@@ -72,7 +72,7 @@ void	avUpdateTiles()
 }
 
 // ------------------------------------------------------------------------------------
-UDWORD	avGetObjLightLevel(BASE_OBJECT *psObj, UDWORD origLevel)
+UDWORD	avGetObjLightLevel(GameObject *psObj, UDWORD origLevel)
 {
 	float div = (float)psObj->visibleForLocalDisplay() / 255.f;
 	unsigned int lowest = origLevel / START_DIVIDE;

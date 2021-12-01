@@ -39,7 +39,7 @@
 
 extern MISSION		mission;
 extern bool			offWorldKeepLists;
-extern DROID       *apsLimboDroids[MAX_PLAYERS];
+extern Droid *apsLimboDroids[MAX_PLAYERS];
 
 extern bool Cheated;
 
@@ -66,7 +66,7 @@ bool setUpMission(LEVEL_TYPE type);
 void launchMission();
 
 /** The update routine for all droids left back at home base. Only interested in Transporters at present. */
-void missionDroidUpdate(DROID *psDroid);
+void missionDroidUpdate(Droid *psDroid);
 
 bool missionIsOffworld();
 bool missionCanReEnforce();
@@ -101,7 +101,7 @@ void intRemoveMissionResultNoAnim();
 void intProcessMissionResult(UDWORD id);
 void intRunMissionResult();
 
-void unloadTransporter(DROID *psTransporter, UDWORD x, UDWORD y, bool goingHome);
+void unloadTransporter(Droid *psTransporter, UDWORD x, UDWORD y, bool goingHome);
 
 /** Sets the appropriate pause states for when the interface is up but the game needs to be paused. */
 void setMissionPauseState();
@@ -148,13 +148,13 @@ void setNoGoArea(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2, UBYTE area);
 void missionFlyTransportersIn(SDWORD iPlayer, bool bTrackTransporter);
 
 /** Move transporter offworld. */
-void missionMoveTransporterOffWorld(DROID *psTransporter);
+void missionMoveTransporterOffWorld(Droid *psTransporter);
 
 void missionSetReinforcementTime(UDWORD iTime);
 UDWORD  missionGetReinforcementTime();
 
 /** Builds a droid back at the home base whilst on a mission - stored in a list made available to the transporter interface. */
-DROID *buildMissionDroid(DROID_TEMPLATE *psTempl, UDWORD x, UDWORD y, UDWORD player);
+Droid *buildMissionDroid(DroidStats *psTempl, UDWORD x, UDWORD y, UDWORD player);
 
 /** This is just a very big number - bigger than a map width/height could ever be! */
 #define		INVALID_XY				(512 * 127)
@@ -175,7 +175,7 @@ bool missionDroidsRemaining(UDWORD player);
  * Called when a Transporter gets to the edge of the world and the droids are being flown to safety.
  * The droids inside the Transporter are placed into the mission list for later use.
  */
-void moveDroidsToSafety(DROID *psTransporter);
+void moveDroidsToSafety(Droid *psTransporter);
 
 /** Called when ESC is pressed. */
 void clearMissionWidgets();

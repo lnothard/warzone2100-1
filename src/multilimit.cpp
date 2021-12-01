@@ -380,9 +380,9 @@ bool applyLimitSet()
 				{
 					while (asStructureStats[id].curCount[player] > asStructureStats[id].upgrade[player].limit)
 					{
-						for (STRUCTURE *psStruct = apsStructLists[player]; psStruct; psStruct = psStruct->psNext)
+						for (Structure *psStruct = apsStructLists[player]; psStruct; psStruct = psStruct->psNext)
 						{
-							if (psStruct->pStructureType->type == asStructureStats[id].type)
+							if (psStruct->stats->type == asStructureStats[id].type)
 							{
 								removeStruct(psStruct, true);
 								break;
@@ -468,7 +468,7 @@ static void displayStructureBar(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset
 	int y = yOffset + psWidget->y();
 	int w = psWidget->width();
 	int h = psWidget->height();
-	STRUCTURE_STATS	*stat = asStructureStats + psWidget->UserData;
+        StructureStats *stat = asStructureStats + psWidget->UserData;
 	Position position;
 	Vector3i rotation;
 	char str[20];

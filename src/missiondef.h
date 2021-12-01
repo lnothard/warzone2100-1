@@ -63,11 +63,11 @@ struct MISSION
 	int32_t                         scrollMinY;
 	int32_t                         scrollMaxX;
 	int32_t                         scrollMaxY;
-	STRUCTURE			*apsStructLists[MAX_PLAYERS], *apsExtractorLists[MAX_PLAYERS];	//original object lists
-	DROID						*apsDroidLists[MAX_PLAYERS];
-	FEATURE						*apsFeatureLists[MAX_PLAYERS];
-	BASE_OBJECT			*apsSensorList[1];
-	FEATURE				*apsOilList[1];
+        Structure *apsStructLists[MAX_PLAYERS], *apsExtractorLists[MAX_PLAYERS];	//original object lists
+        Droid *apsDroidLists[MAX_PLAYERS];
+        Feature *apsFeatureLists[MAX_PLAYERS];
+        GameObject *apsSensorList[1];
+        Feature *apsOilList[1];
 	FLAG_POSITION				*apsFlagPosLists[MAX_PLAYERS];
 	int32_t                         asCurrentPower[MAX_PLAYERS];
 

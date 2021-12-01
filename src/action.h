@@ -62,47 +62,47 @@ const char *getDroidActionName(DROID_ACTION action);
  *              data manipulation in this function itself. In either case, this
  *              function requires a major refactoring...
  */
-void actionUpdateDroid(DROID *psDroid);
+void actionUpdateDroid(Droid *psDroid);
 
 /** Do sanity update only. Called from actionUpdateDroid() normally. */
-void actionSanity(DROID *psDroid);
+void actionSanity(Droid *psDroid);
 
 /** Give a droid an action. */
-void actionDroid(DROID *psDroid, DROID_ACTION action);
+void actionDroid(Droid *psDroid, DROID_ACTION action);
 
 /** Give a droid an action with a location target. */
-void actionDroid(DROID *psDroid, DROID_ACTION action, UDWORD x, UDWORD y);
+void actionDroid(Droid *psDroid, DROID_ACTION action, UDWORD x, UDWORD y);
 
 /** Give a droid an action with an object target. */
-void actionDroid(DROID *psDroid, DROID_ACTION action, BASE_OBJECT *psObj);
+void actionDroid(Droid *psDroid, DROID_ACTION action, GameObject *psObj);
 
 /** Give a droid an action with an object target and a location. */
-void actionDroid(DROID *psDroid, DROID_ACTION action,
-                 BASE_OBJECT *psObj, UDWORD x, UDWORD y);
+void actionDroid(Droid *psDroid, DROID_ACTION action, GameObject *psObj, UDWORD x, UDWORD y);
 
 /** Rotate turret toward  target return True if locked on (Droid and Structure). */
-bool actionTargetTurret(BASE_OBJECT *psAttacker, BASE_OBJECT *psTarget, WEAPON *psWeapon);
+bool actionTargetTurret(GameObject *psAttacker, GameObject *psTarget,
+                        Weapon *psWeapon);
 
 /** Realign turret. */
-void actionAlignTurret(BASE_OBJECT *psObj, int weapon_slot);
+void actionAlignTurret(GameObject *psObj, int weapon_slot);
 
 /** Check if a target is within weapon range. */
-bool actionInRange(const DROID *psDroid, const BASE_OBJECT *psObj, int weapon_slot, bool useLongWithOptimum = true);
+bool actionInRange(const Droid *droid, const GameObject *targetObj, int weapon_slot, bool useLongWithOptimum = true);
 
 /** Return whether a droid can see a target to fire on it. */
-bool actionVisibleTarget(DROID *psDroid, BASE_OBJECT *psTarget, int weapon_slot);
+bool actionVisibleTarget(Droid *psDroid, GameObject *psTarget, int weapon_slot);
 
 /** Check whether a droid is in the neighboring tile to a build position. */
-bool actionReachedBuildPos(DROID const *psDroid, int x, int y, uint16_t direction, BASE_STATS const *psStats);
+bool actionReachedBuildPos(Droid const *psDroid, int x, int y, uint16_t direction, StatsObject const *psStats);
 
 /** Check that  two droids are next to each other */
-bool actionReachedDroid(DROID const *psDroid, DROID const *psOther);
+bool actionReachedDroid(Droid const *psDroid, Droid const *psOther);
 
 /** Send the vtol droid back to the nearest rearming pad - if there is one, otherwise return to base. */
-void moveToRearm(DROID *psDroid);
+void moveToRearm(Droid *psDroid);
 
 /** Choose a landing position for a VTOL when it goes to rearm. */
-bool actionVTOLLandingPos(DROID const *psDroid, Vector2i *p);
+bool actionVTOLLandingPos(Droid const *psDroid, Vector2i *p);
 
 /** How many frames to skip before looking for a better target. */
 #define TARGET_UPD_SKIP_FRAMES 1000

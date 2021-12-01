@@ -871,7 +871,7 @@ MESSAGE *findMessage(const VIEWDATA *pViewData, MESSAGE_TYPE type, UDWORD player
 	return nullptr;
 }
 
-MESSAGE *findMessage(const BASE_OBJECT *psObj, MESSAGE_TYPE type, UDWORD player)
+MESSAGE *findMessage(const GameObject *psObj, MESSAGE_TYPE type, UDWORD player)
 {
 	ASSERT_OR_RETURN(nullptr, player < MAX_PLAYERS, "Bad player");
 	ASSERT_OR_RETURN(nullptr , type < MSG_TYPES, "Bad message type");
@@ -911,17 +911,17 @@ void displayProximityMessage(PROXIMITY_DISPLAY *psProxDisp)
 	{
 		ASSERT_OR_RETURN(, psProxDisp->psMessage->psObj, "Invalid proxobj - null object");
 		ASSERT_OR_RETURN(, psProxDisp->psMessage->psObj->type == OBJ_FEATURE, "Invalid proxobj - must be feature");
-		const FEATURE *psFeature = (FEATURE *)psProxDisp->psMessage->psObj;
+		const Feature *psFeature = (Feature *)psProxDisp->psMessage->psObj;
 
 		if (psFeature->psStats->subType == FEAT_OIL_RESOURCE)
 		{
 			//play default audio message for oil resource
-			audio_QueueTrackPos(ID_SOUND_RESOURCE_HERE, psFeature->pos.x, psFeature->pos.y, psFeature->pos.z);
+			audio_QueueTrackPos(ID_SOUND_RESOURCE_HERE, psFeature->position.x, psFeature->position.y, psFeature->position.z);
 		}
 		else if (psFeature->psStats->subType == FEAT_GEN_ARTE)
 		{
 			//play default audio message for artefact
-			audio_QueueTrackPos(ID_SOUND_ARTIFACT, psFeature->pos.x, psFeature->pos.y, psFeature->pos.z);
+			audio_QueueTrackPos(ID_SOUND_ARTIFACT, psFeature->position.x, psFeature->position.y, psFeature->position.z);
 		}
 	}
 

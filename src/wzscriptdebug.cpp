@@ -314,7 +314,7 @@ static nlohmann::ordered_json fillPlayerModel(int i)
 
 // MARK: - componentToString
 
-static const char *getObjType(const BASE_OBJECT *psObj)
+static const char *getObjType(const GameObject *psObj)
 {
 	switch (psObj->type)
 	{
@@ -349,7 +349,7 @@ nlohmann::ordered_json componentToString(const COMPONENT_STATS *psStats, int pla
 	nlohmann::ordered_json key = nlohmann::ordered_json::object();
 
 	key["Name"] = getStatsName(psStats);
-	key["^Id"] = psStats->id.toUtf8();
+	key["^Id"] = psStats->textId.toUtf8();
 	key["^Power"] = psStats->buildPower;
 	key["^Build Points"] = psStats->buildPoints;
 	key["^Weight"] = psStats->weight;
@@ -2074,7 +2074,7 @@ void WZScriptDebugger::updateLabelModel()
 	}
 }
 
-void WZScriptDebugger::selected(const BASE_OBJECT *psObj)
+void WZScriptDebugger::selected(const GameObject *psObj)
 {
 	selectedObjectDetails = nlohmann::ordered_json::object();
 	selectedObjectId = nullopt;
@@ -2084,33 +2084,33 @@ void WZScriptDebugger::selected(const BASE_OBJECT *psObj)
 		selectedObjectDetails["Name"] = objInfo(psObj);
 		selectedObjectDetails["Type"] = getObjType(psObj);
 		selectedObjectDetails["Id"] = psObj->id;
-		selectedObjectDetails["Player"] = psObj->player;
-		selectedObjectDetails["Born"] = psObj->born;
-		selectedObjectDetails["Died"] = psObj->died;
+		selectedObjectDetails["Player"] = psObj->owningPlayer;
+		selectedObjectDetails["Born"] = psObj->creationTime;
+		selectedObjectDetails["Died"] = psObj->deathTime;
 		selectedObjectDetails["Group"] = psObj->group;
 		selectedObjectDetails["Watched tiles"] = psObj->watchedTiles.size();
 		selectedObjectDetails["Last hit"] = psObj->timeLastHit;
-		selectedObjectDetails["Hit points"] = psObj->body;
+		selectedObjectDetails["Hit points"] = psObj->hitPoints;
 		selectedObjectDetails["Periodical start"] = psObj->periodicalDamageStart;
 		selectedObjectDetails["Periodical damage"] = psObj->periodicalDamage;
 		selectedObjectDetails["Animation event"] = psObj->animationEvent;
-		selectedObjectDetails["Number of weapons"] = psObj->numWeaps;
+		selectedObjectDetails["Number of weapons"] = psObj->numWeapons;
 		selectedObjectDetails["Last hit weapon"] = psObj->lastHitWeapon;
 		selectedObjectDetails["Visible"] = arrayToString(psObj->visible, MAX_PLAYERS);
 		selectedObjectDetails["Seen last tick"] = arrayToString(psObj->seenThisTick, MAX_PLAYERS);
 
 		nlohmann::ordered_json weapons = nlohmann::ordered_json::array();
-		for (int i = 0; i < psObj->numWeaps; i++)
+		for (int i = 0; i < psObj->numWeapons; i++)
 		{
-			if (psObj->asWeaps[i].nStat > 0)
+			if (psObj->weaponList[i].nStat > 0)
 			{
-				WEAPON_STATS *psWeap = asWeaponStats + psObj->asWeaps[i].nStat;
-				auto component = componentToString(psWeap, psObj->player);
-				component["Ammo"] = psObj->asWeaps[i].ammo;
-				component["Last fired time"] = psObj->asWeaps[i].lastFired;
-				component["Shots fired"] = psObj->asWeaps[i].shotsFired;
-				component["Used ammo"] = psObj->asWeaps[i].usedAmmo;
-				component["Origin"] = psObj->asWeaps[i].origin;
+				WEAPON_STATS *psWeap = asWeaponStats + psObj->weaponList[i].nStat;
+				auto component = componentToString(psWeap, psObj->owningPlayer);
+				component["Ammo"] = psObj->weaponList[i].ammo;
+				component["Last fired time"] = psObj->weaponList[i].lastFired;
+				component["Shots fired"] = psObj->weaponList[i].shotsFired;
+				component["Used ammo"] = psObj->weaponList[i].usedAmmo;
+				component["Origin"] = psObj->weaponList[i].origin;
 				weapons.push_back(component);
 			}
 		}
@@ -2118,7 +2118,7 @@ void WZScriptDebugger::selected(const BASE_OBJECT *psObj)
 
 		if (psObj->type == OBJ_DROID)
 		{
-			const DROID *psDroid = castDroid(psObj);
+			const Droid *psDroid = castDroid(psObj);
 			selectedObjectDetails["Droid type"] = psDroid->droidType;
 			selectedObjectDetails["Weight"] = psDroid->weight;
 			selectedObjectDetails["Base speed"] = psDroid->baseSpeed;
@@ -2148,29 +2148,29 @@ void WZScriptDebugger::selected(const BASE_OBJECT *psObj)
 			selectedObjectDetails["Move pause time"] = psDroid->sMove.pauseTime;
 			selectedObjectDetails["Move shuffle start"] = psDroid->sMove.shuffleStart;
 			selectedObjectDetails["Move vert speed"] = psDroid->sMove.iVertSpeed;
-			selectedObjectDetails["Body"] = componentToString(asBodyStats + psDroid->asBits[COMP_BODY], psObj->player);
-			selectedObjectDetails["Brain"] = componentToString(asBrainStats + psDroid->asBits[COMP_BRAIN], psObj->player);
-			selectedObjectDetails["Propulsion"] = componentToString(asPropulsionStats + psDroid->asBits[COMP_PROPULSION], psObj->player);
-			selectedObjectDetails["ECM"] = componentToString(asECMStats + psDroid->asBits[COMP_ECM], psObj->player);
-			selectedObjectDetails["Sensor"] = componentToString(asSensorStats + psDroid->asBits[COMP_SENSOR], psObj->player);
-			selectedObjectDetails["Construct"] = componentToString(asConstructStats + psDroid->asBits[COMP_CONSTRUCT], psObj->player);
-			selectedObjectDetails["Repair"] = componentToString(asRepairStats + psDroid->asBits[COMP_REPAIRUNIT], psObj->player);
+			selectedObjectDetails["Body"] = componentToString(asBodyStats + psDroid->asBits[COMP_BODY], psObj->owningPlayer);
+			selectedObjectDetails["Brain"] = componentToString(asBrainStats + psDroid->asBits[COMP_BRAIN], psObj->owningPlayer);
+			selectedObjectDetails["Propulsion"] = componentToString(asPropulsionStats + psDroid->asBits[COMP_PROPULSION], psObj->owningPlayer);
+			selectedObjectDetails["ECM"] = componentToString(asECMStats + psDroid->asBits[COMP_ECM], psObj->owningPlayer);
+			selectedObjectDetails["Sensor"] = componentToString(asSensorStats + psDroid->asBits[COMP_SENSOR], psObj->owningPlayer);
+			selectedObjectDetails["Construct"] = componentToString(asConstructStats + psDroid->asBits[COMP_CONSTRUCT], psObj->owningPlayer);
+			selectedObjectDetails["Repair"] = componentToString(asRepairStats + psDroid->asBits[COMP_REPAIRUNIT], psObj->owningPlayer);
 		}
 		else if (psObj->type == OBJ_STRUCTURE)
 		{
-			const STRUCTURE *psStruct = castStructure(psObj);
+			const Structure *psStruct = castStructure(psObj);
 			selectedObjectDetails["Build points"] = psStruct->currentBuildPts;
 			selectedObjectDetails["Build rate"] = psStruct->buildRate;
 			selectedObjectDetails["Resistance"] = psStruct->resistance;
 			selectedObjectDetails["Foundation depth"] = psStruct->foundationDepth;
 			selectedObjectDetails["Capacity"] = psStruct->capacity;
-			selectedObjectDetails["^Type"] = psStruct->pStructureType->type;
+			selectedObjectDetails["^Type"] = psStruct->stats->type;
 			selectedObjectDetails["^Build points"] = structureBuildPointsToCompletion(*psStruct);
-			selectedObjectDetails["^Power points"] = psStruct->pStructureType->powerToBuild;
-			selectedObjectDetails["^Height"] = psStruct->pStructureType->height;
-			selectedObjectDetails["ECM"] = componentToString(psStruct->pStructureType->pECM, psObj->player);
-			selectedObjectDetails["Sensor"] = componentToString(psStruct->pStructureType->pSensor, psObj->player);
-			if (psStruct->pStructureType->type == REF_REARM_PAD)
+			selectedObjectDetails["^Power points"] = psStruct->stats->powerToBuild;
+			selectedObjectDetails["^Height"] = psStruct->stats->height;
+			selectedObjectDetails["ECM"] = componentToString(psStruct->stats->pECM, psObj->owningPlayer);
+			selectedObjectDetails["Sensor"] = componentToString(psStruct->stats->pSensor, psObj->owningPlayer);
+			if (psStruct->stats->type == REF_REARM_PAD)
 			{
 				selectedObjectDetails[":timeStarted"] = psStruct->pFunctionality->rearmPad.timeStarted;
 				selectedObjectDetails[":timeLastUpdated"] = psStruct->pFunctionality->rearmPad.timeLastUpdated;
@@ -2179,7 +2179,7 @@ void WZScriptDebugger::selected(const BASE_OBJECT *psObj)
 		}
 		else if (psObj->type == OBJ_FEATURE)
 		{
-			const FEATURE *psFeat = castFeature(psObj);
+			const Feature *psFeat = castFeature(psObj);
 			selectedObjectDetails["^Feature type"] = psFeat->psStats->subType;
 			selectedObjectDetails["^Needs drawn"] = psFeat->psStats->tileDraw;
 			selectedObjectDetails["^Visible at start"] = psFeat->psStats->visibleAtStart;
@@ -2234,7 +2234,7 @@ void jsDebugMessageUpdate()
 	}
 }
 
-void jsDebugSelected(const BASE_OBJECT *psObj)
+void jsDebugSelected(const GameObject *psObj)
 {
 	if (globalDialog)
 	{

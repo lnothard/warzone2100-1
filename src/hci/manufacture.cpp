@@ -7,15 +7,15 @@
 #include "../mission.h"
 #include "../qtscript.h"
 
-STRUCTURE *ManufactureController::highlightedFactory = nullptr;
+Structure *ManufactureController::highlightedFactory = nullptr;
 
-FACTORY *getFactoryOrNullptr(STRUCTURE *factory)
+Factory *getFactoryOrNullptr(Structure *factory)
 {
 	ASSERT_OR_RETURN(nullptr, StructIsFactory(factory), "Invalid factory pointer");
-	return (FACTORY *)factory->pFunctionality;
+	return (Factory *)factory->pFunctionality;
 }
 
-static uint8_t getProductionLoops(STRUCTURE *structure)
+static uint8_t getProductionLoops(Structure *structure)
 {
 	if (structure == nullptr)
 	{
@@ -46,7 +46,8 @@ void ManufactureController::updateData()
 	updateManufactureOptionsList();
 }
 
-void ManufactureController::adjustFactoryProduction(DROID_TEMPLATE *manufactureOption, bool add)
+void ManufactureController::adjustFactoryProduction(
+    DroidStats *manufactureOption, bool add)
 {
 	factoryProdAdjust(getHighlightedObject(), manufactureOption, add);
 }
@@ -56,12 +57,12 @@ void ManufactureController::adjustFactoryLoop(bool add)
 	factoryLoopAdjust(getHighlightedObject(), add);
 }
 
-void ManufactureController::releaseFactoryProduction(STRUCTURE *structure)
+void ManufactureController::releaseFactoryProduction(Structure *structure)
 {
 	releaseProduction(structure, ModeQueue);
 }
 
-void ManufactureController::cancelFactoryProduction(STRUCTURE *structure)
+void ManufactureController::cancelFactoryProduction(Structure *structure)
 {
 	if (!StructureIsManufacturingPending(structure))
 	{
@@ -92,7 +93,7 @@ void ManufactureController::startDeliveryPointPosition()
 	}
 }
 
-static inline bool compareFactories(STRUCTURE *a, STRUCTURE *b)
+static inline bool compareFactories(Structure *a, Structure *b)
 {
 	if (a == nullptr || b == nullptr)
 	{
@@ -118,7 +119,7 @@ void ManufactureController::updateFactoriesList()
 
 	for (auto structure = interfaceStructList(); structure != nullptr; structure = structure->psNext)
 	{
-		if (structure->status == SS_BUILT && structure->died == 0 && StructIsFactory(structure))
+		if (structure->status == SS_BUILT && structure->deathTime == 0 && StructIsFactory(structure))
 		{
 			factories.push_back(structure);
 		}
@@ -139,7 +140,7 @@ void ManufactureController::updateManufactureOptionsList()
 	}
 }
 
-DROID_TEMPLATE *ManufactureController::getObjectStatsAt(size_t objectIndex) const
+DroidStats *ManufactureController::getObjectStatsAt(size_t objectIndex) const
 {
 	auto factory = getFactoryOrNullptr(getObjectAt(objectIndex));
 	return factory == nullptr ? nullptr : factory->psSubject;
@@ -162,7 +163,7 @@ void ManufactureController::clearData()
 	stats.clear();
 }
 
-void ManufactureController::setHighlightedObject(BASE_OBJECT *object)
+void ManufactureController::setHighlightedObject(GameObject *object)
 {
 	if (object == nullptr)
 	{
@@ -224,7 +225,7 @@ protected:
 		ASSERT_NOT_NULLPTR_OR_RETURN(, factory);
 		if (isDead(factory))
 		{
-			ASSERT_FAILURE(!isDead(factory), "!isDead(factory)", AT_MACRO, __FUNCTION__, "Factory is dead");
+			ASSERT_FAILURE(!isDead(factory), "!alive(factory)", AT_MACRO, __FUNCTION__, "Factory is dead");
 			// ensure the backing information is refreshed before the next draw
 			intRefreshScreen();
 			return;
@@ -250,7 +251,7 @@ protected:
 	{
 		auto factory = controller->getObjectAt(objectIndex);
 		ASSERT_NOT_NULLPTR_OR_RETURN("", factory);
-		return getStatsName(factory->pStructureType);
+		return getStatsName(factory->stats);
 	}
 
 	ManufactureController &getController() const override
@@ -313,7 +314,7 @@ protected:
 	}
 
 private:
-	DROID_TEMPLATE *getStats() override
+  DroidStats *getStats() override
 	{
 		return controller->getObjectStatsAt(objectIndex);
 	}
@@ -330,7 +331,8 @@ private:
 		productionRunSizeLabel->setFontColour(WZCOL_ACTION_PRODUCTION_RUN_TEXT);
 	}
 
-	void updateProductionRunSizeLabel(STRUCTURE *factory, DROID_TEMPLATE *droidTemplate)
+	void updateProductionRunSizeLabel(Structure *factory,
+                                          DroidStats *droidTemplate)
 	{
 		auto productionRemaining = getProduction(factory, droidTemplate).numRemaining();
 		if (productionRemaining > 0 && factory && StructureIsManufacturingPending(factory))
@@ -344,7 +346,7 @@ private:
 		}
 	}
 
-	void updateProgressBar(STRUCTURE *factory)
+	void updateProgressBar(Structure *factory)
 	{
 		progressBar->hide();
 
@@ -436,7 +438,7 @@ protected:
 	}
 
 private:
-	DROID_TEMPLATE *getStats() override
+  DroidStats *getStats() override
 	{
 		return controller->getStatsAt(manufactureOptionIndex);
 	}
@@ -452,7 +454,8 @@ private:
 		attach(productionRunSizeLabel = makeProductionRunSizeLabel());
 	}
 
-	void updateProductionRunSizeLabel(STRUCTURE *structure, DROID_TEMPLATE *droidTemplate)
+	void updateProductionRunSizeLabel(Structure *structure,
+                                          DroidStats *droidTemplate)
 	{
 		auto production = getProduction(structure, droidTemplate);
 		if (production.isValid())
@@ -486,7 +489,7 @@ private:
 
 	uint32_t getCost() override
 	{
-		DROID_TEMPLATE* psTemplate = getStats();
+          DroidStats * psTemplate = getStats();
 		return psTemplate ? calcTemplatePower(psTemplate) : 0;
 	}
 
@@ -658,7 +661,7 @@ private:
 			auto factory = controller->getHighlightedObject();
 			ASSERT_NOT_NULLPTR_OR_RETURN(, factory);
 
-			switch (factory->pStructureType->type)
+			switch (factory->stats->type)
 			{
 			default:
 			case REF_FACTORY:

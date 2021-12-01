@@ -177,23 +177,23 @@ OBJECT_MODE objMode;
 std::shared_ptr<BaseObjectsController> interfaceController = nullptr;
 
 /* The current stats list being used by the stats screen */
-static BASE_STATS		**ppsStatsList;
+static StatsObject **ppsStatsList;
 
 /* The selected builder on the object screen when the build screen is displayed */
-static DROID *psSelectedBuilder;
+static Droid *psSelectedBuilder;
 
 /* The button ID of an objects stat on the stat screen if it is locked down */
 static UDWORD			statID;
 
 /* The stats for the current getStructPos */
-static BASE_STATS		*psPositionStats;
+static StatsObject *psPositionStats;
 
 /* Store a list of stats pointers from the main structure stats */
-static STRUCTURE_STATS	**apsStructStatsList;
+static StructureStats **apsStructStatsList;
 
 /* Store a list of Template pointers for Droids that can be built */
-std::vector<DROID_TEMPLATE *>   apsTemplateList;
-std::list<DROID_TEMPLATE>       localTemplates;
+std::vector<DroidStats *>   apsTemplateList;
+std::list<DroidStats>       localTemplates;
 
 /* Store a list of Feature pointers for features to be placed on the map */
 static FEATURE_STATS	**apsFeatureList;
@@ -244,7 +244,7 @@ static std::vector<IntUpdateFunc> intUpdateFuncs;
 
 /* Add the stats widgets to the widget screen */
 /* If psSelected != NULL it specifies which stat should be hilited */
-static bool intAddDebugStatsForm(BASE_STATS **ppsStatsList, UDWORD numStats);
+static bool intAddDebugStatsForm(StatsObject **ppsStatsList, UDWORD numStats);
 
 /* Add the build widgets to the widget screen */
 static bool intAddBuild();
@@ -258,9 +258,9 @@ static bool intAddCommand();
 /* Stop looking for a structure location */
 static void intStopStructPosition();
 
-static STRUCTURE *CurrentStruct = nullptr;
+static Structure *CurrentStruct = nullptr;
 static SWORD CurrentStructType = 0;
-static DROID *CurrentDroid = nullptr;
+static Droid *CurrentDroid = nullptr;
 static DROID_TYPE CurrentDroidType = DROID_ANY;
 
 /******************Power Bar Stuff!**************/
@@ -879,7 +879,7 @@ bool intInitialise()
 	WidgSetAudio(WidgetAudioCallback, ID_SOUND_BUTTON_CLICK_3, ID_SOUND_SELECT, ID_SOUND_BUILD_FAIL);
 
 	/* Create storage for Structures that can be built */
-	apsStructStatsList = (STRUCTURE_STATS **)malloc(sizeof(STRUCTURE_STATS *) * MAXSTRUCTURES);
+	apsStructStatsList = (StructureStats **)malloc(sizeof(StructureStats *) * MAXSTRUCTURES);
 
 	/* Create storage for Templates that can be built */
 	apsTemplateList.clear();
@@ -1228,7 +1228,7 @@ void intOpenDebugMenu(OBJECT_TYPE id)
 		{
 			apsTemplateList.push_back(&localTemplate);
 		}
-		ppsStatsList = (BASE_STATS **)&apsTemplateList[0]; // FIXME Ugly cast, and is undefined behaviour (strict-aliasing violation) in C/C++.
+		ppsStatsList = (StatsObject **)&apsTemplateList[0]; // FIXME Ugly cast, and is undefined behaviour (strict-aliasing violation) in C/C++.
 		objMode = IOBJ_DEBUG_DROID;
 		intAddDebugStatsForm(ppsStatsList, apsTemplateList.size());
 		intMode = INT_EDITSTAT;
@@ -1239,7 +1239,7 @@ void intOpenDebugMenu(OBJECT_TYPE id)
 		{
 			apsStructStatsList[i] = asStructureStats + i;
 		}
-		ppsStatsList = (BASE_STATS **)apsStructStatsList;
+		ppsStatsList = (StatsObject **)apsStructStatsList;
 		objMode = IOBJ_DEBUG_STRUCTURE;
 		intAddDebugStatsForm(ppsStatsList, std::min<unsigned>(numStructureStats, MAXSTRUCTURES));
 		intMode = INT_EDITSTAT;
@@ -1250,7 +1250,7 @@ void intOpenDebugMenu(OBJECT_TYPE id)
 		{
 			apsFeatureList[i] = asFeatureStats + i;
 		}
-		ppsStatsList = (BASE_STATS **)apsFeatureList;
+		ppsStatsList = (StatsObject **)apsFeatureList;
 		intAddDebugStatsForm(ppsStatsList, std::min<unsigned>(numFeatureStats, MAXFEATURES));
 		intMode = INT_EDITSTAT;
 		editPosMode = IED_NOPOS;
@@ -1611,11 +1611,11 @@ INT_RETVAL intRunWidgets()
 					&& intNumSelectedDroids(DROID_CYBORG_CONSTRUCT) == 0
 					&& psSelectedBuilder != nullptr && isConstructionDroid(psSelectedBuilder))
 				{
-					orderDroidStatsTwoLocDir(psSelectedBuilder, DORDER_LINEBUILD, (STRUCTURE_STATS *)psPositionStats, pos.x, pos.y, pos2.x, pos2.y, getBuildingDirection(), ModeQueue);
+					orderDroidStatsTwoLocDir(psSelectedBuilder, DORDER_LINEBUILD, (StructureStats *)psPositionStats, pos.x, pos.y, pos2.x, pos2.y, getBuildingDirection(), ModeQueue);
 				}
 				else
 				{
-					orderSelectedStatsTwoLocDir(selectedPlayer, DORDER_LINEBUILD, (STRUCTURE_STATS *)psPositionStats, pos.x, pos.y, pos2.x, pos2.y, getBuildingDirection(), ctrlShiftDown());
+					orderSelectedStatsTwoLocDir(selectedPlayer, DORDER_LINEBUILD, (StructureStats *)psPositionStats, pos.x, pos.y, pos2.x, pos2.y, getBuildingDirection(), ctrlShiftDown());
 				}
 				if (!quickQueueMode)
 				{
@@ -1628,13 +1628,13 @@ INT_RETVAL intRunWidgets()
 			{
 				//check droid hasn't died
 				if ((psSelectedBuilder == nullptr) ||
-					!psSelectedBuilder->died)
+					!psSelectedBuilder->deathTime)
 				{
 					// Send the droid off to build the structure assuming the droid
 					// can get to the location chosen
 
 					// Don't allow derrick to be built on burning ground.
-					if (((STRUCTURE_STATS *)psPositionStats)->type == REF_RESOURCE_EXTRACTOR)
+					if (((StructureStats *)psPositionStats)->type == REF_RESOURCE_EXTRACTOR)
 					{
 						if (fireOnLocation(pos.x, pos.y))
 						{
@@ -1646,11 +1646,11 @@ INT_RETVAL intRunWidgets()
 						&& intNumSelectedDroids(DROID_CYBORG_CONSTRUCT) == 0
 						&& psSelectedBuilder != nullptr)
 					{
-						orderDroidStatsLocDir(psSelectedBuilder, DORDER_BUILD, (STRUCTURE_STATS *)psPositionStats, pos.x, pos.y, getBuildingDirection(), ModeQueue);
+						orderDroidStatsLocDir(psSelectedBuilder, DORDER_BUILD, (StructureStats *)psPositionStats, pos.x, pos.y, getBuildingDirection(), ModeQueue);
 					}
 					else
 					{
-						orderSelectedStatsLocDir(selectedPlayer, DORDER_BUILD, (STRUCTURE_STATS *)psPositionStats, pos.x, pos.y, getBuildingDirection(), ctrlShiftDown());
+						orderSelectedStatsLocDir(selectedPlayer, DORDER_BUILD, (StructureStats *)psPositionStats, pos.x, pos.y, getBuildingDirection(), ctrlShiftDown());
 					}
 				}
 
@@ -1699,13 +1699,13 @@ INT_RETVAL intRunWidgets()
 					auto psBuilding = castStructureStats(psPositionStats);
 					if (psBuilding && selectedPlayer < MAX_PLAYERS)
 					{
-						STRUCTURE tmp(0, selectedPlayer);
+                                          Structure tmp(0, selectedPlayer);
 
 						if (psBuilding->type == REF_DEMOLISH)
 						{
 							MAPTILE *psTile = mapTile(map_coord(pos.x), map_coord(pos.y));
-							FEATURE *psFeature = (FEATURE *)psTile->psObject;
-							STRUCTURE *psStructure = (STRUCTURE *)psTile->psObject;
+                                                        Feature *psFeature = (Feature *)psTile->psObject;
+                                                        Structure *psStructure = (Structure *)psTile->psObject;
 
 							if (psStructure && psTile->psObject->type == OBJ_STRUCTURE)
 							{
@@ -1719,10 +1719,10 @@ INT_RETVAL intRunWidgets()
 						}
 						else
 						{
-							STRUCTURE *psStructure = &tmp;
+                                                  Structure *psStructure = &tmp;
 							tmp.id = generateNewObjectId();
-							tmp.pStructureType = (STRUCTURE_STATS *)psPositionStats;
-							tmp.pos = {pos.x, pos.y, map_Height(pos.x, pos.y) + world_coord(1) / 10};
+							tmp.stats = (StructureStats *)psPositionStats;
+							tmp.position = {pos.x, pos.y, map_Height(pos.x, pos.y) + world_coord(1) / 10};
 
 							// In multiplayer games be sure to send a message to the
 							// other players, telling them a new structure has been
@@ -1732,7 +1732,7 @@ INT_RETVAL intRunWidgets()
 							// the fact that we're cheating ourselves a new
 							// structure.
 							std::string msg = astringf(_("Player %u is cheating (debug menu) him/herself a new structure: %s."),
-										selectedPlayer, getStatsName(psStructure->pStructureType));
+										selectedPlayer, getStatsName(psStructure->stats));
 							sendInGameSystemMessage(msg.c_str());
 							Cheated = true;
 						}
@@ -1746,20 +1746,21 @@ INT_RETVAL intRunWidgets()
 						Cheated = true;
 						// Notify the other hosts that we've just built ourselves a feature
 						//sendMultiPlayerFeature(result->psStats->subType, result->pos.x, result->pos.y, result->id);
-						sendMultiPlayerFeature(((FEATURE_STATS *)psPositionStats)->ref, pos.x, pos.y, generateNewObjectId());
+						sendMultiPlayerFeature(((FEATURE_STATS *)psPositionStats)->id, pos.x, pos.y, generateNewObjectId());
 					}
 					else if (psPositionStats->hasType(STAT_TEMPLATE))
 					{
 						std::string msg;
-						DROID *psDroid = buildDroid((DROID_TEMPLATE *)psPositionStats, pos.x, pos.y, selectedPlayer, false, nullptr);
+                                                Droid *psDroid = buildDroid((DroidStats *)psPositionStats, pos.x, pos.y, selectedPlayer, false, nullptr);
 						cancelDeliveryRepos();
 						if (psDroid)
 						{
-							addDroid(psDroid, apsDroidLists);
+							addDroid(psDroid,
+                                                           allDroidLists);
 
 							// Send a text message to all players, notifying them of
 							// the fact that we're cheating ourselves a new droid.
-							msg = astringf(_("Player %u is cheating (debug menu) him/herself a new droid: %s."), selectedPlayer, psDroid->aName);
+							msg = astringf(_("Player %u is cheating (debug menu) him/herself a new droid: %s."), selectedPlayer, psDroid->name);
 
 							triggerEventDroidBuilt(psDroid, nullptr);
 						}
@@ -1805,7 +1806,7 @@ INT_RETVAL intRunWidgets()
 static void intRunPower()
 {
 	UDWORD				highlightedStatID;
-	BASE_STATS			*psStat;
+        StatsObject *psStat;
 	UDWORD				quantity = 0;
 
 	/* Find out which button was hilited */
@@ -1816,7 +1817,7 @@ static void intRunPower()
 		if (psStat->hasType(STAT_STRUCTURE))
 		{
 			//get the structure build points
-			quantity = ((STRUCTURE_STATS *)apsStructStatsList[highlightedStatID -
+			quantity = ((StructureStats *)apsStructStatsList[highlightedStatID -
 			            IDSTAT_START])->powerToBuild;
 		}
 		else if (psStat->hasType(STAT_TEMPLATE))
@@ -1842,7 +1843,7 @@ void intSetMapPos(UDWORD x, UDWORD y)
 //
 // There should be two version of this function, one for left clicking and one got right.
 //
-void intObjectSelected(BASE_OBJECT *psObj)
+void intObjectSelected(GameObject *psObj)
 {
 	if (psObj)
 	{
@@ -1876,7 +1877,7 @@ void intObjectSelected(BASE_OBJECT *psObj)
 						intAddManufacture();
 						break;
 					}
-					else if (structure->pStructureType->type == REF_RESEARCH)
+					else if (structure->stats->type == REF_RESEARCH)
 					{
 						intAddResearch();
 						break;
@@ -1899,7 +1900,7 @@ void intObjectSelected(BASE_OBJECT *psObj)
 /**
  * Start location selection, where the builder will build the structure
  */
-void intStartConstructionPosition(DROID *builder, STRUCTURE_STATS *structure)
+void intStartConstructionPosition(Droid *builder, StructureStats *structure)
 {
 	psSelectedBuilder = builder;
 	psPositionStats = structure;
@@ -1908,7 +1909,7 @@ void intStartConstructionPosition(DROID *builder, STRUCTURE_STATS *structure)
 
 
 /* Start looking for a structure location */
-void intStartStructPosition(BASE_STATS *psStats)
+void intStartStructPosition(StatsObject *psStats)
 {
 	init3DBuilding(psStats, nullptr, nullptr);
 }
@@ -1987,7 +1988,7 @@ void intDemolishCancel()
 }
 
 /* Tell the interface a research facility has completed a topic */
-void intResearchFinished(STRUCTURE *psBuilding)
+void intResearchFinished(Structure *psBuilding)
 {
 	ASSERT_OR_RETURN(, psBuilding != nullptr, "Invalid structure pointer");
 
@@ -2170,7 +2171,7 @@ void makeObsoleteButton(const std::shared_ptr<WIDGET> &parent)
 /* Add the stats widgets to the widget screen */
 /* If psSelected != NULL it specifies which stat should be hilited
    psOwner specifies which object is hilighted on the object bar for this stat*/
-static bool intAddDebugStatsForm(BASE_STATS **_ppsStatsList, UDWORD numStats)
+static bool intAddDebugStatsForm(StatsObject **_ppsStatsList, UDWORD numStats)
 {
 	// should this ever be called with psOwner == NULL?
 
@@ -2254,13 +2255,13 @@ static bool intAddDebugStatsForm(BASE_STATS **_ppsStatsList, UDWORD numStats)
 		button->setStats(_ppsStatsList[i]);
 		statList->addWidgetToLayout(button);
 
-		BASE_STATS *Stat = _ppsStatsList[i];
+                StatsObject *Stat = _ppsStatsList[i];
 		WzString tipString = getStatsName(_ppsStatsList[i]);
 		unsigned powerCost = 0;
 		W_BARGRAPH *bar;
 		if (Stat->hasType(STAT_STRUCTURE))  // It's a structure.
 		{
-			powerCost = ((STRUCTURE_STATS *)Stat)->powerToBuild;
+			powerCost = ((StructureStats *)Stat)->powerToBuild;
 			sBarInit.size = powerCost / POWERPOINTS_DROIDDIV;
 			if (sBarInit.size > 100)
 			{
@@ -2274,7 +2275,7 @@ static bool intAddDebugStatsForm(BASE_STATS **_ppsStatsList, UDWORD numStats)
 		}
 		else if (Stat->hasType(STAT_TEMPLATE))  // It's a droid.
 		{
-			powerCost = calcTemplatePower((DROID_TEMPLATE *)Stat);
+			powerCost = calcTemplatePower((DroidStats *)Stat);
 			sBarInit.size = powerCost / POWERPOINTS_DROIDDIV;
 			if (sBarInit.size > 100)
 			{
@@ -2301,13 +2302,13 @@ static bool intAddDebugStatsForm(BASE_STATS **_ppsStatsList, UDWORD numStats)
 }
 
 /* Return the stats for a research facility */
-static BASE_STATS *getResearchStats(BASE_OBJECT *psObj)
+static StatsObject *getResearchStats(GameObject *psObj)
 {
 	ASSERT_OR_RETURN(nullptr, psObj != nullptr && psObj->type == OBJ_STRUCTURE, "Invalid Structure pointer");
-	STRUCTURE *psBuilding = (STRUCTURE *)psObj;
+        Structure *psBuilding = (Structure *)psObj;
 	RESEARCH_FACILITY *psResearchFacility = &psBuilding->pFunctionality->researchFacility;
 
-	if (psResearchFacility->psSubjectPending != nullptr && !IsResearchCompleted(&asPlayerResList[psObj->player][psResearchFacility->psSubjectPending->index]))
+	if (psResearchFacility->psSubjectPending != nullptr && !IsResearchCompleted(&asPlayerResList[psObj->owningPlayer][psResearchFacility->psSubjectPending->index]))
 	{
 		return psResearchFacility->psSubjectPending;
 	}
@@ -2378,7 +2379,7 @@ void addIntelScreen()
 }
 
 //sets up the Transporter Screen as far as the interface is concerned
-void addTransporterInterface(DROID *psSelected, bool onMission)
+void addTransporterInterface(Droid *psSelected, bool onMission)
 {
 	// if psSelected = NULL add interface but if psSelected != NULL make sure its not flying
 	if (!psSelected || (psSelected && !transporterFlying(psSelected)))
@@ -2390,7 +2391,7 @@ void addTransporterInterface(DROID *psSelected, bool onMission)
 }
 
 /*sets which list of structures to use for the interface*/
-STRUCTURE *interfaceStructList()
+Structure *interfaceStructList()
 {
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
@@ -2616,7 +2617,7 @@ void	setKeyButtonMapping(UDWORD	val)
 // count the number of selected droids of a type
 static SDWORD intNumSelectedDroids(UDWORD droidType)
 {
-	DROID	*psDroid;
+  Droid *psDroid;
 	SDWORD	num;
 
 	if (selectedPlayer >= MAX_PLAYERS)
@@ -2625,7 +2626,7 @@ static SDWORD intNumSelectedDroids(UDWORD droidType)
 	}
 
 	num = 0;
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected && psDroid->droidType == droidType)
 		{
@@ -2646,9 +2647,9 @@ int intGetResearchState()
 	}
 
 	bool resFree = false;
-	for (STRUCTURE *psStruct = interfaceStructList(); psStruct != nullptr; psStruct = psStruct->psNext)
+	for (Structure *psStruct = interfaceStructList(); psStruct != nullptr; psStruct = psStruct->psNext)
 	{
-		if (psStruct->pStructureType->type == REF_RESEARCH &&
+		if (psStruct->stats->type == REF_RESEARCH &&
 		    psStruct->status == SS_BUILT &&
 		    getResearchStats(psStruct) == nullptr)
 		{
@@ -2709,9 +2710,9 @@ bool intCheckReticuleButEnabled(UDWORD id)
 
 // Look through the players structures and find the next one of type structType.
 //
-static STRUCTURE *intGotoNextStructureType(UDWORD structType)
+static Structure *intGotoNextStructureType(UDWORD structType)
 {
-	STRUCTURE	*psStruct;
+  Structure *psStruct;
 	bool Found = false;
 
 	if ((SWORD)structType != CurrentStructType)
@@ -2731,7 +2732,7 @@ static STRUCTURE *intGotoNextStructureType(UDWORD structType)
 
 	for (; psStruct != nullptr; psStruct = psStruct->psNext)
 	{
-		if ((psStruct->pStructureType->type == structType || structType == REF_ANY) && psStruct->status == SS_BUILT)
+		if ((psStruct->stats->type == structType || structType == REF_ANY) && psStruct->status == SS_BUILT)
 		{
 			if (psStruct != CurrentStruct)
 			{
@@ -2749,7 +2750,7 @@ static STRUCTURE *intGotoNextStructureType(UDWORD structType)
 	{
 		for (psStruct = interfaceStructList(); psStruct != CurrentStruct && psStruct != nullptr; psStruct = psStruct->psNext)
 		{
-			if ((psStruct->pStructureType->type == structType || structType == REF_ANY) && psStruct->status == SS_BUILT)
+			if ((psStruct->stats->type == structType || structType == REF_ANY) && psStruct->status == SS_BUILT)
 			{
 				if (psStruct != CurrentStruct)
 				{
@@ -2770,9 +2771,9 @@ static STRUCTURE *intGotoNextStructureType(UDWORD structType)
 
 // Find any structure. Returns NULL if none found.
 //
-STRUCTURE *intFindAStructure()
+Structure *intFindAStructure()
 {
-	STRUCTURE *Struct;
+  Structure *Struct;
 
 	// First try and find a factory.
 	Struct = intGotoNextStructureType(REF_FACTORY);
@@ -2793,9 +2794,9 @@ STRUCTURE *intFindAStructure()
 // Look through the players droids and find the next one of type droidType.
 // If Current=NULL then start at the beginning overwise start at Current.
 //
-DROID *intGotoNextDroidType(DROID *CurrDroid, DROID_TYPE droidType, bool AllowGroup)
+Droid *intGotoNextDroidType(Droid *CurrDroid, DROID_TYPE droidType, bool AllowGroup)
 {
-	DROID *psDroid;
+  Droid *psDroid;
 	bool Found = false;
 
 	if (selectedPlayer >= MAX_PLAYERS)
@@ -2820,7 +2821,7 @@ DROID *intGotoNextDroidType(DROID *CurrDroid, DROID_TYPE droidType, bool AllowGr
 	}
 	else
 	{
-		psDroid = apsDroidLists[selectedPlayer];
+		psDroid = allDroidLists[selectedPlayer];
 	}
 
 	for (; psDroid != nullptr; psDroid = psDroid->psNext)
@@ -2843,7 +2844,7 @@ DROID *intGotoNextDroidType(DROID *CurrDroid, DROID_TYPE droidType, bool AllowGr
 	// Start back at the beginning?
 	if ((!Found) && (CurrentDroid != nullptr))
 	{
-		for (psDroid = apsDroidLists[selectedPlayer]; (psDroid != CurrentDroid) && (psDroid != nullptr); psDroid = psDroid->psNext)
+		for (psDroid = allDroidLists[selectedPlayer]; (psDroid != CurrentDroid) && (psDroid != nullptr); psDroid = psDroid->psNext)
 		{
 			if ((psDroid->droidType == droidType ||
 			     ((droidType == DROID_ANY) && !isTransporter(psDroid))) &&
@@ -2866,7 +2867,7 @@ DROID *intGotoNextDroidType(DROID *CurrDroid, DROID_TYPE droidType, bool AllowGr
 		// Center it on screen.
 		if (CurrentDroid)
 		{
-			intSetMapPos(CurrentDroid->pos.x, CurrentDroid->pos.y);
+			intSetMapPos(CurrentDroid->position.x, CurrentDroid->position.y);
 		}
 		return CurrentDroid;
 	}

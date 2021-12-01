@@ -2696,8 +2696,8 @@ bool changeReadyStatus(UBYTE player, bool bReady)
 	NETBroadcastPlayerInfo(player);
 	netPlayersUpdated = true;
 	// Player is fast! Clicked the "Ready" button before we had a chance to ping him/her
-	// change PingTime to some value less than PING_LIMIT, so that multiplayPlayersReady 
-	// doesnt block 
+	// change PingTime to some value less than PING_LIMIT, so that multiplayPlayersReady
+	// doesnt block
 	ingame.PingTimes[player] = ingame.PingTimes[player] == PING_LIMIT ? 1 : ingame.PingTimes[player];
 	return true;
 }
@@ -3710,7 +3710,7 @@ private:
 		uint8_t readySpectatorOnlySlots = 0;
 		for (size_t i = 0; i < MAX_CONNECTED_PLAYERS; ++i)
 		{
-			PLAYER const &p = NetPlay.players[i];
+                  NetPlayer const &p = NetPlay.players[i];
 			if (p.ai == AI_CLOSED)
 			{
 				// closed slot - skip
@@ -6056,7 +6056,7 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 		break;
 
 	case CON_CANCEL:
-		
+
 		setHostLaunch(HostLaunch::Normal); // Dont load the autohost file on subsequent hosts
 		performedFirstStart = false; // Reset everything
 		if (!challengeActive)
@@ -8024,7 +8024,7 @@ inline void from_json(const nlohmann::json& j, MULTIPLAYERINGAME& p) {
 	p.flags = j.at("flags").get<uint8_t>();
 }
 
-inline void to_json(nlohmann::json& j, const PLAYER& p) {
+inline void to_json(nlohmann::json& j, const NetPlayer & p) {
 
 	j = nlohmann::json::object();
 	j["name"] = WzString::fromUtf8(p.name).toStdString(); // Wrap this in WzString to handle invalid UTF-8 before adding to json object
@@ -8045,7 +8045,7 @@ inline void to_json(nlohmann::json& j, const PLAYER& p) {
 	j["isSpectator"] = p.isSpectator;
 }
 
-inline void from_json(const nlohmann::json& j, PLAYER& p) {
+inline void from_json(const nlohmann::json& j, NetPlayer & p) {
 	std::string str = j.at("name").get<std::string>();
 	sstrcpy(p.name, str.c_str());
 	p.position = j.at("position").get<int32_t>();
@@ -8386,7 +8386,7 @@ bool WZGameReplayOptionsHandler::restoreOptions(const nlohmann::json& object, Em
 		debug(LOG_ERROR, "Unexpected NetPlay.players.size(): %zu", NetPlay.players.size());
 		return false;
 	}
-	NetPlay.players.push_back(PLAYER());
+	NetPlay.players.push_back(NetPlayer());
 	size_t replaySpectatorIndex = NetPlay.players.size() - 1;
 	NET_InitPlayer(replaySpectatorIndex, false);  // re-init everything
 	NetPlay.players[replaySpectatorIndex].allocated = true;

@@ -40,8 +40,8 @@
 #include "main.h"
 
 // Template storage
-std::map<UDWORD, std::unique_ptr<DROID_TEMPLATE>> droidTemplates[MAX_PLAYERS];
-std::vector<std::unique_ptr<DROID_TEMPLATE>> replacedDroidTemplates[MAX_PLAYERS];
+std::map<UDWORD, std::unique_ptr<DroidStats>> droidTemplates[MAX_PLAYERS];
+std::vector<std::unique_ptr<DroidStats>> replacedDroidTemplates[MAX_PLAYERS];
 
 #define ASSERT_PLAYER_OR_RETURN(retVal, player) \
 	ASSERT_OR_RETURN(retVal, player >= 0 && player < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
@@ -51,7 +51,7 @@ bool includeRedundantDesigns = false;
 bool playerBuiltHQ = false;
 
 
-static bool researchedItem(const DROID_TEMPLATE* /*psCurr*/, int player, COMPONENT_TYPE partIndex, int part, bool allowZero, bool allowRedundant)
+static bool researchedItem(const DroidStats * /*psCurr*/, int player, COMPONENT_TYPE partIndex, int part, bool allowZero, bool allowRedundant)
 {
 	ASSERT_PLAYER_OR_RETURN(false, player);
 	if (allowZero && part <= 0)
@@ -62,19 +62,19 @@ static bool researchedItem(const DROID_TEMPLATE* /*psCurr*/, int player, COMPONE
 	return availability == AVAILABLE || (allowRedundant && availability == REDUNDANT);
 }
 
-static bool researchedPart(const DROID_TEMPLATE *psCurr, int player, COMPONENT_TYPE partIndex, bool allowZero, bool allowRedundant)
+static bool researchedPart(const DroidStats *psCurr, int player, COMPONENT_TYPE partIndex, bool allowZero, bool allowRedundant)
 {
 	return researchedItem(psCurr, player, partIndex, psCurr->asParts[partIndex], allowZero, allowRedundant);
 }
 
-static bool researchedWeap(const DROID_TEMPLATE *psCurr, int player, int weapIndex, bool allowRedundant)
+static bool researchedWeap(const DroidStats *psCurr, int player, int weapIndex, bool allowRedundant)
 {
 	ASSERT_PLAYER_OR_RETURN(false, player);
 	int availability = apCompLists[player][COMP_WEAPON][psCurr->asWeaps[weapIndex]];
 	return availability == AVAILABLE || (allowRedundant && availability == REDUNDANT);
 }
 
-bool researchedTemplate(const DROID_TEMPLATE *psCurr, int player, bool allowRedundant, bool verbose)
+bool researchedTemplate(const DroidStats *psCurr, int player, bool allowRedundant, bool verbose)
 {
 	ASSERT_OR_RETURN(false, psCurr, "Given a null template");
 	ASSERT_PLAYER_OR_RETURN(false, player);
@@ -102,7 +102,8 @@ bool researchedTemplate(const DROID_TEMPLATE *psCurr, int player, bool allowRedu
 	return researchedEverything;
 }
 
-bool droidTemplate_LoadPartByName(COMPONENT_TYPE compType, const WzString &name, DROID_TEMPLATE &outputTemplate)
+bool droidTemplate_LoadPartByName(COMPONENT_TYPE compType, const WzString &name,
+                                  DroidStats &outputTemplate)
 {
 	int index = getCompFromName(compType, name);
 	if (index < 0)
@@ -120,7 +121,8 @@ bool droidTemplate_LoadPartByName(COMPONENT_TYPE compType, const WzString &name,
 	return true;
 }
 
-bool droidTemplate_LoadWeapByName(size_t destIndex, const WzString &name, DROID_TEMPLATE &outputTemplate)
+bool droidTemplate_LoadWeapByName(size_t destIndex, const WzString &name,
+                                  DroidStats &outputTemplate)
 {
 	int index = getCompFromName(COMP_WEAPON, name);
 	if (index < 0)
@@ -140,9 +142,9 @@ bool droidTemplate_LoadWeapByName(size_t destIndex, const WzString &name, DROID_
 	return true;
 }
 
-bool loadTemplateCommon(WzConfig &ini, DROID_TEMPLATE &outputTemplate)
+bool loadTemplateCommon(WzConfig &ini, DroidStats &outputTemplate)
 {
-	DROID_TEMPLATE &design = outputTemplate;
+  DroidStats &design = outputTemplate;
 	design.name = ini.string("name");
 	WzString droidType = ini.value("type").toWzString();
 
@@ -242,7 +244,7 @@ bool initTemplates()
 	}
 	for (ini.beginArray("templates"); ini.remainingArrayItems(); ini.nextArrayItem())
 	{
-		DROID_TEMPLATE design;
+          DroidStats design;
 		bool loadCommonSuccess = loadTemplateCommon(ini, design);
 		design.multiPlayerID = generateNewObjectId();
 		design.prefab = false;		// not AI template
@@ -288,7 +290,7 @@ bool initTemplates()
 			debug(LOG_ERROR, "Invalid template \"%s\" from stored templates", design.name.toUtf8().c_str());
 			continue;
 		}
-		DROID_TEMPLATE *psDestTemplate = nullptr;
+                DroidStats *psDestTemplate = nullptr;
 		for (auto &keyvaluepair : droidTemplates[selectedPlayer])
 		{
 			psDestTemplate = keyvaluepair.second.get();
@@ -324,7 +326,7 @@ bool initTemplates()
 	return true;
 }
 
-nlohmann::json saveTemplateCommon(const DROID_TEMPLATE *psCurr)
+nlohmann::json saveTemplateCommon(const DroidStats *psCurr)
 {
 	nlohmann::json templateObj = nlohmann::json::object();
 	templateObj["name"] = psCurr->name;
@@ -346,32 +348,32 @@ nlohmann::json saveTemplateCommon(const DROID_TEMPLATE *psCurr)
 	case DROID_DEFAULT: templateObj["type"] = "DROID"; break;
 	default: ASSERT(false, "No such droid type \"%d\" for %s", psCurr->droidType, psCurr->name.toUtf8().c_str());
 	}
-	templateObj["body"] = (asBodyStats + psCurr->asParts[COMP_BODY])->id;
-	templateObj["propulsion"] = (asPropulsionStats + psCurr->asParts[COMP_PROPULSION])->id;
+	templateObj["body"] = (asBodyStats + psCurr->asParts[COMP_BODY])->textId;
+	templateObj["propulsion"] = (asPropulsionStats + psCurr->asParts[COMP_PROPULSION])->textId;
 	if (psCurr->asParts[COMP_BRAIN] != 0)
 	{
-		templateObj["brain"] = (asBrainStats + psCurr->asParts[COMP_BRAIN])->id;
+		templateObj["brain"] = (asBrainStats + psCurr->asParts[COMP_BRAIN])->textId;
 	}
 	if ((asRepairStats + psCurr->asParts[COMP_REPAIRUNIT])->location == LOC_TURRET) // avoid auto-repair...
 	{
-		templateObj["repair"] = (asRepairStats + psCurr->asParts[COMP_REPAIRUNIT])->id;
+		templateObj["repair"] = (asRepairStats + psCurr->asParts[COMP_REPAIRUNIT])->textId;
 	}
 	if ((asECMStats + psCurr->asParts[COMP_ECM])->location == LOC_TURRET)
 	{
-		templateObj["ecm"] = (asECMStats + psCurr->asParts[COMP_ECM])->id;
+		templateObj["ecm"] = (asECMStats + psCurr->asParts[COMP_ECM])->textId;
 	}
 	if ((asSensorStats + psCurr->asParts[COMP_SENSOR])->location == LOC_TURRET)
 	{
-		templateObj["sensor"] = (asSensorStats + psCurr->asParts[COMP_SENSOR])->id;
+		templateObj["sensor"] = (asSensorStats + psCurr->asParts[COMP_SENSOR])->textId;
 	}
 	if (psCurr->asParts[COMP_CONSTRUCT] != 0)
 	{
-		templateObj["construct"] = (asConstructStats + psCurr->asParts[COMP_CONSTRUCT])->id;
+		templateObj["construct"] = (asConstructStats + psCurr->asParts[COMP_CONSTRUCT])->textId;
 	}
 	nlohmann::json weapons = nlohmann::json::array();
 	for (int j = 0; j < psCurr->numWeaps; j++)
 	{
-		weapons.push_back((asWeaponStats + psCurr->asWeaps[j])->id);
+		weapons.push_back((asWeaponStats + psCurr->asWeaps[j])->textId);
 	}
 	if (!weapons.empty())
 	{
@@ -395,7 +397,7 @@ bool storeTemplates()
 	ini.beginArray("templates");
 	for (auto &keyvaluepair : droidTemplates[selectedPlayer])
 	{
-		const DROID_TEMPLATE *psCurr = keyvaluepair.second.get();
+		const DroidStats *psCurr = keyvaluepair.second.get();
 		if (psCurr->stored)
 		{
 			ini.currentJsonValue() = saveTemplateCommon(psCurr);
@@ -411,8 +413,8 @@ bool shutdownTemplates()
 	return storeTemplates();
 }
 
-DROID_TEMPLATE::DROID_TEMPLATE()  // This constructor replaces a memset in scrAssembleWeaponTemplate(), not needed elsewhere.
-	: BASE_STATS(STAT_TEMPLATE)
+DroidStats::DroidStats()  // This constructor replaces a memset in scrAssembleWeaponTemplate(), not needed elsewhere.
+	: StatsObject(STAT_TEMPLATE)
 	  //, asParts
 	, numWeaps(0)
 	  //, asWeaps
@@ -433,13 +435,13 @@ bool loadDroidTemplates(const char *filename)
 	for (int i = 0; i < list.size(); ++i)
 	{
 		ini.beginGroup(list[i]);
-		DROID_TEMPLATE design;
+                DroidStats design;
 		if (!loadTemplateCommon(ini, design))
 		{
 			debug(LOG_ERROR, "Stored template \"%s\" contains an unknown component.", ini.string("name").toUtf8().c_str());
 			continue;
 		}
-		design.id = list[i];
+		design.textId = list[i];
 		design.name = ini.string("name");
 		design.multiPlayerID = generateNewObjectId();
 		design.prefab = true;
@@ -461,10 +463,10 @@ bool loadDroidTemplates(const char *filename)
 				// This sets up the UI templates for display purposes ONLY--we still only use droidTemplates for making them.
 				// FIXME: Why are we doing this here, and not on demand ?
 				// Only add unique designs to the UI list (Note, perhaps better to use std::map instead?)
-				std::list<DROID_TEMPLATE>::iterator it;
+				std::list<DroidStats>::iterator it;
 				for (it = localTemplates.begin(); it != localTemplates.end(); ++it)
 				{
-					DROID_TEMPLATE *psCurr = &*it;
+                                  DroidStats *psCurr = &*it;
 					if (psCurr->multiPlayerID == design.multiPlayerID)
 					{
 						debug(LOG_WARNING, "Design id:%d (%s) *NOT* added to UI list (duplicate), player= %d", design.multiPlayerID, getStatsName(&design), playerIdx);
@@ -484,19 +486,19 @@ bool loadDroidTemplates(const char *filename)
 			}
 		}
 		debug(LOG_NEVER, "Droid template found, Name: %s, MP ID: %d, ref: %u, ID: %s, prefab: %s, type:%d (loading)",
-		      getStatsName(&design), design.multiPlayerID, design.ref, getID(&design), design.prefab ? "yes" : "no", design.droidType);
+		      getStatsName(&design), design.multiPlayerID, design.id, getID(&design), design.prefab ? "yes" : "no", design.droidType);
 	}
 
 	return true;
 }
 
-DROID_TEMPLATE *copyTemplate(int player, DROID_TEMPLATE *psTemplate)
+DroidStats *copyTemplate(int player, DroidStats *psTemplate)
 {
-	auto dup = std::unique_ptr<DROID_TEMPLATE>(new DROID_TEMPLATE(*psTemplate));
+	auto dup = std::unique_ptr<DroidStats>(new DroidStats(*psTemplate));
 	return addTemplate(player, std::move(dup));
 }
 
-DROID_TEMPLATE* addTemplate(int player, std::unique_ptr<DROID_TEMPLATE> psTemplate)
+DroidStats * addTemplate(int player, std::unique_ptr<DroidStats> psTemplate)
 {
 	ASSERT_PLAYER_OR_RETURN(nullptr, player);
 	UDWORD multiPlayerID = psTemplate->multiPlayerID;
@@ -511,12 +513,12 @@ DROID_TEMPLATE* addTemplate(int player, std::unique_ptr<DROID_TEMPLATE> psTempla
 	else
 	{
 		// new template
-		auto result = droidTemplates[player].insert(std::pair<UDWORD, std::unique_ptr<DROID_TEMPLATE>>(multiPlayerID, std::move(psTemplate)));
+		auto result = droidTemplates[player].insert(std::pair<UDWORD, std::unique_ptr<DroidStats>>(multiPlayerID, std::move(psTemplate)));
 		return result.first->second.get();
 	}
 }
 
-void enumerateTemplates(int player, const std::function<bool (DROID_TEMPLATE* psTemplate)>& func)
+void enumerateTemplates(int player, const std::function<bool (DroidStats * psTemplate)>& func)
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 	for (auto &keyvaluepair : droidTemplates[player])
@@ -528,7 +530,7 @@ void enumerateTemplates(int player, const std::function<bool (DROID_TEMPLATE* ps
 	}
 }
 
-DROID_TEMPLATE* findPlayerTemplateById(int player, UDWORD templateId)
+DroidStats * findPlayerTemplateById(int player, UDWORD templateId)
 {
 	ASSERT_PLAYER_OR_RETURN(nullptr, player);
 	auto it = droidTemplates[player].find(templateId);
@@ -569,13 +571,13 @@ bool droidTemplateShutDown()
  * \param pName Template name
  * \pre pName has to be the unique, untranslated name!
  */
-const DROID_TEMPLATE *getTemplateFromTranslatedNameNoPlayer(char const *pName)
+const DroidStats *getTemplateFromTranslatedNameNoPlayer(char const *pName)
 {
 	for (auto &droidTemplate : droidTemplates)
 	{
 		for (auto &keyvaluepair : droidTemplate)
 		{
-			if (keyvaluepair.second->id.compare(pName) == 0)
+			if (keyvaluepair.second->textId.compare(pName) == 0)
 			{
 				return keyvaluepair.second.get();
 			}
@@ -585,7 +587,7 @@ const DROID_TEMPLATE *getTemplateFromTranslatedNameNoPlayer(char const *pName)
 }
 
 /*getTemplatefFromMultiPlayerID gets template for unique ID  searching all lists */
-DROID_TEMPLATE *getTemplateFromMultiPlayerID(UDWORD multiPlayerID)
+DroidStats *getTemplateFromMultiPlayerID(UDWORD multiPlayerID)
 {
 	for (auto &droidTemplate : droidTemplates)
 	{
@@ -598,10 +600,10 @@ DROID_TEMPLATE *getTemplateFromMultiPlayerID(UDWORD multiPlayerID)
 }
 
 /*called when a Template is deleted in the Design screen*/
-void deleteTemplateFromProduction(DROID_TEMPLATE *psTemplate, unsigned player, QUEUE_MODE mode)
+void deleteTemplateFromProduction(DroidStats *psTemplate, unsigned player, QUEUE_MODE mode)
 {
-	STRUCTURE   *psStruct;
-	STRUCTURE	*psList;
+  Structure *psStruct;
+  Structure *psList;
 
 	ASSERT_OR_RETURN(, psTemplate != nullptr, "Null psTemplate");
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player: %u", player);
@@ -627,7 +629,7 @@ void deleteTemplateFromProduction(DROID_TEMPLATE *psTemplate, unsigned player, Q
 				{
 					continue;
 				}
-				FACTORY *psFactory = &psStruct->pFunctionality->factory;
+                                Factory *psFactory = &psStruct->pFunctionality->factory;
 
 				if (psFactory->psAssemblyPoint && psFactory->psAssemblyPoint->factoryType < NUM_FACTORY_TYPES
 					&& psFactory->psAssemblyPoint->factoryInc < asProductionRun[psFactory->psAssemblyPoint->factoryType].size())
@@ -668,7 +670,7 @@ void deleteTemplateFromProduction(DROID_TEMPLATE *psTemplate, unsigned player, Q
 }
 
 // return whether a template is for an IDF droid
-bool templateIsIDF(DROID_TEMPLATE *psTemplate)
+bool templateIsIDF(DroidStats *psTemplate)
 {
 	//add Cyborgs
 	if (!(psTemplate->droidType == DROID_WEAPON || psTemplate->droidType == DROID_CYBORG || psTemplate->droidType == DROID_CYBORG_SUPER))
@@ -689,7 +691,7 @@ void listTemplates()
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "selectedPlayer (%" PRIu32 ") >= MAX_PLAYERS", selectedPlayer);
 	for (auto &keyvaluepair : droidTemplates[selectedPlayer])
 	{
-		DROID_TEMPLATE *t = keyvaluepair.second.get();
+          DroidStats *t = keyvaluepair.second.get();
 		debug(LOG_INFO, "template %s : %ld : %s : %s : %s", getStatsName(t), (long)t->multiPlayerID, t->enabled ? "Enabled" : "Disabled", t->stored ? "Stored" : "Temporal", t->prefab ? "Prefab" : "Designed");
 	}
 }
@@ -699,17 +701,17 @@ fills the list with Templates that can be manufactured
 in the Factory - based on size. There is a limit on how many can be manufactured
 at any one time.
 */
-std::vector<DROID_TEMPLATE *> fillTemplateList(STRUCTURE *psFactory)
+std::vector<DroidStats *> fillTemplateList(Structure *psFactory)
 {
-	std::vector<DROID_TEMPLATE *> pList;
-	const int player = psFactory->player;
+	std::vector<DroidStats *> pList;
+	const int player = psFactory->owningPlayer;
 
 	BODY_SIZE	iCapacity = (BODY_SIZE)psFactory->capacity;
 
 	/* Add the templates to the list*/
-	for (DROID_TEMPLATE &i : localTemplates)
+	for (DroidStats &i : localTemplates)
 	{
-		DROID_TEMPLATE *psCurr = &i;
+          DroidStats *psCurr = &i;
 		// Must add droids if currently in production.
 		if (!getProduction(psFactory, psCurr).quantity)
 		{
@@ -749,9 +751,9 @@ std::vector<DROID_TEMPLATE *> fillTemplateList(STRUCTURE *psFactory)
 	return pList;
 }
 
-void checkPlayerBuiltHQ(const STRUCTURE *psStruct)
+void checkPlayerBuiltHQ(const Structure *psStruct)
 {
-	if (selectedPlayer == psStruct->player && psStruct->pStructureType->type == REF_HQ)
+	if (selectedPlayer == psStruct->owningPlayer && psStruct->stats->type == REF_HQ)
 	{
 		playerBuiltHQ = true;
 	}

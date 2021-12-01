@@ -34,7 +34,7 @@ void createTeamAlliances();
 bool sendGift(uint8_t type, uint8_t to);
 bool recvGift(NETQUEUE queue);
 
-void technologyGiveAway(const STRUCTURE *pS);
+void technologyGiveAway(const Structure *pS);
 void recvMultiPlayerFeature(NETQUEUE queue);
 void sendMultiPlayerFeature(uint32_t ref, uint32_t x, uint32_t y, uint32_t id);
 

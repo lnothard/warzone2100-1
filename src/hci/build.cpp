@@ -10,7 +10,7 @@
 #include "../power.h"
 #include "../map.h"
 
-DROID *BuildController::highlightedBuilder = nullptr;
+Droid *BuildController::highlightedBuilder = nullptr;
 bool BuildController::showFavorites = false;
 
 void BuildController::updateData()
@@ -26,9 +26,9 @@ void BuildController::updateBuildersList()
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "selectedPlayer = %" PRIu32 "", selectedPlayer);
 
-	for (DROID *droid = apsDroidLists[selectedPlayer]; droid; droid = droid->psNext)
+	for (Droid *droid = allDroidLists[selectedPlayer]; droid; droid = droid->psNext)
 	{
-		if (isConstructionDroid(droid) && droid->died == 0)
+		if (isConstructionDroid(droid) && droid->deathTime == 0)
 		{
 			builders.push_back(droid);
 		}
@@ -41,10 +41,10 @@ void BuildController::updateBuildOptionsList()
 {
 	auto newBuildOptions = fillStructureList(selectedPlayer, MAXSTRUCTURES - 1, shouldShowFavorites());
 
-	stats = std::vector<STRUCTURE_STATS *>(newBuildOptions.begin(), newBuildOptions.end());
+	stats = std::vector<StructureStats *>(newBuildOptions.begin(), newBuildOptions.end());
 }
 
-STRUCTURE_STATS *BuildController::getObjectStatsAt(size_t objectIndex) const
+StructureStats *BuildController::getObjectStatsAt(size_t objectIndex) const
 {
 	auto builder = getObjectAt(objectIndex);
 	if (!builder)
@@ -57,7 +57,7 @@ STRUCTURE_STATS *BuildController::getObjectStatsAt(size_t objectIndex) const
 		return nullptr;
 	}
 
-	STRUCTURE_STATS *builderStats;
+        StructureStats *builderStats;
 	if (orderStateStatsLoc(builder, DORDER_BUILD, &builderStats)) // Moving to build location?
 	{
 		return builderStats;
@@ -72,7 +72,7 @@ STRUCTURE_STATS *BuildController::getObjectStatsAt(size_t objectIndex) const
 	{
 		if (auto structure = orderStateObj(builder, DORDER_HELPBUILD))
 		{
-			return ((STRUCTURE *)structure)->pStructureType;
+			return ((Structure *)structure)->stats;
 		}
 	}
 
@@ -85,7 +85,7 @@ STRUCTURE_STATS *BuildController::getObjectStatsAt(size_t objectIndex) const
 }
 
 
-void BuildController::startBuildPosition(STRUCTURE_STATS *buildOption)
+void BuildController::startBuildPosition(StructureStats *buildOption)
 {
 	auto builder = getHighlightedObject();
 	ASSERT_NOT_NULLPTR_OR_RETURN(, builder);
@@ -106,7 +106,7 @@ void BuildController::startBuildPosition(STRUCTURE_STATS *buildOption)
 	intMode = INT_OBJECT;
 }
 
-void BuildController::toggleFavorites(STRUCTURE_STATS *buildOption)
+void BuildController::toggleFavorites(StructureStats *buildOption)
 {
 	asStructureStats[buildOption->index].isFavorite = !shouldShowFavorites();
 	updateBuildOptionsList();
@@ -129,7 +129,7 @@ void BuildController::clearData()
 	stats.clear();
 }
 
-void BuildController::toggleBuilderSelection(DROID *droid)
+void BuildController::toggleBuilderSelection(Droid *droid)
 {
 	if (droid->selected)
 	{
@@ -146,7 +146,7 @@ void BuildController::toggleBuilderSelection(DROID *droid)
 	triggerEventSelected();
 }
 
-void BuildController::setHighlightedObject(BASE_OBJECT *object)
+void BuildController::setHighlightedObject(GameObject *object)
 {
 	if (object == nullptr)
 	{
@@ -198,7 +198,7 @@ protected:
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		if (isDead(droid))
 		{
-			ASSERT_FAILURE(!isDead(droid), "!isDead(droid)", AT_MACRO, __FUNCTION__, "Droid is dead");
+			ASSERT_FAILURE(!isDead(droid), "!alive(droid)", AT_MACRO, __FUNCTION__, "Droid is dead");
 			// ensure the backing information is refreshed before the next draw
 			intRefreshScreen();
 			return;
@@ -260,7 +260,7 @@ protected:
 	}
 
 private:
-	STRUCTURE_STATS *getStats() override
+  StructureStats *getStats() override
 	{
 		return controller->getObjectStatsAt(objectIndex);
 	}
@@ -285,7 +285,7 @@ private:
 		productionRunSizeLabel->setFontColour(WZCOL_ACTION_PRODUCTION_RUN_TEXT);
 	}
 
-	void updateProgressBar(DROID *droid)
+	void updateProgressBar(Droid *droid)
 	{
 		progressBar->hide();
 
@@ -306,19 +306,19 @@ private:
 			}
 			else
 			{
-				formatPower(progressBar.get(), checkPowerRequest(structure), structure->pStructureType->powerToBuild);
+				formatPower(progressBar.get(), checkPowerRequest(structure), structure->stats->powerToBuild);
 			}
 		}
 	}
 
-	void updateProductionRunSizeLabel(DROID *droid)
+	void updateProductionRunSizeLabel(Droid *droid)
 	{
 		int remaining = -1;
 
-		STRUCTURE_STATS const *stats = nullptr;
+                StructureStats const *stats = nullptr;
 		int count = 0;
 		auto processOrder = [&](DroidOrder const &order) {
-			STRUCTURE_STATS *newStats = nullptr;
+                  StructureStats *newStats = nullptr;
 			int deltaCount = 0;
 			switch (order.type)
 			{
@@ -328,9 +328,9 @@ private:
 					deltaCount = order.type == DORDER_LINEBUILD? 1 + (abs(order.pos.x - order.pos2.x) + abs(order.pos.y - order.pos2.y)) / TILE_UNITS : 1;
 					break;
 				case DORDER_HELPBUILD:
-					if (STRUCTURE *target = castStructure(order.psObj))
+					if (Structure *target = castStructure(order.psObj))
 					{
-						newStats = target->pStructureType;
+						newStats = target->stats;
 						deltaCount = 1;
 					}
 					break;
@@ -444,7 +444,7 @@ protected:
 	}
 
 private:
-	STRUCTURE_STATS *getStats() override
+  StructureStats *getStats() override
 	{
 		return controller->getStatsAt(buildOptionIndex);
 	}
@@ -473,7 +473,7 @@ private:
 
 	uint32_t getCost() override
 	{
-		STRUCTURE_STATS * psStats = getStats();
+          StructureStats * psStats = getStats();
 		return psStats ? psStats->powerToBuild : 0;
 	}
 

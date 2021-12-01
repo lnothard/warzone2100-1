@@ -688,7 +688,8 @@ static bool audio_CheckSame3DTracksPlaying(SDWORD iTrack, SDWORD iX, SDWORD iY, 
 // =======================================================================================================================
 // =======================================================================================================================
 //
-static bool audio_Play3DTrack(SDWORD iX, SDWORD iY, SDWORD iZ, int iTrack, SIMPLE_OBJECT *psObj, AUDIO_CALLBACK pUserCallback)
+static bool audio_Play3DTrack(SDWORD iX, SDWORD iY, SDWORD iZ, int iTrack,
+                              GameObject *psObj, AUDIO_CALLBACK pUserCallback)
 {
 	AUDIO_SAMPLE	*psSample;
 	// coordinates
@@ -790,7 +791,7 @@ bool audio_PlayStaticTrack(SDWORD iMapX, SDWORD iMapY, int iTrack)
 // =======================================================================================================================
 // =======================================================================================================================
 //
-bool audio_PlayObjStaticTrack(SIMPLE_OBJECT *psObj, int iTrack)
+bool audio_PlayObjStaticTrack(GameObject *psObj, int iTrack)
 {
 	//~~~~~~~~~~~~~~~
 	SDWORD	iX, iY, iZ;
@@ -810,7 +811,7 @@ bool audio_PlayObjStaticTrack(SIMPLE_OBJECT *psObj, int iTrack)
 // =======================================================================================================================
 // =======================================================================================================================
 //
-bool audio_PlayObjStaticTrackCallback(SIMPLE_OBJECT *psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
+bool audio_PlayObjStaticTrackCallback(GameObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
 {
 	//~~~~~~~~~~~~~~~
 	SDWORD	iX, iY, iZ;
@@ -830,7 +831,7 @@ bool audio_PlayObjStaticTrackCallback(SIMPLE_OBJECT *psObj, int iTrack, AUDIO_CA
 // =======================================================================================================================
 // =======================================================================================================================
 //
-bool audio_PlayObjDynamicTrack(SIMPLE_OBJECT *psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
+bool audio_PlayObjDynamicTrack(GameObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
 {
 	//~~~~~~~~~~~~~~~
 	SDWORD	iX, iY, iZ;
@@ -899,7 +900,7 @@ AUDIO_STREAM *audio_PlayStream(const char *fileName, float volume, void (*onFini
 // =======================================================================================================================
 // =======================================================================================================================
 //
-void audio_StopObjTrack(SIMPLE_OBJECT *psObj, int iTrack)
+void audio_StopObjTrack(GameObject *psObj, int iTrack)
 {
 	//~~~~~~~~~~~~~~~~~~~~~~
 	AUDIO_SAMPLE	*psSample;
@@ -1114,7 +1115,7 @@ SDWORD audio_GetTrackID(const char *fileName)
  *  \param psObj pointer to the object for which we must destroy all of its
  *               outstanding audio samples.
  */
-void audio_RemoveObj(SIMPLE_OBJECT const *psObj)
+void audio_RemoveObj(GameObject const *psObj)
 {
 	unsigned int count = 0;
 

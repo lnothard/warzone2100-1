@@ -24,7 +24,7 @@
 #ifndef __INCLUDED_SRC_MAPGRID_H__
 #define __INCLUDED_SRC_MAPGRID_H__
 
-typedef std::vector<BASE_OBJECT *> GridList;
+typedef std::vector<GameObject *> GridList;
 typedef GridList::const_iterator GridIterator;
 
 // initialise the grid system

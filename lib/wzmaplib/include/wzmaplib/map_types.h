@@ -75,7 +75,7 @@ struct WorldPos
 	int y = 0;
 };
 
-struct Structure
+class Structure
 {
 	optional<uint32_t> id;
 	std::string name;
@@ -84,7 +84,7 @@ struct Structure
 	int8_t player = 0;  // -1 = scavs
 	uint8_t modules = 0; // capacity
 };
-struct Droid
+class Droid
 {
 	optional<uint32_t> id;
 	std::string name;

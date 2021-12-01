@@ -440,17 +440,17 @@ void updateMultiStatsLoses()
 	++playerStats[selectedPlayer].losses;
 }
 
-static inline uint32_t calcObjectCost(const BASE_OBJECT *psObj)
+static inline uint32_t calcObjectCost(const GameObject *psObj)
 {
 	switch (psObj->type)
 	{
 		case OBJ_DROID:
-			return calcDroidPower((const DROID *)psObj);
+			return calcDroidPower((const Droid *)psObj);
 		case OBJ_STRUCTURE:
 		{
-			auto psStruct = static_cast<const STRUCTURE *>(psObj);
-			ASSERT_OR_RETURN(0, psStruct->pStructureType != nullptr, "pStructureType is null?");
-			return psStruct->pStructureType->powerToBuild;
+			auto psStruct = static_cast<const Structure *>(psObj);
+			ASSERT_OR_RETURN(0, psStruct->stats != nullptr, "pStructureType is null?");
+			return psStruct->stats->powerToBuild;
 		}
 		case OBJ_FEATURE:
 			return 0;
@@ -462,21 +462,21 @@ static inline uint32_t calcObjectCost(const BASE_OBJECT *psObj)
 }
 
 // update kills
-void updateMultiStatsKills(BASE_OBJECT *psKilled, UDWORD player)
+void updateMultiStatsKills(GameObject *psKilled, UDWORD player)
 {
 	if (player < MAX_PLAYERS)
 	{
 		if (NetPlay.bComms)
 		{
 			// killing scavengers does not count in MP games
-			if (psKilled != nullptr && psKilled->player != scavengerSlot())
+			if (psKilled != nullptr && psKilled->owningPlayer != scavengerSlot())
 			{
 				// FIXME: Why in the world are we using two different structs for stats when we can use only one?
 				++playerStats[player].totalKills;
 				++playerStats[player].recentKills;
-				if (psKilled->player < MAX_PLAYERS)
+				if (psKilled->owningPlayer < MAX_PLAYERS)
 				{
-					playerStats[psKilled->player].recentPowerLost += static_cast<uint64_t>(calcObjectCost(psKilled));
+					playerStats[psKilled->owningPlayer].recentPowerLost += static_cast<uint64_t>(calcObjectCost(psKilled));
 				}
 			}
 		}

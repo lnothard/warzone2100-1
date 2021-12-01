@@ -25,6 +25,8 @@
 #ifndef __INCLUDED_SRC_GAMEDEF_H__
 #define __INCLUDED_SRC_GAMEDEF_H__
 
+#include "playerdef.h"
+
 /***************************************************************************/
 /*
  *	Global Definitions
@@ -37,6 +39,7 @@
 //#define VERSION_4             4	        // changes to SAVE_GAME
 //#define VERSION_5             5	        // different types of save game added
 //#define VERSION_6             6	        // level name added to a user save game
+
 #define VERSION_7               7	        // string ID names saved for comps an objects
 #define VERSION_8               8	        // research status saved out for user saved games
 #define VERSION_9               9	        // power and experience saved out for user saved games
@@ -44,8 +47,8 @@
 #define VERSION_11              11	        // newstyle save game with extending structure checked in 13 Nov.
 #define VERSION_12              12	        // mission and order stuff checked in 20 Nov.
 //#define VERSION_13            13	        // odds and ends to 24 Nov. and hashed scripts
-#define VERSION_14              14	        // 
-#define VERSION_15              15	        // 
+#define VERSION_14              14	        //
+#define VERSION_15              15	        //
 #define VERSION_16              16	        // beta save game
 #define VERSION_17              17	        // objId and new struct stats included
 #define VERSION_18              18	        // droid name savegame validity stamps
@@ -90,6 +93,12 @@ struct VIS_SAVEHEADER
 {
 	char        aFileType[4];
 	uint32_t    version;
+};
+
+class Game
+{
+private:
+  std::vector<Player> playerList;
 };
 
 #endif // __INCLUDED_SRC_GAMEDEF_H__

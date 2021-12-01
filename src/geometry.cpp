@@ -45,22 +45,22 @@ uint16_t calcDirection(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
   NB*****THIS WON'T PICK A VTOL DROID*****
 */
 
-DROID	*getNearestDroid(UDWORD x, UDWORD y, bool bSelected)
+Droid *getNearestDroid(UDWORD x, UDWORD y, bool bSelected)
 {
-	DROID *psBestUnit = nullptr;
+  Droid *psBestUnit = nullptr;
 	unsigned bestSoFar = UDWORD_MAX;
 
 	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS, "Not supported selectedPlayer: %" PRIu32 "", selectedPlayer);
 
 	/* Go thru' all the droids  - how often have we seen this - a MACRO maybe? */
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (Droid *psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (!isVtolDroid(psDroid))
 		{
 			/* Clever (?) bit that reads whether we're interested in droids being selected or not */
 			if (!bSelected || psDroid->selected)
 			{
-				uint32_t dist = iHypot(psDroid->pos.x - x, psDroid->pos.y - y);
+				uint32_t dist = iHypot(psDroid->position.x - x, psDroid->position.y - y);
 				/* Is this the nearest one we got so far? */
 				if (dist < bestSoFar)
 				{
@@ -137,12 +137,12 @@ Vector2i positionInQuad(Vector2i const &pt, QUAD const &quad)
 }
 
 //-----------------------------------------------------------------------------------
-bool objectOnScreen(BASE_OBJECT *object, SDWORD tolerance)
+bool objectOnScreen(GameObject *object, SDWORD tolerance)
 {
-	if (DrawnInLastFrame(object->sDisplay.frameNumber) == true)
+	if (DrawnInLastFrame(object->displayData.frameNumber) == true)
 	{
-		const int dX = object->sDisplay.screenX;
-		const int dY = object->sDisplay.screenY;
+		const int dX = object->displayData.screenX;
+		const int dY = object->displayData.screenY;
 		/* Is it on screen */
 		if (dX > (0 - tolerance) && dY > (0 - tolerance)
 		    && dX < (SDWORD)(pie_GetVideoBufferWidth() + tolerance)

@@ -272,47 +272,48 @@ enum StatType
 };
 
 /* Stats common to all stats structs */
-struct BASE_STATS
-{
-	BASE_STATS(unsigned ref = 0) : ref(ref) {}
-	virtual ~BASE_STATS() = default;
+class StatsObject {
+public:
+  explicit StatsObject(unsigned ref = 0) : id(ref) {}
+  virtual ~StatsObject() = default;
 
-	bool hasType(StatType type) const { return (ref & STAT_MASK) == type; }
+  bool hasType(StatType type) const { return (id & STAT_MASK) == type; }
 
-	WzString id;    ///< Text id (i.e. short language-independent name)
-	WzString name;  ///< Full / real name of the item
-	unsigned ref;   ///< Unique ID of the item
-	size_t index = 0;  ///< Index into containing array
+protected:
+  WzString textId;       ///< Text id (i.e. short language-independent name)
+  WzString name;     ///< Full / real name of the item
+  unsigned id;      ///< Unique ID of the item
+  size_t index = 0;  ///< Index into containing array
 };
 
 #define getStatsName(_psStats) ((_psStats)->name.isEmpty() ? "" : gettext((_psStats)->name.toUtf8().c_str()))
-#define getID(_psStats) (_psStats)->id.toUtf8().c_str()
-#define checkIfZNullStat(_psStats) ((_psStats)->id.toUtf8().find("ZNULL") != std::string::npos)
+#define getID(_psStats) (_psStats)->textId.toUtf8().c_str()
+#define checkIfZNullStat(_psStats) ((_psStats)->textId.toUtf8().find("ZNULL") != std::string::npos)
 
 /* Stats common to all droid components */
-struct COMPONENT_STATS : public BASE_STATS
-{
-	COMPONENT_STATS() {}
+class COMPONENT_STATS : public StatsObject {
+public:
+  COMPONENT_STATS() = default;
 
-	struct UPGRADE
-	{
-		/// Number of upgradeable hitpoints
-		unsigned hitpoints = 0;
-		/// Adjust final droid hitpoints by this percentage amount
-		int hitpointPct = 100;
-	};
+  struct UPGRADE
+  {
+          /// Number of upgradeable hitpoints
+          unsigned hitpoints = 0;
+          /// Adjust final droid hitpoints by this percentage amount
+          int hitpointPct = 100;
+  };
 
-	virtual UPGRADE const &getBase() const = 0;
-	virtual UPGRADE const &getUpgrade(unsigned player) const = 0;
-	UPGRADE &getBase() { return const_cast<UPGRADE &>(const_cast<COMPONENT_STATS const *>(this)->getBase()); }
-
-	iIMDShape *pIMD = nullptr;				/**< The IMD to draw for this component */
-	unsigned buildPower = 0;			/**< Power required to build the component */
-	unsigned buildPoints = 0;		/**< Time required to build the component */
-	unsigned weight = 0;				/**< Component's weight */
-	COMPONENT_TYPE compType = COMP_NUMCOMPONENTS;
-	DROID_TYPE droidTypeOverride = DROID_ANY;
-	bool designable = false;		///< Flag to indicate whether this component can be used in the design screen
+  virtual UPGRADE const &getBase() const = 0;
+  virtual UPGRADE const &getUpgrade(unsigned player) const = 0;
+  UPGRADE &getBase() { return const_cast<UPGRADE &>(const_cast<COMPONENT_STATS const *>(this)->getBase()); }
+protected:
+  iIMDShape *pIMD = nullptr;				/**< The IMD to draw for this component */
+  unsigned buildPower = 0;			/**< Power required to build the component */
+  unsigned buildPoints = 0;		/**< Time required to build the component */
+  unsigned weight = 0;				/**< Component's weight */
+  COMPONENT_TYPE compType = COMP_NUMCOMPONENTS;
+  DROID_TYPE droidTypeOverride = DROID_ANY;
+  bool designable = false;		///< Flag to indicate whether this component can be used in the design screen
 };
 
 struct PROPULSION_STATS : public COMPONENT_STATS

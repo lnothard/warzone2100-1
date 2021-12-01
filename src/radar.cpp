@@ -486,7 +486,7 @@ static void DrawRadarObjects()
 	/* Show droids on map - go through all players */
 	for (clan = 0; clan < MAX_PLAYERS; clan++)
 	{
-		DROID		*psDroid;
+          Droid *psDroid;
 
 		//see if have to draw enemy/ally color
 		if (bEnemyAllyRadarColor)
@@ -511,19 +511,19 @@ static void DrawRadarObjects()
 		flashCol = flashColours[getPlayerColour(clan)];
 
 		/* Go through all droids */
-		for (psDroid = apsDroidLists[clan]; psDroid != nullptr; psDroid = psDroid->psNext)
+		for (psDroid = allDroidLists[clan]; psDroid != nullptr; psDroid = psDroid->psNext)
 		{
-			if (psDroid->pos.x < world_coord(scrollMinX) || psDroid->pos.y < world_coord(scrollMinY)
-			    || psDroid->pos.x >= world_coord(scrollMaxX) || psDroid->pos.y >= world_coord(scrollMaxY))
+			if (psDroid->position.x < world_coord(scrollMinX) || psDroid->position.y < world_coord(scrollMinY)
+			    || psDroid->position.x >= world_coord(scrollMaxX) || psDroid->position.y >= world_coord(scrollMaxY))
 			{
 				continue;
 			}
 			if (psDroid->visibleForLocalDisplay()
 			    || (bMultiPlayer && alliancesSharedVision(game.alliance)
-					&& selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psDroid->player)))
+					&& selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psDroid->owningPlayer)))
 			{
-				int	x = psDroid->pos.x / TILE_UNITS;
-				int	y = psDroid->pos.y / TILE_UNITS;
+				int	x = psDroid->position.x / TILE_UNITS;
+				int	y = psDroid->position.y / TILE_UNITS;
 				size_t	pos = (x - scrollMinX) + (y - scrollMinY) * radarTexWidth;
 
 				ASSERT(pos * sizeof(*radarOverlayBuffer) < radarBufferSize, "Buffer overrun");
@@ -551,7 +551,7 @@ static void DrawRadarObjects()
 		for (SDWORD y = scrollMinY; y < scrollMaxY; y++)
 		{
 			MAPTILE		*psTile = mapTile(x, y);
-			STRUCTURE	*psStruct;
+                        Structure *psStruct;
 			size_t		pos = (x - scrollMinX) + (y - scrollMinY) * radarTexWidth;
 
 			ASSERT(pos * sizeof(*radarOverlayBuffer) < radarBufferSize, "Buffer overrun");
@@ -559,8 +559,8 @@ static void DrawRadarObjects()
 			{
 				continue;
 			}
-			psStruct = (STRUCTURE *)psTile->psObject;
-			clan = psStruct->player;
+			psStruct = (Structure *)psTile->psObject;
+			clan = psStruct->owningPlayer;
 
 			//see if have to draw enemy/ally color
 			if (bEnemyAllyRadarColor)
@@ -583,18 +583,18 @@ static void DrawRadarObjects()
 
 			if (psStruct->visibleForLocalDisplay()
 			    || (bMultiPlayer && alliancesSharedVision(game.alliance)
-			        && selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psStruct->player)))
+			        && selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psStruct->owningPlayer)))
 			{
 				if (clan == selectedPlayer && gameTime > HIT_NOTIFICATION && gameTime - psStruct->timeLastHit < HIT_NOTIFICATION)
 				{
-					if (psStruct->player == selectedPlayer && psStruct->selected && !blinkState)
+					if (psStruct->owningPlayer == selectedPlayer && psStruct->selected && !blinkState)
 						radarOverlayBuffer[pos] = applyAlpha(flashCol, OVERLAY_OPACITY).rgba;
 					else
 						radarOverlayBuffer[pos] = flashCol.rgba;
 				}
 				else
 				{
-					if (psStruct->player == selectedPlayer && psStruct->selected && !blinkState)
+					if (psStruct->owningPlayer == selectedPlayer && psStruct->selected && !blinkState)
 						radarOverlayBuffer[pos] = applyAlpha(playerCol, OVERLAY_OPACITY).rgba;
 					else
 						radarOverlayBuffer[pos] = playerCol.rgba;

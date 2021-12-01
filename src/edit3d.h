@@ -31,7 +31,7 @@ typedef void (*BUILDCALLBACK)(UDWORD xPos, UDWORD yPos, void *UserData);
 void Edit3DInitVars();
 bool found3DBuilding(Vector2i &pos);
 bool found3DBuildLocTwo(Vector2i &pos, Vector2i &pos2);
-void init3DBuilding(BASE_STATS *psStats, BUILDCALLBACK CallBack, void *UserData);
+void init3DBuilding(StatsObject *psStats, BUILDCALLBACK CallBack, void *UserData);
 void kill3DBuilding();
 bool process3DBuilding();
 void incrementBuildingDirection(uint16_t amount);
@@ -65,7 +65,7 @@ struct BUILDDETAILS
 	void         	*UserData;  //this holds the OBJECT_POSITION pointer for a Deliv Point
 	UDWORD       	x, y;
 	UDWORD       	width, height;
-	BASE_STATS   	*psStats;
+        StatsObject *psStats;
 	uint16_t     	directionShift;
 };
 
@@ -75,7 +75,7 @@ extern BUILDDETAILS	sBuildDetails;
 static inline bool canLineBuild()
 {
 	ASSERT_OR_RETURN(false, selectedPlayer < MAX_PLAYERS, "selectedPlayer definitely can't line-build: %" PRIu32 "", selectedPlayer);
-	return ((STRUCTURE_STATS *)sBuildDetails.psStats)->upgrade[selectedPlayer].limit > 1;
+	return ((StructureStats *)sBuildDetails.psStats)->upgrade[selectedPlayer].limit > 1;
 }
 
 extern int brushSize;

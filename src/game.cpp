@@ -556,7 +556,7 @@ static bool deserializeMultiplayerGame(PHYSFS_file *fileHandle, MULTIPLAYERGAME 
 
 	return true;
 }
-static void serializePlayer_json(nlohmann::json &o, const PLAYER *serializePlayer, int player)
+static void serializePlayer_json(nlohmann::json &o, const NetPlayer *serializePlayer, int player)
 {
 	o["position"] = serializePlayer->position;
 	o["name"] = serializePlayer->name;
@@ -567,7 +567,7 @@ static void serializePlayer_json(nlohmann::json &o, const PLAYER *serializePlaye
 	o["team"] = serializePlayer->team;
 }
 
-static bool serializePlayer(PHYSFS_file *fileHandle, const PLAYER *serializePlayer, int player)
+static bool serializePlayer(PHYSFS_file *fileHandle, const NetPlayer *serializePlayer, int player)
 {
 	return (PHYSFS_writeUBE32(fileHandle, serializePlayer->position)
 	        && WZ_PHYSFS_writeBytes(fileHandle, serializePlayer->name, StringSize) == StringSize
@@ -577,7 +577,8 @@ static bool serializePlayer(PHYSFS_file *fileHandle, const PLAYER *serializePlay
 	        && PHYSFS_writeUBE32(fileHandle, serializePlayer->colour)
 	        && PHYSFS_writeUBE32(fileHandle, serializePlayer->team));
 }
-static void deserializePlayer_json(const nlohmann::json &o, PLAYER *serializePlayer, int player)
+static void deserializePlayer_json(const nlohmann::json &o,
+                                   NetPlayer *serializePlayer, int player)
 {
 	char aiName[MAX_LEN_AI_NAME] = { "THEREISNOAI" };
 	ASSERT(o.is_object(), "unexpected type, wanted object");
@@ -595,7 +596,8 @@ static void deserializePlayer_json(const nlohmann::json &o, PLAYER *serializePla
 	serializePlayer->colour = o.at("colour").get<uint32_t>();
 	serializePlayer->team = o.at("team").get<uint32_t>();
 }
-static bool deserializePlayer(PHYSFS_file *fileHandle, PLAYER *serializePlayer, int player)
+static bool deserializePlayer(PHYSFS_file *fileHandle,
+                              NetPlayer *serializePlayer, int player)
 {
 	char aiName[MAX_LEN_AI_NAME] = { "THEREISNOAI" };
 	uint32_t position = 0, colour = 0, team = 0;
@@ -1219,7 +1221,7 @@ static void deserializeSaveGameV16Data_json(const nlohmann::json &o, SAVE_GAME_V
 {
 	deserializeSaveGameV15Data_json(o, (SAVE_GAME_V15 *) serializeGame);
 	for (unsigned i = 0; i < MAX_NOGO_AREAS; ++i)
-	{		
+	{
 		deserializeLandingZoneData_json(o.at("landingZones").at(i), &serializeGame->sLandingZone[i]);
 	}
 }
@@ -1531,7 +1533,7 @@ static void deserializeSaveGameV22Data_json(const nlohmann::json &o, SAVE_GAME_V
 		const nlohmann::json runData = o.at("runData");
 		ASSERT_OR_RETURN(, runData.is_array(), "unexpected type, wanted array");
 		deserializeRunData_json(runData.at(i), &serializeGame->asRunData[i]);
-		
+
 	}
 }
 
@@ -1965,7 +1967,7 @@ static bool serializeSaveGameV38Data(PHYSFS_file *fileHandle, const SAVE_GAME_V3
 	{
 		return false;
 	}
-	
+
 	if (WZ_PHYSFS_writeBytes(fileHandle, serializeGame->modList, modlist_string_size) != modlist_string_size)
 	{
 		return false;
@@ -2001,8 +2003,8 @@ static void serializeSaveGameData_json(nlohmann::json &o, nlohmann::json &savein
 {
 	serializeSaveGameV38Data_json(o, (const SAVE_GAME_V38 *) serializeGame);
 	// not sure whether its 38, 39 or 40... different .cpp files are using different numbers
-	o["version"] = VERSION_39; 
-	
+	o["version"] = VERSION_39;
+
 	// This file lists saved games, and their build info
 	// one per savegame directory
 	const auto tag = version_extractVersionNumberFromTag(version_getLatestTag());
@@ -2012,7 +2014,7 @@ static void serializeSaveGameData_json(nlohmann::json &o, nlohmann::json &savein
 	if (saveinfo.contains(saveName))
 	{
 		saveinfo.erase(saveName);
-	}	
+	}
 	char ourtime[20];
 	const time_t curtime = time(nullptr);
 	struct tm timeinfo = getLocalTime(curtime);
@@ -2035,7 +2037,7 @@ static bool deserializeSaveGameData_json(const nlohmann::json &o, SAVE_GAME *ser
 		debug(LOG_ERROR, "%s", e.what());
 		return false;
 	}
-	
+
 }
 static bool deserializeSaveGameData(PHYSFS_file *fileHandle, SAVE_GAME *serializeGame)
 {
@@ -2211,14 +2213,16 @@ static bool writeMapFile(const char *fileName);
 
 static bool loadWzMapDroidInit(WzMap::Map &wzMap);
 
-static bool loadSaveDroid(const char *pFileName, DROID **ppsCurrentDroidLists);
-static bool loadSaveDroidPointers(const WzString &pFileName, DROID **ppsCurrentDroidLists);
-static bool writeDroidFile(const char *pFileName, DROID **ppsCurrentDroidLists);
+static bool loadSaveDroid(const char *pFileName, Droid **ppsCurrentDroidLists);
+static bool loadSaveDroidPointers(const WzString &pFileName,
+                                  Droid **ppsCurrentDroidLists);
+static bool writeDroidFile(const char *pFileName, Droid **ppsCurrentDroidLists);
 
 static bool loadSaveStructure(char *pFileData, UDWORD filesize);
-static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList);
+static bool loadSaveStructure2(const char *pFileName, Structure **ppList);
 static bool loadWzMapStructure(WzMap::Map& wzMap);
-static bool loadSaveStructurePointers(const WzString& filename, STRUCTURE **ppList);
+static bool loadSaveStructurePointers(const WzString& filename,
+                                      Structure **ppList);
 static bool writeStructFile(const char *pFileName);
 
 static bool loadSaveTemplate(const char *pFileName);
@@ -2337,7 +2341,7 @@ static void sanityUpdate()
 {
 	for (int player = 0; player < game.maxPlayers; player++)
 	{
-		for (DROID *psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+		for (Droid *psDroid = allDroidLists[player]; psDroid; psDroid = psDroid->psNext)
 		{
 			orderCheckList(psDroid);
 			actionSanity(psDroid);
@@ -2345,7 +2349,8 @@ static void sanityUpdate()
 	}
 }
 
-static void getIniBaseObject(WzConfig &ini, WzString const &key, BASE_OBJECT *&object)
+static void getIniGameObject(WzConfig &ini, WzString const &key,
+                             GameObject *&object)
 {
 	object = nullptr;
 	if (ini.contains(key + "/id"))
@@ -2359,7 +2364,8 @@ static void getIniBaseObject(WzConfig &ini, WzString const &key, BASE_OBJECT *&o
 	}
 }
 
-static void getIniStructureStats(WzConfig &ini, WzString const &key, STRUCTURE_STATS *&stats)
+static void getIniStructureStats(WzConfig &ini, WzString const &key,
+                                 StructureStats *&stats)
 {
 	stats = nullptr;
 	if (ini.contains(key))
@@ -2377,18 +2383,19 @@ static void getIniDroidOrder(WzConfig &ini, WzString const &key, DroidOrder &ord
 	order.pos = ini.vector2i(key + "/pos");
 	order.pos2 = ini.vector2i(key + "/pos2");
 	order.direction = ini.value(key + "/direction").toInt();
-	getIniBaseObject(ini, key + "/obj", order.psObj);
+	getIniGameObject(ini, key + "/obj", order.psObj);
 	getIniStructureStats(ini, key + "/stats", order.psStats);
 }
 
-static void setIniBaseObject(nlohmann::json &json, WzString const &key, BASE_OBJECT const *object)
+static void setIniGameObject(nlohmann::json &json, WzString const &key,
+                             GameObject const *object)
 {
-	if (object != nullptr && object->died <= 1)
+	if (object != nullptr && object->deathTime <= 1)
 	{
 		const auto& keyStr = key.toStdString();
 		json[keyStr + "/id"] = object->id;
-		json[keyStr + "/player"] = object->player;
-		json[keyStr + "/type"] = object->type;
+		json[keyStr + "/player"] = object->owningPlayer;
+		json[keyStr + "/type"] = object->type();
 #ifdef DEBUG
 		//ini.setValue(key + "/debugfunc", WzString::fromUtf8(psCurr->targetFunc));
 		//ini.setValue(key + "/debugline", psCurr->targetLine);
@@ -2396,11 +2403,12 @@ static void setIniBaseObject(nlohmann::json &json, WzString const &key, BASE_OBJ
 	}
 }
 
-static inline void setIniStructureStats(nlohmann::json &jsonObj, WzString const &key, STRUCTURE_STATS const *stats)
+static inline void setIniStructureStats(nlohmann::json &jsonObj, WzString const &key,
+                                        StructureStats const *stats)
 {
 	if (stats != nullptr)
 	{
-		jsonObj[key.toStdString()] = stats->id;
+		jsonObj[key.toStdString()] = stats->textId;
 	}
 }
 
@@ -2411,7 +2419,7 @@ static inline void setIniDroidOrder(nlohmann::json &jsonObj, WzString const &key
 	jsonObj[keyStr + "/pos"] = order.pos;
 	jsonObj[keyStr + "/pos2"] = order.pos2;
 	jsonObj[keyStr + "/direction"] = order.direction;
-	setIniBaseObject(jsonObj, key + "/obj", order.psObj);
+	setIniGameObject(jsonObj, key + "/obj", order.psObj);
 	setIniStructureStats(jsonObj, key + "/stats", order.psStats);
 }
 
@@ -2468,14 +2476,14 @@ static WzMap::MapType getWzMapType(bool UserSaveGame)
 bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool UserSaveGame)
 {
 	std::unique_ptr<WzMap::Map> data;
-	std::map<WzString, DROID **> droidMap;
-	std::map<WzString, STRUCTURE **> structMap;
+	std::map<WzString, Droid **> droidMap;
+	std::map<WzString, Structure **> structMap;
 	char			aFileName[256];
 	size_t			fileExten;
 	UDWORD			fileSize;
 	char			*pFileData = nullptr;
 	UDWORD			player, inc, i, j;
-	DROID           *psCurr;
+        Droid *psCurr;
 	UWORD           missionScrollMinX = 0, missionScrollMinY = 0,
 	                missionScrollMaxX = 0, missionScrollMaxY = 0;
 	uint32_t        mapSeed = 0;
@@ -2509,7 +2517,7 @@ bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool User
 		//initialise the lists
 		for (player = 0; player < MAX_PLAYERS; player++)
 		{
-			apsDroidLists[player] = nullptr;
+                  allDroidLists[player] = nullptr;
 			apsStructLists[player] = nullptr;
 			apsFeatureLists[player] = nullptr;
 			apsFlagPosLists[player] = nullptr;
@@ -2811,7 +2819,7 @@ bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool User
 		// load in the mission droids, if any
 		aFileName[fileExten] = '\0';
 		strcat(aFileName, "mdroid.json");
-		if (loadSaveDroid(aFileName, apsDroidLists))
+		if (loadSaveDroid(aFileName, allDroidLists))
 		{
 			droidMap[aFileName] = mission.apsDroidLists; // need to swap here to read correct list later
 		}
@@ -2822,13 +2830,13 @@ bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool User
 		 */
 		for (player = 0; player < MAX_PLAYERS; ++player)
 		{
-			for (psCurr = apsDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+			for (psCurr = allDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
 			{
 				if (psCurr->droidType != DROID_PERSON
 				    // && psCurr->droidType != DROID_CYBORG
 				    && !cyborgDroid(psCurr)
 				    && (!isTransporter(psCurr))
-				    && psCurr->pos.x != INVALID_XY)
+				    && psCurr->spacetime()->m_position.x != INVALID_XY)
 				{
 					updateDroidOrientation(psCurr);
 				}
@@ -2949,7 +2957,8 @@ bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool User
 			if (loadWzMapDroidInit(*(data.get())))
 			{
 				debug(LOG_SAVE, "Loaded new style droids");
-				droidMap[aFileName] = apsDroidLists;	// load pointers later
+				droidMap[aFileName] =
+                                    allDroidLists;	// load pointers later
 			}
 			else
 			{
@@ -2960,10 +2969,11 @@ bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool User
 		}
 		else
 		{
-			if (loadSaveDroid(aFileName, apsDroidLists))
+			if (loadSaveDroid(aFileName, allDroidLists))
 			{
 				debug(LOG_SAVE, "Loaded new style droids");
-				droidMap[aFileName] = apsDroidLists;	// load pointers later
+				droidMap[aFileName] =
+                                    allDroidLists;	// load pointers later
 			}
 		}
 	}
@@ -2974,12 +2984,12 @@ bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool User
 		strcat(aFileName, "droid.json");
 
 		//load the data into apsDroidLists
-		if (!loadSaveDroid(aFileName, apsDroidLists))
+		if (!loadSaveDroid(aFileName, allDroidLists))
 		{
 			debug(LOG_ERROR, "failed to load %s", aFileName);
 			goto error;
 		}
-		droidMap[aFileName] = apsDroidLists;	// load pointers later
+		droidMap[aFileName] = allDroidLists;	// load pointers later
 
 		/* after we've loaded in the units we need to redo the orientation because
 		 * the direction may have been saved - we need to do it outside of the loop
@@ -2987,12 +2997,12 @@ bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool User
 		 */
 		for (player = 0; player < MAX_PLAYERS; ++player)
 		{
-			for (psCurr = apsDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+			for (psCurr = allDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
 			{
 				if (psCurr->droidType != DROID_PERSON
 				    && !cyborgDroid(psCurr)
 				    && (!isTransporter(psCurr))
-				    && psCurr->pos.x != INVALID_XY)
+				    && psCurr->position.x != INVALID_XY)
 				{
 					updateDroidOrientation(psCurr);
 				}
@@ -3184,13 +3194,13 @@ bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool User
 		for (auto it = droidMap.begin(); it != droidMap.end(); ++it)
 		{
 			const WzString& key = it->first;
-			DROID **pList = it->second;
+                        Droid **pList = it->second;
 			loadSaveDroidPointers(key, pList);
 		}
 		for (auto it = structMap.begin(); it != structMap.end(); ++it)
 		{
 			const WzString& key = it->first;
-			STRUCTURE **pList = it->second;
+                        Structure **pList = it->second;
 			loadSaveStructurePointers(key, pList);
 		}
 	}
@@ -3288,7 +3298,7 @@ error:
 bool saveGame(const char *aFileName, GAME_TYPE saveType)
 {
 	size_t			fileExtension;
-	DROID			*psDroid, *psNext;
+        Droid *psDroid, *psNext;
 	char			CurrentFileName[PATH_MAX] = {'\0'};
 
 	triggerEvent(TRIGGER_GAME_SAVING);
@@ -3339,7 +3349,7 @@ bool saveGame(const char *aFileName, GAME_TYPE saveType)
 	CurrentFileName[fileExtension] = '\0';
 	strcat(CurrentFileName, "droid.json");
 	/*Write the current droid lists to the file*/
-	if (!writeDroidFile(CurrentFileName, apsDroidLists))
+	if (!writeDroidFile(CurrentFileName, allDroidLists))
 	{
 		debug(LOG_ERROR, "writeDroidFile(\"%s\") failed", CurrentFileName);
 		goto error;
@@ -3503,8 +3513,8 @@ bool saveGame(const char *aFileName, GAME_TYPE saveType)
 		{
 			psNext = psDroid->psNext;
 			//limbo list invalidate XY
-			psDroid->pos.x = INVALID_XY;
-			psDroid->pos.y = INVALID_XY;
+			psDroid->position.x = INVALID_XY;
+			psDroid->position.y = INVALID_XY;
 			//this is mainly for VTOLs
 			setSaveDroidBase(psDroid, nullptr);
 			orderDroid(psDroid, DORDER_STOP, ModeImmediate);
@@ -3949,7 +3959,7 @@ UDWORD getCampaign(const char *fileName)
 	}
 
 	debug(LOG_NEVER, "gl .gam file is version %d\n", fileHeader.version);
-	
+
 	//set main version Id from game file
 	saveGameVersion = fileHeader.version;
 
@@ -3960,7 +3970,7 @@ UDWORD getCampaign(const char *fileName)
 		PHYSFS_close(fileHandle);
 		return 0;
 	}
-	
+
 
 	// what the arse bollocks is this
 	// the campaign number is fine prior to saving
@@ -4250,7 +4260,7 @@ bool gameLoadV(PHYSFS_file *fileHandle, unsigned int version, nonstd::optional<n
 				debug(LOG_ERROR, "failed to load gamjson");
 				return false;
 			}
-		} 
+		}
 		else
 		{
 			debug(LOG_SAVEGAME, "no gam json found, falling back to .gam");
@@ -4887,7 +4897,7 @@ static bool writeGameFile(const char *fileName, SDWORD saveType)
 	const std::string fileNameStr(fileName);
 	const auto len = fileNameStr.size();
 	ASSERT(strcmp(fileName + (len - 4), ".gam") == 0, "hmm... not .gam?");
-	
+
 	const auto lastSep = fileNameStr.rfind("/");
 	// TODO: convert argument "const char* filename" to a manageable struct with path/filename/extension
 	//		 and remove this mess...
@@ -4901,7 +4911,7 @@ static bool writeGameFile(const char *fileName, SDWORD saveType)
 	const std::string saveInfoJsonFilename = pathToThisSaveDir + "save-info.json";
 	const std::string jsonFileName = pathToThisSaveDir + gameName + ".json";
 	auto gamJson = nlohmann::json::object();
-	
+
 	if (!PHYSFS_exists(saveInfoJsonFilename.c_str()))
 	{
 		// save empty {} into save-info.jsons
@@ -5021,10 +5031,10 @@ static bool loadWzMapDroidInit(WzMap::Map &wzMap)
 		Vector2i startpos = getPlayerStartPosition(player);
 		if (psDroid->droidType == DROID_CONSTRUCT && startpos.x == 0 && startpos.y == 0)
 		{
-			scriptSetStartPos(psDroid->player, psDroid->pos.x, psDroid->pos.y);	// set map start position, FIXME - save properly elsewhere!
+			scriptSetStartPos(psDroid->owningPlayer, psDroid->position.x, psDroid->position.y);	// set map start position, FIXME - save properly elsewhere!
 		}
 
-		addDroid(psDroid, apsDroidLists);
+		addDroid(psDroid, allDroidLists);
 	}
 	if (NumberOfSkippedDroids)
 	{
@@ -5110,7 +5120,7 @@ static inline void setPlayerJSON(nlohmann::json &jsonObj, int player)
 }
 
 static bool skipForDifficulty(WzConfig &ini, int player)
-{ 
+{
 	if (ini.contains("difficulty")) // optionally skip this object
 	{
 		int difficulty = ini.value("difficulty").toInt();
@@ -5123,7 +5133,8 @@ static bool skipForDifficulty(WzConfig &ini, int player)
 	return false;
 }
 
-static bool loadSaveDroidPointers(const WzString &pFileName, DROID **ppsCurrentDroidLists)
+static bool loadSaveDroidPointers(const WzString &pFileName,
+                                  Droid **ppsCurrentDroidLists)
 {
 	WzConfig ini(pFileName, WzConfig::ReadOnly);
 	std::vector<WzString> list = ini.childGroups();
@@ -5131,7 +5142,7 @@ static bool loadSaveDroidPointers(const WzString &pFileName, DROID **ppsCurrentD
 	for (size_t i = 0; i < list.size(); ++i)
 	{
 		ini.beginGroup(list[i]);
-		DROID *psDroid;
+                Droid *psDroid;
 		int id = ini.value("id", -1).toInt();
 		int player = getPlayer(ini);
 
@@ -5150,7 +5161,7 @@ static bool loadSaveDroidPointers(const WzString &pFileName, DROID **ppsCurrentD
 		{
 			if (isTransporter(psDroid) && psDroid->psGroup != nullptr)  // Check for droids in the transporter.
 			{
-				for (DROID *psTrDroid = psDroid->psGroup->psList; psTrDroid != nullptr; psTrDroid = psTrDroid->psGrpNext)
+				for (Droid *psTrDroid = psDroid->psGroup->psList; psTrDroid != nullptr; psTrDroid = psTrDroid->psGrpNext)
 				{
 					if (psTrDroid->id == id)
 					{
@@ -5180,8 +5191,8 @@ foundDroid:
 		psDroid->listPendingBegin = 0;
 		for (int j = 0; j < MAX_WEAPONS; j++)
 		{
-			objTrace(psDroid->id, "weapon %d, nStat %d", j, psDroid->asWeaps[j].nStat);
-			getIniBaseObject(ini, "actionTarget/" + WzString::number(j), psDroid->psActionTarget[j]);
+			objTrace(psDroid->id, "weapon %d, nStat %d", j, psDroid->m_weaponList[j].nStat);
+			getIniGameObject(ini, "actionTarget/" + WzString::number(j), psDroid->psActionTarget[j]);
 		}
 		if (ini.contains("baseStruct/id"))
 		{
@@ -5189,15 +5200,15 @@ foundDroid:
 			int tplayer = ini.value("baseStruct/player", -1).toInt();
 			OBJECT_TYPE ttype = (OBJECT_TYPE)ini.value("baseStruct/type", 0).toInt();
 			ASSERT(tid >= 0 && tplayer >= 0, "Bad ID");
-			BASE_OBJECT *psObj = getBaseObjFromData(tid, tplayer, ttype);
+                        GameObject *psObj = getBaseObjFromData(tid, tplayer, ttype);
 			ASSERT(psObj, "Failed to find droid base structure");
 			ASSERT(!psObj || psObj->type == OBJ_STRUCTURE, "Droid base structure not a structure");
-			setSaveDroidBase(psDroid, (STRUCTURE *)psObj);
+			setSaveDroidBase(psDroid, (Structure *)psObj);
 		}
 		if (ini.contains("commander"))
 		{
 			int tid = ini.value("commander", -1).toInt();
-			DROID *psCommander = (DROID *)getBaseObjFromData(tid, psDroid->player, OBJ_DROID);
+                        Droid *psCommander = (Droid *)getBaseObjFromData(tid, psDroid->owningPlayer, OBJ_DROID);
 			ASSERT(psCommander, "Failed to find droid commander");
 			cmdDroidAddDroid(psCommander, psDroid);
 		}
@@ -5225,9 +5236,9 @@ static int healthValue(WzConfig &ini, int defaultValue)
 	}
 }
 
-static void loadSaveObject(WzConfig &ini, BASE_OBJECT *psObj)
+static void loadSaveObject(WzConfig &ini, GameObject *psObj)
 {
-	psObj->died = ini.value("died", 0).toInt();
+	psObj->deathTime = ini.value("died", 0).toInt();
 	memset(psObj->visible, 0, sizeof(psObj->visible));
 	for (int j = 0; j < game.maxPlayers; j++)
 	{
@@ -5240,16 +5251,16 @@ static void loadSaveObject(WzConfig &ini, BASE_OBJECT *psObj)
 	psObj->timeLastHit = ini.value("timeLastHit", UDWORD_MAX).toInt();
 	psObj->lastEmission = ini.value("lastEmission", 0).toInt();
 	psObj->selected = ini.value("selected", false).toBool();
-	psObj->born = ini.value("born", 2).toInt();
+	psObj->creationTime = ini.value("born", 2).toInt();
 }
 
-static void writeSaveObject(WzConfig &ini, BASE_OBJECT *psObj)
+static void writeSaveObject(WzConfig &ini, GameObject *psObj)
 {
 	ini.setValue("id", psObj->id);
-	setPlayer(ini, psObj->player);
-	ini.setValue("health", psObj->body);
-	ini.setVector3i("position", psObj->pos);
-	ini.setVector3i("rotation", toVector(psObj->rot));
+	setPlayer(ini, psObj->owningPlayer);
+	ini.setValue("health", psObj->hitPoints);
+	ini.setVector3i("position", psObj->position);
+	ini.setVector3i("rotation", toVector(psObj->rotation));
 	if (psObj->timeAnimationStarted)
 	{
 		ini.setValue("timeAnimationStarted", psObj->timeAnimationStarted);
@@ -5271,10 +5282,10 @@ static void writeSaveObject(WzConfig &ini, BASE_OBJECT *psObj)
 	{
 		ini.setValue("periodicalDamage", psObj->periodicalDamage);
 	}
-	ini.setValue("born", psObj->born);
-	if (psObj->died > 0)
+	ini.setValue("born", psObj->creationTime);
+	if (psObj->deathTime > 0)
 	{
-		ini.setValue("died", psObj->died);
+		ini.setValue("died", psObj->deathTime);
 	}
 	if (psObj->timeLastHit != UDWORD_MAX)
 	{
@@ -5293,13 +5304,13 @@ static void writeSaveObject(WzConfig &ini, BASE_OBJECT *psObj)
 	}
 }
 
-static void writeSaveObjectJSON(nlohmann::json &jsonObj, BASE_OBJECT *psObj)
+static void writeSaveObjectJSON(nlohmann::json &jsonObj, GameObject *psObj)
 {
 	jsonObj["id"] = psObj->id;
-	setPlayerJSON(jsonObj, psObj->player);
-	jsonObj["health"] = psObj->body;
-	jsonObj["position"] = psObj->pos;
-	jsonObj["rotation"] = toVector(psObj->rot);
+	setPlayerJSON(jsonObj, psObj->owningPlayer);
+	jsonObj["health"] = psObj->hitPoints;
+	jsonObj["position"] = psObj->position;
+	jsonObj["rotation"] = toVector(psObj->rotation);
 	if (psObj->timeAnimationStarted)
 	{
 		jsonObj["timeAnimationStarted"] = psObj->timeAnimationStarted;
@@ -5321,10 +5332,10 @@ static void writeSaveObjectJSON(nlohmann::json &jsonObj, BASE_OBJECT *psObj)
 	{
 		jsonObj["periodicalDamage"] = psObj->periodicalDamage;
 	}
-	jsonObj["born"] = psObj->born;
-	if (psObj->died > 0)
+	jsonObj["born"] = psObj->creationTime;
+	if (psObj->deathTime > 0)
 	{
-		jsonObj["died"] = psObj->died;
+		jsonObj["died"] = psObj->deathTime;
 	}
 	if (psObj->timeLastHit != UDWORD_MAX)
 	{
@@ -5343,7 +5354,7 @@ static void writeSaveObjectJSON(nlohmann::json &jsonObj, BASE_OBJECT *psObj)
 	}
 }
 
-static bool loadSaveDroid(const char *pFileName, DROID **ppsCurrentDroidLists)
+static bool loadSaveDroid(const char *pFileName, Droid **ppsCurrentDroidLists)
 {
 	if (!PHYSFS_exists(pFileName))
 	{
@@ -5386,14 +5397,14 @@ static bool loadSaveDroid(const char *pFileName, DROID **ppsCurrentDroidLists)
 	for (unsigned i = 0; i < sortedList.size(); ++i)
 	{
 		ini.beginGroup(sortedList[i].second);
-		DROID *psDroid;
+                Droid *psDroid;
 		int player = getPlayer(ini);
 		int id = ini.value("id", -1).toInt();
 		Position pos = ini.vector3i("position");
 		Rotation rot = ini.vector3i("rotation");
 		bool onMission = ini.value("onMission", false).toBool();
-		DROID_TEMPLATE templ;
-		const DROID_TEMPLATE *psTemplate = nullptr;
+                DroidStats templ;
+		const DroidStats *psTemplate = nullptr;
 
 		if (skipForDifficulty(ini, player))
 		{
@@ -5461,8 +5472,8 @@ static bool loadSaveDroid(const char *pFileName, DROID **ppsCurrentDroidLists)
 			// so it's much simplier just store/retrieve originalBody value
 			psDroid->originalBody = ini.value("originalBody").toInt();
 		}
-		psDroid->body = healthValue(ini, psDroid->originalBody);
-		ASSERT(psDroid->body != 0, "%s : %d has zero hp!", pFileName, i);
+		psDroid->hitPoints = healthValue(ini, psDroid->originalBody);
+		ASSERT(psDroid->hitPoints != 0, "%s : %d has zero hp!", pFileName, i);
 		psDroid->experience = ini.value("experience", 0).toInt();
 		psDroid->kills = ini.value("kills", 0).toInt();
 		psDroid->secondaryOrder = ini.value("secondaryOrder", psDroid->secondaryOrder).toInt();
@@ -5478,14 +5489,14 @@ static bool loadSaveDroid(const char *pFileName, DROID **ppsCurrentDroidLists)
 		loadSaveObject(ini, psDroid);
 
 		// copy the droid's weapon stats
-		for (int j = 0; j < psDroid->numWeaps; j++)
+		for (int j = 0; j < psDroid->numWeapons; j++)
 		{
-			if (psDroid->asWeaps[j].nStat > 0)
+			if (psDroid->m_weaponList[j].nStat > 0)
 			{
-				psDroid->asWeaps[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
-				psDroid->asWeaps[j].lastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
-				psDroid->asWeaps[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
-				psDroid->asWeaps[j].rot = ini.vector3i("rotation/" + WzString::number(j));
+				psDroid->m_weaponList[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
+				psDroid->m_weaponList[j].lastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
+				psDroid->m_weaponList[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
+				psDroid->m_weaponList[j].rot = ini.vector3i("rotation/" + WzString::number(j));
 			}
 		}
 
@@ -5533,7 +5544,7 @@ static bool loadSaveDroid(const char *pFileName, DROID **ppsCurrentDroidLists)
 		psDroid->sMove.shuffleStart = ini.value("shuffleStart").toInt();
 		for (int j = 0; j < MAX_WEAPONS; ++j)
 		{
-			psDroid->asWeaps[j].usedAmmo = ini.value("attackRun/" + WzString::number(j)).toInt();
+			psDroid->m_weaponList[j].usedAmmo = ini.value("attackRun/" + WzString::number(j)).toInt();
 		}
 		psDroid->sMove.lastBump = ini.value("lastBump").toInt();
 		psDroid->sMove.pauseTime = ini.value("pauseTime").toInt();
@@ -5566,7 +5577,7 @@ static bool loadSaveDroid(const char *pFileName, DROID **ppsCurrentDroidLists)
 		Vector2i startpos = getPlayerStartPosition(player);
 		if (psDroid->droidType == DROID_CONSTRUCT && startpos.x == 0 && startpos.y == 0)
 		{
-			scriptSetStartPos(psDroid->player, psDroid->pos.x, psDroid->pos.y);	// set map start position, FIXME - save properly elsewhere!
+			scriptSetStartPos(psDroid->owningPlayer, psDroid->position.x, psDroid->position.y);	// set map start position, FIXME - save properly elsewhere!
 		}
 
 		if (psDroid->psGroup == nullptr || psDroid->psGroup->type != GT_TRANSPORTER || isTransporter(psDroid))  // do not add to list if on a transport, then the group list is used instead
@@ -5583,29 +5594,29 @@ static bool loadSaveDroid(const char *pFileName, DROID **ppsCurrentDroidLists)
 /*
 Writes the linked list of droids for each player to a file
 */
-static nlohmann::json writeDroid(DROID *psCurr, bool onMission, int &counter)
+static nlohmann::json writeDroid(Droid *psCurr, bool onMission, int &counter)
 {
 	nlohmann::json droidObj = nlohmann::json::object();
-	droidObj["name"] = psCurr->aName;
+	droidObj["name"] = psCurr->name;
 	droidObj["originalBody"] = psCurr->originalBody;
 	// write common BASE_OBJECT info
 	writeSaveObjectJSON(droidObj, psCurr);
 
-	for (unsigned i = 0; i < psCurr->numWeaps; i++)
+	for (unsigned i = 0; i < psCurr->numWeapons; i++)
 	{
-		if (psCurr->asWeaps[i].nStat > 0)
+		if (psCurr->m_weaponList[i].nStat > 0)
 		{
 			auto numberWzStr = WzString::number(i);
 			const std::string& numStr = numberWzStr.toStdString();
-			droidObj["ammo/" + numStr] = psCurr->asWeaps[i].ammo;
-			droidObj["lastFired/" + numStr] = psCurr->asWeaps[i].lastFired;
-			droidObj["shotsFired/" + numStr] = psCurr->asWeaps[i].shotsFired;
-			droidObj["rotation/" + numStr] = toVector(psCurr->asWeaps[i].rot);
+			droidObj["ammo/" + numStr] = psCurr->m_weaponList[i].ammo;
+			droidObj["lastFired/" + numStr] = psCurr->m_weaponList[i].lastFired;
+			droidObj["shotsFired/" + numStr] = psCurr->m_weaponList[i].shotsFired;
+			droidObj["rotation/" + numStr] = toVector(psCurr->m_weaponList[i].rot);
 		}
 	}
 	for (unsigned i = 0; i < MAX_WEAPONS; i++)
 	{
-		setIniBaseObject(droidObj, "actionTarget/" + WzString::number(i), psCurr->psActionTarget[i]);
+		setIniGameObject(droidObj, "actionTarget/" + WzString::number(i), psCurr->psActionTarget[i]);
 	}
 	if (psCurr->lastFrustratedTime > 0)
 	{
@@ -5639,7 +5650,7 @@ static nlohmann::json writeDroid(DROID *psCurr, bool onMission, int &counter)
 	if (psCurr->psBaseStruct != nullptr)
 	{
 		droidObj["baseStruct/id"] = psCurr->psBaseStruct->id;
-		droidObj["baseStruct/player"] = psCurr->psBaseStruct->player;	// always ours, but for completeness
+		droidObj["baseStruct/player"] = psCurr->psBaseStruct->owningPlayer;	// always ours, but for completeness
 		droidObj["baseStruct/type"] = psCurr->psBaseStruct->type;		// always a building, but for completeness
 	}
 	if (psCurr->psGroup)
@@ -5648,7 +5659,7 @@ static nlohmann::json writeDroid(DROID *psCurr, bool onMission, int &counter)
 		droidObj["aigroup/type"] = psCurr->psGroup->type;
 	}
 	droidObj["group"] = psCurr->group;	// different kind of group. of course.
-	if (hasCommander(psCurr) && psCurr->psGroup->psCommander->died <= 1)
+	if (hasCommander(psCurr) && psCurr->psGroup->psCommander->deathTime <= 1)
 	{
 		droidObj["commander"] = psCurr->psGroup->psCommander->id;
 	}
@@ -5657,18 +5668,18 @@ static nlohmann::json writeDroid(DROID *psCurr, bool onMission, int &counter)
 		droidObj["resistance"] = psCurr->resistance;
 	}
 	droidObj["droidType"] = psCurr->droidType;
-	droidObj["weapons"] = psCurr->numWeaps;
+	droidObj["weapons"] = psCurr->numWeapons;
 	nlohmann::json partsObj = nlohmann::json::object();
-	partsObj["body"] = (asBodyStats + psCurr->asBits[COMP_BODY])->id;
-	partsObj["propulsion"] = (asPropulsionStats + psCurr->asBits[COMP_PROPULSION])->id;
-	partsObj["brain"] = (asBrainStats + psCurr->asBits[COMP_BRAIN])->id;
-	partsObj["repair"] = (asRepairStats + psCurr->asBits[COMP_REPAIRUNIT])->id;
-	partsObj["ecm"] = (asECMStats + psCurr->asBits[COMP_ECM])->id;
-	partsObj["sensor"] = (asSensorStats + psCurr->asBits[COMP_SENSOR])->id;
-	partsObj["construct"] = (asConstructStats + psCurr->asBits[COMP_CONSTRUCT])->id;
-	for (int j = 0; j < psCurr->numWeaps; j++)
+	partsObj["body"] = (asBodyStats + psCurr->asBits[COMP_BODY])->textId;
+	partsObj["propulsion"] = (asPropulsionStats + psCurr->asBits[COMP_PROPULSION])->textId;
+	partsObj["brain"] = (asBrainStats + psCurr->asBits[COMP_BRAIN])->textId;
+	partsObj["repair"] = (asRepairStats + psCurr->asBits[COMP_REPAIRUNIT])->textId;
+	partsObj["ecm"] = (asECMStats + psCurr->asBits[COMP_ECM])->textId;
+	partsObj["sensor"] = (asSensorStats + psCurr->asBits[COMP_SENSOR])->textId;
+	partsObj["construct"] = (asConstructStats + psCurr->asBits[COMP_CONSTRUCT])->textId;
+	for (int j = 0; j < psCurr->numWeapons; j++)
 	{
-		partsObj["weapon/" + WzString::number(j + 1).toStdString()] = (asWeaponStats + psCurr->asWeaps[j].nStat)->id;
+		partsObj["weapon/" + WzString::number(j + 1).toStdString()] = (asWeaponStats + psCurr->m_weaponList[j].nStat)->textId;
 	}
 	droidObj["parts"] = partsObj;
 	droidObj["moveStatus"] = psCurr->sMove.Status;
@@ -5689,7 +5700,7 @@ static nlohmann::json writeDroid(DROID *psCurr, bool onMission, int &counter)
 	droidObj["shuffleStart"] = psCurr->sMove.shuffleStart;
 	for (int i = 0; i < MAX_WEAPONS; ++i)
 	{
-		droidObj["attackRun/" + WzString::number(i).toStdString()] = psCurr->asWeaps[i].usedAmmo;
+		droidObj["attackRun/" + WzString::number(i).toStdString()] = psCurr->m_weaponList[i].usedAmmo;
 	}
 	droidObj["lastBump"] = psCurr->sMove.lastBump;
 	droidObj["pauseTime"] = psCurr->sMove.pauseTime;
@@ -5698,7 +5709,8 @@ static nlohmann::json writeDroid(DROID *psCurr, bool onMission, int &counter)
 	return droidObj;
 }
 
-static bool writeDroidFile(const char *pFileName, DROID **ppsCurrentDroidLists)
+static bool writeDroidFile(const char *pFileName,
+                           Droid **ppsCurrentDroidLists)
 {
 	nlohmann::json mRoot = nlohmann::json::object();
 	int counter = 0;
@@ -5706,13 +5718,13 @@ static bool writeDroidFile(const char *pFileName, DROID **ppsCurrentDroidLists)
 
 	for (int player = 0; player < MAX_PLAYERS; player++)
 	{
-		for (DROID *psCurr = ppsCurrentDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (Droid *psCurr = ppsCurrentDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			auto droidKey = "droid_" + (WzString::number(counter++).leftPadToMinimumLength(WzUniCodepoint::fromASCII('0'), 10));  // Zero padded so that alphabetical sort works.
 			mRoot[droidKey.toStdString()] = writeDroid(psCurr, onMission, counter);
 			if (isTransporter(psCurr))	// if transporter save any droids in the grp
 			{
-				for (DROID *psTrans = psCurr->psGroup->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
+				for (Droid *psTrans = psCurr->psGroup->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
 				{
 					if (psTrans != psCurr)
 					{
@@ -5740,8 +5752,8 @@ bool loadSaveStructure(char *pFileData, UDWORD filesize)
 {
 	STRUCT_SAVEHEADER		*psHeader;
 	SAVE_STRUCTURE_V2		*psSaveStructure, sSaveStructure;
-	STRUCTURE			*psStructure;
-	STRUCTURE_STATS			*psStats = nullptr;
+        Structure *psStructure;
+        StructureStats *psStats = nullptr;
 	UDWORD				count, statInc;
 	int32_t				found;
 	UDWORD				NumberOfSkippedStructures = 0;
@@ -5823,7 +5835,7 @@ bool loadSaveStructure(char *pFileData, UDWORD filesize)
 			psStats = asStructureStats + statInc;
 			//loop until find the same name
 
-			if (psStats->id.compare(psSaveStructure->name) == 0)
+			if (psStats->textId.compare(psSaveStructure->name) == 0)
 			{
 				found = true;
 				break;
@@ -5880,13 +5892,13 @@ bool loadSaveStructure(char *pFileData, UDWORD filesize)
 		{
 			buildingComplete(psStructure);
 		}
-		if (psStructure->pStructureType->type == REF_HQ)
+		if (psStructure->stats->type == REF_HQ)
 		{
-			scriptSetStartPos(psSaveStructure->player, psStructure->pos.x, psStructure->pos.y);
+			scriptSetStartPos(psSaveStructure->player, psStructure->position.x, psStructure->position.y);
 		}
-		else if (psStructure->pStructureType->type == REF_RESOURCE_EXTRACTOR)
+		else if (psStructure->stats->type == REF_RESOURCE_EXTRACTOR)
 		{
-			scriptSetDerrickPos(psStructure->pos.x, psStructure->pos.y);
+			scriptSetDerrickPos(psStructure->position.x, psStructure->position.y);
 		}
 	}
 
@@ -5905,7 +5917,7 @@ static UDWORD getResearchIdFromName(const WzString &name)
 {
 	for (size_t inc = 0; inc < asResearch.size(); inc++)
 	{
-		if (asResearch[inc].id.compare(name) == 0)
+		if (asResearch[inc].textId.compare(name) == 0)
 		{
 			return inc;
 		}
@@ -5924,7 +5936,7 @@ static bool loadWzMapStructure(WzMap::Map& wzMap)
 	}
 
 	for (auto &structure : *pStructures) {
-		auto psStats = std::find_if(asStructureStats, asStructureStats + numStructureStats, [&](STRUCTURE_STATS &stat) { return stat.id.compare(structure.name.c_str()) == 0; });
+		auto psStats = std::find_if(asStructureStats, asStructureStats + numStructureStats, [&](StructureStats &stat) { return stat.textId.compare(structure.name.c_str()) == 0; });
 		if (psStats == asStructureStats + numStructureStats)
 		{
 			debug(LOG_ERROR, "Structure type \"%s\" unknown", structure.name.c_str());
@@ -5933,7 +5945,7 @@ static bool loadWzMapStructure(WzMap::Map& wzMap)
 		//for modules - need to check the base structure exists
 		if (IsStatExpansionModule(psStats))
 		{
-			STRUCTURE *psStructure = getTileStructure(map_coord(structure.position.x), map_coord(structure.position.y));
+                  Structure *psStructure = getTileStructure(map_coord(structure.position.x), map_coord(structure.position.y));
 			if (psStructure == nullptr)
 			{
 				debug(LOG_ERROR, "No owning structure for module - %s for player - %d", structure.name.c_str(), structure.player);
@@ -5953,7 +5965,7 @@ static bool loadWzMapStructure(WzMap::Map& wzMap)
 			player = MAX_PLAYERS - 1;
 			NumberOfSkippedStructures++;
 		}
-		STRUCTURE *psStructure = buildStructureDir(psStats, structure.position.x, structure.position.y, structure.direction, player, true);
+                Structure *psStructure = buildStructureDir(psStats, structure.position.x, structure.position.y, structure.direction, player, true);
 		if (psStructure == nullptr)
 		{
 			debug(LOG_ERROR, "Structure %s couldn't be built (probably on top of another structure).", structure.name.c_str());
@@ -5979,13 +5991,13 @@ static bool loadWzMapStructure(WzMap::Map& wzMap)
 			}
 		}
 		buildingComplete(psStructure);
-		if (psStructure->pStructureType->type == REF_HQ)
+		if (psStructure->stats->type == REF_HQ)
 		{
-			scriptSetStartPos(player, psStructure->pos.x, psStructure->pos.y);
+			scriptSetStartPos(player, psStructure->position.x, psStructure->position.y);
 		}
-		else if (psStructure->pStructureType->type == REF_RESOURCE_EXTRACTOR)
+		else if (psStructure->stats->type == REF_RESOURCE_EXTRACTOR)
 		{
-			scriptSetDerrickPos(psStructure->pos.x, psStructure->pos.y);
+			scriptSetDerrickPos(psStructure->position.x, psStructure->position.y);
 		}
 	}
 
@@ -6000,7 +6012,7 @@ static bool loadWzMapStructure(WzMap::Map& wzMap)
 
 // -----------------------------------------------------------------------------------------
 /* code for versions after version 20 of a save structure */
-static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
+static bool loadSaveStructure2(const char *pFileName, Structure **ppList)
 {
 	if (!PHYSFS_exists(pFileName))
 	{
@@ -6014,13 +6026,13 @@ static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
 	std::vector<WzString> list = ini.childGroups();
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		FACTORY *psFactory;
+          Factory *psFactory;
 		RESEARCH_FACILITY *psResearch;
 		REPAIR_FACILITY *psRepair;
 		REARM_PAD *psReArmPad;
-		STRUCTURE_STATS *psModule;
+                StructureStats *psModule;
 		int capacity, researchId;
-		STRUCTURE *psStructure;
+                Structure *psStructure;
 
 		ini.beginGroup(list[i]);
 		int player = getPlayer(ini);
@@ -6030,7 +6042,7 @@ static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
 		WzString name = ini.string("name");
 
 		//get the stats for this structure
-		auto psStats = std::find_if(asStructureStats, asStructureStats + numStructureStats, [&](STRUCTURE_STATS &stat) { return stat.id == name; });
+		auto psStats = std::find_if(asStructureStats, asStructureStats + numStructureStats, [&](StructureStats &stat) { return stat.textId == name; });
 		//if haven't found the structure - ignore this record!
 		ASSERT(psStats != asStructureStats + numStructureStats, "This structure no longer exists - %s", name.toUtf8().c_str());
 		if (psStats == asStructureStats + numStructureStats)
@@ -6042,7 +6054,7 @@ static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
 		//for modules - need to check the base structure exists
 		if (IsStatExpansionModule(psStats))
 		{
-			STRUCTURE *psTileStructure = getTileStructure(map_coord(pos.x), map_coord(pos.y));
+                  Structure *psTileStructure = getTileStructure(map_coord(pos.x), map_coord(pos.y));
 			if (psTileStructure == nullptr)
 			{
 				debug(LOG_ERROR, "No owning structure for module - %s for player - %d", name.toUtf8().c_str(), player);
@@ -6073,20 +6085,20 @@ static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
 		// common BASE_OBJECT info
 		loadSaveObject(ini, psStructure);
 
-		if (psStructure->pStructureType->type == REF_HQ)
+		if (psStructure->stats->type == REF_HQ)
 		{
-			scriptSetStartPos(player, psStructure->pos.x, psStructure->pos.y);
+			scriptSetStartPos(player, psStructure->position.x, psStructure->position.y);
 		}
 		psStructure->resistance = ini.value("resistance", psStructure->resistance).toInt();
 		capacity = ini.value("modules", 0).toInt();
 		psStructure->capacity = 0; // increased when modules are built
-		switch (psStructure->pStructureType->type)
+		switch (psStructure->stats->type)
 		{
 		case REF_FACTORY:
 		case REF_VTOL_FACTORY:
 		case REF_CYBORG_FACTORY:
 			//if factory save the current build info
-			psFactory = ((FACTORY *)psStructure->pFunctionality);
+			psFactory = ((Factory *)psStructure->pFunctionality);
 			psFactory->productionLoops = ini.value("Factory/productionLoops", psFactory->productionLoops).toUInt();
 			psFactory->timeStarted = ini.value("Factory/timeStarted", psFactory->timeStarted).toInt();
 			psFactory->buildPointsRemaining = ini.value("Factory/buildPointsRemaining", psFactory->buildPointsRemaining).toInt();
@@ -6101,7 +6113,7 @@ static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
 				//build the appropriate number of modules
 				for (int moduleIdx = 0; moduleIdx < capacity; moduleIdx++)
 				{
-					buildStructure(psModule, psStructure->pos.x, psStructure->pos.y, psStructure->player, true);
+					buildStructure(psModule, psStructure->position.x, psStructure->position.y, psStructure->owningPlayer, true);
 				}
 			}
 			if (ini.contains("Factory/template"))
@@ -6129,7 +6141,7 @@ static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
 					if (ini.contains("Factory/Run/" + WzString::number(runNum) + "/template"))
 					{
 						int tid = ini.value("Factory/Run/" + WzString::number(runNum) + "/template").toInt();
-						DROID_TEMPLATE *psTempl = getTemplateFromMultiPlayerID(tid);
+                                                DroidStats *psTempl = getTemplateFromMultiPlayerID(tid);
 						currentProd.psTemplate = psTempl;
 						ASSERT(psTempl, "No template found for template ID %d for %s (%d)", tid, objInfo(psStructure), id);
 					}
@@ -6147,7 +6159,7 @@ static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
 			if (capacity)
 			{
 				psModule = getModuleStat(psStructure);
-				buildStructure(psModule, psStructure->pos.x, psStructure->pos.y, psStructure->player, true);
+				buildStructure(psModule, psStructure->position.x, psStructure->position.y, psStructure->owningPlayer, true);
 			}
 			//clear subject
 			psResearch->psSubject = nullptr;
@@ -6172,7 +6184,7 @@ static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
 			if (capacity)
 			{
 				psModule = getModuleStat(psStructure);
-				buildStructure(psModule, psStructure->pos.x, psStructure->pos.y, psStructure->player, true);
+				buildStructure(psModule, psStructure->position.x, psStructure->position.y, psStructure->owningPlayer, true);
 			}
 			break;
 		case REF_RESOURCE_EXTRACTOR:
@@ -6194,20 +6206,20 @@ static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
 		case REF_WALL:
 		case REF_GATE:
 			psStructure->pFunctionality->wall.type = ini.value("Wall/type").toInt();
-			psStructure->sDisplay.imd = psStructure->pStructureType->pIMD[std::min<unsigned>(psStructure->pFunctionality->wall.type, psStructure->pStructureType->pIMD.size() - 1)];
+			psStructure->displayData.imd = psStructure->stats->pIMD[std::min<unsigned>(psStructure->pFunctionality->wall.type, psStructure->stats->pIMD.size() - 1)];
 			break;
 		default:
 			break;
 		}
-		psStructure->body = healthValue(ini, structureBody(psStructure));
+		psStructure->hitPoints = healthValue(ini, structureBody(psStructure));
 		psStructure->currentBuildPts = ini.value("currentBuildPts", structureBuildPointsToCompletion(*psStructure)).toInt();
 		if (psStructure->status == SS_BUILT)
 		{
-			switch (psStructure->pStructureType->type)
+			switch (psStructure->stats->type)
 			{
 			case REF_POWER_GEN:
 				checkForResExtractors(psStructure);
-				if (selectedPlayer == psStructure->player)
+				if (selectedPlayer == psStructure->owningPlayer)
 				{
 					audio_PlayObjStaticTrack(psStructure, ID_SOUND_POWER_HUM);
 				}
@@ -6221,14 +6233,14 @@ static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
 			}
 		}
 		// weapons
-		for (int j = 0; j < psStructure->pStructureType->numWeaps; j++)
+		for (int j = 0; j < psStructure->stats->numWeaps; j++)
 		{
-			if (psStructure->asWeaps[j].nStat > 0)
+			if (psStructure->m_weaponList[j].nStat > 0)
 			{
-				psStructure->asWeaps[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
-				psStructure->asWeaps[j].lastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
-				psStructure->asWeaps[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
-				psStructure->asWeaps[j].rot = ini.vector3i("rotation/" + WzString::number(j));
+				psStructure->m_weaponList[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
+				psStructure->m_weaponList[j].lastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
+				psStructure->m_weaponList[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
+				psStructure->m_weaponList[j].rot = ini.vector3i("rotation/" + WzString::number(j));
 			}
 		}
 		psStructure->status = (STRUCT_STATES)ini.value("status", SS_BUILT).toInt();
@@ -6289,10 +6301,10 @@ bool writeStructFile(const char *pFileName)
 
 	for (int player = 0; player < MAX_PLAYERS; player++)
 	{
-		for (STRUCTURE *psCurr = apsStructLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (Structure *psCurr = apsStructLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			ini.beginGroup("structure_" + (WzString::number(counter++).leftPadToMinimumLength(WzUniCodepoint::fromASCII('0'), 10)));  // Zero padded so that alphabetical sort works.
-			ini.setValue("name", psCurr->pStructureType->id);
+			ini.setValue("name", psCurr->stats->textId);
 
 			writeSaveObject(ini, psCurr);
 
@@ -6304,24 +6316,24 @@ bool writeStructFile(const char *pFileName)
 			{
 				ini.setValue("status", psCurr->status);
 			}
-			ini.setValue("weapons", psCurr->numWeaps);
-			for (unsigned j = 0; j < psCurr->numWeaps; j++)
+			ini.setValue("weapons", psCurr->numWeapons);
+			for (unsigned j = 0; j < psCurr->numWeapons; j++)
 			{
-				ini.setValue("parts/weapon/" + WzString::number(j + 1), (asWeaponStats + psCurr->asWeaps[j].nStat)->id);
-				if (psCurr->asWeaps[j].nStat > 0)
+				ini.setValue("parts/weapon/" + WzString::number(j + 1), (asWeaponStats + psCurr->m_weaponList[j].nStat)->textId);
+				if (psCurr->m_weaponList[j].nStat > 0)
 				{
-					ini.setValue("ammo/" + WzString::number(j), psCurr->asWeaps[j].ammo);
-					ini.setValue("lastFired/" + WzString::number(j), psCurr->asWeaps[j].lastFired);
-					ini.setValue("shotsFired/" + WzString::number(j), psCurr->asWeaps[j].shotsFired);
-					ini.setVector3i("rotation/" + WzString::number(j), toVector(psCurr->asWeaps[j].rot));
+					ini.setValue("ammo/" + WzString::number(j), psCurr->m_weaponList[j].ammo);
+					ini.setValue("lastFired/" + WzString::number(j), psCurr->m_weaponList[j].lastFired);
+					ini.setValue("shotsFired/" + WzString::number(j), psCurr->m_weaponList[j].shotsFired);
+					ini.setVector3i("rotation/" + WzString::number(j), toVector(psCurr->m_weaponList[j].rot));
 				}
 			}
-			for (unsigned i = 0; i < psCurr->numWeaps; i++)
+			for (unsigned i = 0; i < psCurr->numWeapons; i++)
 			{
-				if (psCurr->psTarget[i] && !psCurr->psTarget[i]->died)
+				if (psCurr->psTarget[i] && !psCurr->psTarget[i]->deathTime)
 				{
 					ini.setValue("target/" + WzString::number(i) + "/id", psCurr->psTarget[i]->id);
-					ini.setValue("target/" + WzString::number(i) + "/player", psCurr->psTarget[i]->player);
+					ini.setValue("target/" + WzString::number(i) + "/player", psCurr->psTarget[i]->owningPlayer);
 					ini.setValue("target/" + WzString::number(i) + "/type", psCurr->psTarget[i]->type);
 #ifdef DEBUG
 					ini.setValue("target/" + WzString::number(i) + "/debugfunc", WzString::fromUtf8(psCurr->targetFunc[i]));
@@ -6332,10 +6344,10 @@ bool writeStructFile(const char *pFileName)
 			ini.setValue("currentBuildPts", psCurr->currentBuildPts);
 			if (psCurr->pFunctionality)
 			{
-				if (psCurr->pStructureType->type == REF_FACTORY || psCurr->pStructureType->type == REF_CYBORG_FACTORY
-				    || psCurr->pStructureType->type == REF_VTOL_FACTORY)
+				if (psCurr->stats->type == REF_FACTORY || psCurr->stats->type == REF_CYBORG_FACTORY
+				    || psCurr->stats->type == REF_VTOL_FACTORY)
 				{
-					FACTORY *psFactory = (FACTORY *)psCurr->pFunctionality;
+                                  Factory *psFactory = (Factory *)psCurr->pFunctionality;
 					ini.setValue("modules", psCurr->capacity);
 					ini.setValue("Factory/productionLoops", psFactory->productionLoops);
 					ini.setValue("Factory/timeStarted", psFactory->timeStarted);
@@ -6349,7 +6361,7 @@ bool writeStructFile(const char *pFileName)
 					{
 						ini.setValue("Factory/template", psFactory->psSubject->multiPlayerID);
 					}
-					FLAG_POSITION *psFlag = ((FACTORY *)psCurr->pFunctionality)->psAssemblyPoint;
+					FLAG_POSITION *psFlag = ((Factory *)psCurr->pFunctionality)->psAssemblyPoint;
 					if (psFlag != nullptr)
 					{
 						ini.setVector3i("Factory/assemblyPoint/pos", psFlag->coords);
@@ -6362,7 +6374,7 @@ bool writeStructFile(const char *pFileName)
 					if (psFactory->psCommander)
 					{
 						ini.setValue("Factory/commander/id", psFactory->psCommander->id);
-						ini.setValue("Factory/commander/player", psFactory->psCommander->player);
+						ini.setValue("Factory/commander/player", psFactory->psCommander->owningPlayer);
 					}
 					ini.setValue("Factory/secondaryOrder", psFactory->secondaryOrder);
 					if (player == productionPlayer)
@@ -6385,26 +6397,26 @@ bool writeStructFile(const char *pFileName)
 						ini.setValue("Factory/productionRuns", 0);
 					}
 				}
-				else if (psCurr->pStructureType->type == REF_RESEARCH)
+				else if (psCurr->stats->type == REF_RESEARCH)
 				{
 					ini.setValue("modules", psCurr->capacity);
 					ini.setValue("Research/timeStartHold", ((RESEARCH_FACILITY *)psCurr->pFunctionality)->timeStartHold);
 					if (((RESEARCH_FACILITY *)psCurr->pFunctionality)->psSubject)
 					{
-						ini.setValue("Research/target", ((RESEARCH_FACILITY *)psCurr->pFunctionality)->psSubject->id);
+						ini.setValue("Research/target", ((RESEARCH_FACILITY *)psCurr->pFunctionality)->psSubject->textId);
 					}
 				}
-				else if (psCurr->pStructureType->type == REF_POWER_GEN)
+				else if (psCurr->stats->type == REF_POWER_GEN)
 				{
 					ini.setValue("modules", psCurr->capacity);
 				}
-				else if (psCurr->pStructureType->type == REF_REPAIR_FACILITY)
+				else if (psCurr->stats->type == REF_REPAIR_FACILITY)
 				{
 					REPAIR_FACILITY *psRepair = ((REPAIR_FACILITY *)psCurr->pFunctionality);
 					if (psRepair->psObj)
 					{
 						ini.setValue("Repair/target/id", psRepair->psObj->id);
-						ini.setValue("Repair/target/player", psRepair->psObj->player);
+						ini.setValue("Repair/target/player", psRepair->psObj->owningPlayer);
 						ini.setValue("Repair/target/type", psRepair->psObj->type);
 					}
 					FLAG_POSITION *psFlag = psRepair->psDeliveryPoint;
@@ -6417,7 +6429,7 @@ bool writeStructFile(const char *pFileName)
 						}
 					}
 				}
-				else if (psCurr->pStructureType->type == REF_REARM_PAD)
+				else if (psCurr->stats->type == REF_REARM_PAD)
 				{
 					REARM_PAD *psReArmPad = ((REARM_PAD *)psCurr->pFunctionality);
 					ini.setValue("Rearm/timeStarted", psReArmPad->timeStarted);
@@ -6425,11 +6437,11 @@ bool writeStructFile(const char *pFileName)
 					if (psReArmPad->psObj)
 					{
 						ini.setValue("Rearm/target/id", psReArmPad->psObj->id);
-						ini.setValue("Rearm/target/player", psReArmPad->psObj->player);
+						ini.setValue("Rearm/target/player", psReArmPad->psObj->owningPlayer);
 						ini.setValue("Rearm/target/type", psReArmPad->psObj->type);
 					}
 				}
-				else if (psCurr->pStructureType->type == REF_WALL || psCurr->pStructureType->type == REF_GATE)
+				else if (psCurr->stats->type == REF_WALL || psCurr->stats->type == REF_GATE)
 				{
 					ini.setValue("Wall/type", psCurr->pFunctionality->wall.type);
 				}
@@ -6441,7 +6453,7 @@ bool writeStructFile(const char *pFileName)
 }
 
 // -----------------------------------------------------------------------------------------
-bool loadSaveStructurePointers(const WzString& filename, STRUCTURE **ppList)
+bool loadSaveStructurePointers(const WzString& filename, Structure **ppList)
 {
 	WzConfig ini(filename, WzConfig::ReadOnly);
 	std::vector<WzString> list = ini.childGroups();
@@ -6449,7 +6461,7 @@ bool loadSaveStructurePointers(const WzString& filename, STRUCTURE **ppList)
 	for (size_t i = 0; i < list.size(); ++i)
 	{
 		ini.beginGroup(list[i]);
-		STRUCTURE *psStruct;
+                Structure *psStruct;
 		int player = getPlayer(ini);
 		int id = ini.value("id", -1).toInt();
 		for (psStruct = ppList[player]; psStruct && psStruct->id != id; psStruct = psStruct->psNext) { }
@@ -6460,7 +6472,7 @@ bool loadSaveStructurePointers(const WzString& filename, STRUCTURE **ppList)
 		}
 		for (int j = 0; j < MAX_WEAPONS; j++)
 		{
-			objTrace(psStruct->id, "weapon %d, nStat %d", j, psStruct->asWeaps[j].nStat);
+			objTrace(psStruct->id, "weapon %d, nStat %d", j, psStruct->m_weaponList[j].nStat);
 			if (ini.contains("target/" + WzString::number(j) + "/id"))
 			{
 				int tid = ini.value("target/" + WzString::number(j) + "/id", -1).toInt();
@@ -6472,14 +6484,14 @@ bool loadSaveStructurePointers(const WzString& filename, STRUCTURE **ppList)
 			}
 		}
 		if (ini.contains("Factory/commander/id")) {
-				ASSERT(psStruct->pStructureType->type == REF_FACTORY || psStruct->pStructureType->type == REF_CYBORG_FACTORY
-				       || psStruct->pStructureType->type == REF_VTOL_FACTORY, "Bad type");
-				FACTORY *psFactory = (FACTORY *)psStruct->pFunctionality;
+				ASSERT(psStruct->stats->type == REF_FACTORY || psStruct->stats->type == REF_CYBORG_FACTORY
+				       || psStruct->stats->type == REF_VTOL_FACTORY, "Bad type");
+                                Factory *psFactory = (Factory *)psStruct->pFunctionality;
 				OBJECT_TYPE ttype = OBJ_DROID;
 				int tid = ini.value("Factory/commander/id", -1).toInt();
 				int tplayer = ini.value("Factory/commander/player", -1).toInt();
 				ASSERT(tid >= 0 && tplayer >= 0, "Bad commander ID %d for player %d for building %d", tid, tplayer, id);
-				DROID *psCommander = (DROID *)getBaseObjFromData(tid, tplayer, ttype);
+                                Droid *psCommander = (Droid *)getBaseObjFromData(tid, tplayer, ttype);
 				ASSERT(psCommander, "Commander %d not found for building %d", tid, id);
 				if (ppList == mission.apsStructLists)
 				{
@@ -6491,7 +6503,7 @@ bool loadSaveStructurePointers(const WzString& filename, STRUCTURE **ppList)
 				}
 		}
 		if (ini.contains("Repair/target/id")){
-				ASSERT(psStruct->pStructureType->type == REF_REPAIR_FACILITY, "Bad type");
+				ASSERT(psStruct->stats->type == REF_REPAIR_FACILITY, "Bad type");
 				REPAIR_FACILITY *psRepair = ((REPAIR_FACILITY *)psStruct->pFunctionality);
 				OBJECT_TYPE ttype = (OBJECT_TYPE)ini.value("Repair/target/type", OBJ_DROID).toInt();
 				int tid = ini.value("Repair/target/id", -1).toInt();
@@ -6501,7 +6513,7 @@ bool loadSaveStructurePointers(const WzString& filename, STRUCTURE **ppList)
 				ASSERT(psRepair->psObj, "Repair target %d not found for building %d", tid, id);
 		}
 		if (ini.contains("Rearm/target/id")) {
-				ASSERT(psStruct->pStructureType->type == REF_REARM_PAD, "Bad type");
+				ASSERT(psStruct->stats->type == REF_REARM_PAD, "Bad type");
 				REARM_PAD *psReArmPad = ((REARM_PAD *)psStruct->pFunctionality);
 				OBJECT_TYPE ttype = OBJ_DROID; // always, for now
 				int tid = ini.value("Rearm/target/id", -1).toInt();
@@ -6521,7 +6533,7 @@ bool loadSaveFeature(char *pFileData, UDWORD filesize)
 {
 	FEATURE_SAVEHEADER		*psHeader;
 	SAVE_FEATURE_V14			*psSaveFeature;
-	FEATURE					*pFeature;
+        Feature *pFeature;
 	UDWORD					count, i, statInc;
 	FEATURE_STATS			*psStats = nullptr;
 	bool					found;
@@ -6589,7 +6601,7 @@ bool loadSaveFeature(char *pFileData, UDWORD filesize)
 		{
 			psStats = asFeatureStats + statInc;
 			//loop until find the same name
-			if (psStats->id.compare(psSaveFeature->name) == 0)
+			if (psStats->textId.compare(psSaveFeature->name) == 0)
 			{
 				found = true;
 				break;
@@ -6611,11 +6623,11 @@ bool loadSaveFeature(char *pFileData, UDWORD filesize)
 		}
 		if (pFeature->psStats->subType == FEAT_OIL_RESOURCE)
 		{
-			scriptSetDerrickPos(pFeature->pos.x, pFeature->pos.y);
+			scriptSetDerrickPos(pFeature->position.x, pFeature->position.y);
 		}
 		//restore values
 		pFeature->id = psSaveFeature->id;
-		pFeature->rot.direction = DEG(psSaveFeature->direction);
+		pFeature->rotation.direction = DEG(psSaveFeature->direction);
 		pFeature->periodicalDamage = psSaveFeature->periodicalDamage;
 		if (psHeader->version >= VERSION_14)
 		{
@@ -6639,7 +6651,7 @@ static bool loadWzMapFeature(WzMap::Map &wzMap)
 
 	for (auto &feature : *pFeatures)
 	{
-		auto psStats = std::find_if(asFeatureStats, asFeatureStats + numFeatureStats, [&](FEATURE_STATS &stat) { return stat.id.compare(feature.name.c_str()) == 0; });
+		auto psStats = std::find_if(asFeatureStats, asFeatureStats + numFeatureStats, [&](FEATURE_STATS &stat) { return stat.textId.compare(feature.name.c_str()) == 0; });
 		if (psStats == asFeatureStats + numFeatureStats)
 		{
 			debug(LOG_ERROR, "Feature type \"%s\" unknown", feature.name.c_str());
@@ -6654,7 +6666,7 @@ static bool loadWzMapFeature(WzMap::Map &wzMap)
 		}
 		if (pFeature->psStats->subType == FEAT_OIL_RESOURCE)
 		{
-			scriptSetDerrickPos(pFeature->pos.x, pFeature->pos.y);
+			scriptSetDerrickPos(pFeature->position.x, pFeature->position.y);
 		}
 		//restore values
 		if (feature.id.has_value())
@@ -6665,8 +6677,8 @@ static bool loadWzMapFeature(WzMap::Map &wzMap)
 		{
 			pFeature->id = generateSynchronisedObjectId();
 		}
-		pFeature->rot.direction = feature.direction;
-		pFeature->player = (feature.player.has_value()) ? feature.player.value() : PLAYER_FEATURE;
+		pFeature->rotation.direction = feature.direction;
+		pFeature->owningPlayer = (feature.player.has_value()) ? feature.player.value() : PLAYER_FEATURE;
 	}
 
 	return true;
@@ -6685,7 +6697,7 @@ bool loadSaveFeature2(const char *pFileName)
 
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		FEATURE *pFeature;
+          Feature *pFeature;
 		ini.beginGroup(list[i]);
 		WzString name = ini.string("name");
 		Position pos = ini.vector3i("position");
@@ -6698,7 +6710,7 @@ bool loadSaveFeature2(const char *pFileName)
 		{
 			psStats = asFeatureStats + statInc;
 			//loop until find the same name
-			if (psStats->id.compare(name) == 0)
+			if (psStats->textId.compare(name) == 0)
 			{
 				found = true;
 				break;
@@ -6720,7 +6732,7 @@ bool loadSaveFeature2(const char *pFileName)
 		}
 		if (pFeature->psStats->subType == FEAT_OIL_RESOURCE)
 		{
-			scriptSetDerrickPos(pFeature->pos.x, pFeature->pos.y);
+			scriptSetDerrickPos(pFeature->position.x, pFeature->position.y);
 		}
 		//restore values
 		int id = ini.value("id", -1).toInt();
@@ -6732,13 +6744,13 @@ bool loadSaveFeature2(const char *pFileName)
 		{
 			pFeature->id = generateSynchronisedObjectId();
 		}
-		pFeature->rot = ini.vector3i("rotation");
-		pFeature->player = ini.value("player", PLAYER_FEATURE).toInt();
+		pFeature->rotation = ini.vector3i("rotation");
+		pFeature->owningPlayer = ini.value("player", PLAYER_FEATURE).toInt();
 
 		// common BASE_OBJECT info
 		loadSaveObject(ini, pFeature);
 
-		pFeature->body = healthValue(ini, pFeature->psStats->body);
+		pFeature->hitPoints = healthValue(ini, pFeature->psStats->body);
 
 		ini.endGroup();
 	}
@@ -6754,10 +6766,10 @@ bool writeFeatureFile(const char *pFileName)
 	WzConfig ini(WzString::fromUtf8(pFileName), WzConfig::ReadAndWrite);
 	int counter = 0;
 
-	for (FEATURE *psCurr = apsFeatureLists[0]; psCurr != nullptr; psCurr = psCurr->psNext)
+	for (Feature *psCurr = apsFeatureLists[0]; psCurr != nullptr; psCurr = psCurr->psNext)
 	{
 		ini.beginGroup("feature_" + (WzString::number(counter++).leftPadToMinimumLength(WzUniCodepoint::fromASCII('0'), 10)));  // Zero padded so that alphabetical sort works.
-		ini.setValue("name", psCurr->psStats->id);
+		ini.setValue("name", psCurr->psStats->textId);
 		writeSaveObject(ini, psCurr);
 		ini.endGroup();
 	}
@@ -6771,7 +6783,7 @@ bool loadSaveTemplate(const char *pFileName)
 	std::vector<WzString> list = ini.childGroups();
 
 	auto loadTemplate = [&]() {
-		DROID_TEMPLATE t;
+          DroidStats t;
 		if (!loadTemplateCommon(ini, t))
 		{
 			debug(LOG_ERROR, "Stored template \"%s\" contains an unknown component.", ini.string("name").toUtf8().c_str());
@@ -6797,7 +6809,7 @@ bool loadSaveTemplate(const char *pFileName)
 		ini.beginArray("templates");
 		while (ini.remainingArrayItems() > 0)
 		{
-			addTemplate(player, std::unique_ptr<DROID_TEMPLATE>(new DROID_TEMPLATE(loadTemplate())));
+			addTemplate(player, std::unique_ptr<DroidStats>(new DroidStats(loadTemplate())));
 		}
 		ini.endArray();
 		ini.endGroup();
@@ -6815,7 +6827,7 @@ bool loadSaveTemplate(const char *pFileName)
 	else
 	{
 		// Old savegame compatibility, should remove this branch sometime.
-		enumerateTemplates(selectedPlayer, [](DROID_TEMPLATE * psTempl) {
+		enumerateTemplates(selectedPlayer, [](DroidStats * psTempl) {
 			localTemplates.push_back(*psTempl);
 			return true;
 		});
@@ -6824,10 +6836,10 @@ bool loadSaveTemplate(const char *pFileName)
 	return true;
 }
 
-static nlohmann::json convGameTemplateToJSON(DROID_TEMPLATE *psCurr)
+static nlohmann::json convGameTemplateToJSON(DroidStats *psCurr)
 {
 	nlohmann::json templateObj = saveTemplateCommon(psCurr);
-	templateObj["ref"] = psCurr->ref;
+	templateObj["ref"] = psCurr->id;
 	templateObj["multiPlayerID"] = psCurr->multiPlayerID;
 	templateObj["enabled"] = psCurr->enabled;
 	templateObj["stored"] = psCurr->stored;
@@ -6842,14 +6854,15 @@ bool writeTemplateFile(const char *pFileName)
 	mRoot["version"] = 1;
 	for (int player = 0; player < MAX_PLAYERS; player++)
 	{
-		if (!apsDroidLists[player] && !apsStructLists[player])	// only write out templates of players that are still 'alive'
+		if (!allDroidLists[player] && !apsStructLists[player])	// only write out templates of players that are still 'alive'
 		{
 			continue;
 		}
 		nlohmann::json playerTemplatesObj = nlohmann::json::object();
 		setPlayerJSON(playerTemplatesObj, player);
 		nlohmann::json templates_array = nlohmann::json::array();
-		enumerateTemplates(player, [&templates_array](DROID_TEMPLATE* psTemplate) {
+		enumerateTemplates(player, [&templates_array](
+                                               DroidStats * psTemplate) {
 			templates_array.push_back(convGameTemplateToJSON(psTemplate));
 			return true;
 		});
@@ -7048,7 +7061,7 @@ static bool writeCompListFile(const char *pFileName)
 			const int state = apCompLists[player][COMP_BODY][i];
 			if (state != UNAVAILABLE)
 			{
-				ini.setValue(psStats->id, state);
+				ini.setValue(psStats->textId, state);
 			}
 		}
 		for (int i = 0; i < numWeaponStats; i++)
@@ -7057,7 +7070,7 @@ static bool writeCompListFile(const char *pFileName)
 			const int state = apCompLists[player][COMP_WEAPON][i];
 			if (state != UNAVAILABLE)
 			{
-				ini.setValue(psStats->id, state);
+				ini.setValue(psStats->textId, state);
 			}
 		}
 		for (int i = 0; i < numConstructStats; i++)
@@ -7066,7 +7079,7 @@ static bool writeCompListFile(const char *pFileName)
 			const int state = apCompLists[player][COMP_CONSTRUCT][i];
 			if (state != UNAVAILABLE)
 			{
-				ini.setValue(psStats->id, state);
+				ini.setValue(psStats->textId, state);
 			}
 		}
 		for (int i = 0; i < numECMStats; i++)
@@ -7075,7 +7088,7 @@ static bool writeCompListFile(const char *pFileName)
 			const int state = apCompLists[player][COMP_ECM][i];
 			if (state != UNAVAILABLE)
 			{
-				ini.setValue(psStats->id, state);
+				ini.setValue(psStats->textId, state);
 			}
 		}
 		for (int i = 0; i < numPropulsionStats; i++)
@@ -7084,7 +7097,7 @@ static bool writeCompListFile(const char *pFileName)
 			const int state = apCompLists[player][COMP_PROPULSION][i];
 			if (state != UNAVAILABLE)
 			{
-				ini.setValue(psStats->id, state);
+				ini.setValue(psStats->textId, state);
 			}
 		}
 		for (int i = 0; i < numSensorStats; i++)
@@ -7093,7 +7106,7 @@ static bool writeCompListFile(const char *pFileName)
 			const int state = apCompLists[player][COMP_SENSOR][i];
 			if (state != UNAVAILABLE)
 			{
-				ini.setValue(psStats->id, state);
+				ini.setValue(psStats->textId, state);
 			}
 		}
 		for (int i = 0; i < numRepairStats; i++)
@@ -7102,7 +7115,7 @@ static bool writeCompListFile(const char *pFileName)
 			const int state = apCompLists[player][COMP_REPAIRUNIT][i];
 			if (state != UNAVAILABLE)
 			{
-				ini.setValue(psStats->id, state);
+				ini.setValue(psStats->textId, state);
 			}
 		}
 		for (int i = 0; i < numBrainStats; i++)
@@ -7111,7 +7124,7 @@ static bool writeCompListFile(const char *pFileName)
 			const int state = apCompLists[player][COMP_BRAIN][i];
 			if (state != UNAVAILABLE)
 			{
-				ini.setValue(psStats->id, state);
+				ini.setValue(psStats->textId, state);
 			}
 		}
 		ini.endGroup();
@@ -7139,9 +7152,9 @@ static bool loadSaveStructTypeList(const char *pFileName)
 			                 "Bad state %d for %s", state, name.toUtf8().c_str());
 			for (statInc = 0; statInc < numStructureStats; statInc++) // loop until find the same name
 			{
-				STRUCTURE_STATS *psStats = asStructureStats + statInc;
+                          StructureStats *psStats = asStructureStats + statInc;
 
-				if (name.compare(psStats->id) == 0)
+				if (name.compare(psStats->textId) == 0)
 				{
 					apStructTypeLists[player][statInc] = state;
 					break;
@@ -7164,12 +7177,12 @@ static bool writeStructTypeListFile(const char *pFileName)
 	for (int player = 0; player < MAX_PLAYERS; player++)
 	{
 		ini.beginGroup("player_" + WzString::number(player));
-		STRUCTURE_STATS *psStats = asStructureStats;
+                StructureStats *psStats = asStructureStats;
 		for (int i = 0; i < numStructureStats; i++, psStats++)
 		{
 			if (apStructTypeLists[player][i] != UNAVAILABLE)
 			{
-				ini.setValue(psStats->id, apStructTypeLists[player][i]);
+				ini.setValue(psStats->textId, apStructTypeLists[player][i]);
 			}
 		}
 		ini.endGroup();
@@ -7194,7 +7207,7 @@ bool loadSaveResearch(const char *pFileName)
 		{
 			RESEARCH *psStats = &asResearch[statInc];
 			//loop until find the same name
-			if (psStats->id.compare(name) == 0)
+			if (psStats->textId.compare(name) == 0)
 
 			{
 				found = true;
@@ -7264,7 +7277,7 @@ static bool writeResearchFile(char *pFileName)
 		if (valid)
 		{
 			ini.beginGroup("research_" + WzString::number(i));
-			ini.setValue("name", psStats->id);
+			ini.setValue("name", psStats->textId);
 			ini.setValue("possible", possibles);
 			ini.setValue("researched", researched);
 			ini.setValue("currentPoints", points);
@@ -7454,11 +7467,11 @@ static bool writeMessageFile(const char *pFileName)
 				else
 				{
 					// message has object so store Object Id
-					const BASE_OBJECT *psObj = psMessage->psObj;
+					const GameObject *psObj = psMessage->psObj;
 					if (psObj)
 					{
 						ini.setValue("obj/id", psObj->id);
-						ini.setValue("obj/player", psObj->player);
+						ini.setValue("obj/player", psObj->owningPlayer);
 						ini.setValue("obj/type", psObj->type);
 					}
 					else
@@ -7511,8 +7524,8 @@ bool loadSaveStructLimits(const char *pFileName)
 				unsigned statInc;
 				for (statInc = 0; statInc < numStructureStats; ++statInc)
 				{
-					STRUCTURE_STATS *psStats = asStructureStats + statInc;
-					if (name.compare(psStats->id) == 0)
+                                  StructureStats *psStats = asStructureStats + statInc;
+					if (name.compare(psStats->textId) == 0)
 					{
 						asStructureStats[statInc].upgrade[player].limit = limit != 255 ? limit : LOTS_OF;
 						break;
@@ -7543,13 +7556,13 @@ bool writeStructLimitsFile(const char *pFileName)
 		ini.setValue("@Commander", getMaxCommanders(player));
 		ini.setValue("@Constructor", getMaxConstructors(player));
 
-		STRUCTURE_STATS *psStats = asStructureStats;
+                StructureStats *psStats = asStructureStats;
 		for (int i = 0; i < numStructureStats; i++, psStats++)
 		{
 			const int limit = MIN(asStructureStats[i].upgrade[player].limit, 255);
 			if (limit != 255)
 			{
-				ini.setValue(psStats->id, limit);
+				ini.setValue(psStats->textId, limit);
 			}
 		}
 		ini.endGroup();
@@ -7570,7 +7583,7 @@ bool readFiresupportDesignators(const char *pFileName)
 		uint32_t id = ini.value("Player_" + WzString::number(i) + "/id", NULL_ID).toInt();
 		if (id != NULL_ID)
 		{
-			cmdDroidSetDesignator((DROID *)getBaseObjFromId(id));
+			cmdDroidSetDesignator((Droid *)getBaseObjFromId(id));
 		}
 	}
 	return true;
@@ -7586,7 +7599,7 @@ bool writeFiresupportDesignators(const char *pFileName)
 
 	for (player = 0; player < MAX_PLAYERS; player++)
 	{
-		DROID *psDroid = cmdDroidGetDesignator(player);
+          Droid *psDroid = cmdDroidGetDesignator(player);
 		if (psDroid != nullptr)
 		{
 			ini.setValue("Player_" + WzString::number(player) + "/id", psDroid->id);

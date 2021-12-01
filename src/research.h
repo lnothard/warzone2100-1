@@ -77,7 +77,7 @@ extern std::vector<PLAYER_RESEARCH> asPlayerResList[MAX_PLAYERS];
 
 //used for Callbacks to say which topic was last researched
 extern RESEARCH				*psCBLastResearch;
-extern STRUCTURE			*psCBLastResStructure;
+extern Structure *psCBLastResStructure;
 extern SDWORD				CBResFacilityOwner;
 
 /* Default level of sensor, repair and ECM */
@@ -92,7 +92,8 @@ bool loadResearch(WzConfig &ini);
 std::vector<uint16_t> fillResearchList(UDWORD playerID, nonstd::optional<UWORD> topic, UWORD limit);
 
 /* process the results of a completed research topic */
-void researchResult(UDWORD researchIndex, UBYTE player, bool bDisplay, STRUCTURE *psResearchFacility, bool bTrigger);
+void researchResult(UDWORD researchIndex, UBYTE player, bool bDisplay,
+                    Structure *psResearchFacility, bool bTrigger);
 
 //this just inits all the research arrays
 bool ResearchShutDown();
@@ -104,7 +105,7 @@ RESEARCH *getResearch(const char *pName);
 
 /* sets the status of the topic to cancelled and stores the current research
    points accquired */
-void cancelResearch(STRUCTURE *psBuilding, QUEUE_MODE mode);
+void cancelResearch(Structure *psBuilding, QUEUE_MODE mode);
 
 /* For a given view data get the research this is related to */
 RESEARCH *getResearchForMsg(const VIEWDATA *pViewData);
@@ -123,9 +124,9 @@ bool selfRepairEnabled(UBYTE player);
 SDWORD	mapIconToRID(UDWORD iconID);
 
 /*puts research facility on hold*/
-void holdResearch(STRUCTURE *psBuilding, QUEUE_MODE mode);
+void holdResearch(Structure *psBuilding, QUEUE_MODE mode);
 /*release a research facility from hold*/
-void releaseResearch(STRUCTURE *psBuilding, QUEUE_MODE mode);
+void releaseResearch(Structure *psBuilding, QUEUE_MODE mode);
 
 void enableSelfRepair(UBYTE player);
 

@@ -81,7 +81,7 @@
 //the loop default value
 #define DEFAULT_LOOP		1
 
-static void StatGetResearchImage(BASE_STATS *psStat, Image *image, iIMDShape **Shape, BASE_STATS **ppGraphicData, bool drawTechIcon);
+static void StatGetResearchImage(StatsObject *psStat, Image *image, iIMDShape **Shape, StatsObject **ppGraphicData, bool drawTechIcon);
 
 
 static int FormOpenAudioID;	// ID of sfx to play when form opens.
@@ -380,9 +380,9 @@ IntStatusButton::IntStatusButton()
 // Widget callback to display a rendered status button, ie the progress of a manufacturing or  building task.
 void IntStatusButton::display(int xOffset, int yOffset)
 {
-	STRUCTURE           *Structure;
-	DROID               *Droid;
-	BASE_STATS          *Stats, *psResGraphic;
+  Structure *Structure;
+        Droid *Droid;
+        StatsObject *Stats, *psResGraphic;
 	UDWORD              compID;
 	bool	            bOnHold = false;
 	ImdObject object;
@@ -390,7 +390,7 @@ void IntStatusButton::display(int xOffset, int yOffset)
 
 	initDisplay();
 
-	if (psObj && isDead(psObj))
+	if (psObj && !psObj->alive())
 	{
 		// this may catch this horrible crash bug we've been having,
 		// who knows?.... Shipping tomorrow, la de da :-)
@@ -400,10 +400,10 @@ void IntStatusButton::display(int xOffset, int yOffset)
 
 	if (psObj)
 	{
-		switch (psObj->type)
+		switch (psObj->type())
 		{
 		case OBJ_DROID:						// If it's a droid...
-			Droid = (DROID *)psObj;
+			Droid = (Droid *)psObj;
 
 			if (DroidIsBuilding(Droid))
 			{
@@ -436,8 +436,8 @@ void IntStatusButton::display(int xOffset, int yOffset)
 			break;
 
 		case OBJ_STRUCTURE:					// If it's a structure...
-			Structure = (STRUCTURE *)psObj;
-			switch (Structure->pStructureType->type)
+			Structure = (Structure *)psObj;
+			switch (Structure->stats->type)
 			{
 			case REF_FACTORY:
 			case REF_CYBORG_FACTORY:
@@ -534,7 +534,7 @@ void IntObjectButton::display(int xOffset, int yOffset)
 
 	ImdObject object;
 
-	if (psObj && isDead(psObj))
+	if (psObj && !psObj->alive())
 	{
 		// this may catch this horrible crash bug we've been having,
 		// who knows?.... Shipping tomorrow, la de da :-)
@@ -544,7 +544,7 @@ void IntObjectButton::display(int xOffset, int yOffset)
 
 	if (psObj)
 	{
-		switch (psObj->type)
+		switch (psObj->type())
 		{
 		case OBJ_DROID:						// If it's a droid...
 			object = ImdObject::Droid(psObj);
@@ -570,7 +570,7 @@ IntStatsButton::IntStatsButton()
 //
 void IntStatsButton::display(int xOffset, int yOffset)
 {
-	BASE_STATS     *psResGraphic;
+  StatsObject *psResGraphic;
 	SDWORD          compID;
 
 	initDisplay();
@@ -1013,11 +1013,11 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 
 		if (IMDType == IMDTYPE_DROID)
 		{
-			Radius = getComponentDroidRadius((DROID *)Object);
+			Radius = getComponentDroidRadius((Droid *)Object);
 		}
 		else
 		{
-			Radius = getComponentDroidTemplateRadius((DROID_TEMPLATE *)Object);
+			Radius = getComponentDroidTemplateRadius((DroidStats *)Object);
 		}
 
 		model.scale = DROID_BUT_SCALE;
@@ -1027,9 +1027,9 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 
 		if (IMDType == IMDTYPE_DROID)
 		{
-			if (isTransporter((DROID *)Object))
+			if (isTransporter((Droid *)Object))
 			{
-				if (((DROID *)Object)->droidType == DROID_TRANSPORTER)
+				if (((Droid *)Object)->droidType == DROID_TRANSPORTER)
 				{
 					model.scale = DROID_BUT_SCALE / 2;
 				}
@@ -1041,9 +1041,9 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		}
 		else//(IMDType == IMDTYPE_DROIDTEMPLATE)
 		{
-			if (isTransporter((DROID_TEMPLATE *)Object))
+			if (isTransporter((DroidStats *)Object))
 			{
-				if (((DROID_TEMPLATE *)Object)->droidType == DROID_TRANSPORTER)
+				if (((DroidStats *)Object)->droidType == DROID_TRANSPORTER)
 				{
 					model.scale = DROID_BUT_SCALE / 2;
 				}
@@ -1057,11 +1057,11 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		//lefthand display droid buttons
 		if (IMDType == IMDTYPE_DROID)
 		{
-			displayComponentButtonObject((DROID *)Object, &model.rotation, &model.position, model.scale);
+			displayComponentButtonObject((Droid *)Object, &model.rotation, &model.position, model.scale);
 		}
 		else
 		{
-			displayComponentButtonTemplate((DROID_TEMPLATE *)Object, &model.rotation, &model.position, model.scale);
+			displayComponentButtonTemplate((DroidStats *)Object, &model.rotation, &model.position, model.scale);
 		}
 	}
 	else
@@ -1102,22 +1102,22 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		// Decide which button grid size to use.
 		if (IMDType == IMDTYPE_COMPONENT)
 		{
-			Radius = getComponentRadius((BASE_STATS *)Object);
+			Radius = getComponentRadius((StatsObject *)Object);
 			model.scale = rescaleButtonObject(Radius, COMP_BUT_SCALE, COMPONENT_RADIUS);
 			// NOTE: The Super transport is huge, and is considered a component type, so refit it to inside the button.
-			BASE_STATS *psStats = (BASE_STATS *)Object;
-			if (psStats->id.compare("SuperTransportBody") == 0)
+                        StatsObject *psStats = (StatsObject *)Object;
+			if (psStats->textId.compare("SuperTransportBody") == 0)
 			{
 				model.scale = static_cast<int>(model.scale * .4f);
 			}
-			else if (psStats->id.compare("TransporterBody") == 0)
+			else if (psStats->textId.compare("TransporterBody") == 0)
 			{
 				model.scale = static_cast<int>(model.scale * .6f);
 			}
 		}
 		else if (IMDType == IMDTYPE_RESEARCH)
 		{
-			Radius = getResearchRadius((BASE_STATS *)Object);
+			Radius = getResearchRadius((StatsObject *)Object);
 			if (Radius <= 100)
 			{
 				model.scale = rescaleButtonObject(Radius, COMP_BUT_SCALE, COMPONENT_RADIUS);
@@ -1137,7 +1137,7 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		}
 		else if (IMDType == IMDTYPE_STRUCTURE)
 		{
-			basePlateSize = getStructureSizeMax((STRUCTURE *)Object);
+			basePlateSize = getStructureSizeMax((Structure *)Object);
 			if (basePlateSize == 1)
 			{
 				model.scale = SMALL_STRUCT_SCALE;
@@ -1153,7 +1153,7 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		}
 		else if (IMDType == IMDTYPE_STRUCTURESTAT)
 		{
-			basePlateSize = getStructureStatSizeMax((STRUCTURE_STATS *)Object);
+			basePlateSize = getStructureStatSizeMax((StructureStats *)Object);
 			if (basePlateSize == 1)
 			{
 				model.scale = SMALL_STRUCT_SCALE;
@@ -1220,19 +1220,19 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		/* all non droid buttons */
 		if (IMDType == IMDTYPE_COMPONENT)
 		{
-			displayComponentButton((BASE_STATS *)Object, &model.rotation, &model.position, model.scale);
+			displayComponentButton((StatsObject *)Object, &model.rotation, &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_RESEARCH)
 		{
-			displayResearchButton((BASE_STATS *)Object, &model.rotation, &model.position, model.scale);
+			displayResearchButton((StatsObject *)Object, &model.rotation, &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_STRUCTURE)
 		{
-			displayStructureButton((STRUCTURE *)Object, &model.rotation, &model.position, model.scale);
+			displayStructureButton((Structure *)Object, &model.rotation, &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_STRUCTURESTAT)
 		{
-			displayStructureStatButton((STRUCTURE_STATS *)Object, &model.rotation, &model.position, model.scale);
+			displayStructureStatButton((StructureStats *)Object, &model.rotation, &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_FEATURE)
 		{
@@ -1280,9 +1280,9 @@ void IntFancyButton::displayBlank(int xOffset, int yOffset)
 
 // Returns true if the droid is currently building something.
 //
-bool DroidIsBuilding(DROID *Droid)
+bool DroidIsBuilding(Droid *Droid)
 {
-	STRUCTURE_STATS	*Stats;
+  StructureStats *Stats;
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, Droid);
 
 	if (!(droidType(Droid) == DROID_CONSTRUCT ||
@@ -1308,9 +1308,9 @@ bool DroidIsBuilding(DROID *Droid)
 
 // Returns true if the droid has been ordered build something ( but hasn't started yet )
 //
-bool DroidGoingToBuild(DROID *Droid)
+bool DroidGoingToBuild(Droid *Droid)
 {
-	STRUCTURE_STATS	*Stats;
+  StructureStats *Stats;
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, Droid);
 
 	if (!(droidType(Droid) == DROID_CONSTRUCT ||
@@ -1330,33 +1330,33 @@ bool DroidGoingToBuild(DROID *Droid)
 
 // Get the structure for a structure which a droid is currently building.
 //
-STRUCTURE *DroidGetBuildStructure(DROID *Droid)
+Structure *DroidGetBuildStructure(Droid *Droid)
 {
-	BASE_OBJECT *Structure = nullptr;
+  GameObject *Structure = nullptr;
 
 	if (orderStateObj(Droid, DORDER_BUILD))
 	{
 		Structure = orderStateObj(Droid, DORDER_HELPBUILD);
 	}
 
-	return (STRUCTURE *)Structure;
+	return (Structure *)Structure;
 }
 
 // Get the first factory assigned to a command droid
-STRUCTURE *droidGetCommandFactory(DROID *psDroid)
+Structure *droidGetCommandFactory(Droid *psDroid)
 {
 	SDWORD		inc;
-	STRUCTURE	*psCurr;
+        Structure *psCurr;
 
 	for (inc = 0; inc < MAX_FACTORY; inc++)
 	{
 		if (psDroid->secondaryOrder & (1 << (inc + DSS_ASSPROD_SHIFT)))
 		{
 			// found an assigned factory - look for it in the lists
-			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+			for (psCurr = apsStructLists[psDroid->owningPlayer]; psCurr; psCurr = psCurr->psNext)
 			{
-				if ((psCurr->pStructureType->type == REF_FACTORY) &&
-				    (((FACTORY *)psCurr->pFunctionality)->
+				if ((psCurr->stats->type == REF_FACTORY) &&
+				    (((Factory *)psCurr->pFunctionality)->
 				     psAssemblyPoint->factoryInc == inc))
 				{
 					return psCurr;
@@ -1366,10 +1366,10 @@ STRUCTURE *droidGetCommandFactory(DROID *psDroid)
 		if (psDroid->secondaryOrder & (1 << (inc + DSS_ASSPROD_CYBORG_SHIFT)))
 		{
 			// found an assigned factory - look for it in the lists
-			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+			for (psCurr = apsStructLists[psDroid->owningPlayer]; psCurr; psCurr = psCurr->psNext)
 			{
-				if ((psCurr->pStructureType->type == REF_CYBORG_FACTORY) &&
-				    (((FACTORY *)psCurr->pFunctionality)->
+				if ((psCurr->stats->type == REF_CYBORG_FACTORY) &&
+				    (((Factory *)psCurr->pFunctionality)->
 				     psAssemblyPoint->factoryInc == inc))
 				{
 					return psCurr;
@@ -1379,10 +1379,10 @@ STRUCTURE *droidGetCommandFactory(DROID *psDroid)
 		if (psDroid->secondaryOrder & (1 << (inc + DSS_ASSPROD_VTOL_SHIFT)))
 		{
 			// found an assigned factory - look for it in the lists
-			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+			for (psCurr = apsStructLists[psDroid->owningPlayer]; psCurr; psCurr = psCurr->psNext)
 			{
-				if ((psCurr->pStructureType->type == REF_VTOL_FACTORY) &&
-				    (((FACTORY *)psCurr->pFunctionality)->
+				if ((psCurr->stats->type == REF_VTOL_FACTORY) &&
+				    (((Factory *)psCurr->pFunctionality)->
 				     psAssemblyPoint->factoryInc == inc))
 				{
 					return psCurr;
@@ -1396,9 +1396,9 @@ STRUCTURE *droidGetCommandFactory(DROID *psDroid)
 
 // Get the stats for a structure which a droid is going to ( but not yet ) building.
 //
-BASE_STATS *DroidGetBuildStats(DROID *Droid)
+StatsObject *DroidGetBuildStats(Droid *Droid)
 {
-	STRUCTURE_STATS *Stats;
+  StructureStats *Stats;
 
 	if (orderStateStatsLoc(Droid, DORDER_BUILD, &Stats))  	// Moving to build location?
 	{
@@ -1408,9 +1408,9 @@ BASE_STATS *DroidGetBuildStats(DROID *Droid)
 	return nullptr;
 }
 
-iIMDShape *DroidGetIMD(DROID *Droid)
+iIMDShape *DroidGetIMD(Droid *Droid)
 {
-	return Droid->sDisplay.imd;
+	return Droid->displayData.imd;
 }
 
 template<typename Functionality>
@@ -1423,10 +1423,10 @@ static inline bool _structureIsManufacturingPending(Functionality const &functio
 	return functionality.psSubject != nullptr;
 }
 
-bool StructureIsManufacturingPending(STRUCTURE *structure)
+bool StructureIsManufacturingPending(Structure *structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, structure);
-	switch (structure->pStructureType->type)
+	switch (structure->stats->type)
 	{
 	case REF_FACTORY:
 	case REF_CYBORG_FACTORY:
@@ -1437,16 +1437,16 @@ bool StructureIsManufacturingPending(STRUCTURE *structure)
 	}
 }
 
-FACTORY *StructureGetFactory(STRUCTURE *Structure)
+Factory *StructureGetFactory(Structure *Structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Structure);
 	return &Structure->pFunctionality->factory;
 }
 
-bool structureIsResearchingPending(STRUCTURE *structure)
+bool structureIsResearchingPending(Structure *structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, structure);
-	return structure->pStructureType->type == REF_RESEARCH && _structureIsManufacturingPending(structure->pFunctionality->researchFacility);
+	return structure->stats->type == REF_RESEARCH && _structureIsManufacturingPending(structure->pFunctionality->researchFacility);
 }
 
 template<typename Functionality>
@@ -1459,10 +1459,10 @@ static inline bool structureIsOnHoldPending(Functionality const &functionality)
 	return functionality.timeStartHold != 0;
 }
 
-bool StructureIsOnHoldPending(STRUCTURE *structure)
+bool StructureIsOnHoldPending(Structure *structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, structure);
-	switch (structure->pStructureType->type)
+	switch (structure->stats->type)
 	{
 	case REF_FACTORY:
 	case REF_CYBORG_FACTORY:
@@ -1476,49 +1476,48 @@ bool StructureIsOnHoldPending(STRUCTURE *structure)
 	}
 }
 
-RESEARCH_FACILITY *StructureGetResearch(STRUCTURE *Structure)
+RESEARCH_FACILITY *StructureGetResearch(Structure *Structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Structure);
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Structure->pFunctionality);
 	return &Structure->pFunctionality->researchFacility;
 }
 
-
-DROID_TEMPLATE *FactoryGetTemplate(FACTORY *Factory)
+DroidStats *FactoryGetTemplate(Factory *Factory)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Factory);
 	if (Factory->psSubjectPending != nullptr)
 	{
-		return (DROID_TEMPLATE *)Factory->psSubjectPending;
+		return (DroidStats *)Factory->psSubjectPending;
 	}
 
-	return (DROID_TEMPLATE *)Factory->psSubject;
+	return (DroidStats *)Factory->psSubject;
 }
 
-bool StatIsStructure(BASE_STATS const *Stat)
+bool StatIsStructure(StatsObject const *Stat)
 {
 	return Stat->hasType(STAT_STRUCTURE);
 }
 
-bool StatIsFeature(BASE_STATS const *Stat)
+bool StatIsFeature(StatsObject const *Stat)
 {
 	return Stat->hasType(STAT_FEATURE);
 }
 
-iIMDShape *StatGetStructureIMD(BASE_STATS *Stat, UDWORD Player)
+iIMDShape *StatGetStructureIMD(StatsObject *Stat, UDWORD Player)
 {
 	(void)Player;
-	return ((STRUCTURE_STATS *)Stat)->pIMD[0];
+	return ((StructureStats *)Stat)->pIMD[0];
 }
 
-bool StatIsTemplate(BASE_STATS *Stat)
+bool StatIsTemplate(StatsObject *Stat)
 {
 	return Stat->hasType(STAT_TEMPLATE);
 }
 
-COMPONENT_TYPE StatIsComponent(BASE_STATS *Stat)
+COMPONENT_TYPE StatIsComponent(StatsObject *Stat)
 {
-	switch (StatType(Stat->ref & STAT_MASK))
+	switch (StatType(Stat->id & STAT_MASK))
 	{
 		case STAT_BODY: return COMP_BODY;
 		case STAT_BRAIN: return COMP_BRAIN;
@@ -1532,7 +1531,7 @@ COMPONENT_TYPE StatIsComponent(BASE_STATS *Stat)
 	}
 }
 
-bool StatGetComponentIMD(BASE_STATS *Stat, SDWORD compID, iIMDShape **CompIMD, iIMDShape **MountIMD)
+bool StatGetComponentIMD(StatsObject *Stat, SDWORD compID, iIMDShape **CompIMD, iIMDShape **MountIMD)
 {
 	WEAPON_STATS		*psWStat;
 
@@ -1588,12 +1587,12 @@ bool StatGetComponentIMD(BASE_STATS *Stat, SDWORD compID, iIMDShape **CompIMD, i
 }
 
 
-bool StatIsResearch(BASE_STATS *Stat)
+bool StatIsResearch(StatsObject *Stat)
 {
 	return Stat->hasType(STAT_RESEARCH);
 }
 
-static void StatGetResearchImage(BASE_STATS *psStat, Image *image, iIMDShape **Shape, BASE_STATS **ppGraphicData, bool drawTechIcon)
+static void StatGetResearchImage(StatsObject *psStat, Image *image, iIMDShape **Shape, StatsObject **ppGraphicData, bool drawTechIcon)
 {
 	if (drawTechIcon && ((RESEARCH *)psStat)->iconID != NO_RESEARCH_ICON)
 	{
@@ -1733,13 +1732,13 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 		}
 		else
 		{
-			const FEATURE *psFeature = castFeature(psProxDisp->psMessage->psObj);
+			const Feature *psFeature = castFeature(psProxDisp->psMessage->psObj);
 
 			ASSERT_OR_RETURN(, psFeature && psFeature->psStats, "Bad feature message");
 			if (psFeature && psFeature->psStats && psFeature->psStats->subType == FEAT_OIL_RESOURCE)
 			{
 				images = imagesResource;
-				if (fireOnLocation(psFeature->pos.x, psFeature->pos.y))
+				if (fireOnLocation(psFeature->position.x, psFeature->position.y))
 				{
 					images = imagesBurningResource;
 					animationLength = ARRAY_SIZE(imagesBurningResource) - 1;  // Longer animation for burning oil wells.
@@ -1777,8 +1776,8 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 		}
 		else if (psProxDisp->type == POS_PROXOBJ)
 		{
-			x = static_cast<int>((psProxDisp->psMessage->psObj->pos.x / TILE_UNITS - scrollMinX) * pixSizeH);
-			y = static_cast<int>((psProxDisp->psMessage->psObj->pos.y / TILE_UNITS - scrollMinY) * pixSizeV);
+			x = static_cast<int>((psProxDisp->psMessage->psObj->position.x / TILE_UNITS - scrollMinX) * pixSizeH);
+			y = static_cast<int>((psProxDisp->psMessage->psObj->position.y / TILE_UNITS - scrollMinY) * pixSizeV);
 		}
 		else
 		{
@@ -1839,8 +1838,8 @@ void intDisplayProximityBlips(WIDGET *psWidget, WZ_DECL_UNUSED UDWORD xOffset, W
 	}
 	else if (psProxDisp->type == POS_PROXOBJ)
 	{
-		x = psProxDisp->psMessage->psObj->pos.x;
-		y = psProxDisp->psMessage->psObj->pos.y;
+		x = psProxDisp->psMessage->psObj->position.x;
+		y = psProxDisp->psMessage->psObj->position.y;
 	}
 
 	//if not within view ignore message

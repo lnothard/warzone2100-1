@@ -41,30 +41,30 @@ void cmdDroidShutDown();
 void cmdDroidUpdate();
 
 /** \brief Adds a droid to a command group.*/
-bool cmdDroidAddDroid(DROID *psCommander, DROID *psDroid);
+bool cmdDroidAddDroid(Droid *psCommander, Droid *psDroid);
 
 /** \brief Returns the current target designator for a player.*/
-DROID *cmdDroidGetDesignator(UDWORD player);
+Droid *cmdDroidGetDesignator(UDWORD player);
 
 /** \brief Sets the current target designator for a player.*/
-void cmdDroidSetDesignator(DROID *psDroid);
+void cmdDroidSetDesignator(Droid *psDroid);
 
 /** \brief Clears the current target designator for a player.*/
 void cmdDroidClearDesignator(UDWORD player);
 
 /** \brief Gets the index of the command droid.*/
-SDWORD cmdDroidGetIndex(DROID *psCommander);
+SDWORD cmdDroidGetIndex(Droid *psCommander);
 
 /** \brief Gets the maximum group size for a command droid.*/
-unsigned int cmdDroidMaxGroup(const DROID *psCommander);
+unsigned int cmdDroidMaxGroup(const Droid *psCommander);
 
 /** \brief Updates the experience of a command droid if psShooter is in a command group.*/
-void cmdDroidUpdateExperience(DROID *psShooter, uint32_t experienceInc);
+void cmdDroidUpdateExperience(Droid *psShooter, uint32_t experienceInc);
 
 /** \brief Gets the level of the droid group's commander, if any.*/
-unsigned int cmdGetCommanderLevel(const DROID *psDroid);
+unsigned int cmdGetCommanderLevel(const Droid *psDroid);
 
 /** \brief Returns if the droid has commander.*/
-bool hasCommander(const DROID *psDroid);
+bool hasCommander(const Droid *psDroid);
 
 #endif // __INCLUDED_SRC_CMDDROID_H__

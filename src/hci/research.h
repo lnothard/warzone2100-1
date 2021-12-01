@@ -23,13 +23,13 @@ public:
 		return facilities.size();
 	}
 
-	STRUCTURE *getObjectAt(size_t index) const override
+        Structure *getObjectAt(size_t index) const override
 	{
 		ASSERT_OR_RETURN(nullptr, index < facilities.size(), "Invalid object index (%zu); max: (%zu)", index, facilities.size());
 		return facilities[index];
 	}
 
-	bool findObject(std::function<bool (BASE_OBJECT *)> iteration) const override
+	bool findObject(std::function<bool (GameObject *)> iteration) const override
 	{
 		return BaseObjectsController::findObject(facilities, iteration);
 	}
@@ -41,22 +41,22 @@ public:
 	void clearData() override;
 	std::shared_ptr<StatsForm> makeStatsForm() override;
 	void startResearch(RESEARCH &research);
-	void cancelResearch(STRUCTURE *facility);
-	void requestResearchCancellation(STRUCTURE *facility);
+	void cancelResearch(Structure *facility);
+	void requestResearchCancellation(Structure *facility);
 
-	STRUCTURE *getHighlightedObject() const override
+        Structure *getHighlightedObject() const override
 	{
 		return highlightedFacility;
 	}
 
-	void setHighlightedObject(BASE_OBJECT *object) override;
+	void setHighlightedObject(GameObject *object) override;
 
 private:
 	void updateFacilitiesList();
 	void updateResearchOptionsList();
 	std::vector<RESEARCH *> stats;
-	std::vector<STRUCTURE *> facilities;
-	static STRUCTURE *highlightedFacility;
+	std::vector<Structure *> facilities;
+	static Structure *highlightedFacility;
 };
 
 #endif // __INCLUDED_SRC_HCI_RESEARCH_INTERFACE_H__

@@ -55,11 +55,11 @@ Rotation interpolateRot(Rotation v1, Rotation v2, uint32_t t1, uint32_t t2, uint
 static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, uint32_t t)
 {
 	// Cyp says this should never happen, #3037 and #3238 say it does though.
-	ASSERT_OR_RETURN(st1, st1.time != st2.time, "Spacetime overlap!");
-	return Spacetime(interpolatePos(st1.pos, st2.pos, st1.time, st2.time, t), interpolateRot(st1.rot, st2.rot, st1.time, st2.time, t), t);
+	ASSERT_OR_RETURN(st1, st1.m_time != st2.m_time, "Spacetime overlap!");
+	return Spacetime(interpolatePos(st1.m_position, st2.m_position, st1.m_time, st2.m_time, t), interpolateRot(st1.m_rotation, st2.m_rotation, st1.m_time, st2.m_time, t), t);
 }
 
-Spacetime interpolateObjectSpacetime(const SIMPLE_OBJECT *obj, uint32_t t)
+Spacetime interpolateObjectSpacetime(const GameObject *obj, uint32_t t)
 {
 	switch (obj->type)
 	{
@@ -72,47 +72,48 @@ Spacetime interpolateObjectSpacetime(const SIMPLE_OBJECT *obj, uint32_t t)
 	}
 }
 
-SIMPLE_OBJECT::SIMPLE_OBJECT(OBJECT_TYPE type, uint32_t id, unsigned player)
+GameObject::GameObject(OBJECT_TYPE type, uint32_t id, unsigned player)
 	: type(type)
 	, id(id)
-	, pos(0, 0, 0)
-	, rot(0, 0, 0)
-	, player(player)
-	, born(gameTime)
-	, died(0)
+	, position(0, 0, 0)
+	, rotation(0, 0, 0)
+	,
+      owningPlayer(player)
+	, creationTime(gameTime)
+	, deathTime(0)
 	, time(0)
 {}
 
-SIMPLE_OBJECT::~SIMPLE_OBJECT()
+GameObject::~GameObject()
 {
 	// Make sure to get rid of some final references in the sound code to this object first
 	audio_RemoveObj(this);
 
 	const_cast<OBJECT_TYPE volatile &>(type) = (OBJECT_TYPE)(type + 1000000000);  // Hopefully this will trigger an assert              if someone uses the freed object.
-	const_cast<UBYTE volatile &>(player) += 100;                                  // Hopefully this will trigger an assert and/or crash if someone uses the freed object.
+	const_cast<UBYTE volatile &>(owningPlayer) += 100;                                  // Hopefully this will trigger an assert and/or crash if someone uses the freed object.
 }
 
-BASE_OBJECT::BASE_OBJECT(OBJECT_TYPE type, uint32_t id, unsigned player)
-	: SIMPLE_OBJECT(type, id, player)
+GameObject::GameObject(OBJECT_TYPE type, uint32_t id, unsigned player)
+	: GameObject(type, id, player)
 	, selected(false)
 	, lastEmission(0)
 	, lastHitWeapon(WSC_NUM_WEAPON_SUBCLASSES)  // No such weapon.
 	, timeLastHit(UDWORD_MAX)
-	, body(0)
+	, hitPoints(0)
 	, periodicalDamageStart(0)
 	, periodicalDamage(0)
 	, timeAnimationStarted(0)
 	, animationEvent(ANIM_EVENT_NONE)
 {
 	memset(visible, 0, sizeof(visible));
-	sDisplay.imd = nullptr;
-	sDisplay.frameNumber = 0;
-	sDisplay.screenX = 0;
-	sDisplay.screenY = 0;
-	sDisplay.screenR = 0;
+        displayData.imd = nullptr;
+        displayData.frameNumber = 0;
+        displayData.screenX = 0;
+        displayData.screenY = 0;
+        displayData.screenR = 0;
 }
 
-BASE_OBJECT::~BASE_OBJECT()
+GameObject::~GameObject()
 {
 	visRemoveVisibility(this);
 
@@ -124,7 +125,7 @@ BASE_OBJECT::~BASE_OBJECT()
 
 // Query visibility for display purposes (i.e. for `selectedPlayer`)
 // *DO NOT USE TO QUERY VISIBILITY FOR CALCULATIONS INVOLVING GAME / SIMULATION STATE*
-UBYTE BASE_OBJECT::visibleForLocalDisplay() const
+UBYTE GameObject::visibleForLocalDisplay() const
 {
 	if (godMode)
 	{
@@ -138,7 +139,7 @@ UBYTE BASE_OBJECT::visibleForLocalDisplay() const
 	return visible[selectedPlayer];
 }
 
-void checkObject(const SIMPLE_OBJECT *psObject, const char *const location_description, const char *function, const int recurse)
+void checkObject(const GameObject *psObject, const char *const location_description, const char *function, const int recurse)
 {
 	if (recurse < 0)
 	{
@@ -150,15 +151,15 @@ void checkObject(const SIMPLE_OBJECT *psObject, const char *const location_descr
 	switch (psObject->type)
 	{
 	case OBJ_DROID:
-		checkDroid((const DROID *)psObject, location_description, function, recurse - 1);
+		checkDroid((const Droid *)psObject, location_description, function, recurse - 1);
 		break;
 
 	case OBJ_STRUCTURE:
-		checkStructure((const STRUCTURE *)psObject, location_description, function, recurse - 1);
+		checkStructure((const Structure *)psObject, location_description, function, recurse - 1);
 		break;
 
 	case OBJ_PROJECTILE:
-		checkProjectile((const PROJECTILE *)psObject, location_description, function, recurse - 1);
+		checkProjectile((const Projectile *)psObject, location_description, function, recurse - 1);
 		break;
 
 	case OBJ_FEATURE:
@@ -170,25 +171,25 @@ void checkObject(const SIMPLE_OBJECT *psObject, const char *const location_descr
 	}
 }
 
-void _syncDebugObject(const char *function, SIMPLE_OBJECT const *psObject, char ch)
+void _syncDebugObject(const char *function, GameObject const *psObject, char ch)
 {
 	switch (psObject->type)
 	{
-	case OBJ_DROID:      _syncDebugDroid(function, (const DROID *)     psObject, ch); break;
-	case OBJ_STRUCTURE:  _syncDebugStructure(function, (const STRUCTURE *) psObject, ch); break;
-	case OBJ_FEATURE:    _syncDebugFeature(function, (const FEATURE *)   psObject, ch); break;
-	case OBJ_PROJECTILE: _syncDebugProjectile(function, (const PROJECTILE *)psObject, ch); break;
-	default:             _syncDebug(function, "%c unidentified_object%d = p%d;objectType%d", ch, psObject->id, psObject->player, psObject->type);
+	case OBJ_DROID:      _syncDebugDroid(function, (const Droid *)     psObject, ch); break;
+	case OBJ_STRUCTURE:  _syncDebugStructure(function, (const Structure *) psObject, ch); break;
+	case OBJ_FEATURE:    _syncDebugFeature(function, (const Feature *)   psObject, ch); break;
+	case OBJ_PROJECTILE: _syncDebugProjectile(function, (const Projectile *)psObject, ch); break;
+	default:             _syncDebug(function, "%c unidentified_object%d = p%d;objectType%d", ch, psObject->id, psObject->owningPlayer, psObject->type);
 		ASSERT_HELPER(!"invalid object type", "_syncDebugObject", function, "syncDebug: Invalid object type (type num %u)", (unsigned int)psObject->type);
 		break;
 	}
 }
 
-Vector2i getStatsSize(BASE_STATS const *pType, uint16_t direction)
+Vector2i getStatsSize(StatsObject const *pType, uint16_t direction)
 {
 	if (StatIsStructure(pType))
 	{
-		return static_cast<STRUCTURE_STATS const *>(pType)->size(direction);
+		return static_cast<StructureStats const *>(pType)->size(direction);
 	}
 	else if (StatIsFeature(pType))
 	{
@@ -197,10 +198,10 @@ Vector2i getStatsSize(BASE_STATS const *pType, uint16_t direction)
 	return Vector2i(1, 1);
 }
 
-StructureBounds getStructureBounds(BASE_OBJECT const *object)
+StructureBounds getStructureBounds(GameObject const *object)
 {
-	STRUCTURE const *psStructure = castStructure(object);
-	FEATURE const *psFeature = castFeature(object);
+  Structure const *psStructure = castStructure(object);
+        Feature const *psFeature = castFeature(object);
 
 	if (psStructure != nullptr)
 	{
@@ -214,11 +215,11 @@ StructureBounds getStructureBounds(BASE_OBJECT const *object)
 	return StructureBounds(Vector2i(32767, 32767), Vector2i(-65535, -65535));  // Default to an invalid area.
 }
 
-StructureBounds getStructureBounds(BASE_STATS const *stats, Vector2i pos, uint16_t direction)
+StructureBounds getStructureBounds(StatsObject const *stats, Vector2i pos, uint16_t direction)
 {
 	if (StatIsStructure(stats))
 	{
-		return getStructureBounds(static_cast<STRUCTURE_STATS const *>(stats), pos, direction);
+		return getStructureBounds(static_cast<StructureStats const *>(stats), pos, direction);
 	}
 	else if (StatIsFeature(stats))
 	{

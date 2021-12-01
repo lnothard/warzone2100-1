@@ -31,12 +31,12 @@
 
 class QString;
 class WzString;
-struct BASE_OBJECT;
-struct DROID;
-struct DROID_TEMPLATE;
-struct FEATURE;
+class GameObject;
+class Droid;
+struct DroidStats;
+struct Feature;
 struct RESEARCH;
-struct STRUCTURE;
+class Structure;
 
 enum SCRIPT_TRIGGER_TYPE
 {
@@ -112,7 +112,7 @@ bool loadScriptStates(const char *filename);
 bool saveScriptStates(const char *filename);
 
 /// Tell script system that an object has been removed.
-void scriptRemoveObject(const BASE_OBJECT *psObj);
+void scriptRemoveObject(const GameObject *psObj);
 
 /// Open debug GUI
 void jsShowDebug();
@@ -124,32 +124,33 @@ void jsAutogameSpecific(const WzString &name, int player);
 // Event functions
 
 /// For generic, parameter-less triggers, using an enum to avoid declaring a ton of parameter-less functions
-bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, BASE_OBJECT *psObj = nullptr);
+bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, GameObject *psObj = nullptr);
 
 // For each trigger with function parameters, a function to trigger it here
-bool triggerEventDroidBuilt(DROID *psDroid, STRUCTURE *psFactory);
-bool triggerEventAttacked(BASE_OBJECT *psVictim, BASE_OBJECT *psAttacker, int lastHit);
-bool triggerEventResearched(RESEARCH *psResearch, STRUCTURE *psStruct, int player);
-bool triggerEventStructBuilt(STRUCTURE *psStruct, DROID *psDroid);
-bool triggerEventStructDemolish(STRUCTURE *psStruct, DROID *psDroid);
-bool triggerEventDroidIdle(DROID *psDroid);
-bool triggerEventDestroyed(BASE_OBJECT *psVictim);
-bool triggerEventStructureReady(STRUCTURE *psStruct);
-bool triggerEventStructureUpgradeStarted(STRUCTURE *psStruct);
-bool triggerEventSeen(BASE_OBJECT *psViewer, BASE_OBJECT *psSeen);
-bool triggerEventObjectTransfer(BASE_OBJECT *psObj, int from);
+bool triggerEventDroidBuilt(Droid *psDroid, Structure *psFactory);
+bool triggerEventAttacked(GameObject *psVictim, GameObject *psAttacker, int lastHit);
+bool triggerEventResearched(RESEARCH *psResearch, Structure *psStruct, int player);
+bool triggerEventStructBuilt(Structure *psStruct, Droid *psDroid);
+bool triggerEventStructDemolish(Structure *psStruct, Droid *psDroid);
+bool triggerEventDroidIdle(Droid *psDroid);
+bool triggerEventDestroyed(GameObject *psVictim);
+bool triggerEventStructureReady(Structure *psStruct);
+bool triggerEventStructureUpgradeStarted(Structure *psStruct);
+bool triggerEventSeen(GameObject *psViewer, GameObject *psSeen);
+bool triggerEventObjectTransfer(GameObject *psObj, int from);
 bool triggerEventChat(int from, int to, const char *message);
 bool triggerEventBeacon(int from, int to, const char *message, int x, int y);
 bool triggerEventBeaconRemoved(int from, int to);
-bool triggerEventPickup(FEATURE *psFeat, DROID *psDroid);
+bool triggerEventPickup(Feature *psFeat, Droid *psDroid);
 bool triggerEventCheatMode(bool entered);
-bool triggerEventGroupLoss(const BASE_OBJECT *psObj, int group, int size, wzapi::scripting_instance *instance);
-bool triggerEventDroidMoved(DROID *psDroid, int oldx, int oldy);
-bool triggerEventArea(const std::string& label, DROID *psDroid);
+bool triggerEventGroupLoss(const GameObject *psObj, int group, int size, wzapi::scripting_instance *instance);
+bool triggerEventDroidMoved(Droid *psDroid, int oldx, int oldy);
+bool triggerEventArea(const std::string& label, Droid *psDroid);
 bool triggerEventSelected();
 bool triggerEventPlayerLeft(int player);
-bool triggerEventDesignCreated(DROID_TEMPLATE *psTemplate);
-bool triggerEventSyncRequest(int from, int req_id, int x, int y, BASE_OBJECT *psObj, BASE_OBJECT *psObj2);
+bool triggerEventDesignCreated(DroidStats *psTemplate);
+bool triggerEventSyncRequest(int from, int req_id, int x, int y,
+                             GameObject *psObj, GameObject *psObj2);
 bool triggerEventKeyPressed(int meta, int key);
 bool triggerEventAllianceOffer(uint8_t from, uint8_t to);
 bool triggerEventAllianceAccepted(uint8_t from, uint8_t to);
@@ -158,7 +159,7 @@ bool triggerEventAllianceBroken(uint8_t from, uint8_t to);
 // ----------------------------------------------
 // Debug functions
 
-void jsDebugSelected(const BASE_OBJECT *psObj);
+void jsDebugSelected(const GameObject *psObj);
 void jsDebugMessageUpdate();
 
 //
@@ -196,7 +197,7 @@ public:
 	static generic_script_object fromArea(int x, int y, int x2, int y2);
 	static generic_script_object fromPosition(int x, int y);
 	static generic_script_object fromGroup(int groupId);
-	static generic_script_object fromObject(const BASE_OBJECT *psObj);
+	static generic_script_object fromObject(const GameObject *psObj);
 public:
 	inline bool isNull() const { return type < 0; }
 	inline bool isRadius() const { return type == SCRIPT_RADIUS; }
@@ -210,7 +211,7 @@ public:
 	scr_area getArea() const; // if type == SCRIPT_AREA, returns the area
 	scr_position getPosition() const; // if type == SCRIPT_POSITION, returns the position
 	int getGroupId() const; // if type == SCRIPT_GROUP, returns the groupId
-	BASE_OBJECT *getObject() const; // if type == OBJ_DROID, OBJ_FEATURE, OBJ_STRUCTURE, returns the game object
+        GameObject *getObject() const; // if type == OBJ_DROID, OBJ_FEATURE, OBJ_STRUCTURE, returns the game object
 public:
 	LABEL toNewLabel() const;
 };
@@ -227,10 +228,10 @@ public:
 	struct GROUPMAP
 	{
 		typedef int groupID;
-		typedef std::unordered_map<const BASE_OBJECT *, groupID> ObjectToGroupMap;
+		typedef std::unordered_map<const GameObject *, groupID> ObjectToGroupMap;
 	private:
 		ObjectToGroupMap m_map;
-		typedef std::unordered_set<const BASE_OBJECT *> GroupSet;
+		typedef std::unordered_set<const GameObject *> GroupSet;
 		std::unordered_map<groupID, GroupSet> m_groups;
 		int lastNewGroupId = 0;
 	protected:
@@ -239,11 +240,11 @@ public:
 		void saveLoadSetLastNewGroupId(int value);
 	public:
 		groupID newGroupID();
-		void insertObjectIntoGroup(const BASE_OBJECT *psObj, groupID groupId);
+		void insertObjectIntoGroup(const GameObject *psObj, groupID groupId);
 		inline const ObjectToGroupMap& map() const { return m_map; }
 		size_t groupSize(groupID groupId) const;
-		optional<groupID> removeObjectFromGroup(const BASE_OBJECT *psObj);
-		std::vector<const BASE_OBJECT *> getGroupObjects(groupID groupId) const;
+		optional<groupID> removeObjectFromGroup(const GameObject *psObj);
+		std::vector<const GameObject *> getGroupObjects(groupID groupId) const;
 	};
 
 	struct timerNode
@@ -328,7 +329,7 @@ public:
 
 // MARK: TIMERS
 public:
-	uniqueTimerID setTimer(wzapi::scripting_instance *caller, const TimerFunc& timerFunc, int player, int milliseconds, std::string timerName = "", const BASE_OBJECT * obj = nullptr, timerType type = TIMER_REPEAT, std::unique_ptr<timerAdditionalData> additionalParam = nullptr);
+	uniqueTimerID setTimer(wzapi::scripting_instance *caller, const TimerFunc& timerFunc, int player, int milliseconds, std::string timerName = "", const GameObject * obj = nullptr, timerType type = TIMER_REPEAT, std::unique_ptr<timerAdditionalData> additionalParam = nullptr);
 
 	// removes any timer(s) that satisfy _pred
 	template< class UnaryPredicate >
@@ -372,7 +373,7 @@ private:
 
 // MARK: triggering events (from wz game code)
 public:
-	bool triggerEventSeen(BASE_OBJECT *psViewer, BASE_OBJECT *psSeen);
+	bool triggerEventSeen(GameObject *psViewer, GameObject *psSeen);
 
 // MARK: wzapi functions
 public:
@@ -387,7 +388,7 @@ public:
 	static wzapi::no_return_value addLabel(WZAPI_PARAMS(generic_script_object object, std::string label, optional<int> _triggered));
 
 	static int removeLabel(WZAPI_PARAMS(std::string label));
-	static optional<std::string> getLabel(WZAPI_PARAMS(const BASE_OBJECT *psObj));
+	static optional<std::string> getLabel(WZAPI_PARAMS(const GameObject *psObj));
 	static optional<std::string> getLabelJS(WZAPI_PARAMS(wzapi::game_object_identifier obj_id));
 
 	generic_script_object getObjectFromLabel(WZAPI_PARAMS(const std::string& label));
@@ -397,10 +398,10 @@ private:
 public:
 
 	static generic_script_object getObject(WZAPI_PARAMS(wzapi::object_request request));
-	static std::vector<const BASE_OBJECT *> enumAreaByLabel(WZAPI_PARAMS(std::string label, optional<int> playerFilter, optional<bool> seen));
-	static std::vector<const BASE_OBJECT *> enumArea(WZAPI_PARAMS(scr_area area, optional<int> playerFilter, optional<bool> seen));
+	static std::vector<const GameObject *> enumAreaByLabel(WZAPI_PARAMS(std::string label, optional<int> playerFilter, optional<bool> seen));
+	static std::vector<const GameObject *> enumArea(WZAPI_PARAMS(scr_area area, optional<int> playerFilter, optional<bool> seen));
 private:
-	static std::vector<const BASE_OBJECT *> _enumAreaWorldCoords(WZAPI_PARAMS(int x1, int y1, int x2, int y2, optional<int> playerFilter, optional<bool> seen));
+	static std::vector<const GameObject *> _enumAreaWorldCoords(WZAPI_PARAMS(int x1, int y1, int x2, int y2, optional<int> playerFilter, optional<bool> seen));
 public:
 
 	// A special function for Javascript backends that accept either a label or a series of integers describing an area
@@ -422,14 +423,14 @@ public:
 		int x2 = -1;
 		int y2 = -1;
 	};
-	static std::vector<const BASE_OBJECT *> enumAreaJS(WZAPI_PARAMS(area_by_values_or_area_label_lookup area_lookup, optional<int> playerFilter, optional<bool> seen));
+	static std::vector<const GameObject *> enumAreaJS(WZAPI_PARAMS(area_by_values_or_area_label_lookup area_lookup, optional<int> playerFilter, optional<bool> seen));
 
 	// Group functions
-	static std::vector<const BASE_OBJECT *> enumGroup(WZAPI_PARAMS(int groupId));
+	static std::vector<const GameObject *> enumGroup(WZAPI_PARAMS(int groupId));
 	static int newGroup(WZAPI_NO_PARAMS);
 	static wzapi::no_return_value groupAddArea(WZAPI_PARAMS(int groupId, int x1, int y1, int x2, int y2));
-	static wzapi::no_return_value groupAddDroid(WZAPI_PARAMS(int groupId, const DROID *psDroid));
-	static wzapi::no_return_value groupAdd(WZAPI_PARAMS(int groupId, const BASE_OBJECT *psObj));
+	static wzapi::no_return_value groupAddDroid(WZAPI_PARAMS(int groupId, const Droid *psDroid));
+	static wzapi::no_return_value groupAdd(WZAPI_PARAMS(int groupId, const GameObject *psObj));
 	static int groupSize(WZAPI_PARAMS(int groupId));
 private:
 	wzapi::scripting_instance* findInstanceForPlayer(int match, const WzString& scriptName);
@@ -505,16 +506,16 @@ protected:
 	/// Mark and show label
 	void showLabel(const std::string &key, bool clear_old = true, bool jump_to = true);
 
-	friend bool triggerEventDroidMoved(DROID *psDroid, int oldx, int oldy);
-	bool areaLabelCheck(DROID *psDroid);
+	friend bool triggerEventDroidMoved(Droid *psDroid, int oldx, int oldy);
+	bool areaLabelCheck(Droid *psDroid);
 
-	friend void scriptRemoveObject(const BASE_OBJECT *psObj);
-	void groupRemoveObject(const BASE_OBJECT *psObj);
+	friend void scriptRemoveObject(const GameObject *psObj);
+	void groupRemoveObject(const GameObject *psObj);
 
 private:
-	std::pair<bool, int> seenLabelCheck(wzapi::scripting_instance *instance, const BASE_OBJECT *seen, const BASE_OBJECT *viewer);
-	void removeFromGroup(wzapi::scripting_instance *instance, GROUPMAP *psMap, const BASE_OBJECT *psObj);
-	bool groupAddObject(const BASE_OBJECT *psObj, int groupId, wzapi::scripting_instance *instance);
+	std::pair<bool, int> seenLabelCheck(wzapi::scripting_instance *instance, const GameObject *seen, const GameObject *viewer);
+	void removeFromGroup(wzapi::scripting_instance *instance, GROUPMAP *psMap, const GameObject *psObj);
+	bool groupAddObject(const GameObject *psObj, int groupId, wzapi::scripting_instance *instance);
 };
 
 /// Clear all map markers (used by label marking, for instance)

@@ -24,8 +24,8 @@
 #ifndef __INCLUDED_SRC_AI_H__
 #define __INCLUDED_SRC_AI_H__
 
-struct BASE_OBJECT;
-struct DROID;
+class GameObject;
+class Droid;
 
 #include "weapondef.h"
 
@@ -61,30 +61,29 @@ bool aiInitialise();
 bool aiShutdown();
 
 /* Do the AI for a droid */
-void aiUpdateDroid(DROID *psDroid);
+void aiUpdateDroid(Droid *psDroid);
 
 // Find the nearest best target for a droid
 // returns integer representing quality of choice, -1 if failed
-int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, int extraRange = 0);
+int aiBestNearestTarget(Droid *psDroid, GameObject **ppsObj, int weapon_slot, int extraRange = 0);
 
 // Are there a lot of bullets heading towards the structure?
-bool aiObjectIsProbablyDoomed(BASE_OBJECT *psObject, bool isDirect);
+bool aiObjectIsProbablyDoomed(GameObject *psObject, bool isDirect);
 
 // Update the expected damage of the object.
-void aiObjectAddExpectedDamage(BASE_OBJECT *psObject, SDWORD damage, bool isDirect);
+void aiObjectAddExpectedDamage(GameObject *psObject, SDWORD damage, bool isDirect);
 
 /* See if there is a target in range added int weapon_slot*/
-bool aiChooseTarget(BASE_OBJECT *psObj,
-                    BASE_OBJECT **ppsTarget, int weapon_slot, bool bUpdateTarget, TARGET_ORIGIN *targetOrigin);
+bool aiChooseTarget(GameObject *psObj, GameObject **ppsTarget, int weapon_slot, bool bUpdateTarget, TARGET_ORIGIN *targetOrigin);
 
 /** See if there is a target in range for Sensor objects. */
-bool aiChooseSensorTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget);
+bool aiChooseSensorTarget(GameObject *psObj, GameObject **ppsTarget);
 
 /*set of rules which determine whether the weapon associated with the object
 can fire on the propulsion type of the target*/
-bool validTarget(BASE_OBJECT *psObject, BASE_OBJECT *psTarget, int weapon_slot);
+bool validTarget(GameObject *psObject, GameObject *psTarget, int weapon_slot);
 // Check if any of the weapons can target the target
-bool checkAnyWeaponsTarget(BASE_OBJECT *psObject, BASE_OBJECT *psTarget);
+bool checkAnyWeaponsTarget(GameObject *psObject, GameObject *psTarget);
 // Check properties of the AllianceType enum.
 static inline bool alliancesFixed(int t)
 {

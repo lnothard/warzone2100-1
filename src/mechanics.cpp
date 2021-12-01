@@ -37,7 +37,7 @@
 /* Shutdown the mechanics system */
 bool mechanicsShutdown()
 {
-	BASE_OBJECT *psObj, *psNext;
+  GameObject *psObj, *psNext;
 
 	for (psObj = psDestroyedObj; psObj != nullptr; psObj = psNext)
 	{
@@ -220,4 +220,3 @@ void makeAllAvailable()
 		}
 	}
 }
-

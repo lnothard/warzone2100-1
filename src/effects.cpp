@@ -2154,7 +2154,7 @@ static void effectStructureUpdates()
 	/* Go thru' all players */
 	for (unsigned player = 0; player < MAX_PLAYERS; ++player)
 	{
-		for (STRUCTURE *psStructure = apsStructLists[player]; psStructure != nullptr; psStructure = psStructure->psNext)
+		for (Structure *psStructure = apsStructLists[player]; psStructure != nullptr; psStructure = psStructure->psNext)
 		{
 			// Find its group.
 			unsigned int partition = psStructure->id % EFFECT_STRUCTURE_DIVISION;
@@ -2171,7 +2171,7 @@ static void effectStructureUpdates()
 			}
 
 			/* Factories puff out smoke, power stations puff out tesla stuff */
-			switch (psStructure->pStructureType->type)
+			switch (psStructure->stats->type)
 			{
 			case REF_FACTORY:
 			case REF_CYBORG_FACTORY:
@@ -2180,12 +2180,13 @@ static void effectStructureUpdates()
 					We're a factory, so better puff out a bit of steam
 					Complete hack with the magic numbers - just for IAN demo
 				*/
-				if (psStructure->sDisplay.imd->nconnectors == 1)
+				if (psStructure->displayData.imd->nconnectors == 1)
 				{
-					Vector3i eventPos = psStructure->pos.xzy() + Affine3F().RotY(psStructure->rot.direction)*Vector3i(
-					                        psStructure->sDisplay.imd->connectors->x,
-					                        psStructure->sDisplay.imd->connectors->z,
-					                        -psStructure->sDisplay.imd->connectors->y
+					Vector3i eventPos = psStructure->position.xzy() + Affine3F().RotY(psStructure->rotation.direction)*Vector3i(
+					                        psStructure->displayData.imd->connectors->x,
+					                        psStructure->displayData.imd->connectors->z,
+					                        -psStructure->displayData
+                                                        .imd->connectors->y
 					                    );
 
 					addEffect(&eventPos, EFFECT_SMOKE, SMOKE_TYPE_STEAM, false, nullptr, 0);
@@ -2195,11 +2196,11 @@ static void effectStructureUpdates()
 				break;
 			case REF_POWER_GEN:
 				{
-					Vector3i eventPos = psStructure->pos.xzy();
+					Vector3i eventPos = psStructure->position.xzy();
 
 					// Add an effect over the central spire.
 
-					eventPos.y = psStructure->pos.z + 48;
+					eventPos.y = psStructure->position.z + 48;
 
 					addEffect(&eventPos, EFFECT_EXPLOSION, EXPLOSION_TYPE_TESLA, false, nullptr, 0);
 

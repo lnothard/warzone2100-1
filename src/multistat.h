@@ -67,7 +67,7 @@ void updateMultiStatsDamage(UDWORD attacker, UDWORD defender, UDWORD inflicted);
 void updateMultiStatsGames();
 void updateMultiStatsWins();
 void updateMultiStatsLoses();
-void updateMultiStatsKills(BASE_OBJECT *psKilled, UDWORD player);
+void updateMultiStatsKills(GameObject *psKilled, UDWORD player);
 void recvMultiStats(NETQUEUE queue);
 void lookupRatingAsync(uint32_t playerIndex);
 

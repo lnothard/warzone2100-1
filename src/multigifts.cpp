@@ -244,7 +244,7 @@ void giftRadar(uint8_t from, uint8_t to, bool send)
 // NOTICE: the packet is already set-up for decoding via recvGift()
 static void recvGiftStruct(uint8_t from, uint8_t to, uint32_t structID)
 {
-	STRUCTURE *psStruct = IdToStruct(structID, from);
+  Structure *psStruct = IdToStruct(structID, from);
 	if (psStruct)
 	{
 		syncDebugStructure(psStruct, '<');
@@ -269,7 +269,7 @@ static void recvGiftStruct(uint8_t from, uint8_t to, uint32_t structID)
 // \param to    :player that should be getting the droid
 static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 {
-	DROID *psDroid = IdToDroid(droidID, from);
+  Droid *psDroid = IdToDroid(droidID, from);
 
 	if (psDroid)
 	{
@@ -278,7 +278,7 @@ static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 		syncDebugDroid(psDroid, '>');
 		if (to == selectedPlayer)
 		{
-			CONPRINTF(_("%s Gives you a %s"), getPlayerName(from), psDroid->aName);
+			CONPRINTF(_("%s Gives you a %s"), getPlayerName(from), psDroid->name);
 		}
 	}
 	else
@@ -294,11 +294,11 @@ static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 // \param to    :player that should be getting the droid
 static void sendGiftDroids(uint8_t from, uint8_t to)
 {
-	DROID        *psD;
+  Droid *psD;
 	uint8_t      giftType = DROID_GIFT;
 	uint8_t      totalToSend;
 
-	if (apsDroidLists[from] == nullptr)
+	if (allDroidLists[from] == nullptr)
 	{
 		return;
 	}
@@ -309,7 +309,7 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 	 * over their droid limit.
 	 */
 
-	for (totalToSend = 0, psD = apsDroidLists[from];
+	for (totalToSend = 0, psD = allDroidLists[from];
 	     psD && getNumDroids(to) + totalToSend < getMaxDroids(to) && totalToSend != UINT8_MAX;
 	     psD = psD->psNext)
 	{
@@ -323,12 +323,12 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 	 * does its own net calls.
 	 */
 
-	for (psD = apsDroidLists[from]; psD && totalToSend != 0; psD = psD->psNext)
+	for (psD = allDroidLists[from]; psD && totalToSend != 0; psD = psD->psNext)
 	{
 		if (isTransporter(psD)
 		    && !transporterIsEmpty(psD))
 		{
-			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD->aName);
+			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD->name);
 			continue;
 		}
 		if (psD->selected)
@@ -502,7 +502,7 @@ void breakAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio)
 
 void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allowNotification)
 {
-	DROID	*psDroid;
+  Droid *psDroid;
 	char	tm1[128];
 
 	if (bMultiMessages && prop)
@@ -541,20 +541,20 @@ void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allow
 	}
 
 	// Clear out any attacking orders
-	for (psDroid = apsDroidLists[p1]; psDroid; psDroid = psDroid->psNext)	// from -> to
+	for (psDroid = allDroidLists[p1]; psDroid; psDroid = psDroid->psNext)	// from -> to
 	{
 		if (psDroid->order.type == DORDER_ATTACK
 		    && psDroid->order.psObj
-		    && psDroid->order.psObj->player == p2)
+		    && psDroid->order.psObj->owningPlayer == p2)
 		{
 			orderDroid(psDroid, DORDER_STOP, ModeImmediate);
 		}
 	}
-	for (psDroid = apsDroidLists[p2]; psDroid; psDroid = psDroid->psNext)	// to -> from
+	for (psDroid = allDroidLists[p2]; psDroid; psDroid = psDroid->psNext)	// to -> from
 	{
 		if (psDroid->order.type == DORDER_ATTACK
 		    && psDroid->order.psObj
-		    && psDroid->order.psObj->player == p1)
+		    && psDroid->order.psObj->owningPlayer == p1)
 		{
 			orderDroid(psDroid, DORDER_STOP, ModeImmediate);
 		}
@@ -642,10 +642,10 @@ bool recvAlliance(NETQUEUE queue, bool allowAudio)
 
 // ////////////////////////////////////////////////////////////////////////////
 // add an artifact on destruction if required.
-void  technologyGiveAway(const STRUCTURE *pS)
+void  technologyGiveAway(const Structure *pS)
 {
 	// If a fully built factory (or with modules under construction) which is our responsibility got destroyed
-	if (pS->pStructureType->type == REF_FACTORY && (pS->status == SS_BUILT || pS->currentBuildPts >= pS->body))
+	if (pS->stats->type == REF_FACTORY && (pS->status == SS_BUILT || pS->currentBuildPts >= pS->hitPoints))
 	{
 		syncDebug("Adding artefact.");
 	}
@@ -663,17 +663,17 @@ void  technologyGiveAway(const STRUCTURE *pS)
 		return;
 	}
 
-	uint32_t x = map_coord(pS->pos.x), y = map_coord(pS->pos.y);
+	uint32_t x = map_coord(pS->position.x), y = map_coord(pS->position.y);
 	if (!pickATileGen(&x, &y, LOOK_FOR_EMPTY_TILE, zonedPAT))
 	{
 		syncDebug("Did not find location for oil drum.");
 		debug(LOG_FEATURE, "Unable to find a free location.");
 		return;
 	}
-	FEATURE *pF = buildFeature(&asFeatureStats[featureIndex], world_coord(x), world_coord(y), false);
+        Feature *pF = buildFeature(&asFeatureStats[featureIndex], world_coord(x), world_coord(y), false);
 	if (pF)
 	{
-		pF->player = pS->player;
+		pF->owningPlayer = pS->owningPlayer;
 		syncDebugFeature(pF, '+');
 	}
 	else
@@ -723,10 +723,10 @@ void recvMultiPlayerFeature(NETQUEUE queue)
 	for (i = 0; i < numFeatureStats; ++i)
 	{
 		// If we found the correct feature type
-		if (asFeatureStats[i].ref == ref)
+		if (asFeatureStats[i].id == ref)
 		{
 			// Create a feature of the specified type at the given location
-			FEATURE *result = buildFeature(&asFeatureStats[i], x, y, false);
+                        Feature *result = buildFeature(&asFeatureStats[i], x, y, false);
 			result->id = id;
 			break;
 		}

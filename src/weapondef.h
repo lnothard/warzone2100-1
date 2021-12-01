@@ -44,8 +44,7 @@ enum TARGET_ORIGIN
 	ORIGIN_RADAR_DETECTOR,	///< Came from Radar Detector sensor
 };
 
-struct WEAPON
-{
+struct Weapon {
 	uint32_t        nStat;		///< Index into the asWeaponStats global array
 	uint32_t        ammo;
 	uint32_t        lastFired;	///< The gametime when this weapon last fired
@@ -55,10 +54,11 @@ struct WEAPON
 	unsigned        usedAmmo;    ///< Amount of ammunition used up by a VTOL
 	TARGET_ORIGIN   origin;
 
-	WEAPON() : nStat(0), ammo(0), lastFired(0), shotsFired(0), usedAmmo(0), origin(ORIGIN_UNKNOWN) {}
+        Weapon() : nStat(0), ammo(0), lastFired(0), shotsFired(0), usedAmmo(0), origin(ORIGIN_UNKNOWN) {}
 };
 
 // Defined in droid.cpp.
-int getRecoil(WEAPON const &weapon);  ///< Returns how much the weapon assembly should currently be rocked back due to firing.
+int getRecoil(
+    Weapon const &weapon);  ///< Returns how much the weapon assembly should currently be rocked back due to firing.
 
 #endif // __INCLUDED_WEAPONDEF_H__

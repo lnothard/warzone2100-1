@@ -44,9 +44,8 @@ enum FEATURE_TYPE
 };
 
 /* Stats for a feature */
-struct FEATURE_STATS : public BASE_STATS
-{
-	FEATURE_STATS(int idx = 0) : BASE_STATS(idx) {}
+struct FEATURE_STATS : public StatsObject {
+	FEATURE_STATS(int idx = 0) : StatsObject(idx) {}
 
 	FEATURE_TYPE    subType = FEAT_COUNT;   ///< type of feature
 
@@ -61,13 +60,12 @@ struct FEATURE_STATS : public BASE_STATS
 	UDWORD		body = 0;               ///< Number of body points
 	UDWORD          armourValue = 0;        ///< Feature armour
 
-	inline Vector2i size() const { return Vector2i(baseWidth, baseBreadth); }
+	inline Vector2i size() const { return {baseWidth, baseBreadth}; }
 };
 
-struct FEATURE : public BASE_OBJECT
-{
-	FEATURE(uint32_t id, FEATURE_STATS const *psStats);
-	~FEATURE();
+class Feature : public GameObject {
+  Feature(uint32_t id, FEATURE_STATS const *psStats);
+	~Feature();
 
 	FEATURE_STATS const *psStats;
 

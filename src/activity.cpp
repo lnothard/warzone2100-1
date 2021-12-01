@@ -39,7 +39,7 @@ std::string ActivitySink::getTeamDescription(const ActivitySink::SkirmishGameInf
 	std::map<int32_t, size_t> teamIdToCountOfPlayers;
 	for (size_t index = 0; index < std::min<size_t>(info.players.size(), (size_t)game.maxPlayers); ++index)
 	{
-		PLAYER const &p = NetPlay.players[index];
+          NetPlayer const &p = NetPlay.players[index];
 		if (p.ai == AI_CLOSED)
 		{
 			// closed slot - skip
@@ -688,7 +688,7 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 
 	for (size_t index = 0; index < std::min<size_t>(MAX_PLAYERS, (size_t)multiGame.maxPlayers); ++index)
 	{
-		PLAYER const &p = NetPlay.players[index];
+          NetPlayer const &p = NetPlay.players[index];
 		if (p.ai == AI_CLOSED)
 		{
 			--maxPlayers;
@@ -798,14 +798,13 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 }
 
 // called on the host when the host kicks a player
-void ActivityManager::hostKickPlayer(const PLAYER& player, LOBBY_ERROR_TYPES kick_type, const std::string& reason)
+void ActivityManager::hostKickPlayer(const NetPlayer & player, LOBBY_ERROR_TYPES kick_type, const std::string& reason)
 {
 	/* currently, no-op */
 }
 
 // called on the kicked player when they are kicked by another player
-void ActivityManager::wasKickedByPlayer(const PLAYER& kicker, LOBBY_ERROR_TYPES kick_type, const std::string& reason)
+void ActivityManager::wasKickedByPlayer(const NetPlayer & kicker, LOBBY_ERROR_TYPES kick_type, const std::string& reason)
 {
 	/* currently, no-op */
 }
-

@@ -139,7 +139,7 @@ static bool		giftsUp[MAX_PLAYERS] = {true};		//gift buttons for player are up.
 static PIELIGHT GetPlayerTextColor(int mode, UDWORD player)
 {
 	// override color if they are dead...
-	if (player >= MAX_PLAYERS || (!apsDroidLists[player] && !apsStructLists[player]))
+	if (player >= MAX_PLAYERS || (!allDroidLists[player] && !apsStructLists[player]))
 	{
 		return WZCOL_GREY;			// dead text color
 	}
@@ -693,7 +693,7 @@ public:
 	void display(int xOffset, int yOffset) override
 	{
 		// a droid of theirs.
-		DROID *displayDroid = (player < MAX_PLAYERS) ? apsDroidLists[player] : nullptr;
+                Droid *displayDroid = (player < MAX_PLAYERS) ? allDroidLists[player] : nullptr;
 		while (displayDroid != nullptr && !displayDroid->visibleForLocalDisplay())
 		{
 			displayDroid = displayDroid->psNext;
@@ -717,7 +717,7 @@ public:
 
 			displayComponentButtonObject(displayDroid, &rotation, &position, 100);
 		}
-		else if ((player < MAX_PLAYERS) && apsDroidLists[player])
+		else if ((player < MAX_PLAYERS) && allDroidLists[player])
 		{
 			// Show that they have droids, but not which droids, since we can't see them.
 			iV_DrawImageTc(
@@ -989,7 +989,7 @@ private:
 				{
 					// NOTE, This tallys up *all* the structures you have. Test out via 'start with no base'.
 					int num = 0;
-					for (STRUCTURE *temp = apsStructLists[playerWidget.player]; temp != nullptr; temp = temp->psNext)
+					for (Structure *temp = apsStructLists[playerWidget.player]; temp != nullptr; temp = temp->psNext)
 					{
 						++num;
 					}

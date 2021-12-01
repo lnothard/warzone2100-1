@@ -78,7 +78,7 @@ void fpathUpdate();
 
 /** Find a route for a droid to a location.
  */
-FPATH_RETVAL fpathDroidRoute(DROID *psDroid, SDWORD targetX, SDWORD targetY, FPATH_MOVETYPE moveType);
+FPATH_RETVAL fpathDroidRoute(Droid *psDroid, SDWORD targetX, SDWORD targetY, FPATH_MOVETYPE moveType);
 
 /// Returns true iff the parameters have equivalent behaviour in fpathBaseBlockingTile.
 bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_MOVETYPE moveType1,
@@ -97,7 +97,7 @@ bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_M
  *  @return true if the given tile is blocking for this droid
  */
 bool fpathBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion);
-bool fpathDroidBlockingTile(DROID *psDroid, int x, int y, FPATH_MOVETYPE moveType);
+bool fpathDroidBlockingTile(Droid *psDroid, int x, int y, FPATH_MOVETYPE moveType);
 bool fpathBaseBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion, int player, FPATH_MOVETYPE moveType);
 
 static inline bool fpathBlockingTile(Vector2i tile, PROPULSION_TYPE propulsion)
@@ -112,7 +112,7 @@ static inline bool fpathBlockingTile(Vector2i tile, PROPULSION_TYPE propulsion)
  *
  *  Used for instance by VTOLs. Function is thread-safe.
  */
-void fpathSetDirectRoute(DROID *psDroid, SDWORD targetX, SDWORD targetY);
+void fpathSetDirectRoute(Droid *psDroid, SDWORD targetX, SDWORD targetY);
 
 /** Clean up path jobs and results for a droid. Function is thread-safe. */
 void fpathRemoveDroidData(int id);

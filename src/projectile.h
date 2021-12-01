@@ -34,7 +34,7 @@
 
 /***************************************************************************/
 
-extern	BASE_OBJECT	*g_pProjLastAttacker;	///< The last unit that did damage - used by script functions
+extern GameObject *g_pProjLastAttacker;	///< The last unit that did damage - used by script functions
 
 #define PROJ_MAX_PITCH  45
 #define PROJ_ULTIMATE_PITCH  80
@@ -51,8 +51,8 @@ bool	proj_InitSystem();	///< Initialize projectiles subsystem.
 void	proj_UpdateAll();	///< Frame update for projectiles.
 bool	proj_Shutdown();	///< Shut down projectile subsystem.
 
-PROJECTILE *proj_GetFirst();	///< Get first projectile in the list.
-PROJECTILE *proj_GetNext();		///< Get next projectile in the list.
+Projectile *proj_GetFirst();	///< Get first projectile in the list.
+Projectile *proj_GetNext();		///< Get next projectile in the list.
 
 void	proj_FreeAllProjectiles();	///< Free all projectiles in the list.
 
@@ -60,14 +60,15 @@ void setExpGain(int player, int gain);
 int getExpGain(int player);
 
 /// Calculate the initial velocities of an indirect projectile. Returns the flight time.
-int32_t projCalcIndirectVelocities(const int32_t dx, const int32_t dz, int32_t v, int32_t *vx, int32_t *vz, int min_angle);
+int32_t projCalcIndirectVelocities(int32_t dx, int32_t dz, int32_t v, int32_t *vx, int32_t *vz, int min_angle);
 
 /** Send a single projectile against the given target. */
-bool proj_SendProjectile(WEAPON *psWeap, SIMPLE_OBJECT *psAttacker, int player, Vector3i target, BASE_OBJECT *psTarget, bool bVisible, int weapon_slot);
+bool proj_SendProjectile(Weapon *psWeap, GameObject *psAttacker, int player, Vector3i target, GameObject *psTarget, bool bVisible, int weapon_slot);
 
 /** Send a single projectile against the given target
  * with a minimum shot angle. */
-bool proj_SendProjectileAngled(WEAPON *psWeap, SIMPLE_OBJECT *psAttacker, int player, Vector3i target, BASE_OBJECT *psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
+bool proj_SendProjectileAngled(Weapon *psWeap, GameObject *psAttacker, int player, Vector3i target,
+                               GameObject *psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
 
 /** Return whether a weapon is direct or indirect. */
 bool proj_Direct(const WEAPON_STATS *psStats);
@@ -81,14 +82,15 @@ int proj_GetMinRange(const WEAPON_STATS *psStats, int player);
 /** Return the short range for a weapon. */
 int proj_GetShortRange(const WEAPON_STATS *psStats, int player);
 
-UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, BASE_OBJECT *psTarget);
-bool gfxVisible(PROJECTILE *psObj);
+UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect,
+                  GameObject *psTarget);
+bool gfxVisible(Projectile *psObj);
 
 /***************************************************************************/
 
-glm::mat4 objectShimmy(BASE_OBJECT *psObj);
+glm::mat4 objectShimmy(GameObject *psObj);
 
-static inline void setProjectileSource(PROJECTILE *psProj, SIMPLE_OBJECT *psObj)
+static inline void setProjectileSource(Projectile *psProj, GameObject *psObj)
 {
 	// use the source of the source of psProj if psAttacker is a projectile
 	psProj->psSource = nullptr;
@@ -97,30 +99,30 @@ static inline void setProjectileSource(PROJECTILE *psProj, SIMPLE_OBJECT *psObj)
 	}
 	else if (isProjectile(psObj))
 	{
-		PROJECTILE *psPrevProj = castProjectile(psObj);
+          Projectile *psPrevProj = castProjectile(psObj);
 
-		if (psPrevProj->psSource && !psPrevProj->psSource->died)
+		if (psPrevProj->psSource && !psPrevProj->psSource->deathTime)
 		{
 			psProj->psSource = psPrevProj->psSource;
 		}
 	}
 	else
 	{
-		psProj->psSource = castBaseObject(psObj);
+		psProj->psSource = psObj;
 	}
 }
 
-int establishTargetHeight(BASE_OBJECT const *psTarget);
+int establishTargetHeight(GameObject const *psTarget);
 
 /* @} */
 
-void checkProjectile(const PROJECTILE *psProjectile, const char *const location_description, const char *function, const int recurse);
+void checkProjectile(const Projectile *psProjectile, const char *location_description, const char *function, int recurse);
 
 /* assert if projectile is bad */
 #define CHECK_PROJECTILE(object) checkProjectile((object), AT_MACRO, __FUNCTION__, max_check_object_recursion)
 
 #define syncDebugProjectile(psProj, ch) _syncDebugProjectile(__FUNCTION__, psProj, ch)
-void _syncDebugProjectile(const char *function, PROJECTILE const *psProj, char ch);
+void _syncDebugProjectile(const char *function, Projectile const *psProj, char ch);
 
 struct ObjectShape
 {
@@ -128,7 +130,7 @@ struct ObjectShape
 	ObjectShape(int radius) : isRectangular(false), size(radius, radius) {}
 	ObjectShape(int width, int breadth) : isRectangular(true), size(width, breadth) {}
 	ObjectShape(Vector2i widthBreadth) : isRectangular(true), size(widthBreadth) {}
-	int radius() const
+	[[nodiscard]] int radius() const
 	{
 		return size.x;
 	}
@@ -137,6 +139,6 @@ struct ObjectShape
 	Vector2i size;           ///< x == y if circular.
 };
 
-ObjectShape establishTargetShape(BASE_OBJECT *psTarget);
+ObjectShape establishTargetShape(GameObject *psTarget);
 
 #endif // __INCLUDED_SRC_PROJECTILE_H__

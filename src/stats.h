@@ -106,8 +106,8 @@ bool statsAllocConstruct(UDWORD numEntries);
 *		Load stats functions
 *******************************************************************************/
 // Used from structure.cpp
-void loadStructureStats_BaseStats(WzConfig &json, STRUCTURE_STATS *psStats, size_t index);
-void unloadStructureStats_BaseStats(const STRUCTURE_STATS &psStats);
+void loadStructureStats_BaseStats(WzConfig &json, StructureStats *psStats, size_t index);
+void unloadStructureStats_BaseStats(const StructureStats &psStats);
 
 /*Load the weapon stats from the file exported from Access*/
 bool loadWeaponStats(WzConfig &ini);
@@ -165,10 +165,10 @@ int getCompFromID(COMPONENT_TYPE compType, const WzString &name);
 COMPONENT_STATS *getCompStatsFromName(const WzString &name);
 
 /// Get the structure pointer for a structure based on the name
-STRUCTURE_STATS *getStructStatsFromName(const WzString &name);
+StructureStats *getStructStatsFromName(const WzString &name);
 
 /// Get the base stat pointer for a stat based on the name
-BASE_STATS *getBaseStatsFromName(const WzString &name);
+StatsObject *getBaseStatsFromName(const WzString &name);
 
 /*returns the weapon sub class based on the string name passed in */
 bool getWeaponSubClass(const char *subClass, WEAPON_SUBCLASS *wclass);
@@ -224,7 +224,7 @@ WZ_DECL_PURE int constructorPoints(const CONSTRUCT_STATS *psStats, int player);
 WZ_DECL_PURE int bodyPower(const BODY_STATS *psStats, int player);
 WZ_DECL_PURE int bodyArmour(const BODY_STATS *psStats, int player, WEAPON_CLASS weaponClass);
 
-WZ_DECL_PURE bool objHasWeapon(const BASE_OBJECT *psObj);
+WZ_DECL_PURE bool objHasWeapon(const GameObject *psObj);
 
 void statsInitVars();
 
@@ -237,9 +237,9 @@ bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS *weaponClass);
 /* Wrappers */
 
 /** If object is an active radar (has sensor turret), then return a pointer to its sensor stats. If not, return NULL. */
-WZ_DECL_PURE SENSOR_STATS *objActiveRadar(const BASE_OBJECT *psObj);
+WZ_DECL_PURE SENSOR_STATS *objActiveRadar(const GameObject *psObj);
 
 /** Returns whether object has a radar detector sensor. */
-WZ_DECL_PURE bool objRadarDetector(const BASE_OBJECT *psObj);
+WZ_DECL_PURE bool objRadarDetector(const GameObject *psObj);
 
 #endif // __INCLUDED_SRC_STATS_H__

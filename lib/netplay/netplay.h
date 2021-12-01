@@ -270,8 +270,7 @@ enum class NET_LOBBY_OPT_FIELD
 // ////////////////////////////////////////////////////////////////////////
 // Player information. Filled when players join, never re-ordered. selectedPlayer global points to
 // currently controlled player.
-struct PLAYER
-{
+struct NetPlayer {
 	char                name[StringSize];   ///< Player name
 	int32_t             position;           ///< Map starting position
 	int32_t             colour;             ///< Which colour slot this player is using
@@ -322,7 +321,7 @@ struct PlayerReference;
 // all the luvly Netplay info....
 struct NETPLAY
 {
-	std::vector<PLAYER>	players;	///< The array of players.
+	std::vector<NetPlayer>	players;	///< The array of players.
 	uint32_t	playercount;		///< Number of players in game.
 	uint32_t	hostPlayer;		///< Index of host in player array
 	bool		bComms;			///< Actually do the comms?
@@ -532,11 +531,11 @@ struct PlayerReference
 
 	void disconnect()
 	{
-		detached = std::unique_ptr<PLAYER>(new PLAYER(NetPlay.players[index]));
+		detached = std::unique_ptr<NetPlayer>(new NetPlayer(NetPlay.players[index]));
 		detached->wzFiles = std::make_shared<std::vector<WZFile>>();
 	}
 
-	PLAYER const *operator ->() const
+        NetPlayer const *operator ->() const
 	{
 		return detached? detached.get(): &NetPlay.players[index];
 	}
@@ -547,7 +546,7 @@ struct PlayerReference
 	}
 
 private:
-	std::unique_ptr<PLAYER> detached = nullptr;
+	std::unique_ptr<NetPlayer> detached = nullptr;
 	uint32_t index;
 };
 

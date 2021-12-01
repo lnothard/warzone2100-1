@@ -6,22 +6,22 @@
 class CommanderController: public BaseObjectsController, public std::enable_shared_from_this<CommanderController>
 {
 public:
-	STRUCTURE_STATS *getObjectStatsAt(size_t objectIndex) const override;
+  StructureStats *getObjectStatsAt(size_t objectIndex) const override;
 
-	STRUCTURE *getAssignedFactoryAt(size_t objectIndex) const;
+        Structure *getAssignedFactoryAt(size_t objectIndex) const;
 
 	size_t objectsSize() const override
 	{
 		return commanders.size();
 	}
 
-	DROID *getObjectAt(size_t index) const override
+        Droid *getObjectAt(size_t index) const override
 	{
 		ASSERT_OR_RETURN(nullptr, index < commanders.size(), "Invalid object index (%zu); max: (%zu)", index, commanders.size());
 		return commanders[index];
 	}
 
-	bool findObject(std::function<bool (BASE_OBJECT *)> iteration) const override
+	bool findObject(std::function<bool (GameObject *)> iteration) const override
 	{
 		return BaseObjectsController::findObject(commanders, iteration);
 	}
@@ -32,17 +32,17 @@ public:
 	void clearData() override;
 	void displayOrderForm();
 
-	DROID *getHighlightedObject() const override
+        Droid *getHighlightedObject() const override
 	{
 		return highlightedCommander;
 	}
 
-	void setHighlightedObject(BASE_OBJECT *object) override;
+	void setHighlightedObject(GameObject *object) override;
 
 private:
 	void updateCommandersList();
-	std::vector<DROID *> commanders;
-	static DROID *highlightedCommander;
+	std::vector<Droid *> commanders;
+	static Droid *highlightedCommander;
 };
 
 #endif // __INCLUDED_SRC_HCI_COMMANDER_INTERFACE_H__

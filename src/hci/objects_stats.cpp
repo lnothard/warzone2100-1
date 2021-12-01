@@ -19,7 +19,7 @@ void BaseObjectsController::clearStructureSelection()
 	}
 }
 
-void BaseObjectsController::selectObject(BASE_OBJECT *object)
+void BaseObjectsController::selectObject(GameObject *object)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(, object);
 	object->selected = true;
@@ -34,10 +34,10 @@ void BaseObjectsController::prepareToClose()
 	clearData();
 }
 
-void BaseObjectsController::jumpToObject(BASE_OBJECT *object)
+void BaseObjectsController::jumpToObject(GameObject *object)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(, object);
-	setPlayerPos(object->pos.x, object->pos.y);
+	setPlayerPos(object->position.x, object->position.y);
 	setWarCamActive(false);
 }
 
@@ -49,8 +49,8 @@ void BaseObjectsController::updateHighlighted()
 		return;
 	}
 
-	auto findAnySelectedObject = [&] (BASE_OBJECT *object) {
-		if (object->died == 0 && object->selected)
+	auto findAnySelectedObject = [&] (GameObject *object) {
+		if (object->deathTime == 0 && object->selected)
 		{
 			setHighlightedObject(object);
 			return true;
@@ -66,8 +66,8 @@ void BaseObjectsController::updateHighlighted()
 
 	if (auto highlighted = getHighlightedObject())
 	{
-		auto findHighlightedObject = [&] (BASE_OBJECT *object) {
-			if (object->died == 0 && object == highlighted)
+		auto findHighlightedObject = [&] (GameObject *object) {
+			if (object->deathTime == 0 && object == highlighted)
 			{
 				setHighlightedObject(object);
 				return true;
@@ -424,4 +424,3 @@ void StatsForm::removeLastButton()
 		listWidget->detach(lastButton);
 	}
 }
-

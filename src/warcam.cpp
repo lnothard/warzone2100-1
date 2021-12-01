@@ -76,7 +76,7 @@ struct WARCAM
 	Vector3f rotAccel = Vector3f(0.f, 0.f, 0.f);
 
 	float oldDistance;
-	DROID *target;
+        Droid *target;
 };
 
 #define MIN_TRACK_HEIGHT 16
@@ -136,8 +136,8 @@ void	initWarCam()
 
 static void processLeaderSelection()
 {
-	DROID *psDroid;
-	DROID *psNew = nullptr;
+  Droid *psDroid;
+  Droid *psNew = nullptr;
 	UDWORD leaderClass;
 	bool bSuccess;
 	UDWORD dif;
@@ -184,14 +184,15 @@ static void processLeaderSelection()
 	switch (leaderClass)
 	{
 	case	LEADER_LEFT:
-		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
+			if (DrawnInLastFrame(psDroid->displayData.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
 			{
-				if (psDroid->sDisplay.screenX < trackingCamera.target->sDisplay.screenX)
+				if (psDroid->displayData.screenX < trackingCamera.target->displayData.screenX)
 				{
-					dif = trackingCamera.target->sDisplay.screenX - psDroid->sDisplay.screenX;
+					dif = trackingCamera.target->displayData
+                                            .screenX - psDroid->displayData.screenX;
 					if (dif < bestSoFar)
 					{
 						bestSoFar = dif;
@@ -203,14 +204,15 @@ static void processLeaderSelection()
 		}
 		break;
 	case	LEADER_RIGHT:
-		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
+			if (DrawnInLastFrame(psDroid->displayData.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
 			{
-				if (psDroid->sDisplay.screenX > trackingCamera.target->sDisplay.screenX)
+				if (psDroid->displayData.screenX > trackingCamera.target->displayData.screenX)
 				{
-					dif = psDroid->sDisplay.screenX - trackingCamera.target->sDisplay.screenX;
+					dif = psDroid->displayData.screenX - trackingCamera.target->displayData
+                                            .screenX;
 					if (dif < bestSoFar)
 					{
 						bestSoFar = dif;
@@ -222,14 +224,15 @@ static void processLeaderSelection()
 		}
 		break;
 	case	LEADER_UP:
-		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
+			if (DrawnInLastFrame(psDroid->displayData.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
 			{
-				if (psDroid->sDisplay.screenY < trackingCamera.target->sDisplay.screenY)
+				if (psDroid->displayData.screenY < trackingCamera.target->displayData.screenY)
 				{
-					dif = trackingCamera.target->sDisplay.screenY - psDroid->sDisplay.screenY;
+					dif = trackingCamera.target->displayData
+                                            .screenY - psDroid->displayData.screenY;
 					if (dif < bestSoFar)
 					{
 						bestSoFar = dif;
@@ -241,14 +244,15 @@ static void processLeaderSelection()
 		}
 		break;
 	case	LEADER_DOWN:
-		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
+			if (DrawnInLastFrame(psDroid->displayData.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
 			{
-				if (psDroid->sDisplay.screenY > trackingCamera.target->sDisplay.screenY)
+				if (psDroid->displayData.screenY > trackingCamera.target->displayData.screenY)
 				{
-					dif = psDroid->sDisplay.screenY - trackingCamera.target->sDisplay.screenY;
+					dif = psDroid->displayData.screenY - trackingCamera.target->displayData
+                                            .screenY;
 					if (dif < bestSoFar)
 					{
 						bestSoFar = dif;
@@ -271,7 +275,7 @@ static void processLeaderSelection()
 /* Updates the camera position/angle along with the object movement */
 void	processWarCam()
 {
-	DROID *foundTarget;
+  Droid *foundTarget;
 
 	/* Ensure that the camera only ever flips state within this routine! */
 	switch (trackingCamera.status)
@@ -284,7 +288,7 @@ void	processWarCam()
 		/* See if we can find the target to follow */
 		foundTarget = camFindDroidTarget();
 
-		if (foundTarget && !foundTarget->died)
+		if (foundTarget && !foundTarget->deathTime)
 		{
 			/* We've got one, so store away info */
 			camAlignWithTarget(foundTarget);
@@ -312,7 +316,7 @@ void	processWarCam()
 				no longer selected, so reset to old values
 			*/
 			foundTarget = camFindDroidTarget();
-			if (foundTarget && !foundTarget->died)
+			if (foundTarget && !foundTarget->deathTime)
 			{
 				trackingCamera.status = CAM_REQUEST;
 			}
@@ -377,9 +381,9 @@ void	setWarCamActive(bool status)
 
 //-----------------------------------------------------------------------------------
 
-DROID *camFindDroidTarget()
+Droid *camFindDroidTarget()
 {
-	DROID	*psDroid;
+  Droid *psDroid;
 
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
@@ -387,7 +391,7 @@ DROID *camFindDroidTarget()
 		return nullptr;
 	}
 
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected)
 		{
@@ -404,7 +408,7 @@ DROID *camFindDroidTarget()
 //-----------------------------------------------------------------------------------
 
 /* Stores away old viewangle info and sets up new distance and angles */
-void	camAlignWithTarget(DROID *psDroid)
+void	camAlignWithTarget(Droid *psDroid)
 {
 	/* Store away the target */
 	trackingCamera.target = psDroid;
@@ -447,7 +451,7 @@ void	camAlignWithTarget(DROID *psDroid)
 //-----------------------------------------------------------------------------------
 static uint16_t getAverageTrackAngle(unsigned groupNumber, bool bCheckOnScreen)
 {
-	DROID *psDroid;
+  Droid *psDroid;
 	int32_t xTotal = 0, yTotal = 0;
 
 	if (selectedPlayer >= MAX_PLAYERS)
@@ -457,15 +461,15 @@ static uint16_t getAverageTrackAngle(unsigned groupNumber, bool bCheckOnScreen)
 	}
 
 	/* Got thru' all droids */
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		/* Is he worth selecting? */
 		if (groupNumber == GROUP_SELECTED ? psDroid->selected : psDroid->group == groupNumber)
 		{
 			if (bCheckOnScreen ? objectOnScreen(psDroid, pie_GetVideoBufferWidth() / 6) : true)
 			{
-				xTotal += iSin(psDroid->rot.direction);
-				yTotal += iCos(psDroid->rot.direction);
+				xTotal += iSin(psDroid->rotation.direction);
+				yTotal += iCos(psDroid->rotation.direction);
 			}
 		}
 	}
@@ -478,7 +482,7 @@ static uint16_t getAverageTrackAngle(unsigned groupNumber, bool bCheckOnScreen)
 static void getTrackingConcerns(SDWORD *x, SDWORD *y, SDWORD *z, UDWORD groupNumber, bool bOnScreen)
 {
 	SDWORD xTotals = 0, yTotals = 0, zTotals = 0;
-	DROID *psDroid;
+        Droid *psDroid;
 	UDWORD count;
 
 	if (selectedPlayer >= MAX_PLAYERS)
@@ -487,16 +491,16 @@ static void getTrackingConcerns(SDWORD *x, SDWORD *y, SDWORD *z, UDWORD groupNum
 		return;
 	}
 
-	for (count = 0, psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (count = 0, psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (groupNumber == GROUP_SELECTED ? psDroid->selected : psDroid->group == groupNumber)
 		{
 			if (!bOnScreen || objectOnScreen(psDroid, pie_GetVideoBufferWidth() / 4))
 			{
 				count++;
-				xTotals += psDroid->pos.x;
-				yTotals += psDroid->pos.z;	// note the flip
-				zTotals += psDroid->pos.y;
+				xTotals += psDroid->position.x;
+				yTotals += psDroid->position.z;	// note the flip
+				zTotals += psDroid->position.y;
 			}
 		}
 	}
@@ -551,7 +555,7 @@ in the case of location and degrees of arc in the case of rotation.
 
 static void updateCameraAcceleration(UBYTE update)
 {
-	Vector3i concern = trackingCamera.target->pos.xzy();
+	Vector3i concern = trackingCamera.target->position.xzy();
 	Vector2i behind(0, 0); /* Irrelevant for normal radar tracking */
 	bool bFlying = false;
 
@@ -587,7 +591,7 @@ static void updateCameraAcceleration(UBYTE update)
 	}
 	else
 	{
-		behind = iSinCosR(trackingCamera.target->rot.direction, CAM_DEFAULT_OFFSET);
+		behind = iSinCosR(trackingCamera.target->rotation.direction, CAM_DEFAULT_OFFSET);
 	}
 
 	concern.y += angle * 5;
@@ -686,8 +690,8 @@ static void updateCameraRotationAcceleration(UBYTE update)
 		int droidHeight, difHeight, droidMapHeight;
 
 		bGotFlying = true;
-		droidHeight = trackingCamera.target->pos.z;
-		droidMapHeight = map_Height(trackingCamera.target->pos.x, trackingCamera.target->pos.y);
+		droidHeight = trackingCamera.target->position.z;
+		droidMapHeight = map_Height(trackingCamera.target->position.x, trackingCamera.target->position.y);
 		difHeight = abs(droidHeight - droidMapHeight);
 		if (difHeight < MIN_TRACK_HEIGHT)
 		{
@@ -706,7 +710,7 @@ static void updateCameraRotationAcceleration(UBYTE update)
 		}
 		else
 		{
-			yConcern = trackingCamera.target->rot.direction;
+			yConcern = trackingCamera.target->rotation.direction;
 		}
 		yConcern += DEG(180);
 
@@ -736,7 +740,7 @@ static void updateCameraRotationAcceleration(UBYTE update)
 		}
 		else
 		{
-			xConcern = trackingCamera.target->rot.pitch;
+			xConcern = trackingCamera.target->rotation.pitch;
 			xConcern += DEG(-16);
 		}
 		while (trackingCamera.rotation.x < 0)
@@ -761,7 +765,7 @@ static void updateCameraRotationAcceleration(UBYTE update)
 		}
 		else
 		{
-			zConcern = trackingCamera.target->rot.roll;
+			zConcern = trackingCamera.target->rotation.roll;
 		}
 		while (trackingCamera.rotation.z < 0)
 		{
@@ -831,7 +835,7 @@ static bool camTrackCamera()
 	bool bFlying = false;
 
 	/* Most importantly - see if the target we're tracking is dead! */
-	if (trackingCamera.target->died)
+	if (trackingCamera.target->deathTime)
 	{
 		return (false);
 	}
@@ -914,7 +918,7 @@ static void camRadarJump()
 }
 
 //-----------------------------------------------------------------------------------
-DROID *getTrackingDroid()
+Droid *getTrackingDroid()
 {
 	if (!getWarCamStatus())
 	{

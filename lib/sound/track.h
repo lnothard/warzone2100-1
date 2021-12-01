@@ -44,7 +44,7 @@ struct AUDIO_STREAM;
 
 /* structs */
 
-struct SIMPLE_OBJECT;
+class GameObject;
 
 struct AUDIO_SAMPLE
 {
@@ -59,7 +59,7 @@ struct AUDIO_SAMPLE
 	float                   fVol;           // computed volume of sample
 	bool                    bFinishedPlaying;
 	AUDIO_CALLBACK          pCallback;
-	SIMPLE_OBJECT          *psObj;
+        GameObject *psObj;
 	AUDIO_SAMPLE           *psPrev;
 	AUDIO_SAMPLE           *psNext;
 };

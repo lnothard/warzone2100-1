@@ -49,11 +49,11 @@
 bool	powerCalculated;
 
 /* Updates the current power based on the extracted power and a Power Generator*/
-static void updateCurrentPower(STRUCTURE *psStruct, UDWORD player, int ticks);
-static int64_t updateExtractedPower(STRUCTURE *psBuilding);
+static void updateCurrentPower(Structure *psStruct, UDWORD player, int ticks);
+static int64_t updateExtractedPower(Structure *psBuilding);
 
 //returns the relevant list based on OffWorld or OnWorld
-static STRUCTURE *powerStructList(int player);
+static Structure *powerStructList(int player);
 
 struct PowerRequest
 {
@@ -129,10 +129,10 @@ static bool addPowerRequest(unsigned player, unsigned id, int64_t amount)
 	return requiredPower <= p->currentPower;
 }
 
-void delPowerRequest(STRUCTURE *psStruct)
+void delPowerRequest(Structure *psStruct)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(, psStruct);
-	PlayerPower *p = &asPower[psStruct->player];
+	PlayerPower *p = &asPower[psStruct->owningPlayer];
 
 	for (size_t n = 0; n < p->powerQueue.size(); ++n)
 	{
@@ -144,10 +144,10 @@ void delPowerRequest(STRUCTURE *psStruct)
 	}
 }
 
-static int64_t checkPrecisePowerRequest(STRUCTURE *psStruct)
+static int64_t checkPrecisePowerRequest(Structure *psStruct)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(-1, psStruct);
-	PlayerPower const *p = &asPower[psStruct->player];
+	PlayerPower const *p = &asPower[psStruct->owningPlayer];
 
 	int64_t requiredPower = 0;
 	for (size_t n = 0; n < p->powerQueue.size(); ++n)
@@ -166,7 +166,7 @@ static int64_t checkPrecisePowerRequest(STRUCTURE *psStruct)
 	return -1;
 }
 
-int32_t checkPowerRequest(STRUCTURE *psStruct)
+int32_t checkPowerRequest(Structure *psStruct)
 {
 	int64_t power = checkPrecisePowerRequest(psStruct);
 	return power != -1 ? power / FP_ONE : -1;
@@ -229,7 +229,7 @@ void powerCalc(bool on)
 }
 
 /** Each Resource Extractor yields EXTRACT_POINTS per second FOREVER */
-static int64_t updateExtractedPower(STRUCTURE *psBuilding)
+static int64_t updateExtractedPower(Structure *psBuilding)
 {
 	RES_EXTRACTOR		*pResExtractor;
 	int64_t                 extractedPoints;
@@ -242,15 +242,15 @@ static int64_t updateExtractedPower(STRUCTURE *psBuilding)
 	if (pResExtractor->psPowerGen != nullptr)
 	{
 		// include modifier as a %
-		extractedPoints = asPower[psBuilding->player].powerModifier * EXTRACT_POINTS * FP_ONE / (100 * GAME_UPDATES_PER_SEC);
-		syncDebug("updateExtractedPower%d = %" PRId64"", psBuilding->player, extractedPoints);
+		extractedPoints = asPower[psBuilding->owningPlayer].powerModifier * EXTRACT_POINTS * FP_ONE / (100 * GAME_UPDATES_PER_SEC);
+		syncDebug("updateExtractedPower%d = %" PRId64"", psBuilding->owningPlayer, extractedPoints);
 	}
 	ASSERT(extractedPoints >= 0, "extracted negative amount of power");
 	return extractedPoints;
 }
 
 //returns the relevant list based on OffWorld or OnWorld
-STRUCTURE *powerStructList(int player)
+Structure *powerStructList(int player)
 {
 	ASSERT_OR_RETURN(nullptr, player < MAX_PLAYERS, "Invalid player %d", player);
 	if (offWorldKeepLists)
@@ -266,7 +266,7 @@ STRUCTURE *powerStructList(int player)
 /* Update current power based on what Power Generators exist */
 void updatePlayerPower(int player, int ticks)
 {
-	STRUCTURE		*psStruct;//, *psList;
+  Structure *psStruct;//, *psList;
 	int64_t powerBefore = asPower[player].currentPower;
 
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player %d", player);
@@ -275,7 +275,7 @@ void updatePlayerPower(int player, int ticks)
 
 	for (psStruct = powerStructList(player); psStruct != nullptr; psStruct = psStruct->psNext)
 	{
-		if (psStruct->pStructureType->type == REF_POWER_GEN && psStruct->status == SS_BUILT)
+		if (psStruct->stats->type == REF_POWER_GEN && psStruct->status == SS_BUILT)
 		{
 			updateCurrentPower(psStruct, player, ticks);
 		}
@@ -287,7 +287,7 @@ void updatePlayerPower(int player, int ticks)
 }
 
 /* Updates the current power based on the extracted power and a Power Generator*/
-static void updateCurrentPower(STRUCTURE *psStruct, UDWORD player, int ticks)
+static void updateCurrentPower(Structure *psStruct, UDWORD player, int ticks)
 {
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player %u", player);
 
@@ -299,7 +299,7 @@ static void updateCurrentPower(STRUCTURE *psStruct, UDWORD player, int ticks)
 	for (int i = 0; i < NUM_POWER_MODULES; ++i)
 	{
 		auto &extractor = psPowerGen->apResExtractors[i];
-		if (extractor && extractor->died) {
+		if (extractor && extractor->deathTime) {
 			syncDebugStructure(extractor, '-');
 			extractor = nullptr;  // Clear pointer.
 		}
@@ -381,27 +381,27 @@ std::string getApproxPowerGeneratedPerSecForDisplay(unsigned player)
 	return fmt::format("{:+.0f}", floatingValue);
 }
 
-bool requestPowerFor(STRUCTURE *psStruct, int32_t amount)
+bool requestPowerFor(Structure *psStruct, int32_t amount)
 {
 	return requestPrecisePowerFor(psStruct, amount * FP_ONE);
 }
 
-bool requestPrecisePowerFor(STRUCTURE *psStruct, int64_t amount)
+bool requestPrecisePowerFor(Structure *psStruct, int64_t amount)
 {
 	if (amount <= 0 || !powerCalculated)
 	{
 		return true;
 	}
 
-	bool haveEnoughPower = addPowerRequest(psStruct->player, psStruct->id, amount);
+	bool haveEnoughPower = addPowerRequest(psStruct->owningPlayer, psStruct->id, amount);
 	if (haveEnoughPower)
 	{
 		// you can have it
-		asPower[psStruct->player].currentPower -= amount;
+		asPower[psStruct->owningPlayer].currentPower -= amount;
 		delPowerRequest(psStruct);
-		syncDebug("requestPrecisePowerFor%d,%u amount%" PRId64"", psStruct->player, psStruct->id, amount);
+		syncDebug("requestPrecisePowerFor%d,%u amount%" PRId64"", psStruct->owningPlayer, psStruct->id, amount);
 		return true;
 	}
-	syncDebug("requestPrecisePowerFor%d,%u wait,amount%" PRId64"", psStruct->player, psStruct->id, amount);
+	syncDebug("requestPrecisePowerFor%d,%u wait,amount%" PRId64"", psStruct->owningPlayer, psStruct->id, amount);
 	return false;  // Not enough power in the queue.
 }

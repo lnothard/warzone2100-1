@@ -105,7 +105,7 @@ DROID_GROUP *grpFind(int id)
 }
 
 // add a droid to a group
-void DROID_GROUP::add(DROID *psDroid)
+void DROID_GROUP::add(Droid *psDroid)
 {
 	ASSERT(grpInitialized, "Group code not initialized yet");
 
@@ -113,7 +113,7 @@ void DROID_GROUP::add(DROID *psDroid)
 	// if psDroid == NULL just increase the refcount don't add anything to the list
 	if (psDroid != nullptr)
 	{
-		if (psList && psDroid->player != psList->player)
+		if (psList && psDroid->owningPlayer != psList->owningPlayer)
 		{
 			ASSERT(false, "grpJoin: Cannot have more than one players droids in a group");
 			return;
@@ -153,9 +153,9 @@ void DROID_GROUP::add(DROID *psDroid)
 }
 
 // remove a droid from a group
-void DROID_GROUP::remove(DROID *psDroid)
+void DROID_GROUP::remove(Droid *psDroid)
 {
-	DROID	*psPrev, *psCurr;
+  Droid *psPrev, *psCurr;
 
 	ASSERT_OR_RETURN(, grpInitialized, "Group code not initialized yet");
 
@@ -227,7 +227,7 @@ void DROID_GROUP::remove(DROID *psDroid)
 // count the members of a group
 unsigned int DROID_GROUP::getNumMembers()
 {
-	const DROID *psCurr;
+	const Droid *psCurr;
 	unsigned int num;
 
 	ASSERT(grpInitialized, "Group code not initialized yet");
@@ -244,7 +244,7 @@ unsigned int DROID_GROUP::getNumMembers()
 // Give a group of droids an order
 void DROID_GROUP::orderGroup(DROID_ORDER order)
 {
-	DROID *psCurr;
+  Droid *psCurr;
 
 	ASSERT(grpInitialized, "Group code not initialized yet");
 
@@ -257,7 +257,7 @@ void DROID_GROUP::orderGroup(DROID_ORDER order)
 // Give a group of droids an order (using a Location)
 void DROID_GROUP::orderGroup(DROID_ORDER order, UDWORD x, UDWORD y)
 {
-	DROID	*psCurr;
+  Droid *psCurr;
 
 	ASSERT(grpInitialized, "Group code not initialized yet");
 	ASSERT_OR_RETURN(, validOrderForLoc(order), "orderGroup: Bad order");
@@ -269,22 +269,22 @@ void DROID_GROUP::orderGroup(DROID_ORDER order, UDWORD x, UDWORD y)
 }
 
 // Give a group of droids an order (using an Object)
-void DROID_GROUP::orderGroup(DROID_ORDER order, BASE_OBJECT *psObj)
+void DROID_GROUP::orderGroup(DROID_ORDER order, GameObject *psObj)
 {
-	DROID	*psCurr;
+  Droid *psCurr;
 
 	ASSERT_OR_RETURN(, validOrderForObj(order), "orderGroup: Bad order");
 
 	for (psCurr = psList; psCurr != nullptr; psCurr = psCurr->psGrpNext)
 	{
-		orderDroidObj(psCurr, order, (BASE_OBJECT *)psObj, bMultiMessages ? ModeQueue : ModeImmediate);
+		orderDroidObj(psCurr, order, (GameObject *)psObj, bMultiMessages ? ModeQueue : ModeImmediate);
 	}
 }
 
 // Set the secondary state for a group of droids
 void DROID_GROUP::setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state)
 {
-	DROID	*psCurr;
+  Droid *psCurr;
 
 	ASSERT(grpInitialized, "Group code not initialized yet");
 

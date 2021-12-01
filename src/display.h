@@ -52,7 +52,7 @@ bool DrawnInLastFrame(SDWORD Frame);
 // Clear all selections
 void clearSelection();
 // deal with selecting a droid
-void dealWithDroidSelect(DROID *psDroid, bool bDragBox);
+void dealWithDroidSelect(Droid *psDroid, bool bDragBox);
 
 bool isMouseOverRadar();
 
@@ -187,7 +187,7 @@ void resetInput();
 bool CheckInScrollLimits(SDWORD *xPos, SDWORD *zPos);
 bool CheckScrollLimits();
 
-BASE_OBJECT	*mouseTarget();
+GameObject *mouseTarget();
 
 void cancelDeliveryRepos();
 void startDeliveryPosition(FLAG_POSITION *psFlag);

@@ -376,8 +376,8 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 };
 
 
-static std::vector<DROID *> SelectedDroids;
-static STRUCTURE *psSelectedFactory = nullptr;
+static std::vector<Droid *> SelectedDroids;
+static Structure *psSelectedFactory = nullptr;
 static std::vector<AVORDER> AvailableOrders;
 
 
@@ -393,7 +393,7 @@ static bool BuildSelectedDroidList()
 		return false;
 	}
 
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (Droid *psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected)
 		{
@@ -431,7 +431,7 @@ static std::vector<AVORDER> buildDroidOrderList()
 }
 
 // Build a list of orders available for the selected structure.
-static std::vector<AVORDER> buildStructureOrderList(STRUCTURE *psStructure)
+static std::vector<AVORDER> buildStructureOrderList(Structure *psStructure)
 {
 	ASSERT_OR_RETURN(std::vector<AVORDER>(), StructIsFactory(psStructure), "BuildStructureOrderList: structure is not a factory");
 
@@ -497,7 +497,7 @@ static UDWORD GetImageHeight(IMAGEFILE *ImageFile, UDWORD ImageID)
 // Returns true if the form was displayed ok.
 //
 //changed to a BASE_OBJECT to accommodate the factories - AB 21/04/99
-bool intAddOrder(BASE_OBJECT *psObj)
+bool intAddOrder(GameObject *psObj)
 {
 	bool Animate = true;
 	SECONDARY_STATE State;
@@ -506,8 +506,8 @@ bool intAddOrder(BASE_OBJECT *psObj)
 	UWORD NumButs;
 	UWORD NumJustifyButs, NumCombineButs, NumCombineBefore;
 	bool  bLastCombine, bHidden;
-	DROID *Droid;
-	STRUCTURE *psStructure;
+        Droid *Droid;
+        Structure *psStructure;
 
 	// Is the form already up?
 	if (widgGetFromID(psWScreen, IDORDER_FORM) != nullptr)
@@ -526,16 +526,16 @@ bool intAddOrder(BASE_OBJECT *psObj)
 	{
 		if (psObj->type == OBJ_DROID)
 		{
-			Droid = (DROID *)psObj;
+			Droid = (Droid *)psObj;
 			psStructure =  nullptr;
 		}
 		else if (psObj->type == OBJ_STRUCTURE)
 		{
 			Droid = nullptr;
-			psStructure = (STRUCTURE *)psObj;
+			psStructure = (Structure *)psObj;
 			psSelectedFactory = psStructure;
 			ASSERT_OR_RETURN(false, StructIsFactory(psSelectedFactory), "Trying to select a %s as a factory!",
-			                 objInfo((BASE_OBJECT *)psSelectedFactory));
+			                 objInfo((GameObject *)psSelectedFactory));
 		}
 		else
 		{
@@ -834,15 +834,15 @@ void intRunOrder()
 	// Check to see if there all dead or unselected.
 	for (auto &SelectedDroid : SelectedDroids)
 	{
-		if (SelectedDroid->died)
+		if (SelectedDroid->deathTime)
 		{
 			SelectedDroid = nullptr;
 		}
 	}
 	// Remove any NULL pointers from SelectedDroids.
-	SelectedDroids.erase(std::remove(SelectedDroids.begin(), SelectedDroids.end(), (DROID *)nullptr), SelectedDroids.end());
+	SelectedDroids.erase(std::remove(SelectedDroids.begin(), SelectedDroids.end(), (Droid *)nullptr), SelectedDroids.end());
 
-	if (psSelectedFactory != nullptr && psSelectedFactory->died)
+	if (psSelectedFactory != nullptr && psSelectedFactory->deathTime)
 	{
 		psSelectedFactory = nullptr;
 	}
@@ -1179,16 +1179,16 @@ void intRemoveOrderNoAnim()
 }
 
 //new function added to bring up the RMB order form for Factories as well as droids
-void intAddFactoryOrder(STRUCTURE *psStructure)
+void intAddFactoryOrder(Structure *psStructure)
 {
 	if (!OrderUp)
 	{
 		intResetScreen(false);
-		intAddOrder((BASE_OBJECT *)psStructure);
+		intAddOrder((GameObject *)psStructure);
 		intMode = INT_ORDER;
 	}
 	else
 	{
-		intAddOrder((BASE_OBJECT *)psStructure);
+		intAddOrder((GameObject *)psStructure);
 	}
 }

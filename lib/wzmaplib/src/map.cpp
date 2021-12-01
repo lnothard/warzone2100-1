@@ -662,14 +662,14 @@ static inline bool jsonGetBaseMapObjectInfo(T& mapObj, uint32_t jsonFileVersion,
 			debug(pCustomLogger, LOG_ERROR, "%s: Invalid \"id\" = 0 for: %s", jsonContext.filename, jsonContext.jsonPath);
 			return false;
 		}
-		mapObj.id = id;
+		mapObj.textId = id;
 	}
 	// "position" must contain at least two components [x, y]
 	auto position = jsonGetListOfType<int>(jsonObj, "position", 2, maxComponentsPosition, jsonContext, pCustomLogger);
 	if (position.has_value())
 	{
-		mapObj.position.x = position.value()[0];
-		mapObj.position.y = position.value()[1];
+		mapObj.m_position.x = position.value()[0];
+		mapObj.m_position.y = position.value()[1];
 	}
 	else
 	{
@@ -692,14 +692,14 @@ static void jsonSetBaseMapObjectInfo(nlohmann::ordered_json& jsonObj, uint32_t j
 {
 	assert(pNameKey != nullptr);
 	jsonObj[pNameKey] = mapObj.name;
-	if (mapObj.id.has_value())
+	if (mapObj.textId.has_value())
 	{
-		jsonObj["id"] = mapObj.id.value();
+		jsonObj["id"] = mapObj.textId.value();
 	}
 	// "position" must contain at least two components [x, y] - jsonFileVersion_v1 always expects 3 (and ignores the third)
 	nlohmann::ordered_json position = nlohmann::ordered_json::array();
-	position.push_back(mapObj.position.x);
-	position.push_back(mapObj.position.y);
+	position.push_back(mapObj.m_position.x);
+	position.push_back(mapObj.m_position.y);
 	if (jsonFileVersion == 1)
 	{
 		position.push_back(0);
@@ -758,9 +758,9 @@ static uint32_t getLargestSpecifiedId(const std::vector<T>& container)
 	uint32_t largestId = 0;
 	for (const auto& item : container)
 	{
-		if (item.id.has_value() && item.id.value() > largestId)
+		if (item.textId.has_value() && item.textId.value() > largestId)
 		{
-			largestId = item.id.value();
+			largestId = item.textId.value();
 		}
 	}
 	return largestId;

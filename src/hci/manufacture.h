@@ -6,8 +6,8 @@
 class ManufactureController: public BaseObjectsStatsController, public std::enable_shared_from_this<ManufactureController>
 {
 public:
-	DROID_TEMPLATE *getObjectStatsAt(size_t objectIndex) const override;
-	DROID_TEMPLATE *getStatsAt(size_t statsIndex) const override
+  DroidStats *getObjectStatsAt(size_t objectIndex) const override;
+  DroidStats *getStatsAt(size_t statsIndex) const override
 	{
 		ASSERT_OR_RETURN(nullptr, statsIndex < stats.size(), "Invalid stats index (%zu); max: (%zu)", statsIndex, stats.size());
 		return stats[statsIndex];
@@ -34,41 +34,41 @@ public:
 		return factories.size();
 	}
 
-	STRUCTURE *getObjectAt(size_t index) const override
+        Structure *getObjectAt(size_t index) const override
 	{
 		ASSERT_OR_RETURN(nullptr, index < factories.size(), "Invalid object index (%zu); max: (%zu)", index, factories.size());
 		return factories[index];
 	}
 
-	bool findObject(std::function<bool (BASE_OBJECT *)> iteration) const override
+	bool findObject(std::function<bool (GameObject *)> iteration) const override
 	{
 		return BaseObjectsController::findObject(factories, iteration);
 	}
 
 	void updateData();
-	void adjustFactoryProduction(DROID_TEMPLATE *manufactureOption, bool add);
+	void adjustFactoryProduction(DroidStats *manufactureOption, bool add);
 	void adjustFactoryLoop(bool add);
-	void releaseFactoryProduction(STRUCTURE *structure);
-	void cancelFactoryProduction(STRUCTURE *structure);
+	void releaseFactoryProduction(Structure *structure);
+	void cancelFactoryProduction(Structure *structure);
 	void startDeliveryPointPosition();
 	bool showInterface() override;
 	void refresh() override;
 	void clearData() override;
 	std::shared_ptr<StatsForm> makeStatsForm() override;
 
-	STRUCTURE *getHighlightedObject() const override
+        Structure *getHighlightedObject() const override
 	{
 		return highlightedFactory;
 	}
 
-	void setHighlightedObject(BASE_OBJECT *object) override;
+	void setHighlightedObject(GameObject *object) override;
 
 private:
 	void updateFactoriesList();
 	void updateManufactureOptionsList();
-	std::vector<DROID_TEMPLATE *> stats;
-	std::vector<STRUCTURE *> factories;
-	static STRUCTURE *highlightedFactory;
+	std::vector<DroidStats *> stats;
+	std::vector<Structure *> factories;
+	static Structure *highlightedFactory;
 };
 
 #endif // __INCLUDED_SRC_HCI_MANUFACTURE_INTERFACE_H__

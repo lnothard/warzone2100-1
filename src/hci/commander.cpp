@@ -5,7 +5,7 @@
 #include "../group.h"
 #include "../intorder.h"
 
-DROID *CommanderController::highlightedCommander = nullptr;
+Droid *CommanderController::highlightedCommander = nullptr;
 
 void CommanderController::updateData()
 {
@@ -19,9 +19,9 @@ void CommanderController::updateCommandersList()
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "selectedPlayer = %" PRIu32 "", selectedPlayer);
 
-	for (DROID *droid = apsDroidLists[selectedPlayer]; droid; droid = droid->psNext)
+	for (Droid *droid = allDroidLists[selectedPlayer]; droid; droid = droid->psNext)
 	{
-		if (droid->droidType == DROID_COMMAND && droid->died == 0)
+		if (droid->droidType == DROID_COMMAND && droid->deathTime == 0)
 		{
 			commanders.push_back(droid);
 		}
@@ -30,13 +30,13 @@ void CommanderController::updateCommandersList()
 	std::reverse(commanders.begin(), commanders.end());
 }
 
-STRUCTURE_STATS *CommanderController::getObjectStatsAt(size_t objectIndex) const
+StructureStats *CommanderController::getObjectStatsAt(size_t objectIndex) const
 {
 	auto assignedFactory = getAssignedFactoryAt(objectIndex);
-	return assignedFactory == nullptr ? nullptr : assignedFactory->pStructureType;
+	return assignedFactory == nullptr ? nullptr : assignedFactory->stats;
 }
 
-STRUCTURE *CommanderController::getAssignedFactoryAt(size_t objectIndex) const
+Structure *CommanderController::getAssignedFactoryAt(size_t objectIndex) const
 {
 	auto droid = getObjectAt(objectIndex);
 	return droid == nullptr ? nullptr : droidGetCommandFactory(droid);
@@ -63,7 +63,7 @@ void CommanderController::clearData()
 	setHighlightedObject(nullptr);
 }
 
-void CommanderController::setHighlightedObject(BASE_OBJECT *object)
+void CommanderController::setHighlightedObject(GameObject *object)
 {
 	if (object == nullptr)
 	{
@@ -121,7 +121,7 @@ protected:
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		if (isDead(droid))
 		{
-			ASSERT_FAILURE(!isDead(droid), "!isDead(droid)", AT_MACRO, __FUNCTION__, "Droid is dead");
+			ASSERT_FAILURE(!isDead(droid), "!alive(droid)", AT_MACRO, __FUNCTION__, "Droid is dead");
 			// ensure the backing information is refreshed before the next draw
 			intRefreshScreen();
 			return;
@@ -139,7 +139,7 @@ protected:
 		updateExperienceStarsLabel(droid);
 	}
 
-	void updateGroupSizeLabel(DROID *droid)
+	void updateGroupSizeLabel(Droid *droid)
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		auto text = astringf("%u/%u", droid->psGroup ? droid->psGroup->getNumMembers() : 0, cmdDroidMaxGroup(droid));
@@ -147,7 +147,7 @@ protected:
 		groupSizeLabel->show();
 	}
 
-	void updateExperienceStarsLabel(DROID *droid)
+	void updateExperienceStarsLabel(Droid *droid)
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		int numStars = std::max((int)getDroidLevel(droid) - 1, 0);
@@ -225,7 +225,8 @@ protected:
 	}
 
 private:
-	void updateAssignedFactoriesLabel(const std::shared_ptr<W_LABEL> &label, DROID *droid, uint32_t factoryTypeShift)
+	void updateAssignedFactoriesLabel(const std::shared_ptr<W_LABEL> &label,
+                                    Droid *droid, uint32_t factoryTypeShift)
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		/**
@@ -255,7 +256,7 @@ private:
 		}
 	}
 
-	STRUCTURE_STATS *getStats() override
+        StructureStats *getStats() override
 	{
 		return controller->getObjectStatsAt(objectIndex);
 	}
@@ -350,7 +351,7 @@ void CommanderController::displayOrderForm()
 {
 	auto psWeakControllerRef = std::weak_ptr<CommanderController>(shared_from_this());
 	widgScheduleTask([psWeakControllerRef]() {
-		DROID *psDroid = nullptr;
+          Droid *psDroid = nullptr;
 		if (auto strongControllerRef = psWeakControllerRef.lock())
 		{
 			psDroid = strongControllerRef->getHighlightedObject();

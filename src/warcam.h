@@ -23,8 +23,8 @@
 
 #include "lib/framework/vector.h"
 
-struct BASE_OBJECT;
-struct DROID;
+class GameObject;
+class Droid;
 
 #define X_UPDATE 0x1
 #define Y_UPDATE 0x2
@@ -59,9 +59,9 @@ void camToggleInfo();
 void requestRadarTrack(SDWORD x, SDWORD y);
 bool getRadarTrackingStatus();
 void camInformOfRotation(Vector3i *rotation);
-DROID *camFindDroidTarget();
-DROID *getTrackingDroid();
+Droid *camFindDroidTarget();
+Droid *getTrackingDroid();
 UDWORD getNumDroidsSelected();
-void camAlignWithTarget(DROID *psDroid);
+void camAlignWithTarget(Droid *psDroid);
 
 #endif // __INCLUDED_SRC_WARCAM_H__

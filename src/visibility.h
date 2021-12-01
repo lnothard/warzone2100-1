@@ -31,7 +31,7 @@
 bool visInitialise();
 
 /* Check which tiles can be seen by an object */
-void visTilesUpdate(BASE_OBJECT *psObj);
+void visTilesUpdate(GameObject *psObj);
 
 void revealAll(UBYTE player);
 
@@ -40,19 +40,19 @@ void revealAll(UBYTE player);
  * currently droids and structures.
  * psTarget can be any type of BASE_OBJECT (e.g. a tree).
  */
-int visibleObject(const BASE_OBJECT *psViewer, const BASE_OBJECT *psTarget, bool wallsBlock);
+int visibleObject(const GameObject *psViewer, const GameObject *psTarget, bool wallsBlock);
 
 /** Can shooter hit target with direct fire weapon? */
-bool lineOfFire(const SIMPLE_OBJECT *psViewer, const BASE_OBJECT *psTarget, int weapon_slot, bool wallsBlock);
+bool lineOfFire(const GameObject *psViewer, const GameObject *psTarget, int weapon_slot, bool wallsBlock);
 
 /** How much of target can the player hit with direct fire weapon? */
-int areaOfFire(const SIMPLE_OBJECT *psViewer, const BASE_OBJECT *psTarget, int weapon_slot, bool wallsBlock);
+int areaOfFire(const GameObject *psViewer, const GameObject *psTarget, int weapon_slot, bool wallsBlock);
 
 /** How much of target can the player hit with direct fire weapon? */
-int arcOfFire(const SIMPLE_OBJECT *psViewer, const BASE_OBJECT *psTarget, int weapon_slot, bool wallsBlock);
+int arcOfFire(const GameObject *psViewer, const GameObject *psTarget, int weapon_slot, bool wallsBlock);
 
 // Find the wall that is blocking LOS to a target (if any)
-STRUCTURE *visGetBlockingWall(const BASE_OBJECT *psViewer, const BASE_OBJECT *psTarget);
+Structure *visGetBlockingWall(const GameObject *psViewer, const GameObject *psTarget);
 
 bool hasSharedVision(unsigned viewer, unsigned ally);
 
@@ -61,53 +61,53 @@ void processVisibility();  ///< Calls processVisibilitySelf and processVisibilit
 // update the visibility reduction
 void visUpdateLevel();
 
-void setUnderTilesVis(BASE_OBJECT *psObj, UDWORD player);
+void setUnderTilesVis(GameObject *psObj, UDWORD player);
 
-void visRemoveVisibilityOffWorld(BASE_OBJECT *psObj);
-void visRemoveVisibility(BASE_OBJECT *psObj);
+void visRemoveVisibilityOffWorld(GameObject *psObj);
+void visRemoveVisibility(GameObject *psObj);
 
 // fast test for whether obj2 is in range of obj1
-static inline bool visObjInRange(BASE_OBJECT *psObj1, BASE_OBJECT *psObj2, SDWORD range)
+static inline bool visObjInRange(GameObject *psObj1, GameObject *psObj2, SDWORD range)
 {
-	int32_t xdiff = psObj1->pos.x - psObj2->pos.x, ydiff = psObj1->pos.y - psObj2->pos.y;
+	int32_t xdiff = psObj1->position.x - psObj2->position.x, ydiff = psObj1->position.y - psObj2->position.y;
 
 	return abs(xdiff) <= range && abs(ydiff) <= range && xdiff * xdiff + ydiff * ydiff <= range;
 }
 
 // If we have ECM, use this for range instead. Otherwise, the sensor's range will be used for
 // jamming range, which we do not want. Rather limit ECM unit sensor range to jammer range.
-static inline int objSensorRange(const BASE_OBJECT *psObj)
+static inline int objSensorRange(const GameObject *psObj)
 {
 	if (psObj->type == OBJ_DROID)
 	{
-		const int ecmrange = asECMStats[((const DROID *)psObj)->asBits[COMP_ECM]].upgrade[psObj->player].range;
+		const int ecmrange = asECMStats[((const Droid *)psObj)->asBits[COMP_ECM]].upgrade[psObj->owningPlayer].range;
 		if (ecmrange > 0)
 		{
 			return ecmrange;
 		}
-		return asSensorStats[((const DROID *)psObj)->asBits[COMP_SENSOR]].upgrade[psObj->player].range;
+		return asSensorStats[((const Droid *)psObj)->asBits[COMP_SENSOR]].upgrade[psObj->owningPlayer].range;
 	}
 	else if (psObj->type == OBJ_STRUCTURE)
 	{
-		const int ecmrange = ((const STRUCTURE *)psObj)->pStructureType->pECM->upgrade[psObj->player].range;
+		const int ecmrange = ((const Structure *)psObj)->stats->pECM->upgrade[psObj->owningPlayer].range;
 		if (ecmrange)
 		{
 			return ecmrange;
 		}
-		return ((const STRUCTURE *)psObj)->pStructureType->pSensor->upgrade[psObj->player].range;
+		return ((const Structure *)psObj)->stats->pSensor->upgrade[psObj->owningPlayer].range;
 	}
 	return 0;
 }
 
-static inline int objJammerPower(const BASE_OBJECT *psObj)
+static inline int objJammerPower(const GameObject *psObj)
 {
 	if (psObj->type == OBJ_DROID)
 	{
-		return asECMStats[((const DROID *)psObj)->asBits[COMP_ECM]].upgrade[psObj->player].range;
+		return asECMStats[((const Droid *)psObj)->asBits[COMP_ECM]].upgrade[psObj->owningPlayer].range;
 	}
 	else if (psObj->type == OBJ_STRUCTURE)
 	{
-		return ((const STRUCTURE *)psObj)->pStructureType->pECM->upgrade[psObj->player].range;
+		return ((const Structure *)psObj)->stats->pECM->upgrade[psObj->owningPlayer].range;
 	}
 	return 0;
 }

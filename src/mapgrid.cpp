@@ -55,14 +55,14 @@ void gridReset()
 	// Put all existing objects into the point tree.
 	for (unsigned player = 0; player < MAX_PLAYERS; player++)
 	{
-		BASE_OBJECT *start[3] = {(BASE_OBJECT *)apsDroidLists[player], (BASE_OBJECT *)apsStructLists[player], (BASE_OBJECT *)apsFeatureLists[player]};
+          GameObject *start[3] = {(GameObject *)allDroidLists[player], (GameObject *)apsStructLists[player], (GameObject *)apsFeatureLists[player]};
 		for (unsigned type = 0; type != sizeof(start) / sizeof(*start); ++type)
 		{
-			for (BASE_OBJECT *psObj = start[type]; psObj != nullptr; psObj = psObj->psNext)
+			for (GameObject *psObj = start[type]; psObj != nullptr; psObj = psObj->psNext)
 			{
-				if (!psObj->died)
+				if (!psObj->deathTime)
 				{
-					gridPointTree->insert(psObj, psObj->pos.x, psObj->pos.y);
+					gridPointTree->insert(psObj, psObj->position.x, psObj->position.y);
 					for (unsigned char &viewer : psObj->seenThisTick)
 					{
 						viewer = 0;
@@ -114,12 +114,12 @@ static GridList const &gridStartIterateFiltered(int32_t x, int32_t y, uint32_t r
 	PointTree::ResultVector::iterator w = gridPointTree->lastQueryResults.begin(), i;
 	for (i = w; i != gridPointTree->lastQueryResults.end(); ++i)
 	{
-		BASE_OBJECT *obj = static_cast<BASE_OBJECT *>(*i);
+          GameObject *obj = static_cast<GameObject *>(*i);
 		if (!condition.test(obj))  // Check if we should skip this object.
 		{
 			filter->erase(gridPointTree->lastFilteredQueryIndices[i - gridPointTree->lastQueryResults.begin()]);  // Stop the object from appearing in future searches.
 		}
-		else if (isInRadius(obj->pos.x - x, obj->pos.y - y, radius))  // Check that search result is less than radius (since they can be up to a factor of sqrt(2) more).
+		else if (isInRadius(obj->position.x - x, obj->position.y - y, radius))  // Check that search result is less than radius (since they can be up to a factor of sqrt(2) more).
 		{
 			*w = *i;
 			++w;
@@ -134,7 +134,7 @@ static GridList const &gridStartIterateFiltered(int32_t x, int32_t y, uint32_t r
 	gridList.resize(gridPointTree->lastQueryResults.size());
 	for (unsigned n = 0; n < gridList.size(); ++n)
 	{
-		gridList[n] = (BASE_OBJECT *)gridPointTree->lastQueryResults[n];
+		gridList[n] = (GameObject *)gridPointTree->lastQueryResults[n];
 	}
 	return gridList;
 }
@@ -148,14 +148,14 @@ static GridList const &gridStartIterateFilteredArea(int32_t x, int32_t y, int32_
 	gridList.resize(gridPointTree->lastQueryResults.size());
 	for (unsigned n = 0; n < gridList.size(); ++n)
 	{
-		gridList[n] = (BASE_OBJECT *)gridPointTree->lastQueryResults[n];
+		gridList[n] = (GameObject *)gridPointTree->lastQueryResults[n];
 	}
 	return gridList;
 }
 
 struct ConditionTrue
 {
-	bool test(BASE_OBJECT *) const
+	bool test(GameObject *) const
 	{
 		return true;
 	}
@@ -174,9 +174,9 @@ GridList const &gridStartIterateArea(int32_t x, int32_t y, uint32_t x2, uint32_t
 struct ConditionDroidsByPlayer
 {
 	ConditionDroidsByPlayer(int32_t player_) : player(player_) {}
-	bool test(BASE_OBJECT *obj) const
+	bool test(GameObject *obj) const
 	{
-		return obj->type == OBJ_DROID && obj->player == player;
+		return obj->type == OBJ_DROID && obj->owningPlayer == player;
 	}
 	int player;
 };
@@ -189,7 +189,7 @@ GridList const &gridStartIterateDroidsByPlayer(int32_t x, int32_t y, uint32_t ra
 struct ConditionUnseen
 {
 	ConditionUnseen(int32_t player_) : player(player_) {}
-	bool test(BASE_OBJECT *obj) const
+	bool test(GameObject *obj) const
 	{
 		return obj->seenThisTick[player] < UINT8_MAX;
 	}
@@ -201,10 +201,10 @@ GridList const &gridStartIterateUnseen(int32_t x, int32_t y, uint32_t radius, in
 	return gridStartIterateFiltered(x, y, radius, &gridFiltersUnseen[player], ConditionUnseen(player));
 }
 
-BASE_OBJECT **gridIterateDup()
+GameObject **gridIterateDup()
 {
 	size_t bytes = gridPointTree->lastQueryResults.size() * sizeof(void *);
-	BASE_OBJECT **ret = (BASE_OBJECT **)malloc(bytes);
+        GameObject **ret = (GameObject **)malloc(bytes);
 	memcpy(ret, &gridPointTree->lastQueryResults[0], bytes);
 	return ret;
 }

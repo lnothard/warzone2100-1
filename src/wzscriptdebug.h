@@ -55,7 +55,7 @@ public:
 	virtual void display(int xOffset, int yOffset) override;
 
 public:
-	void selected(const BASE_OBJECT *psObj);
+	void selected(const GameObject *psObj);
 	void updateMessages();
 
 	const MODELMAP& getModelMap() const { return modelMap; }
@@ -103,12 +103,12 @@ private:
 		uint32_t id = -1;
 		uint8_t player = -1;
 
-		SelectedObjectId(const BASE_OBJECT *psObj)
+		SelectedObjectId(const GameObject *psObj)
 		{
 			if (!psObj) { return; }
 			type = psObj->type;
 			id = psObj->id;
-			player = psObj->player;
+			player = psObj->owningPlayer;
 		}
 	};
 

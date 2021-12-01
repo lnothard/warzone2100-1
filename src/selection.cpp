@@ -60,12 +60,12 @@ static unsigned selSelectUnitsIf(unsigned player, T condition, bool onlyOnScreen
 	selDroidDeselect(player);
 
 	// Go through all.
-	for (DROID *psDroid = apsDroidLists[player]; psDroid != nullptr; psDroid = psDroid->psNext)
+	for (Droid *psDroid = allDroidLists[player]; psDroid != nullptr; psDroid = psDroid->psNext)
 	{
 		bool shouldSelect = (!onlyOnScreen || objectOnScreen(psDroid, 0)) &&
 		                    condition(psDroid);
 		count += shouldSelect;
-		if (shouldSelect && !psDroid->selected && !psDroid->flags.test(OBJECT_FLAG_UNSELECTABLE))
+		if (shouldSelect && !psDroid->selected && !psDroid->flags.test(UNSELECTABLE))
 		{
 			SelectDroid(psDroid);
 		}
@@ -81,58 +81,58 @@ static unsigned selSelectUnitsIf(unsigned player, T condition, bool onlyOnScreen
 template <typename T, typename U>
 static unsigned selSelectUnitsIf(unsigned player, T condition, U value, bool onlyOnScreen)
 {
-	return selSelectUnitsIf(player, [condition, value](DROID *psDroid) { return condition(psDroid, value); }, onlyOnScreen);
+	return selSelectUnitsIf(player, [condition, value](Droid *psDroid) { return condition(psDroid, value); }, onlyOnScreen);
 }
 
-static bool selTransporter(DROID *droid)
+static bool selTransporter(Droid *droid)
 {
 	return isTransporter(droid);
 }
-static bool selTrue(DROID *droid)
+static bool selTrue(Droid *droid)
 {
 	return !selTransporter(droid);
 }
-static bool selProp(DROID *droid, PROPULSION_TYPE prop)
+static bool selProp(Droid *droid, PROPULSION_TYPE prop)
 {
 	return asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType == prop && !selTransporter(droid);
 }
-static bool selPropArmed(DROID *droid, PROPULSION_TYPE prop)
+static bool selPropArmed(Droid *droid, PROPULSION_TYPE prop)
 {
 	return asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType == prop && vtolFull(droid) && !selTransporter(droid);
 }
-static bool selType(DROID *droid, DROID_TYPE type)
+static bool selType(Droid *droid, DROID_TYPE type)
 {
 	return droid->droidType == type;
 }
-static bool selCombat(DROID *droid)
+static bool selCombat(Droid *droid)
 {
-	return droid->asWeaps[0].nStat > 0 && !selTransporter(droid);
+	return droid->m_weaponList[0].nStat > 0 && !selTransporter(droid);
 }
-static bool selCombatLand(DROID *droid)
+static bool selCombatLand(Droid *droid)
 {
 	PROPULSION_TYPE type = asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType;
-	return droid->asWeaps[0].nStat > 0 && (type == PROPULSION_TYPE_WHEELED ||
+	return droid->m_weaponList[0].nStat > 0 && (type == PROPULSION_TYPE_WHEELED ||
 	                                       type == PROPULSION_TYPE_HALF_TRACKED ||
 	                                       type == PROPULSION_TYPE_TRACKED ||
 	                                       type == PROPULSION_TYPE_HOVER ||
 	                                       type == PROPULSION_TYPE_LEGGED);
 }
-static bool selCombatCyborg(DROID *droid)
+static bool selCombatCyborg(Droid *droid)
 {
 	PROPULSION_TYPE type = asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType;
-	return droid->asWeaps[0].nStat > 0 && type == PROPULSION_TYPE_LEGGED;
+	return droid->m_weaponList[0].nStat > 0 && type == PROPULSION_TYPE_LEGGED;
 }
-static bool selDamaged(DROID *droid)
+static bool selDamaged(Droid *droid)
 {
-	return PERCENT(droid->body, droid->originalBody) < REPAIRLEV_LOW && !selTransporter(droid);
+	return PERCENT(droid->hitPoints, droid->originalBody) < REPAIRLEV_LOW && !selTransporter(droid);
 }
-static bool selNoGroup(DROID *psDroid)
+static bool selNoGroup(Droid *psDroid)
 {
 	return psDroid->group != UBYTE_MAX;
 }
-static bool selCombatLandMildlyOrNotDamaged(DROID *psDroid)
+static bool selCombatLandMildlyOrNotDamaged(Droid *psDroid)
 {
-	return PERCENT(psDroid->body, psDroid->originalBody) > REPAIRLEV_LOW && selCombatLand(psDroid) && !selNoGroup(psDroid);
+	return PERCENT(psDroid->hitPoints, psDroid->originalBody) > REPAIRLEV_LOW && selCombatLand(psDroid) && !selNoGroup(psDroid);
 }
 
 // ---------------------------------------------------------------------
@@ -142,7 +142,7 @@ unsigned int selDroidDeselect(unsigned int player)
 	unsigned int count = 0;
 	if (player >= MAX_PLAYERS) { return 0; }
 
-	for (DROID *psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+	for (Droid *psDroid = allDroidLists[player]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected)
 		{
@@ -161,7 +161,7 @@ unsigned int selNumSelected(unsigned int player)
 	unsigned int count = 0;
 	if (player >= MAX_PLAYERS) { return 0; }
 
-	for (DROID *psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+	for (Droid *psDroid = allDroidLists[player]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected)
 		{
@@ -174,7 +174,7 @@ unsigned int selNumSelected(unsigned int player)
 
 // Helper function to check whether the component stats of a unit can be found
 // in the combinations vector and, optionally, to add them to it if not
-static bool componentsInCombinations(DROID *psDroid, bool add)
+static bool componentsInCombinations(Droid *psDroid, bool add)
 {
 	std::vector<uint32_t> components;
 	uint32_t stat = 0;
@@ -187,7 +187,7 @@ static bool componentsInCombinations(DROID *psDroid, bool add)
 	{
 		switch(c)
 		{
-			case 0: stat = psDroid->asWeaps[1].nStat; break;
+			case 0: stat = psDroid->m_weaponList[1].nStat; break;
 			case 1: stat = psDroid->asBits[COMP_ECM]; break;
 			case 2: stat = psDroid->asBits[COMP_BRAIN]; break;
 			case 3: stat = psDroid->asBits[COMP_SENSOR]; break;
@@ -195,7 +195,7 @@ static bool componentsInCombinations(DROID *psDroid, bool add)
 			case 5: stat = psDroid->asBits[COMP_CONSTRUCT]; break;
 			case 6: stat = psDroid->asBits[COMP_BODY]; break;
 			case 7: stat = psDroid->asBits[COMP_PROPULSION]; break;
-			case 8: stat = psDroid->asWeaps[0].nStat; break;
+			case 8: stat = psDroid->m_weaponList[0].nStat; break;
 		}
 
 		// keep the list of components short by not adding stats with
@@ -233,7 +233,7 @@ static unsigned int selSelectAllSame(unsigned int player, bool bOnScreen)
 	if (player >= MAX_PLAYERS) { return 0; }
 
 	// find out which units will need to be compared to which component combinations
-	for (DROID *psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+	for (Droid *psDroid = allDroidLists[player]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (bOnScreen && !objectOnScreen(psDroid, 0))
 		{
@@ -254,7 +254,7 @@ static unsigned int selSelectAllSame(unsigned int player, bool bOnScreen)
 	{
 		// reset unit counter
 		i = 0;
-		for (DROID *psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+		for (Droid *psDroid = allDroidLists[player]; psDroid; psDroid = psDroid->psNext)
 		{
 			if (excluded.empty() || *excluded.begin() != i)
 			{
@@ -278,13 +278,13 @@ static unsigned int selSelectAllSame(unsigned int player, bool bOnScreen)
 // ---------------------------------------------------------------------
 void selNextSpecifiedUnit(DROID_TYPE unitType)
 {
-	static DROID *psOldRD = nullptr; // pointer to last selected repair unit
-	DROID *psResult = nullptr, *psFirst = nullptr;
+	static Droid *psOldRD = nullptr; // pointer to last selected repair unit
+        Droid *psResult = nullptr, *psFirst = nullptr;
 	bool bLaterInList = false;
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "invalid selectedPlayer: %" PRIu32 "", selectedPlayer);
 
-	for (DROID *psCurr = apsDroidLists[selectedPlayer]; psCurr && !psResult; psCurr = psCurr->psNext)
+	for (Droid *psCurr = allDroidLists[selectedPlayer]; psCurr && !psResult; psCurr = psCurr->psNext)
 	{
 		//exceptions - as always...
 		bool bMatch = false;
@@ -341,7 +341,7 @@ void selNextSpecifiedUnit(DROID_TYPE unitType)
 		psResult = psFirst;
 	}
 
-	if (psResult && !psResult->died)
+	if (psResult && !psResult->deathTime)
 	{
 		selDroidDeselect(selectedPlayer);
 		SelectDroid(psResult);
@@ -356,7 +356,7 @@ void selNextSpecifiedUnit(DROID_TYPE unitType)
 		{
 			// camToggleStatus();
 			/* Centre display on him if warcam isn't active */
-			setViewPos(map_coord(psResult->pos.x), map_coord(psResult->pos.y), true);
+			setViewPos(map_coord(psResult->position.x), map_coord(psResult->position.y), true);
 		}
 		psOldRD = psResult;
 	}
@@ -384,13 +384,13 @@ void selNextSpecifiedUnit(DROID_TYPE unitType)
 // ---------------------------------------------------------------------
 void selNextUnassignedUnit()
 {
-	static DROID *psOldNS = nullptr;
-	DROID *psResult = nullptr, *psFirst = nullptr;
+	static Droid *psOldNS = nullptr;
+        Droid *psResult = nullptr, *psFirst = nullptr;
 	bool bLaterInList = false;
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "invalid selectedPlayer: %" PRIu32 "", selectedPlayer);
 
-	for (DROID *psCurr = apsDroidLists[selectedPlayer]; psCurr && !psResult; psCurr = psCurr->psNext)
+	for (Droid *psCurr = allDroidLists[selectedPlayer]; psCurr && !psResult; psCurr = psCurr->psNext)
 	{
 		/* Only look at unselected ones */
 		if (psCurr->group == UBYTE_MAX)
@@ -426,7 +426,7 @@ void selNextUnassignedUnit()
 		psResult = psFirst;
 	}
 
-	if (psResult && !psResult->died)
+	if (psResult && !psResult->deathTime)
 	{
 		selDroidDeselect(selectedPlayer);
 		SelectDroid(psResult);
@@ -441,7 +441,7 @@ void selNextUnassignedUnit()
 		{
 			// camToggleStatus();
 			/* Centre display on him if warcam isn't active */
-			setViewPos(map_coord(psResult->pos.x), map_coord(psResult->pos.y), true);
+			setViewPos(map_coord(psResult->position.x), map_coord(psResult->position.y), true);
 		}
 		psOldNS = psResult;
 	}
@@ -454,7 +454,7 @@ void selNextUnassignedUnit()
 // ---------------------------------------------------------------------
 void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 {
-	STRUCTURE *psResult = nullptr, *psOldStruct = nullptr, *psFirst = nullptr;
+  Structure *psResult = nullptr, *psOldStruct = nullptr, *psFirst = nullptr;
 	bool bLaterInList = false;
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "invalid selectedPlayer: %" PRIu32 "", selectedPlayer);
@@ -462,9 +462,9 @@ void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 	/* Firstly, start coughing if the type is invalid */
 	ASSERT(structType <= NUM_DIFF_BUILDINGS, "Invalid structure type %u", structType);
 
-	for (STRUCTURE *psCurr = apsStructLists[selectedPlayer]; psCurr && !psResult; psCurr = psCurr->psNext)
+	for (Structure *psCurr = apsStructLists[selectedPlayer]; psCurr && !psResult; psCurr = psCurr->psNext)
 	{
-		if (psCurr->pStructureType->type == structType && psCurr->status == SS_BUILT)
+		if (psCurr->stats->type == structType && psCurr->status == SS_BUILT)
 		{
 			if (!psFirst)
 			{
@@ -487,7 +487,7 @@ void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 		psResult = psFirst;
 	}
 
-	if (psResult && !psResult->died)
+	if (psResult && !psResult->deathTime)
 	{
 		if (getWarCamStatus())
 		{
@@ -495,7 +495,7 @@ void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 		}
 		if (jump)
 		{
-			setViewPos(map_coord(psResult->pos.x), map_coord(psResult->pos.y), false);
+			setViewPos(map_coord(psResult->position.x), map_coord(psResult->position.y), false);
 		}
 		if (psOldStruct)
 		{
@@ -514,7 +514,7 @@ void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 
 // ---------------------------------------------------------------------
 // see if a commander is the n'th command droid
-static bool droidIsCommanderNum(DROID *psDroid, SDWORD n)
+static bool droidIsCommanderNum(Droid *psDroid, SDWORD n)
 {
 	if (psDroid->droidType != DROID_COMMAND)
 	{
@@ -522,7 +522,7 @@ static bool droidIsCommanderNum(DROID *psDroid, SDWORD n)
 	}
 
 	int numLess = 0;
-	for (DROID *psCurr = apsDroidLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+	for (Droid *psCurr = allDroidLists[psDroid->owningPlayer]; psCurr; psCurr = psCurr->psNext)
 	{
 		if ((psCurr->droidType == DROID_COMMAND) && (psCurr->id < psDroid->id))
 		{
@@ -538,16 +538,16 @@ void selCommander(int n)
 {
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "invalid selectedPlayer: %" PRIu32 "", selectedPlayer);
 
-	for (DROID *psCurr = apsDroidLists[selectedPlayer]; psCurr; psCurr = psCurr->psNext)
+	for (Droid *psCurr = allDroidLists[selectedPlayer]; psCurr; psCurr = psCurr->psNext)
 	{
 		if (droidIsCommanderNum(psCurr, n))
 		{
-			if (!psCurr->selected && !psCurr->flags.test(OBJECT_FLAG_UNSELECTABLE))
+			if (!psCurr->selected && !psCurr->flags.test(UNSELECTABLE))
 			{
 				clearSelection();
 				psCurr->selected = true;
 			}
-			else if (!psCurr->flags.test(OBJECT_FLAG_UNSELECTABLE))
+			else if (!psCurr->flags.test(UNSELECTABLE))
 			{
 				clearSelection();
 				psCurr->selected = true;
@@ -564,7 +564,7 @@ void selCommander(int n)
 				else
 				{
 					/* Centre display on him if warcam isn't active */
-					setViewPos(map_coord(psCurr->pos.x), map_coord(psCurr->pos.y), true);
+					setViewPos(map_coord(psCurr->position.x), map_coord(psCurr->position.y), true);
 				}
 			}
 			return;

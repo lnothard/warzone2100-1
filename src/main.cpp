@@ -1713,7 +1713,7 @@ int realmain(int argc, char *argv[])
 	debug(LOG_WZ, "Using language: %s", getLanguage());
 	debug(LOG_WZ, "Backend: %s", BACKEND);
 	debug(LOG_MEMORY, "sizeof: SIMPLE_OBJECT=%ld, BASE_OBJECT=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-	      (long)sizeof(SIMPLE_OBJECT), (long)sizeof(BASE_OBJECT), (long)sizeof(DROID), (long)sizeof(STRUCTURE), (long)sizeof(FEATURE), (long)sizeof(PROJECTILE));
+	      (long)sizeof(GameObject), (long)sizeof(GameObject), (long)sizeof(Droid), (long)sizeof(Structure), (long)sizeof(Feature), (long)sizeof(Projectile));
 
 #if defined(WZ_OS_UNIX)
 	debug(LOG_WZ, "Ignoring SIGPIPE: %s", (ignoredSIGPIPE) ? "true" : "false");
@@ -1854,7 +1854,7 @@ int realmain(int argc, char *argv[])
 	debug(LOG_WZ, "Using language: %s", getLanguage());
 	debug(LOG_WZ, "Backend: %s", BACKEND);
 	debug(LOG_MEMORY, "sizeof: SIMPLE_OBJECT=%ld, BASE_OBJECT=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-	      (long)sizeof(SIMPLE_OBJECT), (long)sizeof(BASE_OBJECT), (long)sizeof(DROID), (long)sizeof(STRUCTURE), (long)sizeof(FEATURE), (long)sizeof(PROJECTILE));
+	      (long)sizeof(GameObject), (long)sizeof(GameObject), (long)sizeof(Droid), (long)sizeof(Structure), (long)sizeof(Feature), (long)sizeof(Projectile));
 
 	int w = pie_GetVideoBufferWidth();
 	int h = pie_GetVideoBufferHeight();

@@ -54,7 +54,7 @@ public:
 		QUIT
 	};
 public:
-	virtual ~ActivitySink() { }
+	virtual ~ActivitySink() = default;
 public:
 	// navigating main menus
 	virtual void navigatedToMenu(const std::string& menuName) { }
@@ -73,7 +73,7 @@ public:
 		MULTIPLAYERGAME game;
 		uint8_t numAIBotPlayers = 0;
 		size_t currentPlayerIdx = 0;			// = the selectedPlayer global for the current client (points to currently controlled player in the players array)
-		std::vector<PLAYER> players;
+		std::vector<NetPlayer> players;
 
 		// information on limits
 		bool limit_no_tanks;					///< Flag for tanks disabled
@@ -208,9 +208,9 @@ public:
 	// for skirmish / multiplayer, provide additional data / state
 	void updateMultiplayGameData(const MULTIPLAYERGAME& game, const MULTIPLAYERINGAME& ingame, optional<bool> privateGame);
 	// called on the host when the host kicks a player
-	void hostKickPlayer(const PLAYER& player, LOBBY_ERROR_TYPES kick_type, const std::string& reason);
+	void hostKickPlayer(const NetPlayer & player, LOBBY_ERROR_TYPES kick_type, const std::string& reason);
 	// called on the kicked player when they are kicked by another player
-	void wasKickedByPlayer(const PLAYER& kicker, LOBBY_ERROR_TYPES kick_type, const std::string& reason);
+	void wasKickedByPlayer(const NetPlayer & kicker, LOBBY_ERROR_TYPES kick_type, const std::string& reason);
 public:
 	static ActivityManager& instance();
 	bool initialize();

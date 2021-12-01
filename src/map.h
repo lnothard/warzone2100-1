@@ -71,7 +71,8 @@ struct MAPTILE
 	uint16_t        texture;                // Which graphics texture is on this tile
 	int32_t         height;                 ///< The height at the top left of the tile
 	float           level;                  ///< The visibility level of the top left of the tile, for this client.
-	BASE_OBJECT *   psObject;               // Any object sitting on the location (e.g. building)
+        GameObject
+            *   psObject;               // Any object sitting on the location (e.g. building)
 	PIELIGHT        colour;
 	uint16_t        limitedContinent;       ///< For land or sea limited propulsion types
 	uint16_t        hoverContinent;         ///< For hover type propulsions
@@ -235,7 +236,7 @@ WZ_DECL_ALWAYS_INLINE static inline bool TileIsOccupied(const MAPTILE *tile)
 static inline bool TileIsKnownOccupied(MAPTILE const *tile, unsigned player)
 {
 	return TileIsOccupied(tile) &&
-	       (tile->psObject->type != OBJ_STRUCTURE || ((STRUCTURE *)tile->psObject)->visible[player] || aiCheckAlliances(player, ((STRUCTURE *)tile->psObject)->player));
+	       (tile->psObject->type != OBJ_STRUCTURE || ((Structure *)tile->psObject)->visible[player] || aiCheckAlliances(player, ((Structure *)tile->psObject)->owningPlayer));
 }
 
 /** Check if tile contains a structure. Function is NOT thread-safe. */
@@ -256,9 +257,9 @@ static inline bool TileHasFeature(const MAPTILE *tile)
 static inline bool TileHasWall(const MAPTILE *tile)
 {
 	return TileHasStructure(tile)
-	       && (((STRUCTURE *)tile->psObject)->pStructureType->type == REF_WALL
-	           || ((STRUCTURE *)tile->psObject)->pStructureType->type == REF_GATE
-	           || ((STRUCTURE *)tile->psObject)->pStructureType->type == REF_WALLCORNER);
+	       && (((Structure *)tile->psObject)->stats->type == REF_WALL
+	           || ((Structure *)tile->psObject)->stats->type == REF_GATE
+	           || ((Structure *)tile->psObject)->stats->type == REF_WALLCORNER);
 }
 
 /** Check if tile is burning. */
@@ -290,7 +291,7 @@ static inline bool tileIsClearlyVisible(const MAPTILE *psTile)
 static inline bool TileHasSmallStructure(const MAPTILE *tile)
 {
 	return TileHasStructure(tile)
-	       && ((STRUCTURE *)tile->psObject)->pStructureType->height == 1;
+	       && ((Structure *)tile->psObject)->stats->height == 1;
 }
 
 #define SET_TILE_DECAL(x)	((x)->tileInfoBits |= BITS_DECAL)
@@ -515,7 +516,7 @@ static inline int32_t map_Height(Vector2i const &v)
 }
 
 /* returns true if object is above ground */
-bool mapObjIsAboveGround(const SIMPLE_OBJECT *psObj);
+bool mapObjIsAboveGround(const GameObject *psObj);
 
 /* returns the max and min height of a tile by looking at the four corners
    in tile coords */

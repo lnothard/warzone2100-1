@@ -91,7 +91,7 @@ bool	bMovePause = false;
 bool		bAllowOtherKeyPresses = true;
 char	beaconMsg[MAX_PLAYERS][MAX_CONSOLE_STRING_LENGTH];		//beacon msg for each player
 
-static STRUCTURE	*psOldRE = nullptr;
+static Structure *psOldRE = nullptr;
 static char	sCurrentConsoleText[MAX_CONSOLE_STRING_LENGTH];			//remember what user types in console for beacon msg
 
 #define QUICKSAVE_CAM_FOLDER "savegames/campaign/QuickSave"
@@ -209,35 +209,35 @@ void kf_DamageMe()
 	{
 		return; // no-op
 	}
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (Droid *psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected)
 		{
-			int val = psDroid->body - ((psDroid->originalBody / 100) * 20);
+			int val = psDroid->hitPoints - ((psDroid->originalBody / 100) * 20);
 			if (val > 0)
 			{
-				psDroid->body = val;
+				psDroid->hitPoints = val;
 				addConsoleMessage(_("Ouch! Droid's health is down 20%!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
 			}
 			else
 			{
-				psDroid->body = 0;
+				psDroid->hitPoints = 0;
 			}
 		}
 	}
-	for (STRUCTURE *psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
+	for (Structure *psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
 	{
 		if (psStruct->selected)
 		{
-			int val = psStruct->body - ((structureBody(psStruct) / 100) * 20);
+			int val = psStruct->hitPoints - ((structureBody(psStruct) / 100) * 20);
 			if (val > 0)
 			{
-				psStruct->body = val;
+				psStruct->hitPoints = val;
 				addConsoleMessage(_("Ouch! Structure's health is down 20%!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
 			}
 			else
 			{
-				psStruct->body = 0;
+				psStruct->hitPoints = 0;
 			}
 		}
 	}
@@ -245,15 +245,15 @@ void kf_DamageMe()
 
 void	kf_TraceObject()
 {
-	DROID		*psCDroid, *psNDroid;
-	STRUCTURE	*psCStruct, *psNStruct;
+  Droid *psCDroid, *psNDroid;
+  Structure *psCStruct, *psNStruct;
 
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
 		return; // no-op
 	}
 
-	for (psCDroid = apsDroidLists[selectedPlayer]; psCDroid; psCDroid = psNDroid)
+	for (psCDroid = allDroidLists[selectedPlayer]; psCDroid; psCDroid = psNDroid)
 	{
 		psNDroid = psCDroid->psNext;
 		if (psCDroid->selected)
@@ -357,14 +357,14 @@ void	kf_FaceWest()
 /* Writes out debug info about all the selected droids */
 void	kf_DebugDroidInfo()
 {
-	DROID	*psDroid;
+  Droid *psDroid;
 
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
 		return; // no-op
 	}
 
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected)
 		{
@@ -375,7 +375,7 @@ void	kf_DebugDroidInfo()
 
 void kf_CloneSelected(int limit)
 {
-	DROID_TEMPLATE	*sTemplate = nullptr;
+  DroidStats *sTemplate = nullptr;
 #ifndef DEBUG
 	// Bail out if we're running a _true_ multiplayer game (to prevent MP cheating)
 	if (runningMultiplayer())
@@ -390,12 +390,13 @@ void kf_CloneSelected(int limit)
 		return; // no-op
 	}
 
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (Droid *psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected)
 		{
-			enumerateTemplates(selectedPlayer, [psDroid, &sTemplate](DROID_TEMPLATE * psTempl) {
-				if (psTempl->name.compare(psDroid->aName) == 0)
+			enumerateTemplates(selectedPlayer, [psDroid, &sTemplate](
+                                                         DroidStats * psTempl) {
+				if (psTempl->name.compare(psDroid->name) == 0)
 				{
 					sTemplate = psTempl;
 					return false; // stop enumerating
@@ -405,18 +406,18 @@ void kf_CloneSelected(int limit)
 
 			if (!sTemplate)
 			{
-				debug(LOG_ERROR, "Cloning vat has been destroyed. We can't find the template for this droid: %s, id:%u, type:%d!", psDroid->aName, psDroid->id, psDroid->droidType);
+				debug(LOG_ERROR, "Cloning vat has been destroyed. We can't find the template for this droid: %s, id:%u, type:%d!", psDroid->name, psDroid->id, psDroid->droidType);
 				return;
 			}
 
 			// create a new droid army
 			for (int i = 0; i < limit; i++)
 			{
-				Vector2i pos = psDroid->pos.xy() + iSinCosR(40503 * i, iSqrt(50 * 50 * i));  // 40503 = 65536/φ
-				DROID *psNewDroid = buildDroid(sTemplate, pos.x, pos.y, psDroid->player, false, nullptr);
+				Vector2i pos = psDroid->position.xy() + iSinCosR(40503 * i, iSqrt(50 * 50 * i));  // 40503 = 65536/φ
+                                Droid *psNewDroid = buildDroid(sTemplate, pos.x, pos.y, psDroid->owningPlayer, false, nullptr);
 				if (psNewDroid)
 				{
-					addDroid(psNewDroid, apsDroidLists);
+					addDroid(psNewDroid, allDroidLists);
 					triggerEventDroidBuilt(psNewDroid, nullptr);
 				}
 				else if (!bMultiMessages)
@@ -424,7 +425,7 @@ void kf_CloneSelected(int limit)
 					debug(LOG_ERROR, "Cloning has failed for template:%s id:%d", getID(sTemplate), sTemplate->multiPlayerID);
 				}
 			}
-			std::string msg = astringf(_("Player %u is cheating a new droid army of: %d × %s."), selectedPlayer, limit, psDroid->aName);
+			std::string msg = astringf(_("Player %u is cheating a new droid army of: %d × %s."), selectedPlayer, limit, psDroid->name);
 			sendInGameSystemMessage(msg.c_str());
 			Cheated = true;
 			audio_PlayTrack(ID_SOUND_NEXUS_LAUGH1);
@@ -449,12 +450,12 @@ void kf_MakeMeHero()
 		return; // no-op
 	}
 
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (Droid *psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected && psDroid->droidType == DROID_COMMAND)
 		{
 			psDroid->experience = 8 * 65536 * 128;
-		} 
+		}
 		else if (psDroid->selected)
 		{
 			psDroid->experience = 4 * 65536 * 128;
@@ -478,7 +479,7 @@ void kf_TeachSelected()
 		return; // no-op
 	}
 
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (Droid *psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected)
 		{
@@ -503,19 +504,19 @@ void kf_Unselectable()
 		return; // no-op
 	}
 
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (Droid *psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected)
 		{
-			psDroid->flags.set(OBJECT_FLAG_UNSELECTABLE, true);
+			psDroid->flags.set(UNSELECTABLE, true);
 			psDroid->selected = false;
 		}
 	}
-	for (STRUCTURE *psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
+	for (Structure *psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
 	{
 		if (psStruct->selected)
 		{
-			psStruct->flags.set(OBJECT_FLAG_UNSELECTABLE, true);
+			psStruct->flags.set(UNSELECTABLE, true);
 			psStruct->selected = false;
 		}
 	}
@@ -882,15 +883,15 @@ void kf_MapCheck()
 	}
 #endif
 
-	DROID		*psDroid;
-	STRUCTURE	*psStruct;
+        Droid *psDroid;
+        Structure *psStruct;
 	FLAG_POSITION	*psCurrFlag;
 
 	if (selectedPlayer >= MAX_PLAYERS) { return; }
 
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
-		psDroid->pos.z = map_Height(psDroid->pos.x, psDroid->pos.y);
+		psDroid->position.z = map_Height(psDroid->position.x, psDroid->position.y);
 	}
 
 	for (psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
@@ -1055,11 +1056,11 @@ void kf_SelectGrouping(UDWORD groupNumber)
 	SPECTATOR_NO_OP();
 
 	bool	bAlreadySelected;
-	DROID	*psDroid;
+        Droid *psDroid;
 	bool	Selected;
 
 	bAlreadySelected = false;
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid != nullptr; psDroid = psDroid->psNext)
+	for (psDroid = allDroidLists[selectedPlayer]; psDroid != nullptr; psDroid = psDroid->psNext)
 	{
 		/* Wipe out the ones in the wrong group */
 		if (psDroid->selected && psDroid->group != groupNumber)
@@ -1276,7 +1277,7 @@ void	kf_ToggleGodMode()
 	{
 		ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "Cannot disable godMode for spectator-only slots");
 
-		FEATURE	*psFeat = apsFeatureLists[0];
+                Feature *psFeat = apsFeatureLists[0];
 
 		godMode = false;
 		setRevealStatus(pastReveal);
@@ -1292,7 +1293,7 @@ void	kf_ToggleGodMode()
 		{
 			if (playerId != selectedPlayer)
 			{
-				STRUCTURE *psStruct = apsStructLists[playerId];
+                          Structure *psStruct = apsStructLists[playerId];
 
 				while (psStruct)
 				{
@@ -1494,7 +1495,7 @@ void	kf_FinishAllResearch()
 
 void kf_Reload()
 {
-	STRUCTURE	*psCurr;
+  Structure *psCurr;
 
 	/* not supported if a spectator */
 	SPECTATOR_NO_OP();
@@ -1510,11 +1511,11 @@ void kf_Reload()
 
 	for (psCurr = interfaceStructList(); psCurr; psCurr = psCurr->psNext)
 	{
-		if (isLasSat(psCurr->pStructureType) && psCurr->selected)
+		if (isLasSat(psCurr->stats) && psCurr->selected)
 		{
-			unsigned int firePause = weaponFirePause(&asWeaponStats[psCurr->asWeaps[0].nStat], psCurr->player);
+			unsigned int firePause = weaponFirePause(&asWeaponStats[psCurr->m_weaponList[0].nStat], psCurr->owningPlayer);
 
-			psCurr->asWeaps[0].lastFired -= firePause;
+			psCurr->m_weaponList[0].lastFired -= firePause;
 			CONPRINTF("%s", _("Selected buildings instantly recharged!"));
 		}
 	}
@@ -1524,7 +1525,7 @@ void kf_Reload()
 // finish all the research for the selected player
 void	kf_FinishResearch()
 {
-	STRUCTURE	*psCurr;
+  Structure *psCurr;
 
 	/* not supported if a spectator */
 	SPECTATOR_NO_OP();
@@ -1540,9 +1541,9 @@ void	kf_FinishResearch()
 
 	for (psCurr = interfaceStructList(); psCurr; psCurr = psCurr->psNext)
 	{
-		if (psCurr->pStructureType->type == REF_RESEARCH)
+		if (psCurr->stats->type == REF_RESEARCH)
 		{
-			BASE_STATS	*pSubject;
+                  StatsObject *pSubject;
 
 			// find out what we are researching here
 			pSubject = ((RESEARCH_FACILITY *)psCurr->pFunctionality)->psSubject;
@@ -1605,7 +1606,7 @@ void	kf_JumpToResourceExtractor()
 	/* not supported if a spectator */
 	SPECTATOR_NO_OP();
 
-	if (psOldRE && (STRUCTURE *)psOldRE->psNextFunc)
+	if (psOldRE && (Structure *)psOldRE->psNextFunc)
 	{
 		psOldRE = psOldRE->psNextFunc;
 	}
@@ -1617,7 +1618,7 @@ void	kf_JumpToResourceExtractor()
 	if (psOldRE)
 	{
 		playerPos.r.y = 0; // face north
-		setViewPos(map_coord(psOldRE->pos.x), map_coord(psOldRE->pos.y), true);
+		setViewPos(map_coord(psOldRE->position.x), map_coord(psOldRE->position.y), true);
 	}
 	else
 	{
@@ -1818,12 +1819,12 @@ MappableFunction kf_SelectNextFactory(const STRUCTURE_TYPE factoryType, const bo
 
 		selNextSpecifiedBuilding(factoryType, bJumpToSelected);
 
-		STRUCTURE* psCurrent;
+                Structure * psCurrent;
 
 		//deselect factories of other types
 		for (psCurrent = apsStructLists[selectedPlayer]; psCurrent; psCurrent = psCurrent->psNext)
 		{
-			const STRUCTURE_TYPE currentType = psCurrent->pStructureType->type;
+			const STRUCTURE_TYPE currentType = psCurrent->stats->type;
 			const bool bIsAnotherTypeOfFactory = currentType != factoryType && std::any_of(FACTORY_TYPES.begin(), FACTORY_TYPES.end(), [currentType](const STRUCTURE_TYPE type) {
 				return currentType == type;
 			});
@@ -1872,8 +1873,8 @@ MappableFunction kf_SelectNextPowerStation(const bool bJumpToSelected)
 // --------------------------------------------------------------------------
 void	kf_KillEnemy()
 {
-	DROID		*psCDroid, *psNDroid;
-	STRUCTURE	*psCStruct, *psNStruct;
+  Droid *psCDroid, *psNDroid;
+  Structure *psCStruct, *psNStruct;
 
 #ifndef DEBUG
 	// Bail out if we're running a _true_ multiplayer game (to prevent MP cheating)
@@ -1898,7 +1899,7 @@ void	kf_KillEnemy()
 		if (playerId != selectedPlayer)
 		{
 			// wipe out all the droids
-			for (psCDroid = apsDroidLists[playerId]; psCDroid; psCDroid = psNDroid)
+			for (psCDroid = allDroidLists[playerId]; psCDroid; psCDroid = psNDroid)
 			{
 				psNDroid = psCDroid->psNext;
 				SendDestroyDroid(psCDroid);
@@ -1916,8 +1917,8 @@ void	kf_KillEnemy()
 // kill all the selected objects
 void kf_KillSelected()
 {
-	DROID		*psCDroid, *psNDroid;
-	STRUCTURE	*psCStruct, *psNStruct;
+  Droid *psCDroid, *psNDroid;
+  Structure *psCStruct, *psNStruct;
 
 	/* not supported if a spectator */
 	SPECTATOR_NO_OP();
@@ -1939,7 +1940,7 @@ void kf_KillSelected()
 	audio_PlayTrack(ID_SOUND_COLL_DIE);
 	Cheated = true;
 
-	for (psCDroid = apsDroidLists[selectedPlayer]; psCDroid; psCDroid = psNDroid)
+	for (psCDroid = allDroidLists[selectedPlayer]; psCDroid; psCDroid = psNDroid)
 	{
 		psNDroid = psCDroid->psNext;
 		if (psCDroid->selected)
@@ -2064,7 +2065,7 @@ MappableFunction kf_OrderDroid(const DroidOrderType order)
 		/* not supported if a spectator */
 		SPECTATOR_NO_OP();
 
-		for (DROID* psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (Droid * psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 		{
 			if (psDroid->selected)
 			{
@@ -2093,7 +2094,7 @@ void	kf_ToggleVisibility()
 // --------------------------------------------------------------------------
 static void kfsf_SetSelectedDroidsState(SECONDARY_ORDER sec, SECONDARY_STATE state)
 {
-	DROID	*psDroid;
+  Droid *psDroid;
 
 	/* not supported if a spectator */
 	SPECTATOR_NO_OP();
@@ -2103,7 +2104,7 @@ static void kfsf_SetSelectedDroidsState(SECONDARY_ORDER sec, SECONDARY_STATE sta
 	// _not_ be disallowed in multiplayer games.
 
 	// This code is similar to SetSecondaryState() in intorder.cpp. Unfortunately, it seems hard to un-duplicate the code.
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		// Only set the state if it's not a transporter.
 		if (psDroid->selected && !isTransporter(psDroid))
@@ -2117,14 +2118,14 @@ static void kfsf_SetSelectedDroidsState(SECONDARY_ORDER sec, SECONDARY_STATE sta
 // --------------------------------------------------------------------------
 void	kf_TriggerRayCast()
 {
-	DROID	*psDroid;
+  Droid *psDroid;
 	bool	found;
 
 	/* not supported if a spectator */
 	SPECTATOR_NO_OP();
 
 	found = false;
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid && !found;
+	for (psDroid = allDroidLists[selectedPlayer]; psDroid && !found;
 	     psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected)
@@ -2145,7 +2146,7 @@ void	kf_TriggerRayCast()
 // --------------------------------------------------------------------------
 void	kf_CentreOnBase()
 {
-	STRUCTURE	*psStruct;
+  Structure *psStruct;
 	bool		bGotHQ;
 	UDWORD		xJump = 0, yJump = 0;
 
@@ -2158,11 +2159,11 @@ void	kf_CentreOnBase()
 	     psStruct = psStruct->psNext)									// iteration
 	{
 		/* Have we got a HQ? */
-		if (psStruct->pStructureType->type == REF_HQ)
+		if (psStruct->stats->type == REF_HQ)
 		{
 			bGotHQ = true;
-			xJump = psStruct->pos.x;
-			yJump = psStruct->pos.y;
+			xJump = psStruct->position.x;
+			yJump = psStruct->position.y;
 		}
 	}
 
@@ -2194,7 +2195,7 @@ void kf_ToggleFormationSpeedLimiting()
 // --------------------------------------------------------------------------
 void	kf_RightOrderMenu()
 {
-	DROID	*psDroid, *psGotOne = nullptr;
+  Droid *psDroid, *psGotOne = nullptr;
 	bool	bFound;
 
 	// if menu open, then close it!
@@ -2207,7 +2208,7 @@ void	kf_RightOrderMenu()
 	/* not supported if a spectator */
 	SPECTATOR_NO_OP();
 
-	for (psDroid = apsDroidLists[selectedPlayer], bFound = false;
+	for (psDroid = allDroidLists[selectedPlayer], bFound = false;
 	     psDroid && !bFound; psDroid = psDroid->psNext)
 	{
 		if (psDroid->selected) // && droidOnScreen(psDroid,0))
@@ -2219,7 +2220,7 @@ void	kf_RightOrderMenu()
 	if (bFound)
 	{
 		intResetScreen(true);
-		intObjectSelected((BASE_OBJECT *)psGotOne);
+		intObjectSelected((GameObject *)psGotOne);
 	}
 }
 

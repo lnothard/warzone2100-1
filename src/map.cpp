@@ -128,7 +128,7 @@ int numGroundTypes;
 char *tilesetDir = nullptr;
 static int numTile_names;
 static std::unique_ptr<char[]> Tile_names = nullptr;
-	
+
 static std::unique_ptr<int[]> map; // 3D array pointer that holds the texturetype
 static std::unique_ptr<bool[]> mapDecals;           // array that tells us what tile is a decal
 #define MAX_TERRAIN_TILES 0x0200  // max that we support (for now), see TILE_NUMMASK
@@ -612,7 +612,7 @@ static void SetDecals(const char *filename, const char *decal_type)
 	pFileData = strchr(pFileData, '\n') + 1;
 	// value initialization sets everything to false.
 	mapDecals = std::unique_ptr<bool[]>(new bool[MAX_TERRAIN_TILES]());
-	
+
 	for (i = 0; i < numlines; i++)
 	{
 		tiledecal = -1;
@@ -1525,13 +1525,13 @@ extern int32_t map_Height(int x, int y)
 }
 
 /* returns true if object is above ground */
-bool mapObjIsAboveGround(const SIMPLE_OBJECT *psObj)
+bool mapObjIsAboveGround(const GameObject *psObj)
 {
 	// min is used to make sure we don't go over array bounds!
 	// TODO Using the corner of the map instead doesn't make sense. Fix this...
 	const int mapsize = mapWidth * mapHeight - 1;
-	const int tileX = map_coord(psObj->pos.x);
-	const int tileY = map_coord(psObj->pos.y);
+	const int tileX = map_coord(psObj->position.x);
+	const int tileY = map_coord(psObj->position.y);
 	const int tileYOffset1 = (tileY * mapWidth);
 	const int tileYOffset2 = ((tileY + 1) * mapWidth);
 	const int h1 = psMapTiles[MIN(mapsize, tileYOffset1 + tileX)    ].height;
@@ -1540,19 +1540,19 @@ bool mapObjIsAboveGround(const SIMPLE_OBJECT *psObj)
 	const int h4 = psMapTiles[MIN(mapsize, tileYOffset2 + tileX + 1)].height;
 
 	/* trivial test above */
-	if (psObj->pos.z > h1 && psObj->pos.z > h2 && psObj->pos.z > h3 && psObj->pos.z > h4)
+	if (psObj->position.z > h1 && psObj->position.z > h2 && psObj->position.z > h3 && psObj->position.z > h4)
 	{
 		return true;
 	}
 
 	/* trivial test below */
-	if (psObj->pos.z <= h1 && psObj->pos.z <= h2 && psObj->pos.z <= h3 && psObj->pos.z <= h4)
+	if (psObj->position.z <= h1 && psObj->position.z <= h2 && psObj->position.z <= h3 && psObj->position.z <= h4)
 	{
 		return false;
 	}
 
 	/* exhaustive test */
-	return psObj->pos.z > map_Height(psObj->pos.x, psObj->pos.y);
+	return psObj->position.z > map_Height(psObj->position.x, psObj->position.y);
 }
 
 /* returns the max and min height of a tile by looking at the four corners
@@ -1915,9 +1915,9 @@ static int dangerThreadFunc(WZ_DECL_UNUSED void *data)
 	return 0;
 }
 
-static inline void threatUpdateTarget(int player, BASE_OBJECT *psObj, bool ground, bool air)
+static inline void threatUpdateTarget(int player, GameObject *psObj, bool ground, bool air)
 {
-	if (psObj->visible[player] || psObj->born == 2)
+	if (psObj->visible[player] || psObj->creationTime == 2)
 	{
 		for (TILEPOS pos : psObj->watchedTiles)
 		{
@@ -1949,8 +1949,8 @@ static void threatUpdate(int player)
 	// Step 2: Set threat bits
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{
-		DROID *psDroid;
-		STRUCTURE *psStruct;
+          Droid *psDroid;
+          Structure *psStruct;
 
 		if (aiCheckAlliances(player, i))
 		{
@@ -1958,7 +1958,7 @@ static void threatUpdate(int player)
 			continue;
 		}
 
-		for (psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
+		for (psDroid = allDroidLists[i]; psDroid; psDroid = psDroid->psNext)
 		{
 			UBYTE mode = 0;
 
@@ -1967,9 +1967,9 @@ static void threatUpdate(int player)
 			{
 				continue;	// hack that really should not be needed, but is -- trucks can SHOOT_ON_GROUND...!
 			}
-			for (weapon = 0; weapon < psDroid->numWeaps; weapon++)
+			for (weapon = 0; weapon < psDroid->numWeapons; weapon++)
 			{
-				mode |= asWeaponStats[psDroid->asWeaps[weapon].nStat].surfaceToAir;
+				mode |= asWeaponStats[psDroid->m_weaponList[weapon].nStat].surfaceToAir;
 			}
 			if (psDroid->droidType == DROID_SENSOR)	// special treatment for sensor turrets, no multiweapon support
 			{
@@ -1977,7 +1977,7 @@ static void threatUpdate(int player)
 			}
 			if (mode > 0)
 			{
-				threatUpdateTarget(player, (BASE_OBJECT *)psDroid, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
+				threatUpdateTarget(player, (GameObject *)psDroid, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
 			}
 		}
 
@@ -1985,17 +1985,17 @@ static void threatUpdate(int player)
 		{
 			UBYTE mode = 0;
 
-			for (weapon = 0; weapon < psStruct->numWeaps; weapon++)
+			for (weapon = 0; weapon < psStruct->numWeapons; weapon++)
 			{
-				mode |= asWeaponStats[psStruct->asWeaps[weapon].nStat].surfaceToAir;
+				mode |= asWeaponStats[psStruct->m_weaponList[weapon].nStat].surfaceToAir;
 			}
-			if (psStruct->pStructureType->pSensor && psStruct->pStructureType->pSensor->location == LOC_TURRET)	// special treatment for sensor turrets
+			if (psStruct->stats->pSensor && psStruct->stats->pSensor->location == LOC_TURRET)	// special treatment for sensor turrets
 			{
 				mode |= SHOOT_ON_GROUND;		// assume it only shoots at ground targets for now
 			}
 			if (mode > 0)
 			{
-				threatUpdateTarget(player, (BASE_OBJECT *)psStruct, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
+				threatUpdateTarget(player, (GameObject *)psStruct, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
 			}
 		}
 	}

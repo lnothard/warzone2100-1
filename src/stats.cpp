@@ -77,7 +77,7 @@ UBYTE		*apCompLists[MAX_PLAYERS][COMP_NUMCOMPONENTS];
 //store for each players Structure states
 UBYTE		*apStructTypeLists[MAX_PLAYERS];
 
-static std::unordered_map<WzString, BASE_STATS *> lookupStatPtr;
+static std::unordered_map<WzString, StatsObject *> lookupStatPtr;
 static std::unordered_map<WzString, COMPONENT_STATS *> lookupCompStatPtr;
 
 static bool getMovementModel(const WzString &movementModel, MOVEMENT_MODEL *model);
@@ -201,7 +201,7 @@ bool statsAllocConstruct(UDWORD	numStats)
 *		Load stats functions
 *******************************************************************************/
 
-static iIMDShape *statsGetIMD(WzConfig &json, BASE_STATS *psStats, const WzString& key, const WzString& key2 = WzString())
+static iIMDShape *statsGetIMD(WzConfig &json, StatsObject *psStats, const WzString& key, const WzString& key2 = WzString())
 {
 	iIMDShape *retval = nullptr;
 	if (json.contains(key))
@@ -225,29 +225,29 @@ static iIMDShape *statsGetIMD(WzConfig &json, BASE_STATS *psStats, const WzStrin
 	return retval;
 }
 
-static void loadStats(WzConfig &json, BASE_STATS *psStats, size_t index)
+static void loadStats(WzConfig &json, StatsObject *psStats, size_t index)
 {
-	psStats->id = json.group();
+	psStats->textId = json.group();
 	psStats->name = json.string("name");
 	psStats->index = index;
-	ASSERT(lookupStatPtr.find(psStats->id) == lookupStatPtr.end(), "Duplicate ID found! (%s)", psStats->id.toUtf8().c_str());
-	lookupStatPtr.insert(std::make_pair(psStats->id, psStats));
+	ASSERT(lookupStatPtr.find(psStats->textId) == lookupStatPtr.end(), "Duplicate ID found! (%s)", psStats->textId.toUtf8().c_str());
+	lookupStatPtr.insert(std::make_pair(psStats->textId, psStats));
 }
 
-void loadStructureStats_BaseStats(WzConfig &json, STRUCTURE_STATS *psStats, size_t index)
+void loadStructureStats_BaseStats(WzConfig &json, StructureStats *psStats, size_t index)
 {
 	loadStats(json, psStats, index);
 }
 
-void unloadStructureStats_BaseStats(const STRUCTURE_STATS &psStats)
+void unloadStructureStats_BaseStats(const StructureStats &psStats)
 {
-	lookupStatPtr.erase(psStats.id);
+	lookupStatPtr.erase(psStats.textId);
 }
 
 static void loadCompStats(WzConfig &json, COMPONENT_STATS *psStats, size_t index)
 {
 	loadStats(json, psStats, index);
-	lookupCompStatPtr.insert(std::make_pair(psStats->id, psStats));
+	lookupCompStatPtr.insert(std::make_pair(psStats->textId, psStats));
 	psStats->buildPower = json.value("buildPower", 0).toUInt();
 	psStats->buildPoints = json.value("buildPoints", 0).toUInt();
 	psStats->designable = json.value("designable", false).toBool();
@@ -382,7 +382,7 @@ bool loadWeaponStats(WzConfig &ini)
 
 		ASSERT(psStats->flightSpeed > 0, "Invalid flight speed for %s", list[i].toUtf8().c_str());
 
-		psStats->ref = STAT_WEAPON + i;
+		psStats->id = STAT_WEAPON + i;
 
 		//get the IMD for the component
 		psStats->pIMD = statsGetIMD(ini, psStats, "model");
@@ -562,7 +562,7 @@ bool loadBodyStats(WzConfig &ini)
 		{
 			psStats->upgrade[j] = psStats->base;
 		}
-		psStats->ref = STAT_BODY + i;
+		psStats->id = STAT_BODY + i;
 		if (!getBodySize(ini.value("size").toWzString(), &psStats->size))
 		{
 			ASSERT(false, "Unknown body size for %s", getStatsName(psStats));
@@ -601,7 +601,7 @@ bool loadBodyStats(WzConfig &ini)
 		for (numStats = 0; numStats < numBodyStats; ++numStats)
 		{
 			psBodyStat = &asBodyStats[numStats];
-			if (list[i].compare(psBodyStat->id) == 0)
+			if (list[i].compare(psBodyStat->textId) == 0)
 			{
 				break;
 			}
@@ -617,7 +617,7 @@ bool loadBodyStats(WzConfig &ini)
 			for (numStats = 0; numStats < numPropulsionStats; numStats++)
 			{
 				PROPULSION_STATS *psPropulsionStat = &asPropulsionStats[numStats];
-				if (keys[j].compare(psPropulsionStat->id) == 0)
+				if (keys[j].compare(psPropulsionStat->textId) == 0)
 				{
 					break;
 				}
@@ -672,7 +672,7 @@ bool loadBrainStats(WzConfig &ini)
 		{
 			psStats->base.rankThresholds.push_back(v.get<int>());
 		}
-		psStats->ref = STAT_BRAIN + i;
+		psStats->id = STAT_BRAIN + i;
 
 		for (int j = 0; j < MAX_PLAYERS; j++)
 		{
@@ -756,7 +756,7 @@ bool loadPropulsionStats(WzConfig &ini)
 
 		psStats->base.hitpointPctOfBody = ini.value("hitpointPctOfBody", 0).toInt();
 		psStats->maxSpeed = ini.value("speed").toInt();
-		psStats->ref = STAT_PROPULSION + i;
+		psStats->id = STAT_PROPULSION + i;
 		psStats->turnSpeed = ini.value("turnSpeed", DEG(1) / 3).toInt();
 		psStats->spinSpeed = ini.value("spinSpeed", DEG(3) / 4).toInt();
 		psStats->spinAngle = ini.value("spinAngle", 180).toInt();
@@ -804,7 +804,7 @@ bool loadSensorStats(WzConfig &ini)
 			psStats->upgrade[j] = psStats->base;
 		}
 
-		psStats->ref = STAT_SENSOR + i;
+		psStats->id = STAT_SENSOR + i;
 
 		WzString location = ini.value("location").toWzString();
 		if (location.compare("DEFAULT") == 0)
@@ -882,7 +882,7 @@ bool loadECMStats(WzConfig &ini)
 			psStats->upgrade[j] = psStats->base;
 		}
 
-		psStats->ref = STAT_ECM + i;
+		psStats->id = STAT_ECM + i;
 
 		WzString location = ini.value("location").toWzString();
 		if (location.compare("DEFAULT") == 0)
@@ -932,7 +932,7 @@ bool loadRepairStats(WzConfig &ini)
 		}
 		psStats->time = ini.value("time", 0).toInt() * WEAPON_TIME;
 
-		psStats->ref = STAT_REPAIR + i;
+		psStats->id = STAT_REPAIR + i;
 
 		WzString location = ini.value("location").toWzString();
 		if (location.compare("DEFAULT") == 0)
@@ -983,7 +983,7 @@ bool loadConstructStats(WzConfig &ini)
 		{
 			psStats->upgrade[j] = psStats->base;
 		}
-		psStats->ref = STAT_CONSTRUCT + i;
+		psStats->id = STAT_CONSTRUCT + i;
 
 		//get the IMD for the component
 		psStats->pIMD = statsGetIMD(ini, psStats, "sensorModel");
@@ -1257,9 +1257,9 @@ COMPONENT_STATS *getCompStatsFromName(const WzString &name)
 	return psComp;
 }
 
-BASE_STATS *getBaseStatsFromName(const WzString &name)
+StatsObject *getBaseStatsFromName(const WzString &name)
 {
-	BASE_STATS *psStat = nullptr;
+  StatsObject *psStat = nullptr;
 	auto it = lookupStatPtr.find(name);
 	if (it != lookupStatPtr.end())
 	{
@@ -1636,19 +1636,19 @@ int weaponROF(const WEAPON_STATS *psStat, int player)
 }
 
 /* Check if an object has a weapon */
-bool objHasWeapon(const BASE_OBJECT *psObj)
+bool objHasWeapon(const GameObject *psObj)
 {
 	//check if valid type
 	if (psObj->type == OBJ_DROID)
 	{
-		if (((const DROID *)psObj)->numWeaps > 0)
+		if (((const Droid *)psObj)->numWeapons > 0)
 		{
 			return true;
 		}
 	}
 	else if (psObj->type == OBJ_STRUCTURE)
 	{
-		if (((const STRUCTURE *)psObj)->numWeaps > 0)
+		if (((const Structure *)psObj)->numWeapons > 0)
 		{
 			return true;
 		}
@@ -1657,7 +1657,7 @@ bool objHasWeapon(const BASE_OBJECT *psObj)
 	return false;
 }
 
-SENSOR_STATS *objActiveRadar(const BASE_OBJECT *psObj)
+SENSOR_STATS *objActiveRadar(const GameObject *psObj)
 {
 	SENSOR_STATS	*psStats = nullptr;
 	int				compIndex;
@@ -1665,17 +1665,17 @@ SENSOR_STATS *objActiveRadar(const BASE_OBJECT *psObj)
 	switch (psObj->type)
 	{
 	case OBJ_DROID:
-		if (((const DROID *)psObj)->droidType != DROID_SENSOR && ((const DROID *)psObj)->droidType != DROID_COMMAND)
+		if (((const Droid *)psObj)->droidType != DROID_SENSOR && ((const Droid *)psObj)->droidType != DROID_COMMAND)
 		{
 			return nullptr;
 		}
-		compIndex = ((const DROID *)psObj)->asBits[COMP_SENSOR];
+		compIndex = ((const Droid *)psObj)->asBits[COMP_SENSOR];
 		ASSERT_OR_RETURN(nullptr, compIndex < numSensorStats, "Invalid range referenced for numSensorStats, %d > %d", compIndex, numSensorStats);
 		psStats = asSensorStats + compIndex;
 		break;
 	case OBJ_STRUCTURE:
-		psStats = ((const STRUCTURE *)psObj)->pStructureType->pSensor;
-		if (psStats == nullptr || psStats->location != LOC_TURRET || ((const STRUCTURE *)psObj)->status != SS_BUILT)
+		psStats = ((const Structure *)psObj)->stats->pSensor;
+		if (psStats == nullptr || psStats->location != LOC_TURRET || ((const Structure *)psObj)->status != SS_BUILT)
 		{
 			return nullptr;
 		}
@@ -1686,17 +1686,17 @@ SENSOR_STATS *objActiveRadar(const BASE_OBJECT *psObj)
 	return psStats;
 }
 
-bool objRadarDetector(const BASE_OBJECT *psObj)
+bool objRadarDetector(const GameObject *psObj)
 {
 	if (psObj->type == OBJ_STRUCTURE)
 	{
-		const STRUCTURE *psStruct = (const STRUCTURE *)psObj;
+		const Structure *psStruct = (const Structure *)psObj;
 
-		return (psStruct->status == SS_BUILT && psStruct->pStructureType->pSensor && psStruct->pStructureType->pSensor->type == RADAR_DETECTOR_SENSOR);
+		return (psStruct->status == SS_BUILT && psStruct->stats->pSensor && psStruct->stats->pSensor->type == RADAR_DETECTOR_SENSOR);
 	}
 	else if (psObj->type == OBJ_DROID)
 	{
-		const DROID *psDroid = (const DROID *)psObj;
+		const Droid *psDroid = (const Droid *)psObj;
 		SENSOR_STATS *psSensor = getSensorStats(psDroid);
 
 		return (psSensor && psSensor->type == RADAR_DETECTOR_SENSOR);

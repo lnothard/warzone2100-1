@@ -72,10 +72,10 @@ class timerAdditionalData
 public:
 	virtual ~timerAdditionalData() { }
 public:
-	virtual void onTimerDelete(uniqueTimerID, BASE_OBJECT*) { };
+	virtual void onTimerDelete(uniqueTimerID, GameObject *) { };
 };
 
-typedef std::function<void (uniqueTimerID, BASE_OBJECT*, timerAdditionalData *)> TimerFunc;
+typedef std::function<void (uniqueTimerID, GameObject *, timerAdditionalData *)> TimerFunc;
 
 // NOTES:
 // - All position value types (scr_position, scr_area, etc) passed to/from scripts expect map coordinates
@@ -101,7 +101,7 @@ struct scr_position
 };
 
 // Utility conversion functions
-BASE_OBJECT *IdToObject(OBJECT_TYPE type, int id, int player);
+GameObject *IdToObject(OBJECT_TYPE type, int id, int player);
 
 // MARK: - wzapi
 
@@ -204,32 +204,32 @@ namespace wzapi
 		//__ An event that is run when the mission transporter has been ordered to fly off.
 		//__
 		virtual bool handle_eventLaunchTransporter() SCRIPTING_EVENT_NON_REQUIRED // DEPRECATED!
-		virtual bool handle_eventTransporterLaunch(const BASE_OBJECT *psTransport) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventTransporterLaunch(const GameObject *psTransport) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventTransporterArrived(transport)
 		//__
 		//__ An event that is run when the mission transporter has arrived at the map edge with reinforcements.
 		//__
 		virtual bool handle_eventReinforcementsArrived() SCRIPTING_EVENT_NON_REQUIRED // DEPRECATED!
-		virtual bool handle_eventTransporterArrived(const BASE_OBJECT *psTransport) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventTransporterArrived(const GameObject *psTransport) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventTransporterExit(transport)
 		//__
 		//__ An event that is run when the mission transporter has left the map.
 		//__
-		virtual bool handle_eventTransporterExit(const BASE_OBJECT *psObj) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventTransporterExit(const GameObject *psObj) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventTransporterDone(transport)
 		//__
 		//__ An event that is run when the mission transporter has no more reinforcements to deliver.
 		//__
-		virtual bool handle_eventTransporterDone(const BASE_OBJECT *psTransport) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventTransporterDone(const GameObject *psTransport) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventTransporterLanded(transport)
 		//__
 		//__ An event that is run when the mission transporter has landed with reinforcements.
 		//__
-		virtual bool handle_eventTransporterLanded(const BASE_OBJECT *psTransport) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventTransporterLanded(const GameObject *psTransport) SCRIPTING_EVENT_NON_REQUIRED
 
 	public:
 		// MARK: UI-related events (intended for the tutorial)
@@ -238,13 +238,13 @@ namespace wzapi
 		//__
 		//__ An event that is run when the current player starts to move a delivery point.
 		//__
-		virtual bool handle_eventDeliveryPointMoving(const BASE_OBJECT *psStruct) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventDeliveryPointMoving(const GameObject *psStruct) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventDeliveryPointMoved()
 		//__
 		//__ An event that is run after the current player has moved a delivery point.
 		//__
-		virtual bool handle_eventDeliveryPointMoved(const BASE_OBJECT *psStruct) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventDeliveryPointMoved(const GameObject *psStruct) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventDesignBody()
 		//__
@@ -324,7 +324,7 @@ namespace wzapi
 		//__ deselected object. If all selected game objects are deselected, ```objects``` will
 		//__ be empty.
 		//__
-		virtual bool handle_eventSelectionChanged(const std::vector<const BASE_OBJECT *>& objects) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventSelectionChanged(const std::vector<const GameObject *>& objects) SCRIPTING_EVENT_NON_REQUIRED
 
 	public:
 		// MARK: Game state-change events
@@ -333,7 +333,7 @@ namespace wzapi
 		//__
 		//__ An event that is run when an object (ex. droid, structure) is recycled.
 		//__
-		virtual bool handle_eventObjectRecycled(const BASE_OBJECT *psObj) = 0;
+		virtual bool handle_eventObjectRecycled(const GameObject *psObj) = 0;
 
 		//__ ## eventPlayerLeft(player)
 		//__
@@ -352,7 +352,7 @@ namespace wzapi
 		//__
 		//__ A droid should be given new orders.
 		//__
-		virtual bool handle_eventDroidIdle(const DROID *psDroid) = 0;
+		virtual bool handle_eventDroidIdle(const Droid *psDroid) = 0;
 
 		//__ ## eventDroidBuilt(droid[, structure])
 		//__
@@ -360,7 +360,7 @@ namespace wzapi
 		//__ if the droid was produced in a factory. It is not triggered for droid theft or
 		//__ gift (check ```eventObjectTransfer``` for that).
 		//__
-		virtual bool handle_eventDroidBuilt(const DROID *psDroid, optional<const STRUCTURE *> psFactory) = 0;
+		virtual bool handle_eventDroidBuilt(const Droid *psDroid, optional<const Structure *> psFactory) = 0;
 
 		//__ ## eventStructureBuilt(structure[, droid])
 		//__
@@ -368,14 +368,14 @@ namespace wzapi
 		//__ if the structure was built by a droid. It is not triggered for building theft
 		//__ (check ```eventObjectTransfer``` for that).
 		//__
-		virtual bool handle_eventStructureBuilt(const STRUCTURE *psStruct, optional<const DROID *> psDroid) = 0;
+		virtual bool handle_eventStructureBuilt(const Structure *psStruct, optional<const Droid *> psDroid) = 0;
 
 		//__ ## eventStructureDemolish(structure[, droid])
 		//__
 		//__ An event that is run every time a structure begins to be demolished. This does
 		//__ not trigger again if the structure is partially demolished.
 		//__
-		virtual bool handle_eventStructureDemolish(const STRUCTURE *psStruct, optional<const DROID *> psDroid) = 0;
+		virtual bool handle_eventStructureDemolish(const Structure *psStruct, optional<const Droid *> psDroid) = 0;
 
 		//__ ## eventStructureReady(structure)
 		//__
@@ -383,20 +383,20 @@ namespace wzapi
 		//__ special ability. It will only fire once, so if the time is not right,
 		//__ register your own timer to keep checking.
 		//__
-		virtual bool handle_eventStructureReady(const STRUCTURE *psStruct) = 0;
+		virtual bool handle_eventStructureReady(const Structure *psStruct) = 0;
 
 		//__ ## eventStructureUpgradeStarted(structure)
 		//__
 		//__ An event that is run every time a structure starts to be upgraded.
 		//__
-		virtual bool handle_eventStructureUpgradeStarted(const STRUCTURE *psStruct) = 0;
+		virtual bool handle_eventStructureUpgradeStarted(const Structure *psStruct) = 0;
 
 		//__ ## eventAttacked(victim, attacker)
 		//__
 		//__ An event that is run when an object belonging to the script's controlling player is
 		//__ attacked. The attacker parameter may be either a structure or a droid.
 		//__
-		virtual bool handle_eventAttacked(const BASE_OBJECT *psVictim, const BASE_OBJECT *psAttacker) = 0;
+		virtual bool handle_eventAttacked(const GameObject *psVictim, const GameObject *psAttacker) = 0;
 
 		//__ ## eventResearched(research, structure, player)
 		//__
@@ -405,14 +405,14 @@ namespace wzapi
 		//__ current player. If an ally does the research, the structure parameter will
 		//__ be set to null. The player parameter gives the player it is called for.
 		//__
-		virtual bool handle_eventResearched(const researchResult& research, event_nullable_ptr<const STRUCTURE> psStruct, int player) = 0;
+		virtual bool handle_eventResearched(const researchResult& research, event_nullable_ptr<const Structure> psStruct, int player) = 0;
 
 		//__ ## eventDestroyed(object)
 		//__
 		//__ An event that is run whenever an object is destroyed. Careful passing
 		//__ the parameter object around, since it is about to vanish!
 		//__
-		virtual bool handle_eventDestroyed(const BASE_OBJECT *psVictim) = 0;
+		virtual bool handle_eventDestroyed(const GameObject *psVictim) = 0;
 
 		//__ ## eventPickup(feature, droid)
 		//__
@@ -420,7 +420,7 @@ namespace wzapi
 		//__ all players / scripts.
 		//__ Careful passing the parameter object around, since it is about to vanish! (3.2+ only)
 		//__
-		virtual bool handle_eventPickup(const FEATURE *psFeat, const DROID *psDroid) = 0;
+		virtual bool handle_eventPickup(const Feature *psFeat, const Droid *psDroid) = 0;
 
 		//__ ## eventObjectSeen(viewer, seen)
 		//__
@@ -429,7 +429,7 @@ namespace wzapi
 		//__ An event that is run sometimes when an objectm  goes from not seen to seen.
 		//__ First parameter is **game object** doing the seeing, the next the game
 		//__ object being seen.
-		virtual bool handle_eventObjectSeen(const BASE_OBJECT *psViewer, const BASE_OBJECT *psSeen) = 0;
+		virtual bool handle_eventObjectSeen(const GameObject *psViewer, const GameObject *psSeen) = 0;
 
 		//__
 		//__ ## eventGroupSeen(viewer, group)
@@ -439,7 +439,7 @@ namespace wzapi
 		//__ First parameter is **game object** doing the seeing, the next the id of the group
 		//__ being seen.
 		//__
-		virtual bool handle_eventGroupSeen(const BASE_OBJECT *psViewer, int groupId) = 0;
+		virtual bool handle_eventGroupSeen(const GameObject *psViewer, int groupId) = 0;
 
 		//__ ## eventObjectTransfer(object, from)
 		//__
@@ -448,7 +448,7 @@ namespace wzapi
 		//__ object has been transferred, so the target player is in object.player.
 		//__ The event is called for both players.
 		//__
-		virtual bool handle_eventObjectTransfer(const BASE_OBJECT *psObj, int from) = 0;
+		virtual bool handle_eventObjectTransfer(const GameObject *psObj, int from) = 0;
 
 		//__ ## eventChat(from, to, message)
 		//__
@@ -479,7 +479,7 @@ namespace wzapi
 		//__ is the about to be killed object, the group's id, and the new group size.
 		//__
 //		// Since groups are entities local to one context, we do not iterate over them here.
-		virtual bool handle_eventGroupLoss(const BASE_OBJECT *psObj, int group, int size) = 0;
+		virtual bool handle_eventGroupLoss(const GameObject *psObj, int group, int size) = 0;
 
 		//__ ## eventArea<label>(droid)
 		//__
@@ -487,14 +487,14 @@ namespace wzapi
 		//__ deactived. Call resetArea() to reactivate it. The name of the event is
 		//__ `eventArea${label}`.
 		//__
-		virtual bool handle_eventArea(const std::string& label, const DROID *psDroid) = 0;
+		virtual bool handle_eventArea(const std::string& label, const Droid *psDroid) = 0;
 
 		//__ ## eventDesignCreated(template)
 		//__
 		//__ An event that is run whenever a new droid template is created. It is only
 		//__ run on the client of the player designing the template.
 		//__
-		virtual bool handle_eventDesignCreated(const DROID_TEMPLATE *psTemplate) = 0;
+		virtual bool handle_eventDesignCreated(const DroidStats *psTemplate) = 0;
 
 		//__ ## eventAllianceOffer(from, to)
 		//__
@@ -523,7 +523,7 @@ namespace wzapi
 		//__ to prevent desync from happening. Sync requests must be carefully validated to prevent
 		//__ cheating!
 		//__
-		virtual bool handle_eventSyncRequest(int from, int req_id, int x, int y, const BASE_OBJECT *psObj, const BASE_OBJECT *psObj2) = 0;
+		virtual bool handle_eventSyncRequest(int from, int req_id, int x, int y, const GameObject *psObj, const GameObject *psObj2) = 0;
 
 		//__ ## eventKeyPressed(meta, key)
 		//__
@@ -683,10 +683,10 @@ namespace wzapi
 	struct game_object_identifier
 	{
 		game_object_identifier() { }
-		game_object_identifier(const BASE_OBJECT* psObj)
+		game_object_identifier(const GameObject * psObj)
 		: type(psObj->type)
 		, id(psObj->id)
-		, player(psObj->player)
+		, player(psObj->owningPlayer)
 		{ }
 		int type;
 		int id = -1;
@@ -956,22 +956,22 @@ namespace wzapi
 	int32_t syncRandom(WZAPI_PARAMS(uint32_t limit));
 	bool setAlliance(WZAPI_PARAMS(int player1, int player2, bool areAllies));
 	no_return_value sendAllianceRequest(WZAPI_PARAMS(int player2));
-	bool orderDroid(WZAPI_PARAMS(DROID* psDroid, int order));
-	bool orderDroidBuild(WZAPI_PARAMS(DROID* psDroid, int order, std::string structureName, int x, int y, optional<float> direction));
-	bool setAssemblyPoint(WZAPI_PARAMS(STRUCTURE *psStruct, int x, int y));
+	bool orderDroid(WZAPI_PARAMS(Droid * psDroid, int order));
+	bool orderDroidBuild(WZAPI_PARAMS(Droid * psDroid, int order, std::string structureName, int x, int y, optional<float> direction));
+	bool setAssemblyPoint(WZAPI_PARAMS(Structure *psStruct, int x, int y));
 	bool setSunPosition(WZAPI_PARAMS(float x, float y, float z));
 	bool setSunIntensity(WZAPI_PARAMS(float ambient_r, float ambient_g, float ambient_b, float diffuse_r, float diffuse_g, float diffuse_b, float specular_r, float specular_g, float specular_b));
 	bool setWeather(WZAPI_PARAMS(int weatherType));
 	bool setSky(WZAPI_PARAMS(std::string textureFilename, float windSpeed, float scale));
 	bool cameraSlide(WZAPI_PARAMS(float x, float y));
 	bool cameraZoom(WZAPI_PARAMS(float viewDistance, float speed));
-	bool cameraTrack(WZAPI_PARAMS(optional<DROID *> _droid));
+	bool cameraTrack(WZAPI_PARAMS(optional<Droid *> _droid));
 	uint32_t addSpotter(WZAPI_PARAMS(int x, int y, int player, int range, bool radar, uint32_t expiry));
 	bool removeSpotter(WZAPI_PARAMS(uint32_t spotterId));
-	bool syncRequest(WZAPI_PARAMS(int32_t req_id, int32_t x, int32_t y, optional<const BASE_OBJECT *> _psObj, optional<const BASE_OBJECT *> _psObj2));
+	bool syncRequest(WZAPI_PARAMS(int32_t req_id, int32_t x, int32_t y, optional<const GameObject *> _psObj, optional<const GameObject *> _psObj2));
 	bool replaceTexture(WZAPI_PARAMS(std::string oldFilename, std::string newFilename));
 	bool changePlayerColour(WZAPI_PARAMS(int player, int colour));
-	bool setHealth(WZAPI_PARAMS(BASE_OBJECT* psObject, int health)); MULTIPLAY_SYNCREQUEST_REQUIRED
+	bool setHealth(WZAPI_PARAMS(GameObject * psObject, int health)); MULTIPLAY_SYNCREQUEST_REQUIRED
 	bool useSafetyTransport(WZAPI_PARAMS(bool flag));
 	bool restoreLimboMissionData(WZAPI_NO_PARAMS);
 	uint32_t getMultiTechLevel(WZAPI_NO_PARAMS);
@@ -986,7 +986,7 @@ namespace wzapi
 	no_return_value hackNetOn(WZAPI_NO_PARAMS);
 	no_return_value hackAddMessage(WZAPI_PARAMS(std::string message, int messageType, int player, bool immediate));
 	no_return_value hackRemoveMessage(WZAPI_PARAMS(std::string message, int messageType, int player));
-	returned_nullable_ptr<const BASE_OBJECT> hackGetObj(WZAPI_PARAMS(int _objectType, int player, int id)) WZAPI_DEPRECATED;
+	returned_nullable_ptr<const GameObject> hackGetObj(WZAPI_PARAMS(int _objectType, int player, int id)) WZAPI_DEPRECATED;
 	no_return_value hackAssert(WZAPI_PARAMS(bool condition, va_list_treat_as_strings message));
 	bool receiveAllEvents(WZAPI_PARAMS(optional<bool> enabled));
 	no_return_value hackDoNotSave(WZAPI_PARAMS(std::string name));
@@ -999,50 +999,52 @@ namespace wzapi
 	no_return_value debugOutputStrings(WZAPI_PARAMS(va_list_treat_as_strings strings));
 	bool console(WZAPI_PARAMS(va_list_treat_as_strings strings));
 	bool clearConsole(WZAPI_NO_PARAMS);
-	bool structureIdle(WZAPI_PARAMS(const STRUCTURE *psStruct));
-	std::vector<const STRUCTURE *> enumStruct(WZAPI_PARAMS(optional<int> _player, optional<STRUCTURE_TYPE_or_statsName_string> _structureType, optional<int> _playerFilter));
-	std::vector<const STRUCTURE *> enumStructOffWorld(WZAPI_PARAMS(optional<int> _player, optional<STRUCTURE_TYPE_or_statsName_string> _structureType, optional<int> _playerFilter));
-	std::vector<const DROID *> enumDroid(WZAPI_PARAMS(optional<int> _player, optional<int> _droidType, optional<int> _playerFilter));
-	std::vector<const FEATURE *> enumFeature(WZAPI_PARAMS(int playerFilter, optional<std::string> _featureName));
+	bool structureIdle(WZAPI_PARAMS(const Structure *psStruct));
+	std::vector<const Structure *> enumStruct(WZAPI_PARAMS(optional<int> _player, optional<STRUCTURE_TYPE_or_statsName_string> _structureType, optional<int> _playerFilter));
+	std::vector<const Structure *> enumStructOffWorld(WZAPI_PARAMS(optional<int> _player, optional<STRUCTURE_TYPE_or_statsName_string> _structureType, optional<int> _playerFilter));
+	std::vector<const Droid *> enumDroid(WZAPI_PARAMS(optional<int> _player, optional<int> _droidType, optional<int> _playerFilter));
+	std::vector<const Feature *> enumFeature(WZAPI_PARAMS(int playerFilter, optional<std::string> _featureName));
 	std::vector<scr_position> enumBlips(WZAPI_PARAMS(int player));
-	std::vector<const BASE_OBJECT *> enumSelected(WZAPI_NO_PARAMS_NO_CONTEXT);
+	std::vector<const GameObject *> enumSelected(WZAPI_NO_PARAMS_NO_CONTEXT);
 	GATEWAY_LIST enumGateways(WZAPI_NO_PARAMS);
 	researchResult getResearch(WZAPI_PARAMS(std::string researchName, optional<int> _player));
 	researchResults enumResearch(WZAPI_NO_PARAMS);
-	std::vector<const BASE_OBJECT *> enumRange(WZAPI_PARAMS(int x, int y, int range, optional<int> _playerFilter, optional<bool> _seen));
-	bool pursueResearch(WZAPI_PARAMS(const STRUCTURE *psStruct, string_or_string_list research));
+	std::vector<const GameObject *> enumRange(WZAPI_PARAMS(int x, int y, int range, optional<int> _playerFilter, optional<bool> _seen));
+	bool pursueResearch(WZAPI_PARAMS(const Structure *psStruct, string_or_string_list research));
 	researchResults findResearch(WZAPI_PARAMS(std::string researchName, optional<int> _player));
 	int32_t distBetweenTwoPoints(WZAPI_PARAMS(int32_t x1, int32_t y1, int32_t x2, int32_t y2));
-	bool orderDroidLoc(WZAPI_PARAMS(DROID *psDroid, int order_, int x, int y));
+	bool orderDroidLoc(WZAPI_PARAMS(Droid *psDroid, int order_, int x, int y));
 	int32_t playerPower(WZAPI_PARAMS(int player));
 	int queuedPower(WZAPI_PARAMS(int player));
 	bool isStructureAvailable(WZAPI_PARAMS(std::string structureName, optional<int> _player));
-	optional<scr_position> pickStructLocation(WZAPI_PARAMS(const DROID *psDroid, std::string structureName, int startX, int startY, optional<int> _maxBlockingTiles));
-	bool droidCanReach(WZAPI_PARAMS(const DROID *psDroid, int x, int y));
+	optional<scr_position> pickStructLocation(WZAPI_PARAMS(const Droid *psDroid, std::string structureName, int startX, int startY, optional<int> _maxBlockingTiles));
+	bool droidCanReach(WZAPI_PARAMS(const Droid *psDroid, int x, int y));
 	bool propulsionCanReach(WZAPI_PARAMS(std::string propulsionName, int x1, int y1, int x2, int y2));
 	int terrainType(WZAPI_PARAMS(int x, int y));
 	bool tileIsBurning(WZAPI_PARAMS(int x, int y));
-	bool orderDroidObj(WZAPI_PARAMS(DROID *psDroid, int _order, BASE_OBJECT *psObj));
-	bool buildDroid(WZAPI_PARAMS(STRUCTURE *psFactory, std::string templateName, string_or_string_list body, string_or_string_list propulsion, reservedParam reserved1, reservedParam reserved2, va_list<string_or_string_list> turrets));
-	returned_nullable_ptr<const DROID> addDroid(WZAPI_PARAMS(int player, int x, int y, std::string templateName, string_or_string_list body, string_or_string_list propulsion, reservedParam reserved1, reservedParam reserved2, va_list<string_or_string_list> turrets)); MUTLIPLAY_UNSAFE
-	std::unique_ptr<const DROID_TEMPLATE> makeTemplate(WZAPI_PARAMS(int player, std::string templateName, string_or_string_list body, string_or_string_list propulsion, reservedParam reserved1, va_list<string_or_string_list> turrets));
+	bool orderDroidObj(WZAPI_PARAMS(Droid *psDroid, int _order,
+                                        GameObject *psObj));
+	bool buildDroid(WZAPI_PARAMS(
+            Structure *psFactory, std::string templateName, string_or_string_list body, string_or_string_list propulsion, reservedParam reserved1, reservedParam reserved2, va_list<string_or_string_list> turrets));
+	returned_nullable_ptr<const Droid> addDroid(WZAPI_PARAMS(int player, int x, int y, std::string templateName, string_or_string_list body, string_or_string_list propulsion, reservedParam reserved1, reservedParam reserved2, va_list<string_or_string_list> turrets)); MUTLIPLAY_UNSAFE
+	std::unique_ptr<const DroidStats> makeTemplate(WZAPI_PARAMS(int player, std::string templateName, string_or_string_list body, string_or_string_list propulsion, reservedParam reserved1, va_list<string_or_string_list> turrets));
 	bool addDroidToTransporter(WZAPI_PARAMS(game_object_identifier transporter, game_object_identifier droid));
-	returned_nullable_ptr<const FEATURE> addFeature(WZAPI_PARAMS(std::string featureName, int x, int y)) MUTLIPLAY_UNSAFE;
+	returned_nullable_ptr<const Feature> addFeature(WZAPI_PARAMS(std::string featureName, int x, int y)) MUTLIPLAY_UNSAFE;
 	bool componentAvailable(WZAPI_PARAMS(std::string componentType, optional<std::string> _componentName));
-	bool isVTOL(WZAPI_PARAMS(const DROID *psDroid));
+	bool isVTOL(WZAPI_PARAMS(const Droid *psDroid));
 	bool safeDest(WZAPI_PARAMS(int player, int x, int y));
-	bool activateStructure(WZAPI_PARAMS(STRUCTURE *psStruct, optional<BASE_OBJECT *> _psTarget));
+	bool activateStructure(WZAPI_PARAMS(Structure *psStruct, optional<GameObject *> _psTarget));
 	bool chat(WZAPI_PARAMS(int playerFilter, std::string message));
 	bool addBeacon(WZAPI_PARAMS(int x, int y, int playerFilter, optional<std::string> _message));
 	bool removeBeacon(WZAPI_PARAMS(int playerFilter));
-	std::unique_ptr<const DROID> getDroidProduction(WZAPI_PARAMS(const STRUCTURE *_psFactory));
+	std::unique_ptr<const Droid> getDroidProduction(WZAPI_PARAMS(const Structure *_psFactory));
 	int getDroidLimit(WZAPI_PARAMS(optional<int> _player, optional<int> _droidType));
 	int getExperienceModifier(WZAPI_PARAMS(int player));
 	bool setDroidLimit(WZAPI_PARAMS(int player, int maxNumber, optional<int> _droidType));
 	bool setCommanderLimit(WZAPI_PARAMS(int player, int maxNumber));
 	bool setConstructorLimit(WZAPI_PARAMS(int player, int maxNumber));
 	bool setExperienceModifier(WZAPI_PARAMS(int player, int percent));
-	std::vector<const DROID *> enumCargo(WZAPI_PARAMS(const DROID *psDroid));
+	std::vector<const Droid *> enumCargo(WZAPI_PARAMS(const Droid *psDroid));
 	bool isSpectator(WZAPI_PARAMS(int player));
 
 	nlohmann::json getWeaponInfo(WZAPI_PARAMS(std::string weaponName)) WZAPI_DEPRECATED;
@@ -1079,24 +1081,25 @@ namespace wzapi
 	no_return_value enableComponent(WZAPI_PARAMS(std::string componentName, int player));
 	no_return_value makeComponentAvailable(WZAPI_PARAMS(std::string componentName, int player));
 	bool allianceExistsBetween(WZAPI_PARAMS(int player1, int player2));
-	bool removeStruct(WZAPI_PARAMS(STRUCTURE *psStruct)) WZAPI_DEPRECATED;
-	bool removeObject(WZAPI_PARAMS(BASE_OBJECT *psObj, optional<bool> _sfx));
+	bool removeStruct(WZAPI_PARAMS(Structure *psStruct)) WZAPI_DEPRECATED;
+	bool removeObject(WZAPI_PARAMS(GameObject *psObj, optional<bool> _sfx));
 	no_return_value setScrollLimits(WZAPI_PARAMS(int x1, int y1, int x2, int y2));
 	scr_area getScrollLimits(WZAPI_NO_PARAMS);
-	returned_nullable_ptr<const STRUCTURE> addStructure(WZAPI_PARAMS(std::string structureName, int player, int x, int y));
+	returned_nullable_ptr<const Structure> addStructure(WZAPI_PARAMS(std::string structureName, int player, int x, int y));
 	unsigned int getStructureLimit(WZAPI_PARAMS(std::string structureName, optional<int> _player));
 	int countStruct(WZAPI_PARAMS(std::string structureName, optional<int> _playerFilter));
 	int countDroid(WZAPI_PARAMS(optional<int> _droidType, optional<int> _playerFilter));
 	no_return_value loadLevel(WZAPI_PARAMS(std::string levelName));
-	no_return_value setDroidExperience(WZAPI_PARAMS(DROID *psDroid, double experience));
-	bool donateObject(WZAPI_PARAMS(BASE_OBJECT *psObject, int player));
+	no_return_value setDroidExperience(WZAPI_PARAMS(Droid *psDroid, double experience));
+	bool donateObject(WZAPI_PARAMS(GameObject *psObject, int player));
 	bool donatePower(WZAPI_PARAMS(int amount, int player));
 	no_return_value setNoGoArea(WZAPI_PARAMS(int x1, int y1, int x2, int y2, int playerFilter));
 	no_return_value startTransporterEntry(WZAPI_PARAMS(int x, int y, int player));
 	no_return_value setTransporterExit(WZAPI_PARAMS(int x, int y, int player));
-	no_return_value setObjectFlag(WZAPI_PARAMS(BASE_OBJECT *psObj, int _flag, bool flagValue)) MULTIPLAY_SYNCREQUEST_REQUIRED;
+	no_return_value setObjectFlag(WZAPI_PARAMS(GameObject *psObj, int _flag, bool flagValue)) MULTIPLAY_SYNCREQUEST_REQUIRED;
 	no_return_value fireWeaponAtLoc(WZAPI_PARAMS(std::string weaponName, int x, int y, optional<int> _player));
-	no_return_value fireWeaponAtObj(WZAPI_PARAMS(std::string weaponName, BASE_OBJECT *psObj, optional<int> _player));
+	no_return_value fireWeaponAtObj(WZAPI_PARAMS(std::string weaponName,
+                                                     GameObject *psObj, optional<int> _player));
 	bool setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& name, int type, unsigned index, const nlohmann::json& newValue));
 	nlohmann::json getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& name, int type, unsigned index));
 	bool transformPlayerToSpectator(WZAPI_PARAMS(int player));

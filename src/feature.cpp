@@ -78,7 +78,7 @@ bool loadFeatureStats(WzConfig &ini)
 		asFeatureStats[i] = FEATURE_STATS(STAT_FEATURE + i);
 		FEATURE_STATS *p = &asFeatureStats[i];
 		p->name = ini.string(WzString::fromUtf8("name"));
-		p->id = list[i];
+		p->textId = list[i];
 		WzString subType = ini.value("type").toWzString();
 		if (subType == "TANK WRECK")
 		{
@@ -155,14 +155,14 @@ void featureStatsShutDown()
  *  \param weaponClass,weaponSubClass the class and subclass of the weapon that deals the damage
  *  \return < 0 never, >= 0 always
  */
-int32_t featureDamage(FEATURE *psFeature, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass, unsigned impactTime, bool isDamagePerSecond, int minDamage)
+int32_t featureDamage(Feature *psFeature, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass, unsigned impactTime, bool isDamagePerSecond, int minDamage)
 {
 	int32_t relativeDamage;
 
 	ASSERT_OR_RETURN(0, psFeature != nullptr, "Invalid feature pointer");
 
 	debug(LOG_ATTACK, "feature (id %d): body %d armour %d damage: %d",
-	      psFeature->id, psFeature->body, psFeature->psStats->armourValue, damage);
+	      psFeature->id, psFeature->hitPoints, psFeature->psStats->armourValue, damage);
 
 	relativeDamage = objDamage(psFeature, damage, psFeature->psStats->body, weaponClass, weaponSubClass, isDamagePerSecond, minDamage);
 
@@ -181,10 +181,10 @@ int32_t featureDamage(FEATURE *psFeature, unsigned damage, WEAPON_CLASS weaponCl
 
 
 /* Create a feature on the map */
-FEATURE *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave)
+Feature *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave)
 {
 	//try and create the Feature
-	FEATURE *psFeature = new FEATURE(generateSynchronisedObjectId(), psStats);
+        Feature *psFeature = new Feature(generateSynchronisedObjectId(), psStats);
 
 	if (psFeature == nullptr)
 	{
@@ -209,8 +209,8 @@ FEATURE *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave)
 		}
 	}
 
-	psFeature->pos.x = x;
-	psFeature->pos.y = y;
+	psFeature->position.x = x;
+	psFeature->position.y = y;
 
 	StructureBounds b = getStructureBounds(psFeature);
 
@@ -231,26 +231,26 @@ FEATURE *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave)
 
 	if (psStats->subType == FEAT_TREE)
 	{
-		psFeature->rot.direction = gameRand(DEG_360);
+		psFeature->rotation.direction = gameRand(DEG_360);
 	}
 	else
 	{
-		psFeature->rot.direction = 0;
+		psFeature->rotation.direction = 0;
 	}
-	psFeature->body = psStats->body;
+	psFeature->hitPoints = psStats->body;
 	psFeature->periodicalDamageStart = 0;
 	psFeature->periodicalDamage = 0;
 
 	// it has never been drawn
-	psFeature->sDisplay.frameNumber = 0;
+	psFeature->displayData.frameNumber = 0;
 
 	memset(psFeature->seenThisTick, 0, sizeof(psFeature->seenThisTick));
 	memset(psFeature->visible, 0, sizeof(psFeature->visible));
 
 	// set up the imd for the feature
-	psFeature->sDisplay.imd = psStats->psImd;
+	psFeature->displayData.imd = psStats->psImd;
 
-	ASSERT_OR_RETURN(nullptr, psFeature->sDisplay.imd, "No IMD for feature");		// make sure we have an imd.
+	ASSERT_OR_RETURN(nullptr, psFeature->displayData.imd, "No IMD for feature");		// make sure we have an imd.
 
 	for (int breadth = 0; breadth < b.size.y; ++breadth)
 	{
@@ -266,19 +266,19 @@ FEATURE *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave)
 			{
 				if (TileHasFeature(psTile))
 				{
-					FEATURE *psBlock = (FEATURE *)psTile->psObject;
+                                  Feature *psBlock = (Feature *)psTile->psObject;
 
 					debug(LOG_ERROR, "%s(%d) already placed at (%d+%d, %d+%d) when trying to place %s(%d) at (%d+%d, %d+%d) - removing it",
-					      getStatsName(psBlock->psStats), psBlock->id, map_coord(psBlock->pos.x), psBlock->psStats->baseWidth, map_coord(psBlock->pos.y),
+					      getStatsName(psBlock->psStats), psBlock->id, map_coord(psBlock->position.x), psBlock->psStats->baseWidth, map_coord(psBlock->position.y),
 					      psBlock->psStats->baseBreadth, getStatsName(psFeature->psStats), psFeature->id, b.map.x, b.size.x, b.map.y, b.size.y);
 
 					removeFeature(psBlock);
 				}
 
-				psTile->psObject = (BASE_OBJECT *)psFeature;
+				psTile->psObject = (GameObject *)psFeature;
 
 				// if it's a tall feature then flag it in the map.
-				if (psFeature->sDisplay.imd->max.y > TALLOBJECT_YMAX)
+				if (psFeature->displayData.imd->max.y > TALLOBJECT_YMAX)
 				{
 					auxSetBlocking(b.map.x + width, b.map.y + breadth, AIR_BLOCKED);
 				}
@@ -295,25 +295,24 @@ FEATURE *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave)
 			}
 		}
 	}
-	psFeature->pos.z = map_TileHeight(b.map.x, b.map.y);//jps 18july97
+	psFeature->position.z = map_TileHeight(b.map.x, b.map.y);//jps 18july97
 
 	return psFeature;
 }
 
-
-FEATURE::FEATURE(uint32_t id, FEATURE_STATS const *psStats)
-	: BASE_OBJECT(OBJ_FEATURE, id, PLAYER_FEATURE)  // Set the default player out of range to avoid targeting confusions
+Feature::Feature(uint32_t id, FEATURE_STATS const *psStats)
+	: GameObject(OBJ_FEATURE, id, PLAYER_FEATURE)  // Set the default player out of range to avoid targeting confusions
 	, psStats(psStats)
 {}
 
 /* Release the resources associated with a feature */
-FEATURE::~FEATURE()
+Feature::~Feature()
 {
 	// Make sure to get rid of some final references in the sound code to this object first
 	audio_RemoveObj(this);
 }
 
-void _syncDebugFeature(const char *function, FEATURE const *psFeature, char ch)
+void _syncDebugFeature(const char *function, Feature const *psFeature, char ch)
 {
 	if (psFeature->type != OBJ_FEATURE) {
 		ASSERT(false, "%c Broken psFeature->type %u!", ch, psFeature->type);
@@ -325,17 +324,17 @@ void _syncDebugFeature(const char *function, FEATURE const *psFeature, char ch)
 
 		(int)psFeature->id,
 
-		psFeature->player,
-		psFeature->pos.x, psFeature->pos.y, psFeature->pos.z,
+		psFeature->owningPlayer,
+		psFeature->position.x, psFeature->position.y, psFeature->position.z,
 		(int)psFeature->psStats->subType,
 		psFeature->psStats->damageable,
-		(int)psFeature->body,
+		(int)psFeature->hitPoints,
 	};
 	_syncDebugIntList(function, "%c feature%d = p%d;pos(%d,%d,%d),subtype%d,damageable%d,body%d", list, ARRAY_SIZE(list));
 }
 
 /* Update routine for features */
-void featureUpdate(FEATURE *psFeat)
+void featureUpdate(Feature *psFeat)
 {
 	syncDebugFeature(psFeat, '<');
 
@@ -353,13 +352,13 @@ void featureUpdate(FEATURE *psFeat)
 
 
 // free up a feature with no visual effects
-bool removeFeature(FEATURE *psDel)
+bool removeFeature(Feature *psDel)
 {
 	MESSAGE		*psMessage;
 	Vector3i	pos;
 
 	ASSERT_OR_RETURN(false, psDel != nullptr, "Invalid feature pointer");
-	ASSERT_OR_RETURN(false, !psDel->died, "Feature already dead");
+	ASSERT_OR_RETURN(false, !psDel->deathTime, "Feature already dead");
 
 	//remove from the map data
 	StructureBounds b = getStructureBounds(psDel);
@@ -382,8 +381,8 @@ bool removeFeature(FEATURE *psDel)
 
 	if (psDel->psStats->subType == FEAT_GEN_ARTE || psDel->psStats->subType == FEAT_OIL_DRUM)
 	{
-		pos.x = psDel->pos.x;
-		pos.z = psDel->pos.y;
+		pos.x = psDel->position.x;
+		pos.z = psDel->position.y;
 		pos.y = map_Height(pos.x, pos.z) + 30;
 		addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_DISCOVERY, false, nullptr, 0, gameTime - deltaGameTime + 1);
 		if (psDel->psStats->subType == FEAT_GEN_ARTE)
@@ -419,7 +418,7 @@ bool removeFeature(FEATURE *psDel)
 }
 
 /* Remove a Feature and free it's memory */
-bool destroyFeature(FEATURE *psDel, unsigned impactTime)
+bool destroyFeature(Feature *psDel, unsigned impactTime)
 {
 	UDWORD			widthScatter, breadthScatter, heightScatter, i;
 	EFFECT_TYPE		explosionSize;
@@ -451,26 +450,26 @@ bool destroyFeature(FEATURE *psDel, unsigned impactTime)
 		}
 		for (i = 0; i < 4; i++)
 		{
-			pos.x = psDel->pos.x + widthScatter - rand() % (2 * widthScatter);
-			pos.z = psDel->pos.y + breadthScatter - rand() % (2 * breadthScatter);
-			pos.y = psDel->pos.z + 32 + rand() % heightScatter;
+			pos.x = psDel->position.x + widthScatter - rand() % (2 * widthScatter);
+			pos.z = psDel->position.y + breadthScatter - rand() % (2 * breadthScatter);
+			pos.y = psDel->position.z + 32 + rand() % heightScatter;
 			addEffect(&pos, EFFECT_EXPLOSION, explosionSize, false, nullptr, 0, impactTime);
 		}
 
 		if (psDel->psStats->subType == FEAT_SKYSCRAPER)
 		{
-			pos.x = psDel->pos.x;
-			pos.z = psDel->pos.y;
-			pos.y = psDel->pos.z;
-			addEffect(&pos, EFFECT_DESTRUCTION, DESTRUCTION_TYPE_SKYSCRAPER, true, psDel->sDisplay.imd, 0, impactTime);
-			initPerimeterSmoke(psDel->sDisplay.imd, pos);
+			pos.x = psDel->position.x;
+			pos.z = psDel->position.y;
+			pos.y = psDel->position.z;
+			addEffect(&pos, EFFECT_DESTRUCTION, DESTRUCTION_TYPE_SKYSCRAPER, true, psDel->displayData.imd, 0, impactTime);
+			initPerimeterSmoke(psDel->displayData.imd, pos);
 
 			shakeStart(250); // small shake
 		}
 
 		/* Then a sequence of effects */
-		pos.x = psDel->pos.x;
-		pos.z = psDel->pos.y;
+		pos.x = psDel->position.x;
+		pos.z = psDel->position.y;
 		pos.y = map_Height(pos.x, pos.z);
 		addEffect(&pos, EFFECT_DESTRUCTION, DESTRUCTION_TYPE_FEATURE, false, nullptr, 0, impactTime);
 
@@ -478,11 +477,11 @@ bool destroyFeature(FEATURE *psDel, unsigned impactTime)
 		// ffs gj
 		if (psDel->psStats->subType == FEAT_SKYSCRAPER)
 		{
-			audio_PlayStaticTrack(psDel->pos.x, psDel->pos.y, ID_SOUND_BUILDING_FALL);
+			audio_PlayStaticTrack(psDel->position.x, psDel->position.y, ID_SOUND_BUILDING_FALL);
 		}
 		else
 		{
-			audio_PlayStaticTrack(psDel->pos.x, psDel->pos.y, ID_SOUND_EXPLOSION);
+			audio_PlayStaticTrack(psDel->position.x, psDel->position.y, ID_SOUND_EXPLOSION);
 		}
 	}
 
@@ -518,7 +517,7 @@ bool destroyFeature(FEATURE *psDel, unsigned impactTime)
 	}
 
 	removeFeature(psDel);
-	psDel->died = impactTime;
+	psDel->deathTime = impactTime;
 	return true;
 }
 
@@ -530,7 +529,7 @@ SDWORD getFeatureStatFromName(const WzString &name)
 	for (unsigned inc = 0; inc < numFeatureStats; inc++)
 	{
 		psStat = &asFeatureStats[inc];
-		if (psStat->id.compare(name) == 0)
+		if (psStat->textId.compare(name) == 0)
 		{
 			return inc;
 		}
@@ -538,9 +537,9 @@ SDWORD getFeatureStatFromName(const WzString &name)
 	return -1;
 }
 
-StructureBounds getStructureBounds(FEATURE const *object)
+StructureBounds getStructureBounds(Feature const *object)
 {
-	return getStructureBounds(object->psStats, object->pos.xy());
+	return getStructureBounds(object->psStats, object->position.xy());
 }
 
 StructureBounds getStructureBounds(FEATURE_STATS const *stats, Vector2i pos)

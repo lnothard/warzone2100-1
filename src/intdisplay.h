@@ -53,31 +53,31 @@ enum ImdType
 struct ImdObject
 {
 	ImdObject() : ptr(nullptr), type(IMDTYPE_NONE) {}
-	static ImdObject Droid(BASE_OBJECT *p)
+	static ImdObject Droid(GameObject *p)
 	{
 		return ImdObject(p, IMDTYPE_DROID);
 	}
-	static ImdObject DroidTemplate(BASE_STATS *p)
+	static ImdObject DroidTemplate(StatsObject *p)
 	{
 		return ImdObject(p, IMDTYPE_DROIDTEMPLATE);
 	}
-	static ImdObject Component(BASE_STATS *p)
+	static ImdObject Component(StatsObject *p)
 	{
 		return ImdObject(p, IMDTYPE_COMPONENT);
 	}
-	static ImdObject Structure(BASE_OBJECT *p)
+	static ImdObject Structure(GameObject *p)
 	{
 		return ImdObject(p, IMDTYPE_STRUCTURE);
 	}
-	static ImdObject Research(BASE_STATS *p)
+	static ImdObject Research(StatsObject *p)
 	{
 		return ImdObject(p, IMDTYPE_RESEARCH);
 	}
-	static ImdObject StructureStat(BASE_STATS *p)
+	static ImdObject StructureStat(StatsObject *p)
 	{
 		return ImdObject(p, IMDTYPE_STRUCTURESTAT);
 	}
-	static ImdObject Feature(BASE_STATS *p)
+	static ImdObject Feature(StatsObject *p)
 	{
 		FEATURE_STATS *fStat = (FEATURE_STATS *)p;
 		return ImdObject(fStat->psImd, IMDTYPE_FEATURE);
@@ -150,7 +150,7 @@ public:
 
 	virtual void display(int xOffset, int yOffset);
 
-	void setObject(BASE_OBJECT *object)
+	void setObject(GameObject *object)
 	{
 		psObj = object;
 	}
@@ -162,7 +162,7 @@ public:
 	}
 
 protected:
-	BASE_OBJECT *psObj;
+  GameObject *psObj;
 };
 
 class IntStatusButton : public IntObjectButton
@@ -170,12 +170,12 @@ class IntStatusButton : public IntObjectButton
 public:
 	IntStatusButton();
 
-	void setObject(BASE_OBJECT *object)
+	void setObject(GameObject *object)
 	{
 		psObj = object;
 		theStats = nullptr;
 	}
-	void setObjectAndStats(BASE_OBJECT *object, BASE_STATS *stats)
+	void setObjectAndStats(GameObject *object, StatsObject *stats)
 	{
 		psObj = object;
 		theStats = stats;
@@ -184,7 +184,7 @@ public:
 	virtual void display(int xOffset, int yOffset);
 
 protected:
-	BASE_STATS *theStats;
+  StatsObject *theStats;
 };
 
 class IntStatsButton : public IntFancyButton
@@ -194,18 +194,18 @@ public:
 
 	virtual void display(int xOffset, int yOffset);
 
-	void setStats(BASE_STATS *stats)
+	void setStats(StatsObject *stats)
 	{
 		Stat = stats;
 	}
-	void setStatsAndTip(BASE_STATS *stats)
+	void setStatsAndTip(StatsObject *stats)
 	{
 		setStats(stats);
 		setTip(getStatsName(stats));
 	}
 
 protected:
-	BASE_STATS *Stat;
+  StatsObject *Stat;
 };
 
 /// Form which only acts as a glass container.
@@ -246,29 +246,32 @@ void intDisplayEditBox(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
 void formatTime(W_BARGRAPH *barGraph, int buildPointsDone, int buildPointsTotal, int buildRate, char const *toolTip);
 void formatPower(W_BARGRAPH *barGraph, int neededPower, int powerToBuild);
 
-bool DroidIsBuilding(DROID *Droid);
-STRUCTURE *DroidGetBuildStructure(DROID *Droid);
-bool DroidGoingToBuild(DROID *Droid);
-BASE_STATS *DroidGetBuildStats(DROID *Droid);
-iIMDShape *DroidGetIMD(DROID *Droid);
+bool DroidIsBuilding(Droid *Droid);
+Structure *DroidGetBuildStructure(Droid *Droid);
+bool DroidGoingToBuild(Droid *Droid);
+StatsObject *DroidGetBuildStats(Droid *Droid);
+iIMDShape *DroidGetIMD(Droid *Droid);
 
-bool StructureIsManufacturingPending(STRUCTURE *structure);   ///< Returns true iff the structure is either manufacturing or on hold (even if not yet synchronised). (But ignores research.)
-bool structureIsResearchingPending(STRUCTURE *structure);     ///< Returns true iff the structure is either researching or on hold (even if not yet synchronised). (But ignores manufacturing.)
-bool StructureIsOnHoldPending(STRUCTURE *structure);          ///< Returns true iff the structure is on hold (even if not yet synchronised).
-DROID_TEMPLATE *FactoryGetTemplate(FACTORY *Factory);
+bool StructureIsManufacturingPending(
+    Structure *structure);   ///< Returns true iff the structure is either manufacturing or on hold (even if not yet synchronised). (But ignores research.)
+bool structureIsResearchingPending(
+    Structure *structure);     ///< Returns true iff the structure is either researching or on hold (even if not yet synchronised). (But ignores manufacturing.)
+bool StructureIsOnHoldPending(
+    Structure *structure);          ///< Returns true iff the structure is on hold (even if not yet synchronised).
+DroidStats *FactoryGetTemplate(Factory *Factory);
 
-RESEARCH_FACILITY *StructureGetResearch(STRUCTURE *Structure);
-FACTORY *StructureGetFactory(STRUCTURE *Structure);
+RESEARCH_FACILITY *StructureGetResearch(Structure *Structure);
+Factory *StructureGetFactory(Structure *Structure);
 
-bool StatIsStructure(BASE_STATS const *Stat);
-iIMDShape *StatGetStructureIMD(BASE_STATS *Stat, UDWORD Player);
-bool StatIsTemplate(BASE_STATS *Stat);
-bool StatIsFeature(BASE_STATS const *Stat);
+bool StatIsStructure(StatsObject const *Stat);
+iIMDShape *StatGetStructureIMD(StatsObject *Stat, UDWORD Player);
+bool StatIsTemplate(StatsObject *Stat);
+bool StatIsFeature(StatsObject const *Stat);
 
-COMPONENT_TYPE StatIsComponent(BASE_STATS *Stat);
-bool StatGetComponentIMD(BASE_STATS *Stat, SDWORD compID, iIMDShape **CompIMD, iIMDShape **MountIMD);
+COMPONENT_TYPE StatIsComponent(StatsObject *Stat);
+bool StatGetComponentIMD(StatsObject *Stat, SDWORD compID, iIMDShape **CompIMD, iIMDShape **MountIMD);
 
-bool StatIsResearch(BASE_STATS *Stat);
+bool StatIsResearch(StatsObject *Stat);
 
 // Widget callback function to play an audio track.
 void WidgetAudioCallback(int AudioID);
@@ -280,13 +283,13 @@ public:
 
 	virtual void display(int xOffset, int yOffset);
 
-	void setObject(DROID *object)
+	void setObject(Droid *object)
 	{
 		psDroid = object;
 	}
 
 protected:
-	DROID *psDroid;
+  Droid *psDroid;
 };
 
 /*draws blips on radar to represent Proximity Display*/
@@ -300,7 +303,7 @@ void intUpdateQuantitySlider(WIDGET *psWidget, W_CONTEXT *psContext);
 void intDisplayMissionClock(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
 
 void intDisplayUpdateAllyBar(W_BARGRAPH *psBar, const RESEARCH &research, const std::vector<AllyResearch> &researches);
-STRUCTURE *droidGetCommandFactory(DROID *psDroid);
+Structure *droidGetCommandFactory(Droid *psDroid);
 
 void intSetShadowPower(int quantity);
 

@@ -1523,9 +1523,9 @@ bool stageTwoShutDown()
 
 bool stageThreeInitialise()
 {
-	STRUCTURE *psStr;
+  Structure *psStr;
 	UDWORD i;
-	DROID *psDroid;
+        Droid *psDroid;
 	bool fromSave = (getSaveGameType() == GTYPE_SAVE_START || getSaveGameType() == GTYPE_SAVE_MIDMISSION);
 
 	debug(LOG_WZ, "== stageThreeInitialise ==");
@@ -1609,18 +1609,18 @@ bool stageThreeInitialise()
 				/* Structures */
 				for (psStr = apsStructLists[i]; psStr; psStr = psStr->psNext)
 				{
-					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psStr->player, selectedPlayer))
+					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psStr->owningPlayer, selectedPlayer))
 					{
-						visTilesUpdate((BASE_OBJECT *)psStr);
+						visTilesUpdate((GameObject *)psStr);
 					}
 				}
 
 				/* Droids */
-				for (psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
+				for (psDroid = allDroidLists[i]; psDroid; psDroid = psDroid->psNext)
 				{
-					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psDroid->player, selectedPlayer))
+					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psDroid->owningPlayer, selectedPlayer))
 					{
-						visTilesUpdate((BASE_OBJECT *)psDroid);
+						visTilesUpdate((GameObject *)psDroid);
 					}
 				}
 			}

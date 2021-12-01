@@ -289,8 +289,8 @@ END_GAME_STATS_DATA	collectEndGameStatsData()
 	fullStats.numUnits = 0;
 	if (selectedPlayer < MAX_PLAYERS)
 	{
-		for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext, fullStats.numUnits++) {}
-		for (DROID *psDroid = mission.apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext, fullStats.numUnits++) {}
+		for (Droid *psDroid = allDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext, fullStats.numUnits++) {}
+		for (Droid *psDroid = mission.apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext, fullStats.numUnits++) {}
 	}
 
 	return fullStats;
@@ -583,27 +583,27 @@ void stdOutGameSummary(UDWORD realTimeThrottleSeconds, bool flush_output /* = tr
 			}
 			uint32_t unitsKilled = getMultiPlayUnitsKilled(n);
 			uint32_t numUnits = 0;
-			for (DROID *psDroid = apsDroidLists[n]; psDroid; psDroid = psDroid->psNext, numUnits++) {}
+			for (Droid *psDroid = allDroidLists[n]; psDroid; psDroid = psDroid->psNext, numUnits++) {}
 			uint32_t numStructs = 0;
 			uint32_t numFactories = 0;
 			uint32_t numResearch = 0;
 			uint32_t numFactoriesThatCanProduceConstructionUnits = 0;
-			for (STRUCTURE *psStruct = apsStructLists[n]; psStruct; psStruct = psStruct->psNext, numStructs++)
+			for (Structure *psStruct = apsStructLists[n]; psStruct; psStruct = psStruct->psNext, numStructs++)
 			{
-				if (psStruct->status != SS_BUILT || psStruct->died != 0)
+				if (psStruct->status != SS_BUILT || psStruct->deathTime != 0)
 				{
 					continue; // ignore structures that aren't completely built, or are "dead"
 				}
 				if (StructIsFactory(psStruct))
 				{
 					numFactories++;
-					if (psStruct->pStructureType->type == REF_FACTORY ||
-						psStruct->pStructureType->type == REF_CYBORG_FACTORY)
+					if (psStruct->stats->type == REF_FACTORY ||
+						psStruct->stats->type == REF_CYBORG_FACTORY)
 					{
 						numFactoriesThatCanProduceConstructionUnits++;
 					}
 				}
-				else if (psStruct->pStructureType->type == REF_RESEARCH)
+				else if (psStruct->stats->type == REF_RESEARCH)
 				{
 					numResearch++;
 				}

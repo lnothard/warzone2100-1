@@ -34,14 +34,14 @@ bool allocPlayerPower();
 void clearPlayerPower();
 
 /// Removes any pending power request from this structure.
-void delPowerRequest(STRUCTURE *psStruct);
+void delPowerRequest(Structure *psStruct);
 
 /// Checks how much power must be accumulated, before the power request from this structure can be satisfied.
 /// Returns -1 if there is no power request or if there is enough power already.
-int32_t checkPowerRequest(STRUCTURE *psStruct);
+int32_t checkPowerRequest(Structure *psStruct);
 
-bool requestPowerFor(STRUCTURE *psStruct, int32_t amount);
-bool requestPrecisePowerFor(STRUCTURE *psStruct, int64_t amount);
+bool requestPowerFor(Structure *psStruct, int32_t amount);
+bool requestPrecisePowerFor(Structure *psStruct, int64_t amount);
 
 void addPower(int player, int32_t quantity);
 

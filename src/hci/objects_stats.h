@@ -16,21 +16,21 @@ class BaseObjectsController
 public:
 	virtual ~BaseObjectsController() = default;
 	virtual size_t objectsSize() const = 0;
-	virtual BASE_OBJECT *getObjectAt(size_t index) const = 0;
-	virtual BASE_STATS *getObjectStatsAt(size_t index) const = 0;
-	virtual bool findObject(std::function<bool (BASE_OBJECT *)> iteration) const = 0;
+	virtual GameObject *getObjectAt(size_t index) const = 0;
+	virtual StatsObject *getObjectStatsAt(size_t index) const = 0;
+	virtual bool findObject(std::function<bool (GameObject *)> iteration) const = 0;
 	virtual void refresh() = 0;
 	virtual bool showInterface() = 0;
 	virtual void prepareToClose();
 	virtual void clearData() = 0;
-	void jumpToObject(BASE_OBJECT *object);
+	void jumpToObject(GameObject *object);
 	void updateHighlighted();
 	void clearSelection();
 	void clearStructureSelection();
-	void selectObject(BASE_OBJECT *object);
+	void selectObject(GameObject *object);
 
-	virtual BASE_OBJECT *getHighlightedObject() const = 0;
-	virtual void setHighlightedObject(BASE_OBJECT *object) = 0;
+	virtual GameObject *getHighlightedObject() const = 0;
+	virtual void setHighlightedObject(GameObject *object) = 0;
 
 	void closeInterface()
 	{
@@ -70,7 +70,7 @@ public:
 	virtual std::shared_ptr<StatsForm> makeStatsForm() = 0;
 	void displayStatsForm();
 	static void scheduleDisplayStatsForm(const std::shared_ptr<BaseStatsController>& controller);
-	virtual BASE_STATS *getStatsAt(size_t) const = 0;
+	virtual StatsObject *getStatsAt(size_t) const = 0;
 };
 
 class BaseObjectsStatsController: public BaseStatsController, public BaseObjectsController
@@ -83,13 +83,13 @@ public:
 		return getStatsAt(statsIndex) == highlightedObjectStats;
 	}
 
-	BASE_STATS *getHighlightedObjectStats()
+        StatsObject *getHighlightedObjectStats()
 	{
 		return highlightedObjectStats;
 	}
 
 private:
-	BASE_STATS *highlightedObjectStats;
+  StatsObject *highlightedObjectStats;
 };
 
 class DynamicIntFancyButton: public IntFancyButton
@@ -106,7 +106,7 @@ protected:
 class StatsButton: public DynamicIntFancyButton
 {
 protected:
-	virtual BASE_STATS *getStats() = 0;
+	virtual StatsObject *getStats() = 0;
 
 	std::string getTip() override
 	{
@@ -189,7 +189,7 @@ protected:
 
 	std::shared_ptr<IntListTabWidget> objectsList;
 	size_t buttonsCount = 0;
-	BASE_OBJECT *previousHighlighted = nullptr;
+        GameObject *previousHighlighted = nullptr;
 };
 
 class StatsForm: public IntFormAnimated
@@ -229,7 +229,7 @@ public:
 protected:
 	void updateLayout() override;
 	void goToHighlightedTab();
-	BASE_STATS *previousHighlighted = nullptr;
+        StatsObject *previousHighlighted = nullptr;
 };
 
 #endif // __INCLUDED_SRC_HCI_OBJECTS_STATS_INTERFACE_H__

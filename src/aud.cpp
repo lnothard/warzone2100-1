@@ -31,7 +31,7 @@
 #include "display3d.h"
 #include "map.h"
 
-bool audio_ObjectDead(const SIMPLE_OBJECT *psSimpleObj)
+bool audio_ObjectDead(const GameObject *psSimpleObj)
 {
 	/* check is valid simple object pointer */
 	if (psSimpleObj == nullptr)
@@ -48,7 +48,7 @@ bool audio_ObjectDead(const SIMPLE_OBJECT *psSimpleObj)
 	else
 	{
 		/* check base object */
-		return psSimpleObj->died;
+		return psSimpleObj->deathTime;
 	}
 }
 // @FIXME we don't need to do this, since we are not using qsound.
@@ -89,16 +89,16 @@ void audio_GetStaticPos(SDWORD iWorldX, SDWORD iWorldY, SDWORD *piX, SDWORD *piY
 }
 
 // @FIXME we don't need to do this, since we are not using qsound.
-void audio_GetObjectPos(const SIMPLE_OBJECT *psBaseObj, SDWORD *piX, SDWORD *piY, SDWORD *piZ)
+void audio_GetObjectPos(const GameObject *psBaseObj, SDWORD *piX, SDWORD *piY, SDWORD *piZ)
 {
 	/* check is valid pointer */
 	ASSERT_OR_RETURN(, psBaseObj != nullptr, "Game object pointer invalid");
 
-	*piX = psBaseObj->pos.x;
-	*piZ = map_TileHeight(map_coord(psBaseObj->pos.x), map_coord(psBaseObj->pos.y));
+	*piX = psBaseObj->position.x;
+	*piZ = map_TileHeight(map_coord(psBaseObj->position.x), map_coord(psBaseObj->position.y));
 
 	/* invert y to match QSOUND axes */
-	*piY = world_coord(mapHeight) - psBaseObj->pos.y;
+	*piY = world_coord(mapHeight) - psBaseObj->position.y;
 }
 
 UDWORD sound_GetGameTime()

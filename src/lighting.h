@@ -37,6 +37,6 @@ void processLight(LIGHT *psLight);
 void initLighting(UDWORD x1, UDWORD y1, UDWORD x2, UDWORD y2);
 void doBuildingLights();
 void updateFogDistance(float distance);
-void calcDroidIllumination(DROID *psDroid);
+void calcDroidIllumination(Droid *psDroid);
 
 #endif // __INCLUDED_SRC_LIGHTNING_H__

@@ -26,17 +26,19 @@
 
 #include "objectdef.h"
 
+#include <vector>
+
 /* The lists of objects allocated */
-extern DROID			*apsDroidLists[MAX_PLAYERS];
-extern STRUCTURE		*apsStructLists[MAX_PLAYERS];
-extern FEATURE			*apsFeatureLists[MAX_PLAYERS];
-extern FLAG_POSITION	*apsFlagPosLists[MAX_PLAYERS];
-extern STRUCTURE		*apsExtractorLists[MAX_PLAYERS];
-extern BASE_OBJECT		*apsSensorList[1];
-extern FEATURE			*apsOilList[1];
+extern std::vector<std::vector<Droid>&> allDroidLists;
+extern Structure *apsStructLists[MAX_PLAYERS];
+extern Feature *apsFeatureLists[MAX_PLAYERS];
+extern FLAG_POSITION	        *apsFlagPosLists[MAX_PLAYERS];
+extern Structure *apsExtractorLists[MAX_PLAYERS];
+extern GameObject               *apsSensorList[1];
+extern Feature *apsOilList[1];
 
 /* The list of destroyed objects */
-extern BASE_OBJECT	*psDestroyedObj;
+extern GameObject *psDestroyedObj;
 
 /* Initialise the object heaps */
 bool objmemInitialise();
@@ -53,16 +55,16 @@ uint32_t generateNewObjectId();
 uint32_t generateSynchronisedObjectId();
 
 /* add the droid to the Droid Lists */
-void addDroid(DROID *psDroidToAdd, DROID *pList[MAX_PLAYERS]);
+void addDroid(Droid *psDroidToAdd, Droid *pList[MAX_PLAYERS]);
 
 /*destroy a droid */
-void killDroid(DROID *psDel);
+void killDroid(Droid *psDel);
 
 /* Remove all droids */
 void freeAllDroids();
 
 /*Remove a single Droid from its list*/
-void removeDroid(DROID *psDroidToRemove, DROID *pList[MAX_PLAYERS]);
+void removeDroid(Droid *psDroidToRemove, Droid *pList[MAX_PLAYERS]);
 
 /*Removes all droids that may be stored in the mission lists*/
 void freeAllMissionDroids();
@@ -71,22 +73,23 @@ void freeAllMissionDroids();
 void freeAllLimboDroids();
 
 /* add the structure to the Structure Lists */
-void addStructure(STRUCTURE *psStructToAdd);
+void addStructure(Structure *psStructToAdd);
 
 /* Destroy a structure */
-void killStruct(STRUCTURE *psDel);
+void killStruct(Structure *psDel);
 
 /* Remove all structures */
 void freeAllStructs();
 
 /*Remove a single Structure from a list*/
-void removeStructureFromList(STRUCTURE *psStructToRemove, STRUCTURE *pList[MAX_PLAYERS]);
+void removeStructureFromList(Structure *psStructToRemove,
+                             Structure *pList[MAX_PLAYERS]);
 
 /* add the feature to the Feature Lists */
-void addFeature(FEATURE *psFeatureToAdd);
+void addFeature(Feature *psFeatureToAdd);
 
 /* Destroy a feature */
-void killFeature(FEATURE *psDel);
+void killFeature(Feature *psDel);
 
 /* Remove all features */
 void freeAllFeatures();
@@ -101,8 +104,8 @@ void removeFlagPosition(FLAG_POSITION *psDel);
 void freeAllFlagPositions();
 
 // Find a base object from it's id
-BASE_OBJECT *getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type);
-BASE_OBJECT *getBaseObjFromId(UDWORD id);
+GameObject *getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type);
+GameObject *getBaseObjFromId(UDWORD id);
 
 UDWORD getRepairIdFromFlag(FLAG_POSITION *psFlag);
 

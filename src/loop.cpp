@@ -87,10 +87,6 @@
 
 #include "warzoneconfig.h"
 
-#ifdef DEBUG
-#include "objmem.h"
-#endif
-
 #include <numeric>
 
 
@@ -116,6 +112,7 @@ struct PAUSE_STATE
 	bool scrollPause;
 	bool consolePause;
 };
+
 static PAUSE_STATE pauseState;
 static size_t maxFastForwardTicks = WZ_DEFAULT_MAX_FASTFORWARD_TICKS;
 static bool fastForwardTicksFixedToNormalTickRate = true; // can be set to false to "catch-up" as quickly as possible (but this may result in more jerky behavior)
@@ -170,11 +167,6 @@ static GAMECODE renderLoop()
 				wzSetCursor(CURSOR_DEFAULT);
 			}
 
-#ifdef DEBUG
-			// check all flag positions for duplicate delivery points
-			checkFactoryFlags();
-#endif
-
 			//handles callbacks for positioning of DP's
 			process3DBuilding();
 			processDeliveryRepos();
@@ -186,9 +178,9 @@ static GAMECODE renderLoop()
 				multiPlayerLoop();
 			}
 
-			for (unsigned i = 0; i < MAX_PLAYERS; i++)
+			for (auto psCurr : allDroidLists)
 			{
-				for (DROID *psCurr = apsDroidLists[i]; psCurr; psCurr = psCurr->psNext)
+				for (; psCurr; psCurr = psCurr->psNext)
 				{
 					// Don't copy the next pointer - if droids somehow get destroyed in the graphics rendering loop, who cares if we crash.
 					calcDroidIllumination(psCurr);
@@ -411,7 +403,7 @@ void countUpdate(bool synch)
 		numMissionDroids[i] = 0;
 		numTransporterDroids[i] = 0;
 
-		for (DROID *psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (Droid *psCurr = allDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			numDroids[i]++;
 			switch (psCurr->droidType)
@@ -431,7 +423,7 @@ void countUpdate(bool synch)
 				break;
 			}
 		}
-		for (DROID *psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (Droid *psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			numMissionDroids[i]++;
 			switch (psCurr->droidType)
@@ -451,7 +443,7 @@ void countUpdate(bool synch)
 				break;
 			}
 		}
-		for (DROID *psCurr = apsLimboDroids[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (Droid *psCurr = apsLimboDroids[i]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			// count the type of units
 			switch (psCurr->droidType)
@@ -469,26 +461,26 @@ void countUpdate(bool synch)
 		}
 		// FIXME: These for-loops are code duplicationo
 		setLasSatExists(false, i);
-		for (STRUCTURE *psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->psNext)
+		for (Structure *psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->psNext)
 		{
-			if (psCBuilding->pStructureType->type == REF_SAT_UPLINK && psCBuilding->status == SS_BUILT)
+			if (psCBuilding->stats->type == REF_SAT_UPLINK && psCBuilding->status == SS_BUILT)
 			{
 				setSatUplinkExists(true, i);
 			}
 			//don't wait for the Las Sat to be built - can't build another if one is partially built
-			if (asWeaponStats[psCBuilding->asWeaps[0].nStat].weaponSubClass == WSC_LAS_SAT)
+			if (asWeaponStats[psCBuilding->m_weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT)
 			{
 				setLasSatExists(true, i);
 			}
 		}
-		for (STRUCTURE *psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->psNext)
+		for (Structure *psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->psNext)
 		{
-			if (psCBuilding->pStructureType->type == REF_SAT_UPLINK && psCBuilding->status == SS_BUILT)
+			if (psCBuilding->stats->type == REF_SAT_UPLINK && psCBuilding->status == SS_BUILT)
 			{
 				setSatUplinkExists(true, i);
 			}
 			//don't wait for the Las Sat to be built - can't build another if one is partially built
-			if (asWeaponStats[psCBuilding->asWeaps[0].nStat].weaponSubClass == WSC_LAS_SAT)
+			if (asWeaponStats[psCBuilding->m_weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT)
 			{
 				setLasSatExists(true, i);
 			}
@@ -553,15 +545,15 @@ static void gameStateUpdate()
 		//update the current power available for a player
 		updatePlayerPower(i);
 
-		DROID *psNext;
-		for (DROID *psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
+                Droid *psNext;
+		for (Droid *psCurr = allDroidLists[i]; psCurr != nullptr; psCurr = psNext)
 		{
 			// Copy the next pointer - not 100% sure if the droid could get destroyed but this covers us anyway
 			psNext = psCurr->psNext;
 			droidUpdate(psCurr);
 		}
 
-		for (DROID *psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
+		for (Droid *psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
 		{
 			/* Copy the next pointer - not 100% sure if the droid could
 			get destroyed but this covers us anyway */
@@ -570,14 +562,14 @@ static void gameStateUpdate()
 		}
 
 		// FIXME: These for-loops are code duplicationo
-		STRUCTURE *psNBuilding;
-		for (STRUCTURE *psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
+                Structure *psNBuilding;
+		for (Structure *psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
 		{
 			/* Copy the next pointer - not 100% sure if the structure could get destroyed but this covers us anyway */
 			psNBuilding = psCBuilding->psNext;
 			structureUpdate(psCBuilding, false);
 		}
-		for (STRUCTURE *psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
+		for (Structure *psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
 		{
 			/* Copy the next pointer - not 100% sure if the structure could get destroyed but this covers us anyway. It shouldn't do since its not even on the map!*/
 			psNBuilding = psCBuilding->psNext;
@@ -589,8 +581,8 @@ static void gameStateUpdate()
 
 	proj_UpdateAll();
 
-	FEATURE *psNFeat;
-	for (FEATURE *psCFeat = apsFeatureLists[0]; psCFeat; psCFeat = psNFeat)
+        Feature *psNFeat;
+	for (Feature *psCFeat = apsFeatureLists[0]; psCFeat; psCFeat = psNFeat)
 	{
 		psNFeat = psCFeat->psNext;
 		featureUpdate(psCFeat);
@@ -879,8 +871,8 @@ UDWORD	getNumConstructorDroids(UDWORD player)
 }
 
 // increase the droid counts - used by update factory to keep the counts in sync
-void adjustDroidCount(DROID *droid, int delta) {
-	int player = droid->player;
+void adjustDroidCount(Droid *droid, int delta) {
+	int player = droid->owningPlayer;
 	syncDebug("numDroids[%d]:%d=%d→%d", player, droid->droidType, numDroids[player], numDroids[player] + delta);
 	numDroids[player] += delta;
 	switch (droid->droidType)
@@ -898,9 +890,9 @@ void adjustDroidCount(DROID *droid, int delta) {
 }
 
 // Increase counts of droids in a transporter
-void droidCountsInTransporter(DROID *droid, int player)
+void droidCountsInTransporter(Droid *droid, int player)
 {
-	DROID *psDroid = nullptr;
+  Droid *psDroid = nullptr;
 
 	if (!isTransporter(droid) || droid->psGroup == nullptr)
 	{

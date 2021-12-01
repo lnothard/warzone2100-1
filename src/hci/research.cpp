@@ -9,7 +9,7 @@
 #include "../component.h"
 #include "../mission.h"
 
-STRUCTURE *ResearchController::highlightedFacility = nullptr;
+Structure *ResearchController::highlightedFacility = nullptr;
 static ImdObject getResearchObjectImage(RESEARCH *research);
 
 void ResearchController::updateData()
@@ -25,7 +25,7 @@ void ResearchController::updateFacilitiesList()
 
 	for (auto psStruct = interfaceStructList(); psStruct != nullptr; psStruct = psStruct->psNext)
 	{
-		if (psStruct->pStructureType->type == REF_RESEARCH && psStruct->status == SS_BUILT && psStruct->died == 0)
+		if (psStruct->stats->type == REF_RESEARCH && psStruct->status == SS_BUILT && psStruct->deathTime == 0)
 		{
 			facilities.push_back(psStruct);
 		}
@@ -68,7 +68,7 @@ void ResearchController::updateResearchOptionsList()
 			return iconIdA < iconIdB;
 		}
 
-		return a->id < b->id;
+		return a->textId < b->textId;
 	});
 }
 
@@ -90,7 +90,7 @@ RESEARCH *ResearchController::getObjectStatsAt(size_t objectIndex) const
 		return nullptr;
 	}
 
-	if (psResearchFacility->psSubjectPending != nullptr && !IsResearchCompleted(&asPlayerResList[facility->player][psResearchFacility->psSubjectPending->index]))
+	if (psResearchFacility->psSubjectPending != nullptr && !IsResearchCompleted(&asPlayerResList[facility->owningPlayer][psResearchFacility->psSubjectPending->index]))
 	{
 		return psResearchFacility->psSubjectPending;
 	}
@@ -134,13 +134,13 @@ void ResearchController::startResearch(RESEARCH &research)
 	if (bMultiMessages)
 	{
 		// Say that we want to do research [sic].
-		sendResearchStatus(facility, research.ref - STAT_RESEARCH, selectedPlayer, true);
+		sendResearchStatus(facility, research.id - STAT_RESEARCH, selectedPlayer, true);
 		setStatusPendingStart(*psResFacilty, &research);  // Tell UI that we are going to research.
 	}
 	else
 	{
 		//set up the player_research
-		auto count = research.ref - STAT_RESEARCH;
+		auto count = research.id - STAT_RESEARCH;
 		//meant to still be in the list but greyed out
 		auto pPlayerRes = &asPlayerResList[selectedPlayer][count];
 
@@ -157,7 +157,7 @@ void ResearchController::startResearch(RESEARCH &research)
 	stopReticuleButtonFlash(IDRET_RESEARCH);
 }
 
-void ResearchController::setHighlightedObject(BASE_OBJECT *object)
+void ResearchController::setHighlightedObject(GameObject *object)
 {
 	if (object == nullptr)
 	{
@@ -167,7 +167,7 @@ void ResearchController::setHighlightedObject(BASE_OBJECT *object)
 
 	auto facility = castStructure(object);
 	ASSERT_NOT_NULLPTR_OR_RETURN(, facility);
-	ASSERT_OR_RETURN(, facility->pStructureType->type == REF_RESEARCH, "Invalid facility pointer");
+	ASSERT_OR_RETURN(, facility->stats->type == REF_RESEARCH, "Invalid facility pointer");
 	highlightedFacility = facility;
 }
 
@@ -281,7 +281,7 @@ protected:
 		ASSERT_NOT_NULLPTR_OR_RETURN(, facility);
 		if (isDead(facility))
 		{
-			ASSERT_FAILURE(!isDead(facility), "!isDead(facility)", AT_MACRO, __FUNCTION__, "Facility is dead");
+			ASSERT_FAILURE(!isDead(facility), "!alive(facility)", AT_MACRO, __FUNCTION__, "Facility is dead");
 			// ensure the backing information is refreshed before the next draw
 			intRefreshScreen();
 			return;
@@ -310,7 +310,7 @@ protected:
 			return;
 		}
 
-		const std::vector<AllyResearch> &allyResearches = listAllyResearch(research->ref);
+		const std::vector<AllyResearch> &allyResearches = listAllyResearch(research->id);
 		if (allyResearches.empty())
 		{
 			return;
@@ -323,7 +323,7 @@ protected:
 	{
 		auto facility = controller->getObjectAt(objectIndex);
 		ASSERT_NOT_NULLPTR_OR_RETURN("", facility);
-		return getStatsName(facility->pStructureType);
+		return getStatsName(facility->stats);
 	}
 
 	ResearchController &getController() const override
@@ -554,7 +554,7 @@ private:
 			return;
 		}
 
-		const std::vector<AllyResearch> &allyResearches = listAllyResearch(research->ref);
+		const std::vector<AllyResearch> &allyResearches = listAllyResearch(research->id);
 		if (allyResearches.empty())
 		{
 			return;
@@ -683,12 +683,12 @@ std::shared_ptr<StatsForm> ResearchController::makeStatsForm()
 	return ResearchStatsForm::make(shared_from_this());
 }
 
-void ResearchController::cancelResearch(STRUCTURE *facility)
+void ResearchController::cancelResearch(Structure *facility)
 {
 	::cancelResearch(facility, ModeQueue);
 }
 
-void ResearchController::requestResearchCancellation(STRUCTURE *facility)
+void ResearchController::requestResearchCancellation(Structure *facility)
 {
 	if (!structureIsResearchingPending(facility))
 	{
@@ -707,7 +707,7 @@ void ResearchController::requestResearchCancellation(STRUCTURE *facility)
 
 static ImdObject getResearchObjectImage(RESEARCH *research)
 {
-	BASE_STATS *psResGraphic = research->psStat;
+  StatsObject *psResGraphic = research->psStat;
 
 	if (!psResGraphic)
 	{

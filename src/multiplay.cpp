@@ -211,7 +211,7 @@ bool multiplayerWinSequence(bool firstCall)
 	static Position pos = Position(0, 0, 0);
 	static UDWORD last = 0;
 	float		rotAmount;
-	STRUCTURE	*psStruct;
+        Structure *psStruct;
 
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
@@ -231,7 +231,7 @@ bool multiplayerWinSequence(bool firstCall)
 		{
 			if (StructIsFactory(psStruct))
 			{
-				if (((FACTORY *)psStruct->pFunctionality)->psSubject)//check if active
+				if (((Factory *)psStruct->pFunctionality)->psSubject)//check if active
 				{
 					cancelProduction(psStruct, ModeQueue);
 				}
@@ -397,13 +397,13 @@ bool multiPlayerLoop()
 // quikie functions.
 
 // to get droids ...
-DROID *IdToDroid(UDWORD id, UDWORD player)
+Droid *IdToDroid(UDWORD id, UDWORD player)
 {
 	if (player == ANYPLAYER)
 	{
 		for (int i = 0; i < MAX_PLAYERS; i++)
 		{
-			for (DROID *d = apsDroidLists[i]; d; d = d->psNext)
+			for (Droid *d = allDroidLists[i]; d; d = d->psNext)
 			{
 				if (d->id == id)
 				{
@@ -414,7 +414,7 @@ DROID *IdToDroid(UDWORD id, UDWORD player)
 	}
 	else if (player < MAX_PLAYERS)
 	{
-		for (DROID *d = apsDroidLists[player]; d; d = d->psNext)
+		for (Droid *d = allDroidLists[player]; d; d = d->psNext)
 		{
 			if (d->id == id)
 			{
@@ -426,13 +426,13 @@ DROID *IdToDroid(UDWORD id, UDWORD player)
 }
 
 // find off-world droids
-DROID *IdToMissionDroid(UDWORD id, UDWORD player)
+Droid *IdToMissionDroid(UDWORD id, UDWORD player)
 {
 	if (player == ANYPLAYER)
 	{
 		for (int i = 0; i < MAX_PLAYERS; i++)
 		{
-			for (DROID *d = mission.apsDroidLists[i]; d; d = d->psNext)
+			for (Droid *d = mission.apsDroidLists[i]; d; d = d->psNext)
 			{
 				if (d->id == id)
 				{
@@ -443,7 +443,7 @@ DROID *IdToMissionDroid(UDWORD id, UDWORD player)
 	}
 	else if (player < MAX_PLAYERS)
 	{
-		for (DROID *d = mission.apsDroidLists[player]; d; d = d->psNext)
+		for (Droid *d = mission.apsDroidLists[player]; d; d = d->psNext)
 		{
 			if (d->id == id)
 			{
@@ -456,7 +456,7 @@ DROID *IdToMissionDroid(UDWORD id, UDWORD player)
 
 // ////////////////////////////////////////////////////////////////////////////
 // find a structure
-STRUCTURE *IdToStruct(UDWORD id, UDWORD player)
+Structure *IdToStruct(UDWORD id, UDWORD player)
 {
 	int beginPlayer = 0, endPlayer = MAX_PLAYERS;
 	if (player != ANYPLAYER)
@@ -464,12 +464,12 @@ STRUCTURE *IdToStruct(UDWORD id, UDWORD player)
 		beginPlayer = player;
 		endPlayer = std::min<int>(player + 1, MAX_PLAYERS);
 	}
-	STRUCTURE **lists[2] = {apsStructLists, mission.apsStructLists};
+        Structure **lists[2] = {apsStructLists, mission.apsStructLists};
 	for (int j = 0; j < 2; ++j)
 	{
 		for (int i = beginPlayer; i < endPlayer; ++i)
 		{
-			for (STRUCTURE *d = lists[j][i]; d; d = d->psNext)
+			for (Structure *d = lists[j][i]; d; d = d->psNext)
 			{
 				if (d->id == id)
 				{
@@ -483,10 +483,10 @@ STRUCTURE *IdToStruct(UDWORD id, UDWORD player)
 
 // ////////////////////////////////////////////////////////////////////////////
 // find a feature
-FEATURE *IdToFeature(UDWORD id, UDWORD player)
+Feature *IdToFeature(UDWORD id, UDWORD player)
 {
 	(void)player;	// unused, all features go into player 0
-	for (FEATURE *d = apsFeatureLists[0]; d; d = d->psNext)
+	for (Feature *d = apsFeatureLists[0]; d; d = d->psNext)
 	{
 		if (d->id == id)
 		{
@@ -498,7 +498,7 @@ FEATURE *IdToFeature(UDWORD id, UDWORD player)
 
 // ////////////////////////////////////////////////////////////////////////////
 
-DROID_TEMPLATE *IdToTemplate(UDWORD tempId, UDWORD player)
+DroidStats *IdToTemplate(UDWORD tempId, UDWORD player)
 {
 	// Check if we know which player this is from, in that case, assume it is a player template
 	// FIXME: nuke the ANYPLAYER hack
@@ -523,31 +523,31 @@ DROID_TEMPLATE *IdToTemplate(UDWORD tempId, UDWORD player)
 
 /////////////////////////////////////////////////////////////////////////////////
 //  Returns a pointer to base object, given an id and optionally a player.
-BASE_OBJECT *IdToPointer(UDWORD id, UDWORD player)
+GameObject *IdToPointer(UDWORD id, UDWORD player)
 {
-	DROID		*pD;
-	STRUCTURE	*pS;
-	FEATURE		*pF;
+  Droid *pD;
+  Structure *pS;
+        Feature *pF;
 	// droids.
 
 	pD = IdToDroid(id, player);
 	if (pD)
 	{
-		return (BASE_OBJECT *)pD;
+		return (GameObject *)pD;
 	}
 
 	// structures
 	pS = IdToStruct(id, player);
 	if (pS)
 	{
-		return (BASE_OBJECT *)pS;
+		return (GameObject *)pS;
 	}
 
 	// features
 	pF = IdToFeature(id, player);
 	if (pF)
 	{
-		return (BASE_OBJECT *)pF;
+		return (GameObject *)pF;
 	}
 
 	return nullptr;
@@ -656,27 +656,28 @@ int scavengerPlayer()
 Vector3i cameraToHome(UDWORD player, bool scroll)
 {
 	UDWORD x, y;
-	STRUCTURE	*psBuilding = nullptr;
+        Structure *psBuilding = nullptr;
 
 	if (player < MAX_PLAYERS)
 	{
-		for (psBuilding = apsStructLists[player]; psBuilding && (psBuilding->pStructureType->type != REF_HQ); psBuilding = psBuilding->psNext) {}
+		for (psBuilding = apsStructLists[player]; psBuilding && (psBuilding->stats->type != REF_HQ); psBuilding = psBuilding->psNext) {}
 	}
 
 	if (psBuilding)
 	{
-		x = map_coord(psBuilding->pos.x);
-		y = map_coord(psBuilding->pos.y);
+		x = map_coord(psBuilding->position.x);
+		y = map_coord(psBuilding->position.y);
 	}
-	else if ((player < MAX_PLAYERS) && apsDroidLists[player])				// or first droid
+	else if ((player < MAX_PLAYERS) &&
+                   allDroidLists[player])				// or first droid
 	{
-		x = map_coord(apsDroidLists[player]->pos.x);
-		y =	map_coord(apsDroidLists[player]->pos.y);
+		x = map_coord(allDroidLists[player]->position.x);
+		y =	map_coord(allDroidLists[player]->position.y);
 	}
 	else if ((player < MAX_PLAYERS) && apsStructLists[player])				// center on first struct
 	{
-		x = map_coord(apsStructLists[player]->pos.x);
-		y = map_coord(apsStructLists[player]->pos.y);
+		x = map_coord(apsStructLists[player]->position.x);
+		y = map_coord(apsStructLists[player]->position.y);
 	}
 	else														//or map center.
 	{
@@ -704,7 +705,7 @@ Vector3i cameraToHome(UDWORD player, bool scroll)
 static void recvSyncRequest(NETQUEUE queue)
 {
 	int32_t req_id, x, y, obj_id, obj_id2, player_id, player_id2;
-	BASE_OBJECT *psObj = nullptr, *psObj2 = nullptr;
+        GameObject *psObj = nullptr, *psObj2 = nullptr;
 
 	NETbeginDecode(queue, GAME_SYNC_REQUEST);
 	NETint32_t(&req_id);
@@ -728,12 +729,12 @@ static void recvSyncRequest(NETQUEUE queue)
 	triggerEventSyncRequest(queue.index, req_id, x, y, psObj, psObj2);
 }
 
-static void sendObj(const BASE_OBJECT *psObj)
+static void sendObj(const GameObject *psObj)
 {
 	if (psObj)
 	{
 		int32_t obj_id = psObj->id;
-		int32_t player = psObj->player;
+		int32_t player = psObj->owningPlayer;
 		NETint32_t(&obj_id);
 		NETint32_t(&player);
 	}
@@ -745,7 +746,7 @@ static void sendObj(const BASE_OBJECT *psObj)
 	}
 }
 
-void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const BASE_OBJECT *psObj, const BASE_OBJECT *psObj2)
+void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const GameObject *psObj, const GameObject *psObj2)
 {
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_SYNC_REQUEST);
 	NETint32_t(&req_id);
@@ -1459,7 +1460,7 @@ static bool recvResearch(NETQUEUE queue)
 // ////////////////////////////////////////////////////////////////////////////
 // New research stuff, so you can see what others are up to!
 // inform others that I'm researching this.
-bool sendResearchStatus(const STRUCTURE *psBuilding, uint32_t index, uint8_t player, bool bStart)
+bool sendResearchStatus(const Structure *psBuilding, uint32_t index, uint8_t player, bool bStart)
 {
 	if (!myResponsibility(player) || gameTime < 5)
 	{
@@ -1492,14 +1493,14 @@ bool sendResearchStatus(const STRUCTURE *psBuilding, uint32_t index, uint8_t pla
 	return true;
 }
 
-STRUCTURE *findResearchingFacilityByResearchIndex(unsigned player, unsigned index)
+Structure *findResearchingFacilityByResearchIndex(unsigned player, unsigned index)
 {
 	// Go through the structs to find the one doing this topic
-	for (STRUCTURE *psBuilding = apsStructLists[player]; psBuilding; psBuilding = psBuilding->psNext)
+	for (Structure *psBuilding = apsStructLists[player]; psBuilding; psBuilding = psBuilding->psNext)
 	{
-		if (psBuilding->pStructureType->type == REF_RESEARCH
+		if (psBuilding->stats->type == REF_RESEARCH
 		    && ((RESEARCH_FACILITY *)psBuilding->pFunctionality)->psSubject
-		    && ((RESEARCH_FACILITY *)psBuilding->pFunctionality)->psSubject->ref - STAT_RESEARCH == index)
+		    && ((RESEARCH_FACILITY *)psBuilding->pFunctionality)->psSubject->id - STAT_RESEARCH == index)
 		{
 			return psBuilding;
 		}
@@ -1509,7 +1510,7 @@ STRUCTURE *findResearchingFacilityByResearchIndex(unsigned player, unsigned inde
 
 bool recvResearchStatus(NETQUEUE queue)
 {
-	STRUCTURE			*psBuilding;
+  Structure *psBuilding;
 	PLAYER_RESEARCH		*pPlayerRes;
 	RESEARCH_FACILITY	*psResFacilty;
 	RESEARCH			*pResearch;
@@ -1567,7 +1568,7 @@ bool recvResearchStatus(NETQUEUE queue)
 
 			if (IsResearchStarted(pPlayerRes))
 			{
-				STRUCTURE *psOtherBuilding = findResearchingFacilityByResearchIndex(player, index);
+                          Structure *psOtherBuilding = findResearchingFacilityByResearchIndex(player, index);
 				ASSERT(psOtherBuilding != nullptr, "Something researched but no facility.");
 				if (psOtherBuilding != nullptr)
 				{
@@ -1834,7 +1835,7 @@ bool recvSpecInGameTextMessage(NETQUEUE queue)
 // process a destroy feature msg.
 bool recvDestroyFeature(NETQUEUE queue)
 {
-	FEATURE *pF;
+  Feature *pF;
 	uint32_t	id;
 
 	NETbeginDecode(queue, GAME_DEBUG_REMOVE_FEATURE);
@@ -1855,7 +1856,7 @@ bool recvDestroyFeature(NETQUEUE queue)
 		return false;
 	}
 
-	debug(LOG_FEATURE, "p%d feature id %d destroyed (%s)", pF->player, pF->id, getStatsName(pF->psStats));
+	debug(LOG_FEATURE, "p%d feature id %d destroyed (%s)", pF->owningPlayer, pF->id, getStatsName(pF->psStats));
 	// Remove the feature locally
 	turnOffMultiMsg(true);
 	destroyFeature(pF, gameTime - deltaGameTime + 1);  // deltaGameTime is actually 0 here, since we're between updates. However, the value of gameTime - deltaGameTime + 1 will not change when we start the next tick.
@@ -2295,10 +2296,10 @@ bool makePlayerSpectator(uint32_t playerIndex, bool removeAllStructs, bool quiet
 		setPower(playerIndex, 0);
 
 		// Destroy HQ
-		std::vector<STRUCTURE *> hqStructs;
-		for (STRUCTURE *psStruct = apsStructLists[playerIndex]; psStruct; psStruct = psStruct->psNext)
+		std::vector<Structure *> hqStructs;
+		for (Structure *psStruct = apsStructLists[playerIndex]; psStruct; psStruct = psStruct->psNext)
 		{
-			if (REF_HQ == psStruct->pStructureType->type)
+			if (REF_HQ == psStruct->stats->type)
 			{
 				hqStructs.push_back(psStruct);
 			}
@@ -2317,33 +2318,33 @@ bool makePlayerSpectator(uint32_t playerIndex, bool removeAllStructs, bool quiet
 
 		// Destroy all droids
 		debug(LOG_DEATH, "killing off all droids for player %d", playerIndex);
-		while (apsDroidLists[playerIndex])				// delete all droids
+		while (allDroidLists[playerIndex])				// delete all droids
 		{
 			if (quietly)			// don't show effects
 			{
-				killDroid(apsDroidLists[playerIndex]);
+				killDroid(allDroidLists[playerIndex]);
 			}
 			else				// show effects
 			{
-				destroyDroid(apsDroidLists[playerIndex], gameTime);
+				destroyDroid(allDroidLists[playerIndex], gameTime);
 			}
 		}
 
 		// Destroy structs
 		debug(LOG_DEATH, "killing off structures for player %d", playerIndex);
-		STRUCTURE *psStruct = apsStructLists[playerIndex];
+                Structure *psStruct = apsStructLists[playerIndex];
 		while (psStruct)				// delete structs
 		{
-			STRUCTURE * psNext = psStruct->psNext;
+                  Structure * psNext = psStruct->psNext;
 
 			if (removeAllStructs
-				|| psStruct->pStructureType->type == REF_POWER_GEN
-				|| psStruct->pStructureType->type == REF_RESEARCH
-				|| psStruct->pStructureType->type == REF_COMMAND_CONTROL
+				|| psStruct->stats->type == REF_POWER_GEN
+				|| psStruct->stats->type == REF_RESEARCH
+				|| psStruct->stats->type == REF_COMMAND_CONTROL
 				|| StructIsFactory(psStruct))
 			{
 				// FIXME: look why destroyStruct() doesn't put back the feature like removeStruct() does
-				if (quietly || psStruct->pStructureType->type == REF_RESOURCE_EXTRACTOR)		// don't show effects
+				if (quietly || psStruct->stats->type == REF_RESOURCE_EXTRACTOR)		// don't show effects
 				{
 					removeStruct(psStruct, true);
 				}

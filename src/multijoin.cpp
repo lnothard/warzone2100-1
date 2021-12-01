@@ -178,7 +178,7 @@ bool intDisplayMultiJoiningStatus(UBYTE joinCount)
 void clearPlayer(UDWORD player, bool quietly)
 {
 	UDWORD			i;
-	STRUCTURE		*psStruct, *psNext;
+        Structure *psStruct, *psNext;
 
 	ASSERT_OR_RETURN(, player < MAX_CONNECTED_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
@@ -214,15 +214,15 @@ void clearPlayer(UDWORD player, bool quietly)
 	}
 
 	debug(LOG_DEATH, "killing off all droids for player %d", player);
-	while (apsDroidLists[player])				// delete all droids
+	while (allDroidLists[player])				// delete all droids
 	{
 		if (quietly)			// don't show effects
 		{
-			killDroid(apsDroidLists[player]);
+			killDroid(allDroidLists[player]);
 		}
 		else				// show effects
 		{
-			destroyDroid(apsDroidLists[player], gameTime);
+			destroyDroid(allDroidLists[player], gameTime);
 		}
 	}
 
@@ -233,7 +233,7 @@ void clearPlayer(UDWORD player, bool quietly)
 		psNext = psStruct->psNext;
 
 		// FIXME: look why destroyStruct() doesn't put back the feature like removeStruct() does
-		if (quietly || psStruct->pStructureType->type == REF_RESOURCE_EXTRACTOR)		// don't show effects
+		if (quietly || psStruct->stats->type == REF_RESOURCE_EXTRACTOR)		// don't show effects
 		{
 			removeStruct(psStruct, true);
 		}
@@ -252,8 +252,8 @@ void clearPlayer(UDWORD player, bool quietly)
 static void resetMultiVisibility(UDWORD player)
 {
 	UDWORD		owned;
-	DROID		*pDroid;
-	STRUCTURE	*pStruct;
+        Droid *pDroid;
+        Structure *pStruct;
 
 	if (player >= MAX_PLAYERS)
 	{
@@ -265,7 +265,7 @@ static void resetMultiVisibility(UDWORD player)
 		if (owned != player)								// done reset own stuff..
 		{
 			//droids
-			for (pDroid = apsDroidLists[owned]; pDroid; pDroid = pDroid->psNext)
+			for (pDroid = allDroidLists[owned]; pDroid; pDroid = pDroid->psNext)
 			{
 				pDroid->visible[player] = false;
 			}

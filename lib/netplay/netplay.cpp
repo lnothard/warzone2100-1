@@ -201,13 +201,13 @@ public:
 		identitiesMovedToSpectatorsByHost.clear();
 		ipsMovedToSpectatorsByHost.clear();
 	}
-	void movedPlayerToSpectators(const PLAYER& player, const EcKey::Key& publicIdentity, bool byHost)
+	void movedPlayerToSpectators(const NetPlayer & player, const EcKey::Key& publicIdentity, bool byHost)
 	{
 		if (!byHost) { return; }
 		ipsMovedToSpectatorsByHost.insert(player.IPtextAddress);
 		identitiesMovedToSpectatorsByHost.insert(base64Encode(publicIdentity));
 	}
-	void movedSpectatorToPlayers(const PLAYER& player, const EcKey::Key& publicIdentity, bool byHost)
+	void movedSpectatorToPlayers(const NetPlayer & player, const EcKey::Key& publicIdentity, bool byHost)
 	{
 		if (!byHost) { return; }
 		ipsMovedToSpectatorsByHost.erase(player.IPtextAddress);
@@ -724,7 +724,7 @@ static bool NET_HasAnyOpenSlots()
 			// do not offer up this "player feature" slot - TODO: maybe remove the need for this slot?
 			continue;
 		}
-		PLAYER const &p = NetPlay.players[i];
+                NetPlayer const &p = NetPlay.players[i];
 		if (!p.allocated && p.ai == AI_OPEN)
 		{
 			return true;
@@ -756,7 +756,7 @@ static optional<uint32_t> NET_FindOpenSlotForPlayer(bool forceTakeLowestAvailabl
 			continue;
 		}
 		// find the lowest "position" slot that is available (unless forceTakeLowestAvailablePlayerNumber is set, in which case just take the first available)
-		PLAYER const &p = NetPlay.players[i];
+                NetPlayer const &p = NetPlay.players[i];
 		if (!p.allocated && p.ai == AI_OPEN && p.position < position && (!asSpectator.has_value() || asSpectator.value() == p.isSpectator))
 		{
 			index = i;
@@ -1869,7 +1869,7 @@ static bool swapPlayerIndexes(uint32_t playerIndexA, uint32_t playerIndexB)
 	NETswapQueues(NETnetQueue(playerIndexA), NETnetQueue(playerIndexB));
 
 	// Backup the old NETPLAY PLAYERS data
-	std::array<PLAYER, 2> playersData = {std::move(NetPlay.players[playerIndexA]), std::move(NetPlay.players[playerIndexB])};
+	std::array<NetPlayer, 2> playersData = {std::move(NetPlay.players[playerIndexA]), std::move(NetPlay.players[playerIndexB])};
 
 	// Instead of calling clearPlayer() which has all kinds of unintended effects,
 	// hmmm...
