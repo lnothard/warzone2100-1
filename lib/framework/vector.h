@@ -37,7 +37,8 @@
 using Vector3i = glm::ivec3;
 using Vector2i = glm::ivec2;
 using Vector2f = glm::vec2;
-using Vector3f = glm::vec3;
+using Vector3f = glm::vec3
+
 struct Rotation
 {
 	Rotation()
@@ -50,6 +51,7 @@ struct Rotation
 	Rotation(Vector3i xyz) : direction((uint16_t)xyz.x), pitch((uint16_t)xyz.y), roll((uint16_t)xyz.z) {}
 	uint16_t direction, pitch, roll;  ///< Object rotation in 0..64k range
 };
+
 typedef Vector3i Position;  ///< Map position in world coordinates
 
 static inline Vector3i toVector(Rotation const &r)

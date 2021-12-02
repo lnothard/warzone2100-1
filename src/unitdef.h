@@ -23,6 +23,12 @@ protected:
   UDWORD timeAnimationStarted;       ///< Animation start time, zero for do not animate
 public:
   auto weaponList();
+  void alignTurret(int weaponSlot);
+
+  int objPosDiffSq(Position otherPos) override;
+  int objPosDiffSq(const GameObject& otherObj) override;
+
+  virtual bool aiObjHasRange(const GameObject& targetObj, int weapon_slot) = 0;
 };
 
 #endif // WARZONE2100_UNITDEF_H

@@ -50,6 +50,53 @@
 //defines how many times to perform the iteration on looking for a blank location
 #define LOOK_FOR_EMPTY_TILE		20
 
+/**
+ * What a droid is currently doing. Not necessarily the same as its order as the micro-AI may get a droid to do
+ * something else whilst carrying out an order.
+ */
+enum class DROID_ACTION
+{
+  NONE,					///< 0 not doing anything
+  MOVE,					///< 1 moving to a location
+  BUILD,					///< 2 building a structure
+  DEMOLISH,				///< 4 demolishing a structure
+  REPAIR,					///< 5 repairing a structure
+  ATTACK,					///< 6 attacking something
+  OBSERVE,				///< 7 observing something
+  FIRESUPPORT,				///< 8 attacking something visible by a sensor droid
+  SULK,					///< 9 refuse to do anything aggressive for a fixed time
+  TRANSPORTOUT,				///< 11 move transporter offworld
+  TRANSPORTWAITTOFLYIN,			///< 12 wait for timer to move reinforcements in
+  TRANSPORTIN,				///< 13 move transporter onworld
+  DROIDREPAIR,				///< 14 repairing a droid
+  RESTORE,				///< 15 restore resistance points of a structure
+
+  // The states below are used by the action system
+  // but should not be given as an action
+  MOVEFIRE,				///< 17
+  MOVETOBUILD,				///< 18 moving to a new building location
+  MOVETODEMOLISH,				///< 19 moving to a new demolition location
+  MOVETOREPAIR,				///< 20 moving to a new repair location
+  BUILDWANDER,				///< 21 moving around while building
+  MOVETOATTACK,				///< 23 moving to a target to attack
+  ROTATETOATTACK,				///< 24 rotating to a target to attack
+  MOVETOOBSERVE,				///< 25 moving to be able to see a target
+  WAITFORREPAIR,				///< 26 waiting to be repaired by a facility
+  MOVETOREPAIRPOINT,			///< 27 move to repair facility repair point
+  WAITDURINGREPAIR,			///< 28 waiting to be repaired by a facility
+  MOVETODROIDREPAIR,			///< 29 moving to a new location next to droid to be repaired
+  MOVETORESTORE,				///< 30 moving to a low resistance structure
+  MOVETOREARM,				///< 32 moving to a rearming pad - VTOLS
+  WAITFORREARM,				///< 33 waiting for rearm - VTOLS
+  MOVETOREARMPOINT,			///< 34 move to rearm point - VTOLS - this actually moves them onto the pad
+  WAITDURINGREARM,			///< 35 waiting during rearm process- VTOLS
+  VTOLATTACK,				///< 36 a VTOL droid doing attack runs
+  CLEARREARMPAD,				///< 37 a VTOL droid being told to get off a rearm pad
+  RETURNTOPOS,				///< 38 used by scout/patrol order when returning to route
+  FIRESUPPORT_RETREAT,			///< 39 used by firesupport order when sensor retreats
+  CIRCLE				///< 41 circling while engaging
+};
+
 typedef std::vector<DROID_ORDER_DATA> OrderList;
 
 class DroidStats : public StatsObject {
@@ -85,9 +132,14 @@ class Structure;
 class Droid : public Unit {
 public:
   Droid(uint32_t id, unsigned player);
-  ~Droid();
 
+  int objPosDiffSq(const GameObject& targetObj) override;
+  bool aiObjHasRange(const GameObject& targetObj, int weapon_slot) override;
+
+  bool actionInsideMinRange(const GameObject& targetObj, const WEAPON_STATS* droidWeapStats) const;
   bool actionInRange(const GameObject& targetObj, int weapon_slot, bool useLongWithOptimum);
+  void actionAddVtolAttackRun(const GameObject& targetDroid);
+  bool actionVTOLLandingPos(Vector2i* p);
 protected:
   /// UTF-8 name of the droid. This is generated from the droid template
   ///  WARNING: This *can* be changed by the game player after creation & can be translated, do NOT rely on this being the same for everyone!

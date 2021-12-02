@@ -101,28 +101,6 @@ static int aiDroidRange(Droid *psDroid, int weapon_slot)
 	return longRange;
 }
 
-// see if a structure has the range to fire on a target
-static bool aiStructHasRange(Structure *psStruct, GameObject *psTarget, int weapon_slot)
-{
-	if (psStruct->numWeapons == 0 || psStruct->m_weaponList[0].nStat == 0)
-	{
-		// Can't attack without a weapon
-		return false;
-	}
-
-	WEAPON_STATS *psWStats = psStruct->m_weaponList[weapon_slot].nStat + asWeaponStats;
-
-	int longRange = proj_GetLongRange(psWStats, psStruct->owningPlayer);
-	return objPosDiffSq(psStruct, psTarget) < longRange * longRange && lineOfFire(psStruct, psTarget, weapon_slot, true);
-}
-
-static bool aiDroidHasRange(Droid *psDroid, GameObject *psTarget, int weapon_slot)
-{
-	int32_t longRange = aiDroidRange(psDroid, weapon_slot);
-
-	return objPosDiffSq(psDroid, psTarget) < longRange * longRange;
-}
-
 static bool aiObjHasRange(GameObject *psObj, GameObject *psTarget, int weapon_slot)
 {
 	if (psObj->type == OBJ_DROID)

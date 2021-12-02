@@ -37,23 +37,6 @@
 #define NOT_CURRENT_LIST 1   //the died flag for a droid is set to this when it gets added to the non-current list
 #define MAX_WEAPONS 3
 
-/**
- * FIXME Shouldn't be necessary
- */
-enum OBJECT_TYPE
-{
-	OBJ_DROID,      ///< Droids
-	OBJ_STRUCTURE,  ///< All Buildings
-	OBJ_FEATURE,    ///< Things like roads, trees, bridges, fires
-	OBJ_PROJECTILE, ///< Comes out of guns, stupid :-)
-	OBJ_NUM_TYPES   ///< number of object types - MUST BE LAST
-};
-
-struct TILEPOS
-{
-	UBYTE x, y, type;
-};
-
 /*
  Coordinate system used for objects in Warzone 2100:
   x - "right"
@@ -63,19 +46,38 @@ struct TILEPOS
   For explanation of yaw/pitch/roll look for "flight dynamics" in your encyclopedia.
 */
 
-enum OBJECT_FLAG
+struct TILEPOS
+{
+  UBYTE x, y, type;
+};
+
+/**
+ * FIXME Shouldn't be necessary
+ */
+enum class OBJECT_TYPE
+{
+  DROID,      ///< Droids
+  STRUCTURE,  ///< All Buildings
+  FEATURE,    ///< Things like roads, trees, bridges, fires
+  PROJECTILE, ///< Comes out of guns, stupid :-)
+  COUNT       ///< number of object types - MUST BE LAST
+};
+
+enum class OBJECT_FLAG
 {
   JAMMED_TILES,
   TARGETED,
   DIRTY,
   UNSELECTABLE,
-  OBJECT_FLAG_COUNT
+  COUNT            // MUST BE LAST
 };
 
 class GameObject {
 protected:
 const OBJECT_TYPE m_type;                         ///< The type of object
-  std::shared_ptr<Spacetime> m_spacetime;           ///< The object's space-time coordinate
+  Position m_position;                            ///< Object's three-dimensional coordinate
+  Rotation m_rotation;
+  uint32_t m_time;
   uint32_t id;                                    ///< ID number of the object
   uint8_t owningPlayer;                           ///< Which player the object belongs to
   uint32_t creationTime;                                  ///< Time the game object was born
@@ -90,16 +92,19 @@ const OBJECT_TYPE m_type;                         ///< The type of object
   UDWORD periodicalDamageStart;                  ///< When the object entered the fire
   UDWORD periodicalDamage;                 ///< How much damage has been done since the object entered the fire
   std::vector<TILEPOS> watchedTiles;              ///< Variable size array of watched tiles, empty for features
-  std::bitset<OBJECT_FLAG_COUNT> flags;
+  std::bitset<OBJECT_FLAG::COUNT> flags;
 
 public:
   GameObject(OBJECT_TYPE type, uint32_t id, unsigned player);
   virtual ~GameObject();
 
-  std::shared_ptr<Spacetime> spacetime() const;
-  void spacetime(std::shared_ptr<Spacetime> st);
+  Position position() const;
   OBJECT_TYPE type() const;
   bool alive() const;
+  Spacetime spacetime();
+
+  virtual int objPosDiffSq(Position otherPos) = 0;
+  virtual int objPosDiffSq(const GameObject& otherObj) = 0;
 
   // Query visibility for display purposes (i.e. for `selectedPlayer`)
   // *DO NOT USE TO QUERY VISIBILITY FOR CALCULATIONS INVOLVING GAME / SIMULATION STATE*
@@ -111,16 +116,11 @@ public:
 class Spacetime
 {
 public:
-  Spacetime() = default;
   Spacetime(Position position, Rotation rotation, uint32_t time);
-  Position position() const;
 private:
   Position m_position;              ///< Position of the object
   Rotation m_rotation;              ///< Rotation of the object
   uint32_t m_time;                  ///< Game time
 };
-
-static inline int objPosDiffSq(Position pos1, Position pos2);
-static inline int objPosDiffSq(GameObject const *pos1, GameObject const *pos2);
 
 #endif // __INCLUDED_BASEDEF_H__
