@@ -172,6 +172,20 @@ public:
   bool removeDroidBase();
   void droidUpdate();
   DroidStartBuild droidStartBuild();
+  bool droidUpdateDemolishing();
+  void setUpBuildModule();
+  bool electronicDroid() const;
+  bool droidUnderRepair() const;
+  bool vtolEmpty() const;
+  bool vtolFull() const;
+  void aiUpdateDroid();
+  void orderCheckList();
+  DROID_ORDER chooseOrderLoc(UDWORD x, UDWORD y, bool altOrder);
+  bool orderDroidList();
+  void orderDroidAdd(DROID_ORDER_DATA *psOrder);
+  bool orderStateStatsLoc(DROID_ORDER order, StructureStats **ppsStats);
+  void orderDroidLoc(DROID_ORDER order, UDWORD x, UDWORD y, QUEUE_MODE mode);
+  void orderUpdateDroid();
 protected:
   /// UTF-8 name of the droid. This is generated from the droid template
   ///  WARNING: This *can* be changed by the game player after creation & can be translated, do NOT rely on this being the same for everyone!

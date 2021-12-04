@@ -41,49 +41,42 @@ struct StructureStats;
 /** All the possible droid orders.
  * @todo DORDER_CIRCLE = 40 which is not consistent with rest of the enum.
  */
-enum DroidOrderType
+enum class DROID_ORDER_TYPE
 {
-	DORDER_NONE,            /**< no order set. */
-
-	DORDER_STOP,            /**< stop the current order. */
-	DORDER_MOVE,            /**< 2 - move to a location. */
-	DORDER_ATTACK,          /**< attack an enemy. */
-	DORDER_BUILD,           /**< 4 - build a structure. */
-	DORDER_HELPBUILD,       /**< help to build a structure. */
-	DORDER_LINEBUILD,       /**< 6 - build a number of structures in a row (walls + bridges). */
-	DORDER_DEMOLISH,        /**< demolish a structure. */
-	DORDER_REPAIR,          /**< 8 - repair a structure. */
-	DORDER_OBSERVE,         /**< keep a target in sensor view. */
-	DORDER_FIRESUPPORT,     /**< 10 - attack whatever the linked sensor droid attacks. */
-	DORDER_UNUSED_4,
-	DORDER_UNUSED_2,
-	DORDER_RTB,             /**< return to base. */
-	DORDER_RTR,             /**< 14 - return to repair at any repair facility*/
-	DORDER_UNUSED_5,
-	DORDER_EMBARK,          /**< 16 - board a transporter. */
-	DORDER_DISEMBARK,       /**< get off a transporter. */
-	DORDER_ATTACKTARGET,    /**< 18 - a suggestion to attack something i.e. the target was chosen because the droid could see it. */
-	DORDER_COMMANDERSUPPORT,/**< Assigns droid to the target commander. */
-	DORDER_BUILDMODULE,     /**< 20 - build a module (power, research or factory). */
-	DORDER_RECYCLE,         /**< return to factory to be recycled. */
-	DORDER_TRANSPORTOUT,    /**< 22 - offworld transporter order. */
-	DORDER_TRANSPORTIN,     /**< onworld transporter order. */
-	DORDER_TRANSPORTRETURN, /**< 24 - transporter return after unloading. */
-	DORDER_GUARD,           /**< guard a structure. */
-	DORDER_DROIDREPAIR,     /**< 26 - repair a droid. */
-	DORDER_RESTORE,         /**< restore resistance points for a structure. */
-	DORDER_SCOUT,           /**< 28 - same as move, but stop if an enemy is seen. */
-	DORDER_UNUSED_3,
-	DORDER_UNUSED,
-	DORDER_PATROL,          /**< move between two way points. */
-	DORDER_REARM,           /**< 32 - order a vtol to rearming pad. */
-	DORDER_RECOVER,         /**< pick up an artifact. */
-	DORDER_UNUSED_6,
-	DORDER_RTR_SPECIFIED,   /**< return to repair at a specified repair center. */
-	DORDER_CIRCLE = 40,     /**< circles target location and engage. */
-	DORDER_HOLD,            /**< hold position until given next order. */
+	NONE,            /**< no order set. */
+	STOP,            /**< stop the current order. */
+	MOVE,            /**< 2 - move to a location. */
+	ATTACK,          /**< attack an enemy. */
+	BUILD,           /**< 4 - build a structure. */
+	HELPBUILD,       /**< help to build a structure. */
+	LINEBUILD,       /**< 6 - build a number of structures in a row (walls + bridges). */
+	DEMOLISH,        /**< demolish a structure. */
+	REPAIR,          /**< 8 - repair a structure. */
+	OBSERVE,         /**< keep a target in sensor view. */
+	FIRESUPPORT,     /**< 10 - attack whatever the linked sensor droid attacks. */
+	RTB,             /**< return to base. */
+	RTR,             /**< 14 - return to repair at any repair facility*/
+	EMBARK,          /**< 16 - board a transporter. */
+	DISEMBARK,       /**< get off a transporter. */
+	ATTACKTARGET,    /**< 18 - a suggestion to attack something i.e. the target was chosen because the droid could see it. */
+	COMMANDERSUPPORT,/**< Assigns droid to the target commander. */
+	BUILDMODULE,     /**< 20 - build a module (power, research or factory). */
+	RECYCLE,         /**< return to factory to be recycled. */
+	TRANSPORTOUT,    /**< 22 - offworld transporter order. */
+	TRANSPORTIN,     /**< onworld transporter order. */
+	TRANSPORTRETURN, /**< 24 - transporter return after unloading. */
+	GUARD,           /**< guard a structure. */
+	DROIDREPAIR,     /**< 26 - repair a droid. */
+	RESTORE,         /**< restore resistance points for a structure. */
+	SCOUT,           /**< 28 - same as move, but stop if an enemy is seen. */
+	PATROL,          /**< move between two way points. */
+	REARM,           /**< 32 - order a vtol to rearming pad. */
+	RECOVER,         /**< pick up an artifact. */
+	RTR_SPECIFIED,   /**< return to repair at a specified repair center. */
+	CIRCLE,          /**< circles target location and engage. */
+	HOLD,            /**< hold position until given next order. */
 };
-typedef DroidOrderType DROID_ORDER;
+typedef DROID_ORDER_TYPE DROID_ORDER;
 
 /** All the possible secondary orders for droids. */
 enum SECONDARY_ORDER
@@ -166,25 +159,25 @@ enum RTR_DATA_TYPE
  */
 struct DroidOrder
 {
-	explicit DroidOrder(DroidOrderType type = DORDER_NONE)
+	explicit DroidOrder(DROID_ORDER_TYPE type = DROID_ORDER_TYPE::NONE)
 		: type(type), pos(0, 0), pos2(0, 0), direction(0),         index(0),     rtrType(RTR_TYPE_NO_RESULT),	 psObj(nullptr),  psStats(nullptr)    {}
-	DroidOrder(DroidOrderType type, Vector2i pos)
+	DroidOrder(DROID_ORDER_TYPE type, Vector2i pos)
 		: type(type), pos(pos),  pos2(0, 0), direction(0),         index(0),     rtrType(RTR_TYPE_NO_RESULT),    psObj(nullptr),  psStats(nullptr)    {}
-	DroidOrder(DroidOrderType type, Vector2i pos, RTR_DATA_TYPE rtrType)
+	DroidOrder(DROID_ORDER_TYPE type, Vector2i pos, RTR_DATA_TYPE rtrType)
 		: type(type), pos(pos),  pos2(0, 0), direction(0),         index(0),     rtrType(rtrType),    			 psObj(nullptr),  psStats(nullptr)    {}
-	DroidOrder(DroidOrderType type, StructureStats *psStats, Vector2i pos, uint16_t direction)
+	DroidOrder(DROID_ORDER_TYPE type, StructureStats *psStats, Vector2i pos, uint16_t direction)
 		: type(type), pos(pos),  pos2(0, 0), direction(direction), index(0),     rtrType(RTR_TYPE_NO_RESULT),    psObj(nullptr),  psStats(psStats) {}
-	DroidOrder(DroidOrderType type, StructureStats *psStats, Vector2i pos, Vector2i pos2, uint16_t direction)
+	DroidOrder(DROID_ORDER_TYPE type, StructureStats *psStats, Vector2i pos, Vector2i pos2, uint16_t direction)
 		: type(type), pos(pos),  pos2(pos2), direction(direction), index(0),     rtrType(RTR_TYPE_NO_RESULT),    psObj(nullptr),  psStats(psStats) {}
-	DroidOrder(DroidOrderType type, GameObject *psObj)
+	DroidOrder(DROID_ORDER_TYPE type, GameObject *psObj)
 		: type(type), pos(0, 0), pos2(0, 0), direction(0),         index(0),     rtrType(RTR_TYPE_NO_RESULT),    psObj(psObj), psStats(nullptr)    {}
-	DroidOrder(DroidOrderType type, GameObject *psObj, RTR_DATA_TYPE rtrType)
+	DroidOrder(DROID_ORDER_TYPE type, GameObject *psObj, RTR_DATA_TYPE rtrType)
 		: type(type), pos(0, 0), pos2(0, 0), direction(0),         index(0),     rtrType(rtrType),    			 psObj(psObj), psStats(nullptr)    {}
-	DroidOrder(DroidOrderType type, GameObject *psObj, uint32_t index)
+	DroidOrder(DROID_ORDER_TYPE type, GameObject *psObj, uint32_t index)
 		: type(type), pos(0, 0), pos2(0, 0), direction(0),         index(index), rtrType(RTR_TYPE_NO_RESULT),    psObj(psObj), psStats(nullptr)    {}
 
 
-	DroidOrderType   type;       /**< the actual order. */
+	DROID_ORDER_TYPE   type;       /**< the actual order. */
 	Vector2i         pos;        /**< the order's position. */
 	Vector2i         pos2;       /**< the order's second position, in case those exist. */
 	uint16_t         direction;  /**< the order's direction, in case it exist. */

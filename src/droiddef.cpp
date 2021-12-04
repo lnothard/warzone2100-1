@@ -1382,3 +1382,1314 @@ DroidStartBuild Droid::droidStartBuild()
   objTrace(id, "DroidStartBuildSuccess");
   return DroidStartBuildSuccess;
 }
+
+bool Droid::droidUpdateDemolishing()
+{
+  CHECK_DROID(psDroid);
+
+  ASSERT_OR_RETURN(false, action == DROID_ACTION::DEMOLISH, "unit is not demolishing");
+  auto psStruct = (Structure*) order.psObj;
+  ASSERT_OR_RETURN(false, psStruct->type == OBJECT_TYPE::STRUCTURE, "target is not a structure");
+
+  int constructRate = 5 * constructorPoints(asConstructStats + asBits[COMP_CONSTRUCT], owningPlayer);
+  int pointsToAdd = gameTimeAdjustedAverage(constructRate);
+
+  structureDemolish(psStruct, psDroid, pointsToAdd);
+
+  addConstructorEffect(psStruct);
+
+  CHECK_DROID(psDroid);
+
+  return true;
+}
+
+/*Deals with building a module - checking if any droid is currently doing this
+ - if so, helping to build the current one*/
+void Droid::setUpBuildModule()
+{
+  Vector2i tile = map_coord(order.pos);
+
+  //check not another Truck started
+  Structure *psStruct = getTileStructure(tile.x, tile.y);
+  if (psStruct)
+  {
+    // if a droid is currently building, or building is in progress of being built/upgraded the droid's order should be DORDER_HELPBUILD
+    if (checkDroidsBuilding(psStruct) || !psStruct->status)
+    {
+      //set up the help build scenario
+      order.type = DORDER_HELPBUILD;
+      setDroidTarget(psDroid, (GameObject *)psStruct);
+      if (droidStartBuild(psDroid))
+      {
+        action = DROID_ACTION::BUILD;
+        return;
+      }
+    }
+    else
+    {
+      if (nextModuleToBuild(psStruct, -1) > 0)
+      {
+        //no other droids building so just start it off
+        if (droidStartBuild())
+        {
+          action = DROID_ACTION::BUILD;
+          return;
+        }
+      }
+    }
+  }
+  cancelBuild();
+}
+
+/*checks to see if an electronic warfare weapon is attached to the droid*/
+bool Droid::electronicDroid() const
+{
+  CHECK_DROID(psDroid);
+
+  //use slot 0 for now
+  if (numWeapons > 0 && asWeaponStats[m_weaponList[0].nStat].weaponSubClass == WSC_ELECTRONIC)
+  {
+    return true;
+  }
+
+  if (droidType == DROID_COMMAND && psGroup && psGroup->psCommander == psDroid)
+  {
+    // if a commander has EW units attached it is electronic
+    for (const Droid *psCurr = psGroup->psList; psCurr; psCurr = psCurr->psGrpNext)
+    {
+      if (psDroid != psCurr && electronicDroid(psCurr))
+      {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/*checks to see if the droid is currently being repaired by another*/
+bool Droid::droidUnderRepair() const
+{
+  CHECK_DROID(psDroid);
+
+  //droid must be damaged
+  if (droidIsDamaged(psDroid))
+  {
+    //look thru the list of players droids to see if any are repairing this droid
+    for (const Droid *psCurr = allDroidLists[owningPlayer]; psCurr != nullptr; psCurr = psCurr->psNext)
+    {
+      if ((psCurr->droidType == DROID_REPAIR || psCurr->droidType ==
+                                                    DROID_CYBORG_REPAIR) && psCurr->action ==
+              DROID_ACTION::DROIDREPAIR && psCurr->order.psObj == psDroid)
+      {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/* returns true if it's a VTOL weapon droid which has completed all runs */
+bool Droid::vtolEmpty() const
+{
+  CHECK_DROID(psDroid);
+
+  if (!isVtolDroid(psDroid))
+  {
+    return false;
+  }
+  if (droidType != DROID_WEAPON)
+  {
+    return false;
+  }
+
+  for (int i = 0; i < numWeapons; i++)
+  {
+    if (asWeaponStats[m_weaponList[i].nStat].vtolAttackRuns > 0 &&
+        m_weaponList[i].usedAmmo < getNumAttackRuns(psDroid, i))
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/* returns true if it's a VTOL weapon droid which still has full ammo */
+bool Droid::vtolFull() const
+{
+  CHECK_DROID(psDroid);
+
+  if (!isVtolDroid(psDroid))
+  {
+    return false;
+  }
+  if (droidType != DROID_WEAPON)
+  {
+    return false;
+  }
+
+  for (int i = 0; i < numWeapons; i++)
+  {
+    if (asWeaponStats[m_weaponList[i].nStat].vtolAttackRuns > 0 &&
+        m_weaponList[i].usedAmmo > 0)
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/* Do the AI for a droid */
+void Droid::aiUpdateDroid()
+{
+  bool		lookForTarget, updateTarget;
+
+  ASSERT(psDroid != nullptr, "Invalid droid pointer");
+  if (!psDroid || isDead((GameObject *)psDroid))
+  {
+    return;
+  }
+
+  if (droidType != DROID_SENSOR && numWeapons == 0)
+  {
+    return;
+  }
+
+  lookForTarget = false;
+  updateTarget = false;
+
+  // look for a target if doing nothing
+  if (orderState(psDroid, DORDER_NONE) ||
+      orderState(psDroid, DORDER_GUARD) ||
+      orderState(psDroid, DORDER_HOLD))
+  {
+    lookForTarget = true;
+  }
+  // but do not choose another target if doing anything while guarding
+  // exception for sensors, to allow re-targetting when target is doomed
+  if (orderState(psDroid, DORDER_GUARD) && action != DROID_ACTION::NONE && droidType != DROID_SENSOR)
+  {
+    lookForTarget = false;
+  }
+  // don't look for a target if sulking
+  if (action == DROID_ACTION::SULK)
+  {
+    lookForTarget = false;
+  }
+
+  /* Only try to update target if already have some target */
+  if (action == DROID_ACTION::ATTACK ||
+      action == DROID_ACTION::MOVEFIRE ||
+      action == DROID_ACTION::MOVETOATTACK ||
+      action == DROID_ACTION::ROTATETOATTACK)
+  {
+    updateTarget = true;
+  }
+  if ((orderState(psDroid, DORDER_OBSERVE) || orderState(psDroid, DORDER_ATTACKTARGET)) &&
+      order.psObj && order.psObj->deathTime)
+  {
+    lookForTarget = true;
+    updateTarget = false;
+  }
+
+  /* Don't update target if we are sent to attack and reached attack destination (attacking our target) */
+  if (orderState(psDroid, DORDER_ATTACK) && psActionTarget[0] == order.psObj)
+  {
+    updateTarget = false;
+  }
+
+  // don't look for a target if there are any queued orders
+  if (listSize > 0)
+  {
+    lookForTarget = false;
+    updateTarget = false;
+  }
+
+  // don't allow units to start attacking if they will switch to guarding the commander
+  // except for sensors: they still look for targets themselves, because
+  // they have wider view
+  if (hasCommander(psDroid) && droidType != DROID_SENSOR)
+  {
+    lookForTarget = false;
+    updateTarget = false;
+  }
+
+  if (bMultiPlayer && isVtolDroid(psDroid) && isHumanPlayer(owningPlayer))
+  {
+    lookForTarget = false;
+    updateTarget = false;
+  }
+
+  // CB and VTOL CB droids can't autotarget.
+  if (droidType == DROID_SENSOR && !standardSensorDroid(psDroid))
+  {
+    lookForTarget = false;
+    updateTarget = false;
+  }
+
+  // do not attack if the attack level is wrong
+  if (secondaryGetState(psDroid, DSO_ATTACK_LEVEL) != DSS_ALEV_ALWAYS)
+  {
+    lookForTarget = false;
+  }
+
+  /* For commanders and non-assigned non-commanders: look for a better target once in a while */
+  if (!lookForTarget && updateTarget && numWeapons > 0 && !hasCommander(psDroid)
+      && (id + gameTime) / TARGET_UPD_SKIP_FRAMES != (id + gameTime - deltaGameTime) / TARGET_UPD_SKIP_FRAMES)
+  {
+    for (unsigned i = 0; i < numWeapons; ++i)
+    {
+      updateAttackTarget((GameObject *)psDroid, i);
+    }
+  }
+
+  /* Null target - see if there is an enemy to attack */
+
+  if (lookForTarget && !updateTarget)
+  {
+    GameObject *psTarget;
+    if (droidType == DROID_SENSOR)
+    {
+      if (aiChooseSensorTarget(psDroid, &psTarget))
+      {
+        if (!orderState(psDroid, DORDER_HOLD)
+            && secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_PURSUE)
+        {
+          order = DroidOrder(DORDER_OBSERVE, psTarget);
+        }
+        actionDroid(psDroid, DROID_ACTION::OBSERVE, psTarget);
+      }
+    }
+    else
+    {
+      if (aiChooseTarget((GameObject *)psDroid, &psTarget, 0, true, nullptr))
+      {
+        if (!orderState(psDroid, DORDER_HOLD)
+            && secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_PURSUE)
+        {
+          order = DroidOrder(DORDER_ATTACK, psTarget);
+        }
+        actionDroid(psDroid, DROID_ACTION::ATTACK, psTarget);
+      }
+    }
+  }
+}
+
+/** This function checks its order list: if a given order needs a target and the target has died, the order is removed from the list.*/
+void Droid::orderCheckList()
+{
+  for (unsigned i = 0; i < asOrderList.size(); ++i)
+  {
+    auto psTarget = asOrderList[i].psObj;
+    if (psTarget != nullptr && psTarget->deathTime)
+    {
+      if ((int)i < listSize)
+      {
+        syncDebugObject(psTarget, '-');
+        syncDebug("droid%d list erase dead droid%d", id, psTarget->id);
+      }
+      orderDroidListEraseRange(psDroid, i, i + 1);
+      --i;  // If this underflows, the ++i will overflow it back.
+    }
+  }
+}
+
+/** This function returns an order which is assigned according to the location and droid. Uses altOrder flag to choose between a direct order or an altOrder.*/
+DROID_ORDER Droid::chooseOrderLoc(UDWORD x, UDWORD y, bool altOrder)
+{
+  DROID_ORDER order = DORDER_NONE;
+  PROPULSION_TYPE propulsion = getPropulsionStats(psDroid)->propulsionType;
+
+  if (isTransporter(psDroid) && game.type == LEVEL_TYPE::CAMPAIGN)
+  {
+    // transports can't be controlled in campaign
+    return DORDER_NONE;
+  }
+
+  // default to move; however, we can only end up on a tile
+  // where can stay, ie VTOLs must be able to land as well
+  if (isVtolDroid(psDroid))
+  {
+    propulsion = PROPULSION_TYPE_WHEELED;
+  }
+  if (!fpathBlockingTile(map_coord(x), map_coord(y), propulsion))
+  {
+    order = DORDER_MOVE;
+  }
+
+  // scout if alt was pressed
+  if (altOrder)
+  {
+    order = DORDER_SCOUT;
+    if (isVtolDroid(psDroid))
+    {
+      // Patrol if in a VTOL
+      order = DORDER_PATROL;
+    }
+  }
+
+  // and now we want Transporters to fly! - in multiPlayer!!
+  if (isTransporter(psDroid) && game.type == LEVEL_TYPE::SKIRMISH)
+  {
+    /* in MultiPlayer - if ALT-key is pressed then need to get the Transporter
+		 * to fly to location and all units disembark */
+    if (altOrder)
+    {
+      order = DORDER_DISEMBARK;
+    }
+  }
+  else if (secondaryGetState(psDroid, DSO_CIRCLE, ModeQueue) == DSS_CIRCLE_SET)  // ModeQueue here means to check whether we pressed the circle button, whether or not it synched yet. The reason for this weirdness is that a circle order makes no sense as a secondary state in the first place (the circle button _should_ have been only in the UI, not in the game state..!), so anything dealing with circle orders will necessarily be weird.
+  {
+    order = DORDER_CIRCLE;
+    secondarySetState(psDroid, DSO_CIRCLE, DSS_NONE);
+  }
+  else if (secondaryGetState(psDroid, DSO_PATROL, ModeQueue) == DSS_PATROL_SET)  // ModeQueue here means to check whether we pressed the patrol button, whether or not it synched yet. The reason for this weirdness is that a patrol order makes no sense as a secondary state in the first place (the patrol button _should_ have been only in the UI, not in the game state..!), so anything dealing with patrol orders will necessarily be weird.
+  {
+    order = DORDER_PATROL;
+    secondarySetState(psDroid, DSO_PATROL, DSS_NONE);
+  }
+
+  return order;
+}
+
+/** This function goes to the droid's order list and sets a new order to it from its order list.*/
+bool Droid::orderDroidList()
+{
+  if (listSize > 0)
+  {
+    // there are some orders to give
+    DROID_ORDER_DATA sOrder = asOrderList[0];
+    orderDroidListEraseRange(psDroid, 0, 1);
+
+    switch (sOrder.type)
+    {
+    case DORDER_MOVE:
+    case DORDER_SCOUT:
+    case DORDER_DISEMBARK:
+      ASSERT(sOrder.psObj == nullptr && sOrder.psStats == nullptr, "Extra %s parameters.", getDroidOrderName(sOrder.type));
+      sOrder.psObj = nullptr;
+      sOrder.psStats = nullptr;
+      break;
+    case DORDER_ATTACK:
+    case DORDER_REPAIR:
+    case DORDER_OBSERVE:
+    case DORDER_DROIDREPAIR:
+    case DORDER_FIRESUPPORT:
+    case DORDER_DEMOLISH:
+    case DORDER_HELPBUILD:
+    case DORDER_BUILDMODULE:
+    case DORDER_RECOVER:
+      ASSERT(sOrder.psStats == nullptr, "Extra %s parameters.", getDroidOrderName(sOrder.type));
+      sOrder.psStats = nullptr;
+      break;
+    case DORDER_BUILD:
+    case DORDER_LINEBUILD:
+      ASSERT(sOrder.psObj == nullptr, "Extra %s parameters.", getDroidOrderName(sOrder.type));
+      sOrder.psObj = nullptr;
+      break;
+    default:
+      ASSERT(false, "orderDroidList: Invalid order");
+      return false;
+    }
+
+    orderDroidBase(psDroid, &sOrder);
+    syncDebugDroid(psDroid, 'o');
+
+    return true;
+  }
+
+  return false;
+}
+
+/** Add an order to a droid's order list
+ * @todo needs better documentation.
+ */
+void Droid::orderDroidAdd(DROID_ORDER_DATA *psOrder)
+{
+  if (listSize >= asOrderList.size())
+  {
+    // Make more room to store the order.
+    asOrderList.resize(asOrderList.size() + 1);
+  }
+
+  asOrderList[listSize] = *psOrder;
+  listSize += 1;
+
+  // if not doing anything - do it immediately
+  if (listSize <= 1 &&
+      (order.type == DORDER_NONE ||
+       order.type == DORDER_GUARD ||
+       order.type == DORDER_PATROL ||
+       order.type == DORDER_CIRCLE ||
+       order.type == DORDER_HOLD))
+  {
+    orderDroidList(psDroid);
+  }
+}
+
+/** This function returns false if droid's order and order don't match or the order is not a location order. Else ppsStats = psDroid->psTarStats, (pX,pY) = psDroid.(orderX,orderY) and it returns true.
+ * @todo seems closely related to orderStateLoc()
+ */
+bool Droid::orderStateStatsLoc(DROID_ORDER order, StructureStats **ppsStats)
+{
+  bool	match = false;
+
+  switch (order)
+  {
+  case DORDER_BUILD:
+  case DORDER_LINEBUILD:
+    if (order.type == DORDER_BUILD ||
+        order.type == DORDER_LINEBUILD)
+    {
+      match = true;
+    }
+    break;
+  default:
+    break;
+  }
+  if (!match)
+  {
+    return false;
+  }
+
+  // check the order is one with stats and a location
+  switch (order.type)
+  {
+  default:
+    // not a stats/location order - return false
+    return false;
+    break;
+  case DORDER_BUILD:
+  case DORDER_LINEBUILD:
+    if (action == DROID_ACTION::MOVETOBUILD)
+    {
+      *ppsStats = order.psStats;
+      return true;
+    }
+    break;
+  }
+
+  return false;
+}
+
+/** This function sends the droid an order with a location.
+ * If the mode is ModeQueue, the order is added to the droid's order list using sendDroidInfo(), else, a DROID_ORDER_DATA is alloc, the old order list is erased, and the order is sent using orderDroidBase().
+ */
+void Droid::orderDroidLoc(DROID_ORDER order, UDWORD x, UDWORD y, QUEUE_MODE mode)
+{
+  ASSERT_OR_RETURN(, validOrderForLoc(order), "Invalid order for location");
+
+  DROID_ORDER_DATA sOrder(order, Vector2i(x, y));
+  if (mode == ModeQueue)
+  {
+    sendDroidInfo(psDroid, sOrder, false);
+    return;  // Wait to receive our order before changing the droid.
+  }
+
+  orderClearDroidList(psDroid);
+  orderDroidBase(psDroid, &sOrder);
+}
+
+/** This function updates all the orders status, according with psdroid's current order and state.
+ */
+void Droid::orderUpdateDroid()
+{
+  GameObject *psObj = nullptr;
+  Structure *psStruct, *psWall;
+  SDWORD			xdiff, ydiff;
+  bool			bAttack;
+  SDWORD			xoffset, yoffset;
+
+  // clear the target if it has died
+  if (order.psObj && order.psObj->deathTime)
+  {
+    syncDebugObject(order.psObj, '-');
+    setDroidTarget(psDroid, nullptr);
+    objTrace(id, "Target dead");
+  }
+
+  //clear its base struct if its died
+  if (psBaseStruct && psBaseStruct->deathTime)
+  {
+    syncDebugStructure(psBaseStruct, '-');
+    setDroidBase(psDroid, nullptr);
+    objTrace(id, "Base struct dead");
+  }
+
+  // check for died objects in the list
+  orderCheckList(psDroid);
+
+  if (isDead(psDroid))
+  {
+    return;
+  }
+
+  switch (order.type)
+  {
+  case DORDER_NONE:
+  case DORDER_HOLD:
+    // see if there are any orders queued up
+    if (orderDroidList(psDroid))
+    {
+      // started a new order, quit
+      break;
+    }
+    // if you are in a command group, default to guarding the commander
+    else if (hasCommander(psDroid) && order.type != DORDER_HOLD
+             && order.psStats != structGetDemolishStat())  // stop the constructor auto repairing when it is about to demolish
+    {
+      orderDroidObj(psDroid, DORDER_GUARD, psGroup->psCommander, ModeImmediate);
+    }
+    else if (isTransporter(psDroid) && !bMultiPlayer)
+    {
+
+    }
+    // default to guarding
+    else if (!tryDoRepairlikeAction(psDroid)
+             && order.type != DORDER_HOLD
+             && order.psStats != structGetDemolishStat()
+             && secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_GUARD
+             && !isVtolDroid(psDroid))
+    {
+      orderDroidLoc(psDroid, DORDER_GUARD, position.x, position.y, ModeImmediate);
+    }
+    break;
+  case DORDER_TRANSPORTRETURN:
+    if (action == DROID_ACTION::NONE)
+    {
+      missionMoveTransporterOffWorld(psDroid);
+
+      /* clear order */
+      order = DroidOrder(DORDER_NONE);
+    }
+    break;
+  case DORDER_TRANSPORTOUT:
+    if (action == DROID_ACTION::NONE)
+    {
+      if (owningPlayer == selectedPlayer)
+      {
+        if (getDroidsToSafetyFlag())
+        {
+          //move droids in Transporter into holding list
+          moveDroidsToSafety(psDroid);
+          //we need the transporter to just sit off world for a while...
+          orderDroid(psDroid, DORDER_TRANSPORTIN, ModeImmediate);
+          /* set action transporter waits for timer */
+          actionDroid(psDroid, DROID_ACTION::TRANSPORTWAITTOFLYIN);
+
+          missionSetReinforcementTime(gameTime);
+          //don't do this until waited for the required time
+          //fly Transporter back to get some more droids
+          //orderDroidLoc( psDroid, DORDER_TRANSPORTIN,
+          //getLandingX(selectedPlayer), getLandingY(selectedPlayer));
+        }
+        else
+        {
+          //the script can call startMission for this callback for offworld missions
+          triggerEvent(TRIGGER_TRANSPORTER_EXIT, psDroid);
+          /* clear order */
+          order = DroidOrder(DORDER_NONE);
+        }
+
+        sMove.speed = 0; // Prevent radical movement vector when adjusting from home to away map exit and entry coordinates.
+      }
+    }
+    break;
+  case DORDER_TRANSPORTIN:
+    if ((action == DROID_ACTION::NONE) &&
+        (sMove.Status == MOVEINACTIVE))
+    {
+      /* clear order */
+      order = DroidOrder(DORDER_NONE);
+
+      //FFS! You only wan't to do this if the droid being tracked IS the transporter! Not all the time!
+      // What about if your happily playing the game and tracking a droid, and re-enforcements come in!
+      // And suddenly BLAM!!!! It drops you out of camera mode for no apparent reason! TOTALY CONFUSING
+      // THE PLAYER!
+      //
+      // Just had to get that off my chest....end of rant.....
+      //
+      if (psDroid == getTrackingDroid())    // Thats better...
+      {
+        /* deselect transporter if have been tracking */
+        if (getWarCamStatus())
+        {
+          camToggleStatus();
+        }
+      }
+
+      DeSelectDroid(psDroid);
+
+      /*don't try the unload if moving droids to safety and still got some
+      droids left  - wait until full and then launch again*/
+      if (owningPlayer == selectedPlayer && getDroidsToSafetyFlag() &&
+          missionDroidsRemaining(selectedPlayer))
+      {
+        resetTransporter();
+      }
+      else
+      {
+        unloadTransporter(psDroid, position.x, position.y, false);
+      }
+    }
+    break;
+  case DORDER_MOVE:
+    // Just wait for the action to finish then clear the order
+    if (action == DROID_ACTION::NONE || action == DROID_ACTION::ATTACK)
+    {
+      order = DroidOrder(DORDER_NONE);
+    }
+    break;
+  case DORDER_RECOVER:
+    if (order.psObj == nullptr)
+    {
+      order = DroidOrder(DORDER_NONE);
+    }
+    else if (action == DROID_ACTION::NONE)
+    {
+      // stopped moving, but still haven't got the artifact
+      actionDroid(psDroid, DROID_ACTION::MOVE, order.psObj->position.x, order.psObj->position.y);
+    }
+    break;
+  case DORDER_SCOUT:
+  case DORDER_PATROL:
+    // if there is an enemy around, attack it
+    if (action == DROID_ACTION::MOVE || action == DROID_ACTION::MOVEFIRE || (action == DROID_ACTION::NONE && isVtolDroid(psDroid)))
+    {
+      bool tooFarFromPath = false;
+      if (isVtolDroid(psDroid) && order.type == DORDER_PATROL)
+      {
+        // Don't stray too far from the patrol path - only attack if we're near it
+        // A fun algorithm to detect if we're near the path
+        Vector2i delta = order.pos - order.pos2;
+        if (delta == Vector2i(0, 0))
+        {
+          tooFarFromPath = false;
+        }
+        else if (abs(delta.x) >= abs(delta.y) &&
+                 MIN(order.pos.x, order.pos2.x) - SCOUT_DIST <= position.x &&
+                 position.x <= MAX(order.pos.x, order.pos2.x) + SCOUT_DIST)
+        {
+          tooFarFromPath = (abs((position.x - order.pos.x) * delta.y / delta.x +
+                                order.pos.y - position.y) > SCOUT_DIST);
+        }
+        else if (abs(delta.x) <= abs(delta.y) &&
+                 MIN(order.pos.y, order.pos2.y) - SCOUT_DIST <= position.y &&
+                 position.y <= MAX(order.pos.y, order.pos2.y) + SCOUT_DIST)
+        {
+          tooFarFromPath = (abs((position.y - order.pos.y) * delta.x / delta.y +
+                                order.pos.x - position.x) > SCOUT_DIST);
+        }
+        else
+        {
+          tooFarFromPath = true;
+        }
+      }
+      if (!tooFarFromPath)
+      {
+        // true if in condition to set actionDroid to attack/observe
+        bool attack = secondaryGetState(psDroid, DSO_ATTACK_LEVEL) == DSS_ALEV_ALWAYS &&
+                      aiBestNearestTarget(psDroid, &psObj, 0, SCOUT_ATTACK_DIST) >= 0;
+        switch (droidType)
+        {
+        case DROID_CONSTRUCT:
+        case DROID_CYBORG_CONSTRUCT:
+        case DROID_REPAIR:
+        case DROID_CYBORG_REPAIR:
+          tryDoRepairlikeAction(psDroid);
+          break;
+        case DROID_WEAPON:
+        case DROID_CYBORG:
+        case DROID_CYBORG_SUPER:
+        case DROID_PERSON:
+        case DROID_COMMAND:
+          if (attack)
+          {
+            actionDroid(psDroid, DROID_ACTION::ATTACK, psObj);
+          }
+          break;
+        case DROID_SENSOR:
+          if (attack)
+          {
+            actionDroid(psDroid, DROID_ACTION::OBSERVE, psObj);
+          }
+          break;
+        default:
+          actionDroid(psDroid, DROID_ACTION::NONE);
+          break;
+        }
+      }
+    }
+    if (action == DROID_ACTION::NONE)
+    {
+      xdiff = position.x - order.pos.x;
+      ydiff = position.y - order.pos.y;
+      if (xdiff * xdiff + ydiff * ydiff < SCOUT_DIST * SCOUT_DIST)
+      {
+        if (order.type == DORDER_PATROL)
+        {
+          // see if we have anything queued up
+          if (orderDroidList(psDroid))
+          {
+            // started a new order, quit
+            break;
+          }
+          if (isVtolDroid(psDroid) && !vtolFull(psDroid) && (secondaryOrder & DSS_ALEV_MASK) != DSS_ALEV_NEVER)
+          {
+            moveToRearm(psDroid);
+            break;
+          }
+          // head back to the other point
+          std::swap(order.pos, order.pos2);
+          actionDroid(psDroid, DROID_ACTION::MOVE, order.pos.x, order.pos.y);
+        }
+        else
+        {
+          order = DroidOrder(DORDER_NONE);
+        }
+      }
+      else
+      {
+        actionDroid(psDroid, DROID_ACTION::MOVE, order.pos.x, order.pos.y);
+      }
+    }
+    else if (((action == DROID_ACTION::ATTACK) ||
+              (action == DROID_ACTION::VTOLATTACK) ||
+              (action == DROID_ACTION::MOVETOATTACK) ||
+              (action == DROID_ACTION::ROTATETOATTACK) ||
+              (action == DROID_ACTION::OBSERVE) ||
+              (action == DROID_ACTION::MOVETOOBSERVE)) &&
+             secondaryGetState(psDroid, DSO_HALTTYPE) != DSS_HALT_PURSUE)
+    {
+      // attacking something - see if the droid has gone too far, go up to twice the distance we want to go, so that we don't repeatedly turn back when the target is almost in range.
+      if (objPosDiffSq(position, Vector3i(actionPos, 0)) > (SCOUT_ATTACK_DIST * 2 * SCOUT_ATTACK_DIST * 2))
+      {
+        actionDroid(psDroid, DROID_ACTION::RETURNTOPOS, actionPos.x, actionPos.y);
+      }
+    }
+    if (order.type == DORDER_PATROL && isVtolDroid(psDroid) && vtolEmpty(psDroid) && (secondaryOrder & DSS_ALEV_MASK) != DSS_ALEV_NEVER)
+    {
+      moveToRearm(psDroid);  // Completely empty (and we're not set to hold fire), don't bother patrolling.
+      break;
+    }
+    break;
+  case DORDER_CIRCLE:
+    // if there is an enemy around, attack it
+    if (action == DROID_ACTION::MOVE &&
+        secondaryGetState(psDroid, DSO_ATTACK_LEVEL) == DSS_ALEV_ALWAYS &&
+        aiBestNearestTarget(psDroid, &psObj, 0, SCOUT_ATTACK_DIST) >= 0)
+    {
+      switch (droidType)
+      {
+      case DROID_WEAPON:
+      case DROID_CYBORG:
+      case DROID_CYBORG_SUPER:
+      case DROID_PERSON:
+      case DROID_COMMAND:
+        actionDroid(psDroid, DROID_ACTION::ATTACK, psObj);
+        break;
+      case DROID_SENSOR:
+        actionDroid(psDroid, DROID_ACTION::OBSERVE, psObj);
+        break;
+      default:
+        actionDroid(psDroid, DROID_ACTION::NONE);
+        break;
+      }
+    }
+    else if (action == DROID_ACTION::NONE || action == DROID_ACTION::MOVE)
+    {
+      if (action == DROID_ACTION::MOVE)
+      {
+        // see if we have anything queued up
+        if (orderDroidList(psDroid))
+        {
+          // started a new order, quit
+          break;
+        }
+      }
+
+      Vector2i edgeDiff = position.xy() - actionPos;
+      if (action != DROID_ACTION::MOVE || dot(edgeDiff, edgeDiff) <= TILE_UNITS * 4 * TILE_UNITS * 4)
+      {
+        //Watermelon:use orderX,orderY as local space origin and calculate droid direction in local space
+        Vector2i diff = position.xy() - order.pos;
+        uint16_t angle = iAtan2(diff) - DEG(30);
+        do
+        {
+          xoffset = iSinR(angle, 1500);
+          yoffset = iCosR(angle, 1500);
+          angle -= DEG(10);
+        }
+        while (!worldOnMap(order.pos.x + xoffset, order.pos.y + yoffset));    // Don't try to fly off map.
+        actionDroid(psDroid, DROID_ACTION::MOVE, order.pos.x + xoffset, order.pos.y + yoffset);
+      }
+
+      if (isVtolDroid(psDroid) && vtolEmpty(psDroid) && (secondaryOrder & DSS_ALEV_MASK) != DSS_ALEV_NEVER)
+      {
+        moveToRearm(psDroid);  // Completely empty (and we're not set to hold fire), don't bother circling.
+        break;
+      }
+    }
+    else if (((action == DROID_ACTION::ATTACK) ||
+              (action == DROID_ACTION::VTOLATTACK) ||
+              (action == DROID_ACTION::MOVETOATTACK) ||
+              (action == DROID_ACTION::ROTATETOATTACK) ||
+              (action == DROID_ACTION::OBSERVE) ||
+              (action == DROID_ACTION::MOVETOOBSERVE)) &&
+             secondaryGetState(psDroid, DSO_HALTTYPE) != DSS_HALT_PURSUE)
+    {
+      // attacking something - see if the droid has gone too far
+      xdiff = position.x - actionPos.x;
+      ydiff = position.y - actionPos.y;
+      if (xdiff * xdiff + ydiff * ydiff > 2000 * 2000)
+      {
+        // head back to the target location
+        actionDroid(psDroid, DROID_ACTION::RETURNTOPOS, order.pos.x, order.pos.y);
+      }
+    }
+    break;
+  case DORDER_HELPBUILD:
+  case DORDER_DEMOLISH:
+  case DORDER_OBSERVE:
+  case DORDER_REPAIR:
+  case DORDER_DROIDREPAIR:
+  case DORDER_RESTORE:
+    if (action == DROID_ACTION::NONE || order.psObj == nullptr)
+    {
+      order = DroidOrder(DORDER_NONE);
+      actionDroid(psDroid, DROID_ACTION::NONE);
+      if (owningPlayer == selectedPlayer)
+      {
+        intRefreshScreen();
+      }
+    }
+    break;
+  case DORDER_REARM:
+    if (order.psObj == nullptr || psActionTarget[0] == nullptr)
+    {
+      // arm pad destroyed find another
+      order = DroidOrder(DORDER_NONE);
+      moveToRearm(psDroid);
+    }
+    else if (action == DROID_ACTION::NONE)
+    {
+      order = DroidOrder(DORDER_NONE);
+    }
+    break;
+  case DORDER_ATTACK:
+  case DORDER_ATTACKTARGET:
+    if (order.psObj == nullptr || order.psObj->deathTime)
+    {
+      // if vtol then return to rearm pad as long as there are no other
+      // orders queued up
+      if (isVtolDroid(psDroid))
+      {
+        if (!orderDroidList(psDroid))
+        {
+          order = DroidOrder(DORDER_NONE);
+          moveToRearm(psDroid);
+        }
+      }
+      else
+      {
+        order = DroidOrder(DORDER_NONE);
+        actionDroid(psDroid, DROID_ACTION::NONE);
+      }
+    }
+    else if (((action == DROID_ACTION::MOVE) ||
+              (action == DROID_ACTION::MOVEFIRE)) &&
+             actionVisibleTarget(psDroid, order.psObj, 0) && !isVtolDroid(psDroid))
+    {
+      // moved near enough to attack change to attack action
+      actionDroid(psDroid, DROID_ACTION::ATTACK, order.psObj);
+    }
+    else if ((action == DROID_ACTION::MOVETOATTACK) &&
+             !isVtolDroid(psDroid) &&
+             !actionVisibleTarget(psDroid, order.psObj, 0) &&
+             secondaryGetState(psDroid, DSO_HALTTYPE) != DSS_HALT_HOLD)
+    {
+      // lost sight of the target while chasing it - change to a move action so
+      // that the unit will fire on other things while moving
+      actionDroid(psDroid, DROID_ACTION::MOVE, order.psObj->position.x, order.psObj->position.y);
+    }
+    else if (!isVtolDroid(psDroid)
+             && order.psObj == psActionTarget[0]
+             && actionInRange(psDroid, order.psObj, 0)
+             && (psWall = visGetBlockingWall(psDroid, order.psObj))
+             && !aiCheckAlliances(psWall->owningPlayer, owningPlayer))
+    {
+      // there is a wall in the way - attack that
+      actionDroid(psDroid, DROID_ACTION::ATTACK, psWall);
+    }
+    else if ((action == DROID_ACTION::NONE) ||
+             (action == DROID_ACTION::CLEARREARMPAD))
+    {
+      if ((order.type == DORDER_ATTACKTARGET || order.type == DORDER_ATTACK)
+          && secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_HOLD
+          && !actionInRange(psDroid, order.psObj, 0))
+      {
+        // target is not in range and DSS_HALT_HOLD: give up, don't move
+        order = DroidOrder(DORDER_NONE);
+      }
+      else if (!isVtolDroid(psDroid) || allVtolsRearmed(psDroid))
+      {
+        actionDroid(psDroid, DROID_ACTION::ATTACK, order.psObj);
+      }
+    }
+    break;
+  case DORDER_BUILD:
+    if (action == DROID_ACTION::BUILD &&
+        order.psObj == nullptr)
+    {
+      order = DroidOrder(DORDER_NONE);
+      actionDroid(psDroid, DROID_ACTION::NONE);
+      objTrace(id, "Clearing build order since build target is gone");
+    }
+    else if (action == DROID_ACTION::NONE)
+    {
+      order = DroidOrder(DORDER_NONE);
+      objTrace(id, "Clearing build order since build action is reset");
+    }
+    break;
+  case DORDER_EMBARK:
+  {
+    // only place it can be trapped - in multiPlayer can only put cyborgs onto a Cyborg Transporter
+    Droid *temp = (Droid *)order.psObj;	// NOTE: It is possible to have a NULL here
+
+    if (temp && temp->droidType == DROID_TRANSPORTER && !cyborgDroid(psDroid))
+    {
+      order = DroidOrder(DORDER_NONE);
+      actionDroid(psDroid, DROID_ACTION::NONE);
+      if (owningPlayer == selectedPlayer)
+      {
+        audio_PlayBuildFailedOnce();
+        addConsoleMessage(_("We can't do that! We must be a Cyborg unit to use a Cyborg Transport!"), DEFAULT_JUSTIFY, selectedPlayer);
+      }
+    }
+    else
+    {
+      // Wait for the action to finish then assign to Transporter (if not already flying)
+      if (order.psObj == nullptr || transporterFlying((Droid *)order.psObj))
+      {
+        order = DroidOrder(DORDER_NONE);
+        actionDroid(psDroid, DROID_ACTION::NONE);
+      }
+      else if (abs((SDWORD)position.x - (SDWORD)order.psObj->position.x) < TILE_UNITS
+               && abs((SDWORD)position.y - (SDWORD)order.psObj->position.y) < TILE_UNITS)
+      {
+        // save the target of current droid (the transporter)
+        Droid *transporter = (Droid *)order.psObj;
+
+        // Make sure that it really is a valid droid
+        CHECK_DROID(transporter);
+
+        // order the droid to stop so moveUpdateDroid does not process this unit
+        orderDroid(psDroid, DORDER_STOP, ModeImmediate);
+        setDroidTarget(psDroid, nullptr);
+        order.psObj = nullptr;
+        secondarySetState(psDroid, DSO_RETURN_TO_LOC, DSS_NONE);
+
+        /* We must add the droid to the transporter only *after*
+					* processing changing its orders (see above).
+         */
+        transporterAddDroid(transporter, psDroid);
+      }
+      else if (action == DROID_ACTION::NONE)
+      {
+        actionDroid(psDroid, DROID_ACTION::MOVE, order.psObj->position.x, order.psObj->position.y);
+      }
+    }
+  }
+  // Do we need to clear the secondary order "DSO_EMBARK" here? (PD)
+  break;
+  case DORDER_DISEMBARK:
+    //only valid in multiPlayer mode
+    if (bMultiPlayer)
+    {
+      //this order can only be given to Transporter droids
+      if (isTransporter(psDroid))
+      {
+        /*once the Transporter has reached its destination (and landed),
+        get all the units to disembark*/
+        if (action != DROID_ACTION::MOVE && action != DROID_ACTION::MOVEFIRE &&
+            sMove.Status == MOVEINACTIVE && sMove.iVertSpeed == 0)
+        {
+          unloadTransporter(psDroid, position.x, position.y, false);
+          //reset the transporter's order
+          order = DroidOrder(DORDER_NONE);
+        }
+      }
+    }
+    break;
+  case DORDER_RTB:
+    // Just wait for the action to finish then clear the order
+    if (action == DROID_ACTION::NONE)
+    {
+      order = DroidOrder(DORDER_NONE);
+      secondarySetState(psDroid, DSO_RETURN_TO_LOC, DSS_NONE);
+    }
+    break;
+  case DORDER_RTR:
+  case DORDER_RTR_SPECIFIED:
+    if (order.psObj == nullptr)
+    {
+      // Our target got lost. Let's try again.
+      order = DroidOrder(DORDER_NONE);
+      orderDroid(psDroid, DORDER_RTR, ModeImmediate);
+    }
+    else if (action == DROID_ACTION::NONE)
+    {
+      /* get repair facility pointer */
+      psStruct = (Structure *)order.psObj;
+      ASSERT(psStruct != nullptr,
+             "orderUpdateUnit: invalid structure pointer");
+
+
+      if (objPosDiffSq(position, order.psObj->position) < (TILE_UNITS * 8) * (TILE_UNITS * 8))
+      {
+        /* action droid to wait */
+        actionDroid(psDroid, DROID_ACTION::WAITFORREPAIR);
+      }
+      else
+      {
+        // move the droid closer to the repair point
+        // setting target to null will trigger search for nearest repair point: we might have a better option after all
+        order.psObj = nullptr;
+      }
+    }
+    break;
+  case DORDER_LINEBUILD:
+    if (action == DROID_ACTION::NONE ||
+        (action == DROID_ACTION::BUILD && order.psObj == nullptr))
+    {
+      // finished building the current structure
+      auto lb = calcLineBuild(order.psStats, order.direction, order.pos, order.pos2);
+      if (lb.count <= 1)
+      {
+        // finished all the structures - done
+        order = DroidOrder(DORDER_NONE);
+        break;
+      }
+
+      // update the position for another structure
+      order.pos = lb[1];
+
+      // build another structure
+      setDroidTarget(psDroid, nullptr);
+      actionDroid(psDroid, DROID_ACTION::BUILD, order.pos.x, order.pos.y);
+      //intRefreshScreen();
+    }
+    break;
+  case DORDER_FIRESUPPORT:
+    if (order.psObj == nullptr)
+    {
+      order = DroidOrder(DORDER_NONE);
+      if (isVtolDroid(psDroid) && !vtolFull(psDroid))
+      {
+        moveToRearm(psDroid);
+      }
+      else
+      {
+        actionDroid(psDroid, DROID_ACTION::NONE);
+      }
+    }
+    //before targetting - check VTOL's are fully armed
+    else if (vtolEmpty(psDroid))
+    {
+      moveToRearm(psDroid);
+    }
+    //indirect weapon droid attached to (standard)sensor droid
+    else
+    {
+      GameObject *psFireTarget = nullptr;
+
+      if (order.psObj->type == OBJ_DROID)
+      {
+        Droid *psSpotter = (Droid *)order.psObj;
+
+        if (psSpotter->action == DROID_ACTION::OBSERVE
+            || (psSpotter->droidType == DROID_COMMAND && psSpotter->action == DROID_ACTION::ATTACK))
+        {
+          psFireTarget = psSpotter->psActionTarget[0];
+        }
+      }
+      else if (order.psObj->type == OBJ_STRUCTURE)
+      {
+        Structure *psSpotter = (Structure *)order.psObj;
+
+        psFireTarget = psSpotter->psTarget[0];
+      }
+
+      if (psFireTarget && !psFireTarget->deathTime && checkAnyWeaponsTarget(psDroid, psFireTarget))
+      {
+        bAttack = false;
+        if (isVtolDroid(psDroid))
+        {
+          if (!vtolEmpty(psDroid) &&
+              ((action == DROID_ACTION::MOVETOREARM) ||
+               (action == DROID_ACTION::WAITFORREARM)) &&
+              (sMove.Status != MOVEINACTIVE))
+          {
+            // catch vtols that were attacking another target which was destroyed
+            // get them to attack the new target rather than returning to rearm
+            bAttack = true;
+          }
+          else if (allVtolsRearmed(psDroid))
+          {
+            bAttack = true;
+          }
+        }
+        else
+        {
+          bAttack = true;
+        }
+
+        //if not currently attacking or target has changed
+        if (bAttack &&
+            (!droidAttacking(psDroid) ||
+             psFireTarget != psActionTarget[0]))
+        {
+          //get the droid to attack
+          actionDroid(psDroid, DROID_ACTION::ATTACK, psFireTarget);
+        }
+      }
+      else if (isVtolDroid(psDroid) &&
+               !vtolFull(psDroid) &&
+               (action != DROID_ACTION::NONE) &&
+               (action != DROID_ACTION::FIRESUPPORT))
+      {
+        moveToRearm(psDroid);
+      }
+      else if ((action != DROID_ACTION::FIRESUPPORT) &&
+               (action != DROID_ACTION::FIRESUPPORT_RETREAT))
+      {
+        actionDroid(psDroid, DROID_ACTION::FIRESUPPORT, order.psObj);
+      }
+    }
+    break;
+  case DORDER_RECYCLE:
+    if (order.psObj == nullptr)
+    {
+      order = DroidOrder(DORDER_NONE);
+      actionDroid(psDroid, DROID_ACTION::NONE);
+    }
+    else if (actionReachedBuildPos(psDroid, order.psObj->position.x, order.psObj->position.y, ((Structure *)order.psObj)->rotation.direction, ((Structure *)order.psObj)->stats))
+    {
+      recycleDroid(psDroid);
+    }
+    else if (action == DROID_ACTION::NONE)
+    {
+      actionDroid(psDroid, DROID_ACTION::MOVE, order.psObj->position.x, order.psObj->position.y);
+    }
+    break;
+  case DORDER_GUARD:
+    if (orderDroidList(psDroid))
+    {
+      // started a queued order - quit
+      break;
+    }
+    else if ((action == DROID_ACTION::NONE) ||
+             (action == DROID_ACTION::MOVE) ||
+             (action == DROID_ACTION::MOVEFIRE))
+    {
+      // not doing anything, make sure the droid is close enough
+      // to the thing it is defending
+      if ((!(droidType == DROID_REPAIR || droidType == DROID_CYBORG_REPAIR))
+          && order.psObj != nullptr && order.psObj->type == OBJ_DROID
+          && ((Droid *)order.psObj)->droidType == DROID_COMMAND)
+      {
+        // guarding a commander, allow more space
+        orderCheckGuardPosition(psDroid, DEFEND_CMD_BASEDIST);
+      }
+      else
+      {
+        orderCheckGuardPosition(psDroid, DEFEND_BASEDIST);
+      }
+    }
+    else if (droidType == DROID_REPAIR || droidType == DROID_CYBORG_REPAIR)
+    {
+      // repairing something, make sure the droid doesn't go too far
+      orderCheckGuardPosition(psDroid, REPAIR_MAXDIST);
+    }
+    else if (droidType == DROID_CONSTRUCT || droidType == DROID_CYBORG_CONSTRUCT)
+    {
+      // repairing something, make sure the droid doesn't go too far
+      orderCheckGuardPosition(psDroid, CONSTRUCT_MAXDIST);
+    }
+    else if (isTransporter(psDroid))
+    {
+
+    }
+    else
+    {
+      //let vtols return to rearm
+      if (!vtolRearming(psDroid))
+      {
+        // attacking something, make sure the droid doesn't go too far
+        if (order.psObj != nullptr && order.psObj->type == OBJ_DROID &&
+            ((Droid *)order.psObj)->droidType == DROID_COMMAND)
+        {
+          // guarding a commander, allow more space
+          orderCheckGuardPosition(psDroid, DEFEND_CMD_MAXDIST);
+        }
+        else
+        {
+          orderCheckGuardPosition(psDroid, DEFEND_MAXDIST);
+        }
+      }
+    }
+
+    // get combat units in a command group to attack the commanders target
+    if (hasCommander(psDroid) && (numWeapons > 0))
+    {
+      if (psGroup->psCommander->action == DROID_ACTION::ATTACK &&
+          psGroup->psCommander->psActionTarget[0] != nullptr &&
+          !psGroup->psCommander->psActionTarget[0]->deathTime)
+      {
+        psObj = psGroup->psCommander->psActionTarget[0];
+        if (action == DROID_ACTION::ATTACK ||
+            action == DROID_ACTION::MOVETOATTACK)
+        {
+          if (psActionTarget[0] != psObj)
+          {
+            actionDroid(psDroid, DROID_ACTION::ATTACK, psObj);
+          }
+        }
+        else if (action != DROID_ACTION::MOVE)
+        {
+          actionDroid(psDroid, DROID_ACTION::ATTACK, psObj);
+        }
+      }
+
+      // make sure units in a command group are actually guarding the commander
+      psObj = orderStateObj(psDroid, DORDER_GUARD);	// find out who is being guarded by the droid
+      if (psObj == nullptr
+          || psObj != psGroup->psCommander)
+      {
+        orderDroidObj(psDroid, DORDER_GUARD, psGroup->psCommander, ModeImmediate);
+      }
+    }
+
+    tryDoRepairlikeAction(psDroid);
+    break;
+  default:
+    ASSERT(false, "orderUpdateUnit: unknown order");
+  }
+
+  // catch any vtol that is rearming but has finished his order
+  if (order.type == DORDER_NONE && vtolRearming(psDroid)
+      && (psActionTarget[0] == nullptr || !psActionTarget[0]->deathTime))
+  {
+    order = DroidOrder(DORDER_REARM, psActionTarget[0]);
+  }
+
+  if (selected)
+  {
+    // Tell us what the droid is doing.
+    snprintf(DROIDDOING, sizeof(DROIDDOING), "%.12s,id(%d) order(%d):%s action(%d):%s secondary:%x move:%s", droidGetName(psDroid), id,
+             order.type, getDroidOrderName(order.type), action, getDroidActionName(action), secondaryOrder,
+             moveDescription(sMove.Status));
+  }
+}
