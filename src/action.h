@@ -24,7 +24,6 @@
 #ifndef __INCLUDED_SRC_ACTION_H__
 #define __INCLUDED_SRC_ACTION_H__
 
-#include "actiondef.h"
 #include "droiddef.h"
 
 /**
@@ -37,8 +36,8 @@
 const char *getDroidActionName(DROID_ACTION action);
 
 /** After failing a route ... this is the amount of time that the droid goes all defensive until it can start going aggressive. */
-#define MIN_SULK_TIME (1500)		// 1.5 sec
-#define MAX_SULK_TIME (4000)		// 4 secs
+constexpr uint16_t MIN_SULK_TIME {1500};	        // 1.5 sec
+constexpr uint16_t MAX_SULK_TIME {4000};		// 4 secs
 
 /** This is how long a droid is disabled for when its been attacked by an EMP weapon. */
 #define EMP_DISABLE_TIME (10000)     // 10 secs

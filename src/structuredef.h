@@ -41,7 +41,7 @@ enum class STRUCTURE_TYPE
 {
   REF_HQ,
   REF_FACTORY,
-  REF_FACTORY_MODULE,//draw as factory 2
+  REF_FACTORY_MODULE,           //draw as factory 2
   REF_POWER_GEN,
   REF_POWER_MODULE,
   REF_RESOURCE_EXTRACTOR,
@@ -256,11 +256,9 @@ public:
 
   Vector2i size() const;
 
-  int objPosDiffSq(const GameObject& targetObj) override;
-
-  bool aiObjHasRange(const GameObject& targetObj, int weapon_slot) override;
+  bool aiUnitHasRange(const GameObject& targetObj, int weapon_slot) override;
 protected:
-  std::shared_ptr<StructureStats> stats;            /* pointer to the structure stats for this type of building */
+  std::unique_ptr<StructureStats> stats;            /* pointer to the structure stats for this type of building */
   STRUCT_STATES       status;                     /* defines whether the structure is being built, doing nothing or performing a function */
   uint32_t            currentBuildPts;            /* the build points currently assigned to this structure */
   int                 resistance;                 /* current resistance points, 0 = cannot be attacked electrically */

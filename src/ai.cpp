@@ -101,19 +101,6 @@ static int aiDroidRange(Droid *psDroid, int weapon_slot)
 	return longRange;
 }
 
-static bool aiObjHasRange(GameObject *psObj, GameObject *psTarget, int weapon_slot)
-{
-	if (psObj->type == OBJ_DROID)
-	{
-		return aiDroidHasRange((Droid *)psObj, psTarget, weapon_slot);
-	}
-	else if (psObj->type == OBJ_STRUCTURE)
-	{
-		return aiStructHasRange((Structure *)psObj, psTarget, weapon_slot);
-	}
-	return false;
-}
-
 /* Initialise the AI system */
 bool aiInitialise()
 {

@@ -42,14 +42,14 @@
 #define _USE_MATH_DEFINES
 #endif
 
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 
 static uint16_t trigSinTable[0x4001];
 static uint16_t trigAtanTable[0x2001];
 
 /* Initialise the Trig tables */
-bool trigInitialise(void)
+bool trigInitialise()
 {
 	uint32_t crc;
 	uint32_t i;
@@ -58,12 +58,12 @@ bool trigInitialise(void)
 	STATIC_ASSERT(sizeof(trigSinTable) / sizeof(*trigSinTable) == 0x4001);
 	for (i = 0; i != 0x4001; ++i)
 	{
-		trigSinTable[i] = (int)(0x10000 * sin(i * (M_PI / 0x8000)) + 0.5) - !!i; // -!!i = subtract 1, unless i == 0.
+		trigSinTable[i] = lround((0x10000 * sin(i * (M_PI / 0x8000)) + 0.5)) - !!i; // -!!i = subtract 1, unless i == 0.
 	}
 	STATIC_ASSERT(sizeof(trigAtanTable) / sizeof(*trigAtanTable) == 0x2001);
 	for (i = 0; i != 0x2001; ++i)
 	{
-		trigAtanTable[i] = (int)(0x8000 / M_PI * atan((double)i / 0x2000) + 0.5);
+		trigAtanTable[i] = lround((0x8000 / M_PI * atan((double)i / 0x2000) + 0.5));
 	}
 
 	// Check tables are correct.
@@ -91,7 +91,7 @@ bool trigInitialise(void)
 	return true;
 }
 
-int32_t iSin(uint16_t a)
+constexpr int32_t iSin(uint16_t a)
 {
 	int sign[4] = {1, 1, -1, -1};
 	bool reverse[4] = {false, true, false, true};
@@ -101,7 +101,7 @@ int32_t iSin(uint16_t a)
 	return sign[q] * (trigSinTable[rvr] + !!rvr); // +!!rvr = add 1, unless rvr == 0.
 }
 
-int32_t iCos(uint16_t a)
+constexpr int32_t iCos(uint16_t a)
 {
 	int sign[4] = {1, -1, -1, 1};
 	bool reverse[4] = {true, false, true, false};
@@ -111,27 +111,27 @@ int32_t iCos(uint16_t a)
 	return sign[q] * (trigSinTable[rvr] + !!rvr); // +!!rvr = add 1, unless rvr == 0.
 }
 
-int32_t iSinR(uint16_t a, int32_t r)
+constexpr int32_t iSinR(uint16_t a, int32_t r)
 {
 	return static_cast<int32_t>(((int64_t)r * iSin(a)) / 65536);
 }
 
-int32_t iCosR(uint16_t a, int32_t r)
+constexpr int32_t iCosR(uint16_t a, int32_t r)
 {
 	return static_cast<int32_t>(((int64_t)r * iCos(a)) / 65536);
 }
 
-int32_t iSinSR(int32_t a, int32_t s, int32_t r)
+constexpr int32_t iSinSR(int32_t a, int32_t s, int32_t r)
 {
 	return static_cast<int32_t>(((int64_t)r * iSin(((int64_t)a << 16) / s)) / 65536);
 }
 
-int32_t iCosSR(int32_t a, int32_t s, int32_t r)
+constexpr int32_t iCosSR(int32_t a, int32_t s, int32_t r)
 {
 	return static_cast<int32_t>(((int64_t)r * iCos(((int64_t)a << 16) / s)) / 65536);
 }
 
-uint16_t iAtan2(int32_t s, int32_t c)
+constexpr uint16_t iAtan2(int32_t s, int32_t c)
 {
 	uint16_t d = 0;         // Dummy initialisation.
 	uint32_t j = 0, k = 0;  // Dummy initialisations.
@@ -152,9 +152,9 @@ uint16_t iAtan2(int32_t s, int32_t c)
 	       : d + 0x4000 - trigAtanTable[((int64_t)k * 0x2000 + j / 2) / j];
 }
 
-int32_t iSqrt(uint32_t n)
+constexpr int32_t iSqrt(uint32_t n)
 {
-	uint32_t r = (uint32_t) sqrt((double)n);          // Calculate square root, rounded down. Excess precision does not change the result.
+	auto r = (uint32_t) sqrt((double)n);          // Calculate square root, rounded down. Excess precision does not change the result.
 
 	// Check that we got the right result.
 	ASSERT((int32_t)(r * r - n) <= 0 && (int32_t)((r + 1) * (r + 1) - n) > 0, "Too badly broken sqrt function, iSqrt(%u) = %u.", (unsigned)n, (unsigned)r);
@@ -162,18 +162,12 @@ int32_t iSqrt(uint32_t n)
 	return r;
 }
 
-int32_t i64Sqrt(uint64_t n)
+constexpr int32_t i64Sqrt(uint64_t n)
 {
-	uint64_t r;
-	if (sizeof(void *) > 4)
-	{
-		r = (uint64_t) sqrt((double)n);          // Calculate square root, usually rounded down. Excess precision may result in rounding down instead of up, which is fine.
-	}
-	else
-	{
-		// Bad compiler workaround. On some compilers, sqrt() seems to have somehow been taking 64-bit doubles and returning 80-bit doubles, breaking expected rounding behaviour.
-		r = (uint64_t) sqrtl(n);         // Calculate square root, usually rounded down. Excess precision may result in rounding down instead of up, which is fine.
-	}
+	auto r = (uint64_t)sqrt(
+      (double)
+          n); // Calculate square root, usually rounded down. Excess precision
+              // may result in rounding down instead of up, which is fine.
 
 	// Correct for different rounding & precision
 	// See: https://codereview.stackexchange.com/questions/69069/computing-the-square-root-of-a-64-bit-integer
@@ -189,12 +183,12 @@ int32_t i64Sqrt(uint64_t n)
 	return static_cast<int32_t>(r);
 }
 
-int32_t iHypot(int32_t x, int32_t y)
+constexpr int32_t iHypot(int32_t x, int32_t y)
 {
 	return i64Sqrt((uint64_t)x * x + (uint64_t)y * y); // Casting from int32_t to uint64_t does sign extend.
 }
 
-int32_t iHypot3(int32_t x, int32_t y, int32_t z)
+constexpr int32_t iHypot3(int32_t x, int32_t y, int32_t z)
 {
 	return i64Sqrt((uint64_t)x * x + (uint64_t)y * y + (uint64_t)z * z); // Casting from int32_t to uint64_t does sign extend.
 }

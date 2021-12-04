@@ -83,7 +83,7 @@ static inline WZ_DECL_PURE int iAtan2(Vector2i const &a)
 }
 
 // iHypot(vector) -> scalar
-static inline WZ_DECL_PURE int iHypot(Vector2i const &a)
+static inline constexpr WZ_DECL_PURE int iHypot(Vector2i const &a)
 {
 	return iHypot(a.x, a.y);
 }

@@ -25,7 +25,7 @@ Vector2i StructureStats::size(uint16_t direction) const
 Vector2i Structure::size() const { return stats->size(m_rotation.direction); }
 
 // see if a structure has the range to fire on a target
-bool Structure::aiObjHasRange(const GameObject& targetObj, int weapon_slot)
+bool Structure::aiUnitHasRange(const GameObject& targetObj, int weapon_slot)
 {
   if (numWeapons == 0 || m_weaponList[0].nStat == 0)
   {

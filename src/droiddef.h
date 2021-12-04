@@ -26,7 +26,6 @@
 
 #include <vector>
 
-#include "actiondef.h"
 #include "basedef.h"
 #include "movedef.h"
 #include "orderdef.h"
@@ -44,6 +43,7 @@
 
 /* The maximum number of droid weapons */
 #define	DROID_DAMAGE_SCALING	400
+
 // This should really be logarithmic
 #define	CALC_DROID_SMOKE_INTERVAL(x) ((((100-x)+10)/10) * DROID_DAMAGE_SCALING)
 
@@ -133,13 +133,45 @@ class Droid : public Unit {
 public:
   Droid(uint32_t id, unsigned player);
 
-  int objPosDiffSq(const GameObject& targetObj) override;
-  bool aiObjHasRange(const GameObject& targetObj, int weapon_slot) override;
+  bool aiUnitHasRange(const GameObject& targetObj, int weapon_slot) override;
 
   bool actionInsideMinRange(const GameObject& targetObj, const WEAPON_STATS* droidWeapStats) const;
   bool actionInRange(const GameObject& targetObj, int weapon_slot, bool useLongWithOptimum);
   void actionAddVtolAttackRun(const GameObject& targetDroid);
+  void moveToRearm();
+  void actionSanity();
   bool actionVTOLLandingPos(Vector2i* p);
+  void cancelBuild();
+  void droidBodyUpgrade();
+  void droidSetPosition(int x, int y);
+  bool droidOnMap();
+  bool cyborgDroid();
+  bool isConstructionDroid();
+  bool isSelectable() const;
+  void selectDroid();
+  void DeSelectDroid();
+  void actionUpdateTransporter();
+  void actionUpdateVtolAttack();
+  SWORD droidResistance() const;
+  bool standardSensorDroid() const;
+  bool cbSensorDroid() const;
+  void updateVtolAttackRun(int weapon_slot);
+  bool vtolHappy() const;
+  UWORD getNumAttackRuns(int weapon_slot);
+  bool allVtolsRearmed() const;
+  bool droidAttacking() const;
+  bool vtolRearming() const;
+  unsigned getDroidLevel() const;
+  void droidSetBits(const DroidStats* pTemplate);
+  void initDroidMovement();
+  bool idfDroid();
+  bool droidUpdateRepair();
+  bool droidUpdateRestore();
+  int32_t droidDamage(unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass, unsigned impactTime, bool isDamagePerSecond, int minDamage);
+  void recycleDroid();
+  bool removeDroidBase();
+  void droidUpdate();
+  DroidStartBuild droidStartBuild();
 protected:
   /// UTF-8 name of the droid. This is generated from the droid template
   ///  WARNING: This *can* be changed by the game player after creation & can be translated, do NOT rely on this being the same for everyone!
@@ -162,7 +194,7 @@ protected:
   UDWORD          lastFrustratedTime;             ///< Set when eg being stuck; used for eg firing indiscriminately at map features to clear the way
   SWORD           resistance;                     ///< used in Electronic Warfare
   // The group the droid belongs to
-  DROID_GROUP    *psGroup;
+  std::unique_ptr<DROID_GROUP> psGroup;
   Droid *psGrpNext;
   Structure
       *psBaseStruct;                   ///< a structure that this droid might be associated with. For VTOLs this is the rearming pad
@@ -181,7 +213,7 @@ protected:
   /* Action data */
   DROID_ACTION    action;
   Vector2i        actionPos;
-  Unit* psActionTarget[MAX_WEAPONS] = {}; ///< Action target object
+  std::unique_ptr<Unit> psActionTarget[MAX_WEAPONS] = {}; ///< Action target object
   UDWORD          actionStarted;                  ///< Game time action started
   UDWORD          actionPoints;                   ///< number of points done by action since start
   UDWORD          expectedDamageDirect;                 ///< Expected damage to be caused by all currently incoming direct projectiles. This info is shared between all players,

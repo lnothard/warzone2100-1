@@ -34,8 +34,8 @@
 #include "statsdef.h"
 #include "weapondef.h"
 
-#define NOT_CURRENT_LIST 1   //the died flag for a droid is set to this when it gets added to the non-current list
-#define MAX_WEAPONS 3
+constexpr uint8_t NOT_CURRENT_LIST = 1;  //the died flag for a droid is set to this when it gets added to the non-current list
+constexpr uint8_t MAX_WEAPONS = 3;
 
 /*
  Coordinate system used for objects in Warzone 2100:
@@ -100,7 +100,7 @@ public:
 
   Position position() const;
   OBJECT_TYPE type() const;
-  bool alive() const;
+  constexpr bool alive() const;
   Spacetime spacetime();
 
   virtual int objPosDiffSq(Position otherPos) = 0;

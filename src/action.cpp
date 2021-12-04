@@ -231,43 +231,6 @@ bool actionVisibleTarget(Droid *psDroid, GameObject *psTarget, int weapon_slot)
 	       && lineOfFire(psDroid, psTarget, weapon_slot, true);
 }
 
-static void actionUpdateVtolAttack(Droid *psDroid)
-{
-	CHECK_DROID(psDroid);
-
-	/* don't do attack runs whilst returning to base */
-	if (psDroid->order.type == DORDER_RTB)
-	{
-		return;
-	}
-
-	/* order back to base after fixed number of attack runs */
-	if (psDroid->numWeapons > 0 && psDroid->m_weaponList[0].nStat > 0 && vtolEmpty(psDroid))
-	{
-		moveToRearm(psDroid);
-		return;
-	}
-
-	/* circle around target if hovering and not cyborg */
-	if (psDroid->sMove.Status == MOVEHOVER && !cyborgDroid(psDroid))
-	{
-		actionAddVtolAttackRun(psDroid);
-	}
-}
-
-static void actionUpdateTransporter(Droid *psDroid)
-{
-	CHECK_DROID(psDroid);
-
-	//check if transporter has arrived
-	if (updateTransporter(psDroid))
-	{
-		// Got to destination
-		psDroid->action = DACTION_NONE;
-	}
-}
-
-
 // calculate a position for units to pull back to if they
 // need to increase the range between them and a target
 static void actionCalcPullBackPoint(GameObject *psObj, GameObject *psTarget, int *px, int *py)
@@ -339,9 +302,9 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 
 	static GridList gridList;  // static to avoid allocations.
 	gridList = gridStartIterate(structureCentre.x, structureCentre.y, structureMaxRadius);
-	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+	for (auto gi : gridList)
 	{
-          Droid *droid = castDroid(*gi);
+          Droid *droid = castDroid(gi);
 		if (droid == nullptr)
 		{
 			continue;  // Only looking for droids.
@@ -383,49 +346,6 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 	}
 
 	return buildPosEmpty;
-}
-
-
-void actionSanity(Droid *psDroid)
-{
-	// Don't waste ammo unless given a direct attack order.
-	bool avoidOverkill = psDroid->order.type != DORDER_ATTACK &&
-	                     (psDroid->action == DACTION_ATTACK || psDroid->action == DACTION_MOVEFIRE || psDroid->action == DACTION_MOVETOATTACK ||
-	                      psDroid->action == DACTION_ROTATETOATTACK || psDroid->action == DACTION_VTOLATTACK);
-	bool bDirect = false;
-
-	// clear the target if it has died
-	for (int i = 0; i < MAX_WEAPONS; i++)
-	{
-		bDirect = proj_Direct(asWeaponStats + psDroid->m_weaponList[i].nStat);
-		if (psDroid->psActionTarget[i] && (avoidOverkill ? aiObjectIsProbablyDoomed(psDroid->psActionTarget[i], bDirect) : psDroid->psActionTarget[i]->deathTime))
-		{
-			syncDebugObject(psDroid->psActionTarget[i], '-');
-			setDroidActionTarget(psDroid, nullptr, i);
-			if (i == 0)
-			{
-				if (psDroid->action != DACTION_MOVEFIRE &&
-				    psDroid->action != DACTION_TRANSPORTIN &&
-				    psDroid->action != DACTION_TRANSPORTOUT)
-				{
-					psDroid->action = DACTION_NONE;
-					// if VTOL - return to rearm pad if not patrolling
-					if (isVtolDroid(psDroid))
-					{
-						if ((psDroid->order.type == DORDER_PATROL || psDroid->order.type == DORDER_CIRCLE) && (!vtolEmpty(psDroid) || (psDroid->secondaryOrder & DSS_ALEV_MASK) == DSS_ALEV_NEVER))
-						{
-							// Back to the patrol.
-							actionDroid(psDroid, DACTION_MOVE, psDroid->order.pos.x, psDroid->order.pos.y);
-						}
-						else
-						{
-							moveToRearm(psDroid);
-						}
-					}
-				}
-			}
-		}
-	}
 }
 
 // Update the action state for a droid
@@ -2359,56 +2279,6 @@ void actionDroid(Droid *psDroid, DROID_ACTION action, GameObject *psObj, UDWORD 
 	sAction.y = y;
 	actionDroidBase(psDroid, &sAction);
 }
-
-
-/*send the vtol droid back to the nearest rearming pad - if one otherwise
-return to base*/
-void moveToRearm(Droid *psDroid)
-{
-	CHECK_DROID(psDroid);
-
-	if (!isVtolDroid(psDroid))
-	{
-		return;
-	}
-
-	//if droid is already returning - ignore
-	if (vtolRearming(psDroid))
-	{
-		return;
-	}
-
-	//get the droid to fly back to a ReArming Pad
-	// don't worry about finding a clear one for the minute
-        Structure *psStruct = findNearestReArmPad(psDroid, psDroid->psBaseStruct, false);
-	if (psStruct)
-	{
-		// note a base rearm pad if the vtol doesn't have one
-		if (psDroid->psBaseStruct == nullptr)
-		{
-			setDroidBase(psDroid, psStruct);
-		}
-
-		//return to re-arming pad
-		if (psDroid->order.type == DORDER_NONE)
-		{
-			// no order set - use the rearm order to ensure the unit goes back
-			// to the landing pad
-			orderDroidObj(psDroid, DORDER_REARM, psStruct, ModeImmediate);
-		}
-		else
-		{
-			actionDroid(psDroid, DACTION_MOVETOREARM, psStruct);
-		}
-	}
-	else
-	{
-		//return to base un-armed
-		objTrace(psDroid->id, "Did not find an available rearm pad - RTB instead");
-		orderDroid(psDroid, DORDER_RTB, ModeImmediate);
-	}
-}
-
 
 // whether a tile is suitable for a vtol to land on
 static bool vtolLandingTile(SDWORD x, SDWORD y)

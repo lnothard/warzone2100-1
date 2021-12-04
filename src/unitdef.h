@@ -28,7 +28,7 @@ public:
   int objPosDiffSq(Position otherPos) override;
   int objPosDiffSq(const GameObject& otherObj) override;
 
-  virtual bool aiObjHasRange(const GameObject& targetObj, int weapon_slot) = 0;
+  virtual bool aiUnitHasRange(const GameObject& targetObj, int weapon_slot) = 0;
 };
 
 #endif // WARZONE2100_UNITDEF_H
