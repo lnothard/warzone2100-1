@@ -193,7 +193,7 @@ Vector2i getStatsSize(StatsObject const *pType, uint16_t direction)
 	}
 	else if (StatIsFeature(pType))
 	{
-		return static_cast<FEATURE_STATS const *>(pType)->size();
+		return static_cast<FeatureStats const *>(pType)->size();
 	}
 	return Vector2i(1, 1);
 }
@@ -223,7 +223,7 @@ StructureBounds getStructureBounds(StatsObject const *stats, Vector2i pos, uint1
 	}
 	else if (StatIsFeature(stats))
 	{
-		return getStructureBounds(static_cast<FEATURE_STATS const *>(stats), pos);
+		return getStructureBounds(static_cast<FeatureStats const *>(stats), pos);
 	}
 
 	return StructureBounds(map_coord(pos), Vector2i(1, 1));  // Default to a 1×1 tile.

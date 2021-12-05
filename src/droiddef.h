@@ -220,11 +220,12 @@ public:
   void actionDroid(DROID_ACTION action, UDWORD x, UDWORD y);
   void actionDroid(DROID_ACTION action, GameObject *psObj);
   void actionDroid(DROID_ACTION action, GameObject *psObj, UDWORD x, UDWORD y);
+  bool droidRemove(Droid *pList[MAX_PLAYERS]);
 protected:
   /// UTF-8 name of the droid. This is generated from the droid template
   ///  WARNING: This *can* be changed by the game player after creation & can be translated, do NOT rely on this being the same for everyone!
   char name[MAX_STR_LENGTH];
-  DROID_TYPE      droidType;                      ///< The getType of droid
+  DROID_TYPE      droidType;                      ///< The type of droid
   /** Holds the specifics for the component parts - allows damage
    *  per part to be calculated. Indexed by COMPONENT_TYPE.
    *  Weapons need to be dealt with separately.

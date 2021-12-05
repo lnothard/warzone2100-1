@@ -196,7 +196,7 @@ std::vector<DroidStats *>   apsTemplateList;
 std::list<DroidStats>       localTemplates;
 
 /* Store a list of Feature pointers for features to be placed on the map */
-static FEATURE_STATS	**apsFeatureList;
+static FeatureStats **apsFeatureList;
 
 /* Store a list of component stats pointers for the design screen */
 UDWORD			numComponent;
@@ -885,7 +885,7 @@ bool intInitialise()
 	apsTemplateList.clear();
 
 	/* Create storage for the feature list */
-	apsFeatureList = (FEATURE_STATS **)malloc(sizeof(FEATURE_STATS *) * MAXFEATURES);
+	apsFeatureList = (FeatureStats **)malloc(sizeof(FeatureStats *) * MAXFEATURES);
 
 	/* Create storage for the component list */
 	apsComponentList = (COMPONENT_STATS **)malloc(sizeof(COMPONENT_STATS *) * MAXCOMPONENT);
@@ -1746,7 +1746,7 @@ INT_RETVAL intRunWidgets()
 						Cheated = true;
 						// Notify the other hosts that we've just built ourselves a feature
 						//sendMultiPlayerFeature(result->psStats->subType, result->pos.x, result->pos.y, result->id);
-						sendMultiPlayerFeature(((FEATURE_STATS *)psPositionStats)->id, pos.x, pos.y, generateNewObjectId());
+						sendMultiPlayerFeature(((FeatureStats *)psPositionStats)->id, pos.x, pos.y, generateNewObjectId());
 					}
 					else if (psPositionStats->hasType(STAT_TEMPLATE))
 					{

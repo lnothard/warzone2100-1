@@ -858,7 +858,7 @@ JSValue convStructure(const Structure *psStruct, JSContext *ctx)
 JSValue convFeature(const Feature *psFeature, JSContext *ctx)
 {
 	JSValue value = convObj(psFeature, ctx);
-	const FEATURE_STATS *psStats = psFeature->psStats;
+	const FeatureStats *psStats = psFeature->psStats;
 	QuickJS_DefinePropertyValue(ctx, value, "health", JS_NewUint32(ctx, 100 * psStats->body / MAX(1, psFeature->hitPoints)), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "damageable", JS_NewBool(ctx, psStats->damageable), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "stattype", JS_NewInt32(ctx, psStats->subType), JS_PROP_ENUMERABLE);

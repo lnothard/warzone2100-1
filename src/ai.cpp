@@ -1037,12 +1037,11 @@ static bool updateAttackTarget(GameObject *psAttacker, SDWORD weapon_slot)
 
 
 /* Check if any of our weapons can hit the target... */
-bool checkAnyWeaponsTarget(GameObject *psObject, GameObject *psTarget)
+bool checkAnyWeaponsTarget(Droid *psDroid, GameObject *psTarget)
 {
-  Droid *psDroid = (Droid *) psObject;
 	for (int i = 0; i < psDroid->numWeapons; i++)
 	{
-		if (validTarget(psObject, psTarget, i))
+		if (validTarget(psDroid, psTarget, i))
 		{
 			return true;
 		}

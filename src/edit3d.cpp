@@ -119,8 +119,8 @@ void init3DBuilding(StatsObject *psStats, BUILDCALLBACK CallBack, void *UserData
 	}
 	else if (psStats->hasType(STAT_FEATURE))
 	{
-		sBuildDetails.width = ((FEATURE_STATS *)psStats)->baseWidth;
-		sBuildDetails.height = ((FEATURE_STATS *)psStats)->baseBreadth;
+		sBuildDetails.width = ((FeatureStats *)psStats)->baseWidth;
+		sBuildDetails.height = ((FeatureStats *)psStats)->baseBreadth;
 		sBuildDetails.psStats = psStats;
 	}
 	else /*if (psStats->hasType(STAT_TEMPLATE))*/

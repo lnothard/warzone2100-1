@@ -79,7 +79,7 @@ struct ImdObject
 	}
 	static ImdObject Feature(StatsObject *p)
 	{
-		FEATURE_STATS *fStat = (FEATURE_STATS *)p;
+          FeatureStats *fStat = (FeatureStats *)p;
 		return ImdObject(fStat->psImd, IMDTYPE_FEATURE);
 	}
 

@@ -1945,7 +1945,7 @@ bool wzapi::addDroidToTransporter(WZAPI_PARAMS(game_object_identifier transporte
 wzapi::returned_nullable_ptr<const Feature> wzapi::addFeature(WZAPI_PARAMS(std::string featureName, int x, int y)) MUTLIPLAY_UNSAFE
 {
 	int feature = getFeatureStatFromName(WzString::fromUtf8(featureName));
-	FEATURE_STATS *psStats = &asFeatureStats[feature];
+        FeatureStats *psStats = &asFeatureStats[feature];
 	for (Feature *psFeat = apsFeatureLists[0]; psFeat; psFeat = psFeat->psNext)
 	{
 		SCRIPT_ASSERT(nullptr, context, map_coord(psFeat->position.x) != x || map_coord(psFeat->position.y) != y,

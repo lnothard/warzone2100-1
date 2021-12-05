@@ -28,11 +28,11 @@
 #include "lib/framework/wzconfig.h"
 
 /* The statistics for the features */
-extern FEATURE_STATS	*asFeatureStats;
+extern FeatureStats *asFeatureStats;
 extern UDWORD			numFeatureStats;
 
 //Value is stored for easy access to this feature in destroyDroid()/destroyStruct()
-extern FEATURE_STATS *oilResFeature;
+extern FeatureStats *oilResFeature;
 
 /* Load the feature stats */
 bool loadFeatureStats(WzConfig &ini);
@@ -41,7 +41,7 @@ bool loadFeatureStats(WzConfig &ini);
 void featureStatsShutDown();
 
 /* Create a feature on the map */
-Feature *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave);
+Feature *buildFeature(FeatureStats *psStats, UDWORD x, UDWORD y, bool FromSave);
 
 /* Update routine for features */
 void featureUpdate(Feature *psFeat);
@@ -60,7 +60,7 @@ int32_t featureDamage(Feature *psFeature, unsigned damage, WEAPON_CLASS weaponCl
 void featureInitVars();
 
 StructureBounds getStructureBounds(Feature const *object);
-StructureBounds getStructureBounds(FEATURE_STATS const *stats, Vector2i pos);
+StructureBounds getStructureBounds(FeatureStats const *stats, Vector2i pos);
 
 #define syncDebugFeature(psFeature, ch) _syncDebugFeature(__FUNCTION__, psFeature, ch)
 void _syncDebugFeature(const char *function, Feature const *psFeature, char ch);

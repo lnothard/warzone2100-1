@@ -6535,7 +6535,7 @@ bool loadSaveFeature(char *pFileData, UDWORD filesize)
 	SAVE_FEATURE_V14			*psSaveFeature;
         Feature *pFeature;
 	UDWORD					count, i, statInc;
-	FEATURE_STATS			*psStats = nullptr;
+        FeatureStats *psStats = nullptr;
 	bool					found;
 	UDWORD					sizeOfSaveFeature;
 
@@ -6651,7 +6651,7 @@ static bool loadWzMapFeature(WzMap::Map &wzMap)
 
 	for (auto &feature : *pFeatures)
 	{
-		auto psStats = std::find_if(asFeatureStats, asFeatureStats + numFeatureStats, [&](FEATURE_STATS &stat) { return stat.textId.compare(feature.name.c_str()) == 0; });
+		auto psStats = std::find_if(asFeatureStats, asFeatureStats + numFeatureStats, [&](FeatureStats &stat) { return stat.textId.compare(feature.name.c_str()) == 0; });
 		if (psStats == asFeatureStats + numFeatureStats)
 		{
 			debug(LOG_ERROR, "Feature type \"%s\" unknown", feature.name.c_str());
@@ -6703,7 +6703,7 @@ bool loadSaveFeature2(const char *pFileName)
 		Position pos = ini.vector3i("position");
 		int statInc;
 		bool found = false;
-		FEATURE_STATS *psStats = nullptr;
+                FeatureStats *psStats = nullptr;
 
 		//get the stats for this feature
 		for (statInc = 0; statInc < numFeatureStats; statInc++)

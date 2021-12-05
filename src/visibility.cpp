@@ -911,7 +911,7 @@ void	setUnderTilesVis(GameObject *psObj, UDWORD player)
 	UDWORD		mapX, mapY, width, breadth;
         Feature *psFeature;
         Structure *psStructure;
-	FEATURE_STATS const *psStats;
+        FeatureStats const *psStats;
 	MAPTILE		*psTile;
 
 	if (player >= MAX_PLAYERS)

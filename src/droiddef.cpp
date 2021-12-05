@@ -6139,3 +6139,34 @@ void Droid::actionDroid(DROID_ACTION action, GameObject *psObj, UDWORD x, UDWORD
   sAction.y = y;
   actionDroidBase(&sAction);
 }
+
+/* Remove a droid from the List so doesn't update or get drawn etc
+TAKE CARE with removeDroid() - usually want droidRemove since it deal with grid code*/
+//returns false if the droid wasn't removed - because it died!
+bool Droid::droidRemove(Droid *pList[MAX_PLAYERS])
+{
+  if (!alive())
+  {
+    // droid has already been killed, quit
+    return false;
+  }
+
+  // leave the current group if any - not if its a Transporter droid
+  if (!isTransporter() && psGroup)
+  {
+    psGroup->remove(psDroid);
+    psGroup = nullptr;
+  }
+
+  // reset the baseStruct
+  setDroidBase(psDroid, nullptr);
+
+  removeDroid(psDroid, pList);
+
+  if (owningPlayer == selectedPlayer)
+  {
+    intRefreshScreen();
+  }
+
+  return true;
+}

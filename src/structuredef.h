@@ -39,30 +39,30 @@
 /* Defines for indexing an appropriate IMD object given a buildings purpose. */
 enum class STRUCTURE_TYPE
 {
-  REF_HQ,
-  REF_FACTORY,
-  REF_FACTORY_MODULE,           //draw as factory 2
-  REF_POWER_GEN,
-  REF_POWER_MODULE,
-  REF_RESOURCE_EXTRACTOR,
-  REF_DEFENSE,
-  REF_WALL,
-  REF_WALLCORNER,				//corner wall - no gun
-  REF_GENERIC,
-  REF_RESEARCH,
-  REF_RESEARCH_MODULE,
-  REF_REPAIR_FACILITY,
-  REF_COMMAND_CONTROL,		//control centre for command droids
-  REF_BRIDGE,			//NOT USED, but removing it would change savegames
-  REF_DEMOLISH,			//the demolish structure type - should only be one stat with this type
-  REF_CYBORG_FACTORY,
-  REF_VTOL_FACTORY,
-  REF_LAB,
-  REF_REARM_PAD,
-  REF_MISSILE_SILO,
-  REF_SAT_UPLINK,         //added for updates - AB 8/6/99
-  REF_GATE,
-  REF_LASSAT,
+  HQ,
+  FACTORY,
+  FACTORY_MODULE,           //draw as factory 2
+  POWER_GEN,
+  POWER_MODULE,
+  RESOURCE_EXTRACTOR,
+  DEFENSE,
+  WALL,
+  WALLCORNER,				//corner wall - no gun
+  GENERIC,
+  RESEARCH,
+  RESEARCH_MODULE,
+  REPAIR_FACILITY,
+  COMMAND_CONTROL,		//control centre for command droids
+  BRIDGE,			//NOT USED, but removing it would change savegames
+  DEMOLISH,			//the demolish structure type - should only be one stat with this type
+  CYBORG_FACTORY,
+  VTOL_FACTORY,
+  LAB,
+  REARM_PAD,
+  MISSILE_SILO,
+  SAT_UPLINK,         //added for updates - AB 8/6/99
+  GATE,
+  LASSAT,
   COUNT		//need to keep a count of how many types for IMD loading
 };
 
@@ -88,12 +88,12 @@ typedef UWORD STRUCTSTRENGTH_MODIFIER;
 #define SAS_OPEN_SPEED		(GAME_TICKS_PER_SEC)
 #define SAS_STAY_OPEN_TIME	(GAME_TICKS_PER_SEC * 6)
 
-enum STRUCT_ANIM_STATES
+enum class STRUCT_ANIM_STATES
 {
-  SAS_NORMAL,
-  SAS_OPEN,
-  SAS_OPENING,
-  SAS_CLOSING,
+  NORMAL,
+  OPEN,
+  OPENING,
+  CLOSING,
 };
 
 #define STRUCTURE_CONNECTED 0x0001 ///< This structure must be built side by side with another of the same player
@@ -156,31 +156,31 @@ static inline StructureStats const *castStructureStats(StatsObject const *stats)
   return stats != nullptr && stats->hasType(STAT_STRUCTURE)? dynamic_cast<StructureStats const *>(stats) : nullptr;
 }
 
-enum STRUCT_STATES
+enum class STRUCT_STATES
 {
-  SS_BEING_BUILT,
-  SS_BUILT,
-  SS_BLUEPRINT_VALID,
-  SS_BLUEPRINT_INVALID,
-  SS_BLUEPRINT_PLANNED,
-  SS_BLUEPRINT_PLANNED_BY_ALLY,
+  BEING_BUILT,
+  BUILT,
+  BLUEPRINT_VALID,
+  BLUEPRINT_INVALID,
+  BLUEPRINT_PLANNED,
+  BLUEPRINT_PLANNED_BY_ALLY,
 };
 
-enum StatusPending
+enum class PENDING_STATUS
 {
-  FACTORY_NOTHING_PENDING = 0,
-  FACTORY_START_PENDING,
-  FACTORY_HOLD_PENDING,
-  FACTORY_CANCEL_PENDING
+  NOTHING_PENDING = 0,
+  START_PENDING,
+  HOLD_PENDING,
+  CANCEL_PENDING
 };
 
 struct RESEARCH;
 
-struct RESEARCH_FACILITY
+class ResearchFacility
 {
   RESEARCH *psSubject;              // The subject the structure is working on.
   RESEARCH *psSubjectPending;       // The subject the structure is going to work on when the GAME_RESEARCHSTATUS message is received.
-  StatusPending statusPending;      ///< Pending = not yet synchronised.
+  PENDING_STATUS statusPending;      ///< Pending = not yet synchronised.
   unsigned pendingCount;            ///< Number of messages sent but not yet processed.
   RESEARCH *psBestTopic;            // The topic with the most research points that was last performed
   UDWORD timeStartHold;             /* The time the research facility was put on hold*/
@@ -190,11 +190,12 @@ class DroidStats;
 
 class Factory : public Structure
 {
+private:
   uint8_t productionLoops;          ///< Number of loops to perform. Not synchronised, and only meaningful for selectedPlayer.
   UBYTE loopsPerformed;             /* how many times the loop has been performed*/
   DroidStats *psSubject;        ///< The subject the structure is working on.
   DroidStats *psSubjectPending; ///< The subject the structure is going to working on. (Pending = not yet synchronised.)
-  StatusPending statusPending;      ///< Pending = not yet synchronised.
+  PENDING_STATUS statusPending;      ///< Pending = not yet synchronised.
   unsigned pendingCount;            ///< Number of messages sent but not yet processed.
   UDWORD timeStarted;               /* The time the building started on the subject*/
   int buildPointsRemaining;         ///< Build points required to finish building the droid.
@@ -257,6 +258,7 @@ public:
   Vector2i size() const;
 
   bool aiUnitHasRange(const GameObject& targetObj, int weapon_slot) override;
+
   void addConstructorEffect();
 protected:
   std::unique_ptr<StructureStats> stats;            /* pointer to the structure stats for this type of building */
@@ -282,15 +284,15 @@ protected:
 
 //the three different types of factory (currently) - FACTORY, CYBORG_FACTORY, VTOL_FACTORY
 // added repair facilities as they need an assembly point as well
-enum FLAG_TYPE
+enum class FLAG_TYPE
 {
-  FACTORY_FLAG,
-  CYBORG_FLAG,
-  VTOL_FLAG,
-  REPAIR_FLAG,
+  FACTORY,
+  CYBORG,
+  VTOL,
+  REPAIR,
 //separate the numfactory from numflag
-  NUM_FLAG_TYPES,
-  NUM_FACTORY_TYPES = REPAIR_FLAG,
+  NUM_TYPES,
+  NUM_FACTORY_TYPES = REPAIR,
 };
 
 //this is used for module graphics - factory and vtol factory

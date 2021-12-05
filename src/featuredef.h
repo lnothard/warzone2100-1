@@ -27,49 +27,50 @@
 #include "basedef.h"
 #include "statsdef.h"
 
-enum FEATURE_TYPE
+enum class FEATURE_TYPE
 {
-	FEAT_TANK = 2, // hack to keep enums the same value
-	FEAT_GEN_ARTE,
-	FEAT_OIL_RESOURCE,
-	FEAT_BOULDER,
-	FEAT_VEHICLE,
-	FEAT_BUILDING,
-	FEAT_UNUSED,
-	FEAT_LOS_OBJ,
-	FEAT_OIL_DRUM,
-	FEAT_TREE,
-	FEAT_SKYSCRAPER,
-	FEAT_COUNT
+  TANK,
+  GEN_ARTE,
+  OIL_RESOURCE,
+  BOULDER,
+  VEHICLE,
+  BUILDING,
+  LOS_OBJ,
+  OIL_DRUM,
+  TREE,
+  SKYSCRAPER,
+  COUNT
 };
 
 /* Stats for a feature */
-struct FEATURE_STATS : public StatsObject {
-	FEATURE_STATS(int idx = 0) : StatsObject(idx) {}
+class FeatureStats : public StatsObject {
+public:
+  inline Vector2i size() const { return {baseWidth, baseBreadth}; }
 
-	FEATURE_TYPE    subType = FEAT_COUNT;   ///< type of feature
+  FeatureStats(int idx = 0) : StatsObject(idx) {}
+private:
+  FEATURE_TYPE    subType = FEATURE_TYPE::COUNT;   ///< type of feature
+  iIMDShape      *psImd = nullptr;        ///< Graphic for the feature
+  UWORD           baseWidth = 0;          ///< The width of the base in tiles
+  UWORD           baseBreadth = 0;        ///< The breadth of the base in tiles
 
-	iIMDShape      *psImd = nullptr;        ///< Graphic for the feature
-	UWORD           baseWidth = 0;          ///< The width of the base in tiles
-	UWORD           baseBreadth = 0;        ///< The breadth of the base in tiles
-
-	bool            tileDraw = false;       ///< Whether the tile needs to be drawn
-	bool            allowLOS = false;       ///< Whether the feature allows the LOS. true = can see through the feature
-	bool            visibleAtStart = false; ///< Whether the feature is visible at the start of the mission
-	bool            damageable = false;     ///< Whether the feature can be destroyed
-	UDWORD		body = 0;               ///< Number of body points
-	UDWORD          armourValue = 0;        ///< Feature armour
-
-	inline Vector2i size() const { return {baseWidth, baseBreadth}; }
+  bool            tileDraw = false;       ///< Whether the tile needs to be drawn
+  bool            allowLOS = false;       ///< Whether the feature allows the LOS. true = can see through the feature
+  bool            visibleAtStart = false; ///< Whether the feature is visible at the start of the mission
+  bool            damageable = false;     ///< Whether the feature can be destroyed
+  UDWORD		body = 0;               ///< Number of body points
+  UDWORD          armourValue = 0;        ///< Feature armour
 };
 
 class Feature : public GameObject {
-  Feature(uint32_t id, FEATURE_STATS const *psStats);
-	~Feature();
+public:
+  Feature(uint32_t id, FeatureStats const *psStats);
+  ~Feature();
 
-	FEATURE_STATS const *psStats;
-
-	inline Vector2i size() const { return psStats->size(); }
+  Vector2i size() const { return psStats->size(); }
+  bool destroyFeature(unsigned impactTime);
+private:
+  FeatureStats const *psStats;
 };
 
 #endif // __INCLUDED_FEATUREDEF_H__
