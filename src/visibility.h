@@ -69,43 +69,18 @@ void visRemoveVisibility(GameObject *psObj);
 // fast test for whether obj2 is in range of obj1
 static inline bool visObjInRange(GameObject *psObj1, GameObject *psObj2, SDWORD range)
 {
-	int32_t xdiff = psObj1->position.x - psObj2->position.x, ydiff = psObj1->position.y - psObj2->position.y;
+	int32_t xdiff = psObj1->getPosition.x - psObj2->getPosition.x, ydiff = psObj1->getPosition.y - psObj2->getPosition.y;
 
 	return abs(xdiff) <= range && abs(ydiff) <= range && xdiff * xdiff + ydiff * ydiff <= range;
 }
 
-// If we have ECM, use this for range instead. Otherwise, the sensor's range will be used for
-// jamming range, which we do not want. Rather limit ECM unit sensor range to jammer range.
-static inline int objSensorRange(const GameObject *psObj)
-{
-	if (psObj->type == OBJ_DROID)
-	{
-		const int ecmrange = asECMStats[((const Droid *)psObj)->asBits[COMP_ECM]].upgrade[psObj->owningPlayer].range;
-		if (ecmrange > 0)
-		{
-			return ecmrange;
-		}
-		return asSensorStats[((const Droid *)psObj)->asBits[COMP_SENSOR]].upgrade[psObj->owningPlayer].range;
-	}
-	else if (psObj->type == OBJ_STRUCTURE)
-	{
-		const int ecmrange = ((const Structure *)psObj)->stats->pECM->upgrade[psObj->owningPlayer].range;
-		if (ecmrange)
-		{
-			return ecmrange;
-		}
-		return ((const Structure *)psObj)->stats->pSensor->upgrade[psObj->owningPlayer].range;
-	}
-	return 0;
-}
-
 static inline int objJammerPower(const GameObject *psObj)
 {
-	if (psObj->type == OBJ_DROID)
+	if (psObj->getType == OBJ_DROID)
 	{
 		return asECMStats[((const Droid *)psObj)->asBits[COMP_ECM]].upgrade[psObj->owningPlayer].range;
 	}
-	else if (psObj->type == OBJ_STRUCTURE)
+	else if (psObj->getType == OBJ_STRUCTURE)
 	{
 		return ((const Structure *)psObj)->stats->pECM->upgrade[psObj->owningPlayer].range;
 	}

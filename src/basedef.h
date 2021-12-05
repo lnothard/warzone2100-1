@@ -18,7 +18,7 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 /** \file
- *  Definitions for the base object type.
+ *  Definitions for the base object getType.
  */
 
 #ifndef __INCLUDED_BASEDEF_H__
@@ -74,8 +74,8 @@ enum class OBJECT_FLAG
 
 class GameObject {
 protected:
-const OBJECT_TYPE m_type;                         ///< The type of object
-  Position m_position;                            ///< Object's three-dimensional coordinate
+  const OBJECT_TYPE m_type;                         ///< The getType of object
+  Position position;                            ///< Object's three-dimensional coordinate
   Rotation m_rotation;
   uint32_t m_time;
   uint32_t id;                                    ///< ID number of the object
@@ -98,8 +98,8 @@ public:
   GameObject(OBJECT_TYPE type, uint32_t id, unsigned player);
   virtual ~GameObject();
 
-  Position position() const;
-  OBJECT_TYPE type() const;
+  Position getPosition() const;
+  OBJECT_TYPE getType() const;
   constexpr bool alive() const;
   Spacetime spacetime();
 

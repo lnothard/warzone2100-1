@@ -124,7 +124,7 @@ protected:
 
   unsigned minLimit;		///< lowest value user can set limit to (currently unused)
   unsigned maxLimit;		///< highest value user can set limit to, LOTS_OF = no limit
-  unsigned curCount[MAX_PLAYERS];	///< current number of instances of this type
+  unsigned curCount[MAX_PLAYERS];	///< current number of instances of this getType
 
   struct
   {

@@ -93,10 +93,6 @@ static void groupConsoleInformOfRemoval();
 static void droidUpdateDroidSelfRepair(Droid *psRepairDroid);
 static UDWORD calcDroidBaseBody(Droid *psDroid);
 
-
-
-
-
 // initialise droid module
 bool droidInit()
 {
@@ -125,9 +121,9 @@ int droidReloadBar(const GameObject *psObj, const Weapon *psWeap, int weapon_slo
 	bSalvo = (psStats->upgrade[psObj->owningPlayer].numRounds > 1);
 	if ((bSalvo && psStats->upgrade[psObj->owningPlayer].reloadTime > GAME_TICKS_PER_SEC)
 		|| psStats->upgrade[psObj->owningPlayer].firePause > GAME_TICKS_PER_SEC
-		|| (psObj->type == OBJ_DROID && isVtolDroid((const Droid *)psObj)))
+		|| (psObj->getType == OBJ_DROID && isVtolDroid((const Droid *)psObj)))
 	{
-		if (psObj->type == OBJ_DROID && isVtolDroid((const Droid *)psObj))
+		if (psObj->getType == OBJ_DROID && isVtolDroid((const Droid *)psObj))
 		{
 			//deal with VTOLs
 			firingStage = getNumAttackRuns((const Droid *)psObj, weapon_slot) - ((const Droid *)psObj)->m_weaponList[weapon_slot].usedAmmo;
@@ -165,7 +161,7 @@ Droid::Droid(uint32_t id, unsigned player)
 {
 	memset(name, 0, sizeof(name));
 	memset(asBits, 0, sizeof(asBits));
-        position = Vector3i(0, 0, 0);
+        getPosition = Vector3i(0, 0, 0);
         rotation = Vector3i(0, 0, 0);
 	order.type = DORDER_NONE;
 	order.pos = Vector2i(0, 0);
@@ -261,14 +257,16 @@ static void removeDroidFX(Droid *psDel, unsigned impactTime)
 	if (psDel->droidType == DROID_PERSON)
 	{
 		// The barbarian has been run over ...
-		audio_PlayStaticTrack(psDel->position.x, psDel->position.y, ID_SOUND_BARB_SQUISH);
+                audio_PlayStaticTrack(psDel->getPosition.x,
+                                      psDel->getPosition.y,
+                                      ID_SOUND_BARB_SQUISH);
 	}
 	else
 	{
 		destroyFXDroid(psDel, impactTime);
-		pos.x = psDel->position.x;
-		pos.z = psDel->position.y;
-		pos.y = psDel->position.z;
+		pos.x = psDel->getPosition.x;
+		pos.z = psDel->getPosition.y;
+		pos.y = psDel->getPosition.z;
 		if (psDel->droidType == DROID_SUPERTRANSPORTER)
 		{
 			addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_LARGE, false, nullptr, 0, impactTime);
@@ -277,7 +275,8 @@ static void removeDroidFX(Droid *psDel, unsigned impactTime)
 		{
 			addEffect(&pos, EFFECT_DESTRUCTION, DESTRUCTION_TYPE_DROID, false, nullptr, 0, impactTime);
 		}
-		audio_PlayStaticTrack(psDel->position.x, psDel->position.y, ID_SOUND_EXPLOSION);
+                audio_PlayStaticTrack(psDel->getPosition.x,
+                                      psDel->getPosition.y, ID_SOUND_EXPLOSION);
 	}
 }
 
@@ -290,8 +289,8 @@ bool destroyDroid(Droid *psDel, unsigned impactTime)
 		UDWORD width, breadth, mapX, mapY;
 		MAPTILE	*psTile;
 
-		mapX = map_coord(psDel->position.x);
-		mapY = map_coord(psDel->position.y);
+		mapX = map_coord(psDel->getPosition.x);
+		mapY = map_coord(psDel->getPosition.y);
 		for (width = mapX - 1; width <= mapX + 1; width++)
 		{
 			for (breadth = mapY - 1; breadth <= mapY + 1; breadth++)
@@ -356,7 +355,7 @@ static bool droidNextToStruct(Droid *psDroid, Structure *psStruct)
 {
 	CHECK_DROID(psDroid);
 
-	auto pos = map_coord(psDroid->position);
+	auto pos = map_coord(psDroid->getPosition);
 	int minX = std::max(pos.x - 1, 0);
 	int minY = std::max(pos.y - 1, 0);
 	int maxX = std::min(pos.x + 1, mapWidth);
@@ -459,7 +458,8 @@ static bool droidUpdateDroidRepairBase(Droid *psRepairDroid,
 	/* add plasma repair effect whilst being repaired */
 	if ((ONEINFIVE) && (psDroidToRepair->visibleForLocalDisplay()))
 	{
-		Vector3i iVecEffect = (psDroidToRepair->position + Vector3i(DROID_REPAIR_SPREAD, DROID_REPAIR_SPREAD, rand() % 8)).xzy();
+		Vector3i iVecEffect = (psDroidToRepair->getPosition +
+               Vector3i(DROID_REPAIR_SPREAD, DROID_REPAIR_SPREAD, rand() % 8)).xzy();
 		effectGiveAuxVar(90 + rand() % 20);
 		addEffect(&iVecEffect, EFFECT_EXPLOSION, EXPLOSION_TYPE_LASER, false, nullptr, 0, gameTime - deltaGameTime + 1 + rand() % deltaGameTime);
 		droidAddWeldSound(iVecEffect);
@@ -685,14 +685,15 @@ Droid *reallyBuildDroid(const DroidStats *pTemplate, Position pos, UDWORD player
 
 	// Set the droids type
 	psDroid->droidType = droidTemplateType(pTemplate);  // Is set again later to the same thing, in droidSetBits.
-	psDroid->position = pos;
+	psDroid->getPosition = pos;
 	psDroid->rotation = rot;
 
 	//don't worry if not on homebase cos not being drawn yet
 	if (!onMission)
 	{
 		//set droid height
-		psDroid->position.z = map_Height(psDroid->position.x, psDroid->position.y);
+		psDroid->getPosition.z =
+                    map_Height(psDroid->getPosition.x, psDroid->getPosition.y);
 	}
 
 	if (isTransporter(psDroid) || psDroid->droidType == DROID_COMMAND)
@@ -760,7 +761,7 @@ Droid *reallyBuildDroid(const DroidStats *pTemplate, Position pos, UDWORD player
 		}
 
 		//set droid height to be above the terrain
-		psDroid->position.z += TRANSPORTER_HOVER_HEIGHT;
+		psDroid->getPosition.z += TRANSPORTER_HOVER_HEIGHT;
 
 		/* reset halt secondary order from guard to hold */
 		secondarySetState(psDroid, DSO_HALTTYPE, DSS_HALT_HOLD);
@@ -772,10 +773,10 @@ Droid *reallyBuildDroid(const DroidStats *pTemplate, Position pos, UDWORD player
 	}
 
 	// Avoid droid appearing to jump or turn on spawn.
-	psDroid->prevSpacetime.m_position = psDroid->position;
+	psDroid->prevSpacetime.m_position = psDroid->getPosition;
 	psDroid->prevSpacetime.m_rotation = psDroid->rotation;
 
-	debug(LOG_LIFE, "created droid for player %d, droid = %p, id=%d (%s): position: x(%d)y(%d)z(%d)", player, static_cast<void *>(psDroid), (int)psDroid->id, psDroid->name, psDroid->position.x, psDroid->position.y, psDroid->position.z);
+	debug(LOG_LIFE, "created droid for player %d, droid = %p, id=%d (%s): getPosition: x(%d)y(%d)z(%d)", player, static_cast<void *>(psDroid), (int)psDroid->id, psDroid->name, psDroid->getPosition.x, psDroid->getPosition.y, psDroid->getPosition.z);
 
 	return psDroid;
 }
@@ -928,7 +929,9 @@ bool activateGroupAndMove(UDWORD playerNumber, UDWORD groupNumber)
 			else
 			{
 				/* Centre display on him if warcam isn't active */
-				setViewPos(map_coord(psCentreDroid->position.x), map_coord(psCentreDroid->position.y), true);
+				setViewPos(
+                                    map_coord(psCentreDroid->getPosition.x),
+                                    map_coord(psCentreDroid->getPosition.y), true);
 			}
 		}
 	}
@@ -1070,7 +1073,8 @@ bool calcDroidMuzzleBaseLocation(const Droid *psDroid, Vector3i *muzzle, int wea
 
 		Affine3F af;
 
-		af.Trans(psDroid->position.x, -psDroid->position.z, psDroid->position.y);
+                af.Trans(psDroid->getPosition.x, -psDroid->getPosition.z,
+                         psDroid->getPosition.y);
 
 		//matrix = the center of droid
 		af.RotY(psDroid->rotation.direction);
@@ -1084,7 +1088,8 @@ bool calcDroidMuzzleBaseLocation(const Droid *psDroid, Vector3i *muzzle, int wea
 	}
 	else
 	{
-		*muzzle = psDroid->position + Vector3i(0, 0, psDroid->displayData.imd->max.y);
+		*muzzle = psDroid->getPosition +
+                    Vector3i(0, 0, psDroid->displayData.imd->max.y);
 	}
 
 	CHECK_DROID(psDroid);
@@ -1116,7 +1121,8 @@ bool calcDroidMuzzleLocation(const Droid *psDroid, Vector3i *muzzle, int weapon_
 
 		Affine3F af;
 
-		af.Trans(psDroid->position.x, -psDroid->position.z, psDroid->position.y);
+                af.Trans(psDroid->getPosition.x, -psDroid->getPosition.z,
+                         psDroid->getPosition.y);
 
 		//matrix = the center of droid
 		af.RotY(psDroid->rotation.direction);
@@ -1165,7 +1171,8 @@ bool calcDroidMuzzleLocation(const Droid *psDroid, Vector3i *muzzle, int weapon_
 	}
 	else
 	{
-		*muzzle = psDroid->position + Vector3i(0, 0, psDroid->displayData.imd->max.y);
+		*muzzle = psDroid->getPosition +
+                    Vector3i(0, 0, psDroid->displayData.imd->max.y);
 	}
 
 	CHECK_DROID(psDroid);
@@ -1244,8 +1251,9 @@ bool noDroid(UDWORD x, UDWORD y)
 		const Droid *psDroid;
 		for (psDroid = allDroidLists[i]; psDroid; psDroid = psDroid->psNext)
 		{
-			if (map_coord(psDroid->position.x) == x
-				&& map_coord(psDroid->position.y) == y)
+			if (map_coord(psDroid->getPosition.x) == x
+				&&
+                      map_coord(psDroid->getPosition.y) == y)
 			{
 				return false;
 			}
@@ -1266,8 +1274,9 @@ static bool oneDroidMax(UDWORD x, UDWORD y)
 	{
 		for (pD = allDroidLists[i]; pD ; pD = pD->psNext)
 		{
-			if (map_coord(pD->position.x) == x
-				&& map_coord(pD->position.y) == y)
+			if (map_coord(pD->getPosition.x) == x
+				&&
+                      map_coord(pD->getPosition.y) == y)
 			{
 				if (bFound)
 				{
@@ -1365,7 +1374,10 @@ static bool ThreatInRange(SDWORD player, SDWORD range, SDWORD rangeX, SDWORD ran
 					case REF_REARM_PAD:
 
 						if (range < 0
-							|| world_coord(static_cast<int32_t>(hypotf(tx - map_coord(psStruct->position.x), ty - map_coord(psStruct->position
+							|| world_coord(static_cast<int32_t>(hypotf(tx - map_coord(
+                                                           psStruct->getPosition
+                                                               .x), ty - map_coord(
+                                                           psStruct->getPosition
                                                                .y)))) < range)	//enemy in range
 						{
 							return true;
@@ -1394,7 +1406,8 @@ static bool ThreatInRange(SDWORD player, SDWORD range, SDWORD rangeX, SDWORD ran
 				}
 
 				if (range < 0
-					|| world_coord(static_cast<int32_t>(hypotf(tx - map_coord(psDroid->position.x), ty - map_coord(psDroid->position.y)))) < range)	//enemy in range
+					|| world_coord(static_cast<int32_t>(hypotf(tx - map_coord(psDroid->getPosition.x), ty - map_coord(
+                                                 psDroid->getPosition.y)))) < range)	//enemy in range
 				{
 					return true;
 				}
@@ -1590,35 +1603,6 @@ UBYTE checkCommandExist(UBYTE player)
 	return quantity;
 }
 
-static inline bool isTransporter(DROID_TYPE type)
-{
-	return type == DROID_TRANSPORTER || type == DROID_SUPERTRANSPORTER;
-}
-
-bool isTransporter(Droid const *psDroid)
-{
-	return isTransporter(psDroid->droidType);
-}
-
-bool isTransporter(DroidStats const *psTemplate)
-{
-	return isTransporter(psTemplate->droidType);
-}
-
-//access functions for vtols
-bool isVtolDroid(const Droid *psDroid)
-{
-	return asPropulsionStats[psDroid->asBits[COMP_PROPULSION]].propulsionType == PROPULSION_TYPE_LIFT
-		   && !isTransporter(psDroid);
-}
-
-/* returns true if the droid has lift propulsion and is moving */
-bool isFlying(const Droid *psDroid)
-{
-	return (asPropulsionStats + psDroid->asBits[COMP_PROPULSION])->propulsionType == PROPULSION_TYPE_LIFT
-		   && (psDroid->sMove.Status != MOVEINACTIVE || isTransporter(psDroid));
-}
-
 // true if a vtol is waiting to be rearmed by a particular rearm pad
 bool vtolReadyToRearm(Droid *psDroid, Structure *psStruct)
 {
@@ -1634,7 +1618,11 @@ bool vtolReadyToRearm(Droid *psDroid, Structure *psStruct)
 	if (psRearmPad && psRearmPad != psStruct && !vtolOnRearmPad(psRearmPad, psDroid))
 	{
 		// target rearm pad is clear - let it go there
-		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we already have another available at %d,%d", psStruct->position.x / TILE_UNITS, psStruct->position.y / TILE_UNITS, psRearmPad->position.x / TILE_UNITS, psRearmPad->position.y / TILE_UNITS);
+		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we already have another available at %d,%d",
+                         psStruct->getPosition.x / TILE_UNITS,
+                         psStruct->getPosition.y / TILE_UNITS,
+                         psRearmPad->getPosition.x / TILE_UNITS,
+                         psRearmPad->getPosition.y / TILE_UNITS);
 		return false;
 	}
 
@@ -1642,7 +1630,9 @@ bool vtolReadyToRearm(Droid *psDroid, Structure *psStruct)
 	{
 		// there is a vtol on the pad and this vtol is already rearmed
 		// don't bother shifting the other vtol off
-		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we're rearmed and pad is busy", psStruct->position.x / TILE_UNITS, psStruct->position.y / TILE_UNITS);
+		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we're rearmed and pad is busy",
+                         psStruct->getPosition.x / TILE_UNITS,
+                         psStruct->getPosition.y / TILE_UNITS);
 		return false;
 	}
 
@@ -1650,7 +1640,11 @@ bool vtolReadyToRearm(Droid *psDroid, Structure *psStruct)
 	if (psTarget && psTarget->pFunctionality && psTarget->pFunctionality->rearmPad.psObj == psDroid)
 	{
 		// vtol is rearming at a different base, leave it alone
-		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we already are snatched by %d,%d", psStruct->position.x / TILE_UNITS, psStruct->position.y / TILE_UNITS, psTarget->position.x / TILE_UNITS, psTarget->position.y / TILE_UNITS);
+		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we already are snatched by %d,%d",
+                         psStruct->getPosition.x / TILE_UNITS,
+                         psStruct->getPosition.y / TILE_UNITS,
+                         psTarget->getPosition.x / TILE_UNITS,
+                         psTarget->getPosition.y / TILE_UNITS);
 		return false;
 	}
 
@@ -1661,7 +1655,8 @@ bool vtolReadyToRearm(Droid *psDroid, Structure *psStruct)
 void assignVTOLPad(Droid *psNewDroid, Structure *psReArmPad)
 {
 	ASSERT_OR_RETURN(, isVtolDroid(psNewDroid), "%s is not a VTOL droid", objInfo(psNewDroid));
-	ASSERT_OR_RETURN(,  psReArmPad->type == OBJ_STRUCTURE && psReArmPad->stats->type == REF_REARM_PAD,
+	ASSERT_OR_RETURN(,
+                         psReArmPad->getType == OBJ_STRUCTURE && psReArmPad->stats->type == REF_REARM_PAD,
 					 "%s cannot rearm", objInfo(psReArmPad));
 
 	setDroidBase(psNewDroid, psReArmPad);
@@ -1682,8 +1677,8 @@ bool droidSensorDroidWeapon(const GameObject *psObj, const Droid *psDroid)
 	}
 
 	//first check if the object is a droid or a structure
-	if ((psObj->type != OBJ_DROID) &&
-		(psObj->type != OBJ_STRUCTURE))
+	if ((psObj->getType != OBJ_DROID) &&
+		(psObj->getType != OBJ_STRUCTURE))
 	{
 		return false;
 	}
@@ -1693,7 +1688,7 @@ bool droidSensorDroidWeapon(const GameObject *psObj, const Droid *psDroid)
 		return false;
 	}
 	//check obj is a sensor droid/structure
-	switch (psObj->type)
+	switch (psObj->getType)
 	{
 	case OBJ_DROID:
 		if (((const Droid *)psObj)->droidType != DROID_SENSOR &&
@@ -1727,7 +1722,7 @@ bool droidSensorDroidWeapon(const GameObject *psObj, const Droid *psDroid)
 	//finally check the right droid/sensor combination
 	// check vtol droid with commander
 	if ((isVtolDroid(psDroid) || !proj_Direct(asWeaponStats + psDroid->m_weaponList[0].nStat)) &&
-		psObj->type == OBJ_DROID && ((const Droid *)psObj)->droidType == DROID_COMMAND)
+            psObj->getType == OBJ_DROID && ((const Droid *)psObj)->droidType == DROID_COMMAND)
 	{
 		return true;
 	}
@@ -1797,7 +1792,8 @@ Droid *giftSingleDroid(Droid *psD, UDWORD to, bool electronic)
 		adjustDroidCount(psD, -1);
 		vanishDroid(psD);
 		// create a new droid
-		psNewDroid = reallyBuildDroid(&sTemplate, Position(psD->position.x, psD->position.y, 0), to, false, psD->rotation);
+		psNewDroid = reallyBuildDroid(&sTemplate,
+                    Position(psD->getPosition.x, psD->getPosition.y, 0), to, false, psD->rotation);
 		ASSERT_OR_RETURN(nullptr, psNewDroid, "Unable to build unit");
 
 		addDroid(psNewDroid, allDroidLists);
@@ -1999,7 +1995,7 @@ bool droidAudioTrackStopped(void *psObj)
 		return false;
 	}
 
-	if (psDroid->type != OBJ_DROID || psDroid->deathTime)
+	if (psDroid->getType != OBJ_DROID || psDroid->deathTime)
 	{
 		return false;
 	}
@@ -2024,7 +2020,7 @@ void checkDroid(const Droid *droid, const char *const location, const char *func
 	}
 
 	ASSERT_HELPER(droid != nullptr, location, function, "CHECK_DROID: NULL pointer");
-	ASSERT_HELPER(droid->type == OBJ_DROID, location, function, "CHECK_DROID: Not droid (type %d)", (int)droid->type);
+	ASSERT_HELPER(droid->getType == OBJ_DROID, location, function, "CHECK_DROID: Not droid (getType %d)", (int)droid->getType);
 	ASSERT_HELPER(droid->numWeapons <= MAX_WEAPONS, location, function, "CHECK_DROID: Bad number of droid weapons %d", (int)droid->numWeapons);
 	ASSERT_HELPER((unsigned)droid->listSize <= droid->asOrderList.size() && (unsigned)droid->listPendingBegin <= droid->asOrderList.size(), location, function, "CHECK_DROID: Bad number of droid orders %d %d %d", (int)droid->listSize, (int)droid->listPendingBegin, (int)droid->asOrderList.size());
 	ASSERT_HELPER(droid->owningPlayer < MAX_PLAYERS, location, function, "CHECK_DROID: Bad droid owner %d", (int)droid->owningPlayer);
@@ -2041,9 +2037,10 @@ int droidSqDist(Droid *psDroid, GameObject *psObj)
 {
 	PROPULSION_STATS *psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
 
-	if (!fpathCheck(psDroid->position, psObj->position, psPropStats->propulsionType))
+	if (!fpathCheck(psDroid->getPosition, psObj->getPosition,
+                        psPropStats->propulsionType))
 	{
 		return -1;
 	}
-	return objPosDiffSq(psDroid->position, psObj->position);
+	return objPosDiffSq(psDroid->getPosition, psObj->getPosition);
 }

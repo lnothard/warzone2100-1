@@ -9,12 +9,12 @@ Spacetime::Spacetime(Position position, Rotation rotation, uint32_t time)
 {
 }
 
-Position GameObject::position() const
+Position GameObject::getPosition() const
 {
-  return m_position;
+  return position;
 }
 
-OBJECT_TYPE GameObject::type() const
+OBJECT_TYPE GameObject::getType() const
 {
   return m_type;
 }
@@ -27,5 +27,5 @@ constexpr bool GameObject::alive() const
 
 Spacetime GameObject::spacetime()
 {
-  return { m_position, m_rotation, m_time };
+  return {position, m_rotation, m_time };
 }

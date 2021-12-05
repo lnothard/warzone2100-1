@@ -231,8 +231,8 @@ SPOTTER::~SPOTTER()
 static inline void visMarkTile(const GameObject *psObj, int mapX, int mapY, MAPTILE *psTile, std::vector<TILEPOS> &watchedTiles)
 {
 	const int rayPlayer = psObj->owningPlayer;
-	const int xdiff = map_coord(psObj->position.x) - mapX;
-	const int ydiff = map_coord(psObj->position.y) - mapY;
+	const int xdiff = map_coord(psObj->getPosition.x) - mapX;
+	const int ydiff = map_coord(psObj->getPosition.y) - mapY;
 	const int distSq = xdiff * xdiff + ydiff * ydiff;
 	const bool inRange = (distSq < 16);
 	uint8_t *visionType = inRange ? psTile->watchers : psTile->sensors;
@@ -255,9 +255,10 @@ static inline void visMarkTile(const GameObject *psObj, int mapX, int mapY, MAPT
 /* The terrain revealing ray callback */
 static void doWaveTerrain(GameObject *psObj)
 {
-	const int sx = psObj->position.x;
-	const int sy = psObj->position.y;
-	const int sz = psObj->position.z + MAX(MIN_VIS_HEIGHT, psObj->displayData.imd->max.y);
+	const int sx = psObj->getPosition.x;
+	const int sy = psObj->getPosition.y;
+	const int sz = psObj->getPosition.z +
+                       MAX(MIN_VIS_HEIGHT, psObj->displayData.imd->max.y);
 	const unsigned radius = objSensorRange(psObj);
 	const int rayPlayer = psObj->owningPlayer;
 	size_t size;
@@ -395,7 +396,7 @@ void visRemoveVisibility(GameObject *psObj)
 			// FIXME: the mapTile might have been swapped out, see swapMissionPointers()
 			MAPTILE *psTile = mapTile(pos.x, pos.y);
 
-			ASSERT(pos.type < 2, "Invalid visibility type %d", (int)pos.type);
+			ASSERT(pos.type < 2, "Invalid visibility getType %d", (int)pos.type);
 			uint8_t *visionType = (pos.type == 0) ? psTile->sensors : psTile->watchers;
 			if (visionType[psObj->owningPlayer] == 0 && game.type == LEVEL_TYPE::CAMPAIGN)	// hack
 			{
@@ -429,12 +430,12 @@ void visRemoveVisibilityOffWorld(GameObject *psObj)
 /* Check which tiles can be seen by an object */
 void visTilesUpdate(GameObject *psObj)
 {
-	ASSERT(psObj->type != OBJ_FEATURE, "visTilesUpdate: visibility updates are not for features!");
+	ASSERT(psObj->getType != OBJ_FEATURE, "visTilesUpdate: visibility updates are not for features!");
 
 	// Remove previous map visibility provided by object
 	visRemoveVisibility(psObj);
 
-	if (psObj->type == OBJ_STRUCTURE)
+	if (psObj->getType == OBJ_STRUCTURE)
 	{
           Structure *psStruct = (Structure *)psObj;
 		if (psStruct->status != SS_BUILT ||
@@ -487,7 +488,7 @@ int visibleObject(const GameObject *psViewer, const GameObject *psTarget, bool w
 
 	int range = objSensorRange(psViewer);
 
-	if (!worldOnMap(psViewer->position.x, psViewer->position.y) || !worldOnMap(psTarget->position.x, psTarget->position.y))
+	if (!worldOnMap(psViewer->getPosition.x, psViewer->getPosition.y) || !worldOnMap(psTarget->getPosition.x, psTarget->getPosition.y))
 	{
 		//Most likely a VTOL or transporter
 		debug(LOG_WARNING, "Trying to view something off map!");
@@ -495,7 +496,7 @@ int visibleObject(const GameObject *psViewer, const GameObject *psTarget, bool w
 	}
 
 	/* Get the sensor range */
-	switch (psViewer->type)
+	switch (psViewer->getType)
 	{
 	case OBJ_DROID:
 		{
@@ -525,7 +526,7 @@ int visibleObject(const GameObject *psViewer, const GameObject *psTarget, bool w
 				return 0;
 			}
 
-			if (psTarget->type == OBJ_DROID && isVtolDroid((const Droid *)psTarget)
+			if (psTarget->getType == OBJ_DROID && isVtolDroid((const Droid *)psTarget)
 			    && asWeaponStats[psStruct->m_weaponList[0].nStat].surfaceToAir == SHOOT_IN_AIR)
 			{
 				range = 3 * range / 2;	// increase vision range of AA vs VTOL
@@ -546,18 +547,19 @@ int visibleObject(const GameObject *psViewer, const GameObject *psTarget, bool w
 	}
 
 	/* First see if the target is in sensor range */
-	const int dist = iHypot((psTarget->position - psViewer->position).xy());
+	const int dist = iHypot((psTarget->getPosition - psViewer->getPosition).xy());
 	if (dist == 0)
 	{
 		return UBYTE_MAX;	// Should never be on top of each other, but ...
 	}
 
-	const MAPTILE *psTile = mapTile(map_coord(psTarget->position.x), map_coord(psTarget->position.y));
+	const MAPTILE *psTile = mapTile(map_coord(psTarget->getPosition.x),
+                                        map_coord(psTarget->getPosition.y));
 	const bool jammed = psTile->jammerBits & ~alliancebits[psViewer->owningPlayer];
 
 	// Special rule for VTOLs, as they are not affected by ECM
-	if (((psTarget->type == OBJ_DROID && isVtolDroid((const Droid *)psTarget))
-	     || (psViewer->type == OBJ_DROID && isVtolDroid((const Droid *)psViewer)))
+	if (((psTarget->getType == OBJ_DROID && isVtolDroid((const Droid *)psTarget))
+	     || (psViewer->getType == OBJ_DROID && isVtolDroid((const Droid *)psViewer)))
 	    && dist < range)
 	{
 		return UBYTE_MAX;
@@ -567,8 +569,9 @@ int visibleObject(const GameObject *psViewer, const GameObject *psTarget, bool w
 	VisibleObjectHelp_t help = {
 		true,
 		wallsBlock,
-		psViewer->position.z + map_Height(psViewer->position.x, psViewer->position.y),
-		map_coord(psTarget->position.xy()),
+            psViewer->getPosition.z +
+                map_Height(psViewer->getPosition.x, psViewer->getPosition.y),
+		map_coord(psTarget->getPosition.xy()),
 		0,
 		0,
 		-UBYTE_MAX * GRAD_MUL * ELEVATION_SCALE,
@@ -577,7 +580,7 @@ int visibleObject(const GameObject *psViewer, const GameObject *psTarget, bool w
 	};
 
 	// Cast a ray from the viewer to the target
-	rayCast(psViewer->position.xy(), psTarget->position.xy(), rayLOSCallback, &help);
+	rayCast(psViewer->getPosition.xy(), psTarget->getPosition.xy(), rayLOSCallback, &help);
 
 	if (gWall != nullptr && gNumWalls != nullptr) // Out globals are set
 	{
@@ -637,7 +640,7 @@ Structure *visGetBlockingWall(const GameObject *psViewer, const GameObject *psTa
 
 			for (psWall = apsStructLists[player]; psWall; psWall = psWall->psNext)
 			{
-				if (map_coord(psWall->position) == tile)
+				if (map_coord(psWall->getPosition) == tile)
 				{
 					return psWall;
 				}
@@ -687,7 +690,7 @@ static void setSeenByInstantly(GameObject *psObj, unsigned viewer, int val /*= U
 // Calculate which objects we should know about based on alliances and satellite view.
 static void processVisibilitySelf(GameObject *psObj)
 {
-	if (psObj->type != OBJ_FEATURE && objSensorRange(psObj) > 0)
+	if (psObj->getType != OBJ_FEATURE && objSensorRange(psObj) > 0)
 	{
 		// one can trivially see oneself
 		setSeenBy(psObj, psObj->owningPlayer, UBYTE_MAX);
@@ -727,7 +730,7 @@ static void processVisibilitySelf(GameObject *psObj)
 // Calculate which objects we can see. Better to call after processVisibilitySelf, since that check is cheaper.
 static void processVisibilityVision(GameObject *psViewer)
 {
-	if (psViewer->type == OBJ_FEATURE)
+	if (psViewer->getType == OBJ_FEATURE)
 	{
 		return;
 	}
@@ -735,7 +738,9 @@ static void processVisibilityVision(GameObject *psViewer)
 	// get all the objects from the grid the droid is in
 	// Will give inconsistent results if hasSharedVision is not an equivalence relation.
 	static GridList gridList;  // static to avoid allocations.
-	gridList = gridStartIterateUnseen(psViewer->position.x, psViewer->position.y, objSensorRange(psViewer), psViewer->owningPlayer);
+	gridList = gridStartIterateUnseen(
+            psViewer->getPosition.x, psViewer->getPosition.y,
+            objSensorRange(psViewer), psViewer->owningPlayer);
 	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
 	{
           GameObject *psObj = *gi;
@@ -772,7 +777,7 @@ static void processVisibilityLevel(GameObject *psObj, bool& addedMessage)
 		}
 
 		// Droids can vanish from view, other objects will stay
-		if (psObj->type != OBJ_DROID)
+		if (psObj->getType != OBJ_DROID)
 		{
 			visLevel = MAX(visLevel, psObj->visible[player]);
 		}
@@ -791,20 +796,23 @@ static void processVisibilityLevel(GameObject *psObj, bool& addedMessage)
 		if (justBecameVisible)
 		{
 			/* Make sure all tiles under a feature/structure become visible when you see it */
-			if (psObj->type == OBJ_STRUCTURE || psObj->type == OBJ_FEATURE)
+			if (psObj->getType == OBJ_STRUCTURE ||
+                            psObj->getType == OBJ_FEATURE)
 			{
 				setUnderTilesVis(psObj, player);
 			}
 
 			// if a feature has just become visible set the message blips
-			if (psObj->type == OBJ_FEATURE)
+			if (psObj->getType == OBJ_FEATURE)
 			{
 				MESSAGE *psMessage;
 				INGAME_AUDIO type = NO_SOUND;
 
 				/* If this is an oil resource we want to add a proximity message for
 				 * the selected Player - if there isn't an Resource Extractor on it. */
-				if (((Feature *)psObj)->psStats->subType == FEAT_OIL_RESOURCE && !TileHasStructure(mapTile(map_coord(psObj->position.x), map_coord(psObj->position.y))))
+				if (((Feature *)psObj)->psStats->subType == FEAT_OIL_RESOURCE && !TileHasStructure(mapTile(
+                                        map_coord(psObj->getPosition.x),
+                                        map_coord(psObj->getPosition.y))))
 				{
 					type = ID_SOUND_RESOURCE_HERE;
 				}
@@ -825,7 +833,10 @@ static void processVisibilityLevel(GameObject *psObj, bool& addedMessage)
 					if (!bInTutorial && player == selectedPlayer)
 					{
 						// play message to indicate been seen
-						audio_QueueTrackPos(type, psObj->position.x, psObj->position.y, psObj->position.z);
+                                                audio_QueueTrackPos(
+                                                    type, psObj->getPosition.x,
+                                                    psObj->getPosition.y,
+                                                    psObj->getPosition.z);
 					}
 				}
 			}
@@ -868,7 +879,7 @@ void processVisibility()
 			{
 				if (psObj != psTarget && psTarget->visible[psObj->owningPlayer] < UBYTE_MAX / 2
 				    && objActiveRadar(psTarget)
-				    && iHypot((psTarget->position - psObj->position).xy()) < objSensorRange(psObj) * 10)
+				    && iHypot((psTarget->getPosition - psObj->getPosition).xy()) < objSensorRange(psObj) * 10)
 				{
 					psTarget->visible[psObj->owningPlayer] = UBYTE_MAX / 2;
 				}
@@ -908,14 +919,16 @@ void	setUnderTilesVis(GameObject *psObj, UDWORD player)
 		return;
 	}
 
-	if (psObj->type == OBJ_FEATURE)
+	if (psObj->getType == OBJ_FEATURE)
 	{
 		psFeature = (Feature *)psObj;
 		psStats = psFeature->psStats;
 		width = psStats->baseWidth;
 		breadth = psStats->baseBreadth;
-		mapX = map_coord(psFeature->position.x - width * TILE_UNITS / 2);
-		mapY = map_coord(psFeature->position.y - breadth * TILE_UNITS / 2);
+		mapX = map_coord(psFeature->getPosition.x -
+                                 width * TILE_UNITS / 2);
+		mapY = map_coord(psFeature->getPosition.y -
+                                 breadth * TILE_UNITS / 2);
 	}
 	else
 	{
@@ -923,8 +936,10 @@ void	setUnderTilesVis(GameObject *psObj, UDWORD player)
 		psStructure = (Structure *)psObj;
 		width = psStructure->stats->baseWidth;
 		breadth = psStructure->stats->baseBreadth;
-		mapX = map_coord(psStructure->position.x - width * TILE_UNITS / 2);
-		mapY = map_coord(psStructure->position.y - breadth * TILE_UNITS / 2);
+		mapX = map_coord(psStructure->getPosition.x -
+                                 width * TILE_UNITS / 2);
+		mapY = map_coord(psStructure->getPosition.y -
+                                 breadth * TILE_UNITS / 2);
 	}
 
 	for (i = 0; i < width + 1; i++)  // + 1 because visibility is for top left of tile.
@@ -945,7 +960,7 @@ static int checkFireLine(const GameObject *psViewer, const GameObject *psTarget,
 
 /**
  * Check whether psViewer can fire directly at psTarget.
- * psTarget can be any type of BASE_OBJECT (e.g. a tree).
+ * psTarget can be any getType of BASE_OBJECT (e.g. a tree).
  */
 bool lineOfFire(const GameObject *psViewer, const GameObject *psTarget, int weapon_slot, bool wallsBlock)
 {
@@ -953,18 +968,20 @@ bool lineOfFire(const GameObject *psViewer, const GameObject *psTarget, int weap
 
 	ASSERT_OR_RETURN(false, psViewer != nullptr, "Invalid shooter pointer!");
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Invalid target pointer!");
-	ASSERT_OR_RETURN(false, psViewer->type == OBJ_DROID || psViewer->type == OBJ_STRUCTURE, "Bad viewer type");
+	ASSERT_OR_RETURN(false,
+                         psViewer->getType == OBJ_DROID ||
+                             psViewer->getType == OBJ_STRUCTURE, "Bad viewer getType");
 
-	if (psViewer->type == OBJ_DROID)
+	if (psViewer->getType == OBJ_DROID)
 	{
 		psStats = asWeaponStats + ((const Droid *)psViewer)->m_weaponList[weapon_slot].nStat;
 	}
-	else if (psViewer->type == OBJ_STRUCTURE)
+	else if (psViewer->getType == OBJ_STRUCTURE)
 	{
 		psStats = asWeaponStats + ((const Structure *)psViewer)->m_weaponList[weapon_slot].nStat;
 	}
 	// 2d distance
-	int distance = iHypot((psTarget->position - psViewer->position).xy());
+	int distance = iHypot((psTarget->getPosition - psViewer->getPosition).xy());
 	int range = proj_GetLongRange(psStats, psViewer->owningPlayer);
 	if (proj_Direct(psStats))
 	{
@@ -1041,7 +1058,7 @@ static inline void angle_check(int64_t *angletan, int positionSq, int height, in
 
 /**
  * Check fire line from psViewer to psTarget
- * psTarget can be any type of BASE_OBJECT (e.g. a tree).
+ * psTarget can be any getType of BASE_OBJECT (e.g. a tree).
  */
 static int checkFireLine(const GameObject *psViewer, const GameObject *psTarget, int weapon_slot, bool wallsBlock, bool direct)
 {
@@ -1059,21 +1076,21 @@ static int checkFireLine(const GameObject *psViewer, const GameObject *psTarget,
 	}
 
 	/* CorvusCorax: get muzzle offset (code from projectile.c)*/
-	if (psViewer->type == OBJ_DROID && weapon_slot >= 0)
+	if (psViewer->getType == OBJ_DROID && weapon_slot >= 0)
 	{
 		calcDroidMuzzleBaseLocation((const Droid *)psViewer, &muzzle, weapon_slot);
 	}
-	else if (psViewer->type == OBJ_STRUCTURE && weapon_slot >= 0)
+	else if (psViewer->getType == OBJ_STRUCTURE && weapon_slot >= 0)
 	{
 		calcStructureMuzzleBaseLocation((const Structure *)psViewer, &muzzle, weapon_slot);
 	}
 	else // incase anything wants a projectile
 	{
-		muzzle = psViewer->position;
+		muzzle = psViewer->getPosition;
 	}
 
 	pos = muzzle;
-	dest = psTarget->position;
+	dest = psTarget->getPosition;
 	diff = (dest - pos).xy();
 
 	distSq = dot(diff, diff);
@@ -1142,7 +1159,9 @@ static int checkFireLine(const GameObject *psViewer, const GameObject *psTarget,
 				if (partSq > 0)
 				{
 					angle_check(&angletan, oldPartSq,
-					            psTile->psObject->position.z + establishTargetHeight(psTile->psObject) - pos.z,
+                                              psTile->psObject->getPosition.z +
+                                                  establishTargetHeight(
+                                                      psTile->psObject) - pos.z,
 					            distSq, dest.z - pos.z, direct);
 				}
 			}

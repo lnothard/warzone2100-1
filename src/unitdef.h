@@ -28,6 +28,8 @@ public:
   int objPosDiffSq(Position otherPos) override;
   int objPosDiffSq(const GameObject& otherObj) override;
 
+  int objSensorRange();
+
   virtual bool aiUnitHasRange(const GameObject& targetObj, int weapon_slot) = 0;
 };
 

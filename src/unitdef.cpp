@@ -45,11 +45,36 @@ void Unit::alignTurret(int weaponSlot)
 
 int Unit::objPosDiffSq(Position otherPos)
 {
-  const Vector2i diff = (m_position - otherPos).xy();
+  const Vector2i diff = (position - otherPos).xy();
   return dot(diff, diff);
 }
 
 int Unit::objPosDiffSq(const GameObject& otherObj)
 {
-  return objPosDiffSq(otherObj.position());
+  return objPosDiffSq(otherObj.getPosition());
+}
+
+// If we have ECM, use this for range instead. Otherwise, the sensor's range will be used for
+// jamming range, which we do not want. Rather limit ECM unit sensor range to jammer range.
+int Unit::objSensorRange()
+{
+  if (m_type == OBJECT_TYPE::DROID)
+  {
+    const int ecmrange = asECMStats[((const Droid *)psObj)->asBits[COMP_ECM]].upgrade[owningPlayer].range;
+    if (ecmrange > 0)
+    {
+      return ecmrange;
+    }
+    return asSensorStats[((const Droid *)psObj)->asBits[COMP_SENSOR]].upgrade[owningPlayer].range;
+  }
+  else if (m_type == OBJECT_TYPE::STRUCTURE)
+  {
+    const int ecmrange = ((const Structure *)psObj)->stats->pECM->upgrade[owningPlayer].range;
+    if (ecmrange)
+    {
+      return ecmrange;
+    }
+    return ((const Structure *)psObj)->stats->pSensor->upgrade[owningPlayer].range;
+  }
+  return 0;
 }

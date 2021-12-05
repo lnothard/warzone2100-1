@@ -74,7 +74,7 @@ enum class DROID_ORDER_TYPE
 	RECOVER,         /**< pick up an artifact. */
 	RTR_SPECIFIED,   /**< return to repair at a specified repair center. */
 	CIRCLE,          /**< circles target location and engage. */
-	HOLD,            /**< hold position until given next order. */
+	HOLD,            /**< hold getPosition until given next order. */
 };
 typedef DROID_ORDER_TYPE DROID_ORDER;
 
@@ -90,11 +90,11 @@ enum SECONDARY_ORDER
 	DSO_CLEAR_PRODUCTION,           /**< Removes the production from a command droid. */
 	DSO_RECYCLE,                    /**< If can be recycled or not. */
 	DSO_PATROL,                     /**< If it is assigned to patrol between current pos and next move target. */
-	DSO_HALTTYPE,                    /**< The type of halt. It can be hold, guard or pursue. Used with DSS_HALT_HOLD, DSS_HALT_GUARD,  DSS_HALT_PURSUE. */
+	DSO_HALTTYPE,                    /**< The getType of halt. It can be hold, guard or pursue. Used with DSS_HALT_HOLD, DSS_HALT_GUARD,  DSS_HALT_PURSUE. */
 	DSO_RETURN_TO_LOC,              /**< Generic secondary order to return to a location. Will depend on the secondary state DSS_RTL* to be specific. */
 	DSO_FIRE_DESIGNATOR,            /**< Assigns a droid to be a target designator. */
 	DSO_ASSIGN_VTOL_PRODUCTION,     /**< Assigns a vtol factory to a command droid - the state is given by the factory number. */
-	DSO_CIRCLE,                     /**< circling target position and engage. */
+	DSO_CIRCLE,                     /**< circling target getPosition and engage. */
 };
 
 /** All associated secondary states of the secondary orders. */
@@ -154,7 +154,7 @@ enum RTR_DATA_TYPE
 };
 
 /** Struct that stores data of an order.
- * This struct is needed to send orders that comes with information, such as position, target, etc.
+ * This struct is needed to send orders that comes with information, such as getPosition, target, etc.
  * This struct is used to issue orders to droids.
  */
 struct DroidOrder
@@ -178,8 +178,8 @@ struct DroidOrder
 
 
 	DROID_ORDER_TYPE   type;       /**< the actual order. */
-	Vector2i         pos;        /**< the order's position. */
-	Vector2i         pos2;       /**< the order's second position, in case those exist. */
+	Vector2i         pos;        /**< the order's getPosition. */
+	Vector2i         pos2;       /**< the order's second getPosition, in case those exist. */
 	uint16_t         direction;  /**< the order's direction, in case it exist. */
 	uint32_t         index;      ///< Module index, with DORDER_BUILDMODULE.
 	RTR_DATA_TYPE	 rtrType;	 /**< specifies where to repair. */

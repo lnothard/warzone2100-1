@@ -105,6 +105,7 @@ public:
 
   DROID_TYPE droidTemplateType();
   UDWORD calcDroidBaseSpeed(UDWORD weight, UBYTE player);
+  bool isTransporter() const;
   /*!
    * The droid components.
    *
@@ -118,7 +119,7 @@ private:
   /* The weapon systems */
   int8_t          numWeaps;                   ///< Number of weapons
   uint32_t        asWeaps[MAX_WEAPONS];       ///< weapon indices
-  DROID_TYPE      droidType;                  ///< The type of droid
+  DROID_TYPE      droidType;                  ///< The getType of droid
   UDWORD          multiPlayerID;              ///< multiplayer unique descriptor(cant use id's for templates). Used for save games as well now - AB 29/10/98
   bool            prefab;                     ///< Not player designed, not saved, never delete or change
   bool            stored;                     ///< Stored template
@@ -130,6 +131,15 @@ static inline DroidStats const *castDroidTemplate(StatsObject const *stats);
 
 class DROID_GROUP;
 class Structure;
+
+struct DROID_ACTION_DATA
+{
+  DROID_ACTION action;
+  UDWORD x, y;
+  //multiple action target info
+  GameObject *targetObj;
+  StatsObject *targetStats;
+};
 
 class Droid : public Unit {
 public:
@@ -156,8 +166,8 @@ public:
   void actionUpdateVtolAttack();
   SWORD droidResistance() const;
   bool standardSensorDroid() const;
-  bool cbSensorDroid() const;
-  void updateVtolAttackRun(int weapon_slot);
+  bool hasCBSensor() const;
+  void updateVtolAttackRun(int weaponSlot);
   bool vtolHappy() const;
   UWORD getNumAttackRuns(int weapon_slot);
   bool allVtolsRearmed() const;
@@ -199,11 +209,22 @@ public:
   bool droidUpdateDroidRepair();
   RtrBestResult decideWhereToRepairAndBalance();
   void actionUpdateDroid();
+  bool actionVisibleTarget(GameObject* psTarget, int weapon_slot);
+  bool isVtolDroid() const;
+  bool isTransporter() const;
+  bool isFlying() const;
+  int aiDroidRange(int weapon_slot);
+  GameObject* orderStateObj(DROID_ORDER order);
+  void actionDroidBase(DROID_ACTION_DATA *psAction);
+  void actionDroid(DROID_ACTION action);
+  void actionDroid(DROID_ACTION action, UDWORD x, UDWORD y);
+  void actionDroid(DROID_ACTION action, GameObject *psObj);
+  void actionDroid(DROID_ACTION action, GameObject *psObj, UDWORD x, UDWORD y);
 protected:
   /// UTF-8 name of the droid. This is generated from the droid template
   ///  WARNING: This *can* be changed by the game player after creation & can be translated, do NOT rely on this being the same for everyone!
   char name[MAX_STR_LENGTH];
-  DROID_TYPE      droidType;                      ///< The type of droid
+  DROID_TYPE      droidType;                      ///< The getType of droid
   /** Holds the specifics for the component parts - allows damage
    *  per part to be calculated. Indexed by COMPONENT_TYPE.
    *  Weapons need to be dealt with separately.
@@ -214,7 +235,7 @@ protected:
    */
   UBYTE group = 0;                                ///< Which group selection is the droid currently in?
   UDWORD          weight;
-  UDWORD          baseSpeed;                      ///< the base speed dependent on propulsion type
+  UDWORD          baseSpeed;                      ///< the base speed dependent on propulsion getType
   UDWORD          originalBody;                   ///< the original body points
   uint32_t        experience;
   uint32_t        kills;
@@ -250,7 +271,7 @@ protected:
   /* Movement control data */
   MOVE_CONTROL    sMove;
   Spacetime       prevSpacetime;                  ///< Location of droid in previous tick.
-  uint8_t         blockedBits;                    ///< Bit set telling which tiles block this type of droid (TODO)
+  uint8_t         blockedBits;                    ///< Bit set telling which tiles block this getType of droid (TODO)
   /* anim data */
   SDWORD          iAudioID;
 };
