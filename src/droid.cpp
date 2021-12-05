@@ -349,34 +349,7 @@ bool droidRemove(Droid *psDroid, Droid *pList[MAX_PLAYERS])
 	return true;
 }
 
-void _syncDebugDroid(const char *function, Droid const *psDroid, char ch)
-{
-	if (psDroid->type != OBJ_DROID) {
-		ASSERT(false, "%c Broken psDroid->type %u!", ch, psDroid->type);
-		syncDebug("Broken psDroid->type %u!", psDroid->type);
-	}
-	int list[] =
-	{
-		ch,
 
-		(int)psDroid->id,
-
-		psDroid->owningPlayer,
-		psDroid->position.x, psDroid->position.y, psDroid->position.z,
-		psDroid->rotation.direction, psDroid->rotation.pitch, psDroid->rotation.roll,
-		(int)psDroid->order.type, psDroid->order.pos.x, psDroid->order.pos.y, psDroid->listSize,
-		(int)psDroid->action,
-		(int)psDroid->secondaryOrder,
-		(int)psDroid->hitPoints,
-		(int)psDroid->sMove.Status,
-		psDroid->sMove.speed, psDroid->sMove.moveDir,
-		psDroid->sMove.pathIndex, (int)psDroid->sMove.asPath.size(),
-		psDroid->sMove.src.x, psDroid->sMove.src.y, psDroid->sMove.target.x, psDroid->sMove.target.y, psDroid->sMove.destination.x, psDroid->sMove.destination.y,
-		psDroid->sMove.bumpDir, (int)psDroid->sMove.bumpTime, (int)psDroid->sMove.lastBump, (int)psDroid->sMove.pauseTime, psDroid->sMove.bumpPos.x, psDroid->sMove.bumpPos.y, (int)psDroid->sMove.shuffleStart,
-		(int)psDroid->experience,
-	};
-	_syncDebugIntList(function, "%c droid%d = p%d;pos(%d,%d,%d),rot(%d,%d,%d),order%d(%d,%d)^%d,action%d,secondaryOrder%X,body%d,sMove(status%d,speed%d,moveDir%d,path%d/%d,src(%d,%d),target(%d,%d),destination(%d,%d),bump(%d,%d,%d,%d,(%d,%d),%d)),exp%u", list, ARRAY_SIZE(list));
-}
 
 /* See if a droid is next to a structure */
 static bool droidNextToStruct(Droid *psDroid, Structure *psStruct)
@@ -437,22 +410,7 @@ static void droidAddWeldSound(Vector3i iVecEffect)
 	audio_PlayStaticTrack(iVecEffect.x, iVecEffect.z, iAudioID);
 }
 
-static void addConstructorEffect(Structure *psStruct)
-{
-	if ((ONEINTEN) && (psStruct->visibleForLocalDisplay()))
-	{
-		/* This needs fixing - it's an arse effect! */
-		const Vector2i size = psStruct->size() * TILE_UNITS / 4;
-		Vector3i temp;
-		temp.x = psStruct->position.x + ((rand() % (2 * size.x)) - size.x);
-		temp.y = map_TileHeight(map_coord(psStruct->position.x), map_coord(psStruct->position.y)) + (psStruct->displayData.imd->max.y / 6);
-		temp.z = psStruct->position.y + ((rand() % (2 * size.y)) - size.y);
-		if (rand() % 2)
-		{
-			droidAddWeldSound(temp);
-		}
-	}
-}
+
 
 void droidStartAction(Droid *psDroid)
 {
@@ -512,80 +470,9 @@ static bool droidUpdateDroidRepairBase(Droid *psRepairDroid,
 	return psDroidToRepair->hitPoints < psDroidToRepair->originalBody;
 }
 
-bool droidUpdateDroidRepair(Droid *psRepairDroid)
-{
-	ASSERT_OR_RETURN(false, psRepairDroid->action == DACTION_DROIDREPAIR, "Unit does not have unit repair order");
-	ASSERT_OR_RETURN(false, psRepairDroid->asBits[COMP_REPAIRUNIT] != 0, "Unit does not have a repair turret");
-
-        Droid *psDroidToRepair = (Droid *)psRepairDroid->psActionTarget[0];
-	ASSERT_OR_RETURN(false, psDroidToRepair->type == OBJ_DROID, "Target is not a unit");
-	bool needMoreRepair = droidUpdateDroidRepairBase(psRepairDroid, psDroidToRepair);
-	if (needMoreRepair && psDroidToRepair->order.type == DORDER_RTR && psDroidToRepair->order.rtrType == RTR_TYPE_DROID && psDroidToRepair->action == DACTION_NONE)
-	{
-		psDroidToRepair->action = DACTION_WAITDURINGREPAIR;
-	}
-	if (!needMoreRepair && psDroidToRepair->order.type == DORDER_RTR && psDroidToRepair->order.rtrType == RTR_TYPE_DROID)
-	{
-		// if psDroidToRepair has a commander, commander will call him back anyway
-		// if no commanders, just DORDER_GUARD the repair turret
-		orderDroidObj(psDroidToRepair, DORDER_GUARD, psRepairDroid, ModeImmediate);
-		secondarySetState(psDroidToRepair, DSO_RETURN_TO_LOC, DSS_NONE);
-		psDroidToRepair->order.psObj = nullptr;
-	}
-	return needMoreRepair;
-}
-
 static void droidUpdateDroidSelfRepair(Droid *psRepairDroid)
 {
 	droidUpdateDroidRepairBase(psRepairDroid, psRepairDroid);
-}
-
-/* Return the type of a droid from it's template */
-DROID_TYPE droidTemplateType(const DroidStats *psTemplate)
-{
-	DROID_TYPE type = DROID_DEFAULT;
-
-	if (psTemplate->droidType == DROID_PERSON ||
-		psTemplate->droidType == DROID_CYBORG ||
-		psTemplate->droidType == DROID_CYBORG_SUPER ||
-		psTemplate->droidType == DROID_CYBORG_CONSTRUCT ||
-		psTemplate->droidType == DROID_CYBORG_REPAIR ||
-		psTemplate->droidType == DROID_TRANSPORTER ||
-		psTemplate->droidType == DROID_SUPERTRANSPORTER)
-	{
-		type = psTemplate->droidType;
-	}
-	else if (psTemplate->asParts[COMP_BRAIN] != 0)
-	{
-		type = DROID_COMMAND;
-	}
-	else if ((asSensorStats + psTemplate->asParts[COMP_SENSOR])->location == LOC_TURRET)
-	{
-		type = DROID_SENSOR;
-	}
-	else if ((asECMStats + psTemplate->asParts[COMP_ECM])->location == LOC_TURRET)
-	{
-		type = DROID_ECM;
-	}
-	else if (psTemplate->asParts[COMP_CONSTRUCT] != 0)
-	{
-		type = DROID_CONSTRUCT;
-	}
-	else if ((asRepairStats + psTemplate->asParts[COMP_REPAIRUNIT])->location == LOC_TURRET)
-	{
-		type = DROID_REPAIR;
-	}
-	else if (psTemplate->asWeaps[0] != 0)
-	{
-		type = DROID_WEAPON;
-	}
-	/* with more than weapon is still a DROID_WEAPON */
-	else if (psTemplate->numWeaps > 1)
-	{
-		type = DROID_WEAPON;
-	}
-
-	return type;
 }
 
 template <typename F, typename G>
@@ -720,36 +607,6 @@ static UDWORD calcDroidBaseBody(Droid *psDroid)
 {
 	return calcBody(psDroid, psDroid->owningPlayer);
 }
-
-
-/* Calculate the base speed of a droid from it's template */
-UDWORD calcDroidBaseSpeed(const DroidStats *psTemplate, UDWORD weight, UBYTE player)
-{
-	unsigned speed = asPropulsionTypes[asPropulsionStats[psTemplate->asParts[COMP_PROPULSION]].propulsionType].powerRatioMult *
-				 bodyPower(&asBodyStats[psTemplate->asParts[COMP_BODY]], player) / MAX(1, weight);
-
-	// reduce the speed of medium/heavy VTOLs
-	if (asPropulsionStats[psTemplate->asParts[COMP_PROPULSION]].propulsionType == PROPULSION_TYPE_LIFT)
-	{
-		if (asBodyStats[psTemplate->asParts[COMP_BODY]].size == SIZE_HEAVY)
-		{
-			speed /= 4;
-		}
-		else if (asBodyStats[psTemplate->asParts[COMP_BODY]].size == SIZE_MEDIUM)
-		{
-			speed = speed * 3 / 4;
-		}
-	}
-
-	// applies the engine output bonus if output > weight
-	if (asBodyStats[psTemplate->asParts[COMP_BODY]].base.power > weight)
-	{
-		speed = speed * 3 / 2;
-	}
-
-	return speed;
-}
-
 
 /* Calculate the speed of a droid over a terrain */
 UDWORD calcDroidSpeed(UDWORD baseSpeed, UDWORD terrainType, UDWORD propIndex, UDWORD level)

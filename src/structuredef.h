@@ -257,6 +257,7 @@ public:
   Vector2i size() const;
 
   bool aiUnitHasRange(const GameObject& targetObj, int weapon_slot) override;
+  void addConstructorEffect();
 protected:
   std::unique_ptr<StructureStats> stats;            /* pointer to the structure stats for this type of building */
   STRUCT_STATES       status;                     /* defines whether the structure is being built, doing nothing or performing a function */

@@ -38,3 +38,20 @@ bool Structure::aiUnitHasRange(const GameObject& targetObj, int weapon_slot)
   int longRange = proj_GetLongRange(psWStats, owningPlayer);
   return objPosDiffSq(targetObj) < longRange * longRange && lineOfFire(this, targetObj, weapon_slot, true);
 }
+
+void Structure::addConstructorEffect()
+{
+  if ((ONEINTEN) && (visibleForLocalDisplay()))
+  {
+    /* This needs fixing - it's an arse effect! */
+    const Vector2i size = size() * TILE_UNITS / 4;
+    Vector3i temp;
+    temp.x = position.x + ((rand() % (2 * size.x)) - size.x);
+    temp.y = map_TileHeight(map_coord(position.x), map_coord(position.y)) + (displayData.imd->max.y / 6);
+    temp.z = position.y + ((rand() % (2 * size.y)) - size.y);
+    if (rand() % 2)
+    {
+      droidAddWeldSound(temp);
+    }
+  }
+}

@@ -103,6 +103,8 @@ class DroidStats : public StatsObject {
 public:
   DroidStats();
 
+  DROID_TYPE droidTemplateType();
+  UDWORD calcDroidBaseSpeed(UDWORD weight, UBYTE player);
   /*!
    * The droid components.
    *
@@ -186,6 +188,17 @@ public:
   bool orderStateStatsLoc(DROID_ORDER order, StructureStats **ppsStats);
   void orderDroidLoc(DROID_ORDER order, UDWORD x, UDWORD y, QUEUE_MODE mode);
   void orderUpdateDroid();
+  void orderCheckGuardPosition(SDWORD range);
+  Droid* checkForRepairRange();
+  bool tryDoRepairlikeAction();
+  void orderDroidBase(DROID_ORDER_DATA *psOrder);
+  void orderDroid(DROID_ORDER order, QUEUE_MODE mode);
+  bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_MODE mode);
+  bool droidUpdateBuild();
+  void _syncDebugDroid(const char *function, char ch);
+  bool droidUpdateDroidRepair();
+  RtrBestResult decideWhereToRepairAndBalance();
+  void actionUpdateDroid();
 protected:
   /// UTF-8 name of the droid. This is generated from the droid template
   ///  WARNING: This *can* be changed by the game player after creation & can be translated, do NOT rely on this being the same for everyone!
