@@ -34,23 +34,23 @@ struct iIMDShape;
 /* The different types of droid */
 // NOTE, if you add to, or change this list then you'll need
 // to update the DroidSelectionWeights lookup table in Display.c
-enum DROID_TYPE
+enum class DROID_TYPE
 {
-	DROID_WEAPON,           ///< Weapon droid
-	DROID_SENSOR,           ///< Sensor droid
-	DROID_ECM,              ///< ECM droid
-	DROID_CONSTRUCT,        ///< Constructor droid
-	DROID_PERSON,           ///< person
-	DROID_CYBORG,           ///< cyborg-type thang
-	DROID_TRANSPORTER,      ///< guess what this is!
-	DROID_COMMAND,          ///< Command droid
-	DROID_REPAIR,           ///< Repair droid
-	DROID_DEFAULT,          ///< Default droid
-	DROID_CYBORG_CONSTRUCT, ///< cyborg constructor droid - new for update 28/5/99
-	DROID_CYBORG_REPAIR,    ///< cyborg repair droid - new for update 28/5/99
-	DROID_CYBORG_SUPER,     ///< cyborg repair droid - new for update 7/6/99
-	DROID_SUPERTRANSPORTER,	///< SuperTransport (MP)
-	DROID_ANY,              ///< Any droid. Used as a parameter for various stuff.
+	WEAPON,           ///< Weapon droid
+	SENSOR,           ///< Sensor droid
+	ECM,              ///< ECM droid
+	CONSTRUCT,        ///< Constructor droid
+	PERSON,           ///< person
+	CYBORG,           ///< cyborg-type thang
+	TRANSPORTER,      ///< guess what this is!
+	COMMAND,          ///< Command droid
+	REPAIR,           ///< Repair droid
+	DEFAULT,          ///< Default droid
+	CYBORG_CONSTRUCT, ///< cyborg constructor droid - new for update 28/5/99
+	CYBORG_REPAIR,    ///< cyborg repair droid - new for update 28/5/99
+	CYBORG_SUPER,     ///< cyborg repair droid - new for update 7/6/99
+	SUPERTRANSPORTER,	///< SuperTransport (MP)
+	ANY,              ///< Any droid. Used as a parameter for various stuff.
 };
 
 static inline bool stringToEnumSortFunction(std::pair<char const *, unsigned> const &a, std::pair<char const *, unsigned> const &b)

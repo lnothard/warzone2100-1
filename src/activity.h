@@ -98,7 +98,7 @@ public:
 		bool isReplay = false;
 
 	public:
-		virtual ~SkirmishGameInfo() { }
+		virtual ~SkirmishGameInfo() = default;
 		// some convenience functions to get data
 		const char * gameName() const { return game.name; }
 		const char * mapName() const { return game.map; }

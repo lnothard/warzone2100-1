@@ -6028,8 +6028,8 @@ static bool loadSaveStructure2(const char *pFileName, Structure **ppList)
 	{
           Factory *psFactory;
 		RESEARCH_FACILITY *psResearch;
-		REPAIR_FACILITY *psRepair;
-		REARM_PAD *psReArmPad;
+                RepairFacility *psRepair;
+                RearmPad *psReArmPad;
                 StructureStats *psModule;
 		int capacity, researchId;
                 Structure *psStructure;
@@ -6190,7 +6190,7 @@ static bool loadSaveStructure2(const char *pFileName, Structure **ppList)
 		case REF_RESOURCE_EXTRACTOR:
 			break;
 		case REF_REPAIR_FACILITY:
-			psRepair = ((REPAIR_FACILITY *)psStructure->pFunctionality);
+			psRepair = ((RepairFacility *)psStructure->pFunctionality);
 			if (ini.contains("Repair/deliveryPoint/pos"))
 			{
 				Position point = ini.vector3i("Repair/deliveryPoint/pos");
@@ -6199,7 +6199,7 @@ static bool loadSaveStructure2(const char *pFileName, Structure **ppList)
 			}
 			break;
 		case REF_REARM_PAD:
-			psReArmPad = ((REARM_PAD *)psStructure->pFunctionality);
+			psReArmPad = ((RearmPad *)psStructure->pFunctionality);
 			psReArmPad->timeStarted = ini.value("Rearm/timeStarted", psReArmPad->timeStarted).toInt();
 			psReArmPad->timeLastUpdated = ini.value("Rearm/timeLastUpdated", psReArmPad->timeLastUpdated).toInt();
 			break;
@@ -6412,7 +6412,7 @@ bool writeStructFile(const char *pFileName)
 				}
 				else if (psCurr->stats->type == REF_REPAIR_FACILITY)
 				{
-					REPAIR_FACILITY *psRepair = ((REPAIR_FACILITY *)psCurr->pFunctionality);
+                                  RepairFacility *psRepair = ((RepairFacility *)psCurr->pFunctionality);
 					if (psRepair->psObj)
 					{
 						ini.setValue("Repair/target/id", psRepair->psObj->id);
@@ -6431,7 +6431,7 @@ bool writeStructFile(const char *pFileName)
 				}
 				else if (psCurr->stats->type == REF_REARM_PAD)
 				{
-					REARM_PAD *psReArmPad = ((REARM_PAD *)psCurr->pFunctionality);
+                                  RearmPad *psReArmPad = ((RearmPad *)psCurr->pFunctionality);
 					ini.setValue("Rearm/timeStarted", psReArmPad->timeStarted);
 					ini.setValue("Rearm/timeLastUpdated", psReArmPad->timeLastUpdated);
 					if (psReArmPad->psObj)
@@ -6504,7 +6504,7 @@ bool loadSaveStructurePointers(const WzString& filename, Structure **ppList)
 		}
 		if (ini.contains("Repair/target/id")){
 				ASSERT(psStruct->stats->type == REF_REPAIR_FACILITY, "Bad type");
-				REPAIR_FACILITY *psRepair = ((REPAIR_FACILITY *)psStruct->pFunctionality);
+                                RepairFacility *psRepair = ((RepairFacility *)psStruct->pFunctionality);
 				OBJECT_TYPE ttype = (OBJECT_TYPE)ini.value("Repair/target/type", OBJ_DROID).toInt();
 				int tid = ini.value("Repair/target/id", -1).toInt();
 				int tplayer = ini.value("Repair/target/player", -1).toInt();
@@ -6514,7 +6514,7 @@ bool loadSaveStructurePointers(const WzString& filename, Structure **ppList)
 		}
 		if (ini.contains("Rearm/target/id")) {
 				ASSERT(psStruct->stats->type == REF_REARM_PAD, "Bad type");
-				REARM_PAD *psReArmPad = ((REARM_PAD *)psStruct->pFunctionality);
+                                RearmPad *psReArmPad = ((RearmPad *)psStruct->pFunctionality);
 				OBJECT_TYPE ttype = OBJ_DROID; // always, for now
 				int tid = ini.value("Rearm/target/id", -1).toInt();
 				int tplayer = ini.value("Rearm/target/player", -1).toInt();

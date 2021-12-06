@@ -23,7 +23,7 @@
  * Functions for design screen.
  *
  */
-#include <string.h>
+#include <cstring>
 #include <algorithm>
 
 #include "lib/framework/frame.h"

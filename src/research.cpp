@@ -23,7 +23,7 @@
  * Research tree and functions!
  *
  */
-#include <string.h>
+#include <cstring>
 #include <map>
 
 #include "lib/framework/frame.h"

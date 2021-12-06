@@ -552,7 +552,7 @@ void killStruct(Structure *psBuilding)
 		}
 		else if (psBuilding->stats->type == REF_REPAIR_FACILITY)
 		{
-			REPAIR_FACILITY *psRepair = &psBuilding->pFunctionality->repairFacility;
+                  RepairFacility *psRepair = &psBuilding->pFunctionality->repairFacility;
 
 			if (psRepair->psDeliveryPoint)
 			{
@@ -914,7 +914,7 @@ UDWORD getRepairIdFromFlag(FLAG_POSITION *psFlag)
 	unsigned int i;
 	UDWORD			player;
         Structure *psObj;
-	REPAIR_FACILITY	*psRepair;
+        RepairFacility *psRepair;
 
 
 	player = psFlag->player;
@@ -942,7 +942,7 @@ UDWORD getRepairIdFromFlag(FLAG_POSITION *psFlag)
 				if	(psObj->stats->type == REF_REPAIR_FACILITY)
 				{
 					//check for matching delivery point
-					psRepair = ((REPAIR_FACILITY *)psObj->pFunctionality);
+					psRepair = ((RepairFacility *)psObj->pFunctionality);
 					if (psRepair->psDeliveryPoint == psFlag)
 					{
 						return psObj->id;

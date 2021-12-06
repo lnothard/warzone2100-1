@@ -133,7 +133,7 @@ static GameObject *aiSearchSensorTargets(GameObject *psObj, int weapon_slot, WEA
 		}
 		else if (psSensor->getType == OBJ_DROID)
 		{
-                  Droid *psDroid = (Droid *)psSensor;
+                  auto *psDroid = (Droid *)psSensor;
 
 			ASSERT_OR_RETURN(nullptr, psDroid->droidType == DROID_SENSOR, "A non-sensor droid in a sensor list is non-sense");
 			// Skip non-observing droids. This includes Radar Detectors at the moment since they never observe anything.
@@ -154,7 +154,7 @@ static GameObject *aiSearchSensorTargets(GameObject *psObj, int weapon_slot, WEA
 		}
 		else if (psSensor->getType == OBJ_STRUCTURE)
 		{
-                  Structure *psCStruct = (Structure *)psSensor;
+                  auto *psCStruct = (Structure *)psSensor;
 
 			// skip incomplete structures
 			if (psCStruct->status != SS_BUILT)
@@ -530,12 +530,10 @@ int aiBestNearestTarget(Droid *psDroid, GameObject **ppsObj, int weapon_slot, in
 	static GridList gridList;  // static to avoid allocations.
 	gridList = gridStartIterate(psDroid->getPosition.x,
                                     psDroid->getPosition.y, droidRange);
-	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+	for (auto targetInQuestion : gridList)
 	{
           GameObject *friendlyObj = nullptr;
-          GameObject *targetInQuestion = *gi;
-
-		/* This is a friendly unit, check if we can reuse its target */
+          	/* This is a friendly unit, check if we can reuse its target */
 		if (aiCheckAlliances(targetInQuestion->owningPlayer, psDroid->owningPlayer))
 		{
 			friendlyObj = targetInQuestion;
@@ -546,7 +544,7 @@ int aiBestNearestTarget(Droid *psDroid, GameObject **ppsObj, int weapon_slot, in
 			{
 				if (friendlyObj->getType == OBJ_DROID)
 				{
-                                  Droid *friendlyDroid = (Droid *)friendlyObj;
+                                  auto *friendlyDroid = (Droid *)friendlyObj;
 
 					/* See if friendly droid has a target */
 					tempTarget = friendlyDroid->psActionTarget[0];
@@ -606,7 +604,7 @@ int aiBestNearestTarget(Droid *psDroid, GameObject **ppsObj, int weapon_slot, in
 			}
 			else if (targetInQuestion->getType == OBJ_STRUCTURE)
 			{
-                          Structure *psStruct = (Structure *)targetInQuestion;
+                          auto *psStruct = (Structure *)targetInQuestion;
 
 				if (electronic)
 				{
@@ -873,10 +871,9 @@ bool aiChooseTarget(GameObject *psObj, GameObject **ppsTarget, int weapon_slot, 
 			static GridList gridList;  // static to avoid allocations.
 			gridList = gridStartIterate(
                             psObj->getPosition.x, psObj->getPosition.y, srange);
-			for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+			for (auto psCurr : gridList)
 			{
-                          GameObject *psCurr = *gi;
-				/* Check that it is a valid target */
+                          	/* Check that it is a valid target */
 				if (psCurr->getType != OBJ_FEATURE && !psCurr->deathTime && !aiCheckAlliances(psCurr->owningPlayer, psObj->owningPlayer)
 				    && validTarget(psObj, psCurr, weapon_slot) && psCurr->visible[psObj->owningPlayer] == UBYTE_MAX
 				    && aiStructHasRange((Structure *)psObj, psCurr, weapon_slot))
@@ -961,10 +958,9 @@ bool aiChooseSensorTarget(GameObject *psObj, GameObject **ppsTarget)
 		gridList =
                     gridStartIterate(psObj->getPosition.x, psObj->getPosition.y,
                                      objSensorRange(psObj));
-		for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+		for (auto psCurr : gridList)
 		{
-                  GameObject *psCurr = *gi;
-			// Don't target features or doomed/dead objects
+                  	// Don't target features or doomed/dead objects
 			if (psCurr->getType != OBJ_FEATURE && !psCurr->deathTime && !aiObjectIsProbablyDoomed(psCurr, false))
 			{
 				if (!aiCheckAlliances(psCurr->owningPlayer, psObj->owningPlayer) && !aiObjIsWall(psCurr))

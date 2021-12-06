@@ -24,7 +24,7 @@
  *
  */
 
-#include <string.h>
+#include <cstring>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/input.h"

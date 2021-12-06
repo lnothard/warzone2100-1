@@ -195,7 +195,7 @@ Set alliance status between two players to either true or false. (3.2+ only)
 
 Send an alliance request to a player. (3.3+ only)
 
-## orderDroid(droid, order)
+## sendOrder(droid, order)
 
 Give a droid an order to do something. (3.2+ only)
 

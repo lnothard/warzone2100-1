@@ -100,7 +100,7 @@ public:
 
   Position getPosition() const;
   OBJECT_TYPE getType() const;
-  constexpr bool alive() const;
+  bool alive() const;
   Spacetime spacetime();
 
   virtual int objPosDiffSq(Position otherPos) = 0;

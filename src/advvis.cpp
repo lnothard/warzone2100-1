@@ -76,7 +76,7 @@ UDWORD	avGetObjLightLevel(GameObject *psObj, UDWORD origLevel)
 {
 	float div = (float)psObj->visibleForLocalDisplay() / 255.f;
 	unsigned int lowest = origLevel / START_DIVIDE;
-	unsigned int newLevel = static_cast<unsigned int>(div * origLevel);
+	auto newLevel = static_cast<unsigned int>(div * origLevel);
 
 	if (newLevel < lowest)
 	{

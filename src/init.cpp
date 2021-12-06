@@ -25,7 +25,7 @@
  */
 #include "lib/framework/frame.h"
 
-#include <string.h>
+#include <cstring>
 
 #include "lib/framework/frameresource.h"
 #include "lib/framework/file.h"
@@ -773,7 +773,7 @@ static inline optional<WZmapInfo> CheckInMap(const char *archive, const std::str
 	bool mapmod = false;
 	bool isRandom = false;
 
-	for (auto lookin_subdir : lookin_list)
+	for (const auto& lookin_subdir : lookin_list)
 	{
 		std::string lookin = mountpoint;
 		if (!lookin_subdir.empty())
@@ -786,7 +786,7 @@ static inline optional<WZmapInfo> CheckInMap(const char *archive, const std::str
 			if (WZ_PHYSFS_isDirectory((lookin + "/" + checkfile).c_str()))
 			{
 				if (checkfile.compare("wrf") == 0 || checkfile.compare("stats") == 0 || checkfile.compare("components") == 0
-					|| checkfile.compare("effects") == 0 || checkfile.compare("messages") == 0
+					|| checkfile == "effects" || checkfile == "messages"
 					|| checkfile.compare("audio") == 0 || checkfile.compare("sequenceaudio") == 0 || checkfile.compare("misc") == 0
 					|| checkfile.compare("features") == 0 || checkfile.compare("script") == 0 || checkfile.compare("structs") == 0
 					|| checkfile.compare("tileset") == 0 || checkfile.compare("images") == 0 || checkfile.compare("texpages") == 0
@@ -1075,7 +1075,7 @@ void systemShutdown()
 	debug(LOG_MAIN, "shutting down CD audio");
 	cdAudio_Close();
 
-	if (audio_Disabled() == false && !audio_Shutdown())
+	if (!audio_Disabled() && !audio_Shutdown())
 	{
 		debug(LOG_FATAL, "Unable to audio_Shutdown() cleanly!");
 		abort();

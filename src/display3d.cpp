@@ -2342,7 +2342,7 @@ static void renderStructureTurrets(Structure *psStructure, iIMDShape *strImd, PI
 			{
 				if (psStructure->stats->type == REF_REPAIR_FACILITY)
 				{
-					REPAIR_FACILITY *psRepairFac = &psStructure->pFunctionality->repairFacility;
+                                  RepairFacility *psRepairFac = &psStructure->pFunctionality->repairFacility;
 					// draw repair flash if the Repair Facility has a target which it has started work on
 					if (weaponImd[i]->nconnectors && psRepairFac->psObj != nullptr
 					    && psRepairFac->psObj->type == OBJ_DROID)
@@ -3776,7 +3776,7 @@ static void structureEffectsPlayer(UDWORD player)
 		else if (psStructure->stats->type == REF_REARM_PAD
 		         && psStructure->visibleForLocalDisplay())
 		{
-			REARM_PAD *psReArmPad = &psStructure->pFunctionality->rearmPad;
+                  RearmPad *psReArmPad = &psStructure->pFunctionality->rearmPad;
                         GameObject *psChosenObj = psReArmPad->psObj;
 			if (psChosenObj != nullptr && (((Droid *)psChosenObj)->visibleForLocalDisplay()))
 			{

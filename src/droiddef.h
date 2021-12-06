@@ -155,23 +155,23 @@ public:
   bool actionVTOLLandingPos(Vector2i* p);
   void cancelBuild();
   void droidBodyUpgrade();
-  void droidSetPosition(int x, int y);
+  void setPosition(int x, int y);
   bool droidOnMap();
-  bool cyborgDroid();
+  bool isCyborg();
   bool isConstructionDroid();
   bool isSelectable() const;
   void selectDroid();
   void DeSelectDroid();
   void actionUpdateTransporter();
   void actionUpdateVtolAttack();
-  SWORD droidResistance() const;
-  bool standardSensorDroid() const;
+  SWORD calculateResistance() const;
+  bool hasStandardSensor() const;
   bool hasCBSensor() const;
   void updateVtolAttackRun(int weaponSlot);
   bool vtolHappy() const;
   UWORD getNumAttackRuns(int weapon_slot);
   bool allVtolsRearmed() const;
-  bool droidAttacking() const;
+  bool isAttacking() const;
   bool vtolRearming() const;
   unsigned getDroidLevel() const;
   void droidSetBits(const DroidStats* pTemplate);
@@ -186,12 +186,12 @@ public:
   DroidStartBuild droidStartBuild();
   bool droidUpdateDemolishing();
   void setUpBuildModule();
-  bool electronicDroid() const;
-  bool droidUnderRepair() const;
+  bool isElectronic() const;
+  bool isUnderRepair() const;
   bool vtolEmpty() const;
   bool vtolFull() const;
   void aiUpdateDroid();
-  void orderCheckList();
+  void checkOrderList();
   DROID_ORDER chooseOrderLoc(UDWORD x, UDWORD y, bool altOrder);
   bool orderDroidList();
   void orderDroidAdd(DROID_ORDER_DATA *psOrder);
@@ -202,7 +202,7 @@ public:
   Droid* checkForRepairRange();
   bool tryDoRepairlikeAction();
   void orderDroidBase(DROID_ORDER_DATA *psOrder);
-  void orderDroid(DROID_ORDER order, QUEUE_MODE mode);
+  void sendOrder(DROID_ORDER order, QUEUE_MODE mode);
   bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_MODE mode);
   bool droidUpdateBuild();
   void _syncDebugDroid(const char *function, char ch);
@@ -236,7 +236,7 @@ protected:
    */
   UBYTE group = 0;                                ///< Which group selection is the droid currently in?
   UDWORD          weight;
-  UDWORD          baseSpeed;                      ///< the base speed dependent on propulsion getType
+  UDWORD          baseSpeed;                      ///< the base speed dependent on propulsion type
   UDWORD          originalBody;                   ///< the original body points
   uint32_t        experience;
   uint32_t        kills;

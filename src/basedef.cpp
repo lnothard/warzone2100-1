@@ -19,7 +19,7 @@ OBJECT_TYPE GameObject::getType() const
   return m_type;
 }
 
-constexpr bool GameObject::alive() const
+bool GameObject::alive() const
 {
   // See objmem.c for comments on the NOT_CURRENT_LIST hack
   return deathTime <= NOT_CURRENT_LIST;

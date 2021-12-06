@@ -92,8 +92,8 @@ typedef SSIZE_T ssize_t;
 #error inttypes.h and stdint.h defines missing! Make sure that __STDC_FORMAT_MACROS and __STDC_LIMIT_MACROS are defined when compiling C++ files.
 #endif
 
-#include <limits.h>
-#include <ctype.h>
+#include <climits>
+#include <cctype>
 
 /* Basic numeric types */
 typedef uint8_t  UBYTE;

@@ -29,6 +29,7 @@
 #include "statsdef.h"
 #include "weapondef.h"
 #include "unitdef.h"
+#include "droid.h"
 
 #include <vector>
 
@@ -168,7 +169,7 @@ enum class STRUCT_STATES
 
 enum class PENDING_STATUS
 {
-  NOTHING_PENDING = 0,
+  NOTHING_PENDING,
   START_PENDING,
   HOLD_PENDING,
   CANCEL_PENDING
@@ -188,6 +189,62 @@ class ResearchFacility
 
 class DroidStats;
 
+struct RES_EXTRACTOR
+{
+  class Structure *psPowerGen;    ///< owning power generator
+};
+
+struct POWER_GEN
+{
+  class Structure
+  *apResExtractors[NUM_POWER_MODULES];   ///< Pointers to associated oil derricks
+};
+
+class DROID_GROUP;
+
+struct WALL
+{
+  unsigned type;             // Type of wall, 0 = ─, 1 = ┼, 2 = ┴, 3 = ┘.
+};
+
+//this structure is used whenever an instance of a building is required in game
+class Structure : public Unit {
+public:
+  Structure(uint32_t id, unsigned player);
+
+  Vector2i size() const;
+
+  virtual void printStructureInfo() = 0;
+
+  bool aiUnitHasRange(const GameObject& targetObj, int weapon_slot) override;
+
+  void addConstructorEffect();
+  void alignStructure();
+  int  structureTotalReturn() const;
+  void structureBuild(Droid *psDroid, int buildPoints, int buildRate);
+  void structureUpdate(bool bMission);
+  int  requestOpenGate();
+  void aiUpdateStructure(bool isMission);
+
+protected:
+  std::unique_ptr<StructureStats> stats;            /* pointer to the structure stats for this type of building */
+  STRUCT_STATES       status;                     /* defines whether the structure is being built, doing nothing or performing a function */
+  uint32_t            currentBuildPts;            /* the build points currently assigned to this structure */
+  int                 resistance;                 /* current resistance points, 0 = cannot be attacked electrically */
+  UDWORD              lastResistance;             /* time the resistance was last increased*/
+  int                 buildRate;                  ///< Rate that this structure is being built, calculated each tick. Only meaningful if status == SS_BEING_BUILT. If construction hasn't started and build rate is 0, remove the structure.
+  int                 lastBuildRate;              ///< Needed if wanting the buildRate between buildRate being reset to 0 each tick and the trucks calculating it.
+  GameObject *psTarget[MAX_WEAPONS];
+  UDWORD expectedDamage;           ///< Expected damage to be caused by all currently incoming projectiles. This info is shared between all players,
+                                      ///< but shouldn't make a difference unless 3 mutual enemies happen to be fighting each other at the same time.
+  uint32_t prevTime;               ///< Time of structure's previous tick.
+  float foundationDepth;           ///< Depth of structure's foundation
+  uint8_t capacity;                ///< Lame name: current number of module upgrades (*not* maximum nb of upgrades)
+  STRUCT_ANIM_STATES state;
+  UDWORD lastStateTime;
+  iIMDShape *prebuiltImd;
+};
+
 class Factory : public Structure
 {
 private:
@@ -203,22 +260,13 @@ private:
   FLAG_POSITION *psAssemblyPoint;   /* Place for the new droids to assemble at */
   class Droid *psCommander;        // command droid to produce droids for (if any)
   uint32_t secondaryOrder;          ///< Secondary order state for all units coming out of the factory.
+public:
+  void refundFactoryBuildPower();
+  bool structSetManufacture(DroidStats *psTempl, QUEUE_MODE mode);
+  bool isCommanderGroupFull() const;
 };
 
-struct RES_EXTRACTOR
-{
-  class Structure *psPowerGen;    ///< owning power generator
-};
-
-struct POWER_GEN
-{
-  class Structure
-  *apResExtractors[NUM_POWER_MODULES];   ///< Pointers to associated oil derricks
-};
-
-class DROID_GROUP;
-
-struct REPAIR_FACILITY
+class RepairFacility : public Structure
 {
   GameObject *psObj;                /* Object being repaired */
   FLAG_POSITION *psDeliveryPoint;    /* Place for the repaired droids to assemble at */
@@ -227,57 +275,11 @@ struct REPAIR_FACILITY
   int droidQueue;                    ///< Last count of droid queue for this facility
 };
 
-struct REARM_PAD
+class RearmPad : public Structure
 {
   UDWORD timeStarted;            /* Time reArm started on current object */
   GameObject *psObj;            /* Object being rearmed */
   UDWORD timeLastUpdated;        /* Time rearm was last updated */
-};
-
-struct WALL
-{
-  unsigned type;             // Type of wall, 0 = ─, 1 = ┼, 2 = ┴, 3 = ┘.
-};
-
-union FUNCTIONALITY
-{
-  RESEARCH_FACILITY researchFacility;
-  Factory factory;
-  RES_EXTRACTOR     resourceExtractor;
-  POWER_GEN         powerGenerator;
-  REPAIR_FACILITY   repairFacility;
-  REARM_PAD         rearmPad;
-  WALL              wall;
-};
-
-//this structure is used whenever an instance of a building is required in game
-class Structure : public Unit {
-public:
-  Structure(uint32_t id, unsigned player);
-
-  Vector2i size() const;
-
-  bool aiUnitHasRange(const GameObject& targetObj, int weapon_slot) override;
-
-  void addConstructorEffect();
-protected:
-  std::unique_ptr<StructureStats> stats;            /* pointer to the structure stats for this type of building */
-  STRUCT_STATES       status;                     /* defines whether the structure is being built, doing nothing or performing a function */
-  uint32_t            currentBuildPts;            /* the build points currently assigned to this structure */
-  int                 resistance;                 /* current resistance points, 0 = cannot be attacked electrically */
-  UDWORD              lastResistance;             /* time the resistance was last increased*/
-  FUNCTIONALITY       *pFunctionality;            /* pointer to structure that contains fields necessary for functionality */
-  int                 buildRate;                  ///< Rate that this structure is being built, calculated each tick. Only meaningful if status == SS_BEING_BUILT. If construction hasn't started and build rate is 0, remove the structure.
-  int                 lastBuildRate;              ///< Needed if wanting the buildRate between buildRate being reset to 0 each tick and the trucks calculating it.
-  GameObject *psTarget[MAX_WEAPONS];
-  UDWORD expectedDamage;           ///< Expected damage to be caused by all currently incoming projectiles. This info is shared between all players,
-                                      ///< but shouldn't make a difference unless 3 mutual enemies happen to be fighting each other at the same time.
-  uint32_t prevTime;               ///< Time of structure's previous tick.
-  float foundationDepth;           ///< Depth of structure's foundation
-  uint8_t capacity;                ///< Lame name: current number of module upgrades (*not* maximum nb of upgrades)
-  STRUCT_ANIM_STATES state;
-  UDWORD lastStateTime;
-  iIMDShape *prebuiltImd;
 };
 
 #define LOTS_OF 0xFFFFFFFF  // highest number the limit can be set to

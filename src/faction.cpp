@@ -158,14 +158,14 @@ std::unordered_set<FactionID> getEnabledFactions(bool ignoreNormalFaction /*= fa
 	std::unordered_set<FactionID> enabledFactions;
 	for (uint8_t f_id = 0; f_id < NUM_FACTIONS; ++f_id)
 	{
-		const FactionID faction = static_cast<FactionID>(f_id);
+		const auto faction = static_cast<FactionID>(f_id);
 		if (ignoreNormalFaction && (faction == FACTION_NORMAL))
 		{
 			continue;
 		}
-		for (size_t player = 0; player < NetPlay.players.size(); ++player)
+		for (auto & player : NetPlay.players)
 		{
-			if (NetPlay.players[player].faction == faction)
+			if (player.faction == faction)
 			{
 				enabledFactions.insert(faction);
 				continue;
