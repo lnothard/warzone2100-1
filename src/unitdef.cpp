@@ -143,3 +143,31 @@ bool Unit::turretOnTarget(GameObject *targetObj, Weapon *weapon)
 
   return onTarget;
 }
+
+// calculate a position for units to pull back to if they
+// need to increase the range between them and a target
+void Unit::actionCalcPullBackPoint(GameObject const* targetObj, int *px, int *py) const
+{
+  // get the vector from the target to the object
+  int xdiff = position.x - targetObj->getPosition().x;
+  int ydiff = position.y - targetObj->getPosition().y;
+  const int len = iHypot(xdiff, ydiff);
+
+  if (len == 0)
+  {
+    xdiff = TILE_UNITS;
+    ydiff = TILE_UNITS;
+  }
+  else
+  {
+    xdiff = (xdiff * TILE_UNITS) / len;
+    ydiff = (ydiff * TILE_UNITS) / len;
+  }
+
+  // create the position
+  *px = position.x + xdiff * PULL_BACK_DIST;
+  *py = position.y + ydiff * PULL_BACK_DIST;
+
+  // make sure coordinates stay inside of the map
+  clip_world_offmap(px, py);
+}

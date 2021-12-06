@@ -74,7 +74,7 @@ enum class OBJECT_FLAG
 
 class GameObject {
 protected:
-  const OBJECT_TYPE type;                         ///< The getType of object
+  const OBJECT_TYPE type;                         ///< The type of object
   Position position;                            ///< Object's three-dimensional coordinate
   Rotation m_rotation;
   uint32_t m_time;

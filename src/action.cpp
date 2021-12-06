@@ -85,64 +85,6 @@ static const int vtolLandingRadius = 23;
  */
 typedef bool (*tileMatchFunction)(int x, int y, void *matchState);
 
-
-// calculate a position for units to pull back to if they
-// need to increase the range between them and a target
-static void actionCalcPullBackPoint(GameObject *psObj, GameObject *psTarget, int *px, int *py)
-{
-	// get the vector from the target to the object
-	int xdiff = psObj->getPosition.x - psTarget->getPosition.x;
-	int ydiff = psObj->getPosition.y - psTarget->getPosition.y;
-	const int len = iHypot(xdiff, ydiff);
-
-	if (len == 0)
-	{
-		xdiff = TILE_UNITS;
-		ydiff = TILE_UNITS;
-	}
-	else
-	{
-		xdiff = (xdiff * TILE_UNITS) / len;
-		ydiff = (ydiff * TILE_UNITS) / len;
-	}
-
-	// create the position
-	*px = psObj->getPosition.x + xdiff * PULL_BACK_DIST;
-	*py = psObj->getPosition.y + ydiff * PULL_BACK_DIST;
-
-	// make sure coordinates stay inside of the map
-	clip_world_offmap(px, py);
-}
-
-// check whether a droid is in the neighboring tile of another droid
-bool actionReachedDroid(Droid const *psDroid, Droid const *psOther)
-{
-	ASSERT_OR_RETURN(false, psDroid != nullptr && psOther != nullptr, "Bad droids");
-	CHECK_DROID(psDroid);
-	Vector2i xy = map_coord(psDroid->getPosition.xy());
-	Vector2i otherxy = map_coord(psOther->getPosition.xy());
-	Vector2i delta = xy - otherxy;
-	return delta.x >=-1 && delta.x <=1 &&  delta.y >=-1 && delta.y <=1 ;
-}
-
-
-// check whether a droid is in the neighboring tile to a build position
-bool actionReachedBuildPos(Droid const *psDroid, int x, int y, uint16_t dir,
-                           StatsObject const *psStats)
-{
-	ASSERT_OR_RETURN(false, psStats != nullptr && psDroid != nullptr, "Bad stat or droid");
-	CHECK_DROID(psDroid);
-
-	StructureBounds b = getStructureBounds(psStats, Vector2i(x, y), dir);
-
-	// do all calculations in half tile units so that
-	// the droid moves to within half a tile of the target
-	// NOT ANY MORE - JOHN
-	Vector2i delta = map_coord(psDroid->getPosition.xy()) - b.map;
-	return delta.x >= -1 && delta.x <= b.size.x && delta.y >= -1 && delta.y <= b.size.y;
-}
-
-
 // check if a droid is on the foundations of a new building
 static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir, StatsObject *psStats)
 {
@@ -165,7 +107,7 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 			continue;  // Only looking for droids.
 		}
 
-		Vector2i delta = map_coord(droid->getPosition.xy()) - b.map;
+		Vector2i delta = map_coord(droid->getPosition().xy()) - b.map;
 		if (delta.x < 0 || delta.x >= b.size.x || delta.y < 0 || delta.y >= b.size.y || isFlying(droid))
 		{
 			continue;  // Droid not under new structure (just near it).
@@ -185,7 +127,7 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 			for (int x = -1; x <= b.size.x; x += y >= 0 && y < b.size.y ? b.size.x + 1 : 1)
 			{
 				Vector2i dest = world_coord(b.map + Vector2i(x, y)) + Vector2i(TILE_UNITS, TILE_UNITS) / 2;
-				unsigned dist = iHypot(droid->getPosition.xy() - dest);
+				unsigned dist = iHypot(droid->getPosition().xy() - dest);
 				if (dist < bestDist && !fpathBlockingTile(map_coord(dest.x), map_coord(dest.y), getPropulsionStats(droid)->propulsionType))
 				{
 					bestDest = dest;
@@ -196,7 +138,7 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 		{
 			// Push the droid out of the way.
 			Vector2i newPos =
-                            droid->getPosition.xy() + iSinCosR(iAtan2(bestDest - droid->getPosition.xy()), gameTimeAdjustedIncrement(TILE_UNITS));
+                            droid->getPosition().xy() + iSinCosR(iAtan2(bestDest - droid->getPosition().xy()), gameTimeAdjustedIncrement(TILE_UNITS));
 			droidSetPosition(droid, newPos.x, newPos.y);
 		}
 	}

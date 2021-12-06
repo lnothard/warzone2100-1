@@ -25,6 +25,7 @@
 #define __INCLUDED_DROIDDEF_H__
 
 #include <vector>
+#include <glm/fwd.hpp>
 
 #include "basedef.h"
 #include "movedef.h"
@@ -225,6 +226,9 @@ public:
   bool droidRemove(Droid *pList[MAX_PLAYERS]);
   int sensorRange() override;
   bool turretOnTarget(GameObject *targetObj, Weapon *weapon) override;
+  bool actionReachedDroid(Droid const *psOther) const;
+  bool actionReachedBuildPos(int x, int y, uint16_t dir, StatsObject const *psStats) const;
+  bool displayCompObj(bool bButton, const glm::mat4 &viewMatrix);
 protected:
   /// UTF-8 name of the droid. This is generated from the droid template
   ///  WARNING: This *can* be changed by the game player after creation & can be translated, do NOT rely on this being the same for everyone!

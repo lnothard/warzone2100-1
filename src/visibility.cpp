@@ -340,7 +340,7 @@ static void doWaveTerrain(GameObject *psObj)
 /* The los ray callback */
 static bool rayLOSCallback(Vector2i pos, int32_t dist, void *data)
 {
-	VisibleObjectHelp_t *help = (VisibleObjectHelp_t *)data;
+	auto *help = (VisibleObjectHelp_t *)data;
 
 	ASSERT(pos.x >= 0 && pos.x < world_coord(mapWidth) && pos.y >= 0 && pos.y < world_coord(mapHeight), "rayLOSCallback: coords off map");
 
@@ -371,7 +371,7 @@ static bool rayLOSCallback(Vector2i pos, int32_t dist, void *data)
 			MAPTILE *psTile = mapTile(tile);
 			if (TileHasWall(psTile) && !TileHasSmallStructure(psTile))
 			{
-                          Structure *psStruct = (Structure *)psTile->psObject;
+                          auto *psStruct = (Structure *)psTile->psObject;
 				if (psStruct->stats->type != REF_GATE || psStruct->state != SAS_OPEN)
 				{
 					help->lastHeight = 2 * TILE_MAX_HEIGHT;

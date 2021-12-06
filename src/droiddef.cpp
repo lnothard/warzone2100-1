@@ -3547,7 +3547,7 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_
 
   // set the state for any droids in the command group
   if ((sec != DSO_RECYCLE) &&
-      droidType == DROID_COMMAND &&
+      droidType == COMMAND &&
       psGroup != nullptr &&
       psGroup->type == GT_COMMAND)
   {
@@ -3571,21 +3571,21 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_
     CurrState = (CurrState & ~DSS_ALEV_MASK) | State;
     if (State == DSS_ALEV_NEVER)
     {
-      if (orderState(psDroid, DROID_ORDER_TYPE::ATTACK))
+      if (orderState(DROID_ORDER_TYPE::ATTACK))
       {
         // just kill these orders
-        sendOrder(psDroid, DROID_ORDER_TYPE::STOP, ModeImmediate);
-        if (isVtolDroid(psDroid))
+        sendOrder(DROID_ORDER_TYPE::STOP, ModeImmediate);
+        if (isVtolDroid())
         {
-          moveToRearm(psDroid);
+          moveToRearm();
         }
       }
-      else if (isAttacking(psDroid))
+      else if (isAttacking())
       {
         // send the unit back to the guard position
         actionDroid(DROID_ACTION::NONE);
       }
-      else if (orderState(psDroid, DROID_ORDER_TYPE::PATROL))
+      else if (orderState(DROID_ORDER_TYPE::PATROL))
       {
         // send the unit back to the patrol
         actionDroid(DROID_ACTION::RETURNTOPOS, actionPos.x, actionPos.y);
@@ -3613,7 +3613,7 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_
       prodType = REF_VTOL_FACTORY;
     }
 
-    if (droidType == DROID_COMMAND)
+    if (droidType == COMMAND)
     {
       // look for the factories
       for (psStruct = apsStructLists[owningPlayer]; psStruct;
@@ -3671,7 +3671,7 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_
     break;
 
   case DSO_CLEAR_PRODUCTION:
-    if (droidType == DROID_COMMAND)
+    if (droidType == COMMAND)
     {
       // simply clear the flag - all the factory stuff is done in assignFactoryCommandDroid
       CurrState &= ~(State & DSS_ASSPROD_MASK);
@@ -3682,16 +3682,16 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_
   case DSO_RECYCLE:
     if (State & DSS_RECYCLE_MASK)
     {
-      if (!orderState(psDroid, DROID_ORDER_TYPE::RECYCLE))
+      if (!orderState(DROID_ORDER_TYPE::RECYCLE))
       {
-        sendOrder(psDroid, DROID_ORDER_TYPE::RECYCLE, ModeImmediate);
+        sendOrder(DROID_ORDER_TYPE::RECYCLE, ModeImmediate);
       }
       CurrState &= ~(DSS_RTL_MASK | DSS_RECYCLE_MASK | DSS_HALT_MASK);
       CurrState |= DSS_RECYCLE_SET | DSS_HALT_GUARD;
       group = UBYTE_MAX;
       if (psGroup != nullptr)
       {
-        if (droidType == DROID_COMMAND)
+        if (droidType == COMMAND)
         {
           // remove all the units from the commanders group
           for (psCurr = psGroup->psList; psCurr; psCurr = psNext)
@@ -3709,7 +3709,7 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_
     }
     else
     {
-      if (orderState(psDroid, DROID_ORDER_TYPE::RECYCLE))
+      if (orderState(DROID_ORDER_TYPE::RECYCLE))
       {
         sendOrder(DROID_ORDER_TYPE::STOP, ModeImmediate);
       }
@@ -3742,7 +3742,7 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_
     case DSS_HALT_PURSUE:
       CurrState &= ~ DSS_HALT_MASK;
       CurrState |= DSS_HALT_PURSUE;
-      if (orderState(psDroid, DROID_ORDER_TYPE::GUARD))
+      if (orderState(DROID_ORDER_TYPE::GUARD))
       {
         sendOrder(DROID_ORDER_TYPE::STOP, ModeImmediate);
       }
@@ -3756,7 +3756,7 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_
     case DSS_HALT_HOLD:
       CurrState &= ~ DSS_HALT_MASK;
       CurrState |= DSS_HALT_HOLD;
-      if (!orderState(psDroid, DROID_ORDER_TYPE::FIRESUPPORT))
+      if (!orderState(DROID_ORDER_TYPE::FIRESUPPORT))
       {
         sendOrder(DROID_ORDER_TYPE::STOP, ModeImmediate);
       }
@@ -3766,9 +3766,9 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_
   case DSO_RETURN_TO_LOC:
     if ((State & DSS_RTL_MASK) == 0)
     {
-      if (orderState(psDroid, DROID_ORDER_TYPE::RTR) ||
-          orderState(psDroid, DROID_ORDER_TYPE::RTB) ||
-          orderState(psDroid, DROID_ORDER_TYPE::EMBARK))
+      if (orderState(DROID_ORDER_TYPE::RTR) ||
+          orderState(DROID_ORDER_TYPE::RTB) ||
+          orderState(DROID_ORDER_TYPE::EMBARK))
       {
         sendOrder(DROID_ORDER_TYPE::STOP, ModeImmediate);
       }
@@ -3800,7 +3800,7 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_
         {
           order = DROID_ORDER_TYPE::EMBARK;
           CurrState |= DSS_RTL_TRANSPORT;
-          if (!orderState(psDroid, DROID_ORDER_TYPE::EMBARK))
+          if (!orderState(DROID_ORDER_TYPE::EMBARK))
           {
             orderDroidObj(psDroid, DROID_ORDER_TYPE::EMBARK, psTransport, ModeImmediate);
           }
@@ -3814,9 +3814,9 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_
         order = DROID_ORDER_TYPE::NONE;
         break;
       }
-      if (!orderState(psDroid, order))
+      if (!orderState(order))
       {
-        sendOrder(psDroid, order, ModeImmediate);
+        sendOrder(order, ModeImmediate);
       }
     }
     break;
@@ -6254,4 +6254,433 @@ std::pair<Structure *, DROID_ACTION> Droid::checkForDamagedStruct()
   }
 
   return best;
+}
+
+// check whether a droid is in the neighboring tile of another droid
+bool Droid::actionReachedDroid(Droid const *psOther) const
+{
+  ASSERT_OR_RETURN(false, psOther != nullptr, "Bad droids");
+  Vector2i xy = map_coord(position.xy());
+  Vector2i otherxy = map_coord(psOther->getPosition().xy());
+  Vector2i delta = xy - otherxy;
+  return delta.x >=-1 && delta.x <=1 &&  delta.y >=-1 && delta.y <=1 ;
+}
+
+// check whether a droid is in the neighboring tile to a build position
+bool Droid::actionReachedBuildPos(int x, int y, uint16_t dir, StatsObject const *psStats) const
+{
+  ASSERT_OR_RETURN(false, psStats != nullptr, "Bad stat");
+
+  StructureBounds b = getStructureBounds(psStats, Vector2i(x, y), dir);
+
+  // do all calculations in half tile units so that
+  // the droid moves to within half a tile of the target
+  // NOT ANY MORE - JOHN
+  Vector2i delta = map_coord(position.xy()) - b.map;
+  return delta.x >= -1 && delta.x <= b.size.x && delta.y >= -1 && delta.y <= b.size.y;
+}
+
+/* Assumes matrix context is already set */
+// this is able to handle multiple weapon graphics now
+// removed mountRotation,they get such stuff from psObj directly now
+bool Droid::displayCompObj(bool bButton, const glm::mat4 &viewMatrix)
+{
+  iIMDShape *psMoveAnim, *psStillAnim;
+  SDWORD				iConnector;
+  PROPULSION_STATS	*psPropStats;
+  SDWORD				pieFlag, iPieData;
+  PIELIGHT			brightness;
+  UDWORD				colour;
+  size_t	i = 0;
+  bool				didDrawSomething = false;
+
+  glm::mat4 modelMatrix(1.f);
+
+  if (timeLastHit - graphicsTime < ELEC_DAMAGE_DURATION && lastHitWeapon == WSC_ELECTRONIC && !gamePaused())
+  {
+    colour = getPlayerColour(rand() % MAX_PLAYERS);
+  }
+  else
+  {
+    colour = getPlayerColour(owningPlayer);
+  }
+
+  /* get propulsion stats */
+  psPropStats = asPropulsionStats + asBits[COMP_PROPULSION];
+  ASSERT_OR_RETURN(didDrawSomething, psPropStats != nullptr, "invalid propulsion stats pointer");
+
+  //set pieflag for button object or ingame object
+  if (bButton)
+  {
+    pieFlag = pie_BUTTON;
+    brightness = WZCOL_WHITE;
+  }
+  else
+  {
+    pieFlag = pie_SHADOW;
+    brightness = pal_SetBrightness(illumination);
+    // NOTE: Beware of transporters that are offscreen, on a mission!  We should *not* be checking tiles at this point in time!
+    if (!isTransporter() && !missionIsOffworld())
+    {
+      MAPTILE *psTile = worldTile(position.x, position.y);
+      if (psTile->jammerBits & alliancebits[owningPlayer])
+      {
+        pieFlag |= pie_ECM;
+      }
+    }
+  }
+
+  /* set default components transparent */
+  if (asBits[COMP_PROPULSION] == 0)
+  {
+    pieFlag  |= pie_TRANSLUCENT;
+    iPieData  = DEFAULT_COMPONENT_TRANSLUCENCY;
+  }
+  else
+  {
+    iPieData = 0;
+  }
+
+  if (!bButton && psPropStats->propulsionType == PROPULSION_TYPE_PROPELLOR)
+  {
+    // FIXME: change when adding submarines to the game
+    modelMatrix *= glm::translate(glm::vec3(0.f, -world_coord(1) / 2.3f, 0.f));
+  }
+
+  iIMDShape *psShapeProp = (leftFirst ? getLeftPropulsionIMD(psDroid) : getRightPropulsionIMD(psDroid));
+  if (psShapeProp)
+  {
+    if (pie_Draw3DShape(psShapeProp, 0, colour, brightness, pieFlag, iPieData, viewMatrix * modelMatrix))
+    {
+      didDrawSomething = true;
+    }
+  }
+
+  /* set default components transparent */
+  if (asBits[COMP_BODY] == 0)
+  {
+    pieFlag  |= pie_TRANSLUCENT;
+    iPieData  = DEFAULT_COMPONENT_TRANSLUCENCY;
+  }
+  else
+  {
+    pieFlag  &= ~pie_TRANSLUCENT;
+    iPieData = 0;
+  }
+
+  /* Get the body graphic now*/
+  iIMDShape *psShapeBody = BODY_IMD(psDroid, owningPlayer);
+  if (psShapeBody)
+  {
+    iIMDShape *strImd = psShapeBody;
+    if (droidType == PERSON)
+    {
+      modelMatrix *= glm::scale(glm::vec3(.75f)); // FIXME - hideous....!!!!
+    }
+    if (strImd->objanimpie[animationEvent])
+    {
+      strImd = psShapeBody->objanimpie[animationEvent];
+    }
+    glm::mat4 viewModelMatrix = viewMatrix * modelMatrix;
+    while (strImd)
+    {
+      if (drawShape(psDroid, strImd, colour, brightness, pieFlag, iPieData, viewModelMatrix))
+      {
+        didDrawSomething = true;
+      }
+      strImd = strImd->next;
+    }
+  }
+
+  /* Render animation effects based on movement or lack thereof, if any */
+  psMoveAnim = asBodyStats[asBits[COMP_BODY]].ppMoveIMDList[asBits[COMP_PROPULSION]];
+  psStillAnim = asBodyStats[asBits[COMP_BODY]].ppStillIMDList[asBits[COMP_PROPULSION]];
+  glm::mat4 viewModelMatrix = viewMatrix * modelMatrix;
+  if (!bButton && psMoveAnim && sMove.Status != MOVEINACTIVE)
+  {
+    if (pie_Draw3DShape(psMoveAnim, getModularScaledGraphicsTime(psMoveAnim->animInterval, psMoveAnim->numFrames), colour, brightness, pie_ADDITIVE, 200, viewModelMatrix))
+    {
+      didDrawSomething = true;
+    }
+  }
+  else if (!bButton && psStillAnim) // standing still
+  {
+    if (pie_Draw3DShape(psStillAnim, getModularScaledGraphicsTime(psStillAnim->animInterval, psStillAnim->numFrames), colour, brightness, 0, 0, viewModelMatrix))
+    {
+      didDrawSomething = true;
+    }
+  }
+
+  //don't change the screen coords of an object if drawing it in a button
+  if (!bButton)
+  {
+    /* set up all the screen coords stuff - need to REMOVE FROM THIS LOOP */
+    calcScreenCoords(psDroid, viewModelMatrix);
+  }
+
+  /* set default components transparent */
+  if (weaponList[0].nStat        == 0 &&
+      asBits[COMP_SENSOR]     == 0 &&
+      asBits[COMP_ECM]        == 0 &&
+      asBits[COMP_BRAIN]      == 0 &&
+      asBits[COMP_REPAIRUNIT] == 0 &&
+      asBits[COMP_CONSTRUCT]  == 0)
+  {
+    pieFlag  |= pie_TRANSLUCENT;
+    iPieData  = DEFAULT_COMPONENT_TRANSLUCENCY;
+  }
+  else
+  {
+    pieFlag  &= ~pie_TRANSLUCENT;
+    iPieData = 0;
+  }
+
+  if (psShapeBody && psShapeBody->nconnectors)
+  {
+    /* vtol weapons attach to connector 2 (underneath);
+		 * all others to connector 1 */
+    /* VTOL's now skip the first 5 connectors(0 to 4),
+    VTOL's use 5,6,7,8 etc now */
+    if (psPropStats->propulsionType == PROPULSION_TYPE_LIFT && droidType == DROID_WEAPON)
+    {
+      iConnector = VTOL_CONNECTOR_START;
+    }
+    else
+    {
+      iConnector = 0;
+    }
+
+    switch (droidType)
+    {
+    case DEFAULT:
+    case TRANSPORTER:
+    case SUPERTRANSPORTER:
+    case CYBORG:
+    case CYBORG_SUPER:
+    case WEAPON:
+    case COMMAND:		// command droids have a weapon to store all the graphics
+      /*	Get the mounting graphic - we've already moved to the right position
+      Allegedly - all droids will have a mount graphic so this shouldn't
+      fall on it's arse......*/
+      /* Double check that the weapon droid actually has any */
+      for (i = 0; i < numWeapons; i++)
+      {
+        if ((weaponList[i].nStat > 0 || droidType == DEFAULT)
+            && psShapeBody->connectors)
+        {
+          Rotation rot = getInterpolatedWeaponRotation(psDroid, i, graphicsTime);
+
+          glm::mat4 localModelMatrix = modelMatrix;
+
+          //to skip number of VTOL_CONNECTOR_START ground unit connectors
+          if (iConnector < VTOL_CONNECTOR_START)
+          {
+            localModelMatrix *= glm::translate(glm::vec3(psShapeBody->connectors[i].xzy()));
+          }
+          else
+          {
+            localModelMatrix *= glm::translate(glm::vec3(psShapeBody->connectors[iConnector + i].xzy()));
+          }
+          localModelMatrix *= glm::rotate(UNDEG(-rot.direction), glm::vec3(0.f, 1.f, 0.f));
+
+          /* vtol weapons inverted */
+          if (iConnector >= VTOL_CONNECTOR_START)
+          {
+            //this might affect gun rotation
+            localModelMatrix *= glm::rotate(UNDEG(65536 / 2), glm::vec3(0.f, 0.f, 1.f));
+          }
+
+          /* Get the mount graphic */
+          iIMDShape *psShape = WEAPON_MOUNT_IMD(psDroid, i);
+
+          int recoilValue = getRecoil(weaponList[i]);
+          localModelMatrix *= glm::translate(glm::vec3(0.f, 0.f, recoilValue / 3.f));
+
+          /* Draw it */
+          if (psShape)
+          {
+            if (pie_Draw3DShape(psShape, 0, colour, brightness, pieFlag, iPieData, viewMatrix * localModelMatrix))
+            {
+              didDrawSomething = true;
+            }
+          }
+          localModelMatrix *= glm::translate(glm::vec3(0, 0, recoilValue));
+
+          /* translate for weapon mount point */
+          if (psShape && psShape->nconnectors)
+          {
+            localModelMatrix *= glm::translate(glm::vec3(psShape->connectors->xzy()));
+          }
+
+          /* vtol weapons inverted */
+          if (iConnector >= VTOL_CONNECTOR_START)
+          {
+            //pitch the barrel down
+            localModelMatrix *= glm::rotate(UNDEG(-rot.pitch), glm::vec3(1.f, 0.f, 0.f));
+          }
+          else
+          {
+            //pitch the barrel up
+            localModelMatrix *= glm::rotate(UNDEG(rot.pitch), glm::vec3(1.f, 0.f, 0.f));
+          }
+
+          /* Get the weapon (gun?) graphic */
+          psShape = WEAPON_IMD(psDroid, i);
+
+          // We have a weapon so we draw it and a muzzle flash from weapon connector
+          if (psShape)
+          {
+            glm::mat4 localViewModelMatrix = viewMatrix * localModelMatrix;
+            if (pie_Draw3DShape(psShape, 0, colour, brightness, pieFlag, iPieData, localViewModelMatrix))
+            {
+              didDrawSomething = true;
+            }
+            drawMuzzleFlash(weaponList[i], psShape, MUZZLE_FLASH_PIE(psDroid, i), brightness, pieFlag, iPieData, localViewModelMatrix);
+          }
+        }
+      }
+      break;
+
+    case DROID_SENSOR:
+    case DROID_CONSTRUCT:
+    case DROID_CYBORG_CONSTRUCT:
+    case DROID_ECM:
+    case DROID_REPAIR:
+    case DROID_CYBORG_REPAIR:
+    {
+      Rotation rot = getInterpolatedWeaponRotation(psDroid, 0, graphicsTime);
+      iIMDShape *psShape = nullptr;
+      iIMDShape *psMountShape = nullptr;
+
+      switch (droidType)
+      {
+      default:
+        ASSERT(false, "Bad component type");
+        break;
+      case DROID_SENSOR:
+        psMountShape = SENSOR_MOUNT_IMD(psDroid, owningPlayer);
+        /* Get the sensor graphic, assuming it's there */
+        psShape = SENSOR_IMD(psDroid, owningPlayer);
+        break;
+      case DROID_CONSTRUCT:
+      case DROID_CYBORG_CONSTRUCT:
+        psMountShape = CONSTRUCT_MOUNT_IMD(psDroid, owningPlayer);
+        /* Get the construct graphic assuming it's there */
+        psShape = CONSTRUCT_IMD(psDroid, owningPlayer);
+        break;
+      case DROID_ECM:
+        psMountShape = ECM_MOUNT_IMD(psDroid, owningPlayer);
+        /* Get the ECM graphic assuming it's there.... */
+        psShape = ECM_IMD(psDroid, owningPlayer);
+        break;
+      case DROID_REPAIR:
+      case DROID_CYBORG_REPAIR:
+        psMountShape = REPAIR_MOUNT_IMD(psDroid, owningPlayer);
+        /* Get the Repair graphic assuming it's there.... */
+        psShape = REPAIR_IMD(psDroid, owningPlayer);
+        break;
+      }
+      /*	Get the mounting graphic - we've already moved to the right position
+      Allegedly - all droids will have a mount graphic so this shouldn't
+      fall on it's arse......*/
+      //sensor and cyborg and ecm uses connectors[0]
+
+      glm::mat4 localModelMatrix = modelMatrix;
+      /* vtol weapons inverted */
+      if (iConnector >= VTOL_CONNECTOR_START)
+      {
+        //this might affect gun rotation
+        localModelMatrix *= glm::rotate(UNDEG(65536 / 2), glm::vec3(0.f, 0.f, 1.f));
+      }
+
+      localModelMatrix *= glm::translate(glm::vec3(psShapeBody->connectors[0].xzy()));
+
+      localModelMatrix *= glm::rotate(UNDEG(-rot.direction), glm::vec3(0.f, 1.f, 0.f));
+      /* Draw it */
+      if (psMountShape)
+      {
+        if (pie_Draw3DShape(psMountShape, 0, colour, brightness, pieFlag, iPieData, viewMatrix * localModelMatrix))
+        {
+          didDrawSomething = true;
+        }
+      }
+
+      /* translate for construct mount point if cyborg */
+      if (cyborgDroid(psDroid) && psMountShape && psMountShape->nconnectors)
+      {
+        localModelMatrix *= glm::translate(glm::vec3(psMountShape->connectors[0].xzy()));
+      }
+
+      /* Draw it */
+      if (psShape)
+      {
+        if (pie_Draw3DShape(psShape, 0, colour, brightness, pieFlag, iPieData, viewMatrix * localModelMatrix))
+        {
+          didDrawSomething = true;
+        }
+
+        // In repair droid case only:
+        if ((droidType == DROID_REPAIR || droidType == DROID_CYBORG_REPAIR) &&
+            psShape->nconnectors && action == DACTION_DROIDREPAIR)
+        {
+          Spacetime st = interpolateObjectSpacetime(psDroid, graphicsTime);
+          localModelMatrix *= glm::translate(glm::vec3(psShape->connectors[0].xzy()));
+          localModelMatrix *= glm::translate(glm::vec3(0.f, -20.f, 0.f));
+
+          psShape = getImdFromIndex(MI_FLAME);
+
+          /* Rotate for droid */
+          localModelMatrix *= glm::rotate(UNDEG(st.m_rotation
+                                                    .direction), glm::vec3(0.f, 1.f, 0.f));
+          localModelMatrix *= glm::rotate(UNDEG(-st.m_rotation.pitch), glm::vec3(1.f, 0.f, 0.f));
+          localModelMatrix *= glm::rotate(UNDEG(-st.m_rotation.roll), glm::vec3(0.f, 0.f, 1.f));
+          //rotate Y
+          localModelMatrix *= glm::rotate(UNDEG(rot.direction), glm::vec3(0.f, 1.f, 0.f));
+
+          localModelMatrix *= glm::rotate(UNDEG(-playerPos.r.y), glm::vec3(0.f, 1.f, 0.f));
+          localModelMatrix *= glm::rotate(UNDEG(-playerPos.r.x), glm::vec3(1.f, 0.f, 0.f));
+
+          if (pie_Draw3DShape(psShape, getModularScaledGraphicsTime(psShape->animInterval, psShape->numFrames), 0, brightness, pie_ADDITIVE, 140, viewMatrix * localModelMatrix))
+          {
+            didDrawSomething = true;
+          }
+
+          //						localModelMatrix *= glm::rotate(UNDEG(playerPos.r.x), glm::vec3(1.f, 0.f, 0.f)); // Not used?
+          //						localModelMatrix *= glm::rotate(UNDEG(playerPos.r.y), glm::vec3(0.f, 1.f, 0.f)); // Not used?
+        }
+      }
+      break;
+    }
+    case DROID_PERSON:
+      // no extra mounts for people
+      break;
+    default:
+      ASSERT(!"invalid droid type", "Whoa! Weirdy type of droid found in drawComponentObject!!!");
+      break;
+    }
+  }
+
+  /* set default components transparent */
+  if (asBits[COMP_PROPULSION] == 0)
+  {
+    pieFlag  |= pie_TRANSLUCENT;
+    iPieData  = DEFAULT_COMPONENT_TRANSLUCENCY;
+  }
+  else
+  {
+    pieFlag  &= ~pie_TRANSLUCENT;
+    iPieData = 0;
+  }
+
+  // now render the other propulsion side
+  psShapeProp = (leftFirst ? getRightPropulsionIMD(psDroid) : getLeftPropulsionIMD(psDroid));
+  if (psShapeProp)
+  {
+    if (pie_Draw3DShape(psShapeProp, 0, colour, brightness, pieFlag, iPieData, viewModelMatrix)) // Safe to use viewModelMatrix because modelView has not been changed since it was calculated
+    {
+      didDrawSomething = true;
+    }
+  }
+
+  return didDrawSomething;
 }

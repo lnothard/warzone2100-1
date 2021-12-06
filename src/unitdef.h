@@ -33,6 +33,8 @@ public:
   virtual int sensorRange() = 0;
 
   virtual bool aiUnitHasRange(const GameObject& targetObj, int weapon_slot) = 0;
+
+  void actionCalcPullBackPoint(GameObject const* targetObj, int *px, int *py) const;
 };
 
 #endif // WARZONE2100_UNITDEF_H

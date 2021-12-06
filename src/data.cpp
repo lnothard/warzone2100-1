@@ -492,7 +492,7 @@ static bool dataResearchMsgLoad(const char *fileName, void **ppData)
 static void dataSMSGRelease(void *pData)
 {
 	ASSERT(pData, "pData unexpectedly null");
-	WzString *pFilename = static_cast<WzString *>(pData);
+	auto *pFilename = static_cast<WzString *>(pData);
 	viewDataShutDown(pFilename->toUtf8().c_str());
 	delete pFilename;
 }
@@ -502,7 +502,7 @@ static void dataSMSGRelease(void *pData)
  */
 static bool dataImageLoad(const char *fileName, void **ppData)
 {
-	iV_Image *psSprite = (iV_Image *)malloc(sizeof(iV_Image));
+	auto *psSprite = (iV_Image *)malloc(sizeof(iV_Image));
 	if (!psSprite)
 	{
 		return false;
@@ -557,7 +557,7 @@ static void dataIMGRelease(void *pData)
  */
 static void dataImageRelease(void *pData)
 {
-	iV_Image *psSprite = (iV_Image *) pData;
+	auto *psSprite = (iV_Image *) pData;
 
 	if (psSprite)
 	{
@@ -569,7 +569,7 @@ static void dataImageRelease(void *pData)
 /* Load an audio file */
 static bool dataAudioLoad(const char *fileName, void **ppData)
 {
-	if (audio_Disabled() == true)
+	if (audio_Disabled())
 	{
 		*ppData = nullptr;
 		// No error occurred (sound is just disabled), so we return true
