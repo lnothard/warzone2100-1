@@ -66,11 +66,6 @@
 /* How many tiles to pull back. */
 #define PULL_BACK_DIST		10
 
-// Check if a droid has stopped moving
-#define DROID_STOPPED(psDroid) \
-	(psDroid->sMove.Status == MOVEINACTIVE || psDroid->sMove.Status == MOVEHOVER || \
-	 psDroid->sMove.Status == MOVESHUFFLE)
-
 /** Radius for search when looking for VTOL landing getPosition */
 static const int vtolLandingRadius = 23;
 
@@ -90,119 +85,6 @@ static const int vtolLandingRadius = 23;
  */
 typedef bool (*tileMatchFunction)(int x, int y, void *matchState);
 
-/* returns true if on target */
-bool actionTargetTurret(GameObject *psAttacker, GameObject *psTarget,
-                        Weapon *psWeapon)
-{
-	WEAPON_STATS *psWeapStats = asWeaponStats + psWeapon->nStat;
-	uint16_t tRotation, tPitch;
-	uint16_t targetRotation;
-	int32_t  rotationTolerance = 0;
-	int32_t  pitchLowerLimit, pitchUpperLimit;
-
-	if (!psTarget)
-	{
-		return false;
-	}
-
-	bool bRepair = psAttacker->getType == OBJ_DROID && ((Droid *)psAttacker)->droidType == DROID_REPAIR;
-
-	// these are constants now and can be set up at the start of the function
-	int rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
-	int pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
-
-	// extra heavy weapons on some structures need to rotate and pitch more slowly
-	if (psWeapStats->weight > HEAVY_WEAPON_WEIGHT && !bRepair)
-	{
-		UDWORD excess = DEG(100) * (psWeapStats->weight - HEAVY_WEAPON_WEIGHT) / psWeapStats->weight;
-
-		rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2 - excess;
-		pitchRate = rotRate / 2;
-	}
-
-	tRotation = psWeapon->rot.direction;
-	tPitch = psWeapon->rot.pitch;
-
-	//set the pitch limits based on the weapon stats of the attacker
-	pitchLowerLimit = pitchUpperLimit = 0;
-	Vector3i attackerMuzzlePos = psAttacker->getPosition;  // Using for calculating the pitch, but not the direction, in case using the exact direction causes bugs somewhere.
-	if (psAttacker->getType == OBJ_STRUCTURE)
-	{
-          auto *psStructure = (Structure *)psAttacker;
-		int weapon_slot = psWeapon - psStructure->m_weaponList;  // Should probably be passed weapon_slot instead of psWeapon.
-		calcStructureMuzzleLocation(psStructure, &attackerMuzzlePos, weapon_slot);
-		pitchLowerLimit = DEG(psWeapStats->minElevation);
-		pitchUpperLimit = DEG(psWeapStats->maxElevation);
-	}
-	else if (psAttacker->getType == OBJ_DROID)
-	{
-          auto *psDroid = (Droid *)psAttacker;
-		int weapon_slot = psWeapon - psDroid->m_weaponList;  // Should probably be passed weapon_slot instead of psWeapon.
-		calcDroidMuzzleLocation(psDroid, &attackerMuzzlePos, weapon_slot);
-
-		if (psDroid->droidType == DROID_WEAPON || isTransporter(psDroid)
-		    || psDroid->droidType == DROID_COMMAND || psDroid->droidType == DROID_CYBORG
-		    || psDroid->droidType == DROID_CYBORG_SUPER)
-		{
-			pitchLowerLimit = DEG(psWeapStats->minElevation);
-			pitchUpperLimit = DEG(psWeapStats->maxElevation);
-		}
-		else if (psDroid->droidType == DROID_REPAIR)
-		{
-			pitchLowerLimit = DEG(REPAIR_PITCH_LOWER);
-			pitchUpperLimit = DEG(REPAIR_PITCH_UPPER);
-		}
-	}
-
-	//get the maximum rotation this frame
-	rotRate = gameTimeAdjustedIncrement(rotRate);
-	rotRate = MAX(rotRate, DEG(1));
-	pitchRate = gameTimeAdjustedIncrement(pitchRate);
-	pitchRate = MAX(pitchRate, DEG(1));
-
-	//and point the turret at target
-	targetRotation =
-            calcDirection(psAttacker->getPosition.x, psAttacker->getPosition.y,
-                          psTarget->getPosition.x, psTarget->getPosition.y);
-
-	//restrict rotationerror to =/- 180 degrees
-	int rotationError = angleDelta(targetRotation - (tRotation + psAttacker->rotation.direction));
-
-	tRotation += clip(rotationError, -rotRate, rotRate);  // Addition wrapping intentional.
-	if (psAttacker->getType == OBJ_DROID && isVtolDroid((Droid *)psAttacker))
-	{
-		// limit the rotation for vtols
-		int32_t limit = VTOL_TURRET_LIMIT;
-		if (psWeapStats->weaponSubClass == WSC_BOMB || psWeapStats->weaponSubClass == WSC_EMP)
-		{
-			limit = 0;  // Don't turn bombs.
-			rotationTolerance = VTOL_TURRET_LIMIT_BOMB;
-		}
-		tRotation = (uint16_t)clip(angleDelta(tRotation), -limit, limit);  // Cast wrapping intentional.
-	}
-	bool onTarget = abs(angleDelta(targetRotation - (tRotation + psAttacker->rotation.direction))) <= rotationTolerance;
-
-	/* Set muzzle pitch if not repairing or outside minimum range */
-	const int minRange = proj_GetMinRange(psWeapStats, psAttacker->owningPlayer);
-	if (!bRepair && (unsigned)objPosDiffSq(psAttacker, psTarget) > minRange * minRange)
-	{
-		/* get target distance */
-		Vector3i delta = psTarget->getPosition - attackerMuzzlePos;
-		int32_t dxy = iHypot(delta.x, delta.y);
-
-		uint16_t targetPitch = iAtan2(delta.z, dxy);
-		targetPitch = (uint16_t)clip(angleDelta(targetPitch), pitchLowerLimit, pitchUpperLimit);  // Cast wrapping intended.
-		int pitchError = angleDelta(targetPitch - tPitch);
-
-		tPitch += clip(pitchError, -pitchRate, pitchRate);  // Addition wrapping intended.
-		onTarget = onTarget && targetPitch == tPitch;
-	}
-
-	psWeapon->rot.direction = tRotation;
-	psWeapon->rot.pitch = tPitch;
-
-	return onTarget;
-}
 
 // calculate a position for units to pull back to if they
 // need to increase the range between them and a target

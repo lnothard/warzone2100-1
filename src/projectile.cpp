@@ -531,11 +531,11 @@ bool proj_SendProjectileAngled(Weapon *psWeap, GameObject *psAttacker, int playe
 	{
 		if (psAttacker->type == OBJ_DROID)
 		{
-			((Droid *)psAttacker)->m_weaponList[weapon_slot].rot.pitch = psProj->rotation.pitch;
+			((Droid *)psAttacker)->weaponList[weapon_slot].rot.pitch = psProj->rotation.pitch;
 		}
 		else if (psAttacker->type == OBJ_STRUCTURE)
 		{
-			((Structure *)psAttacker)->m_weaponList[weapon_slot].rot.pitch = psProj->rotation.pitch;
+			((Structure *)psAttacker)->weaponList[weapon_slot].rot.pitch = psProj->rotation.pitch;
 		}
 	}
 
@@ -1746,13 +1746,13 @@ int establishTargetHeight(GameObject const *psTarget)
 				if (psDroid->numWeapons > 0)
 				{
 					// Don't do this for Barbarian Propulsions as they don't possess a turret (and thus have pIMD == NULL)
-					if ((asWeaponStats[psDroid->m_weaponList[0].nStat]).pIMD == nullptr)
+					if ((asWeaponStats[psDroid->weaponList[0].nStat]).pIMD == nullptr)
 					{
 						return height;
 					}
 
-					yMax = (asWeaponStats[psDroid->m_weaponList[0].nStat]).pIMD->max.y;
-					yMin = (asWeaponStats[psDroid->m_weaponList[0].nStat]).pIMD->min.y;
+					yMax = (asWeaponStats[psDroid->weaponList[0].nStat]).pIMD->max.y;
+					yMin = (asWeaponStats[psDroid->weaponList[0].nStat]).pIMD->min.y;
 				}
 				break;
 

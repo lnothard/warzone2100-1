@@ -1598,11 +1598,11 @@ void replaceStructureComponent(Structure *pList, UDWORD oldType, UDWORD oldCompI
 		case COMP_WEAPON:
 			for (inc = 0; inc < psStructure->numWeapons; inc++)
 			{
-				if (psStructure->m_weaponList[inc].nStat > 0)
+				if (psStructure->weaponList[inc].nStat > 0)
 				{
-					if (psStructure->m_weaponList[inc].nStat == oldCompInc)
+					if (psStructure->weaponList[inc].nStat == oldCompInc)
 					{
-						psStructure->m_weaponList[inc].nStat = newCompInc;
+						psStructure->weaponList[inc].nStat = newCompInc;
 					}
 				}
 			}
@@ -1636,11 +1636,11 @@ static void switchComponent(Droid *psDroid, UDWORD oldType, UDWORD oldCompInc,
 		break;
 	case COMP_WEAPON:
 		// Can only be one weapon now
-		if (psDroid->m_weaponList[0].nStat > 0)
+		if (psDroid->weaponList[0].nStat > 0)
 		{
-			if (psDroid->m_weaponList[0].nStat == oldCompInc)
+			if (psDroid->weaponList[0].nStat == oldCompInc)
 			{
-				psDroid->m_weaponList[0].nStat = newCompInc;
+				psDroid->weaponList[0].nStat = newCompInc;
 			}
 		}
 		break;

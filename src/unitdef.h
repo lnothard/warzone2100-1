@@ -17,18 +17,20 @@ class Unit : public GameObject
 {
 protected:
   unsigned numWeapons;
-  std::array<Weapon, MAX_WEAPONS> m_weaponList;
+  std::array<Weapon, MAX_WEAPONS> weaponList;
   UBYTE selected;
   UBYTE animationEvent;              ///< If animation start time > 0, this points to which animation to run
   UDWORD timeAnimationStarted;       ///< Animation start time, zero for do not animate
 public:
-  auto weaponList();
+  //auto weaponList();
   void alignTurret(int weaponSlot);
 
   int objPosDiffSq(Position otherPos) override;
   int objPosDiffSq(const GameObject& otherObj) override;
 
-  int objSensorRange();
+  virtual bool turretOnTarget(GameObject *targetObj, Weapon *weapon);
+
+  virtual int sensorRange() = 0;
 
   virtual bool aiUnitHasRange(const GameObject& targetObj, int weapon_slot) = 0;
 };

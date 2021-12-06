@@ -359,12 +359,12 @@ static inline CONSTRUCT_STATS *getConstructStats(const Droid *psDroid)
 
 static inline WEAPON_STATS *getWeaponStats(const Droid *psDroid, int weapon_slot)
 {
-	return asWeaponStats + psDroid->m_weaponList[weapon_slot].nStat;
+	return asWeaponStats + psDroid->weaponList[weapon_slot].nStat;
 }
 
 static inline Rotation getInterpolatedWeaponRotation(const Droid *psDroid, int weaponSlot, uint32_t time)
 {
-	return interpolateRot(psDroid->m_weaponList[weaponSlot].prevRot, psDroid->m_weaponList[weaponSlot].rot, psDroid->prevSpacetime.m_time, psDroid->time, time);
+	return interpolateRot(psDroid->weaponList[weaponSlot].prevRot, psDroid->weaponList[weaponSlot].rot, psDroid->prevSpacetime.m_time, psDroid->time, time);
 }
 
 /** helper functions for future refcount patch **/

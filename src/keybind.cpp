@@ -1513,9 +1513,9 @@ void kf_Reload()
 	{
 		if (isLasSat(psCurr->stats) && psCurr->selected)
 		{
-			unsigned int firePause = weaponFirePause(&asWeaponStats[psCurr->m_weaponList[0].nStat], psCurr->owningPlayer);
+			unsigned int firePause = weaponFirePause(&asWeaponStats[psCurr->weaponList[0].nStat], psCurr->owningPlayer);
 
-			psCurr->m_weaponList[0].lastFired -= firePause;
+			psCurr->weaponList[0].lastFired -= firePause;
 			CONPRINTF("%s", _("Selected buildings instantly recharged!"));
 		}
 	}

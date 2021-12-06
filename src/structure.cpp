@@ -223,19 +223,6 @@ static int numStructureModules(Structure const *psStruct)
 	return psStruct->capacity;
 }
 
-bool structureIsBlueprint(const Structure *psStructure)
-{
-	return (psStructure->status == SS_BLUEPRINT_VALID ||
-	        psStructure->status == SS_BLUEPRINT_INVALID ||
-	        psStructure->status == SS_BLUEPRINT_PLANNED ||
-	        psStructure->status == SS_BLUEPRINT_PLANNED_BY_ALLY);
-}
-
-bool isBlueprint(const GameObject *psObject)
-{
-	return psObject != nullptr && psObject->getType == OBJ_STRUCTURE && structureIsBlueprint((const Structure *)psObject);
-}
-
 void initStructLimits()
 {
 	for (unsigned i = 0; i < numStructureStats; ++i)
@@ -1198,11 +1185,11 @@ Structure *buildStructureDir(StructureStats *pStructureType, UDWORD x, UDWORD y,
 		//set up the rest of the data
 		for (i = 0; i < MAX_WEAPONS; i++)
 		{
-			psBuilding->m_weaponList[i].rot.direction = 0;
-			psBuilding->m_weaponList[i].rot.pitch = 0;
-			psBuilding->m_weaponList[i].rot.roll = 0;
-			psBuilding->m_weaponList[i].prevRot = psBuilding->m_weaponList[i].rot;
-			psBuilding->m_weaponList[i].origin = ORIGIN_UNKNOWN;
+			psBuilding->weaponList[i].rot.direction = 0;
+			psBuilding->weaponList[i].rot.pitch = 0;
+			psBuilding->weaponList[i].rot.roll = 0;
+			psBuilding->weaponList[i].prevRot = psBuilding->weaponList[i].rot;
+			psBuilding->weaponList[i].origin = ORIGIN_UNKNOWN;
 			psBuilding->psTarget[i] = nullptr;
 		}
 
@@ -1224,15 +1211,15 @@ Structure *buildStructureDir(StructureStats *pStructureType, UDWORD x, UDWORD y,
 			{
 				if (pStructureType->psWeapStat[weapon])
 				{
-					psBuilding->m_weaponList[weapon].lastFired = 0;
-					psBuilding->m_weaponList[weapon].shotsFired = 0;
+					psBuilding->weaponList[weapon].lastFired = 0;
+					psBuilding->weaponList[weapon].shotsFired = 0;
 					//in multiPlayer make the Las-Sats require re-loading from the start
 					if (bMultiPlayer && pStructureType->psWeapStat[0]->weaponSubClass == WSC_LAS_SAT)
 					{
-						psBuilding->m_weaponList[0].lastFired = gameTime;
+						psBuilding->weaponList[0].lastFired = gameTime;
 					}
-					psBuilding->m_weaponList[weapon].nStat =	pStructureType->psWeapStat[weapon] - asWeaponStats;
-					psBuilding->m_weaponList[weapon].ammo = (asWeaponStats + psBuilding->m_weaponList[weapon].nStat)->upgrade[psBuilding->owningPlayer].numRounds;
+					psBuilding->weaponList[weapon].nStat =	pStructureType->psWeapStat[weapon] - asWeaponStats;
+					psBuilding->weaponList[weapon].ammo = (asWeaponStats + psBuilding->weaponList[weapon].nStat)->upgrade[psBuilding->owningPlayer].numRounds;
 					psBuilding->numWeapons++;
 				}
 			}
@@ -1241,15 +1228,15 @@ Structure *buildStructureDir(StructureStats *pStructureType, UDWORD x, UDWORD y,
 		{
 			if (pStructureType->psWeapStat[0])
 			{
-				psBuilding->m_weaponList[0].lastFired = 0;
-				psBuilding->m_weaponList[0].shotsFired = 0;
+				psBuilding->weaponList[0].lastFired = 0;
+				psBuilding->weaponList[0].shotsFired = 0;
 				//in multiPlayer make the Las-Sats require re-loading from the start
 				if (bMultiPlayer && pStructureType->psWeapStat[0]->weaponSubClass == WSC_LAS_SAT)
 				{
-					psBuilding->m_weaponList[0].lastFired = gameTime;
+					psBuilding->weaponList[0].lastFired = gameTime;
 				}
-				psBuilding->m_weaponList[0].nStat =	pStructureType->psWeapStat[0] - asWeaponStats;
-				psBuilding->m_weaponList[0].ammo = (asWeaponStats + psBuilding->m_weaponList[0].nStat)->upgrade[psBuilding->owningPlayer].numRounds;
+				psBuilding->weaponList[0].nStat =	pStructureType->psWeapStat[0] - asWeaponStats;
+				psBuilding->weaponList[0].ammo = (asWeaponStats + psBuilding->weaponList[0].nStat)->upgrade[psBuilding->owningPlayer].numRounds;
 			}
 		}
 
@@ -1337,7 +1324,7 @@ Structure *buildStructureDir(StructureStats *pStructureType, UDWORD x, UDWORD y,
 
 		if (isLasSat(psBuilding->stats))
 		{
-			psBuilding->m_weaponList[0].ammo = 1; // ready to trigger the fire button
+			psBuilding->weaponList[0].ammo = 1; // ready to trigger the fire button
 		}
 
 		// Move any delivery points under the new structure.
@@ -1544,20 +1531,20 @@ Structure *buildBlueprint(StructureStats const *psStats, Vector3i pos, uint16_t 
 	blueprint->selected = false;
 
 	blueprint->numWeapons = 0;
-	blueprint->m_weaponList[0].nStat = 0;
+	blueprint->weaponList[0].nStat = 0;
 
 	// give defensive structures a weapon
 	if (psStats->psWeapStat[0])
 	{
-		blueprint->m_weaponList[0].nStat = psStats->psWeapStat[0] - asWeaponStats;
+		blueprint->weaponList[0].nStat = psStats->psWeapStat[0] - asWeaponStats;
 	}
 	// things with sensors or ecm (or repair facilities) need these set, even if they have no official weapon
 	blueprint->numWeapons = 0;
-	blueprint->m_weaponList[0].lastFired = 0;
-	blueprint->m_weaponList[0].rot.pitch = 0;
-	blueprint->m_weaponList[0].rot.direction = 0;
-	blueprint->m_weaponList[0].rot.roll = 0;
-	blueprint->m_weaponList[0].prevRot = blueprint->m_weaponList[0].rot;
+	blueprint->weaponList[0].lastFired = 0;
+	blueprint->weaponList[0].rot.pitch = 0;
+	blueprint->weaponList[0].rot.direction = 0;
+	blueprint->weaponList[0].rot.roll = 0;
+	blueprint->weaponList[0].prevRot = blueprint->weaponList[0].rot;
 
 	blueprint->expectedDamage = 0;
 
@@ -2293,20 +2280,6 @@ static bool checkHaltOnMaxUnitsReached(Structure *psStructure, bool isMission)
 	}
 
 	return isLimit;
-}
-
-/** Decides whether a structure should emit smoke when it's damaged */
-static bool canSmoke(const Structure *psStruct)
-{
-	if (psStruct->stats->type == REF_WALL || psStruct->stats->type == REF_WALLCORNER
-	    || psStruct->status == SS_BEING_BUILT || psStruct->stats->type == REF_GATE)
-	{
-		return (false);
-	}
-	else
-	{
-		return (true);
-	}
 }
 
 static float CalcStructureSmokeInterval(float damage)
@@ -3451,7 +3424,7 @@ bool calcStructureMuzzleLocation(const Structure *psStructure, Vector3i *muzzle,
 	if (psShape && psShape->nconnectors)
 	{
 		Vector3i barrel(0, 0, 0);
-		unsigned int nWeaponStat = psStructure->m_weaponList[weapon_slot].nStat;
+		unsigned int nWeaponStat = psStructure->weaponList[weapon_slot].nStat;
 		const iIMDShape *psWeaponImd = nullptr, *psMountImd = nullptr;
 
 		if (nWeaponStat)
@@ -3474,7 +3447,7 @@ bool calcStructureMuzzleLocation(const Structure *psStructure, Vector3i *muzzle,
 		         -psShape->connectors[weapon_slot].y);//note y and z flipped
 
 		//matrix = the weapon[slot] mount on the body
-		af.RotY(psStructure->m_weaponList[weapon_slot].rot.direction);  // +ve anticlockwise
+		af.RotY(psStructure->weaponList[weapon_slot].rot.direction);  // +ve anticlockwise
 
 		// process turret mount
 		if (psMountImd && psMountImd->nconnectors)
@@ -3483,7 +3456,7 @@ bool calcStructureMuzzleLocation(const Structure *psStructure, Vector3i *muzzle,
 		}
 
 		//matrix = the turret connector for the gun
-		af.RotX(psStructure->m_weaponList[weapon_slot].rot.pitch);      // +ve up
+		af.RotX(psStructure->weaponList[weapon_slot].rot.pitch);      // +ve up
 
 		//process the gun
 		if (psWeaponImd && psWeaponImd->nconnectors)
@@ -3491,10 +3464,10 @@ bool calcStructureMuzzleLocation(const Structure *psStructure, Vector3i *muzzle,
 			unsigned int connector_num = 0;
 
 			// which barrel is firing if model have multiple muzzle connectors?
-			if (psStructure->m_weaponList[weapon_slot].shotsFired && (psWeaponImd->nconnectors > 1))
+			if (psStructure->weaponList[weapon_slot].shotsFired && (psWeaponImd->nconnectors > 1))
 			{
 				// shoot first, draw later - substract one shot to get correct results
-				connector_num = (psStructure->m_weaponList[weapon_slot].shotsFired - 1) % (psWeaponImd->nconnectors);
+				connector_num = (psStructure->weaponList[weapon_slot].shotsFired - 1) % (psWeaponImd->nconnectors);
 			}
 
 			barrel = Vector3i(psWeaponImd->connectors[connector_num].x, -psWeaponImd->connectors[connector_num].z, -psWeaponImd->connectors[connector_num].y);
@@ -3849,7 +3822,7 @@ static unsigned int countAssignedDroids(const Structure *psStructure)
 		    && psCurr->order.psObj->id == psStructure->id
 		    && psCurr->owningPlayer == psStructure->owningPlayer)
 		{
-			const MOVEMENT_MODEL weapontype = asWeaponStats[psCurr->m_weaponList[0].nStat].movementModel;
+			const MOVEMENT_MODEL weapontype = asWeaponStats[psCurr->weaponList[0].nStat].movementModel;
 
 			if (weapontype == MM_INDIRECT
 			    || weapontype == MM_HOMINGINDIRECT
@@ -4900,30 +4873,30 @@ bool structSensorDroidWeapon(const Structure *psStruct, const Droid *psDroid)
 	{
 		//Standard Sensor Tower + indirect weapon droid (non VTOL)
 		//else if (structStandardSensor(psStruct) && (psDroid->numWeaps &&
-		if (structStandardSensor(psStruct) && (psDroid->m_weaponList[0].nStat > 0 &&
-		                                       !proj_Direct(asWeaponStats + psDroid->m_weaponList[0].nStat)) &&
+		if (structStandardSensor(psStruct) && (psDroid->weaponList[0].nStat > 0 &&
+		                                       !proj_Direct(asWeaponStats + psDroid->weaponList[0].nStat)) &&
 		    !isVtolDroid(psDroid))
 		{
 			return true;
 		}
 		//CB Sensor Tower + indirect weapon droid (non VTOL)
 		//if (structCBSensor(psStruct) && (psDroid->numWeaps &&
-		else if (structCBSensor(psStruct) && (psDroid->m_weaponList[0].nStat > 0 &&
-		                                      !proj_Direct(asWeaponStats + psDroid->m_weaponList[0].nStat)) &&
+		else if (structCBSensor(psStruct) && (psDroid->weaponList[0].nStat > 0 &&
+		                                      !proj_Direct(asWeaponStats + psDroid->weaponList[0].nStat)) &&
 		         !isVtolDroid(psDroid))
 		{
 			return true;
 		}
 		//VTOL Intercept Sensor Tower + any weapon VTOL droid
 		//else if (structVTOLSensor(psStruct) && psDroid->numWeaps &&
-		else if (structVTOLSensor(psStruct) && psDroid->m_weaponList[0].nStat > 0 &&
+		else if (structVTOLSensor(psStruct) && psDroid->weaponList[0].nStat > 0 &&
 		         isVtolDroid(psDroid))
 		{
 			return true;
 		}
 		//VTOL CB Sensor Tower + any weapon VTOL droid
 		//else if (structVTOLCBSensor(psStruct) && psDroid->numWeaps &&
-		else if (structVTOLCBSensor(psStruct) && psDroid->m_weaponList[0].nStat > 0 &&
+		else if (structVTOLCBSensor(psStruct) && psDroid->weaponList[0].nStat > 0 &&
 		         isVtolDroid(psDroid))
 		{
 			return true;
@@ -5359,8 +5332,8 @@ selected - returns true if valid*/
 bool lasSatStructSelected(const Structure *psStruct)
 {
 	if ((psStruct->selected || (bMultiPlayer && !isHumanPlayer(psStruct->owningPlayer)))
-	    && psStruct->m_weaponList[0].nStat
-	    && (asWeaponStats[psStruct->m_weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT))
+	    && psStruct->weaponList[0].nStat
+	    && (asWeaponStats[psStruct->weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT))
 	{
 		return true;
 	}
@@ -5403,7 +5376,7 @@ void checkStructure(const Structure *psStructure, const char *const location_des
 	ASSERT_HELPER(psStructure->stats->type < NUM_DIFF_BUILDINGS, location_description, function, "CHECK_STRUCTURE: Out of bound structure getType (%u)", (unsigned int)psStructure->stats->type);
 	ASSERT_HELPER(psStructure->numWeapons <= MAX_WEAPONS, location_description, function, "CHECK_STRUCTURE: Out of bound weapon count (%u)", (unsigned int)psStructure->numWeapons);
 
-	for (unsigned i = 0; i < ARRAY_SIZE(psStructure->m_weaponList); ++i)
+	for (unsigned i = 0; i < ARRAY_SIZE(psStructure->weaponList); ++i)
 	{
 		if (psStructure->psTarget[i])
 		{

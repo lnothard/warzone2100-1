@@ -106,12 +106,12 @@ static bool selType(Droid *droid, DROID_TYPE type)
 }
 static bool selCombat(Droid *droid)
 {
-	return droid->m_weaponList[0].nStat > 0 && !selTransporter(droid);
+	return droid->weaponList[0].nStat > 0 && !selTransporter(droid);
 }
 static bool selCombatLand(Droid *droid)
 {
 	PROPULSION_TYPE type = asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType;
-	return droid->m_weaponList[0].nStat > 0 && (type == PROPULSION_TYPE_WHEELED ||
+	return droid->weaponList[0].nStat > 0 && (type == PROPULSION_TYPE_WHEELED ||
 	                                       type == PROPULSION_TYPE_HALF_TRACKED ||
 	                                       type == PROPULSION_TYPE_TRACKED ||
 	                                       type == PROPULSION_TYPE_HOVER ||
@@ -120,7 +120,7 @@ static bool selCombatLand(Droid *droid)
 static bool selCombatCyborg(Droid *droid)
 {
 	PROPULSION_TYPE type = asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType;
-	return droid->m_weaponList[0].nStat > 0 && type == PROPULSION_TYPE_LEGGED;
+	return droid->weaponList[0].nStat > 0 && type == PROPULSION_TYPE_LEGGED;
 }
 static bool selDamaged(Droid *droid)
 {
@@ -187,7 +187,7 @@ static bool componentsInCombinations(Droid *psDroid, bool add)
 	{
 		switch(c)
 		{
-			case 0: stat = psDroid->m_weaponList[1].nStat; break;
+			case 0: stat = psDroid->weaponList[1].nStat; break;
 			case 1: stat = psDroid->asBits[COMP_ECM]; break;
 			case 2: stat = psDroid->asBits[COMP_BRAIN]; break;
 			case 3: stat = psDroid->asBits[COMP_SENSOR]; break;
@@ -195,7 +195,7 @@ static bool componentsInCombinations(Droid *psDroid, bool add)
 			case 5: stat = psDroid->asBits[COMP_CONSTRUCT]; break;
 			case 6: stat = psDroid->asBits[COMP_BODY]; break;
 			case 7: stat = psDroid->asBits[COMP_PROPULSION]; break;
-			case 8: stat = psDroid->m_weaponList[0].nStat; break;
+			case 8: stat = psDroid->weaponList[0].nStat; break;
 		}
 
 		// keep the list of components short by not adding stats with

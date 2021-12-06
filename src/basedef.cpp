@@ -16,7 +16,7 @@ Position GameObject::getPosition() const
 
 OBJECT_TYPE GameObject::getType() const
 {
-  return m_type;
+  return type;
 }
 
 bool GameObject::alive() const
@@ -28,4 +28,34 @@ bool GameObject::alive() const
 Spacetime GameObject::spacetime()
 {
   return {position, m_rotation, m_time };
+}
+
+void GameObject::checkObject(const char *const location_description, const char *function, const int recurse) const
+{
+  if (recurse < 0)
+  {
+    return;
+  }
+
+  switch (type)
+  {
+  case OBJ_DROID:
+    checkDroid((const Droid *)psObject, location_description, function, recurse - 1);
+    break;
+
+  case OBJ_STRUCTURE:
+    checkStructure((const Structure *)psObject, location_description, function, recurse - 1);
+    break;
+
+  case OBJ_PROJECTILE:
+    checkProjectile((const Projectile *)psObject, location_description, function, recurse - 1);
+    break;
+
+  case OBJ_FEATURE:
+    break;
+
+  default:
+    ASSERT_HELPER(!"invalid object type", location_description, function, "CHECK_OBJECT: Invalid object type (type num %u)", (unsigned int)psObject->type);
+    break;
+  }
 }

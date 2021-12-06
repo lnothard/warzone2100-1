@@ -940,8 +940,8 @@ void processMouseClickInput()
 			}
 			else if (arnMPointers[item][selection] == CURSOR_NOTPOSSIBLE &&
 			         ObjUnderMouse && (ObjUnderMouse->owningPlayer == selectedPlayer) &&
-			         ObjUnderMouse->type == OBJ_STRUCTURE && ((Structure *)ObjUnderMouse)->m_weaponList[0].nStat &&
-			         (asWeaponStats[((Structure *)ObjUnderMouse)->m_weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT))
+			         ObjUnderMouse->type == OBJ_STRUCTURE && ((Structure *)ObjUnderMouse)->weaponList[0].nStat &&
+			         (asWeaponStats[((Structure *)ObjUnderMouse)->weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT))
 			{
 				wzSetCursor(CURSOR_SELECT); // Special casing for LasSat
 			}
@@ -986,8 +986,8 @@ void processMouseClickInput()
 			}
 		}
 		else if (ObjUnderMouse && (ObjUnderMouse->owningPlayer == selectedPlayer) &&
-		         ((ObjUnderMouse->type == OBJ_STRUCTURE && ((Structure *)ObjUnderMouse)->m_weaponList[0].nStat
-		           && (asWeaponStats[((Structure *)ObjUnderMouse)->m_weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT))
+		         ((ObjUnderMouse->type == OBJ_STRUCTURE && ((Structure *)ObjUnderMouse)->weaponList[0].nStat
+		           && (asWeaponStats[((Structure *)ObjUnderMouse)->weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT))
 		          || ObjUnderMouse->type == OBJ_DROID))
 		{
 			wzSetCursor(CURSOR_SELECT); // Special casing for LasSat or own unit
@@ -1550,7 +1550,7 @@ void dealWithDroidSelect(Droid *psDroid, bool bDragBox)
 		if (specialOrderKeyDown())
 		{
 			/* We only want to select weapon units if ALT is down on a drag */
-			if (psDroid->m_weaponList[0].nStat > 0)
+			if (psDroid->weaponList[0].nStat > 0)
 			{
 				SelectDroid(psDroid);
 			}
@@ -1714,8 +1714,8 @@ static void dealWithLMBDroid(Droid *psDroid, SELECTION_TYPE selection)
 			//must be indirect weapon droid or VTOL weapon droid
 			if ((psCurr->droidType == DROID_WEAPON) &&
 			    (psCurr->selected) &&
-			    (psCurr->m_weaponList[0].nStat > 0) &&
-			    ((!proj_Direct(asWeaponStats + psCurr->m_weaponList[0].nStat)) ||
+			    (psCurr->weaponList[0].nStat > 0) &&
+			    ((!proj_Direct(asWeaponStats + psCurr->weaponList[0].nStat)) ||
 			     isVtolDroid(psCurr)) &&
 			    droidSensorDroidWeapon((GameObject *)psDroid, psCurr))
 			{
@@ -2590,7 +2590,7 @@ static SELECTION_TYPE	establishSelection(UDWORD _selectedPlayer)
 		switch (psDominant->droidType)
 		{
 		case DROID_WEAPON:
-			if (proj_Direct(asWeaponStats + psDominant->m_weaponList[0].nStat))
+			if (proj_Direct(asWeaponStats + psDominant->weaponList[0].nStat))
 			{
 				selectionClass = SC_DROID_DIRECT;
 			}

@@ -417,7 +417,7 @@ FPATH_RETVAL fpathDroidRoute(Droid *psDroid, SDWORD tX, SDWORD tY, FPATH_MOVETYP
 	// override for AI to blast our way through stuff
 	if (!isHumanPlayer(psDroid->owningPlayer) && moveType == FMT_MOVE)
 	{
-		moveType = (psDroid->m_weaponList[0].nStat == 0) ? FMT_MOVE : FMT_ATTACK;
+		moveType = (psDroid->weaponList[0].nStat == 0) ? FMT_MOVE : FMT_ATTACK;
 	}
 
 	ASSERT_OR_RETURN(FPR_FAILED, psPropStats != nullptr, "invalid propulsion stats pointer");

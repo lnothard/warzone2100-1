@@ -119,55 +119,6 @@ struct RtrBestResult
 
 static RtrBestResult decideWhereToRepairAndBalance(Droid *psDroid);
 
-/** This function checks if there are any structures to repair or help build in a given radius near the droid defined by REPAIR_RANGE if it is on hold, and REPAIR_MAXDIST if not on hold.
- * It returns a damaged or incomplete structure if any was found or nullptr if none was found.
- */
-static std::pair<Structure *, DROID_ACTION> checkForDamagedStruct(Droid *psDroid)
-{
-  Structure *psFailedTarget = nullptr;
-	if (psDroid->action == DROID_ACTION::SULK)
-	{
-		psFailedTarget = (Structure *)psDroid->psActionTarget[0];
-	}
-
-	unsigned radius = ((psDroid->order.type == DROID_ORDER_TYPE::HOLD) || (psDroid->order.type == DROID_ORDER_TYPE::NONE && secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_HOLD)) ? REPAIR_RANGE : REPAIR_MAXDIST;
-
-	unsigned bestDistanceSq = radius * radius;
-	std::pair<Structure *, DROID_ACTION> best = {nullptr, DROID_ACTION::NONE};
-
-	for (GameObject *object : gridStartIterate(
-                 psDroid->getPosition.x, psDroid->getPosition.y, radius))
-	{
-		unsigned distanceSq = droidSqDist(psDroid, object);  // droidSqDist returns -1 if unreachable, (unsigned)-1 is a big number.
-
-                Structure *structure = castStructure(object);
-		if (structure == nullptr ||  // Must be a structure.
-		    structure == psFailedTarget ||  // Must not have just failed to reach it.
-		    distanceSq > bestDistanceSq ||  // Must be as close as possible.
-		    !visibleObject(psDroid, structure, false) ||  // Must be able to sense it.
-		    !aiCheckAlliances(psDroid->owningPlayer, structure->owningPlayer) ||  // Must be a friendly structure.
-		    checkDroidsDemolishing(structure))  // Must not be trying to get rid of it.
-		{
-			continue;
-		}
-
-		// Check for structures to repair.
-		if (structure->status == SS_BUILT && structIsDamaged(structure))
-		{
-			bestDistanceSq = distanceSq;
-			best = {structure, DROID_ACTION::REPAIR};
-		}
-		// Check for structures to help build.
-		else if (structure->status == SS_BEING_BUILT)
-		{
-			bestDistanceSq = distanceSq;
-			best = {structure, DROID_ACTION::BUILD};
-		}
-	}
-
-	return best;
-}
-
 static bool isRepairlikeAction(DROID_ACTION action)
 {
 	switch (action)
@@ -313,20 +264,6 @@ static void orderPlayFireSupportAudio(GameObject *psObj)
 		audio_QueueTrackMinDelay(iAudioID, AUDIO_DELAY_FIRESUPPORT);
 	}
 }
-
-/** This function compares the current droid's order to the order.
- * Returns true if they are the same, false else.
- */
-bool orderState(Droid *psDroid, DROID_ORDER order)
-{
-	if (order == DROID_ORDER_TYPE::RTR)
-	{
-		return psDroid->order.type == DROID_ORDER_TYPE::RTR || psDroid->order.type == DROID_ORDER_TYPE::RTR_SPECIFIED;
-	}
-
-	return psDroid->order.type == order;
-}
-
 
 /** This function returns true if the order is an acceptable order to give for a given location on the map.*/
 bool validOrderForLoc(DROID_ORDER order)
@@ -757,7 +694,7 @@ DroidOrder chooseOrderObj(Droid *psDroid, GameObject *psObj, bool altOrder)
 	         (psDroid->droidType == DROID_WEAPON ||
 	          psDroid->droidType == DROID_CYBORG ||
 	          psDroid->droidType == DROID_CYBORG_SUPER) &&
-	         proj_Direct(asWeaponStats + psDroid->m_weaponList[0].nStat))
+	         proj_Direct(asWeaponStats + psDroid->weaponList[0].nStat))
 	{
 		order = DroidOrder(DROID_ORDER_TYPE::GUARD, psObj);
 		assignSensorTarget(psObj);
@@ -852,7 +789,7 @@ DroidOrder chooseOrderObj(Droid *psDroid, GameObject *psObj, bool altOrder)
 			else if ((psDroid->droidType == DROID_WEAPON ||
 			          psDroid->droidType == DROID_CYBORG ||
 			          psDroid->droidType == DROID_CYBORG_SUPER)
-			         && proj_Direct(asWeaponStats + psDroid->m_weaponList[0].nStat))
+			         && proj_Direct(asWeaponStats + psDroid->weaponList[0].nStat))
 			{
 				order = DroidOrder(DROID_ORDER_TYPE::GUARD, psObj);
 			}
@@ -1120,7 +1057,7 @@ bool secondarySupported(Droid *psDroid, SECONDARY_ORDER sec)
 		{
 			for (unsigned i = 0; i < psDroid->numWeapons; ++i)
 			{
-				const WEAPON_STATS *weaponStats = asWeaponStats + psDroid->m_weaponList[i].nStat;
+				const WEAPON_STATS *weaponStats = asWeaponStats + psDroid->weaponList[i].nStat;
 
 				if (proj_GetLongRange(weaponStats, psDroid->owningPlayer) == proj_GetShortRange(weaponStats, psDroid->owningPlayer))
 				{

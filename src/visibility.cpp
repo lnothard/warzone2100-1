@@ -527,7 +527,7 @@ int visibleObject(const GameObject *psViewer, const GameObject *psTarget, bool w
 			}
 
 			if (psTarget->getType == OBJ_DROID && isVtolDroid((const Droid *)psTarget)
-			    && asWeaponStats[psStruct->m_weaponList[0].nStat].surfaceToAir == SHOOT_IN_AIR)
+			    && asWeaponStats[psStruct->weaponList[0].nStat].surfaceToAir == SHOOT_IN_AIR)
 			{
 				range = 3 * range / 2;	// increase vision range of AA vs VTOL
 			}
@@ -974,11 +974,11 @@ bool lineOfFire(const GameObject *psViewer, const GameObject *psTarget, int weap
 
 	if (psViewer->getType == OBJ_DROID)
 	{
-		psStats = asWeaponStats + ((const Droid *)psViewer)->m_weaponList[weapon_slot].nStat;
+		psStats = asWeaponStats + ((const Droid *)psViewer)->weaponList[weapon_slot].nStat;
 	}
 	else if (psViewer->getType == OBJ_STRUCTURE)
 	{
-		psStats = asWeaponStats + ((const Structure *)psViewer)->m_weaponList[weapon_slot].nStat;
+		psStats = asWeaponStats + ((const Structure *)psViewer)->weaponList[weapon_slot].nStat;
 	}
 	// 2d distance
 	int distance = iHypot((psTarget->getPosition - psViewer->getPosition).xy());

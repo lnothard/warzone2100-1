@@ -468,7 +468,7 @@ void countUpdate(bool synch)
 				setSatUplinkExists(true, i);
 			}
 			//don't wait for the Las Sat to be built - can't build another if one is partially built
-			if (asWeaponStats[psCBuilding->m_weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT)
+			if (asWeaponStats[psCBuilding->weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT)
 			{
 				setLasSatExists(true, i);
 			}
@@ -480,7 +480,7 @@ void countUpdate(bool synch)
 				setSatUplinkExists(true, i);
 			}
 			//don't wait for the Las Sat to be built - can't build another if one is partially built
-			if (asWeaponStats[psCBuilding->m_weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT)
+			if (asWeaponStats[psCBuilding->weaponList[0].nStat].weaponSubClass == WSC_LAS_SAT)
 			{
 				setLasSatExists(true, i);
 			}

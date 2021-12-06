@@ -784,9 +784,9 @@ JSValue convStructure(const Structure *psStruct, JSContext *ctx)
 	int range = -1;
 	for (int i = 0; i < psStruct->numWeapons; i++)
 	{
-		if (psStruct->m_weaponList[i].nStat)
+		if (psStruct->weaponList[i].nStat)
 		{
-			WEAPON_STATS *psWeap = &asWeaponStats[psStruct->m_weaponList[i].nStat];
+			WEAPON_STATS *psWeap = &asWeaponStats[psStruct->weaponList[i].nStat];
 			aa = aa || psWeap->surfaceToAir & SHOOT_IN_AIR;
 			ga = ga || psWeap->surfaceToAir & SHOOT_ON_GROUND;
 			indirect = indirect || psWeap->movementModel == MM_INDIRECT || psWeap->movementModel == MM_HOMINGINDIRECT;
@@ -836,11 +836,11 @@ JSValue convStructure(const Structure *psStruct, JSContext *ctx)
 	for (int j = 0; j < psStruct->numWeapons; j++)
 	{
 		JSValue weapon = JS_NewObject(ctx);
-		const WEAPON_STATS *psStats = asWeaponStats + psStruct->m_weaponList[j].nStat;
+		const WEAPON_STATS *psStats = asWeaponStats + psStruct->weaponList[j].nStat;
 		QuickJS_DefinePropertyValue(ctx, weapon, "fullname", JS_NewString(ctx, psStats->name.toUtf8().c_str()), JS_PROP_ENUMERABLE);
 		QuickJS_DefinePropertyValue(ctx, weapon, "name", JS_NewString(ctx, psStats->textId.toUtf8().c_str()), JS_PROP_ENUMERABLE); // will be changed to contain full name
 		QuickJS_DefinePropertyValue(ctx, weapon, "id", JS_NewString(ctx, psStats->textId.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psStruct->m_weaponList[j].lastFired), JS_PROP_ENUMERABLE);
+		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psStruct->weaponList[j].lastFired), JS_PROP_ENUMERABLE);
 		JS_DefinePropertyValueUint32(ctx, weaponlist, j, weapon, JS_PROP_ENUMERABLE);
 	}
 	QuickJS_DefinePropertyValue(ctx, value, "weapons", weaponlist, JS_PROP_ENUMERABLE);
@@ -937,9 +937,9 @@ JSValue convDroid(const Droid *psDroid, JSContext *ctx)
 
 	for (int i = 0; i < psDroid->numWeapons; i++)
 	{
-		if (psDroid->m_weaponList[i].nStat)
+		if (psDroid->weaponList[i].nStat)
 		{
-			WEAPON_STATS *psWeap = &asWeaponStats[psDroid->m_weaponList[i].nStat];
+			WEAPON_STATS *psWeap = &asWeaponStats[psDroid->weaponList[i].nStat];
 			aa = aa || psWeap->surfaceToAir & SHOOT_IN_AIR;
 			ga = ga || psWeap->surfaceToAir & SHOOT_ON_GROUND;
 			indirect = indirect || psWeap->movementModel == MM_INDIRECT || psWeap->movementModel == MM_HOMINGINDIRECT;
@@ -997,13 +997,13 @@ JSValue convDroid(const Droid *psDroid, JSContext *ctx)
 	JSValue weaponlist = JS_NewArray(ctx);
 	for (int j = 0; j < psDroid->numWeapons; j++)
 	{
-		int armed = droidReloadBar(psDroid, &psDroid->m_weaponList[j], j);
+		int armed = droidReloadBar(psDroid, &psDroid->weaponList[j], j);
 		JSValue weapon = JS_NewObject(ctx);
-		const WEAPON_STATS *psStats = asWeaponStats + psDroid->m_weaponList[j].nStat;
+		const WEAPON_STATS *psStats = asWeaponStats + psDroid->weaponList[j].nStat;
 		QuickJS_DefinePropertyValue(ctx, weapon, "fullname", JS_NewString(ctx, psStats->name.toUtf8().c_str()), JS_PROP_ENUMERABLE);
 		QuickJS_DefinePropertyValue(ctx, weapon, "name", JS_NewString(ctx, psStats->textId.toUtf8().c_str()), JS_PROP_ENUMERABLE); // will be changed to contain full name
 		QuickJS_DefinePropertyValue(ctx, weapon, "id", JS_NewString(ctx, psStats->textId.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psDroid->m_weaponList[j].lastFired), JS_PROP_ENUMERABLE);
+		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psDroid->weaponList[j].lastFired), JS_PROP_ENUMERABLE);
 		QuickJS_DefinePropertyValue(ctx, weapon, "armed", JS_NewInt32(ctx, armed), JS_PROP_ENUMERABLE);
 		JS_DefinePropertyValueUint32(ctx, weaponlist, j, weapon, JS_PROP_ENUMERABLE);
 	}

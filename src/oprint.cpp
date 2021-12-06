@@ -201,9 +201,9 @@ void printDroidInfo(const Droid *psDroid)
 	CONPRINTF("   wt %d bSpeed %d sRng %d ECM %d bdy %d\n",
 	                          psDroid->weight, psDroid->baseSpeed, droidSensorRange(psDroid), objJammerPower(psDroid), psDroid->hitPoints);
 
-	if (psDroid->m_weaponList[0].nStat > 0)
+	if (psDroid->weaponList[0].nStat > 0)
 	{
-		printWeaponInfo(asWeaponStats + psDroid->m_weaponList[0].nStat);
+		printWeaponInfo(asWeaponStats + psDroid->weaponList[0].nStat);
 	}
 
 	for (int i = 0; i < COMP_NUMCOMPONENTS; ++i)

@@ -85,7 +85,7 @@ void drawMuzzleFlash(Weapon sWeap, iIMDShape *weaponImd, iIMDShape *flashImd, PI
 /* Get the brain imd - NOTE: Unused!*/
 #define BRAIN_IMD(DROID,PLAYER)	(asBrainStats[DROID->asBits[COMP_BRAIN]].pIMD)
 /* Get the weapon imd */
-#define WEAPON_IMD(DROID,WEAPON_NUM)	(asWeaponStats[DROID->m_weaponList[WEAPON_NUM].nStat].pIMD)
+#define WEAPON_IMD(DROID,WEAPON_NUM)	(asWeaponStats[DROID->weaponList[WEAPON_NUM].nStat].pIMD)
 /* Get the propulsion imd  THIS IS A LITTLE MORE COMPLICATED NOW!*/
 //#define PROPULSION_IMD(DROID,PLAYER)	(asPropulsionStats[DROID->asBits[COMP_PROPULSION]].pIMD[PLAYER])
 /* Get the sensor imd */
@@ -97,7 +97,7 @@ void drawMuzzleFlash(Weapon sWeap, iIMDShape *weaponImd, iIMDShape *flashImd, PI
 /* Get a construct imd */
 #define CONSTRUCT_IMD(DROID,PLAYER)	(asConstructStats[DROID->asBits[COMP_CONSTRUCT]].pIMD)
 /* Get a weapon mount imd*/
-#define WEAPON_MOUNT_IMD(DROID,WEAPON_NUM)	(asWeaponStats[DROID->m_weaponList[WEAPON_NUM].nStat].pMountGraphic)
+#define WEAPON_MOUNT_IMD(DROID,WEAPON_NUM)	(asWeaponStats[DROID->weaponList[WEAPON_NUM].nStat].pMountGraphic)
 /* Get a sensor mount imd*/
 #define SENSOR_MOUNT_IMD(DROID,PLAYER)	(asSensorStats[DROID->asBits[COMP_SENSOR]].pMountGraphic)
 /* Get a construct mount imd*/
@@ -107,6 +107,6 @@ void drawMuzzleFlash(Weapon sWeap, iIMDShape *weaponImd, iIMDShape *flashImd, PI
 /* Get a repair mount imd*/
 #define REPAIR_MOUNT_IMD(DROID,PLAYER)	(asRepairStats[DROID->asBits[COMP_REPAIRUNIT]].pMountGraphic)
 /* Get a muzzle flash pie*/
-#define MUZZLE_FLASH_PIE(DROID,WEAPON_NUM)	(asWeaponStats[DROID->m_weaponList[WEAPON_NUM].nStat].pMuzzleGraphic)
+#define MUZZLE_FLASH_PIE(DROID,WEAPON_NUM)	(asWeaponStats[DROID->weaponList[WEAPON_NUM].nStat].pMuzzleGraphic)
 
 #endif // __INCLUDED_SRC_COMPONENT_H__

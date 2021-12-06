@@ -359,7 +359,7 @@ static inline int structJammerPower(const Structure *psObj)
 
 static inline Rotation structureGetInterpolatedWeaponRotation(Structure *psStructure, int weaponSlot, uint32_t time)
 {
-	return interpolateRot(psStructure->m_weaponList[weaponSlot].prevRot, psStructure->m_weaponList[weaponSlot].rot, psStructure->prevTime, psStructure->time, time);
+	return interpolateRot(psStructure->weaponList[weaponSlot].prevRot, psStructure->weaponList[weaponSlot].rot, psStructure->prevTime, psStructure->time, time);
 }
 
 #define setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin) _setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin, __LINE__, __FUNCTION__)
@@ -369,7 +369,7 @@ static inline void _setStructureTarget(Structure *psBuilding,
 	ASSERT_OR_RETURN(, idx < MAX_WEAPONS, "Bad index");
 	ASSERT_OR_RETURN(, psNewTarget == nullptr || !psNewTarget->deathTime, "setStructureTarget set dead target");
 	psBuilding->psTarget[idx] = psNewTarget;
-	psBuilding->m_weaponList[idx].origin = targetOrigin;
+	psBuilding->weaponList[idx].origin = targetOrigin;
 #ifdef DEBUG
 	psBuilding->targetLine[idx] = line;
 	sstrcpy(psBuilding->targetFunc[idx], func);

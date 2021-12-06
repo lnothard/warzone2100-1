@@ -156,11 +156,13 @@ public:
   void cancelBuild();
   void droidBodyUpgrade();
   void setPosition(int x, int y);
+  bool isStationary() const;
   bool droidOnMap();
   bool isCyborg();
   bool isConstructionDroid();
   bool isSelectable() const;
   void selectDroid();
+  bool orderState(DROID_ORDER order) const;
   void DeSelectDroid();
   void actionUpdateTransporter();
   void actionUpdateVtolAttack();
@@ -169,7 +171,7 @@ public:
   bool hasCBSensor() const;
   void updateVtolAttackRun(int weaponSlot);
   bool vtolHappy() const;
-  UWORD getNumAttackRuns(int weapon_slot);
+  UWORD getNumAttackRuns(int weapon_slot) const;
   bool allVtolsRearmed() const;
   bool isAttacking() const;
   bool vtolRearming() const;
@@ -221,11 +223,31 @@ public:
   void actionDroid(DROID_ACTION action, GameObject *psObj);
   void actionDroid(DROID_ACTION action, GameObject *psObj, UDWORD x, UDWORD y);
   bool droidRemove(Droid *pList[MAX_PLAYERS]);
+  int sensorRange() override;
+  bool turretOnTarget(GameObject *targetObj, Weapon *weapon) override;
 protected:
   /// UTF-8 name of the droid. This is generated from the droid template
   ///  WARNING: This *can* be changed by the game player after creation & can be translated, do NOT rely on this being the same for everyone!
   char name[MAX_STR_LENGTH];
-  DROID_TYPE      droidType;                      ///< The type of droid
+
+  enum {
+    WEAPON,           ///< Weapon droid
+    SENSOR,           ///< Sensor droid
+    ECM,              ///< ECM droid
+    CONSTRUCT,        ///< Constructor droid
+    PERSON,           ///< person
+    CYBORG,           ///< cyborg-type thang
+    TRANSPORTER,      ///< guess what this is!
+    COMMAND,          ///< Command droid
+    REPAIR,           ///< Repair droid
+    DEFAULT,          ///< Default droid
+    CYBORG_CONSTRUCT, ///< cyborg constructor droid - new for update 28/5/99
+    CYBORG_REPAIR,    ///< cyborg repair droid - new for update 28/5/99
+    CYBORG_SUPER,     ///< cyborg repair droid - new for update 7/6/99
+    SUPERTRANSPORTER,	///< SuperTransport (MP)
+    ANY,              ///< Any droid. Used as a parameter for various stuff.
+  } droidType;
+
   /** Holds the specifics for the component parts - allows damage
    *  per part to be calculated. Indexed by COMPONENT_TYPE.
    *  Weapons need to be dealt with separately.
@@ -252,7 +274,7 @@ protected:
   OrderList       asOrderList;                    ///< The range [0; listSize - 1] corresponds to synchronised orders, and the range [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will remain, once all orders are synchronised.
   unsigned        listPendingBegin;               ///< Index of first order which will not be erased by a pending order. After all messages are processed, the orders in the range [listPendingBegin; listPendingEnd - 1] will remain.
   /* Order data */
-  DROID_ORDER_DATA order;
+  DROID_ORDER_DATA activeOrder;
 
   // secondary order data
   UDWORD          secondaryOrder;

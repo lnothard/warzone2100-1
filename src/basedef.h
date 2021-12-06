@@ -74,7 +74,7 @@ enum class OBJECT_FLAG
 
 class GameObject {
 protected:
-  const OBJECT_TYPE m_type;                         ///< The getType of object
+  const OBJECT_TYPE type;                         ///< The getType of object
   Position position;                            ///< Object's three-dimensional coordinate
   Rotation m_rotation;
   uint32_t m_time;
@@ -102,6 +102,7 @@ public:
   OBJECT_TYPE getType() const;
   bool alive() const;
   Spacetime spacetime();
+  void checkObject(const char *const location_description, const char *function, const int recurse) const;
 
   virtual int objPosDiffSq(Position otherPos) = 0;
   virtual int objPosDiffSq(const GameObject& otherObj) = 0;

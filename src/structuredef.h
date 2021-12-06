@@ -37,36 +37,6 @@
 #define NUM_POWER_MODULES 4
 #define	REF_ANY 255		// Used to indicate any kind of building when calling intGotoNextStructureType()
 
-/* Defines for indexing an appropriate IMD object given a buildings purpose. */
-enum class STRUCTURE_TYPE
-{
-  HQ,
-  FACTORY,
-  FACTORY_MODULE,           //draw as factory 2
-  POWER_GEN,
-  POWER_MODULE,
-  RESOURCE_EXTRACTOR,
-  DEFENSE,
-  WALL,
-  WALLCORNER,				//corner wall - no gun
-  GENERIC,
-  RESEARCH,
-  RESEARCH_MODULE,
-  REPAIR_FACILITY,
-  COMMAND_CONTROL,		//control centre for command droids
-  BRIDGE,			//NOT USED, but removing it would change savegames
-  DEMOLISH,			//the demolish structure type - should only be one stat with this type
-  CYBORG_FACTORY,
-  VTOL_FACTORY,
-  LAB,
-  REARM_PAD,
-  MISSILE_SILO,
-  SAT_UPLINK,         //added for updates - AB 8/6/99
-  GATE,
-  LASSAT,
-  COUNT		//need to keep a count of how many types for IMD loading
-};
-
 struct FLAG_POSITION : public OBJECT_POSITION
 {
   Vector3i coords = Vector3i(0, 0, 0); //the world coords of the Position
@@ -105,8 +75,8 @@ public:
   StructureStats();
 
   Vector2i size(uint16_t direction) const;
+  bool canSmoke() const;
 protected:
-  STRUCTURE_TYPE type;            /* the type of structure */
   STRUCT_STRENGTH strength;       /* strength against the weapon effects */
   UDWORD baseWidth;               /*The width of the base in tiles*/
   UDWORD baseBreadth;             /*The breadth of the base in tiles*/
@@ -144,6 +114,35 @@ protected:
     unsigned limit;		// current max limit for this type, LOTS_OF = no limit
   } upgrade[MAX_PLAYERS], base;
 
+  /* Defines for indexing an appropriate IMD object given a buildings purpose. */
+  enum class {
+    HQ,
+    FACTORY,
+    FACTORY_MODULE,           //draw as factory 2
+    POWER_GEN,
+    POWER_MODULE,
+    RESOURCE_EXTRACTOR,
+    DEFENSE,
+    WALL,
+    WALLCORNER,				//corner wall - no gun
+    GENERIC,
+    RESEARCH,
+    RESEARCH_MODULE,
+    REPAIR_FACILITY,
+    COMMAND_CONTROL,		//control centre for command droids
+    BRIDGE,			//NOT USED, but removing it would change savegames
+    DEMOLISH,			//the demolish structure type - should only be one stat with this type
+    CYBORG_FACTORY,
+    VTOL_FACTORY,
+    LAB,
+    REARM_PAD,
+    MISSILE_SILO,
+    SAT_UPLINK,         //added for updates - AB 8/6/99
+    GATE,
+    LASSAT,
+    COUNT		//need to keep a count of how many types for IMD loading
+  } type;
+
   bool isFavorite;		///< on Favorites list
 };
 
@@ -157,15 +156,7 @@ static inline StructureStats const *castStructureStats(StatsObject const *stats)
   return stats != nullptr && stats->hasType(STAT_STRUCTURE)? dynamic_cast<StructureStats const *>(stats) : nullptr;
 }
 
-enum class STRUCT_STATES
-{
-  BEING_BUILT,
-  BUILT,
-  BLUEPRINT_VALID,
-  BLUEPRINT_INVALID,
-  BLUEPRINT_PLANNED,
-  BLUEPRINT_PLANNED_BY_ALLY,
-};
+
 
 enum class PENDING_STATUS
 {
@@ -217,6 +208,8 @@ public:
   virtual void printStructureInfo() = 0;
 
   bool aiUnitHasRange(const GameObject& targetObj, int weapon_slot) override;
+  int sensorRange() override;
+  bool turretOnTarget(GameObject *targetObj, Weapon *weapon) override;
 
   void addConstructorEffect();
   void alignStructure();
@@ -225,10 +218,20 @@ public:
   void structureUpdate(bool bMission);
   int  requestOpenGate();
   void aiUpdateStructure(bool isMission);
-
+  bool isBlueprint() const;
+  bool canSmoke() const;
 protected:
   std::unique_ptr<StructureStats> stats;            /* pointer to the structure stats for this type of building */
-  STRUCT_STATES       status;                     /* defines whether the structure is being built, doing nothing or performing a function */
+
+  enum class {
+    BEING_BUILT,
+    BUILT,
+    BLUEPRINT_VALID,
+    BLUEPRINT_INVALID,
+    BLUEPRINT_PLANNED,
+    BLUEPRINT_PLANNED_BY_ALLY,
+  } status;
+
   uint32_t            currentBuildPts;            /* the build points currently assigned to this structure */
   int                 resistance;                 /* current resistance points, 0 = cannot be attacked electrically */
   UDWORD              lastResistance;             /* time the resistance was last increased*/
@@ -268,11 +271,11 @@ public:
 
 class RepairFacility : public Structure
 {
-  GameObject *psObj;                /* Object being repaired */
-  FLAG_POSITION *psDeliveryPoint;    /* Place for the repaired droids to assemble at */
-  // The group the droids to be repaired by this facility belong to
-  DROID_GROUP *psGroup;
-  int droidQueue;                    ///< Last count of droid queue for this facility
+  GameObject&    repairTarget;                /* Object being repaired */
+  FLAG_POSITION* psDeliveryPoint;    /* Place for the repaired droids to assemble at */
+
+  DROID_GROUP*   psGroup;                       // The group the droids to be repaired by this facility belong to
+  int            droidQueue;                    ///< Last count of droid queue for this facility
 };
 
 class RearmPad : public Structure

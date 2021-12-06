@@ -5191,7 +5191,7 @@ foundDroid:
 		psDroid->listPendingBegin = 0;
 		for (int j = 0; j < MAX_WEAPONS; j++)
 		{
-			objTrace(psDroid->id, "weapon %d, nStat %d", j, psDroid->m_weaponList[j].nStat);
+			objTrace(psDroid->id, "weapon %d, nStat %d", j, psDroid->weaponList[j].nStat);
 			getIniGameObject(ini, "actionTarget/" + WzString::number(j), psDroid->psActionTarget[j]);
 		}
 		if (ini.contains("baseStruct/id"))
@@ -5491,12 +5491,12 @@ static bool loadSaveDroid(const char *pFileName, Droid **ppsCurrentDroidLists)
 		// copy the droid's weapon stats
 		for (int j = 0; j < psDroid->numWeapons; j++)
 		{
-			if (psDroid->m_weaponList[j].nStat > 0)
+			if (psDroid->weaponList[j].nStat > 0)
 			{
-				psDroid->m_weaponList[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
-				psDroid->m_weaponList[j].lastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
-				psDroid->m_weaponList[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
-				psDroid->m_weaponList[j].rot = ini.vector3i("rotation/" + WzString::number(j));
+				psDroid->weaponList[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
+				psDroid->weaponList[j].lastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
+				psDroid->weaponList[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
+				psDroid->weaponList[j].rot = ini.vector3i("rotation/" + WzString::number(j));
 			}
 		}
 
@@ -5544,7 +5544,7 @@ static bool loadSaveDroid(const char *pFileName, Droid **ppsCurrentDroidLists)
 		psDroid->sMove.shuffleStart = ini.value("shuffleStart").toInt();
 		for (int j = 0; j < MAX_WEAPONS; ++j)
 		{
-			psDroid->m_weaponList[j].usedAmmo = ini.value("attackRun/" + WzString::number(j)).toInt();
+			psDroid->weaponList[j].usedAmmo = ini.value("attackRun/" + WzString::number(j)).toInt();
 		}
 		psDroid->sMove.lastBump = ini.value("lastBump").toInt();
 		psDroid->sMove.pauseTime = ini.value("pauseTime").toInt();
@@ -5604,14 +5604,14 @@ static nlohmann::json writeDroid(Droid *psCurr, bool onMission, int &counter)
 
 	for (unsigned i = 0; i < psCurr->numWeapons; i++)
 	{
-		if (psCurr->m_weaponList[i].nStat > 0)
+		if (psCurr->weaponList[i].nStat > 0)
 		{
 			auto numberWzStr = WzString::number(i);
 			const std::string& numStr = numberWzStr.toStdString();
-			droidObj["ammo/" + numStr] = psCurr->m_weaponList[i].ammo;
-			droidObj["lastFired/" + numStr] = psCurr->m_weaponList[i].lastFired;
-			droidObj["shotsFired/" + numStr] = psCurr->m_weaponList[i].shotsFired;
-			droidObj["rotation/" + numStr] = toVector(psCurr->m_weaponList[i].rot);
+			droidObj["ammo/" + numStr] = psCurr->weaponList[i].ammo;
+			droidObj["lastFired/" + numStr] = psCurr->weaponList[i].lastFired;
+			droidObj["shotsFired/" + numStr] = psCurr->weaponList[i].shotsFired;
+			droidObj["rotation/" + numStr] = toVector(psCurr->weaponList[i].rot);
 		}
 	}
 	for (unsigned i = 0; i < MAX_WEAPONS; i++)
@@ -5679,7 +5679,7 @@ static nlohmann::json writeDroid(Droid *psCurr, bool onMission, int &counter)
 	partsObj["construct"] = (asConstructStats + psCurr->asBits[COMP_CONSTRUCT])->textId;
 	for (int j = 0; j < psCurr->numWeapons; j++)
 	{
-		partsObj["weapon/" + WzString::number(j + 1).toStdString()] = (asWeaponStats + psCurr->m_weaponList[j].nStat)->textId;
+		partsObj["weapon/" + WzString::number(j + 1).toStdString()] = (asWeaponStats + psCurr->weaponList[j].nStat)->textId;
 	}
 	droidObj["parts"] = partsObj;
 	droidObj["moveStatus"] = psCurr->sMove.Status;
@@ -5700,7 +5700,7 @@ static nlohmann::json writeDroid(Droid *psCurr, bool onMission, int &counter)
 	droidObj["shuffleStart"] = psCurr->sMove.shuffleStart;
 	for (int i = 0; i < MAX_WEAPONS; ++i)
 	{
-		droidObj["attackRun/" + WzString::number(i).toStdString()] = psCurr->m_weaponList[i].usedAmmo;
+		droidObj["attackRun/" + WzString::number(i).toStdString()] = psCurr->weaponList[i].usedAmmo;
 	}
 	droidObj["lastBump"] = psCurr->sMove.lastBump;
 	droidObj["pauseTime"] = psCurr->sMove.pauseTime;
@@ -6235,12 +6235,12 @@ static bool loadSaveStructure2(const char *pFileName, Structure **ppList)
 		// weapons
 		for (int j = 0; j < psStructure->stats->numWeaps; j++)
 		{
-			if (psStructure->m_weaponList[j].nStat > 0)
+			if (psStructure->weaponList[j].nStat > 0)
 			{
-				psStructure->m_weaponList[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
-				psStructure->m_weaponList[j].lastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
-				psStructure->m_weaponList[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
-				psStructure->m_weaponList[j].rot = ini.vector3i("rotation/" + WzString::number(j));
+				psStructure->weaponList[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
+				psStructure->weaponList[j].lastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
+				psStructure->weaponList[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
+				psStructure->weaponList[j].rot = ini.vector3i("rotation/" + WzString::number(j));
 			}
 		}
 		psStructure->status = (STRUCT_STATES)ini.value("status", SS_BUILT).toInt();
@@ -6319,13 +6319,13 @@ bool writeStructFile(const char *pFileName)
 			ini.setValue("weapons", psCurr->numWeapons);
 			for (unsigned j = 0; j < psCurr->numWeapons; j++)
 			{
-				ini.setValue("parts/weapon/" + WzString::number(j + 1), (asWeaponStats + psCurr->m_weaponList[j].nStat)->textId);
-				if (psCurr->m_weaponList[j].nStat > 0)
+				ini.setValue("parts/weapon/" + WzString::number(j + 1), (asWeaponStats + psCurr->weaponList[j].nStat)->textId);
+				if (psCurr->weaponList[j].nStat > 0)
 				{
-					ini.setValue("ammo/" + WzString::number(j), psCurr->m_weaponList[j].ammo);
-					ini.setValue("lastFired/" + WzString::number(j), psCurr->m_weaponList[j].lastFired);
-					ini.setValue("shotsFired/" + WzString::number(j), psCurr->m_weaponList[j].shotsFired);
-					ini.setVector3i("rotation/" + WzString::number(j), toVector(psCurr->m_weaponList[j].rot));
+					ini.setValue("ammo/" + WzString::number(j), psCurr->weaponList[j].ammo);
+					ini.setValue("lastFired/" + WzString::number(j), psCurr->weaponList[j].lastFired);
+					ini.setValue("shotsFired/" + WzString::number(j), psCurr->weaponList[j].shotsFired);
+					ini.setVector3i("rotation/" + WzString::number(j), toVector(psCurr->weaponList[j].rot));
 				}
 			}
 			for (unsigned i = 0; i < psCurr->numWeapons; i++)
@@ -6472,7 +6472,7 @@ bool loadSaveStructurePointers(const WzString& filename, Structure **ppList)
 		}
 		for (int j = 0; j < MAX_WEAPONS; j++)
 		{
-			objTrace(psStruct->id, "weapon %d, nStat %d", j, psStruct->m_weaponList[j].nStat);
+			objTrace(psStruct->id, "weapon %d, nStat %d", j, psStruct->weaponList[j].nStat);
 			if (ini.contains("target/" + WzString::number(j) + "/id"))
 			{
 				int tid = ini.value("target/" + WzString::number(j) + "/id", -1).toInt();

@@ -237,7 +237,7 @@ static SDWORD targetAttackWeight(GameObject *psTarget, GameObject *psAttacker, S
 	{
 		psAttackerDroid = (Droid *)psAttacker;
 
-		attackerWeapon = (WEAPON_STATS *)(asWeaponStats + psAttackerDroid->m_weaponList[weapon_slot].nStat);
+		attackerWeapon = (WEAPON_STATS *)(asWeaponStats + psAttackerDroid->weaponList[weapon_slot].nStat);
 
 		//check if this droid is assigned to a commander
 		bCmdAttached = hasCommander(psAttackerDroid);
@@ -279,7 +279,7 @@ static SDWORD targetAttackWeight(GameObject *psTarget, GameObject *psAttacker, S
 	}
 	else if (psAttacker->getType == OBJ_STRUCTURE)
 	{
-		attackerWeapon = ((WEAPON_STATS *)(asWeaponStats + ((Structure *)psAttacker)->m_weaponList[weapon_slot].nStat));
+		attackerWeapon = ((WEAPON_STATS *)(asWeaponStats + ((Structure *)psAttacker)->weaponList[weapon_slot].nStat));
 	}
 	else	/* feature */
 	{
@@ -507,20 +507,20 @@ int aiBestNearestTarget(Droid *psDroid, GameObject **ppsObj, int weapon_slot, in
 
 	/* Return if have no weapons */
 	// The ai orders a non-combat droid to patrol = crash without it...
-	if ((psDroid->m_weaponList[0].nStat == 0 || psDroid->numWeapons == 0) && psDroid->droidType != DROID_SENSOR)
+	if ((psDroid->weaponList[0].nStat == 0 || psDroid->numWeapons == 0) && psDroid->droidType != DROID_SENSOR)
 	{
 		return failure;
 	}
 	// Check if we have a CB target to begin with
-	if (!proj_Direct(asWeaponStats + psDroid->m_weaponList[weapon_slot].nStat))
+	if (!proj_Direct(asWeaponStats + psDroid->weaponList[weapon_slot].nStat))
 	{
-		WEAPON_STATS *psWStats = psDroid->m_weaponList[weapon_slot].nStat + asWeaponStats;
+		WEAPON_STATS *psWStats = psDroid->weaponList[weapon_slot].nStat + asWeaponStats;
 
 		bestTarget = aiSearchSensorTargets((GameObject *)psDroid, weapon_slot, psWStats, &tmpOrigin);
 		bestMod = targetAttackWeight(bestTarget, (GameObject *)psDroid, weapon_slot);
 	}
 
-	weaponEffect = (asWeaponStats + psDroid->m_weaponList[weapon_slot].nStat)->weaponEffect;
+	weaponEffect = (asWeaponStats + psDroid->weaponList[weapon_slot].nStat)->weaponEffect;
 
 	electronic = electronicDroid(psDroid);
 
@@ -615,7 +615,7 @@ int aiBestNearestTarget(Droid *psDroid, GameObject **ppsObj, int weapon_slot, in
 						psTarget = targetInQuestion;
 					}
 				}
-				else if (psStruct->m_weaponList[0].nStat > 0)
+				else if (psStruct->weaponList[0].nStat > 0)
 				{
 					// structure with weapons - go for this
 					psTarget = targetInQuestion;
@@ -659,7 +659,7 @@ int aiBestNearestTarget(Droid *psDroid, GameObject **ppsObj, int weapon_slot, in
 
 		// See if target is blocked by a wall; only affects direct weapons
 		// Ignore friendly walls here
-		if (proj_Direct(asWeaponStats + psDroid->m_weaponList[weapon_slot].nStat)
+		if (proj_Direct(asWeaponStats + psDroid->weaponList[weapon_slot].nStat)
 			&& targetStructure
 			&& !aiCheckAlliances(psDroid->owningPlayer, targetStructure->owningPlayer))
 		{
@@ -1093,9 +1093,9 @@ bool validTarget(GameObject *psObject, GameObject *psTarget, int weapon_slot)
 		}
 
 		// Can't attack without a weapon
-		if (((Droid *)psObject)->numWeapons != 0 && ((Droid *)psObject)->m_weaponList[weapon_slot].nStat != 0)
+		if (((Droid *)psObject)->numWeapons != 0 && ((Droid *)psObject)->weaponList[weapon_slot].nStat != 0)
 		{
-			surfaceToAir = asWeaponStats[((Droid *)psObject)->m_weaponList[weapon_slot].nStat].surfaceToAir;
+			surfaceToAir = asWeaponStats[((Droid *)psObject)->weaponList[weapon_slot].nStat].surfaceToAir;
 			if (((surfaceToAir & SHOOT_IN_AIR) && bTargetInAir) || ((surfaceToAir & SHOOT_ON_GROUND) && !bTargetInAir))
 			{
 				return true;
@@ -1108,9 +1108,9 @@ bool validTarget(GameObject *psObject, GameObject *psTarget, int weapon_slot)
 		break;
 	case OBJ_STRUCTURE:
 		// Can't attack without a weapon
-		if (((Structure *)psObject)->numWeapons != 0 && ((Structure *)psObject)->m_weaponList[weapon_slot].nStat != 0)
+		if (((Structure *)psObject)->numWeapons != 0 && ((Structure *)psObject)->weaponList[weapon_slot].nStat != 0)
 		{
-			surfaceToAir = asWeaponStats[((Structure *)psObject)->m_weaponList[weapon_slot].nStat].surfaceToAir;
+			surfaceToAir = asWeaponStats[((Structure *)psObject)->weaponList[weapon_slot].nStat].surfaceToAir;
 		}
 		else
 		{

@@ -28,7 +28,7 @@
 #include "lib/framework/vector.h"
 
 class GameObject;
-struct StatsObject;
+class StatsObject;
 class GameObject;
 class Spacetime;
 

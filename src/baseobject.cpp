@@ -139,38 +139,6 @@ UBYTE GameObject::visibleForLocalDisplay() const
 	return visible[selectedPlayer];
 }
 
-void checkObject(const GameObject *psObject, const char *const location_description, const char *function, const int recurse)
-{
-	if (recurse < 0)
-	{
-		return;
-	}
-
-	ASSERT(psObject != nullptr, "NULL pointer");
-
-	switch (psObject->type)
-	{
-	case OBJ_DROID:
-		checkDroid((const Droid *)psObject, location_description, function, recurse - 1);
-		break;
-
-	case OBJ_STRUCTURE:
-		checkStructure((const Structure *)psObject, location_description, function, recurse - 1);
-		break;
-
-	case OBJ_PROJECTILE:
-		checkProjectile((const Projectile *)psObject, location_description, function, recurse - 1);
-		break;
-
-	case OBJ_FEATURE:
-		break;
-
-	default:
-		ASSERT_HELPER(!"invalid object type", location_description, function, "CHECK_OBJECT: Invalid object type (type num %u)", (unsigned int)psObject->type);
-		break;
-	}
-}
-
 void _syncDebugObject(const char *function, GameObject const *psObject, char ch)
 {
 	switch (psObject->type)

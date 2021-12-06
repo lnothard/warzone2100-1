@@ -530,7 +530,7 @@ static bool displayCompObj(Droid *psDroid, bool bButton, const glm::mat4 &viewMa
 	}
 
 	/* set default components transparent */
-	if (psDroid->m_weaponList[0].nStat        == 0 &&
+	if (psDroid->weaponList[0].nStat        == 0 &&
 	    psDroid->asBits[COMP_SENSOR]     == 0 &&
 	    psDroid->asBits[COMP_ECM]        == 0 &&
 	    psDroid->asBits[COMP_BRAIN]      == 0 &&
@@ -576,7 +576,7 @@ static bool displayCompObj(Droid *psDroid, bool bButton, const glm::mat4 &viewMa
 			/* Double check that the weapon droid actually has any */
 			for (i = 0; i < psDroid->numWeapons; i++)
 			{
-				if ((psDroid->m_weaponList[i].nStat > 0 || psDroid->droidType == DROID_DEFAULT)
+				if ((psDroid->weaponList[i].nStat > 0 || psDroid->droidType == DROID_DEFAULT)
 				    && psShapeBody->connectors)
 				{
 					Rotation rot = getInterpolatedWeaponRotation(psDroid, i, graphicsTime);
@@ -604,7 +604,7 @@ static bool displayCompObj(Droid *psDroid, bool bButton, const glm::mat4 &viewMa
 					/* Get the mount graphic */
 					iIMDShape *psShape = WEAPON_MOUNT_IMD(psDroid, i);
 
-					int recoilValue = getRecoil(psDroid->m_weaponList[i]);
+					int recoilValue = getRecoil(psDroid->weaponList[i]);
 					localModelMatrix *= glm::translate(glm::vec3(0.f, 0.f, recoilValue / 3.f));
 
 					/* Draw it */
@@ -646,7 +646,7 @@ static bool displayCompObj(Droid *psDroid, bool bButton, const glm::mat4 &viewMa
 						{
 							didDrawSomething = true;
 						}
-						drawMuzzleFlash(psDroid->m_weaponList[i], psShape, MUZZLE_FLASH_PIE(psDroid, i), brightness, pieFlag, iPieData, localViewModelMatrix);
+						drawMuzzleFlash(psDroid->weaponList[i], psShape, MUZZLE_FLASH_PIE(psDroid, i), brightness, pieFlag, iPieData, localViewModelMatrix);
 					}
 				}
 			}
@@ -936,7 +936,7 @@ void destroyFXDroid(Droid *psDroid, unsigned impactTime)
 			case DROID_COMMAND:
 				if (psDroid->numWeapons > 0)
 				{
-					if (psDroid->m_weaponList[0].nStat > 0)
+					if (psDroid->weaponList[0].nStat > 0)
 					{
 						psImd = WEAPON_MOUNT_IMD(psDroid, 0);
 					}

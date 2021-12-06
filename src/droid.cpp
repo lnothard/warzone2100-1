@@ -126,7 +126,7 @@ int droidReloadBar(const GameObject *psObj, const Weapon *psWeap, int weapon_slo
 		if (psObj->getType == OBJ_DROID && isVtolDroid((const Droid *)psObj))
 		{
 			//deal with VTOLs
-			firingStage = getNumAttackRuns((const Droid *)psObj, weapon_slot) - ((const Droid *)psObj)->m_weaponList[weapon_slot].usedAmmo;
+			firingStage = getNumAttackRuns((const Droid *)psObj, weapon_slot) - ((const Droid *)psObj)->weaponList[weapon_slot].usedAmmo;
 
 			//compare with max value
 			interval = getNumAttackRuns((const Droid *)psObj, weapon_slot);
@@ -147,50 +147,6 @@ int droidReloadBar(const GameObject *psObj, const Weapon *psWeap, int weapon_slo
 
 #define UNIT_LOST_DELAY	(5*GAME_TICKS_PER_SEC)
 
-
-Droid::Droid(uint32_t id, unsigned player)
-	: GameObject(OBJ_DROID, id, player)
-	, droidType(DROID_ANY)
-	, psGroup(nullptr)
-	, psGrpNext(nullptr)
-	, secondaryOrder(DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD)
-	, secondaryOrderPending(DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD)
-	, secondaryOrderPendingCount(0)
-	, action(DACTION_NONE)
-	, actionPos(0, 0)
-{
-	memset(name, 0, sizeof(name));
-	memset(asBits, 0, sizeof(asBits));
-        getPosition = Vector3i(0, 0, 0);
-        rotation = Vector3i(0, 0, 0);
-	order.type = DORDER_NONE;
-	order.pos = Vector2i(0, 0);
-	order.pos2 = Vector2i(0, 0);
-	order.direction = 0;
-	order.psObj = nullptr;
-	order.psStats = nullptr;
-	sMove.Status = MOVEINACTIVE;
-	listSize = 0;
-	listPendingBegin = 0;
-	iAudioID = NO_SOUND;
-	group = UBYTE_MAX;
-	psBaseStruct = nullptr;
-        displayData.frameNumber = 0;	// it was never drawn before
-	for (unsigned vPlayer = 0; vPlayer < MAX_PLAYERS; ++vPlayer)
-	{
-		visible[vPlayer] = hasSharedVision(vPlayer, player) ? UINT8_MAX : 0;
-	}
-	memset(seenThisTick, 0, sizeof(seenThisTick));
-	periodicalDamageStart = 0;
-	periodicalDamage = 0;
-        displayData.screenX = OFF_SCREEN;
-        displayData.screenY = OFF_SCREEN;
-        displayData.screenR = 0;
-        displayData.imd = nullptr;
-	illumination = UBYTE_MAX;
-	resistance = ACTION_START_TIME;	// init the resistance to indicate no EW performed on this droid
-	lastFrustratedTime = 0;		// make sure we do not start the game frustrated
-}
 
 /* DROID::~DROID: release all resources associated with a droid -
  * should only be called by objmem - use vanishDroid preferably
@@ -507,7 +463,7 @@ static unsigned calcSum(const DroidStats *psTemplate, F func, G propulsionFunc)
 template <typename F, typename G>
 static unsigned calcSum(const Droid *psDroid, F func, G propulsionFunc)
 {
-	FilterDroidWeaps f = {psDroid->numWeapons, psDroid->m_weaponList};
+	FilterDroidWeaps f = {psDroid->numWeapons, psDroid->weaponList};
 	return calcSum(psDroid->asBits, f.numWeaps, f.asWeaps, func, propulsionFunc);
 }
 
@@ -520,7 +476,7 @@ static unsigned calcUpgradeSum(const DroidStats *psTemplate, int player, F func,
 template <typename F, typename G>
 static unsigned calcUpgradeSum(const Droid *psDroid, int player, F func, G propulsionFunc)
 {
-	FilterDroidWeaps f = {psDroid->numWeapons, psDroid->m_weaponList};
+	FilterDroidWeaps f = {psDroid->numWeapons, psDroid->weaponList};
 	return calcUpgradeSum(psDroid->asBits, f.numWeaps, f.asWeaps, player, func, propulsionFunc);
 }
 
@@ -771,10 +727,10 @@ void templateSetParts(const Droid *psDroid, DroidStats *psTemplate)
 	{
 		//this should fix the NULL weapon stats for empty weaponslots
 		psTemplate->asWeaps[inc] = 0;
-		if (psDroid->m_weaponList[inc].nStat > 0)
+		if (psDroid->weaponList[inc].nStat > 0)
 		{
 			psTemplate->numWeaps += 1;
-			psTemplate->asWeaps[inc] = psDroid->m_weaponList[inc].nStat;
+			psTemplate->asWeaps[inc] = psDroid->weaponList[inc].nStat;
 		}
 	}
 	memcpy(psTemplate->asParts, psDroid->asBits, sizeof(psDroid->asBits));
@@ -1078,7 +1034,7 @@ bool calcDroidMuzzleLocation(const Droid *psDroid, Vector3i *muzzle, int weapon_
 		Vector3i barrel(0, 0, 0);
 		const iIMDShape *psWeaponImd = nullptr, *psMountImd = nullptr;
 
-		if (psDroid->m_weaponList[weapon_slot].nStat)
+		if (psDroid->weaponList[weapon_slot].nStat)
 		{
 			psMountImd = WEAPON_MOUNT_IMD(psDroid, weapon_slot);
 			psWeaponImd = WEAPON_IMD(psDroid, weapon_slot);
@@ -1098,7 +1054,7 @@ bool calcDroidMuzzleLocation(const Droid *psDroid, Vector3i *muzzle, int weapon_
 		debugLen += sprintf(debugStr + debugLen, "connect:body[%d]=(%d,%d,%d)", weapon_slot, psBodyImd->connectors[weapon_slot].x, -psBodyImd->connectors[weapon_slot].z, -psBodyImd->connectors[weapon_slot].y);
 
 		//matrix = the weapon[slot] mount on the body
-		af.RotY(psDroid->m_weaponList[weapon_slot].rot.direction);  // +ve anticlockwise
+		af.RotY(psDroid->weaponList[weapon_slot].rot.direction);  // +ve anticlockwise
 
 		// process turret mount
 		if (psMountImd && psMountImd->nconnectors)
@@ -1108,7 +1064,7 @@ bool calcDroidMuzzleLocation(const Droid *psDroid, Vector3i *muzzle, int weapon_
 		}
 
 		//matrix = the turret connector for the gun
-		af.RotX(psDroid->m_weaponList[weapon_slot].rot.pitch);      // +ve up
+		af.RotX(psDroid->weaponList[weapon_slot].rot.pitch);      // +ve up
 
 		//process the gun
 		if (psWeaponImd && psWeaponImd->nconnectors)
@@ -1116,10 +1072,10 @@ bool calcDroidMuzzleLocation(const Droid *psDroid, Vector3i *muzzle, int weapon_
 			unsigned int connector_num = 0;
 
 			// which barrel is firing if model have multiple muzzle connectors?
-			if (psDroid->m_weaponList[weapon_slot].shotsFired && (psWeaponImd->nconnectors > 1))
+			if (psDroid->weaponList[weapon_slot].shotsFired && (psWeaponImd->nconnectors > 1))
 			{
 				// shoot first, draw later - substract one shot to get correct results
-				connector_num = (psDroid->m_weaponList[weapon_slot].shotsFired - 1) % (psWeaponImd->nconnectors);
+				connector_num = (psDroid->weaponList[weapon_slot].shotsFired - 1) % (psWeaponImd->nconnectors);
 			}
 
 			barrel = Vector3i(psWeaponImd->connectors[connector_num].x,
@@ -1686,14 +1642,14 @@ bool droidSensorDroidWeapon(const GameObject *psObj, const Droid *psDroid)
 
 	//finally check the right droid/sensor combination
 	// check vtol droid with commander
-	if ((isVtolDroid(psDroid) || !proj_Direct(asWeaponStats + psDroid->m_weaponList[0].nStat)) &&
+	if ((isVtolDroid(psDroid) || !proj_Direct(asWeaponStats + psDroid->weaponList[0].nStat)) &&
             psObj->getType == OBJ_DROID && ((const Droid *)psObj)->droidType == DROID_COMMAND)
 	{
 		return true;
 	}
 
 	//check vtol droid with vtol sensor
-	if (isVtolDroid(psDroid) && psDroid->m_weaponList[0].nStat > 0)
+	if (isVtolDroid(psDroid) && psDroid->weaponList[0].nStat > 0)
 	{
 		if (psStats->type == VTOL_INTERCEPT_SENSOR || psStats->type == VTOL_CB_SENSOR || psStats->type == SUPER_SENSOR /*|| psStats->type == RADAR_DETECTOR_SENSOR*/)
 		{
@@ -1703,7 +1659,7 @@ bool droidSensorDroidWeapon(const GameObject *psObj, const Droid *psDroid)
 	}
 
 	// Check indirect weapon droid with standard/CB/radar detector sensor
-	if (!proj_Direct(asWeaponStats + psDroid->m_weaponList[0].nStat))
+	if (!proj_Direct(asWeaponStats + psDroid->weaponList[0].nStat))
 	{
 		if (psStats->type == STANDARD_SENSOR ||	psStats->type == INDIRECT_CB_SENSOR || psStats->type == SUPER_SENSOR /*|| psStats->type == RADAR_DETECTOR_SENSOR*/)
 		{
@@ -1994,7 +1950,7 @@ void checkDroid(const Droid *droid, const char *const location, const char *func
 
 	for (int i = 0; i < MAX_WEAPONS; ++i)
 	{
-		ASSERT_HELPER(droid->m_weaponList[i].lastFired <= gameTime, location, function, "CHECK_DROID: Bad last fired time for turret %u", i);
+		ASSERT_HELPER(droid->weaponList[i].lastFired <= gameTime, location, function, "CHECK_DROID: Bad last fired time for turret %u", i);
 	}
 }
 

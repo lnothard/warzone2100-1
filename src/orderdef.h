@@ -33,7 +33,7 @@
 
 class DROID_GROUP;
 class GameObject;
-struct StatsObject;
+class StatsObject;
 class Droid;
 class Structure;
 struct StructureStats;

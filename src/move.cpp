@@ -1342,9 +1342,9 @@ SDWORD moveCalcDroidSpeed(Droid *psDroid)
 	// stop droids that have just fired a no fire while moving weapon
 	if (psDroid->numWeapons > 0)
 	{
-		if (psDroid->m_weaponList[0].nStat > 0 && psDroid->m_weaponList[0].lastFired + FOM_MOVEPAUSE > gameTime)
+		if (psDroid->weaponList[0].nStat > 0 && psDroid->weaponList[0].lastFired + FOM_MOVEPAUSE > gameTime)
 		{
-			psWStats = asWeaponStats + psDroid->m_weaponList[0].nStat;
+			psWStats = asWeaponStats + psDroid->weaponList[0].nStat;
 			if (!psWStats->fireOnMove)
 			{
 				speed = 0;

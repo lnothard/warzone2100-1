@@ -2271,9 +2271,9 @@ static void renderStructureTurrets(Structure *psStructure, iIMDShape *strImd, PI
 	//check for weapon
 	for (int i = 0; i < MAX(1, psStructure->numWeapons); i++)
 	{
-		if (psStructure->m_weaponList[i].nStat > 0)
+		if (psStructure->weaponList[i].nStat > 0)
 		{
-			const int nWeaponStat = psStructure->m_weaponList[i].nStat;
+			const int nWeaponStat = psStructure->weaponList[i].nStat;
 
 			weaponImd[i] = asWeaponStats[nWeaponStat].pIMD;
 			mountImd[i] = asWeaponStats[nWeaponStat].pMountGraphic;
@@ -2319,7 +2319,7 @@ static void renderStructureTurrets(Structure *psStructure, iIMDShape *strImd, PI
 		if (weaponImd[i] != nullptr)
 		{
 			glm::mat4 matrix = glm::translate(glm::vec3(strImd->connectors[i].xzy())) * glm::rotate(UNDEG(-rot.direction), glm::vec3(0.f, 1.f, 0.f));
-			int recoilValue = noRecoil ? 0 : getRecoil(psStructure->m_weaponList[i]);
+			int recoilValue = noRecoil ? 0 : getRecoil(psStructure->weaponList[i]);
 			if (mountImd[i] != nullptr)
 			{
 				matrix *= glm::translate(glm::vec3(0.f, 0.f, recoilValue / 3.f));
@@ -2367,16 +2367,16 @@ static void renderStructureTurrets(Structure *psStructure, iIMDShape *strImd, PI
 				}
 				else // we have a weapon so we draw a muzzle flash
 				{
-					drawMuzzleFlash(psStructure->m_weaponList[i], weaponImd[i], flashImd[i], buildingBrightness, pieFlag, pieFlagData, modelViewMatrix * matrix, colour);
+					drawMuzzleFlash(psStructure->weaponList[i], weaponImd[i], flashImd[i], buildingBrightness, pieFlag, pieFlagData, modelViewMatrix * matrix, colour);
 				}
 			}
 		}
 		// no IMD, its a baba machine gun, bunker, etc.
-		else if (psStructure->m_weaponList[i].nStat > 0)
+		else if (psStructure->weaponList[i].nStat > 0)
 		{
 			if (psStructure->status == SS_BUILT)
 			{
-				const int nWeaponStat = psStructure->m_weaponList[i].nStat;
+				const int nWeaponStat = psStructure->weaponList[i].nStat;
 
 				// get an imd to draw on the connector priority is weapon, ECM, sensor
 				// check for weapon
@@ -2403,8 +2403,8 @@ static void renderStructureTurrets(Structure *psStructure, iIMDShape *strImd, PI
 						if (flashImd[i]->numFrames == 0 || flashImd[i]->animInterval <= 0)
 						{
 							// no anim so display one frame for a fixed time
-							if (graphicsTime >= psStructure->m_weaponList
-                                                                        [i].lastFired && graphicsTime < psStructure->m_weaponList
+							if (graphicsTime >= psStructure->weaponList
+                                                                        [i].lastFired && graphicsTime < psStructure->weaponList
                                                                             [i].lastFired + BASE_MUZZLE_FLASH_DURATION)
 							{
 								pie_Draw3DShape(flashImd[i], 0, colour, buildingBrightness, 0, 0, modelViewMatrix * matrix); //muzzle flash
@@ -2412,7 +2412,7 @@ static void renderStructureTurrets(Structure *psStructure, iIMDShape *strImd, PI
 						}
 						else
 						{
-							const int frame = (graphicsTime - psStructure->m_weaponList[i].lastFired) / flashImd[i]->animInterval;
+							const int frame = (graphicsTime - psStructure->weaponList[i].lastFired) / flashImd[i]->animInterval;
 							if (frame < flashImd[i]->numFrames && frame >= 0)
 							{
 								pie_Draw3DShape(flashImd[i], 0, colour, buildingBrightness, 0, 0, modelViewMatrix * matrix); //muzzle flash
@@ -2802,7 +2802,7 @@ static void drawStructureTargetOriginIcon(Structure *psStruct, int weapon_slot)
 	UDWORD		scale;
 
 	// Process main weapon only for now
-	if (!tuiTargetOrigin || weapon_slot || !((psStruct->m_weaponList[weapon_slot]).nStat))
+	if (!tuiTargetOrigin || weapon_slot || !((psStruct->weaponList[weapon_slot]).nStat))
 	{
 		return;
 	}
@@ -2813,7 +2813,7 @@ static void drawStructureTargetOriginIcon(Structure *psStruct, int weapon_slot)
 	scrR = scale * 20;
 
 	/* Render target origin graphics */
-	switch (psStruct->m_weaponList[weapon_slot].origin)
+	switch (psStruct->weaponList[weapon_slot].origin)
 	{
 	case ORIGIN_VISUAL:
 		iV_DrawImage(IntImages, IMAGE_ORIGIN_VISUAL, scrX + scrR + 5, scrY - 1);
@@ -2951,7 +2951,7 @@ static void	drawStructureSelections()
 
 				for (i = 0; i < psStruct->numWeapons; i++)
 				{
-					drawWeaponReloadBar((GameObject *)psStruct, &psStruct->m_weaponList[i], i);
+					drawWeaponReloadBar((GameObject *)psStruct, &psStruct->weaponList[i], i);
 					drawStructureTargetOriginIcon(psStruct, i);
 				}
 			}
@@ -3111,7 +3111,7 @@ void drawDroidSelection(Droid *psDroid, bool drawBox){
 
 	for (int i = 0; i < psDroid->numWeapons; i++)
 	{
-		drawWeaponReloadBar((GameObject *)psDroid, &psDroid->m_weaponList[i], i);
+		drawWeaponReloadBar((GameObject *)psDroid, &psDroid->weaponList[i], i);
 	}
 }
 
@@ -3872,7 +3872,7 @@ static void showWeaponRange(GameObject *psObj)
 	if (psObj->type == OBJ_DROID)
 	{
           Droid *psDroid = (Droid *)psObj;
-		const int compIndex = psDroid->m_weaponList[0].nStat;	// weapon_slot
+		const int compIndex = psDroid->weaponList[0].nStat;	// weapon_slot
 		ASSERT_OR_RETURN(, compIndex < numWeaponStats, "Invalid range referenced for numWeaponStats, %d > %d", compIndex, numWeaponStats);
 		psStats = asWeaponStats + compIndex;
 	}

@@ -248,7 +248,7 @@ bool recvLasSat(NETQUEUE queue)
 	if (psStruct && psObj && psStruct->stats->psWeapStat[0]->weaponSubClass == WSC_LAS_SAT)
 	{
 		// Lassats have just one weapon
-		unsigned firePause = weaponFirePause(&asWeaponStats[psStruct->m_weaponList[0].nStat], player);
+		unsigned firePause = weaponFirePause(&asWeaponStats[psStruct->weaponList[0].nStat], player);
 		unsigned damLevel = PERCENT(psStruct->hitPoints, structureBody(psStruct));
 
 		if (damLevel < HEAVY_DAMAGE_LEVEL)
@@ -256,16 +256,16 @@ bool recvLasSat(NETQUEUE queue)
 			firePause += firePause;
 		}
 
-		if (isHumanPlayer(player) && gameTime - psStruct->m_weaponList[0].lastFired <= firePause)
+		if (isHumanPlayer(player) && gameTime - psStruct->weaponList[0].lastFired <= firePause)
 		{
 			/* Too soon to fire again */
 			return true ^ false;  // Return value meaningless and ignored.
 		}
 
 		// Give enemy no quarter, unleash the lasat
-		proj_SendProjectile(&psStruct->m_weaponList[0], nullptr, player, psObj->position, psObj, true, 0);
-		psStruct->m_weaponList[0].lastFired = gameTime;
-		psStruct->m_weaponList[0].ammo = 1; // abducting this field for keeping track of triggers
+		proj_SendProjectile(&psStruct->weaponList[0], nullptr, player, psObj->position, psObj, true, 0);
+		psStruct->weaponList[0].lastFired = gameTime;
+		psStruct->weaponList[0].ammo = 1; // abducting this field for keeping track of triggers
 
 		// Play 5 second countdown message
 		audio_QueueTrackPos(ID_SOUND_LAS_SAT_COUNTDOWN, psObj->position.x, psObj->position.y, psObj->position.z);
