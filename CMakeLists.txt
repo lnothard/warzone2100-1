@@ -48,7 +48,7 @@ if(MSVC)
 	# However, avoid using any features not supported by c++11 or the build will fail on other platforms.
 	set(CMAKE_CXX_STANDARD 14)
 else()
-	set(CMAKE_CXX_STANDARD 11)
+	set(CMAKE_CXX_STANDARD 20)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF) # Disable compiler-specific extensions
