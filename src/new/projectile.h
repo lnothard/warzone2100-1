@@ -23,11 +23,11 @@ private:
   using enum PROJECTILE_STATE;
 
   PROJECTILE_STATE state;
-  Unit *source;
-  Unit *target;
-  Vector3i destination;
-  Vector3i origin;
-  uint32_t base_damage;
+  Unit*            source;
+  Unit*            target;
+  Vector3i         destination;
+  Vector3i         origin;
+  uint32_t         base_damage;
 };
 
 #endif // WARZONE2100_PROJECTILE_H

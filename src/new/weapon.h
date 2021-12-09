@@ -83,7 +83,7 @@ struct Weapon_Stats : public Component_Stats
     uint32_t ticking_damage_radius;
     uint32_t ticking_damage_time;
     uint8_t  rounds_per_salvo;
-  } base_stats, upgraded_stats;
+  } base_stats, upgraded_stats[MAX_PLAYERS];
 
   WEAPON_CLASS    wclass;
   WEAPON_SUBCLASS subclass;
@@ -117,7 +117,11 @@ enum class ATTACKER_TYPE
 class Weapon
 {
 public:
+  bool has_ammo() const;
+  bool has_full_ammo() const;
   uint32_t get_recoil() const;
+  uint32_t get_max_range(uint8_t player) const;
+  uint32_t get_min_range(uint8_t player) const;
 private:
   using enum ATTACKER_TYPE;
 
@@ -126,6 +130,7 @@ private:
   Rotation      rotation;
   Rotation      previous_rotation;
   uint32_t      ammo;
+  uint32_t      ammo_used;
   uint32_t      time_last_fired;
   uint32_t      shots_fired;
 };

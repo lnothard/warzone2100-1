@@ -83,13 +83,20 @@ public:
   bool is_VTOL() const;
   bool is_flying() const;
   bool is_transporter() const;
+  bool is_builder() const;
+  bool is_cyborg() const;
   bool is_damaged() const;
   bool is_stationary() const;
+  bool is_rearming() const;
+  bool is_attacking() const;
+  bool is_VTOL_rearmed_and_repaired() const;
   bool has_commander() const;
-  int  maximum_range() const;
-  bool target_within_range(Unit& target) const;
+  bool has_standard_sensor() const;
+  bool has_CB_sensor() const;
+  bool target_within_range(const Unit& target, uint8_t weapon_slot) const;
   void gain_experience(uint32_t exp);
   void commander_gain_experience(uint32_t exp);
+  void move_to_rearming_pad();
 private:
   using enum ACTION;
   using enum DROID_TYPE;

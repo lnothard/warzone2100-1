@@ -24,8 +24,9 @@ namespace Impl
   public:
     bool is_alive() const override;
     bool hp_below_x(uint32_t x) const;
+    bool has_full_ammo() const;
   private:
-    uint32_t hit_points;
+    uint32_t            hit_points;
     std::vector<Weapon> weapons;
   };
 }

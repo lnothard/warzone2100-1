@@ -37,12 +37,11 @@ namespace Impl
   };
 }
 
-class Production_Job
+struct Production_Job
 {
-private:
   Droid_Template droid_template;
-  uint32_t time_started;
-  int points_remaining;
+  uint32_t       time_started;
+  int            points_remaining;
 };
 
 class Factory : public virtual Structure, public Impl::Structure
