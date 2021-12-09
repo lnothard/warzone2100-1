@@ -10,6 +10,8 @@
 
 #include "unit.h"
 #include "droid_group.h"
+#include "structure.h"
+#include "movement.h"
 
 enum class ACTION
 {
@@ -82,20 +84,27 @@ public:
   bool is_flying() const;
   bool is_transporter() const;
   bool is_damaged() const;
+  bool is_stationary() const;
   bool has_commander() const;
+  int  maximum_range() const;
+  bool target_within_range(Unit& target) const;
+  void gain_experience(uint32_t exp);
+  void commander_gain_experience(uint32_t exp);
 private:
   using enum ACTION;
   using enum DROID_TYPE;
 
-  ACTION      action;
-  DROID_TYPE  type;
-  Droid_Group *group;
-  uint32_t    weight;
-  uint32_t    base_speed;
-  uint32_t    original_hp;
-  uint32_t    kills;
-  uint32_t    experience;
-  int16_t     electronic_resistance;
+  ACTION       action;
+  DROID_TYPE   type;
+  Droid_Group* group;
+  Structure*   associated_structure;
+  Movement     movement;
+  uint32_t     weight;
+  uint32_t     base_speed;
+  uint32_t     original_hp;
+  uint32_t     kills;
+  uint32_t     experience;
+  int16_t      electronic_resistance;
 };
 
 struct Droid_Template

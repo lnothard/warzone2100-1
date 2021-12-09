@@ -23,7 +23,8 @@ class Simple_Object
 public:
   virtual ~Simple_Object();
 
-  virtual Spacetime spacetime() = 0;
+  virtual Spacetime spacetime() const = 0;
+  virtual Position get_position() const = 0;
 };
 
 namespace Impl
@@ -33,7 +34,8 @@ namespace Impl
   public:
     Simple_Object(uint32_t id, uint8_t player);
 
-    Spacetime spacetime() override;
+    Spacetime spacetime() const override;
+    Position get_position() const override;
   private:
     uint8_t  player;
     uint32_t id;
@@ -42,5 +44,8 @@ namespace Impl
     Rotation rotation { Rotation(0, 0, 0) };
   };
 }
+
+static inline int object_position_square_diff(const Simple_Object& first, const Simple_Object& second);
+static inline int object_position_square_diff(const Position& first, const Position& second);
 
 #endif // WARZONE2100_BASEDEF_H

@@ -31,7 +31,9 @@ namespace Impl
   public:
     bool is_blueprint() const;
   private:
-    using enum STRUCTURE_STATE; STRUCTURE_STATE state;
+    using enum STRUCTURE_STATE;
+
+    STRUCTURE_STATE state;
   };
 }
 

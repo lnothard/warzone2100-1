@@ -5,12 +5,16 @@
 #ifndef WARZONE2100_UNIT_H
 #define WARZONE2100_UNIT_H
 
+#include <vector>
+
 #include "basedef.h"
+#include "weapon.h"
 
 class Unit : public virtual ::Simple_Object
 {
 public:
   virtual bool is_alive() const = 0;
+  virtual void align_turret() = 0;
 };
 
 namespace Impl
@@ -22,6 +26,7 @@ namespace Impl
     bool hp_below_x(uint32_t x) const;
   private:
     uint32_t hit_points;
+    std::vector<Weapon> weapons;
   };
 }
 #endif // WARZONE2100_UNIT_H

@@ -7,18 +7,38 @@
 
 #include <cstdint>
 
-class Component_Stats
+enum class PROPULSION_TYPE
 {
-private:
+  WHEELED,
+  TRACKED,
+  LEGGED,
+  HOVER,
+  LIFT,
+  PROPELLER,
+  HALF_TRACKED
+};
+
+struct Component_Stats
+{
+  struct Upgradeable
+  {
+    uint32_t hit_points;
+    uint32_t hit_point_percent;
+  };
+
   uint32_t power_to_build;
   uint32_t weight;
   bool     is_designable;
 };
 
-class Propulsion_Stats : public Component_Stats
+struct Propulsion_Stats : public Component_Stats
 {
-private:
   uint32_t max_speed;
+};
+
+struct Brain_Stats : public Component_Stats
+{
+
 };
 
 #endif // WARZONE2100_STATS_H
