@@ -27,6 +27,11 @@ Position Impl::Simple_Object::get_position() const
   return position;
 }
 
+uint8_t Impl::Simple_Object::get_player() const
+{
+  return player;
+}
+
 static inline int object_position_square_diff(const Position& first, const Position& second)
 {
   const Vector2i diff = (first - second).xy();

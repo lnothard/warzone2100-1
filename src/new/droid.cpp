@@ -2,7 +2,30 @@
 // Created by luna on 08/12/2021.
 //
 
+#include <algorithm>
+
 #include "droid.h"
+#include "obj_lists.h"
+
+ACTION Droid::get_current_action() const
+{
+  return action;
+}
+
+bool Droid::is_probably_doomed(bool is_direct_damage) const
+{
+  auto is_doomed = [this] (uint32_t damage) {
+    const auto hit_points = get_hp();
+    return damage > hit_points && damage - hit_points > hit_points / 5;
+  };
+
+  if (is_direct_damage)
+  {
+    return is_doomed(expected_damage_direct);
+  }
+
+  return is_doomed(expected_damage_indirect);
+}
 
 bool Droid::is_transporter() const
 {
@@ -20,9 +43,26 @@ bool Droid::is_cyborg() const
           type == CYBORG_REPAIR || type == CYBORG_SUPER);
 }
 
+bool Droid::is_repairer() const
+{
+  return type == REPAIRER || type == CYBORG_REPAIR;
+}
+
 bool Droid::is_damaged() const
 {
-  return hp_below_x(original_hp);
+  return get_hp() < original_hp;
+}
+
+bool Droid::is_being_repaired() const
+{
+  if (!is_damaged()) return false;
+
+  auto droids = *droid_lists[get_player()];
+
+  return std::any_of(droids.begin(), droids.end(), [this] (const auto& droid) {
+    return droid.is_repairer() && droid.get_current_action() == DROID_REPAIR &&
+           order.target_object == this;
+  });
 }
 
 bool Droid::is_stationary() const

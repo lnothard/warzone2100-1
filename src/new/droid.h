@@ -12,6 +12,7 @@
 #include "droid_group.h"
 #include "structure.h"
 #include "movement.h"
+#include "order.h"
 
 enum class ACTION
 {
@@ -80,14 +81,18 @@ class Droid : public virtual ::Unit, public Impl::Unit
 public:
   Droid(uint32_t id, uint32_t player);
 
+  ACTION get_current_action() const;
+  bool is_probably_doomed(bool is_direct_damage) const;
   bool is_VTOL() const;
   bool is_flying() const;
   bool is_transporter() const;
   bool is_builder() const;
   bool is_cyborg() const;
-  bool is_damaged() const;
+  bool is_repairer() const;
+  bool is_being_repaired() const;
   bool is_stationary() const;
   bool is_rearming() const;
+  bool is_damaged() const;
   bool is_attacking() const;
   bool is_VTOL_rearmed_and_repaired() const;
   bool has_commander() const;
@@ -102,6 +107,7 @@ private:
   using enum DROID_TYPE;
 
   ACTION       action;
+  Order        order;
   DROID_TYPE   type;
   Droid_Group* group;
   Structure*   associated_structure;
@@ -109,6 +115,8 @@ private:
   uint32_t     weight;
   uint32_t     base_speed;
   uint32_t     original_hp;
+  uint32_t     expected_damage_direct;
+  uint32_t     expected_damage_indirect;
   uint32_t     kills;
   uint32_t     experience;
   int16_t      electronic_resistance;
@@ -124,6 +132,5 @@ struct Droid_Template
   bool       is_stored;
   bool       is_enabled;
 };
-
 
 #endif // WARZONE2100_DROID_H

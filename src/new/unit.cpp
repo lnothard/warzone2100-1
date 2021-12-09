@@ -8,9 +8,9 @@
 
 namespace Impl
 {
-  bool Unit::hp_below_x(uint32_t x) const
+  uint32_t Unit::get_hp() const
   {
-    return hit_points < x;
+    return hit_points;
   }
 
   bool Unit::has_full_ammo() const
