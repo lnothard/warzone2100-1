@@ -119,9 +119,11 @@ class Weapon
 public:
   bool has_ammo() const;
   bool has_full_ammo() const;
+  bool is_artillery() const;
   uint32_t get_recoil() const;
   uint32_t get_max_range(uint8_t player) const;
   uint32_t get_min_range(uint8_t player) const;
+  WEAPON_SUBCLASS get_subclass() const;
 private:
   using enum ATTACKER_TYPE;
 

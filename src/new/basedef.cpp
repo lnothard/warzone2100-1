@@ -4,11 +4,9 @@
 
 #include "basedef.h"
 
-Spacetime::Spacetime(uint32_t time, Position position, Rotation rotation)
+Spacetime::Spacetime(uint32_t time_, Position position_, Rotation rotation_)
+:time {time_}, position{position_}, rotation{rotation_}
 {
-  this->time = time;
-  this->position = position;
-  this->rotation = rotation;
 }
 
 Spacetime Impl::Simple_Object::spacetime() const
@@ -16,10 +14,9 @@ Spacetime Impl::Simple_Object::spacetime() const
   return { time, position, rotation };
 }
 
-Impl::Simple_Object::Simple_Object(uint32_t id, uint8_t player)
+Impl::Simple_Object::Simple_Object(uint32_t id_, uint8_t player_)
+: id {id_}, player {player_}
 {
-  this->id = id;
-  this->player = player;
 }
 
 Position Impl::Simple_Object::get_position() const
@@ -30,6 +27,11 @@ Position Impl::Simple_Object::get_position() const
 uint8_t Impl::Simple_Object::get_player() const
 {
   return player;
+}
+
+uint32_t Impl::Simple_Object::get_id() const
+{
+  return id;
 }
 
 static inline int object_position_square_diff(const Position& first, const Position& second)

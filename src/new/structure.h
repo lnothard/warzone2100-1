@@ -43,8 +43,15 @@ enum class STRUCTURE_TYPE
   MISSILE_SILO,
   SAT_UPLINK,
   GATE,
-  LASSAT,
-  NUM_DIFF_BUILDINGS
+  LASSAT
+};
+
+enum class STRUCTURE_STRENGTH
+{
+  SOFT,
+  MEDIUM,
+  HARD,
+  BUNKER
 };
 
 class Structure_Bounds
@@ -55,6 +62,25 @@ public:
 private:
   Vector2i top_left_coords;
   Vector2i size_in_coords;
+};
+
+struct Structure_Stats
+{
+  Vector2i size(uint16_t direction) const;
+
+  using enum STRUCTURE_TYPE;
+
+  STRUCTURE_TYPE type;
+  STRUCTURE_STRENGTH strength;
+  bool combines_with_wall;
+  bool is_favourite;
+  uint32_t base_width;
+  uint32_t base_breadth;
+  uint32_t build_points_required;
+  uint32_t height;
+  uint32_t power_to_build;
+  uint32_t weapon_slots;
+  uint32_t num_weapons_default;
 };
 
 class Structure : public virtual Unit
@@ -71,12 +97,13 @@ namespace Impl
     bool is_blueprint() const;
     bool is_wall() const;
     bool is_probably_doomed() const;
+    uint16_t count_assigned_droids() const;
   private:
     using enum STRUCTURE_STATE;
     using enum STRUCTURE_TYPE;
 
     STRUCTURE_STATE state;
-    STRUCTURE_TYPE  type;
+    Structure_Stats stats;
     uint32_t        expected_damage;
   };
 }

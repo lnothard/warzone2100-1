@@ -12,6 +12,11 @@ ACTION Droid::get_current_action() const
   return action;
 }
 
+const Order& Droid::get_current_order() const
+{
+  return order;
+}
+
 bool Droid::is_probably_doomed(bool is_direct_damage) const
 {
   auto is_doomed = [this] (uint32_t damage) {
@@ -80,6 +85,14 @@ bool Droid::has_commander() const
   return false;
 }
 
+bool Droid::has_electronic_weapon() const
+{
+  if (Unit::has_electronic_weapon()) return true;
+  if (type != COMMAND) return false;
+
+  return group->has_electronic_weapon();
+}
+
 bool Droid::has_CB_sensor() const
 {
   if (type != SENSOR) return false;
@@ -133,10 +146,32 @@ bool Droid::is_VTOL_rearmed_and_repaired() const
   return true;
 }
 
+bool Droid::are_all_VTOLs_rearmed() const
+{
+  if (!is_VTOL()) return true;
+  auto droids = *droid_lists[get_player()];
+
+  std::none_of(droids.begin(), droids.end(), [this] (const auto& droid) {
+    return droid.is_rearming() &&
+           droid.get_current_order().type == order.type &&
+           droid.get_current_order().target_object == order.target_object;
+  });
+}
+
 void Droid::move_to_rearming_pad()
 {
   if (!is_VTOL()) return;
   if (is_rearming()) return;
 
 
+}
+
+void Droid::cancel_build()
+{
+
+}
+
+static inline bool is_droid_still_building(const Droid& droid)
+{
+  return droid.is_alive() && droid.get_current_action() == ACTION::BUILD;
 }

@@ -81,7 +81,11 @@ class Droid : public virtual ::Unit, public Impl::Unit
 public:
   Droid(uint32_t id, uint32_t player);
 
+  uint8_t get_player() const override;
+  bool has_electronic_weapon() const override;
+
   ACTION get_current_action() const;
+  const Order& get_current_order() const;
   bool is_probably_doomed(bool is_direct_damage) const;
   bool is_VTOL() const;
   bool is_flying() const;
@@ -95,6 +99,7 @@ public:
   bool is_damaged() const;
   bool is_attacking() const;
   bool is_VTOL_rearmed_and_repaired() const;
+  bool are_all_VTOLs_rearmed() const;
   bool has_commander() const;
   bool has_standard_sensor() const;
   bool has_CB_sensor() const;
@@ -102,6 +107,7 @@ public:
   void gain_experience(uint32_t exp);
   void commander_gain_experience(uint32_t exp);
   void move_to_rearming_pad();
+  void cancel_build();
 private:
   using enum ACTION;
   using enum DROID_TYPE;

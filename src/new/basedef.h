@@ -11,7 +11,7 @@
 
 struct Spacetime
 {
-  Spacetime(uint32_t time, Position position, Rotation rotation);
+  Spacetime(uint32_t time_, Position position_, Rotation rotation_);
 
   uint32_t time;
   Position position;
@@ -26,6 +26,7 @@ public:
   virtual Spacetime spacetime() const = 0;
   virtual Position get_position() const = 0;
   virtual uint8_t get_player() const = 0;
+  virtual uint32_t get_id() const = 0;
 };
 
 namespace Impl
@@ -33,14 +34,15 @@ namespace Impl
   class Simple_Object : public virtual ::Simple_Object
   {
   public:
-    Simple_Object(uint32_t id, uint8_t player);
+    Simple_Object(uint32_t id_, uint8_t player_);
 
     Spacetime spacetime() const override;
     Position get_position() const override;
-    uint8_t get_player() const;
+    uint8_t get_player() const override;
+    uint32_t get_id() const override;
   private:
-    uint8_t  player;
     uint32_t id;
+    uint8_t  player;
     uint32_t time { 0 };
     Position position { Position(0, 0, 0) };
     Rotation rotation { Rotation(0, 0, 0) };

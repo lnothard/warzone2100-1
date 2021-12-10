@@ -20,6 +20,7 @@ public:
   void add(Droid& droid);
   void remove(Droid& droid);
   bool is_command_group() const;
+  bool has_electronic_weapon() const;
   void commander_gain_experience(uint32_t exp);
 private:
   using enum GROUP_TYPE;

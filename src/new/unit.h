@@ -14,6 +14,7 @@ class Unit : public virtual ::Simple_Object
 {
 public:
   virtual bool is_alive() const = 0;
+  virtual bool has_electronic_weapon() const = 0;
   virtual void align_turret() = 0;
 };
 
@@ -23,8 +24,11 @@ namespace Impl
   {
   public:
     bool is_alive() const override;
+    bool has_electronic_weapon() const override;
     bool has_full_ammo() const;
+    bool has_artillery() const;
     uint32_t get_hp() const;
+    uint16_t num_weapons() const;
   private:
     uint32_t            hit_points;
     std::vector<Weapon> weapons;

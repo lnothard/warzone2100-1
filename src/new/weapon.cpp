@@ -11,6 +11,12 @@ bool Weapon::has_full_ammo() const
   return ammo_used == 0;
 }
 
+bool Weapon::is_artillery() const
+{
+  return stats.movement_type == MOVEMENT_TYPE::INDIRECT ||
+         stats.movement_type == MOVEMENT_TYPE::HOMING_INDIRECT;
+}
+
 uint32_t Weapon::get_recoil() const
 {
   if (graphicsTime >= time_last_fired && graphicsTime < time_last_fired + DEFAULT_RECOIL_TIME)
@@ -31,4 +37,9 @@ uint32_t Weapon::get_max_range(uint8_t player) const
 uint32_t Weapon::get_min_range(uint8_t player) const
 {
   return stats.upgraded_stats[player].min_range;
+}
+
+WEAPON_SUBCLASS Weapon::get_subclass() const
+{
+  return stats.subclass;
 }

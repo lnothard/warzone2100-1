@@ -18,4 +18,25 @@ namespace Impl
     return std::all_of(weapons.begin(), weapons.end(),
                        [](const auto& w){ return w.has_full_ammo(); });
   }
+
+  bool Unit::has_artillery() const
+  {
+    return std::any_of(weapons.begin(), weapons.end(), [] (const auto& weapon) {
+      return weapon.is_artillery();
+    });
+  }
+
+  bool Unit::has_electronic_weapon() const
+  {
+    if (weapons.size() == 0) return false;
+
+    return (std::any_of(weapons.begin(), weapons.end(), [this] (const auto& weapon) {
+      return weapon.get_subclass() == WEAPON_SUBCLASS::ELECTRONIC;
+    }));
+  }
+
+  uint16_t Unit::num_weapons() const
+  {
+    return static_cast<uint16_t>(weapons.size());
+  }
 }
