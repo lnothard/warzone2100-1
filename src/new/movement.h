@@ -24,6 +24,8 @@ class Movement
 {
 public:
   bool is_stationary() const;
+  void stop_moving();
+  void stop_moving_instantly();
 private:
   using enum MOVEMENT_STATE;
 

@@ -112,20 +112,20 @@ private:
   using enum ACTION;
   using enum DROID_TYPE;
 
-  ACTION       action;
-  Order        order;
-  DROID_TYPE   type;
-  Droid_Group* group;
-  Structure*   associated_structure;
-  Movement     movement;
-  uint32_t     weight;
-  uint32_t     base_speed;
-  uint32_t     original_hp;
-  uint32_t     expected_damage_direct;
-  uint32_t     expected_damage_indirect;
-  uint32_t     kills;
-  uint32_t     experience;
-  int16_t      electronic_resistance;
+  ACTION action { NONE };
+  Order order;
+  DROID_TYPE type { ANY };
+  Droid_Group* group { nullptr };
+  Structure* associated_structure { nullptr };
+  Movement movement;
+  uint32_t weight { 0 };
+  uint32_t base_speed { 0 };
+  uint32_t original_hp { 0 };
+  uint32_t expected_damage_direct { 0 };
+  uint32_t expected_damage_indirect { 0 };
+  uint32_t kills { 0 };
+  uint32_t experience { 0 };
+  int16_t electronic_resistance { 0 };
 };
 
 struct Droid_Template

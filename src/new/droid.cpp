@@ -7,6 +7,11 @@
 #include "droid.h"
 #include "obj_lists.h"
 
+Droid::Droid(uint32_t id, uint32_t player)
+    : Unit(id, player)
+{
+}
+
 ACTION Droid::get_current_action() const
 {
   return action;
@@ -179,4 +184,12 @@ void Droid::cancel_build()
 static inline bool is_droid_still_building(const Droid& droid)
 {
   return droid.is_alive() && droid.get_current_action() == ACTION::BUILD;
+}
+
+void update_orientation(Droid& droid)
+{
+  if (droid.is_cyborg() || droid.is_flying() || droid.is_transporter())
+    return;
+
+
 }

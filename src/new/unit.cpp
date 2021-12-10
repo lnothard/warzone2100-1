@@ -8,6 +8,11 @@
 
 namespace Impl
 {
+  Unit::Unit(uint32_t id, uint32_t player)
+  : Impl::Simple_Object(id, player)
+  {
+  }
+
   uint32_t Unit::get_hp() const
   {
     return hit_points;
