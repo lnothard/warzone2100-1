@@ -25,6 +25,7 @@ public:
 
   virtual Spacetime spacetime() const = 0;
   virtual Position get_position() const = 0;
+  virtual Rotation get_rotation() const = 0;
   virtual uint8_t get_player() const = 0;
   virtual uint32_t get_id() const = 0;
 };
@@ -38,6 +39,7 @@ namespace Impl
 
     Spacetime spacetime() const override;
     Position get_position() const override;
+    Rotation get_rotation() const override;
     uint8_t get_player() const override;
     uint32_t get_id() const override;
   private:

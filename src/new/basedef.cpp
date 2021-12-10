@@ -24,6 +24,11 @@ Position Impl::Simple_Object::get_position() const
   return position;
 }
 
+Rotation Impl::Simple_Object::get_rotation() const
+{
+  return rotation;
+}
+
 uint8_t Impl::Simple_Object::get_player() const
 {
   return player;

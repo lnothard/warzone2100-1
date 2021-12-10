@@ -139,4 +139,6 @@ struct Droid_Template
   bool       is_enabled;
 };
 
+static inline bool VTOL_may_land_here(int32_t x, int32_t y);
+
 #endif // WARZONE2100_DROID_H

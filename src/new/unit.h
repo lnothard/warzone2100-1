@@ -16,6 +16,7 @@ public:
   virtual bool is_alive() const = 0;
   virtual bool has_electronic_weapon() const = 0;
   virtual void align_turret() = 0;
+  virtual uint32_t get_hp() const = 0;
 };
 
 namespace Impl
@@ -27,7 +28,7 @@ namespace Impl
     bool has_electronic_weapon() const override;
     bool has_full_ammo() const;
     bool has_artillery() const;
-    uint32_t get_hp() const;
+    uint32_t get_hp() const override;
     uint16_t num_weapons() const;
   private:
     uint32_t            hit_points;

@@ -2,6 +2,7 @@
 // Created by luna on 08/12/2021.
 //
 
+#include "map.h"
 #include "structure.h"
 #include "obj_lists.h"
 
@@ -40,6 +41,37 @@ namespace Impl
       return expected_damage > hit_points && expected_damage - hit_points > hit_points / 15;
   }
 
+  bool Structure::is_pulled_to_terrain() const
+  {
+    return is_wall() || stats.type == DEFENSE || stats.type == GATE || stats.type == REARM_PAD;
+  }
+
+  bool Structure::is_damaged() const
+  {
+    return get_hp() < get_original_hp();
+  }
+
+  bool Structure::has_modules() const
+  {
+    return num_modules > 0;
+  }
+
+  bool Structure::has_VTOL_CB_sensor() const
+  {
+    if (stats.sensor_stats == nullptr) return false;
+    auto sensor_type = stats.sensor_stats->type;
+
+    return sensor_type == VTOL_CB || sensor_type == SUPER;
+  }
+
+  bool Structure::smoke_when_damaged() const
+  {
+    if (is_wall() || stats.type == GATE || state == BEING_BUILT)
+      return false;
+
+    return true;
+  }
+
   uint16_t Structure::count_assigned_droids() const
   {
     auto& droids = *droid_lists[selectedPlayer];
@@ -52,4 +84,35 @@ namespace Impl
       }
     });
   }
+
+  uint32_t Structure::get_original_hp() const
+  {
+    return stats.upgrade[get_player()].get_hp();
+  }
+
+  Vector2i Structure::get_size() const
+  {
+    return stats.size(get_rotation().direction);
+  }
+
+  Structure_Bounds Structure::get_bounds() const
+  {
+    return Structure_Bounds{ map_coord(get_position().xy()) - get_size() / 2, get_size() };
+  }
+
+  void Structure::update_expected_damage(int32_t damage)
+  {
+    expected_damage += damage;
+    assert(expected_damage >= 0);
+  }
+
+  static inline int calculate_foundation_height(const Structure& structure)
+  {
+    const Structure_Bounds& bounds = structure.get_bounds();
+  }
+}
+
+bool Rearm_Pad::is_clear() const
+{
+  return occupying_unit == nullptr || occupying_unit->is_VTOL_rearmed_and_repaired();
 }

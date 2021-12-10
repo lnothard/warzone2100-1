@@ -158,6 +158,11 @@ bool Droid::are_all_VTOLs_rearmed() const
   });
 }
 
+bool Droid::target_within_range(const Unit &target, uint8_t weapon_slot) const
+{
+  if (num_weapons() == 0) return false;
+}
+
 void Droid::move_to_rearming_pad()
 {
   if (!is_VTOL()) return;

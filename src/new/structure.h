@@ -7,6 +7,7 @@
 
 #include "unit.h"
 #include "droid.h"
+#include "positiondef.h"
 
 enum class STRUCTURE_STATE
 {
@@ -54,6 +55,22 @@ enum class STRUCTURE_STRENGTH
   BUNKER
 };
 
+enum class STRUCTURE_ANIMATION_STATE
+{
+  NORMAL,
+  OPEN,
+  OPENING,
+  CLOSING
+};
+
+enum class PENDING_STATUS
+{
+  NOTHING_PENDING,
+  START_PENDING,
+  HOLD_PENDING,
+  CANCEL_PENDING
+};
+
 class Structure_Bounds
 {
 public:
@@ -64,6 +81,13 @@ private:
   Vector2i size_in_coords;
 };
 
+struct Flag_Position : public Object_Position
+{
+  Vector3i coords = Vector3i(0, 0, 0);
+  uint8_t factory_inc;
+  uint8_t factory_type;
+};
+
 struct Structure_Stats
 {
   Vector2i size(uint16_t direction) const;
@@ -72,11 +96,12 @@ struct Structure_Stats
 
   STRUCTURE_TYPE type;
   STRUCTURE_STRENGTH strength;
+  Sensor_Stats* sensor_stats;
   bool combines_with_wall;
   bool is_favourite;
   uint32_t base_width;
   uint32_t base_breadth;
-  uint32_t build_points_required;
+  uint32_t build_point_cost;
   uint32_t height;
   uint32_t power_to_build;
   uint32_t weapon_slots;
@@ -87,6 +112,8 @@ class Structure : public virtual Unit
 {
 public:
   virtual ~Structure();
+
+  virtual void print_info() = 0;
 };
 
 namespace Impl
@@ -97,28 +124,77 @@ namespace Impl
     bool is_blueprint() const;
     bool is_wall() const;
     bool is_probably_doomed() const;
+    bool is_pulled_to_terrain() const;
+    bool is_damaged() const;
+    bool has_modules() const;
+    bool has_VTOL_CB_sensor() const;
+    bool smoke_when_damaged() const;
     uint16_t count_assigned_droids() const;
+    uint32_t get_original_hp() const;
+    Vector2i get_size() const;
+    Structure_Bounds get_bounds() const;
+    void update_expected_damage(int32_t damage);
   private:
     using enum STRUCTURE_STATE;
     using enum STRUCTURE_TYPE;
+    using enum SENSOR_TYPE;
 
     STRUCTURE_STATE state;
     Structure_Stats stats;
-    uint32_t        expected_damage;
+    uint32_t expected_damage;
+    uint8_t num_modules;
   };
+
+  static inline int calculate_foundation_height(const Structure& structure);
 }
 
 struct Production_Job
 {
   Droid_Template droid_template;
-  uint32_t       time_started;
-  int            points_remaining;
+  uint32_t time_started;
+  int remaining_build_points;
+};
+
+struct Research_Item
+{
+  uint8_t tech_code;
+  uint16_t research_point_cost;
+  uint32_t power_cost;
 };
 
 class Factory : public virtual Structure, public Impl::Structure
 {
+public:
+  void pause_production(QUEUE_MODE mode);
+  void unpause_production(QUEUE_MODE mode);
+  void cancel_production(QUEUE_MODE mode);
 private:
+  using enum PENDING_STATUS;
+
   Production_Job active_job;
+  Flag_Position assembly_point;
+  PENDING_STATUS pending_status;
+  uint8_t production_loops;
+  uint8_t loops_performed;
 };
+
+class Research_Facility : public virtual Structure, public Impl::Structure
+{
+
+};
+
+class Resource_Extractor : public virtual Structure, public Impl::Structure
+{
+
+};
+
+class Rearm_Pad : public virtual Structure, public Impl::Structure
+{
+public:
+  bool is_clear() const;
+private:
+  Droid* occupying_unit;
+};
+
 
 #endif // WARZONE2100_STRUCTURE_H
