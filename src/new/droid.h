@@ -14,6 +14,8 @@
 #include "movement.h"
 #include "order.h"
 
+constexpr auto MAX_COMPONENTS { COMPONENT_TYPE::COUNT - 1 };
+
 enum class ACTION
 {
   NONE,					///< 0 not doing anything
@@ -81,18 +83,20 @@ class Droid : public virtual ::Unit, public Impl::Unit
 public:
   Droid(uint32_t id, uint32_t player);
 
-  uint8_t get_player() const override;
-  bool has_electronic_weapon() const override;
+  uint8_t get_player() const final;
+  bool has_electronic_weapon() const final;
 
   ACTION get_current_action() const;
   const Order& get_current_order() const;
   bool is_probably_doomed(bool is_direct_damage) const;
+  bool is_commander() const;
   bool is_VTOL() const;
   bool is_flying() const;
   bool is_transporter() const;
   bool is_builder() const;
   bool is_cyborg() const;
   bool is_repairer() const;
+  bool is_IDF() const;
   bool is_being_repaired() const;
   bool is_stationary() const;
   bool is_rearming() const;
@@ -108,16 +112,18 @@ public:
   void commander_gain_experience(uint32_t exp);
   void move_to_rearming_pad();
   void cancel_build();
+  void start_new_action();
 private:
   using enum ACTION;
   using enum DROID_TYPE;
 
   ACTION action { NONE };
-  Order order;
   DROID_TYPE type { ANY };
+  Order order;
   Droid_Group* group { nullptr };
   Structure* associated_structure { nullptr };
   Movement movement;
+  std::array<Component_Stats, MAX_COMPONENTS> components;
   uint32_t weight { 0 };
   uint32_t base_speed { 0 };
   uint32_t original_hp { 0 };
@@ -125,7 +131,9 @@ private:
   uint32_t expected_damage_indirect { 0 };
   uint32_t kills { 0 };
   uint32_t experience { 0 };
-  int16_t electronic_resistance { 0 };
+  uint32_t time_action_started { 0 };
+  uint32_t action_points_done { 0 };
+  int16_t resistance_to_electric { 0 };
 };
 
 struct Droid_Template
@@ -140,5 +148,11 @@ struct Droid_Template
 };
 
 static inline bool VTOL_may_land_here(int32_t x, int32_t y);
+
+template <typename T>
+static uint32_t calculate_required_build_points(const T& object);
+
+template <typename T>
+static uint32_t calculate_required_power(const T& object);
 
 #endif // WARZONE2100_DROID_H

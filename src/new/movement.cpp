@@ -4,6 +4,11 @@
 
 #include "movement.h"
 
+bool Movement::is_inactive() const
+{
+  return state == INACTIVE;
+}
+
 bool Movement::is_stationary() const
 {
   return state == INACTIVE || state == HOVER || state == SHUFFLE;

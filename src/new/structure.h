@@ -136,13 +136,18 @@ namespace Impl
     void update_expected_damage(int32_t damage);
   private:
     using enum STRUCTURE_STATE;
+    using enum STRUCTURE_ANIMATION_STATE;
     using enum STRUCTURE_TYPE;
     using enum SENSOR_TYPE;
 
     STRUCTURE_STATE state;
+    STRUCTURE_ANIMATION_STATE animation_state;
     Structure_Stats stats;
+    uint32_t current_build_points;
+    int build_rate;
     uint32_t expected_damage;
     uint8_t num_modules;
+    float foundation_depth;
   };
 
   static inline int calculate_foundation_height(const Structure& structure);
@@ -180,12 +185,18 @@ private:
 
 class Research_Facility : public virtual Structure, public Impl::Structure
 {
+  Research_Item active_research_task;
+  Research_Item pending_research_task;
+};
 
+class Power_Generator : public virtual Structure, public Impl::Structure
+{
+  std::vector<Structure*> associated_resource_extractors;
 };
 
 class Resource_Extractor : public virtual Structure, public Impl::Structure
 {
-
+  Structure* owning_power_generator;
 };
 
 class Rearm_Pad : public virtual Structure, public Impl::Structure
@@ -193,7 +204,15 @@ class Rearm_Pad : public virtual Structure, public Impl::Structure
 public:
   bool is_clear() const;
 private:
-  Droid* occupying_unit;
+  Droid* rearm_target;
+  uint32_t time_started;
+  uint32_t last_update_time;
+};
+
+class Repair_Facility : public virtual Structure, public Impl::Structure
+{
+  Unit* repair_target;
+  Flag_Position assembly_point;
 };
 
 

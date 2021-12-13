@@ -23,6 +23,7 @@ enum class MOVEMENT_STATE
 class Movement
 {
 public:
+  bool is_inactive() const;
   bool is_stationary() const;
   void stop_moving();
   void stop_moving_instantly();

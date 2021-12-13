@@ -96,6 +96,7 @@ struct Weapon_Stats : public Component_Stats
   short           max_rotation;
   short           min_elevation;
   short           max_elevation;
+  short           max_VTOL_attack_runs;
   bool            can_penetrate;
   bool            can_fire_while_moving;
   bool            effect_emits_light;
