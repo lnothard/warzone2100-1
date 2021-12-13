@@ -34,17 +34,9 @@ function checkEnemyVtolArea()
 	}
 }
 
-//Play last video sequence and destroy all droids on map.
+//Play last video sequence.
 function playLastVideo()
 {
-	var droids = enumArea(0, 0, mapWidth, mapHeight, CAM_HUMAN_PLAYER, false).filter(function(obj) {
-		return (obj.type === DROID && !camIsTransporter(obj));
-	});
-
-	for (var i = 0, l = droids.length; i < l; ++i)
-	{
-		camSafeRemoveObject(droids[i], false);
-	}
 	camPlayVideos({video: "CAM2_OUT", type: CAMP_MSG});
 }
 
@@ -187,7 +179,7 @@ function checkIfLaunched()
 //Everything in this level mostly just requeues itself until the mission ends.
 function eventStartLevel()
 {
-	camSetExtraObjectiveMessage(_("Send off at least one transporter with a truck and survive The Collective assault"));
+	camSetExtraObjectiveMessage(_("Send off at least one transporter with a truck and survive The Collective assault until the timer ends"));
 
 	var lz = {x: 86, y: 99, x2: 88, y2: 101};
 	var tCoords = {xStart: 87, yStart: 100, xOut: 0, yOut: 55};
