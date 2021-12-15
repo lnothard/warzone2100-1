@@ -116,10 +116,14 @@ public:
   void move_to_rearming_pad();
   void cancel_build();
   void start_new_action();
+  uint32_t get_level() const;
+  uint32_t get_commander_level() const;
+  uint32_t get_effective_level() const;
 private:
   using enum ACTION;
   using enum DROID_TYPE;
 
+  std::string name;
   ACTION action { NONE };
   DROID_TYPE type { ANY };
   Order order;
@@ -127,6 +131,7 @@ private:
   Structure* associated_structure { nullptr };
   Movement movement;
   std::optional<Propulsion_Stats> propulsion;
+  std::optional<Commander_Stats> brain;
   uint32_t weight { 0 };
   uint32_t base_speed { 0 };
   uint32_t original_hp { 0 };

@@ -45,7 +45,7 @@ bool Droid::is_commander() const
 
 bool Droid::is_VTOL() const
 {
-  assert(propulsion);
+  if (!propulsion) return false;
   using enum PROPULSION_TYPE;
 
   return !is_transporter() && propulsion->propulsion_type == LIFT;
@@ -53,7 +53,7 @@ bool Droid::is_VTOL() const
 
 bool Droid::is_flying() const
 {
-  assert(propulsion);
+  if (!propulsion) return false;
   using enum PROPULSION_TYPE;
 
   return (!movement.is_inactive() || is_transporter()) &&
@@ -215,6 +215,40 @@ bool Droid::target_within_range(const Unit &target, uint8_t weapon_slot) const
   return num_weapons() != 0;
 }
 
+uint32_t Droid::get_level() const
+{
+  if (!brain) return 0;
+
+  auto& rank_thresholds = brain->upgraded[get_player()].rank_thresholds;
+  for (int i = 1; i < rank_thresholds.size(); ++i)
+  {
+    if (kills < rank_thresholds.at(i))
+    {
+      return i - 1;
+    }
+  }
+  return rank_thresholds.size() - 1;
+}
+
+uint32_t Droid::get_commander_level() const
+{
+  if (!has_commander()) return 0;
+
+  return group->get_commander_level();
+}
+
+uint32_t Droid::get_effective_level() const
+{
+  uint32_t level = get_level();
+  if (!has_commander()) return level;
+
+  uint32_t cmd_level = get_commander_level();
+  if (cmd_level > level + 1)
+    return cmd_level;
+
+  return level;
+}
+
 void Droid::move_to_rearming_pad()
 {
   if (!is_VTOL() || is_rearming()) return;
@@ -240,10 +274,31 @@ void Droid::cancel_build()
   }
 }
 
+void Droid::give_action(ACTION new_action, const Unit& target_unit, Position position)
+{
+
+};
+
 void Droid::start_new_action()
 {
   time_action_started = gameTime;
   action_points_done = 0;
+}
+
+bool can_assign_fire_support(const Droid& droid, const Structure& structure)
+{
+  if (droid.num_weapons() == 0 || !structure.has_sensor()) return false;
+
+  if (droid.is_VTOL())
+  {
+    return structure.has_VTOL_intercept_sensor() || structure.has_VTOL_CB_sensor();
+  }
+  else if (droid.has_artillery())
+  {
+    return structure.has_standard_sensor() || structure.has_CB_sensor();
+  }
+
+  return false;
 }
 
 bool is_droid_still_building(const Droid& droid)

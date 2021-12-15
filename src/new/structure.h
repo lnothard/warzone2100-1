@@ -94,9 +94,16 @@ struct Structure_Stats
 
   using enum STRUCTURE_TYPE;
 
+  struct
+  {
+    uint32_t hit_points;
+    uint32_t power;
+    uint32_t armour;
+  } upgraded_stats[MAX_PLAYERS], base_stats;
+
   STRUCTURE_TYPE type;
   STRUCTURE_STRENGTH strength;
-  Sensor_Stats* sensor_stats;
+  std::unique_ptr<Sensor_Stats> sensor_stats;
   bool combines_with_wall;
   bool is_favourite;
   uint32_t base_width;
@@ -127,6 +134,10 @@ namespace Impl
     bool is_pulled_to_terrain() const;
     bool is_damaged() const;
     bool has_modules() const;
+    bool has_sensor() const;
+    bool has_standard_sensor() const;
+    bool has_CB_sensor() const;
+    bool has_VTOL_intercept_sensor() const;
     bool has_VTOL_CB_sensor() const;
     bool smoke_when_damaged() const;
     uint16_t count_assigned_droids() const;

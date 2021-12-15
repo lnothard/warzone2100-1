@@ -56,9 +56,38 @@ namespace Impl
     return num_modules > 0;
   }
 
+  bool Structure::has_sensor() const
+  {
+    return stats.sensor_stats != nullptr;
+  }
+
+  bool Structure::has_standard_sensor() const
+  {
+    if (!has_sensor()) return false;
+    auto sensor_type = stats.sensor_stats->type;
+
+    return sensor_type == STANDARD || sensor_type == SUPER;
+  }
+
+  bool Structure::has_CB_sensor() const
+  {
+    if (!has_sensor()) return false;
+    auto sensor_type = stats.sensor_stats->type;
+
+    return sensor_type == INDIRECT_CB || sensor_type == SUPER;
+  }
+
+  bool Structure::has_VTOL_intercept_sensor() const
+  {
+    if (!has_sensor()) return false;
+    auto sensor_type = stats.sensor_stats->type;
+
+    return sensor_type == VTOL_INTERCEPT || sensor_type == SUPER;
+  }
+
   bool Structure::has_VTOL_CB_sensor() const
   {
-    if (stats.sensor_stats == nullptr) return false;
+    if (!has_sensor()) return false;
     auto sensor_type = stats.sensor_stats->type;
 
     return sensor_type == VTOL_CB || sensor_type == SUPER;
@@ -114,5 +143,5 @@ namespace Impl
 
 bool Rearm_Pad::is_clear() const
 {
-  return occupying_unit == nullptr || occupying_unit->is_VTOL_rearmed_and_repaired();
+  return rearm_target == nullptr || rearm_target->is_VTOL_rearmed_and_repaired();
 }
