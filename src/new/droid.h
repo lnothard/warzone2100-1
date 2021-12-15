@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <vector>
+#include <optional>
 
 #include "unit.h"
 #include "droid_group.h"
@@ -103,6 +104,8 @@ public:
   bool is_damaged() const;
   bool is_attacking() const;
   bool is_VTOL_rearmed_and_repaired() const;
+  bool is_VTOL_empty() const;
+  bool is_VTOL_full() const;
   bool are_all_VTOLs_rearmed() const;
   bool has_commander() const;
   bool has_standard_sensor() const;
@@ -123,7 +126,7 @@ private:
   Droid_Group* group { nullptr };
   Structure* associated_structure { nullptr };
   Movement movement;
-  std::array<Component_Stats, MAX_COMPONENTS> components;
+  std::optional<Propulsion_Stats> propulsion;
   uint32_t weight { 0 };
   uint32_t base_speed { 0 };
   uint32_t original_hp { 0 };

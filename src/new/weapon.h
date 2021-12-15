@@ -121,9 +121,12 @@ public:
   bool has_ammo() const;
   bool has_full_ammo() const;
   bool is_artillery() const;
+  bool is_VTOL_weapon() const;
+  bool is_empty_VTOL_weapon(uint32_t player) const;
   uint32_t get_recoil() const;
-  uint32_t get_max_range(uint8_t player) const;
-  uint32_t get_min_range(uint8_t player) const;
+  uint32_t get_max_range(uint32_t player) const;
+  uint32_t get_min_range(uint32_t player) const;
+  uint32_t get_num_attack_runs(uint32_t player) const;
   WEAPON_SUBCLASS get_subclass() const;
 private:
   using enum ATTACKER_TYPE;

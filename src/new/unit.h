@@ -18,6 +18,7 @@ public:
   virtual bool is_alive() const = 0;
   virtual bool has_electronic_weapon() const = 0;
   virtual uint32_t get_hp() const = 0;
+  virtual const std::vector<Weapon>& get_weapons() const = 0;
 };
 
 namespace Impl
@@ -27,11 +28,12 @@ namespace Impl
   public:
     Unit(uint32_t id, uint32_t player);
 
-    bool is_alive() const override;
-    bool has_electronic_weapon() const override;
+    bool is_alive() const final;
+    bool has_electronic_weapon() const final;
     bool has_full_ammo() const;
     bool has_artillery() const;
-    uint32_t get_hp() const override;
+    uint32_t get_hp() const final;
+    const std::vector<Weapon>& get_weapons() const final;
     uint16_t num_weapons() const;
   private:
     uint32_t hit_points { 0 };

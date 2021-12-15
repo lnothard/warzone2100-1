@@ -2,7 +2,8 @@
 // Created by luna on 08/12/2021.
 //
 
-#include <algorithm>
+#include <ranges>
+using namespace std;
 
 #include "droid.h"
 #include "obj_lists.h"
@@ -44,19 +45,19 @@ bool Droid::is_commander() const
 
 bool Droid::is_VTOL() const
 {
+  assert(propulsion);
   using enum PROPULSION_TYPE;
-  auto propulsion_stats = get_propulsion_stats();
 
-  return !is_transporter() && propulsion_stats.has_lift();
+  return !is_transporter() && propulsion->propulsion_type == LIFT;
 }
 
 bool Droid::is_flying() const
 {
+  assert(propulsion);
   using enum PROPULSION_TYPE;
-  auto propulsion_stats = get_propulsion_stats();
 
   return (!movement.is_inactive() || is_transporter()) &&
-         propulsion_stats->type == LIFT;
+         propulsion->propulsion_type == LIFT;
 }
 
 bool Droid::is_transporter() const
@@ -96,7 +97,7 @@ bool Droid::is_being_repaired() const
 
   auto droids = *droid_lists[get_player()];
 
-  return std::any_of(droids.begin(), droids.end(), [this] (const auto& droid) {
+  return ranges::any_of(droids, [this] (const auto& droid) {
     return droid.is_repairer() && droid.get_current_action() == DROID_REPAIR &&
            order.target_object == this;
   });
@@ -177,12 +178,32 @@ bool Droid::is_VTOL_rearmed_and_repaired() const
   return true;
 }
 
+bool Droid::is_VTOL_empty() const
+{
+  assert(is_VTOL());
+  if (type != WEAPON) return false;
+
+  return ranges::all_of(get_weapons(), [this] (const auto& weapon) {
+    return weapon.is_VTOL_weapon() && weapon.is_empty_VTOL_weapon(get_player());
+  });
+}
+
+bool Droid::is_VTOL_full() const
+{
+  assert(is_VTOL());
+  if (type != WEAPON) return false;
+
+  return ranges::all_of(get_weapons(), [] (const auto& weapon) {
+    return weapon.is_VTOL_weapon() && weapon.has_full_ammo();
+  });
+}
+
 bool Droid::are_all_VTOLs_rearmed() const
 {
   if (!is_VTOL()) return true;
   auto droids = *droid_lists[get_player()];
 
-  std::none_of(droids.begin(), droids.end(), [this] (const auto& droid) {
+  ranges::none_of(droids, [this] (const auto& droid) {
     return droid.is_rearming() &&
            droid.get_current_order().type == order.type &&
            droid.get_current_order().target_object == order.target_object;
@@ -242,7 +263,7 @@ auto count_player_command_droids(uint32_t player)
 {
   auto droids = *droid_lists[player];
 
-  return std::count_if(droids.begin(), droids.end(), [] (const auto& droid) {
+  return ranges::count_if(droids, [] (const auto& droid) {
     return droid.is_commander();
   });
 }

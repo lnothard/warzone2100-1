@@ -2,7 +2,8 @@
 // Created by luna on 08/12/2021.
 //
 
-#include <algorithm>
+#include <ranges>
+using namespace std;
 
 #include "unit.h"
 
@@ -20,13 +21,13 @@ namespace Impl
 
   bool Unit::has_full_ammo() const
   {
-    return std::all_of(weapons.begin(), weapons.end(),
+    return ranges::all_of(weapons,
                        [](const auto& w){ return w.has_full_ammo(); });
   }
 
   bool Unit::has_artillery() const
   {
-    return std::any_of(weapons.begin(), weapons.end(), [] (const auto& weapon) {
+    return ranges::any_of(weapons, [] (const auto& weapon) {
       return weapon.is_artillery();
     });
   }
@@ -35,7 +36,7 @@ namespace Impl
   {
     if (weapons.size() == 0) return false;
 
-    return (std::any_of(weapons.begin(), weapons.end(), [this] (const auto& weapon) {
+    return (ranges::any_of(weapons, [] (const auto& weapon) {
       return weapon.get_subclass() == WEAPON_SUBCLASS::ELECTRONIC;
     }));
   }
@@ -43,5 +44,10 @@ namespace Impl
   uint16_t Unit::num_weapons() const
   {
     return static_cast<uint16_t>(weapons.size());
+  }
+
+  const std::vector<Weapon>& Unit::get_weapons() const
+  {
+    return weapons;
   }
 }

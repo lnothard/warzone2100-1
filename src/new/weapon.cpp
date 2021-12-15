@@ -17,6 +17,18 @@ bool Weapon::is_artillery() const
          stats.movement_type == MOVEMENT_TYPE::HOMING_INDIRECT;
 }
 
+bool Weapon::is_VTOL_weapon() const
+{
+  return stats.max_VTOL_attack_runs;
+}
+
+bool Weapon::is_empty_VTOL_weapon(uint32_t player) const
+{
+  if (!is_VTOL_weapon()) return false;
+
+  return ammo_used >= get_num_attack_runs(player);
+}
+
 uint32_t Weapon::get_recoil() const
 {
   if (graphicsTime >= time_last_fired && graphicsTime < time_last_fired + DEFAULT_RECOIL_TIME)
@@ -29,12 +41,12 @@ uint32_t Weapon::get_recoil() const
   return 0;
 }
 
-uint32_t Weapon::get_max_range(uint8_t player) const
+uint32_t Weapon::get_max_range(uint32_t player) const
 {
   return stats.upgraded_stats[player].max_range;
 }
 
-uint32_t Weapon::get_min_range(uint8_t player) const
+uint32_t Weapon::get_min_range(uint32_t player) const
 {
   return stats.upgraded_stats[player].min_range;
 }
@@ -42,4 +54,14 @@ uint32_t Weapon::get_min_range(uint8_t player) const
 WEAPON_SUBCLASS Weapon::get_subclass() const
 {
   return stats.subclass;
+}
+
+uint32_t Weapon::get_num_attack_runs(uint32_t player) const
+{
+  auto u_stats = stats.upgraded_stats[player];
+
+  if (u_stats.reload_time > 0)
+    return u_stats.rounds_per_salvo * stats.max_VTOL_attack_runs;
+
+  return stats.max_VTOL_attack_runs;
 }
