@@ -128,6 +128,8 @@ namespace Impl
   class Structure : public virtual ::Structure, public Impl::Unit
   {
   public:
+    Structure(uint32_t id, uint32_t player);
+
     bool is_blueprint() const;
     bool is_wall() const;
     bool is_probably_doomed() const;

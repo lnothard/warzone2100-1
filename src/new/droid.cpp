@@ -239,10 +239,10 @@ uint32_t Droid::get_commander_level() const
 
 uint32_t Droid::get_effective_level() const
 {
-  uint32_t level = get_level();
+  auto level = get_level();
   if (!has_commander()) return level;
 
-  uint32_t cmd_level = get_commander_level();
+  auto cmd_level = get_commander_level();
   if (cmd_level > level + 1)
     return cmd_level;
 
@@ -279,10 +279,17 @@ void Droid::give_action(ACTION new_action, const Unit& target_unit, Position pos
 
 };
 
-void Droid::start_new_action()
+void Droid::reset_action()
 {
   time_action_started = gameTime;
   action_points_done = 0;
+}
+
+void Droid::update_expected_damage(int32_t damage, bool is_direct) {
+  if (is_direct)
+    expected_damage_direct += damage;
+  else
+    expected_damage_indirect += damage;
 }
 
 bool can_assign_fire_support(const Droid& droid, const Structure& structure)

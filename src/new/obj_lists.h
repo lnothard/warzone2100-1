@@ -16,4 +16,9 @@ void create_droid(uint32_t id, uint32_t player)
   droid_lists[player]->emplace_back(id, player);
 }
 
+void create_structure(uint32_t id, uint32_t player)
+{
+  structure_lists[player]->emplace_back(id, player);
+}
+
 #endif // WARZONE2100_OBJ_LISTS_H

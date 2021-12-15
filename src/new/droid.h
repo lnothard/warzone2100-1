@@ -115,7 +115,8 @@ public:
   void commander_gain_experience(uint32_t exp);
   void move_to_rearming_pad();
   void cancel_build();
-  void start_new_action();
+  void reset_action();
+  void update_expected_damage(int32_t damage, bool is_direct);
   uint32_t get_level() const;
   uint32_t get_commander_level() const;
   uint32_t get_effective_level() const;

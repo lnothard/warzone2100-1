@@ -12,19 +12,24 @@ Structure_Bounds::Structure_Bounds()
 }
 
 Structure_Bounds::Structure_Bounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords)
+: top_left_coords{top_left_coords}, size_in_coords{size_in_coords}
 {
-  this->top_left_coords = top_left_coords;
-  this->size_in_coords = size_in_coords;
 }
 
 namespace Impl
 {
+  Structure::Structure(uint32_t id, uint32_t player)
+  : Unit(id, player)
+  {
+
+  }
+
   bool Structure::is_blueprint() const
   {
-    return (state == BLUEPRINT_VALID ||
-            state == BLUEPRINT_INVALID ||
-            state == BLUEPRINT_PLANNED ||
-            state == BLUEPRINT_PLANNED_BY_ALLY);
+    return state == BLUEPRINT_VALID ||
+           state == BLUEPRINT_INVALID ||
+           state == BLUEPRINT_PLANNED ||
+           state == BLUEPRINT_PLANNED_BY_ALLY;
   }
 
   bool Structure::is_wall() const
@@ -116,7 +121,7 @@ namespace Impl
 
   uint32_t Structure::get_original_hp() const
   {
-    return stats.upgrade[get_player()].get_hp();
+    return stats.upgraded_stats[get_player()].hit_points;
   }
 
   Vector2i Structure::get_size() const
