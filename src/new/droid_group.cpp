@@ -2,8 +2,7 @@
 // Created by luna on 08/12/2021.
 //
 
-#include <ranges>
-using namespace std;
+#include <algorithm>
 
 #include "droid_group.h"
 
@@ -14,7 +13,7 @@ bool Droid_Group::is_command_group() const
 
 bool Droid_Group::has_electronic_weapon() const
 {
-  return ranges::any_of(members, [] (const auto* droid) {
+  return std::any_of(members.begin(), members.end(), [] (const auto* droid) {
     return dynamic_cast<const Unit*>(droid)->has_electronic_weapon();
   });
 }
