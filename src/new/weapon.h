@@ -7,9 +7,10 @@
 
 #include <cstdint>
 
-#include "stats.h"
-#include "lib/gamelib/gtime.h"
 #include "lib/framework/vector.h"
+#include "lib/gamelib/gtime.h"
+#include "basedef.h"
+#include "stats.h"
 
 constexpr uint32_t DEFAULT_RECOIL_TIME { GAME_TICKS_PER_SEC / 4 };
 
@@ -100,6 +101,7 @@ struct Weapon_Stats : public Component_Stats
   bool            can_penetrate;
   bool            can_fire_while_moving;
   bool            effect_emits_light;
+  std::unique_ptr<iIMDShape> weapon_graphic;
   std::unique_ptr<iIMDShape> mount_graphic;
   std::unique_ptr<iIMDShape> muzzle_graphic;
   std::unique_ptr<iIMDShape> in_flight_graphic;
@@ -122,7 +124,7 @@ enum class ATTACKER_TYPE
   RADAR_DETECTOR
 };
 
-class Weapon
+class Weapon : public Simple_Object
 {
 public:
   bool has_ammo() const;
@@ -134,6 +136,9 @@ public:
   uint32_t get_max_range(uint32_t player) const;
   uint32_t get_min_range(uint32_t player) const;
   uint32_t get_num_attack_runs(uint32_t player) const;
+  uint32_t get_shots_fired() const;
+  const iIMDShape& get_IMD_shape() const;
+  const iIMDShape& get_mount_graphic() const;
   WEAPON_SUBCLASS get_subclass() const;
 private:
   using enum ATTACKER_TYPE;

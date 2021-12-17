@@ -65,3 +65,18 @@ uint32_t Weapon::get_num_attack_runs(uint32_t player) const
 
   return stats.max_VTOL_attack_runs;
 }
+
+uint32_t Weapon::get_shots_fired() const
+{
+  return shots_fired;
+}
+
+const iIMDShape& Weapon::get_IMD_shape() const
+{
+  return *stats.weapon_graphic;
+}
+
+const iIMDShape& Weapon::get_mount_graphic() const
+{
+  return *stats.mount_graphic;
+}

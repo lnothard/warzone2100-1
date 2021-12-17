@@ -20,13 +20,13 @@ public:
 
   virtual bool is_alive() const = 0;
   virtual bool has_electronic_weapon() const = 0;
-  virtual bool target_in_line_of_fire(const Unit& target) const = 0;
+  virtual bool target_in_line_of_fire(const Unit& target, const int weapon_slot) const = 0;
   virtual uint32_t get_hp() const = 0;
-  virtual int calculate_line_of_fire(const Simple_Object& target) const = 0;
+  virtual int calculate_line_of_fire(const Simple_Object& target, const int weapon_slot, bool is_direct) const = 0;
   virtual int calculate_sensor_range() const = 0;
   virtual uint32_t get_max_weapon_range() const = 0;
-  virtual Vector3i calculate_muzzle_base_location(int weapon_slot) const = 0;
-  virtual Vector3i calculate_muzzle_tip_location(int weapon_slot) const = 0;
+  virtual Vector3i calculate_muzzle_base_location(const int weapon_slot) const = 0;
+  virtual Vector3i calculate_muzzle_tip_location(const int weapon_slot) const = 0;
   virtual const std::vector<Weapon>& get_weapons() const = 0;
   virtual const iIMDShape& get_IMD_shape() const = 0;
 };
@@ -40,12 +40,12 @@ namespace Impl
 
     bool is_alive() const final;
     bool has_electronic_weapon() const override;
-    bool target_in_line_of_fire(const ::Unit& target) const final;
+    bool target_in_line_of_fire(const ::Unit& target, const int weapon_slot) const final;
     bool has_full_ammo() const;
     bool has_artillery() const;
-    int calculate_line_of_fire(const ::Simple_Object& target) const final;
-    Vector3i calculate_muzzle_base_location(int weapon_slot) const final;
-    Vector3i calculate_muzzle_tip_location(int weapon_slot) const final;
+    int calculate_line_of_fire(const ::Simple_Object& target, const int weapon_slot, bool walls_block, bool is_direct) const final;
+    Vector3i calculate_muzzle_base_location(const int weapon_slot) const final;
+    Vector3i calculate_muzzle_tip_location(const int weapon_slot) const final;
     uint32_t get_hp() const final;
     uint32_t get_max_weapon_range() const final;
     const std::vector<Weapon>& get_weapons() const final;
@@ -55,4 +55,6 @@ namespace Impl
     std::vector<Weapon> weapons { 0 };
   };
 }
+
+static inline void check_angle(int64_t& angle_tan, int start_coord, int height, int square_distance, int target_height, bool is_direct);
 #endif // WARZONE2100_UNIT_H
