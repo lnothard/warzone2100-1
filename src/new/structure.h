@@ -5,9 +5,10 @@
 #ifndef WARZONE2100_STRUCTURE_H
 #define WARZONE2100_STRUCTURE_H
 
-#include "unit.h"
+#include "lib/ivis_opengl/ivisdef.h"
 #include "droid.h"
 #include "positiondef.h"
+#include "unit.h"
 
 enum class STRUCTURE_STATE
 {
@@ -103,7 +104,10 @@ struct Structure_Stats
 
   STRUCTURE_TYPE type;
   STRUCTURE_STRENGTH strength;
+  std::vector< std::unique_ptr<iIMDShape> > IMDs;
   std::unique_ptr<Sensor_Stats> sensor_stats;
+  std::unique_ptr<ECM_Stats> ecm_stats;
+  std::unique_ptr<iIMDShape> base_imd;
   bool combines_with_wall;
   bool is_favourite;
   uint32_t base_width;
@@ -145,9 +149,11 @@ namespace Impl
     uint16_t count_assigned_droids() const;
     uint32_t get_original_hp() const;
     Vector2i get_size() const;
+    const iIMDShape& get_IMD_shape() const final;
     Structure_Bounds get_bounds() const;
     void update_expected_damage(int32_t damage);
     int calculate_sensor_range() const final;
+    bool target_within_range(const Unit& target) const;
   private:
     using enum STRUCTURE_STATE;
     using enum STRUCTURE_ANIMATION_STATE;

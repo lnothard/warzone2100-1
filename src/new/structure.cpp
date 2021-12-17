@@ -134,6 +134,11 @@ namespace Impl
     return Structure_Bounds{ map_coord(get_position().xy()) - get_size() / 2, get_size() };
   }
 
+  const iIMDShape& Structure::get_IMD_shape() const
+  {
+    return *stats.base_imd;
+  }
+
   void Structure::update_expected_damage(int32_t damage)
   {
     expected_damage += damage;
@@ -143,6 +148,15 @@ namespace Impl
   int Structure::calculate_sensor_range() const
   {
 
+  }
+
+  bool Structure::target_within_range(const Unit &target) const
+  {
+    if (num_weapons() == 0) return false;
+
+    auto max_range = get_max_weapon_range();
+    return object_position_square_diff(get_position(), target.get_position()) < max_range * max_range &&
+           target_in_line_of_fire(target);
   }
 
   static inline int calculate_foundation_height(const Structure& structure)

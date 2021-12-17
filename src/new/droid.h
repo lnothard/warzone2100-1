@@ -120,6 +120,7 @@ public:
   uint32_t get_level() const;
   uint32_t get_commander_level() const;
   uint32_t get_effective_level() const;
+  const iIMDShape& get_IMD_shape() const final;
   int calculate_sensor_range() const final;
   int calculate_max_range() const;
 private:
@@ -133,6 +134,7 @@ private:
   Droid_Group* group { nullptr };
   Structure* associated_structure { nullptr };
   Movement movement;
+  std::unique_ptr<Body_Stats> body;
   std::optional<Propulsion_Stats> propulsion;
   std::optional<Commander_Stats> brain;
   std::optional<Sensor_Stats> sensor;

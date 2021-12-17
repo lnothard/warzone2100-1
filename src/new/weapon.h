@@ -100,6 +100,13 @@ struct Weapon_Stats : public Component_Stats
   bool            can_penetrate;
   bool            can_fire_while_moving;
   bool            effect_emits_light;
+  std::unique_ptr<iIMDShape> mount_graphic;
+  std::unique_ptr<iIMDShape> muzzle_graphic;
+  std::unique_ptr<iIMDShape> in_flight_graphic;
+  std::unique_ptr<iIMDShape> hit_graphic;
+  std::unique_ptr<iIMDShape> miss_graphic;
+  std::unique_ptr<iIMDShape> splash_graphic;
+  std::unique_ptr<iIMDShape> trail_graphic;
 };
 
 enum class ATTACKER_TYPE

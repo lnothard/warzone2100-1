@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "lib/framework/frame.h"
+#include "lib/ivis_opengl/ivisdef.h"
 #include "weapon.h"
 
 enum class PROPULSION_TYPE
@@ -43,6 +44,14 @@ enum class SENSOR_TYPE
   VTOL_INTERCEPT,
   SUPER,
   RADAR_DETECTOR
+};
+
+enum class BODY_SIZE
+{
+  LIGHT,
+  MEDIUM,
+  HEAVY,
+  SUPER_HEAVY
 };
 
 struct Component_Stats
@@ -103,6 +112,9 @@ struct Commander_Stats : public Component_Stats
 
 struct Body_Stats : public Component_Stats
 {
+  BODY_SIZE size;
+  std::unique_ptr<iIMDShape> imd_shape;
+
   struct : Upgradeable
   {
     unsigned power_output;

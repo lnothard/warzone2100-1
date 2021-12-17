@@ -8,6 +8,8 @@
 #include "basedef.h"
 #include "unit.h"
 
+constexpr auto PROJECTILE_MAX_PITCH { 45 };
+
 enum class PROJECTILE_STATE
 {
   IN_FLIGHT,

@@ -249,6 +249,10 @@ uint32_t Droid::get_effective_level() const
   return level;
 }
 
+const iIMDShape& Droid::get_IMD_shape() const
+{
+  return *body->imd_shape;
+}
 
 void Droid::move_to_rearming_pad()
 {
@@ -324,17 +328,7 @@ int Droid::calculate_max_range() const
   else if (num_weapons() == 0)
     return 0;
   else
-  {
-    auto weapons = get_weapons();
-    int max = 0;
-    for (const auto& weapon : weapons)
-    {
-      auto max_range = weapon.get_max_range(get_player());
-      if (max_range > max)
-        max = max_range;
-    }
-    return max;
-  }
+    return get_max_weapon_range();
 }
 
 bool is_droid_still_building(const Droid& droid)
