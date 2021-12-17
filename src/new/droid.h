@@ -123,6 +123,7 @@ public:
   const iIMDShape& get_IMD_shape() const final;
   int calculate_sensor_range() const final;
   int calculate_max_range() const;
+  int calculate_height() const final;
 private:
   using enum ACTION;
   using enum DROID_TYPE;

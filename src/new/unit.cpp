@@ -50,7 +50,7 @@ namespace Impl
     auto range = weapons[weapon_slot].get_max_range(get_player());
     if (!has_artillery())
     {
-      return range >= distance && LINE_OF_FIRE_MINIMUM <= calculate_line_of_fire(target);
+      return range >= distance && LINE_OF_FIRE_MINIMUM <= calculate_line_of_fire(target, weapon_slot);
     }
     auto min_angle = calculate_line_of_fire(target, weapon_slot);
     if (min_angle > DEG(PROJECTILE_MAX_PITCH)) {
@@ -128,146 +128,145 @@ namespace Impl
       if (walls_block && oldPartSq > 0)
       {
         const Tile *psTile;
-          halfway = current + (next - current) / 2;
-          psTile = mapTile(map_coord(halfway.x), map_coord(halfway.y));
-          if (TileHasStructure(psTile) && psTile->occupying_object != target)
+        halfway = current + (next - current) / 2;
+        psTile = mapTile(map_coord(halfway.x), map_coord(halfway.y));
+        if (tile_is_occupied_by_structure(*psTile) && psTile->occupying_object != target)
+        {
+          // check whether target was reached before tile's "half way" line
+          part = halfway - start;
+          partSq = dot(part, part);
+
+          if (partSq >= distSq)
           {
-            // check whether target was reached before tile's "half way" line
-            part = halfway - start;
-            partSq = dot(part, part);
+            break;
+          }
 
-            if (partSq >= distSq)
-            {
-              break;
-            }
-
-            // allowed to shoot over enemy structures if they are NOT the target
-            if (partSq > 0)
-            {
-              check_angle(angletan, oldPartSq,
-                          psTile->occupying_object->get_position().z + establishTargetHeight(psTile->occupying_object) - pos.z,
-                          distSq, dest.z - pos.z, is_direct);
-            }
+          // allowed to shoot over enemy structures if they are NOT the target
+          if (partSq > 0)
+          {
+            check_angle(angletan, oldPartSq,
+                        psTile->occupying_object->get_position().z + establishTargetHeight(psTile->occupying_object) - pos.z,
+                        distSq, dest.z - pos.z, is_direct);
+          }
           }
         }
-        // next
-        current = next;
-        part = current - start;
-        partSq = dot(part, part);
-        ASSERT(partSq > oldPartSq, "areaOfFire(): no progress in tile-walk! From: %i,%i to %i,%i stuck in %i,%i", map_coord(pos.x), map_coord(pos.y), map_coord(dest.x), map_coord(dest.y), map_coord(current.x), map_coord(current.y));
-
-      }
-      if (is_direct)
-      {
-        return establishTargetHeight(target) - (pos.z + (angletan * iSqrt(distSq)) / 65536 - dest.z);
-      }
-      else
-      {
-        angletan = iAtan2(angletan, 65536);
-        angletan = angleDelta(angletan);
-        return DEG(1) + angletan;
-      }
+      // next
+      current = next;
+      part = current - start;
+      partSq = dot(part, part);
+      ASSERT(partSq > oldPartSq, "areaOfFire(): no progress in tile-walk! From: %i,%i to %i,%i stuck in %i,%i", map_coord(pos.x), map_coord(pos.y), map_coord(dest.x), map_coord(dest.y), map_coord(current.x), map_coord(current.y));
     }
-
-    Vector3i Unit::calculate_muzzle_base_location(int weapon_slot) const
+    if (is_direct)
     {
-      const auto& imd_shape = get_IMD_shape();
-      auto position = get_position();
-      auto muzzle = Vector3i{0, 0, 0};
-
-      if (imd_shape.nconnectors)
-      {
-        Affine3F af;
-        auto rotation = get_rotation();
-        af.Trans(position.x, -position.z, position.y);
-        af.RotY(rotation.direction);
-        af.RotX(rotation.pitch);
-        af.RotZ(-rotation.roll);
-        af.Trans(imd_shape.connectors[weapon_slot].x, -imd_shape.connectors[weapon_slot].z,
-                 -imd_shape.connectors[weapon_slot].y);
-
-        auto barrel = Vector3i{0, 0, 0};
-        muzzle = (af * barrel).xzy();
-        muzzle.z = -muzzle.z;
-      }
-      else
-      {
-        muzzle = position + Vector3i{0, 0, get_display_data().imd_shape->max.y};
-      }
-      return muzzle;
+      return establishTargetHeight(target) - (pos.z + (angletan * iSqrt(distSq)) / 65536 - dest.z);
     }
-
-    Vector3i Unit::calculate_muzzle_tip_location(int weapon_slot) const
+    else
     {
-      const auto& imd_shape = get_IMD_shape();
-      const auto& weapon = weapons[weapon_slot];
-      const auto position = get_position();
-      const auto rotation = get_rotation();
-      auto muzzle = Vector3i{0, 0, 0};
+      angletan = iAtan2(angletan, 65536);
+      angletan = angleDelta(angletan);
+      return DEG(1) + angletan;
+    }
+  }
 
-      if (imd_shape.nconnectors)
+  Vector3i Unit::calculate_muzzle_base_location(int weapon_slot) const
+  {
+    const auto& imd_shape = get_IMD_shape();
+    auto position = get_position();
+    auto muzzle = Vector3i{0, 0, 0};
+
+    if (imd_shape.nconnectors)
+    {
+      Affine3F af;
+      auto rotation = get_rotation();
+      af.Trans(position.x, -position.z, position.y);
+      af.RotY(rotation.direction);
+      af.RotX(rotation.pitch);
+      af.RotZ(-rotation.roll);
+      af.Trans(imd_shape.connectors[weapon_slot].x, -imd_shape.connectors[weapon_slot].z,
+               -imd_shape.connectors[weapon_slot].y);
+
+      auto barrel = Vector3i{0, 0, 0};
+      muzzle = (af * barrel).xzy();
+      muzzle.z = -muzzle.z;
+      }
+    else
+    {
+      muzzle = position + Vector3i{0, 0, get_display_data().imd_shape->max.y};
+    }
+    return muzzle;
+  }
+
+  Vector3i Unit::calculate_muzzle_tip_location(int weapon_slot) const
+  {
+    const auto& imd_shape = get_IMD_shape();
+    const auto& weapon = weapons[weapon_slot];
+    const auto position = get_position();
+    const auto rotation = get_rotation();
+    auto muzzle = Vector3i{0, 0, 0};
+
+    if (imd_shape.nconnectors)
+    {
+      auto barrel = Vector3i{0, 0, 0};
+      auto weapon_imd = weapon.get_IMD_shape();
+      auto mount_imd = weapon.get_mount_graphic();
+
+      Affine3F af;
+      af.Trans(position.x, -position.z, position.y);
+      af.RotY(rotation.direction);
+      af.RotX(rotation.pitch);
+      af.RotZ(-rotation.roll);
+      af.Trans(imd_shape.connectors[weapon_slot].x, -imd_shape.connectors[weapon_slot].z,
+               -imd_shape.connectors[weapon_slot].y);
+
+      af.RotY(weapon.get_rotation().direction);
+
+      if (mount_imd.nconnectors)
       {
-        auto barrel = Vector3i{0, 0, 0};
-        auto weapon_imd = weapon.get_IMD_shape();
-        auto mount_imd = weapon.get_mount_graphic();
+        af.Trans(mount_imd.connectors->x, -mount_imd.connectors->z, -mount_imd.connectors->y);
+      }
+      af.RotX(weapon.get_rotation().pitch);
 
-        Affine3F af;
-        af.Trans(position.x, -position.z, position.y);
-        af.RotY(rotation.direction);
-        af.RotX(rotation.pitch);
-        af.RotZ(-rotation.roll);
-        af.Trans(imd_shape.connectors[weapon_slot].x, -imd_shape.connectors[weapon_slot].z,
-                 -imd_shape.connectors[weapon_slot].y);
-
-        af.RotY(weapon.get_rotation().direction);
-
-        if (mount_imd.nconnectors)
+      if (weapon_imd.nconnectors)
+      {
+        auto connector_num = 0;
+        if (weapon.get_shots_fired() && weapon_imd.nconnectors > 1)
         {
-          af.Trans(mount_imd.connectors->x, -mount_imd.connectors->z, -mount_imd.connectors->y);
+          connector_num = (weapon.get_shots_fired() - 1) % weapon_imd.nconnectors;
         }
-        af.RotX(weapon.get_rotation().pitch);
-
-        if (weapon_imd.nconnectors)
-        {
-          auto connector_num = 0;
-          if (weapon.get_shots_fired() && weapon_imd.nconnectors > 1)
-          {
-            connector_num = (weapon.get_shots_fired() - 1) % weapon_imd.nconnectors;
-          }
-          auto connector = weapon_imd.connectors[connector_num];
-          barrel = Vector3i{connector.x, -connector.z, -connector.y};
-        }
-        muzzle = (af * barrel).xzy();
-        muzzle.z = -muzzle.z;
+        auto connector = weapon_imd.connectors[connector_num];
+        barrel = Vector3i{connector.x, -connector.z, -connector.y};
       }
-      else
-      {
-        muzzle = position + Vector3i{0, 0, 0 + get_display_data().imd_shape->max.y};
-      }
-      return muzzle;
+      muzzle = (af * barrel).xzy();
+      muzzle.z = -muzzle.z;
     }
-
-    uint16_t Unit::num_weapons() const
+    else
     {
-      return static_cast<uint16_t>(weapons.size());
+      muzzle = position + Vector3i{0, 0, 0 + get_display_data().imd_shape->max.y};
     }
+    return muzzle;
+  }
 
-    uint32_t Unit::get_max_weapon_range() const
-    {
-      auto max = 0;
-      for (const auto& weapon : weapons)
-      {
-        auto max_weapon_range = weapon.get_max_range(get_player());
-        if (max_weapon_range > max)
-          max = max_weapon_range;
-      }
-      return max;
-    }
+  uint16_t Unit::num_weapons() const
+  {
+    return static_cast<uint16_t>(weapons.size());
+  }
 
-    const std::vector<Weapon>& Unit::get_weapons() const
+  uint32_t Unit::get_max_weapon_range() const
+  {
+    auto max = 0;
+    for (const auto& weapon : weapons)
     {
-      return weapons;
+      auto max_weapon_range = weapon.get_max_range(get_player());
+      if (max_weapon_range > max)
+        max = max_weapon_range;
     }
+    return max;
+  }
+
+  const std::vector<Weapon>& Unit::get_weapons() const
+  {
+    return weapons;
+  }
 }
 
 static inline void check_angle(int64_t& angle_tan, int start_coord, int height, int square_distance, int target_height, bool is_direct)

@@ -36,6 +36,7 @@ struct Tile
 extern std::unique_ptr<Tile[]> psMapTiles;
 
 static inline bool tile_is_occupied(const Tile& tile);
+static inline bool tile_is_occupied_by_structure(const Tile& tile);
 static inline Vector2i world_coord(const Vector2i& map_coord);
 static inline Vector2i map_coord(const Vector2i& world_coord);
 

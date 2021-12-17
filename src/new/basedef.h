@@ -22,13 +22,14 @@ struct Spacetime
 class Simple_Object
 {
 public:
-  virtual ~Simple_Object();
+  virtual ~Simple_Object() = default;
 
   virtual Spacetime spacetime() const = 0;
   virtual Position get_position() const = 0;
   virtual Rotation get_rotation() const = 0;
   virtual uint8_t get_player() const = 0;
   virtual uint32_t get_id() const = 0;
+  virtual int calculate_height() const = 0;
   virtual Display_Data get_display_data() const = 0;
 };
 

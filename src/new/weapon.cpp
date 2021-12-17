@@ -29,6 +29,11 @@ bool Weapon::is_empty_VTOL_weapon(uint32_t player) const
   return ammo_used >= get_num_attack_runs(player);
 }
 
+const Weapon_Stats& Weapon::get_stats() const
+{
+  return stats;
+}
+
 uint32_t Weapon::get_recoil() const
 {
   if (graphicsTime >= time_last_fired && graphicsTime < time_last_fired + DEFAULT_RECOIL_TIME)

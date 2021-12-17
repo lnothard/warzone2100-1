@@ -21,6 +21,8 @@ enum class FEATURE_TYPE
 
 class Feature : public Simple_Object
 {
+public:
+  int calculate_height() const final;
 private:
   using enum FEATURE_TYPE;
 

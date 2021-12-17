@@ -9,6 +9,8 @@
 #include "unit.h"
 
 constexpr auto PROJECTILE_MAX_PITCH { 45 };
+constexpr auto BULLET_FLIGHT_HEIGHT { 16 };
+constexpr auto VTOL_HITBOX_MODIFIER { 100 };
 
 enum class PROJECTILE_STATE
 {
@@ -21,6 +23,7 @@ enum class PROJECTILE_STATE
 class Projectile : public virtual Simple_Object, public Impl::Simple_Object
 {
 public:
+  int calculate_height() const final;
 private:
   using enum PROJECTILE_STATE;
 

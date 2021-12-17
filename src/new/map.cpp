@@ -3,10 +3,16 @@
 //
 
 #include "map.h"
+#include "structure.h"
 
 static inline bool tile_is_occupied(const Tile& tile)
 {
   return tile.occupying_object != nullptr;
+}
+
+static inline bool tile_is_occupied_by_structure(const Tile& tile)
+{
+  return tile_is_occupied(tile) && dynamic_cast<Structure*>(tile.occupying_object);
 }
 
 static inline Vector2i world_coord(const Vector2i& map_coord)

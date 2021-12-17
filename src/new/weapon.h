@@ -132,6 +132,7 @@ public:
   bool is_artillery() const;
   bool is_VTOL_weapon() const;
   bool is_empty_VTOL_weapon(uint32_t player) const;
+  const Weapon_Stats& get_stats() const;
   uint32_t get_recoil() const;
   uint32_t get_max_range(uint32_t player) const;
   uint32_t get_min_range(uint32_t player) const;

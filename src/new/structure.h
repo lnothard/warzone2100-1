@@ -154,6 +154,8 @@ namespace Impl
     void update_expected_damage(int32_t damage);
     int calculate_sensor_range() const final;
     bool target_within_range(const Unit& target) const;
+    int calculate_gate_height(uint32_t time, int minimum) const;
+    int calculate_height() const final;
   private:
     using enum STRUCTURE_STATE;
     using enum STRUCTURE_ANIMATION_STATE;
@@ -168,6 +170,7 @@ namespace Impl
     uint32_t expected_damage;
     uint8_t num_modules;
     float foundation_depth;
+    uint32_t last_state_time;
   };
 
   static inline int calculate_foundation_height(const Structure& structure);

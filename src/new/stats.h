@@ -62,6 +62,7 @@ struct Component_Stats
     uint32_t hit_point_percent;
   };
 
+  std::unique_ptr<iIMDShape> imd_shape;
   COMPONENT_TYPE type;
   uint32_t power_to_build;
   uint32_t weight;
@@ -113,7 +114,6 @@ struct Commander_Stats : public Component_Stats
 struct Body_Stats : public Component_Stats
 {
   BODY_SIZE size;
-  std::unique_ptr<iIMDShape> imd_shape;
 
   struct : Upgradeable
   {

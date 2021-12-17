@@ -7,6 +7,7 @@
 #include "droid.h"
 #include "map.h"
 #include "obj_lists.h"
+#include "projectile.h"
 
 Droid::Droid(uint32_t id, uint32_t player)
     : Unit(id, player)
@@ -95,7 +96,7 @@ bool Droid::is_being_repaired() const
 {
   if (!is_damaged()) return false;
 
-  auto droids = *droid_lists[get_player()];
+  const auto& droids = *droid_lists[get_player()];
 
   return std::any_of(droids.begin(), droids.end(), [this] (const auto& droid) {
     return droid.is_repairer() && droid.get_current_action() == DROID_REPAIR &&
@@ -290,7 +291,8 @@ void Droid::reset_action()
   action_points_done = 0;
 }
 
-void Droid::update_expected_damage(int32_t damage, bool is_direct) {
+void Droid::update_expected_damage(int32_t damage, bool is_direct)
+{
   if (is_direct)
     expected_damage_direct += damage;
   else
@@ -331,6 +333,40 @@ int Droid::calculate_max_range() const
     return get_max_weapon_range();
 }
 
+int Droid::calculate_height() const
+{
+  const auto& imd = body->imd_shape;
+  auto height = imd->max.y - imd->min.y;
+  auto utility_height = 0, y_max = 0, y_min = 0;
+
+  if (is_VTOL())
+  {
+    return height + VTOL_HITBOX_MODIFIER;
+  }
+
+  const auto& weapon_stats = get_weapons()[0].get_stats();
+  switch (type)
+  {
+    case WEAPON:
+      if (num_weapons() == 0) break;
+
+      y_max = weapon_stats.imd_shape->max.y;
+      y_min = weapon_stats.imd_shape->min.y;
+      break;
+    case SENSOR:
+      y_max = sensor->imd_shape->max.y;
+      y_min = sensor->imd_shape->min.y;
+      break;
+    case ECM:
+      y_max = ecm->imd_shape->max.y;
+      y_min = ecm->imd_shape->min.y;
+      break;
+    case CONSTRUCT:
+      break;
+    default:
+  }
+}
+
 bool is_droid_still_building(const Droid& droid)
 {
   return droid.is_alive() && droid.get_current_action() == ACTION::BUILD;
@@ -346,7 +382,7 @@ void update_orientation(Droid& droid)
 
 auto count_player_command_droids(uint32_t player)
 {
-  auto droids = *droid_lists[player];
+  const auto& droids = *droid_lists[player];
 
   return std::count_if(droids.begin(), droids.end(), [] (const auto& droid) {
     return droid.is_commander();
@@ -355,7 +391,7 @@ auto count_player_command_droids(uint32_t player)
 
 auto count_droids_for_level(uint32_t player, uint32_t level)
 {
-  auto droids = *droid_lists[player];
+  const auto& droids = *droid_lists[player];
 
   return std::count_if(droids.begin(), droids.end(), [level] (const auto& droid) {
     return droid.get_level() == level;
@@ -366,7 +402,7 @@ bool tile_is_occupied_by_droid(uint32_t x, uint32_t y)
 {
   for (int i = 0; i < MAX_PLAYERS; ++i)
   {
-    auto droids = *droid_lists[i];
+    const auto& droids = *droid_lists[i];
 
     for (const auto& droid : droids)
     {

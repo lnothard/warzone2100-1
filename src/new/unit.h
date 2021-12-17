@@ -22,7 +22,7 @@ public:
   virtual bool has_electronic_weapon() const = 0;
   virtual bool target_in_line_of_fire(const Unit& target, const int weapon_slot) const = 0;
   virtual uint32_t get_hp() const = 0;
-  virtual int calculate_line_of_fire(const Simple_Object& target, const int weapon_slot, bool is_direct) const = 0;
+  virtual int calculate_line_of_fire(const Simple_Object& target, const int weapon_slot, bool walls_block, bool is_direct) const = 0;
   virtual int calculate_sensor_range() const = 0;
   virtual uint32_t get_max_weapon_range() const = 0;
   virtual Vector3i calculate_muzzle_base_location(const int weapon_slot) const = 0;

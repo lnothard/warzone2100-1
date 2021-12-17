@@ -159,6 +159,37 @@ namespace Impl
            target_in_line_of_fire(target);
   }
 
+  int Structure::calculate_gate_height(uint32_t time, int minimum) const
+  {
+    if (stats.type != GATE) return 0;
+
+    auto height = get_display_data().imd_shape->max.y;
+    int open_height;
+    switch (animation_state)
+    {
+      case OPEN:
+        open_height = height;
+        break;
+      case OPENING:
+        open_height = (height * std::max<int>(time + GAME_TICKS_PER_UPDATE - last_state_time, 0)) / GAME_TICKS_PER_SEC;
+        break;
+      case CLOSING:
+        open_height = height - (height * std::max<int>(time - last_state_time, 0)) / GAME_TICKS_PER_SEC;
+        break;
+      default:
+        return 0;
+    }
+    return std::max(std::min(open_height, height - minimum), 0);
+  }
+
+  int Structure::calculate_height() const
+  {
+    const auto& imd = get_IMD_shape();
+    auto height = imd.max.y + imd.min.y;
+    height -= calculate_gate_height(gameTime, 2);  // Treat gate as at least 2 units tall, even if open, so that it's possible to hit.
+    return height;
+  }
+
   static inline int calculate_foundation_height(const Structure& structure)
   {
     const Structure_Bounds& bounds = structure.get_bounds();
