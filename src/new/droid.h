@@ -120,6 +120,8 @@ public:
   uint32_t get_level() const;
   uint32_t get_commander_level() const;
   uint32_t get_effective_level() const;
+  int calculate_sensor_range() const final;
+  int calculate_max_range() const;
 private:
   using enum ACTION;
   using enum DROID_TYPE;
@@ -133,6 +135,8 @@ private:
   Movement movement;
   std::optional<Propulsion_Stats> propulsion;
   std::optional<Commander_Stats> brain;
+  std::optional<Sensor_Stats> sensor;
+  std::optional<ECM_Stats> ecm;
   uint32_t weight { 0 };
   uint32_t base_speed { 0 };
   uint32_t original_hp { 0 };

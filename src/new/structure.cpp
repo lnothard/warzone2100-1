@@ -140,6 +140,11 @@ namespace Impl
     assert(expected_damage >= 0);
   }
 
+  int Structure::calculate_sensor_range() const
+  {
+
+  }
+
   static inline int calculate_foundation_height(const Structure& structure)
   {
     const Structure_Bounds& bounds = structure.get_bounds();

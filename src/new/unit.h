@@ -18,6 +18,7 @@ public:
   virtual bool is_alive() const = 0;
   virtual bool has_electronic_weapon() const = 0;
   virtual uint32_t get_hp() const = 0;
+  virtual int calculate_sensor_range() const = 0;
   virtual const std::vector<Weapon>& get_weapons() const = 0;
 };
 

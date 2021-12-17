@@ -309,6 +309,34 @@ bool can_assign_fire_support(const Droid& droid, const Structure& structure)
   return false;
 }
 
+int Droid::calculate_sensor_range() const
+{
+  const int ecm_range = ecm->upgraded[get_player()].range;
+  if (ecm_range > 0) return ecm_range;
+
+  return sensor->upgraded[get_player()].range;
+}
+
+int Droid::calculate_max_range() const
+{
+  if (type == SENSOR)
+    return calculate_sensor_range();
+  else if (num_weapons() == 0)
+    return 0;
+  else
+  {
+    auto weapons = get_weapons();
+    int max = 0;
+    for (const auto& weapon : weapons)
+    {
+      auto max_range = weapon.get_max_range(get_player());
+      if (max_range > max)
+        max = max_range;
+    }
+    return max;
+  }
+}
+
 bool is_droid_still_building(const Droid& droid)
 {
   return droid.is_alive() && droid.get_current_action() == ACTION::BUILD;

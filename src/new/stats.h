@@ -112,6 +112,14 @@ struct Body_Stats : public Component_Stats
   } upgraded[MAX_PLAYERS], base;
 };
 
+struct ECM_Stats : public Component_Stats
+{
+  struct : Upgradeable
+  {
+    uint32_t range { 0 };
+  } upgraded[MAX_PLAYERS], base;
+};
+
 extern Propulsion_Stats* global_propulsion_stats;
 
 #endif // WARZONE2100_STATS_H

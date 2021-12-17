@@ -147,6 +147,7 @@ namespace Impl
     Vector2i get_size() const;
     Structure_Bounds get_bounds() const;
     void update_expected_damage(int32_t damage);
+    int calculate_sensor_range() const final;
   private:
     using enum STRUCTURE_STATE;
     using enum STRUCTURE_ANIMATION_STATE;
