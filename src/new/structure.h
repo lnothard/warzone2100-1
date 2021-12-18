@@ -124,7 +124,12 @@ class Structure : public virtual Unit
 public:
   virtual ~Structure();
 
-  virtual void print_info() = 0;
+  virtual void print_info() const = 0;
+  virtual bool has_sensor() const = 0;
+  virtual bool has_standard_sensor() const = 0;
+  virtual bool has_CB_sensor() const = 0;
+  virtual bool has_VTOL_intercept_sensor() const = 0;
+  virtual bool has_VTOL_CB_sensor() const = 0;
 };
 
 namespace Impl
@@ -140,21 +145,21 @@ namespace Impl
     bool is_pulled_to_terrain() const;
     bool is_damaged() const;
     bool has_modules() const;
-    bool has_sensor() const;
-    bool has_standard_sensor() const;
-    bool has_CB_sensor() const;
-    bool has_VTOL_intercept_sensor() const;
-    bool has_VTOL_CB_sensor() const;
+    bool has_sensor() const final;
+    bool has_standard_sensor() const final;
+    bool has_CB_sensor() const final;
+    bool has_VTOL_intercept_sensor() const final;
+    bool has_VTOL_CB_sensor() const final;
     bool smoke_when_damaged() const;
     uint16_t count_assigned_droids() const;
     uint32_t get_original_hp() const;
     Vector2i get_size() const;
     const iIMDShape& get_IMD_shape() const final;
     Structure_Bounds get_bounds() const;
-    void update_expected_damage(int32_t damage);
+    void update_expected_damage(const int32_t damage);
     int calculate_sensor_range() const final;
     bool target_within_range(const Unit& target) const;
-    int calculate_gate_height(uint32_t time, int minimum) const;
+    int calculate_gate_height(const uint32_t time, const int minimum) const;
     int calculate_height() const final;
   private:
     using enum STRUCTURE_STATE;

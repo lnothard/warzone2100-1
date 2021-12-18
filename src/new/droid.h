@@ -84,12 +84,11 @@ class Droid : public virtual ::Unit, public Impl::Unit
 public:
   Droid(uint32_t id, uint32_t player);
 
-  uint8_t get_player() const final;
   bool has_electronic_weapon() const final;
 
   ACTION get_current_action() const;
   const Order& get_current_order() const;
-  bool is_probably_doomed(bool is_direct_damage) const;
+  bool is_probably_doomed(const bool is_direct_damage) const;
   bool is_commander() const;
   bool is_VTOL() const;
   bool is_flying() const;
@@ -110,13 +109,13 @@ public:
   bool has_commander() const;
   bool has_standard_sensor() const;
   bool has_CB_sensor() const;
-  bool target_within_range(const Unit& target, uint8_t weapon_slot) const;
-  void gain_experience(uint32_t exp);
-  void commander_gain_experience(uint32_t exp);
+  bool target_within_range(const Unit& target, const uint8_t weapon_slot) const;
+  void gain_experience(const uint32_t exp);
+  void commander_gain_experience(const uint32_t exp) const;
   void move_to_rearming_pad();
   void cancel_build();
   void reset_action();
-  void update_expected_damage(int32_t damage, bool is_direct);
+  void update_expected_damage(const int32_t damage, const bool is_direct);
   uint32_t get_level() const;
   uint32_t get_commander_level() const;
   uint32_t get_effective_level() const;
@@ -157,13 +156,13 @@ struct Droid_Template
   using enum DROID_TYPE;
 
   DROID_TYPE type;
-  uint8_t    weapon_count;
-  bool       is_prefab;
-  bool       is_stored;
-  bool       is_enabled;
+  uint8_t weapon_count;
+  bool is_prefab;
+  bool is_stored;
+  bool is_enabled;
 };
 
-static inline bool VTOL_may_land_here(int32_t x, int32_t y);
+static inline bool VTOL_may_land_here(const int32_t x, const int32_t y);
 
 template <typename T>
 static uint32_t calculate_required_build_points(const T& object);

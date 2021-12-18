@@ -24,7 +24,7 @@ const Order& Droid::get_current_order() const
   return order;
 }
 
-bool Droid::is_probably_doomed(bool is_direct_damage) const
+bool Droid::is_probably_doomed(const bool is_direct_damage) const
 {
   auto is_doomed = [this] (uint32_t damage) {
     const auto hit_points = get_hp();
@@ -133,12 +133,12 @@ bool Droid::has_CB_sensor() const
 
 }
 
-void Droid::gain_experience(uint32_t exp)
+void Droid::gain_experience(const uint32_t exp)
 {
   experience += exp;
 }
 
-void Droid::commander_gain_experience(uint32_t exp)
+void Droid::commander_gain_experience(const uint32_t exp) const
 {
   assert(has_commander());
   group->commander_gain_experience(exp);
@@ -211,7 +211,7 @@ bool Droid::are_all_VTOLs_rearmed() const
   });
 }
 
-bool Droid::target_within_range(const Unit &target, uint8_t weapon_slot) const
+bool Droid::target_within_range(const Unit &target, const uint8_t weapon_slot) const
 {
   return num_weapons() != 0;
 }
@@ -291,7 +291,7 @@ void Droid::reset_action()
   action_points_done = 0;
 }
 
-void Droid::update_expected_damage(int32_t damage, bool is_direct)
+void Droid::update_expected_damage(const int32_t damage, const bool is_direct)
 {
   if (is_direct)
     expected_damage_direct += damage;
@@ -363,7 +363,6 @@ int Droid::calculate_height() const
       break;
     case CONSTRUCT:
       break;
-    default:
   }
 }
 
@@ -380,7 +379,7 @@ void update_orientation(Droid& droid)
 
 }
 
-auto count_player_command_droids(uint32_t player)
+auto count_player_command_droids(const uint32_t player)
 {
   const auto& droids = *droid_lists[player];
 
@@ -389,7 +388,7 @@ auto count_player_command_droids(uint32_t player)
   });
 }
 
-auto count_droids_for_level(uint32_t player, uint32_t level)
+auto count_droids_for_level(const uint32_t player, const uint32_t level)
 {
   const auto& droids = *droid_lists[player];
 
@@ -398,7 +397,7 @@ auto count_droids_for_level(uint32_t player, uint32_t level)
   });
 }
 
-bool tile_is_occupied_by_droid(uint32_t x, uint32_t y)
+bool tile_is_occupied_by_droid(const uint32_t x, const uint32_t y)
 {
   for (int i = 0; i < MAX_PLAYERS; ++i)
   {

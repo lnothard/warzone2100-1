@@ -108,7 +108,7 @@ namespace Impl
 
   uint16_t Structure::count_assigned_droids() const
   {
-    auto& droids = *droid_lists[selectedPlayer];
+    const auto& droids = *droid_lists[selectedPlayer];
 
     return std::count_if(droids.begin(), droids.end(), [this] (const auto& droid) {
       if (droid.get_current_order().target_object->get_id() == get_id() &&
@@ -139,7 +139,7 @@ namespace Impl
     return *stats.base_imd;
   }
 
-  void Structure::update_expected_damage(int32_t damage)
+  void Structure::update_expected_damage(const int32_t damage)
   {
     expected_damage += damage;
     assert(expected_damage >= 0);
@@ -159,7 +159,7 @@ namespace Impl
            target_in_line_of_fire(target);
   }
 
-  int Structure::calculate_gate_height(uint32_t time, int minimum) const
+  int Structure::calculate_gate_height(const uint32_t time, const int minimum) const
   {
     if (stats.type != GATE) return 0;
 
