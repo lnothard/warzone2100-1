@@ -108,7 +108,7 @@ static inline __attribute__((__pure__)) Tile* get_map_tile(int32_t x, int32_t y)
 
 static inline Feature* get_feature_from_tile(const uint32_t x, const uint32_t y)
 {
-  Simple_Object* tile_object = get_map_tile(x, y)->occupying_object;
+  auto* tile_object = get_map_tile(x, y)->occupying_object;
   return dynamic_cast<Feature*>(tile_object);
 }
 

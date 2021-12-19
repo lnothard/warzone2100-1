@@ -22,7 +22,12 @@ struct Spacetime
 class Simple_Object
 {
 public:
+  Simple_Object() = default;
   virtual ~Simple_Object() = default;
+  Simple_Object(const Simple_Object&) = delete;
+  Simple_Object(Simple_Object&&) = delete;
+  Simple_Object& operator=(const Simple_Object&) = delete;
+  Simple_Object& operator=(Simple_Object&&) = delete;
 
   virtual Spacetime spacetime() const = 0;
   virtual Position get_position() const = 0;

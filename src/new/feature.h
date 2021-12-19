@@ -19,7 +19,7 @@ enum class FEATURE_TYPE
   SKYSCRAPER
 };
 
-class Feature : public Simple_Object
+class Feature : public virtual ::Simple_Object, public Impl::Simple_Object
 {
 public:
   int calculate_height() const final;
@@ -27,11 +27,11 @@ private:
   using enum FEATURE_TYPE;
 
   FEATURE_TYPE type;
-  bool         is_damageable;
-  uint16_t     base_width;
-  uint16_t     base_breadth;
-  uint32_t     hit_points;
-  uint32_t     armour_points;
+  bool is_damageable;
+  uint16_t base_width;
+  uint16_t base_breadth;
+  uint32_t hit_points;
+  uint32_t armour_points;
 };
 
 #endif // WARZONE2100_FEATURE_H

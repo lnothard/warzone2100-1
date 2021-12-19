@@ -194,7 +194,7 @@ namespace Impl
     return height - calculate_gate_height(gameTime, 2);  // Treat gate as at least 2 units tall, even if open, so that it's possible to hit.
   }
 
-  void Structure::set_foundation_depth(float depth)
+  void Structure::set_foundation_depth(const float depth)
   {
     foundation_depth = depth;
   }

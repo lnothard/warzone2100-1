@@ -122,7 +122,11 @@ struct Structure_Stats
 class Structure : public virtual Unit
 {
 public:
-  virtual ~Structure();
+  virtual ~Structure() = default;
+  Structure(const Structure&) = delete;
+  Structure(Structure&&) = delete;
+  Structure& operator=(const Structure&) = delete;
+  Structure& operator=(Structure&&) = delete;
 
   virtual void print_info() const = 0;
   virtual bool has_sensor() const = 0;
@@ -162,7 +166,8 @@ namespace Impl
     bool target_within_range(const Unit& target) const;
     int calculate_gate_height(const uint32_t time, const int minimum) const;
     int calculate_height() const final;
-    void set_foundation_depth(float depth);
+    void set_foundation_depth(const float depth);
+    void print_info() const override;
   private:
     using enum STRUCTURE_STATE;
     using enum STRUCTURE_ANIMATION_STATE;

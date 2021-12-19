@@ -202,7 +202,7 @@ bool Droid::is_VTOL_full() const
 bool Droid::are_all_VTOLs_rearmed() const
 {
   if (!is_VTOL()) return true;
-  auto droids = *droid_lists[get_player()];
+  const auto& droids = *droid_lists[get_player()];
 
   return std::none_of(droids.begin(), droids.end(), [this] (const auto& droid) {
     return droid.is_rearming() &&
@@ -240,10 +240,10 @@ uint32_t Droid::get_commander_level() const
 
 uint32_t Droid::get_effective_level() const
 {
-  auto level = get_level();
+  const auto level = get_level();
   if (!has_commander()) return level;
 
-  auto cmd_level = get_commander_level();
+  const auto cmd_level = get_commander_level();
   if (cmd_level > level + 1)
     return cmd_level;
 

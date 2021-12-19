@@ -6,6 +6,6 @@
 
 int Feature::calculate_height() const
 {
-  auto imd = get_display_data().imd_shape;
+  const auto& imd = get_display_data().imd_shape;
   return imd->max.y + imd->min.y;
 }

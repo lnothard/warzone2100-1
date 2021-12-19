@@ -84,8 +84,6 @@ class Droid : public virtual ::Unit, public Impl::Unit
 public:
   Droid(uint32_t id, uint32_t player);
 
-  bool has_electronic_weapon() const final;
-
   ACTION get_current_action() const;
   const Order& get_current_order() const;
   bool is_probably_doomed(const bool is_direct_damage) const;
@@ -109,6 +107,7 @@ public:
   bool has_commander() const;
   bool has_standard_sensor() const;
   bool has_CB_sensor() const;
+  bool has_electronic_weapon() const final;
   bool target_within_range(const Unit& target, const uint8_t weapon_slot) const;
   void gain_experience(const uint32_t exp);
   void commander_gain_experience(const uint32_t exp) const;

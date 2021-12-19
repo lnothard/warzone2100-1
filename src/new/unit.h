@@ -16,7 +16,12 @@ constexpr auto LINE_OF_FIRE_MINIMUM { 5 };
 class Unit : public virtual ::Simple_Object
 {
 public:
+  Unit() = default;
   virtual ~Unit() = default;
+  Unit(const Unit&) = delete;
+  Unit(Unit&&) = delete;
+  Unit& operator=(const Unit&) = delete;
+  Unit& operator=(Unit&&) = delete;
 
   virtual bool is_alive() const = 0;
   virtual bool has_electronic_weapon() const = 0;
@@ -39,7 +44,7 @@ namespace Impl
     Unit(uint32_t id, uint32_t player);
 
     bool is_alive() const final;
-    bool has_electronic_weapon() const final;
+    bool has_electronic_weapon() const override;
     bool target_in_line_of_fire(const ::Unit& target, const int weapon_slot) const final;
     bool has_full_ammo() const;
     bool has_artillery() const;
