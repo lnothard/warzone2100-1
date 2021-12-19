@@ -69,7 +69,7 @@ namespace Impl
   bool Structure::has_standard_sensor() const
   {
     if (!has_sensor()) return false;
-    auto sensor_type = stats.sensor_stats->type;
+    const auto sensor_type = stats.sensor_stats->type;
 
     return sensor_type == STANDARD || sensor_type == SUPER;
   }
@@ -77,7 +77,7 @@ namespace Impl
   bool Structure::has_CB_sensor() const
   {
     if (!has_sensor()) return false;
-    auto sensor_type = stats.sensor_stats->type;
+    const auto sensor_type = stats.sensor_stats->type;
 
     return sensor_type == INDIRECT_CB || sensor_type == SUPER;
   }
@@ -85,7 +85,7 @@ namespace Impl
   bool Structure::has_VTOL_intercept_sensor() const
   {
     if (!has_sensor()) return false;
-    auto sensor_type = stats.sensor_stats->type;
+    const auto sensor_type = stats.sensor_stats->type;
 
     return sensor_type == VTOL_INTERCEPT || sensor_type == SUPER;
   }
@@ -93,7 +93,7 @@ namespace Impl
   bool Structure::has_VTOL_CB_sensor() const
   {
     if (!has_sensor()) return false;
-    auto sensor_type = stats.sensor_stats->type;
+    const auto sensor_type = stats.sensor_stats->type;
 
     return sensor_type == VTOL_CB || sensor_type == SUPER;
   }
@@ -139,6 +139,11 @@ namespace Impl
     return *stats.base_imd;
   }
 
+  float Structure::get_foundation_depth() const
+  {
+    return foundation_depth;
+  }
+
   void Structure::update_expected_damage(const int32_t damage)
   {
     expected_damage += damage;
@@ -154,7 +159,7 @@ namespace Impl
   {
     if (num_weapons() == 0) return false;
 
-    auto max_range = get_max_weapon_range();
+    const auto max_range = get_max_weapon_range();
     return object_position_square_diff(get_position(), target.get_position()) < max_range * max_range &&
            target_in_line_of_fire(target);
   }
@@ -163,7 +168,7 @@ namespace Impl
   {
     if (stats.type != GATE) return 0;
 
-    auto height = get_display_data().imd_shape->max.y;
+    const auto height = get_display_data().imd_shape->max.y;
     int open_height;
     switch (animation_state)
     {
@@ -185,29 +190,83 @@ namespace Impl
   int Structure::calculate_height() const
   {
     const auto& imd = get_IMD_shape();
-    auto height = imd.max.y + imd.min.y;
+    const auto height = imd.max.y + imd.min.y;
     return height - calculate_gate_height(gameTime, 2);  // Treat gate as at least 2 units tall, even if open, so that it's possible to hit.
+  }
+
+  void Structure::set_foundation_depth(float depth)
+  {
+    foundation_depth = depth;
   }
 
   static void adjust_tile_height(const Structure& structure, const int new_height)
   {
-    const Structure_Bounds& bounds = structure.get_bounds();
-    auto x_max = bounds.size_in_coords.x;
-    auto y_max = bounds.size_in_coords.y;
+    const auto& bounds = structure.get_bounds();
+    const auto x_max = bounds.size_in_coords.x;
+    const auto y_max = bounds.size_in_coords.y;
 
-    auto coords = bounds.top_left_coords;
+    const auto coords = bounds.top_left_coords;
 
     for (int breadth = 0; breadth <= y_max; ++breadth)
     {
       for (int width = 0; width <= x_max; ++width)
       {
-        set_tile_height(coords.x + width, coords.y + breadth, height);
+        set_tile_height(coords.x + width, coords.y + breadth, new_height);
 
         if (tile_is_occupied_by_feature(*get_map_tile(coords.x + width, coords.y + breadth)))
         {
-          get_feature_from_tile(coords.x + width, coords.y + breadth)->set_height(height);
+          get_feature_from_tile(coords.x + width, coords.y + breadth)->set_height(new_height);
         }
       }
+    }
+  }
+
+  void align_structure(Structure& structure)
+  {
+    if (!structure.is_pulled_to_terrain())
+    {
+      const auto map_height = calculate_foundation_height(structure);
+      adjust_tile_height(structure, map_height);
+      structure.set_height(map_height);
+      structure.set_foundation_depth(structure.get_position().z);
+
+      const auto& bounds = structure.get_bounds();
+      const auto x_max = bounds.size_in_coords.x;
+      const auto y_max = bounds.size_in_coords.y;
+      const auto coords = bounds.top_left_coords;
+
+      for (int breadth = -1; breadth <= y_max; ++breadth)
+      {
+        for (int width = -1; width <= x_max; ++width)
+        {
+          auto neighbouring_structure = dynamic_cast<Structure*>(
+                  get_map_tile(coords.x + width, coords.y + breadth)->occupying_object);
+          if (neighbouring_structure != nullptr && neighbouring_structure->is_pulled_to_terrain())
+          {
+            align_structure(*neighbouring_structure);
+          }
+        }
+      }
+    }
+    else
+    {
+      const auto imd = structure.get_display_data().imd_shape;
+      structure.set_height(TILE_MIN_HEIGHT);
+      structure.set_foundation_depth(TILE_MAX_HEIGHT);
+
+      const auto dir = iSinCosR(structure.get_rotation().direction, 1);
+      // Rotate s->max.{x, z} and s->min.{x, z} by angle rot.direction.
+      const Vector2i p1{imd->max.x * dir.y - imd->max.z * dir.x, imd->max.x * dir.x + imd->max.z * dir.y};
+      const Vector2i p2{imd->min.x * dir.y - imd->min.z * dir.x, imd->min.x * dir.x + imd->min.z * dir.y};
+
+      const auto h1 = calculate_map_height(structure.get_position().x + p1.x, structure.get_position().y + p2.y);
+      const auto h2 = calculate_map_height(structure.get_position().x + p1.x, structure.get_position().y + p1.y);
+      const auto h3 = calculate_map_height(structure.get_position().x + p2.x, structure.get_position().y + p1.y);
+      const auto h4 = calculate_map_height(structure.get_position().x + p2.x, structure.get_position().y + p2.y);
+      const auto minH = std::min({h1, h2, h3, h4});
+      const auto maxH = std::max({h1, h2, h3, h4});
+      structure.set_height(std::max(structure.get_position().z, maxH));
+      structure.set_foundation_depth(std::min<float>(structure.get_foundation_depth(), minH));
     }
   }
 }

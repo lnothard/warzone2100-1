@@ -39,7 +39,7 @@ namespace Impl
     Unit(uint32_t id, uint32_t player);
 
     bool is_alive() const final;
-    bool has_electronic_weapon() const override;
+    bool has_electronic_weapon() const final;
     bool target_in_line_of_fire(const ::Unit& target, const int weapon_slot) const final;
     bool has_full_ammo() const;
     bool has_artillery() const;

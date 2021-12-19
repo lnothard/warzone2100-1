@@ -46,13 +46,13 @@ namespace Impl
 
   bool Unit::target_in_line_of_fire(const ::Unit& target, const int weapon_slot) const
   {
-    auto distance = iHypot((target.get_position() - get_position()).xy());
-    auto range = weapons[weapon_slot].get_max_range(get_player());
+    const auto distance = iHypot((target.get_position() - get_position()).xy());
+    const auto range = weapons[weapon_slot].get_max_range(get_player());
     if (!has_artillery())
     {
       return range >= distance && LINE_OF_FIRE_MINIMUM <= calculate_line_of_fire(target, weapon_slot);
     }
-    auto min_angle = calculate_line_of_fire(target, weapon_slot);
+    const auto min_angle = calculate_line_of_fire(target, weapon_slot);
     if (min_angle > DEG(PROJECTILE_MAX_PITCH)) {
       if (iSin(2 * min_angle) < iSin(2 * DEG(PROJECTILE_MAX_PITCH))) {
         range = range * iSin(2 * min_angle) / iSin(2 * DEG(PROJECTILE_MAX_PITCH));
@@ -99,7 +99,7 @@ namespace Impl
 
       if (partSq > 0)
       {
-        check_angle(angletan, partSq, map_Height(current) - pos.z, distSq, dest.z - pos.z, is_direct);
+        check_angle(angletan, partSq, calculate_map_height(current) - pos.z, distSq, dest.z - pos.z, is_direct);
       }
 
       // intersect current tile with line of fire
@@ -119,7 +119,7 @@ namespace Impl
 
         if (partSq > 0)
         {
-          check_angle(angletan, partSq, map_Height(halfway) - pos.z, distSq, dest.z - pos.z, is_direct);
+          check_angle(angletan, partSq, calculate_map_height(halfway) - pos.z, distSq, dest.z - pos.z, is_direct);
         }
       }
 
@@ -129,7 +129,7 @@ namespace Impl
       {
         const Tile *psTile;
         halfway = current + (next - current) / 2;
-        psTile = mapTile(map_coord(halfway.x), map_coord(halfway.y));
+        psTile = get_map_tile(map_coord(halfway.x), map_coord(halfway.y));
         if (tile_is_occupied_by_structure(*psTile) && psTile->occupying_object != target)
         {
           // check whether target was reached before tile's "half way" line
@@ -171,13 +171,13 @@ namespace Impl
   Vector3i Unit::calculate_muzzle_base_location(int weapon_slot) const
   {
     const auto& imd_shape = get_IMD_shape();
-    auto position = get_position();
+    const auto position = get_position();
     auto muzzle = Vector3i{0, 0, 0};
 
     if (imd_shape.nconnectors)
     {
       Affine3F af;
-      auto rotation = get_rotation();
+      const auto rotation = get_rotation();
       af.Trans(position.x, -position.z, position.y);
       af.RotY(rotation.direction);
       af.RotX(rotation.pitch);
@@ -185,7 +185,7 @@ namespace Impl
       af.Trans(imd_shape.connectors[weapon_slot].x, -imd_shape.connectors[weapon_slot].z,
                -imd_shape.connectors[weapon_slot].y);
 
-      auto barrel = Vector3i{0, 0, 0};
+      const auto barrel = Vector3i{0, 0, 0};
       muzzle = (af * barrel).xzy();
       muzzle.z = -muzzle.z;
       }
@@ -207,8 +207,8 @@ namespace Impl
     if (imd_shape.nconnectors)
     {
       auto barrel = Vector3i{0, 0, 0};
-      auto weapon_imd = weapon.get_IMD_shape();
-      auto mount_imd = weapon.get_mount_graphic();
+      const auto weapon_imd = weapon.get_IMD_shape();
+      const auto mount_imd = weapon.get_mount_graphic();
 
       Affine3F af;
       af.Trans(position.x, -position.z, position.y);
@@ -233,7 +233,7 @@ namespace Impl
         {
           connector_num = (weapon.get_shots_fired() - 1) % weapon_imd.nconnectors;
         }
-        auto connector = weapon_imd.connectors[connector_num];
+        const auto connector = weapon_imd.connectors[connector_num];
         barrel = Vector3i{connector.x, -connector.z, -connector.y};
       }
       muzzle = (af * barrel).xzy();
@@ -256,7 +256,7 @@ namespace Impl
     auto max = 0;
     for (const auto& weapon : weapons)
     {
-      auto max_weapon_range = weapon.get_max_range(get_player());
+      const auto max_weapon_range = weapon.get_max_range(get_player());
       if (max_weapon_range > max)
         max = max_weapon_range;
     }
@@ -279,8 +279,8 @@ static inline void check_angle(int64_t& angle_tan, int start_coord, int height, 
   }
   else
   {
-    auto distance = iSqrt(square_distance);
-    auto position = iSqrt(start_coord);
+    const auto distance = iSqrt(square_distance);
+    const auto position = iSqrt(start_coord);
     current_angle = (position * target_height) / distance;
 
     if (current_angle < height && position > TILE_UNITS / 2 && position < distance - TILE_UNITS / 2)

@@ -154,6 +154,7 @@ namespace Impl
     uint16_t count_assigned_droids() const;
     uint32_t get_original_hp() const;
     Vector2i get_size() const;
+    float get_foundation_depth() const;
     const iIMDShape& get_IMD_shape() const final;
     Structure_Bounds get_bounds() const;
     void update_expected_damage(const int32_t damage);
@@ -161,6 +162,7 @@ namespace Impl
     bool target_within_range(const Unit& target) const;
     int calculate_gate_height(const uint32_t time, const int minimum) const;
     int calculate_height() const final;
+    void set_foundation_depth(float depth);
   private:
     using enum STRUCTURE_STATE;
     using enum STRUCTURE_ANIMATION_STATE;
@@ -200,6 +202,7 @@ namespace Impl
   }
 
   static void adjust_tile_height(const Structure& structure, const int new_height);
+  void align_structure(Structure& structure);
 }
 
 struct Production_Job
