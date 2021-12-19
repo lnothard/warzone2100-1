@@ -7,6 +7,7 @@
 
 #include "lib/ivis_opengl/ivisdef.h"
 #include "droid.h"
+#include "map.h"
 #include "positiondef.h"
 #include "unit.h"
 
@@ -72,12 +73,11 @@ enum class PENDING_STATUS
   CANCEL_PENDING
 };
 
-class Structure_Bounds
+struct Structure_Bounds
 {
-public:
   Structure_Bounds();
   Structure_Bounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords);
-private:
+
   Vector2i top_left_coords;
   Vector2i size_in_coords;
 };
@@ -172,13 +172,34 @@ namespace Impl
     Structure_Stats stats;
     uint32_t current_build_points;
     int build_rate;
+    int previous_build_rate;
     uint32_t expected_damage;
     uint8_t num_modules;
     float foundation_depth;
     uint32_t last_state_time;
   };
 
-  static inline int calculate_foundation_height(const Structure& structure);
+  static inline int calculate_foundation_height(const Structure& structure)
+  {
+    const Structure_Bounds& bounds = structure.get_bounds();
+    auto foundation_min = INT32_MIN;
+    auto foundation_max = INT32_MAX;
+    auto x_max = bounds.size_in_coords.x;
+    auto y_max = bounds.size_in_coords.y;
+
+    for (int breadth = 0; breadth <= y_max; ++breadth)
+    {
+      for (int width = 0; width <= x_max; ++width)
+      {
+        auto height = map_tile_height(bounds.top_left_coords.x, bounds.top_left_coords.y + breadth);
+        foundation_min = std::min(foundation_min, height);
+        foundation_max = std::min(foundation_max, height);
+      }
+    }
+    return (foundation_min + foundation_max) / 2;
+  }
+
+  static void adjust_tile_height(const Structure& structure, const int new_height);
 }
 
 struct Production_Job
@@ -199,7 +220,7 @@ class Factory : public virtual Structure, public Impl::Structure
 {
 public:
   void pause_production(QUEUE_MODE mode);
-  void unpause_production(QUEUE_MODE mode);
+  void resume_production(QUEUE_MODE mode);
   void cancel_production(QUEUE_MODE mode);
 private:
   using enum PENDING_STATUS;

@@ -39,6 +39,11 @@ uint32_t Impl::Simple_Object::get_id() const
   return id;
 }
 
+void Impl::Simple_Object::set_height(int height)
+{
+  position.z = height;
+}
+
 static inline int object_position_square_diff(const Position& first, const Position& second)
 {
   const Vector2i diff = (first - second).xy();

@@ -186,13 +186,29 @@ namespace Impl
   {
     const auto& imd = get_IMD_shape();
     auto height = imd.max.y + imd.min.y;
-    height -= calculate_gate_height(gameTime, 2);  // Treat gate as at least 2 units tall, even if open, so that it's possible to hit.
-    return height;
+    return height - calculate_gate_height(gameTime, 2);  // Treat gate as at least 2 units tall, even if open, so that it's possible to hit.
   }
 
-  static inline int calculate_foundation_height(const Structure& structure)
+  static void adjust_tile_height(const Structure& structure, const int new_height)
   {
     const Structure_Bounds& bounds = structure.get_bounds();
+    auto x_max = bounds.size_in_coords.x;
+    auto y_max = bounds.size_in_coords.y;
+
+    auto coords = bounds.top_left_coords;
+
+    for (int breadth = 0; breadth <= y_max; ++breadth)
+    {
+      for (int width = 0; width <= x_max; ++width)
+      {
+        set_tile_height(coords.x + width, coords.y + breadth, height);
+
+        if (tile_is_occupied_by_feature(*get_map_tile(coords.x + width, coords.y + breadth)))
+        {
+          get_feature_from_tile(coords.x + width, coords.y + breadth)->set_height(height);
+        }
+      }
+    }
   }
 }
 

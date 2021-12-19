@@ -10,6 +10,7 @@
 
 extern std::unique_ptr< std::vector<Droid> > droid_lists[MAX_PLAYERS];
 extern std::unique_ptr< std::vector<Structure> > structure_lists[MAX_PLAYERS];
+extern std::vector<Feature> feature_list;
 
 void create_droid(uint32_t id, uint32_t player)
 {
