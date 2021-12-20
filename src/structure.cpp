@@ -1198,107 +1198,107 @@ static WallOrientation structChooseWallType(unsigned player, Vector2i map)
 /* For now all this does is work out what height the terrain needs to be set to
 An actual foundation structure may end up being placed down
 The x and y passed in are the CENTRE of the structure*/
-static int foundationHeight(const STRUCTURE *psStruct)
-{
-	StructureBounds b = getStructureBounds(psStruct);
+//static int foundationHeight(const STRUCTURE *psStruct)
+//{
+//	StructureBounds b = getStructureBounds(psStruct);
+//
+//	//check the terrain is the correct type return -1 if not
+//
+//	//may also have to check that overlapping terrain can be set to the average height
+//	//eg water - don't want it to 'flow' into the structure if this effect is coded!
+//
+//	//initialise the starting values so they get set in loop
+//	int foundationMin = INT32_MAX;
+//	int foundationMax = INT32_MIN;
+//
+//	for (int breadth = 0; breadth <= b.size.y; breadth++)
+//	{
+//		for (int width = 0; width <= b.size.x; width++)
+//		{
+//			int height = map_TileHeight(b.map.x + width, b.map.y + breadth);
+//			foundationMin = std::min(foundationMin, height);
+//			foundationMax = std::max(foundationMax, height);
+//		}
+//	}
+//	//return the average of max/min height
+//	return (foundationMin + foundationMax) / 2;
+//}
 
-	//check the terrain is the correct type return -1 if not
 
-	//may also have to check that overlapping terrain can be set to the average height
-	//eg water - don't want it to 'flow' into the structure if this effect is coded!
+//static void buildFlatten(STRUCTURE *pStructure, int h)
+//{
+//	StructureBounds b = getStructureBounds(pStructure);
+//
+//	for (int breadth = 0; breadth <= b.size.y; ++breadth)
+//	{
+//		for (int width = 0; width <= b.size.x; ++width)
+//		{
+//			setTileHeight(b.map.x + width, b.map.y + breadth, h);
+//			// We need to raise features on raised tiles to the new height
+//			if (TileHasFeature(mapTile(b.map.x + width, b.map.y + breadth)))
+//			{
+//				getTileFeature(b.map.x + width, b.map.y + breadth)->pos.z = h;
+//			}
+//		}
+//	}
+//}
 
-	//initialise the starting values so they get set in loop
-	int foundationMin = INT32_MAX;
-	int foundationMax = INT32_MIN;
+//static bool isPulledToTerrain(const STRUCTURE *psBuilding)
+//{
+//	STRUCTURE_TYPE type = psBuilding->pStructureType->type;
+//	return type == REF_DEFENSE || type == REF_GATE || type == REF_WALL || type == REF_WALLCORNER || type == REF_REARM_PAD;
+//}
 
-	for (int breadth = 0; breadth <= b.size.y; breadth++)
-	{
-		for (int width = 0; width <= b.size.x; width++)
-		{
-			int height = map_TileHeight(b.map.x + width, b.map.y + breadth);
-			foundationMin = std::min(foundationMin, height);
-			foundationMax = std::max(foundationMax, height);
-		}
-	}
-	//return the average of max/min height
-	return (foundationMin + foundationMax) / 2;
-}
-
-
-static void buildFlatten(STRUCTURE *pStructure, int h)
-{
-	StructureBounds b = getStructureBounds(pStructure);
-
-	for (int breadth = 0; breadth <= b.size.y; ++breadth)
-	{
-		for (int width = 0; width <= b.size.x; ++width)
-		{
-			setTileHeight(b.map.x + width, b.map.y + breadth, h);
-			// We need to raise features on raised tiles to the new height
-			if (TileHasFeature(mapTile(b.map.x + width, b.map.y + breadth)))
-			{
-				getTileFeature(b.map.x + width, b.map.y + breadth)->pos.z = h;
-			}
-		}
-	}
-}
-
-static bool isPulledToTerrain(const STRUCTURE *psBuilding)
-{
-	STRUCTURE_TYPE type = psBuilding->pStructureType->type;
-	return type == REF_DEFENSE || type == REF_GATE || type == REF_WALL || type == REF_WALLCORNER || type == REF_REARM_PAD;
-}
-
-void alignStructure(STRUCTURE *psBuilding)
-{
-	/* DEFENSIVE structures are pulled to the terrain */
-	if (!isPulledToTerrain(psBuilding))
-	{
-		int mapH = foundationHeight(psBuilding);
-
-		buildFlatten(psBuilding, mapH);
-		psBuilding->pos.z = mapH;
-		psBuilding->foundationDepth = psBuilding->pos.z;
-
-		// Align surrounding structures.
-		StructureBounds b = getStructureBounds(psBuilding);
-		syncDebug("Flattened (%d+%d, %d+%d) to %d for %d(p%d)", b.map.x, b.size.x, b.map.y, b.size.y, mapH, psBuilding->id, psBuilding->player);
-		for (int breadth = -1; breadth <= b.size.y; ++breadth)
-		{
-			for (int width = -1; width <= b.size.x; ++width)
-			{
-				STRUCTURE *neighbourStructure = castStructure(mapTile(b.map.x + width, b.map.y + breadth)->psObject);
-				if (neighbourStructure != nullptr && isPulledToTerrain(neighbourStructure))
-				{
-					alignStructure(neighbourStructure);  // Recursive call, but will go to the else case, so will not re-recurse.
-				}
-			}
-		}
-	}
-	else
-	{
-		// Sample points around the structure to find a good depth for the foundation
-		iIMDShape *s = psBuilding->sDisplay.imd;
-
-		psBuilding->pos.z = TILE_MIN_HEIGHT;
-		psBuilding->foundationDepth = TILE_MAX_HEIGHT;
-
-		Vector2i dir = iSinCosR(psBuilding->rot.direction, 1);
-		// Rotate s->max.{x, z} and s->min.{x, z} by angle rot.direction.
-		Vector2i p1{s->max.x * dir.y - s->max.z * dir.x, s->max.x * dir.x + s->max.z * dir.y};
-		Vector2i p2{s->min.x * dir.y - s->min.z * dir.x, s->min.x * dir.x + s->min.z * dir.y};
-
-		int h1 = map_Height(psBuilding->pos.x + p1.x, psBuilding->pos.y + p2.y);
-		int h2 = map_Height(psBuilding->pos.x + p1.x, psBuilding->pos.y + p1.y);
-		int h3 = map_Height(psBuilding->pos.x + p2.x, psBuilding->pos.y + p1.y);
-		int h4 = map_Height(psBuilding->pos.x + p2.x, psBuilding->pos.y + p2.y);
-		int minH = std::min({h1, h2, h3, h4});
-		int maxH = std::max({h1, h2, h3, h4});
-		psBuilding->pos.z = std::max(psBuilding->pos.z, maxH);
-		psBuilding->foundationDepth = std::min<float>(psBuilding->foundationDepth, minH);
-		syncDebug("minH=%d,maxH=%d,pointHeight=%d", minH, maxH, psBuilding->pos.z);  // s->max is based on floats! If this causes desynchs, need to fix!
-	}
-}
+//void alignStructure(STRUCTURE *psBuilding)
+//{
+//	/* DEFENSIVE structures are pulled to the terrain */
+//	if (!isPulledToTerrain(psBuilding))
+//	{
+//		int mapH = foundationHeight(psBuilding);
+//
+//		buildFlatten(psBuilding, mapH);
+//		psBuilding->pos.z = mapH;
+//		psBuilding->foundationDepth = psBuilding->pos.z;
+//
+//		// Align surrounding structures.
+//		StructureBounds b = getStructureBounds(psBuilding);
+//		syncDebug("Flattened (%d+%d, %d+%d) to %d for %d(p%d)", b.map.x, b.size.x, b.map.y, b.size.y, mapH, psBuilding->id, psBuilding->player);
+//		for (int breadth = -1; breadth <= b.size.y; ++breadth)
+//		{
+//			for (int width = -1; width <= b.size.x; ++width)
+//			{
+//				STRUCTURE *neighbourStructure = castStructure(mapTile(b.map.x + width, b.map.y + breadth)->psObject);
+//				if (neighbourStructure != nullptr && isPulledToTerrain(neighbourStructure))
+//				{
+//					alignStructure(neighbourStructure);  // Recursive call, but will go to the else case, so will not re-recurse.
+//				}
+//			}
+//		}
+//	}
+//	else
+//	{
+//		// Sample points around the structure to find a good depth for the foundation
+//		iIMDShape *s = psBuilding->sDisplay.imd;
+//
+//		psBuilding->pos.z = TILE_MIN_HEIGHT;
+//		psBuilding->foundationDepth = TILE_MAX_HEIGHT;
+//
+//		Vector2i dir = iSinCosR(psBuilding->rot.direction, 1);
+//		// Rotate s->max.{x, z} and s->min.{x, z} by angle rot.direction.
+//		Vector2i p1{s->max.x * dir.y - s->max.z * dir.x, s->max.x * dir.x + s->max.z * dir.y};
+//		Vector2i p2{s->min.x * dir.y - s->min.z * dir.x, s->min.x * dir.x + s->min.z * dir.y};
+//
+//		int h1 = map_Height(psBuilding->pos.x + p1.x, psBuilding->pos.y + p2.y);
+//		int h2 = map_Height(psBuilding->pos.x + p1.x, psBuilding->pos.y + p1.y);
+//		int h3 = map_Height(psBuilding->pos.x + p2.x, psBuilding->pos.y + p1.y);
+//		int h4 = map_Height(psBuilding->pos.x + p2.x, psBuilding->pos.y + p2.y);
+//		int minH = std::min({h1, h2, h3, h4});
+//		int maxH = std::max({h1, h2, h3, h4});
+//		psBuilding->pos.z = std::max(psBuilding->pos.z, maxH);
+//		psBuilding->foundationDepth = std::min<float>(psBuilding->foundationDepth, minH);
+//		syncDebug("minH=%d,maxH=%d,pointHeight=%d", minH, maxH, psBuilding->pos.z);  // s->max is based on floats! If this causes desynchs, need to fix!
+//	}
+//}
 
 /*Builds an instance of a Structure - the x/y passed in are in world coords. */
 STRUCTURE *buildStructure(STRUCTURE_STATS *pStructureType, UDWORD x, UDWORD y, UDWORD player, bool FromSave)

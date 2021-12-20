@@ -213,87 +213,87 @@ bool actionInRange(const DROID *psDroid, const BASE_OBJECT *psObj, int weapon_sl
 	return false;
 }
 
-// check if a target is inside minimum weapon range
-static bool actionInsideMinRange(DROID *psDroid, BASE_OBJECT *psObj, WEAPON_STATS *psStats)
-{
-	CHECK_DROID(psDroid);
-	CHECK_OBJECT(psObj);
+//// check if a target is inside minimum weapon range
+//static bool actionInsideMinRange(DROID *psDroid, BASE_OBJECT *psObj, WEAPON_STATS *psStats)
+//{
+//	CHECK_DROID(psDroid);
+//	CHECK_OBJECT(psObj);
+//
+//	if (!psStats)
+//	{
+//		psStats = getWeaponStats(psDroid, 0);
+//	}
+//
+//	/* if I am a multi-turret droid */
+//	if (psDroid->asWeaps[0].nStat == 0)
+//	{
+//		return false;
+//	}
+//
+//	const int dx = psDroid->pos.x - psObj->pos.x;
+//	const int dy = psDroid->pos.y - psObj->pos.y;
+//	const int radSq = dx * dx + dy * dy;
+//	const int minRange = proj_GetMinRange(psStats, psDroid->player);
+//	const int rangeSq = minRange * minRange;
+//
+//	// check min range
+//	if (radSq <= rangeSq)
+//	{
+//		return true;
+//	}
+//
+//	return false;
+//}
 
-	if (!psStats)
-	{
-		psStats = getWeaponStats(psDroid, 0);
-	}
 
-	/* if I am a multi-turret droid */
-	if (psDroid->asWeaps[0].nStat == 0)
-	{
-		return false;
-	}
-
-	const int dx = psDroid->pos.x - psObj->pos.x;
-	const int dy = psDroid->pos.y - psObj->pos.y;
-	const int radSq = dx * dx + dy * dy;
-	const int minRange = proj_GetMinRange(psStats, psDroid->player);
-	const int rangeSq = minRange * minRange;
-
-	// check min range
-	if (radSq <= rangeSq)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-
-// Realign turret
-void actionAlignTurret(BASE_OBJECT *psObj, int weapon_slot)
-{
-	uint16_t        nearest = 0;
-	uint16_t        tRot;
-	uint16_t        tPitch;
-
-	//get the maximum rotation this frame
-	const int rotation = gameTimeAdjustedIncrement(DEG(ACTION_TURRET_ROTATION_RATE));
-
-	switch (psObj->type)
-	{
-	case OBJ_DROID:
-		tRot = ((DROID *)psObj)->asWeaps[weapon_slot].rot.direction;
-		tPitch = ((DROID *)psObj)->asWeaps[weapon_slot].rot.pitch;
-		break;
-	case OBJ_STRUCTURE:
-		tRot = ((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.direction;
-		tPitch = ((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.pitch;
-
-		// now find the nearest 90 degree angle
-		nearest = (uint16_t)((tRot + DEG(45)) / DEG(90) * DEG(90));  // Cast wrapping intended.
-		break;
-	default:
-		ASSERT(!"invalid object type", "invalid object type");
-		return;
-	}
-
-	tRot += clip(angleDelta(nearest - tRot), -rotation, rotation);  // Addition wrapping intended.
-
-	// align the turret pitch
-	tPitch += clip(angleDelta(0 - tPitch), -rotation / 2, rotation / 2); // Addition wrapping intended.
-
-	switch (psObj->type)
-	{
-	case OBJ_DROID:
-		((DROID *)psObj)->asWeaps[weapon_slot].rot.direction = tRot;
-		((DROID *)psObj)->asWeaps[weapon_slot].rot.pitch = tPitch;
-		break;
-	case OBJ_STRUCTURE:
-		((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.direction = tRot;
-		((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.pitch = tPitch;
-		break;
-	default:
-		ASSERT(!"invalid object type", "invalid object type");
-		return;
-	}
-}
+//// Realign turret
+//void actionAlignTurret(BASE_OBJECT *psObj, int weapon_slot)
+//{
+//	uint16_t        nearest = 0;
+//	uint16_t        tRot;
+//	uint16_t        tPitch;
+//
+//	//get the maximum rotation this frame
+//	const int rotation = gameTimeAdjustedIncrement(DEG(ACTION_TURRET_ROTATION_RATE));
+//
+//	switch (psObj->type)
+//	{
+//	case OBJ_DROID:
+//		tRot = ((DROID *)psObj)->asWeaps[weapon_slot].rot.direction;
+//		tPitch = ((DROID *)psObj)->asWeaps[weapon_slot].rot.pitch;
+//		break;
+//	case OBJ_STRUCTURE:
+//		tRot = ((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.direction;
+//		tPitch = ((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.pitch;
+//
+//		// now find the nearest 90 degree angle
+//		nearest = (uint16_t)((tRot + DEG(45)) / DEG(90) * DEG(90));  // Cast wrapping intended.
+//		break;
+//	default:
+//		ASSERT(!"invalid object type", "invalid object type");
+//		return;
+//	}
+//
+//	tRot += clip(angleDelta(nearest - tRot), -rotation, rotation);  // Addition wrapping intended.
+//
+//	// align the turret pitch
+//	tPitch += clip(angleDelta(0 - tPitch), -rotation / 2, rotation / 2); // Addition wrapping intended.
+//
+//	switch (psObj->type)
+//	{
+//	case OBJ_DROID:
+//		((DROID *)psObj)->asWeaps[weapon_slot].rot.direction = tRot;
+//		((DROID *)psObj)->asWeaps[weapon_slot].rot.pitch = tPitch;
+//		break;
+//	case OBJ_STRUCTURE:
+//		((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.direction = tRot;
+//		((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.pitch = tPitch;
+//		break;
+//	default:
+//		ASSERT(!"invalid object type", "invalid object type");
+//		return;
+//	}
+//}
 
 /* returns true if on target */
 bool actionTargetTurret(BASE_OBJECT *psAttacker, BASE_OBJECT *psTarget, WEAPON *psWeapon)

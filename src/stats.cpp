@@ -1686,20 +1686,20 @@ SENSOR_STATS *objActiveRadar(const BASE_OBJECT *psObj)
 	return psStats;
 }
 
-bool objRadarDetector(const BASE_OBJECT *psObj)
-{
-	if (psObj->type == OBJ_STRUCTURE)
-	{
-		const STRUCTURE *psStruct = (const STRUCTURE *)psObj;
-
-		return (psStruct->status == SS_BUILT && psStruct->pStructureType->pSensor && psStruct->pStructureType->pSensor->type == RADAR_DETECTOR_SENSOR);
-	}
-	else if (psObj->type == OBJ_DROID)
-	{
-		const DROID *psDroid = (const DROID *)psObj;
-		SENSOR_STATS *psSensor = getSensorStats(psDroid);
-
-		return (psSensor && psSensor->type == RADAR_DETECTOR_SENSOR);
-	}
-	return false;
-}
+//bool objRadarDetector(const BASE_OBJECT *psObj)
+//{
+//	if (psObj->type == OBJ_STRUCTURE)
+//	{
+//		const STRUCTURE *psStruct = (const STRUCTURE *)psObj;
+//
+//		return (psStruct->status == SS_BUILT && psStruct->pStructureType->pSensor && psStruct->pStructureType->pSensor->type == RADAR_DETECTOR_SENSOR);
+//	}
+//	else if (psObj->type == OBJ_DROID)
+//	{
+//		const DROID *psDroid = (const DROID *)psObj;
+//		SENSOR_STATS *psSensor = getSensorStats(psDroid);
+//
+//		return (psSensor && psSensor->type == RADAR_DETECTOR_SENSOR);
+//	}
+//	return false;
+//}

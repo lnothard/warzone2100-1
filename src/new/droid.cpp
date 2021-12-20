@@ -296,7 +296,7 @@ bool Droid::target_within_range(const Unit &target, int weapon_slot) const
   return false;
 }
 
-uint32_t Droid::get_level() const
+unsigned Droid::get_level() const
 {
   if (!brain) return 0;
 
@@ -311,14 +311,14 @@ uint32_t Droid::get_level() const
   return rank_thresholds.size() - 1;
 }
 
-uint32_t Droid::get_commander_level() const
+unsigned Droid::get_commander_level() const
 {
   if (!has_commander()) return 0;
 
   return group->get_commander_level();
 }
 
-uint32_t Droid::get_effective_level() const
+unsigned Droid::get_effective_level() const
 {
   const auto level = get_level();
   if (!has_commander()) return level;
@@ -472,23 +472,21 @@ auto count_droids_for_level(unsigned player, unsigned level)
 {
   const auto& droids = droid_lists[player];
 
-  return std::count_if(droids.begin(), droids.end(), [level] (const auto& droid) {
+  return std::count_if(droids.begin(), droids.end(),
+                       [level] (const auto& droid) {
     return droid.get_level() == level;
   });
 }
 
 bool tile_is_occupied_by_droid(unsigned x, unsigned y)
 {
-  for (int i = 0; i < MAX_PLAYERS; ++i)
+  for (const auto& player_droids : droid_lists)
   {
-    const auto& droids = droid_lists[i];
-
-    for (const auto& droid : droids)
-    {
-      if (map_coord(droid.get_position().x) == x &&
-          map_coord(droid.get_position().y) == y)
-        return true;
-    }
+    if (std::any_of(player_droids.begin(), player_droids.end(),
+                    [x, y] (const auto& droid) {
+      return map_coord(droid.get_position().x) == x &&
+             map_coord(droid.get_position().y == y);
+    }) ) { return true; }
   }
   return false;
 }

@@ -209,6 +209,7 @@ namespace Impl
 
   void adjust_tile_height(const Structure& structure, const int new_height);
   void align_structure(Structure& structure);
+  bool is_a_droid_building_this_structure(const Structure* structure);
 }
 
 struct Production_Job

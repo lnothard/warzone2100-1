@@ -189,38 +189,38 @@ void cmdDroidUpdateExperience(DROID *psShooter, uint32_t experienceInc)
 	}
 }
 
-/** This function returns true if the droid is assigned to a commander group and it is not the commander.*/
-bool hasCommander(const DROID *psDroid)
-{
-	ASSERT_OR_RETURN(false, psDroid != nullptr, "invalid droid pointer");
+///** This function returns true if the droid is assigned to a commander group and it is not the commander.*/
+//bool hasCommander(const DROID *psDroid)
+//{
+//	ASSERT_OR_RETURN(false, psDroid != nullptr, "invalid droid pointer");
+//
+//	if (psDroid->droidType != DROID_COMMAND &&
+//	    psDroid->psGroup != nullptr &&
+//	    psDroid->psGroup->type == GT_COMMAND)
+//	{
+//		return true;
+//	}
+//
+//	return false;
+//}
 
-	if (psDroid->droidType != DROID_COMMAND &&
-	    psDroid->psGroup != nullptr &&
-	    psDroid->psGroup->type == GT_COMMAND)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-/** This function returns the level of a droids commander. If the droid doesn't have commander, it returns 0.*/
-unsigned int cmdGetCommanderLevel(const DROID *psDroid)
-{
-	const DROID *psCommander;
-
-	ASSERT(psDroid != nullptr, "invalid droid pointer");
-
-	// If this droid is not the member of a Commander's group
-	// Return an experience level of 0
-	if (!hasCommander(psDroid))
-	{
-		return 0;
-	}
-
-	// Retrieve this group's commander
-	psCommander = psDroid->psGroup->psCommander;
-
-	// Return the experience level of this commander
-	return getDroidLevel(psCommander);
-}
+///** This function returns the level of a droids commander. If the droid doesn't have commander, it returns 0.*/
+//unsigned int cmdGetCommanderLevel(const DROID *psDroid)
+//{
+//	const DROID *psCommander;
+//
+//	ASSERT(psDroid != nullptr, "invalid droid pointer");
+//
+//	// If this droid is not the member of a Commander's group
+//	// Return an experience level of 0
+//	if (!hasCommander(psDroid))
+//	{
+//		return 0;
+//	}
+//
+//	// Retrieve this group's commander
+//	psCommander = psDroid->psGroup->psCommander;
+//
+//	// Return the experience level of this commander
+//	return getDroidLevel(psCommander);
+//}

@@ -256,24 +256,36 @@ namespace Impl
     }
     else
     {
-      const auto imd = structure.get_display_data().imd_shape;
+      const auto& imd = structure.get_display_data().imd_shape;
       structure.set_height(TILE_MIN_HEIGHT);
       structure.set_foundation_depth(TILE_MAX_HEIGHT);
 
-      const auto dir = iSinCosR(structure.get_rotation().direction, 1);
+      auto dir = iSinCosR(structure.get_rotation().direction, 1);
       // Rotate s->max.{x, z} and s->min.{x, z} by angle rot.direction.
-      const Vector2i p1{imd->max.x * dir.y - imd->max.z * dir.x, imd->max.x * dir.x + imd->max.z * dir.y};
-      const Vector2i p2{imd->min.x * dir.y - imd->min.z * dir.x, imd->min.x * dir.x + imd->min.z * dir.y};
+      Vector2i p1{imd->max.x * dir.y - imd->max.z * dir.x, imd->max.x * dir.x + imd->max.z * dir.y};
+      Vector2i p2{imd->min.x * dir.y - imd->min.z * dir.x, imd->min.x * dir.x + imd->min.z * dir.y};
 
-      const auto h1 = calculate_map_height(structure.get_position().x + p1.x, structure.get_position().y + p2.y);
-      const auto h2 = calculate_map_height(structure.get_position().x + p1.x, structure.get_position().y + p1.y);
-      const auto h3 = calculate_map_height(structure.get_position().x + p2.x, structure.get_position().y + p1.y);
-      const auto h4 = calculate_map_height(structure.get_position().x + p2.x, structure.get_position().y + p2.y);
-      const auto minH = std::min({h1, h2, h3, h4});
-      const auto maxH = std::max({h1, h2, h3, h4});
+      auto h1 = calculate_map_height(structure.get_position().x + p1.x, structure.get_position().y + p2.y);
+      auto h2 = calculate_map_height(structure.get_position().x + p1.x, structure.get_position().y + p1.y);
+      auto h3 = calculate_map_height(structure.get_position().x + p2.x, structure.get_position().y + p1.y);
+      auto h4 = calculate_map_height(structure.get_position().x + p2.x, structure.get_position().y + p2.y);
+      auto minH = std::min({h1, h2, h3, h4});
+      auto maxH = std::max({h1, h2, h3, h4});
       structure.set_height(std::max(structure.get_position().z, maxH));
       structure.set_foundation_depth(std::min<float>(structure.get_foundation_depth(), minH));
     }
+  }
+
+  bool is_a_droid_building_this_structure(const Structure* structure)
+  {
+    assert(structure != nullptr);
+    const auto& droids = droid_lists[structure->get_player()];
+    return std::any_of(droids.begin(), droids.end(),
+                       [structure] (const auto& droid) {
+      const auto& order = droid.get_current_order();
+      return order.type == ORDER_TYPE::BUILD &&
+             order.target_object == structure;
+    });
   }
 }
 

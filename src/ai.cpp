@@ -80,26 +80,26 @@ PlayerMask alliancebits[MAX_PLAYER_SLOTS];
 /// A bitfield for the satellite uplink
 PlayerMask satuplinkbits;
 
-static int aiDroidRange(DROID *psDroid, int weapon_slot)
-{
-	int32_t longRange;
-	if (psDroid->droidType == DROID_SENSOR)
-	{
-		longRange = objSensorRange(psDroid);
-	}
-	else if (psDroid->numWeaps == 0 || psDroid->asWeaps[0].nStat == 0)
-	{
-		// Can't attack without a weapon
-		return 0;
-	}
-	else
-	{
-		WEAPON_STATS *psWStats = psDroid->asWeaps[weapon_slot].nStat + asWeaponStats;
-		longRange = proj_GetLongRange(psWStats, psDroid->player);
-	}
-
-	return longRange;
-}
+//static int aiDroidRange(DROID *psDroid, int weapon_slot)
+//{
+//	int32_t longRange;
+//	if (psDroid->droidType == DROID_SENSOR)
+//	{
+//		longRange = objSensorRange(psDroid);
+//	}
+//	else if (psDroid->numWeaps == 0 || psDroid->asWeaps[0].nStat == 0)
+//	{
+//		// Can't attack without a weapon
+//		return 0;
+//	}
+//	else
+//	{
+//		WEAPON_STATS *psWStats = psDroid->asWeaps[weapon_slot].nStat + asWeaponStats;
+//		longRange = proj_GetLongRange(psWStats, psDroid->player);
+//	}
+//
+//	return longRange;
+//}
 
 // see if a structure has the range to fire on a target
 static bool aiStructHasRange(STRUCTURE *psStruct, BASE_OBJECT *psTarget, int weapon_slot)

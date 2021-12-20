@@ -1111,11 +1111,11 @@ bool droidUpdateDemolishing(DROID *psDroid)
 	return true;
 }
 
-void droidStartAction(DROID *psDroid)
-{
-	psDroid->actionStarted = gameTime;
-	psDroid->actionPoints  = 0;
-}
+//void droidStartAction(DROID *psDroid)
+//{
+//	psDroid->actionStarted = gameTime;
+//	psDroid->actionPoints  = 0;
+//}
 
 /*continue restoring a structure*/
 bool droidUpdateRestore(DROID *psDroid)
@@ -1266,25 +1266,25 @@ static void droidUpdateDroidSelfRepair(DROID *psRepairDroid)
 	droidUpdateDroidRepairBase(psRepairDroid, psRepairDroid);
 }
 
-// return whether a droid is IDF
-bool idfDroid(DROID *psDroid)
-{
-	//add Cyborgs
-	//if (psDroid->droidType != DROID_WEAPON)
-	if (!(psDroid->droidType == DROID_WEAPON || psDroid->droidType == DROID_CYBORG ||
-		  psDroid->droidType == DROID_CYBORG_SUPER))
-	{
-		return false;
-	}
+//// return whether a droid is IDF
+//bool idfDroid(DROID *psDroid)
+//{
+//	//add Cyborgs
+//	//if (psDroid->droidType != DROID_WEAPON)
+//	if (!(psDroid->droidType == DROID_WEAPON || psDroid->droidType == DROID_CYBORG ||
+//		  psDroid->droidType == DROID_CYBORG_SUPER))
+//	{
+//		return false;
+//	}
+//
+//	return !proj_Direct(psDroid->asWeaps[0].nStat + asWeaponStats);
+//}
 
-	return !proj_Direct(psDroid->asWeaps[0].nStat + asWeaponStats);
-}
-
-/* Return the type of a droid */
-DROID_TYPE droidType(DROID *psDroid)
-{
-	return psDroid->droidType;
-}
+///* Return the type of a droid */
+//DROID_TYPE droidType(DROID *psDroid)
+//{
+//	return psDroid->droidType;
+//}
 
 /* Return the type of a droid from it's template */
 DROID_TYPE droidTemplateType(const DROID_TEMPLATE *psTemplate)
@@ -2131,44 +2131,44 @@ struct rankMap
 	const char  *name;           // name of this rank
 };
 
-unsigned int getDroidLevel(const DROID *psDroid)
-{
-	unsigned int numKills = psDroid->experience / 65536;
-	unsigned int i;
+//unsigned int getDroidLevel(const DROID *psDroid)
+//{
+//	unsigned int numKills = psDroid->experience / 65536;
+//	unsigned int i;
+//
+//	// Search through the array of ranks until one is found
+//	// which requires more kills than the droid has.
+//	// Then fall back to the previous rank.
+//	const BRAIN_STATS *psStats = getBrainStats(psDroid);
+//	auto &vec = psStats->upgrade[psDroid->player].rankThresholds;
+//	for (i = 1; i < vec.size(); ++i)
+//	{
+//		if (numKills < vec.at(i))
+//		{
+//			return i - 1;
+//		}
+//	}
+//
+//	// If the criteria of the last rank are met, then select the last one
+//	return vec.size() - 1;
+//}
 
-	// Search through the array of ranks until one is found
-	// which requires more kills than the droid has.
-	// Then fall back to the previous rank.
-	const BRAIN_STATS *psStats = getBrainStats(psDroid);
-	auto &vec = psStats->upgrade[psDroid->player].rankThresholds;
-	for (i = 1; i < vec.size(); ++i)
-	{
-		if (numKills < vec.at(i))
-		{
-			return i - 1;
-		}
-	}
-
-	// If the criteria of the last rank are met, then select the last one
-	return vec.size() - 1;
-}
-
-UDWORD getDroidEffectiveLevel(const DROID *psDroid)
-{
-	UDWORD level = getDroidLevel(psDroid);
-	UDWORD cmdLevel = 0;
-
-	// get commander level
-	if (hasCommander(psDroid))
-	{
-		cmdLevel = cmdGetCommanderLevel(psDroid);
-
-		// Commanders boost units' effectiveness just by being assigned to it
-		level++;
-	}
-
-	return MAX(level, cmdLevel);
-}
+//UDWORD getDroidEffectiveLevel(const DROID *psDroid)
+//{
+//	UDWORD level = getDroidLevel(psDroid);
+//	UDWORD cmdLevel = 0;
+//
+//	// get commander level
+//	if (hasCommander(psDroid))
+//	{
+//		cmdLevel = cmdGetCommanderLevel(psDroid);
+//
+//		// Commanders boost units' effectiveness just by being assigned to it
+//		level++;
+//	}
+//
+//	return MAX(level, cmdLevel);
+//}
 
 const char *getDroidLevelName(const DROID *psDroid)
 {
@@ -2176,24 +2176,24 @@ const char *getDroidLevelName(const DROID *psDroid)
 	return PE_("rank", psStats->rankNames[getDroidLevel(psDroid)].c_str());
 }
 
-UDWORD	getNumDroidsForLevel(uint32_t player, UDWORD level)
-{
-	DROID	*psDroid;
-	UDWORD	count;
-
-	if (player >= MAX_PLAYERS) { return 0; }
-
-	for (psDroid = apsDroidLists[player], count = 0;
-		 psDroid; psDroid = psDroid->psNext)
-	{
-		if (getDroidLevel(psDroid) == level)
-		{
-			count++;
-		}
-	}
-
-	return count;
-}
+//UDWORD	getNumDroidsForLevel(uint32_t player, UDWORD level)
+//{
+//	DROID	*psDroid;
+//	UDWORD	count;
+//
+//	if (player >= MAX_PLAYERS) { return 0; }
+//
+//	for (psDroid = apsDroidLists[player], count = 0;
+//		 psDroid; psDroid = psDroid->psNext)
+//	{
+//		if (getDroidLevel(psDroid) == level)
+//		{
+//			count++;
+//		}
+//	}
+//
+//	return count;
+//}
 
 // Get the name of a droid from it's DROID structure.
 //
@@ -2213,27 +2213,27 @@ void droidSetName(DROID *psDroid, const char *pName)
 	sstrcpy(psDroid->aName, pName);
 }
 
-// ////////////////////////////////////////////////////////////////////////////
-// returns true when no droid on x,y square.
-bool noDroid(UDWORD x, UDWORD y)
-{
-	unsigned int i;
-
-	// check each droid list
-	for (i = 0; i < MAX_PLAYERS; ++i)
-	{
-		const DROID *psDroid;
-		for (psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
-		{
-			if (map_coord(psDroid->pos.x) == x
-				&& map_coord(psDroid->pos.y) == y)
-			{
-				return false;
-			}
-		}
-	}
-	return true;
-}
+//// ////////////////////////////////////////////////////////////////////////////
+//// returns true when no droid on x,y square.
+//bool noDroid(UDWORD x, UDWORD y)
+//{
+//	unsigned int i;
+//
+//	// check each droid list
+//	for (i = 0; i < MAX_PLAYERS; ++i)
+//	{
+//		const DROID *psDroid;
+//		for (psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
+//		{
+//			if (map_coord(psDroid->pos.x) == x
+//				&& map_coord(psDroid->pos.y) == y)
+//			{
+//				return false;
+//			}
+//		}
+//	}
+//	return true;
+//}
 
 // ////////////////////////////////////////////////////////////////////////////
 // returns true when at most one droid on x,y square.
