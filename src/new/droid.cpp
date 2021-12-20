@@ -84,7 +84,7 @@ bool Droid::is_repairer() const
 
 bool Droid::is_IDF() const
 {
-  return (type != WEAPON || !is_cyborg()) && has_artillery();
+  return (type != WEAPON || !is_cyborg()) && has_artillery(*this);
 }
 
 bool Droid::is_radar_detector() const
@@ -117,7 +117,7 @@ bool Droid::has_commander() const
 
 bool Droid::has_electronic_weapon() const
 {
-  if (Unit::has_electronic_weapon()) return true;
+  if (Impl::has_electronic_weapon(*this)) return true;
   if (type != COMMAND) return false;
 
   return group->has_electronic_weapon();
@@ -169,7 +169,7 @@ bool Droid::is_attacking() const
 bool Droid::is_VTOL_rearmed_and_repaired() const
 {
   assert(is_VTOL());
-  if (is_damaged() || !has_full_ammo() || type == WEAPON)
+  if (is_damaged() || !has_full_ammo(*this) || type == WEAPON)
     return false;
 
   return true;
@@ -258,7 +258,7 @@ uint8_t Droid::is_target_visible(const ::Simple_Object* target, bool walls_block
 
 bool Droid::target_within_range(const Unit &target, int weapon_slot) const
 {
-  if (num_weapons() == 0) return false;
+  if (num_weapons(*this) == 0) return false;
 
   auto droid_position = get_position();
   auto target_position = target.get_position();
@@ -326,11 +326,6 @@ void Droid::cancel_build()
   }
 }
 
-void Droid::give_action(ACTION new_action, const Unit& target_unit, Position position)
-{
-
-}
-
 void Droid::reset_action()
 {
   time_action_started = gameTime;
@@ -345,7 +340,6 @@ void Droid::update_expected_damage(unsigned damage, bool is_direct)
     expected_damage_indirect += damage;
 }
 
-
 unsigned Droid::calculate_sensor_range() const
 {
   auto ecm_range = ecm->upgraded[get_player()].range;
@@ -358,10 +352,10 @@ unsigned Droid::calculate_max_range() const
 {
   if (type == SENSOR)
     return calculate_sensor_range();
-  else if (num_weapons() == 0)
+  else if (num_weapons(*this) == 0)
     return 0;
   else
-    return get_max_weapon_range();
+    return get_max_weapon_range(*this);
 }
 
 int Droid::calculate_height() const
@@ -379,7 +373,7 @@ int Droid::calculate_height() const
   switch (type)
   {
     case WEAPON:
-      if (num_weapons() == 0) break;
+      if (num_weapons(*this) == 0) break;
 
       y_max = weapon_stats.imd_shape->max.y;
       y_min = weapon_stats.imd_shape->min.y;
@@ -410,14 +404,6 @@ void update_orientation(Droid& droid)
 
 }
 
-auto count_player_command_droids(unsigned player)
-{
-  const auto& droids = droid_lists[player];
-
-  return std::count_if(droids.begin(), droids.end(), [] (const auto& droid) {
-    return droid.is_commander();
-  });
-}
 
 auto count_droids_for_level(unsigned player, unsigned level)
 {
@@ -444,13 +430,13 @@ bool tile_occupied_by_droid(unsigned x, unsigned y)
 
 bool can_assign_fire_support(const Droid& droid, const Structure& structure)
 {
-  if (droid.num_weapons() == 0 || !structure.has_sensor()) return false;
+  if (num_weapons(droid) == 0 || !structure.has_sensor()) return false;
 
   if (droid.is_VTOL())
   {
     return structure.has_VTOL_intercept_sensor() || structure.has_VTOL_CB_sensor();
   }
-  else if (droid.has_artillery())
+  else if (has_artillery(droid))
   {
     return structure.has_standard_sensor() || structure.has_CB_sensor();
   }

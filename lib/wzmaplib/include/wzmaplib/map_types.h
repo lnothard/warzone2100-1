@@ -75,7 +75,7 @@ struct WorldPos
 	int y = 0;
 };
 
-struct Structure
+struct Structure_
 {
 	optional<uint32_t> id;
 	std::string name;
@@ -84,7 +84,7 @@ struct Structure
 	int8_t player = 0;  // -1 = scavs
 	uint8_t modules = 0; // capacity
 };
-struct Droid
+struct Droid_
 {
 	optional<uint32_t> id;
 	std::string name;
@@ -92,7 +92,7 @@ struct Droid
 	uint16_t direction = 0;
 	int8_t player = 0;  // -1 = scavs
 };
-struct Feature
+struct Feature_
 {
 	optional<uint32_t> id; // an explicit feature id# override, used by older formats
 	std::string name;

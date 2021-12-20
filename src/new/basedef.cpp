@@ -19,12 +19,12 @@ Impl::Simple_Object::Simple_Object(unsigned id, unsigned player)
 {
 }
 
-Position Impl::Simple_Object::get_position() const noexcept
+const Position& Impl::Simple_Object::get_position() const noexcept
 {
   return position;
 }
 
-Rotation Impl::Simple_Object::get_rotation() const noexcept
+const Rotation& Impl::Simple_Object::get_rotation() const noexcept
 {
   return rotation;
 }
@@ -44,7 +44,7 @@ void Impl::Simple_Object::set_height(int height)
   position.z = height;
 }
 
-void Impl::Simple_Object::set_rotation(const Rotation &new_rotation)
+void Impl::Simple_Object::set_rotation(Rotation &new_rotation)
 {
   rotation = new_rotation;
 }

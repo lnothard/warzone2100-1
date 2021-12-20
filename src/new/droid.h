@@ -13,6 +13,7 @@
 #include "droid_group.h"
 #include "structure.h"
 #include "movement.h"
+#include "obj_lists.h"
 #include "order.h"
 
 static constexpr auto MAX_COMPONENTS = COMPONENT_TYPE::COUNT - 1;
@@ -109,7 +110,7 @@ public:
   [[nodiscard]] bool has_commander() const;
   bool has_standard_sensor() const;
   bool has_CB_sensor() const;
-  bool has_electronic_weapon() const final;
+  bool has_electronic_weapon() const;
   [[nodiscard]] bool target_within_range(const Unit& target, int weapon_slot) const;
   void gain_experience(unsigned exp);
   void commander_gain_experience(unsigned exp) const;
@@ -122,7 +123,7 @@ public:
   const iIMDShape& get_IMD_shape() const final;
   unsigned calculate_sensor_range() const final;
   unsigned calculate_max_range() const;
-  int calculate_height() const final;
+  int calculate_height() const;
 private:
   using enum ACTION;
   using enum DROID_TYPE;
@@ -150,6 +151,15 @@ private:
   unsigned action_points_done { 0 };
   int resistance_to_electric { 0 };
 };
+
+constexpr auto count_player_command_droids(unsigned player)
+{
+  const auto& droids = droid_lists[player];
+
+  return std::count_if(droids.begin(), droids.end(), [] (const auto& droid) {
+      return droid.is_commander();
+  });
+}
 
 struct Droid_Template
 {

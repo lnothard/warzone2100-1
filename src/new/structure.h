@@ -184,9 +184,14 @@ namespace Impl
     std::size_t last_state_time;
   };
 
+  Structure_Bounds get_bounds(const Structure& structure);
+  void adjust_tile_height(const Structure& structure, int new_height);
+  void align_structure(Structure& structure);
+  bool being_built(const Structure* structure);
+
   inline int calculate_foundation_height(const Structure& structure)
   {
-    const Structure_Bounds& bounds = structure.get_bounds();
+    const Structure_Bounds& bounds = get_bounds(structure);
     auto foundation_min = INT32_MIN;
     auto foundation_max = INT32_MAX;
     const auto x_max = bounds.size_in_coords.x;
@@ -203,10 +208,6 @@ namespace Impl
     }
     return (foundation_min + foundation_max) / 2;
   }
-
-  void adjust_tile_height(const Structure& structure, const int new_height);
-  void align_structure(Structure& structure);
-  bool is_a_droid_building_this_structure(const Structure* structure);
 }
 
 struct Production_Job

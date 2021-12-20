@@ -185,7 +185,7 @@ namespace Impl
 
   void adjust_tile_height(const Structure& structure, int new_height)
   {
-    const auto& bounds = structure.get_bounds();
+    const auto& bounds = get_bounds(structure);
     auto x_max = bounds.size_in_coords.x;
     auto y_max = bounds.size_in_coords.y;
 
@@ -209,15 +209,15 @@ namespace Impl
   {
     if (!structure.is_pulled_to_terrain())
     {
-      const auto map_height = calculate_foundation_height(structure);
+      auto map_height = calculate_foundation_height(structure);
       adjust_tile_height(structure, map_height);
       structure.set_height(map_height);
       structure.set_foundation_depth(structure.get_position().z);
 
-      const auto& bounds = structure.get_bounds();
-      const auto x_max = bounds.size_in_coords.x;
-      const auto y_max = bounds.size_in_coords.y;
-      const auto coords = bounds.top_left_coords;
+      const auto& bounds = get_bounds(structure);
+      auto x_max = bounds.size_in_coords.x;
+      auto y_max = bounds.size_in_coords.y;
+      auto coords = bounds.top_left_coords;
 
       for (int breadth = -1; breadth <= y_max; ++breadth)
       {
@@ -254,9 +254,8 @@ namespace Impl
     }
   }
 
-  bool is_a_droid_building_this_structure(const Structure& structure)
+  bool being_built(const Structure& structure)
   {
-    assert(structure != nullptr);
     const auto& droids = droid_lists[structure.get_player()];
     return std::any_of(droids.begin(), droids.end(),
                        [&structure] (const auto& droid) {

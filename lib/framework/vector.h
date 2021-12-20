@@ -38,6 +38,7 @@ using Vector3i = glm::ivec3;
 using Vector2i = glm::ivec2;
 using Vector2f = glm::vec2;
 using Vector3f = glm::vec3;
+
 struct Rotation
 {
 	Rotation()
@@ -59,11 +60,12 @@ static inline Vector3i toVector(Rotation const &r)
 
 // vector * vector -> scalar
 // Note: glm doesn't provide dot operator for integral vector.
-static inline WZ_DECL_PURE int dot(Vector2i const &a, Vector2i const &b)
+constexpr int dot(Vector2i const &a, Vector2i const &b)
 {
 	return a.x * b.x + a.y * b.y;
 }
-static inline WZ_DECL_PURE int dot(Vector3i const &a, Vector3i const &b)
+
+constexpr int dot(Vector3i const &a, Vector3i const &b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
@@ -71,7 +73,7 @@ static inline WZ_DECL_PURE int dot(Vector3i const &a, Vector3i const &b)
 // iSinCosR(angle, scalar) -> 2d_vector
 static inline WZ_DECL_PURE Vector2i iSinCosR(uint16_t a, int32_t r)
 {
-	return Vector2i(iSinR(a, r), iCosR(a, r));
+	return {iSinR(a, r), iCosR(a, r)};
 }
 
 // iAtan2(2d_vector) -> angle

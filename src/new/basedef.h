@@ -28,14 +28,13 @@ public:
   Simple_Object& operator=(Simple_Object&&) = delete;
 
   virtual Spacetime spacetime() const = 0;
-  virtual Position get_position() const = 0;
-  virtual Rotation get_rotation() const = 0;
+  virtual const Position& get_position() const = 0;
+  virtual const Rotation& get_rotation() const = 0;
   virtual unsigned get_player() const = 0;
   virtual unsigned get_id() const = 0;
-  virtual int calculate_height() const = 0;
   virtual Display_Data get_display_data() const = 0;
   virtual void set_height(int height) = 0;
-  virtual void set_rotation(const Rotation& new_rotation) = 0;
+  virtual void set_rotation(Rotation& new_rotation) = 0;
 };
 
 namespace Impl
@@ -46,13 +45,13 @@ namespace Impl
     Simple_Object(unsigned id, unsigned player);
 
     [[nodiscard]] Spacetime spacetime() const noexcept final;
-    [[nodiscard]] Position get_position() const noexcept final;
-    [[nodiscard]] Rotation get_rotation() const noexcept final;
+    [[nodiscard]] const Position& get_position() const noexcept final;
+    [[nodiscard]] const Rotation& get_rotation() const noexcept final;
     [[nodiscard]] unsigned get_player() const noexcept final;
     [[nodiscard]] unsigned get_id() const noexcept final;
     [[nodiscard]] Display_Data get_display_data() const noexcept final;
     void set_height(int height) final;
-    void set_rotation(const Rotation& new_rotation) final;
+    void set_rotation(Rotation& new_rotation) final;
   private:
     unsigned id;
     unsigned player;
@@ -63,13 +62,13 @@ namespace Impl
   };
 }
 
-inline int object_position_square_diff(const Position& first, const Position& second)
+constexpr int object_position_square_diff(const Position& first, const Position& second)
 {
-  const Vector2i diff = (first - second).xy();
+  Vector2i diff = (first - second).xy();
   return dot(diff, diff);
 }
 
-inline int object_position_square_diff(const Simple_Object& first, const Simple_Object& second)
+constexpr int object_position_square_diff(const Simple_Object& first, const Simple_Object& second)
 {
   return object_position_square_diff(first.get_position(), second.get_position());
 }
