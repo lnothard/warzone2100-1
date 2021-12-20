@@ -24,7 +24,7 @@ const Order& Droid::get_current_order() const
   return order;
 }
 
-bool Droid::is_probably_doomed(const bool is_direct_damage) const
+bool Droid::is_probably_doomed(bool is_direct_damage) const
 {
   auto is_doomed = [this] (uint32_t damage) {
     const auto hit_points = get_hp();
@@ -87,6 +87,13 @@ bool Droid::is_IDF() const
   return (type != WEAPON || !is_cyborg()) && has_artillery();
 }
 
+bool Droid::is_radar_detector() const
+{
+  if (!sensor) return false;
+
+  return sensor->type == SENSOR_TYPE::RADAR_DETECTOR;
+}
+
 bool Droid::is_damaged() const
 {
   return get_hp() < original_hp;
@@ -133,12 +140,12 @@ bool Droid::has_CB_sensor() const
 
 }
 
-void Droid::gain_experience(const unsigned exp)
+void Droid::gain_experience(unsigned exp)
 {
   experience += exp;
 }
 
-void Droid::commander_gain_experience(const unsigned exp) const
+void Droid::commander_gain_experience(unsigned exp) const
 {
   assert(has_commander());
   group->commander_gain_experience(exp);
@@ -199,6 +206,66 @@ bool Droid::is_VTOL_full() const
   });
 }
 
+// return UBYTE_MAX if directly visible, UBYTE_MAX / 2 if shown as radar blip, 0 if not visible
+uint8_t Droid::is_target_visible(const ::Simple_Object* target, bool walls_block) const
+{
+  assert(target != nullptr);
+
+  static constexpr uint8_t VISIBLE = UBYTE_MAX;
+  static constexpr uint8_t RADAR_BLIP = UBYTE_MAX / 2;
+  static constexpr uint8_t NOT_VISIBLE = 0;
+
+  auto droid_position = get_position();
+  auto target_position = target->get_position();
+
+  if  (!is_coord_on_map(droid_position.x, droid_position.y) ||
+       !is_coord_on_map(target_position.x, target_position.y))
+    return 0;
+
+  if (order.target_object == target && has_CB_sensor())
+    return VISIBLE;
+
+  auto range = calculate_sensor_range();
+  auto distance = iHypot((target_position - droid_position).xy());
+
+  if (distance == 0) return VISIBLE;
+
+  const auto target_tile = get_map_tile(map_coord(target_position.x), map_coord(target_position.y));
+  bool is_jammed = target_tile->jammer_bits & ~alliance_bits[get_player()];
+
+  if (distance < range)
+  {
+    if (is_VTOL()) return VISIBLE;
+
+    else if (dynamic_cast<const Droid*>(target))
+    {
+      const Droid* droid = dynamic_cast<const Droid*>(target);
+      if (droid->is_VTOL()) return VISIBLE;
+    }
+  }
+
+  bool is_tile_watched = target_tile->watchers[get_player()] > 0;
+  bool is_tile_watched_by_sensors = target_tile->watching_sensors[get_player()] > 0;
+
+  if (is_tile_watched || is_tile_watched_by_sensors)
+  {
+    if (is_jammed)
+    {
+      if (!is_tile_watched)
+        return RADAR_BLIP;
+    }
+    else
+    {
+      return VISIBLE;
+    }
+  }
+
+  if (is_radar_detector() && )
+    return RADAR_BLIP;
+
+  return NOT_VISIBLE;
+}
+
 bool Droid::are_all_VTOLs_rearmed() const
 {
   if (!is_VTOL()) return true;
@@ -211,9 +278,22 @@ bool Droid::are_all_VTOLs_rearmed() const
   });
 }
 
-bool Droid::target_within_range(const Unit &target, const uint8_t weapon_slot) const
+bool Droid::target_within_range(const Unit &target, int weapon_slot) const
 {
-  return num_weapons() != 0;
+  if (num_weapons() == 0) return false;
+
+  const auto droid_position = get_position();
+  const auto target_position = target.get_position();
+
+  const auto x_diff = droid_position.x - target_position.x;
+  const auto y_diff = droid_position.y - target_position.y;
+
+  const auto square_diff = x_diff * x_diff + y_diff * y_diff;
+  const auto min_range = get_weapons()[weapon_slot].get_min_range(get_player());
+  const auto range_squared = min_range * min_range;
+
+  if (square_diff <= range_squared) return true;
+  return false;
 }
 
 uint32_t Droid::get_level() const
@@ -291,7 +371,7 @@ void Droid::reset_action()
   action_points_done = 0;
 }
 
-void Droid::update_expected_damage(const unsigned damage, const bool is_direct)
+void Droid::update_expected_damage(unsigned damage, bool is_direct)
 {
   if (is_direct)
     expected_damage_direct += damage;
@@ -379,7 +459,7 @@ void update_orientation(Droid& droid)
 
 }
 
-auto count_player_command_droids(const unsigned player)
+auto count_player_command_droids(unsigned player)
 {
   const auto& droids = droid_lists[player];
 
@@ -388,7 +468,7 @@ auto count_player_command_droids(const unsigned player)
   });
 }
 
-auto count_droids_for_level(const unsigned player, const unsigned level)
+auto count_droids_for_level(unsigned player, unsigned level)
 {
   const auto& droids = droid_lists[player];
 
@@ -397,7 +477,7 @@ auto count_droids_for_level(const unsigned player, const unsigned level)
   });
 }
 
-bool tile_is_occupied_by_droid(const unsigned x, const unsigned y)
+bool tile_is_occupied_by_droid(unsigned x, unsigned y)
 {
   for (int i = 0; i < MAX_PLAYERS; ++i)
   {

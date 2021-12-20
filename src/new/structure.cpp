@@ -40,6 +40,12 @@ namespace Impl
     return false;
   }
 
+  bool Structure::is_radar_detector() const
+  {
+    if (!has_sensor() || state != BUILT) return false;
+    return stats.sensor_stats->type == RADAR_DETECTOR;
+  }
+
   bool Structure::is_probably_doomed() const
   {
       const auto hit_points = get_hp();

@@ -17,6 +17,8 @@
 
 static constexpr auto MAX_COMPONENTS = COMPONENT_TYPE::COUNT - 1;
 
+extern std::array<PlayerMask, MAX_PLAYER_SLOTS> alliance_bits;
+
 enum class ACTION
 {
   NONE,					///< 0 not doing anything
@@ -86,7 +88,7 @@ public:
 
   ACTION get_current_action() const;
   const Order& get_current_order() const;
-  bool is_probably_doomed(const bool is_direct_damage) const;
+  bool is_probably_doomed(bool is_direct_damage) const;
   bool is_commander() const;
   bool is_VTOL() const;
   bool is_flying() const;
@@ -95,6 +97,7 @@ public:
   bool is_cyborg() const;
   bool is_repairer() const;
   bool is_IDF() const;
+  bool is_radar_detector() const final;
   bool is_being_repaired() const;
   bool is_stationary() const;
   bool is_rearming() const;
@@ -103,18 +106,19 @@ public:
   bool is_VTOL_rearmed_and_repaired() const;
   bool is_VTOL_empty() const;
   bool is_VTOL_full() const;
+  uint8_t is_target_visible(const ::Simple_Object* target, bool walls_block) const final;
   bool are_all_VTOLs_rearmed() const;
-  bool has_commander() const;
+  [[nodiscard]] bool has_commander() const;
   bool has_standard_sensor() const;
   bool has_CB_sensor() const;
   bool has_electronic_weapon() const final;
-  bool target_within_range(const Unit& target, const uint8_t weapon_slot) const;
-  void gain_experience(const unsigned exp);
-  void commander_gain_experience(const unsigned exp) const;
+  [[nodiscard]] bool target_within_range(const Unit& target, int weapon_slot) const;
+  void gain_experience(unsigned exp);
+  void commander_gain_experience(unsigned exp) const;
   void move_to_rearming_pad();
   void cancel_build();
   void reset_action();
-  void update_expected_damage(const unsigned damage, const bool is_direct);
+  void update_expected_damage(unsigned damage, bool is_direct);
   unsigned get_level() const;
   unsigned get_commander_level() const;
   unsigned get_effective_level() const;
@@ -161,12 +165,12 @@ struct Droid_Template
   bool is_enabled;
 };
 
-static inline bool VTOL_may_land_here(const int x, const int y);
+inline bool VTOL_may_land_here(const int x, const int y);
 
 template <typename T>
-static unsigned calculate_required_build_points(const T& object);
+unsigned calculate_required_build_points(const T& object);
 
 template <typename T>
-static unsigned calculate_required_power(const T& object);
+unsigned calculate_required_power(const T& object);
 
 #endif // WARZONE2100_DROID_H

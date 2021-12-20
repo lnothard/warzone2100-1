@@ -35,6 +35,7 @@ public:
   virtual int calculate_height() const = 0;
   virtual Display_Data get_display_data() const = 0;
   virtual void set_height(int height) = 0;
+  virtual void set_rotation(const Rotation& new_rotation) = 0;
 };
 
 namespace Impl
@@ -44,13 +45,14 @@ namespace Impl
   public:
     Simple_Object(unsigned id, unsigned player);
 
-    Spacetime spacetime() const final;
-    Position get_position() const final;
-    Rotation get_rotation() const final;
-    unsigned get_player() const final;
-    unsigned get_id() const final;
-    Display_Data get_display_data() const final;
+    [[nodiscard]] Spacetime spacetime() const noexcept final;
+    [[nodiscard]] Position get_position() const noexcept final;
+    [[nodiscard]] Rotation get_rotation() const noexcept final;
+    [[nodiscard]] unsigned get_player() const noexcept final;
+    [[nodiscard]] unsigned get_id() const noexcept final;
+    [[nodiscard]] Display_Data get_display_data() const noexcept final;
     void set_height(int height) final;
+    void set_rotation(const Rotation& new_rotation) final;
   private:
     unsigned id;
     unsigned player;
@@ -61,7 +63,15 @@ namespace Impl
   };
 }
 
-static inline int object_position_square_diff(const Simple_Object& first, const Simple_Object& second);
-static inline int object_position_square_diff(const Position& first, const Position& second);
+inline int object_position_square_diff(const Position& first, const Position& second)
+{
+  const Vector2i diff = (first - second).xy();
+  return dot(diff, diff);
+}
+
+inline int object_position_square_diff(const Simple_Object& first, const Simple_Object& second)
+{
+  return object_position_square_diff(first.get_position(), second.get_position());
+}
 
 #endif // WARZONE2100_BASEDEF_H

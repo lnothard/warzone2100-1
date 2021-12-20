@@ -91,7 +91,7 @@ struct Flag_Position : public Object_Position
 
 struct Structure_Stats
 {
-  Vector2i size(uint16_t direction) const;
+  Vector2i size(unsigned direction) const;
 
   using enum STRUCTURE_TYPE;
 
@@ -145,6 +145,7 @@ namespace Impl
 
     bool is_blueprint() const;
     bool is_wall() const;
+    bool is_radar_detector() const final;
     bool is_probably_doomed() const;
     bool is_pulled_to_terrain() const;
     bool is_damaged() const;

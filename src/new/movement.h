@@ -23,10 +23,25 @@ enum class MOVEMENT_STATE
 class Movement
 {
 public:
-  bool is_inactive() const;
-  bool is_stationary() const;
-  void stop_moving();
-  void stop_moving_instantly();
+  [[nodiscard]] constexpr bool is_inactive() const noexcept
+  {
+    return state == INACTIVE;
+  }
+  [[nodiscard]] constexpr bool is_stationary() const noexcept
+  {
+    return state == INACTIVE || state == HOVER || state == SHUFFLE;
+  }
+  constexpr void stop_moving()
+  {
+    // if flying: state = HOVER;
+
+    state = INACTIVE;
+  }
+  constexpr void stop_moving_instantly()
+  {
+    stop_moving();
+    speed = 0;
+  }
 private:
   using enum MOVEMENT_STATE;
 

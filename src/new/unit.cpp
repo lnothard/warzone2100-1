@@ -6,7 +6,7 @@
 
 #include "lib/framework/fixedpoint.h"
 #include "lib/framework/geometry.h"
-#include "map.h"
+#include "lib/framework/math_ext.h"
 #include "projectile.h"
 #include "unit.h"
 
@@ -267,31 +267,19 @@ namespace Impl
   {
     return weapons;
   }
-}
 
-static inline void check_angle(int64_t& angle_tan, int start_coord, int height, int square_distance, int target_height, bool is_direct)
-{
-  int64_t current_angle = 0;
-
-  if (is_direct)
+  void Unit::align_turret(int weapon_slot)
   {
-    current_angle = (65536 * height) / iSqrt(start_coord);
-  }
-  else
-  {
-    const auto distance = iSqrt(square_distance);
-    const auto position = iSqrt(start_coord);
-    current_angle = (position * target_height) / distance;
+    if (num_weapons() == 0) return;
 
-    if (current_angle < height && position > TILE_UNITS / 2 && position < distance - TILE_UNITS / 2)
-    {
-      current_angle = (65536 * square_distance * height - start_coord * target_height)
-                      / (square_distance * position - distance * start_coord);
-    }
-    else
-    {
-      current_angle = 0;
-    }
+    const auto turret_rotation = gameTimeAdjustedIncrement(DEG(TURRET_ROTATION_RATE));
+    auto unit_rotation = weapons[weapon_slot].get_rotation().direction;
+    auto unit_pitch = weapons[weapon_slot].get_rotation().pitch;
+    const auto nearest_right_angle = (unit_rotation + DEG(45)) / DEG(90) * DEG(90);
+
+    unit_rotation += clip(angleDelta(nearest_right_angle - unit_rotation), -turret_rotation / 2, turret_rotation / 2);
+    unit_pitch += clip(angleDelta(0 - unit_pitch), -turret_rotation / 2, turret_rotation / 2);
+
+    set_rotation({unit_rotation, unit_pitch, get_rotation().roll});
   }
-  angle_tan = std::max(angle_tan, current_angle);
 }

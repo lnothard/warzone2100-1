@@ -23,7 +23,7 @@ enum class PROJECTILE_STATE
 class Projectile : public virtual Simple_Object, public Impl::Simple_Object
 {
 public:
-  int calculate_height() const final;
+  [[nodiscard]] int calculate_height() const final;
 private:
   using enum PROJECTILE_STATE;
 

@@ -15,11 +15,11 @@ enum class ASTAR_RETVAL
 class Path_Coordinate
 {
 public:
-  Path_Coordinate() = default;
-  Path_Coordinate(int x, int y);
+  constexpr Path_Coordinate() = default;
+  constexpr Path_Coordinate(int x, int y);
 
-  bool operator ==(const Path_Coordinate &rhs) const;
-  bool operator !=(const Path_Coordinate &rhs) const;
+  constexpr bool operator ==(const Path_Coordinate &rhs) const;
+  constexpr bool operator !=(const Path_Coordinate &rhs) const;
 private:
   int x, y;
 };

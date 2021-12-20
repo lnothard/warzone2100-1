@@ -5,6 +5,7 @@
 #ifndef WARZONE2100_MAP_H
 #define WARZONE2100_MAP_H
 
+#include <array>
 #include <wzmaplib/map.h>
 
 #include "lib/ivis_opengl/pietypes.h"
@@ -12,7 +13,7 @@
 #include "feature.h"
 #include "structure.h"
 
-extern int map_width, map_height;
+extern const int map_width, map_height;
 
 enum class TILE_SET
 {
@@ -30,6 +31,8 @@ struct Tile
   PlayerMask jammer_bits;
   uint8_t info_bits;
   uint8_t illumination_level;
+  std::array<uint8_t, MAX_PLAYERS> watchers;
+  std::array<uint8_t, MAX_PLAYERS> watching_sensors;
   int water_level;
   int height;
   uint8_t ground_type;
@@ -37,27 +40,27 @@ struct Tile
 };
 extern std::unique_ptr<Tile[]> map_tiles;
 
-inline bool tile_is_occupied(const Tile& tile)
+constexpr bool tile_is_occupied(const Tile& tile)
 {
   return tile.occupying_object != nullptr;
 }
 
-inline bool tile_is_occupied_by_structure(const Tile& tile)
+constexpr bool tile_is_occupied_by_structure(const Tile& tile)
 {
   return tile_is_occupied(tile) && dynamic_cast<Structure*>(tile.occupying_object);
 }
 
-inline bool tile_is_occupied_by_feature(const Tile& tile)
+constexpr bool tile_is_occupied_by_feature(const Tile& tile)
 {
   return tile_is_occupied(tile) && dynamic_cast<Feature*>(tile.occupying_object);
 }
 
-inline Vector2i world_coord(const Vector2i& map_coord)
+constexpr Vector2i world_coord(const Vector2i& map_coord)
 {
   return { world_coord(map_coord.x), world_coord(map_coord.y) };
 }
 
-inline Vector2i map_coord(const Vector2i& world_coord)
+constexpr Vector2i map_coord(const Vector2i& world_coord)
 {
   return { map_coord(world_coord.x), map_coord(world_coord.y) };
 }
@@ -71,7 +74,7 @@ static inline int calculate_map_height(const Vector2i& v)
   return calculate_map_height(v.x, v.y);
 }
 
-inline __attribute__((__pure__)) int map_tile_height(int x, int y)
+constexpr int map_tile_height(int x, int y)
 {
  if (x >= map_width || y >= map_height || x < 0 || y < 0)
  {
@@ -80,7 +83,7 @@ inline __attribute__((__pure__)) int map_tile_height(int x, int y)
  return map_tiles[x + (y * map_width)].height;
 }
 
-inline void set_tile_height(int x, int y, int height)
+constexpr void set_tile_height(int x, int y, int height)
 {
   assert(x < map_width && x >=0);
   assert(y < map_height && y >= 0);
@@ -90,7 +93,7 @@ inline void set_tile_height(int x, int y, int height)
 }
 
 /** Return a pointer to the tile structure at x,y in map coordinates */
-inline __attribute__((__pure__)) Tile* get_map_tile(int x, int y)
+constexpr Tile* get_map_tile(int x, int y)
 {
   // Clamp x and y values to actual ones
   // Give one tile worth of leeway before asserting, for units/transporters coming in from off-map.
@@ -106,10 +109,16 @@ inline __attribute__((__pure__)) Tile* get_map_tile(int x, int y)
   return &map_tiles[x + (y * map_width)];
 }
 
-inline Feature* get_feature_from_tile(const unsigned x, const unsigned y)
+constexpr Feature* get_feature_from_tile(unsigned x, unsigned y)
 {
   auto* tile_object = get_map_tile(x, y)->occupying_object;
   return dynamic_cast<Feature*>(tile_object);
+}
+
+constexpr bool is_coord_on_map(int x, int y)
+{
+  return (x >= 0) && (x < map_width << TILE_SHIFT) &&
+         (y >= 0) && (y < map_height << TILE_SHIFT);
 }
 
 #endif // WARZONE2100_MAP_H

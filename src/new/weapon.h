@@ -124,7 +124,7 @@ enum class ATTACKER_TYPE
   RADAR_DETECTOR
 };
 
-class Weapon : public Simple_Object
+class Weapon : public virtual ::Simple_Object, public Impl::Simple_Object
 {
 public:
   bool has_ammo() const;
