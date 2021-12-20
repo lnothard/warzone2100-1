@@ -8,9 +8,9 @@
 #include "basedef.h"
 #include "unit.h"
 
-constexpr auto PROJECTILE_MAX_PITCH { 45 };
-constexpr auto BULLET_FLIGHT_HEIGHT { 16 };
-constexpr auto VTOL_HITBOX_MODIFIER { 100 };
+static constexpr auto PROJECTILE_MAX_PITCH = 45;
+static constexpr auto BULLET_FLIGHT_HEIGHT = 16;
+static constexpr auto VTOL_HITBOX_MODIFIER = 100;
 
 enum class PROJECTILE_STATE
 {
@@ -32,7 +32,7 @@ private:
   Unit*            target;
   Vector3i         destination;
   Vector3i         origin;
-  uint32_t         base_damage;
+  unsigned         base_damage;
 };
 
 #endif // WARZONE2100_PROJECTILE_H

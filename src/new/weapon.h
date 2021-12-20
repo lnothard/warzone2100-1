@@ -12,7 +12,7 @@
 #include "basedef.h"
 #include "stats.h"
 
-constexpr uint32_t DEFAULT_RECOIL_TIME { GAME_TICKS_PER_SEC / 4 };
+static constexpr auto DEFAULT_RECOIL_TIME = GAME_TICKS_PER_SEC / 4;
 
 enum class WEAPON_SIZE
 {
@@ -71,18 +71,18 @@ struct Weapon_Stats : public Component_Stats
 
   struct : Upgradeable
   {
-    uint32_t min_range;
-    uint32_t max_range;
-    uint32_t hit_chance;
-    uint32_t direct_damage;
-    uint32_t blast_radius;
-    uint32_t splash_damage;
-    uint32_t min_damage_percent;
-    uint32_t reload_time;
-    uint32_t pause_between_shots;
-    uint32_t ticking_damage;
-    uint32_t ticking_damage_radius;
-    uint32_t ticking_damage_time;
+    unsigned min_range;
+    unsigned max_range;
+    unsigned hit_chance;
+    unsigned direct_damage;
+    unsigned blast_radius;
+    unsigned splash_damage;
+    unsigned min_damage_percent;
+    std::size_t reload_time;
+    std::size_t pause_between_shots;
+    unsigned ticking_damage;
+    unsigned ticking_damage_radius;
+    std::size_t ticking_damage_time;
     uint8_t  rounds_per_salvo;
   } base_stats, upgraded_stats[MAX_PLAYERS];
 
@@ -91,9 +91,9 @@ struct Weapon_Stats : public Component_Stats
   WEAPON_EFFECT   effect;
   WEAPON_SIZE     size;
   MOVEMENT_TYPE   movement_type;
-  uint32_t        flight_speed;
-  uint32_t        recoil_value;
-  uint16_t        effect_magnitude;
+  unsigned        flight_speed;
+  unsigned        recoil_value;
+  unsigned        effect_magnitude;
   short           max_rotation;
   short           min_elevation;
   short           max_elevation;
@@ -131,13 +131,13 @@ public:
   bool has_full_ammo() const;
   bool is_artillery() const;
   bool is_VTOL_weapon() const;
-  bool is_empty_VTOL_weapon(const uint32_t player) const;
+  bool is_empty_VTOL_weapon(const unsigned player) const;
   const Weapon_Stats& get_stats() const;
-  uint32_t get_recoil() const;
-  uint32_t get_max_range(const uint32_t player) const;
-  uint32_t get_min_range(const uint32_t player) const;
-  uint32_t get_num_attack_runs(const uint32_t player) const;
-  uint32_t get_shots_fired() const;
+  unsigned get_recoil() const;
+  unsigned get_max_range(const unsigned player) const;
+  unsigned get_min_range(const unsigned player) const;
+  unsigned get_num_attack_runs(const unsigned player) const;
+  unsigned get_shots_fired() const;
   const iIMDShape& get_IMD_shape() const;
   const iIMDShape& get_mount_graphic() const;
   WEAPON_SUBCLASS get_subclass() const;
@@ -148,10 +148,10 @@ private:
   Weapon_Stats  stats;
   Rotation      rotation;
   Rotation      previous_rotation;
-  uint32_t      ammo;
-  uint32_t      ammo_used;
-  uint32_t      time_last_fired;
-  uint32_t      shots_fired;
+  unsigned      ammo;
+  unsigned      ammo_used;
+  std::size_t      time_last_fired;
+  unsigned      shots_fired;
 };
 
 #endif // WARZONE2100_WEAPON_H

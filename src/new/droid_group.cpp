@@ -18,12 +18,12 @@ bool Droid_Group::has_electronic_weapon() const
   });
 }
 
-uint32_t Droid_Group::get_commander_level() const
+unsigned Droid_Group::get_commander_level() const
 {
   return commander->get_level();
 }
 
-void Droid_Group::commander_gain_experience(uint32_t exp)
+void Droid_Group::commander_gain_experience(unsigned exp)
 {
   commander->gain_experience(exp);
 }

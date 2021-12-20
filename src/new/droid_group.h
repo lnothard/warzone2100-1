@@ -21,12 +21,12 @@ public:
   void remove(Droid& droid);
   bool is_command_group() const;
   bool has_electronic_weapon() const;
-  uint32_t get_commander_level() const;
-  void commander_gain_experience(uint32_t exp);
+  unsigned get_commander_level() const;
+  void commander_gain_experience(unsigned exp);
 private:
   using enum GROUP_TYPE;
 
-  uint32_t                id;
+  unsigned                id;
   GROUP_TYPE              type;
   Droid*                  commander;
   std::vector<Droid*>     members;

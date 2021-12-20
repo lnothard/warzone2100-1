@@ -9,7 +9,7 @@
 #include "obj_lists.h"
 #include "projectile.h"
 
-Droid::Droid(uint32_t id, uint32_t player)
+Droid::Droid(unsigned id, unsigned player)
     : Unit(id, player)
 {
 }
@@ -96,7 +96,7 @@ bool Droid::is_being_repaired() const
 {
   if (!is_damaged()) return false;
 
-  const auto& droids = *droid_lists[get_player()];
+  const auto& droids = droid_lists[get_player()];
 
   return std::any_of(droids.begin(), droids.end(), [this] (const auto& droid) {
     return droid.is_repairer() && droid.get_current_action() == DROID_REPAIR &&
@@ -133,12 +133,12 @@ bool Droid::has_CB_sensor() const
 
 }
 
-void Droid::gain_experience(const uint32_t exp)
+void Droid::gain_experience(const unsigned exp)
 {
   experience += exp;
 }
 
-void Droid::commander_gain_experience(const uint32_t exp) const
+void Droid::commander_gain_experience(const unsigned exp) const
 {
   assert(has_commander());
   group->commander_gain_experience(exp);
@@ -202,7 +202,7 @@ bool Droid::is_VTOL_full() const
 bool Droid::are_all_VTOLs_rearmed() const
 {
   if (!is_VTOL()) return true;
-  const auto& droids = *droid_lists[get_player()];
+  const auto& droids = droid_lists[get_player()];
 
   return std::none_of(droids.begin(), droids.end(), [this] (const auto& droid) {
     return droid.is_rearming() &&
@@ -220,7 +220,7 @@ uint32_t Droid::get_level() const
 {
   if (!brain) return 0;
 
-  auto& rank_thresholds = brain->upgraded[get_player()].rank_thresholds;
+  const auto& rank_thresholds = brain->upgraded[get_player()].rank_thresholds;
   for (int i = 1; i < rank_thresholds.size(); ++i)
   {
     if (kills < rank_thresholds.at(i))
@@ -291,7 +291,7 @@ void Droid::reset_action()
   action_points_done = 0;
 }
 
-void Droid::update_expected_damage(const int32_t damage, const bool is_direct)
+void Droid::update_expected_damage(const unsigned damage, const bool is_direct)
 {
   if (is_direct)
     expected_damage_direct += damage;
@@ -379,29 +379,29 @@ void update_orientation(Droid& droid)
 
 }
 
-auto count_player_command_droids(const uint32_t player)
+auto count_player_command_droids(const unsigned player)
 {
-  const auto& droids = *droid_lists[player];
+  const auto& droids = droid_lists[player];
 
   return std::count_if(droids.begin(), droids.end(), [] (const auto& droid) {
     return droid.is_commander();
   });
 }
 
-auto count_droids_for_level(const uint32_t player, const uint32_t level)
+auto count_droids_for_level(const unsigned player, const unsigned level)
 {
-  const auto& droids = *droid_lists[player];
+  const auto& droids = droid_lists[player];
 
   return std::count_if(droids.begin(), droids.end(), [level] (const auto& droid) {
     return droid.get_level() == level;
   });
 }
 
-bool tile_is_occupied_by_droid(const uint32_t x, const uint32_t y)
+bool tile_is_occupied_by_droid(const unsigned x, const unsigned y)
 {
   for (int i = 0; i < MAX_PLAYERS; ++i)
   {
-    const auto& droids = *droid_lists[i];
+    const auto& droids = droid_lists[i];
 
     for (const auto& droid : droids)
     {

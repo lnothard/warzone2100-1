@@ -18,7 +18,7 @@ Structure_Bounds::Structure_Bounds(const Vector2i& top_left_coords, const Vector
 
 namespace Impl
 {
-  Structure::Structure(uint32_t id, uint32_t player)
+  Structure::Structure(unsigned id, unsigned player)
   : Unit(id, player)
   {
 
@@ -106,9 +106,9 @@ namespace Impl
     return true;
   }
 
-  uint16_t Structure::count_assigned_droids() const
+  unsigned Structure::count_assigned_droids() const
   {
-    const auto& droids = *droid_lists[selectedPlayer];
+    const auto& droids = droid_lists[selectedPlayer];
 
     return std::count_if(droids.begin(), droids.end(), [this] (const auto& droid) {
       if (droid.get_current_order().target_object->get_id() == get_id() &&
@@ -119,7 +119,7 @@ namespace Impl
     });
   }
 
-  uint32_t Structure::get_original_hp() const
+  unsigned Structure::get_original_hp() const
   {
     return stats.upgraded_stats[get_player()].hit_points;
   }
@@ -144,7 +144,7 @@ namespace Impl
     return foundation_depth;
   }
 
-  void Structure::update_expected_damage(const int32_t damage)
+  void Structure::update_expected_damage(const int damage)
   {
     expected_damage += damage;
     assert(expected_damage >= 0);
@@ -164,7 +164,7 @@ namespace Impl
            target_in_line_of_fire(target);
   }
 
-  int Structure::calculate_gate_height(const uint32_t time, const int minimum) const
+  int Structure::calculate_gate_height(const std::size_t time, const int minimum) const
   {
     if (stats.type != GATE) return 0;
 
@@ -199,7 +199,7 @@ namespace Impl
     foundation_depth = depth;
   }
 
-  static void adjust_tile_height(const Structure& structure, const int new_height)
+  void adjust_tile_height(const Structure& structure, const int new_height)
   {
     const auto& bounds = structure.get_bounds();
     const auto x_max = bounds.size_in_coords.x;

@@ -11,7 +11,7 @@
 #include "basedef.h"
 #include "weapon.h"
 
-constexpr auto LINE_OF_FIRE_MINIMUM { 5 };
+static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
 
 class Unit : public virtual ::Simple_Object
 {
@@ -26,10 +26,10 @@ public:
   virtual bool is_alive() const = 0;
   virtual bool has_electronic_weapon() const = 0;
   virtual bool target_in_line_of_fire(const Unit& target, const int weapon_slot) const = 0;
-  virtual uint32_t get_hp() const = 0;
+  virtual unsigned get_hp() const = 0;
   virtual int calculate_line_of_fire(const Simple_Object& target, const int weapon_slot, bool walls_block, bool is_direct) const = 0;
   virtual int calculate_sensor_range() const = 0;
-  virtual uint32_t get_max_weapon_range() const = 0;
+  virtual unsigned get_max_weapon_range() const = 0;
   virtual Vector3i calculate_muzzle_base_location(const int weapon_slot) const = 0;
   virtual Vector3i calculate_muzzle_tip_location(const int weapon_slot) const = 0;
   virtual const std::vector<Weapon>& get_weapons() const = 0;
@@ -51,12 +51,12 @@ namespace Impl
     int calculate_line_of_fire(const ::Simple_Object& target, const int weapon_slot, bool walls_block, bool is_direct) const final;
     Vector3i calculate_muzzle_base_location(const int weapon_slot) const final;
     Vector3i calculate_muzzle_tip_location(const int weapon_slot) const final;
-    uint32_t get_hp() const final;
-    uint32_t get_max_weapon_range() const final;
+    unsigned get_hp() const final;
+    unsigned get_max_weapon_range() const final;
     const std::vector<Weapon>& get_weapons() const final;
-    uint16_t num_weapons() const;
+    unsigned num_weapons() const;
   private:
-    uint32_t hit_points { 0 };
+    unsigned hit_points { 0 };
     std::vector<Weapon> weapons { 0 };
   };
 }

@@ -4,12 +4,12 @@
 
 #include "obj_lists.h"
 
-void create_droid(uint32_t id, uint32_t player)
+void create_droid(unsigned id, unsigned player)
 {
   droid_lists[player].emplace_back(id, player);
 }
 
-void create_structure(uint32_t id, uint32_t player)
+void create_structure(unsigned id, unsigned player)
 {
   auto new_structure = std::make_unique<Impl::Structure>(id, player);
   structure_lists[player].push_back(new_structure);

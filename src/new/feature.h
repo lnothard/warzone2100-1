@@ -28,10 +28,10 @@ private:
 
   FEATURE_TYPE type;
   bool is_damageable;
-  uint16_t base_width;
-  uint16_t base_breadth;
-  uint32_t hit_points;
-  uint32_t armour_points;
+  unsigned base_width;
+  unsigned base_breadth;
+  unsigned hit_points;
+  unsigned armour_points;
 };
 
 #endif // WARZONE2100_FEATURE_H

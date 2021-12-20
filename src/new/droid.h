@@ -15,7 +15,7 @@
 #include "movement.h"
 #include "order.h"
 
-constexpr auto MAX_COMPONENTS { COMPONENT_TYPE::COUNT - 1 };
+static constexpr auto MAX_COMPONENTS = COMPONENT_TYPE::COUNT - 1;
 
 enum class ACTION
 {
@@ -82,7 +82,7 @@ enum class DROID_TYPE
 class Droid : public virtual ::Unit, public Impl::Unit
 {
 public:
-  Droid(uint32_t id, uint32_t player);
+  Droid(unsigned id, unsigned player);
 
   ACTION get_current_action() const;
   const Order& get_current_order() const;
@@ -109,15 +109,15 @@ public:
   bool has_CB_sensor() const;
   bool has_electronic_weapon() const final;
   bool target_within_range(const Unit& target, const uint8_t weapon_slot) const;
-  void gain_experience(const uint32_t exp);
-  void commander_gain_experience(const uint32_t exp) const;
+  void gain_experience(const unsigned exp);
+  void commander_gain_experience(const unsigned exp) const;
   void move_to_rearming_pad();
   void cancel_build();
   void reset_action();
-  void update_expected_damage(const int32_t damage, const bool is_direct);
-  uint32_t get_level() const;
-  uint32_t get_commander_level() const;
-  uint32_t get_effective_level() const;
+  void update_expected_damage(const unsigned damage, const bool is_direct);
+  unsigned get_level() const;
+  unsigned get_commander_level() const;
+  unsigned get_effective_level() const;
   const iIMDShape& get_IMD_shape() const final;
   int calculate_sensor_range() const final;
   int calculate_max_range() const;
@@ -138,16 +138,16 @@ private:
   std::optional<Commander_Stats> brain;
   std::optional<Sensor_Stats> sensor;
   std::optional<ECM_Stats> ecm;
-  uint32_t weight { 0 };
-  uint32_t base_speed { 0 };
-  uint32_t original_hp { 0 };
-  uint32_t expected_damage_direct { 0 };
-  uint32_t expected_damage_indirect { 0 };
-  uint32_t kills { 0 };
-  uint32_t experience { 0 };
-  uint32_t time_action_started { 0 };
-  uint32_t action_points_done { 0 };
-  int16_t resistance_to_electric { 0 };
+  unsigned weight { 0 };
+  unsigned base_speed { 0 };
+  unsigned original_hp { 0 };
+  unsigned expected_damage_direct { 0 };
+  unsigned expected_damage_indirect { 0 };
+  unsigned kills { 0 };
+  unsigned experience { 0 };
+  std::size_t time_action_started { 0 };
+  unsigned action_points_done { 0 };
+  int resistance_to_electric { 0 };
 };
 
 struct Droid_Template
@@ -161,12 +161,12 @@ struct Droid_Template
   bool is_enabled;
 };
 
-static inline bool VTOL_may_land_here(const int32_t x, const int32_t y);
+static inline bool VTOL_may_land_here(const int x, const int y);
 
 template <typename T>
-static uint32_t calculate_required_build_points(const T& object);
+static unsigned calculate_required_build_points(const T& object);
 
 template <typename T>
-static uint32_t calculate_required_power(const T& object);
+static unsigned calculate_required_power(const T& object);
 
 #endif // WARZONE2100_DROID_H

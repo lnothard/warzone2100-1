@@ -15,8 +15,8 @@ extern std::array< std::vector<Droid>, MAX_PLAYERS > droid_lists;
 extern std::array< std::vector< std::unique_ptr<Impl::Structure> >, MAX_PLAYERS > structure_lists;
 extern std::vector<Feature> feature_list;
 
-void create_droid(uint32_t id, uint32_t player);
-void create_structure(uint32_t id, uint32_t player);
+void create_droid(unsigned id, unsigned player);
+void create_structure(unsigned id, unsigned player);
 void destroy_droid(Droid& droid);
 void destroy_structure(Structure& structure);
 

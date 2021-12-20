@@ -97,9 +97,9 @@ struct Structure_Stats
 
   struct
   {
-    uint32_t hit_points;
-    uint32_t power;
-    uint32_t armour;
+    unsigned hit_points;
+    unsigned power;
+    unsigned armour;
   } upgraded_stats[MAX_PLAYERS], base_stats;
 
   STRUCTURE_TYPE type;
@@ -110,13 +110,13 @@ struct Structure_Stats
   std::unique_ptr<iIMDShape> base_imd;
   bool combines_with_wall;
   bool is_favourite;
-  uint32_t base_width;
-  uint32_t base_breadth;
-  uint32_t build_point_cost;
-  uint32_t height;
-  uint32_t power_to_build;
-  uint32_t weapon_slots;
-  uint32_t num_weapons_default;
+  unsigned base_width;
+  unsigned base_breadth;
+  unsigned build_point_cost;
+  unsigned height;
+  unsigned power_to_build;
+  unsigned weapon_slots;
+  unsigned num_weapons_default;
 };
 
 class Structure : public virtual Unit
@@ -141,7 +141,7 @@ namespace Impl
   class Structure : public virtual ::Structure, public Impl::Unit
   {
   public:
-    Structure(uint32_t id, uint32_t player);
+    Structure(unsigned id, unsigned player);
 
     bool is_blueprint() const;
     bool is_wall() const;
@@ -155,16 +155,16 @@ namespace Impl
     bool has_VTOL_intercept_sensor() const final;
     bool has_VTOL_CB_sensor() const final;
     bool smoke_when_damaged() const;
-    uint16_t count_assigned_droids() const;
-    uint32_t get_original_hp() const;
+    unsigned count_assigned_droids() const;
+    unsigned get_original_hp() const;
     Vector2i get_size() const;
     float get_foundation_depth() const;
     const iIMDShape& get_IMD_shape() const final;
     Structure_Bounds get_bounds() const;
-    void update_expected_damage(const int32_t damage);
+    void update_expected_damage(const int damage);
     int calculate_sensor_range() const final;
     bool target_within_range(const Unit& target) const;
-    int calculate_gate_height(const uint32_t time, const int minimum) const;
+    int calculate_gate_height(const std::size_t time, const int minimum) const;
     int calculate_height() const final;
     void set_foundation_depth(const float depth);
     void print_info() const override;
@@ -177,22 +177,22 @@ namespace Impl
     STRUCTURE_STATE state;
     STRUCTURE_ANIMATION_STATE animation_state;
     Structure_Stats stats;
-    uint32_t current_build_points;
+    unsigned current_build_points;
     int build_rate;
     int previous_build_rate;
-    uint32_t expected_damage;
+    unsigned expected_damage;
     uint8_t num_modules;
     float foundation_depth;
-    uint32_t last_state_time;
+    std::size_t last_state_time;
   };
 
-  static inline int calculate_foundation_height(const Structure& structure)
+  inline int calculate_foundation_height(const Structure& structure)
   {
     const Structure_Bounds& bounds = structure.get_bounds();
     auto foundation_min = INT32_MIN;
     auto foundation_max = INT32_MAX;
-    auto x_max = bounds.size_in_coords.x;
-    auto y_max = bounds.size_in_coords.y;
+    const auto x_max = bounds.size_in_coords.x;
+    const auto y_max = bounds.size_in_coords.y;
 
     for (int breadth = 0; breadth <= y_max; ++breadth)
     {
@@ -206,22 +206,22 @@ namespace Impl
     return (foundation_min + foundation_max) / 2;
   }
 
-  static void adjust_tile_height(const Structure& structure, const int new_height);
+  void adjust_tile_height(const Structure& structure, const int new_height);
   void align_structure(Structure& structure);
 }
 
 struct Production_Job
 {
   Droid_Template droid_template;
-  uint32_t time_started;
+  std::size_t time_started;
   int remaining_build_points;
 };
 
 struct Research_Item
 {
   uint8_t tech_code;
-  uint16_t research_point_cost;
-  uint32_t power_cost;
+  unsigned research_point_cost;
+  unsigned power_cost;
 };
 
 class Factory : public virtual Structure, public Impl::Structure
@@ -262,8 +262,8 @@ public:
   bool is_clear() const;
 private:
   Droid* rearm_target;
-  uint32_t time_started;
-  uint32_t last_update_time;
+  std::size_t time_started;
+  std::size_t last_update_time;
 };
 
 class Repair_Facility : public virtual Structure, public Impl::Structure

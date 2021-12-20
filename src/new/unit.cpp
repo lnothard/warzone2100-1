@@ -12,12 +12,12 @@
 
 namespace Impl
 {
-  Unit::Unit(uint32_t id, uint32_t player)
+  Unit::Unit(unsigned id, unsigned player)
   : Impl::Simple_Object(id, player)
   {
   }
 
-  uint32_t Unit::get_hp() const
+  unsigned Unit::get_hp() const
   {
     return hit_points;
   }
@@ -246,12 +246,12 @@ namespace Impl
     return muzzle;
   }
 
-  uint16_t Unit::num_weapons() const
+  unsigned Unit::num_weapons() const
   {
-    return static_cast<uint16_t>(weapons.size());
+    return static_cast<unsigned>(weapons.size());
   }
 
-  uint32_t Unit::get_max_weapon_range() const
+  unsigned Unit::get_max_weapon_range() const
   {
     auto max = 0;
     for (const auto& weapon : weapons)

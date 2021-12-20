@@ -4,7 +4,7 @@
 
 #include "basedef.h"
 
-Spacetime::Spacetime(uint32_t time, Position position, Rotation rotation)
+Spacetime::Spacetime(std::size_t time, Position position, Rotation rotation)
 :time {time}, position{position}, rotation{rotation}
 {
 }
@@ -14,7 +14,7 @@ Spacetime Impl::Simple_Object::spacetime() const
   return { time, position, rotation };
 }
 
-Impl::Simple_Object::Simple_Object(uint32_t id, uint32_t player)
+Impl::Simple_Object::Simple_Object(unsigned id, unsigned player)
 : id {id}, player {player}
 {
 }
@@ -29,12 +29,12 @@ Rotation Impl::Simple_Object::get_rotation() const
   return rotation;
 }
 
-uint8_t Impl::Simple_Object::get_player() const
+unsigned Impl::Simple_Object::get_player() const
 {
   return player;
 }
 
-uint32_t Impl::Simple_Object::get_id() const
+unsigned Impl::Simple_Object::get_id() const
 {
   return id;
 }

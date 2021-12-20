@@ -5,7 +5,6 @@
 #ifndef WARZONE2100_STATS_H
 #define WARZONE2100_STATS_H
 
-#include <cstdint>
 #include <memory>
 
 #include "lib/framework/frame.h"
@@ -58,14 +57,14 @@ struct Component_Stats
 {
   struct Upgradeable
   {
-    uint32_t hit_points;
-    uint32_t hit_point_percent;
+    unsigned hit_points;
+    unsigned hit_point_percent;
   };
 
   std::unique_ptr<iIMDShape> imd_shape;
   COMPONENT_TYPE type;
-  uint32_t power_to_build;
-  uint32_t weight;
+  unsigned power_to_build;
+  unsigned weight;
   bool     is_designable;
 };
 
@@ -77,7 +76,7 @@ struct Sensor_Stats : public Component_Stats
 
   struct : Upgradeable
   {
-    uint32_t range;
+    unsigned range;
   } upgraded[MAX_PLAYERS], base;
 };
 
@@ -86,13 +85,13 @@ struct Propulsion_Stats : public Component_Stats
   using enum PROPULSION_TYPE;
 
   PROPULSION_TYPE propulsion_type;
-  uint32_t max_speed { 0 };
-  uint32_t turn_speed { 0 };
-  uint32_t spin_speed { 0 };
-  uint32_t spin_angle { 0 };
-  uint32_t skid_deceleration { 0 };
-  uint32_t deceleration { 0 };
-  uint32_t acceleration { 0 };
+  unsigned max_speed { 0 };
+  unsigned turn_speed { 0 };
+  unsigned spin_speed { 0 };
+  unsigned spin_angle { 0 };
+  unsigned skid_deceleration { 0 };
+  unsigned deceleration { 0 };
+  unsigned acceleration { 0 };
 
   struct : Upgradeable
   {
@@ -128,7 +127,7 @@ struct ECM_Stats : public Component_Stats
 {
   struct : Upgradeable
   {
-    uint32_t range { 0 };
+    unsigned range { 0 };
   } upgraded[MAX_PLAYERS], base;
 };
 
