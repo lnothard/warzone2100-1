@@ -32,7 +32,7 @@ public:
   virtual uint8_t is_target_visible(const Simple_Object* target, bool walls_block) const = 0;
   virtual unsigned get_hp() const = 0;
   virtual int calculate_line_of_fire(const Simple_Object& target, const int weapon_slot, bool walls_block, bool is_direct) const = 0;
-  virtual int calculate_sensor_range() const = 0;
+  virtual unsigned calculate_sensor_range() const = 0;
   virtual unsigned get_max_weapon_range() const = 0;
   virtual Vector3i calculate_muzzle_base_location(const int weapon_slot) const = 0;
   virtual Vector3i calculate_muzzle_tip_location(const int weapon_slot) const = 0;

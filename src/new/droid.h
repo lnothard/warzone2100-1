@@ -98,7 +98,6 @@ public:
   bool is_repairer() const;
   bool is_IDF() const;
   bool is_radar_detector() const final;
-  bool is_being_repaired() const;
   bool is_stationary() const;
   bool is_rearming() const;
   bool is_damaged() const;
@@ -107,7 +106,6 @@ public:
   bool is_VTOL_empty() const;
   bool is_VTOL_full() const;
   uint8_t is_target_visible(const ::Simple_Object* target, bool walls_block) const final;
-  bool are_all_VTOLs_rearmed() const;
   [[nodiscard]] bool has_commander() const;
   bool has_standard_sensor() const;
   bool has_CB_sensor() const;
@@ -121,10 +119,9 @@ public:
   void update_expected_damage(unsigned damage, bool is_direct);
   unsigned get_level() const;
   unsigned get_commander_level() const;
-  unsigned get_effective_level() const;
   const iIMDShape& get_IMD_shape() const final;
-  int calculate_sensor_range() const final;
-  int calculate_max_range() const;
+  unsigned calculate_sensor_range() const final;
+  unsigned calculate_max_range() const;
   int calculate_height() const final;
 private:
   using enum ACTION;

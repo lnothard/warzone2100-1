@@ -156,17 +156,14 @@ namespace Impl
     bool has_VTOL_intercept_sensor() const final;
     bool has_VTOL_CB_sensor() const final;
     bool smoke_when_damaged() const;
-    unsigned count_assigned_droids() const;
     unsigned get_original_hp() const;
     Vector2i get_size() const;
     float get_foundation_depth() const;
     const iIMDShape& get_IMD_shape() const final;
-    Structure_Bounds get_bounds() const;
     void update_expected_damage(const int damage);
-    int calculate_sensor_range() const final;
+    unsigned calculate_sensor_range() const final;
     bool target_within_range(const Unit& target) const;
     int calculate_gate_height(const std::size_t time, const int minimum) const;
-    int calculate_height() const final;
     void set_foundation_depth(const float depth);
     void print_info() const override;
   private:

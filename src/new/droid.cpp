@@ -26,7 +26,7 @@ const Order& Droid::get_current_order() const
 
 bool Droid::is_probably_doomed(bool is_direct_damage) const
 {
-  auto is_doomed = [this] (uint32_t damage) {
+  auto is_doomed = [this] (unsigned damage) {
     const auto hit_points = get_hp();
     return damage > hit_points && damage - hit_points > hit_points / 5;
   };
@@ -99,17 +99,6 @@ bool Droid::is_damaged() const
   return get_hp() < original_hp;
 }
 
-bool Droid::is_being_repaired() const
-{
-  if (!is_damaged()) return false;
-
-  const auto& droids = droid_lists[get_player()];
-
-  return std::any_of(droids.begin(), droids.end(), [this] (const auto& droid) {
-    return droid.is_repairer() && droid.get_current_action() == DROID_REPAIR &&
-           order.target_object == this;
-  });
-}
 
 bool Droid::is_stationary() const
 {
@@ -266,31 +255,20 @@ uint8_t Droid::is_target_visible(const ::Simple_Object* target, bool walls_block
   return NOT_VISIBLE;
 }
 
-bool Droid::are_all_VTOLs_rearmed() const
-{
-  if (!is_VTOL()) return true;
-  const auto& droids = droid_lists[get_player()];
-
-  return std::none_of(droids.begin(), droids.end(), [this] (const auto& droid) {
-    return droid.is_rearming() &&
-           droid.get_current_order().type == order.type &&
-           droid.get_current_order().target_object == order.target_object;
-  });
-}
 
 bool Droid::target_within_range(const Unit &target, int weapon_slot) const
 {
   if (num_weapons() == 0) return false;
 
-  const auto droid_position = get_position();
-  const auto target_position = target.get_position();
+  auto droid_position = get_position();
+  auto target_position = target.get_position();
 
-  const auto x_diff = droid_position.x - target_position.x;
-  const auto y_diff = droid_position.y - target_position.y;
+  auto x_diff = droid_position.x - target_position.x;
+  auto y_diff = droid_position.y - target_position.y;
 
-  const auto square_diff = x_diff * x_diff + y_diff * y_diff;
-  const auto min_range = get_weapons()[weapon_slot].get_min_range(get_player());
-  const auto range_squared = min_range * min_range;
+  auto square_diff = x_diff * x_diff + y_diff * y_diff;
+  auto min_range = get_weapons()[weapon_slot].get_min_range(get_player());
+  auto range_squared = min_range * min_range;
 
   if (square_diff <= range_squared) return true;
   return false;
@@ -316,18 +294,6 @@ unsigned Droid::get_commander_level() const
   if (!has_commander()) return 0;
 
   return group->get_commander_level();
-}
-
-unsigned Droid::get_effective_level() const
-{
-  const auto level = get_level();
-  if (!has_commander()) return level;
-
-  const auto cmd_level = get_commander_level();
-  if (cmd_level > level + 1)
-    return cmd_level;
-
-  return level;
 }
 
 const iIMDShape& Droid::get_IMD_shape() const
@@ -379,31 +345,16 @@ void Droid::update_expected_damage(unsigned damage, bool is_direct)
     expected_damage_indirect += damage;
 }
 
-bool can_assign_fire_support(const Droid& droid, const Structure& structure)
+
+unsigned Droid::calculate_sensor_range() const
 {
-  if (droid.num_weapons() == 0 || !structure.has_sensor()) return false;
-
-  if (droid.is_VTOL())
-  {
-    return structure.has_VTOL_intercept_sensor() || structure.has_VTOL_CB_sensor();
-  }
-  else if (droid.has_artillery())
-  {
-    return structure.has_standard_sensor() || structure.has_CB_sensor();
-  }
-
-  return false;
-}
-
-int Droid::calculate_sensor_range() const
-{
-  const int ecm_range = ecm->upgraded[get_player()].range;
+  auto ecm_range = ecm->upgraded[get_player()].range;
   if (ecm_range > 0) return ecm_range;
 
   return sensor->upgraded[get_player()].range;
 }
 
-int Droid::calculate_max_range() const
+unsigned Droid::calculate_max_range() const
 {
   if (type == SENSOR)
     return calculate_sensor_range();
@@ -415,7 +366,7 @@ int Droid::calculate_max_range() const
 
 int Droid::calculate_height() const
 {
-  const auto& imd = body->imd_shape;
+  auto& imd = body->imd_shape;
   auto height = imd->max.y - imd->min.y;
   auto utility_height = 0, y_max = 0, y_min = 0;
 
@@ -446,7 +397,7 @@ int Droid::calculate_height() const
   }
 }
 
-bool is_droid_still_building(const Droid& droid)
+bool droid_still_building(const Droid& droid)
 {
   return droid.is_alive() && droid.get_current_action() == ACTION::BUILD;
 }
@@ -478,7 +429,7 @@ auto count_droids_for_level(unsigned player, unsigned level)
   });
 }
 
-bool tile_is_occupied_by_droid(unsigned x, unsigned y)
+bool tile_occupied_by_droid(unsigned x, unsigned y)
 {
   for (const auto& player_droids : droid_lists)
   {
@@ -489,4 +440,59 @@ bool tile_is_occupied_by_droid(unsigned x, unsigned y)
     }) ) { return true; }
   }
   return false;
+}
+
+bool can_assign_fire_support(const Droid& droid, const Structure& structure)
+{
+  if (droid.num_weapons() == 0 || !structure.has_sensor()) return false;
+
+  if (droid.is_VTOL())
+  {
+    return structure.has_VTOL_intercept_sensor() || structure.has_VTOL_CB_sensor();
+  }
+  else if (droid.has_artillery())
+  {
+    return structure.has_standard_sensor() || structure.has_CB_sensor();
+  }
+
+  return false;
+}
+
+unsigned get_effective_level(const Droid& droid)
+{
+  auto level = droid.get_level();
+  if (!droid.has_commander()) return level;
+
+  auto cmd_level = droid.get_commander_level();
+  if (cmd_level > level + 1)
+    return cmd_level;
+
+  return level;
+}
+
+bool all_VTOLs_rearmed(const Droid& droid)
+{
+  if (!droid.is_VTOL()) return true;
+  const auto& droids = droid_lists[droid.get_player()];
+
+  return std::none_of(droids.begin(), droids.end(), [&] (const auto& other_droid) {
+      return other_droid.is_rearming() &&
+             other_droid.get_current_order().type == droid.get_current_order().type &&
+             other_droid.get_current_order().target_object == droid.get_current_order().target_object;
+  });
+}
+
+bool being_repaired(const Droid* droid)
+{
+  assert(droid != nullptr);
+
+  using enum ACTION;
+  if (!droid->is_damaged()) return false;
+
+  const auto& droids = droid_lists[droid->get_player()];
+
+  return std::any_of(droids.begin(), droids.end(), [droid] (const auto& other_droid) {
+      return other_droid.is_repairer() && other_droid.get_current_action() == DROID_REPAIR &&
+             other_droid.get_current_order().target_object == droid;
+  });
 }

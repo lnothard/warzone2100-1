@@ -112,18 +112,6 @@ namespace Impl
     return true;
   }
 
-  unsigned Structure::count_assigned_droids() const
-  {
-    const auto& droids = droid_lists[selectedPlayer];
-
-    return std::count_if(droids.begin(), droids.end(), [this] (const auto& droid) {
-      if (droid.get_current_order().target_object->get_id() == get_id() &&
-          droid.get_player() == get_player())
-      {
-        return droid.is_VTOL() || has_artillery();
-      }
-    });
-  }
 
   unsigned Structure::get_original_hp() const
   {
@@ -135,10 +123,6 @@ namespace Impl
     return stats.size(get_rotation().direction);
   }
 
-  Structure_Bounds Structure::get_bounds() const
-  {
-    return Structure_Bounds{ map_coord(get_position().xy()) - get_size() / 2, get_size() };
-  }
 
   const iIMDShape& Structure::get_IMD_shape() const
   {
@@ -156,7 +140,7 @@ namespace Impl
     assert(expected_damage >= 0);
   }
 
-  int Structure::calculate_sensor_range() const
+  unsigned Structure::calculate_sensor_range() const
   {
 
   }
@@ -165,7 +149,7 @@ namespace Impl
   {
     if (num_weapons() == 0) return false;
 
-    const auto max_range = get_max_weapon_range();
+    auto max_range = get_max_weapon_range();
     return object_position_square_diff(get_position(), target.get_position()) < max_range * max_range &&
            target_in_line_of_fire(target);
   }
@@ -174,7 +158,7 @@ namespace Impl
   {
     if (stats.type != GATE) return 0;
 
-    const auto height = get_display_data().imd_shape->max.y;
+    auto height = get_display_data().imd_shape->max.y;
     int open_height;
     switch (animation_state)
     {
@@ -193,25 +177,19 @@ namespace Impl
     return std::max(std::min(open_height, height - minimum), 0);
   }
 
-  int Structure::calculate_height() const
-  {
-    const auto& imd = get_IMD_shape();
-    const auto height = imd.max.y + imd.min.y;
-    return height - calculate_gate_height(gameTime, 2);  // Treat gate as at least 2 units tall, even if open, so that it's possible to hit.
-  }
 
   void Structure::set_foundation_depth(const float depth)
   {
     foundation_depth = depth;
   }
 
-  void adjust_tile_height(const Structure& structure, const int new_height)
+  void adjust_tile_height(const Structure& structure, int new_height)
   {
     const auto& bounds = structure.get_bounds();
-    const auto x_max = bounds.size_in_coords.x;
-    const auto y_max = bounds.size_in_coords.y;
+    auto x_max = bounds.size_in_coords.x;
+    auto y_max = bounds.size_in_coords.y;
 
-    const auto coords = bounds.top_left_coords;
+    auto coords = bounds.top_left_coords;
 
     for (int breadth = 0; breadth <= y_max; ++breadth)
     {
@@ -276,15 +254,40 @@ namespace Impl
     }
   }
 
-  bool is_a_droid_building_this_structure(const Structure* structure)
+  bool is_a_droid_building_this_structure(const Structure& structure)
   {
     assert(structure != nullptr);
-    const auto& droids = droid_lists[structure->get_player()];
+    const auto& droids = droid_lists[structure.get_player()];
     return std::any_of(droids.begin(), droids.end(),
-                       [structure] (const auto& droid) {
+                       [&structure] (const auto& droid) {
       const auto& order = droid.get_current_order();
       return order.type == ORDER_TYPE::BUILD &&
-             order.target_object == structure;
+             order.target_object->get_id() == structure.get_id();
+    });
+  }
+
+  int calculate_height(const Structure& structure)
+  {
+    const auto& imd = structure.get_IMD_shape();
+    auto height = imd.max.y + imd.min.y;
+    return height - structure.calculate_gate_height(gameTime, 2);  // Treat gate as at least 2 units tall, even if open, so that it's possible to hit.
+  }
+
+  Structure_Bounds get_bounds(const Structure& structure)
+  {
+    return Structure_Bounds{ map_coord(structure.get_position().xy()) - structure.get_size() / 2, structure.get_size() };
+  }
+
+  unsigned count_assigned_droids(const Structure& structure)
+  {
+    const auto& droids = droid_lists[selectedPlayer];
+
+    return std::count_if(droids.begin(), droids.end(), [&structure] (const auto& droid) {
+        if (droid.get_current_order().target_object->get_id() == structure.get_id() &&
+            droid.get_player() == structure.get_player())
+        {
+          return droid.is_VTOL() || structure.has_artillery();
+        }
     });
   }
 }
