@@ -127,20 +127,20 @@ enum class ATTACKER_TYPE
 class Weapon : public virtual ::Simple_Object, public Impl::Simple_Object
 {
 public:
-  bool has_ammo() const;
-  bool has_full_ammo() const;
-  bool is_artillery() const;
-  bool is_VTOL_weapon() const;
-  bool is_empty_VTOL_weapon(unsigned player) const;
-  const Weapon_Stats& get_stats() const;
-  unsigned get_recoil() const;
-  unsigned get_max_range(unsigned player) const;
-  unsigned get_min_range(unsigned player) const;
-  unsigned get_num_attack_runs(unsigned player) const;
-  unsigned get_shots_fired() const;
-  const iIMDShape& get_IMD_shape() const;
-  const iIMDShape& get_mount_graphic() const;
-  WEAPON_SUBCLASS get_subclass() const;
+  [[nodiscard]] bool has_ammo() const;
+  [[nodiscard]] bool has_full_ammo() const noexcept;
+  [[nodiscard]] bool is_artillery() const noexcept;
+  [[nodiscard]] bool is_VTOL_weapon() const;
+  [[nodiscard]] bool is_empty_VTOL_weapon(unsigned player) const;
+  [[nodiscard]] const Weapon_Stats& get_stats() const;
+  [[nodiscard]] unsigned get_recoil() const;
+  [[nodiscard]] unsigned get_max_range(unsigned player) const;
+  [[nodiscard]] unsigned get_min_range(unsigned player) const;
+  [[nodiscard]] unsigned get_num_attack_runs(unsigned player) const;
+  [[nodiscard]] unsigned get_shots_fired() const noexcept ;
+  [[nodiscard]] const iIMDShape& get_IMD_shape() const;
+  [[nodiscard]] const iIMDShape& get_mount_graphic() const;
+  [[nodiscard]] WEAPON_SUBCLASS get_subclass() const;
 private:
   using enum ATTACKER_TYPE;
 

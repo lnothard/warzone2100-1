@@ -50,8 +50,8 @@ namespace Impl
     [[nodiscard]] unsigned get_player() const noexcept final;
     [[nodiscard]] unsigned get_id() const noexcept final;
     [[nodiscard]] Display_Data get_display_data() const noexcept final;
-    void set_height(int height) final;
-    void set_rotation(Rotation new_rotation) final;
+    void set_height(int height) noexcept final;
+    void set_rotation(Rotation new_rotation) noexcept final;
   private:
     unsigned id;
     unsigned player;

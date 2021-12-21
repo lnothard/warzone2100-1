@@ -37,12 +37,12 @@ namespace Impl
       return id;
     }
 
-    void Simple_Object::set_height(int height)
+    void Simple_Object::set_height(int height) noexcept
     {
       position.z = height;
     }
 
-    void Simple_Object::set_rotation(Rotation new_rotation)
+    void Simple_Object::set_rotation(Rotation new_rotation) noexcept
     {
       rotation = new_rotation;
     }

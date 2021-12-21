@@ -40,27 +40,27 @@ struct Tile
 };
 extern std::unique_ptr<Tile[]> map_tiles;
 
-constexpr bool tile_is_occupied(const Tile& tile)
+[[nodiscard]] constexpr bool tile_is_occupied(const Tile& tile)
 {
   return tile.occupying_object != nullptr;
 }
 
-constexpr bool tile_is_occupied_by_structure(const Tile& tile)
+[[nodiscard]] constexpr bool tile_is_occupied_by_structure(const Tile& tile)
 {
   return tile_is_occupied(tile) && dynamic_cast<Structure*>(tile.occupying_object);
 }
 
-constexpr bool tile_is_occupied_by_feature(const Tile& tile)
+[[nodiscard]] constexpr bool tile_is_occupied_by_feature(const Tile& tile)
 {
   return tile_is_occupied(tile) && dynamic_cast<Feature*>(tile.occupying_object);
 }
 
-constexpr Vector2i world_coord(const Vector2i& map_coord)
+[[nodiscard]] constexpr Vector2i world_coord(const Vector2i& map_coord)
 {
   return { world_coord(map_coord.x), world_coord(map_coord.y) };
 }
 
-constexpr Vector2i map_coord(const Vector2i& world_coord)
+[[nodiscard]] constexpr Vector2i map_coord(const Vector2i& world_coord)
 {
   return { map_coord(world_coord.x), map_coord(world_coord.y) };
 }
@@ -74,7 +74,7 @@ static inline int calculate_map_height(const Vector2i& v)
   return calculate_map_height(v.x, v.y);
 }
 
-constexpr int map_tile_height(int x, int y)
+[[nodiscard]] constexpr int map_tile_height(int x, int y)
 {
  if (x >= map_width || y >= map_height || x < 0 || y < 0)
  {
@@ -109,13 +109,13 @@ constexpr Tile* get_map_tile(int x, int y)
   return &map_tiles[x + (y * map_width)];
 }
 
-constexpr Feature* get_feature_from_tile(unsigned x, unsigned y)
+[[nodiscard]] constexpr Feature* get_feature_from_tile(unsigned x, unsigned y)
 {
   auto* tile_object = get_map_tile(x, y)->occupying_object;
   return dynamic_cast<Feature*>(tile_object);
 }
 
-constexpr bool is_coord_on_map(int x, int y)
+[[nodiscard]] constexpr bool is_coord_on_map(int x, int y)
 {
   return (x >= 0) && (x < map_width << TILE_SHIFT) &&
          (y >= 0) && (y < map_height << TILE_SHIFT);

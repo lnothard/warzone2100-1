@@ -65,7 +65,7 @@ struct Component_Stats
   COMPONENT_TYPE type;
   unsigned power_to_build;
   unsigned weight;
-  bool     is_designable;
+  bool is_designable;
 };
 
 struct Sensor_Stats : public Component_Stats

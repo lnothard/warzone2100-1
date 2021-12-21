@@ -6,7 +6,7 @@
 
 #include "droid_group.h"
 
-bool Droid_Group::is_command_group() const
+bool Droid_Group::is_command_group() const noexcept
 {
   return type == COMMAND;
 }

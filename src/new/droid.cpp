@@ -10,7 +10,7 @@
 Droid::Droid(unsigned id, unsigned player)
     : Unit(id, player) { }
 
-ACTION Droid::get_current_action() const
+ACTION Droid::get_current_action() const noexcept
 {
   return action;
 }
@@ -35,7 +35,7 @@ bool Droid::is_probably_doomed(bool is_direct_damage) const
   return is_doomed(expected_damage_indirect);
 }
 
-bool Droid::is_commander() const
+bool Droid::is_commander() const noexcept
 {
   return type == COMMAND;
 }
@@ -149,7 +149,7 @@ bool Droid::is_rearming() const
   return false;
 }
 
-bool Droid::is_attacking() const
+bool Droid::is_attacking() const noexcept
 {
   if (!(type == WEAPON || type == CYBORG || type == CYBORG_SUPER))
     return false;
@@ -243,13 +243,13 @@ void Droid::cancel_build()
   }
 }
 
-void Droid::reset_action()
+void Droid::reset_action() noexcept
 {
   time_action_started = gameTime;
   action_points_done = 0;
 }
 
-void Droid::update_expected_damage(unsigned damage, bool is_direct)
+void Droid::update_expected_damage(unsigned damage, bool is_direct) noexcept
 {
   if (is_direct)
     expected_damage_direct += damage;

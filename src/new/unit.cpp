@@ -14,11 +14,9 @@
 namespace Impl
 {
   Unit::Unit(unsigned id, unsigned player)
-  : Impl::Simple_Object(id, player)
-  {
-  }
+  : Impl::Simple_Object(id, player) { }
 
-  unsigned Unit::get_hp() const
+  unsigned Unit::get_hp() const noexcept
   {
     return hit_points;
   }

@@ -23,10 +23,6 @@ enum class PROJECTILE_STATE
 class Projectile : public virtual Simple_Object, public Impl::Simple_Object
 {
 public:
-  [[nodiscard]] int calculate_height() const
-  {
-    return BULLET_FLIGHT_HEIGHT;
-  }
 private:
   using enum PROJECTILE_STATE;
 
@@ -37,5 +33,10 @@ private:
   Vector3i         origin;
   unsigned         base_damage;
 };
+
+[[nodiscard]] constexpr int calculate_height(const Projectile &projectile)
+{
+  return BULLET_FLIGHT_HEIGHT;
+}
 
 #endif // WARZONE2100_PROJECTILE_H

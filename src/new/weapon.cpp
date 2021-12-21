@@ -6,12 +6,12 @@
 
 #include "weapon.h"
 
-bool Weapon::has_full_ammo() const
+bool Weapon::has_full_ammo() const noexcept
 {
   return ammo_used == 0;
 }
 
-bool Weapon::is_artillery() const
+bool Weapon::is_artillery() const noexcept
 {
   return stats->movement_type == MOVEMENT_TYPE::INDIRECT ||
          stats->movement_type == MOVEMENT_TYPE::HOMING_INDIRECT;
@@ -71,7 +71,7 @@ unsigned Weapon::get_num_attack_runs(unsigned player) const
   return stats->max_VTOL_attack_runs;
 }
 
-unsigned Weapon::get_shots_fired() const
+unsigned Weapon::get_shots_fired() const noexcept
 {
   return shots_fired;
 }

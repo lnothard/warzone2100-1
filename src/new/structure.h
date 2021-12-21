@@ -151,21 +151,21 @@ namespace Impl
     [[nodiscard]] bool is_radar_detector() const final;
     [[nodiscard]] bool is_probably_doomed() const;
     [[nodiscard]] bool is_pulled_to_terrain() const;
-    [[nodiscard]] bool has_modules() const;
+    [[nodiscard]] bool has_modules() const noexcept;
     [[nodiscard]] bool has_sensor() const final;
     [[nodiscard]] bool has_standard_sensor() const final;
     [[nodiscard]] bool has_CB_sensor() const final;
     [[nodiscard]] bool has_VTOL_intercept_sensor() const final;
     [[nodiscard]] bool has_VTOL_CB_sensor() const final;
-    [[nodiscard]] bool smoke_when_damaged() const;
+    [[nodiscard]] bool smoke_when_damaged() const noexcept;
     [[nodiscard]] unsigned get_original_hp() const;
     [[nodiscard]] Vector2i get_size() const;
-    [[nodiscard]] float get_foundation_depth() const;
+    [[nodiscard]] float get_foundation_depth() const noexcept;
     [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
     void update_expected_damage(const int damage);
     [[nodiscard]] unsigned calculate_sensor_range() const final;
     [[nodiscard]] int calculate_gate_height(const std::size_t time, const int minimum) const;
-    void set_foundation_depth(const float depth);
+    void set_foundation_depth(float depth) noexcept;
     void print_info() const override;
   private:
     using enum STRUCTURE_STATE;
@@ -188,7 +188,7 @@ namespace Impl
   [[nodiscard]] unsigned count_assigned_droids(const Structure& structure);
   [[nodiscard]] bool being_built(const Structure& structure);
   [[nodiscard]] bool is_damaged(const Structure& structure);
-  [[nodiscard]] Structure_Bounds get_bounds(const Structure& structure);
+  [[nodiscard]] Structure_Bounds get_bounds(const Structure& structure) noexcept;
   void adjust_tile_height(const Structure& structure, int new_height);
   [[nodiscard]] int calculate_height(const Structure& structure);
   [[nodiscard]] int calculate_foundation_height(const Structure& structure);

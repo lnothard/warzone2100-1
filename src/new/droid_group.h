@@ -19,9 +19,9 @@ class Droid_Group
 public:
   void add(Droid& droid);
   void remove(Droid& droid);
-  bool is_command_group() const;
-  bool has_electronic_weapon() const;
-  unsigned get_commander_level() const;
+  [[nodiscard]] bool is_command_group() const noexcept;
+  [[nodiscard]] bool has_electronic_weapon() const;
+  [[nodiscard]] unsigned get_commander_level() const;
   void commander_gain_experience(unsigned exp);
 private:
   using enum GROUP_TYPE;

@@ -41,8 +41,7 @@ namespace Impl
   public:
     Unit(uint32_t id, uint32_t player);
 
-    [[nodiscard]] bool is_alive() const final;
-    [[nodiscard]] unsigned get_hp() const final;
+    [[nodiscard]] unsigned get_hp() const noexcept final;
     [[nodiscard]] const std::vector<Weapon>& get_weapons() const final;
     void align_turret(int weapon_slot);
   private:

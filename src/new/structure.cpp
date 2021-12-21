@@ -43,7 +43,7 @@ namespace Impl
     return is_wall() || stats->type == DEFENSE || stats->type == GATE || stats->type == REARM_PAD;
   }
 
-  bool Structure::has_modules() const
+  bool Structure::has_modules() const noexcept
   {
     return num_modules > 0;
   }
@@ -85,7 +85,7 @@ namespace Impl
     return sensor_type == VTOL_CB || sensor_type == SUPER;
   }
 
-  bool Structure::smoke_when_damaged() const
+  bool Structure::smoke_when_damaged() const noexcept
   {
     if (is_wall() || stats->type == GATE || state == BEING_BUILT)
       return false;
@@ -108,7 +108,7 @@ namespace Impl
     return *stats->base_imd;
   }
 
-  float Structure::get_foundation_depth() const
+  float Structure::get_foundation_depth() const noexcept
   {
     return foundation_depth;
   }
@@ -142,7 +142,7 @@ namespace Impl
     return std::max(std::min(open_height, height - minimum), 0);
   }
 
-  void Structure::set_foundation_depth(const float depth)
+  void Structure::set_foundation_depth(float depth) noexcept
   {
     foundation_depth = depth;
   }
@@ -174,7 +174,7 @@ namespace Impl
     return structure.get_hp() < structure.get_original_hp();
   }
 
-  Structure_Bounds get_bounds(const Structure& structure)
+  Structure_Bounds get_bounds(const Structure& structure) noexcept
   {
     return Structure_Bounds{ map_coord(structure.get_position().xy()) - structure.get_size() / 2, structure.get_size() };
   }

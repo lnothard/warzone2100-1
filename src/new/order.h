@@ -41,7 +41,7 @@ enum class ORDER_TYPE
   RECOVER,         /**< pick up an artifact. */
   RTR_SPECIFIED,   /**< return to repair at a specified repair center. */
   CIRCLE,     /**< circles target location and engage. */
-  HOLD,            /**< hold position until given next order. */
+  HOLD            /**< hold position until given next order. */
 };
 
 enum class SECONDARY_ORDER
@@ -58,7 +58,7 @@ enum class SECONDARY_ORDER
   RETURN_TO_LOC,              /**< Generic secondary order to return to a location. Will depend on the secondary state DSS_RTL* to be specific. */
   FIRE_DESIGNATOR,            /**< Assigns a droid to be a target designator. */
   ASSIGN_VTOL_PRODUCTION,     /**< Assigns a vtol factory to a command droid - the state is given by the factory number. */
-  CIRCLE,                     /**< circling target position and engage. */
+  CIRCLE                     /**< circling target position and engage. */
 };
 
 struct Order

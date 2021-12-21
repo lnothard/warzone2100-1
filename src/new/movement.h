@@ -27,17 +27,20 @@ public:
   {
     return state == INACTIVE;
   }
+
   [[nodiscard]] constexpr bool is_stationary() const noexcept
   {
     return state == INACTIVE || state == HOVER || state == SHUFFLE;
   }
-  constexpr void stop_moving()
+
+  constexpr void stop_moving() noexcept
   {
     // if flying: state = HOVER;
 
     state = INACTIVE;
   }
-  constexpr void stop_moving_instantly()
+
+  constexpr void stop_moving_instantly() noexcept
   {
     stop_moving();
     speed = 0;
