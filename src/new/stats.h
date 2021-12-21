@@ -11,6 +11,9 @@
 #include "lib/ivis_opengl/ivisdef.h"
 #include "weapon.h"
 
+static constexpr auto SHOOT_IN_AIR = 0x02;
+static constexpr auto SHOOT_ON_GROUND = 0x01;
+
 enum class PROPULSION_TYPE
 {
   WHEELED,
@@ -85,6 +88,14 @@ struct Propulsion_Stats : public Component_Stats
   using enum PROPULSION_TYPE;
 
   PROPULSION_TYPE propulsion_type;
+  bool is_airborne { false };
+  unsigned power_ratio_multiplier { 0 };
+  int start_sound { 0 };
+  int idle_sound { 0 };
+  int move_off_sound { 0 };
+  int move_sound { 0 };
+  int hiss_sound { 0 };
+  int shutdown_sound { 0 };
   unsigned max_speed { 0 };
   unsigned turn_speed { 0 };
   unsigned spin_speed { 0 };
@@ -130,7 +141,5 @@ struct ECM_Stats : public Component_Stats
     unsigned range { 0 };
   } upgraded[MAX_PLAYERS], base;
 };
-
-extern Propulsion_Stats* global_propulsion_stats;
 
 #endif // WARZONE2100_STATS_H

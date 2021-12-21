@@ -193,7 +193,7 @@ namespace Impl
   [[nodiscard]] int calculate_height(const Structure& structure);
   [[nodiscard]] int calculate_foundation_height(const Structure& structure);
   void align_structure(Structure& structure);
-  [[nodiscard]] bool target_within_range(const Structure& structure, const Unit& unit);
+  [[nodiscard]] bool target_within_range(const Structure& structure, const Unit& unit, int weapon_slot);
 }
 
 struct Production_Job

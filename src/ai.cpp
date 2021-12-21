@@ -101,61 +101,61 @@ PlayerMask satuplinkbits;
 //	return longRange;
 //}
 
-// see if a structure has the range to fire on a target
-static bool aiStructHasRange(STRUCTURE *psStruct, BASE_OBJECT *psTarget, int weapon_slot)
-{
-	if (psStruct->numWeaps == 0 || psStruct->asWeaps[0].nStat == 0)
-	{
-		// Can't attack without a weapon
-		return false;
-	}
+//// see if a structure has the range to fire on a target
+//static bool aiStructHasRange(STRUCTURE *psStruct, BASE_OBJECT *psTarget, int weapon_slot)
+//{
+//	if (psStruct->numWeaps == 0 || psStruct->asWeaps[0].nStat == 0)
+//	{
+//		// Can't attack without a weapon
+//		return false;
+//	}
+//
+//	WEAPON_STATS *psWStats = psStruct->asWeaps[weapon_slot].nStat + asWeaponStats;
+//
+//	int longRange = proj_GetLongRange(psWStats, psStruct->player);
+//	return objPosDiffSq(psStruct, psTarget) < longRange * longRange && lineOfFire(psStruct, psTarget, weapon_slot, true);
+//}
 
-	WEAPON_STATS *psWStats = psStruct->asWeaps[weapon_slot].nStat + asWeaponStats;
+//static bool aiDroidHasRange(DROID *psDroid, BASE_OBJECT *psTarget, int weapon_slot)
+//{
+//	int32_t longRange = aiDroidRange(psDroid, weapon_slot);
+//
+//	return objPosDiffSq(psDroid, psTarget) < longRange * longRange;
+//}
+//
+//static bool aiObjHasRange(BASE_OBJECT *psObj, BASE_OBJECT *psTarget, int weapon_slot)
+//{
+//	if (psObj->type == OBJ_DROID)
+//	{
+//		return aiDroidHasRange((DROID *)psObj, psTarget, weapon_slot);
+//	}
+//	else if (psObj->type == OBJ_STRUCTURE)
+//	{
+//		return aiStructHasRange((STRUCTURE *)psObj, psTarget, weapon_slot);
+//	}
+//	return false;
+//}
 
-	int longRange = proj_GetLongRange(psWStats, psStruct->player);
-	return objPosDiffSq(psStruct, psTarget) < longRange * longRange && lineOfFire(psStruct, psTarget, weapon_slot, true);
-}
-
-static bool aiDroidHasRange(DROID *psDroid, BASE_OBJECT *psTarget, int weapon_slot)
-{
-	int32_t longRange = aiDroidRange(psDroid, weapon_slot);
-
-	return objPosDiffSq(psDroid, psTarget) < longRange * longRange;
-}
-
-static bool aiObjHasRange(BASE_OBJECT *psObj, BASE_OBJECT *psTarget, int weapon_slot)
-{
-	if (psObj->type == OBJ_DROID)
-	{
-		return aiDroidHasRange((DROID *)psObj, psTarget, weapon_slot);
-	}
-	else if (psObj->type == OBJ_STRUCTURE)
-	{
-		return aiStructHasRange((STRUCTURE *)psObj, psTarget, weapon_slot);
-	}
-	return false;
-}
-
-/* Initialise the AI system */
-bool aiInitialise()
-{
-	SDWORD		i, j;
-
-	for (i = 0; i < MAX_PLAYER_SLOTS; i++)
-	{
-		alliancebits[i] = 0;
-		for (j = 0; j < MAX_PLAYER_SLOTS; j++)
-		{
-			bool valid = (i == j && i < MAX_PLAYERS);
-
-			alliances[i][j] = valid ? ALLIANCE_FORMED : ALLIANCE_BROKEN;
-			alliancebits[i] |= valid << j;
-		}
-	}
-	satuplinkbits = 0;
-
-	return true;
-}
+///* Initialise the AI system */
+//bool aiInitialise()
+//{
+//	SDWORD		i, j;
+//
+//	for (i = 0; i < MAX_PLAYER_SLOTS; i++)
+//	{
+//		alliancebits[i] = 0;
+//		for (j = 0; j < MAX_PLAYER_SLOTS; j++)
+//		{
+//			bool valid = (i == j && i < MAX_PLAYERS);
+//
+//			alliances[i][j] = valid ? ALLIANCE_FORMED : ALLIANCE_BROKEN;
+//			alliancebits[i] |= valid << j;
+//		}
+//	}
+//	satuplinkbits = 0;
+//
+//	return true;
+//}
 
 /* Shutdown the AI system */
 bool aiShutdown()
@@ -728,94 +728,94 @@ int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, i
 	return failure;
 }
 
-// Are there a lot of bullets heading towards the droid?
-static bool aiDroidIsProbablyDoomed(DROID *psDroid, bool isDirect)
-{
-	if (isDirect)
-	{
-		return psDroid->expectedDamageDirect > psDroid->body
-		      && psDroid->expectedDamageDirect - psDroid->body > psDroid->body / 5; // Doomed if projectiles will damage 120% of remaining body points.
-	}
-	else
-	{
-		return psDroid->expectedDamageIndirect > psDroid->body
-		      && psDroid->expectedDamageIndirect - psDroid->body > psDroid->body / 5; // Doomed if projectiles will damage 120% of remaining body points.
-	}
+//// Are there a lot of bullets heading towards the droid?
+//static bool aiDroidIsProbablyDoomed(DROID *psDroid, bool isDirect)
+//{
+//	if (isDirect)
+//	{
+//		return psDroid->expectedDamageDirect > psDroid->body
+//		      && psDroid->expectedDamageDirect - psDroid->body > psDroid->body / 5; // Doomed if projectiles will damage 120% of remaining body points.
+//	}
+//	else
+//	{
+//		return psDroid->expectedDamageIndirect > psDroid->body
+//		      && psDroid->expectedDamageIndirect - psDroid->body > psDroid->body / 5; // Doomed if projectiles will damage 120% of remaining body points.
+//	}
+//}
+
+//// Are there a lot of bullets heading towards the structure?
+//static bool aiStructureIsProbablyDoomed(STRUCTURE *psStructure)
+//{
+//	return psStructure->expectedDamage > psStructure->body
+//	       && psStructure->expectedDamage - psStructure->body > psStructure->body / 15; // Doomed if projectiles will damage 106.6666666667% of remaining body points.
+//}
+//
+//// Are there a lot of bullets heading towards the object?
+//bool aiObjectIsProbablyDoomed(BASE_OBJECT *psObject, bool isDirect)
+//{
+//	if (psObject->died)
+//	{
+//		return true;    // Was definitely doomed.
+//	}
+//
+//	switch (psObject->type)
+//	{
+//	case OBJ_DROID:
+//		return aiDroidIsProbablyDoomed((DROID *)psObject, isDirect);
+//	case OBJ_STRUCTURE:
+//		return aiStructureIsProbablyDoomed((STRUCTURE *)psObject);
+//	default:
+//		return false;
+//	}
+//}
+
+//// Update the expected damage of the object.
+//void aiObjectAddExpectedDamage(BASE_OBJECT *psObject, SDWORD damage, bool isDirect)
+//{
+//	if (psObject == nullptr)
+//	{
+//		return;    // Hard to destroy the ground.
+//	}
+//
+//	switch (psObject->type)
+//	{
+//	case OBJ_DROID:
+//		if (isDirect)
+//		{
+//			((DROID *)psObject)->expectedDamageDirect += damage;
+//			ASSERT((SDWORD)((DROID *)psObject)->expectedDamageDirect >= 0, "aiObjectAddExpectedDamage: Negative amount of projectiles heading towards droid.");
+//		}
+//		else
+//		{
+//			((DROID *)psObject)->expectedDamageIndirect += damage;
+//			ASSERT((SDWORD)((DROID *)psObject)->expectedDamageIndirect >= 0, "aiObjectAddExpectedDamage: Negative amount of projectiles heading towards droid.");
+//		}
+//		break;
+//	case OBJ_STRUCTURE:
+//		((STRUCTURE *)psObject)->expectedDamage += damage;
+//		ASSERT((SDWORD)((STRUCTURE *)psObject)->expectedDamage >= 0, "aiObjectAddExpectedDamage: Negative amount of projectiles heading towards droid.");
+//		break;
+//	default:
+//		break;
+//	}
 }
 
-// Are there a lot of bullets heading towards the structure?
-static bool aiStructureIsProbablyDoomed(STRUCTURE *psStructure)
-{
-	return psStructure->expectedDamage > psStructure->body
-	       && psStructure->expectedDamage - psStructure->body > psStructure->body / 15; // Doomed if projectiles will damage 106.6666666667% of remaining body points.
-}
-
-// Are there a lot of bullets heading towards the object?
-bool aiObjectIsProbablyDoomed(BASE_OBJECT *psObject, bool isDirect)
-{
-	if (psObject->died)
-	{
-		return true;    // Was definitely doomed.
-	}
-
-	switch (psObject->type)
-	{
-	case OBJ_DROID:
-		return aiDroidIsProbablyDoomed((DROID *)psObject, isDirect);
-	case OBJ_STRUCTURE:
-		return aiStructureIsProbablyDoomed((STRUCTURE *)psObject);
-	default:
-		return false;
-	}
-}
-
-// Update the expected damage of the object.
-void aiObjectAddExpectedDamage(BASE_OBJECT *psObject, SDWORD damage, bool isDirect)
-{
-	if (psObject == nullptr)
-	{
-		return;    // Hard to destroy the ground.
-	}
-
-	switch (psObject->type)
-	{
-	case OBJ_DROID:
-		if (isDirect)
-		{
-			((DROID *)psObject)->expectedDamageDirect += damage;
-			ASSERT((SDWORD)((DROID *)psObject)->expectedDamageDirect >= 0, "aiObjectAddExpectedDamage: Negative amount of projectiles heading towards droid.");
-		}
-		else
-		{
-			((DROID *)psObject)->expectedDamageIndirect += damage;
-			ASSERT((SDWORD)((DROID *)psObject)->expectedDamageIndirect >= 0, "aiObjectAddExpectedDamage: Negative amount of projectiles heading towards droid.");
-		}
-		break;
-	case OBJ_STRUCTURE:
-		((STRUCTURE *)psObject)->expectedDamage += damage;
-		ASSERT((SDWORD)((STRUCTURE *)psObject)->expectedDamage >= 0, "aiObjectAddExpectedDamage: Negative amount of projectiles heading towards droid.");
-		break;
-	default:
-		break;
-	}
-}
-
-// see if an object is a wall
-static bool aiObjIsWall(BASE_OBJECT *psObj)
-{
-	if (psObj->type != OBJ_STRUCTURE)
-	{
-		return false;
-	}
-
-	if (((STRUCTURE *)psObj)->pStructureType->type != REF_WALL &&
-	    ((STRUCTURE *)psObj)->pStructureType->type != REF_WALLCORNER)
-	{
-		return false;
-	}
-
-	return true;
-}
+//// see if an object is a wall
+//static bool aiObjIsWall(BASE_OBJECT *psObj)
+//{
+//	if (psObj->type != OBJ_STRUCTURE)
+//	{
+//		return false;
+//	}
+//
+//	if (((STRUCTURE *)psObj)->pStructureType->type != REF_WALL &&
+//	    ((STRUCTURE *)psObj)->pStructureType->type != REF_WALLCORNER)
+//	{
+//		return false;
+//	}
+//
+//	return true;
+//}
 
 
 /* See if there is a target in range */

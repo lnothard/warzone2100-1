@@ -15,8 +15,12 @@
 #include "order.h"
 
 static constexpr auto MAX_COMPONENTS = COMPONENT_TYPE::COUNT - 1;
+static constexpr auto ALLIANCE_FORMED = 3;
+static constexpr auto ALLIANCE_BROKEN = 0;
 
+extern PlayerMask satellite_uplink_bits;
 extern std::array<PlayerMask, MAX_PLAYER_SLOTS> alliance_bits;
+extern std::array< std::array<uint8_t, MAX_PLAYER_SLOTS>, MAX_PLAYER_SLOTS> alliances;
 
 enum class ACTION
 {
@@ -101,6 +105,7 @@ public:
   [[nodiscard]] bool is_VTOL_rearmed_and_repaired() const;
   [[nodiscard]] bool is_VTOL_empty() const;
   [[nodiscard]] bool is_VTOL_full() const;
+  [[nodiscard]] bool is_valid_target(const Unit* attacker, int weapon_slot) const final;
   [[nodiscard]] bool has_commander() const;
   [[nodiscard]] bool has_standard_sensor() const;
   [[nodiscard]] bool has_CB_sensor() const;
@@ -111,6 +116,7 @@ public:
   void cancel_build();
   void reset_action() noexcept;
   void update_expected_damage(unsigned damage, bool is_direct) noexcept;
+  [[nodiscard]] DROID_TYPE get_type() const noexcept;
   [[nodiscard]] unsigned get_level() const;
   [[nodiscard]] unsigned get_commander_level() const;
   [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
@@ -153,7 +159,8 @@ private:
 [[nodiscard]] bool being_repaired(const Droid& droid);
 // return UBYTE_MAX if directly visible, UBYTE_MAX / 2 if shown as radar blip, 0 if not visible
 [[nodiscard]] uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool walls_block);
-[[nodiscard]] bool target_within_range(const Droid& droid, const Unit &target, int weapon_slot);
+[[nodiscard]] bool target_within_action_range(const Droid& droid, const Unit &target, int weapon_slot);
+[[nodiscard]] bool target_within_weapon_range(const Droid& droid, const Unit& target, int weapon_slot);
 
 [[nodiscard]] constexpr bool tile_occupied_by_droid(unsigned x, unsigned y)
 {

@@ -277,13 +277,15 @@ namespace Impl
     }
   }
 
-  bool target_within_range(const Structure& structure, const Unit &target)
+  bool target_within_range(const Structure& structure, const Unit &target, int weapon_slot)
   {
     if (num_weapons(structure) == 0) return false;
 
-    auto max_range = get_max_weapon_range(structure);
+    auto& weapon = structure.get_weapons()[weapon_slot];
+    auto max_range = weapon.get_max_range(structure.get_player());
+
     return object_position_square_diff(structure.get_position(), target.get_position()) < max_range * max_range &&
-           target_in_line_of_fire(structure, target, 0);
+           target_in_line_of_fire(structure, target, weapon_slot);
   }
 }
 

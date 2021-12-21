@@ -109,6 +109,7 @@ struct Weapon_Stats : public Component_Stats
   std::unique_ptr<iIMDShape> miss_graphic;
   std::unique_ptr<iIMDShape> splash_graphic;
   std::unique_ptr<iIMDShape> trail_graphic;
+  uint8_t surface_to_air;
 };
 
 enum class ATTACKER_TYPE

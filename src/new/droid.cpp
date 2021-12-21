@@ -191,6 +191,46 @@ bool Droid::is_VTOL_full() const
   });
 }
 
+bool Droid::is_valid_target(const Unit* attacker, int weapon_slot) const
+{
+  auto target_airborne = bool { false };
+  auto valid_target = bool { false };
+  uint8_t surface_to_air = 0;
+
+  if (propulsion->is_airborne)
+  {
+    if (movement->is_inactive())
+      target_airborne = true;
+  }
+
+  if (auto as_droid = dynamic_cast<const Droid*>(attacker))
+  {
+    if (as_droid->get_type() == SENSOR)
+      return !target_airborne;
+
+    if (num_weapons(*attacker) == 0)
+      return false;
+
+    auto& weapon_stats = attacker->get_weapons()[weapon_slot].get_stats();
+    surface_to_air = weapon_stats.surface_to_air;
+
+    if (((surface_to_air & SHOOT_IN_AIR) && target_airborne) || ((surface_to_air & SHOOT_ON_GROUND) && !target_airborne))
+      return true;
+
+    return false;
+  }
+  else // attacker is a structure
+  {
+
+  }
+  return valid_target;
+}
+
+DROID_TYPE Droid::get_type() const noexcept
+{
+  return type;
+}
+
 unsigned Droid::get_level() const
 {
   if (!brain) return 0;
@@ -449,7 +489,7 @@ uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool 
   return NOT_VISIBLE;
 }
 
-bool target_within_range(const Droid& droid, const Unit &target, int weapon_slot)
+bool target_within_action_range(const Droid& droid, const Unit &target, int weapon_slot)
 {
   if (num_weapons(droid) == 0) return false;
 
@@ -465,4 +505,25 @@ bool target_within_range(const Droid& droid, const Unit &target, int weapon_slot
 
   if (square_diff <= range_squared) return true;
   return false;
+}
+
+bool target_within_weapon_range(const Droid& droid, const Unit& target, int weapon_slot)
+{
+  auto max_range = droid.get_weapons()[weapon_slot].get_max_range(droid.get_player());
+  return object_position_square_diff(droid, target) < max_range * max_range;
+}
+
+void initialise_ai_bits()
+{
+  for (int i = 0; i < MAX_PLAYER_SLOTS; ++i)
+  {
+    alliance_bits[i] = 0;
+    for (int j = 0; j < MAX_PLAYER_SLOTS; ++j)
+    {
+      bool valid = i == j && i < MAX_PLAYERS;
+      alliances[i][j] = valid ? ALLIANCE_FORMED : ALLIANCE_BROKEN;
+      alliance_bits[i] |= valid << j;
+    }
+  }
+  satellite_uplink_bits = 0;
 }

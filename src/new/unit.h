@@ -24,6 +24,7 @@ public:
 
   virtual bool is_alive() const = 0;
   virtual bool is_radar_detector() const = 0;
+  virtual bool is_valid_target(const Unit* attacker, int weapon_slot) const = 0;
   virtual uint8_t is_target_visible(const Simple_Object* target, bool walls_block) const = 0;
   virtual unsigned get_hp() const = 0;
   virtual unsigned calculate_sensor_range() const = 0;
