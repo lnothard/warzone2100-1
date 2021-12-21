@@ -26,10 +26,10 @@ public:
 private:
   using enum GROUP_TYPE;
 
-  unsigned                id;
-  GROUP_TYPE              type;
-  Droid*                  commander;
-  std::vector<Droid*>     members;
+  unsigned id;
+  GROUP_TYPE type;
+  Droid* commander;
+  std::vector<Droid*> members;
 };
 
 

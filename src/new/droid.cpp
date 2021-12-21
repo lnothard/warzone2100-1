@@ -5,14 +5,10 @@
 #include <algorithm>
 
 #include "droid.h"
-#include "map.h"
-#include "obj_lists.h"
 #include "projectile.h"
 
 Droid::Droid(unsigned id, unsigned player)
-    : Unit(id, player)
-{
-}
+    : Unit(id, player) { }
 
 ACTION Droid::get_current_action() const
 {
@@ -195,85 +191,6 @@ bool Droid::is_VTOL_full() const
   });
 }
 
-// return UBYTE_MAX if directly visible, UBYTE_MAX / 2 if shown as radar blip, 0 if not visible
-uint8_t Droid::is_target_visible(const ::Simple_Object* target, bool walls_block) const
-{
-  assert(target != nullptr);
-
-  static constexpr uint8_t VISIBLE = UBYTE_MAX;
-  static constexpr uint8_t RADAR_BLIP = UBYTE_MAX / 2;
-  static constexpr uint8_t NOT_VISIBLE = 0;
-
-  auto droid_position = get_position();
-  auto target_position = target->get_position();
-
-  if  (!is_coord_on_map(droid_position.x, droid_position.y) ||
-       !is_coord_on_map(target_position.x, target_position.y))
-    return 0;
-
-  if (order->target_object == target && has_CB_sensor())
-    return VISIBLE;
-
-  auto range = calculate_sensor_range();
-  auto distance = iHypot((target_position - droid_position).xy());
-
-  if (distance == 0) return VISIBLE;
-
-  const auto target_tile = get_map_tile(map_coord(target_position.x), map_coord(target_position.y));
-  bool is_jammed = target_tile->jammer_bits & ~alliance_bits[get_player()];
-
-  if (distance < range)
-  {
-    if (is_VTOL()) return VISIBLE;
-
-    else if (dynamic_cast<const Droid*>(target))
-    {
-      const Droid* droid = dynamic_cast<const Droid*>(target);
-      if (droid->is_VTOL()) return VISIBLE;
-    }
-  }
-
-  bool is_tile_watched = target_tile->watchers[get_player()] > 0;
-  bool is_tile_watched_by_sensors = target_tile->watching_sensors[get_player()] > 0;
-
-  if (is_tile_watched || is_tile_watched_by_sensors)
-  {
-    if (is_jammed)
-    {
-      if (!is_tile_watched)
-        return RADAR_BLIP;
-    }
-    else
-    {
-      return VISIBLE;
-    }
-  }
-
-  if (is_radar_detector() && )
-    return RADAR_BLIP;
-
-  return NOT_VISIBLE;
-}
-
-
-bool Droid::target_within_range(const Unit &target, int weapon_slot) const
-{
-  if (num_weapons(*this) == 0) return false;
-
-  auto droid_position = get_position();
-  auto target_position = target.get_position();
-
-  auto x_diff = droid_position.x - target_position.x;
-  auto y_diff = droid_position.y - target_position.y;
-
-  auto square_diff = x_diff * x_diff + y_diff * y_diff;
-  auto min_range = get_weapons()[weapon_slot].get_min_range(get_player());
-  auto range_squared = min_range * min_range;
-
-  if (square_diff <= range_squared) return true;
-  return false;
-}
-
 unsigned Droid::get_level() const
 {
   if (!brain) return 0;
@@ -391,41 +308,9 @@ int Droid::calculate_height() const
   }
 }
 
-bool droid_still_building(const Droid& droid)
+bool still_building(const Droid& droid)
 {
   return droid.is_alive() && droid.get_current_action() == ACTION::BUILD;
-}
-
-void update_orientation(Droid& droid)
-{
-  if (droid.is_cyborg() || droid.is_flying() || droid.is_transporter())
-    return;
-
-
-}
-
-
-auto count_droids_for_level(unsigned player, unsigned level)
-{
-  const auto& droids = droid_lists[player];
-
-  return std::count_if(droids.begin(), droids.end(),
-                       [level] (const auto& droid) {
-    return droid.get_level() == level;
-  });
-}
-
-bool tile_occupied_by_droid(unsigned x, unsigned y)
-{
-  for (const auto& player_droids : droid_lists)
-  {
-    if (std::any_of(player_droids.begin(), player_droids.end(),
-                    [x, y] (const auto& droid) {
-      return map_coord(droid.get_position().x) == x &&
-             map_coord(droid.get_position().y == y);
-    }) ) { return true; }
-  }
-  return false;
 }
 
 bool can_assign_fire_support(const Droid& droid, const Structure& structure)
@@ -440,20 +325,7 @@ bool can_assign_fire_support(const Droid& droid, const Structure& structure)
   {
     return structure.has_standard_sensor() || structure.has_CB_sensor();
   }
-
   return false;
-}
-
-unsigned get_effective_level(const Droid& droid)
-{
-  auto level = droid.get_level();
-  if (!droid.has_commander()) return level;
-
-  auto cmd_level = droid.get_commander_level();
-  if (cmd_level > level + 1)
-    return cmd_level;
-
-  return level;
 }
 
 bool all_VTOLs_rearmed(const Droid& droid)
@@ -468,17 +340,129 @@ bool all_VTOLs_rearmed(const Droid& droid)
   });
 }
 
-bool being_repaired(const Droid* droid)
+bool being_repaired(const Droid& droid)
 {
-  assert(droid != nullptr);
-
   using enum ACTION;
-  if (!droid->is_damaged()) return false;
+  if (!droid.is_damaged()) return false;
 
-  const auto& droids = droid_lists[droid->get_player()];
+  const auto& droids = droid_lists[droid.get_player()];
 
-  return std::any_of(droids.begin(), droids.end(), [droid] (const auto& other_droid) {
+  return std::any_of(droids.begin(), droids.end(), [&droid] (const auto& other_droid) {
       return other_droid.is_repairer() && other_droid.get_current_action() == DROID_REPAIR &&
-             other_droid.get_current_order().target_object == droid;
+             other_droid.get_current_order().target_object->get_id() == droid.get_id();
   });
+}
+
+unsigned get_effective_level(const Droid& droid)
+{
+  auto level = droid.get_level();
+  if (!droid.has_commander()) return level;
+
+  auto cmd_level = droid.get_commander_level();
+  if (cmd_level > level + 1)
+    return cmd_level;
+
+  return level;
+}
+
+unsigned count_player_command_droids(unsigned player)
+{
+  const auto& droids = droid_lists[player];
+
+  return std::count_if(droids.begin(), droids.end(), [] (const auto& droid) {
+      return droid.is_commander();
+  });
+}
+
+void update_orientation(Droid& droid)
+{
+  if (droid.is_cyborg() || droid.is_flying() || droid.is_transporter())
+    return;
+
+
+}
+
+unsigned count_droids_for_level(unsigned player, unsigned level)
+{
+  const auto& droids = droid_lists[player];
+
+  return std::count_if(droids.begin(), droids.end(),
+                       [level] (const auto& droid) {
+    return droid.get_level() == level;
+  });
+}
+
+uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool walls_block)
+{
+  constexpr static uint8_t VISIBLE = UBYTE_MAX;
+  constexpr static uint8_t RADAR_BLIP = UBYTE_MAX / 2;
+  constexpr static uint8_t NOT_VISIBLE = 0;
+
+  auto droid_position = droid.get_position();
+  auto target_position = target->get_position();
+
+  if  (!is_coord_on_map(droid_position.x, droid_position.y) ||
+       !is_coord_on_map(target_position.x, target_position.y))
+    return 0;
+
+  if (droid.get_current_order().target_object->get_id() == target->get_id() && droid.has_CB_sensor())
+    return VISIBLE;
+
+  auto range = droid.calculate_sensor_range();
+  auto distance = iHypot((target_position - droid_position).xy());
+
+  if (distance == 0) return VISIBLE;
+
+  const auto target_tile = get_map_tile(map_coord(target_position.x), map_coord(target_position.y));
+  bool is_jammed = target_tile->jammer_bits & ~alliance_bits[droid.get_player()];
+
+  if (distance < range)
+  {
+    if (droid.is_VTOL()) return VISIBLE;
+
+    else if (dynamic_cast<const Droid*>(target))
+    {
+      const Droid* as_droid = dynamic_cast<const Droid*>(target);
+      if (as_droid->is_VTOL()) return VISIBLE;
+    }
+  }
+
+  bool is_tile_watched = target_tile->watchers[droid.get_player()] > 0;
+  bool is_tile_watched_by_sensors = target_tile->watching_sensors[droid.get_player()] > 0;
+
+  if (is_tile_watched || is_tile_watched_by_sensors)
+  {
+    if (is_jammed)
+    {
+      if (!is_tile_watched)
+        return RADAR_BLIP;
+    }
+    else
+    {
+      return VISIBLE;
+    }
+  }
+
+  if (droid.is_radar_detector() && )
+    return RADAR_BLIP;
+
+  return NOT_VISIBLE;
+}
+
+bool target_within_range(const Droid& droid, const Unit &target, int weapon_slot)
+{
+  if (num_weapons(droid) == 0) return false;
+
+  auto droid_position = droid.get_position();
+  auto target_position = target.get_position();
+
+  auto x_diff = droid_position.x - target_position.x;
+  auto y_diff = droid_position.y - target_position.y;
+
+  auto square_diff = x_diff * x_diff + y_diff * y_diff;
+  auto min_range = droid.get_weapons()[weapon_slot].get_min_range(droid.get_player());
+  auto range_squared = min_range * min_range;
+
+  if (square_diff <= range_squared) return true;
+  return false;
 }

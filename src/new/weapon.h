@@ -131,12 +131,12 @@ public:
   bool has_full_ammo() const;
   bool is_artillery() const;
   bool is_VTOL_weapon() const;
-  bool is_empty_VTOL_weapon(const unsigned player) const;
+  bool is_empty_VTOL_weapon(unsigned player) const;
   const Weapon_Stats& get_stats() const;
   unsigned get_recoil() const;
-  unsigned get_max_range(const unsigned player) const;
-  unsigned get_min_range(const unsigned player) const;
-  unsigned get_num_attack_runs(const unsigned player) const;
+  unsigned get_max_range(unsigned player) const;
+  unsigned get_min_range(unsigned player) const;
+  unsigned get_num_attack_runs(unsigned player) const;
   unsigned get_shots_fired() const;
   const iIMDShape& get_IMD_shape() const;
   const iIMDShape& get_mount_graphic() const;
@@ -145,13 +145,13 @@ private:
   using enum ATTACKER_TYPE;
 
   ATTACKER_TYPE attacker_type;
-  Weapon_Stats  stats;
-  Rotation      rotation;
-  Rotation      previous_rotation;
-  unsigned      ammo;
-  unsigned      ammo_used;
-  std::size_t      time_last_fired;
-  unsigned      shots_fired;
+  std::shared_ptr<Weapon_Stats> stats;
+  Rotation rotation;
+  Rotation previous_rotation;
+  unsigned ammo;
+  unsigned ammo_used;
+  unsigned shots_fired;
+  std::size_t time_last_fired;
 };
 
 #endif // WARZONE2100_WEAPON_H

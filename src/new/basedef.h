@@ -34,7 +34,7 @@ public:
   virtual unsigned get_id() const = 0;
   virtual Display_Data get_display_data() const = 0;
   virtual void set_height(int height) = 0;
-  virtual void set_rotation(Rotation& new_rotation) = 0;
+  virtual void set_rotation(Rotation new_rotation) = 0;
 };
 
 namespace Impl
@@ -51,7 +51,7 @@ namespace Impl
     [[nodiscard]] unsigned get_id() const noexcept final;
     [[nodiscard]] Display_Data get_display_data() const noexcept final;
     void set_height(int height) final;
-    void set_rotation(Rotation& new_rotation) final;
+    void set_rotation(Rotation new_rotation) final;
   private:
     unsigned id;
     unsigned player;
@@ -62,13 +62,13 @@ namespace Impl
   };
 }
 
-constexpr int object_position_square_diff(const Position& first, const Position& second)
+inline int object_position_square_diff(const Position& first, const Position& second)
 {
   Vector2i diff = (first - second).xy();
   return dot(diff, diff);
 }
 
-constexpr int object_position_square_diff(const Simple_Object& first, const Simple_Object& second)
+inline int object_position_square_diff(const Simple_Object& first, const Simple_Object& second)
 {
   return object_position_square_diff(first.get_position(), second.get_position());
 }

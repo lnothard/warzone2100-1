@@ -21,8 +21,6 @@ enum class FEATURE_TYPE
 
 class Feature : public virtual ::Simple_Object, public Impl::Simple_Object
 {
-public:
-  int calculate_height() const;
 private:
   using enum FEATURE_TYPE;
 
@@ -33,5 +31,11 @@ private:
   unsigned hit_points;
   unsigned armour_points;
 };
+
+inline int calculate_height(const Feature& feature)
+{
+  auto imd = feature.get_display_data().imd_shape;
+  return imd->max.y + imd->min.y;
+}
 
 #endif // WARZONE2100_FEATURE_H

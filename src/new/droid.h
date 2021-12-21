@@ -13,8 +13,6 @@
 #include "movement.h"
 #include "obj_lists.h"
 #include "order.h"
-#include "structure.h"
-#include "unit.h"
 
 static constexpr auto MAX_COMPONENTS = COMPONENT_TYPE::COUNT - 1;
 
@@ -106,12 +104,10 @@ public:
   bool is_VTOL_rearmed_and_repaired() const;
   bool is_VTOL_empty() const;
   bool is_VTOL_full() const;
-  uint8_t is_target_visible(const ::Simple_Object* target, bool walls_block) const final;
   [[nodiscard]] bool has_commander() const;
   bool has_standard_sensor() const;
   bool has_CB_sensor() const;
   bool has_electronic_weapon() const;
-  [[nodiscard]] bool target_within_range(const Unit& target, int weapon_slot) const;
   void gain_experience(unsigned exp);
   void commander_gain_experience(unsigned exp) const;
   void move_to_rearming_pad();
@@ -152,13 +148,27 @@ private:
   std::size_t time_action_started { 0 };
 };
 
-constexpr auto count_player_command_droids(unsigned player)
-{
-  const auto& droids = droid_lists[player];
+unsigned count_player_command_droids(unsigned player);
+[[nodiscard]] bool still_building(const Droid& droid);
+[[nodiscard]] bool can_assign_fire_support(const Droid& droid, const Structure& structure);
+[[nodiscard]] unsigned get_effective_level(const Droid& droid);
+[[nodiscard]] bool all_VTOLs_rearmed(const Droid& droid);
+[[nodiscard]] bool being_repaired(const Droid& droid);
+// return UBYTE_MAX if directly visible, UBYTE_MAX / 2 if shown as radar blip, 0 if not visible
+[[nodiscard]] uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool walls_block);
+[[nodiscard]] bool target_within_range(const Droid& droid, const Unit &target, int weapon_slot);
 
-  return std::count_if(droids.begin(), droids.end(), [] (const auto& droid) {
-      return droid.is_commander();
-  });
+[[nodiscard]] constexpr bool tile_occupied_by_droid(unsigned x, unsigned y)
+{
+  for (const auto& player_droids : droid_lists)
+  {
+    if (std::any_of(player_droids.begin(), player_droids.end(),
+                    [x, y] (const auto& droid) {
+                        return map_coord(droid.get_position().x) == x &&
+                               map_coord(droid.get_position().y == y);
+                    }) ) { return true; }
+  }
+  return false;
 }
 
 struct Droid_Template
