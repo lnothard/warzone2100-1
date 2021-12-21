@@ -6,15 +6,15 @@
 #define WARZONE2100_DROID_H
 
 #include <memory>
-#include <vector>
 #include <optional>
+#include <vector>
 
-#include "unit.h"
 #include "droid_group.h"
-#include "structure.h"
 #include "movement.h"
 #include "obj_lists.h"
 #include "order.h"
+#include "structure.h"
+#include "unit.h"
 
 static constexpr auto MAX_COMPONENTS = COMPONENT_TYPE::COUNT - 1;
 
@@ -131,10 +131,10 @@ private:
   std::string name;
   ACTION action { NONE };
   DROID_TYPE type { ANY };
-  Order order;
-  Droid_Group* group { nullptr };
   Structure* associated_structure { nullptr };
-  Movement movement;
+  std::shared_ptr<Droid_Group> group;
+  std::unique_ptr<Order> order;
+  std::unique_ptr<Movement> movement;
   std::unique_ptr<Body_Stats> body;
   std::optional<Propulsion_Stats> propulsion;
   std::optional<Commander_Stats> brain;
@@ -147,9 +147,9 @@ private:
   unsigned expected_damage_indirect { 0 };
   unsigned kills { 0 };
   unsigned experience { 0 };
-  std::size_t time_action_started { 0 };
   unsigned action_points_done { 0 };
   int resistance_to_electric { 0 };
+  std::size_t time_action_started { 0 };
 };
 
 constexpr auto count_player_command_droids(unsigned player)

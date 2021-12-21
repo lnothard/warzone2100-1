@@ -21,7 +21,7 @@ ACTION Droid::get_current_action() const
 
 const Order& Droid::get_current_order() const
 {
-  return order;
+  return *order;
 }
 
 bool Droid::is_probably_doomed(bool is_direct_damage) const
@@ -57,7 +57,7 @@ bool Droid::is_flying() const
   if (!propulsion) return false;
   using enum PROPULSION_TYPE;
 
-  return (!movement.is_inactive() || is_transporter()) &&
+  return (!movement->is_inactive() || is_transporter()) &&
          propulsion->propulsion_type == LIFT;
 }
 
@@ -102,7 +102,7 @@ bool Droid::is_damaged() const
 
 bool Droid::is_stationary() const
 {
-  return movement.is_stationary();
+  return movement->is_stationary();
 }
 
 bool Droid::has_commander() const
@@ -211,7 +211,7 @@ uint8_t Droid::is_target_visible(const ::Simple_Object* target, bool walls_block
        !is_coord_on_map(target_position.x, target_position.y))
     return 0;
 
-  if (order.target_object == target && has_CB_sensor())
+  if (order->target_object == target && has_CB_sensor())
     return VISIBLE;
 
   auto range = calculate_sensor_range();
@@ -311,18 +311,18 @@ void Droid::cancel_build()
 {
   using enum ORDER_TYPE;
 
-  if (order.type == NONE || order.type == PATROL || order.type == HOLD ||
-      order.type == SCOUT || order.type == GUARD)
+  if (order->type == NONE || order->type == PATROL || order->type == HOLD ||
+      order->type == SCOUT || order->type == GUARD)
   {
-    order.target_object = nullptr;
+    order->target_object = nullptr;
     action = ACTION::NONE;
     return;
   }
   else
   {
     action = ACTION::NONE;
-    order.type = NONE;
-    movement.stop_moving();
+    order->type = NONE;
+    movement->stop_moving();
   }
 }
 

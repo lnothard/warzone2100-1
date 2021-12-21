@@ -75,8 +75,11 @@ enum class PENDING_STATUS
 
 struct Structure_Bounds
 {
-  Structure_Bounds();
-  Structure_Bounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords);
+  constexpr Structure_Bounds()
+            : top_left_coords(0, 0), size_in_coords(0, 0) { }
+
+  constexpr Structure_Bounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords)
+            : top_left_coords{top_left_coords}, size_in_coords{size_in_coords} { }
 
   Vector2i top_left_coords;
   Vector2i size_in_coords;
@@ -148,7 +151,6 @@ namespace Impl
     bool is_radar_detector() const final;
     bool is_probably_doomed() const;
     bool is_pulled_to_terrain() const;
-    bool is_damaged() const;
     bool has_modules() const;
     bool has_sensor() const final;
     bool has_standard_sensor() const final;
@@ -162,7 +164,6 @@ namespace Impl
     const iIMDShape& get_IMD_shape() const final;
     void update_expected_damage(const int damage);
     unsigned calculate_sensor_range() const final;
-    bool target_within_range(const Unit& target) const;
     int calculate_gate_height(const std::size_t time, const int minimum) const;
     void set_foundation_depth(const float depth);
     void print_info() const override;
@@ -174,7 +175,7 @@ namespace Impl
 
     STRUCTURE_STATE state;
     STRUCTURE_ANIMATION_STATE animation_state;
-    Structure_Stats stats;
+    std::shared_ptr<Structure_Stats> stats;
     unsigned current_build_points;
     int build_rate;
     int previous_build_rate;
@@ -184,18 +185,55 @@ namespace Impl
     std::size_t last_state_time;
   };
 
-  Structure_Bounds get_bounds(const Structure& structure);
-  void adjust_tile_height(const Structure& structure, int new_height);
-  void align_structure(Structure& structure);
-  bool being_built(const Structure* structure);
+  long count_assigned_droids(const Structure& structure);
+  [[nodiscard]] bool being_built(const Structure& structure);
 
-  inline int calculate_foundation_height(const Structure& structure)
+  [[nodiscard]] constexpr bool is_damaged(const Structure& structure)
   {
-    const Structure_Bounds& bounds = get_bounds(structure);
+    return structure.get_hp() < structure.get_original_hp();
+  }
+
+  [[nodiscard]] constexpr Structure_Bounds get_bounds(const Structure& structure)
+  {
+    return Structure_Bounds{ map_coord(structure.get_position().xy()) - structure.get_size() / 2, structure.get_size() };
+  }
+
+  constexpr void adjust_tile_height(const Structure& structure, int new_height)
+  {
+    auto bounds = get_bounds(structure);
+    auto x_max = bounds.size_in_coords.x;
+    auto y_max = bounds.size_in_coords.y;
+
+    auto coords = bounds.top_left_coords;
+
+    for (int breadth = 0; breadth <= y_max; ++breadth)
+    {
+      for (int width = 0; width <= x_max; ++width)
+      {
+        set_tile_height(coords.x + width, coords.y + breadth, new_height);
+
+        if (tile_is_occupied_by_feature(*get_map_tile(coords.x + width, coords.y + breadth)))
+        {
+          get_feature_from_tile(coords.x + width, coords.y + breadth)->set_height(new_height);
+        }
+      }
+    }
+  }
+
+  constexpr int calculate_height(const Structure& structure)
+  {
+    auto& imd = structure.get_IMD_shape();
+    auto height = imd.max.y + imd.min.y;
+    return height - structure.calculate_gate_height(gameTime, 2);  // Treat gate as at least 2 units tall, even if open, so that it's possible to hit.
+  }
+
+  constexpr int calculate_foundation_height(const Structure& structure)
+  {
+    auto bounds = get_bounds(structure);
     auto foundation_min = INT32_MIN;
     auto foundation_max = INT32_MAX;
-    const auto x_max = bounds.size_in_coords.x;
-    const auto y_max = bounds.size_in_coords.y;
+    auto x_max = bounds.size_in_coords.x;
+    auto y_max = bounds.size_in_coords.y;
 
     for (int breadth = 0; breadth <= y_max; ++breadth)
     {
@@ -208,11 +246,69 @@ namespace Impl
     }
     return (foundation_min + foundation_max) / 2;
   }
+
+  constexpr void align_structure(Structure& structure)
+  {
+    if (!structure.is_pulled_to_terrain())
+    {
+      auto map_height = calculate_foundation_height(structure);
+      adjust_tile_height(structure, map_height);
+      structure.set_height(map_height);
+      structure.set_foundation_depth(structure.get_position().z);
+
+      const auto& bounds = get_bounds(structure);
+      auto x_max = bounds.size_in_coords.x;
+      auto y_max = bounds.size_in_coords.y;
+      auto coords = bounds.top_left_coords;
+
+      for (int breadth = -1; breadth <= y_max; ++breadth)
+      {
+        for (int width = -1; width <= x_max; ++width)
+        {
+          auto neighbouring_structure = dynamic_cast<Structure*>(
+                  get_map_tile(coords.x + width, coords.y + breadth)->occupying_object);
+          if (neighbouring_structure != nullptr && neighbouring_structure->is_pulled_to_terrain())
+          {
+            align_structure(*neighbouring_structure);
+          }
+        }
+      }
+    }
+    else
+    {
+      const auto& imd = structure.get_display_data().imd_shape;
+      structure.set_height(TILE_MIN_HEIGHT);
+      structure.set_foundation_depth(TILE_MAX_HEIGHT);
+
+      auto dir = iSinCosR(structure.get_rotation().direction, 1);
+      // Rotate s->max.{x, z} and s->min.{x, z} by angle rot.direction.
+      Vector2i p1{imd->max.x * dir.y - imd->max.z * dir.x, imd->max.x * dir.x + imd->max.z * dir.y};
+      Vector2i p2{imd->min.x * dir.y - imd->min.z * dir.x, imd->min.x * dir.x + imd->min.z * dir.y};
+
+      auto h1 = calculate_map_height(structure.get_position().x + p1.x, structure.get_position().y + p2.y);
+      auto h2 = calculate_map_height(structure.get_position().x + p1.x, structure.get_position().y + p1.y);
+      auto h3 = calculate_map_height(structure.get_position().x + p2.x, structure.get_position().y + p1.y);
+      auto h4 = calculate_map_height(structure.get_position().x + p2.x, structure.get_position().y + p2.y);
+      auto minH = std::min({h1, h2, h3, h4});
+      auto maxH = std::max({h1, h2, h3, h4});
+      structure.set_height(std::max(structure.get_position().z, maxH));
+      structure.set_foundation_depth(std::min<float>(structure.get_foundation_depth(), minH));
+    }
+  }
+
+  [[nodiscard]] constexpr bool target_within_range(const Structure& structure, const Unit &target)
+  {
+    if (num_weapons(structure) == 0) return false;
+
+    auto max_range = get_max_weapon_range(structure);
+    return object_position_square_diff(structure.get_position(), target.get_position()) < max_range * max_range &&
+           target_in_line_of_fire(structure, target, 0);
+  }
 }
 
 struct Production_Job
 {
-  Droid_Template droid_template;
+  std::shared_ptr<Droid_Template> droid_template;
   std::size_t time_started;
   int remaining_build_points;
 };
@@ -233,8 +329,8 @@ public:
 private:
   using enum PENDING_STATUS;
 
-  Production_Job active_job;
-  Flag_Position assembly_point;
+  std::unique_ptr<Production_Job> active_job;
+  std::unique_ptr<Flag_Position> assembly_point;
   PENDING_STATUS pending_status;
   uint8_t production_loops;
   uint8_t loops_performed;
@@ -269,7 +365,7 @@ private:
 class Repair_Facility : public virtual Structure, public Impl::Structure
 {
   Unit* repair_target;
-  Flag_Position assembly_point;
+  std::unique_ptr<Flag_Position> assembly_point;
 };
 
 

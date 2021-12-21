@@ -220,9 +220,9 @@ namespace Impl
     auto range = unit.get_weapons()[weapon_slot].get_max_range(unit.get_player());
     if (!has_artillery(unit))
     {
-      return range >= distance && LINE_OF_FIRE_MINIMUM <= unit.calculate_line_of_fire(target, weapon_slot);
+      return range >= distance && LINE_OF_FIRE_MINIMUM <= calculate_line_of_fire(unit, target, weapon_slot);
     }
-    auto min_angle = unit.calculate_line_of_fire(target, weapon_slot);
+    auto min_angle = calculate_line_of_fire(unit, target, weapon_slot);
     if (min_angle > DEG(PROJECTILE_MAX_PITCH)) {
       if (iSin(2 * min_angle) < iSin(2 * DEG(PROJECTILE_MAX_PITCH))) {
         range = range * iSin(2 * min_angle) / iSin(2 * DEG(PROJECTILE_MAX_PITCH));

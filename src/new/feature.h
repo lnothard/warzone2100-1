@@ -22,7 +22,7 @@ enum class FEATURE_TYPE
 class Feature : public virtual ::Simple_Object, public Impl::Simple_Object
 {
 public:
-  int calculate_height() const final;
+  int calculate_height() const;
 private:
   using enum FEATURE_TYPE;
 
