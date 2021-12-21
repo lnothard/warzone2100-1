@@ -118,6 +118,7 @@ struct Commander_Stats : public Component_Stats
   {
     std::vector<int> rank_thresholds;
     int max_droids_assigned { 0 };
+    int max_droids_multiplier { 0 };
   } upgraded[MAX_PLAYERS], base;
 };
 

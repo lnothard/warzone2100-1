@@ -253,6 +253,14 @@ unsigned Droid::get_commander_level() const
   return group->get_commander_level();
 }
 
+unsigned Droid::commander_max_group_size() const
+{
+  assert (is_commander() && group->is_command_group());
+
+  auto& cmd_stats = brain->upgraded[get_player()];
+  return get_level() * cmd_stats.max_droids_multiplier + cmd_stats.max_droids_assigned;
+}
+
 const iIMDShape& Droid::get_IMD_shape() const
 {
   return *body->imd_shape;
@@ -526,4 +534,14 @@ void initialise_ai_bits()
     }
   }
   satellite_uplink_bits = 0;
+}
+
+int get_commander_index(const Droid& commander)
+{
+  assert(commander.is_commander());
+
+  auto& droids = droid_lists[commander.get_player()];
+  return std::find_if(droids.begin(), droids.end(), [&commander] (const auto& droid) {
+    return droid.is_commander() && droid.get_id() == commander.get_id();
+  }) - droids.begin();
 }

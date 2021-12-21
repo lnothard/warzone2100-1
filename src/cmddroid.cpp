@@ -144,50 +144,50 @@ void cmdDroidClearDesignator(UDWORD player)
 	apsCmdDesignator[player] = nullptr;
 }
 
-/** This function returns the index of the command droid.
- * It does this by searching throughout all the player's droids.
- * @todo try to find something more efficient, has this function is of O(TotalNumberOfDroidsOfPlayer).
- */
-SDWORD cmdDroidGetIndex(DROID *psCommander)
-{
-	SDWORD	index = 1;
-	DROID	*psCurr;
+///** This function returns the index of the command droid.
+// * It does this by searching throughout all the player's droids.
+// * @todo try to find something more efficient, has this function is of O(TotalNumberOfDroidsOfPlayer).
+// */
+//SDWORD cmdDroidGetIndex(DROID *psCommander)
+//{
+//	SDWORD	index = 1;
+//	DROID	*psCurr;
+//
+//	if (psCommander->droidType != DROID_COMMAND)
+//	{
+//		return 0;
+//	}
+//
+//	for (psCurr = apsDroidLists[psCommander->player]; psCurr; psCurr = psCurr->psNext)
+//	{
+//		if (psCurr->droidType == DROID_COMMAND &&
+//		    psCurr->id < psCommander->id)
+//		{
+//			index += 1;
+//		}
+//	}
+//
+//	return index;
+//}
 
-	if (psCommander->droidType != DROID_COMMAND)
-	{
-		return 0;
-	}
+///** This function returns the maximum group size of the command droid.*/
+//unsigned int cmdDroidMaxGroup(const DROID *psCommander)
+//{
+//	const BRAIN_STATS *psStats = getBrainStats(psCommander);
+//	return getDroidLevel(psCommander) * psStats->upgrade[psCommander->player].maxDroidsMult + psStats->upgrade[psCommander->player].maxDroids;
+//}
 
-	for (psCurr = apsDroidLists[psCommander->player]; psCurr; psCurr = psCurr->psNext)
-	{
-		if (psCurr->droidType == DROID_COMMAND &&
-		    psCurr->id < psCommander->id)
-		{
-			index += 1;
-		}
-	}
-
-	return index;
-}
-
-/** This function returns the maximum group size of the command droid.*/
-unsigned int cmdDroidMaxGroup(const DROID *psCommander)
-{
-	const BRAIN_STATS *psStats = getBrainStats(psCommander);
-	return getDroidLevel(psCommander) * psStats->upgrade[psCommander->player].maxDroidsMult + psStats->upgrade[psCommander->player].maxDroids;
-}
-
-/** This function adds experience to the command droid of the psShooter's command group.*/
-void cmdDroidUpdateExperience(DROID *psShooter, uint32_t experienceInc)
-{
-	ASSERT_OR_RETURN(, psShooter != nullptr, "invalid Unit pointer");
-
-	if (hasCommander(psShooter))
-	{
-		DROID *psCommander = psShooter->psGroup->psCommander;
-		psCommander->experience += MIN(experienceInc, UINT32_MAX - psCommander->experience);
-	}
-}
+///** This function adds experience to the command droid of the psShooter's command group.*/
+//void cmdDroidUpdateExperience(DROID *psShooter, uint32_t experienceInc)
+//{
+//	ASSERT_OR_RETURN(, psShooter != nullptr, "invalid Unit pointer");
+//
+//	if (hasCommander(psShooter))
+//	{
+//		DROID *psCommander = psShooter->psGroup->psCommander;
+//		psCommander->experience += MIN(experienceInc, UINT32_MAX - psCommander->experience);
+//	}
+//}
 
 ///** This function returns true if the droid is assigned to a commander group and it is not the commander.*/
 //bool hasCommander(const DROID *psDroid)

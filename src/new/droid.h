@@ -119,6 +119,7 @@ public:
   [[nodiscard]] DROID_TYPE get_type() const noexcept;
   [[nodiscard]] unsigned get_level() const;
   [[nodiscard]] unsigned get_commander_level() const;
+  [[nodiscard]] unsigned commander_max_group_size() const;
   [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
   [[nodiscard]] unsigned calculate_sensor_range() const final;
   [[nodiscard]] unsigned calculate_max_range() const;
