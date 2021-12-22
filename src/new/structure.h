@@ -187,6 +187,7 @@ namespace Impl
 
   [[nodiscard]] unsigned count_assigned_droids(const Structure& structure);
   [[nodiscard]] bool being_built(const Structure& structure);
+  [[nodiscard]] bool being_demolished(const Structure& structure);
   [[nodiscard]] bool is_damaged(const Structure& structure);
   [[nodiscard]] Structure_Bounds get_bounds(const Structure& structure) noexcept;
   void adjust_tile_height(const Structure& structure, int new_height);

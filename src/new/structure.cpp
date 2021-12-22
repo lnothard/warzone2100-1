@@ -151,11 +151,11 @@ namespace Impl
   {
     const auto& droids = droid_lists[selectedPlayer];
     return std::count_if(droids.begin(), droids.end(), [&structure] (const auto& droid) {
-        if (droid.get_current_order().target_object->get_id() == structure.get_id() &&
-            droid.get_player() == structure.get_player())
-        {
-          return droid.is_VTOL() || has_artillery(structure);
-        }
+      if (droid.get_current_order().target_object->get_id() == structure.get_id() &&
+          droid.get_player() == structure.get_player())
+      {
+        return droid.is_VTOL() || has_artillery(structure);
+      }
     });
   }
 
@@ -163,9 +163,19 @@ namespace Impl
   {
     const auto& droids = droid_lists[structure.get_player()];
     return std::any_of(droids.begin(), droids.end(), [&structure] (const auto& droid) {
-        auto& order = droid.get_current_order();
-        return order.type == ORDER_TYPE::BUILD &&
-               order.target_object->get_id() == structure.get_id();
+      auto& order = droid.get_current_order();
+      return order.type == ORDER_TYPE::BUILD &&
+             order.target_object->get_id() == structure.get_id();
+    });
+  }
+
+  bool being_demolished(const Structure& structure)
+  {
+    const auto& droids = droid_lists[structure.get_player()];
+    return std::any_of(droids.begin(), droids.end(), [&structure] (const auto& droid) {
+      auto& order = droid.get_current_order();
+      return order.type == ORDER_TYPE::DEMOLISH &&
+             order.target_object->get_id() == structure.get_id();
     });
   }
 

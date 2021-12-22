@@ -191,7 +191,7 @@ bool Droid::is_VTOL_full() const
   });
 }
 
-bool Droid::is_valid_target(const Unit* attacker, int weapon_slot) const
+bool Droid::is_valid_target(const ::Unit* attacker, int weapon_slot) const
 {
   auto target_airborne = bool { false };
   auto valid_target = bool { false };
@@ -208,7 +208,7 @@ bool Droid::is_valid_target(const Unit* attacker, int weapon_slot) const
     if (as_droid->get_type() == SENSOR)
       return !target_airborne;
 
-    if (num_weapons(*attacker) == 0)
+    if (num_weapons(*as_droid) == 0)
       return false;
 
     auto& weapon_stats = attacker->get_weapons()[weapon_slot].get_stats();
@@ -379,13 +379,22 @@ bool can_assign_fire_support(const Droid& droid, const Structure& structure)
 bool all_VTOLs_rearmed(const Droid& droid)
 {
   if (!droid.is_VTOL()) return true;
-  const auto& droids = droid_lists[droid.get_player()];
 
-  return std::none_of(droids.begin(), droids.end(), [&] (const auto& other_droid) {
+  const auto& droids = droid_lists[droid.get_player()];
+  return std::none_of(droids.begin(), droids.end(), [&droid] (const auto& other_droid) {
       return other_droid.is_rearming() &&
              other_droid.get_current_order().type == droid.get_current_order().type &&
              other_droid.get_current_order().target_object == droid.get_current_order().target_object;
   });
+}
+
+bool VTOL_ready_to_rearm(const Droid& droid, const Rearm_Pad &rearm_pad)
+{
+  if (droid.is_VTOL() || droid.get_current_action() == ACTION::WAIT_FOR_REARM ||
+      !droid.is_VTOL_rearmed_and_repaired() || rearm_pad.is_clear() || !droid.is_rearming())
+    return true;
+
+  return false;
 }
 
 bool being_repaired(const Droid& droid)
@@ -394,7 +403,6 @@ bool being_repaired(const Droid& droid)
   if (!droid.is_damaged()) return false;
 
   const auto& droids = droid_lists[droid.get_player()];
-
   return std::any_of(droids.begin(), droids.end(), [&droid] (const auto& other_droid) {
       return other_droid.is_repairer() && other_droid.get_current_action() == DROID_REPAIR &&
              other_droid.get_current_order().target_object->get_id() == droid.get_id();
@@ -416,7 +424,6 @@ unsigned get_effective_level(const Droid& droid)
 unsigned count_player_command_droids(unsigned player)
 {
   const auto& droids = droid_lists[player];
-
   return std::count_if(droids.begin(), droids.end(), [] (const auto& droid) {
       return droid.is_commander();
   });

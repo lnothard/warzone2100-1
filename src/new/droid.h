@@ -105,7 +105,7 @@ public:
   [[nodiscard]] bool is_VTOL_rearmed_and_repaired() const;
   [[nodiscard]] bool is_VTOL_empty() const;
   [[nodiscard]] bool is_VTOL_full() const;
-  [[nodiscard]] bool is_valid_target(const Unit* attacker, int weapon_slot) const final;
+  [[nodiscard]] bool is_valid_target(const ::Unit* attacker, int weapon_slot) const final;
   [[nodiscard]] bool has_commander() const;
   [[nodiscard]] bool has_standard_sensor() const;
   [[nodiscard]] bool has_CB_sensor() const;
@@ -157,6 +157,7 @@ private:
 [[nodiscard]] bool can_assign_fire_support(const Droid& droid, const Structure& structure);
 [[nodiscard]] unsigned get_effective_level(const Droid& droid);
 [[nodiscard]] bool all_VTOLs_rearmed(const Droid& droid);
+[[nodiscard]] bool VTOL_ready_to_rearm(const Droid& droid, const Rearm_Pad& rearm_pad);
 [[nodiscard]] bool being_repaired(const Droid& droid);
 // return UBYTE_MAX if directly visible, UBYTE_MAX / 2 if shown as radar blip, 0 if not visible
 [[nodiscard]] uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool walls_block);

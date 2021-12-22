@@ -93,34 +93,34 @@ static void groupConsoleInformOfRemoval();
 static void droidUpdateDroidSelfRepair(DROID *psRepairDroid);
 static UDWORD calcDroidBaseBody(DROID *psDroid);
 
-void cancelBuild(DROID *psDroid)
-{
-	if (psDroid->order.type == DORDER_NONE || psDroid->order.type == DORDER_PATROL || psDroid->order.type == DORDER_HOLD || psDroid->order.type == DORDER_SCOUT || psDroid->order.type == DORDER_GUARD)
-	{
-		objTrace(psDroid->id, "Droid build action cancelled");
-		psDroid->order.psObj = nullptr;
-		psDroid->action = DACTION_NONE;
-		setDroidActionTarget(psDroid, nullptr, 0);
-		return;  // Don't cancel orders.
-	}
-
-	if (orderDroidList(psDroid))
-	{
-		objTrace(psDroid->id, "Droid build order cancelled - changing to next order");
-	}
-	else
-	{
-		objTrace(psDroid->id, "Droid build order cancelled");
-		psDroid->action = DACTION_NONE;
-		psDroid->order = DroidOrder(DORDER_NONE);
-		setDroidActionTarget(psDroid, nullptr, 0);
-
-		// The droid has no more build orders, so halt in place rather than clumping around the build objective
-		moveStopDroid(psDroid);
-
-		triggerEventDroidIdle(psDroid);
-	}
-}
+//void cancelBuild(DROID *psDroid)
+//{
+//	if (psDroid->order.type == DORDER_NONE || psDroid->order.type == DORDER_PATROL || psDroid->order.type == DORDER_HOLD || psDroid->order.type == DORDER_SCOUT || psDroid->order.type == DORDER_GUARD)
+//	{
+//		objTrace(psDroid->id, "Droid build action cancelled");
+//		psDroid->order.psObj = nullptr;
+//		psDroid->action = DACTION_NONE;
+//		setDroidActionTarget(psDroid, nullptr, 0);
+//		return;  // Don't cancel orders.
+//	}
+//
+//	if (orderDroidList(psDroid))
+//	{
+//		objTrace(psDroid->id, "Droid build order cancelled - changing to next order");
+//	}
+//	else
+//	{
+//		objTrace(psDroid->id, "Droid build order cancelled");
+//		psDroid->action = DACTION_NONE;
+//		psDroid->order = DroidOrder(DORDER_NONE);
+//		setDroidActionTarget(psDroid, nullptr, 0);
+//
+//		// The droid has no more build orders, so halt in place rather than clumping around the build objective
+//		moveStopDroid(psDroid);
+//
+//		triggerEventDroidIdle(psDroid);
+//	}
+//}
 
 static void droidBodyUpgrade(DROID *psDroid)
 {
@@ -2444,43 +2444,43 @@ PICKTILE pickHalfATile(UDWORD *x, UDWORD *y, UBYTE numIterations)
 	return pickATileGen(x, y, numIterations, canFitDroid) ? FREE_TILE : NO_FREE_TILE;
 }
 
-/* Looks through the players list of droids to see if any of them are
-building the specified structure - returns true if finds one*/
-bool checkDroidsBuilding(STRUCTURE *psStructure)
-{
-	DROID				*psDroid;
+///* Looks through the players list of droids to see if any of them are
+//building the specified structure - returns true if finds one*/
+//bool checkDroidsBuilding(STRUCTURE *psStructure)
+//{
+//	DROID				*psDroid;
+//
+//	for (psDroid = apsDroidLists[psStructure->player]; psDroid != nullptr; psDroid =
+//			 psDroid->psNext)
+//	{
+//		//check DORDER_BUILD, HELP_BUILD is handled the same
+//		BASE_OBJECT *const psStruct = orderStateObj(psDroid, DORDER_BUILD);
+//		if ((STRUCTURE *)psStruct == psStructure)
+//		{
+//			return true;
+//		}
+//	}
+//	return false;
+//}
 
-	for (psDroid = apsDroidLists[psStructure->player]; psDroid != nullptr; psDroid =
-			 psDroid->psNext)
-	{
-		//check DORDER_BUILD, HELP_BUILD is handled the same
-		BASE_OBJECT *const psStruct = orderStateObj(psDroid, DORDER_BUILD);
-		if ((STRUCTURE *)psStruct == psStructure)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-/* Looks through the players list of droids to see if any of them are
-demolishing the specified structure - returns true if finds one*/
-bool checkDroidsDemolishing(STRUCTURE *psStructure)
-{
-	DROID				*psDroid;
-
-	for (psDroid = apsDroidLists[psStructure->player]; psDroid != nullptr; psDroid =
-			 psDroid->psNext)
-	{
-		//check DORDER_DEMOLISH
-		BASE_OBJECT *const psStruct = orderStateObj(psDroid, DORDER_DEMOLISH);
-		if ((STRUCTURE *)psStruct == psStructure)
-		{
-			return true;
-		}
-	}
-	return false;
-}
+///* Looks through the players list of droids to see if any of them are
+//demolishing the specified structure - returns true if finds one*/
+//bool checkDroidsDemolishing(STRUCTURE *psStructure)
+//{
+//	DROID				*psDroid;
+//
+//	for (psDroid = apsDroidLists[psStructure->player]; psDroid != nullptr; psDroid =
+//			 psDroid->psNext)
+//	{
+//		//check DORDER_DEMOLISH
+//		BASE_OBJECT *const psStruct = orderStateObj(psDroid, DORDER_DEMOLISH);
+//		if ((STRUCTURE *)psStruct == psStructure)
+//		{
+//			return true;
+//		}
+//	}
+//	return false;
+//}
 
 
 int nextModuleToBuild(STRUCTURE const *psStruct, int lastOrderedModule)
@@ -2578,11 +2578,11 @@ void setUpBuildModule(DROID *psDroid)
 	cancelBuild(psDroid);
 }
 
-/* Just returns true if the droid's present body points aren't as high as the original*/
-bool	droidIsDamaged(const DROID *psDroid)
-{
-	return psDroid->body < psDroid->originalBody;
-}
+///* Just returns true if the droid's present body points aren't as high as the original*/
+//bool	droidIsDamaged(const DROID *psDroid)
+//{
+//	return psDroid->body < psDroid->originalBody;
+//}
 
 
 char const *getDroidResourceName(char const *pName)
@@ -2594,264 +2594,263 @@ char const *getDroidResourceName(char const *pName)
 }
 
 
-/*checks to see if an electronic warfare weapon is attached to the droid*/
-bool electronicDroid(const DROID *psDroid)
-{
-	CHECK_DROID(psDroid);
+///*checks to see if an electronic warfare weapon is attached to the droid*/
+//bool electronicDroid(const DROID *psDroid)
+//{
+//	CHECK_DROID(psDroid);
+//
+//	//use slot 0 for now
+//	if (psDroid->numWeaps > 0 && asWeaponStats[psDroid->asWeaps[0].nStat].weaponSubClass == WSC_ELECTRONIC)
+//	{
+//		return true;
+//	}
+//
+//	if (psDroid->droidType == DROID_COMMAND && psDroid->psGroup && psDroid->psGroup->psCommander == psDroid)
+//	{
+//		// if a commander has EW units attached it is electronic
+//		for (const DROID *psCurr = psDroid->psGroup->psList; psCurr; psCurr = psCurr->psGrpNext)
+//		{
+//			if (psDroid != psCurr && electronicDroid(psCurr))
+//			{
+//				return true;
+//			}
+//		}
+//	}
+//
+//	return false;
+//}
 
-	//use slot 0 for now
-	if (psDroid->numWeaps > 0 && asWeaponStats[psDroid->asWeaps[0].nStat].weaponSubClass == WSC_ELECTRONIC)
-	{
-		return true;
-	}
+///*checks to see if the droid is currently being repaired by another*/
+//bool droidUnderRepair(const DROID *psDroid)
+//{
+//	CHECK_DROID(psDroid);
+//
+//	//droid must be damaged
+//	if (droidIsDamaged(psDroid))
+//	{
+//		//look thru the list of players droids to see if any are repairing this droid
+//		for (const DROID *psCurr = apsDroidLists[psDroid->player]; psCurr != nullptr; psCurr = psCurr->psNext)
+//		{
+//			if ((psCurr->droidType == DROID_REPAIR || psCurr->droidType ==
+//				 DROID_CYBORG_REPAIR) && psCurr->action ==
+//				DACTION_DROIDREPAIR && psCurr->order.psObj == psDroid)
+//			{
+//				return true;
+//			}
+//		}
+//	}
+//	return false;
+//}
 
-	if (psDroid->droidType == DROID_COMMAND && psDroid->psGroup && psDroid->psGroup->psCommander == psDroid)
-	{
-		// if a commander has EW units attached it is electronic
-		for (const DROID *psCurr = psDroid->psGroup->psList; psCurr; psCurr = psCurr->psGrpNext)
-		{
-			if (psDroid != psCurr && electronicDroid(psCurr))
-			{
-				return true;
-			}
-		}
-	}
+////count how many Command Droids exist in the world at any one moment
+//UBYTE checkCommandExist(UBYTE player)
+//{
+//	UBYTE	quantity = 0;
+//
+//	for (DROID *psDroid = apsDroidLists[player]; psDroid != nullptr; psDroid = psDroid->psNext)
+//	{
+//		if (psDroid->droidType == DROID_COMMAND)
+//		{
+//			quantity++;
+//		}
+//	}
+//	return quantity;
+//}
 
-	return false;
-}
+//static inline bool isTransporter(DROID_TYPE type)
+//{
+//	return type == DROID_TRANSPORTER || type == DROID_SUPERTRANSPORTER;
+//}
+//
+//bool isTransporter(DROID const *psDroid)
+//{
+//	return isTransporter(psDroid->droidType);
+//}
+//
+//bool isTransporter(DROID_TEMPLATE const *psTemplate)
+//{
+//	return isTransporter(psTemplate->droidType);
+//}
 
-/*checks to see if the droid is currently being repaired by another*/
-bool droidUnderRepair(const DROID *psDroid)
-{
-	CHECK_DROID(psDroid);
-
-	//droid must be damaged
-	if (droidIsDamaged(psDroid))
-	{
-		//look thru the list of players droids to see if any are repairing this droid
-		for (const DROID *psCurr = apsDroidLists[psDroid->player]; psCurr != nullptr; psCurr = psCurr->psNext)
-		{
-			if ((psCurr->droidType == DROID_REPAIR || psCurr->droidType ==
-				 DROID_CYBORG_REPAIR) && psCurr->action ==
-				DACTION_DROIDREPAIR && psCurr->order.psObj == psDroid)
-			{
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-//count how many Command Droids exist in the world at any one moment
-UBYTE checkCommandExist(UBYTE player)
-{
-	UBYTE	quantity = 0;
-
-	for (DROID *psDroid = apsDroidLists[player]; psDroid != nullptr; psDroid = psDroid->psNext)
-	{
-		if (psDroid->droidType == DROID_COMMAND)
-		{
-			quantity++;
-		}
-	}
-	return quantity;
-}
-
-static inline bool isTransporter(DROID_TYPE type)
-{
-	return type == DROID_TRANSPORTER || type == DROID_SUPERTRANSPORTER;
-}
-
-bool isTransporter(DROID const *psDroid)
-{
-	return isTransporter(psDroid->droidType);
-}
-
-bool isTransporter(DROID_TEMPLATE const *psTemplate)
-{
-	return isTransporter(psTemplate->droidType);
-}
-
-//access functions for vtols
-bool isVtolDroid(const DROID *psDroid)
-{
-	return asPropulsionStats[psDroid->asBits[COMP_PROPULSION]].propulsionType == PROPULSION_TYPE_LIFT
-		   && !isTransporter(psDroid);
-}
-
-/* returns true if the droid has lift propulsion and is moving */
-bool isFlying(const DROID *psDroid)
-{
-	return (asPropulsionStats + psDroid->asBits[COMP_PROPULSION])->propulsionType == PROPULSION_TYPE_LIFT
-		   && (psDroid->sMove.Status != MOVEINACTIVE || isTransporter(psDroid));
-}
+////access functions for vtols
+//bool isVtolDroid(const DROID *psDroid)
+//{
+//	return asPropulsionStats[psDroid->asBits[COMP_PROPULSION]].propulsionType == PROPULSION_TYPE_LIFT
+//		   && !isTransporter(psDroid);
+//}
+//
+///* returns true if the droid has lift propulsion and is moving */
+//bool isFlying(const DROID *psDroid)
+//{
+//	return (asPropulsionStats + psDroid->asBits[COMP_PROPULSION])->propulsionType == PROPULSION_TYPE_LIFT
+//		   && (psDroid->sMove.Status != MOVEINACTIVE || isTransporter(psDroid));
+//}
 
 /* returns true if it's a VTOL weapon droid which has completed all runs */
-bool vtolEmpty(const DROID *psDroid)
-{
-	CHECK_DROID(psDroid);
+//bool vtolEmpty(const DROID *psDroid)
+//{
+//	CHECK_DROID(psDroid);
+//
+//	if (!isVtolDroid(psDroid))
+//	{
+//		return false;
+//	}
+//	if (psDroid->droidType != DROID_WEAPON)
+//	{
+//		return false;
+//	}
+//
+//	for (int i = 0; i < psDroid->numWeaps; i++)
+//	{
+//		if (asWeaponStats[psDroid->asWeaps[i].nStat].vtolAttackRuns > 0 &&
+//			psDroid->asWeaps[i].usedAmmo < getNumAttackRuns(psDroid, i))
+//		{
+//			return false;
+//		}
+//	}
+//
+//	return true;
+//}
 
-	if (!isVtolDroid(psDroid))
-	{
-		return false;
-	}
-	if (psDroid->droidType != DROID_WEAPON)
-	{
-		return false;
-	}
+///* returns true if it's a VTOL weapon droid which still has full ammo */
+//bool vtolFull(const DROID *psDroid)
+//{
+//	CHECK_DROID(psDroid);
+//
+//	if (!isVtolDroid(psDroid))
+//	{
+//		return false;
+//	}
+//	if (psDroid->droidType != DROID_WEAPON)
+//	{
+//		return false;
+//	}
+//
+//	for (int i = 0; i < psDroid->numWeaps; i++)
+//	{
+//		if (asWeaponStats[psDroid->asWeaps[i].nStat].vtolAttackRuns > 0 &&
+//			psDroid->asWeaps[i].usedAmmo > 0)
+//		{
+//			return false;
+//		}
+//	}
+//
+//	return true;
+//}
 
-	for (int i = 0; i < psDroid->numWeaps; i++)
-	{
-		if (asWeaponStats[psDroid->asWeaps[i].nStat].vtolAttackRuns > 0 &&
-			psDroid->asWeaps[i].usedAmmo < getNumAttackRuns(psDroid, i))
-		{
-			return false;
-		}
-	}
+//// true if a vtol is waiting to be rearmed by a particular rearm pad
+//bool vtolReadyToRearm(DROID *psDroid, STRUCTURE *psStruct)
+//{
+//	CHECK_DROID(psDroid);
+//
+//	if (!isVtolDroid(psDroid) || psDroid->action != DACTION_WAITFORREARM)
+//	{
+//		return false;
+//	}
+//
+//	// If a unit has been ordered to rearm make sure it goes to the correct base
+//	STRUCTURE *psRearmPad = castStructure(orderStateObj(psDroid, DORDER_REARM));
+//	if (psRearmPad && psRearmPad != psStruct && !vtolOnRearmPad(psRearmPad, psDroid))
+//	{
+//		// target rearm pad is clear - let it go there
+//		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we already have another available at %d,%d", psStruct->pos.x / TILE_UNITS, psStruct->pos.y / TILE_UNITS, psRearmPad->pos.x / TILE_UNITS, psRearmPad->pos.y / TILE_UNITS);
+//		return false;
+//	}
+//
+//	if (vtolHappy(psDroid) && vtolOnRearmPad(psStruct, psDroid))
+//	{
+//		// there is a vtol on the pad and this vtol is already rearmed
+//		// don't bother shifting the other vtol off
+//		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we're rearmed and pad is busy", psStruct->pos.x / TILE_UNITS, psStruct->pos.y / TILE_UNITS);
+//		return false;
+//	}
+//
+//	STRUCTURE *psTarget = castStructure(psDroid->psActionTarget[0]);
+//	if (psTarget && psTarget->pFunctionality && psTarget->pFunctionality->rearmPad.psObj == psDroid)
+//	{
+//		// vtol is rearming at a different base, leave it alone
+//		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we already are snatched by %d,%d", psStruct->pos.x / TILE_UNITS, psStruct->pos.y / TILE_UNITS, psTarget->pos.x / TILE_UNITS, psTarget->pos.y / TILE_UNITS);
+//		return false;
+//	}
+//
+//	return true;
+//}
 
-	return true;
-}
+//// true if a vtol droid currently returning to be rearmed
+//bool vtolRearming(const DROID *psDroid)
+//{
+//	CHECK_DROID(psDroid);
+//
+//	if (!isVtolDroid(psDroid))
+//	{
+//		return false;
+//	}
+//	if (psDroid->droidType != DROID_WEAPON)
+//	{
+//		return false;
+//	}
+//
+//	if (psDroid->action == DACTION_MOVETOREARM ||
+//		psDroid->action == DACTION_WAITFORREARM ||
+//		psDroid->action == DACTION_MOVETOREARMPOINT ||
+//		psDroid->action == DACTION_WAITDURINGREARM)
+//	{
+//		return true;
+//	}
+//
+//	return false;
+//}
 
-/* returns true if it's a VTOL weapon droid which still has full ammo */
-bool vtolFull(const DROID *psDroid)
-{
-	CHECK_DROID(psDroid);
+//// true if a droid is currently attacking
+//bool droidAttacking(const DROID *psDroid)
+//{
+//	CHECK_DROID(psDroid);
+//
+//	//what about cyborgs?
+//	if (!(psDroid->droidType == DROID_WEAPON || psDroid->droidType == DROID_CYBORG ||
+//		  psDroid->droidType == DROID_CYBORG_SUPER))
+//	{
+//		return false;
+//	}
+//
+//	if (psDroid->action == DACTION_ATTACK ||
+//		psDroid->action == DACTION_MOVETOATTACK ||
+//		psDroid->action == DACTION_ROTATETOATTACK ||
+//		psDroid->action == DACTION_VTOLATTACK ||
+//		psDroid->action == DACTION_MOVEFIRE)
+//	{
+//		return true;
+//	}
+//
+//	return false;
+//}
 
-	if (!isVtolDroid(psDroid))
-	{
-		return false;
-	}
-	if (psDroid->droidType != DROID_WEAPON)
-	{
-		return false;
-	}
-
-	for (int i = 0; i < psDroid->numWeaps; i++)
-	{
-		if (asWeaponStats[psDroid->asWeaps[i].nStat].vtolAttackRuns > 0 &&
-			psDroid->asWeaps[i].usedAmmo > 0)
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-// true if a vtol is waiting to be rearmed by a particular rearm pad
-bool vtolReadyToRearm(DROID *psDroid, STRUCTURE *psStruct)
-{
-	CHECK_DROID(psDroid);
-
-	if (!isVtolDroid(psDroid) || psDroid->action != DACTION_WAITFORREARM)
-	{
-		return false;
-	}
-
-	// If a unit has been ordered to rearm make sure it goes to the correct base
-	STRUCTURE *psRearmPad = castStructure(orderStateObj(psDroid, DORDER_REARM));
-	if (psRearmPad && psRearmPad != psStruct && !vtolOnRearmPad(psRearmPad, psDroid))
-	{
-		// target rearm pad is clear - let it go there
-		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we already have another available at %d,%d", psStruct->pos.x / TILE_UNITS, psStruct->pos.y / TILE_UNITS, psRearmPad->pos.x / TILE_UNITS, psRearmPad->pos.y / TILE_UNITS);
-		return false;
-	}
-
-	if (vtolHappy(psDroid) && vtolOnRearmPad(psStruct, psDroid))
-	{
-		// there is a vtol on the pad and this vtol is already rearmed
-		// don't bother shifting the other vtol off
-		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we're rearmed and pad is busy", psStruct->pos.x / TILE_UNITS, psStruct->pos.y / TILE_UNITS);
-		return false;
-	}
-
-	STRUCTURE *psTarget = castStructure(psDroid->psActionTarget[0]);
-	if (psTarget && psTarget->pFunctionality && psTarget->pFunctionality->rearmPad.psObj == psDroid)
-	{
-		// vtol is rearming at a different base, leave it alone
-		objTrace(psDroid->id, "rearm pad at %d,%d won't snatch us - we already are snatched by %d,%d", psStruct->pos.x / TILE_UNITS, psStruct->pos.y / TILE_UNITS, psTarget->pos.x / TILE_UNITS, psTarget->pos.y / TILE_UNITS);
-		return false;
-	}
-
-	return true;
-}
-
-// true if a vtol droid currently returning to be rearmed
-bool vtolRearming(const DROID *psDroid)
-{
-	CHECK_DROID(psDroid);
-
-	if (!isVtolDroid(psDroid))
-	{
-		return false;
-	}
-	if (psDroid->droidType != DROID_WEAPON)
-	{
-		return false;
-	}
-
-	if (psDroid->action == DACTION_MOVETOREARM ||
-		psDroid->action == DACTION_WAITFORREARM ||
-		psDroid->action == DACTION_MOVETOREARMPOINT ||
-		psDroid->action == DACTION_WAITDURINGREARM)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-// true if a droid is currently attacking
-bool droidAttacking(const DROID *psDroid)
-{
-	CHECK_DROID(psDroid);
-
-	//what about cyborgs?
-	if (!(psDroid->droidType == DROID_WEAPON || psDroid->droidType == DROID_CYBORG ||
-		  psDroid->droidType == DROID_CYBORG_SUPER))
-	{
-		return false;
-	}
-
-	if (psDroid->action == DACTION_ATTACK ||
-		psDroid->action == DACTION_MOVETOATTACK ||
-		psDroid->action == DACTION_ROTATETOATTACK ||
-		psDroid->action == DACTION_VTOLATTACK ||
-		psDroid->action == DACTION_MOVEFIRE)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-// see if there are any other vtols attacking the same target
-// but still rearming
-bool allVtolsRearmed(const DROID *psDroid)
-{
-	CHECK_DROID(psDroid);
-
-	// ignore all non vtols
-	if (!isVtolDroid(psDroid))
-	{
-		return true;
-	}
-
-	bool stillRearming = false;
-	for (const DROID *psCurr = apsDroidLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
-	{
-		if (vtolRearming(psCurr) &&
-			psCurr->order.type == psDroid->order.type &&
-			psCurr->order.psObj == psDroid->order.psObj)
-		{
-			stillRearming = true;
-			break;
-		}
-	}
-
-	return !stillRearming;
-}
-
+//// see if there are any other vtols attacking the same target
+//// but still rearming
+//bool allVtolsRearmed(const DROID *psDroid)
+//{
+//	CHECK_DROID(psDroid);
+//
+//	// ignore all non vtols
+//	if (!isVtolDroid(psDroid))
+//	{
+//		return true;
+//	}
+//
+//	bool stillRearming = false;
+//	for (const DROID *psCurr = apsDroidLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+//	{
+//		if (vtolRearming(psCurr) &&
+//			psCurr->order.type == psDroid->order.type &&
+//			psCurr->order.psObj == psDroid->order.psObj)
+//		{
+//			stillRearming = true;
+//			break;
+//		}
+//	}
+//
+//	return !stillRearming;
+//}
 
 /*returns a count of the base number of attack runs for the weapon attached to the droid*/
 UWORD   getNumAttackRuns(const DROID *psDroid, int weapon_slot)
@@ -2866,45 +2865,45 @@ UWORD   getNumAttackRuns(const DROID *psDroid, int weapon_slot)
 	return asWeaponStats[psDroid->asWeaps[weapon_slot].nStat].vtolAttackRuns;
 }
 
-/*Checks a vtol for being fully armed and fully repaired to see if ready to
-leave reArm pad */
-bool vtolHappy(const DROID *psDroid)
-{
-	CHECK_DROID(psDroid);
-
-	ASSERT_OR_RETURN(false, isVtolDroid(psDroid), "not a VTOL droid");
-
-	if (psDroid->body < psDroid->originalBody)
-	{
-		// VTOLs with less health than their original aren't happy
-		return false;
-	}
-
-	if (psDroid->droidType != DROID_WEAPON)
-	{
-		// Not an armed droid, so don't check the (non-existent) weapons
-		return true;
-	}
-
-	/* NOTE: Previous code (r5410) returned false if a droid had no weapon,
-	 *       which IMO isn't correct, but might be expected behaviour. I'm
-	 *       also not sure if weapon droids (see the above droidType check)
-	 *       can even have zero weapons. -- Giel
-	 */
-	ASSERT_OR_RETURN(false, psDroid->numWeaps > 0, "VTOL weapon droid without weapons found!");
-
-	//check full complement of ammo
-	for (int i = 0; i < psDroid->numWeaps; ++i)
-	{
-		if (asWeaponStats[psDroid->asWeaps[i].nStat].vtolAttackRuns > 0
-			&& psDroid->asWeaps[i].usedAmmo != 0)
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
+///*Checks a vtol for being fully armed and fully repaired to see if ready to
+//leave reArm pad */
+//bool vtolHappy(const DROID *psDroid)
+//{
+//	CHECK_DROID(psDroid);
+//
+//	ASSERT_OR_RETURN(false, isVtolDroid(psDroid), "not a VTOL droid");
+//
+//	if (psDroid->body < psDroid->originalBody)
+//	{
+//		// VTOLs with less health than their original aren't happy
+//		return false;
+//	}
+//
+//	if (psDroid->droidType != DROID_WEAPON)
+//	{
+//		// Not an armed droid, so don't check the (non-existent) weapons
+//		return true;
+//	}
+//
+//	/* NOTE: Previous code (r5410) returned false if a droid had no weapon,
+//	 *       which IMO isn't correct, but might be expected behaviour. I'm
+//	 *       also not sure if weapon droids (see the above droidType check)
+//	 *       can even have zero weapons. -- Giel
+//	 */
+//	ASSERT_OR_RETURN(false, psDroid->numWeaps > 0, "VTOL weapon droid without weapons found!");
+//
+//	//check full complement of ammo
+//	for (int i = 0; i < psDroid->numWeaps; ++i)
+//	{
+//		if (asWeaponStats[psDroid->asWeaps[i].nStat].vtolAttackRuns > 0
+//			&& psDroid->asWeaps[i].usedAmmo != 0)
+//		{
+//			return false;
+//		}
+//	}
+//
+//	return true;
+//}
 
 /*checks if the droid is a VTOL droid and updates the attack runs as required*/
 void updateVtolAttackRun(DROID *psDroid, int weapon_slot)
