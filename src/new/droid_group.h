@@ -7,6 +7,8 @@
 
 #include "droid.h"
 
+std::vector<Droid_Group> droid_groups;
+
 enum class GROUP_TYPE
 {
 	NORMAL,
@@ -17,6 +19,8 @@ enum class GROUP_TYPE
 class Droid_Group
 {
 public:
+  Droid_Group(unsigned id);
+
 	void add(Droid& droid);
 	void remove(Droid& droid);
 	[[nodiscard]] bool is_command_group() const noexcept;

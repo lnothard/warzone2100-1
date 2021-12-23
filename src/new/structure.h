@@ -205,6 +205,8 @@ namespace Impl
 	[[nodiscard]] bool target_within_range(const Structure& structure, const Unit& unit, int weapon_slot);
 }
 
+const Structure* find_repair_facility(unsigned player);
+
 struct Production_Job
 {
 	std::shared_ptr<Droid_Template> droid_template;

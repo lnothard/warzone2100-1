@@ -6,6 +6,11 @@
 
 #include "droid_group.h"
 
+void Droid_Group::add(Droid& droid)
+{
+  members.push_back(&droid);
+}
+
 bool Droid_Group::is_command_group() const noexcept
 {
 	return type == COMMAND;

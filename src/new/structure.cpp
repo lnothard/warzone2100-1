@@ -355,3 +355,14 @@ void Factory::decrement_production_loops()
     --production_loops;
   }
 }
+
+const Structure* find_repair_facility(unsigned player)
+{
+  const auto& structures = structure_lists[player];
+
+  auto it = std::find_if(structures.begin(), structures.end(), [](const auto& structure)
+  {
+    return dynamic_cast<const Repair_Facility*>(structure);
+  });
+  return (it != std::begin(structures)) ? *it : nullptr;
+}
