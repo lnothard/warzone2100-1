@@ -128,6 +128,8 @@ public:
 	[[nodiscard]] int calculate_height() const;
   [[nodiscard]] int space_occupied_on_transporter() const;
   [[nodiscard]] int get_vertical_speed() const noexcept;
+  void increment_kills() noexcept;
+  void increment_commander_kills() const;
 private:
 	using enum ACTION;
 	using enum DROID_TYPE;

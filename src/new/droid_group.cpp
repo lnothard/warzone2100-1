@@ -33,3 +33,8 @@ void Droid_Group::commander_gain_experience(unsigned exp)
 {
 	commander->gain_experience(exp);
 }
+
+void Droid_Group::increment_commander_kills()
+{
+  commander->increment_kills();
+}

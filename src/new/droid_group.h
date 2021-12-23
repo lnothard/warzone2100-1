@@ -27,6 +27,7 @@ public:
 	[[nodiscard]] bool has_electronic_weapon() const;
 	[[nodiscard]] unsigned get_commander_level() const;
 	void commander_gain_experience(unsigned exp);
+  void increment_commander_kills();
 private:
 	using enum GROUP_TYPE;
 

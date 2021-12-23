@@ -1652,16 +1652,16 @@ static int32_t objectDamageDispatch(DAMAGE* psDamage)
 	return 0;
 }
 
-static bool isFriendlyFire(DAMAGE* psDamage)
-{
-	return psDamage->psProjectile->psDest && psDamage->psProjectile->psSource->player == psDamage->psProjectile->psDest
-		->player;
-}
+//static bool isFriendlyFire(DAMAGE* psDamage)
+//{
+//	return psDamage->psProjectile->psDest && psDamage->psProjectile->psSource->player == psDamage->psProjectile->psDest
+//		->player;
+//}
 
-static bool shouldIncreaseExperience(DAMAGE* psDamage)
-{
-	return psDamage->psProjectile->psSource && !isFeature(psDamage->psProjectile->psDest) && !isFriendlyFire(psDamage);
-}
+//static bool shouldIncreaseExperience(DAMAGE* psDamage)
+//{
+//	return psDamage->psProjectile->psSource && !isFeature(psDamage->psProjectile->psDest) && !isFriendlyFire(psDamage);
+//}
 
 static void updateKills(DAMAGE* psDamage)
 {

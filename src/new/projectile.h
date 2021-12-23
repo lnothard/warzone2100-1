@@ -20,12 +20,8 @@ enum class PROJECTILE_STATE
 	INACTIVE
 };
 
-class Projectile : public virtual Simple_Object, public Impl::Simple_Object
+struct Projectile
 {
-public:
-private:
-	using enum PROJECTILE_STATE;
-
 	PROJECTILE_STATE state;
 	Unit* source;
 	Unit* target;
@@ -33,6 +29,21 @@ private:
 	Vector3i origin;
 	unsigned base_damage;
 };
+
+struct Damage
+{
+    Projectile* projectile;
+    Unit* target;
+    unsigned damage;
+    WEAPON_CLASS weapon_class;
+    WEAPON_SUBCLASS weapon_subclass;
+    std::size_t impact_time;
+    bool is_ticking_damage;
+    int min_damage;
+};
+
+[[nodiscard]] bool is_friendly_fire(const Damage& damage);
+[[nodiscard]] bool should_increase_experience(const Damage& damage);
 
 [[nodiscard]] constexpr int calculate_height(const Projectile& projectile)
 {

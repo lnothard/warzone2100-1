@@ -136,6 +136,7 @@ void Droid::gain_experience(unsigned exp)
 void Droid::commander_gain_experience(unsigned exp) const
 {
 	assert(has_commander());
+
 	group->commander_gain_experience(exp);
 }
 
@@ -366,6 +367,17 @@ int Droid::space_occupied_on_transporter() const
 int Droid::get_vertical_speed() const noexcept
 {
   return movement->get_vertical_speed();
+}
+
+void Droid::increment_kills() noexcept
+{
+  ++kills;
+}
+
+void Droid::increment_commander_kills() const
+{
+  assert(has_commander());
+  group->increment_commander_kills();
 }
 
 bool transporter_is_flying(const Droid& transporter)
