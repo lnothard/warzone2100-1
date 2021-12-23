@@ -26,8 +26,8 @@
 # include <objbase.h> /* For CoInitializeEx */
 # include <ntverp.h> /* Windows SDK - include for access to VER_PRODUCTBUILD */
 # if VER_PRODUCTBUILD >= 9600
-	// 9600 is the Windows SDK 8.1
-	# include <VersionHelpers.h> /* For IsWindows7OrGreater() */
+// 9600 is the Windows SDK 8.1
+# include <VersionHelpers.h> /* For IsWindows7OrGreater() */
 # else
 	// Earlier SDKs may not have VersionHelpers.h - use simple fallback
 	inline bool IsWindows7OrGreater()
@@ -60,12 +60,12 @@
 #include <vector>
 
 #if defined(WZ_OS_WIN)
-static const std::vector<std::string> validLinkPrefixes = { "http://", "https://", "ms-windows-store://" };
+static const std::vector<std::string> validLinkPrefixes = {"http://", "https://", "ms-windows-store://"};
 #else
 static const std::vector<std::string> validLinkPrefixes = { "http://", "https://" };
 #endif
 
-bool urlHasAcceptableProtocol(char const *url)
+bool urlHasAcceptableProtocol(char const* url)
 {
 	// Verify URL starts with a validLinkPrefixes (examples: http:// or https:// )
 	bool bValidLinkPrefix = false;
@@ -87,14 +87,16 @@ bool win_utf8ToUtf16(const char* str, std::vector<wchar_t>& outputWStr)
 	if (wstr_len <= 0)
 	{
 		DWORD dwError = GetLastError();
-		debug(LOG_ERROR, "Could not not convert string from UTF-8; MultiByteToWideChar failed with error %lu: %s\n", dwError, str);
+		debug(LOG_ERROR, "Could not not convert string from UTF-8; MultiByteToWideChar failed with error %lu: %s\n",
+		      dwError, str);
 		return false;
 	}
 	outputWStr = std::vector<wchar_t>(wstr_len, L'\0');
 	if (MultiByteToWideChar(CP_UTF8, 0, str, -1, &outputWStr[0], wstr_len) == 0)
 	{
 		DWORD dwError = GetLastError();
-		debug(LOG_ERROR, "Could not not convert string from UTF-8; MultiByteToWideChar[2] failed with error %lu: %s\n", dwError, str);
+		debug(LOG_ERROR, "Could not not convert string from UTF-8; MultiByteToWideChar[2] failed with error %lu: %s\n",
+		      dwError, str);
 		return false;
 	}
 	return true;
@@ -127,7 +129,7 @@ bool xdg_open(const char *url)
 }
 #endif
 
-bool openURLInBrowser(char const *url)
+bool openURLInBrowser(char const* url)
 {
 	if (!url || !*url) return false;
 
@@ -149,7 +151,7 @@ bool openURLInBrowser(char const *url)
 		return false;
 	}
 
-	#define _INTERNET_MAX_URL_LENGTH 2083
+#define _INTERNET_MAX_URL_LENGTH 2083
 	if (wUrl.size() > _INTERNET_MAX_URL_LENGTH)
 	{
 		debug(LOG_ERROR, "URL length (%zu) exceeds maximum supported length: %s\n", wUrl.size(), url);
@@ -158,9 +160,9 @@ bool openURLInBrowser(char const *url)
 	std::vector<wchar_t> wUrlCanonicalized(_INTERNET_MAX_URL_LENGTH + 1, L'\0');
 	DWORD canonicalizedLength = wUrlCanonicalized.size();
 	DWORD dwFlags = URL_UNESCAPE | URL_ESCAPE_UNSAFE;
-	#ifndef URL_ESCAPE_AS_UTF8
-	# define URL_ESCAPE_AS_UTF8 0x00040000
-	#endif
+#ifndef URL_ESCAPE_AS_UTF8
+# define URL_ESCAPE_AS_UTF8 0x00040000
+#endif
 	if (IsWindows7OrGreater())
 	{
 		dwFlags |= URL_ESCAPE_AS_UTF8;
@@ -211,13 +213,13 @@ bool openURLInBrowser(char const *url)
 std::string urlEncode(const char* urlFragment)
 {
 # if LIBCURL_VERSION_NUM >= 0x070F04	// cURL 7.15.4+
-	CURL *curl = curl_easy_init();
+	CURL* curl = curl_easy_init();
 	if (!curl)
 	{
 		debug(LOG_ERROR, "curl_easy_init failed");
 		return "";
 	}
-	char *urlEscaped = curl_easy_escape(curl, urlFragment, 0);
+	char* urlEscaped = curl_easy_escape(curl, urlFragment, 0);
 	if (!urlEscaped)
 	{
 		debug(LOG_ERROR, "curl_easy_escape failed");

@@ -52,11 +52,11 @@
 #include "random.h"
 
 /* The statistics for the features */
-FEATURE_STATS	*asFeatureStats;
-UDWORD			numFeatureStats;
+FEATURE_STATS* asFeatureStats;
+UDWORD numFeatureStats;
 
 //Value is stored for easy access to this feature in destroyDroid()/destroyStruct()
-FEATURE_STATS *oilResFeature = nullptr;
+FEATURE_STATS* oilResFeature = nullptr;
 
 void featureInitVars()
 {
@@ -66,7 +66,7 @@ void featureInitVars()
 }
 
 /* Load the feature stats */
-bool loadFeatureStats(WzConfig &ini)
+bool loadFeatureStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
@@ -76,7 +76,7 @@ bool loadFeatureStats(WzConfig &ini)
 	{
 		ini.beginGroup(list[i]);
 		asFeatureStats[i] = FEATURE_STATS(STAT_FEATURE + i);
-		FEATURE_STATS *p = &asFeatureStats[i];
+		FEATURE_STATS* p = &asFeatureStats[i];
 		p->name = ini.string(WzString::fromUtf8("name"));
 		p->id = list[i];
 		WzString subType = ini.value("type").toWzString();
@@ -155,7 +155,8 @@ void featureStatsShutDown()
  *  \param weaponClass,weaponSubClass the class and subclass of the weapon that deals the damage
  *  \return < 0 never, >= 0 always
  */
-int32_t featureDamage(FEATURE *psFeature, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass, unsigned impactTime, bool isDamagePerSecond, int minDamage)
+int32_t featureDamage(FEATURE* psFeature, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
+                      unsigned impactTime, bool isDamagePerSecond, int minDamage)
 {
 	int32_t relativeDamage;
 
@@ -164,7 +165,8 @@ int32_t featureDamage(FEATURE *psFeature, unsigned damage, WEAPON_CLASS weaponCl
 	debug(LOG_ATTACK, "feature (id %d): body %d armour %d damage: %d",
 	      psFeature->id, psFeature->body, psFeature->psStats->armourValue, damage);
 
-	relativeDamage = objDamage(psFeature, damage, psFeature->psStats->body, weaponClass, weaponSubClass, isDamagePerSecond, minDamage);
+	relativeDamage = objDamage(psFeature, damage, psFeature->psStats->body, weaponClass, weaponSubClass,
+	                           isDamagePerSecond, minDamage);
 
 	// If the shell did sufficient damage to destroy the feature
 	if (relativeDamage < 0)
@@ -181,10 +183,10 @@ int32_t featureDamage(FEATURE *psFeature, unsigned damage, WEAPON_CLASS weaponCl
 
 
 /* Create a feature on the map */
-FEATURE *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave)
+FEATURE* buildFeature(FEATURE_STATS* psStats, UDWORD x, UDWORD y, bool FromSave)
 {
 	//try and create the Feature
-	FEATURE *psFeature = new FEATURE(generateSynchronisedObjectId(), psStats);
+	FEATURE* psFeature = new FEATURE(generateSynchronisedObjectId(), psStats);
 
 	if (psFeature == nullptr)
 	{
@@ -197,15 +199,16 @@ FEATURE *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave)
 	// snap the coords to a tile
 	if (!FromSave)
 	{
-		x = (x & ~TILE_MASK) + psStats->baseWidth  % 2 * TILE_UNITS / 2;
+		x = (x & ~TILE_MASK) + psStats->baseWidth % 2 * TILE_UNITS / 2;
 		y = (y & ~TILE_MASK) + psStats->baseBreadth % 2 * TILE_UNITS / 2;
 	}
 	else
 	{
-		if ((x & TILE_MASK) != psStats->baseWidth  % 2 * TILE_UNITS / 2 ||
-		    (y & TILE_MASK) != psStats->baseBreadth % 2 * TILE_UNITS / 2)
+		if ((x & TILE_MASK) != psStats->baseWidth % 2 * TILE_UNITS / 2 ||
+			(y & TILE_MASK) != psStats->baseBreadth % 2 * TILE_UNITS / 2)
 		{
-			debug(LOG_WARNING, "Feature not aligned. position (%d,%d), size (%d,%d)", x, y, psStats->baseWidth, psStats->baseBreadth);
+			debug(LOG_WARNING, "Feature not aligned. position (%d,%d), size (%d,%d)", x, y, psStats->baseWidth,
+			      psStats->baseBreadth);
 		}
 	}
 
@@ -250,32 +253,37 @@ FEATURE *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave)
 	// set up the imd for the feature
 	psFeature->sDisplay.imd = psStats->psImd;
 
-	ASSERT_OR_RETURN(nullptr, psFeature->sDisplay.imd, "No IMD for feature");		// make sure we have an imd.
+	ASSERT_OR_RETURN(nullptr, psFeature->sDisplay.imd, "No IMD for feature"); // make sure we have an imd.
 
 	for (int breadth = 0; breadth < b.size.y; ++breadth)
 	{
 		for (int width = 0; width < b.size.x; ++width)
 		{
-			MAPTILE *psTile = mapTile(b.map.x + width, b.map.y + breadth);
+			MAPTILE* psTile = mapTile(b.map.x + width, b.map.y + breadth);
 
 			//check not outside of map - for load save game
-			ASSERT_OR_RETURN(nullptr, b.map.x + width < mapWidth, "x coord bigger than map width - %s, id = %d", getStatsName(psFeature->psStats), psFeature->id);
-			ASSERT_OR_RETURN(nullptr, b.map.y + breadth < mapHeight, "y coord bigger than map height - %s, id = %d", getStatsName(psFeature->psStats), psFeature->id);
+			ASSERT_OR_RETURN(nullptr, b.map.x + width < mapWidth, "x coord bigger than map width - %s, id = %d",
+			                 getStatsName(psFeature->psStats), psFeature->id);
+			ASSERT_OR_RETURN(nullptr, b.map.y + breadth < mapHeight, "y coord bigger than map height - %s, id = %d",
+			                 getStatsName(psFeature->psStats), psFeature->id);
 
 			if (width != psStats->baseWidth && breadth != psStats->baseBreadth)
 			{
 				if (TileHasFeature(psTile))
 				{
-					FEATURE *psBlock = (FEATURE *)psTile->psObject;
+					FEATURE* psBlock = (FEATURE*)psTile->psObject;
 
-					debug(LOG_ERROR, "%s(%d) already placed at (%d+%d, %d+%d) when trying to place %s(%d) at (%d+%d, %d+%d) - removing it",
-					      getStatsName(psBlock->psStats), psBlock->id, map_coord(psBlock->pos.x), psBlock->psStats->baseWidth, map_coord(psBlock->pos.y),
-					      psBlock->psStats->baseBreadth, getStatsName(psFeature->psStats), psFeature->id, b.map.x, b.size.x, b.map.y, b.size.y);
+					debug(LOG_ERROR,
+					      "%s(%d) already placed at (%d+%d, %d+%d) when trying to place %s(%d) at (%d+%d, %d+%d) - removing it",
+					      getStatsName(psBlock->psStats), psBlock->id, map_coord(psBlock->pos.x),
+					      psBlock->psStats->baseWidth, map_coord(psBlock->pos.y),
+					      psBlock->psStats->baseBreadth, getStatsName(psFeature->psStats), psFeature->id, b.map.x,
+					      b.size.x, b.map.y, b.size.y);
 
 					removeFeature(psBlock);
 				}
 
-				psTile->psObject = (BASE_OBJECT *)psFeature;
+				psTile->psObject = (BASE_OBJECT*)psFeature;
 
 				// if it's a tall feature then flag it in the map.
 				if (psFeature->sDisplay.imd->max.y > TALLOBJECT_YMAX)
@@ -295,16 +303,17 @@ FEATURE *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave)
 			}
 		}
 	}
-	psFeature->pos.z = map_TileHeight(b.map.x, b.map.y);//jps 18july97
+	psFeature->pos.z = map_TileHeight(b.map.x, b.map.y); //jps 18july97
 
 	return psFeature;
 }
 
 
-FEATURE::FEATURE(uint32_t id, FEATURE_STATS const *psStats)
-	: BASE_OBJECT(OBJ_FEATURE, id, PLAYER_FEATURE)  // Set the default player out of range to avoid targeting confusions
-	, psStats(psStats)
-{}
+FEATURE::FEATURE(uint32_t id, FEATURE_STATS const* psStats)
+	: BASE_OBJECT(OBJ_FEATURE, id, PLAYER_FEATURE) // Set the default player out of range to avoid targeting confusions
+	  , psStats(psStats)
+{
+}
 
 /* Release the resources associated with a feature */
 FEATURE::~FEATURE()
@@ -313,9 +322,10 @@ FEATURE::~FEATURE()
 	audio_RemoveObj(this);
 }
 
-void _syncDebugFeature(const char *function, FEATURE const *psFeature, char ch)
+void _syncDebugFeature(const char* function, FEATURE const* psFeature, char ch)
 {
-	if (psFeature->type != OBJ_FEATURE) {
+	if (psFeature->type != OBJ_FEATURE)
+	{
 		ASSERT(false, "%c Broken psFeature->type %u!", ch, psFeature->type);
 		syncDebug("Broken psFeature->type %u!", psFeature->type);
 	}
@@ -331,19 +341,21 @@ void _syncDebugFeature(const char *function, FEATURE const *psFeature, char ch)
 		psFeature->psStats->damageable,
 		(int)psFeature->body,
 	};
-	_syncDebugIntList(function, "%c feature%d = p%d;pos(%d,%d,%d),subtype%d,damageable%d,body%d", list, ARRAY_SIZE(list));
+	_syncDebugIntList(function, "%c feature%d = p%d;pos(%d,%d,%d),subtype%d,damageable%d,body%d", list,
+	                  ARRAY_SIZE(list));
 }
 
 /* Update routine for features */
-void featureUpdate(FEATURE *psFeat)
+void featureUpdate(FEATURE* psFeat)
 {
 	syncDebugFeature(psFeat, '<');
 
 	/* Update the periodical damage data */
-	if (psFeat->periodicalDamageStart != 0 && psFeat->periodicalDamageStart != gameTime - deltaGameTime)  // -deltaGameTime, since projectiles are updated after features.
+	if (psFeat->periodicalDamageStart != 0 && psFeat->periodicalDamageStart != gameTime - deltaGameTime)
+	// -deltaGameTime, since projectiles are updated after features.
 	{
 		// The periodicalDamageStart has been set, but is not from the previous tick, so we must be out of the periodical damage.
-		psFeat->periodicalDamage = 0;  // Reset periodical damage done this tick.
+		psFeat->periodicalDamage = 0; // Reset periodical damage done this tick.
 		// Finished periodical damaging
 		psFeat->periodicalDamageStart = 0;
 	}
@@ -353,10 +365,10 @@ void featureUpdate(FEATURE *psFeat)
 
 
 // free up a feature with no visual effects
-bool removeFeature(FEATURE *psDel)
+bool removeFeature(FEATURE* psDel)
 {
-	MESSAGE		*psMessage;
-	Vector3i	pos;
+	MESSAGE* psMessage;
+	Vector3i pos;
 
 	ASSERT_OR_RETURN(false, psDel != nullptr, "Invalid feature pointer");
 	ASSERT_OR_RETURN(false, !psDel->died, "Feature already dead");
@@ -369,7 +381,7 @@ bool removeFeature(FEATURE *psDel)
 		{
 			if (tileOnMap(b.map.x + width, b.map.y + breadth))
 			{
-				MAPTILE *psTile = mapTile(b.map.x + width, b.map.y + breadth);
+				MAPTILE* psTile = mapTile(b.map.x + width, b.map.y + breadth);
 
 				if (psTile->psObject == psDel)
 				{
@@ -419,14 +431,15 @@ bool removeFeature(FEATURE *psDel)
 }
 
 /* Remove a Feature and free it's memory */
-bool destroyFeature(FEATURE *psDel, unsigned impactTime)
+bool destroyFeature(FEATURE* psDel, unsigned impactTime)
 {
-	UDWORD			widthScatter, breadthScatter, heightScatter, i;
-	EFFECT_TYPE		explosionSize;
+	UDWORD widthScatter, breadthScatter, heightScatter, i;
+	EFFECT_TYPE explosionSize;
 	Vector3i pos;
 
 	ASSERT_OR_RETURN(false, psDel != nullptr, "Invalid feature pointer");
-	ASSERT(gameTime - deltaGameTime < impactTime, "Expected %u < %u, gameTime = %u, bad impactTime", gameTime - deltaGameTime, impactTime, gameTime);
+	ASSERT(gameTime - deltaGameTime < impactTime, "Expected %u < %u, gameTime = %u, bad impactTime",
+	       gameTime - deltaGameTime, impactTime, gameTime);
 
 	/* Only add if visible and damageable*/
 	if (psDel->visibleForLocalDisplay() && psDel->psStats->damageable)
@@ -495,7 +508,7 @@ bool destroyFeature(FEATURE *psDel, unsigned impactTime)
 		{
 			for (int width = 0; width < b.size.x; ++width)
 			{
-				MAPTILE *psTile = mapTile(b.map.x + width, b.map.y + breadth);
+				MAPTILE* psTile = mapTile(b.map.x + width, b.map.y + breadth);
 				// stops water texture changing for underwater features
 				if (terrainType(psTile) != TER_WATER)
 				{
@@ -509,7 +522,8 @@ bool destroyFeature(FEATURE *psDel, unsigned impactTime)
 					{
 						/* This remains a blocking tile */
 						psTile->psObject = nullptr;
-						auxClearBlocking(b.map.x + width, b.map.y + breadth, AIR_BLOCKED);  // Shouldn't remain blocking for air units, however.
+						auxClearBlocking(b.map.x + width, b.map.y + breadth, AIR_BLOCKED);
+						// Shouldn't remain blocking for air units, however.
 						psTile->texture = TileNumber_texture(psTile->texture) | BLOCKING_RUBBLE_TILE;
 					}
 				}
@@ -523,9 +537,9 @@ bool destroyFeature(FEATURE *psDel, unsigned impactTime)
 }
 
 
-SDWORD getFeatureStatFromName(const WzString &name)
+SDWORD getFeatureStatFromName(const WzString& name)
 {
-	FEATURE_STATS *psStat;
+	FEATURE_STATS* psStat;
 
 	for (unsigned inc = 0; inc < numFeatureStats; inc++)
 	{
@@ -538,12 +552,12 @@ SDWORD getFeatureStatFromName(const WzString &name)
 	return -1;
 }
 
-StructureBounds getStructureBounds(FEATURE const *object)
+StructureBounds getStructureBounds(FEATURE const* object)
 {
 	return getStructureBounds(object->psStats, object->pos.xy());
 }
 
-StructureBounds getStructureBounds(FEATURE_STATS const *stats, Vector2i pos)
+StructureBounds getStructureBounds(FEATURE_STATS const* stats, Vector2i pos)
 {
 	const Vector2i size = stats->size();
 	const Vector2i map = map_coord(pos) - size / 2;

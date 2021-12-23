@@ -42,7 +42,8 @@ static bool isActiveSingleKey(const KeyMapping& mapping)
 	case KeyAction::RELEASED:
 		return mapping.keys.input.isReleased();
 	default:
-		debug(LOG_WARNING, "Unknown key action (action code %u) while processing keymap.", static_cast<unsigned int>(mapping.keys.action));
+		debug(LOG_WARNING, "Unknown key action (action code %u) while processing keymap.",
+		      static_cast<unsigned int>(mapping.keys.action));
 		return false;
 	}
 }
@@ -92,8 +93,8 @@ bool KeyMapping::isInvalid() const
 bool KeyMapping::isActivated() const
 {
 	return isCombination(*this)
-		? isActiveCombination(*this)
-		: isActiveSingleKey(*this);
+		       ? isActiveCombination(*this)
+		       : isActiveSingleKey(*this);
 }
 
 bool KeyMapping::hasMeta() const
@@ -116,7 +117,8 @@ bool KeyMapping::toString(char* pOutStr) const
 		break;
 	default:
 		strcpy(asciiSub, "NOT VALID");
-		debug(LOG_WZ, "Encountered invalid key mapping source %u while converting mapping to string!", static_cast<unsigned int>(keys.input.source));
+		debug(LOG_WZ, "Encountered invalid key mapping source %u while converting mapping to string!",
+		      static_cast<unsigned int>(keys.input.source));
 		return true;
 	}
 
@@ -178,16 +180,18 @@ KeyMapping& KeyMappings::add(const KeyCombination keys, const KeyFunctionInfo& i
 		gameTime,
 		keysWithLeftMeta,
 		slot
-		});
+	});
 
 	/* Invalidate the sorting order and return the newly created mapping */
 	bDirty = true;
 	return keyMappings.back();
 }
 
-nonstd::optional<std::reference_wrapper<KeyMapping>> KeyMappings::get(const KeyFunctionInfo& info, const KeyMappingSlot slot)
+nonstd::optional<std::reference_wrapper<KeyMapping>> KeyMappings::get(const KeyFunctionInfo& info,
+                                                                      const KeyMappingSlot slot)
 {
-	auto mapping = std::find_if(keyMappings.begin(), keyMappings.end(), [&info, slot](const KeyMapping& mapping) {
+	auto mapping = std::find_if(keyMappings.begin(), keyMappings.end(), [&info, slot](const KeyMapping& mapping)
+	{
 		return mapping.info.name == info.name && mapping.slot == slot;
 	});
 	if (mapping != keyMappings.end())
@@ -214,7 +218,8 @@ std::vector<std::reference_wrapper<KeyMapping>> KeyMappings::find(const KEY_CODE
 
 bool KeyMappings::remove(const KeyMapping& mappingToRemove)
 {
-	auto mapping = std::find_if(keyMappings.begin(), keyMappings.end(), [mappingToRemove](const KeyMapping& mapping) {
+	auto mapping = std::find_if(keyMappings.begin(), keyMappings.end(), [mappingToRemove](const KeyMapping& mapping)
+	{
 		return mapping == mappingToRemove;
 	});
 	if (mapping != keyMappings.end())
@@ -226,7 +231,8 @@ bool KeyMappings::remove(const KeyMapping& mappingToRemove)
 	return false;
 }
 
-std::vector<std::reference_wrapper<KeyMapping>> KeyMappings::findConflicting(const KEY_CODE meta, const KeyMappingInput input, const ContextId contextId, const ContextManager& contexts)
+std::vector<std::reference_wrapper<KeyMapping>> KeyMappings::findConflicting(
+	const KEY_CODE meta, const KeyMappingInput input, const ContextId contextId, const ContextManager& contexts)
 {
 	/* Find any mapping with same keys */
 	const auto matches = find(meta, input);
@@ -236,7 +242,8 @@ std::vector<std::reference_wrapper<KeyMapping>> KeyMappings::findConflicting(con
 		const InputContext mappingContext = contexts.get(mapping.info.context);
 
 		/* Keys conflict if they are for the same context. Always active contexts are special (always have highest priority), so those keys will always conflict. */
-		const bool bConflicts = mappingContext.isAlwaysActive() || std::string(mapping.info.context) == std::string(contextId);
+		const bool bConflicts = mappingContext.isAlwaysActive() || std::string(mapping.info.context) ==
+			std::string(contextId);
 		if (bConflicts)
 		{
 			conflicts.push_back(mapping);
@@ -246,7 +253,8 @@ std::vector<std::reference_wrapper<KeyMapping>> KeyMappings::findConflicting(con
 	return conflicts;
 }
 
-std::vector<KeyMapping> KeyMappings::removeConflicting(const KEY_CODE meta, const KeyMappingInput input, const ContextId& contextId, const ContextManager& contexts)
+std::vector<KeyMapping> KeyMappings::removeConflicting(const KEY_CODE meta, const KeyMappingInput input,
+                                                       const ContextId& contextId, const ContextManager& contexts)
 {
 	/* Find any mapping with same keys */
 	const auto conflicting = findConflicting(meta, input, contextId, contexts);
@@ -277,7 +285,8 @@ void KeyMappings::clear(nonstd::optional<KeyMappingType> filter)
 	}
 	else
 	{
-		keyMappings.remove_if([filter](const KeyMapping& mapping) {
+		keyMappings.remove_if([filter](const KeyMapping& mapping)
+		{
 			return mapping.info.type == filter.value();
 		});
 	}
@@ -287,13 +296,15 @@ void KeyMappings::clear(nonstd::optional<KeyMappingType> filter)
 
 void KeyMappings::sort(const ContextManager& contexts)
 {
-	keyMappings.sort([&contexts](const KeyMapping& a, const KeyMapping& b) {
+	keyMappings.sort([&contexts](const KeyMapping& a, const KeyMapping& b)
+	{
 		// Sort by meta. This causes all mappings with meta to be checked before non-meta mappings,
 		// avoiding having to check for meta-conflicts in the processing loop. (e.g. if we should execute
 		// a mapping with right arrow key, depending on if another binding on shift+right-arrow is executed
 		// or not). In other words, if any mapping with meta is executed, it will consume the respective input,
 		// preventing any non-meta mappings with the same input from being executed.
-		if (a.hasMeta() != b.hasMeta()) {
+		if (a.hasMeta() != b.hasMeta())
+		{
 			return a.hasMeta() && !b.hasMeta();
 		}
 
@@ -307,13 +318,15 @@ void KeyMappings::sort(const ContextManager& contexts)
 
 static KeyMappingInput createInputForSource(const KeyMappingInputSource source, const unsigned int keyCode)
 {
-	switch (source) {
+	switch (source)
+	{
 	case KeyMappingInputSource::KEY_CODE:
 		return (KEY_CODE)keyCode;
 	case KeyMappingInputSource::MOUSE_KEY_CODE:
 		return (MOUSE_KEY_CODE)keyCode;
 	default:
-		debug(LOG_WZ, "Encountered invalid key mapping source %u while loading keymap!", static_cast<unsigned int>(source));
+		debug(LOG_WZ, "Encountered invalid key mapping source %u while loading keymap!",
+		      static_cast<unsigned int>(source));
 		return KEY_CODE::KEY_MAXSCAN;
 	}
 }
@@ -356,7 +369,7 @@ bool KeyMappings::load(const char* path, const KeyFunctionConfiguration& keyFunc
 		const WzString slotName = ini.value("slot", "primary").toWzString();
 		const KeyMappingSlot slot = keyMappingSlotByName(slotName.toUtf8().c_str());
 
-		add({ meta, input, action }, *info, slot);
+		add({meta, input, action}, *info, slot);
 	}
 	ini.endArray();
 	return true;
@@ -386,7 +399,8 @@ bool KeyMappings::save(const char* path) const
 		ini.setValue("name", mapping.info.name);
 		ini.setValue("meta", mapping.keys.meta);
 
-		switch (mapping.keys.input.source) {
+		switch (mapping.keys.input.source)
+		{
 		case KeyMappingInputSource::KEY_CODE:
 			ini.setValue("source", "default");
 			ini.setValue("sub", mapping.keys.input.value.keyCode);
@@ -396,7 +410,8 @@ bool KeyMappings::save(const char* path) const
 			ini.setValue("sub", mapping.keys.input.value.mouseKeyCode);
 			break;
 		default:
-			debug(LOG_WZ, "Encountered invalid key mapping source %u while saving keymap!", static_cast<unsigned int>(mapping.keys.input.source));
+			debug(LOG_WZ, "Encountered invalid key mapping source %u while saving keymap!",
+			      static_cast<unsigned int>(mapping.keys.input.source));
 			break;
 		}
 		switch (mapping.slot)
@@ -408,7 +423,8 @@ bool KeyMappings::save(const char* path) const
 			ini.setValue("slot", "secondary");
 			break;
 		default:
-			debug(LOG_WZ, "Encountered invalid key mapping slot %u while saving keymap!", static_cast<unsigned int>(mapping.slot));
+			debug(LOG_WZ, "Encountered invalid key mapping slot %u while saving keymap!",
+			      static_cast<unsigned int>(mapping.slot));
 			break;
 		}
 

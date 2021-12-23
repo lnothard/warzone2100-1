@@ -25,7 +25,8 @@
 #include "lib/netplay/netplay.h"
 
 static const struct FACTION factions[NUM_FACTIONS] = {
-	{ "Normal",
+	{
+		"Normal",
 		{
 		}
 	},
@@ -42,7 +43,7 @@ static const struct FACTION factions[NUM_FACTIONS] = {
 			{"research_module4.pie", "research_module4_nex.pie"},
 			{"blbresch.pie", "blbresch_nex.pie"},
 			{"blbpower.pie", "blbpower_nex.pie"},
-			{"blbhq.pie",  "blbhq_nex.pie"},
+			{"blbhq.pie", "blbhq_nex.pie"},
 			{"blbdrdcm.pie", "blbdrdcm_nex.pie"},
 			{"blpower0.pie", "blpower0_nex.pie"},
 			{"blpower4.pie", "blpower4_nex.pie"},
@@ -84,11 +85,11 @@ static const struct FACTION factions[NUM_FACTIONS] = {
 			{"research_module4.pie", "research_module4_col.pie"},
 			{"blbresch.pie", "blbresch_col.pie"},
 			{"blbpower.pie", "blbpower_col.pie"},
-			{"blbhq.pie",  "blbhq_col.pie"},
+			{"blbhq.pie", "blbhq_col.pie"},
 			{"blbdrdcm.pie", "blbdrdcm_col.pie"},
 			{"blpower0.pie", "blpower0_col.pie"},
 			{"blpower4.pie", "blpower4_col.pie"},
-//			{"blpilbox.pie", "blpilbox_nex.pie"},
+			//			{"blpilbox.pie", "blpilbox_nex.pie"},
 			{"blfact0.pie", "blfact0_col.pie"},
 			{"factory_module1.pie", "factory_module1_col.pie"},
 			{"blfact1.pie", "blfact1_col.pie"},
@@ -98,9 +99,9 @@ static const struct FACTION factions[NUM_FACTIONS] = {
 			{"bldrdcm0.pie", "bldrdcm0_col.pie"},
 			{"blcfact1.pie", "blcfact1_col.pie"},
 			{"blbcfact.pie", "blbcfact_col.pie"},
-//			{"blcanpil.pie", "blcanpil_nex.pie"},
-//			{"blhowmnt.pie", "blhowmnt_nex.pie"},
-//			{"blguardm.pie", "blguardm_nex.pie"},
+			//			{"blcanpil.pie", "blcanpil_nex.pie"},
+			//			{"blhowmnt.pie", "blhowmnt_nex.pie"},
+			//			{"blguardm.pie", "blguardm_nex.pie"},
 			{"blvfact0.pie", "blvfact0_col.pie"},
 			{"blvfact1.pie", "blvfact1_col.pie"},
 			{"blvfact2.pie", "blvfact2_col.pie"},
@@ -108,18 +109,20 @@ static const struct FACTION factions[NUM_FACTIONS] = {
 			{"vtolfactory_module2.pie", "vtolfactory_module2_col.pie"},
 			{"blderik_anim.pie", "blderik_anim_col.pie"},
 			{"blderik.pie", "blderik_col.pie"},
-//			{"blmrtpit.pie", "blmrtpit_nex.pie"}
+			//			{"blmrtpit.pie", "blmrtpit_nex.pie"}
 		}
 	}
 };
 
-optional<WzString> getFactionModelName(const FACTION *faction, const WzString& normalFactionName)
+optional<WzString> getFactionModelName(const FACTION* faction, const WzString& normalFactionName)
 {
 	auto pos = faction->replaceIMD.find(normalFactionName);
 	if (pos == faction->replaceIMD.end())
 	{
 		return nullopt;
-	} else {
+	}
+	else
+	{
 		return pos->second;
 	}
 }
@@ -129,7 +132,7 @@ optional<WzString> getFactionModelName(const FactionID faction, const WzString& 
 	return getFactionModelName(getFactionByID(faction), normalFactionName);
 }
 
-iIMDShape* getFactionIMD(const FACTION *faction, iIMDShape* imd)
+iIMDShape* getFactionIMD(const FACTION* faction, iIMDShape* imd)
 {
 	WzString name = WzString::fromUtf8(modelName(imd));
 	auto factionModelName = getFactionModelName(faction, name);
@@ -179,12 +182,12 @@ const char* to_string(FactionID faction)
 {
 	switch (faction)
 	{
-		case FACTION_NORMAL:
-			return "Normal";
-		case FACTION_NEXUS:
-			return "NEXUS";
-		case FACTION_COLLECTIVE:
-			return "Collective";
+	case FACTION_NORMAL:
+		return "Normal";
+	case FACTION_NEXUS:
+		return "NEXUS";
+	case FACTION_COLLECTIVE:
+		return "Collective";
 	}
 	return ""; // silence warning - switch above should be complete
 }
@@ -193,15 +196,15 @@ const char* to_localized_string(FactionID faction)
 {
 	switch (faction)
 	{
-		case FACTION_NORMAL:
-			// TRANSLATORS: "Normal" Faction
-			return _("Normal");
-		case FACTION_NEXUS:
-			// TRANSLATORS: "NEXUS" Faction
-			return _("NEXUS");
-		case FACTION_COLLECTIVE:
-			// TRANSLATORS: "Collective" Faction
-			return _("Collective");
+	case FACTION_NORMAL:
+		// TRANSLATORS: "Normal" Faction
+		return _("Normal");
+	case FACTION_NEXUS:
+		// TRANSLATORS: "NEXUS" Faction
+		return _("NEXUS");
+	case FACTION_COLLECTIVE:
+		// TRANSLATORS: "Collective" Faction
+		return _("Collective");
 	}
 	return ""; // silence warning - switch above should be complete
 }

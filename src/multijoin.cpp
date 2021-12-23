@@ -80,7 +80,8 @@ static void resetMultiVisibility(UDWORD player);
 // ////////////////////////////////////////////////////////////////////////////
 // Local Variables
 
-struct DisplayMultiJoiningStatusCache {
+struct DisplayMultiJoiningStatusCache
+{
 	WzText wzMainProgressText;
 	WzText wzPlayerCountText;
 	std::vector<WzText> wzPlayerNameAndStatus;
@@ -101,22 +102,23 @@ void clearDisplayMultiJoiningStatusCache()
 
 bool intDisplayMultiJoiningStatus(UBYTE joinCount)
 {
-	UDWORD			x, y, w, h;
-	char			sTmp[6];
+	UDWORD x, y, w, h;
+	char sTmp[6];
 
 	w = RET_FORMWIDTH;
 	h = RET_FORMHEIGHT;
 	x = RET_X;
 	y = RET_Y;
 
-	RenderWindowFrame(FRAME_NORMAL, x, y , w, h);		// draw a wee blue box.
+	RenderWindowFrame(FRAME_NORMAL, x, y, w, h); // draw a wee blue box.
 
 	// display how far done..
 	textCache.wzMainProgressText.setText(_("Players Still Joining"), font_regular);
 	textCache.wzMainProgressText.render(x + (w / 2) - (textCache.wzMainProgressText.width() / 2),
-										y + (h / 2) - 8, WZCOL_TEXT_BRIGHT);
+	                                    y + (h / 2) - 8, WZCOL_TEXT_BRIGHT);
 
-	unsigned playerCount = 0;  // Calculate what NetPlay.playercount should be, which is apparently only non-zero for the host.
+	unsigned playerCount = 0;
+	// Calculate what NetPlay.playercount should be, which is apparently only non-zero for the host.
 	unsigned numUsedPlayerSlots = 0;
 	for (unsigned player = 0; player < MAX_CONNECTED_PLAYERS; ++player)
 	{
@@ -152,7 +154,7 @@ bool intDisplayMultiJoiningStatus(UBYTE joinCount)
 		}
 		else if (NetPlay.players[player].ai >= 0)
 		{
-			status = 2;  // AI player (automatically joined).
+			status = 2; // AI player (automatically joined).
 		}
 		if (status >= 0)
 		{
@@ -160,8 +162,10 @@ bool intDisplayMultiJoiningStatus(UBYTE joinCount)
 			{
 				textCache.wzPlayerNameAndStatus.resize(player + 1);
 			}
-			textCache.wzPlayerNameAndStatus[player].setText((statusStrings[status] + getPlayerName(player)).c_str(), font_small);
-			textCache.wzPlayerNameAndStatus[player].render(x + 5, yPos + yStep * NetPlay.players[player].position, WZCOL_TEXT_BRIGHT);
+			textCache.wzPlayerNameAndStatus[player].setText((statusStrings[status] + getPlayerName(player)).c_str(),
+			                                                font_small);
+			textCache.wzPlayerNameAndStatus[player].render(x + 5, yPos + yStep * NetPlay.players[player].position,
+			                                               WZCOL_TEXT_BRIGHT);
 		}
 	}
 
@@ -177,8 +181,8 @@ bool intDisplayMultiJoiningStatus(UBYTE joinCount)
 */
 void clearPlayer(UDWORD player, bool quietly)
 {
-	UDWORD			i;
-	STRUCTURE		*psStruct, *psNext;
+	UDWORD i;
+	STRUCTURE *psStruct, *psNext;
 
 	ASSERT_OR_RETURN(, player < MAX_CONNECTED_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
@@ -189,7 +193,7 @@ void clearPlayer(UDWORD player, bool quietly)
 	debug(LOG_NET, "R.I.P. %s (%u). quietly is %s", getPlayerName(player), player, quietly ? "true" : "false");
 
 	ingame.LagCounter[player] = 0;
-	ingame.JoiningInProgress[player] = false;	// if they never joined, reset the flag
+	ingame.JoiningInProgress[player] = false; // if they never joined, reset the flag
 	ingame.DataIntegrity[player] = false;
 	ingame.lastSentPlayerDataCheck2[player].reset();
 
@@ -198,9 +202,9 @@ void clearPlayer(UDWORD player, bool quietly)
 		return; // no more to do
 	}
 
-	(void)setPlayerName(player, "");				//clear custom player name (will use default instead)
+	(void)setPlayerName(player, ""); //clear custom player name (will use default instead)
 
-	for (i = 0; i < MAX_PLAYERS; i++)				// remove alliances
+	for (i = 0; i < MAX_PLAYERS; i++) // remove alliances
 	{
 		// Never remove a player's self-alliance, as the player can be selected and units added via the debug menu
 		// even after they have left, and this would lead to them firing on each other.
@@ -214,13 +218,13 @@ void clearPlayer(UDWORD player, bool quietly)
 	}
 
 	debug(LOG_DEATH, "killing off all droids for player %d", player);
-	while (apsDroidLists[player])				// delete all droids
+	while (apsDroidLists[player]) // delete all droids
 	{
-		if (quietly)			// don't show effects
+		if (quietly) // don't show effects
 		{
 			killDroid(apsDroidLists[player]);
 		}
-		else				// show effects
+		else // show effects
 		{
 			destroyDroid(apsDroidLists[player], gameTime);
 		}
@@ -228,16 +232,16 @@ void clearPlayer(UDWORD player, bool quietly)
 
 	debug(LOG_DEATH, "killing off all structures for player %d", player);
 	psStruct = apsStructLists[player];
-	while (psStruct)				// delete all structs
+	while (psStruct) // delete all structs
 	{
 		psNext = psStruct->psNext;
 
 		// FIXME: look why destroyStruct() doesn't put back the feature like removeStruct() does
-		if (quietly || psStruct->pStructureType->type == REF_RESOURCE_EXTRACTOR)		// don't show effects
+		if (quietly || psStruct->pStructureType->type == REF_RESOURCE_EXTRACTOR) // don't show effects
 		{
 			removeStruct(psStruct, true);
 		}
-		else			// show effects
+		else // show effects
 		{
 			destroyStruct(psStruct, gameTime);
 		}
@@ -251,18 +255,18 @@ void clearPlayer(UDWORD player, bool quietly)
 // Reset visibility, so a new player can't see the old stuff!!
 static void resetMultiVisibility(UDWORD player)
 {
-	UDWORD		owned;
-	DROID		*pDroid;
-	STRUCTURE	*pStruct;
+	UDWORD owned;
+	DROID* pDroid;
+	STRUCTURE* pStruct;
 
 	if (player >= MAX_PLAYERS)
 	{
 		return;
 	}
 
-	for (owned = 0 ; owned < MAX_PLAYERS ; owned++)		// for each player
+	for (owned = 0; owned < MAX_PLAYERS; owned++) // for each player
 	{
-		if (owned != player)								// done reset own stuff..
+		if (owned != player) // done reset own stuff..
 		{
 			//droids
 			for (pDroid = apsDroidLists[owned]; pDroid; pDroid = pDroid->psNext)
@@ -275,7 +279,6 @@ static void resetMultiVisibility(UDWORD player)
 			{
 				pStruct->visible[player] = false;
 			}
-
 		}
 	}
 	return;
@@ -286,7 +289,7 @@ static void sendPlayerLeft(uint32_t playerIndex)
 	ASSERT_OR_RETURN(, NetPlay.isHost, "Only host should call this.");
 
 	uint32_t forcedPlayerIndex = whosResponsible(playerIndex);
-	NETQUEUE(*netQueueType)(unsigned) = forcedPlayerIndex != selectedPlayer ? NETgameQueueForced : NETgameQueue;
+	NETQUEUE (*netQueueType)(unsigned) = forcedPlayerIndex != selectedPlayer ? NETgameQueueForced : NETgameQueue;
 	NETbeginEncode(netQueueType(forcedPlayerIndex), GAME_PLAYER_LEFT);
 	NETuint32_t(&playerIndex);
 	NETend();
@@ -317,7 +320,7 @@ void recvPlayerLeft(NETQUEUE queue)
 	}
 
 	turnOffMultiMsg(true);
-	clearPlayer(playerIndex, false);  // don't do it quietly
+	clearPlayer(playerIndex, false); // don't do it quietly
 	turnOffMultiMsg(false);
 	setMultiStats(playerIndex, PLAYERSTATS(), true); // local only
 	NetPlay.players[playerIndex].allocated = false;
@@ -345,7 +348,8 @@ bool MultiPlayerLeave(UDWORD playerIndex)
 	}
 
 	NETlogEntry("Player leaving game", SYNC_FLAG, playerIndex);
-	debug(LOG_NET, "** Player %u [%s], has left the game at game time %u.", playerIndex, getPlayerName(playerIndex), gameTime);
+	debug(LOG_NET, "** Player %u [%s], has left the game at game time %u.", playerIndex, getPlayerName(playerIndex),
+	      gameTime);
 
 	if (ingame.localJoiningInProgress)
 	{
@@ -353,7 +357,7 @@ bool MultiPlayerLeave(UDWORD playerIndex)
 		clearPlayer(playerIndex, false);
 		setMultiStats(playerIndex, PLAYERSTATS(), true); // local only
 	}
-	else if (NetPlay.isHost)  // If hosting, and game has started (not in pre-game lobby screen, that is).
+	else if (NetPlay.isHost) // If hosting, and game has started (not in pre-game lobby screen, that is).
 	{
 		sendPlayerLeft(playerIndex);
 	}
@@ -363,7 +367,7 @@ bool MultiPlayerLeave(UDWORD playerIndex)
 	{
 		char buf[256];
 
-		ssprintf(buf, _("File transfer has been aborted for %d.") , playerIndex);
+		ssprintf(buf, _("File transfer has been aborted for %d."), playerIndex);
 		addConsoleMessage(buf, DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
 		debug(LOG_INFO, "=== File has been aborted for %d ===", playerIndex);
 		NetPlay.players[playerIndex].wzFiles->clear();
@@ -388,20 +392,20 @@ bool MultiPlayerLeave(UDWORD playerIndex)
 // A Remote Player has joined the game.
 bool MultiPlayerJoin(UDWORD playerIndex)
 {
-	if (widgGetFromID(psWScreen, IDRET_FORM))	// if ingame.
+	if (widgGetFromID(psWScreen, IDRET_FORM)) // if ingame.
 	{
 		audio_QueueTrack(ID_CLAN_ENTER);
 	}
 
-	if (widgGetFromID(psWScreen, MULTIOP_PLAYERS))	// if in multimenu.
+	if (widgGetFromID(psWScreen, MULTIOP_PLAYERS)) // if in multimenu.
 	{
 		if (!multiRequestUp && (NetPlay.isHost || ingame.localJoiningInProgress))
 		{
-			netPlayersUpdated = true;	// update the player box.
+			netPlayersUpdated = true; // update the player box.
 		}
 	}
 
-	if (NetPlay.isHost)		// host responsible for welcoming this player.
+	if (NetPlay.isHost) // host responsible for welcoming this player.
 	{
 		// if we've already received a request from this player don't reallocate.
 		if (ingame.JoiningInProgress[playerIndex])
@@ -412,7 +416,7 @@ bool MultiPlayerJoin(UDWORD playerIndex)
 		ASSERT(GetGameMode() != GS_NORMAL, "A player joined after the game started??");
 
 		// setup data for this player, then broadcast it to the other players.
-		setupNewPlayer(playerIndex);						// setup all the guff for that player.
+		setupNewPlayer(playerIndex); // setup all the guff for that player.
 		sendOptions();
 		// if skirmish and game full, then kick...
 		if (NetPlay.playercount > game.maxPlayers)
@@ -434,7 +438,8 @@ bool MultiPlayerJoin(UDWORD playerIndex)
 		if (lobby_slashcommands_enabled())
 		{
 			// Inform the new player that this lobby has slash commands enabled.
-			sendRoomSystemMessageToSingleReceiver("Lobby slash commands enabled. Type " LOBBY_COMMAND_PREFIX "help to see details.", playerIndex);
+			sendRoomSystemMessageToSingleReceiver(
+				"Lobby slash commands enabled. Type " LOBBY_COMMAND_PREFIX "help to see details.", playerIndex);
 		}
 	}
 	return true;
@@ -444,7 +449,7 @@ bool sendDataCheck()
 {
 	int i = 0;
 
-	NETbeginEncode(NETnetQueue(NetPlay.hostPlayer), NET_DATA_CHECK);		// only need to send to HOST
+	NETbeginEncode(NETnetQueue(NetPlay.hostPlayer), NET_DATA_CHECK); // only need to send to HOST
 	for (i = 0; i < DATA_MAXDATA; i++)
 	{
 		NETuint32_t(&DataHash[i]);
@@ -460,7 +465,7 @@ bool recvDataCheck(NETQUEUE queue)
 	uint32_t player = queue.index;
 	uint32_t tempBuffer[DATA_MAXDATA] = {0};
 
-	if (!NetPlay.isHost)				// only host should act
+	if (!NetPlay.isHost) // only host should act
 	{
 		ASSERT(false, "Host only routine detected for client!");
 		return false;
@@ -497,40 +502,44 @@ bool recvDataCheck(NETQUEUE queue)
 			{
 			}
 
-			snprintf(msg, sizeof(msg), _("%s (%u) has an incompatible mod, and has been kicked."), getPlayerName(player), player);
+			snprintf(msg, sizeof(msg), _("%s (%u) has an incompatible mod, and has been kicked."),
+			         getPlayerName(player), player);
 			sendInGameSystemMessage(msg);
 			addConsoleMessage(msg, LEFT_JUSTIFY, NOTIFY_MESSAGE);
 
 			kickPlayer(player, _("Your data doesn't match the host's!"), ERROR_WRONGDATA);
-			debug(LOG_ERROR, "%s (%u) has an incompatible mod. ([%d] got %x, expected %x)", getPlayerName(player), player, i, tempBuffer[i], DataHash[i]);
+			debug(LOG_ERROR, "%s (%u) has an incompatible mod. ([%d] got %x, expected %x)", getPlayerName(player),
+			      player, i, tempBuffer[i], DataHash[i]);
 
 			return false;
 		}
 		else
 		{
-			debug(LOG_NET, "DataCheck message received and verified for player %s (slot=%u)", getPlayerName(player), player);
+			debug(LOG_NET, "DataCheck message received and verified for player %s (slot=%u)", getPlayerName(player),
+			      player);
 			ingame.DataIntegrity[player] = true;
 		}
 	}
 	return true;
 }
+
 // ////////////////////////////////////////////////////////////////////////////
 // Setup Stuff for a new player.
 void setupNewPlayer(UDWORD player)
 {
 	ASSERT_OR_RETURN(, player < MAX_CONNECTED_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
-	ingame.PingTimes[player] = 0;					// Reset ping time
+	ingame.PingTimes[player] = 0; // Reset ping time
 	ingame.LagCounter[player] = 0;
 	ingame.VerifiedIdentity[player] = false;
-	ingame.JoiningInProgress[player] = true;			// Note that player is now joining
+	ingame.JoiningInProgress[player] = true; // Note that player is now joining
 	ingame.DataIntegrity[player] = false;
 	ingame.lastSentPlayerDataCheck2[player].reset();
 	multiSyncResetPlayerChallenge(player);
 
-	resetMultiVisibility(player);						// set visibility flags.
+	resetMultiVisibility(player); // set visibility flags.
 
-	setMultiStats(player, getMultiStats(player), true);  // get the players score
+	setMultiStats(player, getMultiStats(player), true); // get the players score
 
 	if (selectedPlayer != player)
 	{
@@ -545,7 +554,7 @@ void setupNewPlayer(UDWORD player)
 // unfortunately, we don't get the message until after the setup is done.
 void ShowMOTD()
 {
-	char buf[250] = { '\0' };
+	char buf[250] = {'\0'};
 	// when HOST joins the game, show server MOTD message first
 	addConsoleMessage(_("Server message:"), DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
 	if (NetPlay.MOTD)
@@ -560,12 +569,12 @@ void ShowMOTD()
 	if (NetPlay.HaveUpgrade)
 	{
 		audio_PlayBuildFailedOnce();
-		ssprintf(buf, "%s", _("There is an update to the game, please visit https://wz2100.net to download new version."));
+		ssprintf(buf, "%s", _(
+			         "There is an update to the game, please visit https://wz2100.net to download new version."));
 		addConsoleMessage(buf, DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
 	}
 	else
 	{
 		audio_PlayTrack(FE_AUDIO_MESSAGEEND);
 	}
-
 }

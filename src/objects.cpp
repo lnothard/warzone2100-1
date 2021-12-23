@@ -52,14 +52,14 @@ bool objShutdown()
 
 /*goes thru' the list passed in reversing the order so the first entry becomes
 the last and the last entry becomes the first!*/
-void reverseObjectList(BASE_OBJECT **ppsList)
+void reverseObjectList(BASE_OBJECT** ppsList)
 {
-	BASE_OBJECT *psPrev = nullptr;
-	BASE_OBJECT *psCurrent = *ppsList;
+	BASE_OBJECT* psPrev = nullptr;
+	BASE_OBJECT* psCurrent = *ppsList;
 
 	while (psCurrent != nullptr)
 	{
-		BASE_OBJECT *psNext = psCurrent->psNext;
+		BASE_OBJECT* psNext = psCurrent->psNext;
 		psCurrent->psNext = psPrev;
 		psPrev = psCurrent;
 		psCurrent = psNext;
@@ -68,9 +68,9 @@ void reverseObjectList(BASE_OBJECT **ppsList)
 	*ppsList = psPrev;
 }
 
-const char *objInfo(const BASE_OBJECT *psObj)
+const char* objInfo(const BASE_OBJECT* psObj)
 {
-	static char	info[PATH_MAX];
+	static char info[PATH_MAX];
 
 	if (!psObj)
 	{
@@ -81,23 +81,23 @@ const char *objInfo(const BASE_OBJECT *psObj)
 	{
 	case OBJ_DROID:
 		{
-			const DROID *psDroid = (const DROID *)psObj;
+			const DROID* psDroid = (const DROID*)psObj;
 			return droidGetName(psDroid);
 		}
 	case OBJ_STRUCTURE:
 		{
-			const STRUCTURE *psStruct = (const STRUCTURE *)psObj;
+			const STRUCTURE* psStruct = (const STRUCTURE*)psObj;
 			sstrcpy(info, getStatsName(psStruct->pStructureType));
 			break;
 		}
 	case OBJ_FEATURE:
 		{
-			const FEATURE *psFeat = (const FEATURE *)psObj;
+			const FEATURE* psFeat = (const FEATURE*)psObj;
 			sstrcpy(info, getStatsName(psFeat->psStats));
 			break;
 		}
 	case OBJ_PROJECTILE:
-		sstrcpy(info, "Projectile");	// TODO
+		sstrcpy(info, "Projectile"); // TODO
 		break;
 	default:
 		sstrcpy(info, "Unknown object type");

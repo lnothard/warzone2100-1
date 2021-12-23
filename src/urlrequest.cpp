@@ -82,13 +82,13 @@
 
 static volatile bool urlRequestQuit = false;
 
-static WZ_THREAD        *urlRequestThread = nullptr;
-static WZ_MUTEX         *urlRequestMutex = nullptr;
-static WZ_SEMAPHORE     *urlRequestSemaphore = nullptr;
+static WZ_THREAD* urlRequestThread = nullptr;
+static WZ_MUTEX* urlRequestMutex = nullptr;
+static WZ_SEMAPHORE* urlRequestSemaphore = nullptr;
 
 MemoryStruct::MemoryStruct()
 {
-	memory = (char *) malloc(1);
+	memory = (char*)malloc(1);
 	size = 0;
 }
 
@@ -101,9 +101,17 @@ MemoryStruct::~MemoryStruct()
 	}
 }
 
-HTTPResponseHeaders::~HTTPResponseHeaders() { }
-HTTPResponseDetails::~HTTPResponseDetails() { }
-AsyncRequest::~AsyncRequest() { }
+HTTPResponseHeaders::~HTTPResponseHeaders()
+{
+}
+
+HTTPResponseDetails::~HTTPResponseDetails()
+{
+}
+
+AsyncRequest::~AsyncRequest()
+{
+}
 
 bool URLRequestBase::setRequestHeader(const std::string& name, const std::string& value)
 {
@@ -212,35 +220,44 @@ struct SemVer
 	unsigned long rev;
 
 	SemVer()
-	: maj(0)
-	, min(0)
-	, rev(0)
-	{ }
+		: maj(0)
+		  , min(0)
+		  , rev(0)
+	{
+	}
 
 	SemVer(unsigned long maj, unsigned long min, unsigned long rev)
-	: maj(maj)
-	, min(min)
-	, rev(rev)
-	{ }
+		: maj(maj)
+		  , min(min)
+		  , rev(rev)
+	{
+	}
 
-	bool operator <(const SemVer& b) {
+	bool operator <(const SemVer& b)
+	{
 		return (maj < b.maj) ||
-				((maj == b.maj) && (
-					(min < b.min) ||
-					((min == b.min) && (rev < b.rev))
-				));
+		((maj == b.maj) && (
+			(min < b.min) ||
+			((min == b.min) && (rev < b.rev))
+		));
 	}
-	bool operator <=(const SemVer& b) {
+
+	bool operator <=(const SemVer& b)
+	{
 		return (maj < b.maj) ||
-				((maj == b.maj) && (
-					(min < b.min) ||
-					((min == b.min) && (rev <= b.rev))
-				));
+		((maj == b.maj) && (
+			(min < b.min) ||
+			((min == b.min) && (rev <= b.rev))
+		));
 	}
-	bool operator >(const SemVer& b) {
+
+	bool operator >(const SemVer& b)
+	{
 		return !(*this <= b);
 	}
-	bool operator >=(const SemVer& b) {
+
+	bool operator >=(const SemVer& b)
+	{
 		return !(*this < b);
 	}
 };
@@ -248,7 +265,7 @@ struct SemVer
 bool verify_curl_ssl_thread_safe_setup()
 {
 	// verify SSL backend version (if possible explicit thread-safety locks setup is required)
-	const curl_version_info_data * info = curl_version_info(CURLVERSION_NOW);
+	const curl_version_info_data* info = curl_version_info(CURLVERSION_NOW);
 	std::cmatch cm;
 
 	const char* ssl_version_str = info->ssl_version;
@@ -256,14 +273,16 @@ bool verify_curl_ssl_thread_safe_setup()
 	// GnuTLS
 	std::regex gnutls_regex("^GnuTLS\\/([\\d]+)\\.([\\d]+)\\.([\\d]+).*");
 	std::regex_match(ssl_version_str, cm, gnutls_regex);
-	if(!cm.empty())
+	if (!cm.empty())
 	{
 		SemVer version;
-		try {
+		try
+		{
 			version.maj = std::stoul(cm[1]);
 			version.min = std::stoul(cm[2]);
 		}
-		catch (const std::exception &e) {
+		catch (const std::exception& e)
+		{
 			debug(LOG_WARNING, "Failed to convert string to unsigned long because of error: %s", e.what());
 		}
 
@@ -287,16 +306,18 @@ bool verify_curl_ssl_thread_safe_setup()
 	// OpenSSL, libressl, BoringSSL
 	std::regex e("^(OpenSSL|libressl|BoringSSL)\\/([\\d]+)\\.([\\d]+)\\.([\\d]+).*");
 	std::regex_match(ssl_version_str, cm, e);
-	if(!cm.empty())
+	if (!cm.empty())
 	{
 		ASSERT(cm.size() == 5, "Unexpected # of match results: %zu", cm.size());
 		std::string variant = cm[1];
 		SemVer version;
-		try {
+		try
+		{
 			version.maj = std::stoul(cm[2]);
 			version.min = std::stoul(cm[3]);
 		}
-		catch (const std::exception &e) {
+		catch (const std::exception& e)
+		{
 			debug(LOG_WARNING, "Failed to convert string to unsigned long because of error: %s", e.what());
 		}
 		if (variant == "OpenSSL")
@@ -349,34 +370,36 @@ bool verify_curl_ssl_thread_safe_setup()
 
 class URLTransferRequest;
 
-struct myprogress {
-  TIMETYPE lastruntime = (TIMETYPE)0; /* type depends on version, see above */
-  URLTransferRequest *request;
+struct myprogress
+{
+	TIMETYPE lastruntime = (TIMETYPE)0; /* type depends on version, see above */
+	URLTransferRequest* request;
 };
 
 // MARK: -
 
-static size_t WriteMemoryCallback_URLTransferRequest(void *contents, size_t size, size_t nmemb, void *userp);
-static int xferinfo(void *p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow);
+static size_t WriteMemoryCallback_URLTransferRequest(void* contents, size_t size, size_t nmemb, void* userp);
+static int xferinfo(void* p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow);
 #if LIBCURL_VERSION_NUM < 0x072000
 /* for libcurl older than 7.32.0 (CURLOPT_PROGRESSFUNCTION) */
 static int older_progress(void *p, double dltotal, double dlnow, double ultotal, double ulnow);
 #endif
-static size_t header_callback(char *buffer, size_t size, size_t nitems, void *userdata);
+static size_t header_callback(char* buffer, size_t size, size_t nitems, void* userdata);
 
 class CaseInsensitiveHash
 {
 public:
-	size_t operator() (std::string key) const
+	size_t operator()(std::string key) const
 	{
 		std::transform(key.begin(), key.end(), key.begin(), [](char c) { return std::tolower(c); });
 		return std::hash<std::string>{}(key);
 	}
 };
+
 class CaseInsensitiveEqualFunc
 {
 public:
-	bool operator() (std::string lhs, std::string rhs) const
+	bool operator()(std::string lhs, std::string rhs) const
 	{
 		std::transform(lhs.begin(), lhs.end(), lhs.begin(), [](char c) { return std::tolower(c); });
 		std::transform(rhs.begin(), rhs.end(), rhs.begin(), [](char c) { return std::tolower(c); });
@@ -384,14 +407,17 @@ public:
 	}
 };
 
-typedef std::unordered_map<std::string, std::string, CaseInsensitiveHash, CaseInsensitiveEqualFunc> ResponseHeaderContainer;
+typedef std::unordered_map<std::string, std::string, CaseInsensitiveHash, CaseInsensitiveEqualFunc>
+ResponseHeaderContainer;
 
-class HTTPResponseHeadersContainer: public HTTPResponseHeaders {
+class HTTPResponseHeadersContainer : public HTTPResponseHeaders
+{
 public:
 	virtual bool hasHeader(const std::string& name) const override
 	{
 		return responseHeaders.count(name) > 0;
 	}
+
 	virtual bool getHeader(const std::string& name, std::string& output_value) const override
 	{
 		const auto it = responseHeaders.find(name);
@@ -399,13 +425,14 @@ public:
 		output_value = it->second;
 		return true;
 	}
+
 public:
 	ResponseHeaderContainer responseHeaders;
 };
 
 #if LIBCURL_VERSION_NUM >= 0x071000	// cURL 7.16.0+
-static int sockopt_callback(void *clientp, curl_socket_t curlfd,
-							curlsocktype purpose)
+static int sockopt_callback(void* clientp, curl_socket_t curlfd,
+                            curlsocktype purpose)
 {
 #if defined(WZ_OS_UNIX)
 	// Set FD_CLOEXEC flag
@@ -433,16 +460,18 @@ static int sockopt_callback(void *clientp, curl_socket_t curlfd,
 class URLTransferRequest
 {
 public:
-	CURL *handle = nullptr;
+	CURL* handle = nullptr;
 	struct myprogress progress;
 	std::shared_ptr<AsyncRequestImpl> requestHandle;
 
 public:
 	URLTransferRequest(const std::shared_ptr<AsyncRequestImpl>& requestHandle)
-	: requestHandle(requestHandle)
-	{ }
+		: requestHandle(requestHandle)
+	{
+	}
 
-	virtual ~URLTransferRequest() {
+	virtual ~URLTransferRequest()
+	{
 		if (request_header_list != nullptr)
 		{
 			curl_slist_free_all(request_header_list);
@@ -473,23 +502,23 @@ public:
 #if LIBCURL_VERSION_NUM >= 0x070A08 // CURLOPT_IPRESOLVE is available since cURL 7.10.8
 		switch (protocol())
 		{
-			case InternetProtocol::IP_ANY:
-				// default - do nothing
-				break;
-			case InternetProtocol::IPv4:
-				curl_easy_setopt(handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-				break;
-			case InternetProtocol::IPv6:
-				const curl_version_info_data * info = curl_version_info(CURLVERSION_NOW);
-				if (info && ((info->features & CURL_VERSION_IPV6) != CURL_VERSION_IPV6))
-				{
-					// cURL was not compiled with IPv6 support - fail out
-					curl_easy_cleanup(handle);
-					handle = nullptr;
-					return nullptr;
-				}
-				curl_easy_setopt(handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
-				break;
+		case InternetProtocol::IP_ANY:
+			// default - do nothing
+			break;
+		case InternetProtocol::IPv4:
+			curl_easy_setopt(handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+			break;
+		case InternetProtocol::IPv6:
+			const curl_version_info_data* info = curl_version_info(CURLVERSION_NOW);
+			if (info && ((info->features & CURL_VERSION_IPV6) != CURL_VERSION_IPV6))
+			{
+				// cURL was not compiled with IPv6 support - fail out
+				curl_easy_cleanup(handle);
+				handle = nullptr;
+				return nullptr;
+			}
+			curl_easy_setopt(handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
+			break;
 		}
 #endif
 		if (noProxy())
@@ -499,7 +528,8 @@ public:
 			if (proxyResult != CURLE_OK)
 			{
 				// Failed to disable proxy
-				wzAsyncExecOnMainThread([proxyResult]{
+				wzAsyncExecOnMainThread([proxyResult]
+				{
 					debug(LOG_NET, "cURL: Failed to set CURLOPT_NOPROXY: %d", static_cast<int>(proxyResult));
 				});
 			}
@@ -526,21 +556,21 @@ public:
 		if (hasWriteMemoryCallback())
 		{
 			curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback_URLTransferRequest);
-			curl_easy_setopt(handle, CURLOPT_WRITEDATA, (void *)this);
+			curl_easy_setopt(handle, CURLOPT_WRITEDATA, (void*)this);
 		}
 		curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, header_callback);
-		curl_easy_setopt(handle, CURLOPT_HEADERDATA, (void *)this);
-	#if LIBCURL_VERSION_NUM >= 0x071304	// cURL 7.19.4+
+		curl_easy_setopt(handle, CURLOPT_HEADERDATA, (void*)this);
+#if LIBCURL_VERSION_NUM >= 0x071304	// cURL 7.19.4+
 		/* only allow HTTP and HTTPS */
 		curl_easy_setopt(handle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
-	#endif
+#endif
 		/* tell libcurl to follow redirection */
 		curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
 		/* set max redirects */
 		curl_easy_setopt(handle, CURLOPT_MAXREDIRS, 10L);
 
 		progress.request = this;
-	#if LIBCURL_VERSION_NUM >= 0x072000
+#if LIBCURL_VERSION_NUM >= 0x072000
 		/* xferinfo was introduced in 7.32.0, no earlier libcurl versions will
 		   compile as they won't have the symbols around.
 
@@ -555,26 +585,26 @@ public:
 		/* pass the struct pointer into the xferinfo function, note that this is
 		   an alias to CURLOPT_PROGRESSDATA */
 		curl_easy_setopt(handle, CURLOPT_XFERINFODATA, &progress);
-	#else
+#else
 		curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, older_progress);
 		/* pass the struct pointer into the progress function */
 		curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, &progress);
-	#endif
+#endif
 
 		curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
 
-	#if LIBCURL_VERSION_NUM >= 0x070B00	// cURL 7.11.0+
+#if LIBCURL_VERSION_NUM >= 0x070B00	// cURL 7.11.0+
 		/* refuse to download if larger than limit */
 		curl_off_t downloadSizeLimit = maxDownloadSize();
 		if (downloadSizeLimit > 0)
 		{
 			curl_easy_setopt(handle, CURLOPT_MAXFILESIZE_LARGE, downloadSizeLimit);
 		}
-	#endif
+#endif
 
-	#if LIBCURL_VERSION_NUM >= 0x070A00	// cURL 7.10.0+
+#if LIBCURL_VERSION_NUM >= 0x070A00	// cURL 7.10.0+
 		curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
-	#endif
+#endif
 
 		/* abort if slower than 30 bytes/sec during 60 seconds */
 		curl_easy_setopt(handle, CURLOPT_LOW_SPEED_TIME, 60L);
@@ -584,24 +614,29 @@ public:
 	}
 
 	virtual bool hasWriteMemoryCallback() { return false; }
-	virtual size_t writeMemoryCallback(void *contents, size_t size, size_t nmemb) { return 0; }
+	virtual size_t writeMemoryCallback(void* contents, size_t size, size_t nmemb) { return 0; }
 
 	virtual bool onProgressUpdate(int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow) { return false; }
 
 	virtual bool waitOnShutdown() const { return false; }
 
-	virtual void handleRequestDone(CURLcode result) { }
-	virtual void requestFailedToFinish(URLRequestFailureType type) { }
+	virtual void handleRequestDone(CURLcode result)
+	{
+	}
+
+	virtual void requestFailedToFinish(URLRequestFailureType type)
+	{
+	}
 
 protected:
-	friend size_t header_callback(char *buffer, size_t size, size_t nitems, void *userdata);
+	friend size_t header_callback(char* buffer, size_t size, size_t nitems, void* userdata);
 	std::shared_ptr<HTTPResponseHeadersContainer> responseHeaders = std::make_shared<HTTPResponseHeadersContainer>();
 private:
-	struct curl_slist *request_header_list = nullptr;
+	struct curl_slist* request_header_list = nullptr;
 };
 
 static size_t
-WriteMemoryCallback_URLTransferRequest(void *contents, size_t size, size_t nmemb, void *userp)
+WriteMemoryCallback_URLTransferRequest(void* contents, size_t size, size_t nmemb, void* userp)
 {
 	// expects that userp will be the URLTransferRequest
 	if (!userp)
@@ -614,13 +649,13 @@ WriteMemoryCallback_URLTransferRequest(void *contents, size_t size, size_t nmemb
 }
 
 /* this is how the CURLOPT_XFERINFOFUNCTION callback works */
-static int xferinfo(void *p,
+static int xferinfo(void* p,
                     curl_off_t dltotal, curl_off_t dlnow,
                     curl_off_t ultotal, curl_off_t ulnow)
 {
 	int retValue = 0;
-	struct myprogress *myp = (struct myprogress *)p;
-	CURL *curl = myp->request->handle;
+	struct myprogress* myp = (struct myprogress*)p;
+	CURL* curl = myp->request->handle;
 	TIMETYPE curtime = 0;
 
 	curl_easy_getinfo(curl, TIMEOPT, &curtime);
@@ -628,20 +663,21 @@ static int xferinfo(void *p,
 	/* under certain circumstances it may be desirable for certain functionality
 	 to only run every N seconds, in order to do this the transaction time can
 	 be used */
-	if((curtime - myp->lastruntime) >= MINIMAL_PROGRESS_FUNCTIONALITY_INTERVAL) {
+	if ((curtime - myp->lastruntime) >= MINIMAL_PROGRESS_FUNCTIONALITY_INTERVAL)
+	{
 		myp->lastruntime = curtime;
-//		#ifdef TIME_IN_US
-//		fprintf(stderr, "TOTAL TIME: %" CURL_FORMAT_CURL_OFF_T ".%06ld\r\n",
-//				(curtime / 1000000), (long)(curtime % 1000000));
-//		#else
-//		fprintf(stderr, "TOTAL TIME: %f \r\n", curtime);
-//		#endif
+		//		#ifdef TIME_IN_US
+		//		fprintf(stderr, "TOTAL TIME: %" CURL_FORMAT_CURL_OFF_T ".%06ld\r\n",
+		//				(curtime / 1000000), (long)(curtime % 1000000));
+		//		#else
+		//		fprintf(stderr, "TOTAL TIME: %f \r\n", curtime);
+		//		#endif
 
 		retValue = myp->request->onProgressUpdate(dltotal, dlnow, ultotal, ulnow);
 	}
 
 	// prevent infinite download denial-of-service
-	if(dlnow > myp->request->maxDownloadSize())
+	if (dlnow > myp->request->maxDownloadSize())
 		return 1;
 	return retValue;
 }
@@ -662,16 +698,18 @@ static int older_progress(void *p,
 
 static void trim_str(std::string& str)
 {
-	str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](int c) {
+	str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](int c)
+	{
 		return !std::isspace(c);
 	}));
-	str.erase(std::find_if(str.rbegin(), str.rend(), [](int c) {
+	str.erase(std::find_if(str.rbegin(), str.rend(), [](int c)
+	{
 		return !std::isspace(c);
 	}).base(), str.end());
 }
 
-static size_t header_callback(char *buffer, size_t size,
-							  size_t nitems, void *userdata)
+static size_t header_callback(char* buffer, size_t size,
+                              size_t nitems, void* userdata)
 {
 	/* received header is nitems * size long in 'buffer' NOT ZERO TERMINATED */
 	/* 'userdata' is set with CURLOPT_HEADERDATA */
@@ -698,8 +736,9 @@ public:
 	virtual const URLRequestBase& getBaseRequest() const = 0;
 public:
 	RunningURLTransferRequestBase(const std::shared_ptr<AsyncRequestImpl>& requestHandle)
-	: URLTransferRequest(requestHandle)
-	{ }
+		: URLTransferRequest(requestHandle)
+	{
+	}
 
 	virtual const std::string& url() const override
 	{
@@ -751,7 +790,8 @@ public:
 
 	virtual void requestFailedToFinish(URLRequestFailureType type) override
 	{
-		ASSERT_OR_RETURN(, type != URLRequestFailureType::TRANSFER_FAILED, "TRANSFER_FAILED should be handled by handleRequestDone");
+		ASSERT_OR_RETURN(, type != URLRequestFailureType::TRANSFER_FAILED,
+		                   "TRANSFER_FAILED should be handled by handleRequestDone");
 		onFailure(type, nullopt);
 	}
 
@@ -765,37 +805,44 @@ private:
 		const std::string& url = request.url;
 		switch (type)
 		{
-			case URLRequestFailureType::INITIALIZE_REQUEST_ERROR:
-				wzAsyncExecOnMainThread([url]{
-					debug(LOG_NET, "cURL: Failed to initialize request for (%s)", url.c_str());
-				});
-				break;
-			case URLRequestFailureType::TRANSFER_FAILED:
-				if (!transferDetails.has_value())
+		case URLRequestFailureType::INITIALIZE_REQUEST_ERROR:
+			wzAsyncExecOnMainThread([url]
+			{
+				debug(LOG_NET, "cURL: Failed to initialize request for (%s)", url.c_str());
+			});
+			break;
+		case URLRequestFailureType::TRANSFER_FAILED:
+			if (!transferDetails.has_value())
+			{
+				wzAsyncExecOnMainThread([url]
 				{
-					wzAsyncExecOnMainThread([url]{
-						debug(LOG_ERROR, "cURL: Request for (%s) failed - but no transfer failure details provided!", url.c_str());
-					});
-				}
-				else
+					debug(LOG_ERROR, "cURL: Request for (%s) failed - but no transfer failure details provided!",
+					      url.c_str());
+				});
+			}
+			else
+			{
+				CURLcode result = transferDetails->curlResult();
+				long httpStatusCode = transferDetails->httpStatusCode();
+				wzAsyncExecOnMainThread([url, result, httpStatusCode]
 				{
-					CURLcode result = transferDetails->curlResult();
-					long httpStatusCode = transferDetails->httpStatusCode();
-					wzAsyncExecOnMainThread([url, result, httpStatusCode]{
-						debug(LOG_NET, "cURL: Request for (%s) failed with error %d, and HTTP response code: %ld", url.c_str(), result, httpStatusCode);
-					});
-				}
-				break;
-			case URLRequestFailureType::CANCELLED:
-				wzAsyncExecOnMainThread([url]{
-					debug(LOG_NET, "cURL: Request for (%s) was cancelled", url.c_str());
+					debug(LOG_NET, "cURL: Request for (%s) failed with error %d, and HTTP response code: %ld",
+					      url.c_str(), result, httpStatusCode);
 				});
-				break;
-			case URLRequestFailureType::CANCELLED_BY_SHUTDOWN:
-				wzAsyncExecOnMainThread([url]{
-					debug(LOG_NET, "cURL: Request for (%s) was cancelled by application shutdown", url.c_str());
-				});
-				break;
+			}
+			break;
+		case URLRequestFailureType::CANCELLED:
+			wzAsyncExecOnMainThread([url]
+			{
+				debug(LOG_NET, "cURL: Request for (%s) was cancelled", url.c_str());
+			});
+			break;
+		case URLRequestFailureType::CANCELLED_BY_SHUTDOWN:
+			wzAsyncExecOnMainThread([url]
+			{
+				debug(LOG_NET, "cURL: Request for (%s) was cancelled by application shutdown", url.c_str());
+			});
+			break;
 		}
 
 		if (request.onFailure)
@@ -815,13 +862,14 @@ private:
 
 public:
 	RunningURLDataRequest(const URLDataRequest& request, const std::shared_ptr<AsyncRequestImpl>& requestHandle)
-	: RunningURLTransferRequestBase(requestHandle)
-	, request(request)
+		: RunningURLTransferRequestBase(requestHandle)
+		  , request(request)
 	{
 		chunk = std::make_shared<MemoryStruct>();
 		if (request.maxDownloadSizeLimit > 0)
 		{
-			_maxDownloadSize = std::min(request.maxDownloadSizeLimit, static_cast<curl_off_t>(MAXIMUM_IN_MEMORY_DOWNLOAD_SIZE));
+			_maxDownloadSize = std::min(request.maxDownloadSizeLimit,
+			                            static_cast<curl_off_t>(MAXIMUM_IN_MEMORY_DOWNLOAD_SIZE));
 		}
 	}
 
@@ -837,13 +885,15 @@ public:
 	}
 
 	virtual bool hasWriteMemoryCallback() override { return true; }
-	virtual size_t writeMemoryCallback(void *contents, size_t size, size_t nmemb) override
+
+	virtual size_t writeMemoryCallback(void* contents, size_t size, size_t nmemb) override
 	{
 		size_t realsize = size * nmemb;
-		MemoryStruct *mem = chunk.get();
+		MemoryStruct* mem = chunk.get();
 
-		char *ptr = (char*) realloc(mem->memory, mem->size + realsize + 1);
-		if(ptr == NULL) {
+		char* ptr = (char*)realloc(mem->memory, mem->size + realsize + 1);
+		if (ptr == NULL)
+		{
 			/* out of memory! */
 			return 0;
 		}
@@ -870,11 +920,12 @@ class RunningURLFileDownloadRequest : public RunningURLTransferRequestBase
 {
 public:
 	URLFileDownloadRequest request;
-	FILE *outFile;
+	FILE* outFile;
 
-	RunningURLFileDownloadRequest(const URLFileDownloadRequest& request, const std::shared_ptr<AsyncRequestImpl>& requestHandle)
-	: RunningURLTransferRequestBase(requestHandle)
-	, request(request)
+	RunningURLFileDownloadRequest(const URLFileDownloadRequest& request,
+	                              const std::shared_ptr<AsyncRequestImpl>& requestHandle)
+		: RunningURLTransferRequestBase(requestHandle)
+		  , request(request)
 	{
 #if defined(WZ_OS_WIN)
 		// On Windows, path strings passed to fopen() are interpreted using the ANSI or OEM codepage
@@ -885,7 +936,8 @@ public:
 		{
 			DWORD dwError = GetLastError();
 			std::ostringstream errMsg;
-			errMsg << "Could not not convert string from UTF-8; MultiByteToWideChar failed with error " << dwError << ": " << request.outFilePath;
+			errMsg << "Could not not convert string from UTF-8; MultiByteToWideChar failed with error " << dwError <<
+				": " << request.outFilePath;
 			throw std::runtime_error(errMsg.str());
 			return;
 		}
@@ -894,7 +946,8 @@ public:
 		{
 			DWORD dwError = GetLastError();
 			std::ostringstream errMsg;
-			errMsg << "Could not not convert string from UTF-8; MultiByteToWideChar[2] failed with error " << dwError << ": " << request.outFilePath;
+			errMsg << "Could not not convert string from UTF-8; MultiByteToWideChar[2] failed with error " << dwError <<
+				": " << request.outFilePath;
 			throw std::runtime_error(errMsg.str());
 			return;
 		}
@@ -924,7 +977,8 @@ public:
 	}
 
 	virtual bool hasWriteMemoryCallback() override { return true; }
-	virtual size_t writeMemoryCallback(void *contents, size_t size, size_t nmemb) override
+
+	virtual size_t writeMemoryCallback(void* contents, size_t size, size_t nmemb) override
 	{
 		if (!outFile) return 0;
 		size_t written = fwrite(contents, size, nmemb, outFile);
@@ -954,25 +1008,26 @@ private:
 static std::list<URLTransferRequest*> newUrlRequests;
 
 /** This runs in a separate thread */
-static int urlRequestThreadFunc(void *)
+static int urlRequestThreadFunc(void*)
 {
 	// initialize cURL
-	CURLM *multi_handle = curl_multi_init();
+	CURLM* multi_handle = curl_multi_init();
 
 	std::list<URLTransferRequest*> runningTransfers;
 	int transfers_running = 0;
 	CURLMcode multiCode = CURLM_OK;
 
-	auto performTransfers = [&]() -> bool {
-		multiCode = curl_multi_perform ( multi_handle, &transfers_running );
-		if (multiCode == CURLM_OK )
+	auto performTransfers = [&]() -> bool
+	{
+		multiCode = curl_multi_perform(multi_handle, &transfers_running);
+		if (multiCode == CURLM_OK)
 		{
 			/* wait for activity, timeout or "nothing" */
-		#if LIBCURL_VERSION_NUM >= 0x071C00	// cURL 7.28.0+ required for curl_multi_wait
-			multiCode = curl_multi_wait ( multi_handle, NULL, 0, 1000, NULL);
-		#else
+#if LIBCURL_VERSION_NUM >= 0x071C00	// cURL 7.28.0+ required for curl_multi_wait
+			multiCode = curl_multi_wait(multi_handle, NULL, 0, 1000, NULL);
+#else
 			#error "Needs a fallback for lack of curl_multi_wait (or, even better, update libcurl!)"
-		#endif
+#endif
 		}
 		if (multiCode != CURLM_OK)
 		{
@@ -981,19 +1036,23 @@ static int urlRequestThreadFunc(void *)
 		}
 
 		// Handle finished transfers
-		CURLMsg *msg; /* for picking up messages with the transfer status */
+		CURLMsg* msg; /* for picking up messages with the transfer status */
 		int msgs_left; /* how many messages are left */
-		while((msg = curl_multi_info_read(multi_handle, &msgs_left))) {
-			if(msg->msg == CURLMSG_DONE) {
-				CURL *e = msg->easy_handle;
+		while ((msg = curl_multi_info_read(multi_handle, &msgs_left)))
+		{
+			if (msg->msg == CURLMSG_DONE)
+			{
+				CURL* e = msg->easy_handle;
 				CURLcode result = msg->data.result;
 
 				// printf("HTTP transfer completed with status %d\n", msg->data.result);
 
 				/* Find out which handle this message is about */
-				auto it = std::find_if(runningTransfers.begin(), runningTransfers.end(), [e](const URLTransferRequest* req) {
-					return req->handle == e;
-				});
+				auto it = std::find_if(runningTransfers.begin(), runningTransfers.end(),
+				                       [e](const URLTransferRequest* req)
+				                       {
+					                       return req->handle == e;
+				                       });
 
 				if (it != runningTransfers.end())
 				{
@@ -1005,7 +1064,8 @@ static int urlRequestThreadFunc(void *)
 				else
 				{
 					// log failure to find request in running transfers list
-					wzAsyncExecOnMainThread([]{
+					wzAsyncExecOnMainThread([]
+					{
 						debug(LOG_ERROR, "Failed to find request in running transfers list");
 					});
 				}
@@ -1024,13 +1084,13 @@ static int urlRequestThreadFunc(void *)
 		if (newUrlRequests.empty() && transfers_running == 0)
 		{
 			wzMutexUnlock(urlRequestMutex);
-			wzSemaphoreWait(urlRequestSemaphore);  // Go to sleep until needed.
+			wzSemaphoreWait(urlRequestSemaphore); // Go to sleep until needed.
 			wzMutexLock(urlRequestMutex);
 			continue;
 		}
 
 		// Start handling new requests
-		while(!newUrlRequests.empty())
+		while (!newUrlRequests.empty())
 		{
 			URLTransferRequest* newRequest = newUrlRequests.front();
 			newUrlRequests.pop_front();
@@ -1049,7 +1109,8 @@ static int urlRequestThreadFunc(void *)
 			if (multiCode != CURLM_OK)
 			{
 				// curl_multi_add_handle failed
-				wzAsyncExecOnMainThread([multiCode]{
+				wzAsyncExecOnMainThread([multiCode]
+				{
 					debug(LOG_ERROR, "curl_multi_add_handle failed: %d", multiCode);
 				});
 				newRequest->requestFailedToFinish(URLRequestFailureType::INITIALIZE_REQUEST_ERROR);
@@ -1111,10 +1172,12 @@ static int urlRequestThreadFunc(void *)
 	while (!runningTransfers.empty())
 	{
 		performTransfers();
-		auto currentWaitDuration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - waitForTransfersStart);
+		auto currentWaitDuration = std::chrono::duration_cast<std::chrono::seconds>(
+			std::chrono::high_resolution_clock::now() - waitForTransfersStart);
 		if (currentWaitDuration.count() > MAX_WAIT_ON_SHUTDOWN_SECONDS)
 		{
-			printf("Failed to finish all \"waitOnShutdown\" transfers before timeout: %d\n", MAX_WAIT_ON_SHUTDOWN_SECONDS);
+			printf("Failed to finish all \"waitOnShutdown\" transfers before timeout: %d\n",
+			       MAX_WAIT_ON_SHUTDOWN_SECONDS);
 			break;
 		}
 	}
@@ -1135,9 +1198,11 @@ static int urlRequestThreadFunc(void *)
 AsyncURLRequestHandle urlRequestData(const URLDataRequest& request)
 {
 	ASSERT_OR_RETURN(nullptr, !request.url.empty(), "A valid request must specify a URL");
-	ASSERT_OR_RETURN(nullptr, request.maxDownloadSizeLimit <= (curl_off_t)MAXIMUM_IN_MEMORY_DOWNLOAD_SIZE, "Requested maxDownloadSizeLimit exceeds maximum in-memory download size limit %zu", (size_t)MAXIMUM_IN_MEMORY_DOWNLOAD_SIZE);
+	ASSERT_OR_RETURN(nullptr, request.maxDownloadSizeLimit <= (curl_off_t)MAXIMUM_IN_MEMORY_DOWNLOAD_SIZE,
+	                 "Requested maxDownloadSizeLimit exceeds maximum in-memory download size limit %zu",
+	                 (size_t)MAXIMUM_IN_MEMORY_DOWNLOAD_SIZE);
 	std::shared_ptr<AsyncRequestImpl> requestHandle = std::make_shared<AsyncRequestImpl>();
-	RunningURLDataRequest *pNewRequest = new RunningURLDataRequest(request, requestHandle);
+	RunningURLDataRequest* pNewRequest = new RunningURLDataRequest(request, requestHandle);
 	wzMutexLock(urlRequestMutex);
 	bool isFirstJob = newUrlRequests.empty();
 	newUrlRequests.push_back(pNewRequest);
@@ -1145,7 +1210,7 @@ AsyncURLRequestHandle urlRequestData(const URLDataRequest& request)
 
 	if (isFirstJob)
 	{
-		wzSemaphorePost(urlRequestSemaphore);  // Wake up processing thread.
+		wzSemaphorePost(urlRequestSemaphore); // Wake up processing thread.
 	}
 	return requestHandle;
 }
@@ -1154,12 +1219,13 @@ AsyncURLRequestHandle urlDownloadFile(const URLFileDownloadRequest& request)
 {
 	ASSERT_OR_RETURN(nullptr, !request.url.empty(), "A valid request must specify a URL");
 	ASSERT_OR_RETURN(nullptr, !request.outFilePath.empty(), "A valid request must specify an output filepath");
-	RunningURLFileDownloadRequest *pNewRequest = nullptr;
+	RunningURLFileDownloadRequest* pNewRequest = nullptr;
 	std::shared_ptr<AsyncRequestImpl> requestHandle = std::make_shared<AsyncRequestImpl>();
-	try {
+	try
+	{
 		pNewRequest = new RunningURLFileDownloadRequest(request, requestHandle);
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		debug(LOG_ERROR, "Failed to create new file download request with error: %s", e.what());
 		if (request.onFailure)
@@ -1175,7 +1241,7 @@ AsyncURLRequestHandle urlDownloadFile(const URLFileDownloadRequest& request)
 
 	if (isFirstJob)
 	{
-		wzSemaphorePost(urlRequestSemaphore);  // Wake up processing thread.
+		wzSemaphorePost(urlRequestSemaphore); // Wake up processing thread.
 	}
 	return requestHandle;
 }
@@ -1197,14 +1263,14 @@ std::vector<std::pair<std::string, curl_sslbackend>> listSSLBackends()
 	// List available cURL SSL backends
 	std::vector<std::pair<std::string, curl_sslbackend>> output;
 
-	const curl_ssl_backend **list;
+	const curl_ssl_backend** list;
 	int i;
 	CURLsslset result = curl_global_sslset((curl_sslbackend)-1, NULL, &list);
-	if(result != CURLSSLSET_UNKNOWN_BACKEND)
+	if (result != CURLSSLSET_UNKNOWN_BACKEND)
 	{
 		return output;
 	}
-	for(i = 0; list[i]; i++)
+	for (i = 0; list[i]; i++)
 	{
 		output.push_back({list[i]->name, list[i]->id});
 	}
@@ -1214,18 +1280,18 @@ std::vector<std::pair<std::string, curl_sslbackend>> listSSLBackends()
 
 void urlRequestOutputDebugInfo()
 {
-	const curl_version_info_data * info = curl_version_info(CURLVERSION_NOW);
+	const curl_version_info_data* info = curl_version_info(CURLVERSION_NOW);
 	if (info->age >= 0)
 	{
 		debug(LOG_WZ, "cURL: %s", info->version);
 		debug(LOG_WZ, "- SSL: %s", info->ssl_version);
 
-		#if LIBCURL_VERSION_NUM >= 0x073800 // cURL 7.56.0+
+#if LIBCURL_VERSION_NUM >= 0x073800 // cURL 7.56.0+
 		if (!!(info->features & CURL_VERSION_MULTI_SSL))
 		{
 			auto availableSSLBackends = listSSLBackends();
 			std::string sslBackendStr;
-			for (const auto &backend : availableSSLBackends)
+			for (const auto& backend : availableSSLBackends)
 			{
 				if (!sslBackendStr.empty())
 				{
@@ -1235,10 +1301,10 @@ void urlRequestOutputDebugInfo()
 			}
 			debug(LOG_WZ, "- Available SSL backends: %s", sslBackendStr.c_str());
 		}
-		#endif
-		#if LIBCURL_VERSION_NUM >= 0x070A07 // cURL 7.10.7+
+#endif
+#if LIBCURL_VERSION_NUM >= 0x070A07 // cURL 7.10.7+
 		debug(LOG_WZ, "- AsynchDNS: %d", !!(info->features & CURL_VERSION_ASYNCHDNS));
-		#endif
+#endif
 	}
 
 	if (info->age >= 1)
@@ -1267,7 +1333,9 @@ void urlSelectSSLBackend()
 		return;
 	}
 	// Note: Use CURLSSLBACKEND_DARWINSSL instead of CURLSSLBACKEND_SECURETRANSPORT to support older cURL versions
-	const std::vector<curl_sslbackend> backendPreferencesOrder = {CURLSSLBACKEND_SCHANNEL, CURLSSLBACKEND_DARWINSSL, CURLSSLBACKEND_GNUTLS, CURLSSLBACKEND_NSS};
+	const std::vector<curl_sslbackend> backendPreferencesOrder = {
+		CURLSSLBACKEND_SCHANNEL, CURLSSLBACKEND_DARWINSSL, CURLSSLBACKEND_GNUTLS, CURLSSLBACKEND_NSS
+	};
 	std::vector<curl_sslbackend> ignoredBackends;
 #if !defined(USE_OPENSSL_LOCKS_INIT) && !defined(CURL_OPENSSL_DOES_NOT_REQUIRE_LOCKS_INIT)
 	// Did not compile with support for thread-safety / locks for OpenSSL, so ignore it
@@ -1280,21 +1348,25 @@ void urlSelectSSLBackend()
 	if (!ignoredBackends.empty())
 	{
 		availableSSLBackends.erase(std::remove_if(availableSSLBackends.begin(),
-					   availableSSLBackends.end(),
-					   [ignoredBackends](const std::pair<std::string, curl_sslbackend>& backend)
-		{
-			return std::find(ignoredBackends.begin(), ignoredBackends.end(), backend.second) != ignoredBackends.end();
-		}),
-		availableSSLBackends.end());
+		                                          availableSSLBackends.end(),
+		                                          [ignoredBackends](
+		                                          const std::pair<std::string, curl_sslbackend>& backend)
+		                                          {
+			                                          return std::find(ignoredBackends.begin(), ignoredBackends.end(),
+			                                                           backend.second) != ignoredBackends.end();
+		                                          }),
+		                           availableSSLBackends.end());
 	}
 	if (!availableSSLBackends.empty())
 	{
 		curl_sslbackend sslBackendChoice = availableSSLBackends.front().second;
 		for (const auto& preferredBackend : backendPreferencesOrder)
 		{
-			auto it = std::find_if(availableSSLBackends.begin(), availableSSLBackends.end(), [preferredBackend](const std::pair<std::string, curl_sslbackend>& backend) {
-				return backend.second == preferredBackend;
-			});
+			auto it = std::find_if(availableSSLBackends.begin(), availableSSLBackends.end(),
+			                       [preferredBackend](const std::pair<std::string, curl_sslbackend>& backend)
+			                       {
+				                       return backend.second == preferredBackend;
+			                       });
 			if (it != availableSSLBackends.end())
 			{
 				sslBackendChoice = it->second;
@@ -1367,7 +1439,7 @@ void urlRequestShutdown()
 		wzMutexLock(urlRequestMutex);
 		urlRequestQuit = true;
 		wzMutexUnlock(urlRequestMutex);
-		wzSemaphorePost(urlRequestSemaphore);  // Wake up thread.
+		wzSemaphorePost(urlRequestSemaphore); // Wake up thread.
 
 		wzThreadJoin(urlRequestThread);
 		urlRequestThread = nullptr;

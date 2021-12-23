@@ -27,8 +27,9 @@
 #ifndef __INCLUDED_SRC_ANIMATION_H__
 #define __INCLUDED_SRC_ANIMATION_H__
 
-class ValueTracker {
-	private:
+class ValueTracker
+{
+private:
 	UDWORD startTime;
 	int initial;
 	int target;
@@ -36,7 +37,7 @@ class ValueTracker {
 	bool _reachedTarget;
 	float current;
 	int speed = 10;
-	public:
+public:
 	/// Starts the tracking with the specified initial value.
 	ValueTracker* startTracking(int value);
 	/// Stops tracking
@@ -77,22 +78,29 @@ template <class AnimatableData>
 class Animation
 {
 public:
-	Animation(uint32_t const &time, EasingType easingType = LINEAR, uint16_t duration = 0) : time(time), easingType(easingType), duration(duration) {}
-	virtual ~Animation() {}
+	Animation(uint32_t const& time, EasingType easingType = LINEAR, uint16_t duration = 0) : time(time),
+		easingType(easingType), duration(duration)
+	{
+	}
+
+	virtual ~Animation()
+	{
+	}
+
 	virtual void start();
 	void update();
 	bool isActive() const;
-	const AnimatableData &getCurrent() const;
-	const AnimatableData &getFinalData() const;
-	Animation<AnimatableData> &setInitialData(AnimatableData initial);
-	Animation<AnimatableData> &setFinalData(AnimatableData final);
-	Animation<AnimatableData> &setEasing(EasingType easing);
-	Animation<AnimatableData> &setDuration(uint32_t durationMilliseconds);
+	const AnimatableData& getCurrent() const;
+	const AnimatableData& getFinalData() const;
+	Animation<AnimatableData>& setInitialData(AnimatableData initial);
+	Animation<AnimatableData>& setFinalData(AnimatableData final);
+	Animation<AnimatableData>& setEasing(EasingType easing);
+	Animation<AnimatableData>& setDuration(uint32_t durationMilliseconds);
 
 protected:
 	uint16_t getEasedProgress() const;
 
-	uint32_t const &time;
+	uint32_t const& time;
 	EasingType easingType;
 	uint32_t duration;
 	uint32_t startTime = 0;
@@ -102,10 +110,14 @@ protected:
 	AnimatableData currentData;
 };
 
-class RotationAnimation: public Animation<Vector3f>
+class RotationAnimation : public Animation<Vector3f>
 {
 public:
-	RotationAnimation(uint32_t const &time, EasingType easingType = LINEAR, uint16_t duration = 0): Animation(time, easingType, duration) {}
+	RotationAnimation(uint32_t const& time, EasingType easingType = LINEAR, uint16_t duration = 0): Animation(
+		time, easingType, duration)
+	{
+	}
+
 	void start() override;
 };
 

@@ -105,9 +105,11 @@ int scripting_engine::GROUPMAP::newGroupID()
 	return newId;
 }
 
-void scripting_engine::GROUPMAP::insertObjectIntoGroup(const BASE_OBJECT *psObj, scripting_engine::GROUPMAP::groupID groupId)
+void scripting_engine::GROUPMAP::insertObjectIntoGroup(const BASE_OBJECT* psObj,
+                                                       scripting_engine::GROUPMAP::groupID groupId)
 {
-	std::pair<ObjectToGroupMap::iterator,bool> result = m_map.insert(std::pair<const BASE_OBJECT *, scripting_engine::GROUPMAP::groupID>(psObj, groupId));
+	std::pair<ObjectToGroupMap::iterator, bool> result = m_map.insert(
+		std::pair<const BASE_OBJECT*, scripting_engine::GROUPMAP::groupID>(psObj, groupId));
 	if (result.second)
 	{
 		auto groupSetResult = m_groups[groupId].insert(psObj);
@@ -125,7 +127,8 @@ size_t scripting_engine::GROUPMAP::groupSize(GROUPMAP::groupID groupId) const
 	return 0;
 }
 
-optional<scripting_engine::GROUPMAP::groupID> scripting_engine::GROUPMAP::removeObjectFromGroup(const BASE_OBJECT *psObj)
+optional<scripting_engine::GROUPMAP::groupID> scripting_engine::GROUPMAP::removeObjectFromGroup(
+	const BASE_OBJECT* psObj)
 {
 	auto it = m_map.find(psObj);
 	if (it != m_map.end())
@@ -140,9 +143,9 @@ optional<scripting_engine::GROUPMAP::groupID> scripting_engine::GROUPMAP::remove
 	return optional<groupID>();
 }
 
-std::vector<const BASE_OBJECT *> scripting_engine::GROUPMAP::getGroupObjects(groupID groupId) const
+std::vector<const BASE_OBJECT*> scripting_engine::GROUPMAP::getGroupObjects(groupID groupId) const
 {
-	std::vector<const BASE_OBJECT *> result;
+	std::vector<const BASE_OBJECT*> result;
 	auto it = m_groups.find(groupId);
 	if (it != m_groups.end())
 	{
@@ -151,10 +154,14 @@ std::vector<const BASE_OBJECT *> scripting_engine::GROUPMAP::getGroupObjects(gro
 	return result;
 }
 
-scripting_engine::timerNode::timerNode(wzapi::scripting_instance* caller, const TimerFunc& func, const std::string& timerName, int plr, int frame, std::unique_ptr<timerAdditionalData> additionalParam /*= nullptr*/)
-: function(func), timerName(timerName), instance(caller), baseobj(-1), baseobjtype(OBJ_NUM_TYPES), additionalTimerFuncParam(std::move(additionalParam)),
-	frameTime(frame + gameTime), ms(frame), player(plr), calls(0), type(TIMER_REPEAT)
-{}
+scripting_engine::timerNode::timerNode(wzapi::scripting_instance* caller, const TimerFunc& func,
+                                       const std::string& timerName, int plr, int frame,
+                                       std::unique_ptr<timerAdditionalData> additionalParam /*= nullptr*/)
+	: function(func), timerName(timerName), instance(caller), baseobj(-1), baseobjtype(OBJ_NUM_TYPES),
+	  additionalTimerFuncParam(std::move(additionalParam)),
+	  frameTime(frame + gameTime), ms(frame), player(plr), calls(0), type(TIMER_REPEAT)
+{
+}
 
 scripting_engine::timerNode::~timerNode()
 {
@@ -164,8 +171,8 @@ scripting_engine::timerNode::~timerNode()
 	}
 }
 
-scripting_engine::timerNode::timerNode(timerNode&& rhs)           // move constructor
-: timerNode()
+scripting_engine::timerNode::timerNode(timerNode&& rhs) // move constructor
+	: timerNode()
 {
 	swap(rhs);
 }
@@ -186,15 +193,22 @@ void scripting_engine::timerNode::swap(timerNode& _rhs)
 	std::swap(type, _rhs.type);
 }
 
-scripting_engine::area_by_values_or_area_label_lookup::area_by_values_or_area_label_lookup() { }
-scripting_engine::area_by_values_or_area_label_lookup::area_by_values_or_area_label_lookup(const std::string &label)
-: m_isLabel(true)
-, m_label(label)
-{ }
-scripting_engine::area_by_values_or_area_label_lookup::area_by_values_or_area_label_lookup(int x1, int y1, int x2, int y2)
-: m_isLabel(false)
-, x1(x1), y1(y1), x2(x2), y2(y2)
-{ }
+scripting_engine::area_by_values_or_area_label_lookup::area_by_values_or_area_label_lookup()
+{
+}
+
+scripting_engine::area_by_values_or_area_label_lookup::area_by_values_or_area_label_lookup(const std::string& label)
+	: m_isLabel(true)
+	  , m_label(label)
+{
+}
+
+scripting_engine::area_by_values_or_area_label_lookup::area_by_values_or_area_label_lookup(
+	int x1, int y1, int x2, int y2)
+	: m_isLabel(false)
+	  , x1(x1), y1(y1), x2(x2), y2(y2)
+{
+}
 
 #define MAX_US 20000
 #define HALF_MAX_US 10000
@@ -202,16 +216,22 @@ scripting_engine::area_by_values_or_area_label_lookup::area_by_values_or_area_la
 
 uniqueTimerID scripting_engine::getNextAvailableTimerID()
 {
-	do {
+	do
+	{
 		++lastTimerID;
-	} while (timerIDMap.count(lastTimerID) > 0);
+	}
+	while (timerIDMap.count(lastTimerID) > 0);
 	return lastTimerID;
 }
 
-uniqueTimerID scripting_engine::setTimer(wzapi::scripting_instance *caller, const TimerFunc& timerFunc, int player, int milliseconds, std::string timerName /*= ""*/, const BASE_OBJECT * obj /*= nullptr*/, timerType type /*= TIMER_REPEAT*/, std::unique_ptr<timerAdditionalData> additionalParam /*= nullptr*/)
+uniqueTimerID scripting_engine::setTimer(wzapi::scripting_instance* caller, const TimerFunc& timerFunc, int player,
+                                         int milliseconds, std::string timerName /*= ""*/,
+                                         const BASE_OBJECT* obj /*= nullptr*/, timerType type /*= TIMER_REPEAT*/,
+                                         std::unique_ptr<timerAdditionalData> additionalParam /*= nullptr*/)
 {
 	uniqueTimerID newTimerID = getNextAvailableTimerID();
-	std::shared_ptr<timerNode> node = std::make_shared<timerNode>(caller, timerFunc, timerName, player, milliseconds, std::move(additionalParam));
+	std::shared_ptr<timerNode> node = std::make_shared<timerNode>(caller, timerFunc, timerName, player, milliseconds,
+	                                                              std::move(additionalParam));
 	if (obj != nullptr)
 	{
 		node->baseobj = obj->id;
@@ -227,13 +247,14 @@ uniqueTimerID scripting_engine::setTimer(wzapi::scripting_instance *caller, cons
 // internal-only function that adds a Timer node (used for restoring saved games)
 void scripting_engine::addTimerNode(std::shared_ptr<scripting_engine::timerNode>&& node)
 {
-	ASSERT(timerIDMap.count(node->timerID) == 0, "Duplicate timerID found: %s", WzString::number(node->timerID).toUtf8().c_str());
+	ASSERT(timerIDMap.count(node->timerID) == 0, "Duplicate timerID found: %s",
+	       WzString::number(node->timerID).toUtf8().c_str());
 	auto inserted_iter = timers.emplace(timers.end(), std::move(node));
 	timerIDMap[(*inserted_iter)->timerID] = inserted_iter;
 }
 
 /// Scripting engine (what others call the scripting context, but QtScript's nomenclature is different).
-static std::vector<wzapi::scripting_instance *> scripts;
+static std::vector<wzapi::scripting_instance*> scripts;
 
 /// Whether the scripts have been set up or not
 static bool scriptsReady = false;
@@ -241,12 +262,15 @@ static bool scriptsReady = false;
 /// Structure for research events put on hold
 struct researchEvent
 {
-	RESEARCH *research;
-	STRUCTURE *structure;
+	RESEARCH* research;
+	STRUCTURE* structure;
 	int player;
 
-	researchEvent(RESEARCH *r, STRUCTURE *s, int p): research(r), structure(s), player(p) {}
+	researchEvent(RESEARCH* r, STRUCTURE* s, int p): research(r), structure(s), player(p)
+	{
+	}
 };
+
 /// Research events that are put on hold until the scripts are ready
 static std::queue<struct researchEvent> eventQueue;
 
@@ -258,10 +282,14 @@ typedef struct monitor_bin
 	int overMaxTimeCalls;
 	int overHalfMaxTimeCalls;
 	uint64_t time;
-	monitor_bin() : worst(0),  worstGameTime(0), calls(0), overMaxTimeCalls(0), overHalfMaxTimeCalls(0), time(0) {}
+
+	monitor_bin() : worst(0), worstGameTime(0), calls(0), overMaxTimeCalls(0), overHalfMaxTimeCalls(0), time(0)
+	{
+	}
 } MONITOR_BIN;
+
 typedef std::unordered_map<std::string, MONITOR_BIN> MONITOR;
-static std::unordered_map<wzapi::scripting_instance *, MONITOR *> monitors;
+static std::unordered_map<wzapi::scripting_instance*, MONITOR*> monitors;
 
 static bool globalDialog = false;
 
@@ -352,7 +380,7 @@ bool scripting_engine::removeTimer(uniqueTimerID timerID)
 	return false;
 }
 
-void scriptRemoveObject(const BASE_OBJECT *psObj)
+void scriptRemoveObject(const BASE_OBJECT* psObj)
 {
 	// Weed out timers with dead objects
 	scripting_engine::instance().removeTimersIf([psObj](const scripting_engine::timerNode& node)
@@ -396,15 +424,16 @@ bool scripting_engine::shutdownScripts()
 	scriptsReady = false;
 	jsDebugShutdown();
 	globalDialog = false;
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
-		MONITOR *monitor = monitors.at(instance);
+		MONITOR* monitor = monitors.at(instance);
 		WzString scriptName = WzString::fromUtf8(instance->scriptName());
 		instance->dumpScriptLog("=== PERFORMANCE DATA ===\n");
-		instance->dumpScriptLog("    calls | avg (usec) | worst (usec) | worst call at | >=limit | >=limit/2 | function\n");
+		instance->dumpScriptLog(
+			"    calls | avg (usec) | worst (usec) | worst call at | >=limit | >=limit/2 | function\n");
 		for (MONITOR::const_iterator iter = monitor->begin(); iter != monitor->end(); ++iter)
 		{
-			const std::string &function = iter->first;
+			const std::string& function = iter->first;
 			MONITOR_BIN m = iter->second;
 			std::ostringstream info;
 			info << std::right << std::setw(9) << m.calls << " | ";
@@ -442,7 +471,7 @@ bool scripting_engine::updateScripts()
 	// Call delayed triggers here
 	if (selectionChanged)
 	{
-		for (auto *instance : scripts)
+		for (auto* instance : scripts)
 		{
 			instance->handle_eventSelectionChanged(wzapi::enumSelected());
 		}
@@ -450,7 +479,7 @@ bool scripting_engine::updateScripts()
 	}
 
 	// Update gameTime
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->updateGameTime(gameTime);
 	}
@@ -461,12 +490,13 @@ bool scripting_engine::updateScripts()
 	});
 	// Check for timers, and run them if applicable.
 	// TODO - load balancing
-	std::vector<std::shared_ptr<timerNode>> runlist; // make a new list here, since we might trample all over the timer list during execution
-	for (auto &node : timers)
+	std::vector<std::shared_ptr<timerNode>> runlist;
+	// make a new list here, since we might trample all over the timer list during execution
+	for (auto& node : timers)
 	{
 		if (node->frameTime <= gameTime)
 		{
-			node->frameTime = node->ms + gameTime;	// update for next invokation
+			node->frameTime = node->ms + gameTime; // update for next invokation
 			if (node->type == TIMER_ONESHOT_READY)
 			{
 				node->type = TIMER_ONESHOT_DONE; // unless there is none
@@ -476,7 +506,7 @@ bool scripting_engine::updateScripts()
 		}
 	}
 
-	for (auto &node : runlist)
+	for (auto& node : runlist)
 	{
 		// IMPORTANT: A queued function can delete a timer that is in the runlist!
 		// So we must verify that the node is not one of the deleted ones.
@@ -484,7 +514,8 @@ bool scripting_engine::updateScripts()
 		{
 			continue; // skip
 		}
-		node->function(node->timerID, IdToObject(node->baseobjtype, node->baseobj, node->player), node->additionalTimerFuncParam.get());
+		node->function(node->timerID, IdToObject(node->baseobjtype, node->baseobj, node->player),
+		               node->additionalTimerFuncParam.get());
 	}
 
 	return true;
@@ -500,17 +531,18 @@ static wzapi::scripting_instance* loadPlayerScriptByBackend(const WzString& path
 	// JS scripts:
 	switch (war_getJSBackend())
 	{
-		case JS_BACKEND::quickjs:
-			return createQuickJSScriptInstance(path, player, realDifficulty);
-		case JS_BACKEND::num_backends:
-			debug(LOG_ERROR, "Invalid js backend value"); // should not happen
+	case JS_BACKEND::quickjs:
+		return createQuickJSScriptInstance(path, player, realDifficulty);
+	case JS_BACKEND::num_backends:
+		debug(LOG_ERROR, "Invalid js backend value"); // should not happen
 	}
 	return nullptr;
 }
 
 wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& path, int player, AIDifficulty difficulty)
 {
-	ASSERT_OR_RETURN(nullptr, player >= 0 && (player < MAX_PLAYERS || player == selectedPlayer), "Player index %d out of bounds", player);
+	ASSERT_OR_RETURN(nullptr, player >= 0 && (player < MAX_PLAYERS || player == selectedPlayer),
+	                 "Player index %d out of bounds", player);
 
 	debug(LOG_SCRIPT, "loadPlayerScript[%d]: %s", player, path.toUtf8().c_str());
 
@@ -528,14 +560,16 @@ wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& pa
 	if (!pNewInstance)
 	{
 		// failed to create new scripting instance
-		debug(LOG_ERROR, "Failed to create new scripting instance: path:\"%s\", player: %d, difficulty: %d", path.toUtf8().c_str(), player, static_cast<int>(difficulty));
+		debug(LOG_ERROR, "Failed to create new scripting instance: path:\"%s\", player: %d, difficulty: %d",
+		      path.toUtf8().c_str(), player, static_cast<int>(difficulty));
 		return nullptr;
 	}
 
 	// Create group map
-	GROUPMAP *psMap = new GROUPMAP;
+	GROUPMAP* psMap = new GROUPMAP;
 	auto insert_result = groups.insert(ENGINEMAP::value_type(pNewInstance, psMap));
-	ASSERT(insert_result.second, "Entry for this engine %p already exists in ENGINEMAP!", static_cast<void *>(pNewInstance));
+	ASSERT(insert_result.second, "Entry for this engine %p already exists in ENGINEMAP!",
+	       static_cast<void *>(pNewInstance));
 
 	json globalVars = json::object();
 	// Special global variables
@@ -544,7 +578,9 @@ wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& pa
 	//== * ```selectedPlayer``` The player controlled by the client on which the script runs.
 	globalVars["selectedPlayer"] = selectedPlayer;
 	//== * ```gameTime``` The current game time. Updated before every invokation of a script.
-	pNewInstance->setSpecifiedGlobalVariable("gameTime", gameTime, wzapi::GlobalVariableFlags::ReadOnlyUpdatedFromApp | wzapi::GlobalVariableFlags::DoNotSave);
+	pNewInstance->setSpecifiedGlobalVariable("gameTime", gameTime,
+	                                         wzapi::GlobalVariableFlags::ReadOnlyUpdatedFromApp |
+	                                         wzapi::GlobalVariableFlags::DoNotSave);
 	//== * ```modList``` The current loaded mods.
 	globalVars["modList"] = getModList();
 
@@ -599,28 +635,43 @@ wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& pa
 	//== * ```idleTime``` The amount of game time without active play before a player should be considered "inactive". (0 = disable activity alerts / AFK check) (4.2.0+ only)
 	globalVars["idleTime"] = game.inactivityMinutes * 60 * 1000;
 
-	pNewInstance->setSpecifiedGlobalVariables(globalVars, wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave);
+	pNewInstance->setSpecifiedGlobalVariables(
+		globalVars, wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave);
 
 	// Register 'Stats' object. It is a read-only representation of basic game component states.
-	pNewInstance->setSpecifiedGlobalVariable("Stats", wzapi::constructStatsObject(), wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave);
+	pNewInstance->setSpecifiedGlobalVariable("Stats", wzapi::constructStatsObject(),
+	                                         wzapi::GlobalVariableFlags::ReadOnly |
+	                                         wzapi::GlobalVariableFlags::DoNotSave);
 
 	// Register 'MapTiles' two-dimensional array. It is a read-only representation of static map tile states.
-	pNewInstance->setSpecifiedGlobalVariable("MapTiles", wzapi::constructMapTilesArray(), wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave);
+	pNewInstance->setSpecifiedGlobalVariable("MapTiles", wzapi::constructMapTilesArray(),
+	                                         wzapi::GlobalVariableFlags::ReadOnly |
+	                                         wzapi::GlobalVariableFlags::DoNotSave);
 
 	// Set some useful constants
-	pNewInstance->setSpecifiedGlobalVariables(wzapi::getUsefulConstants(), wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave);
+	pNewInstance->setSpecifiedGlobalVariables(wzapi::getUsefulConstants(),
+	                                          wzapi::GlobalVariableFlags::ReadOnly |
+	                                          wzapi::GlobalVariableFlags::DoNotSave);
 
 	/// Place to store group sizes
 	//== * ```groupSizes``` A sparse array of group sizes. If a group has never been used, the entry in this array will
 	//== be undefined.
-	pNewInstance->setSpecifiedGlobalVariable("groupSizes", nlohmann::json::object(), wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave);
+	pNewInstance->setSpecifiedGlobalVariable("groupSizes", nlohmann::json::object(),
+	                                         wzapi::GlobalVariableFlags::ReadOnly |
+	                                         wzapi::GlobalVariableFlags::DoNotSave);
 
 	// Static knowledge about players
-	pNewInstance->setSpecifiedGlobalVariable("playerData", wzapi::constructStaticPlayerData(), wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave);
+	pNewInstance->setSpecifiedGlobalVariable("playerData", wzapi::constructStaticPlayerData(),
+	                                         wzapi::GlobalVariableFlags::ReadOnly |
+	                                         wzapi::GlobalVariableFlags::DoNotSave);
 
 	// Static map knowledge about start positions
-	pNewInstance->setSpecifiedGlobalVariable("derrickPositions", constructDerrickPositions(), wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave);
-	pNewInstance->setSpecifiedGlobalVariable("startPositions", constructStartPositions(), wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave);
+	pNewInstance->setSpecifiedGlobalVariable("derrickPositions", constructDerrickPositions(),
+	                                         wzapi::GlobalVariableFlags::ReadOnly |
+	                                         wzapi::GlobalVariableFlags::DoNotSave);
+	pNewInstance->setSpecifiedGlobalVariable("startPositions", constructStartPositions(),
+	                                         wzapi::GlobalVariableFlags::ReadOnly |
+	                                         wzapi::GlobalVariableFlags::DoNotSave);
 
 	WzPathInfo basename = WzPathInfo::fromPlatformIndependentPath(path.toUtf8());
 	json globalVarsToSave = json::object();
@@ -636,7 +687,8 @@ wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& pa
 	//== * ```scriptPath``` Base path of the script that is running.
 	globalVarsToSave["scriptPath"] = basename.path();
 
-	pNewInstance->setSpecifiedGlobalVariables(globalVarsToSave, wzapi::GlobalVariableFlags::ReadOnly); // ensure these are saved
+	pNewInstance->setSpecifiedGlobalVariables(globalVarsToSave, wzapi::GlobalVariableFlags::ReadOnly);
+	// ensure these are saved
 
 	// Clear previous log file
 	PHYSFS_delete((std::string("logs/") + pNewInstance->scriptName() + ".log").c_str());
@@ -652,10 +704,11 @@ wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& pa
 	// Register script
 	scripts.push_back(pNewInstance);
 
-	MONITOR *monitor = new MONITOR;
+	MONITOR* monitor = new MONITOR;
 	monitors[pNewInstance] = monitor;
 
-	debug(LOG_SAVE, "Created script engine %zu for player %d from %s", scripts.size() - 1, player, path.toUtf8().c_str());
+	debug(LOG_SAVE, "Created script engine %zu for player %d from %s", scripts.size() - 1, player,
+	      path.toUtf8().c_str());
 	return pNewInstance;
 }
 
@@ -664,12 +717,12 @@ bool loadGlobalScript(WzString path)
 	return loadPlayerScript(std::move(path), selectedPlayer, AIDifficulty::DISABLED);
 }
 
-bool saveScriptStates(const char *filename)
+bool saveScriptStates(const char* filename)
 {
 	return scripting_engine::instance().saveScriptStates(filename);
 }
 
-bool scripting_engine::saveScriptStates(const char *filename)
+bool scripting_engine::saveScriptStates(const char* filename)
 {
 	WzConfig ini(filename, WzConfig::ReadAndWrite);
 	for (int i = 0; i < scripts.size(); ++i)
@@ -699,7 +752,8 @@ bool scripting_engine::saveScriptStates(const char *filename)
 		// we have to save 'scriptName' and 'me' explicitly
 		nodeInfo["me"] = node->player;
 		nodeInfo["scriptName"] = node->instance->scriptName();
-		nodeInfo["functionRestoreInfo"] = node->instance->saveTimerFunction(node->timerID, node->timerName, node->additionalTimerFuncParam.get());
+		nodeInfo["functionRestoreInfo"] = node->instance->saveTimerFunction(
+			node->timerID, node->timerName, node->additionalTimerFuncParam.get());
 		if (node->baseobj >= 0)
 		{
 			nodeInfo["object"] = node->baseobj;
@@ -719,7 +773,7 @@ bool scripting_engine::saveScriptStates(const char *filename)
 wzapi::scripting_instance* scripting_engine::findInstanceForPlayer(int match, const WzString& _scriptName)
 {
 	WzString scriptName = _scriptName.normalized(WzString::NormalizationForm_KD);
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		int player = instance->player();
 		WzString matchName = WzString::fromUtf8(instance->scriptName()).normalized(WzString::NormalizationForm_KD);
@@ -733,12 +787,12 @@ wzapi::scripting_instance* scripting_engine::findInstanceForPlayer(int match, co
 	return nullptr;
 }
 
-bool loadScriptStates(const char *filename)
+bool loadScriptStates(const char* filename)
 {
 	return scripting_engine::instance().loadScriptStates(filename);
 }
 
-bool scripting_engine::loadScriptStates(const char *filename)
+bool scripting_engine::loadScriptStates(const char* filename)
 {
 	uniqueTimerID maxRestoredTimerID = 0;
 	WzConfig ini(filename, WzConfig::ReadOnly);
@@ -796,7 +850,9 @@ bool scripting_engine::loadScriptStates(const char *filename)
 					nlohmann::json backwardsCompatJSFunctionRestoreInfo = nlohmann::json::object();
 					if (!ini.contains("function"))
 					{
-						ASSERT(false, "Invalid trigger in save (%s) - missing new functionRestoreInfo block, and old function parameter", list[i].toUtf8().c_str());
+						ASSERT(false,
+						       "Invalid trigger in save (%s) - missing new functionRestoreInfo block, and old function parameter",
+						       list[i].toUtf8().c_str());
 						continue;
 					}
 					backwardsCompatJSFunctionRestoreInfo["function"] = ini.value("function").jsonValue();
@@ -820,7 +876,7 @@ bool scripting_engine::loadScriptStates(const char *filename)
 		{
 			nlohmann::json result = ini.currentJsonValue();
 			debug(LOG_SAVE, "Loading script globals for player %d, script %s -- found %zu values",
-				  instance->player(), instance->scriptName().c_str(), result.size());
+			      instance->player(), instance->scriptName().c_str(), result.size());
 			// filter out "scriptName" and "me" variables
 			result.erase("me");
 			result.erase("scriptName");
@@ -844,7 +900,7 @@ bool scripting_engine::loadScriptStates(const char *filename)
 			int lastNewGroupId = ini.value("lastNewGroupId").toInt(&bHasLastNewGroupId);
 			if (bHasLastNewGroupId)
 			{
-				GROUPMAP *psMap = getGroupMap(instance);
+				GROUPMAP* psMap = getGroupMap(instance);
 				if (psMap)
 				{
 					psMap->saveLoadSetLastNewGroupId(lastNewGroupId);
@@ -864,10 +920,10 @@ bool scripting_engine::loadScriptStates(const char *filename)
 	return true;
 }
 
-std::unordered_map<wzapi::scripting_instance *, nlohmann::json> scripting_engine::debug_GetGlobalsSnapshot() const
+std::unordered_map<wzapi::scripting_instance*, nlohmann::json> scripting_engine::debug_GetGlobalsSnapshot() const
 {
 	MODELMAP debug_globals;
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		json scriptGlobals = instance->debugGetAllScriptGlobals();
 		debug_globals[instance] = std::move(scriptGlobals);
@@ -885,7 +941,7 @@ std::vector<scripting_engine::timerNodeSnapshot> scripting_engine::debug_GetTime
 	return debug_timer_snapshot;
 }
 
-void jsAutogameSpecific(const WzString &name, int player)
+void jsAutogameSpecific(const WzString& name, int player)
 {
 	wzapi::scripting_instance* instance = loadPlayerScript(name, player, AIDifficulty::MEDIUM);
 	if (!instance)
@@ -906,7 +962,9 @@ void jsHandleDebugClosed()
 void jsShowDebug()
 {
 	globalDialog = true;
-	class make_shared_enabler : public scripting_engine::DebugInterface { };
+	class make_shared_enabler : public scripting_engine::DebugInterface
+	{
+	};
 	bool isSpectator = NetPlay.players[selectedPlayer].isSpectator;
 	jsDebugCreate(std::make_shared<make_shared_enabler>(), jsHandleDebugClosed, isSpectator);
 }
@@ -1011,11 +1069,11 @@ void jsShowDebug()
 //__ ## eventMenuManufacture()
 //__An event that is run when current user opens the manufacture menu.
 //__
-bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, BASE_OBJECT *psObj)
+bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, BASE_OBJECT* psObj)
 {
 	// HACK: TRIGGER_VIDEO_QUIT is called before scripts for initial campaign video
 	ASSERT(scriptsReady || trigger == TRIGGER_VIDEO_QUIT, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		if (psObj)
 		{
@@ -1132,7 +1190,7 @@ bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, BASE_OBJECT *psObj)
 bool triggerEventPlayerLeft(int player)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->handle_eventPlayerLeft(player);
 	}
@@ -1147,7 +1205,7 @@ bool triggerEventPlayerLeft(int player)
 bool triggerEventCheatMode(bool entered)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->handle_eventCheatMode(entered);
 	}
@@ -1158,10 +1216,10 @@ bool triggerEventCheatMode(bool entered)
 //__
 //__ A droid should be given new orders.
 //__
-bool triggerEventDroidIdle(DROID *psDroid)
+bool triggerEventDroidIdle(DROID* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		int player = instance->player();
 		if (player == psDroid->player)
@@ -1178,11 +1236,11 @@ bool triggerEventDroidIdle(DROID *psDroid)
 //__ if the droid was produced in a factory. It is not triggered for droid theft or
 //__ gift (check ```eventObjectTransfer``` for that).
 //__
-bool triggerEventDroidBuilt(DROID *psDroid, STRUCTURE *psFactory)
+bool triggerEventDroidBuilt(DROID* psDroid, STRUCTURE* psFactory)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	optional<const STRUCTURE *> opt_factory = (psFactory) ? optional<const STRUCTURE *>(psFactory) : nullopt;
-	for (auto *instance : scripts)
+	optional<const STRUCTURE*> opt_factory = (psFactory) ? optional<const STRUCTURE*>(psFactory) : nullopt;
+	for (auto* instance : scripts)
 	{
 		int player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
@@ -1200,11 +1258,11 @@ bool triggerEventDroidBuilt(DROID *psDroid, STRUCTURE *psFactory)
 //__ if the structure was built by a droid. It is not triggered for building theft
 //__ (check ```eventObjectTransfer``` for that).
 //__
-bool triggerEventStructBuilt(STRUCTURE *psStruct, DROID *psDroid)
+bool triggerEventStructBuilt(STRUCTURE* psStruct, DROID* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	optional<const DROID *> opt_droid = (psDroid) ? optional<const DROID *>(psDroid) : nullopt;
-	for (auto *instance : scripts)
+	optional<const DROID*> opt_droid = (psDroid) ? optional<const DROID*>(psDroid) : nullopt;
+	for (auto* instance : scripts)
 	{
 		int player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
@@ -1221,11 +1279,11 @@ bool triggerEventStructBuilt(STRUCTURE *psStruct, DROID *psDroid)
 //__ An event that is run every time a structure begins to be demolished. This does
 //__ not trigger again if the structure is partially demolished.
 //__
-bool triggerEventStructDemolish(STRUCTURE *psStruct, DROID *psDroid)
+bool triggerEventStructDemolish(STRUCTURE* psStruct, DROID* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	optional<const DROID *> opt_droid = (psDroid) ? optional<const DROID *>(psDroid) : nullopt;
-	for (auto *instance : scripts)
+	optional<const DROID*> opt_droid = (psDroid) ? optional<const DROID*>(psDroid) : nullopt;
+	for (auto* instance : scripts)
 	{
 		int player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
@@ -1243,10 +1301,10 @@ bool triggerEventStructDemolish(STRUCTURE *psStruct, DROID *psDroid)
 //__ special ability. It will only fire once, so if the time is not right,
 //__ register your own timer to keep checking.
 //__
-bool triggerEventStructureReady(STRUCTURE *psStruct)
+bool triggerEventStructureReady(STRUCTURE* psStruct)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		int player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
@@ -1262,10 +1320,10 @@ bool triggerEventStructureReady(STRUCTURE *psStruct)
 //__
 //__ An event that is run every time a structure starts to be upgraded.
 //__
-bool triggerEventStructureUpgradeStarted(STRUCTURE *psStruct)
+bool triggerEventStructureUpgradeStarted(STRUCTURE* psStruct)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		int player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
@@ -1282,7 +1340,7 @@ bool triggerEventStructureUpgradeStarted(STRUCTURE *psStruct)
 //__ An event that is run when an object belonging to the script's controlling player is
 //__ attacked. The attacker parameter may be either a structure or a droid.
 //__
-bool triggerEventAttacked(BASE_OBJECT *psVictim, BASE_OBJECT *psAttacker, int lastHit)
+bool triggerEventAttacked(BASE_OBJECT* psVictim, BASE_OBJECT* psAttacker, int lastHit)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psAttacker)
@@ -1296,7 +1354,7 @@ bool triggerEventAttacked(BASE_OBJECT *psVictim, BASE_OBJECT *psAttacker, int la
 	{
 		return false;
 	}
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		int player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
@@ -1315,7 +1373,7 @@ bool triggerEventAttacked(BASE_OBJECT *psVictim, BASE_OBJECT *psAttacker, int la
 //__ current player. If an ally does the research, the structure parameter will
 //__ be set to null. The player parameter gives the player it is called for.
 //__
-bool triggerEventResearched(RESEARCH *psResearch, STRUCTURE *psStruct, int player)
+bool triggerEventResearched(RESEARCH* psResearch, STRUCTURE* psStruct, int player)
 {
 	//HACK: This event can be triggered when loading savegames, before the script engines are initialized.
 	// if this is the case, we need to store these events and replay them later
@@ -1324,7 +1382,7 @@ bool triggerEventResearched(RESEARCH *psResearch, STRUCTURE *psStruct, int playe
 		eventQueue.emplace(psResearch, psStruct, player);
 		return true;
 	}
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		int me = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
@@ -1341,11 +1399,11 @@ bool triggerEventResearched(RESEARCH *psResearch, STRUCTURE *psStruct, int playe
 //__ An event that is run whenever an object is destroyed. Careful passing
 //__ the parameter object around, since it is about to vanish!
 //__
-bool triggerEventDestroyed(BASE_OBJECT *psVictim)
+bool triggerEventDestroyed(BASE_OBJECT* psVictim)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psVictim) { return true; }
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->handle_eventDestroyed(psVictim);
 	}
@@ -1358,10 +1416,10 @@ bool triggerEventDestroyed(BASE_OBJECT *psVictim)
 //__ all players / scripts.
 //__ Careful passing the parameter object around, since it is about to vanish! (3.2+ only)
 //__
-bool triggerEventPickup(FEATURE *psFeat, DROID *psDroid)
+bool triggerEventPickup(FEATURE* psFeat, DROID* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->handle_eventPickup(psFeat, psDroid);
 	}
@@ -1383,15 +1441,16 @@ bool triggerEventPickup(FEATURE *psFeat, DROID *psDroid)
 //__ First parameter is **game object** doing the seeing, the next the id of the group
 //__ being seen.
 //__
-bool triggerEventSeen(BASE_OBJECT *psViewer, BASE_OBJECT *psSeen)
+bool triggerEventSeen(BASE_OBJECT* psViewer, BASE_OBJECT* psSeen)
 {
 	return scripting_engine::instance().triggerEventSeen(psViewer, psSeen);
 }
-bool scripting_engine::triggerEventSeen(BASE_OBJECT *psViewer, BASE_OBJECT *psSeen)
+
+bool scripting_engine::triggerEventSeen(BASE_OBJECT* psViewer, BASE_OBJECT* psSeen)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psSeen || !psViewer) { return true; }
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		std::pair<bool, int> callbacks = scripting_engine::instance().seenLabelCheck(instance, psSeen, psViewer);
 		if (callbacks.first)
@@ -1414,11 +1473,11 @@ bool scripting_engine::triggerEventSeen(BASE_OBJECT *psViewer, BASE_OBJECT *psSe
 //__ object has been transferred, so the target player is in object.player.
 //__ The event is called for both players.
 //__
-bool triggerEventObjectTransfer(BASE_OBJECT *psObj, int from)
+bool triggerEventObjectTransfer(BASE_OBJECT* psObj, int from)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psObj) { return true; }
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		int me = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
@@ -1436,7 +1495,7 @@ bool triggerEventObjectTransfer(BASE_OBJECT *psObj, int from)
 //__ player sending the chat message. For the moment, the ```to``` parameter is always the script
 //__ player.
 //__
-bool triggerEventChat(int from, int to, const char *message)
+bool triggerEventChat(int from, int to, const char* message)
 {
 	if (!scriptsReady)
 	{
@@ -1444,7 +1503,7 @@ bool triggerEventChat(int from, int to, const char *message)
 		return false;
 	}
 	ASSERT_OR_RETURN(false, message, "No message provided");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		int me = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
@@ -1462,11 +1521,11 @@ bool triggerEventChat(int from, int to, const char *message)
 //__ player sending the beacon. For the moment, the ```to``` parameter is always the script player.
 //__ Message may be undefined.
 //__
-bool triggerEventBeacon(int from, int to, const char *message, int x, int y)
+bool triggerEventBeacon(int from, int to, const char* message, int x, int y)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	optional<const char *> opt_message = (message) ? optional<const char *>(message) : nullopt;
-	for (auto *instance : scripts)
+	optional<const char*> opt_message = (message) ? optional<const char*>(message) : nullopt;
+	for (auto* instance : scripts)
 	{
 		int me = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
@@ -1486,7 +1545,7 @@ bool triggerEventBeacon(int from, int to, const char *message, int x, int y)
 bool triggerEventBeaconRemoved(int from, int to)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		int me = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
@@ -1521,14 +1580,14 @@ bool triggerEventSelected()
 //__ is the about to be killed object, the group's id, and the new group size.
 //__
 // Since groups are entities local to one context, we do not iterate over them here.
-bool triggerEventGroupLoss(const BASE_OBJECT *psObj, int group, int size, wzapi::scripting_instance *instance)
+bool triggerEventGroupLoss(const BASE_OBJECT* psObj, int group, int size, wzapi::scripting_instance* instance)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	return instance->handle_eventGroupLoss(psObj, group, size);
 }
 
 // This is not a trigger yet.
-bool triggerEventDroidMoved(DROID *psDroid, int oldx, int oldy)
+bool triggerEventDroidMoved(DROID* psDroid, int oldx, int oldy)
 {
 	return scripting_engine::instance().areaLabelCheck(psDroid);
 }
@@ -1539,10 +1598,10 @@ bool triggerEventDroidMoved(DROID *psDroid, int oldx, int oldy)
 //__ deactived. Call resetArea() to reactivate it. The name of the event is
 //__ `eventArea${label}`.
 //__
-bool triggerEventArea(const std::string& label, DROID *psDroid)
+bool triggerEventArea(const std::string& label, DROID* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->handle_eventArea(label, psDroid);
 	}
@@ -1554,10 +1613,10 @@ bool triggerEventArea(const std::string& label, DROID *psDroid)
 //__ An event that is run whenever a new droid template is created. It is only
 //__ run on the client of the player designing the template.
 //__
-bool triggerEventDesignCreated(DROID_TEMPLATE *psTemplate)
+bool triggerEventDesignCreated(DROID_TEMPLATE* psTemplate)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->handle_eventDesignCreated(psTemplate);
 	}
@@ -1571,7 +1630,7 @@ bool triggerEventDesignCreated(DROID_TEMPLATE *psTemplate)
 bool triggerEventAllianceOffer(uint8_t from, uint8_t to)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->handle_eventAllianceOffer(from, to);
 	}
@@ -1588,7 +1647,7 @@ bool triggerEventAllianceAccepted(uint8_t from, uint8_t to)
 	{
 		return false; //silently ignore
 	}
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->handle_eventAllianceAccepted(from, to);
 	}
@@ -1605,7 +1664,7 @@ bool triggerEventAllianceBroken(uint8_t from, uint8_t to)
 	{
 		return false; //silently ignore
 	}
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->handle_eventAllianceBroken(from, to);
 	}
@@ -1618,10 +1677,10 @@ bool triggerEventAllianceBroken(uint8_t from, uint8_t to)
 //__ to prevent desync from happening. Sync requests must be carefully validated to prevent
 //__ cheating!
 //__
-bool triggerEventSyncRequest(int from, int req_id, int x, int y, BASE_OBJECT *psObj, BASE_OBJECT *psObj2)
+bool triggerEventSyncRequest(int from, int req_id, int x, int y, BASE_OBJECT* psObj, BASE_OBJECT* psObj2)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->handle_eventSyncRequest(from, req_id, x, y, psObj, psObj2);
 	}
@@ -1635,7 +1694,7 @@ bool triggerEventSyncRequest(int from, int req_id, int x, int y, BASE_OBJECT *ps
 bool triggerEventKeyPressed(int meta, int key)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	for (auto *instance : scripts)
+	for (auto* instance : scripts)
 	{
 		instance->handle_eventKeyPressed(meta, key);
 	}
@@ -1659,30 +1718,41 @@ std::vector<scripting_engine::LabelInfo> scripting_engine::debug_GetLabelInfo() 
 	std::vector<scripting_engine::LabelInfo> results;
 	for (LABELMAP::const_iterator i = labels.cbegin(); i != labels.cend(); i++)
 	{
-		const LABEL &l = i->second;
+		const LABEL& l = i->second;
 		scripting_engine::LabelInfo labelInfo;
 		labelInfo.label = WzString::fromUtf8(i->first);
-		const char *c = "?";
+		const char* c = "?";
 		switch (l.type)
 		{
-		case OBJ_DROID: c = "DROID"; break;
-		case OBJ_FEATURE: c = "FEATURE"; break;
-		case OBJ_STRUCTURE: c = "STRUCTURE"; break;
-		case SCRIPT_POSITION: c = "POSITION"; break;
-		case SCRIPT_AREA: c = "AREA"; break;
-		case SCRIPT_RADIUS: c = "RADIUS"; break;
-		case SCRIPT_GROUP: c = "GROUP"; break;
+		case OBJ_DROID: c = "DROID";
+			break;
+		case OBJ_FEATURE: c = "FEATURE";
+			break;
+		case OBJ_STRUCTURE: c = "STRUCTURE";
+			break;
+		case SCRIPT_POSITION: c = "POSITION";
+			break;
+		case SCRIPT_AREA: c = "AREA";
+			break;
+		case SCRIPT_RADIUS: c = "RADIUS";
+			break;
+		case SCRIPT_GROUP: c = "GROUP";
+			break;
 		case SCRIPT_PLAYER:
 		case SCRIPT_RESEARCH:
 		case OBJ_PROJECTILE:
-		case SCRIPT_COUNT: c = "ERROR"; break;
+		case SCRIPT_COUNT: c = "ERROR";
+			break;
 		}
 		labelInfo.type = WzString::fromUtf8(c);
 		switch (l.triggered)
 		{
-		case -1: labelInfo.trigger = "N/A"; break;
-		case 0: labelInfo.trigger = "Active"; break;
-		default: labelInfo.trigger = "Done"; break;
+		case -1: labelInfo.trigger = "N/A";
+			break;
+		case 0: labelInfo.trigger = "Active";
+			break;
+		default: labelInfo.trigger = "Done";
+			break;
 		}
 		if (l.player == ALL_PLAYERS)
 		{
@@ -1711,7 +1781,7 @@ void clearMarks()
 	{
 		for (int y = 0; y < mapHeight; y++)
 		{
-			MAPTILE *psTile = mapTile(x, y);
+			MAPTILE* psTile = mapTile(x, y);
 			psTile->tileInfoBits &= ~BITS_MARKED;
 		}
 	}
@@ -1719,10 +1789,10 @@ void clearMarks()
 
 void scripting_engine::markAllLabels(bool only_active)
 {
-	for (const auto &it : labels)
+	for (const auto& it : labels)
 	{
-		const auto &key = it.first;
-		const LABEL &l = it.second;
+		const auto& key = it.first;
+		const LABEL& l = it.second;
 		if (!only_active || l.triggered <= 0)
 		{
 			showLabel(key, false, false);
@@ -1732,14 +1802,14 @@ void scripting_engine::markAllLabels(bool only_active)
 
 #include "display3d.h"
 
-void scripting_engine::showLabel(const std::string &key, bool clear_old, bool jump_to)
+void scripting_engine::showLabel(const std::string& key, bool clear_old, bool jump_to)
 {
 	if (labels.count(key) == 0)
 	{
 		debug(LOG_ERROR, "label %s not found", key.c_str());
 		return;
 	}
-	LABEL &l = labels[key];
+	LABEL& l = labels[key];
 	if (clear_old)
 	{
 		clearMarks();
@@ -1761,7 +1831,7 @@ void scripting_engine::showLabel(const std::string &key, bool clear_old, bool ju
 		{
 			for (int y = map_coord(l.p1.y); y < maxy; y++)
 			{
-				MAPTILE *psTile = mapTile(x, y);
+				MAPTILE* psTile = mapTile(x, y);
 				psTile->tileInfoBits |= BITS_MARKED;
 			}
 		}
@@ -1774,11 +1844,12 @@ void scripting_engine::showLabel(const std::string &key, bool clear_old, bool ju
 		}
 		for (int x = MAX(map_coord(l.p1.x - l.p2.x), 0); x < MIN(map_coord(l.p1.x + l.p2.x), mapWidth); x++)
 		{
-			for (int y = MAX(map_coord(l.p1.y - l.p2.x), 0); y < MIN(map_coord(l.p1.y + l.p2.x), mapHeight); y++) // l.p2.x is radius, not a bug
+			for (int y = MAX(map_coord(l.p1.y - l.p2.x), 0); y < MIN(map_coord(l.p1.y + l.p2.x), mapHeight); y++)
+			// l.p2.x is radius, not a bug
 			{
 				if (iHypot(map_coord(l.p1) - Vector2i(x, y)) < map_coord(l.p2.x))
 				{
-					MAPTILE *psTile = mapTile(x, y);
+					MAPTILE* psTile = mapTile(x, y);
 					psTile->tileInfoBits |= BITS_MARKED;
 				}
 			}
@@ -1786,14 +1857,14 @@ void scripting_engine::showLabel(const std::string &key, bool clear_old, bool ju
 	}
 	else if (l.type == OBJ_DROID || l.type == OBJ_FEATURE || l.type == OBJ_STRUCTURE)
 	{
-		BASE_OBJECT *psObj = IdToObject((OBJECT_TYPE)l.type, l.id, l.player);
+		BASE_OBJECT* psObj = IdToObject((OBJECT_TYPE)l.type, l.id, l.player);
 		if (psObj)
 		{
 			if (jump_to)
 			{
 				setViewPos(map_coord(psObj->pos.x), map_coord(psObj->pos.y), false); // move camera position
 			}
-			MAPTILE *psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
+			MAPTILE* psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
 			psTile->tileInfoBits |= BITS_MARKED;
 		}
 	}
@@ -1802,18 +1873,18 @@ void scripting_engine::showLabel(const std::string &key, bool clear_old, bool ju
 		bool cameraMoved = false;
 		for (ENGINEMAP::iterator i = groups.begin(); i != groups.end(); ++i)
 		{
-			const GROUPMAP *pGroupMap = i->second;
+			const GROUPMAP* pGroupMap = i->second;
 			for (auto iter = pGroupMap->map().cbegin(); iter != pGroupMap->map().cend(); ++iter)
 			{
 				if (iter->second == l.id)
 				{
-					const BASE_OBJECT *psObj = iter->first;
+					const BASE_OBJECT* psObj = iter->first;
 					if (!cameraMoved && jump_to)
 					{
 						setViewPos(map_coord(psObj->pos.x), map_coord(psObj->pos.y), false); // move camera position
 						cameraMoved = true;
 					}
-					MAPTILE *psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
+					MAPTILE* psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
 					psTile->tileInfoBits |= BITS_MARKED;
 				}
 			}
@@ -1823,16 +1894,17 @@ void scripting_engine::showLabel(const std::string &key, bool clear_old, bool ju
 
 // The bool return value is true when an object callback needs to be called.
 // The int return value holds group id when a group callback needs to be called, 0 otherwise.
-std::pair<bool, int> scripting_engine::seenLabelCheck(wzapi::scripting_instance *instance, const BASE_OBJECT *seen, const BASE_OBJECT *viewer)
+std::pair<bool, int> scripting_engine::seenLabelCheck(wzapi::scripting_instance* instance, const BASE_OBJECT* seen,
+                                                      const BASE_OBJECT* viewer)
 {
-	GROUPMAP *psMap = getGroupMap(instance);
+	GROUPMAP* psMap = getGroupMap(instance);
 	ASSERT_OR_RETURN(std::make_pair(false, 0), psMap != nullptr, "Non-existent groupmap for engine");
 	auto seenObjIt = psMap->map().find(seen);
 	int groupId = (seenObjIt != psMap->map().end()) ? seenObjIt->second : 0;
 	bool foundObj = false, foundGroup = false;
-	for (auto &it : labels)
+	for (auto& it : labels)
 	{
-		LABEL &l = it.second;
+		LABEL& l = it.second;
 		if (l.triggered != 0 || !(l.subscriber == ALL_PLAYERS || l.subscriber == viewer->player))
 		{
 			continue;
@@ -1858,17 +1930,17 @@ std::pair<bool, int> scripting_engine::seenLabelCheck(wzapi::scripting_instance 
 	return std::make_pair(foundObj, foundGroup ? groupId : 0);
 }
 
-bool scripting_engine::areaLabelCheck(DROID *psDroid)
+bool scripting_engine::areaLabelCheck(DROID* psDroid)
 {
 	int x = psDroid->pos.x;
 	int y = psDroid->pos.y;
 	bool activated = false;
 	for (LABELMAP::iterator i = labels.begin(); i != labels.end(); i++)
 	{
-		LABEL &l = i->second;
+		LABEL& l = i->second;
 		if (l.triggered == 0 && (l.subscriber == ALL_PLAYERS || l.subscriber == psDroid->player)
-		    && ((l.type == SCRIPT_AREA && l.p1.x < x && l.p1.y < y && l.p2.x > x && l.p2.y > y)
-		        || (l.type == SCRIPT_RADIUS && iHypot(l.p1 - psDroid->pos.xy()) < l.p2.x)))
+			&& ((l.type == SCRIPT_AREA && l.p1.x < x && l.p1.y < y && l.p2.x > x && l.p2.y > y)
+				|| (l.type == SCRIPT_RADIUS && iHypot(l.p1 - psDroid->pos.xy()) < l.p2.x)))
 		{
 			// We're inside an untriggered area
 			activated = true;
@@ -1887,14 +1959,14 @@ bool scripting_engine::areaLabelCheck(DROID *psDroid)
 // Group system
 //
 
-scripting_engine::GROUPMAP* scripting_engine::getGroupMap(wzapi::scripting_instance *instance)
+scripting_engine::GROUPMAP* scripting_engine::getGroupMap(wzapi::scripting_instance* instance)
 {
 	auto groupIt = groups.find(instance);
-	GROUPMAP *psMap = (groupIt != groups.end()) ? groupIt->second : nullptr;
+	GROUPMAP* psMap = (groupIt != groups.end()) ? groupIt->second : nullptr;
 	return psMap;
 }
 
-void scripting_engine::removeFromGroup(wzapi::scripting_instance *instance, GROUPMAP *psMap, const BASE_OBJECT *psObj)
+void scripting_engine::removeFromGroup(wzapi::scripting_instance* instance, GROUPMAP* psMap, const BASE_OBJECT* psObj)
 {
 	auto result = psMap->removeObjectFromGroup(psObj);
 	if (result.has_value())
@@ -1906,7 +1978,7 @@ void scripting_engine::removeFromGroup(wzapi::scripting_instance *instance, GROU
 	}
 }
 
-void scripting_engine::groupRemoveObject(const BASE_OBJECT *psObj)
+void scripting_engine::groupRemoveObject(const BASE_OBJECT* psObj)
 {
 	for (ENGINEMAP::iterator i = groups.begin(); i != groups.end(); ++i)
 	{
@@ -1914,32 +1986,32 @@ void scripting_engine::groupRemoveObject(const BASE_OBJECT *psObj)
 	}
 }
 
-bool scripting_engine::groupAddObject(const BASE_OBJECT *psObj, int groupId, wzapi::scripting_instance *instance)
+bool scripting_engine::groupAddObject(const BASE_OBJECT* psObj, int groupId, wzapi::scripting_instance* instance)
 {
 	ASSERT_OR_RETURN(false, psObj && instance, "Bad parameter");
-	GROUPMAP *psMap = getGroupMap(instance);
+	GROUPMAP* psMap = getGroupMap(instance);
 	removeFromGroup(instance, psMap, psObj);
 	psMap->insertObjectIntoGroup(psObj, groupId);
 	instance->updateGroupSizes(groupId, psMap->groupSize(groupId));
 	return true; // inserted
 }
 
-bool scripting_engine::loadGroup(wzapi::scripting_instance *instance, int groupId, int objId)
+bool scripting_engine::loadGroup(wzapi::scripting_instance* instance, int groupId, int objId)
 {
-	BASE_OBJECT *psObj = IdToPointer(objId, ANYPLAYER);
+	BASE_OBJECT* psObj = IdToPointer(objId, ANYPLAYER);
 	ASSERT_OR_RETURN(false, psObj, "Non-existent object %d in group %d in savegame", objId, groupId);
 	return groupAddObject(psObj, groupId, instance);
 }
 
-bool scripting_engine::saveGroups(nlohmann::json &result, wzapi::scripting_instance *instance)
+bool scripting_engine::saveGroups(nlohmann::json& result, wzapi::scripting_instance* instance)
 {
 	// Save group info as a list of group memberships for each droid
-	GROUPMAP *psMap = getGroupMap(instance);
+	GROUPMAP* psMap = getGroupMap(instance);
 	ASSERT_OR_RETURN(false, psMap, "Non-existent groupmap for engine");
 	result["lastNewGroupId"] = psMap->getLastNewGroupId();
 	for (auto i = psMap->map().begin(); i != psMap->map().end(); ++i)
 	{
-		const BASE_OBJECT *psObj = i->first;
+		const BASE_OBJECT* psObj = i->first;
 		ASSERT(!isDead(psObj), "Wanted to save dead %s to savegame!", objInfo(psObj));
 		std::vector<WzString> value = json_getValue(result, WzString::number(psObj->id)).toWzStringList();
 		value.push_back(WzString::number(i->second));
@@ -1952,13 +2024,13 @@ bool scripting_engine::saveGroups(nlohmann::json &result, wzapi::scripting_insta
 // Label system (function defined in qtscript.h header)
 //
 
-bool loadLabels(const char *filename)
+bool loadLabels(const char* filename)
 {
 	return scripting_engine::instance().loadLabels(filename);
 }
 
 // Load labels
-bool scripting_engine::loadLabels(const char *filename)
+bool scripting_engine::loadLabels(const char* filename)
 {
 	int groupidx = -1;
 
@@ -2029,10 +2101,10 @@ bool scripting_engine::loadLabels(const char *filename)
 			p.type = SCRIPT_GROUP;
 			p.player = ini.value("player").toInt();
 			std::vector<WzString> memberList = ini.value("members").toWzStringList();
-			for (WzString const &j : memberList)
+			for (WzString const& j : memberList)
 			{
 				int id = j.toInt();
-				BASE_OBJECT *psObj = IdToPointer(id, p.player);
+				BASE_OBJECT* psObj = IdToPointer(id, p.player);
 				ASSERT(psObj, "Unit %d belonging to player %d not found from label %s",
 				       id, p.player, list[i].toUtf8().c_str());
 				p.idlist.push_back(id);
@@ -2050,12 +2122,12 @@ bool scripting_engine::loadLabels(const char *filename)
 	return true;
 }
 
-bool writeLabels(const char *filename)
+bool writeLabels(const char* filename)
 {
 	return scripting_engine::instance().writeLabels(filename);
 }
 
-bool scripting_engine::writeLabels(const char *filename)
+bool scripting_engine::writeLabels(const char* filename)
 {
 	int c[5]; // make unique, incremental section names
 	memset(c, 0, sizeof(c));
@@ -2063,7 +2135,7 @@ bool scripting_engine::writeLabels(const char *filename)
 	for (LABELMAP::const_iterator i = labels.begin(); i != labels.end(); i++)
 	{
 		const std::string& key = i->first;
-		const LABEL &l = i->second;
+		const LABEL& l = i->second;
 		if (l.type == SCRIPT_POSITION)
 		{
 			ini.beginGroup("position_" + WzString::number(c[0]++));
@@ -2158,7 +2230,7 @@ wzapi::no_return_value scripting_engine::resetLabel(WZAPI_PARAMS(std::string lab
 {
 	LABELMAP& labels = scripting_engine::instance().labels;
 	SCRIPT_ASSERT({}, context, labels.count(labelName) > 0, "Label %s not found", labelName.c_str());
-	LABEL &label = labels[labelName];
+	LABEL& label = labels[labelName];
 	label.triggered = 0; // make active again
 	label.subscriber = playerFilter.value_or(ALL_PLAYERS);
 	return {};
@@ -2178,7 +2250,7 @@ std::vector<std::string> scripting_engine::enumLabels(WZAPI_PARAMS(optional<int>
 		SCRIPT_TYPE type = (SCRIPT_TYPE)filterLabelType.value();
 		for (LABELMAP::const_iterator i = labels.begin(); i != labels.end(); i++)
 		{
-			const LABEL &label = i->second;
+			const LABEL& label = i->second;
 			if (label.type == type)
 			{
 				matches.push_back(i->first);
@@ -2197,12 +2269,13 @@ std::vector<std::string> scripting_engine::enumLabels(WZAPI_PARAMS(optional<int>
 }
 
 generic_script_object::generic_script_object()
-: p1(Vector2i(0,0))
-, p2(Vector2i(0,0))
-, id(-1)
-, player(-1)
-, type(-1)
-{ }
+	: p1(Vector2i(0, 0))
+	  , p2(Vector2i(0, 0))
+	  , id(-1)
+	  , player(-1)
+	  , type(-1)
+{
+}
 
 generic_script_object generic_script_object::Null()
 {
@@ -2222,7 +2295,7 @@ generic_script_object generic_script_object::fromRadius(int x, int y, int radius
 scr_radius generic_script_object::getRadius() const // if type == SCRIPT_RADIUS, returns the radius
 {
 	ASSERT(isRadius(), "generic_script_object is not a radius; type: %d", type);
-	return scr_radius {p1.x, p1.y, p2.x};
+	return scr_radius{p1.x, p1.y, p2.x};
 }
 
 generic_script_object generic_script_object::fromArea(int x, int y, int x2, int y2)
@@ -2239,7 +2312,7 @@ generic_script_object generic_script_object::fromArea(int x, int y, int x2, int 
 scr_area generic_script_object::getArea() const // if type == SCRIPT_AREA, returns the area
 {
 	ASSERT(isArea(), "generic_script_object is not an area; type: %d", type);
-	return scr_area {p1.x, p1.y, p2.x, p2.y};
+	return scr_area{p1.x, p1.y, p2.x, p2.y};
 }
 
 generic_script_object generic_script_object::fromPosition(int x, int y)
@@ -2254,7 +2327,7 @@ generic_script_object generic_script_object::fromPosition(int x, int y)
 scr_position generic_script_object::getPosition() const // if type == SCRIPT_POSITION, returns the position
 {
 	ASSERT(isPosition(), "generic_script_object is not a position; type: %d", type);
-	return scr_position {p1.x, p1.y};
+	return scr_position{p1.x, p1.y};
 }
 
 generic_script_object generic_script_object::fromGroup(int groupId)
@@ -2271,7 +2344,7 @@ int generic_script_object::getGroupId() const // if type == SCRIPT_GROUP, return
 	return id;
 }
 
-generic_script_object generic_script_object::fromObject(const BASE_OBJECT *psObj)
+generic_script_object generic_script_object::fromObject(const BASE_OBJECT* psObj)
 {
 	generic_script_object result;
 	if (psObj == nullptr)
@@ -2284,7 +2357,8 @@ generic_script_object generic_script_object::fromObject(const BASE_OBJECT *psObj
 	return result;
 }
 
-BASE_OBJECT * generic_script_object::getObject() const // if type == OBJ_DROID, OBJ_FEATURE, OBJ_STRUCTURE, returns the game object
+BASE_OBJECT* generic_script_object::getObject() const
+// if type == OBJ_DROID, OBJ_FEATURE, OBJ_STRUCTURE, returns the game object
 {
 	ASSERT(isObject(), "generic_script_object is not an object; type: %d", type);
 	return IdToObject((OBJECT_TYPE)type, id, player);
@@ -2319,14 +2393,15 @@ LABEL generic_script_object::toNewLabel() const
 //-- This is a fast operation of O(log n) algorithmic complexity. (3.2+ only)
 //-- Can optionally specify an initial "triggered" value for the label. (3.4+ only)
 //--
-wzapi::no_return_value scripting_engine::addLabel(WZAPI_PARAMS(generic_script_object object, std::string label, optional<int> _triggered))
+wzapi::no_return_value scripting_engine::addLabel(
+	WZAPI_PARAMS(generic_script_object object, std::string label, optional<int> _triggered))
 {
 	LABELMAP& labels = scripting_engine::instance().labels;
 	LABEL value = object.toNewLabel();
 
 	if (value.type == OBJ_DROID || value.type == OBJ_STRUCTURE || value.type == OBJ_FEATURE)
 	{
-		BASE_OBJECT *psObj = IdToObject((OBJECT_TYPE)value.type, value.id, value.player);
+		BASE_OBJECT* psObj = IdToObject((OBJECT_TYPE)value.type, value.id, value.player);
 		SCRIPT_ASSERT({}, context, psObj, "Object id %d not found belonging to player %d", value.id, value.player);
 	}
 
@@ -2370,10 +2445,12 @@ optional<std::string> scripting_engine::getLabel(WZAPI_PARAMS(const BASE_OBJECT 
 	tmp.type = psObj->type;
 	return _findMatchingLabel(tmp);
 }
+
 optional<std::string> scripting_engine::getLabelJS(WZAPI_PARAMS(wzapi::game_object_identifier obj_id))
 {
 	return _findMatchingLabel(obj_id);
 }
+
 optional<std::string> scripting_engine::_findMatchingLabel(wzapi::game_object_identifier obj_id)
 {
 	const LABELMAP& labels = scripting_engine::instance().labels;
@@ -2382,7 +2459,7 @@ optional<std::string> scripting_engine::_findMatchingLabel(wzapi::game_object_id
 	value.player = obj_id.player;
 	value.type = obj_id.type;
 	std::string label;
-	for (const auto &it : labels)
+	for (const auto& it : labels)
 	{
 		if (it.second == value)
 		{
@@ -2426,7 +2503,7 @@ generic_script_object scripting_engine::getObject(WZAPI_PARAMS(wzapi::object_req
 		int x = pos.x;
 		int y = pos.y;
 		SCRIPT_ASSERT({}, context, tileOnMap(x, y), "Map position (%d, %d) not on the map!", x, y);
-		const MAPTILE *psTile = mapTile(x, y);
+		const MAPTILE* psTile = mapTile(x, y);
 		return generic_script_object::fromObject(psTile->psObject);
 	}
 	else if (request.requestType == wzapi::object_request::RequestType::OBJECTID_REQUEST)
@@ -2448,17 +2525,18 @@ generic_script_object scripting_engine::getObject(WZAPI_PARAMS(wzapi::object_req
 generic_script_object scripting_engine::getObjectFromLabel(WZAPI_PARAMS(const std::string& label))
 {
 	// get by label case
-	BASE_OBJECT *psObj = nullptr;
+	BASE_OBJECT* psObj = nullptr;
 	if (labels.count(label) > 0)
 	{
-		const LABEL &p = labels[label];
+		const LABEL& p = labels[label];
 		switch (p.type)
 		{
 		case SCRIPT_RADIUS:
 			return generic_script_object::fromRadius(map_coord(p.p1.x), map_coord(p.p1.y), map_coord(p.p2.x));
 			break;
 		case SCRIPT_AREA:
-			return generic_script_object::fromArea(map_coord(p.p1.x), map_coord(p.p1.y), map_coord(p.p2.x), map_coord(p.p2.y));
+			return generic_script_object::fromArea(map_coord(p.p1.x), map_coord(p.p1.y), map_coord(p.p2.x),
+			                                       map_coord(p.p2.y));
 			break;
 		case SCRIPT_POSITION:
 			return generic_script_object::fromPosition(map_coord(p.p1.x), map_coord(p.p1.y));
@@ -2492,10 +2570,11 @@ generic_script_object scripting_engine::getObjectFromLabel(WZAPI_PARAMS(const st
 //-- positions or a label to an AREA. Calling this function is much faster than iterating over all
 //-- game objects using other enum functions. (3.2+ only)
 //--
-std::vector<const BASE_OBJECT *> scripting_engine::enumAreaByLabel(WZAPI_PARAMS(std::string label, optional<int> _playerFilter, optional<bool> _seen))
+std::vector<const BASE_OBJECT*> scripting_engine::enumAreaByLabel(
+	WZAPI_PARAMS(std::string label, optional<int> _playerFilter, optional<bool> _seen))
 {
 	SCRIPT_ASSERT({}, context, instance().labels.count(label) > 0, "Label %s not found", label.c_str());
-	const LABEL &p = instance().labels[label];
+	const LABEL& p = instance().labels[label];
 	SCRIPT_ASSERT({}, context, p.type == SCRIPT_AREA, "Wrong label type for %s", label.c_str());
 	int x1 = p.p1.x;
 	int y1 = p.p1.y;
@@ -2504,10 +2583,11 @@ std::vector<const BASE_OBJECT *> scripting_engine::enumAreaByLabel(WZAPI_PARAMS(
 	return _enumAreaWorldCoords(context, x1, y1, x2, y2, _playerFilter, _seen);
 }
 
-typedef std::vector<BASE_OBJECT *> GridList;
+typedef std::vector<BASE_OBJECT*> GridList;
 #include "mapgrid.h"
 
-std::vector<const BASE_OBJECT *> scripting_engine::enumArea(WZAPI_PARAMS(scr_area area, optional<int> _playerFilter, optional<bool> _seen))
+std::vector<const BASE_OBJECT*> scripting_engine::enumArea(
+	WZAPI_PARAMS(scr_area area, optional<int> _playerFilter, optional<bool> _seen))
 {
 	int x1 = world_coord(area.x1);
 	int y1 = world_coord(area.y1);
@@ -2516,23 +2596,24 @@ std::vector<const BASE_OBJECT *> scripting_engine::enumArea(WZAPI_PARAMS(scr_are
 	return _enumAreaWorldCoords(context, x1, y1, x2, y2, _playerFilter, _seen);
 }
 
-std::vector<const BASE_OBJECT *> scripting_engine::_enumAreaWorldCoords(WZAPI_PARAMS(int x1, int y1, int x2, int y2, optional<int> _playerFilter, optional<bool> _seen))
+std::vector<const BASE_OBJECT*> scripting_engine::_enumAreaWorldCoords(
+	WZAPI_PARAMS(int x1, int y1, int x2, int y2, optional<int> _playerFilter, optional<bool> _seen))
 {
 	int player = context.player();
 	int playerFilter = _playerFilter.value_or(ALL_PLAYERS);
 	bool seen = _seen.value_or(true);
 
-	static GridList gridList;  // static to avoid allocations. // not thread-safe
+	static GridList gridList; // static to avoid allocations. // not thread-safe
 	gridList = gridStartIterateArea(x1, y1, x2, y2);
-	std::vector<const BASE_OBJECT *> list;
+	std::vector<const BASE_OBJECT*> list;
 	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
 	{
-		BASE_OBJECT *psObj = *gi;
+		BASE_OBJECT* psObj = *gi;
 		if ((psObj->visible[player] || !seen) && !psObj->died)
 		{
 			if ((playerFilter >= 0 && psObj->player == playerFilter) || playerFilter == ALL_PLAYERS
-			    || (playerFilter == ALLIES && psObj->type != OBJ_FEATURE && aiCheckAlliances(psObj->player, player))
-			    || (playerFilter == ENEMIES && psObj->type != OBJ_FEATURE && !aiCheckAlliances(psObj->player, player)))
+				|| (playerFilter == ALLIES && psObj->type != OBJ_FEATURE && aiCheckAlliances(psObj->player, player))
+				|| (playerFilter == ENEMIES && psObj->type != OBJ_FEATURE && !aiCheckAlliances(psObj->player, player)))
 			{
 				list.push_back(psObj);
 			}
@@ -2541,7 +2622,8 @@ std::vector<const BASE_OBJECT *> scripting_engine::_enumAreaWorldCoords(WZAPI_PA
 	return list;
 }
 
-std::vector<const BASE_OBJECT *> scripting_engine::enumAreaJS(WZAPI_PARAMS(scripting_engine::area_by_values_or_area_label_lookup area_lookup, optional<int> playerFilter, optional<bool> seen))
+std::vector<const BASE_OBJECT*> scripting_engine::enumAreaJS(WZAPI_PARAMS(
+	scripting_engine::area_by_values_or_area_label_lookup area_lookup, optional<int> playerFilter, optional<bool> seen))
 {
 	if (area_lookup.isLabel())
 	{
@@ -2561,10 +2643,10 @@ std::vector<const BASE_OBJECT *> scripting_engine::enumAreaJS(WZAPI_PARAMS(scrip
 //--
 //-- Return an array containing all the members of a given group.
 //--
-std::vector<const BASE_OBJECT *> scripting_engine::enumGroup(WZAPI_PARAMS(int groupId))
+std::vector<const BASE_OBJECT*> scripting_engine::enumGroup(WZAPI_PARAMS(int groupId))
 {
-	std::vector<const BASE_OBJECT *> matches;
-	GROUPMAP *psMap = instance().getGroupMap(context.currentInstance());
+	std::vector<const BASE_OBJECT*> matches;
+	GROUPMAP* psMap = instance().getGroupMap(context.currentInstance());
 
 	if (psMap != nullptr)
 	{
@@ -2580,7 +2662,7 @@ std::vector<const BASE_OBJECT *> scripting_engine::enumGroup(WZAPI_PARAMS(int gr
 //--
 int scripting_engine::newGroup(WZAPI_NO_PARAMS)
 {
-	GROUPMAP *psMap = instance().getGroupMap(context.currentInstance());
+	GROUPMAP* psMap = instance().getGroupMap(context.currentInstance());
 	int i = psMap->newGroupID();
 	// NOTE: group zero is reserved
 	SCRIPT_ASSERT(1, context, i != 0, "Group 0 is reserved - error in WZ code");
@@ -2599,7 +2681,7 @@ wzapi::no_return_value scripting_engine::groupAddArea(WZAPI_PARAMS(int groupId, 
 	int x2 = world_coord(_x2);
 	int y2 = world_coord(_y2);
 
-	for (DROID *psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+	for (DROID* psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->pos.x >= x1 && psDroid->pos.x <= x2 && psDroid->pos.y >= y1 && psDroid->pos.y <= y2)
 		{
@@ -2645,13 +2727,13 @@ int scripting_engine::groupSize(WZAPI_PARAMS(int groupId))
 // ----------------------------------------------------------------------------------------
 // Register functions with scripting system
 
-bool scripting_engine::unregisterFunctions(wzapi::scripting_instance *instance)
+bool scripting_engine::unregisterFunctions(wzapi::scripting_instance* instance)
 {
 	int num = 0;
 	auto it = groups.find(instance);
 	if (it != groups.end())
 	{
-		GROUPMAP *psMap = groups.at(instance);
+		GROUPMAP* psMap = groups.at(instance);
 		groups.erase(it);
 		delete psMap;
 		num = 1;
@@ -2668,16 +2750,16 @@ void scripting_engine::prepareLabels()
 	// load the label group data into every scripting context, with the same negative group id
 	for (ENGINEMAP::iterator iter = groups.begin(); iter != groups.end(); ++iter)
 	{
-		wzapi::scripting_instance *instance = iter->first;
+		wzapi::scripting_instance* instance = iter->first;
 		for (LABELMAP::iterator i = labels.begin(); i != labels.end(); ++i)
 		{
-			const LABEL &l = i->second;
+			const LABEL& l = i->second;
 			if (l.type == SCRIPT_GROUP)
 			{
 				for (std::vector<int>::const_iterator j = l.idlist.begin(); j != l.idlist.end(); j++)
 				{
 					int id = (*j);
-					BASE_OBJECT *psObj = IdToPointer(id, l.player);
+					BASE_OBJECT* psObj = IdToPointer(id, l.player);
 					ASSERT(psObj, "Unit %d belonging to player %d not found", id, l.player);
 					if (psObj)
 					{
@@ -2694,14 +2776,14 @@ wzapi::no_return_value scripting_engine::hackMarkTiles_ByLabel(WZAPI_PARAMS(cons
 {
 	SCRIPT_ASSERT({}, context, labels.count(label) > 0, "Label %s not found", label.c_str());
 
-	const LABEL &l = labels[label];
+	const LABEL& l = labels[label];
 	if (l.type == SCRIPT_AREA)
 	{
 		for (int x = map_coord(l.p1.x); x < map_coord(l.p2.x); x++)
 		{
 			for (int y = map_coord(l.p1.y); y < map_coord(l.p2.y); y++)
 			{
-				MAPTILE *psTile = mapTile(x, y);
+				MAPTILE* psTile = mapTile(x, y);
 				psTile->tileInfoBits |= BITS_MARKED;
 			}
 		}
@@ -2712,9 +2794,10 @@ wzapi::no_return_value scripting_engine::hackMarkTiles_ByLabel(WZAPI_PARAMS(cons
 		{
 			for (int y = map_coord(l.p1.y - l.p2.x); y < map_coord(l.p1.y + l.p2.x); y++)
 			{
-				if (x >= -1 && x < mapWidth + 1 && y >= -1 && y < mapWidth + 1 && iHypot(map_coord(l.p1) - Vector2i(x, y)) < map_coord(l.p2.x))
+				if (x >= -1 && x < mapWidth + 1 && y >= -1 && y < mapWidth + 1 && iHypot(
+					map_coord(l.p1) - Vector2i(x, y)) < map_coord(l.p2.x))
 				{
-					MAPTILE *psTile = mapTile(x, y);
+					MAPTILE* psTile = mapTile(x, y);
 					psTile->tileInfoBits |= BITS_MARKED;
 				}
 			}
@@ -2724,9 +2807,10 @@ wzapi::no_return_value scripting_engine::hackMarkTiles_ByLabel(WZAPI_PARAMS(cons
 	return {};
 }
 
-void scripting_engine::logFunctionPerformance(wzapi::scripting_instance *instance, const std::string &function, int ticks)
+void scripting_engine::logFunctionPerformance(wzapi::scripting_instance* instance, const std::string& function,
+                                              int ticks)
 {
-	MONITOR *monitor = monitors.at(instance); // pick right one for this instance
+	MONITOR* monitor = monitors.at(instance); // pick right one for this instance
 	MONITOR_BIN m;
 	MONITOR::iterator it = monitor->find(function);
 	if (it != monitor->end())
@@ -2754,25 +2838,31 @@ void scripting_engine::logFunctionPerformance(wzapi::scripting_instance *instanc
 
 // MARK: - DebugInterface
 
-std::unordered_map<wzapi::scripting_instance *, nlohmann::json> scripting_engine::DebugInterface::debug_GetGlobalsSnapshot() const
+std::unordered_map<wzapi::scripting_instance*, nlohmann::json>
+scripting_engine::DebugInterface::debug_GetGlobalsSnapshot() const
 {
 	return scripting_engine::instance().debug_GetGlobalsSnapshot();
 }
+
 std::vector<scripting_engine::timerNodeSnapshot> scripting_engine::DebugInterface::debug_GetTimersSnapshot() const
 {
 	return scripting_engine::instance().debug_GetTimersSnapshot();
 }
+
 std::vector<scripting_engine::LabelInfo> scripting_engine::DebugInterface::debug_GetLabelInfo() const
 {
 	return scripting_engine::instance().debug_GetLabelInfo();
 }
+
 /// Show all labels or all currently active labels
 void scripting_engine::DebugInterface::markAllLabels(bool only_active)
 {
 	return scripting_engine::instance().markAllLabels(only_active);
 }
+
 /// Mark and show label
-void scripting_engine::DebugInterface::showLabel(const std::string &key, bool clear_old /*= true*/, bool jump_to /*= true*/)
+void scripting_engine::DebugInterface::showLabel(const std::string& key, bool clear_old /*= true*/,
+                                                 bool jump_to /*= true*/)
 {
 	return scripting_engine::instance().showLabel(key, clear_old, jump_to);
 }

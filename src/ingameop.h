@@ -35,7 +35,7 @@ void intAddInGamePopup();
 extern bool hostQuitConfirmation;
 
 // status bools.
-extern bool	InGameOpUp;
+extern bool InGameOpUp;
 extern bool isInGamePopupUp;
 extern bool isKeyMapEditorUp;
 // ////////////////////////////////////////////////////////////////////////////
@@ -88,7 +88,8 @@ enum
 	INTINGAMEPOPUP,
 	INTINGAMEOP_HOSTQUIT,
 	INTINGAMEOP_CONFIRM_QUIT,
-	INTINGAMEOP_QUIT,               ///< The all important quit button
+	INTINGAMEOP_QUIT,
+	///< The all important quit button
 	INTINGAMEOP_RESUME,
 	INTINGAMEOP_GO_BACK,
 	INTINGAMEOP_LOAD_MISSION,
@@ -106,11 +107,13 @@ enum
 	INTINGAMEOP_CONTROL_BT,
 	INTINGAMEOP_VIBRATION,
 	INTINGAMEOP_VIBRATION_BT,
-	INTINGAMEOP_PAUSELABEL,                 ///< The paused message
+	INTINGAMEOP_PAUSELABEL,
+	///< The paused message
 	INTINGAMEOP_CENTRESCREEN,
 	INTINGAMEOP_REPLAY,
 	INTINGAMEOP_CURSOR_S,
-	INTINGAMEOP_TUI_TARGET_ORIGIN_SW,		///< Switch
+	INTINGAMEOP_TUI_TARGET_ORIGIN_SW,
+	///< Switch
 	INTINGAMEOP_POPUP_QUIT,
 	INTINGAMEOP_POPUP_MSG1,
 	INTINGAMEOP_POPUP_MSG2,
@@ -150,7 +153,6 @@ enum
 	INTINGAMEOP_SCREENSHAKE,
 	INTINGAMEOP_SCREENSHAKE_R
 };
-
 
 
 // positions within option boxes.

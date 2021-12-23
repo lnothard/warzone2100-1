@@ -39,7 +39,9 @@ class WZ_Notification_Display_Options
 public:
 	// The default WZ_Notification_Display_Options is useful for notifications
 	// that should _always_ be displayed.
-	WZ_Notification_Display_Options() {}
+	WZ_Notification_Display_Options()
+	{
+	}
 
 public:
 	// Sets a specific notification identifier to "display once".
@@ -70,13 +72,15 @@ public:
 	//
 	// Specify a uniqueNotificationIdentifier that uniquely identifies this notification, and is used to
 	// match against future notifications.
-	static WZ_Notification_Display_Options makeIgnorable(const std::string& uniqueNotificationIdentifier, uint8_t numTimesSeenBeforeDoNotShowAgainOption = 0)
+	static WZ_Notification_Display_Options makeIgnorable(const std::string& uniqueNotificationIdentifier,
+	                                                     uint8_t numTimesSeenBeforeDoNotShowAgainOption = 0)
 	{
 		WZ_Notification_Display_Options options;
 		options._uniqueNotificationIdentifier = uniqueNotificationIdentifier;
 		options._numTimesSeenBeforeDoNotShowAgainOption = numTimesSeenBeforeDoNotShowAgainOption;
 		return options;
 	}
+
 public:
 	const std::string& uniqueNotificationIdentifier() const { return _uniqueNotificationIdentifier; }
 	uint8_t numTimesSeenBeforeDoNotShowAgainOption() const { return _numTimesSeenBeforeDoNotShowAgainOption; }
@@ -97,31 +101,42 @@ private:
 class WZ_Notification_Image
 {
 public:
-	enum class ImageType {
+	enum class ImageType
+	{
 		PNG
 	};
+
 public:
 	WZ_Notification_Image()
-	: _type(ImageType::PNG)
-	{ }
+		: _type(ImageType::PNG)
+	{
+	}
 
 	explicit WZ_Notification_Image(const char* imagePath, const ImageType& imageType = ImageType::PNG)
-	: _imagePath(imagePath)
-	, _type(imageType)
-	{ }
+		: _imagePath(imagePath)
+		  , _type(imageType)
+	{
+	}
+
 	explicit WZ_Notification_Image(const std::string& imagePath, const ImageType& imageType = ImageType::PNG)
-	: _imagePath(imagePath)
-	, _type(imageType)
-	{ }
-	explicit WZ_Notification_Image(const std::vector<unsigned char>& memoryBuffer, const ImageType& imageType = ImageType::PNG)
-	: _memoryBuffer(memoryBuffer)
-	, _type(imageType)
-	{ }
+		: _imagePath(imagePath)
+		  , _type(imageType)
+	{
+	}
+
+	explicit WZ_Notification_Image(const std::vector<unsigned char>& memoryBuffer,
+	                               const ImageType& imageType = ImageType::PNG)
+		: _memoryBuffer(memoryBuffer)
+		  , _type(imageType)
+	{
+	}
+
 public:
 	bool empty() const
 	{
 		return _imagePath.empty() && _memoryBuffer.empty();
 	}
+
 	const std::string& imagePath() const { return _imagePath; }
 	const std::vector<unsigned char>& memoryBuffer() const { return _memoryBuffer; }
 	ImageType imageType() const { return _type; }
@@ -137,17 +152,23 @@ class WZ_Notification; // forward-declare
 class WZ_Notification_Action
 {
 public:
-	WZ_Notification_Action() {}
+	WZ_Notification_Action()
+	{
+	}
+
 	WZ_Notification_Action(std::string actionTitle, const std::function<void (const WZ_Notification&)>& onAction)
-	: title(actionTitle)
-	, onAction(onAction)
-	{ }
+		: title(actionTitle)
+		  , onAction(onAction)
+	{
+	}
+
 public:
 	std::string title;
 	std::function<void (WZ_Notification&)> onAction;
 };
 
-enum class WZ_Notification_Dismissal_Reason {
+enum class WZ_Notification_Dismissal_Reason
+{
 	// the user pressed the "Dismiss" button (or dragged the notification upwards)
 	USER_DISMISSED,
 	// the notification was dismissed because the "Action" button was pressed
@@ -204,14 +225,16 @@ public:
 	// A time interval, in game ticks (see: GAME_TICKS_PER_SEC),
 	// from the time the notification is submitted before it is displayed.
 	WZ_Notification_Trigger(uint32_t timeInterval)
-	: timeInterval(timeInterval)
-	{ }
+		: timeInterval(timeInterval)
+	{
+	}
 
 	// Can be displayed immediately.
 	static WZ_Notification_Trigger Immediate()
 	{
 		return WZ_Notification_Trigger(0);
 	}
+
 public:
 	uint32_t timeInterval = 0;
 };
@@ -222,9 +245,11 @@ void addNotification(const WZ_Notification& notification, const WZ_Notification_
 
 // Remove notification preferences by unique notification identifier
 // - must be called from the main thread
-bool removeNotificationPreferencesIf(const std::function<bool (const std::string& uniqueNotificationIdentifier)>& matchIdentifierFunc);
+bool removeNotificationPreferencesIf(
+	const std::function<bool (const std::string& uniqueNotificationIdentifier)>& matchIdentifierFunc);
 
-enum class NotificationScope {
+enum class NotificationScope
+{
 	DISPLAYED_ONLY,
 	QUEUED_ONLY,
 	DISPLAYED_AND_QUEUED
@@ -240,7 +265,8 @@ bool hasNotificationsWithTag(const std::string& tag, NotificationScope scope = N
 // If `scope` is `QUEUED_ONLY`, only queued notifications will be processed
 //
 // Returns: `true` if one or more notifications were cancelled or dismissed
-bool cancelOrDismissNotificationsWithTag(const std::string& tag, NotificationScope scope = NotificationScope::DISPLAYED_AND_QUEUED);
+bool cancelOrDismissNotificationsWithTag(const std::string& tag,
+                                         NotificationScope scope = NotificationScope::DISPLAYED_AND_QUEUED);
 
 // Cancel or dismiss existing notifications by tag
 // Accepts a `matchTagFunc` that receives each (queued / currently-displayed) notification's tag,
@@ -249,7 +275,8 @@ bool cancelOrDismissNotificationsWithTag(const std::string& tag, NotificationSco
 // If `scope` is `QUEUED_ONLY`, only queued notifications will be processed
 //
 // Returns: `true` if one or more notifications were cancelled or dismissed
-bool cancelOrDismissNotificationIfTag(const std::function<bool (const std::string& tag)>& matchTagFunc, NotificationScope scope = NotificationScope::DISPLAYED_AND_QUEUED);
+bool cancelOrDismissNotificationIfTag(const std::function<bool (const std::string& tag)>& matchTagFunc,
+                                      NotificationScope scope = NotificationScope::DISPLAYED_AND_QUEUED);
 
 // In-Game Notifications System
 bool notificationsInitialize();

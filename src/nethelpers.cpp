@@ -41,10 +41,12 @@ void setPublicIPv4LookupService(const std::string& publicIPv4LookupServiceUrl, c
 	publicIPv4LookupService = publicIPv4LookupServiceUrl;
 	publicIPv4LookupServiceJSONKey = jsonKey;
 }
+
 const std::string& getPublicIPv4LookupServiceUrl()
 {
 	return publicIPv4LookupService;
 }
+
 const std::string& getPublicIPv4LookupServiceJSONKey()
 {
 	return publicIPv4LookupServiceJSONKey;
@@ -59,23 +61,29 @@ void setPublicIPv6LookupService(const std::string& publicIPv6LookupServiceUrl, c
 	publicIPv6LookupService = publicIPv6LookupServiceUrl;
 	publicIPv6LookupServiceJSONKey = jsonKey;
 }
+
 const std::string& getPublicIPv6LookupServiceUrl()
 {
 	return publicIPv6LookupService;
 }
+
 const std::string& getPublicIPv6LookupServiceJSONKey()
 {
 	return publicIPv6LookupServiceJSONKey;
 }
 
-static void requestPublicIPAddress(const std::string& lookupServiceUrl, InternetProtocol protocol, const std::string& jsonResponseKey, const std::function<void (optional<std::string> ipAddressString, optional<std::string> errorString)>& callback)
+static void requestPublicIPAddress(const std::string& lookupServiceUrl, InternetProtocol protocol,
+                                   const std::string& jsonResponseKey,
+                                   const std::function<void (optional<std::string> ipAddressString,
+                                                             optional<std::string> errorString)>& callback)
 {
 	URLDataRequest request;
 	request.url = lookupServiceUrl;
 	request.protocol = protocol;
 	request.noProxy = true;
-	request.onSuccess = [jsonResponseKey, callback](const std::string& url, const HTTPResponseDetails& responseDetails, const std::shared_ptr<MemoryStruct>& data) {
-
+	request.onSuccess = [jsonResponseKey, callback](const std::string& url, const HTTPResponseDetails& responseDetails,
+	                                                const std::shared_ptr<MemoryStruct>& data)
+	{
 		long httpStatusCode = responseDetails.httpStatusCode();
 		if (httpStatusCode != 200)
 		{
@@ -87,10 +95,12 @@ static void requestPublicIPAddress(const std::string& lookupServiceUrl, Internet
 
 		// Parse the remaining json (minus the digital signature)
 		json updateData;
-		try {
+		try
+		{
 			updateData = json::parse(data->memory, data->memory + data->size);
 		}
-		catch (const std::exception &e) {
+		catch (const std::exception& e)
+		{
 			std::string errorString = "Failed to parse JSON response: ";
 			errorString += e.what();
 			callback(nullopt, errorString);
@@ -117,7 +127,9 @@ static void requestPublicIPAddress(const std::string& lookupServiceUrl, Internet
 		std::string ipAddressString = it.value().get<std::string>();
 		callback(ipAddressString, nullopt);
 	};
-	request.onFailure = [callback](const std::string& url, URLRequestFailureType type, optional<HTTPResponseDetails> transferDetails) {
+	request.onFailure = [callback](const std::string& url, URLRequestFailureType type,
+	                               optional<HTTPResponseDetails> transferDetails)
+	{
 		std::string errorString = "Request failed; failure type: ";
 		errorString += std::to_string(type);
 		if (transferDetails.has_value())
@@ -130,7 +142,8 @@ static void requestPublicIPAddress(const std::string& lookupServiceUrl, Internet
 	AsyncURLRequestHandle handle = urlRequestData(request);
 }
 
-class GetPublicIPAddress {
+class GetPublicIPAddress
+{
 private:
 	IPAddressResultCallbackFunc resultCallback;
 	optional<std::string> ipv4;
@@ -139,10 +152,13 @@ private:
 	optional<std::string> ipv6_error;
 	std::mutex ip_mutex;
 
-	bool allRequestsFinished() const {
+	bool allRequestsFinished() const
+	{
 		return (ipv4.has_value() || ipv4_error.has_value()) && (ipv6.has_value() || ipv6_error.has_value());
 	}
-	bool dispatchCallbackIfDone() const {
+
+	bool dispatchCallbackIfDone() const
+	{
 		if (!allRequestsFinished())
 		{
 			return false;
@@ -159,13 +175,16 @@ private:
 		resultCallback((ipv4.has_value()) ? ipv4.value() : "", (ipv6.has_value()) ? ipv6.value() : "", errors);
 		return true;
 	}
-public:
-	GetPublicIPAddress(const IPAddressResultCallbackFunc& resultCallback)
-	: resultCallback(resultCallback)
-	{ }
 
 public:
-	static void getPublicIPAddress(const IPAddressResultCallbackFunc& resultCallback, bool ipv4 = true, bool ipv6 = true)
+	GetPublicIPAddress(const IPAddressResultCallbackFunc& resultCallback)
+		: resultCallback(resultCallback)
+	{
+	}
+
+public:
+	static void getPublicIPAddress(const IPAddressResultCallbackFunc& resultCallback, bool ipv4 = true,
+	                               bool ipv6 = true)
 	{
 		std::shared_ptr<GetPublicIPAddress> pPublicIpAddresses = std::make_shared<GetPublicIPAddress>(resultCallback);
 		if (!ipv4)
@@ -179,47 +198,55 @@ public:
 
 		if (ipv4)
 		{
-			requestPublicIPAddress(publicIPv4LookupService, InternetProtocol::IPv4, publicIPv4LookupServiceJSONKey, [pPublicIpAddresses](optional<std::string> ipAddressString, optional<std::string> errorString){
-				std::lock_guard<std::mutex> guard(pPublicIpAddresses->ip_mutex);
-				if (!errorString.has_value())
-				{
-					if (ipAddressString.has_value() && (pPublicIpAddresses->ipv6 != ipAddressString))
-					{
-						pPublicIpAddresses->ipv4 = ipAddressString;
-					}
-					else
-					{
-						pPublicIpAddresses->ipv4 = std::string();
-					}
-				}
-				else
-				{
-					pPublicIpAddresses->ipv4_error = errorString.value();
-				}
-				pPublicIpAddresses->dispatchCallbackIfDone();
-			});
+			requestPublicIPAddress(publicIPv4LookupService, InternetProtocol::IPv4, publicIPv4LookupServiceJSONKey,
+			                       [pPublicIpAddresses](optional<std::string> ipAddressString,
+			                                            optional<std::string> errorString)
+			                       {
+				                       std::lock_guard<std::mutex> guard(pPublicIpAddresses->ip_mutex);
+				                       if (!errorString.has_value())
+				                       {
+					                       if (ipAddressString.has_value() && (pPublicIpAddresses->ipv6 !=
+						                       ipAddressString))
+					                       {
+						                       pPublicIpAddresses->ipv4 = ipAddressString;
+					                       }
+					                       else
+					                       {
+						                       pPublicIpAddresses->ipv4 = std::string();
+					                       }
+				                       }
+				                       else
+				                       {
+					                       pPublicIpAddresses->ipv4_error = errorString.value();
+				                       }
+				                       pPublicIpAddresses->dispatchCallbackIfDone();
+			                       });
 		}
 		if (ipv6)
 		{
-			requestPublicIPAddress(publicIPv6LookupService, InternetProtocol::IPv6, publicIPv6LookupServiceJSONKey, [pPublicIpAddresses](optional<std::string> ipAddressString, optional<std::string> errorString){
-				std::lock_guard<std::mutex> guard(pPublicIpAddresses->ip_mutex);
-				if (!errorString.has_value())
-				{
-					if (ipAddressString.has_value() && (pPublicIpAddresses->ipv4 != ipAddressString))
-					{
-						pPublicIpAddresses->ipv6 = ipAddressString;
-					}
-					else
-					{
-						pPublicIpAddresses->ipv6 = std::string();
-					}
-				}
-				else
-				{
-					pPublicIpAddresses->ipv6_error = errorString.value();
-				}
-				pPublicIpAddresses->dispatchCallbackIfDone();
-			});
+			requestPublicIPAddress(publicIPv6LookupService, InternetProtocol::IPv6, publicIPv6LookupServiceJSONKey,
+			                       [pPublicIpAddresses](optional<std::string> ipAddressString,
+			                                            optional<std::string> errorString)
+			                       {
+				                       std::lock_guard<std::mutex> guard(pPublicIpAddresses->ip_mutex);
+				                       if (!errorString.has_value())
+				                       {
+					                       if (ipAddressString.has_value() && (pPublicIpAddresses->ipv4 !=
+						                       ipAddressString))
+					                       {
+						                       pPublicIpAddresses->ipv6 = ipAddressString;
+					                       }
+					                       else
+					                       {
+						                       pPublicIpAddresses->ipv6 = std::string();
+					                       }
+				                       }
+				                       else
+				                       {
+					                       pPublicIpAddresses->ipv6_error = errorString.value();
+				                       }
+				                       pPublicIpAddresses->dispatchCallbackIfDone();
+			                       });
 		}
 	}
 };

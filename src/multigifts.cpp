@@ -66,8 +66,8 @@ static void giftAutoGame(uint8_t from, uint8_t to, bool send);
 
 bool recvGift(NETQUEUE queue)
 {
-	uint8_t	type, from, to;
-	int		audioTrack;
+	uint8_t type, from, to;
+	int audioTrack;
 	uint32_t droidID;
 
 	NETbeginDecode(queue, GAME_GIFT);
@@ -86,7 +86,8 @@ bool recvGift(NETQUEUE queue)
 
 	if (to >= MAX_PLAYERS)
 	{
-		debug(LOG_WARNING, "Gift (%d) from %d, to %d (invalid recipient player), queue.index %d", (int)type, (int)from, (int)to, (int)queue.index);
+		debug(LOG_WARNING, "Gift (%d) from %d, to %d (invalid recipient player), queue.index %d", (int)type, (int)from,
+		      (int)to, (int)queue.index);
 		syncDebug("Invalid recipient player.");
 		return false;
 	}
@@ -95,7 +96,8 @@ bool recvGift(NETQUEUE queue)
 	{
 		if (NetPlay.players[to].isSpectator)
 		{
-			debug(LOG_WARNING, "Can't gift (%d) from %d, to %d (spectator player), queue.index %d", (int)type, (int)from, (int)to, (int)queue.index);
+			debug(LOG_WARNING, "Can't gift (%d) from %d, to %d (spectator player), queue.index %d", (int)type,
+			      (int)from, (int)to, (int)queue.index);
 			syncDebug("Can't gift to spectator.");
 			return false;
 		}
@@ -146,7 +148,8 @@ bool sendGift(uint8_t type, uint8_t to)
 {
 	int audioTrack;
 
-	ASSERT_OR_RETURN(false, selectedPlayer < MAX_PLAYERS, "Must be a player to send a gift (selectedPlayer: %" PRIu32 "", selectedPlayer);
+	ASSERT_OR_RETURN(false, selectedPlayer < MAX_PLAYERS,
+	                 "Must be a player to send a gift (selectedPlayer: %" PRIu32 "", selectedPlayer);
 
 	switch (type)
 	{
@@ -205,9 +208,11 @@ static void giftAutoGame(uint8_t from, uint8_t to, bool send)
 	{
 		if (to == selectedPlayer)
 		{
-			NetPlay.players[from].autoGame = !NetPlay.players[from].autoGame ;
-			CONPRINTF("%s has %s the autoGame command", getPlayerName(from), NetPlay.players[from].autoGame ? "Enabled" : "Disabled");
-			debug(LOG_SYNC, "We (%d) are being told that %d has %s autogame", selectedPlayer, from, NetPlay.players[from].autoGame ? "Enabled" : "Disabled");
+			NetPlay.players[from].autoGame = !NetPlay.players[from].autoGame;
+			CONPRINTF("%s has %s the autoGame command", getPlayerName(from),
+			          NetPlay.players[from].autoGame ? "Enabled" : "Disabled");
+			debug(LOG_SYNC, "We (%d) are being told that %d has %s autogame", selectedPlayer, from,
+			      NetPlay.players[from].autoGame ? "Enabled" : "Disabled");
 		}
 	}
 }
@@ -244,7 +249,7 @@ void giftRadar(uint8_t from, uint8_t to, bool send)
 // NOTICE: the packet is already set-up for decoding via recvGift()
 static void recvGiftStruct(uint8_t from, uint8_t to, uint32_t structID)
 {
-	STRUCTURE *psStruct = IdToStruct(structID, from);
+	STRUCTURE* psStruct = IdToStruct(structID, from);
 	if (psStruct)
 	{
 		syncDebugStructure(psStruct, '<');
@@ -269,7 +274,7 @@ static void recvGiftStruct(uint8_t from, uint8_t to, uint32_t structID)
 // \param to    :player that should be getting the droid
 static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 {
-	DROID *psDroid = IdToDroid(droidID, from);
+	DROID* psDroid = IdToDroid(droidID, from);
 
 	if (psDroid)
 	{
@@ -294,9 +299,9 @@ static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 // \param to    :player that should be getting the droid
 static void sendGiftDroids(uint8_t from, uint8_t to)
 {
-	DROID        *psD;
-	uint8_t      giftType = DROID_GIFT;
-	uint8_t      totalToSend;
+	DROID* psD;
+	uint8_t giftType = DROID_GIFT;
+	uint8_t totalToSend;
 
 	if (apsDroidLists[from] == nullptr)
 	{
@@ -326,7 +331,7 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 	for (psD = apsDroidLists[from]; psD && totalToSend != 0; psD = psD->psNext)
 	{
 		if (isTransporter(psD)
-		    && !transporterIsEmpty(psD))
+			&& !transporterIsEmpty(psD))
 		{
 			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD->aName);
 			continue;
@@ -352,7 +357,7 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 // give technologies.
 static void giftResearch(uint8_t from, uint8_t to, bool send)
 {
-	uint32_t	dummy = 0;
+	uint32_t dummy = 0;
 
 	if (send)
 	{
@@ -376,7 +381,7 @@ static void giftResearch(uint8_t from, uint8_t to, bool send)
 		{
 			// If they have it and we don't research it
 			if (IsResearchCompleted(&asPlayerResList[from][i])
-			    && !IsResearchCompleted(&asPlayerResList[to][i]))
+				&& !IsResearchCompleted(&asPlayerResList[to][i]))
 			{
 				MakeResearchCompleted(&asPlayerResList[to][i]);
 				researchResult(i, to, false, nullptr, true);
@@ -442,12 +447,12 @@ void requestAlliance(uint8_t from, uint8_t to, bool prop, bool allowAudio)
 	if (prop && bMultiMessages)
 	{
 		sendAlliance(from, to, ALLIANCE_REQUESTED, false);
-		return;  // Wait for our message.
+		return; // Wait for our message.
 	}
 
 	syncDebug("Request alliance %d %d", from, to);
-	alliances[from][to] = ALLIANCE_REQUESTED;	// We've asked
-	alliances[to][from] = ALLIANCE_INVITATION;	// They've been invited
+	alliances[from][to] = ALLIANCE_REQUESTED; // We've asked
+	alliances[to][from] = ALLIANCE_INVITATION; // They've been invited
 
 
 	triggerEventAllianceOffer(from, to);
@@ -473,12 +478,12 @@ void requestAlliance(uint8_t from, uint8_t to, bool prop, bool allowAudio)
 
 void breakAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio)
 {
-	char	tm1[128];
+	char tm1[128];
 
 	if (prop && bMultiMessages)
 	{
 		sendAlliance(p1, p2, ALLIANCE_BROKEN, false);
-		return;  // Wait for our message.
+		return; // Wait for our message.
 	}
 
 	if (alliances[p1][p2] == ALLIANCE_FORMED)
@@ -502,13 +507,13 @@ void breakAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio)
 
 void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allowNotification)
 {
-	DROID	*psDroid;
-	char	tm1[128];
+	DROID* psDroid;
+	char tm1[128];
 
 	if (bMultiMessages && prop)
 	{
 		sendAlliance(p1, p2, ALLIANCE_FORMED, false);
-		return;  // Wait for our message.
+		return; // Wait for our message.
 	}
 
 	// Don't add message if already allied
@@ -522,7 +527,7 @@ void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allow
 	triggerEventAllianceAccepted(p1, p2);
 	alliances[p1][p2] = ALLIANCE_FORMED;
 	alliances[p2][p1] = ALLIANCE_FORMED;
-	if (bMultiPlayer && alliancesSharedVision(game.alliance))	// this is for shared vision only
+	if (bMultiPlayer && alliancesSharedVision(game.alliance)) // this is for shared vision only
 	{
 		alliancebits[p1] |= 1 << p2;
 		alliancebits[p2] |= 1 << p1;
@@ -541,26 +546,25 @@ void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allow
 	}
 
 	// Clear out any attacking orders
-	for (psDroid = apsDroidLists[p1]; psDroid; psDroid = psDroid->psNext)	// from -> to
+	for (psDroid = apsDroidLists[p1]; psDroid; psDroid = psDroid->psNext) // from -> to
 	{
 		if (psDroid->order.type == DORDER_ATTACK
-		    && psDroid->order.psObj
-		    && psDroid->order.psObj->player == p2)
+			&& psDroid->order.psObj
+			&& psDroid->order.psObj->player == p2)
 		{
 			orderDroid(psDroid, DORDER_STOP, ModeImmediate);
 		}
 	}
-	for (psDroid = apsDroidLists[p2]; psDroid; psDroid = psDroid->psNext)	// to -> from
+	for (psDroid = apsDroidLists[p2]; psDroid; psDroid = psDroid->psNext) // to -> from
 	{
 		if (psDroid->order.type == DORDER_ATTACK
-		    && psDroid->order.psObj
-		    && psDroid->order.psObj->player == p1)
+			&& psDroid->order.psObj
+			&& psDroid->order.psObj->player == p1)
 		{
 			orderDroid(psDroid, DORDER_STOP, ModeImmediate);
 		}
 	}
 }
-
 
 
 void sendAlliance(uint8_t from, uint8_t to, uint8_t state, int32_t value)
@@ -596,7 +600,8 @@ bool recvAlliance(NETQUEUE queue, bool allowAudio)
 		return false;
 	}
 
-	auto prohibitedNewAlliance = [](uint8_t from, uint8_t to) -> bool {
+	auto prohibitedNewAlliance = [](uint8_t from, uint8_t to) -> bool
+	{
 		if (bMultiPlayer)
 		{
 			if ((static_cast<size_t>(from) < NetPlay.players.size()) && NetPlay.players[from].isSpectator)
@@ -642,7 +647,7 @@ bool recvAlliance(NETQUEUE queue, bool allowAudio)
 
 // ////////////////////////////////////////////////////////////////////////////
 // add an artifact on destruction if required.
-void  technologyGiveAway(const STRUCTURE *pS)
+void technologyGiveAway(const STRUCTURE* pS)
 {
 	// If a fully built factory (or with modules under construction) which is our responsibility got destroyed
 	if (pS->pStructureType->type == REF_FACTORY && (pS->status == SS_BUILT || pS->currentBuildPts >= pS->body))
@@ -656,7 +661,10 @@ void  technologyGiveAway(const STRUCTURE *pS)
 	}
 
 	int featureIndex;
-	for (featureIndex = 0; featureIndex < numFeatureStats && asFeatureStats[featureIndex].subType != FEAT_GEN_ARTE; ++featureIndex) {}
+	for (featureIndex = 0; featureIndex < numFeatureStats && asFeatureStats[featureIndex].subType != FEAT_GEN_ARTE; ++
+	     featureIndex)
+	{
+	}
 	if (featureIndex >= numFeatureStats)
 	{
 		debug(LOG_WARNING, "No artefact feature!");
@@ -670,7 +678,7 @@ void  technologyGiveAway(const STRUCTURE *pS)
 		debug(LOG_FEATURE, "Unable to find a free location.");
 		return;
 	}
-	FEATURE *pF = buildFeature(&asFeatureStats[featureIndex], world_coord(x), world_coord(y), false);
+	FEATURE* pF = buildFeature(&asFeatureStats[featureIndex], world_coord(x), world_coord(y), false);
 	if (pF)
 	{
 		pF->player = pS->player;
@@ -726,7 +734,7 @@ void recvMultiPlayerFeature(NETQUEUE queue)
 		if (asFeatureStats[i].ref == ref)
 		{
 			// Create a feature of the specified type at the given location
-			FEATURE *result = buildFeature(&asFeatureStats[i], x, y, false);
+			FEATURE* result = buildFeature(&asFeatureStats[i], x, y, false);
 			result->id = id;
 			break;
 		}
@@ -747,7 +755,7 @@ bool pickupArtefact(int toPlayer, int fromPlayer)
 		for (int topic = asResearch.size() - 1; topic >= 0; topic--)
 		{
 			if (IsResearchCompleted(&asPlayerResList[fromPlayer][topic])
-			    && !IsResearchPossible(&asPlayerResList[toPlayer][topic]))
+				&& !IsResearchPossible(&asPlayerResList[toPlayer][topic]))
 			{
 				// Make sure the topic can be researched
 				if (asResearch[topic].researchPower && asResearch[topic].researchPoints)
@@ -787,13 +795,13 @@ void createTeamAlliances()
 	{
 		for (unsigned j = 0; j < MAX_PLAYERS; j++)
 		{
-			if (i != j														// two different players
-			    && NetPlay.players[i].team == NetPlay.players[j].team		// ...belonging to the same team
-			    && !aiCheckAlliances(i, j)									// ...not allied and not ignoring teams
-			    && NetPlay.players[i].difficulty != AIDifficulty::DISABLED
-			    && NetPlay.players[j].difficulty != AIDifficulty::DISABLED	// ...not disabled
-			    && !NetPlay.players[i].isSpectator
-			    && !NetPlay.players[j].isSpectator)							// ...not spectators
+			if (i != j // two different players
+				&& NetPlay.players[i].team == NetPlay.players[j].team // ...belonging to the same team
+				&& !aiCheckAlliances(i, j) // ...not allied and not ignoring teams
+				&& NetPlay.players[i].difficulty != AIDifficulty::DISABLED
+				&& NetPlay.players[j].difficulty != AIDifficulty::DISABLED // ...not disabled
+				&& !NetPlay.players[i].isSpectator
+				&& !NetPlay.players[j].isSpectator) // ...not spectators
 			{
 				// Create silently
 				formAlliance(i, j, false, false, false);

@@ -10,7 +10,7 @@
 #include "../power.h"
 #include "../map.h"
 
-DROID *BuildController::highlightedBuilder = nullptr;
+DROID* BuildController::highlightedBuilder = nullptr;
 bool BuildController::showFavorites = false;
 
 void BuildController::updateData()
@@ -26,7 +26,7 @@ void BuildController::updateBuildersList()
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "selectedPlayer = %" PRIu32 "", selectedPlayer);
 
-	for (DROID *droid = apsDroidLists[selectedPlayer]; droid; droid = droid->psNext)
+	for (DROID* droid = apsDroidLists[selectedPlayer]; droid; droid = droid->psNext)
 	{
 		if (isConstructionDroid(droid) && droid->died == 0)
 		{
@@ -41,10 +41,10 @@ void BuildController::updateBuildOptionsList()
 {
 	auto newBuildOptions = fillStructureList(selectedPlayer, MAXSTRUCTURES - 1, shouldShowFavorites());
 
-	stats = std::vector<STRUCTURE_STATS *>(newBuildOptions.begin(), newBuildOptions.end());
+	stats = std::vector<STRUCTURE_STATS*>(newBuildOptions.begin(), newBuildOptions.end());
 }
 
-STRUCTURE_STATS *BuildController::getObjectStatsAt(size_t objectIndex) const
+STRUCTURE_STATS* BuildController::getObjectStatsAt(size_t objectIndex) const
 {
 	auto builder = getObjectAt(objectIndex);
 	if (!builder)
@@ -57,7 +57,7 @@ STRUCTURE_STATS *BuildController::getObjectStatsAt(size_t objectIndex) const
 		return nullptr;
 	}
 
-	STRUCTURE_STATS *builderStats;
+	STRUCTURE_STATS* builderStats;
 	if (orderStateStatsLoc(builder, DORDER_BUILD, &builderStats)) // Moving to build location?
 	{
 		return builderStats;
@@ -72,7 +72,7 @@ STRUCTURE_STATS *BuildController::getObjectStatsAt(size_t objectIndex) const
 	{
 		if (auto structure = orderStateObj(builder, DORDER_HELPBUILD))
 		{
-			return ((STRUCTURE *)structure)->pStructureType;
+			return ((STRUCTURE*)structure)->pStructureType;
 		}
 	}
 
@@ -85,7 +85,7 @@ STRUCTURE_STATS *BuildController::getObjectStatsAt(size_t objectIndex) const
 }
 
 
-void BuildController::startBuildPosition(STRUCTURE_STATS *buildOption)
+void BuildController::startBuildPosition(STRUCTURE_STATS* buildOption)
 {
 	auto builder = getHighlightedObject();
 	ASSERT_NOT_NULLPTR_OR_RETURN(, builder);
@@ -106,7 +106,7 @@ void BuildController::startBuildPosition(STRUCTURE_STATS *buildOption)
 	intMode = INT_OBJECT;
 }
 
-void BuildController::toggleFavorites(STRUCTURE_STATS *buildOption)
+void BuildController::toggleFavorites(STRUCTURE_STATS* buildOption)
 {
 	asStructureStats[buildOption->index].isFavorite = !shouldShowFavorites();
 	updateBuildOptionsList();
@@ -129,7 +129,7 @@ void BuildController::clearData()
 	stats.clear();
 }
 
-void BuildController::toggleBuilderSelection(DROID *droid)
+void BuildController::toggleBuilderSelection(DROID* droid)
 {
 	if (droid->selected)
 	{
@@ -146,7 +146,7 @@ void BuildController::toggleBuilderSelection(DROID *droid)
 	triggerEventSelected();
 }
 
-void BuildController::setHighlightedObject(BASE_OBJECT *object)
+void BuildController::setHighlightedObject(BASE_OBJECT* object)
 {
 	if (object == nullptr)
 	{
@@ -166,7 +166,7 @@ private:
 	typedef ObjectButton BaseWidget;
 
 public:
-	BuildObjectButton(const std::shared_ptr<BuildController> &controller, size_t newObjectIndex)
+	BuildObjectButton(const std::shared_ptr<BuildController>& controller, size_t newObjectIndex)
 		: controller(controller)
 	{
 		objectIndex = newObjectIndex;
@@ -207,7 +207,7 @@ protected:
 		displayIfHighlight(xOffset, yOffset);
 	}
 
-	BuildController &getController() const override
+	BuildController& getController() const override
 	{
 		return *controller.get();
 	}
@@ -223,18 +223,23 @@ private:
 	std::shared_ptr<BuildController> controller;
 };
 
-class BuildStatsButton: public StatsButton
+class BuildStatsButton : public StatsButton
 {
 private:
-	typedef	StatsButton BaseWidget;
+	typedef StatsButton BaseWidget;
 
 protected:
-	BuildStatsButton() {}
+	BuildStatsButton()
+	{
+	}
 
 public:
-	static std::shared_ptr<BuildStatsButton> make(const std::shared_ptr<BuildController> &controller, size_t objectIndex)
+	static std::shared_ptr<BuildStatsButton> make(const std::shared_ptr<BuildController>& controller,
+	                                              size_t objectIndex)
 	{
-		class make_shared_enabler: public BuildStatsButton {};
+		class make_shared_enabler : public BuildStatsButton
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->objectIndex = objectIndex;
@@ -247,7 +252,7 @@ protected:
 	{
 		updateLayout();
 		auto stat = getStats();
-		displayIMD(Image(), stat ? ImdObject::StructureStat(stat): ImdObject::Component(nullptr), xOffset, yOffset);
+		displayIMD(Image(), stat ? ImdObject::StructureStat(stat) : ImdObject::Component(nullptr), xOffset, yOffset);
 		displayIfHighlight(xOffset, yOffset);
 	}
 
@@ -260,7 +265,7 @@ protected:
 	}
 
 private:
-	STRUCTURE_STATS *getStats() override
+	STRUCTURE_STATS* getStats() override
 	{
 		return controller->getObjectStatsAt(objectIndex);
 	}
@@ -285,7 +290,7 @@ private:
 		productionRunSizeLabel->setFontColour(WZCOL_ACTION_PRODUCTION_RUN_TEXT);
 	}
 
-	void updateProgressBar(DROID *droid)
+	void updateProgressBar(DROID* droid)
 	{
 		progressBar->hide();
 
@@ -302,7 +307,8 @@ private:
 			//show progress of build
 			if (structure->currentBuildPts != 0)
 			{
-				formatTime(progressBar.get(), structure->currentBuildPts, structureBuildPointsToCompletion(*structure), structure->lastBuildRate, _("Build Progress"));
+				formatTime(progressBar.get(), structure->currentBuildPts, structureBuildPointsToCompletion(*structure),
+				           structure->lastBuildRate, _("Build Progress"));
 			}
 			else
 			{
@@ -311,31 +317,34 @@ private:
 		}
 	}
 
-	void updateProductionRunSizeLabel(DROID *droid)
+	void updateProductionRunSizeLabel(DROID* droid)
 	{
 		int remaining = -1;
 
-		STRUCTURE_STATS const *stats = nullptr;
+		STRUCTURE_STATS const* stats = nullptr;
 		int count = 0;
-		auto processOrder = [&](DroidOrder const &order) {
-			STRUCTURE_STATS *newStats = nullptr;
+		auto processOrder = [&](DroidOrder const& order)
+		{
+			STRUCTURE_STATS* newStats = nullptr;
 			int deltaCount = 0;
 			switch (order.type)
 			{
-				case DORDER_BUILD:
-				case DORDER_LINEBUILD:
-					newStats = order.psStats;
-					deltaCount = order.type == DORDER_LINEBUILD? 1 + (abs(order.pos.x - order.pos2.x) + abs(order.pos.y - order.pos2.y)) / TILE_UNITS : 1;
-					break;
-				case DORDER_HELPBUILD:
-					if (STRUCTURE *target = castStructure(order.psObj))
-					{
-						newStats = target->pStructureType;
-						deltaCount = 1;
-					}
-					break;
-				default:
-					return false;
+			case DORDER_BUILD:
+			case DORDER_LINEBUILD:
+				newStats = order.psStats;
+				deltaCount = order.type == DORDER_LINEBUILD
+					             ? 1 + (abs(order.pos.x - order.pos2.x) + abs(order.pos.y - order.pos2.y)) / TILE_UNITS
+					             : 1;
+				break;
+			case DORDER_HELPBUILD:
+				if (STRUCTURE* target = castStructure(order.psObj))
+				{
+					newStats = target->pStructureType;
+					deltaCount = 1;
+				}
+				break;
+			default:
+				return false;
 			}
 			if (newStats != nullptr && (stats == nullptr || stats == newStats))
 			{
@@ -348,7 +357,7 @@ private:
 
 		if (droid && processOrder(droid->order))
 		{
-			for (auto const &order: droid->asOrderList)
+			for (auto const& order : droid->asOrderList)
 			{
 				if (!processOrder(order))
 				{
@@ -415,16 +424,19 @@ private:
 	size_t objectIndex;
 };
 
-class BuildOptionButton: public StatsFormButton
+class BuildOptionButton : public StatsFormButton
 {
 private:
 	typedef StatsFormButton BaseWidget;
 	using BaseWidget::BaseWidget;
 
 public:
-	static std::shared_ptr<BuildOptionButton> make(const std::shared_ptr<BuildController> &controller, size_t buildOptionIndex)
+	static std::shared_ptr<BuildOptionButton> make(const std::shared_ptr<BuildController>& controller,
+	                                               size_t buildOptionIndex)
 	{
-		class make_shared_enabler: public BuildOptionButton {};
+		class make_shared_enabler : public BuildOptionButton
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->buildOptionIndex = buildOptionIndex;
@@ -444,7 +456,7 @@ protected:
 	}
 
 private:
-	STRUCTURE_STATS *getStats() override
+	STRUCTURE_STATS* getStats() override
 	{
 		return controller->getStatsAt(buildOptionIndex);
 	}
@@ -473,7 +485,7 @@ private:
 
 	uint32_t getCost() override
 	{
-		STRUCTURE_STATS * psStats = getStats();
+		STRUCTURE_STATS* psStats = getStats();
 		return psStats ? psStats->powerToBuild : 0;
 	}
 
@@ -483,7 +495,8 @@ private:
 		ASSERT_NOT_NULLPTR_OR_RETURN(, clickedStats);
 
 		auto controllerRef = controller;
-		widgScheduleTask([clickedStats, controllerRef]() {
+		widgScheduleTask([clickedStats, controllerRef]()
+		{
 			controllerRef->startBuildPosition(clickedStats);
 		});
 	}
@@ -494,7 +507,8 @@ private:
 		ASSERT_NOT_NULLPTR_OR_RETURN(, clickedStats);
 
 		auto controllerRef = controller;
-		widgScheduleTask([clickedStats, controllerRef]() {
+		widgScheduleTask([clickedStats, controllerRef]()
+		{
 			controllerRef->toggleFavorites(clickedStats);
 		});
 	}
@@ -503,16 +517,18 @@ private:
 	size_t buildOptionIndex;
 };
 
-class BuildObjectsForm: public ObjectsForm
+class BuildObjectsForm : public ObjectsForm
 {
 private:
 	typedef ObjectsForm BaseWidget;
 	using BaseWidget::BaseWidget;
 
 public:
-	static std::shared_ptr<BuildObjectsForm> make(const std::shared_ptr<BuildController> &controller)
+	static std::shared_ptr<BuildObjectsForm> make(const std::shared_ptr<BuildController>& controller)
 	{
-		class make_shared_enabler: public BuildObjectsForm {};
+		class make_shared_enabler : public BuildObjectsForm
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->initialize();
@@ -530,7 +546,7 @@ public:
 	}
 
 protected:
-	BuildController &getController() const override
+	BuildController& getController() const override
 	{
 		return *controller.get();
 	}
@@ -539,16 +555,18 @@ private:
 	std::shared_ptr<BuildController> controller;
 };
 
-class BuildStatsForm: public ObjectStatsForm
+class BuildStatsForm : public ObjectStatsForm
 {
 private:
 	typedef ObjectStatsForm BaseWidget;
 	using BaseWidget::BaseWidget;
 
 public:
-	static std::shared_ptr<BuildStatsForm> make(const std::shared_ptr<BuildController> &controller)
+	static std::shared_ptr<BuildStatsForm> make(const std::shared_ptr<BuildController>& controller)
 	{
-		class make_shared_enabler: public BuildStatsForm {};
+		class make_shared_enabler : public BuildStatsForm
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->initialize();
@@ -561,7 +579,7 @@ public:
 	}
 
 protected:
-	BuildController &getController() const override
+	BuildController& getController() const override
 	{
 		return *controller.get();
 	}
@@ -579,17 +597,22 @@ private:
 		attach(obsoleteButton = std::make_shared<MultipleChoiceButton>());
 		obsoleteButton->style |= WBUT_SECONDARY;
 		obsoleteButton->setChoice(controller->shouldShowRedundantDesign());
-		obsoleteButton->setImages(false, MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_HIDE_UP), Image(IntImages, IMAGE_OBSOLETE_HIDE_UP), Image(IntImages, IMAGE_OBSOLETE_HIDE_HI)));
+		obsoleteButton->setImages(false, MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_HIDE_UP),
+		                                                              Image(IntImages, IMAGE_OBSOLETE_HIDE_UP),
+		                                                              Image(IntImages, IMAGE_OBSOLETE_HIDE_HI)));
 		obsoleteButton->setTip(false, _("Hiding Obsolete Tech"));
-		obsoleteButton->setImages(true,  MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_SHOW_UP), Image(IntImages, IMAGE_OBSOLETE_SHOW_UP), Image(IntImages, IMAGE_OBSOLETE_SHOW_HI)));
+		obsoleteButton->setImages(true, MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_SHOW_UP),
+		                                                             Image(IntImages, IMAGE_OBSOLETE_SHOW_UP),
+		                                                             Image(IntImages, IMAGE_OBSOLETE_SHOW_HI)));
 		obsoleteButton->setTip(true, _("Showing Obsolete Tech"));
 		obsoleteButton->move(4 + Image(IntImages, IMAGE_FDP_UP).width() + 4, STAT_SLDY);
 
 		auto weakController = std::weak_ptr<BuildController>(controller);
-		obsoleteButton->addOnClickHandler([weakController](W_BUTTON &button) {
+		obsoleteButton->addOnClickHandler([weakController](W_BUTTON& button)
+		{
 			if (auto buildController = weakController.lock())
 			{
-				auto &_obsoleteButton = static_cast<MultipleChoiceButton &>(button);
+				auto& _obsoleteButton = static_cast<MultipleChoiceButton&>(button);
 				auto newValue = !_obsoleteButton.getChoice();
 				buildController->setShouldShowRedundantDesign(newValue);
 				_obsoleteButton.setChoice(newValue);
@@ -602,17 +625,22 @@ private:
 		attach(favoriteButton = std::make_shared<MultipleChoiceButton>());
 		favoriteButton->style |= WBUT_SECONDARY;
 		favoriteButton->setChoice(controller->shouldShowFavorites());
-		favoriteButton->setImages(false, MultipleChoiceButton::Images(Image(IntImages, IMAGE_ALLY_RESEARCH), Image(IntImages, IMAGE_ALLY_RESEARCH), Image(IntImages, IMAGE_ALLY_RESEARCH)));
+		favoriteButton->setImages(false, MultipleChoiceButton::Images(Image(IntImages, IMAGE_ALLY_RESEARCH),
+		                                                              Image(IntImages, IMAGE_ALLY_RESEARCH),
+		                                                              Image(IntImages, IMAGE_ALLY_RESEARCH)));
 		favoriteButton->setTip(false, _("Showing All Tech\nRight-click to add to Favorites"));
-		favoriteButton->setImages(true,  MultipleChoiceButton::Images(Image(IntImages, IMAGE_ALLY_RESEARCH_TC), Image(IntImages, IMAGE_ALLY_RESEARCH_TC), Image(IntImages, IMAGE_ALLY_RESEARCH_TC)));
+		favoriteButton->setImages(true, MultipleChoiceButton::Images(Image(IntImages, IMAGE_ALLY_RESEARCH_TC),
+		                                                             Image(IntImages, IMAGE_ALLY_RESEARCH_TC),
+		                                                             Image(IntImages, IMAGE_ALLY_RESEARCH_TC)));
 		favoriteButton->setTip(true, _("Showing Only Favorite Tech\nRight-click to remove from Favorites"));
 		favoriteButton->move(4 * 2 + Image(IntImages, IMAGE_FDP_UP).width() * 2 + 4 * 2, STAT_SLDY);
 
 		auto weakController = std::weak_ptr<BuildController>(controller);
-		favoriteButton->addOnClickHandler([weakController](W_BUTTON &button) {
+		favoriteButton->addOnClickHandler([weakController](W_BUTTON& button)
+		{
 			if (auto buildController = weakController.lock())
 			{
-				auto &_favoriteButton = static_cast<MultipleChoiceButton &>(button);
+				auto& _favoriteButton = static_cast<MultipleChoiceButton&>(button);
 				auto newValue = !_favoriteButton.getChoice();
 				buildController->setShouldShowFavorite(newValue);
 				_favoriteButton.setChoice(newValue);

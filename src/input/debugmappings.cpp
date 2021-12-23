@@ -25,7 +25,7 @@
 
 DebugInputManager::DebugInputManager(const unsigned int maxPlayers)
 	: bDoingDebugMappings(false)
-	, playerWantsDebugMappings(maxPlayers, false)
+	  , playerWantsDebugMappings(maxPlayers, false)
 {
 }
 
@@ -36,7 +36,8 @@ bool DebugInputManager::debugMappingsAllowed() const
 
 bool DebugInputManager::getPlayerWantsDebugMappings(const unsigned int playerIndex) const
 {
-	ASSERT_OR_RETURN(false, playerIndex < playerWantsDebugMappings.size(), "Tried to get debug mapping status for playerIndex > maxPlayers");
+	ASSERT_OR_RETURN(false, playerIndex < playerWantsDebugMappings.size(),
+	                 "Tried to get debug mapping status for playerIndex > maxPlayers");
 
 	return playerWantsDebugMappings[playerIndex];
 }
@@ -53,7 +54,8 @@ void DebugInputManager::setPlayerWantsDebugMappings(const unsigned int playerInd
 
 		const bool bIsEmptySlot = !NetPlay.players[n].allocated;
 		const bool bIsSpectatorSlot = NetPlay.players[n].isSpectator;
-		const bool bPlayerNWantsDebugMappings = bIsEmptySlot || (bIsSpectatorSlot && bIsTrueMultiplayerGame) || playerWantsDebugMappings[n];
+		const bool bPlayerNWantsDebugMappings = bIsEmptySlot || (bIsSpectatorSlot && bIsTrueMultiplayerGame) ||
+			playerWantsDebugMappings[n];
 		bDoingDebugMappings &= bPlayerNWantsDebugMappings;
 	}
 }

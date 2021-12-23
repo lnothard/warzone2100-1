@@ -58,10 +58,10 @@ void processWarCam();
 void camToggleInfo();
 void requestRadarTrack(SDWORD x, SDWORD y);
 bool getRadarTrackingStatus();
-void camInformOfRotation(Vector3i *rotation);
-DROID *camFindDroidTarget();
-DROID *getTrackingDroid();
+void camInformOfRotation(Vector3i* rotation);
+DROID* camFindDroidTarget();
+DROID* getTrackingDroid();
 UDWORD getNumDroidsSelected();
-void camAlignWithTarget(DROID *psDroid);
+void camAlignWithTarget(DROID* psDroid);
 
 #endif // __INCLUDED_SRC_WARCAM_H__

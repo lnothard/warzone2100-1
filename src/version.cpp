@@ -41,41 +41,41 @@ static const char vcs_tag[] = VCS_TAG;
 
 optional<TagVer> version_extractVersionNumberFromTag(const std::string& tag)
 {
-    std::istringstream parser(tag);
+	std::istringstream parser(tag);
 	// Remove "v/" or "v" prefix (as in "v3.2.2"), if present
-    if (parser.peek() == 'v')  parser.get(); // skip
-    if (parser.peek() == '/')  parser.get(); // skip
+	if (parser.peek() == 'v') parser.get(); // skip
+	if (parser.peek() == '/') parser.get(); // skip
 	TagVer result;
 	parser >> result.version[0];
-    if (parser.fail())
-    {
-        return nullopt;
-    }
+	if (parser.fail())
+	{
+		return nullopt;
+	}
 	for (int i = 1; i < 3; i++)
-    {
-        parser.get(); // skip any separator
-        parser >> result.version[i];
-        if (parser.fail())
-        {
-            return nullopt;
-        }
-    }
-	if (!parser.eof())
+	{
+		parser.get(); // skip any separator
+		parser >> result.version[i];
+		if (parser.fail())
 		{
-			// it has "-rc/beta1.." suffix 
-			if (parser.peek() == '-') parser.get(); // skip
-			parser.read(result.qualifier, TAGVER_MAX_QUALIF_LEN - 1);
-			result.qualifier[TAGVER_MAX_QUALIF_LEN - 1] = 0;
-			if (parser.fail() && !parser.eof())
-			{
-				return nullopt;
-			}
-			// must terminate now
-			if (!parser.eof())
-			{
-				return nullopt;
-			}
+			return nullopt;
 		}
+	}
+	if (!parser.eof())
+	{
+		// it has "-rc/beta1.." suffix 
+		if (parser.peek() == '-') parser.get(); // skip
+		parser.read(result.qualifier, TAGVER_MAX_QUALIF_LEN - 1);
+		result.qualifier[TAGVER_MAX_QUALIF_LEN - 1] = 0;
+		if (parser.fail() && !parser.eof())
+		{
+			return nullopt;
+		}
+		// must terminate now
+		if (!parser.eof())
+		{
+			return nullopt;
+		}
+	}
 	return result;
 }
 
@@ -141,7 +141,8 @@ std::string version_getVersionedModsFolderPath(std::string subFolders /*= ""*/)
 	std::string versionedModsFolderPath;
 	if (strlen(VCS_TAG))
 	{
-		versionedModsFolderPath = "mods/" VCS_TAG;
+		versionedModsFolderPath = "mods/"
+		VCS_TAG;
 	}
 	else
 	{
@@ -161,9 +162,9 @@ std::string version_getVersionedModsFolderPath(std::string subFolders /*= ""*/)
 * or a branch (which WILL show the hash)
 * or in a detached state (which WILL show the hash)
 */
-const char *version_getVersionString()
+const char* version_getVersionString()
 {
-	static const char *version_string = nullptr;
+	static const char* version_string = nullptr;
 
 	if (version_string == nullptr)
 	{
@@ -173,7 +174,11 @@ const char *version_getVersionString()
 		}
 		else if (strlen(vcs_branch_cstr))
 		{
-			version_string = (VCS_BRANCH " " VCS_SHORT_HASH);
+			version_string = (VCS_BRANCH
+			" "
+			VCS_SHORT_HASH
+			)
+			;
 		}
 		else
 		{
@@ -185,9 +190,9 @@ const char *version_getVersionString()
 	return version_string;
 }
 
-const char *version_getLatestTag()
+const char* version_getLatestTag()
 {
-	if(strlen(VCS_TAG))
+	if (strlen(VCS_TAG))
 	{
 		return VCS_TAG;
 	}
@@ -245,7 +250,7 @@ std::string version_getBuildIdentifierReleaseEnvironment()
 /** Composes a nicely formatted version string.
 *
 */
-const char *version_getFormattedVersionString(bool translated /* = true */)
+const char* version_getFormattedVersionString(bool translated /* = true */)
 {
 	static char versionString[MAX_STR_LENGTH] = {'\0'};
 
@@ -254,12 +259,12 @@ const char *version_getFormattedVersionString(bool translated /* = true */)
 	// TRANSLATORS: Printed when compiling with uncommitted changes
 	const char *wc_state = (translated) ? _(" (modified locally)") : " (modified locally)";
 #else
-	const char *wc_state = "";
+	const char* wc_state = "";
 #endif
 	// Compose the build type string
 #ifdef DEBUG
 	// TRANSLATORS: Printed in Debug builds
-	const char *build_type = (translated) ? _(" - DEBUG") : " - DEBUG";
+	const char* build_type = (translated) ? _(" - DEBUG") : " - DEBUG";
 #else
 	const char *build_type = "";
 #endif
@@ -268,7 +273,9 @@ const char *version_getFormattedVersionString(bool translated /* = true */)
 	// TRANSLATORS: This string looks as follows when expanded.
 	// "Version: <version name/number>, <working copy state>,
 	// Built: <BUILD DATE><BUILD TYPE>"
-	snprintf(versionString, MAX_STR_LENGTH, (translated) ? _("Version: %s,%s Built: %s%s") : "Version: %s,%s Built: %s%s", version_getVersionString(), wc_state, getCompileDate(), build_type);
+	snprintf(versionString, MAX_STR_LENGTH,
+	         (translated) ? _("Version: %s,%s Built: %s%s") : "Version: %s,%s Built: %s%s", version_getVersionString(),
+	         wc_state, getCompileDate(), build_type);
 
 	return versionString;
 }

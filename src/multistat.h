@@ -31,20 +31,21 @@
 
 struct PLAYERSTATS
 {
-	uint32_t played = 0;  /// propagated stats.
+	uint32_t played = 0; /// propagated stats.
 	uint32_t wins = 0;
 	uint32_t losses = 0;
 	uint32_t totalKills = 0;
 	uint32_t totalScore = 0;
 
-	uint32_t recentKills = 0;  // score/kills in last game.
+	uint32_t recentKills = 0; // score/kills in last game.
 	uint32_t recentScore = 0;
-	uint64_t recentPowerLost = 0;  // power lost in last game (i.e. from droids / structures being killed by other players)
+	uint64_t recentPowerLost = 0;
+	// power lost in last game (i.e. from droids / structures being killed by other players)
 
 	struct Autorating
 	{
 		Autorating() = default;
-		Autorating(nlohmann::json const &json);
+		Autorating(nlohmann::json const& json);
 
 		bool valid = false;
 		bool dummy = false;
@@ -54,27 +55,28 @@ struct PLAYERSTATS
 		uint8_t level = 0;
 		std::string elo;
 	};
+
 	Autorating autorating;
 
 	EcKey identity;
 };
 
-bool saveMultiStats(const char *sFName, const char *sPlayerName, const PLAYERSTATS *playerStats);	// to disk
-bool loadMultiStats(char *sPlayerName, PLAYERSTATS *playerStats);					// form disk
-PLAYERSTATS const &getMultiStats(UDWORD player);									// get from net
-bool setMultiStats(uint32_t player, PLAYERSTATS plStats, bool bLocal);  // send to net.
+bool saveMultiStats(const char* sFName, const char* sPlayerName, const PLAYERSTATS* playerStats); // to disk
+bool loadMultiStats(char* sPlayerName, PLAYERSTATS* playerStats); // form disk
+PLAYERSTATS const& getMultiStats(UDWORD player); // get from net
+bool setMultiStats(uint32_t player, PLAYERSTATS plStats, bool bLocal); // send to net.
 void updateMultiStatsDamage(UDWORD attacker, UDWORD defender, UDWORD inflicted);
 void updateMultiStatsGames();
 void updateMultiStatsWins();
 void updateMultiStatsLoses();
-void updateMultiStatsKills(BASE_OBJECT *psKilled, UDWORD player);
+void updateMultiStatsKills(BASE_OBJECT* psKilled, UDWORD player);
 void recvMultiStats(NETQUEUE queue);
 void lookupRatingAsync(uint32_t playerIndex);
 
 void initKnownPlayers();
 void shutdownKnownPlayers();
-bool isLocallyKnownPlayer(std::string const &name, EcKey const &key);
-void addKnownPlayer(std::string const &name, EcKey const &key, bool override = false);
+bool isLocallyKnownPlayer(std::string const& name, EcKey const& key);
+void addKnownPlayer(std::string const& name, EcKey const& key, bool override = false);
 
 uint32_t getMultiPlayUnitsKilled(uint32_t player);
 uint32_t getSelectedPlayerUnitsKilled();

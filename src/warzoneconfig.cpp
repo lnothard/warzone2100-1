@@ -48,7 +48,8 @@ struct WARZONE_GLOBALS
 	int8_t SPcolor = 0;
 	int MPcolour = -1;
 	int antialiasing = 0;
-	WINDOW_MODE Fullscreen = WINDOW_MODE::windowed; // Leave this to windowed, some system will fail and they can't see the system popup dialog!
+	WINDOW_MODE Fullscreen = WINDOW_MODE::windowed;
+	// Leave this to windowed, some system will fail and they can't see the system popup dialog!
 	bool soundEnabled = true;
 	bool trapCursor = false;
 	int vsync = 1;
@@ -80,9 +81,10 @@ std::string js_backend_names[] =
 	"invalid" // Must be last!
 };
 
-static_assert((size_t)JS_BACKEND::num_backends == (sizeof(js_backend_names) / sizeof(std::string)) - 1, "js_backend_names must match JS_BACKEND enum");
+static_assert((size_t)JS_BACKEND::num_backends == (sizeof(js_backend_names) / sizeof(std::string)) - 1,
+	"js_backend_names must match JS_BACKEND enum");
 
-bool js_backend_from_str(const char *str, JS_BACKEND &output_backend)
+bool js_backend_from_str(const char* str, JS_BACKEND& output_backend)
 {
 	for (size_t i = 0; i < (size_t)JS_BACKEND::num_backends; i++)
 	{
@@ -110,7 +112,7 @@ void war_SetDefaultStates()
 
 void war_SetSPcolor(int color)
 {
-	if (color >= 1 && color <= 3)		// only 0,4,5,6,7 are allowed for SP games, AI uses the other colors.
+	if (color >= 1 && color <= 3) // only 0,4,5,6,7 are allowed for SP games, AI uses the other colors.
 	{
 		color = 0;
 	}
@@ -239,7 +241,7 @@ void war_SetFMVmode(FMV_MODE mode)
 
 FMV_MODE war_GetFMVmode()
 {
-	return  warGlobs.FMVmode;
+	return warGlobs.FMVmode;
 }
 
 void war_setScanlineMode(SCANLINE_MODE mode)
@@ -306,7 +308,8 @@ HRTFMode war_GetHRTFMode()
 void war_SetHRTFMode(HRTFMode mode)
 {
 	warGlobs.hrtfMode = mode;
-	ActivityManager::instance().changedSetting("hrtfMode", std::to_string(static_cast<typename std::underlying_type<HRTFMode>::type>(mode)));
+	ActivityManager::instance().changedSetting(
+		"hrtfMode", std::to_string(static_cast<typename std::underlying_type<HRTFMode>::type>(mode)));
 }
 
 int war_GetMapZoom()

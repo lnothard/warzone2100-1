@@ -57,10 +57,10 @@ enum
 	DATA_RFUNC,
 	DATA_SCRIPT,
 	DATA_SCRIPTVAL,
-	DATA_MAXDATA		// must be last
+	DATA_MAXDATA // must be last
 };
 
-void calcDataHash(const uint8_t *pBuffer, uint32_t size, uint32_t index);
+void calcDataHash(const uint8_t* pBuffer, uint32_t size, uint32_t index);
 void resetDataHash();
 extern uint32_t DataHash[DATA_MAXDATA];
 

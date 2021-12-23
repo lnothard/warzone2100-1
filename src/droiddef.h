@@ -65,25 +65,26 @@ struct DROID_TEMPLATE : public BASE_STATS
 	 *
 	 * Weapons are stored in asWeaps, _not_ here at index COMP_WEAPON! (Which is the reason we do not have a COMP_NUMCOMPONENTS sized array here.)
 	 */
-	uint8_t         asParts[DROID_MAXCOMP];
+	uint8_t asParts[DROID_MAXCOMP];
 	/* The weapon systems */
-	int8_t          numWeaps;                   ///< Number of weapons
-	uint32_t        asWeaps[MAX_WEAPONS];       ///< weapon indices
-	DROID_TYPE      droidType;                  ///< The type of droid
-	UDWORD          multiPlayerID;              ///< multiplayer unique descriptor(cant use id's for templates). Used for save games as well now - AB 29/10/98
-	bool            prefab;                     ///< Not player designed, not saved, never delete or change
-	bool            stored;                     ///< Stored template
-	bool            enabled;                    ///< Has been enabled
+	int8_t numWeaps; ///< Number of weapons
+	uint32_t asWeaps[MAX_WEAPONS]; ///< weapon indices
+	DROID_TYPE droidType; ///< The type of droid
+	UDWORD multiPlayerID;
+	///< multiplayer unique descriptor(cant use id's for templates). Used for save games as well now - AB 29/10/98
+	bool prefab; ///< Not player designed, not saved, never delete or change
+	bool stored; ///< Stored template
+	bool enabled; ///< Has been enabled
 };
 
-static inline DROID_TEMPLATE *castDroidTemplate(BASE_STATS *stats)
+static inline DROID_TEMPLATE* castDroidTemplate(BASE_STATS* stats)
 {
-	return stats != nullptr && stats->hasType(STAT_TEMPLATE)? static_cast<DROID_TEMPLATE *>(stats) : nullptr;
+	return stats != nullptr && stats->hasType(STAT_TEMPLATE) ? static_cast<DROID_TEMPLATE*>(stats) : nullptr;
 }
 
-static inline DROID_TEMPLATE const *castDroidTemplate(BASE_STATS const *stats)
+static inline DROID_TEMPLATE const* castDroidTemplate(BASE_STATS const* stats)
 {
-	return stats != nullptr && stats->hasType(STAT_TEMPLATE)? static_cast<DROID_TEMPLATE const *>(stats) : nullptr;
+	return stats != nullptr && stats->hasType(STAT_TEMPLATE) ? static_cast<DROID_TEMPLATE const*>(stats) : nullptr;
 }
 
 class DROID_GROUP;
@@ -96,65 +97,72 @@ struct DROID : public BASE_OBJECT
 
 	/// UTF-8 name of the droid. This is generated from the droid template
 	///  WARNING: This *can* be changed by the game player after creation & can be translated, do NOT rely on this being the same for everyone!
-	char            aName[MAX_STR_LENGTH];
-	DROID_TYPE      droidType;                      ///< The type of droid
+	char aName[MAX_STR_LENGTH];
+	DROID_TYPE droidType; ///< The type of droid
 	/** Holds the specifics for the component parts - allows damage
 	 *  per part to be calculated. Indexed by COMPONENT_TYPE.
 	 *  Weapons need to be dealt with separately.
 	 */
-	uint8_t         asBits[DROID_MAXCOMP];
+	uint8_t asBits[DROID_MAXCOMP];
 	/* The other droid data.  These are all derived from the components
 	 * but stored here for easy access
 	 */
-	UDWORD          weight;
-	UDWORD          baseSpeed;                      ///< the base speed dependent on propulsion type
-	UDWORD          originalBody;                   ///< the original body points
-	uint32_t        experience;
-	uint32_t        kills;
-	UDWORD          lastFrustratedTime;             ///< Set when eg being stuck; used for eg firing indiscriminately at map features to clear the way
-	SWORD           resistance;                     ///< used in Electronic Warfare
+	UDWORD weight;
+	UDWORD baseSpeed; ///< the base speed dependent on propulsion type
+	UDWORD originalBody; ///< the original body points
+	uint32_t experience;
+	uint32_t kills;
+	UDWORD lastFrustratedTime;
+	///< Set when eg being stuck; used for eg firing indiscriminately at map features to clear the way
+	SWORD resistance; ///< used in Electronic Warfare
 	// The group the droid belongs to
-	DROID_GROUP    *psGroup;
-	DROID          *psGrpNext;
-	STRUCTURE      *psBaseStruct;                   ///< a structure that this droid might be associated with. For VTOLs this is the rearming pad
+	DROID_GROUP* psGroup;
+	DROID* psGrpNext;
+	STRUCTURE* psBaseStruct;
+	///< a structure that this droid might be associated with. For VTOLs this is the rearming pad
 	// queued orders
-	SDWORD          listSize;                       ///< Gives the number of synchronised orders. Orders from listSize to the real end of the list may not affect game state.
-	OrderList       asOrderList;                    ///< The range [0; listSize - 1] corresponds to synchronised orders, and the range [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will remain, once all orders are synchronised.
-	unsigned        listPendingBegin;               ///< Index of first order which will not be erased by a pending order. After all messages are processed, the orders in the range [listPendingBegin; listPendingEnd - 1] will remain.
+	SDWORD listSize;
+	///< Gives the number of synchronised orders. Orders from listSize to the real end of the list may not affect game state.
+	OrderList asOrderList;
+	///< The range [0; listSize - 1] corresponds to synchronised orders, and the range [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will remain, once all orders are synchronised.
+	unsigned listPendingBegin;
+	///< Index of first order which will not be erased by a pending order. After all messages are processed, the orders in the range [listPendingBegin; listPendingEnd - 1] will remain.
 	/* Order data */
 	DROID_ORDER_DATA order;
 
 #ifdef DEBUG
 	// these are to help tracking down dangling pointers
-	char            targetFunc[MAX_EVENT_NAME_LEN];
-	int             targetLine;
-	char            actionTargetFunc[MAX_WEAPONS][MAX_EVENT_NAME_LEN];
-	int             actionTargetLine[MAX_WEAPONS];
-	char            baseFunc[MAX_EVENT_NAME_LEN];
-	int             baseLine;
+	char targetFunc[MAX_EVENT_NAME_LEN];
+	int targetLine;
+	char actionTargetFunc[MAX_WEAPONS][MAX_EVENT_NAME_LEN];
+	int actionTargetLine[MAX_WEAPONS];
+	char baseFunc[MAX_EVENT_NAME_LEN];
+	int baseLine;
 #endif
 
 	// secondary order data
-	UDWORD          secondaryOrder;
-	uint32_t        secondaryOrderPending;          ///< What the secondary order will be, after synchronisation.
-	int             secondaryOrderPendingCount;     ///< Number of pending secondary order changes.
+	UDWORD secondaryOrder;
+	uint32_t secondaryOrderPending; ///< What the secondary order will be, after synchronisation.
+	int secondaryOrderPendingCount; ///< Number of pending secondary order changes.
 
 	/* Action data */
-	DROID_ACTION    action;
-	Vector2i        actionPos;
-	BASE_OBJECT    *psActionTarget[MAX_WEAPONS] = {}; ///< Action target object
-	UDWORD          actionStarted;                  ///< Game time action started
-	UDWORD          actionPoints;                   ///< number of points done by action since start
-	UDWORD          expectedDamageDirect;                 ///< Expected damage to be caused by all currently incoming direct projectiles. This info is shared between all players,
-	UDWORD          expectedDamageIndirect;                 ///< Expected damage to be caused by all currently incoming indirect projectiles. This info is shared between all players,
-	///< but shouldn't make a difference unless 3 mutual enemies happen to be fighting each other at the same time.
-	UBYTE           illumination;
+	DROID_ACTION action;
+	Vector2i actionPos;
+	BASE_OBJECT* psActionTarget[MAX_WEAPONS] = {}; ///< Action target object
+	UDWORD actionStarted; ///< Game time action started
+	UDWORD actionPoints; ///< number of points done by action since start
+	UDWORD expectedDamageDirect;
+	///< Expected damage to be caused by all currently incoming direct projectiles. This info is shared between all players,
+	UDWORD expectedDamageIndirect;
+	///< Expected damage to be caused by all currently incoming indirect projectiles. This info is shared between all players,
+	   ///< but shouldn't make a difference unless 3 mutual enemies happen to be fighting each other at the same time.
+	UBYTE illumination;
 	/* Movement control data */
-	MOVE_CONTROL    sMove;
-	Spacetime       prevSpacetime;                  ///< Location of droid in previous tick.
-	uint8_t         blockedBits;                    ///< Bit set telling which tiles block this type of droid (TODO)
+	MOVE_CONTROL sMove;
+	Spacetime prevSpacetime; ///< Location of droid in previous tick.
+	uint8_t blockedBits; ///< Bit set telling which tiles block this type of droid (TODO)
 	/* anim data */
-	SDWORD          iAudioID;
+	SDWORD iAudioID;
 };
 
 #endif // __INCLUDED_DROIDDEF_H__

@@ -31,13 +31,13 @@
 #define NO_AUDIO_MSG		-1
 
 /** The lists of messages allocated. */
-extern MESSAGE		*apsMessages[MAX_PLAYERS];
+extern MESSAGE* apsMessages[MAX_PLAYERS];
 
 /** The IMD to use for the proximity messages. */
-extern iIMDShape	*pProximityMsgIMD;
+extern iIMDShape* pProximityMsgIMD;
 
 /** The list of proximity displays allocated. */
-extern PROXIMITY_DISPLAY *apsProxDisp[MAX_PLAYERS];
+extern PROXIMITY_DISPLAY* apsProxDisp[MAX_PLAYERS];
 
 extern bool releaseObjectives;
 
@@ -51,13 +51,13 @@ bool initMessage();
 bool messageShutdown();
 
 /** Add a message to the list. */
-MESSAGE *addMessage(MESSAGE_TYPE msgType, bool proxPos, UDWORD player);
+MESSAGE* addMessage(MESSAGE_TYPE msgType, bool proxPos, UDWORD player);
 
 /** Add a beacon message to the list. */
-MESSAGE *addBeaconMessage(MESSAGE_TYPE msgType, bool proxPos, UDWORD player);
+MESSAGE* addBeaconMessage(MESSAGE_TYPE msgType, bool proxPos, UDWORD player);
 
 /** Remove a message. */
-void removeMessage(MESSAGE *psDel, UDWORD player);
+void removeMessage(MESSAGE* psDel, UDWORD player);
 
 /** Remove all Messages. */
 void freeMessages();
@@ -66,28 +66,28 @@ void freeMessages();
 void releaseAllProxDisp();
 
 /** Load the view data for the messages from the file exported from the world editor. */
-WzString *loadViewData(const char *pViewMsgData, UDWORD bufferSize);
-WzString *loadResearchViewData(const char *fileName);
+WzString* loadViewData(const char* pViewMsgData, UDWORD bufferSize);
+WzString* loadResearchViewData(const char* fileName);
 
 /** Get the view data identified by the name */
-VIEWDATA *getViewData(const WzString &name);
+VIEWDATA* getViewData(const WzString& name);
 
 /// Get a list of viewdata entries
 std::vector<WzString> getViewDataKeys();
 
 // Get rid of mission objectives
-void releaseAllFlicMessages(MESSAGE *list[]);
+void releaseAllFlicMessages(MESSAGE* list[]);
 
 /** Release the viewdata memory. */
-void viewDataShutDown(const char *fileName);
+void viewDataShutDown(const char* fileName);
 
 /** Looks through the players list of messages to find one with the same viewData
   * pointer and which is the same type of message - used in scriptFuncs. */
-MESSAGE *findMessage(const VIEWDATA *pViewdata, MESSAGE_TYPE type, UDWORD player);
-MESSAGE *findMessage(const BASE_OBJECT *psObj, MESSAGE_TYPE type, UDWORD player);
+MESSAGE* findMessage(const VIEWDATA* pViewdata, MESSAGE_TYPE type, UDWORD player);
+MESSAGE* findMessage(const BASE_OBJECT* psObj, MESSAGE_TYPE type, UDWORD player);
 
 /** 'Displays' a proximity display. */
-void displayProximityMessage(PROXIMITY_DISPLAY *psProxDisp);
+void displayProximityMessage(PROXIMITY_DISPLAY* psProxDisp);
 
 bool messageInitVars();
 

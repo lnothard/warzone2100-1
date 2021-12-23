@@ -52,34 +52,43 @@ enum ImdType
 
 struct ImdObject
 {
-	ImdObject() : ptr(nullptr), type(IMDTYPE_NONE) {}
-	static ImdObject Droid(BASE_OBJECT *p)
+	ImdObject() : ptr(nullptr), type(IMDTYPE_NONE)
+	{
+	}
+
+	static ImdObject Droid(BASE_OBJECT* p)
 	{
 		return ImdObject(p, IMDTYPE_DROID);
 	}
-	static ImdObject DroidTemplate(BASE_STATS *p)
+
+	static ImdObject DroidTemplate(BASE_STATS* p)
 	{
 		return ImdObject(p, IMDTYPE_DROIDTEMPLATE);
 	}
-	static ImdObject Component(BASE_STATS *p)
+
+	static ImdObject Component(BASE_STATS* p)
 	{
 		return ImdObject(p, IMDTYPE_COMPONENT);
 	}
-	static ImdObject Structure(BASE_OBJECT *p)
+
+	static ImdObject Structure(BASE_OBJECT* p)
 	{
 		return ImdObject(p, IMDTYPE_STRUCTURE);
 	}
-	static ImdObject Research(BASE_STATS *p)
+
+	static ImdObject Research(BASE_STATS* p)
 	{
 		return ImdObject(p, IMDTYPE_RESEARCH);
 	}
-	static ImdObject StructureStat(BASE_STATS *p)
+
+	static ImdObject StructureStat(BASE_STATS* p)
 	{
 		return ImdObject(p, IMDTYPE_STRUCTURESTAT);
 	}
-	static ImdObject Feature(BASE_STATS *p)
+
+	static ImdObject Feature(BASE_STATS* p)
 	{
-		FEATURE_STATS *fStat = (FEATURE_STATS *)p;
+		FEATURE_STATS* fStat = (FEATURE_STATS*)p;
 		return ImdObject(fStat->psImd, IMDTYPE_FEATURE);
 	}
 
@@ -88,11 +97,13 @@ struct ImdObject
 		return ptr == nullptr;
 	}
 
-	void *ptr;
+	void* ptr;
 	ImdType type;
 
 private:
-	ImdObject(void *ptr, ImdType type) : ptr(ptr), type(type) {}
+	ImdObject(void* ptr, ImdType type) : ptr(ptr), type(type)
+	{
+	}
 };
 
 // Set audio IDs for form opening/closing anims.
@@ -101,20 +112,22 @@ void SetFormAudioIDs(int OpenID, int CloseID);
 // Initialise interface graphics.
 bool intInitialiseGraphics();
 
-class PowerBar: public W_BARGRAPH
+class PowerBar : public W_BARGRAPH
 {
-	public:
-		PowerBar(W_BARINIT* init): W_BARGRAPH(init) {}
+public:
+	PowerBar(W_BARINIT* init): W_BARGRAPH(init)
+	{
+	}
 
-		std::string getTip() override;
-		void display(int xOffset, int yOffset) override;
+	std::string getTip() override;
+	void display(int xOffset, int yOffset) override;
 
-	private:
-		struct DisplayPowerBarCache
-		{
-			WzText wzText;
-			WzText wzNeedText;
-		} cache;
+private:
+	struct DisplayPowerBarCache
+	{
+		WzText wzText;
+		WzText wzNeedText;
+	} cache;
 };
 
 class IntFancyButton : public W_CLICKFORM
@@ -124,7 +137,7 @@ public:
 
 protected:
 	//the two types of button used in the object display (bottom bar)
-	enum ButtonType {TOPBUTTON = 0, BTMBUTTON = 1};
+	enum ButtonType { TOPBUTTON = 0, BTMBUTTON = 1 };
 
 	void initDisplay();
 	void displayClear(int xOffset, int yOffset);
@@ -140,7 +153,8 @@ protected:
 		int scale;
 		int rate;
 	} model;
-	ButtonType buttonType;  // TOPBUTTON is square, BTMBUTTON has a little up arrow.
+
+	ButtonType buttonType; // TOPBUTTON is square, BTMBUTTON has a little up arrow.
 };
 
 class IntObjectButton : public IntFancyButton
@@ -150,10 +164,11 @@ public:
 
 	virtual void display(int xOffset, int yOffset);
 
-	void setObject(BASE_OBJECT *object)
+	void setObject(BASE_OBJECT* object)
 	{
 		psObj = object;
 	}
+
 	bool clearData()
 	{
 		bool ret = psObj != nullptr;
@@ -162,7 +177,7 @@ public:
 	}
 
 protected:
-	BASE_OBJECT *psObj;
+	BASE_OBJECT* psObj;
 };
 
 class IntStatusButton : public IntObjectButton
@@ -170,12 +185,13 @@ class IntStatusButton : public IntObjectButton
 public:
 	IntStatusButton();
 
-	void setObject(BASE_OBJECT *object)
+	void setObject(BASE_OBJECT* object)
 	{
 		psObj = object;
 		theStats = nullptr;
 	}
-	void setObjectAndStats(BASE_OBJECT *object, BASE_STATS *stats)
+
+	void setObjectAndStats(BASE_OBJECT* object, BASE_STATS* stats)
 	{
 		psObj = object;
 		theStats = stats;
@@ -184,7 +200,7 @@ public:
 	virtual void display(int xOffset, int yOffset);
 
 protected:
-	BASE_STATS *theStats;
+	BASE_STATS* theStats;
 };
 
 class IntStatsButton : public IntFancyButton
@@ -194,18 +210,19 @@ public:
 
 	virtual void display(int xOffset, int yOffset);
 
-	void setStats(BASE_STATS *stats)
+	void setStats(BASE_STATS* stats)
 	{
 		Stat = stats;
 	}
-	void setStatsAndTip(BASE_STATS *stats)
+
+	void setStatsAndTip(BASE_STATS* stats)
 	{
 		setStats(stats);
 		setTip(getStatsName(stats));
 	}
 
 protected:
-	BASE_STATS *Stat;
+	BASE_STATS* Stat;
 };
 
 /// Form which only acts as a glass container.
@@ -225,50 +242,53 @@ public:
 
 	virtual void display(int xOffset, int yOffset);
 
-	void closeAnimateDelete();              ///< Animates the form closing, and deletes itself when done.
+	void closeAnimateDelete(); ///< Animates the form closing, and deletes itself when done.
 	bool isClosing() const;
 
 private:
-	unsigned        startTime;              ///< Animation start time
-	int             currentAction;          ///< Opening/open/closing/closed.
+	unsigned startTime; ///< Animation start time
+	int currentAction; ///< Opening/open/closing/closed.
 };
 
-void intDisplayImage(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+void intDisplayImage(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
-void intDisplayImageHilight(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+void intDisplayImageHilight(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
-void intDisplayButtonHilight(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+void intDisplayButtonHilight(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
-void intDisplayButtonFlash(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+void intDisplayButtonFlash(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
-void intDisplayEditBox(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+void intDisplayEditBox(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
-void formatTime(W_BARGRAPH *barGraph, int buildPointsDone, int buildPointsTotal, int buildRate, char const *toolTip);
-void formatPower(W_BARGRAPH *barGraph, int neededPower, int powerToBuild);
+void formatTime(W_BARGRAPH* barGraph, int buildPointsDone, int buildPointsTotal, int buildRate, char const* toolTip);
+void formatPower(W_BARGRAPH* barGraph, int neededPower, int powerToBuild);
 
-bool DroidIsBuilding(DROID *Droid);
-STRUCTURE *DroidGetBuildStructure(DROID *Droid);
-bool DroidGoingToBuild(DROID *Droid);
-BASE_STATS *DroidGetBuildStats(DROID *Droid);
-iIMDShape *DroidGetIMD(DROID *Droid);
+bool DroidIsBuilding(DROID* Droid);
+STRUCTURE* DroidGetBuildStructure(DROID* Droid);
+bool DroidGoingToBuild(DROID* Droid);
+BASE_STATS* DroidGetBuildStats(DROID* Droid);
+iIMDShape* DroidGetIMD(DROID* Droid);
 
-bool StructureIsManufacturingPending(STRUCTURE *structure);   ///< Returns true iff the structure is either manufacturing or on hold (even if not yet synchronised). (But ignores research.)
-bool structureIsResearchingPending(STRUCTURE *structure);     ///< Returns true iff the structure is either researching or on hold (even if not yet synchronised). (But ignores manufacturing.)
-bool StructureIsOnHoldPending(STRUCTURE *structure);          ///< Returns true iff the structure is on hold (even if not yet synchronised).
-DROID_TEMPLATE *FactoryGetTemplate(FACTORY *Factory);
+bool StructureIsManufacturingPending(STRUCTURE* structure);
+///< Returns true iff the structure is either manufacturing or on hold (even if not yet synchronised). (But ignores research.)
+bool structureIsResearchingPending(STRUCTURE* structure);
+///< Returns true iff the structure is either researching or on hold (even if not yet synchronised). (But ignores manufacturing.)
+bool StructureIsOnHoldPending(STRUCTURE* structure);
+///< Returns true iff the structure is on hold (even if not yet synchronised).
+DROID_TEMPLATE* FactoryGetTemplate(FACTORY* Factory);
 
-RESEARCH_FACILITY *StructureGetResearch(STRUCTURE *Structure);
-FACTORY *StructureGetFactory(STRUCTURE *Structure);
+RESEARCH_FACILITY* StructureGetResearch(STRUCTURE* Structure);
+FACTORY* StructureGetFactory(STRUCTURE* Structure);
 
-bool StatIsStructure(BASE_STATS const *Stat);
-iIMDShape *StatGetStructureIMD(BASE_STATS *Stat, UDWORD Player);
-bool StatIsTemplate(BASE_STATS *Stat);
-bool StatIsFeature(BASE_STATS const *Stat);
+bool StatIsStructure(BASE_STATS const* Stat);
+iIMDShape* StatGetStructureIMD(BASE_STATS* Stat, UDWORD Player);
+bool StatIsTemplate(BASE_STATS* Stat);
+bool StatIsFeature(BASE_STATS const* Stat);
 
-COMPONENT_TYPE StatIsComponent(BASE_STATS *Stat);
-bool StatGetComponentIMD(BASE_STATS *Stat, SDWORD compID, iIMDShape **CompIMD, iIMDShape **MountIMD);
+COMPONENT_TYPE StatIsComponent(BASE_STATS* Stat);
+bool StatGetComponentIMD(BASE_STATS* Stat, SDWORD compID, iIMDShape** CompIMD, iIMDShape** MountIMD);
 
-bool StatIsResearch(BASE_STATS *Stat);
+bool StatIsResearch(BASE_STATS* Stat);
 
 // Widget callback function to play an audio track.
 void WidgetAudioCallback(int AudioID);
@@ -280,27 +300,27 @@ public:
 
 	virtual void display(int xOffset, int yOffset);
 
-	void setObject(DROID *object)
+	void setObject(DROID* object)
 	{
 		psDroid = object;
 	}
 
 protected:
-	DROID *psDroid;
+	DROID* psDroid;
 };
 
 /*draws blips on radar to represent Proximity Display*/
-void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, const glm::mat4 &modelViewProjection);
+void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, const glm::mat4& modelViewProjection);
 
 /*Displays the proximity messages blips over the world*/
-void intDisplayProximityBlips(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+void intDisplayProximityBlips(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
-void intUpdateQuantitySlider(WIDGET *psWidget, W_CONTEXT *psContext);
+void intUpdateQuantitySlider(WIDGET* psWidget, W_CONTEXT* psContext);
 
-void intDisplayMissionClock(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+void intDisplayMissionClock(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
-void intDisplayUpdateAllyBar(W_BARGRAPH *psBar, const RESEARCH &research, const std::vector<AllyResearch> &researches);
-STRUCTURE *droidGetCommandFactory(DROID *psDroid);
+void intDisplayUpdateAllyBar(W_BARGRAPH* psBar, const RESEARCH& research, const std::vector<AllyResearch>& researches);
+STRUCTURE* droidGetCommandFactory(DROID* psDroid);
 
 void intSetShadowPower(int quantity);
 

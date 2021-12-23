@@ -37,9 +37,9 @@
 #define         MAX_NOGO_AREAS          (MAX_PLAYERS + 1)
 #define         LIMBO_LANDING           MAX_PLAYERS
 
-extern MISSION		mission;
-extern bool			offWorldKeepLists;
-extern DROID       *apsLimboDroids[MAX_PLAYERS];
+extern MISSION mission;
+extern bool offWorldKeepLists;
+extern DROID* apsLimboDroids[MAX_PLAYERS];
 
 extern bool Cheated;
 
@@ -53,7 +53,7 @@ void releaseMission();
 /** On the PC - sets the countdown played flag. */
 void setMissionCountDown();
 
-bool startMission(LEVEL_TYPE missionType, char *pGame);
+bool startMission(LEVEL_TYPE missionType, char* pGame);
 void endMission();
 
 /** Initialise the mission stuff for a save game. */
@@ -66,7 +66,7 @@ bool setUpMission(LEVEL_TYPE type);
 void launchMission();
 
 /** The update routine for all droids left back at home base. Only interested in Transporters at present. */
-void missionDroidUpdate(DROID *psDroid);
+void missionDroidUpdate(DROID* psDroid);
 
 bool missionIsOffworld();
 bool missionCanReEnforce();
@@ -101,7 +101,7 @@ void intRemoveMissionResultNoAnim();
 void intProcessMissionResult(UDWORD id);
 void intRunMissionResult();
 
-void unloadTransporter(DROID *psTransporter, UDWORD x, UDWORD y, bool goingHome);
+void unloadTransporter(DROID* psTransporter, UDWORD x, UDWORD y, bool goingHome);
 
 /** Sets the appropriate pause states for when the interface is up but the game needs to be paused. */
 void setMissionPauseState();
@@ -136,7 +136,7 @@ bool getPlayCountDown();
 bool withinLandingZone(UDWORD x, UDWORD y);
 
 //sets the coords for the Transporter to land
-LANDING_ZONE *getLandingZone(SDWORD i);
+LANDING_ZONE* getLandingZone(SDWORD i);
 
 /** Initialises all the nogo areas to 0. */
 void initNoGoAreas();
@@ -148,21 +148,21 @@ void setNoGoArea(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2, UBYTE area);
 void missionFlyTransportersIn(SDWORD iPlayer, bool bTrackTransporter);
 
 /** Move transporter offworld. */
-void missionMoveTransporterOffWorld(DROID *psTransporter);
+void missionMoveTransporterOffWorld(DROID* psTransporter);
 
 void missionSetReinforcementTime(UDWORD iTime);
-UDWORD  missionGetReinforcementTime();
+UDWORD missionGetReinforcementTime();
 
 /** Builds a droid back at the home base whilst on a mission - stored in a list made available to the transporter interface. */
-DROID *buildMissionDroid(DROID_TEMPLATE *psTempl, UDWORD x, UDWORD y, UDWORD player);
+DROID* buildMissionDroid(DROID_TEMPLATE* psTempl, UDWORD x, UDWORD y, UDWORD player);
 
 /** This is just a very big number - bigger than a map width/height could ever be! */
 #define		INVALID_XY				(512 * 127)
 
 void missionSetTransporterEntry(SDWORD iPlayer, SDWORD iEntryTileX, SDWORD iEntryTileY);
 void missionSetTransporterExit(SDWORD iPlayer, SDWORD iExitTileX, SDWORD iExitTileY);
-void missionGetTransporterEntry(SDWORD iPlayer, UWORD *iX, UWORD *iY);
-void missionGetTransporterExit(SDWORD iPlayer, UDWORD *iX, UDWORD *iY);
+void missionGetTransporterEntry(SDWORD iPlayer, UWORD* iX, UWORD* iY);
+void missionGetTransporterExit(SDWORD iPlayer, UDWORD* iX, UDWORD* iY);
 
 //access functions for droidsToSafety flag
 void setDroidsToSafetyFlag(bool set);
@@ -175,7 +175,7 @@ bool missionDroidsRemaining(UDWORD player);
  * Called when a Transporter gets to the edge of the world and the droids are being flown to safety.
  * The droids inside the Transporter are placed into the mission list for later use.
  */
-void moveDroidsToSafety(DROID *psTransporter);
+void moveDroidsToSafety(DROID* psTransporter);
 
 /** Called when ESC is pressed. */
 void clearMissionWidgets();
@@ -183,8 +183,8 @@ void clearMissionWidgets();
 /** Resets if return to game after an ESC. */
 void resetMissionWidgets();
 
-UDWORD	getCampaignNumber();
-void	setCampaignNumber(UDWORD number);
+UDWORD getCampaignNumber();
+void setCampaignNumber(UDWORD number);
 
 std::string getCampaignName();
 
@@ -197,6 +197,7 @@ struct CAMPAIGN_FILE
 	WzString package;
 	WzString loading;
 };
+
 std::vector<CAMPAIGN_FILE> readCampaignFiles();
 
 bool intAddMissionResult(bool result, bool bPlaySuccess, bool showBackDrop);

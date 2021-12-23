@@ -39,11 +39,16 @@ enum LOADSAVE_MODE
 	SAVE_INGAME_SKIRMISH,
 	LOADREPLAY_FRONTEND_SKIRMISH,
 	LOADREPLAY_FRONTEND_MULTI,
-	LOAD_FRONTEND_MISSION_AUTO = 16,// internal use only
-	LOAD_MISSIONEND_AUTO,		// internal use only
-	LOAD_INGAME_MISSION_AUTO,	// internal use only
-	LOAD_FRONTEND_SKIRMISH_AUTO,	// internal use only
-	LOAD_INGAME_SKIRMISH_AUTO,      // internal use only
+	LOAD_FRONTEND_MISSION_AUTO = 16,
+	// internal use only
+	LOAD_MISSIONEND_AUTO,
+	// internal use only
+	LOAD_INGAME_MISSION_AUTO,
+	// internal use only
+	LOAD_FRONTEND_SKIRMISH_AUTO,
+	// internal use only
+	LOAD_INGAME_SKIRMISH_AUTO,
+	// internal use only
 };
 
 /***************************************************************************/
@@ -52,7 +57,7 @@ enum LOADSAVE_MODE
  */
 /***************************************************************************/
 
-extern bool bLoadSaveUp;							// true when interface is up and should be run.
+extern bool bLoadSaveUp; // true when interface is up and should be run.
 //the name of the save game to load from the front end
 extern char saveGameName[256];
 extern SaveGamePath_t lastSavePath;
@@ -71,13 +76,13 @@ extern bool bRequestLoadReplay;
 void drawBlueBox(UDWORD x, UDWORD y, UDWORD w, UDWORD h);
 void drawBlueBoxInset(UDWORD x, UDWORD y, UDWORD w, UDWORD h);
 
-bool addLoadSave(LOADSAVE_MODE mode, const char *title);
+bool addLoadSave(LOADSAVE_MODE mode, const char* title);
 bool closeLoadSave(bool goBack = false);
 bool closeLoadSaveOnShutdown();
 bool runLoadSave(bool bResetMissionWidgets);
 bool displayLoadSave();
 
-void removeWildcards(char *pStr);
+void removeWildcards(char* pStr);
 
 // return whether the save screen was displayed in the mission results screen
 bool saveInMissionRes();
@@ -85,10 +90,11 @@ bool saveInMissionRes();
 // return whether the save screen was displayed in the middle of a mission
 bool saveMidMission();
 
-void deleteSaveGame_classic(const char *fileName);
+void deleteSaveGame_classic(const char* fileName);
 void deleteSaveGame(std::string saveGameFolderPath);
 
-void loadSaveScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight);
+void loadSaveScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+                                 unsigned int newHeight);
 
 bool findLastSave();
 

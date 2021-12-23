@@ -57,13 +57,20 @@
 /// A coordinate.
 struct PathCoord
 {
-	PathCoord(): x(0), y(0) {}
-	PathCoord(int16_t x_, int16_t y_) : x(x_), y(y_) {}
-	bool operator ==(PathCoord const &z) const
+	PathCoord(): x(0), y(0)
+	{
+	}
+
+	PathCoord(int16_t x_, int16_t y_) : x(x_), y(y_)
+	{
+	}
+
+	bool operator ==(PathCoord const& z) const
 	{
 		return x == z.x && y == z.y;
 	}
-	bool operator !=(PathCoord const &z) const
+
+	bool operator !=(PathCoord const& z) const
 	{
 		return !(*this == z);
 	}
@@ -77,35 +84,38 @@ struct PathCoord
  */
 struct PathNode
 {
-	bool operator <(PathNode const &z) const
+	bool operator <(PathNode const& z) const
 	{
 		// Sort descending est, fallback to ascending dist, fallback to sorting by position.
-		if (est  != z.est)
+		if (est != z.est)
 		{
-			return est  > z.est;
+			return est > z.est;
 		}
 		if (dist != z.dist)
 		{
 			return dist < z.dist;
 		}
-		if (p.x  != z.p.x)
+		if (p.x != z.p.x)
 		{
-			return p.x  < z.p.x;
+			return p.x < z.p.x;
 		}
-		return p.y  < z.p.y;
+		return p.y < z.p.y;
 	}
 
-	PathCoord p;                    // Map coords.
-	unsigned  dist, est;            // Distance so far and estimate to end.
+	PathCoord p; // Map coords.
+	unsigned dist, est; // Distance so far and estimate to end.
 };
+
 struct PathExploredTile
 {
-	PathExploredTile() : iteration(0xFFFF), dx(0), dy(0), dist(0), visited(false) {}
+	PathExploredTile() : iteration(0xFFFF), dx(0), dy(0), dist(0), visited(false)
+	{
+	}
 
 	uint16_t iteration;
-	int8_t   dx, dy;                // Offset from previous point in the route.
-	unsigned dist;                  // Shortest known distance to tile.
-	bool     visited;
+	int8_t dx, dy; // Offset from previous point in the route.
+	unsigned dist; // Shortest known distance to tile.
+	bool visited;
 };
 
 struct PathBlockingType
@@ -116,33 +126,43 @@ struct PathBlockingType
 	int owner;
 	FPATH_MOVETYPE moveType;
 };
+
 /// Pathfinding blocking map
 struct PathBlockingMap
 {
-	bool operator ==(PathBlockingType const &z) const
+	bool operator ==(PathBlockingType const& z) const
 	{
 		return type.gameTime == z.gameTime &&
-		       fpathIsEquivalentBlocking(type.propulsion, type.owner, type.moveType,
-		                                 z.propulsion,    z.owner,    z.moveType);
+			fpathIsEquivalentBlocking(type.propulsion, type.owner, type.moveType,
+			                          z.propulsion, z.owner, z.moveType);
 	}
 
 	PathBlockingType type;
 	std::vector<bool> map;
-	std::vector<bool> dangerMap;	// using threatBits
+	std::vector<bool> dangerMap; // using threatBits
 };
 
 struct PathNonblockingArea
 {
-	PathNonblockingArea() {}
-	PathNonblockingArea(StructureBounds const &st) : x1(st.map.x), x2(st.map.x + st.size.x), y1(st.map.y), y2(st.map.y + st.size.y) {}
-	bool operator ==(PathNonblockingArea const &z) const
+	PathNonblockingArea()
+	{
+	}
+
+	PathNonblockingArea(StructureBounds const& st) : x1(st.map.x), x2(st.map.x + st.size.x), y1(st.map.y),
+	                                                 y2(st.map.y + st.size.y)
+	{
+	}
+
+	bool operator ==(PathNonblockingArea const& z) const
 	{
 		return x1 == z.x1 && x2 == z.x2 && y1 == z.y1 && y2 == z.y2;
 	}
-	bool operator !=(PathNonblockingArea const &z) const
+
+	bool operator !=(PathNonblockingArea const& z) const
 	{
 		return !(*this == z);
 	}
+
 	bool isNonblocking(int x, int y) const
 	{
 		return x >= x1 && x < x2 && y >= y1 && y < y2;
@@ -157,26 +177,34 @@ struct PathNonblockingArea
 // Data structures used for pathfinding, can contain cached results.
 struct PathfindContext
 {
-	PathfindContext() : myGameTime(0), iteration(0), blockingMap(nullptr) {}
+	PathfindContext() : myGameTime(0), iteration(0), blockingMap(nullptr)
+	{
+	}
+
 	bool isBlocked(int x, int y) const
 	{
 		if (dstIgnore.isNonblocking(x, y))
 		{
-			return false;  // The path is actually blocked here by a structure, but ignore it since it's where we want to go (or where we came from).
+			return false;
+			// The path is actually blocked here by a structure, but ignore it since it's where we want to go (or where we came from).
 		}
 		// Not sure whether the out-of-bounds check is needed, can only happen if pathfinding is started on a blocking tile (or off the map).
 		return x < 0 || y < 0 || x >= mapWidth || y >= mapHeight || blockingMap->map[x + y * mapWidth];
 	}
+
 	bool isDangerous(int x, int y) const
 	{
 		return !blockingMap->dangerMap.empty() && blockingMap->dangerMap[x + y * mapWidth];
 	}
-	bool matches(std::shared_ptr<PathBlockingMap> &blockingMap_, PathCoord tileS_, PathNonblockingArea dstIgnore_) const
+
+	bool matches(std::shared_ptr<PathBlockingMap>& blockingMap_, PathCoord tileS_, PathNonblockingArea dstIgnore_) const
 	{
 		// Must check myGameTime == blockingMap_->type.gameTime, otherwise blockingMap could be a deleted pointer which coincidentally compares equal to the valid pointer blockingMap_.
-		return myGameTime == blockingMap_->type.gameTime && blockingMap == blockingMap_ && tileS == tileS_ && dstIgnore == dstIgnore_;
+		return myGameTime == blockingMap_->type.gameTime && blockingMap == blockingMap_ && tileS == tileS_ && dstIgnore
+			== dstIgnore_;
 	}
-	void assign(std::shared_ptr<PathBlockingMap> &blockingMap_, PathCoord tileS_, PathNonblockingArea dstIgnore_)
+
+	void assign(std::shared_ptr<PathBlockingMap>& blockingMap_, PathCoord tileS_, PathNonblockingArea dstIgnore_)
 	{
 		blockingMap = blockingMap_;
 		tileS = tileS_;
@@ -187,27 +215,28 @@ struct PathfindContext
 		// Make the iteration not match any value of iteration in map.
 		if (++iteration == 0xFFFF)
 		{
-			map.clear();  // There are no values of iteration guaranteed not to exist in map, so clear the map.
+			map.clear(); // There are no values of iteration guaranteed not to exist in map, so clear the map.
 			iteration = 0;
 		}
-		map.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));  // Allocate space for map, if needed.
+		map.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
+		// Allocate space for map, if needed.
 	}
 
-	PathCoord       tileS;                // Start tile for pathfinding. (May be either source or target tile.)
-	uint32_t        myGameTime;
+	PathCoord tileS; // Start tile for pathfinding. (May be either source or target tile.)
+	uint32_t myGameTime;
 
-	PathCoord       nearestCoord;         // Nearest reachable tile to destination.
+	PathCoord nearestCoord; // Nearest reachable tile to destination.
 
 	/** Counter to implement lazy deletion from map.
 	 *
 	 *  @see fpathTableReset
 	 */
-	uint16_t        iteration;
+	uint16_t iteration;
 
-	std::vector<PathNode> nodes;        ///< Edge of explored region of the map.
-	std::vector<PathExploredTile> map;  ///< Map, with paths leading back to tileS.
+	std::vector<PathNode> nodes; ///< Edge of explored region of the map.
+	std::vector<PathExploredTile> map; ///< Map, with paths leading back to tileS.
 	std::shared_ptr<PathBlockingMap> blockingMap; ///< Map of blocking tiles for the type of object which needs a path.
-	PathNonblockingArea dstIgnore;      ///< Area of structure at destination which should be considered nonblocking.
+	PathNonblockingArea dstIgnore; ///< Area of structure at destination which should be considered nonblocking.
 };
 
 /// Last recently used list of contexts.
@@ -241,15 +270,16 @@ void fpathHardTableReset()
 /** Get the nearest entry in the open list
  */
 /// Takes the current best node, and removes from the node heap.
-static inline PathNode fpathTakeNode(std::vector<PathNode> &nodes)
+static inline PathNode fpathTakeNode(std::vector<PathNode>& nodes)
 {
 	// find the node with the lowest distance
 	// if equal totals, give preference to node closer to target
 	PathNode ret = nodes.front();
 
 	// remove the node from the list
-	std::pop_heap(nodes.begin(), nodes.end());  // Move the best node from the front of nodes to the back of nodes, preserving the heap properties, setting the front to the next best node.
-	nodes.pop_back();                           // Pop the best node (which we will be returning).
+	std::pop_heap(nodes.begin(), nodes.end());
+	// Move the best node from the front of nodes to the back of nodes, preserving the heap properties, setting the front to the next best node.
+	nodes.pop_back(); // Pop the best node (which we will be returning).
 
 	return ret;
 }
@@ -262,6 +292,7 @@ static inline unsigned WZ_DECL_PURE fpathEstimate(PathCoord s, PathCoord f)
 	unsigned xDelta = abs(s.x - f.x), yDelta = abs(s.y - f.y);
 	return std::min(xDelta, yDelta) * (198 - 140) + std::max(xDelta, yDelta) * 140;
 }
+
 static inline unsigned WZ_DECL_PURE fpathGoodEstimate(PathCoord s, PathCoord f)
 {
 	// Cost of moving horizontal/vertical = 70*2, cost of moving diagonal = 99*2, 99/70 = 1.41428571... ≈ √2 = 1.41421356...
@@ -270,9 +301,11 @@ static inline unsigned WZ_DECL_PURE fpathGoodEstimate(PathCoord s, PathCoord f)
 
 /** Generate a new node
  */
-static inline void fpathNewNode(PathfindContext &context, PathCoord dest, PathCoord pos, unsigned prevDist, PathCoord prevPos)
+static inline void fpathNewNode(PathfindContext& context, PathCoord dest, PathCoord pos, unsigned prevDist,
+                                PathCoord prevPos)
 {
-	ASSERT_OR_RETURN(, (unsigned)pos.x < (unsigned)mapWidth && (unsigned)pos.y < (unsigned)mapHeight, "X (%d) or Y (%d) coordinate for path finding node is out of range!", pos.x, pos.y);
+	ASSERT_OR_RETURN(, (unsigned)pos.x < (unsigned)mapWidth && (unsigned)pos.y < (unsigned)mapHeight,
+	                   "X (%d) or Y (%d) coordinate for path finding node is out of range!", pos.x, pos.y);
 
 	// Create the node.
 	PathNode node;
@@ -284,16 +317,17 @@ static inline void fpathNewNode(PathfindContext &context, PathCoord dest, PathCo
 	Vector2i delta = Vector2i(pos.x - prevPos.x, pos.y - prevPos.y) * 64;
 	bool isDiagonal = delta.x && delta.y;
 
-	PathExploredTile &expl = context.map[pos.x + pos.y * mapWidth];
+	PathExploredTile& expl = context.map[pos.x + pos.y * mapWidth];
 	if (expl.iteration == context.iteration)
 	{
 		if (expl.visited)
 		{
-			return;  // Already visited this tile. Do nothing.
+			return; // Already visited this tile. Do nothing.
 		}
 		Vector2i deltaA = delta;
 		Vector2i deltaB = Vector2i(expl.dx, expl.dy);
-		Vector2i deltaDelta = deltaA - deltaB;  // Vector pointing from current considered source tile leading to pos, to the previously considered source tile leading to pos.
+		Vector2i deltaDelta = deltaA - deltaB;
+		// Vector pointing from current considered source tile leading to pos, to the previously considered source tile leading to pos.
 		if (abs(deltaDelta.x) + abs(deltaDelta.y) == 64)
 		{
 			// prevPos is tile A or B, and pos is tile P. We were previously called with prevPos being tile B or A, and pos tile P.
@@ -303,7 +337,8 @@ static inline void fpathNewNode(PathfindContext &context, PathCoord dest, PathCo
 			// +---+---+
 			// | A | B |
 			// +---+---+
-			unsigned distA = node.dist - (isDiagonal ? 198 : 140) * costFactor; // If isDiagonal, node is A and expl is B.
+			unsigned distA = node.dist - (isDiagonal ? 198 : 140) * costFactor;
+			// If isDiagonal, node is A and expl is B.
 			unsigned distB = expl.dist - (isDiagonal ? 140 : 198) * costFactor;
 			if (!isDiagonal)
 			{
@@ -311,11 +346,18 @@ static inline void fpathNewNode(PathfindContext &context, PathCoord dest, PathCo
 				std::swap(deltaA, deltaB);
 			}
 			int gradientX = int(distB - distA) / costFactor;
-			if (gradientX > 0 && gradientX <= 98)  // 98 = floor(140/√2), so gradientX <= 98 is needed so that gradientX < gradientY.
+			if (gradientX > 0 && gradientX <= 98)
+			// 98 = floor(140/√2), so gradientX <= 98 is needed so that gradientX < gradientY.
 			{
 				// The distance gradient is now known to be somewhere between the direction from A to P and the direction from B to P.
-				static const uint8_t gradYLookup[99] = {140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 139, 139, 139, 139, 139, 139, 139, 139, 139, 138, 138, 138, 138, 138, 138, 137, 137, 137, 137, 137, 136, 136, 136, 136, 135, 135, 135, 134, 134, 134, 134, 133, 133, 133, 132, 132, 132, 131, 131, 130, 130, 130, 129, 129, 128, 128, 127, 127, 126, 126, 126, 125, 125, 124, 123, 123, 122, 122, 121, 121, 120, 119, 119, 118, 118, 117, 116, 116, 115, 114, 113, 113, 112, 111, 110, 110, 109, 108, 107, 106, 106, 105, 104, 103, 102, 101, 100};
-				int gradientY = gradYLookup[gradientX];  // = sqrt(140² -  gradientX²), rounded to nearest integer
+				static const uint8_t gradYLookup[99] = {
+					140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 139, 139, 139, 139, 139, 139, 139, 139,
+					139, 138, 138, 138, 138, 138, 138, 137, 137, 137, 137, 137, 136, 136, 136, 136, 135, 135, 135, 134,
+					134, 134, 134, 133, 133, 133, 132, 132, 132, 131, 131, 130, 130, 130, 129, 129, 128, 128, 127, 127,
+					126, 126, 126, 125, 125, 124, 123, 123, 122, 122, 121, 121, 120, 119, 119, 118, 118, 117, 116, 116,
+					115, 114, 113, 113, 112, 111, 110, 110, 109, 108, 107, 106, 106, 105, 104, 103, 102, 101, 100
+				};
+				int gradientY = gradYLookup[gradientX]; // = sqrt(140² -  gradientX²), rounded to nearest integer
 				unsigned distP = gradientY * costFactor + distB;
 				node.est -= node.dist - distP;
 				node.dist = distP;
@@ -324,7 +366,7 @@ static inline void fpathNewNode(PathfindContext &context, PathCoord dest, PathCo
 		}
 		if (expl.dist <= node.dist)
 		{
-			return;  // A different path to this tile is shorter.
+			return; // A different path to this tile is shorter.
 		}
 	}
 
@@ -336,14 +378,14 @@ static inline void fpathNewNode(PathfindContext &context, PathCoord dest, PathCo
 	expl.visited = false;
 
 	// Add the node to the node heap.
-	context.nodes.push_back(node);                               // Add the new node to nodes.
-	std::push_heap(context.nodes.begin(), context.nodes.end());  // Move the new node to the right place in the heap.
+	context.nodes.push_back(node); // Add the new node to nodes.
+	std::push_heap(context.nodes.begin(), context.nodes.end()); // Move the new node to the right place in the heap.
 }
 
 /// Recalculates estimates to new tileF tile.
-static void fpathAStarReestimate(PathfindContext &context, PathCoord tileF)
+static void fpathAStarReestimate(PathfindContext& context, PathCoord tileF)
 {
-	for (auto &node : context.nodes)
+	for (auto& node : context.nodes)
 	{
 		node.est = node.dist + fpathGoodEstimate(node.p, tileF);
 	}
@@ -353,10 +395,10 @@ static void fpathAStarReestimate(PathfindContext &context, PathCoord tileF)
 }
 
 /// Returns nearest explored tile to tileF.
-static PathCoord fpathAStarExplore(PathfindContext &context, PathCoord tileF)
+static PathCoord fpathAStarExplore(PathfindContext& context, PathCoord tileF)
 {
-	PathCoord       nearestCoord(0, 0);
-	unsigned        nearestDist = 0xFFFFFFFF;
+	PathCoord nearestCoord(0, 0);
+	unsigned nearestDist = 0xFFFFFFFF;
 
 	// search for a route
 	bool foundIt = false;
@@ -365,7 +407,7 @@ static PathCoord fpathAStarExplore(PathfindContext &context, PathCoord tileF)
 		PathNode node = fpathTakeNode(context.nodes);
 		if (context.map[node.p.x + node.p.y * mapWidth].visited)
 		{
-			continue;  // Already been here.
+			continue; // Already been here.
 		}
 		context.map[node.p.x + node.p.y * mapWidth].visited = true;
 
@@ -380,7 +422,8 @@ static PathCoord fpathAStarExplore(PathfindContext &context, PathCoord tileF)
 		{
 			// reached the target
 			nearestCoord = node.p;
-			foundIt = true;  // Break out of loop, but not before inserting neighbour nodes, since the neighbours may be important if the context gets reused.
+			foundIt = true;
+			// Break out of loop, but not before inserting neighbour nodes, since the neighbours may be important if the context gets reused.
 		}
 
 		// loop through possible moves in 8 directions to find a valid move
@@ -398,7 +441,8 @@ static PathCoord fpathAStarExplore(PathfindContext &context, PathCoord tileF)
 			   3  2  1
 			   odd:orthogonal-adjacent tiles even:non-orthogonal-adjacent tiles
 			*/
-			if (dir % 2 != 0 && !context.dstIgnore.isNonblocking(node.p.x, node.p.y) && !context.dstIgnore.isNonblocking(x, y))
+			if (dir % 2 != 0 && !context.dstIgnore.isNonblocking(node.p.x, node.p.y) && !context.dstIgnore.
+				isNonblocking(x, y))
 			{
 				int x2, y2;
 
@@ -432,7 +476,8 @@ static PathCoord fpathAStarExplore(PathfindContext &context, PathCoord tileF)
 	return nearestCoord;
 }
 
-static void fpathInitContext(PathfindContext &context, std::shared_ptr<PathBlockingMap> &blockingMap, PathCoord tileS, PathCoord tileRealS, PathCoord tileF, PathNonblockingArea dstIgnore)
+static void fpathInitContext(PathfindContext& context, std::shared_ptr<PathBlockingMap>& blockingMap, PathCoord tileS,
+                             PathCoord tileRealS, PathCoord tileF, PathNonblockingArea dstIgnore)
 {
 	context.assign(blockingMap, tileS, dstIgnore);
 
@@ -441,17 +486,17 @@ static void fpathInitContext(PathfindContext &context, std::shared_ptr<PathBlock
 	ASSERT(!context.nodes.empty(), "fpathNewNode failed to add node.");
 }
 
-ASR_RETVAL fpathAStarRoute(MOVE_CONTROL *psMove, PATHJOB *psJob)
+ASR_RETVAL fpathAStarRoute(MOVE_CONTROL* psMove, PATHJOB* psJob)
 {
-	ASR_RETVAL      retval = ASR_OK;
+	ASR_RETVAL retval = ASR_OK;
 
-	bool            mustReverse = true;
+	bool mustReverse = true;
 
 	const PathCoord tileOrig(map_coord(psJob->origX), map_coord(psJob->origY));
 	const PathCoord tileDest(map_coord(psJob->destX), map_coord(psJob->destY));
 	const PathNonblockingArea dstIgnore(psJob->dstStructure);
 
-	PathCoord endCoord;  // Either nearest coord (mustReverse = true) or orig (mustReverse = false).
+	PathCoord endCoord; // Either nearest coord (mustReverse = true) or orig (mustReverse = false).
 
 	std::list<PathfindContext>::iterator contextIterator = fpathContexts.begin();
 	for (contextIterator = fpathContexts.begin(); contextIterator != fpathContexts.end(); ++contextIterator)
@@ -465,7 +510,7 @@ ASR_RETVAL fpathAStarRoute(MOVE_CONTROL *psMove, PATHJOB *psJob)
 		// We have tried going to tileDest before.
 
 		if (contextIterator->map[tileOrig.x + tileOrig.y * mapWidth].iteration == contextIterator->iteration
-		    && contextIterator->map[tileOrig.x + tileOrig.y * mapWidth].visited)
+			&& contextIterator->map[tileOrig.x + tileOrig.y * mapWidth].visited)
 		{
 			// Already know the path from orig to dest.
 			endCoord = tileOrig;
@@ -483,8 +528,8 @@ ASR_RETVAL fpathAStarRoute(MOVE_CONTROL *psMove, PATHJOB *psJob)
 			continue;
 		}
 
-		mustReverse = false;  // We have the path from the nearest reachable tile to dest, to orig.
-		break;  // Found the path! Don't search more contexts.
+		mustReverse = false; // We have the path from the nearest reachable tile to dest, to orig.
+		break; // Found the path! Don't search more contexts.
 	}
 
 	if (contextIterator == fpathContexts.end())
@@ -504,7 +549,7 @@ ASR_RETVAL fpathAStarRoute(MOVE_CONTROL *psMove, PATHJOB *psJob)
 		contextIterator->nearestCoord = endCoord;
 	}
 
-	PathfindContext &context = *contextIterator;
+	PathfindContext& context = *contextIterator;
 
 	// return the nearest route if no actual route was found
 	if (context.nearestCoord != tileDest)
@@ -513,33 +558,40 @@ ASR_RETVAL fpathAStarRoute(MOVE_CONTROL *psMove, PATHJOB *psJob)
 	}
 
 	// Get route, in reverse order.
-	static std::vector<Vector2i> path;  // Declared static to save allocations.
+	static std::vector<Vector2i> path; // Declared static to save allocations.
 	path.clear();
 
 	Vector2i newP(0, 0);
 	for (Vector2i p(world_coord(endCoord.x) + TILE_UNITS / 2, world_coord(endCoord.y) + TILE_UNITS / 2); true; p = newP)
 	{
-		ASSERT_OR_RETURN(ASR_FAILED, worldOnMap(p.x, p.y), "Assigned XY coordinates (%d, %d) not on map!", (int)p.x, (int)p.y);
-		ASSERT_OR_RETURN(ASR_FAILED, path.size() < (static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight)), "Pathfinding got in a loop.");
+		ASSERT_OR_RETURN(ASR_FAILED, worldOnMap(p.x, p.y), "Assigned XY coordinates (%d, %d) not on map!", (int)p.x,
+		                 (int)p.y);
+		ASSERT_OR_RETURN(ASR_FAILED, path.size() < (static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight)),
+		                 "Pathfinding got in a loop.");
 
 		path.push_back(p);
 
-		PathExploredTile &tile = context.map[map_coord(p.x) + map_coord(p.y) * mapWidth];
+		PathExploredTile& tile = context.map[map_coord(p.x) + map_coord(p.y) * mapWidth];
 		newP = p - Vector2i(tile.dx, tile.dy) * (TILE_UNITS / 64);
 		Vector2i mapP = map_coord(newP);
-		int xSide = newP.x - world_coord(mapP.x) > TILE_UNITS / 2 ? 1 : -1; // 1 if newP is on right-hand side of the tile, or -1 if newP is on the left-hand side of the tile.
-		int ySide = newP.y - world_coord(mapP.y) > TILE_UNITS / 2 ? 1 : -1; // 1 if newP is on bottom side of the tile, or -1 if newP is on the top side of the tile.
+		int xSide = newP.x - world_coord(mapP.x) > TILE_UNITS / 2 ? 1 : -1;
+		// 1 if newP is on right-hand side of the tile, or -1 if newP is on the left-hand side of the tile.
+		int ySide = newP.y - world_coord(mapP.y) > TILE_UNITS / 2 ? 1 : -1;
+		// 1 if newP is on bottom side of the tile, or -1 if newP is on the top side of the tile.
 		if (context.isBlocked(mapP.x + xSide, mapP.y))
 		{
-			newP.x = world_coord(mapP.x) + TILE_UNITS / 2; // Point too close to a blocking tile on left or right side, so move the point to the middle.
+			newP.x = world_coord(mapP.x) + TILE_UNITS / 2;
+			// Point too close to a blocking tile on left or right side, so move the point to the middle.
 		}
 		if (context.isBlocked(mapP.x, mapP.y + ySide))
 		{
-			newP.y = world_coord(mapP.y) + TILE_UNITS / 2; // Point too close to a blocking tile on rop or bottom side, so move the point to the middle.
+			newP.y = world_coord(mapP.y) + TILE_UNITS / 2;
+			// Point too close to a blocking tile on rop or bottom side, so move the point to the middle.
 		}
 		if (map_coord(p) == Vector2i(context.tileS.x, context.tileS.y) || p == newP)
 		{
-			break;  // We stopped moving, because we reached the destination or the closest reachable tile to context.tileS. Give up now.
+			break;
+			// We stopped moving, because we reached the destination or the closest reachable tile to context.tileS. Give up now.
 		}
 	}
 	if (retval == ASR_OK)
@@ -575,7 +627,8 @@ ASR_RETVAL fpathAStarRoute(MOVE_CONTROL *psMove, PATHJOB *psJob)
 		// Copy the list, in reverse.
 		std::copy(path.rbegin(), path.rend(), psMove->asPath.data());
 
-		if (!context.isBlocked(tileOrig.x, tileOrig.y))  // If blocked, searching from tileDest to tileOrig wouldn't find the tileOrig tile.
+		if (!context.isBlocked(tileOrig.x, tileOrig.y))
+		// If blocked, searching from tileDest to tileOrig wouldn't find the tileOrig tile.
 		{
 			// Next time, search starting from nearest reachable tile to the destination.
 			fpathInitContext(context, psJob->blockingMap, tileDest, context.nearestCoord, tileOrig, dstIgnore);
@@ -588,7 +641,7 @@ ASR_RETVAL fpathAStarRoute(MOVE_CONTROL *psMove, PATHJOB *psJob)
 	}
 
 	// Move context to beginning of last recently used list.
-	if (contextIterator != fpathContexts.begin())  // Not sure whether or not the splice is a safe noop, if equal.
+	if (contextIterator != fpathContexts.begin()) // Not sure whether or not the splice is a safe noop, if equal.
 	{
 		fpathContexts.splice(fpathContexts.begin(), fpathContexts, contextIterator);
 	}
@@ -598,7 +651,7 @@ ASR_RETVAL fpathAStarRoute(MOVE_CONTROL *psMove, PATHJOB *psJob)
 	return retval;
 }
 
-void fpathSetBlockingMap(PATHJOB *psJob)
+void fpathSetBlockingMap(PATHJOB* psJob)
 {
 	if (fpathCurrentGameTime != gameTime)
 	{
@@ -615,18 +668,20 @@ void fpathSetBlockingMap(PATHJOB *psJob)
 	type.moveType = psJob->moveType;
 
 	// Find the map.
-	auto i = std::find_if(fpathBlockingMaps.begin(), fpathBlockingMaps.end(), [&](std::shared_ptr<PathBlockingMap> const &ptr) {
-		return *ptr == type;
-	});
+	auto i = std::find_if(fpathBlockingMaps.begin(), fpathBlockingMaps.end(),
+	                      [&](std::shared_ptr<PathBlockingMap> const& ptr)
+	                      {
+		                      return *ptr == type;
+	                      });
 	if (i == fpathBlockingMaps.end())
 	{
 		// Didn't find the map, so i does not point to a map.
-		PathBlockingMap *blockMap = new PathBlockingMap();
+		PathBlockingMap* blockMap = new PathBlockingMap();
 		fpathBlockingMaps.emplace_back(blockMap);
 
 		// blockMap now points to an empty map with no data. Fill the map.
 		blockMap->type = type;
-		std::vector<bool> &map = blockMap->map;
+		std::vector<bool>& map = blockMap->map;
 		map.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
 		uint32_t checksumMap = 0, checksumDangerMap = 0, factor = 0;
 		for (int y = 0; y < mapHeight; ++y)
@@ -637,7 +692,7 @@ void fpathSetBlockingMap(PATHJOB *psJob)
 			}
 		if (!isHumanPlayer(type.owner) && type.moveType == FMT_MOVE)
 		{
-			std::vector<bool> &dangerMap = blockMap->dangerMap;
+			std::vector<bool>& dangerMap = blockMap->dangerMap;
 			dangerMap.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
 			for (int y = 0; y < mapHeight; ++y)
 				for (int x = 0; x < mapWidth; ++x)
@@ -646,7 +701,8 @@ void fpathSetBlockingMap(PATHJOB *psJob)
 					checksumDangerMap ^= dangerMap[x + y * mapWidth] * (factor = 3 * factor + 1);
 				}
 		}
-		syncDebug("blockingMap(%d,%d,%d,%d) = %08X %08X", gameTime, psJob->propulsion, psJob->owner, psJob->moveType, checksumMap, checksumDangerMap);
+		syncDebug("blockingMap(%d,%d,%d,%d) = %08X %08X", gameTime, psJob->propulsion, psJob->owner, psJob->moveType,
+		          checksumMap, checksumDangerMap);
 
 		psJob->blockingMap = fpathBlockingMaps.back();
 	}

@@ -28,10 +28,10 @@
 struct InGameChatMessage
 {
 	uint32_t sender;
-	char const *text;
+	char const* text;
 	bool toAllies = false;
 
-	InGameChatMessage(uint32_t messageSender, char const *messageText);
+	InGameChatMessage(uint32_t messageSender, char const* messageText);
 	void send();
 	void addReceiverByPosition(uint32_t playerPosition);
 	void addReceiverByIndex(uint32_t playerIndex);

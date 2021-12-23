@@ -33,6 +33,7 @@ ValueTracker* ValueTracker::startTracking(int value)
 	this->_reachedTarget = false;
 	return this;
 }
+
 ValueTracker* ValueTracker::stopTracking()
 {
 	this->initial = 0;
@@ -41,15 +42,18 @@ ValueTracker* ValueTracker::stopTracking()
 	this->_reachedTarget = false;
 	return this;
 }
+
 bool ValueTracker::isTracking()
 {
 	return this->startTime != 0;
 }
+
 ValueTracker* ValueTracker::setSpeed(int value)
 {
 	this->speed = value;
 	return this;
 }
+
 ValueTracker* ValueTracker::setTargetDelta(int value)
 {
 	this->targetDelta = value;
@@ -57,6 +61,7 @@ ValueTracker* ValueTracker::setTargetDelta(int value)
 	this->_reachedTarget = false;
 	return this;
 }
+
 ValueTracker* ValueTracker::setTarget(int value)
 {
 	this->targetDelta = value - this->initial;
@@ -64,50 +69,58 @@ ValueTracker* ValueTracker::setTarget(int value)
 	this->_reachedTarget = false;
 	return this;
 }
+
 ValueTracker* ValueTracker::update()
 {
-	if(this->_reachedTarget)
+	if (this->_reachedTarget)
 	{
 		return this;
 	}
 
-	if(std::abs(this->target - this->current) < 1)
+	if (std::abs(this->target - this->current) < 1)
 	{
 		this->_reachedTarget = true;
 		return this;
 	}
 
-	this->current = (this->initial + this->targetDelta - this->current) * realTimeAdjustedIncrement(this->speed) + this->current;
+	this->current = (this->initial + this->targetDelta - this->current) * realTimeAdjustedIncrement(this->speed) + this
+		->current;
 	return this;
 }
+
 int ValueTracker::getCurrent()
 {
-	if(this->_reachedTarget)
+	if (this->_reachedTarget)
 	{
 		return this->target;
 	}
 	return static_cast<int>(this->current);
 }
+
 int ValueTracker::getCurrentDelta()
 {
-	if(this->_reachedTarget)
+	if (this->_reachedTarget)
 	{
 		return this->targetDelta;
 	}
 	return static_cast<int>(this->current - this->initial);
 }
+
 int ValueTracker::getInitial()
 {
 	return this->initial;
 }
+
 int ValueTracker::getTarget()
 {
 	return this->target;
 }
+
 int ValueTracker::getTargetDelta()
 {
 	return this->targetDelta;
 }
+
 bool ValueTracker::reachedTarget()
 {
 	return this->_reachedTarget;
@@ -160,13 +173,13 @@ bool Animation<AnimatableData>::isActive() const
 }
 
 template <class AnimatableData>
-const AnimatableData &Animation<AnimatableData>::getCurrent() const
+const AnimatableData& Animation<AnimatableData>::getCurrent() const
 {
 	return currentData;
 }
 
 template <class AnimatableData>
-const AnimatableData &Animation<AnimatableData>::getFinalData() const
+const AnimatableData& Animation<AnimatableData>::getFinalData() const
 {
 	return finalData;
 }
@@ -178,7 +191,7 @@ uint16_t Animation<AnimatableData>::getEasedProgress() const
 }
 
 template <class AnimatableData>
-Animation<AnimatableData> &Animation<AnimatableData>::setInitialData(AnimatableData initial)
+Animation<AnimatableData>& Animation<AnimatableData>::setInitialData(AnimatableData initial)
 {
 	initialData = initial;
 	currentData = initial;
@@ -186,21 +199,21 @@ Animation<AnimatableData> &Animation<AnimatableData>::setInitialData(AnimatableD
 }
 
 template <class AnimatableData>
-Animation<AnimatableData> &Animation<AnimatableData>::setFinalData(AnimatableData final)
+Animation<AnimatableData>& Animation<AnimatableData>::setFinalData(AnimatableData final)
 {
 	finalData = final;
 	return *this;
 }
 
 template <class AnimatableData>
-Animation<AnimatableData> &Animation<AnimatableData>::setEasing(EasingType easing)
+Animation<AnimatableData>& Animation<AnimatableData>::setEasing(EasingType easing)
 {
 	easingType = easing;
 	return *this;
 }
 
 template <class AnimatableData>
-Animation<AnimatableData> &Animation<AnimatableData>::setDuration(uint32_t durationMilliseconds)
+Animation<AnimatableData>& Animation<AnimatableData>::setDuration(uint32_t durationMilliseconds)
 {
 	duration = static_cast<uint32_t>(durationMilliseconds * 0.001 * GAME_TICKS_PER_SEC);
 	return *this;

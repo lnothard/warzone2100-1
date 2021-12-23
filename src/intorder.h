@@ -29,7 +29,7 @@
 
 extern bool OrderUp;
 
-bool intAddOrder(BASE_OBJECT *psObj);			// create and open order form
+bool intAddOrder(BASE_OBJECT* psObj); // create and open order form
 void intRunOrder();
 void intProcessOrder(UDWORD id);
 void intRemoveOrder();
@@ -37,6 +37,6 @@ void intRemoveOrderNoAnim();
 bool intRefreshOrder();
 
 //new function added to bring up the RMB order form for Factories as well as droids
-void intAddFactoryOrder(STRUCTURE *psStructure);
+void intAddFactoryOrder(STRUCTURE* psStructure);
 
 #endif // __INCLUDED_SRC_INTORDER_H__

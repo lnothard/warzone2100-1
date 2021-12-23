@@ -100,18 +100,18 @@ struct BUTOFFSET
 	SWORD y;
 };
 
-static BUTOFFSET ReticuleOffsets[NUMRETBUTS] =  	// Reticule button form relative positions.
+static BUTOFFSET ReticuleOffsets[NUMRETBUTS] = // Reticule button form relative positions.
 {
-	{43, 47},	// RETBUT_CANCEL,
-	{47, 15},	// RETBUT_FACTORY,
-	{81, 33},	// RETBUT_RESEARCH,
-	{81, 69},	// RETBUT_BUILD,
-	{47, 87},	// RETBUT_DESIGN,
-	{13, 69},	// RETBUT_INTELMAP,
-	{13, 33},	// RETBUT_COMMAND,
+	{43, 47}, // RETBUT_CANCEL,
+	{47, 15}, // RETBUT_FACTORY,
+	{81, 33}, // RETBUT_RESEARCH,
+	{81, 69}, // RETBUT_BUILD,
+	{47, 87}, // RETBUT_DESIGN,
+	{13, 69}, // RETBUT_INTELMAP,
+	{13, 33}, // RETBUT_COMMAND,
 };
 
-static BUTSTATE ReticuleEnabled[NUMRETBUTS] =  	// Reticule button enable states.
+static BUTSTATE ReticuleEnabled[NUMRETBUTS] = // Reticule button enable states.
 {
 	{IDRET_CANCEL, false, false},
 	{IDRET_MANUFACTURE, false, false},
@@ -122,7 +122,7 @@ static BUTSTATE ReticuleEnabled[NUMRETBUTS] =  	// Reticule button enable states
 	{IDRET_COMMAND, false, false},
 };
 
-static UDWORD	keyButtonMapping = 0;
+static UDWORD keyButtonMapping = 0;
 static bool ReticuleUp = false;
 static bool Refreshing = false;
 
@@ -177,35 +177,35 @@ OBJECT_MODE objMode;
 std::shared_ptr<BaseObjectsController> interfaceController = nullptr;
 
 /* The current stats list being used by the stats screen */
-static BASE_STATS		**ppsStatsList;
+static BASE_STATS** ppsStatsList;
 
 /* The selected builder on the object screen when the build screen is displayed */
-static DROID *psSelectedBuilder;
+static DROID* psSelectedBuilder;
 
 /* The button ID of an objects stat on the stat screen if it is locked down */
-static UDWORD			statID;
+static UDWORD statID;
 
 /* The stats for the current getStructPos */
-static BASE_STATS		*psPositionStats;
+static BASE_STATS* psPositionStats;
 
 /* Store a list of stats pointers from the main structure stats */
-static STRUCTURE_STATS	**apsStructStatsList;
+static STRUCTURE_STATS** apsStructStatsList;
 
 /* Store a list of Template pointers for Droids that can be built */
-std::vector<DROID_TEMPLATE *>   apsTemplateList;
-std::list<DROID_TEMPLATE>       localTemplates;
+std::vector<DROID_TEMPLATE*> apsTemplateList;
+std::list<DROID_TEMPLATE> localTemplates;
 
 /* Store a list of Feature pointers for features to be placed on the map */
-static FEATURE_STATS	**apsFeatureList;
+static FEATURE_STATS** apsFeatureList;
 
 /* Store a list of component stats pointers for the design screen */
-UDWORD			numComponent;
-COMPONENT_STATS	**apsComponentList;
-UDWORD			numExtraSys;
-COMPONENT_STATS	**apsExtraSysList;
+UDWORD numComponent;
+COMPONENT_STATS** apsComponentList;
+UDWORD numExtraSys;
+COMPONENT_STATS** apsExtraSysList;
 
 /* Flags to check whether the power bars are currently on the screen */
-static bool				powerBarUp = false;
+static bool powerBarUp = false;
 
 /* Update functions to be called at an interval */
 struct IntUpdateFunc
@@ -214,10 +214,12 @@ public:
 	typedef std::function<void ()> UpdateFunc;
 public:
 	IntUpdateFunc(const UpdateFunc& func, uint32_t intervalTicks = GAME_TICKS_PER_SEC)
-	: func(func)
-	, intervalTicks(intervalTicks)
-	, realTimeLastCalled(0)
-	{ }
+		: func(func)
+		  , intervalTicks(intervalTicks)
+		  , realTimeLastCalled(0)
+	{
+	}
+
 	~IntUpdateFunc() = default;
 	IntUpdateFunc(IntUpdateFunc&&) = default;
 	IntUpdateFunc(const IntUpdateFunc&) = delete;
@@ -231,12 +233,14 @@ public:
 			realTimeLastCalled = realTime;
 		}
 	}
+
 public:
 	std::function<void ()> func;
 	uint32_t intervalTicks = GAME_TICKS_PER_SEC;
 private:
 	uint32_t realTimeLastCalled = 0;
 };
+
 static std::vector<IntUpdateFunc> intUpdateFuncs;
 
 /***************************************************************************************/
@@ -244,7 +248,7 @@ static std::vector<IntUpdateFunc> intUpdateFuncs;
 
 /* Add the stats widgets to the widget screen */
 /* If psSelected != NULL it specifies which stat should be hilited */
-static bool intAddDebugStatsForm(BASE_STATS **ppsStatsList, UDWORD numStats);
+static bool intAddDebugStatsForm(BASE_STATS** ppsStatsList, UDWORD numStats);
 
 /* Add the build widgets to the widget screen */
 static bool intAddBuild();
@@ -258,9 +262,9 @@ static bool intAddCommand();
 /* Stop looking for a structure location */
 static void intStopStructPosition();
 
-static STRUCTURE *CurrentStruct = nullptr;
+static STRUCTURE* CurrentStruct = nullptr;
 static SWORD CurrentStructType = 0;
-static DROID *CurrentDroid = nullptr;
+static DROID* CurrentDroid = nullptr;
 static DROID_TYPE CurrentDroidType = DROID_ANY;
 
 /******************Power Bar Stuff!**************/
@@ -274,7 +278,7 @@ static void processProximityButtons(UDWORD id);
 // count the number of selected droids of a type
 static SDWORD intNumSelectedDroids(UDWORD droidType);
 
-static void parseChatMessageModifiers(InGameChatMessage &message);
+static void parseChatMessageModifiers(InGameChatMessage& message);
 
 
 /***************************GAME CODE ****************************/
@@ -290,6 +294,7 @@ struct RETBUTSTATS
 	std::shared_ptr<W_BUTTON> button = nullptr;
 	playerCallbackFunc callbackFunc = nullptr;
 };
+
 static RETBUTSTATS retbutstats[NUMRETBUTS];
 
 static bool buttonIsClickable(uint16_t id)
@@ -298,7 +303,7 @@ static bool buttonIsClickable(uint16_t id)
 	return !gamePaused() && enabled;
 }
 
-static bool buttonIsHighlighted(W_BUTTON *p)
+static bool buttonIsHighlighted(W_BUTTON* p)
 {
 	bool clickable = buttonIsClickable(p->id);
 	return (p->getState() & WBUT_HIGHLIGHT) != 0 && clickable;
@@ -318,9 +323,9 @@ void setReticuleFlash(int ButId, bool flash)
 }
 
 // set up the button's size & hit-testing based on the dimensions of the "normal" image
-void setReticuleButtonDimensions(W_BUTTON &button, const WzString &filename)
+void setReticuleButtonDimensions(W_BUTTON& button, const WzString& filename)
 {
-	ImageDef *image = nullptr;
+	ImageDef* image = nullptr;
 	if (!filename.isEmpty())
 	{
 		image = iV_GetImage(filename);
@@ -340,8 +345,8 @@ void setReticuleButtonDimensions(W_BUTTON &button, const WzString &filename)
 		button.setGeometry(button.x(), button.y(), image->Width / 2, image->Height / 2);
 
 		// add a custom hit-testing function that uses a tighter bounding ellipse
-		button.setCustomHitTest([](WIDGET *psWidget, int x, int y) -> bool {
-
+		button.setCustomHitTest([](WIDGET* psWidget, int x, int y) -> bool
+		{
 			// determine center of ellipse contained within the bounding rect
 			float centerX = ((psWidget->x()) + (psWidget->x() + psWidget->width())) / 2.f;
 			float centerY = ((psWidget->y()) + (psWidget->y() + psWidget->height())) / 2.f;
@@ -351,14 +356,17 @@ void setReticuleButtonDimensions(W_BUTTON &button, const WzString &filename)
 			float axisY = psWidget->height() / 2.f;
 
 			// Srivatsan (https://math.stackexchange.com/users/13425/srivatsan), Check if a point is within an ellipse, URL (version: 2011-10-27): https://math.stackexchange.com/q/76463
-			float partX = (((float)x - centerX) * ((float)x - centerX)) / (axisX * axisX); // ((x - centerX)^2) / ((axisX)^2)
-			float partY = (((float)y - centerY) * ((float)y - centerY)) / (axisY * axisY); // ((y - centerY)^2) / ((axisY)^2)
+			float partX = (((float)x - centerX) * ((float)x - centerX)) / (axisX * axisX);
+			// ((x - centerX)^2) / ((axisX)^2)
+			float partY = (((float)y - centerY) * ((float)y - centerY)) / (axisY * axisY);
+			// ((y - centerY)^2) / ((axisY)^2)
 			return partX + partY <= 1.f;
 		});
 	}
 }
 
-void setReticuleStats(int ButId, std::string tip, std::string filename, std::string filenameDown, const playerCallbackFunc& callbackFunc)
+void setReticuleStats(int ButId, std::string tip, std::string filename, std::string filenameDown,
+                      const playerCallbackFunc& callbackFunc)
 {
 	ASSERT_OR_RETURN(, (ButId >= 0) && (ButId < NUMRETBUTS), "Invalid ButId: %d", ButId);
 
@@ -394,13 +402,15 @@ void setReticulesEnabled(bool enabled)
 {
 	for (int i = 0; i < NUMRETBUTS; i++)
 	{
-		if (retbutstats[i].filename.isEmpty()) {
+		if (retbutstats[i].filename.isEmpty())
+		{
 			continue;
 		}
 
 		ReticuleEnabled[i].Enabled = enabled;
 
-		if (!retbutstats[i].button) {
+		if (!retbutstats[i].button)
+		{
 			continue;
 		}
 		if (enabled)
@@ -415,7 +425,7 @@ void setReticulesEnabled(bool enabled)
 	}
 }
 
-static void intDisplayReticuleButton(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+static void intDisplayReticuleButton(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	const int x = xOffset + psWidget->x();
 	const int y = yOffset + psWidget->y();
@@ -423,7 +433,7 @@ static void intDisplayReticuleButton(WIDGET *psWidget, UDWORD xOffset, UDWORD yO
 	bool flashing = retbutstats[psWidget->UserData].flashing;
 	int flashTime = retbutstats[psWidget->UserData].flashTime;
 	ASSERT_OR_RETURN(, psWidget->type == WIDG_BUTTON, "Not a button");
-	W_BUTTON *psButton = (W_BUTTON *)psWidget;
+	W_BUTTON* psButton = (W_BUTTON*)psWidget;
 	bool butDisabled = psButton->state & WBUT_DISABLE;
 
 	if (retbutstats[psWidget->UserData].filename.isEmpty() && !butDisabled)
@@ -457,7 +467,7 @@ static void intDisplayReticuleButton(WIDGET *psWidget, UDWORD xOffset, UDWORD yO
 			iV_DrawImage2(retbutstats[psWidget->UserData].filenameDown, x, y, psWidget->width(), psWidget->height());
 		}
 		DownTime++;
-		flashing = false;	// stop the reticule from flashing if it was
+		flashing = false; // stop the reticule from flashing if it was
 	}
 	else
 	{
@@ -465,7 +475,8 @@ static void intDisplayReticuleButton(WIDGET *psWidget, UDWORD xOffset, UDWORD yO
 		{
 			if (((realTime / 250) % 2) != 0)
 			{
-				iV_DrawImage2(retbutstats[psWidget->UserData].filenameDown, x, y, psWidget->width(), psWidget->height());
+				iV_DrawImage2(retbutstats[psWidget->UserData].filenameDown, x, y, psWidget->width(),
+				              psWidget->height());
 				flashTime = 0;
 			}
 			else
@@ -509,8 +520,13 @@ constexpr size_t WZ_MAX_REPLAY_FASTFORWARD_TICKS = 3;
 class ReplayControllerWidget : public W_FORM
 {
 public:
-	ReplayControllerWidget() : W_FORM() {}
-	~ReplayControllerWidget() { }
+	ReplayControllerWidget() : W_FORM()
+	{
+	}
+
+	~ReplayControllerWidget()
+	{
+	}
 
 public:
 	static std::shared_ptr<ReplayControllerWidget> make();
@@ -519,18 +535,21 @@ public:
 	virtual void display(int xOffset, int yOffset) override;
 	virtual void geometryChanged() override;
 	virtual void screenSizeDidChange(int oldWidth, int oldHeight, int newWidth, int newHeight) override;
-	virtual void run(W_CONTEXT *psContext) override;
+	virtual void run(W_CONTEXT* psContext) override;
 
 private:
 	class W_REPLAY_CONTROL_BUTTON : public W_BUTTON
 	{
 	public:
-		W_REPLAY_CONTROL_BUTTON(W_BUTINIT const *init)
-		: W_BUTTON(init)
-		{ }
+		W_REPLAY_CONTROL_BUTTON(W_BUTINIT const* init)
+			: W_BUTTON(init)
+		{
+		}
+
 		W_REPLAY_CONTROL_BUTTON()
-		: W_BUTTON()
-		{ }
+			: W_BUTTON()
+		{
+		}
 
 		~W_REPLAY_CONTROL_BUTTON()
 		{
@@ -543,7 +562,7 @@ private:
 	public:
 		void display(int xOffset, int yOffset) override
 		{
-			W_BUTTON *psButton = this;
+			W_BUTTON* psButton = this;
 
 			int x0 = psButton->x() + xOffset;
 			int y0 = psButton->y() + yOffset;
@@ -557,7 +576,8 @@ private:
 			// Display the button.
 			auto light_border = pal_RGBA(255, 255, 255, 100);
 			auto fill_color = isDown || isDisabled ? pal_RGBA(10, 0, 70, 200) : pal_RGBA(25, 0, 110, 175);
-			iV_ShadowBox(x0, y0, x1, y1, 0, isDown ? pal_RGBA(0,0,0,0) : light_border, isDisabled ? light_border : WZCOL_FORM_DARK, fill_color);
+			iV_ShadowBox(x0, y0, x1, y1, 0, isDown ? pal_RGBA(0, 0, 0, 0) : light_border,
+			             isDisabled ? light_border : WZCOL_FORM_DARK, fill_color);
 
 			// Highlight
 			if (isHighlight)
@@ -568,14 +588,14 @@ private:
 			// Outline
 			switch (outline)
 			{
-				case OutlineState::None:
-					break;
-				case OutlineState::Double:
-					iV_Box(x0 + 3, y0 + 3, x1 - 3, y1 - 3, pal_RGBA(218, 207, 255, 200));
-					// fall-through
-				case OutlineState::Single:
-					iV_Box(x0 + 1, y0 + 1, x1 - 1, y1 - 1, pal_RGBA(218, 207, 255, 200));
-					break;
+			case OutlineState::None:
+				break;
+			case OutlineState::Double:
+				iV_Box(x0 + 3, y0 + 3, x1 - 3, y1 - 3, pal_RGBA(218, 207, 255, 200));
+			// fall-through
+			case OutlineState::Single:
+				iV_Box(x0 + 1, y0 + 1, x1 - 1, y1 - 1, pal_RGBA(218, 207, 255, 200));
+				break;
 			}
 
 			// Display the image, if present
@@ -584,16 +604,22 @@ private:
 
 			if (pButtonImage)
 			{
-				iV_DrawImageAnisotropic(*(pButtonImage), Vector2i(imageLeft, imageTop), Vector2f(0,0), Vector2f(REPLAY_ACTION_BUTTONS_IMAGE_SIZE, REPLAY_ACTION_BUTTONS_IMAGE_SIZE), 0.f, WZCOL_WHITE);
+				iV_DrawImageAnisotropic(*(pButtonImage), Vector2i(imageLeft, imageTop), Vector2f(0, 0),
+				                        Vector2f(REPLAY_ACTION_BUTTONS_IMAGE_SIZE, REPLAY_ACTION_BUTTONS_IMAGE_SIZE),
+				                        0.f, WZCOL_WHITE);
 			}
 		}
+
 	public:
 		gfx_api::texture* pButtonImage = nullptr;
-		enum class OutlineState {
+
+		enum class OutlineState
+		{
 			None,
 			Single,
 			Double
 		};
+
 		OutlineState outline = OutlineState::None;
 	};
 
@@ -602,6 +628,7 @@ private:
 		PLAY,
 		PAUSE,
 	};
+
 	ReplayGameStatus getReplayGameStatus() const
 	{
 		ReplayGameStatus status = (!gameTimeIsStopped()) ? ReplayGameStatus::PLAY : ReplayGameStatus::PAUSE;
@@ -613,26 +640,27 @@ private:
 	{
 		switch (newStatus)
 		{
-			case ReplayGameStatus::PLAY:
-				setAudioPause(false);
-				setConsolePause(false);
-				if (gameTimeIsStopped())
-				{
-					gameTimeStart();
-				}
-				break;
-			case ReplayGameStatus::PAUSE:
-				if (!gameTimeIsStopped())
-				{
-					gameTimeStop();
-				}
-				setAudioPause(true);
-				setConsolePause(true);
-				break;
+		case ReplayGameStatus::PLAY:
+			setAudioPause(false);
+			setConsolePause(false);
+			if (gameTimeIsStopped())
+			{
+				gameTimeStart();
+			}
+			break;
+		case ReplayGameStatus::PAUSE:
+			if (!gameTimeIsStopped())
+			{
+				gameTimeStop();
+			}
+			setAudioPause(true);
+			setConsolePause(true);
+			break;
 		}
 
 		auto sharedThis = std::dynamic_pointer_cast<ReplayControllerWidget>(shared_from_this());
-		widgScheduleTask([sharedThis](){
+		widgScheduleTask([sharedThis]()
+		{
 			sharedThis->refreshButtonStates();
 		});
 	}
@@ -656,7 +684,8 @@ private:
 		setMaxFastForwardTicks(newFastForward, true);
 
 		auto sharedThis = std::dynamic_pointer_cast<ReplayControllerWidget>(shared_from_this());
-		widgScheduleTask([sharedThis](){
+		widgScheduleTask([sharedThis]()
+		{
 			sharedThis->refreshButtonStates();
 		});
 	}
@@ -666,18 +695,18 @@ private:
 		auto status = getReplayGameStatus();
 		switch (status)
 		{
-			case ReplayGameStatus::PLAY:
-				// play button shoud be disabled
-				playButton->setState(WBUT_DISABLE);
-				// pause + fast-forward buttons should be enabled
-				pauseButton->setState(0);
-				break;
-			case ReplayGameStatus::PAUSE:
-				// play button should be enabled
-				playButton->setState(0);
-				// pause + fast-forward buttons should be disabled
-				pauseButton->setState(WBUT_DISABLE);
-				break;
+		case ReplayGameStatus::PLAY:
+			// play button shoud be disabled
+			playButton->setState(WBUT_DISABLE);
+		// pause + fast-forward buttons should be enabled
+			pauseButton->setState(0);
+			break;
+		case ReplayGameStatus::PAUSE:
+			// play button should be enabled
+			playButton->setState(0);
+		// pause + fast-forward buttons should be disabled
+			pauseButton->setState(WBUT_DISABLE);
+			break;
 		}
 
 		// fast-forward state is based on getMaxFastForwardTicks
@@ -685,7 +714,9 @@ private:
 		if (maxFastForwardTicks > 0)
 		{
 			// fast-forward is enabled
-			fastForwardButton->outline = (maxFastForwardTicks >= WZ_MAX_REPLAY_FASTFORWARD_TICKS) ? W_REPLAY_CONTROL_BUTTON::OutlineState::Double : W_REPLAY_CONTROL_BUTTON::OutlineState::Single;
+			fastForwardButton->outline = (maxFastForwardTicks >= WZ_MAX_REPLAY_FASTFORWARD_TICKS)
+				                             ? W_REPLAY_CONTROL_BUTTON::OutlineState::Double
+				                             : W_REPLAY_CONTROL_BUTTON::OutlineState::Single;
 		}
 		else
 		{
@@ -707,12 +738,12 @@ private:
 	}
 
 private:
-	std::shared_ptr<W_LABEL>					titleLabel;
-	std::shared_ptr<W_REPLAY_CONTROL_BUTTON>	pauseButton;
-	std::shared_ptr<W_REPLAY_CONTROL_BUTTON>	playButton;
-	std::shared_ptr<W_REPLAY_CONTROL_BUTTON>	fastForwardButton;
-	UDWORD										lastUpdateTime = 0;
-	UDWORD										autoStateRefreshInterval = GAME_TICKS_PER_SEC * 3;
+	std::shared_ptr<W_LABEL> titleLabel;
+	std::shared_ptr<W_REPLAY_CONTROL_BUTTON> pauseButton;
+	std::shared_ptr<W_REPLAY_CONTROL_BUTTON> playButton;
+	std::shared_ptr<W_REPLAY_CONTROL_BUTTON> fastForwardButton;
+	UDWORD lastUpdateTime = 0;
+	UDWORD autoStateRefreshInterval = GAME_TICKS_PER_SEC * 3;
 };
 
 std::shared_ptr<ReplayControllerWidget> ReplayControllerWidget::make()
@@ -723,15 +754,16 @@ std::shared_ptr<ReplayControllerWidget> ReplayControllerWidget::make()
 	result->titleLabel = std::make_shared<W_LABEL>();
 	result->titleLabel->setFont(font_regular_bold, WZCOL_FORM_TEXT);
 	result->titleLabel->setString(WzString::fromUtf8(_("Replay")));
-	result->titleLabel->setGeometry(REPLAY_ACTION_BUTTONS_SPACING, REPLAY_ACTION_BUTTONS_SPACING, result->titleLabel->getMaxLineWidth(), iV_GetTextLineSize(font_regular_bold));
+	result->titleLabel->setGeometry(REPLAY_ACTION_BUTTONS_SPACING, REPLAY_ACTION_BUTTONS_SPACING,
+	                                result->titleLabel->getMaxLineWidth(), iV_GetTextLineSize(font_regular_bold));
 	result->titleLabel->setCacheNeverExpires(true);
 	result->attach(result->titleLabel);
 	result->titleLabel->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		auto psParent = std::dynamic_pointer_cast<ReplayControllerWidget>(psWidget->parent());
-		ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
-		int x0 = psParent->width() - (psWidget->width() + REPLAY_ACTION_BUTTONS_SPACING);
-		psWidget->setGeometry(x0, REPLAY_ACTION_BUTTONS_SPACING, psWidget->width(), psWidget->height());
-	}));
+			auto psParent = std::dynamic_pointer_cast<ReplayControllerWidget>(psWidget->parent());
+			ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
+			int x0 = psParent->width() - (psWidget->width() + REPLAY_ACTION_BUTTONS_SPACING);
+			psWidget->setGeometry(x0, REPLAY_ACTION_BUTTONS_SPACING, psWidget->width(), psWidget->height());
+			}));
 
 	int buttonsY0 = result->titleLabel->y() + result->titleLabel->height() + REPLAY_ACTION_BUTTONS_SPACING;
 
@@ -739,54 +771,60 @@ std::shared_ptr<ReplayControllerWidget> ReplayControllerWidget::make()
 	result->pauseButton = result->makeReplayActionButton("images/replay/pause.png");
 	result->pauseButton->setTip(_("Pause"));
 	result->attach(result->pauseButton);
-	result->pauseButton->addOnClickHandler([](W_BUTTON& button) {
+	result->pauseButton->addOnClickHandler([](W_BUTTON& button)
+	{
 		auto psParent = std::dynamic_pointer_cast<ReplayControllerWidget>(button.parent());
 		ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
 		psParent->setReplayGameStatus(ReplayGameStatus::PAUSE);
 	});
 	result->pauseButton->move(0, buttonsY0);
 	result->pauseButton->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		int x0 = REPLAY_ACTION_BUTTONS_SPACING;
-		psWidget->setGeometry(x0, psWidget->y(), psWidget->width(), psWidget->height());
-	}));
+			int x0 = REPLAY_ACTION_BUTTONS_SPACING;
+			psWidget->setGeometry(x0, psWidget->y(), psWidget->width(), psWidget->height());
+			}));
 
 	// Add "play" button
 	result->playButton = result->makeReplayActionButton("images/replay/play.png");
 	result->playButton->setTip(_("Resume"));
 	result->attach(result->playButton);
-	result->playButton->addOnClickHandler([](W_BUTTON& button) {
+	result->playButton->addOnClickHandler([](W_BUTTON& button)
+	{
 		auto psParent = std::dynamic_pointer_cast<ReplayControllerWidget>(button.parent());
 		ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
 		psParent->setReplayGameStatus(ReplayGameStatus::PLAY);
 	});
 	result->playButton->move(0, buttonsY0);
 	result->playButton->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		auto psParent = std::dynamic_pointer_cast<ReplayControllerWidget>(psWidget->parent());
-		ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
-		int x0 = psParent->pauseButton->x() + psParent->pauseButton->width() + REPLAY_ACTION_BUTTONS_SPACING;
-		psWidget->setGeometry(x0, psWidget->y(), psWidget->width(), psWidget->height());
-	}));
+			auto psParent = std::dynamic_pointer_cast<ReplayControllerWidget>(psWidget->parent());
+			ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
+			int x0 = psParent->pauseButton->x() + psParent->pauseButton->width() + REPLAY_ACTION_BUTTONS_SPACING;
+			psWidget->setGeometry(x0, psWidget->y(), psWidget->width(), psWidget->height());
+			}));
 
 	// Add "fast-forwards" button
 	result->fastForwardButton = result->makeReplayActionButton("images/replay/fast_forward.png");
 	result->fastForwardButton->setTip(_("Fast-Forward"));
 	result->attach(result->fastForwardButton);
-	result->fastForwardButton->addOnClickHandler([](W_BUTTON& button) {
+	result->fastForwardButton->addOnClickHandler([](W_BUTTON& button)
+	{
 		auto psParent = std::dynamic_pointer_cast<ReplayControllerWidget>(button.parent());
 		ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
 		psParent->toggleFastForward(button.getOnClickButtonPressed() == WKEY_SECONDARY);
 	});
 	result->fastForwardButton->move(0, buttonsY0);
 	result->fastForwardButton->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		auto psParent = std::dynamic_pointer_cast<ReplayControllerWidget>(psWidget->parent());
-		ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
-		int x0 = psParent->playButton->x() + psParent->playButton->width() + REPLAY_ACTION_BUTTONS_SPACING;
-		psWidget->setGeometry(x0, psWidget->y(), psWidget->width(), psWidget->height());
-	}));
+			auto psParent = std::dynamic_pointer_cast<ReplayControllerWidget>(psWidget->parent());
+			ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
+			int x0 = psParent->playButton->x() + psParent->playButton->width() + REPLAY_ACTION_BUTTONS_SPACING;
+			psWidget->setGeometry(x0, psWidget->y(), psWidget->width(), psWidget->height());
+			}));
 
 	// set overall width
-	int neededWidth = (REPLAY_ACTION_BUTTONS_SPACING * 4) + result->pauseButton->width() + result->playButton->width() + result->fastForwardButton->width();
-	neededWidth = std::max<int>(neededWidth, REPLAY_ACTION_BUTTONS_SPACING + result->titleLabel->width() + REPLAY_ACTION_BUTTONS_SPACING);
+	int neededWidth = (REPLAY_ACTION_BUTTONS_SPACING * 4) + result->pauseButton->width() + result->playButton->width() +
+		result->fastForwardButton->width();
+	neededWidth = std::max<int>(neededWidth,
+	                            REPLAY_ACTION_BUTTONS_SPACING + result->titleLabel->width() +
+	                            REPLAY_ACTION_BUTTONS_SPACING);
 	int neededHeight = result->pauseButton->y() + result->pauseButton->height() + REPLAY_ACTION_BUTTONS_SPACING;
 	result->setGeometry(result->x(), result->y(), neededWidth, neededHeight);
 
@@ -826,13 +864,14 @@ void ReplayControllerWidget::screenSizeDidChange(int oldWidth, int oldHeight, in
 	W_FORM::screenSizeDidChange(oldWidth, oldHeight, newWidth, newHeight);
 }
 
-void ReplayControllerWidget::run(W_CONTEXT *psContext)
+void ReplayControllerWidget::run(W_CONTEXT* psContext)
 {
 	if (realTime - lastUpdateTime >= autoStateRefreshInterval)
 	{
 		// trigger update call
 		auto replayController = std::dynamic_pointer_cast<ReplayControllerWidget>(shared_from_this());
-		widgScheduleTask([replayController](){
+		widgScheduleTask([replayController]()
+		{
 			replayController->refreshButtonStates();
 		});
 		lastUpdateTime = realTime;
@@ -855,7 +894,8 @@ bool createReplayControllerOverlay()
 	replayOverlayScreen->psForm->attach(replayControllerForm);
 
 	// Position the Replay Controller form
-	replayControllerForm->setCalcLayout([](WIDGET *psWidget) {
+	replayControllerForm->setCalcLayout([](WIDGET* psWidget)
+	{
 		int x0 = screenWidth - psWidget->width() - (REPLAY_ACTION_BUTTONS_SPACING * 2);
 		int y0 = 0;
 		psWidget->move(x0, y0);
@@ -869,7 +909,7 @@ bool createReplayControllerOverlay()
 /* Initialise the in game interface */
 bool intInitialise()
 {
-	for (auto &i : ReticuleEnabled)
+	for (auto& i : ReticuleEnabled)
 	{
 		i.Hidden = false;
 	}
@@ -879,19 +919,19 @@ bool intInitialise()
 	WidgSetAudio(WidgetAudioCallback, ID_SOUND_BUTTON_CLICK_3, ID_SOUND_SELECT, ID_SOUND_BUILD_FAIL);
 
 	/* Create storage for Structures that can be built */
-	apsStructStatsList = (STRUCTURE_STATS **)malloc(sizeof(STRUCTURE_STATS *) * MAXSTRUCTURES);
+	apsStructStatsList = (STRUCTURE_STATS**)malloc(sizeof(STRUCTURE_STATS*) * MAXSTRUCTURES);
 
 	/* Create storage for Templates that can be built */
 	apsTemplateList.clear();
 
 	/* Create storage for the feature list */
-	apsFeatureList = (FEATURE_STATS **)malloc(sizeof(FEATURE_STATS *) * MAXFEATURES);
+	apsFeatureList = (FEATURE_STATS**)malloc(sizeof(FEATURE_STATS*) * MAXFEATURES);
 
 	/* Create storage for the component list */
-	apsComponentList = (COMPONENT_STATS **)malloc(sizeof(COMPONENT_STATS *) * MAXCOMPONENT);
+	apsComponentList = (COMPONENT_STATS**)malloc(sizeof(COMPONENT_STATS*) * MAXCOMPONENT);
 
 	/* Create storage for the extra systems list */
-	apsExtraSysList = (COMPONENT_STATS **)malloc(sizeof(COMPONENT_STATS *) * MAXEXTRASYS);
+	apsExtraSysList = (COMPONENT_STATS**)malloc(sizeof(COMPONENT_STATS*) * MAXEXTRASYS);
 
 	psSelectedBuilder = nullptr;
 
@@ -921,7 +961,7 @@ bool intInitialise()
 		{
 			if (asStructureStats[comp].type == REF_DEMOLISH)
 			{
-				for (auto &apStructTypeList : apStructTypeLists)
+				for (auto& apStructTypeList : apStructTypeLists)
 				{
 					apStructTypeList[comp] = AVAILABLE;
 				}
@@ -936,8 +976,10 @@ bool intInitialise()
 		createReplayControllerOverlay();
 	}
 
-	intUpdateFuncs.emplace_back([]() {
-		widgForEachOverlayScreen([](const std::shared_ptr<W_SCREEN> &pScreen, uint16_t order) -> bool {
+	intUpdateFuncs.emplace_back([]()
+	{
+		widgForEachOverlayScreen([](const std::shared_ptr<W_SCREEN>& pScreen, uint16_t order) -> bool
+		{
 			if (pScreen != nullptr && order >= WIDG_SPEC_SCREEN_ORDER_START && order <= WIDG_SPEC_SCREEN_ORDER_END)
 			{
 				if (!((realSelectedPlayer <= MAX_CONNECTED_PLAYERS && NetPlay.players[realSelectedPlayer].isSpectator)
@@ -1004,11 +1046,12 @@ bool intIsRefreshing()
 
 
 // see if a delivery point is selected
-static FLAG_POSITION *intFindSelectedDelivPoint()
+static FLAG_POSITION* intFindSelectedDelivPoint()
 {
-	FLAG_POSITION *psFlagPos;
+	FLAG_POSITION* psFlagPos;
 
-	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS, "Not supported selectedPlayer: %" PRIu32 "", selectedPlayer);
+	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS, "Not supported selectedPlayer: %" PRIu32 "",
+	                 selectedPlayer);
 
 	for (psFlagPos = apsFlagPosLists[selectedPlayer]; psFlagPos;
 	     psFlagPos = psFlagPos->psNext)
@@ -1041,14 +1084,14 @@ void intDoScreenRefresh()
 		return;
 	}
 
-	size_t          objMajor = 0, statMajor = 0;
-	FLAG_POSITION	*psFlag;
+	size_t objMajor = 0, statMajor = 0;
+	FLAG_POSITION* psFlag;
 
 	if ((intMode == INT_OBJECT ||
-		 intMode == INT_STAT ||
-		 intMode == INT_CMDORDER ||
-		 intMode == INT_ORDER ||
-		 intMode == INT_TRANSPORTER) &&
+			intMode == INT_STAT ||
+			intMode == INT_CMDORDER ||
+			intMode == INT_ORDER ||
+			intMode == INT_TRANSPORTER) &&
 		widgGetFromID(psWScreen, IDOBJ_FORM) != nullptr &&
 		widgGetFromID(psWScreen, IDOBJ_FORM)->visible())
 	{
@@ -1064,11 +1107,11 @@ void intDoScreenRefresh()
 		// store the current tab position
 		if (widgGetFromID(psWScreen, IDOBJ_TABFORM) != nullptr)
 		{
-			objMajor = ((ListTabWidget *)widgGetFromID(psWScreen, IDOBJ_TABFORM))->currentPage();
+			objMajor = ((ListTabWidget*)widgGetFromID(psWScreen, IDOBJ_TABFORM))->currentPage();
 		}
 		if (StatsWasUp)
 		{
-			statMajor = ((ListTabWidget *)widgGetFromID(psWScreen, IDSTAT_TABFORM))->currentPage();
+			statMajor = ((ListTabWidget*)widgGetFromID(psWScreen, IDSTAT_TABFORM))->currentPage();
 		}
 		// now make sure the stats screen isn't up
 		if (widgGetFromID(psWScreen, IDSTAT_FORM) != nullptr)
@@ -1089,12 +1132,12 @@ void intDoScreenRefresh()
 		// set the tabs again
 		if (widgGetFromID(psWScreen, IDOBJ_TABFORM) != nullptr)
 		{
-			((ListTabWidget *)widgGetFromID(psWScreen, IDOBJ_TABFORM))->setCurrentPage(objMajor);
+			((ListTabWidget*)widgGetFromID(psWScreen, IDOBJ_TABFORM))->setCurrentPage(objMajor);
 		}
 
 		if (widgGetFromID(psWScreen, IDSTAT_TABFORM) != nullptr)
 		{
-			((ListTabWidget *)widgGetFromID(psWScreen, IDSTAT_TABFORM))->setCurrentPage(statMajor);
+			((ListTabWidget*)widgGetFromID(psWScreen, IDSTAT_TABFORM))->setCurrentPage(statMajor);
 		}
 
 		if (psFlag != nullptr)
@@ -1224,11 +1267,12 @@ void intOpenDebugMenu(OBJECT_TYPE id)
 	{
 	case OBJ_DROID:
 		apsTemplateList.clear();
-		for (auto &localTemplate : localTemplates)
+		for (auto& localTemplate : localTemplates)
 		{
 			apsTemplateList.push_back(&localTemplate);
 		}
-		ppsStatsList = (BASE_STATS **)&apsTemplateList[0]; // FIXME Ugly cast, and is undefined behaviour (strict-aliasing violation) in C/C++.
+		ppsStatsList = (BASE_STATS**)&apsTemplateList[0];
+	// FIXME Ugly cast, and is undefined behaviour (strict-aliasing violation) in C/C++.
 		objMode = IOBJ_DEBUG_DROID;
 		intAddDebugStatsForm(ppsStatsList, apsTemplateList.size());
 		intMode = INT_EDITSTAT;
@@ -1239,7 +1283,7 @@ void intOpenDebugMenu(OBJECT_TYPE id)
 		{
 			apsStructStatsList[i] = asStructureStats + i;
 		}
-		ppsStatsList = (BASE_STATS **)apsStructStatsList;
+		ppsStatsList = (BASE_STATS**)apsStructStatsList;
 		objMode = IOBJ_DEBUG_STRUCTURE;
 		intAddDebugStatsForm(ppsStatsList, std::min<unsigned>(numStructureStats, MAXSTRUCTURES));
 		intMode = INT_EDITSTAT;
@@ -1250,7 +1294,7 @@ void intOpenDebugMenu(OBJECT_TYPE id)
 		{
 			apsFeatureList[i] = asFeatureStats + i;
 		}
-		ppsStatsList = (BASE_STATS **)apsFeatureList;
+		ppsStatsList = (BASE_STATS**)apsFeatureList;
 		intAddDebugStatsForm(ppsStatsList, std::min<unsigned>(numFeatureStats, MAXFEATURES));
 		intMode = INT_EDITSTAT;
 		editPosMode = IED_NOPOS;
@@ -1305,13 +1349,13 @@ static void reticuleCallback(int retbut)
 /* Run the widgets for the in game interface */
 INT_RETVAL intRunWidgets()
 {
-	bool			quitting = false;
+	bool quitting = false;
 
 	if (bLoadSaveUp && runLoadSave(true) && strlen(sRequestResult) > 0)
 	{
 		if (bRequestLoad)
 		{
-			NET_InitPlayers();	// reinitialize starting positions
+			NET_InitPlayers(); // reinitialize starting positions
 			loopMissionState = LMS_LOADGAME;
 			sstrcpy(saveGameName, sRequestResult);
 		}
@@ -1347,8 +1391,8 @@ INT_RETVAL intRunWidgets()
 	std::vector<unsigned> retIDs;
 	if (!bLoadSaveUp)
 	{
-		WidgetTriggers const &triggers = widgRunScreen(psWScreen);
-		for (const auto &trigger: triggers)
+		WidgetTriggers const& triggers = widgRunScreen(psWScreen);
+		for (const auto& trigger : triggers)
 		{
 			retIDs.push_back(trigger.widget->id);
 		}
@@ -1406,7 +1450,8 @@ INT_RETVAL intRunWidgets()
 			return INT_NONE;
 		}
 
-		bool selectedPlayerIsSpectator = (bMultiPlayer && NetPlay.players[selectedPlayer].isSpectator) || (selectedPlayer >= MAX_PLAYERS);
+		bool selectedPlayerIsSpectator = (bMultiPlayer && NetPlay.players[selectedPlayer].isSpectator) || (
+			selectedPlayer >= MAX_PLAYERS);
 
 		switch (retID)
 		{
@@ -1461,7 +1506,7 @@ INT_RETVAL intRunWidgets()
 			{
 				break;
 			}
-			// check if RMB was clicked
+		// check if RMB was clicked
 			if (widgGetButtonKey_DEPRECATED(psWScreen) == WKEY_SECONDARY)
 			{
 				//set the current message to be the last non-proximity message added
@@ -1483,7 +1528,7 @@ INT_RETVAL intRunWidgets()
 			}
 			intResetScreen(true);
 			widgSetButtonState(psWScreen, IDRET_DESIGN, WBUT_CLICKLOCK);
-			/*add the power bar - for looks! */
+		/*add the power bar - for looks! */
 			intShowPowerBar();
 			intAddDesign(false);
 			intMode = INT_DESIGN;
@@ -1514,9 +1559,9 @@ INT_RETVAL intRunWidgets()
 
 		/* Catch the quit button here */
 		case INTINGAMEOP_POPUP_QUIT:
-		case IDMISSIONRES_QUIT:			// mission quit
-		case INTINGAMEOP_QUIT:			// esc quit confirm
-		case IDOPT_QUIT:						// options screen quit
+		case IDMISSIONRES_QUIT: // mission quit
+		case INTINGAMEOP_QUIT: // esc quit confirm
+		case IDOPT_QUIT: // options screen quit
 			intCloseInGameOptions(false, false);
 			intResetScreen(false);
 			quitting = true;
@@ -1526,9 +1571,9 @@ INT_RETVAL intRunWidgets()
 		case CHAT_EDITBOX:
 			{
 				auto message = InGameChatMessage(selectedPlayer, widgGetString(psWScreen, CHAT_EDITBOX));
-				attemptCheatCode(message.text);		// parse the message
+				attemptCheatCode(message.text); // parse the message
 
-				if ((int) widgGetUserData2(psWScreen, CHAT_EDITBOX) == CHAT_TEAM)
+				if ((int)widgGetUserData2(psWScreen, CHAT_EDITBOX) == CHAT_TEAM)
 				{
 					message.toAllies = true;
 				}
@@ -1611,20 +1656,21 @@ INT_RETVAL intRunWidgets()
 					&& intNumSelectedDroids(DROID_CYBORG_CONSTRUCT) == 0
 					&& psSelectedBuilder != nullptr && isConstructionDroid(psSelectedBuilder))
 				{
-					orderDroidStatsTwoLocDir(psSelectedBuilder, DORDER_LINEBUILD, (STRUCTURE_STATS *)psPositionStats, pos.x, pos.y, pos2.x, pos2.y, getBuildingDirection(), ModeQueue);
+					orderDroidStatsTwoLocDir(psSelectedBuilder, DORDER_LINEBUILD, (STRUCTURE_STATS*)psPositionStats,
+					                         pos.x, pos.y, pos2.x, pos2.y, getBuildingDirection(), ModeQueue);
 				}
 				else
 				{
-					orderSelectedStatsTwoLocDir(selectedPlayer, DORDER_LINEBUILD, (STRUCTURE_STATS *)psPositionStats, pos.x, pos.y, pos2.x, pos2.y, getBuildingDirection(), ctrlShiftDown());
+					orderSelectedStatsTwoLocDir(selectedPlayer, DORDER_LINEBUILD, (STRUCTURE_STATS*)psPositionStats,
+					                            pos.x, pos.y, pos2.x, pos2.y, getBuildingDirection(), ctrlShiftDown());
 				}
 				if (!quickQueueMode)
 				{
 					// Clear the object screen, only if we aren't immediately building something else
 					intResetScreen(false);
 				}
-
 			}
-			else if (found3DBuilding(pos))	//found building
+			else if (found3DBuilding(pos)) //found building
 			{
 				//check droid hasn't died
 				if ((psSelectedBuilder == nullptr) ||
@@ -1634,7 +1680,7 @@ INT_RETVAL intRunWidgets()
 					// can get to the location chosen
 
 					// Don't allow derrick to be built on burning ground.
-					if (((STRUCTURE_STATS *)psPositionStats)->type == REF_RESOURCE_EXTRACTOR)
+					if (((STRUCTURE_STATS*)psPositionStats)->type == REF_RESOURCE_EXTRACTOR)
 					{
 						if (fireOnLocation(pos.x, pos.y))
 						{
@@ -1646,11 +1692,13 @@ INT_RETVAL intRunWidgets()
 						&& intNumSelectedDroids(DROID_CYBORG_CONSTRUCT) == 0
 						&& psSelectedBuilder != nullptr)
 					{
-						orderDroidStatsLocDir(psSelectedBuilder, DORDER_BUILD, (STRUCTURE_STATS *)psPositionStats, pos.x, pos.y, getBuildingDirection(), ModeQueue);
+						orderDroidStatsLocDir(psSelectedBuilder, DORDER_BUILD, (STRUCTURE_STATS*)psPositionStats, pos.x,
+						                      pos.y, getBuildingDirection(), ModeQueue);
 					}
 					else
 					{
-						orderSelectedStatsLocDir(selectedPlayer, DORDER_BUILD, (STRUCTURE_STATS *)psPositionStats, pos.x, pos.y, getBuildingDirection(), ctrlShiftDown());
+						orderSelectedStatsLocDir(selectedPlayer, DORDER_BUILD, (STRUCTURE_STATS*)psPositionStats, pos.x,
+						                         pos.y, getBuildingDirection(), ctrlShiftDown());
 					}
 				}
 
@@ -1703,9 +1751,9 @@ INT_RETVAL intRunWidgets()
 
 						if (psBuilding->type == REF_DEMOLISH)
 						{
-							MAPTILE *psTile = mapTile(map_coord(pos.x), map_coord(pos.y));
-							FEATURE *psFeature = (FEATURE *)psTile->psObject;
-							STRUCTURE *psStructure = (STRUCTURE *)psTile->psObject;
+							MAPTILE* psTile = mapTile(map_coord(pos.x), map_coord(pos.y));
+							FEATURE* psFeature = (FEATURE*)psTile->psObject;
+							STRUCTURE* psStructure = (STRUCTURE*)psTile->psObject;
 
 							if (psStructure && psTile->psObject->type == OBJ_STRUCTURE)
 							{
@@ -1719,9 +1767,9 @@ INT_RETVAL intRunWidgets()
 						}
 						else
 						{
-							STRUCTURE *psStructure = &tmp;
+							STRUCTURE* psStructure = &tmp;
 							tmp.id = generateNewObjectId();
-							tmp.pStructureType = (STRUCTURE_STATS *)psPositionStats;
+							tmp.pStructureType = (STRUCTURE_STATS*)psPositionStats;
 							tmp.pos = {pos.x, pos.y, map_Height(pos.x, pos.y) + world_coord(1) / 10};
 
 							// In multiplayer games be sure to send a message to the
@@ -1731,8 +1779,9 @@ INT_RETVAL intRunWidgets()
 							// Send a text message to all players, notifying them of
 							// the fact that we're cheating ourselves a new
 							// structure.
-							std::string msg = astringf(_("Player %u is cheating (debug menu) him/herself a new structure: %s."),
-										selectedPlayer, getStatsName(psStructure->pStructureType));
+							std::string msg = astringf(
+								_("Player %u is cheating (debug menu) him/herself a new structure: %s."),
+								selectedPlayer, getStatsName(psStructure->pStructureType));
 							sendInGameSystemMessage(msg.c_str());
 							Cheated = true;
 						}
@@ -1740,18 +1789,21 @@ INT_RETVAL intRunWidgets()
 					else if (psPositionStats->hasType(STAT_FEATURE))
 					{
 						// Send a text message to all players, notifying them of the fact that we're cheating ourselves a new feature.
-						std::string msg = astringf(_("Player %u is cheating (debug menu) him/herself a new feature: %s."),
-									selectedPlayer, getStatsName(psPositionStats));
+						std::string msg = astringf(
+							_("Player %u is cheating (debug menu) him/herself a new feature: %s."),
+							selectedPlayer, getStatsName(psPositionStats));
 						sendInGameSystemMessage(msg.c_str());
 						Cheated = true;
 						// Notify the other hosts that we've just built ourselves a feature
 						//sendMultiPlayerFeature(result->psStats->subType, result->pos.x, result->pos.y, result->id);
-						sendMultiPlayerFeature(((FEATURE_STATS *)psPositionStats)->ref, pos.x, pos.y, generateNewObjectId());
+						sendMultiPlayerFeature(((FEATURE_STATS*)psPositionStats)->ref, pos.x, pos.y,
+						                       generateNewObjectId());
 					}
 					else if (psPositionStats->hasType(STAT_TEMPLATE))
 					{
 						std::string msg;
-						DROID *psDroid = buildDroid((DROID_TEMPLATE *)psPositionStats, pos.x, pos.y, selectedPlayer, false, nullptr);
+						DROID* psDroid = buildDroid((DROID_TEMPLATE*)psPositionStats, pos.x, pos.y, selectedPlayer,
+						                            false, nullptr);
 						cancelDeliveryRepos();
 						if (psDroid)
 						{
@@ -1759,7 +1811,9 @@ INT_RETVAL intRunWidgets()
 
 							// Send a text message to all players, notifying them of
 							// the fact that we're cheating ourselves a new droid.
-							msg = astringf(_("Player %u is cheating (debug menu) him/herself a new droid: %s."), selectedPlayer, psDroid->aName);
+							msg = astringf(
+								_("Player %u is cheating (debug menu) him/herself a new droid: %s."), selectedPlayer,
+								psDroid->aName);
 
 							triggerEventDroidBuilt(psDroid, nullptr);
 						}
@@ -1767,7 +1821,8 @@ INT_RETVAL intRunWidgets()
 						{
 							// Send a text message to all players, notifying them of
 							// the fact that we're cheating ourselves a new droid.
-							msg = astringf(_("Player %u is cheating (debug menu) him/herself a new droid."), selectedPlayer);
+							msg = astringf(
+								_("Player %u is cheating (debug menu) him/herself a new droid."), selectedPlayer);
 						}
 						sendInGameSystemMessage(msg.c_str());
 						Cheated = true;
@@ -1792,7 +1847,8 @@ INT_RETVAL intRunWidgets()
 	}
 
 	const DebugInputManager& dbgInputManager = gInputManager.debugManager();
-	if ((testPlayerHasLost() || testPlayerHasWon()) && !bMultiPlayer && intMode != INT_MISSIONRES && !dbgInputManager.debugMappingsAllowed())
+	if ((testPlayerHasLost() || testPlayerHasWon()) && !bMultiPlayer && intMode != INT_MISSIONRES && !dbgInputManager.
+		debugMappingsAllowed())
 	{
 		debug(LOG_ERROR, "PlayerHasLost Or Won");
 		intResetScreen(true);
@@ -1804,9 +1860,9 @@ INT_RETVAL intRunWidgets()
 /* Set the shadow for the PowerBar */
 static void intRunPower()
 {
-	UDWORD				highlightedStatID;
-	BASE_STATS			*psStat;
-	UDWORD				quantity = 0;
+	UDWORD highlightedStatID;
+	BASE_STATS* psStat;
+	UDWORD quantity = 0;
 
 	/* Find out which button was hilited */
 	highlightedStatID = widgGetMouseOver(psWScreen);
@@ -1816,8 +1872,8 @@ static void intRunPower()
 		if (psStat->hasType(STAT_STRUCTURE))
 		{
 			//get the structure build points
-			quantity = ((STRUCTURE_STATS *)apsStructStatsList[highlightedStatID -
-			            IDSTAT_START])->powerToBuild;
+			quantity = ((STRUCTURE_STATS*)apsStructStatsList[highlightedStatID -
+				IDSTAT_START])->powerToBuild;
 		}
 		else if (psStat->hasType(STAT_TEMPLATE))
 		{
@@ -1842,7 +1898,7 @@ void intSetMapPos(UDWORD x, UDWORD y)
 //
 // There should be two version of this function, one for left clicking and one got right.
 //
-void intObjectSelected(BASE_OBJECT *psObj)
+void intObjectSelected(BASE_OBJECT* psObj)
 {
 	if (psObj)
 	{
@@ -1899,7 +1955,7 @@ void intObjectSelected(BASE_OBJECT *psObj)
 /**
  * Start location selection, where the builder will build the structure
  */
-void intStartConstructionPosition(DROID *builder, STRUCTURE_STATS *structure)
+void intStartConstructionPosition(DROID* builder, STRUCTURE_STATS* structure)
 {
 	psSelectedBuilder = builder;
 	psPositionStats = structure;
@@ -1908,7 +1964,7 @@ void intStartConstructionPosition(DROID *builder, STRUCTURE_STATS *structure)
 
 
 /* Start looking for a structure location */
-void intStartStructPosition(BASE_STATS *psStats)
+void intStartStructPosition(BASE_STATS* psStats)
 {
 	init3DBuilding(psStats, nullptr, nullptr);
 }
@@ -1987,7 +2043,7 @@ void intDemolishCancel()
 }
 
 /* Tell the interface a research facility has completed a topic */
-void intResearchFinished(STRUCTURE *psBuilding)
+void intResearchFinished(STRUCTURE* psBuilding)
 {
 	ASSERT_OR_RETURN(, psBuilding != nullptr, "Invalid structure pointer");
 
@@ -2010,13 +2066,13 @@ bool intAddReticule()
 	{
 		return true; // all fine
 	}
-	auto const &parent = psWScreen->psForm;
+	auto const& parent = psWScreen->psForm;
 	auto retForm = std::make_shared<IntFormAnimated>(false);
 	parent->attach(retForm);
 	retForm->id = IDRET_FORM;
 	retForm->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		psWidget->setGeometry(RET_X, RET_Y, RET_FORMWIDTH, RET_FORMHEIGHT);
-	}));
+			psWidget->setGeometry(RET_X, RET_Y, RET_FORMWIDTH, RET_FORMHEIGHT);
+			}));
 	for (int i = 0; i < NUMRETBUTS; i++)
 	{
 		// Set the x,y members of a button widget initialiser
@@ -2055,7 +2111,7 @@ void intRemoveReticule()
 {
 	if (ReticuleUp == true)
 	{
-		widgDelete(psWScreen, IDRET_FORM);		// remove reticule
+		widgDelete(psWScreen, IDRET_FORM); // remove reticule
 		ReticuleUp = false;
 	}
 }
@@ -2082,7 +2138,7 @@ bool intAddPower()
 	W_BARINIT sBarInit;
 
 	/* Add the trough bar */
-	sBarInit.formID = 0;	//IDPOW_FORM;
+	sBarInit.formID = 0; //IDPOW_FORM;
 	sBarInit.id = IDPOW_POWERBAR_T;
 	//start the power bar off in view (default)
 	sBarInit.style = WBAR_TROUGH;
@@ -2091,8 +2147,9 @@ bool intAddPower()
 
 	auto psBarGraph = std::make_shared<PowerBar>(&sBarInit);
 	psBarGraph->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		psWidget->setGeometry((SWORD)POW_X, (SWORD)POW_Y, POW_BARWIDTH, iV_GetImageHeight(IntImages, IMAGE_PBAR_EMPTY));
-	}));
+			psWidget->setGeometry((SWORD)POW_X, (SWORD)POW_Y, POW_BARWIDTH, iV_GetImageHeight(IntImages,
+				IMAGE_PBAR_EMPTY));
+			}));
 
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, psWScreen);
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, psWScreen->psForm);
@@ -2108,7 +2165,7 @@ void intRemoveObject()
 	widgDelete(psWScreen, IDOBJ_TABFORM);
 
 	// Start the window close animation.
-	IntFormAnimated *Form = (IntFormAnimated *)widgGetFromID(psWScreen, IDOBJ_FORM);
+	IntFormAnimated* Form = (IntFormAnimated*)widgGetFromID(psWScreen, IDOBJ_FORM);
 	if (Form)
 	{
 		Form->closeAnimateDelete();
@@ -2136,7 +2193,7 @@ void intRemoveStats()
 	setSecondaryWindowUp(false);
 
 	// Start the window close animation.
-	IntFormAnimated *Form = (IntFormAnimated *)widgGetFromID(psWScreen, IDSTAT_FORM);
+	IntFormAnimated* Form = (IntFormAnimated*)widgGetFromID(psWScreen, IDSTAT_FORM);
 	if (Form)
 	{
 		Form->closeAnimateDelete();
@@ -2153,16 +2210,20 @@ void intRemoveStatsNoAnim()
 	setSecondaryWindowUp(false);
 }
 
-void makeObsoleteButton(const std::shared_ptr<WIDGET> &parent)
+void makeObsoleteButton(const std::shared_ptr<WIDGET>& parent)
 {
 	auto obsoleteButton = std::make_shared<MultipleChoiceButton>();
 	parent->attach(obsoleteButton);
 	obsoleteButton->id = IDSTAT_OBSOLETE_BUTTON;
 	obsoleteButton->style |= WBUT_SECONDARY;
 	obsoleteButton->setChoice(includeRedundantDesigns);
-	obsoleteButton->setImages(false, MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_HIDE_UP), Image(IntImages, IMAGE_OBSOLETE_HIDE_UP), Image(IntImages, IMAGE_OBSOLETE_HIDE_HI)));
+	obsoleteButton->setImages(false, MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_HIDE_UP),
+	                                                              Image(IntImages, IMAGE_OBSOLETE_HIDE_UP),
+	                                                              Image(IntImages, IMAGE_OBSOLETE_HIDE_HI)));
 	obsoleteButton->setTip(false, _("Hiding Obsolete Tech"));
-	obsoleteButton->setImages(true,  MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_SHOW_UP), Image(IntImages, IMAGE_OBSOLETE_SHOW_UP), Image(IntImages, IMAGE_OBSOLETE_SHOW_HI)));
+	obsoleteButton->setImages(true, MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_SHOW_UP),
+	                                                             Image(IntImages, IMAGE_OBSOLETE_SHOW_UP),
+	                                                             Image(IntImages, IMAGE_OBSOLETE_SHOW_HI)));
 	obsoleteButton->setTip(true, _("Showing Obsolete Tech"));
 	obsoleteButton->move(4 + Image(IntImages, IMAGE_FDP_UP).width() + 4, STAT_SLDY);
 }
@@ -2170,7 +2231,7 @@ void makeObsoleteButton(const std::shared_ptr<WIDGET> &parent)
 /* Add the stats widgets to the widget screen */
 /* If psSelected != NULL it specifies which stat should be hilited
    psOwner specifies which object is hilighted on the object bar for this stat*/
-static bool intAddDebugStatsForm(BASE_STATS **_ppsStatsList, UDWORD numStats)
+static bool intAddDebugStatsForm(BASE_STATS** _ppsStatsList, UDWORD numStats)
 {
 	// should this ever be called with psOwner == NULL?
 
@@ -2188,15 +2249,15 @@ static bool intAddDebugStatsForm(BASE_STATS **_ppsStatsList, UDWORD numStats)
 
 	setSecondaryWindowUp(true);
 
-	auto const &parent = psWScreen->psForm;
+	auto const& parent = psWScreen->psForm;
 
 	/* Create the basic form */
 	auto statForm = std::make_shared<IntFormAnimated>(false);
 	parent->attach(statForm);
 	statForm->id = IDSTAT_FORM;
 	statForm->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		psWidget->setGeometry(STAT_X, STAT_Y, STAT_WIDTH, STAT_HEIGHT);
-	}));
+			psWidget->setGeometry(STAT_X, STAT_Y, STAT_WIDTH, STAT_HEIGHT);
+			}));
 
 	/* Add the close button */
 	W_BUTINIT sButInit;
@@ -2208,7 +2269,7 @@ static bool intAddDebugStatsForm(BASE_STATS **_ppsStatsList, UDWORD numStats)
 	sButInit.height = CLOSE_HEIGHT;
 	sButInit.pTip = _("Close");
 	sButInit.pDisplay = intDisplayImageHilight;
-	sButInit.UserData = PACKDWORD_TRI(0, IMAGE_CLOSEHILIGHT , IMAGE_CLOSE);
+	sButInit.UserData = PACKDWORD_TRI(0, IMAGE_CLOSEHILIGHT, IMAGE_CLOSE);
 	if (!widgAddButton(psWScreen, &sButInit))
 	{
 		return false;
@@ -2254,13 +2315,13 @@ static bool intAddDebugStatsForm(BASE_STATS **_ppsStatsList, UDWORD numStats)
 		button->setStats(_ppsStatsList[i]);
 		statList->addWidgetToLayout(button);
 
-		BASE_STATS *Stat = _ppsStatsList[i];
+		BASE_STATS* Stat = _ppsStatsList[i];
 		WzString tipString = getStatsName(_ppsStatsList[i]);
 		unsigned powerCost = 0;
-		W_BARGRAPH *bar;
-		if (Stat->hasType(STAT_STRUCTURE))  // It's a structure.
+		W_BARGRAPH* bar;
+		if (Stat->hasType(STAT_STRUCTURE)) // It's a structure.
 		{
-			powerCost = ((STRUCTURE_STATS *)Stat)->powerToBuild;
+			powerCost = ((STRUCTURE_STATS*)Stat)->powerToBuild;
 			sBarInit.size = powerCost / POWERPOINTS_DROIDDIV;
 			if (sBarInit.size > 100)
 			{
@@ -2272,9 +2333,9 @@ static bool intAddDebugStatsForm(BASE_STATS **_ppsStatsList, UDWORD numStats)
 			bar = widgAddBarGraph(psWScreen, &sBarInit);
 			bar->setBackgroundColour(WZCOL_BLACK);
 		}
-		else if (Stat->hasType(STAT_TEMPLATE))  // It's a droid.
+		else if (Stat->hasType(STAT_TEMPLATE)) // It's a droid.
 		{
-			powerCost = calcTemplatePower((DROID_TEMPLATE *)Stat);
+			powerCost = calcTemplatePower((DROID_TEMPLATE*)Stat);
 			sBarInit.size = powerCost / POWERPOINTS_DROIDDIV;
 			if (sBarInit.size > 100)
 			{
@@ -2301,13 +2362,14 @@ static bool intAddDebugStatsForm(BASE_STATS **_ppsStatsList, UDWORD numStats)
 }
 
 /* Return the stats for a research facility */
-static BASE_STATS *getResearchStats(BASE_OBJECT *psObj)
+static BASE_STATS* getResearchStats(BASE_OBJECT* psObj)
 {
 	ASSERT_OR_RETURN(nullptr, psObj != nullptr && psObj->type == OBJ_STRUCTURE, "Invalid Structure pointer");
-	STRUCTURE *psBuilding = (STRUCTURE *)psObj;
-	RESEARCH_FACILITY *psResearchFacility = &psBuilding->pFunctionality->researchFacility;
+	STRUCTURE* psBuilding = (STRUCTURE*)psObj;
+	RESEARCH_FACILITY* psResearchFacility = &psBuilding->pFunctionality->researchFacility;
 
-	if (psResearchFacility->psSubjectPending != nullptr && !IsResearchCompleted(&asPlayerResList[psObj->player][psResearchFacility->psSubjectPending->index]))
+	if (psResearchFacility->psSubjectPending != nullptr && !IsResearchCompleted(
+		&asPlayerResList[psObj->player][psResearchFacility->psSubjectPending->index]))
 	{
 		return psResearchFacility->psSubjectPending;
 	}
@@ -2378,7 +2440,7 @@ void addIntelScreen()
 }
 
 //sets up the Transporter Screen as far as the interface is concerned
-void addTransporterInterface(DROID *psSelected, bool onMission)
+void addTransporterInterface(DROID* psSelected, bool onMission)
 {
 	// if psSelected = NULL add interface but if psSelected != NULL make sure its not flying
 	if (!psSelected || (psSelected && !transporterFlying(psSelected)))
@@ -2390,7 +2452,7 @@ void addTransporterInterface(DROID *psSelected, bool onMission)
 }
 
 /*sets which list of structures to use for the interface*/
-STRUCTURE *interfaceStructList()
+STRUCTURE* interfaceStructList()
 {
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
@@ -2412,7 +2474,7 @@ STRUCTURE *interfaceStructList()
 void flashReticuleButton(UDWORD buttonID)
 {
 	//get the button for the id
-	WIDGET *psButton = widgGetFromID(psWScreen, buttonID);
+	WIDGET* psButton = widgGetFromID(psWScreen, buttonID);
 	if (psButton)
 	{
 		retbutstats[psButton->UserData].flashing = true;
@@ -2422,7 +2484,7 @@ void flashReticuleButton(UDWORD buttonID)
 // stop a reticule button flashing
 void stopReticuleButtonFlash(UDWORD buttonID)
 {
-	WIDGET	*psButton = widgGetFromID(psWScreen, buttonID);
+	WIDGET* psButton = widgGetFromID(psWScreen, buttonID);
 	if (psButton)
 	{
 		retbutstats[psButton->UserData].flashTime = 0;
@@ -2458,7 +2520,7 @@ void intShowWidget(int buttonID)
 	case RETBUT_DESIGN:
 		intResetScreen(true);
 		widgSetButtonState(psWScreen, IDRET_DESIGN, WBUT_CLICKLOCK);
-		/*add the power bar - for looks! */
+	/*add the power bar - for looks! */
 		intShowPowerBar();
 		intAddDesign(false);
 		intMode = INT_DESIGN;
@@ -2517,10 +2579,10 @@ void forceHidePowerBar(bool forceSetPowerBarUpState)
 
 
 /* Add the Proximity message buttons */
-bool intAddProximityButton(PROXIMITY_DISPLAY *psProxDisp, UDWORD inc)
+bool intAddProximityButton(PROXIMITY_DISPLAY* psProxDisp, UDWORD inc)
 {
-	PROXIMITY_DISPLAY	*psProxDisp2;
-	UDWORD				cnt;
+	PROXIMITY_DISPLAY* psProxDisp2;
+	UDWORD cnt;
 
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
@@ -2539,9 +2601,12 @@ bool intAddProximityButton(PROXIMITY_DISPLAY *psProxDisp, UDWORD inc)
 		for (cnt = IDPROX_START; cnt < IDPROX_END; cnt++)
 		{
 			// go down the prox msgs and see if it's free.
-			for (psProxDisp2 = apsProxDisp[selectedPlayer]; psProxDisp2 && psProxDisp2->buttonID != cnt; psProxDisp2 = psProxDisp2->psNext) {}
+			for (psProxDisp2 = apsProxDisp[selectedPlayer]; psProxDisp2 && psProxDisp2->buttonID != cnt; psProxDisp2 =
+			     psProxDisp2->psNext)
+			{
+			}
 
-			if (psProxDisp2 == nullptr)	// value was unused.
+			if (psProxDisp2 == nullptr) // value was unused.
 			{
 				sBFormInit.id = cnt;
 				break;
@@ -2570,16 +2635,17 @@ bool intAddProximityButton(PROXIMITY_DISPLAY *psProxDisp, UDWORD inc)
 
 
 /*Remove a Proximity Button - when the message is deleted*/
-void intRemoveProximityButton(PROXIMITY_DISPLAY *psProxDisp)
+void intRemoveProximityButton(PROXIMITY_DISPLAY* psProxDisp)
 {
-	ASSERT_OR_RETURN(, psProxDisp->buttonID >= IDPROX_START && psProxDisp->buttonID <= IDPROX_END, "Invalid proximity ID");
+	ASSERT_OR_RETURN(, psProxDisp->buttonID >= IDPROX_START && psProxDisp->buttonID <= IDPROX_END,
+	                   "Invalid proximity ID");
 	widgDelete(psWScreen, psProxDisp->buttonID);
 }
 
 /*deals with the proximity message when clicked on*/
 void processProximityButtons(UDWORD id)
 {
-	PROXIMITY_DISPLAY	*psProxDisp;
+	PROXIMITY_DISPLAY* psProxDisp;
 
 	if (!doWeDrawProximitys())
 	{
@@ -2608,7 +2674,7 @@ void processProximityButtons(UDWORD id)
 }
 
 /*	Fools the widgets by setting a key value */
-void	setKeyButtonMapping(UDWORD	val)
+void setKeyButtonMapping(UDWORD val)
 {
 	keyButtonMapping = val;
 }
@@ -2616,8 +2682,8 @@ void	setKeyButtonMapping(UDWORD	val)
 // count the number of selected droids of a type
 static SDWORD intNumSelectedDroids(UDWORD droidType)
 {
-	DROID	*psDroid;
-	SDWORD	num;
+	DROID* psDroid;
+	SDWORD num;
 
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
@@ -2646,16 +2712,15 @@ int intGetResearchState()
 	}
 
 	bool resFree = false;
-	for (STRUCTURE *psStruct = interfaceStructList(); psStruct != nullptr; psStruct = psStruct->psNext)
+	for (STRUCTURE* psStruct = interfaceStructList(); psStruct != nullptr; psStruct = psStruct->psNext)
 	{
 		if (psStruct->pStructureType->type == REF_RESEARCH &&
-		    psStruct->status == SS_BUILT &&
-		    getResearchStats(psStruct) == nullptr)
+			psStruct->status == SS_BUILT &&
+			getResearchStats(psStruct) == nullptr)
 		{
 			resFree = true;
 			break;
 		}
-
 	}
 
 	int count = 0;
@@ -2668,9 +2733,10 @@ int intGetResearchState()
 		{
 			for (int player = 0; player < MAX_PLAYERS; ++player)
 			{
-				if (aiCheckAlliances(player, selectedPlayer) && IsResearchStarted(&asPlayerResList[player][researchList[n]]))
+				if (aiCheckAlliances(player, selectedPlayer) && IsResearchStarted(
+					&asPlayerResList[player][researchList[n]]))
 				{
-					--count;  // An ally is already researching this topic, so don't flash the button because of it.
+					--count; // An ally is already researching this topic, so don't flash the button because of it.
 					break;
 				}
 			}
@@ -2697,7 +2763,7 @@ void intNotifyResearchButton(int prevState)
 // see if a reticule button is enabled
 bool intCheckReticuleButEnabled(UDWORD id)
 {
-	for (auto &i : ReticuleEnabled)
+	for (auto& i : ReticuleEnabled)
 	{
 		if (i.id == id)
 		{
@@ -2709,9 +2775,9 @@ bool intCheckReticuleButEnabled(UDWORD id)
 
 // Look through the players structures and find the next one of type structType.
 //
-static STRUCTURE *intGotoNextStructureType(UDWORD structType)
+static STRUCTURE* intGotoNextStructureType(UDWORD structType)
 {
-	STRUCTURE	*psStruct;
+	STRUCTURE* psStruct;
 	bool Found = false;
 
 	if ((SWORD)structType != CurrentStructType)
@@ -2747,7 +2813,8 @@ static STRUCTURE *intGotoNextStructureType(UDWORD structType)
 	// Start back at the beginning?
 	if ((!Found) && (CurrentStruct != nullptr))
 	{
-		for (psStruct = interfaceStructList(); psStruct != CurrentStruct && psStruct != nullptr; psStruct = psStruct->psNext)
+		for (psStruct = interfaceStructList(); psStruct != CurrentStruct && psStruct != nullptr; psStruct = psStruct->
+		     psNext)
 		{
 			if ((psStruct->pStructureType->type == structType || structType == REF_ANY) && psStruct->status == SS_BUILT)
 			{
@@ -2770,9 +2837,9 @@ static STRUCTURE *intGotoNextStructureType(UDWORD structType)
 
 // Find any structure. Returns NULL if none found.
 //
-STRUCTURE *intFindAStructure()
+STRUCTURE* intFindAStructure()
 {
-	STRUCTURE *Struct;
+	STRUCTURE* Struct;
 
 	// First try and find a factory.
 	Struct = intGotoNextStructureType(REF_FACTORY);
@@ -2793,9 +2860,9 @@ STRUCTURE *intFindAStructure()
 // Look through the players droids and find the next one of type droidType.
 // If Current=NULL then start at the beginning overwise start at Current.
 //
-DROID *intGotoNextDroidType(DROID *CurrDroid, DROID_TYPE droidType, bool AllowGroup)
+DROID* intGotoNextDroidType(DROID* CurrDroid, DROID_TYPE droidType, bool AllowGroup)
 {
-	DROID *psDroid;
+	DROID* psDroid;
 	bool Found = false;
 
 	if (selectedPlayer >= MAX_PLAYERS)
@@ -2826,8 +2893,8 @@ DROID *intGotoNextDroidType(DROID *CurrDroid, DROID_TYPE droidType, bool AllowGr
 	for (; psDroid != nullptr; psDroid = psDroid->psNext)
 	{
 		if ((psDroid->droidType == droidType
-		     || (droidType == DROID_ANY && !isTransporter(psDroid)))
-		    && (psDroid->group == UBYTE_MAX || AllowGroup))
+				|| (droidType == DROID_ANY && !isTransporter(psDroid)))
+			&& (psDroid->group == UBYTE_MAX || AllowGroup))
 		{
 			if (psDroid != CurrentDroid)
 			{
@@ -2843,11 +2910,12 @@ DROID *intGotoNextDroidType(DROID *CurrDroid, DROID_TYPE droidType, bool AllowGr
 	// Start back at the beginning?
 	if ((!Found) && (CurrentDroid != nullptr))
 	{
-		for (psDroid = apsDroidLists[selectedPlayer]; (psDroid != CurrentDroid) && (psDroid != nullptr); psDroid = psDroid->psNext)
+		for (psDroid = apsDroidLists[selectedPlayer]; (psDroid != CurrentDroid) && (psDroid != nullptr); psDroid =
+		     psDroid->psNext)
 		{
 			if ((psDroid->droidType == droidType ||
-			     ((droidType == DROID_ANY) && !isTransporter(psDroid))) &&
-			    ((psDroid->group == UBYTE_MAX) || AllowGroup))
+					((droidType == DROID_ANY) && !isTransporter(psDroid))) &&
+				((psDroid->group == UBYTE_MAX) || AllowGroup))
 			{
 				if (psDroid != CurrentDroid)
 				{
@@ -2899,15 +2967,15 @@ void chatDialog(int mode)
 {
 	if (!ChatDialogUp)
 	{
-		auto const &parent = psWScreen->psForm;
+		auto const& parent = psWScreen->psForm;
 		W_CONTEXT sContext = W_CONTEXT::ZeroContext();
 
 		auto consoleBox = std::make_shared<IntFormAnimated>();
 		parent->attach(consoleBox);
 		consoleBox->id = CHAT_CONSOLEBOX;
 		consoleBox->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-			psWidget->setGeometry(CHAT_CONSOLEBOXX, CHAT_CONSOLEBOXY, CHAT_CONSOLEBOXW, CHAT_CONSOLEBOXH);
-		}));
+				psWidget->setGeometry(CHAT_CONSOLEBOXX, CHAT_CONSOLEBOXY, CHAT_CONSOLEBOXW, CHAT_CONSOLEBOXH);
+				}));
 
 		auto chatBox = std::make_shared<W_EDITBOX>();
 		consoleBox->attach(chatBox);
@@ -2926,7 +2994,7 @@ void chatDialog(int mode)
 
 		auto label = std::make_shared<W_LABEL>();
 		consoleBox->attach(label);
-		label->setGeometry(2, 2,60, 16);
+		label->setGeometry(2, 2, 60, 16);
 		if (mode == CHAT_GLOB)
 		{
 			label->setFontColour(WZCOL_TEXT_BRIGHT);
@@ -2976,7 +3044,7 @@ void setSecondaryWindowUp(bool value)
  * - "123hi there" sends "hi there" to players 1, 2 and 3.
  * - ".123hi there" sends "hi there" to allies and players 1, 2 and 3.
  **/
-static void parseChatMessageModifiers(InGameChatMessage &message)
+static void parseChatMessageModifiers(InGameChatMessage& message)
 {
 	if (*message.text == '.')
 	{
@@ -2984,7 +3052,7 @@ static void parseChatMessageModifiers(InGameChatMessage &message)
 		message.text++;
 	}
 
-	for (; *message.text >= '0' && *message.text <= '9'; ++message.text)  // for each 0..9 numeric char encountered
+	for (; *message.text >= '0' && *message.text <= '9'; ++message.text) // for each 0..9 numeric char encountered
 	{
 		message.addReceiverByPosition(*message.text - '0');
 	}

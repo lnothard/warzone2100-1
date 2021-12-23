@@ -9,27 +9,27 @@
 
 enum class GROUP_TYPE
 {
-  NORMAL,
-  COMMAND,
-  TRANSPORTER
+	NORMAL,
+	COMMAND,
+	TRANSPORTER
 };
 
 class Droid_Group
 {
 public:
-  void add(Droid& droid);
-  void remove(Droid& droid);
-  [[nodiscard]] bool is_command_group() const noexcept;
-  [[nodiscard]] bool has_electronic_weapon() const;
-  [[nodiscard]] unsigned get_commander_level() const;
-  void commander_gain_experience(unsigned exp);
+	void add(Droid& droid);
+	void remove(Droid& droid);
+	[[nodiscard]] bool is_command_group() const noexcept;
+	[[nodiscard]] bool has_electronic_weapon() const;
+	[[nodiscard]] unsigned get_commander_level() const;
+	void commander_gain_experience(unsigned exp);
 private:
-  using enum GROUP_TYPE;
+	using enum GROUP_TYPE;
 
-  unsigned id;
-  GROUP_TYPE type;
-  Droid* commander;
-  std::vector<Droid*> members;
+	unsigned id;
+	GROUP_TYPE type;
+	Droid* commander;
+	std::vector<Droid*> members;
 };
 
 

@@ -92,7 +92,7 @@ void lowerTile(int tile3dX, int tile3dY)
 }
 
 /* Ensures any adjustment to tile elevation is within allowed ranges */
-void	adjustTileHeight(MAPTILE *psTile, SDWORD adjust)
+void adjustTileHeight(MAPTILE* psTile, SDWORD adjust)
 {
 	int32_t newHeight = psTile->height + adjust;
 
@@ -102,7 +102,7 @@ void	adjustTileHeight(MAPTILE *psTile, SDWORD adjust)
 	}
 }
 
-void init3DBuilding(BASE_STATS *psStats, BUILDCALLBACK CallBack, void *UserData)
+void init3DBuilding(BASE_STATS* psStats, BUILDCALLBACK CallBack, void* UserData)
 {
 	ASSERT_OR_RETURN(, psStats, "Bad parameter");
 
@@ -113,14 +113,14 @@ void init3DBuilding(BASE_STATS *psStats, BUILDCALLBACK CallBack, void *UserData)
 
 	if (psStats->hasType(STAT_STRUCTURE))
 	{
-		sBuildDetails.width = ((STRUCTURE_STATS *)psStats)->baseWidth;
-		sBuildDetails.height = ((STRUCTURE_STATS *)psStats)->baseBreadth;
+		sBuildDetails.width = ((STRUCTURE_STATS*)psStats)->baseWidth;
+		sBuildDetails.height = ((STRUCTURE_STATS*)psStats)->baseBreadth;
 		sBuildDetails.psStats = psStats;
 	}
 	else if (psStats->hasType(STAT_FEATURE))
 	{
-		sBuildDetails.width = ((FEATURE_STATS *)psStats)->baseWidth;
-		sBuildDetails.height = ((FEATURE_STATS *)psStats)->baseBreadth;
+		sBuildDetails.width = ((FEATURE_STATS*)psStats)->baseWidth;
+		sBuildDetails.height = ((FEATURE_STATS*)psStats)->baseBreadth;
 		sBuildDetails.psStats = psStats;
 	}
 	else /*if (psStats->hasType(STAT_TEMPLATE))*/
@@ -130,11 +130,11 @@ void init3DBuilding(BASE_STATS *psStats, BUILDCALLBACK CallBack, void *UserData)
 		sBuildDetails.psStats = psStats;
 	}
 
-	sBuildDetails.x = map_coord(mousePos.x - world_coord(sBuildDetails.width)/2);
-	sBuildDetails.y = map_coord(mousePos.y - world_coord(sBuildDetails.height)/2);
+	sBuildDetails.x = map_coord(mousePos.x - world_coord(sBuildDetails.width) / 2);
+	sBuildDetails.y = map_coord(mousePos.y - world_coord(sBuildDetails.height) / 2);
 }
 
-void	kill3DBuilding()
+void kill3DBuilding()
 {
 	//cancel the drag boxes
 	dragBox3D.status = DRAG_INACTIVE;
@@ -159,20 +159,25 @@ bool process3DBuilding()
 	}
 
 	/* Need to update the building locations if we're building */
-	int border = 5*TILE_UNITS/2;
-	Vector2i bv = {clip(mousePos.x, border, mapWidth*TILE_UNITS - border), clip(mousePos.y, border, mapHeight*TILE_UNITS - border)};
+	int border = 5 * TILE_UNITS / 2;
+	Vector2i bv = {
+		clip(mousePos.x, border, mapWidth * TILE_UNITS - border),
+		clip(mousePos.y, border, mapHeight * TILE_UNITS - border)
+	};
 	Vector2i size = getStatsSize(sBuildDetails.psStats, getBuildingDirection());
 	Vector2i worldSize = world_coord(size);
-	bv = round_to_nearest_tile(bv - worldSize/2) + worldSize/2;
+	bv = round_to_nearest_tile(bv - worldSize / 2) + worldSize / 2;
 
 	if (buildState != BUILD3D_FINISHED)
 	{
 		bool isValid = true;
 		if (wallDrag.status != DRAG_INACTIVE && sBuildDetails.psStats->hasType(STAT_STRUCTURE) && canLineBuild())
 		{
-			wallDrag.pos2 = mousePos;  // Why must this be done here? If not doing it here, dragging works almost normally, except it suddenly stops working if the drag becomes invalid.
+			wallDrag.pos2 = mousePos;
+			// Why must this be done here? If not doing it here, dragging works almost normally, except it suddenly stops working if the drag becomes invalid.
 
-			auto lb = calcLineBuild(static_cast<STRUCTURE_STATS *>(sBuildDetails.psStats), getBuildingDirection(), wallDrag.pos, wallDrag.pos2);
+			auto lb = calcLineBuild(static_cast<STRUCTURE_STATS*>(sBuildDetails.psStats), getBuildingDirection(),
+			                        wallDrag.pos, wallDrag.pos2);
 			for (int i = 0; i < lb.count && isValid; ++i)
 			{
 				isValid &= validLocation(sBuildDetails.psStats, lb[i], getBuildingDirection(), selectedPlayer, true);
@@ -183,11 +188,11 @@ bool process3DBuilding()
 			isValid = validLocation(sBuildDetails.psStats, bv, getBuildingDirection(), selectedPlayer, true);
 		}
 
-		buildState = isValid? BUILD3D_VALID : BUILD3D_POS;
+		buildState = isValid ? BUILD3D_VALID : BUILD3D_POS;
 	}
 
-	sBuildDetails.x = buildSite.xTL = map_coord(bv.x - worldSize.x/2);
-	sBuildDetails.y = buildSite.yTL = map_coord(bv.y - worldSize.y/2);
+	sBuildDetails.x = buildSite.xTL = map_coord(bv.x - worldSize.x / 2);
+	sBuildDetails.y = buildSite.yTL = map_coord(bv.y - worldSize.y / 2);
 	if ((getBuildingDirection() & 0x4000) == 0)
 	{
 		buildSite.xBR = buildSite.xTL + sBuildDetails.width - 1;
@@ -226,7 +231,7 @@ uint16_t getBuildingDirection()
 }
 
 /* See if a structure location has been found */
-bool found3DBuilding(Vector2i &pos)
+bool found3DBuilding(Vector2i& pos)
 {
 	if (buildState != BUILD3D_FINISHED)
 	{
@@ -234,9 +239,10 @@ bool found3DBuilding(Vector2i &pos)
 	}
 
 	pos = world_coord({sBuildDetails.x, sBuildDetails.y}) + world_coord(
-		(getBuildingDirection() & 0x4000) == 0?
-			Vector2i{sBuildDetails.width, sBuildDetails.height} : Vector2i{sBuildDetails.height, sBuildDetails.width}
-	)/2;
+		(getBuildingDirection() & 0x4000) == 0
+			? Vector2i{sBuildDetails.width, sBuildDetails.height}
+			: Vector2i{sBuildDetails.height, sBuildDetails.width}
+	) / 2;
 
 	if (ctrlShiftDown())
 	{
@@ -252,7 +258,7 @@ bool found3DBuilding(Vector2i &pos)
 }
 
 /* See if a second position for a build has been found */
-bool found3DBuildLocTwo(Vector2i &pos, Vector2i &pos2)
+bool found3DBuildLocTwo(Vector2i& pos, Vector2i& pos2)
 {
 	if (wallDrag.status != DRAG_RELEASED || !canLineBuild())
 	{
@@ -266,7 +272,7 @@ bool found3DBuildLocTwo(Vector2i &pos, Vector2i &pos2)
 	}
 
 	wallDrag.status = DRAG_INACTIVE;
-	STRUCTURE_STATS *stats = (STRUCTURE_STATS *)sBuildDetails.psStats;
+	STRUCTURE_STATS* stats = (STRUCTURE_STATS*)sBuildDetails.psStats;
 	LineBuild lb = calcLineBuild(stats, getBuildingDirection(), wallDrag.pos, wallDrag.pos2);
 	pos = lb.begin;
 	pos2 = lb.back();

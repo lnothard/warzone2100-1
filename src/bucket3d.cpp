@@ -47,70 +47,69 @@
 
 struct BUCKET_TAG
 {
-	bool operator <(BUCKET_TAG const &b) const
+	bool operator <(BUCKET_TAG const& b) const
 	{
-		return actualZ > b.actualZ;    // Sort in reverse z order.
+		return actualZ > b.actualZ; // Sort in reverse z order.
 	}
 
-	RENDER_TYPE     objectType; //type of object held
-	void           *pObject;    //pointer to the object
-	int32_t         actualZ;
+	RENDER_TYPE objectType; //type of object held
+	void* pObject; //pointer to the object
+	int32_t actualZ;
 };
 
 static std::vector<BUCKET_TAG> bucketArray;
 
-static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void *pObject, const glm::mat4 &viewMatrix)
+static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::mat4& viewMatrix)
 {
-	SDWORD				z = 0, radius;
-	Vector2i				pixel(0, 0);
-	Vector3i				position(0, 0, 0);
-	UDWORD				droidSize;
-	DROID				*psDroid;
-	BODY_STATS			*psBStats;
-	SIMPLE_OBJECT		*psSimpObj;
-	const iIMDShape		*pImd;
-	Spacetime               spacetime;
+	SDWORD z = 0, radius;
+	Vector2i pixel(0, 0);
+	Vector3i position(0, 0, 0);
+	UDWORD droidSize;
+	DROID* psDroid;
+	BODY_STATS* psBStats;
+	SIMPLE_OBJECT* psSimpObj;
+	const iIMDShape* pImd;
+	Spacetime spacetime;
 
 	switch (objectType)
 	{
 	case RENDER_PARTICLE:
-		position.x = static_cast<int>(((ATPART *)pObject)->position.x);
-		position.y = static_cast<int>(((ATPART *)pObject)->position.y);
-		position.z = static_cast<int>(((ATPART *)pObject)->position.z);
+		position.x = static_cast<int>(((ATPART*)pObject)->position.x);
+		position.y = static_cast<int>(((ATPART*)pObject)->position.y);
+		position.z = static_cast<int>(((ATPART*)pObject)->position.z);
 
 		position.x = position.x - playerPos.p.x;
 		position.z = -(position.z - playerPos.p.z);
 
-		/* 16 below is HACK!!! */
+	/* 16 below is HACK!!! */
 		z = pie_RotateProject(&position, viewMatrix, &pixel) - 16;
 		if (z > 0)
 		{
 			//particle use the image radius
-			radius = ((ATPART *)pObject)->imd->radius;
+			radius = ((ATPART*)pObject)->imd->radius;
 			radius *= SCALE_DEPTH;
 			radius /= z;
 			if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-			    || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
+				|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
 			{
 				z = -1;
 			}
 		}
 		break;
 	case RENDER_PROJECTILE:
-		if (((PROJECTILE *)pObject)->psWStats->weaponSubClass == WSC_FLAME ||
-		    ((PROJECTILE *)pObject)->psWStats->weaponSubClass == WSC_COMMAND ||
-		    ((PROJECTILE *)pObject)->psWStats->weaponSubClass == WSC_EMP)
+		if (((PROJECTILE*)pObject)->psWStats->weaponSubClass == WSC_FLAME ||
+			((PROJECTILE*)pObject)->psWStats->weaponSubClass == WSC_COMMAND ||
+			((PROJECTILE*)pObject)->psWStats->weaponSubClass == WSC_EMP)
 		{
 			/* We don't do projectiles from these guys, cos there's an effect instead */
 			z = -1;
 		}
 		else
 		{
-
 			//the weapon stats holds the reference to which graphic to use
-			pImd = ((PROJECTILE *)pObject)->psWStats->pInFlightGraphic;
+			pImd = ((PROJECTILE*)pObject)->psWStats->pInFlightGraphic;
 
-			psSimpObj = (SIMPLE_OBJECT *) pObject;
+			psSimpObj = (SIMPLE_OBJECT*)pObject;
 			position.x = psSimpObj->pos.x - playerPos.p.x;
 			position.z = -(psSimpObj->pos.y - playerPos.p.z);
 
@@ -125,30 +124,30 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void *pObject, const glm:
 				radius *= SCALE_DEPTH;
 				radius /= z;
 				if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-				    || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
+					|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
 				{
 					z = -1;
 				}
 			}
 		}
 		break;
-	case RENDER_STRUCTURE://not depth sorted
-		psSimpObj = (SIMPLE_OBJECT *) pObject;
+	case RENDER_STRUCTURE: //not depth sorted
+		psSimpObj = (SIMPLE_OBJECT*)pObject;
 		position.x = psSimpObj->pos.x - playerPos.p.x;
 		position.z = -(psSimpObj->pos.y - playerPos.p.z);
 
 		if ((objectType == RENDER_STRUCTURE) &&
-		    ((((STRUCTURE *)pObject)->pStructureType->type == REF_DEFENSE) ||
-		     (((STRUCTURE *)pObject)->pStructureType->type == REF_WALL) ||
-		     (((STRUCTURE *)pObject)->pStructureType->type == REF_WALLCORNER)))
+			((((STRUCTURE*)pObject)->pStructureType->type == REF_DEFENSE) ||
+				(((STRUCTURE*)pObject)->pStructureType->type == REF_WALL) ||
+				(((STRUCTURE*)pObject)->pStructureType->type == REF_WALLCORNER)))
 		{
 			position.y = psSimpObj->pos.z + 64;
-			radius = ((STRUCTURE *)pObject)->sDisplay.imd->radius; //walls guntowers and tank traps clip tightly
+			radius = ((STRUCTURE*)pObject)->sDisplay.imd->radius; //walls guntowers and tank traps clip tightly
 		}
 		else
 		{
 			position.y = psSimpObj->pos.z;
-			radius = (((STRUCTURE *)pObject)->sDisplay.imd->radius);
+			radius = (((STRUCTURE*)pObject)->sDisplay.imd->radius);
 		}
 
 		z = pie_RotateProject(&position, viewMatrix, &pixel);
@@ -159,14 +158,14 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void *pObject, const glm:
 			radius *= SCALE_DEPTH;
 			radius /= z;
 			if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-			    || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
+				|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
 			{
 				z = -1;
 			}
 		}
 		break;
-	case RENDER_FEATURE://not depth sorted
-		psSimpObj = (SIMPLE_OBJECT *) pObject;
+	case RENDER_FEATURE: //not depth sorted
+		psSimpObj = (SIMPLE_OBJECT*)pObject;
 		position.x = psSimpObj->pos.x - playerPos.p.x;
 		position.z = -(psSimpObj->pos.y - playerPos.p.z);
 
@@ -177,20 +176,20 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void *pObject, const glm:
 		if (z > 0)
 		{
 			//particle use the image radius
-			radius = ((FEATURE *)pObject)->sDisplay.imd->radius;
+			radius = ((FEATURE*)pObject)->sDisplay.imd->radius;
 			radius *= SCALE_DEPTH;
 			radius /= z;
 			if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-			    || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
+				|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
 			{
 				z = -1;
 			}
 		}
 		break;
 	case RENDER_DROID:
-		psDroid = (DROID *) pObject;
+		psDroid = (DROID*)pObject;
 
-		psSimpObj = (SIMPLE_OBJECT *) pObject;
+		psSimpObj = (SIMPLE_OBJECT*)pObject;
 		position.x = psSimpObj->pos.x - playerPos.p.x;
 		position.z = -(psSimpObj->pos.y - playerPos.p.z);
 		position.y = psSimpObj->pos.z;
@@ -206,30 +205,30 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void *pObject, const glm:
 			radius *= SCALE_DEPTH;
 			radius /= z;
 			if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-			    || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
+				|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
 			{
 				z = -1;
 			}
 		}
 		break;
 	case RENDER_PROXMSG:
-		if (((PROXIMITY_DISPLAY *)pObject)->type == POS_PROXDATA)
+		if (((PROXIMITY_DISPLAY*)pObject)->type == POS_PROXDATA)
 		{
-			const PROXIMITY_DISPLAY *ptr = (PROXIMITY_DISPLAY *)pObject;
-			position.x = ((VIEW_PROXIMITY *)ptr->psMessage->pViewData->pData)->x - playerPos.p.x;
+			const PROXIMITY_DISPLAY* ptr = (PROXIMITY_DISPLAY*)pObject;
+			position.x = ((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->x - playerPos.p.x;
 #if defined( _MSC_VER )
-	#pragma warning( push )
-	#pragma warning( disable : 4146 ) // warning C4146: unary minus operator applied to unsigned type, result still unsigned
+#pragma warning( push )
+#pragma warning( disable : 4146 ) // warning C4146: unary minus operator applied to unsigned type, result still unsigned
 #endif
-			position.z = -(((VIEW_PROXIMITY *)ptr->psMessage->pViewData->pData)->y - playerPos.p.z);
+			position.z = -(((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->y - playerPos.p.z);
 #if defined( _MSC_VER )
-	#pragma warning( pop )
+#pragma warning( pop )
 #endif
-			position.y = ((VIEW_PROXIMITY *)ptr->psMessage->pViewData->pData)->z;
+			position.y = ((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->z;
 		}
-		else if (((PROXIMITY_DISPLAY *)pObject)->type == POS_PROXOBJ)
+		else if (((PROXIMITY_DISPLAY*)pObject)->type == POS_PROXOBJ)
 		{
-			const PROXIMITY_DISPLAY *ptr = (PROXIMITY_DISPLAY *)pObject;
+			const PROXIMITY_DISPLAY* ptr = (PROXIMITY_DISPLAY*)pObject;
 			position.x = ptr->psMessage->psObj->pos.x - playerPos.p.x;
 			position.z = -(ptr->psMessage->psObj->pos.y - playerPos.p.z);
 			position.y = ptr->psMessage->psObj->pos.z;
@@ -239,36 +238,36 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void *pObject, const glm:
 		if (z > 0)
 		{
 			//particle use the image radius
-			pImd = getImdFromIndex(MI_BLIP_ENEMY);//use MI_BLIP_ENEMY as all are same radius
+			pImd = getImdFromIndex(MI_BLIP_ENEMY); //use MI_BLIP_ENEMY as all are same radius
 			radius = pImd->radius;
 			radius *= SCALE_DEPTH;
 			radius /= z;
 			if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-			    || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
+				|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
 			{
 				z = -1;
 			}
 		}
 		break;
 	case RENDER_EFFECT:
-		position.x = static_cast<int>(((EFFECT *)pObject)->position.x - playerPos.p.x);
-		position.z = static_cast<int>(-(((EFFECT *)pObject)->position.z - playerPos.p.z));
-		position.y = static_cast<int>(((EFFECT *)pObject)->position.y);
+		position.x = static_cast<int>(((EFFECT*)pObject)->position.x - playerPos.p.x);
+		position.z = static_cast<int>(-(((EFFECT*)pObject)->position.z - playerPos.p.z));
+		position.y = static_cast<int>(((EFFECT*)pObject)->position.y);
 
-		/* 16 below is HACK!!! */
+	/* 16 below is HACK!!! */
 		z = pie_RotateProject(&position, viewMatrix, &pixel) - 16;
 
 		if (z > 0)
 		{
 			//particle use the image radius
-			pImd = ((EFFECT *)pObject)->imd;
+			pImd = ((EFFECT*)pObject)->imd;
 			if (pImd != nullptr)
 			{
 				radius = pImd->radius;
 				radius *= SCALE_DEPTH;
 				radius /= z;
 				if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-				    || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
+					|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
 				{
 					z = -1;
 				}
@@ -278,21 +277,22 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void *pObject, const glm:
 		break;
 
 	case RENDER_DELIVPOINT:
-		position.x = ((FLAG_POSITION *)pObject)->coords.x - playerPos.p.x;
-		position.z = -(((FLAG_POSITION *)pObject)->
+		position.x = ((FLAG_POSITION*)pObject)->coords.x - playerPos.p.x;
+		position.z = -(((FLAG_POSITION*)pObject)->
 		               coords.y - playerPos.p.z);
-		position.y = ((FLAG_POSITION *)pObject)->coords.z;
+		position.y = ((FLAG_POSITION*)pObject)->coords.z;
 
 		z = pie_RotateProject(&position, viewMatrix, &pixel);
 
 		if (z > 0)
 		{
 			//particle use the image radius
-			radius = pAssemblyPointIMDs[((FLAG_POSITION *)pObject)->factoryType][((FLAG_POSITION *)pObject)->factoryInc]->radius;
+			radius = pAssemblyPointIMDs[((FLAG_POSITION*)pObject)->factoryType][((FLAG_POSITION*)pObject)->factoryInc]->
+				radius;
 			radius *= SCALE_DEPTH;
 			radius /= z;
 			if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-			    || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
+				|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
 			{
 				z = -1;
 			}
@@ -308,11 +308,11 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void *pObject, const glm:
 }
 
 /* add an object to the current render list */
-void bucketAddTypeToList(RENDER_TYPE objectType, void *pObject, const glm::mat4 &viewMatrix)
+void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4& viewMatrix)
 {
-	const iIMDShape *pie;
-	BUCKET_TAG	newTag;
-	int32_t		z = bucketCalculateZ(objectType, pObject, viewMatrix);
+	const iIMDShape* pie;
+	BUCKET_TAG newTag;
+	int32_t z = bucketCalculateZ(objectType, pObject, viewMatrix);
 
 	if (z < 0)
 	{
@@ -320,7 +320,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void *pObject, const glm::mat4 
 		if (objectType == RENDER_DROID || objectType == RENDER_STRUCTURE)
 		{
 			/* Won't draw selection boxes */
-			((BASE_OBJECT *)pObject)->sDisplay.frameNumber = 0;
+			((BASE_OBJECT*)pObject)->sDisplay.frameNumber = 0;
 		}
 
 		return;
@@ -329,7 +329,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void *pObject, const glm::mat4 
 	switch (objectType)
 	{
 	case RENDER_EFFECT:
-		switch (((EFFECT *)pObject)->group)
+		switch (((EFFECT*)pObject)->group)
 		{
 		case EFFECT_EXPLOSION:
 		case EFFECT_CONSTRUCTION:
@@ -339,7 +339,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void *pObject, const glm::mat4 
 			break;
 
 		case EFFECT_WAYPOINT:
-			pie = ((EFFECT *)pObject)->imd;
+			pie = ((EFFECT*)pObject)->imd;
 			z = INT32_MAX - pie->texpage;
 			break;
 
@@ -353,16 +353,16 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void *pObject, const glm::mat4 
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_STRUCTURE:
-		pie = ((STRUCTURE *)pObject)->sDisplay.imd;
+		pie = ((STRUCTURE*)pObject)->sDisplay.imd;
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_FEATURE:
-		pie = ((FEATURE *)pObject)->sDisplay.imd;
+		pie = ((FEATURE*)pObject)->sDisplay.imd;
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_DELIVPOINT:
-		pie = pAssemblyPointIMDs[((FLAG_POSITION *)pObject)->
-		                         factoryType][((FLAG_POSITION *)pObject)->factoryInc];
+		pie = pAssemblyPointIMDs[((FLAG_POSITION*)pObject)->
+			factoryType][((FLAG_POSITION*)pObject)->factoryInc];
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_PARTICLE:
@@ -383,7 +383,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void *pObject, const glm::mat4 
 }
 
 /* render Objects in list */
-void bucketRenderCurrentList(const glm::mat4 &viewMatrix)
+void bucketRenderCurrentList(const glm::mat4& viewMatrix)
 {
 	std::sort(bucketArray.begin(), bucketArray.end());
 
@@ -392,28 +392,28 @@ void bucketRenderCurrentList(const glm::mat4 &viewMatrix)
 		switch (thisTag->objectType)
 		{
 		case RENDER_PARTICLE:
-			renderParticle((ATPART *)thisTag->pObject, viewMatrix);
+			renderParticle((ATPART*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_EFFECT:
-			renderEffect((EFFECT *)thisTag->pObject, viewMatrix);
+			renderEffect((EFFECT*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_DROID:
-			displayComponentObject((DROID *)thisTag->pObject, viewMatrix);
+			displayComponentObject((DROID*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_STRUCTURE:
-			renderStructure((STRUCTURE *)thisTag->pObject, viewMatrix);
+			renderStructure((STRUCTURE*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_FEATURE:
-			renderFeature((FEATURE *)thisTag->pObject, viewMatrix);
+			renderFeature((FEATURE*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_PROXMSG:
-			renderProximityMsg((PROXIMITY_DISPLAY *)thisTag->pObject, viewMatrix);
+			renderProximityMsg((PROXIMITY_DISPLAY*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_PROJECTILE:
-			renderProjectile((PROJECTILE *)thisTag->pObject, viewMatrix);
+			renderProjectile((PROJECTILE*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_DELIVPOINT:
-			renderDeliveryPoint((FLAG_POSITION *)thisTag->pObject, false, viewMatrix);
+			renderDeliveryPoint((FLAG_POSITION*)thisTag->pObject, false, viewMatrix);
 			break;
 		}
 	}

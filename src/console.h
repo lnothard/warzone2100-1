@@ -46,7 +46,7 @@ struct DEBOUNCED_MESSAGE
 
 struct ConsoleMessage
 {
-	const char *text;
+	const char* text;
 	CONSOLE_TEXT_JUSTIFICATION justification;
 	int32_t sender;
 	bool team;
@@ -67,8 +67,11 @@ const DEBOUNCED_MESSAGE CANNOT_BUILD_BURNING = {2500};
 
 extern char ConsoleString[MAX_CONSOLE_TMP_STRING_LENGTH];
 
-bool addConsoleMessage(const char *Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDWORD player, bool team = false, UDWORD duration = DEFAULT_CONSOLE_MESSAGE_DURATION);
-bool addConsoleMessageDebounced(const char* Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDWORD player, const DEBOUNCED_MESSAGE & debouncedMessage, bool team = false, UDWORD duration = DEFAULT_CONSOLE_MESSAGE_DURATION);
+bool addConsoleMessage(const char* Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDWORD player, bool team = false,
+                       UDWORD duration = DEFAULT_CONSOLE_MESSAGE_DURATION);
+bool addConsoleMessageDebounced(const char* Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDWORD player,
+                                const DEBOUNCED_MESSAGE& debouncedMessage, bool team = false,
+                                UDWORD duration = DEFAULT_CONSOLE_MESSAGE_DURATION);
 void updateConsoleMessages();
 void initConsoleMessages();
 void shutdownConsoleMessages();
@@ -92,7 +95,7 @@ void toggleConsoleDrop();
 void setHistoryMode(bool mode);
 void clearInfoMessages();
 
-typedef std::function<void(ConsoleMessage const &)> CONSOLE_MESSAGE_LISTENER;
+typedef std::function<void(ConsoleMessage const&)> CONSOLE_MESSAGE_LISTENER;
 void consoleAddMessageListener(const std::shared_ptr<CONSOLE_MESSAGE_LISTENER>& listener);
 void consoleRemoveMessageListener(const std::shared_ptr<CONSOLE_MESSAGE_LISTENER>& listener);
 
@@ -103,7 +106,7 @@ void consoleRemoveMessageListener(const std::shared_ptr<CONSOLE_MESSAGE_LISTENER
 # define debug_console(...) (void)0
 #endif // !defined(DEBUG)
 
-void console(const char *pFormat, ...); /// Print always to the ingame console
+void console(const char* pFormat, ...); /// Print always to the ingame console
 
 /**
  Usage:
@@ -115,7 +118,7 @@ void console(const char *pFormat, ...); /// Print always to the ingame console
 	CONPRINTF("Hello %d", 123);
 */
 template <typename... P>
-static inline void CONPRINTF(P &&... params)
+static inline void CONPRINTF(P&&... params)
 {
 	snprintf(ConsoleString, sizeof(ConsoleString), std::forward<P>(params)...);
 	addConsoleMessage(ConsoleString, DEFAULT_JUSTIFY, INFO_MESSAGE);
@@ -127,7 +130,8 @@ static inline void CONPRINTF(P &&... params)
 typedef std::function<void ()> CONSOLE_CALC_LAYOUT_FUNC;
 void setConsoleCalcLayout(const CONSOLE_CALC_LAYOUT_FUNC& layoutFunc);
 
-void consoleScreenDidChangeSize(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight);
+void consoleScreenDidChangeSize(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+                                unsigned int newHeight);
 
 
 #endif // __INCLUDED_SRC_CONSOLE_H__

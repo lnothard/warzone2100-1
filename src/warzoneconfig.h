@@ -55,7 +55,7 @@ enum class JS_BACKEND
 	num_backends // Must be last!
 };
 
-bool js_backend_from_str(const char *str, JS_BACKEND &output_backend);
+bool js_backend_from_str(const char* str, JS_BACKEND& output_backend);
 std::string to_string(JS_BACKEND backend);
 
 /***************************************************************************/

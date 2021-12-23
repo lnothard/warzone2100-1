@@ -51,7 +51,7 @@ static Vector3f theSun(0.f, 0.f, 0.f);
 static Vector3f theSun_ForTileIllumination(0.f, 0.f, 0.f);
 
 /*	Module function Prototypes */
-static UDWORD calcDistToTile(UDWORD tileX, UDWORD tileY, Vector3i *pos);
+static UDWORD calcDistToTile(UDWORD tileX, UDWORD tileY, Vector3i* pos);
 static void calcTileIllum(UDWORD tileX, UDWORD tileY);
 
 void setTheSun(Vector3f newSun)
@@ -59,7 +59,7 @@ void setTheSun(Vector3f newSun)
 	Vector3f oldSun = theSun;
 	theSun = normalise(newSun) * float(FP12_MULTIPLIER);
 	theSun_ForTileIllumination = Vector3f(-theSun.x, -theSun.y, theSun.z);
-	if(oldSun != theSun)
+	if (oldSun != theSun)
 	{
 		// The sun has changed - must relcalulate lighting
 		initLighting(0, 0, mapWidth, mapHeight);
@@ -92,7 +92,7 @@ void initLighting(UDWORD x1, UDWORD y1, UDWORD x2, UDWORD y2)
 	{
 		for (unsigned j = y1; j < y2; j++)
 		{
-			MAPTILE	*psTile = mapTile(i, j);
+			MAPTILE* psTile = mapTile(i, j);
 
 			// always make the edge tiles dark
 			if (i == 0 || j == 0 || i >= mapWidth - 1 || j >= mapHeight - 1)
@@ -106,7 +106,7 @@ void initLighting(UDWORD x1, UDWORD y1, UDWORD x2, UDWORD y2)
 			// Basically darkens down the tiles that are outside the scroll
 			// limits - thereby emphasising the cannot-go-there-ness of them
 			if ((SDWORD)i < scrollMinX + 4 || (SDWORD)i > scrollMaxX - 4
-			    || (SDWORD)j < scrollMinY + 4 || (SDWORD)j > scrollMaxY - 4)
+				|| (SDWORD)j < scrollMinY + 4 || (SDWORD)j > scrollMaxY - 4)
 			{
 				psTile->illumination /= 3;
 			}
@@ -115,10 +115,11 @@ void initLighting(UDWORD x1, UDWORD y1, UDWORD x2, UDWORD y2)
 }
 
 
-static void normalsOnTile(unsigned int tileX, unsigned int tileY, unsigned int quadrant, unsigned int *numNormals, Vector3f normals[])
+static void normalsOnTile(unsigned int tileX, unsigned int tileY, unsigned int quadrant, unsigned int* numNormals,
+                          Vector3f normals[])
 {
 	Vector2i tiles[2][2];
-	MAPTILE *psTiles[2][2];
+	MAPTILE* psTiles[2][2];
 	Vector3f corners[2][2];
 
 	for (unsigned j = 0; j < 2; ++j)
@@ -207,31 +208,37 @@ static void calcTileIllum(UDWORD tileX, UDWORD tileY)
 		finalVector += normals[i];
 	}
 
-	float dotProduct = glm::dot(normalise(finalVector), theSun_ForTileIllumination)/16;
+	float dotProduct = glm::dot(normalise(finalVector), theSun_ForTileIllumination) / 16;
 
 	// Primitive ambient occlusion calculation.
 	float ao = 0;
-	const int cx = world_coord(tileX), cy = world_coord(tileY), maxX = world_coord(mapWidth), maxY = world_coord(mapHeight);
+	const int cx = world_coord(tileX), cy = world_coord(tileY), maxX = world_coord(mapWidth), maxY =
+		          world_coord(mapHeight);
 	float height = map_Height(clip<int>(cx, 0, maxX), clip<int>(cy, 0, maxY));
 	constexpr float I = 100;
-	constexpr float H = I*0.70710678118654752440f;  // √½
+	constexpr float H = I * 0.70710678118654752440f; // √½
 	constexpr int Dirs = 8;
-	constexpr float dx[Dirs] = {0, H, I,  H,  0, -H, -I, -H};  // I sin(2π dir/Dirs)
-	constexpr float dy[Dirs] = {I, H, 0, -H, -I, -H,  0,  H};  // I cos(2π dir/Dirs)
+	constexpr float dx[Dirs] = {0, H, I, H, 0, -H, -I, -H}; // I sin(2π dir/Dirs)
+	constexpr float dy[Dirs] = {I, H, 0, -H, -I, -H, 0, H}; // I cos(2π dir/Dirs)
 
-	for (int dir = 0; dir < Dirs; ++dir) {
+	for (int dir = 0; dir < Dirs; ++dir)
+	{
 		float maxTangent = 0;
-		for (int dist = 1; dist < 9; ++dist) {
-			float tangent = (map_Height(clip<int>(static_cast<int>(cx + dx[dir]*dist), 0, maxX), clip<int>(static_cast<int>(cy + dy[dir]*dist), 0, maxY)) - height)/(I*dist);
+		for (int dist = 1; dist < 9; ++dist)
+		{
+			float tangent = (map_Height(clip<int>(static_cast<int>(cx + dx[dir] * dist), 0, maxX),
+			                            clip<int>(static_cast<int>(cy + dy[dir] * dist), 0, maxY)) - height) / (I *
+				dist);
 			maxTangent = std::max(maxTangent, tangent);
 		}
 		// Ambient light in this direction is proportional to the integral from tan(φ) = tangent to tan(φ) = ∞ of dφ cos(φ).
 		// Indefinite integral is sin(φ), so definite integral is 1 - sin(atan(tangent)) = 1 - tangent/√(tangent² + 1).
-		ao += 1 - maxTangent/sqrtf(maxTangent*maxTangent + 1);
+		ao += 1 - maxTangent / sqrtf(maxTangent * maxTangent + 1);
 	}
-	ao *= 1.f/Dirs;
+	ao *= 1.f / Dirs;
 
-	mapTile(tileX, tileY)->illumination = static_cast<uint8_t>(clip<int>(static_cast<int>(abs(dotProduct*ao)), 1, 254));
+	mapTile(tileX, tileY)->illumination = static_cast<uint8_t>(clip<
+		int>(static_cast<int>(abs(dotProduct * ao)), 1, 254));
 }
 
 static void colourTile(SDWORD xIndex, SDWORD yIndex, PIELIGHT light_colour, double fraction)
@@ -243,7 +250,7 @@ static void colourTile(SDWORD xIndex, SDWORD yIndex, PIELIGHT light_colour, doub
 	setTileColour(xIndex, yIndex, colour);
 }
 
-void processLight(LIGHT *psLight)
+void processLight(LIGHT* psLight)
 {
 	/* Firstly - there's no point processing lights that are off the grid */
 	if (clipXY(psLight->position.x, psLight->position.z) == false)
@@ -289,7 +296,7 @@ void processLight(LIGHT *psLight)
 }
 
 
-static UDWORD calcDistToTile(UDWORD tileX, UDWORD tileY, Vector3i *pos)
+static UDWORD calcDistToTile(UDWORD tileX, UDWORD tileY, Vector3i* pos)
 {
 	int x1, y1, z1;
 
@@ -306,14 +313,15 @@ static UDWORD calcDistToTile(UDWORD tileX, UDWORD tileY, Vector3i *pos)
 /// "popping" tiles
 void updateFogDistance(float distance)
 {
-	pie_UpdateFogDistance(FOG_BEGIN + (distance - war_GetMapZoom()) * FOG_ALTITUDE_COEFFICIENT, FOG_END + (distance - war_GetMapZoom()) * FOG_ALTITUDE_COEFFICIENT);
+	pie_UpdateFogDistance(FOG_BEGIN + (distance - war_GetMapZoom()) * FOG_ALTITUDE_COEFFICIENT,
+	                      FOG_END + (distance - war_GetMapZoom()) * FOG_ALTITUDE_COEFFICIENT);
 }
 
 
 #define MIN_DROID_LIGHT_LEVEL	96
 #define	DROID_SEEK_LIGHT_SPEED	2
 
-void calcDroidIllumination(DROID *psDroid)
+void calcDroidIllumination(DROID* psDroid)
 {
 	int lightVal, presVal, retVal;
 	float adjust;
@@ -333,11 +341,11 @@ void calcDroidIllumination(DROID *psDroid)
 	}
 	else
 	{
-		lightVal = mapTile(tileX, tileY)->illumination +		 //
-		           mapTile(tileX - 1, tileY)->illumination +	 //		 *
-		           mapTile(tileX, tileY - 1)->illumination +	 //		***		pattern
-		           mapTile(tileX + 1, tileY)->illumination +	 //		 *
-		           mapTile(tileX + 1, tileY + 1)->illumination;	 //
+		lightVal = mapTile(tileX, tileY)->illumination + //
+			mapTile(tileX - 1, tileY)->illumination + //		 *
+			mapTile(tileX, tileY - 1)->illumination + //		***		pattern
+			mapTile(tileX + 1, tileY)->illumination + //		 *
+			mapTile(tileX + 1, tileY + 1)->illumination; //
 		lightVal /= 5;
 		lightVal += MIN_DROID_LIGHT_LEVEL;
 	}
@@ -360,9 +368,9 @@ void calcDroidIllumination(DROID *psDroid)
 
 void doBuildingLights()
 {
-	STRUCTURE	*psStructure;
-	UDWORD	i;
-	LIGHT	light;
+	STRUCTURE* psStructure;
+	UDWORD i;
+	LIGHT light;
 
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{

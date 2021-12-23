@@ -26,30 +26,30 @@
 
 #if defined(WZ_OS_WIN)
 #  if defined( _MSC_VER )
-	// Silence warning when using MSVC + the Windows 7 SDK (required for XP compatibility)
-	//	warning C4091: 'typedef ': ignored on left of 'tagGPFIDL_FLAGS' when no variable is declared
-	#pragma warning( push )
-	#pragma warning( disable : 4091 )
+// Silence warning when using MSVC + the Windows 7 SDK (required for XP compatibility)
+//	warning C4091: 'typedef ': ignored on left of 'tagGPFIDL_FLAGS' when no variable is declared
+#pragma warning( push )
+#pragma warning( disable : 4091 )
 #  endif
 #  include <shlobj.h> /* For SHGetFolderPath */
 #  if defined( _MSC_VER )
-	#pragma warning( pop )
+#pragma warning( pop )
 #  endif
 #  include <shellapi.h> /* CommandLineToArgvW */
 
 #  include <ntverp.h>				// Windows SDK - include for access to VER_PRODUCTBUILD
 #  if VER_PRODUCTBUILD >= 9200
-	// 9200 is the Windows SDK 8.0 (which introduced family support)
-	#include <winapifamily.h>	// Windows SDK
+// 9200 is the Windows SDK 8.0 (which introduced family support)
+#include <winapifamily.h>	// Windows SDK
 #  else
-	// Earlier SDKs don't have the concept of families - provide simple implementation
-	// that treats everything as "desktop"
-	#if !defined(WINAPI_PARTITION_DESKTOP)
+// Earlier SDKs don't have the concept of families - provide simple implementation
+// that treats everything as "desktop"
+#if !defined(WINAPI_PARTITION_DESKTOP)
 		#define WINAPI_PARTITION_DESKTOP			0x00000001
-	#endif
-	#if !defined(WINAPI_FAMILY_PARTITION)
+#endif
+#if !defined(WINAPI_FAMILY_PARTITION)
 		#define WINAPI_FAMILY_PARTITION(Partition)	((WINAPI_PARTITION_DESKTOP & Partition) == Partition)
-	#endif
+#endif
 #  endif
 #elif defined(WZ_OS_UNIX)
 #  include <errno.h>
@@ -138,13 +138,16 @@
 
 enum FOCUS_STATE
 {
-	FOCUS_OUT,		// Window does not have the focus
-	FOCUS_IN,		// Window has got the focus
+	FOCUS_OUT,
+	// Window does not have the focus
+	FOCUS_IN,
+	// Window has got the focus
 };
 
-bool customDebugfile = false;		// Default false: user has NOT specified where to store the stdout/err file.
+bool customDebugfile = false; // Default false: user has NOT specified where to store the stdout/err file.
 
-char datadir[PATH_MAX] = ""; // Global that src/clparse.c:ParseCommandLine can write to, so it can override the default datadir on runtime. Needs to be empty on startup for ParseCommandLine to work!
+char datadir[PATH_MAX] = "";
+// Global that src/clparse.c:ParseCommandLine can write to, so it can override the default datadir on runtime. Needs to be empty on startup for ParseCommandLine to work!
 char configdir[PATH_MAX] = ""; // specifies custom USER directory. Same rules apply as datadir above.
 char rulesettag[40] = "";
 
@@ -154,7 +157,7 @@ const char* SAVEGAME_CAM_AUTO = "savegames/campaign/auto";
 const char* SAVEGAME_SKI = "savegames/skirmish";
 const char* SAVEGAME_SKI_AUTO = "savegames/skirmish/auto";
 
-const char *SaveGameLocToPath[] = {
+const char* SaveGameLocToPath[] = {
 	SAVEGAME_CAM,
 	SAVEGAME_CAM_AUTO,
 	SAVEGAME_SKI,
@@ -176,13 +179,13 @@ std::string SaveGamePath_t::toPath(SaveGamePath_t::Extension ext)
 	return out;
 }
 
-bool	gameInitialised = false;
-char	SaveGamePath[PATH_MAX];
-char    ReplayPath[PATH_MAX];
-char	ScreenDumpPath[PATH_MAX];
-char	MultiCustomMapsPath[PATH_MAX];
-char	MultiPlayersPath[PATH_MAX];
-char	KeyMapPath[PATH_MAX];
+bool gameInitialised = false;
+char SaveGamePath[PATH_MAX];
+char ReplayPath[PATH_MAX];
+char ScreenDumpPath[PATH_MAX];
+char MultiCustomMapsPath[PATH_MAX];
+char MultiPlayersPath[PATH_MAX];
+char KeyMapPath[PATH_MAX];
 // Start game in title mode:
 static GS_GAMEMODE gameStatus = GS_TITLE_SCREEN;
 // Status of the gameloop
@@ -214,7 +217,8 @@ static std::wstring getCurrentApplicationPath_WIN()
 	}
 	else if (moduleFileNameLen > (buffer.size() - 1))
 	{
-		debug(LOG_ERROR, "GetModuleFileName returned a length: %lu >= buffer length: %zu", moduleFileNameLen, buffer.size());
+		debug(LOG_ERROR, "GetModuleFileName returned a length: %lu >= buffer length: %zu", moduleFileNameLen,
+		      buffer.size());
 		return std::wstring();
 	}
 
@@ -262,7 +266,8 @@ static std::string getCurrentApplicationFolder()
 		return std::string();
 	}
 	std::vector<char> u8_buffer(outputLength, 0);
-	if (WideCharToMultiByte(CP_UTF8, 0, applicationFolderPath_utf16.c_str(), -1, &u8_buffer[0], outputLength, NULL, NULL) == 0)
+	if (WideCharToMultiByte(CP_UTF8, 0, applicationFolderPath_utf16.c_str(), -1, &u8_buffer[0], outputLength, NULL,
+	                        NULL) == 0)
 	{
 		debug(LOG_ERROR, "Encoding conversion error.");
 		return std::string();
@@ -396,17 +401,17 @@ static bool getCurrentDir(char *const dest, size_t const size)
 
 #if defined(WZ_OS_WIN)
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) || !defined(WZ_PHYSFS_2_1_OR_GREATER)
-static bool win_wcharConvToUtf8(wchar_t *pwStr, std::string &outputUtf8)
+static bool win_wcharConvToUtf8(wchar_t* pwStr, std::string& outputUtf8)
 {
 	std::vector<char> utf8Buffer;
 	int utf8Len = WideCharToMultiByte(CP_UTF8, 0, pwStr, -1, NULL, 0, NULL, NULL);
-	if ( utf8Len <= 0 )
+	if (utf8Len <= 0)
 	{
 		// Encoding conversion error
 		return false;
 	}
 	utf8Buffer.resize(utf8Len, 0);
-	if ( (utf8Len = WideCharToMultiByte(CP_UTF8, 0, pwStr, -1, &utf8Buffer[0], utf8Len, NULL, NULL)) <= 0 )
+	if ((utf8Len = WideCharToMultiByte(CP_UTF8, 0, pwStr, -1, &utf8Buffer[0], utf8Len, NULL, NULL)) <= 0)
 	{
 		// Encoding conversion error
 		return false;
@@ -519,7 +524,7 @@ static std::string getPlatformPrefDir_Fallback(const char *org, const char *app)
 
 // Retrieves the appropriate storage directory for application-created files / prefs
 // (Ensures the directory exists. Creates folders if necessary.)
-static std::string getPlatformPrefDir(const char * org, const std::string &app)
+static std::string getPlatformPrefDir(const char* org, const std::string& app)
 {
 	if (isPortableMode())
 	{
@@ -530,7 +535,8 @@ static std::string getPlatformPrefDir(const char * org, const std::string &app)
 		if (prefixPath.empty())
 		{
 			// Failed to get the current application folder
-			debug(LOG_FATAL, "Error getting the current application folder prefix - unable to proceed with portable mode");
+			debug(LOG_FATAL,
+			      "Error getting the current application folder prefix - unable to proceed with portable mode");
 			exit(1);
 		}
 
@@ -540,14 +546,14 @@ static std::string getPlatformPrefDir(const char * org, const std::string &app)
 		if (!PHYSFS_setWriteDir(prefixPath.c_str())) // Workaround for PhysFS not creating the writedir as expected.
 		{
 			debug(LOG_FATAL, "Error setting write directory to \"%s\": %s",
-				  prefixPath.c_str(), WZ_PHYSFS_getLastError());
+			      prefixPath.c_str(), WZ_PHYSFS_getLastError());
 			exit(1);
 		}
 
 		if (!PHYSFS_mkdir(appendPath.c_str()))
 		{
 			debug(LOG_FATAL, "Error creating directory \"%s\" in \"%s\": %s",
-				  appendPath.c_str(), PHYSFS_getWriteDir(), WZ_PHYSFS_getLastError());
+			      appendPath.c_str(), PHYSFS_getWriteDir(), WZ_PHYSFS_getLastError());
 			exit(1);
 		}
 
@@ -558,15 +564,17 @@ static std::string getPlatformPrefDir(const char * org, const std::string &app)
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 	BuildPropertyProvider buildPropProvider;
 	std::string win_package_fullname;
-	if (buildPropProvider.getPropertyValue("WIN_PACKAGE_FULLNAME", win_package_fullname) && !win_package_fullname.empty())
+	if (buildPropProvider.getPropertyValue("WIN_PACKAGE_FULLNAME", win_package_fullname) && !win_package_fullname.
+		empty())
 	{
 		// Running as a packaged Windows desktop app - to behave nicely, we should always use the redirected app data folder location
 		// (so it can be cleanly uninstalled)
-		# if !defined(KF_FLAG_FORCE_APP_DATA_REDIRECTION)
-		#  define KF_FLAG_FORCE_APP_DATA_REDIRECTION 0x00080000
-		# endif
+# if !defined(KF_FLAG_FORCE_APP_DATA_REDIRECTION)
+#  define KF_FLAG_FORCE_APP_DATA_REDIRECTION 0x00080000
+# endif
 		wchar_t* appData = nullptr;
-		HRESULT result = SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_CREATE | KF_FLAG_FORCE_APP_DATA_REDIRECTION, NULL, &appData);
+		HRESULT result = SHGetKnownFolderPath(FOLDERID_LocalAppData,
+		                                      KF_FLAG_CREATE | KF_FLAG_FORCE_APP_DATA_REDIRECTION, NULL, &appData);
 		if (result == S_OK)
 		{
 			std::string utf8Path;
@@ -585,7 +593,7 @@ static std::string getPlatformPrefDir(const char * org, const std::string &app)
 			if (!WZ_PHYSFS_createPlatformPrefDir(basePath, appendPath))
 			{
 				debug(LOG_FATAL, "Failed to create platform config dir: %s/%s",
-					  basePath.toUtf8().c_str(), appendPath.toUtf8().c_str());
+				      basePath.toUtf8().c_str(), appendPath.toUtf8().c_str());
 				abort();
 			}
 
@@ -604,7 +612,7 @@ static std::string getPlatformPrefDir(const char * org, const std::string &app)
 #endif // defined(WZ_OS_WIN)
 
 #if defined(WZ_PHYSFS_2_1_OR_GREATER)
-	const char * prefsDir = PHYSFS_getPrefDir(org, app.c_str());
+	const char* prefsDir = PHYSFS_getPrefDir(org, app.c_str());
 	if (prefsDir == nullptr)
 	{
 		debug(LOG_FATAL, "Failed to obtain prefs directory: %s", WZ_PHYSFS_getLastError());
@@ -623,10 +631,14 @@ static std::string getPlatformPrefDir(const char * org, const std::string &app)
 #endif // defined(WZ_PHYSFS_2_1_OR_GREATER)
 }
 
-bool endsWith (std::string const &fullString, std::string const &endString) {
-	if (fullString.length() >= endString.length()) {
-		return (0 == fullString.compare (fullString.length() - endString.length(), endString.length(), endString));
-	} else {
+bool endsWith(std::string const& fullString, std::string const& endString)
+{
+	if (fullString.length() >= endString.length())
+	{
+		return (0 == fullString.compare(fullString.length() - endString.length(), endString.length(), endString));
+	}
+	else
+	{
 		return false;
 	}
 }
@@ -660,7 +672,7 @@ static void initialize_ConfigDir()
 	if (!PHYSFS_setWriteDir(configDir.c_str())) // Workaround for PhysFS not creating the writedir as expected.
 	{
 		debug(LOG_FATAL, "Error setting write directory to \"%s\": %s",
-			  configDir.c_str(), WZ_PHYSFS_getLastError());
+		      configDir.c_str(), WZ_PHYSFS_getLastError());
 		exit(1);
 	}
 
@@ -685,7 +697,7 @@ static void initialize_ConfigDir()
 /*!
  * Initialize the PhysicsFS library.
  */
-static void initialize_PhysicsFS(const char *argv_0)
+static void initialize_PhysicsFS(const char* argv_0)
 {
 	int result = PHYSFS_init(argv_0);
 
@@ -698,7 +710,7 @@ static void initialize_PhysicsFS(const char *argv_0)
 
 static void check_Physfs()
 {
-	const PHYSFS_ArchiveInfo **i;
+	const PHYSFS_ArchiveInfo** i;
 	bool zipfound = false;
 	PHYSFS_Version compiled;
 	PHYSFS_Version linked;
@@ -717,7 +729,9 @@ static void check_Physfs()
 	}
 	if (linked.major == 2 && linked.minor == 0 && linked.patch == 2)
 	{
-		debug(LOG_ERROR, "You have PhysicsFS 2.0.2, which is buggy. You may experience random errors/crashes due to spuriously missing files.");
+		debug(LOG_ERROR,
+		      "You have PhysicsFS 2.0.2, which is buggy. You may experience random errors/crashes due to spuriously missing files.")
+		;
 		debug(LOG_ERROR, "Please upgrade/downgrade PhysicsFS to a different version, such as 2.0.3 or 2.0.1.");
 	}
 
@@ -731,7 +745,9 @@ static void check_Physfs()
 	}
 	if (!zipfound)
 	{
-		debug(LOG_FATAL, "Your Physfs wasn't compiled with zip support.  Please recompile Physfs with zip support.  Exiting program.");
+		debug(LOG_FATAL,
+		      "Your Physfs wasn't compiled with zip support.  Please recompile Physfs with zip support.  Exiting program.")
+		;
 		exit(-1);
 	}
 }
@@ -792,18 +808,18 @@ static void scanDataDirs()
 			{
 				// Guessed fallback default datadir on Unix
 				std::string wzDataDir = WZ_DATADIR;
-				if(!wzDataDir.empty())
+				if (!wzDataDir.empty())
 				{
-				#ifndef WZ_DATADIR_ISABSOLUTE
+#ifndef WZ_DATADIR_ISABSOLUTE
 					// Treat WZ_DATADIR as a relative path - append to the install PREFIX
 					tmpstr = prefix + dirSeparator + wzDataDir;
 					registerSearchPath(tmpstr.c_str(), 5);
 					rebuildSearchPath(mod_multiplay, true);
-				#else
+#else
 					// Treat WZ_DATADIR as an absolute path, and use directly
 					registerSearchPath(wzDataDir.c_str(), 5);
 					rebuildSearchPath(mod_multiplay, true);
-				#endif
+#endif
 				}
 
 				if (!PHYSFS_exists("gamedesc.lev"))
@@ -872,7 +888,7 @@ static void scanDataDirs()
 /***************************************************************************
 	Make a directory in write path and set a variable to point to it.
 ***************************************************************************/
-static void make_dir(char *dest, const char *dirname, const char *subdir)
+static void make_dir(char* dest, const char* dirname, const char* subdir)
 {
 	strcpy(dest, dirname);
 	if (subdir != nullptr)
@@ -934,21 +950,21 @@ static void setCDAudioForCurrentGameMode()
 	auto gameMode = ActivityManager::instance().getCurrentGameMode();
 	switch (gameMode)
 	{
-		case ActivitySink::GameMode::CAMPAIGN:
-			cdAudio_SetGameMode(MusicGameMode::CAMPAIGN);
-			break;
-		case ActivitySink::GameMode::CHALLENGE:
-			cdAudio_SetGameMode(MusicGameMode::CHALLENGE);
-			break;
-		case ActivitySink::GameMode::SKIRMISH:
-			cdAudio_SetGameMode(MusicGameMode::SKIRMISH);
-			break;
-		case ActivitySink::GameMode::MULTIPLAYER:
-			cdAudio_SetGameMode(MusicGameMode::MULTIPLAYER);
-			break;
-		default:
-			debug(LOG_ERROR, "Unhandled started game mode for cd audio: %u", (unsigned int)gameMode);
-			break;
+	case ActivitySink::GameMode::CAMPAIGN:
+		cdAudio_SetGameMode(MusicGameMode::CAMPAIGN);
+		break;
+	case ActivitySink::GameMode::CHALLENGE:
+		cdAudio_SetGameMode(MusicGameMode::CHALLENGE);
+		break;
+	case ActivitySink::GameMode::SKIRMISH:
+		cdAudio_SetGameMode(MusicGameMode::SKIRMISH);
+		break;
+	case ActivitySink::GameMode::MULTIPLAYER:
+		cdAudio_SetGameMode(MusicGameMode::MULTIPLAYER);
+		break;
+	default:
+		debug(LOG_ERROR, "Unhandled started game mode for cd audio: %u", (unsigned int)gameMode);
+		break;
 	}
 }
 
@@ -1004,26 +1020,27 @@ static void startGameLoop()
 	auto currentGameMode = ActivityManager::instance().getCurrentGameMode();
 	switch (currentGameMode)
 	{
-		case ActivitySink::GameMode::MENUS:
-			// should not happen
-			break;
-		case ActivitySink::GameMode::CAMPAIGN:
-		case ActivitySink::GameMode::CHALLENGE:
-			// replays not currently supported
-			break;
-		case ActivitySink::GameMode::SKIRMISH:
-		case ActivitySink::GameMode::MULTIPLAYER:
+	case ActivitySink::GameMode::MENUS:
+		// should not happen
+		break;
+	case ActivitySink::GameMode::CAMPAIGN:
+	case ActivitySink::GameMode::CHALLENGE:
+		// replays not currently supported
+		break;
+	case ActivitySink::GameMode::SKIRMISH:
+	case ActivitySink::GameMode::MULTIPLAYER:
 		{
 			// start saving a replay
 			if (!war_getDisableReplayRecording())
 			{
 				WZGameReplayOptionsHandler replayOptions;
-				NETreplaySaveStart((currentGameMode == ActivitySink::GameMode::MULTIPLAYER) ? "multiplay" : "skirmish", replayOptions, (currentGameMode == ActivitySink::GameMode::MULTIPLAYER));
+				NETreplaySaveStart((currentGameMode == ActivitySink::GameMode::MULTIPLAYER) ? "multiplay" : "skirmish",
+				                   replayOptions, (currentGameMode == ActivitySink::GameMode::MULTIPLAYER));
 			}
 			break;
 		}
-		default:
-			debug(LOG_INFO, "Unhandled case: %u", (unsigned int)currentGameMode);
+	default:
+		debug(LOG_INFO, "Unhandled case: %u", (unsigned int)currentGameMode);
 	}
 
 	setMaxFastForwardTicks(WZ_DEFAULT_MAX_FASTFORWARD_TICKS, true); // default value / spectator "catch-up" behavior
@@ -1098,10 +1115,11 @@ static bool initSaveGameLoad()
 	{
 		// FIXME: we really should throw up a error window, but we can't (easily) so I won't.
 		debug(LOG_ERROR, "Trying to load Game %s failed!", saveGameName);
-		debug(LOG_POPUP, "Failed to load a save game! It is either corrupted or a unsupported format.\n\nRestarting main menu.");
+		debug(LOG_POPUP,
+		      "Failed to load a save game! It is either corrupted or a unsupported format.\n\nRestarting main menu.");
 		// FIXME: If we bomb out on a in game load, then we would crash if we don't do the next two calls
 		// Doesn't seem to be a way to tell where we are in game loop to determine if/when we should do the two calls.
-		gameLoopStatus = GAMECODE_FASTEXIT;	// clear out all old data
+		gameLoopStatus = GAMECODE_FASTEXIT; // clear out all old data
 		stopGameLoop();
 		startTitleLoop(); // Restart into titleloop
 		SetGameMode(GS_TITLE_SCREEN);
@@ -1232,7 +1250,7 @@ void mainLoop()
 	if (keyPressed(KEY_F10))
 	{
 		kf_ScreenDump();
-		inputLoseFocus();		// remove it from input stream
+		inputLoseFocus(); // remove it from input stream
 	}
 
 	wzSetCursor(CURSOR_DEFAULT); // if cursor isn't set by anything in the mainLoop, it should revert to default.
@@ -1243,7 +1261,8 @@ void mainLoop()
 		{
 			videoLoop(); // Display the video if necessary
 		}
-		else switch (GetGameMode())
+		else
+			switch (GetGameMode())
 			{
 			case GS_NORMAL: // Run the gameloop code
 				runGameLoop();
@@ -1264,19 +1283,21 @@ void mainLoop()
 #endif
 }
 
-bool getUTF8CmdLine(int *const utfargc WZ_DECL_UNUSED, char *** const utfargv WZ_DECL_UNUSED) // explicitely pass by reference
+bool getUTF8CmdLine(int* const utfargc WZ_DECL_UNUSED, char*** const utfargv WZ_DECL_UNUSED)
+// explicitely pass by reference
 {
 #ifdef WZ_OS_WIN
 	int wargc;
-	wchar_t **wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
+	wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
 
 	if (wargv == NULL)
 	{
 		const DWORD err = GetLastError();
-		char *err_string;
+		char* err_string;
 
 		// Retrieve a (locally encoded) string describing the error (uses LocalAlloc() to allocate memory)
-		FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 0, (char *)&err_string, 0, NULL);
+		FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 0, (char*)&err_string, 0,
+		               NULL);
 
 		debug(LOG_FATAL, "CommandLineToArgvW failed: %s (code:%lu)", err_string, err);
 
@@ -1285,7 +1306,7 @@ bool getUTF8CmdLine(int *const utfargc WZ_DECL_UNUSED, char *** const utfargv WZ
 		return false;
 	}
 	// the following malloc and UTF16toUTF8 will be cleaned up in realmain().
-	*utfargv = (char **)malloc(sizeof(char *) * wargc);
+	*utfargv = (char**)malloc(sizeof(char *) * wargc);
 	if (!*utfargv)
 	{
 		debug(LOG_FATAL, "Out of memory!");
@@ -1295,7 +1316,7 @@ bool getUTF8CmdLine(int *const utfargc WZ_DECL_UNUSED, char *** const utfargv WZ
 	for (int i = 0; i < wargc; ++i)
 	{
 		STATIC_ASSERT(sizeof(wchar_t) == sizeof(utf_16_char)); // Should be true on windows
-		(*utfargv)[i] = UTF16toUTF8((const utf_16_char *)wargv[i], NULL); // only returns null when memory runs out
+		(*utfargv)[i] = UTF16toUTF8((const utf_16_char*)wargv[i], NULL); // only returns null when memory runs out
 		if ((*utfargv)[i] == NULL)
 		{
 			*utfargc = i;
@@ -1313,7 +1334,7 @@ bool getUTF8CmdLine(int *const utfargc WZ_DECL_UNUSED, char *** const utfargv WZ
 #if defined(WZ_OS_WIN)
 
 typedef BOOL (WINAPI *SetDefaultDllDirectoriesFunction)(
-  DWORD DirectoryFlags
+	DWORD DirectoryFlags
 );
 #if !defined(LOAD_LIBRARY_SEARCH_APPLICATION_DIR)
 # define LOAD_LIBRARY_SEARCH_APPLICATION_DIR	0x00000200
@@ -1326,11 +1347,11 @@ typedef BOOL (WINAPI *SetDefaultDllDirectoriesFunction)(
 #endif
 
 typedef BOOL (WINAPI *SetDllDirectoryWFunction)(
-  LPCWSTR lpPathName
+	LPCWSTR lpPathName
 );
 
 typedef BOOL (WINAPI *SetSearchPathModeFunction)(
-  DWORD Flags
+	DWORD Flags
 );
 #if !defined(BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE)
 # define BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE	0x00000001
@@ -1340,7 +1361,7 @@ typedef BOOL (WINAPI *SetSearchPathModeFunction)(
 #endif
 
 typedef BOOL (WINAPI *SetProcessDEPPolicyFunction)(
-  DWORD dwFlags
+	DWORD dwFlags
 );
 #if !defined(PROCESS_DEP_ENABLE)
 # define PROCESS_DEP_ENABLE		0x00000001
@@ -1351,7 +1372,8 @@ void osSpecificFirstChanceProcessSetup_Win()
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 	HMODULE hKernel32 = GetModuleHandleW(L"kernel32");
 
-	SetDefaultDllDirectoriesFunction _SetDefaultDllDirectories = reinterpret_cast<SetDefaultDllDirectoriesFunction>(reinterpret_cast<void*>(GetProcAddress(hKernel32, "SetDefaultDllDirectories")));
+	SetDefaultDllDirectoriesFunction _SetDefaultDllDirectories = reinterpret_cast<SetDefaultDllDirectoriesFunction>(
+		reinterpret_cast<void*>(GetProcAddress(hKernel32, "SetDefaultDllDirectories")));
 
 	if (_SetDefaultDllDirectories)
 	{
@@ -1359,7 +1381,8 @@ void osSpecificFirstChanceProcessSetup_Win()
 		_SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32);
 	}
 
-	SetDllDirectoryWFunction _SetDllDirectoryW = reinterpret_cast<SetDllDirectoryWFunction>(reinterpret_cast<void*>(GetProcAddress(hKernel32, "SetDllDirectoryW")));
+	SetDllDirectoryWFunction _SetDllDirectoryW = reinterpret_cast<SetDllDirectoryWFunction>(reinterpret_cast<void*>(
+		GetProcAddress(hKernel32, "SetDllDirectoryW")));
 
 	if (_SetDllDirectoryW)
 	{
@@ -1367,7 +1390,8 @@ void osSpecificFirstChanceProcessSetup_Win()
 		_SetDllDirectoryW(L"");
 	}
 
-	SetSearchPathModeFunction _SetSearchPathMode = reinterpret_cast<SetSearchPathModeFunction>(reinterpret_cast<void*>(GetProcAddress(hKernel32, "SetSearchPathMode")));
+	SetSearchPathModeFunction _SetSearchPathMode = reinterpret_cast<SetSearchPathModeFunction>(reinterpret_cast<void*>(
+		GetProcAddress(hKernel32, "SetSearchPathMode")));
 	if (_SetSearchPathMode)
 	{
 		// Enable safe search mode for the process
@@ -1375,20 +1399,20 @@ void osSpecificFirstChanceProcessSetup_Win()
 	}
 #endif /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) */
 
-    // Enable heap terminate-on-corruption.
-    // A correct application can continue to run even if this call fails,
-    // so it is safe to ignore the return value and call the function as follows:
-    // (void)HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
-    //
+	// Enable heap terminate-on-corruption.
+	// A correct application can continue to run even if this call fails,
+	// so it is safe to ignore the return value and call the function as follows:
+	// (void)HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
+	//
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 	typedef BOOL (WINAPI *HSI)
-		   (HANDLE, HEAP_INFORMATION_CLASS, PVOID, SIZE_T);
+		(HANDLE, HEAP_INFORMATION_CLASS, PVOID, SIZE_T);
 	HSI pHsi = reinterpret_cast<HSI>(reinterpret_cast<void*>(GetProcAddress(hKernel32, "HeapSetInformation")));
 	if (pHsi)
 	{
-		#ifndef HeapEnableTerminationOnCorruption
-		#   define HeapEnableTerminationOnCorruption (HEAP_INFORMATION_CLASS)1
-		#endif
+#ifndef HeapEnableTerminationOnCorruption
+#   define HeapEnableTerminationOnCorruption (HEAP_INFORMATION_CLASS)1
+#endif
 
 		(void)((pHsi)(NULL, HeapEnableTerminationOnCorruption, NULL, 0));
 	}
@@ -1397,7 +1421,8 @@ void osSpecificFirstChanceProcessSetup_Win()
 #endif /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) */
 
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-	SetProcessDEPPolicyFunction _SetProcessDEPPolicy = reinterpret_cast<SetProcessDEPPolicyFunction>(reinterpret_cast<void*>(GetProcAddress(hKernel32, "SetProcessDEPPolicy")));
+	SetProcessDEPPolicyFunction _SetProcessDEPPolicy = reinterpret_cast<SetProcessDEPPolicyFunction>(reinterpret_cast<
+		void*>(GetProcAddress(hKernel32, "SetProcessDEPPolicy")));
 	if (_SetProcessDEPPolicy)
 	{
 		// Ensure DEP is enabled
@@ -1406,11 +1431,12 @@ void osSpecificFirstChanceProcessSetup_Win()
 #endif /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) */
 }
 
-static bool winCheckIfRunningUnderWine(std::string* output_wineinfostr = nullptr, std::string* output_platform = nullptr)
+static bool winCheckIfRunningUnderWine(std::string* output_wineinfostr = nullptr,
+                                       std::string* output_platform = nullptr)
 {
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 	typedef const char* (CDECL *WineGetVersionFunction)(void);
-	typedef void (CDECL *WineGetHostVersionFunction)(const char **sysname, const char **release);
+	typedef void (CDECL *WineGetHostVersionFunction)(const char** sysname, const char** release);
 
 	HMODULE hntdll = GetModuleHandleW(L"ntdll.dll");
 	if (!hntdll)
@@ -1418,8 +1444,10 @@ static bool winCheckIfRunningUnderWine(std::string* output_wineinfostr = nullptr
 		return false;
 	}
 
-	WineGetVersionFunction pWineGetVersion = reinterpret_cast<WineGetVersionFunction>(reinterpret_cast<void*>(GetProcAddress(hntdll, "wine_get_version")));
-	WineGetHostVersionFunction pWineGetHostVersion = reinterpret_cast<WineGetHostVersionFunction>(reinterpret_cast<void*>(GetProcAddress(hntdll, "wine_get_host_version")));
+	WineGetVersionFunction pWineGetVersion = reinterpret_cast<WineGetVersionFunction>(reinterpret_cast<void*>(
+		GetProcAddress(hntdll, "wine_get_version")));
+	WineGetHostVersionFunction pWineGetHostVersion = reinterpret_cast<WineGetHostVersionFunction>(reinterpret_cast<void
+		*>(GetProcAddress(hntdll, "wine_get_host_version")));
 
 	if (pWineGetVersion == nullptr)
 	{
@@ -1470,19 +1498,24 @@ void osSpecificPostInit_Win()
 	std::string wineHostPlatform;
 	if (winCheckIfRunningUnderWine(&wineInfoStr, &wineHostPlatform))
 	{
-		const char* pWineNativeAvailableMsg = "You are running the Windows version of Warzone 2100 under Wine.\n\nA native version for your platform is likely available (and will perform better).\n\nPlease visit: https://wz2100.net";
+		const char* pWineNativeAvailableMsg =
+			"You are running the Windows version of Warzone 2100 under Wine.\n\nA native version for your platform is likely available (and will perform better).\n\nPlease visit: https://wz2100.net";
 		// Display a messagebox that a native version is available for this platform
 		if (!wineHostPlatform.empty())
 		{
-			if (strncasecmp(wineHostPlatform.c_str(), "Darwin", std::min<size_t>(wineHostPlatform.size(), strlen("Darwin"))) == 0)
+			if (strncasecmp(wineHostPlatform.c_str(), "Darwin",
+			                std::min<size_t>(wineHostPlatform.size(), strlen("Darwin"))) == 0)
 			{
 				// macOS
-				pWineNativeAvailableMsg = "You are running the Windows version of Warzone 2100 under Wine.\n\nA native version for macOS is available.\n\nPlease visit: https://wz2100.net";
+				pWineNativeAvailableMsg =
+					"You are running the Windows version of Warzone 2100 under Wine.\n\nA native version for macOS is available.\n\nPlease visit: https://wz2100.net";
 			}
-			if (strncasecmp(wineHostPlatform.c_str(), "Linux", std::min<size_t>(wineHostPlatform.size(), strlen("Linux"))) == 0)
+			if (strncasecmp(wineHostPlatform.c_str(), "Linux",
+			                std::min<size_t>(wineHostPlatform.size(), strlen("Linux"))) == 0)
 			{
 				// Linux
-				pWineNativeAvailableMsg = "You are running the Windows version of Warzone 2100 under Wine.\n\nNative builds for Linux are available.\n\nPlease visit: https://wz2100.net";
+				pWineNativeAvailableMsg =
+					"You are running the Windows version of Warzone 2100 under Wine.\n\nNative builds for Linux are available.\n\nPlease visit: https://wz2100.net";
 			}
 		}
 
@@ -1520,7 +1553,7 @@ void osSpecificPostInit()
 #endif
 }
 
-static std::string getDefaultLogFilePath(const char *platformDirSeparator)
+static std::string getDefaultLogFilePath(const char* platformDirSeparator)
 {
 	static std::string defaultLogFileName;
 	if (defaultLogFileName.empty()) // only generate this once per run, so multiple callers get the same value
@@ -1529,10 +1562,10 @@ static std::string getDefaultLogFilePath(const char *platformDirSeparator)
 		struct tm newtime;
 		char buf[PATH_MAX];
 
-		time(&aclock);						// Get time in seconds
-		newtime = getLocalTime(aclock);		// Convert time to struct
+		time(&aclock); // Get time in seconds
+		newtime = getLocalTime(aclock); // Convert time to struct
 		snprintf(buf, sizeof(buf), "WZlog-%02d%02d_%02d%02d%02d.txt",
-				 newtime.tm_mon + 1, newtime.tm_mday, newtime.tm_hour, newtime.tm_min, newtime.tm_sec);
+		         newtime.tm_mon + 1, newtime.tm_mday, newtime.tm_hour, newtime.tm_min, newtime.tm_sec);
 		defaultLogFileName = buf;
 	}
 	// log name is logs/(or \)WZlog-MMDD_HHMMSS.txt
@@ -1555,7 +1588,8 @@ static bool initializeCrashHandlingContext(optional<video_backend> gfxbackend)
 		if (it.second.size() > MAX_BACKENDINFO_VALUE_LENGTH)
 		{
 			size_t remainingLength = it.second.size() - MAX_BACKENDINFO_VALUE_LENGTH;
-			it.second = it.second.substr(0, MAX_BACKENDINFO_VALUE_LENGTH) + "[...] (+ " + std::to_string(remainingLength) + " chars)";
+			it.second = it.second.substr(0, MAX_BACKENDINFO_VALUE_LENGTH) + "[...] (+ " +
+				std::to_string(remainingLength) + " chars)";
 		}
 	}
 	nlohmann::json jsonBackendInfo = backendInfo;
@@ -1568,11 +1602,11 @@ static void wzCmdInterfaceInit()
 {
 	switch (wz_command_interface())
 	{
-		case WZ_Command_Interface::None:
-			return;
-		case WZ_Command_Interface::StdIn_Interface:
-			stdInThreadInit();
-			break;
+	case WZ_Command_Interface::None:
+		return;
+	case WZ_Command_Interface::StdIn_Interface:
+		stdInThreadInit();
+		break;
 	}
 }
 
@@ -1595,15 +1629,19 @@ static void cleanupOldLogFiles()
 	CleanupFileEnumFilterFunctions filterFuncs;
 	constexpr std::chrono::hours MinDeletableAge(24 * 7); // never delete logs that are less than a week old
 	auto currentTime = std::chrono::system_clock::now();
-	filterFuncs.fileNameFilterFunction = [](const char *fileName) -> bool {
+	filterFuncs.fileNameFilterFunction = [](const char* fileName) -> bool
+	{
 		return filenameEndWithExtension(fileName, ".txt") || filenameEndWithExtension(fileName, ".log");
 	};
-	filterFuncs.fileLastModifiedFilterFunction = [currentTime, MinDeletableAge](time_t fileLastModified) -> bool {
-		return std::chrono::duration_cast<std::chrono::hours>(currentTime - std::chrono::system_clock::from_time_t(fileLastModified)) >= MinDeletableAge;
+	filterFuncs.fileLastModifiedFilterFunction = [currentTime, MinDeletableAge](time_t fileLastModified) -> bool
+	{
+		return std::chrono::duration_cast<std::chrono::hours>(
+			currentTime - std::chrono::system_clock::from_time_t(fileLastModified)) >= MinDeletableAge;
 	};
 
 	// clean up old log .txt / .log files
-	WZ_PHYSFS_cleanupOldFilesInFolder("logs", filterFuncs, MAX_OLD_LOGS, [fullCurrentLogFileName](const char *fileName){
+	WZ_PHYSFS_cleanupOldFilesInFolder("logs", filterFuncs, MAX_OLD_LOGS, [fullCurrentLogFileName](const char* fileName)
+	{
 		if (fullCurrentLogFileName.compare(fileName) == 0)
 		{
 			// skip
@@ -1619,12 +1657,12 @@ static void cleanupOldLogFiles()
 }
 
 // for backend detection
-extern const char *BACKEND;
+extern const char* BACKEND;
 
-int realmain(int argc, char *argv[])
+int realmain(int argc, char* argv[])
 {
 	int utfargc = argc;
-	char **utfargv = (char **)argv;
+	char** utfargv = (char**)argv;
 
 	osSpecificFirstChanceProcessSetup();
 
@@ -1650,28 +1688,34 @@ int realmain(int argc, char *argv[])
 	bool bCrashHandlingProvider = useCrashHandlingProvider(utfargc, utfargv);
 	if (bCrashHandlingProvider)
 	{
-		bCrashHandlingProvider = initCrashHandlingProvider(getWzPlatformPrefDir(), getDefaultLogFilePath(PHYSFS_getDirSeparator()));
+		bCrashHandlingProvider = initCrashHandlingProvider(getWzPlatformPrefDir(),
+		                                                   getDefaultLogFilePath(PHYSFS_getDirSeparator()));
 	}
-	auto shutdown_crash_handling_provider_on_return = gsl::finally([bCrashHandlingProvider] { if (bCrashHandlingProvider) { shutdownCrashHandlingProvider(); } });
+	auto shutdown_crash_handling_provider_on_return = gsl::finally([bCrashHandlingProvider]
+	{
+		if (bCrashHandlingProvider) { shutdownCrashHandlingProvider(); }
+	});
 
 	/*** Initialize translations ***/
 	/*** NOTE: Should occur before any use of gettext / libintl translation routines. ***/
 	initI18n();
 
-	wzMain(argc, argv);		// init Qt integration first
+	wzMain(argc, argv); // init Qt integration first
 
 	LaunchInfo::initialize(argc, argv);
 	if (!bCrashHandlingProvider)
 	{
-		setupExceptionHandler(utfargc, utfargv, version_getFormattedVersionString(false), version_getVersionedAppDirFolderName(), isPortableMode());
+		setupExceptionHandler(utfargc, utfargv, version_getFormattedVersionString(false),
+		                      version_getVersionedAppDirFolderName(), isPortableMode());
 	}
 
 	/*** Initialize sodium library ***/
-	if (sodium_init() < 0) {
-        /* libsodium couldn't be initialized - it is not safe to use */
+	if (sodium_init() < 0)
+	{
+		/* libsodium couldn't be initialized - it is not safe to use */
 		fprintf(stderr, "Failed to initialize libsodium\n");
 		return EXIT_FAILURE;
-    }
+	}
 
 	/*** Initialize URL Request library ***/
 	urlRequestInit();
@@ -1691,42 +1735,44 @@ int realmain(int argc, char *argv[])
 
 	/*** Initialize directory structure ***/
 
-	PHYSFS_mkdir("autohost");	// autohost games launched with --autohost=game
+	PHYSFS_mkdir("autohost"); // autohost games launched with --autohost=game
 
-	PHYSFS_mkdir("challenges");	// custom challenges
+	PHYSFS_mkdir("challenges"); // custom challenges
 
-	PHYSFS_mkdir("logs");		// netplay, mingw crash reports & WZ logs
+	PHYSFS_mkdir("logs"); // netplay, mingw crash reports & WZ logs
 
 	make_dir(MultiCustomMapsPath, "maps", nullptr); // needed to prevent crashes when getting map
 
-	PHYSFS_mkdir(version_getVersionedModsFolderPath("autoload").c_str());	// mods that are automatically loaded
-	PHYSFS_mkdir(version_getVersionedModsFolderPath("campaign").c_str());	// campaign only mods activated with --mod_ca=example.wz
-	PHYSFS_mkdir("mods/downloads");	// mod download directory - NOT currently versioned
-	PHYSFS_mkdir(version_getVersionedModsFolderPath("global").c_str());	// global mods activated with --mod=example.wz
-	PHYSFS_mkdir(version_getVersionedModsFolderPath("multiplay").c_str());	// multiplay only mods activated with --mod_mp=example.wz
-	PHYSFS_mkdir(version_getVersionedModsFolderPath("music").c_str());	// music mods that are automatically loaded
+	PHYSFS_mkdir(version_getVersionedModsFolderPath("autoload").c_str()); // mods that are automatically loaded
+	PHYSFS_mkdir(version_getVersionedModsFolderPath("campaign").c_str());
+	// campaign only mods activated with --mod_ca=example.wz
+	PHYSFS_mkdir("mods/downloads"); // mod download directory - NOT currently versioned
+	PHYSFS_mkdir(version_getVersionedModsFolderPath("global").c_str()); // global mods activated with --mod=example.wz
+	PHYSFS_mkdir(version_getVersionedModsFolderPath("multiplay").c_str());
+	// multiplay only mods activated with --mod_mp=example.wz
+	PHYSFS_mkdir(version_getVersionedModsFolderPath("music").c_str()); // music mods that are automatically loaded
 
 	make_dir(MultiPlayersPath, "multiplay", "players"); // player profiles
 
-	PHYSFS_mkdir("music");	// custom music overriding default music and music mods
+	PHYSFS_mkdir("music"); // custom music overriding default music and music mods
 
-	make_dir(SaveGamePath, "savegames", nullptr); 	// save games
-	PHYSFS_mkdir(SAVEGAME_CAM);		// campaign save games
-	PHYSFS_mkdir(SAVEGAME_CAM_AUTO);	// campaign autosave games
-	PHYSFS_mkdir(SAVEGAME_SKI);		// skirmish save games
-	PHYSFS_mkdir(SAVEGAME_SKI_AUTO);	// skirmish autosave games
+	make_dir(SaveGamePath, "savegames", nullptr); // save games
+	PHYSFS_mkdir(SAVEGAME_CAM); // campaign save games
+	PHYSFS_mkdir(SAVEGAME_CAM_AUTO); // campaign autosave games
+	PHYSFS_mkdir(SAVEGAME_SKI); // skirmish save games
+	PHYSFS_mkdir(SAVEGAME_SKI_AUTO); // skirmish autosave games
 
-	make_dir(ReplayPath, "replay", nullptr);  // replays
+	make_dir(ReplayPath, "replay", nullptr); // replays
 	PHYSFS_mkdir("replay/skirmish");
 	PHYSFS_mkdir("replay/multiplay");
 
-	make_dir(ScreenDumpPath, "screenshots", nullptr);	// for screenshots
+	make_dir(ScreenDumpPath, "screenshots", nullptr); // for screenshots
 
-	PHYSFS_mkdir("tests");			// test games launched with --skirmish=game
+	PHYSFS_mkdir("tests"); // test games launched with --skirmish=game
 
-	PHYSFS_mkdir("userdata");		// per-mod data user generated data
-	PHYSFS_mkdir("userdata/campaign");	// contains campaign templates
-	PHYSFS_mkdir("userdata/mp");		// contains multiplayer templates
+	PHYSFS_mkdir("userdata"); // per-mod data user generated data
+	PHYSFS_mkdir("userdata/campaign"); // contains campaign templates
+	PHYSFS_mkdir("userdata/mp"); // contains multiplayer templates
 	memset(rulesettag, 0, sizeof(rulesettag)); // stores tag property of ruleset.json files
 
 	if (!customDebugfile)
@@ -1735,7 +1781,9 @@ int realmain(int argc, char *argv[])
 		// so we use our write directory to store our logs.
 		WzString debug_filename = PHYSFS_getWriteDir();
 		debug_filename.append(WzString::fromUtf8(getDefaultLogFilePath(PHYSFS_getDirSeparator())));
-		debug_register_callback(debug_callback_file, debug_callback_file_init, debug_callback_file_exit, &debug_filename); // note: by the time this function returns, all use of debug_filename has completed
+		debug_register_callback(debug_callback_file, debug_callback_file_init, debug_callback_file_exit,
+		                        &debug_filename);
+		// note: by the time this function returns, all use of debug_filename has completed
 
 		debug(LOG_WZ, "Using %s debug file", debug_filename.toUtf8().c_str());
 	}
@@ -1749,8 +1797,10 @@ int realmain(int argc, char *argv[])
 	debug(LOG_WZ, "Warzone 2100 - %s", version_getFormattedVersionString(false));
 	debug(LOG_WZ, "Using language: %s", getLanguage());
 	debug(LOG_WZ, "Backend: %s", BACKEND);
-	debug(LOG_MEMORY, "sizeof: SIMPLE_OBJECT=%ld, BASE_OBJECT=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-	      (long)sizeof(SIMPLE_OBJECT), (long)sizeof(BASE_OBJECT), (long)sizeof(DROID), (long)sizeof(STRUCTURE), (long)sizeof(FEATURE), (long)sizeof(PROJECTILE));
+	debug(LOG_MEMORY,
+	      "sizeof: SIMPLE_OBJECT=%ld, BASE_OBJECT=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
+	      (long)sizeof(SIMPLE_OBJECT), (long)sizeof(BASE_OBJECT), (long)sizeof(DROID), (long)sizeof(STRUCTURE),
+	      (long)sizeof(FEATURE), (long)sizeof(PROJECTILE));
 
 #if defined(WZ_OS_UNIX)
 	debug(LOG_WZ, "Ignoring SIGPIPE: %s", (ignoredSIGPIPE) ? "true" : "false");
@@ -1890,8 +1940,10 @@ int realmain(int argc, char *argv[])
 	debug(LOG_WZ, "Warzone 2100 - %s", version_getFormattedVersionString(false));
 	debug(LOG_WZ, "Using language: %s", getLanguage());
 	debug(LOG_WZ, "Backend: %s", BACKEND);
-	debug(LOG_MEMORY, "sizeof: SIMPLE_OBJECT=%ld, BASE_OBJECT=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-	      (long)sizeof(SIMPLE_OBJECT), (long)sizeof(BASE_OBJECT), (long)sizeof(DROID), (long)sizeof(STRUCTURE), (long)sizeof(FEATURE), (long)sizeof(PROJECTILE));
+	debug(LOG_MEMORY,
+	      "sizeof: SIMPLE_OBJECT=%ld, BASE_OBJECT=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
+	      (long)sizeof(SIMPLE_OBJECT), (long)sizeof(BASE_OBJECT), (long)sizeof(DROID), (long)sizeof(STRUCTURE),
+	      (long)sizeof(FEATURE), (long)sizeof(PROJECTILE));
 
 	int w = pie_GetVideoBufferWidth();
 	int h = pie_GetVideoBufferHeight();
@@ -2003,18 +2055,18 @@ int realmain(int argc, char *argv[])
 
 	switch (GetGameMode())
 	{
-		case GS_NORMAL:
-			// if running a game while quitting, stop the game loop
-			// (currently required for some cleanup) (should modelShutdown() be added to systemShutdown?)
-			stopGameLoop();
-			break;
-		case GS_TITLE_SCREEN:
-			// if showing the title / menus while quitting, stop the title loop
-			// (currently required for some cleanup)
-			stopTitleLoop();
-			break;
-		default:
-			break;
+	case GS_NORMAL:
+		// if running a game while quitting, stop the game loop
+		// (currently required for some cleanup) (should modelShutdown() be added to systemShutdown?)
+		stopGameLoop();
+		break;
+	case GS_TITLE_SCREEN:
+		// if showing the title / menus while quitting, stop the title loop
+		// (currently required for some cleanup)
+		stopTitleLoop();
+		break;
+	default:
+		break;
 	}
 	saveConfig();
 #if defined(ENABLE_DISCORD)
@@ -2027,7 +2079,7 @@ int realmain(int argc, char *argv[])
 #ifdef WZ_OS_WIN	// clean up the memory allocated for the command line conversion
 	for (int i = 0; i < argc; i++)
 	{
-		char *** const utfargvF = &utfargv;
+		char*** const utfargvF = &utfargv;
 		free((void *)(*utfargvF)[i]);
 	}
 	free(utfargv);

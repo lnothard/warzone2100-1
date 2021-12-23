@@ -28,23 +28,26 @@
 
 enum class POSITION_TYPE
 {
-  DELIVERY,		//Delivery Points NOT wayPoints
-  PROX_DATA,	        //proximity messages that are data generated
-  PROX_OBJ,	        //proximity messages that are in game generated
-  TEMP_DELIVERY         //SAVE ONLY delivery point for factory currently assigned to commander
+	DELIVERY,
+	//Delivery Points NOT wayPoints
+	PROX_DATA,
+	//proximity messages that are data generated
+	PROX_OBJ,
+	//proximity messages that are in game generated
+	TEMP_DELIVERY //SAVE ONLY delivery point for factory currently assigned to commander
 };
 
 struct Object_Position
 {
-  using enum POSITION_TYPE;
+	using enum POSITION_TYPE;
 
-  POSITION_TYPE type;          ///< the type of position obj - FlagPos or ProxDisp
-  unsigned frame_number;       ///< when the Position was last drawn
-  unsigned screen_x;           ///< screen coords and radius of Position imd
-  unsigned screen_y;
-  unsigned screen_r;
-  unsigned player;             ///< which player the Position belongs to
-  bool selected;               ///< flag to indicate whether the Position is to be highlighted
+	POSITION_TYPE type; ///< the type of position obj - FlagPos or ProxDisp
+	unsigned frame_number; ///< when the Position was last drawn
+	unsigned screen_x; ///< screen coords and radius of Position imd
+	unsigned screen_y;
+	unsigned screen_r;
+	unsigned player; ///< which player the Position belongs to
+	bool selected; ///< flag to indicate whether the Position is to be highlighted
 };
 
 #endif // __INCLUDED_POSITIONDEF_H__

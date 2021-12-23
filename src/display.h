@@ -52,24 +52,24 @@ bool DrawnInLastFrame(SDWORD Frame);
 // Clear all selections
 void clearSelection();
 // deal with selecting a droid
-void dealWithDroidSelect(DROID *psDroid, bool bDragBox);
+void dealWithDroidSelect(DROID* psDroid, bool bDragBox);
 
 bool isMouseOverRadar();
 
-void	setInvertMouseStatus(bool val);
-bool	getInvertMouseStatus();
+void setInvertMouseStatus(bool val);
+bool getInvertMouseStatus();
 
-void	setRightClickOrders(bool val);
-bool	getRightClickOrders();
+void setRightClickOrders(bool val);
+bool getRightClickOrders();
 
-void	setMiddleClickRotate(bool val);
-bool	getMiddleClickRotate();
+void setMiddleClickRotate(bool val);
+bool getMiddleClickRotate();
 
-void	setDrawShadows(bool val);
-bool	getDrawShadows();
+void setDrawShadows(bool val);
+bool getDrawShadows();
 
-bool	getCameraAccel();
-void	setCameraAccel(bool val);
+bool getCameraAccel();
+void setCameraAccel(bool val);
 
 /* Do the 3D display */
 void displayWorld();
@@ -140,7 +140,6 @@ enum SELECTION_TYPE
 	SC_DROID_DEMOLISH,
 	SC_DROID_REPAIR,
 	SC_INVALID,
-
 };
 
 enum MOUSE_TARGET
@@ -169,12 +168,12 @@ enum MOUSE_TARGET
 	MT_SENSORSTRUCT,
 	MT_SENSORSTRUCTDAM,
 
-	MT_NOTARGET		//leave as last one
+	MT_NOTARGET //leave as last one
 };
 
-extern bool		gameStats;
-extern bool		godMode;
-extern bool		lockCameraScrollWhileRotating;
+extern bool gameStats;
+extern bool godMode;
+extern bool lockCameraScrollWhileRotating;
 
 extern bool getShakeStatus();
 extern void setShakeStatus(bool val);
@@ -184,19 +183,19 @@ extern void shakeStop();
 // reset the input state
 void resetInput();
 
-bool CheckInScrollLimits(SDWORD *xPos, SDWORD *zPos);
+bool CheckInScrollLimits(SDWORD* xPos, SDWORD* zPos);
 bool CheckScrollLimits();
 
-BASE_OBJECT	*mouseTarget();
+BASE_OBJECT* mouseTarget();
 
 void cancelDeliveryRepos();
-void startDeliveryPosition(FLAG_POSITION *psFlag);
+void startDeliveryPosition(FLAG_POSITION* psFlag);
 bool deliveryReposValid();
 void processDeliveryRepos();
-void renderDeliveryRepos(const glm::mat4 &viewMatrix);
-bool deliveryReposFinished(FLAG_POSITION *psFlag = nullptr);
+void renderDeliveryRepos(const glm::mat4& viewMatrix);
+bool deliveryReposFinished(FLAG_POSITION* psFlag = nullptr);
 
-bool	getRotActive();
+bool getRotActive();
 
 #define MAX_PLAYER_X_ANGLE	(-1)
 #define MIN_PLAYER_X_ANGLE	(-90)
@@ -230,7 +229,7 @@ bool ctrlShiftDown();
 void animateToViewDistance(float target, float speed = DEFAULT_VIEW_DISTANCE_ANIMATION_SPEED);
 void incrementViewDistance(float amount);
 void displayRenderLoop();
-bool clipXYZ(int x, int y, int z, const glm::mat4 &viewMatrix);
-bool clipXYZNormalized(const Vector3i &normalizedPosition, const glm::mat4 &viewMatrix);
+bool clipXYZ(int x, int y, int z, const glm::mat4& viewMatrix);
+bool clipXYZNormalized(const Vector3i& normalizedPosition, const glm::mat4& viewMatrix);
 
 #endif // __INCLUDED_SRC_DISPLAY_H__

@@ -37,10 +37,14 @@ struct DROID;
 
 enum AllianceType
 {
-	NO_ALLIANCES,        // FFA
-	ALLIANCES,           // Players can make and break alliances during the game.
-	ALLIANCES_TEAMS,     // Alliances are set before the game.
-	ALLIANCES_UNSHARED,  // Alliances are set before the game. No shared research.
+	NO_ALLIANCES,
+	// FFA
+	ALLIANCES,
+	// Players can make and break alliances during the game.
+	ALLIANCES_TEAMS,
+	// Alliances are set before the game.
+	ALLIANCES_UNSHARED,
+	// Alliances are set before the game. No shared research.
 };
 
 /// Amount of time to rage at the world when frustrated (10 seconds)
@@ -61,51 +65,56 @@ bool aiInitialise();
 bool aiShutdown();
 
 /* Do the AI for a droid */
-void aiUpdateDroid(DROID *psDroid);
+void aiUpdateDroid(DROID* psDroid);
 
 // Find the nearest best target for a droid
 // returns integer representing quality of choice, -1 if failed
-int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, int extraRange = 0);
+int aiBestNearestTarget(DROID* psDroid, BASE_OBJECT** ppsObj, int weapon_slot, int extraRange = 0);
 
 // Are there a lot of bullets heading towards the structure?
-bool aiObjectIsProbablyDoomed(BASE_OBJECT *psObject, bool isDirect);
+bool aiObjectIsProbablyDoomed(BASE_OBJECT* psObject, bool isDirect);
 
 // Update the expected damage of the object.
-void aiObjectAddExpectedDamage(BASE_OBJECT *psObject, SDWORD damage, bool isDirect);
+void aiObjectAddExpectedDamage(BASE_OBJECT* psObject, SDWORD damage, bool isDirect);
 
 /* See if there is a target in range added int weapon_slot*/
-bool aiChooseTarget(BASE_OBJECT *psObj,
-                    BASE_OBJECT **ppsTarget, int weapon_slot, bool bUpdateTarget, TARGET_ORIGIN *targetOrigin);
+bool aiChooseTarget(BASE_OBJECT* psObj,
+                    BASE_OBJECT** ppsTarget, int weapon_slot, bool bUpdateTarget, TARGET_ORIGIN* targetOrigin);
 
 /** See if there is a target in range for Sensor objects. */
-bool aiChooseSensorTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget);
+bool aiChooseSensorTarget(BASE_OBJECT* psObj, BASE_OBJECT** ppsTarget);
 
 /*set of rules which determine whether the weapon associated with the object
 can fire on the propulsion type of the target*/
-bool validTarget(BASE_OBJECT *psObject, BASE_OBJECT *psTarget, int weapon_slot);
+bool validTarget(BASE_OBJECT* psObject, BASE_OBJECT* psTarget, int weapon_slot);
 // Check if any of the weapons can target the target
-bool checkAnyWeaponsTarget(BASE_OBJECT *psObject, BASE_OBJECT *psTarget);
+bool checkAnyWeaponsTarget(BASE_OBJECT* psObject, BASE_OBJECT* psTarget);
 // Check properties of the AllianceType enum.
 static inline bool alliancesFixed(int t)
 {
 	return t != ALLIANCES;
 }
+
 static inline bool alliancesSharedVision(int t)
 {
 	return t == ALLIANCES_TEAMS || t == ALLIANCES_UNSHARED;
 }
+
 static inline bool alliancesSharedResearch(int t)
 {
 	return t == ALLIANCES || t == ALLIANCES_TEAMS;
 }
+
 static inline bool alliancesSetTeamsBeforeGame(int t)
 {
 	return t == ALLIANCES_TEAMS || t == ALLIANCES_UNSHARED;
 }
+
 static inline bool alliancesCanGiveResearchAndRadar(int t)
 {
 	return t == ALLIANCES;
 }
+
 static inline bool alliancesCanGiveAnything(int t)
 {
 	return t != NO_ALLIANCES;

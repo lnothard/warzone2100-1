@@ -22,13 +22,14 @@
 
 struct WavecastTile
 {
-	int16_t dx, dy;            ///< Tile coordinates.
-	int32_t invRadius;         ///< Arbitrary constant divided by radius.
-	size_t angBegin, angEnd;  ///< Start and finish angles for obstruction of view. Non-linear units, for comparison purposes only.
+	int16_t dx, dy; ///< Tile coordinates.
+	int32_t invRadius; ///< Arbitrary constant divided by radius.
+	size_t angBegin, angEnd;
+	///< Start and finish angles for obstruction of view. Non-linear units, for comparison purposes only.
 };
 
 
 // Not thread safe if someone calls with a new radius. Thread safe, otherwise.
-const WavecastTile *getWavecastTable(unsigned radius, size_t *size);
+const WavecastTile* getWavecastTable(unsigned radius, size_t* size);
 
 #endif //_WAVE_CAST_H_

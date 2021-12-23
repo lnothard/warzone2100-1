@@ -43,12 +43,12 @@
 
 // WzMultiplayerOptionsTitleUI is in titleui.h to prevent dependency explosions
 
-void calcBackdropLayoutForMultiplayerOptionsTitleUI(WIDGET *psWidget);
-void readAIs();	///< step 1, load AI definition files
-void loadMultiScripts();	///< step 2, load the actual AI scripts
-const char *getAIName(int player);	///< only run this -after- readAIs() is called
+void calcBackdropLayoutForMultiplayerOptionsTitleUI(WIDGET* psWidget);
+void readAIs(); ///< step 1, load AI definition files
+void loadMultiScripts(); ///< step 2, load the actual AI scripts
+const char* getAIName(int player); ///< only run this -after- readAIs() is called
 const std::vector<WzString> getAINames();
-int matchAIbyName(const char* name);	///< only run this -after- readAIs() is called
+int matchAIbyName(const char* name); ///< only run this -after- readAIs() is called
 
 LOBBY_ERROR_TYPES getLobbyError();
 void setLobbyError(LOBBY_ERROR_TYPES error_type);
@@ -58,14 +58,18 @@ void setLobbyError(LOBBY_ERROR_TYPES error_type);
  */
 void updateStructureDisabledFlags();
 
-void intDisplayFeBox(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
-void intDisplayFeBox_Spectator(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+void intDisplayFeBox(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
+void intDisplayFeBox_Spectator(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
-std::shared_ptr<W_BUTTON> addMultiBut(WIDGET &parent, UDWORD id, UDWORD x, UDWORD y, UDWORD width, UDWORD height, const char *tipres, UDWORD norm, UDWORD down, UDWORD hi, unsigned tc = MAX_PLAYERS, uint8_t alpha = 255);
+std::shared_ptr<W_BUTTON> addMultiBut(WIDGET& parent, UDWORD id, UDWORD x, UDWORD y, UDWORD width, UDWORD height,
+                                      const char* tipres, UDWORD norm, UDWORD down, UDWORD hi,
+                                      unsigned tc = MAX_PLAYERS, uint8_t alpha = 255);
 /**
  * @deprecated use `addMultiBut(WIDGET &parent, UDWORD id, UDWORD x, UDWORD y, UDWORD width, UDWORD height, const char *tipres, UDWORD norm, UDWORD down, UDWORD hi, unsigned tc = MAX_PLAYERS)` instead
  **/
-std::shared_ptr<W_BUTTON> addMultiBut(const std::shared_ptr<W_SCREEN> &screen, UDWORD formid, UDWORD id, UDWORD x, UDWORD y, UDWORD width, UDWORD height, const char *tipres, UDWORD norm, UDWORD down, UDWORD hi, unsigned tc = MAX_PLAYERS, uint8_t alpha = 255);
+std::shared_ptr<W_BUTTON> addMultiBut(const std::shared_ptr<W_SCREEN>& screen, UDWORD formid, UDWORD id, UDWORD x,
+                                      UDWORD y, UDWORD width, UDWORD height, const char* tipres, UDWORD norm,
+                                      UDWORD down, UDWORD hi, unsigned tc = MAX_PLAYERS, uint8_t alpha = 255);
 
 Image mpwidgetGetFrontHighlightImage(Image image);
 bool changeColour(unsigned player, int col, bool isHost);
@@ -73,18 +77,18 @@ bool changeColour(unsigned player, int col, bool isHost);
 extern char sPlayer[128];
 extern bool multiintDisableLobbyRefresh; // gamefind
 
-void kickPlayer(uint32_t player_id, const char *reason, LOBBY_ERROR_TYPES type);
-void displayKickReasonPopup(const std::string &reason);
+void kickPlayer(uint32_t player_id, const char* reason, LOBBY_ERROR_TYPES type);
+void displayKickReasonPopup(const std::string& reason);
 void loadMapPreview(bool hideInterface);
 
 bool changeReadyStatus(UBYTE player, bool bReady);
 WzString formatGameName(WzString name);
 void resetVoteData();
-void sendRoomSystemMessage(char const *text);
-void sendRoomNotifyMessage(char const *text);
-void sendRoomSystemMessageToSingleReceiver(char const *text, uint32_t receiver);
-void displayRoomSystemMessage(char const *text);
-void displayRoomNotifyMessage(char const *text);
+void sendRoomSystemMessage(char const* text);
+void sendRoomNotifyMessage(char const* text);
+void sendRoomSystemMessageToSingleReceiver(char const* text, uint32_t receiver);
+void displayRoomSystemMessage(char const* text);
+void displayRoomNotifyMessage(char const* text);
 
 void handleAutoReadyRequest();
 

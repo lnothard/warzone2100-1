@@ -50,7 +50,7 @@
 #include "../frend.h"
 #include "../init.h"
 
-WzPassBoxTitleUI::WzPassBoxTitleUI(std::function<void(const char *)> next) : next(next)
+WzPassBoxTitleUI::WzPassBoxTitleUI(std::function<void(const char*)> next) : next(next)
 {
 }
 
@@ -58,15 +58,15 @@ void WzPassBoxTitleUI::start()
 {
 	addBackdrop();
 
-	WIDGET *parent = widgGetFromID(psWScreen, FRONTEND_BACKDROP);
+	WIDGET* parent = widgGetFromID(psWScreen, FRONTEND_BACKDROP);
 
 	// draws the background of the password box
 	auto passwordForm = std::make_shared<IntFormAnimated>();
 	parent->attach(passwordForm);
 	passwordForm->id = FRONTEND_PASSWORDFORM;
 	passwordForm->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		psWidget->setGeometry(FRONTEND_BOTFORMX, 160, FRONTEND_TOPFORMW, FRONTEND_TOPFORMH - 40);
-	}));
+			psWidget->setGeometry(FRONTEND_BOTFORMX, 160, FRONTEND_TOPFORMW, FRONTEND_TOPFORMH - 40);
+			}));
 
 	// password label.
 	auto enterPasswordLabel = std::make_shared<W_LABEL>();
@@ -86,13 +86,15 @@ void WzPassBoxTitleUI::start()
 	auto buttonYes = std::make_shared<W_BUTTON>();
 	passwordForm->attach(buttonYes);
 	buttonYes->id = CON_PASSWORDYES;
-	buttonYes->setImages(Image(FrontImages, IMAGE_OK), Image(FrontImages, IMAGE_OK), mpwidgetGetFrontHighlightImage(Image(FrontImages, IMAGE_OK)));
+	buttonYes->setImages(Image(FrontImages, IMAGE_OK), Image(FrontImages, IMAGE_OK),
+	                     mpwidgetGetFrontHighlightImage(Image(FrontImages, IMAGE_OK)));
 	buttonYes->move(180, 65);
 	buttonYes->setTip(_("OK"));
 	auto buttonNo = std::make_shared<W_BUTTON>();
 	passwordForm->attach(buttonNo);
 	buttonNo->id = CON_PASSWORDNO;
-	buttonNo->setImages(Image(FrontImages, IMAGE_NO), Image(FrontImages, IMAGE_NO), mpwidgetGetFrontHighlightImage(Image(FrontImages, IMAGE_NO)));
+	buttonNo->setImages(Image(FrontImages, IMAGE_NO), Image(FrontImages, IMAGE_NO),
+	                    mpwidgetGetFrontHighlightImage(Image(FrontImages, IMAGE_NO)));
 	buttonNo->move(230, 65);
 	buttonNo->setTip(_("Cancel"));
 
@@ -104,11 +106,14 @@ void WzPassBoxTitleUI::start()
 TITLECODE WzPassBoxTitleUI::run()
 {
 	screen_disableMapPreview();
-	WidgetTriggers const &triggers = widgRunScreen(psWScreen);
+	WidgetTriggers const& triggers = widgRunScreen(psWScreen);
 	unsigned id = triggers.empty() ? 0 : triggers.front().widget->id;
-	if (id == CON_PASSWORDYES || (keyPressed(KEY_RETURN) || keyPressed(KEY_KPENTER))) {
+	if (id == CON_PASSWORDYES || (keyPressed(KEY_RETURN) || keyPressed(KEY_KPENTER)))
+	{
 		next(widgGetString(psWScreen, CON_PASSWORD));
-	} else if ((id == CON_PASSWORDNO) || CancelPressed()) {
+	}
+	else if ((id == CON_PASSWORDNO) || CancelPressed())
+	{
 		next(nullptr);
 	}
 	widgDisplayScreen(psWScreen);

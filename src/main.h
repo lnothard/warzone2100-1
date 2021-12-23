@@ -45,7 +45,7 @@ enum SAVEGAME_LOC
 	SAVEGAME_LOC_SKI_AUTO,
 };
 
-extern const char *SaveGameLocToPath[];
+extern const char* SaveGameLocToPath[];
 
 struct SaveGamePath_t
 {
@@ -54,6 +54,7 @@ struct SaveGamePath_t
 		GAM,
 		JSON,
 	};
+
 	SAVEGAME_LOC loc;
 	// not a path, just the name
 	std::string gameName;

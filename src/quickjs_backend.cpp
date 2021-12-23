@@ -86,7 +86,8 @@
 #pragma GCC diagnostic ignored "-Wcast-function-type"
 #endif
 MSVC_PRAGMA(warning( push ))
-MSVC_PRAGMA(warning( disable : 4191 )) // disable "warning C4191: 'type cast': unsafe conversion from 'JSCFunctionMagic (__cdecl *)' to 'JSCFunction (__cdecl *)'"
+MSVC_PRAGMA(warning( disable : 4191 ))
+// disable "warning C4191: 'type cast': unsafe conversion from 'JSCFunctionMagic (__cdecl *)' to 'JSCFunction (__cdecl *)'"
 #include "quickjs.h"
 #include "quickjs-debugger.h"
 #include "quickjs-limitedcontext.h"
@@ -99,7 +100,7 @@ MSVC_PRAGMA(warning( pop ))
 
 // Alternatives for C++ - can't use the JS_CFUNC_DEF / JS_CGETSET_DEF / etc defines
 // #define JS_CFUNC_DEF(name, length, func1) { name, JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE, JS_DEF_CFUNC, 0, .u = { .func = { length, JS_CFUNC_generic, { .generic = func1 } } } }
-static inline JSCFunctionListEntry QJS_CFUNC_DEF(const char *name, uint8_t length, JSCFunction *func1)
+static inline JSCFunctionListEntry QJS_CFUNC_DEF(const char* name, uint8_t length, JSCFunction* func1)
 {
 	JSCFunctionListEntry entry;
 	entry.name = name;
@@ -111,10 +112,13 @@ static inline JSCFunctionListEntry QJS_CFUNC_DEF(const char *name, uint8_t lengt
 	entry.u.func.cfunc.generic = func1;
 	return entry;
 }
+
 // #define JS_CGETSET_DEF(name, fgetter, fsetter) { name, JS_PROP_CONFIGURABLE, JS_DEF_CGETSET, 0, .u = { .getset = { .get = { .getter = fgetter }, .set = { .setter = fsetter } } } }
-typedef JSValue JSCFunctionGetter(JSContext *ctx, JSValueConst this_val);
-typedef JSValue JSCFunctionSetter(JSContext *ctx, JSValueConst this_val, JSValueConst val);
-static inline JSCFunctionListEntry QJS_CGETSET_DEF(const char *name, JSCFunctionGetter *fgetter, JSCFunctionSetter *fsetter)
+typedef JSValue JSCFunctionGetter(JSContext* ctx, JSValueConst this_val);
+typedef JSValue JSCFunctionSetter(JSContext* ctx, JSValueConst this_val, JSValueConst val);
+
+static inline JSCFunctionListEntry QJS_CGETSET_DEF(const char* name, JSCFunctionGetter* fgetter,
+                                                   JSCFunctionSetter* fsetter)
 {
 	JSCFunctionListEntry entry;
 	entry.name = name;
@@ -126,17 +130,21 @@ static inline JSCFunctionListEntry QJS_CGETSET_DEF(const char *name, JSCFunction
 	return entry;
 }
 
-struct JSContextValue {
-	JSContext *ctx;
+struct JSContextValue
+{
+	JSContext* ctx;
 	JSValue value;
 	bool skip_constructors;
 };
+
 void to_json(nlohmann::json& j, const JSContextValue& value); // forward-declare
 
-bool QuickJS_EnumerateObjectProperties(JSContext *ctx, JSValue obj, const std::function<void (const char *key, JSAtom& atom)>& func, bool enumerableOnly = true); // forward-declare
+bool QuickJS_EnumerateObjectProperties(JSContext* ctx, JSValue obj,
+                                       const std::function<void (const char* key, JSAtom& atom)>& func,
+                                       bool enumerableOnly = true); // forward-declare
 
 class quickjs_scripting_instance;
-static std::map<JSContext*, quickjs_scripting_instance *> engineToInstanceMap;
+static std::map<JSContext*, quickjs_scripting_instance*> engineToInstanceMap;
 
 static void QJSRuntimeFree_LeakHandler_Error(const char* msg)
 {
@@ -147,7 +155,7 @@ class quickjs_scripting_instance : public wzapi::scripting_instance
 {
 public:
 	quickjs_scripting_instance(int player, const std::string& scriptName, const std::string& scriptPath)
-	: scripting_instance(player, scriptName, scriptPath)
+		: scripting_instance(player, scriptName, scriptPath)
 	{
 		rt = JS_NewRuntime();
 		ASSERT(rt != nullptr, "JS_NewRuntime failed?");
@@ -157,6 +165,7 @@ public:
 
 		engineToInstanceMap.insert(std::pair<JSContext*, quickjs_scripting_instance*>(ctx, this));
 	}
+
 	virtual ~quickjs_scripting_instance()
 	{
 		engineToInstanceMap.erase(ctx);
@@ -181,6 +190,7 @@ public:
 			rt = nullptr;
 		}
 	}
+
 	bool loadScript(const WzString& path, int player, int difficulty);
 	bool readyInstanceForExecution() override;
 
@@ -189,36 +199,43 @@ private:
 
 public:
 	// save / restore state
-	virtual bool saveScriptGlobals(nlohmann::json &result) override;
-	virtual bool loadScriptGlobals(const nlohmann::json &result) override;
+	virtual bool saveScriptGlobals(nlohmann::json& result) override;
+	virtual bool loadScriptGlobals(const nlohmann::json& result) override;
 
-	virtual nlohmann::json saveTimerFunction(uniqueTimerID timerID, std::string timerName, const timerAdditionalData* additionalParam) override;
+	virtual nlohmann::json saveTimerFunction(uniqueTimerID timerID, std::string timerName,
+	                                         const timerAdditionalData* additionalParam) override;
 
 	// recreates timer functions (and additional userdata) based on the information saved by the saveTimerFunction() method
-	virtual std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>> restoreTimerFunction(const nlohmann::json& savedTimerFuncData) override;
+	virtual std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>> restoreTimerFunction(
+		const nlohmann::json& savedTimerFuncData) override;
 
 public:
 	// get state for debugging
 	nlohmann::json debugGetAllScriptGlobals() override;
-	std::unordered_map<std::string, wzapi::scripting_instance::DebugSpecialStringType> debugGetScriptGlobalSpecialStringValues() override;
+	std::unordered_map<std::string, wzapi::scripting_instance::DebugSpecialStringType>
+	debugGetScriptGlobalSpecialStringValues() override;
 
-	bool debugEvaluateCommand(const std::string &text) override;
+	bool debugEvaluateCommand(const std::string& text) override;
 
 public:
-
 	void updateGameTime(uint32_t gameTime) override;
 	void updateGroupSizes(int group, int size) override;
 
-	void setSpecifiedGlobalVariables(const nlohmann::json& variables, wzapi::GlobalVariableFlags flags = wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave) override;
+	void setSpecifiedGlobalVariables(const nlohmann::json& variables,
+	                                 wzapi::GlobalVariableFlags flags = wzapi::GlobalVariableFlags::ReadOnly |
+		                                 wzapi::GlobalVariableFlags::DoNotSave) override;
 
-	void setSpecifiedGlobalVariable(const std::string& name, const nlohmann::json& value, wzapi::GlobalVariableFlags flags = wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave) override;
+	void setSpecifiedGlobalVariable(const std::string& name, const nlohmann::json& value,
+	                                wzapi::GlobalVariableFlags flags = wzapi::GlobalVariableFlags::ReadOnly |
+		                                wzapi::GlobalVariableFlags::DoNotSave) override;
 
 private:
 	inline int toQuickJSPropertyFlags(wzapi::GlobalVariableFlags flags)
 	{
 		int propertyFlags = 0;
 		if (((flags & wzapi::GlobalVariableFlags::ReadOnly) != wzapi::GlobalVariableFlags::ReadOnly)
-			|| ((flags & wzapi::GlobalVariableFlags::ReadOnlyUpdatedFromApp) == wzapi::GlobalVariableFlags::ReadOnlyUpdatedFromApp))
+			|| ((flags & wzapi::GlobalVariableFlags::ReadOnlyUpdatedFromApp) ==
+				wzapi::GlobalVariableFlags::ReadOnlyUpdatedFromApp))
 		{
 			// NOTE: QuickJS prevents even the app - not just scripts - from updating unwritable / read-only variables
 			// So if ReadOnlyUpdatedFromApp is set, we must set the variable to writable to support updates from WZ
@@ -228,12 +245,11 @@ private:
 	}
 
 public:
-
-	void doNotSaveGlobal(const std::string &global);
+	void doNotSaveGlobal(const std::string& global);
 
 private:
-	JSRuntime *rt;
-    JSContext *ctx;
+	JSRuntime* rt;
+	JSContext* ctx;
 	JSValue global_obj;
 
 	JSValue compiledScriptObj = JS_UNINITIALIZED;
@@ -300,32 +316,32 @@ public:
 	//__ An event that is run when the mission transporter has been ordered to fly off.
 	//__
 	virtual bool handle_eventLaunchTransporter() override; // DEPRECATED!
-	virtual bool handle_eventTransporterLaunch(const BASE_OBJECT *psTransport) override;
+	virtual bool handle_eventTransporterLaunch(const BASE_OBJECT* psTransport) override;
 
 	//__ ## eventTransporterArrived(transport)
 	//__
 	//__ An event that is run when the mission transporter has arrived at the map edge with reinforcements.
 	//__
 	virtual bool handle_eventReinforcementsArrived() override; // DEPRECATED!
-	virtual bool handle_eventTransporterArrived(const BASE_OBJECT *psTransport) override;
+	virtual bool handle_eventTransporterArrived(const BASE_OBJECT* psTransport) override;
 
 	//__ ## eventTransporterExit(transport)
 	//__
 	//__ An event that is run when the mission transporter has left the map.
 	//__
-	virtual bool handle_eventTransporterExit(const BASE_OBJECT *psObj) override;
+	virtual bool handle_eventTransporterExit(const BASE_OBJECT* psObj) override;
 
 	//__ ## eventTransporterDone(transport)
 	//__
 	//__ An event that is run when the mission transporter has no more reinforcements to deliver.
 	//__
-	virtual bool handle_eventTransporterDone(const BASE_OBJECT *psTransport) override;
+	virtual bool handle_eventTransporterDone(const BASE_OBJECT* psTransport) override;
 
 	//__ ## eventTransporterLanded(transport)
 	//__
 	//__ An event that is run when the mission transporter has landed with reinforcements.
 	//__
-	virtual bool handle_eventTransporterLanded(const BASE_OBJECT *psTransport) override;
+	virtual bool handle_eventTransporterLanded(const BASE_OBJECT* psTransport) override;
 
 public:
 	// MARK: UI-related events (intended for the tutorial)
@@ -334,13 +350,13 @@ public:
 	//__
 	//__ An event that is run when the current player starts to move a delivery point.
 	//__
-	virtual bool handle_eventDeliveryPointMoving(const BASE_OBJECT *psStruct) override;
+	virtual bool handle_eventDeliveryPointMoving(const BASE_OBJECT* psStruct) override;
 
 	//__ ## eventDeliveryPointMoved()
 	//__
 	//__ An event that is run after the current player has moved a delivery point.
 	//__
-	virtual bool handle_eventDeliveryPointMoved(const BASE_OBJECT *psStruct) override;
+	virtual bool handle_eventDeliveryPointMoved(const BASE_OBJECT* psStruct) override;
 
 	//__ ## eventDesignBody()
 	//__
@@ -420,7 +436,7 @@ public:
 	//__ deselected object. If all selected game objects are deselected, ```objects``` will
 	//__ be empty.
 	//__
-	virtual bool handle_eventSelectionChanged(const std::vector<const BASE_OBJECT *>& objects) override;
+	virtual bool handle_eventSelectionChanged(const std::vector<const BASE_OBJECT*>& objects) override;
 
 public:
 	// MARK: Game state-change events
@@ -429,7 +445,7 @@ public:
 	//__
 	//__ An event that is run when an object (ex. droid, structure) is recycled.
 	//__
-	virtual bool handle_eventObjectRecycled(const BASE_OBJECT *psObj) override;
+	virtual bool handle_eventObjectRecycled(const BASE_OBJECT* psObj) override;
 
 	//__ ## eventPlayerLeft(player)
 	//__
@@ -448,7 +464,7 @@ public:
 	//__
 	//__ A droid should be given new orders.
 	//__
-	virtual bool handle_eventDroidIdle(const DROID *psDroid) override;
+	virtual bool handle_eventDroidIdle(const DROID* psDroid) override;
 
 	//__ ## eventDroidBuilt(droid[, structure])
 	//__
@@ -456,7 +472,7 @@ public:
 	//__ if the droid was produced in a factory. It is not triggered for droid theft or
 	//__ gift (check ```eventObjectTransfer``` for that).
 	//__
-	virtual bool handle_eventDroidBuilt(const DROID *psDroid, optional<const STRUCTURE *> psFactory) override;
+	virtual bool handle_eventDroidBuilt(const DROID* psDroid, optional<const STRUCTURE*> psFactory) override;
 
 	//__ ## eventStructureBuilt(structure[, droid])
 	//__
@@ -464,14 +480,14 @@ public:
 	//__ if the structure was built by a droid. It is not triggered for building theft
 	//__ (check ```eventObjectTransfer``` for that).
 	//__
-	virtual bool handle_eventStructureBuilt(const STRUCTURE *psStruct, optional<const DROID *> psDroid) override;
+	virtual bool handle_eventStructureBuilt(const STRUCTURE* psStruct, optional<const DROID*> psDroid) override;
 
 	//__ ## eventStructureDemolish(structure[, droid])
 	//__
 	//__ An event that is run every time a structure begins to be demolished. This does
 	//__ not trigger again if the structure is partially demolished.
 	//__
-	virtual bool handle_eventStructureDemolish(const STRUCTURE *psStruct, optional<const DROID *> psDroid) override;
+	virtual bool handle_eventStructureDemolish(const STRUCTURE* psStruct, optional<const DROID*> psDroid) override;
 
 	//__ ## eventStructureReady(structure)
 	//__
@@ -479,20 +495,20 @@ public:
 	//__ special ability. It will only fire once, so if the time is not right,
 	//__ register your own timer to keep checking.
 	//__
-	virtual bool handle_eventStructureReady(const STRUCTURE *psStruct) override;
+	virtual bool handle_eventStructureReady(const STRUCTURE* psStruct) override;
 
 	//__ ## eventStructureUpgradeStarted(structure)
 	//__
 	//__ An event that is run every time a structure starts to be upgraded.
 	//__
-	virtual bool handle_eventStructureUpgradeStarted(const STRUCTURE *psStruct) override;
+	virtual bool handle_eventStructureUpgradeStarted(const STRUCTURE* psStruct) override;
 
 	//__ ## eventAttacked(victim, attacker)
 	//__
 	//__ An event that is run when an object belonging to the script's controlling player is
 	//__ attacked. The attacker parameter may be either a structure or a droid.
 	//__
-	virtual bool handle_eventAttacked(const BASE_OBJECT *psVictim, const BASE_OBJECT *psAttacker) override;
+	virtual bool handle_eventAttacked(const BASE_OBJECT* psVictim, const BASE_OBJECT* psAttacker) override;
 
 	//__ ## eventResearched(research, structure, player)
 	//__
@@ -501,14 +517,15 @@ public:
 	//__ current player. If an ally does the research, the structure parameter will
 	//__ be set to null. The player parameter gives the player it is called for.
 	//__
-	virtual bool handle_eventResearched(const wzapi::researchResult& research, wzapi::event_nullable_ptr<const STRUCTURE> psStruct, int player) override;
+	virtual bool handle_eventResearched(const wzapi::researchResult& research,
+	                                    wzapi::event_nullable_ptr<const STRUCTURE> psStruct, int player) override;
 
 	//__ ## eventDestroyed(object)
 	//__
 	//__ An event that is run whenever an object is destroyed. Careful passing
 	//__ the parameter object around, since it is about to vanish!
 	//__
-	virtual bool handle_eventDestroyed(const BASE_OBJECT *psVictim) override;
+	virtual bool handle_eventDestroyed(const BASE_OBJECT* psVictim) override;
 
 	//__ ## eventPickup(feature, droid)
 	//__
@@ -516,7 +533,7 @@ public:
 	//__ all players / scripts.
 	//__ Careful passing the parameter object around, since it is about to vanish! (3.2+ only)
 	//__
-	virtual bool handle_eventPickup(const FEATURE *psFeat, const DROID *psDroid) override;
+	virtual bool handle_eventPickup(const FEATURE* psFeat, const DROID* psDroid) override;
 
 	//__ ## eventObjectSeen(viewer, seen)
 	//__
@@ -525,7 +542,7 @@ public:
 	//__ An event that is run sometimes when an objectm  goes from not seen to seen.
 	//__ First parameter is **game object** doing the seeing, the next the game
 	//__ object being seen.
-	virtual bool handle_eventObjectSeen(const BASE_OBJECT *psViewer, const BASE_OBJECT *psSeen) override;
+	virtual bool handle_eventObjectSeen(const BASE_OBJECT* psViewer, const BASE_OBJECT* psSeen) override;
 
 	//__
 	//__ ## eventGroupSeen(viewer, group)
@@ -535,7 +552,7 @@ public:
 	//__ First parameter is **game object** doing the seeing, the next the id of the group
 	//__ being seen.
 	//__
-	virtual bool handle_eventGroupSeen(const BASE_OBJECT *psViewer, int groupId) override;
+	virtual bool handle_eventGroupSeen(const BASE_OBJECT* psViewer, int groupId) override;
 
 	//__ ## eventObjectTransfer(object, from)
 	//__
@@ -544,7 +561,7 @@ public:
 	//__ object has been transferred, so the target player is in object.player.
 	//__ The event is called for both players.
 	//__
-	virtual bool handle_eventObjectTransfer(const BASE_OBJECT *psObj, int from) override;
+	virtual bool handle_eventObjectTransfer(const BASE_OBJECT* psObj, int from) override;
 
 	//__ ## eventChat(from, to, message)
 	//__
@@ -552,7 +569,7 @@ public:
 	//__ player sending the chat message. For the moment, the ```to``` parameter is always the script
 	//__ player.
 	//__
-	virtual bool handle_eventChat(int from, int to, const char *message) override;
+	virtual bool handle_eventChat(int from, int to, const char* message) override;
 
 	//__ ## eventBeacon(x, y, from, to[, message])
 	//__
@@ -560,7 +577,7 @@ public:
 	//__ player sending the beacon. For the moment, the ```to``` parameter is always the script player.
 	//__ Message may be undefined.
 	//__
-	virtual bool handle_eventBeacon(int x, int y, int from, int to, optional<const char *> message) override;
+	virtual bool handle_eventBeacon(int x, int y, int from, int to, optional<const char*> message) override;
 
 	//__ ## eventBeaconRemoved(from, to)
 	//__
@@ -574,8 +591,8 @@ public:
 	//__ An event that is run whenever a group becomes empty. Input parameter
 	//__ is the about to be killed object, the group's id, and the new group size.
 	//__
-//		// Since groups are entities local to one context, we do not iterate over them here.
-	virtual bool handle_eventGroupLoss(const BASE_OBJECT *psObj, int group, int size) override;
+	//		// Since groups are entities local to one context, we do not iterate over them here.
+	virtual bool handle_eventGroupLoss(const BASE_OBJECT* psObj, int group, int size) override;
 
 	//__ ## eventArea<label>(droid)
 	//__
@@ -583,14 +600,14 @@ public:
 	//__ deactived. Call resetArea() to reactivate it. The name of the event is
 	//__ `eventArea${label}`.
 	//__
-	virtual bool handle_eventArea(const std::string& label, const DROID *psDroid) override;
+	virtual bool handle_eventArea(const std::string& label, const DROID* psDroid) override;
 
 	//__ ## eventDesignCreated(template)
 	//__
 	//__ An event that is run whenever a new droid template is created. It is only
 	//__ run on the client of the player designing the template.
 	//__
-	virtual bool handle_eventDesignCreated(const DROID_TEMPLATE *psTemplate) override;
+	virtual bool handle_eventDesignCreated(const DROID_TEMPLATE* psTemplate) override;
 
 	//__ ## eventAllianceOffer(from, to)
 	//__
@@ -619,7 +636,8 @@ public:
 	//__ to prevent desync from happening. Sync requests must be carefully validated to prevent
 	//__ cheating!
 	//__
-	virtual bool handle_eventSyncRequest(int from, int req_id, int x, int y, const BASE_OBJECT *psObj, const BASE_OBJECT *psObj2) override;
+	virtual bool handle_eventSyncRequest(int from, int req_id, int x, int y, const BASE_OBJECT* psObj,
+	                                     const BASE_OBJECT* psObj2) override;
 
 	//__ ## eventKeyPressed(meta, key)
 	//__
@@ -641,9 +659,9 @@ public:
 // ----------------------------------------------------------------------------------------
 // Utility functions -- not called directly from scripts
 
-JSValue mapJsonToQuickJSValue(JSContext *ctx, const nlohmann::json &instance, uint8_t prop_flags); // forward-declare
+JSValue mapJsonToQuickJSValue(JSContext* ctx, const nlohmann::json& instance, uint8_t prop_flags); // forward-declare
 
-static JSValue mapJsonObjectToQuickJSValue(JSContext *ctx, const nlohmann::json &obj, uint8_t prop_flags)
+static JSValue mapJsonObjectToQuickJSValue(JSContext* ctx, const nlohmann::json& obj, uint8_t prop_flags)
 {
 	JSValue value = JS_NewObject(ctx);
 	for (auto it = obj.begin(); it != obj.end(); ++it)
@@ -654,7 +672,7 @@ static JSValue mapJsonObjectToQuickJSValue(JSContext *ctx, const nlohmann::json 
 	return value;
 }
 
-static JSValue mapJsonArrayToQuickJSValue(JSContext *ctx, const nlohmann::json &array, uint8_t prop_flags)
+static JSValue mapJsonArrayToQuickJSValue(JSContext* ctx, const nlohmann::json& array, uint8_t prop_flags)
 {
 	JSValue value = JS_NewArray(ctx);
 	for (int i = 0; i < array.size(); i++)
@@ -664,50 +682,50 @@ static JSValue mapJsonArrayToQuickJSValue(JSContext *ctx, const nlohmann::json &
 	return value;
 }
 
-JSValue mapJsonToQuickJSValue(JSContext *ctx, const nlohmann::json &instance, uint8_t prop_flags)
+JSValue mapJsonToQuickJSValue(JSContext* ctx, const nlohmann::json& instance, uint8_t prop_flags)
 {
 	switch (instance.type())
 	{
-		// IMPORTANT: To match the prior behavior of loading a QVariant from the JSON value and using engine->toScriptValue(QVariant)
-		//			  to convert to a QScriptValue, "null" JSON values *MUST* map to QScriptValue::UndefinedValue.
-		//
-		//			  If they are set to QScriptValue::NullValue, it causes issues for libcampaign.js. (As the values become "defined".)
-		//
-		case json::value_t::null : return JS_UNDEFINED;
-		case json::value_t::boolean : return JS_NewBool(ctx, instance.get<bool>());
-		case json::value_t::number_integer: return JS_NewInt32(ctx, instance.get<int32_t>());
-		case json::value_t::number_unsigned: return JS_NewUint32(ctx, instance.get<uint32_t>());
-		case json::value_t::number_float: return JS_NewFloat64(ctx, instance.get<double>());
-		case json::value_t::string	: return JS_NewString(ctx, instance.get<WzString>().toUtf8().c_str());
-		case json::value_t::array : return mapJsonArrayToQuickJSValue(ctx, instance, prop_flags);
-		case json::value_t::object : return mapJsonObjectToQuickJSValue(ctx, instance, prop_flags);
-		case json::value_t::binary :
-			debug(LOG_ERROR, "Unexpected binary value type");
-			return JS_UNDEFINED;
-		case json::value_t::discarded : return JS_UNDEFINED;
+	// IMPORTANT: To match the prior behavior of loading a QVariant from the JSON value and using engine->toScriptValue(QVariant)
+	//			  to convert to a QScriptValue, "null" JSON values *MUST* map to QScriptValue::UndefinedValue.
+	//
+	//			  If they are set to QScriptValue::NullValue, it causes issues for libcampaign.js. (As the values become "defined".)
+	//
+	case json::value_t::null: return JS_UNDEFINED;
+	case json::value_t::boolean: return JS_NewBool(ctx, instance.get<bool>());
+	case json::value_t::number_integer: return JS_NewInt32(ctx, instance.get<int32_t>());
+	case json::value_t::number_unsigned: return JS_NewUint32(ctx, instance.get<uint32_t>());
+	case json::value_t::number_float: return JS_NewFloat64(ctx, instance.get<double>());
+	case json::value_t::string: return JS_NewString(ctx, instance.get<WzString>().toUtf8().c_str());
+	case json::value_t::array: return mapJsonArrayToQuickJSValue(ctx, instance, prop_flags);
+	case json::value_t::object: return mapJsonObjectToQuickJSValue(ctx, instance, prop_flags);
+	case json::value_t::binary:
+		debug(LOG_ERROR, "Unexpected binary value type");
+		return JS_UNDEFINED;
+	case json::value_t::discarded: return JS_UNDEFINED;
 	}
 	return JS_UNDEFINED; // should never be reached
 }
 
-int JS_DeletePropertyStr(JSContext *ctx, JSValueConst this_obj,
-                          const char *prop)
+int JS_DeletePropertyStr(JSContext* ctx, JSValueConst this_obj,
+                         const char* prop)
 {
-    JSAtom atom = JS_NewAtom(ctx, prop);
-    int ret = JS_DeleteProperty(ctx, this_obj, atom, 0);
-    JS_FreeAtom(ctx, atom);
-    return ret;
+	JSAtom atom = JS_NewAtom(ctx, prop);
+	int ret = JS_DeleteProperty(ctx, this_obj, atom, 0);
+	JS_FreeAtom(ctx, atom);
+	return ret;
 }
 
 // Forward-declare
-JSValue convDroid(const DROID *psDroid, JSContext *ctx);
-JSValue convStructure(const STRUCTURE *psStruct, JSContext *ctx);
-JSValue convObj(const BASE_OBJECT *psObj, JSContext *ctx);
-JSValue convFeature(const FEATURE *psFeature, JSContext *ctx);
-JSValue convMax(const BASE_OBJECT *psObj, JSContext *ctx);
-JSValue convTemplate(const DROID_TEMPLATE *psTemplate, JSContext *ctx);
-JSValue convResearch(const RESEARCH *psResearch, JSContext *ctx, int player);
+JSValue convDroid(const DROID* psDroid, JSContext* ctx);
+JSValue convStructure(const STRUCTURE* psStruct, JSContext* ctx);
+JSValue convObj(const BASE_OBJECT* psObj, JSContext* ctx);
+JSValue convFeature(const FEATURE* psFeature, JSContext* ctx);
+JSValue convMax(const BASE_OBJECT* psObj, JSContext* ctx);
+JSValue convTemplate(const DROID_TEMPLATE* psTemplate, JSContext* ctx);
+JSValue convResearch(const RESEARCH* psResearch, JSContext* ctx, int player);
 
-static int QuickJS_DefinePropertyValue(JSContext *ctx, JSValueConst this_obj, const char* prop, JSValue val, int flags)
+static int QuickJS_DefinePropertyValue(JSContext* ctx, JSValueConst this_obj, const char* prop, JSValue val, int flags)
 {
 	JSAtom prop_name = JS_NewAtom(ctx, prop);
 	int ret = JS_DefinePropertyValue(ctx, this_obj, prop_name, val, flags);
@@ -727,31 +745,41 @@ static int QuickJS_DefinePropertyValue(JSContext *ctx, JSValueConst this_obj, co
 //;; * ```id``` A string containing the index name of the research.
 //;; * ```type``` The type will always be ```RESEARCH_DATA```.
 //;;
-JSValue convResearch(const RESEARCH *psResearch, JSContext *ctx, int player)
+JSValue convResearch(const RESEARCH* psResearch, JSContext* ctx, int player)
 {
 	if (psResearch == nullptr)
 	{
 		return JS_NULL;
 	}
 	JSValue value = JS_NewObject(ctx);
-	QuickJS_DefinePropertyValue(ctx, value, "power", JS_NewInt32(ctx, (int)psResearch->researchPower), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "points", JS_NewInt32(ctx, (int)psResearch->researchPoints), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "power", JS_NewInt32(ctx, (int)psResearch->researchPower),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "points", JS_NewInt32(ctx, (int)psResearch->researchPoints),
+	                            JS_PROP_ENUMERABLE);
 	bool started = false;
 	for (int i = 0; i < game.maxPlayers; i++)
 	{
 		if (aiCheckAlliances(player, i) || player == i)
 		{
 			int bits = asPlayerResList[i][psResearch->index].ResearchStatus;
-			started = started || (bits & STARTED_RESEARCH) || (bits & STARTED_RESEARCH_PENDING) || (bits & RESBITS_PENDING_ONLY);
+			started = started || (bits & STARTED_RESEARCH) || (bits & STARTED_RESEARCH_PENDING) || (bits &
+				RESBITS_PENDING_ONLY);
 		}
 	}
-	QuickJS_DefinePropertyValue(ctx, value, "started", JS_NewBool(ctx, started), JS_PROP_ENUMERABLE); // including whether an ally has started it
-	QuickJS_DefinePropertyValue(ctx, value, "done", JS_NewBool(ctx, IsResearchCompleted(&asPlayerResList[player][psResearch->index])), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "fullname", JS_NewString(ctx, psResearch->name.toUtf8().c_str()), JS_PROP_ENUMERABLE); // temporary
-	QuickJS_DefinePropertyValue(ctx, value, "name", JS_NewString(ctx, psResearch->id.toUtf8().c_str()), JS_PROP_ENUMERABLE); // will be changed to contain fullname
-	QuickJS_DefinePropertyValue(ctx, value, "id", JS_NewString(ctx, psResearch->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "started", JS_NewBool(ctx, started), JS_PROP_ENUMERABLE);
+	// including whether an ally has started it
+	QuickJS_DefinePropertyValue(ctx, value, "done",
+	                            JS_NewBool(ctx, IsResearchCompleted(&asPlayerResList[player][psResearch->index])),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "fullname", JS_NewString(ctx, psResearch->name.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE); // temporary
+	QuickJS_DefinePropertyValue(ctx, value, "name", JS_NewString(ctx, psResearch->id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE); // will be changed to contain fullname
+	QuickJS_DefinePropertyValue(ctx, value, "id", JS_NewString(ctx, psResearch->id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "type", JS_NewInt32(ctx, SCRIPT_RESEARCH), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "results", mapJsonToQuickJSValue(ctx, psResearch->results, 0), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "results", mapJsonToQuickJSValue(ctx, psResearch->results, 0),
+	                            JS_PROP_ENUMERABLE);
 	return value;
 }
 
@@ -776,7 +804,7 @@ JSValue convResearch(const RESEARCH *psResearch, JSContext *ctx, int player)
 //;; * ```range``` Maximum range of its weapons. (3.2+ only)
 //;; * ```hasIndirect``` One or more of the structure's weapons are indirect. (3.2+ only)
 //;;
-JSValue convStructure(const STRUCTURE *psStruct, JSContext *ctx)
+JSValue convStructure(const STRUCTURE* psStruct, JSContext* ctx)
 {
 	bool aa = false;
 	bool ga = false;
@@ -786,7 +814,7 @@ JSValue convStructure(const STRUCTURE *psStruct, JSContext *ctx)
 	{
 		if (psStruct->asWeaps[i].nStat)
 		{
-			WEAPON_STATS *psWeap = &asWeaponStats[psStruct->asWeaps[i].nStat];
+			WEAPON_STATS* psWeap = &asWeaponStats[psStruct->asWeaps[i].nStat];
 			aa = aa || psWeap->surfaceToAir & SHOOT_IN_AIR;
 			ga = ga || psWeap->surfaceToAir & SHOOT_ON_GROUND;
 			indirect = indirect || psWeap->movementModel == MM_INDIRECT || psWeap->movementModel == MM_HOMINGINDIRECT;
@@ -795,15 +823,20 @@ JSValue convStructure(const STRUCTURE *psStruct, JSContext *ctx)
 	}
 	JSValue value = convObj(psStruct, ctx);
 	QuickJS_DefinePropertyValue(ctx, value, "isCB", JS_NewBool(ctx, structCBSensor(psStruct)), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "isSensor", JS_NewBool(ctx, structStandardSensor(psStruct)), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "isSensor", JS_NewBool(ctx, structStandardSensor(psStruct)),
+	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "canHitAir", JS_NewBool(ctx, aa), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "canHitGround", JS_NewBool(ctx, ga), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "hasIndirect", JS_NewBool(ctx, indirect), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "isRadarDetector", JS_NewBool(ctx, objRadarDetector(psStruct)), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "isRadarDetector", JS_NewBool(ctx, objRadarDetector(psStruct)),
+	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "range", JS_NewInt32(ctx, range), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "status", JS_NewInt32(ctx, (int)psStruct->status), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "health", JS_NewInt32(ctx, 100 * psStruct->body / MAX(1, structureBody(psStruct))), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "cost", JS_NewInt32(ctx, psStruct->pStructureType->powerToBuild), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "health",
+	                            JS_NewInt32(ctx, 100 * psStruct->body / MAX(1, structureBody(psStruct))),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "cost", JS_NewInt32(ctx, psStruct->pStructureType->powerToBuild),
+	                            JS_PROP_ENUMERABLE);
 	int stattype = 0;
 	switch (psStruct->pStructureType->type) // don't bleed our source insanities into the scripting world
 	{
@@ -822,9 +855,9 @@ JSValue convStructure(const STRUCTURE *psStruct, JSContext *ctx)
 	}
 	QuickJS_DefinePropertyValue(ctx, value, "stattype", JS_NewInt32(ctx, stattype), JS_PROP_ENUMERABLE);
 	if (psStruct->pStructureType->type == REF_FACTORY || psStruct->pStructureType->type == REF_CYBORG_FACTORY
-	    || psStruct->pStructureType->type == REF_VTOL_FACTORY
-	    || psStruct->pStructureType->type == REF_RESEARCH
-	    || psStruct->pStructureType->type == REF_POWER_GEN)
+		|| psStruct->pStructureType->type == REF_VTOL_FACTORY
+		|| psStruct->pStructureType->type == REF_RESEARCH
+		|| psStruct->pStructureType->type == REF_POWER_GEN)
 	{
 		QuickJS_DefinePropertyValue(ctx, value, "modules", JS_NewUint32(ctx, psStruct->capacity), JS_PROP_ENUMERABLE);
 	}
@@ -836,11 +869,15 @@ JSValue convStructure(const STRUCTURE *psStruct, JSContext *ctx)
 	for (int j = 0; j < psStruct->numWeaps; j++)
 	{
 		JSValue weapon = JS_NewObject(ctx);
-		const WEAPON_STATS *psStats = asWeaponStats + psStruct->asWeaps[j].nStat;
-		QuickJS_DefinePropertyValue(ctx, weapon, "fullname", JS_NewString(ctx, psStats->name.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-		QuickJS_DefinePropertyValue(ctx, weapon, "name", JS_NewString(ctx, psStats->id.toUtf8().c_str()), JS_PROP_ENUMERABLE); // will be changed to contain full name
-		QuickJS_DefinePropertyValue(ctx, weapon, "id", JS_NewString(ctx, psStats->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psStruct->asWeaps[j].lastFired), JS_PROP_ENUMERABLE);
+		const WEAPON_STATS* psStats = asWeaponStats + psStruct->asWeaps[j].nStat;
+		QuickJS_DefinePropertyValue(ctx, weapon, "fullname", JS_NewString(ctx, psStats->name.toUtf8().c_str()),
+		                            JS_PROP_ENUMERABLE);
+		QuickJS_DefinePropertyValue(ctx, weapon, "name", JS_NewString(ctx, psStats->id.toUtf8().c_str()),
+		                            JS_PROP_ENUMERABLE); // will be changed to contain full name
+		QuickJS_DefinePropertyValue(ctx, weapon, "id", JS_NewString(ctx, psStats->id.toUtf8().c_str()),
+		                            JS_PROP_ENUMERABLE);
+		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psStruct->asWeaps[j].lastFired),
+		                            JS_PROP_ENUMERABLE);
 		JS_DefinePropertyValueUint32(ctx, weaponlist, j, weapon, JS_PROP_ENUMERABLE);
 	}
 	QuickJS_DefinePropertyValue(ctx, value, "weapons", weaponlist, JS_PROP_ENUMERABLE);
@@ -855,11 +892,12 @@ JSValue convStructure(const STRUCTURE *psStruct, JSContext *ctx)
 //;; * ```stattype``` The type of feature. Defined types are ```OIL_RESOURCE```, ```OIL_DRUM``` and ```ARTIFACT```.
 //;; * ```damageable``` Can this feature be damaged?
 //;;
-JSValue convFeature(const FEATURE *psFeature, JSContext *ctx)
+JSValue convFeature(const FEATURE* psFeature, JSContext* ctx)
 {
 	JSValue value = convObj(psFeature, ctx);
-	const FEATURE_STATS *psStats = psFeature->psStats;
-	QuickJS_DefinePropertyValue(ctx, value, "health", JS_NewUint32(ctx, 100 * psStats->body / MAX(1, psFeature->body)), JS_PROP_ENUMERABLE);
+	const FEATURE_STATS* psStats = psFeature->psStats;
+	QuickJS_DefinePropertyValue(ctx, value, "health", JS_NewUint32(ctx, 100 * psStats->body / MAX(1, psFeature->body)),
+	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "damageable", JS_NewBool(ctx, psStats->damageable), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "stattype", JS_NewInt32(ctx, psStats->subType), JS_PROP_ENUMERABLE);
 	return value;
@@ -927,19 +965,19 @@ JSValue convFeature(const FEATURE *psFeature, JSContext *ctx)
 //;; * ```cargoCount``` Defined for transporters only: Number of individual \emph{items} in the cargo hold. (3.2+ only)
 //;; * ```cargoSize``` The amount of cargo space the droid will take inside a transport. (3.2+ only)
 //;;
-JSValue convDroid(const DROID *psDroid, JSContext *ctx)
+JSValue convDroid(const DROID* psDroid, JSContext* ctx)
 {
 	bool aa = false;
 	bool ga = false;
 	bool indirect = false;
 	int range = -1;
-	const BODY_STATS *psBodyStats = &asBodyStats[psDroid->asBits[COMP_BODY]];
+	const BODY_STATS* psBodyStats = &asBodyStats[psDroid->asBits[COMP_BODY]];
 
 	for (int i = 0; i < psDroid->numWeaps; i++)
 	{
 		if (psDroid->asWeaps[i].nStat)
 		{
-			WEAPON_STATS *psWeap = &asWeaponStats[psDroid->asWeaps[i].nStat];
+			WEAPON_STATS* psWeap = &asWeaponStats[psDroid->asWeaps[i].nStat];
 			aa = aa || psWeap->surfaceToAir & SHOOT_IN_AIR;
 			ga = ga || psWeap->surfaceToAir & SHOOT_ON_GROUND;
 			indirect = indirect || psWeap->movementModel == MM_INDIRECT || psWeap->movementModel == MM_HOMINGINDIRECT;
@@ -963,35 +1001,54 @@ JSValue convDroid(const DROID *psDroid, JSContext *ctx)
 	switch (psDroid->droidType) // hide some engine craziness
 	{
 	case DROID_CYBORG_CONSTRUCT:
-		type = DROID_CONSTRUCT; break;
+		type = DROID_CONSTRUCT;
+		break;
 	case DROID_CYBORG_SUPER:
-		type = DROID_CYBORG; break;
+		type = DROID_CYBORG;
+		break;
 	case DROID_DEFAULT:
-		type = DROID_WEAPON; break;
+		type = DROID_WEAPON;
+		break;
 	case DROID_CYBORG_REPAIR:
-		type = DROID_REPAIR; break;
+		type = DROID_REPAIR;
+		break;
 	default:
 		break;
 	}
 	QuickJS_DefinePropertyValue(ctx, value, "bodySize", JS_NewInt32(ctx, psBodyStats->size), JS_PROP_ENUMERABLE);
 	if (isTransporter(psDroid))
 	{
-		QuickJS_DefinePropertyValue(ctx, value, "cargoCapacity", JS_NewInt32(ctx, TRANSPORTER_CAPACITY), JS_PROP_ENUMERABLE);
-		QuickJS_DefinePropertyValue(ctx, value, "cargoLeft", JS_NewInt32(ctx, calcRemainingCapacity(psDroid)), JS_PROP_ENUMERABLE);
-		QuickJS_DefinePropertyValue(ctx, value, "cargoCount", JS_NewUint32(ctx, psDroid->psGroup != nullptr? psDroid->psGroup->getNumMembers() : 0), JS_PROP_ENUMERABLE);
+		QuickJS_DefinePropertyValue(ctx, value, "cargoCapacity", JS_NewInt32(ctx, TRANSPORTER_CAPACITY),
+		                            JS_PROP_ENUMERABLE);
+		QuickJS_DefinePropertyValue(ctx, value, "cargoLeft", JS_NewInt32(ctx, calcRemainingCapacity(psDroid)),
+		                            JS_PROP_ENUMERABLE);
+		QuickJS_DefinePropertyValue(ctx, value, "cargoCount",
+		                            JS_NewUint32(ctx, psDroid->psGroup != nullptr
+			                                              ? psDroid->psGroup->getNumMembers()
+			                                              : 0), JS_PROP_ENUMERABLE);
 	}
-	QuickJS_DefinePropertyValue(ctx, value, "isRadarDetector", JS_NewBool(ctx, objRadarDetector(psDroid)), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "isRadarDetector", JS_NewBool(ctx, objRadarDetector(psDroid)),
+	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "isCB", JS_NewBool(ctx, cbSensorDroid(psDroid)), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "isSensor", JS_NewBool(ctx, standardSensorDroid(psDroid)), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "isSensor", JS_NewBool(ctx, standardSensorDroid(psDroid)),
+	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "canHitAir", JS_NewBool(ctx, aa), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "canHitGround", JS_NewBool(ctx, ga), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "isVTOL", JS_NewBool(ctx, isVtolDroid(psDroid)), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "droidType", JS_NewInt32(ctx, (int)type), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "experience", JS_NewFloat64(ctx, (double)psDroid->experience / 65536.0), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "health", JS_NewFloat64(ctx, 100.0 / (double)psDroid->originalBody * (double)psDroid->body), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "experience", JS_NewFloat64(ctx, (double)psDroid->experience / 65536.0),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "health",
+	                            JS_NewFloat64(ctx, 100.0 / (double)psDroid->originalBody * (double)psDroid->body),
+	                            JS_PROP_ENUMERABLE);
 
-	QuickJS_DefinePropertyValue(ctx, value, "body", JS_NewString(ctx, asBodyStats[psDroid->asBits[COMP_BODY]].id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "propulsion", JS_NewString(ctx, asPropulsionStats[psDroid->asBits[COMP_PROPULSION]].id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "body",
+	                            JS_NewString(ctx, asBodyStats[psDroid->asBits[COMP_BODY]].id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "propulsion",
+	                            JS_NewString(
+		                            ctx, asPropulsionStats[psDroid->asBits[COMP_PROPULSION]].id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "armed", JS_NewFloat64(ctx, 0.0), JS_PROP_ENUMERABLE); // deprecated!
 
 	JSValue weaponlist = JS_NewArray(ctx);
@@ -999,16 +1056,21 @@ JSValue convDroid(const DROID *psDroid, JSContext *ctx)
 	{
 		int armed = droidReloadBar(psDroid, &psDroid->asWeaps[j], j);
 		JSValue weapon = JS_NewObject(ctx);
-		const WEAPON_STATS *psStats = asWeaponStats + psDroid->asWeaps[j].nStat;
-		QuickJS_DefinePropertyValue(ctx, weapon, "fullname", JS_NewString(ctx, psStats->name.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-		QuickJS_DefinePropertyValue(ctx, weapon, "name", JS_NewString(ctx, psStats->id.toUtf8().c_str()), JS_PROP_ENUMERABLE); // will be changed to contain full name
-		QuickJS_DefinePropertyValue(ctx, weapon, "id", JS_NewString(ctx, psStats->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psDroid->asWeaps[j].lastFired), JS_PROP_ENUMERABLE);
+		const WEAPON_STATS* psStats = asWeaponStats + psDroid->asWeaps[j].nStat;
+		QuickJS_DefinePropertyValue(ctx, weapon, "fullname", JS_NewString(ctx, psStats->name.toUtf8().c_str()),
+		                            JS_PROP_ENUMERABLE);
+		QuickJS_DefinePropertyValue(ctx, weapon, "name", JS_NewString(ctx, psStats->id.toUtf8().c_str()),
+		                            JS_PROP_ENUMERABLE); // will be changed to contain full name
+		QuickJS_DefinePropertyValue(ctx, weapon, "id", JS_NewString(ctx, psStats->id.toUtf8().c_str()),
+		                            JS_PROP_ENUMERABLE);
+		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psDroid->asWeaps[j].lastFired),
+		                            JS_PROP_ENUMERABLE);
 		QuickJS_DefinePropertyValue(ctx, weapon, "armed", JS_NewInt32(ctx, armed), JS_PROP_ENUMERABLE);
 		JS_DefinePropertyValueUint32(ctx, weaponlist, j, weapon, JS_PROP_ENUMERABLE);
 	}
 	QuickJS_DefinePropertyValue(ctx, value, "weapons", weaponlist, JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "cargoSize", JS_NewInt32(ctx, transporterSpaceRequired(psDroid)), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "cargoSize", JS_NewInt32(ctx, transporterSpaceRequired(psDroid)),
+	                            JS_PROP_ENUMERABLE);
 	return value;
 }
 
@@ -1032,7 +1094,7 @@ JSValue convDroid(const DROID *psDroid, JSContext *ctx)
 //;; * ```thermal``` Amount of thermal protection that protect against heat based weapons.
 //;; * ```born``` The game time at which this object was produced or came into the world. (3.2+ only)
 //;;
-JSValue convObj(const BASE_OBJECT *psObj, JSContext *ctx)
+JSValue convObj(const BASE_OBJECT* psObj, JSContext* ctx)
 {
 	JSValue value = JS_NewObject(ctx);
 	ASSERT_OR_RETURN(value, psObj, "No object for conversion");
@@ -1041,13 +1103,14 @@ JSValue convObj(const BASE_OBJECT *psObj, JSContext *ctx)
 	QuickJS_DefinePropertyValue(ctx, value, "y", JS_NewInt32(ctx, map_coord(psObj->pos.y)), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "z", JS_NewInt32(ctx, map_coord(psObj->pos.z)), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "player", JS_NewUint32(ctx, psObj->player), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "armour", JS_NewInt32(ctx, objArmour(psObj, WC_KINETIC)), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "armour", JS_NewInt32(ctx, objArmour(psObj, WC_KINETIC)),
+	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "thermal", JS_NewInt32(ctx, objArmour(psObj, WC_HEAT)), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "type", JS_NewInt32(ctx, psObj->type), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "selected", JS_NewUint32(ctx, psObj->selected), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "name", JS_NewString(ctx, objInfo(psObj)), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "born", JS_NewUint32(ctx, psObj->born), JS_PROP_ENUMERABLE);
-	scripting_engine::GROUPMAP *psMap = scripting_engine::instance().getGroupMap(engineToInstanceMap.at(ctx));
+	scripting_engine::GROUPMAP* psMap = scripting_engine::instance().getGroupMap(engineToInstanceMap.at(ctx));
 	if (psMap != nullptr && psMap->map().count(psObj) > 0) // FIXME:
 	{
 		int group = psMap->map().at(psObj); // FIXME:
@@ -1076,34 +1139,57 @@ JSValue convObj(const BASE_OBJECT *psObj, JSContext *ctx)
 //;; * ```ecm``` The name of the ECM (electronic counter-measure) type.
 //;; * ```construct``` The name of the construction type.
 //;; * ```weapons``` An array of weapon names attached to this template.
-JSValue convTemplate(const DROID_TEMPLATE *psTempl, JSContext *ctx)
+JSValue convTemplate(const DROID_TEMPLATE* psTempl, JSContext* ctx)
 {
 	JSValue value = JS_NewObject(ctx);
 	ASSERT_OR_RETURN(value, psTempl, "No object for conversion");
-	QuickJS_DefinePropertyValue(ctx, value, "fullname", JS_NewString(ctx, psTempl->name.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "name", JS_NewString(ctx, psTempl->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "fullname", JS_NewString(ctx, psTempl->name.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "name", JS_NewString(ctx, psTempl->id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "id", JS_NewString(ctx, psTempl->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "points", JS_NewUint32(ctx, calcTemplateBuild(psTempl)), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "power", JS_NewUint32(ctx, calcTemplatePower(psTempl)), JS_PROP_ENUMERABLE); // deprecated, use cost below
+	QuickJS_DefinePropertyValue(ctx, value, "points", JS_NewUint32(ctx, calcTemplateBuild(psTempl)),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "power", JS_NewUint32(ctx, calcTemplatePower(psTempl)), JS_PROP_ENUMERABLE);
+	// deprecated, use cost below
 	QuickJS_DefinePropertyValue(ctx, value, "cost", JS_NewUint32(ctx, calcTemplatePower(psTempl)), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "droidType", JS_NewInt32(ctx, psTempl->droidType), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "body", JS_NewString(ctx, (asBodyStats + psTempl->asParts[COMP_BODY])->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "propulsion", JS_NewString(ctx, (asPropulsionStats + psTempl->asParts[COMP_PROPULSION])->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "brain", JS_NewString(ctx, (asBrainStats + psTempl->asParts[COMP_BRAIN])->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "repair", JS_NewString(ctx, (asRepairStats + psTempl->asParts[COMP_REPAIRUNIT])->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "ecm", JS_NewString(ctx, (asECMStats + psTempl->asParts[COMP_ECM])->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "sensor", JS_NewString(ctx, (asSensorStats + psTempl->asParts[COMP_SENSOR])->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "construct", JS_NewString(ctx, (asConstructStats + psTempl->asParts[COMP_CONSTRUCT])->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "body",
+	                            JS_NewString(ctx, (asBodyStats + psTempl->asParts[COMP_BODY])->id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "propulsion",
+	                            JS_NewString(
+		                            ctx, (asPropulsionStats + psTempl->asParts[COMP_PROPULSION])->id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "brain",
+	                            JS_NewString(ctx, (asBrainStats + psTempl->asParts[COMP_BRAIN])->id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "repair",
+	                            JS_NewString(
+		                            ctx, (asRepairStats + psTempl->asParts[COMP_REPAIRUNIT])->id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "ecm",
+	                            JS_NewString(ctx, (asECMStats + psTempl->asParts[COMP_ECM])->id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "sensor",
+	                            JS_NewString(ctx, (asSensorStats + psTempl->asParts[COMP_SENSOR])->id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "construct",
+	                            JS_NewString(
+		                            ctx, (asConstructStats + psTempl->asParts[COMP_CONSTRUCT])->id.toUtf8().c_str()),
+	                            JS_PROP_ENUMERABLE);
 	JSValue weaponlist = JS_NewArray(ctx);
 	for (int j = 0; j < psTempl->numWeaps; j++)
 	{
-		JS_DefinePropertyValueUint32(ctx, weaponlist, j, JS_NewString(ctx, (asWeaponStats + psTempl->asWeaps[j])->id.toUtf8().c_str()), JS_PROP_ENUMERABLE);
+		JS_DefinePropertyValueUint32(ctx, weaponlist, j,
+		                             JS_NewString(ctx, (asWeaponStats + psTempl->asWeaps[j])->id.toUtf8().c_str()),
+		                             JS_PROP_ENUMERABLE);
 	}
 	QuickJS_DefinePropertyValue(ctx, value, "weapons", weaponlist, JS_PROP_ENUMERABLE);
 	return value;
 }
 
-JSValue convMax(const BASE_OBJECT *psObj, JSContext *ctx)
+JSValue convMax(const BASE_OBJECT* psObj, JSContext* ctx)
 {
 	if (!psObj)
 	{
@@ -1111,22 +1197,23 @@ JSValue convMax(const BASE_OBJECT *psObj, JSContext *ctx)
 	}
 	switch (psObj->type)
 	{
-	case OBJ_DROID: return convDroid((const DROID *)psObj, ctx);
-	case OBJ_STRUCTURE: return convStructure((const STRUCTURE *)psObj, ctx);
-	case OBJ_FEATURE: return convFeature((const FEATURE *)psObj, ctx);
-	default: ASSERT(false, "No such supported object type"); return convObj(psObj, ctx);
+	case OBJ_DROID: return convDroid((const DROID*)psObj, ctx);
+	case OBJ_STRUCTURE: return convStructure((const STRUCTURE*)psObj, ctx);
+	case OBJ_FEATURE: return convFeature((const FEATURE*)psObj, ctx);
+	default: ASSERT(false, "No such supported object type");
+		return convObj(psObj, ctx);
 	}
 }
 
 // Call a function by name
-static JSValue callFunction(JSContext *ctx, const std::string &function, std::vector<JSValue> &args, bool event = true)
+static JSValue callFunction(JSContext* ctx, const std::string& function, std::vector<JSValue>& args, bool event = true)
 {
 	const auto instance = engineToInstanceMap.at(ctx);
 	JSValue global_obj = instance->Get_Global_Obj();
 	if (event)
 	{
 		// recurse into variants, if any
-		for (const std::string &s : instance->eventNamespaces)
+		for (const std::string& s : instance->eventNamespaces)
 		{
 			std::string funcName = s + function;
 			JSValue value = JS_GetPropertyStr(ctx, global_obj, funcName.c_str());
@@ -1139,7 +1226,7 @@ static JSValue callFunction(JSContext *ctx, const std::string &function, std::ve
 	}
 	code_part level = event ? LOG_SCRIPT : LOG_ERROR;
 	JSValue value = JS_GetPropertyStr(ctx, global_obj, function.c_str());
-	auto free_func_ref = gsl::finally([ctx, value] { JS_FreeValue(ctx, value); });  // establish exit action
+	auto free_func_ref = gsl::finally([ctx, value] { JS_FreeValue(ctx, value); }); // establish exit action
 	if (!JS_IsFunction(ctx, value))
 	{
 		// not necessarily an error, may just be a trigger that is not defined (ie not needed)
@@ -1149,7 +1236,8 @@ static JSValue callFunction(JSContext *ctx, const std::string &function, std::ve
 	}
 
 	JSValue result;
-	scripting_engine::instance().executeWithPerformanceMonitoring(instance, function, [ctx, &result, value, &args](){
+	scripting_engine::instance().executeWithPerformanceMonitoring(instance, function, [ctx, &result, value, &args]()
+	{
 		result = JS_Call(ctx, value, JS_UNDEFINED, (int)args.size(), args.data());
 	});
 
@@ -1173,14 +1261,16 @@ static JSValue callFunction(JSContext *ctx, const std::string &function, std::ve
 			JS_FreeCString(ctx, message_str);
 			JS_FreeValue(ctx, message);
 			JSValue stack = JS_GetPropertyStr(ctx, err, "stack");
-			if (!JS_IsUndefined(stack)) {
-                const char* stack_str = JS_ToCString(ctx, stack);
-                if (stack_str) {
+			if (!JS_IsUndefined(stack))
+			{
+				const char* stack_str = JS_ToCString(ctx, stack);
+				if (stack_str)
+				{
 					result_str += stack_str;
-                    JS_FreeCString(ctx, stack_str);
-                }
-            }
-            JS_FreeValue(ctx, stack);
+					JS_FreeCString(ctx, stack_str);
+				}
+			}
+			JS_FreeValue(ctx, stack);
 		}
 		JS_FreeValue(ctx, err);
 		ASSERT(false, "Uncaught exception calling function \"%s\": %s",
@@ -1192,976 +1282,1013 @@ static JSValue callFunction(JSContext *ctx, const std::string &function, std::ve
 
 // ----------------------------------------------------------------------------------------
 
-	class quickjs_execution_context : public wzapi::execution_context
-	{
-	private:
-		JSContext *ctx = nullptr;
-	public:
-		quickjs_execution_context(JSContext *ctx)
+class quickjs_execution_context : public wzapi::execution_context
+{
+private:
+	JSContext* ctx = nullptr;
+public:
+	quickjs_execution_context(JSContext* ctx)
 		: ctx(ctx)
-		{ }
-		~quickjs_execution_context() { }
-	public:
-		virtual wzapi::scripting_instance* currentInstance() const override
-		{
-			return engineToInstanceMap.at(ctx);
-		}
+	{
+	}
 
-		virtual void throwError(const char *expr, int line, const char *function) const override
-		{
-			JS_ThrowReferenceError(ctx, "%s failed in %s at line %d", expr, function, line);
-		}
+	~quickjs_execution_context()
+	{
+	}
 
-		virtual playerCallbackFunc getNamedScriptCallback(const WzString& func) const override
-		{
-			JSContext *pCtx = ctx;
-			return [pCtx, func](const int player) {
-				std::vector<JSValue> args;
-				args.push_back(JS_NewInt32(pCtx, player));
-				callFunction(pCtx, func.toUtf8(), args);
-				std::for_each(args.begin(), args.end(), [pCtx](JSValue& val) { JS_FreeValue(pCtx, val); });
-			};
-		}
+public:
+	virtual wzapi::scripting_instance* currentInstance() const override
+	{
+		return engineToInstanceMap.at(ctx);
+	}
 
-		virtual void doNotSaveGlobal(const std::string &name) const override
-		{
-			engineToInstanceMap.at(ctx)->doNotSaveGlobal(name);
-		}
-	};
+	virtual void throwError(const char* expr, int line, const char* function) const override
+	{
+		JS_ThrowReferenceError(ctx, "%s failed in %s at line %d", expr, function, line);
+	}
 
-	/// Assert for scripts that give useful backtraces and other info.
-	#define UNBOX_SCRIPT_ASSERT(context, expr, ...) \
+	virtual playerCallbackFunc getNamedScriptCallback(const WzString& func) const override
+	{
+		JSContext* pCtx = ctx;
+		return [pCtx, func](const int player)
+		{
+			std::vector<JSValue> args;
+			args.push_back(JS_NewInt32(pCtx, player));
+			callFunction(pCtx, func.toUtf8(), args);
+			std::for_each(args.begin(), args.end(), [pCtx](JSValue& val) { JS_FreeValue(pCtx, val); });
+		};
+	}
+
+	virtual void doNotSaveGlobal(const std::string& name) const override
+	{
+		engineToInstanceMap.at(ctx)->doNotSaveGlobal(name);
+	}
+};
+
+/// Assert for scripts that give useful backtraces and other info.
+#define UNBOX_SCRIPT_ASSERT(context, expr, ...) \
 		do { bool _wzeval = (expr); \
 			if (!_wzeval) { debug(LOG_ERROR, __VA_ARGS__); \
 				JS_ThrowReferenceError(ctx, "%s failed when converting argument %zu for %s", #expr, idx, function); \
 				break; } } while (0)
 
-	namespace
+namespace
+{
+	template <typename T>
+	struct unbox
 	{
-		template<typename T>
-		struct unbox {
-			//T operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function) const;
-		};
+		//T operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function) const;
+	};
 
-		template<>
-		struct unbox<int>
+	template <>
+	struct unbox<int>
+	{
+		int operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
-			int operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				int32_t value = -1;
-				if (JS_ToInt32(ctx, &value, argv[idx++]))
-				{
-					// failed
-					ASSERT(false, "Failed"); // TODO:
-				}
-				return value;
-			}
-		};
-
-		template<>
-		struct unbox<unsigned int>
-		{
-			unsigned int operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				uint32_t value = -1;
-				if (JS_ToUint32(ctx, &value, argv[idx++]))
-				{
-					// failed
-					ASSERT(false, "Failed"); // TODO:
-				}
-				return value;
-			}
-		};
-
-		template<>
-		struct unbox<bool>
-		{
-			bool operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				return JS_ToBool(ctx, argv[idx++]);
-			}
-		};
-
-
-
-		template<>
-		struct unbox<float>
-		{
-			float operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				double value = -1;
-				if (JS_ToFloat64(ctx, &value, argv[idx++]))
-				{
-					// failed
-					ASSERT(false, "Failed"); // TODO:
-				}
-				return static_cast<float>(value);
-			}
-		};
-
-		template<>
-		struct unbox<double>
-		{
-			double operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				double value = -1;
-				if (JS_ToFloat64(ctx, &value, argv[idx++]))
-				{
-					// failed
-					ASSERT(false, "Failed"); // TODO:
-				}
-				return value;
-			}
-		};
-
-		static inline int32_t JSValueToInt32(JSContext *ctx, JSValue &value)
-		{
-			int intVal = -1;
-			if (JS_ToInt32(ctx, &intVal, value))
+			if (argc <= idx)
+				return {};
+			int32_t value = -1;
+			if (JS_ToInt32(ctx, &value, argv[idx++]))
 			{
 				// failed
 				ASSERT(false, "Failed"); // TODO:
 			}
-			return intVal;
+			return value;
 		}
+	};
 
-		static int32_t QuickJS_GetInt32(JSContext *ctx, JSValueConst this_obj, const char *prop)
+	template <>
+	struct unbox<unsigned int>
+	{
+		unsigned int operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
-			JSValue val = JS_GetPropertyStr(ctx, this_obj, prop);
-			int32_t result = JSValueToInt32(ctx, val);
-			JS_FreeValue(ctx, val);
-			return result;
-		}
-
-		static inline uint32_t JSValueToUint32(JSContext *ctx, JSValue &value)
-		{
-			uint32_t uintVal = 0;
-			if (JS_ToUint32(ctx, &uintVal, value))
+			if (argc <= idx)
+				return {};
+			uint32_t value = -1;
+			if (JS_ToUint32(ctx, &value, argv[idx++]))
 			{
 				// failed
 				ASSERT(false, "Failed"); // TODO:
 			}
-			return uintVal;
+			return value;
 		}
+	};
 
-		static uint32_t QuickJS_GetUint32(JSContext *ctx, JSValueConst this_obj, const char *prop)
+	template <>
+	struct unbox<bool>
+	{
+		bool operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
-			JSValue val = JS_GetPropertyStr(ctx, this_obj, prop);
-			uint32_t result = JSValueToUint32(ctx, val);
-			JS_FreeValue(ctx, val);
-			return result;
+			if (argc <= idx)
+				return {};
+			return JS_ToBool(ctx, argv[idx++]);
 		}
+	};
 
-		static inline std::string JSValueToStdString(JSContext *ctx, JSValue &value)
+
+	template <>
+	struct unbox<float>
+	{
+		float operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
-			const char* pStr = JS_ToCString(ctx, value);
-			std::string result;
-			if (pStr) result = pStr;
-			JS_FreeCString(ctx, pStr);
-			return result;
-		}
-
-		static std::string QuickJS_GetStdString(JSContext *ctx, JSValueConst this_obj, const char *prop)
-		{
-			JSValue val = JS_GetPropertyStr(ctx, this_obj, prop);
-			std::string result = JSValueToStdString(ctx, val);
-			JS_FreeValue(ctx, val);
-			return result;
-		}
-
-		bool QuickJS_GetArrayLength(JSContext* ctx, JSValueConst arr, uint64_t& len)
-		{
-			len = 0;
-
-			if (!JS_IsArray(ctx, arr))
-				return false;
-
-			JSValue len_val = JS_GetPropertyStr(ctx, arr, "length");
-			if (JS_IsException(len_val))
-				return false;
-
-			if (JS_ToIndex(ctx, &len, len_val)) {
-				JS_FreeValue(ctx, len_val);
-				return false;
+			if (argc <= idx)
+				return {};
+			double value = -1;
+			if (JS_ToFloat64(ctx, &value, argv[idx++]))
+			{
+				// failed
+				ASSERT(false, "Failed"); // TODO:
 			}
+			return static_cast<float>(value);
+		}
+	};
 
+	template <>
+	struct unbox<double>
+	{
+		double operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		{
+			if (argc <= idx)
+				return {};
+			double value = -1;
+			if (JS_ToFloat64(ctx, &value, argv[idx++]))
+			{
+				// failed
+				ASSERT(false, "Failed"); // TODO:
+			}
+			return value;
+		}
+	};
+
+	static inline int32_t JSValueToInt32(JSContext* ctx, JSValue& value)
+	{
+		int intVal = -1;
+		if (JS_ToInt32(ctx, &intVal, value))
+		{
+			// failed
+			ASSERT(false, "Failed"); // TODO:
+		}
+		return intVal;
+	}
+
+	static int32_t QuickJS_GetInt32(JSContext* ctx, JSValueConst this_obj, const char* prop)
+	{
+		JSValue val = JS_GetPropertyStr(ctx, this_obj, prop);
+		int32_t result = JSValueToInt32(ctx, val);
+		JS_FreeValue(ctx, val);
+		return result;
+	}
+
+	static inline uint32_t JSValueToUint32(JSContext* ctx, JSValue& value)
+	{
+		uint32_t uintVal = 0;
+		if (JS_ToUint32(ctx, &uintVal, value))
+		{
+			// failed
+			ASSERT(false, "Failed"); // TODO:
+		}
+		return uintVal;
+	}
+
+	static uint32_t QuickJS_GetUint32(JSContext* ctx, JSValueConst this_obj, const char* prop)
+	{
+		JSValue val = JS_GetPropertyStr(ctx, this_obj, prop);
+		uint32_t result = JSValueToUint32(ctx, val);
+		JS_FreeValue(ctx, val);
+		return result;
+	}
+
+	static inline std::string JSValueToStdString(JSContext* ctx, JSValue& value)
+	{
+		const char* pStr = JS_ToCString(ctx, value);
+		std::string result;
+		if (pStr) result = pStr;
+		JS_FreeCString(ctx, pStr);
+		return result;
+	}
+
+	static std::string QuickJS_GetStdString(JSContext* ctx, JSValueConst this_obj, const char* prop)
+	{
+		JSValue val = JS_GetPropertyStr(ctx, this_obj, prop);
+		std::string result = JSValueToStdString(ctx, val);
+		JS_FreeValue(ctx, val);
+		return result;
+	}
+
+	bool QuickJS_GetArrayLength(JSContext* ctx, JSValueConst arr, uint64_t& len)
+	{
+		len = 0;
+
+		if (!JS_IsArray(ctx, arr))
+			return false;
+
+		JSValue len_val = JS_GetPropertyStr(ctx, arr, "length");
+		if (JS_IsException(len_val))
+			return false;
+
+		if (JS_ToIndex(ctx, &len, len_val))
+		{
 			JS_FreeValue(ctx, len_val);
-			return true;
+			return false;
 		}
 
-		template<>
-		struct unbox<DROID*>
-		{
-			DROID* operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				JSValue droidVal = argv[idx++];
-				int id = QuickJS_GetInt32(ctx, droidVal, "id");
-				int player = QuickJS_GetInt32(ctx, droidVal, "player");
-				DROID *psDroid = IdToDroid(id, player);
-				UNBOX_SCRIPT_ASSERT(context, psDroid, "No such droid id %d belonging to player %d", id, player);
-				return psDroid;
-			}
-		};
+		JS_FreeValue(ctx, len_val);
+		return true;
+	}
 
-		template<>
-		struct unbox<const DROID*>
+	template <>
+	struct unbox<DROID*>
+	{
+		DROID* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
-			const DROID* operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				return unbox<DROID*>()(idx, ctx, argc, argv, function);
-			}
-		};
-
-		template<>
-		struct unbox<STRUCTURE*>
-		{
-			STRUCTURE* operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				JSValue structVal = argv[idx++];
-				int id = QuickJS_GetInt32(ctx, structVal, "id");
-				int player = QuickJS_GetInt32(ctx, structVal, "player");
-				STRUCTURE *psStruct = IdToStruct(id, player);
-				UNBOX_SCRIPT_ASSERT(context, psStruct, "No such structure id %d belonging to player %d", id, player);
-				return psStruct;
-			}
-		};
-
-		template<>
-		struct unbox<const STRUCTURE*>
-		{
-			const STRUCTURE* operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				return unbox<STRUCTURE*>()(idx, ctx, argc, argv, function);
-			}
-		};
-
-		template<>
-		struct unbox<BASE_OBJECT*>
-		{
-			BASE_OBJECT* operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				JSValue objVal = argv[idx++];
-				int oid = QuickJS_GetInt32(ctx, objVal, "id");
-				int oplayer = QuickJS_GetInt32(ctx, objVal, "player");
-				OBJECT_TYPE otype = (OBJECT_TYPE)QuickJS_GetInt32(ctx, objVal, "type");
-				BASE_OBJECT* psObj = IdToObject(otype, oid, oplayer);
-				UNBOX_SCRIPT_ASSERT(context, psObj, "No such object id %d belonging to player %d", oid, oplayer);
-				return psObj;
-			}
-		};
-
-		template<>
-		struct unbox<const BASE_OBJECT*>
-		{
-			const BASE_OBJECT* operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				return unbox<BASE_OBJECT*>()(idx, ctx, argc, argv, function);
-			}
-		};
-
-		template<>
-		struct unbox<std::string>
-		{
-			std::string operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				return JSValueToStdString(ctx, argv[idx++]);
-			}
-		};
-
-		template<>
-		struct unbox<wzapi::STRUCTURE_TYPE_or_statsName_string>
-		{
-			wzapi::STRUCTURE_TYPE_or_statsName_string operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				wzapi::STRUCTURE_TYPE_or_statsName_string result;
-				if (argc <= idx)
-					return result;
-				JSValue val = argv[idx++];
-				if (JS_IsNumber(val))
-				{
-					result.type = (STRUCTURE_TYPE)JSValueToInt32(ctx, val);
-				}
-				else
-				{
-					result.statsName = JSValueToStdString(ctx, val);
-				}
-				return result;
-			}
-		};
-
-		template<typename OptionalType>
-		struct unbox<optional<OptionalType>>
-		{
-			optional<OptionalType> operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				// TODO: Might have to add a check here for whether argv[idx] == JS_UNDEFINED? (depends on how QuickJS handles missing optional arguments of functions)
-				return optional<OptionalType>(unbox<OptionalType>()(idx, ctx, argc, argv, function));
-			}
-		};
-
-		template<>
-		struct unbox<wzapi::reservedParam>
-		{
-			wzapi::reservedParam operator()(size_t& idx, JSContext *ctx, int argc, WZ_DECL_UNUSED JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				// just ignore parameter value, and increment idx
-				idx++;
+			if (argc <= idx)
 				return {};
-			}
-		};
+			JSValue droidVal = argv[idx++];
+			int id = QuickJS_GetInt32(ctx, droidVal, "id");
+			int player = QuickJS_GetInt32(ctx, droidVal, "player");
+			DROID* psDroid = IdToDroid(id, player);
+			UNBOX_SCRIPT_ASSERT(context, psDroid, "No such droid id %d belonging to player %d", id, player);
+			return psDroid;
+		}
+	};
 
-		template<>
-		struct unbox<wzapi::game_object_identifier>
+	template <>
+	struct unbox<const DROID*>
+	{
+		const DROID* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
-			wzapi::game_object_identifier operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc < idx)
-					return {};
-				JSValue objVal = argv[idx++];
-				wzapi::game_object_identifier result;
-				result.id = QuickJS_GetInt32(ctx, objVal, "id");
-				result.player = QuickJS_GetInt32(ctx, objVal, "player");
-				result.type = QuickJS_GetInt32(ctx, objVal, "type");
+			return unbox<DROID*>()(idx, ctx, argc, argv, function);
+		}
+	};
+
+	template <>
+	struct unbox<STRUCTURE*>
+	{
+		STRUCTURE* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		{
+			if (argc <= idx)
+				return {};
+			JSValue structVal = argv[idx++];
+			int id = QuickJS_GetInt32(ctx, structVal, "id");
+			int player = QuickJS_GetInt32(ctx, structVal, "player");
+			STRUCTURE* psStruct = IdToStruct(id, player);
+			UNBOX_SCRIPT_ASSERT(context, psStruct, "No such structure id %d belonging to player %d", id, player);
+			return psStruct;
+		}
+	};
+
+	template <>
+	struct unbox<const STRUCTURE*>
+	{
+		const STRUCTURE* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		{
+			return unbox<STRUCTURE*>()(idx, ctx, argc, argv, function);
+		}
+	};
+
+	template <>
+	struct unbox<BASE_OBJECT*>
+	{
+		BASE_OBJECT* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		{
+			if (argc <= idx)
+				return {};
+			JSValue objVal = argv[idx++];
+			int oid = QuickJS_GetInt32(ctx, objVal, "id");
+			int oplayer = QuickJS_GetInt32(ctx, objVal, "player");
+			OBJECT_TYPE otype = (OBJECT_TYPE)QuickJS_GetInt32(ctx, objVal, "type");
+			BASE_OBJECT* psObj = IdToObject(otype, oid, oplayer);
+			UNBOX_SCRIPT_ASSERT(context, psObj, "No such object id %d belonging to player %d", oid, oplayer);
+			return psObj;
+		}
+	};
+
+	template <>
+	struct unbox<const BASE_OBJECT*>
+	{
+		const BASE_OBJECT* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		{
+			return unbox<BASE_OBJECT*>()(idx, ctx, argc, argv, function);
+		}
+	};
+
+	template <>
+	struct unbox<std::string>
+	{
+		std::string operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		{
+			if (argc <= idx)
+				return {};
+			return JSValueToStdString(ctx, argv[idx++]);
+		}
+	};
+
+	template <>
+	struct unbox<wzapi::STRUCTURE_TYPE_or_statsName_string>
+	{
+		wzapi::STRUCTURE_TYPE_or_statsName_string operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv,
+		                                                     const char* function)
+		{
+			wzapi::STRUCTURE_TYPE_or_statsName_string result;
+			if (argc <= idx)
 				return result;
-			}
-		};
-
-		template<>
-		struct unbox<wzapi::string_or_string_list>
-		{
-			wzapi::string_or_string_list operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
+			JSValue val = argv[idx++];
+			if (JS_IsNumber(val))
 			{
-				if (argc <= idx)
-					return {};
-				wzapi::string_or_string_list strings;
+				result.type = (STRUCTURE_TYPE)JSValueToInt32(ctx, val);
+			}
+			else
+			{
+				result.statsName = JSValueToStdString(ctx, val);
+			}
+			return result;
+		}
+	};
 
-				JSValue list_or_string = argv[idx++];
-				if (JS_IsArray(ctx, list_or_string))
+	template <typename OptionalType>
+	struct unbox<optional<OptionalType>>
+	{
+		optional<OptionalType> operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv,
+		                                  const char* function)
+		{
+			if (argc <= idx)
+				return {};
+			// TODO: Might have to add a check here for whether argv[idx] == JS_UNDEFINED? (depends on how QuickJS handles missing optional arguments of functions)
+			return optional<OptionalType>(unbox<OptionalType>()(idx, ctx, argc, argv, function));
+		}
+	};
+
+	template <>
+	struct unbox<wzapi::reservedParam>
+	{
+		wzapi::reservedParam operator()(size_t& idx, JSContext* ctx, int argc, WZ_DECL_UNUSED JSValueConst* argv,
+		                                const char* function)
+		{
+			if (argc <= idx)
+				return {};
+			// just ignore parameter value, and increment idx
+			idx++;
+			return {};
+		}
+	};
+
+	template <>
+	struct unbox<wzapi::game_object_identifier>
+	{
+		wzapi::game_object_identifier operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv,
+		                                         const char* function)
+		{
+			if (argc < idx)
+				return {};
+			JSValue objVal = argv[idx++];
+			wzapi::game_object_identifier result;
+			result.id = QuickJS_GetInt32(ctx, objVal, "id");
+			result.player = QuickJS_GetInt32(ctx, objVal, "player");
+			result.type = QuickJS_GetInt32(ctx, objVal, "type");
+			return result;
+		}
+	};
+
+	template <>
+	struct unbox<wzapi::string_or_string_list>
+	{
+		wzapi::string_or_string_list operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv,
+		                                        const char* function)
+		{
+			if (argc <= idx)
+				return {};
+			wzapi::string_or_string_list strings;
+
+			JSValue list_or_string = argv[idx++];
+			if (JS_IsArray(ctx, list_or_string))
+			{
+				uint64_t length = 0;
+				if (QuickJS_GetArrayLength(ctx, list_or_string, length))
 				{
-					uint64_t length = 0;
-					if (QuickJS_GetArrayLength(ctx, list_or_string, length))
+					for (uint64_t k = 0; k < length; k++) // TODO: uint64_t isn't correct here, as we call GetUint32...
 					{
-						for (uint64_t k = 0; k < length; k++) // TODO: uint64_t isn't correct here, as we call GetUint32...
-						{
-							JSValue resVal = JS_GetPropertyUint32(ctx, list_or_string, k);
-							strings.strings.push_back(JSValueToStdString(ctx, resVal));
-							JS_FreeValue(ctx, resVal);
-						}
+						JSValue resVal = JS_GetPropertyUint32(ctx, list_or_string, k);
+						strings.strings.push_back(JSValueToStdString(ctx, resVal));
+						JS_FreeValue(ctx, resVal);
 					}
 				}
-				else
-				{
-					strings.strings.push_back(JSValueToStdString(ctx, list_or_string));
-				}
-				return strings;
 			}
-		};
-
-		template<>
-		struct unbox<wzapi::va_list_treat_as_strings>
-		{
-			wzapi::va_list_treat_as_strings operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
+			else
 			{
-				if (argc <= idx)
-					return {};
-				wzapi::va_list_treat_as_strings strings;
-				for (; idx < argc; idx++)
-				{
-					const char* pStr = JS_ToCString(ctx, argv[idx]);
-					if (!pStr) // (context->state() == QScriptContext::ExceptionState)
-					{
-						break;
-					}
-					strings.strings.push_back(std::string(pStr));
-					JS_FreeCString(ctx, pStr);
-				}
-				return strings;
+				strings.strings.push_back(JSValueToStdString(ctx, list_or_string));
 			}
-		};
+			return strings;
+		}
+	};
 
-		template<typename ContainedType>
-		struct unbox<wzapi::va_list<ContainedType>>
+	template <>
+	struct unbox<wzapi::va_list_treat_as_strings>
+	{
+		wzapi::va_list_treat_as_strings operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv,
+		                                           const char* function)
 		{
-			wzapi::va_list<ContainedType> operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-				wzapi::va_list<ContainedType> result;
-				size_t before_idx = idx;
-				for (; idx < argc; )
-				{
-					before_idx = idx;
-					result.va_list.push_back(unbox<ContainedType>()(idx, ctx, argc, argv, function));
-					if (before_idx == idx)
-					{
-						idx++;
-					}
-				}
-				return result;
-			}
-		};
-
-		template<>
-		struct unbox<scripting_engine::area_by_values_or_area_label_lookup>
-		{
-			scripting_engine::area_by_values_or_area_label_lookup operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
-			{
-				if (argc <= idx)
-					return {};
-
-				if (JS_IsString(argv[idx]))
-				{
-					return scripting_engine::area_by_values_or_area_label_lookup(JSValueToStdString(ctx, argv[idx++]));
-				}
-				else if ((argc - idx) >= 4)
-				{
-					int x1, y1, x2, y2;
-					x1 = JSValueToInt32(ctx, argv[idx]);
-					y1 = JSValueToInt32(ctx, argv[idx + 1]);
-					x2 = JSValueToInt32(ctx, argv[idx + 2]);
-					y2 = JSValueToInt32(ctx, argv[idx + 3]);
-					idx += 4;
-					return scripting_engine::area_by_values_or_area_label_lookup(x1, y1, x2, y2);
-				}
-				else
-				{
-					// could log an error here
-				}
+			if (argc <= idx)
 				return {};
-			}
-		};
-
-		template<>
-		struct unbox<generic_script_object>
-		{
-			generic_script_object operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
+			wzapi::va_list_treat_as_strings strings;
+			for (; idx < argc; idx++)
 			{
-				if (argc <= idx)
-					return {};
+				const char* pStr = JS_ToCString(ctx, argv[idx]);
+				if (!pStr) // (context->state() == QScriptContext::ExceptionState)
+				{
+					break;
+				}
+				strings.strings.push_back(std::string(pStr));
+				JS_FreeCString(ctx, pStr);
+			}
+			return strings;
+		}
+	};
 
-				JSValue qval = argv[idx++];
-				int type = QuickJS_GetInt32(ctx, qval, "type");
-
-				JSValue triggered = JS_GetPropertyStr(ctx, qval, "triggered");
-				if (JS_IsNumber(triggered))
-				{
-//					UNBOX_SCRIPT_ASSERT(context, type != SCRIPT_POSITION, "Cannot assign a trigger to a position");
-					ASSERT(false, "Not currently handling triggered property - does anything use this?");
-				}
-
-				if (type == SCRIPT_RADIUS)
-				{
-					return generic_script_object::fromRadius(
-						QuickJS_GetInt32(ctx, qval, "x"),
-						QuickJS_GetInt32(ctx, qval, "y"),
-						QuickJS_GetInt32(ctx, qval, "radius")
-					);
-				}
-				else if (type == SCRIPT_AREA)
-				{
-					return generic_script_object::fromArea(
-						QuickJS_GetInt32(ctx, qval, "x"),
-						QuickJS_GetInt32(ctx, qval, "y"),
-						QuickJS_GetInt32(ctx, qval, "x2"),
-						QuickJS_GetInt32(ctx, qval, "y2")
-					);
-				}
-				else if (type == SCRIPT_POSITION)
-				{
-					return generic_script_object::fromPosition(
-						QuickJS_GetInt32(ctx, qval, "x"),
-						QuickJS_GetInt32(ctx, qval, "y")
-					);
-				}
-				else if (type == SCRIPT_GROUP)
-				{
-					return generic_script_object::fromGroup(
-						QuickJS_GetInt32(ctx, qval, "id")
-					);
-				}
-				else if (type == OBJ_DROID || type == OBJ_STRUCTURE || type == OBJ_FEATURE)
-				{
-					int id = QuickJS_GetInt32(ctx, qval, "id");
-					int player = QuickJS_GetInt32(ctx, qval, "player");
-					BASE_OBJECT *psObj = IdToObject((OBJECT_TYPE)type, id, player);
-					UNBOX_SCRIPT_ASSERT(context, psObj, "Object id %d not found belonging to player %d", id, player); // TODO: fail out
-					return generic_script_object::fromObject(psObj);
-				}
+	template <typename ContainedType>
+	struct unbox<wzapi::va_list<ContainedType>>
+	{
+		wzapi::va_list<ContainedType> operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv,
+		                                         const char* function)
+		{
+			if (argc <= idx)
 				return {};
-			}
-		};
-
-		template<>
-		struct unbox<wzapi::object_request>
-		{
-			wzapi::object_request operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
+			wzapi::va_list<ContainedType> result;
+			size_t before_idx = idx;
+			for (; idx < argc;)
 			{
-				if (argc <= idx)
-					return {};
-
-				if ((argc - idx) >= 3) // get by ID case (3 parameters)
+				before_idx = idx;
+				result.va_list.push_back(unbox<ContainedType>()(idx, ctx, argc, argv, function));
+				if (before_idx == idx)
 				{
-					OBJECT_TYPE type = (OBJECT_TYPE)JSValueToInt32(ctx, argv[idx++]);
-					int player = JSValueToInt32(ctx, argv[idx++]);
-					int id = JSValueToInt32(ctx, argv[idx++]);
-					return wzapi::object_request(type, player, id);
-				}
-				else if ((argc - idx) >= 2) // get at position case (2 parameters)
-				{
-					int x = JSValueToInt32(ctx, argv[idx++]);
-					int y = JSValueToInt32(ctx, argv[idx++]);
-					return wzapi::object_request(x, y);
-				}
-				else
-				{
-					// get by label case (1 parameter)
-					std::string label = JSValueToStdString(ctx, argv[idx++]);
-					return wzapi::object_request(label);
+					idx++;
 				}
 			}
-		};
+			return result;
+		}
+	};
 
-		template<>
-		struct unbox<wzapi::label_or_position_values>
+	template <>
+	struct unbox<scripting_engine::area_by_values_or_area_label_lookup>
+	{
+		scripting_engine::area_by_values_or_area_label_lookup operator()(
+			size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
-			wzapi::label_or_position_values operator()(size_t& idx, JSContext *ctx, int argc, JSValueConst *argv, const char *function)
+			if (argc <= idx)
+				return {};
+
+			if (JS_IsString(argv[idx]))
 			{
-				if ((argc - idx) >= 4) // square area
-				{
-					int x1 = JSValueToInt32(ctx, argv[idx++]);
-					int y1 = JSValueToInt32(ctx, argv[idx++]);
-					int x2 = JSValueToInt32(ctx, argv[idx++]);
-					int y2 = JSValueToInt32(ctx, argv[idx++]);
-					return wzapi::label_or_position_values(x1, y1, x2, y2);
-				}
-				else if ((argc - idx) >= 2) // single tile
-				{
-					int x = JSValueToInt32(ctx, argv[idx++]);
-					int y = JSValueToInt32(ctx, argv[idx++]);
-					return wzapi::label_or_position_values(x, y);
-				}
-				else if ((argc - idx) >= 1) // label
-				{
-					std::string label = JSValueToStdString(ctx, argv[idx++]);
-					return wzapi::label_or_position_values(label);
-				}
-				return wzapi::label_or_position_values();
+				return scripting_engine::area_by_values_or_area_label_lookup(JSValueToStdString(ctx, argv[idx++]));
 			}
-		};
-
-		template<typename T>
-		JSValue box(T a, JSContext *);
-
-		JSValue box(unsigned char val, JSContext* ctx)
-		{
-			return JS_NewUint32(ctx, val);
-		}
-
-		JSValue box(bool val, JSContext* ctx)
-		{
-			return JS_NewBool(ctx, val);
-		}
-
-		JSValue box(int val, JSContext* ctx)
-		{
-			return JS_NewInt32(ctx, val);
-		}
-
-		JSValue box(unsigned int val, JSContext* ctx)
-		{
-			return JS_NewUint32(ctx, val);
-		}
-
-//		JSValue box(double val, JSContext* ctx)
-//		{
-//			return JS_NewFloat64(ctx, val);
-//		}
-
-		JSValue box(const char* str, JSContext* ctx)
-		{
-			return JS_NewString(ctx, str);
-		}
-
-		JSValue box(std::string str, JSContext* ctx)
-		{
-			return JS_NewStringLen(ctx, str.c_str(), str.length());
-		}
-
-		JSValue box(wzapi::no_return_value, JSContext* ctx)
-		{
-			return JS_UNDEFINED;
-		}
-
-		JSValue box(const BASE_OBJECT * psObj, JSContext* ctx)
-		{
-			if (!psObj)
+			else if ((argc - idx) >= 4)
 			{
-				return JS_NULL;
+				int x1, y1, x2, y2;
+				x1 = JSValueToInt32(ctx, argv[idx]);
+				y1 = JSValueToInt32(ctx, argv[idx + 1]);
+				x2 = JSValueToInt32(ctx, argv[idx + 2]);
+				y2 = JSValueToInt32(ctx, argv[idx + 3]);
+				idx += 4;
+				return scripting_engine::area_by_values_or_area_label_lookup(x1, y1, x2, y2);
 			}
-			return convMax(psObj, ctx);
-		}
-
-		JSValue box(const STRUCTURE * psStruct, JSContext* ctx)
-		{
-			if (!psStruct)
+			else
 			{
-				return JS_NULL;
+				// could log an error here
 			}
-			return convStructure(psStruct, ctx);
+			return {};
 		}
+	};
 
-		JSValue box(const DROID * psDroid, JSContext* ctx)
+	template <>
+	struct unbox<generic_script_object>
+	{
+		generic_script_object operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv,
+		                                 const char* function)
 		{
-			if (!psDroid)
+			if (argc <= idx)
+				return {};
+
+			JSValue qval = argv[idx++];
+			int type = QuickJS_GetInt32(ctx, qval, "type");
+
+			JSValue triggered = JS_GetPropertyStr(ctx, qval, "triggered");
+			if (JS_IsNumber(triggered))
 			{
-				return JS_NULL;
+				//					UNBOX_SCRIPT_ASSERT(context, type != SCRIPT_POSITION, "Cannot assign a trigger to a position");
+				ASSERT(false, "Not currently handling triggered property - does anything use this?");
 			}
-			return convDroid(psDroid, ctx);
-		}
 
-		JSValue box(const FEATURE * psFeat, JSContext* ctx)
-		{
-			if (!psFeat)
+			if (type == SCRIPT_RADIUS)
 			{
-				return JS_NULL;
+				return generic_script_object::fromRadius(
+					QuickJS_GetInt32(ctx, qval, "x"),
+					QuickJS_GetInt32(ctx, qval, "y"),
+					QuickJS_GetInt32(ctx, qval, "radius")
+				);
 			}
-			return convFeature(psFeat, ctx);
-		}
-
-		JSValue box(const DROID_TEMPLATE * psTemplate, JSContext* ctx)
-		{
-			if (!psTemplate)
+			else if (type == SCRIPT_AREA)
 			{
-				return JS_NULL;
+				return generic_script_object::fromArea(
+					QuickJS_GetInt32(ctx, qval, "x"),
+					QuickJS_GetInt32(ctx, qval, "y"),
+					QuickJS_GetInt32(ctx, qval, "x2"),
+					QuickJS_GetInt32(ctx, qval, "y2")
+				);
 			}
-			return convTemplate(psTemplate, ctx);
-		}
-
-//		// deliberately not defined
-//		// use `wzapi::researchResult` instead of `const RESEARCH *`
-//		template<>
-//		JSValue box(const RESEARCH * psResearch, JSContext* ctx);
-
-		JSValue box(const scr_radius& r, JSContext* ctx)
-		{
-			JSValue ret = JS_NewObject(ctx);
-			QuickJS_DefinePropertyValue(ctx, ret, "type", JS_NewInt32(ctx, SCRIPT_RADIUS), JS_PROP_C_W_E);
-			QuickJS_DefinePropertyValue(ctx, ret, "x", JS_NewInt32(ctx, r.x), JS_PROP_C_W_E);
-			QuickJS_DefinePropertyValue(ctx, ret, "y", JS_NewInt32(ctx, r.y), JS_PROP_C_W_E);
-			QuickJS_DefinePropertyValue(ctx, ret, "radius", JS_NewInt32(ctx, r.radius), JS_PROP_C_W_E);
-			return ret;
-		}
-
-		JSValue box(const scr_area& r, JSContext* ctx)
-		{
-			JSValue ret = JS_NewObject(ctx);
-			QuickJS_DefinePropertyValue(ctx, ret, "type", JS_NewInt32(ctx, SCRIPT_AREA), JS_PROP_C_W_E);
-			QuickJS_DefinePropertyValue(ctx, ret, "x", JS_NewInt32(ctx, r.x1), JS_PROP_C_W_E); // TODO: Rename scr_area x1 to x
-			QuickJS_DefinePropertyValue(ctx, ret, "y", JS_NewInt32(ctx, r.y1), JS_PROP_C_W_E);
-			QuickJS_DefinePropertyValue(ctx, ret, "x2", JS_NewInt32(ctx, r.x2), JS_PROP_C_W_E);
-			QuickJS_DefinePropertyValue(ctx, ret, "y2", JS_NewInt32(ctx, r.y2), JS_PROP_C_W_E);
-			return ret;
-		}
-
-		JSValue box(const scr_position& p, JSContext* ctx)
-		{
-			JSValue ret = JS_NewObject(ctx);
-			QuickJS_DefinePropertyValue(ctx, ret, "type", JS_NewInt32(ctx, SCRIPT_POSITION), JS_PROP_C_W_E);
-			QuickJS_DefinePropertyValue(ctx, ret, "x", JS_NewInt32(ctx, p.x), JS_PROP_C_W_E);
-			QuickJS_DefinePropertyValue(ctx, ret, "y", JS_NewInt32(ctx, p.y), JS_PROP_C_W_E);
-			return ret;
-		}
-
-		JSValue box(const generic_script_object& p, JSContext* ctx)
-		{
-			int type = p.getType();
-			switch (type)
+			else if (type == SCRIPT_POSITION)
 			{
-			case SCRIPT_RADIUS:
-				return box(p.getRadius(), ctx);
-				break;
-			case SCRIPT_AREA:
-				return box(p.getArea(), ctx);
-				break;
-			case SCRIPT_POSITION:
-				return box(p.getPosition(), ctx);
-				break;
-			case SCRIPT_GROUP:
+				return generic_script_object::fromPosition(
+					QuickJS_GetInt32(ctx, qval, "x"),
+					QuickJS_GetInt32(ctx, qval, "y")
+				);
+			}
+			else if (type == SCRIPT_GROUP)
+			{
+				return generic_script_object::fromGroup(
+					QuickJS_GetInt32(ctx, qval, "id")
+				);
+			}
+			else if (type == OBJ_DROID || type == OBJ_STRUCTURE || type == OBJ_FEATURE)
+			{
+				int id = QuickJS_GetInt32(ctx, qval, "id");
+				int player = QuickJS_GetInt32(ctx, qval, "player");
+				BASE_OBJECT* psObj = IdToObject((OBJECT_TYPE)type, id, player);
+				UNBOX_SCRIPT_ASSERT(context, psObj, "Object id %d not found belonging to player %d", id, player);
+				// TODO: fail out
+				return generic_script_object::fromObject(psObj);
+			}
+			return {};
+		}
+	};
+
+	template <>
+	struct unbox<wzapi::object_request>
+	{
+		wzapi::object_request operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv,
+		                                 const char* function)
+		{
+			if (argc <= idx)
+				return {};
+
+			if ((argc - idx) >= 3) // get by ID case (3 parameters)
+			{
+				OBJECT_TYPE type = (OBJECT_TYPE)JSValueToInt32(ctx, argv[idx++]);
+				int player = JSValueToInt32(ctx, argv[idx++]);
+				int id = JSValueToInt32(ctx, argv[idx++]);
+				return wzapi::object_request(type, player, id);
+			}
+			else if ((argc - idx) >= 2) // get at position case (2 parameters)
+			{
+				int x = JSValueToInt32(ctx, argv[idx++]);
+				int y = JSValueToInt32(ctx, argv[idx++]);
+				return wzapi::object_request(x, y);
+			}
+			else
+			{
+				// get by label case (1 parameter)
+				std::string label = JSValueToStdString(ctx, argv[idx++]);
+				return wzapi::object_request(label);
+			}
+		}
+	};
+
+	template <>
+	struct unbox<wzapi::label_or_position_values>
+	{
+		wzapi::label_or_position_values operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv,
+		                                           const char* function)
+		{
+			if ((argc - idx) >= 4) // square area
+			{
+				int x1 = JSValueToInt32(ctx, argv[idx++]);
+				int y1 = JSValueToInt32(ctx, argv[idx++]);
+				int x2 = JSValueToInt32(ctx, argv[idx++]);
+				int y2 = JSValueToInt32(ctx, argv[idx++]);
+				return wzapi::label_or_position_values(x1, y1, x2, y2);
+			}
+			else if ((argc - idx) >= 2) // single tile
+			{
+				int x = JSValueToInt32(ctx, argv[idx++]);
+				int y = JSValueToInt32(ctx, argv[idx++]);
+				return wzapi::label_or_position_values(x, y);
+			}
+			else if ((argc - idx) >= 1) // label
+			{
+				std::string label = JSValueToStdString(ctx, argv[idx++]);
+				return wzapi::label_or_position_values(label);
+			}
+			return wzapi::label_or_position_values();
+		}
+	};
+
+	template <typename T>
+	JSValue box(T a, JSContext*);
+
+	JSValue box(unsigned char val, JSContext* ctx)
+	{
+		return JS_NewUint32(ctx, val);
+	}
+
+	JSValue box(bool val, JSContext* ctx)
+	{
+		return JS_NewBool(ctx, val);
+	}
+
+	JSValue box(int val, JSContext* ctx)
+	{
+		return JS_NewInt32(ctx, val);
+	}
+
+	JSValue box(unsigned int val, JSContext* ctx)
+	{
+		return JS_NewUint32(ctx, val);
+	}
+
+	//		JSValue box(double val, JSContext* ctx)
+	//		{
+	//			return JS_NewFloat64(ctx, val);
+	//		}
+
+	JSValue box(const char* str, JSContext* ctx)
+	{
+		return JS_NewString(ctx, str);
+	}
+
+	JSValue box(std::string str, JSContext* ctx)
+	{
+		return JS_NewStringLen(ctx, str.c_str(), str.length());
+	}
+
+	JSValue box(wzapi::no_return_value, JSContext* ctx)
+	{
+		return JS_UNDEFINED;
+	}
+
+	JSValue box(const BASE_OBJECT* psObj, JSContext* ctx)
+	{
+		if (!psObj)
+		{
+			return JS_NULL;
+		}
+		return convMax(psObj, ctx);
+	}
+
+	JSValue box(const STRUCTURE* psStruct, JSContext* ctx)
+	{
+		if (!psStruct)
+		{
+			return JS_NULL;
+		}
+		return convStructure(psStruct, ctx);
+	}
+
+	JSValue box(const DROID* psDroid, JSContext* ctx)
+	{
+		if (!psDroid)
+		{
+			return JS_NULL;
+		}
+		return convDroid(psDroid, ctx);
+	}
+
+	JSValue box(const FEATURE* psFeat, JSContext* ctx)
+	{
+		if (!psFeat)
+		{
+			return JS_NULL;
+		}
+		return convFeature(psFeat, ctx);
+	}
+
+	JSValue box(const DROID_TEMPLATE* psTemplate, JSContext* ctx)
+	{
+		if (!psTemplate)
+		{
+			return JS_NULL;
+		}
+		return convTemplate(psTemplate, ctx);
+	}
+
+	//		// deliberately not defined
+	//		// use `wzapi::researchResult` instead of `const RESEARCH *`
+	//		template<>
+	//		JSValue box(const RESEARCH * psResearch, JSContext* ctx);
+
+	JSValue box(const scr_radius& r, JSContext* ctx)
+	{
+		JSValue ret = JS_NewObject(ctx);
+		QuickJS_DefinePropertyValue(ctx, ret, "type", JS_NewInt32(ctx, SCRIPT_RADIUS), JS_PROP_C_W_E);
+		QuickJS_DefinePropertyValue(ctx, ret, "x", JS_NewInt32(ctx, r.x), JS_PROP_C_W_E);
+		QuickJS_DefinePropertyValue(ctx, ret, "y", JS_NewInt32(ctx, r.y), JS_PROP_C_W_E);
+		QuickJS_DefinePropertyValue(ctx, ret, "radius", JS_NewInt32(ctx, r.radius), JS_PROP_C_W_E);
+		return ret;
+	}
+
+	JSValue box(const scr_area& r, JSContext* ctx)
+	{
+		JSValue ret = JS_NewObject(ctx);
+		QuickJS_DefinePropertyValue(ctx, ret, "type", JS_NewInt32(ctx, SCRIPT_AREA), JS_PROP_C_W_E);
+		QuickJS_DefinePropertyValue(ctx, ret, "x", JS_NewInt32(ctx, r.x1), JS_PROP_C_W_E);
+		// TODO: Rename scr_area x1 to x
+		QuickJS_DefinePropertyValue(ctx, ret, "y", JS_NewInt32(ctx, r.y1), JS_PROP_C_W_E);
+		QuickJS_DefinePropertyValue(ctx, ret, "x2", JS_NewInt32(ctx, r.x2), JS_PROP_C_W_E);
+		QuickJS_DefinePropertyValue(ctx, ret, "y2", JS_NewInt32(ctx, r.y2), JS_PROP_C_W_E);
+		return ret;
+	}
+
+	JSValue box(const scr_position& p, JSContext* ctx)
+	{
+		JSValue ret = JS_NewObject(ctx);
+		QuickJS_DefinePropertyValue(ctx, ret, "type", JS_NewInt32(ctx, SCRIPT_POSITION), JS_PROP_C_W_E);
+		QuickJS_DefinePropertyValue(ctx, ret, "x", JS_NewInt32(ctx, p.x), JS_PROP_C_W_E);
+		QuickJS_DefinePropertyValue(ctx, ret, "y", JS_NewInt32(ctx, p.y), JS_PROP_C_W_E);
+		return ret;
+	}
+
+	JSValue box(const generic_script_object& p, JSContext* ctx)
+	{
+		int type = p.getType();
+		switch (type)
+		{
+		case SCRIPT_RADIUS:
+			return box(p.getRadius(), ctx);
+			break;
+		case SCRIPT_AREA:
+			return box(p.getArea(), ctx);
+			break;
+		case SCRIPT_POSITION:
+			return box(p.getPosition(), ctx);
+			break;
+		case SCRIPT_GROUP:
 			{
 				JSValue ret = JS_NewObject(ctx);
 				QuickJS_DefinePropertyValue(ctx, ret, "type", JS_NewInt32(ctx, type), JS_PROP_C_W_E);
 				QuickJS_DefinePropertyValue(ctx, ret, "id", JS_NewInt32(ctx, p.getGroupId()), JS_PROP_C_W_E);
 				return ret;
 			}
-				break;
-			case OBJ_DROID:
-			case OBJ_FEATURE:
-			case OBJ_STRUCTURE:
+			break;
+		case OBJ_DROID:
+		case OBJ_FEATURE:
+		case OBJ_STRUCTURE:
 			{
 				BASE_OBJECT* psObj = p.getObject();
 				return convMax(psObj, ctx);
 			}
-				break;
-			default:
-				if (p.isNull())
-				{
-					return JS_NULL;
-				}
-				debug(LOG_SCRIPT, "Unsupported object label type: %d", type);
-				break;
+			break;
+		default:
+			if (p.isNull())
+			{
+				return JS_NULL;
 			}
+			debug(LOG_SCRIPT, "Unsupported object label type: %d", type);
+			break;
+		}
 
+		return JS_NULL;
+	}
+
+	JSValue box(GATEWAY* psGateway, JSContext* ctx)
+	{
+		JSValue ret = JS_NewObject(ctx);
+		QuickJS_DefinePropertyValue(ctx, ret, "x1", JS_NewInt32(ctx, psGateway->x1), JS_PROP_C_W_E);
+		QuickJS_DefinePropertyValue(ctx, ret, "y1", JS_NewInt32(ctx, psGateway->y1), JS_PROP_C_W_E);
+		QuickJS_DefinePropertyValue(ctx, ret, "x2", JS_NewInt32(ctx, psGateway->x2), JS_PROP_C_W_E);
+		QuickJS_DefinePropertyValue(ctx, ret, "y2", JS_NewInt32(ctx, psGateway->y2), JS_PROP_C_W_E);
+		return ret;
+	}
+
+	template <typename VectorType>
+	JSValue box(const std::vector<VectorType>& value, JSContext* ctx)
+	{
+		JSValue result = JS_NewArray(ctx);
+		for (uint32_t i = 0; i < value.size(); i++)
+		{
+			VectorType item = value.at(i);
+			JS_DefinePropertyValueUint32(ctx, result, i, box(item, ctx), JS_PROP_C_W_E); // TODO: Check return value?
+		}
+		return result;
+	}
+
+	template <typename ContainedType>
+	JSValue box(const std::list<ContainedType>& value, JSContext* ctx)
+	{
+		JSValue result = JS_NewArray(ctx);
+		uint32_t i = 0;
+		for (auto item : value)
+		{
+			JS_DefinePropertyValueUint32(ctx, result, i, box(item, ctx), JS_PROP_C_W_E); // TODO: Check return value?
+			i++;
+		}
+		return result;
+	}
+
+	JSValue box(const wzapi::researchResult& result, JSContext* ctx)
+	{
+		if (result.psResearch == nullptr)
+		{
 			return JS_NULL;
 		}
+		return convResearch(result.psResearch, ctx, result.player);
+	}
 
-		JSValue box(GATEWAY* psGateway, JSContext* ctx)
+	JSValue box(const wzapi::researchResults& results, JSContext* ctx)
+	{
+		JSValue result = JS_NewArray(ctx);
+		for (uint32_t i = 0; i < results.resList.size(); i++)
 		{
-			JSValue ret = JS_NewObject(ctx);
-			QuickJS_DefinePropertyValue(ctx, ret, "x1", JS_NewInt32(ctx, psGateway->x1), JS_PROP_C_W_E);
-			QuickJS_DefinePropertyValue(ctx, ret, "y1", JS_NewInt32(ctx, psGateway->y1), JS_PROP_C_W_E);
-			QuickJS_DefinePropertyValue(ctx, ret, "x2", JS_NewInt32(ctx, psGateway->x2), JS_PROP_C_W_E);
-			QuickJS_DefinePropertyValue(ctx, ret, "y2", JS_NewInt32(ctx, psGateway->y2), JS_PROP_C_W_E);
-			return ret;
+			const RESEARCH* psResearch = results.resList.at(i);
+			JS_DefinePropertyValueUint32(ctx, result, i, convResearch(psResearch, ctx, results.player), JS_PROP_C_W_E);
+			// TODO: Check return value?
+		}
+		return result;
+	}
+
+	template <typename OptionalType>
+	JSValue box(const optional<OptionalType>& result, JSContext* ctx)
+	{
+		if (result.has_value())
+		{
+			return box(result.value(), ctx);
+		}
+		else
+		{
+			return JS_UNDEFINED;
+		}
+	}
+
+	template <typename PtrType>
+	JSValue box(wzapi::event_nullable_ptr<PtrType> result, JSContext* ctx)
+	{
+		if (result)
+		{
+			return box<PtrType*>(result, ctx);
+		}
+		else
+		{
+			return JS_NULL;
+		}
+	}
+
+	template <typename PtrType>
+	JSValue box(wzapi::returned_nullable_ptr<PtrType> result, JSContext* ctx)
+	{
+		if (result)
+		{
+			return box<PtrType*>(result, ctx);
+		}
+		else
+		{
+			return JS_NULL;
+		}
+	}
+
+	template <typename PtrType>
+	JSValue box(std::unique_ptr<PtrType> result, JSContext* ctx)
+	{
+		if (result)
+		{
+			return box(result.get(), ctx);
+		}
+		else
+		{
+			return JS_NULL;
+		}
+	}
+
+	JSValue box(nlohmann::json results, JSContext* ctx)
+	{
+		return mapJsonToQuickJSValue(ctx, results, JS_PROP_C_W_E);
+	}
+
+#include <cstddef>
+#include <tuple>
+#include <type_traits>
+#include <utility>
+
+	template <size_t N>
+	struct Apply
+	{
+		template <typename F, typename T, typename... A>
+		static inline auto apply(F&& f, T&& t, A&&... a)
+		-> decltype(Apply<N - 1>::apply(
+			::std::forward<F>(f), ::std::forward<T>(t),
+			::std::get<N - 1>(::std::forward<T>(t)), ::std::forward<A>(a)...
+		))
+		{
+			return Apply<N - 1>::apply(::std::forward<F>(f), ::std::forward<T>(t),
+			                           ::std::get<N - 1>(::std::forward<T>(t)), ::std::forward<A>(a)...
+			);
+		}
+	};
+
+	template <>
+	struct Apply<0>
+	{
+		template <typename F, typename T, typename... A>
+		static inline auto apply(F&& f, T&&, A&&... a)
+		-> decltype(::std::forward<F>(f)(::std::forward<A>(a)...))
+		{
+			return ::std::forward<F>(f)(::std::forward<A>(a)...);
+		}
+	};
+
+	template <typename F, typename T>
+	inline auto apply(F&& f, T&& t)
+	-> decltype(Apply<::std::tuple_size<
+		typename ::std::decay<T>::type
+	>::value>::apply(::std::forward<F>(f), ::std::forward<T>(t)))
+	{
+		return Apply<::std::tuple_size<
+			typename ::std::decay<T>::type
+		>::value>::apply(::std::forward<F>(f), ::std::forward<T>(t));
+	}
+
+	template <typename...T>
+	struct UnboxTupleIndex;
+
+	template <size_t...I, typename...T>
+	struct UnboxTupleIndex<tl::index_sequence<I...>, T...>
+	{
+	public:
+		typedef std::tuple<const wzapi::execution_context&, T...> tuple_type;
+		typedef std::tuple<const wzapi::execution_context&, T&...> tuple_ref_type;
+
+		UnboxTupleIndex(const wzapi::execution_context& execution_context, size_t& idx, JSContext* ctx, int argc,
+		                JSValueConst* argv, const char* function)
+			: impl(idx, ctx, argc, argv, function),
+			  value(execution_context, (static_cast<UnboxedValueWrapper<I, T>&>(impl)).value...)
+		{
 		}
 
-		template<typename VectorType>
-		JSValue box(const std::vector<VectorType>& value, JSContext* ctx)
+		explicit operator tuple_type() const { return value; }
+		tuple_ref_type operator()() const { return value; }
+
+	private:
+		// Index differentiates wrappers of the same UnboxedType from one another
+		template <size_t Index, typename UnboxedType>
+		struct UnboxedValueWrapper
 		{
-			JSValue result = JS_NewArray(ctx);
-			for (uint32_t i = 0; i < value.size(); i++)
-			{
-				VectorType item = value.at(i);
-				JS_DefinePropertyValueUint32(ctx, result, i, box(item, ctx), JS_PROP_C_W_E); // TODO: Check return value?
-			}
-			return result;
-		}
+			UnboxedType value;
 
-		template<typename ContainedType>
-		JSValue box(const std::list<ContainedType>& value, JSContext* ctx)
-		{
-			JSValue result = JS_NewArray(ctx);
-			uint32_t i = 0;
-			for (auto item : value)
+			UnboxedValueWrapper(size_t& idx, WZ_DECL_UNUSED JSContext* ctx, WZ_DECL_UNUSED int argc,
+			                    WZ_DECL_UNUSED JSValueConst* argv, WZ_DECL_UNUSED const char* function)
+				: value(unbox<UnboxedType>{}(idx, ctx, argc, argv, function))
 			{
-				JS_DefinePropertyValueUint32(ctx, result, i, box(item, ctx), JS_PROP_C_W_E); // TODO: Check return value?
-				i++;
-			}
-			return result;
-		}
-
-		JSValue box(const wzapi::researchResult& result, JSContext* ctx)
-		{
-			if (result.psResearch == nullptr)
-			{
-				return JS_NULL;
-			}
-			return convResearch(result.psResearch, ctx, result.player);
-		}
-
-		JSValue box(const wzapi::researchResults& results, JSContext* ctx)
-		{
-			JSValue result = JS_NewArray(ctx);
-			for (uint32_t i = 0; i < results.resList.size(); i++)
-			{
-				const RESEARCH *psResearch = results.resList.at(i);
-				JS_DefinePropertyValueUint32(ctx, result, i, convResearch(psResearch, ctx, results.player), JS_PROP_C_W_E); // TODO: Check return value?
-			}
-			return result;
-		}
-
-		template<typename OptionalType>
-		JSValue box(const optional<OptionalType>& result, JSContext* ctx)
-		{
-			if (result.has_value())
-			{
-				return box(result.value(), ctx);
-			}
-			else
-			{
-				return JS_UNDEFINED;
-			}
-		}
-
-		template<typename PtrType>
-		JSValue box(wzapi::event_nullable_ptr<PtrType> result, JSContext* ctx)
-		{
-			if (result)
-			{
-				return box<PtrType *>(result, ctx);
-			}
-			else
-			{
-				return JS_NULL;
-			}
-		}
-
-		template<typename PtrType>
-		JSValue box(wzapi::returned_nullable_ptr<PtrType> result, JSContext* ctx)
-		{
-			if (result)
-			{
-				return box<PtrType *>(result, ctx);
-			}
-			else
-			{
-				return JS_NULL;
-			}
-		}
-
-		template<typename PtrType>
-		JSValue box(std::unique_ptr<PtrType> result, JSContext* ctx)
-		{
-			if (result)
-			{
-				return box(result.get(), ctx);
-			}
-			else
-			{
-				return JS_NULL;
-			}
-		}
-
-		JSValue box(nlohmann::json results, JSContext* ctx)
-		{
-			return mapJsonToQuickJSValue(ctx, results, JS_PROP_C_W_E);
-		}
-
-		#include <cstddef>
-		#include <tuple>
-		#include <type_traits>
-		#include <utility>
-
-		template<size_t N>
-		struct Apply {
-			template<typename F, typename T, typename... A>
-			static inline auto apply(F && f, T && t, A &&... a)
-				-> decltype(Apply<N-1>::apply(
-					::std::forward<F>(f), ::std::forward<T>(t),
-					::std::get<N-1>(::std::forward<T>(t)), ::std::forward<A>(a)...
-				))
-			{
-				return Apply<N-1>::apply(::std::forward<F>(f), ::std::forward<T>(t),
-					::std::get<N-1>(::std::forward<T>(t)), ::std::forward<A>(a)...
-				);
 			}
 		};
 
-		template<>
-		struct Apply<0> {
-			template<typename F, typename T, typename... A>
-			static inline auto apply(F && f, T &&, A &&... a)
-				-> decltype(::std::forward<F>(f)(::std::forward<A>(a)...))
+		// The UnboxedImpl class derives from all of the value wrappers
+		// (Base classes are guaranteed to be constructed in-order)
+		struct UnboxedImpl : UnboxedValueWrapper<I, T>...
+		{
+			UnboxedImpl(size_t& idx, WZ_DECL_UNUSED JSContext* ctx, WZ_DECL_UNUSED int argc,
+			            WZ_DECL_UNUSED JSValueConst* argv, WZ_DECL_UNUSED const char* function)
+				: UnboxedValueWrapper<I, T>(idx, ctx, argc, argv, function)...
 			{
-				return ::std::forward<F>(f)(::std::forward<A>(a)...);
 			}
 		};
 
-		template<typename F, typename T>
-		inline auto apply(F && f, T && t)
-			-> decltype(Apply< ::std::tuple_size<
-				typename ::std::decay<T>::type
-			>::value>::apply(::std::forward<F>(f), ::std::forward<T>(t)))
-		{
-			return Apply< ::std::tuple_size<
-				typename ::std::decay<T>::type
-			>::value>::apply(::std::forward<F>(f), ::std::forward<T>(t));
-		}
+		UnboxedImpl impl;
+		tuple_ref_type value;
+	};
 
-		template<typename...T> struct UnboxTupleIndex;
-		template<size_t...I, typename...T>
-		struct UnboxTupleIndex<tl::index_sequence<I...>, T...>
-		{
-		public:
-			typedef std::tuple<const wzapi::execution_context&, T...> tuple_type;
-			typedef std::tuple<const wzapi::execution_context&, T&...> tuple_ref_type;
+	template <typename...T>
+	using UnboxTuple = UnboxTupleIndex<tl::make_index_sequence<sizeof...(T)>, T...>;
 
-			UnboxTupleIndex(const wzapi::execution_context& execution_context, size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
-				: impl(idx, ctx, argc, argv, function),
-				value(execution_context, (static_cast<UnboxedValueWrapper<I, T>&>(impl)).value...)
-			{ }
+	MSVC_PRAGMA(warning( push )) // see matching "pop" below
+	MSVC_PRAGMA(warning( disable : 4189 ))
+	// disable "warning C4189: 'idx': local variable is initialized but not referenced"
 
-			explicit operator tuple_type() const { return value; }
-			tuple_ref_type operator()() const { return value; }
+	template <typename R, typename...Args>
+	JSValue wrap__(R (*f)(const wzapi::execution_context&, Args ...), WZ_DECL_UNUSED const char* wrappedFunctionName,
+	               JSContext* context, WZ_DECL_UNUSED int argc, WZ_DECL_UNUSED JSValueConst* argv)
+	{
+		size_t idx WZ_DECL_UNUSED = 0; // unused when Args... is empty
+		quickjs_execution_context execution_context(context);
+		return box(apply(f, UnboxTuple<Args...>(execution_context, idx, context, argc, argv, wrappedFunctionName)()),
+		           context);
+	}
 
-		private:
-			// Index differentiates wrappers of the same UnboxedType from one another
-			template<size_t Index, typename UnboxedType>
-			struct UnboxedValueWrapper
-			{
-				UnboxedType value;
-				UnboxedValueWrapper(size_t& idx, WZ_DECL_UNUSED JSContext* ctx, WZ_DECL_UNUSED int argc, WZ_DECL_UNUSED JSValueConst* argv, WZ_DECL_UNUSED const char* function)
-					: value(unbox<UnboxedType>{}(idx, ctx, argc, argv, function))
-				{ }
-			};
+	template <typename R, typename...Args>
+	JSValue wrap__(R (*f)(), WZ_DECL_UNUSED const char* wrappedFunctionName, JSContext* context,
+	               WZ_DECL_UNUSED int argc, WZ_DECL_UNUSED JSValueConst* argv)
+	{
+		return box(f(), context);
+	}
 
-			// The UnboxedImpl class derives from all of the value wrappers
-			// (Base classes are guaranteed to be constructed in-order)
-			struct UnboxedImpl : UnboxedValueWrapper<I, T>...
-			{
-				UnboxedImpl(size_t& idx, WZ_DECL_UNUSED JSContext* ctx, WZ_DECL_UNUSED int argc, WZ_DECL_UNUSED JSValueConst* argv, WZ_DECL_UNUSED const char* function)
-					: UnboxedValueWrapper<I, T>(idx, ctx, argc, argv, function)...
-				{}
-			};
+	MSVC_PRAGMA(warning( pop ))
 
-			UnboxedImpl impl;
-			tuple_ref_type value;
-		};
-
-		template<typename...T> using UnboxTuple = UnboxTupleIndex<tl::make_index_sequence<sizeof...(T)>, T...>;
-
-		MSVC_PRAGMA(warning( push )) // see matching "pop" below
-		MSVC_PRAGMA(warning( disable : 4189 )) // disable "warning C4189: 'idx': local variable is initialized but not referenced"
-
-		template<typename R, typename...Args>
-		JSValue wrap__(R(*f)(const wzapi::execution_context&, Args...), WZ_DECL_UNUSED const char *wrappedFunctionName, JSContext *context, WZ_DECL_UNUSED int argc, WZ_DECL_UNUSED JSValueConst *argv)
-		{
-			size_t idx WZ_DECL_UNUSED = 0; // unused when Args... is empty
-			quickjs_execution_context execution_context(context);
-			return box(apply(f, UnboxTuple<Args...>(execution_context, idx, context, argc, argv, wrappedFunctionName)()), context);
-		}
-
-		template<typename R, typename...Args>
-		JSValue wrap__(R(*f)(), WZ_DECL_UNUSED const char *wrappedFunctionName, JSContext *context, WZ_DECL_UNUSED int argc, WZ_DECL_UNUSED JSValueConst *argv)
-		{
-			return box(f(), context);
-		}
-
-		MSVC_PRAGMA(warning( pop ))
-
-		#define wrap_(wzapi_function, context, argc, argv) \
+#define wrap_(wzapi_function, context, argc, argv) \
 		wrap__(wzapi_function, #wzapi_function, context, argc, argv)
 
-		#define JS_FUNC_IMPL_NAME(func_name) js_##func_name
+#define JS_FUNC_IMPL_NAME(func_name) js_##func_name
 
-		#define IMPL_JS_FUNC(func_name, wrapped_func) \
+#define IMPL_JS_FUNC(func_name, wrapped_func) \
 			static JSValue JS_FUNC_IMPL_NAME(func_name)(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) \
 			{ \
 				return wrap_(wrapped_func, ctx, argc, argv); \
 			}
 
-		#define IMPL_JS_FUNC_DEBUGMSGUPDATE(func_name, wrapped_func) \
+#define IMPL_JS_FUNC_DEBUGMSGUPDATE(func_name, wrapped_func) \
 			static JSValue JS_FUNC_IMPL_NAME(func_name)(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) \
 			{ \
 				JSValue retVal = wrap_(wrapped_func, ctx, argc, argv); \
@@ -2169,69 +2296,72 @@ static JSValue callFunction(JSContext *ctx, const std::string &function, std::ve
 				return retVal; \
 			}
 
-		template <typename T>
-		void append_value_list(std::vector<JSValue> &list, T t, JSContext *context) { list.push_back(box(std::forward<T>(t), context)); }
+	template <typename T>
+	void append_value_list(std::vector<JSValue>& list, T t, JSContext* context)
+	{
+		list.push_back(box(std::forward<T>(t), context));
+	}
 
-		template <typename... Args>
-		bool wrap_event_handler__(const std::string &functionName, JSContext *context, Args&&... args)
-		{
-			std::vector<JSValue> args_list;
-			using expander = int[];
-//			WZ_DECL_UNUSED int dummy[] = { 0, ((void) append_value_list(args_list, std::forward<Args>(args), engine),0)... };
-			// Left-most void to avoid `expression result unused [-Wunused-value]`
-			(void)expander{ 0, ((void) append_value_list(args_list, std::forward<Args>(args), context),0)... };
-			/*JSValue result =*/ callFunction(context, functionName, args_list);
-			std::for_each(args_list.begin(), args_list.end(), [context](JSValue& val) { JS_FreeValue(context, val); });
-			return true; //nlohmann::json(result.toVariant());
-		}
+	template <typename... Args>
+	bool wrap_event_handler__(const std::string& functionName, JSContext* context, Args&&... args)
+	{
+		std::vector<JSValue> args_list;
+		using expander = int[];
+		//			WZ_DECL_UNUSED int dummy[] = { 0, ((void) append_value_list(args_list, std::forward<Args>(args), engine),0)... };
+		// Left-most void to avoid `expression result unused [-Wunused-value]`
+		(void)expander{0, ((void)append_value_list(args_list, std::forward<Args>(args), context), 0)...};
+		/*JSValue result =*/
+		callFunction(context, functionName, args_list);
+		std::for_each(args_list.begin(), args_list.end(), [context](JSValue& val) { JS_FreeValue(context, val); });
+		return true; //nlohmann::json(result.toVariant());
+	}
 
-		/* PP_NARG returns the number of arguments that have been passed to it.
-		 * (Expand these macros as necessary. Does not support 0 arguments.)
-		 */
-		#define WRAP_EXPAND(x) x
-        #define VARGS_COUNT_N(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,N,...) N
-        #define VARGS_COUNT(...) WRAP_EXPAND(VARGS_COUNT_N(__VA_ARGS__,10,9,8,7,6,5,4,3,2,1,0))
+	/* PP_NARG returns the number of arguments that have been passed to it.
+	 * (Expand these macros as necessary. Does not support 0 arguments.)
+	 */
+#define WRAP_EXPAND(x) x
+#define VARGS_COUNT_N(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,N,...) N
+#define VARGS_COUNT(...) WRAP_EXPAND(VARGS_COUNT_N(__VA_ARGS__,10,9,8,7,6,5,4,3,2,1,0))
 
-		static_assert(VARGS_COUNT(A) == 1, "PP_NARG() failed for 1 argument");
-		static_assert(VARGS_COUNT(A,B) == 2, "PP_NARG() failed for 2 arguments");
-		static_assert(VARGS_COUNT(A,B,C,D,E,F,G,H,I,J) == 10, "PP_NARG() failed for 12 arguments");
+	static_assert(VARGS_COUNT(A) == 1, "PP_NARG() failed for 1 argument");
+	static_assert(VARGS_COUNT(A, B) == 2, "PP_NARG() failed for 2 arguments");
+	static_assert(VARGS_COUNT(A, B, C, D, E, F, G, H, I, J) == 10, "PP_NARG() failed for 12 arguments");
 
-		#define MAKE_PARAMS_1(t) t arg1
-		#define MAKE_PARAMS_2(t1, t2) t1 arg1, t2 arg2
-		#define MAKE_PARAMS_3(t1, t2, t3) t1 arg1, t2 arg2, t3 arg3
-		#define MAKE_PARAMS_4(t1, t2, t3, t4) t1 arg1, t2 arg2, t3 arg3, t4 arg4
-		#define MAKE_PARAMS_5(t1, t2, t3, t4, t5) t1 arg1, t2 arg2, t3 arg3, t4 arg4, t5 arg5
-		#define MAKE_PARAMS_6(t1, t2, t3, t4, t5, t6) t1 arg1, t2 arg2, t3 arg3, t4 arg4, t5 arg5, t6 arg6
+#define MAKE_PARAMS_1(t) t arg1
+#define MAKE_PARAMS_2(t1, t2) t1 arg1, t2 arg2
+#define MAKE_PARAMS_3(t1, t2, t3) t1 arg1, t2 arg2, t3 arg3
+#define MAKE_PARAMS_4(t1, t2, t3, t4) t1 arg1, t2 arg2, t3 arg3, t4 arg4
+#define MAKE_PARAMS_5(t1, t2, t3, t4, t5) t1 arg1, t2 arg2, t3 arg3, t4 arg4, t5 arg5
+#define MAKE_PARAMS_6(t1, t2, t3, t4, t5, t6) t1 arg1, t2 arg2, t3 arg3, t4 arg4, t5 arg5, t6 arg6
 
-		#define MAKE_ARGS_1(t) arg1
-		#define MAKE_ARGS_2(t1, t2) arg1, arg2
-		#define MAKE_ARGS_3(t1, t2, t3) arg1, arg2, arg3
-		#define MAKE_ARGS_4(t1, t2, t3, t4) arg1, arg2, arg3, arg4
-		#define MAKE_ARGS_5(t1, t2, t3, t4, t5) arg1, arg2, arg3, arg4, arg5
-		#define MAKE_ARGS_6(t1, t2, t3, t4, t5, t6) arg1, arg2, arg3, arg4, arg5, arg6
+#define MAKE_ARGS_1(t) arg1
+#define MAKE_ARGS_2(t1, t2) arg1, arg2
+#define MAKE_ARGS_3(t1, t2, t3) arg1, arg2, arg3
+#define MAKE_ARGS_4(t1, t2, t3, t4) arg1, arg2, arg3, arg4
+#define MAKE_ARGS_5(t1, t2, t3, t4, t5) arg1, arg2, arg3, arg4, arg5
+#define MAKE_ARGS_6(t1, t2, t3, t4, t5, t6) arg1, arg2, arg3, arg4, arg5, arg6
 
-		#define MAKE_PARAMS_COUNT(COUNT, ...) WRAP_EXPAND(MAKE_PARAMS_##COUNT(__VA_ARGS__))
-		#define MAKE_PARAMS_WITH_COUNT(COUNT, ...) MAKE_PARAMS_COUNT(COUNT, __VA_ARGS__)
-		#define MAKE_PARAMS(...) MAKE_PARAMS_WITH_COUNT(VARGS_COUNT(__VA_ARGS__), __VA_ARGS__)
+#define MAKE_PARAMS_COUNT(COUNT, ...) WRAP_EXPAND(MAKE_PARAMS_##COUNT(__VA_ARGS__))
+#define MAKE_PARAMS_WITH_COUNT(COUNT, ...) MAKE_PARAMS_COUNT(COUNT, __VA_ARGS__)
+#define MAKE_PARAMS(...) MAKE_PARAMS_WITH_COUNT(VARGS_COUNT(__VA_ARGS__), __VA_ARGS__)
 
-		#define MAKE_ARGS_COUNT(COUNT, ...) WRAP_EXPAND(MAKE_ARGS_##COUNT(__VA_ARGS__))
-		#define MAKE_ARGS_WITH_COUNT(COUNT, ...) MAKE_ARGS_COUNT(COUNT, __VA_ARGS__)
-		#define MAKE_ARGS(...) MAKE_ARGS_WITH_COUNT(VARGS_COUNT(__VA_ARGS__), __VA_ARGS__)
+#define MAKE_ARGS_COUNT(COUNT, ...) WRAP_EXPAND(MAKE_ARGS_##COUNT(__VA_ARGS__))
+#define MAKE_ARGS_WITH_COUNT(COUNT, ...) MAKE_ARGS_COUNT(COUNT, __VA_ARGS__)
+#define MAKE_ARGS(...) MAKE_ARGS_WITH_COUNT(VARGS_COUNT(__VA_ARGS__), __VA_ARGS__)
 
-		#define STRINGIFY_EXPAND(tok) #tok
-		#define STRINGIFY(tok) STRINGIFY_EXPAND(tok)
+#define STRINGIFY_EXPAND(tok) #tok
+#define STRINGIFY(tok) STRINGIFY_EXPAND(tok)
 
-		#define IMPL_EVENT_HANDLER(fun, ...) \
+#define IMPL_EVENT_HANDLER(fun, ...) \
 			bool quickjs_scripting_instance::handle_##fun(MAKE_PARAMS(__VA_ARGS__)) { \
 				return wrap_event_handler__(STRINGIFY(fun), ctx, MAKE_ARGS(__VA_ARGS__)); \
 			}
 
-		#define IMPL_EVENT_HANDLER_NO_PARAMS(fun) \
+#define IMPL_EVENT_HANDLER_NO_PARAMS(fun) \
 		bool quickjs_scripting_instance::handle_##fun() { \
 			return wrap_event_handler__(STRINGIFY(fun), ctx); \
 		}
-
-	}
+}
 
 // Wraps a QuickJS instance
 
@@ -2241,7 +2371,7 @@ static JSValue callFunction(JSContext *ctx, const std::string &function, std::ve
 //-- function's return value. The function to run is the first parameter, and it
 //-- _must be quoted_. (3.2+ only)
 //--
-static JSValue js_profile(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue js_profile(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	SCRIPT_ASSERT(ctx, argc >= 1, "Must have at least one parameter");
 	SCRIPT_ASSERT(ctx, JS_IsString(argv[0]), "Profiled functions must be quoted");
@@ -2254,26 +2384,26 @@ static JSValue js_profile(JSContext *ctx, JSValueConst this_val, int argc, JSVal
 	return callFunction(ctx, functionName, args);
 }
 
-static std::string QuickJS_DumpObject(JSContext *ctx, JSValue obj)
+static std::string QuickJS_DumpObject(JSContext* ctx, JSValue obj)
 {
 	std::string result;
-    const char *str = JS_ToCString(ctx, obj);
-    if (str)
+	const char* str = JS_ToCString(ctx, obj);
+	if (str)
 	{
 		result = str;
-        JS_FreeCString(ctx, str);
-    }
+		JS_FreeCString(ctx, str);
+	}
 	else
 	{
-        result = "[failed to convert object to string]";
-    }
+		result = "[failed to convert object to string]";
+	}
 	return result;
 }
 
-static std::string QuickJS_DumpError(JSContext *ctx)
+static std::string QuickJS_DumpError(JSContext* ctx)
 {
 	std::string result;
-    JSValue exception_val = JS_GetException(ctx);
+	JSValue exception_val = JS_GetException(ctx);
 	bool isError = JS_IsError(ctx, exception_val);
 	result = QuickJS_DumpObject(ctx, exception_val);
 	if (isError)
@@ -2285,7 +2415,7 @@ static std::string QuickJS_DumpError(JSContext *ctx)
 		}
 		JS_FreeValue(ctx, stack);
 	}
-    JS_FreeValue(ctx, exception_val);
+	JS_FreeValue(ctx, exception_val);
 	return result;
 }
 
@@ -2294,22 +2424,24 @@ static std::string QuickJS_DumpError(JSContext *ctx)
 //-- not try to specify its path, here.
 //-- However, *if* you specify sub-paths / sub-folders, the path separator should **always** be forward-slash ("/").
 //--
-static JSValue js_include(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue js_include(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	SCRIPT_ASSERT(ctx, argc == 1, "Must specify a file to include");
 	std::string filePath = JSValueToStdString(ctx, argv[0]);
 	SCRIPT_ASSERT(ctx, strEndsWith(filePath, ".js"), "Include file must end in .js");
 	const auto instance = engineToInstanceMap.at(ctx);
 	UDWORD size;
-	char *bytes = nullptr;
+	char* bytes = nullptr;
 	std::string loadedFilePath;
-	if (!instance->loadFileForInclude(filePath.c_str(), loadedFilePath, &bytes, &size, wzapi::scripting_instance::LoadFileSearchOptions::All_BackwardsCompat))
+	if (!instance->loadFileForInclude(filePath.c_str(), loadedFilePath, &bytes, &size,
+	                                  wzapi::scripting_instance::LoadFileSearchOptions::All_BackwardsCompat))
 	{
 		debug(LOG_ERROR, "Failed to read include file \"%s\"", filePath.c_str());
 		JS_ThrowReferenceError(ctx, "Failed to read include file \"%s\"", filePath.c_str());
 		return JS_FALSE;
 	}
-	JSValue compiledFuncObj = JS_Eval(ctx, bytes, size, loadedFilePath.c_str(), JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+	JSValue compiledFuncObj = JS_Eval(ctx, bytes, size, loadedFilePath.c_str(),
+	                                  JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
 	free(bytes);
 	if (JS_IsException(compiledFuncObj))
 	{
@@ -2328,8 +2460,8 @@ static JSValue js_include(JSContext *ctx, JSValueConst this_val, int argc, JSVal
 		debug(LOG_ERROR, "Uncaught exception in include file %s: %s", loadedFilePath.c_str(), errorAsString.c_str());
 		JS_FreeValue(ctx, result);
 		return JS_FALSE;
-    }
-    JS_FreeValue(ctx, result);
+	}
+	JS_FreeValue(ctx, result);
 	debug(LOG_SCRIPT, "Included new script file %s", loadedFilePath.c_str());
 	return JS_TRUE;
 }
@@ -2338,16 +2470,17 @@ static JSValue js_include(JSContext *ctx, JSValueConst this_val, int argc, JSVal
 //-- Reads a JSON file and returns an object. You should generally only specify the filename,
 //-- However, *if* you specify sub-paths / sub-folders, the path separator should **always** be forward-slash ("/").
 //--
-static JSValue js_includeJSON(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue js_includeJSON(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	SCRIPT_ASSERT(ctx, argc == 1, "Must specify a file to include");
 	std::string filePath = JSValueToStdString(ctx, argv[0]);
 	SCRIPT_ASSERT(ctx, strEndsWith(filePath, ".json"), "Include file must end in .json");
 	const auto instance = engineToInstanceMap.at(ctx);
 	UDWORD size;
-	char *bytes = nullptr;
+	char* bytes = nullptr;
 	std::string loadedFilePath;
-	if (!instance->loadFileForInclude(filePath.c_str(), loadedFilePath, &bytes, &size, wzapi::scripting_instance::LoadFileSearchOptions::ScriptPath))
+	if (!instance->loadFileForInclude(filePath.c_str(), loadedFilePath, &bytes, &size,
+	                                  wzapi::scripting_instance::LoadFileSearchOptions::ScriptPath))
 	{
 		debug(LOG_ERROR, "Failed to read include file \"%s\"", filePath.c_str());
 		JS_ThrowReferenceError(ctx, "Failed to read include file \"%s\"", filePath.c_str());
@@ -2363,32 +2496,43 @@ class quickjs_timer_additionaldata : public timerAdditionalData
 {
 public:
 	std::string stringArg;
+
 	quickjs_timer_additionaldata(const std::string& _stringArg)
-	: stringArg(_stringArg)
-	{ }
+		: stringArg(_stringArg)
+	{
+	}
 };
 
-static uniqueTimerID SetQuickJSTimer(JSContext *ctx, int player, const std::string& funcName, int32_t ms, const std::string& stringArg, BASE_OBJECT *psObj, timerType type)
+static uniqueTimerID SetQuickJSTimer(JSContext* ctx, int player, const std::string& funcName, int32_t ms,
+                                     const std::string& stringArg, BASE_OBJECT* psObj, timerType type)
 {
 	return scripting_engine::instance().setTimer(engineToInstanceMap.at(ctx)
-	  // timerFunc
-	, [ctx, funcName](uniqueTimerID timerID, BASE_OBJECT* baseObject, timerAdditionalData* additionalParams) {
-		quickjs_timer_additionaldata* pData = static_cast<quickjs_timer_additionaldata*>(additionalParams);
-		std::vector<JSValue> args;
-		if (baseObject != nullptr)
-		{
-			args.push_back(convMax(baseObject, ctx));
-		}
-		else if (pData && !(pData->stringArg.empty()))
-		{
-			args.push_back(JS_NewStringLen(ctx, pData->stringArg.c_str(), pData->stringArg.length()));
-		}
-		callFunction(ctx, funcName, args, true);
-		std::for_each(args.begin(), args.end(), [ctx](JSValue& val) { JS_FreeValue(ctx, val); });
-	}
-	, player, ms, funcName, psObj, type
-	// additionalParams
-	, std::unique_ptr<timerAdditionalData>(new quickjs_timer_additionaldata(stringArg)));
+	                                             // timerFunc
+	                                             , [ctx, funcName](uniqueTimerID timerID, BASE_OBJECT* baseObject,
+	                                                               timerAdditionalData* additionalParams)
+	                                             {
+		                                             quickjs_timer_additionaldata* pData = static_cast<
+			                                             quickjs_timer_additionaldata*>(additionalParams);
+		                                             std::vector<JSValue> args;
+		                                             if (baseObject != nullptr)
+		                                             {
+			                                             args.push_back(convMax(baseObject, ctx));
+		                                             }
+		                                             else if (pData && !(pData->stringArg.empty()))
+		                                             {
+			                                             args.push_back(JS_NewStringLen(
+				                                             ctx, pData->stringArg.c_str(), pData->stringArg.length()));
+		                                             }
+		                                             callFunction(ctx, funcName, args, true);
+		                                             std::for_each(args.begin(), args.end(), [ctx](JSValue& val)
+		                                             {
+			                                             JS_FreeValue(ctx, val);
+		                                             });
+	                                             }
+	                                             , player, ms, funcName, psObj, type
+	                                             // additionalParams
+	                                             , std::unique_ptr<timerAdditionalData>(
+		                                             new quickjs_timer_additionaldata(stringArg)));
 }
 
 //-- ## setTimer(functionName, milliseconds[, object])
@@ -2409,7 +2553,7 @@ static uniqueTimerID SetQuickJSTimer(JSContext *ctx, int player, const std::stri
 //-- setTimer("conDroids", 4000);
 //-- ```
 //--
-static JSValue js_setTimer(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue js_setTimer(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	SCRIPT_ASSERT(ctx, argc >= 2, "Must have at least two parameters");
 	SCRIPT_ASSERT(ctx, JS_IsString(argv[0]), "Timer functions must be quoted");
@@ -2417,7 +2561,7 @@ static JSValue js_setTimer(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 	int32_t ms = JSValueToInt32(ctx, argv[1]);
 
 	JSValue global_obj = JS_GetGlobalObject(ctx);
-	auto free_global_obj = gsl::finally([ctx, global_obj] { JS_FreeValue(ctx, global_obj); });  // establish exit action
+	auto free_global_obj = gsl::finally([ctx, global_obj] { JS_FreeValue(ctx, global_obj); }); // establish exit action
 	int player = QuickJS_GetInt32(ctx, global_obj, "me");
 
 	JSValue funcObj = JS_GetPropertyStr(ctx, global_obj, functionName.c_str()); // check existence
@@ -2425,7 +2569,7 @@ static JSValue js_setTimer(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 	JS_FreeValue(ctx, funcObj);
 
 	std::string stringArg;
-	BASE_OBJECT *psObj = nullptr;
+	BASE_OBJECT* psObj = nullptr;
 	if (argc == 3)
 	{
 		JSValue obj = argv[2];
@@ -2451,22 +2595,22 @@ static JSValue js_setTimer(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 //-- Removes an existing timer. The first parameter is the function timer to remove,
 //-- and its name _must be quoted_.
 //--
-static JSValue js_removeTimer(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue js_removeTimer(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	SCRIPT_ASSERT(ctx, argc == 1, "Must have one parameter");
 	SCRIPT_ASSERT(ctx, JS_IsString(argv[0]), "Timer functions must be quoted");
 	std::string functionName = JSValueToStdString(ctx, argv[0]);
 
 	JSValue global_obj = JS_GetGlobalObject(ctx);
-	auto free_global_obj = gsl::finally([ctx, global_obj] { JS_FreeValue(ctx, global_obj); });  // establish exit action
+	auto free_global_obj = gsl::finally([ctx, global_obj] { JS_FreeValue(ctx, global_obj); }); // establish exit action
 	int player = QuickJS_GetInt32(ctx, global_obj, "me");
 
 	wzapi::scripting_instance* instance = engineToInstanceMap.at(ctx);
 	std::vector<uniqueTimerID> removedTimerIDs = scripting_engine::instance().removeTimersIf(
 		[instance, functionName, player](const scripting_engine::timerNode& node)
-	{
-		return node.instance == instance && node.timerName == functionName && node.player == player;
-	});
+		{
+			return node.instance == instance && node.timerName == functionName && node.player == player;
+		});
 	if (removedTimerIDs.empty())
 	{
 		// Friendly warning
@@ -2490,14 +2634,14 @@ static JSValue js_removeTimer(JSContext *ctx, JSValueConst this_val, int argc, J
 //--
 // TODO, check if an identical call is already queued up - and in this case,
 // do not add anything.
-static JSValue js_queue(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue js_queue(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	SCRIPT_ASSERT(ctx, argc >= 1, "Must have at least one parameter");
 	SCRIPT_ASSERT(ctx, JS_IsString(argv[0]), "Queued functions must be quoted");
 	std::string functionName = JSValueToStdString(ctx, argv[0]);
 
 	JSValue global_obj = JS_GetGlobalObject(ctx);
-	auto free_global_obj = gsl::finally([ctx, global_obj] { JS_FreeValue(ctx, global_obj); });  // establish exit action
+	auto free_global_obj = gsl::finally([ctx, global_obj] { JS_FreeValue(ctx, global_obj); }); // establish exit action
 
 	JSValue funcObj = JS_GetPropertyStr(ctx, global_obj, functionName.c_str()); // check existence
 	SCRIPT_ASSERT(ctx, JS_IsFunction(ctx, funcObj), "No such function: %s", functionName.c_str());
@@ -2511,7 +2655,7 @@ static JSValue js_queue(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 	int player = QuickJS_GetInt32(ctx, global_obj, "me");
 
 	std::string stringArg;
-	BASE_OBJECT *psObj = nullptr;
+	BASE_OBJECT* psObj = nullptr;
 	if (argc == 3)
 	{
 		JSValue obj = argv[2];
@@ -2538,7 +2682,7 @@ static JSValue js_queue(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 //-- function should be called from global; do not (for hopefully obvious reasons) put it
 //-- inside an event.
 //--
-static JSValue js_namespace(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue js_namespace(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	SCRIPT_ASSERT(ctx, argc == 1, "Must have one parameter");
 	SCRIPT_ASSERT(ctx, JS_IsString(argv[0]), "Must provide a string namespace prefix");
@@ -2548,7 +2692,7 @@ static JSValue js_namespace(JSContext *ctx, JSValueConst this_val, int argc, JSV
 	return JS_TRUE;
 }
 
-static JSValue debugGetCallerFuncObject(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue debugGetCallerFuncObject(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	return js_debugger_get_caller_funcObject(ctx);
 }
@@ -2569,12 +2713,12 @@ static JSValue debugGetCallerFuncObject(JSContext *ctx, JSValueConst this_val, i
 //-- Will output: "funcB"
 //-- Useful for debug logging.
 //--
-static JSValue debugGetCallerFuncName(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue debugGetCallerFuncName(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	return js_debugger_get_caller_name(ctx);
 }
 
-static JSValue debugGetBacktrace(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue debugGetBacktrace(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	return js_debugger_build_backtrace(ctx, nullptr);
 }
@@ -2582,7 +2726,8 @@ static JSValue debugGetBacktrace(JSContext *ctx, JSValueConst this_val, int argc
 wzapi::scripting_instance* createQuickJSScriptInstance(const WzString& path, int player, int difficulty)
 {
 	WzPathInfo basename = WzPathInfo::fromPlatformIndependentPath(path.toUtf8());
-	quickjs_scripting_instance* pNewInstance = new quickjs_scripting_instance(player, basename.baseName(), basename.path());
+	quickjs_scripting_instance* pNewInstance = new quickjs_scripting_instance(
+		player, basename.baseName(), basename.path());
 	if (!pNewInstance->loadScript(path, player, difficulty))
 	{
 		delete pNewInstance;
@@ -2591,11 +2736,13 @@ wzapi::scripting_instance* createQuickJSScriptInstance(const WzString& path, int
 	return pNewInstance;
 }
 
-bool QuickJS_EnumerateObjectProperties(JSContext *ctx, JSValue obj, const std::function<void (const char *key, JSAtom& atom)>& func, bool enumerableOnly /*= true*/)
+bool QuickJS_EnumerateObjectProperties(JSContext* ctx, JSValue obj,
+                                       const std::function<void (const char* key, JSAtom& atom)>& func,
+                                       bool enumerableOnly /*= true*/)
 {
 	ASSERT_OR_RETURN(false, JS_IsObject(obj), "obj is not a JS object");
-	JSPropertyEnum * properties = nullptr;
-    uint32_t count = 0;
+	JSPropertyEnum* properties = nullptr;
+	uint32_t count = 0;
 	int32_t flags = (JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK);
 	if (enumerableOnly)
 	{
@@ -2608,16 +2755,16 @@ bool QuickJS_EnumerateObjectProperties(JSContext *ctx, JSValue obj, const std::f
 		return false;
 	}
 
-	for(uint32_t i = 0; i < count; i++)
-    {
-        JSAtom atom = properties[i].atom;
+	for (uint32_t i = 0; i < count; i++)
+	{
+		JSAtom atom = properties[i].atom;
 
-        const char *key = JS_AtomToCString(ctx, atom);
+		const char* key = JS_AtomToCString(ctx, atom);
 
 		func(key, atom);
 
-        JS_FreeCString(ctx, key);
-    }
+		JS_FreeCString(ctx, key);
+	}
 	for (int i = 0; i < count; i++)
 	{
 		JS_FreeAtom(ctx, properties[i].atom);
@@ -2627,22 +2774,23 @@ bool QuickJS_EnumerateObjectProperties(JSContext *ctx, JSValue obj, const std::f
 }
 
 static const JSCFunctionListEntry js_builtin_funcs[] = {
-	QJS_CFUNC_DEF("setTimer", 2, js_setTimer ), // JS-specific implementation
-	QJS_CFUNC_DEF("queue", 1, js_queue ), // JS-specific implementation
-	QJS_CFUNC_DEF("removeTimer", 1, js_removeTimer ), // JS-specific implementation
-	QJS_CFUNC_DEF("profile", 1, js_profile ), // JS-specific implementation
-	QJS_CFUNC_DEF("include", 1, js_include ), // backend-specific (a scripting_instance can't directly include a different type of script)
-	QJS_CFUNC_DEF("includeJSON", 1, js_includeJSON ), // JS-specific JSON loading
-	QJS_CFUNC_DEF("namespace", 1, js_namespace ), // JS-specific implementation
-	QJS_CFUNC_DEF("debugGetCallerFuncObject", 0, debugGetCallerFuncObject ), // backend-specific
-	QJS_CFUNC_DEF("debugGetCallerFuncName", 0, debugGetCallerFuncName ), // backend-specific
-	QJS_CFUNC_DEF("debugGetBacktrace", 0, debugGetBacktrace ) // backend-specific
+	QJS_CFUNC_DEF("setTimer", 2, js_setTimer), // JS-specific implementation
+	QJS_CFUNC_DEF("queue", 1, js_queue), // JS-specific implementation
+	QJS_CFUNC_DEF("removeTimer", 1, js_removeTimer), // JS-specific implementation
+	QJS_CFUNC_DEF("profile", 1, js_profile), // JS-specific implementation
+	QJS_CFUNC_DEF("include", 1, js_include),
+	// backend-specific (a scripting_instance can't directly include a different type of script)
+	QJS_CFUNC_DEF("includeJSON", 1, js_includeJSON), // JS-specific JSON loading
+	QJS_CFUNC_DEF("namespace", 1, js_namespace), // JS-specific implementation
+	QJS_CFUNC_DEF("debugGetCallerFuncObject", 0, debugGetCallerFuncObject), // backend-specific
+	QJS_CFUNC_DEF("debugGetCallerFuncName", 0, debugGetCallerFuncName), // backend-specific
+	QJS_CFUNC_DEF("debugGetBacktrace", 0, debugGetBacktrace) // backend-specific
 };
 
 bool quickjs_scripting_instance::loadScript(const WzString& path, int player, int difficulty)
 {
 	UDWORD size;
-	char *bytes = nullptr;
+	char* bytes = nullptr;
 	if (!loadFile(path.toUtf8().c_str(), &bytes, &size))
 	{
 		debug(LOG_ERROR, "Failed to read script file \"%s\"", path.toUtf8().c_str());
@@ -2650,31 +2798,34 @@ bool quickjs_scripting_instance::loadScript(const WzString& path, int player, in
 	}
 	if (!isHostAI())
 	{
-		calcDataHash(reinterpret_cast<const uint8_t *>(bytes), size, DATA_SCRIPT);
+		calcDataHash(reinterpret_cast<const uint8_t*>(bytes), size, DATA_SCRIPT);
 	}
 	m_path = path.toUtf8();
-	compiledScriptObj = JS_Eval(ctx, bytes, size, path.toUtf8().c_str(), JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+	compiledScriptObj = JS_Eval(ctx, bytes, size, path.toUtf8().c_str(),
+	                            JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
 	free(bytes);
 	if (JS_IsException(compiledScriptObj))
 	{
 		// compilation error / syntax error
 		std::string errorAsString = QuickJS_DumpError(ctx);
 		debug(LOG_ERROR, "Syntax / compilation error in %s: %s",
-			  path.toUtf8().c_str(), errorAsString.c_str());
+		      path.toUtf8().c_str(), errorAsString.c_str());
 		JS_FreeValue(ctx, compiledScriptObj);
 		compiledScriptObj = JS_UNINITIALIZED;
 		return false;
 	}
 
 	// Special functions
-	JS_SetPropertyFunctionList(ctx, global_obj, js_builtin_funcs, sizeof(js_builtin_funcs) / sizeof(js_builtin_funcs[0]));
+	JS_SetPropertyFunctionList(ctx, global_obj, js_builtin_funcs,
+	                           sizeof(js_builtin_funcs) / sizeof(js_builtin_funcs[0]));
 
 	// Regular functions
 	WzPathInfo basename = WzPathInfo::fromPlatformIndependentPath(path.toUtf8());
 	registerFunctions(basename.baseName());
 	// Remember internal, reserved names
 	std::unordered_set<std::string>& internalNamespaceRef = internalNamespace;
-	QuickJS_EnumerateObjectProperties(ctx, global_obj, [&internalNamespaceRef](const char *key, JSAtom &) {
+	QuickJS_EnumerateObjectProperties(ctx, global_obj, [&internalNamespaceRef](const char* key, JSAtom&)
+	{
 		internalNamespaceRef.insert(key);
 	}, false);
 
@@ -2691,7 +2842,7 @@ bool quickjs_scripting_instance::readyInstanceForExecution()
 		// compilation error / syntax error
 		std::string errorAsString = QuickJS_DumpError(ctx);
 		debug(LOG_ERROR, "Syntax / compilation error in %s: %s",
-			  m_path.c_str(), errorAsString.c_str());
+		      m_path.c_str(), errorAsString.c_str());
 		JS_FreeValue(ctx, result);
 		return false;
 	}
@@ -2700,24 +2851,25 @@ bool quickjs_scripting_instance::readyInstanceForExecution()
 	return true;
 }
 
-bool quickjs_scripting_instance::saveScriptGlobals(nlohmann::json &result)
+bool quickjs_scripting_instance::saveScriptGlobals(nlohmann::json& result)
 {
 	// we save 'scriptName' and 'me' implicitly
-	QuickJS_EnumerateObjectProperties(ctx, global_obj, [this, &result](const char *key, JSAtom &atom) {
-        JSValue jsVal = JS_GetProperty(ctx, global_obj, atom);
+	QuickJS_EnumerateObjectProperties(ctx, global_obj, [this, &result](const char* key, JSAtom& atom)
+	{
+		JSValue jsVal = JS_GetProperty(ctx, global_obj, atom);
 		std::string nameStr = key;
 		if (internalNamespace.count(nameStr) == 0 && !JS_IsFunction(ctx, jsVal)
 			&& !JS_IsConstructor(ctx, jsVal)
-			)//&& !it.value().equals(engine->globalObject()))
+		) //&& !it.value().equals(engine->globalObject()))
 		{
 			result[nameStr] = JSContextValue{ctx, jsVal, true};
 		}
-        JS_FreeValue(ctx, jsVal);
+		JS_FreeValue(ctx, jsVal);
 	});
 	return true;
 }
 
-bool quickjs_scripting_instance::loadScriptGlobals(const nlohmann::json &result)
+bool quickjs_scripting_instance::loadScriptGlobals(const nlohmann::json& result)
 {
 	ASSERT_OR_RETURN(false, result.is_object(), "Can't load script globals from non-json-object");
 	for (auto it : result.items())
@@ -2727,26 +2879,31 @@ bool quickjs_scripting_instance::loadScriptGlobals(const nlohmann::json &result)
 		//			  (mapJsonToQuickJSValue handles this properly.)
 		// NOTE: Properties created on the JS global object (as "global variables") should be non-configurable.
 		//		 However *their* properties should probably be C_W_E.
-		int ret = JS_DefinePropertyValueStr(ctx, global_obj, it.key().c_str(), mapJsonToQuickJSValue(ctx, it.value(), JS_PROP_C_W_E), JS_PROP_WRITABLE | JS_PROP_ENUMERABLE | JS_PROP_THROW);
+		int ret = JS_DefinePropertyValueStr(ctx, global_obj, it.key().c_str(),
+		                                    mapJsonToQuickJSValue(ctx, it.value(), JS_PROP_C_W_E),
+		                                    JS_PROP_WRITABLE | JS_PROP_ENUMERABLE | JS_PROP_THROW);
 		if (ret != 1)
 		{
 			// Failed to load script global
 			if (ret == -1)
 			{
 				// threw exception
-				debug(LOG_SCRIPT, "[script: %s] Failed to load script global: \"%s\"; %s", scriptName().c_str(), it.key().c_str(), QuickJS_DumpError(ctx).c_str());
+				debug(LOG_SCRIPT, "[script: %s] Failed to load script global: \"%s\"; %s", scriptName().c_str(),
+				      it.key().c_str(), QuickJS_DumpError(ctx).c_str());
 			}
 			else
 			{
 				// other failure
-				debug(LOG_SCRIPT, "[script: %s] Failed to load script global: \"%s\"", scriptName().c_str(), it.key().c_str());
+				debug(LOG_SCRIPT, "[script: %s] Failed to load script global: \"%s\"", scriptName().c_str(),
+				      it.key().c_str());
 			}
 		}
 	}
 	return true;
 }
 
-nlohmann::json quickjs_scripting_instance::saveTimerFunction(uniqueTimerID timerID, std::string timerName, const timerAdditionalData* additionalParam)
+nlohmann::json quickjs_scripting_instance::saveTimerFunction(uniqueTimerID timerID, std::string timerName,
+                                                             const timerAdditionalData* additionalParam)
 {
 	nlohmann::json result = nlohmann::json::object();
 	result["function"] = timerName;
@@ -2759,20 +2916,23 @@ nlohmann::json quickjs_scripting_instance::saveTimerFunction(uniqueTimerID timer
 }
 
 // recreates timer functions (and additional userdata) based on the information saved by the saveTimer() method
-std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>> quickjs_scripting_instance::restoreTimerFunction(const nlohmann::json& savedTimerFuncData)
+std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>> quickjs_scripting_instance::restoreTimerFunction(
+	const nlohmann::json& savedTimerFuncData)
 {
 	std::string funcName = json_getValue(savedTimerFuncData, WzString::fromUtf8("function")).toWzString().toStdString();
 	if (funcName.empty())
 	{
 		throw std::runtime_error("Invalid timer restore data");
 	}
-	std::string stringArg = json_getValue(savedTimerFuncData, WzString::fromUtf8("stringArg")).toWzString().toStdString();
+	std::string stringArg = json_getValue(savedTimerFuncData, WzString::fromUtf8("stringArg")).toWzString().
+		toStdString();
 
 	JSContext* pContext = ctx;
 
 	return std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>>{
 		// timerFunc
-		[pContext, funcName](uniqueTimerID timerID, BASE_OBJECT* baseObject, timerAdditionalData* additionalParams) {
+		[pContext, funcName](uniqueTimerID timerID, BASE_OBJECT* baseObject, timerAdditionalData* additionalParams)
+		{
 			quickjs_timer_additionaldata* pData = static_cast<quickjs_timer_additionaldata*>(additionalParams);
 			std::vector<JSValue> args;
 			if (baseObject != nullptr)
@@ -2787,7 +2947,8 @@ std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>> quickjs_scripting_in
 			std::for_each(args.begin(), args.end(), [pContext](JSValue& val) { JS_FreeValue(pContext, val); });
 		}
 		// additionalParams
-		, std::unique_ptr<timerAdditionalData>(new quickjs_timer_additionaldata(stringArg))
+		,
+		std::unique_ptr<timerAdditionalData>(new quickjs_timer_additionaldata(stringArg))
 	};
 }
 
@@ -2795,36 +2956,39 @@ nlohmann::json quickjs_scripting_instance::debugGetAllScriptGlobals()
 {
 	nlohmann::json globals = nlohmann::json::object();
 
-	QuickJS_EnumerateObjectProperties(ctx, global_obj, [this, &globals](const char *key, JSAtom &atom) {
-        JSValue jsVal = JS_GetProperty(ctx, global_obj, atom);
+	QuickJS_EnumerateObjectProperties(ctx, global_obj, [this, &globals](const char* key, JSAtom& atom)
+	{
+		JSValue jsVal = JS_GetProperty(ctx, global_obj, atom);
 		std::string nameStr = key;
 		if ((internalNamespace.count(nameStr) == 0 && !JS_IsFunction(ctx, jsVal)
-			/*&& !it.value().equals(engine->globalObject())*/)
+				/*&& !it.value().equals(engine->globalObject())*/)
 			|| nameStr == "Upgrades" || nameStr == "Stats")
 		{
 			globals[nameStr] = JSContextValue{ctx, jsVal, false}; // uses to_json JSContextValue implementation
 		}
-        JS_FreeValue(ctx, jsVal);
+		JS_FreeValue(ctx, jsVal);
 	});
 	return globals;
 }
 
-std::unordered_map<std::string, wzapi::scripting_instance::DebugSpecialStringType> quickjs_scripting_instance::debugGetScriptGlobalSpecialStringValues()
+std::unordered_map<std::string, wzapi::scripting_instance::DebugSpecialStringType>
+quickjs_scripting_instance::debugGetScriptGlobalSpecialStringValues()
 {
 	std::unordered_map<std::string, wzapi::scripting_instance::DebugSpecialStringType> result;
 	result["<constructor>"] = wzapi::scripting_instance::DebugSpecialStringType::TYPE_DESCRIPTION;
 	return result;
 }
 
-bool quickjs_scripting_instance::debugEvaluateCommand(const std::string &text)
+bool quickjs_scripting_instance::debugEvaluateCommand(const std::string& text)
 {
-	JSValue compiledFuncObj = JS_Eval(ctx, text.c_str(), text.length(), "<debug_evaluate_command>", JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+	JSValue compiledFuncObj = JS_Eval(ctx, text.c_str(), text.length(), "<debug_evaluate_command>",
+	                                  JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
 	if (JS_IsException(compiledFuncObj))
 	{
 		// compilation error / syntax error
 		std::string errorAsString = QuickJS_DumpError(ctx);
 		debug(LOG_ERROR, "Syntax error in %s: %s",
-			  text.c_str(), errorAsString.c_str());
+		      text.c_str(), errorAsString.c_str());
 		JS_FreeValue(ctx, compiledFuncObj);
 		compiledFuncObj = JS_UNINITIALIZED;
 		return false;
@@ -2836,7 +3000,7 @@ bool quickjs_scripting_instance::debugEvaluateCommand(const std::string &text)
 		// compilation error / syntax error
 		std::string errorAsString = QuickJS_DumpError(ctx);
 		debug(LOG_ERROR, "Uncaught exception in %s: %s",
-			  text.c_str(), errorAsString.c_str());
+		      text.c_str(), errorAsString.c_str());
 		JS_FreeValue(ctx, result);
 		return false;
 	}
@@ -2848,18 +3012,22 @@ bool quickjs_scripting_instance::debugEvaluateCommand(const std::string &text)
 
 void quickjs_scripting_instance::updateGameTime(uint32_t newGameTime)
 {
-	int ret = JS_DefinePropertyValueStr(ctx, global_obj, "gameTime", JS_NewUint32(ctx, newGameTime), JS_PROP_WRITABLE | JS_PROP_ENUMERABLE);
+	int ret = JS_DefinePropertyValueStr(ctx, global_obj, "gameTime", JS_NewUint32(ctx, newGameTime),
+	                                    JS_PROP_WRITABLE | JS_PROP_ENUMERABLE);
 	ASSERT(ret >= 1, "Failed to update gameTime");
 }
 
 void quickjs_scripting_instance::updateGroupSizes(int groupId, int size)
 {
 	JSValue groupMembersObj = JS_GetPropertyStr(ctx, global_obj, "groupSizes");
-	JS_DefinePropertyValueStr(ctx, groupMembersObj, std::to_string(groupId).c_str(), JS_NewInt32(ctx, size), JS_PROP_C_W_E);
+	JS_DefinePropertyValueStr(ctx, groupMembersObj, std::to_string(groupId).c_str(), JS_NewInt32(ctx, size),
+	                          JS_PROP_C_W_E);
 	JS_FreeValue(ctx, groupMembersObj);
 }
 
-void quickjs_scripting_instance::setSpecifiedGlobalVariables(const nlohmann::json& variables, wzapi::GlobalVariableFlags flags /*= wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave*/)
+void quickjs_scripting_instance::setSpecifiedGlobalVariables(const nlohmann::json& variables,
+                                                             wzapi::GlobalVariableFlags flags
+                                                             /*= wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave*/)
 {
 	if (!variables.is_object())
 	{
@@ -2867,11 +3035,13 @@ void quickjs_scripting_instance::setSpecifiedGlobalVariables(const nlohmann::jso
 		return;
 	}
 	int propertyFlags = toQuickJSPropertyFlags(flags) | JS_PROP_ENUMERABLE;
-	bool markGlobalAsInternal = (flags & wzapi::GlobalVariableFlags::DoNotSave) == wzapi::GlobalVariableFlags::DoNotSave;
+	bool markGlobalAsInternal = (flags & wzapi::GlobalVariableFlags::DoNotSave) ==
+		wzapi::GlobalVariableFlags::DoNotSave;
 	for (auto it : variables.items())
 	{
 		ASSERT(!it.key().empty(), "Empty key");
-		JS_DefinePropertyValueStr(ctx, global_obj, it.key().c_str(), mapJsonToQuickJSValue(ctx, it.value(), propertyFlags), propertyFlags);
+		JS_DefinePropertyValueStr(ctx, global_obj, it.key().c_str(),
+		                          mapJsonToQuickJSValue(ctx, it.value(), propertyFlags), propertyFlags);
 		if (markGlobalAsInternal)
 		{
 			internalNamespace.insert(it.key());
@@ -2879,19 +3049,23 @@ void quickjs_scripting_instance::setSpecifiedGlobalVariables(const nlohmann::jso
 	}
 }
 
-void quickjs_scripting_instance::setSpecifiedGlobalVariable(const std::string& name, const nlohmann::json& value, wzapi::GlobalVariableFlags flags /*= wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave*/)
+void quickjs_scripting_instance::setSpecifiedGlobalVariable(const std::string& name, const nlohmann::json& value,
+                                                            wzapi::GlobalVariableFlags flags
+                                                            /*= wzapi::GlobalVariableFlags::ReadOnly | wzapi::GlobalVariableFlags::DoNotSave*/)
 {
 	ASSERT(!name.empty(), "Empty key");
 	int propertyFlags = toQuickJSPropertyFlags(flags) | JS_PROP_ENUMERABLE;
-	bool markGlobalAsInternal = (flags & wzapi::GlobalVariableFlags::DoNotSave) == wzapi::GlobalVariableFlags::DoNotSave;
-	JS_DefinePropertyValueStr(ctx, global_obj, name.c_str(), mapJsonToQuickJSValue(ctx, value, propertyFlags), propertyFlags);
+	bool markGlobalAsInternal = (flags & wzapi::GlobalVariableFlags::DoNotSave) ==
+		wzapi::GlobalVariableFlags::DoNotSave;
+	JS_DefinePropertyValueStr(ctx, global_obj, name.c_str(), mapJsonToQuickJSValue(ctx, value, propertyFlags),
+	                          propertyFlags);
 	if (markGlobalAsInternal)
 	{
 		internalNamespace.insert(name);
 	}
 }
 
-void quickjs_scripting_instance::doNotSaveGlobal(const std::string &global)
+void quickjs_scripting_instance::doNotSaveGlobal(const std::string& global)
 {
 	internalNamespace.insert(global);
 }
@@ -2952,7 +3126,8 @@ IMPL_EVENT_HANDLER(eventChat, int, int, const char *)
 IMPL_EVENT_HANDLER(eventBeacon, int, int, int, int, optional<const char *>)
 IMPL_EVENT_HANDLER(eventBeaconRemoved, int, int)
 IMPL_EVENT_HANDLER(eventGroupLoss, const BASE_OBJECT *, int, int)
-bool quickjs_scripting_instance::handle_eventArea(const std::string& label, const DROID *psDroid)
+
+bool quickjs_scripting_instance::handle_eventArea(const std::string& label, const DROID* psDroid)
 {
 	std::vector<JSValue> args;
 	args.push_back(convDroid(psDroid, ctx));
@@ -2962,6 +3137,7 @@ bool quickjs_scripting_instance::handle_eventArea(const std::string& label, cons
 	std::for_each(args.begin(), args.end(), [this](JSValue& val) { JS_FreeValue(ctx, val); });
 	return true;
 }
+
 IMPL_EVENT_HANDLER(eventDesignCreated, const DROID_TEMPLATE *)
 IMPL_EVENT_HANDLER(eventAllianceOffer, uint8_t, uint8_t)
 IMPL_EVENT_HANDLER(eventAllianceAccepted, uint8_t, uint8_t)
@@ -2992,7 +3168,7 @@ IMPL_JS_FUNC(enumGateways, wzapi::enumGateways)
 //--
 //-- Return an array containing all the buildable templates for the given player. (3.2+ only)
 //--
-static JSValue js_enumTemplates(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue js_enumTemplates(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	SCRIPT_ASSERT(ctx, argc == 1, "Must have one parameter");
 	SCRIPT_ASSERT(ctx, JS_IsNumber(argv[0]), "Supplied parameter must be a player number");
@@ -3000,7 +3176,8 @@ static JSValue js_enumTemplates(JSContext *ctx, JSValueConst this_val, int argc,
 
 	JSValue result = JS_NewArray(ctx); //engine->newArray(droidTemplates[player].size());
 	uint32_t count = 0;
-	enumerateTemplates(player, [ctx, &result, &count](DROID_TEMPLATE* psTemplate) {
+	enumerateTemplates(player, [ctx, &result, &count](DROID_TEMPLATE* psTemplate)
+	{
 		JS_DefinePropertyValueUint32(ctx, result, count, convTemplate(psTemplate, ctx), 0); // TODO: Check return value?
 		count++;
 		return true;
@@ -3084,7 +3261,7 @@ IMPL_JS_FUNC(hideInterface, wzapi::hideInterface)
 //--
 //-- Remove reticule button. DO NOT USE FOR ANYTHING.
 //--
-static JSValue js_removeReticuleButton(JSContext *, JSValueConst, int, JSValueConst *)
+static JSValue js_removeReticuleButton(JSContext*, JSValueConst, int, JSValueConst*)
 {
 	return JS_UNDEFINED;
 }
@@ -3123,7 +3300,7 @@ IMPL_JS_FUNC(addBeacon, wzapi::addBeacon)
 //-- Remove a beacon message sent to target player. Target may also be ```ALLIES```.
 //-- Returns a boolean that is true on success. (3.2+ only)
 //--
-static JSValue js_removeBeacon(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue js_removeBeacon(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	JSValue retVal = wrap_(wzapi::removeBeacon, ctx, argc, argv);
 	if (JS_IsBool(retVal) && JS_ToBool(ctx, retVal))
@@ -3176,7 +3353,7 @@ IMPL_JS_FUNC(getRevealStatus, wzapi::getRevealStatus)
 IMPL_JS_FUNC(setRevealStatus, wzapi::setRevealStatus)
 
 
-static JSValue js_stats_get(JSContext *ctx, JSValueConst this_val)
+static JSValue js_stats_get(JSContext* ctx, JSValueConst this_val)
 {
 	JSValue currentFuncObj = js_debugger_get_current_funcObject(ctx);
 	int type = QuickJS_GetInt32(ctx, currentFuncObj, "type");
@@ -3185,10 +3362,11 @@ static JSValue js_stats_get(JSContext *ctx, JSValueConst this_val)
 	std::string name = QuickJS_GetStdString(ctx, currentFuncObj, "name");
 	JS_FreeValue(ctx, currentFuncObj);
 	quickjs_execution_context execution_context(ctx);
-	return mapJsonToQuickJSValue(ctx, wzapi::getUpgradeStats(execution_context, player, name, type, index), JS_PROP_C_W_E);
+	return mapJsonToQuickJSValue(ctx, wzapi::getUpgradeStats(execution_context, player, name, type, index),
+	                             JS_PROP_C_W_E);
 }
 
-static JSValue js_stats_set(JSContext *ctx, JSValueConst this_val, JSValueConst val)
+static JSValue js_stats_set(JSContext* ctx, JSValueConst this_val, JSValueConst val)
 {
 	JSValue currentFuncObj = js_debugger_get_current_funcObject(ctx);
 	int type = QuickJS_GetInt32(ctx, currentFuncObj, "type");
@@ -3199,12 +3377,12 @@ static JSValue js_stats_set(JSContext *ctx, JSValueConst this_val, JSValueConst 
 	quickjs_execution_context execution_context(ctx);
 	wzapi::setUpgradeStats(execution_context, player, name, type, index, JSContextValue{ctx, val, true});
 	// Now read value and return it
-	return mapJsonToQuickJSValue(ctx, wzapi::getUpgradeStats(execution_context, player, name, type, index), JS_PROP_C_W_E);
+	return mapJsonToQuickJSValue(ctx, wzapi::getUpgradeStats(execution_context, player, name, type, index),
+	                             JS_PROP_C_W_E);
 }
 
 
-
-static void setStatsFunc(JSValue &base, JSContext *ctx, const std::string& name, int player, int type, unsigned index)
+static void setStatsFunc(JSValue& base, JSContext* ctx, const std::string& name, int player, int type, unsigned index)
 {
 	const JSCFunctionListEntry js_stats_getter_setter_func[] = {
 		QJS_CGETSET_DEF(name.c_str(), js_stats_get, js_stats_set)
@@ -3218,12 +3396,12 @@ static void setStatsFunc(JSValue &base, JSContext *ctx, const std::string& name,
 
 	snprintf(buf, sizeof(buf), "get %s", name.c_str());
 	getter = JS_NewCFunction2(ctx, js_stats_getter_setter_func[0].u.getset.get.generic,
-							  buf, 0, JS_CFUNC_getter,
-							  0);
+	                          buf, 0, JS_CFUNC_getter,
+	                          0);
 	snprintf(buf, sizeof(buf), "set %s", name.c_str());
 	setter = JS_NewCFunction2(ctx, js_stats_getter_setter_func[0].u.getset.set.generic,
-							  buf, 1, JS_CFUNC_setter,
-							  0);
+	                          buf, 1, JS_CFUNC_setter,
+	                          0);
 
 	JSValue funcObjects[2] = {getter, setter};
 	for (size_t i = 0; i < 2; i++)
@@ -3234,12 +3412,13 @@ static void setStatsFunc(JSValue &base, JSContext *ctx, const std::string& name,
 		QuickJS_DefinePropertyValue(ctx, funcObjects[i], "name", JS_NewStringLen(ctx, name.c_str(), name.length()), 0);
 	}
 
-	JS_DefinePropertyGetSet(ctx, base, atom, getter, setter, js_stats_getter_setter_func[0].prop_flags | JS_PROP_WRITABLE | JS_PROP_ENUMERABLE);
+	JS_DefinePropertyGetSet(ctx, base, atom, getter, setter,
+	                        js_stats_getter_setter_func[0].prop_flags | JS_PROP_WRITABLE | JS_PROP_ENUMERABLE);
 
 	JS_FreeAtom(ctx, atom);
 }
 
-JSValue constructUpgradesQuickJSValue(JSContext *ctx)
+JSValue constructUpgradesQuickJSValue(JSContext* ctx)
 {
 	auto upgradesObj = wzapi::getUpgradesObject();
 
@@ -3259,7 +3438,8 @@ JSValue constructUpgradesQuickJSValue(JSContext *ctx)
 				JSValue v = JS_NewObject(ctx);
 				for (const auto& property : gameEntityRules)
 				{
-					setStatsFunc(v, ctx, property.first, gameEntityRules.getPlayer(), property.second, gameEntityRules.getIndex());
+					setStatsFunc(v, ctx, property.first, gameEntityRules.getPlayer(), property.second,
+					             gameEntityRules.getIndex());
 				}
 				QuickJS_DefinePropertyValue(ctx, entityBase, gameEntityName.c_str(), v, JS_PROP_ENUMERABLE);
 			}
@@ -3268,8 +3448,9 @@ JSValue constructUpgradesQuickJSValue(JSContext *ctx)
 
 		// Finally
 		ASSERT(playerUpgrades.getPlayer() >= 0 && playerUpgrades.getPlayer() < MAX_PLAYERS, "Invalid player index");
-//		QuickJS_DefinePropertyValue(ctx, upgrades, std::to_string(playerUpgrades.getPlayer()).c_str(), node, 0);
-		JS_DefinePropertyValueUint32(ctx, upgrades, static_cast<uint32_t>(playerUpgrades.getPlayer()), node, JS_PROP_ENUMERABLE);
+		//		QuickJS_DefinePropertyValue(ctx, upgrades, std::to_string(playerUpgrades.getPlayer()).c_str(), node, 0);
+		JS_DefinePropertyValueUint32(ctx, upgrades, static_cast<uint32_t>(playerUpgrades.getPlayer()), node,
+		                             JS_PROP_ENUMERABLE);
 	}
 
 	return upgrades;
@@ -3476,7 +3657,8 @@ bool quickjs_scripting_instance::registerFunctions(const std::string& scriptName
 // Enable JSON support for custom types
 
 // JSContextValue
-void to_json(nlohmann::json& j, const JSContextValue& v) {
+void to_json(nlohmann::json& j, const JSContextValue& v)
+{
 	// IMPORTANT: This largely follows the Qt documentation on QJsonValue::fromVariant
 	// See: http://doc.qt.io/qt-5/qjsonvalue.html#fromVariant
 	//
@@ -3517,7 +3699,8 @@ void to_json(nlohmann::json& j, const JSContextValue& v) {
 			return;
 		}
 		j = nlohmann::json::object();
-		QuickJS_EnumerateObjectProperties(v.ctx, v.value, [v, &j](const char *key, JSAtom &atom) {
+		QuickJS_EnumerateObjectProperties(v.ctx, v.value, [v, &j](const char* key, JSAtom& atom)
+		{
 			JSValue jsVal = JS_GetProperty(v.ctx, v.value, atom);
 			std::string nameStr = key;
 			if (!JS_IsConstructor(v.ctx, jsVal))
@@ -3536,10 +3719,10 @@ void to_json(nlohmann::json& j, const JSContextValue& v) {
 	int tag = JS_VALUE_GET_NORM_TAG(v.value);
 	switch (tag)
 	{
-		case JS_TAG_BOOL:
-			j = static_cast<bool>(JS_ToBool(v.ctx, v.value) != 0);
-			break;
-		case JS_TAG_INT:
+	case JS_TAG_BOOL:
+		j = static_cast<bool>(JS_ToBool(v.ctx, v.value) != 0);
+		break;
+	case JS_TAG_INT:
 		{
 			int32_t intVal = 0;
 			if (JS_ToInt32(v.ctx, &intVal, v.value))
@@ -3550,7 +3733,7 @@ void to_json(nlohmann::json& j, const JSContextValue& v) {
 			j = intVal;
 			break;
 		}
-		case JS_TAG_FLOAT64:
+	case JS_TAG_FLOAT64:
 		{
 			double dblVal = 0.0;
 			if (JS_ToFloat64(v.ctx, &dblVal, v.value))
@@ -3561,17 +3744,17 @@ void to_json(nlohmann::json& j, const JSContextValue& v) {
 			j = dblVal;
 			break;
 		}
-		case JS_TAG_UNDEFINED:
-			j = nlohmann::json(); // null value // ???
-			break;
-		case JS_TAG_STRING:
+	case JS_TAG_UNDEFINED:
+		j = nlohmann::json(); // null value // ???
+		break;
+	case JS_TAG_STRING:
 		{
 			const char* pStr = JS_ToCString(v.ctx, v.value);
 			j = json(pStr ? pStr : "");
 			JS_FreeCString(v.ctx, pStr);
 			break;
 		}
-		default:
+	default:
 		{
 			// In every other case, a conversion to a string will be attempted
 			const char* pStr = JS_ToCString(v.ctx, v.value);

@@ -61,7 +61,8 @@ public:
 
 private:
 	/* Registers a new default key mapping */
-	bool addDefaultMapping(const KEY_CODE metaCode, const KeyMappingInput input, const KeyAction action, const KeyFunctionInfo& info, const KeyMappingSlot slot = KeyMappingSlot::PRIMARY);
+	bool addDefaultMapping(const KEY_CODE metaCode, const KeyMappingInput input, const KeyAction action,
+	                       const KeyFunctionInfo& info, const KeyMappingSlot slot = KeyMappingSlot::PRIMARY);
 
 	bool mappingsSortRequired() const;
 

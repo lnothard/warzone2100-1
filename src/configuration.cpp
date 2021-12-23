@@ -64,7 +64,7 @@
 #define MASTERSERVERPORT	9990
 #define GAMESERVERPORT		2100
 
-static const char *fileName = "config";
+static const char* fileName = "config";
 
 // ////////////////////////////////////////////////////////////////////////////
 
@@ -74,9 +74,14 @@ class PhysFSFileStreamGenerator : public mINI::INIFileStreamGenerator
 {
 public:
 	PhysFSFileStreamGenerator(std::string const& utf8Path)
-	: INIFileStreamGenerator(utf8Path)
-	{ }
-	virtual ~PhysFSFileStreamGenerator() { }
+		: INIFileStreamGenerator(utf8Path)
+	{
+	}
+
+	virtual ~PhysFSFileStreamGenerator()
+	{
+	}
+
 public:
 	virtual std::shared_ptr<std::istream> getFileReadStream() const override
 	{
@@ -84,7 +89,8 @@ public:
 		{
 			return nullptr;
 		}
-		try {
+		try
+		{
 			return std::static_pointer_cast<std::istream>(PhysFS::ifstream::make(utf8Path));
 		}
 		catch (const std::exception&)
@@ -93,13 +99,15 @@ public:
 			return nullptr;
 		}
 	}
+
 	virtual std::shared_ptr<std::ostream> getFileWriteStream() const override
 	{
 		if (utf8Path.empty())
 		{
 			return nullptr;
 		}
-		try {
+		try
+		{
 			return std::static_pointer_cast<std::ostream>(PhysFS::ofstream::make(utf8Path));
 		}
 		catch (const std::exception&)
@@ -108,6 +116,7 @@ public:
 			return nullptr;
 		}
 	}
+
 	virtual bool fileExists() const override
 	{
 		if (utf8Path.empty())
@@ -116,6 +125,7 @@ public:
 		}
 		return PHYSFS_exists(utf8Path.c_str());
 	}
+
 	std::string realPath() const
 	{
 		std::string fullPath = WZ_PHYSFS_getRealDir_String(utf8Path.c_str());
@@ -130,13 +140,15 @@ public:
 
 typedef mINI::INIMap<std::string> IniSection;
 
-static optional<int> iniSectionGetInteger(const IniSection& iniSection, const std::string& key, optional<int> defaultValue = nullopt)
+static optional<int> iniSectionGetInteger(const IniSection& iniSection, const std::string& key,
+                                          optional<int> defaultValue = nullopt)
 {
 	if (!iniSection.has(key))
 	{
 		return defaultValue;
 	}
-	try {
+	try
+	{
 		auto valueStr = iniSection.get(key);
 		int valueInt = std::stoi(valueStr);
 		return valueInt;
@@ -153,7 +165,8 @@ static void iniSectionSetInteger(IniSection& iniSection, const std::string& key,
 	iniSection[key] = std::to_string(value);
 }
 
-static optional<bool> iniSectionGetBool(const IniSection& iniSection, const std::string& key, optional<bool> defaultValue = nullopt)
+static optional<bool> iniSectionGetBool(const IniSection& iniSection, const std::string& key,
+                                        optional<bool> defaultValue = nullopt)
 {
 	if (!iniSection.has(key))
 	{
@@ -192,7 +205,8 @@ static void iniSectionSetBool(IniSection& iniSection, const std::string& key, bo
 	iniSection[key] = (value) ? "true" : "false";
 }
 
-static optional<std::string> iniSectionGetString(const IniSection& iniSection, const std::string& key, optional<std::string> defaultValue = nullopt)
+static optional<std::string> iniSectionGetString(const IniSection& iniSection, const std::string& key,
+                                                 optional<std::string> defaultValue = nullopt)
 {
 	if (!iniSection.has(key))
 	{
@@ -211,7 +225,7 @@ static optional<std::string> iniSectionGetString(const IniSection& iniSection, c
 	return result;
 }
 
-bool saveIniFile(mINI::INIFile &file, mINI::INIStructure &ini)
+bool saveIniFile(mINI::INIFile& file, mINI::INIStructure& ini)
 {
 	// write out ini file changes
 	try
@@ -257,23 +271,29 @@ bool loadConfig()
 
 	auto& iniGeneral = ini["General"];
 
-	auto iniGetInteger = [&iniGeneral](const std::string& key, optional<int> defaultValue) -> optional<int> {
+	auto iniGetInteger = [&iniGeneral](const std::string& key, optional<int> defaultValue) -> optional<int>
+	{
 		return iniSectionGetInteger(iniGeneral, key, defaultValue);
 	};
 
-	auto iniGetIntegerOpt = [&iniGeneral](const std::string& key) -> optional<int> {
+	auto iniGetIntegerOpt = [&iniGeneral](const std::string& key) -> optional<int>
+	{
 		return iniSectionGetInteger(iniGeneral, key);
 	};
 
-	auto iniGetBool = [&iniGeneral](const std::string& key, optional<bool> defaultValue) -> optional<bool> {
+	auto iniGetBool = [&iniGeneral](const std::string& key, optional<bool> defaultValue) -> optional<bool>
+	{
 		return iniSectionGetBool(iniGeneral, key, defaultValue);
 	};
 
-	auto iniGetBoolOpt = [&iniGeneral](const std::string& key) -> optional<bool> {
+	auto iniGetBoolOpt = [&iniGeneral](const std::string& key) -> optional<bool>
+	{
 		return iniSectionGetBool(iniGeneral, key);
 	};
 
-	auto iniGetString = [&iniGeneral](const std::string& key, optional<std::string> defaultValue) -> optional<std::string> {
+	auto iniGetString = [&iniGeneral](const std::string& key,
+	                                  optional<std::string> defaultValue) -> optional<std::string>
+	{
 		return iniSectionGetString(iniGeneral, key, defaultValue);
 	};
 
@@ -299,7 +319,8 @@ bool loadConfig()
 	if (auto value = iniGetIntegerOpt("hrtf"))
 	{
 		int hrtfmode_int = value.value();
-		if (hrtfmode_int >= static_cast<int>(MIN_VALID_HRTFMode) && hrtfmode_int <= static_cast<int>(MAX_VALID_HRTFMode))
+		if (hrtfmode_int >= static_cast<int>(MIN_VALID_HRTFMode) && hrtfmode_int <= static_cast<int>(
+			MAX_VALID_HRTFMode))
 		{
 			war_SetHRTFMode(static_cast<HRTFMode>(hrtfmode_int));
 		}
@@ -353,23 +374,27 @@ bool loadConfig()
 	setAutoratingUrl(iniGetString("autoratingUrl", "").value());
 	NETsetMasterserverName(iniGetString("masterserver_name", "lobby.wz2100.net").value().c_str());
 	mpSetServerName(iniGetString("server_name", "").value().c_str());
-//	iV_font(ini.value("fontname", "DejaVu Sans").toString().toUtf8().constData(),
-//	        ini.value("fontface", "Book").toString().toUtf8().constData(),
-//	        ini.value("fontfacebold", "Bold").toString().toUtf8().constData());
+	//	iV_font(ini.value("fontname", "DejaVu Sans").toString().toUtf8().constData(),
+	//	        ini.value("fontface", "Book").toString().toUtf8().constData(),
+	//	        ini.value("fontfacebold", "Bold").toString().toUtf8().constData());
 	NETsetMasterserverPort(iniGetInteger("masterserver_port", MASTERSERVERPORT).value());
-	if(!netGameserverPortOverride)  // do not load the config port setting if there's a command-line override
+	if (!netGameserverPortOverride) // do not load the config port setting if there's a command-line override
 	{
 		NETsetGameserverPort(iniGetInteger("gameserver_port", GAMESERVERPORT).value());
 	}
 	NETsetJoinPreferenceIPv6(iniGetBool("prefer_ipv6", true).value());
-	setPublicIPv4LookupService(iniGetString("publicIPv4LookupService_Url", WZ_DEFAULT_PUBLIC_IPv4_LOOKUP_SERVICE_URL).value(), iniGetString("publicIPv4LookupService_JSONKey", WZ_DEFAULT_PUBLIC_IPv4_LOOKUP_SERVICE_JSONKEY).value());
-	setPublicIPv6LookupService(iniGetString("publicIPv6LookupService_Url", WZ_DEFAULT_PUBLIC_IPv6_LOOKUP_SERVICE_URL).value(), iniGetString("publicIPv6LookupService_JSONKey", WZ_DEFAULT_PUBLIC_IPv6_LOOKUP_SERVICE_JSONKEY).value());
+	setPublicIPv4LookupService(
+		iniGetString("publicIPv4LookupService_Url", WZ_DEFAULT_PUBLIC_IPv4_LOOKUP_SERVICE_URL).value(),
+		iniGetString("publicIPv4LookupService_JSONKey", WZ_DEFAULT_PUBLIC_IPv4_LOOKUP_SERVICE_JSONKEY).value());
+	setPublicIPv6LookupService(
+		iniGetString("publicIPv6LookupService_Url", WZ_DEFAULT_PUBLIC_IPv6_LOOKUP_SERVICE_URL).value(),
+		iniGetString("publicIPv6LookupService_JSONKey", WZ_DEFAULT_PUBLIC_IPv6_LOOKUP_SERVICE_JSONKEY).value());
 	war_SetFMVmode((FMV_MODE)iniGetInteger("FMVmode", FMV_FULLSCREEN).value());
 	war_setScanlineMode((SCANLINE_MODE)iniGetInteger("scanlines", SCANLINES_OFF).value());
 	seq_SetSubtitles(iniGetBool("subtitles", true).value());
 	setDifficultyLevel((DIFFICULTY_LEVEL)iniGetInteger("difficulty", DL_NORMAL).value());
-	war_SetSPcolor(iniGetInteger("colour", 0).value());	// default is green (0)
-	war_setMPcolour(iniGetInteger("colourMP", -1).value());  // default is random (-1)
+	war_SetSPcolor(iniGetInteger("colour", 0).value()); // default is green (0)
+	war_setMPcolour(iniGetInteger("colourMP", -1).value()); // default is random (-1)
 	sstrcpy(game.name, iniGetString("gameName", _("My Game")).value().c_str());
 	sstrcpy(sPlayer, iniGetString("playerName", _("Player")).value().c_str());
 
@@ -401,7 +426,8 @@ bool loadConfig()
 	if (auto value = iniGetIntegerOpt("fullscreen"))
 	{
 		int fullscreenmode_int = value.value();
-		if (fullscreenmode_int >= static_cast<int>(MIN_VALID_WINDOW_MODE) && fullscreenmode_int <= static_cast<int>(MAX_VALID_WINDOW_MODE))
+		if (fullscreenmode_int >= static_cast<int>(MIN_VALID_WINDOW_MODE) && fullscreenmode_int <= static_cast<int>(
+			MAX_VALID_WINDOW_MODE))
 		{
 			war_setWindowMode(static_cast<WINDOW_MODE>(fullscreenmode_int));
 		}
@@ -426,7 +452,7 @@ bool loadConfig()
 	int width = iniGetInteger("width", war_GetWidth()).value();
 	int height = iniGetInteger("height", war_GetHeight()).value();
 	int screen = iniGetInteger("screen", 0).value();
-	if (width < 640 || height < 480)	// sanity check
+	if (width < 640 || height < 480) // sanity check
 	{
 		width = 640;
 		height = 480;
@@ -450,7 +476,8 @@ bool loadConfig()
 		if (!video_backend_from_str(gfxbackendStr.c_str(), gfxBackend))
 		{
 			gfxBackend = wzGetDefaultGfxBackendForCurrentSystem();
-			debug(LOG_WARNING, "Unsupported / invalid gfxbackend value: %s; defaulting to: %s", gfxbackendStr.c_str(), to_string(gfxBackend).c_str());
+			debug(LOG_WARNING, "Unsupported / invalid gfxbackend value: %s; defaulting to: %s", gfxbackendStr.c_str(),
+			      to_string(gfxBackend).c_str());
 		}
 	}
 	else
@@ -465,7 +492,8 @@ bool loadConfig()
 		if (!js_backend_from_str(jsbackendStr.c_str(), js_backend))
 		{
 			js_backend = (JS_BACKEND)0; // use the first available option, whatever it is
-			debug(LOG_WARNING, "Unsupported / invalid jsbackend value: %s; defaulting to: %s", jsbackendStr.c_str(), to_string(js_backend).c_str());
+			debug(LOG_WARNING, "Unsupported / invalid jsbackend value: %s; defaulting to: %s", jsbackendStr.c_str(),
+			      to_string(js_backend).c_str());
 		}
 	}
 	BlueprintTrackAnimationSpeed = iniGetInteger("BlueprintTrackAnimationSpeed", 20).value();
@@ -484,7 +512,8 @@ bool loadConfig()
 	war_setAutoLagKickSeconds(iniGetInteger("hostAutoLagKickSeconds", war_getAutoLagKickSeconds()).value());
 	war_setDisableReplayRecording(iniGetBool("disableReplayRecord", war_getDisableReplayRecording()).value());
 	int openSpecSlotsIntValue = iniGetInteger("openSpectatorSlotsMP", war_getMPopenSpectatorSlots()).value();
-	war_setMPopenSpectatorSlots(static_cast<uint16_t>(std::max<int>(0, std::min<int>(openSpecSlotsIntValue, MAX_SPECTATOR_SLOTS))));
+	war_setMPopenSpectatorSlots(
+		static_cast<uint16_t>(std::max<int>(0, std::min<int>(openSpecSlotsIntValue, MAX_SPECTATOR_SLOTS))));
 	ActivityManager::instance().endLoadingSettings();
 	return true;
 }
@@ -524,13 +553,16 @@ bool saveConfig()
 
 	auto& iniGeneral = ini["General"];
 
-	auto iniSetInteger = [&iniGeneral](const std::string& key, int value) {
+	auto iniSetInteger = [&iniGeneral](const std::string& key, int value)
+	{
 		iniSectionSetInteger(iniGeneral, key, value);
 	};
-	auto iniSetBool = [&iniGeneral](const std::string& key, bool value) {
+	auto iniSetBool = [&iniGeneral](const std::string& key, bool value)
+	{
 		iniSectionSetBool(iniGeneral, key, value);
 	};
-	auto iniSetString = [&iniGeneral](const std::string& key, const std::string& value) {
+	auto iniSetString = [&iniGeneral](const std::string& key, const std::string& value)
+	{
 		iniGeneral[key] = value;
 	};
 
@@ -550,24 +582,24 @@ bool saveConfig()
 	iniSetInteger("bpp", war_GetVideoBufferDepth());
 	iniSetInteger("fullscreen", static_cast<typename std::underlying_type<WINDOW_MODE>::type>(war_getWindowMode()));
 	iniSetString("language", getLanguage());
-	iniSetInteger("difficulty", getDifficultyLevel());		// level
-	iniSetInteger("cameraSpeed", war_GetCameraSpeed());	// camera speed
-	iniSetBool("radarJump", war_GetRadarJump());		// radar jump
-	iniSetBool("cameraAccel", getCameraAccel());		// camera acceleration
-	iniSetInteger("shake", (int)getShakeStatus());		// screenshake
-	iniSetInteger("mouseflip", (int)(getInvertMouseStatus()));	// flipmouse
-	iniSetInteger("nomousewarp", (int)getMouseWarp());		// mouse warp
+	iniSetInteger("difficulty", getDifficultyLevel()); // level
+	iniSetInteger("cameraSpeed", war_GetCameraSpeed()); // camera speed
+	iniSetBool("radarJump", war_GetRadarJump()); // radar jump
+	iniSetBool("cameraAccel", getCameraAccel()); // camera acceleration
+	iniSetInteger("shake", (int)getShakeStatus()); // screenshake
+	iniSetInteger("mouseflip", (int)(getInvertMouseStatus())); // flipmouse
+	iniSetInteger("nomousewarp", (int)getMouseWarp()); // mouse warp
 	iniSetInteger("coloredCursor", (int)war_GetColouredCursor());
 	iniSetInteger("RightClickOrders", (int)(getRightClickOrders()));
 	iniSetInteger("MiddleClickRotate", (int)(getMiddleClickRotate()));
 	iniSetInteger("showFPS", (int)showFPS);
 	iniSetInteger("showUNITCOUNT", (int)showUNITCOUNT);
-	iniSetInteger("shadows", (int)(getDrawShadows()));	// shadows
+	iniSetInteger("shadows", (int)(getDrawShadows())); // shadows
 	iniSetInteger("sound", (int)war_getSoundEnabled());
-	iniSetInteger("FMVmode", (int)(war_GetFMVmode()));		// sequences
+	iniSetInteger("FMVmode", (int)(war_GetFMVmode())); // sequences
 	iniSetInteger("scanlines", (int)war_getScanlineMode());
-	iniSetInteger("subtitles", (int)(seq_GetSubtitles()));		// subtitles
-	iniSetInteger("radarObjectMode", (int)bEnemyAllyRadarColor);   // enemy/allies radar view
+	iniSetInteger("subtitles", (int)(seq_GetSubtitles())); // subtitles
+	iniSetInteger("radarObjectMode", (int)bEnemyAllyRadarColor); // enemy/allies radar view
 	iniSetInteger("radarTerrainMode", (int)radarDrawMode);
 	iniSetBool("trapCursor", war_GetTrapCursor());
 	iniSetInteger("vsync", war_GetVsync());
@@ -595,7 +627,7 @@ bool saveConfig()
 	iniSetString("publicIPv6LookupService_JSONKey", getPublicIPv6LookupServiceJSONKey());
 	if (!bMultiPlayer)
 	{
-		iniSetInteger("colour", (int)getPlayerColour(0));			// favourite colour.
+		iniSetInteger("colour", (int)getPlayerColour(0)); // favourite colour.
 	}
 	else
 	{
@@ -603,22 +635,22 @@ bool saveConfig()
 		{
 			if (bMultiPlayer && NetPlay.bComms)
 			{
-				iniSetString("gameName", game.name);			//  last hosted game
+				iniSetString("gameName", game.name); //  last hosted game
 				war_setMPInactivityMinutes(game.inactivityMinutes);
 
 				// remember number of spectator slots in MP games
 				auto currentSpectatorSlotInfo = SpectatorInfo::currentNetPlayState();
 				war_setMPopenSpectatorSlots(currentSpectatorSlotInfo.totalSpectatorSlots);
 			}
-			iniSetString("mapName", game.map);				//  map name
-			iniSetString("mapHash", game.hash.toString());          //  map hash
-			iniSetInteger("maxPlayers", (int)game.maxPlayers);		// maxPlayers
-			iniSetInteger("powerLevel", game.power);				// power
-			iniSetInteger("base", game.base);				// size of base
-			iniSetInteger("alliance", (int)game.alliance);		// allow alliances
+			iniSetString("mapName", game.map); //  map name
+			iniSetString("mapHash", game.hash.toString()); //  map hash
+			iniSetInteger("maxPlayers", (int)game.maxPlayers); // maxPlayers
+			iniSetInteger("powerLevel", game.power); // power
+			iniSetInteger("base", game.base); // size of base
+			iniSetInteger("alliance", (int)game.alliance); // allow alliances
 			iniSetInteger("newScavengers", game.scavengers);
 		}
-		iniSetString("playerName", (char *)sPlayer);		// player name
+		iniSetString("playerName", (char*)sPlayer); // player name
 	}
 	iniSetInteger("colourMP", war_getMPcolour());
 	iniSetInteger("inactivityMinutesMP", war_getMPInactivityMinutes());
@@ -686,7 +718,7 @@ bool reloadMPConfig()
 	{
 		if (bMultiPlayer && NetPlay.bComms)
 		{
-			iniGeneral["gameName"] = std::string(game.name);			//  last hosted game
+			iniGeneral["gameName"] = std::string(game.name); //  last hosted game
 		}
 		else
 		{
@@ -703,9 +735,9 @@ bool reloadMPConfig()
 		game.hash.setZero();
 		game.maxPlayers = DEFAULTSKIRMISHMAPMAXPLAYERS;
 
-		iniSectionSetInteger(iniGeneral, "powerLevel", game.power);				// power
-		iniSectionSetInteger(iniGeneral, "base", game.base);				// size of base
-		iniSectionSetInteger(iniGeneral, "alliance", game.alliance);		// allow alliances
+		iniSectionSetInteger(iniGeneral, "powerLevel", game.power); // power
+		iniSectionSetInteger(iniGeneral, "base", game.base); // size of base
+		iniSectionSetInteger(iniGeneral, "alliance", game.alliance); // allow alliances
 
 		// write out ini file changes
 		bool result = saveIniFile(file, ini);

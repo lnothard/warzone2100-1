@@ -38,13 +38,13 @@
 static bool bRevealActive = true;
 
 // ------------------------------------------------------------------------------------
-void	avUpdateTiles()
+void avUpdateTiles()
 {
 	const int len = mapHeight * mapWidth;
 	const int playermask = 1 << selectedPlayer;
 	UDWORD i = 0;
-	float maxLevel, increment = graphicsTimeAdjustedIncrement(FADE_IN_TIME);	// call once per frame
-	MAPTILE *psTile;
+	float maxLevel, increment = graphicsTimeAdjustedIncrement(FADE_IN_TIME); // call once per frame
+	MAPTILE* psTile;
 
 	/* Go through the tiles */
 	for (; i < len; i++)
@@ -52,7 +52,7 @@ void	avUpdateTiles()
 		psTile = &psMapTiles[i];
 		maxLevel = psTile->illumination;
 
-		if (psTile->level > MIN_ILLUM || psTile->tileExploredBits & playermask)	// seen
+		if (psTile->level > MIN_ILLUM || psTile->tileExploredBits & playermask) // seen
 		{
 			// If we are not omniscient, and we are not seeing the tile, and none of our allies see the tile...
 			if (!godMode && !(alliancebits[selectedPlayer] & (satuplinkbits | psTile->sensorBits)))
@@ -72,7 +72,7 @@ void	avUpdateTiles()
 }
 
 // ------------------------------------------------------------------------------------
-UDWORD	avGetObjLightLevel(BASE_OBJECT *psObj, UDWORD origLevel)
+UDWORD avGetObjLightLevel(BASE_OBJECT* psObj, UDWORD origLevel)
 {
 	float div = (float)psObj->visibleForLocalDisplay() / 255.f;
 	unsigned int lowest = origLevel / START_DIVIDE;
@@ -87,26 +87,26 @@ UDWORD	avGetObjLightLevel(BASE_OBJECT *psObj, UDWORD origLevel)
 }
 
 // ------------------------------------------------------------------------------------
-bool	getRevealStatus()
+bool getRevealStatus()
 {
 	return bRevealActive;
 }
 
 // ------------------------------------------------------------------------------------
-void	setRevealStatus(bool val)
+void setRevealStatus(bool val)
 {
 	debug(LOG_FOG, "avSetRevealStatus: Setting reveal to %s", val ? "ON" : "OFF");
 	bRevealActive = val;
 }
 
 // ------------------------------------------------------------------------------------
-void	preProcessVisibility()
+void preProcessVisibility()
 {
 	for (int i = 0; i < mapWidth; i++)
 	{
 		for (int j = 0; j < mapHeight; j++)
 		{
-			MAPTILE *psTile = mapTile(i, j);
+			MAPTILE* psTile = mapTile(i, j);
 			psTile->level = bRevealActive ? MIN(MIN_ILLUM, psTile->illumination / 4.0f) : 0;
 
 			if (TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile))
@@ -116,4 +116,5 @@ void	preProcessVisibility()
 		}
 	}
 }
+
 // ------------------------------------------------------------------------------------

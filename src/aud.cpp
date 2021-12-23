@@ -31,7 +31,7 @@
 #include "display3d.h"
 #include "map.h"
 
-bool audio_ObjectDead(const SIMPLE_OBJECT *psSimpleObj)
+bool audio_ObjectDead(const SIMPLE_OBJECT* psSimpleObj)
 {
 	/* check is valid simple object pointer */
 	if (psSimpleObj == nullptr)
@@ -51,6 +51,7 @@ bool audio_ObjectDead(const SIMPLE_OBJECT *psSimpleObj)
 		return psSimpleObj->died;
 	}
 }
+
 // @FIXME we don't need to do this, since we are not using qsound.
 
 Vector3f audio_GetPlayerPos()
@@ -71,16 +72,16 @@ Vector3f audio_GetPlayerPos()
 /**
  * get the angle, and convert it from fixed point PSX crap to a float and then convert that to radians
  */
-void audio_Get3DPlayerRotAboutVerticalAxis(float *angle)
+void audio_Get3DPlayerRotAboutVerticalAxis(float* angle)
 {
-	*angle = static_cast<float>(((float) playerPos.r.y / DEG_1) * M_PI / 180.0f);
+	*angle = static_cast<float>(((float)playerPos.r.y / DEG_1) * M_PI / 180.0f);
 }
 
 /**
  * Get QSound axial position from world (x,y)
 @FIXME we don't need to do this, since we are not using qsound.
  */
-void audio_GetStaticPos(SDWORD iWorldX, SDWORD iWorldY, SDWORD *piX, SDWORD *piY, SDWORD *piZ)
+void audio_GetStaticPos(SDWORD iWorldX, SDWORD iWorldY, SDWORD* piX, SDWORD* piY, SDWORD* piZ)
 {
 	*piX = iWorldX;
 	*piZ = map_TileHeight(map_coord(iWorldX), map_coord(iWorldY));
@@ -89,7 +90,7 @@ void audio_GetStaticPos(SDWORD iWorldX, SDWORD iWorldY, SDWORD *piX, SDWORD *piY
 }
 
 // @FIXME we don't need to do this, since we are not using qsound.
-void audio_GetObjectPos(const SIMPLE_OBJECT *psBaseObj, SDWORD *piX, SDWORD *piY, SDWORD *piZ)
+void audio_GetObjectPos(const SIMPLE_OBJECT* psBaseObj, SDWORD* piX, SDWORD* piY, SDWORD* piZ)
 {
 	/* check is valid pointer */
 	ASSERT_OR_RETURN(, psBaseObj != nullptr, "Game object pointer invalid");

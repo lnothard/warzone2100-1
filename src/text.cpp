@@ -28,7 +28,7 @@
 #include "text.h"
 
 /* The string resource object */
-struct STR_RES *psStringRes = nullptr;
+struct STR_RES* psStringRes = nullptr;
 
 /* Initialise the string system */
 bool stringsInitialise()
@@ -44,4 +44,3 @@ void stringsShutDown()
 {
 	strresDestroy(psStringRes);
 }
-

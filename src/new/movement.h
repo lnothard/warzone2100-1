@@ -9,49 +9,50 @@
 
 enum class MOVEMENT_STATE
 {
-  INACTIVE,
-  NAVIGATE,
-  TURN,
-  PAUSE,
-  POINT_TO_POINT,
-  TURN_TO_TARGET,
-  HOVER,
-  WAIT_ROUTE,
-  SHUFFLE
+	INACTIVE,
+	NAVIGATE,
+	TURN,
+	PAUSE,
+	POINT_TO_POINT,
+	TURN_TO_TARGET,
+	HOVER,
+	WAIT_ROUTE,
+	SHUFFLE
 };
 
 class Movement
 {
 public:
-  [[nodiscard]] constexpr bool is_inactive() const noexcept
-  {
-    return state == INACTIVE;
-  }
+	[[nodiscard]] constexpr bool is_inactive() const noexcept
+	{
+		return state == INACTIVE;
+	}
 
-  [[nodiscard]] constexpr bool is_stationary() const noexcept
-  {
-    return state == INACTIVE || state == HOVER || state == SHUFFLE;
-  }
+	[[nodiscard]] constexpr bool is_stationary() const noexcept
+	{
+		return state == INACTIVE || state == HOVER || state == SHUFFLE;
+	}
 
-  constexpr void stop_moving() noexcept
-  {
-    // if flying: state = HOVER;
+	constexpr void stop_moving() noexcept
+	{
+		// if flying: state = HOVER;
 
-    state = INACTIVE;
-  }
+		state = INACTIVE;
+	}
 
-  constexpr void stop_moving_instantly() noexcept
-  {
-    stop_moving();
-    speed = 0;
-  }
+	constexpr void stop_moving_instantly() noexcept
+	{
+		stop_moving();
+		speed = 0;
+	}
+
 private:
-  using enum MOVEMENT_STATE;
+	using enum MOVEMENT_STATE;
 
-  MOVEMENT_STATE state;
-  Vector2i destination;
-  Vector2i origin;
-  int speed;
+	MOVEMENT_STATE state;
+	Vector2i destination;
+	Vector2i origin;
+	int speed;
 };
 
 #endif // WARZONE2100_MOVEMENT_H

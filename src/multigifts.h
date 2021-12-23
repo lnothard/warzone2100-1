@@ -28,13 +28,13 @@ void requestAlliance(uint8_t from, uint8_t to, bool prop, bool allowAudio);
 void breakAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio);
 void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allowNotification);
 void sendAlliance(uint8_t from, uint8_t to, uint8_t state, int32_t value);
-bool recvAlliance(NETQUEUE queue, bool allowAudio);                  // Was declared in multirecv.h, too.
+bool recvAlliance(NETQUEUE queue, bool allowAudio); // Was declared in multirecv.h, too.
 void createTeamAlliances();
 
 bool sendGift(uint8_t type, uint8_t to);
 bool recvGift(NETQUEUE queue);
 
-void technologyGiveAway(const STRUCTURE *pS);
+void technologyGiveAway(const STRUCTURE* pS);
 void recvMultiPlayerFeature(NETQUEUE queue);
 void sendMultiPlayerFeature(uint32_t ref, uint32_t x, uint32_t y, uint32_t id);
 

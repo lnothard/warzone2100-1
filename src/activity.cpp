@@ -39,7 +39,7 @@ std::string ActivitySink::getTeamDescription(const ActivitySink::SkirmishGameInf
 	std::map<int32_t, size_t> teamIdToCountOfPlayers;
 	for (size_t index = 0; index < std::min<size_t>(info.players.size(), (size_t)game.maxPlayers); ++index)
 	{
-		PLAYER const &p = NetPlay.players[index];
+		PLAYER const& p = NetPlay.players[index];
 		if (p.ai == AI_CLOSED)
 		{
 			// closed slot - skip
@@ -91,22 +91,25 @@ std::string to_string(const ActivitySink::GameEndReason& reason)
 {
 	switch (reason)
 	{
-		case ActivitySink::GameEndReason::WON:
-			return "Won";
-		case ActivitySink::GameEndReason::LOST:
-			return "Lost";
-		case ActivitySink::GameEndReason::QUIT:
-			return "Quit";
+	case ActivitySink::GameEndReason::WON:
+		return "Won";
+	case ActivitySink::GameEndReason::LOST:
+		return "Lost";
+	case ActivitySink::GameEndReason::QUIT:
+		return "Quit";
 	}
 	return ""; // silence warning
 }
 
 std::string to_string(const END_GAME_STATS_DATA& stats)
 {
-	return astringf("numUnits: %u, missionStartedTime: %u, unitsBuilt: %u, unitsLost: %u, unitsKilled: %u", stats.numUnits, stats.missionData.missionStarted, stats.missionData.unitsBuilt, stats.missionData.unitsLost, stats.missionData.unitsKilled);
+	return astringf("numUnits: %u, missionStartedTime: %u, unitsBuilt: %u, unitsLost: %u, unitsKilled: %u",
+	                stats.numUnits, stats.missionData.missionStarted, stats.missionData.unitsBuilt,
+	                stats.missionData.unitsLost, stats.missionData.unitsKilled);
 }
 
-class LoggingActivitySink : public ActivitySink {
+class LoggingActivitySink : public ActivitySink
+{
 public:
 	// navigating main menus
 	virtual void navigatedToMenu(const std::string& menuName) override
@@ -119,9 +122,12 @@ public:
 	{
 		debug(LOG_ACTIVITY, "- startedCampaignMission: %s:%s", campaign.c_str(), levelName.c_str());
 	}
-	virtual void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result, END_GAME_STATS_DATA stats, bool cheatsUsed) override
+
+	virtual void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result,
+	                                  END_GAME_STATS_DATA stats, bool cheatsUsed) override
 	{
-		debug(LOG_ACTIVITY, "- endedCampaignMission: %s:%s; result: %s; stats: (%s)", campaign.c_str(), levelName.c_str(), to_string(result).c_str(), to_string(stats).c_str());
+		debug(LOG_ACTIVITY, "- endedCampaignMission: %s:%s; result: %s; stats: (%s)", campaign.c_str(),
+		      levelName.c_str(), to_string(result).c_str(), to_string(stats).c_str());
 	}
 
 	// challenges
@@ -130,9 +136,11 @@ public:
 		debug(LOG_ACTIVITY, "- startedChallenge: %s", challengeName.c_str());
 	}
 
-	virtual void endedChallenge(const std::string& challengeName, GameEndReason result, const END_GAME_STATS_DATA& stats, bool cheatsUsed) override
+	virtual void endedChallenge(const std::string& challengeName, GameEndReason result,
+	                            const END_GAME_STATS_DATA& stats, bool cheatsUsed) override
 	{
-		debug(LOG_ACTIVITY, "- endedChallenge: %s; result: %s; stats: (%s)", challengeName.c_str(), to_string(result).c_str(), to_string(stats).c_str());
+		debug(LOG_ACTIVITY, "- endedChallenge: %s; result: %s; stats: (%s)", challengeName.c_str(),
+		      to_string(result).c_str(), to_string(stats).c_str());
 	}
 
 	virtual void startedSkirmishGame(const SkirmishGameInfo& info) override
@@ -140,31 +148,43 @@ public:
 		debug(LOG_ACTIVITY, "- startedSkirmishGame: %s", info.game.name);
 	}
 
-	virtual void endedSkirmishGame(const SkirmishGameInfo& info, GameEndReason result, const END_GAME_STATS_DATA& stats) override
+	virtual void endedSkirmishGame(const SkirmishGameInfo& info, GameEndReason result,
+	                               const END_GAME_STATS_DATA& stats) override
 	{
-		debug(LOG_ACTIVITY, "- endedSkirmishGame: %s; result: %s; stats: (%s)", info.game.name, to_string(result).c_str(), to_string(stats).c_str());
+		debug(LOG_ACTIVITY, "- endedSkirmishGame: %s; result: %s; stats: (%s)", info.game.name,
+		      to_string(result).c_str(), to_string(stats).c_str());
 	}
 
 	// multiplayer
 	virtual void hostingMultiplayerGame(const MultiplayerGameInfo& info) override
 	{
-		debug(LOG_ACTIVITY, "- hostingMultiplayerGame: %s; isLobbyGame: %s", info.game.name, (info.lobbyGameId != 0) ? "true" : "false");
+		debug(LOG_ACTIVITY, "- hostingMultiplayerGame: %s; isLobbyGame: %s", info.game.name,
+		      (info.lobbyGameId != 0) ? "true" : "false");
 	}
+
 	virtual void joinedMultiplayerGame(const MultiplayerGameInfo& info) override
 	{
 		debug(LOG_ACTIVITY, "- joinedMultiplayerGame: %s", info.game.name);
 	}
+
 	virtual void updateMultiplayerGameInfo(const MultiplayerGameInfo& info) override
 	{
-		debug(LOG_ACTIVITY, "- updateMultiplayerGameInfo: (name: %s), (map: %s), maxPlayers: %u, numAvailableSlots: %zu, numHumanPlayers: %u, numAIBotPlayers: %u", info.game.name, info.game.map, info.maxPlayers, (size_t)info.numAvailableSlots, info.numHumanPlayers, info.numAIBotPlayers);
+		debug(LOG_ACTIVITY,
+		      "- updateMultiplayerGameInfo: (name: %s), (map: %s), maxPlayers: %u, numAvailableSlots: %zu, numHumanPlayers: %u, numAIBotPlayers: %u",
+		      info.game.name, info.game.map, info.maxPlayers, (size_t)info.numAvailableSlots, info.numHumanPlayers,
+		      info.numAIBotPlayers);
 	}
+
 	virtual void startedMultiplayerGame(const MultiplayerGameInfo& info) override
 	{
 		debug(LOG_ACTIVITY, "- startedMultiplayerGame: %s", info.game.name);
 	}
-	virtual void endedMultiplayerGame(const MultiplayerGameInfo& info, GameEndReason result, const END_GAME_STATS_DATA& stats) override
+
+	virtual void endedMultiplayerGame(const MultiplayerGameInfo& info, GameEndReason result,
+	                                  const END_GAME_STATS_DATA& stats) override
 	{
-		debug(LOG_ACTIVITY, "- endedMultiplayerGame: %s; result: %s; stats: (%s)", info.game.name, to_string(result).c_str(), to_string(stats).c_str());
+		debug(LOG_ACTIVITY, "- endedMultiplayerGame: %s; result: %s; stats: (%s)", info.game.name,
+		      to_string(result).c_str(), to_string(stats).c_str());
 	}
 
 	// changing settings
@@ -202,24 +222,30 @@ private:
 };
 
 ActivityDBProtocol::~ActivityDBProtocol()
-{ }
+{
+}
 
 // Should be thread-safe
 class ActivityDatabase : public ActivityDBProtocol
 {
 private:
-	#define FIRST_LAUNCH_DATE_KEY "first_launch"
+#define FIRST_LAUNCH_DATE_KEY "first_launch"
 public:
 	// Caller is expected to handle thrown exceptions
 	ActivityDatabase(const std::string& activityDatabasePath)
 	{
-		db = std::unique_ptr<SQLite::Database>(new SQLite::Database(activityDatabasePath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE));
+		db = std::unique_ptr<SQLite::Database>(
+			new SQLite::Database(activityDatabasePath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE));
 		db->exec("PRAGMA journal_mode=WAL");
 		createTables();
-		query_findValueByName = std::unique_ptr<SQLite::Statement>(new SQLite::Statement(*db, "SELECT value FROM general_kv_storage WHERE name = ?"));
-		query_insertValueForName = std::unique_ptr<SQLite::Statement>(new SQLite::Statement(*db, "INSERT OR IGNORE INTO general_kv_storage(name, value) VALUES(?, ?)"));
-		query_updateValueForName = std::unique_ptr<SQLite::Statement>(new SQLite::Statement(*db, "UPDATE general_kv_storage SET value = ? WHERE name = ?"));
+		query_findValueByName = std::unique_ptr<SQLite::Statement>(
+			new SQLite::Statement(*db, "SELECT value FROM general_kv_storage WHERE name = ?"));
+		query_insertValueForName = std::unique_ptr<SQLite::Statement>(
+			new SQLite::Statement(*db, "INSERT OR IGNORE INTO general_kv_storage(name, value) VALUES(?, ?)"));
+		query_updateValueForName = std::unique_ptr<SQLite::Statement>(
+			new SQLite::Statement(*db, "UPDATE general_kv_storage SET value = ? WHERE name = ?"));
 	}
+
 public:
 	// Must be thread-safe
 	virtual std::string getFirstLaunchDate() const override
@@ -241,28 +267,32 @@ private:
 		std::lock_guard<std::mutex> guard(db_mutex);
 
 		optional<std::string> result;
-		try {
+		try
+		{
 			query_findValueByName->bind(1, name);
 			if (query_findValueByName->executeStep())
 			{
 				result = query_findValueByName->getColumn(0).getString();
 			}
 		}
-		catch (const std::exception& e) {
+		catch (const std::exception& e)
+		{
 			debug(LOG_ERROR, "Failure to query database for key; error: %s", e.what());
 			result = nullopt;
 		}
-		try {
+		try
+		{
 			query_findValueByName->reset();
 		}
-		catch (const std::exception& e) {
+		catch (const std::exception& e)
+		{
 			debug(LOG_ERROR, "Failed to reset prepared statement; error: %s", e.what());
 		}
 		return result;
 	}
 
 	// Must be thread-safe
-	bool setValue(std::string const &name, std::string const& value)
+	bool setValue(std::string const& name, std::string const& value)
 	{
 		if (name.empty())
 		{
@@ -271,7 +301,8 @@ private:
 
 		std::lock_guard<std::mutex> guard(db_mutex);
 
-		try {
+		try
+		{
 			// Begin transaction
 			SQLite::Transaction transaction(*db);
 
@@ -293,16 +324,19 @@ private:
 			transaction.commit();
 			return true;
 		}
-		catch (const std::exception& e) {
+		catch (const std::exception& e)
+		{
 			debug(LOG_ERROR, "Update / insert failed; error: %s", e.what());
 			// continue on to try to reset prepared statements
 		}
 
-		try {
+		try
+		{
 			query_updateValueForName->reset();
 			query_insertValueForName->reset();
 		}
-		catch (const std::exception& e) {
+		catch (const std::exception& e)
+		{
 			debug(LOG_ERROR, "Failed to reset prepared statement; error: %s", e.what());
 		}
 		return false;
@@ -317,7 +351,8 @@ private:
 			db->exec("CREATE TABLE general_kv_storage (local_id INTEGER PRIMARY KEY, name TEXT UNIQUE, value TEXT)");
 		}
 		// initialize first launch date if it doesn't exist
-		db->exec("INSERT OR IGNORE INTO general_kv_storage(name, value) VALUES(\"" FIRST_LAUNCH_DATE_KEY "\", date('now'))");
+		db->exec(
+			"INSERT OR IGNORE INTO general_kv_storage(name, value) VALUES(\"" FIRST_LAUNCH_DATE_KEY "\", date('now'))");
 		transaction.commit();
 	}
 
@@ -333,17 +368,20 @@ ActivityManager::ActivityManager()
 {
 	ASSERT_OR_RETURN(, PHYSFS_isInit() != 0, "PHYSFS must be initialized before the ActivityManager is created");
 	// init ActivityDatabase
-	const char *pWriteDir = PHYSFS_getWriteDir();
+	const char* pWriteDir = PHYSFS_getWriteDir();
 	ASSERT(pWriteDir != nullptr, "PHYSFS_getWriteDir returned null");
 	if (pWriteDir)
 	{
 		std::string statsDBPath = std::string(pWriteDir) + PHYSFS_getDirSeparator() + "stats.db";
-		try {
+		try
+		{
 			activityDatabase = std::make_shared<ActivityDatabase>(statsDBPath);
 		}
-		catch (std::exception& e) {
+		catch (std::exception& e)
+		{
 			// error loading SQLite database
-			debug(LOG_ERROR, "Unable to load or initialize SQLite3 database (%s); error: %s", statsDBPath.c_str(), e.what());
+			debug(LOG_ERROR, "Unable to load or initialize SQLite3 database (%s); error: %s", statsDBPath.c_str(),
+			      e.what());
 		}
 	}
 }
@@ -451,20 +489,20 @@ void ActivityManager::loadedLevel(LEVEL_TYPE type, const std::string& levelName)
 
 	switch (currentMode)
 	{
-		case ActivitySink::GameMode::CAMPAIGN:
-			for (auto sink : activitySinks) { sink->startedCampaignMission(getCampaignName(), levelName); }
-			break;
-		case ActivitySink::GameMode::CHALLENGE:
-			for (auto sink : activitySinks) { sink->startedChallenge(currentChallengeName()); }
-			break;
-		case ActivitySink::GameMode::SKIRMISH:
-			for (auto sink : activitySinks) { sink->startedSkirmishGame(currentMultiplayGameInfo); }
-			break;
-		case ActivitySink::GameMode::MULTIPLAYER:
-			for (auto sink : activitySinks) { sink->startedMultiplayerGame(currentMultiplayGameInfo); }
-			break;
-		default:
-			debug(LOG_ACTIVITY, "loadedLevel: %s; Unhandled case: %u", levelName.c_str(), (unsigned int)currentMode);
+	case ActivitySink::GameMode::CAMPAIGN:
+		for (auto sink : activitySinks) { sink->startedCampaignMission(getCampaignName(), levelName); }
+		break;
+	case ActivitySink::GameMode::CHALLENGE:
+		for (auto sink : activitySinks) { sink->startedChallenge(currentChallengeName()); }
+		break;
+	case ActivitySink::GameMode::SKIRMISH:
+		for (auto sink : activitySinks) { sink->startedSkirmishGame(currentMultiplayGameInfo); }
+		break;
+	case ActivitySink::GameMode::MULTIPLAYER:
+		for (auto sink : activitySinks) { sink->startedMultiplayerGame(currentMultiplayGameInfo); }
+		break;
+	default:
+		debug(LOG_ACTIVITY, "loadedLevel: %s; Unhandled case: %u", levelName.c_str(), (unsigned int)currentMode);
 	}
 }
 
@@ -476,20 +514,23 @@ void ActivityManager::_endedMission(ActivitySink::GameEndReason result, END_GAME
 
 	switch (currentMode)
 	{
-		case ActivitySink::GameMode::CAMPAIGN:
-			for (auto sink : activitySinks) { sink->endedCampaignMission(getCampaignName(), lastLoadedLevelEvent.levelName, result, stats, cheatsUsed); }
-			break;
-		case ActivitySink::GameMode::CHALLENGE:
-			for (auto sink : activitySinks) { sink->endedChallenge(currentChallengeName(), result, stats, cheatsUsed); }
-			break;
-		case ActivitySink::GameMode::SKIRMISH:
-			for (auto sink : activitySinks) { sink->endedSkirmishGame(currentMultiplayGameInfo, result, stats); }
-			break;
-		case ActivitySink::GameMode::MULTIPLAYER:
-			for (auto sink : activitySinks) { sink->endedMultiplayerGame(currentMultiplayGameInfo, result, stats); }
-			break;
-		default:
-			debug(LOG_ACTIVITY, "endedMission: Unhandled case: %u", (unsigned int)currentMode);
+	case ActivitySink::GameMode::CAMPAIGN:
+		for (auto sink : activitySinks)
+		{
+			sink->endedCampaignMission(getCampaignName(), lastLoadedLevelEvent.levelName, result, stats, cheatsUsed);
+		}
+		break;
+	case ActivitySink::GameMode::CHALLENGE:
+		for (auto sink : activitySinks) { sink->endedChallenge(currentChallengeName(), result, stats, cheatsUsed); }
+		break;
+	case ActivitySink::GameMode::SKIRMISH:
+		for (auto sink : activitySinks) { sink->endedSkirmishGame(currentMultiplayGameInfo, result, stats); }
+		break;
+	case ActivitySink::GameMode::MULTIPLAYER:
+		for (auto sink : activitySinks) { sink->endedMultiplayerGame(currentMultiplayGameInfo, result, stats); }
+		break;
+	default:
+		debug(LOG_ACTIVITY, "endedMission: Unhandled case: %u", (unsigned int)currentMode);
 	}
 	bEndedCurrentMission = true;
 }
@@ -562,7 +603,9 @@ void ActivityManager::rebuiltSearchPath()
 
 // called when a joinable multiplayer game is hosted
 // lobbyGameId is 0 if the lobby can't be contacted / the game is not registered with the lobby
-void ActivityManager::hostGame(const char *SessionName, const char *PlayerName, const char *lobbyAddress, unsigned int lobbyPort, const ActivitySink::ListeningInterfaces& listeningInterfaces, uint32_t lobbyGameId /*= 0*/)
+void ActivityManager::hostGame(const char* SessionName, const char* PlayerName, const char* lobbyAddress,
+                               unsigned int lobbyPort, const ActivitySink::ListeningInterfaces& listeningInterfaces,
+                               uint32_t lobbyGameId /*= 0*/)
 {
 	currentMode = ActivitySink::GameMode::HOSTING_IN_LOBBY;
 
@@ -582,13 +625,15 @@ void ActivityManager::hostGameLobbyServerDisconnect()
 {
 	if (currentMode != ActivitySink::GameMode::HOSTING_IN_LOBBY)
 	{
-		debug(LOG_ACTIVITY, "Unexpected call to hostGameLobbyServerDisconnect - currentMode (%u) - ignoring", (unsigned int)currentMode);
+		debug(LOG_ACTIVITY, "Unexpected call to hostGameLobbyServerDisconnect - currentMode (%u) - ignoring",
+		      (unsigned int)currentMode);
 		return;
 	}
 
 	if (currentMultiplayGameInfo.lobbyGameId == 0)
 	{
-		debug(LOG_ACTIVITY, "Unexpected call to hostGameLobbyServerDisconnect - prior lobbyGameId is %u - ignoring", currentMultiplayGameInfo.lobbyGameId);
+		debug(LOG_ACTIVITY, "Unexpected call to hostGameLobbyServerDisconnect - prior lobbyGameId is %u - ignoring",
+		      currentMultiplayGameInfo.lobbyGameId);
 		return;
 	}
 
@@ -607,7 +652,8 @@ void ActivityManager::hostLobbyQuit()
 {
 	if (currentMode != ActivitySink::GameMode::HOSTING_IN_LOBBY)
 	{
-		debug(LOG_ACTIVITY, "Unexpected call to hostLobbyQuit - currentMode (%u) - ignoring", (unsigned int)currentMode);
+		debug(LOG_ACTIVITY, "Unexpected call to hostLobbyQuit - currentMode (%u) - ignoring",
+		      (unsigned int)currentMode);
 		return;
 	}
 	currentMode = ActivitySink::GameMode::MENUS;
@@ -617,7 +663,9 @@ void ActivityManager::hostLobbyQuit()
 }
 
 // called when attempting to join a lobby game
-void ActivityManager::willAttemptToJoinLobbyGame(const std::string& lobbyAddress, unsigned int lobbyPort, uint32_t lobbyGameId, const std::vector<JoinConnectionDescription>& connections)
+void ActivityManager::willAttemptToJoinLobbyGame(const std::string& lobbyAddress, unsigned int lobbyPort,
+                                                 uint32_t lobbyGameId,
+                                                 const std::vector<JoinConnectionDescription>& connections)
 {
 	lastLobbyGameJoinAttempt.lobbyAddress = lobbyAddress;
 	lastLobbyGameJoinAttempt.lobbyPort = lobbyPort;
@@ -632,7 +680,7 @@ void ActivityManager::joinGameFailed(const std::vector<JoinConnectionDescription
 }
 
 // called when joining a multiplayer game
-void ActivityManager::joinGameSucceeded(const char *host, uint32_t port)
+void ActivityManager::joinGameSucceeded(const char* host, uint32_t port)
 {
 	currentMode = ActivitySink::GameMode::JOINING_IN_PROGRESS;
 	currentMultiplayGameInfo.isHost = false;
@@ -666,7 +714,8 @@ void ActivityManager::joinedLobbyQuit()
 	{
 		if (currentMode != ActivitySink::GameMode::MENUS)
 		{
-			debug(LOG_ACTIVITY, "Unexpected call to joinedLobbyQuit - currentMode (%u) - ignoring", (unsigned int)currentMode);
+			debug(LOG_ACTIVITY, "Unexpected call to joinedLobbyQuit - currentMode (%u) - ignoring",
+			      (unsigned int)currentMode);
 		}
 		return;
 	}
@@ -677,7 +726,8 @@ void ActivityManager::joinedLobbyQuit()
 }
 
 // for skirmish / multiplayer, provide additional data / state
-void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, const MULTIPLAYERINGAME& multiInGame, optional<bool> privateGame)
+void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, const MULTIPLAYERINGAME& multiInGame,
+                                              optional<bool> privateGame)
 {
 	uint8_t maxPlayers = multiGame.maxPlayers;
 	uint8_t numAIBotPlayers = 0;
@@ -688,7 +738,7 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 
 	for (size_t index = 0; index < std::min<size_t>(MAX_PLAYERS, (size_t)multiGame.maxPlayers); ++index)
 	{
-		PLAYER const &p = NetPlay.players[index];
+		PLAYER const& p = NetPlay.players[index];
 		if (p.ai == AI_CLOSED)
 		{
 			--maxPlayers;
@@ -736,7 +786,8 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 		}
 	}
 
-	ActivitySink::MultiplayerGameInfo::AllianceOption alliancesOpt = ActivitySink::MultiplayerGameInfo::AllianceOption::NO_ALLIANCES;
+	ActivitySink::MultiplayerGameInfo::AllianceOption alliancesOpt =
+		ActivitySink::MultiplayerGameInfo::AllianceOption::NO_ALLIANCES;
 	if (multiGame.alliance == ::AllianceType::ALLIANCES)
 	{
 		alliancesOpt = ActivitySink::MultiplayerGameInfo::AllianceOption::ALLIANCES;
@@ -780,12 +831,14 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 
 	currentMultiplayGameInfo.isReplay = NETisReplay();
 
-	if (currentMode == ActivitySink::GameMode::JOINING_IN_PROGRESS || currentMode == ActivitySink::GameMode::JOINING_IN_LOBBY)
+	if (currentMode == ActivitySink::GameMode::JOINING_IN_PROGRESS || currentMode ==
+		ActivitySink::GameMode::JOINING_IN_LOBBY)
 	{
 		currentMultiplayGameInfo.hostName = currentMultiplayGameInfo.players[0].name; // host is always player index 0?
 	}
 
-	if (currentMode == ActivitySink::GameMode::HOSTING_IN_LOBBY || currentMode == ActivitySink::GameMode::JOINING_IN_LOBBY)
+	if (currentMode == ActivitySink::GameMode::HOSTING_IN_LOBBY || currentMode ==
+		ActivitySink::GameMode::JOINING_IN_LOBBY)
 	{
 		for (auto sink : activitySinks) { sink->updateMultiplayerGameInfo(currentMultiplayGameInfo); }
 	}
@@ -808,4 +861,3 @@ void ActivityManager::wasKickedByPlayer(const PLAYER& kicker, LOBBY_ERROR_TYPES 
 {
 	/* currently, no-op */
 }
-

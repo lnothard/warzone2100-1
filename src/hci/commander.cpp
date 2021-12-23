@@ -5,7 +5,7 @@
 #include "../group.h"
 #include "../intorder.h"
 
-DROID *CommanderController::highlightedCommander = nullptr;
+DROID* CommanderController::highlightedCommander = nullptr;
 
 void CommanderController::updateData()
 {
@@ -19,7 +19,7 @@ void CommanderController::updateCommandersList()
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "selectedPlayer = %" PRIu32 "", selectedPlayer);
 
-	for (DROID *droid = apsDroidLists[selectedPlayer]; droid; droid = droid->psNext)
+	for (DROID* droid = apsDroidLists[selectedPlayer]; droid; droid = droid->psNext)
 	{
 		if (droid->droidType == DROID_COMMAND && droid->died == 0)
 		{
@@ -30,13 +30,13 @@ void CommanderController::updateCommandersList()
 	std::reverse(commanders.begin(), commanders.end());
 }
 
-STRUCTURE_STATS *CommanderController::getObjectStatsAt(size_t objectIndex) const
+STRUCTURE_STATS* CommanderController::getObjectStatsAt(size_t objectIndex) const
 {
 	auto assignedFactory = getAssignedFactoryAt(objectIndex);
 	return assignedFactory == nullptr ? nullptr : assignedFactory->pStructureType;
 }
 
-STRUCTURE *CommanderController::getAssignedFactoryAt(size_t objectIndex) const
+STRUCTURE* CommanderController::getAssignedFactoryAt(size_t objectIndex) const
 {
 	auto droid = getObjectAt(objectIndex);
 	return droid == nullptr ? nullptr : droidGetCommandFactory(droid);
@@ -63,7 +63,7 @@ void CommanderController::clearData()
 	setHighlightedObject(nullptr);
 }
 
-void CommanderController::setHighlightedObject(BASE_OBJECT *object)
+void CommanderController::setHighlightedObject(BASE_OBJECT* object)
 {
 	if (object == nullptr)
 	{
@@ -79,15 +79,20 @@ void CommanderController::setHighlightedObject(BASE_OBJECT *object)
 
 class CommanderObjectButton : public ObjectButton
 {
-	typedef	ObjectButton BaseWidget;
+	typedef ObjectButton BaseWidget;
 
 protected:
-	CommanderObjectButton() {}
+	CommanderObjectButton()
+	{
+	}
 
 public:
-	static std::shared_ptr<CommanderObjectButton> make(const std::shared_ptr<CommanderController> &controller, size_t objectIndex)
+	static std::shared_ptr<CommanderObjectButton> make(const std::shared_ptr<CommanderController>& controller,
+	                                                   size_t objectIndex)
 	{
-		class make_shared_enabler: public CommanderObjectButton {};
+		class make_shared_enabler : public CommanderObjectButton
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->objectIndex = objectIndex;
@@ -139,7 +144,7 @@ protected:
 		updateExperienceStarsLabel(droid);
 	}
 
-	void updateGroupSizeLabel(DROID *droid)
+	void updateGroupSizeLabel(DROID* droid)
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		auto text = astringf("%u/%u", droid->psGroup ? droid->psGroup->getNumMembers() : 0, cmdDroidMaxGroup(droid));
@@ -147,7 +152,7 @@ protected:
 		groupSizeLabel->show();
 	}
 
-	void updateExperienceStarsLabel(DROID *droid)
+	void updateExperienceStarsLabel(DROID* droid)
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		int numStars = std::max((int)getDroidLevel(droid) - 1, 0);
@@ -155,7 +160,7 @@ protected:
 		experienceStarsLabel->show();
 	}
 
-	CommanderController &getController() const override
+	CommanderController& getController() const override
 	{
 		return *controller.get();
 	}
@@ -173,18 +178,23 @@ private:
 	std::shared_ptr<CommanderController> controller;
 };
 
-class CommanderStatsButton: public StatsButton
+class CommanderStatsButton : public StatsButton
 {
 private:
-	typedef	StatsButton BaseWidget;
+	typedef StatsButton BaseWidget;
 
 protected:
-	CommanderStatsButton() {}
+	CommanderStatsButton()
+	{
+	}
 
 public:
-	static std::shared_ptr<CommanderStatsButton> make(const std::shared_ptr<CommanderController> &controller, size_t objectIndex)
+	static std::shared_ptr<CommanderStatsButton> make(const std::shared_ptr<CommanderController>& controller,
+	                                                  size_t objectIndex)
 	{
-		class make_shared_enabler: public CommanderStatsButton {};
+		class make_shared_enabler : public CommanderStatsButton
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->objectIndex = objectIndex;
@@ -210,7 +220,7 @@ protected:
 	{
 		updateLayout();
 		auto factory = controller->getAssignedFactoryAt(objectIndex);
-		displayIMD(Image(), factory ? ImdObject::Structure(factory): ImdObject::Component(nullptr), xOffset, yOffset);
+		displayIMD(Image(), factory ? ImdObject::Structure(factory) : ImdObject::Component(nullptr), xOffset, yOffset);
 		displayIfHighlight(xOffset, yOffset);
 	}
 
@@ -225,7 +235,7 @@ protected:
 	}
 
 private:
-	void updateAssignedFactoriesLabel(const std::shared_ptr<W_LABEL> &label, DROID *droid, uint32_t factoryTypeShift)
+	void updateAssignedFactoriesLabel(const std::shared_ptr<W_LABEL>& label, DROID* droid, uint32_t factoryTypeShift)
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		/**
@@ -255,7 +265,7 @@ private:
 		}
 	}
 
-	STRUCTURE_STATS *getStats() override
+	STRUCTURE_STATS* getStats() override
 	{
 		return controller->getObjectStatsAt(objectIndex);
 	}
@@ -296,16 +306,18 @@ private:
 	size_t objectIndex;
 };
 
-class CommanderObjectsForm: public ObjectsForm
+class CommanderObjectsForm : public ObjectsForm
 {
 private:
 	typedef ObjectsForm BaseWidget;
 	using BaseWidget::BaseWidget;
 
 public:
-	static std::shared_ptr<CommanderObjectsForm> make(const std::shared_ptr<CommanderController> &controller)
+	static std::shared_ptr<CommanderObjectsForm> make(const std::shared_ptr<CommanderController>& controller)
 	{
-		class make_shared_enabler: public CommanderObjectsForm {};
+		class make_shared_enabler : public CommanderObjectsForm
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->initialize();
@@ -323,7 +335,7 @@ public:
 	}
 
 protected:
-	BaseObjectsController &getController() const override
+	BaseObjectsController& getController() const override
 	{
 		return *controller.get();
 	}
@@ -349,8 +361,9 @@ bool CommanderController::showInterface()
 void CommanderController::displayOrderForm()
 {
 	auto psWeakControllerRef = std::weak_ptr<CommanderController>(shared_from_this());
-	widgScheduleTask([psWeakControllerRef]() {
-		DROID *psDroid = nullptr;
+	widgScheduleTask([psWeakControllerRef]()
+	{
+		DROID* psDroid = nullptr;
 		if (auto strongControllerRef = psWeakControllerRef.lock())
 		{
 			psDroid = strongControllerRef->getHighlightedObject();

@@ -425,7 +425,7 @@ bool crashHandlingProviderSetContext(const std::string& key, const nlohmann::jso
 #endif
 }
 
-bool useCrashHandlingProvider(int argc, const char * const *argv)
+bool useCrashHandlingProvider(int argc, const char* const * argv)
 {
 #if !defined(WZ_CRASHHANDLING_PROVIDER)
 	return false; // use native crash-handling exception handler
@@ -444,4 +444,3 @@ bool useCrashHandlingProvider(int argc, const char * const *argv)
 	return true;
 #endif
 }
-

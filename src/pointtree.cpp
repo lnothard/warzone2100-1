@@ -43,10 +43,10 @@ static uint64_t expand(uint32_t x)
 {
 	uint64_t r = x;
 	r = (r | r << 16) & 0x0000FFFF0000FFFFULL;
-	r = (r | r << 8)  & 0x00FF00FF00FF00FFULL;
-	r = (r | r << 4)  & 0x0F0F0F0F0F0F0F0FULL;
-	r = (r | r << 2)  & 0x3333333333333333ULL;
-	r = (r | r << 1)  & 0x5555555555555555ULL;
+	r = (r | r << 8) & 0x00FF00FF00FF00FFULL;
+	r = (r | r << 4) & 0x0F0F0F0F0F0F0F0FULL;
+	r = (r | r << 2) & 0x3333333333333333ULL;
+	r = (r | r << 1) & 0x5555555555555555ULL;
 	return r;
 }
 
@@ -77,7 +77,7 @@ static uint64_t interleave(int32_t x, int32_t y)
 	return expandX(x) | expandY(y);
 }
 
-void PointTree::insert(void *pointData, int32_t x, int32_t y)
+void PointTree::insert(void* pointData, int32_t x, int32_t y)
 {
 	points.push_back(Point(interleave(x, y), pointData));
 }
@@ -87,14 +87,15 @@ void PointTree::clear()
 	points.clear();
 }
 
-static bool pointTreeSortFunction(std::pair<uint64_t, void *> const &a, std::pair<uint64_t, void *> const &b)
+static bool pointTreeSortFunction(std::pair<uint64_t, void*> const& a, std::pair<uint64_t, void*> const& b)
 {
-	return a.first < b.first;  // Sort only by position, not by pointer address, even if two units are in the same place.
+	return a.first < b.first; // Sort only by position, not by pointer address, even if two units are in the same place.
 }
 
 void PointTree::sort()
 {
-	std::stable_sort(points.begin(), points.end(), pointTreeSortFunction);  // Stable sort to avoid unspecified behaviour when two objects are in exactly the same place.
+	std::stable_sort(points.begin(), points.end(), pointTreeSortFunction);
+	// Stable sort to avoid unspecified behaviour when two objects are in exactly the same place.
 }
 
 //#define DUMP_IMAGE  // All x and y coordinates must be in range -500 to 499, if dumping an image.
@@ -110,8 +111,8 @@ struct PointTreeRange
 };
 
 // If !IsFiltered, function is trivially optimised to "return i;".
-template<bool IsFiltered>
-static unsigned current(std::vector<unsigned> &filterData, unsigned i)
+template <bool IsFiltered>
+static unsigned current(std::vector<unsigned>& filterData, unsigned i)
 {
 	unsigned ret = i;
 	while (IsFiltered && filterData[ret])
@@ -128,8 +129,9 @@ static unsigned current(std::vector<unsigned> &filterData, unsigned i)
 	return ret;
 }
 
-template<bool IsFiltered>
-PointTree::ResultVector &PointTree::queryMaybeFilter(Filter &filter, int32_t minXo, int32_t minYo, int32_t maxXo, int32_t maxYo)
+template <bool IsFiltered>
+PointTree::ResultVector& PointTree::queryMaybeFilter(Filter& filter, int32_t minXo, int32_t minYo, int32_t maxXo,
+                                                     int32_t maxYo)
 {
 	uint64_t minX = expandX(minXo);
 	uint64_t maxX = expandX(maxXo);
@@ -144,10 +146,11 @@ PointTree::ResultVector &PointTree::queryMaybeFilter(Filter &filter, int32_t min
 	uint64_t splitY1 = expandY(splitYo - 1);
 	uint64_t splitY2 = expandY(splitYo);
 
-	PointTreeRange ranges[4] = {{minX    | minY,    splitX1 | splitY1},
-		{splitX2 | minY,    maxX    | splitY1},
-		{minX    | splitY2, splitX1 | maxY},
-		{splitX2 | splitY2, maxX    | maxY}
+	PointTreeRange ranges[4] = {
+		{minX | minY, splitX1 | splitY1},
+		{splitX2 | minY, maxX | splitY1},
+		{minX | splitY2, splitX1 | maxY},
+		{splitX2 | splitY2, maxX | maxY}
 	};
 	int numRanges = 4;
 
@@ -233,14 +236,17 @@ PointTree::ResultVector &PointTree::queryMaybeFilter(Filter &filter, int32_t min
 	for (int r = 0; r != numRanges; ++r)
 	{
 		// Find range of points which may be close enough. Range is [i1 ... i2 - 1]. The pointers are ignored when searching.
-		unsigned i1 = std::lower_bound(points.begin(),      points.end(), Point(ranges[r].a, (void *)nullptr), pointTreeSortFunction) - points.begin();
-		unsigned i2 = std::upper_bound(points.begin() + i1, points.end(), Point(ranges[r].z, (void *)nullptr), pointTreeSortFunction) - points.begin();
+		unsigned i1 = std::lower_bound(points.begin(), points.end(), Point(ranges[r].a, (void*)nullptr),
+		                               pointTreeSortFunction) - points.begin();
+		unsigned i2 = std::upper_bound(points.begin() + i1, points.end(), Point(ranges[r].z, (void*)nullptr),
+		                               pointTreeSortFunction) - points.begin();
 
 		for (unsigned i = current<IsFiltered>(filter.data, i1); i < i2; i = current<IsFiltered>(filter.data, i + 1))
 		{
 			uint64_t px = points[i].first & 0xAAAAAAAAAAAAAAAAULL;
 			uint64_t py = points[i].first & 0x5555555555555555ULL;
-			if (px >= minX && px <= maxX && py >= minY && py <= maxY)  // Only add point if it's at least in the desired square.
+			if (px >= minX && px <= maxX && py >= minY && py <= maxY)
+			// Only add point if it's at least in the desired square.
 			{
 				lastQueryResults.push_back(points[i].second);
 				if (IsFiltered)
@@ -270,13 +276,13 @@ PointTree::ResultVector &PointTree::queryMaybeFilter(Filter &filter, int32_t min
 	return lastQueryResults;
 }
 
-PointTree::ResultVector &PointTree::query(int32_t x, int32_t y, uint32_t x2, uint32_t y2)
+PointTree::ResultVector& PointTree::query(int32_t x, int32_t y, uint32_t x2, uint32_t y2)
 {
 	Filter unused;
 	return queryMaybeFilter<false>(unused, x, y, x2, y2);
 }
 
-PointTree::ResultVector &PointTree::query(int32_t x, int32_t y, uint32_t radius)
+PointTree::ResultVector& PointTree::query(int32_t x, int32_t y, uint32_t radius)
 {
 	Filter unused;
 	int32_t minXo = x - radius;
@@ -286,7 +292,7 @@ PointTree::ResultVector &PointTree::query(int32_t x, int32_t y, uint32_t radius)
 	return queryMaybeFilter<false>(unused, minXo, minYo, maxXo, maxYo);
 }
 
-PointTree::ResultVector &PointTree::query(Filter &filter, int32_t x, int32_t y, uint32_t radius)
+PointTree::ResultVector& PointTree::query(Filter& filter, int32_t x, int32_t y, uint32_t radius)
 {
 	int32_t minXo = x - radius;
 	int32_t maxXo = x + radius;

@@ -36,7 +36,7 @@ struct HeightCallbackHelp_t
 	uint16_t pitch;
 };
 
-static void initSteps(int32_t srcM, int32_t dstM, int32_t &tile, int32_t &step, int32_t &cur, int32_t &end)
+static void initSteps(int32_t srcM, int32_t dstM, int32_t& tile, int32_t& step, int32_t& cur, int32_t& end)
 {
 	int increasing = srcM < dstM;
 	step = -1 + 2 * increasing;
@@ -46,13 +46,14 @@ static void initSteps(int32_t srcM, int32_t dstM, int32_t &tile, int32_t &step, 
 }
 
 // Finds the next intersection of the line with a vertical grid line (or with a horizontal grid line, if called with x and y swapped).
-static bool tryStep(int32_t &tile, int32_t step, int32_t &cur, int32_t end, int32_t &px, int32_t &py, int32_t sx, int32_t sy, int32_t dx, int32_t dy)
+static bool tryStep(int32_t& tile, int32_t step, int32_t& cur, int32_t end, int32_t& px, int32_t& py, int32_t sx,
+                    int32_t sy, int32_t dx, int32_t dy)
 {
 	tile += step;
 
 	if (cur == end)
 	{
-		return false;  // No more vertical grid lines to cross before reaching the endpoint.
+		return false; // No more vertical grid lines to cross before reaching the endpoint.
 	}
 
 	// Find the point on the line with the x coordinate world_coord(cur).
@@ -63,11 +64,11 @@ static bool tryStep(int32_t &tile, int32_t step, int32_t &cur, int32_t end, int3
 	return true;
 }
 
-void rayCast(Vector2i src, Vector2i dst, RAY_CALLBACK callback, void *data)
+void rayCast(Vector2i src, Vector2i dst, RAY_CALLBACK callback, void* data)
 {
-	if (!callback(src, 0, data) || src == dst)  // Start at src.
+	if (!callback(src, 0, data) || src == dst) // Start at src.
 	{
-		return;  // Callback gave up after the first point, or there are no other points.
+		return; // Callback gave up after the first point, or there are no other points.
 	}
 
 	Vector2i srcM = map_coord(src);
@@ -77,9 +78,9 @@ void rayCast(Vector2i src, Vector2i dst, RAY_CALLBACK callback, void *data)
 	initSteps(srcM.x, dstM.x, tile.x, step.x, cur.x, end.x);
 	initSteps(srcM.y, dstM.y, tile.y, step.y, cur.y, end.y);
 
-	Vector2i prev(0, 0);  // Dummy initialisation.
+	Vector2i prev(0, 0); // Dummy initialisation.
 	bool first = true;
-	Vector2i nextX(0, 0), nextY(0, 0);  // Dummy initialisations.
+	Vector2i nextX(0, 0), nextY(0, 0); // Dummy initialisations.
 	bool canX = tryStep(tile.x, step.x, cur.x, end.x, nextX.x, nextX.y, src.x, src.y, dst.x, dst.y);
 	bool canY = tryStep(tile.y, step.y, cur.y, end.y, nextY.y, nextY.x, src.y, src.x, dst.y, dst.x);
 	while (canX || canY)
@@ -88,13 +89,13 @@ void rayCast(Vector2i src, Vector2i dst, RAY_CALLBACK callback, void *data)
 		int32_t yDist = abs(nextY.x - src.x) + abs(nextY.y - src.y);
 		Vector2i sel;
 		Vector2i selTile;
-		if (canX && (!canY || xDist < yDist))  // The line crosses a vertical grid line next.
+		if (canX && (!canY || xDist < yDist)) // The line crosses a vertical grid line next.
 		{
 			sel = nextX;
 			selTile = tile;
 			canX = tryStep(tile.x, step.x, cur.x, end.x, nextX.x, nextX.y, src.x, src.y, dst.x, dst.y);
 		}
-		else  // The line crosses a horizontal grid line next.
+		else // The line crosses a horizontal grid line next.
 		{
 			assert(canY);
 			sel = nextY;
@@ -110,7 +111,7 @@ void rayCast(Vector2i src, Vector2i dst, RAY_CALLBACK callback, void *data)
 			avg.y = std::min(std::max(avg.y, world_coord(selTile.y)), world_coord(selTile.y + 1) - 1);
 			if (!worldOnMap(avg) || !callback(avg, iHypot(avg), data))
 			{
-				return;  // Callback doesn't want any more points, or we reached the edge of the map, so return.
+				return; // Callback doesn't want any more points, or we reached the edge of the map, so return.
 			}
 		}
 		prev = sel;
@@ -120,16 +121,16 @@ void rayCast(Vector2i src, Vector2i dst, RAY_CALLBACK callback, void *data)
 	// Include the endpoint.
 	if (!worldOnMap(dst))
 	{
-		return;  // Stop, since reached the edge of the map.
+		return; // Stop, since reached the edge of the map.
 	}
 	callback(dst, iHypot(dst), data);
 }
 
 //-----------------------------------------------------------------------------------
 /* Will return false when we've hit the edge of the grid */
-static bool getTileHeightCallback(Vector2i pos, int32_t dist, void *data)
+static bool getTileHeightCallback(Vector2i pos, int32_t dist, void* data)
 {
-	HeightCallbackHelp_t *help = (HeightCallbackHelp_t *)data;
+	HeightCallbackHelp_t* help = (HeightCallbackHelp_t*)data;
 #ifdef TEST_RAY
 	Vector3i effect;
 #endif
@@ -188,7 +189,7 @@ static bool getTileHeightCallback(Vector2i pos, int32_t dist, void *data)
 	return false;
 }
 
-void getBestPitchToEdgeOfGrid(UDWORD x, UDWORD y, uint16_t direction, uint16_t *pitch)
+void getBestPitchToEdgeOfGrid(UDWORD x, UDWORD y, uint16_t direction, uint16_t* pitch)
 {
 	HeightCallbackHelp_t help = {map_Height(x, y), 0};
 

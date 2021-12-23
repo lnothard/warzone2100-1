@@ -60,7 +60,8 @@ enum EFFECT_TYPE
 	EXPLOSION_TYPE_VERY_SMALL,
 	EXPLOSION_TYPE_MEDIUM,
 	EXPLOSION_TYPE_LARGE,
-	EXPLOSION_TYPE_SPECIFIED,	// superfluous?
+	EXPLOSION_TYPE_SPECIFIED,
+	// superfluous?
 	EXPLOSION_TYPE_NOT_FACING,
 	EXPLOSION_TYPE_SPECIFIED_SOLID,
 	EXPLOSION_TYPE_SPECIFIED_FIXME,
@@ -121,52 +122,58 @@ enum LAND_LIGHT_SPEC
 
 struct EFFECT
 {
-	uint8_t           player;      //	when the effect in question needs a player's color
-	uint8_t           control;     // Controls the bits above - essential,flips etc
-	EFFECT_GROUP      group;       // what group is it - explosion, building effect etc....
-	EFFECT_TYPE       type;        // what type is it within the group?
-	uint8_t           frameNumber; // what frame number is the imd on?
-	uint16_t          size;        // Size in terms of percent of original imd.
-	uint8_t           baseScale;   // if scaled, what's bottom line?
-	uint8_t           specific;    // how many times has it bounced?
-	Vector3f          position;    // world coordinates of the effect - floats on the PC.
-	Vector3f          velocity;    // movement values per update
-	Vector3i          rotation;    // current rotation - only for gravitons
-	Vector3i          spin;        // rotation info for spinning things.
-	uint32_t          birthTime;   // what time was it introduced into the world?
-	uint32_t          lastFrame;   // when did we last update the frame?
-	uint16_t          frameDelay;  // how many game ticks between each frame?
-	uint16_t          lifeSpan;    // what is it's life expectancy?
-	uint16_t          radius;      // Used for area effects
-	iIMDShape         *imd;        // pointer to the imd the effect uses.
+	uint8_t player; //	when the effect in question needs a player's color
+	uint8_t control; // Controls the bits above - essential,flips etc
+	EFFECT_GROUP group; // what group is it - explosion, building effect etc....
+	EFFECT_TYPE type; // what type is it within the group?
+	uint8_t frameNumber; // what frame number is the imd on?
+	uint16_t size; // Size in terms of percent of original imd.
+	uint8_t baseScale; // if scaled, what's bottom line?
+	uint8_t specific; // how many times has it bounced?
+	Vector3f position; // world coordinates of the effect - floats on the PC.
+	Vector3f velocity; // movement values per update
+	Vector3i rotation; // current rotation - only for gravitons
+	Vector3i spin; // rotation info for spinning things.
+	uint32_t birthTime; // what time was it introduced into the world?
+	uint32_t lastFrame; // when did we last update the frame?
+	uint16_t frameDelay; // how many game ticks between each frame?
+	uint16_t lifeSpan; // what is it's life expectancy?
+	uint16_t radius; // Used for area effects
+	iIMDShape* imd; // pointer to the imd the effect uses.
 	EFFECT *prev, *next; // Previous and next element in linked list
 
-	EFFECT() : player(MAX_PLAYERS), control(0), group(EFFECT_FREED), type(EXPLOSION_TYPE_SMALL), frameNumber(0), size(0),
-	           baseScale(0), specific(0), position(0.f, 0.f, 0.f), velocity(0.f, 0.f, 0.f), rotation(0, 0, 0), spin(0, 0, 0), birthTime(0), lastFrame(0), frameDelay(0), lifeSpan(0), radius(0),
-	           imd(nullptr), prev(nullptr), next(nullptr) {}
+	EFFECT() : player(MAX_PLAYERS), control(0), group(EFFECT_FREED), type(EXPLOSION_TYPE_SMALL), frameNumber(0),
+	           size(0),
+	           baseScale(0), specific(0), position(0.f, 0.f, 0.f), velocity(0.f, 0.f, 0.f), rotation(0, 0, 0),
+	           spin(0, 0, 0), birthTime(0), lastFrame(0), frameDelay(0), lifeSpan(0), radius(0),
+	           imd(nullptr), prev(nullptr), next(nullptr)
+	{
+	}
 };
 
 /* Maximum number of effects in the world - need to investigate what this should be */
 /* EXTERNAL REFERENCES */
-void	effectGiveAuxVar(UDWORD var);		// naughty
-void	effectGiveAuxVarSec(UDWORD var);	// and so's this
+void effectGiveAuxVar(UDWORD var); // naughty
+void effectGiveAuxVarSec(UDWORD var); // and so's this
 
-void	initEffectsSystem();
-void	shutdownEffectsSystem();
-void	processEffects(const glm::mat4 &viewMatrix);
-void 	addEffect(const Vector3i *pos, EFFECT_GROUP group, EFFECT_TYPE type, bool specified, iIMDShape *imd, int lit);
-void    addEffect(const Vector3i *pos, EFFECT_GROUP group, EFFECT_TYPE type, bool specified, iIMDShape *imd, int lit, unsigned effectTime);
-void    addMultiEffect(const Vector3i *basePos, Vector3i *scatter, EFFECT_GROUP group, EFFECT_TYPE type, bool specified, iIMDShape *imd, unsigned int number, bool lit, unsigned int size, unsigned effectTime);
+void initEffectsSystem();
+void shutdownEffectsSystem();
+void processEffects(const glm::mat4& viewMatrix);
+void addEffect(const Vector3i* pos, EFFECT_GROUP group, EFFECT_TYPE type, bool specified, iIMDShape* imd, int lit);
+void addEffect(const Vector3i* pos, EFFECT_GROUP group, EFFECT_TYPE type, bool specified, iIMDShape* imd, int lit,
+               unsigned effectTime);
+void addMultiEffect(const Vector3i* basePos, Vector3i* scatter, EFFECT_GROUP group, EFFECT_TYPE type, bool specified,
+                    iIMDShape* imd, unsigned int number, bool lit, unsigned int size, unsigned effectTime);
 
-void	renderEffect(const EFFECT *psEffect, const glm::mat4 &viewMatrix);
-void	effectResetUpdates();
+void renderEffect(const EFFECT* psEffect, const glm::mat4& viewMatrix);
+void effectResetUpdates();
 
-void	initPerimeterSmoke(iIMDShape *pImd, Vector3i base);
+void initPerimeterSmoke(iIMDShape* pImd, Vector3i base);
 
-bool	readFXData(const char *fileName);
-bool	writeFXData(const char *fileName);
-void	effectSetSize(UDWORD size);
-void	effectSetLandLightSpec(LAND_LIGHT_SPEC spec);
-void	SetEffectForPlayer(uint8_t player);
+bool readFXData(const char* fileName);
+bool writeFXData(const char* fileName);
+void effectSetSize(UDWORD size);
+void effectSetLandLightSpec(LAND_LIGHT_SPEC spec);
+void SetEffectForPlayer(uint8_t player);
 
 #endif // __INCLUDED_SRC_EFFECTS_H__

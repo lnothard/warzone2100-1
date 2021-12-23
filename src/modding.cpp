@@ -46,7 +46,7 @@ static std::vector<Sha256> mod_hash_list;
 static void addLoadedMod(std::string modname, std::string filename);
 
 
-static inline std::vector<std::string> split(std::string const &str, std::string const &sep)
+static inline std::vector<std::string> split(std::string const& str, std::string const& sep)
 {
 	std::vector<std::string> strs;
 	if (str.empty())
@@ -65,11 +65,11 @@ static inline std::vector<std::string> split(std::string const &str, std::string
 	return strs;
 }
 
-static inline std::string join(std::vector<std::string> const &strs, std::string const &sep)
+static inline std::string join(std::vector<std::string> const& strs, std::string const& sep)
 {
 	std::string str;
 	bool first = true;
-	for (auto const &s : strs)
+	for (auto const& s : strs)
 	{
 		if (!first)
 		{
@@ -81,7 +81,7 @@ static inline std::string join(std::vector<std::string> const &strs, std::string
 	return str;
 }
 
-static WzString convertToPlatformDependentPath(const char *platformIndependentPath)
+static WzString convertToPlatformDependentPath(const char* platformIndependentPath)
 {
 	WzString path(platformIndependentPath);
 
@@ -102,17 +102,20 @@ static WzString convertToPlatformDependentPath(const char *platformIndependentPa
  * \param appendToPath Whether to append or prepend
  * \param checkList List of directories to check. NULL means any.
  */
-void addSubdirs(const char *basedir, const char *subdir, const bool appendToPath, std::vector<std::string> const *checkList, bool addToModList)
+void addSubdirs(const char* basedir, const char* subdir, const bool appendToPath,
+                std::vector<std::string> const* checkList, bool addToModList)
 {
 	const WzString subdir_platformDependent = convertToPlatformDependentPath(subdir);
-	WZ_PHYSFS_enumerateFiles(subdir, [&](const char *i) -> bool {
+	WZ_PHYSFS_enumerateFiles(subdir, [&](const char* i) -> bool
+	{
 #ifdef DEBUG
 		debug(LOG_NEVER, "Examining subdir: [%s]", i);
 #endif // DEBUG
 		if (i[0] != '.' && (!checkList || std::find(checkList->begin(), checkList->end(), i) != checkList->end()))
 		{
 			char tmpstr[PATH_MAX];
-			snprintf(tmpstr, sizeof(tmpstr), "%s%s%s%s", basedir, subdir_platformDependent.toUtf8().c_str(), PHYSFS_getDirSeparator(), i);
+			snprintf(tmpstr, sizeof(tmpstr), "%s%s%s%s", basedir, subdir_platformDependent.toUtf8().c_str(),
+			         PHYSFS_getDirSeparator(), i);
 #ifdef DEBUG
 			debug(LOG_NEVER, "Adding [%s] to search path", tmpstr);
 #endif // DEBUG
@@ -130,17 +133,19 @@ void addSubdirs(const char *basedir, const char *subdir, const bool appendToPath
 	});
 }
 
-void removeSubdirs(const char *basedir, const char *subdir)
+void removeSubdirs(const char* basedir, const char* subdir)
 {
 	ASSERT(basedir, "basedir is null");
 	ASSERT(subdir, "subdir is null");
 	const WzString subdir_platformDependent = convertToPlatformDependentPath(subdir);
 	char tmpstr[PATH_MAX];
-	WZ_PHYSFS_enumerateFiles(subdir, [&](const char *i) -> bool {
+	WZ_PHYSFS_enumerateFiles(subdir, [&](const char* i) -> bool
+	{
 #ifdef DEBUG
 		debug(LOG_NEVER, "Examining subdir: [%s]", i);
 #endif // DEBUG
-		snprintf(tmpstr, sizeof(tmpstr), "%s%s%s%s", basedir, subdir_platformDependent.toUtf8().c_str(), PHYSFS_getDirSeparator(), i);
+		snprintf(tmpstr, sizeof(tmpstr), "%s%s%s%s", basedir, subdir_platformDependent.toUtf8().c_str(),
+		         PHYSFS_getDirSeparator(), i);
 #ifdef DEBUG
 		debug(LOG_NEVER, "Removing [%s] from search path", tmpstr);
 #endif // DEBUG
@@ -157,15 +162,15 @@ void removeSubdirs(const char *basedir, const char *subdir)
 void printSearchPath()
 {
 	debug(LOG_WZ, "Search paths:");
-	char **searchPath = PHYSFS_getSearchPath();
-	for (char **i = searchPath; *i != nullptr; i++)
+	char** searchPath = PHYSFS_getSearchPath();
+	for (char** i = searchPath; *i != nullptr; i++)
 	{
 		debug(LOG_WZ, "    [%s]", *i);
 	}
 	PHYSFS_freeList(searchPath);
 }
 
-void setOverrideMods(char *modlist)
+void setOverrideMods(char* modlist)
 {
 	override_mods = split(modlist, ", ");
 	override_mod_list = modlist;
@@ -192,34 +197,34 @@ void clearLoadedMods()
 	mod_hash_list.clear();
 }
 
-std::vector<WzMods::LoadedMod> const &getLoadedMods()
+std::vector<WzMods::LoadedMod> const& getLoadedMods()
 {
 	return loaded_mods;
 }
 
-std::string const &getModList()
+std::string const& getModList()
 {
 	if (mod_list.empty())
 	{
 		// Construct mod list.
 		std::vector<std::string> mods;
-		for (auto const &mod : loaded_mods)
+		for (auto const& mod : loaded_mods)
 		{
 			mods.push_back(mod.name);
 		}
 		std::sort(mods.begin(), mods.end());
 		mods.erase(std::unique(mods.begin(), mods.end()), mods.end());
 		mod_list = join(mods, ", ");
-		mod_list.resize(std::min<size_t>(mod_list.size(), modlist_string_size - 1));  // Probably not needed.
+		mod_list.resize(std::min<size_t>(mod_list.size(), modlist_string_size - 1)); // Probably not needed.
 	}
 	return mod_list;
 }
 
-std::vector<Sha256> const &getModHashList()
+std::vector<Sha256> const& getModHashList()
 {
 	if (mod_hash_list.empty())
 	{
-		for (auto const &mod : loaded_mods)
+		for (auto const& mod : loaded_mods)
 		{
 			Sha256 hash = findHashOfFile(mod.filename.c_str());
 			debug(LOG_WZ, "Mod[%s]: %s\n", hash.toString().c_str(), mod.filename.c_str());
@@ -229,9 +234,9 @@ std::vector<Sha256> const &getModHashList()
 	return mod_hash_list;
 }
 
-std::string getModFilename(Sha256 const &hash)
+std::string getModFilename(Sha256 const& hash)
 {
-	for (auto const &mod : loaded_mods)
+	for (auto const& mod : loaded_mods)
 	{
 		Sha256 foundHash = findHashOfFile(mod.filename.c_str());
 		if (foundHash == hash)

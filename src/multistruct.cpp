@@ -58,13 +58,13 @@
 
 // ////////////////////////////////////////////////////////////////////////////
 // INFORM others that a building has been completed.
-bool SendBuildFinished(STRUCTURE *psStruct)
+bool SendBuildFinished(STRUCTURE* psStruct)
 {
 	uint8_t player = psStruct->player;
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "invalid player %u", player);
 
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_ADD_STRUCTURE);
-	NETuint32_t(&psStruct->id);		// ID of building
+	NETuint32_t(&psStruct->id); // ID of building
 
 	// Along with enough info to build it (if needed)
 	NETuint32_t(&psStruct->pStructureType->ref);
@@ -76,16 +76,16 @@ bool SendBuildFinished(STRUCTURE *psStruct)
 // ////////////////////////////////////////////////////////////////////////////
 bool recvBuildFinished(NETQUEUE queue)
 {
-	uint32_t	structId;
-	STRUCTURE	*psStruct;
-	Position        pos;
-	uint32_t	type, typeindex;
-	uint8_t		player;
+	uint32_t structId;
+	STRUCTURE* psStruct;
+	Position pos;
+	uint32_t type, typeindex;
+	uint8_t player;
 
 	NETbeginDecode(queue, GAME_DEBUG_ADD_STRUCTURE);
-	NETuint32_t(&structId);	// get the struct id.
-	NETuint32_t(&type); 	// Kind of building.
-	NETPosition(&pos);      // pos
+	NETuint32_t(&structId); // get the struct id.
+	NETuint32_t(&type); // Kind of building.
+	NETPosition(&pos); // pos
 	NETuint8_t(&player);
 	NETend();
 
@@ -118,7 +118,9 @@ bool recvBuildFinished(NETQUEUE queue)
 	// The building wasn't started, so we'll have to just plonk it down in the map.
 
 	// Find the structures stats
-	for (typeindex = 0; typeindex < numStructureStats && asStructureStats[typeindex].ref != type; typeindex++) {}	// Find structure target
+	for (typeindex = 0; typeindex < numStructureStats && asStructureStats[typeindex].ref != type; typeindex++)
+	{
+	} // Find structure target
 
 	// Check for similar buildings, to avoid overlaps
 	if (TileHasStructure(mapTile(map_coord(pos.x), map_coord(pos.y))))
@@ -143,8 +145,8 @@ bool recvBuildFinished(NETQUEUE queue)
 
 	if (psStruct)
 	{
-		psStruct->id		= structId;
-		psStruct->status	= SS_BUILT;
+		psStruct->id = structId;
+		psStruct->status = SS_BUILT;
 		buildingComplete(psStruct);
 		debug(LOG_SYNC, "Huge synch error, forced to create building %u for player %u", psStruct->id, player);
 #if defined (DEBUG)
@@ -165,7 +167,7 @@ bool recvBuildFinished(NETQUEUE queue)
 
 // ////////////////////////////////////////////////////////////////////////////
 // Inform others that a structure has been destroyed
-bool SendDestroyStructure(STRUCTURE *s)
+bool SendDestroyStructure(STRUCTURE* s)
 {
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_REMOVE_STRUCTURE);
 
@@ -180,7 +182,7 @@ bool SendDestroyStructure(STRUCTURE *s)
 bool recvDestroyStructure(NETQUEUE queue)
 {
 	uint32_t structID;
-	STRUCTURE *psStruct;
+	STRUCTURE* psStruct;
 
 	NETbeginDecode(queue, GAME_DEBUG_REMOVE_STRUCTURE);
 	NETuint32_t(&structID);
@@ -200,7 +202,8 @@ bool recvDestroyStructure(NETQUEUE queue)
 	{
 		turnOffMultiMsg(true);
 		// Remove the struct from remote players machine
-		destroyStruct(psStruct, gameTime - deltaGameTime + 1);  // deltaGameTime is actually 0 here, since we're between updates. However, the value of gameTime - deltaGameTime + 1 will not change when we start the next tick.
+		destroyStruct(psStruct, gameTime - deltaGameTime + 1);
+		// deltaGameTime is actually 0 here, since we're between updates. However, the value of gameTime - deltaGameTime + 1 will not change when we start the next tick.
 		turnOffMultiMsg(false);
 	}
 
@@ -210,14 +213,14 @@ bool recvDestroyStructure(NETQUEUE queue)
 // ////////////////////////////////////////////////////////////////////////////
 //lassat is firing
 
-bool sendLasSat(UBYTE player, STRUCTURE *psStruct, BASE_OBJECT *psObj)
+bool sendLasSat(UBYTE player, STRUCTURE* psStruct, BASE_OBJECT* psObj)
 {
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_LASSAT);
 
 	NETuint8_t(&player);
 	NETuint32_t(&psStruct->id);
-	NETuint32_t(&psObj->id);	// Target
-	NETuint8_t(&psObj->player);	// Target player
+	NETuint32_t(&psObj->id); // Target
+	NETuint8_t(&psObj->player); // Target player
 
 	return NETend();
 }
@@ -225,10 +228,10 @@ bool sendLasSat(UBYTE player, STRUCTURE *psStruct, BASE_OBJECT *psObj)
 // recv lassat info on the receiving end.
 bool recvLasSat(NETQUEUE queue)
 {
-	BASE_OBJECT	*psObj;
-	UBYTE		player, targetplayer;
-	STRUCTURE	*psStruct;
-	uint32_t	id, targetid;
+	BASE_OBJECT* psObj;
+	UBYTE player, targetplayer;
+	STRUCTURE* psStruct;
+	uint32_t id, targetid;
 
 	NETbeginDecode(queue, GAME_LASSAT);
 	NETuint8_t(&player);
@@ -238,7 +241,7 @@ bool recvLasSat(NETQUEUE queue)
 	NETend();
 
 	psStruct = IdToStruct(id, player);
-	psObj	 = IdToPointer(targetid, targetplayer);
+	psObj = IdToPointer(targetid, targetplayer);
 	if (psStruct && !canGiveOrdersFor(queue.index, psStruct->player))
 	{
 		syncDebug("Wrong player.");
@@ -259,7 +262,7 @@ bool recvLasSat(NETQUEUE queue)
 		if (isHumanPlayer(player) && gameTime - psStruct->asWeaps[0].lastFired <= firePause)
 		{
 			/* Too soon to fire again */
-			return true ^ false;  // Return value meaningless and ignored.
+			return true ^ false; // Return value meaningless and ignored.
 		}
 
 		// Give enemy no quarter, unleash the lasat
@@ -274,11 +277,11 @@ bool recvLasSat(NETQUEUE queue)
 	return true;
 }
 
-void sendStructureInfo(STRUCTURE *psStruct, STRUCTURE_INFO structureInfo_, DROID_TEMPLATE *pT)
+void sendStructureInfo(STRUCTURE* psStruct, STRUCTURE_INFO structureInfo_, DROID_TEMPLATE* pT)
 {
-	uint8_t  player = psStruct->player;
+	uint8_t player = psStruct->player;
 	uint32_t structId = psStruct->id;
-	uint8_t  structureInfo = structureInfo_;
+	uint8_t structureInfo = structureInfo_;
 
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_STRUCTUREINFO);
 	NETuint8_t(&player);
@@ -309,10 +312,10 @@ void sendStructureInfo(STRUCTURE *psStruct, STRUCTURE_INFO structureInfo_, DROID
 
 void recvStructureInfo(NETQUEUE queue)
 {
-	uint8_t         player = 0;
-	uint32_t        structId = 0;
-	uint8_t         structureInfo;
-	STRUCTURE      *psStruct;
+	uint8_t player = 0;
+	uint32_t structId = 0;
+	uint8_t structureInfo;
+	STRUCTURE* psStruct;
 	DROID_TEMPLATE t, *pT = &t;
 	int32_t droidType;
 
@@ -335,7 +338,8 @@ void recvStructureInfo(NETQUEUE queue)
 		NETuint8_t(&pT->asParts[COMP_SENSOR]);
 		NETuint8_t(&pT->asParts[COMP_CONSTRUCT]);
 		NETint8_t(&pT->numWeaps);
-		ASSERT_OR_RETURN(, pT->numWeaps >= 0 && pT->numWeaps <= ARRAY_SIZE(pT->asWeaps), "Bad numWeaps %d", pT->numWeaps);
+		ASSERT_OR_RETURN(, pT->numWeaps >= 0 && pT->numWeaps <= ARRAY_SIZE(pT->asWeaps), "Bad numWeaps %d",
+		                   pT->numWeaps);
 		for (int i = 0; i < pT->numWeaps; i++)
 		{
 			NETuint32_t(&pT->asWeaps[i]);
@@ -386,12 +390,18 @@ void recvStructureInfo(NETQUEUE queue)
 
 	switch (structureInfo)
 	{
-	case STRUCTUREINFO_MANUFACTURE:       structSetManufacture(psStruct, pT, ModeImmediate); break;
-	case STRUCTUREINFO_CANCELPRODUCTION:  cancelProduction(psStruct, ModeImmediate, false);       break;
-	case STRUCTUREINFO_HOLDPRODUCTION:    holdProduction(psStruct, ModeImmediate);                break;
-	case STRUCTUREINFO_RELEASEPRODUCTION: releaseProduction(psStruct, ModeImmediate);             break;
-	case STRUCTUREINFO_HOLDRESEARCH:      holdResearch(psStruct, ModeImmediate);                  break;
-	case STRUCTUREINFO_RELEASERESEARCH:   releaseResearch(psStruct, ModeImmediate);               break;
+	case STRUCTUREINFO_MANUFACTURE: structSetManufacture(psStruct, pT, ModeImmediate);
+		break;
+	case STRUCTUREINFO_CANCELPRODUCTION: cancelProduction(psStruct, ModeImmediate, false);
+		break;
+	case STRUCTUREINFO_HOLDPRODUCTION: holdProduction(psStruct, ModeImmediate);
+		break;
+	case STRUCTUREINFO_RELEASEPRODUCTION: releaseProduction(psStruct, ModeImmediate);
+		break;
+	case STRUCTUREINFO_HOLDRESEARCH: holdResearch(psStruct, ModeImmediate);
+		break;
+	case STRUCTUREINFO_RELEASERESEARCH: releaseResearch(psStruct, ModeImmediate);
+		break;
 	default:
 		debug(LOG_ERROR, "Invalid structureInfo %d", structureInfo);
 	}

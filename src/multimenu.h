@@ -28,14 +28,15 @@
 #include "stringdef.h"
 
 // requester
-void addMultiRequest(const char *searchDir, const char *fileExtension, UDWORD id, UBYTE numPlayers, std::string const &searchString = std::string());
+void addMultiRequest(const char* searchDir, const char* fileExtension, UDWORD id, UBYTE numPlayers,
+                     std::string const& searchString = std::string());
 void closeMultiRequester();
 
 extern bool multiRequestUp;
 extern std::shared_ptr<W_SCREEN> psRScreen; // requester stuff.
 
-bool runMultiRequester(UDWORD id, UDWORD *mode, WzString *chosen, LEVEL_DATASET **chosenValue, bool *isHoverPreview);
-void displayRequestOption(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+bool runMultiRequester(UDWORD id, UDWORD* mode, WzString* chosen, LEVEL_DATASET** chosenValue, bool* isHoverPreview);
+void displayRequestOption(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
 // multimenu
 void intProcessMultiMenu(UDWORD id);
@@ -44,11 +45,12 @@ bool intCloseMultiMenu();
 void intCloseMultiMenuNoAnim();
 bool intAddMultiMenu();
 
-void multiMenuScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight);
+void multiMenuScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+                                  unsigned int newHeight);
 
-extern bool		MultiMenuUp;
+extern bool MultiMenuUp;
 
-extern UDWORD		current_numplayers;
+extern UDWORD current_numplayers;
 
 #define MULTIMENU				10600
 #define MULTIMENU_FORM			MULTIMENU

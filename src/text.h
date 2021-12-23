@@ -28,7 +28,7 @@
 struct STR_RES;
 
 /* The string resource object */
-extern struct STR_RES *psStringRes;
+extern struct STR_RES* psStringRes;
 
 /* Initialise the string system */
 bool stringsInitialise();

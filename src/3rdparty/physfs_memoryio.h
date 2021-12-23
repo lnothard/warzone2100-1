@@ -36,6 +36,6 @@
 #define HAS_PHYSFS_IO_SUPPORT
 #endif
 
-int PHYSFS_mountMemory_fixed(const void *buf, PHYSFS_uint64 len, void (*del)(void *),
-						const char *fname, const char *mountPoint,
-						int appendToPath);
+int PHYSFS_mountMemory_fixed(const void* buf, PHYSFS_uint64 len, void (*del)(void*),
+                             const char* fname, const char* mountPoint,
+                             int appendToPath);

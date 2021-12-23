@@ -36,116 +36,185 @@ using nonstd::nullopt;
 class ActivitySink
 {
 public:
-	enum class GameMode {
+	enum class GameMode
+	{
 		MENUS,
 		TUTORIAL,
 		CAMPAIGN,
 		CHALLENGE,
 		SKIRMISH,
 		HOSTING_IN_LOBBY,
-		JOINING_IN_PROGRESS, // joined but waiting on game information from host
+		JOINING_IN_PROGRESS,
+		// joined but waiting on game information from host
 		JOINING_IN_LOBBY,
 		MULTIPLAYER
 	};
 
-	enum class GameEndReason {
+	enum class GameEndReason
+	{
 		WON,
 		LOST,
 		QUIT
 	};
+
 public:
-	virtual ~ActivitySink() { }
+	virtual ~ActivitySink()
+	{
+	}
+
 public:
 	// navigating main menus
-	virtual void navigatedToMenu(const std::string& menuName) { }
+	virtual void navigatedToMenu(const std::string& menuName)
+	{
+	}
 
 	// campaign games
-	virtual void startedCampaignMission(const std::string& campaign, const std::string& levelName) { }
-	virtual void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result, END_GAME_STATS_DATA stats, bool cheatsUsed) { }
+	virtual void startedCampaignMission(const std::string& campaign, const std::string& levelName)
+	{
+	}
+
+	virtual void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result,
+	                                  END_GAME_STATS_DATA stats, bool cheatsUsed)
+	{
+	}
 
 	// challenges
-	virtual void startedChallenge(const std::string& challengeName) { }
-	virtual void endedChallenge(const std::string& challengeName, GameEndReason result, const END_GAME_STATS_DATA& stats, bool cheatsUsed) { }
+	virtual void startedChallenge(const std::string& challengeName)
+	{
+	}
+
+	virtual void endedChallenge(const std::string& challengeName, GameEndReason result,
+	                            const END_GAME_STATS_DATA& stats, bool cheatsUsed)
+	{
+	}
 
 	// skirmish
 	struct SkirmishGameInfo
 	{
 		MULTIPLAYERGAME game;
 		uint8_t numAIBotPlayers = 0;
-		size_t currentPlayerIdx = 0;			// = the selectedPlayer global for the current client (points to currently controlled player in the players array)
+		size_t currentPlayerIdx = 0;
+		// = the selectedPlayer global for the current client (points to currently controlled player in the players array)
 		std::vector<PLAYER> players;
 
 		// information on limits
-		bool limit_no_tanks;					///< Flag for tanks disabled
-		bool limit_no_cyborgs;					///< Flag for cyborgs disabled
-		bool limit_no_vtols;					///< Flag for VTOLs disabled
-		bool limit_no_uplink;					///< Flag for Satellite Uplink disabled
-		bool limit_no_lassat;					///< Flag for Laser Satellite Command Post disabled
-		bool force_structure_limits;			///< Flag to force structure limits
+		bool limit_no_tanks; ///< Flag for tanks disabled
+		bool limit_no_cyborgs; ///< Flag for cyborgs disabled
+		bool limit_no_vtols; ///< Flag for VTOLs disabled
+		bool limit_no_uplink; ///< Flag for Satellite Uplink disabled
+		bool limit_no_lassat; ///< Flag for Laser Satellite Command Post disabled
+		bool force_structure_limits; ///< Flag to force structure limits
 		std::vector<MULTISTRUCTLIMITS> structureLimits;
 
 		// information on alliance settings
 		enum class AllianceOption
 		{
-			NO_ALLIANCES,        // FFA
-			ALLIANCES,           // Players can make and break alliances during the game.
-			ALLIANCES_TEAMS,     // Alliances are set before the game.
-			ALLIANCES_UNSHARED,  // Alliances are set before the game. No shared research.
+			NO_ALLIANCES,
+			// FFA
+			ALLIANCES,
+			// Players can make and break alliances during the game.
+			ALLIANCES_TEAMS,
+			// Alliances are set before the game.
+			ALLIANCES_UNSHARED,
+			// Alliances are set before the game. No shared research.
 		};
+
 		AllianceOption alliances;
 
 		// is this a loaded replay?
 		bool isReplay = false;
 
 	public:
-		virtual ~SkirmishGameInfo() { }
+		virtual ~SkirmishGameInfo()
+		{
+		}
+
 		// some convenience functions to get data
-		const char * gameName() const { return game.name; }
-		const char * mapName() const { return game.map; }
+		const char* gameName() const { return game.name; }
+		const char* mapName() const { return game.map; }
 		virtual uint8_t numberOfPlayers() const { return numAIBotPlayers + 1; }
-		bool hasLimits() const { return limit_no_tanks || limit_no_cyborgs || limit_no_vtols || limit_no_uplink || limit_no_lassat || force_structure_limits; }
+
+		bool hasLimits() const
+		{
+			return limit_no_tanks || limit_no_cyborgs || limit_no_vtols || limit_no_uplink || limit_no_lassat ||
+				force_structure_limits;
+		}
 	};
-	virtual void startedSkirmishGame(const SkirmishGameInfo& info) { }
-	virtual void endedSkirmishGame(const SkirmishGameInfo& info, GameEndReason result, const END_GAME_STATS_DATA& stats) { }
+
+	virtual void startedSkirmishGame(const SkirmishGameInfo& info)
+	{
+	}
+
+	virtual void endedSkirmishGame(const SkirmishGameInfo& info, GameEndReason result, const END_GAME_STATS_DATA& stats)
+	{
+	}
 
 	// multiplayer
-	struct ListeningInterfaces {
+	struct ListeningInterfaces
+	{
 		bool IPv4 = false;
 		bool IPv6 = false;
 		unsigned int ipv4_port;
 		unsigned int ipv6_port;
 	};
-	struct MultiplayerGameInfo : public SkirmishGameInfo {
+
+	struct MultiplayerGameInfo : public SkirmishGameInfo
+	{
 		// host information
-		std::string hostName;		// host player name
+		std::string hostName; // host player name
 		ListeningInterfaces listeningInterfaces;
 		std::string lobbyAddress;
 		unsigned int lobbyPort;
 		uint32_t lobbyGameId = 0;
 
-		bool isHost;	// whether the current client is the game host
-		bool privateGame;			// whether game is password-protected
+		bool isHost; // whether the current client is the game host
+		bool privateGame; // whether game is password-protected
 		uint8_t maxPlayers = 0;
 		uint8_t numHumanPlayers = 0;
 		uint8_t numAvailableSlots = 0;
 		uint8_t numSpectators = 0;
 		uint8_t numOpenSpectatorSlots = 0;
 	};
-	virtual void hostingMultiplayerGame(const MultiplayerGameInfo& info) { }
-	virtual void joinedMultiplayerGame(const MultiplayerGameInfo& info) { }
-	virtual void updateMultiplayerGameInfo(const MultiplayerGameInfo& info) { }
-	virtual void leftMultiplayerGameLobby(bool wasHost, LOBBY_ERROR_TYPES type) { }
-	virtual void startedMultiplayerGame(const MultiplayerGameInfo& info) { }
-	virtual void endedMultiplayerGame(const MultiplayerGameInfo& info, GameEndReason result, const END_GAME_STATS_DATA& stats) { }
+
+	virtual void hostingMultiplayerGame(const MultiplayerGameInfo& info)
+	{
+	}
+
+	virtual void joinedMultiplayerGame(const MultiplayerGameInfo& info)
+	{
+	}
+
+	virtual void updateMultiplayerGameInfo(const MultiplayerGameInfo& info)
+	{
+	}
+
+	virtual void leftMultiplayerGameLobby(bool wasHost, LOBBY_ERROR_TYPES type)
+	{
+	}
+
+	virtual void startedMultiplayerGame(const MultiplayerGameInfo& info)
+	{
+	}
+
+	virtual void endedMultiplayerGame(const MultiplayerGameInfo& info, GameEndReason result,
+	                                  const END_GAME_STATS_DATA& stats)
+	{
+	}
 
 	// changing settings
-	virtual void changedSetting(const std::string& settingKey, const std::string& settingValue) { }
+	virtual void changedSetting(const std::string& settingKey, const std::string& settingValue)
+	{
+	}
 
 	// cheats used
-	virtual void cheatUsed(const std::string& cheatName) { }
+	virtual void cheatUsed(const std::string& cheatName)
+	{
+	}
 
 	// loaded mods changed
-	virtual void loadedModsChanged(const std::vector<Sha256>& loadedModHashes) { }
+	virtual void loadedModsChanged(const std::vector<Sha256>& loadedModHashes)
+	{
+	}
 
 public:
 	// Helper Functions
@@ -195,18 +264,21 @@ public:
 
 	// called when a joinable multiplayer game is hosted
 	// lobbyGameId is 0 if the lobby can't be contacted / the game is not registered with the lobby
-	void hostGame(const char *SessionName, const char *PlayerName, const char* lobbyAddress, unsigned int lobbyPort, const ActivitySink::ListeningInterfaces& listeningInterfaces, uint32_t lobbyGameId = 0);
+	void hostGame(const char* SessionName, const char* PlayerName, const char* lobbyAddress, unsigned int lobbyPort,
+	              const ActivitySink::ListeningInterfaces& listeningInterfaces, uint32_t lobbyGameId = 0);
 	void hostGameLobbyServerDisconnect();
 	void hostLobbyQuit();
 	// called when attempting to join a lobby game
-	void willAttemptToJoinLobbyGame(const std::string& lobbyAddress, unsigned int lobbyPort, uint32_t lobbyGameId, const std::vector<JoinConnectionDescription>& connections);
+	void willAttemptToJoinLobbyGame(const std::string& lobbyAddress, unsigned int lobbyPort, uint32_t lobbyGameId,
+	                                const std::vector<JoinConnectionDescription>& connections);
 	// called when an attempt to join fails
 	void joinGameFailed(const std::vector<JoinConnectionDescription>& connection_list);
 	// called when joining a multiplayer game
-	void joinGameSucceeded(const char *host, uint32_t port);
+	void joinGameSucceeded(const char* host, uint32_t port);
 	void joinedLobbyQuit();
 	// for skirmish / multiplayer, provide additional data / state
-	void updateMultiplayGameData(const MULTIPLAYERGAME& game, const MULTIPLAYERINGAME& ingame, optional<bool> privateGame);
+	void updateMultiplayGameData(const MULTIPLAYERGAME& game, const MULTIPLAYERINGAME& ingame,
+	                             optional<bool> privateGame);
 	// called on the host when the host kicks a player
 	void hostKickPlayer(const PLAYER& player, LOBBY_ERROR_TYPES kick_type, const std::string& reason);
 	// called on the kicked player when they are kicked by another player
@@ -232,10 +304,12 @@ private:
 	bool bEndedCurrentMission = false;
 	ActivitySink::MultiplayerGameInfo currentMultiplayGameInfo;
 
-	struct LoadedLevelEvent {
+	struct LoadedLevelEvent
+	{
 		LEVEL_TYPE type;
 		std::string levelName;
 	};
+
 	LoadedLevelEvent* cachedLoadedLevelEvent = nullptr;
 
 	LoadedLevelEvent lastLoadedLevelEvent;
@@ -255,6 +329,7 @@ private:
 			connections.clear();
 		}
 	};
+
 	FoundLobbyGameDetails lastLobbyGameJoinAttempt;
 
 	optional<std::vector<Sha256>> lastLoadedMods;

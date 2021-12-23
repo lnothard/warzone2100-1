@@ -32,9 +32,9 @@
 #define GSL_NODISCARD
 #endif // defined(__cplusplus) && (__cplusplus >= 201703L)
 
-namespace gsl {
-
-	template<class T, class U = T>
+namespace gsl
+{
+	template <class T, class U = T>
 	T exchange(T& obj, U&& new_val)
 	{
 		T original_val = std::move(obj);
@@ -48,14 +48,17 @@ namespace gsl {
 	{
 	public:
 		static_assert(!std::is_reference<F>::value && !std::is_const<F>::value &&
-						  !std::is_volatile<F>::value,
-					  "Final_action should store its callable by value");
+			!std::is_volatile<F>::value,
+			"Final_action should store its callable by value");
 
-		explicit final_action(F f) noexcept : f_(std::move(f)) {}
+		explicit final_action(F f) noexcept : f_(std::move(f))
+		{
+		}
 
 		final_action(final_action&& other) noexcept
 			: f_(std::move(other.f_)), invoke_(exchange(other.invoke_, false))
-		{}
+		{
+		}
 
 		final_action(const final_action&) = delete;
 		final_action& operator=(const final_action&) = delete;

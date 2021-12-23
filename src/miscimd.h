@@ -26,54 +26,54 @@
 #include "messagedef.h"
 
 bool initMiscImds();
-iIMDShape *getImdFromIndex(UDWORD index);
-iIMDShape *getRandomDebrisImd();
+iIMDShape* getImdFromIndex(UDWORD index);
+iIMDShape* getRandomDebrisImd();
 
 #define	MAX_DEBRIS		5
 #define	MAX_WRECKAGE	5
 
-extern iIMDShape	*explosionSmallImd;	// Set this up to point to the explosion imd
-extern iIMDShape	*explosionMediumImd;	// Set this up to point to the explosion imd
-extern iIMDShape	*constructionImd;
-extern iIMDShape	*smallSmokeImd;
-extern iIMDShape	*babaHeadImd;
-extern iIMDShape	*babaBodyImd;
-extern iIMDShape	*babaLegsImd;
-extern iIMDShape	*babaArmImd;
-extern iIMDShape	*cyborgHeadImd;
-extern iIMDShape	*cyborgBodyImd;
-extern iIMDShape	*cyborgLegsImd;
-extern iIMDShape	*cyborgArmImd;
-extern iIMDShape	*waterImd;
-extern iIMDShape	*droidDamageImd;
-extern iIMDShape	*smallSteamImd;
-extern iIMDShape	*plasmaImd;
+extern iIMDShape* explosionSmallImd; // Set this up to point to the explosion imd
+extern iIMDShape* explosionMediumImd; // Set this up to point to the explosion imd
+extern iIMDShape* constructionImd;
+extern iIMDShape* smallSmokeImd;
+extern iIMDShape* babaHeadImd;
+extern iIMDShape* babaBodyImd;
+extern iIMDShape* babaLegsImd;
+extern iIMDShape* babaArmImd;
+extern iIMDShape* cyborgHeadImd;
+extern iIMDShape* cyborgBodyImd;
+extern iIMDShape* cyborgLegsImd;
+extern iIMDShape* cyborgArmImd;
+extern iIMDShape* waterImd;
+extern iIMDShape* droidDamageImd;
+extern iIMDShape* smallSteamImd;
+extern iIMDShape* plasmaImd;
 #define MAX_FACTORY_FLAG_IMDS 32
-extern iIMDShape	*pAssemblyPointIMDs[NUM_FLAG_TYPES][MAX_FACTORY_FLAG_IMDS];
-extern iIMDShape	*blipImd;
-extern iIMDShape	*shadowImd;
-extern iIMDShape	*transporterShadowImd;
-extern iIMDShape	*bloodImd;
-extern iIMDShape	*trailImd;
-extern iIMDShape	*cameraImd;
-extern iIMDShape	*debrisImds[MAX_DEBRIS];
-extern iIMDShape	*flameImd;
-extern iIMDShape	*wreckageImds[MAX_WRECKAGE];
-extern iIMDShape	*proximityImds[PROX_TYPES];
-extern iIMDShape	*teslaImd;
-extern iIMDShape	*mFlareImd;
-extern iIMDShape	*snowImd;
-extern iIMDShape	*rainImd;
-extern iIMDShape	*splashImd;
-extern iIMDShape	*kickImd;
-extern iIMDShape	*landingImd;
-extern iIMDShape	*shockImd;
+extern iIMDShape* pAssemblyPointIMDs[NUM_FLAG_TYPES][MAX_FACTORY_FLAG_IMDS];
+extern iIMDShape* blipImd;
+extern iIMDShape* shadowImd;
+extern iIMDShape* transporterShadowImd;
+extern iIMDShape* bloodImd;
+extern iIMDShape* trailImd;
+extern iIMDShape* cameraImd;
+extern iIMDShape* debrisImds[MAX_DEBRIS];
+extern iIMDShape* flameImd;
+extern iIMDShape* wreckageImds[MAX_WRECKAGE];
+extern iIMDShape* proximityImds[PROX_TYPES];
+extern iIMDShape* teslaImd;
+extern iIMDShape* mFlareImd;
+extern iIMDShape* snowImd;
+extern iIMDShape* rainImd;
+extern iIMDShape* splashImd;
+extern iIMDShape* kickImd;
+extern iIMDShape* landingImd;
+extern iIMDShape* shockImd;
 
 /* An imd entry */
 struct MISC_IMD
 {
-	iIMDShape	*pImd;
-	const char	*pName;
+	iIMDShape* pImd;
+	const char* pName;
 };
 
 enum

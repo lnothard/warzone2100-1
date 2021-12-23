@@ -62,19 +62,20 @@ enum SEQ_TEXT_POSITIONING
  */
 /***************************************************************************/
 //buffer render
-bool seq_RenderVideoToBuffer(const WzString &sequenceName, int seqCommand);
+bool seq_RenderVideoToBuffer(const WzString& sequenceName, int seqCommand);
 
-bool seq_UpdateFullScreenVideo(int *bClear);
+bool seq_UpdateFullScreenVideo(int* bClear);
 
 bool seq_StopFullScreenVideo();
 //control
-bool seq_GetVideoSize(SDWORD *pWidth, SDWORD *pHeight);
+bool seq_GetVideoSize(SDWORD* pWidth, SDWORD* pHeight);
 //text
-bool seq_AddTextForVideo(const char *pText, SDWORD xOffset, SDWORD yOffset, double startTime, double endTime, SEQ_TEXT_POSITIONING textJustification);
+bool seq_AddTextForVideo(const char* pText, SDWORD xOffset, SDWORD yOffset, double startTime, double endTime,
+                         SEQ_TEXT_POSITIONING textJustification);
 //clear the sequence list
 void seq_ClearSeqList();
 //add a sequence to the list to be played
-void seq_AddSeqToList(const WzString &pSeqName, const WzString &audioName, const char *pTextName, bool bLoop);
+void seq_AddSeqToList(const WzString& pSeqName, const WzString& audioName, const char* pTextName, bool bLoop);
 /*checks to see if there are any sequences left in the list to play*/
 bool seq_AnySeqLeft();
 

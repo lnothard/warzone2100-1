@@ -50,7 +50,7 @@ using json = nlohmann::json;
 class WZ_Notification_Preferences
 {
 public:
-	WZ_Notification_Preferences(const std::string &fileName);
+	WZ_Notification_Preferences(const std::string& fileName);
 
 	void incrementNotificationRuns(const std::string& uniqueNotificationIdentifier);
 	uint32_t getNotificationRuns(const std::string& uniqueNotificationIdentifier) const;
@@ -60,26 +60,33 @@ public:
 	bool canShowNotification(const WZ_Notification& notification) const;
 
 	void clearAllNotificationPreferences();
-	bool removeNotificationPreferencesIf(const std::function<bool (const std::string& uniqueNotificationIdentifier)>& matchIdentifierFunc);
+	bool removeNotificationPreferencesIf(
+		const std::function<bool (const std::string& uniqueNotificationIdentifier)>& matchIdentifierFunc);
 
 	bool savePreferences();
 
 private:
-	void storeValueForNotification(const std::string& uniqueNotificationIdentifier, const std::string& key, const json& value);
-	json getJSONValueForNotification(const std::string& uniqueNotificationIdentifier, const std::string& key, const json& defaultValue = json()) const;
+	void storeValueForNotification(const std::string& uniqueNotificationIdentifier, const std::string& key,
+	                               const json& value);
+	json getJSONValueForNotification(const std::string& uniqueNotificationIdentifier, const std::string& key,
+	                                 const json& defaultValue = json()) const;
 
-	template<typename T>
-	T getValueForNotification(const std::string& uniqueNotificationIdentifier, const std::string& key, T defaultValue) const
+	template <typename T>
+	T getValueForNotification(const std::string& uniqueNotificationIdentifier, const std::string& key,
+	                          T defaultValue) const
 	{
 		T result = defaultValue;
-		try {
+		try
+		{
 			result = getJSONValueForNotification(uniqueNotificationIdentifier, key, json(defaultValue)).get<T>();
 		}
-		catch (const std::exception &e) {
+		catch (const std::exception& e)
+		{
 			debug(LOG_WARNING, "Failed to convert json_variant to %s because of error: %s", typeid(T).name(), e.what());
 			result = defaultValue;
 		}
-		catch (...) {
+		catch (...)
+		{
 			debug(LOG_FATAL, "Unexpected exception encountered: json_variant::toType<%s>", typeid(T).name());
 		}
 		return result;
@@ -90,22 +97,25 @@ private:
 	std::string mFilename;
 };
 
-WZ_Notification_Preferences::WZ_Notification_Preferences(const std::string &fileName)
-: mFilename(fileName)
+WZ_Notification_Preferences::WZ_Notification_Preferences(const std::string& fileName)
+	: mFilename(fileName)
 {
 	if (PHYSFS_exists(fileName.c_str()))
 	{
 		UDWORD size;
-		char *data;
+		char* data;
 		if (loadFile(fileName.c_str(), &data, &size))
 		{
-			try {
+			try
+			{
 				mRoot = json::parse(data, data + size);
 			}
-			catch (const std::exception &e) {
+			catch (const std::exception& e)
+			{
 				ASSERT(false, "JSON document from %s is invalid: %s", fileName.c_str(), e.what());
 			}
-			catch (...) {
+			catch (...)
+			{
 				debug(LOG_ERROR, "Unexpected exception parsing JSON %s", fileName.c_str());
 			}
 			ASSERT(!mRoot.is_null(), "JSON document from %s is null", fileName.c_str());
@@ -134,7 +144,8 @@ WZ_Notification_Preferences::WZ_Notification_Preferences(const std::string &file
 	}
 }
 
-void WZ_Notification_Preferences::storeValueForNotification(const std::string& uniqueNotificationIdentifier, const std::string& key, const json& value)
+void WZ_Notification_Preferences::storeValueForNotification(const std::string& uniqueNotificationIdentifier,
+                                                            const std::string& key, const json& value)
 {
 	json& notificationsObj = mRoot["notifications"];
 	auto notificationData = notificationsObj.find(uniqueNotificationIdentifier);
@@ -146,9 +157,12 @@ void WZ_Notification_Preferences::storeValueForNotification(const std::string& u
 	(*notificationData)[key] = value;
 }
 
-json WZ_Notification_Preferences::getJSONValueForNotification(const std::string& uniqueNotificationIdentifier, const std::string& key, const json& defaultValue /*= json()*/) const
+json WZ_Notification_Preferences::getJSONValueForNotification(const std::string& uniqueNotificationIdentifier,
+                                                              const std::string& key,
+                                                              const json& defaultValue /*= json()*/) const
 {
-	try {
+	try
+	{
 		return mRoot.at("notifications").at(uniqueNotificationIdentifier).at(key);
 	}
 	catch (json::out_of_range&)
@@ -184,7 +198,8 @@ void WZ_Notification_Preferences::clearAllNotificationPreferences()
 	mRoot["notifications"] = json::object();
 }
 
-bool WZ_Notification_Preferences::removeNotificationPreferencesIf(const std::function<bool (const std::string& uniqueNotificationIdentifier)>& matchIdentifierFunc)
+bool WZ_Notification_Preferences::removeNotificationPreferencesIf(
+	const std::function<bool (const std::string& uniqueNotificationIdentifier)>& matchIdentifierFunc)
 {
 	ASSERT_OR_RETURN(false, mRoot.contains("notifications"), "root missing notifications object");
 	json notificationsObjCopy = mRoot.at("notifications");
@@ -232,7 +247,8 @@ bool WZ_Notification_Preferences::canShowNotification(const WZ_Notification& not
 	}
 	else
 	{
-		suppressNotification = getDoNotShowNotificationValue(notification.displayOptions.uniqueNotificationIdentifier());
+		suppressNotification =
+			getDoNotShowNotificationValue(notification.displayOptions.uniqueNotificationIdentifier());
 	}
 
 	return !suppressNotification;
@@ -246,8 +262,10 @@ class WZ_Notification_Status
 {
 public:
 	WZ_Notification_Status(uint32_t queuedTime)
-	: queuedTime(queuedTime)
-	{ }
+		: queuedTime(queuedTime)
+	{
+	}
+
 	enum NotificationState
 	{
 		waiting,
@@ -256,6 +274,7 @@ public:
 		closing,
 		closed
 	};
+
 	NotificationState state = NotificationState::waiting;
 	uint32_t stateStartTime = 0;
 	uint32_t queuedTime = 0;
@@ -271,15 +290,23 @@ public:
 class WZ_Queued_Notification
 {
 public:
-	WZ_Queued_Notification(const WZ_Notification& notification, const WZ_Notification_Status& status, const WZ_Notification_Trigger& trigger)
-	: notification(notification)
-	, status(status)
-	, trigger(trigger)
-	{ }
+	WZ_Queued_Notification(const WZ_Notification& notification, const WZ_Notification_Status& status,
+	                       const WZ_Notification_Trigger& trigger)
+		: notification(notification)
+		  , status(status)
+		  , trigger(trigger)
+	{
+	}
 
 public:
 	void setState(WZ_Notification_Status::NotificationState newState);
-	bool wasProgrammaticallyDismissed() const { return dismissalCause == WZ_Notification_Dismissal_Reason::ACTION_BUTTON_CLICK || dismissalCause == WZ_Notification_Dismissal_Reason::PROGRAMMATIC; }
+
+	bool wasProgrammaticallyDismissed() const
+	{
+		return dismissalCause == WZ_Notification_Dismissal_Reason::ACTION_BUTTON_CLICK || dismissalCause ==
+			WZ_Notification_Dismissal_Reason::PROGRAMMATIC;
+	}
+
 	WZ_Notification_Dismissal_Reason dismissReason() const { return dismissalCause; }
 
 protected:
@@ -304,7 +331,8 @@ void WZ_Queued_Notification::setState(WZ_Notification_Status::NotificationState 
 
 	if (newState == WZ_Notification_Status::NotificationState::closed)
 	{
-		if (notification.isIgnorable() && !bWasFullyShown && (dismissalCause != WZ_Notification_Dismissal_Reason::PROGRAMMATIC))
+		if (notification.isIgnorable() && !bWasFullyShown && (dismissalCause !=
+			WZ_Notification_Dismissal_Reason::PROGRAMMATIC))
 		{
 			notificationPrefs->incrementNotificationRuns(notification.displayOptions.uniqueNotificationIdentifier());
 		}
@@ -348,7 +376,7 @@ void removeInGameNotificationForm(WZ_Queued_Notification* request);
 #include "intdisplay.h"
 
 #ifndef GLM_ENABLE_EXPERIMENTAL
-	#define GLM_ENABLE_EXPERIMENTAL
+#define GLM_ENABLE_EXPERIMENTAL
 #endif
 #include <glm/gtx/transform.hpp>
 #include "lib/ivis_opengl/pieblitfunc.h"
@@ -372,10 +400,11 @@ protected:
 	W_NOTIFICATION(WZ_Queued_Notification* request, W_FORMINIT init = MakeNotificationFormInit());
 public:
 	~W_NOTIFICATION();
-	static std::shared_ptr<W_NOTIFICATION> make(WZ_Queued_Notification* request, W_FORMINIT init = MakeNotificationFormInit());
-	void run(W_CONTEXT *psContext) override;
-	void clicked(W_CONTEXT *psContext, WIDGET_KEY key) override;
-	void released(W_CONTEXT *psContext, WIDGET_KEY key) override;
+	static std::shared_ptr<W_NOTIFICATION> make(WZ_Queued_Notification* request,
+	                                            W_FORMINIT init = MakeNotificationFormInit());
+	void run(W_CONTEXT* psContext) override;
+	void clicked(W_CONTEXT* psContext, WIDGET_KEY key) override;
+	void released(W_CONTEXT* psContext, WIDGET_KEY key) override;
 	void display(int xOffset, int yOffset) override;
 public:
 	Vector2i getDragOffset() const { return dragOffset; }
@@ -416,7 +445,7 @@ static std::shared_ptr<W_SCREEN> psNotificationOverlayScreen = nullptr;
 static std::unique_ptr<WZ_Queued_Notification> currentNotification;
 static std::shared_ptr<W_NOTIFICATION> currentInGameNotification = nullptr;
 static uint32_t lastNotificationClosed = 0;
-static Vector2i lastDragOnNotificationStartPos(-1,-1);
+static Vector2i lastDragOnNotificationStartPos(-1, -1);
 
 std::unique_ptr<WZ_Queued_Notification> popNextQueuedNotification()
 {
@@ -424,12 +453,13 @@ std::unique_ptr<WZ_Queued_Notification> popNextQueuedNotification()
 	auto it = notificationQueue.begin();
 	while (it != notificationQueue.end())
 	{
-		auto & request = *it;
+		auto& request = *it;
 
 		if (!notificationPrefs->canShowNotification(request->notification))
 		{
 			// ignore this notification - remove from the list
-			debug(LOG_GUI, "Ignoring notification: %s", request->notification.displayOptions.uniqueNotificationIdentifier().c_str());
+			debug(LOG_GUI, "Ignoring notification: %s",
+			      request->notification.displayOptions.uniqueNotificationIdentifier().c_str());
 			if (request->notification.onIgnored)
 			{
 				request->notification.onIgnored(request->notification);
@@ -455,13 +485,13 @@ std::unique_ptr<WZ_Queued_Notification> popNextQueuedNotification()
 
 // ////////////////////////////////////////////////////////////////////////////
 // display a notification action button
-void displayNotificationAction(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+void displayNotificationAction(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
-	SDWORD			fx, fy, fw;
-	W_BUTTON		*psBut = (W_BUTTON *)psWidget;
-	bool			hilight = false;
-	bool			greyOut = /*psWidget->UserData ||*/ (psBut->getState() & WBUT_DISABLE); // if option is unavailable.
-	bool			isActionButton = (psBut->UserData == 1);
+	SDWORD fx, fy, fw;
+	W_BUTTON* psBut = (W_BUTTON*)psWidget;
+	bool hilight = false;
+	bool greyOut = /*psWidget->UserData ||*/ (psBut->getState() & WBUT_DISABLE); // if option is unavailable.
+	bool isActionButton = (psBut->UserData == 1);
 
 	// Any widget using displayTextOption must have its pUserData initialized to a (DisplayTextOptionCache*)
 	assert(psWidget->pUserData != nullptr);
@@ -469,24 +499,24 @@ void displayNotificationAction(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 
 	cache.wzText.setText(psBut->pText.toUtf8(), psBut->FontID);
 
-	if (psBut->isHighlighted())					// if mouse is over text then hilight.
+	if (psBut->isHighlighted()) // if mouse is over text then hilight.
 	{
 		hilight = true;
 	}
 
 	PIELIGHT colour;
 
-	if (greyOut)								// unavailable
+	if (greyOut) // unavailable
 	{
 		colour = WZCOL_TEXT_DARK;
 	}
-	else										// available
+	else // available
 	{
-		if (hilight || isActionButton)			// hilight
+		if (hilight || isActionButton) // hilight
 		{
 			colour = WZCOL_TEXT_BRIGHT;
 		}
-		else									// don't highlight
+		else // don't highlight
 		{
 			colour = WZCOL_TEXT_MEDIUM;
 		}
@@ -510,7 +540,7 @@ void displayNotificationAction(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 	fw = cache.wzText.width();
 	fy = yOffset + psWidget->y() + (psWidget->height() - cache.wzText.lineSize()) / 2 - cache.wzText.aboveBase();
 
-	if (psWidget->style & WBUT_TXTCENTRE)							//check for centering, calculate offset.
+	if (psWidget->style & WBUT_TXTCENTRE) //check for centering, calculate offset.
 	{
 		fx = xOffset + psWidget->x() + ((psWidget->width() - fw) / 2);
 	}
@@ -532,16 +562,16 @@ bool W_NOTIFICATION::dismissNotification(float animationSpeed /*= 1.0f*/)
 {
 	switch (request->status.state)
 	{
-		case WZ_Notification_Status::NotificationState::closing:
-		case WZ_Notification_Status::NotificationState::closed:
-			// do nothing
-			break;
-		default:
-			request->setWasProgrammaticallyDismissed();
-			request->status.setAnimationSpeed(animationSpeed);
-			request->setState(WZ_Notification_Status::NotificationState::closing);
-			return true;
-			break;
+	case WZ_Notification_Status::NotificationState::closing:
+	case WZ_Notification_Status::NotificationState::closed:
+		// do nothing
+		break;
+	default:
+		request->setWasProgrammaticallyDismissed();
+		request->status.setAnimationSpeed(animationSpeed);
+		request->setState(WZ_Notification_Status::NotificationState::closing);
+		return true;
+		break;
 	}
 
 	return false;
@@ -552,32 +582,37 @@ void W_NOTIFICATION::internalDismissNotification(float animationSpeed /*= 1.0f*/
 	// if notification is the one being displayed, animate it away by setting its state to closing
 	switch (request->status.state)
 	{
-		case WZ_Notification_Status::NotificationState::waiting:
-			// should not happen
-			break;
-////		case WZ_Notification_Status::NotificationState::opening:
-//			request->setState(WZ_Notification_Status::NotificationState::shown);
-//			break;
-		case WZ_Notification_Status::NotificationState::shown:
-			request->status.setAnimationSpeed(animationSpeed);
-			request->setState(WZ_Notification_Status::NotificationState::closing);
-			break;
-		default:
-			// do nothing
-			break;
+	case WZ_Notification_Status::NotificationState::waiting:
+		// should not happen
+		break;
+	////		case WZ_Notification_Status::NotificationState::opening:
+	//			request->setState(WZ_Notification_Status::NotificationState::shown);
+	//			break;
+	case WZ_Notification_Status::NotificationState::shown:
+		request->status.setAnimationSpeed(animationSpeed);
+		request->setState(WZ_Notification_Status::NotificationState::closing);
+		break;
+	default:
+		// do nothing
+		break;
 	}
 }
 
 W_NOTIFICATION::W_NOTIFICATION(WZ_Queued_Notification* request, W_FORMINIT init /*= MakeNotificationFormInit()*/)
-: W_FORM(&init)
-, request(request)
-{ }
-
-std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* request, W_FORMINIT init /*= MakeNotificationFormInit()*/)
+	: W_FORM(&init)
+	  , request(request)
 {
-	class make_shared_enabler : public W_NOTIFICATION {
+}
+
+std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* request,
+                                                     W_FORMINIT init /*= MakeNotificationFormInit()*/)
+{
+	class make_shared_enabler : public W_NOTIFICATION
+	{
 	public:
-		make_shared_enabler(WZ_Queued_Notification* request, W_FORMINIT init): W_NOTIFICATION(request, init) {}
+		make_shared_enabler(WZ_Queued_Notification* request, W_FORMINIT init): W_NOTIFICATION(request, init)
+		{
+		}
 	};
 	auto psNewNotificationForm = std::make_shared<make_shared_enabler>(request, init);
 	psNotificationOverlayScreen->psForm->attach(psNewNotificationForm);
@@ -590,49 +625,57 @@ std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* req
 
 	const int notificationWidth = psNewNotificationForm->width();
 
-//		/* Add the close button */
-//		W_BUTINIT sCloseButInit;
-//		sCloseButInit.formID = 0;
-//		sCloseButInit.id = 1;
-//		sCloseButInit.pTip = _("Close");
-//		sCloseButInit.pDisplay = intDisplayImageHilight;
-//		sCloseButInit.UserData = PACKDWORD_TRI(0, IMAGE_CLOSEHILIGHT , IMAGE_CLOSE);
-//		W_BUTTON* psCloseButton = new W_BUTTON(&sCloseButInit);
-//		psCloseButton->addOnClickHandler([psNewNotificationForm](W_BUTTON& button) {
-//			psNewNotificationForm->internalDismissNotification();
-//		});
-//		attach(psCloseButton);
-//		psCloseButton->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-//			int parentWidth = psWidget->parent()->width();
-//			psWidget->setGeometry(parentWidth - CLOSE_WIDTH, 0, CLOSE_WIDTH, CLOSE_HEIGHT);
-//		}));
+	//		/* Add the close button */
+	//		W_BUTINIT sCloseButInit;
+	//		sCloseButInit.formID = 0;
+	//		sCloseButInit.id = 1;
+	//		sCloseButInit.pTip = _("Close");
+	//		sCloseButInit.pDisplay = intDisplayImageHilight;
+	//		sCloseButInit.UserData = PACKDWORD_TRI(0, IMAGE_CLOSEHILIGHT , IMAGE_CLOSE);
+	//		W_BUTTON* psCloseButton = new W_BUTTON(&sCloseButInit);
+	//		psCloseButton->addOnClickHandler([psNewNotificationForm](W_BUTTON& button) {
+	//			psNewNotificationForm->internalDismissNotification();
+	//		});
+	//		attach(psCloseButton);
+	//		psCloseButton->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
+	//			int parentWidth = psWidget->parent()->width();
+	//			psWidget->setGeometry(parentWidth - CLOSE_WIDTH, 0, CLOSE_WIDTH, CLOSE_HEIGHT);
+	//		}));
 
 	// Calculate dimensions for text area
 	int imageSize = (psNewNotificationForm->pImageTexture) ? WZ_NOTIFICATION_IMAGE_SIZE : 0;
-	int maxTextWidth = notificationWidth - (WZ_NOTIFICATION_PADDING * 2) - imageSize - ((imageSize > 0) ? WZ_NOTIFICATION_PADDING : 0);
+	int maxTextWidth = notificationWidth - (WZ_NOTIFICATION_PADDING * 2) - imageSize - ((imageSize > 0)
+		? WZ_NOTIFICATION_PADDING
+		: 0);
 
 	// Add title
 	auto label_title = std::make_shared<W_LABEL>();
 	psNewNotificationForm->attach(label_title);
 	label_title->setGeometry(WZ_NOTIFICATION_PADDING, WZ_NOTIFICATION_PADDING, maxTextWidth, 12);
 	label_title->setFontColour(WZCOL_TEXT_BRIGHT);
-	int heightOfTitleLabel = label_title->setFormattedString(WzString::fromUtf8(request->notification.contentTitle), maxTextWidth, font_regular_bold, WZ_NOTIFICATION_CONTENTS_LINE_SPACING);
+	int heightOfTitleLabel = label_title->setFormattedString(WzString::fromUtf8(request->notification.contentTitle),
+	                                                         maxTextWidth, font_regular_bold,
+	                                                         WZ_NOTIFICATION_CONTENTS_LINE_SPACING);
 	label_title->setGeometry(label_title->x(), label_title->y(), maxTextWidth, heightOfTitleLabel);
 	label_title->setTextAlignment(WLAB_ALIGNTOPLEFT);
 	// set a custom hit-testing function that ignores all mouse input / clicks
-	label_title->setCustomHitTest([](WIDGET *psWidget, int x, int y) -> bool { return false; });
+	label_title->setCustomHitTest([](WIDGET* psWidget, int x, int y) -> bool { return false; });
 
 	// Add contents
 	auto label_contents = std::make_shared<W_LABEL>();
 	psNewNotificationForm->attach(label_contents);
-//	debug(LOG_GUI, "label_title.height=%d", label_title->height());
-	label_contents->setGeometry(WZ_NOTIFICATION_PADDING, WZ_NOTIFICATION_PADDING + label_title->height() + WZ_NOTIFICATION_CONTENTS_TOP_PADDING, maxTextWidth, 12);
+	//	debug(LOG_GUI, "label_title.height=%d", label_title->height());
+	label_contents->setGeometry(
+		WZ_NOTIFICATION_PADDING, WZ_NOTIFICATION_PADDING + label_title->height() + WZ_NOTIFICATION_CONTENTS_TOP_PADDING,
+		maxTextWidth, 12);
 	label_contents->setFontColour(WZCOL_TEXT_BRIGHT);
-	int heightOfContentsLabel = label_contents->setFormattedString(WzString::fromUtf8(request->notification.contentText), maxTextWidth, font_regular, WZ_NOTIFICATION_CONTENTS_LINE_SPACING);
+	int heightOfContentsLabel = label_contents->setFormattedString(
+		WzString::fromUtf8(request->notification.contentText), maxTextWidth, font_regular,
+		WZ_NOTIFICATION_CONTENTS_LINE_SPACING);
 	label_contents->setGeometry(label_contents->x(), label_contents->y(), maxTextWidth, heightOfContentsLabel);
 	label_contents->setTextAlignment(WLAB_ALIGNTOPLEFT);
 	// set a custom hit-testing function that ignores all mouse input / clicks
-	label_contents->setCustomHitTest([](WIDGET *psWidget, int x, int y) -> bool { return false; });
+	label_contents->setCustomHitTest([](WIDGET* psWidget, int x, int y) -> bool { return false; });
 
 	// Add action buttons
 	std::string dismissLabel = _("Dismiss");
@@ -650,10 +693,11 @@ std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* req
 	sButInit.y = buttonsTop;
 	sButInit.style |= WBUT_TXTCENTRE;
 	sButInit.UserData = 0; // store whether "Action" button or not
-	sButInit.initPUserDataFunc = []() -> void * { return new DisplayNotificationButtonCache(); };
-	sButInit.onDelete = [](WIDGET *psWidget) {
+	sButInit.initPUserDataFunc = []() -> void* { return new DisplayNotificationButtonCache(); };
+	sButInit.onDelete = [](WIDGET* psWidget)
+	{
 		assert(psWidget->pUserData != nullptr);
-		delete static_cast<DisplayNotificationButtonCache *>(psWidget->pUserData);
+		delete static_cast<DisplayNotificationButtonCache*>(psWidget->pUserData);
 		psWidget->pUserData = nullptr;
 	};
 	sButInit.pDisplay = displayNotificationAction;
@@ -671,16 +715,19 @@ std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* req
 		sButInit.pText = actionLabel.c_str();
 		psActionButton = std::make_shared<W_BUTTON>(&sButInit);
 		psNewNotificationForm->attach(psActionButton);
-		psActionButton->addOnClickHandler([](W_BUTTON& button) {
+		psActionButton->addOnClickHandler([](W_BUTTON& button)
+		{
 			auto psNewNotificationForm = std::dynamic_pointer_cast<W_NOTIFICATION>(button.parent());
 			ASSERT_OR_RETURN(, psNewNotificationForm != nullptr, "null parent");
 			if (psNewNotificationForm->request->notification.action.onAction)
 			{
-				psNewNotificationForm->request->notification.action.onAction(psNewNotificationForm->request->notification);
+				psNewNotificationForm->request->notification.action.onAction(
+					psNewNotificationForm->request->notification);
 			}
 			else
 			{
-				debug(LOG_ERROR, "Action defined (\"%s\"), but no action handler!", psNewNotificationForm->request->notification.action.title.c_str());
+				debug(LOG_ERROR, "Action defined (\"%s\"), but no action handler!",
+				      psNewNotificationForm->request->notification.action.title.c_str());
 			}
 			psNewNotificationForm->request->setWasDismissedByActionButton();
 			psNewNotificationForm->internalDismissNotification();
@@ -694,11 +741,14 @@ std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* req
 		sButInit.id = 3;
 		sButInit.FontID = font_regular;
 		sButInit.width = iV_GetTextWidth(dismissLabel.c_str(), font_regular) + 18;
-		sButInit.x = (short)(((psActionButton) ? (psActionButton->x()) - WZ_NOTIFICATION_BETWEEN_BUTTON_PADDING : psNewNotificationForm->width() - WZ_NOTIFICATION_PADDING) - sButInit.width);
+		sButInit.x = (short)(((psActionButton)
+			                      ? (psActionButton->x()) - WZ_NOTIFICATION_BETWEEN_BUTTON_PADDING
+			                      : psNewNotificationForm->width() - WZ_NOTIFICATION_PADDING) - sButInit.width);
 		sButInit.pText = dismissLabel.c_str();
 		sButInit.UserData = 0; // store regular state
 		psDismissButton = std::make_shared<W_BUTTON>(&sButInit);
-		psDismissButton->addOnClickHandler([](W_BUTTON& button) {
+		psDismissButton->addOnClickHandler([](W_BUTTON& button)
+		{
 			auto psNewNotificationForm = std::dynamic_pointer_cast<W_NOTIFICATION>(button.parent());
 			ASSERT_OR_RETURN(, psNewNotificationForm != nullptr, "null parent");
 			psNewNotificationForm->internalDismissNotification();
@@ -709,7 +759,8 @@ std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* req
 	if (request->notification.isIgnorable() && !request->notification.displayOptions.isOneTimeNotification())
 	{
 		ASSERT(notificationPrefs, "Notification preferences not loaded!");
-		auto numTimesShown = notificationPrefs->getNotificationRuns(request->notification.displayOptions.uniqueNotificationIdentifier());
+		auto numTimesShown = notificationPrefs->getNotificationRuns(
+			request->notification.displayOptions.uniqueNotificationIdentifier());
 		if (numTimesShown >= request->notification.displayOptions.numTimesSeenBeforeDoNotShowAgainOption())
 		{
 			// Display "do not show again" button with checkbox
@@ -719,7 +770,8 @@ std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* req
 			pDoNotShowAgainButton->pText = _("Do not show again");
 			pDoNotShowAgainButton->FontID = font_small;
 			Vector2i minimumDimensions = pDoNotShowAgainButton->calculateDesiredDimensions();
-			pDoNotShowAgainButton->setGeometry(WZ_NOTIFICATION_PADDING, buttonsTop, minimumDimensions.x, std::max(minimumDimensions.y, WZ_NOTIFICATION_BUTTON_HEIGHT));
+			pDoNotShowAgainButton->setGeometry(WZ_NOTIFICATION_PADDING, buttonsTop, minimumDimensions.x,
+			                                   std::max(minimumDimensions.y, WZ_NOTIFICATION_BUTTON_HEIGHT));
 			psNewNotificationForm->pOnDoNotShowAgainCheckbox = pDoNotShowAgainButton;
 		}
 	}
@@ -729,7 +781,8 @@ std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* req
 	uint16_t calculatedHeight = bottom_labelContents + WZ_NOTIFICATION_PADDING;
 	if (psActionButton || psDismissButton)
 	{
-		int maxButtonBottom = std::max<int>((psActionButton) ? (psActionButton->y() + psActionButton->height()) : 0, (psDismissButton) ? (psDismissButton->y() + psDismissButton->height()) : 0);
+		int maxButtonBottom = std::max<int>((psActionButton) ? (psActionButton->y() + psActionButton->height()) : 0,
+		                                    (psDismissButton) ? (psDismissButton->y() + psDismissButton->height()) : 0);
 		calculatedHeight = std::max<int>(calculatedHeight, maxButtonBottom + WZ_NOTIFICATION_PADDING);
 	}
 	// Also factor in the image, if one is present
@@ -737,7 +790,8 @@ std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* req
 	{
 		calculatedHeight = std::max<int>(calculatedHeight, imageSize + (WZ_NOTIFICATION_PADDING * 2));
 	}
-	psNewNotificationForm->setGeometry(psNewNotificationForm->x(), psNewNotificationForm->y(), psNewNotificationForm->width(), calculatedHeight);
+	psNewNotificationForm->setGeometry(psNewNotificationForm->x(), psNewNotificationForm->y(),
+	                                   psNewNotificationForm->width(), calculatedHeight);
 
 	return psNewNotificationForm;
 }
@@ -753,7 +807,8 @@ W_NOTIFICATION::~W_NOTIFICATION()
 
 #include "lib/ivis_opengl/piestate.h"
 
-gfx_api::texture* makeTexture(unsigned int width, unsigned int height, const gfx_api::pixel_format& format, const void *image)
+gfx_api::texture* makeTexture(unsigned int width, unsigned int height, const gfx_api::pixel_format& format,
+                              const void* image)
 {
 	size_t mip_count = static_cast<size_t>(floor(log(std::max(width, height)))) + 1;
 	gfx_api::texture* mTexture = gfx_api::context::get().create_texture(mip_count, width, height, format);
@@ -777,7 +832,7 @@ gfx_api::texture* WZ_Notification_Image::loadImageToTexture() const
 	if (!image.imagePath().empty())
 	{
 		const std::string& filename = image.imagePath();
-		const char *extension = strrchr(filename.c_str(), '.'); // determine the filetype
+		const char* extension = strrchr(filename.c_str(), '.'); // determine the filetype
 
 		if (!extension || strcmp(extension, ".png") != 0)
 		{
@@ -829,9 +884,11 @@ float EaseInCubic(float p)
 }
 
 #define WZ_NOTIFICATION_OPEN_DURATION (GAME_TICKS_PER_SEC*1) // Time duration for notification open animation, in game ticks
+
 #define WZ_NOTIFICATION_CLOSE_DURATION (WZ_NOTIFICATION_OPEN_DURATION / 2)
 #define WZ_NOTIFICATION_TOP_PADDING 5
 #define WZ_NOTIFICATION_MIN_DELAY_BETWEEN (GAME_TICKS_PER_SEC*1) // Minimum delay between display of notifications, in game ticks
+
 
 bool W_NOTIFICATION::calculateNotificationWidgetPos()
 {
@@ -848,11 +905,11 @@ bool W_NOTIFICATION::calculateNotificationWidgetPos()
 	// calculate positioning based on state and time
 	switch (request->status.state)
 	{
-		case WZ_Notification_Status::NotificationState::waiting:
-			// first chance to display
-			request->setState(WZ_Notification_Status::NotificationState::opening);
-			// fallthrough
-		case WZ_Notification_Status::NotificationState::opening:
+	case WZ_Notification_Status::NotificationState::waiting:
+		// first chance to display
+		request->setState(WZ_Notification_Status::NotificationState::opening);
+	// fallthrough
+	case WZ_Notification_Status::NotificationState::opening:
 		{
 			// calculate opening progress based on the stateStartTime
 			const uint32_t startTime = request->status.stateStartTime;
@@ -860,7 +917,10 @@ bool W_NOTIFICATION::calculateNotificationWidgetPos()
 			uint32_t endTime = startTime + uint32_t(openAnimationDuration);
 			if (realTime < endTime)
 			{
-				y = static_cast<int>((-height()) + (EaseOutQuint((float(realTime) - float(startTime)) / float(openAnimationDuration)) * (endingYPosition + height())) + 1);
+				y = static_cast<int>((-height()) + (EaseOutQuint(
+						(float(realTime) - float(startTime)) / float(openAnimationDuration)) * (endingYPosition +
+						height()))
+					+ 1);
 				if (!(y + getDragOffset().y >= endingYPosition))
 				{
 					break;
@@ -873,7 +933,7 @@ bool W_NOTIFICATION::calculateNotificationWidgetPos()
 			}
 			request->setState(WZ_Notification_Status::NotificationState::shown);
 		} // fallthrough
-		case WZ_Notification_Status::NotificationState::shown:
+	case WZ_Notification_Status::NotificationState::shown:
 		{
 			const auto& duration = request->notification.duration;
 			if (duration > 0 && !isActivelyBeingDragged())
@@ -883,7 +943,8 @@ bool W_NOTIFICATION::calculateNotificationWidgetPos()
 					// when dragging a notification more *open* (/down),
 					// ensure that the notification remains displayed for at least one additional second
 					// beyond the bounce-back from the drag release
-					request->status.stateStartTime = std::max<uint32_t>(request->status.stateStartTime, realTime - duration + GAME_TICKS_PER_SEC);
+					request->status.stateStartTime = std::max<uint32_t>(request->status.stateStartTime,
+					                                                    realTime - duration + GAME_TICKS_PER_SEC);
 				}
 			}
 			if (duration == 0 || (realTime < (request->status.stateStartTime + duration)) || isActivelyBeingDragged())
@@ -896,7 +957,7 @@ bool W_NOTIFICATION::calculateNotificationWidgetPos()
 			}
 			request->setState(WZ_Notification_Status::NotificationState::closing);
 		} // fallthrough
-		case WZ_Notification_Status::NotificationState::closing:
+	case WZ_Notification_Status::NotificationState::closing:
 		{
 			// calculate closing progress based on the stateStartTime
 			const uint32_t startTime = request->status.stateStartTime;
@@ -921,20 +982,19 @@ bool W_NOTIFICATION::calculateNotificationWidgetPos()
 				}
 			}
 			request->setState(WZ_Notification_Status::NotificationState::closed);
-
 		} // fallthrough
-		case WZ_Notification_Status::NotificationState::closed:
-			// widget is now off-screen - get checkbox state (if present)
-			bool bDoNotShowAgain = false;
-			if (pOnDoNotShowAgainCheckbox)
-			{
-				bDoNotShowAgain = pOnDoNotShowAgainCheckbox->getIsChecked();
-			}
-			// then destroy the widget, and finalize the notification request
-			removeInGameNotificationForm(request);
-			finishedProcessingNotificationRequest(request, bDoNotShowAgain); // after this, request is invalid!
-			request = nullptr; // TEMP
-			return true; // processed notification
+	case WZ_Notification_Status::NotificationState::closed:
+		// widget is now off-screen - get checkbox state (if present)
+		bool bDoNotShowAgain = false;
+		if (pOnDoNotShowAgainCheckbox)
+		{
+			bDoNotShowAgain = pOnDoNotShowAgainCheckbox->getIsChecked();
+		}
+	// then destroy the widget, and finalize the notification request
+		removeInGameNotificationForm(request);
+		finishedProcessingNotificationRequest(request, bDoNotShowAgain); // after this, request is invalid!
+		request = nullptr; // TEMP
+		return true; // processed notification
 	}
 
 	x += getDragOffset().x;
@@ -946,7 +1006,7 @@ bool W_NOTIFICATION::calculateNotificationWidgetPos()
 }
 
 /* Run a notification widget */
-void W_NOTIFICATION::run(W_CONTEXT *psContext)
+void W_NOTIFICATION::run(W_CONTEXT* psContext)
 {
 	if (isInDragMode && mouseDown(MOUSE_LMB))
 	{
@@ -959,7 +1019,7 @@ void W_NOTIFICATION::run(W_CONTEXT *psContext)
 			// dragging up (to close) - respond 1 to 1
 			int distanceY = dragStartY - currMouseY;
 			dragOffset.y = (distanceY > 0) ? -(distanceY) : 0;
-//			debug(LOG_GUI, "dragging up, dragOffset.y: (%d)", dragOffset.y);
+			//			debug(LOG_GUI, "dragging up, dragOffset.y: (%d)", dragOffset.y);
 		}
 		else if (currMouseY > dragStartY)
 		{
@@ -967,7 +1027,7 @@ void W_NOTIFICATION::run(W_CONTEXT *psContext)
 			const int verticalLimit = 10;
 			int distanceY = currMouseY - dragStartY;
 			dragOffset.y = static_cast<int>(verticalLimit * (1 + log10(float(distanceY) / float(verticalLimit))));
-//			debug(LOG_GUI, "dragging down, dragOffset.y: (%d)", dragOffset.y);
+			//			debug(LOG_GUI, "dragging down, dragOffset.y: (%d)", dragOffset.y);
 		}
 		else
 		{
@@ -978,7 +1038,7 @@ void W_NOTIFICATION::run(W_CONTEXT *psContext)
 	{
 		if (isInDragMode && !mouseDown(MOUSE_LMB))
 		{
-//			debug(LOG_GUI, "No longer in drag mode");
+			//			debug(LOG_GUI, "No longer in drag mode");
 			isInDragMode = false;
 			dragEndedTime = realTime;
 			dragOffsetEnded = dragOffset;
@@ -990,7 +1050,8 @@ void W_NOTIFICATION::run(W_CONTEXT *psContext)
 			const uint32_t dragDecayDuration = GAME_TICKS_PER_SEC * 1;
 			if (dragOffset.y != 0)
 			{
-				dragOffset.y = dragOffsetEnded.y - (int)(float(dragOffsetEnded.y) * EaseOutElastic((float(realTime) - float(dragEndedTime)) / float(dragDecayDuration)));
+				dragOffset.y = dragOffsetEnded.y - (int)(float(dragOffsetEnded.y) * EaseOutElastic(
+					(float(realTime) - float(dragEndedTime)) / float(dragDecayDuration)));
 			}
 		}
 	}
@@ -998,25 +1059,25 @@ void W_NOTIFICATION::run(W_CONTEXT *psContext)
 	calculateNotificationWidgetPos();
 }
 
-void W_NOTIFICATION::clicked(W_CONTEXT *psContext, WIDGET_KEY key)
+void W_NOTIFICATION::clicked(W_CONTEXT* psContext, WIDGET_KEY key)
 {
 	ASSERT_OR_RETURN(, request != nullptr, "request is null");
 
 	if (request->status.state == WZ_Notification_Status::NotificationState::closing)
 	{
 		// if clicked while closing, set state to shown
-//		debug(LOG_GUI, "Click while closing - set to shown");
+		//		debug(LOG_GUI, "Click while closing - set to shown");
 		request->status.state = WZ_Notification_Status::NotificationState::shown;
 		request->status.stateStartTime = realTime;
 	}
 
 	if (geometry().contains(psContext->mx, psContext->my))
 	{
-//		debug(LOG_GUI, "Enabling drag mode");
+		//		debug(LOG_GUI, "Enabling drag mode");
 		isInDragMode = true;
 		dragStartMousePos.x = psContext->mx;
 		dragStartMousePos.y = psContext->my;
-//		debug(LOG_GUI, "dragStartMousePos: (%d x %d)", dragStartMousePos.x, dragStartMousePos.y);
+		//		debug(LOG_GUI, "dragStartMousePos: (%d x %d)", dragStartMousePos.x, dragStartMousePos.y);
 		dragStartedTime = realTime;
 		notificationsDidStartDragOnNotification(dragStartMousePos);
 	}
@@ -1024,9 +1085,9 @@ void W_NOTIFICATION::clicked(W_CONTEXT *psContext, WIDGET_KEY key)
 
 #define WZ_NOTIFICATION_DOWN_DRAG_DISCARD_CLICK_THRESHOLD	5
 
-void W_NOTIFICATION::released(W_CONTEXT *psContext, WIDGET_KEY key)
+void W_NOTIFICATION::released(W_CONTEXT* psContext, WIDGET_KEY key)
 {
-//	debug(LOG_GUI, "released");
+	//	debug(LOG_GUI, "released");
 
 	if (request)
 	{
@@ -1065,7 +1126,8 @@ void W_NOTIFICATION::display(int xOffset, int yOffset)
 		int image_x0 = imageLeft;
 		int image_y0 = imageTop;
 
-		iV_DrawImageAnisotropic(*pImageTexture, Vector2i(image_x0, image_y0), Vector2f(0,0), Vector2f(WZ_NOTIFICATION_IMAGE_SIZE, WZ_NOTIFICATION_IMAGE_SIZE), 0.f, WZCOL_WHITE);
+		iV_DrawImageAnisotropic(*pImageTexture, Vector2i(image_x0, image_y0), Vector2f(0, 0),
+		                        Vector2f(WZ_NOTIFICATION_IMAGE_SIZE, WZ_NOTIFICATION_IMAGE_SIZE), 0.f, WZCOL_WHITE);
 	}
 }
 
@@ -1087,7 +1149,8 @@ bool notificationsInitialize()
 
 	// Initialize the notifications overlay screen
 	psNotificationOverlayScreen = W_SCREEN::make();
-	psNotificationOverlayScreen->psForm->hide(); // hiding the root form does not stop display of children, but *does* prevent it from accepting mouse over itself - i.e. basically makes it transparent
+	psNotificationOverlayScreen->psForm->hide();
+	// hiding the root form does not stop display of children, but *does* prevent it from accepting mouse over itself - i.e. basically makes it transparent
 	widgRegisterOverlayScreen(psNotificationOverlayScreen, std::numeric_limits<uint16_t>::max());
 
 	return true;
@@ -1188,7 +1251,8 @@ void runNotifications()
 			UDWORD currDragStartX, currDragStartY;
 			if (mouseDrag(MOUSE_LMB, &currDragStartX, &currDragStartY))
 			{
-				if (currDragStartX != lastDragOnNotificationStartPos.x || currDragStartY != lastDragOnNotificationStartPos.y)
+				if (currDragStartX != lastDragOnNotificationStartPos.x || currDragStartY !=
+					lastDragOnNotificationStartPos.y)
 				{
 					notificationDidStopDragOnNotification(); // ensure last notification drag position is cleared
 				}
@@ -1216,9 +1280,12 @@ void finishedProcessingNotificationRequest(WZ_Queued_Notification* request, bool
 
 	if (doNotShowAgain && !request->wasProgrammaticallyDismissed())
 	{
-		ASSERT(!request->notification.displayOptions.uniqueNotificationIdentifier().empty(), "Do Not Show Again was selected, but notification has no ignore key");
-		debug(LOG_GUI, "Do Not Show Notification Again: %s", request->notification.displayOptions.uniqueNotificationIdentifier().c_str());
-		notificationPrefs->doNotShowNotificationAgain(request->notification.displayOptions.uniqueNotificationIdentifier());
+		ASSERT(!request->notification.displayOptions.uniqueNotificationIdentifier().empty(),
+		       "Do Not Show Again was selected, but notification has no ignore key");
+		debug(LOG_GUI, "Do Not Show Notification Again: %s",
+		      request->notification.displayOptions.uniqueNotificationIdentifier().c_str());
+		notificationPrefs->doNotShowNotificationAgain(
+			request->notification.displayOptions.uniqueNotificationIdentifier());
 	}
 
 	if (request->notification.onDismissed)
@@ -1248,10 +1315,13 @@ void addNotification(const WZ_Notification& notification, const WZ_Notification_
 	}
 
 	// Add the notification to the notification system's queue
-	notificationQueue.push_back(std::unique_ptr<WZ_Queued_Notification>(new WZ_Queued_Notification(notification, WZ_Notification_Status(realTime), trigger)));
+	notificationQueue.push_back(
+		std::unique_ptr<WZ_Queued_Notification>(
+			new WZ_Queued_Notification(notification, WZ_Notification_Status(realTime), trigger)));
 }
 
-bool removeNotificationPreferencesIf(const std::function<bool (const std::string& uniqueNotificationIdentifier)>& matchIdentifierFunc)
+bool removeNotificationPreferencesIf(
+	const std::function<bool (const std::string& uniqueNotificationIdentifier)>& matchIdentifierFunc)
 {
 	ASSERT_OR_RETURN(false, notificationPrefs, "notificationPrefs is null");
 	return notificationPrefs->removeNotificationPreferencesIf(matchIdentifierFunc);
@@ -1260,9 +1330,11 @@ bool removeNotificationPreferencesIf(const std::function<bool (const std::string
 // Whether one or more notifications with the specified tag (exact match) are currently-displayed or queued
 // If `scope` is `DISPLAYED_ONLY`, only currently-displayed notifications will be processed
 // If `scope` is `QUEUED_ONLY`, only queued notifications will be processed
-bool hasNotificationsWithTag(const std::string& tag, NotificationScope scope /*= NotificationScope::DISPLAYED_AND_QUEUED*/)
+bool hasNotificationsWithTag(const std::string& tag,
+                             NotificationScope scope /*= NotificationScope::DISPLAYED_AND_QUEUED*/)
 {
-	if ((scope == NotificationScope::DISPLAYED_AND_QUEUED || scope == NotificationScope::DISPLAYED_ONLY) && currentInGameNotification)
+	if ((scope == NotificationScope::DISPLAYED_AND_QUEUED || scope == NotificationScope::DISPLAYED_ONLY) &&
+		currentInGameNotification)
 	{
 		if (currentInGameNotification->notificationTag() == tag)
 		{
@@ -1288,9 +1360,11 @@ bool hasNotificationsWithTag(const std::string& tag, NotificationScope scope /*=
 // If `scope` is `QUEUED_ONLY`, only queued notifications will be processed
 //
 // Returns: `true` if one or more notifications were cancelled or dismissed
-bool cancelOrDismissNotificationsWithTag(const std::string& desiredTag, NotificationScope scope /*= NotificationScope::DISPLAYED_AND_QUEUED*/)
+bool cancelOrDismissNotificationsWithTag(const std::string& desiredTag,
+                                         NotificationScope scope /*= NotificationScope::DISPLAYED_AND_QUEUED*/)
 {
-	return cancelOrDismissNotificationIfTag([desiredTag](const std::string& tag) {
+	return cancelOrDismissNotificationIfTag([desiredTag](const std::string& tag)
+	{
 		return desiredTag == tag;
 	}, scope);
 }
@@ -1302,17 +1376,20 @@ bool cancelOrDismissNotificationsWithTag(const std::string& desiredTag, Notifica
 // If `scope` is `QUEUED_ONLY`, only queued notifications will be processed
 //
 // Returns: `true` if one or more notifications were cancelled or dismissed
-bool cancelOrDismissNotificationIfTag(const std::function<bool (const std::string& tag)>& matchTagFunc, NotificationScope scope /*= NotificationScope::DISPLAYED_AND_QUEUED*/)
+bool cancelOrDismissNotificationIfTag(const std::function<bool (const std::string& tag)>& matchTagFunc,
+                                      NotificationScope scope /*= NotificationScope::DISPLAYED_AND_QUEUED*/)
 {
 	size_t numCancelledNotifications = 0;
 
-	if ((scope == NotificationScope::DISPLAYED_AND_QUEUED || scope == NotificationScope::DISPLAYED_ONLY) && currentInGameNotification)
+	if ((scope == NotificationScope::DISPLAYED_AND_QUEUED || scope == NotificationScope::DISPLAYED_ONLY) &&
+		currentInGameNotification)
 	{
 		if (matchTagFunc(currentInGameNotification->notificationTag()))
 		{
 			if (currentInGameNotification->dismissNotification())
 			{
-				debug(LOG_GUI, "Dismissing currently-displayed notification with tag: [%s]", currentInGameNotification->notificationTag().c_str());
+				debug(LOG_GUI, "Dismissing currently-displayed notification with tag: [%s]",
+				      currentInGameNotification->notificationTag().c_str());
 				++numCancelledNotifications;
 			}
 		}
@@ -1323,12 +1400,13 @@ bool cancelOrDismissNotificationIfTag(const std::function<bool (const std::strin
 		auto it = notificationQueue.begin();
 		while (it != notificationQueue.end())
 		{
-			auto & request = *it;
+			auto& request = *it;
 
 			if (matchTagFunc(request->notification.tag))
 			{
 				// cancel this notification - remove from the queue
-				debug(LOG_GUI, "Cancelling queued notification: [%s]; with tag: [%s]", request->notification.contentTitle.c_str(), request->notification.tag.c_str());
+				debug(LOG_GUI, "Cancelling queued notification: [%s]; with tag: [%s]",
+				      request->notification.contentTitle.c_str(), request->notification.tag.c_str());
 				it = notificationQueue.erase(it);
 				++numCancelledNotifications;
 				continue;

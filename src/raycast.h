@@ -34,7 +34,7 @@
  * \param data Payload (store intermediate results here)
  * \return true if ore points are required, false otherwise
  */
-typedef bool (*RAY_CALLBACK)(Vector2i pos, int32_t dist, void *data);
+typedef bool (*RAY_CALLBACK)(Vector2i pos, int32_t dist, void* data);
 
 
 /*!
@@ -44,11 +44,11 @@ typedef bool (*RAY_CALLBACK)(Vector2i pos, int32_t dist, void *data);
  * \param callback Callback to call for each passed tile
  * \param data Data to pass through to the callback
  */
-void rayCast(Vector2i src, Vector2i dst, RAY_CALLBACK callback, void *data);
+void rayCast(Vector2i src, Vector2i dst, RAY_CALLBACK callback, void* data);
 
 
 // Calculates the maximum height and distance found along a line from any
 // point to the edge of the grid
-void getBestPitchToEdgeOfGrid(UDWORD x, UDWORD y, uint16_t direction, uint16_t *pitch);
+void getBestPitchToEdgeOfGrid(UDWORD x, UDWORD y, uint16_t direction, uint16_t* pitch);
 
 #endif // __INCLUDED_SRC_RAYCAST_H__

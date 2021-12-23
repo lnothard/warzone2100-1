@@ -35,9 +35,12 @@
  */
 enum TILE_ID
 {
-	RIVERBED_TILE = 5, //! Underwater ground
-	WATER_TILE = 17, //! Water surface
-	RUBBLE_TILE = 54, //! You can drive over these
+	RIVERBED_TILE = 5,
+	//! Underwater ground
+	WATER_TILE = 17,
+	//! Water surface
+	RUBBLE_TILE = 54,
+	//! You can drive over these
 	BLOCKING_RUBBLE_TILE = 67 //! You cannot drive over these
 };
 
@@ -64,36 +67,36 @@ extern int BlueprintTrackAnimationSpeed;
 
 float getViewDistance();
 void setViewDistance(float dist);
-extern bool	radarOnScreen;
-extern bool	radarPermitted;
+extern bool radarOnScreen;
+extern bool radarPermitted;
 bool radarVisible();
 
 extern bool rangeOnScreen; // Added to get sensor/gun range on screen.  -Q 5-10-05
 void setViewPos(UDWORD x, UDWORD y, bool Pan);
-Vector2i    getPlayerPos();
+Vector2i getPlayerPos();
 void setPlayerPos(SDWORD x, SDWORD y);
-void disp3d_setView(iView *newView);
+void disp3d_setView(iView* newView);
 void disp3d_oldView(); // for save games <= 10
-void disp3d_getView(iView *newView);
+void disp3d_getView(iView* newView);
 void screenCoordToWorld(const Vector2i, Vector2i&, SDWORD&, SDWORD&);
 void draw3DScene();
-void renderStructure(STRUCTURE *psStructure, const glm::mat4 &viewMatrix);
-void renderFeature(FEATURE *psFeature, const glm::mat4 &viewMatrix);
-void renderProximityMsg(PROXIMITY_DISPLAY	*psProxDisp, const glm::mat4 &viewMatrix);
-void renderProjectile(PROJECTILE *psCurr, const glm::mat4 &viewMatrix);
-void renderDeliveryPoint(FLAG_POSITION *psPosition, bool blueprint, const glm::mat4 &viewMatrix);
+void renderStructure(STRUCTURE* psStructure, const glm::mat4& viewMatrix);
+void renderFeature(FEATURE* psFeature, const glm::mat4& viewMatrix);
+void renderProximityMsg(PROXIMITY_DISPLAY* psProxDisp, const glm::mat4& viewMatrix);
+void renderProjectile(PROJECTILE* psCurr, const glm::mat4& viewMatrix);
+void renderDeliveryPoint(FLAG_POSITION* psPosition, bool blueprint, const glm::mat4& viewMatrix);
 
-void calcScreenCoords(DROID *psDroid, const glm::mat4 &viewMatrix);
+void calcScreenCoords(DROID* psDroid, const glm::mat4& viewMatrix);
 ENERGY_BAR toggleEnergyBars();
-void drawDroidSelection(DROID *psDroid, bool drawBox);
+void drawDroidSelection(DROID* psDroid, bool drawBox);
 
 bool doWeDrawProximitys();
 void setProximityDraw(bool val);
 
-bool	clipXY(SDWORD x, SDWORD y);
-inline bool clipShapeOnScreen(const iIMDShape *pIMD, const glm::mat4& viewModelMatrix, int overdrawScreenPoints = 10);
-bool clipDroidOnScreen(DROID *psDroid, const glm::mat4& viewModelMatrix, int overdrawScreenPoints = 25);
-bool clipStructureOnScreen(STRUCTURE *psStructure, const glm::mat4 &viewModelMatrix, int overdrawScreenPoints = 0);
+bool clipXY(SDWORD x, SDWORD y);
+inline bool clipShapeOnScreen(const iIMDShape* pIMD, const glm::mat4& viewModelMatrix, int overdrawScreenPoints = 10);
+bool clipDroidOnScreen(DROID* psDroid, const glm::mat4& viewModelMatrix, int overdrawScreenPoints = 25);
+bool clipStructureOnScreen(STRUCTURE* psStructure, const glm::mat4& viewModelMatrix, int overdrawScreenPoints = 0);
 
 bool init3DView();
 void shutdown3DView();
@@ -101,19 +104,23 @@ extern iView playerPos;
 extern bool selectAttempt;
 
 extern SDWORD scrollSpeed;
-void assignSensorTarget(BASE_OBJECT *psObj);
+void assignSensorTarget(BASE_OBJECT* psObj);
 void assignDestTarget();
 UDWORD getWaterTileNum();
 void setUnderwaterTile(UDWORD num);
 UDWORD getRubbleTileNum();
 void setRubbleTile(UDWORD num);
 
-STRUCTURE *getTileBlueprintStructure(int mapX, int mapY);  ///< Gets the blueprint at those coordinates, if any. Previous return value becomes invalid.
-STRUCTURE_STATS const *getTileBlueprintStats(int mapX, int mapY);  ///< Gets the structure stats of the blueprint at those coordinates, if any.
-bool anyBlueprintTooClose(STRUCTURE_STATS const *stats, Vector2i pos, uint16_t dir);  ///< Checks if any blueprint is too close to the given structure.
+STRUCTURE* getTileBlueprintStructure(int mapX, int mapY);
+///< Gets the blueprint at those coordinates, if any. Previous return value becomes invalid.
+STRUCTURE_STATS const* getTileBlueprintStats(int mapX, int mapY);
+///< Gets the structure stats of the blueprint at those coordinates, if any.
+bool anyBlueprintTooClose(STRUCTURE_STATS const* stats, Vector2i pos, uint16_t dir);
+///< Checks if any blueprint is too close to the given structure.
 void clearBlueprints();
 
-void display3dScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight);
+void display3dScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+                                  unsigned int newHeight);
 
 extern SDWORD mouseTileX, mouseTileY;
 extern Vector2i mousePos;
@@ -124,9 +131,9 @@ extern bool showPath;
 extern const Vector2i visibleTiles;
 
 /*returns the graphic ID for a droid rank*/
-UDWORD  getDroidRankGraphic(DROID *psDroid);
+UDWORD getDroidRankGraphic(DROID* psDroid);
 
-void setSkyBox(const char *page, float mywind, float myscale);
+void setSkyBox(const char* page, float mywind, float myscale);
 
 #define	BASE_MUZZLE_FLASH_DURATION	(GAME_TICKS_PER_SEC/10)
 #define	EFFECT_MUZZLE_ADDITIVE		128
@@ -138,7 +145,8 @@ extern bool CauseCrash;
 extern bool tuiTargetOrigin;
 
 /// Draws using the animation systems. Usually want to use in a while loop to get all model levels.
-bool drawShape(BASE_OBJECT *psObj, iIMDShape *strImd, int colour, PIELIGHT buildingBrightness, int pieFlag, int pieFlagData, const glm::mat4& viewMatrix);
+bool drawShape(BASE_OBJECT* psObj, iIMDShape* strImd, int colour, PIELIGHT buildingBrightness, int pieFlag,
+               int pieFlagData, const glm::mat4& viewMatrix);
 
 int calculateCameraHeightAt(int tileX, int tileY);
 

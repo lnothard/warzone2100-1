@@ -39,8 +39,8 @@
 
 struct CHEAT_ENTRY
 {
-	const char *pName;
-	void (*function)();  // pointer to void* function
+	const char* pName;
+	void (*function)(); // pointer to void* function
 };
 
 bool Cheated = false;
@@ -51,40 +51,40 @@ static CHEAT_ENTRY cheatCodes[] =
 	{"teach us", kf_TeachSelected}, // give experience to selected units
 	{"makemehero", kf_MakeMeHero}, // make selected units Heros
 	{"untouchable", kf_Unselectable}, // make selected droids unselectable
-	{"clone wars", []{ kf_CloneSelected(10); }}, // clone selected units
-	{"clone wars!", []{ kf_CloneSelected(40); }}, // clone selected units
-	{"clone wars!!", []{ kf_CloneSelected(135); }}, // clone selected units
+	{"clone wars", [] { kf_CloneSelected(10); }}, // clone selected units
+	{"clone wars!", [] { kf_CloneSelected(40); }}, // clone selected units
+	{"clone wars!!", [] { kf_CloneSelected(135); }}, // clone selected units
 	{"noassert", kf_NoAssert}, // turn off asserts
 	{"count me", kf_ShowNumObjects}, // give a count of objects in the world
-	{"give all", kf_AllAvailable},	// give all
+	{"give all", kf_AllAvailable}, // give all
 	{"research all", kf_FinishAllResearch}, // research everything at once
 	{"superpower", kf_MaxPower}, // get tons of power
 	{"more power", kf_UpThePower}, // get tons of power
-	{"deity", kf_ToggleGodMode},	//from above
-	{"droidinfo", kf_DebugDroidInfo},	//show unit stats
-	{"sensors", kf_ToggleSensorDisplay},	//show sensor ranges
-	{"timedemo", kf_FrameRate},	 //timedemo
-	{"kill", kf_KillSelected},	//kill selected
-	{"john kettley", kf_ToggleWeather},	//john kettley
-	{"mouseflip", kf_ToggleMouseInvert},	//mouseflip
-	{"biffer baker", kf_BifferBaker},	// almost invincible units
-	{"easy", kf_SetEasyLevel},	//easy
-	{"normal", kf_SetNormalLevel},	//normal
-	{"hard", kf_SetHardLevel},	//hard
-	{"double up", kf_DoubleUp},	// your units take half the damage
-	{"whale fin", kf_TogglePower},	// turns on/off infinte power
-	{"get off my land", kf_KillEnemy},	// kills all enemy units and structures
-	{"build info", kf_BuildInfo},	// tells you when the game was built
+	{"deity", kf_ToggleGodMode}, //from above
+	{"droidinfo", kf_DebugDroidInfo}, //show unit stats
+	{"sensors", kf_ToggleSensorDisplay}, //show sensor ranges
+	{"timedemo", kf_FrameRate}, //timedemo
+	{"kill", kf_KillSelected}, //kill selected
+	{"john kettley", kf_ToggleWeather}, //john kettley
+	{"mouseflip", kf_ToggleMouseInvert}, //mouseflip
+	{"biffer baker", kf_BifferBaker}, // almost invincible units
+	{"easy", kf_SetEasyLevel}, //easy
+	{"normal", kf_SetNormalLevel}, //normal
+	{"hard", kf_SetHardLevel}, //hard
+	{"double up", kf_DoubleUp}, // your units take half the damage
+	{"whale fin", kf_TogglePower}, // turns on/off infinte power
+	{"get off my land", kf_KillEnemy}, // kills all enemy units and structures
+	{"build info", kf_BuildInfo}, // tells you when the game was built
 	{"time toggle", kf_ToggleMissionTimer},
 	{"work harder", kf_FinishResearch},
 	{"tileinfo", kf_TileInfo}, // output debug info about a tile
-	{"showfps", kf_ToggleFPS},	//displays your average FPS
-	{"showunits", kf_ToggleUnitCount},	//displays unit count information
+	{"showfps", kf_ToggleFPS}, //displays your average FPS
+	{"showunits", kf_ToggleUnitCount}, //displays unit count information
 	{"showsamples", kf_ToggleSamples}, //displays the # of Sound samples in Queue & List
 	{"showorders", kf_ToggleOrders}, //displays unit order/action state.
 	{"pause", kf_TogglePauseMode}, // Pause the game.
 	{"power info", kf_PowerInfo},
-	{"reload me", kf_Reload},	// reload selected weapons immediately
+	{"reload me", kf_Reload}, // reload selected weapons immediately
 	{"desync me", kf_ForceDesync},
 	{"damage me", kf_DamageMe},
 	{"autogame on", kf_AutoGame},
@@ -93,10 +93,10 @@ static CHEAT_ENTRY cheatCodes[] =
 
 };
 
-bool _attemptCheatCode(const char *cheat_name)
+bool _attemptCheatCode(const char* cheat_name)
 {
-	const CHEAT_ENTRY *curCheat;
-	static const CHEAT_ENTRY *const EndCheat = &cheatCodes[ARRAY_SIZE(cheatCodes)];
+	const CHEAT_ENTRY* curCheat;
+	static const CHEAT_ENTRY* const EndCheat = &cheatCodes[ARRAY_SIZE(cheatCodes)];
 
 	// there is no reason to make people enter "cheat mode" to enter following commands
 	if (!strcasecmp("showfps", cheat_name))
@@ -141,7 +141,7 @@ bool _attemptCheatCode(const char *cheat_name)
 			char buf[256];
 
 			/* We've got our man... */
-			curCheat->function();	// run it
+			curCheat->function(); // run it
 
 			// Copy this info to be used by the crash handler for the dump file
 			ssprintf(buf, "User has used cheat code: %s", curCheat->pName);
@@ -156,7 +156,7 @@ bool _attemptCheatCode(const char *cheat_name)
 	return false;
 }
 
-bool attemptCheatCode(const char *cheat_name)
+bool attemptCheatCode(const char* cheat_name)
 {
 	bool result = _attemptCheatCode(cheat_name);
 	if (result)
@@ -187,7 +187,8 @@ static std::string getWantedDebugMappingStatuses(const DebugInputManager& dbgInp
 	char* p = ret;
 	for (unsigned n = 0; n < MAX_PLAYERS; ++n)
 	{
-		if (NetPlay.players[n].allocated && !NetPlay.players[n].isSpectator && (dbgInputManager.getPlayerWantsDebugMappings(n) == bStatus))
+		if (NetPlay.players[n].allocated && !NetPlay.players[n].isSpectator && (dbgInputManager.
+			getPlayerWantsDebugMappings(n) == bStatus))
 		{
 			*p++ = '0' + NetPlay.players[n].position;
 		}
@@ -228,18 +229,18 @@ void recvProcessDebugMappings(NETQUEUE queue)
 			getWantedDebugMappingStatuses(dbgInputManager, false).c_str()
 		);
 	}
-	addConsoleMessage(cmsg.c_str(), DEFAULT_JUSTIFY,  SYSTEM_MESSAGE);
+	addConsoleMessage(cmsg.c_str(), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
 
 	if (!oldDebugMode && newDebugMode)
 	{
-		addConsoleMessage(_("Debug mode now enabled!"), DEFAULT_JUSTIFY,  SYSTEM_MESSAGE);
+		addConsoleMessage(_("Debug mode now enabled!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
 		Cheated = true;
 		gInputManager.contexts().set(InputContext::DEBUG_MISC, InputContext::State::ACTIVE);
 		triggerEventCheatMode(true);
 	}
 	else if (oldDebugMode && !newDebugMode)
 	{
-		addConsoleMessage(_("Debug mode now disabled!"), DEFAULT_JUSTIFY,  SYSTEM_MESSAGE);
+		addConsoleMessage(_("Debug mode now disabled!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
 		if (!NETisReplay())
 		{
 			gInputManager.contexts().set(InputContext::DEBUG_MISC, InputContext::State::INACTIVE);

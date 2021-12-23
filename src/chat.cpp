@@ -22,7 +22,7 @@
 #include "lib/netplay/netplay.h"
 #include "qtscript.h"
 
-InGameChatMessage::InGameChatMessage(uint32_t messageSender, char const *messageText)
+InGameChatMessage::InGameChatMessage(uint32_t messageSender, char const* messageText)
 {
 	sender = messageSender;
 	text = messageText;
@@ -35,11 +35,13 @@ bool InGameChatMessage::isGlobal() const
 
 bool InGameChatMessage::shouldReceive(uint32_t playerIndex) const
 {
-	if ((playerIndex >= game.maxPlayers) && ((playerIndex >= NetPlay.players.size()) || (!NetPlay.players[playerIndex].allocated)))
+	if ((playerIndex >= game.maxPlayers) && ((playerIndex >= NetPlay.players.size()) || (!NetPlay.players[playerIndex].
+		allocated)))
 	{
 		return false;
 	}
-	return isGlobal() || toPlayers.find(playerIndex) != toPlayers.end() || (toAllies && sender < MAX_PLAYERS && playerIndex < MAX_PLAYERS && aiCheckAlliances(sender, playerIndex));
+	return isGlobal() || toPlayers.find(playerIndex) != toPlayers.end() || (toAllies && sender < MAX_PLAYERS &&
+		playerIndex < MAX_PLAYERS && aiCheckAlliances(sender, playerIndex));
 }
 
 std::vector<uint32_t> InGameChatMessage::getReceivers() const
@@ -59,19 +61,24 @@ std::vector<uint32_t> InGameChatMessage::getReceivers() const
 
 std::string InGameChatMessage::formatReceivers() const
 {
-	if (isGlobal()) {
+	if (isGlobal())
+	{
 		return _("Global");
 	}
 
-	if (toAllies && toPlayers.empty()) {
+	if (toAllies && toPlayers.empty())
+	{
 		return _("Allies");
 	}
 
 	auto directs = toPlayers.begin();
 	std::stringstream ss;
-	if (toAllies) {
+	if (toAllies)
+	{
 		ss << _("Allies");
-	} else {
+	}
+	else
+	{
 		ss << _("private to ");
 		ss << getPlayerName(*directs++);
 	}
@@ -98,16 +105,18 @@ void InGameChatMessage::sendToHumanPlayers()
 	auto message = NetworkTextMessage(sender, formatted);
 	message.teamSpecific = toAllies && toPlayers.empty();
 
-	if (sender == selectedPlayer || shouldReceive(selectedPlayer)) {
+	if (sender == selectedPlayer || shouldReceive(selectedPlayer))
+	{
 		printInGameTextMessage(message);
 	}
 
-	if (isGlobal()) {
+	if (isGlobal())
+	{
 		message.enqueue(NETbroadcastQueue());
 		return;
 	}
 
-	for (auto receiver: getReceivers())
+	for (auto receiver : getReceivers())
 	{
 		if (isHumanPlayer(receiver))
 		{
@@ -146,7 +155,7 @@ void InGameChatMessage::sendToAiPlayer(uint32_t receiver)
 
 void InGameChatMessage::sendToAiPlayers()
 {
-	for (auto receiver: getReceivers())
+	for (auto receiver : getReceivers())
 	{
 		if (!isHumanPlayer(receiver))
 		{
@@ -172,12 +181,13 @@ void InGameChatMessage::sendToSpectators()
 	char formatted[MAX_CONSOLE_STRING_LENGTH];
 	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), _("Spectators"), text);
 
-	if ((sender == selectedPlayer || shouldReceive(selectedPlayer)) && NetPlay.players[selectedPlayer].isSpectator) {
+	if ((sender == selectedPlayer || shouldReceive(selectedPlayer)) && NetPlay.players[selectedPlayer].isSpectator)
+	{
 		auto message = NetworkTextMessage(SPECTATOR_MESSAGE, formatted);
 		printInGameTextMessage(message);
 	}
 
-	for (auto receiver: getReceivers())
+	for (auto receiver : getReceivers())
 	{
 		if (isHumanPlayer(receiver) && NetPlay.players[receiver].isSpectator && receiver != selectedPlayer)
 		{

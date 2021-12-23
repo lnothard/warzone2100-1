@@ -47,23 +47,23 @@
 
 struct STAR
 {
-	int      xPos;
-	int      speed;
+	int xPos;
+	int speed;
 	PIELIGHT colour;
 };
 
-static bool		firstcall = false;
-static bool		bPlayerHasLost = false;
-static bool		bPlayerHasWon = false;
-static UBYTE    scriptWinLoseVideo = PLAY_NONE;
+static bool firstcall = false;
+static bool bPlayerHasLost = false;
+static bool bPlayerHasWon = false;
+static UBYTE scriptWinLoseVideo = PLAY_NONE;
 
-static HostLaunch hostlaunch = HostLaunch::Normal;  // used to detect if we are hosting a game via command line option.
+static HostLaunch hostlaunch = HostLaunch::Normal; // used to detect if we are hosting a game via command line option.
 static bool bHeadlessAutoGameModeCLIOption = false;
 static bool bActualHeadlessAutoGameMode = false;
 
 static uint32_t lastTick = 0;
 static int barLeftX, barLeftY, barRightX, barRightY, boxWidth, boxHeight, starsNum, starHeight;
-static STAR *stars = nullptr;
+static STAR* stars = nullptr;
 
 static STAR newStar()
 {
@@ -96,7 +96,7 @@ static void setupLoadingScreen()
 
 	if (!stars)
 	{
-		stars = (STAR *)malloc(sizeof(STAR) * starsNum);
+		stars = (STAR*)malloc(sizeof(STAR) * starsNum);
 	}
 
 	for (i = 0; i < starsNum; ++i)
@@ -196,7 +196,7 @@ TITLECODE titleLoop()
 		}
 		else
 		{
-			changeTitleMode(TITLE);			// normal game, run main title screen.
+			changeTitleMode(TITLE); // normal game, run main title screen.
 		}
 		// Using software cursors (when on) for these menus due to a bug in SDL's SDL_ShowCursor()
 		wzSetCursor(CURSOR_DEFAULT);
@@ -213,12 +213,12 @@ TITLECODE titleLoop()
 	{
 		return RetCode; // don't flip
 	}
-	NETflush();  // Send any pending network data.
+	NETflush(); // Send any pending network data.
 
 	audio_Update();
 
 	pie_SetFogStatus(false);
-	pie_ScreenFlip(CLEAR_BLACK);//title loop
+	pie_ScreenFlip(CLEAR_BLACK); //title loop
 
 	if ((keyDown(KEY_LALT) || keyDown(KEY_RALT)) && keyPressed(KEY_RETURN))
 	{
@@ -265,7 +265,7 @@ void loadingScreenCallback()
 		}
 	}
 
-	pie_ScreenFlip(CLEAR_OFF_AND_NO_BUFFER_DOWNLOAD);//loading callback		// don't clear.
+	pie_ScreenFlip(CLEAR_OFF_AND_NO_BUFFER_DOWNLOAD); //loading callback		// don't clear.
 	audio_Update();
 
 	wzPumpEventsWhileLoading();
@@ -323,12 +323,15 @@ bool displayGameOver(bool bDidit, bool showBackDrop)
 	{
 		// This is a bit of a hack and partially relies upon the logic in endconditions.js
 		bool isGameFullyOver =
-			NetPlay.players[selectedPlayer].isSpectator	// gameOverMessage is only called for spectators when the game fully ends
+			NetPlay.players[selectedPlayer].isSpectator
+			// gameOverMessage is only called for spectators when the game fully ends
 			|| bDidit; // can only win when the game actually ends :)
 		if (isGameFullyOver && !ingame.endTime.has_value())
 		{
 			ingame.endTime = std::chrono::steady_clock::now();
-			debug(LOG_INFO, "Game ended (duration: %lld)", (long long)std::chrono::duration_cast<std::chrono::seconds>(ingame.endTime.value() - ingame.startTime).count());
+			debug(LOG_INFO, "Game ended (duration: %lld)",
+			      (long long)std::chrono::duration_cast<std::chrono::seconds>(ingame.endTime.value() - ingame.startTime)
+			      .count());
 		}
 	}
 	if (bDidit)
@@ -343,7 +346,8 @@ bool displayGameOver(bool bDidit, bool showBackDrop)
 	else
 	{
 		setPlayerHasLost(true);
-		if (bMultiPlayer && isFirstCallForThisGame) // make sure we only accumulate one loss (even if this is called more than once, for example when losing initially, and then when the game fully ends)
+		if (bMultiPlayer && isFirstCallForThisGame)
+		// make sure we only accumulate one loss (even if this is called more than once, for example when losing initially, and then when the game fully ends)
 		{
 			updateMultiStatsLoses();
 		}
@@ -363,7 +367,9 @@ bool displayGameOver(bool bDidit, bool showBackDrop)
 	{
 		// Special message for spectators to inform them that the game is fully over
 		addConsoleMessage(_("GAME OVER"), CENTRE_JUSTIFY, SYSTEM_MESSAGE, false, MAX_CONSOLE_MESSAGE_DURATION);
-		addConsoleMessage(_("The battle is over - you can leave the room."), CENTRE_JUSTIFY, SYSTEM_MESSAGE, false, MAX_CONSOLE_MESSAGE_DURATION);
+		addConsoleMessage(
+			_("The battle is over - you can leave the room."), CENTRE_JUSTIFY, SYSTEM_MESSAGE, false,
+			MAX_CONSOLE_MESSAGE_DURATION);
 		// TODO: Display this in a form with a "Quit to Main Menu" button?, or adapt intAddMissionResult to have a separate display for spectators?
 	}
 	else

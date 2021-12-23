@@ -28,39 +28,44 @@
 #ifndef __INCLUDED_SRC_RADAR_H__
 #define __INCLUDED_SRC_RADAR_H__
 
-void radarColour(UDWORD tileNumber, uint8_t r, uint8_t g, uint8_t b);	///< Set radar colour for given terrain type.
+void radarColour(UDWORD tileNumber, uint8_t r, uint8_t g, uint8_t b); ///< Set radar colour for given terrain type.
 
 #define MAX_RADARZOOM		(64)
 #define MIN_RADARZOOM		(8)
 #define DEFAULT_RADARZOOM	(32)
 #define RADARZOOM_STEP		(4)
 
-bool InitRadar();				///< Initialize minimap subsystem.
-bool ShutdownRadar();			///< Shutdown minimap subsystem.
-bool resizeRadar();				///< Recalculate minimap size. For initialization code only.
-void drawRadar();				///< Draw the minimap on the screen.
-void CalcRadarPosition(int mX, int mY, int *PosX, int *PosY);	///< Given a position within the radar, returns a world coordinate.
-void SetRadarZoom(uint8_t ZoomLevel);		///< Set current zoom level. 1.0 is 1:1 resolution.
-uint8_t GetRadarZoom();			///< Get current zoom level.
-bool CoordInRadar(int x, int y);			///< Is screen coordinate inside minimap?
+bool InitRadar(); ///< Initialize minimap subsystem.
+bool ShutdownRadar(); ///< Shutdown minimap subsystem.
+bool resizeRadar(); ///< Recalculate minimap size. For initialization code only.
+void drawRadar(); ///< Draw the minimap on the screen.
+void CalcRadarPosition(int mX, int mY, int* PosX, int* PosY);
+///< Given a position within the radar, returns a world coordinate.
+void SetRadarZoom(uint8_t ZoomLevel); ///< Set current zoom level. 1.0 is 1:1 resolution.
+uint8_t GetRadarZoom(); ///< Get current zoom level.
+bool CoordInRadar(int x, int y); ///< Is screen coordinate inside minimap?
 
 /** Different mini-map draw modes. */
 enum RADAR_DRAW_MODE
 {
-	RADAR_MODE_TERRAIN,				///< Draw terrain map
-	RADAR_MODE_DEFAULT = RADAR_MODE_TERRAIN,	///< Default is terrain map
-	RADAR_MODE_HEIGHT_MAP,				///< Draw height map
+	RADAR_MODE_TERRAIN,
+	///< Draw terrain map
+	RADAR_MODE_DEFAULT = RADAR_MODE_TERRAIN,
+	///< Default is terrain map
+	RADAR_MODE_HEIGHT_MAP,
+	///< Draw height map
 	RADAR_MODE_COMBINED,
-	RADAR_MODE_NO_TERRAIN,				///< Only display objects
+	RADAR_MODE_NO_TERRAIN,
+	///< Only display objects
 	NUM_RADAR_MODES
 };
 
-extern bool bEnemyAllyRadarColor;		///< Enemy/ally minimap color
-extern RADAR_DRAW_MODE	radarDrawMode;			///< Current minimap mode
+extern bool bEnemyAllyRadarColor; ///< Enemy/ally minimap color
+extern RADAR_DRAW_MODE radarDrawMode; ///< Current minimap mode
 extern bool rotateRadar;
 extern bool radarRotationArrow;
 
-void radarInitVars();			///< Recalculate minimap variables. For initialization code only.
+void radarInitVars(); ///< Recalculate minimap variables. For initialization code only.
 
 extern PIELIGHT clanColours[];
 

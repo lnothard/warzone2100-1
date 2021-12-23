@@ -53,74 +53,74 @@
 
 typedef struct __PHYSFS_MemoryIoInfo2
 {
-	const PHYSFS_uint8 *buf = nullptr;
+	const PHYSFS_uint8* buf = nullptr;
 	PHYSFS_uint64 len = 0;
 	PHYSFS_uint64 pos = 0;
-	PHYSFS_Io *parent = nullptr;
+	PHYSFS_Io* parent = nullptr;
 	std::atomic<int> refcount;
-	void (*destruct)(void *) = nullptr;
+	void (*destruct)(void*) = nullptr;
 } MemoryIoInfo2;
 
-static PHYSFS_sint64 memoryIo2_read(PHYSFS_Io *io, void *buf, PHYSFS_uint64 len)
+static PHYSFS_sint64 memoryIo2_read(PHYSFS_Io* io, void* buf, PHYSFS_uint64 len)
 {
-	MemoryIoInfo2 *info = (MemoryIoInfo2 *) io->opaque;
+	MemoryIoInfo2* info = (MemoryIoInfo2*)io->opaque;
 	const PHYSFS_uint64 avail = info->len - info->pos;
 	assert(avail <= info->len);
 
 	if (avail == 0)
-		return 0;  /* we're at EOF; nothing to do. */
+		return 0; /* we're at EOF; nothing to do. */
 
 	if (len > avail)
 		len = avail;
 
-	memcpy(buf, info->buf + info->pos, (size_t) len);
+	memcpy(buf, info->buf + info->pos, (size_t)len);
 	info->pos += len;
 	return len;
 } /* memoryIo2_read */
 
-static PHYSFS_sint64 memoryIo2_write(PHYSFS_Io *io, const void *buffer,
-									PHYSFS_uint64 len)
+static PHYSFS_sint64 memoryIo2_write(PHYSFS_Io* io, const void* buffer,
+                                     PHYSFS_uint64 len)
 {
 	BAIL(PHYSFS_ERR_OPEN_FOR_READING, -1);
 } /* memoryIo2_write */
 
-static int memoryIo2_seek(PHYSFS_Io *io, PHYSFS_uint64 offset)
+static int memoryIo2_seek(PHYSFS_Io* io, PHYSFS_uint64 offset)
 {
-	MemoryIoInfo2 *info = (MemoryIoInfo2 *) io->opaque;
+	MemoryIoInfo2* info = (MemoryIoInfo2*)io->opaque;
 	BAIL_IF(offset > info->len, PHYSFS_ERR_PAST_EOF, 0);
 	info->pos = offset;
 	return 1;
 } /* memoryIo2_seek */
 
-static PHYSFS_sint64 memoryIo2_tell(PHYSFS_Io *io)
+static PHYSFS_sint64 memoryIo2_tell(PHYSFS_Io* io)
 {
-	const MemoryIoInfo2 *info = (MemoryIoInfo2 *) io->opaque;
-	return (PHYSFS_sint64) info->pos;
+	const MemoryIoInfo2* info = (MemoryIoInfo2*)io->opaque;
+	return (PHYSFS_sint64)info->pos;
 } /* memoryIo2_tell */
 
-static PHYSFS_sint64 memoryIo2_length(PHYSFS_Io *io)
+static PHYSFS_sint64 memoryIo2_length(PHYSFS_Io* io)
 {
-	const MemoryIoInfo2 *info = (MemoryIoInfo2 *) io->opaque;
-	return (PHYSFS_sint64) info->len;
+	const MemoryIoInfo2* info = (MemoryIoInfo2*)io->opaque;
+	return (PHYSFS_sint64)info->len;
 } /* memoryIo2_length */
 
-static PHYSFS_Io *memoryIo2_duplicate(PHYSFS_Io *io)
+static PHYSFS_Io* memoryIo2_duplicate(PHYSFS_Io* io)
 {
-	MemoryIoInfo2 *info = (MemoryIoInfo2 *) io->opaque;
-	MemoryIoInfo2 *newinfo = NULL;
-	PHYSFS_Io *parent = info->parent;
-	PHYSFS_Io *retval = NULL;
+	MemoryIoInfo2* info = (MemoryIoInfo2*)io->opaque;
+	MemoryIoInfo2* newinfo = NULL;
+	PHYSFS_Io* parent = info->parent;
+	PHYSFS_Io* retval = NULL;
 
 	/* avoid deep copies. */
-	assert((!parent) || (!((MemoryIoInfo2 *) parent->opaque)->parent) );
+	assert((!parent) || (!((MemoryIoInfo2 *) parent->opaque)->parent));
 
 	/* share the buffer between duplicates. */
-	if (parent != NULL)  /* dup the parent, increment its refcount. */
+	if (parent != NULL) /* dup the parent, increment its refcount. */
 		return parent->duplicate(parent);
 
 	/* we're the parent. */
 
-	retval = (PHYSFS_Io *) malloc(sizeof (PHYSFS_Io));
+	retval = (PHYSFS_Io*)malloc(sizeof(PHYSFS_Io));
 	BAIL_IF(!retval, PHYSFS_ERR_OUT_OF_MEMORY, NULL);
 	newinfo = new MemoryIoInfo2();
 	if (!newinfo)
@@ -129,10 +129,10 @@ static PHYSFS_Io *memoryIo2_duplicate(PHYSFS_Io *io)
 		BAIL(PHYSFS_ERR_OUT_OF_MEMORY, NULL);
 	} /* if */
 
-//	__PHYSFS_ATOMIC_INCR(&info->refcount);
+	//	__PHYSFS_ATOMIC_INCR(&info->refcount);
 	info->refcount.fetch_add(1);
 
-//	memset(newinfo, '\0', sizeof (*info));
+	//	memset(newinfo, '\0', sizeof (*info));
 	newinfo->buf = info->buf;
 	newinfo->len = info->len;
 	newinfo->pos = 0;
@@ -145,12 +145,15 @@ static PHYSFS_Io *memoryIo2_duplicate(PHYSFS_Io *io)
 	return retval;
 } /* memoryIo2_duplicate */
 
-static int memoryIo2_flush(PHYSFS_Io *io) { return 1;  /* it's read-only. */ }
-
-static void memoryIo2_destroy(PHYSFS_Io *io)
+static int memoryIo2_flush(PHYSFS_Io* io)
 {
-	MemoryIoInfo2 *info = (MemoryIoInfo2 *) io->opaque;
-	PHYSFS_Io *parent = info->parent;
+	return 1; /* it's read-only. */
+}
+
+static void memoryIo2_destroy(PHYSFS_Io* io)
+{
+	MemoryIoInfo2* info = (MemoryIoInfo2*)io->opaque;
+	PHYSFS_Io* parent = info->parent;
 
 	if (parent != NULL)
 	{
@@ -160,19 +163,19 @@ static void memoryIo2_destroy(PHYSFS_Io *io)
 		assert(info->destruct == NULL);
 		delete info;
 		free(io);
-		parent->destroy(parent);  /* decrements refcount. */
+		parent->destroy(parent); /* decrements refcount. */
 		return;
 	} /* if */
 
 	/* we _are_ the parent. */
-	assert(info->refcount.load() > 0);  /* even in a race, we hold a reference. */
+	assert(info->refcount.load() > 0); /* even in a race, we hold a reference. */
 
-//	if (__PHYSFS_ATOMIC_DECR(&info->refcount) == 0)
+	//	if (__PHYSFS_ATOMIC_DECR(&info->refcount) == 0)
 	if (info->refcount.fetch_sub(1) == 1)
 	{
-		void (*destruct)(void *) = info->destruct;
-		void *buf = (void *) info->buf;
-		io->opaque = NULL;  /* kill this here in case of race. */
+		void (*destruct)(void*) = info->destruct;
+		void* buf = (void*)info->buf;
+		io->opaque = NULL; /* kill this here in case of race. */
 		delete info;
 		free(io);
 		if (destruct != NULL)
@@ -194,19 +197,19 @@ static const PHYSFS_Io __PHYSFS_memoryIoInterface2 =
 	memoryIo2_destroy
 };
 
-PHYSFS_Io *__PHYSFS_createMemoryIo2(const void *buf, PHYSFS_uint64 len,
-								   void (*destruct)(void *))
+PHYSFS_Io* __PHYSFS_createMemoryIo2(const void* buf, PHYSFS_uint64 len,
+                                    void (*destruct)(void*))
 {
-	PHYSFS_Io *io = NULL;
-	MemoryIoInfo2 *info = NULL;
+	PHYSFS_Io* io = NULL;
+	MemoryIoInfo2* info = NULL;
 
-	io = (PHYSFS_Io *) malloc(sizeof (PHYSFS_Io));
+	io = (PHYSFS_Io*)malloc(sizeof(PHYSFS_Io));
 	GOTO_IF(!io, PHYSFS_ERR_OUT_OF_MEMORY, createMemoryIo_failed);
 	info = new MemoryIoInfo2();
 	GOTO_IF(!info, PHYSFS_ERR_OUT_OF_MEMORY, createMemoryIo_failed);
 
-//	memset(info, '\0', sizeof (*info));
-	info->buf = (const PHYSFS_uint8 *) buf;
+	//	memset(info, '\0', sizeof (*info));
+	info->buf = (const PHYSFS_uint8*)buf;
 	info->len = len;
 	info->pos = 0;
 	info->parent = NULL;
@@ -223,12 +226,12 @@ createMemoryIo_failed:
 	return NULL;
 } /* __PHYSFS_createMemoryIo2 */
 
-int PHYSFS_mountMemory_fixed(const void *buf, PHYSFS_uint64 len, void (*del)(void *),
-					   const char *fname, const char *mountPoint,
-					   int appendToPath)
+int PHYSFS_mountMemory_fixed(const void* buf, PHYSFS_uint64 len, void (*del)(void*),
+                             const char* fname, const char* mountPoint,
+                             int appendToPath)
 {
 	int retval = 0;
-	PHYSFS_Io *io = NULL;
+	PHYSFS_Io* io = NULL;
 
 	BAIL_IF(!buf, PHYSFS_ERR_INVALID_ARGUMENT, 0);
 	BAIL_IF(!fname, PHYSFS_ERR_INVALID_ARGUMENT, 0);
@@ -239,7 +242,7 @@ int PHYSFS_mountMemory_fixed(const void *buf, PHYSFS_uint64 len, void (*del)(voi
 	if (!retval)
 	{
 		/* docs say not to call (del) in case of failure, so cheat. */
-		MemoryIoInfo2 *info = (MemoryIoInfo2 *) io->opaque;
+		MemoryIoInfo2* info = (MemoryIoInfo2*)io->opaque;
 		info->destruct = NULL;
 		io->destroy(io);
 	} /* if */

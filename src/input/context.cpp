@@ -34,13 +34,13 @@ static bool isInDesignScreen()
 	return intMode == INTMODE::INT_DESIGN;
 }
 
-const ContextId InputContext::ALWAYS_ACTIVE         = "ALWAYS_ACTIVE";
-const ContextId InputContext::BACKGROUND            = "BACKGROUND";
-const ContextId InputContext::GAMEPLAY              = "GAMEPLAY";
-const ContextId InputContext::RADAR                 = "RADAR";
-const ContextId InputContext::DEBUG_MISC            = "DEBUG_MISC";
-const ContextId InputContext::DEBUG_LEVEL_EDITOR    = "DEBUG_LEVEL_EDITOR";
-const ContextId InputContext::DEBUG_HAS_SELECTION   = "DEBUG_HAS_SELECTION";
+const ContextId InputContext::ALWAYS_ACTIVE = "ALWAYS_ACTIVE";
+const ContextId InputContext::BACKGROUND = "BACKGROUND";
+const ContextId InputContext::GAMEPLAY = "GAMEPLAY";
+const ContextId InputContext::RADAR = "RADAR";
+const ContextId InputContext::DEBUG_MISC = "DEBUG_MISC";
+const ContextId InputContext::DEBUG_LEVEL_EDITOR = "DEBUG_LEVEL_EDITOR";
+const ContextId InputContext::DEBUG_HAS_SELECTION = "DEBUG_HAS_SELECTION";
 
 static const InputContext& nullContext()
 {
@@ -51,13 +51,29 @@ static const InputContext& nullContext()
 void registerDefaultContexts(ContextManager& contextManager, DebugInputManager& dbgInputManager)
 {
 	static const unsigned int MAX_ICONTEXT_PRIORITY = std::numeric_limits<unsigned int>::max();
-	const InputContext alwaysActive   = { InputContext::ALWAYS_ACTIVE,          true,  MAX_ICONTEXT_PRIORITY,         InputContext::State::ACTIVE,    N_("Global Hotkeys")          };
-	const InputContext background     = { InputContext::BACKGROUND,             false, 0,                             InputContext::State::ACTIVE,    N_("Other Hotkeys")           };
-	const InputContext gameplay       = { InputContext::GAMEPLAY,               false, 1,                             InputContext::State::ACTIVE,    N_("Gameplay")                };
-	const InputContext radar          = { InputContext::RADAR,                  false, { 2, 0 },                      InputContext::State::ACTIVE,    N_("Radar"),                  []() { return isMouseOverRadar() && !isInDesignScreen(); } };
-	const InputContext debug          = { InputContext::DEBUG_MISC,             false, { MAX_ICONTEXT_PRIORITY, 0 },  InputContext::State::INACTIVE,  N_("Debug"),                  [&dbgInputManager]() { return dbgInputManager.isDebugPrioritized(); } };
-	const InputContext debugLvlEditor = { InputContext::DEBUG_LEVEL_EDITOR,     false, { MAX_ICONTEXT_PRIORITY, 0 },  InputContext::State::INACTIVE,  N_("Debug (level editor)"),   [&dbgInputManager]() { return dbgInputManager.isDebugPrioritized(); } };
-	const InputContext debugSelection = { InputContext::DEBUG_HAS_SELECTION,    false, { MAX_ICONTEXT_PRIORITY, 0 },  InputContext::State::INACTIVE,  N_("Debug (selection)"),      [&dbgInputManager]() { return dbgInputManager.isDebugPrioritized(); } };
+	const InputContext alwaysActive = {
+		InputContext::ALWAYS_ACTIVE, true, MAX_ICONTEXT_PRIORITY, InputContext::State::ACTIVE, N_("Global Hotkeys")
+	};
+	const InputContext background = {
+		InputContext::BACKGROUND, false, 0, InputContext::State::ACTIVE, N_("Other Hotkeys")
+	};
+	const InputContext gameplay = {InputContext::GAMEPLAY, false, 1, InputContext::State::ACTIVE, N_("Gameplay")};
+	const InputContext radar = {
+		InputContext::RADAR, false, {2, 0}, InputContext::State::ACTIVE, N_("Radar"),
+		[]() { return isMouseOverRadar() && !isInDesignScreen(); }
+	};
+	const InputContext debug = {
+		InputContext::DEBUG_MISC, false, {MAX_ICONTEXT_PRIORITY, 0}, InputContext::State::INACTIVE, N_("Debug"),
+		[&dbgInputManager]() { return dbgInputManager.isDebugPrioritized(); }
+	};
+	const InputContext debugLvlEditor = {
+		InputContext::DEBUG_LEVEL_EDITOR, false, {MAX_ICONTEXT_PRIORITY, 0}, InputContext::State::INACTIVE,
+		N_("Debug (level editor)"), [&dbgInputManager]() { return dbgInputManager.isDebugPrioritized(); }
+	};
+	const InputContext debugSelection = {
+		InputContext::DEBUG_HAS_SELECTION, false, {MAX_ICONTEXT_PRIORITY, 0}, InputContext::State::INACTIVE,
+		N_("Debug (selection)"), [&dbgInputManager]() { return dbgInputManager.isDebugPrioritized(); }
+	};
 
 	contextManager.registerContext(nullContext());
 	contextManager.registerContext(alwaysActive);
@@ -69,20 +85,23 @@ void registerDefaultContexts(ContextManager& contextManager, DebugInputManager& 
 	contextManager.registerContext(debugSelection);
 }
 
-InputContext::InputContext(const ContextId id, const bool bIsAlwaysActive, const ContextPriority priority, const State initialState, const char* const displayName)
+InputContext::InputContext(const ContextId id, const bool bIsAlwaysActive, const ContextPriority priority,
+                           const State initialState, const char* const displayName)
 	: InputContext(id, bIsAlwaysActive, priority, initialState, displayName, []() { return false; })
 {
 }
 
 static unsigned int inputCtxIndexCounter = 0;
-InputContext::InputContext(const ContextId id, const bool bIsAlwaysActive, const ContextPriority priority, const State initialState, const char* const displayName, const PriorityCondition condition)
+
+InputContext::InputContext(const ContextId id, const bool bIsAlwaysActive, const ContextPriority priority,
+                           const State initialState, const char* const displayName, const PriorityCondition condition)
 	: id(id)
-	, bIsAlwaysActive(bIsAlwaysActive)
-	, priority(priority)
-	, index(inputCtxIndexCounter++)
-	, displayName(displayName)
-	, defaultState(initialState)
-	, condition(condition)
+	  , bIsAlwaysActive(bIsAlwaysActive)
+	  , priority(priority)
+	  , index(inputCtxIndexCounter++)
+	  , displayName(displayName)
+	  , defaultState(initialState)
+	  , condition(condition)
 {
 }
 
@@ -194,15 +213,15 @@ void ContextManager::updatePriorityStatus()
 		if (isActive(context.id))
 		{
 			set(context.id, context.condition()
-				? InputContext::State::PRIORITIZED
-				: InputContext::State::ACTIVE);
+				                ? InputContext::State::PRIORITIZED
+				                : InputContext::State::ACTIVE);
 		}
 	}
 }
 
 void ContextManager::registerContext(InputContext context)
 {
-	contexts.insert({ context.id, context });
+	contexts.insert({context.id, context});
 }
 
 void ContextManager::pushState()

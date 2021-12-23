@@ -40,10 +40,13 @@ enum PROJ_STATE
 
 struct PROJECTILE : public SIMPLE_OBJECT
 {
-	PROJECTILE(uint32_t id, unsigned player) : SIMPLE_OBJECT(OBJ_PROJECTILE, id, player) {}
+	PROJECTILE(uint32_t id, unsigned player) : SIMPLE_OBJECT(OBJ_PROJECTILE, id, player)
+	{
+	}
 
-	void            update();
-	bool            deleteIfDead()
+	void update();
+
+	bool deleteIfDead()
 	{
 		if (died == 0 || died >= gameTime - deltaGameTime)
 		{
@@ -53,38 +56,41 @@ struct PROJECTILE : public SIMPLE_OBJECT
 		return true;
 	}
 
-	UBYTE           state;                  ///< current projectile state
-	UBYTE           bVisible;               ///< whether the selected player should see the projectile
-	WEAPON_STATS   *psWStats;               ///< firing weapon stats
-	BASE_OBJECT    *psSource;               ///< what fired the projectile
-	BASE_OBJECT    *psDest;                 ///< target of this projectile
-	std::vector<BASE_OBJECT *> psDamaged;   ///< the targets that have already been dealt damage to (don't damage the same target twice)
+	UBYTE state; ///< current projectile state
+	UBYTE bVisible; ///< whether the selected player should see the projectile
+	WEAPON_STATS* psWStats; ///< firing weapon stats
+	BASE_OBJECT* psSource; ///< what fired the projectile
+	BASE_OBJECT* psDest; ///< target of this projectile
+	std::vector<BASE_OBJECT*> psDamaged;
+	///< the targets that have already been dealt damage to (don't damage the same target twice)
 
-	Vector3i        src = Vector3i(0, 0, 0); ///< Where projectile started
-	Vector3i        dst = Vector3i(0, 0, 0); ///< The target coordinates
-	SDWORD          vXY, vZ;                ///< axis velocities
-	Spacetime       prevSpacetime;          ///< Location of projectile in previous tick.
-	UDWORD          expectedDamageCaused;   ///< Expected damage that this projectile will cause to the target.
-	int             partVisible;            ///< how much of target was visible on shooting (important for homing)
+	Vector3i src = Vector3i(0, 0, 0); ///< Where projectile started
+	Vector3i dst = Vector3i(0, 0, 0); ///< The target coordinates
+	SDWORD vXY, vZ; ///< axis velocities
+	Spacetime prevSpacetime; ///< Location of projectile in previous tick.
+	UDWORD expectedDamageCaused; ///< Expected damage that this projectile will cause to the target.
+	int partVisible; ///< how much of target was visible on shooting (important for homing)
 };
 
-typedef std::vector<PROJECTILE *>::const_iterator ProjectileIterator;
+typedef std::vector<PROJECTILE*>::const_iterator ProjectileIterator;
 
 
 /// True iff object is a projectile.
-static inline bool isProjectile(SIMPLE_OBJECT const *psObject)
+static inline bool isProjectile(SIMPLE_OBJECT const* psObject)
 {
 	return psObject != nullptr && psObject->type == OBJ_PROJECTILE;
 }
+
 /// Returns PROJECTILE * if projectile or NULL if not.
-static inline PROJECTILE *castProjectile(SIMPLE_OBJECT *psObject)
+static inline PROJECTILE* castProjectile(SIMPLE_OBJECT* psObject)
 {
-	return isProjectile(psObject) ? (PROJECTILE *)psObject : (PROJECTILE *)nullptr;
+	return isProjectile(psObject) ? (PROJECTILE*)psObject : (PROJECTILE*)nullptr;
 }
+
 /// Returns PROJECTILE const * if projectile or NULL if not.
-static inline PROJECTILE const *castProjectile(SIMPLE_OBJECT const *psObject)
+static inline PROJECTILE const* castProjectile(SIMPLE_OBJECT const* psObject)
 {
-	return isProjectile(psObject) ? (PROJECTILE const *)psObject : (PROJECTILE const *)nullptr;
+	return isProjectile(psObject) ? (PROJECTILE const*)psObject : (PROJECTILE const*)nullptr;
 }
 
 #endif // __INCLUDED_PROJECTILEDEF_H__

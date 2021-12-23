@@ -45,15 +45,16 @@ uint16_t calcDirection(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
   NB*****THIS WON'T PICK A VTOL DROID*****
 */
 
-DROID	*getNearestDroid(UDWORD x, UDWORD y, bool bSelected)
+DROID* getNearestDroid(UDWORD x, UDWORD y, bool bSelected)
 {
-	DROID *psBestUnit = nullptr;
+	DROID* psBestUnit = nullptr;
 	unsigned bestSoFar = UDWORD_MAX;
 
-	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS, "Not supported selectedPlayer: %" PRIu32 "", selectedPlayer);
+	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS, "Not supported selectedPlayer: %" PRIu32 "",
+	                 selectedPlayer);
 
 	/* Go thru' all the droids  - how often have we seen this - a MACRO maybe? */
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (DROID* psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (!isVtolDroid(psDroid))
 		{
@@ -74,26 +75,31 @@ DROID	*getNearestDroid(UDWORD x, UDWORD y, bool bSelected)
 	}
 	return psBestUnit;
 }
+
 // -------------------------------------------------------------------------------------------
 
 /* Returns non-zero if a point is in a 4 sided polygon */
 /* See header file for definition of QUAD */
-bool inQuad(const Vector2i *pt, const QUAD *quad)
+bool inQuad(const Vector2i* pt, const QUAD* quad)
 {
 	// Early out.
-	int minX = std::min(std::min(quad->coords[0].x, quad->coords[1].x), std::min(quad->coords[2].x, quad->coords[3].x)); if (pt->x < minX)
+	int minX = std::min(std::min(quad->coords[0].x, quad->coords[1].x), std::min(quad->coords[2].x, quad->coords[3].x));
+	if (pt->x < minX)
 	{
 		return false;
 	}
-	int maxX = std::max(std::max(quad->coords[0].x, quad->coords[1].x), std::max(quad->coords[2].x, quad->coords[3].x)); if (pt->x > maxX)
+	int maxX = std::max(std::max(quad->coords[0].x, quad->coords[1].x), std::max(quad->coords[2].x, quad->coords[3].x));
+	if (pt->x > maxX)
 	{
 		return false;
 	}
-	int minY = std::min(std::min(quad->coords[0].y, quad->coords[1].y), std::min(quad->coords[2].y, quad->coords[3].y)); if (pt->y < minY)
+	int minY = std::min(std::min(quad->coords[0].y, quad->coords[1].y), std::min(quad->coords[2].y, quad->coords[3].y));
+	if (pt->y < minY)
 	{
 		return false;
 	}
-	int maxY = std::max(std::max(quad->coords[0].y, quad->coords[1].y), std::max(quad->coords[2].y, quad->coords[3].y)); if (pt->y > maxY)
+	int maxY = std::max(std::max(quad->coords[0].y, quad->coords[1].y), std::max(quad->coords[2].y, quad->coords[3].y));
+	if (pt->y > maxY)
 	{
 		return false;
 	}
@@ -105,7 +111,7 @@ bool inQuad(const Vector2i *pt, const QUAD *quad)
 		Vector2i edge = quad->coords[j] - quad->coords[i];
 		Vector2i pos = *pt - quad->coords[i];
 		if ((0 <= pos.y && pos.y < edge.y && (int64_t)pos.x * (int64_t)edge.y < (int64_t)pos.y * (int64_t)edge.x) ||
-		    (edge.y <= pos.y && pos.y < 0 && (int64_t)pos.x * (int64_t)edge.y > (int64_t)pos.y * (int64_t)edge.x))
+			(edge.y <= pos.y && pos.y < 0 && (int64_t)pos.x * (int64_t)edge.y > (int64_t)pos.y * (int64_t)edge.x))
 		{
 			c = !c;
 		}
@@ -114,14 +120,14 @@ bool inQuad(const Vector2i *pt, const QUAD *quad)
 	return c;
 }
 
-Vector2i positionInQuad(Vector2i const &pt, QUAD const &quad)
+Vector2i positionInQuad(Vector2i const& pt, QUAD const& quad)
 {
 	long lenSq[4];
 	long ptDot[4];
 	for (int i = 0, j = 3; i < 4; j = i++)
 	{
 		Vector2i edge = quad.coords[j] - quad.coords[i];
-		Vector2i pos  = quad.coords[j] - pt;
+		Vector2i pos = quad.coords[j] - pt;
 		Vector2i posRot(pos.y, -pos.x);
 		lenSq[i] = dot(edge, edge);
 		ptDot[i] = dot(posRot, edge);
@@ -137,7 +143,7 @@ Vector2i positionInQuad(Vector2i const &pt, QUAD const &quad)
 }
 
 //-----------------------------------------------------------------------------------
-bool objectOnScreen(BASE_OBJECT *object, SDWORD tolerance)
+bool objectOnScreen(BASE_OBJECT* object, SDWORD tolerance)
 {
 	if (DrawnInLastFrame(object->sDisplay.frameNumber) == true)
 	{
@@ -145,8 +151,8 @@ bool objectOnScreen(BASE_OBJECT *object, SDWORD tolerance)
 		const int dY = object->sDisplay.screenY;
 		/* Is it on screen */
 		if (dX > (0 - tolerance) && dY > (0 - tolerance)
-		    && dX < (SDWORD)(pie_GetVideoBufferWidth() + tolerance)
-		    && dY < (SDWORD)(pie_GetVideoBufferHeight() + tolerance))
+			&& dX < (SDWORD)(pie_GetVideoBufferWidth() + tolerance)
+			&& dY < (SDWORD)(pie_GetVideoBufferHeight() + tolerance))
 		{
 			return true;
 		}

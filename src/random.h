@@ -29,13 +29,13 @@ class MersenneTwister
 {
 public:
 	MersenneTwister(uint32_t seed = 42);
-	uint32_t u32();  ///< Generates a random number in the interval [0...UINT32_MAX].
+	uint32_t u32(); ///< Generates a random number in the interval [0...UINT32_MAX].
 
 private:
-	void generate();  ///< Generates more random numbers.
+	void generate(); ///< Generates more random numbers.
 
-	int offset;  ///< Index in state.
-	uint32_t state[624];  ///< 19937 bit state, rounded up to next 32 bits.
+	int offset; ///< Index in state.
+	uint32_t state[624]; ///< 19937 bit state, rounded up to next 32 bits.
 };
 
 /// Seeds the random number generator. The seed is sent over the network, such that all clients generate the same number sequence, without the number sequence being the same each game.

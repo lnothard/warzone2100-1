@@ -33,10 +33,10 @@ struct LIGHT
 void setTheSun(Vector3f newSun);
 Vector3f getTheSun();
 
-void processLight(LIGHT *psLight);
+void processLight(LIGHT* psLight);
 void initLighting(UDWORD x1, UDWORD y1, UDWORD x2, UDWORD y2);
 void doBuildingLights();
 void updateFogDistance(float distance);
-void calcDroidIllumination(DROID *psDroid);
+void calcDroidIllumination(DROID* psDroid);
 
 #endif // __INCLUDED_SRC_LIGHTNING_H__

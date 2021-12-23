@@ -23,7 +23,7 @@
 
 #include "display3ddef.h"
 
-bool texLoad(const char *fileName);
+bool texLoad(const char* fileName);
 
 struct TILE_TEX_INFO
 {
@@ -39,7 +39,7 @@ struct TILE_TEX_INFO
 #define TILES_IN_PAGE		(TILES_IN_PAGE_COLUMN * TILES_IN_PAGE_ROW)
 #define MAX_TILES		TILES_IN_PAGE
 
-extern TILE_TEX_INFO	tileTexInfo[MAX_TILES];
+extern TILE_TEX_INFO tileTexInfo[MAX_TILES];
 extern size_t terrainPage;
 
 void setTextureSize(int texSize);

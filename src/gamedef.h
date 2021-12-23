@@ -29,7 +29,7 @@
 /*
  *	Global Definitions
  */
- /***************************************************************************/
+/***************************************************************************/
 //the version number used in save games
 //#define VERSION_1             1	        // demo save games
 //#define VERSION_2             2	        // names saved for components/structures/features
@@ -66,6 +66,7 @@
 #define VERSION_33              33	        // skirmish save
 #define VERSION_34              34	        // saves AI names for multiplayer (.gam file)
 #define VERSION_35              35	        // uses the (de)serialization API for saving/loading games and is big-endian instead of little-endian
+
 #define VERSION_36              36	        // saves beacon properly
 //#define VERSION_37            37	        // dpid changes; this had better be the last version
 #define VERSION_38              38	        // mod list!
@@ -79,17 +80,22 @@
 
 enum GAME_TYPE
 {
-	GTYPE_SCENARIO_START,   ///< Initial scenario state.
-	GTYPE_SCENARIO_EXPAND,  ///< Scenario scroll area expansion.
-	GTYPE_MISSION,          ///< Stand alone mission.
-	GTYPE_SAVE_START,       ///< User saved game - at the start of a level.
-	GTYPE_SAVE_MIDMISSION,  ///< User saved game - in the middle of a level
+	GTYPE_SCENARIO_START,
+	///< Initial scenario state.
+	GTYPE_SCENARIO_EXPAND,
+	///< Scenario scroll area expansion.
+	GTYPE_MISSION,
+	///< Stand alone mission.
+	GTYPE_SAVE_START,
+	///< User saved game - at the start of a level.
+	GTYPE_SAVE_MIDMISSION,
+	///< User saved game - in the middle of a level
 };
 
 struct VIS_SAVEHEADER
 {
-	char        aFileType[4];
-	uint32_t    version;
+	char aFileType[4];
+	uint32_t version;
 };
 
 #endif // __INCLUDED_SRC_GAMEDEF_H__

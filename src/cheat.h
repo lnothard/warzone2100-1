@@ -23,7 +23,7 @@
 
 struct NETQUEUE;
 
-bool attemptCheatCode(const char *cheat_name);
+bool attemptCheatCode(const char* cheat_name);
 
 void sendProcessDebugMappings(bool val);
 void recvProcessDebugMappings(NETQUEUE queue);

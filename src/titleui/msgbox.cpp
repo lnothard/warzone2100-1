@@ -52,7 +52,7 @@ void WzMsgBoxTitleUI::start()
 
 	W_LABINIT sLabInit;
 	sLabInit.formID = FRONTEND_BOTFORM;
-	sLabInit.id	= WZ_MSGBOX_TUI_LEAVE;
+	sLabInit.id = WZ_MSGBOX_TUI_LEAVE;
 	sLabInit.style = WLAB_ALIGNCENTRE;
 	sLabInit.x = MULTIOP_OKW;
 	sLabInit.y = MULTIOP_OKH;
@@ -61,17 +61,18 @@ void WzMsgBoxTitleUI::start()
 	sLabInit.pText = text;
 	widgAddLabel(psWScreen, &sLabInit);
 
-	addMultiBut(psWScreen, FRONTEND_BOTFORM, WZ_MSGBOX_TUI_LEAVE, FRONTEND_BOTFORMW - (MULTIOP_OKW * 2), FRONTEND_BOTFORMH - (MULTIOP_OKH * 2), MULTIOP_OKW, MULTIOP_OKH, _("Continue"), IMAGE_OK, IMAGE_OK, true);
+	addMultiBut(psWScreen, FRONTEND_BOTFORM, WZ_MSGBOX_TUI_LEAVE, FRONTEND_BOTFORMW - (MULTIOP_OKW * 2),
+	            FRONTEND_BOTFORMH - (MULTIOP_OKH * 2), MULTIOP_OKW, MULTIOP_OKH, _("Continue"), IMAGE_OK, IMAGE_OK,
+	            true);
 }
 
 TITLECODE WzMsgBoxTitleUI::run()
 {
 	screen_disableMapPreview();
-	WidgetTriggers const &triggers = widgRunScreen(psWScreen);
+	WidgetTriggers const& triggers = widgRunScreen(psWScreen);
 	unsigned id = triggers.empty() ? 0 : triggers.front().widget->id;
 	if (id == WZ_MSGBOX_TUI_LEAVE)
 		changeTitleUI(next);
 	widgDisplayScreen(psWScreen);
 	return TITLECODE_CONTINUE;
 }
-

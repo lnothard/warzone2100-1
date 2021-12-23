@@ -35,13 +35,14 @@ using nonstd::nullopt;
 
 #define NUM_FACTIONS 3
 
-struct FACTION {
+struct FACTION
+{
 	WzString name;
 	std::map<WzString, WzString> replaceIMD;
 };
 
 optional<WzString> getFactionModelName(const FactionID faction, const WzString& normalFactionName);
-iIMDShape* getFactionIMD(const FACTION *faction, iIMDShape* imd);
+iIMDShape* getFactionIMD(const FACTION* faction, iIMDShape* imd);
 
 const FACTION* getPlayerFaction(uint8_t player);
 const FACTION* getFactionByID(FactionID faction);

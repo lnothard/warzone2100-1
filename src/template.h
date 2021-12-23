@@ -37,7 +37,7 @@ bool initTemplates();
 DROID_TEMPLATE* addTemplate(int player, std::unique_ptr<DROID_TEMPLATE> psTemplate);
 
 /// Make a duplicate of template given by pointer and store it. Then return pointer to copy.
-DROID_TEMPLATE *copyTemplate(int player, DROID_TEMPLATE *psTemplate);
+DROID_TEMPLATE* copyTemplate(int player, DROID_TEMPLATE* psTemplate);
 
 void enumerateTemplates(int player, const std::function<bool (DROID_TEMPLATE* psTemplate)>& func);
 DROID_TEMPLATE* findPlayerTemplateById(int player, UDWORD templateId);
@@ -47,28 +47,28 @@ void clearTemplates(int player);
 bool shutdownTemplates();
 bool storeTemplates();
 
-bool loadDroidTemplates(const char *filename);
+bool loadDroidTemplates(const char* filename);
 
 /// return whether a template is for an IDF droid
-bool templateIsIDF(DROID_TEMPLATE *psTemplate);
+bool templateIsIDF(DROID_TEMPLATE* psTemplate);
 
 /// Fills the list with Templates that can be manufactured in the Factory - based on size
-std::vector<DROID_TEMPLATE *> fillTemplateList(STRUCTURE *psFactory);
+std::vector<DROID_TEMPLATE*> fillTemplateList(STRUCTURE* psFactory);
 
 /* gets a template from its name - relies on the name being unique */
-const DROID_TEMPLATE *getTemplateFromTranslatedNameNoPlayer(char const *pName);
+const DROID_TEMPLATE* getTemplateFromTranslatedNameNoPlayer(char const* pName);
 
 /*getTemplateFromMultiPlayerID gets template for unique ID  searching all lists */
-DROID_TEMPLATE *getTemplateFromMultiPlayerID(UDWORD multiPlayerID);
+DROID_TEMPLATE* getTemplateFromMultiPlayerID(UDWORD multiPlayerID);
 
 /// Have we researched the components of this template?
-bool researchedTemplate(const DROID_TEMPLATE *psCurr, int player, bool allowRedundant = false, bool verbose = false);
+bool researchedTemplate(const DROID_TEMPLATE* psCurr, int player, bool allowRedundant = false, bool verbose = false);
 
 void listTemplates();
 
-nlohmann::json saveTemplateCommon(const DROID_TEMPLATE *psCurr);
-bool loadTemplateCommon(WzConfig &ini, DROID_TEMPLATE &outputTemplate);
+nlohmann::json saveTemplateCommon(const DROID_TEMPLATE* psCurr);
+bool loadTemplateCommon(WzConfig& ini, DROID_TEMPLATE& outputTemplate);
 
-void checkPlayerBuiltHQ(const STRUCTURE *psStruct);
+void checkPlayerBuiltHQ(const STRUCTURE* psStruct);
 
 #endif // TEMPLATE_H

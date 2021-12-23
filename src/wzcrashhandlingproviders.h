@@ -22,7 +22,7 @@
 #include <string>
 #include <3rdparty/json/json_fwd.hpp>
 
-bool useCrashHandlingProvider(int argc, const char * const *argv);
+bool useCrashHandlingProvider(int argc, const char* const * argv);
 bool initCrashHandlingProvider(const std::string& platformPrefDir, const std::string& defaultLogFilePath);
 bool shutdownCrashHandlingProvider();
 

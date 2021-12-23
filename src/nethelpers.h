@@ -29,7 +29,8 @@
 #define WZ_DEFAULT_PUBLIC_IPv6_LOOKUP_SERVICE_URL "https://api6.ipify.org?format=json"
 #define WZ_DEFAULT_PUBLIC_IPv6_LOOKUP_SERVICE_JSONKEY "ip"
 
-typedef std::function<void (const std::string& ipv4Address, const std::string& ipv6Address, const std::vector<std::string>& errors)> IPAddressResultCallbackFunc;
+typedef std::function<void (const std::string& ipv4Address, const std::string& ipv6Address,
+                            const std::vector<std::string>& errors)> IPAddressResultCallbackFunc;
 
 // Asynchronously query the current device's public IP address(es), using a webservice
 // The `resultCallback` may be called on any thread

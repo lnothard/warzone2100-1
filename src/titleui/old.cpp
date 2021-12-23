@@ -45,7 +45,6 @@
 
 WzOldTitleUI::WzOldTitleUI(tMode mode) : mode(mode)
 {
-
 }
 
 void WzOldTitleUI::start()
@@ -94,7 +93,7 @@ void WzOldTitleUI::start()
 		break;
 	case MULTI:
 		ActivityManager::instance().navigateToMenu("Multiplayer");
-		startMultiPlayerMenu();		// goto multiplayer menu
+		startMultiPlayerMenu(); // goto multiplayer menu
 		break;
 	case KEYMAP:
 		ActivityManager::instance().navigateToMenu("KeyMap Editor");
@@ -212,7 +211,8 @@ TITLECODE WzOldTitleUI::run()
 	return TITLECODE_CONTINUE;
 }
 
-void WzOldTitleUI::screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight)
+void WzOldTitleUI::screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+                                       unsigned int newHeight)
 {
 	// If the Video Options screen is up, the current resolution text (and other values) should be refreshed
 	if (mode == VIDEO_OPTIONS)

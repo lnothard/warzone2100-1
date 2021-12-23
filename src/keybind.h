@@ -40,10 +40,10 @@ extern int scrollDirLeftRight;
 void kf_HalveHeights();
 void kf_DebugDroidInfo();
 void kf_BuildInfo();
-void kf_ToggleFPS();			//FPS counter NOT same as kf_Framerate! -Q
-void kf_ToggleUnitCount();		// Display units built / lost / produced counter
-void kf_ToggleSamples();		// Displays # of sound samples in Queue/list.
-void kf_ToggleOrders();		//displays unit's Order/action state.
+void kf_ToggleFPS(); //FPS counter NOT same as kf_Framerate! -Q
+void kf_ToggleUnitCount(); // Display units built / lost / produced counter
+void kf_ToggleSamples(); // Displays # of sound samples in Queue/list.
+void kf_ToggleOrders(); //displays unit's Order/action state.
 void kf_FrameRate();
 void kf_ShowNumObjects();
 void kf_ToggleRadar();
@@ -105,8 +105,12 @@ void kf_SendGlobalMessage();
 void kf_SendTeamMessage();
 void kf_ToggleConsole();
 void kf_ToggleTeamChat();
-MappableFunction kf_SelectUnits(const SELECTIONTYPE selectionType, const SELECTION_CLASS selectionClass = SELECTION_CLASS::DS_BY_TYPE, const bool bOnScreen = false);
-MappableFunction kf_SelectNoGroupUnits(const SELECTIONTYPE selectionType, const SELECTION_CLASS selectionClass = SELECTION_CLASS::DS_BY_TYPE, const bool bOnScreen = false);
+MappableFunction kf_SelectUnits(const SELECTIONTYPE selectionType,
+                                const SELECTION_CLASS selectionClass = SELECTION_CLASS::DS_BY_TYPE,
+                                const bool bOnScreen = false);
+MappableFunction kf_SelectNoGroupUnits(const SELECTIONTYPE selectionType,
+                                       const SELECTION_CLASS selectionClass = SELECTION_CLASS::DS_BY_TYPE,
+                                       const bool bOnScreen = false);
 MappableFunction kf_SetDroid(const SECONDARY_ORDER order, const SECONDARY_STATE state);
 MappableFunction kf_OrderDroid(const DroidOrderType order);
 
@@ -171,8 +175,8 @@ void kf_Reload();
 #define	SECS_PER_SPIN	2
 #define MAP_SPIN_RATE	(SPIN_SCALING/SECS_PER_SPIN)
 
-void kf_ToggleRadarTerrain();            //radar terrain
-void kf_ToggleRadarAllyEnemy();          //enemy/ally color toggle
+void kf_ToggleRadarTerrain(); //radar terrain
+void kf_ToggleRadarAllyEnemy(); //enemy/ally color toggle
 
 void kf_TileInfo();
 

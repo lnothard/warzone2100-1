@@ -35,7 +35,7 @@
 static GATEWAY_LIST psGateways;
 
 // Prototypes
-static void gwFreeGateway(GATEWAY *psDel);
+static void gwFreeGateway(GATEWAY* psDel);
 
 /******************************************************************************************************/
 /*                   Gateway data access functions                                                    */
@@ -87,14 +87,14 @@ void gwShutDown()
 // Add a gateway to the system
 bool gwNewGateway(SDWORD x1, SDWORD y1, SDWORD x2, SDWORD y2)
 {
-	GATEWAY		*psNew;
-	SDWORD		pos, temp;
+	GATEWAY* psNew;
+	SDWORD pos, temp;
 
 	ASSERT_OR_RETURN(false, x1 >= 0 && x1 < gwMapWidth() && y1 >= 0 && y1 < gwMapHeight()
 	                 && x2 >= 0 && x2 < gwMapWidth() && y2 >= 0 && y2 < gwMapHeight()
 	                 && (x1 == x2 || y1 == y2), "Invalid gateway coordinates (%d, %d, %d, %d)",
 	                 x1, y1, x2, y2);
-	psNew = (GATEWAY *)malloc(sizeof(GATEWAY));
+	psNew = (GATEWAY*)malloc(sizeof(GATEWAY));
 
 	// make sure the first coordinate is always the smallest
 	if (x2 < x1)
@@ -148,13 +148,13 @@ size_t gwNumGateways()
 	return psGateways.size();
 }
 
-GATEWAY_LIST &gwGetGateways()
+GATEWAY_LIST& gwGetGateways()
 {
 	return psGateways;
 }
 
 // Release a gateway
-static void gwFreeGateway(GATEWAY *psDel)
+static void gwFreeGateway(GATEWAY* psDel)
 {
 	int pos;
 
@@ -177,7 +177,6 @@ static void gwFreeGateway(GATEWAY *psDel)
 				gwClearGatewayFlag(pos, psDel->y1);
 			}
 		}
-
 	}
 
 	free(psDel);

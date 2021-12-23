@@ -66,7 +66,8 @@ public:
 
 	void closeAllChoosers();
 
-	void screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight) override;
+	void screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+	                         unsigned int newHeight) override;
 
 	void updatePlayers();
 

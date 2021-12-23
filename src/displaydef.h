@@ -32,10 +32,10 @@ struct iIMDShape;
 
 struct SCREEN_DISP_DATA
 {
-	iIMDShape	*imd;
-	UDWORD		frameNumber;		// last frame it was drawn
-	UDWORD		screenX, screenY;
-	UDWORD		screenR;
+	iIMDShape* imd;
+	UDWORD frameNumber; // last frame it was drawn
+	UDWORD screenX, screenY;
+	UDWORD screenR;
 };
 
 #endif // __INCLUDED_DISPLAYDEF_H__

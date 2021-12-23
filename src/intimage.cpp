@@ -37,45 +37,53 @@
 
 enum
 {
-	FR_SOLID,	//< Bitmap drawn solid.
-	FR_KEYED,	//< Bitmap drawn with colour 0 transparent.
+	FR_SOLID,
+	//< Bitmap drawn solid.
+	FR_KEYED,
+	//< Bitmap drawn with colour 0 transparent.
 };
 
 enum FRAMERECTTYPE
 {
-	FR_IGNORE,	//< Fill rect is ignored.
-	FR_FRAME,	//< Fill rect drawn relative to frame.
-	FR_LEFT,	//< Fill rect drawn relative to left of frame.
-	FR_RIGHT,	//< Fill rect drawn relative to right of frame.
-	FR_TOP,		//< Fill rect drawn relative to top of frame.
-	FR_BOTTOM,	//< Fill rect drawn relative to bottom of frame.
+	FR_IGNORE,
+	//< Fill rect is ignored.
+	FR_FRAME,
+	//< Fill rect drawn relative to frame.
+	FR_LEFT,
+	//< Fill rect drawn relative to left of frame.
+	FR_RIGHT,
+	//< Fill rect drawn relative to right of frame.
+	FR_TOP,
+	//< Fill rect drawn relative to top of frame.
+	FR_BOTTOM,
+	//< Fill rect drawn relative to bottom of frame.
 };
 
 struct FRAMERECT
 {
-	FRAMERECTTYPE Type;		//< One of the FR_... values.
-	int TLXOffset, TLYOffset;	//< Offsets for the rect fill.
+	FRAMERECTTYPE Type; //< One of the FR_... values.
+	int TLXOffset, TLYOffset; //< Offsets for the rect fill.
 	int BRXOffset, BRYOffset;
-	int ColourIndex;		//< Hackish index into the WZCOLOR palette
+	int ColourIndex; //< Hackish index into the WZCOLOR palette
 };
 
 // Frame definition structure.
 struct IMAGEFRAME
 {
-	SWORD OffsetX0, OffsetY0;	//< Offset top left of frame.
-	SWORD OffsetX1, OffsetY1;	//< Offset bottom right of frame.
-	SWORD TopLeft;			//< Image indecies for the corners ( -1 = don't draw).
+	SWORD OffsetX0, OffsetY0; //< Offset top left of frame.
+	SWORD OffsetX1, OffsetY1; //< Offset bottom right of frame.
+	SWORD TopLeft; //< Image indecies for the corners ( -1 = don't draw).
 	SWORD TopRight;
 	SWORD BottomLeft;
 	SWORD BottomRight;
-	SWORD TopEdge, TopType;		//< Image indecies for the edges ( -1 = don't draw). Type ie FR_SOLID or FR_KEYED.
+	SWORD TopEdge, TopType; //< Image indecies for the edges ( -1 = don't draw). Type ie FR_SOLID or FR_KEYED.
 	SWORD RightEdge, RightType;
 	SWORD BottomEdge, BottomType;
 	SWORD LeftEdge, LeftType;
-	FRAMERECT FRect[5];		//< Fill rectangles.
+	FRAMERECT FRect[5]; //< Fill rectangles.
 };
 
-IMAGEFILE *IntImages;	// All the 2d graphics for the user interface.
+IMAGEFILE* IntImages; // All the 2d graphics for the user interface.
 
 /** Form frame definition for normal frames. */
 IMAGEFRAME FrameNormal =
@@ -89,11 +97,12 @@ IMAGEFRAME FrameNormal =
 	IMAGE_FRAME_VR, FR_SOLID,
 	IMAGE_FRAME_HB, FR_SOLID,
 	IMAGE_FRAME_VL, FR_SOLID,
-	{	{FR_FRAME, 0, 1, 0, -1, 33},
-		{FR_IGNORE, 0, 0, 0, 0 , 0},
-		{FR_IGNORE, 0, 0, 0, 0 , 0},
-		{FR_IGNORE, 0, 0, 0, 0 , 0},
-		{FR_IGNORE, 0, 0, 0, 0 , 0}
+	{
+		{FR_FRAME, 0, 1, 0, -1, 33},
+		{FR_IGNORE, 0, 0, 0, 0, 0},
+		{FR_IGNORE, 0, 0, 0, 0, 0},
+		{FR_IGNORE, 0, 0, 0, 0, 0},
+		{FR_IGNORE, 0, 0, 0, 0, 0}
 	},
 };
 
@@ -109,11 +118,12 @@ IMAGEFRAME FrameRadar =
 	IMAGE_FRAME_VR, FR_SOLID,
 	IMAGE_FRAME_HB, FR_SOLID,
 	IMAGE_FRAME_VL, FR_SOLID,
-	{	{FR_IGNORE, 0, 0, 0, 0 , 0},
-		{FR_IGNORE, 0, 0, 0, 0 , 0},
-		{FR_IGNORE, 0, 0, 0, 0 , 0},
-		{FR_IGNORE, 0, 0, 0, 0 , 0},
-		{FR_IGNORE, 0, 0, 0, 0 , 0}
+	{
+		{FR_IGNORE, 0, 0, 0, 0, 0},
+		{FR_IGNORE, 0, 0, 0, 0, 0},
+		{FR_IGNORE, 0, 0, 0, 0, 0},
+		{FR_IGNORE, 0, 0, 0, 0, 0},
+		{FR_IGNORE, 0, 0, 0, 0, 0}
 	},
 };
 
@@ -121,7 +131,7 @@ IMAGEFRAME FrameRadar =
 //
 bool imageInitBitmaps()
 {
-	IntImages = (IMAGEFILE *)resGetData("IMG", "intfac.img");
+	IntImages = (IMAGEFILE*)resGetData("IMG", "intfac.img");
 	if (IntImages == nullptr)
 	{
 		std::string errorMessage = astringf(_("Unable to load: %s."), "intfac.img");
@@ -139,7 +149,8 @@ bool imageInitBitmaps()
 
 // Render a window frame.
 //
-void RenderWindowFrame(FRAMETYPE frame, UDWORD x, UDWORD y, UDWORD Width, UDWORD Height, const glm::mat4 &modelViewProjectionMatrix)
+void RenderWindowFrame(FRAMETYPE frame, UDWORD x, UDWORD y, UDWORD Width, UDWORD Height,
+                       const glm::mat4& modelViewProjectionMatrix)
 {
 	SWORD WTopRight = 0;
 	SWORD WTopLeft = 0;
@@ -150,8 +161,8 @@ void RenderWindowFrame(FRAMETYPE frame, UDWORD x, UDWORD y, UDWORD Width, UDWORD
 	SWORD HBottomRight = 0;
 	SWORD HBottomLeft = 0;
 	UWORD RectI;
-	const FRAMERECT *Rect;
-	const IMAGEFRAME *Frame = (frame == FRAME_NORMAL) ? &FrameNormal : &FrameRadar;
+	const FRAMERECT* Rect;
+	const IMAGEFRAME* Frame = (frame == FRAME_NORMAL) ? &FrameNormal : &FrameRadar;
 
 	x += Frame->OffsetX0;
 	y += Frame->OffsetY0;
@@ -209,14 +220,16 @@ void RenderWindowFrame(FRAMETYPE frame, UDWORD x, UDWORD y, UDWORD Width, UDWORD
 	{
 		WBottomRight = (SWORD)iV_GetImageWidth(IntImages, Frame->BottomRight);
 		HBottomRight = (SWORD)iV_GetImageHeight(IntImages, Frame->BottomRight);
-		iV_DrawImage(IntImages, Frame->BottomRight, x + Width - WBottomRight, y + Height - HBottomRight, modelViewProjectionMatrix, &imageDrawBatch);
+		iV_DrawImage(IntImages, Frame->BottomRight, x + Width - WBottomRight, y + Height - HBottomRight,
+		             modelViewProjectionMatrix, &imageDrawBatch);
 	}
 
 	if (Frame->BottomLeft >= 0)
 	{
 		WBottomLeft = (SWORD)iV_GetImageWidth(IntImages, Frame->BottomLeft);
 		HBottomLeft = (SWORD)iV_GetImageHeight(IntImages, Frame->BottomLeft);
-		iV_DrawImage(IntImages, Frame->BottomLeft, x, y + Height - HBottomLeft, modelViewProjectionMatrix, &imageDrawBatch);
+		iV_DrawImage(IntImages, Frame->BottomLeft, x, y + Height - HBottomLeft, modelViewProjectionMatrix,
+		             &imageDrawBatch);
 	}
 
 	if (Frame->TopEdge >= 0)
@@ -227,18 +240,21 @@ void RenderWindowFrame(FRAMETYPE frame, UDWORD x, UDWORD y, UDWORD Width, UDWORD
 
 	if (Frame->BottomEdge >= 0)
 	{
-		iV_DrawImageRepeatX(IntImages, Frame->BottomEdge, x + WBottomLeft, y + Height - iV_GetImageHeight(IntImages, Frame->BottomEdge),
+		iV_DrawImageRepeatX(IntImages, Frame->BottomEdge, x + WBottomLeft,
+		                    y + Height - iV_GetImageHeight(IntImages, Frame->BottomEdge),
 		                    Width - WBottomLeft - WBottomRight, modelViewProjectionMatrix, false, &imageDrawBatch);
 	}
 
 	if (Frame->LeftEdge >= 0)
 	{
-		iV_DrawImageRepeatY(IntImages, Frame->LeftEdge, x, y + HTopLeft, Height - HTopLeft - HBottomLeft, modelViewProjectionMatrix, &imageDrawBatch);
+		iV_DrawImageRepeatY(IntImages, Frame->LeftEdge, x, y + HTopLeft, Height - HTopLeft - HBottomLeft,
+		                    modelViewProjectionMatrix, &imageDrawBatch);
 	}
 
 	if (Frame->RightEdge >= 0)
 	{
-		iV_DrawImageRepeatY(IntImages, Frame->RightEdge, x + Width - iV_GetImageWidth(IntImages, Frame->RightEdge), y + HTopRight,
+		iV_DrawImageRepeatY(IntImages, Frame->RightEdge, x + Width - iV_GetImageWidth(IntImages, Frame->RightEdge),
+		                    y + HTopRight,
 		                    Height - HTopRight - HBottomRight, modelViewProjectionMatrix, &imageDrawBatch);
 	}
 
@@ -249,7 +265,15 @@ void IntListTabWidget::initialize()
 {
 	ListTabWidget::initialize();
 	tabWidget()->setHeight(15);
-	tabWidget()->addStyle(TabSelectionStyle(Image(IntImages, IMAGE_TAB1),    Image(IntImages, IMAGE_TAB1DOWN),    Image(IntImages, IMAGE_TABHILIGHT),    Image(), Image(), Image(), Image(), Image(), Image(), 2));
-	tabWidget()->addStyle(TabSelectionStyle(Image(IntImages, IMAGE_TAB1_SM), Image(IntImages, IMAGE_TAB1DOWN_SM), Image(IntImages, IMAGE_TABHILIGHT_SM), Image(), Image(), Image(), Image(), Image(), Image(), 2));
-	tabWidget()->addStyle(TabSelectionStyle(Image(IntImages, IMAGE_TAB1_SM), Image(IntImages, IMAGE_TAB1DOWN_SM), Image(IntImages, IMAGE_TABHILIGHT_SM), Image(IntImages, IMAGE_LFTTAB), Image(IntImages, IMAGE_LFTTABD), Image(IntImages, IMAGE_LFTTABD), Image(IntImages, IMAGE_RGTTAB), Image(IntImages, IMAGE_RGTTABD), Image(IntImages, IMAGE_RGTTABD), 2));
+	tabWidget()->addStyle(TabSelectionStyle(Image(IntImages, IMAGE_TAB1), Image(IntImages, IMAGE_TAB1DOWN),
+	                                        Image(IntImages, IMAGE_TABHILIGHT), Image(), Image(), Image(), Image(),
+	                                        Image(), Image(), 2));
+	tabWidget()->addStyle(TabSelectionStyle(Image(IntImages, IMAGE_TAB1_SM), Image(IntImages, IMAGE_TAB1DOWN_SM),
+	                                        Image(IntImages, IMAGE_TABHILIGHT_SM), Image(), Image(), Image(), Image(),
+	                                        Image(), Image(), 2));
+	tabWidget()->addStyle(TabSelectionStyle(Image(IntImages, IMAGE_TAB1_SM), Image(IntImages, IMAGE_TAB1DOWN_SM),
+	                                        Image(IntImages, IMAGE_TABHILIGHT_SM), Image(IntImages, IMAGE_LFTTAB),
+	                                        Image(IntImages, IMAGE_LFTTABD), Image(IntImages, IMAGE_LFTTABD),
+	                                        Image(IntImages, IMAGE_RGTTAB), Image(IntImages, IMAGE_RGTTABD),
+	                                        Image(IntImages, IMAGE_RGTTABD), 2));
 }

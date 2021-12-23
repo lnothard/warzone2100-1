@@ -55,7 +55,8 @@
 
 // MARK: - BuildPropertyProvider
 
-enum class BuildProperty {
+enum class BuildProperty
+{
 	GIT_BRANCH,
 	GIT_TAG,
 	GIT_EXTRA,
@@ -77,25 +78,25 @@ enum class BuildProperty {
 
 #include <ntverp.h>				// Windows SDK - include for access to VER_PRODUCTBUILD
 #if VER_PRODUCTBUILD >= 9200
-	// 9200 is the Windows SDK 8.0 (which introduced family support)
-	#include <winapifamily.h>	// Windows SDK
+// 9200 is the Windows SDK 8.0 (which introduced family support)
+#include <winapifamily.h>	// Windows SDK
 #else
-	// Earlier SDKs don't have the concept of families - provide simple implementation
-	// that treats everything as "desktop"
-	#if !defined(WINAPI_PARTITION_DESKTOP)
+// Earlier SDKs don't have the concept of families - provide simple implementation
+// that treats everything as "desktop"
+#if !defined(WINAPI_PARTITION_DESKTOP)
 		#define WINAPI_PARTITION_DESKTOP			0x00000001
-	#endif
-	#if !defined(WINAPI_FAMILY_PARTITION)
+#endif
+#if !defined(WINAPI_FAMILY_PARTITION)
 		#define WINAPI_FAMILY_PARTITION(Partition)	((WINAPI_PARTITION_DESKTOP & Partition) == Partition)
-	#endif
+#endif
 #endif
 
 static std::string Get_WinPackageFullName()
 {
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 	typedef LONG (WINAPI *GetCurrentPackageFullNameFunc)(
-		UINT32 *packageFullNameLength,
-		PWSTR  packageFullName
+		UINT32* packageFullNameLength,
+		PWSTR packageFullName
 	);
 #if !defined(APPMODEL_ERROR_NO_PACKAGE)
 #  define APPMODEL_ERROR_NO_PACKAGE 15700
@@ -103,7 +104,8 @@ static std::string Get_WinPackageFullName()
 
 	HMODULE hKernel32 = GetModuleHandleW(L"kernel32");
 
-	GetCurrentPackageFullNameFunc _GetCurrentPackageFullName = reinterpret_cast<GetCurrentPackageFullNameFunc>(reinterpret_cast<void*>(GetProcAddress(hKernel32, "GetCurrentPackageFullName")));
+	GetCurrentPackageFullNameFunc _GetCurrentPackageFullName = reinterpret_cast<GetCurrentPackageFullNameFunc>(
+		reinterpret_cast<void*>(GetProcAddress(hKernel32, "GetCurrentPackageFullName")));
 
 	if (!_GetCurrentPackageFullName)
 	{
@@ -138,14 +140,14 @@ static std::string Get_WinPackageFullName()
 	// convert UTF-16 fullNameW to UTF-8
 	std::vector<char> utf8Buffer;
 	int utf8Len = WideCharToMultiByte(CP_UTF8, 0, fullNameW.data(), -1, NULL, 0, NULL, NULL);
-	if ( utf8Len <= 0 )
+	if (utf8Len <= 0)
 	{
 		// Encoding conversion error
 		debug(LOG_ERROR, "WideCharToMultiByte[1] failed");
 		return "";
 	}
 	utf8Buffer.resize(utf8Len, 0);
-	if ( (utf8Len = WideCharToMultiByte(CP_UTF8, 0, fullNameW.data(), -1, &utf8Buffer[0], utf8Len, NULL, NULL)) <= 0 )
+	if ((utf8Len = WideCharToMultiByte(CP_UTF8, 0, fullNameW.data(), -1, &utf8Buffer[0], utf8Len, NULL, NULL)) <= 0)
 	{
 		// Encoding conversion error
 		debug(LOG_ERROR, "WideCharToMultiByte[2] failed");
@@ -165,31 +167,31 @@ static std::string GetCurrentBuildPropertyValue(const BuildProperty& property)
 	using BP = BuildProperty;
 	switch (property)
 	{
-		case BP::GIT_BRANCH:
-			return VCS_BRANCH;
-		case BP::GIT_TAG:
-			return VCS_TAG;
-		case BP::GIT_EXTRA:
-			return VCS_EXTRA;
-		case BP::GIT_FULL_HASH:
-			return VCS_FULL_HASH;
-		case BP::GIT_SHORT_HASH:
-			return VCS_SHORT_HASH;
-		case BP::GIT_WC_MODIFIED:
-			return std::to_string(VCS_WC_MODIFIED);
-		case BP::GIT_MOST_RECENT_COMMIT_DATE:
-			return VCS_MOST_RECENT_COMMIT_DATE;
-		case BP::WZ_PACKAGE_DISTRIBUTOR:
-			return PACKAGE_DISTRIBUTOR;
-		case BP::COMPILE_DATE:
-			return getCompileDate();
-		case BP::VERSION_STRING:
-			return version_getVersionString();
-		case BP::PLATFORM:
-			return wzGetPlatform().toUtf8();
-		case BP::PARENTPROCESS:
-			return LaunchInfo::getParentImageName().fullPath();
-		case BP::ANCESTORS:
+	case BP::GIT_BRANCH:
+		return VCS_BRANCH;
+	case BP::GIT_TAG:
+		return VCS_TAG;
+	case BP::GIT_EXTRA:
+		return VCS_EXTRA;
+	case BP::GIT_FULL_HASH:
+		return VCS_FULL_HASH;
+	case BP::GIT_SHORT_HASH:
+		return VCS_SHORT_HASH;
+	case BP::GIT_WC_MODIFIED:
+		return std::to_string(VCS_WC_MODIFIED);
+	case BP::GIT_MOST_RECENT_COMMIT_DATE:
+		return VCS_MOST_RECENT_COMMIT_DATE;
+	case BP::WZ_PACKAGE_DISTRIBUTOR:
+		return PACKAGE_DISTRIBUTOR;
+	case BP::COMPILE_DATE:
+		return getCompileDate();
+	case BP::VERSION_STRING:
+		return version_getVersionString();
+	case BP::PLATFORM:
+		return wzGetPlatform().toUtf8();
+	case BP::PARENTPROCESS:
+		return LaunchInfo::getParentImageName().fullPath();
+	case BP::ANCESTORS:
 		{
 			auto ancestors = LaunchInfo::getAncestorProcesses();
 			std::string ancestorsStr;
@@ -197,14 +199,15 @@ static std::string GetCurrentBuildPropertyValue(const BuildProperty& property)
 			{
 				if (!ancestorsStr.empty()) ancestorsStr += ";";
 				ancestorsStr += "\"";
-				ancestorsStr += WzString::fromUtf8(ancestor.imageFileName.fullPath()).replace("\"", "\\\"").toStdString();
+				ancestorsStr += WzString::fromUtf8(ancestor.imageFileName.fullPath()).replace("\"", "\\\"").
+					toStdString();
 				ancestorsStr += "\"";
 			}
 			return ancestorsStr;
 		}
-		case BP::WIN_PACKAGE_FULLNAME:
+	case BP::WIN_PACKAGE_FULLNAME:
 #if defined(WZ_OS_WIN)
-			return Get_WinPackageFullName();
+		return Get_WinPackageFullName();
 #else
 			return "";
 #endif
@@ -229,7 +232,10 @@ static const std::unordered_map<std::string, BuildProperty> strToBuildPropertyMa
 	{"WIN_PACKAGE_FULLNAME", BuildProperty::WIN_PACKAGE_FULLNAME}
 };
 
-BuildPropertyProvider::~BuildPropertyProvider() { }
+BuildPropertyProvider::~BuildPropertyProvider()
+{
+}
+
 bool BuildPropertyProvider::getPropertyValue(const std::string& property, std::string& output_value)
 {
 	auto it = strToBuildPropertyMap.find(property);
@@ -243,7 +249,8 @@ bool BuildPropertyProvider::getPropertyValue(const std::string& property, std::s
 
 // MARK: - EnvironmentPropertyProvider
 
-static const std::unordered_map<std::string, EnvironmentPropertyProvider::EnvironmentProperty> strToEnvironmentPropertyMap = {
+static const std::unordered_map<std::string, EnvironmentPropertyProvider::EnvironmentProperty>
+strToEnvironmentPropertyMap = {
 	{"FIRST_LAUNCH", EnvironmentPropertyProvider::EnvironmentProperty::FIRST_LAUNCH},
 	{"INSTALLED_PATH", EnvironmentPropertyProvider::EnvironmentProperty::INSTALLED_PATH},
 	{"WIN_INSTALLED_BINARIES", EnvironmentPropertyProvider::EnvironmentProperty::WIN_INSTALLED_BINARIES},
@@ -259,7 +266,7 @@ static bool win_Utf16toUtf8(const wchar_t* buffer, std::vector<char>& u8_buffer)
 	int outputLength = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, NULL, 0, NULL, NULL);
 	if (outputLength <= 0)
 	{
-//		debug(LOG_ERROR, "Encoding conversion error.");
+		//		debug(LOG_ERROR, "Encoding conversion error.");
 		return false;
 	}
 	if (u8_buffer.size() < static_cast<size_t>(outputLength))
@@ -268,7 +275,7 @@ static bool win_Utf16toUtf8(const wchar_t* buffer, std::vector<char>& u8_buffer)
 	}
 	if (WideCharToMultiByte(CP_UTF8, 0, buffer, -1, &u8_buffer[0], outputLength, NULL, NULL) <= 0)
 	{
-//		debug(LOG_ERROR, "Encoding conversion error.");
+		//		debug(LOG_ERROR, "Encoding conversion error.");
 		return false;
 	}
 	return true;
@@ -299,18 +306,20 @@ static std::vector<std::string> Get_WinInstalledBinaries()
 		return {};
 	}
 	std::vector<char> u8_buffer(MAX_PATH, 0);
-	do {
+	do
+	{
 		if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 		{
 			// convert ffd.cFileName to UTF-8
 			if (!win_Utf16toUtf8(ffd.cFileName, u8_buffer))
 			{
-//				debug(LOG_ERROR, "Encoding conversion error.");
+				//				debug(LOG_ERROR, "Encoding conversion error.");
 				continue;
 			}
 			files.push_back(std::string(u8_buffer.data()));
 		}
-	} while (FindNextFileW(hFind, &ffd) != 0);
+	}
+	while (FindNextFileW(hFind, &ffd) != 0);
 	FindClose(hFind);
 
 	return files;
@@ -323,15 +332,17 @@ static std::vector<std::string> Get_WinProcessModules(bool filenamesOnly = false
 	std::vector<std::string> processModules;
 	std::vector<HMODULE> hMods(2048);
 	DWORD cbNeeded = 2048 * sizeof(HMODULE);
-	do {
+	do
+	{
 		hMods.resize(cbNeeded / sizeof(HMODULE));
 		DWORD currentSize = static_cast<DWORD>(hMods.size() * sizeof(HMODULE));
-		if(EnumProcessModulesEx(GetCurrentProcess(), hMods.data(), currentSize, &cbNeeded, LIST_MODULES_ALL) == 0)
+		if (EnumProcessModulesEx(GetCurrentProcess(), hMods.data(), currentSize, &cbNeeded, LIST_MODULES_ALL) == 0)
 		{
 			// EnumProcessModulesEx failed
 			return {};
 		}
-	} while (cbNeeded > static_cast<DWORD>(hMods.size() * sizeof(HMODULE)));
+	}
+	while (cbNeeded > static_cast<DWORD>(hMods.size() * sizeof(HMODULE)));
 
 	std::vector<wchar_t> buffer(WIN_MAX_EXTENDED_PATH + 1, 0);
 	std::vector<char> u8_buffer(WIN_MAX_EXTENDED_PATH, 0);
@@ -343,12 +354,12 @@ static std::vector<std::string> Get_WinProcessModules(bool filenamesOnly = false
 		if ((moduleFileNameLen == 0) && (lastError != ERROR_SUCCESS))
 		{
 			// GetModuleFileName failed
-//			debug(LOG_ERROR, "GetModuleFileName failed: %lu", moduleFileNameLen);
+			//			debug(LOG_ERROR, "GetModuleFileName failed: %lu", moduleFileNameLen);
 			continue;
 		}
 		else if (moduleFileNameLen > (buffer.size() - 1))
 		{
-//			debug(LOG_ERROR, "GetModuleFileName returned a length: %lu >= buffer length: %zu", moduleFileNameLen, buffer.size());
+			//			debug(LOG_ERROR, "GetModuleFileName returned a length: %lu >= buffer length: %zu", moduleFileNameLen, buffer.size());
 			continue;
 		}
 
@@ -358,7 +369,7 @@ static std::vector<std::string> Get_WinProcessModules(bool filenamesOnly = false
 
 		if (!win_Utf16toUtf8(buffer.data(), u8_buffer))
 		{
-//			debug(LOG_ERROR, "Encoding conversion error.");
+			//			debug(LOG_ERROR, "Encoding conversion error.");
 			continue;
 		}
 		if (!filenamesOnly)
@@ -398,7 +409,7 @@ std::string EnvironmentPropertyProvider::GetCurrentEnvironmentPropertyValue(cons
 	using EP = EnvironmentProperty;
 	switch (property)
 	{
-		case EP::FIRST_LAUNCH:
+	case EP::FIRST_LAUNCH:
 		{
 			if (firstLaunchDateStr.empty())
 			{
@@ -410,9 +421,9 @@ std::string EnvironmentPropertyProvider::GetCurrentEnvironmentPropertyValue(cons
 			}
 			return firstLaunchDateStr;
 		}
-		case EP::INSTALLED_PATH:
-			return LaunchInfo::getCurrentProcessDetails().imageFileName.dirname();
-		case EP::WIN_INSTALLED_BINARIES:
+	case EP::INSTALLED_PATH:
+		return LaunchInfo::getCurrentProcessDetails().imageFileName.dirname();
+	case EP::WIN_INSTALLED_BINARIES:
 		{
 #if defined(WZ_OS_WIN)
 			if (binDirFilesStr.empty())
@@ -429,7 +440,7 @@ std::string EnvironmentPropertyProvider::GetCurrentEnvironmentPropertyValue(cons
 #endif
 			return binDirFilesStr;
 		}
-		case EP::WIN_LOADEDMODULES:
+	case EP::WIN_LOADEDMODULES:
 		{
 #if defined(WZ_OS_WIN)
 			if (processModulesStr.empty())
@@ -446,7 +457,7 @@ std::string EnvironmentPropertyProvider::GetCurrentEnvironmentPropertyValue(cons
 #endif
 			return processModulesStr;
 		}
-		case EP::WIN_LOADEDMODULENAMES:
+	case EP::WIN_LOADEDMODULENAMES:
 		{
 #if defined(WZ_OS_WIN)
 			if (processModuleNamesStr.empty())
@@ -467,7 +478,10 @@ std::string EnvironmentPropertyProvider::GetCurrentEnvironmentPropertyValue(cons
 	return ""; // silence warning
 }
 
-EnvironmentPropertyProvider::~EnvironmentPropertyProvider() { }
+EnvironmentPropertyProvider::~EnvironmentPropertyProvider()
+{
+}
+
 bool EnvironmentPropertyProvider::getPropertyValue(const std::string& property, std::string& output_value)
 {
 	auto it = strToEnvironmentPropertyMap.find(property);
@@ -481,7 +495,10 @@ bool EnvironmentPropertyProvider::getPropertyValue(const std::string& property, 
 
 // MARK: - CombinedPropertyProvider
 
-CombinedPropertyProvider::~CombinedPropertyProvider() { }
+CombinedPropertyProvider::~CombinedPropertyProvider()
+{
+}
+
 bool CombinedPropertyProvider::getPropertyValue(const std::string& property, std::string& output_value)
 {
 	for (auto& provider : propertyProviders)
@@ -493,4 +510,3 @@ bool CombinedPropertyProvider::getPropertyValue(const std::string& property, std
 	}
 	return false;
 }
-

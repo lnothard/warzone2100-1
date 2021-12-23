@@ -29,20 +29,23 @@
  */
 enum ASR_RETVAL
 {
-	ASR_OK,         ///< found a route
-	ASR_FAILED,     ///< no route could be found
-	ASR_NEAREST,    ///< found a partial route to a nearby position
+	ASR_OK,
+	///< found a route
+	ASR_FAILED,
+	///< no route could be found
+	ASR_NEAREST,
+	///< found a partial route to a nearby position
 };
 
 /** Use the A* algorithm to find a path
  *
  *  @ingroup pathfinding
  */
-ASR_RETVAL fpathAStarRoute(MOVE_CONTROL *psMove, PATHJOB *psJob);
+ASR_RETVAL fpathAStarRoute(MOVE_CONTROL* psMove, PATHJOB* psJob);
 
 /// Call from main thread.
 /// Sets psJob->blockingMap for later use by pathfinding thread, generating the required map if not already generated.
-void fpathSetBlockingMap(PATHJOB *psJob);
+void fpathSetBlockingMap(PATHJOB* psJob);
 
 /** Clean up the path finding node table.
  *

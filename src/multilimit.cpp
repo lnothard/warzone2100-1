@@ -81,9 +81,10 @@
 // ////////////////////////////////////////////////////////////////////////////
 // protos.
 
-static void displayStructureBar(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+static void displayStructureBar(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
-struct DisplayStructureBarCache {
+struct DisplayStructureBarCache
+{
 	WzText wzNameText;
 	WzText wzLimitText;
 };
@@ -98,12 +99,11 @@ static inline void freeLimitSet()
 // ////////////////////////////////////////////////////////////////////////////
 WzMultiLimitTitleUI::WzMultiLimitTitleUI(std::shared_ptr<WzMultiplayerOptionsTitleUI> parent) : parent(parent)
 {
-
 }
 
 void WzMultiLimitTitleUI::start()
 {
-	addBackdrop();//background
+	addBackdrop(); //background
 
 	// load stats...
 	if (!bLimiterLoaded)
@@ -142,8 +142,8 @@ void WzMultiLimitTitleUI::start()
 	widgGetFromID(psWScreen, FRONTEND_BACKDROP)->attach(limitsForm);
 	limitsForm->id = IDLIMITS;
 	limitsForm->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		psWidget->setGeometry(LIMITSX, LIMITSY, LIMITSW, LIMITSH);
-	}));
+			psWidget->setGeometry(LIMITSX, LIMITSY, LIMITSW, LIMITSH);
+			}));
 
 	// force limits off button
 	addMultiBut(psWScreen, IDLIMITS, IDLIMITS_FORCEOFF,
@@ -191,12 +191,12 @@ void WzMultiLimitTitleUI::start()
 	auto limitsList = IntListTabWidget::make();
 	limitsForm->attach(limitsList);
 	limitsList->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		IntListTabWidget *limitsList = static_cast<IntListTabWidget *>(psWidget);
-		assert(limitsList != nullptr);
-		limitsList->setChildSize(BARWIDTH, BARHEIGHT);
-		limitsList->setChildSpacing(5, 5);
-		limitsList->setGeometry(50, 10, BARWIDTH, 370);
-	}));
+			IntListTabWidget *limitsList = static_cast<IntListTabWidget *>(psWidget);
+			assert(limitsList != nullptr);
+			limitsList->setChildSize(BARWIDTH, BARHEIGHT);
+			limitsList->setChildSpacing(5, 5);
+			limitsList->setGeometry(50, 10, BARWIDTH, 370);
+			}));
 
 	//Put the buttons on it
 	int limitsButtonId = IDLIMITS_ENTRIES_START;
@@ -211,9 +211,10 @@ void WzMultiLimitTitleUI::start()
 			button->displayFunction = displayStructureBar;
 			button->UserData = i;
 			button->pUserData = new DisplayStructureBarCache();
-			button->setOnDelete([](WIDGET *psWidget) {
+			button->setOnDelete([](WIDGET* psWidget)
+			{
 				assert(psWidget->pUserData != nullptr);
-				delete static_cast<DisplayStructureBarCache *>(psWidget->pUserData);
+				delete static_cast<DisplayStructureBarCache*>(psWidget->pUserData);
 				psWidget->pUserData = nullptr;
 			});
 			limitsList->addWidgetToLayout(button);
@@ -229,18 +230,19 @@ void WzMultiLimitTitleUI::start()
 
 TITLECODE WzMultiLimitTitleUI::run()
 {
-	parent->frontendMultiMessages(false);							// network stuff.
+	parent->frontendMultiMessages(false); // network stuff.
 
-	WidgetTriggers const &triggers = widgRunScreen(psWScreen);
-	unsigned id = triggers.empty() ? 0 : triggers.front().widget->id; // Just use first click here, since the next click could be on another menu.
+	WidgetTriggers const& triggers = widgRunScreen(psWScreen);
+	unsigned id = triggers.empty() ? 0 : triggers.front().widget->id;
+	// Just use first click here, since the next click could be on another menu.
 
 	// sliders
-	if ((id > IDLIMITS_ENTRIES_START)  && (id < IDLIMITS_ENTRIES_END))
+	if ((id > IDLIMITS_ENTRIES_START) && (id < IDLIMITS_ENTRIES_END))
 	{
 		unsigned statid = widgGetFromID(psWScreen, id - 1)->UserData;
 		if (statid)
 		{
-			asStructureStats[statid].upgrade[0].limit = (UBYTE)((W_SLIDER *)(widgGetFromID(psWScreen, id)))->pos;
+			asStructureStats[statid].upgrade[0].limit = (UBYTE)((W_SLIDER*)(widgGetFromID(psWScreen, id)))->pos;
 		}
 	}
 	else
@@ -259,13 +261,13 @@ TITLECODE WzMultiLimitTitleUI::run()
 		case IDLIMITS_RETURN:
 			// reset the sliders..
 			resetLimits();
-			// free limiter structure
+		// free limiter structure
 			freeLimitSet();
 			if (widgGetButtonState(psWScreen, IDLIMITS_FORCE))
 			{
 				ingame.flags &= ~MPFLAGS_FORCELIMITS;
 			}
-			//inform others
+		//inform others
 			if (NetPlay.isHost)
 			{
 				sendOptions();
@@ -273,7 +275,7 @@ TITLECODE WzMultiLimitTitleUI::run()
 
 			changeTitleUI(parent);
 
-			// make some noize.
+		// make some noize.
 			if (!ingame.localOptionsReceived)
 			{
 				displayRoomSystemMessage(_("Limits reset to default values"));
@@ -304,14 +306,14 @@ TITLECODE WzMultiLimitTitleUI::run()
 		}
 	}
 
-	widgDisplayScreen(psWScreen);						// show the widgets currently running
+	widgDisplayScreen(psWScreen); // show the widgets currently running
 	return TITLECODE_CONTINUE;
 }
 
 // ////////////////////////////////////////////////////////////////////////////
 void createLimitSet()
 {
-	UDWORD			numchanges = 0;
+	UDWORD numchanges = 0;
 
 	debug(LOG_NET, "LimitSet created");
 	// free old limiter structure
@@ -344,7 +346,7 @@ void createLimitSet()
 			if (asStructureStats[i].upgrade[0].limit != LOTS_OF)
 			{
 				ASSERT_OR_RETURN(, ingame.structureLimits.size() < numchanges, "Bad number of changed limits");
-				ingame.structureLimits.push_back(MULTISTRUCTLIMITS { i, asStructureStats[i].upgrade[0].limit });
+				ingame.structureLimits.push_back(MULTISTRUCTLIMITS{i, asStructureStats[i].upgrade[0].limit});
 			}
 		}
 	}
@@ -380,7 +382,7 @@ bool applyLimitSet()
 				{
 					while (asStructureStats[id].curCount[player] > asStructureStats[id].upgrade[player].limit)
 					{
-						for (STRUCTURE *psStruct = apsStructLists[player]; psStruct; psStruct = psStruct->psNext)
+						for (STRUCTURE* psStruct = apsStructLists[player]; psStruct; psStruct = psStruct->psNext)
 						{
 							if (psStruct->pStructureType->type == asStructureStats[id].type)
 							{
@@ -388,7 +390,6 @@ bool applyLimitSet()
 								break;
 							}
 						}
-
 					}
 				}
 			}
@@ -458,17 +459,17 @@ bool applyLimitSet()
 
 // ////////////////////////////////////////////////////////////////////////////
 
-static void displayStructureBar(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+static void displayStructureBar(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	// Any widget using displayStructureBar must have its pUserData initialized to a (DisplayStructureBarCache*)
 	assert(psWidget->pUserData != nullptr);
-	DisplayStructureBarCache& cache = *static_cast<DisplayStructureBarCache *>(psWidget->pUserData);
+	DisplayStructureBarCache& cache = *static_cast<DisplayStructureBarCache*>(psWidget->pUserData);
 
 	int x = xOffset + psWidget->x();
 	int y = yOffset + psWidget->y();
 	int w = psWidget->width();
 	int h = psWidget->height();
-	STRUCTURE_STATS	*stat = asStructureStats + psWidget->UserData;
+	STRUCTURE_STATS* stat = asStructureStats + psWidget->UserData;
 	Position position;
 	Vector3i rotation;
 	char str[20];
@@ -480,7 +481,7 @@ static void displayStructureBar(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset
 	// draw image
 	pie_SetGeometricOffset(x + 35, y + psWidget->height() / 2 + 9);
 	rotation.x = -15;
-	rotation.y = ((realTime / 45) % 360) ; //45
+	rotation.y = ((realTime / 45) % 360); //45
 	rotation.z = 0;
 	position.x = 0;
 	position.y = 0;
@@ -507,7 +508,7 @@ static void displayStructureBar(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset
 	cache.wzNameText.render(x + 80, y + psWidget->height() / 2 + 3, WZCOL_TEXT_BRIGHT);
 
 	// draw limit
-	ssprintf(str, "%d", ((W_SLIDER *)widgGetFromID(psWScreen, psWidget->id + 1))->pos);
+	ssprintf(str, "%d", ((W_SLIDER*)widgGetFromID(psWScreen, psWidget->id + 1))->pos);
 	cache.wzLimitText.setText(str, font_regular);
 	cache.wzLimitText.render(x + 270, y + psWidget->height() / 2 + 3, WZCOL_TEXT_BRIGHT);
 

@@ -41,7 +41,8 @@ public:
 	virtual void start() = 0;
 	// NOTE! When porting, add screen_disableMapPreview(); if relevant!
 	virtual TITLECODE run() = 0;
-	virtual void screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight);
+	virtual void screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+	                                 unsigned int newHeight);
 };
 
 // Pointer to the current UI. Dynamic allocation helps with the encapsulation.
@@ -52,25 +53,27 @@ extern char serverName[128];
 void changeTitleUI(std::shared_ptr<WzTitleUI> ui);
 
 // - old.cpp -
-class WzOldTitleUI: public WzTitleUI
+class WzOldTitleUI : public WzTitleUI
 {
 public:
 	WzOldTitleUI(tMode mode);
 	virtual void start() override;
 	virtual TITLECODE run() override;
-	virtual void screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight) override;
+	virtual void screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+	                                 unsigned int newHeight) override;
 private:
 	tMode mode;
 };
 
 // - protocol.cpp -
-class WzProtocolTitleUI: public WzTitleUI
+class WzProtocolTitleUI : public WzTitleUI
 {
 public:
 	WzProtocolTitleUI();
 	virtual void start() override;
 	virtual TITLECODE run() override;
-	virtual void screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight) override;
+	virtual void screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+	                                 unsigned int newHeight) override;
 private:
 	void openIPDialog();
 	void closeIPDialog();
@@ -84,7 +87,7 @@ private:
 class WzMultiplayerOptionsTitleUI;
 
 // - multilimit.cpp -
-class WzMultiLimitTitleUI: public WzTitleUI
+class WzMultiLimitTitleUI : public WzTitleUI
 {
 public:
 	WzMultiLimitTitleUI(std::shared_ptr<WzMultiplayerOptionsTitleUI> parent);
@@ -96,7 +99,7 @@ private:
 };
 
 // - msgbox.cpp -
-class WzMsgBoxTitleUI: public WzTitleUI
+class WzMsgBoxTitleUI : public WzTitleUI
 {
 public:
 	WzMsgBoxTitleUI(WzString text, std::shared_ptr<WzTitleUI> next);
@@ -109,21 +112,21 @@ private:
 };
 
 // - passbox.cpp -
-class WzPassBoxTitleUI: public WzTitleUI
+class WzPassBoxTitleUI : public WzTitleUI
 {
 public:
 	// The callback receives nullptr for cancellation, or a widgGetString result otherwise.
 	// The callback is expected to change current UI.
-	WzPassBoxTitleUI(std::function<void(const char *)> next);
+	WzPassBoxTitleUI(std::function<void(const char*)> next);
 	virtual void start() override;
 	virtual TITLECODE run() override;
 private:
 	// Where to go after the user has acknowledged.
-	std::function<void(const char *)> next;
+	std::function<void(const char*)> next;
 };
 
 // - gamefind.cpp -
-class WzGameFindTitleUI: public WzTitleUI
+class WzGameFindTitleUI : public WzTitleUI
 {
 public:
 	WzGameFindTitleUI();
@@ -140,7 +143,7 @@ private:
 
 #define WZ_MSGBOX_TUI_LEAVE 4597000
 
-void mpSetServerName(const char *hostname);
-const char *mpGetServerName();
+void mpSetServerName(const char* hostname);
+const char* mpGetServerName();
 
 #endif

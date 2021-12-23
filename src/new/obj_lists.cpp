@@ -6,21 +6,21 @@
 
 void create_droid(unsigned id, unsigned player)
 {
-  droid_lists[player].emplace_back(id, player);
+	droid_lists[player].emplace_back(id, player);
 }
 
 void create_structure(unsigned id, unsigned player)
 {
-  auto new_structure = std::make_unique<Impl::Structure>(id, player);
-  structure_lists[player].push_back(new_structure);
+	auto new_structure = std::make_unique<Impl::Structure>(id, player);
+	structure_lists[player].push_back(new_structure);
 }
 
 void destroy_droid(Droid& droid)
 {
-  std::erase(droid_lists[droid.get_player()], droid);
+	std::erase(droid_lists[droid.get_player()], droid);
 }
 
 void destroy_structure(Structure& structure)
 {
-  std::erase(structure_lists[structure.get_player()], structure);
+	std::erase(structure_lists[structure.get_player()], structure);
 }

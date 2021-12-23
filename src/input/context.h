@@ -36,9 +36,10 @@ struct ContextPriority
 		: ContextPriority(value, value)
 	{
 	}
+
 	ContextPriority(unsigned int prioritized, unsigned int active)
 		: prioritized(prioritized)
-		, active(active)
+		  , active(active)
 	{
 	}
 };
@@ -96,9 +97,11 @@ struct InputContext
 	bool isAlwaysActive() const;
 
 public:
-	InputContext(const ContextId id, const bool bIsAlwaysActive, const ContextPriority priority, const State initialState, const char* const displayName);
+	InputContext(const ContextId id, const bool bIsAlwaysActive, const ContextPriority priority,
+	             const State initialState, const char* const displayName);
 
-	InputContext(const ContextId id, const bool bIsAlwaysActive, const ContextPriority priority, const State initialState, const char* const displayName, const PriorityCondition condition);
+	InputContext(const ContextId id, const bool bIsAlwaysActive, const ContextPriority priority,
+	             const State initialState, const char* const displayName, const PriorityCondition condition);
 
 private:
 	const ContextId id;

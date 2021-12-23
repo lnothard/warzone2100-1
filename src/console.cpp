@@ -57,22 +57,25 @@
 
 struct CONSOLE
 {
-	UDWORD	topX;
-	UDWORD	topY;
-	UDWORD	width;
-	UDWORD	textDepth;
-	bool	permanent;
+	UDWORD topX;
+	UDWORD topY;
+	UDWORD width;
+	UDWORD textDepth;
+	bool permanent;
 };
 
 struct CONSOLE_MESSAGE
 {
 	WzText display;
-	UDWORD	timeAdded;		// When was it added to our list?
-	UDWORD	duration;
-	CONSOLE_TEXT_JUSTIFICATION JustifyType;	// text justification
-	int		player;			// Player who sent this message or SYSTEM_MESSAGE
-	CONSOLE_MESSAGE(const std::string &text, iV_fonts fontID, UDWORD time, UDWORD duration, CONSOLE_TEXT_JUSTIFICATION justify, int plr)
-	                : display(text, fontID), timeAdded(time), duration(duration), JustifyType(justify), player(plr) {}
+	UDWORD timeAdded; // When was it added to our list?
+	UDWORD duration;
+	CONSOLE_TEXT_JUSTIFICATION JustifyType; // text justification
+	int player; // Player who sent this message or SYSTEM_MESSAGE
+	CONSOLE_MESSAGE(const std::string& text, iV_fonts fontID, UDWORD time, UDWORD duration,
+	                CONSOLE_TEXT_JUSTIFICATION justify, int plr)
+		: display(text, fontID), timeAdded(time), duration(duration), JustifyType(justify), player(plr)
+	{
+	}
 
 	CONSOLE_MESSAGE& operator =(CONSOLE_MESSAGE&& input) noexcept
 	{
@@ -83,28 +86,27 @@ struct CONSOLE_MESSAGE
 		player = input.player;
 		return *this;
 	}
-
 };
 
-static std::deque<CONSOLE_MESSAGE> ActiveMessages;		// we add all messages to this container
-static std::deque<CONSOLE_MESSAGE> TeamMessages;		// history of team/private communications
-static std::deque<CONSOLE_MESSAGE> HistoryMessages;	// history of all other communications
+static std::deque<CONSOLE_MESSAGE> ActiveMessages; // we add all messages to this container
+static std::deque<CONSOLE_MESSAGE> TeamMessages; // history of team/private communications
+static std::deque<CONSOLE_MESSAGE> HistoryMessages; // history of all other communications
 static std::deque<CONSOLE_MESSAGE> InfoMessages;
-static bool	bConsoleDropped = false;			// Is the console history on or off?
-static bool HistoryMode = false;				// toggle between team & global history
-static int updatepos = 0;						// if user wants to scroll back the history log
-static int linePitch = 0;						// the pitch of a line
-static bool showBackgroundColor = false;		// if user wants to add more contrast to the history display
-static CONSOLE mainConsole;						// Stores the console dimensions and states
-static CONSOLE historyConsole;					// Stores the History console dimensions and states
-static UDWORD	messageDuration;				/** How long do messages last for? */
-static bool	bTextBoxActive = false;				/** Is there a box under the console text? */
-static bool	bConsoleDisplayEnabled = false;		/** Is the console being displayed? */
-static UDWORD	consoleVisibleLines;			/** How many lines are displayed? */
-static int allowNewMessages;					/** Whether new messages are allowed to be added */
+static bool bConsoleDropped = false; // Is the console history on or off?
+static bool HistoryMode = false; // toggle between team & global history
+static int updatepos = 0; // if user wants to scroll back the history log
+static int linePitch = 0; // the pitch of a line
+static bool showBackgroundColor = false; // if user wants to add more contrast to the history display
+static CONSOLE mainConsole; // Stores the console dimensions and states
+static CONSOLE historyConsole; // Stores the History console dimensions and states
+static UDWORD messageDuration; /** How long do messages last for? */
+static bool bTextBoxActive = false; /** Is there a box under the console text? */
+static bool bConsoleDisplayEnabled = false; /** Is the console being displayed? */
+static UDWORD consoleVisibleLines; /** How many lines are displayed? */
+static int allowNewMessages; /** Whether new messages are allowed to be added */
 static std::set<std::shared_ptr<CONSOLE_MESSAGE_LISTENER>> messageListeners;
 
-char ConsoleString[MAX_CONSOLE_TMP_STRING_LENGTH];	/// Globally available string for new console messages.
+char ConsoleString[MAX_CONSOLE_TMP_STRING_LENGTH]; /// Globally available string for new console messages.
 
 void consoleAddMessageListener(const std::shared_ptr<CONSOLE_MESSAGE_LISTENER>& listener)
 {
@@ -121,7 +123,7 @@ static CONSOLE_CALC_LAYOUT_FUNC calcLayoutFunc;
 /**
 	Specify how long messages will stay on screen.
 */
-static void	setConsoleMessageDuration(UDWORD time)
+static void setConsoleMessageDuration(UDWORD time)
 {
 	messageDuration = time;
 }
@@ -136,25 +138,29 @@ void setConsoleCalcLayout(const CONSOLE_CALC_LAYOUT_FUNC& layoutFunc)
 }
 
 /** Sets the system up */
-void	initConsoleMessages()
+void initConsoleMessages()
 {
-	unsigned int duration = (game.type == LEVEL_TYPE::SKIRMISH) ? DEFAULT_MESSAGE_DURATION : DEFAULT_MESSAGE_DURATION_CAMPAIGN;
+	unsigned int duration = (game.type == LEVEL_TYPE::SKIRMISH)
+		                        ? DEFAULT_MESSAGE_DURATION
+		                        : DEFAULT_MESSAGE_DURATION_CAMPAIGN;
 	linePitch = iV_GetTextLineSize(font_regular);
 	bConsoleDropped = false;
-	setConsoleMessageDuration(duration);					// Setup how long messages are displayed for
-	setConsoleBackdropStatus(true);							// No box under the text
-	enableConsoleDisplay(true);								// Turn on the console display
+	setConsoleMessageDuration(duration); // Setup how long messages are displayed for
+	setConsoleBackdropStatus(true); // No box under the text
+	enableConsoleDisplay(true); // Turn on the console display
 
 	//	Set up the main console size and position x,y,width
-	setConsoleCalcLayout([]() {
-		setConsoleSizePos(16, (!challengeActive && (game.type == LEVEL_TYPE::SKIRMISH)) ? 32 : (32 + TIMER_Y), pie_GetVideoBufferWidth() - 32);
+	setConsoleCalcLayout([]()
+	{
+		setConsoleSizePos(16, (!challengeActive && (game.type == LEVEL_TYPE::SKIRMISH)) ? 32 : (32 + TIMER_Y),
+		                  pie_GetVideoBufferWidth() - 32);
 	});
 	historyConsole.topX = HISTORYBOX_X;
 	historyConsole.topY = HISTORYBOX_Y;
 	historyConsole.width = pie_GetVideoBufferWidth() - 32;
 	setConsoleLineInfo(MAX_CONSOLE_MESSAGES / 4 + 4);
-	setConsolePermanence(false, true);						// We're not initially having permanent messages
-	permitNewConsoleMessages(true);							// Allow new messages
+	setConsolePermanence(false, true); // We're not initially having permanent messages
+	permitNewConsoleMessages(true); // Allow new messages
 }
 
 void shutdownConsoleMessages()
@@ -164,7 +170,8 @@ void shutdownConsoleMessages()
 	clearInfoMessages();
 }
 
-void consoleScreenDidChangeSize(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight)
+void consoleScreenDidChangeSize(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+                                unsigned int newHeight)
 {
 	if (calcLayoutFunc == nullptr) return;
 	calcLayoutFunc();
@@ -177,10 +184,11 @@ void setHistoryMode(bool mode)
 }
 
 /** Open the console when it's closed and close it when it's open. */
-void	toggleConsoleDrop()
+void toggleConsoleDrop()
 {
 	if (!bConsoleDropped)
-	{	// it was closed, so play open sound
+	{
+		// it was closed, so play open sound
 		bConsoleDropped = true;
 		audio_PlayTrack(ID_SOUND_WINDOWOPEN);
 	}
@@ -192,17 +200,19 @@ void	toggleConsoleDrop()
 	}
 }
 
-bool addConsoleMessageDebounced(const char * Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDWORD player, const DEBOUNCED_MESSAGE & message, bool team, UDWORD duration)
+bool addConsoleMessageDebounced(const char* Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDWORD player,
+                                const DEBOUNCED_MESSAGE& message, bool team, UDWORD duration)
 {
 	// Messages are debounced individually - one debounced message won't stop a different one from appearing
-	static std::map<const DEBOUNCED_MESSAGE *, std::chrono::steady_clock::time_point> lastAllowedMessageTimes;
+	static std::map<const DEBOUNCED_MESSAGE*, std::chrono::steady_clock::time_point> lastAllowedMessageTimes;
 
 	const std::chrono::milliseconds DEBOUNCE_TIME(message.debounceTime);
 	const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 
 	const auto lastAllowedMessageTime = lastAllowedMessageTimes.find(&message);
 
-	if (lastAllowedMessageTime == lastAllowedMessageTimes.end() || std::chrono::duration_cast<std::chrono::milliseconds>(now - lastAllowedMessageTime->second) >= DEBOUNCE_TIME)
+	if (lastAllowedMessageTime == lastAllowedMessageTimes.end() || std::chrono::duration_cast<
+		std::chrono::milliseconds>(now - lastAllowedMessageTime->second) >= DEBOUNCE_TIME)
 	{
 		lastAllowedMessageTimes[&message] = now;
 		return addConsoleMessage(Text, jusType, player, team, duration);
@@ -214,17 +224,17 @@ bool addConsoleMessageDebounced(const char * Text, CONSOLE_TEXT_JUSTIFICATION ju
 }
 
 /** Add a string to the console. */
-bool addConsoleMessage(const char *Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDWORD player, bool team, UDWORD duration)
+bool addConsoleMessage(const char* Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDWORD player, bool team, UDWORD duration)
 {
-	ConsoleMessage message = { Text, jusType, player, team, duration };
-	for (const auto &listener: messageListeners)
+	ConsoleMessage message = {Text, jusType, player, team, duration};
+	for (const auto& listener : messageListeners)
 	{
 		(*listener)(message);
 	}
 
 	if (!allowNewMessages)
 	{
-		return false;	// Don't allow it to be added if we've disabled adding of new messages
+		return false; // Don't allow it to be added if we've disabled adding of new messages
 	}
 
 	std::istringstream stream(Text);
@@ -243,7 +253,7 @@ bool addConsoleMessage(const char *Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDW
 			{
 				break;
 			}
-			FitText.resize(FitText.length() - 1);	// Erase last char.
+			FitText.resize(FitText.length() - 1); // Erase last char.
 		}
 
 		debug(LOG_CONSOLE, "(to player %d): %s", (int)player, FitText.c_str());
@@ -256,12 +266,15 @@ bool addConsoleMessage(const char *Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDW
 		}
 		else
 		{
-			ActiveMessages.emplace_back(FitText, font_regular, realTime, newMsgDuration, jusType, player);	// everything gets logged here for a specific period of time
+			ActiveMessages.emplace_back(FitText, font_regular, realTime, newMsgDuration, jusType, player);
+			// everything gets logged here for a specific period of time
 			if (team)
 			{
-				TeamMessages.emplace_back(FitText, font_regular, realTime, newMsgDuration, jusType, player);	// persistent team specific logs
+				TeamMessages.emplace_back(FitText, font_regular, realTime, newMsgDuration, jusType, player);
+				// persistent team specific logs
 			}
-			HistoryMessages.emplace_back(FitText, font_regular, realTime, newMsgDuration, jusType, player);	// persistent messages (all types)
+			HistoryMessages.emplace_back(FitText, font_regular, realTime, newMsgDuration, jusType, player);
+			// persistent messages (all types)
 		}
 	}
 
@@ -269,7 +282,7 @@ bool addConsoleMessage(const char *Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDW
 }
 
 /// \return The number of active console messages
-int	getNumberConsoleMessages()
+int getNumberConsoleMessages()
 {
 	return (ActiveMessages.size());
 }
@@ -277,7 +290,7 @@ int	getNumberConsoleMessages()
 /** Update the console messages.
 	This function will remove messages that are overdue.
 */
-void	updateConsoleMessages()
+void updateConsoleMessages()
 {
 	// If there are no messages or we're on permanent (usually for scripts) then exit
 	if ((!getNumberConsoleMessages() && InfoMessages.empty()) || mainConsole.permanent)
@@ -315,7 +328,7 @@ void	updateConsoleMessages()
 	us to put up messages that stay there until we remove them
 	ourselves - be sure and reset message duration afterwards
 */
-void	removeTopConsoleMessage()
+void removeTopConsoleMessage()
 {
 	if (getNumberConsoleMessages())
 	{
@@ -330,7 +343,7 @@ void clearActiveConsole()
 }
 
 /** Clears all console messages */
-void	flushConsoleMessages()
+void flushConsoleMessages()
 {
 	ActiveMessages.clear();
 	TeamMessages.clear();
@@ -384,7 +397,8 @@ static PIELIGHT getConsoleTextColor(int player)
 	}
 }
 
-static void console_drawtext(WzText &display, PIELIGHT colour, int x, int y, CONSOLE_TEXT_JUSTIFICATION justify, int width)
+static void console_drawtext(WzText& display, PIELIGHT colour, int x, int y, CONSOLE_TEXT_JUSTIFICATION justify,
+                             int width)
 {
 	switch (justify)
 	{
@@ -404,7 +418,7 @@ static void console_drawtext(WzText &display, PIELIGHT colour, int x, int y, CON
 void displayOldMessages(bool mode)
 {
 	int startpos = 0;
-	std::deque<CONSOLE_MESSAGE> *WhichMessages;
+	std::deque<CONSOLE_MESSAGE>* WhichMessages;
 
 	if (mode)
 	{
@@ -416,12 +430,12 @@ void displayOldMessages(bool mode)
 	}
 	if (!WhichMessages->empty())
 	{
-		unsigned int count = WhichMessages->size();	// total number of messages
-		if (count > NumDisplayLines)	// if we have more than we can display
+		unsigned int count = WhichMessages->size(); // total number of messages
+		if (count > NumDisplayLines) // if we have more than we can display
 		{
-			startpos = count - NumDisplayLines;	// show last X lines
-			startpos += updatepos;	// unless user wants to start at something else
-			if (startpos < 0)		// don't underflow
+			startpos = count - NumDisplayLines; // show last X lines
+			startpos += updatepos; // unless user wants to start at something else
+			if (startpos < 0) // don't underflow
 			{
 				startpos = 0;
 				updatepos = (count - NumDisplayLines) * -1; // reset back to first entry
@@ -429,7 +443,7 @@ void displayOldMessages(bool mode)
 			}
 			else if (count + updatepos <= count)
 			{
-				count += updatepos;		// user may want something different
+				count += updatepos; // user may want something different
 			}
 			else
 			{
@@ -443,27 +457,30 @@ void displayOldMessages(bool mode)
 		int nudgeright = 0;
 		int TextYpos = historyConsole.topY + linePitch - 2;
 
-		if (isSecondaryWindowUp())	// see if (build/research/...)window is up
+		if (isSecondaryWindowUp()) // see if (build/research/...)window is up
 		{
 			nudgeright = RET_FORMWIDTH + 2; // move text over
 		}
 		// if user wants to add a bit more contrast to the text
 		if (showBackgroundColor)
 		{
-			iV_TransBoxFill(historyConsole.topX + nudgeright - CON_BORDER_WIDTH, historyConsole.topY - historyConsole.textDepth - CON_BORDER_HEIGHT,
-			                historyConsole.topX + historyConsole.width, historyConsole.topY + (NumDisplayLines * linePitch) + CON_BORDER_HEIGHT);
+			iV_TransBoxFill(historyConsole.topX + nudgeright - CON_BORDER_WIDTH,
+			                historyConsole.topY - historyConsole.textDepth - CON_BORDER_HEIGHT,
+			                historyConsole.topX + historyConsole.width,
+			                historyConsole.topY + (NumDisplayLines * linePitch) + CON_BORDER_HEIGHT);
 		}
 		for (int i = startpos; i < count; ++i)
 		{
 			PIELIGHT colour = mode ? WZCOL_CONS_TEXT_USER_ALLY : getConsoleTextColor((*WhichMessages)[i].player);
-			console_drawtext((*WhichMessages)[i].display, colour, historyConsole.topX + nudgeright, TextYpos, (*WhichMessages)[i].JustifyType, historyConsole.width);
+			console_drawtext((*WhichMessages)[i].display, colour, historyConsole.topX + nudgeright, TextYpos,
+			                 (*WhichMessages)[i].JustifyType, historyConsole.width);
 			TextYpos += (*WhichMessages)[i].display.lineSize();
 		}
 	}
 }
 
 /** Displays all the console messages */
-void	displayConsoleMessages()
+void displayConsoleMessages()
 {
 	// Check if we have any messages we want to show
 	if (ActiveMessages.empty() && !bConsoleDropped && InfoMessages.empty())
@@ -486,11 +503,12 @@ void	displayConsoleMessages()
 
 	if (!InfoMessages.empty())
 	{
-		auto i = InfoMessages.end() - 1;		// we can only show the last one...
+		auto i = InfoMessages.end() - 1; // we can only show the last one...
 		int tmp = pie_GetVideoBufferWidth();
-		drawBlueBox(0, 0,tmp, 18);
+		drawBlueBox(0, 0, tmp, 18);
 		tmp -= i->display.width();
-		console_drawtext(i->display, getConsoleTextColor(i->player), tmp - 6, linePitch - 2, i->JustifyType, i->display.width());
+		console_drawtext(i->display, getConsoleTextColor(i->player), tmp - 6, linePitch - 2, i->JustifyType,
+		                 i->display.width());
 	}
 
 	if (!ActiveMessages.empty())
@@ -500,14 +518,15 @@ void	displayConsoleMessages()
 		if (bTextBoxActive && GetGameMode() == GS_NORMAL)
 		{
 			iV_TransBoxFill(mainConsole.topX - CON_BORDER_WIDTH,
-							mainConsole.topY - mainConsole.textDepth - CON_BORDER_HEIGHT,
-							mainConsole.topX + mainConsole.width,
-							mainConsole.topY + (getNumberConsoleMessages() * linePitch) + CON_BORDER_HEIGHT - linePitch);
+			                mainConsole.topY - mainConsole.textDepth - CON_BORDER_HEIGHT,
+			                mainConsole.topX + mainConsole.width,
+			                mainConsole.topY + (getNumberConsoleMessages() * linePitch) + CON_BORDER_HEIGHT -
+			                linePitch);
 		}
-		for (auto &ActiveMessage : ActiveMessages)
+		for (auto& ActiveMessage : ActiveMessages)
 		{
 			console_drawtext(ActiveMessage.display, getConsoleTextColor(ActiveMessage.player), mainConsole.topX,
-							 TextYpos, ActiveMessage.JustifyType, mainConsole.width);
+			                 TextYpos, ActiveMessage.JustifyType, mainConsole.width);
 			TextYpos += ActiveMessage.display.lineSize();
 		}
 	}
@@ -521,7 +540,7 @@ void clearInfoMessages()
 
 
 /** Allows toggling of the box under the console text */
-void	setConsoleBackdropStatus(bool state)
+void setConsoleBackdropStatus(bool state)
 {
 	bTextBoxActive = state;
 }
@@ -532,13 +551,13 @@ void	setConsoleBackdropStatus(bool state)
 	to make sure that when it's turned back on again, there
 	are no messages, the call flushConsoleMessages first.
 */
-void	enableConsoleDisplay(bool state)
+void enableConsoleDisplay(bool state)
 {
 	bConsoleDisplayEnabled = state;
 }
 
 /** Allows positioning of the console on screen */
-void	setConsoleSizePos(UDWORD x, UDWORD y, UDWORD width)
+void setConsoleSizePos(UDWORD x, UDWORD y, UDWORD width)
 {
 	mainConsole.topX = x;
 	mainConsole.topY = y;
@@ -552,7 +571,7 @@ void	setConsoleSizePos(UDWORD x, UDWORD y, UDWORD width)
 }
 
 /**	Establishes whether the console messages stay there */
-void	setConsolePermanence(bool state, bool bClearOld)
+void setConsolePermanence(bool state, bool bClearOld)
 {
 	if (mainConsole.permanent == true && state == false)
 	{
@@ -588,11 +607,12 @@ bool mouseOverConsoleBox()
 }
 
 /** Check if mouse is over the History console 'window' area */
-bool	mouseOverHistoryConsoleBox()
+bool mouseOverHistoryConsoleBox()
 {
 	int nudgeright = 0;
 	if (isSecondaryWindowUp())
-	{	// if a build/research/... is up, we need to move text over by this much
+	{
+		// if a build/research/... is up, we need to move text over by this much
 		nudgeright = RET_FORMWIDTH;
 	}
 	// enable below to see the hitbox of the history console window
@@ -608,11 +628,11 @@ bool	mouseOverHistoryConsoleBox()
 	}
 #endif
 	// check to see if mouse is in the area when console is enabled
-	if	(bConsoleDropped &&
-	     ((UDWORD)mouseX() > historyConsole.topX + nudgeright)
-	     && ((UDWORD)mouseY() > historyConsole.topY)
-	     && ((UDWORD)mouseX() < historyConsole.topX + historyConsole.width)
-	     && ((UDWORD)mouseY() < (historyConsole.topY + 4 + linePitch * NumDisplayLines)))
+	if (bConsoleDropped &&
+		((UDWORD)mouseX() > historyConsole.topX + nudgeright)
+		&& ((UDWORD)mouseY() > historyConsole.topY)
+		&& ((UDWORD)mouseX() < historyConsole.topX + historyConsole.width)
+		&& ((UDWORD)mouseY() < (historyConsole.topY + 4 + linePitch * NumDisplayLines)))
 	{
 		if (mousePressed(MOUSE_WUP))
 		{
@@ -639,7 +659,7 @@ bool	mouseOverHistoryConsoleBox()
 }
 
 /** Sets up how many lines are allowed and how many are visible */
-void	setConsoleLineInfo(UDWORD vis)
+void setConsoleLineInfo(UDWORD vis)
 {
 	ASSERT(vis <= MAX_CONSOLE_MESSAGES, "Request for more visible lines in the console than exist");
 	consoleVisibleLines = vis;
@@ -652,13 +672,13 @@ UDWORD getConsoleLineInfo()
 }
 
 /// Set if new messages may be added to the console
-void	permitNewConsoleMessages(bool allow)
+void permitNewConsoleMessages(bool allow)
 {
 	allowNewMessages = allow;
 }
 
 /// \return the visibility of the console
-bool	getConsoleDisplayStatus()
+bool getConsoleDisplayStatus()
 {
 	return (bConsoleDisplayEnabled);
 }
@@ -668,10 +688,10 @@ bool	getConsoleDisplayStatus()
 
 	Use the macro CONPRINTF if you don't want it to be in the history logs.
 **/
-void console(const char *pFormat, ...)
+void console(const char* pFormat, ...)
 {
-	char		aBuffer[500];	// Output string buffer
-	va_list		pArgs;			// Format arguments
+	char aBuffer[500]; // Output string buffer
+	va_list pArgs; // Format arguments
 
 	/* Print out the string */
 	va_start(pArgs, pFormat);

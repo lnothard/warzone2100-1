@@ -16,41 +16,43 @@ class BaseObjectsController
 public:
 	virtual ~BaseObjectsController() = default;
 	virtual size_t objectsSize() const = 0;
-	virtual BASE_OBJECT *getObjectAt(size_t index) const = 0;
-	virtual BASE_STATS *getObjectStatsAt(size_t index) const = 0;
-	virtual bool findObject(std::function<bool (BASE_OBJECT *)> iteration) const = 0;
+	virtual BASE_OBJECT* getObjectAt(size_t index) const = 0;
+	virtual BASE_STATS* getObjectStatsAt(size_t index) const = 0;
+	virtual bool findObject(std::function<bool (BASE_OBJECT*)> iteration) const = 0;
 	virtual void refresh() = 0;
 	virtual bool showInterface() = 0;
 	virtual void prepareToClose();
 	virtual void clearData() = 0;
-	void jumpToObject(BASE_OBJECT *object);
+	void jumpToObject(BASE_OBJECT* object);
 	void updateHighlighted();
 	void clearSelection();
 	void clearStructureSelection();
-	void selectObject(BASE_OBJECT *object);
+	void selectObject(BASE_OBJECT* object);
 
-	virtual BASE_OBJECT *getHighlightedObject() const = 0;
-	virtual void setHighlightedObject(BASE_OBJECT *object) = 0;
+	virtual BASE_OBJECT* getHighlightedObject() const = 0;
+	virtual void setHighlightedObject(BASE_OBJECT* object) = 0;
 
 	void closeInterface()
 	{
-		widgScheduleTask([]() {
+		widgScheduleTask([]()
+		{
 			intResetScreen(false);
 		});
 	}
 
 	void closeInterfaceNoAnim()
 	{
-		widgScheduleTask([]() {
+		widgScheduleTask([]()
+		{
 			intResetScreen(true);
 		});
 	}
 
 protected:
-	template<typename A, typename B>
+	template <typename A, typename B>
 	static bool findObject(std::vector<A> vector, std::function<bool (B)> iteration)
 	{
-		for (auto item: vector)
+		for (auto item : vector)
 		{
 			if (iteration(item))
 			{
@@ -70,10 +72,10 @@ public:
 	virtual std::shared_ptr<StatsForm> makeStatsForm() = 0;
 	void displayStatsForm();
 	static void scheduleDisplayStatsForm(const std::shared_ptr<BaseStatsController>& controller);
-	virtual BASE_STATS *getStatsAt(size_t) const = 0;
+	virtual BASE_STATS* getStatsAt(size_t) const = 0;
 };
 
-class BaseObjectsStatsController: public BaseStatsController, public BaseObjectsController
+class BaseObjectsStatsController : public BaseStatsController, public BaseObjectsController
 {
 public:
 	void updateHighlightedObjectStats();
@@ -83,35 +85,42 @@ public:
 		return getStatsAt(statsIndex) == highlightedObjectStats;
 	}
 
-	BASE_STATS *getHighlightedObjectStats()
+	BASE_STATS* getHighlightedObjectStats()
 	{
 		return highlightedObjectStats;
 	}
 
 private:
-	BASE_STATS *highlightedObjectStats;
+	BASE_STATS* highlightedObjectStats;
 };
 
-class DynamicIntFancyButton: public IntFancyButton
+class DynamicIntFancyButton : public IntFancyButton
 {
 protected:
 	virtual bool isHighlighted() const = 0;
 	virtual void updateLayout();
 	void updateHighlight();
-	virtual void clickPrimary() {}
-	virtual void clickSecondary() {}
-	void released(W_CONTEXT *context, WIDGET_KEY mouseButton = WKEY_PRIMARY) override;
+
+	virtual void clickPrimary()
+	{
+	}
+
+	virtual void clickSecondary()
+	{
+	}
+
+	void released(W_CONTEXT* context, WIDGET_KEY mouseButton = WKEY_PRIMARY) override;
 };
 
-class StatsButton: public DynamicIntFancyButton
+class StatsButton : public DynamicIntFancyButton
 {
 protected:
-	virtual BASE_STATS *getStats() = 0;
+	virtual BASE_STATS* getStats() = 0;
 
 	std::string getTip() override
 	{
 		auto stats = getStats();
-		return stats == nullptr ? "": getStatsName(stats);
+		return stats == nullptr ? "" : getStatsName(stats);
 	}
 
 	void addProgressBar();
@@ -132,7 +141,7 @@ protected:
 		return false;
 	}
 
-	virtual BaseObjectsController &getController() const = 0;
+	virtual BaseObjectsController& getController() const = 0;
 	virtual void jump();
 
 	void clickSecondary() override
@@ -167,13 +176,15 @@ protected:
 	std::shared_ptr<W_BARGRAPH> costBar;
 };
 
-class ObjectsForm: public IntFormAnimated
+class ObjectsForm : public IntFormAnimated
 {
 private:
 	typedef IntFormAnimated BaseWidget;
 
 protected:
-	ObjectsForm(): BaseWidget(false) {}
+	ObjectsForm(): BaseWidget(false)
+	{
+	}
 
 	void display(int xOffset, int yOffset);
 	void initialize();
@@ -185,20 +196,22 @@ protected:
 	void goToHighlightedTab();
 	virtual std::shared_ptr<StatsButton> makeStatsButton(size_t buttonIndex) const = 0;
 	virtual std::shared_ptr<ObjectButton> makeObjectButton(size_t buttonIndex) const = 0;
-	virtual BaseObjectsController &getController() const = 0;
+	virtual BaseObjectsController& getController() const = 0;
 
 	std::shared_ptr<IntListTabWidget> objectsList;
 	size_t buttonsCount = 0;
-	BASE_OBJECT *previousHighlighted = nullptr;
+	BASE_OBJECT* previousHighlighted = nullptr;
 };
 
-class StatsForm: public IntFormAnimated
+class StatsForm : public IntFormAnimated
 {
 private:
 	typedef IntFormAnimated BaseWidget;
 
 protected:
-	StatsForm(): BaseWidget(false) {}
+	StatsForm(): BaseWidget(false)
+	{
+	}
 
 	virtual void initialize();
 	virtual void updateLayout();
@@ -208,7 +221,7 @@ protected:
 	void addNewButton();
 	void removeLastButton();
 	virtual std::shared_ptr<StatsFormButton> makeOptionButton(size_t buttonIndex) const = 0;
-	virtual BaseStatsController &getController() const = 0;
+	virtual BaseStatsController& getController() const = 0;
 
 	std::shared_ptr<IntListTabWidget> optionList;
 
@@ -218,18 +231,18 @@ private:
 	size_t buttonsCount = 0;
 };
 
-class ObjectStatsForm: public StatsForm
+class ObjectStatsForm : public StatsForm
 {
 private:
 	typedef StatsForm BaseWidget;
 
 public:
-	virtual BaseObjectsStatsController &getController() const override = 0;
+	virtual BaseObjectsStatsController& getController() const override = 0;
 
 protected:
 	void updateLayout() override;
 	void goToHighlightedTab();
-	BASE_STATS *previousHighlighted = nullptr;
+	BASE_STATS* previousHighlighted = nullptr;
 };
 
 #endif // __INCLUDED_SRC_HCI_OBJECTS_STATS_INTERFACE_H__

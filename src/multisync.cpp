@@ -51,13 +51,15 @@ using nonstd::nullopt;
 static UDWORD averagePing();
 
 #define AV_PING_FREQUENCY       20000                           // how often to update average pingtimes. in approx millisecs.
+
 #define PING_FREQUENCY          4000                            // how often to update pingtimes. in approx millisecs.
 
-static UDWORD				PingSend[MAX_CONNECTED_PLAYERS];	//stores the time the ping was called.
+static UDWORD PingSend[MAX_CONNECTED_PLAYERS]; //stores the time the ping was called.
 #define PING_CHALLENGE_BYTES 32
 static_assert(PING_CHALLENGE_BYTES % 8 == 0, "Must be a multiple of 8 bytes");
 typedef std::array<uint8_t, PING_CHALLENGE_BYTES> PingChallengeBytes;
-static std::array<optional<PingChallengeBytes>, MAX_CONNECTED_PLAYERS> pingChallenges;  // Random data sent with the last ping.
+static std::array<optional<PingChallengeBytes>, MAX_CONNECTED_PLAYERS> pingChallenges;
+// Random data sent with the last ping.
 
 
 // ////////////////////////////////////////////////////////////////////////
@@ -70,7 +72,7 @@ bool sendScoreCheck()
 	// Detection for this no longer uses title mode, but instead game mode, because that makes more sense
 	if (GetGameMode() == GS_NORMAL)
 	{
-		uint8_t			i;
+		uint8_t i;
 
 		for (i = 0; i < MAX_CONNECTED_PLAYERS; i++)
 		{
@@ -135,9 +137,9 @@ static inline PingChallengeBytes generatePingChallenge(uint8_t playerIdx)
 	}
 	else
 	{
-		uint8_t *pBytesDst = bytes.data();
-		uint8_t *pBytesEnd = bytes.data() + bytes.size();
-		for (; pBytesDst <= (pBytesEnd - sizeof(uint64_t)); )
+		uint8_t* pBytesDst = bytes.data();
+		uint8_t* pBytesEnd = bytes.data() + bytes.size();
+		for (; pBytesDst <= (pBytesEnd - sizeof(uint64_t));)
 		{
 			uint64_t pingChallengei = (uint64_t)rand() << 32 | rand();
 			memcpy(pBytesDst, &pingChallengei, sizeof(uint64_t));
@@ -149,10 +151,10 @@ static inline PingChallengeBytes generatePingChallenge(uint8_t playerIdx)
 
 bool sendPing()
 {
-	bool			isNew = true;
-	uint8_t			player = selectedPlayer;
-	static UDWORD	lastPing = 0;	// Last time we sent a ping
-	static UDWORD	lastav = 0;		// Last time we updated average
+	bool isNew = true;
+	uint8_t player = selectedPlayer;
+	static UDWORD lastPing = 0; // Last time we sent a ping
+	static UDWORD lastav = 0; // Last time we updated average
 
 	// Only ping every so often
 	if (lastPing > realTime)
@@ -190,16 +192,16 @@ bool sendPing()
 	for (int i = 0; i < MAX_CONNECTED_PLAYERS; ++i)
 	{
 		if (isHumanPlayer(i)
-		    && PingSend[i]
-		    && ingame.PingTimes[i]
-		    && i != selectedPlayer)
+			&& PingSend[i]
+			&& ingame.PingTimes[i]
+			&& i != selectedPlayer)
 		{
 			ingame.PingTimes[i] = PING_LIMIT;
 		}
 		else if (!isHumanPlayer(i)
-		         && PingSend[i]
-		         && ingame.PingTimes[i]
-		         && i != selectedPlayer)
+			&& PingSend[i]
+			&& ingame.PingTimes[i]
+			&& i != selectedPlayer)
 		{
 			ingame.PingTimes[i] = 0;
 		}
@@ -255,8 +257,8 @@ inline optional<PingChallengeBytes>& expectedPingChallengeBytes(uint8_t playerId
 // accept and process incoming ping messages.
 bool recvPing(NETQUEUE queue)
 {
-	bool	isNew = false;
-	uint8_t	sender, us = selectedPlayer;
+	bool isNew = false;
+	uint8_t sender, us = selectedPlayer;
 	uint8_t challenge[PING_CHALLENGE_BYTES];
 	EcKey::Sig challengeResponse;
 
@@ -313,7 +315,9 @@ bool recvPing(NETQUEUE queue)
 		const auto& senderIdentity = getMultiStats(sender).identity;
 		if (!senderIdentity.empty())
 		{
-			verifiedResponse = getMultiStats(sender).identity.verify(challengeResponse, expectedPingChallenge.value().data(), PING_CHALLENGE_BYTES);
+			verifiedResponse = getMultiStats(sender).identity.verify(challengeResponse,
+			                                                         expectedPingChallenge.value().data(),
+			                                                         PING_CHALLENGE_BYTES);
 		}
 		if (!verifiedResponse)
 		{
@@ -333,7 +337,8 @@ bool recvPing(NETQUEUE queue)
 			// Output to stdinterface, if enabled
 			std::string senderPublicKeyB64 = base64Encode(senderIdentity.toBytes(EcKey::Public));
 			std::string senderIdentityHash = senderIdentity.publicHashString();
-			wz_command_interface_output("WZEVENT: player identity VERIFIED: %" PRIu32 " %s %s\n", sender, senderPublicKeyB64.c_str(), senderIdentityHash.c_str());
+			wz_command_interface_output("WZEVENT: player identity VERIFIED: %" PRIu32 " %s %s\n", sender,
+			                            senderPublicKeyB64.c_str(), senderIdentityHash.c_str());
 		}
 
 		// Note that we have received it

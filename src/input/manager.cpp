@@ -116,7 +116,8 @@ void InputManager::resetMappings(bool bForceDefaults, const KeyFunctionConfigura
 	keyMappings.save(KeyMapPath);
 }
 
-bool InputManager::addDefaultMapping(const KEY_CODE metaCode, const KeyMappingInput input, const KeyAction action, const KeyFunctionInfo& info, const KeyMappingSlot slot)
+bool InputManager::addDefaultMapping(const KEY_CODE metaCode, const KeyMappingInput input, const KeyAction action,
+                                     const KeyFunctionInfo& info, const KeyMappingSlot slot)
 {
 	const auto psMapping = keyMappings.get(info, slot);
 	if (psMapping.has_value())
@@ -133,14 +134,13 @@ bool InputManager::addDefaultMapping(const KEY_CODE metaCode, const KeyMappingIn
 #if defined(__GNUC__) && (__GNUC__ == 5 && __GNUC_MINOR__ == 4)
 #pragma GCC diagnostic pop
 #endif // __GNUC__
-
 	}
 
 	// Clear the keys from any other mappings
 	keyMappings.removeConflicting(metaCode, input, info.context, contextManager);
 
 	// Set default key mapping
-	keyMappings.add({ metaCode, input, action }, info, slot);
+	keyMappings.add({metaCode, input, action}, info, slot);
 	return true;
 }
 
@@ -148,13 +148,13 @@ bool InputManager::addDefaultMapping(const KEY_CODE metaCode, const KeyMappingIn
 static const KEY_CODE qwertyCodes[26] =
 {
 	//  +---+   +---+   +---+   +---+   +---+   +---+   +---+   +---+   +---+   +---+
-		KEY_Q,  KEY_W,  KEY_E,  KEY_R,  KEY_T,  KEY_Y,  KEY_U,  KEY_I,  KEY_O,  KEY_P,
+	KEY_Q, KEY_W, KEY_E, KEY_R, KEY_T, KEY_Y, KEY_U, KEY_I, KEY_O, KEY_P,
 	//  +---+   +---+   +---+   +---+   +---+   +---+   +---+   +---+   +---+   +---+
 	//    +---+   +---+   +---+   +---+   +---+   +---+   +---+   +---+   +---+
-		  KEY_A,  KEY_S,  KEY_D,  KEY_F,  KEY_G,  KEY_H,  KEY_J,  KEY_K,  KEY_L,
+	KEY_A, KEY_S, KEY_D, KEY_F, KEY_G, KEY_H, KEY_J, KEY_K, KEY_L,
 	//    +---+   +---+   +---+   +---+   +---+   +---+   +---+   +---+   +---+
 	//        +---+   +---+   +---+   +---+   +---+   +---+   +---+
-			  KEY_Z,  KEY_X,  KEY_C,  KEY_V,  KEY_B,  KEY_N,  KEY_M
+	KEY_Z, KEY_X, KEY_C, KEY_V, KEY_B, KEY_N, KEY_M
 	//        +---+   +---+   +---+   +---+   +---+   +---+   +---+
 };
 
@@ -188,7 +188,8 @@ void InputManager::updateMapMarkers()
 	}
 
 	const auto existing = keyMappings.find(KEY_CODE::KEY_LSHIFT, qKey);
-	if (existing.size() > 0 && std::any_of(existing.begin(), existing.end(), [](const KeyMapping& mapping) {
+	if (existing.size() > 0 && std::any_of(existing.begin(), existing.end(), [](const KeyMapping& mapping)
+	{
 		return mapping.info.name != "JumpToMapMarker";
 	}))
 	{
@@ -224,7 +225,7 @@ void InputManager::updateMapMarkers()
 	if (maybeInfo != markerKeyFunctions.end())
 	{
 		const auto& info = maybeInfo->second;
-		keyMappings.add({ KEY_CODE::KEY_LSHIFT, qKey }, info, KeyMappingSlot::PRIMARY);
+		keyMappings.add({KEY_CODE::KEY_LSHIFT, qKey}, info, KeyMappingSlot::PRIMARY);
 	}
 }
 
@@ -242,7 +243,8 @@ static bool isIgnoredMapping(InputManager& inputManager, const bool bAllowMouseW
 		return true;
 	}
 
-	if (!bAllowMouseWheelEvents && (mapping.keys.input.is(MOUSE_KEY_CODE::MOUSE_WUP) || mapping.keys.input.is(MOUSE_KEY_CODE::MOUSE_WDN)))
+	if (!bAllowMouseWheelEvents && (mapping.keys.input.is(MOUSE_KEY_CODE::MOUSE_WUP) || mapping.keys.input.is(
+		MOUSE_KEY_CODE::MOUSE_WDN)))
 	{
 		return true;
 	}

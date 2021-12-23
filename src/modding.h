@@ -27,26 +27,28 @@
 #include <vector>
 
 
-void addSubdirs(const char *basedir, const char *subdir, const bool appendToPath, std::vector<std::string> const *checkList, bool addToModList);
-void removeSubdirs(const char *basedir, const char *subdir);
+void addSubdirs(const char* basedir, const char* subdir, const bool appendToPath,
+                std::vector<std::string> const* checkList, bool addToModList);
+void removeSubdirs(const char* basedir, const char* subdir);
 void printSearchPath();
 
-void setOverrideMods(char *modlist);
+void setOverrideMods(char* modlist);
 void clearOverrideMods();
 
-namespace WzMods {
-struct LoadedMod
+namespace WzMods
 {
-	std::string name;
-	std::string filename;
-};
+	struct LoadedMod
+	{
+		std::string name;
+		std::string filename;
+	};
 } // namespace WzMods
 
 void clearLoadedMods();
-std::string const &getModList();
-std::vector<WzMods::LoadedMod> const &getLoadedMods();
-std::vector<Sha256> const &getModHashList();
-std::string getModFilename(Sha256 const &hash);
+std::string const& getModList();
+std::vector<WzMods::LoadedMod> const& getLoadedMods();
+std::vector<Sha256> const& getModHashList();
+std::string getModFilename(Sha256 const& hash);
 
 extern std::vector<std::string> global_mods;
 extern std::vector<std::string> campaign_mods;

@@ -71,7 +71,7 @@ int getTextureSize()
 }
 
 // Generate a new texture page both in the texture page table, and on the graphics card
-static size_t newPage(const char *name, int level, int width, int height, int count)
+static size_t newPage(const char* name, int level, int width, int height, int count)
 {
 	size_t texPage = firstPage + ((count + 1) / TILES_IN_PAGE);
 
@@ -80,14 +80,14 @@ static size_t newPage(const char *name, int level, int width, int height, int co
 		// We need to create a new texture page; create it and increase texture table to store it
 		pie_ReserveTexture(name, width, height);
 		pie_AssignTexture(texPage,
-			gfx_api::context::get().create_texture(mipmap_levels, width, height,
-				gfx_api::pixel_format::FORMAT_RGBA8_UNORM_PACK8));
+		                  gfx_api::context::get().create_texture(mipmap_levels, width, height,
+		                                                         gfx_api::pixel_format::FORMAT_RGBA8_UNORM_PACK8));
 	}
 	terrainPage = texPage;
 	return texPage;
 }
 
-bool texLoad(const char *fileName)
+bool texLoad(const char* fileName)
 {
 	char fullPath[PATH_MAX], partialPath[PATH_MAX], *buffer;
 	unsigned int i, j, k, size;
@@ -108,7 +108,8 @@ bool texLoad(const char *fileName)
 	mipmap_max = MIPMAP_MAX;
 	mipmap_levels = MIPMAP_LEVELS;
 
-	int32_t max_texture_size = gfx_api::context::get().get_context_value(gfx_api::context::context_value::MAX_TEXTURE_SIZE);
+	int32_t max_texture_size = gfx_api::context::get().get_context_value(
+		gfx_api::context::context_value::MAX_TEXTURE_SIZE);
 
 	while (max_texture_size < mipmap_max * TILES_IN_PAGE_COLUMN)
 	{
@@ -168,8 +169,12 @@ bool texLoad(const char *fileName)
 		const int yLimit = TILES_IN_PAGE_ROW * i;
 
 		// pad width and height into ^2 values
-		while (xLimit > (xSize *= 2)) {}
-		while (yLimit > (ySize *= 2)) {}
+		while (xLimit > (xSize *= 2))
+		{
+		}
+		while (yLimit > (ySize *= 2))
+		{
+		}
 
 		// Generate the empty texture buffer in VRAM
 		texPage = newPage(fileName, j, xSize, ySize, 0);
@@ -194,15 +199,18 @@ bool texLoad(const char *fileName)
 				break;
 			}
 			// Insert into texture page
-			pie_Texture(texPage).upload(j, xOffset, yOffset, tile.width, tile.height, gfx_api::pixel_format::FORMAT_RGBA8_UNORM_PACK8, tile.bmp);
+			pie_Texture(texPage).upload(j, xOffset, yOffset, tile.width, tile.height,
+			                            gfx_api::pixel_format::FORMAT_RGBA8_UNORM_PACK8, tile.bmp);
 			free(tile.bmp);
 			if (i == mipmap_max) // dealing with main texture page; so register coordinates
 			{
 				tileTexInfo[k].uOffset = (float)xOffset / (float)xSize;
 				tileTexInfo[k].vOffset = (float)yOffset / (float)ySize;
 				tileTexInfo[k].texPage = texPage;
-				debug(LOG_TEXTURE, "  texLoad: Registering k=%d i=%d u=%f v=%f xoff=%d yoff=%d xsize=%d ysize=%d tex=%d (%s)",
-				      k, i, tileTexInfo[k].uOffset, tileTexInfo[k].vOffset, xOffset, yOffset, xSize, ySize, texPage, fullPath);
+				debug(LOG_TEXTURE,
+				      "  texLoad: Registering k=%d i=%d u=%f v=%f xoff=%d yoff=%d xsize=%d ysize=%d tex=%d (%s)",
+				      k, i, tileTexInfo[k].uOffset, tileTexInfo[k].vOffset, xOffset, yOffset, xSize, ySize, texPage,
+				      fullPath);
 			}
 			xOffset += i; // i is width of tile
 			if (xOffset + i > xLimit)
@@ -222,7 +230,7 @@ bool texLoad(const char *fileName)
 		}
 		debug(LOG_TEXTURE, "texLoad: Found %d textures for %s mipmap level %d, added to page %d, opengl id %u",
 		      k, partialPath, i, texPage, (unsigned)pie_Texture(texPage).id());
-		i /= 2;	// halve the dimensions for the next series; OpenGL mipmaps start with largest at level zero
+		i /= 2; // halve the dimensions for the next series; OpenGL mipmaps start with largest at level zero
 	}
 	return true;
 }

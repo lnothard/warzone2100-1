@@ -39,7 +39,7 @@ KeyMappingInputSource keyMappingSourceByName(const std::string& name);
 
 union KeyMappingInputValue
 {
-	KEY_CODE       keyCode;
+	KEY_CODE keyCode;
 	MOUSE_KEY_CODE mouseKeyCode;
 
 	KeyMappingInputValue(const KEY_CODE keyCode);
@@ -49,7 +49,7 @@ union KeyMappingInputValue
 struct KeyMappingInput
 {
 	KeyMappingInputSource source;
-	KeyMappingInputValue  value;
+	KeyMappingInputValue value;
 
 	bool isPressed() const;
 	bool isDown() const;
@@ -101,23 +101,23 @@ enum class KeyAction
 
 struct KeyCombination
 {
-	KEY_CODE        meta;
+	KEY_CODE meta;
 	KeyMappingInput input;
-	KeyAction       action;
+	KeyAction action;
 
 	KeyCombination(
-		const KEY_CODE        meta,
+		const KEY_CODE meta,
 		const KeyMappingInput input,
-		const KeyAction       action
+		const KeyAction action
 	);
 
 	KeyCombination(
 		const KeyMappingInput input,
-		const KeyAction       action
+		const KeyAction action
 	);
 
 	KeyCombination(
-		const KEY_CODE        meta,
+		const KEY_CODE meta,
 		const KeyMappingInput input
 	);
 
@@ -155,31 +155,31 @@ typedef std::function<void()> MappableFunction;
 
 struct KeyFunctionInfo
 {
-	const ContextId&       context;
-	const KeyMappingType   type;
+	const ContextId& context;
+	const KeyMappingType type;
 	const MappableFunction function;
-	const std::string      name;
-	const std::string      displayName;
+	const std::string name;
+	const std::string displayName;
 
 	const std::vector<std::pair<KeyMappingSlot, KeyCombination>> defaultMappings;
 
 	const bool bIsDebugOnly;
 
 	KeyFunctionInfo(
-		const ContextId&       context,
-		const KeyMappingType   type,
+		const ContextId& context,
+		const KeyMappingType type,
 		const MappableFunction function,
-		const std::string      name
+		const std::string name
 	);
 
 	KeyFunctionInfo(
-		const ContextId&       context,
-		const KeyMappingType   type,
+		const ContextId& context,
+		const KeyMappingType type,
 		const MappableFunction function,
-		const std::string      name,
-		const std::string      displayName,
+		const std::string name,
+		const std::string displayName,
 		const std::vector<std::pair<KeyMappingSlot, KeyCombination>> defaultMappings,
-		const bool             bIsDebugOnly = false
+		const bool bIsDebugOnly = false
 	);
 
 	// Prevent copies. The entries are immutable and thus should never be copied around.
@@ -192,11 +192,13 @@ struct KeyFunctionInfo
 
 typedef std::vector<std::reference_wrapper<const KeyFunctionInfo>> KeyFunctionEntries;
 
-class KeyFunctionConfiguration {
+class KeyFunctionConfiguration
+{
 public:
 	KeyFunctionConfiguration();
 
-	nonstd::optional<std::reference_wrapper<const KeyFunctionInfo>> keyFunctionInfoByName(const std::string& name) const;
+	nonstd::optional<std::reference_wrapper<const KeyFunctionInfo>>
+	keyFunctionInfoByName(const std::string& name) const;
 	const KeyFunctionEntries allKeyFunctionEntries() const;
 
 private:

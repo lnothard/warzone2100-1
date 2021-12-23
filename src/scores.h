@@ -44,30 +44,32 @@ enum DATA_INDEX
 /* The mission results data */
 struct MISSION_DATA
 {
-	uint32_t    unitsBuilt;		// How many units were built
-	uint32_t    unitsKilled;	// How many enemy units you blew up
-	uint32_t    unitsLost;		// How many units were lost
-	uint32_t    strBuilt;		// How many structures we built
-	uint32_t    strKilled;		// How many enemy structures you blew up
-	uint32_t    strLost;		// How many structures were lost
-	uint32_t    artefactsFound;	// How many artefacts were found
-	uint32_t    missionStarted;	// When was the mission started
-	uint32_t    shotsOnTarget;	// How many hits
-	uint32_t    shotsOffTarget;	// How many misses
-	uint32_t    babasMowedDown; // How many barbarians did we mow down?
+	uint32_t unitsBuilt; // How many units were built
+	uint32_t unitsKilled; // How many enemy units you blew up
+	uint32_t unitsLost; // How many units were lost
+	uint32_t strBuilt; // How many structures we built
+	uint32_t strKilled; // How many enemy structures you blew up
+	uint32_t strLost; // How many structures were lost
+	uint32_t artefactsFound; // How many artefacts were found
+	uint32_t missionStarted; // When was the mission started
+	uint32_t shotsOnTarget; // How many hits
+	uint32_t shotsOffTarget; // How many misses
+	uint32_t babasMowedDown; // How many barbarians did we mow down?
 };
-extern MISSION_DATA	missionData;
+
+extern MISSION_DATA missionData;
+
 // Could use widgets, but hey.....
 struct STAT_BAR
 {
-	UDWORD	topX, topY;		// Obvious
-	UDWORD	width, height;	// Height down screen and width _unfilled_
-	UDWORD	percent;		// What percentage full is it?
-	UDWORD	stringID;		// String resource name to stick next to it.
-	UDWORD	queTime;		// How many game ticks before it's active?
-	bool	bQueued;		// Already fired off?
-	bool	bActive;		// Is this one active?
-	UDWORD	number;			// %d string for the associated text string.
+	UDWORD topX, topY; // Obvious
+	UDWORD width, height; // Height down screen and width _unfilled_
+	UDWORD percent; // What percentage full is it?
+	UDWORD stringID; // String resource name to stick next to it.
+	UDWORD queTime; // How many game ticks before it's active?
+	bool bQueued; // Already fired off?
+	bool bActive; // Is this one active?
+	UDWORD number; // %d string for the associated text string.
 };
 
 struct END_GAME_STATS_DATA
@@ -100,7 +102,9 @@ enum
 };
 
 #include "lib/ivis_opengl/textdraw.h"
-struct ScoreDataToScreenCache {
+
+struct ScoreDataToScreenCache
+{
 	WzText wzLabelText_UnitLosses;
 	WzText wzLabelText_StructureLosses;
 	WzText wzLabelText_ForceInformation;
@@ -115,11 +119,11 @@ struct ScoreDataToScreenCache {
 
 bool scoreInitSystem();
 void scoreUpdateVar(DATA_INDEX var);
-END_GAME_STATS_DATA	collectEndGameStatsData();
-void scoreDataToScreen(WIDGET *psWidget, ScoreDataToScreenCache& cache);
-void getAsciiTime(char *psText, unsigned time);
-bool readScoreData(const char *fileName);
-bool writeScoreData(const char *fileName);
+END_GAME_STATS_DATA collectEndGameStatsData();
+void scoreDataToScreen(WIDGET* psWidget, ScoreDataToScreenCache& cache);
+void getAsciiTime(char* psText, unsigned time);
+bool readScoreData(const char* fileName);
+bool writeScoreData(const char* fileName);
 
 void stdOutGameSummary(UDWORD realTimeThrottleSeconds = 5, bool flush_output = true);
 

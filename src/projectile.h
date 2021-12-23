@@ -34,7 +34,7 @@
 
 /***************************************************************************/
 
-extern	BASE_OBJECT	*g_pProjLastAttacker;	///< The last unit that did damage - used by script functions
+extern BASE_OBJECT* g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
 
 #define PROJ_MAX_PITCH  45
 #define PROJ_ULTIMATE_PITCH  80
@@ -47,48 +47,51 @@ extern	BASE_OBJECT	*g_pProjLastAttacker;	///< The last unit that did damage - us
 /** How long to display a single electronic warfare shimmmer. */
 #define ELEC_DAMAGE_DURATION    (GAME_TICKS_PER_SEC/5)
 
-bool	proj_InitSystem();	///< Initialize projectiles subsystem.
-void	proj_UpdateAll();	///< Frame update for projectiles.
-bool	proj_Shutdown();	///< Shut down projectile subsystem.
+bool proj_InitSystem(); ///< Initialize projectiles subsystem.
+void proj_UpdateAll(); ///< Frame update for projectiles.
+bool proj_Shutdown(); ///< Shut down projectile subsystem.
 
-PROJECTILE *proj_GetFirst();	///< Get first projectile in the list.
-PROJECTILE *proj_GetNext();		///< Get next projectile in the list.
+PROJECTILE* proj_GetFirst(); ///< Get first projectile in the list.
+PROJECTILE* proj_GetNext(); ///< Get next projectile in the list.
 
-void	proj_FreeAllProjectiles();	///< Free all projectiles in the list.
+void proj_FreeAllProjectiles(); ///< Free all projectiles in the list.
 
 void setExpGain(int player, int gain);
 int getExpGain(int player);
 
 /// Calculate the initial velocities of an indirect projectile. Returns the flight time.
-int32_t projCalcIndirectVelocities(const int32_t dx, const int32_t dz, int32_t v, int32_t *vx, int32_t *vz, int min_angle);
+int32_t projCalcIndirectVelocities(const int32_t dx, const int32_t dz, int32_t v, int32_t* vx, int32_t* vz,
+                                   int min_angle);
 
 /** Send a single projectile against the given target. */
-bool proj_SendProjectile(WEAPON *psWeap, SIMPLE_OBJECT *psAttacker, int player, Vector3i target, BASE_OBJECT *psTarget, bool bVisible, int weapon_slot);
+bool proj_SendProjectile(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target, BASE_OBJECT* psTarget,
+                         bool bVisible, int weapon_slot);
 
 /** Send a single projectile against the given target
  * with a minimum shot angle. */
-bool proj_SendProjectileAngled(WEAPON *psWeap, SIMPLE_OBJECT *psAttacker, int player, Vector3i target, BASE_OBJECT *psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
+bool proj_SendProjectileAngled(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target,
+                               BASE_OBJECT* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
 
 /** Return whether a weapon is direct or indirect. */
-bool proj_Direct(const WEAPON_STATS *psStats);
+bool proj_Direct(const WEAPON_STATS* psStats);
 
 /** Return the maximum range for a weapon. */
-int proj_GetLongRange(const WEAPON_STATS *psStats, int player);
+int proj_GetLongRange(const WEAPON_STATS* psStats, int player);
 
 /** Return the minimum range for a weapon. */
-int proj_GetMinRange(const WEAPON_STATS *psStats, int player);
+int proj_GetMinRange(const WEAPON_STATS* psStats, int player);
 
 /** Return the short range for a weapon. */
-int proj_GetShortRange(const WEAPON_STATS *psStats, int player);
+int proj_GetShortRange(const WEAPON_STATS* psStats, int player);
 
-UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, BASE_OBJECT *psTarget);
-bool gfxVisible(PROJECTILE *psObj);
+UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, BASE_OBJECT* psTarget);
+bool gfxVisible(PROJECTILE* psObj);
 
 /***************************************************************************/
 
-glm::mat4 objectShimmy(BASE_OBJECT *psObj);
+glm::mat4 objectShimmy(BASE_OBJECT* psObj);
 
-static inline void setProjectileSource(PROJECTILE *psProj, SIMPLE_OBJECT *psObj)
+static inline void setProjectileSource(PROJECTILE* psProj, SIMPLE_OBJECT* psObj)
 {
 	// use the source of the source of psProj if psAttacker is a projectile
 	psProj->psSource = nullptr;
@@ -97,7 +100,7 @@ static inline void setProjectileSource(PROJECTILE *psProj, SIMPLE_OBJECT *psObj)
 	}
 	else if (isProjectile(psObj))
 	{
-		PROJECTILE *psPrevProj = castProjectile(psObj);
+		PROJECTILE* psPrevProj = castProjectile(psObj);
 
 		if (psPrevProj->psSource && !psPrevProj->psSource->died)
 		{
@@ -110,33 +113,46 @@ static inline void setProjectileSource(PROJECTILE *psProj, SIMPLE_OBJECT *psObj)
 	}
 }
 
-int establishTargetHeight(BASE_OBJECT const *psTarget);
+int establishTargetHeight(BASE_OBJECT const* psTarget);
 
 /* @} */
 
-void checkProjectile(const PROJECTILE *psProjectile, const char *const location_description, const char *function, const int recurse);
+void checkProjectile(const PROJECTILE* psProjectile, const char* const location_description, const char* function,
+                     const int recurse);
 
 /* assert if projectile is bad */
 #define CHECK_PROJECTILE(object) checkProjectile((object), AT_MACRO, __FUNCTION__, max_check_object_recursion)
 
 #define syncDebugProjectile(psProj, ch) _syncDebugProjectile(__FUNCTION__, psProj, ch)
-void _syncDebugProjectile(const char *function, PROJECTILE const *psProj, char ch);
+void _syncDebugProjectile(const char* function, PROJECTILE const* psProj, char ch);
 
 struct ObjectShape
 {
-	ObjectShape() : isRectangular(false), size(0, 0) {}
-	ObjectShape(int radius) : isRectangular(false), size(radius, radius) {}
-	ObjectShape(int width, int breadth) : isRectangular(true), size(width, breadth) {}
-	ObjectShape(Vector2i widthBreadth) : isRectangular(true), size(widthBreadth) {}
+	ObjectShape() : isRectangular(false), size(0, 0)
+	{
+	}
+
+	ObjectShape(int radius) : isRectangular(false), size(radius, radius)
+	{
+	}
+
+	ObjectShape(int width, int breadth) : isRectangular(true), size(width, breadth)
+	{
+	}
+
+	ObjectShape(Vector2i widthBreadth) : isRectangular(true), size(widthBreadth)
+	{
+	}
+
 	int radius() const
 	{
 		return size.x;
 	}
 
-	bool     isRectangular;  ///< True if rectangular, false if circular.
-	Vector2i size;           ///< x == y if circular.
+	bool isRectangular; ///< True if rectangular, false if circular.
+	Vector2i size; ///< x == y if circular.
 };
 
-ObjectShape establishTargetShape(BASE_OBJECT *psTarget);
+ObjectShape establishTargetShape(BASE_OBJECT* psTarget);
 
 #endif // __INCLUDED_SRC_PROJECTILE_H__

@@ -41,14 +41,13 @@
 
 WzProtocolTitleUI::WzProtocolTitleUI()
 {
-
 }
 
 /*!
  * Set the server name
  * \param hostname The hostname or IP address of the server to connect to
  */
-void mpSetServerName(const char *hostname)
+void mpSetServerName(const char* hostname)
 {
 	sstrcpy(serverName, hostname);
 }
@@ -56,15 +55,15 @@ void mpSetServerName(const char *hostname)
 /**
  * @return The hostname or IP address of the server we will connect to.
  */
-const char *mpGetServerName()
+const char* mpGetServerName()
 {
 	return serverName;
 }
 
 void WzProtocolTitleUI::start()
 {
-	addBackdrop();										//background
-	addTopForm(false);										// logo
+	addBackdrop(); //background
+	addTopForm(false); // logo
 	addBottomForm();
 
 	// Obliterate any hanging settings screen
@@ -76,15 +75,16 @@ void WzProtocolTitleUI::start()
 	// don't pretend we are running a network game. Really do it!
 	NetPlay.bComms = true; // use network = true
 
-	addSideText(FRONTEND_SIDETEXT,  FRONTEND_SIDEX, FRONTEND_SIDEY, _("CONNECTION"));
+	addSideText(FRONTEND_SIDETEXT, FRONTEND_SIDEX, FRONTEND_SIDEY, _("CONNECTION"));
 
 	addMultiBut(psWScreen, FRONTEND_BOTFORM, CON_CANCEL, 10, 10, MULTIOP_OKW, MULTIOP_OKH,
-	            _("Return To Previous Screen"), IMAGE_RETURN, IMAGE_RETURN_HI, IMAGE_RETURN_HI);	// goback buttpn levels
+	            _("Return To Previous Screen"), IMAGE_RETURN, IMAGE_RETURN_HI, IMAGE_RETURN_HI); // goback buttpn levels
 
 	addTextButton(CON_TYPESID_START + 0, FRONTEND_POS2X, FRONTEND_POS2Y, _("Lobby"), WBUT_TXTCENTRE);
 	addTextButton(CON_TYPESID_START + 1, FRONTEND_POS3X, FRONTEND_POS3Y, _("IP"), WBUT_TXTCENTRE);
 
-	if (hasWaitingIP) {
+	if (hasWaitingIP)
+	{
 		hasWaitingIP = false;
 		openIPDialog();
 	}
@@ -94,9 +94,10 @@ TITLECODE WzProtocolTitleUI::run()
 {
 	screen_disableMapPreview();
 
-	auto const &curScreen = psSettingsScreen ? psSettingsScreen : psWScreen;
-	WidgetTriggers const &triggers = widgRunScreen(curScreen);
-	unsigned id = triggers.empty() ? 0 : triggers.front().widget->id; // Just use first click here, since the next click could be on another menu.
+	auto const& curScreen = psSettingsScreen ? psSettingsScreen : psWScreen;
+	WidgetTriggers const& triggers = widgRunScreen(curScreen);
+	unsigned id = triggers.empty() ? 0 : triggers.front().widget->id;
+	// Just use first click here, since the next click could be on another menu.
 
 	switch (id)
 	{
@@ -105,43 +106,44 @@ TITLECODE WzProtocolTitleUI::run()
 		bMultiPlayer = false;
 		bMultiMessages = false;
 		break;
-	case CON_TYPESID_START+0: // Lobby button
+	case CON_TYPESID_START + 0: // Lobby button
 		if (getLobbyError() != ERROR_INVALID)
 		{
 			setLobbyError(ERROR_NOERROR);
 		}
 		changeTitleUI(std::make_shared<WzGameFindTitleUI>());
 		break;
-	case CON_TYPESID_START+1: // IP button
+	case CON_TYPESID_START + 1: // IP button
 		openIPDialog();
 		break;
 	case CON_OK:
-	{
-		sstrcpy(serverName, widgGetString(curScreen, CON_IP));
-		if (serverName[0] == '\0')
 		{
-			sstrcpy(serverName, "127.0.0.1");  // Default to localhost.
+			sstrcpy(serverName, widgGetString(curScreen, CON_IP));
+			if (serverName[0] == '\0')
+			{
+				sstrcpy(serverName, "127.0.0.1"); // Default to localhost.
+			}
+			bool asSpectator = false;
+			auto pSpectatorCheckbox = dynamic_cast<WzCheckboxButton*>(
+				widgGetFromID(psSettingsScreen, CON_SPECTATOR_BOX));
+			if (pSpectatorCheckbox && pSpectatorCheckbox->getIsChecked())
+			{
+				asSpectator = true;
+			}
+			hasWaitingIP = true;
+			closeIPDialog();
+			joinGame(serverName, asSpectator);
+			break;
 		}
-		bool asSpectator = false;
-		auto pSpectatorCheckbox = dynamic_cast<WzCheckboxButton*>(widgGetFromID(psSettingsScreen, CON_SPECTATOR_BOX));
-		if (pSpectatorCheckbox && pSpectatorCheckbox->getIsChecked())
-		{
-			asSpectator = true;
-		}
-		hasWaitingIP = true;
-		closeIPDialog();
-		joinGame(serverName, asSpectator);
-		break;
-	}
 	case CON_IP_CANCEL:
 		closeIPDialog();
 		break;
 	}
 
-	widgDisplayScreen(psWScreen);							// show the widgets currently running
+	widgDisplayScreen(psWScreen); // show the widgets currently running
 	if (psSettingsScreen)
 	{
-		widgDisplayScreen(psSettingsScreen);						// show the widgets currently running
+		widgDisplayScreen(psSettingsScreen); // show the widgets currently running
 	}
 
 	if (CancelPressed())
@@ -154,30 +156,32 @@ TITLECODE WzProtocolTitleUI::run()
 // ////////////////////////////////////////////////////////////////////////////
 // Connection Options Screen.
 
-void WzProtocolTitleUI::screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight)
+void WzProtocolTitleUI::screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+                                            unsigned int newHeight)
 {
 	if (!psSettingsScreen) return;
 	psSettingsScreen->screenSizeDidChange(oldWidth, oldHeight, newWidth, newHeight);
 }
 
-void WzProtocolTitleUI::openIPDialog()			//internet options
+void WzProtocolTitleUI::openIPDialog() //internet options
 {
 	psSettingsScreen = W_SCREEN::make();
 
-	W_FORMINIT sFormInit;           //Connection Settings
+	W_FORMINIT sFormInit; //Connection Settings
 	sFormInit.formID = 0;
 	sFormInit.id = CON_SETTINGS;
 	sFormInit.style = WFORM_PLAIN;
 	sFormInit.calcLayout = LAMBDA_CALCLAYOUT_SIMPLE({
-		psWidget->setGeometry(CON_SETTINGSX, CON_SETTINGSY, CON_SETTINGSWIDTH, CON_SETTINGSHEIGHT);
-	});
+			psWidget->setGeometry(CON_SETTINGSX, CON_SETTINGSY, CON_SETTINGSWIDTH, CON_SETTINGSHEIGHT);
+			});
 	sFormInit.pDisplay = intDisplayFeBox;
-	W_FORM *psConnectionForm = widgAddForm(psSettingsScreen, &sFormInit);
+	W_FORM* psConnectionForm = widgAddForm(psSettingsScreen, &sFormInit);
 
 	// Buttons
 	addMultiBut(psSettingsScreen, CON_SETTINGS, CON_OK, CON_OKX, CON_OKY, MULTIOP_OKW, MULTIOP_OKH,
 	            _("Accept Settings"), IMAGE_OK, IMAGE_OK, true);
-	addMultiBut(psSettingsScreen, CON_SETTINGS, CON_IP_CANCEL, CON_OKX + MULTIOP_OKW + 10, CON_OKY, MULTIOP_OKW, MULTIOP_OKH,
+	addMultiBut(psSettingsScreen, CON_SETTINGS, CON_IP_CANCEL, CON_OKX + MULTIOP_OKW + 10, CON_OKY, MULTIOP_OKW,
+	            MULTIOP_OKH,
 	            _("Cancel"), IMAGE_NO, IMAGE_NO, true);
 
 	// Checkbox for spectator join
@@ -192,17 +196,17 @@ void WzProtocolTitleUI::openIPDialog()			//internet options
 	//label.
 	W_LABINIT sLabInit;
 	sLabInit.formID = CON_SETTINGS;
-	sLabInit.id		= CON_SETTINGS_LABEL;
-	sLabInit.style	= WLAB_ALIGNCENTRE;
-	sLabInit.x		= 0;
-	sLabInit.y		= 10;
-	sLabInit.width	= CON_SETTINGSWIDTH;
+	sLabInit.id = CON_SETTINGS_LABEL;
+	sLabInit.style = WLAB_ALIGNCENTRE;
+	sLabInit.x = 0;
+	sLabInit.y = 10;
+	sLabInit.width = CON_SETTINGSWIDTH;
 	sLabInit.height = 20;
-	sLabInit.pText	= WzString::fromUtf8(_("IP Address or Machine Name"));
+	sLabInit.pText = WzString::fromUtf8(_("IP Address or Machine Name"));
 	widgAddLabel(psSettingsScreen, &sLabInit);
 
 
-	W_EDBINIT sEdInit;             // address
+	W_EDBINIT sEdInit; // address
 	sEdInit.formID = CON_SETTINGS;
 	sEdInit.id = CON_IP;
 	sEdInit.x = CON_IPX;
@@ -219,8 +223,8 @@ void WzProtocolTitleUI::openIPDialog()			//internet options
 	widgSetString(psSettingsScreen, CON_IP, sEdInit.pText);
 	// auto click in the text box
 	W_CONTEXT sContext = W_CONTEXT::ZeroContext();
-	sContext.mx			= CON_NAMEBOXWIDTH;
-	sContext.my			= 0;
+	sContext.mx = CON_NAMEBOXWIDTH;
+	sContext.my = 0;
 	widgGetFromID(psSettingsScreen, CON_IP)->clicked(&sContext);
 }
 

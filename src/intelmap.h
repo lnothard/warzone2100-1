@@ -31,12 +31,12 @@
 #define IDINTMAP_MSGVIEW		6002	//The message 3D view for the intelligence screen
 
 // The current message being displayed
-extern MESSAGE			*psCurrentMsg;
+extern MESSAGE* psCurrentMsg;
 
 /* Add the Intelligence Map widgets to the widget screen */
 bool intAddIntelMap();
 /*Add the 3D world view for the current message */
-bool intAddMessageView(MESSAGE *psMessage);
+bool intAddMessageView(MESSAGE* psMessage);
 /* Remove the Message View from the Intelligence screen */
 void intRemoveMessageView(bool animated);
 
@@ -58,7 +58,7 @@ void setIntelligencePauseState();
 void resetIntelligencePauseState();
 
 // tell the intelligence screen to play this message immediately
-void displayImmediateMessage(MESSAGE *psMessage);
+void displayImmediateMessage(MESSAGE* psMessage);
 
 // return whether a message is immediate
 bool messageIsImmediate();

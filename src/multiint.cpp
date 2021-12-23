@@ -129,11 +129,12 @@
 
 // ////////////////////////////////////////////////////////////////////////////
 // vars
-extern char	MultiCustomMapsPath[PATH_MAX];
-extern char	MultiPlayersPath[PATH_MAX];
-extern bool bSendingMap;			// used to indicate we are sending a map
+extern char MultiCustomMapsPath[PATH_MAX];
+extern char MultiPlayersPath[PATH_MAX];
+extern bool bSendingMap; // used to indicate we are sending a map
 
-enum RoomMessageType {
+enum RoomMessageType
+{
 	RoomMessagePlayer,
 	RoomMessageSystem,
 	RoomMessageNotify
@@ -186,6 +187,7 @@ enum class PlayerDisplayView
 	Players,
 	Spectators
 };
+
 static PlayerDisplayView playerDisplayView = PlayerDisplayView::Players;
 
 static std::weak_ptr<WzMultiplayerOptionsTitleUI> currentMultiOptionsTitleUI;
@@ -195,66 +197,75 @@ static std::weak_ptr<WzMultiplayerOptionsTitleUI> currentMultiOptionsTitleUI;
 // Function protos
 
 // widget functions
-static W_EDITBOX* addMultiEditBox(UDWORD formid, UDWORD id, UDWORD x, UDWORD y, char const *tip, char const *tipres, UDWORD icon, UDWORD iconhi, UDWORD iconid);
+static W_EDITBOX* addMultiEditBox(UDWORD formid, UDWORD id, UDWORD x, UDWORD y, char const* tip, char const* tipres,
+                                  UDWORD icon, UDWORD iconhi, UDWORD iconid);
 static std::shared_ptr<W_FORM> createBlueForm(int x, int y, int w, int h, WIDGET_DISPLAY displayFunc = intDisplayFeBox);
-static W_FORM * addBlueForm(UDWORD parent, UDWORD id, UDWORD x, UDWORD y, UDWORD w, UDWORD h, WIDGET_DISPLAY displayFunc = intDisplayFeBox);
+static W_FORM* addBlueForm(UDWORD parent, UDWORD id, UDWORD x, UDWORD y, UDWORD w, UDWORD h,
+                           WIDGET_DISPLAY displayFunc = intDisplayFeBox);
 static int numSlotsToBeDisplayed();
 static inline bool spectatorSlotsSupported();
 static inline bool isSpectatorOnlySlot(UDWORD playerIdx);
 //static inline bool isSpectatorOnlyPosition(UDWORD playerPosition);
 
 // Drawing Functions
-static void displayChatEdit(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
-static void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
-static void displayReadyBoxContainer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
-static void displayColour(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
-static void displayFaction(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
-static void displayTeamChooser(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
-static void displaySpectatorAddButton(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
-static void displayAi(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
-static void displayDifficulty(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
-static void displayMultiEditBox(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+static void displayChatEdit(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
+static void displayPlayer(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
+static void displayReadyBoxContainer(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
+static void displayColour(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
+static void displayFaction(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
+static void displayTeamChooser(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
+static void displaySpectatorAddButton(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
+static void displayAi(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
+static void displayDifficulty(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
+static void displayMultiEditBox(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 static void drawBlueBox_Spectator(UDWORD x, UDWORD y, UDWORD w, UDWORD h);
 static void drawBlueBox_SpectatorOnly(UDWORD x, UDWORD y, UDWORD w, UDWORD h);
-void intDisplayFeBox_SpectatorOnly(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset);
+void intDisplayFeBox_SpectatorOnly(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 static inline void drawBoxForPlayerInfoSegment(UDWORD playerIdx, UDWORD x, UDWORD y, UDWORD w, UDWORD h);
 
 // pUserData structures used by drawing functions
-struct DisplayPlayerCache {
-	std::string	fullMainText;	// the “full” main text (used for storing the full player name when displaying a player)
-	WzText		wzMainText;		// the main text
+struct DisplayPlayerCache
+{
+	std::string fullMainText; // the “full” main text (used for storing the full player name when displaying a player)
+	WzText wzMainText; // the main text
 
-	WzText		wzSubText;		// the sub text (used for players)
-	WzText		wzEloText;      // the elo text (used for players)
+	WzText wzSubText; // the sub text (used for players)
+	WzText wzEloText; // the elo text (used for players)
 };
-struct DisplayPositionCache {
+
+struct DisplayPositionCache
+{
 	WzText wzPositionText;
 };
-struct DisplayAICache {
+
+struct DisplayAICache
+{
 	WzText wzText;
 };
-struct DisplayDifficultyCache {
+
+struct DisplayDifficultyCache
+{
 	WzText wzDifficultyText;
 };
 
 // Game option functions
-static	void	addGameOptions();
+static void addGameOptions();
 static void addChatBox(bool preserveOldChat = false);
-static	void	disableMultiButs();
-static	void	SendFireUp();
+static void disableMultiButs();
+static void SendFireUp();
 
-static	void	decideWRF();
+static void decideWRF();
 
-static bool		SendColourRequest(UBYTE player, UBYTE col);
-static bool		SendFactionRequest(UBYTE player, UBYTE faction);
-static bool		SendPositionRequest(UBYTE player, UBYTE chosenPlayer);
-static bool		SendPlayerSlotTypeRequest(uint32_t player, bool isSpectator);
+static bool SendColourRequest(UBYTE player, UBYTE col);
+static bool SendFactionRequest(UBYTE player, UBYTE faction);
+static bool SendPositionRequest(UBYTE player, UBYTE chosenPlayer);
+static bool SendPlayerSlotTypeRequest(uint32_t player, bool isSpectator);
 bool changeReadyStatus(UBYTE player, bool bReady);
 static void stopJoining(std::shared_ptr<WzTitleUI> parent);
 static int difficultyIcon(int difficulty);
 
-void sendRoomSystemMessageToSingleReceiver(char const *text, uint32_t receiver);
-static void sendRoomChatMessage(char const *text);
+void sendRoomSystemMessageToSingleReceiver(char const* text, uint32_t receiver);
+static void sendRoomChatMessage(char const* text);
 
 static int factionIcon(FactionID faction);
 
@@ -263,8 +274,11 @@ static bool multiplayIsStartingGame();
 // ////////////////////////////////////////////////////////////////////////////
 // map previews..
 
-static const char *difficultyList[] = { N_("Easy"), N_("Medium"), N_("Hard"), N_("Insane") };
-static const AIDifficulty difficultyValue[] = { AIDifficulty::EASY, AIDifficulty::MEDIUM, AIDifficulty::HARD, AIDifficulty::INSANE };
+static const char* difficultyList[] = {N_("Easy"), N_("Medium"), N_("Hard"), N_("Insane")};
+static const AIDifficulty difficultyValue[] = {
+	AIDifficulty::EASY, AIDifficulty::MEDIUM, AIDifficulty::HARD, AIDifficulty::INSANE
+};
+
 static struct
 {
 	bool scavengers;
@@ -277,23 +291,30 @@ static struct
 	bool bases;
 	bool spectators;
 } locked;
+
 static bool spectatorHost = false;
 static uint16_t defaultOpenSpectatorSlots = 0;
 
 struct AIDATA
 {
-	AIDATA() : name{0}, js{0}, tip{0}, difficultyTips{0}, assigned(0) {}
+	AIDATA() : name{0}, js{0}, tip{0}, difficultyTips{0}, assigned(0)
+	{
+	}
+
 	char name[MAX_LEN_AI_NAME];
 	char js[MAX_LEN_AI_NAME];
-	char tip[255 + 128];            ///< may contain optional AI tournament data
-	char difficultyTips[4][255];    ///< optional difficulty level info
-	int assigned;                   ///< How many AIs have we assigned of this type
+	char tip[255 + 128]; ///< may contain optional AI tournament data
+	char difficultyTips[4][255]; ///< optional difficulty level info
+	int assigned; ///< How many AIs have we assigned of this type
 };
+
 static std::vector<AIDATA> aidata;
 
 struct WzMultiButton : public W_BUTTON
 {
-	WzMultiButton() : W_BUTTON() {}
+	WzMultiButton() : W_BUTTON()
+	{
+	}
 
 	void display(int xOffset, int yOffset) override;
 
@@ -310,20 +331,25 @@ struct WzMultiButton : public W_BUTTON
 class ChatBoxWidget : public IntFormAnimated
 {
 protected:
-	ChatBoxWidget(): IntFormAnimated(true) {}
+	ChatBoxWidget(): IntFormAnimated(true)
+	{
+	}
+
 	virtual void initialize();
 
 public:
 	static std::shared_ptr<ChatBoxWidget> make()
 	{
-		class make_shared_enabler: public ChatBoxWidget {};
+		class make_shared_enabler : public ChatBoxWidget
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->initialize();
 		return widget;
 	}
 
 	virtual ~ChatBoxWidget();
-	void addMessage(RoomMessage const &message);
+	void addMessage(RoomMessage const& message);
 	void initializeMessages(bool preserveOldChat);
 
 protected:
@@ -338,26 +364,27 @@ private:
 	void displayParagraphContextualMenu(const std::string& textToCopy);
 	std::shared_ptr<WIDGET> createParagraphContextualMenuPopoverForm(std::string textToCopy);
 
-	void displayMessage(RoomMessage const &message);
+	void displayMessage(RoomMessage const& message);
 
 	static std::vector<RoomMessage> persistentMessageLocalStorage;
 };
 
 std::vector<RoomMessage> ChatBoxWidget::persistentMessageLocalStorage;
 
-void displayRoomMessage(RoomMessage const &message)
+void displayRoomMessage(RoomMessage const& message)
 {
-	if (auto chatBox = (ChatBoxWidget *)widgGetFromID(psWScreen, MULTIOP_CHATBOX)) {
+	if (auto chatBox = (ChatBoxWidget*)widgGetFromID(psWScreen, MULTIOP_CHATBOX))
+	{
 		chatBox->addMessage(message);
 	}
 }
 
-void displayRoomSystemMessage(char const *text)
+void displayRoomSystemMessage(char const* text)
 {
 	displayRoomMessage(RoomMessage::system(text));
 }
 
-void displayRoomNotifyMessage(char const *text)
+void displayRoomNotifyMessage(char const* text)
 {
 	displayRoomMessage(RoomMessage::notify(text));
 }
@@ -365,7 +392,7 @@ void displayRoomNotifyMessage(char const *text)
 const std::vector<WzString> getAINames()
 {
 	std::vector<WzString> l;
-	for (const auto &i : aidata)
+	for (const auto& i : aidata)
 	{
 		if (i.js[0] != '\0')
 		{
@@ -375,11 +402,12 @@ const std::vector<WzString> getAINames()
 	return l;
 }
 
-const char *getAIName(int player)
+const char* getAIName(int player)
 {
 	if (NetPlay.players[player].ai >= 0 && NetPlay.players[player].ai != AI_CUSTOM)
 	{
-		ASSERT_OR_RETURN(_("Commander"), NetPlay.players[player].ai < aidata.size(), "Invalid AI (index: %" PRIi8 ", num AIs: %zu)", NetPlay.players[player].ai, aidata.size());
+		ASSERT_OR_RETURN(_("Commander"), NetPlay.players[player].ai < aidata.size(),
+		                 "Invalid AI (index: %" PRIi8 ", num AIs: %zu)", NetPlay.players[player].ai, aidata.size());
 		return aidata[NetPlay.players[player].ai].name;
 	}
 	else
@@ -393,9 +421,11 @@ void loadMultiScripts()
 	bool defaultRules = true;
 	char aFileName[256];
 	char aPathName[256];
-	LEVEL_DATASET *psLevel = levFindDataSet(game.map, &game.hash);
+	LEVEL_DATASET* psLevel = levFindDataSet(game.map, &game.hash);
 	ASSERT_OR_RETURN(, psLevel, "No level found for %s", game.map);
-	ASSERT_OR_RETURN(, psLevel->game >= 0 && psLevel->game < LEVEL_MAXFILES, "Invalid psLevel->game: %" PRIi16 " - may be a corrupt level load (%s; hash: %s)", psLevel->game, game.map, game.hash.toString().c_str());
+	ASSERT_OR_RETURN(, psLevel->game >= 0 && psLevel->game < LEVEL_MAXFILES,
+	                   "Invalid psLevel->game: %" PRIi16 " - may be a corrupt level load (%s; hash: %s)", psLevel->game,
+	                   game.map, game.hash.toString().c_str());
 	sstrcpy(aFileName, psLevel->apDataFiles[psLevel->game]);
 	aFileName[strlen(aFileName) - 4] = '\0';
 	sstrcpy(aPathName, aFileName);
@@ -489,7 +519,8 @@ void loadMultiScripts()
 				if (aidata[NetPlay.players[i].ai].js[0] != '\0')
 				{
 					debug(LOG_SAVE, "Loading javascript AI for player %d", i);
-					loadPlayerScript(WzString("multiplay/skirmish/") + aidata[NetPlay.players[i].ai].js, i, NetPlay.players[i].difficulty);
+					loadPlayerScript(WzString("multiplay/skirmish/") + aidata[NetPlay.players[i].ai].js, i,
+					                 NetPlay.players[i].difficulty);
 				}
 			}
 		}
@@ -506,7 +537,7 @@ void loadMultiScripts()
 	resForceBaseDir("");
 }
 
-static MAP_TILESET_TYPE guessMapTilesetType(LEVEL_DATASET *psLevel)
+static MAP_TILESET_TYPE guessMapTilesetType(LEVEL_DATASET* psLevel)
 {
 	unsigned t = 0, c = 0;
 
@@ -538,7 +569,7 @@ static MAP_TILESET_TYPE guessMapTilesetType(LEVEL_DATASET *psLevel)
 static void loadEmptyMapPreview()
 {
 	// No map is available to preview, so improvise.
-	char *imageData = (char *)malloc(BACKDROP_HACK_WIDTH * BACKDROP_HACK_HEIGHT * 3);
+	char* imageData = (char*)malloc(BACKDROP_HACK_WIDTH * BACKDROP_HACK_HEIGHT * 3);
 	memset(imageData, 0, BACKDROP_HACK_WIDTH * BACKDROP_HACK_HEIGHT * 3); //dunno about background color
 	int const ex = 100, ey = 100, bx = 5, by = 8;
 	for (unsigned n = 0; n < 125; ++n)
@@ -579,12 +610,14 @@ static inline WzMap::MapPreviewColor PIELIGHT_to_MapPreviewColor(PIELIGHT color)
 class WzLobbyPreviewPlayerColorProvider : public WzMap::MapPlayerColorProvider
 {
 public:
-	~WzLobbyPreviewPlayerColorProvider() { }
+	~WzLobbyPreviewPlayerColorProvider()
+	{
+	}
 
 	// -1 = scavs
 	virtual WzMap::MapPreviewColor getPlayerColor(int8_t mapPlayer) override
 	{
-		unsigned player = mapPlayer == -1? scavengerSlot() : mapPlayer;
+		unsigned player = mapPlayer == -1 ? scavengerSlot() : mapPlayer;
 		if (player >= MAX_PLAYERS)
 		{
 			debug(LOG_ERROR, "Bad player");
@@ -592,9 +625,10 @@ public:
 		}
 		unsigned playerid = getPlayerColour(RemapPlayerNumber(player));
 		// kludge to fix black, so you can see it on some maps.
-		PIELIGHT color = playerid == 3? WZCOL_GREY : clanColours[playerid];
+		PIELIGHT color = playerid == 3 ? WZCOL_GREY : clanColours[playerid];
 		return PIELIGHT_to_MapPreviewColor(color);
 	}
+
 private:
 	// -----------------------------------------------------------------------------------------
 	// Remaps old player number based on position on map to new owner
@@ -602,7 +636,7 @@ private:
 	{
 		int i;
 
-		if (game.type == LEVEL_TYPE::CAMPAIGN)		// don't remap for SP games
+		if (game.type == LEVEL_TYPE::CAMPAIGN) // don't remap for SP games
 		{
 			return OldNumber;
 		}
@@ -622,8 +656,8 @@ private:
 /// Loads the entire map just to show a picture of it
 void loadMapPreview(bool hideInterface)
 {
-	std::string		aFileName;
-	Vector2i playerpos[MAX_PLAYERS];	// Will hold player positions
+	std::string aFileName;
+	Vector2i playerpos[MAX_PLAYERS]; // Will hold player positions
 
 	// absurd hack, since there is a problem with updating this crap piece of info, we're setting it to
 	// true by default for now, like it used to be
@@ -631,16 +665,18 @@ void loadMapPreview(bool hideInterface)
 	game.mapHasScavengers = true; // this is really the wrong place for it, but this is where it has to be
 
 	// load the terrain types
-	LEVEL_DATASET *psLevel = levFindDataSet(game.map, &game.hash);
+	LEVEL_DATASET* psLevel = levFindDataSet(game.map, &game.hash);
 	if (psLevel == nullptr)
 	{
-		debug(LOG_INFO, "Could not find level dataset \"%s\" %s. We %s waiting for a download.", game.map, game.hash.toString().c_str(), !NET_getDownloadingWzFiles().empty() ? "are" : "aren't");
+		debug(LOG_INFO, "Could not find level dataset \"%s\" %s. We %s waiting for a download.", game.map,
+		      game.hash.toString().c_str(), !NET_getDownloadingWzFiles().empty() ? "are" : "aren't");
 		loadEmptyMapPreview();
 		return;
 	}
 	if (psLevel->game < 0 || psLevel->game >= LEVEL_MAXFILES)
 	{
-		debug(LOG_ERROR, "apDataFiles index (%" PRIi16 ") is out of bounds for: \"%s\" %s.", psLevel->game, game.map, game.hash.toString().c_str());
+		debug(LOG_ERROR, "apDataFiles index (%" PRIi16 ") is out of bounds for: \"%s\" %s.", psLevel->game, game.map,
+		      game.hash.toString().c_str());
 		loadEmptyMapPreview();
 		return;
 	}
@@ -652,13 +688,16 @@ void loadMapPreview(bool hideInterface)
 	else
 	{
 		builtInMap = false;
-		debug(LOG_WZ, "Loading map preview: \"%s\" in (%s)\"%s\"  %s t%d", psLevel->pName, WZ_PHYSFS_getRealDir_String(psLevel->realFileName).c_str(), psLevel->realFileName, psLevel->realFileHash.toString().c_str(), psLevel->dataDir);
+		debug(LOG_WZ, "Loading map preview: \"%s\" in (%s)\"%s\"  %s t%d", psLevel->pName,
+		      WZ_PHYSFS_getRealDir_String(psLevel->realFileName).c_str(), psLevel->realFileName,
+		      psLevel->realFileHash.toString().c_str(), psLevel->dataDir);
 	}
 	rebuildSearchPath(psLevel->dataDir, false, psLevel->realFileName);
 	const char* pGamPath = psLevel->apDataFiles[psLevel->game];
 	if (!pGamPath)
 	{
-		debug(LOG_ERROR, "No path for level \"%s\"? (%s)", psLevel->pName, (psLevel->realFileName) ? psLevel->realFileName : "null");
+		debug(LOG_ERROR, "No path for level \"%s\"? (%s)", psLevel->pName,
+		      (psLevel->realFileName) ? psLevel->realFileName : "null");
 		loadEmptyMapPreview();
 		return;
 	}
@@ -672,7 +711,9 @@ void loadMapPreview(bool hideInterface)
 
 	// load the map data
 	aFileName += "/";
-	auto data = WzMap::Map::loadFromPath(aFileName, WzMap::MapType::SKIRMISH, psLevel->players, rand(), true, std::unique_ptr<WzMap::LoggingProtocol>(new WzMapDebugLogger()), std::unique_ptr<WzMapPhysFSIO>(new WzMapPhysFSIO()));
+	auto data = WzMap::Map::loadFromPath(aFileName, WzMap::MapType::SKIRMISH, psLevel->players, rand(), true,
+	                                     std::unique_ptr<WzMap::LoggingProtocol>(new WzMapDebugLogger()),
+	                                     std::unique_ptr<WzMapPhysFSIO>(new WzMapPhysFSIO()));
 	if (!data)
 	{
 		debug(LOG_ERROR, "Failed to load map from path: %s", aFileName.c_str());
@@ -684,7 +725,8 @@ void loadMapPreview(bool hideInterface)
 	previewColorScheme.hqColor = PIELIGHT_to_MapPreviewColor(WZCOL_MAP_PREVIEW_HQ);
 	previewColorScheme.oilResourceColor = PIELIGHT_to_MapPreviewColor(WZCOL_MAP_PREVIEW_OIL);
 	previewColorScheme.oilBarrelColor = PIELIGHT_to_MapPreviewColor(WZCOL_MAP_PREVIEW_BARREL);
-	previewColorScheme.playerColorProvider = std::unique_ptr<WzMap::MapPlayerColorProvider>(new WzLobbyPreviewPlayerColorProvider());
+	previewColorScheme.playerColorProvider = std::unique_ptr<WzMap::MapPlayerColorProvider>(
+		new WzLobbyPreviewPlayerColorProvider());
 	switch (guessMapTilesetType(psLevel))
 	{
 	case TILESET_ARIZONA:
@@ -698,7 +740,7 @@ void loadMapPreview(bool hideInterface)
 		break;
 	default:
 		debug(LOG_FATAL, "Invalid tileset type");
-		// silence warnings
+	// silence warnings
 		abort();
 		return;
 	}
@@ -721,27 +763,28 @@ void loadMapPreview(bool hideInterface)
 
 	// for the backdrop, we currently need to copy this to the top-left of an image that's BACKDROP_HACK_WIDTH x BACKDROP_HACK_HEIGHT
 	size_t backdropSize = sizeof(char) * BACKDROP_HACK_WIDTH * BACKDROP_HACK_HEIGHT;
-	char *backdropData = (char *)malloc(backdropSize * 3);		// used for the texture
+	char* backdropData = (char*)malloc(backdropSize * 3); // used for the texture
 	if (!backdropData)
 	{
 		debug(LOG_FATAL, "Out of memory for texture!");
-		abort();	// should be a fatal error ?
+		abort(); // should be a fatal error ?
 		return;
 	}
 	ASSERT(mapPreviewResult->width <= BACKDROP_HACK_WIDTH, "mapData width somehow exceeds backdrop width?");
-	memset(backdropData, 0, sizeof(char) * BACKDROP_HACK_WIDTH * BACKDROP_HACK_HEIGHT * 3); //dunno about background color
-	char *imageData = reinterpret_cast<char*>(mapPreviewResult->imageData.data());
+	memset(backdropData, 0, sizeof(char) * BACKDROP_HACK_WIDTH * BACKDROP_HACK_HEIGHT * 3);
+	//dunno about background color
+	char* imageData = reinterpret_cast<char*>(mapPreviewResult->imageData.data());
 	for (int y = 0; y < mapPreviewResult->height; ++y)
 	{
-		char *pSrc = imageData + (3 * (y * mapPreviewResult->width));
-		char *pDst = backdropData + (3 * (y * BACKDROP_HACK_WIDTH));
+		char* pSrc = imageData + (3 * (y * mapPreviewResult->width));
+		char* pDst = backdropData + (3 * (y * BACKDROP_HACK_WIDTH));
 		memcpy(pDst, pSrc, std::min<size_t>(mapPreviewResult->width, BACKDROP_HACK_WIDTH) * 3);
 	}
 
 	for (auto kv : mapPreviewResult->playerHQPosition)
 	{
 		int8_t mapPlayer = kv.first;
-		unsigned player = mapPlayer == -1? scavengerSlot() : mapPlayer;
+		unsigned player = mapPlayer == -1 ? scavengerSlot() : mapPlayer;
 		if (player >= MAX_PLAYERS)
 		{
 			debug(LOG_ERROR, "Bad player");
@@ -765,7 +808,7 @@ void loadMapPreview(bool hideInterface)
 // ////////////////////////////////////////////////////////////////////////////
 // helper func
 
-int matchAIbyName(const char *name)
+int matchAIbyName(const char* name)
 {
 	int i = 0;
 
@@ -786,12 +829,13 @@ int matchAIbyName(const char *name)
 void readAIs()
 {
 	char basepath[PATH_MAX];
-	const char *sSearchPath = "multiplay/skirmish/";
+	const char* sSearchPath = "multiplay/skirmish/";
 
 	aidata.clear();
 
 	sstrcpy(basepath, sSearchPath);
-	WZ_PHYSFS_enumerateFiles(basepath, [&](const char *file) -> bool {
+	WZ_PHYSFS_enumerateFiles(basepath, [&](const char* file) -> bool
+	{
 		char path[PATH_MAX];
 		// See if this filename contains the extension we're looking for
 		if (!strstr(file, ".json"))
@@ -815,7 +859,7 @@ void readAIs()
 
 		sstrcpy(ai.js, aiconf.value("js", "").toWzString().toUtf8().c_str());
 
-		const char *difficultyKeys[] = { "easy_tip", "medium_tip", "hard_tip", "insane_tip" };
+		const char* difficultyKeys[] = {"easy_tip", "medium_tip", "hard_tip", "insane_tip"};
 		for (int i = 0; i < ARRAY_SIZE(difficultyKeys); i++)
 		{
 			if (aiconf.contains(difficultyKeys[i]))
@@ -849,7 +893,8 @@ void readAIs()
 			float draw_percentage = static_cast<float>(draws) / total * 100;
 			sstrcat(ai.tip, "\n");
 			char statistics[127];
-			ssprintf(statistics, _("AI tournament: %3.1f%% wins, %3.1f%% losses, %3.1f%% draws"), win_percentage, loss_percentage, draw_percentage);
+			ssprintf(statistics, _("AI tournament: %3.1f%% wins, %3.1f%% losses, %3.1f%% draws"), win_percentage,
+			         loss_percentage, draw_percentage);
 			sstrcat(ai.tip, statistics);
 		}
 
@@ -878,7 +923,7 @@ static void decideWRF()
 	// FIXME: Try to incorporate this into physfs setup somehow for sane paths
 	if (!PHYSFS_exists(aLevelName))
 	{
-		sstrcpy(aLevelName, game.map);		// doesn't exist, must be a predefined one.
+		sstrcpy(aLevelName, game.map); // doesn't exist, must be a predefined one.
 	}
 }
 
@@ -903,7 +948,8 @@ void setLobbyError(LOBBY_ERROR_TYPES error_type)
 }
 
 // NOTE: Must call NETinit(true); before this will actually work
-std::vector<JoinConnectionDescription> findLobbyGame(const std::string& lobbyAddress, unsigned int lobbyPort, uint32_t lobbyGameId)
+std::vector<JoinConnectionDescription> findLobbyGame(const std::string& lobbyAddress, unsigned int lobbyPort,
+                                                     uint32_t lobbyGameId)
 {
 	WzString originalLobbyServerName = WzString::fromUtf8(NETgetMasterserverName());
 	unsigned int originalLobbyServerPort = NETgetMasterserverPort();
@@ -919,7 +965,8 @@ std::vector<JoinConnectionDescription> findLobbyGame(const std::string& lobbyAdd
 		NETsetMasterserverPort(lobbyPort);
 	}
 
-	auto cleanup = [&]() {
+	auto cleanup = [&]()
+	{
 		NETsetMasterserverName(originalLobbyServerName.toUtf8().c_str());
 		NETsetMasterserverPort(originalLobbyServerPort);
 	};
@@ -981,17 +1028,20 @@ std::vector<JoinConnectionDescription> findLobbyGame(const std::string& lobbyAdd
 	return {JoinConnectionDescription(host, lobbyGame.hostPort)};
 }
 
-static JoinGameResult joinGameInternal(std::vector<JoinConnectionDescription> connection_list, std::shared_ptr<WzTitleUI> oldUI, bool asSpectator = false);
-static JoinGameResult joinGameInternalConnect(const char *host, uint32_t port, std::shared_ptr<WzTitleUI> oldUI, bool asSpectator = false);
+static JoinGameResult joinGameInternal(std::vector<JoinConnectionDescription> connection_list,
+                                       std::shared_ptr<WzTitleUI> oldUI, bool asSpectator = false);
+static JoinGameResult joinGameInternalConnect(const char* host, uint32_t port, std::shared_ptr<WzTitleUI> oldUI,
+                                              bool asSpectator = false);
 
-JoinGameResult joinGame(const char *connectionString, bool asSpectator /*= false*/)
+JoinGameResult joinGame(const char* connectionString, bool asSpectator /*= false*/)
 {
-	if (strchr(connectionString, '[') == NULL || strchr(connectionString, ']') == NULL) // it is not IPv6. For more see rfc3986 section-3.2.2
+	if (strchr(connectionString, '[') == NULL || strchr(connectionString, ']') == NULL)
+	// it is not IPv6. For more see rfc3986 section-3.2.2
 	{
 		const char* ddch = strchr(connectionString, ':');
-		if(ddch != NULL)
+		if (ddch != NULL)
 		{
-			uint32_t serverPort = atoi(ddch+1);
+			uint32_t serverPort = atoi(ddch + 1);
 			std::string serverIP = "";
 			serverIP.assign(connectionString, ddch - connectionString);
 			debug(LOG_INFO, "Connecting to ip [%s] port %d", serverIP.c_str(), serverPort);
@@ -1001,28 +1051,34 @@ JoinGameResult joinGame(const char *connectionString, bool asSpectator /*= false
 	return joinGame(connectionString, 0, asSpectator);
 }
 
-JoinGameResult joinGame(const char *host, uint32_t port, bool asSpectator /*= false*/)
+JoinGameResult joinGame(const char* host, uint32_t port, bool asSpectator /*= false*/)
 {
 	std::string hostStr = (host != nullptr) ? std::string(host) : std::string();
 	return joinGame(std::vector<JoinConnectionDescription>({JoinConnectionDescription(hostStr, port)}), asSpectator);
 }
 
-JoinGameResult joinGame(const std::vector<JoinConnectionDescription>& connection_list, bool asSpectator /*= false*/) {
+JoinGameResult joinGame(const std::vector<JoinConnectionDescription>& connection_list, bool asSpectator /*= false*/)
+{
 	return joinGameInternal(connection_list, wzTitleUICurrent, asSpectator);
 }
 
-static JoinGameResult joinGameInternal(std::vector<JoinConnectionDescription> connection_list, std::shared_ptr<WzTitleUI> oldUI, bool asSpectator /*= false*/){
-
+static JoinGameResult joinGameInternal(std::vector<JoinConnectionDescription> connection_list,
+                                       std::shared_ptr<WzTitleUI> oldUI, bool asSpectator /*= false*/)
+{
 	if (connection_list.size() > 1)
 	{
 		// sort the list, based on NETgetJoinPreferenceIPv6
 		// preserve the original relative order amongst each class of IPv4/IPv6 addresses
 		bool bSortIPv6First = NETgetJoinPreferenceIPv6();
-		std::stable_sort(connection_list.begin(), connection_list.end(), [bSortIPv6First](const JoinConnectionDescription& a, const JoinConnectionDescription& b) -> bool {
-			bool a_isIPv6 = a.host.find(":") != std::string::npos; // this is a very simplistic test - if the host contains ":" we treat it as IPv6
-			bool b_isIPv6 = b.host.find(":") != std::string::npos;
-			return (bSortIPv6First) ? (a_isIPv6 && !b_isIPv6) : (!a_isIPv6 && b_isIPv6);
-		});
+		std::stable_sort(connection_list.begin(), connection_list.end(),
+		                 [bSortIPv6First](const JoinConnectionDescription& a,
+		                                  const JoinConnectionDescription& b) -> bool
+		                 {
+			                 bool a_isIPv6 = a.host.find(":") != std::string::npos;
+			                 // this is a very simplistic test - if the host contains ":" we treat it as IPv6
+			                 bool b_isIPv6 = b.host.find(":") != std::string::npos;
+			                 return (bSortIPv6First) ? (a_isIPv6 && !b_isIPv6) : (!a_isIPv6 && b_isIPv6);
+		                 });
 	}
 
 	for (const auto& connDesc : connection_list)
@@ -1030,13 +1086,13 @@ static JoinGameResult joinGameInternal(std::vector<JoinConnectionDescription> co
 		JoinGameResult result = joinGameInternalConnect(connDesc.host.c_str(), connDesc.port, oldUI, asSpectator);
 		switch (result)
 		{
-			case JoinGameResult::FAILED:
-				continue;
-			case JoinGameResult::PENDING_PASSWORD:
-				return result;
-			case JoinGameResult::JOINED:
-				ActivityManager::instance().joinGameSucceeded(connDesc.host.c_str(), connDesc.port);
-				return result;
+		case JoinGameResult::FAILED:
+			continue;
+		case JoinGameResult::PENDING_PASSWORD:
+			return result;
+		case JoinGameResult::JOINED:
+			ActivityManager::instance().joinGameSucceeded(connDesc.host.c_str(), connDesc.port);
+			return result;
 		}
 	}
 
@@ -1053,17 +1109,18 @@ static JoinGameResult joinGameInternal(std::vector<JoinConnectionDescription> co
  *  doesn't turn into the parent of the next connection attempt.
  * Any other barriers/auth methods/whatever would presumably benefit in the same way.
  */
-static JoinGameResult joinGameInternalConnect(const char *host, uint32_t port, std::shared_ptr<WzTitleUI> oldUI, bool asSpectator /*= false*/)
+static JoinGameResult joinGameInternalConnect(const char* host, uint32_t port, std::shared_ptr<WzTitleUI> oldUI,
+                                              bool asSpectator /*= false*/)
 {
 	// oldUI may get captured for use in the password dialog, among other things.
-	PLAYERSTATS	playerStats;
+	PLAYERSTATS playerStats;
 
 	if (ingame.localJoiningInProgress)
 	{
 		return JoinGameResult::FAILED;
 	}
 
-	if (!NETjoinGame(host, port, (char *)sPlayer, asSpectator))	// join
+	if (!NETjoinGame(host, port, (char*)sPlayer, asSpectator)) // join
 	{
 		switch (getLobbyError())
 		{
@@ -1073,10 +1130,14 @@ static JoinGameResult joinGameInternalConnect(const char *host, uint32_t port, s
 		case ERROR_WRONGPASSWORD:
 			{
 				std::string capturedHost = host;
-				changeTitleUI(std::make_shared<WzPassBoxTitleUI>([=](const char * pass) {
-					if (!pass) {
+				changeTitleUI(std::make_shared<WzPassBoxTitleUI>([=](const char* pass)
+				{
+					if (!pass)
+					{
 						changeTitleUI(oldUI);
-					} else {
+					}
+					else
+					{
 						NETsetGamePassword(pass);
 						JoinConnectionDescription conn(capturedHost, port);
 						joinGameInternal({conn}, oldUI, asSpectator);
@@ -1090,7 +1151,7 @@ static JoinGameResult joinGameInternalConnect(const char *host, uint32_t port, s
 
 		return JoinGameResult::FAILED;
 	}
-	ingame.localJoiningInProgress	= true;
+	ingame.localJoiningInProgress = true;
 
 	loadMultiStats(sPlayer, &playerStats);
 	setMultiStats(selectedPlayer, playerStats, false);
@@ -1111,31 +1172,34 @@ static JoinGameResult joinGameInternalConnect(const char *host, uint32_t port, s
 
 // ////////////////////////////////////////////////////////////////////////////
 
-static std::shared_ptr<W_FORM> addInlineChooserBlueForm(const std::shared_ptr<W_SCREEN> &psScreen, W_FORM *psParent, UDWORD id, WzString txt, UDWORD x, UDWORD y, UDWORD w, UDWORD h)
+static std::shared_ptr<W_FORM> addInlineChooserBlueForm(const std::shared_ptr<W_SCREEN>& psScreen, W_FORM* psParent,
+                                                        UDWORD id, WzString txt, UDWORD x, UDWORD y, UDWORD w, UDWORD h)
 {
-	W_FORMINIT sFormInit;                  // draw options box.
+	W_FORMINIT sFormInit; // draw options box.
 	sFormInit.formID = MULTIOP_INLINE_OVERLAY_ROOT_FRM;
-	sFormInit.id	= id;
-	sFormInit.x		= (UWORD) x;
-	sFormInit.y		= (UWORD) y;
+	sFormInit.id = id;
+	sFormInit.x = (UWORD)x;
+	sFormInit.y = (UWORD)y;
 	sFormInit.style = WFORM_PLAIN;
-	sFormInit.width = (UWORD)w;//190;
+	sFormInit.width = (UWORD)w; //190;
 	sFormInit.height = (UWORD)h; //27;
-	sFormInit.pDisplay =  intDisplayFeBox;
+	sFormInit.pDisplay = intDisplayFeBox;
 
 	std::weak_ptr<WIDGET> psWeakParent(psParent->shared_from_this());
-	sFormInit.calcLayout = [x, y, psWeakParent](WIDGET *psWidget) {
+	sFormInit.calcLayout = [x, y, psWeakParent](WIDGET* psWidget)
+	{
 		if (auto psParent = psWeakParent.lock())
 		{
 			psWidget->move(psParent->screenPosX() + x, psParent->screenPosY() + y);
 		}
 	};
-	W_FORM *psForm = widgAddForm(psScreen, &sFormInit);
+	W_FORM* psForm = widgAddForm(psScreen, &sFormInit);
 	ASSERT_OR_RETURN(nullptr, psForm != nullptr, "widgAddForm failed");
 	return std::dynamic_pointer_cast<W_FORM>(psForm->shared_from_this());
 }
 
-static std::shared_ptr<W_FORM> createBlueForm(int x, int y, int w, int h, WIDGET_DISPLAY displayFunc /* = intDisplayFeBox*/)
+static std::shared_ptr<W_FORM> createBlueForm(int x, int y, int w, int h,
+                                              WIDGET_DISPLAY displayFunc /* = intDisplayFeBox*/)
 {
 	ASSERT(displayFunc != nullptr, "Must have a display func!");
 	auto form = std::make_shared<W_FORM>();
@@ -1145,36 +1209,38 @@ static std::shared_ptr<W_FORM> createBlueForm(int x, int y, int w, int h, WIDGET
 	return form;
 }
 
-static W_FORM * addBlueForm(UDWORD parent, UDWORD id, UDWORD x, UDWORD y, UDWORD w, UDWORD h, WIDGET_DISPLAY displayFunc /* = intDisplayFeBox*/)
+static W_FORM* addBlueForm(UDWORD parent, UDWORD id, UDWORD x, UDWORD y, UDWORD w, UDWORD h,
+                           WIDGET_DISPLAY displayFunc /* = intDisplayFeBox*/)
 {
 	ASSERT(displayFunc != nullptr, "Must have a display func!");
-	W_FORMINIT sFormInit;                  // draw options box.
+	W_FORMINIT sFormInit; // draw options box.
 	sFormInit.formID = parent;
-	sFormInit.id	= id;
-	sFormInit.x		= (UWORD) x;
-	sFormInit.y		= (UWORD) y;
+	sFormInit.id = id;
+	sFormInit.x = (UWORD)x;
+	sFormInit.y = (UWORD)y;
 	sFormInit.style = WFORM_PLAIN;
-	sFormInit.width = (UWORD)w;//190;
+	sFormInit.width = (UWORD)w; //190;
 	sFormInit.height = (UWORD)h; //27;
-	sFormInit.pDisplay =  displayFunc;
+	sFormInit.pDisplay = displayFunc;
 	return widgAddForm(psWScreen, &sFormInit);
 }
 
 
 struct LimitIcon
 {
-	char const *stat;
-	char const *desc;
-	int         icon;
+	char const* stat;
+	char const* desc;
+	int icon;
 };
+
 static const LimitIcon limitIcons[] =
 {
-	{"A0LightFactory",  N_("Tanks disabled!!"),  IMAGE_NO_TANK},
+	{"A0LightFactory", N_("Tanks disabled!!"), IMAGE_NO_TANK},
 	{"A0CyborgFactory", N_("Cyborgs disabled."), IMAGE_NO_CYBORG},
-	{"A0VTolFactory1",  N_("VTOLs disabled."),   IMAGE_NO_VTOL},
+	{"A0VTolFactory1", N_("VTOLs disabled."), IMAGE_NO_VTOL},
 	{"A0Sat-linkCentre", N_("Satellite Uplink disabled."), IMAGE_NO_UPLINK},
-	{"A0LasSatCommand",  N_("Laser Satellite disabled."),  IMAGE_NO_LASSAT},
-	{nullptr,  N_("Structure Limits Enforced."),  IMAGE_DARK_LOCKED},
+	{"A0LasSatCommand", N_("Laser Satellite disabled."), IMAGE_NO_LASSAT},
+	{nullptr, N_("Structure Limits Enforced."), IMAGE_DARK_LOCKED},
 };
 
 void updateStructureDisabledFlags()
@@ -1188,7 +1254,7 @@ void updateStructureDisabledFlags()
 	unsigned flags = ingame.flags & MPFLAGS_FORCELIMITS;
 
 	assert(MPFLAGS_FORCELIMITS == (1 << (ARRAY_SIZE(limitIcons) - 1)));
-	for (unsigned i = 0; i < ARRAY_SIZE(limitIcons) - 1; ++i)	// skip last item, MPFLAGS_FORCELIMITS
+	for (unsigned i = 0; i < ARRAY_SIZE(limitIcons) - 1; ++i) // skip last item, MPFLAGS_FORCELIMITS
 	{
 		int stat = getStructStatFromName(limitIcons[i].stat);
 		bool disabled = stat >= 0 && asStructureStats[stat].upgrade[0].limit == 0;
@@ -1210,7 +1276,8 @@ static void updateLimitIcons()
 			// only add the background once. Must be added *before* the "icons" as the form acts as their parent
 			if (!formBackgroundAdded)
 			{
-				addBlueForm(MULTIOP_OPTIONS, MULTIOP_NO_SOMETHING, MULTIOP_HOSTX, MULTIOP_NO_SOMETHINGY, MULTIOP_ICON_LIMITS_X2, MULTIOP_ICON_LIMITS_Y2);
+				addBlueForm(MULTIOP_OPTIONS, MULTIOP_NO_SOMETHING, MULTIOP_HOSTX, MULTIOP_NO_SOMETHINGY,
+				            MULTIOP_ICON_LIMITS_X2, MULTIOP_ICON_LIMITS_Y2);
 				formBackgroundAdded = true;
 			}
 
@@ -1293,9 +1360,11 @@ static bool recvVote(NETQUEUE queue)
 	debug(LOG_NET, "total votes: %d/%d", static_cast<int>(getVoteTotal()), static_cast<int>(NET_numHumanPlayers()));
 
 	// there is no "votes" that disallows map change so assume they are all allowing
-	if(newVote == 1) {
+	if (newVote == 1)
+	{
 		char msg[128] = {0};
-		ssprintf(msg, _("%s (%d) allowed map change. Total: %d/%d"), NetPlay.players[player].name, player, static_cast<int>(getVoteTotal()), static_cast<int>(NET_numHumanPlayers()));
+		ssprintf(msg, _("%s (%d) allowed map change. Total: %d/%d"), NetPlay.players[player].name, player,
+		         static_cast<int>(getVoteTotal()), static_cast<int>(NET_numHumanPlayers()));
 		sendRoomSystemMessage(msg);
 	}
 
@@ -1318,7 +1387,8 @@ static void setupVoteChoice()
 		notification.duration = 0;
 		notification.contentTitle = _("Vote");
 		notification.contentText = _("Allow host to change map or randomize?");
-		notification.action = WZ_Notification_Action("Allow", [](const WZ_Notification&) {
+		notification.action = WZ_Notification_Action("Allow", [](const WZ_Notification&)
+		{
 			uint8_t vote = 1;
 			sendVoteData(vote);
 		});
@@ -1354,7 +1424,8 @@ static bool canChangeMapOrRandomize()
 	return allowed;
 }
 
-static void addMultiButton(std::shared_ptr<MultibuttonWidget> mbw, int value, Image image, Image imageDown, char const *tip)
+static void addMultiButton(std::shared_ptr<MultibuttonWidget> mbw, int value, Image image, Image imageDown,
+                           char const* tip)
 {
 	auto button = std::make_shared<W_BUTTON>();
 	button->setImages(image, imageDown, mpwidgetGetFrontHighlightImage(image));
@@ -1366,25 +1437,26 @@ static void addMultiButton(std::shared_ptr<MultibuttonWidget> mbw, int value, Im
 // need to check for side effects.
 static void addGameOptions()
 {
-	widgDelete(psWScreen, MULTIOP_OPTIONS);  				// clear options list
-	widgDelete(psWScreen, FRONTEND_SIDETEXT3);				// del text..
+	widgDelete(psWScreen, MULTIOP_OPTIONS); // clear options list
+	widgDelete(psWScreen, FRONTEND_SIDETEXT3); // del text..
 
-	WIDGET *parent = widgGetFromID(psWScreen, FRONTEND_BACKDROP);
+	WIDGET* parent = widgGetFromID(psWScreen, FRONTEND_BACKDROP);
 
 	// draw options box.
 	auto optionsForm = std::make_shared<IntFormAnimated>(false);
 	parent->attach(optionsForm);
 	optionsForm->id = MULTIOP_OPTIONS;
 	optionsForm->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		psWidget->setGeometry(MULTIOP_OPTIONSX, MULTIOP_OPTIONSY, MULTIOP_OPTIONSW, MULTIOP_OPTIONSH);
-	}));
+			psWidget->setGeometry(MULTIOP_OPTIONSX, MULTIOP_OPTIONSY, MULTIOP_OPTIONSW, MULTIOP_OPTIONSH);
+			}));
 
-	addSideText(FRONTEND_SIDETEXT3, MULTIOP_OPTIONSX - 3 , MULTIOP_OPTIONSY, _("OPTIONS"));
+	addSideText(FRONTEND_SIDETEXT3, MULTIOP_OPTIONSX - 3, MULTIOP_OPTIONSY, _("OPTIONS"));
 
 	// game name box
 	if (NetPlay.bComms)
 	{
-		addMultiEditBox(MULTIOP_OPTIONS, MULTIOP_GNAME, MCOL0, MROW2, _("Select Game Name"), game.name, IMAGE_EDIT_GAME, IMAGE_EDIT_GAME_HI, MULTIOP_GNAME_ICON);
+		addMultiEditBox(MULTIOP_OPTIONS, MULTIOP_GNAME, MCOL0, MROW2, _("Select Game Name"), game.name, IMAGE_EDIT_GAME,
+		                IMAGE_EDIT_GAME_HI, MULTIOP_GNAME_ICON);
 	}
 	else
 	{
@@ -1405,16 +1477,19 @@ static void addGameOptions()
 	addBlueForm(MULTIOP_OPTIONS, MULTIOP_MAP, MCOL0, MROW3, MULTIOP_EDITBOXW + MULTIOP_EDITBOXH, MULTIOP_EDITBOXH);
 	W_LABINIT sLabInit;
 	sLabInit.formID = MULTIOP_MAP;
-	sLabInit.id		= MULTIOP_MAP + 1;
-	sLabInit.x		= 3;
-	sLabInit.y		= 4;
-	sLabInit.width	= MULTIOP_EDITBOXW - 24 - 5;
+	sLabInit.id = MULTIOP_MAP + 1;
+	sLabInit.x = 3;
+	sLabInit.y = 4;
+	sLabInit.width = MULTIOP_EDITBOXW - 24 - 5;
 	sLabInit.height = 20;
-	sLabInit.pText	= formatGameName(game.map);
+	sLabInit.pText = formatGameName(game.map);
 	widgAddLabel(psWScreen, &sLabInit);
-	addMultiBut(psWScreen, MULTIOP_MAP, MULTIOP_MAP_ICON, MULTIOP_EDITBOXW + 2, 2, MULTIOP_EDITBOXH, MULTIOP_EDITBOXH, _("Select Map\nCan be blocked by players' votes"), IMAGE_EDIT_MAP, IMAGE_EDIT_MAP_HI, true);
-	addMultiBut(psWScreen, MULTIOP_MAP, MULTIOP_MAP_MOD, MULTIOP_EDITBOXW - 14, 1, 12, 12, _("Map-Mod!"), IMAGE_LAMP_RED, IMAGE_LAMP_AMBER, false);
-	addMultiBut(psWScreen, MULTIOP_MAP, MULTIOP_MAP_RANDOM, MULTIOP_EDITBOXW - 24, 15, 12, 12, _("Random map!"), IMAGE_WEE_DIE, IMAGE_WEE_DIE, false);
+	addMultiBut(psWScreen, MULTIOP_MAP, MULTIOP_MAP_ICON, MULTIOP_EDITBOXW + 2, 2, MULTIOP_EDITBOXH, MULTIOP_EDITBOXH,
+	            _("Select Map\nCan be blocked by players' votes"), IMAGE_EDIT_MAP, IMAGE_EDIT_MAP_HI, true);
+	addMultiBut(psWScreen, MULTIOP_MAP, MULTIOP_MAP_MOD, MULTIOP_EDITBOXW - 14, 1, 12, 12, _("Map-Mod!"),
+	            IMAGE_LAMP_RED, IMAGE_LAMP_AMBER, false);
+	addMultiBut(psWScreen, MULTIOP_MAP, MULTIOP_MAP_RANDOM, MULTIOP_EDITBOXW - 24, 15, 12, 12, _("Random map!"),
+	            IMAGE_WEE_DIE, IMAGE_WEE_DIE, false);
 	if (!game.isMapMod)
 	{
 		widgHide(psWScreen, MULTIOP_MAP_MOD);
@@ -1431,9 +1506,10 @@ static void addGameOptions()
 	// password box
 	if (NetPlay.bComms && ingame.side == InGameSide::HOST_OR_SINGLEPLAYER)
 	{
-		auto editBox = addMultiEditBox(MULTIOP_OPTIONS, MULTIOP_PASSWORD_EDIT, MCOL0, MROW4, _("Click to set Password"), NetPlay.gamePassword, IMAGE_UNLOCK_BLUE, IMAGE_LOCK_BLUE, MULTIOP_PASSWORD_BUT);
+		auto editBox = addMultiEditBox(MULTIOP_OPTIONS, MULTIOP_PASSWORD_EDIT, MCOL0, MROW4, _("Click to set Password"),
+		                               NetPlay.gamePassword, IMAGE_UNLOCK_BLUE, IMAGE_LOCK_BLUE, MULTIOP_PASSWORD_BUT);
 		editBox->setPlaceholder(_("Enter password here"));
-		auto *pPasswordButton = dynamic_cast<WzMultiButton*>(widgGetFromID(psWScreen, MULTIOP_PASSWORD_BUT));
+		auto* pPasswordButton = dynamic_cast<WzMultiButton*>(widgGetFromID(psWScreen, MULTIOP_PASSWORD_BUT));
 		if (pPasswordButton)
 		{
 			pPasswordButton->minClickInterval = GAME_TICKS_PER_SEC / 2;
@@ -1446,7 +1522,8 @@ static void addGameOptions()
 	}
 
 	//just display the game options.
-	addMultiEditBox(MULTIOP_OPTIONS, MULTIOP_PNAME, MCOL0, MROW1, _("Select Player Name"), (char *) sPlayer, IMAGE_EDIT_PLAYER, IMAGE_EDIT_PLAYER_HI, MULTIOP_PNAME_ICON);
+	addMultiEditBox(MULTIOP_OPTIONS, MULTIOP_PNAME, MCOL0, MROW1, _("Select Player Name"), (char*)sPlayer,
+	                IMAGE_EDIT_PLAYER, IMAGE_EDIT_PLAYER_HI, MULTIOP_PNAME_ICON);
 
 	auto optionsList = std::make_shared<ListWidget>();
 	optionsForm->attach(optionsList);
@@ -1460,10 +1537,13 @@ static void addGameOptions()
 	scavengerChoice->setLabel(_("Scavengers"));
 	if (game.mapHasScavengers)
 	{
-		addMultiButton(scavengerChoice, ULTIMATE_SCAVENGERS, Image(FrontImages, IMAGE_SCAVENGERS_ULTIMATE_ON), Image(FrontImages, IMAGE_SCAVENGERS_ULTIMATE_ON_HI), _("Ultimate Scavengers"));
-		addMultiButton(scavengerChoice, SCAVENGERS, Image(FrontImages, IMAGE_SCAVENGERS_ON), Image(FrontImages, IMAGE_SCAVENGERS_ON_HI), _("Scavengers"));
+		addMultiButton(scavengerChoice, ULTIMATE_SCAVENGERS, Image(FrontImages, IMAGE_SCAVENGERS_ULTIMATE_ON),
+		               Image(FrontImages, IMAGE_SCAVENGERS_ULTIMATE_ON_HI), _("Ultimate Scavengers"));
+		addMultiButton(scavengerChoice, SCAVENGERS, Image(FrontImages, IMAGE_SCAVENGERS_ON),
+		               Image(FrontImages, IMAGE_SCAVENGERS_ON_HI), _("Scavengers"));
 	}
-	addMultiButton(scavengerChoice, NO_SCAVENGERS, Image(FrontImages, IMAGE_SCAVENGERS_OFF), Image(FrontImages, IMAGE_SCAVENGERS_OFF_HI), _("No Scavengers"));
+	addMultiButton(scavengerChoice, NO_SCAVENGERS, Image(FrontImages, IMAGE_SCAVENGERS_OFF),
+	               Image(FrontImages, IMAGE_SCAVENGERS_OFF_HI), _("No Scavengers"));
 	scavengerChoice->enable(!locked.scavengers);
 	optionsList->addWidgetToLayout(scavengerChoice);
 
@@ -1471,10 +1551,14 @@ static void addGameOptions()
 	optionsList->attach(allianceChoice);
 	allianceChoice->id = MULTIOP_ALLIANCES;
 	allianceChoice->setLabel(_("Alliances"));
-	addMultiButton(allianceChoice, NO_ALLIANCES, Image(FrontImages, IMAGE_NOALLI), Image(FrontImages, IMAGE_NOALLI_HI), _("No Alliances"));
-	addMultiButton(allianceChoice, ALLIANCES, Image(FrontImages, IMAGE_ALLI), Image(FrontImages, IMAGE_ALLI_HI), _("Allow Alliances"));
-	addMultiButton(allianceChoice, ALLIANCES_UNSHARED, Image(FrontImages, IMAGE_ALLI_UNSHARED), Image(FrontImages, IMAGE_ALLI_UNSHARED_HI), _("Locked Teams, No Shared Research"));
-	addMultiButton(allianceChoice, ALLIANCES_TEAMS, Image(FrontImages, IMAGE_ALLI_TEAMS), Image(FrontImages, IMAGE_ALLI_TEAMS_HI), _("Locked Teams"));
+	addMultiButton(allianceChoice, NO_ALLIANCES, Image(FrontImages, IMAGE_NOALLI), Image(FrontImages, IMAGE_NOALLI_HI),
+	               _("No Alliances"));
+	addMultiButton(allianceChoice, ALLIANCES, Image(FrontImages, IMAGE_ALLI), Image(FrontImages, IMAGE_ALLI_HI),
+	               _("Allow Alliances"));
+	addMultiButton(allianceChoice, ALLIANCES_UNSHARED, Image(FrontImages, IMAGE_ALLI_UNSHARED),
+	               Image(FrontImages, IMAGE_ALLI_UNSHARED_HI), _("Locked Teams, No Shared Research"));
+	addMultiButton(allianceChoice, ALLIANCES_TEAMS, Image(FrontImages, IMAGE_ALLI_TEAMS),
+	               Image(FrontImages, IMAGE_ALLI_TEAMS_HI), _("Locked Teams"));
 	allianceChoice->enable(!locked.alliances);
 	optionsList->addWidgetToLayout(allianceChoice);
 
@@ -1482,9 +1566,12 @@ static void addGameOptions()
 	optionsList->attach(powerChoice);
 	powerChoice->id = MULTIOP_POWER;
 	powerChoice->setLabel(_("Power"));
-	addMultiButton(powerChoice, LEV_LOW, Image(FrontImages, IMAGE_POWLO), Image(FrontImages, IMAGE_POWLO_HI), _("Low Power Levels"));
-	addMultiButton(powerChoice, LEV_MED, Image(FrontImages, IMAGE_POWMED), Image(FrontImages, IMAGE_POWMED_HI), _("Medium Power Levels"));
-	addMultiButton(powerChoice, LEV_HI, Image(FrontImages, IMAGE_POWHI), Image(FrontImages, IMAGE_POWHI_HI), _("High Power Levels"));
+	addMultiButton(powerChoice, LEV_LOW, Image(FrontImages, IMAGE_POWLO), Image(FrontImages, IMAGE_POWLO_HI),
+	               _("Low Power Levels"));
+	addMultiButton(powerChoice, LEV_MED, Image(FrontImages, IMAGE_POWMED), Image(FrontImages, IMAGE_POWMED_HI),
+	               _("Medium Power Levels"));
+	addMultiButton(powerChoice, LEV_HI, Image(FrontImages, IMAGE_POWHI), Image(FrontImages, IMAGE_POWHI_HI),
+	               _("High Power Levels"));
 	powerChoice->enable(!locked.power);
 	optionsList->addWidgetToLayout(powerChoice);
 
@@ -1492,9 +1579,12 @@ static void addGameOptions()
 	optionsList->attach(baseTypeChoice);
 	baseTypeChoice->id = MULTIOP_BASETYPE;
 	baseTypeChoice->setLabel(_("Base"));
-	addMultiButton(baseTypeChoice, CAMP_CLEAN, Image(FrontImages, IMAGE_NOBASE), Image(FrontImages, IMAGE_NOBASE_HI), _("Start with No Bases"));
-	addMultiButton(baseTypeChoice, CAMP_BASE, Image(FrontImages, IMAGE_SBASE), Image(FrontImages, IMAGE_SBASE_HI), _("Start with Bases"));
-	addMultiButton(baseTypeChoice, CAMP_WALLS, Image(FrontImages, IMAGE_LBASE), Image(FrontImages, IMAGE_LBASE_HI), _("Start with Advanced Bases"));
+	addMultiButton(baseTypeChoice, CAMP_CLEAN, Image(FrontImages, IMAGE_NOBASE), Image(FrontImages, IMAGE_NOBASE_HI),
+	               _("Start with No Bases"));
+	addMultiButton(baseTypeChoice, CAMP_BASE, Image(FrontImages, IMAGE_SBASE), Image(FrontImages, IMAGE_SBASE_HI),
+	               _("Start with Bases"));
+	addMultiButton(baseTypeChoice, CAMP_WALLS, Image(FrontImages, IMAGE_LBASE), Image(FrontImages, IMAGE_LBASE_HI),
+	               _("Start with Advanced Bases"));
 	baseTypeChoice->enable(!locked.bases);
 	optionsList->addWidgetToLayout(baseTypeChoice);
 
@@ -1502,7 +1592,8 @@ static void addGameOptions()
 	optionsList->attach(mapPreviewButton);
 	mapPreviewButton->id = MULTIOP_MAP_PREVIEW;
 	mapPreviewButton->setLabel(_("Map Preview"));
-	addMultiButton(mapPreviewButton, 0, Image(FrontImages, IMAGE_FOG_OFF), Image(FrontImages, IMAGE_FOG_OFF_HI), _("Click to see Map"));
+	addMultiButton(mapPreviewButton, 0, Image(FrontImages, IMAGE_FOG_OFF), Image(FrontImages, IMAGE_FOG_OFF_HI),
+	               _("Click to see Map"));
 	optionsList->addWidgetToLayout(mapPreviewButton);
 
 	/* Add additional controls if we are (or going to be) hosting the game */
@@ -1513,7 +1604,8 @@ static void addGameOptions()
 		optionsList->attach(structLimitsButton);
 		structLimitsButton->id = MULTIOP_STRUCTLIMITS;
 		structLimitsButton->setLabel(structureLimitsLabel);
-		addMultiButton(structLimitsButton, 0, Image(FrontImages, IMAGE_SLIM), Image(FrontImages, IMAGE_SLIM_HI), structureLimitsLabel);
+		addMultiButton(structLimitsButton, 0, Image(FrontImages, IMAGE_SLIM), Image(FrontImages, IMAGE_SLIM_HI),
+		               structureLimitsLabel);
 		optionsList->addWidgetToLayout(structLimitsButton);
 
 		/* ...and even more controls if we are not starting a challenge */
@@ -1523,7 +1615,8 @@ static void addGameOptions()
 			optionsList->attach(randomButton);
 			randomButton->id = MULTIOP_RANDOM;
 			randomButton->setLabel(_("Random Game Options"));
-			addMultiButton(randomButton, 0, Image(FrontImages, IMAGE_RELOAD), Image(FrontImages, IMAGE_RELOAD), _("Random Game Options\nCan be blocked by players' votes"));
+			addMultiButton(randomButton, 0, Image(FrontImages, IMAGE_RELOAD), Image(FrontImages, IMAGE_RELOAD),
+			               _("Random Game Options\nCan be blocked by players' votes"));
 			randomButton->setButtonMinClickInterval(GAME_TICKS_PER_SEC / 2);
 			optionsList->addWidgetToLayout(randomButton);
 
@@ -1535,10 +1628,14 @@ static void addGameOptions()
 				optionsList->attach(TechnologyChoice);
 				TechnologyChoice->id = MULTIOP_TECHLEVEL;
 				TechnologyChoice->setLabel(_("Tech"));
-				addMultiButton(TechnologyChoice, TECH_1, Image(FrontImages, IMAGE_TECHLO), Image(FrontImages, IMAGE_TECHLO_HI), _("Technology Level 1"));
-				addMultiButton(TechnologyChoice, TECH_2, Image(FrontImages, IMAGE_TECHMED), Image(FrontImages, IMAGE_TECHMED_HI), _("Technology Level 2"));
-				addMultiButton(TechnologyChoice, TECH_3, Image(FrontImages, IMAGE_TECHHI), Image(FrontImages, IMAGE_TECHHI_HI), _("Technology Level 3"));
-				addMultiButton(TechnologyChoice, TECH_4, Image(FrontImages, IMAGE_COMPUTER_Y), Image(FrontImages, IMAGE_COMPUTER_Y_HI), _("Technology Level 4"));
+				addMultiButton(TechnologyChoice, TECH_1, Image(FrontImages, IMAGE_TECHLO),
+				               Image(FrontImages, IMAGE_TECHLO_HI), _("Technology Level 1"));
+				addMultiButton(TechnologyChoice, TECH_2, Image(FrontImages, IMAGE_TECHMED),
+				               Image(FrontImages, IMAGE_TECHMED_HI), _("Technology Level 2"));
+				addMultiButton(TechnologyChoice, TECH_3, Image(FrontImages, IMAGE_TECHHI),
+				               Image(FrontImages, IMAGE_TECHHI_HI), _("Technology Level 3"));
+				addMultiButton(TechnologyChoice, TECH_4, Image(FrontImages, IMAGE_COMPUTER_Y),
+				               Image(FrontImages, IMAGE_COMPUTER_Y_HI), _("Technology Level 4"));
 				optionsList->addWidgetToLayout(TechnologyChoice);
 			}
 			/* If not hosting (yet), add the button for starting the host. */
@@ -1548,7 +1645,8 @@ static void addGameOptions()
 				optionsList->attach(hostButton);
 				hostButton->id = MULTIOP_HOST;
 				hostButton->setLabel(_("Start Hosting Game"));
-				addMultiButton(hostButton, 0, Image(FrontImages, IMAGE_HOST), Image(FrontImages, IMAGE_HOST_HI), _("Start Hosting Game"));
+				addMultiButton(hostButton, 0, Image(FrontImages, IMAGE_HOST), Image(FrontImages, IMAGE_HOST_HI),
+				               _("Start Hosting Game"));
 				optionsList->addWidgetToLayout(hostButton);
 			}
 		}
@@ -1589,7 +1687,8 @@ static int allPlayersOnSameTeam(int except)
 	int minTeam = MAX_PLAYERS, maxTeam = 0, numPlayers = 0;
 	for (unsigned i = 0; i < game.maxPlayers; ++i)
 	{
-		if (i != except && (!NetPlay.players[i].isSpectator) && (NetPlay.players[i].allocated || NetPlay.players[i].ai >= 0))
+		if (i != except && (!NetPlay.players[i].isSpectator) && (NetPlay.players[i].allocated || NetPlay.players[i].ai
+			>= 0))
 		{
 			int team = getPlayerTeam(i);
 			minTeam = std::min(minTeam, team);
@@ -1599,9 +1698,9 @@ static int allPlayersOnSameTeam(int except)
 	}
 	if (minTeam == MAX_PLAYERS || minTeam == maxTeam)
 	{
-		return minTeam;  // Players all on same team.
+		return minTeam; // Players all on same team.
 	}
-	return -1;  // Players not all on same team.
+	return -1; // Players not all on same team.
 }
 
 int WzMultiplayerOptionsTitleUI::playerRowY0(uint32_t row) const
@@ -1624,7 +1723,7 @@ static int playerBoxHeight(uint32_t rowPosition)
 	{
 		gap = 0;
 	}
-	STATIC_ASSERT(MULTIOP_TEAMSHEIGHT == MULTIOP_PLAYERHEIGHT);  // Why are these different defines?
+	STATIC_ASSERT(MULTIOP_TEAMSHEIGHT == MULTIOP_PLAYERHEIGHT); // Why are these different defines?
 	return playersTop + (MULTIOP_TEAMSHEIGHT * gapDiv + gap) * rowPosition / gapDiv;
 }
 
@@ -1648,7 +1747,8 @@ void WzMultiplayerOptionsTitleUI::initInlineChooser(uint32_t player)
 	// remove any choosers already up
 	closeAllChoosers();
 
-	psInlineChooserOverlayScreen->screenSizeDidChange(screenWidth, screenHeight, screenWidth, screenHeight); // trigger a screenSizeDidChange so it can relayout (if screen size changed since last time it was registered as an overlay screen)
+	psInlineChooserOverlayScreen->screenSizeDidChange(screenWidth, screenHeight, screenWidth, screenHeight);
+	// trigger a screenSizeDidChange so it can relayout (if screen size changed since last time it was registered as an overlay screen)
 	widgRegisterOverlayScreen(psInlineChooserOverlayScreen, 1);
 }
 
@@ -1670,25 +1770,30 @@ std::shared_ptr<IntFormAnimated> WzMultiplayerOptionsTitleUI::initRightSideChoos
 	}
 	std::weak_ptr<WIDGET> psWeakParent(psParent->shared_from_this());
 
-	WIDGET *chooserParent = widgGetFromID(psInlineChooserOverlayScreen, MULTIOP_INLINE_OVERLAY_ROOT_FRM);
+	WIDGET* chooserParent = widgGetFromID(psInlineChooserOverlayScreen, MULTIOP_INLINE_OVERLAY_ROOT_FRM);
 
 	auto aiForm = std::make_shared<IntFormAnimated>(false);
 	chooserParent->attach(aiForm);
 	aiForm->id = MULTIOP_AI_FORM;
-	aiForm->setCalcLayout([psWeakParent](WIDGET *psWidget) {
+	aiForm->setCalcLayout([psWeakParent](WIDGET* psWidget)
+	{
 		if (auto psParent = psWeakParent.lock())
 		{
-			psWidget->setGeometry(psParent->screenPosX() + MULTIOP_PLAYERSX, psParent->screenPosY() + MULTIOP_PLAYERSY, MULTIOP_PLAYERSW, MULTIOP_PLAYERSH);
+			psWidget->setGeometry(psParent->screenPosX() + MULTIOP_PLAYERSX, psParent->screenPosY() + MULTIOP_PLAYERSY,
+			                      MULTIOP_PLAYERSW, MULTIOP_PLAYERSH);
 		}
 	});
 
-	W_LABEL *psSideTextLabel = addSideText(psInlineChooserOverlayScreen, MULTIOP_INLINE_OVERLAY_ROOT_FRM, FRONTEND_SIDETEXT2, MULTIOP_PLAYERSX - 3, MULTIOP_PLAYERSY, sideText);
+	W_LABEL* psSideTextLabel = addSideText(psInlineChooserOverlayScreen, MULTIOP_INLINE_OVERLAY_ROOT_FRM,
+	                                       FRONTEND_SIDETEXT2, MULTIOP_PLAYERSX - 3, MULTIOP_PLAYERSY, sideText);
 	if (psSideTextLabel)
 	{
-		psSideTextLabel->setCalcLayout([psWeakParent](WIDGET *psWidget) {
+		psSideTextLabel->setCalcLayout([psWeakParent](WIDGET* psWidget)
+		{
 			if (auto psParent = psWeakParent.lock())
 			{
-				psWidget->setGeometry(psParent->screenPosX() + MULTIOP_PLAYERSX - 3, psParent->screenPosY() + MULTIOP_PLAYERSY, MULTIOP_PLAYERSW, MULTIOP_PLAYERSH);
+				psWidget->setGeometry(psParent->screenPosX() + MULTIOP_PLAYERSX - 3,
+				                      psParent->screenPosY() + MULTIOP_PLAYERSY, MULTIOP_PLAYERSW, MULTIOP_PLAYERSH);
 			}
 		});
 	}
@@ -1696,10 +1801,16 @@ std::shared_ptr<IntFormAnimated> WzMultiplayerOptionsTitleUI::initRightSideChoos
 	return aiForm;
 }
 
-static std::shared_ptr<WzMultiButton> addMultiButWithClickHandler(const std::shared_ptr<WIDGET> &parent, UDWORD id, UDWORD x, UDWORD y, UDWORD width, UDWORD height, const char *tipres, UDWORD norm, UDWORD down, UDWORD hi, const W_BUTTON::W_BUTTON_ONCLICK_FUNC& clickHandler, unsigned tc = MAX_PLAYERS)
+static std::shared_ptr<WzMultiButton> addMultiButWithClickHandler(const std::shared_ptr<WIDGET>& parent, UDWORD id,
+                                                                  UDWORD x, UDWORD y, UDWORD width, UDWORD height,
+                                                                  const char* tipres, UDWORD norm, UDWORD down,
+                                                                  UDWORD hi,
+                                                                  const W_BUTTON::W_BUTTON_ONCLICK_FUNC& clickHandler,
+                                                                  unsigned tc = MAX_PLAYERS)
 {
 	ASSERT_OR_RETURN(nullptr, parent != nullptr, "Null parent");
-	auto psButton = std::dynamic_pointer_cast<WzMultiButton>(addMultiBut(*(parent.get()), id, x, y, width, height, tipres, norm, down, hi, tc));
+	auto psButton = std::dynamic_pointer_cast<WzMultiButton>(
+		addMultiBut(*(parent.get()), id, x, y, width, height, tipres, norm, down, hi, tc));
 	if (!psButton)
 	{
 		return nullptr;
@@ -1717,17 +1828,20 @@ void WzMultiplayerOptionsTitleUI::openDifficultyChooser(uint32_t player)
 		return;
 	}
 
-	auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
+	auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(
+		std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
 
 	for (int difficultyIdx = 0; difficultyIdx < 4; difficultyIdx++)
 	{
-		auto onClickHandler = [psWeakTitleUI, difficultyIdx, player](W_BUTTON& clickedButton) {
+		auto onClickHandler = [psWeakTitleUI, difficultyIdx, player](W_BUTTON& clickedButton)
+		{
 			auto pStrongPtr = psWeakTitleUI.lock();
 			ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
 			NetPlay.players[player].difficulty = difficultyValue[difficultyIdx];
 			NETBroadcastPlayerInfo(player);
 			resetReadyStatus(false);
-			widgScheduleTask([pStrongPtr] {
+			widgScheduleTask([pStrongPtr]
+			{
 				pStrongPtr->closeDifficultyChooser();
 				pStrongPtr->addPlayerBox(true);
 			});
@@ -1736,16 +1850,21 @@ void WzMultiplayerOptionsTitleUI::openDifficultyChooser(uint32_t player)
 		W_BUTINIT sButInit;
 		auto pDifficultyRow = std::make_shared<W_BUTTON>();
 		pDifficultyRow->id = 0; //MULTIOP_DIFFICULTY_CHOOSE_START + difficultyIdx;
-		pDifficultyRow->setGeometry(7, (MULTIOP_PLAYERHEIGHT + 5) * difficultyIdx + 4, MULTIOP_PLAYERWIDTH + 1, MULTIOP_PLAYERHEIGHT);
+		pDifficultyRow->setGeometry(7, (MULTIOP_PLAYERHEIGHT + 5) * difficultyIdx + 4, MULTIOP_PLAYERWIDTH + 1,
+		                            MULTIOP_PLAYERHEIGHT);
 		std::string tipStr;
 		switch (difficultyIdx)
 		{
-		case 0: tipStr = _("Starts disadvantaged"); break;
-		case 1: tipStr = _("Plays nice"); break;
-		case 2: tipStr = _("No holds barred"); break;
-		case 3: tipStr = _("Starts with advantages"); break;
+		case 0: tipStr = _("Starts disadvantaged");
+			break;
+		case 1: tipStr = _("Plays nice");
+			break;
+		case 2: tipStr = _("No holds barred");
+			break;
+		case 3: tipStr = _("Starts with advantages");
+			break;
 		}
-		const char *difficultyTip = aidata[NetPlay.players[player].ai].difficultyTips[difficultyIdx];
+		const char* difficultyTip = aidata[NetPlay.players[player].ai].difficultyTips[difficultyIdx];
 		if (strcmp(difficultyTip, "") != 0)
 		{
 			tipStr += "\n";
@@ -1755,9 +1874,10 @@ void WzMultiplayerOptionsTitleUI::openDifficultyChooser(uint32_t player)
 		pDifficultyRow->displayFunction = displayDifficulty;
 		pDifficultyRow->UserData = difficultyIdx;
 		pDifficultyRow->pUserData = new DisplayDifficultyCache();
-		pDifficultyRow->setOnDelete([](WIDGET *psWidget) {
+		pDifficultyRow->setOnDelete([](WIDGET* psWidget)
+		{
 			assert(psWidget->pUserData != nullptr);
-			delete static_cast<DisplayDifficultyCache *>(psWidget->pUserData);
+			delete static_cast<DisplayDifficultyCache*>(psWidget->pUserData);
 			psWidget->pUserData = nullptr;
 		});
 		aiForm->attach(pDifficultyRow);
@@ -1780,7 +1900,8 @@ void WzMultiplayerOptionsTitleUI::openAiChooser(uint32_t player)
 	bool openSlotSupported = (NetPlay.bComms) && !isSpectatorOnlySlot(player);
 	bool aiSlotSupported = !isSpectatorOnlySlot(player);
 
-	auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
+	auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(
+		std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
 
 	W_BUTINIT sButInit;
 	sButInit.formID = MULTIOP_AI_FORM;
@@ -1788,14 +1909,16 @@ void WzMultiplayerOptionsTitleUI::openAiChooser(uint32_t player)
 	sButInit.width = MULTIOP_PLAYERWIDTH + 1;
 	sButInit.height = MULTIOP_PLAYERHEIGHT;
 	sButInit.pDisplay = displayAi;
-	sButInit.initPUserDataFunc = []() -> void * { return new DisplayAICache(); };
-	sButInit.onDelete = [](WIDGET *psWidget) {
+	sButInit.initPUserDataFunc = []() -> void* { return new DisplayAICache(); };
+	sButInit.onDelete = [](WIDGET* psWidget)
+	{
 		assert(psWidget->pUserData != nullptr);
-		delete static_cast<DisplayAICache *>(psWidget->pUserData);
+		delete static_cast<DisplayAICache*>(psWidget->pUserData);
 		psWidget->pUserData = nullptr;
 	};
 
-	auto openCloseOnClickHandler = [psWeakTitleUI, player](W_BUTTON& clickedButton) {
+	auto openCloseOnClickHandler = [psWeakTitleUI, player](W_BUTTON& clickedButton)
+	{
 		auto pStrongPtr = psWeakTitleUI.lock();
 		ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
 
@@ -1812,7 +1935,7 @@ void WzMultiplayerOptionsTitleUI::openAiChooser(uint32_t player)
 		case MULTIOP_AI_SPECTATOR:
 			// set slot to open
 			NetPlay.players[player].ai = AI_OPEN;
-			// but also a spectator
+		// but also a spectator
 			NetPlay.players[player].isSpectator = true;
 			break;
 		default:
@@ -1825,7 +1948,8 @@ void WzMultiplayerOptionsTitleUI::openAiChooser(uint32_t player)
 		NetPlay.players[player].difficulty = AIDifficulty::DISABLED; // disable AI for this slot
 		NETBroadcastPlayerInfo(player);
 		resetReadyStatus(false);
-		widgScheduleTask([pStrongPtr] {
+		widgScheduleTask([pStrongPtr]
+		{
 			pStrongPtr->closeAiChooser();
 			pStrongPtr->addPlayerBox(true);
 		});
@@ -1840,7 +1964,7 @@ void WzMultiplayerOptionsTitleUI::openAiChooser(uint32_t player)
 		sButInit.id = MULTIOP_AI_OPEN;
 		sButInit.pTip = _("Allow human players to join in this slot");
 		sButInit.UserData = (UDWORD)AI_OPEN;
-		sButInit.y = topMostYPos;	//Top most position
+		sButInit.y = topMostYPos; //Top most position
 		auto psButton = widgAddButton(psInlineChooserOverlayScreen, &sButInit);
 		if (psButton)
 		{
@@ -1890,9 +2014,11 @@ void WzMultiplayerOptionsTitleUI::openAiChooser(uint32_t player)
 		int aiListEntryHeight = sButInit.height;
 		int aiListEntryWidth = sButInit.width;
 		int aiListHeight = aiListEntryHeight * (NetPlay.bComms ? 7 : 8);
-		pAIScrollableList->setCalcLayout([aiListStartXPos, aiListStartYPos, aiListEntryWidth, aiListHeight](WIDGET *psWidget) {
-			psWidget->setGeometry(aiListStartXPos, aiListStartYPos, aiListEntryWidth, aiListHeight);
-		});
+		pAIScrollableList->setCalcLayout(
+			[aiListStartXPos, aiListStartYPos, aiListEntryWidth, aiListHeight](WIDGET* psWidget)
+			{
+				psWidget->setGeometry(aiListStartXPos, aiListStartYPos, aiListEntryWidth, aiListHeight);
+			});
 
 		W_BUTINIT emptyInit;
 		for (size_t aiIdx = 0; aiIdx < aidata.size(); aiIdx++)
@@ -1904,12 +2030,14 @@ void WzMultiplayerOptionsTitleUI::openAiChooser(uint32_t player)
 			pAIRow->setGeometry(0, 0, sButInit.width, sButInit.height);
 			pAIRow->displayFunction = displayAi;
 			pAIRow->pUserData = new DisplayAICache();
-			pAIRow->setOnDelete([](WIDGET *psWidget) {
+			pAIRow->setOnDelete([](WIDGET* psWidget)
+			{
 				assert(psWidget->pUserData != nullptr);
-				delete static_cast<DisplayAICache *>(psWidget->pUserData);
+				delete static_cast<DisplayAICache*>(psWidget->pUserData);
 				psWidget->pUserData = nullptr;
 			});
-			pAIRow->addOnClickHandler([psWeakTitleUI, aiIdx, player](W_BUTTON& clickedButton) {
+			pAIRow->addOnClickHandler([psWeakTitleUI, aiIdx, player](W_BUTTON& clickedButton)
+			{
 				auto pStrongPtr = psWeakTitleUI.lock();
 				ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
 				NetPlay.players[player].isSpectator = false;
@@ -1918,7 +2046,8 @@ void WzMultiplayerOptionsTitleUI::openAiChooser(uint32_t player)
 				NetPlay.players[player].difficulty = AIDifficulty::MEDIUM;
 				NETBroadcastPlayerInfo(player);
 				resetReadyStatus(false);
-				widgScheduleTask([pStrongPtr] {
+				widgScheduleTask([pStrongPtr]
+				{
 					pStrongPtr->closeAiChooser();
 					pStrongPtr->addPlayerBox(true);
 				});
@@ -1934,37 +2063,52 @@ void WzMultiplayerOptionsTitleUI::openAiChooser(uint32_t player)
 class WzPlayerSelectPositionRowFactory
 {
 public:
-	virtual ~WzPlayerSelectPositionRowFactory() { }
-	virtual std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx, const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent) const = 0;
+	virtual ~WzPlayerSelectPositionRowFactory()
+	{
+	}
+
+	virtual std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx,
+	                                       const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent) const = 0;
 };
 
 class WzPlayerSelectionChangePositionRow : public W_BUTTON
 {
 protected:
 	WzPlayerSelectionChangePositionRow(uint32_t targetPlayerIdx)
-	: W_BUTTON()
-	, targetPlayerIdx(targetPlayerIdx)
-	{ }
-public:
-	static std::shared_ptr<WzPlayerSelectionChangePositionRow> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx, const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent)
+		: W_BUTTON()
+		  , targetPlayerIdx(targetPlayerIdx)
 	{
-		class make_shared_enabler: public WzPlayerSelectionChangePositionRow {
+	}
+
+public:
+	static std::shared_ptr<WzPlayerSelectionChangePositionRow> make(uint32_t switcherPlayerIdx,
+	                                                                uint32_t targetPlayerIdx,
+	                                                                const std::shared_ptr<WzMultiplayerOptionsTitleUI>&
+	                                                                parent)
+	{
+		class make_shared_enabler : public WzPlayerSelectionChangePositionRow
+		{
 		public:
-			make_shared_enabler(uint32_t targetPlayerIdx) : WzPlayerSelectionChangePositionRow(targetPlayerIdx) { }
+			make_shared_enabler(uint32_t targetPlayerIdx) : WzPlayerSelectionChangePositionRow(targetPlayerIdx)
+			{
+			}
 		};
 		auto widget = std::make_shared<make_shared_enabler>(targetPlayerIdx);
 		widget->setTip(_("Click to change to this slot"));
 
 		std::weak_ptr<WzMultiplayerOptionsTitleUI> titleUI(parent);
-		widget->addOnClickHandler([switcherPlayerIdx, titleUI](W_BUTTON& button){
-			auto selectPositionRow = std::dynamic_pointer_cast<WzPlayerSelectionChangePositionRow>(button.shared_from_this());
+		widget->addOnClickHandler([switcherPlayerIdx, titleUI](W_BUTTON& button)
+		{
+			auto selectPositionRow = std::dynamic_pointer_cast<WzPlayerSelectionChangePositionRow>(
+				button.shared_from_this());
 			ASSERT_OR_RETURN(, selectPositionRow != nullptr, "Wrong widget type");
 			auto strongTitleUI = titleUI.lock();
 			ASSERT_OR_RETURN(, strongTitleUI != nullptr, "Title UI is gone?");
 			// Switch player
-			resetReadyStatus(false);		// will reset only locally if not a host
+			resetReadyStatus(false); // will reset only locally if not a host
 			SendPositionRequest(switcherPlayerIdx, NetPlay.players[selectPositionRow->targetPlayerIdx].position);
-			widgScheduleTask([strongTitleUI] {
+			widgScheduleTask([strongTitleUI]
+			{
 				strongTitleUI->closePositionChooser();
 				strongTitleUI->updatePlayers();
 			});
@@ -1980,10 +2124,12 @@ public:
 		char text[80];
 
 		drawBlueBox(x0, y0, width(), height());
-		ssprintf(text, _("Click to take player slot %u"), static_cast<unsigned>(NetPlay.players[targetPlayerIdx].position));
+		ssprintf(text, _("Click to take player slot %u"),
+		         static_cast<unsigned>(NetPlay.players[targetPlayerIdx].position));
 		cache.wzPositionText.setText(text, font_regular);
 		cache.wzPositionText.render(x0 + 10, y0 + 22, WZCOL_FORM_TEXT);
 	}
+
 public:
 	uint32_t targetPlayerIdx;
 	DisplayPositionCache cache;
@@ -1992,8 +2138,12 @@ public:
 class WzPlayerSelectionChangePositionRowFactory : public WzPlayerSelectPositionRowFactory
 {
 public:
-	~WzPlayerSelectionChangePositionRowFactory() { }
-	virtual std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx, const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent) const override
+	~WzPlayerSelectionChangePositionRowFactory()
+	{
+	}
+
+	virtual std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx,
+	                                       const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent) const override
 	{
 		return WzPlayerSelectionChangePositionRow::make(switcherPlayerIdx, targetPlayerIdx, parent);
 	}
@@ -2003,15 +2153,22 @@ class WzPlayerIndexSwapPositionRow : public W_BUTTON
 {
 protected:
 	WzPlayerIndexSwapPositionRow(uint32_t targetPlayerIdx)
-	: W_BUTTON()
-	, targetPlayerIdx(targetPlayerIdx)
-	{ }
-public:
-	static std::shared_ptr<WzPlayerIndexSwapPositionRow> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx, const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent)
+		: W_BUTTON()
+		  , targetPlayerIdx(targetPlayerIdx)
 	{
-		class make_shared_enabler: public WzPlayerIndexSwapPositionRow {
+	}
+
+public:
+	static std::shared_ptr<WzPlayerIndexSwapPositionRow> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx,
+	                                                          const std::shared_ptr<WzMultiplayerOptionsTitleUI>&
+	                                                          parent)
+	{
+		class make_shared_enabler : public WzPlayerIndexSwapPositionRow
+		{
 		public:
-			make_shared_enabler(uint32_t targetPlayerIdx) : WzPlayerIndexSwapPositionRow(targetPlayerIdx) { }
+			make_shared_enabler(uint32_t targetPlayerIdx) : WzPlayerIndexSwapPositionRow(targetPlayerIdx)
+			{
+			}
 		};
 
 		auto widget = std::make_shared<make_shared_enabler>(targetPlayerIdx);
@@ -2020,8 +2177,10 @@ public:
 			widget->setTip(_("Click to swap player to this slot"));
 
 			std::weak_ptr<WzMultiplayerOptionsTitleUI> titleUI(parent);
-			widget->addOnClickHandler([switcherPlayerIdx, titleUI](W_BUTTON& button){
-				auto selectPositionRow = std::dynamic_pointer_cast<WzPlayerIndexSwapPositionRow>(button.shared_from_this());
+			widget->addOnClickHandler([switcherPlayerIdx, titleUI](W_BUTTON& button)
+			{
+				auto selectPositionRow = std::dynamic_pointer_cast<WzPlayerIndexSwapPositionRow>(
+					button.shared_from_this());
 				ASSERT_OR_RETURN(, selectPositionRow != nullptr, "Wrong widget type");
 				auto strongTitleUI = titleUI.lock();
 				ASSERT_OR_RETURN(, strongTitleUI != nullptr, "Title UI is gone?");
@@ -2029,8 +2188,9 @@ public:
 				std::string playerName = getPlayerName(switcherPlayerIdx);
 
 				NETmoveSpectatorToPlayerSlot(switcherPlayerIdx, selectPositionRow->targetPlayerIdx, true);
-				resetReadyStatus(true);		//reset and send notification to all clients
-				widgScheduleTask([strongTitleUI] {
+				resetReadyStatus(true); //reset and send notification to all clients
+				widgScheduleTask([strongTitleUI]
+				{
 					strongTitleUI->closePlayerSlotSwapChooser();
 					strongTitleUI->updatePlayers();
 				});
@@ -2062,6 +2222,7 @@ public:
 
 		iV_Box(x0, y0, x0 + width(), y0 + height(), WZCOL_MENU_BORDER);
 	}
+
 public:
 	uint32_t targetPlayerIdx;
 };
@@ -2069,8 +2230,12 @@ public:
 class WzPlayerIndexSwapPositionRowRactory : public WzPlayerSelectPositionRowFactory
 {
 public:
-	~WzPlayerIndexSwapPositionRowRactory() { }
-	virtual std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx, const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent) const override
+	~WzPlayerIndexSwapPositionRowRactory()
+	{
+	}
+
+	virtual std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx,
+	                                       const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent) const override
 	{
 		return WzPlayerIndexSwapPositionRow::make(switcherPlayerIdx, targetPlayerIdx, parent);
 	}
@@ -2084,7 +2249,8 @@ static std::set<uint32_t> validPlayerIdxTargetsForPlayerPositionMove(uint32_t pl
 	for (uint32_t i = 0; i < game.maxPlayers; i++)
 	{
 		if (player != i
-			&& (NetPlay.isHost || !isHumanPlayer(i)) // host can move a player to any slot, player can only move to empty slots
+			&& (NetPlay.isHost || !isHumanPlayer(i))
+			// host can move a player to any slot, player can only move to empty slots
 			&& !isSpectatorOnlySlot(i)) // target cannot be a spectator only slot (for player position changes)
 		{
 			validTargetPlayerIdx.insert(i);
@@ -2096,17 +2262,26 @@ static std::set<uint32_t> validPlayerIdxTargetsForPlayerPositionMove(uint32_t pl
 class WzPositionChooser : public WIDGET
 {
 protected:
-	WzPositionChooser(uint32_t switcherPlayerIdx, const std::shared_ptr<WzMultiplayerOptionsTitleUI> &parentTitleUI)
-	: WIDGET()
-	, switcherPlayerIdx(switcherPlayerIdx)
-	, psWeakTitleUI(parentTitleUI)
-	{ }
-public:
-	static std::shared_ptr<WzPositionChooser> make(uint32_t switcherPlayerIdx, const WzPlayerSelectPositionRowFactory& rowFactory, const std::shared_ptr<WzMultiplayerOptionsTitleUI> &parent)
+	WzPositionChooser(uint32_t switcherPlayerIdx, const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parentTitleUI)
+		: WIDGET()
+		  , switcherPlayerIdx(switcherPlayerIdx)
+		  , psWeakTitleUI(parentTitleUI)
 	{
-		class make_shared_enabler: public WzPositionChooser {
+	}
+
+public:
+	static std::shared_ptr<WzPositionChooser> make(uint32_t switcherPlayerIdx,
+	                                               const WzPlayerSelectPositionRowFactory& rowFactory,
+	                                               const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent)
+	{
+		class make_shared_enabler : public WzPositionChooser
+		{
 		public:
-			make_shared_enabler(uint32_t switcherPlayerIdx, const std::shared_ptr<WzMultiplayerOptionsTitleUI> &parentTitleUI) : WzPositionChooser(switcherPlayerIdx, parentTitleUI) { }
+			make_shared_enabler(uint32_t switcherPlayerIdx,
+			                    const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parentTitleUI) : WzPositionChooser(
+				switcherPlayerIdx, parentTitleUI)
+			{
+			}
 		};
 		auto widget = std::make_shared<make_shared_enabler>(switcherPlayerIdx, parent);
 
@@ -2123,10 +2298,11 @@ public:
 		return widget;
 	}
 
-	void clicked(W_CONTEXT *, WIDGET_KEY key) override
+	void clicked(W_CONTEXT*, WIDGET_KEY key) override
 	{
 		auto psWeakTitleUICopy = psWeakTitleUI;
-		widgScheduleTask([psWeakTitleUICopy]{
+		widgScheduleTask([psWeakTitleUICopy]
+		{
 			auto psTitleUI = psWeakTitleUICopy.lock();
 			ASSERT_OR_RETURN(, psTitleUI != nullptr, "Title UI is null");
 			psTitleUI->closeAllChoosers(); // this also removes the overlay screen
@@ -2139,7 +2315,7 @@ public:
 		positionRows();
 	}
 
-	void run(W_CONTEXT *psContext) override
+	void run(W_CONTEXT* psContext) override
 	{
 		positionRows();
 	}
@@ -2157,22 +2333,28 @@ public:
 				continue;
 			}
 			int newWidth = width();
-			row.widget->setGeometry(0, std::max(strongTitleUI->playerRowY0(row.targetPlayerIdx), 0), newWidth, MULTIOP_PLAYERHEIGHT);
+			row.widget->setGeometry(0, std::max(strongTitleUI->playerRowY0(row.targetPlayerIdx), 0), newWidth,
+			                        MULTIOP_PLAYERHEIGHT);
 			row.widget->show();
 		}
 	}
+
 private:
 	uint32_t switcherPlayerIdx;
 	std::weak_ptr<WzMultiplayerOptionsTitleUI> psWeakTitleUI;
+
 	struct PlayerButtonRow
 	{
 		PlayerButtonRow(const std::shared_ptr<W_BUTTON>& widget, uint32_t targetPlayerIdx)
-		: widget(widget)
-		, targetPlayerIdx(targetPlayerIdx)
-		{ }
+			: widget(widget)
+			  , targetPlayerIdx(targetPlayerIdx)
+		{
+		}
+
 		std::shared_ptr<W_BUTTON> widget;
 		uint32_t targetPlayerIdx = 0;
 	};
+
 	std::vector<PlayerButtonRow> positionSelectionRows;
 };
 
@@ -2187,16 +2369,20 @@ void WzMultiplayerOptionsTitleUI::openPositionChooser(uint32_t player)
 	ASSERT_OR_RETURN(, psParent != nullptr, "Could not find root form");
 	std::weak_ptr<WIDGET> psWeakParent(psParent->shared_from_this());
 
-	WIDGET *chooserParent = widgGetFromID(psInlineChooserOverlayScreen, MULTIOP_INLINE_OVERLAY_ROOT_FRM);
+	WIDGET* chooserParent = widgGetFromID(psInlineChooserOverlayScreen, MULTIOP_INLINE_OVERLAY_ROOT_FRM);
 
 	WzPlayerSelectionChangePositionRowFactory rowFactory;
-	auto positionChooser = WzPositionChooser::make(player, rowFactory, std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
+	auto positionChooser = WzPositionChooser::make(player, rowFactory,
+	                                               std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(
+		                                               shared_from_this()));
 	chooserParent->attach(positionChooser);
 	positionChooser->id = MULTIOP_AI_FORM;
-	positionChooser->setCalcLayout([psWeakParent](WIDGET *psWidget) {
+	positionChooser->setCalcLayout([psWeakParent](WIDGET* psWidget)
+	{
 		if (auto psParent = psWeakParent.lock())
 		{
-			psWidget->setGeometry(psParent->screenPosX() + MULTIOP_PLAYERSX, psParent->screenPosY() + MULTIOP_PLAYERSY, MULTIOP_PLAYERSW, MULTIOP_PLAYERSH);
+			psWidget->setGeometry(psParent->screenPosX() + MULTIOP_PLAYERSX, psParent->screenPosY() + MULTIOP_PLAYERSY,
+			                      MULTIOP_PLAYERSW, MULTIOP_PLAYERSH);
 		}
 	});
 }
@@ -2218,11 +2404,15 @@ void WzMultiplayerOptionsTitleUI::openTeamChooser(uint32_t player)
 
 	bool isSpectator = NetPlay.players[player].isSpectator;
 	bool canChangeTeams = !locked.teams && !isSpectator && alliancesSetTeamsBeforeGame(game.alliance);
-	bool canKickPlayer = player != selectedPlayer && NetPlay.bComms && NetPlay.isHost && NetPlay.players[player].allocated;
-	bool canChangeSpectatorStatus = !locked.spectators && NetPlay.bComms && isHumanPlayer(player) && (player != NetPlay.hostPlayer) && (NetPlay.isHost || player == selectedPlayer);
-	bool displayMoveToSpectatorsButton = canChangeSpectatorStatus && !isSpectator && (currSpectatorInfo.availableSpectatorSlots() > 0 || (NetPlay.isHost && NETcanOpenNewSpectatorSlot()));
+	bool canKickPlayer = player != selectedPlayer && NetPlay.bComms && NetPlay.isHost && NetPlay.players[player].
+		allocated;
+	bool canChangeSpectatorStatus = !locked.spectators && NetPlay.bComms && isHumanPlayer(player) && (player != NetPlay.
+		hostPlayer) && (NetPlay.isHost || player == selectedPlayer);
+	bool displayMoveToSpectatorsButton = canChangeSpectatorStatus && !isSpectator && (currSpectatorInfo.
+		availableSpectatorSlots() > 0 || (NetPlay.isHost && NETcanOpenNewSpectatorSlot()));
 	bool displayMoveToPlayersButton = canChangeSpectatorStatus && isSpectator;
-	canChangeSpectatorStatus = canChangeSpectatorStatus && (displayMoveToSpectatorsButton || displayMoveToPlayersButton);
+	canChangeSpectatorStatus = canChangeSpectatorStatus && (displayMoveToSpectatorsButton ||
+		displayMoveToPlayersButton);
 
 	if (!canChangeTeams && !canKickPlayer && !canChangeSpectatorStatus)
 	{
@@ -2235,12 +2425,16 @@ void WzMultiplayerOptionsTitleUI::openTeamChooser(uint32_t player)
 	initInlineChooser(player);
 
 	// add form.
-//	addBlueForm(MULTIOP_PLAYERS, MULTIOP_TEAMCHOOSER_FORM, "", 8, playerBoxHeight(player), MULTIOP_ROW_WIDTH, MULTIOP_TEAMSHEIGHT);
-	auto psParentForm = (W_FORM *)widgGetFromID(psWScreen, MULTIOP_PLAYERS);
-	auto psInlineChooserForm = addInlineChooserBlueForm(psInlineChooserOverlayScreen, psParentForm, MULTIOP_TEAMCHOOSER_FORM, "", PLAYERBOX_X0 + 1, std::max(playerRowY0(player), 0), MULTIOP_ROW_WIDTH, MULTIOP_TEAMSHEIGHT);
+	//	addBlueForm(MULTIOP_PLAYERS, MULTIOP_TEAMCHOOSER_FORM, "", 8, playerBoxHeight(player), MULTIOP_ROW_WIDTH, MULTIOP_TEAMSHEIGHT);
+	auto psParentForm = (W_FORM*)widgGetFromID(psWScreen, MULTIOP_PLAYERS);
+	auto psInlineChooserForm = addInlineChooserBlueForm(psInlineChooserOverlayScreen, psParentForm,
+	                                                    MULTIOP_TEAMCHOOSER_FORM, "", PLAYERBOX_X0 + 1,
+	                                                    std::max(playerRowY0(player), 0), MULTIOP_ROW_WIDTH,
+	                                                    MULTIOP_TEAMSHEIGHT);
 	ASSERT(psInlineChooserForm != nullptr, "Failed to create form");
 
-	auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
+	auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(
+		std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
 
 	if (canChangeTeams)
 	{
@@ -2250,7 +2444,8 @@ void WzMultiplayerOptionsTitleUI::openTeamChooser(uint32_t player)
 		int spaceDiv = game.maxPlayers;
 		space = std::min(space, 3 * spaceDiv);
 
-		auto onClickHandler = [player, psWeakTitleUI](W_BUTTON &button) {
+		auto onClickHandler = [player, psWeakTitleUI](W_BUTTON& button)
+		{
 			UDWORD id = button.id;
 			auto pStrongPtr = psWeakTitleUI.lock();
 			ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
@@ -2260,15 +2455,17 @@ void WzMultiplayerOptionsTitleUI::openTeamChooser(uint32_t player)
 			if (id >= MULTIOP_TEAMCHOOSER && id <= MULTIOP_TEAMCHOOSER + MAX_PLAYERS - 1)
 			{
 				ASSERT(id >= MULTIOP_TEAMCHOOSER
-					   && (id - MULTIOP_TEAMCHOOSER) < MAX_PLAYERS, "processMultiopWidgets: wrong id - MULTIOP_TEAMCHOOSER value (%d)", id - MULTIOP_TEAMCHOOSER);
+				       && (id - MULTIOP_TEAMCHOOSER) < MAX_PLAYERS,
+				       "processMultiopWidgets: wrong id - MULTIOP_TEAMCHOOSER value (%d)", id - MULTIOP_TEAMCHOOSER);
 
-				resetReadyStatus(false);		// will reset only locally if not a host
+				resetReadyStatus(false); // will reset only locally if not a host
 
 				SendTeamRequest(player, (UBYTE)id - MULTIOP_TEAMCHOOSER);
 
 				debug(LOG_WZ, "Changed team for player %d to %d", player, NetPlay.players[player].team);
 
-				widgScheduleTask([pStrongPtr] {
+				widgScheduleTask([pStrongPtr]
+				{
 					pStrongPtr->closeTeamChooser();
 					// restore player list
 					pStrongPtr->addPlayerBox(true);
@@ -2281,32 +2478,37 @@ void WzMultiplayerOptionsTitleUI::openTeamChooser(uint32_t player)
 		{
 			if (i != disallow)
 			{
-				addMultiButWithClickHandler(psInlineChooserForm, MULTIOP_TEAMCHOOSER + i, i * (teamW * spaceDiv + space) / spaceDiv + 3, 6, teamW, teamH, _("Team"), IMAGE_TEAM0 + i, IMAGE_TEAM0_HI + i, IMAGE_TEAM0_HI + i, onClickHandler);
+				addMultiButWithClickHandler(psInlineChooserForm, MULTIOP_TEAMCHOOSER + i,
+				                            i * (teamW * spaceDiv + space) / spaceDiv + 3, 6, teamW, teamH, _("Team"),
+				                            IMAGE_TEAM0 + i, IMAGE_TEAM0_HI + i, IMAGE_TEAM0_HI + i, onClickHandler);
 			}
 			// may want to add some kind of 'can't do' icon instead of being blank?
 		}
 	}
 	else if (isSpectator)
 	{
-  		const int imgwidth = iV_GetImageWidth(FrontImages, IMAGE_SPECTATOR);
-  		const int imgheight = iV_GetImageHeight(FrontImages, IMAGE_SPECTATOR);
-  		addMultiBut(psInlineChooserOverlayScreen, MULTIOP_TEAMCHOOSER_FORM, MULTIOP_TEAMCHOOSER_SPECTATOR, 3, 6, imgwidth, imgheight,
-  		_("Spectator"), IMAGE_SPECTATOR, IMAGE_SPECTATOR_HI, IMAGE_SPECTATOR_HI);
-  	}
+		const int imgwidth = iV_GetImageWidth(FrontImages, IMAGE_SPECTATOR);
+		const int imgheight = iV_GetImageHeight(FrontImages, IMAGE_SPECTATOR);
+		addMultiBut(psInlineChooserOverlayScreen, MULTIOP_TEAMCHOOSER_FORM, MULTIOP_TEAMCHOOSER_SPECTATOR, 3, 6,
+		            imgwidth, imgheight,
+		            _("Spectator"), IMAGE_SPECTATOR, IMAGE_SPECTATOR_HI, IMAGE_SPECTATOR_HI);
+	}
 
 	// add a kick button
 	int kickImageX = MULTIOP_ROW_WIDTH;
 	if (canKickPlayer)
 	{
-		auto onClickHandler = [player, psWeakTitleUI](W_BUTTON &button) {
+		auto onClickHandler = [player, psWeakTitleUI](W_BUTTON& button)
+		{
 			auto pStrongPtr = psWeakTitleUI.lock();
 			ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
 
 			std::string msg = astringf(_("The host has kicked %s from the game!"), getPlayerName(player));
 			kickPlayer(player, _("The host has kicked you from the game."), ERROR_KICKED);
 			sendRoomSystemMessage(msg.c_str());
-			resetReadyStatus(true);		//reset and send notification to all clients
-			widgScheduleTask([pStrongPtr] {
+			resetReadyStatus(true); //reset and send notification to all clients
+			widgScheduleTask([pStrongPtr]
+			{
 				pStrongPtr->closeTeamChooser();
 			});
 		};
@@ -2315,7 +2517,7 @@ void WzMultiplayerOptionsTitleUI::openTeamChooser(uint32_t player)
 		const int imgheight = iV_GetImageHeight(FrontImages, IMAGE_NOJOIN);
 		kickImageX = MULTIOP_ROW_WIDTH - imgwidth - 4;
 		addMultiButWithClickHandler(psInlineChooserForm, MULTIOP_TEAMCHOOSER_KICK, kickImageX, 8, imgwidth, imgheight,
-			("Kick player"), IMAGE_NOJOIN, IMAGE_NOJOIN, IMAGE_NOJOIN, onClickHandler);
+		                            ("Kick player"), IMAGE_NOJOIN, IMAGE_NOJOIN, IMAGE_NOJOIN, onClickHandler);
 	}
 
 	if (canChangeSpectatorStatus)
@@ -2330,7 +2532,8 @@ void WzMultiplayerOptionsTitleUI::openTeamChooser(uint32_t player)
 
 			if (NetPlay.isHost)
 			{
-				onSpecClickHandler = [player, psWeakTitleUI](W_BUTTON &button) {
+				onSpecClickHandler = [player, psWeakTitleUI](W_BUTTON& button)
+				{
 					auto pStrongPtr = psWeakTitleUI.lock();
 					ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
 
@@ -2345,28 +2548,33 @@ void WzMultiplayerOptionsTitleUI::openTeamChooser(uint32_t player)
 
 					std::string msg = astringf(_("The host has moved %s to Spectators!"), playerName.c_str());
 					sendRoomSystemMessage(msg.c_str());
-					resetReadyStatus(true);		//reset and send notification to all clients
-					widgScheduleTask([pStrongPtr] {
+					resetReadyStatus(true); //reset and send notification to all clients
+					widgScheduleTask([pStrongPtr]
+					{
 						pStrongPtr->closeTeamChooser();
 					});
 				};
 			}
 			else
 			{
-				onSpecClickHandler = [player, psWeakTitleUI](W_BUTTON &button) {
+				onSpecClickHandler = [player, psWeakTitleUI](W_BUTTON& button)
+				{
 					auto pStrongPtr = psWeakTitleUI.lock();
 					ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
 
 					// Send net message to host asking to be a spectator, as host is responsible for these changes
 					SendPlayerSlotTypeRequest(player, true);
-					widgScheduleTask([pStrongPtr] {
+					widgScheduleTask([pStrongPtr]
+					{
 						pStrongPtr->closeTeamChooser();
 					});
 				};
 			}
 
-			addMultiButWithClickHandler(psInlineChooserForm, MULTIOP_TEAMCHOOSER_SPECTATOR, kickImageX - imgwidth_spec - 4, 6, imgwidth_spec, imgheight_spec,
-			_("Move to Spectators"), IMAGE_SPECTATOR, IMAGE_SPECTATOR_HI, IMAGE_SPECTATOR_HI, onSpecClickHandler);
+			addMultiButWithClickHandler(psInlineChooserForm, MULTIOP_TEAMCHOOSER_SPECTATOR,
+			                            kickImageX - imgwidth_spec - 4, 6, imgwidth_spec, imgheight_spec,
+			                            _("Move to Spectators"), IMAGE_SPECTATOR, IMAGE_SPECTATOR_HI,
+			                            IMAGE_SPECTATOR_HI, onSpecClickHandler);
 		}
 		else if (displayMoveToPlayersButton)
 		{
@@ -2377,13 +2585,15 @@ void WzMultiplayerOptionsTitleUI::openTeamChooser(uint32_t player)
 			std::string toolTip;
 			if (NetPlay.isHost)
 			{
-				onSpecClickHandler = [player, psWeakTitleUI](W_BUTTON &button) {
+				onSpecClickHandler = [player, psWeakTitleUI](W_BUTTON& button)
+				{
 					auto pStrongPtr = psWeakTitleUI.lock();
 					ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
 
 					// Ask the spectator if they are okay with a move from spectator -> player?
 					SendPlayerSlotTypeRequest(player, false);
-					widgScheduleTask([pStrongPtr] {
+					widgScheduleTask([pStrongPtr]
+					{
 						pStrongPtr->closeTeamChooser();
 					});
 				};
@@ -2392,24 +2602,30 @@ void WzMultiplayerOptionsTitleUI::openTeamChooser(uint32_t player)
 			else
 			{
 				// Ask the host for a move from spectator -> player
-				onSpecClickHandler = [player, psWeakTitleUI](W_BUTTON &button) {
+				onSpecClickHandler = [player, psWeakTitleUI](W_BUTTON& button)
+				{
 					auto pStrongPtr = psWeakTitleUI.lock();
 					ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
 
 					// Send net message to host asking to be a player, as host is responsible for these changes
 					SendPlayerSlotTypeRequest(player, false);
 
-					widgScheduleTask([pStrongPtr] {
+					widgScheduleTask([pStrongPtr]
+					{
 						pStrongPtr->closeTeamChooser();
 					});
 				};
 				toolTip = _("Ask to Play");
 			}
 
-			auto psButton = addMultiButWithClickHandler(psInlineChooserForm, MULTIOP_TEAMCHOOSER_SPECTATOR, kickImageX - imgwidth_spec - 4, 5, imgwidth_spec, imgheight_spec,
-				toolTip.c_str(), IMAGE_EDIT_PLAYER, IMAGE_EDIT_PLAYER_HI, IMAGE_EDIT_PLAYER_HI, onSpecClickHandler);
+			auto psButton = addMultiButWithClickHandler(psInlineChooserForm, MULTIOP_TEAMCHOOSER_SPECTATOR,
+			                                            kickImageX - imgwidth_spec - 4, 5, imgwidth_spec,
+			                                            imgheight_spec,
+			                                            toolTip.c_str(), IMAGE_EDIT_PLAYER, IMAGE_EDIT_PLAYER_HI,
+			                                            IMAGE_EDIT_PLAYER_HI, onSpecClickHandler);
 			ASSERT(psButton != nullptr, "Null button??");
-			psButton->drawBlueBorder = false; // HACK: to disable the other hack in WzMultiButton::display() for IMAGE_EDIT_PLAYER (sigh...)
+			psButton->drawBlueBorder = false;
+			// HACK: to disable the other hack in WzMultiButton::display() for IMAGE_EDIT_PLAYER (sigh...)
 		}
 	}
 
@@ -2422,11 +2638,12 @@ void WzMultiplayerOptionsTitleUI::openColourChooser(uint32_t player)
 	initInlineChooser(player);
 
 	// add form.
-	auto psParentForm = (W_FORM *)widgGetFromID(psWScreen, MULTIOP_PLAYERS);
-	auto psInlineChooserForm = addInlineChooserBlueForm(psInlineChooserOverlayScreen, psParentForm, MULTIOP_COLCHOOSER_FORM, "",
-		PLAYERBOX_X0,
-		std::max(playerRowY0(player), 0),
-		MULTIOP_ROW_WIDTH, MULTIOP_PLAYERHEIGHT);
+	auto psParentForm = (W_FORM*)widgGetFromID(psWScreen, MULTIOP_PLAYERS);
+	auto psInlineChooserForm = addInlineChooserBlueForm(psInlineChooserOverlayScreen, psParentForm,
+	                                                    MULTIOP_COLCHOOSER_FORM, "",
+	                                                    PLAYERBOX_X0,
+	                                                    std::max(playerRowY0(player), 0),
+	                                                    MULTIOP_ROW_WIDTH, MULTIOP_PLAYERHEIGHT);
 	ASSERT(psInlineChooserForm != nullptr, "Failed to create form");
 
 	// add the flags
@@ -2436,21 +2653,24 @@ void WzMultiplayerOptionsTitleUI::openColourChooser(uint32_t player)
 	int spaceDiv = MAX_PLAYERS_IN_GUI;
 	space = std::min(space, 5 * spaceDiv);
 
-	auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
+	auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(
+		std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
 
 	for (unsigned i = 0; i < MAX_PLAYERS_IN_GUI; i++)
 	{
-		auto onClickHandler = [player, psWeakTitleUI](W_BUTTON &button) {
+		auto onClickHandler = [player, psWeakTitleUI](W_BUTTON& button)
+		{
 			UDWORD id = button.id;
 			auto pStrongPtr = psWeakTitleUI.lock();
 			ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
 
 			STATIC_ASSERT(MULTIOP_COLCHOOSER + MAX_PLAYERS - 1 <= MULTIOP_COLCHOOSER_END);
-			if (id >= MULTIOP_COLCHOOSER && id < MULTIOP_COLCHOOSER + MAX_PLAYERS - 1)  // chose a new colour.
+			if (id >= MULTIOP_COLCHOOSER && id < MULTIOP_COLCHOOSER + MAX_PLAYERS - 1) // chose a new colour.
 			{
-				resetReadyStatus(false, true);		// will reset only locally if not a host
+				resetReadyStatus(false, true); // will reset only locally if not a host
 				SendColourRequest(player, id - MULTIOP_COLCHOOSER);
-				widgScheduleTask([pStrongPtr] {
+				widgScheduleTask([pStrongPtr]
+				{
 					pStrongPtr->closeColourChooser();
 					pStrongPtr->addPlayerBox(true);
 				});
@@ -2458,9 +2678,10 @@ void WzMultiplayerOptionsTitleUI::openColourChooser(uint32_t player)
 		};
 
 		addMultiButWithClickHandler(psInlineChooserForm, MULTIOP_COLCHOOSER + getPlayerColour(i),
-			i * (flagW * spaceDiv + space) / spaceDiv + 4, 4, // x, y
-			flagW, flagH,  // w, h
-			getPlayerColourName(i), IMAGE_PLAYERN, IMAGE_PLAYERN_HI, IMAGE_PLAYERN_HI, onClickHandler, getPlayerColour(i)
+		                            i * (flagW * spaceDiv + space) / spaceDiv + 4, 4, // x, y
+		                            flagW, flagH, // w, h
+		                            getPlayerColourName(i), IMAGE_PLAYERN, IMAGE_PLAYERN_HI, IMAGE_PLAYERN_HI,
+		                            onClickHandler, getPlayerColour(i)
 		);
 
 		if (!safeToUseColour(selectedPlayer, i))
@@ -2520,11 +2741,12 @@ void WzMultiplayerOptionsTitleUI::openFactionChooser(uint32_t player)
 	initInlineChooser(player);
 
 	// add form.
-	auto psParentForm = (W_FORM *)widgGetFromID(psWScreen, MULTIOP_PLAYERS);
-	auto psInlineChooserForm = addInlineChooserBlueForm(psInlineChooserOverlayScreen, psParentForm, MULTIOP_FACCHOOSER_FORM, "",
-		PLAYERBOX_X0,
-		std::max(playerRowY0(player), 0),
-		MULTIOP_ROW_WIDTH, MULTIOP_PLAYERHEIGHT);
+	auto psParentForm = (W_FORM*)widgGetFromID(psWScreen, MULTIOP_PLAYERS);
+	auto psInlineChooserForm = addInlineChooserBlueForm(psInlineChooserOverlayScreen, psParentForm,
+	                                                    MULTIOP_FACCHOOSER_FORM, "",
+	                                                    PLAYERBOX_X0,
+	                                                    std::max(playerRowY0(player), 0),
+	                                                    MULTIOP_ROW_WIDTH, MULTIOP_PLAYERHEIGHT);
 	ASSERT(psInlineChooserForm != nullptr, "Failed to create form");
 
 	// add the flags
@@ -2534,22 +2756,25 @@ void WzMultiplayerOptionsTitleUI::openFactionChooser(uint32_t player)
 	int spaceDiv = NUM_FACTIONS;
 	space = std::min(space, 5 * spaceDiv);
 
-	auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
+	auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(
+		std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
 
 	for (unsigned int i = 0; i < NUM_FACTIONS; i++)
 	{
-		auto onClickHandler = [player, psWeakTitleUI](W_BUTTON &button) {
+		auto onClickHandler = [player, psWeakTitleUI](W_BUTTON& button)
+		{
 			UDWORD id = button.id;
 			auto pStrongPtr = psWeakTitleUI.lock();
 			ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
 
 			STATIC_ASSERT(MULTIOP_FACCHOOSER + NUM_FACTIONS - 1 <= MULTIOP_FACCHOOSER_END);
-			if (id >= MULTIOP_FACCHOOSER && id <= MULTIOP_FACCHOOSER + NUM_FACTIONS -1)
+			if (id >= MULTIOP_FACCHOOSER && id <= MULTIOP_FACCHOOSER + NUM_FACTIONS - 1)
 			{
 				resetReadyStatus(false, true);
 				uint8_t idx = id - MULTIOP_FACCHOOSER;
 				SendFactionRequest(player, idx);
-				widgScheduleTask([pStrongPtr] {
+				widgScheduleTask([pStrongPtr]
+				{
 					pStrongPtr->closeFactionChooser();
 					pStrongPtr->addPlayerBox(true);
 				});
@@ -2557,10 +2782,11 @@ void WzMultiplayerOptionsTitleUI::openFactionChooser(uint32_t player)
 		};
 
 		addMultiButWithClickHandler(psInlineChooserForm, MULTIOP_FACCHOOSER + i,
-			i * (flagW * spaceDiv + space) / spaceDiv + PLAYERBOX_X0,  4, // x, y
-			flagW, flagH,  // w, h
-			to_localized_string(static_cast<FactionID>(i)),
-			IMAGE_FACTION_NORMAL+i, IMAGE_FACTION_NORMAL_HI+i, IMAGE_FACTION_NORMAL_HI+i, onClickHandler
+		                            i * (flagW * spaceDiv + space) / spaceDiv + PLAYERBOX_X0, 4, // x, y
+		                            flagW, flagH, // w, h
+		                            to_localized_string(static_cast<FactionID>(i)),
+		                            IMAGE_FACTION_NORMAL + i, IMAGE_FACTION_NORMAL_HI + i, IMAGE_FACTION_NORMAL_HI + i,
+		                            onClickHandler
 		);
 	}
 
@@ -2577,9 +2803,9 @@ static void changeTeam(UBYTE player, UBYTE team)
 
 static bool SendTeamRequest(UBYTE player, UBYTE chosenTeam)
 {
-	if (NetPlay.isHost)			// do or request the change.
+	if (NetPlay.isHost) // do or request the change.
 	{
-		changeTeam(player, chosenTeam);	// do the change, remember only the host can do this to avoid confusion.
+		changeTeam(player, chosenTeam); // do the change, remember only the host can do this to avoid confusion.
 	}
 	else
 	{
@@ -2589,7 +2815,6 @@ static bool SendTeamRequest(UBYTE player, UBYTE chosenTeam)
 		NETuint8_t(&chosenTeam);
 
 		NETend();
-
 	}
 	return true;
 }
@@ -2641,7 +2866,7 @@ bool recvTeamRequest(NETQUEUE queue)
 
 static bool SendReadyRequest(UBYTE player, bool bReady)
 {
-	if (NetPlay.isHost)			// do or request the change.
+	if (NetPlay.isHost) // do or request the change.
 	{
 		return changeReadyStatus(player, bReady);
 	}
@@ -2723,7 +2948,8 @@ static bool changePosition(UBYTE player, UBYTE position)
 	debug(LOG_ERROR, "Failed to swap positions for player %d, position %d", (int)player, (int)position);
 	if (player < game.maxPlayers && position < game.maxPlayers)
 	{
-		debug(LOG_NET, "corrupted positions: player (%u) new position (%u) old position (%d)", player, position, NetPlay.players[player].position);
+		debug(LOG_NET, "corrupted positions: player (%u) new position (%u) old position (%d)", player, position,
+		      NetPlay.players[player].position);
 		// Positions were corrupted. Attempt to fix.
 		NetPlay.players[player].position = position;
 		NETBroadcastPlayerInfo(player);
@@ -2747,7 +2973,7 @@ bool changeColour(unsigned player, int col, bool isHost)
 
 	if (getPlayerColour(player) == col)
 	{
-		return true;  // Nothing to do.
+		return true; // Nothing to do.
 	}
 
 	for (unsigned i = 0; i < MAX_PLAYERS; ++i)
@@ -2756,7 +2982,7 @@ bool changeColour(unsigned player, int col, bool isHost)
 		{
 			if (!isHost && NetPlay.players[i].allocated)
 			{
-				return true;  // May not swap.
+				return true; // May not swap.
 			}
 
 			debug(LOG_NET, "Swapping colours between players %d(%d) and %d(%d)",
@@ -2772,7 +2998,8 @@ bool changeColour(unsigned player, int col, bool isHost)
 	if (player < game.maxPlayers && col < MAX_PLAYERS)
 	{
 		// Colours were corrupted. Attempt to fix.
-		debug(LOG_NET, "corrupted colours: player (%u) new colour (%u) old colour (%d)", player, col, NetPlay.players[player].colour);
+		debug(LOG_NET, "corrupted colours: player (%u) new colour (%u) old colour (%d)", player, col,
+		      NetPlay.players[player].colour);
 		setPlayerColour(player, col);
 		NETBroadcastPlayerInfo(player);
 		netPlayersUpdated = true;
@@ -2783,7 +3010,7 @@ bool changeColour(unsigned player, int col, bool isHost)
 
 static bool SendColourRequest(UBYTE player, UBYTE col)
 {
-	if (NetPlay.isHost)			// do or request the change
+	if (NetPlay.isHost) // do or request the change
 	{
 		return changeColour(player, col, true);
 	}
@@ -2801,8 +3028,9 @@ static bool SendColourRequest(UBYTE player, UBYTE col)
 static bool SendFactionRequest(UBYTE player, UBYTE faction)
 {
 	// TODO: needs to be rewritten from scratch
-	ASSERT_OR_RETURN(false, faction <= static_cast<UBYTE>(MAX_FACTION_ID), "Invalid faction: %u", (unsigned int)faction);
-	if (NetPlay.isHost)			// do or request the change
+	ASSERT_OR_RETURN(false, faction <= static_cast<UBYTE>(MAX_FACTION_ID), "Invalid faction: %u",
+	                 (unsigned int)faction);
+	if (NetPlay.isHost) // do or request the change
 	{
 		NetPlay.players[player].faction = static_cast<FactionID>(faction);
 		NETBroadcastPlayerInfo(player);
@@ -2821,7 +3049,7 @@ static bool SendFactionRequest(UBYTE player, UBYTE faction)
 
 static bool SendPositionRequest(UBYTE player, UBYTE position)
 {
-	if (NetPlay.isHost)			// do or request the change
+	if (NetPlay.isHost) // do or request the change
 	{
 		return changePosition(player, position);
 	}
@@ -2910,7 +3138,7 @@ bool recvPositionRequest(NETQUEUE queue)
 
 	NETbeginDecode(queue, NET_POSITIONREQUEST);
 
-	UBYTE	player, position;
+	UBYTE player, position;
 	NETuint8_t(&player);
 	NETuint8_t(&position);
 	NETend();
@@ -2955,7 +3183,8 @@ static bool SendPlayerSlotTypeRequest(uint32_t player, bool isSpectator)
 		bHostRequestedMoveToPlayers[player] = true;
 	}
 
-	debug(LOG_NET, "Requesting the host to change our slot type. From %s to %s", originalPlayerSlotType, desiredPlayerSlotType);
+	debug(LOG_NET, "Requesting the host to change our slot type. From %s to %s", originalPlayerSlotType,
+	      desiredPlayerSlotType);
 	// clients tell the host which player slot type they want (but the host may not allow)
 	NETbeginEncode(NETnetQueue((!NetPlay.isHost) ? NetPlay.hostPlayer : player), NET_PLAYER_SLOTTYPE_REQUEST);
 	NETuint32_t(&player);
@@ -2976,11 +3205,12 @@ static bool recvPlayerSlotTypeRequestAndPop(WzMultiplayerOptionsTitleUI& titleUI
 	NETbool(&desiredIsSpectator);
 	NETend();
 
-	NETpop(queue); // this function *must* handle popping the message itself since, if a player index switch occurs, the queue may be invalidated
+	NETpop(queue);
+	// this function *must* handle popping the message itself since, if a player index switch occurs, the queue may be invalidated
 
 	// Basic parameter validation
 
-	if (!ingame.localJoiningInProgress)  // Only if game hasn't actually started yet.
+	if (!ingame.localJoiningInProgress) // Only if game hasn't actually started yet.
 	{
 		debug(LOG_WARNING, "Player indexes cannot be swapped after game has started");
 		return false;
@@ -2988,12 +3218,14 @@ static bool recvPlayerSlotTypeRequestAndPop(WzMultiplayerOptionsTitleUI& titleUI
 
 	if (playerIndex >= MAX_CONNECTED_PLAYERS)
 	{
-		debug(LOG_ERROR, "Invalid NET_PLAYER_SLOTTYPE_REQUEST from player %" PRIu32 ": Tried to change player %" PRIu32 "",
-			  queue.index, playerIndex);
+		debug(LOG_ERROR,
+		      "Invalid NET_PLAYER_SLOTTYPE_REQUEST from player %" PRIu32 ": Tried to change player %" PRIu32 "",
+		      queue.index, playerIndex);
 		return false;
 	}
 
-	if (whosResponsible(playerIndex) != queue.index && !(queue.index == NetPlay.hostPlayer && whosResponsible(playerIndex) == selectedPlayer && selectedPlayer != NetPlay.hostPlayer))
+	if (whosResponsible(playerIndex) != queue.index && !(queue.index == NetPlay.hostPlayer &&
+		whosResponsible(playerIndex) == selectedPlayer && selectedPlayer != NetPlay.hostPlayer))
 	{
 		HandleBadParam("NET_PLAYER_SLOTTYPE_REQUEST given incorrect params.", playerIndex, queue.index);
 		return false;
@@ -3071,10 +3303,12 @@ static bool recvPlayerSlotTypeRequestAndPop(WzMultiplayerOptionsTitleUI& titleUI
 			}
 			notification.contentTitle = contentTitle;
 			notification.contentText = contentText;
-			notification.action = WZ_Notification_Action(proceedButtonText, [desiredIsSpectator](const WZ_Notification&) {
+			notification.action = WZ_Notification_Action(proceedButtonText, [desiredIsSpectator](const WZ_Notification&)
+			{
 				SendPlayerSlotTypeRequest(selectedPlayer, desiredIsSpectator);
 			});
-			notification.onDismissed = [](const WZ_Notification&, WZ_Notification_Dismissal_Reason reason) {
+			notification.onDismissed = [](const WZ_Notification&, WZ_Notification_Dismissal_Reason reason)
+			{
 				if (reason != WZ_Notification_Dismissal_Reason::USER_DISMISSED) { return; }
 				// Notify the host that the answer is "no" by sending a no-op PlayerSlotTypeRequest
 				SendPlayerSlotTypeRequest(selectedPlayer, NetPlay.players[selectedPlayer].isSpectator);
@@ -3082,7 +3316,8 @@ static bool recvPlayerSlotTypeRequestAndPop(WzMultiplayerOptionsTitleUI& titleUI
 			const std::string notificationIdentifierPrefix = SLOTTYPE_NOTIFICATION_ID_PREFIX;
 			const std::string notificationIdentifier = notificationIdentifierPrefix + notificationId;
 			notification.displayOptions = WZ_Notification_Display_Options::makeIgnorable(notificationIdentifier, 2);
-			notification.onIgnored = [](const WZ_Notification&) {
+			notification.onIgnored = [](const WZ_Notification&)
+			{
 				// Notify the host that the answer is "no" by sending a no-op PlayerSlotTypeRequest
 				SendPlayerSlotTypeRequest(selectedPlayer, NetPlay.players[selectedPlayer].isSpectator);
 			};
@@ -3111,7 +3346,7 @@ static bool recvPlayerSlotTypeRequestAndPop(WzMultiplayerOptionsTitleUI& titleUI
 
 		std::string msg = astringf(_("Player %s has moved to Spectators"), playerName.c_str());
 		sendRoomSystemMessage(msg.c_str());
-		resetReadyStatus(true);		//reset and send notification to all clients
+		resetReadyStatus(true); //reset and send notification to all clients
 	}
 	else
 	{
@@ -3122,15 +3357,15 @@ static bool recvPlayerSlotTypeRequestAndPop(WzMultiplayerOptionsTitleUI& titleUI
 		bHostRequestedMoveToPlayers[playerIndex] = false;
 		switch (result)
 		{
-			case SpectatorToPlayerMoveResult::SUCCESS:
+		case SpectatorToPlayerMoveResult::SUCCESS:
 			{
 				// Was able to move spectator to an open player slot automatically
 				std::string msg = astringf(_("Spectator %s has moved to Players"), playerName.c_str());
 				sendRoomSystemMessage(msg.c_str());
-				resetReadyStatus(true);		//reset and send notification to all clients
+				resetReadyStatus(true); //reset and send notification to all clients
 				break;
 			}
-			case SpectatorToPlayerMoveResult::NEEDS_SLOT_SELECTION:
+		case SpectatorToPlayerMoveResult::NEEDS_SLOT_SELECTION:
 			{
 				// Display a notification that a spectator would like to switch to a player
 				std::string notificationTag = SLOTTYPE_REQUEST_TAG;
@@ -3149,7 +3384,8 @@ static bool recvPlayerSlotTypeRequestAndPop(WzMultiplayerOptionsTitleUI& titleUI
 				WZ_Notification notification;
 				notification.duration = 0;
 				std::string contentTitle = _("Spectator would like to become a Player");
-				std::string contentText = astringf(_("Spectator \"%s\" would like to become a player."), playerName.c_str());
+				std::string contentText = astringf(
+					_("Spectator \"%s\" would like to become a player."), playerName.c_str());
 				contentText += "\n";
 				contentText += _("However, there are currently no open Player slots.");
 				contentText += "\n\n";
@@ -3157,17 +3393,28 @@ static bool recvPlayerSlotTypeRequestAndPop(WzMultiplayerOptionsTitleUI& titleUI
 				std::string proceedButtonText = _("Yes, select Player slot");
 				notification.contentTitle = contentTitle;
 				notification.contentText = contentText;
-				std::weak_ptr<WzMultiplayerOptionsTitleUI> weakTitleUI(std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(titleUI.shared_from_this()));
-				notification.action = WZ_Notification_Action(proceedButtonText, [playerIndex, weakTitleUI](const WZ_Notification&) {
-					auto strongTitleUI = weakTitleUI.lock();
-					ASSERT_OR_RETURN(, strongTitleUI != nullptr, "Expected Title UI is gone");
-					widgScheduleTask([weakTitleUI, playerIndex] {
-						auto strongTitleUI = weakTitleUI.lock();
-						ASSERT_OR_RETURN(, strongTitleUI != nullptr, "Expected Title UI is gone");
-						strongTitleUI->openPlayerSlotSwapChooser(playerIndex);
-					});
-				});
-				notification.onDismissed = [playerIndex](const WZ_Notification&, WZ_Notification_Dismissal_Reason reason) {
+				std::weak_ptr<WzMultiplayerOptionsTitleUI> weakTitleUI(
+					std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(titleUI.shared_from_this()));
+				notification.action = WZ_Notification_Action(proceedButtonText,
+				                                             [playerIndex, weakTitleUI](const WZ_Notification&)
+				                                             {
+					                                             auto strongTitleUI = weakTitleUI.lock();
+					                                             ASSERT_OR_RETURN(,
+						                                             strongTitleUI != nullptr,
+						                                             "Expected Title UI is gone");
+					                                             widgScheduleTask([weakTitleUI, playerIndex]
+					                                             {
+						                                             auto strongTitleUI = weakTitleUI.lock();
+						                                             ASSERT_OR_RETURN(,
+							                                             strongTitleUI != nullptr,
+							                                             "Expected Title UI is gone");
+						                                             strongTitleUI->openPlayerSlotSwapChooser(
+							                                             playerIndex);
+					                                             });
+				                                             });
+				notification.onDismissed = [playerIndex](const WZ_Notification&,
+				                                         WZ_Notification_Dismissal_Reason reason)
+				{
 					if (reason != WZ_Notification_Dismissal_Reason::USER_DISMISSED) { return; }
 					// Notify the player that the answer is "no" by sending a no-op PlayerSlotTypeRequest
 					SendPlayerSlotTypeRequest(playerIndex, NetPlay.players[playerIndex].isSpectator);
@@ -3178,7 +3425,7 @@ static bool recvPlayerSlotTypeRequestAndPop(WzMultiplayerOptionsTitleUI& titleUI
 				// "handled" - now up to the host to decide what happens, so return true below
 				break;
 			}
-			case SpectatorToPlayerMoveResult::FAILED:
+		case SpectatorToPlayerMoveResult::FAILED:
 			{
 				// Notify the player that the answer is "no" by sending a no-op PlayerSlotTypeRequest
 				SendPlayerSlotTypeRequest(playerIndex, NetPlay.players[playerIndex].isSpectator);
@@ -3204,7 +3451,8 @@ static SwapPlayerIndexesResult recvSwapPlayerIndexes(NETQUEUE queue, const std::
 	// For other players, this provides a message and a (quiet / virtual) "leave" of the old slot
 	// Everyone then waits for the host to provide updated NET_PLAYER_INFO
 
-	ASSERT_OR_RETURN(SwapPlayerIndexesResult::FAILURE, queue.index == NetPlay.hostPlayer, "Message received from non-host user");
+	ASSERT_OR_RETURN(SwapPlayerIndexesResult::FAILURE, queue.index == NetPlay.hostPlayer,
+	                 "Message received from non-host user");
 
 	uint32_t playerIndexA;
 	uint32_t playerIndexB;
@@ -3214,7 +3462,7 @@ static SwapPlayerIndexesResult recvSwapPlayerIndexes(NETQUEUE queue, const std::
 	NETuint32_t(&playerIndexB);
 	NETend();
 
-	if (!ingame.localJoiningInProgress)  // Only if game hasn't actually started yet.
+	if (!ingame.localJoiningInProgress) // Only if game hasn't actually started yet.
 	{
 		debug(LOG_ERROR, "Player indexes cannot be swapped after game has started");
 		return SwapPlayerIndexesResult::FAILURE;
@@ -3245,7 +3493,9 @@ static SwapPlayerIndexesResult recvSwapPlayerIndexes(NETQUEUE queue, const std::
 	}
 
 	// Backup some data
-	std::array<bool, 2> wasSpectator = {NetPlay.players[playerIndexA].isSpectator, NetPlay.players[playerIndexB].isSpectator};
+	std::array<bool, 2> wasSpectator = {
+		NetPlay.players[playerIndexA].isSpectator, NetPlay.players[playerIndexB].isSpectator
+	};
 
 	// 1.) Simulate the old slots "leaving" (quietly)
 	// From handling of NET_PLAYER_DROPPED (to cleanup old player indexes - wait for new player info from host)
@@ -3258,7 +3508,7 @@ static SwapPlayerIndexesResult recvSwapPlayerIndexes(NETQUEUE queue, const std::
 		NetPlay.playerReferences[playerIndex] = std::make_shared<PlayerReference>(playerIndex);
 
 		setMultiStats(playerIndex, PLAYERSTATS(), true); // local only
-//		NetPlay.players[playerIndex].difficulty = AIDifficulty::DISABLED;
+		//		NetPlay.players[playerIndex].difficulty = AIDifficulty::DISABLED;
 		//
 		NET_InitPlayer(playerIndex, false);
 		NETsetPlayerConnectionStatus(CONNECTIONSTATUS_PLAYER_DROPPED, playerIndex); // needed??
@@ -3285,19 +3535,20 @@ static SwapPlayerIndexesResult recvSwapPlayerIndexes(NETQUEUE queue, const std::
 
 		selectedPlayer = newPlayerIndex;
 		realSelectedPlayer = selectedPlayer;
-		debug(LOG_NET, "NET_PLAYER_SWAP_INDEX received for me. Switching from player %" PRIu32 " to player %" PRIu32 "", oldPlayerIndex,newPlayerIndex);
+		debug(LOG_NET, "NET_PLAYER_SWAP_INDEX received for me. Switching from player %" PRIu32 " to player %" PRIu32 "",
+		      oldPlayerIndex, newPlayerIndex);
 
 		NetPlay.players[selectedPlayer].allocated = true;
 		sstrcpy(NetPlay.players[selectedPlayer].name, sPlayer);
 		NetPlay.players[selectedPlayer].heartbeat = true;
 
 		// Ensure name is set properly (and re-send to host)
-		NETchangePlayerName(selectedPlayer, (char *)sPlayer);			// update since we're simulating re-joining
+		NETchangePlayerName(selectedPlayer, (char*)sPlayer); // update since we're simulating re-joining
 
 		// 2.) Basically what happens in joinGameInternalConnect after successful NETjoinGame
 
 		// Move my stats to the new player slot, and then broadcast
-		PLAYERSTATS	playerStats;
+		PLAYERSTATS playerStats;
 		loadMultiStats(sPlayer, &playerStats);
 		setMultiStats(selectedPlayer, playerStats, false);
 		setMultiStats(selectedPlayer, playerStats, true);
@@ -3310,7 +3561,8 @@ static SwapPlayerIndexesResult recvSwapPlayerIndexes(NETQUEUE queue, const std::
 		if (selectedPlayerWasSpectator != NetPlay.players[selectedPlayer].isSpectator)
 		{
 			// Spectator status of player slot changed
-			debug(LOG_NET, "Spectator status changed! From %s to %s", (selectedPlayerWasSpectator) ? "true" : "false", (NetPlay.players[selectedPlayer].isSpectator) ? "true" : "false");
+			debug(LOG_NET, "Spectator status changed! From %s to %s", (selectedPlayerWasSpectator) ? "true" : "false",
+			      (NetPlay.players[selectedPlayer].isSpectator) ? "true" : "false");
 			if (!NetPlay.players[selectedPlayer].isSpectator)
 			{
 				if (!bRequestedSelfMoveToPlayers)
@@ -3334,7 +3586,7 @@ static SwapPlayerIndexesResult recvSwapPlayerIndexes(NETQUEUE queue, const std::
 	}
 
 	ActivityManager::instance().updateMultiplayGameData(game, ingame, NETGameIsLocked());
-	netPlayersUpdated = true;	// update the player box.
+	netPlayersUpdated = true; // update the player box.
 
 	return SwapPlayerIndexesResult::SUCCESS;
 }
@@ -3351,13 +3603,16 @@ class WzPlayerBoxTabButton : public W_BUTTON
 {
 protected:
 	WzPlayerBoxTabButton()
-	: W_BUTTON()
-	{}
+		: W_BUTTON()
+	{
+	}
 
 public:
 	static std::shared_ptr<WzPlayerBoxTabButton> make(const std::string& title)
 	{
-		class make_shared_enabler: public WzPlayerBoxTabButton {};
+		class make_shared_enabler : public WzPlayerBoxTabButton
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 
 		// add the titleLabel
@@ -3402,6 +3657,7 @@ private:
 		}
 		return Image(FrontImages, IMAGE_LAMP_GREEN);
 	}
+
 	void recalculateSlotsLabel();
 	void recalculateTitleLabel();
 	void refreshTip();
@@ -3458,7 +3714,8 @@ void WzPlayerBoxTabButton::recalculateTitleLabel()
 {
 	// size titleLabel to take up available space in the middle
 	int slotCountsLabelX0 = slotsCountsLabel->x();
-	int titleLabelX0 = borderWidth + elementPadding + (Image(FrontImages, IMAGE_LAMP_GREEN).width() / 2) + elementPadding;
+	int titleLabelX0 = borderWidth + elementPadding + (Image(FrontImages, IMAGE_LAMP_GREEN).width() / 2) +
+		elementPadding;
 	int titleLabelY0 = (height() - titleLabel->height()) / 2;
 	int titleLabelWidth = slotCountsLabelX0 - elementPadding - titleLabelX0;
 	titleLabel->setGeometry(titleLabelX0, titleLabelY0, titleLabelWidth, titleLabel->height());
@@ -3512,7 +3769,8 @@ void WzPlayerBoxTabButton::display(int xOffset, int yOffset)
 		int imageDisplayHeight = readyStatusImage.height() / 2;
 		int imageX0 = x0 + borderWidth + elementPadding;
 		int imageY0 = y0 + ((h - imageDisplayHeight) / 2);
-		iV_DrawImageFileAnisotropic(readyStatusImage.images, readyStatusImage.id, imageX0, imageY0, Vector2f(imageDisplayWidth, imageDisplayHeight), defaultProjectionMatrix(), 255);
+		iV_DrawImageFileAnisotropic(readyStatusImage.images, readyStatusImage.id, imageX0, imageY0,
+		                            Vector2f(imageDisplayWidth, imageDisplayHeight), defaultProjectionMatrix(), 255);
 	}
 
 	// label drawing is handled by the embedded W_LABEL
@@ -3526,13 +3784,16 @@ class WzPlayerBoxOptionsButton : public W_BUTTON
 {
 protected:
 	WzPlayerBoxOptionsButton()
-	: W_BUTTON()
-	{}
+		: W_BUTTON()
+	{
+	}
 
 public:
 	static std::shared_ptr<WzPlayerBoxOptionsButton> make()
 	{
-		class make_shared_enabler: public WzPlayerBoxOptionsButton {};
+		class make_shared_enabler : public WzPlayerBoxOptionsButton
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 
 		// add the titleLabel
@@ -3540,7 +3801,8 @@ public:
 		widget->titleLabel->setFont(font_regular, WZCOL_TEXT_BRIGHT);
 		widget->titleLabel->setString(WzString::fromUtf8("\u2699")); // "⚙"
 		std::weak_ptr<WzPlayerBoxOptionsButton> psWeakParent = widget;
-		widget->titleLabel->setCalcLayout([psWeakParent](WIDGET *psWidget){
+		widget->titleLabel->setCalcLayout([psWeakParent](WIDGET* psWidget)
+		{
 			auto psParent = psWeakParent.lock();
 			ASSERT_OR_RETURN(, psParent != nullptr, "Parent is null");
 			psWidget->setGeometry(0, 0, psParent->width(), psParent->height());
@@ -3594,9 +3856,10 @@ class WzPlayerBoxTabs : public WIDGET
 {
 protected:
 	WzPlayerBoxTabs(const std::shared_ptr<WzMultiplayerOptionsTitleUI>& titleUI)
-	: WIDGET()
-	, weakTitleUI(titleUI)
-	{ }
+		: WIDGET()
+		  , weakTitleUI(titleUI)
+	{
+	}
 
 	~WzPlayerBoxTabs()
 	{
@@ -3607,11 +3870,15 @@ protected:
 	}
 
 public:
-	static std::shared_ptr<WzPlayerBoxTabs> make(bool displayHostOptions, const std::shared_ptr<WzMultiplayerOptionsTitleUI>& titleUI)
+	static std::shared_ptr<WzPlayerBoxTabs> make(bool displayHostOptions,
+	                                             const std::shared_ptr<WzMultiplayerOptionsTitleUI>& titleUI)
 	{
-		class make_shared_enabler: public WzPlayerBoxTabs {
+		class make_shared_enabler : public WzPlayerBoxTabs
+		{
 		public:
-			make_shared_enabler(const std::shared_ptr<WzMultiplayerOptionsTitleUI>& titleUI) : WzPlayerBoxTabs(titleUI) { }
+			make_shared_enabler(const std::shared_ptr<WzMultiplayerOptionsTitleUI>& titleUI) : WzPlayerBoxTabs(titleUI)
+			{
+			}
 		};
 		auto widget = std::make_shared<make_shared_enabler>(titleUI);
 
@@ -3622,8 +3889,10 @@ public:
 		playersButton->setSelected(true);
 		widget->tabButtons.push_back(playersButton);
 		widget->attach(playersButton);
-		playersButton->addOnClickHandler([weakTitleUI](W_BUTTON& button){
-			widgScheduleTask([weakTitleUI](){
+		playersButton->addOnClickHandler([weakTitleUI](W_BUTTON& button)
+		{
+			widgScheduleTask([weakTitleUI]()
+			{
 				auto strongTitleUI = weakTitleUI.lock();
 				ASSERT_OR_RETURN(, strongTitleUI != nullptr, "No parent title UI");
 				playerDisplayView = PlayerDisplayView::Players;
@@ -3635,8 +3904,10 @@ public:
 		auto spectatorsButton = WzPlayerBoxTabButton::make(_("Spectators"));
 		widget->tabButtons.push_back(spectatorsButton);
 		widget->attach(spectatorsButton);
-		spectatorsButton->addOnClickHandler([weakTitleUI](W_BUTTON& button){
-			widgScheduleTask([weakTitleUI](){
+		spectatorsButton->addOnClickHandler([weakTitleUI](W_BUTTON& button)
+		{
+			widgScheduleTask([weakTitleUI]()
+			{
 				auto strongTitleUI = weakTitleUI.lock();
 				ASSERT_OR_RETURN(, strongTitleUI != nullptr, "No parent title UI");
 				playerDisplayView = PlayerDisplayView::Spectators;
@@ -3650,7 +3921,8 @@ public:
 			widget->optionsButton = WzPlayerBoxOptionsButton::make(); // "⚙"
 			widget->optionsButton->setTip(_("Host Options"));
 			widget->attach(widget->optionsButton);
-			widget->optionsButton->addOnClickHandler([](W_BUTTON& button) {
+			widget->optionsButton->addOnClickHandler([](W_BUTTON& button)
+			{
 				auto psParent = std::dynamic_pointer_cast<WzPlayerBoxTabs>(button.parent());
 				ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
 				// Display a "pop-over" options menu
@@ -3659,10 +3931,10 @@ public:
 		}
 
 		widget->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-			auto psPlayerBoxTabs = std::dynamic_pointer_cast<WzPlayerBoxTabs>(psWidget->shared_from_this());
-			ASSERT_OR_RETURN(, psPlayerBoxTabs.get() != nullptr, "Wrong type of psWidget??");
-			psPlayerBoxTabs->recalculateTabLayout();
-		}));
+				auto psPlayerBoxTabs = std::dynamic_pointer_cast<WzPlayerBoxTabs>(psWidget->shared_from_this());
+				ASSERT_OR_RETURN(, psPlayerBoxTabs.get() != nullptr, "Wrong type of psWidget??");
+				psPlayerBoxTabs->recalculateTabLayout();
+				}));
 
 		widget->refreshData();
 
@@ -3674,7 +3946,7 @@ public:
 		recalculateTabLayout();
 	}
 
-	void run(W_CONTEXT *psContext) override
+	void run(W_CONTEXT* psContext) override
 	{
 		refreshData();
 	}
@@ -3693,12 +3965,12 @@ private:
 		// update currently-selected tab
 		switch (playerDisplayView)
 		{
-			case PlayerDisplayView::Players:
-				setSelectedTab(0);
-				break;
-			case PlayerDisplayView::Spectators:
-				setSelectedTab(1);
-				break;
+		case PlayerDisplayView::Players:
+			setSelectedTab(0);
+			break;
+		case PlayerDisplayView::Spectators:
+			setSelectedTab(1);
+			break;
 		}
 
 		// update counts of players & spectators
@@ -3710,14 +3982,15 @@ private:
 		uint8_t readySpectatorOnlySlots = 0;
 		for (size_t i = 0; i < MAX_CONNECTED_PLAYERS; ++i)
 		{
-			PLAYER const &p = NetPlay.players[i];
+			PLAYER const& p = NetPlay.players[i];
 			if (p.ai == AI_CLOSED)
 			{
 				// closed slot - skip
 				continue;
 			}
 			if (isSpectatorOnlySlot(i)
-					 && ((i >= NetPlay.players.size()) || !(NetPlay.players[i].isSpectator && NetPlay.players[i].ai == AI_OPEN)))
+				&& ((i >= NetPlay.players.size()) || !(NetPlay.players[i].isSpectator && NetPlay.players[i].ai ==
+					AI_OPEN)))
 			{
 				// the only slots displayable beyond game.maxPlayers are spectator slots
 				continue;
@@ -3771,10 +4044,11 @@ private:
 	{
 		int optionsButtonSize = (optionsButton) ? height() : 0;
 		int rightPaddingForAllButtons = optionsButtonSize;
-		int availableWidthForButtons = width() - rightPaddingForAllButtons; // width minus internal and external button padding
+		int availableWidthForButtons = width() - rightPaddingForAllButtons;
+		// width minus internal and external button padding
 		int baseWidthPerButton = availableWidthForButtons / static_cast<int>(tabButtons.size());
 		int x0 = 0;
-		for (auto &button : tabButtons)
+		for (auto& button : tabButtons)
 		{
 			int buttonNewWidth = baseWidthPerButton;
 			button->setGeometry(x0, 0, buttonNewWidth, height());
@@ -3883,9 +4157,11 @@ static void enableSpectatorJoin(bool enabled)
 	{
 		// add max spectator slots
 		bool success = false;
-		do {
+		do
+		{
 			success = NETopenNewSpectatorSlot();
-		} while (success);
+		}
+		while (success);
 	}
 	else
 	{
@@ -3898,12 +4174,16 @@ static void enableSpectatorJoin(bool enabled)
 std::shared_ptr<WIDGET> WzPlayerBoxTabs::createOptionsPopoverForm()
 {
 	// create all the buttons / option rows
-	auto createOptionsSpacer = []() -> std::shared_ptr<WIDGET> {
+	auto createOptionsSpacer = []() -> std::shared_ptr<WIDGET>
+	{
 		auto spacerWidget = std::make_shared<WIDGET>();
 		spacerWidget->setGeometry(0, 0, 1, 5);
 		return spacerWidget;
 	};
-	auto createOptionsCheckbox = [](const WzString& text, bool isChecked, bool isDisabled, const std::function<void (WzCheckboxButton& button)>& onClickFunc) -> std::shared_ptr<WzCheckboxButton> {
+	auto createOptionsCheckbox = [](const WzString& text, bool isChecked, bool isDisabled,
+	                                const std::function<void (WzCheckboxButton& button)>& onClickFunc) ->
+	std::shared_ptr<WzCheckboxButton>
+	{
 		auto pCheckbox = std::make_shared<WzCheckboxButton>();
 		pCheckbox->pText = text;
 		pCheckbox->FontID = font_regular;
@@ -3917,7 +4197,8 @@ std::shared_ptr<WIDGET> WzPlayerBoxTabs::createOptionsPopoverForm()
 		pCheckbox->setGeometry(0, 0, minimumDimensions.x, minimumDimensions.y);
 		if (onClickFunc)
 		{
-			pCheckbox->addOnClickHandler([onClickFunc](W_BUTTON& button){
+			pCheckbox->addOnClickHandler([onClickFunc](W_BUTTON& button)
+			{
 				auto checkBoxButton = std::dynamic_pointer_cast<WzCheckboxButton>(button.shared_from_this());
 				ASSERT_OR_RETURN(, checkBoxButton != nullptr, "checkBoxButton is null");
 				onClickFunc(*checkBoxButton);
@@ -3929,34 +4210,44 @@ std::shared_ptr<WIDGET> WzPlayerBoxTabs::createOptionsPopoverForm()
 	std::vector<std::shared_ptr<WIDGET>> buttons;
 	bool hasOpenSpectatorSlots = hasOpenSpectatorOnlySlots();
 	std::weak_ptr<WzMultiplayerOptionsTitleUI> weakTitleUICopy = weakTitleUI;
-	buttons.push_back(createOptionsCheckbox(_("Enable Spectator Join"), hasOpenSpectatorSlots, !hasOpenSpectatorSlots && !canAddSpectatorOnlySlots(), [weakTitleUICopy](WzCheckboxButton& button){
-		bool enableValue = button.getIsChecked();
-		widgScheduleTask([enableValue, weakTitleUICopy]{
-			auto strongTitleUI = weakTitleUICopy.lock();
-			ASSERT_OR_RETURN(, strongTitleUI != nullptr, "No Title UI?");
-			enableSpectatorJoin(enableValue);
-			strongTitleUI->updatePlayers();
-		});
-	}));
+	buttons.push_back(createOptionsCheckbox(_("Enable Spectator Join"), hasOpenSpectatorSlots,
+	                                        !hasOpenSpectatorSlots && !canAddSpectatorOnlySlots(),
+	                                        [weakTitleUICopy](WzCheckboxButton& button)
+	                                        {
+		                                        bool enableValue = button.getIsChecked();
+		                                        widgScheduleTask([enableValue, weakTitleUICopy]
+		                                        {
+			                                        auto strongTitleUI = weakTitleUICopy.lock();
+			                                        ASSERT_OR_RETURN(, strongTitleUI != nullptr, "No Title UI?");
+			                                        enableSpectatorJoin(enableValue);
+			                                        strongTitleUI->updatePlayers();
+		                                        });
+	                                        }));
 	buttons.push_back(createOptionsSpacer());
-	buttons.push_back(createOptionsCheckbox(_("Lock Teams"), locked.teams, false, [](WzCheckboxButton& button){
+	buttons.push_back(createOptionsCheckbox(_("Lock Teams"), locked.teams, false, [](WzCheckboxButton& button)
+	{
 		locked.teams = button.getIsChecked();
 	}));
 
 	// determine required height for all buttons
-	int totalButtonHeight = std::accumulate(buttons.begin(), buttons.end(), 0, [](int a, const std::shared_ptr<WIDGET>& b) {
-		return a + b->height();
-	});
-	int maxButtonWidth = (*(std::max_element(buttons.begin(), buttons.end(), [](const std::shared_ptr<WIDGET>& a, const std::shared_ptr<WIDGET>& b){
-		return a->width() < b->width();
-	})))->width();
+	int totalButtonHeight = std::accumulate(buttons.begin(), buttons.end(), 0,
+	                                        [](int a, const std::shared_ptr<WIDGET>& b)
+	                                        {
+		                                        return a + b->height();
+	                                        });
+	int maxButtonWidth = (*(std::max_element(buttons.begin(), buttons.end(),
+	                                         [](const std::shared_ptr<WIDGET>& a, const std::shared_ptr<WIDGET>& b)
+	                                         {
+		                                         return a->width() < b->width();
+	                                         })))->width();
 
 	auto itemsList = ScrollableListWidget::make();
 	itemsList->setBackgroundColor(WZCOL_MENU_BACKGROUND);
 	itemsList->setPadding({3, 4, 3, 4});
 	const int itemSpacing = 4;
 	itemsList->setItemSpacing(itemSpacing);
-	itemsList->setGeometry(itemsList->x(), itemsList->y(), maxButtonWidth + 8, totalButtonHeight + (static_cast<int>(buttons.size()) * itemSpacing) + 6);
+	itemsList->setGeometry(itemsList->x(), itemsList->y(), maxButtonWidth + 8,
+	                       totalButtonHeight + (static_cast<int>(buttons.size()) * itemSpacing) + 6);
 	for (auto& button : buttons)
 	{
 		itemsList->addItem(button);
@@ -3975,7 +4266,8 @@ void WzPlayerBoxTabs::displayOptionsOverlay(const std::shared_ptr<WIDGET>& psPar
 	auto newRootFrm = W_FULLSCREENOVERLAY_CLICKFORM::make();
 	std::weak_ptr<W_SCREEN> psWeakOptionsOverlayScreen(optionsOverlayScreen);
 	std::weak_ptr<WzPlayerBoxTabs> psWeakPlayerBoxTabs = std::dynamic_pointer_cast<WzPlayerBoxTabs>(shared_from_this());
-	newRootFrm->onClickedFunc = [psWeakOptionsOverlayScreen, psWeakPlayerBoxTabs]() {
+	newRootFrm->onClickedFunc = [psWeakOptionsOverlayScreen, psWeakPlayerBoxTabs]()
+	{
 		if (auto psOverlayScreen = psWeakOptionsOverlayScreen.lock())
 		{
 			widgRemoveOverlayScreen(psOverlayScreen);
@@ -3995,7 +4287,8 @@ void WzPlayerBoxTabs::displayOptionsOverlay(const std::shared_ptr<WIDGET>& psPar
 
 	// Position the pop-over form
 	std::weak_ptr<WIDGET> weakParent = psParent;
-	optionsPopOver->setCalcLayout([weakParent](WIDGET *psWidget) {
+	optionsPopOver->setCalcLayout([weakParent](WIDGET* psWidget)
+	{
 		auto psParent = weakParent.lock();
 		ASSERT_OR_RETURN(, psParent != nullptr, "parent is null");
 		// (Ideally, with its left aligned with the left side of the "parent" widget, but ensure full visibility on-screen)
@@ -4023,17 +4316,24 @@ class WzPlayerRow : public WIDGET
 {
 protected:
 	WzPlayerRow(uint32_t playerIdx, const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent)
-	: WIDGET()
-	, parentTitleUI(parent)
-	, playerIdx(playerIdx)
-	{ }
+		: WIDGET()
+		  , parentTitleUI(parent)
+		  , playerIdx(playerIdx)
+	{
+	}
 
 public:
-	static std::shared_ptr<WzPlayerRow> make(uint32_t playerIdx, const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent)
+	static std::shared_ptr<WzPlayerRow> make(uint32_t playerIdx,
+	                                         const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent)
 	{
-		class make_shared_enabler: public WzPlayerRow {
+		class make_shared_enabler : public WzPlayerRow
+		{
 		public:
-			make_shared_enabler(uint32_t playerIdx, const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent) : WzPlayerRow(playerIdx, parent) { }
+			make_shared_enabler(uint32_t playerIdx,
+			                    const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent) : WzPlayerRow(
+				playerIdx, parent)
+			{
+			}
 		};
 		auto widget = std::make_shared<make_shared_enabler>(playerIdx, parent);
 
@@ -4045,14 +4345,16 @@ public:
 		widget->teamButton->UserData = playerIdx;
 		widget->teamButton->displayFunction = displayTeamChooser;
 		widget->attach(widget->teamButton);
-		widget->teamButton->addOnClickHandler([playerIdx, titleUI](W_BUTTON& button){
+		widget->teamButton->addOnClickHandler([playerIdx, titleUI](W_BUTTON& button)
+		{
 			auto strongTitleUI = titleUI.lock();
 			ASSERT_OR_RETURN(, strongTitleUI != nullptr, "Title UI is gone?");
-			if ((!locked.teams || !locked.spectators))  // Clicked on a team chooser
+			if ((!locked.teams || !locked.spectators)) // Clicked on a team chooser
 			{
 				if (canChooseTeamFor(playerIdx))
 				{
-					widgScheduleTask([strongTitleUI, playerIdx] {
+					widgScheduleTask([strongTitleUI, playerIdx]
+					{
 						strongTitleUI->openTeamChooser(playerIdx);
 					});
 				}
@@ -4065,14 +4367,16 @@ public:
 		widget->colorButton->UserData = playerIdx;
 		widget->colorButton->displayFunction = displayColour;
 		widget->attach(widget->colorButton);
-		widget->colorButton->addOnClickHandler([playerIdx, titleUI](W_BUTTON& button){
+		widget->colorButton->addOnClickHandler([playerIdx, titleUI](W_BUTTON& button)
+		{
 			auto strongTitleUI = titleUI.lock();
 			ASSERT_OR_RETURN(, strongTitleUI != nullptr, "Title UI is gone?");
 			if (playerIdx == selectedPlayer || NetPlay.isHost)
 			{
 				if (!NetPlay.players[playerIdx].isSpectator) // not a spectator
 				{
-					widgScheduleTask([strongTitleUI, playerIdx] {
+					widgScheduleTask([strongTitleUI, playerIdx]
+					{
 						strongTitleUI->openColourChooser(playerIdx);
 					});
 				}
@@ -4081,18 +4385,21 @@ public:
 
 		// add player faction
 		widget->factionButton = std::make_shared<W_BUTTON>();
-		widget->factionButton->setGeometry(MULTIOP_TEAMSWIDTH+MULTIOP_COLOUR_WIDTH, 0, MULTIOP_FACTION_WIDTH, MULTIOP_PLAYERHEIGHT);
+		widget->factionButton->setGeometry(MULTIOP_TEAMSWIDTH + MULTIOP_COLOUR_WIDTH, 0, MULTIOP_FACTION_WIDTH,
+		                                   MULTIOP_PLAYERHEIGHT);
 		widget->factionButton->UserData = playerIdx;
 		widget->factionButton->displayFunction = displayFaction;
 		widget->attach(widget->factionButton);
-		widget->factionButton->addOnClickHandler([playerIdx, titleUI](W_BUTTON& button){
+		widget->factionButton->addOnClickHandler([playerIdx, titleUI](W_BUTTON& button)
+		{
 			auto strongTitleUI = titleUI.lock();
 			ASSERT_OR_RETURN(, strongTitleUI != nullptr, "Title UI is gone?");
 			if (playerIdx == selectedPlayer || NetPlay.isHost)
 			{
 				if (!NetPlay.players[playerIdx].isSpectator) // not a spectator
 				{
-					widgScheduleTask([strongTitleUI, playerIdx] {
+					widgScheduleTask([strongTitleUI, playerIdx]
+					{
 						strongTitleUI->openFactionChooser(playerIdx);
 					});
 				}
@@ -4107,20 +4414,23 @@ public:
 		widget->playerInfo->UserData = playerIdx;
 		widget->playerInfo->displayFunction = displayPlayer;
 		widget->playerInfo->pUserData = new DisplayPlayerCache();
-		widget->playerInfo->setOnDelete([](WIDGET *psWidget) {
+		widget->playerInfo->setOnDelete([](WIDGET* psWidget)
+		{
 			assert(psWidget->pUserData != nullptr);
-			delete static_cast<DisplayPlayerCache *>(psWidget->pUserData);
+			delete static_cast<DisplayPlayerCache*>(psWidget->pUserData);
 			psWidget->pUserData = nullptr;
 		});
 		widget->attach(widget->playerInfo);
-		widget->playerInfo->setCalcLayout([](WIDGET *psWidget) {
+		widget->playerInfo->setCalcLayout([](WIDGET* psWidget)
+		{
 			auto psParent = std::dynamic_pointer_cast<WzPlayerRow>(psWidget->parent());
 			ASSERT_OR_RETURN(, psParent != nullptr, "Null parent");
 			int x0 = MULTIOP_TEAMSWIDTH + MULTIOP_COLOUR_WIDTH + MULTIOP_FACTION_WIDTH;
 			int width = psParent->readyButtonContainer->x() - x0;
 			psWidget->setGeometry(x0, 0, width, psParent->height());
 		});
-		widget->playerInfo->addOnClickHandler([playerIdx, titleUI](W_BUTTON& button){
+		widget->playerInfo->addOnClickHandler([playerIdx, titleUI](W_BUTTON& button)
+		{
 			auto strongTitleUI = titleUI.lock();
 			ASSERT_OR_RETURN(, strongTitleUI != nullptr, "Title UI is gone?");
 			if (playerIdx == selectedPlayer || NetPlay.isHost)
@@ -4132,7 +4442,8 @@ public:
 					&& player < MAX_PLAYERS
 					&& !isSpectatorOnlySlot(player))
 				{
-					widgScheduleTask([strongTitleUI, player] {
+					widgScheduleTask([strongTitleUI, player]
+					{
 						strongTitleUI->openPositionChooser(player);
 					});
 				}
@@ -4144,7 +4455,8 @@ public:
 						for (int i = 0; i < MAX_PLAYERS; ++i)
 						{
 							// Don't change open/closed slots or humans or spectator-only slots
-							if (NetPlay.players[i].ai >= 0 && i != player && !isHumanPlayer(i) && !isSpectatorOnlySlot(i))
+							if (NetPlay.players[i].ai >= 0 && i != player && !isHumanPlayer(i) && !isSpectatorOnlySlot(
+								i))
 							{
 								NetPlay.players[i].ai = NetPlay.players[player].ai;
 								NetPlay.players[i].isSpectator = NetPlay.players[player].isSpectator;
@@ -4153,14 +4465,16 @@ public:
 								NETBroadcastPlayerInfo(i);
 							}
 						}
-						widgScheduleTask([strongTitleUI] {
+						widgScheduleTask([strongTitleUI]
+						{
 							strongTitleUI->updatePlayers();
 							resetReadyStatus(false);
 						});
 					}
 					else
 					{
-						widgScheduleTask([strongTitleUI, player] {
+						widgScheduleTask([strongTitleUI, player]
+						{
 							strongTitleUI->openAiChooser(player);
 						});
 					}
@@ -4207,8 +4521,10 @@ public:
 		}
 
 		// hide team button if needed
-		bool trueMultiplayerMode = (bMultiPlayer && NetPlay.bComms) || (!NetPlay.isHost && ingame.localJoiningInProgress);
-		if (!alliancesSetTeamsBeforeGame(game.alliance) && !NetPlay.players[playerIdx].isSpectator && !trueMultiplayerMode)
+		bool trueMultiplayerMode = (bMultiPlayer && NetPlay.bComms) || (!NetPlay.isHost && ingame.
+			localJoiningInProgress);
+		if (!alliancesSetTeamsBeforeGame(game.alliance) && !NetPlay.players[playerIdx].isSpectator && !
+			trueMultiplayerMode)
 		{
 			teamButton->hide();
 		}
@@ -4239,7 +4555,8 @@ public:
 
 		// update player info box tooltip
 		std::string playerInfoTooltip;
-		if ((selectedPlayer == playerIdx || NetPlay.isHost) && NetPlay.players[playerIdx].allocated && !locked.position && !isSpectatorOnlySlot(playerIdx))
+		if ((selectedPlayer == playerIdx || NetPlay.isHost) && NetPlay.players[playerIdx].allocated && !locked.position
+			&& !isSpectatorOnlySlot(playerIdx))
 		{
 			playerInfoTooltip = _("Click to change player position");
 		}
@@ -4271,7 +4588,7 @@ public:
 			}
 			std::string hash = getMultiStats(playerIdx).identity.publicHashString(20);
 			playerInfoTooltip += _("Player ID: ");
-			playerInfoTooltip += hash.empty()? _("(none)") : hash;
+			playerInfoTooltip += hash.empty() ? _("(none)") : hash;
 		}
 		playerInfo->setTip(playerInfoTooltip);
 
@@ -4280,7 +4597,6 @@ public:
 	}
 
 public:
-
 	void updateReadyButton()
 	{
 		int disallow = allPlayersOnSameTeam(-1);
@@ -4289,17 +4605,20 @@ public:
 		{
 			// add form to hold 'ready' botton
 			readyButtonContainer = createBlueForm(MULTIOP_PLAYERWIDTH - MULTIOP_READY_WIDTH, 0,
-						MULTIOP_READY_WIDTH, MULTIOP_READY_HEIGHT, displayReadyBoxContainer);
+			                                      MULTIOP_READY_WIDTH, MULTIOP_READY_HEIGHT, displayReadyBoxContainer);
 			readyButtonContainer->UserData = playerIdx;
 			attach(readyButtonContainer);
-			readyButtonContainer->setCalcLayout([](WIDGET *psWidget) {
+			readyButtonContainer->setCalcLayout([](WIDGET* psWidget)
+			{
 				auto psParent = psWidget->parent();
 				ASSERT_OR_RETURN(, psParent != nullptr, "Null parent");
-				psWidget->setGeometry(psParent->width() - MULTIOP_READY_WIDTH, 0, psWidget->width(), psWidget->height());
+				psWidget->setGeometry(psParent->width() - MULTIOP_READY_WIDTH, 0, psWidget->width(),
+				                      psWidget->height());
 			});
 		}
 
-		auto deleteExistingReadyButton = [this]() {
+		auto deleteExistingReadyButton = [this]()
+		{
 			if (readyButton)
 			{
 				widgDelete(readyButton.get());
@@ -4311,7 +4630,8 @@ public:
 				readyTextLabel = nullptr;
 			}
 		};
-		auto deleteExistingDifficultyButton = [this]() {
+		auto deleteExistingDifficultyButton = [this]()
+		{
 			if (difficultyChooserButton)
 			{
 				widgDelete(difficultyChooserButton.get());
@@ -4331,7 +4651,7 @@ public:
 				sstrcpy(tooltip, _(difficultyList[playerDifficulty]));
 				if (NetPlay.players[playerIdx].ai < aidata.size())
 				{
-					const char *difficultyTip = aidata[NetPlay.players[playerIdx].ai].difficultyTips[playerDifficulty];
+					const char* difficultyTip = aidata[NetPlay.players[playerIdx].ai].difficultyTips[playerDifficulty];
 					if (strcmp(difficultyTip, "") != 0)
 					{
 						sstrcat(tooltip, "\n");
@@ -4340,18 +4660,23 @@ public:
 				}
 			}
 			bool freshDifficultyButton = (difficultyChooserButton == nullptr);
-			difficultyChooserButton = addMultiBut(*readyButtonContainer, MULTIOP_DIFFICULTY_INIT_START + playerIdx, 6, 4, MULTIOP_READY_WIDTH, MULTIOP_READY_HEIGHT,
-						(NetPlay.isHost && !locked.difficulty) ? _("Click to change difficulty") : tooltip, icon, icon, icon);
+			difficultyChooserButton = addMultiBut(*readyButtonContainer, MULTIOP_DIFFICULTY_INIT_START + playerIdx, 6,
+			                                      4, MULTIOP_READY_WIDTH, MULTIOP_READY_HEIGHT,
+			                                      (NetPlay.isHost && !locked.difficulty)
+				                                      ? _("Click to change difficulty")
+				                                      : tooltip, icon, icon, icon);
 			auto player = playerIdx;
 			auto weakTitleUi = parentTitleUI;
 			if (freshDifficultyButton)
 			{
-				difficultyChooserButton->addOnClickHandler([player, weakTitleUi](W_BUTTON&){
+				difficultyChooserButton->addOnClickHandler([player, weakTitleUi](W_BUTTON&)
+				{
 					auto strongTitleUI = weakTitleUi.lock();
 					ASSERT_OR_RETURN(, strongTitleUI != nullptr, "Title UI is gone?");
 					if (!locked.difficulty && NetPlay.isHost)
 					{
-						widgScheduleTask([strongTitleUI, player] {
+						widgScheduleTask([strongTitleUI, player]
+						{
 							strongTitleUI->openDifficultyChooser(player);
 						});
 					}
@@ -4379,20 +4704,30 @@ public:
 
 		bool isMe = playerIdx == selectedPlayer;
 		int isReady = NETgetDownloadProgress(playerIdx) != 100 ? 2 : NetPlay.players[playerIdx].ready ? 1 : 0;
-		char const *const toolTips[2][3] = {{_("Waiting for player"), _("Player is ready"), _("Player is downloading")}, {_("Click when ready"), _("Waiting for other players"), _("Waiting for download")}};
-		unsigned images[2][3] = {{IMAGE_CHECK_OFF, IMAGE_CHECK_ON, IMAGE_CHECK_DOWNLOAD}, {IMAGE_CHECK_OFF_HI, IMAGE_CHECK_ON_HI, IMAGE_CHECK_DOWNLOAD_HI}};
+		char const* const toolTips[2][3] = {
+			{_("Waiting for player"), _("Player is ready"), _("Player is downloading")},
+			{_("Click when ready"), _("Waiting for other players"), _("Waiting for download")}
+		};
+		unsigned images[2][3] = {
+			{IMAGE_CHECK_OFF, IMAGE_CHECK_ON, IMAGE_CHECK_DOWNLOAD},
+			{IMAGE_CHECK_OFF_HI, IMAGE_CHECK_ON_HI, IMAGE_CHECK_DOWNLOAD_HI}
+		};
 
 		// draw 'ready' button
-		bool greyedOutReady = (NetPlay.players[playerIdx].isSpectator && NetPlay.players[playerIdx].ready) || (playerIdx != selectedPlayer);
+		bool greyedOutReady = (NetPlay.players[playerIdx].isSpectator && NetPlay.players[playerIdx].ready) || (playerIdx
+			!= selectedPlayer);
 		bool freshReadyButton = (readyButton == nullptr);
-		readyButton = addMultiBut(*readyButtonContainer, MULTIOP_READY_START + playerIdx, 3, 10, MULTIOP_READY_WIDTH, MULTIOP_READY_HEIGHT,
-					toolTips[isMe][isReady], images[0][isReady], images[0][isReady], images[isMe][isReady], MAX_PLAYERS, (!greyedOutReady) ? 255 : 125);
+		readyButton = addMultiBut(*readyButtonContainer, MULTIOP_READY_START + playerIdx, 3, 10, MULTIOP_READY_WIDTH,
+		                          MULTIOP_READY_HEIGHT,
+		                          toolTips[isMe][isReady], images[0][isReady], images[0][isReady],
+		                          images[isMe][isReady], MAX_PLAYERS, (!greyedOutReady) ? 255 : 125);
 		ASSERT_OR_RETURN(, readyButton != nullptr, "Failed to create ready button");
 		readyButton->minClickInterval = GAME_TICKS_PER_SEC;
 		readyButton->unlock();
 		if (greyedOutReady && !NetPlay.isHost)
 		{
-			std::shared_ptr<WzMultiButton> pReadyBut_MultiButton = std::dynamic_pointer_cast<WzMultiButton>(readyButton);
+			std::shared_ptr<WzMultiButton> pReadyBut_MultiButton = std::dynamic_pointer_cast<
+				WzMultiButton>(readyButton);
 			if (pReadyBut_MultiButton)
 			{
 				pReadyBut_MultiButton->downStateMask = WBUT_DOWN | WBUT_CLICKLOCK;
@@ -4405,14 +4740,17 @@ public:
 			// must add onclick handler
 			auto player = playerIdx;
 			auto weakTitleUi = parentTitleUI;
-			readyButton->addOnClickHandler([player, weakTitleUi](W_BUTTON& button){
+			readyButton->addOnClickHandler([player, weakTitleUi](W_BUTTON& button)
+			{
 				auto pButton = button.shared_from_this();
-				widgScheduleTask([weakTitleUi, player, pButton] {
+				widgScheduleTask([weakTitleUi, player, pButton]
+				{
 					auto strongTitleUI = weakTitleUi.lock();
 					ASSERT_OR_RETURN(, strongTitleUI != nullptr, "Title UI is gone?");
 
 					if (player == selectedPlayer
-						&& (!NetPlay.players[player].isSpectator || !NetPlay.players[player].ready || NetPlay.isHost)) // spectators can never toggle off "ready"
+						&& (!NetPlay.players[player].isSpectator || !NetPlay.players[player].ready || NetPlay.isHost))
+					// spectators can never toggle off "ready"
 					{
 						// Lock the "ready" button (until the request is processed)
 						pButton->setState(WBUT_LOCK);
@@ -4432,10 +4770,11 @@ public:
 					{
 						if (mouseDown(MOUSE_RMB) && player != NetPlay.hostPlayer) // both buttons....
 						{
-							std::string msg = astringf(_("The host has kicked %s from the game!"), getPlayerName(player));
+							std::string msg = astringf(
+								_("The host has kicked %s from the game!"), getPlayerName(player));
 							sendRoomSystemMessage(msg.c_str());
 							kickPlayer(player, _("The host has kicked you from the game."), ERROR_KICKED);
-							resetReadyStatus(true);		//reset and send notification to all clients
+							resetReadyStatus(true); //reset and send notification to all clients
 						}
 					}
 				});
@@ -4484,10 +4823,12 @@ void WzMultiplayerOptionsTitleUI::openPlayerSlotSwapChooser(uint32_t playerIndex
 	ASSERT_OR_RETURN(, psParent != nullptr, "Could not find root form");
 	std::weak_ptr<WIDGET> psWeakParent(psParent->shared_from_this());
 
-	WIDGET *psInlineChooserOverlayRootForm = widgGetFromID(psInlineChooserOverlayScreen, MULTIOP_INLINE_OVERLAY_ROOT_FRM);
+	WIDGET* psInlineChooserOverlayRootForm = widgGetFromID(psInlineChooserOverlayScreen,
+	                                                       MULTIOP_INLINE_OVERLAY_ROOT_FRM);
 	ASSERT_OR_RETURN(, psInlineChooserOverlayRootForm != nullptr, "Could not find overlay root form");
-	std::shared_ptr<W_FULLSCREENOVERLAY_CLICKFORM> chooserParent = std::dynamic_pointer_cast<W_FULLSCREENOVERLAY_CLICKFORM>(psInlineChooserOverlayRootForm->shared_from_this());
-	auto psParentPlayersForm = (W_FORM *)widgGetFromID(psWScreen, MULTIOP_PLAYERS);
+	std::shared_ptr<W_FULLSCREENOVERLAY_CLICKFORM> chooserParent = std::dynamic_pointer_cast<
+		W_FULLSCREENOVERLAY_CLICKFORM>(psInlineChooserOverlayRootForm->shared_from_this());
+	auto psParentPlayersForm = (W_FORM*)widgGetFromID(psWScreen, MULTIOP_PLAYERS);
 	ASSERT_OR_RETURN(, psParentPlayersForm != nullptr, "Could not find players form?");
 	chooserParent->setCutoutWidget(psParentPlayersForm->shared_from_this()); // should be cleared on close
 	auto titleUI = std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this());
@@ -4495,16 +4836,19 @@ void WzMultiplayerOptionsTitleUI::openPlayerSlotSwapChooser(uint32_t playerIndex
 	int textHeight = iV_GetTextLineSize(font_regular);
 	int swapContextFormMargin = 1;
 	int swapContextFormPadding = 4;
-	int swapContextFormHeight = swapContextFormPadding + textHeight + 4 + MULTIOP_PLAYERHEIGHT + (swapContextFormPadding * 2);
+	int swapContextFormHeight = swapContextFormPadding + textHeight + 4 + MULTIOP_PLAYERHEIGHT + (swapContextFormPadding
+		* 2);
 	int additionalHeightForSwappingRow = swapContextFormMargin + swapContextFormHeight;
 
 	auto aiForm = std::make_shared<WIDGET>();
 	chooserParent->attach(aiForm);
 	aiForm->id = MULTIOP_AI_FORM;
-	aiForm->setCalcLayout([psWeakParent, additionalHeightForSwappingRow](WIDGET *psWidget) {
+	aiForm->setCalcLayout([psWeakParent, additionalHeightForSwappingRow](WIDGET* psWidget)
+	{
 		if (auto psParent = psWeakParent.lock())
 		{
-			psWidget->setGeometry(psParent->screenPosX() + MULTIOP_PLAYERSX, psParent->screenPosY() + MULTIOP_PLAYERSY, MULTIOP_PLAYERSW, MULTIOP_PLAYERSH + additionalHeightForSwappingRow);
+			psWidget->setGeometry(psParent->screenPosX() + MULTIOP_PLAYERSX, psParent->screenPosY() + MULTIOP_PLAYERSY,
+			                      MULTIOP_PLAYERSW, MULTIOP_PLAYERSH + additionalHeightForSwappingRow);
 		}
 	});
 	aiForm->setTransparentToClicks(true);
@@ -4512,7 +4856,8 @@ void WzMultiplayerOptionsTitleUI::openPlayerSlotSwapChooser(uint32_t playerIndex
 	WzPlayerIndexSwapPositionRowRactory rowFactory;
 	auto positionChooser = WzPositionChooser::make(playerIndex, rowFactory, titleUI);
 	aiForm->attach(positionChooser);
-	positionChooser->setCalcLayout([](WIDGET *psWidget) {
+	positionChooser->setCalcLayout([](WIDGET* psWidget)
+	{
 		psWidget->setGeometry(0, 0, MULTIOP_PLAYERSW, MULTIOP_PLAYERSH);
 	});
 
@@ -4520,26 +4865,34 @@ void WzMultiplayerOptionsTitleUI::openPlayerSlotSwapChooser(uint32_t playerIndex
 	std::weak_ptr<WzPositionChooser> psWeakPositionChooser(positionChooser);
 	auto swapContextForm = std::make_shared<IntFormAnimated>(false);
 	positionChooser->attach(swapContextForm);
-	swapContextForm->setCalcLayout([psWeakPositionChooser, swapContextFormHeight, swapContextFormMargin](WIDGET *psWidget) {
-		if (auto psStrongPositionChooser = psWeakPositionChooser.lock())
+	swapContextForm->setCalcLayout(
+		[psWeakPositionChooser, swapContextFormHeight, swapContextFormMargin](WIDGET* psWidget)
 		{
-			psWidget->setGeometry(0, psStrongPositionChooser->y() + psStrongPositionChooser->height() + swapContextFormMargin, psStrongPositionChooser->width(), swapContextFormHeight);
-		}
-	});
+			if (auto psStrongPositionChooser = psWeakPositionChooser.lock())
+			{
+				psWidget->setGeometry(
+					0, psStrongPositionChooser->y() + psStrongPositionChooser->height() + swapContextFormMargin,
+					psStrongPositionChooser->width(), swapContextFormHeight);
+			}
+		});
 
 	// Now create a dummy row for the row being swapped, and display beneath
 	auto playerRow = WzPlayerRow::make(playerIndex, titleUI);
-	playerRow->setCustomHitTest([](WIDGET *psWidget, int x, int y) -> bool { return false; }); // ensure clicks on this display-only row have no effect
+	playerRow->setCustomHitTest([](WIDGET* psWidget, int x, int y) -> bool { return false; });
+	// ensure clicks on this display-only row have no effect
 	swapContextForm->attach(playerRow);
-	playerRow->setCalcLayout([swapContextFormPadding, textHeight](WIDGET *psWidget) {
-		psWidget->setGeometry(PLAYERBOX_X0, swapContextFormPadding + textHeight + 4, MULTIOP_PLAYERWIDTH, MULTIOP_PLAYERHEIGHT);
+	playerRow->setCalcLayout([swapContextFormPadding, textHeight](WIDGET* psWidget)
+	{
+		psWidget->setGeometry(PLAYERBOX_X0, swapContextFormPadding + textHeight + 4, MULTIOP_PLAYERWIDTH,
+		                      MULTIOP_PLAYERHEIGHT);
 	});
 	auto playerRowLabel = std::make_shared<W_LABEL>();
 	playerRowLabel->setFont(font_regular, WZCOL_TEXT_BRIGHT);
 	const char* playerDescription = (NetPlay.players[playerIndex].isSpectator) ? _("For Spectator:") : _("For Player:");
 	playerRowLabel->setString(playerDescription);
 	swapContextForm->attach(playerRowLabel);
-	playerRowLabel->setCalcLayout([swapContextFormPadding, textHeight](WIDGET *psWidget) {
+	playerRowLabel->setCalcLayout([swapContextFormPadding, textHeight](WIDGET* psWidget)
+	{
 		psWidget->setGeometry(PLAYERBOX_X0, swapContextFormPadding, MULTIOP_PLAYERWIDTH, textHeight);
 	});
 	auto playerRowSwitchArrow = std::make_shared<W_LABEL>();
@@ -4547,20 +4900,26 @@ void WzMultiplayerOptionsTitleUI::openPlayerSlotSwapChooser(uint32_t playerIndex
 	playerRowSwitchArrow->setString("\u21C5"); // ⇅
 	playerRowSwitchArrow->setGeometry(0, 0, playerRowSwitchArrow->idealWidth(), playerRowSwitchArrow->idealHeight());
 	swapContextForm->attach(playerRowSwitchArrow);
-	playerRowSwitchArrow->setCalcLayout([swapContextFormPadding, textHeight](WIDGET *psWidget) {
+	playerRowSwitchArrow->setCalcLayout([swapContextFormPadding, textHeight](WIDGET* psWidget)
+	{
 		auto psParent = psWidget->parent();
 		ASSERT_OR_RETURN(, psParent != nullptr, "No parent?");
-		psWidget->setGeometry(psParent->width() - PLAYERBOX_X0 - psWidget->width(), swapContextFormPadding, psWidget->width(), textHeight);
+		psWidget->setGeometry(psParent->width() - PLAYERBOX_X0 - psWidget->width(), swapContextFormPadding,
+		                      psWidget->width(), textHeight);
 	});
 
 	// Add side text
-	W_LABEL *psSideTextLabel = addSideText(psInlineChooserOverlayScreen, MULTIOP_INLINE_OVERLAY_ROOT_FRM, FRONTEND_SIDETEXT2, MULTIOP_PLAYERSX - 3, MULTIOP_PLAYERSY - 15, _("Choose Player Slot"));
+	W_LABEL* psSideTextLabel = addSideText(psInlineChooserOverlayScreen, MULTIOP_INLINE_OVERLAY_ROOT_FRM,
+	                                       FRONTEND_SIDETEXT2, MULTIOP_PLAYERSX - 3, MULTIOP_PLAYERSY - 15,
+	                                       _("Choose Player Slot"));
 	if (psSideTextLabel)
 	{
-		psSideTextLabel->setCalcLayout([psWeakParent](WIDGET *psWidget) {
+		psSideTextLabel->setCalcLayout([psWeakParent](WIDGET* psWidget)
+		{
 			if (auto psParent = psWeakParent.lock())
 			{
-				psWidget->setGeometry(psParent->screenPosX() + MULTIOP_PLAYERSX - 3, psParent->screenPosY() + MULTIOP_PLAYERSY, MULTIOP_PLAYERSW, MULTIOP_PLAYERSH);
+				psWidget->setGeometry(psParent->screenPosX() + MULTIOP_PLAYERSX - 3,
+				                      psParent->screenPosY() + MULTIOP_PLAYERSY, MULTIOP_PLAYERSW, MULTIOP_PLAYERSH);
 			}
 		});
 	}
@@ -4570,8 +4929,10 @@ void WzMultiplayerOptionsTitleUI::openPlayerSlotSwapChooser(uint32_t playerIndex
 
 void WzMultiplayerOptionsTitleUI::closePlayerSlotSwapChooser()
 {
-	WIDGET *psInlineChooserOverlayRootForm = widgGetFromID(psInlineChooserOverlayScreen, MULTIOP_INLINE_OVERLAY_ROOT_FRM);
-	std::shared_ptr<W_FULLSCREENOVERLAY_CLICKFORM> chooserParent = std::dynamic_pointer_cast<W_FULLSCREENOVERLAY_CLICKFORM>(psInlineChooserOverlayRootForm->shared_from_this());
+	WIDGET* psInlineChooserOverlayRootForm = widgGetFromID(psInlineChooserOverlayScreen,
+	                                                       MULTIOP_INLINE_OVERLAY_ROOT_FRM);
+	std::shared_ptr<W_FULLSCREENOVERLAY_CLICKFORM> chooserParent = std::dynamic_pointer_cast<
+		W_FULLSCREENOVERLAY_CLICKFORM>(psInlineChooserOverlayRootForm->shared_from_this());
 	if (chooserParent)
 	{
 		chooserParent->setCutoutWidget(nullptr);
@@ -4610,9 +4971,10 @@ void WzMultiplayerOptionsTitleUI::addPlayerBox(bool players)
 	}
 
 	// draw player window
-	WIDGET *widgetParent = widgGetFromID(psWScreen, FRONTEND_BACKDROP);
+	WIDGET* widgetParent = widgGetFromID(psWScreen, FRONTEND_BACKDROP);
 
-	std::shared_ptr<IntFormAnimated> playersForm = std::dynamic_pointer_cast<IntFormAnimated>(widgFormGetFromID(psWScreen->psForm, MULTIOP_PLAYERS));
+	std::shared_ptr<IntFormAnimated> playersForm = std::dynamic_pointer_cast<IntFormAnimated>(
+		widgFormGetFromID(psWScreen->psForm, MULTIOP_PLAYERS));
 	if (!playersForm)
 	{
 		widgDelete(psWScreen, MULTIOP_PLAYERS);
@@ -4620,11 +4982,11 @@ void WzMultiplayerOptionsTitleUI::addPlayerBox(bool players)
 		widgetParent->attach(playersForm);
 		playersForm->id = MULTIOP_PLAYERS;
 		playersForm->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-			psWidget->setGeometry(MULTIOP_PLAYERSX, MULTIOP_PLAYERSY, MULTIOP_PLAYERSW, MULTIOP_PLAYERSH);
-		}));
+				psWidget->setGeometry(MULTIOP_PLAYERSX, MULTIOP_PLAYERSY, MULTIOP_PLAYERSW, MULTIOP_PLAYERSH);
+				}));
 	}
 
-	widgDelete(psWScreen, FRONTEND_SIDETEXT2);	// del text
+	widgDelete(psWScreen, FRONTEND_SIDETEXT2); // del text
 	W_LABEL* pPlayersLabel = addSideText(FRONTEND_SIDETEXT2, MULTIOP_PLAYERSX - 3, MULTIOP_PLAYERSY, _("PLAYERS"));
 	pPlayersLabel->hide(); // hide for now
 
@@ -4634,18 +4996,20 @@ void WzMultiplayerOptionsTitleUI::addPlayerBox(bool players)
 
 		// Add "players" / "spectators" tab buttons (if in multiplay mode)
 		bool isMultiplayMode = NetPlay.bComms && (NetPlay.isHost || ingame.side == InGameSide::MULTIPLAYER_CLIENT);
-		std::shared_ptr<WzPlayerBoxTabs> playersTabButtons = std::dynamic_pointer_cast<WzPlayerBoxTabs>(widgFormGetFromID(psWScreen->psForm, MULTIOP_PLAYERS_TABS));
+		std::shared_ptr<WzPlayerBoxTabs> playersTabButtons = std::dynamic_pointer_cast<WzPlayerBoxTabs>(
+			widgFormGetFromID(psWScreen->psForm, MULTIOP_PLAYERS_TABS));
 		if (isMultiplayMode && !playersTabButtons)
 		{
 			playersTabButtons = WzPlayerBoxTabs::make(NetPlay.isHost, titleUI);
 			playersTabButtons->id = MULTIOP_PLAYERS_TABS;
 			playersForm->attach(playersTabButtons);
 			playersTabButtons->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-				psWidget->setGeometry(PLAYERBOX_X0 - 1, 0, MULTIOP_PLAYERSW - PLAYERBOX_X0, MULTIOP_PLAYERS_TABS_H);
-			}));
+					psWidget->setGeometry(PLAYERBOX_X0 - 1, 0, MULTIOP_PLAYERSW - PLAYERBOX_X0, MULTIOP_PLAYERS_TABS_H);
+					}));
 		}
 
-		ASSERT(static_cast<size_t>(MAX_CONNECTED_PLAYERS) <= NetPlay.players.size(), "Insufficient array size: %zu versus %zu", NetPlay.players.size(), (size_t)MAX_CONNECTED_PLAYERS);
+		ASSERT(static_cast<size_t>(MAX_CONNECTED_PLAYERS) <= NetPlay.players.size(),
+		       "Insufficient array size: %zu versus %zu", NetPlay.players.size(), (size_t)MAX_CONNECTED_PLAYERS);
 		uint32_t numSlotsDisplayed = 0;
 		if (playerRows.empty())
 		{
@@ -4678,34 +5042,38 @@ void WzMultiplayerOptionsTitleUI::addPlayerBox(bool players)
 
 			switch (playerDisplayView)
 			{
-				case PlayerDisplayView::Players:
-					if (isSpectatorOnlySlot(i))
-					{
-						// should not be visible
-						playerRow->hide();
-						continue; // skip
-					}
-					break;
-				case PlayerDisplayView::Spectators:
-					if (!isSpectatorOnlySlot(i))
-					{
-						// should not be visible
-						playerRow->hide();
-						continue; // skip
-					}
-					break;
+			case PlayerDisplayView::Players:
+				if (isSpectatorOnlySlot(i))
+				{
+					// should not be visible
+					playerRow->hide();
+					continue; // skip
+				}
+				break;
+			case PlayerDisplayView::Spectators:
+				if (!isSpectatorOnlySlot(i))
+				{
+					// should not be visible
+					playerRow->hide();
+					continue; // skip
+				}
+				break;
 			}
 
 			if (isSpectatorOnlySlot(i)
-				&& ((i >= NetPlay.players.size()) || !(NetPlay.players[i].isSpectator && NetPlay.players[i].ai == AI_OPEN)))
+				&& ((i >= NetPlay.players.size()) || !(NetPlay.players[i].isSpectator && NetPlay.players[i].ai ==
+					AI_OPEN)))
 			{
 				// the only slots displayable beyond game.maxPlayers are spectator slots
 				playerRow->hide();
 				continue;
 			}
 
-			uint32_t playerRowPosition = (playerDisplayView == PlayerDisplayView::Players) ? NetPlay.players[i].position : numSlotsDisplayed;
-			playerRow->setGeometry(PLAYERBOX_X0, playerBoxHeight(playerRowPosition), MULTIOP_PLAYERWIDTH, MULTIOP_PLAYERHEIGHT);
+			uint32_t playerRowPosition = (playerDisplayView == PlayerDisplayView::Players)
+				                             ? NetPlay.players[i].position
+				                             : numSlotsDisplayed;
+			playerRow->setGeometry(PLAYERBOX_X0, playerBoxHeight(playerRowPosition), MULTIOP_PLAYERWIDTH,
+			                       MULTIOP_PLAYERHEIGHT);
 			playerRow->show();
 			playerRow->updateState();
 			// make sure it's attached to the current player form
@@ -4717,7 +5085,8 @@ void WzMultiplayerOptionsTitleUI::addPlayerBox(bool players)
 			numSlotsDisplayed++;
 		}
 
-		std::shared_ptr<W_BUTTON> spectatorAddButton = std::dynamic_pointer_cast<W_BUTTON>(widgFormGetFromID(psWScreen->psForm, MULTIOP_ADD_SPECTATOR_SLOTS));
+		std::shared_ptr<W_BUTTON> spectatorAddButton = std::dynamic_pointer_cast<W_BUTTON>(
+			widgFormGetFromID(psWScreen->psForm, MULTIOP_ADD_SPECTATOR_SLOTS));
 		if (!spectatorAddButton)
 		{
 			// Create a "+ Spectator Slots" button
@@ -4732,20 +5101,23 @@ void WzMultiplayerOptionsTitleUI::addPlayerBox(bool players)
 			sAddSpecSlotInit.pTip = _("Add spectator slot");
 			sAddSpecSlotInit.pDisplay = displaySpectatorAddButton;
 			sAddSpecSlotInit.UserData = 0;
-			W_BUTTON *pButton = widgAddButton(psWScreen, &sAddSpecSlotInit);
+			W_BUTTON* pButton = widgAddButton(psWScreen, &sAddSpecSlotInit);
 			if (pButton)
 			{
-				auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
-				auto onClickHandler = [psWeakTitleUI](W_BUTTON& clickedButton) {
+				auto psWeakTitleUI = std::weak_ptr<WzMultiplayerOptionsTitleUI>(
+					std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this()));
+				auto onClickHandler = [psWeakTitleUI](W_BUTTON& clickedButton)
+				{
 					auto pStrongPtr = psWeakTitleUI.lock();
 					ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
-					widgScheduleTask([psWeakTitleUI]{
+					widgScheduleTask([psWeakTitleUI]
+					{
 						auto pStrongPtr = psWeakTitleUI.lock();
 						ASSERT_OR_RETURN(, pStrongPtr.operator bool(), "WzMultiplayerOptionsTitleUI no longer exists");
 						if (NETopenNewSpectatorSlot())
 						{
 							pStrongPtr->addPlayerBox(true);
-//							resetReadyStatus(false);
+							//							resetReadyStatus(false);
 						}
 					});
 				};
@@ -4755,7 +5127,8 @@ void WzMultiplayerOptionsTitleUI::addPlayerBox(bool players)
 		}
 
 		ASSERT_OR_RETURN(, spectatorAddButton != nullptr, "Unable to create or find button");
-		if ((playerDisplayView == PlayerDisplayView::Spectators) && (numSlotsDisplayed < (MAX_PLAYERS_IN_GUI)) && spectatorSlotsSupported() && NetPlay.isHost)
+		if ((playerDisplayView == PlayerDisplayView::Spectators) && (numSlotsDisplayed < (MAX_PLAYERS_IN_GUI)) &&
+			spectatorSlotsSupported() && NetPlay.isHost)
 		{
 			// spectator add button should be visible
 			spectatorAddButton->show();
@@ -4772,17 +5145,18 @@ void WzMultiplayerOptionsTitleUI::addPlayerBox(bool players)
  */
 static void SendFireUp()
 {
-	uint32_t randomSeed = rand();  // Pick a random random seed for the synchronised random number generator.
+	uint32_t randomSeed = rand(); // Pick a random random seed for the synchronised random number generator.
 
 	NETbeginEncode(NETbroadcastQueue(), NET_FIREUP);
 	NETuint32_t(&randomSeed);
 	NETend();
 	printSearchPath();
-	gameSRand(randomSeed);  // Set the seed for the synchronised random number generator. The clients will use the same seed.
+	gameSRand(randomSeed);
+	// Set the seed for the synchronised random number generator. The clients will use the same seed.
 }
 
 // host kicks a player from a game.
-void kickPlayer(uint32_t player_id, const char *reason, LOBBY_ERROR_TYPES type)
+void kickPlayer(uint32_t player_id, const char* reason, LOBBY_ERROR_TYPES type)
 {
 	ASSERT_HOST_ONLY(return);
 
@@ -4802,7 +5176,7 @@ void kickPlayer(uint32_t player_id, const char *reason, LOBBY_ERROR_TYPES type)
 	NETplayerKicked(player_id);
 }
 
-void displayKickReasonPopup(const std::string &reason)
+void displayKickReasonPopup(const std::string& reason)
 {
 	WZ_Notification notification;
 	notification.duration = GAME_TICKS_PER_SEC * 10;
@@ -4813,7 +5187,7 @@ void displayKickReasonPopup(const std::string &reason)
 	addNotification(notification, WZ_Notification_Trigger(GAME_TICKS_PER_SEC * 1));
 }
 
-RoomMessage buildMessage(int32_t sender, const char *text)
+RoomMessage buildMessage(int32_t sender, const char* text)
 {
 	switch (sender)
 	{
@@ -4842,7 +5216,7 @@ void ChatBoxWidget::initialize()
 	messages->setPadding({3, 4, 3, 4});
 	messages->setItemSpacing(1);
 
-	handleConsoleMessage = std::make_shared<CONSOLE_MESSAGE_LISTENER>([&](ConsoleMessage const &message) -> void
+	handleConsoleMessage = std::make_shared<CONSOLE_MESSAGE_LISTENER>([&](ConsoleMessage const& message) -> void
 	{
 		addMessage(buildMessage(message.sender, message.text));
 	});
@@ -4864,10 +5238,10 @@ ChatBoxWidget::~ChatBoxWidget()
 }
 
 
-class ChatBoxPlayerNameWidget: public WIDGET
+class ChatBoxPlayerNameWidget : public WIDGET
 {
 public:
-	ChatBoxPlayerNameWidget(std::shared_ptr<PlayerReference> const &player):
+	ChatBoxPlayerNameWidget(std::shared_ptr<PlayerReference> const& player):
 		WIDGET(WIDG_UNSPECIFIED_TYPE),
 		player(player),
 		font(font_regular),
@@ -4894,7 +5268,7 @@ public:
 		cachedText->renderOutlined(textX, textY, WZCOL_WHITE, {0, 0, 0, 128});
 	}
 
-	void run(W_CONTEXT *) override
+	void run(W_CONTEXT*) override
 	{
 		if (layoutName != (*player)->name)
 		{
@@ -4919,7 +5293,7 @@ private:
 	}
 };
 
-void ChatBoxWidget::addMessage(RoomMessage const &message)
+void ChatBoxWidget::addMessage(RoomMessage const& message)
 {
 	ChatBoxWidget::persistentMessageLocalStorage.push_back(message);
 	displayMessage(message);
@@ -4936,16 +5310,18 @@ void ChatBoxWidget::initializeMessages(bool preserveOldChat)
 {
 	if (preserveOldChat)
 	{
-		for (auto message: ChatBoxWidget::persistentMessageLocalStorage)
+		for (auto message : ChatBoxWidget::persistentMessageLocalStorage)
 		{
 			displayMessage(message);
 		}
-	} else {
+	}
+	else
+	{
 		ChatBoxWidget::persistentMessageLocalStorage.clear();
 	}
 }
 
-void ChatBoxWidget::displayMessage(RoomMessage const &message)
+void ChatBoxWidget::displayMessage(RoomMessage const& message)
 {
 	auto paragraph = std::make_shared<Paragraph>();
 	paragraph->setGeometry(0, 0, messages->calculateListViewWidth(), 0);
@@ -4958,22 +5334,23 @@ void ChatBoxWidget::displayMessage(RoomMessage const &message)
 		break;
 
 	case RoomMessagePlayer:
-	{
-		ASSERT(message.sender.get() != nullptr, "Null message sender?");
-		paragraph->setFont(font_small);
-		paragraph->setFontColour({0xc0, 0xc0, 0xc0, 0xff});
-		paragraph->addText(formatLocalDateTime("%H:%M", message.time));
+		{
+			ASSERT(message.sender.get() != nullptr, "Null message sender?");
+			paragraph->setFont(font_small);
+			paragraph->setFontColour({0xc0, 0xc0, 0xc0, 0xff});
+			paragraph->addText(formatLocalDateTime("%H:%M", message.time));
 
-		paragraph->addWidget(std::make_shared<ChatBoxPlayerNameWidget>(message.sender), iV_GetTextAboveBase(font_regular));
+			paragraph->addWidget(std::make_shared<ChatBoxPlayerNameWidget>(message.sender),
+			                     iV_GetTextAboveBase(font_regular));
 
-		paragraph->setFont(font_regular);
-		paragraph->setShadeColour({0, 0, 0, 0});
-		bool specSender = (*message.sender)->isSpectator && !message.sender->isHost();
-		paragraph->setFontColour((!specSender) ? WZCOL_WHITE : WZCOL_TEXT_MEDIUM);
-		paragraph->addText(astringf(" %s", message.text.c_str()));
+			paragraph->setFont(font_regular);
+			paragraph->setShadeColour({0, 0, 0, 0});
+			bool specSender = (*message.sender)->isSpectator && !message.sender->isHost();
+			paragraph->setFontColour((!specSender) ? WZCOL_WHITE : WZCOL_TEXT_MEDIUM);
+			paragraph->addText(astringf(" %s", message.text.c_str()));
 
-		break;
-	}
+			break;
+		}
 
 	case RoomMessageNotify:
 	default:
@@ -4983,7 +5360,8 @@ void ChatBoxWidget::displayMessage(RoomMessage const &message)
 	}
 
 	std::string msgText = message.text;
-	paragraph->addOnClickHandler([msgText](Paragraph& paragraph, WIDGET_KEY key) {
+	paragraph->addOnClickHandler([msgText](Paragraph& paragraph, WIDGET_KEY key)
+	{
 		// take advantage of the fact that this widget is the great-grand-child of the ChatBoxWidget
 		auto psParent = paragraph.parent();
 		ASSERT_OR_RETURN(, psParent != nullptr, "Expected parent?");
@@ -5004,22 +5382,27 @@ std::shared_ptr<WIDGET> ChatBoxWidget::createParagraphContextualMenuPopoverForm(
 {
 	// create all the buttons / option rows
 	std::weak_ptr<ChatBoxWidget> weakChatBoxWidget = std::dynamic_pointer_cast<ChatBoxWidget>(shared_from_this());
-	auto createOptionsButton = [weakChatBoxWidget](const WzString& text, const std::function<void (W_BUTTON& button)>& onClickFunc) -> std::shared_ptr<W_BUTTON> {
+	auto createOptionsButton = [weakChatBoxWidget](const WzString& text,
+	                                               const std::function<void (W_BUTTON& button)>& onClickFunc) ->
+	std::shared_ptr<W_BUTTON>
+	{
 		auto button = std::make_shared<W_BUTTON>();
 		button->setString(text);
 		button->FontID = font_regular;
 		button->displayFunction = PopoverMenuButtonDisplayFunc;
 		button->pUserData = new PopoverMenuButtonDisplayCache();
-		button->setOnDelete([](WIDGET *psWidget) {
+		button->setOnDelete([](WIDGET* psWidget)
+		{
 			assert(psWidget->pUserData != nullptr);
-			delete static_cast<PopoverMenuButtonDisplayCache *>(psWidget->pUserData);
+			delete static_cast<PopoverMenuButtonDisplayCache*>(psWidget->pUserData);
 			psWidget->pUserData = nullptr;
 		});
 		int minButtonWidthForText = iV_GetTextWidth(text.toUtf8().c_str(), button->FontID);
 		button->setGeometry(0, 0, minButtonWidthForText + MENU_BUTTONS_PADDING, iV_GetTextLineSize(button->FontID) + 4);
 
 		// On click, perform the designated onClickHandler and close the popover form / overlay
-		button->addOnClickHandler([weakChatBoxWidget, onClickFunc](W_BUTTON& button) {
+		button->addOnClickHandler([weakChatBoxWidget, onClickFunc](W_BUTTON& button)
+		{
 			if (auto chatBoxWidget = weakChatBoxWidget.lock())
 			{
 				widgRemoveOverlayScreen(chatBoxWidget->optionsOverlayScreen);
@@ -5031,7 +5414,8 @@ std::shared_ptr<WIDGET> ChatBoxWidget::createParagraphContextualMenuPopoverForm(
 	};
 
 	std::vector<std::shared_ptr<WIDGET>> buttons;
-	buttons.push_back(createOptionsButton(_("Copy Text to Clipboard"), [weakChatBoxWidget, textToCopy](W_BUTTON& button){
+	buttons.push_back(createOptionsButton(_("Copy Text to Clipboard"), [weakChatBoxWidget, textToCopy](W_BUTTON& button)
+	{
 		if (auto chatBoxWidget = weakChatBoxWidget.lock())
 		{
 			wzSetClipboardText(textToCopy.c_str());
@@ -5039,19 +5423,24 @@ std::shared_ptr<WIDGET> ChatBoxWidget::createParagraphContextualMenuPopoverForm(
 	}));
 
 	// determine required height for all buttons
-	int totalButtonHeight = std::accumulate(buttons.begin(), buttons.end(), 0, [](int a, const std::shared_ptr<WIDGET>& b) {
-		return a + b->height();
-	});
-	int maxButtonWidth = (*(std::max_element(buttons.begin(), buttons.end(), [](const std::shared_ptr<WIDGET>& a, const std::shared_ptr<WIDGET>& b){
-		return a->width() < b->width();
-	})))->width();
+	int totalButtonHeight = std::accumulate(buttons.begin(), buttons.end(), 0,
+	                                        [](int a, const std::shared_ptr<WIDGET>& b)
+	                                        {
+		                                        return a + b->height();
+	                                        });
+	int maxButtonWidth = (*(std::max_element(buttons.begin(), buttons.end(),
+	                                         [](const std::shared_ptr<WIDGET>& a, const std::shared_ptr<WIDGET>& b)
+	                                         {
+		                                         return a->width() < b->width();
+	                                         })))->width();
 
 	auto itemsList = ScrollableListWidget::make();
 	itemsList->setBackgroundColor(WZCOL_MENU_BACKGROUND);
 	itemsList->setPadding({3, 4, 3, 4});
 	const int itemSpacing = 4;
 	itemsList->setItemSpacing(itemSpacing);
-	itemsList->setGeometry(itemsList->x(), itemsList->y(), maxButtonWidth + 8, totalButtonHeight + (static_cast<int>(buttons.size()) * itemSpacing) + 6);
+	itemsList->setGeometry(itemsList->x(), itemsList->y(), maxButtonWidth + 8,
+	                       totalButtonHeight + (static_cast<int>(buttons.size()) * itemSpacing) + 6);
 	for (auto& button : buttons)
 	{
 		itemsList->addItem(button);
@@ -5071,7 +5460,8 @@ void ChatBoxWidget::displayParagraphContextualMenu(const std::string& textToCopy
 	newRootFrm->displayFunction = displayChildDropShadows;
 	std::weak_ptr<W_SCREEN> psWeakOptionsOverlayScreen(optionsOverlayScreen);
 	std::weak_ptr<ChatBoxWidget> psWeakChatBoxWidget = std::dynamic_pointer_cast<ChatBoxWidget>(shared_from_this());
-	newRootFrm->onClickedFunc = [psWeakOptionsOverlayScreen, psWeakChatBoxWidget]() {
+	newRootFrm->onClickedFunc = [psWeakOptionsOverlayScreen, psWeakChatBoxWidget]()
+	{
 		if (auto psOverlayScreen = psWeakOptionsOverlayScreen.lock())
 		{
 			widgRemoveOverlayScreen(psOverlayScreen);
@@ -5109,15 +5499,16 @@ static void addChatBox(bool preserveOldChat)
 		return;
 	}
 
-	WIDGET *parent = widgGetFromID(psWScreen, FRONTEND_BACKDROP);
+	WIDGET* parent = widgGetFromID(psWScreen, FRONTEND_BACKDROP);
 	auto chatBox = ChatBoxWidget::make();
 	parent->attach(chatBox);
 	chatBox->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-		if (auto parent = psWidget->parent())
-		{
-			psWidget->setGeometry(MULTIOP_CHATBOXX, MULTIOP_CHATBOXY, MULTIOP_CHATBOXW, parent->height() - MULTIOP_CHATBOXY);
-		}
-	}));
+			if (auto parent = psWidget->parent())
+			{
+			psWidget->setGeometry(MULTIOP_CHATBOXX, MULTIOP_CHATBOXY, MULTIOP_CHATBOXW, parent->height() -
+				MULTIOP_CHATBOXY);
+			}
+			}));
 	chatBox->initializeMessages(preserveOldChat);
 
 	addSideText(FRONTEND_SIDETEXT4, MULTIOP_CHATBOXX - 3, MULTIOP_CHATBOXY, _("CHAT"));
@@ -5142,10 +5533,10 @@ static void disableMultiButs()
 		// edit boxes
 		widgSetButtonState(psWScreen, MULTIOP_GNAME, WEDBS_DISABLE);
 
-		((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_GAMETYPE))->disable();  // Scavengers.
-		((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_BASETYPE))->disable();  // camapign subtype.
-		((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_POWER))->disable();  // pow levels
-		((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_ALLIANCES))->disable();
+		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_GAMETYPE))->disable(); // Scavengers.
+		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_BASETYPE))->disable(); // camapign subtype.
+		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_POWER))->disable(); // pow levels
+		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_ALLIANCES))->disable();
 	}
 }
 
@@ -5156,7 +5547,8 @@ static void stopJoining(std::shared_ptr<WzTitleUI> parent)
 
 	reloadMPConfig(); // reload own settings
 	cancelOrDismissNotificationsWithTag(VOTE_TAG);
-	cancelOrDismissNotificationIfTag([](const std::string& tag) {
+	cancelOrDismissNotificationIfTag([](const std::string& tag)
+	{
 		return (tag.rfind(SLOTTYPE_TAG_PREFIX, 0) == 0);
 	});
 
@@ -5170,21 +5562,21 @@ static void stopJoining(std::shared_ptr<WzTitleUI> parent)
 		debug(LOG_NET, "Host is quitting game...");
 		NETbeginEncode(NETbroadcastQueue(), NET_HOST_DROPPED);
 		NETend();
-		sendLeavingMsg();								// say goodbye
-		NETclose();										// quit running game.
+		sendLeavingMsg(); // say goodbye
+		NETclose(); // quit running game.
 		ActivityManager::instance().hostLobbyQuit();
-		changeTitleUI(wzTitleUICurrent);				// refresh options screen.
+		changeTitleUI(wzTitleUICurrent); // refresh options screen.
 		ingame.localJoiningInProgress = false;
 		return;
 	}
-	else if (ingame.localJoiningInProgress)				// cancel a joined game.
+	else if (ingame.localJoiningInProgress) // cancel a joined game.
 	{
 		debug(LOG_NET, "Canceling game...");
-		sendLeavingMsg();								// say goodbye
-		NETclose();										// quit running game.
+		sendLeavingMsg(); // say goodbye
+		NETclose(); // quit running game.
 
 		NET_clearDownloadingWZFiles();
-		ingame.localJoiningInProgress = false;			// reset local flags
+		ingame.localJoiningInProgress = false; // reset local flags
 		ingame.localOptionsReceived = false;
 
 		// joining and host was transferred.
@@ -5254,7 +5646,7 @@ static unsigned int repositionHumanSlots()
 	return pos;
 }
 
-static void updateMapWidgets(LEVEL_DATASET *mapData)
+static void updateMapWidgets(LEVEL_DATASET* mapData)
 {
 	sstrcpy(game.map, mapData->pName);
 	game.hash = levGetFileHash(mapData);
@@ -5269,10 +5661,11 @@ static void updateMapWidgets(LEVEL_DATASET *mapData)
 	{
 		widgHide(psWScreen, MULTIOP_MAP_MOD);
 	}
-	(game.isRandom? widgReveal : widgHide)(psWScreen, MULTIOP_MAP_RANDOM);
+	(game.isRandom ? widgReveal : widgHide)(psWScreen, MULTIOP_MAP_RANDOM);
 
 	WzString name = formatGameName(game.map);
-	widgSetString(psWScreen, MULTIOP_MAP + 1, name.toUtf8().c_str()); //What a horrible, horrible way to do this! FIX ME! (See addBlueForm)
+	widgSetString(psWScreen, MULTIOP_MAP + 1, name.toUtf8().c_str());
+	//What a horrible, horrible way to do this! FIX ME! (See addBlueForm)
 }
 
 static void loadMapChallengeSettings(WzConfig& ini)
@@ -5290,7 +5683,8 @@ static void loadMapChallengeSettings(WzConfig& ini)
 	}
 	ini.endGroup();
 
-	const bool bIsAutoHostOrAutoGame = getHostLaunch() == HostLaunch::Skirmish || getHostLaunch() == HostLaunch::Autohost;
+	const bool bIsAutoHostOrAutoGame = getHostLaunch() == HostLaunch::Skirmish || getHostLaunch() ==
+		HostLaunch::Autohost;
 	if (challengeActive || bIsAutoHostOrAutoGame)
 	{
 		ini.beginGroup("challenge");
@@ -5315,7 +5709,9 @@ static void loadMapChallengeSettings(WzConfig& ini)
 			{
 				// always use the autohost config - if it specifies an invalid number of players, this is a bug in the config
 				// however, maxPlayers must still be limited to MAX_PLAYERS
-				ASSERT(configuredMaxPlayers < MAX_PLAYERS, "Configured maxPlayers (%" PRIu8 ") exceeds MAX_PLAYERS (%d)", configuredMaxPlayers, (int)MAX_PLAYERS);
+				ASSERT(configuredMaxPlayers < MAX_PLAYERS,
+				       "Configured maxPlayers (%" PRIu8 ") exceeds MAX_PLAYERS (%d)", configuredMaxPlayers,
+				       (int)MAX_PLAYERS);
 				configuredMaxPlayers = std::min<uint8_t>(configuredMaxPlayers, MAX_PLAYERS);
 				game.maxPlayers = std::max((uint8_t)1u, configuredMaxPlayers);
 			}
@@ -5326,7 +5722,7 @@ static void loadMapChallengeSettings(WzConfig& ini)
 			game.scavengers = ini.value("scavengers", game.scavengers).toInt();
 			game.alliance = ini.value("alliances", ALLIANCES_TEAMS).toInt();
 			game.power = ini.value("powerLevel", game.power).toInt();
-			game.base = ini.value("bases", game.base + 1).toInt() - 1;		// count from 1 like the humans do
+			game.base = ini.value("bases", game.base + 1).toInt() - 1; // count from 1 like the humans do
 			sstrcpy(game.name, ini.value("name").toWzString().toUtf8().c_str());
 			game.techLevel = ini.value("techLevel", game.techLevel).toInt();
 
@@ -5335,7 +5731,8 @@ static void loadMapChallengeSettings(WzConfig& ini)
 
 			// Allow configuring of open spectator slots (for MP games)
 			unsigned int openSpectatorSlots_uint = ini.value("openSpectatorSlots", 0).toUInt();
-			defaultOpenSpectatorSlots = static_cast<uint16_t>(std::min<unsigned int>(openSpectatorSlots_uint, MAX_SPECTATOR_SLOTS));
+			defaultOpenSpectatorSlots = static_cast<uint16_t>(std::min<unsigned int>(
+				openSpectatorSlots_uint, MAX_SPECTATOR_SLOTS));
 
 			// DEPRECATED: This seems to have been odd workaround for not having the locked group handled.
 			//             Keeping it around in case mods use it.
@@ -5365,7 +5762,8 @@ static void resolveAIForPlayer(int player, WzString& aiValue)
 	}
 
 	// strip given path down to filename
-	WzString filename = WzString::fromUtf8(WzPathInfo::fromPlatformIndependentPath(aiValue.toUtf8()).fileName().c_str());
+	WzString filename =
+		WzString::fromUtf8(WzPathInfo::fromPlatformIndependentPath(aiValue.toUtf8()).fileName().c_str());
 
 	// look up AI value in vector of known skirmish AIs
 	for (unsigned ai = 0; ai < aidata.size(); ++ai)
@@ -5412,7 +5810,7 @@ static void loadMapPlayerSettings(WzConfig& ini)
 			sstrcpy(NetPlay.players[i].name, getAIName(i));
 		}
 
-		NetPlay.players[i].position = MAX_PLAYERS;  // Invalid value, fix later.
+		NetPlay.players[i].position = MAX_PLAYERS; // Invalid value, fix later.
 		if (ini.contains("position"))
 		{
 			NetPlay.players[i].position = std::min(std::max(ini.value("position").toInt(), 0), MAX_PLAYERS);
@@ -5451,7 +5849,9 @@ static void loadMapPlayerSettings(WzConfig& ini)
 			NetPlay.players[i].isSpectator = ini.value("spectator", false).toBool();
 			if (NetPlay.players[i].isSpectator)
 			{
-				ASSERT(!ini.contains("ai"), "Player %d is set to be a spectator, but also has the \"ai\" key specified - this is unsupported", i);
+				ASSERT(!ini.contains("ai"),
+				       "Player %d is set to be a spectator, but also has the \"ai\" key specified - this is unsupported",
+				       i);
 				NetPlay.players[i].ai = AI_OPEN;
 			}
 		}
@@ -5502,7 +5902,8 @@ static int playersPerTeam()
 
 static void swapPlayerColours(uint32_t player1, uint32_t player2)
 {
-	ASSERT_OR_RETURN(, player1 < MAX_PLAYERS && player2 < MAX_PLAYERS, "player1 (%" PRIu32 ") & player2 (%" PRIu32 ") must be < MAX_PLAYERS", player1, player2);
+	ASSERT_OR_RETURN(, player1 < MAX_PLAYERS && player2 < MAX_PLAYERS,
+	                   "player1 (%" PRIu32 ") & player2 (%" PRIu32 ") must be < MAX_PLAYERS", player1, player2);
 	auto player1Colour = getPlayerColour(player1);
 	setPlayerColour(player1, getPlayerColour(player2));
 	setPlayerColour(player2, player1Colour);
@@ -5513,7 +5914,7 @@ static void swapPlayerColours(uint32_t player1, uint32_t player2)
  */
 static void resetPlayerConfiguration(const bool bShouldResetLocal = false)
 {
-	auto selectedPlayerPosition = bShouldResetLocal? 0: NetPlay.players[selectedPlayer].position;
+	auto selectedPlayerPosition = bShouldResetLocal ? 0 : NetPlay.players[selectedPlayer].position;
 	for (unsigned playerIndex = 0; playerIndex < MAX_PLAYERS_IN_GUI; playerIndex++)
 	{
 		setPlayerColour(playerIndex, playerIndex);
@@ -5529,7 +5930,7 @@ static void resetPlayerConfiguration(const bool bShouldResetLocal = false)
 
 		if (NetPlay.bComms)
 		{
-			NetPlay.players[playerIndex].difficulty =  AIDifficulty::DISABLED;
+			NetPlay.players[playerIndex].difficulty = AIDifficulty::DISABLED;
 			NetPlay.players[playerIndex].ai = AI_OPEN;
 			NetPlay.players[playerIndex].name[0] = '\0';
 			if (playerIndex == PLAYER_FEATURE)
@@ -5547,7 +5948,8 @@ static void resetPlayerConfiguration(const bool bShouldResetLocal = false)
 		}
 	}
 
-	if (!bShouldResetLocal && selectedPlayerPosition < game.maxPlayers && selectedPlayer != selectedPlayerPosition) {
+	if (!bShouldResetLocal && selectedPlayerPosition < game.maxPlayers && selectedPlayer != selectedPlayerPosition)
+	{
 		std::swap(NetPlay.players[selectedPlayer].position, NetPlay.players[selectedPlayerPosition].position);
 	}
 
@@ -5575,7 +5977,9 @@ static void loadMapChallengeAndPlayerSettings(bool forceLoadPlayers = false)
 	LEVEL_DATASET* psLevel = levFindDataSet(game.map, &game.hash);
 
 	ASSERT_OR_RETURN(, psLevel, "No level found for %s", game.map);
-	ASSERT_OR_RETURN(, psLevel->game >= 0 && psLevel->game < LEVEL_MAXFILES, "Invalid psLevel->game: %" PRIi16 " - may be a corrupt level load (%s; hash: %s)", psLevel->game, game.map, game.hash.toString().c_str());
+	ASSERT_OR_RETURN(, psLevel->game >= 0 && psLevel->game < LEVEL_MAXFILES,
+	                   "Invalid psLevel->game: %" PRIi16 " - may be a corrupt level load (%s; hash: %s)", psLevel->game,
+	                   game.map, game.hash.toString().c_str());
 	sstrcpy(aFileName, psLevel->apDataFiles[psLevel->game]);
 	aFileName[std::max<size_t>(strlen(aFileName), 4) - 4] = '\0';
 	sstrcat(aFileName, ".json");
@@ -5602,7 +6006,8 @@ static void loadMapChallengeAndPlayerSettings(bool forceLoadPlayers = false)
 		}
 
 		/* Just reset the players if config is not found and host is not started yet */
-		if (!bIsOnline) {
+		if (!bIsOnline)
+		{
 			resetPlayerConfiguration();
 		}
 
@@ -5619,7 +6024,7 @@ static void loadMapChallengeAndPlayerSettings(bool forceLoadPlayers = false)
 	}
 }
 
-static void randomizeLimit(const char *name)
+static void randomizeLimit(const char* name)
 {
 	int stat = getStructStatFromName(name);
 	if (rand() % 2 == 0)
@@ -5665,7 +6070,7 @@ static void randomizeOptions()
 		while (levels.empty()); // restart when there are no maps for a random number of players
 
 		int pickedLevel = rand() % levels.size();
-		LEVEL_DATASET *mapData = levels[pickedLevel];
+		LEVEL_DATASET* mapData = levels[pickedLevel];
 
 		updateMapWidgets(mapData);
 		loadMapPreview(false);
@@ -5712,7 +6117,7 @@ static void randomizeOptions()
 		closeLoadingScreen();
 	}
 	resetLimits();
-	for (int i = 0; i < ARRAY_SIZE(limitIcons) - 1; ++i)	// skip last item, MPFLAGS_FORCELIMITS
+	for (int i = 0; i < ARRAY_SIZE(limitIcons) - 1; ++i) // skip last item, MPFLAGS_FORCELIMITS
 	{
 		randomizeLimit(limitIcons[i].stat);
 	}
@@ -5733,28 +6138,28 @@ static void randomizeOptions()
 	if (!locked.scavengers && game.mapHasScavengers)
 	{
 		game.scavengers = rand() % 3;
-		((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_GAMETYPE))->choose(game.scavengers);
+		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_GAMETYPE))->choose(game.scavengers);
 	}
 
 	if (!locked.alliances)
 	{
 		game.alliance = rand() % 4;
-		((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_ALLIANCES))->choose(game.alliance);
+		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_ALLIANCES))->choose(game.alliance);
 	}
 	if (!locked.power)
 	{
 		game.power = rand() % 3;
-		((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_POWER))->choose(game.power);
+		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_POWER))->choose(game.power);
 	}
 	if (!locked.bases)
 	{
 		game.base = rand() % 3;
-		((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_BASETYPE))->choose(game.base);
+		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_BASETYPE))->choose(game.base);
 	}
 	if (NetPlay.isHost)
 	{
 		game.techLevel = rand() % 4;
-		((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_TECHLEVEL))->choose(game.techLevel);
+		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_TECHLEVEL))->choose(game.techLevel);
 
 		resetReadyStatus(true);
 	}
@@ -5773,7 +6178,8 @@ bool WzMultiplayerOptionsTitleUI::startHost()
 	}
 	multiSyncResetAllChallenges();
 
-	const bool bIsAutoHostOrAutoGame = getHostLaunch() == HostLaunch::Skirmish || getHostLaunch() == HostLaunch::Autohost;
+	const bool bIsAutoHostOrAutoGame = getHostLaunch() == HostLaunch::Skirmish || getHostLaunch() ==
+		HostLaunch::Autohost;
 	if (!hostCampaign((char*)game.name, (char*)sPlayer, spectatorHost, bIsAutoHostOrAutoGame))
 	{
 		displayRoomSystemMessage(_("Sorry! Failed to host the game."));
@@ -5794,7 +6200,8 @@ bool WzMultiplayerOptionsTitleUI::startHost()
 		auto desiredDefaultOpenSpectatorSlots = std::min<uint16_t>(defaultOpenSpectatorSlots, MAX_SPECTATOR_SLOTS);
 		if (currentSpectatorSlotInfo.availableSpectatorSlots() < desiredDefaultOpenSpectatorSlots)
 		{
-			for (uint16_t addedSpecSlots = currentSpectatorSlotInfo.availableSpectatorSlots(); addedSpecSlots < desiredDefaultOpenSpectatorSlots; ++addedSpecSlots)
+			for (uint16_t addedSpecSlots = currentSpectatorSlotInfo.availableSpectatorSlots(); addedSpecSlots <
+			     desiredDefaultOpenSpectatorSlots; ++addedSpecSlots)
 			{
 				if (!NETopenNewSpectatorSlot())
 				{
@@ -5824,9 +6231,9 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 	// host, who is setting up the game
 	if (ingame.side == InGameSide::HOST_OR_SINGLEPLAYER)
 	{
-		switch (id)												// Options buttons
+		switch (id) // Options buttons
 		{
-		case MULTIOP_GNAME:										// we get this when nec.
+		case MULTIOP_GNAME: // we get this when nec.
 			sstrcpy(game.name, widgGetString(psWScreen, MULTIOP_GNAME));
 			removeWildcards(game.name);
 			widgSetString(psWScreen, MULTIOP_GNAME, game.name);
@@ -5846,19 +6253,19 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 
 		case MULTIOP_MAP:
 			widgDelete(psWScreen, MULTIOP_PLAYERS);
-			widgDelete(psWScreen, FRONTEND_SIDETEXT2);  // del text too,
+			widgDelete(psWScreen, FRONTEND_SIDETEXT2); // del text too,
 
 			debug(LOG_WZ, "processMultiopWidgets[MULTIOP_MAP_ICON]: %s.wrf", MultiCustomMapsPath);
 			addMultiRequest(MultiCustomMapsPath, ".wrf", MULTIOP_MAP, 0, widgGetString(psWScreen, MULTIOP_MAP));
 
-			widgSetString(psWScreen, MULTIOP_MAP + 1 , game.map); //What a horrible hack! FIX ME! (See addBlueForm())
+			widgSetString(psWScreen, MULTIOP_MAP + 1, game.map); //What a horrible hack! FIX ME! (See addBlueForm())
 			widgReveal(psWScreen, MULTIOP_MAP_MOD);
 			widgReveal(psWScreen, MULTIOP_MAP_RANDOM);
 			break;
 
 		case MULTIOP_MAP_ICON:
 			widgDelete(psWScreen, MULTIOP_PLAYERS);
-			widgDelete(psWScreen, FRONTEND_SIDETEXT2);					// del text too,
+			widgDelete(psWScreen, FRONTEND_SIDETEXT2); // del text too,
 
 			debug(LOG_WZ, "processMultiopWidgets[MULTIOP_MAP_ICON]: %s.wrf", MultiCustomMapsPath);
 			addMultiRequest(MultiCustomMapsPath, ".wrf", MULTIOP_MAP, current_numplayers);
@@ -5880,7 +6287,7 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 		switch (id)
 		{
 		case MULTIOP_GAMETYPE:
-			game.scavengers = ((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_GAMETYPE))->currentValue();
+			game.scavengers = ((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_GAMETYPE))->currentValue();
 			resetReadyStatus(false);
 			if (NetPlay.isHost)
 			{
@@ -5889,7 +6296,7 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 			break;
 
 		case MULTIOP_BASETYPE:
-			game.base = ((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_BASETYPE))->currentValue();
+			game.base = ((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_BASETYPE))->currentValue();
 			addGameOptions();
 
 			resetReadyStatus(false);
@@ -5901,7 +6308,7 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 			break;
 
 		case MULTIOP_ALLIANCES:
-			game.alliance = ((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_ALLIANCES))->currentValue();
+			game.alliance = ((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_ALLIANCES))->currentValue();
 
 			resetReadyStatus(false);
 			netPlayersUpdated = true;
@@ -5912,8 +6319,8 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 			}
 			break;
 
-		case MULTIOP_POWER:  // set power level
-			game.power = ((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_POWER))->currentValue();
+		case MULTIOP_POWER: // set power level
+			game.power = ((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_POWER))->currentValue();
 
 			resetReadyStatus(false);
 
@@ -5924,7 +6331,7 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 			break;
 
 		case MULTIOP_TECHLEVEL:
-			game.techLevel = ((MultichoiceWidget *)widgGetFromID(psWScreen, MULTIOP_TECHLEVEL))->currentValue();
+			game.techLevel = ((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_TECHLEVEL))->currentValue();
 			addGameOptions(); //refresh to see the proper tech level in the map name
 
 			resetReadyStatus(false);
@@ -5943,7 +6350,7 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 					break;
 				}
 			}
-			// fallthrough
+		// fallthrough
 		case MULTIOP_PASSWORD_BUT:
 			{
 				char buf[255];
@@ -5955,8 +6362,8 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 				const size_t passLength = strlen(game_password) > 0;
 				willSet &= (passLength > 0);
 				debug(LOG_NET, "Password button hit, %d", (int)willSet);
-				widgSetButtonState(psWScreen, MULTIOP_PASSWORD_BUT,  willSet ? WBUT_CLICKLOCK : 0);
-				widgSetButtonState(psWScreen, MULTIOP_PASSWORD_EDIT, willSet ? WEDBS_DISABLE  : 0);
+				widgSetButtonState(psWScreen, MULTIOP_PASSWORD_BUT, willSet ? WBUT_CLICKLOCK : 0);
+				widgSetButtonState(psWScreen, MULTIOP_PASSWORD_EDIT, willSet ? WEDBS_DISABLE : 0);
 				if (willSet)
 				{
 					NETsetGamePassword(game_password);
@@ -5990,24 +6397,26 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 		break;
 
 	case MULTIOP_STRUCTLIMITS:
-		changeTitleUI(std::make_shared<WzMultiLimitTitleUI>(std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(wzTitleUICurrent)));
+		changeTitleUI(
+			std::make_shared<WzMultiLimitTitleUI>(
+				std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(wzTitleUICurrent)));
 		break;
 
 	case MULTIOP_PNAME:
 		sstrcpy(sPlayer, widgGetString(psWScreen, MULTIOP_PNAME));
 
-		// chop to 15 chars..
-		while (strlen(sPlayer) > 15)	// clip name.
+	// chop to 15 chars..
+		while (strlen(sPlayer) > 15) // clip name.
 		{
 			sPlayer[strlen(sPlayer) - 1] = '\0';
 		}
 		removeWildcards(sPlayer);
-		// update string.
+	// update string.
 		widgSetString(psWScreen, MULTIOP_PNAME, sPlayer);
 		printConsoleNameChange(NetPlay.players[selectedPlayer].name, sPlayer);
 
-		NETchangePlayerName(selectedPlayer, (char *)sPlayer);			// update if joined.
-		loadMultiStats((char *)sPlayer, &playerStats);
+		NETchangePlayerName(selectedPlayer, (char*)sPlayer); // update if joined.
+		loadMultiStats((char*)sPlayer, &playerStats);
 		setMultiStats(selectedPlayer, playerStats, false);
 		setMultiStats(selectedPlayer, playerStats, true);
 		lookupRatingAsync(selectedPlayer);
@@ -6024,7 +6433,7 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 
 	case MULTIOP_PNAME_ICON:
 		widgDelete(psWScreen, MULTIOP_PLAYERS);
-		widgDelete(psWScreen, FRONTEND_SIDETEXT2);					// del text too,
+		widgDelete(psWScreen, FRONTEND_SIDETEXT2); // del text too,
 
 		addMultiRequest(MultiPlayersPath, ".sta2", MULTIOP_PNAME, 0);
 		break;
@@ -6066,7 +6475,7 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 				// remove a potential "allow" vote if we gracefully leave
 				sendVoteData(0);
 			}
-			NETGameLocked(false);		// reset status on a cancel
+			NETGameLocked(false); // reset status on a cancel
 			stopJoining(parent);
 		}
 		else
@@ -6093,14 +6502,15 @@ void startMultiplayerGame()
 
 	wz_command_interface_output("WZEVENT: startMultiplayerGame\n");
 
-	cancelOrDismissNotificationIfTag([](const std::string& tag) {
+	cancelOrDismissNotificationIfTag([](const std::string& tag)
+	{
 		return (tag.rfind(SLOTTYPE_TAG_PREFIX, 0) == 0);
 	});
 
-	decideWRF();										// set up swrf & game.map
+	decideWRF(); // set up swrf & game.map
 	bMultiPlayer = true;
 	bMultiMessages = true;
-	NETsetPlayerConnectionStatus(CONNECTIONSTATUS_NORMAL, NET_ALL_PLAYERS);  // reset disconnect conditions
+	NETsetPlayerConnectionStatus(CONNECTIONSTATUS_NORMAL, NET_ALL_PLAYERS); // reset disconnect conditions
 	initLoadingScreen(true);
 	if (NetPlay.isHost)
 	{
@@ -6120,16 +6530,16 @@ void startMultiplayerGame()
 			debug(LOG_NET, "limiter was activated");
 		}
 
-		resetDataHash();	// need to reset it, since host's data has changed.
+		resetDataHash(); // need to reset it, since host's data has changed.
 		createLimitSet();
 		debug(LOG_NET, "sending our options to all clients");
 		sendOptions();
-		NEThaltJoining();							// stop new players entering.
+		NEThaltJoining(); // stop new players entering.
 		ingame.TimeEveryoneIsInGame = nullopt;
 		ingame.endTime = nullopt;
 		ingame.isAllPlayersDataOK = false;
-		memset(&ingame.DataIntegrity, 0x0, sizeof(ingame.DataIntegrity));	//clear all player's array
-		SendFireUp();								//bcast a fireup message
+		memset(&ingame.DataIntegrity, 0x0, sizeof(ingame.DataIntegrity)); //clear all player's array
+		SendFireUp(); //bcast a fireup message
 	}
 
 	debug(LOG_NET, "title mode STARTGAME is set--Starting Game!");
@@ -6183,7 +6593,9 @@ void multiClearHostRequestMoveToPlayer(uint32_t playerIdx)
 class WzHostLobbyOperationsInterface : public HostLobbyOperationsInterface
 {
 public:
-	virtual ~WzHostLobbyOperationsInterface() { }
+	virtual ~WzHostLobbyOperationsInterface()
+	{
+	}
 
 public:
 	virtual bool changeTeam(uint32_t player, uint8_t team) override
@@ -6205,6 +6617,7 @@ public:
 		resetReadyStatus(false);
 		return true;
 	}
+
 	virtual bool changePosition(uint32_t player, uint8_t position) override
 	{
 		ASSERT_HOST_ONLY(return false);
@@ -6227,10 +6640,12 @@ public:
 		resetReadyStatus(false);
 		return true;
 	}
+
 	virtual bool changeBase(uint8_t baseValue) override
 	{
 		ASSERT_HOST_ONLY(return false);
-		ASSERT_OR_RETURN(false, baseValue == CAMP_CLEAN || baseValue == CAMP_BASE || baseValue == CAMP_WALLS, "Invalid baseValue: %" PRIu8, baseValue);
+		ASSERT_OR_RETURN(false, baseValue == CAMP_CLEAN || baseValue == CAMP_BASE || baseValue == CAMP_WALLS,
+		                 "Invalid baseValue: %" PRIu8, baseValue);
 		if (locked.bases)
 		{
 			debug(LOG_INFO, "Unable to change bases to %" PRIu8 " - bases are locked", baseValue);
@@ -6242,10 +6657,14 @@ public:
 		addGameOptions(); //refresh to see the proper tech level in the map name
 		return true;
 	}
+
 	virtual bool changeAlliances(uint8_t allianceValue) override
 	{
 		ASSERT_HOST_ONLY(return false);
-		ASSERT_OR_RETURN(false, allianceValue == NO_ALLIANCES || allianceValue == ALLIANCES || allianceValue == ALLIANCES_UNSHARED || allianceValue == ALLIANCES_TEAMS, "Invalid allianceValue: %" PRIu8, allianceValue);
+		ASSERT_OR_RETURN(
+			false,
+			allianceValue == NO_ALLIANCES || allianceValue == ALLIANCES || allianceValue == ALLIANCES_UNSHARED ||
+			allianceValue == ALLIANCES_TEAMS, "Invalid allianceValue: %" PRIu8, allianceValue);
 		if (locked.alliances)
 		{
 			debug(LOG_INFO, "Unable to change alliances to %" PRIu8 " - alliances are locked", allianceValue);
@@ -6258,10 +6677,13 @@ public:
 		addGameOptions(); //refresh to see the proper tech level in the map name
 		return true;
 	}
+
 	virtual bool changeScavengers(uint8_t scavsValue) override
 	{
 		ASSERT_HOST_ONLY(return false);
-		ASSERT_OR_RETURN(false, scavsValue == NO_SCAVENGERS || scavsValue == SCAVENGERS || scavsValue == ULTIMATE_SCAVENGERS, "Invalid scavsValue: %" PRIu8, scavsValue);
+		ASSERT_OR_RETURN(
+			false, scavsValue == NO_SCAVENGERS || scavsValue == SCAVENGERS || scavsValue == ULTIMATE_SCAVENGERS,
+			"Invalid scavsValue: %" PRIu8, scavsValue);
 		if (locked.scavengers)
 		{
 			debug(LOG_INFO, "Unable to change scavengers to %" PRIu8 " - scavengers are locked", scavsValue);
@@ -6274,7 +6696,8 @@ public:
 		addGameOptions(); //refresh to see the proper tech level in the map name
 		return true;
 	}
-	virtual bool kickPlayer(uint32_t player, const char *reason) override
+
+	virtual bool kickPlayer(uint32_t player, const char* reason) override
 	{
 		ASSERT_HOST_ONLY(return false);
 		ASSERT_OR_RETURN(false, player != NetPlay.hostPlayer, "Unable to kich the host");
@@ -6285,11 +6708,13 @@ public:
 			return false;
 		}
 		std::string slotType = (NetPlay.players[player].isSpectator) ? "spectator" : "player";
-		sendRoomSystemMessage((std::string("Kicking ")+slotType+": "+std::string(NetPlay.players[player].name)).c_str());
+		sendRoomSystemMessage(
+			(std::string("Kicking ") + slotType + ": " + std::string(NetPlay.players[player].name)).c_str());
 		::kickPlayer(player, reason, ERROR_KICKED);
 		resetReadyStatus(false);
 		return true;
 	}
+
 	virtual bool movePlayerToSpectators(uint32_t player) override
 	{
 		ASSERT_HOST_ONLY(return false);
@@ -6308,9 +6733,10 @@ public:
 		}
 		std::string msg = astringf(_("Moving %s to Spectators!"), playerName.c_str());
 		sendRoomSystemMessage(msg.c_str());
-		resetReadyStatus(true);		//reset and send notification to all clients
+		resetReadyStatus(true); //reset and send notification to all clients
 		return true;
 	}
+
 	virtual void quitGame(int exitCode) override
 	{
 		ASSERT_HOST_ONLY(return);
@@ -6337,7 +6763,8 @@ static int getBoundedMinAutostartPlayerCount()
 	int maxPlayerSlots = 0;
 	for (int j = 0; j < MAX_PLAYERS; j++)
 	{
-		if ((NetPlay.players[j].allocated || NetPlay.players[j].ai == AI_OPEN) && NetPlay.players[j].position < game.maxPlayers)
+		if ((NetPlay.players[j].allocated || NetPlay.players[j].ai == AI_OPEN) && NetPlay.players[j].position < game.
+			maxPlayers)
 		{
 			maxPlayerSlots++;
 		}
@@ -6348,7 +6775,9 @@ static int getBoundedMinAutostartPlayerCount()
 	}
 	if (minAutoStartPlayerCount > maxPlayerSlots)
 	{
-		debug(LOG_WARNING, "startplayers (%d) exceeds maxPlayerSlots (%d) - using the latter; (game.maxPlayers: %" PRIu8 ", # ai players: %d)", minAutoStartPlayerCount, maxPlayerSlots, game.maxPlayers, numAIPlayers);
+		debug(LOG_WARNING,
+		      "startplayers (%d) exceeds maxPlayerSlots (%d) - using the latter; (game.maxPlayers: %" PRIu8
+		      ", # ai players: %d)", minAutoStartPlayerCount, maxPlayerSlots, game.maxPlayers, numAIPlayers);
 		minAutoStartPlayerCount = maxPlayerSlots;
 	}
 
@@ -6387,7 +6816,8 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 				bool done = recvMapFileData(queue);
 				if (running)
 				{
-					((MultibuttonWidget *)widgGetFromID(psWScreen, MULTIOP_MAP_PREVIEW))->enable(done);  // turn preview button on or off
+					((MultibuttonWidget*)widgGetFromID(psWScreen, MULTIOP_MAP_PREVIEW))->enable(done);
+					// turn preview button on or off
 				}
 				// spectators should automatically become ready as soon as necessary files are downloaded
 				// and not-ready when files remain to be downloaded
@@ -6406,46 +6836,49 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 				NETbin(hash.bytes, hash.Bytes);
 				NETend();
 
-				debug(LOG_WARNING, "Received file cancel request from player %u, they weren't expecting the file.", queue.index);
-				auto &pWzFiles = NetPlay.players[queue.index].wzFiles;
+				debug(LOG_WARNING, "Received file cancel request from player %u, they weren't expecting the file.",
+				      queue.index);
+				auto& pWzFiles = NetPlay.players[queue.index].wzFiles;
 				if (pWzFiles == nullptr)
 				{
 					ASSERT(false, "Null wzFiles (player: %" PRIu8 ")", queue.index);
 					break;
 				}
-				auto &wzFiles = *pWzFiles;
-				wzFiles.erase(std::remove_if(wzFiles.begin(), wzFiles.end(), [&](WZFile const &file) { return file.hash == hash; }), wzFiles.end());
+				auto& wzFiles = *pWzFiles;
+				wzFiles.erase(std::remove_if(wzFiles.begin(), wzFiles.end(),
+				                             [&](WZFile const& file) { return file.hash == hash; }), wzFiles.end());
 			}
 			break;
 
-		case NET_OPTIONS:					// incoming options file.
-		{
-			if (NetPlay.hostPlayer != queue.index)
+		case NET_OPTIONS: // incoming options file.
 			{
-				HandleBadParam("NET_OPTIONS should be sent by host", 255, queue.index);
-				ignoredMessage = true;
+				if (NetPlay.hostPlayer != queue.index)
+				{
+					HandleBadParam("NET_OPTIONS should be sent by host", 255, queue.index);
+					ignoredMessage = true;
+					break;
+				}
+				if (!recvOptions(queue))
+				{
+					// supplied NET_OPTIONS are not valid
+					setLobbyError(ERROR_INVALID);
+					stopJoining(
+						std::make_shared<WzMsgBoxTitleUI>(WzString(_("Host supplied invalid options")), parent));
+					break;
+				}
+				bInActualHostedLobby = true;
+				ingame.localOptionsReceived = true;
+
+				handleAutoReadyRequest();
+
+				if (std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(wzTitleUICurrent))
+				{
+					addGameOptions();
+					disableMultiButs();
+					addChatBox();
+				}
 				break;
 			}
-			if (!recvOptions(queue))
-			{
-				// supplied NET_OPTIONS are not valid
-				setLobbyError(ERROR_INVALID);
-				stopJoining(std::make_shared<WzMsgBoxTitleUI>(WzString(_("Host supplied invalid options")), parent));
-				break;
-			}
-			bInActualHostedLobby = true;
-			ingame.localOptionsReceived = true;
-
-			handleAutoReadyRequest();
-
-			if (std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(wzTitleUICurrent))
-			{
-				addGameOptions();
-				disableMultiButs();
-				addChatBox();
-			}
-			break;
-		}
 
 		case GAME_ALLIANCE:
 			recvAlliance(queue, false);
@@ -6495,7 +6928,7 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 			}
 			recvReadyRequest(queue);
 
-			// If hosting and game not yet started, try to start the game if everyone is ready.
+		// If hosting and game not yet started, try to start the game if everyone is ready.
 			if (NetPlay.isHost && multiplayPlayersReady())
 			{
 				bool allowStart = true;
@@ -6522,17 +6955,18 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 				}
 				else
 				{
-					std::string msg = astringf("Game will not start until there are %d players.", minAutoStartPlayerCount);
+					std::string msg = astringf("Game will not start until there are %d players.",
+					                           minAutoStartPlayerCount);
 					sendRoomSystemMessage(msg.c_str());
 				}
 			}
 			break;
 
-		case NET_PING:						// diagnostic ping msg.
+		case NET_PING: // diagnostic ping msg.
 			recvPing(queue);
 			break;
 
-		case NET_PLAYER_DROPPED:		// remote player got disconnected
+		case NET_PLAYER_DROPPED: // remote player got disconnected
 			{
 				uint32_t player_id = MAX_CONNECTED_PLAYERS;
 
@@ -6558,21 +6992,22 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 
 				debug(LOG_INFO, "** player %u has dropped!", player_id);
 
-				MultiPlayerLeave(player_id);		// get rid of their stuff
-				NET_InitPlayer(player_id, false);           // sets index player's array to false
+				MultiPlayerLeave(player_id); // get rid of their stuff
+				NET_InitPlayer(player_id, false); // sets index player's array to false
 				NETsetPlayerConnectionStatus(CONNECTIONSTATUS_PLAYER_DROPPED, player_id);
 				if (player_id < MAX_PLAYERS)
 				{
 					playerVotes[player_id] = 0;
 				}
 				ActivityManager::instance().updateMultiplayGameData(game, ingame, NETGameIsLocked());
-				if (player_id == NetPlay.hostPlayer || player_id == selectedPlayer)	// if host quits or we quit, abort out
+				if (player_id == NetPlay.hostPlayer || player_id == selectedPlayer)
+				// if host quits or we quit, abort out
 				{
 					stopJoining(parent);
 				}
 				break;
 			}
-		case NET_PLAYERRESPONDING:			// remote player is now playing.
+		case NET_PLAYERRESPONDING: // remote player is now playing.
 			{
 				uint32_t player_id;
 
@@ -6587,9 +7022,10 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 				ingame.DataIntegrity[player_id] = false;
 				break;
 			}
-		case NET_FIREUP:					// campaign game started.. can fire the whole shebang up...
+		case NET_FIREUP: // campaign game started.. can fire the whole shebang up...
 			cancelOrDismissNotificationsWithTag(VOTE_TAG); // don't need vote notifications anymore
-			cancelOrDismissNotificationIfTag([](const std::string& tag) {
+			cancelOrDismissNotificationIfTag([](const std::string& tag)
+			{
 				return (tag.rfind(SLOTTYPE_TAG_PREFIX, 0) == 0);
 			});
 			if (NetPlay.hostPlayer != queue.index)
@@ -6605,10 +7041,11 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 				NETuint32_t(&randomSeed);
 				NETend();
 
-				gameSRand(randomSeed);  // Set the seed for the synchronised random number generator, using the seed given by the host.
+				gameSRand(randomSeed);
+				// Set the seed for the synchronised random number generator, using the seed given by the host.
 
 				debug(LOG_NET, "& local Options Received (MP game)");
-				ingame.TimeEveryoneIsInGame = nullopt;			// reset time
+				ingame.TimeEveryoneIsInGame = nullopt; // reset time
 				ingame.endTime = nullopt;
 				resetDataHash();
 				decideWRF();
@@ -6624,7 +7061,7 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 			ASSERT(false, "NET_FIREUP was received, but !ingame.localOptionsReceived.");
 			break;
 
-		case NET_KICK:						// player is forcing someone to leave
+		case NET_KICK: // player is forcing someone to leave
 			{
 				uint32_t player_id = MAX_CONNECTED_PLAYERS;
 				char reason[MAX_KICK_REASON];
@@ -6651,20 +7088,22 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 				{
 					char buf[250] = {'\0'};
 
-					ssprintf(buf, "*Player %d (%s : %s) tried to kick %u", (int) queue.index, NetPlay.players[queue.index].name, NetPlay.players[queue.index].IPtextAddress, player_id);
+					ssprintf(buf, "*Player %d (%s : %s) tried to kick %u", (int)queue.index,
+					         NetPlay.players[queue.index].name, NetPlay.players[queue.index].IPtextAddress, player_id);
 					NETlogEntry(buf, SYNC_FLAG, 0);
 					debug(LOG_ERROR, "%s", buf);
 					if (NetPlay.isHost)
 					{
-						NETplayerKicked((unsigned int) queue.index);
+						NETplayerKicked((unsigned int)queue.index);
 					}
 					break;
 				}
 
-				if (selectedPlayer == player_id)	// we've been told to leave.
+				if (selectedPlayer == player_id) // we've been told to leave.
 				{
 					setLobbyError(KICK_TYPE);
-					stopJoining(std::make_shared<WzMsgBoxTitleUI>(WzString(_("You have been kicked: ")) + reason, parent));
+					stopJoining(
+						std::make_shared<WzMsgBoxTitleUI>(WzString(_("You have been kicked: ")) + reason, parent));
 					debug(LOG_INFO, "You have been kicked, because %s ", reason);
 					displayKickReasonPopup(reason);
 					ActivityManager::instance().wasKickedByPlayer(NetPlay.players[queue.index], KICK_TYPE, reason);
@@ -6683,11 +7122,12 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 			setLobbyError(ERROR_HOSTDROPPED);
 			break;
 
-		case NET_TEXTMSG:					// Chat message
+		case NET_TEXTMSG: // Chat message
 			if (ingame.localOptionsReceived)
 			{
 				NetworkTextMessage message;
-				if (message.receive(queue)) {
+				if (message.receive(queue))
+				{
 					displayRoomMessage(buildMessage(message.sender, message.text));
 					audio_PlayTrack(FE_AUDIO_MESSAGEEND);
 
@@ -6730,9 +7170,12 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 					if (result == SwapPlayerIndexesResult::ERROR_HOST_MADE_US_PLAYER_WITHOUT_PERMISSION)
 					{
 						// Leave the badly behaved (likely modified) host!
-						sendRoomChatMessage(_("The host moved me to Players, but I never gave permission for this change. Bye!"));
+						sendRoomChatMessage(
+							_("The host moved me to Players, but I never gave permission for this change. Bye!"));
 						debug(LOG_INFO, "Leaving game because host moved us to Players, but we never gave permission.");
-						stopJoining(std::make_shared<WzMsgBoxTitleUI>(WzString(_("The host tried to move us to Players, but we never gave permission.")), parent));
+						stopJoining(std::make_shared<WzMsgBoxTitleUI>(
+							WzString(_("The host tried to move us to Players, but we never gave permission.")),
+							parent));
 						setLobbyError(ERROR_HOSTDROPPED);
 						return;
 					}
@@ -6758,8 +7201,8 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 
 TITLECODE WzMultiplayerOptionsTitleUI::run()
 {
-	static UDWORD	lastrefresh = 0;
-	PLAYERSTATS		playerStats;
+	static UDWORD lastrefresh = 0;
+	PLAYERSTATS playerStats;
 
 	frontendMultiMessages(true);
 	if (NetPlay.isHost)
@@ -6775,7 +7218,7 @@ TITLECODE WzMultiplayerOptionsTitleUI::run()
 		lastrefresh = gameTime;
 		if (!multiRequestUp && (NetPlay.isHost || ingame.localJoiningInProgress))
 		{
-			addPlayerBox(true);				// update the player box.
+			addPlayerBox(true); // update the player box.
 			loadMapPreview(false);
 		}
 	}
@@ -6792,8 +7235,8 @@ TITLECODE WzMultiplayerOptionsTitleUI::run()
 	if (psWScreen->psFocus.expired())
 	{
 		W_CONTEXT context = W_CONTEXT::ZeroContext();
-		context.mx			= mouseX();
-		context.my			= mouseY();
+		context.mx = mouseX();
+		context.my = mouseY();
 
 		W_EDITBOX* pChatEdit = dynamic_cast<W_EDITBOX*>(widgGetFromID(psWScreen, MULTIOP_CHATEDIT));
 		if (pChatEdit)
@@ -6809,7 +7252,7 @@ TITLECODE WzMultiplayerOptionsTitleUI::run()
 		{
 			removeTopConsoleMessage();
 		}
-		updateConsoleMessages();								// run the chatbox
+		updateConsoleMessages(); // run the chatbox
 	}
 
 	// widget handling
@@ -6817,10 +7260,11 @@ TITLECODE WzMultiplayerOptionsTitleUI::run()
 	/* Map or player selection is open */
 	if (multiRequestUp)
 	{
-		WidgetTriggers const &triggers = widgRunScreen(psRScreen);
-		unsigned id = triggers.empty() ? 0 : triggers.front().widget->id; // Just use first click here, since the next click could be on another menu.
+		WidgetTriggers const& triggers = widgRunScreen(psRScreen);
+		unsigned id = triggers.empty() ? 0 : triggers.front().widget->id;
+		// Just use first click here, since the next click could be on another menu.
 
-		LEVEL_DATASET *mapData = nullptr;
+		LEVEL_DATASET* mapData = nullptr;
 		bool isHoverPreview = false;
 		WzString sTemp;
 		if (runMultiRequester(id, &id, &sTemp, &mapData, &isHoverPreview))
@@ -6831,12 +7275,12 @@ TITLECODE WzMultiplayerOptionsTitleUI::run()
 				sstrcpy(sPlayer, sTemp.toUtf8().c_str());
 				widgSetString(psWScreen, MULTIOP_PNAME, sTemp.toUtf8().c_str());
 
-				removeWildcards((char *)sPlayer);
+				removeWildcards((char*)sPlayer);
 
 				printConsoleNameChange(NetPlay.players[selectedPlayer].name, sPlayer);
 
-				NETchangePlayerName(selectedPlayer, (char *)sPlayer);
-				loadMultiStats((char *)sPlayer, &playerStats);
+				NETchangePlayerName(selectedPlayer, (char*)sPlayer);
+				loadMultiStats((char*)sPlayer, &playerStats);
 				setMultiStats(selectedPlayer, playerStats, false);
 				setMultiStats(selectedPlayer, playerStats, true);
 				lookupRatingAsync(selectedPlayer);
@@ -6904,10 +7348,12 @@ TITLECODE WzMultiplayerOptionsTitleUI::run()
 					game.isRandom = CheckForRandom(mapData->realFileName, mapData->apDataFiles[0]);
 					loadMapPreview(true);
 					loadMapChallengeAndPlayerSettings();
-					debug(LOG_INFO, "Switching map: %s (builtin: %d)", (mapData->pName) ? mapData->pName : "n/a", (int)builtInMap);
+					debug(LOG_INFO, "Switching map: %s (builtin: %d)", (mapData->pName) ? mapData->pName : "n/a",
+					      (int)builtInMap);
 
 					WzString name = formatGameName(game.map);
-					widgSetString(psWScreen, MULTIOP_MAP + 1, name.toUtf8().c_str()); //What a horrible, horrible way to do this! FIX ME! (See addBlueForm)
+					widgSetString(psWScreen, MULTIOP_MAP + 1, name.toUtf8().c_str());
+					//What a horrible, horrible way to do this! FIX ME! (See addBlueForm)
 
 					//Reset player slots if it's a smaller map.
 					if (NetPlay.isHost && NetPlay.bComms && oldMaxPlayers > game.maxPlayers)
@@ -6936,7 +7382,7 @@ TITLECODE WzMultiplayerOptionsTitleUI::run()
 				}
 				break;
 			default:
-				loadMapPreview(false);  // Restore the preview of the old map.
+				loadMapPreview(false); // Restore the preview of the old map.
 				break;
 			}
 			if (!isHoverPreview)
@@ -6955,13 +7401,14 @@ TITLECODE WzMultiplayerOptionsTitleUI::run()
 			{
 				return TITLECODE_CONTINUE;
 			}
-			inputLoseFocus();	// remove the mousepress from the input stream.
+			inputLoseFocus(); // remove the mousepress from the input stream.
 			hideTime = 0;
 		}
 		else
 		{
-			WidgetTriggers const &triggers = widgRunScreen(psWScreen);
-			unsigned id = triggers.empty() ? 0 : triggers.front().widget->id; // Just use first click here, since the next click could be on another menu.
+			WidgetTriggers const& triggers = widgRunScreen(psWScreen);
+			unsigned id = triggers.empty() ? 0 : triggers.front().widget->id;
+			// Just use first click here, since the next click could be on another menu.
 
 			if (!triggers.empty() && (!multiplayIsStartingGame() || id == CON_CANCEL))
 			{
@@ -6970,21 +7417,22 @@ TITLECODE WzMultiplayerOptionsTitleUI::run()
 		}
 	}
 
-	widgDisplayScreen(psWScreen);									// show the widgets currently running
+	widgDisplayScreen(psWScreen); // show the widgets currently running
 
 	if (multiRequestUp)
 	{
-		widgDisplayScreen(psRScreen);								// show the Requester running
+		widgDisplayScreen(psRScreen); // show the Requester running
 	}
 
 	if (CancelPressed())
 	{
-		processMultiopWidgets(CON_CANCEL);  // "Press" the cancel button to clean up net connections and stuff.
+		processMultiopWidgets(CON_CANCEL); // "Press" the cancel button to clean up net connections and stuff.
 	}
 	if (!NetPlay.isHostAlive && ingame.side == InGameSide::MULTIPLAYER_CLIENT)
 	{
 		cancelOrDismissNotificationsWithTag(VOTE_TAG);
-		cancelOrDismissNotificationIfTag([](const std::string& tag) {
+		cancelOrDismissNotificationIfTag([](const std::string& tag)
+		{
 			return (tag.rfind(SLOTTYPE_TAG_PREFIX, 0) == 0);
 		});
 		changeTitleUI(std::make_shared<WzMsgBoxTitleUI>(WzString(_("The host has quit.")), parent));
@@ -6996,9 +7444,9 @@ TITLECODE WzMultiplayerOptionsTitleUI::run()
 
 WzMultiplayerOptionsTitleUI::WzMultiplayerOptionsTitleUI(std::shared_ptr<WzTitleUI> parent)
 	: parent(parent)
-	, inlineChooserUp(-1)
-	, aiChooserUp(-1)
-	, difficultyChooserUp(-1)
+	  , inlineChooserUp(-1)
+	  , aiChooserUp(-1)
+	  , difficultyChooserUp(-1)
 {
 }
 
@@ -7010,7 +7458,8 @@ WzMultiplayerOptionsTitleUI::~WzMultiplayerOptionsTitleUI()
 	bInActualHostedLobby = false;
 }
 
-void WzMultiplayerOptionsTitleUI::screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight)
+void WzMultiplayerOptionsTitleUI::screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight,
+                                                      unsigned int newWidth, unsigned int newHeight)
 {
 	// NOTE: To properly support resizing the inline overlay screen based on underlying screen layer recalculations
 	// frontendScreenSizeDidChange() should be called after intScreenSizeDidChange() in gameScreenSizeDidChange()
@@ -7018,7 +7467,7 @@ void WzMultiplayerOptionsTitleUI::screenSizeDidChange(unsigned int oldWidth, uns
 
 static void printHostHelpMessagesToConsole()
 {
-	char buf[512] = { '\0' };
+	char buf[512] = {'\0'};
 	if (NetPlay.bComms)
 	{
 		if (NetPlay.isUPNP)
@@ -7057,7 +7506,7 @@ static void printHostHelpMessagesToConsole()
 	displayRoomNotifyMessage(buf);
 }
 
-void calcBackdropLayoutForMultiplayerOptionsTitleUI(WIDGET *psWidget)
+void calcBackdropLayoutForMultiplayerOptionsTitleUI(WIDGET* psWidget)
 {
 	auto height = screenHeight - 80;
 	CLIP(height, HIDDEN_FRONTEND_HEIGHT, HIDDEN_FRONTEND_WIDTH);
@@ -7108,17 +7557,23 @@ void WzMultiplayerOptionsTitleUI::start()
 		playerSlotSwapChooserUp = nullopt;
 
 		const std::string notificationIdentifierPrefix = SLOTTYPE_NOTIFICATION_ID_PREFIX;
-		removeNotificationPreferencesIf([&notificationIdentifierPrefix](const std::string &uniqueNotificationIdentifier) -> bool {
-			bool hasPrefix = (strncmp(uniqueNotificationIdentifier.c_str(), notificationIdentifierPrefix.c_str(), notificationIdentifierPrefix.size()) == 0);
-			return hasPrefix;
-		});
+		removeNotificationPreferencesIf(
+			[&notificationIdentifierPrefix](const std::string& uniqueNotificationIdentifier) -> bool
+			{
+				bool hasPrefix = (strncmp(uniqueNotificationIdentifier.c_str(), notificationIdentifierPrefix.c_str(),
+				                          notificationIdentifierPrefix.size()) == 0);
+				return hasPrefix;
+			});
 
 		// Initialize the inline chooser overlay screen
 		psInlineChooserOverlayScreen = W_SCREEN::make();
 		auto newRootFrm = W_FULLSCREENOVERLAY_CLICKFORM::make(MULTIOP_INLINE_OVERLAY_ROOT_FRM);
-		std::weak_ptr<WzMultiplayerOptionsTitleUI> psWeakTitleUI = std::dynamic_pointer_cast<WzMultiplayerOptionsTitleUI>(shared_from_this());
-		newRootFrm->onClickedFunc = [psWeakTitleUI]() {
-			widgScheduleTask([psWeakTitleUI]{
+		std::weak_ptr<WzMultiplayerOptionsTitleUI> psWeakTitleUI = std::dynamic_pointer_cast<
+			WzMultiplayerOptionsTitleUI>(shared_from_this());
+		newRootFrm->onClickedFunc = [psWeakTitleUI]()
+		{
+			widgScheduleTask([psWeakTitleUI]
+			{
 				auto psTitleUI = psWeakTitleUI.lock();
 				ASSERT_OR_RETURN(, psTitleUI != nullptr, "Title UI is null");
 				psTitleUI->closeAllChoosers(); // this also removes the overlay screen
@@ -7130,7 +7585,7 @@ void WzMultiplayerOptionsTitleUI::start()
 
 		ingame.localOptionsReceived = false;
 
-		PLAYERSTATS	nullStats;
+		PLAYERSTATS nullStats;
 		loadMultiStats((char*)sPlayer, &nullStats);
 		lookupRatingAsync(selectedPlayer);
 
@@ -7190,7 +7645,7 @@ std::shared_ptr<WzTitleUI> WzMultiplayerOptionsTitleUI::getParentTitleUI()
 /////////////////////////////////////////////////////////////////////////////////////////
 // Drawing functions
 
-void displayChatEdit(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+void displayChatEdit(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	int x = xOffset + psWidget->x();
 	int y = yOffset + psWidget->y();
@@ -7202,11 +7657,11 @@ void displayChatEdit(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 
 // ////////////////////////////////////////////////////////////////////////////
 
-void displayTeamChooser(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+void displayTeamChooser(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	int x = xOffset + psWidget->x();
 	int y = yOffset + psWidget->y();
-	UDWORD		i = psWidget->UserData;
+	UDWORD i = psWidget->UserData;
 
 	ASSERT_OR_RETURN(, i < MAX_CONNECTED_PLAYERS, "Index (%" PRIu32 ") out of bounds", i);
 
@@ -7216,7 +7671,8 @@ void displayTeamChooser(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 	{
 		if (alliancesSetTeamsBeforeGame(game.alliance))
 		{
-			ASSERT_OR_RETURN(, NetPlay.players[i].team >= 0 && NetPlay.players[i].team < MAX_PLAYERS, "Team index out of bounds");
+			ASSERT_OR_RETURN(, NetPlay.players[i].team >= 0 && NetPlay.players[i].team < MAX_PLAYERS,
+			                   "Team index out of bounds");
 			iV_DrawImage(FrontImages, IMAGE_TEAM0 + NetPlay.players[i].team, x + 2, y + 8);
 		}
 		else
@@ -7230,7 +7686,7 @@ void displayTeamChooser(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 	}
 }
 
-void displaySpectatorAddButton(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+void displaySpectatorAddButton(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	int x = xOffset + psWidget->x();
 	int y = yOffset + psWidget->y();
@@ -7239,11 +7695,11 @@ void displaySpectatorAddButton(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 	iV_DrawImage(FrontImages, IMAGE_SPECTATOR, x + 2, y + 1);
 }
 
-static void displayAi(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+static void displayAi(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	// Any widget using displayAi must have its pUserData initialized to a (DisplayAICache*)
 	assert(psWidget->pUserData != nullptr);
-	DisplayAICache& cache = *static_cast<DisplayAICache *>(psWidget->pUserData);
+	DisplayAICache& cache = *static_cast<DisplayAICache*>(psWidget->pUserData);
 
 	const int x = xOffset + psWidget->x();
 	const int y = yOffset + psWidget->y();
@@ -7294,7 +7750,7 @@ static int difficultyIcon(int difficulty)
 	case 1: return IMAGE_MEDIUM;
 	case 2: return IMAGE_HARD;
 	case 3: return IMAGE_INSANE;
-	default: return IMAGE_NO;	/// what??
+	default: return IMAGE_NO; /// what??
 	}
 }
 
@@ -7305,15 +7761,15 @@ static int factionIcon(FactionID faction)
 	case 0: return IMAGE_FACTION_NORMAL;
 	case 1: return IMAGE_FACTION_NEXUS;
 	case 2: return IMAGE_FACTION_COLLECTIVE;
-	default: return IMAGE_NO;	/// what??
+	default: return IMAGE_NO; /// what??
 	}
 }
 
-static void displayDifficulty(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+static void displayDifficulty(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	// Any widget using displayDifficulty must have its pUserData initialized to a (DisplayDifficultyCache*)
 	assert(psWidget->pUserData != nullptr);
-	DisplayDifficultyCache& cache = *static_cast<DisplayDifficultyCache *>(psWidget->pUserData);
+	DisplayDifficultyCache& cache = *static_cast<DisplayDifficultyCache*>(psWidget->pUserData);
 
 	const int x = xOffset + psWidget->x();
 	const int y = yOffset + psWidget->y();
@@ -7326,7 +7782,8 @@ static void displayDifficulty(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 	cache.wzDifficultyText.render(x + 42, y + 22, WZCOL_FORM_TEXT);
 }
 
-static bool isKnownPlayer(std::map<std::string, EcKey::Key> const &knownPlayers, std::string const &name, EcKey const &key)
+static bool isKnownPlayer(std::map<std::string, EcKey::Key> const& knownPlayers, std::string const& name,
+                          EcKey const& key)
 {
 	if (key.empty())
 	{
@@ -7337,11 +7794,11 @@ static bool isKnownPlayer(std::map<std::string, EcKey::Key> const &knownPlayers,
 }
 
 // ////////////////////////////////////////////////////////////////////////////
-void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+void displayPlayer(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	// Any widget using displayPlayer must have its pUserData initialized to a (DisplayPlayerCache*)
 	assert(psWidget->pUserData != nullptr);
-	DisplayPlayerCache& cache = *static_cast<DisplayPlayerCache *>(psWidget->pUserData);
+	DisplayPlayerCache& cache = *static_cast<DisplayPlayerCache*>(psWidget->pUserData);
 
 	int const x = xOffset + psWidget->x();
 	int const y = yOffset + psWidget->y();
@@ -7355,17 +7812,19 @@ void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 	if (downloadProgress != 100)
 	{
 		char progressString[MAX_STR_LENGTH];
-		ssprintf(progressString, j != selectedPlayer ? _("Sending Map: %u%% ") : _("Map: %u%% downloaded"), downloadProgress);
+		ssprintf(progressString, j != selectedPlayer ? _("Sending Map: %u%% ") : _("Map: %u%% downloaded"),
+		         downloadProgress);
 		cache.wzMainText.setText(progressString, font_regular);
 		cache.wzMainText.render(x + 5, y + 22, WZCOL_FORM_TEXT);
 		cache.fullMainText = progressString;
 		return;
 	}
-	else if (ingame.localOptionsReceived && NetPlay.players[j].allocated)					// only draw if real player!
+	else if (ingame.localOptionsReceived && NetPlay.players[j].allocated) // only draw if real player!
 	{
 		std::string name = NetPlay.players[j].name;
 
-		std::map<std::string, EcKey::Key> serverPlayers;  // TODO Fill this with players known to the server (needs implementing on the server, too). Currently useless.
+		std::map<std::string, EcKey::Key> serverPlayers;
+		// TODO Fill this with players known to the server (needs implementing on the server, too). Currently useless.
 
 		PIELIGHT colour;
 		if (ingame.PingTimes[j] >= PING_LIMIT)
@@ -7390,9 +7849,10 @@ void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 		{
 			if ((int)iV_GetTextWidth(name.c_str(), font_regular) > psWidget->width() - nameX)
 			{
-				while (!name.empty() && (int)iV_GetTextWidth((name + "...").c_str(), font_regular) > psWidget->width() - nameX)
+				while (!name.empty() && (int)iV_GetTextWidth((name + "...").c_str(), font_regular) > psWidget->width() -
+					nameX)
 				{
-					name.resize(name.size() - 1);  // Clip name.
+					name.resize(name.size() - 1); // Clip name.
 				}
 				name += "...";
 			}
@@ -7417,7 +7877,7 @@ void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 			}
 			else
 			{
-				ssprintf(buf, "%s", "∞");  // Player has ping of somewhat questionable quality.
+				ssprintf(buf, "%s", "∞"); // Player has ping of somewhat questionable quality.
 			}
 			subText += buf;
 		}
@@ -7428,16 +7888,22 @@ void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 		{
 			ar.dummy = stat.played < 5;
 			// star 1 total droid kills
-			ar.star[0] = stat.totalKills > 600? 1 : stat.totalKills > 300? 2 : stat.totalKills > 150? 3 : 0;
+			ar.star[0] = stat.totalKills > 600 ? 1 : stat.totalKills > 300 ? 2 : stat.totalKills > 150 ? 3 : 0;
 
 			// star 2 games played
-			ar.star[1] = stat.played > 200? 1 : stat.played > 100? 2 : stat.played > 50? 3 : 0;
+			ar.star[1] = stat.played > 200 ? 1 : stat.played > 100 ? 2 : stat.played > 50 ? 3 : 0;
 
 			// star 3 games won.
-			ar.star[2] = stat.wins > 80? 1 : stat.wins > 40? 2 : stat.wins > 10? 3 : 0;
+			ar.star[2] = stat.wins > 80 ? 1 : stat.wins > 40 ? 2 : stat.wins > 10 ? 3 : 0;
 
 			// medals.
-			ar.medal = stat.wins >= 24 && stat.wins > 8 * stat.losses? 1 : stat.wins >= 12 && stat.wins > 4 * stat.losses? 2 : stat.wins >= 6 && stat.wins > 2 * stat.losses? 3 : 0;
+			ar.medal = stat.wins >= 24 && stat.wins > 8 * stat.losses
+				           ? 1
+				           : stat.wins >= 12 && stat.wins > 4 * stat.losses
+				           ? 2
+				           : stat.wins >= 6 && stat.wins > 2 * stat.losses
+				           ? 3
+				           : 0;
 
 			ar.level = 0;
 			ar.autohoster = false;
@@ -7445,11 +7911,11 @@ void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 		}
 
 		int H = 5;
-		cache.wzMainText.render(x + nameX, y + 22 - H*!subText.empty() - H*(ar.valid && !ar.elo.empty()), colour);
+		cache.wzMainText.render(x + nameX, y + 22 - H * !subText.empty() - H * (ar.valid && !ar.elo.empty()), colour);
 		if (!subText.empty())
 		{
 			cache.wzSubText.setText(subText, font_small);
-			cache.wzSubText.render(x + nameX, y + 28 - H*!ar.elo.empty(), WZCOL_TEXT_MEDIUM);
+			cache.wzSubText.render(x + nameX, y + 28 - H * !ar.elo.empty(), WZCOL_TEXT_MEDIUM);
 		}
 
 		if (ar.autohoster)
@@ -7478,10 +7944,12 @@ void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 			constexpr int medalImgs[4] = {0, IMAGE_MEDAL_GOLD, IMAGE_MEDAL_SILVER, IMAGE_MEDAL_BRONZE};
 			if (1 <= ar.medal && ar.medal < ARRAY_SIZE(medalImgs))
 			{
-				iV_DrawImage(FrontImages, medalImgs[ar.medal], x + 16 - 2*(ar.level != 0), y + 11);
+				iV_DrawImage(FrontImages, medalImgs[ar.medal], x + 16 - 2 * (ar.level != 0), y + 11);
 			}
 		}
-		constexpr int levelImgs[9] = {0, IMAGE_LEV_0, IMAGE_LEV_1, IMAGE_LEV_2, IMAGE_LEV_3, IMAGE_LEV_4, IMAGE_LEV_5, IMAGE_LEV_6, IMAGE_LEV_7};
+		constexpr int levelImgs[9] = {
+			0, IMAGE_LEV_0, IMAGE_LEV_1, IMAGE_LEV_2, IMAGE_LEV_3, IMAGE_LEV_4, IMAGE_LEV_5, IMAGE_LEV_6, IMAGE_LEV_7
+		};
 		if (1 <= ar.level && ar.level < ARRAY_SIZE(levelImgs))
 		{
 			iV_DrawImage(IntImages, levelImgs[ar.star[2]], x + 24, y + 15);
@@ -7490,12 +7958,12 @@ void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 		if (!ar.elo.empty())
 		{
 			cache.wzEloText.setText(ar.elo, font_small);
-			cache.wzEloText.render(x + nameX, y + 28 + H*!subText.empty(), WZCOL_TEXT_BRIGHT);
+			cache.wzEloText.render(x + nameX, y + 28 + H * !subText.empty(), WZCOL_TEXT_BRIGHT);
 		}
 
 		NetPlay.players[j].difficulty = AIDifficulty::HUMAN;
 	}
-	else	// AI
+	else // AI
 	{
 		char aitext[100];
 
@@ -7507,7 +7975,7 @@ void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 		// challenges may use custom AIs that are not in aidata and set to 127
 		if (!challengeActive)
 		{
-		    ASSERT_OR_RETURN(, NetPlay.players[j].ai < (int)aidata.size(), "Uh-oh, AI index out of bounds");
+			ASSERT_OR_RETURN(, NetPlay.players[j].ai < (int)aidata.size(), "Uh-oh, AI index out of bounds");
 		}
 
 		PIELIGHT textColor = WZCOL_FORM_TEXT;
@@ -7524,8 +7992,10 @@ void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 				textColor.byte.a = 220;
 			}
 			break;
-		case AI_CLOSED: sstrcpy(aitext, _("Closed")); break;
-		default: sstrcpy(aitext, NetPlay.players[j].name ); break;
+		case AI_CLOSED: sstrcpy(aitext, _("Closed"));
+			break;
+		default: sstrcpy(aitext, NetPlay.players[j].name);
+			break;
 		}
 		cache.wzMainText.setText(aitext, font_regular);
 		cache.wzMainText.render(x + nameX, y + 22, textColor);
@@ -7533,14 +8003,15 @@ void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 	}
 }
 
-void displayColour(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+void displayColour(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	const int x = xOffset + psWidget->x();
 	const int y = yOffset + psWidget->y();
 	const int j = psWidget->UserData;
 
 	drawBoxForPlayerInfoSegment(j, x, y, psWidget->width(), psWidget->height());
-	if (!NetPlay.players[j].fileSendInProgress() && NetPlay.players[j].difficulty != AIDifficulty::DISABLED && !NetPlay.players[j].isSpectator)
+	if (!NetPlay.players[j].fileSendInProgress() && NetPlay.players[j].difficulty != AIDifficulty::DISABLED && !NetPlay.
+		players[j].isSpectator)
 	{
 		int player = getPlayerColour(j);
 		STATIC_ASSERT(MAX_PLAYERS <= 16);
@@ -7548,14 +8019,15 @@ void displayColour(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 	}
 }
 
-void displayFaction(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+void displayFaction(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	const int x = xOffset + psWidget->x();
 	const int y = yOffset + psWidget->y();
 	const int j = psWidget->UserData;
 
 	drawBoxForPlayerInfoSegment(j, x, y, psWidget->width(), psWidget->height());
-	if (!NetPlay.players[j].fileSendInProgress() && NetPlay.players[j].difficulty != AIDifficulty::DISABLED && !NetPlay.players[j].isSpectator)
+	if (!NetPlay.players[j].fileSendInProgress() && NetPlay.players[j].difficulty != AIDifficulty::DISABLED && !NetPlay.
+		players[j].isSpectator)
 	{
 		FactionID faction = NetPlay.players[j].faction;
 		iV_DrawImage(FrontImages, factionIcon(faction), x + 5, y + 8);
@@ -7564,7 +8036,7 @@ void displayFaction(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 
 // ////////////////////////////////////////////////////////////////////////////
 // Display blue box
-void intDisplayFeBox(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+void intDisplayFeBox(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	int x = xOffset + psWidget->x();
 	int y = yOffset + psWidget->y();
@@ -7596,15 +8068,15 @@ static void drawBlueBox_SpectatorOnly(UDWORD x, UDWORD y, UDWORD w, UDWORD h)
 	h += 2;
 	PIELIGHT backgroundClr = WZCOL_FORM_DARK;
 	backgroundClr.byte.a = 175;
-//	PIELIGHT borderClr = pal_RGBA(30, 30, 30, 120);
-//	pie_UniTransBoxFill(x, y, x + w, y + h, borderClr);
-//	pie_UniTransBoxFill(x + 1, y + 1, x + w - 1, y + h - 1, backgroundClr);
+	//	PIELIGHT borderClr = pal_RGBA(30, 30, 30, 120);
+	//	pie_UniTransBoxFill(x, y, x + w, y + h, borderClr);
+	//	pie_UniTransBoxFill(x + 1, y + 1, x + w - 1, y + h - 1, backgroundClr);
 	pie_UniTransBoxFill(x, y, x + w, y + h, backgroundClr);
 }
 
 // ////////////////////////////////////////////////////////////////////////////
 // Display (not-blue) box for spectators
-void intDisplayFeBox_Spectator(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+void intDisplayFeBox_Spectator(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	int x = xOffset + psWidget->x();
 	int y = yOffset + psWidget->y();
@@ -7613,7 +8085,8 @@ void intDisplayFeBox_Spectator(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 
 	drawBlueBox_Spectator(x, y, w, h);
 }
-void intDisplayFeBox_SpectatorOnly(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+
+void intDisplayFeBox_SpectatorOnly(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	int x = xOffset + psWidget->x();
 	int y = yOffset + psWidget->y();
@@ -7643,7 +8116,7 @@ static inline void drawBoxForPlayerInfoSegment(UDWORD playerIdx, UDWORD x, UDWOR
 	}
 }
 
-static void displayReadyBoxContainer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+static void displayReadyBoxContainer(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	const int x = xOffset + psWidget->x();
 	const int y = yOffset + psWidget->y();
@@ -7654,14 +8127,14 @@ static void displayReadyBoxContainer(WIDGET *psWidget, UDWORD xOffset, UDWORD yO
 
 // ////////////////////////////////////////////////////////////////////////////
 // Display edit box
-void displayMultiEditBox(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+void displayMultiEditBox(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	int x = xOffset + psWidget->x();
 	int y = yOffset + psWidget->y();
 
 	drawBlueBox(x, y, psWidget->width(), psWidget->height());
 
-	if (((W_EDITBOX *)psWidget)->state & WEDBS_DISABLE)					// disabled
+	if (((W_EDITBOX*)psWidget)->state & WEDBS_DISABLE) // disabled
 	{
 		PIELIGHT colour;
 
@@ -7702,11 +8175,11 @@ void WzMultiButton::display(int xOffset, int yOffset)
 	// transparent icon with these edit boxes.
 	// hack for multieditbox
 	if (imNormal.id == IMAGE_EDIT_MAP || imNormal.id == IMAGE_EDIT_GAME || imNormal.id == IMAGE_EDIT_PLAYER
-	    || imNormal.id == IMAGE_LOCK_BLUE || imNormal.id == IMAGE_UNLOCK_BLUE || drawBlueBorder.value_or(false))
+		|| imNormal.id == IMAGE_LOCK_BLUE || imNormal.id == IMAGE_UNLOCK_BLUE || drawBlueBorder.value_or(false))
 	{
 		if (drawBlueBorder.value_or(true)) // if drawBlueBox is explicitly set to false, don't draw the box
 		{
-			::drawBlueBox(x0 - 2, y0 - 2, height(), height());  // box on end.
+			::drawBlueBox(x0 - 2, y0 - 2, height(), height()); // box on end.
 		}
 	}
 
@@ -7773,9 +8246,10 @@ void WzMultiButton::display(int xOffset, int yOffset)
 /////////////////////////////////////////////////////////////////////////////////////////
 // common widgets
 
-static W_EDITBOX* addMultiEditBox(UDWORD formid, UDWORD id, UDWORD x, UDWORD y, char const *tip, char const *tipres, UDWORD icon, UDWORD iconhi, UDWORD iconid)
+static W_EDITBOX* addMultiEditBox(UDWORD formid, UDWORD id, UDWORD x, UDWORD y, char const* tip, char const* tipres,
+                                  UDWORD icon, UDWORD iconhi, UDWORD iconid)
 {
-	W_EDBINIT sEdInit;                           // editbox
+	W_EDBINIT sEdInit; // editbox
 	sEdInit.formID = formid;
 	sEdInit.id = id;
 	sEdInit.x = (short)x;
@@ -7790,12 +8264,15 @@ static W_EDITBOX* addMultiEditBox(UDWORD formid, UDWORD id, UDWORD x, UDWORD y, 
 		return nullptr;
 	}
 
-	addMultiBut(psWScreen, MULTIOP_OPTIONS, iconid, x + MULTIOP_EDITBOXW + 2, y + 2, MULTIOP_EDITBOXH, MULTIOP_EDITBOXH, tip, icon, iconhi, iconhi);
+	addMultiBut(psWScreen, MULTIOP_OPTIONS, iconid, x + MULTIOP_EDITBOXW + 2, y + 2, MULTIOP_EDITBOXH, MULTIOP_EDITBOXH,
+	            tip, icon, iconhi, iconhi);
 	return editBox;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
-std::shared_ptr<W_BUTTON> addMultiBut(WIDGET &parent, UDWORD id, UDWORD x, UDWORD y, UDWORD width, UDWORD height, const char *tipres, UDWORD norm, UDWORD down, UDWORD hi, unsigned tc, uint8_t alpha)
+std::shared_ptr<W_BUTTON> addMultiBut(WIDGET& parent, UDWORD id, UDWORD x, UDWORD y, UDWORD width, UDWORD height,
+                                      const char* tipres, UDWORD norm, UDWORD down, UDWORD hi, unsigned tc,
+                                      uint8_t alpha)
 {
 	std::shared_ptr<WzMultiButton> button;
 	auto existingWidget = widgFormGetFromID(parent.shared_from_this(), id);
@@ -7819,9 +8296,11 @@ std::shared_ptr<W_BUTTON> addMultiBut(WIDGET &parent, UDWORD id, UDWORD x, UDWOR
 	return button;
 }
 
-std::shared_ptr<W_BUTTON> addMultiBut(const std::shared_ptr<W_SCREEN> &screen, UDWORD formid, UDWORD id, UDWORD x, UDWORD y, UDWORD width, UDWORD height, const char *tipres, UDWORD norm, UDWORD down, UDWORD hi, unsigned tc, uint8_t alpha)
+std::shared_ptr<W_BUTTON> addMultiBut(const std::shared_ptr<W_SCREEN>& screen, UDWORD formid, UDWORD id, UDWORD x,
+                                      UDWORD y, UDWORD width, UDWORD height, const char* tipres, UDWORD norm,
+                                      UDWORD down, UDWORD hi, unsigned tc, uint8_t alpha)
 {
-	WIDGET *pWidget = widgGetFromID(screen, formid);
+	WIDGET* pWidget = widgGetFromID(screen, formid);
 	ASSERT(pWidget != nullptr, "Unable to find formID: %" PRIu32, formid);
 	return addMultiBut(*pWidget, id, x, y, width, height, tipres, norm, down, hi, tc, alpha);
 }
@@ -7860,21 +8339,21 @@ static bool multiplayIsStartingGame()
 	return bInActualHostedLobby && multiplayPlayersReady();
 }
 
-void sendRoomSystemMessage(char const *text)
+void sendRoomSystemMessage(char const* text)
 {
 	NetworkTextMessage message(SYSTEM_MESSAGE, text);
 	displayRoomSystemMessage(text);
 	message.enqueue(NETbroadcastQueue());
 }
 
-void sendRoomNotifyMessage(char const *text)
+void sendRoomNotifyMessage(char const* text)
 {
 	NetworkTextMessage message(NOTIFY_MESSAGE, text);
 	displayRoomSystemMessage(text);
 	message.enqueue(NETbroadcastQueue());
 }
 
-void sendRoomSystemMessageToSingleReceiver(char const *text, uint32_t receiver)
+void sendRoomSystemMessageToSingleReceiver(char const* text, uint32_t receiver)
 {
 	ASSERT_OR_RETURN(, isHumanPlayer(receiver), "Invalid receiver: %" PRIu32 "", receiver);
 	NetworkTextMessage message(SYSTEM_MESSAGE, text);
@@ -7882,7 +8361,7 @@ void sendRoomSystemMessageToSingleReceiver(char const *text, uint32_t receiver)
 	message.enqueue(NETnetQueue(receiver));
 }
 
-static void sendRoomChatMessage(char const *text)
+static void sendRoomChatMessage(char const* text)
 {
 	NetworkTextMessage message(selectedPlayer, text);
 	displayRoomMessage(RoomMessage::player(selectedPlayer, text));
@@ -7900,12 +8379,13 @@ static void sendRoomChatMessage(char const *text)
 
 static int numSlotsToBeDisplayed()
 {
-	ASSERT(static_cast<size_t>(MAX_CONNECTED_PLAYERS) <= NetPlay.players.size(), "Insufficient array size: %zu versus %zu", NetPlay.players.size(), (size_t)MAX_CONNECTED_PLAYERS);
+	ASSERT(static_cast<size_t>(MAX_CONNECTED_PLAYERS) <= NetPlay.players.size(),
+	       "Insufficient array size: %zu versus %zu", NetPlay.players.size(), (size_t)MAX_CONNECTED_PLAYERS);
 	int numSlotsToBeDisplayed = 0;
 	for (int i = 0; i < MAX_CONNECTED_PLAYERS; i++)
 	{
 		if (isSpectatorOnlySlot(i)
-				 && ((i >= NetPlay.players.size()) || !(NetPlay.players[i].isSpectator && NetPlay.players[i].ai == AI_OPEN)))
+			&& ((i >= NetPlay.players.size()) || !(NetPlay.players[i].isSpectator && NetPlay.players[i].ai == AI_OPEN)))
 		{
 			// the only slots displayable beyond maxPlayers are spectator-only slots that are enabled
 			continue;
@@ -7938,22 +8418,27 @@ static inline bool isSpectatorOnlySlot(UDWORD playerIdx)
 #include "version.h"
 #include "lib/framework/file.h"
 
-inline void to_json(nlohmann::json& j, const Sha256& p) {
+inline void to_json(nlohmann::json& j, const Sha256& p)
+{
 	j = p.toString();
 }
 
-inline void from_json(const nlohmann::json& j, Sha256& p) {
+inline void from_json(const nlohmann::json& j, Sha256& p)
+{
 	std::string str = j.get<std::string>();
 	p.fromString(str);
 }
 
-inline void to_json(nlohmann::json& j, const MULTIPLAYERGAME& p) {
+inline void to_json(nlohmann::json& j, const MULTIPLAYERGAME& p)
+{
 	j = nlohmann::json::object();
 	j["type"] = p.type;
 	j["scavengers"] = p.scavengers;
-	j["map"] = WzString::fromUtf8(p.map).toStdString(); // Wrap this in WzString to handle invalid UTF-8 before adding to json object
+	j["map"] = WzString::fromUtf8(p.map).toStdString();
+	// Wrap this in WzString to handle invalid UTF-8 before adding to json object
 	j["maxPlayers"] = p.maxPlayers;
-	j["name"] = WzString::fromUtf8(p.name).toStdString(); // Wrap this in WzString to handle invalid UTF-8 before adding to json object
+	j["name"] = WzString::fromUtf8(p.name).toStdString();
+	// Wrap this in WzString to handle invalid UTF-8 before adding to json object
 	j["hash"] = p.hash;
 	j["modHashes"] = p.modHashes;
 	j["power"] = p.power;
@@ -7966,7 +8451,8 @@ inline void to_json(nlohmann::json& j, const MULTIPLAYERGAME& p) {
 	j["inactivityMinutes"] = p.inactivityMinutes;
 }
 
-inline void from_json(const nlohmann::json& j, MULTIPLAYERGAME& p) {
+inline void from_json(const nlohmann::json& j, MULTIPLAYERGAME& p)
+{
 	p.type = j.at("type").get<LEVEL_TYPE>();
 	p.scavengers = j.at("scavengers").get<uint8_t>();
 	std::string str = j.at("map").get<std::string>();
@@ -7994,62 +8480,70 @@ inline void from_json(const nlohmann::json& j, MULTIPLAYERGAME& p) {
 	}
 }
 
-inline void to_json(nlohmann::json& j, const MULTISTRUCTLIMITS& p) {
+inline void to_json(nlohmann::json& j, const MULTISTRUCTLIMITS& p)
+{
 	j = nlohmann::json::object();
 	j["id"] = p.id;
 	j["limit"] = p.limit;
 }
 
-inline void from_json(const nlohmann::json& j, MULTISTRUCTLIMITS& p) {
+inline void from_json(const nlohmann::json& j, MULTISTRUCTLIMITS& p)
+{
 	p.id = j.at("id").get<uint32_t>();
 	p.limit = j.at("limit").get<uint32_t>();
 }
 
-inline void to_json(nlohmann::json& j, const InGameSide& p) {
+inline void to_json(nlohmann::json& j, const InGameSide& p)
+{
 	j = static_cast<bool>(p);
 }
 
-inline void from_json(const nlohmann::json& j, InGameSide& p) {
+inline void from_json(const nlohmann::json& j, InGameSide& p)
+{
 	auto val = j.get<bool>();
 	p = static_cast<InGameSide>(val);
 }
 
 
-inline void to_json(nlohmann::json& j, const MULTIPLAYERINGAME& p) {
+inline void to_json(nlohmann::json& j, const MULTIPLAYERINGAME& p)
+{
 	j = nlohmann::json::object();
 
-//	auto joiningInProgress = nlohmann::json::array();
-//	for (size_t idx = 0; idx < MAX_CONNECTED_PLAYERS; idx++)
-//	{
-//		joiningInProgress.push_back(p.JoiningInProgress[idx]);
-//	}
-//	j["JoiningInProgress"] = joiningInProgress;
+	//	auto joiningInProgress = nlohmann::json::array();
+	//	for (size_t idx = 0; idx < MAX_CONNECTED_PLAYERS; idx++)
+	//	{
+	//		joiningInProgress.push_back(p.JoiningInProgress[idx]);
+	//	}
+	//	j["JoiningInProgress"] = joiningInProgress;
 	j["side"] = p.side;
-	j["structureLimits"] = p.lastAppliedStructureLimits; // See applyLimitSet() for why we save `lastAppliedStructureLimits` as `structureLimits`
+	j["structureLimits"] = p.lastAppliedStructureLimits;
+	// See applyLimitSet() for why we save `lastAppliedStructureLimits` as `structureLimits`
 	j["flags"] = p.flags;
 }
 
-inline void from_json(const nlohmann::json& j, MULTIPLAYERINGAME& p) {
-//	auto joiningInProgress = j["JoiningInProgress"];
-//	ASSERT(joiningInProgress.is_array(), "joiningInProgress should be an array");
-//	for (size_t idx = 0; idx < joiningInProgress.size(); idx++)
-//	{
-//		if (idx >= MAX_CONNECTED_PLAYERS)
-//		{
-//			debug(LOG_ERROR, "Unexpected size: %zu", joiningInProgress.size());
-//			break;
-//		}
-//		p.JoiningInProgress[idx] = joiningInProgress[idx].get<bool>();
-//	}
+inline void from_json(const nlohmann::json& j, MULTIPLAYERINGAME& p)
+{
+	//	auto joiningInProgress = j["JoiningInProgress"];
+	//	ASSERT(joiningInProgress.is_array(), "joiningInProgress should be an array");
+	//	for (size_t idx = 0; idx < joiningInProgress.size(); idx++)
+	//	{
+	//		if (idx >= MAX_CONNECTED_PLAYERS)
+	//		{
+	//			debug(LOG_ERROR, "Unexpected size: %zu", joiningInProgress.size());
+	//			break;
+	//		}
+	//		p.JoiningInProgress[idx] = joiningInProgress[idx].get<bool>();
+	//	}
 	p.side = j.at("side").get<InGameSide>();
 	p.structureLimits = j.at("structureLimits").get<std::vector<MULTISTRUCTLIMITS>>();
 	p.flags = j.at("flags").get<uint8_t>();
 }
 
-inline void to_json(nlohmann::json& j, const PLAYER& p) {
-
+inline void to_json(nlohmann::json& j, const PLAYER& p)
+{
 	j = nlohmann::json::object();
-	j["name"] = WzString::fromUtf8(p.name).toStdString(); // Wrap this in WzString to handle invalid UTF-8 before adding to json object
+	j["name"] = WzString::fromUtf8(p.name).toStdString();
+	// Wrap this in WzString to handle invalid UTF-8 before adding to json object
 	j["position"] = p.position;
 	j["colour"] = p.colour;
 	j["allocated"] = p.allocated;
@@ -8067,7 +8561,8 @@ inline void to_json(nlohmann::json& j, const PLAYER& p) {
 	j["isSpectator"] = p.isSpectator;
 }
 
-inline void from_json(const nlohmann::json& j, PLAYER& p) {
+inline void from_json(const nlohmann::json& j, PLAYER& p)
+{
 	std::string str = j.at("name").get<std::string>();
 	sstrcpy(p.name, str.c_str());
 	p.position = j.at("position").get<int32_t>();
@@ -8157,8 +8652,8 @@ bool WZGameReplayOptionsHandler::saveOptions(nlohmann::json& object) const
 	// Save `NetPlay.bComms`
 	object["netplay.bComms"] = NetPlay.bComms;
 
-//	// Save `NetPlay.isHost` (but don't load it)
-//	object["netplay.isHost"] = NetPlay.isHost;
+	//	// Save `NetPlay.isHost` (but don't load it)
+	//	object["netplay.isHost"] = NetPlay.isHost;
 
 	// multistats
 	auto multiStatsJson = nlohmann::json::array();
@@ -8192,7 +8687,7 @@ bool WZGameReplayOptionsHandler::saveMap(EmbeddedMapData& embeddedMapData) const
 		return true;
 	}
 
-	LEVEL_DATASET *mapData = levFindDataSet(game.map, &game.hash);
+	LEVEL_DATASET* mapData = levFindDataSet(game.map, &game.hash);
 	ASSERT_OR_RETURN(false, mapData != nullptr, "Unable to find map??");
 
 	if (!mapData->realFileName)
@@ -8201,14 +8696,15 @@ bool WZGameReplayOptionsHandler::saveMap(EmbeddedMapData& embeddedMapData) const
 		return true;
 	}
 
-	PHYSFS_file *mapFileHandle = PHYSFS_openRead(mapData->realFileName);
+	PHYSFS_file* mapFileHandle = PHYSFS_openRead(mapData->realFileName);
 	if (mapFileHandle == nullptr)
 	{
 		debug(LOG_INFO, "Unable to open for reading: %s; error: %s", mapData->realFileName, WZ_PHYSFS_getLastError());
 		return false;
 	}
 	{
-		auto free_map_handle_ref = gsl::finally([mapFileHandle] { PHYSFS_close(mapFileHandle); });  // establish exit action
+		auto free_map_handle_ref = gsl::finally([mapFileHandle] { PHYSFS_close(mapFileHandle); });
+		// establish exit action
 
 		PHYSFS_sint64 filesize = PHYSFS_fileLength(mapFileHandle);
 		ASSERT_OR_RETURN(false, filesize > 0, "Invalid filesize");
@@ -8219,7 +8715,8 @@ bool WZGameReplayOptionsHandler::saveMap(EmbeddedMapData& embeddedMapData) const
 		}
 		// resize the mapBinaryData to be able to contain the map data
 		embeddedMapData.mapBinaryData.resize(static_cast<size_t>(filesize));
-		auto readBytes = WZ_PHYSFS_readBytes(mapFileHandle, embeddedMapData.mapBinaryData.data(), static_cast<PHYSFS_uint32>(filesize));
+		auto readBytes = WZ_PHYSFS_readBytes(mapFileHandle, embeddedMapData.mapBinaryData.data(),
+		                                     static_cast<PHYSFS_uint32>(filesize));
 		ASSERT_OR_RETURN(false, readBytes == filesize, "Read failed");
 	}
 
@@ -8231,25 +8728,26 @@ size_t WZGameReplayOptionsHandler::desiredBufferSize() const
 	auto currentGameMode = ActivityManager::instance().getCurrentGameMode();
 	switch (currentGameMode)
 	{
-		case ActivitySink::GameMode::MENUS:
-			// should not happen
-			break;
-		case ActivitySink::GameMode::CAMPAIGN:
-		case ActivitySink::GameMode::CHALLENGE:
-			// replays not currently supported
-			break;
-		case ActivitySink::GameMode::SKIRMISH:
-			return 0; // use default
-		case ActivitySink::GameMode::MULTIPLAYER:
-			// big games need a big buffer
-			return std::numeric_limits<size_t>::max();
-		default:
-			debug(LOG_INFO, "Unhandled case: %u", (unsigned int)currentGameMode);
+	case ActivitySink::GameMode::MENUS:
+		// should not happen
+		break;
+	case ActivitySink::GameMode::CAMPAIGN:
+	case ActivitySink::GameMode::CHALLENGE:
+		// replays not currently supported
+		break;
+	case ActivitySink::GameMode::SKIRMISH:
+		return 0; // use default
+	case ActivitySink::GameMode::MULTIPLAYER:
+		// big games need a big buffer
+		return std::numeric_limits<size_t>::max();
+	default:
+		debug(LOG_INFO, "Unhandled case: %u", (unsigned int)currentGameMode);
 	}
 	return 0;
 }
 
-bool WZGameReplayOptionsHandler::restoreOptions(const nlohmann::json& object, EmbeddedMapData&& embeddedMapData, uint32_t replay_netcodeMajor, uint32_t replay_netcodeMinor)
+bool WZGameReplayOptionsHandler::restoreOptions(const nlohmann::json& object, EmbeddedMapData&& embeddedMapData,
+                                                uint32_t replay_netcodeMajor, uint32_t replay_netcodeMinor)
 {
 	// random seed
 	uint32_t rand_seed = object.at("randSeed").get<uint32_t>();
@@ -8264,9 +8762,11 @@ bool WZGameReplayOptionsHandler::restoreOptions(const nlohmann::json& object, Em
 	{
 		if (nonMatchingVersionString)
 		{
-			debug(LOG_INFO, "Version string mismatch: (replay: %s) - (current: %s)", replayVersionStr.c_str(), expectedVersionStr);
+			debug(LOG_INFO, "Version string mismatch: (replay: %s) - (current: %s)", replayVersionStr.c_str(),
+			      expectedVersionStr);
 		}
-		std::string mismatchVersionDescription = _("The version of Warzone 2100 used to save this replay file does not match the currently-running version.");
+		std::string mismatchVersionDescription = _(
+			"The version of Warzone 2100 used to save this replay file does not match the currently-running version.");
 		mismatchVersionDescription += "\n\n";
 		mismatchVersionDescription += astringf(_("Replay File Saved With: \"%s\""), replayVersionStr.c_str());
 		mismatchVersionDescription += "\n";
@@ -8277,15 +8777,20 @@ bool WZGameReplayOptionsHandler::restoreOptions(const nlohmann::json& object, Em
 		else
 		{
 			// only a netcode mismatch - weird, but display the netcode version info
-			mismatchVersionDescription += astringf("Replay File NetcodeVer: (0x%" PRIx32 ", 0x%" PRIx32 ")", replay_netcodeMajor, replay_netcodeMinor);
+			mismatchVersionDescription += astringf("Replay File NetcodeVer: (0x%" PRIx32 ", 0x%" PRIx32 ")",
+			                                       replay_netcodeMajor, replay_netcodeMinor);
 			mismatchVersionDescription += "\n";
-			mismatchVersionDescription += astringf("Current Warzone 2100 NetcodeVer: (0x%" PRIx32 ", 0x%" PRIx32 ")", NETGetMajorVersion(), NETGetMinorVersion());
+			mismatchVersionDescription += astringf("Current Warzone 2100 NetcodeVer: (0x%" PRIx32 ", 0x%" PRIx32 ")",
+			                                       NETGetMajorVersion(), NETGetMinorVersion());
 		}
 		mismatchVersionDescription += "\n\n";
-		mismatchVersionDescription += _("Replays should usually be played back with the same version used to save the replay.");
+		mismatchVersionDescription += _(
+			"Replays should usually be played back with the same version used to save the replay.");
 		mismatchVersionDescription += "\n";
-		mismatchVersionDescription += _("The replay may not playback successfully, or there may be differences in the simulation.");
-		wzDisplayDialog((nonMatchingVersionString) ? Dialog_Warning : Dialog_Error, _("Replay Version Mismatch"), mismatchVersionDescription.c_str());
+		mismatchVersionDescription += _(
+			"The replay may not playback successfully, or there may be differences in the simulation.");
+		wzDisplayDialog((nonMatchingVersionString) ? Dialog_Warning : Dialog_Error, _("Replay Version Mismatch"),
+		                mismatchVersionDescription.c_str());
 	}
 
 	// restore `game`
@@ -8331,7 +8836,7 @@ bool WZGameReplayOptionsHandler::restoreOptions(const nlohmann::json& object, Em
 	// clear out the old level list.
 	levShutDown();
 	levInitialise();
-	rebuildSearchPath(mod_multiplay, true);	// MUST rebuild search path for the new maps we just got!
+	rebuildSearchPath(mod_multiplay, true); // MUST rebuild search path for the new maps we just got!
 	pal_Init(); //Update palettes.
 	if (!buildMapList())
 	{
@@ -8349,12 +8854,13 @@ bool WZGameReplayOptionsHandler::restoreOptions(const nlohmann::json& object, Em
 			}
 			else
 			{
-				debug(LOG_ERROR, "Embedded map data size (%zu) exceeds maximum supported size", embeddedMapData.mapBinaryData.size());
+				debug(LOG_ERROR, "Embedded map data size (%zu) exceeds maximum supported size",
+				      embeddedMapData.mapBinaryData.size());
 			}
 		}
 	}
 
-	LEVEL_DATASET *mapData = levFindDataSet(game.map, &game.hash);
+	LEVEL_DATASET* mapData = levFindDataSet(game.map, &game.hash);
 	// See if we have the map or not
 	if (mapData == nullptr)
 	{
@@ -8365,7 +8871,7 @@ bool WZGameReplayOptionsHandler::restoreOptions(const nlohmann::json& object, Em
 	// Must restore `builtInMap` (this matters for re-loading the map!) - see loadMapPreview() in multiint.cpp
 	builtInMap = (mapData->realFileName == nullptr);
 
-	for (Sha256 &hash : game.modHashes)
+	for (Sha256& hash : game.modHashes)
 	{
 		// TODO: Actually check the loaded mods??
 
@@ -8396,7 +8902,7 @@ bool WZGameReplayOptionsHandler::restoreOptions(const nlohmann::json& object, Em
 	game.isRandom = mapData && CheckForRandom(mapData->realFileName, mapData->apDataFiles[0]);
 
 	// Set various other initialization things (see NET_FIREUP)
-	ingame.TimeEveryoneIsInGame = nullopt;			// reset time
+	ingame.TimeEveryoneIsInGame = nullopt; // reset time
 	ingame.endTime = nullopt;
 	resetDataHash();
 	decideWRF();
@@ -8410,7 +8916,7 @@ bool WZGameReplayOptionsHandler::restoreOptions(const nlohmann::json& object, Em
 	}
 	NetPlay.players.push_back(PLAYER());
 	size_t replaySpectatorIndex = NetPlay.players.size() - 1;
-	NET_InitPlayer(replaySpectatorIndex, false);  // re-init everything
+	NET_InitPlayer(replaySpectatorIndex, false); // re-init everything
 	NetPlay.players[replaySpectatorIndex].allocated = true;
 	sstrcpy(NetPlay.players[replaySpectatorIndex].name, "Replay Viewer");
 	NetPlay.players[replaySpectatorIndex].isSpectator = true;

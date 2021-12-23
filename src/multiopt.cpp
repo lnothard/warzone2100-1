@@ -81,7 +81,7 @@ void sendOptions()
 	NETbin(game.hash.bytes, game.hash.Bytes);
 	uint32_t modHashesSize = game.modHashes.size();
 	NETuint32_t(&modHashesSize);
-	for (auto &hash : game.modHashes)
+	for (auto& hash : game.modHashes)
 	{
 		NETbin(hash.bytes, hash.Bytes);
 	}
@@ -95,7 +95,8 @@ void sendOptions()
 	NETuint32_t(&game.techLevel);
 	if (game.inactivityMinutes > 0 && game.inactivityMinutes < MIN_MPINACTIVITY_MINUTES)
 	{
-		debug(LOG_ERROR, "Invalid inactivityMinutes value specified: %" PRIu32 "; resetting to: %" PRIu32, game.inactivityMinutes, static_cast<uint32_t>(MIN_MPINACTIVITY_MINUTES));
+		debug(LOG_ERROR, "Invalid inactivityMinutes value specified: %" PRIu32 "; resetting to: %" PRIu32,
+		      game.inactivityMinutes, static_cast<uint32_t>(MIN_MPINACTIVITY_MINUTES));
 		game.inactivityMinutes = MIN_MPINACTIVITY_MINUTES;
 	}
 	NETuint32_t(&game.inactivityMinutes);
@@ -143,7 +144,8 @@ void sendOptions()
 // returns: false if the options should be considered invalid and the client should disconnect
 bool recvOptions(NETQUEUE queue)
 {
-	ASSERT_OR_RETURN(true /* silently ignore */, queue.index == NetPlay.hostPlayer, "NET_OPTIONS received from unexpected player: %" PRIu8 " - ignoring", queue.index);
+	ASSERT_OR_RETURN(true /* silently ignore */, queue.index == NetPlay.hostPlayer,
+	                 "NET_OPTIONS received from unexpected player: %" PRIu8 " - ignoring", queue.index);
 	ASSERT_OR_RETURN(false, GetGameMode() != GS_NORMAL, "NET_OPTIONS received after the game has started??");
 
 	unsigned int i;
@@ -162,7 +164,7 @@ bool recvOptions(NETQUEUE queue)
 	NETuint32_t(&modHashesSize);
 	ASSERT_OR_RETURN(false, modHashesSize < 1000000, "Way too many mods %u", modHashesSize);
 	game.modHashes.resize(modHashesSize);
-	for (auto &hash : game.modHashes)
+	for (auto& hash : game.modHashes)
 	{
 		NETbin(hash.bytes, hash.Bytes);
 	}
@@ -226,28 +228,32 @@ bool recvOptions(NETQUEUE queue)
 
 	NETend();
 
-	bool bRebuildMapList = strcmp(game.map, priorGameInfo.map) != 0 || game.hash != priorGameInfo.hash || game.modHashes != priorGameInfo.modHashes;
+	bool bRebuildMapList = strcmp(game.map, priorGameInfo.map) != 0 || game.hash != priorGameInfo.hash || game.modHashes
+		!= priorGameInfo.modHashes;
 	if (bRebuildMapList)
 	{
 		debug(LOG_INFO, "Rebuilding map list");
 		// clear out the old level list.
 		levShutDown();
 		levInitialise();
-		rebuildSearchPath(mod_multiplay, true);	// MUST rebuild search path for the new maps we just got!
+		rebuildSearchPath(mod_multiplay, true); // MUST rebuild search path for the new maps we just got!
 		buildMapList();
 	}
 
-	enum class FileRequestResult {
+	enum class FileRequestResult
+	{
 		StartingDownload,
 		DownloadInProgress,
 		FileExists,
 		FailedToOpenFileForWriting
 	};
-	auto requestFile = [](Sha256 &hash, char const *filename) -> FileRequestResult {
-		if (std::any_of(NET_getDownloadingWzFiles().begin(), NET_getDownloadingWzFiles().end(), [&hash](WZFile const &file) { return file.hash == hash; }))
+	auto requestFile = [](Sha256& hash, char const* filename) -> FileRequestResult
+	{
+		if (std::any_of(NET_getDownloadingWzFiles().begin(), NET_getDownloadingWzFiles().end(),
+		                [&hash](WZFile const& file) { return file.hash == hash; }))
 		{
 			debug(LOG_INFO, "Already requested file, continue waiting.");
-			return FileRequestResult::DownloadInProgress;  // Downloading the file already
+			return FileRequestResult::DownloadInProgress; // Downloading the file already
 		}
 
 		if (!PHYSFS_exists(filename))
@@ -261,10 +267,10 @@ bool recvOptions(NETQUEUE queue)
 		else
 		{
 			pal_Init(); // Palette could be modded. // Why is this here - isn't there a better place for it?
-			return FileRequestResult::FileExists;  // Have the file already.
+			return FileRequestResult::FileExists; // Have the file already.
 		}
 
-		PHYSFS_file *pFileHandle = PHYSFS_openWrite(filename);
+		PHYSFS_file* pFileHandle = PHYSFS_openWrite(filename);
 		if (pFileHandle == nullptr)
 		{
 			debug(LOG_ERROR, "Failed to open %s for writing: %s", filename, WZ_PHYSFS_getLastError());
@@ -278,10 +284,10 @@ bool recvOptions(NETQUEUE queue)
 		NETbin(hash.bytes, hash.Bytes);
 		NETend();
 
-		return FileRequestResult::StartingDownload;  // Starting download now.
+		return FileRequestResult::StartingDownload; // Starting download now.
 	};
 
-	LEVEL_DATASET *mapData = levFindDataSet(game.map, &game.hash);
+	LEVEL_DATASET* mapData = levFindDataSet(game.map, &game.hash);
 	// See if we have the map or not
 	if (mapData == nullptr)
 	{
@@ -289,34 +295,36 @@ bool recvOptions(NETQUEUE queue)
 		sstrcpy(mapName, game.map);
 		removeWildcards(mapName);
 
-		if (strlen(mapName) >= 3 && mapName[strlen(mapName) - 3] == '-' && mapName[strlen(mapName) - 2] == 'T' && unsigned(mapName[strlen(mapName) - 1] - '1') < 3)
+		if (strlen(mapName) >= 3 && mapName[strlen(mapName) - 3] == '-' && mapName[strlen(mapName) - 2] == 'T' &&
+			unsigned(mapName[strlen(mapName) - 1] - '1') < 3)
 		{
-			mapName[strlen(mapName) - 3] = '\0';  // Cut off "-T1", "-T2" or "-T3".
+			mapName[strlen(mapName) - 3] = '\0'; // Cut off "-T1", "-T2" or "-T3".
 		}
 		char filename[256];
-		ssprintf(filename, "maps/%dc-%s-%s.wz", game.maxPlayers, mapName, game.hash.toString().c_str());  // Wonder whether game.maxPlayers is initialised already?
+		ssprintf(filename, "maps/%dc-%s-%s.wz", game.maxPlayers, mapName, game.hash.toString().c_str());
+		// Wonder whether game.maxPlayers is initialised already?
 
 		auto requestResult = requestFile(game.hash, filename);
 		switch (requestResult)
 		{
-			case FileRequestResult::StartingDownload:
-				debug(LOG_INFO, "Map was not found, requesting map %s from host, type %d", game.map, game.isMapMod);
-				addConsoleMessage(_("MAP REQUESTED!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
-				break;
-			case FileRequestResult::DownloadInProgress:
-				// do nothing - just wait
-				break;
-			case FileRequestResult::FileExists:
-				debug(LOG_FATAL, "Can't load map %s, even though we downloaded %s", game.map, filename);
-				return false;
-			case FileRequestResult::FailedToOpenFileForWriting:
-				// TODO: How best to handle? Ideally, message + back out of lobby?
-				debug(LOG_FATAL, "Failed to open file for writing - unable to download file: %s", filename);
-				return false;
+		case FileRequestResult::StartingDownload:
+			debug(LOG_INFO, "Map was not found, requesting map %s from host, type %d", game.map, game.isMapMod);
+			addConsoleMessage(_("MAP REQUESTED!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+			break;
+		case FileRequestResult::DownloadInProgress:
+			// do nothing - just wait
+			break;
+		case FileRequestResult::FileExists:
+			debug(LOG_FATAL, "Can't load map %s, even though we downloaded %s", game.map, filename);
+			return false;
+		case FileRequestResult::FailedToOpenFileForWriting:
+			// TODO: How best to handle? Ideally, message + back out of lobby?
+			debug(LOG_FATAL, "Failed to open file for writing - unable to download file: %s", filename);
+			return false;
 		}
 	}
 
-	for (Sha256 &hash : game.modHashes)
+	for (Sha256& hash : game.modHashes)
 	{
 		char filename[256];
 		ssprintf(filename, "mods/downloads/%s", hash.toString().c_str());
@@ -324,28 +332,28 @@ bool recvOptions(NETQUEUE queue)
 		auto requestResult = requestFile(hash, filename);
 		switch (requestResult)
 		{
-			case FileRequestResult::StartingDownload:
-				debug(LOG_INFO, "Mod was not found, requesting mod %s from host", hash.toString().c_str());
-				addConsoleMessage(_("MOD REQUESTED!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
-				break;
-			case FileRequestResult::DownloadInProgress:
-				// do nothing - just wait
-				break;
-			case FileRequestResult::FileExists:
-				// Mod already exists / downloaded
-				break;
-			case FileRequestResult::FailedToOpenFileForWriting:
-				// TODO: How best to handle? Ideally, message + back out of lobby?
-				debug(LOG_FATAL, "Failed to open file for writing - unable to download file: %s", filename);
-				return false;
+		case FileRequestResult::StartingDownload:
+			debug(LOG_INFO, "Mod was not found, requesting mod %s from host", hash.toString().c_str());
+			addConsoleMessage(_("MOD REQUESTED!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+			break;
+		case FileRequestResult::DownloadInProgress:
+			// do nothing - just wait
+			break;
+		case FileRequestResult::FileExists:
+			// Mod already exists / downloaded
+			break;
+		case FileRequestResult::FailedToOpenFileForWriting:
+			// TODO: How best to handle? Ideally, message + back out of lobby?
+			debug(LOG_FATAL, "Failed to open file for writing - unable to download file: %s", filename);
+			return false;
 		}
 	}
 
 	if (mapData && CheckForMod(mapData->realFileName))
 	{
-		char const *str = game.isMapMod ?
-			_("Warning, this is a map-mod, it could alter normal gameplay.") :
-			_("Warning, HOST has altered the game code, and can't be trusted!");
+		char const* str = game.isMapMod
+			                  ? _("Warning, this is a map-mod, it could alter normal gameplay.")
+			                  : _("Warning, HOST has altered the game code, and can't be trusted!");
 		addConsoleMessage(str, DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
 		game.isMapMod = true;
 	}
@@ -364,13 +372,14 @@ bool recvOptions(NETQUEUE queue)
 
 // ////////////////////////////////////////////////////////////////////////////
 // Host Campaign.
-bool hostCampaign(const char *SessionName, char *hostPlayerName, bool spectatorHost, bool skipResetAIs)
+bool hostCampaign(const char* SessionName, char* hostPlayerName, bool spectatorHost, bool skipResetAIs)
 {
 	debug(LOG_WZ, "Hosting campaign: '%s', player: '%s'", SessionName, hostPlayerName);
 
 	freeMessages();
 
-	if (!NEThostGame(SessionName, hostPlayerName, spectatorHost, static_cast<uint32_t>(game.type), 0, 0, 0, game.maxPlayers))
+	if (!NEThostGame(SessionName, hostPlayerName, spectatorHost, static_cast<uint32_t>(game.type), 0, 0, 0,
+	                 game.maxPlayers))
 	{
 		return false;
 	}
@@ -438,14 +447,15 @@ bool multiShutdown()
 // ////////////////////////////////////////////////////////////////////////////
 static bool gameInit()
 {
-	UDWORD			player;
+	UDWORD player;
 
 	for (player = 1; player < MAX_CONNECTED_PLAYERS; player++)
 	{
 		// we want to remove disabled AI & all the other players that don't belong
-		if ((NetPlay.players[player].difficulty == AIDifficulty::DISABLED || player >= game.maxPlayers) && player != scavengerPlayer() && !(NetPlay.players[player].isSpectator && NetPlay.players[player].allocated))
+		if ((NetPlay.players[player].difficulty == AIDifficulty::DISABLED || player >= game.maxPlayers) && player !=
+			scavengerPlayer() && !(NetPlay.players[player].isSpectator && NetPlay.players[player].allocated))
 		{
-			clearPlayer(player, true);			// do this quietly
+			clearPlayer(player, true); // do this quietly
 			debug(LOG_NET, "removing disabled AI (%d) from map.", player);
 		}
 	}
@@ -470,7 +480,7 @@ static bool gameInit()
 	}
 	debug(LOG_NET, "Player count: %u", playerCount);
 
-	playerResponding();			// say howdy!
+	playerResponding(); // say howdy!
 
 	return true;
 }
@@ -500,7 +510,7 @@ bool multiGameInit()
 
 	for (player = 0; player < MAX_CONNECTED_PLAYERS; player++)
 	{
-		openchannels[player] = true;								//open comms to this player.
+		openchannels[player] = true; //open comms to this player.
 	}
 
 	gameInit();
@@ -514,11 +524,11 @@ bool multiGameShutdown()
 {
 	debug(LOG_NET, "%s is shutting down.", getPlayerName(selectedPlayer));
 
-	sendLeavingMsg();							// say goodbye
+	sendLeavingMsg(); // say goodbye
 
 	if (selectedPlayer < MAX_CONNECTED_PLAYERS)
 	{
-		PLAYERSTATS st = getMultiStats(selectedPlayer);	// save stats
+		PLAYERSTATS st = getMultiStats(selectedPlayer); // save stats
 
 		saveMultiStats(getPlayerName(selectedPlayer), getPlayerName(selectedPlayer), &st);
 	}
@@ -527,7 +537,7 @@ bool multiGameShutdown()
 	uint32_t time = wzGetTicks();
 	while (wzGetTicks() - time < 1000)
 	{
-		wzYieldCurrentThread();  // TODO Make a wzDelay() function?
+		wzYieldCurrentThread(); // TODO Make a wzDelay() function?
 	}
 	// close game
 	NETclose();
@@ -544,10 +554,10 @@ bool multiGameShutdown()
 	ingame.endTime = nullopt;
 	ingame.lastLagCheck = std::chrono::steady_clock::time_point();
 	ingame.lastPlayerDataCheck2 = std::chrono::steady_clock::time_point();
-	NetPlay.isHost					= false;
-	bMultiPlayer					= false;	// Back to single player mode
-	bMultiMessages					= false;
-	selectedPlayer					= 0;		// Back to use player 0 (single player friendly)
+	NetPlay.isHost = false;
+	bMultiPlayer = false; // Back to single player mode
+	bMultiMessages = false;
+	selectedPlayer = 0; // Back to use player 0 (single player friendly)
 
 	return true;
 }

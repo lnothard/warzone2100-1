@@ -24,6 +24,6 @@
 #include "qtscript.h"
 
 wzapi::scripting_instance* createQuickJSScriptInstance(const WzString& path, int player, int difficulty);
-ScriptMapData runMapScript_QuickJS(WzString const &path, uint64_t seed, bool preview);
+ScriptMapData runMapScript_QuickJS(WzString const& path, uint64_t seed, bool preview);
 
 #endif

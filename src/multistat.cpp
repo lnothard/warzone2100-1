@@ -53,12 +53,12 @@ static PLAYERSTATS playerStats[MAX_CONNECTED_PLAYERS];
 
 // ////////////////////////////////////////////////////////////////////////////
 // Get Player's stats
-PLAYERSTATS const &getMultiStats(UDWORD player)
+PLAYERSTATS const& getMultiStats(UDWORD player)
 {
 	return playerStats[player];
 }
 
-static void NETauto(PLAYERSTATS::Autorating &ar)
+static void NETauto(PLAYERSTATS::Autorating& ar)
 {
 	NETauto(ar.valid);
 	if (ar.valid)
@@ -72,9 +72,10 @@ static void NETauto(PLAYERSTATS::Autorating &ar)
 	}
 }
 
-PLAYERSTATS::Autorating::Autorating(nlohmann::json const &json)
+PLAYERSTATS::Autorating::Autorating(nlohmann::json const& json)
 {
-	try {
+	try
+	{
 		dummy = json["dummy"].get<bool>();
 		star[0] = json["star"][0].get<uint8_t>();
 		star[1] = json["star"][1].get<uint8_t>();
@@ -84,7 +85,9 @@ PLAYERSTATS::Autorating::Autorating(nlohmann::json const &json)
 		elo = json["elo"].get<std::string>();
 		autohoster = json["autohoster"].get<bool>();
 		valid = true;
-	} catch (const std::exception &e) {
+	}
+	catch (const std::exception& e)
+	{
 		debug(LOG_WARNING, "Error parsing rating JSON: %s", e.what());
 	}
 }
@@ -111,42 +114,53 @@ void lookupRatingAsync(uint32_t playerIndex)
 	URLDataRequest req;
 	req.url = url;
 	debug(LOG_INFO, "Requesting \"%s\"", req.url.c_str());
-	req.onSuccess = [playerIndex, hash](std::string const &url, HTTPResponseDetails const &response, std::shared_ptr<MemoryStruct> const &data) {
+	req.onSuccess = [playerIndex, hash](std::string const& url, HTTPResponseDetails const& response,
+	                                    std::shared_ptr<MemoryStruct> const& data)
+	{
 		long httpStatusCode = response.httpStatusCode();
 		std::string urlCopy = url;
 		if (httpStatusCode != 200 || !data || data->size == 0)
 		{
-			wzAsyncExecOnMainThread([urlCopy, httpStatusCode] {
+			wzAsyncExecOnMainThread([urlCopy, httpStatusCode]
+			{
 				debug(LOG_WARNING, "Failed to retrieve data from \"%s\", got [%ld].", urlCopy.c_str(), httpStatusCode);
 			});
 			return;
 		}
 
 		std::shared_ptr<MemoryStruct> dataCopy = data;
-		wzAsyncExecOnMainThread([playerIndex, hash, urlCopy, dataCopy] {
+		wzAsyncExecOnMainThread([playerIndex, hash, urlCopy, dataCopy]
+		{
 			if (playerStats[playerIndex].identity.publicHashString() != hash)
 			{
 				debug(LOG_WARNING, "Got data from \"%s\", but player is already gone.", urlCopy.c_str());
 				return;
 			}
-			try {
-				playerStats[playerIndex].autorating = nlohmann::json::parse(dataCopy->memory, dataCopy->memory + dataCopy->size);
+			try
+			{
+				playerStats[playerIndex].autorating = nlohmann::json::parse(
+					dataCopy->memory, dataCopy->memory + dataCopy->size);
 				if (playerStats[playerIndex].autorating.valid)
 				{
 					setMultiStats(playerIndex, playerStats[playerIndex], false);
 				}
 			}
-			catch (const std::exception &e) {
+			catch (const std::exception& e)
+			{
 				debug(LOG_WARNING, "JSON document from \"%s\" is invalid: %s", urlCopy.c_str(), e.what());
 			}
-			catch (...) {
+			catch (...)
+			{
 				debug(LOG_FATAL, "Unexpected exception parsing JSON \"%s\"", urlCopy.c_str());
 			}
 		});
 	};
-	req.onFailure = [](std::string const &url, WZ_DECL_UNUSED URLRequestFailureType type, WZ_DECL_UNUSED optional<HTTPResponseDetails> transferDetails) {
+	req.onFailure = [](std::string const& url, WZ_DECL_UNUSED URLRequestFailureType type,
+	                   WZ_DECL_UNUSED optional<HTTPResponseDetails> transferDetails)
+	{
 		std::string urlCopy = url;
-		wzAsyncExecOnMainThread([urlCopy] {
+		wzAsyncExecOnMainThread([urlCopy]
+		{
 			debug(LOG_WARNING, "Failure fetching \"%s\".", urlCopy.c_str());
 		});
 	};
@@ -256,7 +270,8 @@ void recvMultiStats(NETQUEUE queue)
 			// Output to stdinterface, if enabled
 			std::string senderPublicKeyB64 = base64Encode(playerStats[playerIndex].identity.toBytes(EcKey::Public));
 			std::string senderIdentityHash = playerStats[playerIndex].identity.publicHashString();
-			wz_command_interface_output("WZEVENT: player identity UNVERIFIED: %" PRIu32 " %s %s\n", playerIndex, senderPublicKeyB64.c_str(), senderIdentityHash.c_str());
+			wz_command_interface_output("WZEVENT: player identity UNVERIFIED: %" PRIu32 " %s %s\n", playerIndex,
+			                            senderPublicKeyB64.c_str(), senderIdentityHash.c_str());
 		}
 	}
 	NETend();
@@ -270,9 +285,9 @@ void recvMultiStats(NETQUEUE queue)
 // ////////////////////////////////////////////////////////////////////////////
 // Load Player Stats
 
-static bool loadMultiStatsFile(const std::string& fileName, PLAYERSTATS *st, bool skipLoadingIdentity = false)
+static bool loadMultiStatsFile(const std::string& fileName, PLAYERSTATS* st, bool skipLoadingIdentity = false)
 {
-	char *pFileData = nullptr;
+	char* pFileData = nullptr;
 	UDWORD size = 0;
 
 	if (loadFile(fileName.c_str(), &pFileData, &size))
@@ -289,12 +304,12 @@ static bool loadMultiStatsFile(const std::string& fileName, PLAYERSTATS *st, boo
 		if (!skipLoadingIdentity)
 		{
 			sscanf(pFileData, "WZ.STA.v3\n%u %u %u %u %u\n%1000[A-Za-z0-9+/=]",
-			   &st->wins, &st->losses, &st->totalKills, &st->totalScore, &st->played, identity);
+			       &st->wins, &st->losses, &st->totalKills, &st->totalScore, &st->played, identity);
 		}
 		else
 		{
 			sscanf(pFileData, "WZ.STA.v3\n%u %u %u %u %u\n",
-				   &st->wins, &st->losses, &st->totalKills, &st->totalScore, &st->played);
+			       &st->wins, &st->losses, &st->totalKills, &st->totalScore, &st->played);
 		}
 		free(pFileData);
 		if (identity[0] != '\0')
@@ -306,9 +321,9 @@ static bool loadMultiStatsFile(const std::string& fileName, PLAYERSTATS *st, boo
 	return true;
 }
 
-bool loadMultiStats(char *sPlayerName, PLAYERSTATS *st)
+bool loadMultiStats(char* sPlayerName, PLAYERSTATS* st)
 {
-	*st = PLAYERSTATS();  // clear in case we don't get to load
+	*st = PLAYERSTATS(); // clear in case we don't get to load
 
 	// Prevent an empty player name (where the first byte is a 0x0 terminating char already)
 	if (!*sPlayerName)
@@ -343,8 +358,8 @@ bool loadMultiStats(char *sPlayerName, PLAYERSTATS *st)
 
 	if (st->identity.empty())
 	{
-		st->identity = EcKey::generate();  // Generate new identity.
-		saveMultiStats(sPlayerName, sPlayerName, st);  // Save new identity.
+		st->identity = EcKey::generate(); // Generate new identity.
+		saveMultiStats(sPlayerName, sPlayerName, st); // Save new identity.
 	}
 
 	// reset recent scores
@@ -364,16 +379,17 @@ bool loadMultiStats(char *sPlayerName, PLAYERSTATS *st)
 
 // ////////////////////////////////////////////////////////////////////////////
 // Save Player Stats
-bool saveMultiStats(const char *sFileName, const char *sPlayerName, const PLAYERSTATS *st)
+bool saveMultiStats(const char* sFileName, const char* sPlayerName, const PLAYERSTATS* st)
 {
 	if (Cheated)
 	{
-	    return false;
+		return false;
 	}
 	char buffer[1000];
 
 	ssprintf(buffer, "WZ.STA.v3\n%u %u %u %u %u\n%s\n",
-	         st->wins, st->losses, st->totalKills, st->totalScore, st->played, base64Encode(st->identity.toBytes(EcKey::Private)).c_str());
+	         st->wins, st->losses, st->totalKills, st->totalScore, st->played,
+	         base64Encode(st->identity.toBytes(EcKey::Private)).c_str());
 
 	std::string fileName = std::string(MultiPlayersPath) + sFileName + ".sta2";
 
@@ -403,16 +419,16 @@ void updateMultiStatsDamage(UDWORD attacker, UDWORD defender, UDWORD inflicted)
 		if (attacker != scavengerSlot() && defender != scavengerSlot())
 		{
 			// FIXME: Why in the world are we using two different structs for stats when we can use only one?
-			playerStats[attacker].totalScore  += 2 * inflicted;
+			playerStats[attacker].totalScore += 2 * inflicted;
 			playerStats[attacker].recentScore += 2 * inflicted;
-			playerStats[defender].totalScore  -= inflicted;
+			playerStats[defender].totalScore -= inflicted;
 			playerStats[defender].recentScore -= inflicted;
 		}
 	}
 	else
 	{
-		ingame.skScores[attacker][0] += 2 * inflicted;  // increment skirmish players rough score.
-		ingame.skScores[defender][0] -= inflicted;  // increment skirmish players rough score.
+		ingame.skScores[attacker][0] += 2 * inflicted; // increment skirmish players rough score.
+		ingame.skScores[defender][0] -= inflicted; // increment skirmish players rough score.
 	}
 }
 
@@ -446,29 +462,29 @@ void updateMultiStatsLoses()
 	++playerStats[selectedPlayer].losses;
 }
 
-static inline uint32_t calcObjectCost(const BASE_OBJECT *psObj)
+static inline uint32_t calcObjectCost(const BASE_OBJECT* psObj)
 {
 	switch (psObj->type)
 	{
-		case OBJ_DROID:
-			return calcDroidPower((const DROID *)psObj);
-		case OBJ_STRUCTURE:
+	case OBJ_DROID:
+		return calcDroidPower((const DROID*)psObj);
+	case OBJ_STRUCTURE:
 		{
-			auto psStruct = static_cast<const STRUCTURE *>(psObj);
+			auto psStruct = static_cast<const STRUCTURE*>(psObj);
 			ASSERT_OR_RETURN(0, psStruct->pStructureType != nullptr, "pStructureType is null?");
 			return psStruct->pStructureType->powerToBuild;
 		}
-		case OBJ_FEATURE:
-			return 0;
-		default:
-			ASSERT(false, "No such supported object type: %d", static_cast<int>(psObj->type));
-			break;
+	case OBJ_FEATURE:
+		return 0;
+	default:
+		ASSERT(false, "No such supported object type: %d", static_cast<int>(psObj->type));
+		break;
 	}
 	return 0;
 }
 
 // update kills
-void updateMultiStatsKills(BASE_OBJECT *psKilled, UDWORD player)
+void updateMultiStatsKills(BASE_OBJECT* psKilled, UDWORD player)
 {
 	if (player < MAX_PLAYERS)
 	{
@@ -493,9 +509,11 @@ void updateMultiStatsKills(BASE_OBJECT *psKilled, UDWORD player)
 	}
 }
 
-class KnownPlayersDB {
+class KnownPlayersDB
+{
 public:
-	struct PlayerInfo {
+	struct PlayerInfo
+	{
 		int64_t local_id;
 		std::string name;
 		EcKey::Key pk;
@@ -505,12 +523,16 @@ public:
 	// Caller is expected to handle thrown exceptions
 	KnownPlayersDB(const std::string& knownPlayersDBPath)
 	{
-		db = std::unique_ptr<SQLite::Database>(new SQLite::Database(knownPlayersDBPath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE));
+		db = std::unique_ptr<SQLite::Database>(
+			new SQLite::Database(knownPlayersDBPath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE));
 		db->exec("PRAGMA journal_mode=WAL");
 		createKnownPlayersDBTables();
-		query_findPlayerByName = std::unique_ptr<SQLite::Statement>(new SQLite::Statement(*db, "SELECT local_id, name, pk FROM known_players WHERE name = ?"));
-		query_insertNewKnownPlayer = std::unique_ptr<SQLite::Statement>(new SQLite::Statement(*db, "INSERT OR IGNORE INTO known_players(name, pk) VALUES(?, ?)"));
-		query_updateKnownPlayerKey = std::unique_ptr<SQLite::Statement>(new SQLite::Statement(*db, "UPDATE known_players SET pk = ? WHERE name = ?"));
+		query_findPlayerByName = std::unique_ptr<SQLite::Statement>(
+			new SQLite::Statement(*db, "SELECT local_id, name, pk FROM known_players WHERE name = ?"));
+		query_insertNewKnownPlayer = std::unique_ptr<SQLite::Statement>(
+			new SQLite::Statement(*db, "INSERT OR IGNORE INTO known_players(name, pk) VALUES(?, ?)"));
+		query_updateKnownPlayerKey = std::unique_ptr<SQLite::Statement>(
+			new SQLite::Statement(*db, "UPDATE known_players SET pk = ? WHERE name = ?"));
 	}
 
 public:
@@ -527,7 +549,8 @@ public:
 			return i->second.first;
 		}
 		optional<PlayerInfo> result;
-		try {
+		try
+		{
 			query_findPlayerByName->bind(1, name);
 			if (query_findPlayerByName->executeStep())
 			{
@@ -539,14 +562,17 @@ public:
 				result = data;
 			}
 		}
-		catch (const std::exception& e) {
+		catch (const std::exception& e)
+		{
 			debug(LOG_ERROR, "Failure to query database for player; error: %s", e.what());
 			result = nullopt;
 		}
-		try {
+		try
+		{
 			query_findPlayerByName->reset();
 		}
-		catch (const std::exception& e) {
+		catch (const std::exception& e)
+		{
 			debug(LOG_ERROR, "Failed to reset prepared statement; error: %s", e.what());
 		}
 		// add to the current in-memory cache
@@ -555,7 +581,7 @@ public:
 	}
 
 	// Note: May throw on database error!
-	void addKnownPlayer(std::string const &name, EcKey const &key, bool overrideCurrentKey)
+	void addKnownPlayer(std::string const& name, EcKey const& key, bool overrideCurrentKey)
 	{
 		if (key.empty())
 		{
@@ -624,15 +650,18 @@ void initKnownPlayers()
 {
 	if (!knownPlayersDB)
 	{
-		const char *pWriteDir = PHYSFS_getWriteDir();
+		const char* pWriteDir = PHYSFS_getWriteDir();
 		ASSERT_OR_RETURN(, pWriteDir, "PHYSFS_getWriteDir returned null");
 		std::string knownPlayersDBPath = std::string(pWriteDir) + "/" + "knownPlayers.db";
-		try {
+		try
+		{
 			knownPlayersDB = std::unique_ptr<KnownPlayersDB>(new KnownPlayersDB(knownPlayersDBPath));
 		}
-		catch (std::exception& e) {
+		catch (std::exception& e)
+		{
 			// error loading SQLite database
-			debug(LOG_ERROR, "Unable to load or initialize SQLite3 database (%s); error: %s", knownPlayersDBPath.c_str(), e.what());
+			debug(LOG_ERROR, "Unable to load or initialize SQLite3 database (%s); error: %s",
+			      knownPlayersDBPath.c_str(), e.what());
 			return;
 		}
 	}
@@ -643,7 +672,7 @@ void shutdownKnownPlayers()
 	knownPlayersDB.reset();
 }
 
-bool isLocallyKnownPlayer(std::string const &name, EcKey const &key)
+bool isLocallyKnownPlayer(std::string const& name, EcKey const& key)
 {
 	ASSERT_OR_RETURN(false, knownPlayersDB.operator bool(), "knownPlayersDB is uninitialized");
 	if (key.empty())
@@ -658,7 +687,7 @@ bool isLocallyKnownPlayer(std::string const &name, EcKey const &key)
 	return result.value().pk == key.toBytes(EcKey::Public);
 }
 
-void addKnownPlayer(std::string const &name, EcKey const &key, bool override)
+void addKnownPlayer(std::string const& name, EcKey const& key, bool override)
 {
 	if (key.empty())
 	{
@@ -666,10 +695,12 @@ void addKnownPlayer(std::string const &name, EcKey const &key, bool override)
 	}
 	ASSERT_OR_RETURN(, knownPlayersDB.operator bool(), "knownPlayersDB is uninitialized");
 
-	try {
+	try
+	{
 		knownPlayersDB->addKnownPlayer(name, key, override);
 	}
-	catch (const std::exception& e) {
+	catch (const std::exception& e)
+	{
 		debug(LOG_ERROR, "Failed to add known_player with error: %s", e.what());
 	}
 }
@@ -703,7 +734,8 @@ uint32_t getSelectedPlayerUnitsKilled()
 
 // MARK: -
 
-inline void to_json(nlohmann::json& j, const EcKey& k) {
+inline void to_json(nlohmann::json& j, const EcKey& k)
+{
 	if (k.empty())
 	{
 		j = "";
@@ -714,7 +746,8 @@ inline void to_json(nlohmann::json& j, const EcKey& k) {
 	j = publicKeyB64Str;
 }
 
-inline void from_json(const nlohmann::json& j, EcKey& k) {
+inline void from_json(const nlohmann::json& j, EcKey& k)
+{
 	std::string publicKeyB64Str = j.get<std::string>();
 	if (publicKeyB64Str.empty())
 	{
@@ -725,7 +758,8 @@ inline void from_json(const nlohmann::json& j, EcKey& k) {
 	k.fromBytes(publicKeyBytes, EcKey::Public);
 }
 
-inline void to_json(nlohmann::json& j, const PLAYERSTATS& p) {
+inline void to_json(nlohmann::json& j, const PLAYERSTATS& p)
+{
 	j = nlohmann::json::object();
 	j["played"] = p.played;
 	j["wins"] = p.wins;
@@ -738,7 +772,8 @@ inline void to_json(nlohmann::json& j, const PLAYERSTATS& p) {
 	j["identity"] = p.identity;
 }
 
-inline void from_json(const nlohmann::json& j, PLAYERSTATS& k) {
+inline void from_json(const nlohmann::json& j, PLAYERSTATS& k)
+{
 	k.played = j.at("played").get<uint32_t>();
 	k.wins = j.at("wins").get<uint32_t>();
 	k.losses = j.at("losses").get<uint32_t>();

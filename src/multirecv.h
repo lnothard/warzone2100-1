@@ -48,7 +48,7 @@ void recvStructureInfo(NETQUEUE queue);
 bool recvMapFileData(NETQUEUE queue);
 bool recvMapFileRequested(NETQUEUE queue);
 
-bool recvTextMessageAI(NETQUEUE queue);         //AI multiplayer message
+bool recvTextMessageAI(NETQUEUE queue); //AI multiplayer message
 bool recvTeamRequest(NETQUEUE queue);
 bool recvReadyRequest(NETQUEUE queue);
 

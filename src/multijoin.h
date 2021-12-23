@@ -26,13 +26,13 @@
 
 #include "droiddef.h"
 
-void clearDisplayMultiJoiningStatusCache();						// Call when bDisplayMultiJoiningStatus is set to 0
+void clearDisplayMultiJoiningStatusCache(); // Call when bDisplayMultiJoiningStatus is set to 0
 bool intDisplayMultiJoiningStatus(UBYTE joinCount);
 void recvPlayerLeft(NETQUEUE queue);
-bool MultiPlayerLeave(UDWORD playerIndex);						// A player has left the game.
-bool MultiPlayerJoin(UDWORD playerIndex);						// A Player has joined the game.
-void setupNewPlayer(UDWORD player);		// stuff to do when player joins.
-void clearPlayer(UDWORD player, bool quietly);     // wipe a player off the face of the earth.
+bool MultiPlayerLeave(UDWORD playerIndex); // A player has left the game.
+bool MultiPlayerJoin(UDWORD playerIndex); // A Player has joined the game.
+void setupNewPlayer(UDWORD player); // stuff to do when player joins.
+void clearPlayer(UDWORD player, bool quietly); // wipe a player off the face of the earth.
 
 void ShowMOTD();
 bool recvDataCheck(NETQUEUE queue);

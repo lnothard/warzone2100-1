@@ -41,6 +41,7 @@
 #endif
 
 #if (defined(HAVE_POLL_H) || defined(HAVE_SYS_POLL_H)) && !defined(__APPLE__) // Do not use poll on macOS - ref: https://daniel.haxx.se/blog/2016/10/11/poll-on-mac-10-12-is-broken/
+
 # define HAVE_WORKING_POLL
 #endif
 
@@ -53,7 +54,7 @@
 #define strncmpl(a, b) strncmp(a, b, strlen(b))
 #define errlog(...) do { fprintf(stderr, __VA_ARGS__); fflush(stderr); } while(0);
 
-static WZ_THREAD *stdinThread = nullptr;
+static WZ_THREAD* stdinThread = nullptr;
 static std::atomic<bool> stdinThreadQuit;
 #if defined(HAVE_SYS_EVENTFD_H)
 int quitSignalEventFd = -1;
@@ -420,7 +421,7 @@ void stdInThreadShutdown()
 
 #endif
 
-void wz_command_interface_output(const char *str, ...)
+void wz_command_interface_output(const char* str, ...)
 {
 	if (wz_command_interface() == WZ_Command_Interface::None)
 	{
@@ -434,4 +435,3 @@ void wz_command_interface_output(const char *str, ...)
 	fwrite(outputBuffer, sizeof(char), strlen(outputBuffer), stderr);
 	fflush(stderr);
 }
-

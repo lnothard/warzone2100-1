@@ -42,7 +42,7 @@ struct STRUCTURE;
 struct W_SCREEN;
 struct iIMDShape;
 
-enum  				  // Reticule button indecies.
+enum // Reticule button indecies.
 {
 	RETBUT_CANCEL,
 	RETBUT_FACTORY,
@@ -198,26 +198,42 @@ enum  				  // Reticule button indecies.
 
 enum INTMODE
 {
-	INT_NORMAL,		// Standard mode (just the reticule)
+	INT_NORMAL,
+	// Standard mode (just the reticule)
 
-	INT_OPTION,		// Option screen
-	INT_EDIT,		// Edit mode
+	INT_OPTION,
+	// Option screen
+	INT_EDIT,
+	// Edit mode
 
-	INT_EDITSTAT,	// Stat screen up for placing objects
-	INT_OBJECT,		// Object screen
-	INT_STAT,		// Object screen with stat screen
-	INT_CMDORDER,	// Object screen with command droids and orders screen
-	INT_DESIGN,		// Design screen
-	INT_INTELMAP,	// Intelligence Map
+	INT_EDITSTAT,
+	// Stat screen up for placing objects
+	INT_OBJECT,
+	// Object screen
+	INT_STAT,
+	// Object screen with stat screen
+	INT_CMDORDER,
+	// Object screen with command droids and orders screen
+	INT_DESIGN,
+	// Design screen
+	INT_INTELMAP,
+	// Intelligence Map
 	INT_ORDER,
-	INT_INGAMEOP,	// in game options.
-	INT_TRANSPORTER, //Loading/unloading a Transporter
-	INT_MISSIONRES,	// Results of a mission display.
-	INT_MULTIMENU,	// multiplayer only, player stats etc...
-	INT_CDCHANGE,		// CD Change message box
-	INT_POPUPMSG,	// Adds a popup message to user
+	INT_INGAMEOP,
+	// in game options.
+	INT_TRANSPORTER,
+	//Loading/unloading a Transporter
+	INT_MISSIONRES,
+	// Results of a mission display.
+	INT_MULTIMENU,
+	// multiplayer only, player stats etc...
+	INT_CDCHANGE,
+	// CD Change message box
+	INT_POPUPMSG,
+	// Adds a popup message to user
 
-	INT_MAXMODE,   //leave as last so we can start the objMode at this value
+	INT_MAXMODE,
+	//leave as last so we can start the objMode at this value
 };
 
 extern INTMODE intMode;
@@ -225,18 +241,26 @@ extern INTMODE intMode;
 /* Which type of object screen is being displayed. Starting value is where the intMode left off*/
 enum OBJECT_MODE
 {
-	IOBJ_NONE = INT_MAXMODE,	// Nothing doing.
-	IOBJ_BUILD,			        // The build screen
-	IOBJ_BUILDSEL,		        // Selecting a position for a new structure
-	IOBJ_DEMOLISHSEL,	        // Selecting a structure to demolish
-	IOBJ_MANUFACTURE,	        // The manufacture screen
-	IOBJ_RESEARCH,		        // The research screen
-	IOBJ_COMMAND,		        // the command droid screen
+	IOBJ_NONE = INT_MAXMODE,
+	// Nothing doing.
+	IOBJ_BUILD,
+	// The build screen
+	IOBJ_BUILDSEL,
+	// Selecting a position for a new structure
+	IOBJ_DEMOLISHSEL,
+	// Selecting a structure to demolish
+	IOBJ_MANUFACTURE,
+	// The manufacture screen
+	IOBJ_RESEARCH,
+	// The research screen
+	IOBJ_COMMAND,
+	// the command droid screen
 
 	IOBJ_DEBUG_STRUCTURE,
 	IOBJ_DEBUG_DROID,
 
-	IOBJ_MAX,			        // maximum object mode,
+	IOBJ_MAX,
+	// maximum object mode,
 };
 
 extern OBJECT_MODE objMode;
@@ -245,14 +269,15 @@ extern OBJECT_MODE objMode;
 extern std::shared_ptr<W_SCREEN> psWScreen;
 
 // The last widget ID from widgRunScreen
-extern UDWORD			intLastWidget;
+extern UDWORD intLastWidget;
 
 /* The current template for the design screen to start with*/
-extern std::vector<DROID_TEMPLATE *> apsTemplateList;  ///< Either a list of templates a factory can build or a list of designable templates, for UI use only.
-extern std::list<DROID_TEMPLATE> localTemplates;       ///< Unsynchronised list, for UI use only.
+extern std::vector<DROID_TEMPLATE*> apsTemplateList;
+///< Either a list of templates a factory can build or a list of designable templates, for UI use only.
+extern std::list<DROID_TEMPLATE> localTemplates; ///< Unsynchronised list, for UI use only.
 
 /* pointer to hold the imd to use for a new template in the design screen */
-extern iIMDShape	*pNewDesignIMD;
+extern iIMDShape* pNewDesignIMD;
 
 /* Initialise the in game interface */
 bool intInitialise();
@@ -266,9 +291,12 @@ void interfaceShutDown();
 /* Return codes for the widget interface */
 enum INT_RETVAL
 {
-	INT_NONE,		// no key clicks have been intercepted
-	INT_INTERCEPT,	// key clicks have been intercepted
-	INT_QUIT,		// The game should quit
+	INT_NONE,
+	// no key clicks have been intercepted
+	INT_INTERCEPT,
+	// key clicks have been intercepted
+	INT_QUIT,
+	// The game should quit
 };
 
 void intDoScreenRefresh();
@@ -283,7 +311,8 @@ void intDisplayWidgets();
 bool intAddReticule();
 bool intAddPower();
 void intRemoveReticule();
-void setReticuleStats(int ButId, std::string tip = std::string(), std::string filename = std::string(), std::string filenameDown = std::string(), const playerCallbackFunc& callbackFunc = nullptr);
+void setReticuleStats(int ButId, std::string tip = std::string(), std::string filename = std::string(),
+                      std::string filenameDown = std::string(), const playerCallbackFunc& callbackFunc = nullptr);
 void setReticulesEnabled(bool enabled);
 void setReticuleFlash(int ButId, bool flash);
 
@@ -294,11 +323,11 @@ void intSetMapPos(UDWORD x, UDWORD y);
 void intSetMapPos(UDWORD x, UDWORD y);
 
 /* Tell the interface a research facility has completed a topic */
-void intResearchFinished(STRUCTURE *psBuilding);
+void intResearchFinished(STRUCTURE* psBuilding);
 void intAlliedResearchChanged();
 
 /* Sync the interface to an object */
-void intObjectSelected(BASE_OBJECT *psObj);
+void intObjectSelected(BASE_OBJECT* psObj);
 
 bool intBuildSelectMode();
 bool intDemolishSelectMode();
@@ -323,10 +352,10 @@ void intRemoveStatsNoAnim();
 void intRemoveObjectNoAnim();
 
 /*sets which list of structures to use for the interface*/
-STRUCTURE *interfaceStructList();
+STRUCTURE* interfaceStructList();
 
 //sets up the Transporter Screen as far as the interface is concerned
-void addTransporterInterface(DROID *psSelected, bool onMission);
+void addTransporterInterface(DROID* psSelected, bool onMission);
 
 /*causes a reticule button to start flashing*/
 void flashReticuleButton(UDWORD buttonID);
@@ -345,16 +374,16 @@ void intShowWidget(int buttonID);
 void forceHidePowerBar(bool forceSetPowerBarUpState = false);
 
 /* Add the Proximity message buttons */
-bool intAddProximityButton(PROXIMITY_DISPLAY *psProxDisp, UDWORD inc);
+bool intAddProximityButton(PROXIMITY_DISPLAY* psProxDisp, UDWORD inc);
 
 /*Remove a Proximity Button - when the message is deleted*/
-void intRemoveProximityButton(PROXIMITY_DISPLAY *psProxDisp);
+void intRemoveProximityButton(PROXIMITY_DISPLAY* psProxDisp);
 
 /* Allows us to fool the widgets with a keypress */
-void	setKeyButtonMapping(UDWORD	val);
+void setKeyButtonMapping(UDWORD val);
 
-STRUCTURE *intFindAStructure();
-DROID *intGotoNextDroidType(DROID *CurrDroid, DROID_TYPE droidType, bool AllowGroup);
+STRUCTURE* intFindAStructure();
+DROID* intGotoNextDroidType(DROID* CurrDroid, DROID_TYPE droidType, bool AllowGroup);
 
 /// Returns the number of researches that selectedPlayer is not already researching, or 0 if there are no free laboratories.
 int intGetResearchState();
@@ -367,13 +396,13 @@ void intNotifyResearchButton(int prevState);
 bool intCheckReticuleButEnabled(UDWORD id);
 
 //access function for selected object in the interface
-BASE_OBJECT *getCurrentSelected();
+BASE_OBJECT* getCurrentSelected();
 
 bool intIsRefreshing();
 
 void intDemolishCancel();
 
-void makeObsoleteButton(const std::shared_ptr<WIDGET> &parent);  ///< Makes a button to toggle showing obsolete items.
+void makeObsoleteButton(const std::shared_ptr<WIDGET>& parent); ///< Makes a button to toggle showing obsolete items.
 
 void chatDialog(int mode);
 bool isChatUp();
@@ -382,12 +411,12 @@ void setSecondaryWindowUp(bool value);
 
 void intOpenDebugMenu(OBJECT_TYPE id);
 
-void intStartConstructionPosition(DROID *builder, STRUCTURE_STATS *structure);
+void intStartConstructionPosition(DROID* builder, STRUCTURE_STATS* structure);
 void intSetShouldShowRedundantDesign(bool value);
 bool intGetShouldShowRedundantDesign();
 
 /* Start looking for a structure location */
-void intStartStructPosition(BASE_STATS *psStats);
+void intStartStructPosition(BASE_STATS* psStats);
 
 /* Remove the object widgets from the widget screen */
 void intRemoveObject();

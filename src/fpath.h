@@ -37,33 +37,40 @@
 
 enum FPATH_MOVETYPE
 {
-	FMT_MOVE,		///< Move around all obstacles
-	FMT_ATTACK,		///< Assume that we will destroy enemy obstacles
-	FMT_BLOCK,              ///< Don't go through obstacles, not even gates.
+	FMT_MOVE,
+	///< Move around all obstacles
+	FMT_ATTACK,
+	///< Assume that we will destroy enemy obstacles
+	FMT_BLOCK,
+	///< Don't go through obstacles, not even gates.
 };
 
 struct PathBlockingMap;
 
 struct PATHJOB
 {
-	PROPULSION_TYPE	propulsion;
-	DROID_TYPE	droidType;
-	int		destX, destY;
-	int		origX, origY;
+	PROPULSION_TYPE propulsion;
+	DROID_TYPE droidType;
+	int destX, destY;
+	int origX, origY;
 	StructureBounds dstStructure;
-	UDWORD		droidID;
-	FPATH_MOVETYPE	moveType;
-	int		owner;		///< Player owner
-	std::shared_ptr<PathBlockingMap> blockingMap;   ///< Map of blocking tiles.
-	bool		acceptNearest;
-	bool            deleted;        ///< Droid was deleted, so throw away result when complete. Must still process this PATHJOB, since processing order can affect resulting paths (but can't affect the path length).
+	UDWORD droidID;
+	FPATH_MOVETYPE moveType;
+	int owner; ///< Player owner
+	std::shared_ptr<PathBlockingMap> blockingMap; ///< Map of blocking tiles.
+	bool acceptNearest;
+	bool deleted;
+	///< Droid was deleted, so throw away result when complete. Must still process this PATHJOB, since processing order can affect resulting paths (but can't affect the path length).
 };
 
 enum FPATH_RETVAL
 {
-	FPR_OK,         ///< found a route
-	FPR_FAILED,     ///< failed to find a route
-	FPR_WAIT,       ///< route is being calculated by the path-finding thread
+	FPR_OK,
+	///< found a route
+	FPR_FAILED,
+	///< failed to find a route
+	FPR_WAIT,
+	///< route is being calculated by the path-finding thread
 };
 
 /** Initialise the path-finding module.
@@ -78,7 +85,7 @@ void fpathUpdate();
 
 /** Find a route for a droid to a location.
  */
-FPATH_RETVAL fpathDroidRoute(DROID *psDroid, SDWORD targetX, SDWORD targetY, FPATH_MOVETYPE moveType);
+FPATH_RETVAL fpathDroidRoute(DROID* psDroid, SDWORD targetX, SDWORD targetY, FPATH_MOVETYPE moveType);
 
 /// Returns true iff the parameters have equivalent behaviour in fpathBaseBlockingTile.
 bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_MOVETYPE moveType1,
@@ -97,7 +104,7 @@ bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_M
  *  @return true if the given tile is blocking for this droid
  */
 bool fpathBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion);
-bool fpathDroidBlockingTile(DROID *psDroid, int x, int y, FPATH_MOVETYPE moveType);
+bool fpathDroidBlockingTile(DROID* psDroid, int x, int y, FPATH_MOVETYPE moveType);
 bool fpathBaseBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion, int player, FPATH_MOVETYPE moveType);
 
 static inline bool fpathBlockingTile(Vector2i tile, PROPULSION_TYPE propulsion)
@@ -112,7 +119,7 @@ static inline bool fpathBlockingTile(Vector2i tile, PROPULSION_TYPE propulsion)
  *
  *  Used for instance by VTOLs. Function is thread-safe.
  */
-void fpathSetDirectRoute(DROID *psDroid, SDWORD targetX, SDWORD targetY);
+void fpathSetDirectRoute(DROID* psDroid, SDWORD targetX, SDWORD targetY);
 
 /** Clean up path jobs and results for a droid. Function is thread-safe. */
 void fpathRemoveDroidData(int id);

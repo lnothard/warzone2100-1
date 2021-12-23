@@ -23,9 +23,9 @@
 #include <string>
 #include <vector>
 
-bool openURLInBrowser(char const *url);
+bool openURLInBrowser(char const* url);
 std::string urlEncode(const char* urlFragment);
-bool urlHasAcceptableProtocol(char const *url);
+bool urlHasAcceptableProtocol(char const* url);
 
 bool openFolderInDefaultFileManager(const char* path);
 

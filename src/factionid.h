@@ -27,11 +27,13 @@
 using nonstd::optional;
 using nonstd::nullopt;
 
-enum FactionID : uint8_t {
+enum FactionID : uint8_t
+{
 	FACTION_NORMAL = 0,
 	FACTION_NEXUS = 1,
 	FACTION_COLLECTIVE = 2
 };
+
 #define MAX_FACTION_ID FACTION_COLLECTIVE
 
 inline optional<FactionID> uintToFactionID(uint8_t value)
@@ -43,8 +45,10 @@ inline optional<FactionID> uintToFactionID(uint8_t value)
 	return static_cast<FactionID>(value);
 }
 
-namespace std {
-	template <> struct hash<FactionID>
+namespace std
+{
+	template <>
+	struct hash<FactionID>
 	{
 		size_t operator()(const FactionID& faction) const
 		{

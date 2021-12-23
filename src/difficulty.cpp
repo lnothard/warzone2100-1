@@ -48,20 +48,20 @@ void setDamageModifiers(int playerModifier, int enemyModifier)
 
 // ------------------------------------------------------------------------------------
 /* Sets the game difficulty level */
-void	setDifficultyLevel(DIFFICULTY_LEVEL lev)
+void setDifficultyLevel(DIFFICULTY_LEVEL lev)
 {
 	switch (lev)
 	{
-	case	DL_EASY:
+	case DL_EASY:
 		setDamageModifiers(120, 100);
 		break;
-	case	DL_NORMAL:
+	case DL_NORMAL:
 		setDamageModifiers(100, 100);
 		break;
-	case	DL_HARD:
+	case DL_HARD:
 		setDamageModifiers(100, 110);
 		break;
-	case	DL_INSANE:
+	case DL_INSANE:
 		setDamageModifiers(80, 120);
 		break;
 	}

@@ -45,14 +45,21 @@ enum GAMECODE
 // the states the loop goes through before starting a new level
 enum LOOP_MISSION_STATE
 {
-	LMS_NORMAL,			// normal state of the loop
-	LMS_SETUPMISSION,	// make the call to set up mission
-	LMS_SAVECONTINUE,	// the save/continue box is up between missions
-	LMS_NEWLEVEL,		// start a new level
-	LMS_LOADGAME,		// load a savegame
-	LMS_CLEAROBJECTS,	// make the call to destroy objects
+	LMS_NORMAL,
+	// normal state of the loop
+	LMS_SETUPMISSION,
+	// make the call to set up mission
+	LMS_SAVECONTINUE,
+	// the save/continue box is up between missions
+	LMS_NEWLEVEL,
+	// start a new level
+	LMS_LOADGAME,
+	// load a savegame
+	LMS_CLEAROBJECTS,
+	// make the call to destroy objects
 };
-extern LOOP_MISSION_STATE		loopMissionState;
+
+extern LOOP_MISSION_STATE loopMissionState;
 
 // this is set by scrStartMission to say what type of new level is to be started
 extern LEVEL_TYPE nextMissionType;
@@ -66,8 +73,8 @@ void loop_SetVideoPlaybackMode();
 void loop_ClearVideoPlaybackMode();
 bool loop_GetVideoStatus();
 SDWORD loop_GetVideoMode();
-bool	gamePaused();
-void	setGamePauseStatus(bool val);
+bool gamePaused();
+void setGamePauseStatus(bool val);
 
 bool gameUpdatePaused();
 bool audioPaused();
@@ -96,9 +103,9 @@ UDWORD getNumMissionDroids(UDWORD player);
 UDWORD getNumCommandDroids(UDWORD player);
 UDWORD getNumConstructorDroids(UDWORD player);
 // increase the droid counts - used by update factory to keep the counts in sync
-void adjustDroidCount(struct DROID *droid, int delta);
+void adjustDroidCount(struct DROID* droid, int delta);
 // Increase counts of droids in a transporter
-void droidCountsInTransporter(DROID *droid, int player);
+void droidCountsInTransporter(DROID* droid, int player);
 
 void countUpdate(bool synch = false);
 

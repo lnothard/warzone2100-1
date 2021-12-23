@@ -7,15 +7,15 @@
 #include "../mission.h"
 #include "../qtscript.h"
 
-STRUCTURE *ManufactureController::highlightedFactory = nullptr;
+STRUCTURE* ManufactureController::highlightedFactory = nullptr;
 
-FACTORY *getFactoryOrNullptr(STRUCTURE *factory)
+FACTORY* getFactoryOrNullptr(STRUCTURE* factory)
 {
 	ASSERT_OR_RETURN(nullptr, StructIsFactory(factory), "Invalid factory pointer");
-	return (FACTORY *)factory->pFunctionality;
+	return (FACTORY*)factory->pFunctionality;
 }
 
-static uint8_t getProductionLoops(STRUCTURE *structure)
+static uint8_t getProductionLoops(STRUCTURE* structure)
 {
 	if (structure == nullptr)
 	{
@@ -46,7 +46,7 @@ void ManufactureController::updateData()
 	updateManufactureOptionsList();
 }
 
-void ManufactureController::adjustFactoryProduction(DROID_TEMPLATE *manufactureOption, bool add)
+void ManufactureController::adjustFactoryProduction(DROID_TEMPLATE* manufactureOption, bool add)
 {
 	factoryProdAdjust(getHighlightedObject(), manufactureOption, add);
 }
@@ -56,12 +56,12 @@ void ManufactureController::adjustFactoryLoop(bool add)
 	factoryLoopAdjust(getHighlightedObject(), add);
 }
 
-void ManufactureController::releaseFactoryProduction(STRUCTURE *structure)
+void ManufactureController::releaseFactoryProduction(STRUCTURE* structure)
 {
 	releaseProduction(structure, ModeQueue);
 }
 
-void ManufactureController::cancelFactoryProduction(STRUCTURE *structure)
+void ManufactureController::cancelFactoryProduction(STRUCTURE* structure)
 {
 	if (!StructureIsManufacturingPending(structure))
 	{
@@ -92,7 +92,7 @@ void ManufactureController::startDeliveryPointPosition()
 	}
 }
 
-static inline bool compareFactories(STRUCTURE *a, STRUCTURE *b)
+static inline bool compareFactories(STRUCTURE* a, STRUCTURE* b)
 {
 	if (a == nullptr || b == nullptr)
 	{
@@ -139,7 +139,7 @@ void ManufactureController::updateManufactureOptionsList()
 	}
 }
 
-DROID_TEMPLATE *ManufactureController::getObjectStatsAt(size_t objectIndex) const
+DROID_TEMPLATE* ManufactureController::getObjectStatsAt(size_t objectIndex) const
 {
 	auto factory = getFactoryOrNullptr(getObjectAt(objectIndex));
 	return factory == nullptr ? nullptr : factory->psSubject;
@@ -162,7 +162,7 @@ void ManufactureController::clearData()
 	stats.clear();
 }
 
-void ManufactureController::setHighlightedObject(BASE_OBJECT *object)
+void ManufactureController::setHighlightedObject(BASE_OBJECT* object)
 {
 	if (object == nullptr)
 	{
@@ -181,12 +181,17 @@ private:
 	typedef ObjectButton BaseWidget;
 
 protected:
-	ManufactureObjectButton() {}
+	ManufactureObjectButton()
+	{
+	}
 
 public:
-	static std::shared_ptr<ManufactureObjectButton> make(const std::shared_ptr<ManufactureController> &controller, size_t objectIndex)
+	static std::shared_ptr<ManufactureObjectButton> make(const std::shared_ptr<ManufactureController>& controller,
+	                                                     size_t objectIndex)
 	{
-		class make_shared_enabler: public ManufactureObjectButton {};
+		class make_shared_enabler : public ManufactureObjectButton
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->objectIndex = objectIndex;
@@ -253,7 +258,7 @@ protected:
 		return getStatsName(factory->pStructureType);
 	}
 
-	ManufactureController &getController() const override
+	ManufactureController& getController() const override
 	{
 		return *controller.get();
 	}
@@ -263,18 +268,23 @@ private:
 	std::shared_ptr<W_LABEL> factoryNumberLabel;
 };
 
-class ManufactureStatsButton: public StatsButton
+class ManufactureStatsButton : public StatsButton
 {
 private:
-	typedef	StatsButton BaseWidget;
+	typedef StatsButton BaseWidget;
 
 protected:
-	ManufactureStatsButton() {}
+	ManufactureStatsButton()
+	{
+	}
 
 public:
-	static std::shared_ptr<ManufactureStatsButton> make(const std::shared_ptr<ManufactureController> &controller, size_t objectIndex)
+	static std::shared_ptr<ManufactureStatsButton> make(const std::shared_ptr<ManufactureController>& controller,
+	                                                    size_t objectIndex)
 	{
-		class make_shared_enabler: public ManufactureStatsButton {};
+		class make_shared_enabler : public ManufactureStatsButton
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->objectIndex = objectIndex;
@@ -290,13 +300,16 @@ protected:
 		auto factory = controller->getObjectAt(objectIndex);
 		auto production = getStats();
 		auto productionPending = factory && StructureIsManufacturingPending(factory);
-		auto objectImage = productionPending && production ? ImdObject::DroidTemplate(production): ImdObject::Component(nullptr);
+		auto objectImage = productionPending && production
+			                   ? ImdObject::DroidTemplate(production)
+			                   : ImdObject::Component(nullptr);
 
 		displayIMD(Image(), objectImage, xOffset, yOffset);
 
 		if (productionPending && StructureIsOnHoldPending(factory))
 		{
-			iV_DrawImage(IntImages, ((realTime / 250) % 2) == 0 ? IMAGE_BUT0_DOWN : IMAGE_BUT_HILITE, xOffset + x(), yOffset + y());
+			iV_DrawImage(IntImages, ((realTime / 250) % 2) == 0 ? IMAGE_BUT0_DOWN : IMAGE_BUT_HILITE, xOffset + x(),
+			             yOffset + y());
 		}
 		else
 		{
@@ -313,7 +326,7 @@ protected:
 	}
 
 private:
-	DROID_TEMPLATE *getStats() override
+	DROID_TEMPLATE* getStats() override
 	{
 		return controller->getObjectStatsAt(objectIndex);
 	}
@@ -330,7 +343,7 @@ private:
 		productionRunSizeLabel->setFontColour(WZCOL_ACTION_PRODUCTION_RUN_TEXT);
 	}
 
-	void updateProductionRunSizeLabel(STRUCTURE *factory, DROID_TEMPLATE *droidTemplate)
+	void updateProductionRunSizeLabel(STRUCTURE* factory, DROID_TEMPLATE* droidTemplate)
 	{
 		auto productionRemaining = getProduction(factory, droidTemplate).numRemaining();
 		if (productionRemaining > 0 && factory && StructureIsManufacturingPending(factory))
@@ -344,7 +357,7 @@ private:
 		}
 	}
 
-	void updateProgressBar(STRUCTURE *factory)
+	void updateProgressBar(STRUCTURE* factory)
 	{
 		progressBar->hide();
 
@@ -359,12 +372,14 @@ private:
 		auto manufacture = StructureGetFactory(factory);
 		ASSERT_NOT_NULLPTR_OR_RETURN(, manufacture);
 
-		if (manufacture->psSubject != nullptr && manufacture->buildPointsRemaining < calcTemplateBuild(manufacture->psSubject))
+		if (manufacture->psSubject != nullptr && manufacture->buildPointsRemaining < calcTemplateBuild(
+			manufacture->psSubject))
 		{
 			// Started production. Set the colour of the bar to yellow.
 			int buildPointsTotal = calcTemplateBuild(FactoryGetTemplate(manufacture));
 			int buildRate = manufacture->timeStartHold == 0 ? getBuildingProductionPoints(factory) : 0;
-			formatTime(progressBar.get(), buildPointsTotal - manufacture->buildPointsRemaining, buildPointsTotal, buildRate, _("Construction Progress"));
+			formatTime(progressBar.get(), buildPointsTotal - manufacture->buildPointsRemaining, buildPointsTotal,
+			           buildRate, _("Construction Progress"));
 		}
 		else
 		{
@@ -407,16 +422,19 @@ private:
 	size_t objectIndex;
 };
 
-class ManufactureOptionButton: public StatsFormButton
+class ManufactureOptionButton : public StatsFormButton
 {
 private:
 	typedef StatsFormButton BaseWidget;
 	using BaseWidget::BaseWidget;
 
 public:
-	static std::shared_ptr<ManufactureOptionButton> make(const std::shared_ptr<ManufactureController> &controller, size_t manufactureOptionIndex)
+	static std::shared_ptr<ManufactureOptionButton> make(const std::shared_ptr<ManufactureController>& controller,
+	                                                     size_t manufactureOptionIndex)
 	{
-		class make_shared_enabler: public ManufactureOptionButton {};
+		class make_shared_enabler : public ManufactureOptionButton
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->manufactureOptionIndex = manufactureOptionIndex;
@@ -436,7 +454,7 @@ protected:
 	}
 
 private:
-	DROID_TEMPLATE *getStats() override
+	DROID_TEMPLATE* getStats() override
 	{
 		return controller->getStatsAt(manufactureOptionIndex);
 	}
@@ -452,13 +470,14 @@ private:
 		attach(productionRunSizeLabel = makeProductionRunSizeLabel());
 	}
 
-	void updateProductionRunSizeLabel(STRUCTURE *structure, DROID_TEMPLATE *droidTemplate)
+	void updateProductionRunSizeLabel(STRUCTURE* structure, DROID_TEMPLATE* droidTemplate)
 	{
 		auto production = getProduction(structure, droidTemplate);
 		if (production.isValid())
 		{
 			auto productionLoops = getProductionLoops(structure);
-			auto labelText = astringf(productionLoops > 0 ? "%d/%d" : "%d", production.numRemaining(), production.quantity);
+			auto labelText = astringf(productionLoops > 0 ? "%d/%d" : "%d", production.numRemaining(),
+			                          production.quantity);
 			productionRunSizeLabel->setString(WzString::fromUtf8(labelText));
 			productionRunSizeLabel->show();
 		}
@@ -506,7 +525,8 @@ private:
 		ASSERT_NOT_NULLPTR_OR_RETURN(, clickedStats);
 
 		auto controllerRef = controller;
-		widgScheduleTask([add, clickedStats, controllerRef]() {
+		widgScheduleTask([add, clickedStats, controllerRef]()
+		{
 			controllerRef->adjustFactoryProduction(clickedStats, add);
 		});
 	}
@@ -516,16 +536,18 @@ private:
 	size_t manufactureOptionIndex;
 };
 
-class ManufactureObjectsForm: public ObjectsForm
+class ManufactureObjectsForm : public ObjectsForm
 {
 private:
 	typedef ObjectsForm BaseWidget;
 	using BaseWidget::BaseWidget;
 
 public:
-	static std::shared_ptr<ManufactureObjectsForm> make(const std::shared_ptr<ManufactureController> &controller)
+	static std::shared_ptr<ManufactureObjectsForm> make(const std::shared_ptr<ManufactureController>& controller)
 	{
-		class make_shared_enabler: public ManufactureObjectsForm {};
+		class make_shared_enabler : public ManufactureObjectsForm
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->initialize();
@@ -543,7 +565,7 @@ public:
 	}
 
 protected:
-	ManufactureController &getController() const override
+	ManufactureController& getController() const override
 	{
 		return *controller.get();
 	}
@@ -552,16 +574,18 @@ private:
 	std::shared_ptr<ManufactureController> controller;
 };
 
-class ManufactureStatsForm: public ObjectStatsForm
+class ManufactureStatsForm : public ObjectStatsForm
 {
 private:
 	typedef ObjectStatsForm BaseWidget;
 	using BaseWidget::BaseWidget;
 
 public:
-	static std::shared_ptr<ManufactureStatsForm> make(const std::shared_ptr<ManufactureController> &controller)
+	static std::shared_ptr<ManufactureStatsForm> make(const std::shared_ptr<ManufactureController>& controller)
 	{
-		class make_shared_enabler: public ManufactureStatsForm {};
+		class make_shared_enabler : public ManufactureStatsForm
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->controller = controller;
 		widget->initialize();
@@ -574,7 +598,7 @@ public:
 	}
 
 protected:
-	ManufactureController &getController() const override
+	ManufactureController& getController() const override
 	{
 		return *controller.get();
 	}
@@ -594,17 +618,22 @@ private:
 		attach(obsoleteButton);
 		obsoleteButton->style |= WBUT_SECONDARY;
 		obsoleteButton->setChoice(controller->shouldShowRedundantDesign());
-		obsoleteButton->setImages(false, MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_HIDE_UP), Image(IntImages, IMAGE_OBSOLETE_HIDE_UP), Image(IntImages, IMAGE_OBSOLETE_HIDE_HI)));
+		obsoleteButton->setImages(false, MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_HIDE_UP),
+		                                                              Image(IntImages, IMAGE_OBSOLETE_HIDE_UP),
+		                                                              Image(IntImages, IMAGE_OBSOLETE_HIDE_HI)));
 		obsoleteButton->setTip(false, _("Hiding Obsolete Tech"));
-		obsoleteButton->setImages(true,  MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_SHOW_UP), Image(IntImages, IMAGE_OBSOLETE_SHOW_UP), Image(IntImages, IMAGE_OBSOLETE_SHOW_HI)));
+		obsoleteButton->setImages(true, MultipleChoiceButton::Images(Image(IntImages, IMAGE_OBSOLETE_SHOW_UP),
+		                                                             Image(IntImages, IMAGE_OBSOLETE_SHOW_UP),
+		                                                             Image(IntImages, IMAGE_OBSOLETE_SHOW_HI)));
 		obsoleteButton->setTip(true, _("Showing Obsolete Tech"));
 		obsoleteButton->move(4 + Image(IntImages, IMAGE_FDP_UP).width() + 4, STAT_SLDY);
 
 		auto weakController = std::weak_ptr<ManufactureController>(controller);
-		obsoleteButton->addOnClickHandler([weakController](W_BUTTON &button) {
+		obsoleteButton->addOnClickHandler([weakController](W_BUTTON& button)
+		{
 			if (auto manufactureController = weakController.lock())
 			{
-				auto &obsoleteButton = static_cast<MultipleChoiceButton &>(button);
+				auto& obsoleteButton = static_cast<MultipleChoiceButton&>(button);
 				auto newValue = !obsoleteButton.getChoice();
 				manufactureController->setShouldShowRedundantDesign(newValue);
 				obsoleteButton.setChoice(newValue);
@@ -625,20 +654,22 @@ private:
 
 	std::shared_ptr<ManufactureController> controller;
 
-	class DeliveryPointButton: public W_BUTTON
+	class DeliveryPointButton : public W_BUTTON
 	{
 	private:
 		typedef W_BUTTON BaseWidget;
 
 	public:
-		DeliveryPointButton(const std::shared_ptr<ManufactureController> &controller): BaseWidget(), controller(controller)
+		DeliveryPointButton(const std::shared_ptr<ManufactureController>& controller): BaseWidget(),
+			controller(controller)
 		{
 			style |= WBUT_SECONDARY;
 			move(4, STAT_SLDY);
 			setTip(_("Factory Delivery Point"));
 
 			auto weakController = std::weak_ptr<ManufactureController>(controller);
-			addOnClickHandler([weakController](W_BUTTON &) {
+			addOnClickHandler([weakController](W_BUTTON&)
+			{
 				auto controller = weakController.lock();
 				ASSERT_NOT_NULLPTR_OR_RETURN(, controller);
 				controller->startDeliveryPointPosition();
@@ -662,13 +693,16 @@ private:
 			{
 			default:
 			case REF_FACTORY:
-				setImages(Image(IntImages, IMAGE_FDP_UP), Image(IntImages, IMAGE_FDP_DOWN), Image(IntImages, IMAGE_FDP_HI));
+				setImages(Image(IntImages, IMAGE_FDP_UP), Image(IntImages, IMAGE_FDP_DOWN),
+				          Image(IntImages, IMAGE_FDP_HI));
 				break;
 			case REF_CYBORG_FACTORY:
-				setImages(Image(IntImages, IMAGE_CDP_UP), Image(IntImages, IMAGE_CDP_DOWN), Image(IntImages, IMAGE_CDP_HI));
+				setImages(Image(IntImages, IMAGE_CDP_UP), Image(IntImages, IMAGE_CDP_DOWN),
+				          Image(IntImages, IMAGE_CDP_HI));
 				break;
 			case REF_VTOL_FACTORY:
-				setImages(Image(IntImages, IMAGE_VDP_UP), Image(IntImages, IMAGE_VDP_DOWN), Image(IntImages, IMAGE_VDP_HI));
+				setImages(Image(IntImages, IMAGE_VDP_UP), Image(IntImages, IMAGE_VDP_DOWN),
+				          Image(IntImages, IMAGE_VDP_HI));
 				break;
 			}
 		}
@@ -676,26 +710,28 @@ private:
 		std::shared_ptr<ManufactureController> controller;
 	};
 
-	class LoopProductionButton: public W_BUTTON
+	class LoopProductionButton : public W_BUTTON
 	{
 	private:
 		typedef W_BUTTON BaseWidget;
 
 	public:
-		LoopProductionButton(const std::shared_ptr<ManufactureController> &controller): BaseWidget(), controller(controller)
+		LoopProductionButton(const std::shared_ptr<ManufactureController>& controller): BaseWidget(),
+			controller(controller)
 		{
 			style |= WBUT_SECONDARY;
-			setImages(Image(IntImages, IMAGE_LOOP_UP), Image(IntImages, IMAGE_LOOP_DOWN), Image(IntImages, IMAGE_LOOP_HI));
+			setImages(Image(IntImages, IMAGE_LOOP_UP), Image(IntImages, IMAGE_LOOP_DOWN),
+			          Image(IntImages, IMAGE_LOOP_HI));
 			setTip(_("Loop Production"));
 		}
 
-		void released(W_CONTEXT *psContext, WIDGET_KEY key) override
+		void released(W_CONTEXT* psContext, WIDGET_KEY key) override
 		{
 			BaseWidget::released(psContext, key);
 			controller->adjustFactoryLoop(key == WKEY_PRIMARY);
 		}
 
-protected:
+	protected:
 		void display(int xOffset, int yOffset) override
 		{
 			updateLayout();
@@ -704,20 +740,21 @@ protected:
 
 		void updateLayout()
 		{
-			setState(getProductionLoops(controller->getHighlightedObject()) == 0 ? 0: WBUT_CLICKLOCK);
+			setState(getProductionLoops(controller->getHighlightedObject()) == 0 ? 0 : WBUT_CLICKLOCK);
 		}
 
 	private:
 		std::shared_ptr<ManufactureController> controller;
 	};
 
-	class LoopProductionLabel: public W_LABEL
+	class LoopProductionLabel : public W_LABEL
 	{
 	private:
 		typedef W_LABEL BaseWidget;
 
 	public:
-		LoopProductionLabel(const std::shared_ptr<ManufactureController> &controller): BaseWidget(), controller(controller)
+		LoopProductionLabel(const std::shared_ptr<ManufactureController>& controller): BaseWidget(),
+			controller(controller)
 		{
 		}
 

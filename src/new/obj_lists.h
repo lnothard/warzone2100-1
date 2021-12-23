@@ -10,9 +10,9 @@
 #include "droid.h"
 #include "structure.h"
 
-extern std::array< std::vector<Droid>, MAX_PLAYERS > droid_lists;
+extern std::array<std::vector<Droid>, MAX_PLAYERS> droid_lists;
 // have to use pointers here because -Structure- is a base class
-extern std::array< std::vector< std::unique_ptr<Impl::Structure> >, MAX_PLAYERS > structure_lists;
+extern std::array<std::vector<std::unique_ptr<Impl::Structure>>, MAX_PLAYERS> structure_lists;
 extern std::vector<Feature> feature_list;
 
 void create_droid(unsigned id, unsigned player);

@@ -11,9 +11,9 @@
 
 struct Display_Data
 {
-  std::unique_ptr<iIMDShape> imd_shape;
-  unsigned frame_number;
-  unsigned screen_x, screen_y, screen_r;
+	std::unique_ptr<iIMDShape> imd_shape;
+	unsigned frame_number;
+	unsigned screen_x, screen_y, screen_r;
 };
 
 #endif //WARZONE2100_DISPLAYDEF_H

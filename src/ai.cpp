@@ -42,26 +42,34 @@
  */
 #define	WEIGHT_DIST_TILE			13						//In points used in weaponmodifier.txt and structuremodifier.txt
 #define	WEIGHT_DIST_TILE_DROID		WEIGHT_DIST_TILE		//How much weight a distance of 1 tile (128 world units) has when looking for the best nearest target
+
 #define	WEIGHT_DIST_TILE_STRUCT		WEIGHT_DIST_TILE
 #define	WEIGHT_HEALTH_DROID			(WEIGHT_DIST_TILE * 10)	//How much weight unit damage has (100% of damage is equally weighted as 10 tiles distance)
+
 //~100% damage should be ~8 tiles (max sensor range)
 #define	WEIGHT_HEALTH_STRUCT		(WEIGHT_DIST_TILE * 7)
 
 #define	WEIGHT_NOT_VISIBLE_F		10						//We really don't like objects we can't see
 
 #define	WEIGHT_SERVICE_DROIDS		(WEIGHT_DIST_TILE_DROID * 5)		//We don't want them to be repairing droids or structures while we are after them
+
 #define	WEIGHT_WEAPON_DROIDS		(WEIGHT_DIST_TILE_DROID * 4)		//We prefer to go after anything that has a gun and can hurt us
+
 #define	WEIGHT_COMMAND_DROIDS		(WEIGHT_DIST_TILE_DROID * 6)		//Commanders get a higher priority
 #define	WEIGHT_MILITARY_STRUCT		WEIGHT_DIST_TILE_STRUCT				//Droid/cyborg factories, repair facility; shouldn't have too much weight
+
 #define	WEIGHT_WEAPON_STRUCT		WEIGHT_WEAPON_DROIDS				//Same as weapon droids (?)
 #define	WEIGHT_DERRICK_STRUCT		(WEIGHT_MILITARY_STRUCT + WEIGHT_DIST_TILE_STRUCT * 4)	//Even if it's 4 tiles further away than defenses we still choose it
+
 
 #define	WEIGHT_STRUCT_NOTBUILT_F	8						//Humans won't fool us anymore!
 
 #define OLD_TARGET_THRESHOLD		(WEIGHT_DIST_TILE * 4)	//it only makes sense to switch target if new one is 4+ tiles closer
 
+
 #define	EMP_DISABLED_PENALTY_F		10								//EMP shouldn't attack emped targets again
 #define	EMP_STRUCT_PENALTY_F		(EMP_DISABLED_PENALTY_F * 2)	//EMP don't attack structures, should be bigger than EMP_DISABLED_PENALTY_F
+
 
 #define TOO_CLOSE_PENALTY_F             20
 
@@ -71,6 +79,7 @@
 //Some weights for the units attached to a commander
 #define	WEIGHT_CMD_RANK				(WEIGHT_DIST_TILE * 4)			//A single rank is as important as 4 tiles distance
 #define	WEIGHT_CMD_SAME_TARGET		WEIGHT_DIST_TILE				//Don't want this to be too high, since a commander can have many units assigned
+
 
 uint8_t alliances[MAX_PLAYER_SLOTS][MAX_PLAYER_SLOTS];
 
@@ -164,23 +173,24 @@ bool aiShutdown()
 }
 
 /** Search the global list of sensors for a possible target for psObj. */
-static BASE_OBJECT *aiSearchSensorTargets(BASE_OBJECT *psObj, int weapon_slot, WEAPON_STATS *psWStats, TARGET_ORIGIN *targetOrigin)
+static BASE_OBJECT* aiSearchSensorTargets(BASE_OBJECT* psObj, int weapon_slot, WEAPON_STATS* psWStats,
+                                          TARGET_ORIGIN* targetOrigin)
 {
-	int		longRange = proj_GetLongRange(psWStats, psObj->player);
-	int		tarDist = longRange * longRange;
-	bool		foundCB = false;
-	int		minDist = proj_GetMinRange(psWStats, psObj->player) * proj_GetMinRange(psWStats, psObj->player);
-	BASE_OBJECT	*psTarget = nullptr;
+	int longRange = proj_GetLongRange(psWStats, psObj->player);
+	int tarDist = longRange * longRange;
+	bool foundCB = false;
+	int minDist = proj_GetMinRange(psWStats, psObj->player) * proj_GetMinRange(psWStats, psObj->player);
+	BASE_OBJECT* psTarget = nullptr;
 
 	if (targetOrigin)
 	{
 		*targetOrigin = ORIGIN_UNKNOWN;
 	}
 
-	for (BASE_OBJECT *psSensor = apsSensorList[0]; psSensor; psSensor = psSensor->psNextFunc)
+	for (BASE_OBJECT* psSensor = apsSensorList[0]; psSensor; psSensor = psSensor->psNextFunc)
 	{
-		BASE_OBJECT	*psTemp = nullptr;
-		bool		isCB = false;
+		BASE_OBJECT* psTemp = nullptr;
+		bool isCB = false;
 		//bool		isRD = false;
 
 		if (!aiCheckAlliances(psSensor->player, psObj->player))
@@ -189,9 +199,10 @@ static BASE_OBJECT *aiSearchSensorTargets(BASE_OBJECT *psObj, int weapon_slot, W
 		}
 		else if (psSensor->type == OBJ_DROID)
 		{
-			DROID		*psDroid = (DROID *)psSensor;
+			DROID* psDroid = (DROID*)psSensor;
 
-			ASSERT_OR_RETURN(nullptr, psDroid->droidType == DROID_SENSOR, "A non-sensor droid in a sensor list is non-sense");
+			ASSERT_OR_RETURN(nullptr, psDroid->droidType == DROID_SENSOR,
+			                 "A non-sensor droid in a sensor list is non-sense");
 			// Skip non-observing droids. This includes Radar Detectors at the moment since they never observe anything.
 			if (psDroid->action != DACTION_OBSERVE)
 			{
@@ -200,7 +211,7 @@ static BASE_OBJECT *aiSearchSensorTargets(BASE_OBJECT *psObj, int weapon_slot, W
 			// Artillery should not fire at objects observed by VTOL CB/Strike sensors.
 			if (asSensorStats[psDroid->asBits[COMP_SENSOR]].type == VTOL_CB_SENSOR ||
 				asSensorStats[psDroid->asBits[COMP_SENSOR]].type == VTOL_INTERCEPT_SENSOR ||
-				objRadarDetector((BASE_OBJECT *)psDroid))
+				objRadarDetector((BASE_OBJECT*)psDroid))
 			{
 				continue;
 			}
@@ -210,7 +221,7 @@ static BASE_OBJECT *aiSearchSensorTargets(BASE_OBJECT *psObj, int weapon_slot, W
 		}
 		else if (psSensor->type == OBJ_STRUCTURE)
 		{
-			STRUCTURE	*psCStruct = (STRUCTURE *)psSensor;
+			STRUCTURE* psCStruct = (STRUCTURE*)psSensor;
 
 			// skip incomplete structures
 			if (psCStruct->status != SS_BUILT)
@@ -220,7 +231,7 @@ static BASE_OBJECT *aiSearchSensorTargets(BASE_OBJECT *psObj, int weapon_slot, W
 			// Artillery should not fire at objects observed by VTOL CB/Strike sensors.
 			if (psCStruct->pStructureType->pSensor->type == VTOL_CB_SENSOR ||
 				psCStruct->pStructureType->pSensor->type == VTOL_INTERCEPT_SENSOR ||
-				objRadarDetector((BASE_OBJECT *)psCStruct))
+				objRadarDetector((BASE_OBJECT*)psCStruct))
 			{
 				continue;
 			}
@@ -228,7 +239,8 @@ static BASE_OBJECT *aiSearchSensorTargets(BASE_OBJECT *psObj, int weapon_slot, W
 			isCB = structCBSensor(psCStruct);
 			//isRD = objRadarDetector((BASE_OBJECT *)psCStruct);
 		}
-		if (!psTemp || psTemp->died || aiObjectIsProbablyDoomed(psTemp, false) || !validTarget(psObj, psTemp, 0) || aiCheckAlliances(psTemp->player, psObj->player))
+		if (!psTemp || psTemp->died || aiObjectIsProbablyDoomed(psTemp, false) || !validTarget(psObj, psTemp, 0) ||
+			aiCheckAlliances(psTemp->player, psObj->player))
 		{
 			continue;
 		}
@@ -251,7 +263,7 @@ static BASE_OBJECT *aiSearchSensorTargets(BASE_OBJECT *psObj, int weapon_slot, W
 					{
 						*targetOrigin = ORIGIN_CB_SENSOR;
 					}
-					foundCB = true;  // got CB target, drop everything and shoot!
+					foundCB = true; // got CB target, drop everything and shoot!
 				}
 				/*
 				else if (isRD)
@@ -269,15 +281,15 @@ static BASE_OBJECT *aiSearchSensorTargets(BASE_OBJECT *psObj, int weapon_slot, W
 }
 
 /* Calculates attack priority for a certain target */
-static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker, SDWORD weapon_slot)
+static SDWORD targetAttackWeight(BASE_OBJECT* psTarget, BASE_OBJECT* psAttacker, SDWORD weapon_slot)
 {
-	SDWORD			targetTypeBonus = 0, damageRatio = 0, attackWeight = 0, noTarget = -1;
-	UDWORD			weaponSlot;
-	DROID			*targetDroid = nullptr, *psAttackerDroid = nullptr, *psGroupDroid, *psDroid;
-	STRUCTURE		*targetStructure = nullptr;
-	WEAPON_EFFECT	weaponEffect;
-	WEAPON_STATS	*attackerWeapon;
-	bool			bEmpWeap = false, bCmdAttached = false, bTargetingCmd = false, bDirect = false;
+	SDWORD targetTypeBonus = 0, damageRatio = 0, attackWeight = 0, noTarget = -1;
+	UDWORD weaponSlot;
+	DROID *targetDroid = nullptr, *psAttackerDroid = nullptr, *psGroupDroid, *psDroid;
+	STRUCTURE* targetStructure = nullptr;
+	WEAPON_EFFECT weaponEffect;
+	WEAPON_STATS* attackerWeapon;
+	bool bEmpWeap = false, bCmdAttached = false, bTargetingCmd = false, bDirect = false;
 
 	if (psTarget == nullptr || psAttacker == nullptr || psTarget->died)
 	{
@@ -285,14 +297,14 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 	}
 	ASSERT(psTarget != psAttacker, "targetAttackWeight: Wanted to evaluate the worth of attacking ourselves...");
 
-	targetTypeBonus = 0;			//Sensors/ecm droids, non-military structures get lower priority
+	targetTypeBonus = 0; //Sensors/ecm droids, non-military structures get lower priority
 
 	/* Get attacker weapon effect */
 	if (psAttacker->type == OBJ_DROID)
 	{
-		psAttackerDroid = (DROID *)psAttacker;
+		psAttackerDroid = (DROID*)psAttacker;
 
-		attackerWeapon = (WEAPON_STATS *)(asWeaponStats + psAttackerDroid->asWeaps[weapon_slot].nStat);
+		attackerWeapon = (WEAPON_STATS*)(asWeaponStats + psAttackerDroid->asWeaps[weapon_slot].nStat);
 
 		//check if this droid is assigned to a commander
 		bCmdAttached = hasCommander(psAttackerDroid);
@@ -302,14 +314,14 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 		{
 			if (psTarget->type == OBJ_DROID)
 			{
-				psDroid = (DROID *)psTarget;
+				psDroid = (DROID*)psTarget;
 
 				//go through all enemy weapon slots
 				for (weaponSlot = 0; !bTargetingCmd &&
-				     weaponSlot < ((DROID *)psTarget)->numWeaps; weaponSlot++)
+				     weaponSlot < ((DROID*)psTarget)->numWeaps; weaponSlot++)
 				{
 					//see if this weapon is targeting our commander
-					if (psDroid->psActionTarget[weaponSlot] == (BASE_OBJECT *)psAttackerDroid->psGroup->psCommander)
+					if (psDroid->psActionTarget[weaponSlot] == (BASE_OBJECT*)psAttackerDroid->psGroup->psCommander)
 					{
 						bTargetingCmd = true;
 					}
@@ -320,10 +332,10 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 				if (psTarget->type == OBJ_STRUCTURE)
 				{
 					//go through all enemy weapons
-					for (weaponSlot = 0; !bTargetingCmd && weaponSlot < ((STRUCTURE *)psTarget)->numWeaps; weaponSlot++)
+					for (weaponSlot = 0; !bTargetingCmd && weaponSlot < ((STRUCTURE*)psTarget)->numWeaps; weaponSlot++)
 					{
-						if (((STRUCTURE *)psTarget)->psTarget[weaponSlot] ==
-						    (BASE_OBJECT *)psAttackerDroid->psGroup->psCommander)
+						if (((STRUCTURE*)psTarget)->psTarget[weaponSlot] ==
+							(BASE_OBJECT*)psAttackerDroid->psGroup->psCommander)
 						{
 							bTargetingCmd = true;
 						}
@@ -334,9 +346,9 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 	}
 	else if (psAttacker->type == OBJ_STRUCTURE)
 	{
-		attackerWeapon = ((WEAPON_STATS *)(asWeaponStats + ((STRUCTURE *)psAttacker)->asWeaps[weapon_slot].nStat));
+		attackerWeapon = ((WEAPON_STATS*)(asWeaponStats + ((STRUCTURE*)psAttacker)->asWeaps[weapon_slot].nStat));
 	}
-	else	/* feature */
+	else /* feature */
 	{
 		ASSERT(!"invalid attacker object type", "targetAttackWeight: Invalid attacker object type");
 		return noTarget;
@@ -360,13 +372,13 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 	bool tooClose = (unsigned)dist <= proj_GetMinRange(attackerWeapon, psAttacker->player);
 	if (tooClose)
 	{
-		dist = objSensorRange(psAttacker);  // If object is too close to fire at, consider it to be at maximum range.
+		dist = objSensorRange(psAttacker); // If object is too close to fire at, consider it to be at maximum range.
 	}
 
 	/* Calculate attack weight */
 	if (psTarget->type == OBJ_DROID)
 	{
-		targetDroid = (DROID *)psTarget;
+		targetDroid = (DROID*)psTarget;
 
 		if (targetDroid->died)
 		{
@@ -419,24 +431,25 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 		}
 
 		/* Now calculate the overall weight */
-		attackWeight = asWeaponModifier[weaponEffect][(asPropulsionStats + targetDroid->asBits[COMP_PROPULSION])->propulsionType] // Our weapon's effect against target
-		               + asWeaponModifierBody[weaponEffect][(asBodyStats + targetDroid->asBits[COMP_BODY])->size]
-		               + WEIGHT_DIST_TILE_DROID * objSensorRange(psAttacker) / TILE_UNITS
-		               - WEIGHT_DIST_TILE_DROID * dist / TILE_UNITS // farther droids are less attractive
-		               + WEIGHT_HEALTH_DROID * damageRatio / 100 // we prefer damaged droids
-		               + targetTypeBonus; // some droid types have higher priority
+		attackWeight = asWeaponModifier[weaponEffect][(asPropulsionStats + targetDroid->asBits[COMP_PROPULSION])->
+				propulsionType] // Our weapon's effect against target
+			+ asWeaponModifierBody[weaponEffect][(asBodyStats + targetDroid->asBits[COMP_BODY])->size]
+			+ WEIGHT_DIST_TILE_DROID * objSensorRange(psAttacker) / TILE_UNITS
+			- WEIGHT_DIST_TILE_DROID * dist / TILE_UNITS // farther droids are less attractive
+			+ WEIGHT_HEALTH_DROID * damageRatio / 100 // we prefer damaged droids
+			+ targetTypeBonus; // some droid types have higher priority
 
 		/* If attacking with EMP try to avoid targets that were already "EMPed" */
 		if (bEmpWeap &&
-		    (targetDroid->lastHitWeapon == WSC_EMP) &&
-		    ((gameTime - targetDroid->timeLastHit) < EMP_DISABLE_TIME))		//target still disabled
+			(targetDroid->lastHitWeapon == WSC_EMP) &&
+			((gameTime - targetDroid->timeLastHit) < EMP_DISABLE_TIME)) //target still disabled
 		{
 			attackWeight /= EMP_DISABLED_PENALTY_F;
 		}
 	}
 	else if (psTarget->type == OBJ_STRUCTURE)
 	{
-		targetStructure = (STRUCTURE *)psTarget;
+		targetStructure = (STRUCTURE*)psTarget;
 
 		/* Calculate damage this target suffered */
 		damageRatio = 100 - 100 * targetStructure->body / structureBody(targetStructure);
@@ -462,14 +475,15 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 		}
 
 		/* Now calculate the overall weight */
-		attackWeight = asStructStrengthModifier[weaponEffect][targetStructure->pStructureType->strength] // Our weapon's effect against target
-		               + WEIGHT_DIST_TILE_STRUCT * objSensorRange(psAttacker) / TILE_UNITS
-		               - WEIGHT_DIST_TILE_STRUCT * dist / TILE_UNITS // farther structs are less attractive
-		               + WEIGHT_HEALTH_STRUCT * damageRatio / 100 // we prefer damaged structures
-		               + targetTypeBonus; // some structure types have higher priority
+		attackWeight = asStructStrengthModifier[weaponEffect][targetStructure->pStructureType->strength]
+			// Our weapon's effect against target
+			+ WEIGHT_DIST_TILE_STRUCT * objSensorRange(psAttacker) / TILE_UNITS
+			- WEIGHT_DIST_TILE_STRUCT * dist / TILE_UNITS // farther structs are less attractive
+			+ WEIGHT_HEALTH_STRUCT * damageRatio / 100 // we prefer damaged structures
+			+ targetTypeBonus; // some structure types have higher priority
 
 		/* Go for unfinished structures only if nothing else found (same for non-visible structures) */
-		if (targetStructure->status != SS_BUILT)		//a decoy?
+		if (targetStructure->status != SS_BUILT) //a decoy?
 		{
 			attackWeight /= WEIGHT_STRUCT_NOTBUILT_F;
 		}
@@ -480,13 +494,13 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 			attackWeight /= EMP_STRUCT_PENALTY_F;
 		}
 	}
-	else	//a feature
+	else //a feature
 	{
 		return 1;
 	}
 
 	/* We prefer objects we can see and can attack immediately */
-	if (!visibleObject((BASE_OBJECT *)psAttacker, psTarget, true))
+	if (!visibleObject((BASE_OBJECT*)psAttacker, psTarget, true))
 	{
 		attackWeight /= WEIGHT_NOT_VISIBLE_F;
 	}
@@ -503,14 +517,15 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 		 * and give a different unit a chance to get in range, too. */
 		if (weaponROF(attackerWeapon, psAttacker->player) < TARGET_DOOMED_SLOW_RELOAD_T)
 		{
-			debug(LOG_NEVER, "Not killing unit - doomed. My ROF: %i (%s)", weaponROF(attackerWeapon, psAttacker->player), getStatsName(attackerWeapon));
+			debug(LOG_NEVER, "Not killing unit - doomed. My ROF: %i (%s)",
+			      weaponROF(attackerWeapon, psAttacker->player), getStatsName(attackerWeapon));
 			return noTarget;
 		}
 		attackWeight /= TARGET_DOOMED_PENALTY_F;
 	}
 
 	/* Commander-related criterias */
-	if (bCmdAttached)	//attached to a commander and don't have a target assigned by some order
+	if (bCmdAttached) //attached to a commander and don't have a target assigned by some order
 	{
 		ASSERT(psAttackerDroid->psGroup->psCommander != nullptr, "Commander is NULL");
 
@@ -527,7 +542,7 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 			{
 				//see if this droid is currently targeting current target
 				if (psGroupDroid->order.psObj == psTarget ||
-				    psGroupDroid->psActionTarget[weaponSlot] == psTarget)
+					psGroupDroid->psActionTarget[weaponSlot] == psTarget)
 				{
 					//we prefer targets that are already targeted and hence will be destroyed faster
 					attackWeight += WEIGHT_CMD_SAME_TARGET;
@@ -543,14 +558,14 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 // Find the best nearest target for a droid.
 // If extraRange is higher than zero, then this is the range it accepts for movement to target.
 // Returns integer representing target priority, -1 if failed
-int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, int extraRange)
+int aiBestNearestTarget(DROID* psDroid, BASE_OBJECT** ppsObj, int weapon_slot, int extraRange)
 {
 	int failure = -1;
 	int bestMod = 0;
-	BASE_OBJECT                     *psTarget = nullptr, *bestTarget = nullptr, *tempTarget;
-	bool				electronic = false;
-	STRUCTURE			*targetStructure;
-	WEAPON_EFFECT			weaponEffect;
+	BASE_OBJECT *psTarget = nullptr, *bestTarget = nullptr, *tempTarget;
+	bool electronic = false;
+	STRUCTURE* targetStructure;
+	WEAPON_EFFECT weaponEffect;
 	TARGET_ORIGIN tmpOrigin = ORIGIN_UNKNOWN;
 
 	//don't bother looking if empty vtol droid
@@ -568,10 +583,10 @@ int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, i
 	// Check if we have a CB target to begin with
 	if (!proj_Direct(asWeaponStats + psDroid->asWeaps[weapon_slot].nStat))
 	{
-		WEAPON_STATS *psWStats = psDroid->asWeaps[weapon_slot].nStat + asWeaponStats;
+		WEAPON_STATS* psWStats = psDroid->asWeaps[weapon_slot].nStat + asWeaponStats;
 
-		bestTarget = aiSearchSensorTargets((BASE_OBJECT *)psDroid, weapon_slot, psWStats, &tmpOrigin);
-		bestMod = targetAttackWeight(bestTarget, (BASE_OBJECT *)psDroid, weapon_slot);
+		bestTarget = aiSearchSensorTargets((BASE_OBJECT*)psDroid, weapon_slot, psWStats, &tmpOrigin);
+		bestMod = targetAttackWeight(bestTarget, (BASE_OBJECT*)psDroid, weapon_slot);
 	}
 
 	weaponEffect = (asWeaponStats + psDroid->asWeaps[weapon_slot].nStat)->weaponEffect;
@@ -579,14 +594,15 @@ int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, i
 	electronic = electronicDroid(psDroid);
 
 	// Range was previously 9*TILE_UNITS. Increasing this doesn't seem to help much, though. Not sure why.
-	int droidRange = std::min(aiDroidRange(psDroid, weapon_slot) + extraRange, objSensorRange(psDroid) + 6 * TILE_UNITS);
+	int droidRange = std::min(aiDroidRange(psDroid, weapon_slot) + extraRange,
+	                          objSensorRange(psDroid) + 6 * TILE_UNITS);
 
-	static GridList gridList;  // static to avoid allocations.
+	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(psDroid->pos.x, psDroid->pos.y, droidRange);
 	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
 	{
-		BASE_OBJECT *friendlyObj = nullptr;
-		BASE_OBJECT *targetInQuestion = *gi;
+		BASE_OBJECT* friendlyObj = nullptr;
+		BASE_OBJECT* targetInQuestion = *gi;
 
 		/* This is a friendly unit, check if we can reuse its target */
 		if (aiCheckAlliances(targetInQuestion->player, psDroid->player))
@@ -599,7 +615,7 @@ int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, i
 			{
 				if (friendlyObj->type == OBJ_DROID)
 				{
-					DROID	*friendlyDroid = (DROID *)friendlyObj;
+					DROID* friendlyDroid = (DROID*)friendlyObj;
 
 					/* See if friendly droid has a target */
 					tempTarget = friendlyDroid->psActionTarget[0];
@@ -611,14 +627,14 @@ int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, i
 							// make sure this target wasn't assigned explicitly to this droid
 							if (friendlyDroid->order.type != DORDER_ATTACK)
 							{
-								targetInQuestion = tempTarget;  //consider this target
+								targetInQuestion = tempTarget; //consider this target
 							}
 						}
 					}
 				}
 				else if (friendlyObj->type == OBJ_STRUCTURE)
 				{
-					tempTarget = ((STRUCTURE *)friendlyObj)->psTarget[0];
+					tempTarget = ((STRUCTURE*)friendlyObj)->psTarget[0];
 					if (tempTarget && !tempTarget->died)
 					{
 						targetInQuestion = tempTarget;
@@ -628,12 +644,13 @@ int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, i
 		}
 
 		if (targetInQuestion != nullptr
-		    && targetInQuestion != psDroid  // in case friendly unit had me as target
-		    && (targetInQuestion->type == OBJ_DROID || targetInQuestion->type == OBJ_STRUCTURE || targetInQuestion->type == OBJ_FEATURE)
-		    && targetInQuestion->visible[psDroid->player] == UBYTE_MAX
-		    && !aiCheckAlliances(targetInQuestion->player, psDroid->player)
-		    && validTarget(psDroid, targetInQuestion, weapon_slot)
-		    && objPosDiffSq(psDroid, targetInQuestion) < droidRange * droidRange)
+			&& targetInQuestion != psDroid // in case friendly unit had me as target
+			&& (targetInQuestion->type == OBJ_DROID || targetInQuestion->type == OBJ_STRUCTURE || targetInQuestion->type
+				== OBJ_FEATURE)
+			&& targetInQuestion->visible[psDroid->player] == UBYTE_MAX
+			&& !aiCheckAlliances(targetInQuestion->player, psDroid->player)
+			&& validTarget(psDroid, targetInQuestion, weapon_slot)
+			&& objPosDiffSq(psDroid, targetInQuestion) < droidRange * droidRange)
 		{
 			if (targetInQuestion->type == OBJ_DROID)
 			{
@@ -642,8 +659,8 @@ int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, i
 				{
 					// if not electronic then valid target
 					if (!electronic
-					    || (electronic
-					        && !isTransporter((DROID *)targetInQuestion)))
+						|| (electronic
+							&& !isTransporter((DROID*)targetInQuestion)))
 					{
 						//only a valid target if NOT a transporter
 						psTarget = targetInQuestion;
@@ -656,12 +673,12 @@ int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, i
 			}
 			else if (targetInQuestion->type == OBJ_STRUCTURE)
 			{
-				STRUCTURE *psStruct = (STRUCTURE *)targetInQuestion;
+				STRUCTURE* psStruct = (STRUCTURE*)targetInQuestion;
 
 				if (electronic)
 				{
 					/* don't want to target structures with resistance of zero if using electronic warfare */
-					if (validStructResistance((STRUCTURE *)targetInQuestion))
+					if (validStructResistance((STRUCTURE*)targetInQuestion))
 					{
 						psTarget = targetInQuestion;
 					}
@@ -671,26 +688,27 @@ int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, i
 					// structure with weapons - go for this
 					psTarget = targetInQuestion;
 				}
-				else if ((isHumanPlayer(psDroid->player) && (psStruct->pStructureType->type != REF_WALL && psStruct->pStructureType->type != REF_WALLCORNER))
+				else if ((isHumanPlayer(psDroid->player) && (psStruct->pStructureType->type != REF_WALL && psStruct->
+						pStructureType->type != REF_WALLCORNER))
 					|| !isHumanPlayer(psDroid->player))
 				{
 					psTarget = targetInQuestion;
 				}
 			}
 			else if (targetInQuestion->type == OBJ_FEATURE
-			         && psDroid->lastFrustratedTime > 0
-			         && gameTime - psDroid->lastFrustratedTime < FRUSTRATED_TIME
-			         && ((FEATURE *)targetInQuestion)->psStats->damageable
-			         && psDroid->player != scavengerPlayer())  // hack to avoid scavs blowing up their nice feature walls
+				&& psDroid->lastFrustratedTime > 0
+				&& gameTime - psDroid->lastFrustratedTime < FRUSTRATED_TIME
+				&& ((FEATURE*)targetInQuestion)->psStats->damageable
+				&& psDroid->player != scavengerPlayer()) // hack to avoid scavs blowing up their nice feature walls
 			{
 				psTarget = targetInQuestion;
 				objTrace(psDroid->id, "considering shooting at %s in frustration", objInfo(targetInQuestion));
 			}
 
 			/* Check if our weapon is most effective against this object */
-			if (psTarget != nullptr && psTarget == targetInQuestion)		//was assigned?
+			if (psTarget != nullptr && psTarget == targetInQuestion) //was assigned?
 			{
-				int newMod = targetAttackWeight(psTarget, (BASE_OBJECT *)psDroid, weapon_slot);
+				int newMod = targetAttackWeight(psTarget, (BASE_OBJECT*)psDroid, weapon_slot);
 
 				/* Remember this one if it's our best target so far */
 				if (newMod >= 0 && (newMod > bestMod || bestTarget == nullptr))
@@ -715,9 +733,10 @@ int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, i
 			&& !aiCheckAlliances(psDroid->player, targetStructure->player))
 		{
 			//are we any good against walls?
-			if (asStructStrengthModifier[weaponEffect][targetStructure->pStructureType->strength] >= MIN_STRUCTURE_BLOCK_STRENGTH)
+			if (asStructStrengthModifier[weaponEffect][targetStructure->pStructureType->strength] >=
+				MIN_STRUCTURE_BLOCK_STRENGTH)
 			{
-				bestTarget = (BASE_OBJECT *)targetStructure; //attack wall
+				bestTarget = (BASE_OBJECT*)targetStructure; //attack wall
 			}
 		}
 
@@ -819,12 +838,13 @@ int aiBestNearestTarget(DROID *psDroid, BASE_OBJECT **ppsObj, int weapon_slot, i
 
 
 /* See if there is a target in range */
-bool aiChooseTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget, int weapon_slot, bool bUpdateTarget, TARGET_ORIGIN *targetOrigin)
+bool aiChooseTarget(BASE_OBJECT* psObj, BASE_OBJECT** ppsTarget, int weapon_slot, bool bUpdateTarget,
+                    TARGET_ORIGIN* targetOrigin)
 {
-	BASE_OBJECT		*psTarget = nullptr;
-	DROID			*psCommander;
-	SDWORD			curTargetWeight = -1;
-	TARGET_ORIGIN		tmpOrigin = ORIGIN_UNKNOWN;
+	BASE_OBJECT* psTarget = nullptr;
+	DROID* psCommander;
+	SDWORD curTargetWeight = -1;
+	TARGET_ORIGIN tmpOrigin = ORIGIN_UNKNOWN;
 
 	if (targetOrigin)
 	{
@@ -836,10 +856,10 @@ bool aiChooseTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget, int weapon_slot
 	/* See if there is a something in range */
 	if (psObj->type == OBJ_DROID)
 	{
-		BASE_OBJECT *psCurrTarget = ((DROID *)psObj)->psActionTarget[0];
+		BASE_OBJECT* psCurrTarget = ((DROID*)psObj)->psActionTarget[0];
 
 		/* find a new target */
-		int newTargetWeight = aiBestNearestTarget((DROID *)psObj, &psTarget, weapon_slot);
+		int newTargetWeight = aiBestNearestTarget((DROID*)psObj, &psTarget, weapon_slot);
 
 		/* Calculate weight of the current target if updating; but take care not to target
 		 * ourselves... */
@@ -848,12 +868,12 @@ bool aiChooseTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget, int weapon_slot
 			curTargetWeight = targetAttackWeight(psCurrTarget, psObj, weapon_slot);
 		}
 
-		if (newTargetWeight >= 0		// found a new target
-		    && (!bUpdateTarget			// choosing a new target, don't care if current one is better
-		        || curTargetWeight <= 0		// attacker had no valid target, use new one
-		        || newTargetWeight > curTargetWeight + OLD_TARGET_THRESHOLD)	// updating and new target is better
-		    && validTarget(psObj, psTarget, weapon_slot)
-		    && aiDroidHasRange((DROID *)psObj, psTarget, weapon_slot))
+		if (newTargetWeight >= 0 // found a new target
+			&& (!bUpdateTarget // choosing a new target, don't care if current one is better
+				|| curTargetWeight <= 0 // attacker had no valid target, use new one
+				|| newTargetWeight > curTargetWeight + OLD_TARGET_THRESHOLD) // updating and new target is better
+			&& validTarget(psObj, psTarget, weapon_slot)
+			&& aiDroidHasRange((DROID*)psObj, psTarget, weapon_slot))
 		{
 			ASSERT(!isDead(psTarget), "Droid found a dead target!");
 			*ppsTarget = psTarget;
@@ -862,18 +882,18 @@ bool aiChooseTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget, int weapon_slot
 	}
 	else if (psObj->type == OBJ_STRUCTURE)
 	{
-		bool	bCommanderBlock = false;
+		bool bCommanderBlock = false;
 
 		ASSERT_OR_RETURN(false, psObj->asWeaps[weapon_slot].nStat > 0, "Invalid weapon turret");
 
-		WEAPON_STATS *psWStats = psObj->asWeaps[weapon_slot].nStat + asWeaponStats;
+		WEAPON_STATS* psWStats = psObj->asWeaps[weapon_slot].nStat + asWeaponStats;
 		int longRange = proj_GetLongRange(psWStats, psObj->player);
 
 		// see if there is a target from the command droids
 		psTarget = nullptr;
 		psCommander = cmdDroidGetDesignator(psObj->player);
 		if (!proj_Direct(psWStats) && (psCommander != nullptr) &&
-		    aiStructHasRange((STRUCTURE *)psObj, (BASE_OBJECT *)psCommander, weapon_slot))
+			aiStructHasRange((STRUCTURE*)psObj, (BASE_OBJECT*)psCommander, weapon_slot))
 		{
 			// there is a commander that can fire designate for this structure
 			// set bCommanderBlock so that the structure does not fire until the commander
@@ -884,11 +904,11 @@ bool aiChooseTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget, int weapon_slot
 			debug(LOG_NEVER, "Commander %d is good enough for fire designation", psCommander->id);
 
 			if (psCommander->action == DACTION_ATTACK
-			    && psCommander->psActionTarget[0] != nullptr
-			    && !psCommander->psActionTarget[0]->died)
+				&& psCommander->psActionTarget[0] != nullptr
+				&& !psCommander->psActionTarget[0]->died)
 			{
 				// the commander has a target to fire on
-				if (aiStructHasRange((STRUCTURE *)psObj, psCommander->psActionTarget[0], weapon_slot))
+				if (aiStructHasRange((STRUCTURE*)psObj, psCommander->psActionTarget[0], weapon_slot))
 				{
 					// target in range - fire on it
 					tmpOrigin = ORIGIN_COMMANDER;
@@ -921,16 +941,16 @@ bool aiChooseTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget, int weapon_slot
 				srange = objSensorRange(psObj);
 			}
 
-			static GridList gridList;  // static to avoid allocations.
+			static GridList gridList; // static to avoid allocations.
 			gridList = gridStartIterate(psObj->pos.x, psObj->pos.y, srange);
 			for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
 			{
-				BASE_OBJECT *psCurr = *gi;
+				BASE_OBJECT* psCurr = *gi;
 				/* Check that it is a valid target */
 				if (psCurr->type != OBJ_FEATURE && !psCurr->died
-				    && !aiCheckAlliances(psCurr->player, psObj->player)
-				    && validTarget(psObj, psCurr, weapon_slot) && psCurr->visible[psObj->player] == UBYTE_MAX
-				    && aiStructHasRange((STRUCTURE *)psObj, psCurr, weapon_slot))
+					&& !aiCheckAlliances(psCurr->player, psObj->player)
+					&& validTarget(psObj, psCurr, weapon_slot) && psCurr->visible[psObj->player] == UBYTE_MAX
+					&& aiStructHasRange((STRUCTURE*)psObj, psCurr, weapon_slot))
 				{
 					int newTargetValue = targetAttackWeight(psCurr, psObj, weapon_slot);
 					// See if in sensor range and visible
@@ -965,11 +985,11 @@ bool aiChooseTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget, int weapon_slot
 
 
 /* See if there is a target in range for Sensor objects*/
-bool aiChooseSensorTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget)
+bool aiChooseSensorTarget(BASE_OBJECT* psObj, BASE_OBJECT** ppsTarget)
 {
-	int		sensorRange = objSensorRange(psObj);
-	unsigned int	radSquared = sensorRange * sensorRange;
-	bool		radarDetector = objRadarDetector(psObj);
+	int sensorRange = objSensorRange(psObj);
+	unsigned int radSquared = sensorRange * sensorRange;
+	bool radarDetector = objRadarDetector(psObj);
 
 	if (!objActiveRadar(psObj) && !radarDetector)
 	{
@@ -980,9 +1000,9 @@ bool aiChooseSensorTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget)
 	/* See if there is something in range */
 	if (psObj->type == OBJ_DROID)
 	{
-		BASE_OBJECT	*psTarget = nullptr;
+		BASE_OBJECT* psTarget = nullptr;
 
-		if (aiBestNearestTarget((DROID *)psObj, &psTarget, 0) >= 0)
+		if (aiBestNearestTarget((DROID*)psObj, &psTarget, 0) >= 0)
 		{
 			/* See if in sensor range */
 			const int xdiff = psTarget->pos.x - psObj->pos.x;
@@ -999,16 +1019,16 @@ bool aiChooseSensorTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget)
 			}
 		}
 	}
-	else	// structure
+	else // structure
 	{
-		BASE_OBJECT    *psTemp = nullptr;
+		BASE_OBJECT* psTemp = nullptr;
 		unsigned tarDist = UINT32_MAX;
 
-		static GridList gridList;  // static to avoid allocations.
+		static GridList gridList; // static to avoid allocations.
 		gridList = gridStartIterate(psObj->pos.x, psObj->pos.y, objSensorRange(psObj));
 		for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
 		{
-			BASE_OBJECT *psCurr = *gi;
+			BASE_OBJECT* psCurr = *gi;
 			// Don't target features or doomed/dead objects
 			if (psCurr->type != OBJ_FEATURE && !psCurr->died && !aiObjectIsProbablyDoomed(psCurr, false))
 			{
@@ -1040,32 +1060,32 @@ bool aiChooseSensorTarget(BASE_OBJECT *psObj, BASE_OBJECT **ppsTarget)
 }
 
 /* Make droid/structure look for a better target */
-static bool updateAttackTarget(BASE_OBJECT *psAttacker, SDWORD weapon_slot)
+static bool updateAttackTarget(BASE_OBJECT* psAttacker, SDWORD weapon_slot)
 {
-	BASE_OBJECT		*psBetterTarget = nullptr;
+	BASE_OBJECT* psBetterTarget = nullptr;
 	TARGET_ORIGIN tmpOrigin = ORIGIN_UNKNOWN;
 
-	if (aiChooseTarget(psAttacker, &psBetterTarget, weapon_slot, true, &tmpOrigin))	//update target
+	if (aiChooseTarget(psAttacker, &psBetterTarget, weapon_slot, true, &tmpOrigin)) //update target
 	{
 		if (psAttacker->type == OBJ_DROID)
 		{
-			DROID *psDroid = (DROID *)psAttacker;
+			DROID* psDroid = (DROID*)psAttacker;
 
 			if ((orderState(psDroid, DORDER_NONE) ||
-			     orderState(psDroid, DORDER_GUARD) ||
-			     orderState(psDroid, DORDER_ATTACKTARGET)) &&
-			    weapon_slot == 0)
+					orderState(psDroid, DORDER_GUARD) ||
+					orderState(psDroid, DORDER_ATTACKTARGET)) &&
+				weapon_slot == 0)
 			{
-				actionDroid((DROID *)psAttacker, DACTION_ATTACK, psBetterTarget);
+				actionDroid((DROID*)psAttacker, DACTION_ATTACK, psBetterTarget);
 			}
-			else	//can't override current order
+			else //can't override current order
 			{
 				setDroidActionTarget(psDroid, psBetterTarget, weapon_slot);
 			}
 		}
 		else if (psAttacker->type == OBJ_STRUCTURE)
 		{
-			STRUCTURE *psBuilding = (STRUCTURE *)psAttacker;
+			STRUCTURE* psBuilding = (STRUCTURE*)psAttacker;
 
 			setStructureTarget(psBuilding, psBetterTarget, weapon_slot, tmpOrigin);
 		}
@@ -1077,12 +1097,12 @@ static bool updateAttackTarget(BASE_OBJECT *psAttacker, SDWORD weapon_slot)
 }
 
 /* Do the AI for a droid */
-void aiUpdateDroid(DROID *psDroid)
+void aiUpdateDroid(DROID* psDroid)
 {
-	bool		lookForTarget, updateTarget;
+	bool lookForTarget, updateTarget;
 
 	ASSERT(psDroid != nullptr, "Invalid droid pointer");
-	if (!psDroid || isDead((BASE_OBJECT *)psDroid))
+	if (!psDroid || isDead((BASE_OBJECT*)psDroid))
 	{
 		return;
 	}
@@ -1097,8 +1117,8 @@ void aiUpdateDroid(DROID *psDroid)
 
 	// look for a target if doing nothing
 	if (orderState(psDroid, DORDER_NONE) ||
-	    orderState(psDroid, DORDER_GUARD) ||
-	    orderState(psDroid, DORDER_HOLD))
+		orderState(psDroid, DORDER_GUARD) ||
+		orderState(psDroid, DORDER_HOLD))
 	{
 		lookForTarget = true;
 	}
@@ -1116,14 +1136,14 @@ void aiUpdateDroid(DROID *psDroid)
 
 	/* Only try to update target if already have some target */
 	if (psDroid->action == DACTION_ATTACK ||
-	    psDroid->action == DACTION_MOVEFIRE ||
-	    psDroid->action == DACTION_MOVETOATTACK ||
-	    psDroid->action == DACTION_ROTATETOATTACK)
+		psDroid->action == DACTION_MOVEFIRE ||
+		psDroid->action == DACTION_MOVETOATTACK ||
+		psDroid->action == DACTION_ROTATETOATTACK)
 	{
 		updateTarget = true;
 	}
 	if ((orderState(psDroid, DORDER_OBSERVE) || orderState(psDroid, DORDER_ATTACKTARGET)) &&
-	    psDroid->order.psObj && psDroid->order.psObj->died)
+		psDroid->order.psObj && psDroid->order.psObj->died)
 	{
 		lookForTarget = true;
 		updateTarget = false;
@@ -1172,11 +1192,12 @@ void aiUpdateDroid(DROID *psDroid)
 
 	/* For commanders and non-assigned non-commanders: look for a better target once in a while */
 	if (!lookForTarget && updateTarget && psDroid->numWeaps > 0 && !hasCommander(psDroid)
-	    && (psDroid->id + gameTime) / TARGET_UPD_SKIP_FRAMES != (psDroid->id + gameTime - deltaGameTime) / TARGET_UPD_SKIP_FRAMES)
+		&& (psDroid->id + gameTime) / TARGET_UPD_SKIP_FRAMES != (psDroid->id + gameTime - deltaGameTime) /
+		TARGET_UPD_SKIP_FRAMES)
 	{
 		for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 		{
-			updateAttackTarget((BASE_OBJECT *)psDroid, i);
+			updateAttackTarget((BASE_OBJECT*)psDroid, i);
 		}
 	}
 
@@ -1184,7 +1205,7 @@ void aiUpdateDroid(DROID *psDroid)
 
 	if (lookForTarget && !updateTarget)
 	{
-		BASE_OBJECT *psTarget;
+		BASE_OBJECT* psTarget;
 		if (psDroid->droidType == DROID_SENSOR)
 		{
 			if (aiChooseSensorTarget(psDroid, &psTarget))
@@ -1199,7 +1220,7 @@ void aiUpdateDroid(DROID *psDroid)
 		}
 		else
 		{
-			if (aiChooseTarget((BASE_OBJECT *)psDroid, &psTarget, 0, true, nullptr))
+			if (aiChooseTarget((BASE_OBJECT*)psDroid, &psTarget, 0, true, nullptr))
 			{
 				if (!orderState(psDroid, DORDER_HOLD)
 					&& secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_PURSUE)
@@ -1213,9 +1234,9 @@ void aiUpdateDroid(DROID *psDroid)
 }
 
 /* Check if any of our weapons can hit the target... */
-bool checkAnyWeaponsTarget(BASE_OBJECT *psObject, BASE_OBJECT *psTarget)
+bool checkAnyWeaponsTarget(BASE_OBJECT* psObject, BASE_OBJECT* psTarget)
 {
-	DROID *psDroid = (DROID *) psObject;
+	DROID* psDroid = (DROID*)psObject;
 	for (int i = 0; i < psDroid->numWeaps; i++)
 	{
 		if (validTarget(psObject, psTarget, i))
@@ -1227,10 +1248,10 @@ bool checkAnyWeaponsTarget(BASE_OBJECT *psObject, BASE_OBJECT *psTarget)
 }
 
 /* Set of rules which determine whether the weapon associated with the object can fire on the propulsion type of the target. */
-bool validTarget(BASE_OBJECT *psObject, BASE_OBJECT *psTarget, int weapon_slot)
+bool validTarget(BASE_OBJECT* psObject, BASE_OBJECT* psTarget, int weapon_slot)
 {
-	bool	bTargetInAir = false, bValidTarget = false;
-	UBYTE	surfaceToAir = 0;
+	bool bTargetInAir = false, bValidTarget = false;
+	UBYTE surfaceToAir = 0;
 
 	if (!psTarget)
 	{
@@ -1241,9 +1262,10 @@ bool validTarget(BASE_OBJECT *psObject, BASE_OBJECT *psTarget, int weapon_slot)
 	switch (psTarget->type)
 	{
 	case OBJ_DROID:
-		if (asPropulsionTypes[asPropulsionStats[((DROID *)psTarget)->asBits[COMP_PROPULSION]].propulsionType].travel == AIR)
+		if (asPropulsionTypes[asPropulsionStats[((DROID*)psTarget)->asBits[COMP_PROPULSION]].propulsionType].travel ==
+			AIR)
 		{
-			if (((DROID *)psTarget)->sMove.Status != MOVEINACTIVE)
+			if (((DROID*)psTarget)->sMove.Status != MOVEINACTIVE)
 			{
 				bTargetInAir = true;
 			}
@@ -1268,15 +1290,15 @@ bool validTarget(BASE_OBJECT *psObject, BASE_OBJECT *psTarget, int weapon_slot)
 	switch (psObject->type)
 	{
 	case OBJ_DROID:
-		if (((DROID *)psObject)->droidType == DROID_SENSOR)
+		if (((DROID*)psObject)->droidType == DROID_SENSOR)
 		{
-			return !bTargetInAir;  // Sensor droids should not target anything in the air.
+			return !bTargetInAir; // Sensor droids should not target anything in the air.
 		}
 
-		// Can't attack without a weapon
-		if (((DROID *)psObject)->numWeaps != 0 && ((DROID *)psObject)->asWeaps[weapon_slot].nStat != 0)
+	// Can't attack without a weapon
+		if (((DROID*)psObject)->numWeaps != 0 && ((DROID*)psObject)->asWeaps[weapon_slot].nStat != 0)
 		{
-			surfaceToAir = asWeaponStats[((DROID *)psObject)->asWeaps[weapon_slot].nStat].surfaceToAir;
+			surfaceToAir = asWeaponStats[((DROID*)psObject)->asWeaps[weapon_slot].nStat].surfaceToAir;
 			if (((surfaceToAir & SHOOT_IN_AIR) && bTargetInAir) || ((surfaceToAir & SHOOT_ON_GROUND) && !bTargetInAir))
 			{
 				return true;
@@ -1289,9 +1311,9 @@ bool validTarget(BASE_OBJECT *psObject, BASE_OBJECT *psTarget, int weapon_slot)
 		break;
 	case OBJ_STRUCTURE:
 		// Can't attack without a weapon
-		if (((STRUCTURE *)psObject)->numWeaps != 0 && ((STRUCTURE *)psObject)->asWeaps[weapon_slot].nStat != 0)
+		if (((STRUCTURE*)psObject)->numWeaps != 0 && ((STRUCTURE*)psObject)->asWeaps[weapon_slot].nStat != 0)
 		{
-			surfaceToAir = asWeaponStats[((STRUCTURE *)psObject)->asWeaps[weapon_slot].nStat].surfaceToAir;
+			surfaceToAir = asWeaponStats[((STRUCTURE*)psObject)->asWeaps[weapon_slot].nStat].surfaceToAir;
 		}
 		else
 		{

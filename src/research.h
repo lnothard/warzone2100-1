@@ -76,23 +76,23 @@ extern std::vector<RESEARCH> asResearch;
 extern std::vector<PLAYER_RESEARCH> asPlayerResList[MAX_PLAYERS];
 
 //used for Callbacks to say which topic was last researched
-extern RESEARCH				*psCBLastResearch;
-extern STRUCTURE			*psCBLastResStructure;
-extern SDWORD				CBResFacilityOwner;
+extern RESEARCH* psCBLastResearch;
+extern STRUCTURE* psCBLastResStructure;
+extern SDWORD CBResFacilityOwner;
 
 /* Default level of sensor, repair and ECM */
-extern UDWORD	aDefaultSensor[MAX_PLAYERS];
-extern UDWORD	aDefaultECM[MAX_PLAYERS];
-extern UDWORD	aDefaultRepair[MAX_PLAYERS];
+extern UDWORD aDefaultSensor[MAX_PLAYERS];
+extern UDWORD aDefaultECM[MAX_PLAYERS];
+extern UDWORD aDefaultRepair[MAX_PLAYERS];
 
-bool loadResearch(WzConfig &ini);
+bool loadResearch(WzConfig& ini);
 
 /*function to check what can be researched for a particular player at any one
   instant. Returns the number to research*/
 std::vector<uint16_t> fillResearchList(UDWORD playerID, nonstd::optional<UWORD> topic, UWORD limit);
 
 /* process the results of a completed research topic */
-void researchResult(UDWORD researchIndex, UBYTE player, bool bDisplay, STRUCTURE *psResearchFacility, bool bTrigger);
+void researchResult(UDWORD researchIndex, UBYTE player, bool bDisplay, STRUCTURE* psResearchFacility, bool bTrigger);
 
 //this just inits all the research arrays
 bool ResearchShutDown();
@@ -100,18 +100,18 @@ bool ResearchShutDown();
 void ResearchRelease();
 
 /* For a given view data get the research this is related to */
-RESEARCH *getResearch(const char *pName);
+RESEARCH* getResearch(const char* pName);
 
 /* sets the status of the topic to cancelled and stores the current research
    points accquired */
-void cancelResearch(STRUCTURE *psBuilding, QUEUE_MODE mode);
+void cancelResearch(STRUCTURE* psBuilding, QUEUE_MODE mode);
 
 /* For a given view data get the research this is related to */
-RESEARCH *getResearchForMsg(const VIEWDATA *pViewData);
+RESEARCH* getResearchForMsg(const VIEWDATA* pViewData);
 
 /* Sets the 'possible' flag for a player's research so the topic will appear in
 the research list next time the Research Facility is selected */
-bool enableResearch(RESEARCH *psResearch, UDWORD player);
+bool enableResearch(RESEARCH* psResearch, UDWORD player);
 
 /*find the last research topic of importance that the losing player did and
 'give' the results to the reward player*/
@@ -120,12 +120,12 @@ void researchReward(UBYTE losingPlayer, UBYTE rewardPlayer);
 /*check to see if any research has been completed that enables self repair*/
 bool selfRepairEnabled(UBYTE player);
 
-SDWORD	mapIconToRID(UDWORD iconID);
+SDWORD mapIconToRID(UDWORD iconID);
 
 /*puts research facility on hold*/
-void holdResearch(STRUCTURE *psBuilding, QUEUE_MODE mode);
+void holdResearch(STRUCTURE* psBuilding, QUEUE_MODE mode);
 /*release a research facility from hold*/
-void releaseResearch(STRUCTURE *psBuilding, QUEUE_MODE mode);
+void releaseResearch(STRUCTURE* psBuilding, QUEUE_MODE mode);
 
 void enableSelfRepair(UBYTE player);
 
@@ -143,15 +143,18 @@ struct AllyResearch
 	int timeToResearch;
 	bool active;
 };
-std::vector<AllyResearch> const &listAllyResearch(unsigned ref);
+
+std::vector<AllyResearch> const& listAllyResearch(unsigned ref);
 
 // various counts / statistics
 uint32_t getNumWeaponImpactClassUpgrades(uint32_t player, WEAPON_SUBCLASS subClass);
+
 enum class BodyClass
 {
 	Tank,
 	Cyborg
 };
+
 uint32_t getNumBodyClassArmourUpgrades(uint32_t player, BodyClass bodyClass);
 uint32_t getNumBodyClassThermalArmourUpgrades(uint32_t player, BodyClass bodyClass);
 

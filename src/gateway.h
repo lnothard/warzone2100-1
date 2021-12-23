@@ -29,7 +29,7 @@ struct GATEWAY
 	UBYTE x1, y1, x2, y2;
 };
 
-typedef std::list<GATEWAY *> GATEWAY_LIST;
+typedef std::list<GATEWAY*> GATEWAY_LIST;
 
 /// Initialise the gateway system
 bool gwInitialise();
@@ -44,6 +44,6 @@ bool gwNewGateway(int x1, int y1, int x2, int y2);
 size_t gwNumGateways();
 
 /// Get the gateway list.
-GATEWAY_LIST &gwGetGateways();
+GATEWAY_LIST& gwGetGateways();
 
 #endif // __INCLUDED_SRC_GATEWAY_H__

@@ -116,9 +116,11 @@ struct PAUSE_STATE
 	bool scrollPause;
 	bool consolePause;
 };
+
 static PAUSE_STATE pauseState;
 static size_t maxFastForwardTicks = WZ_DEFAULT_MAX_FASTFORWARD_TICKS;
-static bool fastForwardTicksFixedToNormalTickRate = true; // can be set to false to "catch-up" as quickly as possible (but this may result in more jerky behavior)
+static bool fastForwardTicksFixedToNormalTickRate = true;
+// can be set to false to "catch-up" as quickly as possible (but this may result in more jerky behavior)
 
 static unsigned numDroids[MAX_PLAYERS];
 static unsigned numMissionDroids[MAX_PLAYERS];
@@ -128,7 +130,7 @@ static unsigned numConstructorDroids[MAX_PLAYERS];
 
 static SDWORD videoMode = 0;
 
-LOOP_MISSION_STATE		loopMissionState = LMS_NORMAL;
+LOOP_MISSION_STATE loopMissionState = LMS_NORMAL;
 
 // this is set by scrStartMission to say what type of new level is to be started
 LEVEL_TYPE nextMissionType = LEVEL_TYPE::LDS_NONE;
@@ -151,7 +153,8 @@ static GAMECODE renderLoop()
 		intDoScreenRefresh();
 
 		/* Run the in game interface and see if it grabbed any mouse clicks */
-		if (!getRotActive() && getWidgetsStatus() && dragBox3D.status != DRAG_DRAGGING && wallDrag.status != DRAG_DRAGGING)
+		if (!getRotActive() && getWidgetsStatus() && dragBox3D.status != DRAG_DRAGGING && wallDrag.status !=
+			DRAG_DRAGGING)
 		{
 			intRetVal = intRunWidgets();
 			screen_FlipIfBackDropTransition();
@@ -164,7 +167,7 @@ static GAMECODE renderLoop()
 		if (!gameUpdatePaused() && intRetVal != INT_QUIT)
 		{
 			if (dragBox3D.status != DRAG_DRAGGING && wallDrag.status != DRAG_DRAGGING
-			    && (intRetVal == INT_INTERCEPT || isMouseOverRadar()))
+				&& (intRetVal == INT_INTERCEPT || isMouseOverRadar()))
 			{
 				// Using software cursors (when on) for these menus due to a bug in SDL's SDL_ShowCursor()
 				wzSetCursor(CURSOR_DEFAULT);
@@ -188,7 +191,7 @@ static GAMECODE renderLoop()
 
 			for (unsigned i = 0; i < MAX_PLAYERS; i++)
 			{
-				for (DROID *psCurr = apsDroidLists[i]; psCurr; psCurr = psCurr->psNext)
+				for (DROID* psCurr = apsDroidLists[i]; psCurr; psCurr = psCurr->psNext)
 				{
 					// Don't copy the next pointer - if droids somehow get destroyed in the graphics rendering loop, who cares if we crash.
 					calcDroidIllumination(psCurr);
@@ -206,7 +209,7 @@ static GAMECODE renderLoop()
 			displayRenderLoop();
 		}
 	}
-	else  // paused
+	else // paused
 	{
 		// Using software cursors (when on) for these menus due to a bug in SDL's SDL_ShowCursor()
 		wzSetCursor(CURSOR_DEFAULT);
@@ -216,10 +219,11 @@ static GAMECODE renderLoop()
 			displayRenderLoop();
 		}
 
-		if (InGameOpUp || isInGamePopupUp)		// ingame options menu up, run it!
+		if (InGameOpUp || isInGamePopupUp) // ingame options menu up, run it!
 		{
-			WidgetTriggers const &triggers = widgRunScreen(psWScreen);
-			unsigned widgval = triggers.empty() ? 0 : triggers.front().widget->id; // Just use first click here, since the next click could be on another menu.
+			WidgetTriggers const& triggers = widgRunScreen(psWScreen);
+			unsigned widgval = triggers.empty() ? 0 : triggers.front().widget->id;
+			// Just use first click here, since the next click could be on another menu.
 
 			intProcessInGameOptions(widgval);
 			if (widgval == INTINGAMEOP_QUIT || widgval == INTINGAMEOP_POPUP_QUIT)
@@ -238,7 +242,7 @@ static GAMECODE renderLoop()
 			if (bRequestLoad)
 			{
 				loopMissionState = LMS_LOADGAME;
-				NET_InitPlayers();			// otherwise alliances were not cleared
+				NET_InitPlayers(); // otherwise alliances were not cleared
 				sstrcpy(saveGameName, sRequestResult);
 			}
 			else
@@ -263,7 +267,7 @@ static GAMECODE renderLoop()
 				}
 				else if (bMultiPlayer || saveMidMission())
 				{
-					if (saveGame(sRequestResult, GTYPE_SAVE_MIDMISSION))//mid mission from [esc] menu
+					if (saveGame(sRequestResult, GTYPE_SAVE_MIDMISSION)) //mid mission from [esc] menu
 					{
 						sstrcpy(msgbuffer, _("GAME SAVED: "));
 						sstrcat(msgbuffer, sRequestResult);
@@ -271,7 +275,8 @@ static GAMECODE renderLoop()
 					}
 					else
 					{
-						ASSERT(!"saveGame(sRequestResult, GTYPE_SAVE_MIDMISSION) failed", "Mid Mission: saveGame Failed");
+						ASSERT(!"saveGame(sRequestResult, GTYPE_SAVE_MIDMISSION) failed",
+						       "Mid Mission: saveGame Failed");
 						sstrcpy(msgbuffer, _("Could not save game!"));
 						addConsoleMessage(msgbuffer, LEFT_JUSTIFY, NOTIFY_MESSAGE);
 						deleteSaveGame_classic(sRequestResult);
@@ -303,15 +308,16 @@ static GAMECODE renderLoop()
 		if (!gameUpdatePaused())
 		{
 			if (dragBox3D.status != DRAG_DRAGGING
-			    && wallDrag.status != DRAG_DRAGGING
-			    && intRetVal != INT_INTERCEPT)
+				&& wallDrag.status != DRAG_DRAGGING
+				&& intRetVal != INT_INTERCEPT)
 			{
 				ProcessRadarInput();
 			}
 			processInput();
 
 			//no key clicks or in Intelligence Screen
-			if (!isMouseOverRadar() && !isDraggingInGameNotification() && !isMouseClickDownOnScreenOverlayChild() && intRetVal == INT_NONE && !InGameOpUp && !isInGamePopupUp)
+			if (!isMouseOverRadar() && !isDraggingInGameNotification() && !isMouseClickDownOnScreenOverlayChild() &&
+				intRetVal == INT_NONE && !InGameOpUp && !isInGamePopupUp)
 			{
 				processMouseClickInput();
 			}
@@ -382,7 +388,7 @@ static GAMECODE renderLoop()
 		pie_SetFogStatus(false);
 		clearMode = CLEAR_BLACK;
 	}
-	pie_ScreenFlip(clearMode);//gameloopflip
+	pie_ScreenFlip(clearMode); //gameloopflip
 
 	if (quitting)
 	{
@@ -411,7 +417,7 @@ void countUpdate(bool synch)
 		numMissionDroids[i] = 0;
 		numTransporterDroids[i] = 0;
 
-		for (DROID *psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (DROID* psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			numDroids[i]++;
 			switch (psCurr->droidType)
@@ -431,7 +437,7 @@ void countUpdate(bool synch)
 				break;
 			}
 		}
-		for (DROID *psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (DROID* psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			numMissionDroids[i]++;
 			switch (psCurr->droidType)
@@ -451,7 +457,7 @@ void countUpdate(bool synch)
 				break;
 			}
 		}
-		for (DROID *psCurr = apsLimboDroids[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (DROID* psCurr = apsLimboDroids[i]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			// count the type of units
 			switch (psCurr->droidType)
@@ -469,7 +475,7 @@ void countUpdate(bool synch)
 		}
 		// FIXME: These for-loops are code duplicationo
 		setLasSatExists(false, i);
-		for (STRUCTURE *psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->psNext)
+		for (STRUCTURE* psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->psNext)
 		{
 			if (psCBuilding->pStructureType->type == REF_SAT_UPLINK && psCBuilding->status == SS_BUILT)
 			{
@@ -481,7 +487,8 @@ void countUpdate(bool synch)
 				setLasSatExists(true, i);
 			}
 		}
-		for (STRUCTURE *psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->psNext)
+		for (STRUCTURE* psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->
+		     psNext)
 		{
 			if (psCBuilding->pStructureType->type == REF_SAT_UPLINK && psCBuilding->status == SS_BUILT)
 			{
@@ -495,17 +502,27 @@ void countUpdate(bool synch)
 		}
 		if (synch)
 		{
-			syncDebug("counts[%d] = {droid: %d, command: %d, constructor: %d, mission: %d, transporter: %d}", i, numDroids[i], numCommandDroids[i], numConstructorDroids[i], numMissionDroids[i], numTransporterDroids[i]);
+			syncDebug("counts[%d] = {droid: %d, command: %d, constructor: %d, mission: %d, transporter: %d}", i,
+			          numDroids[i], numCommandDroids[i], numConstructorDroids[i], numMissionDroids[i],
+			          numTransporterDroids[i]);
 		}
 	}
 }
 
 static void gameStateUpdate()
 {
-	syncDebug("map = \"%s\", pseudorandom 32-bit integer = 0x%08X, allocated = %d %d %d %d %d %d %d %d %d %d, position = %d %d %d %d %d %d %d %d %d %d", game.map, gameRandU32(),
-	          NetPlay.players[0].allocated, NetPlay.players[1].allocated, NetPlay.players[2].allocated, NetPlay.players[3].allocated, NetPlay.players[4].allocated, NetPlay.players[5].allocated, NetPlay.players[6].allocated, NetPlay.players[7].allocated, NetPlay.players[8].allocated, NetPlay.players[9].allocated,
-	          NetPlay.players[0].position, NetPlay.players[1].position, NetPlay.players[2].position, NetPlay.players[3].position, NetPlay.players[4].position, NetPlay.players[5].position, NetPlay.players[6].position, NetPlay.players[7].position, NetPlay.players[8].position, NetPlay.players[9].position
-	         );
+	syncDebug(
+		"map = \"%s\", pseudorandom 32-bit integer = 0x%08X, allocated = %d %d %d %d %d %d %d %d %d %d, position = %d %d %d %d %d %d %d %d %d %d",
+		game.map, gameRandU32(),
+		NetPlay.players[0].allocated, NetPlay.players[1].allocated, NetPlay.players[2].allocated,
+		NetPlay.players[3].allocated, NetPlay.players[4].allocated, NetPlay.players[5].allocated,
+		NetPlay.players[6].allocated, NetPlay.players[7].allocated, NetPlay.players[8].allocated,
+		NetPlay.players[9].allocated,
+		NetPlay.players[0].position, NetPlay.players[1].position, NetPlay.players[2].position,
+		NetPlay.players[3].position, NetPlay.players[4].position, NetPlay.players[5].position,
+		NetPlay.players[6].position, NetPlay.players[7].position, NetPlay.players[8].position,
+		NetPlay.players[9].position
+	);
 	for (unsigned n = 0; n < MAX_PLAYERS; ++n)
 	{
 		syncDebug("Player %d = \"%s\"", n, NetPlay.players[n].name);
@@ -520,7 +537,7 @@ static void gameStateUpdate()
 	sendQueuedDroidInfo();
 
 	sendPlayerGameTime();
-	NETflush();  // Make sure the game time tick message is really sent over the network.
+	NETflush(); // Make sure the game time tick message is really sent over the network.
 
 	if (!paused && !scriptPaused())
 	{
@@ -553,15 +570,15 @@ static void gameStateUpdate()
 		//update the current power available for a player
 		updatePlayerPower(i);
 
-		DROID *psNext;
-		for (DROID *psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
+		DROID* psNext;
+		for (DROID* psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
 		{
 			// Copy the next pointer - not 100% sure if the droid could get destroyed but this covers us anyway
 			psNext = psCurr->psNext;
 			droidUpdate(psCurr);
 		}
 
-		for (DROID *psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
+		for (DROID* psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
 		{
 			/* Copy the next pointer - not 100% sure if the droid could
 			get destroyed but this covers us anyway */
@@ -570,14 +587,14 @@ static void gameStateUpdate()
 		}
 
 		// FIXME: These for-loops are code duplicationo
-		STRUCTURE *psNBuilding;
-		for (STRUCTURE *psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
+		STRUCTURE* psNBuilding;
+		for (STRUCTURE* psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
 		{
 			/* Copy the next pointer - not 100% sure if the structure could get destroyed but this covers us anyway */
 			psNBuilding = psCBuilding->psNext;
 			structureUpdate(psCBuilding, false);
 		}
-		for (STRUCTURE *psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
+		for (STRUCTURE* psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
 		{
 			/* Copy the next pointer - not 100% sure if the structure could get destroyed but this covers us anyway. It shouldn't do since its not even on the map!*/
 			psNBuilding = psCBuilding->psNext;
@@ -589,8 +606,8 @@ static void gameStateUpdate()
 
 	proj_UpdateAll();
 
-	FEATURE *psNFeat;
-	for (FEATURE *psCFeat = apsFeatureLists[0]; psCFeat; psCFeat = psNFeat)
+	FEATURE* psNFeat;
+	for (FEATURE* psCFeat = apsFeatureLists[0]; psCFeat; psCFeat = psNFeat)
 	{
 		psNFeat = psCFeat->psNext;
 		featureUpdate(psCFeat);
@@ -623,9 +640,9 @@ GAMECODE gameLoop()
 	static uint32_t lastFlushTime = 0;
 
 	static size_t numForcedUpdatesLastCall = 0;
-	static int renderBudget = 0;  // Scaled time spent rendering minus scaled time spent updating.
+	static int renderBudget = 0; // Scaled time spent rendering minus scaled time spent updating.
 	static bool previousUpdateWasRender = false;
-	const Rational renderFraction(2, 5);  // Minimum fraction of time spent rendering.
+	const Rational renderFraction(2, 5); // Minimum fraction of time spent rendering.
 	const Rational updateFraction = Rational(1) - renderFraction;
 
 	// Shouldn't this be when initialising the game, rather than randomly called between ticks?
@@ -641,15 +658,19 @@ GAMECODE gameLoop()
 		recvMessage();
 
 		bool selectedPlayerIsSpectator = bMultiPlayer && NetPlay.players[selectedPlayer].isSpectator;
-		bool multiplayerHostDisconnected = bMultiPlayer && !NetPlay.isHostAlive && NetPlay.bComms && !NetPlay.isHost; // do not fast-forward after the host has disconnected
+		bool multiplayerHostDisconnected = bMultiPlayer && !NetPlay.isHostAlive && NetPlay.bComms && !NetPlay.isHost;
+		// do not fast-forward after the host has disconnected
 		bool canFastForwardGameTime =
-			selectedPlayerIsSpectator 			// current player must be a spectator
-			&& !NetPlay.isHost					// AND NOT THE HOST (!)
-			&& !multiplayerHostDisconnected		// and the multiplayer host must not be disconnected ("host quit")
-			&& numFastForwardTicks < maxFastForwardTicks // and the number of forced updates this call of gameLoop must not exceed the max allowed
-			&& checkPlayerGameTime(NET_ALL_PLAYERS);	// and there must be a new game tick available to process from all players
+			selectedPlayerIsSpectator // current player must be a spectator
+			&& !NetPlay.isHost // AND NOT THE HOST (!)
+			&& !multiplayerHostDisconnected // and the multiplayer host must not be disconnected ("host quit")
+			&& numFastForwardTicks < maxFastForwardTicks
+			// and the number of forced updates this call of gameLoop must not exceed the max allowed
+			&& checkPlayerGameTime(NET_ALL_PLAYERS);
+		// and there must be a new game tick available to process from all players
 
-		bool forceTryGameTickUpdate = canFastForwardGameTime && ((!fastForwardTicksFixedToNormalTickRate && numForcedUpdatesLastCall > 0) || numRegularUpdatesTicks > 0) && NETgameIsBehindPlayersByAtLeast(4);
+		bool forceTryGameTickUpdate = canFastForwardGameTime && ((!fastForwardTicksFixedToNormalTickRate &&
+			numForcedUpdatesLastCall > 0) || numRegularUpdatesTicks > 0) && NETgameIsBehindPlayersByAtLeast(4);
 
 		// Update gameTime and graphicsTime, and corresponding deltas. Note that gameTime and graphicsTime pause, if we aren't getting our GAME_GAME_TIME messages.
 		auto timeUpdateResult = gameTimeUpdate(renderBudget > 0 || previousUpdateWasRender, forceTryGameTickUpdate);
@@ -666,7 +687,7 @@ GAMECODE gameLoop()
 
 		if (deltaGameTime == 0)
 		{
-			break;  // Not doing a game state update.
+			break; // Not doing a game state update.
 		}
 
 		ASSERT(!paused && !gameUpdatePaused(), "Nonsensical pause values.");
@@ -688,7 +709,7 @@ GAMECODE gameLoop()
 	if (realTime - lastFlushTime >= 400u)
 	{
 		lastFlushTime = realTime;
-		NETflush();  // Make sure that we aren't waiting too long to send data.
+		NETflush(); // Make sure that we aren't waiting too long to send data.
 	}
 
 	unsigned before = wzGetTicks();
@@ -805,18 +826,22 @@ bool gameUpdatePaused()
 {
 	return pauseState.gameUpdatePause;
 }
+
 bool audioPaused()
 {
 	return pauseState.audioPause;
 }
+
 bool scriptPaused()
 {
 	return pauseState.scriptPause;
 }
+
 bool scrollPaused()
 {
 	return pauseState.scrollPause;
 }
+
 bool consolePaused()
 {
 	return pauseState.consolePause;
@@ -826,18 +851,22 @@ void setGameUpdatePause(bool state)
 {
 	pauseState.gameUpdatePause = state;
 }
+
 void setAudioPause(bool state)
 {
 	pauseState.audioPause = state;
 }
+
 void setScriptPause(bool state)
 {
 	pauseState.scriptPause = state;
 }
+
 void setScrollPause(bool state)
 {
 	pauseState.scrollPause = state;
 }
+
 void setConsolePause(bool state)
 {
 	pauseState.consolePause = state;
@@ -853,33 +882,34 @@ void setAllPauseStates(bool state)
 	setConsolePause(state);
 }
 
-UDWORD	getNumDroids(UDWORD player)
+UDWORD getNumDroids(UDWORD player)
 {
 	return numDroids[player];
 }
 
-UDWORD	getNumTransporterDroids(UDWORD player)
+UDWORD getNumTransporterDroids(UDWORD player)
 {
 	return numTransporterDroids[player];
 }
 
-UDWORD	getNumMissionDroids(UDWORD player)
+UDWORD getNumMissionDroids(UDWORD player)
 {
 	return numMissionDroids[player];
 }
 
-UDWORD	getNumCommandDroids(UDWORD player)
+UDWORD getNumCommandDroids(UDWORD player)
 {
 	return numCommandDroids[player];
 }
 
-UDWORD	getNumConstructorDroids(UDWORD player)
+UDWORD getNumConstructorDroids(UDWORD player)
 {
 	return numConstructorDroids[player];
 }
 
 // increase the droid counts - used by update factory to keep the counts in sync
-void adjustDroidCount(DROID *droid, int delta) {
+void adjustDroidCount(DROID* droid, int delta)
+{
 	int player = droid->player;
 	syncDebug("numDroids[%d]:%d=%d→%d", player, droid->droidType, numDroids[player], numDroids[player] + delta);
 	numDroids[player] += delta;
@@ -898,9 +928,9 @@ void adjustDroidCount(DROID *droid, int delta) {
 }
 
 // Increase counts of droids in a transporter
-void droidCountsInTransporter(DROID *droid, int player)
+void droidCountsInTransporter(DROID* droid, int player)
 {
-	DROID *psDroid = nullptr;
+	DROID* psDroid = nullptr;
 
 	if (!isTransporter(droid) || droid->psGroup == nullptr)
 	{

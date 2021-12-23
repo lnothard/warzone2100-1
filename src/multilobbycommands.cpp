@@ -76,7 +76,8 @@ static bool senderApparentlyMatchesAdmin(uint32_t playerIdx)
 	}
 	std::string senderIdentityHash = identity.publicHashString();
 	std::string senderPublicKeyB64 = base64Encode(identity.toBytes(EcKey::Public));
-	if (lobbyAdminPublicKeys.count(senderPublicKeyB64) == 0 && lobbyAdminPublicHashStrings.count(senderIdentityHash) == 0)
+	if (lobbyAdminPublicKeys.count(senderPublicKeyB64) == 0 && lobbyAdminPublicHashStrings.count(senderIdentityHash) ==
+		0)
 	{
 		return false; // identity hash is not in permitted lists
 	}
@@ -112,11 +113,17 @@ static bool senderHasLobbyCommandAdminPrivs(uint32_t playerIdx)
 		sendRoomSystemMessageToSingleReceiver("Waiting for sync (admin privileges not yet enabled)", playerIdx);
 		if (lobbyAdminPublicKeys.count(senderPublicKeyB64) > 0)
 		{
-			debug(LOG_INFO, "Received an admin check for player %" PRIu32 " that passed (public key: %s), but they have not yet verified their identity", playerIdx, senderPublicKeyB64.c_str());
+			debug(LOG_INFO,
+			      "Received an admin check for player %" PRIu32
+			      " that passed (public key: %s), but they have not yet verified their identity", playerIdx,
+			      senderPublicKeyB64.c_str());
 		}
 		else
 		{
-			debug(LOG_INFO, "Received an admin check for player %" PRIu32 " that passed (public identity: %s), but they have not yet verified their identity", playerIdx, senderIdentityHash.c_str());
+			debug(LOG_INFO,
+			      "Received an admin check for player %" PRIu32
+			      " that passed (public identity: %s), but they have not yet verified their identity", playerIdx,
+			      senderIdentityHash.c_str());
 		}
 		return false;
 	}
@@ -127,7 +134,8 @@ static void lobbyCommand_PrintHelp(uint32_t receiver)
 {
 	sendRoomSystemMessageToSingleReceiver("Command list:", receiver);
 	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "help - Get this message", receiver);
-	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "admin - Display currently-connected admin players", receiver);
+	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "admin - Display currently-connected admin players",
+	                                      receiver);
 	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "me - Display your information", receiver);
 	if (!senderApparentlyMatchesAdmin(receiver))
 	{
@@ -136,13 +144,20 @@ static void lobbyCommand_PrintHelp(uint32_t receiver)
 	}
 	// admin-only commands
 	sendRoomSystemMessageToSingleReceiver("Admin-only commands: (All slots count from 0)", receiver);
-	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "swap <slot-from> <slot-to> - Swap player/slot positions", receiver);
-	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "makespec <slot> - Move a player to spectators", receiver);
-	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "kick <slot> - Kick a player; (or s<slot> for spectator - ex. s0)", receiver);
-	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "team <slot> <team> - Change team for player/slot", receiver);
-	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "base <base level> - Change base level (0, 1, 2)", receiver);
-	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "alliance <alliance type> - Change alliance setting (0, 1, 2, 3)", receiver);
-	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "scav <scav level> - Change scav setting (0=off, 1=on, 2=ultimate)", receiver);
+	sendRoomSystemMessageToSingleReceiver(
+		LOBBY_COMMAND_PREFIX "swap <slot-from> <slot-to> - Swap player/slot positions", receiver);
+	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "makespec <slot> - Move a player to spectators",
+	                                      receiver);
+	sendRoomSystemMessageToSingleReceiver(
+		LOBBY_COMMAND_PREFIX "kick <slot> - Kick a player; (or s<slot> for spectator - ex. s0)", receiver);
+	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "team <slot> <team> - Change team for player/slot",
+	                                      receiver);
+	sendRoomSystemMessageToSingleReceiver(LOBBY_COMMAND_PREFIX "base <base level> - Change base level (0, 1, 2)",
+	                                      receiver);
+	sendRoomSystemMessageToSingleReceiver(
+		LOBBY_COMMAND_PREFIX "alliance <alliance type> - Change alliance setting (0, 1, 2, 3)", receiver);
+	sendRoomSystemMessageToSingleReceiver(
+		LOBBY_COMMAND_PREFIX "scav <scav level> - Change scav setting (0=off, 1=on, 2=ultimate)", receiver);
 }
 
 static std::unordered_set<size_t> getConnectedAdminPlayerIndexes()
@@ -195,7 +210,9 @@ if (!senderHasLobbyCommandAdminPrivs(message.sender)) \
 	return false; \
 }
 
-HostLobbyOperationsInterface::~HostLobbyOperationsInterface() { }
+HostLobbyOperationsInterface::~HostLobbyOperationsInterface()
+{
+}
 
 bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyOperationsInterface& cmdInterface)
 {
@@ -216,11 +233,15 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 		return false;
 	}
 
-	ASSERT_OR_RETURN(false, message.sender < MAX_CONNECTED_PLAYERS, "Out of bounds message sender?: %" PRIi32 "", message.sender);
+	ASSERT_OR_RETURN(false, message.sender < MAX_CONNECTED_PLAYERS, "Out of bounds message sender?: %" PRIi32 "",
+	                 message.sender);
 
-	auto posToNetPlayer = [](int a) {
-		for (int i=0; i<MAX_PLAYERS; i++) {
-			if (NetPlay.players[i].position == a) {
+	auto posToNetPlayer = [](int a)
+	{
+		for (int i = 0; i < MAX_PLAYERS; i++)
+		{
+			if (NetPlay.players[i].position == a)
+			{
 				return i;
 			}
 		}
@@ -234,7 +255,9 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 	std::string messagetext = message.text;
 	std::string messagetext64 = base64Encode(std::vector<unsigned char>(messagetext.begin(), messagetext.end()));
 	debug(LOG_INFO, "message [%s] [%s]", senderhash.c_str(), message.text);
-	wz_command_interface_output("WZCHATCMD: %i %s %s %s %s %s\n", message.sender, NetPlay.players[message.sender].IPtextAddress, senderhash.c_str(), senderPublicKeyB64.c_str(), sendername64.c_str(), messagetext64.c_str());
+	wz_command_interface_output("WZCHATCMD: %i %s %s %s %s %s\n", message.sender,
+	                            NetPlay.players[message.sender].IPtextAddress, senderhash.c_str(),
+	                            senderPublicKeyB64.c_str(), sendername64.c_str(), messagetext64.c_str());
 	if (strcmp(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "help") == 0)
 	{
 		lobbyCommand_PrintHelp(static_cast<uint32_t>(message.sender));
@@ -245,12 +268,13 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 	}
 	else if (strcmp(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "me") == 0)
 	{
-		std::string msg = astringf("Your player information:\nidentity: %s\nhash: %s\nsender [%d] position [%d] name [%s]",
-								senderPublicKeyB64.c_str(),
-								senderhash.c_str(),
-								message.sender,
-								NetPlay.players[message.sender].position,
-								NetPlay.players[message.sender].name);
+		std::string msg = astringf(
+			"Your player information:\nidentity: %s\nhash: %s\nsender [%d] position [%d] name [%s]",
+			senderPublicKeyB64.c_str(),
+			senderhash.c_str(),
+			message.sender,
+			NetPlay.players[message.sender].position,
+			NetPlay.players[message.sender].name);
 		sendRoomSystemMessageToSingleReceiver(msg.c_str(), message.sender);
 	}
 	else if (strncmp(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "team", 4) == 0)
@@ -312,7 +336,8 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 		}
 		if (!cmdInterface.kickPlayer(playerIdx, _("Administrator has kicked you from the game.")))
 		{
-			std::string msg = astringf("Failed to kick %s: %u", (playerIdx < MAX_PLAYER_SLOTS) ? "player" : "spectator", playerPos);
+			std::string msg = astringf("Failed to kick %s: %u", (playerIdx < MAX_PLAYER_SLOTS) ? "player" : "spectator",
+			                           playerPos);
 			sendRoomSystemMessage(msg.c_str());
 			return false;
 		}
@@ -349,14 +374,15 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 			return false;
 		}
 
-		sendRoomSystemMessage((std::string("Swapping player ")+std::to_string(s1)+" and "+std::to_string(s2)).c_str());
+		sendRoomSystemMessage(
+			(std::string("Swapping player ") + std::to_string(s1) + " and " + std::to_string(s2)).c_str());
 	}
 	else if (strncmp(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "base", 4) == 0)
 	{
 		ADMIN_REQUIRED_FOR_COMMAND("base");
 		int s1;
 		int r = sscanf(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "base %d", &s1);
-		if(r != 1)
+		if (r != 1)
 		{
 			sendRoomNotifyMessage("Usage: " LOBBY_COMMAND_PREFIX "base <base level>");
 			return false;
@@ -374,7 +400,7 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 			return false;
 		}
 
-		sendRoomSystemMessage((std::string("Starting base set to ")+std::to_string(s1)).c_str());
+		sendRoomSystemMessage((std::string("Starting base set to ") + std::to_string(s1)).c_str());
 	}
 	else if (strncmp(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "alliance", 8) == 0)
 	{
@@ -400,7 +426,7 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 			{
 				alliancesType = 2;
 			}
-			else if(alliancesType == 2)
+			else if (alliancesType == 2)
 			{
 				alliancesType = 3;
 			}
@@ -411,7 +437,7 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 				return false;
 			}
 
-			sendRoomSystemMessage((std::string("Alliance type set to ")+std::to_string(s1)).c_str());
+			sendRoomSystemMessage((std::string("Alliance type set to ") + std::to_string(s1)).c_str());
 		}
 	}
 	else if (strncmp(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "scav", 4) == 0)
@@ -438,7 +464,7 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 			return false;
 		}
 
-		sendRoomSystemMessage((std::string("Scavangers set to ")+std::to_string(scavsValue)).c_str());
+		sendRoomSystemMessage((std::string("Scavangers set to ") + std::to_string(scavsValue)).c_str());
 	}
 	else if (strncmp(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "makespec", 8) == 0)
 	{
@@ -460,7 +486,8 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 		if (playerIdx == message.sender)
 		{
 			// Can't move self this way (or it'll prevent us from moving back) - use the UI!
-			sendRoomSystemMessageToSingleReceiver("Use the UI to move yourself.", static_cast<uint32_t>(message.sender));
+			sendRoomSystemMessageToSingleReceiver("Use the UI to move yourself.",
+			                                      static_cast<uint32_t>(message.sender));
 			return false;
 		}
 		if (!cmdInterface.movePlayerToSpectators(playerIdx))

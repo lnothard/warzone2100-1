@@ -37,7 +37,7 @@
 #include <cmath>
 
 #ifndef GLM_ENABLE_EXPERIMENTAL
-	#define GLM_ENABLE_EXPERIMENTAL
+#define GLM_ENABLE_EXPERIMENTAL
 #endif
 #include <glm/gtx/transform.hpp>
 
@@ -64,9 +64,9 @@ enum AP_STATUS
 	APS_ACTIVE
 };
 
-static ATPART	*asAtmosParts = nullptr;
-static UDWORD	freeParticle;
-static WT_CLASS	weather = WT_NONE;
+static ATPART* asAtmosParts = nullptr;
+static UDWORD freeParticle;
+static WT_CLASS weather = WT_NONE;
 
 /* Setup all the particles */
 void atmosInitSystem()
@@ -74,7 +74,7 @@ void atmosInitSystem()
 	if (!asAtmosParts && weather != WT_NONE)
 	{
 		// calloc sets all to APS_INACTIVE initially
-		asAtmosParts = (ATPART *)calloc(MAX_ATMOS_PARTICLES, sizeof(*asAtmosParts));
+		asAtmosParts = (ATPART*)calloc(MAX_ATMOS_PARTICLES, sizeof(*asAtmosParts));
 	}
 	/* Start at the beginning */
 	freeParticle = 0;
@@ -82,7 +82,7 @@ void atmosInitSystem()
 
 /*	Makes a particle wrap around - if it goes off the grid, then it returns
 	on the other side - provided it's still on world... Which it should be */
-static void testParticleWrap(ATPART *psPart)
+static void testParticleWrap(ATPART* psPart)
 {
 	/* Gone off left side */
 	if (psPart->position.x < playerPos.p.x - world_coord(visibleTiles.x) / 2)
@@ -110,12 +110,12 @@ static void testParticleWrap(ATPART *psPart)
 }
 
 /* Moves one of the particles */
-static void processParticle(ATPART *psPart)
+static void processParticle(ATPART* psPart)
 {
-	SDWORD	groundHeight;
+	SDWORD groundHeight;
 	Vector3i pos;
-	UDWORD	x, y;
-	MAPTILE	*psTile;
+	UDWORD x, y;
+	MAPTILE* psTile;
 
 	/* Only move if the game isn't paused */
 	if (!gamePaused())
@@ -130,8 +130,8 @@ static void processParticle(ATPART *psPart)
 
 		/* If it's gone off the WORLD... */
 		if (psPart->position.x < 0 || psPart->position.z < 0 ||
-		    psPart->position.x > ((mapWidth - 1)*TILE_UNITS) ||
-		    psPart->position.z > ((mapHeight - 1)*TILE_UNITS))
+			psPart->position.x > ((mapWidth - 1) * TILE_UNITS) ||
+			psPart->position.z > ((mapHeight - 1) * TILE_UNITS))
 		{
 			/* The kill it */
 			psPart->status = APS_INACTIVE;
@@ -146,7 +146,7 @@ static void processParticle(ATPART *psPart)
 
 			/* Are we below ground? */
 			if ((int)psPart->position.y < groundHeight
-			    || psPart->position.y < 0.f)
+				|| psPart->position.y < 0.f)
 			{
 				/* Kill it and return */
 				psPart->status = APS_INACTIVE;
@@ -155,13 +155,15 @@ static void processParticle(ATPART *psPart)
 					x = map_coord(static_cast<int32_t>(psPart->position.x));
 					y = map_coord(static_cast<int32_t>(psPart->position.z));
 					psTile = mapTile(x, y);
-					if (terrainType(psTile) == TER_WATER && TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile)) // display-only check for adding effect
+					if (terrainType(psTile) == TER_WATER && TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile))
+					// display-only check for adding effect
 					{
 						pos.x = static_cast<int>(psPart->position.x);
 						pos.z = static_cast<int>(psPart->position.z);
 						pos.y = groundHeight;
 						effectSetSize(60);
-						addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_SPECIFIED, true, getImdFromIndex(MI_SPLASH), 0);
+						addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_SPECIFIED, true, getImdFromIndex(MI_SPLASH),
+						          0);
 					}
 				}
 				return;
@@ -182,12 +184,13 @@ static void processParticle(ATPART *psPart)
 }
 
 /* Adds a particle to the system if it can */
-static void atmosAddParticle(const Vector3f &pos, AP_TYPE type)
+static void atmosAddParticle(const Vector3f& pos, AP_TYPE type)
 {
-	UDWORD	activeCount;
-	UDWORD	i;
+	UDWORD activeCount;
+	UDWORD i;
 
-	for (i = freeParticle, activeCount = 0; asAtmosParts[i].status == APS_ACTIVE && activeCount < MAX_ATMOS_PARTICLES; i++)
+	for (i = freeParticle, activeCount = 0; asAtmosParts[i].status == APS_ACTIVE && activeCount < MAX_ATMOS_PARTICLES; i
+	     ++)
 	{
 		activeCount++;
 		/* Check for wrap around */
@@ -247,8 +250,8 @@ static void atmosAddParticle(const Vector3f &pos, AP_TYPE type)
 /* Move the particles */
 void atmosUpdateSystem()
 {
-	UDWORD	i;
-	UDWORD	numberToAdd;
+	UDWORD i;
+	UDWORD numberToAdd;
 	Vector3f pos;
 
 	// we don't want to do any of this while paused.
@@ -287,8 +290,8 @@ void atmosUpdateSystem()
 
 			/* If we've got one on the grid */
 			if (pos.x > 0 && pos.z > 0 &&
-			    pos.x < (SDWORD)world_coord(mapWidth - 1) &&
-			    pos.z < (SDWORD)world_coord(mapHeight - 1))
+				pos.x < (SDWORD)world_coord(mapWidth - 1) &&
+				pos.z < (SDWORD)world_coord(mapHeight - 1))
 			{
 				/* On grid, so which particle shall we add? */
 				switch (weather)
@@ -307,9 +310,9 @@ void atmosUpdateSystem()
 	}
 }
 
-void atmosDrawParticles(const glm::mat4 &viewMatrix)
+void atmosDrawParticles(const glm::mat4& viewMatrix)
 {
-	UDWORD	i;
+	UDWORD i;
 
 	if (weather == WT_NONE)
 	{
@@ -323,7 +326,8 @@ void atmosDrawParticles(const glm::mat4 &viewMatrix)
 		if (asAtmosParts[i].status == APS_ACTIVE)
 		{
 			/* Is it visible on the screen? */
-			if (clipXYZ(static_cast<int>(asAtmosParts[i].position.x), static_cast<int>(asAtmosParts[i].position.z), static_cast<int>(asAtmosParts[i].position.y), viewMatrix))
+			if (clipXYZ(static_cast<int>(asAtmosParts[i].position.x), static_cast<int>(asAtmosParts[i].position.z),
+			            static_cast<int>(asAtmosParts[i].position.y), viewMatrix))
 			{
 				renderParticle(&asAtmosParts[i], viewMatrix);
 			}
@@ -331,7 +335,7 @@ void atmosDrawParticles(const glm::mat4 &viewMatrix)
 	}
 }
 
-void renderParticle(ATPART *psPart, const glm::mat4 &viewMatrix)
+void renderParticle(ATPART* psPart, const glm::mat4& viewMatrix)
 {
 	glm::vec3 dv;
 

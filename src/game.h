@@ -41,31 +41,33 @@
  */
 /***************************************************************************/
 
-bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool UserSaveGame);	// UserSaveGame is true when the save game is not a new level (User Save Game)
+bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool UserSaveGame);
+// UserSaveGame is true when the save game is not a new level (User Save Game)
 
 /*This just loads up the .gam file to determine which level data to set up - split up
 so can be called in levLoadData when starting a game from a load save game*/
-bool loadGameInit(const char *fileName);
+bool loadGameInit(const char* fileName);
 
 bool loadMissionExtras(const char* pGameToLoad, LEVEL_TYPE levelType);
 
 // load the script state given a .gam name
-bool loadScriptState(char *pFileName);
+bool loadScriptState(char* pFileName);
 
 /// Load the terrain types
-bool loadTerrainTypeMap(const char *pFilePath);
+bool loadTerrainTypeMap(const char* pFilePath);
 bool loadTerrainTypeMapOverride(unsigned int tileSet);
 
-bool saveGame(const char *aFileName, GAME_TYPE saveType);
+bool saveGame(const char* aFileName, GAME_TYPE saveType);
 
 // Get the campaign number for loadGameInit game
-UDWORD getCampaign(const char *fileName);
+UDWORD getCampaign(const char* fileName);
 
 /*returns the current type of save game being loaded*/
 GAME_TYPE getSaveGameType();
 
-void gameScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight);
+void gameScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+                             unsigned int newHeight);
 void gameDisplayScaleFactorDidChange(float newDisplayScaleFactor);
-nonstd::optional<nlohmann::json> parseJsonFile(const char *filename);
+nonstd::optional<nlohmann::json> parseJsonFile(const char* filename);
 bool saveJSONToFile(const nlohmann::json& obj, const char* pFileName);
 #endif // __INCLUDED_SRC_GAME_H__

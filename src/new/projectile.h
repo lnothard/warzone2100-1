@@ -14,29 +14,29 @@ static constexpr auto VTOL_HITBOX_MODIFIER = 100;
 
 enum class PROJECTILE_STATE
 {
-  IN_FLIGHT,
-  IMPACT,
-  POST_IMPACT,
-  INACTIVE
+	IN_FLIGHT,
+	IMPACT,
+	POST_IMPACT,
+	INACTIVE
 };
 
 class Projectile : public virtual Simple_Object, public Impl::Simple_Object
 {
 public:
 private:
-  using enum PROJECTILE_STATE;
+	using enum PROJECTILE_STATE;
 
-  PROJECTILE_STATE state;
-  Unit*            source;
-  Unit*            target;
-  Vector3i         destination;
-  Vector3i         origin;
-  unsigned         base_damage;
+	PROJECTILE_STATE state;
+	Unit* source;
+	Unit* target;
+	Vector3i destination;
+	Vector3i origin;
+	unsigned base_damage;
 };
 
-[[nodiscard]] constexpr int calculate_height(const Projectile &projectile)
+[[nodiscard]] constexpr int calculate_height(const Projectile& projectile)
 {
-  return BULLET_FLIGHT_HEIGHT;
+	return BULLET_FLIGHT_HEIGHT;
 }
 
 #endif // WARZONE2100_PROJECTILE_H

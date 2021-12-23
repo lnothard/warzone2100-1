@@ -29,11 +29,13 @@
 class PropertyMatcher
 {
 public:
-	class PropertyProvider {
+	class PropertyProvider
+	{
 	public:
 		virtual ~PropertyProvider();
 		virtual bool getPropertyValue(const std::string& property, std::string& output_value) = 0;
 	};
+
 public:
 	// Evaluate a conditional expression of property matches
 	//

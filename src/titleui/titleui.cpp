@@ -34,7 +34,8 @@ WzTitleUI::~WzTitleUI()
 {
 }
 
-void WzTitleUI::screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight)
+void WzTitleUI::screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+                                    unsigned int newHeight)
 {
 }
 

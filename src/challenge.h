@@ -35,6 +35,7 @@ extern WzString challengeFileName;
 
 const char* currentChallengeName();
 
-void challengesScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth, unsigned int newHeight);
+void challengesScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
+                                   unsigned int newHeight);
 
 #endif // __INCLUDED_SRC_CHALLENGE_H__

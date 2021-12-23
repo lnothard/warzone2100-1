@@ -53,33 +53,40 @@ using json = nlohmann::json;
 # pragma GCC diagnostic pop
 #endif
 
-enum class ProcessResult {
+enum class ProcessResult
+{
 	INVALID_JSON,
 	NO_MATCHING_CHANNEL,
 	MATCHED_CHANNEL_NO_UPDATE,
 	UPDATE_FOUND
 };
 
-typedef std::function<ProcessResult (const json& updateData, bool validSignature, bool validExpiry)> ProcessJSONDataFileFunc;
+typedef std::function<ProcessResult (const json& updateData, bool validSignature, bool validExpiry)>
+ProcessJSONDataFileFunc;
 
-struct CachePaths {
+struct CachePaths
+{
 	const char* cache_data_path;
 	const char* cache_info_path;
 };
 
 static std::string configureLinkURL(const std::string& url, BuildPropertyProvider& propProvider);
 static bool isValidExpiry(const json& updateData);
-static void initProcessData(const std::vector<std::string> &updateDataUrls, ProcessJSONDataFileFunc processDataFunc, CachePaths outputPaths);
-static void fetchLatestData(const std::vector<std::string> &updateDataUrls, ProcessJSONDataFileFunc processDataFunc, CachePaths outputPaths);
+static void initProcessData(const std::vector<std::string>& updateDataUrls, ProcessJSONDataFileFunc processDataFunc,
+                            CachePaths outputPaths);
+static void fetchLatestData(const std::vector<std::string>& updateDataUrls, ProcessJSONDataFileFunc processDataFunc,
+                            CachePaths outputPaths);
 
-class WzUpdateManager {
+class WzUpdateManager
+{
 public:
 	static void initUpdateCheck();
 private:
 	static ProcessResult processUpdateJSONFile(const json& updateData, bool validSignature, bool validExpiry);
 };
 
-class WzCompatCheckManager {
+class WzCompatCheckManager
+{
 public:
 	static void initCompatCheck();
 private:
@@ -99,7 +106,7 @@ static const char compatDataPath[] = WZ_UPDATES_CACHE_DIR "/wz2100_compat.json";
 static CachePaths updatesCachePaths = CachePaths{updatesCacheDataPath, cacheInfoPath};
 static CachePaths compatCachePaths = CachePaths{compatDataPath, nullptr};
 
-template<class Duration>
+template <class Duration>
 date::sys_time<Duration> parse_ISO_8601(const std::string& timeStr)
 {
 	std::istringstream inputStream(timeStr);
@@ -123,7 +130,9 @@ date::sys_time<Duration> parse_ISO_8601(const std::string& timeStr)
 // May be called from a background thread
 static std::string configureLinkURL(const std::string& url, BuildPropertyProvider& propProvider)
 {
-	const std::unordered_set<std::string> permittedBuildPropertySubstitutions = { "PLATFORM", "VERSION_STRING", "GIT_BRANCH" };
+	const std::unordered_set<std::string> permittedBuildPropertySubstitutions = {
+		"PLATFORM", "VERSION_STRING", "GIT_BRANCH"
+	};
 
 	std::vector<std::string> tokens;
 	re2::StringPiece input(url);
@@ -167,14 +176,15 @@ static bool isValidExpiry(const json& updateData)
 {
 	if (!updateData.is_object())
 	{
-		wzAsyncExecOnMainThread([]{ debug(LOG_WARNING, "Update data is not an object"); });
+		wzAsyncExecOnMainThread([] { debug(LOG_WARNING, "Update data is not an object"); });
 		return false;
 	}
 	if (!updateData.contains("validThru")) { return false; }
 	const auto& validThru = updateData["validThru"];
 	if (!validThru.is_string()) { return false; }
 	std::string validThruStr = validThru.get<std::string>();
-	try {
+	try
+	{
 		const auto validThruTimePoint = parse_ISO_8601<std::chrono::system_clock::duration>(validThruStr);
 		if (validThruTimePoint >= std::chrono::system_clock::now())
 		{
@@ -193,13 +203,13 @@ ProcessResult WzUpdateManager::processUpdateJSONFile(const json& updateData, boo
 {
 	if (!updateData.is_object())
 	{
-		wzAsyncExecOnMainThread([]{ debug(LOG_WARNING, "Update data is not an object"); });
+		wzAsyncExecOnMainThread([] { debug(LOG_WARNING, "Update data is not an object"); });
 		return ProcessResult::INVALID_JSON;
 	}
 	const auto& channels = updateData["channels"];
 	if (!channels.is_array())
 	{
-		wzAsyncExecOnMainThread([]{ debug(LOG_WARNING, "Channels should be an array"); });
+		wzAsyncExecOnMainThread([] { debug(LOG_WARNING, "Channels should be an array"); });
 		return ProcessResult::INVALID_JSON;
 	}
 	BuildPropertyProvider buildPropProvider;
@@ -226,7 +236,8 @@ ProcessResult WzUpdateManager::processUpdateJSONFile(const json& updateData, boo
 				{
 					const auto& buildPropertyMatch = release.at("buildPropertyMatch");
 					if (!buildPropertyMatch.is_string()) continue;
-					if (!PropertyMatcher::evaluateConditionString(buildPropertyMatch.get<std::string>(), buildPropProvider))
+					if (!PropertyMatcher::evaluateConditionString(buildPropertyMatch.get<std::string>(),
+					                                              buildPropProvider))
 					{
 						// non-matching release buildPropertyMatch
 						continue;
@@ -266,46 +277,63 @@ ProcessResult WzUpdateManager::processUpdateJSONFile(const json& updateData, boo
 					}
 					updateLink = configureLinkURL(updateLink, buildPropProvider);
 					// submit notification (on main thread)
-					wzAsyncExecOnMainThread([validSignature, channelNameStr, releaseVersionStr, notificationInfo, updateLink]{
-						debug(LOG_INFO, "Found an available update (%s) in channel (%s)", releaseVersionStr.c_str(), channelNameStr.c_str());
-						WZ_Notification notification;
-						notification.duration = 0;
-						notification.contentTitle = _("Update Available");
-						if (validSignature)
+					wzAsyncExecOnMainThread(
+						[validSignature, channelNameStr, releaseVersionStr, notificationInfo, updateLink]
 						{
-							notification.contentText = astringf(_("A new build of Warzone 2100 (%s) is available!"), releaseVersionStr.c_str());
-						}
-						else
-						{
-							notification.contentText = _("A new build of Warzone 2100 is available!");
-						}
-						notification.action = WZ_Notification_Action(_("Get Update Now"), [updateLink](const WZ_Notification&){
-							// Open the updateLink url
-							wzAsyncExecOnMainThread([updateLink]{
-								if (!openURLInBrowser(updateLink.c_str()))
-								{
-									debug(LOG_ERROR, "Failed to open url in browser: \"%s\"", updateLink.c_str());
-								}
-							});
-						});
-						notification.largeIcon = WZ_Notification_Image("images/warzone2100.png");
-						if (notificationInfo.is_object())
-						{
-							const auto& notificationBase = notificationInfo["base"];
-							const auto& notificationId = notificationInfo["id"];
-							if (notificationBase.is_string() && notificationId.is_string())
+							debug(LOG_INFO, "Found an available update (%s) in channel (%s)", releaseVersionStr.c_str(),
+							      channelNameStr.c_str());
+							WZ_Notification notification;
+							notification.duration = 0;
+							notification.contentTitle = _("Update Available");
+							if (validSignature)
 							{
-								const std::string notificationIdentifierPrefix = notificationBase.get<std::string>() + "::";
-								const std::string notificationIdentifier = notificationIdentifierPrefix + notificationId.get<std::string>();
-								removeNotificationPreferencesIf([&notificationIdentifierPrefix, &notificationIdentifier](const std::string &uniqueNotificationIdentifier) -> bool {
-									bool hasPrefix = (strncmp(uniqueNotificationIdentifier.c_str(), notificationIdentifierPrefix.c_str(), notificationIdentifierPrefix.size()) == 0);
-									return hasPrefix && (notificationIdentifier != uniqueNotificationIdentifier);
-								});
-								notification.displayOptions = WZ_Notification_Display_Options::makeIgnorable(notificationIdentifier, 3);
+								notification.contentText = astringf(
+									_("A new build of Warzone 2100 (%s) is available!"), releaseVersionStr.c_str());
 							}
-						}
-						addNotification(notification, WZ_Notification_Trigger::Immediate());
-					});
+							else
+							{
+								notification.contentText = _("A new build of Warzone 2100 is available!");
+							}
+							notification.action = WZ_Notification_Action(
+								_("Get Update Now"), [updateLink](const WZ_Notification&)
+								{
+									// Open the updateLink url
+									wzAsyncExecOnMainThread([updateLink]
+									{
+										if (!openURLInBrowser(updateLink.c_str()))
+										{
+											debug(LOG_ERROR, "Failed to open url in browser: \"%s\"",
+											      updateLink.c_str());
+										}
+									});
+								});
+							notification.largeIcon = WZ_Notification_Image("images/warzone2100.png");
+							if (notificationInfo.is_object())
+							{
+								const auto& notificationBase = notificationInfo["base"];
+								const auto& notificationId = notificationInfo["id"];
+								if (notificationBase.is_string() && notificationId.is_string())
+								{
+									const std::string notificationIdentifierPrefix = notificationBase.get<std::string>()
+										+ "::";
+									const std::string notificationIdentifier = notificationIdentifierPrefix +
+										notificationId.get<std::string>();
+									removeNotificationPreferencesIf(
+										[&notificationIdentifierPrefix, &notificationIdentifier](
+										const std::string& uniqueNotificationIdentifier) -> bool
+										{
+											bool hasPrefix = (strncmp(uniqueNotificationIdentifier.c_str(),
+											                          notificationIdentifierPrefix.c_str(),
+											                          notificationIdentifierPrefix.size()) == 0);
+											return hasPrefix && (notificationIdentifier !=
+												uniqueNotificationIdentifier);
+										});
+									notification.displayOptions = WZ_Notification_Display_Options::makeIgnorable(
+										notificationIdentifier, 3);
+								}
+							}
+							addNotification(notification, WZ_Notification_Trigger::Immediate());
+						});
 					return ProcessResult::UPDATE_FOUND;
 				}
 				catch (const std::exception&)
@@ -328,22 +356,25 @@ ProcessResult WzUpdateManager::processUpdateJSONFile(const json& updateData, boo
 // May be called from a background thread
 void WzUpdateManager::initUpdateCheck()
 {
-	std::vector<std::string> updateDataUrls = {"https://data.wz2100.net/wz2100.json", "https://warzone2100.github.io/update-data/wz2100.json"};
+	std::vector<std::string> updateDataUrls = {
+		"https://data.wz2100.net/wz2100.json", "https://warzone2100.github.io/update-data/wz2100.json"
+	};
 	initProcessData(updateDataUrls, WzUpdateManager::processUpdateJSONFile, updatesCachePaths);
 }
 
 // May be called from a background thread
-ProcessResult WzCompatCheckManager::processCompatCheckJSONFile(const json& updateData, bool validSignature, bool validExpiry)
+ProcessResult WzCompatCheckManager::processCompatCheckJSONFile(const json& updateData, bool validSignature,
+                                                               bool validExpiry)
 {
 	if (!updateData.is_object())
 	{
-		wzAsyncExecOnMainThread([]{ debug(LOG_WARNING, "Update data is not an object"); });
+		wzAsyncExecOnMainThread([] { debug(LOG_WARNING, "Update data is not an object"); });
 		return ProcessResult::INVALID_JSON;
 	}
 	const auto& channels = updateData["channels"];
 	if (!channels.is_array())
 	{
-		wzAsyncExecOnMainThread([]{ debug(LOG_WARNING, "Channels should be an array"); });
+		wzAsyncExecOnMainThread([] { debug(LOG_WARNING, "Channels should be an array"); });
 		return ProcessResult::INVALID_JSON;
 	}
 	auto buildPropProvider = std::make_shared<BuildPropertyProvider>();
@@ -411,56 +442,75 @@ ProcessResult WzCompatCheckManager::processCompatCheckJSONFile(const json& updat
 					}
 					infoLink = configureLinkURL(infoLink, (*buildPropProvider.get()));
 					// submit notification (on main thread)
-					wzAsyncExecOnMainThread([validSignature, channelNameStr, compatNoticeIdStr, notificationInfo, infoLink]{
-						debug(LOG_WZ, "Found a matching compatibility notice (%s) in channel (%s)", compatNoticeIdStr.c_str(), channelNameStr.c_str());
-						WZ_Notification notification;
-						notification.duration = 0;
-						notification.contentTitle = _("Compatibility Warning");
-						notification.contentText = _("An issue has been detected that may affect Warzone 2100's operation / performance.");
-						notification.contentText += "\n\n";
-						notification.contentText += _("Please click the button below for more information on how to fix it.");
-						if (validSignature)
+					wzAsyncExecOnMainThread(
+						[validSignature, channelNameStr, compatNoticeIdStr, notificationInfo, infoLink]
 						{
+							debug(LOG_WZ, "Found a matching compatibility notice (%s) in channel (%s)",
+							      compatNoticeIdStr.c_str(), channelNameStr.c_str());
+							WZ_Notification notification;
+							notification.duration = 0;
+							notification.contentTitle = _("Compatibility Warning");
+							notification.contentText = _(
+								"An issue has been detected that may affect Warzone 2100's operation / performance.");
 							notification.contentText += "\n\n";
-							notification.contentText += astringf(_("(Notice ID: %s)"), compatNoticeIdStr.c_str());
-						}
-						notification.action = WZ_Notification_Action(_("More Information"), [infoLink](const WZ_Notification&){
-							// Open the infoLink url
-							wzAsyncExecOnMainThread([infoLink]{
-								if (!openURLInBrowser(infoLink.c_str()))
-								{
-									debug(LOG_ERROR, "Failed to open url in browser: \"%s\"", infoLink.c_str());
-								}
-							});
-						});
-						notification.largeIcon = WZ_Notification_Image("images/notifications/exclamation_triangle.png");
-						if (notificationInfo.is_object())
-						{
-							const auto& notificationBase = notificationInfo["base"];
-							const auto& notificationId = notificationInfo["id"];
-							const auto& minTimesShown = notificationInfo["minShown"];
-							if (notificationBase.is_string() && notificationId.is_string())
+							notification.contentText += _(
+								"Please click the button below for more information on how to fix it.");
+							if (validSignature)
 							{
-								const std::string notificationIdentifierPrefix = notificationBase.get<std::string>() + "::";
-								const std::string notificationIdentifier = notificationIdentifierPrefix + notificationId.get<std::string>();
-								removeNotificationPreferencesIf([&notificationIdentifierPrefix, &notificationIdentifier](const std::string &uniqueNotificationIdentifier) -> bool {
-									bool hasPrefix = (strncmp(uniqueNotificationIdentifier.c_str(), notificationIdentifierPrefix.c_str(), notificationIdentifierPrefix.size()) == 0);
-									return hasPrefix && (notificationIdentifier != uniqueNotificationIdentifier);
-								});
-								uint8_t minTimesShownValue = 3;
-								if (minTimesShown.is_number_integer())
-								{
-									auto intValue = minTimesShown.get<json::number_integer_t>();
-									if (intValue >= 0)
-									{
-										minTimesShownValue = static_cast<uint8_t>(std::min<json::number_integer_t>(intValue, 10));
-									}
-								}
-								notification.displayOptions = WZ_Notification_Display_Options::makeIgnorable(notificationIdentifier, minTimesShownValue);
+								notification.contentText += "\n\n";
+								notification.contentText += astringf(_("(Notice ID: %s)"), compatNoticeIdStr.c_str());
 							}
-						}
-						addNotification(notification, WZ_Notification_Trigger::Immediate());
-					});
+							notification.action = WZ_Notification_Action(
+								_("More Information"), [infoLink](const WZ_Notification&)
+								{
+									// Open the infoLink url
+									wzAsyncExecOnMainThread([infoLink]
+									{
+										if (!openURLInBrowser(infoLink.c_str()))
+										{
+											debug(LOG_ERROR, "Failed to open url in browser: \"%s\"", infoLink.c_str());
+										}
+									});
+								});
+							notification.largeIcon = WZ_Notification_Image(
+								"images/notifications/exclamation_triangle.png");
+							if (notificationInfo.is_object())
+							{
+								const auto& notificationBase = notificationInfo["base"];
+								const auto& notificationId = notificationInfo["id"];
+								const auto& minTimesShown = notificationInfo["minShown"];
+								if (notificationBase.is_string() && notificationId.is_string())
+								{
+									const std::string notificationIdentifierPrefix = notificationBase.get<std::string>()
+										+ "::";
+									const std::string notificationIdentifier = notificationIdentifierPrefix +
+										notificationId.get<std::string>();
+									removeNotificationPreferencesIf(
+										[&notificationIdentifierPrefix, &notificationIdentifier](
+										const std::string& uniqueNotificationIdentifier) -> bool
+										{
+											bool hasPrefix = (strncmp(uniqueNotificationIdentifier.c_str(),
+											                          notificationIdentifierPrefix.c_str(),
+											                          notificationIdentifierPrefix.size()) == 0);
+											return hasPrefix && (notificationIdentifier !=
+												uniqueNotificationIdentifier);
+										});
+									uint8_t minTimesShownValue = 3;
+									if (minTimesShown.is_number_integer())
+									{
+										auto intValue = minTimesShown.get<json::number_integer_t>();
+										if (intValue >= 0)
+										{
+											minTimesShownValue = static_cast<uint8_t>(std::min<json::number_integer_t>(
+												intValue, 10));
+										}
+									}
+									notification.displayOptions = WZ_Notification_Display_Options::makeIgnorable(
+										notificationIdentifier, minTimesShownValue);
+								}
+							}
+							addNotification(notification, WZ_Notification_Trigger::Immediate());
+						});
 					return ProcessResult::UPDATE_FOUND;
 				}
 				catch (const std::exception&)
@@ -483,24 +533,29 @@ ProcessResult WzCompatCheckManager::processCompatCheckJSONFile(const json& updat
 // May be called from a background thread
 void WzCompatCheckManager::initCompatCheck()
 {
-	std::vector<std::string> updateDataUrls = {"https://data.wz2100.net/wz2100_compat.json", "https://warzone2100.github.io/update-data/wz2100_compat.json"};
+	std::vector<std::string> updateDataUrls = {
+		"https://data.wz2100.net/wz2100_compat.json", "https://warzone2100.github.io/update-data/wz2100_compat.json"
+	};
 	initProcessData(updateDataUrls, WzCompatCheckManager::processCompatCheckJSONFile, compatCachePaths);
 }
 
-template<typename T>
+template <typename T>
 static json loadDataJsonObject(T&& updateJsonStr)
 {
 	json updateData;
-	try {
+	try
+	{
 		updateData = json::parse(std::forward<T>(updateJsonStr));
 	}
-	catch (const std::exception &e) {
+	catch (const std::exception& e)
+	{
 		std::string errorStr = e.what();
 		std::ostringstream errMsg;
 		errMsg << "JSON document parsing failed: " << errorStr.c_str();
 		throw std::runtime_error(errMsg.str());
 	}
-	catch (...) {
+	catch (...)
+	{
 		throw std::runtime_error("Unexpected exception parsing JSON");
 	}
 	if (updateData.is_null())
@@ -524,9 +579,10 @@ static bool cacheInfoIsUsable(CachePaths& paths)
 	// Check if cache was written by the same version of WZ - if not, ignore it
 	if (PHYSFS_exists(paths.cache_info_path))
 	{
-		try {
+		try
+		{
 			// Open the file + read the data
-			PHYSFS_file *fileHandle = PHYSFS_openRead(paths.cache_info_path);
+			PHYSFS_file* fileHandle = PHYSFS_openRead(paths.cache_info_path);
 			PHYSFS_sint64 filesize = PHYSFS_fileLength(fileHandle);
 			if (filesize <= 0)
 			{
@@ -558,9 +614,11 @@ static bool cacheInfoIsUsable(CachePaths& paths)
 			// passed all checks
 			return true;
 		}
-		catch (const std::exception &e) {
+		catch (const std::exception& e)
+		{
 			std::string errorStr = e.what();
-			wzAsyncExecOnMainThread([errorStr]{
+			wzAsyncExecOnMainThread([errorStr]
+			{
 				debug(LOG_WZ, "Cache info file: %s", errorStr.c_str());
 			});
 		}
@@ -569,13 +627,15 @@ static bool cacheInfoIsUsable(CachePaths& paths)
 }
 
 // May be called from a background thread
-static void initProcessData(const std::vector<std::string> &updateDataUrls, ProcessJSONDataFileFunc processDataFunc, CachePaths outputPaths)
+static void initProcessData(const std::vector<std::string>& updateDataUrls, ProcessJSONDataFileFunc processDataFunc,
+                            CachePaths outputPaths)
 {
 	if (PHYSFS_exists(outputPaths.cache_data_path) && cacheInfoIsUsable(outputPaths))
 	{
-		try {
+		try
+		{
 			// Open the file + read the data
-			PHYSFS_file *fileHandle = PHYSFS_openRead(outputPaths.cache_data_path);
+			PHYSFS_file* fileHandle = PHYSFS_openRead(outputPaths.cache_data_path);
 			PHYSFS_sint64 filesize = PHYSFS_fileLength(fileHandle);
 			if (filesize < 0 || filesize > WZ_UPDATES_JSON_MAX_SIZE)
 			{
@@ -592,7 +652,8 @@ static void initProcessData(const std::vector<std::string> &updateDataUrls, Proc
 
 			// Extract the digital signature, and verify it
 			std::string updateJsonStr;
-			bool validSignature = EmbeddedJSONSignature::verifySignedJson(fileData.data(), fileData.size() - 1, WZ_UPDATES_VERIFY_KEY, updateJsonStr);
+			bool validSignature = EmbeddedJSONSignature::verifySignedJson(
+				fileData.data(), fileData.size() - 1, WZ_UPDATES_VERIFY_KEY, updateJsonStr);
 
 			if (!validSignature)
 			{
@@ -624,9 +685,11 @@ static void initProcessData(const std::vector<std::string> &updateDataUrls, Proc
 			// handled with cached data
 			return;
 		}
-		catch (const std::exception &e) {
+		catch (const std::exception& e)
+		{
 			std::string errorStr = e.what();
-			wzAsyncExecOnMainThread([errorStr]{
+			wzAsyncExecOnMainThread([errorStr]
+			{
 				debug(LOG_WZ, "Cached updates file: %s", errorStr.c_str());
 			});
 			// continue on to fetch a fresh copy
@@ -638,12 +701,14 @@ static void initProcessData(const std::vector<std::string> &updateDataUrls, Proc
 }
 
 // May be called from a background thread
-static void fetchLatestData(const std::vector<std::string> &updateDataUrls, ProcessJSONDataFileFunc processDataFunc, CachePaths outputPaths)
+static void fetchLatestData(const std::vector<std::string>& updateDataUrls, ProcessJSONDataFileFunc processDataFunc,
+                            CachePaths outputPaths)
 {
 	if (updateDataUrls.empty())
 	{
 		// No urls to check
-		wzAsyncExecOnMainThread([]{
+		wzAsyncExecOnMainThread([]
+		{
 			debug(LOG_WARNING, "No more URLs to fetch - failed update check");
 		});
 		return;
@@ -652,126 +717,141 @@ static void fetchLatestData(const std::vector<std::string> &updateDataUrls, Proc
 	URLDataRequest* pRequest = new URLDataRequest();
 	pRequest->url = updateDataUrls.front();
 	std::vector<std::string> additionalUrls(updateDataUrls.begin() + 1, updateDataUrls.end());
-	pRequest->onSuccess = [additionalUrls, processDataFunc, outputPaths](const std::string& url, const HTTPResponseDetails& responseDetails, const std::shared_ptr<MemoryStruct>& data) {
-
-		long httpStatusCode = responseDetails.httpStatusCode();
-		if (httpStatusCode != 200)
+	pRequest->onSuccess = [additionalUrls, processDataFunc, outputPaths](
+		const std::string& url, const HTTPResponseDetails& responseDetails, const std::shared_ptr<MemoryStruct>& data)
 		{
-			wzAsyncExecOnMainThread([httpStatusCode]{
-				debug(LOG_WARNING, "Update check returned HTTP status code: %ld", httpStatusCode);
-			});
-			fetchLatestData(additionalUrls, processDataFunc, outputPaths);
-			return;
-		}
-
-		// Extract the digital signature, and verify it
-		std::string updateJsonStr;
-		bool validSignature = false;
-		try {
-			validSignature = EmbeddedJSONSignature::verifySignedJson(data->memory, data->size, WZ_UPDATES_VERIFY_KEY, updateJsonStr);
-		}
-		catch (const std::exception& e) {
-			std::string errorStr = e.what();
-			wzAsyncExecOnMainThread([url, errorStr]{
-				debug(LOG_NET, "%s; %s", errorStr.c_str(), url.c_str());
-			});
-			fetchLatestData(additionalUrls, processDataFunc, outputPaths);
-			return;
-		}
-
-		// Parse the remaining json (minus the digital signature)
-		json updateData;
-		try {
-			updateData = loadDataJsonObject(updateJsonStr);
-		}
-		catch (const std::exception &e) {
-			std::string errorStr = e.what();
-			wzAsyncExecOnMainThread([url, errorStr]{
-				debug(LOG_NET, "%s; %s", errorStr.c_str(), url.c_str());
-			});
-			fetchLatestData(additionalUrls, processDataFunc, outputPaths);
-			return;
-		}
-
-		// Determine if the JSON is still valid (note: requires accurate system clock)
-		bool validExpiry = isValidExpiry(updateData);
-
-		if ((!validSignature || !validExpiry) && !additionalUrls.empty())
-		{
-			// signature is invalid, or data is expired, and there are further urls to try to fetch
-			// instead of proceeding, try the next url
-			fetchLatestData(additionalUrls, processDataFunc, outputPaths);
-			return;
-		}
-
-		// Otherwise,
-		// Do not immediately fail if the validThru date doesn't check out - pass this status to processUpdateJSONFile
-		// so it can decide how to trust the parts of the data
-
-		// Process the updates JSON, notify if new version is available
-		if (!processDataFunc)
-		{
-			wzAsyncExecOnMainThread([]{
-				debug(LOG_ERROR, "Missing processDataFunc");
-			});
-			return;
-		}
-		const auto processResult = processDataFunc(updateData, validSignature, validExpiry);
-
-		if (validSignature && (processResult != ProcessResult::INVALID_JSON) && isValidExpiry(updateData))
-		{
-			// Cache the data JSON on disk
-			if (!WZ_PHYSFS_isDirectory(WZ_UPDATES_CACHE_DIR))
+			long httpStatusCode = responseDetails.httpStatusCode();
+			if (httpStatusCode != 200)
 			{
-				// Cache dir should have already been created?
+				wzAsyncExecOnMainThread([httpStatusCode]
+				{
+					debug(LOG_WARNING, "Update check returned HTTP status code: %ld", httpStatusCode);
+				});
+				fetchLatestData(additionalUrls, processDataFunc, outputPaths);
 				return;
 			}
-			if (outputPaths.cache_data_path)
+
+			// Extract the digital signature, and verify it
+			std::string updateJsonStr;
+			bool validSignature = false;
+			try
 			{
-				PHYSFS_uint32 size = data->size;
-				PHYSFS_file *fileHandle = PHYSFS_openWrite(outputPaths.cache_data_path);
-				if (fileHandle)
+				validSignature = EmbeddedJSONSignature::verifySignedJson(
+					data->memory, data->size, WZ_UPDATES_VERIFY_KEY, updateJsonStr);
+			}
+			catch (const std::exception& e)
+			{
+				std::string errorStr = e.what();
+				wzAsyncExecOnMainThread([url, errorStr]
 				{
-					if (WZ_PHYSFS_writeBytes(fileHandle, data->memory, size) != size)
+					debug(LOG_NET, "%s; %s", errorStr.c_str(), url.c_str());
+				});
+				fetchLatestData(additionalUrls, processDataFunc, outputPaths);
+				return;
+			}
+
+			// Parse the remaining json (minus the digital signature)
+			json updateData;
+			try
+			{
+				updateData = loadDataJsonObject(updateJsonStr);
+			}
+			catch (const std::exception& e)
+			{
+				std::string errorStr = e.what();
+				wzAsyncExecOnMainThread([url, errorStr]
+				{
+					debug(LOG_NET, "%s; %s", errorStr.c_str(), url.c_str());
+				});
+				fetchLatestData(additionalUrls, processDataFunc, outputPaths);
+				return;
+			}
+
+			// Determine if the JSON is still valid (note: requires accurate system clock)
+			bool validExpiry = isValidExpiry(updateData);
+
+			if ((!validSignature || !validExpiry) && !additionalUrls.empty())
+			{
+				// signature is invalid, or data is expired, and there are further urls to try to fetch
+				// instead of proceeding, try the next url
+				fetchLatestData(additionalUrls, processDataFunc, outputPaths);
+				return;
+			}
+
+			// Otherwise,
+			// Do not immediately fail if the validThru date doesn't check out - pass this status to processUpdateJSONFile
+			// so it can decide how to trust the parts of the data
+
+			// Process the updates JSON, notify if new version is available
+			if (!processDataFunc)
+			{
+				wzAsyncExecOnMainThread([]
+				{
+					debug(LOG_ERROR, "Missing processDataFunc");
+				});
+				return;
+			}
+			const auto processResult = processDataFunc(updateData, validSignature, validExpiry);
+
+			if (validSignature && (processResult != ProcessResult::INVALID_JSON) && isValidExpiry(updateData))
+			{
+				// Cache the data JSON on disk
+				if (!WZ_PHYSFS_isDirectory(WZ_UPDATES_CACHE_DIR))
+				{
+					// Cache dir should have already been created?
+					return;
+				}
+				if (outputPaths.cache_data_path)
+				{
+					PHYSFS_uint32 size = data->size;
+					PHYSFS_file* fileHandle = PHYSFS_openWrite(outputPaths.cache_data_path);
+					if (fileHandle)
 					{
-						// Failed to write data to file
-						std::string pathStr = outputPaths.cache_data_path;
-						wzAsyncExecOnMainThread([pathStr]{
-							debug(LOG_ERROR, "Failed to write cache file: %s", pathStr.c_str());
-						});
+						if (WZ_PHYSFS_writeBytes(fileHandle, data->memory, size) != size)
+						{
+							// Failed to write data to file
+							std::string pathStr = outputPaths.cache_data_path;
+							wzAsyncExecOnMainThread([pathStr]
+							{
+								debug(LOG_ERROR, "Failed to write cache file: %s", pathStr.c_str());
+							});
+						}
+						PHYSFS_close(fileHandle);
 					}
-					PHYSFS_close(fileHandle);
+				}
+				if (outputPaths.cache_info_path)
+				{
+					// Also write out the cache info file (which contains the version of WZ used to write the cache)
+					json cacheInfoObj = json::object();
+					cacheInfoObj[WZ_CACHE_INFO_JSON_WZVERSION_KEY] = version_getBuildIdentifierReleaseString();
+					std::string cacheInfoData = cacheInfoObj.dump(2, ' ', true, json::error_handler_t::replace);
+					PHYSFS_uint32 size = static_cast<PHYSFS_uint32>(cacheInfoData.size());
+					PHYSFS_file* fileHandle = PHYSFS_openWrite(outputPaths.cache_info_path);
+					if (fileHandle)
+					{
+						if (WZ_PHYSFS_writeBytes(fileHandle, cacheInfoData.data(), size) != size)
+						{
+							// Failed to write data to file
+							std::string pathStr = outputPaths.cache_info_path;
+							wzAsyncExecOnMainThread([pathStr]
+							{
+								debug(LOG_ERROR, "Failed to write cache info file: %s", pathStr.c_str());
+							});
+						}
+						PHYSFS_close(fileHandle);
+					}
 				}
 			}
-			if (outputPaths.cache_info_path)
-			{
-				// Also write out the cache info file (which contains the version of WZ used to write the cache)
-				json cacheInfoObj = json::object();
-				cacheInfoObj[WZ_CACHE_INFO_JSON_WZVERSION_KEY] = version_getBuildIdentifierReleaseString();
-				std::string cacheInfoData = cacheInfoObj.dump(2, ' ', true, json::error_handler_t::replace);
-				PHYSFS_uint32 size = static_cast<PHYSFS_uint32>(cacheInfoData.size());
-				PHYSFS_file *fileHandle = PHYSFS_openWrite(outputPaths.cache_info_path);
-				if (fileHandle)
-				{
-					if (WZ_PHYSFS_writeBytes(fileHandle, cacheInfoData.data(), size) != size)
-					{
-						// Failed to write data to file
-						std::string pathStr = outputPaths.cache_info_path;
-						wzAsyncExecOnMainThread([pathStr]{
-							debug(LOG_ERROR, "Failed to write cache info file: %s", pathStr.c_str());
-						});
-					}
-					PHYSFS_close(fileHandle);
-				}
-			}
-		}
-	};
-	pRequest->onFailure = [additionalUrls, processDataFunc, outputPaths](const std::string& url, URLRequestFailureType type, optional<HTTPResponseDetails> transferDetails) {
-		bool tryNextUrl = false;
-		switch (type)
+		};
+	pRequest->onFailure = [additionalUrls, processDataFunc, outputPaths](
+		const std::string& url, URLRequestFailureType type, optional<HTTPResponseDetails> transferDetails)
 		{
+			bool tryNextUrl = false;
+			switch (type)
+			{
 			case URLRequestFailureType::INITIALIZE_REQUEST_ERROR:
-				wzAsyncExecOnMainThread([]{
+				wzAsyncExecOnMainThread([]
+				{
 					debug(LOG_WARNING, "Failed to initialize request for update check");
 				});
 				tryNextUrl = true;
@@ -779,7 +859,8 @@ static void fetchLatestData(const std::vector<std::string> &updateDataUrls, Proc
 			case URLRequestFailureType::TRANSFER_FAILED:
 				if (!transferDetails.has_value())
 				{
-					wzAsyncExecOnMainThread([]{
+					wzAsyncExecOnMainThread([]
+					{
 						debug(LOG_WARNING, "Update check request failed - but no transfer failure details provided!");
 					});
 				}
@@ -787,44 +868,49 @@ static void fetchLatestData(const std::vector<std::string> &updateDataUrls, Proc
 				{
 					CURLcode result = transferDetails->curlResult();
 					long httpStatusCode = transferDetails->httpStatusCode();
-					wzAsyncExecOnMainThread([result, httpStatusCode]{
-						debug(LOG_WARNING, "Update check request failed with error %d, and HTTP response code: %ld", result, httpStatusCode);
+					wzAsyncExecOnMainThread([result, httpStatusCode]
+					{
+						debug(LOG_WARNING, "Update check request failed with error %d, and HTTP response code: %ld",
+						      result, httpStatusCode);
 					});
 				}
 				tryNextUrl = true;
 				break;
 			case URLRequestFailureType::CANCELLED:
-				wzAsyncExecOnMainThread([url]{
+				wzAsyncExecOnMainThread([url]
+				{
 					debug(LOG_INFO, "Update check was cancelled");
 				});
 				break;
 			case URLRequestFailureType::CANCELLED_BY_SHUTDOWN:
-				wzAsyncExecOnMainThread([url]{
+				wzAsyncExecOnMainThread([url]
+				{
 					debug(LOG_WARNING, "Update check was cancelled by application shutdown");
 				});
 				break;
-		}
-		if (tryNextUrl)
-		{
-			fetchLatestData(additionalUrls, processDataFunc, outputPaths);
-		}
-	};
+			}
+			if (tryNextUrl)
+			{
+				fetchLatestData(additionalUrls, processDataFunc, outputPaths);
+			}
+		};
 	pRequest->maxDownloadSizeLimit = WZ_UPDATES_JSON_MAX_SIZE; // 32 MB (the response should never be this big)
-	wzAsyncExecOnMainThread([pRequest]{
+	wzAsyncExecOnMainThread([pRequest]
+	{
 		urlRequestData(*pRequest);
 		delete pRequest;
 	});
 }
 
 /** This runs in a separate thread */
-static int updateManagerThreadFunc(void *)
+static int updateManagerThreadFunc(void*)
 {
 	WzUpdateManager::initUpdateCheck();
 	return 0;
 }
 
 /** This runs in a separate thread */
-static int compatManagerThreadFunc(void *)
+static int compatManagerThreadFunc(void*)
 {
 	WzCompatCheckManager::initCompatCheck();
 	return 0;

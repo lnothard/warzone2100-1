@@ -28,22 +28,25 @@
 using nonstd::optional;
 using nonstd::nullopt;
 
-struct MemoryStruct {
-	char *memory = nullptr;
+struct MemoryStruct
+{
+	char* memory = nullptr;
 	size_t size = 0;
 
 	MemoryStruct();
 	~MemoryStruct();
 };
 
-enum URLRequestFailureType {
+enum URLRequestFailureType
+{
 	INITIALIZE_REQUEST_ERROR,
 	TRANSFER_FAILED,
 	CANCELLED,
 	CANCELLED_BY_SHUTDOWN
 };
 
-class HTTPResponseHeaders {
+class HTTPResponseHeaders
+{
 public:
 	virtual ~HTTPResponseHeaders();
 
@@ -52,13 +55,16 @@ public:
 	virtual bool getHeader(const std::string& name, std::string& output_value) const = 0;
 };
 
-class HTTPResponseDetails {
+class HTTPResponseDetails
+{
 public:
 	HTTPResponseDetails(CURLcode curlResult, long httpStatusCode, std::shared_ptr<HTTPResponseHeaders> responseHeaders)
-	: _curlResult(curlResult)
-	, _httpStatusCode(httpStatusCode)
-	, _responseHeaders(responseHeaders)
-	{ }
+		: _curlResult(curlResult)
+		  , _httpStatusCode(httpStatusCode)
+		  , _responseHeaders(responseHeaders)
+	{
+	}
+
 	virtual ~HTTPResponseDetails();
 
 	CURLcode curlResult() const { return _curlResult; }
@@ -66,17 +72,24 @@ public:
 
 	// Permits retrieving HTTP response headers in a case-insensitive manner
 	bool hasHeader(const std::string& name) const { return _responseHeaders->hasHeader(name); }
-	bool getHeader(const std::string& name, std::string& output_value) const { return _responseHeaders->getHeader(name, output_value); }
+
+	bool getHeader(const std::string& name, std::string& output_value) const
+	{
+		return _responseHeaders->getHeader(name, output_value);
+	}
+
 private:
 	CURLcode _curlResult;
 	long _httpStatusCode;
 	std::shared_ptr<HTTPResponseHeaders> _responseHeaders;
 };
 
-typedef std::function<void (const std::string& url, URLRequestFailureType type, optional<HTTPResponseDetails> transferDetails)> UrlRequestFailure;
+typedef std::function<void (const std::string& url, URLRequestFailureType type,
+                            optional<HTTPResponseDetails> transferDetails)> UrlRequestFailure;
 typedef std::function<void (const std::string& url, int64_t dltotal, int64_t dlnow)> UrlProgressCallback;
 
-enum class InternetProtocol {
+enum class InternetProtocol
+{
 	IP_ANY,
 	IPv4,
 	IPv6
@@ -111,7 +124,8 @@ private:
 	std::unordered_map<std::string, std::string> requestHeaders;
 };
 
-typedef std::function<void (const std::string& url, const HTTPResponseDetails& response, const std::shared_ptr<MemoryStruct>& data)> UrlRequestSuccess;
+typedef std::function<void (const std::string& url, const HTTPResponseDetails& response,
+                            const std::shared_ptr<MemoryStruct>& data)> UrlRequestSuccess;
 
 struct URLDataRequest : public URLRequestBase
 {
@@ -125,7 +139,9 @@ struct URLDataRequest : public URLRequestBase
 	UrlRequestSuccess onSuccess;
 };
 
-typedef std::function<void (const std::string& url, const HTTPResponseDetails& response, const std::string& outFilePath)> UrlDownloadFileSuccess;
+typedef std::function<void
+	(const std::string& url, const HTTPResponseDetails& response, const std::string& outFilePath)>
+UrlDownloadFileSuccess;
 
 struct URLFileDownloadRequest : public URLRequestBase
 {

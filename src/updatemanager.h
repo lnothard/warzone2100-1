@@ -19,7 +19,8 @@
 #ifndef _WZ_UPDATE_MANAGER_H_
 #define _WZ_UPDATE_MANAGER_H_
 
-class WzInfoManager {
+class WzInfoManager
+{
 public:
 	static void initialize();
 	static void shutdown();

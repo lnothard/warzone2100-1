@@ -32,38 +32,45 @@
 /** Frame type */
 enum FRAMETYPE
 {
-	FRAME_NORMAL, FRAME_RADAR
+	FRAME_NORMAL,
+	FRAME_RADAR
 };
 
 struct TABDEF
 {
-	SWORD MajorUp;			//< Index of image to use for tab not pressed.
-	SWORD MajorDown;		//< Index of image to use for tab pressed.
-	SWORD MajorHilight;		//< Index of image to use for tab hilighted by mouse.
-	SWORD MajorSelected;		//< Index of image to use for tab selected (same as pressed).
+	SWORD MajorUp; //< Index of image to use for tab not pressed.
+	SWORD MajorDown; //< Index of image to use for tab pressed.
+	SWORD MajorHilight; //< Index of image to use for tab hilighted by mouse.
+	SWORD MajorSelected; //< Index of image to use for tab selected (same as pressed).
 };
 
 class IntListTabWidget : public ListTabWidget
 {
 protected:
-	IntListTabWidget(): ListTabWidget() {}
+	IntListTabWidget(): ListTabWidget()
+	{
+	}
+
 	virtual void initialize() override;
 
 public:
 	static std::shared_ptr<IntListTabWidget> make()
 	{
-		class make_shared_enabler: public IntListTabWidget {};
+		class make_shared_enabler : public IntListTabWidget
+		{
+		};
 		auto widget = std::make_shared<make_shared_enabler>();
 		widget->initialize();
 		return widget;
 	}
 };
 
-extern IMAGEFILE *IntImages;	//< All the 2d graphics for the user interface.
+extern IMAGEFILE* IntImages; //< All the 2d graphics for the user interface.
 
 bool imageInitBitmaps();
 
 /** Draws a transparent window. */
-void RenderWindowFrame(FRAMETYPE frame, uint32_t x, uint32_t y, uint32_t Width, uint32_t Heig, const glm::mat4 &modelViewProjection = defaultProjectionMatrix());
+void RenderWindowFrame(FRAMETYPE frame, uint32_t x, uint32_t y, uint32_t Width, uint32_t Heig,
+                       const glm::mat4& modelViewProjection = defaultProjectionMatrix());
 
 #endif

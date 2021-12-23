@@ -35,7 +35,7 @@ extern char fileLoadBuffer[];
 
 bool systemInitialise(float horizScaleFactor, float vertScaleFactor);
 void systemShutdown();
-bool frontendInitialise(const char *ResourceFile);
+bool frontendInitialise(const char* ResourceFile);
 bool frontendShutdown();
 bool stageOneInitialise();
 bool stageOneShutDown();
@@ -53,21 +53,21 @@ struct wzSearchPath
 {
 	char path[PATH_MAX];
 	unsigned int priority;
-	wzSearchPath *higherPriority, * lowerPriority;
+	wzSearchPath *higherPriority, *lowerPriority;
 };
 
 enum searchPathMode { mod_clean, mod_campaign, mod_multiplay, mod_override };
 
 void registerSearchPath(const char path[], unsigned int priority);
-bool rebuildSearchPath(searchPathMode mode, bool force, const char *current_map = NULL);
+bool rebuildSearchPath(searchPathMode mode, bool force, const char* current_map = NULL);
 
 bool buildMapList();
-bool CheckForMod(char const *mapFile);
-bool CheckForRandom(char const *mapFile, char const *mapDataFile0);
+bool CheckForMod(char const* mapFile);
+bool CheckForRandom(char const* mapFile, char const* mapDataFile0);
 bool setSpecialInMemoryMap(std::vector<uint8_t>&& mapArchiveData);
 
-bool loadLevFile(const std::string& filename, searchPathMode datadir, bool ignoreWrf, char const *realFileName);
+bool loadLevFile(const std::string& filename, searchPathMode datadir, bool ignoreWrf, char const* realFileName);
 
-extern IMAGEFILE	*FrontImages;
+extern IMAGEFILE* FrontImages;
 
 #endif // __INCLUDED_SRC_INIT_H__
