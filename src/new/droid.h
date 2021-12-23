@@ -126,7 +126,8 @@ public:
 	[[nodiscard]] unsigned calculate_sensor_range() const final;
 	[[nodiscard]] unsigned calculate_max_range() const;
 	[[nodiscard]] int calculate_height() const;
-
+  [[nodiscard]] int space_occupied_on_transporter() const;
+  [[nodiscard]] int get_vertical_speed() const noexcept;
 private:
 	using enum ACTION;
 	using enum DROID_TYPE;

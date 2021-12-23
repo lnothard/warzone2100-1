@@ -1088,13 +1088,13 @@ bool checkTransporterSpace(DROID const* psTransporter, DROID const* psAssigned, 
 	}
 }
 
-/*returns the space the droid occupies on a transporter based on the body size*/
-int transporterSpaceRequired(const DROID* psDroid)
-{
-	// all droids are the same weight for campaign games.
-	// TODO - move this into a droid flag
-	return bMultiPlayer ? (asBodyStats + psDroid->asBits[COMP_BODY])->size + 1 : 1;
-}
+///*returns the space the droid occupies on a transporter based on the body size*/
+//int transporterSpaceRequired(const DROID* psDroid)
+//{
+//	// all droids are the same weight for campaign games.
+//	// TODO - move this into a droid flag
+//	return bMultiPlayer ? (asBodyStats + psDroid->asBits[COMP_BODY])->size + 1 : 1;
+//}
 
 /*sets which list of droids to use for the transporter interface*/
 DROID* transInterfaceDroidList()
@@ -1341,23 +1341,23 @@ void resetTransporter()
 	}
 }
 
-/*checks the order of the droid to see if its currently flying*/
-bool transporterFlying(DROID* psTransporter)
-{
-	ASSERT_OR_RETURN(false, psTransporter != nullptr, "Invalid droid pointer");
-	ASSERT_OR_RETURN(false, isTransporter(psTransporter), "Droid is not a Transporter");
-
-	return psTransporter->order.type == DORDER_TRANSPORTOUT ||
-		psTransporter->order.type == DORDER_TRANSPORTIN ||
-		psTransporter->order.type == DORDER_TRANSPORTRETURN ||
-		//in multiPlayer mode the Transporter can be moved around
-		(bMultiPlayer && psTransporter->order.type == DORDER_MOVE) ||
-		//in multiPlayer mode the Transporter can be moved and emptied!
-		(bMultiPlayer && psTransporter->order.type == DORDER_DISEMBARK) ||
-		//in multiPlayer, descending still counts as flying
-		(bMultiPlayer && psTransporter->order.type == DORDER_NONE &&
-			psTransporter->sMove.iVertSpeed != 0);
-}
+///*checks the order of the droid to see if its currently flying*/
+//bool transporterFlying(DROID* psTransporter)
+//{
+//	ASSERT_OR_RETURN(false, psTransporter != nullptr, "Invalid droid pointer");
+//	ASSERT_OR_RETURN(false, isTransporter(psTransporter), "Droid is not a Transporter");
+//
+//	return psTransporter->order.type == DORDER_TRANSPORTOUT ||
+//		psTransporter->order.type == DORDER_TRANSPORTIN ||
+//		psTransporter->order.type == DORDER_TRANSPORTRETURN ||
+//		//in multiPlayer mode the Transporter can be moved around
+//		(bMultiPlayer && psTransporter->order.type == DORDER_MOVE) ||
+//		//in multiPlayer mode the Transporter can be moved and emptied!
+//		(bMultiPlayer && psTransporter->order.type == DORDER_DISEMBARK) ||
+//		//in multiPlayer, descending still counts as flying
+//		(bMultiPlayer && psTransporter->order.type == DORDER_NONE &&
+//			psTransporter->sMove.iVertSpeed != 0);
+//}
 
 //initialise the flag to indicate the first transporter has arrived - set in startMission()
 void initFirstTransporterFlag()

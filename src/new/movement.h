@@ -46,6 +46,11 @@ public:
 		speed = 0;
 	}
 
+  [[nodiscard]] constexpr int get_vertical_speed() const noexcept
+  {
+    return vertical_speed;
+  }
+
 private:
 	using enum MOVEMENT_STATE;
 
@@ -53,6 +58,7 @@ private:
 	Vector2i destination;
 	Vector2i origin;
 	int speed;
+  int vertical_speed;
 };
 
 #endif // WARZONE2100_MOVEMENT_H

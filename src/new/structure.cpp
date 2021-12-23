@@ -150,6 +150,17 @@ namespace Impl
 		foundation_depth = depth;
 	}
 
+  unsigned Structure::build_points_to_completion() const
+  {
+    return stats->build_point_cost - current_build_points;
+  }
+
+  unsigned Structure::calculate_refunded_power() const
+  {
+    auto power = stats->power_to_build;
+    return power / 2;
+  }
+
 	unsigned count_assigned_droids(const Structure& structure)
 	{
 		const auto& droids = droid_lists[selectedPlayer];
@@ -311,4 +322,36 @@ namespace Impl
 bool Rearm_Pad::is_clear() const
 {
 	return rearm_target == nullptr || rearm_target->is_VTOL_rearmed_and_repaired();
+}
+
+void Factory::increment_production_loops()
+{
+  assert(get_player() == selectedPlayer);
+
+  if (production_loops == MAX_IN_RUN)
+  {
+    production_loops = 0;
+  }
+  else
+  {
+    ++production_loops;
+    if (production_loops > MAX_IN_RUN)
+    {
+      production_loops = MAX_IN_RUN;
+    }
+  }
+}
+
+void Factory::decrement_production_loops()
+{
+  assert(get_player() == selectedPlayer);
+
+  if (production_loops == 0)
+  {
+    production_loops = MAX_IN_RUN;
+  }
+  else
+  {
+    --production_loops;
+  }
 }

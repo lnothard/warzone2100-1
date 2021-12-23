@@ -218,23 +218,23 @@ bool IsStatExpansionModule(const STRUCTURE_STATS* psStats)
 		psStats->type == REF_RESEARCH_MODULE;
 }
 
-static int numStructureModules(STRUCTURE const* psStruct)
-{
-	return psStruct->capacity;
-}
-
-bool structureIsBlueprint(const STRUCTURE* psStructure)
-{
-	return (psStructure->status == SS_BLUEPRINT_VALID ||
-		psStructure->status == SS_BLUEPRINT_INVALID ||
-		psStructure->status == SS_BLUEPRINT_PLANNED ||
-		psStructure->status == SS_BLUEPRINT_PLANNED_BY_ALLY);
-}
-
-bool isBlueprint(const BASE_OBJECT* psObject)
-{
-	return psObject != nullptr && psObject->type == OBJ_STRUCTURE && structureIsBlueprint((const STRUCTURE*)psObject);
-}
+//static int numStructureModules(STRUCTURE const* psStruct)
+//{
+//	return psStruct->capacity;
+//}
+//
+//bool structureIsBlueprint(const STRUCTURE* psStructure)
+//{
+//	return (psStructure->status == SS_BLUEPRINT_VALID ||
+//		psStructure->status == SS_BLUEPRINT_INVALID ||
+//		psStructure->status == SS_BLUEPRINT_PLANNED ||
+//		psStructure->status == SS_BLUEPRINT_PLANNED_BY_ALLY);
+//}
+//
+//bool isBlueprint(const BASE_OBJECT* psObject)
+//{
+//	return psObject != nullptr && psObject->type == OBJ_STRUCTURE && structureIsBlueprint((const STRUCTURE*)psObject);
+//}
 
 void initStructLimits()
 {
@@ -702,11 +702,11 @@ bool structureStatsShutDown()
 	return true;
 }
 
-// TODO: The abandoned code needs to be factored out, see: saveMissionData
-void handleAbandonedStructures()
-{
-	// TODO: do something here
-}
+//// TODO: The abandoned code needs to be factored out, see: saveMissionData
+//void handleAbandonedStructures()
+//{
+//	// TODO: do something here
+//}
 
 /* Deals damage to a Structure.
  * \param psStructure structure to deal damage to
@@ -755,20 +755,20 @@ int32_t getStructureDamage(const STRUCTURE* psStructure)
 	return 65536 - health;
 }
 
-uint32_t structureBuildPointsToCompletion(const STRUCTURE& structure)
-{
-	if (structureHasModules(&structure))
-	{
-		auto moduleStat = getModuleStat(&structure);
-
-		if (moduleStat != nullptr)
-		{
-			return moduleStat->buildPoints;
-		}
-	}
-
-	return structure.pStructureType->buildPoints;
-}
+//uint32_t structureBuildPointsToCompletion(const STRUCTURE& structure)
+//{
+//	if (structureHasModules(&structure))
+//	{
+//		auto moduleStat = getModuleStat(&structure);
+//
+//		if (moduleStat != nullptr)
+//		{
+//			return moduleStat->buildPoints;
+//		}
+//	}
+//
+//	return structure.pStructureType->buildPoints;
+//}
 
 float structureCompletionProgress(const STRUCTURE& structure)
 {
@@ -919,10 +919,10 @@ void structureBuild(STRUCTURE* psStruct, DROID* psDroid, int buildPoints, int bu
 	}
 }
 
-static bool structureHasModules(const STRUCTURE* psStruct)
-{
-	return psStruct->capacity != 0;
-}
+//static bool structureHasModules(const STRUCTURE* psStruct)
+//{
+//	return psStruct->capacity != 0;
+//}
 
 // Power returned on demolish, which is half the power taken to build the structure and any modules
 static int structureTotalReturn(const STRUCTURE* psStruct)
@@ -6074,16 +6074,16 @@ void hqReward(UBYTE losingPlayer, UBYTE rewardPlayer)
 
 // Return true if structure is a factory of any type.
 //
-bool StructIsFactory(const STRUCTURE* Struct)
-{
-	ASSERT_OR_RETURN(false, Struct != nullptr, "Invalid structure!");
-	ASSERT_OR_RETURN(false, Struct->pStructureType != nullptr, "Invalid structureType!");
-
-	return Struct->type == OBJ_STRUCTURE && (
-		Struct->pStructureType->type == REF_FACTORY ||
-		Struct->pStructureType->type == REF_CYBORG_FACTORY ||
-		Struct->pStructureType->type == REF_VTOL_FACTORY);
-}
+//bool StructIsFactory(const STRUCTURE* Struct)
+//{
+//	ASSERT_OR_RETURN(false, Struct != nullptr, "Invalid structure!");
+//	ASSERT_OR_RETURN(false, Struct->pStructureType != nullptr, "Invalid structureType!");
+//
+//	return Struct->type == OBJ_STRUCTURE && (
+//		Struct->pStructureType->type == REF_FACTORY ||
+//		Struct->pStructureType->type == REF_CYBORG_FACTORY ||
+//		Struct->pStructureType->type == REF_VTOL_FACTORY);
+//}
 
 
 // Return true if flag is a delivery point for a factory.
@@ -6581,47 +6581,47 @@ void checkDeliveryPoints(UDWORD version)
 }
 
 
-//adjust the loop quantity for this factory
-void factoryLoopAdjust(STRUCTURE* psStruct, bool add)
-{
-	FACTORY* psFactory;
-
-	ASSERT_OR_RETURN(, StructIsFactory(psStruct), "structure is not a factory");
-	ASSERT_OR_RETURN(, psStruct->player == selectedPlayer, "should only be called for selectedPlayer");
-
-	psFactory = &psStruct->pFunctionality->factory;
-
-	if (add)
-	{
-		//check for wrapping to infinite production
-		if (psFactory->productionLoops == MAX_IN_RUN)
-		{
-			psFactory->productionLoops = 0;
-		}
-		else
-		{
-			//increment the count
-			psFactory->productionLoops++;
-			//check for limit - this caters for when on infinite production and want to wrap around
-			if (psFactory->productionLoops > MAX_IN_RUN)
-			{
-				psFactory->productionLoops = INFINITE_PRODUCTION;
-			}
-		}
-	}
-	else
-	{
-		//decrement the count
-		if (psFactory->productionLoops == 0)
-		{
-			psFactory->productionLoops = INFINITE_PRODUCTION;
-		}
-		else
-		{
-			psFactory->productionLoops--;
-		}
-	}
-}
+////adjust the loop quantity for this factory
+//void factoryLoopAdjust(STRUCTURE* psStruct, bool add)
+//{
+//	FACTORY* psFactory;
+//
+//	ASSERT_OR_RETURN(, StructIsFactory(psStruct), "structure is not a factory");
+//	ASSERT_OR_RETURN(, psStruct->player == selectedPlayer, "should only be called for selectedPlayer");
+//
+//	psFactory = &psStruct->pFunctionality->factory;
+//
+//	if (add)
+//	{
+//		//check for wrapping to infinite production
+//		if (psFactory->productionLoops == MAX_IN_RUN)
+//		{
+//			psFactory->productionLoops = 0;
+//		}
+//		else
+//		{
+//			//increment the count
+//			psFactory->productionLoops++;
+//			//check for limit - this caters for when on infinite production and want to wrap around
+//			if (psFactory->productionLoops > MAX_IN_RUN)
+//			{
+//				psFactory->productionLoops = INFINITE_PRODUCTION;
+//			}
+//		}
+//	}
+//	else
+//	{
+//		//decrement the count
+//		if (psFactory->productionLoops == 0)
+//		{
+//			psFactory->productionLoops = INFINITE_PRODUCTION;
+//		}
+//		else
+//		{
+//			psFactory->productionLoops--;
+//		}
+//	}
+//}
 
 
 /*Used for determining how much of the structure to draw as being built or demolished*/
@@ -6676,81 +6676,81 @@ bool structSensorDroidWeapon(const STRUCTURE* psStruct, const DROID* psDroid)
 }
 
 
-/*checks if the structure has a Counter Battery sensor attached - returns
-true if it has*/
-bool structCBSensor(const STRUCTURE* psStruct)
-{
-	// Super Sensor works as any type
-	if (psStruct->pStructureType->pSensor
-		&& (psStruct->pStructureType->pSensor->type == INDIRECT_CB_SENSOR
-			|| psStruct->pStructureType->pSensor->type == SUPER_SENSOR)
-		&& psStruct->pStructureType->pSensor->location == LOC_TURRET)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-
-/*checks if the structure has a Standard Turret sensor attached - returns
-true if it has*/
-bool structStandardSensor(const STRUCTURE* psStruct)
-{
-	// Super Sensor works as any type
-	if (psStruct->pStructureType->pSensor
-		&& (psStruct->pStructureType->pSensor->type == STANDARD_SENSOR
-			|| psStruct->pStructureType->pSensor->type == SUPER_SENSOR)
-		&& psStruct->pStructureType->pSensor->location == LOC_TURRET)
-	{
-		return true;
-	}
-
-	return false;
-}
+///*checks if the structure has a Counter Battery sensor attached - returns
+//true if it has*/
+//bool structCBSensor(const STRUCTURE* psStruct)
+//{
+//	// Super Sensor works as any type
+//	if (psStruct->pStructureType->pSensor
+//		&& (psStruct->pStructureType->pSensor->type == INDIRECT_CB_SENSOR
+//			|| psStruct->pStructureType->pSensor->type == SUPER_SENSOR)
+//		&& psStruct->pStructureType->pSensor->location == LOC_TURRET)
+//	{
+//		return true;
+//	}
+//
+//	return false;
+//}
 
 
-/*checks if the structure has a VTOL Intercept sensor attached - returns
-true if it has*/
-bool structVTOLSensor(const STRUCTURE* psStruct)
-{
-	// Super Sensor works as any type
-	if (psStruct->pStructureType->pSensor
-		&& (psStruct->pStructureType->pSensor->type == VTOL_INTERCEPT_SENSOR
-			|| psStruct->pStructureType->pSensor->type == SUPER_SENSOR)
-		&& psStruct->pStructureType->pSensor->location == LOC_TURRET)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-
-/*checks if the structure has a VTOL Counter Battery sensor attached - returns
-true if it has*/
-bool structVTOLCBSensor(const STRUCTURE* psStruct)
-{
-	// Super Sensor works as any type
-	if (psStruct->pStructureType->pSensor
-		&& (psStruct->pStructureType->pSensor->type == VTOL_CB_SENSOR
-			|| psStruct->pStructureType->pSensor->type == SUPER_SENSOR)
-		&& psStruct->pStructureType->pSensor->location == LOC_TURRET)
-	{
-		return true;
-	}
-
-	return false;
-}
+///*checks if the structure has a Standard Turret sensor attached - returns
+//true if it has*/
+//bool structStandardSensor(const STRUCTURE* psStruct)
+//{
+//	// Super Sensor works as any type
+//	if (psStruct->pStructureType->pSensor
+//		&& (psStruct->pStructureType->pSensor->type == STANDARD_SENSOR
+//			|| psStruct->pStructureType->pSensor->type == SUPER_SENSOR)
+//		&& psStruct->pStructureType->pSensor->location == LOC_TURRET)
+//	{
+//		return true;
+//	}
+//
+//	return false;
+//}
 
 
-// check whether a rearm pad is clear
-bool clearRearmPad(const STRUCTURE* psStruct)
-{
-	return psStruct->pStructureType->type == REF_REARM_PAD
-		&& (psStruct->pFunctionality->rearmPad.psObj == nullptr
-			|| vtolHappy((DROID*)psStruct->pFunctionality->rearmPad.psObj));
-}
+///*checks if the structure has a VTOL Intercept sensor attached - returns
+//true if it has*/
+//bool structVTOLSensor(const STRUCTURE* psStruct)
+//{
+//	// Super Sensor works as any type
+//	if (psStruct->pStructureType->pSensor
+//		&& (psStruct->pStructureType->pSensor->type == VTOL_INTERCEPT_SENSOR
+//			|| psStruct->pStructureType->pSensor->type == SUPER_SENSOR)
+//		&& psStruct->pStructureType->pSensor->location == LOC_TURRET)
+//	{
+//		return true;
+//	}
+//
+//	return false;
+//}
+
+
+///*checks if the structure has a VTOL Counter Battery sensor attached - returns
+//true if it has*/
+//bool structVTOLCBSensor(const STRUCTURE* psStruct)
+//{
+//	// Super Sensor works as any type
+//	if (psStruct->pStructureType->pSensor
+//		&& (psStruct->pStructureType->pSensor->type == VTOL_CB_SENSOR
+//			|| psStruct->pStructureType->pSensor->type == SUPER_SENSOR)
+//		&& psStruct->pStructureType->pSensor->location == LOC_TURRET)
+//	{
+//		return true;
+//	}
+//
+//	return false;
+//}
+
+
+//// check whether a rearm pad is clear
+//bool clearRearmPad(const STRUCTURE* psStruct)
+//{
+//	return psStruct->pStructureType->type == REF_REARM_PAD
+//		&& (psStruct->pFunctionality->rearmPad.psObj == nullptr
+//			|| vtolHappy((DROID*)psStruct->pFunctionality->rearmPad.psObj));
+//}
 
 
 // return the nearest rearm pad

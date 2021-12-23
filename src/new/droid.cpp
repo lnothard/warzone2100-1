@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "droid.h"
+#include "multiplayer.h"
 #include "projectile.h"
 
 Droid::Droid(unsigned id, unsigned player)
@@ -355,6 +356,33 @@ int Droid::calculate_height() const
 	case CONSTRUCT:
 		break;
 	}
+}
+
+int Droid::space_occupied_on_transporter() const
+{
+  return is_multiplayer ? static_cast<int>(body->size) + 1 : 1;
+}
+
+int Droid::get_vertical_speed() const noexcept
+{
+  return movement->get_vertical_speed();
+}
+
+bool transporter_is_flying(const Droid& transporter)
+{
+  assert(transporter.is_transporter());
+  auto& order = transporter.get_current_order();
+
+  if (is_multiplayer)
+  {
+    return order.type == ORDER_TYPE::MOVE ||
+           order.type == ORDER_TYPE::DISEMBARK ||
+           (order.type == ORDER_TYPE::NONE && transporter.get_vertical_speed() != 0);
+  }
+
+  return order.type == ORDER_TYPE::TRANSPORT_OUT ||
+         order.type == ORDER_TYPE::TRANSPORT_IN ||
+         order.type == ORDER_TYPE::TRANSPORT_RETURN;
 }
 
 bool still_building(const Droid& droid)

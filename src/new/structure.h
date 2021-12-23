@@ -11,6 +11,8 @@
 #include "positiondef.h"
 #include "unit.h"
 
+static constexpr auto MAX_IN_RUN = 9;
+
 enum class STRUCTURE_STATE
 {
 	BEING_BUILT,
@@ -171,6 +173,8 @@ namespace Impl
 		[[nodiscard]] int calculate_gate_height(const std::size_t time, const int minimum) const;
 		void set_foundation_depth(float depth) noexcept;
 		void print_info() const override;
+    [[nodiscard]] unsigned build_points_to_completion() const;
+    [[nodiscard]] unsigned calculate_refunded_power() const;
 	private:
 		using enum STRUCTURE_STATE;
 		using enum STRUCTURE_ANIMATION_STATE;
@@ -221,6 +225,8 @@ public:
 	void pause_production(QUEUE_MODE mode);
 	void resume_production(QUEUE_MODE mode);
 	void cancel_production(QUEUE_MODE mode);
+  void increment_production_loops();
+  void decrement_production_loops();
 private:
 	using enum PENDING_STATUS;
 
