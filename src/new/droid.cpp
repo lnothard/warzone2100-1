@@ -195,7 +195,6 @@ bool Droid::is_valid_target(const ::Unit* attacker, int weapon_slot) const
 {
   auto target_airborne = bool { false };
   auto valid_target = bool { false };
-  uint8_t surface_to_air = 0;
 
   if (propulsion->is_airborne)
   {
@@ -203,18 +202,18 @@ bool Droid::is_valid_target(const ::Unit* attacker, int weapon_slot) const
       target_airborne = true;
   }
 
-  if (auto as_droid = dynamic_cast<const Droid*>(attacker))
+  if (const auto as_droid = dynamic_cast<const Droid*>(attacker))
   {
-    if (as_droid->get_type() == SENSOR)
+	  if (as_droid->get_type() == SENSOR)
       return !target_airborne;
 
     if (num_weapons(*as_droid) == 0)
       return false;
 
     auto& weapon_stats = attacker->get_weapons()[weapon_slot].get_stats();
-    surface_to_air = weapon_stats.surface_to_air;
 
-    if (((surface_to_air & SHOOT_IN_AIR) && target_airborne) || ((surface_to_air & SHOOT_ON_GROUND) && !target_airborne))
+	  if (auto surface_to_air = weapon_stats.surface_to_air; ((surface_to_air & SHOOT_IN_AIR) && target_airborne) ||
+		  ((surface_to_air & SHOOT_ON_GROUND) && !target_airborne))
       return true;
 
     return false;
@@ -453,8 +452,8 @@ uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool 
   constexpr static uint8_t RADAR_BLIP = UBYTE_MAX / 2;
   constexpr static uint8_t NOT_VISIBLE = 0;
 
-  auto droid_position = droid.get_position();
-  auto target_position = target->get_position();
+  auto& droid_position = droid.get_position();
+  auto& target_position = target->get_position();
 
   if  (!is_coord_on_map(droid_position.x, droid_position.y) ||
        !is_coord_on_map(target_position.x, target_position.y))
@@ -477,7 +476,7 @@ uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool 
 
     else if (dynamic_cast<const Droid*>(target))
     {
-      const Droid* as_droid = dynamic_cast<const Droid*>(target);
+      const auto* as_droid = dynamic_cast<const Droid*>(target);
       if (as_droid->is_VTOL()) return VISIBLE;
     }
   }
@@ -508,8 +507,8 @@ bool target_within_action_range(const Droid& droid, const Unit &target, int weap
 {
   if (num_weapons(droid) == 0) return false;
 
-  auto droid_position = droid.get_position();
-  auto target_position = target.get_position();
+  auto& droid_position = droid.get_position();
+  auto& target_position = target.get_position();
 
   auto x_diff = droid_position.x - target_position.x;
   auto y_diff = droid_position.y - target_position.y;

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5...3.14)
+cmake_minimum_required(VERSION 3.22)
 
 set(_OLD_CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}")
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -8,15 +8,11 @@ unset(_OLD_CMAKE_MODULE_PATH)
 
 project(warzone2100)
 
-if(${CMAKE_VERSION} VERSION_LESS 3.12)
-    cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
-endif()
-
 include(CMakeDependentOption)
 
 OPTION(ENABLE_DOCS "Enable documentation generation" ON)
 OPTION(ENABLE_NLS "Native Language Support" ON)
-OPTION(WZ_ENABLE_WARNINGS "Enable (additional) warnings" OFF)
+OPTION(WZ_ENABLE_WARNINGS "Enable (additional) warnings" ON)
 OPTION(WZ_ENABLE_WARNINGS_AS_ERRORS "Enable compiler flags that treat (most) warnings as errors" ON)
 OPTION(WZ_ENABLE_BACKEND_VULKAN "Enable Vulkan backend" ON)
 
@@ -41,15 +37,8 @@ else()
 	set(WZ_Wno_ "-Wno-")
 endif()
 
-# CXX Standard
-if(MSVC)
-	# MSVC doesn't support enforcing c++11 - the minimum it will allow is c++14
-	# See https://docs.microsoft.com/en-us/cpp/build/reference/std-specify-language-standard-version
-	# However, avoid using any features not supported by c++11 or the build will fail on other platforms.
-	set(CMAKE_CXX_STANDARD 14)
-else()
-	set(CMAKE_CXX_STANDARD 20)
-endif()
+
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF) # Disable compiler-specific extensions
 
