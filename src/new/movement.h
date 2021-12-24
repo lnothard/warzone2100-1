@@ -9,6 +9,8 @@
 
 #include "droid.h"
 
+class Droid;
+
 enum class MOVEMENT_STATE
 {
 	INACTIVE,
@@ -25,7 +27,7 @@ enum class MOVEMENT_STATE
 class Movement
 {
 public:
-  void move_droid_direct(Droid& droid, Position position);
+  void move_droid_direct(Droid& droid, Vector2i position);
 
 	[[nodiscard]] constexpr bool is_inactive() const noexcept
 	{
@@ -55,10 +57,12 @@ public:
     return vertical_speed;
   }
 
+  void set_path_vars(int target_x, int target_y);
 private:
 	using enum MOVEMENT_STATE;
 
 	MOVEMENT_STATE state;
+  std::vector<Vector2i> path;
 	Vector2i destination;
 	Vector2i origin;
 	int speed;

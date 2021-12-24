@@ -131,6 +131,8 @@ public:
   [[nodiscard]] int get_vertical_speed() const noexcept;
   [[nodiscard]] unsigned get_secondary_order() const noexcept;
   [[nodiscard]] const ::Simple_Object* get_action_target() const noexcept;
+  [[nodiscard]] const std::optional<Propulsion_Stats>& get_propulsion() const;
+  void set_direct_route(int target_x, int target_y) const;
   void increment_kills() noexcept;
   void increment_commander_kills() const;
 private:
@@ -183,6 +185,7 @@ private:
 [[nodiscard]] bool target_within_weapon_range(const Droid& droid,
                                               const Unit& target,
                                               int weapon_slot);
+long get_commander_index(const Droid& commander);
 void add_VTOL_attack_run(Droid& droid);
 
 [[nodiscard]] constexpr bool tile_occupied_by_droid(unsigned x, unsigned y)

@@ -13,7 +13,26 @@
 #include "feature.h"
 #include "structure.h"
 
+static constexpr auto AUX_MAX = 3;
+static constexpr auto AUX_NON_PASSABLE = 0x01;
+static constexpr auto AUX_OUR_BUILDING = 0x02;
+static constexpr auto AUX_BLOCKING = 0x04;
+static constexpr auto AUX_TEMPORARY = 0x08;
+static constexpr auto AUX_DANGER = 0x10;
+static constexpr auto AUX_THREAT = 0x20;
+static constexpr auto AUX_AA_THREAT = 0x40;
+
+static constexpr auto AIR_BLOCKED = 0x01;
+static constexpr auto FEATURE_BLOCKED = 0x02;
+static constexpr auto WATER_BLOCKED = 0x04;
+static constexpr auto LAND_BLOCKED = 0x08;
+
 extern const int map_width, map_height;
+extern const int min_horizontal_scroll, max_horizontal_scroll,
+                 min_vertical_scroll, max_vertical_scroll;
+
+extern std::array<uint8_t[], AUX_MAX> block_map;
+extern std::array<uint8_t[], MAX_PLAYERS + AUX_MAX> aux_map;
 
 enum class TILE_SET
 {
@@ -125,6 +144,16 @@ constexpr Tile* get_map_tile(int x, int y)
 [[nodiscard]] constexpr bool is_coord_on_map(Vector2i& position)
 {
   return is_coord_on_map(position.x, position.y);
+}
+
+[[nodiscard]] constexpr uint8_t aux_tile(int x, int y, int player)
+{
+  return aux_map[player][x + y + map_width];
+}
+
+[[nodiscard]] constexpr uint8_t block_tile(int x, int y, int slot)
+{
+  return block_map[slot][x + y * map_width];
 }
 
 #endif // WARZONE2100_MAP_H

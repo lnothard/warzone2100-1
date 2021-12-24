@@ -391,6 +391,16 @@ const Simple_Object* Droid::get_action_target() const noexcept
   return action_target;
 }
 
+const std::optional<Propulsion_Stats>& Droid::get_propulsion() const
+{
+  return propulsion;
+}
+
+void Droid::set_direct_route(int target_x, int target_y) const
+{
+  movement->set_path_vars(target_x, target_y);
+}
+
 bool transporter_is_flying(const Droid& transporter)
 {
   assert(transporter.is_transporter());
@@ -635,7 +645,7 @@ void initialise_ai_bits()
 	satellite_uplink_bits = 0;
 }
 
-int get_commander_index(const Droid& commander)
+long get_commander_index(const Droid& commander)
 {
 	assert(commander.is_commander());
 

@@ -197,75 +197,75 @@ bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_M
 
 	return true;
 }
+//
+//static uint8_t prop2bits(PROPULSION_TYPE propulsion)
+//{
+//	uint8_t bits;
+//
+//	switch (propulsion)
+//	{
+//	case PROPULSION_TYPE_LIFT:
+//		bits = AIR_BLOCKED;
+//		break;
+//	case PROPULSION_TYPE_HOVER:
+//		bits = FEATURE_BLOCKED;
+//		break;
+//	case PROPULSION_TYPE_PROPELLOR:
+//		bits = FEATURE_BLOCKED | LAND_BLOCKED;
+//		break;
+//	default:
+//		bits = FEATURE_BLOCKED | WATER_BLOCKED;
+//		break;
+//	}
+//	return bits;
+//}
 
-static uint8_t prop2bits(PROPULSION_TYPE propulsion)
-{
-	uint8_t bits;
+//// Check if the map tile at a location blocks a droid
+//bool fpathBaseBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion, int mapIndex, FPATH_MOVETYPE moveType)
+//{
+//	/* All tiles outside of the map and on map border are blocking. */
+//	if (x < 1 || y < 1 || x > mapWidth - 1 || y > mapHeight - 1)
+//	{
+//		return true;
+//	}
+//
+//	/* Check scroll limits (used in campaign to partition the map. */
+//	if (propulsion != PROPULSION_TYPE_LIFT && (x < scrollMinX + 1 || y < scrollMinY + 1 || x >= scrollMaxX - 1 || y >=
+//		scrollMaxY - 1))
+//	{
+//		// coords off map - auto blocking tile
+//		return true;
+//	}
+//	unsigned aux = auxTile(x, y, mapIndex);
+//
+//	int auxMask = 0;
+//	switch (moveType)
+//	{
+//	case FMT_MOVE: auxMask = AUXBITS_NONPASSABLE;
+//		break;
+//	// do not wish to shoot our way through enemy buildings, but want to go through friendly gates (without shooting them)
+//	case FMT_ATTACK: auxMask = AUXBITS_OUR_BUILDING;
+//		break; // move blocked by friendly building, assuming we do not want to shoot it up en route
+//	case FMT_BLOCK: auxMask = AUXBITS_BLOCKING;
+//		break; // Do not wish to tunnel through closed gates or buildings.
+//	}
+//
+//	unsigned unitbits = prop2bits(propulsion);
+//	// TODO - cache prop2bits to psDroid, and pass in instead of propulsion type
+//	if ((unitbits & FEATURE_BLOCKED) != 0 && (aux & auxMask) != 0)
+//	{
+//		return true; // move blocked by building, and we cannot or do not want to shoot our way through anything
+//	}
+//
+//	// the MAX hack below is because blockTile() range does not include player-specific versions...
+//	return (blockTile(x, y, MAX(0, mapIndex - MAX_PLAYERS)) & unitbits) != 0;
+//	// finally check if move is blocked by propulsion related factors
+//}
 
-	switch (propulsion)
-	{
-	case PROPULSION_TYPE_LIFT:
-		bits = AIR_BLOCKED;
-		break;
-	case PROPULSION_TYPE_HOVER:
-		bits = FEATURE_BLOCKED;
-		break;
-	case PROPULSION_TYPE_PROPELLOR:
-		bits = FEATURE_BLOCKED | LAND_BLOCKED;
-		break;
-	default:
-		bits = FEATURE_BLOCKED | WATER_BLOCKED;
-		break;
-	}
-	return bits;
-}
-
-// Check if the map tile at a location blocks a droid
-bool fpathBaseBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion, int mapIndex, FPATH_MOVETYPE moveType)
-{
-	/* All tiles outside of the map and on map border are blocking. */
-	if (x < 1 || y < 1 || x > mapWidth - 1 || y > mapHeight - 1)
-	{
-		return true;
-	}
-
-	/* Check scroll limits (used in campaign to partition the map. */
-	if (propulsion != PROPULSION_TYPE_LIFT && (x < scrollMinX + 1 || y < scrollMinY + 1 || x >= scrollMaxX - 1 || y >=
-		scrollMaxY - 1))
-	{
-		// coords off map - auto blocking tile
-		return true;
-	}
-	unsigned aux = auxTile(x, y, mapIndex);
-
-	int auxMask = 0;
-	switch (moveType)
-	{
-	case FMT_MOVE: auxMask = AUXBITS_NONPASSABLE;
-		break;
-	// do not wish to shoot our way through enemy buildings, but want to go through friendly gates (without shooting them)
-	case FMT_ATTACK: auxMask = AUXBITS_OUR_BUILDING;
-		break; // move blocked by friendly building, assuming we do not want to shoot it up en route
-	case FMT_BLOCK: auxMask = AUXBITS_BLOCKING;
-		break; // Do not wish to tunnel through closed gates or buildings.
-	}
-
-	unsigned unitbits = prop2bits(propulsion);
-	// TODO - cache prop2bits to psDroid, and pass in instead of propulsion type
-	if ((unitbits & FEATURE_BLOCKED) != 0 && (aux & auxMask) != 0)
-	{
-		return true; // move blocked by building, and we cannot or do not want to shoot our way through anything
-	}
-
-	// the MAX hack below is because blockTile() range does not include player-specific versions...
-	return (blockTile(x, y, MAX(0, mapIndex - MAX_PLAYERS)) & unitbits) != 0;
-	// finally check if move is blocked by propulsion related factors
-}
-
-bool fpathDroidBlockingTile(DROID* psDroid, int x, int y, FPATH_MOVETYPE moveType)
-{
-	return fpathBaseBlockingTile(x, y, getPropulsionStats(psDroid)->propulsionType, psDroid->player, moveType);
-}
+//bool fpathDroidBlockingTile(DROID* psDroid, int x, int y, FPATH_MOVETYPE moveType)
+//{
+//	return fpathBaseBlockingTile(x, y, getPropulsionStats(psDroid)->propulsionType, psDroid->player, moveType);
+//}
 
 // Check if the map tile at a location blocks a droid
 bool fpathBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion)
@@ -309,18 +309,18 @@ static Position findNonblockingPosition(Position pos, PROPULSION_TYPE propulsion
 }
 
 
-static void fpathSetMove(MOVE_CONTROL* psMoveCntl, SDWORD targetX, SDWORD targetY)
-{
-	psMoveCntl->asPath.resize(1);
-	psMoveCntl->destination = Vector2i(targetX, targetY);
-	psMoveCntl->asPath[0] = Vector2i(targetX, targetY);
-}
+//static void fpathSetMove(MOVE_CONTROL* psMoveCntl, SDWORD targetX, SDWORD targetY)
+//{
+//	psMoveCntl->asPath.resize(1);
+//	psMoveCntl->destination = Vector2i(targetX, targetY);
+//	psMoveCntl->asPath[0] = Vector2i(targetX, targetY);
+//}
 
 
-void fpathSetDirectRoute(DROID* psDroid, SDWORD targetX, SDWORD targetY)
-{
-	fpathSetMove(&psDroid->sMove, targetX, targetY);
-}
+//void fpathSetDirectRoute(DROID* psDroid, SDWORD targetX, SDWORD targetY)
+//{
+//	fpathSetMove(&psDroid->sMove, targetX, targetY);
+//}
 
 
 void fpathRemoveDroidData(int id)
