@@ -128,6 +128,7 @@ public:
 	[[nodiscard]] int calculate_height() const;
   [[nodiscard]] int space_occupied_on_transporter() const;
   [[nodiscard]] int get_vertical_speed() const noexcept;
+  [[nodiscard]] unsigned get_secondary_order() const noexcept;
   void increment_kills() noexcept;
   void increment_commander_kills() const;
 private:
@@ -146,6 +147,7 @@ private:
 	std::optional<Commander_Stats> brain;
 	std::optional<Sensor_Stats> sensor;
 	std::optional<ECM_Stats> ecm;
+  unsigned secondary_order;
 	unsigned weight{0};
 	unsigned base_speed{0};
 	unsigned original_hp{0};
@@ -172,7 +174,7 @@ private:
 [[nodiscard]] uint8_t is_target_visible(const Droid& droid,
                                         const Simple_Object* target,
                                         bool walls_block);
-[[nodiscard]] bool target_within_action_range(const Droid& droid,
+[[nodiscard]] bool action_target_inside_minimum_weapon_range(const Droid& droid,
                                               const Unit& target,
                                               int weapon_slot);
 [[nodiscard]] bool target_within_weapon_range(const Droid& droid,

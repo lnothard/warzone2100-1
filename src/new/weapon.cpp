@@ -57,6 +57,21 @@ unsigned Weapon::get_min_range(unsigned player) const
 	return stats->upgraded_stats[player].min_range;
 }
 
+unsigned Weapon::get_short_range(unsigned player) const
+{
+  return stats->upgraded_stats[player].short_range;
+}
+
+unsigned Weapon::get_hit_chance(unsigned int player) const
+{
+  return stats->upgraded_stats[player].hit_chance;
+}
+
+unsigned Weapon::get_short_range_hit_chance(unsigned int player) const
+{
+  return stats->upgraded_stats[player].short_range_hit_chance;
+}
+
 WEAPON_SUBCLASS Weapon::get_subclass() const
 {
 	return stats->subclass;

@@ -369,6 +369,11 @@ int Droid::get_vertical_speed() const noexcept
   return movement->get_vertical_speed();
 }
 
+unsigned Droid::get_secondary_order() const noexcept
+{
+  return secondary_order;
+}
+
 void Droid::increment_kills() noexcept
 {
   ++kills;
@@ -547,22 +552,60 @@ uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool 
 	return NOT_VISIBLE;
 }
 
-bool target_within_action_range(const Droid& droid, const Unit& target, int weapon_slot)
+bool action_target_inside_minimum_weapon_range(const Droid& droid, const Unit& target, int weapon_slot)
 {
 	if (num_weapons(droid) == 0) return false;
 
-	auto& droid_position = droid.get_position();
-	auto& target_position = target.get_position();
-
-	auto x_diff = droid_position.x - target_position.x;
-	auto y_diff = droid_position.y - target_position.y;
-
-	auto square_diff = x_diff * x_diff + y_diff * y_diff;
+  auto square_diff = object_position_square_diff(droid, target);
 	auto min_range = droid.get_weapons()[weapon_slot].get_min_range(droid.get_player());
 	auto range_squared = min_range * min_range;
 
 	if (square_diff <= range_squared) return true;
 	return false;
+}
+
+bool action_target_within_weapon_range(const Droid& droid, const Unit& target, int weapon_slot, bool use_long_with_optimum)
+{
+  if (num_weapons(droid) == 0) return false;
+
+  auto& weapon = droid.get_weapons()[weapon_slot];
+  auto square_diff = object_position_square_diff(droid, target);
+  auto long_range = weapon.get_max_range(droid.get_player());
+  auto short_range = weapon.get_short_range(droid.get_player());
+
+  unsigned range_squared = 0;
+  using enum SECONDARY_STATE;
+  switch (droid.get_secondary_order() & ATTACK_RANGE_MASK)
+  {
+      case ATTACK_RANGE_OPTIMUM:
+        if (!use_long_with_optimum &&
+        weapon.get_short_range_hit_chance(droid.get_player())
+        > weapon.get_hit_chance(droid.get_player()))
+        {
+          range_squared = short_range * short_range;
+        }
+        else
+        {
+          range_squared = long_range * long_range;
+        }
+        break;
+      case ATTACK_RANGE_SHORT:
+        range_squared = short_range * short_range;
+        break;
+      case ATTACK_RANGE_LONG:
+        range_squared = long_range * long_range;
+        break;
+      default:
+        range_squared = long_range * long_range;
+  }
+  if (square_diff > range_squared) return false;
+
+  if (auto min_range = weapon.get_min_range(droid.get_player());
+      square_diff >= min_range * min_range || weapon.is_artillery())
+  {
+    return true;
+  }
+  return false;
 }
 
 bool target_within_weapon_range(const Droid& droid, const Unit& target, int weapon_slot)

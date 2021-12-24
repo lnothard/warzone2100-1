@@ -76,10 +76,10 @@ struct DROID_ACTION_DATA
 	BASE_STATS* psStats;
 };
 
-// Check if a droid has stopped moving
-#define DROID_STOPPED(psDroid) \
-	(psDroid->sMove.Status == MOVEINACTIVE || psDroid->sMove.Status == MOVEHOVER || \
-	 psDroid->sMove.Status == MOVESHUFFLE)
+//// Check if a droid has stopped moving
+//#define DROID_STOPPED(psDroid) \
+//	(psDroid->sMove.Status == MOVEINACTIVE || psDroid->sMove.Status == MOVEHOVER || \
+//	 psDroid->sMove.Status == MOVESHUFFLE)
 
 /** Radius for search when looking for VTOL landing position */
 static const int vtolLandingRadius = 23;
@@ -154,65 +154,65 @@ const char* getDroidActionName(DROID_ACTION action)
 }
 
 // check if a target is within weapon range
-bool actionInRange(const DROID* psDroid, const BASE_OBJECT* psObj, int weapon_slot, bool useLongWithOptimum)
-{
-	CHECK_DROID(psDroid);
-
-	if (psDroid->asWeaps[0].nStat == 0)
-	{
-		return false;
-	}
-
-	const unsigned compIndex = psDroid->asWeaps[weapon_slot].nStat;
-	ASSERT_OR_RETURN(false, compIndex < numWeaponStats, "Invalid range referenced for numWeaponStats, %d > %d",
-	                 compIndex, numWeaponStats);
-	const WEAPON_STATS* psStats = asWeaponStats + compIndex;
-
-	const int dx = (SDWORD)psDroid->pos.x - (SDWORD)psObj->pos.x;
-	const int dy = (SDWORD)psDroid->pos.y - (SDWORD)psObj->pos.y;
-
-	const int radSq = dx * dx + dy * dy;
-	const int longRange = proj_GetLongRange(psStats, psDroid->player);
-	const int shortRange = proj_GetShortRange(psStats, psDroid->player);
-
-	int rangeSq = 0;
-	switch (psDroid->secondaryOrder & DSS_ARANGE_MASK)
-	{
-	case DSS_ARANGE_OPTIMUM:
-		if (!useLongWithOptimum && weaponShortHit(psStats, psDroid->player) > weaponLongHit(psStats, psDroid->player))
-		{
-			rangeSq = shortRange * shortRange;
-		}
-		else
-		{
-			rangeSq = longRange * longRange;
-		}
-		break;
-	case DSS_ARANGE_SHORT:
-		rangeSq = shortRange * shortRange;
-		break;
-	case DSS_ARANGE_LONG:
-		rangeSq = longRange * longRange;
-		break;
-	default:
-		ASSERT(!"unknown attackrange order", "unknown attack range order");
-		rangeSq = longRange * longRange;
-		break;
-	}
-
-	/* check max range */
-	if (radSq <= rangeSq)
-	{
-		/* check min range */
-		const int minrange = proj_GetMinRange(psStats, psDroid->player);
-		if (radSq >= minrange * minrange || !proj_Direct(psStats))
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
+//bool actionInRange(const DROID* psDroid, const BASE_OBJECT* psObj, int weapon_slot, bool useLongWithOptimum)
+//{
+//	CHECK_DROID(psDroid);
+//
+//	if (psDroid->asWeaps[0].nStat == 0)
+//	{
+//		return false;
+//	}
+//
+//	const unsigned compIndex = psDroid->asWeaps[weapon_slot].nStat;
+//	ASSERT_OR_RETURN(false, compIndex < numWeaponStats, "Invalid range referenced for numWeaponStats, %d > %d",
+//	                 compIndex, numWeaponStats);
+//	const WEAPON_STATS* psStats = asWeaponStats + compIndex;
+//
+//	const int dx = (SDWORD)psDroid->pos.x - (SDWORD)psObj->pos.x;
+//	const int dy = (SDWORD)psDroid->pos.y - (SDWORD)psObj->pos.y;
+//
+//	const int radSq = dx * dx + dy * dy;
+//	const int longRange = proj_GetLongRange(psStats, psDroid->player);
+//	const int shortRange = proj_GetShortRange(psStats, psDroid->player);
+//
+//	int rangeSq = 0;
+//	switch (psDroid->secondaryOrder & DSS_ARANGE_MASK)
+//	{
+//	case DSS_ARANGE_OPTIMUM:
+//		if (!useLongWithOptimum && weaponShortHit(psStats, psDroid->player) > weaponLongHit(psStats, psDroid->player))
+//		{
+//			rangeSq = shortRange * shortRange;
+//		}
+//		else
+//		{
+//			rangeSq = longRange * longRange;
+//		}
+//		break;
+//	case DSS_ARANGE_SHORT:
+//		rangeSq = shortRange * shortRange;
+//		break;
+//	case DSS_ARANGE_LONG:
+//		rangeSq = longRange * longRange;
+//		break;
+//	default:
+//		ASSERT(!"unknown attackrange order", "unknown attack range order");
+//		rangeSq = longRange * longRange;
+//		break;
+//	}
+//
+//	/* check max range */
+//	if (radSq <= rangeSq)
+//	{
+//		/* check min range */
+//		const int minrange = proj_GetMinRange(psStats, psDroid->player);
+//		if (radSq >= minrange * minrange || !proj_Direct(psStats))
+//		{
+//			return true;
+//		}
+//	}
+//
+//	return false;
+//}
 
 //// check if a target is inside minimum weapon range
 //static bool actionInsideMinRange(DROID *psDroid, BASE_OBJECT *psObj, WEAPON_STATS *psStats)

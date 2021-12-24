@@ -73,7 +73,9 @@ struct Weapon_Stats : public Component_Stats
 	{
 		unsigned min_range;
 		unsigned max_range;
+    unsigned short_range;
 		unsigned hit_chance;
+    unsigned short_range_hit_chance;
 		unsigned direct_damage;
 		unsigned blast_radius;
 		unsigned splash_damage;
@@ -137,6 +139,9 @@ public:
 	[[nodiscard]] unsigned get_recoil() const;
 	[[nodiscard]] unsigned get_max_range(unsigned player) const;
 	[[nodiscard]] unsigned get_min_range(unsigned player) const;
+  [[nodiscard]] unsigned get_short_range(unsigned player) const;
+  [[nodiscard]] unsigned get_hit_chance(unsigned player) const;
+  [[nodiscard]] unsigned get_short_range_hit_chance(unsigned player) const;
 	[[nodiscard]] unsigned get_num_attack_runs(unsigned player) const;
 	[[nodiscard]] unsigned get_shots_fired() const noexcept;
 	[[nodiscard]] const iIMDShape& get_IMD_shape() const;
