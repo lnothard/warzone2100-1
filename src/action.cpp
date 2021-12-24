@@ -429,43 +429,43 @@ bool actionVisibleTarget(DROID* psDroid, BASE_OBJECT* psTarget, int weapon_slot)
 		&& lineOfFire(psDroid, psTarget, weapon_slot, true);
 }
 
-static void actionAddVtolAttackRun(DROID* psDroid)
-{
-	BASE_OBJECT* psTarget;
-
-	CHECK_DROID(psDroid);
-
-	if (psDroid->psActionTarget[0] != nullptr)
-	{
-		psTarget = psDroid->psActionTarget[0];
-	}
-	else if (psDroid->order.psObj != nullptr)
-	{
-		psTarget = psDroid->order.psObj;
-	}
-	else
-	{
-		return;
-	}
-
-	/* get normal vector from droid to target */
-	Vector2i delta = (psTarget->pos - psDroid->pos).xy();
-
-	/* get magnitude of normal vector (Pythagorean theorem) */
-	int dist = std::max(iHypot(delta), 1);
-
-	/* add waypoint behind target attack length away*/
-	Vector2i dest = psTarget->pos.xy() + delta * VTOL_ATTACK_LENGTH / dist;
-
-	if (!worldOnMap(dest))
-	{
-		debug(LOG_NEVER, "*** actionAddVtolAttackRun: run off map! ***");
-	}
-	else
-	{
-		moveDroidToDirect(psDroid, dest.x, dest.y);
-	}
-}
+//static void actionAddVtolAttackRun(DROID* psDroid)
+//{
+//	BASE_OBJECT* psTarget;
+//
+//	CHECK_DROID(psDroid);
+//
+//	if (psDroid->psActionTarget[0] != nullptr)
+//	{
+//		psTarget = psDroid->psActionTarget[0];
+//	}
+//	else if (psDroid->order.psObj != nullptr)
+//	{
+//		psTarget = psDroid->order.psObj;
+//	}
+//	else
+//	{
+//		return;
+//	}
+//
+//	/* get normal vector from droid to target */
+//	Vector2i delta = (psTarget->pos - psDroid->pos).xy();
+//
+//	/* get magnitude of normal vector (Pythagorean theorem) */
+//	int dist = std::max(iHypot(delta), 1);
+//
+//	/* add waypoint behind target attack length away*/
+//	Vector2i dest = psTarget->pos.xy() + delta * VTOL_ATTACK_LENGTH / dist;
+//
+//	if (!worldOnMap(dest))
+//	{
+//		debug(LOG_NEVER, "*** actionAddVtolAttackRun: run off map! ***");
+//	}
+//	else
+//	{
+//		moveDroidToDirect(psDroid, dest.x, dest.y);
+//	}
+//}
 
 static void actionUpdateVtolAttack(DROID* psDroid)
 {

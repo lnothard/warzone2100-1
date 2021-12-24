@@ -122,4 +122,9 @@ constexpr Tile* get_map_tile(int x, int y)
 		(y >= 0) && (y < map_height << TILE_SHIFT);
 }
 
+[[nodiscard]] constexpr bool is_coord_on_map(Vector2i& position)
+{
+  return is_coord_on_map(position.x, position.y);
+}
+
 #endif // WARZONE2100_MAP_H

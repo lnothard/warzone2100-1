@@ -7,6 +7,8 @@
 
 #include "lib/framework/vector.h"
 
+#include "droid.h"
+
 enum class MOVEMENT_STATE
 {
 	INACTIVE,
@@ -23,6 +25,8 @@ enum class MOVEMENT_STATE
 class Movement
 {
 public:
+  void move_droid_direct(Droid& droid, Position position);
+
 	[[nodiscard]] constexpr bool is_inactive() const noexcept
 	{
 		return state == INACTIVE;

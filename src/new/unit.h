@@ -16,20 +16,20 @@ class Unit : public virtual ::Simple_Object
 {
 public:
 	Unit() = default;
-	virtual ~Unit() = default;
+	~Unit() override = default;
 	Unit(const Unit&) = delete;
 	Unit(Unit&&) = delete;
 	Unit& operator=(const Unit&) = delete;
 	Unit& operator=(Unit&&) = delete;
 
-	virtual bool is_alive() const = 0;
-	virtual bool is_radar_detector() const = 0;
+	[[nodiscard]] virtual bool is_alive() const = 0;
+	[[nodiscard]] virtual bool is_radar_detector() const = 0;
 	virtual bool is_valid_target(const Unit* attacker, int weapon_slot) const = 0;
 	virtual uint8_t is_target_visible(const Simple_Object* target, bool walls_block) const = 0;
-	virtual unsigned get_hp() const = 0;
-	virtual unsigned calculate_sensor_range() const = 0;
-	virtual const std::vector<Weapon>& get_weapons() const = 0;
-	virtual const iIMDShape& get_IMD_shape() const = 0;
+	[[nodiscard]] virtual unsigned get_hp() const = 0;
+	[[nodiscard]] virtual unsigned calculate_sensor_range() const = 0;
+	[[nodiscard]] virtual const std::vector<Weapon>& get_weapons() const = 0;
+	[[nodiscard]] virtual const iIMDShape& get_IMD_shape() const = 0;
 };
 
 Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot);

@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "droid.h"
+#include "movement.h"
 #include "multiplayer.h"
 #include "projectile.h"
 
@@ -385,6 +386,11 @@ void Droid::increment_commander_kills() const
   group->increment_commander_kills();
 }
 
+const Simple_Object* Droid::get_action_target() const noexcept
+{
+  return action_target;
+}
+
 bool transporter_is_flying(const Droid& transporter)
 {
   assert(transporter.is_transporter());
@@ -577,7 +583,7 @@ bool action_target_within_weapon_range(const Droid& droid, const Unit& target, i
   using enum SECONDARY_STATE;
   switch (droid.get_secondary_order() & ATTACK_RANGE_MASK)
   {
-      case ATTACK_RANGE_OPTIMUM:
+      case static_cast<int>(ATTACK_RANGE_OPTIMUM):
         if (!use_long_with_optimum &&
         weapon.get_short_range_hit_chance(droid.get_player())
         > weapon.get_hit_chance(droid.get_player()))
@@ -589,10 +595,10 @@ bool action_target_within_weapon_range(const Droid& droid, const Unit& target, i
           range_squared = long_range * long_range;
         }
         break;
-      case ATTACK_RANGE_SHORT:
+      case static_cast<int>(ATTACK_RANGE_SHORT):
         range_squared = short_range * short_range;
         break;
-      case ATTACK_RANGE_LONG:
+      case static_cast<int>(ATTACK_RANGE_LONG):
         range_squared = long_range * long_range;
         break;
       default:
@@ -638,4 +644,22 @@ int get_commander_index(const Droid& commander)
 	{
 		return droid.is_commander() && droid.get_id() == commander.get_id();
 	}) - droids.begin();
+}
+
+void add_VTOL_attack_run(const Droid& droid)
+{
+  auto* target = droid.get_action_target();
+  if (!target)
+  {
+    target = droid.get_current_order().target_object;
+    if (!target) return;
+  }
+  auto delta = (target->get_position() - droid.get_position()).xy();
+  auto distance = std::max(iHypot(delta), 1);
+  auto destination = target->get_position().xy() + delta * VTOL_ATTACK_LENGTH / distance;
+
+  if (is_coord_on_map(destination))
+  {
+    move_droid_direct(droid, destination);
+  }
 }

@@ -17,6 +17,7 @@
 static constexpr auto MAX_COMPONENTS = COMPONENT_TYPE::COUNT - 1;
 static constexpr auto ALLIANCE_FORMED = 3;
 static constexpr auto ALLIANCE_BROKEN = 0;
+static constexpr auto VTOL_ATTACK_LENGTH = 1000;
 
 extern PlayerMask satellite_uplink_bits;
 extern std::array<PlayerMask, MAX_PLAYER_SLOTS> alliance_bits;
@@ -129,6 +130,7 @@ public:
   [[nodiscard]] int space_occupied_on_transporter() const;
   [[nodiscard]] int get_vertical_speed() const noexcept;
   [[nodiscard]] unsigned get_secondary_order() const noexcept;
+  [[nodiscard]] const ::Simple_Object* get_action_target() const noexcept;
   void increment_kills() noexcept;
   void increment_commander_kills() const;
 private:
@@ -138,6 +140,7 @@ private:
 	std::string name;
 	ACTION action{NONE};
 	DROID_TYPE type{ANY};
+  Simple_Object* action_target{nullptr};
 	Structure* associated_structure{nullptr};
 	std::shared_ptr<Droid_Group> group;
 	std::unique_ptr<Order> order;
@@ -180,6 +183,7 @@ private:
 [[nodiscard]] bool target_within_weapon_range(const Droid& droid,
                                               const Unit& target,
                                               int weapon_slot);
+void add_VTOL_attack_run(Droid& droid);
 
 [[nodiscard]] constexpr bool tile_occupied_by_droid(unsigned x, unsigned y)
 {
