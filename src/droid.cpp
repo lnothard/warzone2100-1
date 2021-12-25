@@ -2069,126 +2069,126 @@ void groupConsoleInformOfCentering(UDWORD groupNumber)
 /**
  * calculate muzzle base location in 3d world
  */
-bool calcDroidMuzzleBaseLocation(const DROID* psDroid, Vector3i* muzzle, int weapon_slot)
-{
-	const iIMDShape* psBodyImd = BODY_IMD(psDroid, psDroid->player);
+//bool calcDroidMuzzleBaseLocation(const DROID* psDroid, Vector3i* muzzle, int weapon_slot)
+//{
+//	const iIMDShape* psBodyImd = BODY_IMD(psDroid, psDroid->player);
+//
+//	CHECK_DROID(psDroid);
+//
+//	if (psBodyImd && psBodyImd->nconnectors)
+//	{
+//		Vector3i barrel(0, 0, 0);
+//
+//		Affine3F af;
+//
+//		af.Trans(psDroid->pos.x, -psDroid->pos.z, psDroid->pos.y);
+//
+//		//matrix = the center of droid
+//		af.RotY(psDroid->rot.direction);
+//		af.RotX(psDroid->rot.pitch);
+//		af.RotZ(-psDroid->rot.roll);
+//		af.Trans(psBodyImd->connectors[weapon_slot].x, -psBodyImd->connectors[weapon_slot].z,
+//		         -psBodyImd->connectors[weapon_slot].y); //note y and z flipped
+//
+//		*muzzle = (af * barrel).xzy();
+//		muzzle->z = -muzzle->z;
+//	}
+//	else
+//	{
+//		*muzzle = psDroid->pos + Vector3i(0, 0, psDroid->sDisplay.imd->max.y);
+//	}
+//
+//	CHECK_DROID(psDroid);
+//
+//	return true;
+//}
 
-	CHECK_DROID(psDroid);
-
-	if (psBodyImd && psBodyImd->nconnectors)
-	{
-		Vector3i barrel(0, 0, 0);
-
-		Affine3F af;
-
-		af.Trans(psDroid->pos.x, -psDroid->pos.z, psDroid->pos.y);
-
-		//matrix = the center of droid
-		af.RotY(psDroid->rot.direction);
-		af.RotX(psDroid->rot.pitch);
-		af.RotZ(-psDroid->rot.roll);
-		af.Trans(psBodyImd->connectors[weapon_slot].x, -psBodyImd->connectors[weapon_slot].z,
-		         -psBodyImd->connectors[weapon_slot].y); //note y and z flipped
-
-		*muzzle = (af * barrel).xzy();
-		muzzle->z = -muzzle->z;
-	}
-	else
-	{
-		*muzzle = psDroid->pos + Vector3i(0, 0, psDroid->sDisplay.imd->max.y);
-	}
-
-	CHECK_DROID(psDroid);
-
-	return true;
-}
-
-/**
- * calculate muzzle tip location in 3d world
- */
-bool calcDroidMuzzleLocation(const DROID* psDroid, Vector3i* muzzle, int weapon_slot)
-{
-	const iIMDShape* psBodyImd = BODY_IMD(psDroid, psDroid->player);
-
-	CHECK_DROID(psDroid);
-
-	if (psBodyImd && psBodyImd->nconnectors)
-	{
-		char debugStr[250], debugLen = 0;
-		// Each "(%d,%d,%d)" uses up to 34 bytes, for very large values. So 250 isn't exaggerating.
-
-		Vector3i barrel(0, 0, 0);
-		const iIMDShape *psWeaponImd = nullptr, *psMountImd = nullptr;
-
-		if (psDroid->asWeaps[weapon_slot].nStat)
-		{
-			psMountImd = WEAPON_MOUNT_IMD(psDroid, weapon_slot);
-			psWeaponImd = WEAPON_IMD(psDroid, weapon_slot);
-		}
-
-		Affine3F af;
-
-		af.Trans(psDroid->pos.x, -psDroid->pos.z, psDroid->pos.y);
-
-		//matrix = the center of droid
-		af.RotY(psDroid->rot.direction);
-		af.RotX(psDroid->rot.pitch);
-		af.RotZ(-psDroid->rot.roll);
-		af.Trans(psBodyImd->connectors[weapon_slot].x, -psBodyImd->connectors[weapon_slot].z,
-		         -psBodyImd->connectors[weapon_slot].y); //note y and z flipped
-		debugLen += sprintf(debugStr + debugLen, "connect:body[%d]=(%d,%d,%d)", weapon_slot,
-		                    psBodyImd->connectors[weapon_slot].x, -psBodyImd->connectors[weapon_slot].z,
-		                    -psBodyImd->connectors[weapon_slot].y);
-
-		//matrix = the weapon[slot] mount on the body
-		af.RotY(psDroid->asWeaps[weapon_slot].rot.direction); // +ve anticlockwise
-
-		// process turret mount
-		if (psMountImd && psMountImd->nconnectors)
-		{
-			af.Trans(psMountImd->connectors->x, -psMountImd->connectors->z, -psMountImd->connectors->y);
-			debugLen += sprintf(debugStr + debugLen, ",turret=(%d,%d,%d)", psMountImd->connectors->x,
-			                    -psMountImd->connectors->z, -psMountImd->connectors->y);
-		}
-
-		//matrix = the turret connector for the gun
-		af.RotX(psDroid->asWeaps[weapon_slot].rot.pitch); // +ve up
-
-		//process the gun
-		if (psWeaponImd && psWeaponImd->nconnectors)
-		{
-			unsigned int connector_num = 0;
-
-			// which barrel is firing if model have multiple muzzle connectors?
-			if (psDroid->asWeaps[weapon_slot].shotsFired && (psWeaponImd->nconnectors > 1))
-			{
-				// shoot first, draw later - substract one shot to get correct results
-				connector_num = (psDroid->asWeaps[weapon_slot].shotsFired - 1) % (psWeaponImd->nconnectors);
-			}
-
-			barrel = Vector3i(psWeaponImd->connectors[connector_num].x,
-			                  -psWeaponImd->connectors[connector_num].z,
-			                  -psWeaponImd->connectors[connector_num].y);
-			debugLen += sprintf(debugStr + debugLen, ",barrel[%u]=(%d,%d,%d)", connector_num,
-			                    psWeaponImd->connectors[connector_num].x, -psWeaponImd->connectors[connector_num].y,
-			                    -psWeaponImd->connectors[connector_num].z);
-		}
-
-		*muzzle = (af * barrel).xzy();
-		muzzle->z = -muzzle->z;
-		sprintf(debugStr + debugLen, ",muzzle=(%d,%d,%d)", muzzle->x, muzzle->y, muzzle->z);
-
-		syncDebug("%s", debugStr);
-	}
-	else
-	{
-		*muzzle = psDroid->pos + Vector3i(0, 0, psDroid->sDisplay.imd->max.y);
-	}
-
-	CHECK_DROID(psDroid);
-
-	return true;
-}
+///**
+// * calculate muzzle tip location in 3d world
+// */
+//bool calcDroidMuzzleLocation(const DROID* psDroid, Vector3i* muzzle, int weapon_slot)
+//{
+//	const iIMDShape* psBodyImd = BODY_IMD(psDroid, psDroid->player);
+//
+//	CHECK_DROID(psDroid);
+//
+//	if (psBodyImd && psBodyImd->nconnectors)
+//	{
+//		char debugStr[250], debugLen = 0;
+//		// Each "(%d,%d,%d)" uses up to 34 bytes, for very large values. So 250 isn't exaggerating.
+//
+//		Vector3i barrel(0, 0, 0);
+//		const iIMDShape *psWeaponImd = nullptr, *psMountImd = nullptr;
+//
+//		if (psDroid->asWeaps[weapon_slot].nStat)
+//		{
+//			psMountImd = WEAPON_MOUNT_IMD(psDroid, weapon_slot);
+//			psWeaponImd = WEAPON_IMD(psDroid, weapon_slot);
+//		}
+//
+//		Affine3F af;
+//
+//		af.Trans(psDroid->pos.x, -psDroid->pos.z, psDroid->pos.y);
+//
+//		//matrix = the center of droid
+//		af.RotY(psDroid->rot.direction);
+//		af.RotX(psDroid->rot.pitch);
+//		af.RotZ(-psDroid->rot.roll);
+//		af.Trans(psBodyImd->connectors[weapon_slot].x, -psBodyImd->connectors[weapon_slot].z,
+//		         -psBodyImd->connectors[weapon_slot].y); //note y and z flipped
+//		debugLen += sprintf(debugStr + debugLen, "connect:body[%d]=(%d,%d,%d)", weapon_slot,
+//		                    psBodyImd->connectors[weapon_slot].x, -psBodyImd->connectors[weapon_slot].z,
+//		                    -psBodyImd->connectors[weapon_slot].y);
+//
+//		//matrix = the weapon[slot] mount on the body
+//		af.RotY(psDroid->asWeaps[weapon_slot].rot.direction); // +ve anticlockwise
+//
+//		// process turret mount
+//		if (psMountImd && psMountImd->nconnectors)
+//		{
+//			af.Trans(psMountImd->connectors->x, -psMountImd->connectors->z, -psMountImd->connectors->y);
+//			debugLen += sprintf(debugStr + debugLen, ",turret=(%d,%d,%d)", psMountImd->connectors->x,
+//			                    -psMountImd->connectors->z, -psMountImd->connectors->y);
+//		}
+//
+//		//matrix = the turret connector for the gun
+//		af.RotX(psDroid->asWeaps[weapon_slot].rot.pitch); // +ve up
+//
+//		//process the gun
+//		if (psWeaponImd && psWeaponImd->nconnectors)
+//		{
+//			unsigned int connector_num = 0;
+//
+//			// which barrel is firing if model have multiple muzzle connectors?
+//			if (psDroid->asWeaps[weapon_slot].shotsFired && (psWeaponImd->nconnectors > 1))
+//			{
+//				// shoot first, draw later - substract one shot to get correct results
+//				connector_num = (psDroid->asWeaps[weapon_slot].shotsFired - 1) % (psWeaponImd->nconnectors);
+//			}
+//
+//			barrel = Vector3i(psWeaponImd->connectors[connector_num].x,
+//			                  -psWeaponImd->connectors[connector_num].z,
+//			                  -psWeaponImd->connectors[connector_num].y);
+//			debugLen += sprintf(debugStr + debugLen, ",barrel[%u]=(%d,%d,%d)", connector_num,
+//			                    psWeaponImd->connectors[connector_num].x, -psWeaponImd->connectors[connector_num].y,
+//			                    -psWeaponImd->connectors[connector_num].z);
+//		}
+//
+//		*muzzle = (af * barrel).xzy();
+//		muzzle->z = -muzzle->z;
+//		sprintf(debugStr + debugLen, ",muzzle=(%d,%d,%d)", muzzle->x, muzzle->y, muzzle->z);
+//
+//		syncDebug("%s", debugStr);
+//	}
+//	else
+//	{
+//		*muzzle = psDroid->pos + Vector3i(0, 0, psDroid->sDisplay.imd->max.y);
+//	}
+//
+//	CHECK_DROID(psDroid);
+//
+//	return true;
+//}
 
 struct rankMap
 {
@@ -2301,32 +2301,32 @@ void droidSetName(DROID* psDroid, const char* pName)
 //	return true;
 //}
 
-// ////////////////////////////////////////////////////////////////////////////
-// returns true when at most one droid on x,y square.
-static bool oneDroidMax(UDWORD x, UDWORD y)
-{
-	UDWORD i;
-	bool bFound = false;
-	DROID* pD;
-	// check each droid list
-	for (i = 0; i < MAX_PLAYERS; i++)
-	{
-		for (pD = apsDroidLists[i]; pD; pD = pD->psNext)
-		{
-			if (map_coord(pD->pos.x) == x
-				&& map_coord(pD->pos.y) == y)
-			{
-				if (bFound)
-				{
-					return false;
-				}
-
-				bFound = true; //first droid on this square so continue
-			}
-		}
-	}
-	return true;
-}
+//// ////////////////////////////////////////////////////////////////////////////
+//// returns true when at most one droid on x,y square.
+//static bool oneDroidMax(UDWORD x, UDWORD y)
+//{
+//	UDWORD i;
+//	bool bFound = false;
+//	DROID* pD;
+//	// check each droid list
+//	for (i = 0; i < MAX_PLAYERS; i++)
+//	{
+//		for (pD = apsDroidLists[i]; pD; pD = pD->psNext)
+//		{
+//			if (map_coord(pD->pos.x) == x
+//				&& map_coord(pD->pos.y) == y)
+//			{
+//				if (bFound)
+//				{
+//					return false;
+//				}
+//
+//				bFound = true; //first droid on this square so continue
+//			}
+//		}
+//	}
+//	return true;
+//}
 
 // ////////////////////////////////////////////////////////////////////////////
 // returns true if it's a sensible place to put that droid.
@@ -3006,15 +3006,15 @@ void updateVtolAttackRun(DROID* psDroid, int weapon_slot)
 	}
 }
 
-//assign rearmPad to the VTOL
-void assignVTOLPad(DROID* psNewDroid, STRUCTURE* psReArmPad)
-{
-	ASSERT_OR_RETURN(, isVtolDroid(psNewDroid), "%s is not a VTOL droid", objInfo(psNewDroid));
-	ASSERT_OR_RETURN(, psReArmPad->type == OBJ_STRUCTURE && psReArmPad->pStructureType->type == REF_REARM_PAD,
-	                   "%s cannot rearm", objInfo(psReArmPad));
-
-	setDroidBase(psNewDroid, psReArmPad);
-}
+////assign rearmPad to the VTOL
+//void assignVTOLPad(DROID* psNewDroid, STRUCTURE* psReArmPad)
+//{
+//	ASSERT_OR_RETURN(, isVtolDroid(psNewDroid), "%s is not a VTOL droid", objInfo(psNewDroid));
+//	ASSERT_OR_RETURN(, psReArmPad->type == OBJ_STRUCTURE && psReArmPad->pStructureType->type == REF_REARM_PAD,
+//	                   "%s cannot rearm", objInfo(psReArmPad));
+//
+//	setDroidBase(psNewDroid, psReArmPad);
+//}
 
 /*compares the droid sensor type with the droid weapon type to see if the
 FIRE_SUPPORT order can be assigned*/
@@ -3106,38 +3106,38 @@ bool droidSensorDroidWeapon(const BASE_OBJECT* psObj, const DROID* psDroid)
 	return false;
 }
 
-// return whether a droid has a CB sensor on it
-bool cbSensorDroid(const DROID* psDroid)
-{
-	if (psDroid->droidType != DROID_SENSOR)
-	{
-		return false;
-	}
-	if (asSensorStats[psDroid->asBits[COMP_SENSOR]].type == VTOL_CB_SENSOR
-		|| asSensorStats[psDroid->asBits[COMP_SENSOR]].type == INDIRECT_CB_SENSOR)
-	{
-		return true;
-	}
+//// return whether a droid has a CB sensor on it
+//bool cbSensorDroid(const DROID* psDroid)
+//{
+//	if (psDroid->droidType != DROID_SENSOR)
+//	{
+//		return false;
+//	}
+//	if (asSensorStats[psDroid->asBits[COMP_SENSOR]].type == VTOL_CB_SENSOR
+//		|| asSensorStats[psDroid->asBits[COMP_SENSOR]].type == INDIRECT_CB_SENSOR)
+//	{
+//		return true;
+//	}
+//
+//	return false;
+//}
 
-	return false;
-}
-
-// return whether a droid has a standard sensor on it (standard, VTOL strike, or wide spectrum)
-bool standardSensorDroid(const DROID* psDroid)
-{
-	if (psDroid->droidType != DROID_SENSOR)
-	{
-		return false;
-	}
-	if (asSensorStats[psDroid->asBits[COMP_SENSOR]].type == VTOL_INTERCEPT_SENSOR
-		|| asSensorStats[psDroid->asBits[COMP_SENSOR]].type == STANDARD_SENSOR
-		|| asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SUPER_SENSOR)
-	{
-		return true;
-	}
-
-	return false;
-}
+//// return whether a droid has a standard sensor on it (standard, VTOL strike, or wide spectrum)
+//bool standardSensorDroid(const DROID* psDroid)
+//{
+//	if (psDroid->droidType != DROID_SENSOR)
+//	{
+//		return false;
+//	}
+//	if (asSensorStats[psDroid->asBits[COMP_SENSOR]].type == VTOL_INTERCEPT_SENSOR
+//		|| asSensorStats[psDroid->asBits[COMP_SENSOR]].type == STANDARD_SENSOR
+//		|| asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SUPER_SENSOR)
+//	{
+//		return true;
+//	}
+//
+//	return false;
+//}
 
 // ////////////////////////////////////////////////////////////////////////////
 // Give a droid from one player to another - used in Electronic Warfare and multiplayer.
@@ -3322,16 +3322,16 @@ DROID* giftSingleDroid(DROID* psD, UDWORD to, bool electronic)
 	return psD;
 }
 
-/*calculates the electronic resistance of a droid based on its experience level*/
-SWORD droidResistance(const DROID* psDroid)
-{
-	CHECK_DROID(psDroid);
-	const BODY_STATS* psStats = asBodyStats + psDroid->asBits[COMP_BODY];
-	int resistance = psDroid->experience / (65536 / MAX(1, psStats->upgrade[psDroid->player].resistance));
-	// ensure resistance is a base minimum
-	resistance = MAX(resistance, psStats->upgrade[psDroid->player].resistance);
-	return MIN(resistance, INT16_MAX);
-}
+///*calculates the electronic resistance of a droid based on its experience level*/
+//SWORD droidResistance(const DROID* psDroid)
+//{
+//	CHECK_DROID(psDroid);
+//	const BODY_STATS* psStats = asBodyStats + psDroid->asBits[COMP_BODY];
+//	int resistance = psDroid->experience / (65536 / MAX(1, psStats->upgrade[psDroid->player].resistance));
+//	// ensure resistance is a base minimum
+//	resistance = MAX(resistance, psStats->upgrade[psDroid->player].resistance);
+//	return MIN(resistance, INT16_MAX);
+//}
 
 /*this is called to check the weapon is 'allowed'. Check if VTOL, the weapon is
 direct fire. Also check numVTOLattackRuns for the weapon is not zero - return
@@ -3448,24 +3448,24 @@ bool droidAudioTrackStopped(void* psObj)
 	return true;
 }
 
-/*returns true if droid type is one of the Cyborg types*/
-bool cyborgDroid(const DROID* psDroid)
-{
-	return (psDroid->droidType == DROID_CYBORG
-		|| psDroid->droidType == DROID_CYBORG_CONSTRUCT
-		|| psDroid->droidType == DROID_CYBORG_REPAIR
-		|| psDroid->droidType == DROID_CYBORG_SUPER);
-}
+///*returns true if droid type is one of the Cyborg types*/
+//bool cyborgDroid(const DROID* psDroid)
+//{
+//	return (psDroid->droidType == DROID_CYBORG
+//		|| psDroid->droidType == DROID_CYBORG_CONSTRUCT
+//		|| psDroid->droidType == DROID_CYBORG_REPAIR
+//		|| psDroid->droidType == DROID_CYBORG_SUPER);
+//}
 
-bool isConstructionDroid(DROID const* psDroid)
-{
-	return psDroid->droidType == DROID_CONSTRUCT || psDroid->droidType == DROID_CYBORG_CONSTRUCT;
-}
-
-bool isConstructionDroid(BASE_OBJECT const* psObject)
-{
-	return isDroid(psObject) && isConstructionDroid(castDroid(psObject));
-}
+//bool isConstructionDroid(DROID const* psDroid)
+//{
+//	return psDroid->droidType == DROID_CONSTRUCT || psDroid->droidType == DROID_CYBORG_CONSTRUCT;
+//}
+//
+//bool isConstructionDroid(BASE_OBJECT const* psObject)
+//{
+//	return isDroid(psObject) && isConstructionDroid(castDroid(psObject));
+//}
 
 bool droidOnMap(const DROID* psDroid)
 {

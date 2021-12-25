@@ -101,3 +101,8 @@ const iIMDShape& Weapon::get_mount_graphic() const
 {
 	return *stats->mount_graphic;
 }
+
+void Weapon::use_ammo()
+{
+  ++ammo_used;
+}

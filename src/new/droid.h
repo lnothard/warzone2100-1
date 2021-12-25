@@ -18,6 +18,7 @@ static constexpr auto MAX_COMPONENTS = COMPONENT_TYPE::COUNT - 1;
 static constexpr auto ALLIANCE_FORMED = 3;
 static constexpr auto ALLIANCE_BROKEN = 0;
 static constexpr auto VTOL_ATTACK_LENGTH = 1000;
+static constexpr auto TOO_NEAR_EDGE = 3;
 
 extern PlayerMask satellite_uplink_bits;
 extern std::array<PlayerMask, MAX_PLAYER_SLOTS> alliance_bits;
@@ -135,6 +136,8 @@ public:
   void set_direct_route(int target_x, int target_y) const;
   void increment_kills() noexcept;
   void increment_commander_kills() const;
+  void assign_vtol_to_rearm_pad(Rearm_Pad* rearm_pad);
+  [[nodiscard]] int calculate_electronic_resistance() const;
 private:
 	using enum ACTION;
 	using enum DROID_TYPE;

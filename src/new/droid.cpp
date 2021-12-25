@@ -7,6 +7,7 @@
 #include "droid.h"
 #include "movement.h"
 #include "multiplayer.h"
+#include "pathfinding.h"
 #include "projectile.h"
 
 Droid::Droid(unsigned id, unsigned player)
@@ -47,19 +48,20 @@ bool Droid::is_commander() const noexcept
 
 bool Droid::is_VTOL() const
 {
-	if (!propulsion) return false;
-	using enum PROPULSION_TYPE;
+	if (!propulsion)
+    return false;
 
+	using enum PROPULSION_TYPE;
 	return !is_transporter() && propulsion->propulsion_type == LIFT;
 }
 
 bool Droid::is_flying() const
 {
-	if (!propulsion) return false;
-	using enum PROPULSION_TYPE;
+	if (!propulsion)
+    return false;
 
 	return (!movement->is_inactive() || is_transporter()) &&
-		propulsion->propulsion_type == LIFT;
+		propulsion->propulsion_type == PROPULSION_TYPE::LIFT;
 }
 
 bool Droid::is_transporter() const
@@ -117,15 +119,40 @@ bool Droid::has_commander() const
 
 bool Droid::has_electronic_weapon() const
 {
-	if (Impl::has_electronic_weapon(*this)) return true;
-	if (type != COMMAND) return false;
+	if (Impl::has_electronic_weapon(*this))
+    return true;
+
+	if (type != COMMAND)
+    return false;
 
 	return group->has_electronic_weapon();
 }
 
+bool Droid::has_standard_sensor() const
+{
+  if (type != SENSOR)
+    return false;
+
+  if (sensor->type == SENSOR_TYPE::VTOL_INTERCEPT ||
+      sensor->type == SENSOR_TYPE::STANDARD ||
+      sensor->type == SENSOR_TYPE::SUPER)
+  {
+    return true;
+  }
+  return false;
+}
+
 bool Droid::has_CB_sensor() const
 {
-	if (type != SENSOR) return false;
+	if (type != SENSOR)
+    return false;
+
+  if (sensor->type == SENSOR_TYPE::VTOL_CB ||
+      sensor->type == SENSOR_TYPE::INDIRECT_CB)
+  {
+    return true;
+  }
+  return false;
 }
 
 void Droid::gain_experience(unsigned exp)
@@ -145,10 +172,12 @@ bool Droid::is_rearming() const
 	if (!is_VTOL() || type != WEAPON) return false;
 
 	if (action == MOVE_TO_REARM ||
-		action == WAIT_FOR_REARM ||
-		action == MOVE_TO_REARM_POINT ||
-		action == WAIT_DURING_REARM)
-		return true;
+      action == WAIT_FOR_REARM ||
+	  	action == MOVE_TO_REARM_POINT ||
+	  	action == WAIT_DURING_REARM)
+  {
+    return true;
+  }
 
 	return false;
 }
@@ -161,7 +190,9 @@ bool Droid::is_attacking() const noexcept
 	if (action == ATTACK || action == MOVE_TO_ATTACK ||
 		action == ROTATE_TO_ATTACK || action == VTOL_ATTACK ||
 		action == MOVE_FIRE)
-		return true;
+  {
+    return true;
+  }
 
 	return false;
 }
@@ -411,6 +442,19 @@ void Droid::set_direct_route(int target_x, int target_y) const
   movement->set_path_vars(target_x, target_y);
 }
 
+void Droid::assign_vtol_to_rearm_pad(Rearm_Pad* rearm_pad)
+{
+  associated_structure = rearm_pad;
+}
+
+int Droid::calculate_electronic_resistance() const
+{
+  auto resistance = experience /
+       (65536 / MAX(1, body->upgraded[get_player()].resistance));
+  resistance = MAX(resistance, body->upgraded[get_player()].resistance);
+  return MIN(resistance, INT16_MAX);
+}
+
 bool transporter_is_flying(const Droid& transporter)
 {
   assert(transporter.is_transporter());
@@ -640,6 +684,18 @@ void add_VTOL_attack_run(const Droid& droid)
   }
 }
 
+void update_vtol_attack_runs(Droid& droid, int weapon_slot)
+{
+  if (!droid.is_VTOL() || num_weapons(droid) == 0)
+    return;
+
+  auto& weapon = droid.get_weapons()[weapon_slot];
+  if (weapon.get_stats().max_VTOL_attack_runs == 0)
+    return;
+
+  weapon.use_ammo();
+}
+
 const Rearm_Pad* find_nearest_rearm_pad(const Droid& droid)
 {
   const auto& structures = structure_lists[droid.get_player()];
@@ -663,4 +719,18 @@ const Rearm_Pad* find_nearest_rearm_pad(const Droid& droid)
     }
   });
   return nearest;
+}
+
+bool valid_position_for_droid(int x, int y, PROPULSION_TYPE propulsion)
+{
+   if (x < TOO_NEAR_EDGE || x > map_width - TOO_NEAR_EDGE ||
+       y < TOO_NEAR_EDGE || y > map_height - TOO_NEAR_EDGE)
+   {
+     return false;
+   }
+
+   if (is_tile_blocking(x, y, propulsion))
+     return false;
+
+   return true;
 }
