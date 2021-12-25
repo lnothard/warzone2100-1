@@ -95,20 +95,20 @@ bool allocPlayerPower()
 	return true;
 }
 
-/*clear the playerPower */
-void clearPlayerPower()
-{
-	for (unsigned player = 0; player < MAX_PLAYERS; player++)
-	{
-		asPower[player].currentPower = 0;
-		asPower[player].extractedPower = 0;
-		asPower[player].wastedPower = 0;
-		asPower[player].powerModifier = 100;
-		asPower[player].powerQueue.clear();
-		asPower[player].maxStorage = MAX_POWER * FP_ONE;
-		asPower[player].powerGeneratedLastUpdate = 0;
-	}
-}
+///*clear the playerPower */
+//void clearPlayerPower()
+//{
+//	for (unsigned player = 0; player < MAX_PLAYERS; player++)
+//	{
+//		asPower[player].currentPower = 0;
+//		asPower[player].extractedPower = 0;
+//		asPower[player].wastedPower = 0;
+//		asPower[player].powerModifier = 100;
+//		asPower[player].powerQueue.clear();
+//		asPower[player].maxStorage = MAX_POWER * FP_ONE;
+//		asPower[player].powerGeneratedLastUpdate = 0;
+//	}
+//}
 
 ///// Returns true iff the power is available. New requests replace old ones (without losing the position in the queue).
 //static bool addPowerRequest(unsigned player, unsigned id, int64_t amount)
@@ -185,17 +185,17 @@ static int64_t getPreciseQueuedPower(unsigned player)
 	return requiredPower;
 }
 
-int getQueuedPower(int player)
-{
-	PlayerPower const* p = &asPower[player];
-
-	int64_t requiredPower = 0;
-	for (size_t n = 0; n < p->powerQueue.size(); ++n)
-	{
-		requiredPower += p->powerQueue[n].amount;
-	}
-	return requiredPower / FP_ONE;
-}
+//int getQueuedPower(int player)
+//{
+//	PlayerPower const* p = &asPower[player];
+//
+//	int64_t requiredPower = 0;
+//	for (size_t n = 0; n < p->powerQueue.size(); ++n)
+//	{
+//		requiredPower += p->powerQueue[n].amount;
+//	}
+//	return requiredPower / FP_ONE;
+//}
 
 static void syncDebugEconomy(unsigned player, char ch)
 {
@@ -230,26 +230,26 @@ void powerCalc(bool on)
 }
 
 /** Each Resource Extractor yields EXTRACT_POINTS per second FOREVER */
-static int64_t updateExtractedPower(STRUCTURE* psBuilding)
-{
-	RES_EXTRACTOR* pResExtractor;
-	int64_t extractedPoints;
-
-	pResExtractor = (RES_EXTRACTOR*)psBuilding->pFunctionality;
-	extractedPoints = 0;
-
-	//only extracts points whilst its active ie associated with a power gen
-	//and has got some power to extract
-	if (pResExtractor->psPowerGen != nullptr)
-	{
-		// include modifier as a %
-		extractedPoints = asPower[psBuilding->player].powerModifier * EXTRACT_POINTS * FP_ONE / (100 *
-			GAME_UPDATES_PER_SEC);
-		syncDebug("updateExtractedPower%d = %" PRId64"", psBuilding->player, extractedPoints);
-	}
-	ASSERT(extractedPoints >= 0, "extracted negative amount of power");
-	return extractedPoints;
-}
+//static int64_t updateExtractedPower(STRUCTURE* psBuilding)
+//{
+//	RES_EXTRACTOR* pResExtractor;
+//	int64_t extractedPoints;
+//
+//	pResExtractor = (RES_EXTRACTOR*)psBuilding->pFunctionality;
+//	extractedPoints = 0;
+//
+//	//only extracts points whilst its active ie associated with a power gen
+//	//and has got some power to extract
+//	if (pResExtractor->psPowerGen != nullptr)
+//	{
+//		// include modifier as a %
+//		extractedPoints = asPower[psBuilding->player].powerModifier * EXTRACT_POINTS * FP_ONE / (100 *
+//			GAME_UPDATES_PER_SEC);
+//		syncDebug("updateExtractedPower%d = %" PRId64"", psBuilding->player, extractedPoints);
+//	}
+//	ASSERT(extractedPoints >= 0, "extracted negative amount of power");
+//	return extractedPoints;
+//}
 
 //returns the relevant list based on OffWorld or OnWorld
 STRUCTURE* powerStructList(int player)

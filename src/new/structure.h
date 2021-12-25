@@ -248,12 +248,17 @@ private:
 
 class Power_Generator : public virtual Structure, public Impl::Structure
 {
+public:
+    void update_current_power();
 private:
 	std::vector<Structure*> associated_resource_extractors;
 };
 
 class Resource_Extractor : public virtual Structure, public Impl::Structure
 {
+public:
+    int get_extracted_power() const;
+private:
 	Structure* owning_power_generator;
 };
 

@@ -11,6 +11,7 @@
 #include "structure.h"
 
 static constexpr auto MAX_POWER = 1'000'000;
+static constexpr auto EXTRACT_POINTS = 1;
 
 struct Power_Request
 {
@@ -38,6 +39,8 @@ std::array<Player_Power, MAX_PLAYERS> power_list;
 // return true iff requested power is available
 bool add_power_request(unsigned player, unsigned requester_id, int amount);
 void remove_power_request(const Structure& structure);
+void reset_power();
+int get_queued_power(unsigned player);
 
 inline void use_power(unsigned player, int amount)
 {

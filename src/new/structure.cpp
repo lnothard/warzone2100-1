@@ -3,6 +3,7 @@
 //
 
 #include "map.h"
+#include "power.h"
 #include "structure.h"
 
 namespace Impl
@@ -353,6 +354,25 @@ void Factory::decrement_production_loops()
   else
   {
     --production_loops;
+  }
+}
+
+int Resource_Extractor::get_extracted_power() const
+{
+  if (!owning_power_generator)
+    return 0;
+
+  return power_list[get_player()].modifier * EXTRACT_POINTS /
+         (100 * GAME_UPDATES_PER_SEC);
+}
+
+void Power_Generator::update_current_power()
+{
+  auto extracted_power = 0;
+  for (auto extractor : associated_resource_extractors)
+  {
+    if (!extractor) return;
+
   }
 }
 
