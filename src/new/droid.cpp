@@ -729,7 +729,7 @@ bool valid_position_for_droid(int x, int y, PROPULSION_TYPE propulsion)
      return false;
    }
 
-   if (is_tile_blocking(x, y, propulsion))
+   if (is_droid_blocked_by_tile(x, y, propulsion))
      return false;
 
    return true;

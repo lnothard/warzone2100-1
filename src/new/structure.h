@@ -100,7 +100,7 @@ struct Flag_Position : public Object_Position
 
 struct Structure_Stats
 {
-	Vector2i size(unsigned direction) const;
+	[[nodiscard]] Vector2i size(unsigned direction) const;
 
 	using enum STRUCTURE_TYPE;
 

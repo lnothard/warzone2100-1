@@ -6,10 +6,21 @@
 #include "power.h"
 #include "structure.h"
 
-namespace Impl
+Vector2i Structure_Stats::size(unsigned direction) const
 {
-	Structure::Structure(unsigned id, unsigned player)
-		: Unit(id, player)
+  Vector2i size(base_width, base_breadth);
+  if ((snapDirection(direction) & 0x4000) != 0)
+    // if building is rotated left or right by 90°, swap width and height
+  {
+    std::swap(size.x, size.y);
+  }
+  return size;
+}
+
+namespace Impl {
+
+  Structure::Structure(unsigned id, unsigned player)
+  : Unit(id, player)
 	{
 	}
 

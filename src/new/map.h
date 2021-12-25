@@ -115,14 +115,8 @@ constexpr void set_tile_height(int x, int y, int height)
 /** Return a pointer to the tile structure at x,y in map coordinates */
 constexpr Tile* get_map_tile(int x, int y)
 {
-	// Clamp x and y values to actual ones
-	// Give one tile worth of leeway before asserting, for units/transporters coming in from off-map.
-	ASSERT(x >= -1, "mapTile: x value is too small (%d,%d) in %dx%d", x, y, map_width, map_height);
-	ASSERT(y >= -1, "mapTile: y value is too small (%d,%d) in %dx%d", x, y, map_width, map_height);
 	x = MAX(x, 0);
 	y = MAX(y, 0);
-	ASSERT(x < map_width + 1, "mapTile: x value is too big (%d,%d) in %dx%d", x, y, map_width, map_height);
-	ASSERT(y < map_height + 1, "mapTile: y value is too big (%d,%d) in %dx%d", x, y, map_width, map_height);
 	x = MIN(x, map_width - 1);
 	y = MIN(y, map_height - 1);
 
@@ -138,7 +132,7 @@ constexpr Tile* get_map_tile(int x, int y)
 [[nodiscard]] constexpr bool is_coord_on_map(int x, int y)
 {
 	return (x >= 0) && (x < map_width << TILE_SHIFT) &&
-		(y >= 0) && (y < map_height << TILE_SHIFT);
+		     (y >= 0) && (y < map_height << TILE_SHIFT);
 }
 
 [[nodiscard]] constexpr bool is_coord_on_map(Vector2i& position)
