@@ -33,10 +33,10 @@ namespace Impl
 		if (num_weapons(*this) == 0) return;
 		auto& weapon = weapons[weapon_slot];
 
-		auto turret_rotation = gameTimeAdjustedIncrement(DEG(TURRET_ROTATION_RATE));
+		const auto turret_rotation = gameTimeAdjustedIncrement(DEG(TURRET_ROTATION_RATE));
 		auto weapon_rotation = weapon.get_rotation().direction;
 		auto weapon_pitch = weapon.get_rotation().pitch;
-		auto nearest_right_angle = (weapon_rotation + DEG(45)) / DEG(90) * DEG(90);
+		const auto nearest_right_angle = (weapon_rotation + DEG(45)) / DEG(90) * DEG(90);
 
 		weapon_rotation += clip(angleDelta(nearest_right_angle - weapon_rotation), -turret_rotation / 2,
 		                        turret_rotation / 2);
@@ -65,13 +65,13 @@ bool has_artillery(const Unit& unit) noexcept
 Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot)
 {
 	auto& imd_shape = unit.get_IMD_shape();
-	auto position = unit.get_position();
+	const auto position = unit.get_position();
 	auto muzzle = Vector3i{0, 0, 0};
 
 	if (imd_shape.nconnectors)
 	{
 		Affine3F af;
-		auto rotation = unit.get_rotation();
+		const auto rotation = unit.get_rotation();
 		af.Trans(position.x, -position.z, position.y);
 		af.RotY(rotation.direction);
 		af.RotX(rotation.pitch);
@@ -168,10 +168,6 @@ void check_angle(int64_t& angle_tan, int start_coord, int height, int square_dis
 	angle_tan = std::max(angle_tan, current_angle);
 }
 
-/**
- * Check fire line from psViewer to psTarget
- * psTarget can be any type of BASE_OBJECT (e.g. a tree).
- */
 int calculate_line_of_fire(const Unit& unit, const ::Simple_Object& target, int weapon_slot, bool walls_block,
                            bool is_direct)
 {
@@ -282,7 +278,7 @@ int calculate_line_of_fire(const Unit& unit, const ::Simple_Object& target, int 
 bool has_electronic_weapon(const Unit& unit) noexcept
 {
 	auto& weapons = unit.get_weapons();
-	if (weapons.size() == 0) return false;
+	if (weapons.empty()) return false;
 
 	return std::any_of(weapons.begin(), weapons.end(), [](const auto& weapon)
 	{
@@ -292,7 +288,7 @@ bool has_electronic_weapon(const Unit& unit) noexcept
 
 bool target_in_line_of_fire(const Unit& unit, const ::Unit& target, int weapon_slot)
 {
-	auto distance = iHypot((target.get_position() - unit.get_position()).xy());
+	const auto distance = iHypot((target.get_position() - unit.get_position()).xy());
 	auto range = unit.get_weapons()[weapon_slot].get_max_range(unit.get_player());
 	if (!has_artillery(unit))
 	{
@@ -313,7 +309,6 @@ unsigned num_weapons(const Unit& unit)
 {
 	return static_cast<unsigned>(unit.get_weapons().size());
 }
-
 
 unsigned get_max_weapon_range(const Unit& unit)
 {

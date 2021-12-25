@@ -2,7 +2,7 @@
 // Created by luna on 09/12/2021.
 //
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "weapon.h"
 

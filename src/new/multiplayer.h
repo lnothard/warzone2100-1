@@ -6,5 +6,6 @@
 #define WARZONE2100_MULTIPLAYER_H
 
 extern bool is_multiplayer;
+extern bool multi_messages_enabled;
 
 #endif //WARZONE2100_MULTIPLAYER_H
