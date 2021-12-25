@@ -270,9 +270,20 @@ const iIMDShape& Droid::get_IMD_shape() const
 	return *body->imd_shape;
 }
 
-void Droid::move_to_rearming_pad()
+void Droid::move_to_rearm_pad()
 {
-	if (!is_VTOL() || is_rearming()) return;
+	if (!is_VTOL() || is_rearming())
+    return;
+
+  auto* rearm_pad = find_nearest_rearm_pad(*this);
+  if (rearm_pad)
+  {
+    // give rearm order
+  }
+  else
+  {
+    // give return to base order
+  }
 }
 
 void Droid::cancel_build()
@@ -627,4 +638,29 @@ void add_VTOL_attack_run(const Droid& droid)
   {
     move_droid_direct(droid, destination);
   }
+}
+
+const Rearm_Pad* find_nearest_rearm_pad(const Droid& droid)
+{
+  const auto& structures = structure_lists[droid.get_player()];
+  const Rearm_Pad* nearest = nullptr;
+  auto shortest_distance = INT32_MAX;
+
+  std::for_each(structures.begin(), structures.end(), [&](const auto& structure)
+  {
+    auto rearm_pad = dynamic_cast<const Rearm_Pad*>(structure.get());
+    if (!rearm_pad)
+      return;
+
+    if (!rearm_pad->is_clear())
+      return;
+
+    const auto distance = object_position_square_diff(droid.get_position(), rearm_pad->get_position());
+    if (distance < shortest_distance)
+    {
+      shortest_distance = distance;
+      nearest = rearm_pad;
+    }
+  });
+  return nearest;
 }

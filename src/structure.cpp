@@ -6753,69 +6753,69 @@ bool structSensorDroidWeapon(const STRUCTURE* psStruct, const DROID* psDroid)
 //}
 
 
-// return the nearest rearm pad
-// psTarget can be NULL
-STRUCTURE* findNearestReArmPad(DROID* psDroid, STRUCTURE* psTarget, bool bClear)
-{
-	STRUCTURE *psNearest, *psTotallyClear;
-	SDWORD xdiff, ydiff, mindist, currdist, totallyDist;
-	SDWORD cx, cy;
-
-	ASSERT_OR_RETURN(nullptr, psDroid != nullptr, "No droid was passed.");
-
-	if (psTarget != nullptr)
-	{
-		if (!vtolOnRearmPad(psTarget, psDroid))
-		{
-			return psTarget;
-		}
-		cx = (SDWORD)psTarget->pos.x;
-		cy = (SDWORD)psTarget->pos.y;
-	}
-	else
-	{
-		cx = (SDWORD)psDroid->pos.x;
-		cy = (SDWORD)psDroid->pos.y;
-	}
-	mindist = SDWORD_MAX;
-	totallyDist = SDWORD_MAX;
-	psNearest = nullptr;
-	psTotallyClear = nullptr;
-	for (STRUCTURE* psStruct = apsStructLists[psDroid->player]; psStruct; psStruct = psStruct->psNext)
-	{
-		if (psStruct->pStructureType->type == REF_REARM_PAD && (!bClear || clearRearmPad(psStruct)))
-		{
-			xdiff = (SDWORD)psStruct->pos.x - cx;
-			ydiff = (SDWORD)psStruct->pos.y - cy;
-			currdist = xdiff * xdiff + ydiff * ydiff;
-			if (bClear && !vtolOnRearmPad(psStruct, psDroid))
-			{
-				if (currdist < totallyDist)
-				{
-					totallyDist = currdist;
-					psTotallyClear = psStruct;
-				}
-			}
-			else
-			{
-				if (currdist < mindist)
-				{
-					mindist = currdist;
-					psNearest = psStruct;
-				}
-			}
-		}
-	}
-	if (bClear && (psTotallyClear != nullptr))
-	{
-		psNearest = psTotallyClear;
-	}
-	if (!psNearest)
-	{
-		objTrace(psDroid->id, "Failed to find a landing spot (%s)!", bClear ? "req clear" : "any");
-	}
-	return psNearest;
-}
+//// return the nearest rearm pad
+//// psTarget can be NULL
+//STRUCTURE* findNearestReArmPad(DROID* psDroid, STRUCTURE* psTarget, bool bClear)
+//{
+//	STRUCTURE *psNearest, *psTotallyClear;
+//	SDWORD xdiff, ydiff, mindist, currdist, totallyDist;
+//	SDWORD cx, cy;
+//
+//	ASSERT_OR_RETURN(nullptr, psDroid != nullptr, "No droid was passed.");
+//
+//	if (psTarget != nullptr)
+//	{
+//		if (!vtolOnRearmPad(psTarget, psDroid))
+//		{
+//			return psTarget;
+//		}
+//		cx = (SDWORD)psTarget->pos.x;
+//		cy = (SDWORD)psTarget->pos.y;
+//	}
+//	else
+//	{
+//		cx = (SDWORD)psDroid->pos.x;
+//		cy = (SDWORD)psDroid->pos.y;
+//	}
+//	mindist = SDWORD_MAX;
+//	totallyDist = SDWORD_MAX;
+//	psNearest = nullptr;
+//	psTotallyClear = nullptr;
+//	for (STRUCTURE* psStruct = apsStructLists[psDroid->player]; psStruct; psStruct = psStruct->psNext)
+//	{
+//		if (psStruct->pStructureType->type == REF_REARM_PAD && (!bClear || clearRearmPad(psStruct)))
+//		{
+//			xdiff = (SDWORD)psStruct->pos.x - cx;
+//			ydiff = (SDWORD)psStruct->pos.y - cy;
+//			currdist = xdiff * xdiff + ydiff * ydiff;
+//			if (bClear && !vtolOnRearmPad(psStruct, psDroid))
+//			{
+//				if (currdist < totallyDist)
+//				{
+//					totallyDist = currdist;
+//					psTotallyClear = psStruct;
+//				}
+//			}
+//			else
+//			{
+//				if (currdist < mindist)
+//				{
+//					mindist = currdist;
+//					psNearest = psStruct;
+//				}
+//			}
+//		}
+//	}
+//	if (bClear && (psTotallyClear != nullptr))
+//	{
+//		psNearest = psTotallyClear;
+//	}
+//	if (!psNearest)
+//	{
+//		objTrace(psDroid->id, "Failed to find a landing spot (%s)!", bClear ? "req clear" : "any");
+//	}
+//	return psNearest;
+//}
 
 
 // clear a rearm pad for a droid to land on it

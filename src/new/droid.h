@@ -115,7 +115,7 @@ public:
 	[[nodiscard]] bool has_electronic_weapon() const;
 	void gain_experience(unsigned exp);
 	void commander_gain_experience(unsigned exp) const;
-	void move_to_rearming_pad();
+	void move_to_rearm_pad();
 	void cancel_build();
 	void reset_action() noexcept;
 	void update_expected_damage(unsigned damage, bool is_direct) noexcept;
@@ -187,6 +187,7 @@ private:
                                               int weapon_slot);
 long get_commander_index(const Droid& commander);
 void add_VTOL_attack_run(Droid& droid);
+const Rearm_Pad* find_nearest_rearm_pad(const Droid& droid);
 
 [[nodiscard]] constexpr bool tile_occupied_by_droid(unsigned x, unsigned y)
 {
