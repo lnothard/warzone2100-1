@@ -153,7 +153,6 @@ private:
 	std::optional<Sensor_Stats> sensor;
 	std::optional<ECM_Stats> ecm;
   unsigned secondary_order;
-  unsigned pending_secondary_order;
 	unsigned weight{0};
 	unsigned base_speed{0};
 	unsigned original_hp{0};
@@ -180,6 +179,9 @@ private:
 [[nodiscard]] uint8_t is_target_visible(const Droid& droid,
                                         const Simple_Object* target,
                                         bool walls_block);
+[[nodiscard]] bool action_target_inside_minimum_weapon_range(const Droid& droid,
+                                              const Unit& target,
+                                              int weapon_slot);
 [[nodiscard]] bool target_within_weapon_range(const Droid& droid,
                                               const Unit& target,
                                               int weapon_slot);

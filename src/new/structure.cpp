@@ -111,7 +111,7 @@ namespace Impl
 		return *stats->base_imd;
 	}
 
-	int Structure::get_foundation_depth() const noexcept
+	float Structure::get_foundation_depth() const noexcept
 	{
 		return foundation_depth;
 	}
@@ -146,7 +146,7 @@ namespace Impl
 		return std::max(std::min(open_height, height - minimum), 0);
 	}
 
-	void Structure::set_foundation_depth(int depth) noexcept
+	void Structure::set_foundation_depth(float depth) noexcept
 	{
 		foundation_depth = depth;
 	}
@@ -304,7 +304,7 @@ namespace Impl
 			auto minH = std::min({h1, h2, h3, h4});
 			auto maxH = std::max({h1, h2, h3, h4});
 			structure.set_height(std::max(structure.get_position().z, maxH));
-			structure.set_foundation_depth(std::min<int>(structure.get_foundation_depth(), minH));
+			structure.set_foundation_depth(std::min<float>(structure.get_foundation_depth(), minH));
 		}
 	}
 
@@ -313,7 +313,7 @@ namespace Impl
 		if (num_weapons(structure) == 0) return false;
 
 		auto& weapon = structure.get_weapons()[weapon_slot];
-		const auto max_range = weapon.get_max_range(structure.get_player());
+		auto max_range = weapon.get_max_range(structure.get_player());
 
 		return object_position_square_diff(structure.get_position(), target.get_position()) < max_range * max_range &&
 			target_in_line_of_fire(structure, target, weapon_slot);
@@ -380,7 +380,7 @@ const Structure* find_repair_facility(unsigned player)
 {
   const auto& structures = structure_lists[player];
 
-  const auto it = std::find_if(structures.begin(), structures.end(), [](const auto& structure)
+  auto it = std::find_if(structures.begin(), structures.end(), [](const auto& structure)
   {
     return dynamic_cast<const Repair_Facility*>(structure);
   });
