@@ -111,7 +111,7 @@ namespace Impl
 		return *stats->base_imd;
 	}
 
-	float Structure::get_foundation_depth() const noexcept
+	int Structure::get_foundation_depth() const noexcept
 	{
 		return foundation_depth;
 	}
@@ -126,7 +126,7 @@ namespace Impl
 	{
 		if (stats->type != GATE) return 0;
 
-		auto height = get_display_data().imd_shape->max.y;
+		const auto height = get_display_data().imd_shape->max.y;
 		int open_height;
 		switch (animation_state)
 		{
@@ -146,7 +146,7 @@ namespace Impl
 		return std::max(std::min(open_height, height - minimum), 0);
 	}
 
-	void Structure::set_foundation_depth(float depth) noexcept
+	void Structure::set_foundation_depth(int depth) noexcept
 	{
 		foundation_depth = depth;
 	}
@@ -158,8 +158,7 @@ namespace Impl
 
   unsigned Structure::calculate_refunded_power() const
   {
-    auto power = stats->power_to_build;
-    return power / 2;
+    return stats->power_to_build / 2;
   }
 
 	unsigned count_assigned_droids(const Structure& structure)
@@ -211,9 +210,9 @@ namespace Impl
 
 	void adjust_tile_height(const Structure& structure, int new_height)
 	{
-		auto bounds = get_bounds(structure);
-		auto x_max = bounds.size_in_coords.x;
-		auto y_max = bounds.size_in_coords.y;
+		const auto bounds = get_bounds(structure);
+		const auto x_max = bounds.size_in_coords.x;
+		const auto y_max = bounds.size_in_coords.y;
 
 		auto coords = bounds.top_left_coords;
 
@@ -234,18 +233,18 @@ namespace Impl
 	int calculate_height(const Structure& structure)
 	{
 		auto& imd = structure.get_IMD_shape();
-		auto height = imd.max.y + imd.min.y;
+		const auto height = imd.max.y + imd.min.y;
 		return height - structure.calculate_gate_height(gameTime, 2);
 		// Treat gate as at least 2 units tall, even if open, so that it's possible to hit.
 	}
 
 	int calculate_foundation_height(const Structure& structure)
 	{
-		auto bounds = get_bounds(structure);
+		const auto bounds = get_bounds(structure);
 		auto foundation_min = INT32_MIN;
 		auto foundation_max = INT32_MAX;
-		auto x_max = bounds.size_in_coords.x;
-		auto y_max = bounds.size_in_coords.y;
+		const auto x_max = bounds.size_in_coords.x;
+		const auto y_max = bounds.size_in_coords.y;
 
 		for (int breadth = 0; breadth <= y_max; ++breadth)
 		{
@@ -263,15 +262,15 @@ namespace Impl
 	{
 		if (!structure.is_pulled_to_terrain())
 		{
-			auto map_height = calculate_foundation_height(structure);
+			const auto map_height = calculate_foundation_height(structure);
 			adjust_tile_height(structure, map_height);
 			structure.set_height(map_height);
 			structure.set_foundation_depth(structure.get_position().z);
 
 			const auto& bounds = get_bounds(structure);
-			auto x_max = bounds.size_in_coords.x;
-			auto y_max = bounds.size_in_coords.y;
-			auto coords = bounds.top_left_coords;
+			const auto x_max = bounds.size_in_coords.x;
+			const auto y_max = bounds.size_in_coords.y;
+			const auto coords = bounds.top_left_coords;
 
 			for (int breadth = -1; breadth <= y_max; ++breadth)
 			{
@@ -304,7 +303,7 @@ namespace Impl
 			auto minH = std::min({h1, h2, h3, h4});
 			auto maxH = std::max({h1, h2, h3, h4});
 			structure.set_height(std::max(structure.get_position().z, maxH));
-			structure.set_foundation_depth(std::min<float>(structure.get_foundation_depth(), minH));
+			structure.set_foundation_depth(std::min<int>(structure.get_foundation_depth(), minH));
 		}
 	}
 
@@ -313,7 +312,7 @@ namespace Impl
 		if (num_weapons(structure) == 0) return false;
 
 		auto& weapon = structure.get_weapons()[weapon_slot];
-		auto max_range = weapon.get_max_range(structure.get_player());
+		const auto max_range = weapon.get_max_range(structure.get_player());
 
 		return object_position_square_diff(structure.get_position(), target.get_position()) < max_range * max_range &&
 			target_in_line_of_fire(structure, target, weapon_slot);
@@ -380,7 +379,7 @@ const Structure* find_repair_facility(unsigned player)
 {
   const auto& structures = structure_lists[player];
 
-  auto it = std::find_if(structures.begin(), structures.end(), [](const auto& structure)
+  const auto it = std::find_if(structures.begin(), structures.end(), [](const auto& structure)
   {
     return dynamic_cast<const Repair_Facility*>(structure);
   });

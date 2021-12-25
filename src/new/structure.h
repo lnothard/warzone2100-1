@@ -166,12 +166,12 @@ namespace Impl
 		[[nodiscard]] bool smoke_when_damaged() const noexcept;
 		[[nodiscard]] unsigned get_original_hp() const;
 		[[nodiscard]] Vector2i get_size() const;
-		[[nodiscard]] float get_foundation_depth() const noexcept;
+		[[nodiscard]] int get_foundation_depth() const noexcept;
 		[[nodiscard]] const iIMDShape& get_IMD_shape() const final;
 		void update_expected_damage(const int damage);
 		[[nodiscard]] unsigned calculate_sensor_range() const final;
 		[[nodiscard]] int calculate_gate_height(const std::size_t time, const int minimum) const;
-		void set_foundation_depth(float depth) noexcept;
+		void set_foundation_depth(int depth) noexcept;
 		void print_info() const override;
     [[nodiscard]] unsigned build_points_to_completion() const;
     [[nodiscard]] unsigned calculate_refunded_power() const;
@@ -189,7 +189,7 @@ namespace Impl
 		int previous_build_rate;
 		unsigned expected_damage;
 		uint8_t num_modules;
-		float foundation_depth;
+		int foundation_depth;
 		std::size_t last_state_time;
 	};
 

@@ -79,7 +79,7 @@ WEAPON_SUBCLASS Weapon::get_subclass() const
 
 unsigned Weapon::get_num_attack_runs(unsigned player) const
 {
-	auto u_stats = stats->upgraded_stats[player];
+	const auto u_stats = stats->upgraded_stats[player];
 
 	if (u_stats.reload_time > 0)
 		return u_stats.rounds_per_salvo * stats->max_VTOL_attack_runs;

@@ -100,7 +100,6 @@ bool Droid::is_damaged() const
 	return get_hp() < original_hp;
 }
 
-
 bool Droid::is_stationary() const
 {
 	return movement->is_stationary();
@@ -311,7 +310,7 @@ void Droid::update_expected_damage(unsigned damage, bool is_direct) noexcept
 
 unsigned Droid::calculate_sensor_range() const
 {
-	auto ecm_range = ecm->upgraded[get_player()].range;
+	const auto ecm_range = ecm->upgraded[get_player()].range;
 	if (ecm_range > 0) return ecm_range;
 
 	return sensor->upgraded[get_player()].range;
@@ -329,8 +328,8 @@ unsigned Droid::calculate_max_range() const
 
 int Droid::calculate_height() const
 {
-	auto& imd = body->imd_shape;
-	auto height = imd->max.y - imd->min.y;
+	const auto& imd = body->imd_shape;
+	const auto height = imd->max.y - imd->min.y;
 	auto utility_height = 0, y_max = 0, y_min = 0;
 
 	if (is_VTOL())
@@ -527,8 +526,8 @@ uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool 
 	if (droid.get_current_order().target_object->get_id() == target->get_id() && droid.has_CB_sensor())
 		return VISIBLE;
 
-	auto range = droid.calculate_sensor_range();
-	auto distance = iHypot((target_position - droid_position).xy());
+	const auto range = droid.calculate_sensor_range();
+	const auto distance = iHypot((target_position - droid_position).xy());
 
 	if (distance == 0) return VISIBLE;
 
@@ -572,61 +571,17 @@ bool action_target_inside_minimum_weapon_range(const Droid& droid, const Unit& t
 {
 	if (num_weapons(droid) == 0) return false;
 
-  auto square_diff = object_position_square_diff(droid, target);
-	auto min_range = droid.get_weapons()[weapon_slot].get_min_range(droid.get_player());
-	auto range_squared = min_range * min_range;
+  const auto square_diff = object_position_square_diff(droid, target);
+	const auto min_range = droid.get_weapons()[weapon_slot].get_min_range(droid.get_player());
+	const auto range_squared = min_range * min_range;
 
 	if (square_diff <= range_squared) return true;
 	return false;
 }
 
-bool action_target_within_weapon_range(const Droid& droid, const Unit& target, int weapon_slot, bool use_long_with_optimum)
-{
-  if (num_weapons(droid) == 0) return false;
-
-  auto& weapon = droid.get_weapons()[weapon_slot];
-  auto square_diff = object_position_square_diff(droid, target);
-  auto long_range = weapon.get_max_range(droid.get_player());
-  auto short_range = weapon.get_short_range(droid.get_player());
-
-  unsigned range_squared = 0;
-  using enum SECONDARY_STATE;
-  switch (droid.get_secondary_order() & ATTACK_RANGE_MASK)
-  {
-      case static_cast<int>(ATTACK_RANGE_OPTIMUM):
-        if (!use_long_with_optimum &&
-        weapon.get_short_range_hit_chance(droid.get_player())
-        > weapon.get_hit_chance(droid.get_player()))
-        {
-          range_squared = short_range * short_range;
-        }
-        else
-        {
-          range_squared = long_range * long_range;
-        }
-        break;
-      case static_cast<int>(ATTACK_RANGE_SHORT):
-        range_squared = short_range * short_range;
-        break;
-      case static_cast<int>(ATTACK_RANGE_LONG):
-        range_squared = long_range * long_range;
-        break;
-      default:
-        range_squared = long_range * long_range;
-  }
-  if (square_diff > range_squared) return false;
-
-  if (auto min_range = weapon.get_min_range(droid.get_player());
-      square_diff >= min_range * min_range || weapon.is_artillery())
-  {
-    return true;
-  }
-  return false;
-}
-
 bool target_within_weapon_range(const Droid& droid, const Unit& target, int weapon_slot)
 {
-	auto max_range = droid.get_weapons()[weapon_slot].get_max_range(droid.get_player());
+	const auto max_range = droid.get_weapons()[weapon_slot].get_max_range(droid.get_player());
 	return object_position_square_diff(droid, target) < max_range * max_range;
 }
 

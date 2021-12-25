@@ -32,7 +32,7 @@ bool is_tile_blocking(int x, int y, PROPULSION_TYPE propulsion, int map_index, M
     return true;
   }
 
-  auto aux = aux_tile(x, y, map_index);
+  const auto aux = aux_tile(x, y, map_index);
 
   auto aux_mask = int{0};
   switch (move_type)
@@ -48,7 +48,7 @@ bool is_tile_blocking(int x, int y, PROPULSION_TYPE propulsion, int map_index, M
       break;
   }
 
-  auto path_bits = get_path_bits_from_propulsion(propulsion);
+  const auto path_bits = get_path_bits_from_propulsion(propulsion);
   if ((path_bits & FEATURE_BLOCKED) != 0 && (aux & aux_mask) != 0)
     return true;
 

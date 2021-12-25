@@ -27,12 +27,12 @@ public:
 	Simple_Object& operator=(const Simple_Object&) = delete;
 	Simple_Object& operator=(Simple_Object&&) = delete;
 
-	virtual Spacetime spacetime() const = 0;
-	virtual const Position& get_position() const = 0;
-	virtual const Rotation& get_rotation() const = 0;
-	virtual unsigned get_player() const = 0;
-	virtual unsigned get_id() const = 0;
-	virtual Display_Data get_display_data() const = 0;
+	[[nodiscard]] virtual Spacetime spacetime() const = 0;
+	[[nodiscard]] virtual const Position& get_position() const = 0;
+	[[nodiscard]] virtual const Rotation& get_rotation() const = 0;
+	[[nodiscard]] virtual unsigned get_player() const = 0;
+	[[nodiscard]] virtual unsigned get_id() const = 0;
+	[[nodiscard]] virtual Display_Data get_display_data() const = 0;
 	virtual void set_height(int height) = 0;
 	virtual void set_rotation(Rotation new_rotation) = 0;
 };
