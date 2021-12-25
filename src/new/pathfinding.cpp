@@ -60,3 +60,8 @@ bool is_droid_blocking_tile(const Droid& droid, int x, int y, MOVE_TYPE move_typ
   assert(*droid.get_propulsion());
   return is_tile_blocking(x, y, *droid.get_propulsion().type, droid.get_player(), move_type);
 }
+
+bool is_droid_blocked_by_tile(int x, int y, PROPULSION_TYPE propulsion)
+{
+  return is_tile_blocking(x, y, propulsion, 0, MOVE_TYPE::BLOCK);
+}

@@ -267,12 +267,12 @@ bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_M
 //	return fpathBaseBlockingTile(x, y, getPropulsionStats(psDroid)->propulsionType, psDroid->player, moveType);
 //}
 
-// Check if the map tile at a location blocks a droid
-bool fpathBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion)
-{
-	return fpathBaseBlockingTile(x, y, propulsion, 0, FMT_BLOCK);
-	// with FMT_BLOCK, it is irrelevant which player is passed in
-}
+//// Check if the map tile at a location blocks a droid
+//bool fpathBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion)
+//{
+//	return fpathBaseBlockingTile(x, y, propulsion, 0, FMT_BLOCK);
+//	// with FMT_BLOCK, it is irrelevant which player is passed in
+//}
 
 
 // Returns the closest non-blocking tile to pos, or returns pos if no non-blocking tiles are present within a 2 tile distance.

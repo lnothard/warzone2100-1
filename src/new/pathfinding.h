@@ -6,6 +6,8 @@
 #define WARZONE2100_PATHFINDING_H
 
 #include "lib/framework/vector.h"
+
+#include "droid.h"
 #include "stats.h"
 
 enum class MOVE_TYPE
@@ -37,5 +39,7 @@ struct Path_Result
 
 uint8_t get_path_bits_from_propulsion(PROPULSION_TYPE propulsion);
 bool is_tile_blocking(int x, int y, PROPULSION_TYPE propulsion, int map_index, MOVE_TYPE move_type);
+bool is_droid_blocking_tile(const Droid& droid, int x, int y, MOVE_TYPE move_type);
+bool is_droid_blocked_by_tile(int x, int y, PROPULSION_TYPE propulsion);
 
 #endif //WARZONE2100_PATHFINDING_H

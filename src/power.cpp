@@ -76,10 +76,10 @@ struct PlayerPower
 
 static PlayerPower asPower[MAX_PLAYERS];
 
-void setPowerModifier(int player, int modifier)
-{
-	asPower[player].powerModifier = modifier;
-}
+//void setPowerModifier(int player, int modifier)
+//{
+//	asPower[player].powerModifier = modifier;
+//}
 
 void setPowerMaxStorage(int player, int max)
 {
@@ -110,40 +110,40 @@ void clearPlayerPower()
 	}
 }
 
-/// Returns true iff the power is available. New requests replace old ones (without losing the position in the queue).
-static bool addPowerRequest(unsigned player, unsigned id, int64_t amount)
-{
-	PlayerPower* p = &asPower[player];
+///// Returns true iff the power is available. New requests replace old ones (without losing the position in the queue).
+//static bool addPowerRequest(unsigned player, unsigned id, int64_t amount)
+//{
+//	PlayerPower* p = &asPower[player];
+//
+//	int64_t requiredPower = amount;
+//	size_t n;
+//	for (n = 0; n < p->powerQueue.size() && p->powerQueue[n].id != id; ++n)
+//	{
+//		requiredPower += p->powerQueue[n].amount;
+//	}
+//	if (n == p->powerQueue.size())
+//	{
+//		p->powerQueue.resize(n + 1);
+//		p->powerQueue[n].id = id;
+//	}
+//	p->powerQueue[n].amount = amount;
+//	return requiredPower <= p->currentPower;
+//}
 
-	int64_t requiredPower = amount;
-	size_t n;
-	for (n = 0; n < p->powerQueue.size() && p->powerQueue[n].id != id; ++n)
-	{
-		requiredPower += p->powerQueue[n].amount;
-	}
-	if (n == p->powerQueue.size())
-	{
-		p->powerQueue.resize(n + 1);
-		p->powerQueue[n].id = id;
-	}
-	p->powerQueue[n].amount = amount;
-	return requiredPower <= p->currentPower;
-}
-
-void delPowerRequest(STRUCTURE* psStruct)
-{
-	ASSERT_NOT_NULLPTR_OR_RETURN(, psStruct);
-	PlayerPower* p = &asPower[psStruct->player];
-
-	for (size_t n = 0; n < p->powerQueue.size(); ++n)
-	{
-		if (p->powerQueue[n].id == psStruct->id)
-		{
-			p->powerQueue.erase(p->powerQueue.begin() + n);
-			return;
-		}
-	}
-}
+//void delPowerRequest(STRUCTURE* psStruct)
+//{
+//	ASSERT_NOT_NULLPTR_OR_RETURN(, psStruct);
+//	PlayerPower* p = &asPower[psStruct->player];
+//
+//	for (size_t n = 0; n < p->powerQueue.size(); ++n)
+//	{
+//		if (p->powerQueue[n].id == psStruct->id)
+//		{
+//			p->powerQueue.erase(p->powerQueue.begin() + n);
+//			return;
+//		}
+//	}
+//}
 
 static int64_t checkPrecisePowerRequest(STRUCTURE* psStruct)
 {
@@ -204,24 +204,24 @@ static void syncDebugEconomy(unsigned player, char ch)
 	syncDebug("%c economy%u = %" PRId64"", ch, player, asPower[player].currentPower);
 }
 
-void usePower(int player, uint32_t quantity)
-{
-	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player (%d)", player);
-	syncDebug("usePower%d %" PRId64"-=%u", player, asPower[player].currentPower, quantity);
-	asPower[player].currentPower = MAX(0, asPower[player].currentPower - quantity * FP_ONE);
-}
-
-void addPower(int player, int32_t quantity)
-{
-	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Bad player (%d)", player);
-	syncDebug("addPower%d %" PRId64"+=%d", player, asPower[player].currentPower, quantity);
-	asPower[player].currentPower += quantity * FP_ONE;
-	if (asPower[player].currentPower > asPower[player].maxStorage)
-	{
-		asPower[player].wastedPower += asPower[player].currentPower - asPower[player].maxStorage;
-		asPower[player].currentPower = asPower[player].maxStorage;
-	}
-}
+//void usePower(int player, uint32_t quantity)
+//{
+//	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player (%d)", player);
+//	syncDebug("usePower%d %" PRId64"-=%u", player, asPower[player].currentPower, quantity);
+//	asPower[player].currentPower = MAX(0, asPower[player].currentPower - quantity * FP_ONE);
+//}
+//
+//void addPower(int player, int32_t quantity)
+//{
+//	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Bad player (%d)", player);
+//	syncDebug("addPower%d %" PRId64"+=%d", player, asPower[player].currentPower, quantity);
+//	asPower[player].currentPower += quantity * FP_ONE;
+//	if (asPower[player].currentPower > asPower[player].maxStorage)
+//	{
+//		asPower[player].wastedPower += asPower[player].currentPower - asPower[player].maxStorage;
+//		asPower[player].currentPower = asPower[player].maxStorage;
+//	}
+//}
 
 /*resets the power calc flag for all players*/
 void powerCalc(bool on)

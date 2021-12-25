@@ -475,10 +475,10 @@ bool being_repaired(const Droid& droid)
 
 unsigned get_effective_level(const Droid& droid)
 {
-	auto level = droid.get_level();
+	const auto level = droid.get_level();
 	if (!droid.has_commander()) return level;
 
-	auto cmd_level = droid.get_commander_level();
+	const auto cmd_level = droid.get_commander_level();
 	if (cmd_level > level + 1)
 		return cmd_level;
 
@@ -546,8 +546,8 @@ uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool 
 		}
 	}
 
-	bool is_tile_watched = target_tile->watchers[droid.get_player()] > 0;
-	bool is_tile_watched_by_sensors = target_tile->watching_sensors[droid.get_player()] > 0;
+	const bool is_tile_watched = target_tile->watchers[droid.get_player()] > 0;
+	const bool is_tile_watched_by_sensors = target_tile->watching_sensors[droid.get_player()] > 0;
 
 	if (is_tile_watched || is_tile_watched_by_sensors)
 	{
@@ -649,7 +649,7 @@ long get_commander_index(const Droid& commander)
 {
 	assert(commander.is_commander());
 
-	auto& droids = droid_lists[commander.get_player()];
+	const auto& droids = droid_lists[commander.get_player()];
 	return std::find_if(droids.begin(), droids.end(), [&commander](const auto& droid)
 	{
 		return droid.is_commander() && droid.get_id() == commander.get_id();
@@ -664,8 +664,8 @@ void add_VTOL_attack_run(const Droid& droid)
     target = droid.get_current_order().target_object;
     if (!target) return;
   }
-  auto delta = (target->get_position() - droid.get_position()).xy();
-  auto distance = std::max(iHypot(delta), 1);
+  const auto delta = (target->get_position() - droid.get_position()).xy();
+  const auto distance = std::max(iHypot(delta), 1);
   auto destination = target->get_position().xy() + delta * VTOL_ATTACK_LENGTH / distance;
 
   if (is_coord_on_map(destination))
