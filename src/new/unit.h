@@ -30,6 +30,7 @@ public:
 	[[nodiscard]] virtual unsigned calculate_sensor_range() const = 0;
 	[[nodiscard]] virtual const std::vector<Weapon>& get_weapons() const = 0;
 	[[nodiscard]] virtual const iIMDShape& get_IMD_shape() const = 0;
+  [[nodiscard]] virtual bool is_selected() const noexcept = 0;
   virtual void use_ammo(int weapon_slot) = 0;
 };
 
@@ -45,10 +46,12 @@ namespace Impl
 
 		[[nodiscard]] unsigned get_hp() const noexcept final;
 		[[nodiscard]] const std::vector<Weapon>& get_weapons() const final;
+    [[nodiscard]] bool is_selected() const noexcept final;
 		void align_turret(int weapon_slot);
     void use_ammo(int weapon_slot) override;
 	private:
 		unsigned hit_points{0};
+    bool selected = false;
 		std::vector<Weapon> weapons{0};
 	};
 

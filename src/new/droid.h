@@ -205,6 +205,7 @@ void add_VTOL_attack_run(Droid& droid);
 const Rearm_Pad* find_nearest_rearm_pad(const Droid& droid);
 bool valid_position_for_droid(int x, int y, PROPULSION_TYPE propulsion);
 bool vtol_can_land_here(int x, int y);
+Droid* find_nearest_droid(unsigned x, unsigned y, bool selected);
 
 [[nodiscard]] constexpr bool tile_occupied_by_droid(unsigned x, unsigned y)
 {

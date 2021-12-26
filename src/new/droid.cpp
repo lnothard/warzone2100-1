@@ -781,3 +781,26 @@ void choose_landing_position(const Droid& vtol, Vector2i position)
 {
 
 }
+
+Droid* find_nearest_droid(unsigned x, unsigned y, bool selected)
+{
+  auto& droids = droid_lists[selectedPlayer];
+  Droid* nearest_vtol = nullptr;
+  auto shortest_distance = UDWORD_MAX;
+  std::for_each(droids.begin(), droids.end(), [&](auto& droid)
+  {
+    if (droid.is_VTOL())
+      return;
+    if (selected && !droid.is_selected())
+      return;
+
+    auto distance = iHypot(droid.get_position().x - x,
+                           droid.get_position().y - y);
+    if (distance < shortest_distance)
+    {
+      shortest_distance = distance;
+      nearest_vtol = &droid;
+    }
+  });
+  return nearest_vtol;
+}

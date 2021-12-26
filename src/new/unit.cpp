@@ -49,6 +49,11 @@ namespace Impl
   {
     weapons[weapon_slot].use_ammo();
   }
+
+  bool Unit::is_selected() const noexcept
+  {
+    return selected;
+  }
 }
 
 bool has_full_ammo(const Unit& unit) noexcept
