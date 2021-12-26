@@ -51,8 +51,8 @@ bool Droid::is_VTOL() const
 	if (!propulsion)
     return false;
 
-	using enum PROPULSION_TYPE;
-	return !is_transporter() && propulsion->propulsion_type == LIFT;
+	return !is_transporter() &&
+    propulsion->propulsion_type == PROPULSION_TYPE::LIFT;
 }
 
 bool Droid::is_flying() const
@@ -580,7 +580,6 @@ void update_orientation(Droid& droid)
 unsigned count_droids_for_level(unsigned player, unsigned level)
 {
 	const auto& droids = droid_lists[player];
-
 	return std::count_if(droids.begin(), droids.end(),
 	                     [level](const auto& droid)
 	                     {
@@ -623,8 +622,8 @@ uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool 
 		}
 	}
 
-	const bool is_tile_watched = target_tile->watchers[droid.get_player()] > 0;
-	const bool is_tile_watched_by_sensors = target_tile->watching_sensors[droid.get_player()] > 0;
+	const auto is_tile_watched = target_tile->watchers[droid.get_player()] > 0;
+	const auto is_tile_watched_by_sensors = target_tile->watching_sensors[droid.get_player()] > 0;
 
 	if (is_tile_watched || is_tile_watched_by_sensors)
 	{
@@ -670,7 +669,7 @@ void initialise_ai_bits()
 		alliance_bits[i] = 0;
 		for (int j = 0; j < MAX_PLAYER_SLOTS; ++j)
 		{
-			bool valid = i == j && i < MAX_PLAYERS;
+			const bool valid = i == j && i < MAX_PLAYERS;
 			alliances[i][j] = valid ? ALLIANCE_FORMED : ALLIANCE_BROKEN;
 			alliance_bits[i] |= valid << j;
 		}
@@ -794,7 +793,7 @@ Droid* find_nearest_droid(unsigned x, unsigned y, bool selected)
     if (selected && !droid.is_selected())
       return;
 
-    auto distance = iHypot(droid.get_position().x - x,
+    const auto distance = iHypot(droid.get_position().x - x,
                            droid.get_position().y - y);
     if (distance < shortest_distance)
     {

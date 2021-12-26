@@ -51,6 +51,7 @@ struct PathNode
 
     return path_coordinate.y < rhs.path_coordinate.y;
   }
+
 	PathCoordinate path_coordinate;
 	unsigned distance_from_start;
 	unsigned estimated_distance_to_end;

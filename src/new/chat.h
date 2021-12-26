@@ -19,13 +19,13 @@ struct ChatMessage
 
     [[nodiscard]] constexpr bool is_global() const
     {
-      return !to_allies_only && recipients.empty();
+      return !allies_only && recipients.empty();
     }
 
     [[nodiscard]] constexpr bool should_receive(unsigned player) const
     {
       return is_global() || recipients.find(player) != recipients.end() ||
-             (to_allies_only && sender < MAX_PLAYERS && player < MAX_PLAYERS &&
+             (allies_only && sender < MAX_PLAYERS && player < MAX_PLAYERS &&
                      alliance_formed(sender, player));
     }
 
@@ -37,7 +37,7 @@ struct ChatMessage
     std::set<unsigned> recipients;
     unsigned sender;
     std::string message;
-    bool to_allies_only;
+    bool allies_only;
 };
 
 #endif //WARZONE2100_CHAT_H

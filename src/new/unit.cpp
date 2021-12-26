@@ -132,7 +132,7 @@ Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot)
 
 		if (weapon_imd.nconnectors)
 		{
-			auto connector_num = 0;
+			auto connector_num = unsigned{0};
 			if (weapon.get_shots_fired() && weapon_imd.nconnectors > 1)
 			{
 				connector_num = (weapon.get_shots_fired() - 1) % weapon_imd.nconnectors;

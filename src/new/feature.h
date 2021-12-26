@@ -34,7 +34,7 @@ private:
 
 [[nodiscard]] inline int calculate_height(const Feature& feature)
 {
-	auto imd = feature.get_display_data().imd_shape;
+	auto& imd = feature.get_display_data().imd_shape;
 	return imd->max.y + imd->min.y;
 }
 

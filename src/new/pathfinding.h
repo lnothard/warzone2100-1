@@ -26,14 +26,19 @@ enum class PATH_RETVAL
 
 struct Path_Job
 {
-    Vector2i destination;
-    Vector2i origin;
+    Vector2i destination{0, 0};
+    Vector2i origin{0, 0};
     MOVE_TYPE move_type;
-    unsigned player;
+    unsigned player{0};
 };
 
 struct Path_Result
 {
+    Path_Result(PATH_RETVAL retval, Movement movement)
+      : retval{retval}, movement{std::move(movement)}
+    {
+    }
+
     PATH_RETVAL retval;
     Movement movement;
 };

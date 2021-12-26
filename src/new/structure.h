@@ -184,13 +184,13 @@ namespace Impl
 		STRUCTURE_STATE state;
 		STRUCTURE_ANIMATION_STATE animation_state;
 		std::shared_ptr<Structure_Stats> stats;
-		unsigned current_build_points;
-		int build_rate;
-		int previous_build_rate;
-		unsigned expected_damage;
-		uint8_t num_modules;
-		int foundation_depth;
-		std::size_t last_state_time;
+		unsigned current_build_points{0};
+		int build_rate{0};
+		int previous_build_rate{0};
+		unsigned expected_damage{0};
+		uint8_t num_modules{0};
+		int foundation_depth{0};
+		std::size_t last_state_time{0};
 	};
 
 	[[nodiscard]] unsigned count_assigned_droids(const Structure& structure);
