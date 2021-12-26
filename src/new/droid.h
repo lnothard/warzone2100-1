@@ -138,6 +138,7 @@ public:
   void increment_commander_kills() const;
   void assign_vtol_to_rearm_pad(Rearm_Pad* rearm_pad);
   [[nodiscard]] int calculate_electronic_resistance() const;
+  [[nodiscard]] bool is_selectable() const override;
 private:
 	using enum ACTION;
 	using enum DROID_TYPE;

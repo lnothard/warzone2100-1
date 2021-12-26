@@ -41,6 +41,11 @@ namespace Impl
 		return id;
 	}
 
+  const Display_Data& Simple_Object::get_display_data() const noexcept
+  {
+    return display;
+  }
+
 	void Simple_Object::set_height(int height) noexcept
 	{
 		position.z = height;
@@ -50,4 +55,9 @@ namespace Impl
 	{
 		rotation = new_rotation;
 	}
+
+  bool Simple_Object::is_selectable() const
+  {
+    return flags.test(static_cast<std::size_t>(OBJECT_FLAG::UNSELECTABLE));
+  }
 }

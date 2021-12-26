@@ -2985,26 +2985,26 @@ UWORD getNumAttackRuns(const DROID* psDroid, int weapon_slot)
 //	return true;
 //}
 
-/*checks if the droid is a VTOL droid and updates the attack runs as required*/
-void updateVtolAttackRun(DROID* psDroid, int weapon_slot)
-{
-	if (isVtolDroid(psDroid))
-	{
-		if (psDroid->numWeaps > 0)
-		{
-			if (asWeaponStats[psDroid->asWeaps[weapon_slot].nStat].vtolAttackRuns > 0)
-			{
-				++psDroid->asWeaps[weapon_slot].usedAmmo;
-				if (psDroid->asWeaps[weapon_slot].usedAmmo == getNumAttackRuns(psDroid, weapon_slot))
-				{
-					psDroid->asWeaps[weapon_slot].ammo = 0;
-				}
-				//quick check doesn't go over limit
-				ASSERT(psDroid->asWeaps[weapon_slot].usedAmmo < UWORD_MAX, "too many attack runs");
-			}
-		}
-	}
-}
+///*checks if the droid is a VTOL droid and updates the attack runs as required*/
+//void updateVtolAttackRun(DROID* psDroid, int weapon_slot)
+//{
+//	if (isVtolDroid(psDroid))
+//	{
+//		if (psDroid->numWeaps > 0)
+//		{
+//			if (asWeaponStats[psDroid->asWeaps[weapon_slot].nStat].vtolAttackRuns > 0)
+//			{
+//				++psDroid->asWeaps[weapon_slot].usedAmmo;
+//				if (psDroid->asWeaps[weapon_slot].usedAmmo == getNumAttackRuns(psDroid, weapon_slot))
+//				{
+//					psDroid->asWeaps[weapon_slot].ammo = 0;
+//				}
+//				//quick check doesn't go over limit
+//				ASSERT(psDroid->asWeaps[weapon_slot].usedAmmo < UWORD_MAX, "too many attack runs");
+//			}
+//		}
+//	}
+//}
 
 ////assign rearmPad to the VTOL
 //void assignVTOLPad(DROID* psNewDroid, STRUCTURE* psReArmPad)
@@ -3383,22 +3383,22 @@ bool checkValidWeaponForProp(DROID_TEMPLATE* psTemplate)
 	return true;
 }
 
-// Check if a droid can be selected.
-bool isSelectable(DROID const* psDroid)
-{
-	if (psDroid->flags.test(OBJECT_FLAG_UNSELECTABLE))
-	{
-		return false;
-	}
-
-	// we shouldn't ever control the transporter in SP games
-	if (isTransporter(psDroid) && !bMultiPlayer)
-	{
-		return false;
-	}
-
-	return true;
-}
+//// Check if a droid can be selected.
+//bool isSelectable(DROID const* psDroid)
+//{
+//	if (psDroid->flags.test(OBJECT_FLAG_UNSELECTABLE))
+//	{
+//		return false;
+//	}
+//
+//	// we shouldn't ever control the transporter in SP games
+//	if (isTransporter(psDroid) && !bMultiPlayer)
+//	{
+//		return false;
+//	}
+//
+//	return true;
+//}
 
 // Select a droid and do any necessary housekeeping.
 //

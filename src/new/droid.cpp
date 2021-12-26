@@ -455,6 +455,17 @@ int Droid::calculate_electronic_resistance() const
   return MIN(resistance, INT16_MAX);
 }
 
+bool Droid::is_selectable() const
+{
+  if (!Simple_Object::is_selectable())
+    return false;
+
+  if (is_transporter() && !is_multiplayer)
+    return false;
+
+  return true;
+}
+
 bool transporter_is_flying(const Droid& transporter)
 {
   assert(transporter.is_transporter());
@@ -693,7 +704,7 @@ void update_vtol_attack_runs(Droid& droid, int weapon_slot)
   if (weapon.get_stats().max_VTOL_attack_runs == 0)
     return;
 
-  weapon.use_ammo();
+  droid.use_ammo(weapon_slot);
 }
 
 const Rearm_Pad* find_nearest_rearm_pad(const Droid& droid)

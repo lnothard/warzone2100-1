@@ -5,8 +5,19 @@
 #ifndef WARZONE2100_BASEDEF_H
 #define WARZONE2100_BASEDEF_H
 
+#include <bitset>
+
 #include "lib/framework/vector.h"
 #include "displaydef.h"
+
+enum class OBJECT_FLAG
+{
+    JAMMED_TILES,
+    TARGETED,
+    DIRTY,
+    UNSELECTABLE,
+    COUNT // MUST BE LAST
+};
 
 struct Spacetime
 {
@@ -32,9 +43,10 @@ public:
 	[[nodiscard]] virtual const Rotation& get_rotation() const = 0;
 	[[nodiscard]] virtual unsigned get_player() const = 0;
 	[[nodiscard]] virtual unsigned get_id() const = 0;
-	[[nodiscard]] virtual Display_Data get_display_data() const = 0;
+	[[nodiscard]] virtual const Display_Data& get_display_data() const = 0;
 	virtual void set_height(int height) = 0;
 	virtual void set_rotation(Rotation new_rotation) = 0;
+  [[nodiscard]] virtual bool is_selectable() const = 0;
 };
 
 namespace Impl
@@ -49,9 +61,10 @@ namespace Impl
 		[[nodiscard]] const Rotation& get_rotation() const noexcept final;
 		[[nodiscard]] unsigned get_player() const noexcept final;
 		[[nodiscard]] unsigned get_id() const noexcept final;
-		[[nodiscard]] Display_Data get_display_data() const noexcept final;
+		[[nodiscard]] const Display_Data& get_display_data() const noexcept final;
 		void set_height(int height) noexcept final;
 		void set_rotation(Rotation new_rotation) noexcept final;
+    [[nodiscard]] bool is_selectable() const override;
 	private:
 		unsigned id;
 		unsigned player;
@@ -59,6 +72,7 @@ namespace Impl
 		Position position{Position(0, 0, 0)};
 		Rotation rotation{Rotation(0, 0, 0)};
 		Display_Data display;
+    std::bitset< static_cast<std::size_t>(OBJECT_FLAG::COUNT) > flags;
 	};
 }
 
