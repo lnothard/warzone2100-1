@@ -27,12 +27,18 @@ static constexpr auto FEATURE_BLOCKED = 0x02;
 static constexpr auto WATER_BLOCKED = 0x04;
 static constexpr auto LAND_BLOCKED = 0x08;
 
+static constexpr auto BLOCKING = 0x10;
+static constexpr auto TILE_NUM_MASK = 0x01ff;
+
+static constexpr auto MAX_TILE_TEXTURES = 255;
+
 extern const int map_width, map_height;
 extern const int min_horizontal_scroll, max_horizontal_scroll,
                  min_vertical_scroll, max_vertical_scroll;
 
 extern std::array<uint8_t[], AUX_MAX> block_map;
 extern std::array<uint8_t[], MAX_PLAYERS + AUX_MAX> aux_map;
+extern terrain_types[MAX_TILE_TEXTURES];
 
 enum class TILE_SET
 {
@@ -59,6 +65,11 @@ struct Tile
 };
 
 extern std::unique_ptr<Tile[]> map_tiles;
+
+[[nodiscard]] constexpr uin8_t get_terrain_type(const Tile& tile)
+{
+  return terrain_types[tile.texture & TILE_NUM_MASK];
+}
 
 [[nodiscard]] constexpr bool tile_is_occupied(const Tile& tile)
 {

@@ -2698,24 +2698,24 @@ void moveToRearm(DROID* psDroid)
 }
 
 
-// whether a tile is suitable for a vtol to land on
-static bool vtolLandingTile(SDWORD x, SDWORD y)
-{
-	if (x < 0 || x >= (SDWORD)mapWidth || y < 0 || y >= (SDWORD)mapHeight)
-	{
-		return false;
-	}
-
-	const MAPTILE* psTile = mapTile(x, y);
-	if (psTile->tileInfoBits & BITS_FPATHBLOCK ||
-		TileIsOccupied(psTile) ||
-		terrainType(psTile) == TER_CLIFFFACE ||
-		terrainType(psTile) == TER_WATER)
-	{
-		return false;
-	}
-	return true;
-}
+//// whether a tile is suitable for a vtol to land on
+//static bool vtolLandingTile(SDWORD x, SDWORD y)
+//{
+//	if (x < 0 || x >= (SDWORD)mapWidth || y < 0 || y >= (SDWORD)mapHeight)
+//	{
+//		return false;
+//	}
+//
+//	const MAPTILE* psTile = mapTile(x, y);
+//	if (psTile->tileInfoBits & BITS_FPATHBLOCK ||
+//		TileIsOccupied(psTile) ||
+//		terrainType(psTile) == TER_CLIFFFACE ||
+//		terrainType(psTile) == TER_WATER)
+//	{
+//		return false;
+//	}
+//	return true;
+//}
 
 /**
  * Performs a space-filling spiral-like search from startX,startY up to (and

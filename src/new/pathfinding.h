@@ -35,6 +35,7 @@ struct Path_Job
 struct Path_Result
 {
     PATH_RETVAL retval;
+    Movement movement;
 };
 
 uint8_t get_path_bits_from_propulsion(PROPULSION_TYPE propulsion);

@@ -25,6 +25,9 @@ extern std::array<PlayerMask, MAX_PLAYER_SLOTS> alliance_bits;
 extern std::array<std::array<uint8_t, MAX_PLAYER_SLOTS>, MAX_PLAYER_SLOTS>
 alliances;
 
+// One droid for each player decides targets
+std::array<Droid*, MAX_PLAYERS> target_designator_list;
+
 enum class ACTION
 {
 	NONE,
@@ -192,6 +195,8 @@ private:
 long get_commander_index(const Droid& commander);
 void add_VTOL_attack_run(Droid& droid);
 const Rearm_Pad* find_nearest_rearm_pad(const Droid& droid);
+bool valid_position_for_droid(int x, int y, PROPULSION_TYPE propulsion);
+bool vtol_can_land_here(int x, int y);
 
 [[nodiscard]] constexpr bool tile_occupied_by_droid(unsigned x, unsigned y)
 {
@@ -220,8 +225,6 @@ struct Droid_Template
 	bool is_stored;
 	bool is_enabled;
 };
-
-inline bool VTOL_may_land_here(const int x, const int y);
 
 template <typename T>
 unsigned calculate_required_build_points(const T& object);

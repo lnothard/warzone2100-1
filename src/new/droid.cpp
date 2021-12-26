@@ -745,3 +745,27 @@ bool valid_position_for_droid(int x, int y, PROPULSION_TYPE propulsion)
 
    return true;
 }
+
+bool vtol_can_land_here(int x, int y)
+{
+  if (x < 0 || x >= map_width ||
+      y < 0 || y >= map_height)
+  {
+    return false;
+  }
+
+  const auto tile = get_map_tile(x, y);
+  if (tile->info_bits & BLOCKING ||
+      tile_is_occupied(*tile) ||
+      get_terrain_type(tile) == TER_CLIFFFACE ||
+      get_terrain_type(tile) == TER_WATER)
+  {
+    return false;
+  }
+  return true;
+}
+
+void choose_landing_position(const Droid& vtol, Vector2i position)
+{
+
+}
