@@ -1616,21 +1616,21 @@ int bodyPower(const BODY_STATS* psStats, int player)
 	return psStats->upgrade[player].power;
 }
 
-int bodyArmour(const BODY_STATS* psStats, int player, WEAPON_CLASS weaponClass)
-{
-	ASSERT_PLAYER_OR_RETURN(0, player);
-	switch (weaponClass)
-	{
-	case WC_KINETIC:
-		return psStats->upgrade[player].armour;
-	case WC_HEAT:
-		return psStats->upgrade[player].thermal;
-	case WC_NUM_WEAPON_CLASSES:
-		break;
-	}
-	ASSERT(false, "Unknown weapon class");
-	return 0; // Should never get here.
-}
+//int bodyArmour(const BODY_STATS* psStats, int player, WEAPON_CLASS weaponClass)
+//{
+//	ASSERT_PLAYER_OR_RETURN(0, player);
+//	switch (weaponClass)
+//	{
+//	case WC_KINETIC:
+//		return psStats->upgrade[player].armour;
+//	case WC_HEAT:
+//		return psStats->upgrade[player].thermal;
+//	case WC_NUM_WEAPON_CLASSES:
+//		break;
+//	}
+//	ASSERT(false, "Unknown weapon class");
+//	return 0; // Should never get here.
+//}
 
 //calculates the weapons ROF based on the fire pause and the salvos
 int weaponROF(const WEAPON_STATS* psStat, int player)

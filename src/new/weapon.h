@@ -147,6 +147,7 @@ public:
 	[[nodiscard]] const iIMDShape& get_IMD_shape() const;
 	[[nodiscard]] const iIMDShape& get_mount_graphic() const;
 	[[nodiscard]] WEAPON_SUBCLASS get_subclass() const;
+  [[nodiscard]] unsigned calculate_rate_of_fire(unsigned player) const;
   void use_ammo();
 private:
 	using enum ATTACKER_TYPE;

@@ -102,6 +102,13 @@ const iIMDShape& Weapon::get_mount_graphic() const
 	return *stats->mount_graphic;
 }
 
+unsigned Weapon::calculate_rate_of_fire(unsigned player) const
+{
+  const auto& wstats = stats->upgraded_stats[player];
+  return wstats.rounds_per_salvo
+          * 60 * GAME_TICKS_PER_SEC / wstats.reload_time;
+}
+
 void Weapon::use_ammo()
 {
   ++ammo_used;

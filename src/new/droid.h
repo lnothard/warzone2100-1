@@ -19,11 +19,18 @@ static constexpr auto ALLIANCE_FORMED = 3;
 static constexpr auto ALLIANCE_BROKEN = 0;
 static constexpr auto VTOL_ATTACK_LENGTH = 1000;
 static constexpr auto TOO_NEAR_EDGE = 3;
+/// maximum number of commanders per player
+static constexpr auto MAX_COMMAND_DROIDS = 5;
 
 extern PlayerMask satellite_uplink_bits;
 extern std::array<PlayerMask, MAX_PLAYER_SLOTS> alliance_bits;
 extern std::array<std::array<uint8_t, MAX_PLAYER_SLOTS>, MAX_PLAYER_SLOTS>
 alliances;
+
+constexpr bool alliance_formed(unsigned p1, unsigned p2)
+{
+  return alliances[p1][p2] == ALLIANCE_FORMED;
+}
 
 // One droid for each player decides targets
 std::array<Droid*, MAX_PLAYERS> target_designator_list;
@@ -142,6 +149,7 @@ public:
   void assign_vtol_to_rearm_pad(Rearm_Pad* rearm_pad);
   [[nodiscard]] int calculate_electronic_resistance() const;
   [[nodiscard]] bool is_selectable() const override;
+  [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
 private:
 	using enum ACTION;
 	using enum DROID_TYPE;
@@ -159,7 +167,7 @@ private:
 	std::optional<Commander_Stats> brain;
 	std::optional<Sensor_Stats> sensor;
 	std::optional<ECM_Stats> ecm;
-  unsigned secondary_order;
+  unsigned secondary_order{0};
 	unsigned weight{0};
 	unsigned base_speed{0};
 	unsigned original_hp{0};

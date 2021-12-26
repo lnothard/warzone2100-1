@@ -322,7 +322,7 @@ void Droid::cancel_build()
 	using enum ORDER_TYPE;
 
 	if (order->type == NONE || order->type == PATROL || order->type == HOLD ||
-		order->type == SCOUT || order->type == GUARD)
+      order->type == SCOUT || order->type == GUARD)
 	{
 		order->target_object = nullptr;
 		action = ACTION::NONE;
@@ -464,6 +464,18 @@ bool Droid::is_selectable() const
     return false;
 
   return true;
+}
+
+unsigned Droid::get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const
+{
+  assert(body);
+  switch (weapon_class)
+  {
+    case WEAPON_CLASS::KINETIC:
+      return body->upgraded[get_player()].armour;
+    case WEAPON_CLASS::HEAT:
+      return body->upgraded[get_player()].thermal;
+  }
 }
 
 bool transporter_is_flying(const Droid& transporter)
