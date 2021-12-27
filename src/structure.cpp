@@ -156,18 +156,18 @@ static WzString favoriteStructs;
 
 #define MAX_UNIT_MESSAGE_PAUSE 40000
 
-static void auxStructureNonblocking(STRUCTURE* psStructure)
-{
-	StructureBounds b = getStructureBounds(psStructure);
-
-	for (int i = 0; i < b.size.x; i++)
-	{
-		for (int j = 0; j < b.size.y; j++)
-		{
-			auxClearAll(b.map.x + i, b.map.y + j, AUXBITS_BLOCKING | AUXBITS_OUR_BUILDING | AUXBITS_NONPASSABLE);
-		}
-	}
-}
+//static void auxStructureNonblocking(STRUCTURE* psStructure)
+//{
+//	StructureBounds b = getStructureBounds(psStructure);
+//
+//	for (int i = 0; i < b.size.x; i++)
+//	{
+//		for (int j = 0; j < b.size.y; j++)
+//		{
+//			auxClearAll(b.map.x + i, b.map.y + j, AUXBITS_BLOCKING | AUXBITS_OUR_BUILDING | AUXBITS_NONPASSABLE);
+//		}
+//	}
+//}
 
 static void auxStructureBlocking(STRUCTURE* psStructure)
 {
@@ -183,18 +183,18 @@ static void auxStructureBlocking(STRUCTURE* psStructure)
 	}
 }
 
-static void auxStructureOpenGate(STRUCTURE* psStructure)
-{
-	StructureBounds b = getStructureBounds(psStructure);
-
-	for (int i = 0; i < b.size.x; i++)
-	{
-		for (int j = 0; j < b.size.y; j++)
-		{
-			auxClearAll(b.map.x + i, b.map.y + j, AUXBITS_BLOCKING);
-		}
-	}
-}
+//static void auxStructureOpenGate(STRUCTURE* psStructure)
+//{
+//	StructureBounds b = getStructureBounds(psStructure);
+//
+//	for (int i = 0; i < b.size.x; i++)
+//	{
+//		for (int j = 0; j < b.size.y; j++)
+//		{
+//			auxClearAll(b.map.x + i, b.map.y + j, AUXBITS_BLOCKING);
+//		}
+//	}
+//}
 
 static void auxStructureClosedGate(STRUCTURE* psStructure)
 {
@@ -210,13 +210,13 @@ static void auxStructureClosedGate(STRUCTURE* psStructure)
 	}
 }
 
-bool IsStatExpansionModule(const STRUCTURE_STATS* psStats)
-{
-	// If the stat is any of the 3 expansion types ... then return true
-	return psStats->type == REF_POWER_MODULE ||
-		psStats->type == REF_FACTORY_MODULE ||
-		psStats->type == REF_RESEARCH_MODULE;
-}
+//bool IsStatExpansionModule(const STRUCTURE_STATS* psStats)
+//{
+//	// If the stat is any of the 4 expansion types ... then return true
+//	return psStats->type == REF_POWER_MODULE ||
+//		psStats->type == REF_FACTORY_MODULE ||
+//		psStats->type == REF_RESEARCH_MODULE;
+//}
 
 //static int numStructureModules(STRUCTURE const* psStruct)
 //{

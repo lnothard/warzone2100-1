@@ -2328,28 +2328,28 @@ void droidSetName(DROID* psDroid, const char* pName)
 //	return true;
 //}
 
-// ////////////////////////////////////////////////////////////////////////////
-// returns true if it's a sensible place to put that droid.
-static bool sensiblePlace(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion)
-{
-	// not too near the edges.
-	if ((x < TOO_NEAR_EDGE) || (x > (SDWORD)(mapWidth - TOO_NEAR_EDGE)))
-	{
-		return false;
-	}
-	if ((y < TOO_NEAR_EDGE) || (y > (SDWORD)(mapHeight - TOO_NEAR_EDGE)))
-	{
-		return false;
-	}
-
-	// not on a blocking tile.
-	if (fpathBlockingTile(x, y, propulsion))
-	{
-		return false;
-	}
-
-	return true;
-}
+//// ////////////////////////////////////////////////////////////////////////////
+//// returns true if it's a sensible place to put that droid.
+//static bool sensiblePlace(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion)
+//{
+//	// not too near the edges.
+//	if ((x < TOO_NEAR_EDGE) || (x > (SDWORD)(mapWidth - TOO_NEAR_EDGE)))
+//	{
+//		return false;
+//	}
+//	if ((y < TOO_NEAR_EDGE) || (y > (SDWORD)(mapHeight - TOO_NEAR_EDGE)))
+//	{
+//		return false;
+//	}
+//
+//	// not on a blocking tile.
+//	if (fpathBlockingTile(x, y, propulsion))
+//	{
+//		return false;
+//	}
+//
+//	return true;
+//}
 
 // ------------------------------------------------------------------------------------
 // Should stop things being placed in inaccessible areas? Assume wheeled propulsion.

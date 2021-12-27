@@ -66,6 +66,14 @@ struct Tile
 
 extern std::unique_ptr<Tile[]> map_tiles;
 
+[[nodiscard]] constexpr void aux_clear(int x, int y, int state)
+{
+  for (int i = 0; i < MAX_PLAYERS; ++i)
+  {
+    aux_map[i][x + y * map_width] &= ~state;
+  }
+}
+
 [[nodiscard]] constexpr uin8_t get_terrain_type(const Tile& tile)
 {
   return terrain_types[tile.texture & TILE_NUM_MASK];

@@ -23,6 +23,7 @@ enum class PROJECTILE_STATE
 struct Projectile
 {
 	PROJECTILE_STATE state;
+  Weapon* firing_weapon;
 	Unit* source;
 	Unit* target;
 	Vector3i destination;
@@ -44,6 +45,8 @@ struct Damage
 
 [[nodiscard]] bool is_friendly_fire(const Damage& damage);
 [[nodiscard]] bool should_increase_experience(const Damage& damage);
+void update_kills(const Damage& damage);
+void set_projectile_target(Projectile& projectile, Unit& unit);
 
 [[nodiscard]] constexpr int calculate_height(const Projectile& projectile)
 {

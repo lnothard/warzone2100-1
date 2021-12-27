@@ -116,22 +116,22 @@ static void proj_checkPeriodicalDamage(PROJECTILE* psProj);
 static int32_t objectDamage(DAMAGE* psDamage);
 
 
-static inline void setProjectileDestination(PROJECTILE* psProj, BASE_OBJECT* psObj)
-{
-	bool bDirect = proj_Direct(psProj->psWStats);
-#if defined( _MSC_VER )
-#pragma warning( push )
-#pragma warning( disable : 4146 ) // warning C4146: unary minus operator applied to unsigned type, result still unsigned
-#endif
-	aiObjectAddExpectedDamage(psProj->psDest, -psProj->expectedDamageCaused, bDirect);
-	// The old target shouldn't be expecting any more damage from this projectile.
-#if defined( _MSC_VER )
-#pragma warning( pop )
-#endif
-	psProj->psDest = psObj;
-	aiObjectAddExpectedDamage(psProj->psDest, psProj->expectedDamageCaused, bDirect);
-	// Let the new target know to say its prayers.
-}
+//static inline void setProjectileDestination(PROJECTILE* psProj, BASE_OBJECT* psObj)
+//{
+//	bool bDirect = proj_Direct(psProj->psWStats);
+//#if defined( _MSC_VER )
+//#pragma warning( push )
+//#pragma warning( disable : 4146 ) // warning C4146: unary minus operator applied to unsigned type, result still unsigned
+//#endif
+//	aiObjectAddExpectedDamage(psProj->psDest, -psProj->expectedDamageCaused, bDirect);
+//	// The old target shouldn't be expecting any more damage from this projectile.
+//#if defined( _MSC_VER )
+//#pragma warning( pop )
+//#endif
+//	psProj->psDest = psObj;
+//	aiObjectAddExpectedDamage(psProj->psDest, psProj->expectedDamageCaused, bDirect);
+//	// Let the new target know to say its prayers.
+//}
 
 
 /***************************************************************************/

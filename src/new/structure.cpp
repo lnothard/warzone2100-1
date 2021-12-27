@@ -17,6 +17,13 @@ Vector2i Structure_Stats::size(unsigned direction) const
   return size;
 }
 
+bool Structure_Stats::is_expansion_module() const noexcept
+{
+  return type == POWER_MODULE ||
+         type == FACTORY_MODULE ||
+         type == RESEARCH_MODULE;
+}
+
 namespace Impl {
 
   Structure::Structure(unsigned id, unsigned player)
@@ -127,7 +134,7 @@ namespace Impl {
 		return foundation_depth;
 	}
 
-	void Structure::update_expected_damage(const int damage)
+	void Structure::update_expected_damage(unsigned damage, bool is_direct) noexcept
 	{
 		expected_damage += damage;
 		assert(expected_damage >= 0);
@@ -402,4 +409,37 @@ const Structure* find_repair_facility(unsigned player)
     return dynamic_cast<const Repair_Facility*>(structure);
   });
   return (it != std::begin(structures)) ? *it : nullptr;
+}
+
+void set_structure_non_blocking(const Impl::Structure& structure)
+{
+  const auto bounds = Impl::get_bounds(structure);
+  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+  {
+    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+    {
+      aux_clear(bounds.top_left_coords.x + i,
+                bounds.top_left_coords.y + j,
+                AUX_BLOCKING | AUX_OUR_BUILDING | AUX_NON_PASSABLE);
+    }
+  }
+}
+
+void set_structure_blocking(const Structure& structure)
+{
+
+}
+
+void open_gate(const Impl::Structure& structure)
+{
+  const auto bounds = Impl::get_bounds(structure);
+  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+  {
+    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+    {
+      aux_clear(bounds.top_left_coords.x + i,
+                bounds.top_left_coords.y + j,
+                AUX_BLOCKING);
+    }
+  }
 }

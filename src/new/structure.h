@@ -101,6 +101,7 @@ struct Flag_Position : public Object_Position
 struct Structure_Stats
 {
 	[[nodiscard]] Vector2i size(unsigned direction) const;
+  [[nodiscard]] bool is_expansion_module() const noexcept;
 
 	using enum STRUCTURE_TYPE;
 
@@ -168,7 +169,7 @@ namespace Impl
 		[[nodiscard]] Vector2i get_size() const;
 		[[nodiscard]] int get_foundation_depth() const noexcept;
 		[[nodiscard]] const iIMDShape& get_IMD_shape() const final;
-		void update_expected_damage(const int damage);
+		void update_expected_damage(unsigned damage, bool is_direct) noexcept override;
 		[[nodiscard]] unsigned calculate_sensor_range() const final;
 		[[nodiscard]] int calculate_gate_height(const std::size_t time, const int minimum) const;
 		void set_foundation_depth(int depth) noexcept;

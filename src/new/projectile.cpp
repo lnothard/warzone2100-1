@@ -35,3 +35,10 @@ void update_kills(const Damage& damage)
 
   }
 }
+
+void set_projectile_target(Projectile& projectile, Unit& unit)
+{
+  const auto is_direct = !projectile.firing_weapon->is_artillery();
+  projectile.target = &unit;
+  projectile.target->update_expected_damage(projectile.base_damage, is_direct);
+}

@@ -129,7 +129,7 @@ public:
 	void move_to_rearm_pad();
 	void cancel_build();
 	void reset_action() noexcept;
-	void update_expected_damage(unsigned damage, bool is_direct) noexcept;
+	void update_expected_damage(unsigned damage, bool is_direct) noexcept override;
 	[[nodiscard]] DROID_TYPE get_type() const noexcept;
 	[[nodiscard]] unsigned get_level() const;
 	[[nodiscard]] unsigned get_commander_level() const;
