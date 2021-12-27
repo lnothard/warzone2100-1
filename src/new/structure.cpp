@@ -133,6 +133,13 @@ namespace Impl {
 		assert(expected_damage >= 0);
 	}
 
+  unsigned Structure::calculate_sensor_range() const
+  {
+    if (stats->ecm_stats)
+      return stats->ecm_stats->upgraded[get_player()].range;
+    return stats->sensor_stats->upgraded[get_player()].range;
+  }
+
 	int Structure::calculate_gate_height(const std::size_t time, const int minimum) const
 	{
 		if (stats->type != GATE) return 0;
