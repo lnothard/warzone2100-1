@@ -168,20 +168,20 @@ static WzString favoriteStructs;
 //		}
 //	}
 //}
-
-static void auxStructureBlocking(STRUCTURE* psStructure)
-{
-	StructureBounds b = getStructureBounds(psStructure);
-
-	for (int i = 0; i < b.size.x; i++)
-	{
-		for (int j = 0; j < b.size.y; j++)
-		{
-			auxSetAllied(b.map.x + i, b.map.y + j, psStructure->player, AUXBITS_OUR_BUILDING);
-			auxSetAll(b.map.x + i, b.map.y + j, AUXBITS_BLOCKING | AUXBITS_NONPASSABLE);
-		}
-	}
-}
+//
+//static void auxStructureBlocking(STRUCTURE* psStructure)
+//{
+//	StructureBounds b = getStructureBounds(psStructure);
+//
+//	for (int i = 0; i < b.size.x; i++)
+//	{
+//		for (int j = 0; j < b.size.y; j++)
+//		{
+//			auxSetAllied(b.map.x + i, b.map.y + j, psStructure->player, AUXBITS_OUR_BUILDING);
+//			auxSetAll(b.map.x + i, b.map.y + j, AUXBITS_BLOCKING | AUXBITS_NONPASSABLE);
+//		}
+//	}
+//}
 
 //static void auxStructureOpenGate(STRUCTURE* psStructure)
 //{
@@ -195,20 +195,20 @@ static void auxStructureBlocking(STRUCTURE* psStructure)
 //		}
 //	}
 //}
-
-static void auxStructureClosedGate(STRUCTURE* psStructure)
-{
-	StructureBounds b = getStructureBounds(psStructure);
-
-	for (int i = 0; i < b.size.x; i++)
-	{
-		for (int j = 0; j < b.size.y; j++)
-		{
-			auxSetEnemy(b.map.x + i, b.map.y + j, psStructure->player, AUXBITS_NONPASSABLE);
-			auxSetAll(b.map.x + i, b.map.y + j, AUXBITS_BLOCKING);
-		}
-	}
-}
+//
+//static void auxStructureClosedGate(STRUCTURE* psStructure)
+//{
+//	StructureBounds b = getStructureBounds(psStructure);
+//
+//	for (int i = 0; i < b.size.x; i++)
+//	{
+//		for (int j = 0; j < b.size.y; j++)
+//		{
+//			auxSetEnemy(b.map.x + i, b.map.y + j, psStructure->player, AUXBITS_NONPASSABLE);
+//			auxSetAll(b.map.x + i, b.map.y + j, AUXBITS_BLOCKING);
+//		}
+//	}
+//}
 
 //bool IsStatExpansionModule(const STRUCTURE_STATS* psStats)
 //{

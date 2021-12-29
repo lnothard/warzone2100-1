@@ -158,44 +158,44 @@ WZ_DECL_ALWAYS_INLINE static inline void auxSet(int x, int y, int player, int st
 	psAuxMap[player][x + y * mapWidth] |= state;
 }
 
+///// Set aux bits. Always set identically for all players. States not set are retained.
+//WZ_DECL_ALWAYS_INLINE static inline void auxSetAll(int x, int y, int state)
+//{
+//	int i;
+//
+//	for (i = 0; i < MAX_PLAYERS; i++)
+//	{
+//		psAuxMap[i][x + y * mapWidth] |= state;
+//	}
+//}
+
+///// Set aux bits. Always set identically for all players. States not set are retained.
+//WZ_DECL_ALWAYS_INLINE static inline void auxSetAllied(int x, int y, int player, int state)
+//{
+//	int i;
+//
+//	for (i = 0; i < MAX_PLAYERS; i++)
+//	{
+//		if (alliancebits[player] & (1 << i))
+//		{
+//			psAuxMap[i][x + y * mapWidth] |= state;
+//		}
+//	}
+//}
+
 /// Set aux bits. Always set identically for all players. States not set are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxSetAll(int x, int y, int state)
-{
-	int i;
-
-	for (i = 0; i < MAX_PLAYERS; i++)
-	{
-		psAuxMap[i][x + y * mapWidth] |= state;
-	}
-}
-
-/// Set aux bits. Always set identically for all players. States not set are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxSetAllied(int x, int y, int player, int state)
-{
-	int i;
-
-	for (i = 0; i < MAX_PLAYERS; i++)
-	{
-		if (alliancebits[player] & (1 << i))
-		{
-			psAuxMap[i][x + y * mapWidth] |= state;
-		}
-	}
-}
-
-/// Set aux bits. Always set identically for all players. States not set are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxSetEnemy(int x, int y, int player, int state)
-{
-	int i;
-
-	for (i = 0; i < MAX_PLAYERS; i++)
-	{
-		if (!(alliancebits[player] & (1 << i)))
-		{
-			psAuxMap[i][x + y * mapWidth] |= state;
-		}
-	}
-}
+//WZ_DECL_ALWAYS_INLINE static inline void auxSetEnemy(int x, int y, int player, int state)
+//{
+//	int i;
+//
+//	for (i = 0; i < MAX_PLAYERS; i++)
+//	{
+//		if (!(alliancebits[player] & (1 << i)))
+//		{
+//			psAuxMap[i][x + y * mapWidth] |= state;
+//		}
+//	}
+//}
 
 /// Clear aux bits. Always set identically for all players. States not cleared are retained.
 WZ_DECL_ALWAYS_INLINE static inline void auxClear(int x, int y, int player, int state)

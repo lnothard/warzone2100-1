@@ -425,9 +425,23 @@ void set_structure_non_blocking(const Impl::Structure& structure)
   }
 }
 
-void set_structure_blocking(const Structure& structure)
+void set_structure_blocking(const Impl::Structure& structure)
 {
+  const auto bounds = Impl::get_bounds(structure);
+  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+  {
+    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+    {
+      aux_set_allied(bounds.top_left_coords.x + i,
+                     bounds.top_left_coords.y + j,
+                     structure.get_player(),
+                     AUX_OUR_BUILDING);
 
+      aux_set_all(bounds.top_left_coords.x + i,
+                  bounds.top_left_coords.y + j,
+                  AUX_BLOCKING | AUX_NON_PASSABLE);
+    }
+  }
 }
 
 void open_gate(const Impl::Structure& structure)
@@ -440,6 +454,25 @@ void open_gate(const Impl::Structure& structure)
       aux_clear(bounds.top_left_coords.x + i,
                 bounds.top_left_coords.y + j,
                 AUX_BLOCKING);
+    }
+  }
+}
+
+void close_gate(const Impl::Structure& structure)
+{
+  const auto bounds = Impl::get_bounds(structure);
+  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+  {
+    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+    {
+      aux_set_enemy(bounds.top_left_coords.x + i,
+                    bounds.top_left_coords.y + j,
+                    structure.get_player(),
+                    AUX_NON_PASSABLE);
+
+      aux_set_all(bounds.top_left_coords.x + i,
+                  bounds.top_left_coords.y + j,
+                  AUX_BLOCKING);
     }
   }
 }

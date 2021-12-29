@@ -74,6 +74,34 @@ extern std::unique_ptr<Tile[]> map_tiles;
   }
 }
 
+constexpr void aux_set_all(int x, int y, int state)
+{
+  for (int i = 0; i < MAX_PLAYERS; ++i)
+  {
+    aux_map[i][x + y * map_width] |= state;
+  }
+}
+
+constexpr void aux_set_enemy(int x, int y, unsigned player, int state)
+{
+  for (int i = 0; i < MAX_PLAYERS; ++i)
+  {
+    if (!(alliances[player] & (1 << i)))
+      aux_map[i][x + y * map_width] |= state;
+  }
+}
+
+constexpr void aux_set_allied(int x, int y, unsigned player, int state)
+{
+  for (int i = 0; i < MAX_PLAYERS; i++)
+  {
+    if (alliances[player] & (1 << i))
+    {
+      aux_map[i][x + y * map_width] |= state;
+    }
+  }
+}
+
 [[nodiscard]] constexpr uin8_t get_terrain_type(const Tile& tile)
 {
   return terrain_types[tile.texture & TILE_NUM_MASK];
