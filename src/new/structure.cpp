@@ -119,6 +119,22 @@ namespace Impl {
 		return stats->upgraded_stats[get_player()].hit_points;
 	}
 
+  unsigned Structure::get_armour_value(WEAPON_CLASS weapon_class) const
+  {
+    if (state != BEING_BUILT)
+      return 0;
+
+    using enum WEAPON_CLASS;
+    if (weapon_class == KINETIC)
+    {
+      return stats->upgraded_stats[get_player()].armour;
+    }
+    else
+    {
+      return stats->upgraded_stats[get_player()].thermal;
+    }
+  }
+
 	Vector2i Structure::get_size() const
 	{
 		return stats->size(get_rotation().direction);
@@ -275,7 +291,7 @@ namespace Impl {
 		{
 			for (int width = 0; width <= x_max; ++width)
 			{
-				auto height = map_tile_height(bounds.top_left_coords.x, bounds.top_left_coords.y + breadth);
+				const auto height = map_tile_height(bounds.top_left_coords.x, bounds.top_left_coords.y + breadth);
 				foundation_min = std::min(foundation_min, height);
 				foundation_max = std::min(foundation_max, height);
 			}

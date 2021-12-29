@@ -150,8 +150,8 @@ Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot)
 	return muzzle;
 }
 
-void check_angle(int64_t& angle_tan, int start_coord, int height, int square_distance, int target_height,
-                 bool is_direct)
+void check_angle(int64_t& angle_tan, int start_coord, int height,
+                 int square_distance, int target_height, bool is_direct)
 {
 	auto current_angle = int64_t{0};
 

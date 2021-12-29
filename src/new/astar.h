@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include "pathfinding.h"
 
-enum class ASTAR_RETVAL
+enum class ASTAR_RESULT
 {
 	OK,
 	FAILED,

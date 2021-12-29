@@ -110,6 +110,7 @@ struct Structure_Stats
 		unsigned hit_points;
 		unsigned power;
 		unsigned armour;
+    unsigned thermal;
 	} upgraded_stats[MAX_PLAYERS], base_stats;
 
 	STRUCTURE_TYPE type;
@@ -118,15 +119,15 @@ struct Structure_Stats
 	std::unique_ptr<Sensor_Stats> sensor_stats;
 	std::unique_ptr<ECM_Stats> ecm_stats;
 	std::unique_ptr<iIMDShape> base_imd;
-	bool combines_with_wall;
-	bool is_favourite;
-	unsigned base_width;
-	unsigned base_breadth;
-	unsigned build_point_cost;
-	unsigned height;
-	unsigned power_to_build;
-	unsigned weapon_slots;
-	unsigned num_weapons_default;
+	bool combines_with_wall{false};
+	bool is_favourite{false};
+	unsigned base_width{0};
+	unsigned base_breadth{0};
+	unsigned build_point_cost{0};
+	unsigned height{0};
+	unsigned power_to_build{0};
+	unsigned weapon_slots{0};
+	unsigned num_weapons_default{0};
 };
 
 class Structure : public virtual Unit
@@ -166,6 +167,7 @@ namespace Impl
 		[[nodiscard]] bool has_VTOL_CB_sensor() const final;
 		[[nodiscard]] bool smoke_when_damaged() const noexcept;
 		[[nodiscard]] unsigned get_original_hp() const;
+    [[nodiscard]] unsigned Structure::get_armour_value(WEAPON_CLASS weapon_class) const;
 		[[nodiscard]] Vector2i get_size() const;
 		[[nodiscard]] int get_foundation_depth() const noexcept;
 		[[nodiscard]] const iIMDShape& get_IMD_shape() const final;
@@ -183,7 +185,7 @@ namespace Impl
 		using enum SENSOR_TYPE;
 
 		STRUCTURE_STATE state;
-		STRUCTURE_ANIMATION_STATE animation_state;
+		STRUCTURE_ANIMATION_STATE animation_state{NORMAL};
 		std::shared_ptr<Structure_Stats> stats;
 		unsigned current_build_points{0};
 		int build_rate{0};
