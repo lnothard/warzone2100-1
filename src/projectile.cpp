@@ -612,11 +612,11 @@ static INTERVAL intervalIntersection(INTERVAL i1, INTERVAL i2)
 	INTERVAL ret = {MAX(i1.begin, i2.begin), MIN(i1.end, i2.end)};
 	return ret;
 }
-
-static bool intervalEmpty(INTERVAL i)
-{
-	return i.begin >= i.end;
-}
+//
+//static bool intervalEmpty(INTERVAL i)
+//{
+//	return i.begin >= i.end;
+//}
 
 static INTERVAL collisionZ(int32_t z1, int32_t z2, int32_t height)
 {
@@ -647,33 +647,33 @@ static INTERVAL collisionZ(int32_t z1, int32_t z2, int32_t height)
 	return ret;
 }
 
-static INTERVAL collisionXY(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t radius)
-{
-	// Solve (1 - t)v1 + t v2 = r.
-	int32_t dx = x2 - x1, dy = y2 - y1;
-	int64_t a = (int64_t)dx * dx + (int64_t)dy * dy; // a = (v2 - v1)²
-	int64_t b = (int64_t)x1 * dx + (int64_t)y1 * dy; // b = v1(v2 - v1)
-	int64_t c = (int64_t)x1 * x1 + (int64_t)y1 * y1 - (int64_t)radius * radius; // c = v1² - r²
-	// Equation to solve is now a t^2 + 2 b t + c = 0.
-	int64_t d = b * b - a * c; // d = b² - a c
-	// Solution is (-b ± √d)/a.
-	INTERVAL empty = {-1, -1};
-	INTERVAL full = {0, 1024};
-	INTERVAL ret;
-	if (d < 0)
-	{
-		return empty; // Missed.
-	}
-	if (a == 0)
-	{
-		return c < 0 ? full : empty; // Not moving. See if inside the target.
-	}
-
-	int32_t sd = i64Sqrt(d);
-	ret.begin = MAX(0, 1024 * (-b - sd) / a);
-	ret.end = MIN(1024, 1024 * (-b + sd) / a);
-	return ret;
-}
+//static INTERVAL collisionXY(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t radius)
+//{
+//	// Solve (1 - t)v1 + t v2 = r.
+//	int32_t dx = x2 - x1, dy = y2 - y1;
+//	int64_t a = (int64_t)dx * dx + (int64_t)dy * dy; // a = (v2 - v1)²
+//	int64_t b = (int64_t)x1 * dx + (int64_t)y1 * dy; // b = v1(v2 - v1)
+//	int64_t c = (int64_t)x1 * x1 + (int64_t)y1 * y1 - (int64_t)radius * radius; // c = v1² - r²
+//	// Equation to solve is now a t^2 + 2 b t + c = 0.
+//	int64_t d = b * b - a * c; // d = b² - a c
+//	// Solution is (-b ± √d)/a.
+//	INTERVAL empty = {-1, -1};
+//	INTERVAL full = {0, 1024};
+//	INTERVAL ret;
+//	if (d < 0)
+//	{
+//		return empty; // Missed.
+//	}
+//	if (a == 0)
+//	{
+//		return c < 0 ? full : empty; // Not moving. See if inside the target.
+//	}
+//
+//	int32_t sd = i64Sqrt(d);
+//	ret.begin = MAX(0, 1024 * (-b - sd) / a);
+//	ret.end = MIN(1024, 1024 * (-b + sd) / a);
+//	return ret;
+//}
 
 static int32_t collisionXYZ(Vector3i v1, Vector3i v2, ObjectShape shape, int32_t height)
 {

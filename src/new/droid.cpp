@@ -416,6 +416,11 @@ unsigned Droid::get_secondary_order() const noexcept
   return secondary_order;
 }
 
+const Vector2i& Droid::get_destination() const
+{
+  return movement->get_destination();
+}
+
 void Droid::increment_kills() noexcept
 {
   ++kills;
@@ -776,9 +781,18 @@ bool vtol_can_land_here(int x, int y)
   return true;
 }
 
-void choose_landing_position(const Droid& vtol, Vector2i position)
-{
+Vector2i choose_landing_position(const Droid& vtol, Vector2i position) {
+  Vector2i start_pos = {map_coord(position.x),
+                        map_coord(position.y)};
 
+  set_blocking_flags(vtol);
+
+  auto landing_tile = spiral_search(start_pos, VTOL_LANDING_RADIUS);
+  landing_tile.x = world_coord(landing_tile.x) + TILE_UNITS / 2;
+  landing_tile.y = world_coord(landing_tile.y) + TILE_UNITS / 2;
+
+  clear_blocking_flags(vtol);
+  return landing_tile;
 }
 
 Droid* find_nearest_droid(unsigned x, unsigned y, bool selected)
@@ -802,4 +816,104 @@ Droid* find_nearest_droid(unsigned x, unsigned y, bool selected)
     }
   });
   return nearest_vtol;
+}
+
+/**
+ * Performs a space-filling spiral-like search from startX,startY up to (and
+ * including) radius.
+ *
+ * @param start_pos starting x and y coordinates
+ *
+ * @param max_radius radius to examine. Search will finish when @c max_radius is exceeded.
+ *
+ */
+Vector2i spiral_search(Vector2i start_pos, int max_radius)
+{
+  // test center tile
+  if (vtol_can_land_here(start_pos.x, start_pos.y)) {
+    return start_pos;
+  }
+
+  // test for each radius, from 1 to max_radius (inclusive)
+  for (auto radius = 1; radius <= max_radius; ++radius)
+  {
+    // choose tiles that are between radius and radius+1 away from center
+    // distances are squared
+    const auto min_distance = radius * radius;
+    const auto max_distance = min_distance + 2 * radius;
+
+    // X offset from startX
+    // dx starts with 1, to visiting tiles on same row or col as start twice
+    for (auto dx = 1; dx <= max_radius; dx++)
+    {
+      // Y offset from startY
+      for (auto dy = 0; dy <= max_radius; dy++)
+      {
+        // Current distance, squared
+        const auto distance = dx * dx + dy * dy;
+
+        // Ignore tiles outside the current circle
+        if (distance < min_distance || distance > max_distance)
+        {
+          continue;
+        }
+
+        // call search function for each of the 4 quadrants of the circle
+        if (vtol_can_land_here(start_pos.x + dx, start_pos.y + dy))
+        {
+          return {start_pos.x + dx, start_pos.y + dy};
+        }
+        if (vtol_can_land_here(start_pos.x - dx, start_pos.y - dy))
+        {
+          return {start_pos.x - dx, start_pos.y - dy};
+        }
+        if (vtol_can_land_here(start_pos.x + dy, start_pos.y - dx))
+        {
+          return {start_pos.x + dy, start_pos.y - dx};
+        }
+        if (vtol_can_land_here(start_pos.x - dy, start_pos.y + dx))
+        {
+          return {start_pos.x - dy, start_pos.y + dx};
+        }
+      }
+    }
+  }
+}
+
+void set_blocking_flags(const Droid& droid)
+{
+  const auto &droids = droid_lists[droid.get_player()];
+  std::for_each(droids.begin(), droids.end(), [&droid](const auto &other_droid)
+  {
+      Vector2i tile{0, 0};
+      if (other_droid.is_stationary()) {
+        tile = map_coord(other_droid.get_position().xy());
+      } else {
+        tile = map_coord(other_droid.get_destination());
+      }
+
+      if (&droid == &other_droid) {
+        return;
+      } else if (tile_on_map(tile)) {
+        get_map_tile(tile)->info_bits |= BLOCKING;
+      }
+  });
+}
+
+void clear_blocking_flags(const Droid& droid)
+{
+  const auto &droids = droid_lists[droid.get_player()];
+  std::for_each(droids.begin(), droids.end(), [&droid](const auto &other_droid)
+  {
+      Vector2i tile{0, 0};
+      if (other_droid.is_stationary()) {
+        tile = map_coord(other_droid.get_position().xy());
+      } else {
+        tile = map_coord(other_droid.get_destination());
+      }
+
+      if (tile_on_map(tile)) {
+        get_map_tile(tile)->info_bits &= ~BLOCKING;
+      }
+  });
 }

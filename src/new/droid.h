@@ -18,6 +18,7 @@ static constexpr auto MAX_COMPONENTS = COMPONENT_TYPE::COUNT - 1;
 static constexpr auto ALLIANCE_FORMED = 3;
 static constexpr auto ALLIANCE_BROKEN = 0;
 static constexpr auto VTOL_ATTACK_LENGTH = 1000;
+static constexpr auto VTOL_LANDING_RADIUS = 23;
 static constexpr auto TOO_NEAR_EDGE = 3;
 /// maximum number of commanders per player
 static constexpr auto MAX_COMMAND_DROIDS = 5;
@@ -141,6 +142,7 @@ public:
   [[nodiscard]] int space_occupied_on_transporter() const;
   [[nodiscard]] int get_vertical_speed() const noexcept;
   [[nodiscard]] unsigned get_secondary_order() const noexcept;
+  [[nodiscard]] const Vector2i& get_destination() const;
   [[nodiscard]] const ::Simple_Object* get_action_target() const noexcept;
   [[nodiscard]] const std::optional<Propulsion_Stats>& get_propulsion() const;
   void set_direct_route(int target_x, int target_y) const;
@@ -206,6 +208,9 @@ const Rearm_Pad* find_nearest_rearm_pad(const Droid& droid);
 bool valid_position_for_droid(int x, int y, PROPULSION_TYPE propulsion);
 bool vtol_can_land_here(int x, int y);
 Droid* find_nearest_droid(unsigned x, unsigned y, bool selected);
+Vector2i spiral_search(Vector2i start_pos, int max_radius);
+void set_blocking_flags(const Droid& droid);
+void clear_blocking_flags(const Droid& droid);
 
 [[nodiscard]] constexpr bool tile_occupied_by_droid(unsigned x, unsigned y)
 {

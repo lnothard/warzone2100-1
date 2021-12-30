@@ -31,6 +31,17 @@ struct Projectile
 	unsigned base_damage;
 };
 
+struct Interval
+{
+    [[nodiscard]] constexpr bool is_empty() const noexcept
+    {
+      return begin >= end;
+    }
+
+    int begin;
+    int end;
+};
+
 struct Damage
 {
     Projectile* projectile;

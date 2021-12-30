@@ -160,7 +160,7 @@ constexpr void set_tile_height(int x, int y, int height)
 }
 
 /** Return a pointer to the tile structure at x,y in map coordinates */
-constexpr Tile* get_map_tile(int x, int y)
+[[nodiscard]] constexpr Tile* get_map_tile(int x, int y)
 {
 	x = MAX(x, 0);
 	y = MAX(y, 0);
@@ -168,6 +168,11 @@ constexpr Tile* get_map_tile(int x, int y)
 	y = MIN(y, map_height - 1);
 
 	return &map_tiles[x + (y * map_width)];
+}
+
+[[nodiscard]] constexpr Tile* get_map_tile(const Vector2i& position)
+{
+  return get_map_tile(position.x, position.y);
 }
 
 [[nodiscard]] constexpr Feature* get_feature_from_tile(unsigned x, unsigned y)
@@ -182,9 +187,20 @@ constexpr Tile* get_map_tile(int x, int y)
 		     (y >= 0) && (y < map_height << TILE_SHIFT);
 }
 
-[[nodiscard]] constexpr bool is_coord_on_map(Vector2i& position)
+[[nodiscard]] constexpr bool is_coord_on_map(const Vector2i& position)
 {
   return is_coord_on_map(position.x, position.y);
+}
+
+/* Return whether a tile coordinate is on the map */
+[[nodiscard]] constexpr bool tile_on_map(int x, int y)
+{
+  return x >= 0 && x < map_width && y >= 0 && y < map_height;
+}
+
+[[nodiscard]] constexpr bool tile_on_map(const Vector2i& position)
+{
+  return tile_on_map(position.x, position.y);
 }
 
 [[nodiscard]] constexpr uint8_t aux_tile(int x, int y, int player)

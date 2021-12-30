@@ -57,6 +57,11 @@ public:
     return vertical_speed;
   }
 
+  [[nodiscard]] constexpr const Vector2i& get_destination() const noexcept
+  {
+    return destination;
+  }
+
   void set_path_vars(int target_x, int target_y);
 private:
 	using enum MOVEMENT_STATE;
