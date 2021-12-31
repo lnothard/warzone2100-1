@@ -43,7 +43,7 @@ namespace Impl
 
   const Display_Data& Simple_Object::get_display_data() const noexcept
   {
-    return display;
+    return *display;
   }
 
 	void Simple_Object::set_height(int height) noexcept

@@ -2,18 +2,20 @@
 // Created by Luna Nothard on 24/12/2021.
 //
 
+#include "droid.h"
 #include "map.h"
 #include "pathfinding.h"
 
 uint8_t get_path_bits_from_propulsion(PROPULSION_TYPE propulsion)
 {
+  using enum PROPULSION_TYPE;
   switch (propulsion)
   {
-    case PROPULSION_TYPE::LIFT:
+    case LIFT:
       return AIR_BLOCKED;
-    case PROPULSION_TYPE::HOVER:
+    case HOVER:
       return FEATURE_BLOCKED;
-    case PROPULSION_TYPE::PROPELLER:
+    case PROPELLER:
       return FEATURE_BLOCKED | LAND_BLOCKED;
     default:
       return FEATURE_BLOCKED | WATER_BLOCKED;
@@ -57,8 +59,9 @@ bool is_tile_blocking(int x, int y, PROPULSION_TYPE propulsion, int map_index, M
 
 bool is_droid_blocking_tile(const Droid& droid, int x, int y, MOVE_TYPE move_type)
 {
-  assert(*droid.get_propulsion());
-  return is_tile_blocking(x, y, *droid.get_propulsion().type, droid.get_player(), move_type);
+  assert(droid.get_propulsion());
+  return is_tile_blocking(x, y, droid.get_propulsion()->propulsion_type,
+                          droid.get_player(), move_type);
 }
 
 bool is_droid_blocked_by_tile(int x, int y, PROPULSION_TYPE propulsion)

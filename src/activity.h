@@ -94,7 +94,8 @@ public:
 		MULTIPLAYERGAME game;
 		uint8_t numAIBotPlayers = 0;
 		size_t currentPlayerIdx = 0;
-		// = the selectedPlayer global for the current client (points to currently controlled player in the players array)
+		// = the selectedPlayer global for the current client
+    // (points to currently controlled player in the players array)
 		std::vector<PLAYER> players;
 
 		// information on limits

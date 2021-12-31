@@ -28,13 +28,14 @@
 
 enum class POSITION_TYPE
 {
+  // delivery Points NOT waypoints
 	DELIVERY,
-	//Delivery Points NOT wayPoints
-	PROX_DATA,
-	//proximity messages that are data generated
-	PROX_OBJ,
-	//proximity messages that are in game generated
-	TEMP_DELIVERY //SAVE ONLY delivery point for factory currently assigned to commander
+  // proximity messages that are data generated
+	PROXIMITY_DATA,
+  // proximity messages that are in game generated
+	PROXIMITY_OBJ,
+  // SAVE ONLY delivery point for factory currently assigned to commander
+	TEMP_DELIVERY
 };
 
 struct Object_Position

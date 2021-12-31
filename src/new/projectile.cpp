@@ -45,12 +45,15 @@ void set_projectile_target(Projectile& projectile, Unit& unit)
 
 Interval resolve_xy_collision(Vector2i pos1, Vector2i pos2, int radius)
 {
-  // Solve (1 - t)v1 + t v2 = r.
+  /// Solve(1 - t)v1 + t v2 = r.
   const auto x_diff = pos2.x - pos1.x;
   const auto y_diff = pos2.y - pos1.y;
-  const auto a = x_diff * x_diff + y_diff * y_diff; // a = (v2 - v1)²
-  const auto b = pos1.x * x_diff + pos1.y * y_diff; // b = v1(v2 - v1)
-  const auto c = pos1.x * pos1.x + pos1.y * pos1.y - radius * radius; // c = v1² - r²
+  // a = (v2 - v1)²
+  const auto a = x_diff * x_diff + y_diff * y_diff;
+  // b = v1(v2 - v1)
+  const auto b = pos1.x * x_diff + pos1.y * y_diff;
+  // c = v1² - r²
+  const auto c = pos1.x * pos1.x + pos1.y * pos1.y - radius * radius;
   // Equation to solve is now a t^2 + 2 b t + c = 0.
   const auto d = b * b - a * c; // d = b² - a c
 

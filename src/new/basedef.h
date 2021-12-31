@@ -48,7 +48,7 @@ public:
 	virtual void set_height(int height) = 0;
 	virtual void set_rotation(Rotation new_rotation) = 0;
   [[nodiscard]] virtual bool is_selectable() const = 0;
-  [[nodiscard]] virtual uint8_t visible_to_player() const = 0;
+  [[nodiscard]] virtual uint8_t visible_to_player(unsigned watcher) const = 0;
   [[nodiscard]] virtual uint8_t visible_to_selected_player() const = 0;
 };
 
@@ -76,10 +76,10 @@ namespace Impl
 		std::size_t time{0};
 		Position position{Position(0, 0, 0)};
 		Rotation rotation{Rotation(0, 0, 0)};
-		Display_Data display;
+		std::unique_ptr<Display_Data> display;
     std::bitset< static_cast<std::size_t>(OBJECT_FLAG::COUNT) > flags;
     /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip, 0 if not visible
-    std::array<uint8_t, MAX_PLAYERS> visibility_state;
+    std::array<uint8_t, MAX_PLAYERS> visibility_state{};
 	};
 }
 

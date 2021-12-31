@@ -15,8 +15,8 @@ static constexpr auto EXTRACT_POINTS = 1;
 
 struct Power_Request
 {
-    Power_Request(int amount, unsigned id) :
-    amount{amount}, requester_id{id}
+    Power_Request(int amount, unsigned id)
+      : amount{amount}, requester_id{id}
     {
     }
 

@@ -13,7 +13,7 @@
 struct ChatMessage
 {
     ChatMessage(unsigned sender, std::string message)
-    : sender{sender}, message{message}
+      : sender{sender}, message{message}
     {
     }
 

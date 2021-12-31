@@ -106,7 +106,7 @@ struct Propulsion_Stats : public Component_Stats
 
 	struct : Upgradeable
 	{
-		int hitpoint_percent_increase{0};
+		int hp_percent_increase{0};
 	} upgraded[MAX_PLAYERS], base;
 };
 

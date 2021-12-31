@@ -201,6 +201,7 @@ struct GAMESTRUCT
 
 #define NET_ALL_PLAYERS 255
 #define NET_HOST_ONLY 0
+
 // the following structure is going to be used to track if we sync or not
 struct SYNC_COUNTER
 {

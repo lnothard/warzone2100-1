@@ -17,14 +17,14 @@ enum class MOVE_TYPE
     BLOCK
 };
 
-enum class PATH_RETVAL
+enum class PATH_RESULT
 {
     OK,
     FAILED,
     WAIT
 };
 
-struct Path_Job
+struct PathJob
 {
     Vector2i destination{0, 0};
     Vector2i origin{0, 0};
@@ -32,14 +32,14 @@ struct Path_Job
     unsigned player{0};
 };
 
-struct Path_Result
+struct PathResult
 {
-    Path_Result(PATH_RETVAL retval, Movement movement)
-      : retval{retval}, movement{std::move(movement)}
+    PathResult(PATH_RESULT retval, Movement movement)
+      : return_val{retval}, movement{std::move(movement)}
     {
     }
 
-    PATH_RETVAL retval;
+    PATH_RESULT return_val;
     Movement movement;
 };
 

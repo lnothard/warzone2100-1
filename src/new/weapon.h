@@ -88,7 +88,7 @@ struct Weapon_Stats : public Component_Stats
 		uint8_t rounds_per_salvo;
 	} base_stats, upgraded_stats[MAX_PLAYERS];
 
-	WEAPON_CLASS wclass;
+	WEAPON_CLASS weapon_class;
 	WEAPON_SUBCLASS subclass;
 	WEAPON_EFFECT effect;
 	WEAPON_SIZE size;

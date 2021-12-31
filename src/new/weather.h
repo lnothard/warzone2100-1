@@ -7,8 +7,10 @@
 
 #include <cstdint>
 #include <memory>
+
 #include "lib/framework/vector.h"
 #include "lib/ivis_opengl/ivisdef.h"
+
 #include "map.h"
 
 static constexpr auto MAX_PARTICLES = MAP_MAXWIDTH * MAP_MAXHEIGHT;

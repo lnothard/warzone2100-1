@@ -2,6 +2,7 @@
 // Created by Luna Nothard on 19/12/2021.
 //
 
+#include "droid.h"
 #include "obj_lists.h"
 
 void create_droid(unsigned id, unsigned player)
