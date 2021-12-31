@@ -77,18 +77,38 @@ struct PathBlockingMap
     std::vector<bool> map;
     std::vector<bool> threat_map;
 };
+extern std::vector<PathBlockingMap> blocking_maps;
 
 struct NonBlockingArea
 {
+    [[nodiscard]] bool is_non_blocking(int x, int y) const;
 
+    int x_1 = 0;
+    int x_2 = 0;
+    int y_1 = 0;
+    int y_2 = 0;
 };
 
 struct PathContext
 {
-    std::size_t game_time;
+    [[nodiscard]] bool is_blocked(int x, int y) const;
+    [[nodiscard]] bool is_dangerous(int x, int y) const;
+
+    PathCoordinate start_coord;
+    PathCoordinate nearest_reachable_tile;
+    std::size_t game_time{0};
     std::vector<PathNode> nodes;
-    std::vector<PathBlockingMap> blocking_map;
+    std::unique_ptr<PathBlockingMap> blocking_map;
     NonBlockingArea non_blocking;
 };
+extern std::vector<PathContext> path_contexts;
+
+void path_table_reset();
+
+/// Takes the current best node, and removes from the node heap.
+PathNode get_best_node(std::vector<PathNode>& nodes);
+
+/// Estimate the distance to the target point
+unsigned estimate_distance(PathCoordinate start, PathCoordinate finish);
 
 #endif // WARZONE2100_ASTAR_H

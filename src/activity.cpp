@@ -30,62 +30,62 @@
 
 #include <SQLiteCpp/SQLiteCpp.h>
 
-std::string ActivitySink::getTeamDescription(const ActivitySink::SkirmishGameInfo& info)
-{
-	if (!alliancesSetTeamsBeforeGame(info.game.alliance))
-	{
-		return "";
-	}
-	std::map<int32_t, size_t> teamIdToCountOfPlayers;
-	for (size_t index = 0; index < std::min<size_t>(info.players.size(), (size_t)game.maxPlayers); ++index)
-	{
-		PLAYER const& p = NetPlay.players[index];
-		if (p.ai == AI_CLOSED)
-		{
-			// closed slot - skip
-			continue;
-		}
-		else if (p.ai == AI_OPEN)
-		{
-			if (p.isSpectator)
-			{
-				// spectator slot - skip
-				continue;
-			}
-			else if (!p.allocated)
-			{
-				// available slot - count team association
-				// (since available slots can have assigned teams)
-				teamIdToCountOfPlayers[p.team]++;
-			}
-			else
-			{
-				// human player
-				teamIdToCountOfPlayers[p.team]++;
-			}
-		}
-		else
-		{
-			// bot player
-			teamIdToCountOfPlayers[p.team]++;
-		}
-	}
-	if (teamIdToCountOfPlayers.size() <= 1)
-	{
-		// does not have multiple teams
-		return "";
-	}
-	std::string teamDescription;
-	for (const auto& team : teamIdToCountOfPlayers)
-	{
-		if (!teamDescription.empty())
-		{
-			teamDescription += "v";
-		}
-		teamDescription += std::to_string(team.second);
-	}
-	return teamDescription;
-}
+//std::string ActivitySink::getTeamDescription(const ActivitySink::SkirmishGameInfo& info)
+//{
+//	if (!alliancesSetTeamsBeforeGame(info.game.alliance))
+//	{
+//		return "";
+//	}
+//	std::map<int32_t, size_t> teamIdToCountOfPlayers;
+//	for (size_t index = 0; index < std::min<size_t>(info.players.size(), (size_t)game.maxPlayers); ++index)
+//	{
+//		PLAYER const& p = NetPlay.players[index];
+//		if (p.ai == AI_CLOSED)
+//		{
+//			// closed slot - skip
+//			continue;
+//		}
+//		else if (p.ai == AI_OPEN)
+//		{
+//			if (p.isSpectator)
+//			{
+//				// spectator slot - skip
+//				continue;
+//			}
+//			else if (!p.allocated)
+//			{
+//				// available slot - count team association
+//				// (since available slots can have assigned teams)
+//				teamIdToCountOfPlayers[p.team]++;
+//			}
+//			else
+//			{
+//				// human player
+//				teamIdToCountOfPlayers[p.team]++;
+//			}
+//		}
+//		else
+//		{
+//			// bot player
+//			teamIdToCountOfPlayers[p.team]++;
+//		}
+//	}
+//	if (teamIdToCountOfPlayers.size() <= 1)
+//	{
+//		// does not have multiple teams
+//		return "";
+//	}
+//	std::string teamDescription;
+//	for (const auto& team : teamIdToCountOfPlayers)
+//	{
+//		if (!teamDescription.empty())
+//		{
+//			teamDescription += "v";
+//		}
+//		teamDescription += std::to_string(team.second);
+//	}
+//	return teamDescription;
+//}
 
 std::string to_string(const ActivitySink::GameEndReason& reason)
 {

@@ -23,30 +23,30 @@
 
 #include "animation.h"
 
-ValueTracker* ValueTracker::startTracking(int value)
-{
-	this->initial = value;
-	this->target = value;
-	this->targetDelta = 0;
-	this->current = value;
-	this->startTime = graphicsTime;
-	this->_reachedTarget = false;
-	return this;
-}
-
-ValueTracker* ValueTracker::stopTracking()
-{
-	this->initial = 0;
-	this->current = 0;
-	this->startTime = 0;
-	this->_reachedTarget = false;
-	return this;
-}
-
-bool ValueTracker::isTracking()
-{
-	return this->startTime != 0;
-}
+//ValueTracker* ValueTracker::startTracking(int value)
+//{
+//	this->initial = value;
+//	this->target = value;
+//	this->targetDelta = 0;
+//	this->current = value;
+//	this->startTime = graphicsTime;
+//	this->_reachedTarget = false;
+//	return this;
+//}
+//
+//ValueTracker* ValueTracker::stopTracking()
+//{
+//	this->initial = 0;
+//	this->current = 0;
+//	this->startTime = 0;
+//	this->_reachedTarget = false;
+//	return this;
+//}
+//
+//bool ValueTracker::isTracking()
+//{
+//	return this->startTime != 0;
+//}
 
 ValueTracker* ValueTracker::setSpeed(int value)
 {
@@ -70,23 +70,23 @@ ValueTracker* ValueTracker::setTarget(int value)
 	return this;
 }
 
-ValueTracker* ValueTracker::update()
-{
-	if (this->_reachedTarget)
-	{
-		return this;
-	}
-
-	if (std::abs(this->target - this->current) < 1)
-	{
-		this->_reachedTarget = true;
-		return this;
-	}
-
-	this->current = (this->initial + this->targetDelta - this->current) * realTimeAdjustedIncrement(this->speed) + this
-		->current;
-	return this;
-}
+//ValueTracker* ValueTracker::update()
+//{
+//	if (this->_reachedTarget)
+//	{
+//		return this;
+//	}
+//
+//	if (std::abs(this->target - this->current) < 1)
+//	{
+//		this->_reachedTarget = true;
+//		return this;
+//	}
+//
+//	this->current = (this->initial + this->targetDelta - this->current) * realTimeAdjustedIncrement(this->speed) + this
+//		->current;
+//	return this;
+//}
 
 int ValueTracker::getCurrent()
 {
@@ -225,13 +225,13 @@ Animation<AnimatableData>& Animation<AnimatableData>::setDuration(uint32_t durat
  * For example:
  * - if `from` is `10°` and `to` is `350°`, it will return `370°`.
  * - if `from` is `350°` and `to` is `0°`, it will return `-10°`.
- *
- * Useful while animating a rotation, to always animate the shortest angle delta.
- */
-int32_t calculateRelativeAngle(uint16_t from, uint16_t to)
-{
-	return to + (int16_t)(from - to);
-}
+// *
+// * Useful while animating a rotation, to always animate the shortest angle delta.
+// */
+//int32_t calculateRelativeAngle(uint16_t from, uint16_t to)
+//{
+//	return to + (int16_t)(from - to);
+//}
 
 void RotationAnimation::start()
 {

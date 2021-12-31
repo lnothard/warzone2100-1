@@ -33,7 +33,7 @@ struct DROID;
 #define ALLIANCE_REQUESTED	1
 #define ALLIANCE_INVITATION	2
 #define ALLIANCE_FORMED		3
-#define	ALLIANCE_NULL		4			// for setting values only.
+#define ALLIANCE_NULL		4			// for setting values only.
 
 enum AllianceType
 {

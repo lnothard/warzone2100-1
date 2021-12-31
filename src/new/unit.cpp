@@ -335,3 +335,8 @@ unsigned get_max_weapon_range(const Unit& unit)
 	}
 	return max;
 }
+
+int calculate_attack_priority(const Unit& attacker, const Unit& target, int weapon_slot)
+{
+
+}

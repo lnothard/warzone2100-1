@@ -7,6 +7,11 @@
 
 #include <string>
 
+#include "lib/netplay/netplay.h"
+
+static constexpr auto AI_CLOSED = -1;
+static constexpr auto AI_OPEN = -2;
+
 enum class GAME_MODE
 {
     MENU,
@@ -50,6 +55,7 @@ class EventHandler
 struct SkirmishGame
 {
     ALLIANCE_SETTING alliance_setting;
+    std::vector<PLAYER> players;
 };
 
 enum class NET_PROTOCOL
@@ -68,5 +74,8 @@ struct MultiplayerGame : public SkirmishGame
     bool private_lobby;
     bool host;
 };
+
+[[nodiscard]] std::string get_team_description(const SkirmishGame& info);
+void get_team_counts(std::map<int, std::size_t>& team_player_count);
 
 #endif //WARZONE2100_EVENT_H

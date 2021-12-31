@@ -54,57 +54,57 @@
 
 #include "lib/netplay/netplay.h"
 
-/// A coordinate.
-struct PathCoord
-{
-	PathCoord(): x(0), y(0)
-	{
-	}
-
-	PathCoord(int16_t x_, int16_t y_) : x(x_), y(y_)
-	{
-	}
-
-	bool operator ==(PathCoord const& z) const
-	{
-		return x == z.x && y == z.y;
-	}
-
-	bool operator !=(PathCoord const& z) const
-	{
-		return !(*this == z);
-	}
-
-	int16_t x, y;
-};
+///// A coordinate.
+//struct PathCoord
+//{
+//	PathCoord(): x(0), y(0)
+//	{
+//	}
+//
+//	PathCoord(int16_t x_, int16_t y_) : x(x_), y(y_)
+//	{
+//	}
+//
+//	bool operator ==(PathCoord const& z) const
+//	{
+//		return x == z.x && y == z.y;
+//	}
+//
+//	bool operator !=(PathCoord const& z) const
+//	{
+//		return !(*this == z);
+//	}
+//
+//	int16_t x, y;
+//};
 
 /** The structure to store a node of the route in node table
- *
- *  @ingroup pathfinding
- */
-struct PathNode
-{
-	bool operator <(PathNode const& z) const
-	{
-		// Sort descending est, fallback to ascending dist, fallback to sorting by position.
-		if (est != z.est)
-		{
-			return est > z.est;
-		}
-		if (dist != z.dist)
-		{
-			return dist < z.dist;
-		}
-		if (p.x != z.p.x)
-		{
-			return p.x < z.p.x;
-		}
-		return p.y < z.p.y;
-	}
-
-	PathCoord p; // Map coords.
-	unsigned dist, est; // Distance so far and estimate to end.
-};
+// *
+// *  @ingroup pathfinding
+// */
+//struct PathNode
+//{
+//	bool operator <(PathNode const& z) const
+//	{
+//		// Sort descending est, fallback to ascending dist, fallback to sorting by position.
+//		if (est != z.est)
+//		{
+//			return est > z.est;
+//		}
+//		if (dist != z.dist)
+//		{
+//			return dist < z.dist;
+//		}
+//		if (p.x != z.p.x)
+//		{
+//			return p.x < z.p.x;
+//		}
+//		return p.y < z.p.y;
+//	}
+//
+//	PathCoord p; // Map coords.
+//	unsigned dist, est; // Distance so far and estimate to end.
+//};
 
 struct PathExploredTile
 {
@@ -181,21 +181,21 @@ struct PathfindContext
 	{
 	}
 
-	bool isBlocked(int x, int y) const
-	{
-		if (dstIgnore.isNonblocking(x, y))
-		{
-			return false;
-			// The path is actually blocked here by a structure, but ignore it since it's where we want to go (or where we came from).
-		}
-		// Not sure whether the out-of-bounds check is needed, can only happen if pathfinding is started on a blocking tile (or off the map).
-		return x < 0 || y < 0 || x >= mapWidth || y >= mapHeight || blockingMap->map[x + y * mapWidth];
-	}
-
-	bool isDangerous(int x, int y) const
-	{
-		return !blockingMap->dangerMap.empty() && blockingMap->dangerMap[x + y * mapWidth];
-	}
+//	bool isBlocked(int x, int y) const
+//	{
+//		if (dstIgnore.isNonblocking(x, y))
+//		{
+//			return false;
+//			// The path is actually blocked here by a structure, but ignore it since it's where we want to go (or where we came from).
+//		}
+//		// Not sure whether the out-of-bounds check is needed, can only happen if pathfinding is started on a blocking tile (or off the map).
+//		return x < 0 || y < 0 || x >= mapWidth || y >= mapHeight || blockingMap->map[x + y * mapWidth];
+//	}
+//
+//	bool isDangerous(int x, int y) const
+//	{
+//		return !blockingMap->dangerMap.empty() && blockingMap->dangerMap[x + y * mapWidth];
+//	}
 
 	bool matches(std::shared_ptr<PathBlockingMap>& blockingMap_, PathCoord tileS_, PathNonblockingArea dstIgnore_) const
 	{
@@ -261,37 +261,37 @@ static const Vector2i aDirOffset[] =
 	Vector2i(1, 1),
 };
 
-void fpathHardTableReset()
-{
-	fpathContexts.clear();
-	fpathBlockingMaps.clear();
-}
+//void fpathHardTableReset()
+//{
+//	fpathContexts.clear();
+//	fpathBlockingMaps.clear();
+//}
 
 /** Get the nearest entry in the open list
  */
-/// Takes the current best node, and removes from the node heap.
-static inline PathNode fpathTakeNode(std::vector<PathNode>& nodes)
-{
-	// find the node with the lowest distance
-	// if equal totals, give preference to node closer to target
-	PathNode ret = nodes.front();
-
-	// remove the node from the list
-	std::pop_heap(nodes.begin(), nodes.end());
-	// Move the best node from the front of nodes to the back of nodes, preserving the heap properties, setting the front to the next best node.
-	nodes.pop_back(); // Pop the best node (which we will be returning).
-
-	return ret;
-}
+///// Takes the current best node, and removes from the node heap.
+//static inline PathNode fpathTakeNode(std::vector<PathNode>& nodes)
+//{
+//	// find the node with the lowest distance
+//	// if equal totals, give preference to node closer to target
+//	PathNode ret = nodes.front();
+//
+//	// remove the node from the list
+//	std::pop_heap(nodes.begin(), nodes.end());
+//	// Move the best node from the front of nodes to the back of nodes, preserving the heap properties, setting the front to the next best node.
+//	nodes.pop_back(); // Pop the best node (which we will be returning).
+//
+//	return ret;
+//}
 
 /** Estimate the distance to the target point
- */
-static inline unsigned WZ_DECL_PURE fpathEstimate(PathCoord s, PathCoord f)
-{
-	// Cost of moving horizontal/vertical = 70*2, cost of moving diagonal = 99*2, 99/70 = 1.41428571... ≈ √2 = 1.41421356...
-	unsigned xDelta = abs(s.x - f.x), yDelta = abs(s.y - f.y);
-	return std::min(xDelta, yDelta) * (198 - 140) + std::max(xDelta, yDelta) * 140;
-}
+// */
+//static inline unsigned WZ_DECL_PURE fpathEstimate(PathCoord s, PathCoord f)
+//{
+//	// Cost of moving horizontal/vertical = 70*2, cost of moving diagonal = 99*2, 99/70 = 1.41428571... ≈ √2 = 1.41421356...
+//	unsigned xDelta = abs(s.x - f.x), yDelta = abs(s.y - f.y);
+//	return std::min(xDelta, yDelta) * (198 - 140) + std::max(xDelta, yDelta) * 140;
+//}
 
 static inline unsigned WZ_DECL_PURE fpathGoodEstimate(PathCoord s, PathCoord f)
 {
