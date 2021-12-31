@@ -216,8 +216,7 @@ void clear_blocking_flags(const Droid& droid);
 {
 	for (const auto& player_droids : droid_lists)
 	{
-		if (std::any_of(player_droids.begin(), player_droids.end(),
-		                [x, y](const auto& droid)
+		if (std::any_of(player_droids.begin(), player_droids.end(), [x, y](const auto& droid)
 		                {
 			                return map_coord(droid.get_position().x) == x &&
 				                map_coord(droid.get_position().y == y);

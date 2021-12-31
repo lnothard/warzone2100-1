@@ -57,7 +57,7 @@ public:
     return vertical_speed;
   }
 
-  [[nodiscard]] constexpr const Vector2i& get_destination() const noexcept
+  [[nodiscard]] constexpr Vector2i get_destination() const noexcept
   {
     return destination;
   }

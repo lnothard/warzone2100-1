@@ -585,11 +585,10 @@ void update_orientation(Droid& droid)
 unsigned count_droids_for_level(unsigned player, unsigned level)
 {
 	const auto& droids = droid_lists[player];
-	return std::count_if(droids.begin(), droids.end(),
-	                     [level](const auto& droid)
-	                     {
-		                     return droid.get_level() == level;
-	                     });
+	return std::count_if(droids.begin(), droids.end(),[level](const auto& droid)
+  {
+      return droid.get_level() == level;
+  });
 }
 
 uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool walls_block)
@@ -689,7 +688,7 @@ long get_commander_index(const Droid& commander)
 	const auto& droids = droid_lists[commander.get_player()];
 	return std::find_if(droids.begin(), droids.end(), [&commander](const auto& droid)
 	{
-		return droid.is_commander() && droid.get_id() == commander.get_id();
+		return droid.is_commander() && &droid == &commander;
 	}) - droids.begin();
 }
 
@@ -739,8 +738,7 @@ const Rearm_Pad* find_nearest_rearm_pad(const Droid& droid)
       return;
 
     const auto distance = object_position_square_diff(droid.get_position(), rearm_pad->get_position());
-    if (distance < shortest_distance)
-    {
+    if (distance < shortest_distance) {
       shortest_distance = distance;
       nearest = rearm_pad;
     }
@@ -781,7 +779,8 @@ bool vtol_can_land_here(int x, int y)
   return true;
 }
 
-Vector2i choose_landing_position(const Droid& vtol, Vector2i position) {
+Vector2i choose_landing_position(const Droid& vtol, Vector2i position) 
+{
   Vector2i start_pos = {map_coord(position.x),
                         map_coord(position.y)};
 
@@ -798,7 +797,7 @@ Vector2i choose_landing_position(const Droid& vtol, Vector2i position) {
 Droid* find_nearest_droid(unsigned x, unsigned y, bool selected)
 {
   auto& droids = droid_lists[selectedPlayer];
-  Droid* nearest_vtol = nullptr;
+  Droid* nearest_droid = nullptr;
   auto shortest_distance = UDWORD_MAX;
   std::for_each(droids.begin(), droids.end(), [&](auto& droid)
   {
@@ -812,10 +811,10 @@ Droid* find_nearest_droid(unsigned x, unsigned y, bool selected)
     if (distance < shortest_distance)
     {
       shortest_distance = distance;
-      nearest_vtol = &droid;
+      nearest_droid = &droid;
     }
   });
-  return nearest_vtol;
+  return nearest_droid;
 }
 
 /**

@@ -147,7 +147,7 @@ struct BASE_OBJECT : public SIMPLE_OBJECT
 public:
 	// Query visibility for display purposes (i.e. for `selectedPlayer`)
 	// *DO NOT USE TO QUERY VISIBILITY FOR CALCULATIONS INVOLVING GAME / SIMULATION STATE*
-	UBYTE visibleForLocalDisplay() const;
+//	UBYTE visibleForLocalDisplay() const;
 };
 
 /// Space-time coordinate, including orientation.

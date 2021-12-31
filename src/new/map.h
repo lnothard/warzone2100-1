@@ -56,6 +56,7 @@ struct Tile
 	PlayerMask jammer_bits;
 	uint8_t info_bits;
 	uint8_t illumination_level;
+  float visibility_level;
 	std::array<uint8_t, MAX_PLAYERS> watchers;
 	std::array<uint8_t, MAX_PLAYERS> watching_sensors;
 	int water_level;
@@ -63,154 +64,60 @@ struct Tile
 	uint8_t ground_type;
 	uint16_t texture;
 };
+extern std::array<Tile, map_width * map_height> map_tiles;
 
-extern std::unique_ptr<Tile[]> map_tiles;
+void aux_clear(int x, int y, int state);
 
-[[nodiscard]] constexpr void aux_clear(int x, int y, int state)
-{
-  for (int i = 0; i < MAX_PLAYERS; ++i)
-  {
-    aux_map[i][x + y * map_width] &= ~state;
-  }
-}
+void aux_set_all(int x, int y, int state);
 
-constexpr void aux_set_all(int x, int y, int state)
-{
-  for (int i = 0; i < MAX_PLAYERS; ++i)
-  {
-    aux_map[i][x + y * map_width] |= state;
-  }
-}
+void aux_set_enemy(int x, int y, unsigned player, int state);
 
-constexpr void aux_set_enemy(int x, int y, unsigned player, int state)
-{
-  for (int i = 0; i < MAX_PLAYERS; ++i)
-  {
-    if (!(alliances[player] & (1 << i)))
-      aux_map[i][x + y * map_width] |= state;
-  }
-}
+void aux_set_allied(int x, int y, unsigned player, int state);
 
-constexpr void aux_set_allied(int x, int y, unsigned player, int state)
-{
-  for (int i = 0; i < MAX_PLAYERS; i++)
-  {
-    if (alliances[player] & (1 << i))
-    {
-      aux_map[i][x + y * map_width] |= state;
-    }
-  }
-}
+[[nodiscard]] uin8_t get_terrain_type(const Tile& tile);
 
-[[nodiscard]] constexpr uin8_t get_terrain_type(const Tile& tile)
-{
-  return terrain_types[tile.texture & TILE_NUM_MASK];
-}
+[[nodiscard]] bool tile_is_occupied(const Tile& tile);
 
-[[nodiscard]] constexpr bool tile_is_occupied(const Tile& tile)
-{
-	return tile.occupying_object != nullptr;
-}
+[[nodiscard]] bool tile_is_occupied_by_structure(const Tile& tile);
 
-[[nodiscard]] constexpr bool tile_is_occupied_by_structure(const Tile& tile)
-{
-	return tile_is_occupied(tile) && dynamic_cast<Structure*>(tile.occupying_object);
-}
+[[nodiscard]] bool tile_is_occupied_by_feature(const Tile& tile);
 
-[[nodiscard]] constexpr bool tile_is_occupied_by_feature(const Tile& tile)
-{
-	return tile_is_occupied(tile) && dynamic_cast<Feature*>(tile.occupying_object);
-}
+[[nodiscard]] bool tile_visible_to_player(const Tile& tile, unsigned player);
 
-[[nodiscard]] constexpr Vector2i world_coord(const Vector2i& map_coord)
-{
-	return {world_coord(map_coord.x), world_coord(map_coord.y)};
-}
+[[nodiscard]] bool tile_visible_to_selected_player(const Tile& tile);
 
-[[nodiscard]] constexpr Vector2i map_coord(const Vector2i& world_coord)
-{
-	return {map_coord(world_coord.x), map_coord(world_coord.y)};
-}
+[[nodiscard]] Vector2i world_coord(const Vector2i& map_coord);
+
+[[nodiscard]] Vector2i map_coord(const Vector2i& world_coord);
 
 bool map_Intersect(int* Cx, int* Cy, int* Vx, int* Vy, int* Sx, int* Sy);
 
 int calculate_map_height(int x, int y);
 
-static inline int calculate_map_height(const Vector2i& v)
-{
-	return calculate_map_height(v.x, v.y);
-}
+static inline int calculate_map_height(const Vector2i& v);
 
-[[nodiscard]] constexpr int map_tile_height(int x, int y)
-{
-	if (x >= map_width || y >= map_height || x < 0 || y < 0)
-	{
-		return 0;
-	}
-	return map_tiles[x + (y * map_width)].height;
-}
+[[nodiscard]] int map_tile_height(int x, int y);
 
-constexpr void set_tile_height(int x, int y, int height)
-{
-	assert(x < map_width && x >=0);
-	assert(y < map_height && y >= 0);
-
-	map_tiles[x + (y * map_width)].height = height;
-	mark_tile_dirty();
-}
+void set_tile_height(int x, int y, int height);
 
 /** Return a pointer to the tile structure at x,y in map coordinates */
-[[nodiscard]] constexpr Tile* get_map_tile(int x, int y)
-{
-	x = MAX(x, 0);
-	y = MAX(y, 0);
-	x = MIN(x, map_width - 1);
-	y = MIN(y, map_height - 1);
+[[nodiscard]] Tile* get_map_tile(int x, int y);
 
-	return &map_tiles[x + (y * map_width)];
-}
+[[nodiscard]] Tile* get_map_tile(const Vector2i& position);
 
-[[nodiscard]] constexpr Tile* get_map_tile(const Vector2i& position)
-{
-  return get_map_tile(position.x, position.y);
-}
+[[nodiscard]] Feature* get_feature_from_tile(int x, int y);
 
-[[nodiscard]] constexpr Feature* get_feature_from_tile(unsigned x, unsigned y)
-{
-	auto* tile_object = get_map_tile(x, y)->occupying_object;
-	return dynamic_cast<Feature*>(tile_object);
-}
+[[nodiscard]] bool is_coord_on_map(int x, int y);
 
-[[nodiscard]] constexpr bool is_coord_on_map(int x, int y)
-{
-	return (x >= 0) && (x < map_width << TILE_SHIFT) &&
-		     (y >= 0) && (y < map_height << TILE_SHIFT);
-}
-
-[[nodiscard]] constexpr bool is_coord_on_map(const Vector2i& position)
-{
-  return is_coord_on_map(position.x, position.y);
-}
+[[nodiscard]] bool is_coord_on_map(const Vector2i& position);
 
 /* Return whether a tile coordinate is on the map */
-[[nodiscard]] constexpr bool tile_on_map(int x, int y)
-{
-  return x >= 0 && x < map_width && y >= 0 && y < map_height;
-}
+[[nodiscard]] bool tile_on_map(int x, int y);
 
-[[nodiscard]] constexpr bool tile_on_map(const Vector2i& position)
-{
-  return tile_on_map(position.x, position.y);
-}
+[[nodiscard]] bool tile_on_map(const Vector2i& position);
 
-[[nodiscard]] constexpr uint8_t aux_tile(int x, int y, int player)
-{
-  return aux_map[player][x + y + map_width];
-}
+[[nodiscard]] uint8_t aux_tile(int x, int y, int player);
 
-[[nodiscard]] constexpr uint8_t block_tile(int x, int y, int slot)
-{
-  return block_map[slot][x + y * map_width];
-}
+[[nodiscard]] uint8_t block_tile(int x, int y, int slot);
 
 #endif // WARZONE2100_MAP_H

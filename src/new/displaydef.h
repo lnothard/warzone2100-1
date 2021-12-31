@@ -9,6 +9,8 @@
 
 #include "lib/ivis_opengl/ivisdef.h"
 
+extern bool god_mode;
+
 struct Display_Data
 {
 	std::unique_ptr<iIMDShape> imd_shape;

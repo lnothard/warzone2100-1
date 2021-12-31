@@ -119,21 +119,21 @@ void visUpdateLevel()
 	visLevelDec = gameTimeAdjustedAverage(VIS_LEVEL_DEC);
 }
 
-static inline void updateTileVis(MAPTILE* psTile)
-{
-	for (int i = 0; i < MAX_PLAYERS; i++)
-	{
-		/// The definition of whether a player can see something on a given tile or not
-		if (psTile->watchers[i] > 0 || (psTile->sensors[i] > 0 && !(psTile->jammerBits & ~alliancebits[i])))
-		{
-			psTile->sensorBits |= (1 << i); // mark it as being seen
-		}
-		else
-		{
-			psTile->sensorBits &= ~(1 << i); // mark as hidden
-		}
-	}
-}
+//static inline void updateTileVis(MAPTILE* psTile)
+//{
+//	for (int i = 0; i < MAX_PLAYERS; i++)
+//	{
+//		/// The definition of whether a player can see something on a given tile or not
+//		if (psTile->watchers[i] > 0 || (psTile->sensors[i] > 0 && !(psTile->jammerBits & ~alliancebits[i])))
+//		{
+//			psTile->sensorBits |= (1 << i); // mark it as being seen
+//		}
+//		else
+//		{
+//			psTile->sensorBits &= ~(1 << i); // mark as hidden
+//		}
+//	}
+//}
 
 uint32_t addSpotter(int x, int y, int player, int radius, bool radar, uint32_t expiry)
 {

@@ -118,18 +118,18 @@ extern std::unique_ptr<uint8_t[]> psBlockMap[AUX_MAX];
 extern std::unique_ptr<uint8_t[]> psAuxMap[MAX_PLAYERS + AUX_MAX];
 // yes, we waste one element... eyes wide open... makes API nicer
 
-/// Find aux bitfield for a given tile
-WZ_DECL_ALWAYS_INLINE static inline uint8_t auxTile(int x, int y, int player)
-{
-	ASSERT_OR_RETURN(AUXBITS_ALL, player >= 0 && player < MAX_PLAYERS + AUX_MAX, "invalid player: %d", player);
-	return psAuxMap[player][x + y * mapWidth];
-}
-
-/// Find blocking bitfield for a given tile
-WZ_DECL_ALWAYS_INLINE static inline uint8_t blockTile(int x, int y, int slot)
-{
-	return psBlockMap[slot][x + y * mapWidth];
-}
+///// Find aux bitfield for a given tile
+//WZ_DECL_ALWAYS_INLINE static inline uint8_t auxTile(int x, int y, int player)
+//{
+//	ASSERT_OR_RETURN(AUXBITS_ALL, player >= 0 && player < MAX_PLAYERS + AUX_MAX, "invalid player: %d", player);
+//	return psAuxMap[player][x + y * mapWidth];
+//}
+//
+///// Find blocking bitfield for a given tile
+//WZ_DECL_ALWAYS_INLINE static inline uint8_t blockTile(int x, int y, int slot)
+//{
+//	return psBlockMap[slot][x + y * mapWidth];
+//}
 
 /// Store a shadow copy of a player's aux map for use in threaded calculations
 static inline void auxMapStore(int player, int slot)
@@ -403,27 +403,27 @@ public:
 /* Save the map data */
 bool mapSaveToWzMapData(WzMap::MapData& output);
 
-/** Return a pointer to the tile structure at x,y in map coordinates */
-static inline WZ_DECL_PURE MAPTILE* mapTile(int32_t x, int32_t y)
-{
-	// Clamp x and y values to actual ones
-	// Give one tile worth of leeway before asserting, for units/transporters coming in from off-map.
-	ASSERT(x >= -1, "mapTile: x value is too small (%d,%d) in %dx%d", x, y, mapWidth, mapHeight);
-	ASSERT(y >= -1, "mapTile: y value is too small (%d,%d) in %dx%d", x, y, mapWidth, mapHeight);
-	x = MAX(x, 0);
-	y = MAX(y, 0);
-	ASSERT(x < mapWidth + 1, "mapTile: x value is too big (%d,%d) in %dx%d", x, y, mapWidth, mapHeight);
-	ASSERT(y < mapHeight + 1, "mapTile: y value is too big (%d,%d) in %dx%d", x, y, mapWidth, mapHeight);
-	x = MIN(x, mapWidth - 1);
-	y = MIN(y, mapHeight - 1);
-
-	return &psMapTiles[x + (y * mapWidth)];
-}
-
-static inline WZ_DECL_PURE MAPTILE* mapTile(Vector2i const& v)
-{
-	return mapTile(v.x, v.y);
-}
+///** Return a pointer to the tile structure at x,y in map coordinates */
+//static inline WZ_DECL_PURE MAPTILE* mapTile(int32_t x, int32_t y)
+//{
+//	// Clamp x and y values to actual ones
+//	// Give one tile worth of leeway before asserting, for units/transporters coming in from off-map.
+//	ASSERT(x >= -1, "mapTile: x value is too small (%d,%d) in %dx%d", x, y, mapWidth, mapHeight);
+//	ASSERT(y >= -1, "mapTile: y value is too small (%d,%d) in %dx%d", x, y, mapWidth, mapHeight);
+//	x = MAX(x, 0);
+//	y = MAX(y, 0);
+//	ASSERT(x < mapWidth + 1, "mapTile: x value is too big (%d,%d) in %dx%d", x, y, mapWidth, mapHeight);
+//	ASSERT(y < mapHeight + 1, "mapTile: y value is too big (%d,%d) in %dx%d", x, y, mapWidth, mapHeight);
+//	x = MIN(x, mapWidth - 1);
+//	y = MIN(y, mapHeight - 1);
+//
+//	return &psMapTiles[x + (y * mapWidth)];
+//}
+//
+//static inline WZ_DECL_PURE MAPTILE* mapTile(Vector2i const& v)
+//{
+//	return mapTile(v.x, v.y);
+//}
 
 /** Return a pointer to the tile structure at x,y in world coordinates */
 static inline WZ_DECL_PURE MAPTILE* worldTile(int32_t x, int32_t y)

@@ -6,13 +6,55 @@
 #define WARZONE2100_VISIBILITY_H
 
 #include "basedef.h"
+#include "map.h"
 
-inline bool objects_in_vis_range(const Simple_Object& first, const Simple_Object& second, int range)
+static constexpr auto VISIBILITY_INCREASE_RATE = 255 * 2;
+static constexpr auto VISIBILITY_DECREASE_RATE = 50;
+static constexpr auto MIN_VISIBILITY_HEIGHT = 80;
+static constexpr auto BASE_DIVISOR = 8;
+static constexpr auto MIN_ILLUMINATION = 45.0f;
+static constexpr auto FADE_IN_TIME = GAME_TICKS_PER_SEC / 10;
+
+/// Whether unexplored tiles should be shown as just darker fog. Left here as a future option
+/// for scripts, since campaign may still want total darkness on unexplored tiles.
+static bool active_reveal = true;
+
+enum class SENSOR_CLASS
 {
-	const auto x_diff = first.get_position().x - second.get_position().x;
-	const auto y_diff = first.get_position().y - second.get_position().y;
+    VISION,
+    RADAR
+};
 
-	return abs(x_diff) <= range && x_diff * x_diff + y_diff * y_diff <= range;
+struct Spotter
+{
+    SENSOR_CLASS sensor_type;
+    Position position;
+    unsigned player;
+    int sensor_radius;
+    /// when to self-destruct; zero if never
+    std::size_t expiration_time;
+};
+extern std::vector<Spotter> invisible_viewers;
+
+inline bool get_reveal_status()
+{
+  return active_reveal;
 }
+
+inline bool set_reveal_status(bool value)
+{
+  active_reveal = value;
+}
+
+bool objects_in_vis_range(const Simple_Object& first,
+                          const Simple_Object& second,
+                          int range);
+
+void update_tile_visibility();
+
+void update_tile_sensors(Tile& tile);
+
+unsigned get_object_light_level(const Simple_Object& object,
+                                unsigned original_level);
 
 #endif // WARZONE2100_VISIBILITY_H

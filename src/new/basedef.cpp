@@ -60,4 +60,20 @@ namespace Impl
   {
     return flags.test(static_cast<std::size_t>(OBJECT_FLAG::UNSELECTABLE));
   }
+
+  uint8_t Simple_Object::visible_to_selected_player() const
+  {
+    return visible_to_player(selectedPlayer);
+  }
+
+  uint8_t Simple_Object::visible_to_player(unsigned watcher) const
+  {
+    if (god_mode) {
+      return UBYTE_MAX;
+    }
+    if (watcher >= MAX_PLAYERS) {
+      return 0;
+    }
+    return visibility_state[watcher];
+  }
 }
