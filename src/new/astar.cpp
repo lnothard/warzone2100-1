@@ -4,6 +4,27 @@
 
 #include "astar.h"
 
+NonBlockingArea::NonBlockingArea(const Structure_Bounds& bounds)
+  : x_1(bounds.top_left_coords.x),
+    x_2(bounds.top_left_coords.x + bounds.size_in_coords.x),
+    y_1(bounds.top_left_coords.y),
+    y_2(bounds.top_left_coords.y + bounds.size_in_coords.y)
+{
+}
+
+bool NonBlockingArea::operator ==(const NonBlockingArea& rhs) const
+{
+  return x_1 == rhs.x_1 &&
+         x_2 == rhs.x_2 &&
+         y_1 == rhs.y_1 &&
+         y_2 == rhs.y_2;
+}
+
+bool NonBlockingArea::operator !=(const NonBlockingArea& rhs) const
+{
+  return !(*this == rhs);
+}
+
 bool NonBlockingArea::is_non_blocking(int x, int y) const
 {
   return x >= x_1 && x < x_2 && y >= y_1 && y < y_2;

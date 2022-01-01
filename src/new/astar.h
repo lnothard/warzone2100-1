@@ -59,7 +59,9 @@ struct PathNode
 
 struct ExploredTile
 {
-    unsigned distance;
+    unsigned iteration;
+    int x_diff, y_diff; ///< offset from previous point in route
+    unsigned distance; ///< shortest known distance to tile
     bool visited;
 };
 
@@ -81,6 +83,11 @@ extern std::vector<PathBlockingMap> blocking_maps;
 
 struct NonBlockingArea
 {
+    NonBlockingArea() = default;
+    explicit NonBlockingArea(const Structure_Bounds& bounds);
+    bool operator ==(const NonBlockingArea& rhs) const;
+    bool operator !=(const NonBlockingArea& rhs) const;
+
     [[nodiscard]] bool is_non_blocking(int x, int y) const;
 
     int x_1 = 0;

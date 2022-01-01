@@ -202,7 +202,17 @@ namespace Impl {
     return stats->power_to_build / 2;
   }
 
-	unsigned count_assigned_droids(const Structure& structure)
+  const ::Simple_Object& Structure::get_target(int weapon_slot) const
+  {
+    return *target[weapon_slot];
+  }
+
+  int Structure::calculate_attack_priority(const Unit *target, int weapon_slot) const
+  {
+
+  }
+
+    unsigned count_assigned_droids(const Structure& structure)
 	{
 		const auto& droids = droid_lists[selectedPlayer];
 		return std::count_if(droids.begin(), droids.end(), [&structure](const auto& droid)

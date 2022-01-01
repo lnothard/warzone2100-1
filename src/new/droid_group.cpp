@@ -38,3 +38,8 @@ void Droid_Group::increment_commander_kills()
 {
   commander->increment_kills();
 }
+
+const Droid& Droid_Group::get_commander() const
+{
+  return *commander;
+}

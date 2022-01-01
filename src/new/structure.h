@@ -178,6 +178,8 @@ namespace Impl
 		void print_info() const override;
     [[nodiscard]] unsigned build_points_to_completion() const;
     [[nodiscard]] unsigned calculate_refunded_power() const;
+    [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
+    [[nodiscard]] const ::Simple_Object& get_target(int weapon_slot) const final;
 	private:
 		using enum STRUCTURE_STATE;
 		using enum STRUCTURE_ANIMATION_STATE;
@@ -187,6 +189,7 @@ namespace Impl
 		STRUCTURE_STATE state;
 		STRUCTURE_ANIMATION_STATE animation_state{NORMAL};
 		std::shared_ptr<Structure_Stats> stats;
+    std::array<::Simple_Object*, MAX_WEAPONS> target{};
 		unsigned current_build_points{0};
 		int build_rate{0};
 		int previous_build_rate{0};

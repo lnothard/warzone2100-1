@@ -20,8 +20,25 @@ static constexpr auto ALLIANCE_BROKEN = 0;
 static constexpr auto VTOL_ATTACK_LENGTH = 1000;
 static constexpr auto VTOL_LANDING_RADIUS = 23;
 static constexpr auto TOO_NEAR_EDGE = 3;
+
 /// maximum number of commanders per player
 static constexpr auto MAX_COMMAND_DROIDS = 5;
+
+/// modifiers used for target selection
+/// How much weight a distance of 1 tile (128 world units)
+/// has when looking for the best nearest target selection
+static constexpr auto BASE_WEIGHT = 13;
+static constexpr auto DROID_DAMAGE_WEIGHT = BASE_WEIGHT * 10;
+static constexpr auto STRUCT_DAMAGE_WEIGHT = BASE_WEIGHT * 7;
+static constexpr auto NOT_VISIBLE_WEIGHT = 10;
+static constexpr auto SERVICE_DROID_WEIGHT = BASE_WEIGHT * 5;
+static constexpr auto WEAPON_DROID_WEIGHT = BASE_WEIGHT * 4;
+static constexpr auto COMMAND_DROID_WEIGHT = BASE_WEIGHT * 6;
+static constexpr auto MILITARY_STRUCT_WEIGHT = BASE_WEIGHT;
+static constexpr auto WEAPON_STRUCT_WEIGHT = WEAPON_DROID_WEIGHT;
+static constexpr auto DERRICK_WEIGHT = MILITARY_STRUCT_WEIGHT + BASE_WEIGHT * 4;
+static constexpr auto UNBUILT_STRUCT_WEIGHT = 8;
+static constexpr auto OLD_TARGET_THRESHOLD = BASE_WEIGHT * 4;
 
 extern PlayerMask satellite_uplink_bits;
 extern std::array<PlayerMask, MAX_PLAYER_SLOTS> alliance_bits;
@@ -106,10 +123,6 @@ public:
 	[[nodiscard]] bool is_commander() const noexcept;
 	[[nodiscard]] bool is_VTOL() const;
 	[[nodiscard]] bool is_flying() const;
-	[[nodiscard]] bool is_transporter() const;
-	[[nodiscard]] bool is_builder() const;
-	[[nodiscard]] bool is_cyborg() const;
-	[[nodiscard]] bool is_repairer() const;
 	[[nodiscard]] bool is_IDF() const;
 	[[nodiscard]] bool is_radar_detector() const final;
 	[[nodiscard]] bool is_stationary() const;
@@ -143,7 +156,7 @@ public:
   [[nodiscard]] int get_vertical_speed() const noexcept;
   [[nodiscard]] unsigned get_secondary_order() const noexcept;
   [[nodiscard]] const Vector2i& get_destination() const;
-  [[nodiscard]] const ::Simple_Object* get_action_target() const noexcept;
+  [[nodiscard]] const ::Simple_Object& get_target(int weapon_slot) const final;
   [[nodiscard]] const std::optional<Propulsion_Stats>& get_propulsion() const;
   void set_direct_route(int target_x, int target_y) const;
   void increment_kills() noexcept;
@@ -152,15 +165,16 @@ public:
   [[nodiscard]] int calculate_electronic_resistance() const;
   [[nodiscard]] bool is_selectable() const override;
   [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
+  [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
 private:
 	using enum ACTION;
 	using enum DROID_TYPE;
 
-	std::string name;
+	std::string name{};
 	ACTION action{NONE};
 	DROID_TYPE type{ANY};
-  Simple_Object* action_target{nullptr};
 	Structure* associated_structure{nullptr};
+  std::array<Simple_Object*, MAX_WEAPONS> action_target{};
 	std::shared_ptr<Droid_Group> group;
 	std::unique_ptr<Order> order;
 	std::unique_ptr<Movement> movement;
@@ -181,6 +195,11 @@ private:
 	int resistance_to_electric{0};
 	std::size_t time_action_started{0};
 };
+
+[[nodiscard]] bool is_cyborg(const Droid& droid);
+[[nodiscard]] bool is_transporter(const Droid& droid);
+[[nodiscard]] bool is_builder(const Droid& droid);
+[[nodiscard]] bool is_repairer(const Droid& droid);
 
 [[nodiscard]] unsigned count_player_command_droids(unsigned player);
 [[nodiscard]] bool still_building(const Droid& droid);
@@ -217,10 +236,10 @@ void clear_blocking_flags(const Droid& droid);
 	for (const auto& player_droids : droid_lists)
 	{
 		if (std::any_of(player_droids.begin(), player_droids.end(), [x, y](const auto& droid)
-		                {
-			                return map_coord(droid.get_position().x) == x &&
-				                map_coord(droid.get_position().y == y);
-		                }))
+        {
+          return map_coord(droid.get_position().x) == x &&
+            map_coord(droid.get_position().y == y);
+        }))
 		{
 			return true;
 		}

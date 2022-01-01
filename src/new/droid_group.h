@@ -28,6 +28,7 @@ public:
 	[[nodiscard]] unsigned get_commander_level() const;
 	void commander_gain_experience(unsigned exp);
   void increment_commander_kills();
+  [[nodiscard]] const Droid& get_commander() const;
 private:
 	using enum GROUP_TYPE;
 

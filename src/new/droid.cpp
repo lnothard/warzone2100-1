@@ -51,7 +51,7 @@ bool Droid::is_VTOL() const
 	if (!propulsion)
     return false;
 
-	return !is_transporter() &&
+	return !is_transporter(*this) &&
     propulsion->propulsion_type == PROPULSION_TYPE::LIFT;
 }
 
@@ -60,34 +60,14 @@ bool Droid::is_flying() const
 	if (!propulsion)
     return false;
 
-	return (!movement->is_inactive() || is_transporter()) &&
+	return (!movement->is_inactive() || is_transporter(*this)) &&
 		propulsion->propulsion_type == PROPULSION_TYPE::LIFT;
 }
 
-bool Droid::is_transporter() const
-{
-	return type == TRANSPORTER || type == SUPER_TRANSPORTER;
-}
-
-bool Droid::is_builder() const
-{
-	return type == CONSTRUCT || type == CYBORG_CONSTRUCT;
-}
-
-bool Droid::is_cyborg() const
-{
-	return (type == CYBORG || type == CYBORG_CONSTRUCT ||
-		type == CYBORG_REPAIR || type == CYBORG_SUPER);
-}
-
-bool Droid::is_repairer() const
-{
-	return type == REPAIRER || type == CYBORG_REPAIR;
-}
 
 bool Droid::is_IDF() const
 {
-	return (type != WEAPON || !is_cyborg()) && has_artillery(*this);
+	return (type != WEAPON || !is_cyborg(*this)) && has_artillery(*this);
 }
 
 bool Droid::is_radar_detector() const
@@ -432,9 +412,9 @@ void Droid::increment_commander_kills() const
   group->increment_commander_kills();
 }
 
-const Simple_Object* Droid::get_action_target() const noexcept
+const Simple_Object& Droid::get_target(int weapon_slot) const
 {
-  return action_target;
+  return *action_target[weapon_slot];
 }
 
 const std::optional<Propulsion_Stats>& Droid::get_propulsion() const
@@ -465,7 +445,7 @@ bool Droid::is_selectable() const
   if (!Simple_Object::is_selectable())
     return false;
 
-  if (is_transporter() && !is_multiplayer)
+  if (is_transporter(*this) && !is_multiplayer)
     return false;
 
   return true;
@@ -483,13 +463,110 @@ unsigned Droid::get_armour_points_against_weapon(WEAPON_CLASS weapon_class) cons
   }
 }
 
+int Droid::calculate_attack_priority(const Unit* target, int weapon_slot) const
+{
+  auto& attacker_weapon = get_weapons()[weapon_slot];
+  auto targeting_commander = false;
+  auto is_direct = false;
+  auto damage_ratio = 0;
+  auto target_type_modifier = 0;
+  auto attack_weight = 0;
+
+  if (!target || !target->is_alive()) {
+    return -1;
+  }
+
+  if (has_commander()) {
+    for (auto slot = 0; slot < num_weapons(*target); ++slot)
+    {
+      if (&(target->get_target(slot)) == &(group->get_commander())) {
+        targeting_commander = true;
+      }
+    }
+  }
+
+  if (type == SENSOR) {
+    // Sensors are considered a direct weapon,
+    // but for computing expected damage it makes more sense to use indirect damage
+    is_direct = false;
+  } else {
+    is_direct = !attacker_weapon.is_artillery();
+  }
+
+  auto distance = iHypot((get_position() - target->get_position()).xy());
+  if (distance <= attacker_weapon.get_min_range(get_player())) {
+    // If object is too close to fire at, consider it to be at maximum range.
+    distance = calculate_sensor_range();
+  }
+
+  if (auto as_droid = dynamic_cast<const Droid*>(target)) {
+    damage_ratio = 100 - 100 * as_droid->get_hp() / as_droid->original_hp;
+
+    switch (as_droid->get_type()) {
+      case CYBORG:
+      case WEAPON:
+      case CYBORG_SUPER:
+        target_type_modifier = WEAPON_DROID_WEIGHT;
+        break;
+      case COMMAND:
+        target_type_modifier = COMMAND_DROID_WEIGHT;
+        break;
+      case REPAIRER:
+      case CONSTRUCT:
+      case CYBORG_CONSTRUCT:
+      case CYBORG_REPAIR:
+        target_type_modifier = SERVICE_DROID_WEIGHT;
+        break;
+      default:
+        break;
+    }
+
+    attack_weight = ;
+
+    if (attacker_weapon.get_subclass() == WEAPON_SUBCLASS::EMP &&
+        gameTime - as_droid->) {
+
+    }
+  }
+  return std::max<int>(1, attack_weight);
+}
+
+bool is_transporter(const Droid& droid)
+{
+  using enum DROID_TYPE;
+  return droid.get_type() == TRANSPORTER ||
+         droid.get_type() == SUPER_TRANSPORTER;
+}
+
+bool is_builder(const Droid& droid)
+{
+  using enum DROID_TYPE;
+  return droid.get_type() == CONSTRUCT ||
+         droid.get_type() == CYBORG_CONSTRUCT;
+}
+
+bool is_cyborg(const Droid& droid)
+{
+  using enum DROID_TYPE;
+  return droid.get_type() == CYBORG ||
+         droid.get_type() == CYBORG_CONSTRUCT ||
+         droid.get_type() == CYBORG_REPAIR ||
+         droid.get_type() == CYBORG_SUPER;
+}
+
+bool is_repairer(const Droid& droid)
+{
+  using enum DROID_TYPE;
+  return droid.get_type() == REPAIRER ||
+         droid.get_type() == CYBORG_REPAIR;
+}
+
 bool transporter_is_flying(const Droid& transporter)
 {
-  assert(transporter.is_transporter());
+  assert(is_transporter(transporter));
   auto& order = transporter.get_current_order();
 
-  if (is_multiplayer)
-  {
+  if (is_multiplayer) {
     return order.type == ORDER_TYPE::MOVE ||
            order.type == ORDER_TYPE::DISEMBARK ||
            (order.type == ORDER_TYPE::NONE && transporter.get_vertical_speed() != 0);
@@ -525,7 +602,8 @@ bool all_VTOLs_rearmed(const Droid& droid)
 	if (!droid.is_VTOL()) return true;
 
 	const auto& droids = droid_lists[droid.get_player()];
-	return std::none_of(droids.begin(), droids.end(), [&droid](const auto& other_droid)
+	return std::none_of(droids.begin(), droids.end(),
+                      [&droid](const auto& other_droid)
 	{
 		return other_droid.is_rearming() &&
 			other_droid.get_current_order().type == droid.get_current_order().type &&
@@ -548,10 +626,12 @@ bool being_repaired(const Droid& droid)
 	if (!droid.is_damaged()) return false;
 
 	const auto& droids = droid_lists[droid.get_player()];
-	return std::any_of(droids.begin(), droids.end(), [&droid](const auto& other_droid)
+	return std::any_of(droids.begin(), droids.end(),
+                     [&droid](const auto& other_droid)
 	{
-		return other_droid.is_repairer() && other_droid.get_current_action() == DROID_REPAIR &&
-			other_droid.get_current_order().target_object->get_id() == droid.get_id();
+		return is_repairer(other_droid) &&
+           other_droid.get_current_action() == DROID_REPAIR &&
+			     other_droid.get_current_order().target_object->get_id() == droid.get_id();
 	});
 }
 
@@ -578,7 +658,7 @@ unsigned count_player_command_droids(unsigned player)
 
 void update_orientation(Droid& droid)
 {
-	if (droid.is_cyborg() || droid.is_flying() || droid.is_transporter())
+	if (is_cyborg(droid) || droid.is_flying() || is_transporter(droid))
 		return;
 }
 
@@ -694,7 +774,7 @@ long get_commander_index(const Droid& commander)
 
 void add_VTOL_attack_run(const Droid& droid)
 {
-  auto* target = droid.get_action_target();
+  auto target = &droid.get_target(0);
   if (!target)
   {
     target = droid.get_current_order().target_object;

@@ -11,6 +11,7 @@
 
 static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
 static constexpr auto TURRET_ROTATION_RATE = 45;
+static constexpr auto MAX_WEAPONS = 3;
 
 class Unit : public virtual ::Simple_Object
 {
@@ -31,8 +32,11 @@ public:
 	[[nodiscard]] virtual const std::vector<Weapon>& get_weapons() const = 0;
 	[[nodiscard]] virtual const iIMDShape& get_IMD_shape() const = 0;
   [[nodiscard]] virtual bool is_selected() const noexcept = 0;
+  virtual void align_turret(int weapon_slot) = 0;
   virtual void update_expected_damage(unsigned damage, bool is_direct) noexcept = 0;
   virtual void use_ammo(int weapon_slot) = 0;
+  [[nodiscard]] virtual int calculate_attack_priority(const Unit* target, int weapon_slot) const = 0;
+  [[nodiscard]] virtual const Simple_Object& get_target(int weapon_slot) const = 0;
 };
 
 Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot);
@@ -48,12 +52,12 @@ namespace Impl
 		[[nodiscard]] unsigned get_hp() const noexcept final;
 		[[nodiscard]] const std::vector<Weapon>& get_weapons() const final;
     [[nodiscard]] bool is_selected() const noexcept final;
-		void align_turret(int weapon_slot);
+		void align_turret(int weapon_slot) final;
     void use_ammo(int weapon_slot) override;
 	private:
-		unsigned hit_points{0};
+		unsigned hit_points = 0;
     bool selected = false;
-		std::vector<Weapon> weapons{0};
+		std::vector<Weapon> weapons{};
 	};
 
 	void check_angle(int64_t& angle_tan, int start_coord, int height, int square_distance, int target_height,
