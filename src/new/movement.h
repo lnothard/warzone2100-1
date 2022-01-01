@@ -34,6 +34,11 @@ public:
 		return state == INACTIVE;
 	}
 
+  [[nodiscard]] constexpr bool is_hovering() const noexcept
+  {
+    return state == HOVER;
+  }
+
 	[[nodiscard]] constexpr bool is_stationary() const noexcept
 	{
 		return state == INACTIVE || state == HOVER || state == SHUFFLE;

@@ -41,10 +41,7 @@ bool Droid::is_probably_doomed(bool is_direct_damage) const
 	return is_doomed(expected_damage_indirect);
 }
 
-bool Droid::is_commander() const noexcept
-{
-	return type == COMMAND;
-}
+
 
 bool Droid::is_VTOL() const
 {
@@ -62,12 +59,6 @@ bool Droid::is_flying() const
 
 	return (!movement->is_inactive() || is_transporter(*this)) &&
 		propulsion->propulsion_type == PROPULSION_TYPE::LIFT;
-}
-
-
-bool Droid::is_IDF() const
-{
-	return (type != WEAPON || !is_cyborg(*this)) && has_artillery(*this);
 }
 
 bool Droid::is_radar_detector() const
@@ -338,15 +329,6 @@ unsigned Droid::calculate_sensor_range() const
 	return sensor->upgraded[get_player()].range;
 }
 
-unsigned Droid::calculate_max_range() const
-{
-	if (type == SENSOR)
-		return calculate_sensor_range();
-	else if (num_weapons(*this) == 0)
-		return 0;
-	else
-		return get_max_weapon_range(*this);
-}
 
 int Droid::calculate_height() const
 {
@@ -531,6 +513,11 @@ int Droid::calculate_attack_priority(const Unit* target, int weapon_slot) const
   return std::max<int>(1, attack_weight);
 }
 
+bool Droid::is_hovering() const
+{
+  return movement->is_hovering();
+}
+
 bool is_transporter(const Droid& droid)
 {
   using enum DROID_TYPE;
@@ -559,6 +546,30 @@ bool is_repairer(const Droid& droid)
   using enum DROID_TYPE;
   return droid.get_type() == REPAIRER ||
          droid.get_type() == CYBORG_REPAIR;
+}
+
+bool is_IDF(const Droid& droid)
+{
+  using enum DROID_TYPE;
+  return (droid.get_type() != WEAPON || !is_cyborg(droid)) &&
+         has_artillery(droid);
+}
+
+bool is_commander(const Droid& droid) noexcept
+{
+  using enum DROID_TYPE;
+  return droid.get_type() == COMMAND;
+}
+
+unsigned calculate_max_range(const Droid& droid)
+{
+  using enum DROID_TYPE;
+  if (droid.get_type() == SENSOR)
+    return droid.calculate_sensor_range();
+  else if (num_weapons(droid) == 0)
+    return 0;
+  else
+    return get_max_weapon_range(droid);
 }
 
 bool transporter_is_flying(const Droid& transporter)
@@ -763,12 +774,12 @@ void initialise_ai_bits()
 
 long get_commander_index(const Droid& commander)
 {
-	assert(commander.is_commander());
+	assert(is_commander(commander));
 
 	const auto& droids = droid_lists[commander.get_player()];
 	return std::find_if(droids.begin(), droids.end(), [&commander](const auto& droid)
 	{
-		return droid.is_commander() && &droid == &commander;
+		return  is_commander(droid) && &droid == &commander;
 	}) - droids.begin();
 }
 
@@ -788,6 +799,57 @@ void add_VTOL_attack_run(const Droid& droid)
   {
     move_droid_direct(droid, destination);
   }
+}
+
+void update_vtol_attack(Droid& droid)
+{
+  using enum ORDER_TYPE;
+  if (droid.get_current_order().type == RETURN_TO_BASE) {
+    // don't do attack runs while returning to base
+    return;
+  }
+
+  // order back to base after fixed number of attack runs
+  if (num_weapons(droid) > 0 && droid.is_VTOL_empty()) {
+    droid.move_to_rearm_pad();
+    return;
+  }
+
+  // circle target if hovering and not cyborg
+  if (!is_cyborg(droid) && droid.is_hovering()) {
+    add_VTOL_attack_run(droid);
+  }
+}
+
+Vector2i determine_fallback_position(Unit& unit, Unit& target)
+{
+  auto x_diff = unit.get_position().x - target.get_position().x;
+  auto y_diff = unit.get_position().y - target.get_position().y;
+  const auto length = iHypot(x_diff, y_diff);
+
+  if (length == 0) {
+    x_diff = y_diff = TILE_UNITS;
+  } else {
+    x_diff = (x_diff * TILE_UNITS) / length;
+    y_diff = (y_diff * TILE_UNITS) / length;
+  }
+
+  auto fallback_position =
+          Vector2i{unit.get_position().x + x_diff * FALLBACK_DISTANCE,
+                   unit.get_position().y + y_diff * FALLBACK_DISTANCE};
+
+  clip_coords(fallback_position);
+  return fallback_position;
+}
+
+bool droids_are_neighbours(const Droid& first, const Droid& second)
+{
+  const auto first_coord = map_coord(first.get_position().xy());
+  const auto second_coord = map_coord(second.get_position().xy());
+  const auto delta = first_coord - second_coord;
+
+  return delta.x >= -1 && delta.x <= 1 &&
+         delta.y >= -1 && delta.y <= 1;
 }
 
 void update_vtol_attack_runs(Droid& droid, int weapon_slot)

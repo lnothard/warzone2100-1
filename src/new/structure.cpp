@@ -212,7 +212,12 @@ namespace Impl {
 
   }
 
-    unsigned count_assigned_droids(const Structure& structure)
+  STRUCTURE_STATE Structure::get_state() const
+  {
+    return state;
+  }
+
+  unsigned count_assigned_droids(const Structure& structure)
 	{
 		const auto& droids = droid_lists[selectedPlayer];
 		return std::count_if(droids.begin(), droids.end(), [&structure](const auto& droid)

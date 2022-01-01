@@ -60,13 +60,17 @@ bool has_full_ammo(const Unit& unit) noexcept
 {
 	auto& weapons = unit.get_weapons();
 	return std::all_of(weapons.begin(), weapons.end(),
-	                   [](const auto& weapon) { return weapon.has_full_ammo(); });
+	                   [](const auto& weapon)
+  {
+       return weapon.has_full_ammo();
+  });
 }
 
 bool has_artillery(const Unit& unit) noexcept
 {
 	auto& weapons = unit.get_weapons();
-	return std::any_of(weapons.begin(), weapons.end(), [](const auto& weapon)
+	return std::any_of(weapons.begin(), weapons.end(),
+                     [](const auto& weapon)
 	{
 		return weapon.is_artillery();
 	});
@@ -248,7 +252,8 @@ int calculate_line_of_fire(const Unit& unit, const ::Simple_Object& target, int 
 			const Tile* psTile;
 			halfway = current + (next - current) / 2;
 			psTile = get_map_tile(map_coord(halfway.x), map_coord(halfway.y));
-			if (tile_is_occupied_by_structure(*psTile) && psTile->occupying_object != target)
+			if (tile_is_occupied_by_structure(*psTile) &&
+          psTile->occupying_object != &target)
 			{
 				// check whether target was reached before tile's "half way" line
 				part = halfway - start;
@@ -317,6 +322,67 @@ bool target_in_line_of_fire(const Unit& unit, const ::Unit& target, int weapon_s
 		}
 	}
 	return range >= distance;
+}
+
+Unit* find_target(Unit& unit, ATTACKER_TYPE attacker_type,
+                 int weapon_slot, Weapon weapon)
+{
+  Unit* target = nullptr;
+  bool is_cb_sensor = false;
+  bool found_cb = false;
+  auto target_dist = weapon.get_max_range(unit.get_player());
+  auto min_dist = weapon.get_min_range(unit.get_player());
+
+  for (const auto& sensor : sensor_list)
+  {
+    if (!alliance_formed(sensor.get_player(), unit.get_player())) {
+      continue;
+    }
+    // Artillery should not fire at objects observed
+    // by VTOL CB/Strike sensors.
+    if (sensor.has_VTOL_CB_sensor() ||
+        sensor.has_VTOL_intercept_sensor() ||
+        sensor.is_radar_detector()) {
+      continue;
+    }
+
+    if (auto as_droid = dynamic_cast<const Droid&>(sensor)) {
+      // Skip non-observing droids. This includes Radar Detectors
+      // at the moment since they never observe anything.
+      if (as_droid.get_current_action() == ACTION::OBSERVE) {
+        continue;
+      }
+    } else { // structure
+      auto as_structure = dynamic_cast<const Structure &>(sensor);
+      // skip incomplete structures
+      if (as_structure.get_state() != STRUCTURE_STATE::BUILT) {
+        continue;
+      }
+    }
+    target = &sensor.get_target(0);
+    is_cb_sensor = sensor.has_CB_sensor();
+
+    if (!target ||
+        !target->is_alive() ||
+        target->is_probably_doomed() ||
+        !target->is_valid_target() ||
+        alliance_formed(target->get_player(),
+                        unit.get_player())) {
+      continue;
+    }
+
+    auto square_dist = object_position_square_diff(target->get_position(),
+                                                   unit.get_position());
+    if (target_within_weapon_range(unit, target, weapon_slot) &&
+        is_target_visible()) {
+      target_dist = square_dist;
+      if (is_cb_sensor) {
+        // got CB target, drop everything and shoot!
+        found_cb = true;
+      }
+    }
+  }
+  return target;
 }
 
 unsigned num_weapons(const Unit& unit)

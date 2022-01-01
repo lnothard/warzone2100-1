@@ -20,6 +20,7 @@ static constexpr auto ALLIANCE_BROKEN = 0;
 static constexpr auto VTOL_ATTACK_LENGTH = 1000;
 static constexpr auto VTOL_LANDING_RADIUS = 23;
 static constexpr auto TOO_NEAR_EDGE = 3;
+static constexpr auto FALLBACK_DISTANCE = 10;
 
 /// maximum number of commanders per player
 static constexpr auto MAX_COMMAND_DROIDS = 5;
@@ -120,10 +121,8 @@ public:
 	[[nodiscard]] ACTION get_current_action() const noexcept;
 	[[nodiscard]] const Order& get_current_order() const;
 	[[nodiscard]] bool is_probably_doomed(bool is_direct_damage) const;
-	[[nodiscard]] bool is_commander() const noexcept;
 	[[nodiscard]] bool is_VTOL() const;
 	[[nodiscard]] bool is_flying() const;
-	[[nodiscard]] bool is_IDF() const;
 	[[nodiscard]] bool is_radar_detector() const final;
 	[[nodiscard]] bool is_stationary() const;
 	[[nodiscard]] bool is_rearming() const;
@@ -150,7 +149,6 @@ public:
 	[[nodiscard]] unsigned commander_max_group_size() const;
 	[[nodiscard]] const iIMDShape& get_IMD_shape() const final;
 	[[nodiscard]] unsigned calculate_sensor_range() const final;
-	[[nodiscard]] unsigned calculate_max_range() const;
 	[[nodiscard]] int calculate_height() const;
   [[nodiscard]] int space_occupied_on_transporter() const;
   [[nodiscard]] int get_vertical_speed() const noexcept;
@@ -166,6 +164,7 @@ public:
   [[nodiscard]] bool is_selectable() const override;
   [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
   [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
+  [[nodiscard]] bool is_hovering() const;
 private:
 	using enum ACTION;
 	using enum DROID_TYPE;
@@ -200,7 +199,9 @@ private:
 [[nodiscard]] bool is_transporter(const Droid& droid);
 [[nodiscard]] bool is_builder(const Droid& droid);
 [[nodiscard]] bool is_repairer(const Droid& droid);
-
+[[nodiscard]] bool is_IDF(const Droid& droid);
+[[nodiscard]] bool is_commander(const Droid& droid) noexcept;
+[[nodiscard]] unsigned calculate_max_range(const Droid& droid);
 [[nodiscard]] unsigned count_player_command_droids(unsigned player);
 [[nodiscard]] bool still_building(const Droid& droid);
 [[nodiscard]] bool can_assign_fire_support(const Droid& droid,
@@ -223,6 +224,7 @@ private:
                                               int weapon_slot);
 long get_commander_index(const Droid& commander);
 void add_VTOL_attack_run(Droid& droid);
+void update_vtol_attack(Droid& droid);
 const Rearm_Pad* find_nearest_rearm_pad(const Droid& droid);
 bool valid_position_for_droid(int x, int y, PROPULSION_TYPE propulsion);
 bool vtol_can_land_here(int x, int y);
@@ -230,6 +232,13 @@ Droid* find_nearest_droid(unsigned x, unsigned y, bool selected);
 Vector2i spiral_search(Vector2i start_pos, int max_radius);
 void set_blocking_flags(const Droid& droid);
 void clear_blocking_flags(const Droid& droid);
+
+// calculate a position for units to pull back to if they
+// need to increase the range between them and a target
+Vector2i determine_fallback_position(Unit& unit, Unit& target);
+
+/// check whether a droid is in the neighboring tile of another droid
+bool droids_are_neighbours(const Droid& first, const Droid& second)
 
 [[nodiscard]] constexpr bool tile_occupied_by_droid(unsigned x, unsigned y)
 {

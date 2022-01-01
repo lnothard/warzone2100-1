@@ -180,6 +180,7 @@ namespace Impl
     [[nodiscard]] unsigned calculate_refunded_power() const;
     [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
     [[nodiscard]] const ::Simple_Object& get_target(int weapon_slot) const final;
+    [[nodiscard]] STRUCTURE_STATE get_state() const;
 	private:
 		using enum STRUCTURE_STATE;
 		using enum STRUCTURE_ANIMATION_STATE;

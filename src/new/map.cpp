@@ -41,7 +41,7 @@ void aux_set_allied(int x, int y, unsigned player, int state)
   }
 }
 
-uin8_t get_terrain_type(const Tile& tile)
+uint8_t get_terrain_type(const Tile& tile)
 {
   return terrain_types[tile.texture & TILE_NUM_MASK];
 }
@@ -147,6 +147,14 @@ bool tile_on_map(int x, int y)
 bool tile_on_map(const Vector2i& position)
 {
   return tile_on_map(position.x, position.y);
+}
+
+void clip_coords(Vector2i& pos)
+{
+  pos.x = MAX(1, pos.x);
+  pos.y = MAX(1, pos.y);
+  pos.x = MIN(world_coord(map_width) - 1, pos.x);
+  pos.y = MIN(world_coord(map_height) - 1, pos.y);
 }
 
 uint8_t aux_tile(int x, int y, int player)

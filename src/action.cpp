@@ -467,29 +467,29 @@ bool actionVisibleTarget(DROID* psDroid, BASE_OBJECT* psTarget, int weapon_slot)
 //	}
 //}
 
-static void actionUpdateVtolAttack(DROID* psDroid)
-{
-	CHECK_DROID(psDroid);
-
-	/* don't do attack runs whilst returning to base */
-	if (psDroid->order.type == DORDER_RTB)
-	{
-		return;
-	}
-
-	/* order back to base after fixed number of attack runs */
-	if (psDroid->numWeaps > 0 && psDroid->asWeaps[0].nStat > 0 && vtolEmpty(psDroid))
-	{
-		moveToRearm(psDroid);
-		return;
-	}
-
-	/* circle around target if hovering and not cyborg */
-	if (psDroid->sMove.Status == MOVEHOVER && !cyborgDroid(psDroid))
-	{
-		actionAddVtolAttackRun(psDroid);
-	}
-}
+//static void actionUpdateVtolAttack(DROID* psDroid)
+//{
+//	CHECK_DROID(psDroid);
+//
+//	/* don't do attack runs whilst returning to base */
+//	if (psDroid->order.type == DORDER_RTB)
+//	{
+//		return;
+//	}
+//
+//	/* order back to base after fixed number of attack runs */
+//	if (psDroid->numWeaps > 0 && psDroid->asWeaps[0].nStat > 0 && vtolEmpty(psDroid))
+//	{
+//		moveToRearm(psDroid);
+//		return;
+//	}
+//
+//	/* circle around target if hovering and not cyborg */
+//	if (psDroid->sMove.Status == MOVEHOVER && !cyborgDroid(psDroid))
+//	{
+//		actionAddVtolAttackRun(psDroid);
+//	}
+//}
 
 static void actionUpdateTransporter(DROID* psDroid)
 {
@@ -504,44 +504,44 @@ static void actionUpdateTransporter(DROID* psDroid)
 }
 
 
-// calculate a position for units to pull back to if they
-// need to increase the range between them and a target
-static void actionCalcPullBackPoint(BASE_OBJECT* psObj, BASE_OBJECT* psTarget, int* px, int* py)
-{
-	// get the vector from the target to the object
-	int xdiff = psObj->pos.x - psTarget->pos.x;
-	int ydiff = psObj->pos.y - psTarget->pos.y;
-	const int len = iHypot(xdiff, ydiff);
+//// calculate a position for units to pull back to if they
+//// need to increase the range between them and a target
+//static void actionCalcPullBackPoint(BASE_OBJECT* psObj, BASE_OBJECT* psTarget, int* px, int* py)
+//{
+//	// get the vector from the target to the object
+//	int xdiff = psObj->pos.x - psTarget->pos.x;
+//	int ydiff = psObj->pos.y - psTarget->pos.y;
+//	const int len = iHypot(xdiff, ydiff);
+//
+//	if (len == 0)
+//	{
+//		xdiff = TILE_UNITS;
+//		ydiff = TILE_UNITS;
+//	}
+//	else
+//	{
+//		xdiff = (xdiff * TILE_UNITS) / len;
+//		ydiff = (ydiff * TILE_UNITS) / len;
+//	}
+//
+//	// create the position
+//	*px = psObj->pos.x + xdiff * PULL_BACK_DIST;
+//	*py = psObj->pos.y + ydiff * PULL_BACK_DIST;
+//
+//	// make sure coordinates stay inside of the map
+//	clip_world_offmap(px, py);
+//}
 
-	if (len == 0)
-	{
-		xdiff = TILE_UNITS;
-		ydiff = TILE_UNITS;
-	}
-	else
-	{
-		xdiff = (xdiff * TILE_UNITS) / len;
-		ydiff = (ydiff * TILE_UNITS) / len;
-	}
-
-	// create the position
-	*px = psObj->pos.x + xdiff * PULL_BACK_DIST;
-	*py = psObj->pos.y + ydiff * PULL_BACK_DIST;
-
-	// make sure coordinates stay inside of the map
-	clip_world_offmap(px, py);
-}
-
-// check whether a droid is in the neighboring tile of another droid
-bool actionReachedDroid(DROID const* psDroid, DROID const* psOther)
-{
-	ASSERT_OR_RETURN(false, psDroid != nullptr && psOther != nullptr, "Bad droids");
-	CHECK_DROID(psDroid);
-	Vector2i xy = map_coord(psDroid->pos.xy());
-	Vector2i otherxy = map_coord(psOther->pos.xy());
-	Vector2i delta = xy - otherxy;
-	return delta.x >= -1 && delta.x <= 1 && delta.y >= -1 && delta.y <= 1;
-}
+//// check whether a droid is in the neighboring tile of another droid
+//bool actionReachedDroid(DROID const* psDroid, DROID const* psOther)
+//{
+//	ASSERT_OR_RETURN(false, psDroid != nullptr && psOther != nullptr, "Bad droids");
+//	CHECK_DROID(psDroid);
+//	Vector2i xy = map_coord(psDroid->pos.xy());
+//	Vector2i otherxy = map_coord(psOther->pos.xy());
+//	Vector2i delta = xy - otherxy;
+//	return delta.x >= -1 && delta.x <= 1 && delta.y >= -1 && delta.y <= 1;
+//}
 
 
 // check whether a droid is in the neighboring tile to a build position

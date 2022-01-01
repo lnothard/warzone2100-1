@@ -9,7 +9,7 @@ std::string get_team_description(const SkirmishGame& info)
   using enum ALLIANCE_SETTING;
   if (info.alliance_setting == ALLIANCES_TEAMS ||
       info.alliance_setting == ALLIANCES_UNSHARED) {
-    return nullptr;
+    return {};
   }
 
   std::map<int, std::size_t> team_player_count;
@@ -17,7 +17,7 @@ std::string get_team_description(const SkirmishGame& info)
 
   if (team_player_count.size() <= 1) {
     // does not have multiple teams
-    return nullptr;
+    return {};
   }
 
   std::string team_description;

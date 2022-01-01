@@ -116,6 +116,14 @@ void set_tile_height(int x, int y, int height);
 
 [[nodiscard]] bool tile_on_map(const Vector2i& position);
 
+/* Make sure world coordinates are inside the map */
+/** Clip world coordinates to make sure they're inside the map's boundaries
+ *  \param pos a pointer to a coordinate inside the map
+ *  \post 1 <= pos.x <= world_coord(mapWidth)-1 and
+ *        1 <= pos.y <= world_coord(mapHeight)-1
+ */
+void clip_coords(Vector2i& pos);
+
 [[nodiscard]] uint8_t aux_tile(int x, int y, int player);
 
 [[nodiscard]] uint8_t block_tile(int x, int y, int slot);
