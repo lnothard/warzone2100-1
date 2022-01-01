@@ -55,7 +55,7 @@ PathNode get_best_node(std::vector<PathNode>& nodes)
 {
   // find the node with the lowest distance
   // if equal totals, give preference to node closer to target
-  auto best = std::move(nodes.front());
+  auto best = nodes.front();
   // remove the node from the list
   std::pop_heap(nodes.begin(), nodes.end());
   // move the best node from the front of nodes to the back of nodes,
@@ -74,4 +74,33 @@ unsigned estimate_distance(PathCoordinate start, PathCoordinate finish)
   // 99/70 = 1.41428571... ≈ √2 = 1.41421356...
   return std::min(x_delta, y_delta) * (198 - 140) +
          std::max(x_delta, y_delta) * 140;
+}
+
+unsigned estimate_distance_precise(PathCoordinate start, PathCoordinate finish)
+{
+  // cost of moving horizontal/vertical = 70*2,
+  // cost of moving diagonal = 99*2,
+  // 99/70 = 1.41428571... ≈ √2 = 1.41421356...
+  return iHypot((start.x - finish.x) * 140, (start.y - finish.y) * 140);
+}
+
+void generate_new_node(PathContext& context, PathCoordinate destination,
+                       PathCoordinate current_pos, PathCoordinate prev_pos,
+                       unsigned prev_dist)
+{
+  auto cost_factor = context.is_dangerous(current_pos.x, current_pos.y);
+  auto dist = prev_dist + estimate_distance(prev_pos, current_pos) * cost_factor;
+  auto node = PathNode{current_pos, dist,
+                       dist + estimate_distance_precise(current_pos, destination)};
+
+  auto delta = Vector2i{current_pos.x - prev_pos.x,
+                        current_pos.y - prev_pos.y} * 64;
+  bool is_diagonal = delta.x && delta.y;
+
+  auto& explored = context.map[current_pos.x + current_pos.y * map_width];
+  if (explored.visited) {
+    // Already visited this tile. Do nothing.
+    return;
+  }
+
 }

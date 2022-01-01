@@ -39,7 +39,7 @@ struct Particle
     PARTICLE_STATUS status;
     PARTICLE_TYPE type;
     unsigned size;
-    Vector3f position;
+    Vector3i position;
     Vector3f velocity;
     std::unique_ptr<iIMDShape> imd_shape;
 };

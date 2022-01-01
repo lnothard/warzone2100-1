@@ -82,32 +82,32 @@ void atmosInitSystem()
 
 /*	Makes a particle wrap around - if it goes off the grid, then it returns
 	on the other side - provided it's still on world... Which it should be */
-static void testParticleWrap(ATPART* psPart)
-{
-	/* Gone off left side */
-	if (psPart->position.x < playerPos.p.x - world_coord(visibleTiles.x) / 2)
-	{
-		psPart->position.x += world_coord(visibleTiles.x);
-	}
-
-	/* Gone off right side */
-	else if (psPart->position.x > (playerPos.p.x + world_coord(visibleTiles.x) / 2))
-	{
-		psPart->position.x -= world_coord(visibleTiles.x);
-	}
-
-	/* Gone off top */
-	if (psPart->position.z < playerPos.p.z - world_coord(visibleTiles.y) / 2)
-	{
-		psPart->position.z += world_coord(visibleTiles.y);
-	}
-
-	/* Gone off bottom */
-	else if (psPart->position.z > (playerPos.p.z + world_coord(visibleTiles.y) / 2))
-	{
-		psPart->position.z -= world_coord(visibleTiles.y);
-	}
-}
+//static void testParticleWrap(ATPART* psPart)
+//{
+//	/* Gone off left side */
+//	if (psPart->position.x < playerPos.p.x - world_coord(visibleTiles.x) / 2)
+//	{
+//		psPart->position.x += world_coord(visibleTiles.x);
+//	}
+//
+//	/* Gone off right side */
+//	else if (psPart->position.x > (playerPos.p.x + world_coord(visibleTiles.x) / 2))
+//	{
+//		psPart->position.x -= world_coord(visibleTiles.x);
+//	}
+//
+//	/* Gone off top */
+//	if (psPart->position.z < playerPos.p.z - world_coord(visibleTiles.y) / 2)
+//	{
+//		psPart->position.z += world_coord(visibleTiles.y);
+//	}
+//
+//	/* Gone off bottom */
+//	else if (psPart->position.z > (playerPos.p.z + world_coord(visibleTiles.y) / 2))
+//	{
+//		psPart->position.z -= world_coord(visibleTiles.y);
+//	}
+//}
 
 /* Moves one of the particles */
 static void processParticle(ATPART* psPart)

@@ -38,6 +38,13 @@ struct PathCoordinate
 
 struct PathNode
 {
+  constexpr PathNode(PathCoordinate coord, unsigned dist, unsigned est)
+    : path_coordinate{coord},
+      distance_from_start{dist},
+      estimated_distance_to_end{est}
+  {
+  }
+
   constexpr bool operator <(const PathNode& rhs) const
   {
     if (estimated_distance_to_end != rhs.estimated_distance_to_end)
@@ -105,6 +112,7 @@ struct PathContext
     PathCoordinate nearest_reachable_tile;
     std::size_t game_time{0};
     std::vector<PathNode> nodes;
+    std::vector<ExploredTile> map;
     std::unique_ptr<PathBlockingMap> blocking_map;
     NonBlockingArea non_blocking;
 };
@@ -117,5 +125,10 @@ PathNode get_best_node(std::vector<PathNode>& nodes);
 
 /// Estimate the distance to the target point
 unsigned estimate_distance(PathCoordinate start, PathCoordinate finish);
+
+unsigned estimate_distance_precise(PathCoordinate start, PathCoordinate finish);
+
+void generate_new_node(PathContext& context, PathCoordinate destination,
+                       PathCoordinate current_pos, PathCoordinate prev_pos);
 
 #endif // WARZONE2100_ASTAR_H
