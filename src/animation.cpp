@@ -62,13 +62,13 @@ ValueTracker* ValueTracker::setTargetDelta(int value)
 	return this;
 }
 
-ValueTracker* ValueTracker::setTarget(int value)
-{
-	this->targetDelta = value - this->initial;
-	this->target = value;
-	this->_reachedTarget = false;
-	return this;
-}
+//ValueTracker* ValueTracker::setTarget(int value)
+//{
+//	this->targetDelta = value - this->initial;
+//	this->target = value;
+//	this->_reachedTarget = false;
+//	return this;
+//}
 
 //ValueTracker* ValueTracker::update()
 //{
@@ -125,23 +125,23 @@ bool ValueTracker::reachedTarget()
 {
 	return this->_reachedTarget;
 }
-
-static uint16_t calculateEasing(EasingType easingType, uint16_t progress)
-{
-	switch (easingType)
-	{
-	case LINEAR:
-		return progress;
-	case EASE_IN_OUT:
-		return MAX(0, MIN(UINT16_MAX, iCos(UINT16_MAX / 2 + progress / 2) / 2 + (1 << 15)));
-	case EASE_IN:
-		return (progress * (uint32_t)progress) / UINT16_MAX;
-	case EASE_OUT:
-		return 2 * progress - (progress * (uint32_t)progress) / (UINT16_MAX - 1);
-	}
-
-	return UINT16_MAX;
-}
+//
+//static uint16_t calculateEasing(EasingType easingType, uint16_t progress)
+//{
+//	switch (easingType)
+//	{
+//	case LINEAR:
+//		return progress;
+//	case EASE_IN_OUT:
+//		return MAX(0, MIN(UINT16_MAX, iCos(UINT16_MAX / 2 + progress / 2) / 2 + (1 << 15)));
+//	case EASE_IN:
+//		return (progress * (uint32_t)progress) / UINT16_MAX;
+//	case EASE_OUT:
+//		return 2 * progress - (progress * (uint32_t)progress) / (UINT16_MAX - 1);
+//	}
+//
+//	return UINT16_MAX;
+//}
 
 template <class AnimatableData>
 void Animation<AnimatableData>::start()

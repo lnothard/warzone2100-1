@@ -382,99 +382,99 @@ static inline void fpathNewNode(PathfindContext& context, PathCoord dest, PathCo
 	std::push_heap(context.nodes.begin(), context.nodes.end()); // Move the new node to the right place in the heap.
 }
 
-/// Recalculates estimates to new tileF tile.
-static void fpathAStarReestimate(PathfindContext& context, PathCoord tileF)
-{
-	for (auto& node : context.nodes)
-	{
-		node.est = node.dist + fpathGoodEstimate(node.p, tileF);
-	}
+///// Recalculates estimates to new tileF tile.
+//static void fpathAStarReestimate(PathfindContext& context, PathCoord tileF)
+//{
+//	for (auto& node : context.nodes)
+//	{
+//		node.est = node.dist + fpathGoodEstimate(node.p, tileF);
+//	}
+//
+//	// Changing the estimates breaks the heap ordering. Fix the heap ordering.
+//	std::make_heap(context.nodes.begin(), context.nodes.end());
+//}
 
-	// Changing the estimates breaks the heap ordering. Fix the heap ordering.
-	std::make_heap(context.nodes.begin(), context.nodes.end());
-}
-
-/// Returns nearest explored tile to tileF.
-static PathCoord fpathAStarExplore(PathfindContext& context, PathCoord tileF)
-{
-	PathCoord nearestCoord(0, 0);
-	unsigned nearestDist = 0xFFFFFFFF;
-
-	// search for a route
-	bool foundIt = false;
-	while (!context.nodes.empty() && !foundIt)
-	{
-		PathNode node = fpathTakeNode(context.nodes);
-		if (context.map[node.p.x + node.p.y * mapWidth].visited)
-		{
-			continue; // Already been here.
-		}
-		context.map[node.p.x + node.p.y * mapWidth].visited = true;
-
-		// note the nearest node to the target so far
-		if (node.est - node.dist < nearestDist)
-		{
-			nearestCoord = node.p;
-			nearestDist = node.est - node.dist;
-		}
-
-		if (node.p == tileF)
-		{
-			// reached the target
-			nearestCoord = node.p;
-			foundIt = true;
-			// Break out of loop, but not before inserting neighbour nodes, since the neighbours may be important if the context gets reused.
-		}
-
-		// loop through possible moves in 8 directions to find a valid move
-		for (unsigned dir = 0; dir < ARRAY_SIZE(aDirOffset); ++dir)
-		{
-			// Try a new location
-			int x = node.p.x + aDirOffset[dir].x;
-			int y = node.p.y + aDirOffset[dir].y;
-
-			/*
-			   5  6  7
-			     \|/
-			   4 -I- 0
-			     /|\
-			   3  2  1
-			   odd:orthogonal-adjacent tiles even:non-orthogonal-adjacent tiles
-			*/
-			if (dir % 2 != 0 && !context.dstIgnore.isNonblocking(node.p.x, node.p.y) && !context.dstIgnore.
-				isNonblocking(x, y))
-			{
-				int x2, y2;
-
-				// We cannot cut corners
-				x2 = node.p.x + aDirOffset[(dir + 1) % 8].x;
-				y2 = node.p.y + aDirOffset[(dir + 1) % 8].y;
-				if (context.isBlocked(x2, y2))
-				{
-					continue;
-				}
-				x2 = node.p.x + aDirOffset[(dir + 7) % 8].x;
-				y2 = node.p.y + aDirOffset[(dir + 7) % 8].y;
-				if (context.isBlocked(x2, y2))
-				{
-					continue;
-				}
-			}
-
-			// See if the node is a blocking tile
-			if (context.isBlocked(x, y))
-			{
-				// tile is blocked, skip it
-				continue;
-			}
-
-			// Now insert the point into the appropriate list, if not already visited.
-			fpathNewNode(context, tileF, PathCoord(x, y), node.dist, node.p);
-		}
-	}
-
-	return nearestCoord;
-}
+///// Returns nearest explored tile to tileF.
+//static PathCoord fpathAStarExplore(PathfindContext& context, PathCoord tileF)
+//{
+//	PathCoord nearestCoord(0, 0);
+//	unsigned nearestDist = 0xFFFFFFFF;
+//
+//	// search for a route
+//	bool foundIt = false;
+//	while (!context.nodes.empty() && !foundIt)
+//	{
+//		PathNode node = fpathTakeNode(context.nodes);
+//		if (context.map[node.p.x + node.p.y * mapWidth].visited)
+//		{
+//			continue; // Already been here.
+//		}
+//		context.map[node.p.x + node.p.y * mapWidth].visited = true;
+//
+//		// note the nearest node to the target so far
+//		if (node.est - node.dist < nearestDist)
+//		{
+//			nearestCoord = node.p;
+//			nearestDist = node.est - node.dist;
+//		}
+//
+//		if (node.p == tileF)
+//		{
+//			// reached the target
+//			nearestCoord = node.p;
+//			foundIt = true;
+//			// Break out of loop, but not before inserting neighbour nodes, since the neighbours may be important if the context gets reused.
+//		}
+//
+//		// loop through possible moves in 8 directions to find a valid move
+//		for (unsigned dir = 0; dir < ARRAY_SIZE(aDirOffset); ++dir)
+//		{
+//			// Try a new location
+//			int x = node.p.x + aDirOffset[dir].x;
+//			int y = node.p.y + aDirOffset[dir].y;
+//
+//			/*
+//			   5  6  7
+//			     \|/
+//			   4 -I- 0
+//			     /|\
+//			   3  2  1
+//			   odd:orthogonal-adjacent tiles even:non-orthogonal-adjacent tiles
+//			*/
+//			if (dir % 2 != 0 && !context.dstIgnore.isNonblocking(node.p.x, node.p.y) && !context.dstIgnore.
+//				isNonblocking(x, y))
+//			{
+//				int x2, y2;
+//
+//				// We cannot cut corners
+//				x2 = node.p.x + aDirOffset[(dir + 1) % 8].x;
+//				y2 = node.p.y + aDirOffset[(dir + 1) % 8].y;
+//				if (context.isBlocked(x2, y2))
+//				{
+//					continue;
+//				}
+//				x2 = node.p.x + aDirOffset[(dir + 7) % 8].x;
+//				y2 = node.p.y + aDirOffset[(dir + 7) % 8].y;
+//				if (context.isBlocked(x2, y2))
+//				{
+//					continue;
+//				}
+//			}
+//
+//			// See if the node is a blocking tile
+//			if (context.isBlocked(x, y))
+//			{
+//				// tile is blocked, skip it
+//				continue;
+//			}
+//
+//			// Now insert the point into the appropriate list, if not already visited.
+//			fpathNewNode(context, tileF, PathCoord(x, y), node.dist, node.p);
+//		}
+//	}
+//
+//	return nearestCoord;
+//}
 
 static void fpathInitContext(PathfindContext& context, std::shared_ptr<PathBlockingMap>& blockingMap, PathCoord tileS,
                              PathCoord tileRealS, PathCoord tileF, PathNonblockingArea dstIgnore)

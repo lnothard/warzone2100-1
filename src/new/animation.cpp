@@ -40,12 +40,35 @@ void ValueTracker::update()
           realTimeAdjustedIncrement(speed) + current_value;
 }
 
-bool ValueTracker::currently_tracking()
+bool ValueTracker::currently_tracking() const
 {
   return start_time != 0;
 }
 
-int32_t calculateRelativeAngle(unsigned from, unsigned to)
+void ValueTracker::set_target(int value)
+{
+  target_delta = value - initial_value;
+  target_value = value;
+  target_reached = false;
+}
+
+int calculateRelativeAngle(unsigned from, unsigned to)
 {
   return to + (from - to);
+}
+
+unsigned calculate_easing(EASING_FUNCTION easing_func, unsigned progress)
+{
+  using enum EASING_FUNCTION;
+  switch (easing_func) {
+    case LINEAR:
+      return progress;
+    case EASE_IN_OUT:
+      return MAX(0, MIN(UINT16_MAX, iCos(UINT16_MAX / 2 + progress / 2)
+                / 2 + (1 << 15)));
+    case EASE_IN:
+      return progress * progress / UINT16_MAX;
+    case EASE_OUT:
+      return 2 * progress - progress * progress / (UINT16_MAX - 1);
+  }
 }

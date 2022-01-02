@@ -21,7 +21,8 @@ public:
     void start(int value);
     void stop();
     void update();
-    [[nodiscard]] bool currently_tracking();
+    [[nodiscard]] bool currently_tracking() const;
+    void set_target(int value);
 private:
     std::size_t start_time;
     int initial_value;
@@ -61,5 +62,7 @@ class Rotation : public Animation
  * Useful while animating a rotation, to always animate the shortest angle delta.
  */
 int32_t calculateRelativeAngle(unsigned from, unsigned to);
+
+unsigned calculate_easing(EASING_FUNCTION easing_func, unsigned progress)
 
 #endif //WARZONE2100_ANIMATION_H

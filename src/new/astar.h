@@ -8,6 +8,20 @@
 #include <cstdlib>
 #include "pathfinding.h"
 
+// Convert a direction into an offset
+// dir 0 => x = 0, y = -1
+constexpr Vector2i direction_to_offset[] =
+{
+  Vector2i(0, 1),
+  Vector2i(-1, 1),
+  Vector2i(-1, 0),
+  Vector2i(-1, -1),
+  Vector2i(0, -1),
+  Vector2i(1, -1),
+  Vector2i(1, 0),
+  Vector2i(1, 1),
+};
+
 enum class ASTAR_RESULT
 {
 	OK,
@@ -129,6 +143,9 @@ unsigned estimate_distance(PathCoordinate start, PathCoordinate finish);
 unsigned estimate_distance_precise(PathCoordinate start, PathCoordinate finish);
 
 void generate_new_node(PathContext& context, PathCoordinate destination,
-                       PathCoordinate current_pos, PathCoordinate prev_pos);
+                       PathCoordinate current_pos, PathCoordinate prev_pos,
+                       unsigned prev_dist);
+
+void recalculate_estimates(PathContext& context, PathCoordinate tile);
 
 #endif // WARZONE2100_ASTAR_H
