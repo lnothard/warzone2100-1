@@ -6,17 +6,32 @@
 
 #include "droid_group.h"
 
-void Droid_Group::add(Droid& droid)
+DroidGroup::DroidGroup(unsigned id)
+  :id{id}
+{
+}
+
+DroidGroup::DroidGroup(unsigned id, GROUP_TYPE type)
+  : id{id}, type{type}
+{
+}
+
+DroidGroup::DroidGroup(unsigned id, GROUP_TYPE type, Droid& commander)
+  : id{id}, type{type}, commander{&commander}
+{
+}
+
+void DroidGroup::add(Droid& droid)
 {
   members.push_back(&droid);
 }
 
-bool Droid_Group::is_command_group() const noexcept
+bool DroidGroup::is_command_group() const noexcept
 {
 	return type == COMMAND;
 }
 
-bool Droid_Group::has_electronic_weapon() const
+bool DroidGroup::has_electronic_weapon() const
 {
 	return std::any_of(members.begin(), members.end(), [](const auto* droid)
 	{
@@ -24,22 +39,22 @@ bool Droid_Group::has_electronic_weapon() const
 	});
 }
 
-unsigned Droid_Group::get_commander_level() const
+unsigned DroidGroup::get_commander_level() const
 {
 	return commander->get_level();
 }
 
-void Droid_Group::commander_gain_experience(unsigned exp)
+void DroidGroup::commander_gain_experience(unsigned exp)
 {
 	commander->gain_experience(exp);
 }
 
-void Droid_Group::increment_commander_kills()
+void DroidGroup::increment_commander_kills()
 {
   commander->increment_kills();
 }
 
-const Droid& Droid_Group::get_commander() const
+const Droid& DroidGroup::get_commander() const
 {
   return *commander;
 }

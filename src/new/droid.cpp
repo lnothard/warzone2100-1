@@ -184,7 +184,7 @@ bool Droid::is_VTOL_empty() const
 
 	return std::all_of(get_weapons().begin(), get_weapons().end(), [this](const auto& weapon)
 	{
-		return weapon.is_VTOL_weapon() && weapon.is_empty_VTOL_weapon(get_player());
+		return weapon.is_vtol_weapon() && weapon.is_empty_vtol_weapon(get_player());
 	});
 }
 
@@ -195,7 +195,7 @@ bool Droid::is_VTOL_full() const
 
 	return std::all_of(get_weapons().begin(), get_weapons().end(), [](const auto& weapon)
 	{
-		return weapon.is_VTOL_weapon() && weapon.has_full_ammo();
+		return weapon.is_vtol_weapon() && weapon.has_full_ammo();
 	});
 }
 
@@ -394,12 +394,12 @@ void Droid::increment_commander_kills() const
   group->increment_commander_kills();
 }
 
-const Simple_Object& Droid::get_target(int weapon_slot) const
+const SimpleObject& Droid::get_target(int weapon_slot) const
 {
   return *action_target[weapon_slot];
 }
 
-const std::optional<Propulsion_Stats>& Droid::get_propulsion() const
+const std::optional<PropulsionStats>& Droid::get_propulsion() const
 {
   return propulsion;
 }
@@ -424,7 +424,7 @@ int Droid::calculate_electronic_resistance() const
 
 bool Droid::is_selectable() const
 {
-  if (!Simple_Object::is_selectable())
+  if (!SimpleObject::is_selectable())
     return false;
 
   if (is_transporter(*this) && !is_multiplayer)
@@ -682,7 +682,7 @@ unsigned count_droids_for_level(unsigned player, unsigned level)
   });
 }
 
-uint8_t is_target_visible(const Droid& droid, const Simple_Object* target, bool walls_block)
+uint8_t is_target_visible(const Droid& droid, const SimpleObject* target, bool walls_block)
 {
 	constexpr static uint8_t VISIBLE = UBYTE_MAX;
 	constexpr static uint8_t RADAR_BLIP = UBYTE_MAX / 2;

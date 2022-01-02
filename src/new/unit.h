@@ -13,7 +13,7 @@ static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
 static constexpr auto TURRET_ROTATION_RATE = 45;
 static constexpr auto MAX_WEAPONS = 3;
 
-class Unit : public virtual ::Simple_Object
+class Unit : public virtual ::SimpleObject
 {
 public:
 	Unit() = default;
@@ -26,7 +26,7 @@ public:
 	[[nodiscard]] virtual bool is_alive() const = 0;
 	[[nodiscard]] virtual bool is_radar_detector() const = 0;
 	virtual bool is_valid_target(const Unit* attacker, int weapon_slot) const = 0;
-	virtual uint8_t is_target_visible(const Simple_Object* target, bool walls_block) const = 0;
+	virtual uint8_t is_target_visible(const SimpleObject* target, bool walls_block) const = 0;
 	[[nodiscard]] virtual unsigned get_hp() const = 0;
 	[[nodiscard]] virtual unsigned calculate_sensor_range() const = 0;
 	[[nodiscard]] virtual const std::vector<Weapon>& get_weapons() const = 0;
@@ -36,7 +36,7 @@ public:
   virtual void update_expected_damage(unsigned damage, bool is_direct) noexcept = 0;
   virtual void use_ammo(int weapon_slot) = 0;
   [[nodiscard]] virtual int calculate_attack_priority(const Unit* target, int weapon_slot) const = 0;
-  [[nodiscard]] virtual const Simple_Object& get_target(int weapon_slot) const = 0;
+  [[nodiscard]] virtual const SimpleObject& get_target(int weapon_slot) const = 0;
 };
 
 Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot);
@@ -44,7 +44,7 @@ Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot);
 
 namespace Impl
 {
-	class Unit : public virtual ::Unit, public Impl::Simple_Object
+	class Unit : public virtual ::Unit, public Impl::SimpleObject
 	{
 	public:
 		Unit(uint32_t id, uint32_t player);
@@ -66,8 +66,8 @@ namespace Impl
 	[[nodiscard]] bool has_artillery(const Unit& unit) noexcept;
 	[[nodiscard]] bool has_electronic_weapon(const Unit& unit) noexcept;
 	[[nodiscard]] bool target_in_line_of_fire(const Unit& unit, const ::Unit& target, int weapon_slot);
-	[[nodiscard]] int calculate_line_of_fire(const Unit& unit, const ::Simple_Object& target, int weapon_slot,
-	                                         bool walls_block, bool is_direct);
+	[[nodiscard]] int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int weapon_slot,
+                                           bool walls_block, bool is_direct);
 	[[nodiscard]] unsigned num_weapons(const Unit& unit);
 	[[nodiscard]] unsigned get_max_weapon_range(const Unit& unit);
 }

@@ -17,19 +17,19 @@ bool Weapon::is_artillery() const noexcept
 		stats->movement_type == MOVEMENT_TYPE::HOMING_INDIRECT;
 }
 
-bool Weapon::is_VTOL_weapon() const
+bool Weapon::is_vtol_weapon() const
 {
 	return stats->max_VTOL_attack_runs;
 }
 
-bool Weapon::is_empty_VTOL_weapon(unsigned player) const
+bool Weapon::is_empty_vtol_weapon(unsigned player) const
 {
-	if (!is_VTOL_weapon()) return false;
+	if (!is_vtol_weapon()) return false;
 
 	return ammo_used >= get_num_attack_runs(player);
 }
 
-const Weapon_Stats& Weapon::get_stats() const
+const WeaponStats& Weapon::get_stats() const
 {
 	return *stats;
 }
@@ -82,7 +82,7 @@ unsigned Weapon::get_num_attack_runs(unsigned player) const
 	const auto u_stats = stats->upgraded_stats[player];
 
 	if (u_stats.reload_time > 0)
-		return u_stats.rounds_per_salvo * stats->max_VTOL_attack_runs;
+		return u_stats.rounds_per_volley * stats->max_VTOL_attack_runs;
 
 	return stats->max_VTOL_attack_runs;
 }
@@ -105,7 +105,7 @@ const iIMDShape& Weapon::get_mount_graphic() const
 unsigned Weapon::calculate_rate_of_fire(unsigned player) const
 {
   const auto& w_stats = stats->upgraded_stats[player];
-  return w_stats.rounds_per_salvo
+  return w_stats.rounds_per_volley
           * 60 * GAME_TICKS_PER_SEC / w_stats.reload_time;
 }
 

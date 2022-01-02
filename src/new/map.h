@@ -49,7 +49,7 @@ enum class TILE_SET
 
 struct Tile
 {
-	Simple_Object* occupying_object;
+	SimpleObject* occupying_object;
 	PIELIGHT colour;
 	PlayerMask explored_bits;
 	PlayerMask sensor_bits;

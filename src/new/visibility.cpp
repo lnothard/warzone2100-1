@@ -4,7 +4,7 @@
 
 #include "visibility.h"
 
-bool objects_in_vis_range(const Simple_Object& first, const Simple_Object& second, int range)
+bool objects_in_vis_range(const SimpleObject& first, const SimpleObject& second, int range)
 {
   const auto x_diff = first.get_position().x - second.get_position().x;
   const auto y_diff = first.get_position().y - second.get_position().y;
@@ -70,7 +70,7 @@ void update_tile_sensors(Tile& tile)
   }
 }
 
-unsigned get_object_light_level(const Simple_Object& object, unsigned original_level)
+unsigned get_object_light_level(const SimpleObject& object, unsigned original_level)
 {
   const auto divisor = object.visible_to_selected_player() / 255.f;
   const auto lowest_level = original_level / BASE_DIVISOR;

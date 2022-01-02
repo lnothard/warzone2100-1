@@ -20,12 +20,17 @@ enum class WEAPON_SIZE
 	HEAVY
 };
 
+/// Basic weapon type
 enum class WEAPON_CLASS
 {
 	KINETIC,
+
+  /// Flamethrower class - paired against
+  /// thermal armour points
 	HEAT
 };
 
+/// Secondary weapon type
 enum class WEAPON_SUBCLASS
 {
 	MACHINE_GUN,
@@ -44,24 +49,34 @@ enum class WEAPON_SUBCLASS
 	EMP
 };
 
+/// Specialisation (if any) of the weapon
 enum class WEAPON_EFFECT
 {
 	ANTI_PERSONNEL,
 	ANTI_TANK,
+
+  ///
 	BUNKER_BUSTER,
+
 	FLAMER,
 	ANTI_AIRCRAFT
 };
 
+/// The projectile trajectory of this weapon type
 enum class MOVEMENT_TYPE
 {
 	DIRECT,
+
+  /// Artillery
 	INDIRECT,
+
 	HOMING_DIRECT,
 	HOMING_INDIRECT
 };
 
-struct Weapon_Stats : public Component_Stats
+/// Parameters affecting a weapon's effectiveness,
+/// such as range, accuracy and damage
+struct WeaponStats : public ComponentStats
 {
 	using enum WEAPON_CLASS;
 	using enum WEAPON_SUBCLASS;
@@ -84,8 +99,8 @@ struct Weapon_Stats : public Component_Stats
 		std::size_t pause_between_shots;
 		unsigned ticking_damage;
 		unsigned ticking_damage_radius;
-		std::size_t ticking_damage_time;
-		uint8_t rounds_per_salvo;
+		std::size_t ticking_damage_duration;
+		uint8_t rounds_per_volley;
 	} base_stats, upgraded_stats[MAX_PLAYERS];
 
 	WEAPON_CLASS weapon_class;
@@ -93,8 +108,9 @@ struct Weapon_Stats : public Component_Stats
 	WEAPON_EFFECT effect;
 	WEAPON_SIZE size;
 	MOVEMENT_TYPE movement_type;
+
 	unsigned flight_speed;
-	unsigned recoil_value;
+	unsigned recoil_value = DEFAULT_RECOIL_TIME;
 	unsigned effect_magnitude;
 	short max_rotation;
 	short min_elevation;
@@ -102,18 +118,28 @@ struct Weapon_Stats : public Component_Stats
 	short max_VTOL_attack_runs;
 	bool can_penetrate;
 	bool can_fire_while_moving;
+
+  ///
+  uint8_t surface_to_air;
+
+  /// True if firing this weapon affects visibility
 	bool effect_emits_light;
+
+  /// Main weapon texture
 	std::unique_ptr<iIMDShape> weapon_graphic;
+
+  /// Texture to use for the turret mount
 	std::unique_ptr<iIMDShape> mount_graphic;
+
 	std::unique_ptr<iIMDShape> muzzle_graphic;
 	std::unique_ptr<iIMDShape> in_flight_graphic;
 	std::unique_ptr<iIMDShape> hit_graphic;
 	std::unique_ptr<iIMDShape> miss_graphic;
 	std::unique_ptr<iIMDShape> splash_graphic;
 	std::unique_ptr<iIMDShape> trail_graphic;
-	uint8_t surface_to_air;
 };
 
+/// Which kind of object chose the target?
 enum class ATTACKER_TYPE
 {
 	UNKNOWN,
@@ -124,18 +150,23 @@ enum class ATTACKER_TYPE
 	SENSOR,
 	CB_SENSOR,
 	AIR_DEF_SENSOR,
-	RADAR_DETECTOR
+	RADAR_DETECTOR,
+
+  /// Target specifier is unknown by default
+  DEFAULT = UNKNOWN
 };
 
-class Weapon final : public virtual ::Simple_Object, public Impl::Simple_Object
+/// Represents a weapon attachment. Used by -Units-,
+/// currently -Structures- and -Droids-
+class Weapon final : public virtual ::SimpleObject, public Impl::SimpleObject
 {
 public:
 	[[nodiscard]] bool has_ammo() const;
 	[[nodiscard]] bool has_full_ammo() const noexcept;
 	[[nodiscard]] bool is_artillery() const noexcept;
-	[[nodiscard]] bool is_VTOL_weapon() const;
-	[[nodiscard]] bool is_empty_VTOL_weapon(unsigned player) const;
-	[[nodiscard]] const Weapon_Stats& get_stats() const;
+	[[nodiscard]] bool is_vtol_weapon() const;
+	[[nodiscard]] bool is_empty_vtol_weapon(unsigned player) const;
+	[[nodiscard]] const WeaponStats& get_stats() const;
 	[[nodiscard]] unsigned get_recoil() const;
 	[[nodiscard]] unsigned get_max_range(unsigned player) const;
 	[[nodiscard]] unsigned get_min_range(unsigned player) const;
@@ -153,7 +184,11 @@ private:
 	using enum ATTACKER_TYPE;
 
 	ATTACKER_TYPE attacker_type;
-	std::shared_ptr<Weapon_Stats> stats;
+
+  /// Shared ownership of the -WeaponStats- object, since
+  /// there could exist several weapons of the same type
+	std::shared_ptr<WeaponStats> stats;
+
 	Rotation rotation;
 	Rotation previous_rotation;
 	unsigned ammo;

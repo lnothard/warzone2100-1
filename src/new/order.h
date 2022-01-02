@@ -67,7 +67,7 @@ struct Order
 
 	ORDER_TYPE type;
 	Vector2i position;
-	Simple_Object* target_object;
+	SimpleObject* target_object;
 };
 
 #endif // WARZONE2100_ORDER_H

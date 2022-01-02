@@ -46,15 +46,15 @@ inline bool set_reveal_status(bool value)
   active_reveal = value;
 }
 
-bool objects_in_vis_range(const Simple_Object& first,
-                          const Simple_Object& second,
+bool objects_in_vis_range(const SimpleObject& first,
+                          const SimpleObject& second,
                           int range);
 
 void update_tile_visibility();
 
 void update_tile_sensors(Tile& tile);
 
-unsigned get_object_light_level(const Simple_Object& object,
+unsigned get_object_light_level(const SimpleObject& object,
                                 unsigned original_level);
 
 #endif // WARZONE2100_VISIBILITY_H

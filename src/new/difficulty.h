@@ -5,9 +5,13 @@
 #ifndef WARZONE2100_DIFFICULTY_H
 #define WARZONE2100_DIFFICULTY_H
 
+///
 extern int player_modifier;
+
+///
 extern int enemy_modifier;
 
+///
 enum class DIFFICULTY_LEVEL
 {
     EASY,
@@ -15,30 +19,11 @@ enum class DIFFICULTY_LEVEL
     HARD,
     INSANE
 };
+
+/// The game difficulty is set globally
 extern DIFFICULTY_LEVEL current_difficulty;
 
-inline void set_difficulty(DIFFICULTY_LEVEL level)
-{
-  using enum DIFFICULTY_LEVEL;
-  switch (level)
-  {
-    case EASY:
-      player_modifier = 120;
-      enemy_modifier = 100;
-      break;
-    case NORMAL:
-      player_modifier = 100;
-      enemy_modifier = 100;
-      break;
-    case HARD:
-      player_modifier = 100;
-      enemy_modifier = 110;
-      break;
-    case INSANE:
-      player_modifier = 80;
-      enemy_modifier = 120;
-  }
-  current_difficulty = level;
-}
+///
+void set_difficulty(DIFFICULTY_LEVEL level);
 
 #endif //WARZONE2100_DIFFICULTY_H

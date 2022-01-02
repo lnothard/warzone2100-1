@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+/// The type of command being executed
 enum class CLI_OPTIONS
 {
     CONFIG_DIR,
@@ -18,12 +19,15 @@ enum class CLI_OPTIONS
     FULLSCREEN,
     GAME,
     HELP,
-
 };
 
+/// Represents a command
 struct Command
 {
+    /// The actual command text
     std::string text;
+
+    /// A textual description of the command
     std::string description;
 };
 
@@ -32,7 +36,10 @@ struct CommandContext
     std::vector<Command> commands;
 };
 
+///
 void print_help_info();
+
+/// Processes command text
 void parse_command();
 
 #endif //WARZONE2100_COMMAND_LINE_H

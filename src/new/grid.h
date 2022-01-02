@@ -8,6 +8,6 @@
 #include <vector>
 #include "basedef.h"
 
-std::vector<Simple_Object*> grid_list;
+std::vector<SimpleObject*> grid_list;
 
 #endif //WARZONE2100_GRID_H

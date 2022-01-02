@@ -154,8 +154,8 @@ public:
   [[nodiscard]] int get_vertical_speed() const noexcept;
   [[nodiscard]] unsigned get_secondary_order() const noexcept;
   [[nodiscard]] const Vector2i& get_destination() const;
-  [[nodiscard]] const ::Simple_Object& get_target(int weapon_slot) const final;
-  [[nodiscard]] const std::optional<Propulsion_Stats>& get_propulsion() const;
+  [[nodiscard]] const ::SimpleObject& get_target(int weapon_slot) const final;
+  [[nodiscard]] const std::optional<PropulsionStats>& get_propulsion() const;
   void set_direct_route(int target_x, int target_y) const;
   void increment_kills() noexcept;
   void increment_commander_kills() const;
@@ -173,15 +173,15 @@ private:
 	ACTION action{NONE};
 	DROID_TYPE type{ANY};
 	Structure* associated_structure{nullptr};
-  std::array<Simple_Object*, MAX_WEAPONS> action_target{};
-	std::shared_ptr<Droid_Group> group;
+  std::array<SimpleObject*, MAX_WEAPONS> action_target{};
+	std::shared_ptr<DroidGroup> group;
 	std::unique_ptr<Order> order;
 	std::unique_ptr<Movement> movement;
-	std::unique_ptr<Body_Stats> body;
-	std::optional<Propulsion_Stats> propulsion;
-	std::optional<Commander_Stats> brain;
-	std::optional<Sensor_Stats> sensor;
-	std::optional<ECM_Stats> ecm;
+	std::unique_ptr<BodyStats> body;
+	std::optional<PropulsionStats> propulsion;
+	std::optional<CommanderStats> brain;
+	std::optional<SensorStats> sensor;
+	std::optional<ECMStats> ecm;
   unsigned secondary_order{0};
 	unsigned weight{0};
 	unsigned base_speed{0};
@@ -214,7 +214,7 @@ private:
 // return UBYTE_MAX if directly visible, UBYTE_MAX / 2 if shown as radar blip, 0
 // if not visible
 [[nodiscard]] uint8_t is_target_visible(const Droid& droid,
-                                        const Simple_Object* target,
+                                        const SimpleObject* target,
                                         bool walls_block);
 [[nodiscard]] bool action_target_inside_minimum_weapon_range(const Droid& droid,
                                               const Unit& target,

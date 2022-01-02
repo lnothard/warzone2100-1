@@ -202,7 +202,7 @@ namespace Impl {
     return stats->power_to_build / 2;
   }
 
-  const ::Simple_Object& Structure::get_target(int weapon_slot) const
+  const ::SimpleObject& Structure::get_target(int weapon_slot) const
   {
     return *target[weapon_slot];
   }

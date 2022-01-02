@@ -14,7 +14,7 @@
 namespace Impl
 {
 	Unit::Unit(unsigned id, unsigned player)
-		: Impl::Simple_Object(id, player)
+		: Impl::SimpleObject(id, player)
 	{
 	}
 
@@ -186,7 +186,7 @@ void check_angle(int64_t& angle_tan, int start_coord, int height,
  * Check fire line from psViewer to psTarget
  * psTarget can be any type of BASE_OBJECT (e.g. a tree).
  */
-int calculate_line_of_fire(const Unit& unit, const ::Simple_Object& target, int weapon_slot, bool walls_block,
+int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int weapon_slot, bool walls_block,
                            bool is_direct)
 {
 	Vector3i pos(0, 0, 0), dest(0, 0, 0);

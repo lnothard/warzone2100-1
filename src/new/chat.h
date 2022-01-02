@@ -10,34 +10,43 @@
 #include "lib/framework/frame.h"
 #include "droid.h"
 
+/**
+ *
+ */
 struct ChatMessage
 {
-    ChatMessage(unsigned sender, std::string message)
-      : sender{sender}, message{message}
-    {
-    }
+    ChatMessage(unsigned sender, std::string message);
 
-    [[nodiscard]] constexpr bool is_global() const
-    {
-      return !allies_only && recipients.empty();
-    }
+    /// @return True if seen by all players
+    [[nodiscard]] bool is_global() const;
 
-    [[nodiscard]] constexpr bool should_receive(unsigned player) const
-    {
-      return is_global() || recipients.find(player) != recipients.end() ||
-             (allies_only && sender < MAX_PLAYERS && player < MAX_PLAYERS &&
-                     alliance_formed(sender, player));
-    }
+    /** @param player The ID of the player in question
+     *   @return True if `player` is a valid recipient
+     */
+    [[nodiscard]] bool should_receive(unsigned player) const;
 
-    [[nodiscard]] constexpr std::vector<unsigned> get_recipients() const
-    {
+    /**
+     *
+     * @return A list of the actual recipients of this message
+     */
+    [[nodiscard]] std::vector<unsigned> get_recipients() const;
 
-    }
+    /** If empty, the message is sent to all players if
+     *  `is_global()` returns true. Otherwise, send the message
+     *  only to the players contained within the `intended_recipients` set.
+     */
+    std::set<unsigned> intended_recipients;
 
-    std::set<unsigned> recipients;
-    unsigned sender;
-    std::string message;
-    bool allies_only;
+    /// Uniquely identifies the player sending this message
+    unsigned sender_id = 0;
+
+    /// The actual text to be displayed
+    std::string message_text {};
+
+    /** Whether the message is private, i.e., shown only
+     * to allies of `sender_id`
+     */
+    bool allies_only = false;
 };
 
 #endif //WARZONE2100_CHAT_H

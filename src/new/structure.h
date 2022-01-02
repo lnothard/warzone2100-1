@@ -116,8 +116,8 @@ struct Structure_Stats
 	STRUCTURE_TYPE type;
 	STRUCTURE_STRENGTH strength;
 	std::vector<std::unique_ptr<iIMDShape>> IMDs;
-	std::unique_ptr<Sensor_Stats> sensor_stats;
-	std::unique_ptr<ECM_Stats> ecm_stats;
+	std::unique_ptr<SensorStats> sensor_stats;
+	std::unique_ptr<ECMStats> ecm_stats;
 	std::unique_ptr<iIMDShape> base_imd;
 	bool combines_with_wall{false};
 	bool is_favourite{false};
@@ -179,7 +179,7 @@ namespace Impl
     [[nodiscard]] unsigned build_points_to_completion() const;
     [[nodiscard]] unsigned calculate_refunded_power() const;
     [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
-    [[nodiscard]] const ::Simple_Object& get_target(int weapon_slot) const final;
+    [[nodiscard]] const ::SimpleObject& get_target(int weapon_slot) const final;
     [[nodiscard]] STRUCTURE_STATE get_state() const;
 	private:
 		using enum STRUCTURE_STATE;
@@ -190,7 +190,7 @@ namespace Impl
 		STRUCTURE_STATE state;
 		STRUCTURE_ANIMATION_STATE animation_state{NORMAL};
 		std::shared_ptr<Structure_Stats> stats;
-    std::array<::Simple_Object*, MAX_WEAPONS> target{};
+    std::array<::SimpleObject*, MAX_WEAPONS> target{};
 		unsigned current_build_points{0};
 		int build_rate{0};
 		int previous_build_rate{0};

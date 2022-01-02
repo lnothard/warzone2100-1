@@ -4,6 +4,11 @@
 
 #include "astar.h"
 
+PathCoord::PathCoord(int x, int y)
+  : x{x}, y{y}
+{
+}
+
 NonBlockingArea::NonBlockingArea(const Structure_Bounds& bounds)
   : x_1(bounds.top_left_coords.x),
     x_2(bounds.top_left_coords.x + bounds.size_in_coords.x),
@@ -12,37 +17,56 @@ NonBlockingArea::NonBlockingArea(const Structure_Bounds& bounds)
 {
 }
 
-bool NonBlockingArea::operator ==(const NonBlockingArea& rhs) const
-{
-  return x_1 == rhs.x_1 &&
-         x_2 == rhs.x_2 &&
-         y_1 == rhs.y_1 &&
-         y_2 == rhs.y_2;
-}
-
-bool NonBlockingArea::operator !=(const NonBlockingArea& rhs) const
-{
-  return !(*this == rhs);
-}
-
 bool NonBlockingArea::is_non_blocking(int x, int y) const
 {
-  return x >= x_1 && x < x_2 && y >= y_1 && y < y_2;
+  return x >= x_1 && x < x_2 &&
+         y >= y_1 && y < y_2;
+}
+
+bool NonBlockingArea::is_non_blocking(PathCoord coord) const
+{
+  return is_non_blocking(coord.x, coord.y);
 }
 
 bool PathContext::is_blocked(int x, int y) const
 {
-  if (non_blocking.is_non_blocking(x, y)) {
+  if (destination_bounds.is_non_blocking(x, y)) {
     return false;
   }
+
   return x < 0 || y < 0 || x >= map_width ||
-         y >= map_height || blocking_map->map[x + y * map_width];
+         y >= map_height ||
+         blocking_map->map[x + y * map_width];
 }
 
 bool PathContext::is_dangerous(int x, int y) const
 {
   return !blocking_map->threat_map.empty() &&
           blocking_map->threat_map[x + y * map_width];
+}
+
+void PathContext::reset(const PathBlockingMap& blocking,
+                        PathCoord start,
+                        NonBlockingArea bounds)
+{
+  blocking_map = std::make_unique<PathBlockingMap>(blocking);
+  start_coord = start;
+  destination_bounds = bounds;
+  game_time = blocking_map->type.game_time;
+
+  // reset route
+  nodes.clear();
+
+  // iteration should not match value of iteration in -map-
+  if (++iteration == UINT16_MAX) {
+    // there are no values of iteration guaranteed not to exist
+    // in -map-, so clear it
+    map.clear();
+    iteration = 0;
+  }
+  // ensure the correct size is allocated for -map-,
+  // corresponding to the total area of the game map
+  map.resize(static_cast<std::size_t>(map_width) * static_cast<std::size_t>(map_height));
 }
 
 void path_table_reset()
@@ -64,7 +88,7 @@ PathNode get_best_node(std::vector<PathNode>& nodes)
   return best;
 }
 
-unsigned estimate_distance(PathCoordinate start, PathCoordinate finish)
+unsigned estimate_distance(PathCoord start, PathCoord finish)
 {
   const auto x_delta = std::abs(start.x - finish.x);
   const auto y_delta = std::abs(start.y - finish.y);
@@ -76,7 +100,7 @@ unsigned estimate_distance(PathCoordinate start, PathCoordinate finish)
          std::max(x_delta, y_delta) * 140;
 }
 
-unsigned estimate_distance_precise(PathCoordinate start, PathCoordinate finish)
+unsigned estimate_distance_precise(PathCoord start, PathCoord finish)
 {
   // cost of moving horizontal/vertical = 70*2,
   // cost of moving diagonal = 99*2,
@@ -84,8 +108,8 @@ unsigned estimate_distance_precise(PathCoordinate start, PathCoordinate finish)
   return iHypot((start.x - finish.x) * 140, (start.y - finish.y) * 140);
 }
 
-void generate_new_node(PathContext& context, PathCoordinate destination,
-                       PathCoordinate current_pos, PathCoordinate prev_pos,
+void generate_new_node(PathContext& context, PathCoord destination,
+                       PathCoord current_pos, PathCoord prev_pos,
                        unsigned prev_dist)
 {
   const auto cost_factor = context.is_dangerous(current_pos.x, current_pos.y);
@@ -122,7 +146,7 @@ void generate_new_node(PathContext& context, PathCoordinate destination,
   }
 }
 
-void recalculate_estimates(PathContext& context, PathCoordinate tile)
+void recalculate_estimates(PathContext& context, PathCoord tile)
 {
   for (auto& node : context.nodes)
   {
@@ -133,10 +157,10 @@ void recalculate_estimates(PathContext& context, PathCoordinate tile)
   std::make_heap(context.nodes.begin(), context.nodes.end());
 }
 
-PathCoordinate find_nearest_explored_tile(PathContext& context, PathCoordinate tile)
+PathCoord find_nearest_explored_tile(PathContext& context, PathCoord tile)
 {
   unsigned nearest_dist = UINT32_MAX;
-  auto nearest_coord = PathCoordinate{0, 0};
+  auto nearest_coord = PathCoord{0, 0};
   bool target_found = false;
   while (!target_found)
   {
@@ -161,11 +185,11 @@ PathCoordinate find_nearest_explored_tile(PathContext& context, PathCoordinate t
       target_found = true;
     }
 
-    for (auto direction = 0; direction < ARRAY_SIZE(direction_to_offset); ++direction)
+    for (auto direction = 0; direction < ARRAY_SIZE(offset); ++direction)
     {
       // try a new location
-      auto x = node.path_coordinate.x + direction_to_offset[direction].x;
-      auto y = node.path_coordinate.y + direction_to_offset[direction].y;
+      auto x = node.path_coordinate.x + offset[direction].x;
+      auto y = node.path_coordinate.y + offset[direction].y;
 
       //			   5  6  7
       //			     \|/
@@ -173,18 +197,18 @@ PathCoordinate find_nearest_explored_tile(PathContext& context, PathCoordinate t
       //			     /|\
       //			   3  2  1
       // odd:orthogonal-adjacent tiles even:non-orthogonal-adjacent tiles
-      if (direction % 2 != 0 && !context.non_blocking.
+      if (direction % 2 != 0 && !context.destination_bounds.
            is_non_blocking(node.path_coordinate.x, node.path_coordinate.y) &&
-           !context.non_blocking.is_non_blocking(x, y)) {
+           !context.destination_bounds.is_non_blocking(x, y)) {
 
         // cannot cut corners
-        auto x_2 = node.path_coordinate.x + direction_to_offset[(direction + 1) % 8].x;
-        auto y_2 = node.path_coordinate.y + direction_to_offset[(direction + 1) % 8].y;
+        auto x_2 = node.path_coordinate.x + offset[(direction + 1) % 8].x;
+        auto y_2 = node.path_coordinate.y + offset[(direction + 1) % 8].y;
         if (context.is_blocked(x_2, y_2)) {
           continue;
         }
-        x_2 = node.path_coordinate.x + direction_to_offset[(direction + 7) % 8].x;
-        y_2 = node.path_coordinate.y + direction_to_offset[(direction + 7) % 8].y;
+        x_2 = node.path_coordinate.x + offset[(direction + 7) % 8].x;
+        y_2 = node.path_coordinate.y + offset[(direction + 7) % 8].y;
         if (context.is_blocked(x_2, y_2)) {
           continue;
         }
@@ -197,7 +221,7 @@ PathCoordinate find_nearest_explored_tile(PathContext& context, PathCoordinate t
       }
 
       // now insert the point into the appropriate list, if not already visited.
-      generate_new_node(context, tile, PathCoordinate{x, y},
+      generate_new_node(context, tile, PathCoord{x, y},
                         node.path_coordinate, node.distance_from_start);
     }
   }

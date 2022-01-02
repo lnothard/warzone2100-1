@@ -5,6 +5,7 @@
 #include "map.h"
 #include "structure.h"
 
+/// Reset
 void aux_clear(int x, int y, int state)
 {
   for (int i = 0; i < MAX_PLAYERS; ++i)
@@ -166,6 +167,7 @@ uint8_t block_tile(int x, int y, int slot)
 {
   return block_map[slot][x + y * map_width];
 }
+
 /**
  * Intersect a tile with a line and report the points of intersection
  * line is gives as point plus 2d directional vector

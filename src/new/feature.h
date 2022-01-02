@@ -19,7 +19,7 @@ enum class FEATURE_TYPE
 	SKYSCRAPER
 };
 
-class Feature : public virtual ::Simple_Object, public Impl::Simple_Object
+class Feature : public virtual ::SimpleObject, public Impl::SimpleObject
 {
 private:
 	using enum FEATURE_TYPE;

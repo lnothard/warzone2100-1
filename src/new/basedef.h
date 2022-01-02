@@ -11,6 +11,7 @@
 #include "lib/framework/vector.h"
 #include "displaydef.h"
 
+///
 enum class OBJECT_FLAG
 {
     JAMMED_TILES,
@@ -20,6 +21,7 @@ enum class OBJECT_FLAG
     COUNT // MUST BE LAST
 };
 
+/// 4D spacetime coordinate and rotation
 struct Spacetime
 {
 	Spacetime(std::size_t time, Position position, Rotation rotation);
@@ -29,15 +31,15 @@ struct Spacetime
 	Rotation rotation;
 };
 
-class Simple_Object
+class SimpleObject
 {
 public:
-	Simple_Object() = default;
-	virtual ~Simple_Object() = default;
-	Simple_Object(const Simple_Object&) = delete;
-	Simple_Object(Simple_Object&&) = delete;
-	Simple_Object& operator=(const Simple_Object&) = delete;
-	Simple_Object& operator=(Simple_Object&&) = delete;
+	SimpleObject() = default;
+	virtual ~SimpleObject() = default;
+	SimpleObject(const SimpleObject&) = delete;
+	SimpleObject(SimpleObject&&) = delete;
+	SimpleObject& operator=(const SimpleObject&) = delete;
+	SimpleObject& operator=(SimpleObject&&) = delete;
 
 	[[nodiscard]] virtual Spacetime spacetime() const = 0;
 	[[nodiscard]] virtual const Position& get_position() const = 0;
@@ -54,10 +56,10 @@ public:
 
 namespace Impl
 {
-	class Simple_Object : public virtual ::Simple_Object
+	class SimpleObject : public virtual ::SimpleObject
 	{
 	public:
-		Simple_Object(unsigned id, unsigned player);
+		SimpleObject(unsigned id, unsigned player);
 
 		[[nodiscard]] Spacetime spacetime() const noexcept final;
 		[[nodiscard]] const Position& get_position() const noexcept final;
@@ -89,7 +91,7 @@ inline int object_position_square_diff(const Position& first, const Position& se
 	return dot(diff, diff);
 }
 
-inline int object_position_square_diff(const Simple_Object& first, const Simple_Object& second)
+inline int object_position_square_diff(const SimpleObject& first, const SimpleObject& second)
 {
 	return object_position_square_diff(first.get_position(), second.get_position());
 }
