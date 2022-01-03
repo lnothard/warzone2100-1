@@ -9,7 +9,7 @@ PathCoord::PathCoord(int x, int y)
 {
 }
 
-NonBlockingArea::NonBlockingArea(const Structure_Bounds& bounds)
+NonBlockingArea::NonBlockingArea(const StructureBounds& bounds)
   : x_1(bounds.top_left_coords.x),
     x_2(bounds.top_left_coords.x + bounds.size_in_coords.x),
     y_1(bounds.top_left_coords.y),

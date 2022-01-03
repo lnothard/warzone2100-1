@@ -75,29 +75,28 @@ enum class PENDING_STATUS
 	CANCEL_PENDING
 };
 
-struct Structure_Bounds
+/**
+ * 
+ */
+struct StructureBounds
 {
-	constexpr Structure_Bounds()
-		: top_left_coords(0, 0), size_in_coords(0, 0)
-	{
-	}
+	StructureBounds();
+	StructureBounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords);
 
-	constexpr Structure_Bounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords)
-		: top_left_coords{top_left_coords}, size_in_coords{size_in_coords}
-	{
-	}
-
-	Vector2i top_left_coords;
-	Vector2i size_in_coords;
+	Vector2i top_left_coords {0, 0};
+	Vector2i size_in_coords {0, 0};
 };
 
-struct Flag_Position : public Object_Position
+struct FlagPosition : public ObjectPosition
 {
-	Vector3i coords = Vector3i(0, 0, 0);
-	uint8_t factory_inc;
-	uint8_t factory_type;
+	Vector3i coords {0, 0, 0};
+	uint8_t factory_inc = 0;
+	uint8_t factory_type = 0;
 };
 
+/**
+ * 
+ */
 struct Structure_Stats
 {
 	[[nodiscard]] Vector2i size(unsigned direction) const;
@@ -115,19 +114,19 @@ struct Structure_Stats
 
 	STRUCTURE_TYPE type;
 	STRUCTURE_STRENGTH strength;
-	std::vector<std::unique_ptr<iIMDShape>> IMDs;
+	std::vector< std::unique_ptr<iIMDShape> > IMDs;
 	std::unique_ptr<SensorStats> sensor_stats;
 	std::unique_ptr<ECMStats> ecm_stats;
 	std::unique_ptr<iIMDShape> base_imd;
-	bool combines_with_wall{false};
-	bool is_favourite{false};
-	unsigned base_width{0};
-	unsigned base_breadth{0};
-	unsigned build_point_cost{0};
-	unsigned height{0};
-	unsigned power_to_build{0};
-	unsigned weapon_slots{0};
-	unsigned num_weapons_default{0};
+	bool combines_with_wall = false;
+	bool is_favourite = false;
+	unsigned base_width = 0;
+	unsigned base_breadth = 0;
+	unsigned build_point_cost = 0;
+	unsigned height = 0;
+	unsigned power_to_build = 0;
+	unsigned weapon_slots = 0;
+	unsigned num_weapons_default = 0;
 };
 
 class Structure : public virtual Unit
@@ -204,7 +203,7 @@ namespace Impl
 	[[nodiscard]] bool being_built(const Structure& structure);
 	[[nodiscard]] bool being_demolished(const Structure& structure);
 	[[nodiscard]] bool is_damaged(const Structure& structure);
-	[[nodiscard]] Structure_Bounds get_bounds(const Structure& structure) noexcept;
+	[[nodiscard]] StructureBounds get_bounds(const Structure& structure) noexcept;
 	void adjust_tile_height(const Structure& structure, int new_height);
 	[[nodiscard]] int calculate_height(const Structure& structure);
 	[[nodiscard]] int calculate_foundation_height(const Structure& structure);
@@ -214,14 +213,14 @@ namespace Impl
 
 const Structure* find_repair_facility(unsigned player);
 
-struct Production_Job
+struct ProductionJob
 {
 	std::shared_ptr<Droid_Template> droid_template;
-	std::size_t time_started;
+	std::size_t time_started = gameTime;
 	int remaining_build_points;
 };
 
-struct Research_Item
+struct ResearchItem
 {
 	uint8_t tech_code;
 	unsigned research_point_cost;
@@ -239,52 +238,51 @@ public:
 private:
 	using enum PENDING_STATUS;
 
-	std::unique_ptr<Production_Job> active_job;
-	std::unique_ptr<Flag_Position> assembly_point;
+	std::unique_ptr<ProductionJob> active_job;
+	std::unique_ptr<FlagPosition> assembly_point;
 	PENDING_STATUS pending_status;
 	uint8_t production_loops;
 	uint8_t loops_performed;
 };
 
-class Research_Facility : public virtual Structure, public Impl::Structure
+class ResearchFacility : public virtual Structure, public Impl::Structure
 {
 private:
-	Research_Item active_research_task;
-	Research_Item pending_research_task;
+	ResearchItem active_research_task;
+	ResearchItem pending_research_task;
 };
 
-class Power_Generator : public virtual Structure, public Impl::Structure
+class PowerGenerator : public virtual Structure, public Impl::Structure
 {
 public:
-    void update_current_power();
+  void update_current_power();
 private:
 	std::vector<Structure*> associated_resource_extractors;
 };
 
-class Resource_Extractor : public virtual Structure, public Impl::Structure
+class ResourceExtractor : public virtual Structure, public Impl::Structure
 {
 public:
     int get_extracted_power() const;
 private:
-	Structure* owning_power_generator;
+	Structure* owning_power_generator = nullptr;
 };
 
-class Rearm_Pad : public virtual Structure, public Impl::Structure
+class RearmPad : public virtual Structure, public Impl::Structure
 {
 public:
 	bool is_clear() const;
 private:
-	Droid* rearm_target;
-	std::size_t time_started;
-	std::size_t last_update_time;
+	Droid* rearm_target = nullptr;
+	std::size_t time_started = gameTime;
+	std::size_t last_update_time = gameTime;
 };
 
-class Repair_Facility : public virtual Structure, public Impl::Structure
+class RepairFacility : public virtual Structure, public Impl::Structure
 {
 private:
-	Unit* repair_target;
-	std::unique_ptr<Flag_Position> assembly_point;
+	Unit* repair_target = nullptr;
+	std::unique_ptr<FlagPosition> assembly_point;
 };
-
 
 #endif // WARZONE2100_STRUCTURE_H

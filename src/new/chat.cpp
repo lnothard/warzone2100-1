@@ -16,7 +16,7 @@ ChatMessage::ChatMessage(unsigned sender, std::string message)
 
 [[nodiscard]] bool ChatMessage::should_receive(unsigned player) const
 {
-  // if `is_global() returns `true`, the `player` does not matter,
+  // if `is_global()` returns `true`, the `player` does not matter,
   // since all receive the message
   return is_global() ||
   // if `player` is not found in `intended_recipients`, return `false`

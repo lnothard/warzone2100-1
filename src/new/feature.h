@@ -19,6 +19,11 @@ enum class FEATURE_TYPE
 	SKYSCRAPER
 };
 
+/**
+ * A `Feature` is the name for a game entity that is
+ * not owned by any player. For example, trees,
+ * vehicles, and resource deposits
+ */
 class Feature : public virtual ::SimpleObject, public Impl::SimpleObject
 {
 private:

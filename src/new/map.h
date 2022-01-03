@@ -1,6 +1,7 @@
-//
-// Created by luna on 10/12/2021.
-//
+
+/**
+ * @file map.h
+ */
 
 #ifndef WARZONE2100_MAP_H
 #define WARZONE2100_MAP_H
@@ -33,6 +34,7 @@ static constexpr auto TILE_NUM_MASK = 0x01ff;
 static constexpr auto MAX_TILE_TEXTURES = 255;
 
 extern const int map_width, map_height;
+
 extern const int min_horizontal_scroll, max_horizontal_scroll,
                  min_vertical_scroll, max_vertical_scroll;
 
@@ -64,6 +66,8 @@ struct Tile
 	uint8_t ground_type;
 	uint16_t texture;
 };
+
+/// The global tile array
 extern std::array<Tile, map_width * map_height> map_tiles;
 
 void aux_clear(int x, int y, int state);
@@ -100,7 +104,7 @@ static inline int calculate_map_height(const Vector2i& v);
 
 void set_tile_height(int x, int y, int height);
 
-/** Return a pointer to the tile structure at x,y in map coordinates */
+/// @return a pointer to the tile at coordinates x, y
 [[nodiscard]] Tile* get_map_tile(int x, int y);
 
 [[nodiscard]] Tile* get_map_tile(const Vector2i& position);
@@ -111,16 +115,18 @@ void set_tile_height(int x, int y, int height);
 
 [[nodiscard]] bool is_coord_on_map(const Vector2i& position);
 
-/* Return whether a tile coordinate is on the map */
+/// @return `true` if the tile coordinate at `x, y` exists on the map
 [[nodiscard]] bool tile_on_map(int x, int y);
 
+/// @return `true` if the tile coordinate `position` exists on the map
 [[nodiscard]] bool tile_on_map(const Vector2i& position);
 
-/* Make sure world coordinates are inside the map */
-/** Clip world coordinates to make sure they're inside the map's boundaries
- *  \param pos a pointer to a coordinate inside the map
- *  \post 1 <= pos.x <= world_coord(mapWidth)-1 and
- *        1 <= pos.y <= world_coord(mapHeight)-1
+/**
+ * Clip world coordinates to ensure they are within the map boundaries
+ *
+ * @param pos a pointer to a coordinate inside the map
+ * @post 1 <= pos.x <= world_coord(mapWidth)-1 and
+ *       1 <= pos.y <= world_coord(mapHeight)-1
  */
 void clip_coords(Vector2i& pos);
 

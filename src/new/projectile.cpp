@@ -6,6 +6,11 @@
 #include "feature.h"
 #include "projectile.h"
 
+bool Interval::is_empty() const noexcept
+{
+  return begin >= end;
+}
+
 bool is_friendly_fire(const Damage& damage)
 {
   const auto& target = damage.projectile->target;
@@ -73,4 +78,9 @@ Interval resolve_xy_collision(Vector2i pos1, Vector2i pos2, int radius)
   const auto sd = i64Sqrt(d);
   return {MAX(0, 1024 * (-b - sd) / a),
           MIN(1024, 1024 * (-b + sd) / a)};
+}
+
+int calculate_height(const Projectile& projectile)
+{
+  return BULLET_FLIGHT_HEIGHT;
 }

@@ -2,6 +2,10 @@
 // Created by luna on 08/12/2021.
 //
 
+/**
+ * @file droid.cpp
+ */
+
 #include <algorithm>
 
 #include "droid.h"
@@ -90,24 +94,26 @@ bool Droid::has_commander() const
 
 bool Droid::has_electronic_weapon() const
 {
-	if (Impl::has_electronic_weapon(*this))
+	if (Impl::has_electronic_weapon(*this)) {
     return true;
+  }
 
-	if (type != COMMAND)
+	if (type != COMMAND)  {
     return false;
+  }
 
 	return group->has_electronic_weapon();
 }
 
 bool Droid::has_standard_sensor() const
 {
-  if (type != SENSOR)
+  if (type != SENSOR) {
     return false;
+  }
 
   if (sensor->type == SENSOR_TYPE::VTOL_INTERCEPT ||
       sensor->type == SENSOR_TYPE::STANDARD ||
-      sensor->type == SENSOR_TYPE::SUPER)
-  {
+      sensor->type == SENSOR_TYPE::SUPER)  {
     return true;
   }
   return false;
@@ -261,7 +267,7 @@ unsigned Droid::get_commander_level() const
 
 unsigned Droid::commander_max_group_size() const
 {
-	assert(is_commander() && group->is_command_group());
+	assert(is_commander(*this) && group->is_command_group());
 
 	auto& cmd_stats = brain->upgraded[get_player()];
 	return get_level() * cmd_stats.max_droids_multiplier + cmd_stats.max_droids_assigned;
@@ -370,7 +376,7 @@ int Droid::space_occupied_on_transporter() const
 
 int Droid::get_vertical_speed() const noexcept
 {
-  return movement->get_vertical_speed();
+  return movement->vertical_speed;
 }
 
 unsigned Droid::get_secondary_order() const noexcept
@@ -380,7 +386,7 @@ unsigned Droid::get_secondary_order() const noexcept
 
 const Vector2i& Droid::get_destination() const
 {
-  return movement->get_destination();
+  return movement->destination;
 }
 
 void Droid::increment_kills() noexcept
@@ -409,7 +415,7 @@ void Droid::set_direct_route(int target_x, int target_y) const
   movement->set_path_vars(target_x, target_y);
 }
 
-void Droid::assign_vtol_to_rearm_pad(Rearm_Pad* rearm_pad)
+void Droid::assign_vtol_to_rearm_pad(RearmPad* rearm_pad)
 {
   associated_structure = rearm_pad;
 }
@@ -622,7 +628,7 @@ bool all_VTOLs_rearmed(const Droid& droid)
 	});
 }
 
-bool VTOL_ready_to_rearm(const Droid& droid, const Rearm_Pad& rearm_pad)
+bool VTOL_ready_to_rearm(const Droid& droid, const RearmPad& rearm_pad)
 {
 	if (droid.is_VTOL() || droid.get_current_action() == ACTION::WAIT_FOR_REARM ||
 		!droid.is_VTOL_rearmed_and_repaired() || rearm_pad.is_clear() || !droid.is_rearming())
@@ -663,7 +669,7 @@ unsigned count_player_command_droids(unsigned player)
 	const auto& droids = droid_lists[player];
 	return std::count_if(droids.begin(), droids.end(), [](const auto& droid)
 	{
-		return droid.is_commander();
+		return is_commander(droid);
 	});
 }
 
@@ -804,13 +810,14 @@ void add_VTOL_attack_run(const Droid& droid)
 void update_vtol_attack(Droid& droid)
 {
   using enum ORDER_TYPE;
-  if (droid.get_current_order().type == RETURN_TO_BASE) {
+
+  if (droid.get_current_order().type == RETURN_TO_BASE)  {
     // don't do attack runs while returning to base
     return;
   }
 
   // order back to base after fixed number of attack runs
-  if (num_weapons(droid) > 0 && droid.is_VTOL_empty()) {
+  if (num_weapons(droid) > 0 && droid.is_VTOL_empty())  {
     droid.move_to_rearm_pad();
     return;
   }
@@ -827,9 +834,9 @@ Vector2i determine_fallback_position(Unit& unit, Unit& target)
   auto y_diff = unit.get_position().y - target.get_position().y;
   const auto length = iHypot(x_diff, y_diff);
 
-  if (length == 0) {
+  if (length == 0)  {
     x_diff = y_diff = TILE_UNITS;
-  } else {
+  } else  {
     x_diff = (x_diff * TILE_UNITS) / length;
     y_diff = (y_diff * TILE_UNITS) / length;
   }
@@ -864,15 +871,15 @@ void update_vtol_attack_runs(Droid& droid, int weapon_slot)
   droid.use_ammo(weapon_slot);
 }
 
-const Rearm_Pad* find_nearest_rearm_pad(const Droid& droid)
+const RearmPad* find_nearest_rearm_pad(const Droid& droid)
 {
   const auto& structures = structure_lists[droid.get_player()];
-  const Rearm_Pad* nearest = nullptr;
+  const RearmPad* nearest = nullptr;
   auto shortest_distance = INT32_MAX;
 
   std::for_each(structures.begin(), structures.end(), [&](const auto& structure)
   {
-    auto rearm_pad = dynamic_cast<const Rearm_Pad*>(structure.get());
+    auto rearm_pad = dynamic_cast<const RearmPad*>(structure.get());
     if (!rearm_pad)
       return;
 
@@ -959,15 +966,6 @@ Droid* find_nearest_droid(unsigned x, unsigned y, bool selected)
   return nearest_droid;
 }
 
-/**
- * Performs a space-filling spiral-like search from startX,startY up to (and
- * including) radius.
- *
- * @param start_pos starting x and y coordinates
- *
- * @param max_radius radius to examine. Search will finish when @c max_radius is exceeded.
- *
- */
 Vector2i spiral_search(Vector2i start_pos, int max_radius)
 {
   // test center tile
@@ -1057,4 +1055,19 @@ void clear_blocking_flags(const Droid& droid)
         get_map_tile(tile)->info_bits &= ~BLOCKING;
       }
   });
+}
+
+bool tile_occupied_by_droid(unsigned x, unsigned y)
+{
+  for (const auto& player_droids : droid_lists)
+  {
+    if (std::any_of(player_droids.begin(), player_droids.end(), [x, y](const auto& droid)  {
+        return map_coord(droid.get_position().x) == x &&
+               map_coord(droid.get_position().y == y);
+    }))
+    {
+      return true;
+    }
+  }
+  return false;
 }

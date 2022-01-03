@@ -1,6 +1,8 @@
-//
-// Created by Luna Nothard on 17/12/2021.
-//
+
+/**
+ * @file displaydef.h
+ *
+ */
 
 #ifndef WARZONE2100_DISPLAYDEF_H
 #define WARZONE2100_DISPLAYDEF_H
@@ -9,9 +11,13 @@
 
 #include "lib/ivis_opengl/ivisdef.h"
 
+/**
+ * If set to `true`, the fog of war is lifted from the
+ * perspective of the client and from the renderer as a result
+ */
 extern bool god_mode;
 
-struct Display_Data
+struct DisplayData
 {
 	std::unique_ptr<iIMDShape> imd_shape;
 	unsigned frame_number;

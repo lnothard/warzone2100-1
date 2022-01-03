@@ -58,7 +58,7 @@ static const unsigned int max_check_object_recursion = 4;
 
 /// Get interpolated direction at time t.
 Rotation interpolateRot(Rotation v1, Rotation v2, uint32_t t1, uint32_t t2, uint32_t t);
-/// Get interpolated object spacetime at time t.
+/// Get interpolated object get_spacetime at time t.
 Spacetime interpolateObjectSpacetime(const SIMPLE_OBJECT* obj, uint32_t t);
 
 void checkObject(const SIMPLE_OBJECT* psObject, const char* const location_description, const char* function,

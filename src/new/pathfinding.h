@@ -11,8 +11,7 @@
 #include "droid.h"
 #include "stats.h"
 
-/// Which movement class is the droid
-/// currently assigned?
+/// Which movement class is the droid currently assigned?
 enum class MOVE_TYPE
 {
     MOVE,
@@ -60,19 +59,27 @@ struct PathResult
 /// into the bits governing which tile types are blocked
 uint8_t get_path_bits_from_propulsion(PROPULSION_TYPE propulsion);
 
-/// Does this coordinate block units with
-/// movement parameters -move_type- ?
+/**
+ * Does this coordinate block units with movement parameters `move_type` ?
+ *
+ * @param x
+ * @param y
+ * @param propulsion
+ * @param map_index
+ * @param move_type
+ * @return
+ */
 bool is_tile_blocking(int x, int y,
                       PROPULSION_TYPE propulsion,
                       unsigned map_index,
                       MOVE_TYPE move_type);
 
-/// Are we blocked by tile at -x, y- position?
+/// Are we blocked by the tile at coordinate x, y?
 bool is_tile_blocked_by_droid(const Droid& droid,
                               int x, int y,
                               MOVE_TYPE move_type);
 
-/// Do droids of this propulsion class block specified coord?
+/// Do droids of this propulsion class block the specified coord?
 bool is_droid_blocked_by_tile(int x, int y,
                               PROPULSION_TYPE propulsion);
 

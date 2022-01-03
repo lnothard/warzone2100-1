@@ -6,6 +6,11 @@
 
 #include "power.h"
 
+PowerRequest::PowerRequest(int amount, unsigned id)
+        : amount{amount}, requester_id{id}
+{
+}
+
 bool add_power_request(unsigned player, unsigned requester_id, int amount)
 {
   auto& player_power = power_list[player];

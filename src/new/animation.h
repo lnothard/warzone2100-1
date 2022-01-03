@@ -1,6 +1,8 @@
-//
-// Created by Luna Nothard on 26/12/2021.
-//
+
+/**
+ * @file animation.h
+ *
+ */
 
 #ifndef WARZONE2100_ANIMATION_H
 #define WARZONE2100_ANIMATION_H
@@ -63,6 +65,12 @@ class Rotation : public Animation
  */
 int32_t calculateRelativeAngle(unsigned from, unsigned to);
 
+/**
+ *
+ * @param easing_func
+ * @param progress
+ * @return
+ */
 unsigned calculate_easing(EASING_FUNCTION easing_func, unsigned progress)
 
 #endif //WARZONE2100_ANIMATION_H

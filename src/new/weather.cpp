@@ -7,23 +7,23 @@
 
 void wrap_particle(Particle& particle)
 {
-  // Gone off left side
+  // gone off left side
   if (particle.position.x < player_pos.position.x -
       world_coord(visible_tiles.x) / 2) {
     particle.position.x += world_coord(visible_tiles.x);
   }
-  // Gone off right side
+  // gone off right side
   else if (particle.position.x > (player_pos.position.x +
            world_coord(visible_tiles.x) / 2)) {
     particle.position.x -= world_coord(visible_tiles.x);
   }
 
-  // Gone off top
+  // gone off top
   if (particle.position.z < player_pos.position.z -
       world_coord(visible_tiles.y) / 2) {
     particle.position.z += world_coord(visible_tiles.y);
   }
-  // Gone off bottom
+  // gone off bottom
   else if (particle.position.z > (player_pos.position.z +
            world_coord(visible_tiles.y) / 2))
   {

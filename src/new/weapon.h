@@ -12,6 +12,7 @@
 #include "basedef.h"
 #include "stats.h"
 
+///
 static constexpr auto DEFAULT_RECOIL_TIME = GAME_TICKS_PER_SEC / 4;
 
 enum class WEAPON_SIZE
@@ -25,8 +26,7 @@ enum class WEAPON_CLASS
 {
 	KINETIC,
 
-  /// Flamethrower class - paired against
-  /// thermal armour points
+  /// Flamethrower class - paired against thermal armour points
 	HEAT
 };
 
@@ -74,8 +74,10 @@ enum class MOVEMENT_TYPE
 	HOMING_INDIRECT
 };
 
-/// Parameters affecting a weapon's effectiveness,
-/// such as range, accuracy and damage
+/**
+ * Parameters affecting a weapon's effectiveness, such
+ * as range, accuracy and damage
+ */
 struct WeaponStats : public ComponentStats
 {
 	using enum WEAPON_CLASS;
@@ -122,13 +124,13 @@ struct WeaponStats : public ComponentStats
   ///
   uint8_t surface_to_air;
 
-  /// True if firing this weapon affects visibility
+  /// `true` if firing this weapon affects visibility
 	bool effect_emits_light;
 
   /// Main weapon texture
 	std::unique_ptr<iIMDShape> weapon_graphic;
 
-  /// Texture to use for the turret mount
+  /// Texture for the turret mount
 	std::unique_ptr<iIMDShape> mount_graphic;
 
 	std::unique_ptr<iIMDShape> muzzle_graphic;
@@ -156,8 +158,10 @@ enum class ATTACKER_TYPE
   DEFAULT = UNKNOWN
 };
 
-/// Represents a weapon attachment. Used by -Units-,
-/// currently -Structures- and -Droids-
+/**
+ * Represents a weapon attachment. Used by units;
+ * currently structures and droids
+ */
 class Weapon final : public virtual ::SimpleObject, public Impl::SimpleObject
 {
 public:
@@ -185,16 +189,18 @@ private:
 
 	ATTACKER_TYPE attacker_type;
 
-  /// Shared ownership of the -WeaponStats- object, since
-  /// there could exist several weapons of the same type
+  /**
+   * Has shared ownership of the `WeaponStats` object, since
+   * there will usually be several weapons of the same type
+   */
 	std::shared_ptr<WeaponStats> stats;
 
-	Rotation rotation;
-	Rotation previous_rotation;
-	unsigned ammo;
-	unsigned ammo_used;
-	unsigned shots_fired;
-	std::size_t time_last_fired;
+	Rotation rotation { 0, 0, 0};
+	Rotation previous_rotation {0, 0, 0};
+	unsigned ammo = 0;
+	unsigned ammo_used = 0;
+	unsigned shots_fired = 0;
+	std::size_t time_last_fired = gameTime;
 };
 
 #endif // WARZONE2100_WEAPON_H

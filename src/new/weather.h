@@ -36,18 +36,21 @@ enum class PARTICLE_STATUS
 
 struct Particle
 {
-    PARTICLE_STATUS status;
+    using enum PARTICLE_STATUS;
+    PARTICLE_STATUS status = INACTIVE;
     PARTICLE_TYPE type;
-    unsigned size;
-    Vector3i position;
-    Vector3f velocity;
+    unsigned size = 0;
+    Vector3i position {0, 0, 0};
+    Vector3f velocity {0, 0, 0};
     std::unique_ptr<iIMDShape> imd_shape;
 };
 
 extern std::vector<Particle> particles;
 
-/*	Makes a particle wrap around - if it goes off the grid, then it returns
-	on the other side - provided it's still on world... Which it should be */
+/**
+ * Makes a particle wrap around - if it goes off the grid, then it returns
+ * on the other side - provided it's still on world... which it should be
+ */
 void wrap_particle(Particle& particle);
 
 #endif //WARZONE2100_WEATHER_H

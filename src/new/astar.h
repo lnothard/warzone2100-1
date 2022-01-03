@@ -8,8 +8,10 @@
 #include <cstdlib>
 #include "pathfinding.h"
 
-/// Conversion table from direction to offset
-/// dir 0 => x = 0, y = -1
+/**
+ * Conversion table from direction to offset
+ * dir 0 => x = 0, y = -1
+ */
 constexpr Vector2i offset[] =
 {
   Vector2i(0, 1),
@@ -36,9 +38,11 @@ struct PathCoord
 	PathCoord() = default;
 	PathCoord(int x, int y);
 
-  /// Default element-wise comparison.
-  /// Evaluates equality of two coordinates according to
-  /// the equality of their respective scalar values
+  /**
+   * Default element-wise comparison.
+   * Evaluates equality of two coordinates according to
+   * the equality of their respective scalar values
+   */
 	bool operator ==(const PathCoord& rhs) const = default;
 	bool operator !=(const PathCoord& rhs) const = default;
 
@@ -73,10 +77,10 @@ struct PathNode
   /// Current position in route
 	PathCoord path_coordinate;
 
-  /// Total distance traversed
+  /// Distance traversed so far
 	unsigned distance_from_start;
 
-  /// Remaining distance. Frequently updated
+  /// Estimate of remaining distance. Frequently updated
 	unsigned estimated_distance_to_end;
 };
 
@@ -93,7 +97,7 @@ struct ExploredTile
     /// Shortest known distance to tile
     unsigned distance = 0;
 
-    /// True if previously traversed
+    /// `true` if previously traversed
     bool visited = false;
 };
 
@@ -116,8 +120,7 @@ struct PathBlockingType
 /// Represents a blocking region
 struct PathBlockingMap
 {
-    /// Overload testing equivalence
-    /// of two distinct blocking regions
+    /// Overload testing equivalence of two distinct blocking regions
     bool operator ==(const PathBlockingType& rhs) const;
 
     ///
@@ -133,22 +136,25 @@ struct PathBlockingMap
 /// Global list of blocking regions
 extern std::vector<PathBlockingMap> blocking_maps;
 
-/// Represents a region of the map that may
-/// be non-blocking
+/// Represents a region of the map that may be non-blocking
 struct NonBlockingArea
 {
     NonBlockingArea() = default;
 
     /// Construct from existing structure bounds
-    explicit NonBlockingArea(const Structure_Bounds& bounds);
+    explicit NonBlockingArea(const StructureBounds& bounds);
 
     /// Element-wise comparison
     [[nodiscard]] bool operator ==(const NonBlockingArea& rhs) const = default;
     [[nodiscard]] bool operator !=(const NonBlockingArea& rhs) const = default;
 
-    /// Returns -true- if the coordinate is within
-    /// the bounds of this region, -false- otherwise
+    /**
+     * @return `true` if the coordinate is within the bounds
+     * of this region, `false` otherwise
+     */
     [[nodiscard]] bool is_non_blocking(int x, int y) const;
+
+
     [[nodiscard]] bool is_non_blocking(PathCoord coord) const;
 
     /* Coordinates corresponding to the outer tile edges */
@@ -193,8 +199,7 @@ struct PathContext
     /// Owning pointer to the list of blocking tiles for this route
     std::unique_ptr<PathBlockingMap> blocking_map;
 
-    /// Destination structure bounds that may be
-    /// considered non-blocking
+    /// Destination structure bounds that may be considered non-blocking
     NonBlockingArea destination_bounds;
 };
 

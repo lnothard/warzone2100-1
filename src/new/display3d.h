@@ -1,4 +1,3 @@
-// Created by Luna Nothard on 27/12/2021.
 
 /**
  * @file display3d.h
@@ -12,17 +11,15 @@
 
 #include "lib/framework/vector.h"
 
-/**
- * Standard map tile dimensions
- */
+/* Default tile dimensions */
 static constexpr auto TILE_WIDTH = 128;
 static constexpr auto TILE_HEIGHT = 128;
 static constexpr auto TILE_AREA = TILE_HEIGHT * TILE_WIDTH;
 
-/// Global list of displayed tiles
+/// Global list of rendered tiles
 extern const Vector2i visible_tiles;
 
-/// The physical type of a tile
+/// The terrain type of a tile
 enum class TILE_TYPE
 {
     RIVER_BED,

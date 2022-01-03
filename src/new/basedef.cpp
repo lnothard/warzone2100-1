@@ -11,7 +11,7 @@ Spacetime::Spacetime(std::size_t time, Position position, Rotation rotation)
 
 namespace Impl
 {
-	Spacetime SimpleObject::spacetime() const noexcept
+	Spacetime SimpleObject::get_spacetime() const noexcept
 	{
 		return {time, position, rotation};
 	}
@@ -41,7 +41,7 @@ namespace Impl
 		return id;
 	}
 
-  const Display_Data& SimpleObject::get_display_data() const noexcept
+  const DisplayData& SimpleObject::get_display_data() const noexcept
   {
     return *display;
   }

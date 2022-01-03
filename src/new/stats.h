@@ -12,10 +12,10 @@
 
 #include "weapon.h"
 
-/// Bit value for weaponized, flying droids
+/// Bit mask for weaponized, flying droids
 static constexpr auto SHOOT_IN_AIR = 0x02;
 
-/// Bit value for weaponized, grounded droids
+/// Bit mask for weaponized, grounded droids
 static constexpr auto SHOOT_ON_GROUND = 0x01;
 
 /// The movement mechanics assigned to a droid
@@ -33,9 +33,11 @@ enum class PROPULSION_TYPE
 /// The possible module types given to droids
 enum COMPONENT_TYPE
 {
-  /// The -Body- component contains the weight class
-  /// of a unit, its base armour, resistance to electric
-  /// and thermal weaponry
+  /** 
+   * The `Body` component contains the weight class
+   * of a unit, its base armour, resistance to electric
+   * and thermal weaponry
+   */ 
 	BODY,
 
   /// Commander-only component containing parameters
@@ -45,12 +47,15 @@ enum COMPONENT_TYPE
 	PROPULSION,
 	REPAIR_UNIT,
 
-  /// - ECM = Electronic Counter Measures
-  /// (Units which have ECM components installed
-  ///  are harder for enemies to detect. If a unit's
-  ///  ECM rating is higher than the enemy's sensor
-  ///  power rating, reduce the detection range of this
-  ///  unit by a third.)
+  /**
+   * ECM = Electronic Counter Measures
+   * 
+   * Units which have ECM components installed
+   * are harder for enemies to detect. If a unit's
+   * ECM rating is higher than the enemy's sensor
+   * power rating, reduce the detection range of this
+   * unit by a third.
+   */
 	ECM,
 
 	SENSOR,
@@ -59,9 +64,11 @@ enum COMPONENT_TYPE
 	COUNT // MUST BE LAST
 };
 
-/// Sensors can detect and fire upon units.
-/// The type will determine which units are targeted
-/// - CB = Counter-Battery
+/**
+ * Sensors can detect and fire upon units.
+ * The type will determine which units are targeted.
+ * CB = Counter-Battery
+ */
 enum class SENSOR_TYPE
 {
 	STANDARD,
@@ -90,8 +97,7 @@ struct ComponentStats
 	{
 		unsigned hit_points;
 
-    /// This is the modifier used for
-    /// adjusting a unit's final hit points
+    /// This is the modifier used for adjusting a unit's final hit points
 		unsigned hit_point_percent;
 	};
 
@@ -114,49 +120,54 @@ struct SensorStats : public ComponentStats
 {
 	using enum SENSOR_TYPE;
 
-  /// Default sensor is -standard-
+  /// Default sensor is `standard`
 	SENSOR_TYPE type = STANDARD;
 
 	struct : Upgradeable
 	{
-    /// Controls the distance at which a
-    /// unit is detectable
+    /// Controls the distance at which a unit is detectable
 		unsigned range;
-    // Each player has a separate upgradeable
-    // stats object. There is also a shared copy
-    // of the base stats
+    
+    /**
+     * Each player has a separate upgradeable stats object. There is
+     * also a shared copy of the base stats
+     */
 	} upgraded[MAX_PLAYERS], base;
 };
 
-/// Object containing all stats relevant to
-/// a unit's -propulsion_type-
+/**
+ * Object containing all stats relevant to a
+ * unit's `propulsion_type`
+ */
 struct PropulsionStats : public ComponentStats
 {
 	using enum PROPULSION_TYPE;
-
 	PROPULSION_TYPE propulsion_type;
-	bool is_airborne{false};
-	unsigned power_ratio_multiplier{0};
-	int start_sound{0};
-	int idle_sound{0};
-	int move_off_sound{0};
-	int move_sound{0};
-	int hiss_sound{0};
-	int shutdown_sound{0};
-	unsigned max_speed{0};
-	unsigned turn_speed{0};
-	unsigned spin_speed{0};
-	unsigned spin_angle{0};
-	unsigned skid_deceleration{0};
-	unsigned deceleration{0};
-	unsigned acceleration{0};
+	bool is_airborne = false;
+	unsigned power_ratio_multiplier = 0;
+	int start_sound = 0;
+	int idle_sound = 0;
+	int move_off_sound = 0;
+	int move_sound = 0;
+	int hiss_sound = 0;
+	int shutdown_sound = 0;
+	unsigned max_speed = 0;
+	unsigned turn_speed = 0;
+	unsigned spin_speed = 0;
+	unsigned spin_angle = 0;
+	unsigned skid_deceleration = 0;
+	unsigned deceleration = 0;
+	unsigned acceleration = 0;
 
 	struct : Upgradeable
 	{
-		int hp_percent_increase{0};
+		int hp_percent_increase = 0;
 	} upgraded[MAX_PLAYERS], base;
 };
 
+/**
+ *
+ */
 struct CommanderStats : public ComponentStats
 {
   ///
@@ -168,10 +179,10 @@ struct CommanderStats : public ComponentStats
 		std::vector<int> rank_thresholds;
 
     ///
-		int max_droids_assigned{0};
+		int max_droids_assigned = 0;
 
     ///
-		int max_droids_multiplier{0};
+		int max_droids_multiplier = 0;
 	} upgraded[MAX_PLAYERS], base;
 };
 
@@ -184,11 +195,10 @@ struct BodyStats : public ComponentStats
 	{
 		unsigned power_output;
 
-    /// Protection level against physical
-    /// weapons, e.g., bullets
+    /// Protection against physical weapons, e.g., bullets
 		unsigned armour;
 
-    /// Protection level against flamethrowers
+    /// Protection against flamethrowers
 		int thermal;
 
     /// Protection against electronic weaponry
@@ -196,6 +206,9 @@ struct BodyStats : public ComponentStats
 	} upgraded[MAX_PLAYERS], base;
 };
 
+/**
+ *
+ */
 struct ECMStats : public ComponentStats
 {
 	struct : Upgradeable

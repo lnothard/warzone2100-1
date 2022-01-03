@@ -11,7 +11,8 @@
 #include "structure.h"
 
 extern std::array<std::vector<Droid>, MAX_PLAYERS> droid_lists;
-// have to use pointers here because -Structure- is a base class
+
+// Have to use pointers here because `Structure` is a base class
 extern std::array< std::vector<std::unique_ptr<Impl::Structure> >, MAX_PLAYERS> structure_lists;
 extern std::vector<Feature> feature_list;
 extern std::vector<Unit*> sensor_list;

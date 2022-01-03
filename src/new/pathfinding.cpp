@@ -46,10 +46,11 @@ bool is_tile_blocking(int x, int y,
     return true;
   }
 
-  // -auxiliary- map tile corresponding to this tile coordinate
+  // auxiliary map tile corresponding to this tile coordinate
   const auto aux = aux_tile(x, y, map_index);
 
-  // conversion from unit's -move_type- to bitmask for auxiliary map
+  // conversion from unit's `move_type` to the corresponding
+  // bitmask for auxiliary map
   auto aux_mask = int{0};
   switch (move_type)
   {
@@ -64,7 +65,7 @@ bool is_tile_blocking(int x, int y,
       break;
   }
 
-  // convert the -propulsion-type-
+  // convert the `propulsion-type`
   const auto path_bits =
           get_path_bits_from_propulsion(propulsion);
 
@@ -81,7 +82,7 @@ bool is_tile_blocked_by_droid(const Droid& droid,
                               MOVE_TYPE move_type)
 {
   // ensure propulsion data exists for this droid,
-  // otherwise, call to -is_tile_blocking- will fail
+  // otherwise, call to `is_tile_blocking` will fail
   assert(droid.get_propulsion());
 
   return is_tile_blocking(x, y,
@@ -93,6 +94,6 @@ bool is_droid_blocked_by_tile(int x, int y,
                               PROPULSION_TYPE propulsion)
 {
   // test whether an actively blocking droid with
-  // this -propulsion_type- blocks a particular tile coord
+  // this `propulsion_type` blocks a particular tile coord
   return is_tile_blocking(x, y, propulsion, 0, MOVE_TYPE::BLOCK);
 }

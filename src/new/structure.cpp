@@ -6,6 +6,17 @@
 #include "power.h"
 #include "structure.h"
 
+StructureBounds::StructureBounds()
+  : top_left_coords(0, 0), size_in_coords(0, 0)
+{
+}
+
+StructureBounds::StructureBounds(const Vector2i& top_left_coords,
+                                 const Vector2i& size_in_coords)
+  : top_left_coords{top_left_coords}, size_in_coords{size_in_coords}
+{
+}
+
 Vector2i Structure_Stats::size(unsigned direction) const
 {
   Vector2i size(base_width, base_breadth);
@@ -257,9 +268,9 @@ namespace Impl {
 		return structure.get_hp() < structure.get_original_hp();
 	}
 
-	Structure_Bounds get_bounds(const Structure& structure) noexcept
+	StructureBounds get_bounds(const Structure& structure) noexcept
 	{
-		return Structure_Bounds{
+		return StructureBounds{
 			map_coord(structure.get_position().xy()) - structure.get_size() / 2, structure.get_size()
 		};
 	}
@@ -375,7 +386,7 @@ namespace Impl {
 	}
 }
 
-bool Rearm_Pad::is_clear() const
+bool RearmPad::is_clear() const
 {
 	return rearm_target == nullptr || rearm_target->is_VTOL_rearmed_and_repaired();
 }
@@ -412,7 +423,7 @@ void Factory::decrement_production_loops()
   }
 }
 
-int Resource_Extractor::get_extracted_power() const
+int ResourceExtractor::get_extracted_power() const
 {
   if (!owning_power_generator)
     return 0;
@@ -421,7 +432,7 @@ int Resource_Extractor::get_extracted_power() const
          (100 * GAME_UPDATES_PER_SEC);
 }
 
-void Power_Generator::update_current_power()
+void PowerGenerator::update_current_power()
 {
   auto extracted_power = 0;
   for (auto extractor : associated_resource_extractors)
@@ -437,7 +448,7 @@ const Structure* find_repair_facility(unsigned player)
 
   const auto it = std::find_if(structures.begin(), structures.end(), [](const auto& structure)
   {
-    return dynamic_cast<const Repair_Facility*>(structure);
+    return dynamic_cast<const RepairFacility*>(structure);
   });
   return (it != std::begin(structures)) ? *it : nullptr;
 }

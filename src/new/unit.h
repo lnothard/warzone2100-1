@@ -1,6 +1,7 @@
-//
-// Created by luna on 08/12/2021.
-//
+
+/** @file unit.h
+ *
+ */
 
 #ifndef WARZONE2100_UNIT_H
 #define WARZONE2100_UNIT_H
@@ -10,14 +11,21 @@
 #include "weapon.h"
 
 static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
+
 static constexpr auto TURRET_ROTATION_RATE = 45;
+
+/// The maximum number of weapons assigned to a single unit
 static constexpr auto MAX_WEAPONS = 3;
 
+/**
+ *
+ */
 class Unit : public virtual ::SimpleObject
 {
 public:
 	Unit() = default;
 	~Unit() override = default;
+
 	Unit(const Unit&) = delete;
 	Unit(Unit&&) = delete;
 	Unit& operator=(const Unit&) = delete;
@@ -40,6 +48,7 @@ public:
 };
 
 Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot);
+
 Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot);
 
 namespace Impl
@@ -57,18 +66,27 @@ namespace Impl
 	private:
 		unsigned hit_points = 0;
     bool selected = false;
-		std::vector<Weapon> weapons{};
+		std::vector<Weapon> weapons;
 	};
 
-	void check_angle(int64_t& angle_tan, int start_coord, int height, int square_distance, int target_height,
-	                 bool is_direct);
+	void check_angle(int64_t& angle_tan, int start_coord, int height,
+                   int square_distance, int target_height, bool is_direct);
+
 	[[nodiscard]] bool has_full_ammo(const Unit& unit) noexcept;
+
 	[[nodiscard]] bool has_artillery(const Unit& unit) noexcept;
+
 	[[nodiscard]] bool has_electronic_weapon(const Unit& unit) noexcept;
-	[[nodiscard]] bool target_in_line_of_fire(const Unit& unit, const ::Unit& target, int weapon_slot);
-	[[nodiscard]] int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int weapon_slot,
-                                           bool walls_block, bool is_direct);
+
+	[[nodiscard]] bool target_in_line_of_fire(const Unit& unit,
+                                           const ::Unit& target,
+                                           int weapon_slot);
+
+	[[nodiscard]] int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target,
+                                           int weapon_slot, bool walls_block, bool is_direct);
+
 	[[nodiscard]] unsigned num_weapons(const Unit& unit);
+
 	[[nodiscard]] unsigned get_max_weapon_range(const Unit& unit);
 }
 #endif // WARZONE2100_UNIT_H

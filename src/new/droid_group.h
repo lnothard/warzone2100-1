@@ -1,16 +1,18 @@
-//
-// Created by luna on 08/12/2021.
-//
+
+/**
+ * @file droid_group.h
+ *
+ */
 
 #ifndef WARZONE2100_DROID_GROUP_H
 #define WARZONE2100_DROID_GROUP_H
 
 #include "droid.h"
 
-/// Global list of `DroidGroups`
+/// The global list of active droid groups
 extern std::vector<DroidGroup> droid_groups;
 
-/// The category of `DroidGroup`
+/// The category of group
 enum class GROUP_TYPE
 {
 	NORMAL,
@@ -22,18 +24,19 @@ enum class GROUP_TYPE
 class DroidGroup
 {
 public:
+  /* Constructor overloads */
   DroidGroup() = default;
   explicit DroidGroup(unsigned id);
   DroidGroup(unsigned id, GROUP_TYPE type);
   DroidGroup(unsigned id, GROUP_TYPE type, Droid& commander);
 
-  ///
+  /// Add a new member
 	void add(Droid& droid);
 
   ///
 	void remove(Droid& droid);
 
-  ///
+  /// @return `true` if this is a command group
 	[[nodiscard]] bool is_command_group() const noexcept;
 
   ///
@@ -53,18 +56,19 @@ public:
 private:
 	using enum GROUP_TYPE;
 
-  /// Unique ID belonging to this group
+  /// Unique ID for this group
 	unsigned id = 0;
 
   /// What kind of group is this?
 	GROUP_TYPE type = NORMAL;
 
-  /** Non-owning pointer to this group's commander.
-   *  Equal to `nullptr` if this is not a command group
+  /**
+   * Non-owning pointer to this group's commander.
+   * Set to `nullptr` if this is not a command group
    */
 	Droid* commander = nullptr;
 
-  /// List of `Droids` included which are a part of this group
+  /// List of droids which are a part of this group
 	std::vector<Droid*> members;
 };
 

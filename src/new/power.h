@@ -11,22 +11,21 @@
 #include "structure.h"
 
 static constexpr auto MAX_POWER = 1'000'000;
+
 static constexpr auto EXTRACT_POINTS = 1;
 
-struct Power_Request
+struct PowerRequest
 {
-    Power_Request(int amount, unsigned id)
-      : amount{amount}, requester_id{id}
-    {
-    }
+    PowerRequest() = default;
+    PowerRequest(int amount, unsigned id);
 
-    int amount;
-    unsigned requester_id;
+    int amount = 0;
+    unsigned requester_id = 0;
 };
 
-struct Player_Power
+struct PlayerPower
 {
-    std::vector<Power_Request> queue;
+    std::vector<PowerRequest> queue;
     int current = 0;
     int modifier = 100;
     int max_store = MAX_POWER;
@@ -34,12 +33,16 @@ struct Player_Power
     int wasted = 0;
     int amount_generated_last_update = 0;
 };
-std::array<Player_Power, MAX_PLAYERS> power_list;
 
-// return true iff requested power is available
+std::array<PlayerPower, MAX_PLAYERS> power_list;
+
+/// @return true if requested power is available
 bool add_power_request(unsigned player, unsigned requester_id, int amount);
+
 void remove_power_request(const Structure& structure);
+
 void reset_power();
+
 int get_queued_power(unsigned player);
 
 inline void use_power(unsigned player, int amount)

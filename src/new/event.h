@@ -21,7 +21,8 @@ enum class GAME_MODE
     SKIRMISH,
     HOSTING_IN_LOBBY,
     JOINING_IN_PROGRESS,
-    /// joined but waiting on game information from host
+
+    /// Joined but waiting on game information from host
     JOINING_IN_LOBBY,
     MULTIPLAYER
 };
@@ -37,16 +38,21 @@ enum class ALLIANCE_SETTING
 {
     /// FFA
     NO_ALLIANCES,
+
     /// Players can make and break alliances during the game.
     ALLIANCES,
+
     /// Alliances are set before the game.
     ALLIANCES_TEAMS,
+
     /// Alliances are set before the game. No shared research.
     ALLIANCES_UNSHARED,
 };
 
-/// Subclass EventHandler to implement a custom handler for
-/// higher-level game-state event callbacks.
+/**
+ * Subclass `EventHandler` to implement a custom handler for
+ * higher-level game-state event callbacks.
+ */
 class EventHandler
 {
     virtual ~EventHandler() = default;
@@ -75,7 +81,13 @@ struct MultiplayerGame : public SkirmishGame
     bool host;
 };
 
+/**
+ *
+ * @param info
+ * @return
+ */
 [[nodiscard]] std::string get_team_description(const SkirmishGame& info);
+
 void get_team_counts(std::map<int, std::size_t>& team_player_count);
 
 #endif //WARZONE2100_EVENT_H

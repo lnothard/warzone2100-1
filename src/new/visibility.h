@@ -11,12 +11,18 @@
 static constexpr auto VISIBILITY_INCREASE_RATE = 255 * 2;
 static constexpr auto VISIBILITY_DECREASE_RATE = 50;
 static constexpr auto MIN_VISIBILITY_HEIGHT = 80;
+
 static constexpr auto BASE_DIVISOR = 8;
+
 static constexpr auto MIN_ILLUMINATION = 45.0f;
+
 static constexpr auto FADE_IN_TIME = GAME_TICKS_PER_SEC / 10;
 
-/// Whether unexplored tiles should be shown as just darker fog. Left here as a future option
-/// for scripts, since campaign may still want total darkness on unexplored tiles.
+/**
+ * `true` if unexplored tiles should be shown as just darker fog.
+ * Left here as a future option for scripts, since campaign may
+ * still want total darkness on unexplored tiles.
+ */
 static bool active_reveal = true;
 
 enum class SENSOR_CLASS
@@ -28,12 +34,14 @@ enum class SENSOR_CLASS
 struct Spotter
 {
     SENSOR_CLASS sensor_type;
-    Position position;
-    unsigned player;
-    int sensor_radius;
-    /// when to self-destruct; zero if never
-    std::size_t expiration_time;
+    Position position {0, 0, 0};
+    unsigned player = 0;
+    int sensor_radius = 0;
+
+    /// When to self-destruct; zero if never
+    std::size_t expiration_time = 0;
 };
+
 extern std::vector<Spotter> invisible_viewers;
 
 inline bool get_reveal_status()
