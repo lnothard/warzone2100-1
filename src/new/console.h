@@ -19,10 +19,12 @@ enum class TEXT_JUSTIFICATION
     DEFAULT = LEFT
 };
 
-///
 struct ConsoleMessage
 {
     using enum TEXT_JUSTIFICATION;
+
+    ConsoleMessage() = default;
+    ConsoleMessage(std::string text, unsigned sender);
 
     /// Actual message contents
     std::string text {};
@@ -34,8 +36,7 @@ struct ConsoleMessage
     unsigned sender = 0;
 
     /// The length of time the message will be displayed for in the console window
-
-    std::size_t duration;
+    std::size_t duration = 0;
 };
 
 #endif //WARZONE2100_CONSOLE_H

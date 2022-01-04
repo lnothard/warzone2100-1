@@ -32,7 +32,7 @@ enum class ASTAR_RESULT
 	PARTIAL
 };
 
-/// Two-dimensional coordinate
+/// A two-dimensional coordinate
 struct PathCoord
 {
 	PathCoord() = default;
@@ -52,27 +52,11 @@ struct PathCoord
 /// Represents a route node in the pathfinding table
 struct PathNode
 {
-  constexpr PathNode(PathCoord coord, unsigned dist, unsigned est)
-    : path_coordinate{coord},
-      distance_from_start{dist},
-      estimated_distance_to_end{est}
-  {
-  }
+  PathNode() = default;
+  PathNode(PathCoord coord, unsigned dist, unsigned est);
 
   /// Overload for comparing two candidate nodes
-  constexpr bool operator <(const PathNode& rhs) const
-  {
-    if (estimated_distance_to_end != rhs.estimated_distance_to_end)
-      return estimated_distance_to_end > rhs.estimated_distance_to_end;
-
-    if (distance_from_start != rhs.distance_from_start)
-      return distance_from_start < rhs.distance_from_start;
-
-    if (path_coordinate.x != rhs.path_coordinate.x)
-      return path_coordinate.x < rhs.path_coordinate.x;
-
-    return path_coordinate.y < rhs.path_coordinate.y;
-  }
+  bool operator <(const PathNode& rhs) const;
 
   /// Current position in route
 	PathCoord path_coordinate;
@@ -105,10 +89,10 @@ struct ExploredTile
 struct PathBlockingType
 {
     /// Internal representation of game time
-    std::size_t game_time;
+    std::size_t game_time = 0;
 
     /// The player id for the owner of this region
-    unsigned owner;
+    unsigned owner = 0;
 
     /// How does this region interact with colliding units?
     MOVE_TYPE move_type;
@@ -141,7 +125,7 @@ struct NonBlockingArea
 {
     NonBlockingArea() = default;
 
-    /// Construct from existing structure bounds
+    /// Construct from existing `StructureBounds` object
     explicit NonBlockingArea(const StructureBounds& bounds);
 
     /// Element-wise comparison
@@ -149,12 +133,15 @@ struct NonBlockingArea
     [[nodiscard]] bool operator !=(const NonBlockingArea& rhs) const = default;
 
     /**
-     * @return `true` if the coordinate is within the bounds
+     * @return `true` if the coordinate (x, y) is within the bounds
      * of this region, `false` otherwise
      */
     [[nodiscard]] bool is_non_blocking(int x, int y) const;
 
-
+    /**
+     * @return `true` if `coord` is within the bounds of this
+     * region, `false` otherwise
+     */
     [[nodiscard]] bool is_non_blocking(PathCoord coord) const;
 
     /* Coordinates corresponding to the outer tile edges */
@@ -167,16 +154,19 @@ struct NonBlockingArea
 /// Main pathfinding data structure. Represents a candidate route
 struct PathContext
 {
-    /// Is this position currently blocked?
+    /// @return `true` if the position at (x, y) is currently blocked
     [[nodiscard]] bool is_blocked(int x, int y) const;
 
-    /// Are there potential threats in the vicinity?
+    /// @return `true` if there are potential threats in the vicinity of (x, y)
     [[nodiscard]] bool is_dangerous(int x, int y) const;
 
     /// Reverts the route to a default state and sets the parameters
     void reset(const PathBlockingMap& blocking_map,
                PathCoord start_coord,
                NonBlockingArea bounds);
+
+      void init(PathBlockingMap& blocking_map, PathCoord start_coord,
+                PathCoord real_start, PathCoord end, NonBlockingArea non_blocking);
 
     /// How many times have we explored?
     unsigned iteration;
@@ -187,13 +177,13 @@ struct PathContext
     /// Next step towards destination
     PathCoord nearest_reachable_tile;
 
-    /// Should be equal to the game time of the blocking_map
-    std::size_t game_time{0};
+    /// Should be equal to the game time of `blocking_map`
+    std::size_t game_time = 0;
 
-    /// Edge of explored region
+    /// Edge of the explored region
     std::vector<PathNode> nodes;
 
-    /// Paths leading back to start_coord, i.e., route history
+    /// Paths leading back to `start_coord`, i.e., route history
     std::vector<ExploredTile> map;
 
     /// Owning pointer to the list of blocking tiles for this route
@@ -209,19 +199,21 @@ extern std::vector<PathContext> path_contexts;
 /// Clear the global path contexts and blocking maps
 void path_table_reset();
 
-/// Takes the current best node, and removes from the node heap.
+/// Finds the current best node, and removes from the node heap
 PathNode get_best_node(std::vector<PathNode>& nodes);
 
-/// Rough estimate of the distance to the target point
+/// @return a rough estimate of the distance to the target point
 unsigned estimate_distance(PathCoord start, PathCoord finish);
 
-/// More precise estimate using hypotenuse calculation
+/// @return a more precise estimate using hypotenuse calculation
 unsigned estimate_distance_precise(PathCoord start, PathCoord finish);
 
 /// Explore a new node
 void generate_new_node(PathContext& context, PathCoord destination,
                        PathCoord current_pos, PathCoord prev_pos,
                        unsigned prev_dist);
+
+PathCoord find_nearest_explored_tile(PathContext& context, PathCoord tile);
 
 /// Update the estimates of the given pathfinding context
 void recalculate_estimates(PathContext& context, PathCoord tile);

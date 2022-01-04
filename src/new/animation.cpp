@@ -37,7 +37,9 @@ void ValueTracker::update()
   }
 
   current_value = (initial_value + target_delta - current_value) *
-          realTimeAdjustedIncrement(speed) + current_value;
+          static_cast<int>( realTimeAdjustedIncrement(
+                  static_cast<float>( speed )) )
+          + current_value;
 }
 
 bool ValueTracker::currently_tracking() const
@@ -54,7 +56,7 @@ void ValueTracker::set_target(int value)
 
 int calculateRelativeAngle(unsigned from, unsigned to)
 {
-  return to + (from - to);
+  return static_cast<int>( to + (from - to) );
 }
 
 unsigned calculate_easing(EASING_FUNCTION easing_func, unsigned progress)
@@ -64,7 +66,8 @@ unsigned calculate_easing(EASING_FUNCTION easing_func, unsigned progress)
     case LINEAR:
       return progress;
     case EASE_IN_OUT:
-      return MAX(0, MIN(UINT16_MAX, iCos(UINT16_MAX / 2 + progress / 2)
+      return MAX(0, MIN(UINT16_MAX, iCos(
+              UINT16_MAX / 2 + progress / 2)
                 / 2 + (1 << 15)));
     case EASE_IN:
       return progress * progress / UINT16_MAX;

@@ -15,6 +15,7 @@
  */
 struct ChatMessage
 {
+    ChatMessage() = default;
     ChatMessage(unsigned sender, std::string message);
 
     /// @return `true` if seen by all players
@@ -22,7 +23,7 @@ struct ChatMessage
 
     /**
      * @param player The ID of the player in question
-     * @return `true` if `player` is a valid recipient
+     * @return `true` if `player` is a valid recipient for this message
      */
     [[nodiscard]] bool should_receive(unsigned player) const;
 
@@ -30,9 +31,9 @@ struct ChatMessage
     [[nodiscard]] std::vector<unsigned> get_recipients() const;
 
     /**
-     * If empty, the message is sent to all players if
-     * `is_global()` returns true. Otherwise, send the message
-     * only to the players contained within the `intended_recipients` set.
+     * If empty, the message is sent to all players if `is_global()`
+     * returns true. Otherwise, send the message only to the
+     * players contained within the set
      */
     std::set<unsigned> intended_recipients;
 
@@ -43,8 +44,8 @@ struct ChatMessage
     std::string message_text {};
 
     /**
-     * `true` if the message is private, i.e., shown only
-     * to allies of `sender_id`
+     * @return `true` if the message is private, i.e.,
+     * should be shown only to allies of `sender_id`
      */
     bool allies_only = false;
 };

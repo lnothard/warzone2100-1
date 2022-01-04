@@ -10,16 +10,15 @@
 
 #include "weapon.h"
 
+///
 static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
 
 static constexpr auto TURRET_ROTATION_RATE = 45;
 
-/// The maximum number of weapons assigned to a single unit
+/// The maximum number of weapons attached to a single unit
 static constexpr auto MAX_WEAPONS = 3;
 
-/**
- *
- */
+/// Abstract base class with shared methods for both structures and droids
 class Unit : public virtual ::SimpleObject
 {
 public:
@@ -58,9 +57,13 @@ namespace Impl
 	public:
 		Unit(uint32_t id, uint32_t player);
 
+    /* Accessors */
 		[[nodiscard]] unsigned get_hp() const noexcept final;
 		[[nodiscard]] const std::vector<Weapon>& get_weapons() const final;
+
+    /// @return `true` if this unit is being focused by its owner
     [[nodiscard]] bool is_selected() const noexcept final;
+
 		void align_turret(int weapon_slot) final;
     void use_ammo(int weapon_slot) override;
 	private:
@@ -74,14 +77,26 @@ namespace Impl
 
 	[[nodiscard]] bool has_full_ammo(const Unit& unit) noexcept;
 
+  /// @return `true` if `unit` has an indirect weapon attached
 	[[nodiscard]] bool has_artillery(const Unit& unit) noexcept;
 
+  /// @return `true` if `unit` has an electronic weapon attached
 	[[nodiscard]] bool has_electronic_weapon(const Unit& unit) noexcept;
 
+  /**
+   * @return `true` if `unit` may fire upon `target` with the weapon in
+   *    `weapon_slot`
+   */
 	[[nodiscard]] bool target_in_line_of_fire(const Unit& unit,
                                            const ::Unit& target,
                                            int weapon_slot);
 
+  /**
+   *
+   * @param walls_block `true` if
+   * @param is_direct `false` if this is an artillery weapon
+   * @return
+   */
 	[[nodiscard]] int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target,
                                            int weapon_slot, bool walls_block, bool is_direct);
 

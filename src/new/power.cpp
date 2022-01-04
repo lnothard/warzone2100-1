@@ -7,7 +7,7 @@
 #include "power.h"
 
 PowerRequest::PowerRequest(int amount, unsigned id)
-        : amount{amount}, requester_id{id}
+  : amount{amount}, requester_id{id}
 {
 }
 

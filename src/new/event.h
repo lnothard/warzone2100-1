@@ -9,7 +9,10 @@
 
 #include "lib/netplay/netplay.h"
 
+/// Bit flag used if a player slot is closed to AI
 static constexpr auto AI_CLOSED = -1;
+
+/// Bit flag used if a player slot is available
 static constexpr auto AI_OPEN = -2;
 
 enum class GAME_MODE
@@ -24,6 +27,7 @@ enum class GAME_MODE
 
     /// Joined but waiting on game information from host
     JOINING_IN_LOBBY,
+
     MULTIPLAYER
 };
 
@@ -39,13 +43,16 @@ enum class ALLIANCE_SETTING
     /// FFA
     NO_ALLIANCES,
 
-    /// Players can make and break alliances during the game.
+    /// Players may make and break alliances mid-game
     ALLIANCES,
 
-    /// Alliances are set before the game.
+    /// Alliances are set before the game
     ALLIANCES_TEAMS,
 
-    /// Alliances are set before the game. No shared research.
+    /**
+     * Alliances are set before the game. Allied players
+     * do not share research progress
+     */
     ALLIANCES_UNSHARED,
 };
 
@@ -72,13 +79,14 @@ enum class NET_PROTOCOL
 
 struct MultiplayerGame : public SkirmishGame
 {
-    NET_PROTOCOL protocol;
+    using enum NET_PROTOCOL;
+    NET_PROTOCOL protocol = IPv4;
     std::string hostname;
     std::string lobby_address;
-    unsigned lobby_port;
-    unsigned id;
-    bool private_lobby;
-    bool host;
+    unsigned lobby_port = 0;
+    unsigned id = 0;
+    bool private_lobby = false;
+    bool host = false;
 };
 
 /**

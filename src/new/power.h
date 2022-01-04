@@ -10,6 +10,7 @@
 #include "lib/framework/frame.h"
 #include "structure.h"
 
+/// The limit on a player's stored power
 static constexpr auto MAX_POWER = 1'000'000;
 
 static constexpr auto EXTRACT_POINTS = 1;
@@ -36,13 +37,14 @@ struct PlayerPower
 
 std::array<PlayerPower, MAX_PLAYERS> power_list;
 
-/// @return true if requested power is available
+/// @return true if the requested power is available
 bool add_power_request(unsigned player, unsigned requester_id, int amount);
 
 void remove_power_request(const Structure& structure);
 
 void reset_power();
 
+/// @return the total power waiting to be transferred
 int get_queued_power(unsigned player);
 
 inline void use_power(unsigned player, int amount)

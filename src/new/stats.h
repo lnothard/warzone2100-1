@@ -40,8 +40,10 @@ enum COMPONENT_TYPE
    */ 
 	BODY,
 
-  /// Commander-only component containing parameters
-  /// constraining membership and group rankings
+  /**
+   * Commander-only component containing parameters
+   * constraining membership and group rankings
+   */
 	BRAIN,
 
 	PROPULSION,
@@ -65,9 +67,9 @@ enum COMPONENT_TYPE
 };
 
 /**
- * Sensors can detect and fire upon units.
- * The type will determine which units are targeted.
- * CB = Counter-Battery
+ * Sensors can detect and fire upon units within a given
+ * range. The type will determine which units are targeted.
+ * (CB = Counter-Battery)
  */
 enum class SENSOR_TYPE
 {
@@ -91,8 +93,9 @@ enum class BODY_SIZE
 /// Base class subclassed by all component types
 struct ComponentStats
 {
-  /// Values which may be changed by upgrades.
-  /// Subclassed by each component struct
+  /** Values which may be changed by upgrades. Subclassed
+   * by each component struct
+   */
 	struct Upgradeable
 	{
 		unsigned hit_points;
@@ -111,7 +114,7 @@ struct ComponentStats
 
 	unsigned weight;
 
-  /// Accessible through the design UI
+  /// `true` if available through the design UI
 	bool is_designable;
 };
 
@@ -125,7 +128,7 @@ struct SensorStats : public ComponentStats
 
 	struct : Upgradeable
 	{
-    /// Controls the distance at which a unit is detectable
+    /// The maximum distance at which a unit is detectable
 		unsigned range;
     
     /**
@@ -135,10 +138,7 @@ struct SensorStats : public ComponentStats
 	} upgraded[MAX_PLAYERS], base;
 };
 
-/**
- * Object containing all stats relevant to a
- * unit's `propulsion_type`
- */
+/// Object containing all stats relevant to a unit's `propulsion_type`
 struct PropulsionStats : public ComponentStats
 {
 	using enum PROPULSION_TYPE;
@@ -188,7 +188,6 @@ struct CommanderStats : public ComponentStats
 
 struct BodyStats : public ComponentStats
 {
-  /// Weight class
 	BODY_SIZE size;
 
 	struct : Upgradeable

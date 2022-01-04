@@ -187,16 +187,16 @@ namespace Impl
 		using enum SENSOR_TYPE;
 
 		STRUCTURE_STATE state;
-		STRUCTURE_ANIMATION_STATE animation_state{NORMAL};
+		STRUCTURE_ANIMATION_STATE animation_state = NORMAL;
 		std::shared_ptr<Structure_Stats> stats;
-    std::array<::SimpleObject*, MAX_WEAPONS> target{};
-		unsigned current_build_points{0};
-		int build_rate{0};
-		int previous_build_rate{0};
-		unsigned expected_damage{0};
-		uint8_t num_modules{0};
-		int foundation_depth{0};
-		std::size_t last_state_time{0};
+    std::array<::SimpleObject*, MAX_WEAPONS> target;
+		unsigned current_build_points = 0;
+		int build_rate = 0;
+		int previous_build_rate = 0;
+		unsigned expected_damage = 0;
+		uint8_t num_modules = 0;
+		int foundation_depth = 0;
+		std::size_t last_state_time = 0;
 	};
 
 	[[nodiscard]] unsigned count_assigned_droids(const Structure& structure);
@@ -216,7 +216,7 @@ const Structure* find_repair_facility(unsigned player);
 struct ProductionJob
 {
 	std::shared_ptr<Droid_Template> droid_template;
-	std::size_t time_started = gameTime;
+	std::size_t time_started = 0;
 	int remaining_build_points;
 };
 
@@ -263,7 +263,7 @@ private:
 class ResourceExtractor : public virtual Structure, public Impl::Structure
 {
 public:
-    int get_extracted_power() const;
+  int get_extracted_power() const;
 private:
 	Structure* owning_power_generator = nullptr;
 };
@@ -274,8 +274,8 @@ public:
 	bool is_clear() const;
 private:
 	Droid* rearm_target = nullptr;
-	std::size_t time_started = gameTime;
-	std::size_t last_update_time = gameTime;
+	std::size_t time_started = 0;
+	std::size_t last_update_time = 0;
 };
 
 class RepairFacility : public virtual Structure, public Impl::Structure

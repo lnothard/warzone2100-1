@@ -19,7 +19,7 @@ enum class MOVE_TYPE
     BLOCK
 };
 
-/// Return value for a path traversal procedure
+/// The return value for a path traversal procedure
 enum class PATH_RESULT
 {
     OK,
@@ -30,10 +30,10 @@ enum class PATH_RESULT
 /// A pathfinding task
 struct PathJob
 {
-    /// Target coordinate
+    /// The target coordinate
     PathCoord destination {0, 0};
 
-    /// Start coordinate
+    /// The starting coordinate
     PathCoord origin {0, 0};
 
     /// Movement class
@@ -55,12 +55,14 @@ struct PathResult
     Movement movement;
 };
 
-/// Conversion function from -propulsion_type-
-/// into the bits governing which tile types are blocked
+/**
+ * Conversion function from `propulsion_type` into the
+ * bits governing which tile types are blocked
+ */
 uint8_t get_path_bits_from_propulsion(PROPULSION_TYPE propulsion);
 
 /**
- * Does this coordinate block units with movement parameters `move_type` ?
+ * @return true if this coordinate blocks units with movement parameters `move_type`
  *
  * @param x
  * @param y
@@ -74,13 +76,13 @@ bool is_tile_blocking(int x, int y,
                       unsigned map_index,
                       MOVE_TYPE move_type);
 
-/// Are we blocked by the tile at coordinate x, y?
+/// @return `true` if we are blocked by the tile at (x, y)
 bool is_tile_blocked_by_droid(const Droid& droid,
                               int x, int y,
                               MOVE_TYPE move_type);
 
-/// Do droids of this propulsion class block the specified coord?
-bool is_droid_blocked_by_tile(int x, int y,
+/// @return true if droids of this propulsion class block the specified coord
+bool is_droid_blocked_by_tile(int x, int y
                               PROPULSION_TYPE propulsion);
 
 #endif //WARZONE2100_PATHFINDING_H

@@ -14,15 +14,43 @@
 #include "obj_lists.h"
 #include "order.h"
 
+/// The maximum number of components per droid
 static constexpr auto MAX_COMPONENTS = COMPONENT_TYPE::COUNT - 1;
+
+/**
+ * The bit flag used when an alliance exists
+ * between two players
+ */
 static constexpr auto ALLIANCE_FORMED = 3;
+
+/**
+ * The bit flag used when no alliance exists
+ * between two players
+ */
 static constexpr auto ALLIANCE_BROKEN = 0;
+
+/**
+ * The maximum distance a VTOL droid may travel
+ * in a single attack run
+ */
 static constexpr auto VTOL_ATTACK_LENGTH = 1000;
+
+/**
+ * The search radius to use when searching for a
+ * landing position for a VTOL
+ */
 static constexpr auto VTOL_LANDING_RADIUS = 23;
+
+/**
+ * The closest distance a droid may be to the
+ * edge of the world
+ */
 static constexpr auto TOO_NEAR_EDGE = 3;
+
+/// How far to retreat if in danger
 static constexpr auto FALLBACK_DISTANCE = 10;
 
-/// Maximum number of commanders per player
+/// The maximum number of commanders per player
 static constexpr auto MAX_COMMAND_DROIDS = 5;
 
 /* Modifiers used for target selection */
@@ -33,7 +61,9 @@ static constexpr auto MAX_COMMAND_DROIDS = 5;
  */
 static constexpr auto BASE_WEIGHT = 13;
 
+/// Droids are high priority targets
 static constexpr auto DROID_DAMAGE_WEIGHT = BASE_WEIGHT * 10;
+
 static constexpr auto STRUCT_DAMAGE_WEIGHT = BASE_WEIGHT * 7;
 static constexpr auto NOT_VISIBLE_WEIGHT = 10;
 static constexpr auto SERVICE_DROID_WEIGHT = BASE_WEIGHT * 5;
@@ -49,12 +79,12 @@ extern PlayerMask satellite_uplink_bits;
 extern std::array<PlayerMask, MAX_PLAYER_SLOTS> alliance_bits;
 extern std::array<std::array<uint8_t, MAX_PLAYER_SLOTS>, MAX_PLAYER_SLOTS> alliances;
 
+/// @return `true` if `p1` and `p2` are allies
 constexpr bool alliance_formed(unsigned p1, unsigned p2)
 {
   return alliances[p1][p2] == ALLIANCE_FORMED;
 }
 
-// One droid for each player decides targets
 std::array<Droid*, MAX_PLAYERS> target_designator_list;
 
 enum class ACTION
@@ -221,6 +251,7 @@ private:
  * @return
  */
 [[nodiscard]] unsigned calculate_max_range(const Droid& droid);
+
 [[nodiscard]] unsigned count_player_command_droids(unsigned player);
 [[nodiscard]] bool still_building(const Droid& droid);
 
@@ -234,9 +265,12 @@ private:
                                            const Structure& structure);
 
 [[nodiscard]] unsigned get_effective_level(const Droid& droid);
+
 [[nodiscard]] bool all_VTOLs_rearmed(const Droid& droid);
+
 [[nodiscard]] bool VTOL_ready_to_rearm(const Droid& droid,
                                        const RearmPad& rearm_pad);
+
 [[nodiscard]] bool being_repaired(const Droid& droid);
 
 /**
@@ -287,8 +321,9 @@ Droid* find_nearest_droid(unsigned x, unsigned y, bool selected);
  * Performs a space-filling spiral-like search from `start_pos`, up to (and
  * including) radius.
  *
- * @param start_pos starting  x, y coordinates
- * @param max_radius radius to examine. Search will finish when max_radius is exceeded.
+ * @param start_pos the starting (x, y) coordinates
+ * @param max_radius the radius to examine. Search will finish
+ *  when this value is exceeded.
  *
  * @return
  */
@@ -298,7 +333,7 @@ void set_blocking_flags(const Droid& droid);
 void clear_blocking_flags(const Droid& droid);
 
 /**
- * Find a valid position for units to pull back to if they
+ * Find a valid position for droids to retreat to if they
  * need to distance themselves from the target
  *
  * @param unit
@@ -308,29 +343,23 @@ void clear_blocking_flags(const Droid& droid);
  */
 Vector2i determine_fallback_position(Unit& unit, Unit& target);
 
-/**
- *
- * @param first
- * @param second
- *
- * @return `true` if a droid is in the neighboring tile of another droid
- */
+/// @return `true` if two droids are adjacent
 bool droids_are_neighbours(const Droid& first, const Droid& second)
 
-/**
- *
- */
+/// @return `true` if the tile at (x, y) houses a droid
 [[nodiscard]] bool tile_occupied_by_droid(unsigned x, unsigned y);
 
 struct DroidTemplate
 {
+  DroidTemplate() = default;
+
 	using enum DROID_TYPE;
 
-	DROID_TYPE type;
-	uint8_t weapon_count;
-	bool is_prefab;
-	bool is_stored;
-	bool is_enabled;
+	DROID_TYPE type = ANY;
+	uint8_t weapon_count = 0;
+	bool is_prefab = false;
+	bool is_stored = false;
+	bool is_enabled = false;
 };
 
 template <typename T>

@@ -4,6 +4,11 @@
 
 #include "movement.h"
 
+Movement::Movement(Vector2i origin, Vector2i destination)
+  : origin{origin}, destination{destination}
+{
+}
+
 bool Movement::is_inactive() const noexcept
 {
   return state == INACTIVE;

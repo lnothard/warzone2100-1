@@ -20,7 +20,10 @@ enum class GROUP_TYPE
 	TRANSPORTER
 };
 
-///
+/**
+ * A logical grouping of droids, possibly associated
+ * with a particular transporter or commander
+ */
 class DroidGroup
 {
 public:
@@ -30,7 +33,11 @@ public:
   DroidGroup(unsigned id, GROUP_TYPE type);
   DroidGroup(unsigned id, GROUP_TYPE type, Droid& commander);
 
-  /// Add a new member
+  /* Accessors */
+  [[nodiscard]] const Droid& get_commander() const;
+  [[nodiscard]] unsigned get_commander_level() const;
+
+  /// Add a droid to this group
 	void add(Droid& droid);
 
   ///
@@ -39,11 +46,11 @@ public:
   /// @return `true` if this is a command group
 	[[nodiscard]] bool is_command_group() const noexcept;
 
-  ///
+  /**
+   * @return `true` if any of this group's droids have
+   *    electronic weapons attached
+   */
 	[[nodiscard]] bool has_electronic_weapon() const;
-
-  ///
-	[[nodiscard]] unsigned get_commander_level() const;
 
   ///
 	void commander_gain_experience(unsigned exp);
@@ -51,12 +58,10 @@ public:
   ///
   void increment_commander_kills();
 
-  ///
-  [[nodiscard]] const Droid& get_commander() const;
 private:
 	using enum GROUP_TYPE;
 
-  /// Unique ID for this group
+  /// The unique ID for this group
 	unsigned id = 0;
 
   /// What kind of group is this?
@@ -68,7 +73,7 @@ private:
    */
 	Droid* commander = nullptr;
 
-  /// List of droids which are a part of this group
+  /// The list of droids attached to this group
 	std::vector<Droid*> members;
 };
 

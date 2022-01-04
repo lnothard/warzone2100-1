@@ -26,13 +26,15 @@ public:
     [[nodiscard]] bool currently_tracking() const;
     void set_target(int value);
 private:
-    std::size_t start_time;
-    int initial_value;
-    int target_value;
-    int target_delta;
-    int speed;
-    float current_value;
-    bool target_reached;
+    /// Set to 0 if not currently tracking
+    std::size_t start_time = 0;
+
+    int initial_value = 0;
+    int target_value = 0;
+    int target_delta = 0;
+    int speed = 0;
+    int current_value = 0;
+    bool target_reached = false;
 };
 
 class Animation
@@ -44,8 +46,8 @@ public:
     virtual void update();
 private:
     EASING_FUNCTION easing_func;
-    std::size_t start_time{0};
-    std::size_t duration{0};
+    std::size_t start_time = 0;
+    std::size_t duration = 0;
     unsigned progress = UINT16_MAX;
 };
 
@@ -63,7 +65,7 @@ class Rotation : public Animation
  *
  * Useful while animating a rotation, to always animate the shortest angle delta.
  */
-int32_t calculateRelativeAngle(unsigned from, unsigned to);
+int calculateRelativeAngle(unsigned from, unsigned to);
 
 /**
  *

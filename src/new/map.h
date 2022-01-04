@@ -104,7 +104,7 @@ static inline int calculate_map_height(const Vector2i& v);
 
 void set_tile_height(int x, int y, int height);
 
-/// @return a pointer to the tile at coordinates x, y
+/// @return a pointer to the tile at (x, y)
 [[nodiscard]] Tile* get_map_tile(int x, int y);
 
 [[nodiscard]] Tile* get_map_tile(const Vector2i& position);
@@ -115,18 +115,18 @@ void set_tile_height(int x, int y, int height);
 
 [[nodiscard]] bool is_coord_on_map(const Vector2i& position);
 
-/// @return `true` if the tile coordinate at `x, y` exists on the map
+/// @return `true` if the tile at (x, y) exists on the map
 [[nodiscard]] bool tile_on_map(int x, int y);
 
-/// @return `true` if the tile coordinate `position` exists on the map
+/// @return `true` if the tile at `position` exists on the map
 [[nodiscard]] bool tile_on_map(const Vector2i& position);
 
 /**
  * Clip world coordinates to ensure they are within the map boundaries
  *
  * @param pos a pointer to a coordinate inside the map
- * @post 1 <= pos.x <= world_coord(mapWidth)-1 and
- *       1 <= pos.y <= world_coord(mapHeight)-1
+ * @post 1 <= pos.x <= world_coord(map_width) - 1 and
+ *       1 <= pos.y <= world_coord(map_height) - 1
  */
 void clip_coords(Vector2i& pos);
 

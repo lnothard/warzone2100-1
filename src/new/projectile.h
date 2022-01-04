@@ -12,6 +12,7 @@ static constexpr auto PROJECTILE_MAX_PITCH = 45;
 static constexpr auto BULLET_FLIGHT_HEIGHT = 16;
 static constexpr auto VTOL_HITBOX_MODIFIER = 100;
 
+/// Represents the current stage of a projectile's trajectory
 enum class PROJECTILE_STATE
 {
 	IN_FLIGHT,
@@ -20,6 +21,7 @@ enum class PROJECTILE_STATE
 	INACTIVE
 };
 
+/// Covers anything fired out of a weapon
 struct Projectile
 {
   using enum PROJECTILE_STATE;
@@ -49,7 +51,7 @@ struct Damage
     unsigned damage = 0;
     WEAPON_CLASS weapon_class;
     WEAPON_SUBCLASS weapon_subclass;
-    std::size_t impact_time = gameTime;
+    std::size_t impact_time = 0;
     bool is_ticking_damage = false;
     int min_damage = 0;
 };

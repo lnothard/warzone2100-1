@@ -1,6 +1,3 @@
-//
-// Created by luna on 08/12/2021.
-//
 
 /**
  * @file droid.cpp
@@ -1064,8 +1061,7 @@ bool tile_occupied_by_droid(unsigned x, unsigned y)
     if (std::any_of(player_droids.begin(), player_droids.end(), [x, y](const auto& droid)  {
         return map_coord(droid.get_position().x) == x &&
                map_coord(droid.get_position().y == y);
-    }))
-    {
+    }))  {
       return true;
     }
   }

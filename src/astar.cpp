@@ -133,8 +133,9 @@ struct PathBlockingMap
 	bool operator ==(PathBlockingType const& z) const
 	{
 		return type.gameTime == z.gameTime &&
-			fpathIsEquivalentBlocking(type.propulsion, type.owner, type.moveType,
-			                          z.propulsion, z.owner, z.moveType);
+			fpathIsEquivalentBlocking(type.propulsion, type.owner,
+                                type.moveType,z.propulsion,
+                                z.owner, z.moveType);
 	}
 
 	PathBlockingType type;
@@ -204,23 +205,23 @@ struct PathfindContext
 			== dstIgnore_;
 	}
 
-	void assign(std::shared_ptr<PathBlockingMap>& blockingMap_, PathCoord tileS_, PathNonblockingArea dstIgnore_)
-	{
-		blockingMap = blockingMap_;
-		tileS = tileS_;
-		dstIgnore = dstIgnore_;
-		myGameTime = blockingMap->type.gameTime;
-		nodes.clear();
-
-		// Make the iteration not match any value of iteration in map.
-		if (++iteration == 0xFFFF)
-		{
-			map.clear(); // There are no values of iteration guaranteed not to exist in map, so clear the map.
-			iteration = 0;
-		}
-		map.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
-		// Allocate space for map, if needed.
-	}
+//	void assign(std::shared_ptr<PathBlockingMap>& blockingMap_, PathCoord tileS_, PathNonblockingArea dstIgnore_)
+//	{
+//		blockingMap = blockingMap_;
+//		tileS = tileS_;
+//		dstIgnore = dstIgnore_;
+//		myGameTime = blockingMap->type.gameTime;
+//		nodes.clear();
+//
+//		// Make the iteration not match any value of iteration in map.
+//		if (++iteration == 0xFFFF)
+//		{
+//			map.clear(); // There are no values of iteration guaranteed not to exist in map, so clear the map.
+//			iteration = 0;
+//		}
+//		map.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
+//		// Allocate space for map, if needed.
+//	}
 
 	PathCoord tileS; // Start tile for pathfinding. (May be either source or target tile.)
 	uint32_t myGameTime;
@@ -301,86 +302,86 @@ static const Vector2i aDirOffset[] =
 
 /** Generate a new node
  */
-static inline void fpathNewNode(PathfindContext& context, PathCoord dest, PathCoord pos, unsigned prevDist,
-                                PathCoord prevPos)
-{
-	ASSERT_OR_RETURN(, (unsigned)pos.x < (unsigned)mapWidth && (unsigned)pos.y < (unsigned)mapHeight,
-	                   "X (%d) or Y (%d) coordinate for path finding node is out of range!", pos.x, pos.y);
-
-	// Create the node.
-	PathNode node;
-	unsigned costFactor = context.isDangerous(pos.x, pos.y) ? 5 : 1;
-	node.p = pos;
-	node.dist = prevDist + fpathEstimate(prevPos, pos) * costFactor;
-	node.est = node.dist + fpathGoodEstimate(pos, dest);
-
-	Vector2i delta = Vector2i(pos.x - prevPos.x, pos.y - prevPos.y) * 64;
-	bool isDiagonal = delta.x && delta.y;
-
-	PathExploredTile& expl = context.map[pos.x + pos.y * mapWidth];
-	if (expl.iteration == context.iteration)
-	{
-		if (expl.visited)
-		{
-			return; // Already visited this tile. Do nothing.
-		}
-		Vector2i deltaA = delta;
-		Vector2i deltaB = Vector2i(expl.dx, expl.dy);
-		Vector2i deltaDelta = deltaA - deltaB;
-		// Vector pointing from current considered source tile leading to pos, to the previously considered source tile leading to pos.
-		if (abs(deltaDelta.x) + abs(deltaDelta.y) == 64)
-		{
-			// prevPos is tile A or B, and pos is tile P. We were previously called with prevPos being tile B or A, and pos tile P.
-			// We want to find the distance to tile P, taking into account that the actual shortest path involves coming from somewhere between tile A and tile B.
-			// +---+---+
-			// |   | P |
-			// +---+---+
-			// | A | B |
-			// +---+---+
-			unsigned distA = node.dist - (isDiagonal ? 198 : 140) * costFactor;
-			// If isDiagonal, node is A and expl is B.
-			unsigned distB = expl.dist - (isDiagonal ? 140 : 198) * costFactor;
-			if (!isDiagonal)
-			{
-				std::swap(distA, distB);
-				std::swap(deltaA, deltaB);
-			}
-			int gradientX = int(distB - distA) / costFactor;
-			if (gradientX > 0 && gradientX <= 98)
-			// 98 = floor(140/√2), so gradientX <= 98 is needed so that gradientX < gradientY.
-			{
-				// The distance gradient is now known to be somewhere between the direction from A to P and the direction from B to P.
-				static const uint8_t gradYLookup[99] = {
-					140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 139, 139, 139, 139, 139, 139, 139, 139,
-					139, 138, 138, 138, 138, 138, 138, 137, 137, 137, 137, 137, 136, 136, 136, 136, 135, 135, 135, 134,
-					134, 134, 134, 133, 133, 133, 132, 132, 132, 131, 131, 130, 130, 130, 129, 129, 128, 128, 127, 127,
-					126, 126, 126, 125, 125, 124, 123, 123, 122, 122, 121, 121, 120, 119, 119, 118, 118, 117, 116, 116,
-					115, 114, 113, 113, 112, 111, 110, 110, 109, 108, 107, 106, 106, 105, 104, 103, 102, 101, 100
-				};
-				int gradientY = gradYLookup[gradientX]; // = sqrt(140² -  gradientX²), rounded to nearest integer
-				unsigned distP = gradientY * costFactor + distB;
-				node.est -= node.dist - distP;
-				node.dist = distP;
-				delta = (deltaA * gradientX + deltaB * (gradientY - gradientX)) / gradientY;
-			}
-		}
-		if (expl.dist <= node.dist)
-		{
-			return; // A different path to this tile is shorter.
-		}
-	}
-
-	// Remember where we have been, and remember the way back.
-	expl.iteration = context.iteration;
-	expl.dx = delta.x;
-	expl.dy = delta.y;
-	expl.dist = node.dist;
-	expl.visited = false;
-
-	// Add the node to the node heap.
-	context.nodes.push_back(node); // Add the new node to nodes.
-	std::push_heap(context.nodes.begin(), context.nodes.end()); // Move the new node to the right place in the heap.
-}
+//static inline void fpathNewNode(PathfindContext& context, PathCoord dest, PathCoord pos, unsigned prevDist,
+//                                PathCoord prevPos)
+//{
+//	ASSERT_OR_RETURN(, (unsigned)pos.x < (unsigned)mapWidth && (unsigned)pos.y < (unsigned)mapHeight,
+//	                   "X (%d) or Y (%d) coordinate for path finding node is out of range!", pos.x, pos.y);
+//
+//	// Create the node.
+//	PathNode node;
+//	unsigned costFactor = context.isDangerous(pos.x, pos.y) ? 5 : 1;
+//	node.p = pos;
+//	node.dist = prevDist + fpathEstimate(prevPos, pos) * costFactor;
+//	node.est = node.dist + fpathGoodEstimate(pos, dest);
+//
+//	Vector2i delta = Vector2i(pos.x - prevPos.x, pos.y - prevPos.y) * 64;
+//	bool isDiagonal = delta.x && delta.y;
+//
+//	PathExploredTile& expl = context.map[pos.x + pos.y * mapWidth];
+//	if (expl.iteration == context.iteration)
+//	{
+//		if (expl.visited)
+//		{
+//			return; // Already visited this tile. Do nothing.
+//		}
+//		Vector2i deltaA = delta;
+//		Vector2i deltaB = Vector2i(expl.dx, expl.dy);
+//		Vector2i deltaDelta = deltaA - deltaB;
+//		// Vector pointing from current considered source tile leading to pos, to the previously considered source tile leading to pos.
+//		if (abs(deltaDelta.x) + abs(deltaDelta.y) == 64)
+//		{
+//			// prevPos is tile A or B, and pos is tile P. We were previously called with prevPos being tile B or A, and pos tile P.
+//			// We want to find the distance to tile P, taking into account that the actual shortest path involves coming from somewhere between tile A and tile B.
+//			// +---+---+
+//			// |   | P |
+//			// +---+---+
+//			// | A | B |
+//			// +---+---+
+//			unsigned distA = node.dist - (isDiagonal ? 198 : 140) * costFactor;
+//			// If isDiagonal, node is A and expl is B.
+//			unsigned distB = expl.dist - (isDiagonal ? 140 : 198) * costFactor;
+//			if (!isDiagonal)
+//			{
+//				std::swap(distA, distB);
+//				std::swap(deltaA, deltaB);
+//			}
+//			int gradientX = int(distB - distA) / costFactor;
+//			if (gradientX > 0 && gradientX <= 98)
+//			// 98 = floor(140/√2), so gradientX <= 98 is needed so that gradientX < gradientY.
+//			{
+//				// The distance gradient is now known to be somewhere between the direction from A to P and the direction from B to P.
+//				static const uint8_t gradYLookup[99] = {
+//					140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 139, 139, 139, 139, 139, 139, 139, 139,
+//					139, 138, 138, 138, 138, 138, 138, 137, 137, 137, 137, 137, 136, 136, 136, 136, 135, 135, 135, 134,
+//					134, 134, 134, 133, 133, 133, 132, 132, 132, 131, 131, 130, 130, 130, 129, 129, 128, 128, 127, 127,
+//					126, 126, 126, 125, 125, 124, 123, 123, 122, 122, 121, 121, 120, 119, 119, 118, 118, 117, 116, 116,
+//					115, 114, 113, 113, 112, 111, 110, 110, 109, 108, 107, 106, 106, 105, 104, 103, 102, 101, 100
+//				};
+//				int gradientY = gradYLookup[gradientX]; // = sqrt(140² -  gradientX²), rounded to nearest integer
+//				unsigned distP = gradientY * costFactor + distB;
+//				node.est -= node.dist - distP;
+//				node.dist = distP;
+//				delta = (deltaA * gradientX + deltaB * (gradientY - gradientX)) / gradientY;
+//			}
+//		}
+//		if (expl.dist <= node.dist)
+//		{
+//			return; // A different path to this tile is shorter.
+//		}
+//	}
+//
+//	// Remember where we have been, and remember the way back.
+//	expl.iteration = context.iteration;
+//	expl.dx = delta.x;
+//	expl.dy = delta.y;
+//	expl.dist = node.dist;
+//	expl.visited = false;
+//
+//	// Add the node to the node heap.
+//	context.nodes.push_back(node); // Add the new node to nodes.
+//	std::push_heap(context.nodes.begin(), context.nodes.end()); // Move the new node to the right place in the heap.
+//}
 
 ///// Recalculates estimates to new tileF tile.
 //static void fpathAStarReestimate(PathfindContext& context, PathCoord tileF)
@@ -475,16 +476,16 @@ static inline void fpathNewNode(PathfindContext& context, PathCoord dest, PathCo
 //
 //	return nearestCoord;
 //}
-
-static void fpathInitContext(PathfindContext& context, std::shared_ptr<PathBlockingMap>& blockingMap, PathCoord tileS,
-                             PathCoord tileRealS, PathCoord tileF, PathNonblockingArea dstIgnore)
-{
-	context.assign(blockingMap, tileS, dstIgnore);
-
-	// Add the start point to the open list
-	fpathNewNode(context, tileF, tileRealS, 0, tileRealS);
-	ASSERT(!context.nodes.empty(), "fpathNewNode failed to add node.");
-}
+//
+//static void fpathInitContext(PathfindContext& context, std::shared_ptr<PathBlockingMap>& blockingMap, PathCoord tileS,
+//                             PathCoord tileRealS, PathCoord tileF, PathNonblockingArea dstIgnore)
+//{
+//	context.assign(blockingMap, tileS, dstIgnore);
+//
+//	// Add the start point to the open list
+//	fpathNewNode(context, tileF, tileRealS, 0, tileRealS);
+//	ASSERT(!context.nodes.empty(), "fpathNewNode failed to add node.");
+//}
 
 ASR_RETVAL fpathAStarRoute(MOVE_CONTROL* psMove, PATHJOB* psJob)
 {

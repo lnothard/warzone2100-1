@@ -22,8 +22,10 @@ enum class POSITION_TYPE
   /// Proximity messages that are generated in-game
 	PROXIMITY_OBJ,
 
-  /// SAVE ONLY delivery point for factory currently
-  /// assigned to commander
+  /**
+   * SAVE ONLY delivery point for the factory currently
+   * assigned to commander
+   */
 	TEMP_DELIVERY
 };
 
@@ -37,12 +39,10 @@ struct ObjectPosition
 	unsigned screen_y;
 	unsigned screen_radius;
 
-  /// The ID of the player currently occupying
-  /// this position
-	unsigned player;
+  /// The ID of the player currently occupying this position
+	unsigned player = 0;
 
-  /// Boolean flag to indicate whether the position
-  /// is to be highlighted
+  /// `true` if the position should be highlighted
 	bool selected;
 };
 

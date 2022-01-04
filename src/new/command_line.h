@@ -21,7 +21,6 @@ enum class CLI_OPTIONS
     HELP,
 };
 
-/// Represents a command
 struct Command
 {
     /// The actual command text

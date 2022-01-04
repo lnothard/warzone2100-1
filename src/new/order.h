@@ -55,7 +55,7 @@ enum class SECONDARY_ORDER
 	RECYCLE,
 	PATROL,
 	HALT_TYPE,
-	RETURN_TO_LOC,
+	RETURN_TO_LOCATION,
 	FIRE_DESIGNATOR,
 	ASSIGN_VTOL_PRODUCTION,
 	CIRCLE
@@ -64,10 +64,9 @@ enum class SECONDARY_ORDER
 struct Order
 {
 	using enum ORDER_TYPE;
-
 	ORDER_TYPE type;
-	Vector2i position;
-	SimpleObject* target_object;
+	Vector2i position {0, 0};
+	SimpleObject* target_object = nullptr;
 };
 
 #endif // WARZONE2100_ORDER_H

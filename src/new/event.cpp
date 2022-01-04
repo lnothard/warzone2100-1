@@ -15,7 +15,7 @@ std::string get_team_description(const SkirmishGame& info)
   std::map<int, std::size_t> team_player_count;
   get_team_counts(team_player_count);
 
-  if (team_player_count.size() <= 1) {
+  if (team_player_count.size() <= 1)  {
     // does not have multiple teams
     return {};
   }

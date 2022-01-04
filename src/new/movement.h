@@ -29,11 +29,15 @@ enum class MOVEMENT_STATE
 struct Movement
 {
   Movement() = default;
+  Movement(Vector2i origin, Vector2i destination);
 
 	[[nodiscard]] bool is_inactive() const noexcept;
   [[nodiscard]] bool is_hovering() const noexcept;
 	[[nodiscard]] bool is_stationary() const noexcept;
+
+  ///
   void move_droid_direct(Droid& droid, Vector2i position);
+
 	void stop_moving() noexcept;
 	void stop_moving_instantly() noexcept;
   void set_path_vars(int target_x, int target_y);
