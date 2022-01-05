@@ -5422,44 +5422,44 @@ STRUCTURE_STATS* getModuleStat(const STRUCTURE* psStruct)
 /**
  * Count the artillery and VTOL droids assigned to a structure.
  */
-static unsigned int countAssignedDroids(const STRUCTURE* psStructure)
-{
-	const DROID* psCurr;
-	unsigned int num;
-
-	CHECK_STRUCTURE(psStructure);
-
-	// For non-debug builds
-	if (psStructure == nullptr)
-	{
-		return 0;
-	}
-
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
-		return 0;
-	}
-
-	num = 0;
-	for (psCurr = apsDroidLists[selectedPlayer]; psCurr; psCurr = psCurr->psNext)
-	{
-		if (psCurr->order.psObj
-			&& psCurr->order.psObj->id == psStructure->id
-			&& psCurr->player == psStructure->player)
-		{
-			const MOVEMENT_MODEL weapontype = asWeaponStats[psCurr->asWeaps[0].nStat].movementModel;
-
-			if (weapontype == MM_INDIRECT
-				|| weapontype == MM_HOMINGINDIRECT
-				|| isVtolDroid(psCurr))
-			{
-				num++;
-			}
-		}
-	}
-
-	return num;
-}
+//static unsigned int countAssignedDroids(const STRUCTURE* psStructure)
+//{
+//	const DROID* psCurr;
+//	unsigned int num;
+//
+//	CHECK_STRUCTURE(psStructure);
+//
+//	// For non-debug builds
+//	if (psStructure == nullptr)
+//	{
+//		return 0;
+//	}
+//
+//	if (selectedPlayer >= MAX_PLAYERS)
+//	{
+//		return 0;
+//	}
+//
+//	num = 0;
+//	for (psCurr = apsDroidLists[selectedPlayer]; psCurr; psCurr = psCurr->psNext)
+//	{
+//		if (psCurr->order.psObj
+//			&& psCurr->order.psObj->id == psStructure->id
+//			&& psCurr->player == psStructure->player)
+//		{
+//			const MOVEMENT_MODEL weapontype = asWeaponStats[psCurr->asWeaps[0].nStat].movementModel;
+//
+//			if (weapontype == MM_INDIRECT
+//				|| weapontype == MM_HOMINGINDIRECT
+//				|| isVtolDroid(psCurr))
+//			{
+//				num++;
+//			}
+//		}
+//	}
+//
+//	return num;
+//}
 
 //print some info at the top of the screen dependent on the structure
 void printStructureInfo(STRUCTURE* psStructure)

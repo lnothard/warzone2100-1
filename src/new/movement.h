@@ -44,7 +44,7 @@ struct Movement
 
 	using enum MOVEMENT_STATE;
 	MOVEMENT_STATE state = INACTIVE;
-  std::vector<Vector2i> path {0, 0};
+  std::vector<Vector2i> path;
 	Vector2i destination {0, 0};
 	Vector2i origin {0, 0};
 	int speed = 0;

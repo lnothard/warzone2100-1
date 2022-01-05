@@ -83,14 +83,14 @@ namespace Impl
 	private:
 		unsigned id;
 		unsigned player;
-		std::size_t time{0};
-		Position position{Position(0, 0, 0)};
-		Rotation rotation{Rotation(0, 0, 0)};
+		std::size_t time = 0;
+		Position position {0, 0, 0};
+		Rotation rotation {0, 0, 0};
 		std::unique_ptr<DisplayData> display;
     std::bitset< static_cast<std::size_t>(OBJECT_FLAG::COUNT) > flags;
 
     /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip, 0 if not visible
-    std::array<uint8_t, MAX_PLAYERS> visibility_state{};
+    std::array<uint8_t, MAX_PLAYERS> visibility_state;
 	};
 }
 

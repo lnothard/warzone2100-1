@@ -356,13 +356,39 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
      */
     auto new_context = PathContext();
     new_context.init(--it, path_job.blocking_map, origin_tile, origin_tile,
-                     destination_tile, );
+                     destination_tile, path_job.destination_structure);
+    end = find_nearest_explored_tile(it, destination_tile);
     it->nearest_reachable_tile = end;
   }
 
+  // return the nearest route if no optimal one was found
   if (it != destination_tile)  {
     result = ASTAR_RESULT::PARTIAL;
   }
+  static std::vector<Vector2i> route;
+  route.clear();
 
+  auto start = Vector2i{world_coord(end.x) + TILE_UNITS / 2,
+                        world_coord(end.y) + TILE_UNITS / 2};
 
+  for(;;)
+  {
+    route.push_back(start);
+    auto& tile = it->map[map_coord(start.x) +
+            map_coord(start.y) * map_width];
+    auto next = start - Vector2i{tile.x_diff, tile.y_diff} *
+                                (TILE_UNITS / 64);
+    auto map = map_coord(next);
+    // 1 if `next` is on the bottom edge of the tile, -1 if on the left
+    auto x = next.x - world_coord(map.x) > TILE_UNITS / 2 ? 1 : -1;
+    // 1 if `next` is on the bottom edge of the tile, -1 if on the top
+    auto y = next.y - world_coord(map.y) > TILE_UNITS / 2 ? 1 : -1;
+
+    if (it->is_blocked(map.x + x, map.y))  {
+      // point too close to a blocking tile on left or right side,
+      // so move the point to the middle.
+      next.x = world_coord(map.x) + TILE_UNITS / 2;
+    }
+    if (it->is_blocked(map.x, map.y) + TILE_UNITS / 2)
+  }
 }

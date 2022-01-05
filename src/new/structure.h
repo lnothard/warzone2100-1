@@ -12,6 +12,8 @@
 #include "unit.h"
 
 static constexpr auto MAX_IN_RUN = 9;
+static constexpr auto MAX_POWER_MODULES = 4;
+static constexpr auto MAX_FACTORY_MODULES = 2;
 
 enum class STRUCTURE_STATE
 {
@@ -199,7 +201,9 @@ namespace Impl
 		std::size_t last_state_time = 0;
 	};
 
+  /// @return The number of artillery and VTOL droids assigned to `structure`
 	[[nodiscard]] unsigned count_assigned_droids(const Structure& structure);
+
 	[[nodiscard]] bool being_built(const Structure& structure);
 	[[nodiscard]] bool being_demolished(const Structure& structure);
 	[[nodiscard]] bool is_damaged(const Structure& structure);
@@ -213,11 +217,19 @@ namespace Impl
 
 const Structure* find_repair_facility(unsigned player);
 
-struct ProductionJob
+struct ProductionRun
 {
-	std::shared_ptr<Droid_Template> droid_template;
-	std::size_t time_started = 0;
-	int remaining_build_points;
+  ProductionRun() = default;
+  bool operator ==(const DroidTemplate& rhs) const;
+
+  void restart();
+  bool is_valid() const;
+  bool is_complete() const;
+  int tasks_remaining() const;
+
+  std::shared_ptr<DroidTemplate> target;
+  int quantity_to_build = 0;
+  int quantity_built = 0;
 };
 
 struct ResearchItem
@@ -237,12 +249,13 @@ public:
   void decrement_production_loops();
 private:
 	using enum PENDING_STATUS;
-
-	std::unique_ptr<ProductionJob> active_job;
+  std::shared_ptr<DroidTemplate> current_target;
+  std::shared_ptr<DroidTemplate> pending_target;
 	std::unique_ptr<FlagPosition> assembly_point;
 	PENDING_STATUS pending_status;
 	uint8_t production_loops;
 	uint8_t loops_performed;
+  std::size_t time_started;
 };
 
 class ResearchFacility : public virtual Structure, public Impl::Structure
@@ -256,8 +269,9 @@ class PowerGenerator : public virtual Structure, public Impl::Structure
 {
 public:
   void update_current_power();
+  void print_info() const final;
 private:
-	std::vector<Structure*> associated_resource_extractors;
+	std::vector<Structure*> resource_extractors;
 };
 
 class ResourceExtractor : public virtual Structure, public Impl::Structure

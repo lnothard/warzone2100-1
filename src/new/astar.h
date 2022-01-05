@@ -165,7 +165,7 @@ struct PathContext
                PathCoord start_coord,
                NonBlockingArea bounds);
 
-      void init(PathBlockingMap& blocking_map, PathCoord start_coord,
+    void init(PathBlockingMap& blocking_map, PathCoord start_coord,
                 PathCoord real_start, PathCoord end, NonBlockingArea non_blocking);
 
     /// How many times have we explored?

@@ -41,6 +41,10 @@ struct PathJob
 
     /// ID of this unit's controller
     unsigned player = 0;
+
+    StructureBounds destination_structure;
+
+    PathBlockingMap* blocking_map;
 };
 
 /// The result obtained from a pathfinding job
@@ -82,7 +86,6 @@ bool is_tile_blocked_by_droid(const Droid& droid,
                               MOVE_TYPE move_type);
 
 /// @return true if droids of this propulsion class block the specified coord
-bool is_droid_blocked_by_tile(int x, int y
-                              PROPULSION_TYPE propulsion);
+bool is_droid_blocked_by_tile(int x, int y, PROPULSION_TYPE propulsion);
 
 #endif //WARZONE2100_PATHFINDING_H

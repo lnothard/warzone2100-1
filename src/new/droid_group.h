@@ -73,7 +73,7 @@ private:
    */
 	Droid* commander = nullptr;
 
-  /// The list of droids attached to this group
+  /// The list of droids belonging to this group
 	std::vector<Droid*> members;
 };
 

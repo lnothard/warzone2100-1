@@ -194,7 +194,7 @@ public:
 	void move_to_rearm_pad();
 	void cancel_build();
 	void reset_action() noexcept;
-	void update_expected_damage(unsigned damage, bool is_direct) noexcept override;
+	void update_expected_damage(unsigned damage, bool is_direct) noexcept final;
 	[[nodiscard]] unsigned commander_max_group_size() const;
 	[[nodiscard]] unsigned calculate_sensor_range() const final;
 	[[nodiscard]] int calculate_height() const;
@@ -204,19 +204,18 @@ public:
   void increment_commander_kills() const;
   void assign_vtol_to_rearm_pad(RearmPad* rearm_pad);
   [[nodiscard]] int calculate_electronic_resistance() const;
-  [[nodiscard]] bool is_selectable() const override;
+  [[nodiscard]] bool is_selectable() const final;
   [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
   [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
   [[nodiscard]] bool is_hovering() const;
 private:
 	using enum ACTION;
 	using enum DROID_TYPE;
-
-	std::string name {};
+	std::string name;
 	ACTION action = NONE;
 	DROID_TYPE type = ANY;
 	Structure* associated_structure = nullptr;
-  std::array<SimpleObject*, MAX_WEAPONS> action_target {};
+  std::array<SimpleObject*, MAX_WEAPONS> action_target;
 	std::shared_ptr<DroidGroup> group;
 	std::unique_ptr<Order> order;
 	std::unique_ptr<Movement> movement;
@@ -253,6 +252,7 @@ private:
 [[nodiscard]] unsigned calculate_max_range(const Droid& droid);
 
 [[nodiscard]] unsigned count_player_command_droids(unsigned player);
+
 [[nodiscard]] bool still_building(const Droid& droid);
 
 /**
@@ -274,6 +274,7 @@ private:
 [[nodiscard]] bool being_repaired(const Droid& droid);
 
 /**
+ * Checks whether a droid can see a target unit
  *
  * @param droid
  * @param target
@@ -343,7 +344,7 @@ void clear_blocking_flags(const Droid& droid);
  */
 Vector2i determine_fallback_position(Unit& unit, Unit& target);
 
-/// @return `true` if two droids are adjacent
+/// @return `true` if two droids are adjacently located
 bool droids_are_neighbours(const Droid& first, const Droid& second)
 
 /// @return `true` if the tile at (x, y) houses a droid
@@ -354,7 +355,7 @@ struct DroidTemplate
   DroidTemplate() = default;
 
 	using enum DROID_TYPE;
-
+  unsigned id = 0;
 	DROID_TYPE type = ANY;
 	uint8_t weapon_count = 0;
 	bool is_prefab = false;

@@ -42,8 +42,6 @@ bool Droid::is_probably_doomed(bool is_direct_damage) const
 	return is_doomed(expected_damage_indirect);
 }
 
-
-
 bool Droid::is_VTOL() const
 {
 	if (!propulsion)
@@ -895,13 +893,13 @@ const RearmPad* find_nearest_rearm_pad(const Droid& droid)
 bool valid_position_for_droid(int x, int y, PROPULSION_TYPE propulsion)
 {
    if (x < TOO_NEAR_EDGE || x > map_width - TOO_NEAR_EDGE ||
-       y < TOO_NEAR_EDGE || y > map_height - TOO_NEAR_EDGE)
-   {
+       y < TOO_NEAR_EDGE || y > map_height - TOO_NEAR_EDGE)  {
      return false;
    }
 
-   if (is_droid_blocked_by_tile(x, y, propulsion))
+   if (is_droid_blocked_by_tile(x, y, propulsion)) {
      return false;
+   }
 
    return true;
 }
@@ -917,8 +915,8 @@ bool vtol_can_land_here(int x, int y)
   const auto tile = get_map_tile(x, y);
   if (tile->info_bits & BLOCKING ||
       tile_is_occupied(*tile) ||
-      get_terrain_type(tile) == TER_CLIFFFACE ||
-      get_terrain_type(tile) == TER_WATER)
+      get_terrain_type(*tile) == TER_CLIFFFACE ||
+      get_terrain_type(*tile) == TER_WATER)
   {
     return false;
   }
@@ -1066,4 +1064,11 @@ bool tile_occupied_by_droid(unsigned x, unsigned y)
     }
   }
   return false;
+}
+
+int calculate_remaining_ammo(const Droid& droid, const Weapon& weapon, int weapon_slot)
+{
+  if (num_weapons(droid) == 0)  {
+    return -1;
+  }
 }
