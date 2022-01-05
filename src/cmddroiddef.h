@@ -29,7 +29,7 @@
 
 #include "statsdef.h"
 
-struct DROID;
+struct Droid;
 
 /** This defines the maximum number of command droids allowed per player.*/
 #define MAX_CMDDROIDS	5

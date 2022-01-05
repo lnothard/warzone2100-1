@@ -467,12 +467,12 @@ static inline uint32_t calcObjectCost(const BASE_OBJECT* psObj)
 	switch (psObj->type)
 	{
 	case OBJ_DROID:
-		return calcDroidPower((const DROID*)psObj);
+		return calcDroidPower((const Droid*)psObj);
 	case OBJ_STRUCTURE:
 		{
-			auto psStruct = static_cast<const STRUCTURE*>(psObj);
+			auto psStruct = static_cast<const Structure*>(psObj);
 			ASSERT_OR_RETURN(0, psStruct->pStructureType != nullptr, "pStructureType is null?");
-			return psStruct->pStructureType->powerToBuild;
+			return psStruct->pStructureType->power_cost;
 		}
 	case OBJ_FEATURE:
 		return 0;

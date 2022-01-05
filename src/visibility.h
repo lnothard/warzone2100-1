@@ -107,7 +107,7 @@ static inline int objJammerPower(const BASE_OBJECT* psObj)
 	}
 	else if (psObj->type == OBJ_STRUCTURE)
 	{
-		return ((const STRUCTURE*)psObj)->pStructureType->pECM->upgrade[psObj->player].range;
+		return ((const STRUCTURE*)psObj)->stats->ecm_stats->upgraded_stats[psObj->player].range;
 	}
 	return 0;
 }

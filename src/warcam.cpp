@@ -76,7 +76,7 @@ struct WARCAM
 	Vector3f rotAccel = Vector3f(0.f, 0.f, 0.f);
 
 	float oldDistance;
-	DROID* target;
+	Droid* target;
 };
 
 #define MIN_TRACK_HEIGHT 16
@@ -137,8 +137,8 @@ void initWarCam()
 
 static void processLeaderSelection()
 {
-	DROID* psDroid;
-	DROID* psNew = nullptr;
+	Droid* psDroid;
+	Droid* psNew = nullptr;
 	UDWORD leaderClass;
 	bool bSuccess;
 	UDWORD dif;
@@ -276,7 +276,7 @@ static void processLeaderSelection()
 /* Updates the camera position/angle along with the object movement */
 void processWarCam()
 {
-	DROID* foundTarget;
+	Droid* foundTarget;
 
 	/* Ensure that the camera only ever flips state within this routine! */
 	switch (trackingCamera.status)
@@ -382,9 +382,9 @@ void setWarCamActive(bool status)
 
 //-----------------------------------------------------------------------------------
 
-DROID* camFindDroidTarget()
+Droid* camFindDroidTarget()
 {
-	DROID* psDroid;
+	Droid* psDroid;
 
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
@@ -409,7 +409,7 @@ DROID* camFindDroidTarget()
 //-----------------------------------------------------------------------------------
 
 /* Stores away old viewangle info and sets up new distance and angles */
-void camAlignWithTarget(DROID* psDroid)
+void camAlignWithTarget(Droid* psDroid)
 {
 	/* Store away the target */
 	trackingCamera.target = psDroid;
@@ -452,7 +452,7 @@ void camAlignWithTarget(DROID* psDroid)
 //-----------------------------------------------------------------------------------
 static uint16_t getAverageTrackAngle(unsigned groupNumber, bool bCheckOnScreen)
 {
-	DROID* psDroid;
+	Droid* psDroid;
 	int32_t xTotal = 0, yTotal = 0;
 
 	if (selectedPlayer >= MAX_PLAYERS)
@@ -483,7 +483,7 @@ static uint16_t getAverageTrackAngle(unsigned groupNumber, bool bCheckOnScreen)
 static void getTrackingConcerns(SDWORD* x, SDWORD* y, SDWORD* z, UDWORD groupNumber, bool bOnScreen)
 {
 	SDWORD xTotals = 0, yTotals = 0, zTotals = 0;
-	DROID* psDroid;
+	Droid* psDroid;
 	UDWORD count;
 
 	if (selectedPlayer >= MAX_PLAYERS)
@@ -919,7 +919,7 @@ static void camRadarJump()
 }
 
 //-----------------------------------------------------------------------------------
-DROID* getTrackingDroid()
+Droid* getTrackingDroid()
 {
 	if (!getWarCamStatus())
 	{

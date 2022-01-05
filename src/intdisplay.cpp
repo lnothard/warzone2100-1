@@ -389,8 +389,8 @@ IntStatusButton::IntStatusButton()
 // Widget callback to display a rendered status button, ie the progress of a manufacturing or  building task.
 void IntStatusButton::display(int xOffset, int yOffset)
 {
-	STRUCTURE* Structure;
-	DROID* Droid;
+	Structure* Structure;
+	Droid* Droid;
 	BASE_STATS *Stats, *psResGraphic;
 	UDWORD compID;
 	bool bOnHold = false;
@@ -412,7 +412,7 @@ void IntStatusButton::display(int xOffset, int yOffset)
 		switch (psObj->type)
 		{
 		case OBJ_DROID: // If it's a droid...
-			Droid = (DROID*)psObj;
+			Droid = (Droid*)psObj;
 
 			if (DroidIsBuilding(Droid))
 			{
@@ -434,7 +434,7 @@ void IntStatusButton::display(int xOffset, int yOffset)
 				ASSERT(Stats != nullptr, "NULL Stats pointer.");
 				object = ImdObject::StructureStat(Stats);
 			}
-			else if (Droid->droidType == DROID_COMMAND)
+			else if (Droid->type == DROID_COMMAND)
 			{
 				Structure = droidGetCommandFactory(Droid);
 				if (Structure)
@@ -445,7 +445,7 @@ void IntStatusButton::display(int xOffset, int yOffset)
 			break;
 
 		case OBJ_STRUCTURE: // If it's a structure...
-			Structure = (STRUCTURE*)psObj;
+			Structure = (Structure*)psObj;
 			switch (Structure->pStructureType->type)
 			{
 			case REF_FACTORY:
@@ -1026,11 +1026,11 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 
 		if (IMDType == IMDTYPE_DROID)
 		{
-			Radius = getComponentDroidRadius((DROID*)Object);
+			Radius = getComponentDroidRadius((Droid*)Object);
 		}
 		else
 		{
-			Radius = getComponentDroidTemplateRadius((DROID_TEMPLATE*)Object);
+			Radius = getComponentDroidTemplateRadius((DroidTemplate*)Object);
 		}
 
 		model.scale = DROID_BUT_SCALE;
@@ -1040,9 +1040,9 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 
 		if (IMDType == IMDTYPE_DROID)
 		{
-			if (isTransporter((DROID*)Object))
+			if (isTransporter((Droid*)Object))
 			{
-				if (((DROID*)Object)->droidType == DROID_TRANSPORTER)
+				if (((Droid*)Object)->type == DROID_TRANSPORTER)
 				{
 					model.scale = DROID_BUT_SCALE / 2;
 				}
@@ -1054,9 +1054,9 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		}
 		else //(IMDType == IMDTYPE_DROIDTEMPLATE)
 		{
-			if (isTransporter((DROID_TEMPLATE*)Object))
+			if (isTransporter((DroidTemplate*)Object))
 			{
-				if (((DROID_TEMPLATE*)Object)->droidType == DROID_TRANSPORTER)
+				if (((DroidTemplate*)Object)->type == DROID_TRANSPORTER)
 				{
 					model.scale = DROID_BUT_SCALE / 2;
 				}
@@ -1070,11 +1070,11 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		//lefthand display droid buttons
 		if (IMDType == IMDTYPE_DROID)
 		{
-			displayComponentButtonObject((DROID*)Object, &model.rotation, &model.position, model.scale);
+			displayComponentButtonObject((Droid*)Object, &model.rotation, &model.position, model.scale);
 		}
 		else
 		{
-			displayComponentButtonTemplate((DROID_TEMPLATE*)Object, &model.rotation, &model.position, model.scale);
+			displayComponentButtonTemplate((DroidTemplate*)Object, &model.rotation, &model.position, model.scale);
 		}
 	}
 	else
@@ -1150,7 +1150,7 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		}
 		else if (IMDType == IMDTYPE_STRUCTURE)
 		{
-			basePlateSize = getStructureSizeMax((STRUCTURE*)Object);
+			basePlateSize = getStructureSizeMax((Structure*)Object);
 			if (basePlateSize == 1)
 			{
 				model.scale = SMALL_STRUCT_SCALE;
@@ -1166,7 +1166,7 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		}
 		else if (IMDType == IMDTYPE_STRUCTURESTAT)
 		{
-			basePlateSize = getStructureStatSizeMax((STRUCTURE_STATS*)Object);
+			basePlateSize = getStructureStatSizeMax((StructureStats*)Object);
 			if (basePlateSize == 1)
 			{
 				model.scale = SMALL_STRUCT_SCALE;
@@ -1241,11 +1241,11 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		}
 		else if (IMDType == IMDTYPE_STRUCTURE)
 		{
-			displayStructureButton((STRUCTURE*)Object, &model.rotation, &model.position, model.scale);
+			displayStructureButton((Structure*)Object, &model.rotation, &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_STRUCTURESTAT)
 		{
-			displayStructureStatButton((STRUCTURE_STATS*)Object, &model.rotation, &model.position, model.scale);
+			displayStructureStatButton((StructureStats*)Object, &model.rotation, &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_FEATURE)
 		{
@@ -1293,9 +1293,9 @@ void IntFancyButton::displayBlank(int xOffset, int yOffset)
 
 // Returns true if the droid is currently building something.
 //
-bool DroidIsBuilding(DROID* Droid)
+bool DroidIsBuilding(Droid* Droid)
 {
-	STRUCTURE_STATS* Stats;
+	StructureStats* Stats;
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, Droid);
 
 	if (!(droidType(Droid) == DROID_CONSTRUCT ||
@@ -1321,9 +1321,9 @@ bool DroidIsBuilding(DROID* Droid)
 
 // Returns true if the droid has been ordered build something ( but hasn't started yet )
 //
-bool DroidGoingToBuild(DROID* Droid)
+bool DroidGoingToBuild(Droid* Droid)
 {
-	STRUCTURE_STATS* Stats;
+	StructureStats* Stats;
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, Droid);
 
 	if (!(droidType(Droid) == DROID_CONSTRUCT ||
@@ -1343,7 +1343,7 @@ bool DroidGoingToBuild(DROID* Droid)
 
 // Get the structure for a structure which a droid is currently building.
 //
-STRUCTURE* DroidGetBuildStructure(DROID* Droid)
+Structure* DroidGetBuildStructure(Droid* Droid)
 {
 	BASE_OBJECT* Structure = nullptr;
 
@@ -1352,18 +1352,18 @@ STRUCTURE* DroidGetBuildStructure(DROID* Droid)
 		Structure = orderStateObj(Droid, DORDER_HELPBUILD);
 	}
 
-	return (STRUCTURE*)Structure;
+	return (Structure*)Structure;
 }
 
 // Get the first factory assigned to a command droid
-STRUCTURE* droidGetCommandFactory(DROID* psDroid)
+Structure* droidGetCommandFactory(Droid* psDroid)
 {
 	SDWORD inc;
-	STRUCTURE* psCurr;
+	Structure* psCurr;
 
 	for (inc = 0; inc < MAX_FACTORY; inc++)
 	{
-		if (psDroid->secondaryOrder & (1 << (inc + DSS_ASSPROD_SHIFT)))
+		if (psDroid->secondary_order & (1 << (inc + DSS_ASSPROD_SHIFT)))
 		{
 			// found an assigned factory - look for it in the lists
 			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
@@ -1376,7 +1376,7 @@ STRUCTURE* droidGetCommandFactory(DROID* psDroid)
 				}
 			}
 		}
-		if (psDroid->secondaryOrder & (1 << (inc + DSS_ASSPROD_CYBORG_SHIFT)))
+		if (psDroid->secondary_order & (1 << (inc + DSS_ASSPROD_CYBORG_SHIFT)))
 		{
 			// found an assigned factory - look for it in the lists
 			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
@@ -1389,7 +1389,7 @@ STRUCTURE* droidGetCommandFactory(DROID* psDroid)
 				}
 			}
 		}
-		if (psDroid->secondaryOrder & (1 << (inc + DSS_ASSPROD_VTOL_SHIFT)))
+		if (psDroid->secondary_order & (1 << (inc + DSS_ASSPROD_VTOL_SHIFT)))
 		{
 			// found an assigned factory - look for it in the lists
 			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
@@ -1409,9 +1409,9 @@ STRUCTURE* droidGetCommandFactory(DROID* psDroid)
 
 // Get the stats for a structure which a droid is going to ( but not yet ) building.
 //
-BASE_STATS* DroidGetBuildStats(DROID* Droid)
+BASE_STATS* DroidGetBuildStats(Droid* Droid)
 {
-	STRUCTURE_STATS* Stats;
+	StructureStats* Stats;
 
 	if (orderStateStatsLoc(Droid, DORDER_BUILD, &Stats)) // Moving to build location?
 	{
@@ -1421,7 +1421,7 @@ BASE_STATS* DroidGetBuildStats(DROID* Droid)
 	return nullptr;
 }
 
-iIMDShape* DroidGetIMD(DROID* Droid)
+iIMDShape* DroidGetIMD(Droid* Droid)
 {
 	return Droid->sDisplay.imd;
 }
@@ -1437,7 +1437,7 @@ static inline bool _structureIsManufacturingPending(Functionality const& functio
 	return functionality.psSubject != nullptr;
 }
 
-bool StructureIsManufacturingPending(STRUCTURE* structure)
+bool StructureIsManufacturingPending(Structure* structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, structure);
 	switch (structure->pStructureType->type)
@@ -1451,13 +1451,13 @@ bool StructureIsManufacturingPending(STRUCTURE* structure)
 	}
 }
 
-FACTORY* StructureGetFactory(STRUCTURE* Structure)
+FACTORY* StructureGetFactory(Structure* Structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Structure);
 	return &Structure->pFunctionality->factory;
 }
 
-bool structureIsResearchingPending(STRUCTURE* structure)
+bool structureIsResearchingPending(Structure* structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, structure);
 	return structure->pStructureType->type == REF_RESEARCH && _structureIsManufacturingPending(
@@ -1474,7 +1474,7 @@ static inline bool structureIsOnHoldPending(Functionality const& functionality)
 	return functionality.timeStartHold != 0;
 }
 
-bool StructureIsOnHoldPending(STRUCTURE* structure)
+bool StructureIsOnHoldPending(Structure* structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, structure);
 	switch (structure->pStructureType->type)
@@ -1491,7 +1491,7 @@ bool StructureIsOnHoldPending(STRUCTURE* structure)
 	}
 }
 
-RESEARCH_FACILITY* StructureGetResearch(STRUCTURE* Structure)
+RESEARCH_FACILITY* StructureGetResearch(Structure* Structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Structure);
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Structure->pFunctionality);
@@ -1499,15 +1499,15 @@ RESEARCH_FACILITY* StructureGetResearch(STRUCTURE* Structure)
 }
 
 
-DROID_TEMPLATE* FactoryGetTemplate(FACTORY* Factory)
+DroidTemplate* FactoryGetTemplate(FACTORY* Factory)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Factory);
 	if (Factory->psSubjectPending != nullptr)
 	{
-		return (DROID_TEMPLATE*)Factory->psSubjectPending;
+		return (DroidTemplate*)Factory->psSubjectPending;
 	}
 
-	return (DROID_TEMPLATE*)Factory->psSubject;
+	return (DroidTemplate*)Factory->psSubject;
 }
 
 bool StatIsStructure(BASE_STATS const* Stat)
@@ -1523,7 +1523,7 @@ bool StatIsFeature(BASE_STATS const* Stat)
 iIMDShape* StatGetStructureIMD(BASE_STATS* Stat, UDWORD Player)
 {
 	(void)Player;
-	return ((STRUCTURE_STATS*)Stat)->pIMD[0];
+	return ((StructureStats*)Stat)->IMDs[0];
 }
 
 bool StatIsTemplate(BASE_STATS* Stat)

@@ -113,8 +113,8 @@ void init3DBuilding(BASE_STATS* psStats, BUILDCALLBACK CallBack, void* UserData)
 
 	if (psStats->hasType(STAT_STRUCTURE))
 	{
-		sBuildDetails.width = ((STRUCTURE_STATS*)psStats)->baseWidth;
-		sBuildDetails.height = ((STRUCTURE_STATS*)psStats)->baseBreadth;
+		sBuildDetails.width = ((StructureStats*)psStats)->base_width;
+		sBuildDetails.height = ((StructureStats*)psStats)->base_breadth;
 		sBuildDetails.psStats = psStats;
 	}
 	else if (psStats->hasType(STAT_FEATURE))
@@ -176,8 +176,8 @@ bool process3DBuilding()
 			wallDrag.pos2 = mousePos;
 			// Why must this be done here? If not doing it here, dragging works almost normally, except it suddenly stops working if the drag becomes invalid.
 
-			auto lb = calcLineBuild(static_cast<STRUCTURE_STATS*>(sBuildDetails.psStats), getBuildingDirection(),
-			                        wallDrag.pos, wallDrag.pos2);
+			auto lb = calcLineBuild(static_cast<StructureStats*>(sBuildDetails.psStats), getBuildingDirection(),
+                              wallDrag.pos, wallDrag.pos2);
 			for (int i = 0; i < lb.count && isValid; ++i)
 			{
 				isValid &= validLocation(sBuildDetails.psStats, lb[i], getBuildingDirection(), selectedPlayer, true);
@@ -272,7 +272,7 @@ bool found3DBuildLocTwo(Vector2i& pos, Vector2i& pos2)
 	}
 
 	wallDrag.status = DRAG_INACTIVE;
-	STRUCTURE_STATS* stats = (STRUCTURE_STATS*)sBuildDetails.psStats;
+	StructureStats* stats = (StructureStats*)sBuildDetails.psStats;
 	LineBuild lb = calcLineBuild(stats, getBuildingDirection(), wallDrag.pos, wallDrag.pos2);
 	pos = lb.begin;
 	pos2 = lb.back();

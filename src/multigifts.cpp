@@ -249,7 +249,7 @@ void giftRadar(uint8_t from, uint8_t to, bool send)
 // NOTICE: the packet is already set-up for decoding via recvGift()
 static void recvGiftStruct(uint8_t from, uint8_t to, uint32_t structID)
 {
-	STRUCTURE* psStruct = IdToStruct(structID, from);
+	Structure* psStruct = IdToStruct(structID, from);
 	if (psStruct)
 	{
 		syncDebugStructure(psStruct, '<');
@@ -274,7 +274,7 @@ static void recvGiftStruct(uint8_t from, uint8_t to, uint32_t structID)
 // \param to    :player that should be getting the droid
 static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 {
-	DROID* psDroid = IdToDroid(droidID, from);
+	Droid* psDroid = IdToDroid(droidID, from);
 
 	if (psDroid)
 	{
@@ -283,7 +283,7 @@ static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 		syncDebugDroid(psDroid, '>');
 		if (to == selectedPlayer)
 		{
-			CONPRINTF(_("%s Gives you a %s"), getPlayerName(from), psDroid->aName);
+			CONPRINTF(_("%s Gives you a %s"), getPlayerName(from), psDroid->name);
 		}
 	}
 	else
@@ -299,7 +299,7 @@ static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 // \param to    :player that should be getting the droid
 static void sendGiftDroids(uint8_t from, uint8_t to)
 {
-	DROID* psD;
+	Droid* psD;
 	uint8_t giftType = DROID_GIFT;
 	uint8_t totalToSend;
 
@@ -333,7 +333,7 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 		if (isTransporter(psD)
 			&& !transporterIsEmpty(psD))
 		{
-			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD->aName);
+			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD->name);
 			continue;
 		}
 		if (psD->selected)
@@ -507,7 +507,7 @@ void breakAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio)
 
 void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allowNotification)
 {
-	DROID* psDroid;
+	Droid* psDroid;
 	char tm1[128];
 
 	if (bMultiMessages && prop)
@@ -647,7 +647,7 @@ bool recvAlliance(NETQUEUE queue, bool allowAudio)
 
 // ////////////////////////////////////////////////////////////////////////////
 // add an artifact on destruction if required.
-void technologyGiveAway(const STRUCTURE* pS)
+void technologyGiveAway(const Structure* pS)
 {
 	// If a fully built factory (or with modules under construction) which is our responsibility got destroyed
 	if (pS->pStructureType->type == REF_FACTORY && (pS->status == SS_BUILT || pS->currentBuildPts >= pS->body))

@@ -81,12 +81,12 @@ const char* objInfo(const BASE_OBJECT* psObj)
 	{
 	case OBJ_DROID:
 		{
-			const DROID* psDroid = (const DROID*)psObj;
+			const Droid* psDroid = (const Droid*)psObj;
 			return droidGetName(psDroid);
 		}
 	case OBJ_STRUCTURE:
 		{
-			const STRUCTURE* psStruct = (const STRUCTURE*)psObj;
+			const Structure* psStruct = (const Structure*)psObj;
 			sstrcpy(info, getStatsName(psStruct->pStructureType));
 			break;
 		}

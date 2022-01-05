@@ -464,7 +464,7 @@ public:
 	//__
 	//__ A droid should be given new orders.
 	//__
-	virtual bool handle_eventDroidIdle(const DROID* psDroid) override;
+	virtual bool handle_eventDroidIdle(const Droid* psDroid) override;
 
 	//__ ## eventDroidBuilt(droid[, structure])
 	//__
@@ -472,7 +472,7 @@ public:
 	//__ if the droid was produced in a factory. It is not triggered for droid theft or
 	//__ gift (check ```eventObjectTransfer``` for that).
 	//__
-	virtual bool handle_eventDroidBuilt(const DROID* psDroid, optional<const STRUCTURE*> psFactory) override;
+	virtual bool handle_eventDroidBuilt(const Droid* psDroid, optional<const Structure*> psFactory) override;
 
 	//__ ## eventStructureBuilt(structure[, droid])
 	//__
@@ -480,14 +480,14 @@ public:
 	//__ if the structure was built by a droid. It is not triggered for building theft
 	//__ (check ```eventObjectTransfer``` for that).
 	//__
-	virtual bool handle_eventStructureBuilt(const STRUCTURE* psStruct, optional<const DROID*> psDroid) override;
+	virtual bool handle_eventStructureBuilt(const Structure* psStruct, optional<const Droid*> psDroid) override;
 
 	//__ ## eventStructureDemolish(structure[, droid])
 	//__
 	//__ An event that is run every time a structure begins to be demolished. This does
 	//__ not trigger again if the structure is partially demolished.
 	//__
-	virtual bool handle_eventStructureDemolish(const STRUCTURE* psStruct, optional<const DROID*> psDroid) override;
+	virtual bool handle_eventStructureDemolish(const Structure* psStruct, optional<const Droid*> psDroid) override;
 
 	//__ ## eventStructureReady(structure)
 	//__
@@ -495,13 +495,13 @@ public:
 	//__ special ability. It will only fire once, so if the time is not right,
 	//__ register your own timer to keep checking.
 	//__
-	virtual bool handle_eventStructureReady(const STRUCTURE* psStruct) override;
+	virtual bool handle_eventStructureReady(const Structure* psStruct) override;
 
 	//__ ## eventStructureUpgradeStarted(structure)
 	//__
 	//__ An event that is run every time a structure starts to be upgraded.
 	//__
-	virtual bool handle_eventStructureUpgradeStarted(const STRUCTURE* psStruct) override;
+	virtual bool handle_eventStructureUpgradeStarted(const Structure* psStruct) override;
 
 	//__ ## eventAttacked(victim, attacker)
 	//__
@@ -518,7 +518,7 @@ public:
 	//__ be set to null. The player parameter gives the player it is called for.
 	//__
 	virtual bool handle_eventResearched(const wzapi::researchResult& research,
-	                                    wzapi::event_nullable_ptr<const STRUCTURE> psStruct, int player) override;
+																			wzapi::event_nullable_ptr<const Structure> psStruct, int player) override;
 
 	//__ ## eventDestroyed(object)
 	//__
@@ -533,7 +533,7 @@ public:
 	//__ all players / scripts.
 	//__ Careful passing the parameter object around, since it is about to vanish! (3.2+ only)
 	//__
-	virtual bool handle_eventPickup(const FEATURE* psFeat, const DROID* psDroid) override;
+	virtual bool handle_eventPickup(const FEATURE* psFeat, const Droid* psDroid) override;
 
 	//__ ## eventObjectSeen(viewer, seen)
 	//__
@@ -600,14 +600,14 @@ public:
 	//__ deactived. Call resetArea() to reactivate it. The name of the event is
 	//__ `eventArea${label}`.
 	//__
-	virtual bool handle_eventArea(const std::string& label, const DROID* psDroid) override;
+	virtual bool handle_eventArea(const std::string& label, const Droid* psDroid) override;
 
 	//__ ## eventDesignCreated(template)
 	//__
 	//__ An event that is run whenever a new droid template is created. It is only
 	//__ run on the client of the player designing the template.
 	//__
-	virtual bool handle_eventDesignCreated(const DROID_TEMPLATE* psTemplate) override;
+	virtual bool handle_eventDesignCreated(const DroidTemplate* psTemplate) override;
 
 	//__ ## eventAllianceOffer(from, to)
 	//__
@@ -717,12 +717,12 @@ int JS_DeletePropertyStr(JSContext* ctx, JSValueConst this_obj,
 }
 
 // Forward-declare
-JSValue convDroid(const DROID* psDroid, JSContext* ctx);
-JSValue convStructure(const STRUCTURE* psStruct, JSContext* ctx);
+JSValue convDroid(const Droid* psDroid, JSContext* ctx);
+JSValue convStructure(const Structure* psStruct, JSContext* ctx);
 JSValue convObj(const BASE_OBJECT* psObj, JSContext* ctx);
 JSValue convFeature(const FEATURE* psFeature, JSContext* ctx);
 JSValue convMax(const BASE_OBJECT* psObj, JSContext* ctx);
-JSValue convTemplate(const DROID_TEMPLATE* psTemplate, JSContext* ctx);
+JSValue convTemplate(const DroidTemplate* psTemplate, JSContext* ctx);
 JSValue convResearch(const RESEARCH* psResearch, JSContext* ctx, int player);
 
 static int QuickJS_DefinePropertyValue(JSContext* ctx, JSValueConst this_obj, const char* prop, JSValue val, int flags)
@@ -804,7 +804,7 @@ JSValue convResearch(const RESEARCH* psResearch, JSContext* ctx, int player)
 //;; * ```range``` Maximum range of its weapons. (3.2+ only)
 //;; * ```hasIndirect``` One or more of the structure's weapons are indirect. (3.2+ only)
 //;;
-JSValue convStructure(const STRUCTURE* psStruct, JSContext* ctx)
+JSValue convStructure(const Structure* psStruct, JSContext* ctx)
 {
 	bool aa = false;
 	bool ga = false;
@@ -835,7 +835,7 @@ JSValue convStructure(const STRUCTURE* psStruct, JSContext* ctx)
 	QuickJS_DefinePropertyValue(ctx, value, "health",
 	                            JS_NewInt32(ctx, 100 * psStruct->body / MAX(1, structureBody(psStruct))),
 	                            JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "cost", JS_NewInt32(ctx, psStruct->pStructureType->powerToBuild),
+	QuickJS_DefinePropertyValue(ctx, value, "cost", JS_NewInt32(ctx, psStruct->pStructureType->power_cost),
 	                            JS_PROP_ENUMERABLE);
 	int stattype = 0;
 	switch (psStruct->pStructureType->type) // don't bleed our source insanities into the scripting world
@@ -965,7 +965,7 @@ JSValue convFeature(const FEATURE* psFeature, JSContext* ctx)
 //;; * ```cargoCount``` Defined for transporters only: Number of individual \emph{items} in the cargo hold. (3.2+ only)
 //;; * ```cargoSize``` The amount of cargo space the droid will take inside a transport. (3.2+ only)
 //;;
-JSValue convDroid(const DROID* psDroid, JSContext* ctx)
+JSValue convDroid(const Droid* psDroid, JSContext* ctx)
 {
 	bool aa = false;
 	bool ga = false;
@@ -984,7 +984,7 @@ JSValue convDroid(const DROID* psDroid, JSContext* ctx)
 			range = MAX(proj_GetLongRange(psWeap, psDroid->player), range);
 		}
 	}
-	DROID_TYPE type = psDroid->droidType;
+	DROID_TYPE type = psDroid->type;
 	JSValue value = convObj(psDroid, ctx);
 	QuickJS_DefinePropertyValue(ctx, value, "action", JS_NewInt32(ctx, (int)psDroid->action), JS_PROP_ENUMERABLE);
 	if (range >= 0)
@@ -998,7 +998,7 @@ JSValue convDroid(const DROID* psDroid, JSContext* ctx)
 	QuickJS_DefinePropertyValue(ctx, value, "order", JS_NewInt32(ctx, (int)psDroid->order.type), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "cost", JS_NewUint32(ctx, calcDroidPower(psDroid)), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "hasIndirect", JS_NewBool(ctx, indirect), JS_PROP_ENUMERABLE);
-	switch (psDroid->droidType) // hide some engine craziness
+	switch (psDroid->type) // hide some engine craziness
 	{
 	case DROID_CYBORG_CONSTRUCT:
 		type = DROID_CONSTRUCT;
@@ -1023,8 +1023,8 @@ JSValue convDroid(const DROID* psDroid, JSContext* ctx)
 		QuickJS_DefinePropertyValue(ctx, value, "cargoLeft", JS_NewInt32(ctx, calcRemainingCapacity(psDroid)),
 		                            JS_PROP_ENUMERABLE);
 		QuickJS_DefinePropertyValue(ctx, value, "cargoCount",
-		                            JS_NewUint32(ctx, psDroid->psGroup != nullptr
-			                                              ? psDroid->psGroup->getNumMembers()
+		                            JS_NewUint32(ctx, psDroid->group != nullptr
+			                                              ? psDroid->group->getNumMembers()
 			                                              : 0), JS_PROP_ENUMERABLE);
 	}
 	QuickJS_DefinePropertyValue(ctx, value, "isRadarDetector", JS_NewBool(ctx, objRadarDetector(psDroid)),
@@ -1039,7 +1039,7 @@ JSValue convDroid(const DROID* psDroid, JSContext* ctx)
 	QuickJS_DefinePropertyValue(ctx, value, "experience", JS_NewFloat64(ctx, (double)psDroid->experience / 65536.0),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "health",
-	                            JS_NewFloat64(ctx, 100.0 / (double)psDroid->originalBody * (double)psDroid->body),
+	                            JS_NewFloat64(ctx, 100.0 / (double)psDroid->original_hp * (double)psDroid->body),
 	                            JS_PROP_ENUMERABLE);
 
 	QuickJS_DefinePropertyValue(ctx, value, "body",
@@ -1139,7 +1139,7 @@ JSValue convObj(const BASE_OBJECT* psObj, JSContext* ctx)
 //;; * ```ecm``` The name of the ECM (electronic counter-measure) type.
 //;; * ```construct``` The name of the construction type.
 //;; * ```weapons``` An array of weapon names attached to this template.
-JSValue convTemplate(const DROID_TEMPLATE* psTempl, JSContext* ctx)
+JSValue convTemplate(const DroidTemplate* psTempl, JSContext* ctx)
 {
 	JSValue value = JS_NewObject(ctx);
 	ASSERT_OR_RETURN(value, psTempl, "No object for conversion");
@@ -1153,7 +1153,7 @@ JSValue convTemplate(const DROID_TEMPLATE* psTempl, JSContext* ctx)
 	QuickJS_DefinePropertyValue(ctx, value, "power", JS_NewUint32(ctx, calcTemplatePower(psTempl)), JS_PROP_ENUMERABLE);
 	// deprecated, use cost below
 	QuickJS_DefinePropertyValue(ctx, value, "cost", JS_NewUint32(ctx, calcTemplatePower(psTempl)), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "droidType", JS_NewInt32(ctx, psTempl->droidType), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "droidType", JS_NewInt32(ctx, psTempl->type), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "body",
 	                            JS_NewString(ctx, (asBodyStats + psTempl->asParts[COMP_BODY])->id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
@@ -1179,7 +1179,7 @@ JSValue convTemplate(const DROID_TEMPLATE* psTempl, JSContext* ctx)
 		                            ctx, (asConstructStats + psTempl->asParts[COMP_CONSTRUCT])->id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
 	JSValue weaponlist = JS_NewArray(ctx);
-	for (int j = 0; j < psTempl->numWeaps; j++)
+	for (int j = 0; j < psTempl->weapon_count; j++)
 	{
 		JS_DefinePropertyValueUint32(ctx, weaponlist, j,
 		                             JS_NewString(ctx, (asWeaponStats + psTempl->asWeaps[j])->id.toUtf8().c_str()),
@@ -1197,8 +1197,8 @@ JSValue convMax(const BASE_OBJECT* psObj, JSContext* ctx)
 	}
 	switch (psObj->type)
 	{
-	case OBJ_DROID: return convDroid((const DROID*)psObj, ctx);
-	case OBJ_STRUCTURE: return convStructure((const STRUCTURE*)psObj, ctx);
+	case OBJ_DROID: return convDroid((const Droid*)psObj, ctx);
+	case OBJ_STRUCTURE: return convStructure((const Structure*)psObj, ctx);
 	case OBJ_FEATURE: return convFeature((const FEATURE*)psObj, ctx);
 	default: ASSERT(false, "No such supported object type");
 		return convObj(psObj, ctx);
@@ -1497,52 +1497,52 @@ namespace
 	}
 
 	template <>
-	struct unbox<DROID*>
+	struct unbox<Droid*>
 	{
-		DROID* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		Droid* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
 			if (argc <= idx)
 				return {};
 			JSValue droidVal = argv[idx++];
 			int id = QuickJS_GetInt32(ctx, droidVal, "id");
 			int player = QuickJS_GetInt32(ctx, droidVal, "player");
-			DROID* psDroid = IdToDroid(id, player);
+			Droid* psDroid = IdToDroid(id, player);
 			UNBOX_SCRIPT_ASSERT(context, psDroid, "No such droid id %d belonging to player %d", id, player);
 			return psDroid;
 		}
 	};
 
 	template <>
-	struct unbox<const DROID*>
+	struct unbox<const Droid*>
 	{
-		const DROID* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		const Droid* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
-			return unbox<DROID*>()(idx, ctx, argc, argv, function);
+			return unbox<Droid*>()(idx, ctx, argc, argv, function);
 		}
 	};
 
 	template <>
-	struct unbox<STRUCTURE*>
+	struct unbox<Structure*>
 	{
-		STRUCTURE* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		Structure* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
 			if (argc <= idx)
 				return {};
 			JSValue structVal = argv[idx++];
 			int id = QuickJS_GetInt32(ctx, structVal, "id");
 			int player = QuickJS_GetInt32(ctx, structVal, "player");
-			STRUCTURE* psStruct = IdToStruct(id, player);
+			Structure* psStruct = IdToStruct(id, player);
 			UNBOX_SCRIPT_ASSERT(context, psStruct, "No such structure id %d belonging to player %d", id, player);
 			return psStruct;
 		}
 	};
 
 	template <>
-	struct unbox<const STRUCTURE*>
+	struct unbox<const Structure*>
 	{
-		const STRUCTURE* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		const Structure* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
-			return unbox<STRUCTURE*>()(idx, ctx, argc, argv, function);
+			return unbox<Structure*>()(idx, ctx, argc, argv, function);
 		}
 	};
 
@@ -1932,7 +1932,7 @@ namespace
 		return convMax(psObj, ctx);
 	}
 
-	JSValue box(const STRUCTURE* psStruct, JSContext* ctx)
+	JSValue box(const Structure* psStruct, JSContext* ctx)
 	{
 		if (!psStruct)
 		{
@@ -1941,7 +1941,7 @@ namespace
 		return convStructure(psStruct, ctx);
 	}
 
-	JSValue box(const DROID* psDroid, JSContext* ctx)
+	JSValue box(const Droid* psDroid, JSContext* ctx)
 	{
 		if (!psDroid)
 		{
@@ -1959,7 +1959,7 @@ namespace
 		return convFeature(psFeat, ctx);
 	}
 
-	JSValue box(const DROID_TEMPLATE* psTemplate, JSContext* ctx)
+	JSValue box(const DroidTemplate* psTemplate, JSContext* ctx)
 	{
 		if (!psTemplate)
 		{
@@ -3109,16 +3109,16 @@ IMPL_EVENT_HANDLER(eventSelectionChanged, const std::vector<const BASE_OBJECT *>
 IMPL_EVENT_HANDLER(eventObjectRecycled, const BASE_OBJECT *)
 IMPL_EVENT_HANDLER(eventPlayerLeft, int)
 IMPL_EVENT_HANDLER(eventCheatMode, bool)
-IMPL_EVENT_HANDLER(eventDroidIdle, const DROID *)
-IMPL_EVENT_HANDLER(eventDroidBuilt, const DROID *, optional<const STRUCTURE *>)
-IMPL_EVENT_HANDLER(eventStructureBuilt, const STRUCTURE *, optional<const DROID *>)
-IMPL_EVENT_HANDLER(eventStructureDemolish, const STRUCTURE *, optional<const DROID *>)
-IMPL_EVENT_HANDLER(eventStructureReady, const STRUCTURE *)
-IMPL_EVENT_HANDLER(eventStructureUpgradeStarted, const STRUCTURE *)
+IMPL_EVENT_HANDLER(eventDroidIdle, const Droid *)
+IMPL_EVENT_HANDLER(eventDroidBuilt, const Droid *, optional<const Structure *>)
+IMPL_EVENT_HANDLER(eventStructureBuilt, const Structure *, optional<const Droid *>)
+IMPL_EVENT_HANDLER(eventStructureDemolish, const Structure *, optional<const Droid *>)
+IMPL_EVENT_HANDLER(eventStructureReady, const Structure *)
+IMPL_EVENT_HANDLER(eventStructureUpgradeStarted, const Structure *)
 IMPL_EVENT_HANDLER(eventAttacked, const BASE_OBJECT *, const BASE_OBJECT *)
-IMPL_EVENT_HANDLER(eventResearched, const wzapi::researchResult&, wzapi::event_nullable_ptr<const STRUCTURE>, int)
+IMPL_EVENT_HANDLER(eventResearched, const wzapi::researchResult&, wzapi::event_nullable_ptr<const Structure>, int)
 IMPL_EVENT_HANDLER(eventDestroyed, const BASE_OBJECT *)
-IMPL_EVENT_HANDLER(eventPickup, const FEATURE *, const DROID *)
+IMPL_EVENT_HANDLER(eventPickup, const FEATURE *, const Droid *)
 IMPL_EVENT_HANDLER(eventObjectSeen, const BASE_OBJECT *, const BASE_OBJECT *)
 IMPL_EVENT_HANDLER(eventGroupSeen, const BASE_OBJECT *, int)
 IMPL_EVENT_HANDLER(eventObjectTransfer, const BASE_OBJECT *, int)
@@ -3127,7 +3127,7 @@ IMPL_EVENT_HANDLER(eventBeacon, int, int, int, int, optional<const char *>)
 IMPL_EVENT_HANDLER(eventBeaconRemoved, int, int)
 IMPL_EVENT_HANDLER(eventGroupLoss, const BASE_OBJECT *, int, int)
 
-bool quickjs_scripting_instance::handle_eventArea(const std::string& label, const DROID* psDroid)
+bool quickjs_scripting_instance::handle_eventArea(const std::string& label, const Droid* psDroid)
 {
 	std::vector<JSValue> args;
 	args.push_back(convDroid(psDroid, ctx));
@@ -3138,7 +3138,7 @@ bool quickjs_scripting_instance::handle_eventArea(const std::string& label, cons
 	return true;
 }
 
-IMPL_EVENT_HANDLER(eventDesignCreated, const DROID_TEMPLATE *)
+IMPL_EVENT_HANDLER(eventDesignCreated, const DroidTemplate *)
 IMPL_EVENT_HANDLER(eventAllianceOffer, uint8_t, uint8_t)
 IMPL_EVENT_HANDLER(eventAllianceAccepted, uint8_t, uint8_t)
 IMPL_EVENT_HANDLER(eventAllianceBroken, uint8_t, uint8_t)
@@ -3176,7 +3176,7 @@ static JSValue js_enumTemplates(JSContext* ctx, JSValueConst this_val, int argc,
 
 	JSValue result = JS_NewArray(ctx); //engine->newArray(droidTemplates[player].size());
 	uint32_t count = 0;
-	enumerateTemplates(player, [ctx, &result, &count](DROID_TEMPLATE* psTemplate)
+	enumerateTemplates(player, [ctx, &result, &count](DroidTemplate* psTemplate)
 	{
 		JS_DefinePropertyValueUint32(ctx, result, count, convTemplate(psTemplate, ctx), 0); // TODO: Check return value?
 		count++;

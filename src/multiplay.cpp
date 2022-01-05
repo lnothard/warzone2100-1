@@ -220,7 +220,7 @@ bool multiplayerWinSequence(bool firstCall)
 	static Position pos = Position(0, 0, 0);
 	static UDWORD last = 0;
 	float rotAmount;
-	STRUCTURE* psStruct;
+	Structure* psStruct;
 
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
@@ -409,13 +409,13 @@ bool multiPlayerLoop()
 // quikie functions.
 
 // to get droids ...
-DROID* IdToDroid(UDWORD id, UDWORD player)
+Droid* IdToDroid(UDWORD id, UDWORD player)
 {
 	if (player == ANYPLAYER)
 	{
 		for (int i = 0; i < MAX_PLAYERS; i++)
 		{
-			for (DROID* d = apsDroidLists[i]; d; d = d->psNext)
+			for (Droid* d = apsDroidLists[i]; d; d = d->psNext)
 			{
 				if (d->id == id)
 				{
@@ -426,7 +426,7 @@ DROID* IdToDroid(UDWORD id, UDWORD player)
 	}
 	else if (player < MAX_PLAYERS)
 	{
-		for (DROID* d = apsDroidLists[player]; d; d = d->psNext)
+		for (Droid* d = apsDroidLists[player]; d; d = d->psNext)
 		{
 			if (d->id == id)
 			{
@@ -438,13 +438,13 @@ DROID* IdToDroid(UDWORD id, UDWORD player)
 }
 
 // find off-world droids
-DROID* IdToMissionDroid(UDWORD id, UDWORD player)
+Droid* IdToMissionDroid(UDWORD id, UDWORD player)
 {
 	if (player == ANYPLAYER)
 	{
 		for (int i = 0; i < MAX_PLAYERS; i++)
 		{
-			for (DROID* d = mission.apsDroidLists[i]; d; d = d->psNext)
+			for (Droid* d = mission.apsDroidLists[i]; d; d = d->psNext)
 			{
 				if (d->id == id)
 				{
@@ -455,7 +455,7 @@ DROID* IdToMissionDroid(UDWORD id, UDWORD player)
 	}
 	else if (player < MAX_PLAYERS)
 	{
-		for (DROID* d = mission.apsDroidLists[player]; d; d = d->psNext)
+		for (Droid* d = mission.apsDroidLists[player]; d; d = d->psNext)
 		{
 			if (d->id == id)
 			{
@@ -468,7 +468,7 @@ DROID* IdToMissionDroid(UDWORD id, UDWORD player)
 
 // ////////////////////////////////////////////////////////////////////////////
 // find a structure
-STRUCTURE* IdToStruct(UDWORD id, UDWORD player)
+Structure* IdToStruct(UDWORD id, UDWORD player)
 {
 	int beginPlayer = 0, endPlayer = MAX_PLAYERS;
 	if (player != ANYPLAYER)
@@ -476,12 +476,12 @@ STRUCTURE* IdToStruct(UDWORD id, UDWORD player)
 		beginPlayer = player;
 		endPlayer = std::min<int>(player + 1, MAX_PLAYERS);
 	}
-	STRUCTURE** lists[2] = {apsStructLists, mission.apsStructLists};
+	Structure** lists[2] = {apsStructLists, mission.apsStructLists};
 	for (int j = 0; j < 2; ++j)
 	{
 		for (int i = beginPlayer; i < endPlayer; ++i)
 		{
-			for (STRUCTURE* d = lists[j][i]; d; d = d->psNext)
+			for (Structure* d = lists[j][i]; d; d = d->psNext)
 			{
 				if (d->id == id)
 				{
@@ -510,7 +510,7 @@ FEATURE* IdToFeature(UDWORD id, UDWORD player)
 
 // ////////////////////////////////////////////////////////////////////////////
 
-DROID_TEMPLATE* IdToTemplate(UDWORD tempId, UDWORD player)
+DroidTemplate* IdToTemplate(UDWORD tempId, UDWORD player)
 {
 	// Check if we know which player this is from, in that case, assume it is a player template
 	// FIXME: nuke the ANYPLAYER hack
@@ -537,8 +537,8 @@ DROID_TEMPLATE* IdToTemplate(UDWORD tempId, UDWORD player)
 //  Returns a pointer to base object, given an id and optionally a player.
 BASE_OBJECT* IdToPointer(UDWORD id, UDWORD player)
 {
-	DROID* pD;
-	STRUCTURE* pS;
+	Droid* pD;
+	Structure* pS;
 	FEATURE* pF;
 	// droids.
 
@@ -670,7 +670,7 @@ int scavengerPlayer()
 Vector3i cameraToHome(UDWORD player, bool scroll)
 {
 	UDWORD x, y;
-	STRUCTURE* psBuilding = nullptr;
+	Structure* psBuilding = nullptr;
 
 	if (player < MAX_PLAYERS)
 	{
@@ -1498,7 +1498,7 @@ static bool recvResearch(NETQUEUE queue)
 // ////////////////////////////////////////////////////////////////////////////
 // New research stuff, so you can see what others are up to!
 // inform others that I'm researching this.
-bool sendResearchStatus(const STRUCTURE* psBuilding, uint32_t index, uint8_t player, bool bStart)
+bool sendResearchStatus(const Structure* psBuilding, uint32_t index, uint8_t player, bool bStart)
 {
 	if (!myResponsibility(player) || gameTime < 5)
 	{
@@ -1531,10 +1531,10 @@ bool sendResearchStatus(const STRUCTURE* psBuilding, uint32_t index, uint8_t pla
 	return true;
 }
 
-STRUCTURE* findResearchingFacilityByResearchIndex(unsigned player, unsigned index)
+Structure* findResearchingFacilityByResearchIndex(unsigned player, unsigned index)
 {
 	// Go through the structs to find the one doing this topic
-	for (STRUCTURE* psBuilding = apsStructLists[player]; psBuilding; psBuilding = psBuilding->psNext)
+	for (Structure* psBuilding = apsStructLists[player]; psBuilding; psBuilding = psBuilding->psNext)
 	{
 		if (psBuilding->pStructureType->type == REF_RESEARCH
 			&& ((RESEARCH_FACILITY*)psBuilding->pFunctionality)->psSubject
@@ -1548,7 +1548,7 @@ STRUCTURE* findResearchingFacilityByResearchIndex(unsigned player, unsigned inde
 
 bool recvResearchStatus(NETQUEUE queue)
 {
-	STRUCTURE* psBuilding;
+	Structure* psBuilding;
 	PLAYER_RESEARCH* pPlayerRes;
 	RESEARCH_FACILITY* psResFacilty;
 	RESEARCH* pResearch;
@@ -1614,7 +1614,7 @@ bool recvResearchStatus(NETQUEUE queue)
 
 			if (IsResearchStarted(pPlayerRes))
 			{
-				STRUCTURE* psOtherBuilding = findResearchingFacilityByResearchIndex(player, index);
+				Structure* psOtherBuilding = findResearchingFacilityByResearchIndex(player, index);
 				ASSERT(psOtherBuilding != nullptr, "Something researched but no facility.");
 				if (psOtherBuilding != nullptr)
 				{
@@ -2370,8 +2370,8 @@ bool makePlayerSpectator(uint32_t playerIndex, bool removeAllStructs, bool quiet
 		setPower(playerIndex, 0);
 
 		// Destroy HQ
-		std::vector<STRUCTURE*> hqStructs;
-		for (STRUCTURE* psStruct = apsStructLists[playerIndex]; psStruct; psStruct = psStruct->psNext)
+		std::vector<Structure*> hqStructs;
+		for (Structure* psStruct = apsStructLists[playerIndex]; psStruct; psStruct = psStruct->psNext)
 		{
 			if (REF_HQ == psStruct->pStructureType->type)
 			{
@@ -2406,10 +2406,10 @@ bool makePlayerSpectator(uint32_t playerIndex, bool removeAllStructs, bool quiet
 
 		// Destroy structs
 		debug(LOG_DEATH, "killing off structures for player %d", playerIndex);
-		STRUCTURE* psStruct = apsStructLists[playerIndex];
+		Structure* psStruct = apsStructLists[playerIndex];
 		while (psStruct) // delete structs
 		{
-			STRUCTURE* psNext = psStruct->psNext;
+			Structure* psNext = psStruct->psNext;
 
 			if (removeAllStructs
 				|| psStruct->pStructureType->type == REF_POWER_GEN

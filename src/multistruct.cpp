@@ -58,7 +58,7 @@
 
 // ////////////////////////////////////////////////////////////////////////////
 // INFORM others that a building has been completed.
-bool SendBuildFinished(STRUCTURE* psStruct)
+bool SendBuildFinished(Structure* psStruct)
 {
 	uint8_t player = psStruct->player;
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "invalid player %u", player);
@@ -77,7 +77,7 @@ bool SendBuildFinished(STRUCTURE* psStruct)
 bool recvBuildFinished(NETQUEUE queue)
 {
 	uint32_t structId;
-	STRUCTURE* psStruct;
+	Structure* psStruct;
 	Position pos;
 	uint32_t type, typeindex;
 	uint8_t player;
@@ -167,7 +167,7 @@ bool recvBuildFinished(NETQUEUE queue)
 
 // ////////////////////////////////////////////////////////////////////////////
 // Inform others that a structure has been destroyed
-bool SendDestroyStructure(STRUCTURE* s)
+bool SendDestroyStructure(Structure* s)
 {
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_REMOVE_STRUCTURE);
 
@@ -182,7 +182,7 @@ bool SendDestroyStructure(STRUCTURE* s)
 bool recvDestroyStructure(NETQUEUE queue)
 {
 	uint32_t structID;
-	STRUCTURE* psStruct;
+	Structure* psStruct;
 
 	NETbeginDecode(queue, GAME_DEBUG_REMOVE_STRUCTURE);
 	NETuint32_t(&structID);
@@ -213,7 +213,7 @@ bool recvDestroyStructure(NETQUEUE queue)
 // ////////////////////////////////////////////////////////////////////////////
 //lassat is firing
 
-bool sendLasSat(UBYTE player, STRUCTURE* psStruct, BASE_OBJECT* psObj)
+bool sendLasSat(UBYTE player, Structure* psStruct, BASE_OBJECT* psObj)
 {
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_LASSAT);
 
@@ -230,7 +230,7 @@ bool recvLasSat(NETQUEUE queue)
 {
 	BASE_OBJECT* psObj;
 	UBYTE player, targetplayer;
-	STRUCTURE* psStruct;
+	Structure* psStruct;
 	uint32_t id, targetid;
 
 	NETbeginDecode(queue, GAME_LASSAT);
@@ -277,7 +277,7 @@ bool recvLasSat(NETQUEUE queue)
 	return true;
 }
 
-void sendStructureInfo(STRUCTURE* psStruct, STRUCTURE_INFO structureInfo_, DROID_TEMPLATE* pT)
+void sendStructureInfo(Structure* psStruct, STRUCTURE_INFO structureInfo_, DroidTemplate* pT)
 {
 	uint8_t player = psStruct->player;
 	uint32_t structId = psStruct->id;
@@ -289,10 +289,10 @@ void sendStructureInfo(STRUCTURE* psStruct, STRUCTURE_INFO structureInfo_, DROID
 	NETuint8_t(&structureInfo);
 	if (structureInfo_ == STRUCTUREINFO_MANUFACTURE)
 	{
-		int32_t droidType = pT->droidType;
+		int32_t droidType = pT->type;
 		WzString name = pT->name;
 		NETwzstring(name);
-		NETuint32_t(&pT->multiPlayerID);
+		NETuint32_t(&pT->id);
 		NETint32_t(&droidType);
 		NETuint8_t(&pT->asParts[COMP_BODY]);
 		NETuint8_t(&pT->asParts[COMP_BRAIN]);
@@ -301,8 +301,8 @@ void sendStructureInfo(STRUCTURE* psStruct, STRUCTURE_INFO structureInfo_, DROID
 		NETuint8_t(&pT->asParts[COMP_ECM]);
 		NETuint8_t(&pT->asParts[COMP_SENSOR]);
 		NETuint8_t(&pT->asParts[COMP_CONSTRUCT]);
-		NETint8_t(&pT->numWeaps);
-		for (int i = 0; i < pT->numWeaps; i++)
+		NETint8_t(&pT->weapon_count);
+		for (int i = 0; i < pT->weapon_count; i++)
 		{
 			NETuint32_t(&pT->asWeaps[i]);
 		}
@@ -315,8 +315,8 @@ void recvStructureInfo(NETQUEUE queue)
 	uint8_t player = 0;
 	uint32_t structId = 0;
 	uint8_t structureInfo;
-	STRUCTURE* psStruct;
-	DROID_TEMPLATE t, *pT = &t;
+	Structure* psStruct;
+	DroidTemplate t, *pT = &t;
 	int32_t droidType;
 
 	NETbeginDecode(queue, GAME_STRUCTUREINFO);
@@ -328,7 +328,7 @@ void recvStructureInfo(NETQUEUE queue)
 		WzString name;
 		NETwzstring(name);
 		pT->name = name;
-		NETuint32_t(&pT->multiPlayerID);
+		NETuint32_t(&pT->id);
 		NETint32_t(&droidType);
 		NETuint8_t(&pT->asParts[COMP_BODY]);
 		NETuint8_t(&pT->asParts[COMP_BRAIN]);
@@ -337,14 +337,14 @@ void recvStructureInfo(NETQUEUE queue)
 		NETuint8_t(&pT->asParts[COMP_ECM]);
 		NETuint8_t(&pT->asParts[COMP_SENSOR]);
 		NETuint8_t(&pT->asParts[COMP_CONSTRUCT]);
-		NETint8_t(&pT->numWeaps);
-		ASSERT_OR_RETURN(, pT->numWeaps >= 0 && pT->numWeaps <= ARRAY_SIZE(pT->asWeaps), "Bad numWeaps %d",
-		                   pT->numWeaps);
-		for (int i = 0; i < pT->numWeaps; i++)
+		NETint8_t(&pT->weapon_count);
+		ASSERT_OR_RETURN(, pT->weapon_count >= 0 && pT->weapon_count <= ARRAY_SIZE(pT->asWeaps), "Bad numWeaps %d",
+                       pT->weapon_count);
+		for (int i = 0; i < pT->weapon_count; i++)
 		{
 			NETuint32_t(&pT->asWeaps[i]);
 		}
-		pT->droidType = (DROID_TYPE)droidType;
+		pT->type = (DROID_TYPE)droidType;
 		pT = copyTemplate(player, pT);
 	}
 	NETend();

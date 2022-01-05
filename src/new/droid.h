@@ -241,7 +241,7 @@ private:
 [[nodiscard]] bool is_transporter(const Droid& droid);
 [[nodiscard]] bool is_builder(const Droid& droid);
 [[nodiscard]] bool is_repairer(const Droid& droid);
-[[nodiscard]] bool is_IDF(const Droid& droid);
+[[nodiscard]] bool is_idf(const Droid& droid);
 [[nodiscard]] bool is_commander(const Droid& droid) noexcept;
 
 /**

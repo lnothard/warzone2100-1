@@ -87,13 +87,13 @@ static glm::mat4 setMatrix(const Vector3i* Position, const Vector3i* Rotation, i
 		glm::scale(glm::vec3(scale / 100.f));
 }
 
-UDWORD getComponentDroidRadius(DROID*)
+UDWORD getComponentDroidRadius(Droid*)
 {
 	return 100;
 }
 
 
-UDWORD getComponentDroidTemplateRadius(DROID_TEMPLATE*)
+UDWORD getComponentDroidTemplateRadius(DroidTemplate*)
 {
 	return 100;
 }
@@ -142,23 +142,23 @@ UDWORD getResearchRadius(BASE_STATS* Stat)
 }
 
 
-UDWORD getStructureSizeMax(STRUCTURE* psStructure)
+UDWORD getStructureSizeMax(Structure* psStructure)
 {
 	//radius based on base plate size
-	return MAX(psStructure->pStructureType->baseWidth, psStructure->pStructureType->baseBreadth);
+	return MAX(psStructure->pStructureType->base_width, psStructure->pStructureType->base_breadth);
 }
 
-UDWORD getStructureStatSizeMax(STRUCTURE_STATS* Stats)
+UDWORD getStructureStatSizeMax(StructureStats* Stats)
 {
 	//radius based on base plate size
-	return MAX(Stats->baseWidth, Stats->baseBreadth);
+	return MAX(Stats->base_width, Stats->base_breadth);
 }
 
-UDWORD getStructureStatHeight(STRUCTURE_STATS* psStat)
+UDWORD getStructureStatHeight(StructureStats* psStat)
 {
-	if (psStat->pIMD[0])
+	if (psStat->IMDs[0])
 	{
-		return (psStat->pIMD[0]->max.y - psStat->pIMD[0]->min.y);
+		return (psStat->IMDs[0]->max.y - psStat->IMDs[0]->min.y);
 	}
 
 	return 0;
@@ -176,7 +176,7 @@ void displayIMDButton(iIMDShape* IMDShape, const Vector3i* Rotation, const Vecto
 	draw_player_3d_shape(selectedPlayer, IMDShape, 0, WZCOL_WHITE, pie_BUTTON, 0, setMatrix(Position, Rotation, scale));
 }
 
-static void sharedStructureButton(STRUCTURE_STATS* Stats, iIMDShape* strImd, const Vector3i* Rotation,
+static void sharedStructureButton(StructureStats* Stats, iIMDShape* strImd, const Vector3i* Rotation,
                                   const Vector3i* Position, int scale)
 {
 	iIMDShape *baseImd, *mountImd[MAX_WEAPONS], *weaponImd[MAX_WEAPONS];
@@ -192,7 +192,7 @@ static void sharedStructureButton(STRUCTURE_STATS* Stats, iIMDShape* strImd, con
 	const glm::mat4 matrix = setMatrix(&pos, Rotation, scale);
 
 	/* Draw the building's base first */
-	baseImd = Stats->pBaseIMD;
+	baseImd = Stats->base_imd;
 
 	if (baseImd != nullptr)
 	{
@@ -225,20 +225,20 @@ static void sharedStructureButton(STRUCTURE_STATS* Stats, iIMDShape* strImd, con
 			if (weaponImd[i] == nullptr)
 			{
 				//check for ECM
-				if (Stats->pECM != nullptr)
+				if (Stats->ecm_stats != nullptr)
 				{
-					weaponImd[i] = Stats->pECM->pIMD;
-					mountImd[i] = Stats->pECM->pMountGraphic;
+					weaponImd[i] = Stats->ecm_stats->pIMD;
+					mountImd[i] = Stats->ecm_stats->pMountGraphic;
 				}
 			}
 
 			if (weaponImd[i] == nullptr)
 			{
 				//check for sensor
-				if (Stats->pSensor != nullptr)
+				if (Stats->sensor_stats != nullptr)
 				{
-					weaponImd[i] = Stats->pSensor->pIMD;
-					mountImd[i] = Stats->pSensor->pMountGraphic;
+					weaponImd[i] = Stats->sensor_stats->pIMD;
+					mountImd[i] = Stats->sensor_stats->pMountGraphic;
 				}
 			}
 		}
@@ -265,14 +265,14 @@ static void sharedStructureButton(STRUCTURE_STATS* Stats, iIMDShape* strImd, con
 	}
 }
 
-void displayStructureButton(STRUCTURE* psStructure, const Vector3i* rotation, const Vector3i* Position, int scale)
+void displayStructureButton(Structure* psStructure, const Vector3i* rotation, const Vector3i* Position, int scale)
 {
 	sharedStructureButton(psStructure->pStructureType, psStructure->sDisplay.imd, rotation, Position, scale);
 }
 
-void displayStructureStatButton(STRUCTURE_STATS* Stats, const Vector3i* rotation, const Vector3i* Position, int scale)
+void displayStructureStatButton(StructureStats* Stats, const Vector3i* rotation, const Vector3i* Position, int scale)
 {
-	sharedStructureButton(Stats, Stats->pIMD[0], rotation, Position, scale);
+	sharedStructureButton(Stats, Stats->IMDs[0], rotation, Position, scale);
 }
 
 // Render a component given a BASE_STATS structure.
@@ -339,14 +339,14 @@ void displayResearchButton(BASE_STATS* Stat, const Vector3i* Rotation, const Vec
 }
 
 
-static inline iIMDShape* getLeftPropulsionIMD(DROID* psDroid)
+static inline iIMDShape* getLeftPropulsionIMD(Droid* psDroid)
 {
 	int bodyStat = psDroid->asBits[COMP_BODY];
 	int propStat = psDroid->asBits[COMP_PROPULSION];
 	return asBodyStats[bodyStat].ppIMDList[propStat * NUM_PROP_SIDES + LEFT_PROP];
 }
 
-static inline iIMDShape* getRightPropulsionIMD(DROID* psDroid)
+static inline iIMDShape* getRightPropulsionIMD(Droid* psDroid)
 {
 	int bodyStat = psDroid->asBits[COMP_BODY];
 	int propStat = psDroid->asBits[COMP_PROPULSION];
@@ -401,7 +401,7 @@ void drawMuzzleFlash(WEAPON sWeap, iIMDShape* weaponImd, iIMDShape* flashImd, PI
 /* Assumes matrix context is already set */
 // this is able to handle multiple weapon graphics now
 // removed mountRotation,they get such stuff from psObj directly now
-static bool displayCompObj(DROID* psDroid, bool bButton, const glm::mat4& viewMatrix)
+static bool displayCompObj(Droid* psDroid, bool bButton, const glm::mat4& viewMatrix)
 {
 	iIMDShape *psMoveAnim, *psStillAnim;
 	SDWORD iConnector;
@@ -492,7 +492,7 @@ static bool displayCompObj(DROID* psDroid, bool bButton, const glm::mat4& viewMa
 	if (psShapeBody)
 	{
 		iIMDShape* strImd = psShapeBody;
-		if (psDroid->droidType == DROID_PERSON)
+		if (psDroid->type == DROID_PERSON)
 		{
 			modelMatrix *= glm::scale(glm::vec3(.75f)); // FIXME - hideous....!!!!
 		}
@@ -515,7 +515,7 @@ static bool displayCompObj(DROID* psDroid, bool bButton, const glm::mat4& viewMa
 	psMoveAnim = asBodyStats[psDroid->asBits[COMP_BODY]].ppMoveIMDList[psDroid->asBits[COMP_PROPULSION]];
 	psStillAnim = asBodyStats[psDroid->asBits[COMP_BODY]].ppStillIMDList[psDroid->asBits[COMP_PROPULSION]];
 	glm::mat4 viewModelMatrix = viewMatrix * modelMatrix;
-	if (!bButton && psMoveAnim && psDroid->sMove.Status != MOVEINACTIVE)
+	if (!bButton && psMoveAnim && psDroid->movement.Status != MOVEINACTIVE)
 	{
 		if (pie_Draw3DShape(psMoveAnim, getModularScaledGraphicsTime(psMoveAnim->animInterval, psMoveAnim->numFrames),
 		                    colour, brightness, pie_ADDITIVE, 200, viewModelMatrix))
@@ -563,7 +563,7 @@ static bool displayCompObj(DROID* psDroid, bool bButton, const glm::mat4& viewMa
 		 * all others to connector 1 */
 		/* VTOL's now skip the first 5 connectors(0 to 4),
 		VTOL's use 5,6,7,8 etc now */
-		if (psPropStats->propulsionType == PROPULSION_TYPE_LIFT && psDroid->droidType == DROID_WEAPON)
+		if (psPropStats->propulsionType == PROPULSION_TYPE_LIFT && psDroid->type == DROID_WEAPON)
 		{
 			iConnector = VTOL_CONNECTOR_START;
 		}
@@ -572,7 +572,7 @@ static bool displayCompObj(DROID* psDroid, bool bButton, const glm::mat4& viewMa
 			iConnector = 0;
 		}
 
-		switch (psDroid->droidType)
+		switch (psDroid->type)
 		{
 		case DROID_DEFAULT:
 		case DROID_TRANSPORTER:
@@ -587,7 +587,7 @@ static bool displayCompObj(DROID* psDroid, bool bButton, const glm::mat4& viewMa
 			/* Double check that the weapon droid actually has any */
 			for (i = 0; i < psDroid->numWeaps; i++)
 			{
-				if ((psDroid->asWeaps[i].nStat > 0 || psDroid->droidType == DROID_DEFAULT)
+				if ((psDroid->asWeaps[i].nStat > 0 || psDroid->type == DROID_DEFAULT)
 					&& psShapeBody->connectors)
 				{
 					Rotation rot = getInterpolatedWeaponRotation(psDroid, i, graphicsTime);
@@ -676,7 +676,7 @@ static bool displayCompObj(DROID* psDroid, bool bButton, const glm::mat4& viewMa
 				iIMDShape* psShape = nullptr;
 				iIMDShape* psMountShape = nullptr;
 
-				switch (psDroid->droidType)
+				switch (psDroid->type)
 				{
 				default:
 					ASSERT(false, "Bad component type");
@@ -746,8 +746,8 @@ static bool displayCompObj(DROID* psDroid, bool bButton, const glm::mat4& viewMa
 					}
 
 					// In repair droid case only:
-					if ((psDroid->droidType == DROID_REPAIR || psDroid->droidType == DROID_CYBORG_REPAIR) &&
-						psShape->nconnectors && psDroid->action == DACTION_DROIDREPAIR)
+					if ((psDroid->type == DROID_REPAIR || psDroid->type == DROID_CYBORG_REPAIR) &&
+							psShape->nconnectors && psDroid->action == DACTION_DROIDREPAIR)
 					{
 						Spacetime st = interpolateObjectSpacetime(psDroid, graphicsTime);
 						localModelMatrix *= glm::translate(glm::vec3(psShape->connectors[0].xzy()));
@@ -816,7 +816,7 @@ static bool displayCompObj(DROID* psDroid, bool bButton, const glm::mat4& viewMa
 
 // Render a composite droid given a DROID_TEMPLATE structure.
 //
-void displayComponentButtonTemplate(DROID_TEMPLATE* psTemplate, const Vector3i* Rotation, const Vector3i* Position,
+void displayComponentButtonTemplate(DroidTemplate* psTemplate, const Vector3i* Rotation, const Vector3i* Position,
                                     int scale)
 {
 	const glm::mat4 matrix = setMatrix(Position, Rotation, scale);
@@ -824,7 +824,7 @@ void displayComponentButtonTemplate(DROID_TEMPLATE* psTemplate, const Vector3i* 
 	// Decide how to sort it.
 	leftFirst = angleDelta(DEG(Rotation->y)) < 0;
 
-	DROID Droid(0, selectedPlayer);
+	Droid Droid(0, selectedPlayer);
 	memset(Droid.asBits, 0, sizeof(Droid.asBits));
 	droidSetBits(psTemplate, &Droid);
 
@@ -838,7 +838,7 @@ void displayComponentButtonTemplate(DROID_TEMPLATE* psTemplate, const Vector3i* 
 
 // Render a composite droid given a DROID structure.
 //
-void displayComponentButtonObject(DROID* psDroid, const Vector3i* Rotation, const Vector3i* Position, int scale)
+void displayComponentButtonObject(Droid* psDroid, const Vector3i* Rotation, const Vector3i* Position, int scale)
 {
 	SDWORD difference;
 
@@ -856,7 +856,7 @@ void displayComponentButtonObject(DROID* psDroid, const Vector3i* Rotation, cons
 
 /* Assumes matrix context is already set */
 // multiple turrets display removed the pointless mountRotation
-void displayComponentObject(DROID* psDroid, const glm::mat4& viewMatrix)
+void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix)
 {
 	Vector3i position, rotation;
 	Spacetime st = interpolateObjectSpacetime(psDroid, graphicsTime);
@@ -931,7 +931,7 @@ void displayComponentObject(DROID* psDroid, const glm::mat4& viewMatrix)
 }
 
 
-void destroyFXDroid(DROID* psDroid, unsigned impactTime)
+void destroyFXDroid(Droid* psDroid, unsigned impactTime)
 {
 	for (int i = 0; i < 5; ++i)
 	{
@@ -945,7 +945,7 @@ void destroyFXDroid(DROID* psDroid, unsigned impactTime)
 		switch (i)
 		{
 		case 0:
-			switch (psDroid->droidType)
+			switch (psDroid->type)
 			{
 			case DROID_DEFAULT:
 			case DROID_CYBORG:
@@ -967,7 +967,7 @@ void destroyFXDroid(DROID* psDroid, unsigned impactTime)
 			}
 			break;
 		case 1:
-			switch (psDroid->droidType)
+			switch (psDroid->type)
 			{
 			case DROID_DEFAULT:
 			case DROID_CYBORG:
@@ -999,7 +999,7 @@ void destroyFXDroid(DROID* psDroid, unsigned impactTime)
 }
 
 
-void compPersonToBits(DROID* psDroid)
+void compPersonToBits(Droid* psDroid)
 {
 	Vector3i position; //,rotation,velocity;
 	iIMDShape *headImd, *legsImd, *armImd, *bodyImd;

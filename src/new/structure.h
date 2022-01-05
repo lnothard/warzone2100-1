@@ -15,67 +15,67 @@ static constexpr auto MAX_IN_RUN = 9;
 static constexpr auto MAX_POWER_MODULES = 4;
 static constexpr auto MAX_FACTORY_MODULES = 2;
 
-enum class STRUCTURE_STATE
-{
-	BEING_BUILT,
-	BUILT,
-	BLUEPRINT_VALID,
-	BLUEPRINT_INVALID,
-	BLUEPRINT_PLANNED,
-	BLUEPRINT_PLANNED_BY_ALLY,
-};
+//enum class STRUCTURE_STATE
+//{
+//	BEING_BUILT,
+//	BUILT,
+//	BLUEPRINT_VALID,
+//	BLUEPRINT_INVALID,
+//	BLUEPRINT_PLANNED,
+//	BLUEPRINT_PLANNED_BY_ALLY,
+//};
+//
+//enum class STRUCTURE_TYPE
+//{
+//	HQ,
+//	FACTORY,
+//	FACTORY_MODULE,
+//	POWER_GEN,
+//	POWER_MODULE,
+//	RESOURCE_EXTRACTOR,
+//	DEFENSE,
+//	WALL,
+//	WALL_CORNER,
+//	GENERIC,
+//	RESEARCH,
+//	RESEARCH_MODULE,
+//	REPAIR_FACILITY,
+//	COMMAND_CONTROL,
+//	BRIDGE,
+//	DEMOLISH,
+//	CYBORG_FACTORY,
+//	VTOL_FACTORY,
+//	LAB,
+//	REARM_PAD,
+//	MISSILE_SILO,
+//	SAT_UPLINK,
+//	GATE,
+//	LASSAT
+//};
+//
+//enum class STRUCTURE_STRENGTH
+//{
+//	SOFT,
+//	MEDIUM,
+//	HARD,
+//	BUNKER
+//};
+//
+//enum class STRUCTURE_ANIMATION_STATE
+//{
+//	NORMAL,
+//	OPEN,
+//	OPENING,
+//	CLOSING
+//};
 
-enum class STRUCTURE_TYPE
-{
-	HQ,
-	FACTORY,
-	FACTORY_MODULE,
-	POWER_GEN,
-	POWER_MODULE,
-	RESOURCE_EXTRACTOR,
-	DEFENSE,
-	WALL,
-	WALL_CORNER,
-	GENERIC,
-	RESEARCH,
-	RESEARCH_MODULE,
-	REPAIR_FACILITY,
-	COMMAND_CONTROL,
-	BRIDGE,
-	DEMOLISH,
-	CYBORG_FACTORY,
-	VTOL_FACTORY,
-	LAB,
-	REARM_PAD,
-	MISSILE_SILO,
-	SAT_UPLINK,
-	GATE,
-	LASSAT
-};
-
-enum class STRUCTURE_STRENGTH
-{
-	SOFT,
-	MEDIUM,
-	HARD,
-	BUNKER
-};
-
-enum class STRUCTURE_ANIMATION_STATE
-{
-	NORMAL,
-	OPEN,
-	OPENING,
-	CLOSING
-};
-
-enum class PENDING_STATUS
-{
-	NOTHING_PENDING,
-	START_PENDING,
-	HOLD_PENDING,
-	CANCEL_PENDING
-};
+//enum class PENDING_STATUS
+//{
+//	NOTHING_PENDING,
+//	START_PENDING,
+//	HOLD_PENDING,
+//	CANCEL_PENDING
+//};
 
 /**
  * 
@@ -84,6 +84,8 @@ struct StructureBounds
 {
 	StructureBounds();
 	StructureBounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords);
+
+  [[nodiscard]] bool is_valid() const;
 
 	Vector2i top_left_coords {0, 0};
 	Vector2i size_in_coords {0, 0};
@@ -131,57 +133,57 @@ struct Structure_Stats
 	unsigned num_weapons_default = 0;
 };
 
-class Structure : public virtual Unit
-{
-public:
-	virtual ~Structure() = default;
-	Structure(const Structure&) = delete;
-	Structure(Structure&&) = delete;
-	Structure& operator=(const Structure&) = delete;
-	Structure& operator=(Structure&&) = delete;
-
-	virtual void print_info() const = 0;
-	virtual bool has_sensor() const = 0;
-	virtual bool has_standard_sensor() const = 0;
-	virtual bool has_CB_sensor() const = 0;
-	virtual bool has_VTOL_intercept_sensor() const = 0;
-	virtual bool has_VTOL_CB_sensor() const = 0;
-};
+//class Structure : public virtual Unit
+//{
+//public:
+//	virtual ~Structure() = default;
+//	Structure(const Structure&) = delete;
+//	Structure(Structure&&) = delete;
+//	Structure& operator=(const Structure&) = delete;
+//	Structure& operator=(Structure&&) = delete;
+//
+//	virtual void print_info() const = 0;
+//	virtual bool has_sensor() const = 0;
+//	virtual bool has_standard_sensor() const = 0;
+//	virtual bool has_CB_sensor() const = 0;
+//	virtual bool has_VTOL_intercept_sensor() const = 0;
+//	virtual bool has_VTOL_CB_sensor() const = 0;
+//};
 
 namespace Impl
 {
 	class Structure : public virtual ::Structure, public Impl::Unit
 	{
-	public:
-		Structure(unsigned id, unsigned player);
-
-		[[nodiscard]] bool is_blueprint() const noexcept;
-		[[nodiscard]] bool is_wall() const noexcept;
-		[[nodiscard]] bool is_radar_detector() const final;
-		[[nodiscard]] bool is_probably_doomed() const;
-		[[nodiscard]] bool is_pulled_to_terrain() const;
-		[[nodiscard]] bool has_modules() const noexcept;
-		[[nodiscard]] bool has_sensor() const final;
-		[[nodiscard]] bool has_standard_sensor() const final;
-		[[nodiscard]] bool has_CB_sensor() const final;
-		[[nodiscard]] bool has_VTOL_intercept_sensor() const final;
-		[[nodiscard]] bool has_VTOL_CB_sensor() const final;
-		[[nodiscard]] bool smoke_when_damaged() const noexcept;
-		[[nodiscard]] unsigned get_original_hp() const;
-    [[nodiscard]] unsigned Structure::get_armour_value(WEAPON_CLASS weapon_class) const;
-		[[nodiscard]] Vector2i get_size() const;
-		[[nodiscard]] int get_foundation_depth() const noexcept;
-		[[nodiscard]] const iIMDShape& get_IMD_shape() const final;
-		void update_expected_damage(unsigned damage, bool is_direct) noexcept override;
-		[[nodiscard]] unsigned calculate_sensor_range() const final;
-		[[nodiscard]] int calculate_gate_height(const std::size_t time, const int minimum) const;
-		void set_foundation_depth(int depth) noexcept;
-		void print_info() const override;
-    [[nodiscard]] unsigned build_points_to_completion() const;
-    [[nodiscard]] unsigned calculate_refunded_power() const;
-    [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
-    [[nodiscard]] const ::SimpleObject& get_target(int weapon_slot) const final;
-    [[nodiscard]] STRUCTURE_STATE get_state() const;
+//	public:
+//		Structure(unsigned id, unsigned player);
+//
+//		[[nodiscard]] bool is_blueprint() const noexcept;
+//		[[nodiscard]] bool is_wall() const noexcept;
+//		[[nodiscard]] bool is_radar_detector() const final;
+//		[[nodiscard]] bool is_probably_doomed() const;
+//		[[nodiscard]] bool is_pulled_to_terrain() const;
+//		[[nodiscard]] bool has_modules() const noexcept;
+//		[[nodiscard]] bool has_sensor() const final;
+//		[[nodiscard]] bool has_standard_sensor() const final;
+//		[[nodiscard]] bool has_CB_sensor() const final;
+//		[[nodiscard]] bool has_VTOL_intercept_sensor() const final;
+//		[[nodiscard]] bool has_VTOL_CB_sensor() const final;
+//		[[nodiscard]] bool smoke_when_damaged() const noexcept;
+//		[[nodiscard]] unsigned get_original_hp() const;
+//    [[nodiscard]] unsigned Structure::get_armour_value(WEAPON_CLASS weapon_class) const;
+//		[[nodiscard]] Vector2i get_size() const;
+//		[[nodiscard]] int get_foundation_depth() const noexcept;
+//		[[nodiscard]] const iIMDShape& get_IMD_shape() const final;
+//		void update_expected_damage(unsigned damage, bool is_direct) noexcept override;
+//		[[nodiscard]] unsigned calculate_sensor_range() const final;
+//		[[nodiscard]] int calculate_gate_height(const std::size_t time, const int minimum) const;
+//		void set_foundation_depth(int depth) noexcept;
+//		void print_info() const override;
+//    [[nodiscard]] unsigned build_points_to_completion() const;
+//    [[nodiscard]] unsigned calculate_refunded_power() const;
+//    [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
+//    [[nodiscard]] const ::SimpleObject& get_target(int weapon_slot) const final;
+//    [[nodiscard]] STRUCTURE_STATE get_state() const;
 	private:
 		using enum STRUCTURE_STATE;
 		using enum STRUCTURE_ANIMATION_STATE;
@@ -217,27 +219,27 @@ namespace Impl
 
 const Structure* find_repair_facility(unsigned player);
 
-struct ProductionRun
-{
-  ProductionRun() = default;
-  bool operator ==(const DroidTemplate& rhs) const;
+//struct ProductionRun
+//{
+//  ProductionRun() = default;
+//  bool operator ==(const DroidTemplate& rhs) const;
+//
+//  void restart();
+//  bool is_valid() const;
+//  bool is_complete() const;
+//  int tasks_remaining() const;
+//
+//  std::shared_ptr<DroidTemplate> target;
+//  int quantity_to_build = 0;
+//  int quantity_built = 0;
+//};
 
-  void restart();
-  bool is_valid() const;
-  bool is_complete() const;
-  int tasks_remaining() const;
-
-  std::shared_ptr<DroidTemplate> target;
-  int quantity_to_build = 0;
-  int quantity_built = 0;
-};
-
-struct ResearchItem
-{
-	uint8_t tech_code;
-	unsigned research_point_cost;
-	unsigned power_cost;
-};
+//struct ResearchItem
+//{
+//	uint8_t tech_code;
+//	unsigned research_point_cost;
+//	unsigned power_cost;
+//};
 
 class Factory : public virtual Structure, public Impl::Structure
 {

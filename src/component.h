@@ -35,7 +35,7 @@ bool setPlayerColour(UDWORD player, UDWORD col);
 UBYTE getPlayerColour(UDWORD pl);
 
 UDWORD getComponentDroidRadius(DROID* psDroid);
-UDWORD getComponentDroidTemplateRadius(DROID_TEMPLATE* psDroid);
+UDWORD getComponentDroidTemplateRadius(DroidTemplate* psDroid);
 UDWORD getComponentRadius(BASE_STATS* psComponent);
 UDWORD getResearchRadius(BASE_STATS* Stat);
 UDWORD getStructureSizeMax(STRUCTURE* psStructure);
@@ -66,7 +66,7 @@ void displayStructureButton(STRUCTURE* psStructure, const Vector3i* Rotation, co
 void displayStructureStatButton(STRUCTURE_STATS* Stats, const Vector3i* Rotation, const Vector3i* Position, int scale);
 void displayComponentButton(BASE_STATS* Stat, const Vector3i* Rotation, const Vector3i* Position, int scale);
 void displayResearchButton(BASE_STATS* Stat, const Vector3i* Rotation, const Vector3i* Position, int scale);
-void displayComponentButtonTemplate(DROID_TEMPLATE* psTemplate, const Vector3i* Rotation, const Vector3i* Position,
+void displayComponentButtonTemplate(DroidTemplate* psTemplate, const Vector3i* Rotation, const Vector3i* Position,
                                     int scale);
 void displayComponentButtonObject(DROID* psDroid, const Vector3i* Rotation, const Vector3i* Position, int scale);
 void displayComponentObject(DROID* psDroid, const glm::mat4& viewMatrix);

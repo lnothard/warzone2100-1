@@ -37,6 +37,6 @@ void intRemoveOrderNoAnim();
 bool intRefreshOrder();
 
 //new function added to bring up the RMB order form for Factories as well as droids
-void intAddFactoryOrder(STRUCTURE* psStructure);
+void intAddFactoryOrder(Structure* psStructure);
 
 #endif // __INCLUDED_SRC_INTORDER_H__

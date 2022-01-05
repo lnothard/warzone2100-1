@@ -251,12 +251,12 @@ char StringBuffer[STRING_BUFFER_SIZE];
 extern std::shared_ptr<W_SCREEN> psWScreen;
 
 /* default droid design template */
-static DROID_TEMPLATE sDefaultDesignTemplate;
+static DroidTemplate sDefaultDesignTemplate;
 
 static void desSetupDesignTemplates();
 static void setDesignPauseState();
 static void resetDesignPauseState();
-static bool intAddTemplateButtons(ListTabWidget* templList, DROID_TEMPLATE* psSelected);
+static bool intAddTemplateButtons(ListTabWidget* templList, DroidTemplate* psSelected);
 static void intDisplayDesignForm(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
 typedef std::function<bool(std::function<bool(COMPONENT_STATS&, size_t)>)> ComponentIterator;
@@ -264,7 +264,7 @@ typedef std::function<bool(std::function<bool(COMPONENT_STATS&, size_t)>)> Compo
 /* Set the current mode of the design screen, and display the appropriate component lists */
 static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh = false);
 /* Set all the design bar graphs from a design template */
-static void intSetDesignStats(DROID_TEMPLATE* psTemplate);
+static void intSetDesignStats(DroidTemplate* psTemplate);
 /* Set up the system clickable form of the design screen given a set of stats */
 static bool intSetSystemForm(COMPONENT_STATS* psStats);
 /* Set up the propulsion clickable form of the design screen given a set of stats */
@@ -272,7 +272,7 @@ static bool intSetPropulsionForm(PROPULSION_STATS* psStats);
 /* Add the component tab form to the design screen */
 static ListTabWidget* intAddComponentForm();
 /* Add the template tab form to the design screen */
-static bool intAddTemplateForm(DROID_TEMPLATE* psSelected);
+static bool intAddTemplateForm(DroidTemplate* psSelected);
 /* Add the system buttons (weapons, command droid, etc) to the design screen */
 static bool intAddSystemButtons(DES_COMPMODE mode);
 /* Add the component buttons to the main tab of the system or component form */
@@ -315,11 +315,11 @@ static void intSetPropulsionStats(PROPULSION_STATS* psStats);
 /* Set the shadow bar graphs for the Propulsion stats */
 static void intSetPropulsionShadowStats(PROPULSION_STATS* psStats);
 /* Sets the Design Power Bar for a given Template */
-static void intSetDesignPower(DROID_TEMPLATE* psTemplate);
+static void intSetDesignPower(DroidTemplate* psTemplate);
 /* Sets the Power shadow Bar for the current Template with new stat*/
 static void intSetTemplatePowerShadowStats(COMPONENT_STATS* psStats);
 /* Sets the Body Points Bar for a given Template */
-static void intSetBodyPoints(DROID_TEMPLATE* psTemplate);
+static void intSetBodyPoints(DroidTemplate* psTemplate);
 /* Sets the Body Points shadow Bar for the current Template with new stat*/
 static void intSetTemplateBodyShadowStats(COMPONENT_STATS* psStats);
 /* set flashing flag for button */
@@ -328,16 +328,16 @@ static void intSetButtonFlash(UDWORD id, bool bFlash);
 the Template buttons*/
 static void runTemplateShadowStats(UDWORD id);
 
-static bool intCheckValidWeaponForProp(DROID_TEMPLATE* psTemplate);
+static bool intCheckValidWeaponForProp(DroidTemplate* psTemplate);
 
-static bool checkTemplateIsVtol(const DROID_TEMPLATE* psTemplate);
+static bool checkTemplateIsVtol(const DroidTemplate* psTemplate);
 
 /* save the current Template if valid. Return true if stored */
 static bool saveTemplate();
 
 static void desCreateDefaultTemplate();
 
-static void setTemplateStat(DROID_TEMPLATE* psTemplate, COMPONENT_STATS* psStats);
+static void setTemplateStat(DroidTemplate* psTemplate, COMPONENT_STATS* psStats);
 
 /**
  * Updates the status of the stored template toggle button.
@@ -363,8 +363,8 @@ static UDWORD desCompID;
 static UDWORD droidTemplID;
 
 /* The current design being edited on the design screen */
-static DROID_TEMPLATE sCurrDesign;
-static DROID_TEMPLATE sShadowDesign;
+static DroidTemplate sCurrDesign;
+static DroidTemplate sShadowDesign;
 
 static void intDisplayStatForm(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 static void intDisplayViewForm(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
@@ -708,9 +708,9 @@ bool intAddDesign(bool bShowCentreScreen)
 	}
 
 	/* Initialise the current design */
-	sDefaultDesignTemplate.droidType = DROID_ANY;
+	sDefaultDesignTemplate.type = DROID_ANY;
 	sCurrDesign = sDefaultDesignTemplate;
-	sCurrDesign.stored = false;
+	sCurrDesign.is_stored = false;
 	sstrcpy(aCurrName, _("New Vehicle"));
 	sCurrDesign.name = WzString::fromUtf8(aCurrName);
 
@@ -1059,19 +1059,19 @@ void desSetupDesignTemplates()
 	/* init template list */
 	apsTemplateList.clear();
 	apsTemplateList.push_back(&sDefaultDesignTemplate);
-	for (DROID_TEMPLATE& templ : localTemplates)
+	for (DroidTemplate& templ : localTemplates)
 	{
 		/* add template to list if not a transporter,
 		 * cyborg, person or command droid,
 		 */
-		if (templ.droidType != DROID_TRANSPORTER &&
-			templ.droidType != DROID_SUPERTRANSPORTER &&
-			templ.droidType != DROID_CYBORG &&
-			templ.droidType != DROID_CYBORG_SUPER &&
-			templ.droidType != DROID_CYBORG_CONSTRUCT &&
-			templ.droidType != DROID_CYBORG_REPAIR &&
-			templ.droidType != DROID_PERSON &&
-			researchedTemplate(&templ, selectedPlayer, includeRedundantDesigns))
+		if (templ.type != DROID_TRANSPORTER &&
+        templ.type != DROID_SUPERTRANSPORTER &&
+        templ.type != DROID_CYBORG &&
+        templ.type != DROID_CYBORG_SUPER &&
+        templ.type != DROID_CYBORG_CONSTRUCT &&
+        templ.type != DROID_CYBORG_REPAIR &&
+        templ.type != DROID_PERSON &&
+        researchedTemplate(&templ, selectedPlayer, includeRedundantDesigns))
 		{
 			apsTemplateList.push_back(&templ);
 		}
@@ -1079,7 +1079,7 @@ void desSetupDesignTemplates()
 }
 
 /* Add the design template form */
-static bool intAddTemplateForm(DROID_TEMPLATE* psSelected)
+static bool intAddTemplateForm(DroidTemplate* psSelected)
 {
 	auto const& parent = psWScreen->psForm;
 
@@ -1115,7 +1115,7 @@ static bool intAddTemplateForm(DROID_TEMPLATE* psSelected)
 }
 
 /* Add the droid template buttons to a form */
-static bool intAddTemplateButtons(ListTabWidget* templList, DROID_TEMPLATE* psSelected)
+static bool intAddTemplateButtons(ListTabWidget* templList, DroidTemplate* psSelected)
 {
 	char TempString[256];
 
@@ -1135,7 +1135,7 @@ static bool intAddTemplateButtons(ListTabWidget* templList, DROID_TEMPLATE* psSe
 	sBarInit.pTip = _("Power Usage");
 
 	droidTemplID = 0;
-	for (DROID_TEMPLATE* psTempl : apsTemplateList)
+	for (DroidTemplate* psTempl : apsTemplateList)
 	{
 		/* Set the tip and add the button */
 		auto button = std::make_shared<IntStatsButton>();
@@ -1236,7 +1236,7 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 		break;
 	case IDES_TURRET:
 		compList = intAddComponentForm();
-		weaponIndex = (sCurrDesign.numWeaps > 0) ? sCurrDesign.asWeaps[0] : 0;
+		weaponIndex = (sCurrDesign.weapon_count > 0) ? sCurrDesign.asWeaps[0] : 0;
 		intAddComponentButtons(compList, weaponIterator(), weaponIndex, true);
 		intAddSystemButtons(IDES_TURRET);
 		widgSetButtonState(psWScreen, IDDES_SYSTEMFORM, WBUT_LOCK);
@@ -1262,7 +1262,7 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 		break;
 	case IDES_TURRET_A:
 		compList = intAddComponentForm();
-		weaponIndex = (sCurrDesign.numWeaps > 1) ? sCurrDesign.asWeaps[1] : 0;
+		weaponIndex = (sCurrDesign.weapon_count > 1) ? sCurrDesign.asWeaps[1] : 0;
 		intAddComponentButtons(compList, weaponIterator(), weaponIndex, true);
 		intAddSystemButtons(IDES_TURRET_A);
 		widgSetButtonState(psWScreen, IDDES_SYSTEMFORM, WBUT_LOCK);
@@ -1275,7 +1275,7 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 		break;
 	case IDES_TURRET_B:
 		compList = intAddComponentForm();
-		weaponIndex = (sCurrDesign.numWeaps > 2) ? sCurrDesign.asWeaps[2] : 0;
+		weaponIndex = (sCurrDesign.weapon_count > 2) ? sCurrDesign.asWeaps[2] : 0;
 		intAddComponentButtons(compList, weaponIterator(), weaponIndex, true);
 		intAddSystemButtons(IDES_TURRET_B);
 		widgSetButtonState(psWScreen, IDDES_SYSTEMFORM, WBUT_LOCK);
@@ -1290,7 +1290,7 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 }
 
 static COMPONENT_STATS*
-intChooseSystemStats(DROID_TEMPLATE* psTemplate)
+intChooseSystemStats(DroidTemplate* psTemplate)
 {
 	COMPONENT_STATS* psStats = nullptr;
 	int compIndex;
@@ -1362,7 +1362,7 @@ void checkStringLength(const char* string0, const char* string1)
 	}
 }
 
-const char* GetDefaultTemplateName(DROID_TEMPLATE* psTemplate)
+const char* GetDefaultTemplateName(DroidTemplate* psTemplate)
 {
 	// NOTE:	At this time, savegames can support a max of 60. We are using MAX_STR_LENGTH (currently 256) for display
 	// We are also returning a truncated string, instead of NULL if the string is too long.
@@ -1372,22 +1372,22 @@ const char* GetDefaultTemplateName(DROID_TEMPLATE* psTemplate)
 	/*
 		First we check for the special cases of the Transporter & Cyborgs
 	*/
-	if (psTemplate->droidType == DROID_TRANSPORTER)
+	if (psTemplate->type == DROID_TRANSPORTER)
 	{
 		sstrcpy(aCurrName, _("Transport"));
 		return aCurrName;
 	}
-	if (psTemplate->droidType == DROID_SUPERTRANSPORTER)
+	if (psTemplate->type == DROID_SUPERTRANSPORTER)
 	{
 		sstrcpy(aCurrName, _("Super Transport"));
 		return aCurrName;
 	}
 
 	// For cyborgs, we don't need to add the body name nor the propulsion name. We can just use the template name.
-	if (psTemplate->droidType == DROID_CYBORG ||
-		psTemplate->droidType == DROID_CYBORG_CONSTRUCT ||
-		psTemplate->droidType == DROID_CYBORG_REPAIR ||
-		psTemplate->droidType == DROID_CYBORG_SUPER)
+	if (psTemplate->type == DROID_CYBORG ||
+      psTemplate->type == DROID_CYBORG_CONSTRUCT ||
+      psTemplate->type == DROID_CYBORG_REPAIR ||
+      psTemplate->type == DROID_CYBORG_SUPER)
 	{
 		const char* cyborgName = _(psTemplate->name.toUtf8().c_str());
 		sstrcpy(aCurrName, cyborgName);
@@ -1410,7 +1410,7 @@ const char* GetDefaultTemplateName(DROID_TEMPLATE* psTemplate)
 		sstrcat(aCurrName, " ");
 	}
 
-	if (psTemplate->numWeaps > 1)
+	if (psTemplate->weapon_count > 1)
 	{
 		sstrcat(aCurrName, _("Hydra "));
 	}
@@ -1439,12 +1439,12 @@ const char* GetDefaultTemplateName(DROID_TEMPLATE* psTemplate)
 	return aCurrName;
 }
 
-static void intSetEditBoxTextFromTemplate(DROID_TEMPLATE* psTemplate)
+static void intSetEditBoxTextFromTemplate(DroidTemplate* psTemplate)
 {
 	sstrcpy(aCurrName, "");
 
 	/* show component names if default template else show stat name */
-	if (psTemplate->droidType != DROID_DEFAULT)
+	if (psTemplate->type != DROID_DEFAULT)
 	{
 		sstrcpy(aCurrName, getStatsName(psTemplate));
 	}
@@ -1457,7 +1457,7 @@ static void intSetEditBoxTextFromTemplate(DROID_TEMPLATE* psTemplate)
 }
 
 /* Set all the design bar graphs from a design template */
-static void intSetDesignStats(DROID_TEMPLATE* psTemplate)
+static void intSetDesignStats(DroidTemplate* psTemplate)
 {
 	COMPONENT_STATS* psStats = intChooseSystemStats(psTemplate);
 
@@ -2552,13 +2552,13 @@ static void intSetBodyShadowStats(BODY_STATS* psStats)
 }
 
 /* Sets the Design Power Bar for a given Template */
-static void intSetDesignPower(DROID_TEMPLATE* psTemplate)
+static void intSetDesignPower(DroidTemplate* psTemplate)
 {
 	/* use the same scale as PowerBar in main window so values are relative */
 	widgSetBarSize(psWScreen, IDDES_POWERBAR, calcTemplatePower(psTemplate));
 }
 
-static void setTemplateStat(DROID_TEMPLATE* psTemplate, COMPONENT_STATS* psStats)
+static void setTemplateStat(DroidTemplate* psTemplate, COMPONENT_STATS* psStats)
 {
 	ASSERT_OR_RETURN(, psStats != nullptr, "psStats not null");
 
@@ -2568,7 +2568,7 @@ static void setTemplateStat(DROID_TEMPLATE* psTemplate, COMPONENT_STATS* psStats
 		{
 			psTemplate->asWeaps[i] = 0;
 		}
-		psTemplate->numWeaps = std::min(psTemplate->numWeaps, newNumWeaps);
+		psTemplate->weapon_count = std::min(psTemplate->weapon_count, newNumWeaps);
 	};
 
 	auto clearNonWeapons = [&]
@@ -2610,7 +2610,7 @@ static void setTemplateStat(DROID_TEMPLATE* psTemplate, COMPONENT_STATS* psStats
 			clearTurret();
 			psTemplate->asParts[COMP_BRAIN] = stats - asBrainStats;
 			psTemplate->asWeaps[0] = stats->psWeaponStat - asWeaponStats;
-			psTemplate->numWeaps = 1;
+			psTemplate->weapon_count = 1;
 			break;
 		}
 	case COMP_PROPULSION:
@@ -2645,7 +2645,7 @@ static void setTemplateStat(DROID_TEMPLATE* psTemplate, COMPONENT_STATS* psStats
 			clearNonWeapons();
 			int i = desCompMode == IDES_TURRET_A ? 1 : desCompMode == IDES_TURRET_B ? 2 : 0;
 			psTemplate->asWeaps[i] = (WEAPON_STATS*)psStats - asWeaponStats;
-			psTemplate->numWeaps = std::max<int>(psTemplate->numWeaps, i + 1);
+			psTemplate->weapon_count = std::max<int>(psTemplate->weapon_count, i + 1);
 			break;
 		}
 	case COMP_NUMCOMPONENTS:
@@ -2668,7 +2668,7 @@ static void intSetTemplatePowerShadowStats(COMPONENT_STATS* psStats)
 }
 
 /* Sets the Body Points Bar for a given Template */
-static void intSetBodyPoints(DROID_TEMPLATE* psTemplate)
+static void intSetBodyPoints(DroidTemplate* psTemplate)
 {
 	// If total greater than Body Bar size then scale values.
 	widgSetBarSize(psWScreen, IDDES_BODYPOINTS, calcTemplateBody(psTemplate, selectedPlayer));
@@ -2695,7 +2695,7 @@ static UDWORD intCalcSpeed(TYPE_OF_TERRAIN type, PROPULSION_STATS* psProp)
 	{
 		return 0;
 	}
-	DROID_TEMPLATE psTempl = sCurrDesign;
+	DroidTemplate psTempl = sCurrDesign;
 	psTempl.asParts[COMP_PROPULSION] = getCompFromID(COMP_PROPULSION, psProp->id);
 	UDWORD weight = calcDroidWeight(&psTempl);
 	if (weight == 0)
@@ -2853,7 +2853,7 @@ static void intSetPropulsionShadowStats(PROPULSION_STATS* psStats)
 	ASSERT_OR_RETURN(retVal, player >= 0 && player < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
 /* Check whether a droid template is valid */
-bool intValidTemplate(DROID_TEMPLATE* psTempl, const char* newName, bool complain, int player)
+bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(false, player);
 
@@ -2863,7 +2863,7 @@ bool intValidTemplate(DROID_TEMPLATE* psTempl, const char* newName, bool complai
 	// set the weapon for a command droid
 	if (psTempl->asParts[COMP_BRAIN] != 0)
 	{
-		psTempl->numWeaps = 1;
+		psTempl->weapon_count = 1;
 		psTempl->asWeaps[0] = asBrainStats[psTempl->asParts[COMP_BRAIN]].psWeaponStat - asWeaponStats;
 	}
 
@@ -2880,20 +2880,20 @@ bool intValidTemplate(DROID_TEMPLATE* psTempl, const char* newName, bool complai
 	}
 
 	// Check a turret has been installed
-	if (psTempl->numWeaps == 0 &&
+	if (psTempl->weapon_count == 0 &&
 		psTempl->asParts[COMP_SENSOR] == 0 &&
 		psTempl->asParts[COMP_ECM] == 0 &&
 		psTempl->asParts[COMP_BRAIN] == 0 &&
 		psTempl->asParts[COMP_REPAIRUNIT] == 0 &&
 		psTempl->asParts[COMP_CONSTRUCT] == 0 &&
-		!isTransporter(psTempl))
+      !isTransporter(psTempl))
 	{
 		debug(level, "No turret for template");
 		return false;
 	}
 
 	// Check the weapons
-	for (int i = 0; i < psTempl->numWeaps; i++)
+	for (int i = 0; i < psTempl->weapon_count; i++)
 	{
 		int weaponSize = asWeaponStats[psTempl->asWeaps[i]].weaponSize;
 
@@ -2913,15 +2913,15 @@ bool intValidTemplate(DROID_TEMPLATE* psTempl, const char* newName, bool complai
 	}
 
 	// Check number of weapon slots
-	if ((unsigned)psTempl->numWeaps > asBodyStats[psTempl->asParts[COMP_BODY]].weaponSlots)
+	if ((unsigned)psTempl->weapon_count > asBodyStats[psTempl->asParts[COMP_BODY]].weaponSlots)
 	{
 		debug(level, "Too many weapon turrets");
 		return false;
 	}
 
 	// Check no mixing of systems and weapons
-	if (psTempl->numWeaps != 0 &&
-		(psTempl->asParts[COMP_SENSOR] ||
+	if (psTempl->weapon_count != 0 &&
+      (psTempl->asParts[COMP_SENSOR] ||
 			psTempl->asParts[COMP_ECM] ||
 			(psTempl->asParts[COMP_REPAIRUNIT] && psTempl->asParts[COMP_REPAIRUNIT] != aDefaultRepair[player]) ||
 			psTempl->asParts[COMP_CONSTRUCT]))
@@ -2929,14 +2929,14 @@ bool intValidTemplate(DROID_TEMPLATE* psTempl, const char* newName, bool complai
 		debug(level, "Cannot mix system and weapon turrets in a template!");
 		return false;
 	}
-	if (psTempl->numWeaps != 1 && psTempl->asParts[COMP_BRAIN])
+	if (psTempl->weapon_count != 1 && psTempl->asParts[COMP_BRAIN])
 	{
 		debug(level, "Commander template needs 1 weapon turret");
 		return false;
 	}
 
 	//can only have a VTOL weapon on a VTOL propulsion
-	if (checkTemplateIsVtol(psTempl) && !isTransporter(psTempl) && psTempl->numWeaps == 0)
+	if (checkTemplateIsVtol(psTempl) && !isTransporter(psTempl) && psTempl->weapon_count == 0)
 	{
 		debug(level, "VTOL with system turret, not possible");
 		return false;
@@ -2963,9 +2963,9 @@ bool intValidTemplate(DROID_TEMPLATE* psTempl, const char* newName, bool complai
 	psTempl->ref = STAT_TEMPLATE;
 
 	//set the droidtype
-	psTempl->droidType = droidTemplateType(psTempl);
+	psTempl->type = droidTemplateType(psTempl);
 
-	psTempl->enabled = true;
+	psTempl->is_enabled = true;
 
 	/* copy name into template */
 	if (newName)
@@ -2980,7 +2980,7 @@ static void desCreateDefaultTemplate()
 {
 	/* set current design to default */
 	sCurrDesign = sDefaultDesignTemplate;
-	sCurrDesign.stored = false;
+	sCurrDesign.is_stored = false;
 
 	/* reset stats */
 	intSetDesignStats(&sCurrDesign);
@@ -3022,13 +3022,13 @@ static void intSetButtonFlash(UDWORD id, bool bFlash)
  * Checks whether user has customised template name : template not
  * customised if not complete or if generated name same as current.
  */
-static bool desTemplateNameCustomised(DROID_TEMPLATE* psTemplate)
+static bool desTemplateNameCustomised(DroidTemplate* psTemplate)
 {
-	return psTemplate->droidType != DROID_DEFAULT &&
+	return psTemplate->type != DROID_DEFAULT &&
 		strcmp(getStatsName(psTemplate), GetDefaultTemplateName(psTemplate)) != 0;
 }
 
-static DROID_TEMPLATE* templateFromButtonId(unsigned buttonId, bool allowBlankTemplate = false)
+static DroidTemplate* templateFromButtonId(unsigned buttonId, bool allowBlankTemplate = false)
 {
 	unsigned minIndex = allowBlankTemplate ? 0 : 1;
 	unsigned index = buttonId - IDDES_TEMPLSTART;
@@ -3077,7 +3077,7 @@ void intProcessDesign(UDWORD id)
 		else
 		{
 			/* Find the template for the new button */
-			DROID_TEMPLATE* psTempl = templateFromButtonId(id, true);
+			DroidTemplate* psTempl = templateFromButtonId(id, true);
 
 			ASSERT_OR_RETURN(, psTempl != nullptr, "template not found!");
 
@@ -3103,7 +3103,7 @@ void intProcessDesign(UDWORD id)
 				intSetButtonFlash(IDDES_WPBBUTTON, false);
 
 				// reveal additional buttons
-				if (psTempl->numWeaps >= 2)
+				if (psTempl->weapon_count >= 2)
 				{
 					widgReveal(psWScreen, IDDES_WPABUTTON);
 				}
@@ -3111,7 +3111,7 @@ void intProcessDesign(UDWORD id)
 				{
 					intSetButtonFlash(IDDES_WPABUTTON, true);
 				}
-				if (psTempl->numWeaps == 3)
+				if (psTempl->weapon_count == 3)
 				{
 					widgReveal(psWScreen, IDDES_WPBBUTTON);
 				}
@@ -3123,7 +3123,7 @@ void intProcessDesign(UDWORD id)
 				if (bMultiPlayer)
 				{
 					widgReveal(psWScreen, IDDES_STOREBUTTON);
-					updateStoreButton(sCurrDesign.stored);
+					updateStoreButton(sCurrDesign.is_stored);
 				}
 			}
 		}
@@ -3181,7 +3181,7 @@ void intProcessDesign(UDWORD id)
 		{
 		case IDES_SYSTEM:
 			//0 weapon for utility droid
-			sCurrDesign.numWeaps = 0;
+			sCurrDesign.weapon_count = 0;
 			break;
 		case IDES_TURRET:
 			setTemplateStat(&sCurrDesign, apsComponentList[id - IDDES_COMPSTART]);
@@ -3232,7 +3232,7 @@ void intProcessDesign(UDWORD id)
 				/* Set the new stats on the display */
 				intSetBodyStats((BODY_STATS*)apsComponentList[id - IDDES_COMPSTART]);
 
-				int numWeaps = sCurrDesign.asParts[COMP_BRAIN] != 0 ? 0 : sCurrDesign.numWeaps;
+				int numWeaps = sCurrDesign.asParts[COMP_BRAIN] != 0 ? 0 : sCurrDesign.weapon_count;
 				int maxWeaps = asBodyStats[sCurrDesign.asParts[COMP_BODY]].weaponSlots;
 				widgGetFromID(psWScreen, IDDES_WPABUTTON)->show(maxWeaps > 1 && numWeaps >= 1);
 				widgGetFromID(psWScreen, IDDES_WPBBUTTON)->show(maxWeaps > 2 && numWeaps >= 2);
@@ -3375,14 +3375,14 @@ void intProcessDesign(UDWORD id)
 		case IDDES_BIN:
 			{
 				/* Find the template for the current button */
-				DROID_TEMPLATE* psTempl = templateFromButtonId(droidTemplID);
+				DroidTemplate* psTempl = templateFromButtonId(droidTemplID);
 				// Does not return the first template, which is the empty template.
 
 				/* remove template if found */
 				if (psTempl != nullptr)
 				{
 					//update player template list.
-					for (std::list<DROID_TEMPLATE>::iterator i = localTemplates.begin(); i != localTemplates.end(); ++i)
+					for (std::list<DroidTemplate>::iterator i = localTemplates.begin(); i != localTemplates.end(); ++i)
 					{
 						if (&*i == psTempl)
 						{
@@ -3439,10 +3439,10 @@ void intProcessDesign(UDWORD id)
 				break;
 			}
 		case IDDES_STOREBUTTON:
-			sCurrDesign.stored = !sCurrDesign.stored; // Invert the current status
+			sCurrDesign.is_stored = !sCurrDesign.is_stored; // Invert the current status
 			saveTemplate();
 			storeTemplates();
-			updateStoreButton(sCurrDesign.stored);
+			updateStoreButton(sCurrDesign.is_stored);
 			break;
 		case IDDES_SYSTEMBUTTON:
 			// Add the correct component form
@@ -3618,8 +3618,8 @@ void intProcessDesign(UDWORD id)
 
 			case IDES_SYSTEM:
 			case IDES_TURRET:
-				if ((asBodyStats + sCurrDesign.asParts[COMP_BODY])->weaponSlots > 1 &&
-					sCurrDesign.numWeaps == 1 && sCurrDesign.asParts[COMP_BRAIN] == 0)
+				if ((asBodyStats + sCurrDesign.asParts[COMP_BODY])->weapon_slots > 1 &&
+            sCurrDesign.weapon_count == 1 && sCurrDesign.asParts[COMP_BRAIN] == 0)
 				{
 					debug(LOG_GUI, "intProcessDesign: First weapon selected, doing next.");
 					intSetDesignMode(IDES_TURRET_A);
@@ -3631,7 +3631,7 @@ void intProcessDesign(UDWORD id)
 				}
 				break;
 			case IDES_TURRET_A:
-				if ((asBodyStats + sCurrDesign.asParts[COMP_BODY])->weaponSlots > 2)
+				if ((asBodyStats + sCurrDesign.asParts[COMP_BODY])->weapon_slots > 2)
 				{
 					debug(LOG_GUI, "intProcessDesign: Second weapon selected, doing next.");
 					intSetDesignMode(IDES_TURRET_B);
@@ -3839,19 +3839,19 @@ static bool saveTemplate()
 	if (bMultiPlayer)
 	{
 		widgReveal(psWScreen, IDDES_STOREBUTTON);
-		updateStoreButton(sCurrDesign.stored); // Change the buttons icon
+		updateStoreButton(sCurrDesign.is_stored); // Change the buttons icon
 	}
 
 	/* if first (New Design) button selected find empty template
 	 * else find current button template
 	 */
-	DROID_TEMPLATE* psTempl;
+	DroidTemplate* psTempl;
 	if (droidTemplID == IDDES_TEMPLSTART)
 	{
 		/* create empty template and point to that */
-		localTemplates.push_back(DROID_TEMPLATE());
+		localTemplates.push_back(DroidTemplate());
 		psTempl = &localTemplates.back();
-		sCurrDesign.multiPlayerID = generateNewObjectId();
+		sCurrDesign.id = generateNewObjectId();
 		apsTemplateList.push_back(psTempl);
 
 		psTempl->ref = STAT_TEMPLATE;
@@ -3894,7 +3894,7 @@ void runTemplateShadowStats(UDWORD id)
 {
 	/* Find the template for the new button */
 	//we're ignoring the Blank Design so start at the second button
-	DROID_TEMPLATE* psTempl = templateFromButtonId(id);
+	DroidTemplate* psTempl = templateFromButtonId(id);
 
 	//if we're over a different template
 	if (psTempl && psTempl != &sCurrDesign)
@@ -3987,12 +3987,12 @@ static void resetDesignPauseState()
 /*this is called when a new propulsion type is added to the current design
 to check the weapon is 'allowed'. Check if VTOL, the weapon is direct fire.
 Also check numVTOLattackRuns for the weapon is not zero - return true if valid weapon*/
-static bool intCheckValidWeaponForProp(DROID_TEMPLATE* psTemplate)
+static bool intCheckValidWeaponForProp(DroidTemplate* psTemplate)
 {
 	if (asPropulsionTypes[asPropulsionStats[psTemplate->asParts[COMP_PROPULSION]].propulsionType].travel != AIR)
 	{
-		if (psTemplate->numWeaps == 0 &&
-			(psTemplate->asParts[COMP_SENSOR] ||
+		if (psTemplate->weapon_count == 0 &&
+        (psTemplate->asParts[COMP_SENSOR] ||
 				psTemplate->asParts[COMP_REPAIRUNIT] ||
 				psTemplate->asParts[COMP_CONSTRUCT] ||
 				psTemplate->asParts[COMP_ECM]))
@@ -4005,7 +4005,7 @@ static bool intCheckValidWeaponForProp(DROID_TEMPLATE* psTemplate)
 }
 
 //checks if the template has PROPULSION_TYPE_LIFT propulsion attached - returns true if it does
-bool checkTemplateIsVtol(const DROID_TEMPLATE* psTemplate)
+bool checkTemplateIsVtol(const DroidTemplate* psTemplate)
 {
 	return asPropulsionStats[psTemplate->asParts[COMP_PROPULSION]].propulsionType == PROPULSION_TYPE_LIFT;
 }

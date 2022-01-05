@@ -192,7 +192,7 @@ static void printWeaponInfo(const WEAPON_STATS* psStats)
 /** print out information about a droid and it's components
  *  \param psDroid the droid to print the info for
  */
-void printDroidInfo(const DROID* psDroid)
+void printDroidInfo(const Droid* psDroid)
 {
 	BODY_STATS* psBdyStats;
 	PROPULSION_STATS* psPropStats;
@@ -204,7 +204,7 @@ void printDroidInfo(const DROID* psDroid)
 	printBaseObjInfo((const BASE_OBJECT*)psDroid);
 
 	CONPRINTF("   wt %d bSpeed %d sRng %d ECM %d bdy %d\n",
-	          psDroid->weight, psDroid->baseSpeed, droidSensorRange(psDroid), objJammerPower(psDroid), psDroid->body);
+						psDroid->weight, psDroid->base_speed, droidSensorRange(psDroid), objJammerPower(psDroid), psDroid->body);
 
 	if (psDroid->asWeaps[0].nStat > 0)
 	{

@@ -241,12 +241,12 @@ static void loadStats(WzConfig& json, BASE_STATS* psStats, size_t index)
 	lookupStatPtr.insert(std::make_pair(psStats->id, psStats));
 }
 
-void loadStructureStats_BaseStats(WzConfig& json, STRUCTURE_STATS* psStats, size_t index)
+void loadStructureStats_BaseStats(WzConfig& json, StructureStats* psStats, size_t index)
 {
 	loadStats(json, psStats, index);
 }
 
-void unloadStructureStats_BaseStats(const STRUCTURE_STATS& psStats)
+void unloadStructureStats_BaseStats(const StructureStats& psStats)
 {
 	lookupStatPtr.erase(psStats.id);
 }
@@ -1664,14 +1664,14 @@ bool objHasWeapon(const BASE_OBJECT* psObj)
 	//check if valid type
 	if (psObj->type == OBJ_DROID)
 	{
-		if (((const DROID*)psObj)->numWeaps > 0)
+		if (((const Droid*)psObj)->numWeaps > 0)
 		{
 			return true;
 		}
 	}
 	else if (psObj->type == OBJ_STRUCTURE)
 	{
-		if (((const STRUCTURE*)psObj)->numWeaps > 0)
+		if (((const Structure*)psObj)->numWeaps > 0)
 		{
 			return true;
 		}
@@ -1688,18 +1688,18 @@ SENSOR_STATS* objActiveRadar(const BASE_OBJECT* psObj)
 	switch (psObj->type)
 	{
 	case OBJ_DROID:
-		if (((const DROID*)psObj)->droidType != DROID_SENSOR && ((const DROID*)psObj)->droidType != DROID_COMMAND)
+		if (((const Droid*)psObj)->type != DROID_SENSOR && ((const Droid*)psObj)->type != DROID_COMMAND)
 		{
 			return nullptr;
 		}
-		compIndex = ((const DROID*)psObj)->asBits[COMP_SENSOR];
+		compIndex = ((const Droid*)psObj)->asBits[COMP_SENSOR];
 		ASSERT_OR_RETURN(nullptr, compIndex < numSensorStats, "Invalid range referenced for numSensorStats, %d > %d",
 		                 compIndex, numSensorStats);
 		psStats = asSensorStats + compIndex;
 		break;
 	case OBJ_STRUCTURE:
-		psStats = ((const STRUCTURE*)psObj)->pStructureType->pSensor;
-		if (psStats == nullptr || psStats->location != LOC_TURRET || ((const STRUCTURE*)psObj)->status != SS_BUILT)
+		psStats = ((const Structure*)psObj)->pStructureType->sensor_stats;
+		if (psStats == nullptr || psStats->location != LOC_TURRET || ((const Structure*)psObj)->status != SS_BUILT)
 		{
 			return nullptr;
 		}

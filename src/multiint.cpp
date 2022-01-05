@@ -1257,7 +1257,7 @@ void updateStructureDisabledFlags()
 	for (unsigned i = 0; i < ARRAY_SIZE(limitIcons) - 1; ++i) // skip last item, MPFLAGS_FORCELIMITS
 	{
 		int stat = getStructStatFromName(limitIcons[i].stat);
-		bool disabled = stat >= 0 && asStructureStats[stat].upgrade[0].limit == 0;
+		bool disabled = stat >= 0 && asStructureStats[stat].upgraded_stats[0].limit == 0;
 		flags |= disabled << i;
 	}
 
@@ -6029,11 +6029,11 @@ static void randomizeLimit(const char* name)
 	int stat = getStructStatFromName(name);
 	if (rand() % 2 == 0)
 	{
-		asStructureStats[stat].upgrade[0].limit = asStructureStats[stat].base.limit;
+		asStructureStats[stat].upgraded_stats[0].limit = asStructureStats[stat].base.limit;
 	}
 	else
 	{
-		asStructureStats[stat].upgrade[0].limit = 0;
+		asStructureStats[stat].upgraded_stats[0].limit = 0;
 	}
 }
 

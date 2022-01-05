@@ -257,7 +257,7 @@ proj_GetNext()
  * Relates the quality of the attacker to the quality of the victim.
  * The value returned satisfies the following inequality: 0.5 <= ret/65536 <= 2.0
  */
-static uint32_t qualityFactor(DROID* psAttacker, DROID* psVictim)
+static uint32_t qualityFactor(Droid* psAttacker, Droid* psVictim)
 {
 	uint32_t powerRatio = (uint64_t)65536 * calcDroidPower(psVictim) / calcDroidPower(psAttacker);
 	uint32_t pointsRatio = (uint64_t)65536 * calcDroidPoints(psVictim) / calcDroidPoints(psAttacker);
@@ -278,11 +278,11 @@ int getExpGain(int player)
 	return experienceGain[player];
 }
 
-DROID* getDesignatorAttackingObject(int player, BASE_OBJECT* target)
+Droid* getDesignatorAttackingObject(int player, BASE_OBJECT* target)
 {
-	DROID* psCommander = cmdDroidGetDesignator(player);
+	Droid* psCommander = cmdDroidGetDesignator(player);
 
-	return psCommander != nullptr && psCommander->action == DACTION_ATTACK && psCommander->psActionTarget[0] == target
+	return psCommander != nullptr && psCommander->action == DACTION_ATTACK && psCommander->action_target[0] == target
 		       ? psCommander
 		       : nullptr;
 }
@@ -291,14 +291,14 @@ DROID* getDesignatorAttackingObject(int player, BASE_OBJECT* target)
 // update the source experience after a target is damaged/destroyed
 static void proj_UpdateExperience(PROJECTILE* psObj, uint32_t experienceInc)
 {
-	DROID* psDroid;
+	Droid* psDroid;
 	BASE_OBJECT* psSensor;
 
 	CHECK_PROJECTILE(psObj);
 
 	if (psObj->psSource->type == OBJ_DROID) /* update droid kills */
 	{
-		psDroid = (DROID*)psObj->psSource;
+		psDroid = (Droid*)psObj->psSource;
 
 		// If it is 'droid-on-droid' then modify the experience by the Quality factor
 		// Only do this in MP so to not un-balance the campaign
@@ -307,7 +307,7 @@ static void proj_UpdateExperience(PROJECTILE* psObj, uint32_t experienceInc)
 			&& bMultiPlayer)
 		{
 			// Modify the experience gained by the 'quality factor' of the units
-			experienceInc = (uint64_t)experienceInc * qualityFactor(psDroid, (DROID*)psObj->psDest) / 65536;
+			experienceInc = (uint64_t)experienceInc * qualityFactor(psDroid, (Droid*)psObj->psDest) / 65536;
 		}
 
 		ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536), "Experience increase out of range");
@@ -319,7 +319,7 @@ static void proj_UpdateExperience(PROJECTILE* psObj, uint32_t experienceInc)
 		if (psSensor
 			&& psSensor->type == OBJ_DROID)
 		{
-			((DROID*)psSensor)->experience += experienceInc;
+			((Droid*)psSensor)->experience += experienceInc;
 		}
 	}
 	else if (psObj->psSource->type == OBJ_STRUCTURE)
@@ -450,13 +450,13 @@ bool proj_SendProjectileAngled(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int pl
 	}
 	else if (psAttacker->type == OBJ_DROID && weapon_slot >= 0)
 	{
-		calcDroidMuzzleLocation((DROID*)psAttacker, &psProj->src, weapon_slot);
+		calcDroidMuzzleLocation((Droid*)psAttacker, &psProj->src, weapon_slot);
 		/*update attack runs for VTOL droid's each time a shot is fired*/
-		updateVtolAttackRun((DROID*)psAttacker, weapon_slot);
+		updateVtolAttackRun((Droid*)psAttacker, weapon_slot);
 	}
 	else if (psAttacker->type == OBJ_STRUCTURE && weapon_slot >= 0)
 	{
-		calcStructureMuzzleLocation((STRUCTURE*)psAttacker, &psProj->src, weapon_slot);
+		calcStructureMuzzleLocation((Structure*)psAttacker, &psProj->src, weapon_slot);
 	}
 	else // incase anything wants a projectile
 	{
@@ -553,11 +553,11 @@ bool proj_SendProjectileAngled(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int pl
 	{
 		if (psAttacker->type == OBJ_DROID)
 		{
-			((DROID*)psAttacker)->asWeaps[weapon_slot].rot.pitch = psProj->rot.pitch;
+			((Droid*)psAttacker)->asWeaps[weapon_slot].rot.pitch = psProj->rot.pitch;
 		}
 		else if (psAttacker->type == OBJ_STRUCTURE)
 		{
-			((STRUCTURE*)psAttacker)->asWeaps[weapon_slot].rot.pitch = psProj->rot.pitch;
+			((Structure*)psAttacker)->asWeaps[weapon_slot].rot.pitch = psProj->rot.pitch;
 		}
 	}
 
@@ -772,14 +772,14 @@ static void proj_InFlightFunc(PROJECTILE* psProj)
 				{
 					psProj->dst = psProj->psDest->pos + Vector3i(0, 0, establishTargetHeight(psProj->psDest) / 2);
 				}
-				DROID* targetDroid = castDroid(psProj->psDest);
+				Droid* targetDroid = castDroid(psProj->psDest);
 				if (targetDroid != nullptr)
 				{
 					// Do target prediction.
 					Vector3i delta = psProj->dst - psProj->pos;
 					int flightTime = iHypot(delta.xy()) * GAME_TICKS_PER_SEC / psStats->flightSpeed;
-					psProj->dst += Vector3i(iSinCosR(targetDroid->sMove.moveDir,
-					                                 std::min<int>(targetDroid->sMove.speed,
+					psProj->dst += Vector3i(iSinCosR(targetDroid->movement.moveDir,
+					                                 std::min<int>(targetDroid->movement.speed,
 					                                               psStats->flightSpeed * 3 / 4) * flightTime /
 					                                 GAME_TICKS_PER_SEC), 0);
 				}
@@ -868,7 +868,7 @@ static void proj_InFlightFunc(PROJECTILE* psProj)
 		else if (!(psStats->surfaceToAir & SHOOT_ON_GROUND) &&
 			(psTempObj->type == OBJ_STRUCTURE ||
 				psTempObj->type == OBJ_FEATURE ||
-				(psTempObj->type == OBJ_DROID && !isFlying((DROID*)psTempObj))
+				(psTempObj->type == OBJ_DROID && !isFlying((Droid*)psTempObj))
 			))
 		{
 			// AA weapons should not hit buildings and non-vtol droids
@@ -1148,12 +1148,12 @@ static void proj_ImpactFunc(PROJECTILE* psObj)
 				switch (psObj->psSource->type)
 				{
 				case OBJ_DROID:
-					((DROID*)psObj->psSource)->order.type = DORDER_NONE;
-					actionDroid((DROID*)(psObj->psSource), DACTION_NONE);
+					((Droid*)psObj->psSource)->order.type = DORDER_NONE;
+					actionDroid((Droid*)(psObj->psSource), DACTION_NONE);
 					break;
 
 				case OBJ_STRUCTURE:
-					((STRUCTURE*)psObj->psSource)->psTarget[0] = nullptr;
+					((Structure*)psObj->psSource)->psTarget[0] = nullptr;
 					break;
 
 				// This is only here to prevent the compiler from producing
@@ -1254,8 +1254,8 @@ static void proj_ImpactFunc(PROJECTILE* psObj)
 			switch (psCurr->type)
 			{
 			case OBJ_DROID:
-				bTargetInAir = asPropulsionTypes[asPropulsionStats[((DROID*)psCurr)->asBits[COMP_PROPULSION]].
-					propulsionType].travel == AIR && ((DROID*)psCurr)->sMove.Status != MOVEINACTIVE;
+				bTargetInAir = asPropulsionTypes[asPropulsionStats[((Droid*)psCurr)->asBits[COMP_PROPULSION]].
+					propulsionType].travel == AIR && ((Droid*)psCurr)->movement.Status != MOVEINACTIVE;
 				useSphere = true;
 				break;
 			case OBJ_STRUCTURE:
@@ -1449,8 +1449,8 @@ static void proj_checkPeriodicalDamage(PROJECTILE* psProj)
 		}
 
 		if (psCurr->type == OBJ_DROID &&
-			isVtolDroid((DROID*)psCurr) &&
-			((DROID*)psCurr)->sMove.Status != MOVEINACTIVE)
+        isVtolDroid((Droid*)psCurr) &&
+        ((Droid*)psCurr)->movement.Status != MOVEINACTIVE)
 		{
 			continue; // Can't set flying vtols on fire.
 		}
@@ -1539,7 +1539,7 @@ ObjectShape establishTargetShape(BASE_OBJECT* psTarget)
 	switch (psTarget->type)
 	{
 	case OBJ_DROID: // Circular.
-		switch (castDroid(psTarget)->droidType)
+		switch (castDroid(psTarget)->type)
 		{
 		case DROID_WEAPON:
 		case DROID_SENSOR:
@@ -1564,8 +1564,8 @@ ObjectShape establishTargetShape(BASE_OBJECT* psTarget)
 	case OBJ_STRUCTURE: // Rectangular.
 		return castStructure(psTarget)->size() * TILE_UNITS / 2;
 	case OBJ_FEATURE: // Rectangular.
-		return Vector2i(castFeature(psTarget)->psStats->baseWidth, castFeature(psTarget)->psStats->baseBreadth) *
-			TILE_UNITS / 2;
+		return Vector2i(castFeature(psTarget)->psStats->base_width, castFeature(psTarget)->psStats->base_breadth) *
+           TILE_UNITS / 2;
 	case OBJ_PROJECTILE: // Circular, but can't happen since a PROJECTILE isn't a BASE_OBJECT.
 		//Watermelon 1/2 radius of a droid?
 		return TILE_UNITS / 8;
@@ -1591,13 +1591,13 @@ UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, BASE_OBJECT* ps
 
 	if (psTarget->type == OBJ_STRUCTURE)
 	{
-		damage += baseDamage * (asStructStrengthModifier[weaponEffect][((STRUCTURE*)psTarget)->pStructureType->strength]
+		damage += baseDamage * (asStructStrengthModifier[weaponEffect][((Structure*)psTarget)->pStructureType->strength]
 			- 100);
 	}
 	else if (psTarget->type == OBJ_DROID)
 	{
-		const int propulsion = (asPropulsionStats + ((DROID*)psTarget)->asBits[COMP_PROPULSION])->propulsionType;
-		const int body = (asBodyStats + ((DROID*)psTarget)->asBits[COMP_BODY])->size;
+		const int propulsion = (asPropulsionStats + ((Droid*)psTarget)->asBits[COMP_PROPULSION])->propulsionType;
+		const int body = (asBodyStats + ((Droid*)psTarget)->asBits[COMP_BODY])->size;
 		damage += baseDamage * (asWeaponModifier[weaponEffect][propulsion] - 100);
 		damage += baseDamage * (asWeaponModifierBody[weaponEffect][body] - 100);
 	}
@@ -1626,14 +1626,14 @@ static int32_t objectDamageDispatch(DAMAGE* psDamage)
 	switch (psDamage->psDest->type)
 	{
 	case OBJ_DROID:
-		return droidDamage((DROID*)psDamage->psDest, psDamage->damage, psDamage->weaponClass, psDamage->weaponSubClass,
-		                   psDamage->impactTime, psDamage->isDamagePerSecond, psDamage->minDamage);
+		return droidDamage((Droid*)psDamage->psDest, psDamage->damage, psDamage->weaponClass, psDamage->weaponSubClass,
+                       psDamage->impactTime, psDamage->isDamagePerSecond, psDamage->minDamage);
 		break;
 
 	case OBJ_STRUCTURE:
-		return structureDamage((STRUCTURE*)psDamage->psDest, psDamage->damage, psDamage->weaponClass,
-		                       psDamage->weaponSubClass, psDamage->impactTime, psDamage->isDamagePerSecond,
-		                       psDamage->minDamage);
+		return structureDamage((Structure*)psDamage->psDest, psDamage->damage, psDamage->weaponClass,
+													 psDamage->weaponSubClass, psDamage->impactTime, psDamage->isDamagePerSecond,
+													 psDamage->minDamage);
 		break;
 
 	case OBJ_FEATURE:
@@ -1672,20 +1672,20 @@ static void updateKills(DAMAGE* psDamage)
 
 	if (psDamage->psProjectile->psSource->type == OBJ_DROID)
 	{
-		DROID* psDroid = (DROID*)psDamage->psProjectile->psSource;
+		Droid* psDroid = (Droid*)psDamage->psProjectile->psSource;
 
 		psDroid->kills++;
 
 		if (hasCommander(psDroid))
 		{
-			DROID* psCommander = psDroid->psGroup->psCommander;
+			Droid* psCommander = psDroid->group->psCommander;
 			psCommander->kills++;
 		}
 	}
 	else if (psDamage->psProjectile->psSource->type == OBJ_STRUCTURE)
 	{
-		DROID* psCommander = getDesignatorAttackingObject(psDamage->psProjectile->psSource->player,
-		                                                  psDamage->psProjectile->psDest);
+		Droid* psCommander = getDesignatorAttackingObject(psDamage->psProjectile->psSource->player,
+                                                      psDamage->psProjectile->psDest);
 
 		if (psCommander != nullptr)
 		{
@@ -1717,9 +1717,9 @@ static int32_t objectDamage(DAMAGE* psDamage)
 /* Returns true if an object has just been hit by an electronic warfare weapon*/
 static bool justBeenHitByEW(BASE_OBJECT* psObj)
 {
-	DROID* psDroid;
+	Droid* psDroid;
 	FEATURE* psFeature;
-	STRUCTURE* psStructure;
+	Structure* psStructure;
 
 	if (gamePaused())
 	{
@@ -1729,7 +1729,7 @@ static bool justBeenHitByEW(BASE_OBJECT* psObj)
 	switch (psObj->type)
 	{
 	case OBJ_DROID:
-		psDroid = (DROID*)psObj;
+		psDroid = (Droid*)psObj;
 		if ((gameTime - psDroid->timeLastHit) < ELEC_DAMAGE_DURATION
 			&& psDroid->lastHitWeapon == WSC_ELECTRONIC)
 		{
@@ -1746,7 +1746,7 @@ static bool justBeenHitByEW(BASE_OBJECT* psObj)
 		break;
 
 	case OBJ_STRUCTURE:
-		psStructure = (STRUCTURE*)psObj;
+		psStructure = (Structure*)psObj;
 		if ((gameTime - psStructure->timeLastHit) < ELEC_DAMAGE_DURATION
 			&& psStructure->lastHitWeapon == WSC_ELECTRONIC)
 		{
@@ -1794,7 +1794,7 @@ int establishTargetHeight(BASE_OBJECT const* psTarget)
 	{
 	case OBJ_DROID:
 		{
-			DROID const* psDroid = (DROID const*)psTarget;
+			Droid const* psDroid = (Droid const*)psTarget;
 			unsigned int height = asBodyStats[psDroid->asBits[COMP_BODY]].pIMD->max.y - asBodyStats[psDroid->asBits[
 				COMP_BODY]].pIMD->min.y;
 			unsigned int utilityHeight = 0, yMax = 0, yMin = 0;
@@ -1806,7 +1806,7 @@ int establishTargetHeight(BASE_OBJECT const* psTarget)
 				return (height + VTOL_HITBOX_MODIFICATOR);
 			}
 
-			switch (psDroid->droidType)
+			switch (psDroid->type)
 			{
 			case DROID_WEAPON:
 				if (psDroid->numWeaps > 0)
@@ -1864,9 +1864,9 @@ int establishTargetHeight(BASE_OBJECT const* psTarget)
 		}
 	case OBJ_STRUCTURE:
 		{
-			STRUCTURE_STATS* psStructureStats = ((STRUCTURE const*)psTarget)->pStructureType;
-			int height = psStructureStats->pIMD[0]->max.y + psStructureStats->pIMD[0]->min.y;
-			height -= gateCurrentOpenHeight((STRUCTURE const*)psTarget, gameTime, 2);
+			StructureStats* psStructureStats = ((Structure const*)psTarget)->pStructureType;
+			int height = psStructureStats->IMDs[0]->max.y + psStructureStats->IMDs[0]->min.y;
+			height -= gateCurrentOpenHeight((Structure const*)psTarget, gameTime, 2);
 			// Treat gate as at least 2 units tall, even if open, so that it's possible to hit.
 			return height;
 		}

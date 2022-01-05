@@ -500,7 +500,7 @@ static void DrawRadarObjects()
 	/* Show droids on map - go through all players */
 	for (clan = 0; clan < MAX_PLAYERS; clan++)
 	{
-		DROID* psDroid;
+		Droid* psDroid;
 
 		//see if have to draw enemy/ally color
 		if (bEnemyAllyRadarColor)
@@ -568,7 +568,7 @@ static void DrawRadarObjects()
 		for (SDWORD y = scrollMinY; y < scrollMaxY; y++)
 		{
 			MAPTILE* psTile = mapTile(x, y);
-			STRUCTURE* psStruct;
+			Structure* psStruct;
 			size_t pos = (x - scrollMinX) + (y - scrollMinY) * radarTexWidth;
 
 			ASSERT(pos * sizeof(*radarOverlayBuffer) < radarBufferSize, "Buffer overrun");
@@ -576,7 +576,7 @@ static void DrawRadarObjects()
 			{
 				continue;
 			}
-			psStruct = (STRUCTURE*)psTile->psObject;
+			psStruct = (Structure*)psTile->psObject;
 			clan = psStruct->player;
 
 			//see if have to draw enemy/ally color

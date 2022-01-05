@@ -2326,36 +2326,36 @@ void WZScriptDebugger::selected(const BASE_OBJECT* psObj)
 
 		if (psObj->type == OBJ_DROID)
 		{
-			const DROID* psDroid = castDroid(psObj);
-			selectedObjectDetails["Droid type"] = psDroid->droidType;
+			const Droid* psDroid = castDroid(psObj);
+			selectedObjectDetails["Droid type"] = psDroid->type;
 			selectedObjectDetails["Weight"] = psDroid->weight;
-			selectedObjectDetails["Base speed"] = psDroid->baseSpeed;
-			selectedObjectDetails["Original hit points"] = psDroid->originalBody;
+			selectedObjectDetails["Base speed"] = psDroid->base_speed;
+			selectedObjectDetails["Original hit points"] = psDroid->original_hp;
 			selectedObjectDetails["Experience"] = psDroid->experience;
 			selectedObjectDetails["Frustrated time"] = psDroid->lastFrustratedTime;
-			selectedObjectDetails["Resistance"] = psDroid->resistance;
-			selectedObjectDetails["Secondary order"] = psDroid->secondaryOrder;
+			selectedObjectDetails["Resistance"] = psDroid->resistance_to_electric;
+			selectedObjectDetails["Secondary order"] = psDroid->secondary_order;
 			selectedObjectDetails["Action"] = getDroidActionName(psDroid->action);
 			selectedObjectDetails["Action position"] = glm::to_string(psDroid->actionPos);
-			selectedObjectDetails["Action started"] = psDroid->actionStarted;
-			selectedObjectDetails["Action points"] = psDroid->actionPoints;
+			selectedObjectDetails["Action started"] = psDroid->time_action_started;
+			selectedObjectDetails["Action points"] = psDroid->action_points_done;
 			selectedObjectDetails["Illumination"] = psDroid->illumination;
 			selectedObjectDetails["Blocked bits"] = psDroid->blockedBits;
-			selectedObjectDetails["Move status"] = psDroid->sMove.Status;
-			selectedObjectDetails["Move index"] = psDroid->sMove.pathIndex;
-			selectedObjectDetails["Move points"] = psDroid->sMove.asPath.size();
-			selectedObjectDetails["Move destination"] = glm::to_string(psDroid->sMove.destination);
-			selectedObjectDetails["Move source"] = glm::to_string(psDroid->sMove.src);
-			selectedObjectDetails["Move target"] = glm::to_string(psDroid->sMove.target);
-			selectedObjectDetails["Move bump pos"] = glm::to_string(psDroid->sMove.bumpPos);
-			selectedObjectDetails["Move speed"] = psDroid->sMove.speed;
-			selectedObjectDetails["Move direction"] = psDroid->sMove.moveDir;
-			selectedObjectDetails["Move bump dir"] = psDroid->sMove.bumpDir;
-			selectedObjectDetails["Move bump time"] = psDroid->sMove.bumpTime;
-			selectedObjectDetails["Move last bump"] = psDroid->sMove.lastBump;
-			selectedObjectDetails["Move pause time"] = psDroid->sMove.pauseTime;
-			selectedObjectDetails["Move shuffle start"] = psDroid->sMove.shuffleStart;
-			selectedObjectDetails["Move vert speed"] = psDroid->sMove.iVertSpeed;
+			selectedObjectDetails["Move status"] = psDroid->movement.Status;
+			selectedObjectDetails["Move index"] = psDroid->movement.pathIndex;
+			selectedObjectDetails["Move points"] = psDroid->movement.asPath.size();
+			selectedObjectDetails["Move destination"] = glm::to_string(psDroid->movement.destination);
+			selectedObjectDetails["Move source"] = glm::to_string(psDroid->movement.src);
+			selectedObjectDetails["Move target"] = glm::to_string(psDroid->movement.target);
+			selectedObjectDetails["Move bump pos"] = glm::to_string(psDroid->movement.bumpPos);
+			selectedObjectDetails["Move speed"] = psDroid->movement.speed;
+			selectedObjectDetails["Move direction"] = psDroid->movement.moveDir;
+			selectedObjectDetails["Move bump dir"] = psDroid->movement.bumpDir;
+			selectedObjectDetails["Move bump time"] = psDroid->movement.bumpTime;
+			selectedObjectDetails["Move last bump"] = psDroid->movement.lastBump;
+			selectedObjectDetails["Move pause time"] = psDroid->movement.pauseTime;
+			selectedObjectDetails["Move shuffle start"] = psDroid->movement.shuffleStart;
+			selectedObjectDetails["Move vert speed"] = psDroid->movement.iVertSpeed;
 			selectedObjectDetails["Body"] = componentToString(asBodyStats + psDroid->asBits[COMP_BODY], psObj->player);
 			selectedObjectDetails["Brain"] = componentToString(asBrainStats + psDroid->asBits[COMP_BRAIN],
 			                                                   psObj->player);
@@ -2371,7 +2371,7 @@ void WZScriptDebugger::selected(const BASE_OBJECT* psObj)
 		}
 		else if (psObj->type == OBJ_STRUCTURE)
 		{
-			const STRUCTURE* psStruct = castStructure(psObj);
+			const Structure* psStruct = castStructure(psObj);
 			selectedObjectDetails["Build points"] = psStruct->currentBuildPts;
 			selectedObjectDetails["Build rate"] = psStruct->buildRate;
 			selectedObjectDetails["Resistance"] = psStruct->resistance;
@@ -2379,10 +2379,10 @@ void WZScriptDebugger::selected(const BASE_OBJECT* psObj)
 			selectedObjectDetails["Capacity"] = psStruct->capacity;
 			selectedObjectDetails["^Type"] = psStruct->pStructureType->type;
 			selectedObjectDetails["^Build points"] = structureBuildPointsToCompletion(*psStruct);
-			selectedObjectDetails["^Power points"] = psStruct->pStructureType->powerToBuild;
+			selectedObjectDetails["^Power points"] = psStruct->pStructureType->power_cost;
 			selectedObjectDetails["^Height"] = psStruct->pStructureType->height;
-			selectedObjectDetails["ECM"] = componentToString(psStruct->pStructureType->pECM, psObj->player);
-			selectedObjectDetails["Sensor"] = componentToString(psStruct->pStructureType->pSensor, psObj->player);
+			selectedObjectDetails["ECM"] = componentToString(psStruct->pStructureType->ecm_stats, psObj->player);
+			selectedObjectDetails["Sensor"] = componentToString(psStruct->pStructureType->sensor_stats, psObj->player);
 			if (psStruct->pStructureType->type == REF_REARM_PAD)
 			{
 				selectedObjectDetails[":timeStarted"] = psStruct->pFunctionality->rearmPad.timeStarted;

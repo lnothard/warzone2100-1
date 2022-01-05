@@ -155,11 +155,11 @@ void checkObject(const SIMPLE_OBJECT* psObject, const char* const location_descr
 	switch (psObject->type)
 	{
 	case OBJ_DROID:
-		checkDroid((const DROID*)psObject, location_description, function, recurse - 1);
+		checkDroid((const Droid*)psObject, location_description, function, recurse - 1);
 		break;
 
 	case OBJ_STRUCTURE:
-		checkStructure((const STRUCTURE*)psObject, location_description, function, recurse - 1);
+		checkStructure((const Structure*)psObject, location_description, function, recurse - 1);
 		break;
 
 	case OBJ_PROJECTILE:
@@ -180,9 +180,9 @@ void _syncDebugObject(const char* function, SIMPLE_OBJECT const* psObject, char 
 {
 	switch (psObject->type)
 	{
-	case OBJ_DROID: _syncDebugDroid(function, (const DROID*)psObject, ch);
+	case OBJ_DROID: _syncDebugDroid(function, (const Droid*)psObject, ch);
 		break;
-	case OBJ_STRUCTURE: _syncDebugStructure(function, (const STRUCTURE*)psObject, ch);
+	case OBJ_STRUCTURE: _syncDebugStructure(function, (const Structure*)psObject, ch);
 		break;
 	case OBJ_FEATURE: _syncDebugFeature(function, (const FEATURE*)psObject, ch);
 		break;
@@ -200,7 +200,7 @@ Vector2i getStatsSize(BASE_STATS const* pType, uint16_t direction)
 {
 	if (StatIsStructure(pType))
 	{
-		return static_cast<STRUCTURE_STATS const*>(pType)->size(direction);
+		return static_cast<StructureStats const*>(pType)->size(direction);
 	}
 	else if (StatIsFeature(pType))
 	{
@@ -211,7 +211,7 @@ Vector2i getStatsSize(BASE_STATS const* pType, uint16_t direction)
 
 StructureBounds getStructureBounds(BASE_OBJECT const* object)
 {
-	STRUCTURE const* psStructure = castStructure(object);
+	Structure const* psStructure = castStructure(object);
 	FEATURE const* psFeature = castFeature(object);
 
 	if (psStructure != nullptr)
@@ -230,7 +230,7 @@ StructureBounds getStructureBounds(BASE_STATS const* stats, Vector2i pos, uint16
 {
 	if (StatIsStructure(stats))
 	{
-		return getStructureBounds(static_cast<STRUCTURE_STATS const*>(stats), pos, direction);
+		return getStructureBounds(static_cast<StructureStats const*>(stats), pos, direction);
 	}
 	else if (StatIsFeature(stats))
 	{

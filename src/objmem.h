@@ -27,11 +27,11 @@
 #include "objectdef.h"
 
 /* The lists of objects allocated */
-extern DROID* apsDroidLists[MAX_PLAYERS];
-extern STRUCTURE* apsStructLists[MAX_PLAYERS];
+extern Droid* apsDroidLists[MAX_PLAYERS];
+extern Structure* apsStructLists[MAX_PLAYERS];
 extern FEATURE* apsFeatureLists[MAX_PLAYERS];
 extern FLAG_POSITION* apsFlagPosLists[MAX_PLAYERS];
-extern STRUCTURE* apsExtractorLists[MAX_PLAYERS];
+extern Structure* apsExtractorLists[MAX_PLAYERS];
 extern BASE_OBJECT* apsSensorList[1];
 extern FEATURE* apsOilList[1];
 
@@ -53,16 +53,16 @@ uint32_t generateNewObjectId();
 uint32_t generateSynchronisedObjectId();
 
 /* add the droid to the Droid Lists */
-void addDroid(DROID* psDroidToAdd, DROID* pList[MAX_PLAYERS]);
+void addDroid(Droid* psDroidToAdd, Droid* pList[MAX_PLAYERS]);
 
 /*destroy a droid */
-void killDroid(DROID* psDel);
+void killDroid(Droid* psDel);
 
 /* Remove all droids */
 void freeAllDroids();
 
 /*Remove a single Droid from its list*/
-void removeDroid(DROID* psDroidToRemove, DROID* pList[MAX_PLAYERS]);
+void removeDroid(Droid* psDroidToRemove, Droid* pList[MAX_PLAYERS]);
 
 /*Removes all droids that may be stored in the mission lists*/
 void freeAllMissionDroids();
@@ -71,16 +71,16 @@ void freeAllMissionDroids();
 void freeAllLimboDroids();
 
 /* add the structure to the Structure Lists */
-void addStructure(STRUCTURE* psStructToAdd);
+void addStructure(Structure* psStructToAdd);
 
 /* Destroy a structure */
-void killStruct(STRUCTURE* psDel);
+void killStruct(Structure* psDel);
 
 /* Remove all structures */
 void freeAllStructs();
 
 /*Remove a single Structure from a list*/
-void removeStructureFromList(STRUCTURE* psStructToRemove, STRUCTURE* pList[MAX_PLAYERS]);
+void removeStructureFromList(Structure* psStructToRemove, Structure* pList[MAX_PLAYERS]);
 
 /* add the feature to the Feature Lists */
 void addFeature(FEATURE* psFeatureToAdd);

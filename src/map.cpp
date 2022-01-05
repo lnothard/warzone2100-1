@@ -1994,8 +1994,8 @@ static void threatUpdate(int player)
 	// Step 2: Set threat bits
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{
-		DROID* psDroid;
-		STRUCTURE* psStruct;
+		Droid* psDroid;
+		Structure* psStruct;
 
 		if (aiCheckAlliances(player, i))
 		{
@@ -2007,8 +2007,8 @@ static void threatUpdate(int player)
 		{
 			UBYTE mode = 0;
 
-			if (psDroid->droidType == DROID_CONSTRUCT || psDroid->droidType == DROID_CYBORG_CONSTRUCT
-				|| psDroid->droidType == DROID_REPAIR || psDroid->droidType == DROID_CYBORG_REPAIR)
+			if (psDroid->type == DROID_CONSTRUCT || psDroid->type == DROID_CYBORG_CONSTRUCT
+					|| psDroid->type == DROID_REPAIR || psDroid->type == DROID_CYBORG_REPAIR)
 			{
 				continue; // hack that really should not be needed, but is -- trucks can SHOOT_ON_GROUND...!
 			}
@@ -2016,7 +2016,7 @@ static void threatUpdate(int player)
 			{
 				mode |= asWeaponStats[psDroid->asWeaps[weapon].nStat].surfaceToAir;
 			}
-			if (psDroid->droidType == DROID_SENSOR) // special treatment for sensor turrets, no multiweapon support
+			if (psDroid->type == DROID_SENSOR) // special treatment for sensor turrets, no multiweapon support
 			{
 				mode |= SHOOT_ON_GROUND; // assume it only shoots at ground targets for now
 			}
@@ -2034,7 +2034,7 @@ static void threatUpdate(int player)
 			{
 				mode |= asWeaponStats[psStruct->asWeaps[weapon].nStat].surfaceToAir;
 			}
-			if (psStruct->pStructureType->pSensor && psStruct->pStructureType->pSensor->location == LOC_TURRET)
+			if (psStruct->pStructureType->sensor_stats && psStruct->pStructureType->sensor_stats->location == LOC_TURRET)
 			// special treatment for sensor turrets
 			{
 				mode |= SHOOT_ON_GROUND; // assume it only shoots at ground targets for now

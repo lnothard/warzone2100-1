@@ -6,33 +6,33 @@
 #include "power.h"
 #include "structure.h"
 
-StructureBounds::StructureBounds()
-  : top_left_coords(0, 0), size_in_coords(0, 0)
-{
-}
+//StructureBounds::StructureBounds()
+//  : top_left_coords(0, 0), size_in_coords(0, 0)
+//{
+//}
+//
+//StructureBounds::StructureBounds(const Vector2i& top_left_coords,
+//                                 const Vector2i& size_in_coords)
+//  : top_left_coords{top_left_coords}, size_in_coords{size_in_coords}
+//{
+//}
 
-StructureBounds::StructureBounds(const Vector2i& top_left_coords,
-                                 const Vector2i& size_in_coords)
-  : top_left_coords{top_left_coords}, size_in_coords{size_in_coords}
-{
-}
-
-Vector2i Structure_Stats::size(unsigned direction) const
-{
-  Vector2i size(base_width, base_breadth);
-  if ((snapDirection(direction) & 0x4000) != 0)  {
-    // if building is rotated left or right by 90°, swap width and height
-    std::swap(size.x, size.y);
-  }
-  return size;
-}
-
-bool Structure_Stats::is_expansion_module() const noexcept
-{
-  return type == POWER_MODULE ||
-         type == FACTORY_MODULE ||
-         type == RESEARCH_MODULE;
-}
+//Vector2i Structure_Stats::size(unsigned direction) const
+//{
+//  Vector2i size(base_width, base_breadth);
+//  if ((snapDirection(direction) & 0x4000) != 0)  {
+//    // if building is rotated left or right by 90°, swap width and height
+//    std::swap(size.x, size.y);
+//  }
+//  return size;
+//}
+//
+//bool Structure_Stats::is_expansion_module() const noexcept
+//{
+//  return type == POWER_MODULE ||
+//         type == FACTORY_MODULE ||
+//         type == RESEARCH_MODULE;
+//}
 
 namespace Impl {
 
@@ -41,13 +41,13 @@ namespace Impl {
 	{
 	}
 
-	bool Structure::is_blueprint() const noexcept
-	{
-		return state == BLUEPRINT_VALID ||
-			state == BLUEPRINT_INVALID ||
-			state == BLUEPRINT_PLANNED ||
-			state == BLUEPRINT_PLANNED_BY_ALLY;
-	}
+//	bool Structure::is_blueprint() const noexcept
+//	{
+//		return state == BLUEPRINT_VALID ||
+//			state == BLUEPRINT_INVALID ||
+//			state == BLUEPRINT_PLANNED ||
+//			state == BLUEPRINT_PLANNED_BY_ALLY;
+//	}
 
 	bool Structure::is_wall() const noexcept
 	{
@@ -72,56 +72,56 @@ namespace Impl {
 		return expected_damage > hit_points && expected_damage - hit_points > hit_points / 15;
 	}
 
-	bool Structure::is_pulled_to_terrain() const
-	{
-		return is_wall() || stats->type == DEFENSE || stats->type == GATE || stats->type == REARM_PAD;
-	}
+//	bool Structure::is_pulled_to_terrain() const
+//	{
+//		return is_wall() || stats->type == DEFENSE || stats->type == GATE || stats->type == REARM_PAD;
+//	}
 
-	bool Structure::has_modules() const noexcept
-	{
-		return num_modules > 0;
-	}
+//	bool Structure::has_modules() const noexcept
+//	{
+//		return num_modules > 0;
+//	}
 
 	bool Structure::has_sensor() const
 	{
 		return stats->sensor_stats != nullptr;
 	}
 
-	bool Structure::has_standard_sensor() const
-	{
-		if (!has_sensor())  {
-      return false;
-    }
-		const auto sensor_type = stats->sensor_stats->type;
-		return sensor_type == STANDARD || sensor_type == SUPER;
-	}
+//	bool Structure::has_standard_sensor() const
+//	{
+//		if (!has_sensor())  {
+//      return false;
+//    }
+//		const auto sensor_type = stats->sensor_stats->type;
+//		return sensor_type == STANDARD || sensor_type == SUPER;
+//	}
 
-	bool Structure::has_CB_sensor() const
-	{
-		if (!has_sensor())  {
-      return false;
-    }
-		const auto sensor_type = stats->sensor_stats->type;
-		return sensor_type == INDIRECT_CB || sensor_type == SUPER;
-	}
+//	bool Structure::has_CB_sensor() const
+//	{
+//		if (!has_sensor())  {
+//      return false;
+//    }
+//		const auto sensor_type = stats->sensor_stats->type;
+//		return sensor_type == INDIRECT_CB || sensor_type == SUPER;
+//	}
 
-	bool Structure::has_VTOL_intercept_sensor() const
-	{
-		if (!has_sensor())  {
-      return false;
-    }
-		const auto sensor_type = stats->sensor_stats->type;
-		return sensor_type == VTOL_INTERCEPT || sensor_type == SUPER;
-	}
+//	bool Structure::has_VTOL_intercept_sensor() const
+//	{
+//		if (!has_sensor())  {
+//      return false;
+//    }
+//		const auto sensor_type = stats->sensor_stats->type;
+//		return sensor_type == VTOL_INTERCEPT || sensor_type == SUPER;
+//	}
 
-	bool Structure::has_VTOL_CB_sensor() const
-	{
-		if (!has_sensor())  {
-      return false;
-    }
-		const auto sensor_type = stats->sensor_stats->type;
-		return sensor_type == VTOL_CB || sensor_type == SUPER;
-	}
+//	bool Structure::has_VTOL_CB_sensor() const
+//	{
+//		if (!has_sensor())  {
+//      return false;
+//    }
+//		const auto sensor_type = stats->sensor_stats->type;
+//		return sensor_type == VTOL_CB || sensor_type == SUPER;
+//	}
 
 	bool Structure::smoke_when_damaged() const noexcept
 	{
@@ -211,10 +211,10 @@ namespace Impl {
 		foundation_depth = depth;
 	}
 
-  unsigned Structure::build_points_to_completion() const
-  {
-    return stats->build_point_cost - current_build_points;
-  }
+//  unsigned Structure::build_points_to_completion() const
+//  {
+//    return stats->build_point_cost - current_build_points;
+//  }
 
   unsigned Structure::calculate_refunded_power() const
   {
@@ -243,19 +243,19 @@ namespace Impl {
     }
   }
 
-  unsigned count_assigned_droids(const Structure& structure)
-	{
-		const auto& droids = droid_lists[selectedPlayer];
-		return std::count_if(droids.begin(), droids.end(),
-                         [&structure](const auto& droid)
-		{
-			if (droid.get_current_order().target_object->get_id() == structure.get_id() &&
-				droid.get_player() == structure.get_player())
-			{
-				return droid.is_VTOL() || has_artillery(structure);
-			}
-		});
-	}
+//  unsigned count_assigned_droids(const Structure& structure)
+//	{
+//		const auto& droids = droid_lists[selectedPlayer];
+//		return std::count_if(droids.begin(), droids.end(),
+//                         [&structure](const auto& droid)
+//		{
+//			if (droid.get_current_order().target_object->get_id() == structure.get_id() &&
+//				droid.get_player() == structure.get_player())
+//			{
+//				return droid.is_VTOL() || has_artillery(structure);
+//			}
+//		});
+//	}
 
 	bool being_built(const Structure& structure)
 	{
@@ -342,62 +342,62 @@ namespace Impl {
 		return (foundation_min + foundation_max) / 2;
 	}
 
-  // recursing is safe here since recursive call will always jump to else block
-  #pragma clang diagnostic ignored "misc-no-recursion"
-	void align_structure(Structure& structure)
-	{
-		if (!structure.is_pulled_to_terrain())
-		{
-			const auto map_height = calculate_foundation_height(structure);
-			adjust_tile_height(structure, map_height);
-			structure.set_height(map_height);
-			structure.set_foundation_depth(structure.get_position().z);
-
-			const auto& bounds = get_bounds(structure);
-			const auto x_max = bounds.size_in_coords.x;
-			const auto y_max = bounds.size_in_coords.y;
-			const auto coords = bounds.top_left_coords;
-
-			for (int breadth = -1; breadth <= y_max; ++breadth)
-			{
-				for (int width = -1; width <= x_max; ++width)
-				{
-					auto neighbouring_structure = dynamic_cast<Structure*>(
-						get_map_tile(coords.x + width, coords.y + breadth)->occupying_object);
-					if (neighbouring_structure &&
-              neighbouring_structure->is_pulled_to_terrain())  {
-						align_structure(*neighbouring_structure);
-					}
-				}
-			}
-		}
-		else
-		{
-			const auto& imd = structure.get_display_data().imd_shape;
-			structure.set_height(TILE_MIN_HEIGHT);
-			structure.set_foundation_depth(TILE_MAX_HEIGHT);
-
-			const auto dir = iSinCosR(structure.get_rotation().direction, 1);
-
-			// rotate imd->max.{x, z} and imd->min.{x, z} by angle rot.direction.
-			Vector2i pos1{imd->max.x * dir.y - imd->max.z * dir.x, imd->max.x * dir.x + imd->max.z * dir.y};
-			Vector2i pos2{imd->min.x * dir.y - imd->min.z * dir.x, imd->min.x * dir.x + imd->min.z * dir.y};
-
-			const auto height1 = calculate_map_height(structure.get_position().x + pos1.x,
-                                      structure.get_position().y + pos2.y);
-			const auto height2 = calculate_map_height(structure.get_position().x + pos1.x,
-                                      structure.get_position().y + pos1.y);
-			const auto height3 = calculate_map_height(structure.get_position().x + pos2.x,
-                                      structure.get_position().y + pos1.y);
-			const auto height4 = calculate_map_height(structure.get_position().x + pos2.x,
-                                      structure.get_position().y + pos2.y);
-
-			const auto min_height = std::min({height1, height2, height3, height4});
-			const auto max_height = std::max({height1, height2, height3, height4});
-			structure.set_height(std::max(structure.get_position().z, max_height));
-			structure.set_foundation_depth(std::min<int>(structure.get_foundation_depth(), min_height));
-		}
-	}
+//  // recursing is safe here since recursive call will always jump to else block
+//  #pragma clang diagnostic ignored "misc-no-recursion"
+//	void align_structure(Structure& structure)
+//	{
+//		if (!structure.is_pulled_to_terrain())
+//		{
+//			const auto map_height = calculate_foundation_height(structure);
+//			adjust_tile_height(structure, map_height);
+//			structure.set_height(map_height);
+//			structure.set_foundation_depth(structure.get_position().z);
+//
+//			const auto& bounds = get_bounds(structure);
+//			const auto x_max = bounds.size_in_coords.x;
+//			const auto y_max = bounds.size_in_coords.y;
+//			const auto coords = bounds.top_left_coords;
+//
+//			for (int breadth = -1; breadth <= y_max; ++breadth)
+//			{
+//				for (int width = -1; width <= x_max; ++width)
+//				{
+//					auto neighbouring_structure = dynamic_cast<Structure*>(
+//						get_map_tile(coords.x + width, coords.y + breadth)->occupying_object);
+//					if (neighbouring_structure &&
+//              neighbouring_structure->is_pulled_to_terrain())  {
+//						align_structure(*neighbouring_structure);
+//					}
+//				}
+//			}
+//		}
+//		else
+//		{
+//			const auto& imd = structure.get_display_data().imd_shape;
+//			structure.set_height(TILE_MIN_HEIGHT);
+//			structure.set_foundation_depth(TILE_MAX_HEIGHT);
+//
+//			const auto dir = iSinCosR(structure.get_rotation().direction, 1);
+//
+//			// rotate imd->max.{x, z} and imd->min.{x, z} by angle rot.direction.
+//			Vector2i pos1{imd->max.x * dir.y - imd->max.z * dir.x, imd->max.x * dir.x + imd->max.z * dir.y};
+//			Vector2i pos2{imd->min.x * dir.y - imd->min.z * dir.x, imd->min.x * dir.x + imd->min.z * dir.y};
+//
+//			const auto height1 = calculate_map_height(structure.get_position().x + pos1.x,
+//                                      structure.get_position().y + pos2.y);
+//			const auto height2 = calculate_map_height(structure.get_position().x + pos1.x,
+//                                      structure.get_position().y + pos1.y);
+//			const auto height3 = calculate_map_height(structure.get_position().x + pos2.x,
+//                                      structure.get_position().y + pos1.y);
+//			const auto height4 = calculate_map_height(structure.get_position().x + pos2.x,
+//                                      structure.get_position().y + pos2.y);
+//
+//			const auto min_height = std::min({height1, height2, height3, height4});
+//			const auto max_height = std::max({height1, height2, height3, height4});
+//			structure.set_height(std::max(structure.get_position().z, max_height));
+//			structure.set_foundation_depth(std::min<int>(structure.get_foundation_depth(), min_height));
+//		}
+//	}
 
 	bool target_within_range(const Structure& structure, const Unit& target, int weapon_slot)
 	{
@@ -413,11 +413,11 @@ namespace Impl {
 	}
 }
 
-bool RearmPad::is_clear() const
-{
-	return rearm_target == nullptr ||
-         rearm_target->is_VTOL_rearmed_and_repaired();
-}
+//bool RearmPad::is_clear() const
+//{
+//	return rearm_target == nullptr ||
+//         rearm_target->is_VTOL_rearmed_and_repaired();
+//}
 
 void Factory::increment_production_loops()
 {
@@ -476,97 +476,97 @@ const Structure* find_repair_facility(unsigned player)
   return (it != std::begin(structures)) ? *it : nullptr;
 }
 
-void set_structure_non_blocking(const Impl::Structure& structure)
-{
-  const auto bounds = Impl::get_bounds(structure);
-  for (int i = 0; i < bounds.size_in_coords.x; ++i)
-  {
-    for (int j = 0; j < bounds.size_in_coords.y; ++j)
-    {
-      aux_clear(bounds.top_left_coords.x + i,
-                bounds.top_left_coords.y + j,
-                AUX_BLOCKING | AUX_OUR_BUILDING | AUX_NON_PASSABLE);
-    }
-  }
+//void set_structure_non_blocking(const Impl::Structure& structure)
+//{
+//  const auto bounds = Impl::get_bounds(structure);
+//  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+//  {
+//    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+//    {
+//      aux_clear(bounds.top_left_coords.x + i,
+//                bounds.top_left_coords.y + j,
+//                AUX_BLOCKING | AUX_OUR_BUILDING | AUX_NON_PASSABLE);
+//    }
+//  }
+//}
+
+//void set_structure_blocking(const Impl::Structure& structure)
+//{
+//  const auto bounds = Impl::get_bounds(structure);
+//  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+//  {
+//    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+//    {
+//      aux_set_allied(bounds.top_left_coords.x + i,
+//                     bounds.top_left_coords.y + j,
+//                     structure.get_player(),
+//                     AUX_OUR_BUILDING);
+//
+//      aux_set_all(bounds.top_left_coords.x + i,
+//                  bounds.top_left_coords.y + j,
+//                  AUX_BLOCKING | AUX_NON_PASSABLE);
+//    }
+//  }
+//}
+
+//void open_gate(const Impl::Structure& structure)
+//{
+//  const auto bounds = Impl::get_bounds(structure);
+//  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+//  {
+//    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+//    {
+//      aux_clear(bounds.top_left_coords.x + i,
+//                bounds.top_left_coords.y + j,
+//                AUX_BLOCKING);
+//    }
+//  }
 }
 
-void set_structure_blocking(const Impl::Structure& structure)
-{
-  const auto bounds = Impl::get_bounds(structure);
-  for (int i = 0; i < bounds.size_in_coords.x; ++i)
-  {
-    for (int j = 0; j < bounds.size_in_coords.y; ++j)
-    {
-      aux_set_allied(bounds.top_left_coords.x + i,
-                     bounds.top_left_coords.y + j,
-                     structure.get_player(),
-                     AUX_OUR_BUILDING);
+//void close_gate(const Impl::Structure& structure)
+//{
+//  const auto bounds = Impl::get_bounds(structure);
+//  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+//  {
+//    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+//    {
+//      aux_set_enemy(bounds.top_left_coords.x + i,
+//                    bounds.top_left_coords.y + j,
+//                    structure.get_player(),
+//                    AUX_NON_PASSABLE);
+//
+//      aux_set_all(bounds.top_left_coords.x + i,
+//                  bounds.top_left_coords.y + j,
+//                  AUX_BLOCKING);
+//    }
+//  }
+//}
 
-      aux_set_all(bounds.top_left_coords.x + i,
-                  bounds.top_left_coords.y + j,
-                  AUX_BLOCKING | AUX_NON_PASSABLE);
-    }
-  }
-}
-
-void open_gate(const Impl::Structure& structure)
-{
-  const auto bounds = Impl::get_bounds(structure);
-  for (int i = 0; i < bounds.size_in_coords.x; ++i)
-  {
-    for (int j = 0; j < bounds.size_in_coords.y; ++j)
-    {
-      aux_clear(bounds.top_left_coords.x + i,
-                bounds.top_left_coords.y + j,
-                AUX_BLOCKING);
-    }
-  }
-}
-
-void close_gate(const Impl::Structure& structure)
-{
-  const auto bounds = Impl::get_bounds(structure);
-  for (int i = 0; i < bounds.size_in_coords.x; ++i)
-  {
-    for (int j = 0; j < bounds.size_in_coords.y; ++j)
-    {
-      aux_set_enemy(bounds.top_left_coords.x + i,
-                    bounds.top_left_coords.y + j,
-                    structure.get_player(),
-                    AUX_NON_PASSABLE);
-
-      aux_set_all(bounds.top_left_coords.x + i,
-                  bounds.top_left_coords.y + j,
-                  AUX_BLOCKING);
-    }
-  }
-}
-
-bool ProductionRun::operator ==(const DroidTemplate& rhs) const
-{
-  return target->id == rhs.id;
-}
-
-void ProductionRun::restart()
-{
-  quantity_built = 0;
-}
-
-int ProductionRun::tasks_remaining() const
-{
-  return quantity_to_build - quantity_built;
-}
-
-bool ProductionRun::is_valid() const
-{
-  return target && quantity_to_build > 0 &&
-         quantity_built <= quantity_to_build;
-}
-
-bool ProductionRun::is_complete() const
-{
-  return tasks_remaining() == 0;
-}
+//bool ProductionRun::operator ==(const DroidTemplate& rhs) const
+//{
+//  return target->id == rhs.id;
+//}
+//
+//void ProductionRun::restart()
+//{
+//  quantity_built = 0;
+//}
+//
+//int ProductionRun::tasks_remaining() const
+//{
+//  return quantity_to_build - quantity_built;
+//}
+//
+//bool ProductionRun::is_valid() const
+//{
+//  return target && quantity_to_build > 0 &&
+//         quantity_built <= quantity_to_build;
+//}
+//
+//bool ProductionRun::is_complete() const
+//{
+//  return tasks_remaining() == 0;
+//}
 
 void PowerGenerator::print_info() const
 {

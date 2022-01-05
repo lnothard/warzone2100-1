@@ -41,7 +41,7 @@
 extern UDWORD selectedPlayer;
 
 /** This global instance is responsible for dealing with the each player's target designator.*/
-DROID* apsCmdDesignator[MAX_PLAYERS];
+Droid* apsCmdDesignator[MAX_PLAYERS];
 
 // Last time the max commander limit message was displayed
 static UDWORD lastMaxCmdLimitMsgTime = 0;
@@ -52,7 +52,7 @@ static UDWORD lastMaxCmdLimitMsgTime = 0;
 /** This function allocs the global instance apsCmdDesignator.*/
 bool cmdDroidInit()
 {
-	memset(apsCmdDesignator, 0, sizeof(DROID*) * MAX_PLAYERS);
+	memset(apsCmdDesignator, 0, sizeof(Droid*) * MAX_PLAYERS);
 	return true;
 }
 
@@ -80,7 +80,7 @@ void cmdDroidUpdate()
  * It creates a group if it doesn't exist.
  * If the group is not full, it adds the droid to it and sets all the droid's states and orders to the group's.
  */
-bool cmdDroidAddDroid(DROID* psCommander, DROID* psDroid)
+bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 {
 	DROID_GROUP* psGroup;
 	bool addedToGroup = false;
@@ -88,27 +88,27 @@ bool cmdDroidAddDroid(DROID* psCommander, DROID* psDroid)
 	ASSERT_OR_RETURN(false, psCommander != nullptr, "psCommander is null?");
 	ASSERT_OR_RETURN(false, psDroid != nullptr, "psDroid is null?");
 
-	if (psCommander->psGroup == nullptr)
+	if (psCommander->group == nullptr)
 	{
 		psGroup = grpCreate();
 		psGroup->add(psCommander);
 		psDroid->group = UBYTE_MAX;
 	}
 
-	if (psCommander->psGroup->getNumMembers() < cmdDroidMaxGroup(psCommander))
+	if (psCommander->group->getNumMembers() < cmdDroidMaxGroup(psCommander))
 	{
 		addedToGroup = true;
 
-		psCommander->psGroup->add(psDroid);
+		psCommander->group->add(psDroid);
 		psDroid->group = UBYTE_MAX;
 
 		// set the secondary states for the unit
 		// dont reset DSO_ATTACK_RANGE, because there is no way to modify it under commander
-		secondarySetState(psDroid, DSO_REPAIR_LEVEL, (SECONDARY_STATE)(psCommander->secondaryOrder & DSS_REPLEV_MASK),
+		secondarySetState(psDroid, DSO_REPAIR_LEVEL, (SECONDARY_STATE)(psCommander->secondary_order & DSS_REPLEV_MASK),
 		                  ModeImmediate);
-		secondarySetState(psDroid, DSO_ATTACK_LEVEL, (SECONDARY_STATE)(psCommander->secondaryOrder & DSS_ALEV_MASK),
+		secondarySetState(psDroid, DSO_ATTACK_LEVEL, (SECONDARY_STATE)(psCommander->secondary_order & DSS_ALEV_MASK),
 		                  ModeImmediate);
-		secondarySetState(psDroid, DSO_HALTTYPE, (SECONDARY_STATE)(psCommander->secondaryOrder & DSS_HALT_MASK),
+		secondarySetState(psDroid, DSO_HALTTYPE, (SECONDARY_STATE)(psCommander->secondary_order & DSS_HALT_MASK),
 		                  ModeImmediate);
 
 		orderDroidObj(psDroid, DORDER_GUARD, (BASE_OBJECT*)psCommander, ModeImmediate);
@@ -127,15 +127,15 @@ bool cmdDroidAddDroid(DROID* psCommander, DROID* psDroid)
 	return addedToGroup;
 }
 
-DROID* cmdDroidGetDesignator(UDWORD player)
+Droid* cmdDroidGetDesignator(UDWORD player)
 {
 	return apsCmdDesignator[player];
 }
 
-void cmdDroidSetDesignator(DROID* psDroid)
+void cmdDroidSetDesignator(Droid* psDroid)
 {
 	ASSERT_OR_RETURN(, psDroid != nullptr, "Invalid droid!");
-	if (psDroid->droidType != DROID_COMMAND)
+	if (psDroid->type != DROID_COMMAND)
 	{
 		return;
 	}

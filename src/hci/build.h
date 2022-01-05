@@ -6,9 +6,9 @@
 class BuildController : public BaseObjectsStatsController, public std::enable_shared_from_this<BuildController>
 {
 public:
-	STRUCTURE_STATS* getObjectStatsAt(size_t objectIndex) const override;
+	StructureStats* getObjectStatsAt(size_t objectIndex) const override;
 
-	STRUCTURE_STATS* getStatsAt(size_t statsIndex) const override
+	StructureStats* getStatsAt(size_t statsIndex) const override
 	{
 		ASSERT_OR_RETURN(nullptr, statsIndex < stats.size(), "Invalid stats index (%zu); max: (%zu)", statsIndex,
 		                 stats.size());
@@ -47,7 +47,7 @@ public:
 		return builders.size();
 	}
 
-	DROID* getObjectAt(size_t index) const override
+	Droid* getObjectAt(size_t index) const override
 	{
 		ASSERT_OR_RETURN(nullptr, index < builders.size(), "Invalid object index (%zu); max: (%zu)", index,
 		                 builders.size());
@@ -60,12 +60,12 @@ public:
 	}
 
 	void updateData();
-	void toggleFavorites(STRUCTURE_STATS* buildOption);
-	void startBuildPosition(STRUCTURE_STATS* buildOption);
+	void toggleFavorites(StructureStats* buildOption);
+	void startBuildPosition(StructureStats* buildOption);
 	bool showInterface() override;
 	void refresh() override;
 	void clearData() override;
-	void toggleBuilderSelection(DROID* droid);
+	void toggleBuilderSelection(Droid* droid);
 	std::shared_ptr<StatsForm> makeStatsForm() override;
 
 	static void resetShowFavorites()
@@ -73,7 +73,7 @@ public:
 		BuildController::showFavorites = false;
 	}
 
-	DROID* getHighlightedObject() const override
+	Droid* getHighlightedObject() const override
 	{
 		return highlightedBuilder;
 	}
@@ -83,11 +83,11 @@ public:
 private:
 	void updateBuildersList();
 	void updateBuildOptionsList();
-	std::vector<STRUCTURE_STATS*> stats;
-	std::vector<DROID*> builders;
+	std::vector<StructureStats*> stats;
+	std::vector<Droid*> builders;
 
 	static bool showFavorites;
-	static DROID* highlightedBuilder;
+	static Droid* highlightedBuilder;
 };
 
 #endif // __INCLUDED_SRC_HCI_BUILD_INTERFACE_H__

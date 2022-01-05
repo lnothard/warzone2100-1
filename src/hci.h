@@ -36,9 +36,9 @@ typedef std::function<void (const int)> playerCallbackFunc; // callback function
 
 class MultipleChoiceButton;
 class WIDGET;
-struct DROID;
+struct Droid;
 struct PROXIMITY_DISPLAY;
-struct STRUCTURE;
+struct Structure;
 struct W_SCREEN;
 struct iIMDShape;
 
@@ -272,9 +272,9 @@ extern std::shared_ptr<W_SCREEN> psWScreen;
 extern UDWORD intLastWidget;
 
 /* The current template for the design screen to start with*/
-extern std::vector<DROID_TEMPLATE*> apsTemplateList;
+extern std::vector<DroidTemplate*> apsTemplateList;
 ///< Either a list of templates a factory can build or a list of designable templates, for UI use only.
-extern std::list<DROID_TEMPLATE> localTemplates; ///< Unsynchronised list, for UI use only.
+extern std::list<DroidTemplate> localTemplates; ///< Unsynchronised list, for UI use only.
 
 /* pointer to hold the imd to use for a new template in the design screen */
 extern iIMDShape* pNewDesignIMD;
@@ -323,7 +323,7 @@ void intSetMapPos(UDWORD x, UDWORD y);
 void intSetMapPos(UDWORD x, UDWORD y);
 
 /* Tell the interface a research facility has completed a topic */
-void intResearchFinished(STRUCTURE* psBuilding);
+void intResearchFinished(Structure* psBuilding);
 void intAlliedResearchChanged();
 
 /* Sync the interface to an object */
@@ -352,10 +352,10 @@ void intRemoveStatsNoAnim();
 void intRemoveObjectNoAnim();
 
 /*sets which list of structures to use for the interface*/
-STRUCTURE* interfaceStructList();
+Structure* interfaceStructList();
 
 //sets up the Transporter Screen as far as the interface is concerned
-void addTransporterInterface(DROID* psSelected, bool onMission);
+void addTransporterInterface(Droid* psSelected, bool onMission);
 
 /*causes a reticule button to start flashing*/
 void flashReticuleButton(UDWORD buttonID);
@@ -382,8 +382,8 @@ void intRemoveProximityButton(PROXIMITY_DISPLAY* psProxDisp);
 /* Allows us to fool the widgets with a keypress */
 void setKeyButtonMapping(UDWORD val);
 
-STRUCTURE* intFindAStructure();
-DROID* intGotoNextDroidType(DROID* CurrDroid, DROID_TYPE droidType, bool AllowGroup);
+Structure* intFindAStructure();
+Droid* intGotoNextDroidType(Droid* CurrDroid, DROID_TYPE droidType, bool AllowGroup);
 
 /// Returns the number of researches that selectedPlayer is not already researching, or 0 if there are no free laboratories.
 int intGetResearchState();
@@ -411,7 +411,7 @@ void setSecondaryWindowUp(bool value);
 
 void intOpenDebugMenu(OBJECT_TYPE id);
 
-void intStartConstructionPosition(DROID* builder, STRUCTURE_STATS* structure);
+void intStartConstructionPosition(Droid* builder, StructureStats* structure);
 void intSetShouldShowRedundantDesign(bool value);
 bool intGetShouldShowRedundantDesign();
 

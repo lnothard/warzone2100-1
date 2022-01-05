@@ -191,7 +191,7 @@ static GAMECODE renderLoop()
 
 			for (unsigned i = 0; i < MAX_PLAYERS; i++)
 			{
-				for (DROID* psCurr = apsDroidLists[i]; psCurr; psCurr = psCurr->psNext)
+				for (Droid* psCurr = apsDroidLists[i]; psCurr; psCurr = psCurr->psNext)
 				{
 					// Don't copy the next pointer - if droids somehow get destroyed in the graphics rendering loop, who cares if we crash.
 					calcDroidIllumination(psCurr);
@@ -417,10 +417,10 @@ void countUpdate(bool synch)
 		numMissionDroids[i] = 0;
 		numTransporterDroids[i] = 0;
 
-		for (DROID* psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (Droid* psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			numDroids[i]++;
-			switch (psCurr->droidType)
+			switch (psCurr->type)
 			{
 			case DROID_COMMAND:
 				numCommandDroids[i] += 1;
@@ -437,10 +437,10 @@ void countUpdate(bool synch)
 				break;
 			}
 		}
-		for (DROID* psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (Droid* psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			numMissionDroids[i]++;
-			switch (psCurr->droidType)
+			switch (psCurr->type)
 			{
 			case DROID_COMMAND:
 				numCommandDroids[i] += 1;
@@ -457,10 +457,10 @@ void countUpdate(bool synch)
 				break;
 			}
 		}
-		for (DROID* psCurr = apsLimboDroids[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (Droid* psCurr = apsLimboDroids[i]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			// count the type of units
-			switch (psCurr->droidType)
+			switch (psCurr->type)
 			{
 			case DROID_COMMAND:
 				numCommandDroids[i] += 1;
@@ -475,7 +475,7 @@ void countUpdate(bool synch)
 		}
 		// FIXME: These for-loops are code duplicationo
 		setLasSatExists(false, i);
-		for (STRUCTURE* psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->psNext)
+		for (Structure* psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->psNext)
 		{
 			if (psCBuilding->pStructureType->type == REF_SAT_UPLINK && psCBuilding->status == SS_BUILT)
 			{
@@ -487,7 +487,7 @@ void countUpdate(bool synch)
 				setLasSatExists(true, i);
 			}
 		}
-		for (STRUCTURE* psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->
+		for (Structure* psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->
 		     psNext)
 		{
 			if (psCBuilding->pStructureType->type == REF_SAT_UPLINK && psCBuilding->status == SS_BUILT)
@@ -570,15 +570,15 @@ static void gameStateUpdate()
 		//update the current power available for a player
 		updatePlayerPower(i);
 
-		DROID* psNext;
-		for (DROID* psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
+		Droid* psNext;
+		for (Droid* psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
 		{
 			// Copy the next pointer - not 100% sure if the droid could get destroyed but this covers us anyway
 			psNext = psCurr->psNext;
 			droidUpdate(psCurr);
 		}
 
-		for (DROID* psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
+		for (Droid* psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
 		{
 			/* Copy the next pointer - not 100% sure if the droid could
 			get destroyed but this covers us anyway */
@@ -587,14 +587,14 @@ static void gameStateUpdate()
 		}
 
 		// FIXME: These for-loops are code duplicationo
-		STRUCTURE* psNBuilding;
-		for (STRUCTURE* psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
+		Structure* psNBuilding;
+		for (Structure* psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
 		{
 			/* Copy the next pointer - not 100% sure if the structure could get destroyed but this covers us anyway */
 			psNBuilding = psCBuilding->psNext;
 			structureUpdate(psCBuilding, false);
 		}
-		for (STRUCTURE* psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
+		for (Structure* psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
 		{
 			/* Copy the next pointer - not 100% sure if the structure could get destroyed but this covers us anyway. It shouldn't do since its not even on the map!*/
 			psNBuilding = psCBuilding->psNext;
@@ -908,12 +908,12 @@ UDWORD getNumConstructorDroids(UDWORD player)
 }
 
 // increase the droid counts - used by update factory to keep the counts in sync
-void adjustDroidCount(DROID* droid, int delta)
+void adjustDroidCount(Droid* droid, int delta)
 {
 	int player = droid->player;
-	syncDebug("numDroids[%d]:%d=%d→%d", player, droid->droidType, numDroids[player], numDroids[player] + delta);
+	syncDebug("numDroids[%d]:%d=%d→%d", player, droid->type, numDroids[player], numDroids[player] + delta);
 	numDroids[player] += delta;
-	switch (droid->droidType)
+	switch (droid->type)
 	{
 	case DROID_COMMAND:
 		numCommandDroids[player] += delta;
@@ -928,25 +928,25 @@ void adjustDroidCount(DROID* droid, int delta)
 }
 
 // Increase counts of droids in a transporter
-void droidCountsInTransporter(DROID* droid, int player)
+void droidCountsInTransporter(Droid* droid, int player)
 {
-	DROID* psDroid = nullptr;
+	Droid* psDroid = nullptr;
 
-	if (!isTransporter(droid) || droid->psGroup == nullptr)
+	if (!isTransporter(droid) || droid->group == nullptr)
 	{
 		return;
 	}
 
-	numTransporterDroids[player] += droid->psGroup->refCount - 1;
+	numTransporterDroids[player] += droid->group->refCount - 1;
 
 	// and count the units inside it...
-	for (psDroid = droid->psGroup->psList; psDroid != nullptr && psDroid != droid; psDroid = psDroid->psGrpNext)
+	for (psDroid = droid->group->psList; psDroid != nullptr && psDroid != droid; psDroid = psDroid->psGrpNext)
 	{
-		if (psDroid->droidType == DROID_CYBORG_CONSTRUCT || psDroid->droidType == DROID_CONSTRUCT)
+		if (psDroid->type == DROID_CYBORG_CONSTRUCT || psDroid->type == DROID_CONSTRUCT)
 		{
 			numConstructorDroids[player] += 1;
 		}
-		if (psDroid->droidType == DROID_COMMAND)
+		if (psDroid->type == DROID_COMMAND)
 		{
 			numCommandDroids[player] += 1;
 		}

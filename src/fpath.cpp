@@ -403,7 +403,7 @@ queuePathfinding:
 	job.destX = tX;
 	job.destY = tY;
 	job.dstStructure = dstStructure;
-	job.droidType = droidType;
+	job.type = droidType;
 	job.propulsion = propulsionType;
 	job.moveType = moveType;
 	job.owner = owner;
@@ -439,7 +439,7 @@ queuePathfinding:
 
 
 // Find a route for an DROID to a location in world coordinates
-FPATH_RETVAL fpathDroidRoute(DROID* psDroid, SDWORD tX, SDWORD tY, FPATH_MOVETYPE moveType)
+FPATH_RETVAL fpathDroidRoute(Droid* psDroid, SDWORD tX, SDWORD tY, FPATH_MOVETYPE moveType)
 {
 	bool acceptNearest;
 	PROPULSION_STATS* psPropStats = getPropulsionStats(psDroid);
@@ -484,9 +484,9 @@ FPATH_RETVAL fpathDroidRoute(DROID* psDroid, SDWORD tX, SDWORD tY, FPATH_MOVETYP
 		acceptNearest = true;
 		break;
 	}
-	return fpathRoute(&psDroid->sMove, psDroid->id, startPos.x, startPos.y, endPos.x, endPos.y,
-	                  psPropStats->propulsionType,
-	                  psDroid->droidType, moveType, psDroid->player, acceptNearest, dstStructure);
+	return fpathRoute(&psDroid->movement, psDroid->id, startPos.x, startPos.y, endPos.x, endPos.y,
+										psPropStats->propulsionType,
+										psDroid->type, moveType, psDroid->player, acceptNearest, dstStructure);
 }
 
 // Run only from path thread

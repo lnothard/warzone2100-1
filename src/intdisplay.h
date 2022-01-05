@@ -263,22 +263,22 @@ void intDisplayEditBox(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 void formatTime(W_BARGRAPH* barGraph, int buildPointsDone, int buildPointsTotal, int buildRate, char const* toolTip);
 void formatPower(W_BARGRAPH* barGraph, int neededPower, int powerToBuild);
 
-bool DroidIsBuilding(DROID* Droid);
-STRUCTURE* DroidGetBuildStructure(DROID* Droid);
-bool DroidGoingToBuild(DROID* Droid);
-BASE_STATS* DroidGetBuildStats(DROID* Droid);
-iIMDShape* DroidGetIMD(DROID* Droid);
+bool DroidIsBuilding(Droid* Droid);
+Structure* DroidGetBuildStructure(Droid* Droid);
+bool DroidGoingToBuild(Droid* Droid);
+BASE_STATS* DroidGetBuildStats(Droid* Droid);
+iIMDShape* DroidGetIMD(Droid* Droid);
 
-bool StructureIsManufacturingPending(STRUCTURE* structure);
+bool StructureIsManufacturingPending(Structure* structure);
 ///< Returns true iff the structure is either manufacturing or on hold (even if not yet synchronised). (But ignores research.)
-bool structureIsResearchingPending(STRUCTURE* structure);
+bool structureIsResearchingPending(Structure* structure);
 ///< Returns true iff the structure is either researching or on hold (even if not yet synchronised). (But ignores manufacturing.)
-bool StructureIsOnHoldPending(STRUCTURE* structure);
+bool StructureIsOnHoldPending(Structure* structure);
 ///< Returns true iff the structure is on hold (even if not yet synchronised).
-DROID_TEMPLATE* FactoryGetTemplate(FACTORY* Factory);
+DroidTemplate* FactoryGetTemplate(FACTORY* Factory);
 
-RESEARCH_FACILITY* StructureGetResearch(STRUCTURE* Structure);
-FACTORY* StructureGetFactory(STRUCTURE* Structure);
+RESEARCH_FACILITY* StructureGetResearch(Structure* Structure);
+FACTORY* StructureGetFactory(Structure* Structure);
 
 bool StatIsStructure(BASE_STATS const* Stat);
 iIMDShape* StatGetStructureIMD(BASE_STATS* Stat, UDWORD Player);
@@ -300,13 +300,13 @@ public:
 
 	virtual void display(int xOffset, int yOffset);
 
-	void setObject(DROID* object)
+	void setObject(Droid* object)
 	{
 		psDroid = object;
 	}
 
 protected:
-	DROID* psDroid;
+	Droid* psDroid;
 };
 
 /*draws blips on radar to represent Proximity Display*/
@@ -320,7 +320,7 @@ void intUpdateQuantitySlider(WIDGET* psWidget, W_CONTEXT* psContext);
 void intDisplayMissionClock(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
 void intDisplayUpdateAllyBar(W_BARGRAPH* psBar, const RESEARCH& research, const std::vector<AllyResearch>& researches);
-STRUCTURE* droidGetCommandFactory(DROID* psDroid);
+Structure* droidGetCommandFactory(Droid* psDroid);
 
 void intSetShadowPower(int quantity);
 

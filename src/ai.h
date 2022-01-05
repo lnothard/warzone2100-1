@@ -25,7 +25,7 @@
 #define __INCLUDED_SRC_AI_H__
 
 struct BASE_OBJECT;
-struct DROID;
+struct Droid;
 
 #include "weapondef.h"
 
@@ -65,11 +65,11 @@ bool aiInitialise();
 bool aiShutdown();
 
 /* Do the AI for a droid */
-void aiUpdateDroid(DROID* psDroid);
+void aiUpdateDroid(Droid* psDroid);
 
 // Find the nearest best target for a droid
 // returns integer representing quality of choice, -1 if failed
-int aiBestNearestTarget(DROID* psDroid, BASE_OBJECT** ppsObj, int weapon_slot, int extraRange = 0);
+int aiBestNearestTarget(Droid* psDroid, BASE_OBJECT** ppsObj, int weapon_slot, int extraRange = 0);
 
 // Are there a lot of bullets heading towards the structure?
 bool aiObjectIsProbablyDoomed(BASE_OBJECT* psObject, bool isDirect);

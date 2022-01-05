@@ -32,28 +32,6 @@ struct BASE_STATS;
 struct SIMPLE_OBJECT;
 struct Spacetime;
 
-struct StructureBounds
-{
-	StructureBounds()
-		: map(0, 0)
-		  , size(0, 0)
-	{
-	}
-
-	StructureBounds(Vector2i const& map, Vector2i const& size) : map(map), size(size)
-	{
-	}
-
-	bool valid()
-	{
-		return size.x >= 0;
-	}
-
-	Vector2i map; ///< Map coordinates of upper left corner of structure.
-	Vector2i size; ///< Size (in map coordinates) of the structure.
-};
-
-
 static const unsigned int max_check_object_recursion = 4;
 
 /// Get interpolated direction at time t.

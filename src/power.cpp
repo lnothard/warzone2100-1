@@ -49,11 +49,11 @@
 bool powerCalculated;
 
 /* Updates the current power based on the extracted power and a Power Generator*/
-static void updateCurrentPower(STRUCTURE* psStruct, UDWORD player, int ticks);
-static int64_t updateExtractedPower(STRUCTURE* psBuilding);
+static void updateCurrentPower(Structure* psStruct, UDWORD player, int ticks);
+static int64_t updateExtractedPower(Structure* psBuilding);
 
 //returns the relevant list based on OffWorld or OnWorld
-static STRUCTURE* powerStructList(int player);
+static Structure* powerStructList(int player);
 
 struct PowerRequest
 {
@@ -145,7 +145,7 @@ bool allocPlayerPower()
 //	}
 //}
 
-static int64_t checkPrecisePowerRequest(STRUCTURE* psStruct)
+static int64_t checkPrecisePowerRequest(Structure* psStruct)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(-1, psStruct);
 	PlayerPower const* p = &asPower[psStruct->player];
@@ -167,7 +167,7 @@ static int64_t checkPrecisePowerRequest(STRUCTURE* psStruct)
 	return -1;
 }
 
-int32_t checkPowerRequest(STRUCTURE* psStruct)
+int32_t checkPowerRequest(Structure* psStruct)
 {
 	int64_t power = checkPrecisePowerRequest(psStruct);
 	return power != -1 ? power / FP_ONE : -1;
@@ -252,7 +252,7 @@ void powerCalc(bool on)
 //}
 
 //returns the relevant list based on OffWorld or OnWorld
-STRUCTURE* powerStructList(int player)
+Structure* powerStructList(int player)
 {
 	ASSERT_OR_RETURN(nullptr, player < MAX_PLAYERS, "Invalid player %d", player);
 	if (offWorldKeepLists)
@@ -268,7 +268,7 @@ STRUCTURE* powerStructList(int player)
 /* Update current power based on what Power Generators exist */
 void updatePlayerPower(int player, int ticks)
 {
-	STRUCTURE* psStruct; //, *psList;
+	Structure* psStruct; //, *psList;
 	int64_t powerBefore = asPower[player].currentPower;
 
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player %d", player);
@@ -289,7 +289,7 @@ void updatePlayerPower(int player, int ticks)
 }
 
 /* Updates the current power based on the extracted power and a Power Generator*/
-static void updateCurrentPower(STRUCTURE* psStruct, UDWORD player, int ticks)
+static void updateCurrentPower(Structure* psStruct, UDWORD player, int ticks)
 {
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player %u", player);
 
@@ -385,12 +385,12 @@ std::string getApproxPowerGeneratedPerSecForDisplay(unsigned player)
 	return fmt::format("{:+.0f}", floatingValue);
 }
 
-bool requestPowerFor(STRUCTURE* psStruct, int32_t amount)
+bool requestPowerFor(Structure* psStruct, int32_t amount)
 {
 	return requestPrecisePowerFor(psStruct, amount * FP_ONE);
 }
 
-bool requestPrecisePowerFor(STRUCTURE* psStruct, int64_t amount)
+bool requestPrecisePowerFor(Structure* psStruct, int64_t amount)
 {
 	if (amount <= 0 || !powerCalculated)
 	{

@@ -30,19 +30,19 @@
 #include "orderdef.h"
 
 /** \brief Gives the droid an order. */
-void orderDroidBase(DROID* psDroid, DROID_ORDER_DATA* psOrder);
+void orderDroidBase(Droid* psDroid, DROID_ORDER_DATA* psOrder);
 
 /** \brief Checks targets of droid's order list. */
-void orderCheckList(DROID* psDroid);
+void orderCheckList(Droid* psDroid);
 
 /** \brief Updates a droids order state. */
-void orderUpdateDroid(DROID* psDroid);
+void orderUpdateDroid(Droid* psDroid);
 
 /** \brief Sends an order to a droid. */
-void orderDroid(DROID* psDroid, DROID_ORDER order, QUEUE_MODE mode);
+void orderDroid(Droid* psDroid, DROID_ORDER order, QUEUE_MODE mode);
 
 /** \brief Compares droid's order with order. */
-bool orderState(DROID* psDroid, DROID_ORDER order);
+bool orderState(Droid* psDroid, DROID_ORDER order);
 
 /** \brief Checks if an order is valid for a location. */
 bool validOrderForLoc(DROID_ORDER order);
@@ -51,30 +51,30 @@ bool validOrderForLoc(DROID_ORDER order);
 bool validOrderForObj(DROID_ORDER order);
 
 /** \brief Sends an order with a location to a droid. */
-void orderDroidLoc(DROID* psDroid, DROID_ORDER order, UDWORD x, UDWORD y, QUEUE_MODE mode);
+void orderDroidLoc(Droid* psDroid, DROID_ORDER order, UDWORD x, UDWORD y, QUEUE_MODE mode);
 
 /** \brief Gets the state of a droid order with a location. */
-bool orderStateLoc(DROID* psDroid, DROID_ORDER order, UDWORD* pX, UDWORD* pY);
+bool orderStateLoc(Droid* psDroid, DROID_ORDER order, UDWORD* pX, UDWORD* pY);
 
 /** \brief Sends an order with an object target to a droid. */
-void orderDroidObj(DROID* psDroid, DROID_ORDER order, BASE_OBJECT* psObj, QUEUE_MODE mode);
+void orderDroidObj(Droid* psDroid, DROID_ORDER order, BASE_OBJECT* psObj, QUEUE_MODE mode);
 
 /** \brief Gets the state of a droid's order with an object. */
-BASE_OBJECT* orderStateObj(DROID* psDroid, DROID_ORDER order);
+BASE_OBJECT* orderStateObj(Droid* psDroid, DROID_ORDER order);
 
 /** \brief Sends an order with a location and a stat to a droid. */
-void orderDroidStatsLocDir(DROID* psDroid, DROID_ORDER order, STRUCTURE_STATS* psStats, UDWORD x, UDWORD y,
+void orderDroidStatsLocDir(Droid* psDroid, DROID_ORDER order, StructureStats* psStats, UDWORD x, UDWORD y,
                            uint16_t direction, QUEUE_MODE mode);
 
 /** \brief Gets the state of a droid order with a location and a stat. */
-bool orderStateStatsLoc(DROID* psDroid, DROID_ORDER order, STRUCTURE_STATS** ppsStats);
+bool orderStateStatsLoc(Droid* psDroid, DROID_ORDER order, StructureStats** ppsStats);
 
 /** \brief Sends an order with a location and a stat to a droid. */
-void orderDroidStatsTwoLocDir(DROID* psDroid, DROID_ORDER order, STRUCTURE_STATS* psStats, UDWORD x1, UDWORD y1,
+void orderDroidStatsTwoLocDir(Droid* psDroid, DROID_ORDER order, StructureStats* psStats, UDWORD x1, UDWORD y1,
                               UDWORD x2, UDWORD y2, uint16_t direction, QUEUE_MODE mode);
 
 /** \brief Sends an order with two locations and a stat to a droid. */
-void orderDroidStatsTwoLocDirAdd(DROID* psDroid, DROID_ORDER order, STRUCTURE_STATS* psStats, UDWORD x1, UDWORD y1,
+void orderDroidStatsTwoLocDirAdd(Droid* psDroid, DROID_ORDER order, StructureStats* psStats, UDWORD x1, UDWORD y1,
                                  UDWORD x2, UDWORD y2, uint16_t direction);
 
 /** \brief Sends an order with a location target to all selected droids. add = true queues the order. */
@@ -85,37 +85,37 @@ void orderSelectedObj(UDWORD player, BASE_OBJECT* psObj);
 void orderSelectedObjAdd(UDWORD player, BASE_OBJECT* psObj, bool add);
 
 /** \brief Adds an order to a droids order list. */
-void orderDroidAdd(DROID* psDroid, DROID_ORDER_DATA* psOrder);
+void orderDroidAdd(Droid* psDroid, DROID_ORDER_DATA* psOrder);
 
 /** \brief Adds a pending order to a droids order list. */
-void orderDroidAddPending(DROID* psDroid, DROID_ORDER_DATA* psOrder);
+void orderDroidAddPending(Droid* psDroid, DROID_ORDER_DATA* psOrder);
 
 /** \brief Sends the next order from a droids order list to the droid. */
-bool orderDroidList(DROID* psDroid);
+bool orderDroidList(Droid* psDroid);
 
 /** \brief Sends an order with a location and a stat to all selected droids. add = true queues the order. */
-void orderSelectedStatsLocDir(UDWORD player, DROID_ORDER order, STRUCTURE_STATS* psStats, UDWORD x, UDWORD y,
+void orderSelectedStatsLocDir(UDWORD player, DROID_ORDER order, StructureStats* psStats, UDWORD x, UDWORD y,
                               uint16_t direction, bool add);
 
 /** \brief Sends an order with a location and a stat to all selected droids. add = true queues the order. */
-void orderDroidStatsLocDirAdd(DROID* psDroid, DROID_ORDER order, STRUCTURE_STATS* psStats, UDWORD x, UDWORD y,
+void orderDroidStatsLocDirAdd(Droid* psDroid, DROID_ORDER order, StructureStats* psStats, UDWORD x, UDWORD y,
                               uint16_t direction, bool add = true);
 
 /** \brief Sends an order with two a locations and a stat to all selected droids. add = true queues the order. */
-void orderSelectedStatsTwoLocDir(UDWORD player, DROID_ORDER order, STRUCTURE_STATS* psStats, UDWORD x1, UDWORD y1,
+void orderSelectedStatsTwoLocDir(UDWORD player, DROID_ORDER order, StructureStats* psStats, UDWORD x1, UDWORD y1,
                                  UDWORD x2, UDWORD y2, uint16_t direction, bool add);
 
 /** \brief Sees if a droid supports a given secondary order. */
-bool secondarySupported(DROID* psDroid, SECONDARY_ORDER sec);
+bool secondarySupported(Droid* psDroid, SECONDARY_ORDER sec);
 
 /** \brief Gets the state of a secondary order, return false if unsupported. */
-SECONDARY_STATE secondaryGetState(DROID* psDroid, SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate);
+SECONDARY_STATE secondaryGetState(Droid* psDroid, SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate);
 
 /** \brief Sets the state of a secondary order, return false if failed. */
-bool secondarySetState(DROID* psDroid, SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_MODE mode = ModeQueue);
+bool secondarySetState(Droid* psDroid, SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_MODE mode = ModeQueue);
 
 /** \brief Checks the damage level of a droid against it's secondary state. */
-void secondaryCheckDamageLevel(DROID* psDroid);
+void secondaryCheckDamageLevel(Droid* psDroid);
 
 /** \brief Makes all the members of a numeric group to have the same secondary states. */
 void secondarySetAverageGroupState(UDWORD player, UDWORD group);
@@ -125,27 +125,27 @@ const char* getDroidOrderName(DROID_ORDER order);
 const char* getDroidOrderKey(DROID_ORDER order);
 
 /** \brief Gets a player's transporter. */
-DROID* FindATransporter(DROID const* embarkee);
+Droid* FindATransporter(Droid const* embarkee);
 
 /** \brief Sets the state of a secondary order for a factory. */
-bool setFactoryState(STRUCTURE* psStruct, SECONDARY_ORDER sec, SECONDARY_STATE State);
+bool setFactoryState(Structure* psStruct, SECONDARY_ORDER sec, SECONDARY_STATE State);
 
 /** \brief Gets the state of a secondary order for a Factory. */
-bool getFactoryState(STRUCTURE* psStruct, SECONDARY_ORDER sec, SECONDARY_STATE* pState);
+bool getFactoryState(Structure* psStruct, SECONDARY_ORDER sec, SECONDARY_STATE* pState);
 
 /** \brief lasSat structure can select a target. */
 void orderStructureObj(UDWORD player, BASE_OBJECT* psObj);
 
 /** \brief Pops orders (including pending orders) from the order list. */
-void orderDroidListEraseRange(DROID* psDroid, unsigned indexBegin, unsigned indexEnd);
+void orderDroidListEraseRange(Droid* psDroid, unsigned indexBegin, unsigned indexEnd);
 
 /** \brief Clears all orders for the given target (including pending orders) from the order list. */
-void orderClearTargetFromDroidList(DROID* psDroid, BASE_OBJECT* psTarget);
+void orderClearTargetFromDroidList(Droid* psDroid, BASE_OBJECT* psTarget);
 
 /** \brief Chooses an order from a location. */
-DROID_ORDER chooseOrderLoc(DROID* psDroid, UDWORD x, UDWORD y, bool altOrder);
+DROID_ORDER chooseOrderLoc(Droid* psDroid, UDWORD x, UDWORD y, bool altOrder);
 
 /** \brief Chooses an order from an object. */
-DroidOrder chooseOrderObj(DROID* psDroid, BASE_OBJECT* psObj, bool altOrder);
+DroidOrder chooseOrderObj(Droid* psDroid, BASE_OBJECT* psObj, bool altOrder);
 
 #endif // __INCLUDED_SRC_ORDER_H__

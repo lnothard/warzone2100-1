@@ -182,7 +182,7 @@ bool intDisplayMultiJoiningStatus(UBYTE joinCount)
 void clearPlayer(UDWORD player, bool quietly)
 {
 	UDWORD i;
-	STRUCTURE *psStruct, *psNext;
+	Structure *psStruct, *psNext;
 
 	ASSERT_OR_RETURN(, player < MAX_CONNECTED_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
@@ -256,8 +256,8 @@ void clearPlayer(UDWORD player, bool quietly)
 static void resetMultiVisibility(UDWORD player)
 {
 	UDWORD owned;
-	DROID* pDroid;
-	STRUCTURE* pStruct;
+	Droid* pDroid;
+	Structure* pStruct;
 
 	if (player >= MAX_PLAYERS)
 	{

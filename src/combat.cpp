@@ -53,8 +53,8 @@ bool combFire(WEAPON* psWeap, BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, in
 	ASSERT(psWeap != nullptr, "Invalid weapon pointer");
 
 	/* Don't shoot if the weapon_slot of a vtol is empty */
-	if (psAttacker->type == OBJ_DROID && isVtolDroid(((DROID*)psAttacker))
-		&& psWeap->usedAmmo >= getNumAttackRuns(((DROID*)psAttacker), weapon_slot))
+	if (psAttacker->type == OBJ_DROID && isVtolDroid(((Droid*)psAttacker))
+		&& psWeap->usedAmmo >= getNumAttackRuns(((Droid*)psAttacker), weapon_slot))
 	{
 		objTrace(psAttacker->id, "VTOL slot %d is empty", weapon_slot);
 		return false;
@@ -115,8 +115,8 @@ bool combFire(WEAPON* psWeap, BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, in
 	}
 
 	/* Check we can hit the target */
-	bool tall = (psAttacker->type == OBJ_DROID && isVtolDroid((DROID*)psAttacker))
-		|| (psAttacker->type == OBJ_STRUCTURE && ((STRUCTURE*)psAttacker)->pStructureType->height > 1);
+	bool tall = (psAttacker->type == OBJ_DROID && isVtolDroid((Droid*)psAttacker))
+		|| (psAttacker->type == OBJ_STRUCTURE && ((Structure*)psAttacker)->pStructureType->height > 1);
 	if (proj_Direct(psStats) && !lineOfFire(psAttacker, psTarget, weapon_slot, tall))
 	{
 		// Can't see the target - can't hit it with direct fire
@@ -197,7 +197,7 @@ bool combFire(WEAPON* psWeap, BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, in
 	// add the attacker's experience
 	if (psAttacker->type == OBJ_DROID)
 	{
-		SDWORD level = getDroidEffectiveLevel((DROID*)psAttacker);
+		SDWORD level = getDroidEffectiveLevel((Droid*)psAttacker);
 
 		// increase total accuracy by EXP_ACCURACY_BONUS % for each experience level
 		resultHitChance += EXP_ACCURACY_BONUS * level * baseHitChance / 100;
@@ -206,13 +206,13 @@ bool combFire(WEAPON* psWeap, BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, in
 	// subtract the defender's experience
 	if (psTarget->type == OBJ_DROID)
 	{
-		SDWORD level = getDroidEffectiveLevel((DROID*)psTarget);
+		SDWORD level = getDroidEffectiveLevel((Droid*)psTarget);
 
 		// decrease weapon accuracy by EXP_ACCURACY_BONUS % for each experience level
 		resultHitChance -= EXP_ACCURACY_BONUS * level * baseHitChance / 100;
 	}
 
-	if (psAttacker->type == OBJ_DROID && ((DROID*)psAttacker)->sMove.Status != MOVEINACTIVE
+	if (psAttacker->type == OBJ_DROID && ((Droid*)psAttacker)->movement.Status != MOVEINACTIVE
 		&& !psStats->fireOnMove)
 	{
 		return false; // Can't fire while moving
@@ -236,9 +236,9 @@ bool combFire(WEAPON* psWeap, BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, in
 	Vector3i predict = psTarget->pos;
 
 	// Target prediction
-	if (isDroid(psTarget) && castDroid(psTarget)->sMove.bumpTime == 0)
+	if (isDroid(psTarget) && castDroid(psTarget)->movement.bumpTime == 0)
 	{
-		DROID* psDroid = castDroid(psTarget);
+		Droid* psDroid = castDroid(psTarget);
 
 		int32_t flightTime;
 		if (proj_Direct(psStats) || dist <= proj_GetMinRange(psStats, psAttacker->player))
@@ -265,7 +265,7 @@ bool combFire(WEAPON* psWeap, BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, in
 			}
 		}
 
-		predict += Vector3i(iSinCosR(psDroid->sMove.moveDir, psDroid->sMove.speed * flightTime / GAME_TICKS_PER_SEC),
+		predict += Vector3i(iSinCosR(psDroid->movement.moveDir, psDroid->movement.speed * flightTime / GAME_TICKS_PER_SEC),
 		                    0);
 		if (!isFlying(psDroid))
 		{
@@ -351,9 +351,9 @@ void counterBatteryFire(BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget)
 	{
 		if (aiCheckAlliances(psTarget->player, psViewer->player))
 		{
-			if ((psViewer->type == OBJ_STRUCTURE && !structCBSensor((STRUCTURE*)psViewer) && (((STRUCTURE*)psViewer)->
-					pStructureType->pSensor->type != VTOL_CB_SENSOR)) ||
-				(psViewer->type == OBJ_DROID && !cbSensorDroid((DROID*)psViewer)))
+			if ((psViewer->type == OBJ_STRUCTURE && !structCBSensor((Structure*)psViewer) && (((Structure*)psViewer)->
+					pStructureType->sensor_stats->type != VTOL_CB_SENSOR)) ||
+					(psViewer->type == OBJ_DROID && !cbSensorDroid((Droid*)psViewer)))
 			{
 				continue;
 			}
@@ -368,11 +368,11 @@ void counterBatteryFire(BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget)
 				// Inform viewer of target
 				if (psViewer->type == OBJ_DROID)
 				{
-					orderDroidObj((DROID*)psViewer, DORDER_OBSERVE, psAttacker, ModeImmediate);
+					orderDroidObj((Droid*)psViewer, DORDER_OBSERVE, psAttacker, ModeImmediate);
 				}
 				else if (psViewer->type == OBJ_STRUCTURE)
 				{
-					setStructureTarget((STRUCTURE *)psViewer, psAttacker, 0, ORIGIN_CB_SENSOR);
+					setStructureTarget((Structure *)psViewer, psAttacker, 0, ORIGIN_CB_SENSOR);
 				}
 			}
 		}
@@ -384,17 +384,17 @@ int objArmour(const BASE_OBJECT* psObj, WEAPON_CLASS weaponClass)
 	int armour = 0;
 	if (psObj->type == OBJ_DROID)
 	{
-		armour = bodyArmour(asBodyStats + ((const DROID*)psObj)->asBits[COMP_BODY], psObj->player, weaponClass);
+		armour = bodyArmour(asBodyStats + ((const Droid*)psObj)->asBits[COMP_BODY], psObj->player, weaponClass);
 	}
-	else if (psObj->type == OBJ_STRUCTURE && weaponClass == WC_KINETIC && ((const STRUCTURE*)psObj)->status !=
-		SS_BEING_BUILT)
+	else if (psObj->type == OBJ_STRUCTURE && weaponClass == WC_KINETIC && ((const Structure*)psObj)->status !=
+                                                                        SS_BEING_BUILT)
 	{
-		armour = ((const STRUCTURE*)psObj)->pStructureType->upgrade[psObj->player].armour;
+		armour = ((const Structure*)psObj)->pStructureType->upgraded_stats[psObj->player].armour;
 	}
-	else if (psObj->type == OBJ_STRUCTURE && weaponClass == WC_HEAT && ((const STRUCTURE*)psObj)->status !=
-		SS_BEING_BUILT)
+	else if (psObj->type == OBJ_STRUCTURE && weaponClass == WC_HEAT && ((const Structure*)psObj)->status !=
+                                                                     SS_BEING_BUILT)
 	{
-		armour = ((const STRUCTURE*)psObj)->pStructureType->upgrade[psObj->player].thermal;
+		armour = ((const Structure*)psObj)->pStructureType->upgraded_stats[psObj->player].thermal;
 	}
 	else if (psObj->type == OBJ_FEATURE && weaponClass == WC_KINETIC)
 	{
@@ -448,7 +448,7 @@ int32_t objDamage(BASE_OBJECT* psObj, unsigned damage, unsigned originalhp, WEAP
 
 	if (psObj->type == OBJ_DROID)
 	{
-		DROID* psDroid = (DROID*)psObj;
+		Droid* psDroid = (Droid*)psObj;
 
 		// Retrieve highest, applicable, experience level
 		level = getDroidEffectiveLevel(psDroid);
@@ -533,7 +533,7 @@ unsigned int objGuessFutureDamage(WEAPON_STATS* psStats, unsigned int player, BA
 
 	if (psTarget->type == OBJ_DROID)
 	{
-		DROID* psDroid = (DROID*)psTarget;
+		Droid* psDroid = (Droid*)psTarget;
 
 		// Retrieve highest, applicable, experience level
 		level = getDroidEffectiveLevel(psDroid);

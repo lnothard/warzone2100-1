@@ -17,13 +17,15 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** \file
- *  Definitions for the base object type.
+
+/**
+ * @file Definitions for the base object type.
  */
 
 #ifndef __INCLUDED_BASEDEF_H__
 #define __INCLUDED_BASEDEF_H__
 
+#include <array>
 #include <bitset>
 
 #include "lib/framework/vector.h"
@@ -32,151 +34,98 @@
 #include "weapondef.h"
 #include "baseobject.h"
 
-//the died flag for a droid is set to this when it gets added to the non-current list
+//the died flag for a droid is set to this when it gets
+// added to the non-current list
 #define NOT_CURRENT_LIST 1
-
-enum OBJECT_TYPE
-{
-	OBJ_DROID,
-	///< Droids
-	OBJ_STRUCTURE,
-	///< All Buildings
-	OBJ_FEATURE,
-	///< Things like roads, trees, bridges, fires
-	OBJ_PROJECTILE,
-	///< Comes out of guns, stupid :-)
-	OBJ_NUM_TYPES,
-	///< number of object types - MUST BE LAST
-};
 
 struct TILEPOS
 {
 	UBYTE x, y, type;
 };
 
-/*
- Coordinate system used for objects in Warzone 2100:
-  x - "right"
-  y - "forward"
-  z - "up"
-
-  For explanation of yaw/pitch/roll look for "flight dynamics" in your encyclopedia.
-*/
-
-/// NEXTOBJ is an ugly hack to avoid having to fix all occurrences of psNext and psNextFunc. The use of the original NEXTOBJ(pointerType) hack wasn't valid C, so in that sense, it's an improvement.
-/// NEXTOBJ is a BASE_OBJECT *, which can automatically be cast to DROID *, STRUCTURE * and FEATURE *...
-
-struct BASE_OBJECT;
-
-struct NEXTOBJ
+enum class OBJECT_FLAG
 {
-	NEXTOBJ(BASE_OBJECT* ptr_ = nullptr) : ptr(ptr_)
-	{
-	}
-
-	NEXTOBJ& operator =(BASE_OBJECT* ptr_)
-	{
-		ptr = ptr_;
-		return *this;
-	}
-
-	template <class T>
-	operator T*() const
-	{
-		return static_cast<T*>(ptr);
-	}
-
-	BASE_OBJECT* ptr;
+    JAMMED_TILES,
+    TARGETED,
+    DIRTY,
+    UNSELECTABLE,
+    COUNT // MUST BE LAST
 };
 
-struct SIMPLE_OBJECT
+/**
+ * The base type specification inherited by all persistent
+ * game entities
+ */
+class SimpleObject
 {
-	SIMPLE_OBJECT(OBJECT_TYPE type, uint32_t id, unsigned player);
-	virtual ~SIMPLE_OBJECT();
+public:
+    SimpleObject() = default;
+    virtual ~SimpleObject() = default;
+    SimpleObject(const SimpleObject&) = delete;
+    SimpleObject(SimpleObject&&) = delete;
+    SimpleObject& operator=(const SimpleObject&) = delete;
+    SimpleObject& operator=(SimpleObject&&) = delete;
 
-	const OBJECT_TYPE type; ///< The type of object
-	uint32_t id; ///< ID number of the object
-	Position pos = Position(0, 0, 0); ///< Position of the object
-	Rotation rot; ///< Object's yaw +ve rotation around up-axis
-	uint8_t player; ///< Which player the object belongs to
-	uint32_t born; ///< Time the game object was born
-	uint32_t died; ///< When an object was destroyed, if 0 still alive
-	uint32_t time; ///< Game time of given space-time position.
+    /* Accessors */
+    [[nodiscard]] virtual Spacetime get_spacetime() const = 0;
+    [[nodiscard]] virtual const Position& get_position() const = 0;
+    [[nodiscard]] virtual const Rotation& get_rotation() const = 0;
+    [[nodiscard]] virtual unsigned get_player() const = 0;
+    [[nodiscard]] virtual unsigned get_id() const = 0;
+    [[nodiscard]] virtual const DisplayData& get_display_data() const = 0;
+
+    virtual void set_height(int height) = 0;
+    virtual void set_rotation(Rotation new_rotation) = 0;
+    [[nodiscard]] virtual bool is_selectable() const = 0;
+    [[nodiscard]] virtual uint8_t visible_to_player(unsigned watcher) const = 0;
+    [[nodiscard]] virtual uint8_t visible_to_selected_player() const = 0;
 };
+
+namespace Impl
+{
+    class SimpleObject : public virtual ::SimpleObject
+    {
+    public:
+        SimpleObject(unsigned id, unsigned player);
+
+        /* Accessors */
+        [[nodiscard]] Spacetime get_spacetime() const noexcept final;
+        [[nodiscard]] const Position& get_position() const noexcept final;
+        [[nodiscard]] const Rotation& get_rotation() const noexcept final;
+        [[nodiscard]] unsigned get_player() const noexcept final;
+        [[nodiscard]] unsigned get_id() const noexcept final;
+        [[nodiscard]] const DisplayData& get_display_data() const noexcept final;
+
+        void set_height(int height) noexcept final;
+        void set_rotation(Rotation new_rotation) noexcept final;
+        [[nodiscard]] bool is_selectable() const override;
+        [[nodiscard]] uint8_t visible_to_player(unsigned watcher) const final;
+        [[nodiscard]] uint8_t visible_to_selected_player() const final;
+    private:
+        unsigned id;
+        unsigned player;
+        std::size_t time = 0;
+        Position position {0, 0, 0};
+        Rotation rotation {0, 0, 0};
+        std::unique_ptr<DisplayData> display;
+        std::bitset< static_cast<std::size_t>(OBJECT_FLAG::COUNT) > flags;
+
+        /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip, 0 if not visible
+        std::array<uint8_t, MAX_PLAYERS> visibility_state;
+    };
+}
 
 #define MAX_WEAPONS 3
 
-enum OBJECT_FLAG
-{
-	OBJECT_FLAG_JAMMED_TILES,
-	OBJECT_FLAG_TARGETED,
-	OBJECT_FLAG_DIRTY,
-	OBJECT_FLAG_UNSELECTABLE,
-	OBJECT_FLAG_COUNT
-};
-
-struct BASE_OBJECT : public SIMPLE_OBJECT
-{
-	BASE_OBJECT(OBJECT_TYPE type, uint32_t id, unsigned player);
-	~BASE_OBJECT();
-
-	SCREEN_DISP_DATA sDisplay; ///< screen coordinate details
-	UBYTE group = 0; ///< Which group selection is the droid currently in?
-	UBYTE selected; ///< Whether the object is selected (might want this elsewhere)
-	UBYTE visible[MAX_PLAYERS]; ///< Whether object is visible to specific player
-	UBYTE seenThisTick[MAX_PLAYERS]; ///< Whether object has been seen this tick by the specific player.
-	UDWORD lastEmission; ///< When did it last puff out smoke?
-	WEAPON_SUBCLASS lastHitWeapon; ///< The weapon that last hit it
-	UDWORD timeLastHit; ///< The time the structure was last attacked
-	UDWORD body; ///< Hit points with lame name
-	UDWORD periodicalDamageStart; ///< When the object entered the fire
-	UDWORD periodicalDamage; ///< How much damage has been done since the object entered the fire
-	std::vector<TILEPOS> watchedTiles; ///< Variable size array of watched tiles, empty for features
-
-	UDWORD timeAnimationStarted; ///< Animation start time, zero for do not animate
-	UBYTE animationEvent; ///< If animation start time > 0, this points to which animation to run
-
-	unsigned numWeaps;
-	WEAPON asWeaps[MAX_WEAPONS];
-
-	std::bitset<OBJECT_FLAG_COUNT> flags;
-
-	NEXTOBJ psNext; ///< Pointer to the next object in the object list
-	NEXTOBJ psNextFunc; ///< Pointer to the next object in the function list
-
-public:
-	// Query visibility for display purposes (i.e. for `selectedPlayer`)
-	// *DO NOT USE TO QUERY VISIBILITY FOR CALCULATIONS INVOLVING GAME / SIMULATION STATE*
-//	UBYTE visibleForLocalDisplay() const;
-};
-
-/// Space-time coordinate, including orientation.
+/// 4D spacetime coordinate and orientation
 struct Spacetime
 {
-	Spacetime()
-	{
-	}
+    Spacetime(std::size_t time, Position position, Rotation rotation);
 
-	Spacetime(Position pos_, Rotation rot_, uint32_t time_) : time(time_), pos(pos_), rot(rot_)
-	{
-	}
-
-	uint32_t time = 0; ///< Game time
-	Position pos = Position(0, 0, 0); ///< Position of the object
-	Rotation rot; ///< Rotation of the object
+    std::size_t time;
+    Position position;
+    Rotation rotation;
 };
-
-static inline Spacetime getSpacetime(SIMPLE_OBJECT const* psObj)
-{
-	return Spacetime(psObj->pos, psObj->rot, psObj->time);
-}
-
-static inline void setSpacetime(SIMPLE_OBJECT* psObj, Spacetime const& st)
-{
-	psObj->pos = st.pos;
-	psObj->rot = st.rot;
-	psObj->time = st.time;
-}
 
 static inline bool isDead(const BASE_OBJECT* psObj)
 {
@@ -184,33 +133,18 @@ static inline bool isDead(const BASE_OBJECT* psObj)
 	return (psObj->died > NOT_CURRENT_LIST);
 }
 
-static inline int objPosDiffSq(Position pos1, Position pos2)
+inline int object_position_square_diff(const Position& first,
+                                       const Position& second)
 {
-	const Vector2i diff = (pos1 - pos2).xy();
-	return dot(diff, diff);
+  Vector2i diff = (first - second).xy();
+  return dot(diff, diff);
 }
 
-static inline int objPosDiffSq(SIMPLE_OBJECT const* pos1, SIMPLE_OBJECT const* pos2)
+inline int object_position_square_diff(const SimpleObject& first,
+                                       const SimpleObject& second)
 {
-	return objPosDiffSq(pos1->pos, pos2->pos);
-}
-
-// True iff object is a droid, structure or feature (not a projectile). Will incorrectly return true if passed a nonsense object of type OBJ_NUM_TYPES.
-static inline bool isBaseObject(SIMPLE_OBJECT const* psObject)
-{
-	return psObject != nullptr && psObject->type != OBJ_PROJECTILE;
-}
-
-// Returns BASE_OBJECT * if base_object or NULL if not.
-static inline BASE_OBJECT* castBaseObject(SIMPLE_OBJECT* psObject)
-{
-	return isBaseObject(psObject) ? (BASE_OBJECT*)psObject : (BASE_OBJECT*)nullptr;
-}
-
-// Returns BASE_OBJECT const * if base_object or NULL if not.
-static inline BASE_OBJECT const* castBaseObject(SIMPLE_OBJECT const* psObject)
-{
-	return isBaseObject(psObject) ? (BASE_OBJECT const*)psObject : (BASE_OBJECT const*)nullptr;
+  return object_position_square_diff(first.get_position(),
+                                     second.get_position());
 }
 
 #endif // __INCLUDED_BASEDEF_H__

@@ -52,10 +52,10 @@ uint32_t unsynchObjID;
 uint32_t synchObjID;
 
 /* The lists of objects allocated */
-DROID* apsDroidLists[MAX_PLAYERS];
-STRUCTURE* apsStructLists[MAX_PLAYERS];
+Droid* apsDroidLists[MAX_PLAYERS];
+Structure* apsStructLists[MAX_PLAYERS];
 FEATURE* apsFeatureLists[MAX_PLAYERS]; ///< Only player zero is valid for features. TODO: Reduce to single list.
-STRUCTURE* apsExtractorLists[MAX_PLAYERS];
+Structure* apsExtractorLists[MAX_PLAYERS];
 FEATURE* apsOilList[1];
 BASE_OBJECT* apsSensorList[1]; ///< List of sensors in the game.
 
@@ -98,7 +98,7 @@ static bool checkReferences(BASE_OBJECT* psVictim)
 {
 	for (int plr = 0; plr < MAX_PLAYERS; ++plr)
 	{
-		for (STRUCTURE* psStruct = apsStructLists[plr]; psStruct != nullptr; psStruct = psStruct->psNext)
+		for (Structure* psStruct = apsStructLists[plr]; psStruct != nullptr; psStruct = psStruct->psNext)
 		{
 			if (psStruct == psVictim)
 			{
@@ -111,7 +111,7 @@ static bool checkReferences(BASE_OBJECT* psVictim)
 				                 BADREF(psStruct->targetFunc[i], psStruct->targetLine[i]));
 			}
 		}
-		for (DROID* psDroid = apsDroidLists[plr]; psDroid != nullptr; psDroid = psDroid->psNext)
+		for (Droid* psDroid = apsDroidLists[plr]; psDroid != nullptr; psDroid = psDroid->psNext)
 		{
 			if (psDroid == psVictim)
 			{
@@ -120,13 +120,13 @@ static bool checkReferences(BASE_OBJECT* psVictim)
 
 			ASSERT_OR_RETURN(false, psDroid->order.psObj != psVictim, "Illegal reference to object %d", psVictim->id);
 
-			ASSERT_OR_RETURN(false, psDroid->psBaseStruct != psVictim, "Illegal reference to object %d", psVictim->id);
+			ASSERT_OR_RETURN(false, psDroid->associated_structure != psVictim, "Illegal reference to object %d", psVictim->id);
 
 			for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 			{
-				if (psDroid->psActionTarget[i] == psVictim)
+				if (psDroid->action_target[i] == psVictim)
 				{
-					ASSERT_OR_RETURN(false, psDroid->psActionTarget[i] != psVictim,
+					ASSERT_OR_RETURN(false, psDroid->action_target[i] != psVictim,
 					                 BADREF(psDroid->actionTargetFunc[i], psDroid->actionTargetLine[i]));
 				}
 			}
@@ -391,7 +391,7 @@ static inline void releaseAllObjectsInList(OBJECT* list[])
 /***************************  DROID  *********************************/
 
 /* add the droid to the Droid Lists */
-void addDroid(DROID* psDroidToAdd, DROID* pList[MAX_PLAYERS])
+void addDroid(Droid* psDroidToAdd, Droid* pList[MAX_PLAYERS])
 {
 	DROID_GROUP* psGroup;
 
@@ -403,13 +403,13 @@ void addDroid(DROID* psDroidToAdd, DROID* pList[MAX_PLAYERS])
 	if (pList[psDroidToAdd->player] == apsDroidLists[psDroidToAdd->player])
 	{
 		psDroidToAdd->died = false;
-		if (psDroidToAdd->droidType == DROID_SENSOR)
+		if (psDroidToAdd->type == DROID_SENSOR)
 		{
 			addObjectToFuncList(apsSensorList, (BASE_OBJECT*)psDroidToAdd, 0);
 		}
 
 		// commanders have to get their group back if not already loaded
-		if (psDroidToAdd->droidType == DROID_COMMAND && !psDroidToAdd->psGroup)
+		if (psDroidToAdd->type == DROID_COMMAND && !psDroidToAdd->group)
 		{
 			psGroup = grpCreate();
 			psGroup->add(psDroidToAdd);
@@ -417,7 +417,7 @@ void addDroid(DROID* psDroidToAdd, DROID* pList[MAX_PLAYERS])
 	}
 	else if (pList[psDroidToAdd->player] == mission.apsDroidLists[psDroidToAdd->player])
 	{
-		if (psDroidToAdd->droidType == DROID_SENSOR)
+		if (psDroidToAdd->type == DROID_SENSOR)
 		{
 			addObjectToFuncList(mission.apsSensorList, (BASE_OBJECT*)psDroidToAdd, 0);
 		}
@@ -425,7 +425,7 @@ void addDroid(DROID* psDroidToAdd, DROID* pList[MAX_PLAYERS])
 }
 
 /* Destroy a droid */
-void killDroid(DROID* psDel)
+void killDroid(Droid* psDel)
 {
 	int i;
 
@@ -440,7 +440,7 @@ void killDroid(DROID* psDel)
 		setDroidActionTarget(psDel, nullptr, i);
 	}
 	setDroidBase(psDel, nullptr);
-	if (psDel->droidType == DROID_SENSOR)
+	if (psDel->type == DROID_SENSOR)
 	{
 		removeObjectFromFuncList(apsSensorList, (BASE_OBJECT*)psDel, 0);
 	}
@@ -455,7 +455,7 @@ void freeAllDroids()
 }
 
 /*Remove a single Droid from a list*/
-void removeDroid(DROID* psDroidToRemove, DROID* pList[MAX_PLAYERS])
+void removeDroid(Droid* psDroidToRemove, Droid* pList[MAX_PLAYERS])
 {
 	ASSERT_OR_RETURN(, psDroidToRemove->type == OBJ_DROID, "Pointer is not a unit");
 	ASSERT_OR_RETURN(, psDroidToRemove->player < MAX_PLAYERS, "Invalid player for unit");
@@ -466,7 +466,7 @@ void removeDroid(DROID* psDroidToRemove, DROID* pList[MAX_PLAYERS])
 	 * it will cancel itself, and we know it is not really on the map. */
 	if (pList[psDroidToRemove->player] == apsDroidLists[psDroidToRemove->player])
 	{
-		if (psDroidToRemove->droidType == DROID_SENSOR)
+		if (psDroidToRemove->type == DROID_SENSOR)
 		{
 			removeObjectFromFuncList(apsSensorList, (BASE_OBJECT*)psDroidToRemove, 0);
 		}
@@ -474,7 +474,7 @@ void removeDroid(DROID* psDroidToRemove, DROID* pList[MAX_PLAYERS])
 	}
 	else if (pList[psDroidToRemove->player] == mission.apsDroidLists[psDroidToRemove->player])
 	{
-		if (psDroidToRemove->droidType == DROID_SENSOR)
+		if (psDroidToRemove->type == DROID_SENSOR)
 		{
 			removeObjectFromFuncList(mission.apsSensorList, (BASE_OBJECT*)psDroidToRemove, 0);
 		}
@@ -496,11 +496,11 @@ void freeAllLimboDroids()
 /**************************  STRUCTURE  *******************************/
 
 /* add the structure to the Structure Lists */
-void addStructure(STRUCTURE* psStructToAdd)
+void addStructure(Structure* psStructToAdd)
 {
 	addObjectToList(apsStructLists, psStructToAdd, psStructToAdd->player);
-	if (psStructToAdd->pStructureType->pSensor
-		&& psStructToAdd->pStructureType->pSensor->location == LOC_TURRET)
+	if (psStructToAdd->pStructureType->sensor_stats
+		&& psStructToAdd->pStructureType->sensor_stats->location == LOC_TURRET)
 	{
 		addObjectToFuncList(apsSensorList, (BASE_OBJECT*)psStructToAdd, 0);
 	}
@@ -511,7 +511,7 @@ void addStructure(STRUCTURE* psStructToAdd)
 }
 
 /* Destroy a structure */
-void killStruct(STRUCTURE* psBuilding)
+void killStruct(Structure* psBuilding)
 {
 	int i;
 
@@ -520,8 +520,8 @@ void killStruct(STRUCTURE* psBuilding)
 	ASSERT(psBuilding->player < MAX_PLAYERS,
 	       "killStruct: invalid player for stucture");
 
-	if (psBuilding->pStructureType->pSensor
-		&& psBuilding->pStructureType->pSensor->location == LOC_TURRET)
+	if (psBuilding->pStructureType->sensor_stats
+		&& psBuilding->pStructureType->sensor_stats->location == LOC_TURRET)
 	{
 		removeObjectFromFuncList(apsSensorList, (BASE_OBJECT*)psBuilding, 0);
 	}
@@ -577,15 +577,15 @@ void freeAllStructs()
 }
 
 /*Remove a single Structure from a list*/
-void removeStructureFromList(STRUCTURE* psStructToRemove, STRUCTURE* pList[MAX_PLAYERS])
+void removeStructureFromList(Structure* psStructToRemove, Structure* pList[MAX_PLAYERS])
 {
 	ASSERT(psStructToRemove->type == OBJ_STRUCTURE,
 	       "removeStructureFromList: pointer is not a structure");
 	ASSERT(psStructToRemove->player < MAX_PLAYERS,
 	       "removeStructureFromList: invalid player for structure");
 	removeObjectFromList(pList, psStructToRemove, psStructToRemove->player);
-	if (psStructToRemove->pStructureType->pSensor
-		&& psStructToRemove->pStructureType->pSensor->location == LOC_TURRET)
+	if (psStructToRemove->pStructureType->sensor_stats
+		&& psStructToRemove->pStructureType->sensor_stats->location == LOC_TURRET)
 	{
 		removeObjectFromFuncList(apsSensorList, (BASE_OBJECT*)psStructToRemove, 0);
 	}
@@ -770,7 +770,7 @@ void checkFactoryFlags()
 BASE_OBJECT* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
 {
 	BASE_OBJECT* psObj;
-	DROID* psTrans;
+	Droid* psTrans;
 
 	for (int i = 0; i < 3; ++i)
 	{
@@ -815,9 +815,9 @@ BASE_OBJECT* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
 				return psObj;
 			}
 			// if transporter check any droids in the grp
-			if ((psObj->type == OBJ_DROID) && isTransporter((DROID*)psObj))
+			if ((psObj->type == OBJ_DROID) && isTransporter((Droid*)psObj))
 			{
-				for (psTrans = ((DROID*)psObj)->psGroup->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
+				for (psTrans = ((Droid*)psObj)->group->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
 				{
 					if (psTrans->id == id)
 					{
@@ -839,7 +839,7 @@ BASE_OBJECT* getBaseObjFromId(UDWORD id)
 	unsigned int i;
 	UDWORD player;
 	BASE_OBJECT* psObj;
-	DROID* psTrans;
+	Droid* psTrans;
 
 	for (i = 0; i < 7; ++i)
 	{
@@ -901,9 +901,9 @@ BASE_OBJECT* getBaseObjFromId(UDWORD id)
 					return psObj;
 				}
 				// if transporter check any droids in the grp
-				if ((psObj->type == OBJ_DROID) && isTransporter((DROID*)psObj))
+				if ((psObj->type == OBJ_DROID) && isTransporter((Droid*)psObj))
 				{
-					for (psTrans = ((DROID*)psObj)->psGroup->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
+					for (psTrans = ((Droid*)psObj)->group->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
 					{
 						if (psTrans->id == id)
 						{
@@ -924,7 +924,7 @@ UDWORD getRepairIdFromFlag(FLAG_POSITION* psFlag)
 {
 	unsigned int i;
 	UDWORD player;
-	STRUCTURE* psObj;
+	Structure* psObj;
 	REPAIR_FACILITY* psRepair;
 
 
@@ -936,10 +936,10 @@ UDWORD getRepairIdFromFlag(FLAG_POSITION* psFlag)
 		switch (i)
 		{
 		case 0:
-			psObj = (STRUCTURE*)apsStructLists[player];
+			psObj = (Structure*)apsStructLists[player];
 			break;
 		case 1:
-			psObj = (STRUCTURE*)mission.apsStructLists[player];
+			psObj = (Structure*)mission.apsStructLists[player];
 			break;
 		default:
 			psObj = nullptr;
@@ -1015,12 +1015,12 @@ void objCount(int* droids, int* structures, int* features)
 
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (DROID* psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
+		for (Droid* psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
 		{
 			(*droids)++;
 			if (isTransporter(psDroid))
 			{
-				DROID* psTrans = psDroid->psGroup->psList;
+				Droid* psTrans = psDroid->group->psList;
 
 				for (psTrans = psTrans->psGrpNext; psTrans != nullptr; psTrans = psTrans->psGrpNext)
 				{
@@ -1029,7 +1029,7 @@ void objCount(int* droids, int* structures, int* features)
 			}
 		}
 
-		for (STRUCTURE* psStruct = apsStructLists[i]; psStruct; psStruct = psStruct->psNext)
+		for (Structure* psStruct = apsStructLists[i]; psStruct; psStruct = psStruct->psNext)
 		{
 			(*structures)++;
 		}

@@ -32,11 +32,11 @@
 class QString;
 class WzString;
 struct BASE_OBJECT;
-struct DROID;
-struct DROID_TEMPLATE;
+struct Droid;
+struct DroidTemplate;
 struct FEATURE;
 struct RESEARCH;
-struct STRUCTURE;
+struct Structure;
 
 enum SCRIPT_TRIGGER_TYPE
 {
@@ -127,28 +127,28 @@ void jsAutogameSpecific(const WzString& name, int player);
 bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, BASE_OBJECT* psObj = nullptr);
 
 // For each trigger with function parameters, a function to trigger it here
-bool triggerEventDroidBuilt(DROID* psDroid, STRUCTURE* psFactory);
+bool triggerEventDroidBuilt(Droid* psDroid, Structure* psFactory);
 bool triggerEventAttacked(BASE_OBJECT* psVictim, BASE_OBJECT* psAttacker, int lastHit);
-bool triggerEventResearched(RESEARCH* psResearch, STRUCTURE* psStruct, int player);
-bool triggerEventStructBuilt(STRUCTURE* psStruct, DROID* psDroid);
-bool triggerEventStructDemolish(STRUCTURE* psStruct, DROID* psDroid);
-bool triggerEventDroidIdle(DROID* psDroid);
+bool triggerEventResearched(RESEARCH* psResearch, Structure* psStruct, int player);
+bool triggerEventStructBuilt(Structure* psStruct, Droid* psDroid);
+bool triggerEventStructDemolish(Structure* psStruct, Droid* psDroid);
+bool triggerEventDroidIdle(Droid* psDroid);
 bool triggerEventDestroyed(BASE_OBJECT* psVictim);
-bool triggerEventStructureReady(STRUCTURE* psStruct);
-bool triggerEventStructureUpgradeStarted(STRUCTURE* psStruct);
+bool triggerEventStructureReady(Structure* psStruct);
+bool triggerEventStructureUpgradeStarted(Structure* psStruct);
 bool triggerEventSeen(BASE_OBJECT* psViewer, BASE_OBJECT* psSeen);
 bool triggerEventObjectTransfer(BASE_OBJECT* psObj, int from);
 bool triggerEventChat(int from, int to, const char* message);
 bool triggerEventBeacon(int from, int to, const char* message, int x, int y);
 bool triggerEventBeaconRemoved(int from, int to);
-bool triggerEventPickup(FEATURE* psFeat, DROID* psDroid);
+bool triggerEventPickup(FEATURE* psFeat, Droid* psDroid);
 bool triggerEventCheatMode(bool entered);
 bool triggerEventGroupLoss(const BASE_OBJECT* psObj, int group, int size, wzapi::scripting_instance* instance);
-bool triggerEventDroidMoved(DROID* psDroid, int oldx, int oldy);
-bool triggerEventArea(const std::string& label, DROID* psDroid);
+bool triggerEventDroidMoved(Droid* psDroid, int oldx, int oldy);
+bool triggerEventArea(const std::string& label, Droid* psDroid);
 bool triggerEventSelected();
 bool triggerEventPlayerLeft(int player);
-bool triggerEventDesignCreated(DROID_TEMPLATE* psTemplate);
+bool triggerEventDesignCreated(DroidTemplate* psTemplate);
 bool triggerEventSyncRequest(int from, int req_id, int x, int y, BASE_OBJECT* psObj, BASE_OBJECT* psObj2);
 bool triggerEventKeyPressed(int meta, int key);
 bool triggerEventAllianceOffer(uint8_t from, uint8_t to);
@@ -454,7 +454,7 @@ public:
 	static std::vector<const BASE_OBJECT*> enumGroup(WZAPI_PARAMS(int groupId));
 	static int newGroup(WZAPI_NO_PARAMS);
 	static wzapi::no_return_value groupAddArea(WZAPI_PARAMS(int groupId, int x1, int y1, int x2, int y2));
-	static wzapi::no_return_value groupAddDroid(WZAPI_PARAMS(int groupId, const DROID *psDroid));
+	static wzapi::no_return_value groupAddDroid(WZAPI_PARAMS(int groupId, const Droid *psDroid));
 	static wzapi::no_return_value groupAdd(WZAPI_PARAMS(int groupId, const BASE_OBJECT *psObj));
 	static int groupSize(WZAPI_PARAMS(int groupId));
 private:
@@ -539,8 +539,8 @@ protected:
 	/// Mark and show label
 	void showLabel(const std::string& key, bool clear_old = true, bool jump_to = true);
 
-	friend bool triggerEventDroidMoved(DROID* psDroid, int oldx, int oldy);
-	bool areaLabelCheck(DROID* psDroid);
+	friend bool triggerEventDroidMoved(Droid* psDroid, int oldx, int oldy);
+	bool areaLabelCheck(Droid* psDroid);
 
 	friend void scriptRemoveObject(const BASE_OBJECT* psObj);
 	void groupRemoveObject(const BASE_OBJECT* psObj);

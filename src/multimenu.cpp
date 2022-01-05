@@ -711,7 +711,7 @@ public:
 	void display(int xOffset, int yOffset) override
 	{
 		// a droid of theirs.
-		DROID* displayDroid = (player < MAX_PLAYERS) ? apsDroidLists[player] : nullptr;
+		Droid* displayDroid = (player < MAX_PLAYERS) ? apsDroidLists[player] : nullptr;
 		while (displayDroid != nullptr && !displayDroid->visibleForLocalDisplay())
 		{
 			displayDroid = displayDroid->psNext;
@@ -724,11 +724,11 @@ public:
 			pie_SetGeometricOffset(centerX, y0 + height() * 3 / 4);
 			Vector3i rotation(-15, 45, 0);
 			Position position(0, 0, BUTTON_DEPTH); // Scale them.
-			if (displayDroid->droidType == DROID_SUPERTRANSPORTER)
+			if (displayDroid->type == DROID_SUPERTRANSPORTER)
 			{
 				position.z = 7850;
 			}
-			else if (displayDroid->droidType == DROID_TRANSPORTER)
+			else if (displayDroid->type == DROID_TRANSPORTER)
 			{
 				position.z = 4100;
 			}
@@ -1019,7 +1019,7 @@ private:
 				{
 					// NOTE, This tallys up *all* the structures you have. Test out via 'start with no base'.
 					int num = 0;
-					for (STRUCTURE* temp = apsStructLists[playerWidget.player]; temp != nullptr; temp = temp->psNext)
+					for (Structure* temp = apsStructLists[playerWidget.player]; temp != nullptr; temp = temp->psNext)
 					{
 						++num;
 					}

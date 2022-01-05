@@ -263,10 +263,10 @@ static bool scriptsReady = false;
 struct researchEvent
 {
 	RESEARCH* research;
-	STRUCTURE* structure;
+	Structure* structure;
 	int player;
 
-	researchEvent(RESEARCH* r, STRUCTURE* s, int p): research(r), structure(s), player(p)
+	researchEvent(RESEARCH* r, Structure* s, int p): research(r), structure(s), player(p)
 	{
 	}
 };
@@ -1216,7 +1216,7 @@ bool triggerEventCheatMode(bool entered)
 //__
 //__ A droid should be given new orders.
 //__
-bool triggerEventDroidIdle(DROID* psDroid)
+bool triggerEventDroidIdle(Droid* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
@@ -1236,10 +1236,10 @@ bool triggerEventDroidIdle(DROID* psDroid)
 //__ if the droid was produced in a factory. It is not triggered for droid theft or
 //__ gift (check ```eventObjectTransfer``` for that).
 //__
-bool triggerEventDroidBuilt(DROID* psDroid, STRUCTURE* psFactory)
+bool triggerEventDroidBuilt(Droid* psDroid, Structure* psFactory)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	optional<const STRUCTURE*> opt_factory = (psFactory) ? optional<const STRUCTURE*>(psFactory) : nullopt;
+	optional<const Structure*> opt_factory = (psFactory) ? optional<const Structure*>(psFactory) : nullopt;
 	for (auto* instance : scripts)
 	{
 		int player = instance->player();
@@ -1258,10 +1258,10 @@ bool triggerEventDroidBuilt(DROID* psDroid, STRUCTURE* psFactory)
 //__ if the structure was built by a droid. It is not triggered for building theft
 //__ (check ```eventObjectTransfer``` for that).
 //__
-bool triggerEventStructBuilt(STRUCTURE* psStruct, DROID* psDroid)
+bool triggerEventStructBuilt(Structure* psStruct, Droid* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	optional<const DROID*> opt_droid = (psDroid) ? optional<const DROID*>(psDroid) : nullopt;
+	optional<const Droid*> opt_droid = (psDroid) ? optional<const Droid*>(psDroid) : nullopt;
 	for (auto* instance : scripts)
 	{
 		int player = instance->player();
@@ -1279,10 +1279,10 @@ bool triggerEventStructBuilt(STRUCTURE* psStruct, DROID* psDroid)
 //__ An event that is run every time a structure begins to be demolished. This does
 //__ not trigger again if the structure is partially demolished.
 //__
-bool triggerEventStructDemolish(STRUCTURE* psStruct, DROID* psDroid)
+bool triggerEventStructDemolish(Structure* psStruct, Droid* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	optional<const DROID*> opt_droid = (psDroid) ? optional<const DROID*>(psDroid) : nullopt;
+	optional<const Droid*> opt_droid = (psDroid) ? optional<const Droid*>(psDroid) : nullopt;
 	for (auto* instance : scripts)
 	{
 		int player = instance->player();
@@ -1301,7 +1301,7 @@ bool triggerEventStructDemolish(STRUCTURE* psStruct, DROID* psDroid)
 //__ special ability. It will only fire once, so if the time is not right,
 //__ register your own timer to keep checking.
 //__
-bool triggerEventStructureReady(STRUCTURE* psStruct)
+bool triggerEventStructureReady(Structure* psStruct)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
@@ -1320,7 +1320,7 @@ bool triggerEventStructureReady(STRUCTURE* psStruct)
 //__
 //__ An event that is run every time a structure starts to be upgraded.
 //__
-bool triggerEventStructureUpgradeStarted(STRUCTURE* psStruct)
+bool triggerEventStructureUpgradeStarted(Structure* psStruct)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
@@ -1373,7 +1373,7 @@ bool triggerEventAttacked(BASE_OBJECT* psVictim, BASE_OBJECT* psAttacker, int la
 //__ current player. If an ally does the research, the structure parameter will
 //__ be set to null. The player parameter gives the player it is called for.
 //__
-bool triggerEventResearched(RESEARCH* psResearch, STRUCTURE* psStruct, int player)
+bool triggerEventResearched(RESEARCH* psResearch, Structure* psStruct, int player)
 {
 	//HACK: This event can be triggered when loading savegames, before the script engines are initialized.
 	// if this is the case, we need to store these events and replay them later
@@ -1416,7 +1416,7 @@ bool triggerEventDestroyed(BASE_OBJECT* psVictim)
 //__ all players / scripts.
 //__ Careful passing the parameter object around, since it is about to vanish! (3.2+ only)
 //__
-bool triggerEventPickup(FEATURE* psFeat, DROID* psDroid)
+bool triggerEventPickup(FEATURE* psFeat, Droid* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
@@ -1587,7 +1587,7 @@ bool triggerEventGroupLoss(const BASE_OBJECT* psObj, int group, int size, wzapi:
 }
 
 // This is not a trigger yet.
-bool triggerEventDroidMoved(DROID* psDroid, int oldx, int oldy)
+bool triggerEventDroidMoved(Droid* psDroid, int oldx, int oldy)
 {
 	return scripting_engine::instance().areaLabelCheck(psDroid);
 }
@@ -1598,7 +1598,7 @@ bool triggerEventDroidMoved(DROID* psDroid, int oldx, int oldy)
 //__ deactived. Call resetArea() to reactivate it. The name of the event is
 //__ `eventArea${label}`.
 //__
-bool triggerEventArea(const std::string& label, DROID* psDroid)
+bool triggerEventArea(const std::string& label, Droid* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
@@ -1613,7 +1613,7 @@ bool triggerEventArea(const std::string& label, DROID* psDroid)
 //__ An event that is run whenever a new droid template is created. It is only
 //__ run on the client of the player designing the template.
 //__
-bool triggerEventDesignCreated(DROID_TEMPLATE* psTemplate)
+bool triggerEventDesignCreated(DroidTemplate* psTemplate)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
@@ -1930,7 +1930,7 @@ std::pair<bool, int> scripting_engine::seenLabelCheck(wzapi::scripting_instance*
 	return std::make_pair(foundObj, foundGroup ? groupId : 0);
 }
 
-bool scripting_engine::areaLabelCheck(DROID* psDroid)
+bool scripting_engine::areaLabelCheck(Droid* psDroid)
 {
 	int x = psDroid->pos.x;
 	int y = psDroid->pos.y;
@@ -2681,7 +2681,7 @@ wzapi::no_return_value scripting_engine::groupAddArea(WZAPI_PARAMS(int groupId, 
 	int x2 = world_coord(_x2);
 	int y2 = world_coord(_y2);
 
-	for (DROID* psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+	for (Droid* psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
 	{
 		if (psDroid->pos.x >= x1 && psDroid->pos.x <= x2 && psDroid->pos.y >= y1 && psDroid->pos.y <= y2)
 		{
@@ -2695,7 +2695,7 @@ wzapi::no_return_value scripting_engine::groupAddArea(WZAPI_PARAMS(int groupId, 
 //--
 //-- Add given droid to given group. Deprecated since 3.2 - use groupAdd() instead.
 //--
-wzapi::no_return_value scripting_engine::groupAddDroid(WZAPI_PARAMS(int groupId, const DROID *psDroid))
+wzapi::no_return_value scripting_engine::groupAddDroid(WZAPI_PARAMS(int groupId, const Droid *psDroid))
 {
 	SCRIPT_ASSERT({}, context, psDroid, "No valid droid provided");
 	scripting_engine::instance().groupAddObject(psDroid, groupId, context.currentInstance());

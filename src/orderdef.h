@@ -34,9 +34,9 @@
 class DROID_GROUP;
 struct BASE_OBJECT;
 struct BASE_STATS;
-struct DROID;
-struct STRUCTURE;
-struct STRUCTURE_STATS;
+struct Droid;
+struct Structure;
+struct StructureStats;
 
 /** All the possible droid orders.
  * @todo DORDER_CIRCLE = 40 which is not consistent with rest of the enum.
@@ -219,7 +219,7 @@ enum SECONDARY_STATE
 #define DSS_FIREDES_MASK            0x800000
 #define DSS_CIRCLE_MASK             0x400100
 
-struct STRUCTURE_STATS;
+struct StructureStats;
 
 enum RTR_DATA_TYPE
 {
@@ -252,13 +252,13 @@ struct DroidOrder
 	{
 	}
 
-	DroidOrder(DroidOrderType type, STRUCTURE_STATS* psStats, Vector2i pos, uint16_t direction)
+	DroidOrder(DroidOrderType type, StructureStats* psStats, Vector2i pos, uint16_t direction)
 		: type(type), pos(pos), pos2(0, 0), direction(direction), index(0), rtrType(RTR_TYPE_NO_RESULT), psObj(nullptr),
 		  psStats(psStats)
 	{
 	}
 
-	DroidOrder(DroidOrderType type, STRUCTURE_STATS* psStats, Vector2i pos, Vector2i pos2, uint16_t direction)
+	DroidOrder(DroidOrderType type, StructureStats* psStats, Vector2i pos, Vector2i pos2, uint16_t direction)
 		: type(type), pos(pos), pos2(pos2), direction(direction), index(0), rtrType(RTR_TYPE_NO_RESULT), psObj(nullptr),
 		  psStats(psStats)
 	{
@@ -289,7 +289,7 @@ struct DroidOrder
 	uint32_t index; ///< Module index, with DORDER_BUILDMODULE.
 	RTR_DATA_TYPE rtrType; /**< specifies where to repair. */
 	BASE_OBJECT* psObj; /**< the order's target, in case it exist. */
-	STRUCTURE_STATS* psStats; /**< order structure stats. */
+	StructureStats* psStats; /**< order structure stats. */
 };
 
 typedef DroidOrder DROID_ORDER_DATA;

@@ -76,7 +76,7 @@ static inline bool canLineBuild()
 {
 	ASSERT_OR_RETURN(false, selectedPlayer < MAX_PLAYERS, "selectedPlayer definitely can't line-build: %" PRIu32 "",
 	                 selectedPlayer);
-	return ((STRUCTURE_STATS*)sBuildDetails.psStats)->upgrade[selectedPlayer].limit > 1;
+	return ((StructureStats*)sBuildDetails.psStats)->upgraded_stats[selectedPlayer].limit > 1;
 }
 
 extern int brushSize;

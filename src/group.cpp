@@ -107,7 +107,7 @@ DROID_GROUP* grpFind(int id)
 }
 
 // add a droid to a group
-void DROID_GROUP::add(DROID* psDroid)
+void DROID_GROUP::add(Droid* psDroid)
 {
 	ASSERT(grpInitialized, "Group code not initialized yet");
 
@@ -121,11 +121,11 @@ void DROID_GROUP::add(DROID* psDroid)
 			return;
 		}
 
-		if (psDroid->psGroup != nullptr)
+		if (psDroid->group != nullptr)
 		{
-			psDroid->psGroup->remove(psDroid);
+			psDroid->group->remove(psDroid);
 		}
-		psDroid->psGroup = this;
+		psDroid->group = this;
 
 		if (isTransporter(psDroid))
 		{
@@ -135,7 +135,7 @@ void DROID_GROUP::add(DROID* psDroid)
 			psDroid->psGrpNext = psList;
 			psList = psDroid;
 		}
-		else if ((psDroid->droidType == DROID_COMMAND) && (type != GT_TRANSPORTER))
+		else if ((psDroid->type == DROID_COMMAND) && (type != GT_TRANSPORTER))
 		{
 			ASSERT_OR_RETURN(, (type == GT_NORMAL) && (psCommander == nullptr),
 			                   "grpJoin: Cannot have two command droids in a group");
@@ -156,13 +156,13 @@ void DROID_GROUP::add(DROID* psDroid)
 }
 
 // remove a droid from a group
-void DROID_GROUP::remove(DROID* psDroid)
+void DROID_GROUP::remove(Droid* psDroid)
 {
-	DROID *psPrev, *psCurr;
+	Droid *psPrev, *psCurr;
 
 	ASSERT_OR_RETURN(, grpInitialized, "Group code not initialized yet");
 
-	if (psDroid != nullptr && psDroid->psGroup != this)
+	if (psDroid != nullptr && psDroid->group != this)
 	{
 		ASSERT(false, "grpLeave: droid group does not match");
 		return;
@@ -179,7 +179,7 @@ void DROID_GROUP::remove(DROID* psDroid)
 	if (psDroid != nullptr)
 	{
 		// update group list of droids and droids' psGrpNext
-		if (psDroid->droidType != DROID_COMMAND || type != GT_COMMAND)
+		if (psDroid->type != DROID_COMMAND || type != GT_COMMAND)
 		{
 			psPrev = nullptr;
 			for (psCurr = psList; psCurr; psCurr = psCurr->psGrpNext)
@@ -204,11 +204,11 @@ void DROID_GROUP::remove(DROID* psDroid)
 			}
 		}
 
-		psDroid->psGroup = nullptr;
+		psDroid->group = nullptr;
 		psDroid->psGrpNext = nullptr;
 
 		// update group's type
-		if ((psDroid->droidType == DROID_COMMAND) && (type == GT_COMMAND))
+		if ((psDroid->type == DROID_COMMAND) && (type == GT_COMMAND))
 		{
 			type = GT_NORMAL;
 			psCommander = nullptr;
@@ -230,7 +230,7 @@ void DROID_GROUP::remove(DROID* psDroid)
 // count the members of a group
 unsigned int DROID_GROUP::getNumMembers()
 {
-	const DROID* psCurr;
+	const Droid* psCurr;
 	unsigned int num;
 
 	ASSERT(grpInitialized, "Group code not initialized yet");
@@ -247,7 +247,7 @@ unsigned int DROID_GROUP::getNumMembers()
 // Give a group of droids an order
 void DROID_GROUP::orderGroup(DROID_ORDER order)
 {
-	DROID* psCurr;
+	Droid* psCurr;
 
 	ASSERT(grpInitialized, "Group code not initialized yet");
 
@@ -260,7 +260,7 @@ void DROID_GROUP::orderGroup(DROID_ORDER order)
 // Give a group of droids an order (using a Location)
 void DROID_GROUP::orderGroup(DROID_ORDER order, UDWORD x, UDWORD y)
 {
-	DROID* psCurr;
+	Droid* psCurr;
 
 	ASSERT(grpInitialized, "Group code not initialized yet");
 	ASSERT_OR_RETURN(, validOrderForLoc(order), "orderGroup: Bad order");
@@ -274,7 +274,7 @@ void DROID_GROUP::orderGroup(DROID_ORDER order, UDWORD x, UDWORD y)
 // Give a group of droids an order (using an Object)
 void DROID_GROUP::orderGroup(DROID_ORDER order, BASE_OBJECT* psObj)
 {
-	DROID* psCurr;
+	Droid* psCurr;
 
 	ASSERT_OR_RETURN(, validOrderForObj(order), "orderGroup: Bad order");
 
@@ -287,7 +287,7 @@ void DROID_GROUP::orderGroup(DROID_ORDER order, BASE_OBJECT* psObj)
 // Set the secondary state for a group of droids
 void DROID_GROUP::setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state)
 {
-	DROID* psCurr;
+	Droid* psCurr;
 
 	ASSERT(grpInitialized, "Group code not initialized yet");
 

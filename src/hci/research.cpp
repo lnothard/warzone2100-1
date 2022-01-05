@@ -9,7 +9,7 @@
 #include "../component.h"
 #include "../mission.h"
 
-STRUCTURE* ResearchController::highlightedFacility = nullptr;
+Structure* ResearchController::highlightedFacility = nullptr;
 static ImdObject getResearchObjectImage(RESEARCH* research);
 
 void ResearchController::updateData()
@@ -169,7 +169,7 @@ void ResearchController::setHighlightedObject(BASE_OBJECT* object)
 
 	auto facility = castStructure(object);
 	ASSERT_NOT_NULLPTR_OR_RETURN(, facility);
-	ASSERT_OR_RETURN(, facility->pStructureType->type == REF_RESEARCH, "Invalid facility pointer");
+	ASSERT_OR_RETURN(, facility->stats->type == REF_RESEARCH, "Invalid facility pointer");
 	highlightedFacility = facility;
 }
 
@@ -706,12 +706,12 @@ std::shared_ptr<StatsForm> ResearchController::makeStatsForm()
 	return ResearchStatsForm::make(shared_from_this());
 }
 
-void ResearchController::cancelResearch(STRUCTURE* facility)
+void ResearchController::cancelResearch(Structure* facility)
 {
 	::cancelResearch(facility, ModeQueue);
 }
 
-void ResearchController::requestResearchCancellation(STRUCTURE* facility)
+void ResearchController::requestResearchCancellation(Structure* facility)
 {
 	if (!structureIsResearchingPending(facility))
 	{

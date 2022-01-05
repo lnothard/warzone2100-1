@@ -381,7 +381,7 @@ static bool rayLOSCallback(Vector2i pos, int32_t dist, void* data)
 			MAPTILE* psTile = mapTile(tile);
 			if (TileHasWall(psTile) && !TileHasSmallStructure(psTile))
 			{
-				STRUCTURE* psStruct = (STRUCTURE*)psTile->psObject;
+				Structure* psStruct = (Structure*)psTile->psObject;
 				if (psStruct->pStructureType->type != REF_GATE || psStruct->state != SAS_OPEN)
 				{
 					help->lastHeight = 2 * TILE_MAX_HEIGHT;
@@ -448,7 +448,7 @@ void visTilesUpdate(BASE_OBJECT* psObj)
 
 	if (psObj->type == OBJ_STRUCTURE)
 	{
-		STRUCTURE* psStruct = (STRUCTURE*)psObj;
+		Structure* psStruct = (Structure*)psObj;
 		if (psStruct->status != SS_BUILT ||
 			psStruct->pStructureType->type == REF_WALL || psStruct->pStructureType->type == REF_WALLCORNER || psStruct->
 			pStructureType->type == REF_GATE)
@@ -512,7 +512,7 @@ int visibleObject(const BASE_OBJECT* psViewer, const BASE_OBJECT* psTarget, bool
 	{
 	case OBJ_DROID:
 		{
-			const DROID* psDroid = (const DROID*)psViewer;
+			const Droid* psDroid = (const Droid*)psViewer;
 
 			if (psDroid->order.psObj == psTarget && cbSensorDroid(psDroid))
 			{
@@ -523,7 +523,7 @@ int visibleObject(const BASE_OBJECT* psViewer, const BASE_OBJECT* psTarget, bool
 		}
 	case OBJ_STRUCTURE:
 		{
-			const STRUCTURE* psStruct = (const STRUCTURE*)psViewer;
+			const Structure* psStruct = (const Structure*)psViewer;
 
 			// a structure that is being built cannot see anything
 			if (psStruct->status != SS_BUILT)
@@ -538,7 +538,7 @@ int visibleObject(const BASE_OBJECT* psViewer, const BASE_OBJECT* psTarget, bool
 				return 0;
 			}
 
-			if (psTarget->type == OBJ_DROID && isVtolDroid((const DROID*)psTarget)
+			if (psTarget->type == OBJ_DROID && isVtolDroid((const Droid*)psTarget)
 				&& asWeaponStats[psStruct->asWeaps[0].nStat].surfaceToAir == SHOOT_IN_AIR)
 			{
 				range = 3 * range / 2; // increase vision range of AA vs VTOL
@@ -569,8 +569,8 @@ int visibleObject(const BASE_OBJECT* psViewer, const BASE_OBJECT* psTarget, bool
 	const bool jammed = psTile->jammerBits & ~alliancebits[psViewer->player];
 
 	// Special rule for VTOLs, as they are not affected by ECM
-	if (((psTarget->type == OBJ_DROID && isVtolDroid((const DROID*)psTarget))
-			|| (psViewer->type == OBJ_DROID && isVtolDroid((const DROID*)psViewer)))
+	if (((psTarget->type == OBJ_DROID && isVtolDroid((const Droid*)psTarget))
+			|| (psViewer->type == OBJ_DROID && isVtolDroid((const Droid*)psViewer)))
 		&& dist < range)
 	{
 		return UBYTE_MAX;
@@ -624,7 +624,7 @@ int visibleObject(const BASE_OBJECT* psViewer, const BASE_OBJECT* psTarget, bool
 }
 
 // Find the wall that is blocking LOS to a target (if any)
-STRUCTURE* visGetBlockingWall(const BASE_OBJECT* psViewer, const BASE_OBJECT* psTarget)
+Structure* visGetBlockingWall(const BASE_OBJECT* psViewer, const BASE_OBJECT* psTarget)
 {
 	int numWalls = 0;
 	Vector2i wall;
@@ -646,7 +646,7 @@ STRUCTURE* visGetBlockingWall(const BASE_OBJECT* psViewer, const BASE_OBJECT* ps
 
 		for (player = 0; player < MAX_PLAYERS; player++)
 		{
-			STRUCTURE* psWall;
+			Structure* psWall;
 
 			for (psWall = apsStructLists[player]; psWall; psWall = psWall->psNext)
 			{
@@ -719,7 +719,7 @@ static void processVisibilitySelf(BASE_OBJECT* psObj)
 	psObj->flags.set(OBJECT_FLAG_TARGETED, false); // Remove any targetting locks from last update.
 
 	// If we're a CB sensor, make our target visible instantly. Although this is actually checking visibility of our target, we do it here anyway.
-	STRUCTURE* psStruct = castStructure(psObj);
+	Structure* psStruct = castStructure(psObj);
 	// you can always see anything that a CB sensor is targetting
 	// Anyone commenting this out again will get a knee capping from John.
 	// You have been warned!!
@@ -728,12 +728,12 @@ static void processVisibilitySelf(BASE_OBJECT* psObj)
 	{
 		setSeenByInstantly(psStruct->psTarget[0], psObj->player, UBYTE_MAX);
 	}
-	DROID* psDroid = castDroid(psObj);
+	Droid* psDroid = castDroid(psObj);
 	if (psDroid != nullptr && psDroid->action == DACTION_OBSERVE && cbSensorDroid(psDroid))
 	{
 		// Anyone commenting this out will get a knee capping from John.
 		// You have been warned!!
-		setSeenByInstantly(psDroid->psActionTarget[0], psObj->player, UBYTE_MAX);
+		setSeenByInstantly(psDroid->action_target[0], psObj->player, UBYTE_MAX);
 	}
 }
 
@@ -914,7 +914,7 @@ void setUnderTilesVis(BASE_OBJECT* psObj, UDWORD player)
 	UDWORD i, j;
 	UDWORD mapX, mapY, width, breadth;
 	FEATURE* psFeature;
-	STRUCTURE* psStructure;
+	Structure* psStructure;
 	FEATURE_STATS const* psStats;
 	MAPTILE* psTile;
 
@@ -935,9 +935,9 @@ void setUnderTilesVis(BASE_OBJECT* psObj, UDWORD player)
 	else
 	{
 		/* Must be a structure */
-		psStructure = (STRUCTURE*)psObj;
-		width = psStructure->pStructureType->baseWidth;
-		breadth = psStructure->pStructureType->baseBreadth;
+		psStructure = (Structure*)psObj;
+		width = psStructure->pStructureType->base_width;
+		breadth = psStructure->pStructureType->base_breadth;
 		mapX = map_coord(psStructure->pos.x - width * TILE_UNITS / 2);
 		mapY = map_coord(psStructure->pos.y - breadth * TILE_UNITS / 2);
 	}
@@ -973,11 +973,11 @@ bool lineOfFire(const SIMPLE_OBJECT* psViewer, const BASE_OBJECT* psTarget, int 
 
 	if (psViewer->type == OBJ_DROID)
 	{
-		psStats = asWeaponStats + ((const DROID*)psViewer)->asWeaps[weapon_slot].nStat;
+		psStats = asWeaponStats + ((const Droid*)psViewer)->asWeaps[weapon_slot].nStat;
 	}
 	else if (psViewer->type == OBJ_STRUCTURE)
 	{
-		psStats = asWeaponStats + ((const STRUCTURE*)psViewer)->asWeaps[weapon_slot].nStat;
+		psStats = asWeaponStats + ((const Structure*)psViewer)->asWeaps[weapon_slot].nStat;
 	}
 	// 2d distance
 	int distance = iHypot((psTarget->pos - psViewer->pos).xy());
@@ -1081,11 +1081,11 @@ static int checkFireLine(const SIMPLE_OBJECT* psViewer, const BASE_OBJECT* psTar
 	/* CorvusCorax: get muzzle offset (code from projectile.c)*/
 	if (psViewer->type == OBJ_DROID && weapon_slot >= 0)
 	{
-		calcDroidMuzzleBaseLocation((const DROID*)psViewer, &muzzle, weapon_slot);
+		calcDroidMuzzleBaseLocation((const Droid*)psViewer, &muzzle, weapon_slot);
 	}
 	else if (psViewer->type == OBJ_STRUCTURE && weapon_slot >= 0)
 	{
-		calcStructureMuzzleBaseLocation((const STRUCTURE*)psViewer, &muzzle, weapon_slot);
+		calcStructureMuzzleBaseLocation((const Structure*)psViewer, &muzzle, weapon_slot);
 	}
 	else // incase anything wants a projectile
 	{

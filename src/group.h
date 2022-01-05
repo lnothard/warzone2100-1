@@ -27,7 +27,7 @@
 #include "orderdef.h"
 
 struct BASE_OBJECT;
-struct DROID;
+struct Droid;
 
 enum GROUP_TYPE
 {
@@ -44,8 +44,8 @@ class DROID_GROUP
 public: // TODO: c++ design to members become private.
 	DROID_GROUP();
 
-	void add(DROID* psDroid); // Add a droid to group. Remove it from its group in case it already has group
-	void remove(DROID* psDroid); // Remove droid from group. Free group in case RefCount<=0
+	void add(Droid* psDroid); // Add a droid to group. Remove it from its group in case it already has group
+	void remove(Droid* psDroid); // Remove droid from group. Free group in case RefCount<=0
 	unsigned int getNumMembers(); // Count the number of members of a group
 
 	void orderGroup(DROID_ORDER order); // give an order all the droids of the group
@@ -58,8 +58,8 @@ public: // TODO: c++ design to members become private.
 	GROUP_TYPE type; // Type from the enum GROUP_TYPE above
 	SWORD refCount;
 	// Number of objects in the group. Group is deleted if refCount<=0. Count number of droids+NULL pointers.
-	DROID* psList; // List of droids in the group
-	DROID* psCommander; // The command droid of a command group
+	Droid* psList; // List of droids in the group
+	Droid* psCommander; // The command droid of a command group
 	int id; // unique group id
 };
 

@@ -5,7 +5,7 @@
 #include "../group.h"
 #include "../intorder.h"
 
-DROID* CommanderController::highlightedCommander = nullptr;
+Droid* CommanderController::highlightedCommander = nullptr;
 
 void CommanderController::updateData()
 {
@@ -19,9 +19,9 @@ void CommanderController::updateCommandersList()
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "selectedPlayer = %" PRIu32 "", selectedPlayer);
 
-	for (DROID* droid = apsDroidLists[selectedPlayer]; droid; droid = droid->psNext)
+	for (Droid* droid = apsDroidLists[selectedPlayer]; droid; droid = droid->psNext)
 	{
-		if (droid->droidType == DROID_COMMAND && droid->died == 0)
+		if (droid->type == DROID_COMMAND && droid->died == 0)
 		{
 			commanders.push_back(droid);
 		}
@@ -30,13 +30,13 @@ void CommanderController::updateCommandersList()
 	std::reverse(commanders.begin(), commanders.end());
 }
 
-STRUCTURE_STATS* CommanderController::getObjectStatsAt(size_t objectIndex) const
+StructureStats* CommanderController::getObjectStatsAt(size_t objectIndex) const
 {
 	auto assignedFactory = getAssignedFactoryAt(objectIndex);
 	return assignedFactory == nullptr ? nullptr : assignedFactory->pStructureType;
 }
 
-STRUCTURE* CommanderController::getAssignedFactoryAt(size_t objectIndex) const
+Structure* CommanderController::getAssignedFactoryAt(size_t objectIndex) const
 {
 	auto droid = getObjectAt(objectIndex);
 	return droid == nullptr ? nullptr : droidGetCommandFactory(droid);
@@ -73,7 +73,7 @@ void CommanderController::setHighlightedObject(BASE_OBJECT* object)
 
 	auto commander = castDroid(object);
 	ASSERT_NOT_NULLPTR_OR_RETURN(, commander);
-	ASSERT_OR_RETURN(, commander->droidType == DROID_COMMAND, "Droid is not a commander");
+	ASSERT_OR_RETURN(, commander->type == DROID_COMMAND, "Droid is not a commander");
 	highlightedCommander = commander;
 }
 
@@ -144,15 +144,15 @@ protected:
 		updateExperienceStarsLabel(droid);
 	}
 
-	void updateGroupSizeLabel(DROID* droid)
+	void updateGroupSizeLabel(Droid* droid)
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
-		auto text = astringf("%u/%u", droid->psGroup ? droid->psGroup->getNumMembers() : 0, cmdDroidMaxGroup(droid));
+		auto text = astringf("%u/%u", droid->group ? droid->group->getNumMembers() : 0, cmdDroidMaxGroup(droid));
 		groupSizeLabel->setString(WzString::fromUtf8(text));
 		groupSizeLabel->show();
 	}
 
-	void updateExperienceStarsLabel(DROID* droid)
+	void updateExperienceStarsLabel(Droid* droid)
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		int numStars = std::max((int)getDroidLevel(droid) - 1, 0);
@@ -235,7 +235,7 @@ protected:
 	}
 
 private:
-	void updateAssignedFactoriesLabel(const std::shared_ptr<W_LABEL>& label, DROID* droid, uint32_t factoryTypeShift)
+	void updateAssignedFactoriesLabel(const std::shared_ptr<W_LABEL>& label, Droid* droid, uint32_t factoryTypeShift)
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		/**
@@ -248,7 +248,7 @@ private:
 		auto index = 0;
 		for (auto i = 0; i < maxAssignedFactories; ++i)
 		{
-			if (droid->secondaryOrder & (1 << (i + factoryTypeShift)))
+			if (droid->secondary_order & (1 << (i + factoryTypeShift)))
 			{
 				text[index++] = '1' + i;
 			}
@@ -265,7 +265,7 @@ private:
 		}
 	}
 
-	STRUCTURE_STATS* getStats() override
+	StructureStats* getStats() override
 	{
 		return controller->getObjectStatsAt(objectIndex);
 	}
@@ -363,7 +363,7 @@ void CommanderController::displayOrderForm()
 	auto psWeakControllerRef = std::weak_ptr<CommanderController>(shared_from_this());
 	widgScheduleTask([psWeakControllerRef]()
 	{
-		DROID* psDroid = nullptr;
+		Droid* psDroid = nullptr;
 		if (auto strongControllerRef = psWeakControllerRef.lock())
 		{
 			psDroid = strongControllerRef->getHighlightedObject();

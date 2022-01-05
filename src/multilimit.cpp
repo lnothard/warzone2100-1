@@ -222,7 +222,7 @@ void WzMultiLimitTitleUI::start()
 
 			addFESlider(limitsButtonId, limitsButtonId - 1, 290, 11,
 			            asStructureStats[i].maxLimit,
-			            asStructureStats[i].upgrade[0].limit);
+			            asStructureStats[i].upgraded_stats[0].limit);
 			++limitsButtonId;
 		}
 	}
@@ -242,7 +242,7 @@ TITLECODE WzMultiLimitTitleUI::run()
 		unsigned statid = widgGetFromID(psWScreen, id - 1)->UserData;
 		if (statid)
 		{
-			asStructureStats[statid].upgrade[0].limit = (UBYTE)((W_SLIDER*)(widgGetFromID(psWScreen, id)))->pos;
+			asStructureStats[statid].upgraded_stats[0].limit = (UBYTE)((W_SLIDER*)(widgGetFromID(psWScreen, id)))->pos;
 		}
 	}
 	else
@@ -329,7 +329,7 @@ void createLimitSet()
 	for (unsigned i = 0; i < numStructureStats; i++)
 	{
 		// If the limit differs from the default
-		if (asStructureStats[i].upgrade[0].limit != LOTS_OF)
+		if (asStructureStats[i].upgraded_stats[0].limit != LOTS_OF)
 		{
 			numchanges++;
 		}
@@ -343,10 +343,10 @@ void createLimitSet()
 		// Prepare chunk
 		for (unsigned i = 0; i < numStructureStats; i++)
 		{
-			if (asStructureStats[i].upgrade[0].limit != LOTS_OF)
+			if (asStructureStats[i].upgraded_stats[0].limit != LOTS_OF)
 			{
 				ASSERT_OR_RETURN(, ingame.structureLimits.size() < numchanges, "Bad number of changed limits");
-				ingame.structureLimits.push_back(MULTISTRUCTLIMITS{i, asStructureStats[i].upgrade[0].limit});
+				ingame.structureLimits.push_back(MULTISTRUCTLIMITS{i, asStructureStats[i].upgraded_stats[0].limit});
 			}
 		}
 	}
@@ -376,13 +376,13 @@ bool applyLimitSet()
 		{
 			for (int player = 0; player < MAX_PLAYERS; player++)
 			{
-				asStructureStats[id].upgrade[player].limit = structLimit.limit;
+				asStructureStats[id].upgraded_stats[player].limit = structLimit.limit;
 
 				if (ingame.flags & MPFLAGS_FORCELIMITS)
 				{
-					while (asStructureStats[id].curCount[player] > asStructureStats[id].upgrade[player].limit)
+					while (asStructureStats[id].curCount[player] > asStructureStats[id].upgraded_stats[player].limit)
 					{
-						for (STRUCTURE* psStruct = apsStructLists[player]; psStruct; psStruct = psStruct->psNext)
+						for (Structure* psStruct = apsStructLists[player]; psStruct; psStruct = psStruct->psNext)
 						{
 							if (psStruct->pStructureType->type == asStructureStats[id].type)
 							{
@@ -421,7 +421,7 @@ bool applyLimitSet()
 			{
 				for (int player = 0; player < MAX_PLAYERS; player++)
 				{
-					asStructureStats[i].upgrade[player].limit = 0;
+					asStructureStats[i].upgraded_stats[player].limit = 0;
 				}
 			}
 		}
@@ -469,7 +469,7 @@ static void displayStructureBar(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset
 	int y = yOffset + psWidget->y();
 	int w = psWidget->width();
 	int h = psWidget->height();
-	STRUCTURE_STATS* stat = asStructureStats + psWidget->UserData;
+	StructureStats* stat = asStructureStats + psWidget->UserData;
 	Position position;
 	Vector3i rotation;
 	char str[20];
@@ -519,6 +519,6 @@ void resetLimits(void)
 {
 	for (unsigned i = 0; i < numStructureStats; ++i)
 	{
-		asStructureStats[i].upgrade[0].limit = asStructureStats[i].base.limit;
+		asStructureStats[i].upgraded_stats[0].limit = asStructureStats[i].base.limit;
 	}
 }

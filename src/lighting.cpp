@@ -321,7 +321,7 @@ void updateFogDistance(float distance)
 #define MIN_DROID_LIGHT_LEVEL	96
 #define	DROID_SEEK_LIGHT_SPEED	2
 
-void calcDroidIllumination(DROID* psDroid)
+void calcDroidIllumination(Droid* psDroid)
 {
 	int lightVal, presVal, retVal;
 	float adjust;
@@ -368,7 +368,7 @@ void calcDroidIllumination(DROID* psDroid)
 
 void doBuildingLights()
 {
-	STRUCTURE* psStructure;
+	Structure* psStructure;
 	UDWORD i;
 	LIGHT light;
 
@@ -376,11 +376,11 @@ void doBuildingLights()
 	{
 		for (psStructure = apsStructLists[i]; psStructure; psStructure = psStructure->psNext)
 		{
-			light.range = psStructure->pStructureType->baseWidth * TILE_UNITS;
+			light.range = psStructure->pStructureType->base_width * TILE_UNITS;
 			light.position.x = psStructure->pos.x;
 			light.position.z = psStructure->pos.y;
 			light.position.y = map_Height(light.position.x, light.position.z);
-			light.range = psStructure->pStructureType->baseWidth * TILE_UNITS;
+			light.range = psStructure->pStructureType->base_width * TILE_UNITS;
 			light.colour = pal_Colour(255, 255, 255);
 			processLight(&light);
 		}

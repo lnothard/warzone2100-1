@@ -137,17 +137,17 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm:
 		position.z = -(psSimpObj->pos.y - playerPos.p.z);
 
 		if ((objectType == RENDER_STRUCTURE) &&
-			((((STRUCTURE*)pObject)->pStructureType->type == REF_DEFENSE) ||
-				(((STRUCTURE*)pObject)->pStructureType->type == REF_WALL) ||
-				(((STRUCTURE*)pObject)->pStructureType->type == REF_WALLCORNER)))
+			((((Structure*)pObject)->pStructureType->type == REF_DEFENSE) ||
+       (((Structure*)pObject)->pStructureType->type == REF_WALL) ||
+       (((Structure*)pObject)->pStructureType->type == REF_WALLCORNER)))
 		{
 			position.y = psSimpObj->pos.z + 64;
-			radius = ((STRUCTURE*)pObject)->sDisplay.imd->radius; //walls guntowers and tank traps clip tightly
+			radius = ((Structure*)pObject)->sDisplay.imd->radius; //walls guntowers and tank traps clip tightly
 		}
 		else
 		{
 			position.y = psSimpObj->pos.z;
-			radius = (((STRUCTURE*)pObject)->sDisplay.imd->radius);
+			radius = (((Structure*)pObject)->sDisplay.imd->radius);
 		}
 
 		z = pie_RotateProject(&position, viewMatrix, &pixel);
@@ -353,7 +353,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_STRUCTURE:
-		pie = ((STRUCTURE*)pObject)->sDisplay.imd;
+		pie = ((Structure*)pObject)->sDisplay.imd;
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_FEATURE:
@@ -401,7 +401,7 @@ void bucketRenderCurrentList(const glm::mat4& viewMatrix)
 			displayComponentObject((DROID*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_STRUCTURE:
-			renderStructure((STRUCTURE*)thisTag->pObject, viewMatrix);
+			renderStructure((Structure*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_FEATURE:
 			renderFeature((FEATURE*)thisTag->pObject, viewMatrix);

@@ -47,11 +47,11 @@ using nonstd::nullopt;
 
 class DROID_GROUP;
 struct BASE_OBJECT;
-struct DROID;
-struct DROID_TEMPLATE;
+struct Droid;
+struct DroidTemplate;
 struct FEATURE;
 struct INITIAL_DROID_ORDERS;
-struct STRUCTURE;
+struct Structure;
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////
 // Game Options Structure. Enough info to completely describe the static stuff in a multiplayer game.
@@ -206,11 +206,11 @@ extern UBYTE bDisplayMultiJoiningStatus; // draw load progress?
 // functions
 
 WZ_DECL_WARN_UNUSED_RESULT BASE_OBJECT* IdToPointer(UDWORD id, UDWORD player);
-WZ_DECL_WARN_UNUSED_RESULT STRUCTURE* IdToStruct(UDWORD id, UDWORD player);
-WZ_DECL_WARN_UNUSED_RESULT DROID* IdToDroid(UDWORD id, UDWORD player);
-WZ_DECL_WARN_UNUSED_RESULT DROID* IdToMissionDroid(UDWORD id, UDWORD player);
+WZ_DECL_WARN_UNUSED_RESULT Structure* IdToStruct(UDWORD id, UDWORD player);
+WZ_DECL_WARN_UNUSED_RESULT Droid* IdToDroid(UDWORD id, UDWORD player);
+WZ_DECL_WARN_UNUSED_RESULT Droid* IdToMissionDroid(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT FEATURE* IdToFeature(UDWORD id, UDWORD player);
-WZ_DECL_WARN_UNUSED_RESULT DROID_TEMPLATE* IdToTemplate(UDWORD tempId, UDWORD player);
+WZ_DECL_WARN_UNUSED_RESULT DroidTemplate* IdToTemplate(UDWORD tempId, UDWORD player);
 
 const char* getPlayerName(int player);
 bool setPlayerName(int player, const char* sName);
@@ -253,20 +253,20 @@ bool multiplayerWinSequence(bool firstCall);
 // definitions of functions in multiplay's other c files.
 
 // Buildings . multistruct
-bool SendDestroyStructure(STRUCTURE* s);
-bool SendBuildFinished(STRUCTURE* psStruct);
-bool sendLasSat(UBYTE player, STRUCTURE* psStruct, BASE_OBJECT* psObj);
-void sendStructureInfo(STRUCTURE* psStruct, STRUCTURE_INFO structureInfo, DROID_TEMPLATE* psTempl);
+bool SendDestroyStructure(Structure* s);
+bool SendBuildFinished(Structure* psStruct);
+bool sendLasSat(UBYTE player, Structure* psStruct, BASE_OBJECT* psObj);
+void sendStructureInfo(Structure* psStruct, STRUCTURE_INFO structureInfo, DroidTemplate* psTempl);
 
 // droids . multibot
-bool SendDroid(DROID_TEMPLATE* pTemplate, uint32_t x, uint32_t y, uint8_t player, uint32_t id,
+bool SendDroid(DroidTemplate* pTemplate, uint32_t x, uint32_t y, uint8_t player, uint32_t id,
                const INITIAL_DROID_ORDERS* initialOrders);
-bool SendDestroyDroid(const DROID* psDroid);
+bool SendDestroyDroid(const Droid* psDroid);
 void sendQueuedDroidInfo(); ///< Actually sends the droid orders which were queued by SendDroidInfo.
-void sendDroidInfo(DROID* psDroid, DroidOrder const& order, bool add);
+void sendDroidInfo(Droid* psDroid, DroidOrder const& order, bool add);
 
-bool sendDroidSecondary(const DROID* psDroid, SECONDARY_ORDER sec, SECONDARY_STATE state);
-bool sendDroidDisembark(DROID const* psTransporter, DROID const* psDroid);
+bool sendDroidSecondary(const Droid* psDroid, SECONDARY_ORDER sec, SECONDARY_STATE state);
+bool sendDroidDisembark(Droid const* psTransporter, Droid const* psDroid);
 
 // Startup. mulitopt
 bool multiShutdown();
@@ -317,14 +317,14 @@ void multiSyncPlayerSwap(uint32_t playerIndexA, uint32_t playerIndexB);
 bool sendPing(); // allow game to request pings.
 void HandleBadParam(const char* msg, const int from, const int actual);
 // multijoin
-bool sendResearchStatus(const STRUCTURE* psBuilding, UDWORD index, UBYTE player, bool bStart);
+bool sendResearchStatus(const Structure* psBuilding, UDWORD index, UBYTE player, bool bStart);
 
 bool sendBeacon(int32_t locX, int32_t locY, int32_t forPlayer, int32_t sender, const char* pStr);
 
 void startMultiplayerGame();
 void resetReadyStatus(bool bSendOptions, bool ignoreReadyReset = false);
 
-STRUCTURE* findResearchingFacilityByResearchIndex(unsigned player, unsigned index);
+Structure* findResearchingFacilityByResearchIndex(unsigned player, unsigned index);
 
 void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const BASE_OBJECT* psObj, const BASE_OBJECT* psObj2);
 

@@ -62,15 +62,15 @@ void renderResearchToBuffer(RESEARCH* psResearch, UDWORD OriginX, UDWORD OriginY
 			IMDType = IMDTYPE_STRUCTURESTAT;
 			psResGraphic = psResearch->psStat;
 			//set up the scale
-			unsigned basePlateSize = getStructureStatSizeMax((STRUCTURE_STATS*)psResearch->psStat);
+			unsigned basePlateSize = getStructureStatSizeMax((StructureStats*)psResearch->psStat);
 			if (basePlateSize == 1)
 			{
 				scale = RESEARCH_COMPONENT_SCALE / 2;
 				/*HACK HACK HACK!
 				if its a 'tall thin (ie tower)' structure stat with something on
 				the top - offset the position to show the object on top*/
-				if (((STRUCTURE_STATS*)psResearch->psStat)->pIMD[0]->nconnectors &&
-					getStructureStatHeight((STRUCTURE_STATS*)psResearch->psStat) > TOWER_HEIGHT)
+				if (((StructureStats*)psResearch->psStat)->pIMD[0]->nconnectors &&
+            getStructureStatHeight((StructureStats*)psResearch->psStat) > TOWER_HEIGHT)
 				{
 					Position.y -= 30;
 				}
@@ -154,7 +154,7 @@ void renderResearchToBuffer(RESEARCH* psResearch, UDWORD OriginX, UDWORD OriginY
 	}
 	else if (IMDType == IMDTYPE_STRUCTURESTAT)
 	{
-		displayStructureStatButton((STRUCTURE_STATS*)psResGraphic, &Rotation, &Position, scale);
+		displayStructureStatButton((StructureStats*)psResGraphic, &Rotation, &Position, scale);
 	}
 	else
 	{
