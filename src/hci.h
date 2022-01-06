@@ -416,7 +416,7 @@ void intSetShouldShowRedundantDesign(bool value);
 bool intGetShouldShowRedundantDesign();
 
 /* Start looking for a structure location */
-void intStartStructPosition(BASE_STATS* psStats);
+void intStartStructPosition(BaseStats* psStats);
 
 /* Remove the object widgets from the widget screen */
 void intRemoveObject();

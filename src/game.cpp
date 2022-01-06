@@ -5638,9 +5638,9 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 			if (psDroid->asWeaps[j].nStat > 0)
 			{
 				psDroid->asWeaps[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
-				psDroid->asWeaps[j].lastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
-				psDroid->asWeaps[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
-				psDroid->asWeaps[j].rot = ini.vector3i("rotation/" + WzString::number(j));
+				psDroid->asWeaps[j].time_last_fired = ini.value("lastFired/" + WzString::number(j)).toInt();
+				psDroid->asWeaps[j].shots_fired = ini.value("shotsFired/" + WzString::number(j)).toInt();
+				psDroid->asWeaps[j].rotation = ini.vector3i("rotation/" + WzString::number(j));
 			}
 		}
 
@@ -5688,7 +5688,7 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 		psDroid->movement.shuffleStart = ini.value("shuffleStart").toInt();
 		for (int j = 0; j < MAX_WEAPONS; ++j)
 		{
-			psDroid->asWeaps[j].usedAmmo = ini.value("attackRun/" + WzString::number(j)).toInt();
+			psDroid->asWeaps[j].ammo_used = ini.value("attackRun/" + WzString::number(j)).toInt();
 		}
 		psDroid->movement.lastBump = ini.value("lastBump").toInt();
 		psDroid->movement.pauseTime = ini.value("pauseTime").toInt();
@@ -5756,9 +5756,9 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 			auto numberWzStr = WzString::number(i);
 			const std::string& numStr = numberWzStr.toStdString();
 			droidObj["ammo/" + numStr] = psCurr->asWeaps[i].ammo;
-			droidObj["lastFired/" + numStr] = psCurr->asWeaps[i].lastFired;
-			droidObj["shotsFired/" + numStr] = psCurr->asWeaps[i].shotsFired;
-			droidObj["rotation/" + numStr] = toVector(psCurr->asWeaps[i].rot);
+			droidObj["lastFired/" + numStr] = psCurr->asWeaps[i].time_last_fired;
+			droidObj["shotsFired/" + numStr] = psCurr->asWeaps[i].shots_fired;
+			droidObj["rotation/" + numStr] = toVector(psCurr->asWeaps[i].rotation);
 		}
 	}
 	for (unsigned i = 0; i < MAX_WEAPONS; i++)
@@ -5847,7 +5847,7 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 	droidObj["shuffleStart"] = psCurr->movement.shuffleStart;
 	for (int i = 0; i < MAX_WEAPONS; ++i)
 	{
-		droidObj["attackRun/" + WzString::number(i).toStdString()] = psCurr->asWeaps[i].usedAmmo;
+		droidObj["attackRun/" + WzString::number(i).toStdString()] = psCurr->asWeaps[i].ammo_used;
 	}
 	droidObj["lastBump"] = psCurr->movement.lastBump;
 	droidObj["pauseTime"] = psCurr->movement.pauseTime;
@@ -6415,9 +6415,9 @@ static bool loadSaveStructure2(const char* pFileName, Structure** ppList)
 			if (psStructure->asWeaps[j].nStat > 0)
 			{
 				psStructure->asWeaps[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
-				psStructure->asWeaps[j].lastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
-				psStructure->asWeaps[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
-				psStructure->asWeaps[j].rot = ini.vector3i("rotation/" + WzString::number(j));
+				psStructure->asWeaps[j].time_last_fired = ini.value("lastFired/" + WzString::number(j)).toInt();
+				psStructure->asWeaps[j].shots_fired = ini.value("shotsFired/" + WzString::number(j)).toInt();
+				psStructure->asWeaps[j].rotation = ini.vector3i("rotation/" + WzString::number(j));
 			}
 		}
 		psStructure->status = (STRUCT_STATES)ini.value("status", SS_BUILT).toInt();
@@ -6502,9 +6502,9 @@ bool writeStructFile(const char* pFileName)
 				if (psCurr->asWeaps[j].nStat > 0)
 				{
 					ini.setValue("ammo/" + WzString::number(j), psCurr->asWeaps[j].ammo);
-					ini.setValue("lastFired/" + WzString::number(j), psCurr->asWeaps[j].lastFired);
-					ini.setValue("shotsFired/" + WzString::number(j), psCurr->asWeaps[j].shotsFired);
-					ini.setVector3i("rotation/" + WzString::number(j), toVector(psCurr->asWeaps[j].rot));
+					ini.setValue("lastFired/" + WzString::number(j), psCurr->asWeaps[j].time_last_fired);
+					ini.setValue("shotsFired/" + WzString::number(j), psCurr->asWeaps[j].shots_fired);
+					ini.setVector3i("rotation/" + WzString::number(j), toVector(psCurr->asWeaps[j].rotation));
 				}
 			}
 			for (unsigned i = 0; i < psCurr->numWeaps; i++)
@@ -7236,7 +7236,7 @@ bool loadSaveCompList(const char* pFileName)
 		{
 			WzString name = list[i];
 			int state = ini.value(name, UNAVAILABLE).toInt();
-			COMPONENT_STATS* psComp = getCompStatsFromName(name);
+			ComponentStats* psComp = getCompStatsFromName(name);
 			ASSERT_OR_RETURN(false, psComp, "Bad component %s", name.toUtf8().c_str());
 			ASSERT_OR_RETURN(false, psComp->compType >= 0 && psComp->compType != COMP_NUMCOMPONENTS, "Bad type %d",
 			                 psComp->compType);
@@ -7261,7 +7261,7 @@ static bool writeCompListFile(const char* pFileName)
 		ini.beginGroup("player_" + WzString::number(player));
 		for (int i = 0; i < numBodyStats; i++)
 		{
-			COMPONENT_STATS* psStats = (COMPONENT_STATS*)(asBodyStats + i);
+			ComponentStats* psStats = (ComponentStats*)(asBodyStats + i);
 			const int state = apCompLists[player][COMP_BODY][i];
 			if (state != UNAVAILABLE)
 			{
@@ -7270,7 +7270,7 @@ static bool writeCompListFile(const char* pFileName)
 		}
 		for (int i = 0; i < numWeaponStats; i++)
 		{
-			COMPONENT_STATS* psStats = (COMPONENT_STATS*)(asWeaponStats + i);
+			ComponentStats* psStats = (ComponentStats*)(asWeaponStats + i);
 			const int state = apCompLists[player][COMP_WEAPON][i];
 			if (state != UNAVAILABLE)
 			{
@@ -7279,7 +7279,7 @@ static bool writeCompListFile(const char* pFileName)
 		}
 		for (int i = 0; i < numConstructStats; i++)
 		{
-			COMPONENT_STATS* psStats = (COMPONENT_STATS*)(asConstructStats + i);
+			ComponentStats* psStats = (ComponentStats*)(asConstructStats + i);
 			const int state = apCompLists[player][COMP_CONSTRUCT][i];
 			if (state != UNAVAILABLE)
 			{
@@ -7288,7 +7288,7 @@ static bool writeCompListFile(const char* pFileName)
 		}
 		for (int i = 0; i < numECMStats; i++)
 		{
-			COMPONENT_STATS* psStats = (COMPONENT_STATS*)(asECMStats + i);
+			ComponentStats* psStats = (ComponentStats*)(asECMStats + i);
 			const int state = apCompLists[player][COMP_ECM][i];
 			if (state != UNAVAILABLE)
 			{
@@ -7297,7 +7297,7 @@ static bool writeCompListFile(const char* pFileName)
 		}
 		for (int i = 0; i < numPropulsionStats; i++)
 		{
-			COMPONENT_STATS* psStats = (COMPONENT_STATS*)(asPropulsionStats + i);
+			ComponentStats* psStats = (ComponentStats*)(asPropulsionStats + i);
 			const int state = apCompLists[player][COMP_PROPULSION][i];
 			if (state != UNAVAILABLE)
 			{
@@ -7306,7 +7306,7 @@ static bool writeCompListFile(const char* pFileName)
 		}
 		for (int i = 0; i < numSensorStats; i++)
 		{
-			COMPONENT_STATS* psStats = (COMPONENT_STATS*)(asSensorStats + i);
+			ComponentStats* psStats = (ComponentStats*)(asSensorStats + i);
 			const int state = apCompLists[player][COMP_SENSOR][i];
 			if (state != UNAVAILABLE)
 			{
@@ -7315,7 +7315,7 @@ static bool writeCompListFile(const char* pFileName)
 		}
 		for (int i = 0; i < numRepairStats; i++)
 		{
-			COMPONENT_STATS* psStats = (COMPONENT_STATS*)(asRepairStats + i);
+			ComponentStats* psStats = (ComponentStats*)(asRepairStats + i);
 			const int state = apCompLists[player][COMP_REPAIRUNIT][i];
 			if (state != UNAVAILABLE)
 			{
@@ -7324,7 +7324,7 @@ static bool writeCompListFile(const char* pFileName)
 		}
 		for (int i = 0; i < numBrainStats; i++)
 		{
-			COMPONENT_STATS* psStats = (COMPONENT_STATS*)(asBrainStats + i);
+			ComponentStats* psStats = (ComponentStats*)(asBrainStats + i);
 			const int state = apCompLists[player][COMP_BRAIN][i];
 			if (state != UNAVAILABLE)
 			{

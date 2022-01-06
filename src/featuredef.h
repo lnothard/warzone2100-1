@@ -45,9 +45,9 @@ enum FEATURE_TYPE
 };
 
 /* Stats for a feature */
-struct FEATURE_STATS : public BASE_STATS
+struct FEATURE_STATS : public BaseStats
 {
-	FEATURE_STATS(int idx = 0) : BASE_STATS(idx)
+	FEATURE_STATS(int idx = 0) : BaseStats(idx)
 	{
 	}
 

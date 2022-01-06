@@ -144,7 +144,7 @@ enum class ACTION
     CIRCLE
 };
 
-struct DroidTemplate : public BASE_STATS
+struct DroidTemplate : public BaseStats
 {
     DroidTemplate() = default;
 
@@ -564,7 +564,7 @@ bool droidOnMap(const Droid* psDroid);
 void droidSetPosition(Droid* psDroid, int x, int y);
 
 /// Return a percentage of how fully armed the object is, or -1 if N/A.
-int droidReloadBar(const SimpleObject* psObj, const WEAPON* psWeap, int weapon_slot);
+int droidReloadBar(const SimpleObject* psObj, const Weapon* psWeap, int weapon_slot);
 
 static inline int droidSensorRange(const Droid* psDroid)
 {
@@ -574,49 +574,49 @@ static inline int droidSensorRange(const Droid* psDroid)
 /*
  * Component stat helper functions
  */
-static inline BODY_STATS* getBodyStats(const Droid* psDroid)
+static inline BodyStats* getBodyStats(const Droid* psDroid)
 {
 	return asBodyStats + psDroid->asBits[COMP_BODY];
 }
 
-static inline BRAIN_STATS* getBrainStats(const Droid* psDroid)
+static inline CommanderStats* getBrainStats(const Droid* psDroid)
 {
 	return asBrainStats + psDroid->asBits[COMP_BRAIN];
 }
 
-static inline PROPULSION_STATS* getPropulsionStats(const Droid* psDroid)
+static inline PropulsionStats* getPropulsionStats(const Droid* psDroid)
 {
 	return asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
 }
 
-static inline SENSOR_STATS* getSensorStats(const Droid* psDroid)
+static inline SensorStats* getSensorStats(const Droid* psDroid)
 {
 	return asSensorStats + psDroid->asBits[COMP_SENSOR];
 }
 
-static inline ECM_STATS* getECMStats(const Droid* psDroid)
+static inline EcmStats* getECMStats(const Droid* psDroid)
 {
 	return asECMStats + psDroid->asBits[COMP_ECM];
 }
 
-static inline REPAIR_STATS* getRepairStats(const Droid* psDroid)
+static inline RepairStats* getRepairStats(const Droid* psDroid)
 {
 	return asRepairStats + psDroid->asBits[COMP_REPAIRUNIT];
 }
 
-static inline CONSTRUCT_STATS* getConstructStats(const Droid* psDroid)
+static inline ConstructStats* getConstructStats(const Droid* psDroid)
 {
 	return asConstructStats + psDroid->asBits[COMP_CONSTRUCT];
 }
 
-static inline WEAPON_STATS* getWeaponStats(const Droid* psDroid, int weapon_slot)
+static inline WeaponStats* getWeaponStats(const Droid* psDroid, int weapon_slot)
 {
 	return asWeaponStats + psDroid->asWeaps[weapon_slot].nStat;
 }
 
 static inline Rotation getInterpolatedWeaponRotation(const Droid* psDroid, int weaponSlot, uint32_t time)
 {
-	return interpolateRot(psDroid->asWeaps[weaponSlot].prevRot, psDroid->asWeaps[weaponSlot].rot,
+	return interpolateRot(psDroid->asWeaps[weaponSlot].previous_rotation, psDroid->asWeaps[weaponSlot].rotation,
                         psDroid->previous_location.time, psDroid->time, time);
 }
 

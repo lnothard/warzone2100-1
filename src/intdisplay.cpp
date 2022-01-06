@@ -81,7 +81,7 @@
 //the loop default value
 #define DEFAULT_LOOP		1
 
-static void StatGetResearchImage(BASE_STATS* psStat, Image* image, iIMDShape** Shape, BASE_STATS** ppGraphicData,
+static void StatGetResearchImage(BaseStats* psStat, Image* image, iIMDShape** Shape, BaseStats** ppGraphicData,
                                  bool drawTechIcon);
 
 
@@ -391,7 +391,7 @@ void IntStatusButton::display(int xOffset, int yOffset)
 {
 	Structure* Structure;
 	Droid* Droid;
-	BASE_STATS *Stats, *psResGraphic;
+	BaseStats *Stats, *psResGraphic;
 	UDWORD compID;
 	bool bOnHold = false;
 	ImdObject object;
@@ -581,7 +581,7 @@ IntStatsButton::IntStatsButton()
 //
 void IntStatsButton::display(int xOffset, int yOffset)
 {
-	BASE_STATS* psResGraphic;
+	BaseStats* psResGraphic;
 	SDWORD compID;
 
 	initDisplay();
@@ -1115,10 +1115,10 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		// Decide which button grid size to use.
 		if (IMDType == IMDTYPE_COMPONENT)
 		{
-			Radius = getComponentRadius((BASE_STATS*)Object);
+			Radius = getComponentRadius((BaseStats*)Object);
 			model.scale = rescaleButtonObject(Radius, COMP_BUT_SCALE, COMPONENT_RADIUS);
 			// NOTE: The Super transport is huge, and is considered a component type, so refit it to inside the button.
-			BASE_STATS* psStats = (BASE_STATS*)Object;
+			BaseStats* psStats = (BaseStats*)Object;
 			if (psStats->id.compare("SuperTransportBody") == 0)
 			{
 				model.scale = static_cast<int>(model.scale * .4f);
@@ -1130,7 +1130,7 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		}
 		else if (IMDType == IMDTYPE_RESEARCH)
 		{
-			Radius = getResearchRadius((BASE_STATS*)Object);
+			Radius = getResearchRadius((BaseStats*)Object);
 			if (Radius <= 100)
 			{
 				model.scale = rescaleButtonObject(Radius, COMP_BUT_SCALE, COMPONENT_RADIUS);
@@ -1233,11 +1233,11 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		/* all non droid buttons */
 		if (IMDType == IMDTYPE_COMPONENT)
 		{
-			displayComponentButton((BASE_STATS*)Object, &model.rotation, &model.position, model.scale);
+			displayComponentButton((BaseStats*)Object, &model.rotation, &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_RESEARCH)
 		{
-			displayResearchButton((BASE_STATS*)Object, &model.rotation, &model.position, model.scale);
+			displayResearchButton((BaseStats*)Object, &model.rotation, &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_STRUCTURE)
 		{
@@ -1409,7 +1409,7 @@ Structure* droidGetCommandFactory(Droid* psDroid)
 
 // Get the stats for a structure which a droid is going to ( but not yet ) building.
 //
-BASE_STATS* DroidGetBuildStats(Droid* Droid)
+BaseStats* DroidGetBuildStats(Droid* Droid)
 {
 	StructureStats* Stats;
 
@@ -1510,28 +1510,28 @@ DroidTemplate* FactoryGetTemplate(Factory* Factory)
 	return (DroidTemplate*)Factory->psSubject;
 }
 
-bool StatIsStructure(BASE_STATS const* Stat)
+bool StatIsStructure(BaseStats const* Stat)
 {
 	return Stat->hasType(STAT_STRUCTURE);
 }
 
-bool StatIsFeature(BASE_STATS const* Stat)
+bool StatIsFeature(BaseStats const* Stat)
 {
 	return Stat->hasType(STAT_FEATURE);
 }
 
-iIMDShape* StatGetStructureIMD(BASE_STATS* Stat, UDWORD Player)
+iIMDShape* StatGetStructureIMD(BaseStats* Stat, UDWORD Player)
 {
 	(void)Player;
 	return ((StructureStats*)Stat)->IMDs[0];
 }
 
-bool StatIsTemplate(BASE_STATS* Stat)
+bool StatIsTemplate(BaseStats* Stat)
 {
 	return Stat->hasType(STAT_TEMPLATE);
 }
 
-COMPONENT_TYPE StatIsComponent(BASE_STATS* Stat)
+COMPONENT_TYPE StatIsComponent(BaseStats* Stat)
 {
 	switch (StatType(Stat->ref & STAT_MASK))
 	{
@@ -1547,9 +1547,9 @@ COMPONENT_TYPE StatIsComponent(BASE_STATS* Stat)
 	}
 }
 
-bool StatGetComponentIMD(BASE_STATS* Stat, SDWORD compID, iIMDShape** CompIMD, iIMDShape** MountIMD)
+bool StatGetComponentIMD(BaseStats* Stat, SDWORD compID, iIMDShape** CompIMD, iIMDShape** MountIMD)
 {
-	WEAPON_STATS* psWStat;
+	WeaponStats* psWStat;
 
 	*CompIMD = nullptr;
 	*MountIMD = nullptr;
@@ -1557,42 +1557,42 @@ bool StatGetComponentIMD(BASE_STATS* Stat, SDWORD compID, iIMDShape** CompIMD, i
 	switch (compID)
 	{
 	case COMP_BODY:
-		*CompIMD = ((COMPONENT_STATS*)Stat)->pIMD;
+		*CompIMD = ((ComponentStats*)Stat)->pIMD;
 		return true;
 
 	case COMP_BRAIN:
-		psWStat = ((BRAIN_STATS*)Stat)->psWeaponStat;
+		psWStat = ((CommanderStats*)Stat)->psWeaponStat;
 		*MountIMD = psWStat->pMountGraphic;
 		*CompIMD = psWStat->pIMD;
 		return true;
 
 	case COMP_WEAPON:
-		*MountIMD = ((WEAPON_STATS*)Stat)->pMountGraphic;
-		*CompIMD = ((COMPONENT_STATS*)Stat)->pIMD;
+		*MountIMD = ((WeaponStats*)Stat)->pMountGraphic;
+		*CompIMD = ((ComponentStats*)Stat)->pIMD;
 		return true;
 
 	case COMP_SENSOR:
-		*MountIMD = ((SENSOR_STATS*)Stat)->pMountGraphic;
-		*CompIMD = ((COMPONENT_STATS*)Stat)->pIMD;
+		*MountIMD = ((SensorStats*)Stat)->pMountGraphic;
+		*CompIMD = ((ComponentStats*)Stat)->pIMD;
 		return true;
 
 	case COMP_ECM:
-		*MountIMD = ((ECM_STATS*)Stat)->pMountGraphic;
-		*CompIMD = ((COMPONENT_STATS*)Stat)->pIMD;
+		*MountIMD = ((EcmStats*)Stat)->pMountGraphic;
+		*CompIMD = ((ComponentStats*)Stat)->pIMD;
 		return true;
 
 	case COMP_CONSTRUCT:
-		*MountIMD = ((CONSTRUCT_STATS*)Stat)->pMountGraphic;
-		*CompIMD = ((COMPONENT_STATS*)Stat)->pIMD;
+		*MountIMD = ((ConstructStats*)Stat)->pMountGraphic;
+		*CompIMD = ((ComponentStats*)Stat)->pIMD;
 		return true;
 
 	case COMP_PROPULSION:
-		*CompIMD = ((COMPONENT_STATS*)Stat)->pIMD;
+		*CompIMD = ((ComponentStats*)Stat)->pIMD;
 		return true;
 
 	case COMP_REPAIRUNIT:
-		*MountIMD = ((REPAIR_STATS*)Stat)->pMountGraphic;
-		*CompIMD = ((COMPONENT_STATS*)Stat)->pIMD;
+		*MountIMD = ((RepairStats*)Stat)->pMountGraphic;
+		*CompIMD = ((ComponentStats*)Stat)->pIMD;
 		return true;
 
 	case COMP_NUMCOMPONENTS:
@@ -1603,12 +1603,12 @@ bool StatGetComponentIMD(BASE_STATS* Stat, SDWORD compID, iIMDShape** CompIMD, i
 }
 
 
-bool StatIsResearch(BASE_STATS* Stat)
+bool StatIsResearch(BaseStats* Stat)
 {
 	return Stat->hasType(STAT_RESEARCH);
 }
 
-static void StatGetResearchImage(BASE_STATS* psStat, Image* image, iIMDShape** Shape, BASE_STATS** ppGraphicData,
+static void StatGetResearchImage(BaseStats* psStat, Image* image, iIMDShape** Shape, BaseStats** ppGraphicData,
                                  bool drawTechIcon)
 {
 	if (drawTechIcon && ((RESEARCH*)psStat)->iconID != NO_RESEARCH_ICON)

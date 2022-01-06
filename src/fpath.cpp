@@ -442,7 +442,7 @@ queuePathfinding:
 FPATH_RETVAL fpathDroidRoute(Droid* psDroid, SDWORD tX, SDWORD tY, FPATH_MOVETYPE moveType)
 {
 	bool acceptNearest;
-	PROPULSION_STATS* psPropStats = getPropulsionStats(psDroid);
+	PropulsionStats* psPropStats = getPropulsionStats(psDroid);
 
 	// override for AI to blast our way through stuff
 	if (!isHumanPlayer(psDroid->player) && moveType == FMT_MOVE)

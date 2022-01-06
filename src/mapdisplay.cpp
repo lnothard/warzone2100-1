@@ -40,7 +40,7 @@
 Intelligence Map */
 void renderResearchToBuffer(RESEARCH* psResearch, UDWORD OriginX, UDWORD OriginY)
 {
-	BASE_STATS* psResGraphic;
+	BaseStats* psResGraphic;
 	UDWORD IMDType;
 	SDWORD scale = 0;
 
@@ -110,21 +110,21 @@ void renderResearchToBuffer(RESEARCH* psResearch, UDWORD OriginX, UDWORD OriginY
 			{
 				ASSERT(false, "intDisplayMessageButton: invalid stat");
 				IMDType = IMDTYPE_RESEARCH;
-				psResGraphic = (BASE_STATS*)psResearch;
+				psResGraphic = (BaseStats*)psResearch;
 			}
 		}
 	}
 	else
 	{
 		//no Stat for this research topic so use the research topic to define what is drawn
-		psResGraphic = (BASE_STATS*)psResearch;
+		psResGraphic = (BaseStats*)psResearch;
 		IMDType = IMDTYPE_RESEARCH;
 	}
 
 	//scale the research according to size of IMD
 	if (IMDType == IMDTYPE_RESEARCH)
 	{
-		unsigned Radius = getResearchRadius((BASE_STATS*)psResGraphic);
+		unsigned Radius = getResearchRadius((BaseStats*)psResGraphic);
 		if (Radius <= 100)
 		{
 			scale = RESEARCH_COMPONENT_SCALE / 2;

@@ -196,7 +196,7 @@ void _syncDebugObject(const char* function, SIMPLE_OBJECT const* psObject, char 
 	}
 }
 
-Vector2i getStatsSize(BASE_STATS const* pType, uint16_t direction)
+Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 {
 	if (StatIsStructure(pType))
 	{
@@ -226,7 +226,7 @@ StructureBounds getStructureBounds(SimpleObject const* object)
 	return StructureBounds(Vector2i(32767, 32767), Vector2i(-65535, -65535)); // Default to an invalid area.
 }
 
-StructureBounds getStructureBounds(BASE_STATS const* stats, Vector2i pos, uint16_t direction)
+StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos, uint16_t direction)
 {
 	if (StatIsStructure(stats))
 	{

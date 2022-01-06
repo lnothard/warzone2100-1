@@ -57,19 +57,19 @@ static void printBaseObjInfo(const SimpleObject* psObj)
 /** print out information about a general component
  *  \param psStats the component to print the info for
  */
-static void printComponentInfo(const COMPONENT_STATS* psStats)
+static void printComponentInfo(const ComponentStats* psStats)
 {
 	CONPRINTF("%s ref %d\n"
 	          "   bPwr %d bPnts %d wt %d bdy %d imd %p\n",
 	          getStatsName(psStats), psStats->ref, psStats->buildPower,
-	          psStats->buildPoints, psStats->weight, psStats->getBase().hitpoints,
+	          psStats->buildPoints, psStats->weight, psStats->getBase().hit_points,
 	          static_cast<void*>(psStats->pIMD));
 }
 
 /** print out weapon information
  *  \param psStats the weapon to print the info for
  */
-static void printWeaponInfo(const WEAPON_STATS* psStats)
+static void printWeaponInfo(const WeaponStats* psStats)
 {
 	const char *pWC, *pWSC, *pMM;
 
@@ -162,7 +162,7 @@ static void printWeaponInfo(const WEAPON_STATS* psStats)
 	}
 
 	CONPRINTF("%s", "Weapon: ");
-	printComponentInfo((const COMPONENT_STATS*)psStats);
+	printComponentInfo((const ComponentStats*)psStats);
 	CONPRINTF("   sRng %d lRng %d mRng %d %s\n"
 	          "   sHt %d lHt %d pause %d dam %d\n",
 	          proj_GetShortRange(psStats, selectedPlayer), proj_GetLongRange(psStats, selectedPlayer),
@@ -194,12 +194,12 @@ static void printWeaponInfo(const WEAPON_STATS* psStats)
  */
 void printDroidInfo(const Droid* psDroid)
 {
-	BODY_STATS* psBdyStats;
-	PROPULSION_STATS* psPropStats;
-	ECM_STATS* psECMStats;
-	SENSOR_STATS* psSensStats;
-	CONSTRUCT_STATS* psConstStats;
-	REPAIR_STATS* psRepairStats;
+	BodyStats* psBdyStats;
+	PropulsionStats* psPropStats;
+	EcmStats* psECMStats;
+	SensorStats* psSensStats;
+	ConstructStats* psConstStats;
+	RepairStats* psRepairStats;
 
 	printBaseObjInfo((const SimpleObject*)psDroid);
 
@@ -220,7 +220,7 @@ void printDroidInfo(const Droid* psDroid)
 			{
 				CONPRINTF("%s", "Body: ");
 				psBdyStats = asBodyStats + psDroid->asBits[i];
-				printComponentInfo((COMPONENT_STATS*)psBdyStats);
+				printComponentInfo((ComponentStats*)psBdyStats);
 			}
 			else
 			{
@@ -234,7 +234,7 @@ void printDroidInfo(const Droid* psDroid)
 			{
 				CONPRINTF("%s", "Prop: ");
 				psPropStats = asPropulsionStats + psDroid->asBits[i];
-				printComponentInfo((COMPONENT_STATS*)psPropStats);
+				printComponentInfo((ComponentStats*)psPropStats);
 			}
 			else
 			{
@@ -246,7 +246,7 @@ void printDroidInfo(const Droid* psDroid)
 			{
 				CONPRINTF("%s", "ECM: ");
 				psECMStats = asECMStats + psDroid->asBits[i];
-				printComponentInfo((COMPONENT_STATS*)psECMStats);
+				printComponentInfo((ComponentStats*)psECMStats);
 				CONPRINTF("   range %d loc %d imd %p\n",
 				          ecmRange(psECMStats, psDroid->player), psECMStats->location,
 				          static_cast<void*>(psECMStats->pMountGraphic));
@@ -261,7 +261,7 @@ void printDroidInfo(const Droid* psDroid)
 			{
 				CONPRINTF("%s", "Sensor: ");
 				psSensStats = asSensorStats + psDroid->asBits[i];
-				printComponentInfo((COMPONENT_STATS*)psSensStats);
+				printComponentInfo((ComponentStats*)psSensStats);
 				CONPRINTF("   rng %d loc %d imd %p\n",
 				          sensorRange(psSensStats, psDroid->player),
 				          psSensStats->location, static_cast<void*>(psSensStats->pMountGraphic));
@@ -276,7 +276,7 @@ void printDroidInfo(const Droid* psDroid)
 			{
 				CONPRINTF("%s", "Construct: ");
 				psConstStats = asConstructStats + psDroid->asBits[i];
-				printComponentInfo((COMPONENT_STATS*)psConstStats);
+				printComponentInfo((ComponentStats*)psConstStats);
 				CONPRINTF("   cPnts %d imd %p\n",
 				          constructorPoints(psConstStats, psDroid->player),
 				          static_cast<void*>(psConstStats->pMountGraphic));
@@ -287,7 +287,7 @@ void printDroidInfo(const Droid* psDroid)
 			{
 				CONPRINTF("%s", "Repair: ");
 				psRepairStats = asRepairStats + psDroid->asBits[i];
-				printComponentInfo((COMPONENT_STATS*)psRepairStats);
+				printComponentInfo((ComponentStats*)psRepairStats);
 				CONPRINTF("   repPnts %d loc %d imd %p\n",
 				          repairPoints(psRepairStats, psDroid->player),
 				          psRepairStats->location,

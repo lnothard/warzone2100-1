@@ -102,7 +102,7 @@ void adjustTileHeight(MAPTILE* psTile, SDWORD adjust)
 	}
 }
 
-void init3DBuilding(BASE_STATS* psStats, BUILDCALLBACK CallBack, void* UserData)
+void init3DBuilding(BaseStats* psStats, BUILDCALLBACK CallBack, void* UserData)
 {
 	ASSERT_OR_RETURN(, psStats, "Bad parameter");
 

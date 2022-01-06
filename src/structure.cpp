@@ -668,7 +668,7 @@ bool loadStructureStats(WzConfig& ini)
 		psStats->sensor_stats = asSensorStats + sensor;
 
 		// set list of weapons
-		std::fill_n(psStats->psWeapStat, MAX_WEAPONS, (WEAPON_STATS*)nullptr);
+		std::fill_n(psStats->psWeapStat, MAX_WEAPONS, (WeaponStats*)nullptr);
 		std::vector<WzString> weapons = ini.value("weapons").toWzStringList();
 		ASSERT_OR_RETURN(false, weapons.size() <= MAX_WEAPONS,
 		                 "Too many weapons are attached to structure '%s'. Maximum is %d", getID(psStats), MAX_WEAPONS);
@@ -679,7 +679,7 @@ bool loadStructureStats(WzConfig& ini)
 			int weapon = getCompFromName(COMP_WEAPON, weaponsID);
 			ASSERT_OR_RETURN(false, weapon >= 0, "Invalid item '%s' in list of weapons of structure '%s' ",
 			                 weaponsID.toUtf8().c_str(), getID(psStats));
-			WEAPON_STATS* pWeap = asWeaponStats + weapon;
+			WeaponStats* pWeap = asWeaponStats + weapon;
 			psStats->psWeapStat[j] = pWeap;
 		}
 
@@ -1665,10 +1665,10 @@ Structure* buildStructureDir(StructureStats* pStructureType, UDWORD x, UDWORD y,
 		//set up the rest of the data
 		for (i = 0; i < MAX_WEAPONS; i++)
 		{
-			psBuilding->asWeaps[i].rot.direction = 0;
-			psBuilding->asWeaps[i].rot.pitch = 0;
-			psBuilding->asWeaps[i].rot.roll = 0;
-			psBuilding->asWeaps[i].prevRot = psBuilding->asWeaps[i].rot;
+			psBuilding->asWeaps[i].rotation.direction = 0;
+			psBuilding->asWeaps[i].rotation.pitch = 0;
+			psBuilding->asWeaps[i].rotation.roll = 0;
+			psBuilding->asWeaps[i].previous_rotation = psBuilding->asWeaps[i].rotation;
 			psBuilding->asWeaps[i].origin = ORIGIN_UNKNOWN;
 			psBuilding->psTarget[i] = nullptr;
 		}
@@ -1691,12 +1691,12 @@ Structure* buildStructureDir(StructureStats* pStructureType, UDWORD x, UDWORD y,
 			{
 				if (pStructureType->psWeapStat[weapon])
 				{
-					psBuilding->asWeaps[weapon].lastFired = 0;
-					psBuilding->asWeaps[weapon].shotsFired = 0;
+					psBuilding->asWeaps[weapon].time_last_fired = 0;
+					psBuilding->asWeaps[weapon].shots_fired = 0;
 					//in multiPlayer make the Las-Sats require re-loading from the start
 					if (bMultiPlayer && pStructureType->psWeapStat[0]->weaponSubClass == WSC_LAS_SAT)
 					{
-						psBuilding->asWeaps[0].lastFired = gameTime;
+						psBuilding->asWeaps[0].time_last_fired = gameTime;
 					}
 					psBuilding->asWeaps[weapon].nStat = pStructureType->psWeapStat[weapon] - asWeaponStats;
 					psBuilding->asWeaps[weapon].ammo = (asWeaponStats + psBuilding->asWeaps[weapon].nStat)->upgraded_stats[
@@ -1709,12 +1709,12 @@ Structure* buildStructureDir(StructureStats* pStructureType, UDWORD x, UDWORD y,
 		{
 			if (pStructureType->psWeapStat[0])
 			{
-				psBuilding->asWeaps[0].lastFired = 0;
-				psBuilding->asWeaps[0].shotsFired = 0;
+				psBuilding->asWeaps[0].time_last_fired = 0;
+				psBuilding->asWeaps[0].shots_fired = 0;
 				//in multiPlayer make the Las-Sats require re-loading from the start
 				if (bMultiPlayer && pStructureType->psWeapStat[0]->weaponSubClass == WSC_LAS_SAT)
 				{
-					psBuilding->asWeaps[0].lastFired = gameTime;
+					psBuilding->asWeaps[0].time_last_fired = gameTime;
 				}
 				psBuilding->asWeaps[0].nStat = pStructureType->psWeapStat[0] - asWeaponStats;
 				psBuilding->asWeaps[0].ammo = (asWeaponStats + psBuilding->asWeaps[0].nStat)->upgraded_stats[psBuilding->
@@ -2028,11 +2028,11 @@ Structure* buildBlueprint(StructureStats const* psStats, Vector3i pos, uint16_t 
 	}
 	// things with sensors or ecm (or repair facilities) need these set, even if they have no official weapon
 	blueprint->numWeaps = 0;
-	blueprint->asWeaps[0].lastFired = 0;
-	blueprint->asWeaps[0].rot.pitch = 0;
-	blueprint->asWeaps[0].rot.direction = 0;
-	blueprint->asWeaps[0].rot.roll = 0;
-	blueprint->asWeaps[0].prevRot = blueprint->asWeaps[0].rot;
+	blueprint->asWeaps[0].time_last_fired = 0;
+	blueprint->asWeaps[0].rotation.pitch = 0;
+	blueprint->asWeaps[0].rotation.direction = 0;
+	blueprint->asWeaps[0].rotation.roll = 0;
+	blueprint->asWeaps[0].previous_rotation = blueprint->asWeaps[0].rotation;
 
 	blueprint->expectedDamage = 0;
 
@@ -2828,7 +2828,7 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 	RepairFacility* psRepairFac = nullptr;
 	Vector3i iVecEffect;
 	bool bDroidPlaced = false;
-	WEAPON_STATS* psWStats;
+	WeaponStats* psWStats;
 	bool bDirect = false;
 	SDWORD xdiff, ydiff, mindist, currdist;
 	TARGET_ORIGIN tmpOrigin = ORIGIN_UNKNOWN;
@@ -2856,7 +2856,7 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 	psStructure->time = gameTime;
 	for (UDWORD i = 0; i < MAX(1, psStructure->numWeaps); ++i)
 	{
-		psStructure->asWeaps[i].prevRot = psStructure->asWeaps[i].rot;
+		psStructure->asWeaps[i].previous_rotation = psStructure->asWeaps[i].rotation;
 	}
 
 	if (isMission)
@@ -2883,16 +2883,16 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 			//////
 			// - radar should rotate every three seconds ... 'cause we timed it at Heathrow !
 			// gameTime is in milliseconds - one rotation every 3 seconds = 1 rotation event 3000 millisecs
-			psStructure->asWeaps[0].rot.direction = (uint16_t)((uint64_t)gameTime * 65536 / 3000) + ((psStructure->pos.x
-				+ psStructure->pos.y) % 10) * 6550;
+			psStructure->asWeaps[0].rotation.direction = (uint16_t)((uint64_t)gameTime * 65536 / 3000) + ((psStructure->pos.x
+                                                                                                     + psStructure->pos.y) % 10) * 6550;
 			// Randomize by hashing position as seed for rotating 1/10th turns. Cast wrapping intended.
-			psStructure->asWeaps[0].rot.pitch = 0;
+			psStructure->asWeaps[0].rotation.pitch = 0;
 		}
 	}
 
 	/* Check lassat */
 	if (isLasSat(psStructure->pStructureType)
-		&& gameTime - psStructure->asWeaps[0].lastFired > weaponFirePause(
+		&& gameTime - psStructure->asWeaps[0].time_last_fired > weaponFirePause(
 			&asWeaponStats[psStructure->asWeaps[0].nStat], psStructure->player)
 		&& psStructure->asWeaps[0].ammo > 0)
 	{
@@ -2948,7 +2948,7 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 					//if were going to shoot at something move the turret first then fire when locked on
 					if (psWStats->pMountGraphic == nullptr) //no turret so lock on whatever
 					{
-						psStructure->asWeaps[i].rot.direction = calcDirection(
+						psStructure->asWeaps[i].rotation.direction = calcDirection(
 							psStructure->pos.x, psStructure->pos.y, psChosenObjs[i]->pos.x, psChosenObjs[i]->pos.y);
 						combFire(&psStructure->asWeaps[i], psStructure, psChosenObjs[i], i);
 					}
@@ -2960,8 +2960,8 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 				else
 				{
 					// realign the turret
-					if ((psStructure->asWeaps[i].rot.direction % DEG(90)) != 0 || psStructure->asWeaps[i].rot.pitch !=
-						0)
+					if ((psStructure->asWeaps[i].rotation.direction % DEG(90)) != 0 || psStructure->asWeaps[i].rotation.pitch !=
+                                                                             0)
 					{
 						actionAlignTurret(psStructure, i);
 					}
@@ -3008,7 +3008,7 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 	* determine the subject stats (for research or manufacture)
 	* or base object (for repair) or update power levels for resourceExtractor
 	*/
-	BASE_STATS* pSubject = nullptr;
+	BaseStats* pSubject = nullptr;
 	switch (psStructure->pStructureType->type)
 	{
 	case REF_RESEARCH:
@@ -3253,7 +3253,7 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 			{
 				actionTargetTurret(psStructure, psChosenObj, &psStructure->asWeaps[0]);
 			}
-			else if ((psStructure->asWeaps[0].rot.direction % DEG(90)) != 0 || psStructure->asWeaps[0].rot.pitch != 0)
+			else if ((psStructure->asWeaps[0].rotation.direction % DEG(90)) != 0 || psStructure->asWeaps[0].rotation.pitch != 0)
 			{
 				// realign the turret
 				actionAlignTurret(psStructure, 0);
@@ -3670,10 +3670,10 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 					for (unsigned i = 0; i < psDroid->numWeaps; i++)
 					{
 						// set rearm value to no runs made
-						psDroid->asWeaps[i].usedAmmo = 0;
+						psDroid->asWeaps[i].ammo_used = 0;
 						psDroid->asWeaps[i].ammo = asWeaponStats[psDroid->asWeaps[i].nStat].upgrade[psDroid->player].
 							numRounds;
-						psDroid->asWeaps[i].lastFired = 0;
+						psDroid->asWeaps[i].time_last_fired = 0;
 					}
 					objTrace(psDroid->id, "fully loaded");
 				}
@@ -3682,7 +3682,7 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 					for (unsigned i = 0; i < psDroid->numWeaps; i++) // rearm one weapon at a time
 					{
 						// Make sure it's a rearmable weapon (and so we don't divide by zero)
-						if (psDroid->asWeaps[i].usedAmmo > 0 && asWeaponStats[psDroid->asWeaps[i].nStat].upgrade[psDroid
+						if (psDroid->asWeaps[i].ammo_used > 0 && asWeaponStats[psDroid->asWeaps[i].nStat].upgrade[psDroid
 							->player].numRounds > 0)
 						{
 							// Do not "simplify" this formula.
@@ -3690,14 +3690,14 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 							int ammoToAddThisTime =
 								pointsToAdd * getNumAttackRuns(psDroid, i) / psDroid->weight -
 								pointsAlreadyAdded * getNumAttackRuns(psDroid, i) / psDroid->weight;
-							psDroid->asWeaps[i].usedAmmo -= std::min<unsigned>(
-								ammoToAddThisTime, psDroid->asWeaps[i].usedAmmo);
+							psDroid->asWeaps[i].ammo_used -= std::min<unsigned>(
+								ammoToAddThisTime, psDroid->asWeaps[i].ammo_used);
 							if (ammoToAddThisTime)
 							{
 								// reset ammo and lastFired
 								psDroid->asWeaps[i].ammo = asWeaponStats[psDroid->asWeaps[i].nStat].upgrade[psDroid->
 									player].numRounds;
-								psDroid->asWeaps[i].lastFired = 0;
+								psDroid->asWeaps[i].time_last_fired = 0;
 								break;
 							}
 						}
@@ -4380,7 +4380,7 @@ bool isBlueprintTooClose(StructureStats const* stats1, Vector2i pos1, uint16_t d
 	return dist < minDist;
 }
 
-bool validLocation(BASE_STATS* psStats, Vector2i pos, uint16_t direction, unsigned player, bool bCheckBuildQueue)
+bool validLocation(BaseStats* psStats, Vector2i pos, uint16_t direction, unsigned player, bool bCheckBuildQueue)
 {
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "player (%u) >= MAX_PLAYERS", player);
 
@@ -4632,7 +4632,7 @@ bool validLocation(BASE_STATS* psStats, Vector2i pos, uint16_t direction, unsign
 	}
 	else if (psTemplate != nullptr)
 	{
-		PROPULSION_STATS* psPropStats = asPropulsionStats + psTemplate->asParts[COMP_PROPULSION];
+		PropulsionStats* psPropStats = asPropulsionStats + psTemplate->asParts[COMP_PROPULSION];
 
 		if (fpathBlockingTile(b.map.x, b.map.y, psPropStats->propulsionType))
 		{
@@ -4962,7 +4962,7 @@ StructureStats* getStructStatsFromName(const WzString& name)
 /*check to see if the structure is 'doing' anything  - return true if idle*/
 bool structureIdle(const Structure* psBuilding)
 {
-	BASE_STATS* pSubject = nullptr;
+	BaseStats* pSubject = nullptr;
 
 	CHECK_STRUCTURE(psBuilding);
 
@@ -5238,7 +5238,7 @@ bool calcStructureMuzzleLocation(const Structure* psStructure, Vector3i* muzzle,
 		         -psShape->connectors[weapon_slot].y); //note y and z flipped
 
 		//matrix = the weapon[slot] mount on the body
-		af.RotY(psStructure->asWeaps[weapon_slot].rot.direction); // +ve anticlockwise
+		af.RotY(psStructure->asWeaps[weapon_slot].rotation.direction); // +ve anticlockwise
 
 		// process turret mount
 		if (psMountImd && psMountImd->nconnectors)
@@ -5247,7 +5247,7 @@ bool calcStructureMuzzleLocation(const Structure* psStructure, Vector3i* muzzle,
 		}
 
 		//matrix = the turret connector for the gun
-		af.RotX(psStructure->asWeaps[weapon_slot].rot.pitch); // +ve up
+		af.RotX(psStructure->asWeaps[weapon_slot].rotation.pitch); // +ve up
 
 		//process the gun
 		if (psWeaponImd && psWeaponImd->nconnectors)
@@ -5255,10 +5255,10 @@ bool calcStructureMuzzleLocation(const Structure* psStructure, Vector3i* muzzle,
 			unsigned int connector_num = 0;
 
 			// which barrel is firing if model have multiple muzzle connectors?
-			if (psStructure->asWeaps[weapon_slot].shotsFired && (psWeaponImd->nconnectors > 1))
+			if (psStructure->asWeaps[weapon_slot].shots_fired && (psWeaponImd->nconnectors > 1))
 			{
 				// shoot first, draw later - substract one shot to get correct results
-				connector_num = (psStructure->asWeaps[weapon_slot].shotsFired - 1) % (psWeaponImd->nconnectors);
+				connector_num = (psStructure->asWeaps[weapon_slot].shots_fired - 1) % (psWeaponImd->nconnectors);
 			}
 
 			barrel = Vector3i(psWeaponImd->connectors[connector_num].x, -psWeaponImd->connectors[connector_num].z,
@@ -6030,7 +6030,7 @@ unsigned structureBodyBuilt(const Structure* psStructure)
 /*Access functions for the upgradeable stats of a structure*/
 UDWORD structureBody(const Structure* psStructure)
 {
-	return psStructure->pStructureType->upgraded_stats[psStructure->player].hitpoints;
+	return psStructure->pStructureType->upgraded_stats[psStructure->player].hit_points;
 }
 
 UDWORD structureResistance(const StructureStats* psStats, UBYTE player)

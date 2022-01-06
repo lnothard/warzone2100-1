@@ -66,7 +66,7 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm:
 	Vector3i position(0, 0, 0);
 	UDWORD droidSize;
 	DROID* psDroid;
-	BODY_STATS* psBStats;
+	BodyStats* psBStats;
 	SIMPLE_OBJECT* psSimpObj;
 	const iIMDShape* pImd;
 	Spacetime spacetime;

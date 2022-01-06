@@ -99,7 +99,7 @@ UDWORD getComponentDroidTemplateRadius(DroidTemplate*)
 }
 
 
-UDWORD getComponentRadius(BASE_STATS* psComponent)
+UDWORD getComponentRadius(BaseStats* psComponent)
 {
 	iIMDShape* ComponentIMD = nullptr;
 	iIMDShape* MountIMD = nullptr;
@@ -117,8 +117,8 @@ UDWORD getComponentRadius(BASE_STATS* psComponent)
 
 	/* VTOL bombs are only stats allowed to have NULL ComponentIMD */
 	if (StatIsComponent(psComponent) != COMP_WEAPON
-		|| (((WEAPON_STATS*)psComponent)->weaponSubClass != WSC_BOMB
-			&& ((WEAPON_STATS*)psComponent)->weaponSubClass != WSC_EMP))
+		|| (((WeaponStats*)psComponent)->weaponSubClass != WSC_BOMB
+			&& ((WeaponStats*)psComponent)->weaponSubClass != WSC_EMP))
 	{
 		ASSERT(ComponentIMD, "No ComponentIMD!");
 	}
@@ -127,7 +127,7 @@ UDWORD getComponentRadius(BASE_STATS* psComponent)
 }
 
 
-UDWORD getResearchRadius(BASE_STATS* Stat)
+UDWORD getResearchRadius(BaseStats* Stat)
 {
 	iIMDShape* ResearchIMD = ((RESEARCH*)Stat)->pIMD;
 
@@ -277,7 +277,7 @@ void displayStructureStatButton(StructureStats* Stats, const Vector3i* rotation,
 
 // Render a component given a BASE_STATS structure.
 //
-void displayComponentButton(BASE_STATS* Stat, const Vector3i* Rotation, const Vector3i* Position, int scale)
+void displayComponentButton(BaseStats* Stat, const Vector3i* Rotation, const Vector3i* Position, int scale)
 {
 	iIMDShape* ComponentIMD = nullptr;
 	iIMDShape* MountIMD = nullptr;
@@ -295,8 +295,8 @@ void displayComponentButton(BASE_STATS* Stat, const Vector3i* Rotation, const Ve
 
 	/* VTOL bombs are only stats allowed to have NULL ComponentIMD */
 	if (StatIsComponent(Stat) != COMP_WEAPON
-		|| (((WEAPON_STATS*)Stat)->weaponSubClass != WSC_BOMB
-			&& ((WEAPON_STATS*)Stat)->weaponSubClass != WSC_EMP))
+		|| (((WeaponStats*)Stat)->weaponSubClass != WSC_BOMB
+			&& ((WeaponStats*)Stat)->weaponSubClass != WSC_EMP))
 	{
 		ASSERT(ComponentIMD, "No ComponentIMD");
 	}
@@ -320,7 +320,7 @@ void displayComponentButton(BASE_STATS* Stat, const Vector3i* Rotation, const Ve
 
 // Render a research item given a BASE_STATS structure.
 //
-void displayResearchButton(BASE_STATS* Stat, const Vector3i* Rotation, const Vector3i* Position, int scale)
+void displayResearchButton(BaseStats* Stat, const Vector3i* Rotation, const Vector3i* Position, int scale)
 {
 	iIMDShape* ResearchIMD = ((RESEARCH*)Stat)->pIMD;
 	iIMDShape* MountIMD = ((RESEARCH*)Stat)->pIMD2;
@@ -353,10 +353,10 @@ static inline iIMDShape* getRightPropulsionIMD(Droid* psDroid)
 	return asBodyStats[bodyStat].ppIMDList[propStat * NUM_PROP_SIDES + RIGHT_PROP];
 }
 
-void drawMuzzleFlash(WEAPON sWeap, iIMDShape* weaponImd, iIMDShape* flashImd, PIELIGHT buildingBrightness, int pieFlag,
+void drawMuzzleFlash(Weapon sWeap, iIMDShape* weaponImd, iIMDShape* flashImd, PIELIGHT buildingBrightness, int pieFlag,
                      int iPieData, const glm::mat4& viewMatrix, UBYTE colour)
 {
-	if (!weaponImd || !flashImd || !weaponImd->nconnectors || graphicsTime < sWeap.lastFired)
+	if (!weaponImd || !flashImd || !weaponImd->nconnectors || graphicsTime < sWeap.time_last_fired)
 	{
 		return;
 	}
@@ -364,10 +364,10 @@ void drawMuzzleFlash(WEAPON sWeap, iIMDShape* weaponImd, iIMDShape* flashImd, PI
 	int connector_num = 0;
 
 	// which barrel is firing if model have multiple muzzle connectors?
-	if (sWeap.shotsFired && (weaponImd->nconnectors > 1))
+	if (sWeap.shots_fired && (weaponImd->nconnectors > 1))
 	{
 		// shoot first, draw later - substract one shot to get correct results
-		connector_num = (sWeap.shotsFired - 1) % (weaponImd->nconnectors);
+		connector_num = (sWeap.shots_fired - 1) % (weaponImd->nconnectors);
 	}
 
 	/* Now we need to move to the end of the firing barrel */
@@ -377,19 +377,19 @@ void drawMuzzleFlash(WEAPON sWeap, iIMDShape* weaponImd, iIMDShape* flashImd, PI
 	if (flashImd->numFrames == 0 || flashImd->animInterval <= 0)
 	{
 		// no anim so display one frame for a fixed time
-		if (graphicsTime >= sWeap.lastFired && graphicsTime < sWeap.lastFired + BASE_MUZZLE_FLASH_DURATION)
+		if (graphicsTime >= sWeap.time_last_fired && graphicsTime < sWeap.time_last_fired + BASE_MUZZLE_FLASH_DURATION)
 		{
 			pie_Draw3DShape(flashImd, 0, colour, buildingBrightness, pieFlag | pie_ADDITIVE, EFFECT_MUZZLE_ADDITIVE,
 			                viewMatrix * modelMatrix);
 		}
 	}
-	else if (graphicsTime >= sWeap.lastFired)
+	else if (graphicsTime >= sWeap.time_last_fired)
 	{
 		// animated muzzle
 		const int DEFAULT_ANIM_INTERVAL = 17;
 		// A lot of PIE files specify 1, which is too small, so set something bigger as a fallback
 		int animRate = MAX(flashImd->animInterval, DEFAULT_ANIM_INTERVAL);
-		int frame = (graphicsTime - sWeap.lastFired) / animRate;
+		int frame = (graphicsTime - sWeap.time_last_fired) / animRate;
 		if (frame < flashImd->numFrames)
 		{
 			pie_Draw3DShape(flashImd, frame, colour, buildingBrightness, pieFlag | pie_ADDITIVE, EFFECT_MUZZLE_ADDITIVE,
@@ -405,7 +405,7 @@ static bool displayCompObj(Droid* psDroid, bool bButton, const glm::mat4& viewMa
 {
 	iIMDShape *psMoveAnim, *psStillAnim;
 	SDWORD iConnector;
-	PROPULSION_STATS* psPropStats;
+	PropulsionStats* psPropStats;
 	SDWORD pieFlag, iPieData;
 	PIELIGHT brightness;
 	UDWORD colour;

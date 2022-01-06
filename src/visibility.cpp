@@ -17,22 +17,22 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file visibility.c
- * Handles object visibility.
+ * @file visibility.cpp
+ * Functions for handling object visibility.
+ *
  * Pumpkin Studios, Eidos Interactive 1996.
  */
-#include "lib/framework/frame.h"
-#include "lib/framework/fixedpoint.h"
-
-#include "lib/gamelib/gtime.h"
-#include "lib/sound/audio.h"
-#include "lib/sound/audio_id.h"
-#include "lib/ivis_opengl/ivisdef.h"
 
 #include <limits>
 
-#include "visibility.h"
+#include "lib/framework/frame.h"
+#include "lib/framework/fixedpoint.h"
+#include "lib/gamelib/gtime.h"
+#include "lib/ivis_opengl/ivisdef.h"
+#include "lib/sound/audio.h"
+#include "lib/sound/audio_id.h"
 
 #include "objects.h"
 #include "map.h"
@@ -47,55 +47,30 @@
 #include "display.h"
 #include "multiplay.h"
 #include "qtscript.h"
+#include "visibility.h"
 #include "wavecast.h"
 
-// accuracy for the height gradient
-#define GRAD_MUL 10000
+/// Integer amount to change visibility this turn
+static int visLevelInc, visLevelDec;
 
-// rate to change visibility level
-static const int VIS_LEVEL_INC = 255 * 2;
-static const int VIS_LEVEL_DEC = 50;
-
-// integer amount to change visibility this turn
-static SDWORD visLevelInc, visLevelDec;
-
-class SPOTTER
+Spotter::Spotter(int x, int y, int plr, int radius, SENSOR_CLASS type, std::size_t expiry)
+  : pos(x, y, 0), player(plr), sensorRadius(radius),
+    sensorType(type), expiryTime(expiry)
 {
-public:
-	SPOTTER(int x, int y, int plr, int radius, int type, uint32_t expiry = 0)
-		: pos(x, y, 0), player(plr), sensorRadius(radius), sensorType(type), expiryTime(expiry), numWatchedTiles(0),
-		  watchedTiles(nullptr)
-	{
-		id = generateSynchronisedObjectId();
-	}
+  id = generateSynchronisedObjectId();
+}
 
-	~SPOTTER();
-
-	Position pos;
-	int player;
-	int sensorRadius;
-	int sensorType; // 0 - vision, 1 - radar
-	uint32_t expiryTime; // when to self-destruct, zero if never
-	int numWatchedTiles;
-	TILEPOS* watchedTiles;
-	uint32_t id;
-};
-
-static std::vector<SPOTTER*> apsInvisibleViewers;
-
-#define MIN_VIS_HEIGHT 80
-
-struct VisibleObjectHelp_t
+Spotter::~Spotter()
 {
-	bool rayStart; // Whether this is the first point on the ray
-	const bool wallsBlock; // Whether walls block line of sight
-	const int startHeight; // The height at the view point
-	const Vector2i final; // The final tile of the ray cast
-	int lastHeight, lastDist; // The last height and distance
-	int currGrad; // The current obscuring gradient
-	int numWalls; // Whether the LOS has hit a wall
-	Vector2i wall; // The position of a wall if it is on the LOS
-};
+  for (auto& tilePos : watchedTiles)
+  {
+    MAPTILE* psTile = mapTile(tilePos.x, tilePos.y);
+    uint8_t* visionType = (tilePos.type == 0) ? psTile->watchers : psTile->sensors;
+    ASSERT(visionType[player] > 0, "Not watching watched tile (%d, %d)", (int)tilePos.x, (int)tilePos.y);
+    visionType[player]--;
+    updateTileVis(psTile);
+  }
+}
 
 static int* gNumWalls = nullptr;
 static Vector2i* gWall = nullptr;
@@ -135,11 +110,11 @@ void visUpdateLevel()
 //	}
 //}
 
-uint32_t addSpotter(int x, int y, int player, int radius, bool radar, uint32_t expiry)
+unsigned addSpotter(int x, int y, int player, int radius, SENSOR_CLASS type, unsigned expiry)
 {
 	ASSERT_OR_RETURN(0, player >= 0 && player < MAX_PLAYERS, "invalid player: %d", player);
-	SPOTTER* psSpot = new SPOTTER(x, y, player, radius, (int)radar, expiry);
-	size_t size;
+	auto psSpot = std::make_unique<Spotter>(x, y, player, radius, type, expiry);
+	std::size_t size;
 	const WavecastTile* tiles = getWavecastTable(radius, &size);
 	psSpot->watchedTiles = (TILEPOS*)malloc(size * sizeof(*psSpot->watchedTiles));
 	for (unsigned i = 0; i < size; ++i)
@@ -161,17 +136,16 @@ uint32_t addSpotter(int x, int y, int player, int radius, bool radar, uint32_t e
 			psSpot->watchedTiles[psSpot->numWatchedTiles++] = tilePos; // record having seen it
 		}
 	}
-	apsInvisibleViewers.push_back(psSpot);
+	apsInvisibleViewers.push_back(psSpot.get());
 	return psSpot->id;
 }
 
-bool removeSpotter(uint32_t id)
+bool removeSpotter(unsigned id)
 {
 	for (unsigned i = 0; i < apsInvisibleViewers.size(); i++)
 	{
-		SPOTTER* psSpot = apsInvisibleViewers.at(i);
-		if (psSpot->id == id)
-		{
+		Spotter* psSpot = apsInvisibleViewers.at(i);
+		if (psSpot->id == id)  {
 			delete psSpot;
 			apsInvisibleViewers.erase(apsInvisibleViewers.begin() + i);
 			return true;
@@ -184,7 +158,7 @@ void removeSpotters()
 {
 	while (!apsInvisibleViewers.empty())
 	{
-		SPOTTER* psSpot = apsInvisibleViewers.back();
+		auto psSpot = apsInvisibleViewers.back();
 		delete psSpot;
 		apsInvisibleViewers.pop_back();
 	}
@@ -195,45 +169,32 @@ static void updateSpotters()
 	static GridList gridList; // static to avoid allocations.
 	for (unsigned i = 0; i < apsInvisibleViewers.size(); i++)
 	{
-		SPOTTER* psSpot = apsInvisibleViewers.at(i);
-		if (psSpot->expiryTime != 0 && psSpot->expiryTime < gameTime)
-		{
+		auto psSpot = apsInvisibleViewers.at(i);
+		if (psSpot->expiryTime != 0 && psSpot->expiryTime < gameTime)  {
 			delete psSpot;
 			apsInvisibleViewers.erase(apsInvisibleViewers.begin() + i);
 			continue;
 		}
-		// else, ie if not expired, show objects around it
-		gridList = gridStartIterateUnseen(world_coord(psSpot->pos.x), world_coord(psSpot->pos.y), psSpot->sensorRadius,
+		// else, if not expired, show objects around it
+		gridList = gridStartIterateUnseen(world_coord(psSpot->pos.x),
+                                      world_coord(psSpot->pos.y),
+                                      psSpot->sensorRadius,
 		                                  psSpot->player);
-		for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+		for (auto psObj : gridList)
 		{
-			SimpleObject* psObj = *gi;
-
-			// Tell system that this side can see this object
+			// tell system that this side can see this object
 			setSeenBy(psObj, psSpot->player, UBYTE_MAX);
 		}
 	}
 }
 
-SPOTTER::~SPOTTER()
-{
-	for (int i = 0; i < numWatchedTiles; i++)
-	{
-		const TILEPOS tilePos = watchedTiles[i];
-		MAPTILE* psTile = mapTile(tilePos.x, tilePos.y);
-		uint8_t* visionType = (tilePos.type == 0) ? psTile->watchers : psTile->sensors;
-		ASSERT(visionType[player] > 0, "Not watching watched tile (%d, %d)", (int)tilePos.x, (int)tilePos.y);
-		visionType[player]--;
-		updateTileVis(psTile);
-	}
-	free(watchedTiles);
-}
+
 
 /* Record all tiles that some object confers visibility to. Only record each tile
  * once. Note that there is both a limit to how many objects can watch any given
- * tile. Strange but non fatal things will happen if these limits are exceeded. */
-static inline void visMarkTile(const SimpleObject* psObj, int mapX, int mapY, MAPTILE* psTile,
-                               std::vector<TILEPOS>& watchedTiles)
+ * tile. Strange but non-fatal things will happen if these limits are exceeded. */
+static inline void visMarkTile(const SimpleObject* psObj, int mapX, int mapY,
+                               MAPTILE* psTile, std::vector<TILEPOS>& watchedTiles)
 {
 	const int rayPlayer = psObj->player;
 	const int xdiff = map_coord(psObj->pos.x) - mapX;
@@ -242,18 +203,19 @@ static inline void visMarkTile(const SimpleObject* psObj, int mapX, int mapY, MA
 	const bool inRange = (distSq < 16);
 	uint8_t* visionType = inRange ? psTile->watchers : psTile->sensors;
 
-	if (visionType[rayPlayer] < UBYTE_MAX)
-	{
+	if (visionType[rayPlayer] < UBYTE_MAX)  {
 		TILEPOS tilePos = {uint8_t(mapX), uint8_t(mapY), uint8_t(inRange)};
 
 		visionType[rayPlayer]++; // we observe this tile
-		if (psObj->flags.test(OBJECT_FLAG_JAMMED_TILES)) // we are a jammer object
-		{
+		if (psObj->flags.test(OBJECT_FLAG::JAMMED_TILES))  {
+      // we are a jammer object
 			psTile->jammers[rayPlayer]++;
-			psTile->jammerBits |= (1 << rayPlayer); // mark it as being jammed
+      // mark it as being jammed
+			psTile->jammerBits |= (1 << rayPlayer);
 		}
 		updateTileVis(psTile);
-		watchedTiles.push_back(tilePos); // record having seen it
+    // record having seen it
+		watchedTiles.push_back(tilePos);
 	}
 }
 
@@ -265,7 +227,7 @@ static void doWaveTerrain(SimpleObject* psObj)
 	const int sz = psObj->pos.z + MAX(MIN_VIS_HEIGHT, psObj->sDisplay.imd->max.y);
 	const unsigned radius = objSensorRange(psObj);
 	const int rayPlayer = psObj->player;
-	size_t size;
+	std::size_t size;
 	const WavecastTile* tiles = getWavecastTable(radius, &size);
 #define MAX_WAVECAST_LIST_SIZE 1360  // Trivial upper bound to what a fully upgraded WSS can use (its number of angles). Should probably be some factor times the maximum possible radius. Is probably a lot more than needed. Tested to need at least 180.
 
@@ -361,7 +323,7 @@ static bool rayLOSCallback(Vector2i pos, int32_t dist, void* data)
 	else
 	{
 		// Calculate the current LOS gradient
-		int newGrad = (help->lastHeight - help->startHeight) * GRAD_MUL / MAX(1, help->lastDist);
+		int newGrad = (help->lastHeight - help->startHeight) * GRADIENT_MULTIPLIER / MAX(1, help->lastDist);
 		if (newGrad >= help->currGrad)
 		{
 			help->currGrad = newGrad;
@@ -584,7 +546,7 @@ int visibleObject(const SimpleObject* psViewer, const SimpleObject* psTarget, bo
 		map_coord(psTarget->pos.xy()),
 		0,
 		0,
-		-UBYTE_MAX * GRAD_MUL * ELEVATION_SCALE,
+    -UBYTE_MAX * GRADIENT_MULTIPLIER * ELEVATION_SCALE,
 		0,
 		Vector2i(0, 0)
 	};
@@ -965,7 +927,7 @@ static int checkFireLine(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTa
  */
 bool lineOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock)
 {
-	WEAPON_STATS* psStats = nullptr;
+	WeaponStats* psStats = nullptr;
 
 	ASSERT_OR_RETURN(false, psViewer != nullptr, "Invalid shooter pointer!");
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Invalid target pointer!");

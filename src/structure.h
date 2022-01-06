@@ -125,7 +125,7 @@ struct StructureBounds
     Vector2i size_in_coords {0, 0};
 };
 
-struct StructureStats : public BASE_STATS
+struct StructureStats : public BaseStats
 {
     [[nodiscard]] Vector2i size(unsigned direction) const;
     [[nodiscard]] bool is_expansion_module() const noexcept;
@@ -140,11 +140,11 @@ struct StructureStats : public BASE_STATS
     unsigned power_cost; /*How much power the structure requires to build*/
     std::vector< std::unique_ptr<iIMDShape> > IMDs; // The IMDs to draw for this structure, for each possible number of modules.
     std::unique_ptr<iIMDShape> base_imd; /*The base IMD to draw for this structure */
-    struct ECM_STATS* ecm_stats; /*Which ECM is standard for the structure -if any*/
-    struct SENSOR_STATS* sensor_stats; /*Which Sensor is standard for the structure -if any*/
+    struct EcmStats* ecm_stats; /*Which ECM is standard for the structure -if any*/
+    struct SensorStats* sensor_stats; /*Which Sensor is standard for the structure -if any*/
     unsigned weapon_slots; /*Number of weapons that can be attached to the building*/
     unsigned numWeaps; /*Number of weapons for default */
-    struct WEAPON_STATS* psWeapStat[MAX_WEAPONS];
+    struct WeaponStats* psWeapStat[MAX_WEAPONS];
     uint64_t flags;
     bool combines_with_wall; //If the structure will trigger nearby walls to try combining with it
 
@@ -459,7 +459,7 @@ bool isBlueprintTooClose(StructureStats const* stats1, Vector2i pos1, uint16_t d
 
 /// Checks that the location is valid to build on.
 /// pos in world coords
-bool validLocation(BASE_STATS* psStats, Vector2i pos, uint16_t direction, unsigned player, bool bCheckBuildQueue);
+bool validLocation(BaseStats* psStats, Vector2i pos, uint16_t direction, unsigned player, bool bCheckBuildQueue);
 
 bool isWall(STRUCTURE_TYPE type); ///< Structure is a wall. Not completely sure it handles all cases.
 bool isBuildableOnWalls(STRUCTURE_TYPE type);
@@ -694,8 +694,8 @@ static inline int structJammerPower(const Structure* psObj)
 
 static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStructure, int weaponSlot, uint32_t time)
 {
-	return interpolateRot(psStructure->asWeaps[weaponSlot].prevRot, psStructure->asWeaps[weaponSlot].rot,
-	                      psStructure->prevTime, psStructure->time, time);
+	return interpolateRot(psStructure->asWeaps[weaponSlot].previous_rotation, psStructure->asWeaps[weaponSlot].rotation,
+                        psStructure->prevTime, psStructure->time, time);
 }
 
 #define setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin) _setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin, __LINE__, __FUNCTION__)

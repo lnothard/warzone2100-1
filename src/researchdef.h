@@ -39,11 +39,11 @@ enum TECH_CODE
 
 struct RES_COMP_REPLACEMENT
 {
-	COMPONENT_STATS* pOldComponent;
-	COMPONENT_STATS* pNewComponent;
+	ComponentStats* pOldComponent;
+	ComponentStats* pNewComponent;
 };
 
-struct RESEARCH : public BASE_STATS
+struct RESEARCH : public BaseStats
 {
 	UBYTE techCode;
 	UWORD subGroup; /* Subgroup of the item - an iconID from 'Framer' to depict in the button*/
@@ -57,15 +57,15 @@ struct RESEARCH : public BASE_STATS
 	std::vector<UWORD> pPRList; ///< List of research pre-requisites
 	std::vector<UWORD> pStructList; ///< List of structures that when built would enable this research
 	std::vector<UWORD> pRedStructs; ///< List of Structures that become redundant
-	std::vector<COMPONENT_STATS*> pRedArtefacts; ///< List of Artefacts that become redundant
+	std::vector<ComponentStats*> pRedArtefacts; ///< List of Artefacts that become redundant
 	std::vector<UWORD> pStructureResults; ///< List of Structures that are possible after this research
-	std::vector<COMPONENT_STATS*> componentResults; ///< List of Components that are possible after this research
+	std::vector<ComponentStats*> componentResults; ///< List of Components that are possible after this research
 	std::vector<RES_COMP_REPLACEMENT> componentReplacement;
 	///< List of Components that are automatically replaced with new onew after research
 	nlohmann::json results; ///< Research upgrades
 	VIEWDATA* pViewData; ///< Data used to display a message in the Intelligence Screen
 	UWORD iconID; /* the ID from 'Framer' for which graphic to draw in interface*/
-	BASE_STATS* psStat; /* A stat used to define which graphic is drawn instead of the two fields below */
+	BaseStats* psStat; /* A stat used to define which graphic is drawn instead of the two fields below */
 	iIMDShape* pIMD; /* the IMD to draw for this research topic */
 	iIMDShape* pIMD2; /* the 2nd IMD for base plates/turrets*/
 	int index; ///< Unique index for this research, set incrementally

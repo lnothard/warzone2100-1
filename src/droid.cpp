@@ -174,9 +174,9 @@ bool droidInit()
 	return true;
 }
 
-int droidReloadBar(const SimpleObject* psObj, const WEAPON* psWeap, int weapon_slot)
+int droidReloadBar(const SimpleObject* psObj, const Weapon* psWeap, int weapon_slot)
 {
-	WEAPON_STATS* psStats;
+	WeaponStats* psStats;
 	bool bSalvo;
 	int firingStage, interval;
 
@@ -196,14 +196,14 @@ int droidReloadBar(const SimpleObject* psObj, const WEAPON* psWeap, int weapon_s
 		{
 			//deal with VTOLs
 			firingStage = getNumAttackRuns((const Droid*)psObj, weapon_slot) - ((const Droid*)psObj)->asWeaps[
-				weapon_slot].usedAmmo;
+				weapon_slot].ammo_used;
 
 			//compare with max value
 			interval = getNumAttackRuns((const Droid*)psObj, weapon_slot);
 		}
 		else
 		{
-			firingStage = gameTime - psWeap->lastFired;
+			firingStage = gameTime - psWeap->time_last_fired;
 			interval = bSalvo ? weaponReloadTime(psStats, psObj->player) : weaponFirePause(psStats, psObj->player);
 		}
 		if (firingStage < interval && interval > 0)
@@ -716,7 +716,7 @@ void droidUpdate(Droid* psDroid)
 	psDroid->time = gameTime;
 	for (i = 0; i < MAX(1, psDroid->numWeaps); ++i)
 	{
-		psDroid->asWeaps[i].prevRot = psDroid->asWeaps[i].rot;
+		psDroid->asWeaps[i].previous_rotation = psDroid->asWeaps[i].rotation;
 	}
 
 	if (psDroid->animationEvent != ANIM_EVENT_NONE)
@@ -1169,7 +1169,7 @@ bool droidUpdateRestore(Droid* psDroid)
 	unsigned compIndex = psDroid->asWeaps[0].nStat;
 	ASSERT_OR_RETURN(false, compIndex < numWeaponStats, "Invalid range referenced for numWeaponStats, %u > %u",
 	                 compIndex, numWeaponStats);
-	WEAPON_STATS* psStats = &asWeaponStats[compIndex];
+	WeaponStats* psStats = &asWeaponStats[compIndex];
 
 	ASSERT_OR_RETURN(false, psStats->weaponSubClass == WSC_ELECTRONIC, "unit's weapon is not EW");
 
@@ -1202,14 +1202,14 @@ bool droidUpdateRestore(Droid* psDroid)
 }
 
 // Declared in weapondef.h.
-int getRecoil(WEAPON const& weapon)
+int getRecoil(Weapon const& weapon)
 {
 	if (weapon.nStat != 0)
 	{
 		// We have a weapon.
-		if (graphicsTime >= weapon.lastFired && graphicsTime < weapon.lastFired + DEFAULT_RECOIL_TIME)
+		if (graphicsTime >= weapon.time_last_fired && graphicsTime < weapon.time_last_fired + DEFAULT_RECOIL_TIME)
 		{
-			int recoilTime = graphicsTime - weapon.lastFired;
+			int recoilTime = graphicsTime - weapon.time_last_fired;
 			int recoilAmount = DEFAULT_RECOIL_TIME / 2 - abs(recoilTime - DEFAULT_RECOIL_TIME / 2);
 			int maxRecoil = asWeaponStats[weapon.nStat].recoilValue; // Max recoil is 1/10 of this value.
 			return maxRecoil * recoilAmount / (DEFAULT_RECOIL_TIME / 2 * 10);
@@ -1435,9 +1435,9 @@ static unsigned calcUpgradeSum(const uint8_t (&asParts)[DROID_MAXCOMP], int numW
 
 struct FilterDroidWeaps
 {
-	FilterDroidWeaps(unsigned numWeaps, const WEAPON (&asWeaps)[MAX_WEAPONS])
+	FilterDroidWeaps(unsigned numWeaps, const Weapon (&asWeaps)[MAX_WEAPONS])
 	{
-		std::transform(asWeaps, asWeaps + numWeaps, this->asWeaps, [](const WEAPON& weap)
+		std::transform(asWeaps, asWeaps + numWeaps, this->asWeaps, [](const Weapon& weap)
 		{
 			return weap.nStat;
 		});
@@ -1480,10 +1480,10 @@ static unsigned calcUpgradeSum(const Droid* psDroid, int player, F func, G propu
 /* Calculate the weight of a droid from it's template */
 UDWORD calcDroidWeight(const DroidTemplate* psTemplate)
 {
-	return calcSum(psTemplate, [](COMPONENT_STATS const& stat)
+	return calcSum(psTemplate, [](ComponentStats const& stat)
 	               {
 		               return stat.weight;
-	               }, [](BODY_STATS const& bodyStat, PROPULSION_STATS const& propStat)
+	               }, [](BodyStats const& bodyStat, PropulsionStats const& propStat)
 	               {
 		               // Propulsion weight is a percentage of the body weight.
 		               return bodyStat.weight * (100 + propStat.weight) / 100;
@@ -1493,22 +1493,22 @@ UDWORD calcDroidWeight(const DroidTemplate* psTemplate)
 template <typename T>
 static uint32_t calcBody(T* obj, int player)
 {
-	int hitpoints = calcUpgradeSum(obj, player, [](COMPONENT_STATS::UPGRADE const& upgrade)
+	int hitpoints = calcUpgradeSum(obj, player, [](ComponentStats::Upgradeable const& upgrade)
 	                               {
-		                               return upgrade.hitpoints;
-	                               }, [](BODY_STATS::UPGRADE const& bodyUpgrade,
-	                                     PROPULSION_STATS::UPGRADE const& propUpgrade)
+		                               return upgrade.hit_points;
+	                               }, [](BodyStats::Upgradeable const& bodyUpgrade,
+                                       PropulsionStats::Upgradeable const& propUpgrade)
 	                               {
 		                               // propulsion hitpoints can be a percentage of the body's hitpoints
-		                               return bodyUpgrade.hitpoints * (100 + propUpgrade.hitpointPctOfBody) / 100 +
-			                               propUpgrade.hitpoints;
+		                               return bodyUpgrade.hit_points * (100 + propUpgrade.hitpointPctOfBody) / 100 +
+                                          propUpgrade.hit_points;
 	                               });
 
-	int hitpointPct = calcUpgradeSum(obj, player, [](COMPONENT_STATS::UPGRADE const& upgrade)
+	int hitpointPct = calcUpgradeSum(obj, player, [](ComponentStats::Upgradeable const& upgrade)
 	                                 {
 		                                 return upgrade.hitpointPct - 100;
-	                                 }, [](BODY_STATS::UPGRADE const& bodyUpgrade,
-	                                       PROPULSION_STATS::UPGRADE const& propUpgrade)
+	                                 }, [](BodyStats::Upgradeable const& bodyUpgrade,
+                                         PropulsionStats::Upgradeable const& propUpgrade)
 	                                 {
 		                                 return bodyUpgrade.hitpointPct - 100 + propUpgrade.hitpointPct - 100;
 	                                 });
@@ -1569,7 +1569,7 @@ UDWORD calcDroidBaseSpeed(const DroidTemplate* psTemplate, UDWORD weight, UBYTE 
 /* Calculate the speed of a droid over a terrain */
 UDWORD calcDroidSpeed(UDWORD baseSpeed, UDWORD terrainType, UDWORD propIndex, UDWORD level)
 {
-	PROPULSION_STATS const& propulsion = asPropulsionStats[propIndex];
+	PropulsionStats const& propulsion = asPropulsionStats[propIndex];
 
 	// Factor in terrain
 	unsigned speed = baseSpeed * getSpeedFactor(terrainType, propulsion.propulsionType) / 100;
@@ -1587,10 +1587,10 @@ UDWORD calcDroidSpeed(UDWORD baseSpeed, UDWORD terrainType, UDWORD propIndex, UD
 template <typename T>
 static uint32_t calcBuild(T* obj)
 {
-	return calcSum(obj, [](COMPONENT_STATS const& stat)
+	return calcSum(obj, [](ComponentStats const& stat)
 	               {
 		               return stat.buildPoints;
-	               }, [](BODY_STATS const& bodyStat, PROPULSION_STATS const& propStat)
+	               }, [](BodyStats const& bodyStat, PropulsionStats const& propStat)
 	               {
 		               // Propulsion power points are a percentage of the body's build points.
 		               return bodyStat.buildPoints * (100 + propStat.buildPoints) / 100;
@@ -1612,10 +1612,10 @@ template <typename T>
 static uint32_t calcPower(const T* obj)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(0, obj);
-	return calcSum(obj, [](COMPONENT_STATS const& stat)
+	return calcSum(obj, [](ComponentStats const& stat)
 	               {
 		               return stat.buildPower;
-	               }, [](BODY_STATS const& bodyStat, PROPULSION_STATS const& propStat)
+	               }, [](BodyStats const& bodyStat, PropulsionStats const& propStat)
 	               {
 		               // Propulsion power points are a percentage of the body's power points.
 		               return bodyStat.buildPower * (100 + propStat.buildPower) / 100;
@@ -1785,16 +1785,16 @@ void droidSetBits(const DroidTemplate* pTemplate, Droid* psDroid)
 	for (int inc = 0; inc < MAX_WEAPONS; inc++)
 	{
 		psDroid->action_target[inc] = nullptr;
-		psDroid->asWeaps[inc].lastFired = 0;
-		psDroid->asWeaps[inc].shotsFired = 0;
+		psDroid->asWeaps[inc].time_last_fired = 0;
+		psDroid->asWeaps[inc].shots_fired = 0;
 		// no weapon (could be a construction droid for example)
 		// this is also used to check if a droid has a weapon, so zero it
 		psDroid->asWeaps[inc].nStat = 0;
 		psDroid->asWeaps[inc].ammo = 0;
-		psDroid->asWeaps[inc].rot.direction = 0;
-		psDroid->asWeaps[inc].rot.pitch = 0;
-		psDroid->asWeaps[inc].rot.roll = 0;
-		psDroid->asWeaps[inc].prevRot = psDroid->asWeaps[inc].rot;
+		psDroid->asWeaps[inc].rotation.direction = 0;
+		psDroid->asWeaps[inc].rotation.pitch = 0;
+		psDroid->asWeaps[inc].rotation.roll = 0;
+		psDroid->asWeaps[inc].previous_rotation = psDroid->asWeaps[inc].rotation;
 		psDroid->asWeaps[inc].origin = ORIGIN_UNKNOWN;
 		if (inc < pTemplate->weapon_count)
 		{
@@ -1802,7 +1802,7 @@ void droidSetBits(const DroidTemplate* pTemplate, Droid* psDroid)
 			psDroid->asWeaps[inc].ammo = (asWeaponStats + psDroid->asWeaps[inc].nStat)->upgraded_stats[psDroid->player].
 				numRounds;
 		}
-		psDroid->asWeaps[inc].usedAmmo = 0;
+		psDroid->asWeaps[inc].ammo_used = 0;
 	}
 	memcpy(psDroid->asBits, pTemplate->asParts, sizeof(psDroid->asBits));
 
@@ -2289,7 +2289,7 @@ unsigned get_effective_level(const Droid& droid)
 
 const char* getDroidLevelName(const Droid* psDroid)
 {
-	const BRAIN_STATS* psStats = getBrainStats(psDroid);
+	const CommanderStats* psStats = getBrainStats(psDroid);
 	return PE_("rank", psStats->rankNames[getDroidLevel(psDroid)].c_str());
 }
 
@@ -3246,7 +3246,7 @@ void Droid::assign_vtol_to_rearm_pad(RearmPad* rearm_pad)
 FIRE_SUPPORT order can be assigned*/
 bool droidSensorDroidWeapon(const SimpleObject* psObj, const Droid* psDroid)
 {
-	const SENSOR_STATS* psStats = nullptr;
+	const SensorStats* psStats = nullptr;
 	int compIndex;
 
 	CHECK_DROID(psDroid);
@@ -3591,7 +3591,7 @@ Cannot think of a solution without adding additional return value atm.
 */
 bool checkValidWeaponForProp(DroidTemplate* psTemplate)
 {
-	PROPULSION_STATS* psPropStats;
+	PropulsionStats* psPropStats;
 
 	//check propulsion stat for vtol
 	psPropStats = asPropulsionStats + psTemplate->asParts[COMP_PROPULSION];
@@ -3789,14 +3789,14 @@ void checkDroid(const Droid* droid, const char* const location, const char* func
 
 	for (int i = 0; i < MAX_WEAPONS; ++i)
 	{
-		ASSERT_HELPER(droid->asWeaps[i].lastFired <= gameTime, location, function,
-		              "CHECK_DROID: Bad last fired time for turret %u", i);
+		ASSERT_HELPER(droid->asWeaps[i].time_last_fired <= gameTime, location, function,
+                  "CHECK_DROID: Bad last fired time for turret %u", i);
 	}
 }
 
 int droidSqDist(Droid* psDroid, SimpleObject* psObj)
 {
-	PROPULSION_STATS* psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
+	PropulsionStats* psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
 
 	if (!fpathCheck(psDroid->pos, psObj->pos, psPropStats->propulsionType))
 	{

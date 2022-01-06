@@ -28,7 +28,7 @@
 #include "lib/framework/vector.h"
 
 struct SimpleObject;
-struct BASE_STATS;
+struct BaseStats;
 struct SIMPLE_OBJECT;
 struct Spacetime;
 
@@ -48,8 +48,8 @@ void checkObject(const SIMPLE_OBJECT* psObject, const char* const location_descr
 #define syncDebugObject(psObject, ch) _syncDebugObject(__FUNCTION__, psObject, ch)
 void _syncDebugObject(const char* function, SIMPLE_OBJECT const* psObject, char ch);
 
-Vector2i getStatsSize(BASE_STATS const* pType, uint16_t direction);
+Vector2i getStatsSize(BaseStats const* pType, uint16_t direction);
 StructureBounds getStructureBounds(SimpleObject const* object);
-StructureBounds getStructureBounds(BASE_STATS const* stats, Vector2i pos, uint16_t direction);
+StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos, uint16_t direction);
 
 #endif // __INCLUDED_BASEOBJECT_H__

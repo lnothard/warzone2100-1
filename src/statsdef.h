@@ -18,9 +18,11 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-/** \file
-*  Definitions for the stats system.
-*/
+/**
+ * @file
+ * Definitions for the stats system.
+ */
+ 
 #ifndef __INCLUDED_STATSDEF_H__
 #define __INCLUDED_STATSDEF_H__
 
@@ -29,7 +31,10 @@ struct iIMDShape;
 #include <vector>
 #include <algorithm>
 #include <bitset>
+
 #include "lib/framework/wzstring.h"
+
+#include "droid.h"
 
 static inline bool stringToEnumSortFunction(std::pair<char const*, unsigned> const& a,
                                             std::pair<char const*, unsigned> const& b)
@@ -40,7 +45,7 @@ static inline bool stringToEnumSortFunction(std::pair<char const*, unsigned> con
 template <typename Enum>
 struct StringToEnum
 {
-	operator std::pair<char const*, unsigned>() const
+	explicit operator std::pair<char const*, unsigned>() const
 	{
 		return std::make_pair(string, value);
 	}
@@ -65,175 +70,154 @@ struct StringToEnumMap : public std::vector<std::pair<char const*, unsigned>>
 	}
 
 	template <int N>
-	StringToEnumMap(StringToEnum<Enum> const (&entries)[N]) : V(entries, entries + N)
+	explicit StringToEnumMap(StringToEnum<Enum> const (&entries)[N]) : V(entries, entries + N)
 	{
 		std::sort(V::begin(), V::end(), stringToEnumSortFunction);
 	}
 };
 
-enum COMPONENT_TYPE
+enum class COMPONENT_TYPE
 {
-	COMP_BODY,
-	COMP_BRAIN,
-	COMP_PROPULSION,
-	COMP_REPAIRUNIT,
-	COMP_ECM,
-	COMP_SENSOR,
-	COMP_CONSTRUCT,
-	COMP_WEAPON,
-	COMP_NUMCOMPONENTS,
-	/** The number of enumerators in this enum.	 */
+	BODY,
+	BRAIN,
+	PROPULSION,
+	REPAIR_UNIT,
+	ECM,
+	SENSOR,
+	CONSTRUCT,
+	WEAPON,
+	COUNT // MUST BE LAST
 };
 
-enum WEAPON_FLAGS
+enum class WEAPON_FLAGS
 {
-	WEAPON_FLAG_NO_FRIENDLY_FIRE,
-	WEAPON_FLAG_COUNT
+	NO_FRIENDLY_FIRE,
+	COUNT // MUST BE LAST
 };
 
-/**
- * LOC used for holding locations for Sensors and ECM's
- */
-enum LOC
+/// LOC used for holding locations for Sensors and ECMs
+enum class LOC
 {
-	LOC_DEFAULT,
-	LOC_TURRET,
+	DEFAULT,
+	TURRET,
 };
 
-/**
- * SIZE used for specifying body size
- */
-enum BODY_SIZE
+enum class BODY_SIZE
 {
-	SIZE_LIGHT,
-	SIZE_MEDIUM,
-	SIZE_HEAVY,
-	SIZE_SUPER_HEAVY,
-	SIZE_NUM
+	LIGHT,
+	MEDIUM,
+	HEAVY,
+	SUPER_HEAVY,
+	COUNT // MUST BE LAST
 };
 
-/**
- * SIZE used for specifying weapon size
- */
-enum WEAPON_SIZE
+enum class WEAPON_SIZE
 {
-	WEAPON_SIZE_LIGHT,
-	WEAPON_SIZE_HEAVY,
-	WEAPON_SIZE_ANY,
-	WEAPON_SIZE_NUM
+	LIGHT,
+	HEAVY,
+	ANY,
+	COUNT // MUST BE LAST
 };
 
-/**
- * Basic weapon type
- */
-enum WEAPON_CLASS
+/// Basic weapon type
+enum class WEAPON_CLASS
 {
-	WC_KINETIC,
-	///< bullets etc
-	WC_HEAT,
-	///< laser etc
-	WC_NUM_WEAPON_CLASSES /** The number of enumerators in this enum.	 */
+  /// E.g., bullets
+	KINETIC,
+  
+  /// E.g., lasers
+	HEAT,
+  COUNT // MUST BE LAST
 };
 
 /**
- * weapon subclasses used to define which weapons are affected by weapon upgrade
- * functions
+ * Weapon subclass used to define which weapons are affected 
+ * by weapon upgrade functions
  */
-enum WEAPON_SUBCLASS
+enum class WEAPON_SUBCLASS
 {
-	WSC_MGUN,
-	WSC_CANNON,
-	WSC_MORTARS,
-	WSC_MISSILE,
-	WSC_ROCKET,
-	WSC_ENERGY,
-	WSC_GAUSS,
-	WSC_FLAME,
-	//WSC_CLOSECOMBAT,
-	WSC_HOWITZERS,
-	WSC_ELECTRONIC,
-	WSC_AAGUN,
-	WSC_SLOWMISSILE,
-	WSC_SLOWROCKET,
-	WSC_LAS_SAT,
-	WSC_BOMB,
-	WSC_COMMAND,
-	WSC_EMP,
-	WSC_NUM_WEAPON_SUBCLASSES,
-	/** The number of enumerators in this enum.	 */
+	MACHINE_GUN,
+	CANNON,
+	MORTARS,
+	MISSILE,
+	ROCKET,
+	ENERGY,
+	GAUSS,
+	FLAME,
+	HOWITZERS,
+	ELECTRONIC,
+	AA_GUN,
+	SLOW_MISSILE,
+	SLOW_ROCKET,
+	LAS_SAT,
+	BOMB,
+	COMMAND,
+	EMP,
+  COUNT // MUST BE LAST
+};
+
+// Used to define which projectile model to use for the weapon
+enum class MOVEMENT_MODEL
+{
+	DIRECT,
+	INDIRECT,
+	HOMING_DIRECT,
+	HOMING_INDIRECT
 };
 
 /**
- * Used to define which projectile model to use for the weapon.
+ * Used to modify the damage to a propulsion type (or structure) 
+ * based on weapon type
  */
-enum MOVEMENT_MODEL
+enum class WEAPON_EFFECT
 {
-	MM_DIRECT,
-	MM_INDIRECT,
-	MM_HOMINGDIRECT,
-	MM_HOMINGINDIRECT
+	ANTI_PERSONNEL,
+	ANTI_TANK,
+	BUNKER_BUSTER,
+	ARTILLERY_ROUND,
+	FLAMER,
+	ANTI_AIRCRAFT,
+  COUNT // MUST BE LAST
 };
 
-/**
- * Used to modify the damage to a propuslion type (or structure) based on
- * weapon.
- */
-enum WEAPON_EFFECT
+/// Defines the left and right sides for propulsion IMDs
+enum class PROP_SIDE
 {
-	WE_ANTI_PERSONNEL,
-	WE_ANTI_TANK,
-	WE_BUNKER_BUSTER,
-	WE_ARTILLERY_ROUND,
-	WE_FLAMER,
-	WE_ANTI_AIRCRAFT,
-	WE_NUMEFFECTS,
-	/**  The number of enumerators in this enum. */
+	LEFT,
+	RIGHT,
+  COUNT // MUST BE LAST
 };
 
-/**
- * Defines the left and right sides for propulsion IMDs
- */
-enum PROP_SIDE
+enum class PROPULSION_TYPE
 {
-	LEFT_PROP,
-	RIGHT_PROP,
-	NUM_PROP_SIDES,
-	/**  The number of enumerators in this enum. */
+	WHEELED,
+	TRACKED,
+	LEGGED,
+	HOVER,
+	LIFT,
+	PROPELLOR,
+	HALF_TRACKED,
+	COUNT // MUST BE LAST
 };
 
-enum PROPULSION_TYPE
+// CB = Counter Battery
+enum class SENSOR_TYPE
 {
-	PROPULSION_TYPE_WHEELED,
-	PROPULSION_TYPE_TRACKED,
-	PROPULSION_TYPE_LEGGED,
-	PROPULSION_TYPE_HOVER,
-	PROPULSION_TYPE_LIFT,
-	PROPULSION_TYPE_PROPELLOR,
-	PROPULSION_TYPE_HALF_TRACKED,
-	PROPULSION_TYPE_NUM,
-	/**  The number of enumerators in this enum. */
+	STANDARD,
+	INDIRECT_CB,
+	VTOL_CB,
+	VTOL_INTERCEPT,
+	SUPER,
+  
+	/// Works as all of the above together - new for updates
+	RADAR_DETECTOR,
 };
 
-enum SENSOR_TYPE
-{
-	STANDARD_SENSOR,
-	INDIRECT_CB_SENSOR,
-	VTOL_CB_SENSOR,
-	VTOL_INTERCEPT_SENSOR,
-	SUPER_SENSOR,
-	///< works as all of the above together! - new for updates
-	RADAR_DETECTOR_SENSOR,
-};
-
-enum TRAVEL_MEDIUM
+enum class TRAVEL_MEDIUM
 {
 	GROUND,
-	AIR,
+	AIR
 };
-
-/*
-* Stats structures type definitions
-*/
 
 /* Elements common to all stats structures */
 
@@ -258,62 +242,61 @@ enum StatType
 	STAT_MASK = 0xffff0000
 };
 
-/* Stats common to all stats structs */
-struct BASE_STATS
+/// Stats common to all stats structs
+struct BaseStats
 {
-	BASE_STATS(unsigned ref = 0) : ref(ref)
+  virtual ~BaseStats() = default;
+	explicit BaseStats(unsigned ref = 0)
+    : ref{ref}
 	{
 	}
 
-	virtual ~BASE_STATS() = default;
-
-	bool hasType(StatType type) const { return (ref & STAT_MASK) == type; }
+	[[nodiscard]] bool hasType(StatType type) const { return (ref & STAT_MASK) == type; }
 
 	WzString id; ///< Text id (i.e. short language-independent name)
 	WzString name; ///< Full / real name of the item
 	unsigned ref; ///< Unique ID of the item
-	size_t index = 0; ///< Index into containing array
+	std::size_t index = 0; ///< Index into containing array
 };
 
 #define getStatsName(_psStats) ((_psStats)->name.isEmpty() ? "" : gettext((_psStats)->name.toUtf8().c_str()))
 #define getID(_psStats) (_psStats)->id.toUtf8().c_str()
 #define checkIfZNullStat(_psStats) ((_psStats)->id.toUtf8().find("ZNULL") != std::string::npos)
 
-/* Stats common to all droid components */
-struct COMPONENT_STATS : public BASE_STATS
+/// Stats common to all droid components
+struct ComponentStats : public BaseStats
 {
-	COMPONENT_STATS()
-	{
-	}
+	ComponentStats() = default;
 
-	struct UPGRADE
+	struct Upgradeable
 	{
-		/// Number of upgradeable hitpoints
-		unsigned hitpoints = 0;
-		/// Adjust final droid hitpoints by this percentage amount
+		/// Number of upgradeable hit points
+		unsigned hit_points = 0;
+		/// Adjust final droid hit points by this percentage amount
 		int hitpointPct = 100;
 	};
 
-	virtual UPGRADE const& getBase() const = 0;
-	virtual UPGRADE const& getUpgrade(unsigned player) const = 0;
-	UPGRADE& getBase() { return const_cast<UPGRADE&>(const_cast<COMPONENT_STATS const*>(this)->getBase()); }
+	[[nodiscard]] virtual Upgradeable const& getBase() const = 0;
+	[[nodiscard]] virtual Upgradeable const& getUpgrade(unsigned player) const = 0;
+	Upgradeable& getBase() { return const_cast<Upgradeable&>(const_cast<ComponentStats const*>(this)->getBase()); }
 
+  using enum DROID_TYPE;
 	iIMDShape* pIMD = nullptr; /**< The IMD to draw for this component */
 	unsigned buildPower = 0; /**< Power required to build the component */
 	unsigned buildPoints = 0; /**< Time required to build the component */
 	unsigned weight = 0; /**< Component's weight */
-	COMPONENT_TYPE compType = COMP_NUMCOMPONENTS;
-	DROID_TYPE droidTypeOverride = DROID_ANY;
+	COMPONENT_TYPE compType = COMPONENT_TYPE::COUNT;
+	DROID_TYPE droidTypeOverride = ANY;
 	bool designable = false; ///< Flag to indicate whether this component can be used in the design screen
 };
 
-struct PROPULSION_STATS : public COMPONENT_STATS
+struct PropulsionStats : public ComponentStats
 {
-	UPGRADE const& getBase() const override { return base; }
-	UPGRADE const& getUpgrade(unsigned player) const override { return upgrade[player]; }
+	[[nodiscard]] Upgradeable const& getBase() const override { return base; }
+	[[nodiscard]] Upgradeable const& getUpgrade(unsigned player) const override { return upgrade[player]; }
 
-	PROPULSION_TYPE propulsionType = PROPULSION_TYPE_NUM;
-	unsigned maxSpeed = 0; ///< Max speed for the droid
+	PROPULSION_TYPE propulsionType = PROPULSION_TYPE::COUNT;
+	unsigned maxSpeed = 0;
 	unsigned turnSpeed = 0;
 	unsigned spinSpeed = 0;
 	unsigned spinAngle = 0;
@@ -321,63 +304,63 @@ struct PROPULSION_STATS : public COMPONENT_STATS
 	unsigned deceleration = 0;
 	unsigned acceleration = 0;
 
-	struct UPGRADE : COMPONENT_STATS::UPGRADE
+	struct Upgradeable : ComponentStats::Upgradeable
 	{
-		/// Increase hitpoints by this percentage of the body's hitpoints
+		/// Increase hit points by this percentage of the body's hit points
 		int hitpointPctOfBody = 0;
 	} upgrade[MAX_PLAYERS], base;
 };
 
-struct SENSOR_STATS : public COMPONENT_STATS
+struct SensorStats : public ComponentStats
 {
-	UPGRADE const& getBase() const override { return base; }
-	UPGRADE const& getUpgrade(unsigned player) const override { return upgrade[player]; }
+	[[nodiscard]] Upgradeable const& getBase() const override { return base; }
+	[[nodiscard]] Upgradeable const& getUpgrade(unsigned player) const override { return upgrade[player]; }
 
 	iIMDShape* pMountGraphic = nullptr; ///< The turret mount to use
 	unsigned location = 0; ///< specifies whether the Sensor is default or for the Turret
-	SENSOR_TYPE type = STANDARD_SENSOR; ///< used for combat
+	SENSOR_TYPE type = SENSOR_TYPE::STANDARD; ///< used for combat
 
-	struct : UPGRADE
+	struct : Upgradeable
 	{
 		unsigned range = 0;
 	} upgrade[MAX_PLAYERS], base;
 };
 
-struct ECM_STATS : public COMPONENT_STATS
+struct EcmStats : public ComponentStats
 {
-	UPGRADE const& getBase() const override { return base; }
-	UPGRADE const& getUpgrade(unsigned player) const override { return upgrade[player]; }
+	[[nodiscard]] Upgradeable const& getBase() const override { return base; }
+	[[nodiscard]] Upgradeable const& getUpgrade(unsigned player) const override { return upgrade[player]; }
 
 	iIMDShape* pMountGraphic = nullptr; ///< The turret mount to use
 	unsigned location = 0; ///< Specifies whether the ECM is default or for the Turret
 
-	struct : UPGRADE
+	struct : Upgradeable
 	{
 		unsigned range = 0;
 	} upgrade[MAX_PLAYERS], base;
 };
 
-struct REPAIR_STATS : public COMPONENT_STATS
+struct RepairStats : public ComponentStats
 {
-	UPGRADE const& getBase() const override { return base; }
-	UPGRADE const& getUpgrade(unsigned player) const override { return upgrade[player]; }
+	[[nodiscard]] Upgradeable const& getBase() const override { return base; }
+	[[nodiscard]] Upgradeable const& getUpgrade(unsigned player) const override { return upgrade[player]; }
 
 	iIMDShape* pMountGraphic = nullptr; ///< The turret mount to use
 	unsigned location = 0; ///< Specifies whether the Repair is default or for the Turret
 	unsigned time = 0; ///< Time delay for repair cycle
 
-	struct : UPGRADE
+	struct : Upgradeable
 	{
 		unsigned repairPoints = 0; ///< The number of points contributed each cycle
 	} upgrade[MAX_PLAYERS], base;
 };
 
-struct WEAPON_STATS : public COMPONENT_STATS
+struct WeaponStats : public ComponentStats
 {
-	UPGRADE const& getBase() const override { return base; }
-	UPGRADE const& getUpgrade(unsigned player) const override { return upgrade[player]; }
+	[[nodiscard]] Upgradeable const& getBase() const override { return base; }
+	[[nodiscard]] Upgradeable const& getUpgrade(unsigned player) const override { return upgrade[player]; }
 
-	struct : UPGRADE
+	struct : Upgradeable
 	{
 		unsigned shortRange = 0;
 		unsigned maxRange = 0; ///< Max distance to target for long range shot
@@ -396,20 +379,18 @@ struct WEAPON_STATS : public COMPONENT_STATS
 		unsigned minimumDamage = 0; ///< Minimum amount of damage done, in percentage of damage
 	} base, upgrade[MAX_PLAYERS];
 
-	WEAPON_CLASS periodicalDamageWeaponClass = WC_NUM_WEAPON_CLASSES;
+	WEAPON_CLASS periodicalDamageWeaponClass = WEAPON_CLASS::COUNT;
 	///< Periodical damage weapon class by damage type (KINETIC, HEAT)
-	WEAPON_SUBCLASS periodicalDamageWeaponSubClass = WSC_NUM_WEAPON_SUBCLASSES;
+	WEAPON_SUBCLASS periodicalDamageWeaponSubClass = WEAPON_SUBCLASS::COUNT;
 	///< Periodical damage weapon subclass (research class)
-	WEAPON_EFFECT periodicalDamageWeaponEffect = WE_NUMEFFECTS;
+	WEAPON_EFFECT periodicalDamageWeaponEffect = WEAPON_EFFECT::COUNT;
 	///< Periodical damage weapon effect (propulsion/body damage modifier)
-
-	WEAPON_CLASS weaponClass = WC_NUM_WEAPON_CLASSES; ///< the class of weapon  (KINETIC, HEAT)
-	WEAPON_SUBCLASS weaponSubClass = WSC_NUM_WEAPON_SUBCLASSES;
-	///< the subclass to which the weapon belongs (research class)
-	MOVEMENT_MODEL movementModel = MM_DIRECT; ///< which projectile model to use for the bullet
-	WEAPON_EFFECT weaponEffect = WE_NUMEFFECTS;
+	WEAPON_CLASS weaponClass = WEAPON_CLASS::COUNT; ///< the class of weapon  (KINETIC, HEAT)
+	WEAPON_SUBCLASS weaponSubClass = WEAPON_SUBCLASS::COUNT; ///< the subclass to which the weapon belongs (research class)
+	MOVEMENT_MODEL movementModel = MOVEMENT_MODEL::DIRECT; ///< which projectile model to use for the bullet
+	WEAPON_EFFECT weaponEffect = WEAPON_EFFECT::COUNT;
 	///< which type of warhead is associated with the weapon (propulsion/body damage modifier)
-	WEAPON_SIZE weaponSize = WEAPON_SIZE_NUM; ///< eg light weapons can be put on light bodies or as sidearms
+	WEAPON_SIZE weaponSize = WEAPON_SIZE::COUNT; ///< eg light weapons can be put on light bodies or as sidearms
 	unsigned flightSpeed = 0; ///< speed ammo travels at
 	unsigned recoilValue = 0; ///< used to compare with weight to see if recoils or not
 	int distanceExtensionFactor = 0; ///< max extra distance a projectile can travel if misses target
@@ -425,7 +406,7 @@ struct WEAPON_STATS : public COMPONENT_STATS
 	bool penetrate = false; ///< flag to indicate whether pentrate droid or not
 	bool fireOnMove = false; ///< indicates whether the droid has to stop before firing
 
-	std::bitset<WEAPON_FLAG_COUNT> flags;
+	std::bitset< static_cast<std::size_t>(WEAPON_FLAGS::COUNT) > flags;
 
 	/* Graphics control stats */
 	unsigned radiusLife = 0; ///< How long a blast radius is visible
@@ -445,27 +426,27 @@ struct WEAPON_STATS : public COMPONENT_STATS
 	int iAudioImpactID = 0;
 };
 
-struct CONSTRUCT_STATS : public COMPONENT_STATS
+struct ConstructStats : public ComponentStats
 {
-	UPGRADE const& getBase() const override { return base; }
-	UPGRADE const& getUpgrade(unsigned player) const override { return upgrade[player]; }
+	[[nodiscard]] Upgradeable const& getBase() const override { return base; }
+	[[nodiscard]] Upgradeable const& getUpgrade(unsigned player) const override { return upgrade[player]; }
 
 	iIMDShape* pMountGraphic = nullptr; ///< The turret mount to use
 
-	struct : UPGRADE
+	struct : Upgradeable
 	{
 		unsigned constructPoints; ///< The number of points contributed each cycle
 	} upgrade[MAX_PLAYERS], base;
 };
 
-struct BRAIN_STATS : public COMPONENT_STATS
+struct CommanderStats : public ComponentStats
 {
-	UPGRADE const& getBase() const override { return base; }
-	UPGRADE const& getUpgrade(unsigned player) const override { return upgrade[player]; }
+	[[nodiscard]] Upgradeable const& getBase() const override { return base; }
+	[[nodiscard]] Upgradeable const& getUpgrade(unsigned player) const override { return upgrade[player]; }
 
-	WEAPON_STATS* psWeaponStat = nullptr; ///< weapon stats associated with this brain - for Command Droids
+	WeaponStats* psWeaponStat = nullptr; ///< weapon stats associated with this brain - for Command Droids
 
-	struct : UPGRADE
+	struct : Upgradeable
 	{
 		std::vector<int> rankThresholds;
 		int maxDroids = 0; ///< base maximum number of droids that the commander can control
@@ -475,18 +456,15 @@ struct BRAIN_STATS : public COMPONENT_STATS
 	std::vector<std::string> rankNames;
 };
 
-/*
- * Stats structures type definitions
- */
 #define SHOOT_ON_GROUND 0x01
 #define SHOOT_IN_AIR	0x02
 
-struct BODY_STATS : public COMPONENT_STATS
+struct BodyStats : public ComponentStats
 {
-	UPGRADE const& getBase() const override { return base; }
-	UPGRADE const& getUpgrade(unsigned player) const override { return upgrade[player]; }
+	[[nodiscard]] Upgradeable const& getBase() const override { return base; }
+	[[nodiscard]] Upgradeable const& getUpgrade(unsigned player) const override { return upgrade[player]; }
 
-	BODY_SIZE size = SIZE_NUM; ///< How big the body is - affects how hit
+	BODY_SIZE size = BODY_SIZE::COUNT; ///< How big the body is - affects how hit
 	unsigned weaponSlots = 0; ///< The number of weapon slots on the body
 
 	std::vector<iIMDShape*> ppIMDList; ///< list of IMDs to use for propulsion unit - up to numPropulsionStats
@@ -494,7 +472,7 @@ struct BODY_STATS : public COMPONENT_STATS
 	std::vector<iIMDShape*> ppStillIMDList; ///< list of IMDs to use when droid is still - up to numPropulsionStats
 	WzString bodyClass; ///< rules hint to script about its classification
 
-	struct UPGRADE : COMPONENT_STATS::UPGRADE
+	struct Upgradeable : ComponentStats::Upgradeable
 	{
 		unsigned power = 0; ///< this is the engine output of the body
 		unsigned armour = 0; ///< A measure of how much protection the armour provides
@@ -503,12 +481,9 @@ struct BODY_STATS : public COMPONENT_STATS
 	} upgrade[MAX_PLAYERS], base;
 };
 
-/************************************************************************************
-* Additional stats tables
-************************************************************************************/
 struct PROPULSION_TYPES
 {
-	TRAVEL_MEDIUM travel = GROUND; ///< Which medium the propulsion travels in
+	TRAVEL_MEDIUM travel = TRAVEL_MEDIUM::GROUND; ///< Which medium the propulsion travels in
 	uint16_t powerRatioMult = 0; ///< Multiplier for the calculated power ratio of the droid
 	int16_t startID = 0; ///< sound to play when this prop type starts
 	int16_t idleID = 0; ///< sound to play when this prop type is idle

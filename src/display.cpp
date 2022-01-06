@@ -1831,7 +1831,7 @@ static void dealWithLMBStructure(Structure* psStructure, SELECTION_TYPE selectio
 			console(_("(Enemy!) %s, ref: %d, ID: %d Hitpoints: %d/%d"), getID(psStructure->pStructureType),
 			        psStructure->pStructureType->ref,
 			        psStructure->id, psStructure->body,
-			        psStructure->pStructureType->upgraded_stats[psStructure->player].hitpoints);
+			        psStructure->pStructureType->upgraded_stats[psStructure->player].hit_points);
 		}
 		orderSelectedObjAdd(selectedPlayer, (SimpleObject*)psStructure, ctrlShiftDown());
 		//lasSat structure can select a target - in multiPlayer only

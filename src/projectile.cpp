@@ -422,17 +422,17 @@ int32_t projCalcIndirectVelocities(const int32_t dx, const int32_t dz, int32_t v
 	return t;
 }
 
-bool proj_SendProjectile(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target, SimpleObject* psTarget,
+bool proj_SendProjectile(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target, SimpleObject* psTarget,
                          bool bVisible, int weapon_slot)
 {
 	return proj_SendProjectileAngled(psWeap, psAttacker, player, target, psTarget, bVisible, weapon_slot, 0,
 	                                 gameTime - 1);
 }
 
-bool proj_SendProjectileAngled(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target,
+bool proj_SendProjectileAngled(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target,
                                SimpleObject* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime)
 {
-	WEAPON_STATS* psStats = &asWeaponStats[psWeap->nStat];
+	WeaponStats* psStats = &asWeaponStats[psWeap->nStat];
 
 	ASSERT_OR_RETURN(false, psWeap->nStat < numWeaponStats, "Invalid range referenced for numWeaponStats, %d > %d",
 	                 psWeap->nStat, numWeaponStats);
@@ -553,11 +553,11 @@ bool proj_SendProjectileAngled(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int pl
 	{
 		if (psAttacker->type == OBJ_DROID)
 		{
-			((Droid*)psAttacker)->asWeaps[weapon_slot].rot.pitch = psProj->rot.pitch;
+			((Droid*)psAttacker)->asWeaps[weapon_slot].rotation.pitch = psProj->rot.pitch;
 		}
 		else if (psAttacker->type == OBJ_STRUCTURE)
 		{
-			((Structure*)psAttacker)->asWeaps[weapon_slot].rot.pitch = psProj->rot.pitch;
+			((Structure*)psAttacker)->asWeaps[weapon_slot].rotation.pitch = psProj->rot.pitch;
 		}
 	}
 
@@ -716,7 +716,7 @@ static void proj_InFlightFunc(PROJECTILE* psProj)
 	psProj->time = gameTime;
 	int deltaProjectileTime = psProj->time - psProj->prevSpacetime.time;
 
-	WEAPON_STATS* psStats = psProj->psWStats;
+	WeaponStats* psStats = psProj->psWStats;
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid weapon stats pointer");
 
 	/* we want a delay between Las-Sats firing and actually hitting in multiPlayer
@@ -924,7 +924,7 @@ static void proj_InFlightFunc(PROJECTILE* psProj)
 		if (closestCollisionObject != nullptr && closestCollisionObject->type == OBJ_DROID && psStats->penetrate &&
 			currentDistance < static_cast<int>(1.25 * proj_GetLongRange(psStats, psProj->player)))
 		{
-			WEAPON asWeap;
+			Weapon asWeap;
 			asWeap.nStat = psStats - asWeaponStats;
 
 			// Assume we damaged the chosen target
@@ -993,7 +993,7 @@ static void proj_InFlightFunc(PROJECTILE* psProj)
 
 static void proj_ImpactFunc(PROJECTILE* psObj)
 {
-	WEAPON_STATS* psStats;
+	WeaponStats* psStats;
 	SDWORD iAudioImpactID;
 	int32_t relativeDamage;
 	Vector3i position, scatter;
@@ -1321,7 +1321,7 @@ static void proj_PostImpactFunc(PROJECTILE* psObj)
 	ASSERT_OR_RETURN(, psObj != nullptr, "Invalid pointer");
 	CHECK_PROJECTILE(psObj);
 
-	WEAPON_STATS* psStats = psObj->psWStats;
+	WeaponStats* psStats = psObj->psWStats;
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid weapon stats pointer");
 
 	int age = gameTime - psObj->born;
@@ -1430,7 +1430,7 @@ static void proj_checkPeriodicalDamage(PROJECTILE* psProj)
 	// note the attacker if any
 	g_pProjLastAttacker = psProj->psSource;
 
-	WEAPON_STATS* psStats = psProj->psWStats;
+	WeaponStats* psStats = psProj->psWStats;
 
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(psProj->pos.x, psProj->pos.y, psStats->upgrade[psProj->player].periodicalDamageRadius);
@@ -1488,7 +1488,7 @@ static void proj_checkPeriodicalDamage(PROJECTILE* psProj)
 /***************************************************************************/
 
 // return whether a weapon is direct or indirect
-bool proj_Direct(const WEAPON_STATS* psStats)
+bool proj_Direct(const WeaponStats* psStats)
 {
 	ASSERT_OR_RETURN(false, psStats, "Called with NULL weapon");
 
@@ -1511,21 +1511,21 @@ bool proj_Direct(const WEAPON_STATS* psStats)
 	ASSERT_OR_RETURN(retVal, player >= 0 && player < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
 // return the maximum range for a weapon
-int proj_GetLongRange(const WEAPON_STATS* psStats, int player)
+int proj_GetLongRange(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].maxRange;
 }
 
 // return the minimum range for a weapon
-int proj_GetMinRange(const WEAPON_STATS* psStats, int player)
+int proj_GetMinRange(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].minRange;
 }
 
 // return the short range for a weapon
-int proj_GetShortRange(const WEAPON_STATS* psStats, int player)
+int proj_GetShortRange(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].shortRange;

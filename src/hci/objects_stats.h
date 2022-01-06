@@ -17,7 +17,7 @@ public:
 	virtual ~BaseObjectsController() = default;
 	virtual size_t objectsSize() const = 0;
 	virtual SimpleObject* getObjectAt(size_t index) const = 0;
-	virtual BASE_STATS* getObjectStatsAt(size_t index) const = 0;
+	virtual BaseStats* getObjectStatsAt(size_t index) const = 0;
 	virtual bool findObject(std::function<bool (SimpleObject*)> iteration) const = 0;
 	virtual void refresh() = 0;
 	virtual bool showInterface() = 0;
@@ -72,7 +72,7 @@ public:
 	virtual std::shared_ptr<StatsForm> makeStatsForm() = 0;
 	void displayStatsForm();
 	static void scheduleDisplayStatsForm(const std::shared_ptr<BaseStatsController>& controller);
-	virtual BASE_STATS* getStatsAt(size_t) const = 0;
+	virtual BaseStats* getStatsAt(size_t) const = 0;
 };
 
 class BaseObjectsStatsController : public BaseStatsController, public BaseObjectsController
@@ -85,13 +85,13 @@ public:
 		return getStatsAt(statsIndex) == highlightedObjectStats;
 	}
 
-	BASE_STATS* getHighlightedObjectStats()
+	BaseStats* getHighlightedObjectStats()
 	{
 		return highlightedObjectStats;
 	}
 
 private:
-	BASE_STATS* highlightedObjectStats;
+	BaseStats* highlightedObjectStats;
 };
 
 class DynamicIntFancyButton : public IntFancyButton
@@ -115,7 +115,7 @@ protected:
 class StatsButton : public DynamicIntFancyButton
 {
 protected:
-	virtual BASE_STATS* getStats() = 0;
+	virtual BaseStats* getStats() = 0;
 
 	std::string getTip() override
 	{
@@ -242,7 +242,7 @@ public:
 protected:
 	void updateLayout() override;
 	void goToHighlightedTab();
-	BASE_STATS* previousHighlighted = nullptr;
+	BaseStats* previousHighlighted = nullptr;
 };
 
 #endif // __INCLUDED_SRC_HCI_OBJECTS_STATS_INTERFACE_H__

@@ -354,7 +354,7 @@ static std::string arrayToString(const T* array, int length)
 
 // Using ^ to denote stats that are in templates, and as such do not change.
 // Using : to denote stats that come from structure specializations.
-nlohmann::ordered_json componentToString(const COMPONENT_STATS* psStats, int player)
+nlohmann::ordered_json componentToString(const ComponentStats* psStats, int player)
 {
 	nlohmann::ordered_json key = nlohmann::ordered_json::object();
 
@@ -363,14 +363,14 @@ nlohmann::ordered_json componentToString(const COMPONENT_STATS* psStats, int pla
 	key["^Power"] = psStats->buildPower;
 	key["^Build Points"] = psStats->buildPoints;
 	key["^Weight"] = psStats->weight;
-	key["^Hit points"] = psStats->getUpgrade(player).hitpoints;
+	key["^Hit points"] = psStats->getUpgrade(player).hit_points;
 	key["^Hit points +% of total"] = psStats->getUpgrade(player).hitpointPct;
 	key["^Designable"] = psStats->designable;
 	switch (psStats->compType)
 	{
 	case COMP_BODY:
 		{
-			const BODY_STATS* psBody = (const BODY_STATS*)psStats;
+			const BodyStats* psBody = (const BodyStats*)psStats;
 			key["^Size"] = psBody->size;
 			key["^Max weapons"] = psBody->weaponSlots;
 			key["^Body class"] = psBody->bodyClass.toUtf8();
@@ -378,7 +378,7 @@ nlohmann::ordered_json componentToString(const COMPONENT_STATS* psStats, int pla
 		}
 	case COMP_PROPULSION:
 		{
-			const PROPULSION_STATS* psProp = (const PROPULSION_STATS*)psStats;
+			const PropulsionStats* psProp = (const PropulsionStats*)psStats;
 			key["^Hit points +% of body"] = psProp->upgrade[player].hitpointPctOfBody;
 			key["^Max speed"] = psProp->maxSpeed;
 			key["^Propulsion type"] = psProp->propulsionType;
@@ -392,7 +392,7 @@ nlohmann::ordered_json componentToString(const COMPONENT_STATS* psStats, int pla
 		}
 	case COMP_BRAIN:
 		{
-			const BRAIN_STATS* psBrain = (const BRAIN_STATS*)psStats;
+			const CommanderStats* psBrain = (const CommanderStats*)psStats;
 			std::string ranks;
 			for (const std::string& s : psBrain->rankNames)
 			{
@@ -419,33 +419,33 @@ nlohmann::ordered_json componentToString(const COMPONENT_STATS* psStats, int pla
 		}
 	case COMP_REPAIRUNIT:
 		{
-			const REPAIR_STATS* psRepair = (const REPAIR_STATS*)psStats;
+			const RepairStats* psRepair = (const RepairStats*)psStats;
 			key["^Repair time"] = psRepair->time;
 			key["^Base repair points"] = psRepair->upgrade[player].repairPoints;
 			break;
 		}
 	case COMP_ECM:
 		{
-			const ECM_STATS* psECM = (const ECM_STATS*)psStats;
+			const EcmStats* psECM = (const EcmStats*)psStats;
 			key["^Base range"] = psECM->upgrade[player].range;
 			break;
 		}
 	case COMP_SENSOR:
 		{
-			const SENSOR_STATS* psSensor = (const SENSOR_STATS*)psStats;
+			const SensorStats* psSensor = (const SensorStats*)psStats;
 			key["^Sensor type"] = psSensor->type;
 			key["^Base range"] = psSensor->upgrade[player].range;
 			break;
 		}
 	case COMP_CONSTRUCT:
 		{
-			const CONSTRUCT_STATS* psCon = (const CONSTRUCT_STATS*)psStats;
+			const ConstructStats* psCon = (const ConstructStats*)psStats;
 			key["^Base construct points"] = psCon->upgrade[player].constructPoints;
 			break;
 		}
 	case COMP_WEAPON:
 		{
-			const WEAPON_STATS* psWeap = (const WEAPON_STATS*)psStats;
+			const WeaponStats* psWeap = (const WeaponStats*)psStats;
 			key["Max range"] = psWeap->upgrade[player].maxRange;
 			key["Min range"] = psWeap->upgrade[player].minRange;
 			key["Radius"] = psWeap->upgrade[player].radius;
@@ -2312,12 +2312,12 @@ void WZScriptDebugger::selected(const SimpleObject* psObj)
 		{
 			if (psObj->asWeaps[i].nStat > 0)
 			{
-				WEAPON_STATS* psWeap = asWeaponStats + psObj->asWeaps[i].nStat;
+				WeaponStats* psWeap = asWeaponStats + psObj->asWeaps[i].nStat;
 				auto component = componentToString(psWeap, psObj->player);
 				component["Ammo"] = psObj->asWeaps[i].ammo;
-				component["Last fired time"] = psObj->asWeaps[i].lastFired;
-				component["Shots fired"] = psObj->asWeaps[i].shotsFired;
-				component["Used ammo"] = psObj->asWeaps[i].usedAmmo;
+				component["Last fired time"] = psObj->asWeaps[i].time_last_fired;
+				component["Shots fired"] = psObj->asWeaps[i].shots_fired;
+				component["Used ammo"] = psObj->asWeaps[i].ammo_used;
 				component["Origin"] = psObj->asWeaps[i].origin;
 				weapons.push_back(component);
 			}

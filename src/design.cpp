@@ -259,16 +259,16 @@ static void resetDesignPauseState();
 static bool intAddTemplateButtons(ListTabWidget* templList, DroidTemplate* psSelected);
 static void intDisplayDesignForm(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
-typedef std::function<bool(std::function<bool(COMPONENT_STATS&, size_t)>)> ComponentIterator;
+typedef std::function<bool(std::function<bool(ComponentStats&, size_t)>)> ComponentIterator;
 
 /* Set the current mode of the design screen, and display the appropriate component lists */
 static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh = false);
 /* Set all the design bar graphs from a design template */
 static void intSetDesignStats(DroidTemplate* psTemplate);
 /* Set up the system clickable form of the design screen given a set of stats */
-static bool intSetSystemForm(COMPONENT_STATS* psStats);
+static bool intSetSystemForm(ComponentStats* psStats);
 /* Set up the propulsion clickable form of the design screen given a set of stats */
-static bool intSetPropulsionForm(PROPULSION_STATS* psStats);
+static bool intSetPropulsionForm(PropulsionStats* psStats);
 /* Add the component tab form to the design screen */
 static ListTabWidget* intAddComponentForm();
 /* Add the template tab form to the design screen */
@@ -277,51 +277,51 @@ static bool intAddTemplateForm(DroidTemplate* psSelected);
 static bool intAddSystemButtons(DES_COMPMODE mode);
 /* Add the component buttons to the main tab of the system or component form */
 static bool intAddComponentButtons(ListTabWidget* compList, ComponentIterator iterator, unsigned compID, bool bWeapon);
-static uint32_t intCalcSpeed(TYPE_OF_TERRAIN type, PROPULSION_STATS* psProp);
-static uint32_t calculatePropulsionWeight(COMPONENT_STATS& propulsionStats);
+static uint32_t intCalcSpeed(TYPE_OF_TERRAIN type, PropulsionStats* psProp);
+static uint32_t calculatePropulsionWeight(ComponentStats& propulsionStats);
 /* Add the component buttons to the main tab of the component form */
 static bool intAddExtraSystemButtons(ListTabWidget* compList, unsigned sensorIndex, unsigned ecmIndex,
                                      unsigned constIndex, unsigned repairIndex, unsigned brainIndex);
 /* Set the bar graphs for the system clickable */
-static void intSetSystemStats(COMPONENT_STATS* psStats);
+static void intSetSystemStats(ComponentStats* psStats);
 /* Set the shadow bar graphs for the system clickable */
-static void intSetSystemShadowStats(COMPONENT_STATS* psStats);
+static void intSetSystemShadowStats(ComponentStats* psStats);
 /* Set the bar graphs for the sensor stats */
-static void intSetSensorStats(SENSOR_STATS* psStats);
+static void intSetSensorStats(SensorStats* psStats);
 /* Set the shadow bar graphs for the sensor stats */
-static void intSetSensorShadowStats(SENSOR_STATS* psStats);
+static void intSetSensorShadowStats(SensorStats* psStats);
 /* Set the bar graphs for the ECM stats */
-static void intSetECMStats(ECM_STATS* psStats);
+static void intSetECMStats(EcmStats* psStats);
 /* Set the shadow bar graphs for the ECM stats */
-static void intSetECMShadowStats(ECM_STATS* psStats);
+static void intSetECMShadowStats(EcmStats* psStats);
 /* Set the bar graphs for the Repair stats */
-static void intSetRepairStats(REPAIR_STATS* psStats);
+static void intSetRepairStats(RepairStats* psStats);
 /* Set the shadow bar graphs for the Repair stats */
-static void intSetRepairShadowStats(REPAIR_STATS* psStats);
+static void intSetRepairShadowStats(RepairStats* psStats);
 /* Set the bar graphs for the Constructor stats */
-static void intSetConstructStats(CONSTRUCT_STATS* psStats);
+static void intSetConstructStats(ConstructStats* psStats);
 /* Set the shadow bar graphs for the Constructor stats */
-static void intSetConstructShadowStats(CONSTRUCT_STATS* psStats);
+static void intSetConstructShadowStats(ConstructStats* psStats);
 /* Set the bar graphs for the Weapon stats */
-static void intSetWeaponStats(WEAPON_STATS* psStats);
+static void intSetWeaponStats(WeaponStats* psStats);
 /* Set the shadow bar graphs for the weapon stats */
-static void intSetWeaponShadowStats(WEAPON_STATS* psStats);
+static void intSetWeaponShadowStats(WeaponStats* psStats);
 /* Set the bar graphs for the Body stats */
-static void intSetBodyStats(BODY_STATS* psStats);
+static void intSetBodyStats(BodyStats* psStats);
 /* Set the shadow bar graphs for the Body stats */
-static void intSetBodyShadowStats(BODY_STATS* psStats);
+static void intSetBodyShadowStats(BodyStats* psStats);
 /* Set the bar graphs for the Propulsion stats */
-static void intSetPropulsionStats(PROPULSION_STATS* psStats);
+static void intSetPropulsionStats(PropulsionStats* psStats);
 /* Set the shadow bar graphs for the Propulsion stats */
-static void intSetPropulsionShadowStats(PROPULSION_STATS* psStats);
+static void intSetPropulsionShadowStats(PropulsionStats* psStats);
 /* Sets the Design Power Bar for a given Template */
 static void intSetDesignPower(DroidTemplate* psTemplate);
 /* Sets the Power shadow Bar for the current Template with new stat*/
-static void intSetTemplatePowerShadowStats(COMPONENT_STATS* psStats);
+static void intSetTemplatePowerShadowStats(ComponentStats* psStats);
 /* Sets the Body Points Bar for a given Template */
 static void intSetBodyPoints(DroidTemplate* psTemplate);
 /* Sets the Body Points shadow Bar for the current Template with new stat*/
-static void intSetTemplateBodyShadowStats(COMPONENT_STATS* psStats);
+static void intSetTemplateBodyShadowStats(ComponentStats* psStats);
 /* set flashing flag for button */
 static void intSetButtonFlash(UDWORD id, bool bFlash);
 /*Function to set the shadow bars for all the stats when the mouse is over
@@ -337,7 +337,7 @@ static bool saveTemplate();
 
 static void desCreateDefaultTemplate();
 
-static void setTemplateStat(DroidTemplate* psTemplate, COMPONENT_STATS* psStats);
+static void setTemplateStat(DroidTemplate* psTemplate, ComponentStats* psStats);
 
 /**
  * Updates the status of the stored template toggle button.
@@ -352,10 +352,10 @@ static char aCurrName[MAX_STR_LENGTH];
 /* Store a list of component stats pointers for the design screen */
 extern UDWORD maxComponent;
 extern UDWORD numComponent;
-extern COMPONENT_STATS** apsComponentList;
+extern ComponentStats** apsComponentList;
 extern UDWORD maxExtraSys;
 extern UDWORD numExtraSys;
-extern COMPONENT_STATS** apsExtraSysList;
+extern ComponentStats** apsExtraSysList;
 
 /* The button id of the component that is in the design */
 static UDWORD desCompID;
@@ -470,14 +470,14 @@ protected:
 	}
 };
 
-static ComponentIterator componentIterator(COMPONENT_STATS* psStats, unsigned size, const UBYTE* aAvailable,
+static ComponentIterator componentIterator(ComponentStats* psStats, unsigned size, const UBYTE* aAvailable,
                                            unsigned numEntries)
 {
-	return [=](std::function<bool(COMPONENT_STATS&, size_t index)> callback)
+	return [=](std::function<bool(ComponentStats&, size_t index)> callback)
 	{
 		for (unsigned i = 0; i < numEntries; ++i)
 		{
-			COMPONENT_STATS* psCurrStats = (COMPONENT_STATS*)(((UBYTE*)psStats) + size * i);
+			ComponentStats* psCurrStats = (ComponentStats*)(((UBYTE*)psStats) + size * i);
 
 			/* Skip unavailable entries and non-design ones*/
 			if (!(aAvailable[i] == AVAILABLE || (includeRedundantDesigns && aAvailable[i] == REDUNDANT)) || !psCurrStats
@@ -519,39 +519,39 @@ static ComponentIterator propulsionIterator()
 static ComponentIterator sensorIterator()
 {
 	ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer: %" PRIu32 "", selectedPlayer);
-	return componentIterator(asSensorStats, sizeof(SENSOR_STATS), apCompLists[selectedPlayer][COMP_SENSOR],
-	                         numSensorStats);
+	return componentIterator(asSensorStats, sizeof(SensorStats), apCompLists[selectedPlayer][COMP_SENSOR],
+                           numSensorStats);
 }
 
 static ComponentIterator ecmIterator()
 {
 	ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer: %" PRIu32 "", selectedPlayer);
-	return componentIterator(asECMStats, sizeof(ECM_STATS), apCompLists[selectedPlayer][COMP_ECM], numECMStats);
+	return componentIterator(asECMStats, sizeof(EcmStats), apCompLists[selectedPlayer][COMP_ECM], numECMStats);
 }
 
 static ComponentIterator constructorIterator()
 {
 	ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer: %" PRIu32 "", selectedPlayer);
-	return componentIterator(asConstructStats, sizeof(CONSTRUCT_STATS), apCompLists[selectedPlayer][COMP_CONSTRUCT],
-	                         numConstructStats);
+	return componentIterator(asConstructStats, sizeof(ConstructStats), apCompLists[selectedPlayer][COMP_CONSTRUCT],
+                           numConstructStats);
 }
 
 static ComponentIterator repairIterator()
 {
 	ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer: %" PRIu32 "", selectedPlayer);
-	return componentIterator(asRepairStats, sizeof(REPAIR_STATS), apCompLists[selectedPlayer][COMP_REPAIRUNIT],
-	                         numRepairStats);
+	return componentIterator(asRepairStats, sizeof(RepairStats), apCompLists[selectedPlayer][COMP_REPAIRUNIT],
+                           numRepairStats);
 }
 
 static ComponentIterator brainIterator()
 {
 	ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer: %" PRIu32 "", selectedPlayer);
-	return componentIterator(asBrainStats, sizeof(BRAIN_STATS), apCompLists[selectedPlayer][COMP_BRAIN], numBrainStats);
+	return componentIterator(asBrainStats, sizeof(CommanderStats), apCompLists[selectedPlayer][COMP_BRAIN], numBrainStats);
 }
 
 static ComponentIterator concatIterators(std::vector<ComponentIterator> iterators)
 {
-	return [=](std::function<bool(COMPONENT_STATS&, size_t index)> callback)
+	return [=](std::function<bool(ComponentStats&, size_t index)> callback)
 	{
 		for (const auto& iterator : iterators)
 		{
@@ -570,11 +570,11 @@ static ComponentIterator extraSystemIterator()
 	return concatIterators({sensorIterator(), ecmIterator(), constructorIterator(), repairIterator(), brainIterator()});
 }
 
-static uint32_t findMax(ComponentIterator componentIterator, std::function<uint32_t(COMPONENT_STATS&)> value)
+static uint32_t findMax(ComponentIterator componentIterator, std::function<uint32_t(ComponentStats&)> value)
 {
 	uint32_t max = 0;
 
-	componentIterator([&](COMPONENT_STATS& bodyStats, size_t index)
+	componentIterator([&](ComponentStats& bodyStats, size_t index)
 	{
 		max = std::max(max, value(bodyStats));
 		return true;
@@ -585,22 +585,22 @@ static uint32_t findMax(ComponentIterator componentIterator, std::function<uint3
 
 static uint32_t findMaxWeight(ComponentIterator componentIterator)
 {
-	return findMax(componentIterator, [](COMPONENT_STATS& stats) { return stats.weight; });
+	return findMax(componentIterator, [](ComponentStats& stats) { return stats.weight; });
 }
 
 static uint32_t findMaxPropulsionSpeed(TYPE_OF_TERRAIN terrainType)
 {
 	return findMax(
 		propulsionIterator(),
-		[=](COMPONENT_STATS& stats) { return intCalcSpeed(terrainType, (PROPULSION_STATS*)&stats); }
+		[=](ComponentStats& stats) { return intCalcSpeed(terrainType, (PropulsionStats*)&stats); }
 	);
 }
 
-static uint32_t findMaxWeaponAttribute(std::function<uint32_t(WEAPON_STATS*, int)> attributeGetter)
+static uint32_t findMaxWeaponAttribute(std::function<uint32_t(WeaponStats*, int)> attributeGetter)
 {
 	return findMax(
 		weaponIterator(),
-		[=](COMPONENT_STATS& stats) { return attributeGetter((WEAPON_STATS*)&stats, selectedPlayer); }
+		[=](ComponentStats& stats) { return attributeGetter((WeaponStats*)&stats, selectedPlayer); }
 	);
 }
 
@@ -608,7 +608,7 @@ static uint32_t getDesignMaxBodyArmour(WEAPON_CLASS weaponClass)
 {
 	return findMax(
 		bodyIterator(),
-		[=](COMPONENT_STATS& stats) { return bodyArmour((BODY_STATS*)&stats, selectedPlayer, weaponClass); }
+		[=](ComponentStats& stats) { return bodyArmour((BodyStats*)&stats, selectedPlayer, weaponClass); }
 	);
 }
 
@@ -616,18 +616,18 @@ static uint32_t getDesignMaxEngineOutput()
 {
 	return findMax(
 		bodyIterator(),
-		[=](COMPONENT_STATS& stats) { return bodyPower((BODY_STATS*)&stats, selectedPlayer); }
+		[=](ComponentStats& stats) { return bodyPower((BodyStats*)&stats, selectedPlayer); }
 	);
 }
 
-static uint32_t calcShadowBodyPoints(COMPONENT_STATS& psStats)
+static uint32_t calcShadowBodyPoints(ComponentStats& psStats)
 {
 	auto designCopy = sCurrDesign;
 	setTemplateStat(&designCopy, &psStats);
 	return calcTemplateBody(&designCopy, selectedPlayer);
 }
 
-static uint32_t calcShadowPower(COMPONENT_STATS& psStats)
+static uint32_t calcShadowPower(ComponentStats& psStats)
 {
 	auto designCopy = sCurrDesign;
 	setTemplateStat(&designCopy, &psStats);
@@ -638,7 +638,7 @@ static uint32_t getDesignMaxSensorRange()
 {
 	return findMax(
 		sensorIterator(),
-		[=](COMPONENT_STATS& stats) { return sensorRange((SENSOR_STATS*)&stats, selectedPlayer); }
+		[=](ComponentStats& stats) { return sensorRange((SensorStats*)&stats, selectedPlayer); }
 	);
 }
 
@@ -646,7 +646,7 @@ static uint32_t getDesignMaxEcmRange()
 {
 	return findMax(
 		ecmIterator(),
-		[=](COMPONENT_STATS& stats) { return ecmRange((ECM_STATS*)&stats, selectedPlayer); }
+		[=](ComponentStats& stats) { return ecmRange((EcmStats*)&stats, selectedPlayer); }
 	);
 }
 
@@ -654,7 +654,7 @@ static uint32_t getDesignMaxBuildPoints()
 {
 	return findMax(
 		constructorIterator(),
-		[=](COMPONENT_STATS& stats) { return constructorPoints((CONSTRUCT_STATS*)&stats, selectedPlayer); }
+		[=](ComponentStats& stats) { return constructorPoints((ConstructStats*)&stats, selectedPlayer); }
 	);
 }
 
@@ -1242,7 +1242,7 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 		widgSetButtonState(psWScreen, IDDES_SYSTEMFORM, WBUT_LOCK);
 		widgSetButtonState(psWScreen, IDDES_SYSTEMBUTTON, WBUT_CLICKLOCK);
 		widgReveal(psWScreen, IDDES_SYSTEMFORM);
-		intSetSystemForm((COMPONENT_STATS*)(asWeaponStats + sCurrDesign.asWeaps[0]));
+		intSetSystemForm((ComponentStats*)(asWeaponStats + sCurrDesign.asWeaps[0]));
 	// in case previous was a different slot
 		break;
 	case IDES_BODY:
@@ -1268,7 +1268,7 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 		widgSetButtonState(psWScreen, IDDES_SYSTEMFORM, WBUT_LOCK);
 		widgSetButtonState(psWScreen, IDDES_WPABUTTON, WBUT_CLICKLOCK);
 		widgReveal(psWScreen, IDDES_SYSTEMFORM);
-		intSetSystemForm((COMPONENT_STATS*)(asWeaponStats + sCurrDesign.asWeaps[1]));
+		intSetSystemForm((ComponentStats*)(asWeaponStats + sCurrDesign.asWeaps[1]));
 	// in case previous was a different slot
 	// Stop the button flashing
 		intSetButtonFlash(IDDES_WPABUTTON, false);
@@ -1281,7 +1281,7 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 		widgSetButtonState(psWScreen, IDDES_SYSTEMFORM, WBUT_LOCK);
 		widgSetButtonState(psWScreen, IDDES_WPBBUTTON, WBUT_CLICKLOCK);
 		widgReveal(psWScreen, IDDES_SYSTEMFORM);
-		intSetSystemForm((COMPONENT_STATS*)(asWeaponStats + sCurrDesign.asWeaps[2]));
+		intSetSystemForm((ComponentStats*)(asWeaponStats + sCurrDesign.asWeaps[2]));
 	// in case previous was a different slot
 	// Stop the button flashing
 		intSetButtonFlash(IDDES_WPBBUTTON, false);
@@ -1289,10 +1289,10 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 	}
 }
 
-static COMPONENT_STATS*
+static ComponentStats*
 intChooseSystemStats(DroidTemplate* psTemplate)
 {
-	COMPONENT_STATS* psStats = nullptr;
+	ComponentStats* psStats = nullptr;
 	int compIndex;
 
 	// Choose correct system stats
@@ -1302,33 +1302,33 @@ intChooseSystemStats(DroidTemplate* psTemplate)
 		compIndex = psTemplate->asParts[COMP_BRAIN];
 		ASSERT_OR_RETURN(nullptr, compIndex < numBrainStats, "Invalid range referenced for numBrainStats, %d > %d",
 		                 compIndex, numBrainStats);
-		psStats = (COMPONENT_STATS*)(asBrainStats + compIndex);
+		psStats = (ComponentStats*)(asBrainStats + compIndex);
 		break;
 	case DROID_SENSOR:
 		compIndex = psTemplate->asParts[COMP_SENSOR];
 		ASSERT_OR_RETURN(nullptr, compIndex < numSensorStats, "Invalid range referenced for numSensorStats, %d > %d",
 		                 compIndex, numSensorStats);
-		psStats = (COMPONENT_STATS*)(asSensorStats + compIndex);
+		psStats = (ComponentStats*)(asSensorStats + compIndex);
 		break;
 	case DROID_ECM:
 		compIndex = psTemplate->asParts[COMP_ECM];
 		ASSERT_OR_RETURN(nullptr, compIndex < numECMStats, "Invalid range referenced for numECMStats, %d > %d",
 		                 compIndex, numECMStats);
-		psStats = (COMPONENT_STATS*)(asECMStats + compIndex);
+		psStats = (ComponentStats*)(asECMStats + compIndex);
 		break;
 	case DROID_CONSTRUCT:
 	case DROID_CYBORG_CONSTRUCT:
 		compIndex = psTemplate->asParts[COMP_CONSTRUCT];
 		ASSERT_OR_RETURN(nullptr, compIndex < numConstructStats,
 		                 "Invalid range referenced for numConstructStats, %d > %d", compIndex, numConstructStats);
-		psStats = (COMPONENT_STATS*)(asConstructStats + compIndex);
+		psStats = (ComponentStats*)(asConstructStats + compIndex);
 		break;
 	case DROID_REPAIR:
 	case DROID_CYBORG_REPAIR:
 		compIndex = psTemplate->asParts[COMP_REPAIRUNIT];
 		ASSERT_OR_RETURN(nullptr, compIndex < numRepairStats, "Invalid range referenced for numRepairStats, %d > %d",
 		                 compIndex, numRepairStats);
-		psStats = (COMPONENT_STATS*)(asRepairStats + compIndex);
+		psStats = (ComponentStats*)(asRepairStats + compIndex);
 		break;
 	case DROID_WEAPON:
 	case DROID_PERSON:
@@ -1338,7 +1338,7 @@ intChooseSystemStats(DroidTemplate* psTemplate)
 		compIndex = psTemplate->asWeaps[0];
 		ASSERT_OR_RETURN(nullptr, compIndex < numWeaponStats, "Invalid range referenced for numWeaponStats, %d > %d",
 		                 compIndex, numWeaponStats);
-		psStats = (COMPONENT_STATS*)(asWeaponStats + compIndex);
+		psStats = (ComponentStats*)(asWeaponStats + compIndex);
 		break;
 	default:
 		debug(LOG_ERROR, "unrecognised droid type");
@@ -1366,7 +1366,7 @@ const char* GetDefaultTemplateName(DroidTemplate* psTemplate)
 {
 	// NOTE:	At this time, savegames can support a max of 60. We are using MAX_STR_LENGTH (currently 256) for display
 	// We are also returning a truncated string, instead of NULL if the string is too long.
-	COMPONENT_STATS* psStats = nullptr;
+	ComponentStats* psStats = nullptr;
 	int compIndex;
 
 	/*
@@ -1418,7 +1418,7 @@ const char* GetDefaultTemplateName(DroidTemplate* psTemplate)
 	compIndex = psTemplate->asParts[COMP_BODY];
 	ASSERT_OR_RETURN("", compIndex < numBodyStats, "Invalid range referenced for numBodyStats, %d > %d", compIndex,
 	                 numBodyStats);
-	psStats = (COMPONENT_STATS*)(asBodyStats + compIndex);
+	psStats = (ComponentStats*)(asBodyStats + compIndex);
 	if (psTemplate->asParts[COMP_BODY] != 0)
 	{
 		checkStringLength(aCurrName, getStatsName(psStats));
@@ -1429,7 +1429,7 @@ const char* GetDefaultTemplateName(DroidTemplate* psTemplate)
 	compIndex = psTemplate->asParts[COMP_PROPULSION];
 	ASSERT_OR_RETURN("", compIndex < numPropulsionStats, "Invalid range referenced for numPropulsionStats, %d > %d",
 	                 compIndex, numPropulsionStats);
-	psStats = (COMPONENT_STATS*)(asPropulsionStats + compIndex);
+	psStats = (ComponentStats*)(asPropulsionStats + compIndex);
 	if (psTemplate->asParts[COMP_PROPULSION] != 0)
 	{
 		checkStringLength(aCurrName, getStatsName(psStats));
@@ -1459,7 +1459,7 @@ static void intSetEditBoxTextFromTemplate(DroidTemplate* psTemplate)
 /* Set all the design bar graphs from a design template */
 static void intSetDesignStats(DroidTemplate* psTemplate)
 {
-	COMPONENT_STATS* psStats = intChooseSystemStats(psTemplate);
+	ComponentStats* psStats = intChooseSystemStats(psTemplate);
 
 	/* Set system stats */
 	intSetSystemForm(psStats);
@@ -1475,7 +1475,7 @@ static void intSetDesignStats(DroidTemplate* psTemplate)
 }
 
 /* Set up the system clickable form of the design screen given a set of stats */
-static bool intSetSystemForm(COMPONENT_STATS* psStats)
+static bool intSetSystemForm(ComponentStats* psStats)
 {
 	DES_SYSMODE newSysMode = (DES_SYSMODE)0;
 
@@ -1668,7 +1668,7 @@ static bool intSetSystemForm(COMPONENT_STATS* psStats)
 		sBarInit.pTip = _("Build Points");
 		sBarInit.iRange = findMax(
 			repairIterator(),
-			[=](COMPONENT_STATS& stats) { return repairPoints((REPAIR_STATS*)&stats, selectedPlayer); }
+			[=](ComponentStats& stats) { return repairPoints((RepairStats*)&stats, selectedPlayer); }
 		);
 		systemForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
@@ -1790,7 +1790,7 @@ static bool intSetSystemForm(COMPONENT_STATS* psStats)
 
 
 /* Set up the propulsion clickable form of the design screen given a set of stats */
-static bool intSetPropulsionForm(PROPULSION_STATS* psStats)
+static bool intSetPropulsionForm(PropulsionStats* psStats)
 {
 	DES_PROPMODE newPropMode = (DES_PROPMODE)0;
 
@@ -2083,7 +2083,7 @@ static bool intAddComponentButtons(ListTabWidget* compList, ComponentIterator co
 		//check if the current Template propulsion has been set
 		if (sCurrDesign.asParts[COMP_PROPULSION])
 		{
-			PROPULSION_STATS* psPropStats = asPropulsionStats + sCurrDesign.asParts[COMP_PROPULSION];
+			PropulsionStats* psPropStats = asPropulsionStats + sCurrDesign.asParts[COMP_PROPULSION];
 			ASSERT_OR_RETURN(false, psPropStats != nullptr, "invalid propulsion stats pointer");
 
 			bVTOL |= asPropulsionTypes[psPropStats->propulsionType].travel == AIR;
@@ -2098,7 +2098,7 @@ static bool intAddComponentButtons(ListTabWidget* compList, ComponentIterator co
 	desCompID = 0;
 	numComponent = 0;
 
-	componentIterator([&](COMPONENT_STATS& currStats, size_t index)
+	componentIterator([&](ComponentStats& currStats, size_t index)
 	{
 		/* If we are out of space in the list - stop */
 		if (numComponent >= maxComponents)
@@ -2109,7 +2109,7 @@ static bool intAddComponentButtons(ListTabWidget* compList, ComponentIterator co
 		/*skip indirect weapons if VTOL propulsion or numVTOLattackRuns for the weapon is zero*/
 		if (bWeapon)
 		{
-			auto& weapon = (WEAPON_STATS&)currStats;
+			auto& weapon = (WeaponStats&)currStats;
 			if ((weapon.vtolAttackRuns > 0) != bVTOL
 				|| (weapon.weaponSize == WEAPON_SIZE_LIGHT && bodysize != SIZE_LIGHT)
 				|| (weapon.weaponSize == WEAPON_SIZE_HEAVY && bodysize == SIZE_LIGHT))
@@ -2196,7 +2196,7 @@ static bool intAddExtraSystemButtons(ListTabWidget* compList, unsigned sensorInd
 			break;
 		}
 
-		componentIterator([&](COMPONENT_STATS& stats, size_t i)
+		componentIterator([&](ComponentStats& stats, size_t i)
 		{
 			// If we are out of space in the list - stop
 			if (numExtraSys >= MAXEXTRASYS)
@@ -2215,7 +2215,7 @@ static bool intAddExtraSystemButtons(ListTabWidget* compList, unsigned sensorInd
 			//just use one set of buffers for mixed system form
 			if (stats.compType == COMP_BRAIN)
 			{
-				button->setStats(((BRAIN_STATS*)&stats)->psWeaponStat);
+				button->setStats(((CommanderStats*)&stats)->psWeaponStat);
 			}
 
 			// Store the stat pointer in the list
@@ -2243,7 +2243,7 @@ static bool intAddExtraSystemButtons(ListTabWidget* compList, unsigned sensorInd
 
 
 /* Set the bar graphs for the system clickable */
-static void intSetSystemStats(COMPONENT_STATS* psStats)
+static void intSetSystemStats(ComponentStats* psStats)
 {
 	W_FORM* psForm;
 
@@ -2263,19 +2263,19 @@ static void intSetSystemStats(COMPONENT_STATS* psStats)
 	switch (psStats->compType)
 	{
 	case COMP_SENSOR:
-		intSetSensorStats((SENSOR_STATS*)psStats);
+		intSetSensorStats((SensorStats*)psStats);
 		break;
 	case COMP_ECM:
-		intSetECMStats((ECM_STATS*)psStats);
+		intSetECMStats((EcmStats*)psStats);
 		break;
 	case COMP_WEAPON:
-		intSetWeaponStats((WEAPON_STATS*)psStats);
+		intSetWeaponStats((WeaponStats*)psStats);
 		break;
 	case COMP_CONSTRUCT:
-		intSetConstructStats((CONSTRUCT_STATS*)psStats);
+		intSetConstructStats((ConstructStats*)psStats);
 		break;
 	case COMP_REPAIRUNIT:
-		intSetRepairStats((REPAIR_STATS*)psStats);
+		intSetRepairStats((RepairStats*)psStats);
 		break;
 	case COMP_BRAIN:
 		// ??? TBD FIXME
@@ -2286,26 +2286,26 @@ static void intSetSystemStats(COMPONENT_STATS* psStats)
 }
 
 /* Set the shadow bar graphs for the system clickable */
-static void intSetSystemShadowStats(COMPONENT_STATS* psStats)
+static void intSetSystemShadowStats(ComponentStats* psStats)
 {
 	switch (desSysMode)
 	{
 	case IDES_WEAPON:
-		intSetWeaponShadowStats(psStats && psStats->compType == COMP_WEAPON ? (WEAPON_STATS*)psStats : nullptr);
+		intSetWeaponShadowStats(psStats && psStats->compType == COMP_WEAPON ? (WeaponStats*)psStats : nullptr);
 		return;
 	case IDES_SENSOR:
-		intSetSensorShadowStats(psStats && psStats->compType == COMP_SENSOR ? (SENSOR_STATS*)psStats : nullptr);
+		intSetSensorShadowStats(psStats && psStats->compType == COMP_SENSOR ? (SensorStats*)psStats : nullptr);
 		break;
 	case IDES_ECM:
-		intSetECMShadowStats(psStats && psStats->compType == COMP_ECM ? (ECM_STATS*)psStats : nullptr);
+		intSetECMShadowStats(psStats && psStats->compType == COMP_ECM ? (EcmStats*)psStats : nullptr);
 		break;
 	case IDES_CONSTRUCT:
 		intSetConstructShadowStats(psStats && psStats->compType == COMP_CONSTRUCT
-			                           ? (CONSTRUCT_STATS*)psStats
+			                           ? (ConstructStats*)psStats
 			                           : nullptr);
 		break;
 	case IDES_REPAIR:
-		intSetRepairShadowStats(psStats && psStats->compType == COMP_REPAIRUNIT ? (REPAIR_STATS*)psStats : nullptr);
+		intSetRepairShadowStats(psStats && psStats->compType == COMP_REPAIRUNIT ? (RepairStats*)psStats : nullptr);
 		break;
 	default:
 		return;
@@ -2315,7 +2315,7 @@ static void intSetSystemShadowStats(COMPONENT_STATS* psStats)
 }
 
 /* Set the bar graphs for the sensor stats */
-static void intSetSensorStats(SENSOR_STATS* psStats)
+static void intSetSensorStats(SensorStats* psStats)
 {
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid stats pointer");
 	ASSERT_OR_RETURN(, psStats->hasType(STAT_SENSOR), "stats have wrong type");
@@ -2327,7 +2327,7 @@ static void intSetSensorStats(SENSOR_STATS* psStats)
 }
 
 /* Set the shadow bar graphs for the sensor stats */
-static void intSetSensorShadowStats(SENSOR_STATS* psStats)
+static void intSetSensorShadowStats(SensorStats* psStats)
 {
 	ASSERT(psStats == nullptr || psStats->hasType(STAT_SENSOR), "stats have wrong type");
 
@@ -2349,7 +2349,7 @@ static void intSetSensorShadowStats(SENSOR_STATS* psStats)
 
 
 /* Set the bar graphs for the ECM stats */
-static void intSetECMStats(ECM_STATS* psStats)
+static void intSetECMStats(EcmStats* psStats)
 {
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid stats pointer");
 	ASSERT_OR_RETURN(, psStats->hasType(STAT_ECM), "stats have wrong type");
@@ -2361,7 +2361,7 @@ static void intSetECMStats(ECM_STATS* psStats)
 }
 
 /* Set the shadow bar graphs for the ECM stats */
-static void intSetECMShadowStats(ECM_STATS* psStats)
+static void intSetECMShadowStats(EcmStats* psStats)
 {
 	ASSERT(psStats == nullptr || psStats->hasType(STAT_ECM), "stats have wrong type");
 
@@ -2382,7 +2382,7 @@ static void intSetECMShadowStats(ECM_STATS* psStats)
 
 
 /* Set the bar graphs for the Constructor stats */
-static void intSetConstructStats(CONSTRUCT_STATS* psStats)
+static void intSetConstructStats(ConstructStats* psStats)
 {
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid stats pointer");
 	ASSERT_OR_RETURN(, psStats->hasType(STAT_CONSTRUCT), "stats have wrong type");
@@ -2396,7 +2396,7 @@ static void intSetConstructStats(CONSTRUCT_STATS* psStats)
 
 
 /* Set the shadow bar graphs for the Constructor stats */
-static void intSetConstructShadowStats(CONSTRUCT_STATS* psStats)
+static void intSetConstructShadowStats(ConstructStats* psStats)
 {
 	ASSERT(psStats == nullptr || psStats->hasType(STAT_CONSTRUCT), "stats have wrong type");
 
@@ -2417,7 +2417,7 @@ static void intSetConstructShadowStats(CONSTRUCT_STATS* psStats)
 }
 
 /* Set the bar graphs for the Repair stats */
-static void intSetRepairStats(REPAIR_STATS* psStats)
+static void intSetRepairStats(RepairStats* psStats)
 {
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid stats pointer");
 	ASSERT_OR_RETURN(, psStats->hasType(STAT_REPAIR), "stats have wrong type");
@@ -2431,7 +2431,7 @@ static void intSetRepairStats(REPAIR_STATS* psStats)
 
 
 /* Set the shadow bar graphs for the Repair stats */
-static void intSetRepairShadowStats(REPAIR_STATS* psStats)
+static void intSetRepairShadowStats(RepairStats* psStats)
 {
 	ASSERT(psStats == nullptr || psStats->hasType(STAT_REPAIR), "stats have wrong type");
 
@@ -2453,7 +2453,7 @@ static void intSetRepairShadowStats(REPAIR_STATS* psStats)
 
 
 /* Set the bar graphs for the Weapon stats */
-static void intSetWeaponStats(WEAPON_STATS* psStats)
+static void intSetWeaponStats(WeaponStats* psStats)
 {
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid stats pointer");
 	ASSERT_OR_RETURN(, psStats->hasType(STAT_WEAPON), "stats have wrong type");
@@ -2470,7 +2470,7 @@ static void intSetWeaponStats(WEAPON_STATS* psStats)
 }
 
 /* Set the shadow bar graphs for the Weapon stats */
-static void intSetWeaponShadowStats(WEAPON_STATS* psStats)
+static void intSetWeaponShadowStats(WeaponStats* psStats)
 {
 	ASSERT(psStats == nullptr || psStats->hasType(STAT_WEAPON), "stats have wrong type");
 
@@ -2497,7 +2497,7 @@ static void intSetWeaponShadowStats(WEAPON_STATS* psStats)
 }
 
 /* Set the bar graphs for the Body stats */
-static void intSetBodyStats(BODY_STATS* psStats)
+static void intSetBodyStats(BodyStats* psStats)
 {
 	W_FORM* psForm;
 
@@ -2526,7 +2526,7 @@ static void intSetBodyStats(BODY_STATS* psStats)
 }
 
 /* Set the shadow bar graphs for the Body stats */
-static void intSetBodyShadowStats(BODY_STATS* psStats)
+static void intSetBodyShadowStats(BodyStats* psStats)
 {
 	ASSERT(psStats == nullptr || psStats->hasType(STAT_BODY), "stats have wrong type");
 
@@ -2558,7 +2558,7 @@ static void intSetDesignPower(DroidTemplate* psTemplate)
 	widgSetBarSize(psWScreen, IDDES_POWERBAR, calcTemplatePower(psTemplate));
 }
 
-static void setTemplateStat(DroidTemplate* psTemplate, COMPONENT_STATS* psStats)
+static void setTemplateStat(DroidTemplate* psTemplate, ComponentStats* psStats)
 {
 	ASSERT_OR_RETURN(, psStats != nullptr, "psStats not null");
 
@@ -2592,7 +2592,7 @@ static void setTemplateStat(DroidTemplate* psTemplate, COMPONENT_STATS* psStats)
 	{
 	case COMP_BODY:
 		{
-			auto stats = (BODY_STATS*)psStats;
+			auto stats = (BodyStats*)psStats;
 			psTemplate->asParts[COMP_BODY] = stats - asBodyStats;
 			if (!intCheckValidWeaponForProp(psTemplate))
 			{
@@ -2606,7 +2606,7 @@ static void setTemplateStat(DroidTemplate* psTemplate, COMPONENT_STATS* psStats)
 		}
 	case COMP_BRAIN:
 		{
-			auto stats = (BRAIN_STATS*)psStats;
+			auto stats = (CommanderStats*)psStats;
 			clearTurret();
 			psTemplate->asParts[COMP_BRAIN] = stats - asBrainStats;
 			psTemplate->asWeaps[0] = stats->psWeaponStat - asWeaponStats;
@@ -2615,7 +2615,7 @@ static void setTemplateStat(DroidTemplate* psTemplate, COMPONENT_STATS* psStats)
 		}
 	case COMP_PROPULSION:
 		{
-			auto stats = (PROPULSION_STATS*)psStats;
+			auto stats = (PropulsionStats*)psStats;
 			auto oldStats = &asPropulsionStats[psTemplate->asParts[COMP_PROPULSION]];
 			if ((stats->propulsionType == PROPULSION_TYPE_LIFT) != (oldStats->propulsionType == PROPULSION_TYPE_LIFT))
 			{
@@ -2626,25 +2626,25 @@ static void setTemplateStat(DroidTemplate* psTemplate, COMPONENT_STATS* psStats)
 		}
 	case COMP_REPAIRUNIT:
 		clearTurret();
-		psTemplate->asParts[COMP_REPAIRUNIT] = (REPAIR_STATS*)psStats - asRepairStats;
+		psTemplate->asParts[COMP_REPAIRUNIT] = (RepairStats*)psStats - asRepairStats;
 		break;
 	case COMP_ECM:
 		clearTurret();
-		psTemplate->asParts[COMP_ECM] = (ECM_STATS*)psStats - asECMStats;
+		psTemplate->asParts[COMP_ECM] = (EcmStats*)psStats - asECMStats;
 		break;
 	case COMP_SENSOR:
 		clearTurret();
-		psTemplate->asParts[COMP_SENSOR] = (SENSOR_STATS*)psStats - asSensorStats;
+		psTemplate->asParts[COMP_SENSOR] = (SensorStats*)psStats - asSensorStats;
 		break;
 	case COMP_CONSTRUCT:
 		clearTurret();
-		psTemplate->asParts[COMP_CONSTRUCT] = (CONSTRUCT_STATS*)psStats - asConstructStats;
+		psTemplate->asParts[COMP_CONSTRUCT] = (ConstructStats*)psStats - asConstructStats;
 		break;
 	case COMP_WEAPON:
 		{
 			clearNonWeapons();
 			int i = desCompMode == IDES_TURRET_A ? 1 : desCompMode == IDES_TURRET_B ? 2 : 0;
-			psTemplate->asWeaps[i] = (WEAPON_STATS*)psStats - asWeaponStats;
+			psTemplate->asWeaps[i] = (WeaponStats*)psStats - asWeaponStats;
 			psTemplate->weapon_count = std::max<int>(psTemplate->weapon_count, i + 1);
 			break;
 		}
@@ -2655,7 +2655,7 @@ static void setTemplateStat(DroidTemplate* psTemplate, COMPONENT_STATS* psStats)
 }
 
 /* Set the shadow bar graphs for the template power points - psStats is new hilited stats*/
-static void intSetTemplatePowerShadowStats(COMPONENT_STATS* psStats)
+static void intSetTemplatePowerShadowStats(ComponentStats* psStats)
 {
 	if (!psStats)
 	{
@@ -2675,7 +2675,7 @@ static void intSetBodyPoints(DroidTemplate* psTemplate)
 }
 
 /* Set the shadow bar graphs for the template Body points - psStats is new hilited stats*/
-static void intSetTemplateBodyShadowStats(COMPONENT_STATS* psStats)
+static void intSetTemplateBodyShadowStats(ComponentStats* psStats)
 {
 	if (!psStats)
 	{
@@ -2689,7 +2689,7 @@ static void intSetTemplateBodyShadowStats(COMPONENT_STATS* psStats)
 
 
 /* Calculate the speed of a droid over a type of terrain */
-static UDWORD intCalcSpeed(TYPE_OF_TERRAIN type, PROPULSION_STATS* psProp)
+static UDWORD intCalcSpeed(TYPE_OF_TERRAIN type, PropulsionStats* psProp)
 {
 	if (calcDroidWeight(&sCurrDesign) == 0)
 	{
@@ -2717,7 +2717,7 @@ static UDWORD intCalcSpeed(TYPE_OF_TERRAIN type, PROPULSION_STATS* psProp)
 
 
 /* Set the bar graphs for the Propulsion stats */
-static void intSetPropulsionStats(PROPULSION_STATS* psStats)
+static void intSetPropulsionStats(PropulsionStats* psStats)
 {
 	W_FORM* psForm;
 
@@ -2755,7 +2755,7 @@ static void intSetPropulsionStats(PROPULSION_STATS* psStats)
 	widgSetBarSize(psWScreen, IDDES_PROPWEIGHT, calculatePropulsionWeight(*psStats));
 }
 
-static uint32_t calculatePropulsionWeight(COMPONENT_STATS& propulsionStats)
+static uint32_t calculatePropulsionWeight(ComponentStats& propulsionStats)
 {
 	if (sCurrDesign.asParts[COMP_BODY] == 0)
 	{
@@ -2766,7 +2766,7 @@ static uint32_t calculatePropulsionWeight(COMPONENT_STATS& propulsionStats)
 }
 
 /* Set the shadow bar graphs for the Propulsion stats */
-static void intSetPropulsionShadowStats(PROPULSION_STATS* psStats)
+static void intSetPropulsionShadowStats(PropulsionStats* psStats)
 {
 	ASSERT(psStats == nullptr || psStats->hasType(STAT_PROPULSION), "stats have wrong type");
 
@@ -3230,7 +3230,7 @@ void intProcessDesign(UDWORD id)
 
 				setTemplateStat(&sCurrDesign, apsComponentList[id - IDDES_COMPSTART]);
 				/* Set the new stats on the display */
-				intSetBodyStats((BODY_STATS*)apsComponentList[id - IDDES_COMPSTART]);
+				intSetBodyStats((BodyStats*)apsComponentList[id - IDDES_COMPSTART]);
 
 				int numWeaps = sCurrDesign.asParts[COMP_BRAIN] != 0 ? 0 : sCurrDesign.weapon_count;
 				int maxWeaps = asBodyStats[sCurrDesign.asParts[COMP_BODY]].weaponSlots;
@@ -3250,7 +3250,7 @@ void intProcessDesign(UDWORD id)
 			setTemplateStat(&sCurrDesign, apsComponentList[id - IDDES_COMPSTART]);
 
 		/* Set the new stats on the display */
-			intSetPropulsionForm((PROPULSION_STATS*)apsComponentList[id - IDDES_COMPSTART]);
+			intSetPropulsionForm((PropulsionStats*)apsComponentList[id - IDDES_COMPSTART]);
 
 		// Check that the weapon (if any) is valid for this propulsion
 			if (!intCheckValidWeaponForProp(&sCurrDesign))
@@ -3661,7 +3661,7 @@ void intProcessDesign(UDWORD id)
 /* Set the shadow bar graphs for the design screen */
 void intRunDesign()
 {
-	COMPONENT_STATS* psStats;
+	ComponentStats* psStats;
 
 	/* Find out which button was hilited */
 	bool templateButton = false;
@@ -3717,12 +3717,12 @@ void intRunDesign()
 		case IDES_BODY:
 			intSetSystemShadowStats(nullptr);
 			intSetPropulsionShadowStats(nullptr);
-			intSetBodyShadowStats((BODY_STATS*)psStats);
+			intSetBodyShadowStats((BodyStats*)psStats);
 			break;
 		case IDES_PROPULSION:
 			intSetSystemShadowStats(nullptr);
 			intSetBodyShadowStats(nullptr);
-			intSetPropulsionShadowStats((PROPULSION_STATS*)psStats);
+			intSetPropulsionShadowStats((PropulsionStats*)psStats);
 			break;
 		default:
 			break;
@@ -3750,7 +3750,7 @@ static void intDisplayStatForm(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 	/* get stats from userdata pointer in widget stored in
 	 * intSetSystemStats, intSetBodyStats, intSetPropulsionStats
 	 */
-	BASE_STATS* psStats = (BASE_STATS*)Form->pUserData;
+	BaseStats* psStats = (BaseStats*)Form->pUserData;
 
 	SWORD templateRadius = getComponentRadius(psStats);
 
@@ -3903,7 +3903,7 @@ void runTemplateShadowStats(UDWORD id)
 		intSetBodyShadowStats(asBodyStats + psTempl->asParts[COMP_BODY]);
 		intSetPropulsionShadowStats(asPropulsionStats + psTempl->asParts[COMP_PROPULSION]);
 		//only set the system shadow bar if the same type of droid
-		COMPONENT_STATS* psStats = nullptr;
+		ComponentStats* psStats = nullptr;
 		DROID_TYPE templType = droidTemplateType(psTempl);
 		if (templType == droidTemplateType(&sCurrDesign))
 		{

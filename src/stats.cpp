@@ -46,14 +46,14 @@
 #define DEFAULT_DROID_RESISTANCE	150
 
 /* The stores for the different stats */
-BODY_STATS* asBodyStats;
-BRAIN_STATS* asBrainStats;
-PROPULSION_STATS* asPropulsionStats;
-SENSOR_STATS* asSensorStats;
-ECM_STATS* asECMStats;
-REPAIR_STATS* asRepairStats;
-WEAPON_STATS* asWeaponStats;
-CONSTRUCT_STATS* asConstructStats;
+BodyStats* asBodyStats;
+CommanderStats* asBrainStats;
+PropulsionStats* asPropulsionStats;
+SensorStats* asSensorStats;
+EcmStats* asECMStats;
+RepairStats* asRepairStats;
+WeaponStats* asWeaponStats;
+ConstructStats* asConstructStats;
 std::vector<PROPULSION_TYPES> asPropulsionTypes;
 static int* asTerrainTable;
 
@@ -77,8 +77,8 @@ UBYTE* apCompLists[MAX_PLAYERS][COMP_NUMCOMPONENTS];
 //store for each players Structure states
 UBYTE* apStructTypeLists[MAX_PLAYERS];
 
-static std::unordered_map<WzString, BASE_STATS*> lookupStatPtr;
-static std::unordered_map<WzString, COMPONENT_STATS*> lookupCompStatPtr;
+static std::unordered_map<WzString, BaseStats*> lookupStatPtr;
+static std::unordered_map<WzString, ComponentStats*> lookupCompStatPtr;
 
 static bool getMovementModel(const WzString& movementModel, MOVEMENT_MODEL* model);
 static bool statsGetAudioIDFromString(const WzString& szStatName, const WzString& szWavName, int* piWavID);
@@ -157,56 +157,56 @@ bool statsShutDown()
 /* Allocate Weapon stats */
 bool statsAllocWeapons(UDWORD numStats)
 {
-	ALLOC_STATS(numStats, asWeaponStats, numWeaponStats, WEAPON_STATS);
+	ALLOC_STATS(numStats, asWeaponStats, numWeaponStats, WeaponStats);
 }
 
 /* Allocate Body Stats */
 bool statsAllocBody(UDWORD numStats)
 {
-	ALLOC_STATS(numStats, asBodyStats, numBodyStats, BODY_STATS);
+	ALLOC_STATS(numStats, asBodyStats, numBodyStats, BodyStats);
 }
 
 /* Allocate Brain Stats */
 bool statsAllocBrain(UDWORD numStats)
 {
-	ALLOC_STATS(numStats, asBrainStats, numBrainStats, BRAIN_STATS);
+	ALLOC_STATS(numStats, asBrainStats, numBrainStats, CommanderStats);
 }
 
 /* Allocate Propulsion Stats */
 bool statsAllocPropulsion(UDWORD numStats)
 {
-	ALLOC_STATS(numStats, asPropulsionStats, numPropulsionStats, PROPULSION_STATS);
+	ALLOC_STATS(numStats, asPropulsionStats, numPropulsionStats, PropulsionStats);
 }
 
 /* Allocate Sensor Stats */
 bool statsAllocSensor(UDWORD numStats)
 {
-	ALLOC_STATS(numStats, asSensorStats, numSensorStats, SENSOR_STATS);
+	ALLOC_STATS(numStats, asSensorStats, numSensorStats, SensorStats);
 }
 
 /* Allocate Ecm Stats */
 bool statsAllocECM(UDWORD numStats)
 {
-	ALLOC_STATS(numStats, asECMStats, numECMStats, ECM_STATS);
+	ALLOC_STATS(numStats, asECMStats, numECMStats, EcmStats);
 }
 
 /* Allocate Repair Stats */
 bool statsAllocRepair(UDWORD numStats)
 {
-	ALLOC_STATS(numStats, asRepairStats, numRepairStats, REPAIR_STATS);
+	ALLOC_STATS(numStats, asRepairStats, numRepairStats, RepairStats);
 }
 
 /* Allocate Construct Stats */
 bool statsAllocConstruct(UDWORD numStats)
 {
-	ALLOC_STATS(numStats, asConstructStats, numConstructStats, CONSTRUCT_STATS);
+	ALLOC_STATS(numStats, asConstructStats, numConstructStats, ConstructStats);
 }
 
 /*******************************************************************************
 *		Load stats functions
 *******************************************************************************/
 
-static iIMDShape* statsGetIMD(WzConfig& json, BASE_STATS* psStats, const WzString& key,
+static iIMDShape* statsGetIMD(WzConfig& json, BaseStats* psStats, const WzString& key,
                               const WzString& key2 = WzString())
 {
 	iIMDShape* retval = nullptr;
@@ -231,7 +231,7 @@ static iIMDShape* statsGetIMD(WzConfig& json, BASE_STATS* psStats, const WzStrin
 	return retval;
 }
 
-static void loadStats(WzConfig& json, BASE_STATS* psStats, size_t index)
+static void loadStats(WzConfig& json, BaseStats* psStats, size_t index)
 {
 	psStats->id = json.group();
 	psStats->name = json.string("name");
@@ -251,7 +251,7 @@ void unloadStructureStats_BaseStats(const StructureStats& psStats)
 	lookupStatPtr.erase(psStats.id);
 }
 
-static void loadCompStats(WzConfig& json, COMPONENT_STATS* psStats, size_t index)
+static void loadCompStats(WzConfig& json, ComponentStats* psStats, size_t index)
 {
 	loadStats(json, psStats, index);
 	lookupCompStatPtr.insert(std::make_pair(psStats->id, psStats));
@@ -259,7 +259,7 @@ static void loadCompStats(WzConfig& json, COMPONENT_STATS* psStats, size_t index
 	psStats->buildPoints = json.value("buildPoints", 0).toUInt();
 	psStats->designable = json.value("designable", false).toBool();
 	psStats->weight = json.value("weight", 0).toUInt();
-	psStats->getBase().hitpoints = json.value("hitpoints", 0).toUInt();
+	psStats->getBase().hit_points = json.value("hitpoints", 0).toUInt();
 	psStats->getBase().hitpointPct = json.value("hitpointPct", 100).toUInt();
 
 	WzString dtype = json.value("droidType", "DROID").toWzString();
@@ -330,7 +330,7 @@ bool loadWeaponStats(WzConfig& ini)
 	std::iter_swap(nullweapon, list.begin());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		WEAPON_STATS* psStats = &asWeaponStats[i];
+		WeaponStats* psStats = &asWeaponStats[i];
 		std::vector<WzString> flags;
 
 		ini.beginGroup(list[i]);
@@ -562,7 +562,7 @@ bool loadBodyStats(WzConfig& ini)
 	std::iter_swap(nullbody, list.begin());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		BODY_STATS* psStats = &asBodyStats[i];
+		BodyStats* psStats = &asBodyStats[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -595,7 +595,7 @@ bool loadBodyStats(WzConfig& ini)
 	// allocate space
 	for (int numStats = 0; numStats < numBodyStats; ++numStats)
 	{
-		BODY_STATS* psBodyStat = &asBodyStats[numStats];
+		BodyStats* psBodyStat = &asBodyStats[numStats];
 		psBodyStat->ppIMDList.resize(numPropulsionStats * NUM_PROP_SIDES, nullptr);
 		psBodyStat->ppMoveIMDList.resize(numPropulsionStats * NUM_PROP_SIDES, nullptr);
 		psBodyStat->ppStillIMDList.resize(numPropulsionStats * NUM_PROP_SIDES, nullptr);
@@ -603,7 +603,7 @@ bool loadBodyStats(WzConfig& ini)
 	for (size_t i = 0; i < list.size(); ++i)
 	{
 		WzString propulsionName, leftIMD, rightIMD;
-		BODY_STATS* psBodyStat = nullptr;
+		BodyStats* psBodyStat = nullptr;
 		int numStats;
 
 		ini.beginGroup(list[i]);
@@ -632,7 +632,7 @@ bool loadBodyStats(WzConfig& ini)
 		{
 			for (numStats = 0; numStats < numPropulsionStats; numStats++)
 			{
-				PROPULSION_STATS* psPropulsionStat = &asPropulsionStats[numStats];
+				PropulsionStats* psPropulsionStat = &asPropulsionStats[numStats];
 				if (keys[j].compare(psPropulsionStat->id) == 0)
 				{
 					break;
@@ -670,7 +670,7 @@ bool loadBrainStats(WzConfig& ini)
 	std::iter_swap(nullbrain, list.begin());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		BRAIN_STATS* psStats = &asBrainStats[i];
+		CommanderStats* psStats = &asBrainStats[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -766,7 +766,7 @@ bool loadPropulsionStats(WzConfig& ini)
 	std::iter_swap(nullprop, list.begin());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		PROPULSION_STATS* psStats = &asPropulsionStats[i];
+		PropulsionStats* psStats = &asPropulsionStats[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -810,7 +810,7 @@ bool loadSensorStats(WzConfig& ini)
 	std::iter_swap(nullsensor, list.begin());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		SENSOR_STATS* psStats = &asSensorStats[i];
+		SensorStats* psStats = &asSensorStats[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -888,7 +888,7 @@ bool loadECMStats(WzConfig& ini)
 	std::iter_swap(nullecm, list.begin());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		ECM_STATS* psStats = &asECMStats[i];
+		EcmStats* psStats = &asECMStats[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -937,7 +937,7 @@ bool loadRepairStats(WzConfig& ini)
 	std::iter_swap(nullrepair, list.begin());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		REPAIR_STATS* psStats = &asRepairStats[i];
+		RepairStats* psStats = &asRepairStats[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -990,7 +990,7 @@ bool loadConstructStats(WzConfig& ini)
 	std::iter_swap(nullconstruct, list.begin());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		CONSTRUCT_STATS* psStats = &asConstructStats[i];
+		ConstructStats* psStats = &asConstructStats[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -1246,7 +1246,7 @@ int getCompFromName(COMPONENT_TYPE compType, const WzString& name)
 
 int getCompFromID(COMPONENT_TYPE compType, const WzString& name)
 {
-	COMPONENT_STATS* psComp = nullptr;
+	ComponentStats* psComp = nullptr;
 	auto it = lookupCompStatPtr.find(WzString::fromUtf8(name.toUtf8().c_str()));
 	if (it != lookupCompStatPtr.end())
 	{
@@ -1260,9 +1260,9 @@ int getCompFromID(COMPONENT_TYPE compType, const WzString& name)
 
 /// Get the component for a stat based on the name alone.
 /// Returns NULL if record not found
-COMPONENT_STATS* getCompStatsFromName(const WzString& name)
+ComponentStats* getCompStatsFromName(const WzString& name)
 {
-	COMPONENT_STATS* psComp = nullptr;
+	ComponentStats* psComp = nullptr;
 	auto it = lookupCompStatPtr.find(name);
 	if (it != lookupCompStatPtr.end())
 	{
@@ -1279,9 +1279,9 @@ COMPONENT_STATS* getCompStatsFromName(const WzString& name)
 	return psComp;
 }
 
-BASE_STATS* getBaseStatsFromName(const WzString& name)
+BaseStats* getBaseStatsFromName(const WzString& name)
 {
-	BASE_STATS* psStat = nullptr;
+	BaseStats* psStat = nullptr;
 	auto it = lookupStatPtr.find(name);
 	if (it != lookupStatPtr.end())
 	{
@@ -1543,74 +1543,74 @@ bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS* weaponClass)
 	ASSERT_OR_RETURN(retVal, player >= 0 && player < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
 /*Access functions for the upgradeable stats of a weapon*/
-int weaponFirePause(const WEAPON_STATS* psStats, int player)
+int weaponFirePause(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].firePause;
 }
 
 /* Reload time is reduced for weapons with salvo fire */
-int weaponReloadTime(const WEAPON_STATS* psStats, int player)
+int weaponReloadTime(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].reloadTime;
 }
 
-int weaponLongHit(const WEAPON_STATS* psStats, int player)
+int weaponLongHit(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].hitChance;
 }
 
-int weaponShortHit(const WEAPON_STATS* psStats, int player)
+int weaponShortHit(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].shortHitChance;
 }
 
-int weaponDamage(const WEAPON_STATS* psStats, int player)
+int weaponDamage(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].damage;
 }
 
-int weaponRadDamage(const WEAPON_STATS* psStats, int player)
+int weaponRadDamage(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].radiusDamage;
 }
 
-int weaponPeriodicalDamage(const WEAPON_STATS* psStats, int player)
+int weaponPeriodicalDamage(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].periodicalDamage;
 }
 
-int sensorRange(const SENSOR_STATS* psStats, int player)
+int sensorRange(const SensorStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].range;
 }
 
-int ecmRange(const ECM_STATS* psStats, int player)
+int ecmRange(const EcmStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].range;
 }
 
-int repairPoints(const REPAIR_STATS* psStats, int player)
+int repairPoints(const RepairStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].repairPoints;
 }
 
-int constructorPoints(const CONSTRUCT_STATS* psStats, int player)
+int constructorPoints(const ConstructStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].constructPoints;
 }
 
-int bodyPower(const BODY_STATS* psStats, int player)
+int bodyPower(const BodyStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].power;
@@ -1633,7 +1633,7 @@ int bodyPower(const BODY_STATS* psStats, int player)
 //}
 
 //calculates the weapons ROF based on the fire pause and the salvos
-int weaponROF(const WEAPON_STATS* psStat, int player)
+int weaponROF(const WeaponStats* psStat, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	int rof = 0;
@@ -1680,9 +1680,9 @@ bool objHasWeapon(const SimpleObject* psObj)
 	return false;
 }
 
-SENSOR_STATS* objActiveRadar(const SimpleObject* psObj)
+SensorStats* objActiveRadar(const SimpleObject* psObj)
 {
-	SENSOR_STATS* psStats = nullptr;
+	SensorStats* psStats = nullptr;
 	int compIndex;
 
 	switch (psObj->type)

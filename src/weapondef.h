@@ -17,60 +17,80 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** \file
- *  Definitions for the weapons.
+
+/** 
+ * @file weapondef.h
+ * Definitions for the weapons.
  */
 
 #ifndef __INCLUDED_WEAPONDEF_H__
 #define __INCLUDED_WEAPONDEF_H__
 
-// maximum difference in direction for a fixed turret to fire
-#define FIXED_TURRET_DIR DEG(1)
+#include "basedef.h"
 
-// %age at which a unit is considered to be heavily damaged
-#define HEAVY_DAMAGE_LEVEL	25
+/// Maximum difference in direction for a fixed turret to fire
+static constexpr auto FIXED_TURRET_DIR = DEG(1);
 
-/* who specified the target? */
-enum TARGET_ORIGIN
+/// Percentage at which a unit is considered to be heavily damaged
+static constexpr auto HEAVY_DAMAGE_LEVEL = 25;
+
+/// Who specified the target?
+enum class TARGET_ORIGIN
 {
-	ORIGIN_UNKNOWN,
-	///< Default value if unknown
-	ORIGIN_PLAYER,
-	///< Came directly from player
-	ORIGIN_VISUAL,
-	///< Visual targeting
-	ORIGIN_ALLY,
-	///< Came from allied unit/structure
-	ORIGIN_COMMANDER,
-	///< Came from commander
-	ORIGIN_SENSOR,
-	///< Came from standard sensor
-	ORIGIN_CB_SENSOR,
-	///< Came from counter-battery sensor
-	ORIGIN_AIRDEF_SENSOR,
-	///< Came from Air Defense sensor
-	ORIGIN_RADAR_DETECTOR,
-	///< Came from Radar Detector sensor
+	UNKNOWN,
+	PLAYER,
+	VISUAL,
+	ALLY,
+	COMMANDER,
+	SENSOR,
+	CB_SENSOR,
+	AIR_DEFENSE_SENSOR,
+	RADAR_DETECTOR,
 };
 
-struct WEAPON
+class Weapon : public virtual ::SimpleObject, public Impl::SimpleObject
 {
-	uint32_t nStat; ///< Index into the asWeaponStats global array
-	uint32_t ammo;
-	uint32_t lastFired; ///< The gametime when this weapon last fired
-	uint32_t shotsFired;
-	Rotation rot;
-	Rotation prevRot;
-	unsigned usedAmmo; ///< Amount of ammunition used up by a VTOL
-	TARGET_ORIGIN origin;
+public:
+  Weapon() = default;
 
-	WEAPON() : nStat(0), ammo(0), lastFired(0), shotsFired(0), usedAmmo(0), origin(ORIGIN_UNKNOWN)
-	{
-	}
+  [[nodiscard]] bool has_ammo() const;
+  [[nodiscard]] bool has_full_ammo() const noexcept;
+  [[nodiscard]] bool is_artillery() const noexcept;
+  [[nodiscard]] bool is_vtol_weapon() const;
+  [[nodiscard]] bool is_empty_vtol_weapon(unsigned player) const;
+  [[nodiscard]] const WeaponStats& get_stats() const;
+  [[nodiscard]] unsigned get_recoil() const;
+  [[nodiscard]] unsigned get_max_range(unsigned player) const;
+  [[nodiscard]] unsigned get_min_range(unsigned player) const;
+  [[nodiscard]] unsigned get_short_range(unsigned player) const;
+  [[nodiscard]] unsigned get_hit_chance(unsigned player) const;
+  [[nodiscard]] unsigned get_short_range_hit_chance(unsigned player) const;
+  [[nodiscard]] unsigned get_num_attack_runs(unsigned player) const;
+  [[nodiscard]] unsigned get_shots_fired() const noexcept;
+  [[nodiscard]] const iIMDShape& get_IMD_shape() const;
+  [[nodiscard]] const iIMDShape& get_mount_graphic() const;
+  [[nodiscard]] WEAPON_SUBCLASS get_subclass() const;
+  [[nodiscard]] unsigned calculate_rate_of_fire(unsigned player) const;
+private:
+  using enum TARGET_ORIGIN;
+
+  /// Index into the asWeaponStats global array
+	unsigned nStat = 0;
+
+	unsigned ammo = 0;
+  std::shared_ptr<WeaponStats> stats;
+
+  /// The game time when this weapon last fired
+	std::size_t time_last_fired = 0;
+
+	unsigned shots_fired = 0;
+	Rotation rotation {0, 0, 0};
+	Rotation previous_rotation {0, 0, 0};
+	unsigned ammo_used = 0;
+	TARGET_ORIGIN origin = UNKNOWN;
 };
 
-// Defined in droid.cpp.
-int getRecoil(WEAPON const& weapon);
-///< Returns how much the weapon assembly should currently be rocked back due to firing.
+/// Returns how much the weapon assembly should currently be rocked back due to firing.
+int getRecoil(Weapon const& weapon);
 
 #endif // __INCLUDED_WEAPONDEF_H__

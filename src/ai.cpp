@@ -173,8 +173,8 @@ PlayerMask satuplinkbits;
 //}
 
 /** Search the global list of sensors for a possible target for psObj. */
-static SimpleObject* aiSearchSensorTargets(SimpleObject* psObj, int weapon_slot, WEAPON_STATS* psWStats,
-                                          TARGET_ORIGIN* targetOrigin)
+static SimpleObject* aiSearchSensorTargets(SimpleObject* psObj, int weapon_slot, WeaponStats* psWStats,
+                                           TARGET_ORIGIN* targetOrigin)
 {
 	int longRange = proj_GetLongRange(psWStats, psObj->player);
 	int tarDist = longRange * longRange;
@@ -288,7 +288,7 @@ static SDWORD targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacke
 	Droid *targetDroid = nullptr, *psAttackerDroid = nullptr, *psGroupDroid, *psDroid;
 	Structure* targetStructure = nullptr;
 	WEAPON_EFFECT weaponEffect;
-	WEAPON_STATS* attackerWeapon;
+	WeaponStats* attackerWeapon;
 	bool bEmpWeap = false, bCmdAttached = false, bTargetingCmd = false, bDirect = false;
 
 	if (psTarget == nullptr || psAttacker == nullptr || psTarget->died)
@@ -304,7 +304,7 @@ static SDWORD targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacke
 	{
 		psAttackerDroid = (Droid*)psAttacker;
 
-		attackerWeapon = (WEAPON_STATS*)(asWeaponStats + psAttackerDroid->asWeaps[weapon_slot].nStat);
+		attackerWeapon = (WeaponStats*)(asWeaponStats + psAttackerDroid->asWeaps[weapon_slot].nStat);
 
 		//check if this droid is assigned to a commander
 		bCmdAttached = hasCommander(psAttackerDroid);
@@ -346,7 +346,7 @@ static SDWORD targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacke
 	}
 	else if (psAttacker->type == OBJ_STRUCTURE)
 	{
-		attackerWeapon = ((WEAPON_STATS*)(asWeaponStats + ((Structure*)psAttacker)->asWeaps[weapon_slot].nStat));
+		attackerWeapon = ((WeaponStats*)(asWeaponStats + ((Structure*)psAttacker)->asWeaps[weapon_slot].nStat));
 	}
 	else /* feature */
 	{
@@ -583,7 +583,7 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 	// Check if we have a CB target to begin with
 	if (!proj_Direct(asWeaponStats + psDroid->asWeaps[weapon_slot].nStat))
 	{
-		WEAPON_STATS* psWStats = psDroid->asWeaps[weapon_slot].nStat + asWeaponStats;
+		WeaponStats* psWStats = psDroid->asWeaps[weapon_slot].nStat + asWeaponStats;
 
 		bestTarget = aiSearchSensorTargets((SimpleObject*)psDroid, weapon_slot, psWStats, &tmpOrigin);
 		bestMod = targetAttackWeight(bestTarget, (SimpleObject*)psDroid, weapon_slot);
@@ -886,7 +886,7 @@ bool aiChooseTarget(SimpleObject* psObj, SimpleObject** ppsTarget, int weapon_sl
 
 		ASSERT_OR_RETURN(false, psObj->asWeaps[weapon_slot].nStat > 0, "Invalid weapon turret");
 
-		WEAPON_STATS* psWStats = psObj->asWeaps[weapon_slot].nStat + asWeaponStats;
+		WeaponStats* psWStats = psObj->asWeaps[weapon_slot].nStat + asWeaponStats;
 		int longRange = proj_GetLongRange(psWStats, psObj->player);
 
 		// see if there is a target from the command droids

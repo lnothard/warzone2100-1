@@ -40,9 +40,9 @@
 #include "objmem.h"
 
 /* Fire a weapon at something */
-bool combFire(WEAPON* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, int weapon_slot)
+bool combFire(Weapon* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, int weapon_slot)
 {
-	WEAPON_STATS* psStats;
+	WeaponStats* psStats;
 	UDWORD firePause;
 	SDWORD longRange;
 	SDWORD shortRange;
@@ -54,7 +54,7 @@ bool combFire(WEAPON* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, 
 
 	/* Don't shoot if the weapon_slot of a vtol is empty */
 	if (psAttacker->type == OBJ_DROID && isVtolDroid(((Droid*)psAttacker))
-		&& psWeap->usedAmmo >= getNumAttackRuns(((Droid*)psAttacker), weapon_slot))
+		&& psWeap->ammo_used >= getNumAttackRuns(((Droid*)psAttacker), weapon_slot))
 	{
 		objTrace(psAttacker->id, "VTOL slot %d is empty", weapon_slot);
 		return false;
@@ -77,7 +77,7 @@ bool combFire(WEAPON* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, 
 	// See if reloadable weapon.
 	if (psStats->upgrade[psAttacker->player].reloadTime)
 	{
-		unsigned reloadTime = psWeap->lastFired + weaponReloadTime(psStats, psAttacker->player);
+		unsigned reloadTime = psWeap->time_last_fired + weaponReloadTime(psStats, psAttacker->player);
 		if (psWeap->ammo == 0) // Out of ammo?
 		{
 			fireTime = std::max(fireTime, reloadTime); // Have to wait for weapon to reload before firing.
@@ -97,7 +97,7 @@ bool combFire(WEAPON* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, 
 	/* See when the weapon last fired to control it's rate of fire */
 	firePause = weaponFirePause(psStats, psAttacker->player);
 	firePause = std::max(firePause, 1u); // Don't shoot infinitely many shots at once.
-	fireTime = std::max(fireTime, psWeap->lastFired + firePause);
+	fireTime = std::max(fireTime, psWeap->time_last_fired + firePause);
 
 	if (gameTime < fireTime)
 	{
@@ -221,7 +221,7 @@ bool combFire(WEAPON* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, 
 	/* -------!!! From that point we are sure that we are firing !!!------- */
 
 	/* note when the weapon fired */
-	psWeap->lastFired = fireTime;
+	psWeap->time_last_fired = fireTime;
 
 	/* reduce ammo if salvo */
 	if (psStats->upgrade[psAttacker->player].reloadTime)
@@ -230,7 +230,7 @@ bool combFire(WEAPON* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, 
 	}
 
 	// increment the shots counter
-	psWeap->shotsFired++;
+	psWeap->shots_fired++;
 
 	// predicted X,Y offset per sec
 	Vector3i predict = psTarget->pos;
@@ -509,7 +509,7 @@ int32_t objDamage(SimpleObject* psObj, unsigned damage, unsigned originalhp, WEA
  * \param weaponSubClass the subclass of the weapon that deals the damage
  * \return guess at amount of damage
  */
-unsigned int objGuessFutureDamage(WEAPON_STATS* psStats, unsigned int player, SimpleObject* psTarget)
+unsigned int objGuessFutureDamage(WeaponStats* psStats, unsigned int player, SimpleObject* psTarget)
 {
 	unsigned int damage;
 	int actualDamage, armour, level = 1;

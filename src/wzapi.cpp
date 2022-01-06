@@ -1518,7 +1518,7 @@ bool wzapi::isStructureAvailable(WZAPI_PARAMS(std::string structureName, optiona
 }
 
 // additional structure check
-static bool structDoubleCheck(BASE_STATS* psStat, UDWORD xx, UDWORD yy, SDWORD maxBlockingTiles)
+static bool structDoubleCheck(BaseStats* psStat, UDWORD xx, UDWORD yy, SDWORD maxBlockingTiles)
 {
 	UDWORD x, y, xTL, yTL, xBR, yBR;
 	UBYTE count = 0;
@@ -1695,7 +1695,7 @@ endstructloc:
 bool wzapi::droidCanReach(WZAPI_PARAMS(const Droid *psDroid, int x, int y))
 {
 	SCRIPT_ASSERT(false, context, psDroid, "No valid droid provided");
-	const PROPULSION_STATS* psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
+	const PropulsionStats* psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
 	return fpathCheck(psDroid->pos, Vector3i(world_coord(x), world_coord(y), 0), psPropStats->propulsionType);
 }
 
@@ -1708,7 +1708,7 @@ bool wzapi::propulsionCanReach(WZAPI_PARAMS(std::string propulsionName, int x1, 
 {
 	int propulsionIndex = getCompFromName(COMP_PROPULSION, WzString::fromUtf8(propulsionName));
 	SCRIPT_ASSERT(false, context, propulsionIndex > 0, "No such propulsion: %s", propulsionName.c_str());
-	const PROPULSION_STATS* psPropStats = asPropulsionStats + propulsionIndex;
+	const PropulsionStats* psPropStats = asPropulsionStats + propulsionIndex;
 	return fpathCheck(Vector3i(world_coord(x1), world_coord(y1), 0), Vector3i(world_coord(x2), world_coord(y2), 0),
 	                  psPropStats->propulsionType);
 }
@@ -1818,7 +1818,7 @@ static std::unique_ptr<DroidTemplate> makeTemplate(int player, const std::string
 		return nullptr;
 	}
 	std::string componentName = _turrets.va_list[0].strings[0];
-	COMPONENT_STATS* psComp = getCompStatsFromName(WzString::fromUtf8(componentName.c_str()));
+	ComponentStats* psComp = getCompStatsFromName(WzString::fromUtf8(componentName.c_str()));
 	if (psComp == nullptr)
 	{
 		debug(LOG_ERROR, "Wanted to build %s but %s does not exist", templateName.c_str(), componentName.c_str());
@@ -2060,7 +2060,7 @@ bool wzapi::componentAvailable(WZAPI_PARAMS(std::string componentType, optional<
 	int player = context.player();
 	SCRIPT_ASSERT_PLAYER(false, context, player);
 	std::string& componentName = _componentName.has_value() ? _componentName.value() : componentType;
-	COMPONENT_STATS* psComp = getCompStatsFromName(WzString::fromUtf8(componentName.c_str()));
+	ComponentStats* psComp = getCompStatsFromName(WzString::fromUtf8(componentName.c_str()));
 	SCRIPT_ASSERT(false, context, psComp, "No such component: %s", componentName.c_str());
 	int status = apCompLists[player][psComp->compType][psComp->index];
 	return status == AVAILABLE || status == REDUNDANT;
@@ -2368,7 +2368,7 @@ nlohmann::json wzapi::getWeaponInfo(WZAPI_PARAMS(std::string weaponName)) WZAPI_
 {
 	int weaponIndex = getCompFromName(COMP_WEAPON, WzString::fromUtf8(weaponName));
 	SCRIPT_ASSERT(nlohmann::json(), context, weaponIndex >= 0, "No such weapon: %s", weaponName.c_str());
-	WEAPON_STATS* psStats = asWeaponStats + weaponIndex;
+	WeaponStats* psStats = asWeaponStats + weaponIndex;
 	nlohmann::json result = nlohmann::json::object();
 	result["id"] = weaponName;
 	result["name"] = psStats->name;
@@ -2936,7 +2936,7 @@ wzapi::no_return_value wzapi::enableStructure(WZAPI_PARAMS(std::string structure
 
 static void setComponent(const std::string& componentName, int player, int availability)
 {
-	COMPONENT_STATS* psComp = getCompStatsFromName(WzString::fromUtf8(componentName));
+	ComponentStats* psComp = getCompStatsFromName(WzString::fromUtf8(componentName));
 	ASSERT_OR_RETURN(, psComp, "Bad component %s", componentName.c_str());
 	apCompLists[player][psComp->compType][psComp->index] = availability;
 }
@@ -3373,7 +3373,7 @@ wzapi::no_return_value wzapi::fireWeaponAtLoc(WZAPI_PARAMS(std::string weaponNam
 	target.y = world_coord(y);
 	target.z = map_Height(x, y);
 
-	WEAPON sWeapon;
+	Weapon sWeapon;
 	sWeapon.nStat = weaponIndex;
 
 	proj_SendProjectile(&sWeapon, nullptr, player, target, nullptr, true, 0);
@@ -3396,7 +3396,7 @@ wzapi::no_return_value wzapi::fireWeaponAtObj(WZAPI_PARAMS(std::string weaponNam
 
 	Vector3i target = psObj->pos;
 
-	WEAPON sWeapon;
+	Weapon sWeapon;
 	sWeapon.nStat = weaponIndex;
 
 	proj_SendProjectile(&sWeapon, nullptr, player, target, psObj, true, 0);
@@ -3475,10 +3475,10 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 	if (type == COMP_BODY)
 	{
 		SCRIPT_ASSERT(false, context, index < numBodyStats, "Bad index");
-		BODY_STATS* psStats = asBodyStats + index;
+		BodyStats* psStats = asBodyStats + index;
 		if (name == "HitPoints")
 		{
-			psStats->upgrade[player].hitpoints = value;
+			psStats->upgrade[player].hit_points = value;
 			dirtyAllDroids(player);
 		}
 		else if (name == "HitPointPct")
@@ -3512,7 +3512,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 	else if (type == COMP_BRAIN)
 	{
 		SCRIPT_ASSERT(false, context, index < numBrainStats, "Bad index");
-		BRAIN_STATS* psStats = asBrainStats + index;
+		CommanderStats* psStats = asBrainStats + index;
 		if (name == "BaseCommandLimit")
 		{
 			psStats->upgrade[player].maxDroids = value;
@@ -3535,7 +3535,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 		}
 		else if (name == "HitPoints")
 		{
-			psStats->upgrade[player].hitpoints = value;
+			psStats->upgrade[player].hit_points = value;
 			dirtyAllDroids(player);
 		}
 		else if (name == "HitPointPct")
@@ -3551,7 +3551,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 	else if (type == COMP_SENSOR)
 	{
 		SCRIPT_ASSERT(false, context, index < numSensorStats, "Bad index");
-		SENSOR_STATS* psStats = asSensorStats + index;
+		SensorStats* psStats = asSensorStats + index;
 		if (name == "Range")
 		{
 			psStats->upgrade[player].range = value;
@@ -3560,7 +3560,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 		}
 		else if (name == "HitPoints")
 		{
-			psStats->upgrade[player].hitpoints = value;
+			psStats->upgrade[player].hit_points = value;
 			dirtyAllDroids(player);
 		}
 		else if (name == "HitPointPct")
@@ -3576,7 +3576,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 	else if (type == COMP_ECM)
 	{
 		SCRIPT_ASSERT(false, context, index < numECMStats, "Bad index");
-		ECM_STATS* psStats = asECMStats + index;
+		EcmStats* psStats = asECMStats + index;
 		if (name == "Range")
 		{
 			psStats->upgrade[player].range = value;
@@ -3585,7 +3585,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 		}
 		else if (name == "HitPoints")
 		{
-			psStats->upgrade[player].hitpoints = value;
+			psStats->upgrade[player].hit_points = value;
 			dirtyAllDroids(player);
 		}
 		else if (name == "HitPointPct")
@@ -3601,10 +3601,10 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 	else if (type == COMP_PROPULSION)
 	{
 		SCRIPT_ASSERT(false, context, index < numPropulsionStats, "Bad index");
-		PROPULSION_STATS* psStats = asPropulsionStats + index;
+		PropulsionStats* psStats = asPropulsionStats + index;
 		if (name == "HitPoints")
 		{
-			psStats->upgrade[player].hitpoints = value;
+			psStats->upgrade[player].hit_points = value;
 			dirtyAllDroids(player);
 		}
 		else if (name == "HitPointPct")
@@ -3625,14 +3625,14 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 	else if (type == COMP_CONSTRUCT)
 	{
 		SCRIPT_ASSERT(false, context, index < numConstructStats, "Bad index");
-		CONSTRUCT_STATS* psStats = asConstructStats + index;
+		ConstructStats* psStats = asConstructStats + index;
 		if (name == "ConstructorPoints")
 		{
 			psStats->upgrade[player].constructPoints = value;
 		}
 		else if (name == "HitPoints")
 		{
-			psStats->upgrade[player].hitpoints = value;
+			psStats->upgrade[player].hit_points = value;
 			dirtyAllDroids(player);
 		}
 		else if (name == "HitPointPct")
@@ -3648,14 +3648,14 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 	else if (type == COMP_REPAIRUNIT)
 	{
 		SCRIPT_ASSERT(false, context, index < numRepairStats, "Bad index");
-		REPAIR_STATS* psStats = asRepairStats + index;
+		RepairStats* psStats = asRepairStats + index;
 		if (name == "RepairPoints")
 		{
 			psStats->upgrade[player].repairPoints = value;
 		}
 		else if (name == "HitPoints")
 		{
-			psStats->upgrade[player].hitpoints = value;
+			psStats->upgrade[player].hit_points = value;
 			dirtyAllDroids(player);
 		}
 		else if (name == "HitPointPct")
@@ -3671,7 +3671,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 	else if (type == COMP_WEAPON)
 	{
 		SCRIPT_ASSERT(false, context, index < numWeaponStats, "Bad index");
-		WEAPON_STATS* psStats = asWeaponStats + index;
+		WeaponStats* psStats = asWeaponStats + index;
 		if (name == "MaxRange")
 		{
 			psStats->upgrade[player].maxRange = value;
@@ -3734,7 +3734,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 		}
 		else if (name == "HitPoints")
 		{
-			psStats->upgrade[player].hitpoints = value;
+			psStats->upgrade[player].hit_points = value;
 			dirtyAllDroids(player);
 		}
 		else if (name == "HitPointPct")
@@ -3830,10 +3830,10 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::s
 	if (type == COMP_BODY)
 	{
 		SCRIPT_ASSERT(nlohmann::json(), context, index < numBodyStats, "Bad index");
-		const BODY_STATS* psStats = asBodyStats + index;
+		const BodyStats* psStats = asBodyStats + index;
 		if (name == "HitPoints")
 		{
-			return psStats->upgrade[player].hitpoints;
+			return psStats->upgrade[player].hit_points;
 		}
 		else if (name == "HitPointPct")
 		{
@@ -3863,7 +3863,7 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::s
 	else if (type == COMP_BRAIN)
 	{
 		SCRIPT_ASSERT(nlohmann::json(), context, index < numBrainStats, "Bad index");
-		const BRAIN_STATS* psStats = asBrainStats + index;
+		const CommanderStats* psStats = asBrainStats + index;
 		if (name == "BaseCommandLimit")
 		{
 			return psStats->upgrade[player].maxDroids;
@@ -3884,7 +3884,7 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::s
 		}
 		else if (name == "HitPoints")
 		{
-			return psStats->upgrade[player].hitpoints;
+			return psStats->upgrade[player].hit_points;
 		}
 		else if (name == "HitPointPct")
 		{
@@ -3898,14 +3898,14 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::s
 	else if (type == COMP_SENSOR)
 	{
 		SCRIPT_ASSERT(nlohmann::json(), context, index < numSensorStats, "Bad index");
-		const SENSOR_STATS* psStats = asSensorStats + index;
+		const SensorStats* psStats = asSensorStats + index;
 		if (name == "Range")
 		{
 			return psStats->upgrade[player].range;
 		}
 		else if (name == "HitPoints")
 		{
-			return psStats->upgrade[player].hitpoints;
+			return psStats->upgrade[player].hit_points;
 		}
 		else if (name == "HitPointPct")
 		{
@@ -3919,14 +3919,14 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::s
 	else if (type == COMP_ECM)
 	{
 		SCRIPT_ASSERT(nlohmann::json(), context, index < numECMStats, "Bad index");
-		const ECM_STATS* psStats = asECMStats + index;
+		const EcmStats* psStats = asECMStats + index;
 		if (name == "Range")
 		{
 			return psStats->upgrade[player].range;
 		}
 		else if (name == "HitPoints")
 		{
-			return psStats->upgrade[player].hitpoints;
+			return psStats->upgrade[player].hit_points;
 		}
 		else if (name == "HitPointPct")
 		{
@@ -3940,10 +3940,10 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::s
 	else if (type == COMP_PROPULSION)
 	{
 		SCRIPT_ASSERT(nlohmann::json(), context, index < numPropulsionStats, "Bad index");
-		const PROPULSION_STATS* psStats = asPropulsionStats + index;
+		const PropulsionStats* psStats = asPropulsionStats + index;
 		if (name == "HitPoints")
 		{
-			return psStats->upgrade[player].hitpoints;
+			return psStats->upgrade[player].hit_points;
 		}
 		else if (name == "HitPointPct")
 		{
@@ -3961,14 +3961,14 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::s
 	else if (type == COMP_CONSTRUCT)
 	{
 		SCRIPT_ASSERT(nlohmann::json(), context, index < numConstructStats, "Bad index");
-		const CONSTRUCT_STATS* psStats = asConstructStats + index;
+		const ConstructStats* psStats = asConstructStats + index;
 		if (name == "ConstructorPoints")
 		{
 			return psStats->upgrade[player].constructPoints;
 		}
 		else if (name == "HitPoints")
 		{
-			return psStats->upgrade[player].hitpoints;
+			return psStats->upgrade[player].hit_points;
 		}
 		else if (name == "HitPointPct")
 		{
@@ -3982,14 +3982,14 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::s
 	else if (type == COMP_REPAIRUNIT)
 	{
 		SCRIPT_ASSERT(nlohmann::json(), context, index < numRepairStats, "Bad index");
-		const REPAIR_STATS* psStats = asRepairStats + index;
+		const RepairStats* psStats = asRepairStats + index;
 		if (name == "RepairPoints")
 		{
 			return psStats->upgrade[player].repairPoints;
 		}
 		else if (name == "HitPoints")
 		{
-			return psStats->upgrade[player].hitpoints;
+			return psStats->upgrade[player].hit_points;
 		}
 		else if (name == "HitPointPct")
 		{
@@ -4003,7 +4003,7 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::s
 	else if (type == COMP_WEAPON)
 	{
 		SCRIPT_ASSERT(nlohmann::json(), context, index < numWeaponStats, "Bad index");
-		const WEAPON_STATS* psStats = asWeaponStats + index;
+		const WeaponStats* psStats = asWeaponStats + index;
 		if (name == "MaxRange")
 		{
 			return psStats->upgrade[player].maxRange;
@@ -4066,7 +4066,7 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::s
 		}
 		else if (name == "HitPoints")
 		{
-			return psStats->upgrade[player].hitpoints;
+			return psStats->upgrade[player].hit_points;
 		}
 		else if (name == "HitPointPct")
 		{
@@ -4158,7 +4158,7 @@ std::vector<wzapi::PerPlayerUpgrades> wzapi::getUpgradesObject()
 		GameEntityRuleContainer bodybase;
 		for (unsigned j = 0; j < numBodyStats; j++)
 		{
-			BODY_STATS* psStats = asBodyStats + j;
+			BodyStats* psStats = asBodyStats + j;
 			GameEntityRules body(i, j, {
 				                     {"HitPoints", COMP_BODY},
 				                     {"HitPointPct", COMP_BODY},
@@ -4175,7 +4175,7 @@ std::vector<wzapi::PerPlayerUpgrades> wzapi::getUpgradesObject()
 		GameEntityRuleContainer sensorbase;
 		for (unsigned j = 0; j < numSensorStats; j++)
 		{
-			SENSOR_STATS* psStats = asSensorStats + j;
+			SensorStats* psStats = asSensorStats + j;
 			GameEntityRules sensor(i, j, {
 				                       {"HitPoints", COMP_SENSOR},
 				                       {"HitPointPct", COMP_SENSOR},
@@ -4189,7 +4189,7 @@ std::vector<wzapi::PerPlayerUpgrades> wzapi::getUpgradesObject()
 		GameEntityRuleContainer propbase;
 		for (unsigned j = 0; j < numPropulsionStats; j++)
 		{
-			PROPULSION_STATS* psStats = asPropulsionStats + j;
+			PropulsionStats* psStats = asPropulsionStats + j;
 			GameEntityRules v(i, j, {
 				                  {"HitPoints", COMP_PROPULSION},
 				                  {"HitPointPct", COMP_PROPULSION},
@@ -4203,7 +4203,7 @@ std::vector<wzapi::PerPlayerUpgrades> wzapi::getUpgradesObject()
 		GameEntityRuleContainer ecmbase;
 		for (unsigned j = 0; j < numECMStats; j++)
 		{
-			ECM_STATS* psStats = asECMStats + j;
+			EcmStats* psStats = asECMStats + j;
 			GameEntityRules ecm(i, j, {
 				                    {"Range", COMP_ECM},
 				                    {"HitPoints", COMP_ECM},
@@ -4217,7 +4217,7 @@ std::vector<wzapi::PerPlayerUpgrades> wzapi::getUpgradesObject()
 		GameEntityRuleContainer repairbase;
 		for (unsigned j = 0; j < numRepairStats; j++)
 		{
-			REPAIR_STATS* psStats = asRepairStats + j;
+			RepairStats* psStats = asRepairStats + j;
 			GameEntityRules repair(i, j, {
 				                       {"RepairPoints", COMP_REPAIRUNIT},
 				                       {"HitPoints", COMP_REPAIRUNIT},
@@ -4231,7 +4231,7 @@ std::vector<wzapi::PerPlayerUpgrades> wzapi::getUpgradesObject()
 		GameEntityRuleContainer conbase;
 		for (unsigned j = 0; j < numConstructStats; j++)
 		{
-			CONSTRUCT_STATS* psStats = asConstructStats + j;
+			ConstructStats* psStats = asConstructStats + j;
 			GameEntityRules con(i, j, {
 				                    {"ConstructorPoints", COMP_CONSTRUCT},
 				                    {"HitPoints", COMP_CONSTRUCT},
@@ -4249,7 +4249,7 @@ std::vector<wzapi::PerPlayerUpgrades> wzapi::getUpgradesObject()
 		GameEntityRuleContainer brainbase;
 		for (unsigned j = 0; j < numBrainStats; j++)
 		{
-			BRAIN_STATS* psStats = asBrainStats + j;
+			CommanderStats* psStats = asBrainStats + j;
 			GameEntityRules br(i, j, {
 				                   {"BaseCommandLimit", COMP_BRAIN},
 				                   {"CommandLimitByLevel", COMP_BRAIN},
@@ -4265,7 +4265,7 @@ std::vector<wzapi::PerPlayerUpgrades> wzapi::getUpgradesObject()
 		GameEntityRuleContainer wbase;
 		for (unsigned j = 0; j < numWeaponStats; j++)
 		{
-			WEAPON_STATS* psStats = asWeaponStats + j;
+			WeaponStats* psStats = asWeaponStats + j;
 			GameEntityRules weap(i, j, {
 				                     {"MaxRange", COMP_WEAPON},
 				                     {"ShortRange", COMP_WEAPON},
@@ -4316,14 +4316,14 @@ std::vector<wzapi::PerPlayerUpgrades> wzapi::getUpgradesObject()
 	return upgrades;
 }
 
-nlohmann::json register_common(COMPONENT_STATS* psStats)
+nlohmann::json register_common(ComponentStats* psStats)
 {
 	nlohmann::json v = nlohmann::json::object();
 	v["Id"] = psStats->id;
 	v["Weight"] = psStats->weight;
 	v["BuildPower"] = psStats->buildPower;
 	v["BuildTime"] = psStats->buildPoints;
-	v["HitPoints"] = psStats->getBase().hitpoints;
+	v["HitPoints"] = psStats->getBase().hit_points;
 	v["HitPointPct"] = psStats->getBase().hitpointPct;
 	return v;
 }
@@ -4341,7 +4341,7 @@ nlohmann::json wzapi::constructStatsObject()
 		nlohmann::json bodybase = nlohmann::json::object();
 		for (int j = 0; j < numBodyStats; j++)
 		{
-			BODY_STATS* psStats = asBodyStats + j;
+			BodyStats* psStats = asBodyStats + j;
 			nlohmann::json body = register_common(psStats);
 			body["Power"] = psStats->base.power;
 			body["Armour"] = psStats->base.armour;
@@ -4358,7 +4358,7 @@ nlohmann::json wzapi::constructStatsObject()
 		nlohmann::json sensorbase = nlohmann::json::object();
 		for (int j = 0; j < numSensorStats; j++)
 		{
-			SENSOR_STATS* psStats = asSensorStats + j;
+			SensorStats* psStats = asSensorStats + j;
 			nlohmann::json sensor = register_common(psStats);
 			sensor["Range"] = psStats->base.range;
 			sensorbase[psStats->name.toUtf8()] = std::move(sensor);
@@ -4369,7 +4369,7 @@ nlohmann::json wzapi::constructStatsObject()
 		nlohmann::json ecmbase = nlohmann::json::object();
 		for (int j = 0; j < numECMStats; j++)
 		{
-			ECM_STATS* psStats = asECMStats + j;
+			EcmStats* psStats = asECMStats + j;
 			nlohmann::json ecm = register_common(psStats);
 			ecm["Range"] = psStats->base.range;
 			ecmbase[psStats->name.toUtf8()] = std::move(ecm);
@@ -4380,7 +4380,7 @@ nlohmann::json wzapi::constructStatsObject()
 		nlohmann::json propbase = nlohmann::json::object();
 		for (int j = 0; j < numPropulsionStats; j++)
 		{
-			PROPULSION_STATS* psStats = asPropulsionStats + j;
+			PropulsionStats* psStats = asPropulsionStats + j;
 			nlohmann::json v = register_common(psStats);
 			v["HitpointPctOfBody"] = psStats->base.hitpointPctOfBody;
 			v["MaxSpeed"] = psStats->maxSpeed;
@@ -4398,7 +4398,7 @@ nlohmann::json wzapi::constructStatsObject()
 		nlohmann::json repairbase = nlohmann::json::object();
 		for (int j = 0; j < numRepairStats; j++)
 		{
-			REPAIR_STATS* psStats = asRepairStats + j;
+			RepairStats* psStats = asRepairStats + j;
 			nlohmann::json repair = register_common(psStats);
 			repair["RepairPoints"] = psStats->base.repairPoints;
 			repairbase[psStats->name.toUtf8()] = std::move(repair);
@@ -4409,7 +4409,7 @@ nlohmann::json wzapi::constructStatsObject()
 		nlohmann::json conbase = nlohmann::json::object();
 		for (int j = 0; j < numConstructStats; j++)
 		{
-			CONSTRUCT_STATS* psStats = asConstructStats + j;
+			ConstructStats* psStats = asConstructStats + j;
 			nlohmann::json con = register_common(psStats);
 			con["ConstructorPoints"] = psStats->base.constructPoints;
 			conbase[psStats->name.toUtf8()] = std::move(con);
@@ -4420,7 +4420,7 @@ nlohmann::json wzapi::constructStatsObject()
 		nlohmann::json brainbase = nlohmann::json::object();
 		for (int j = 0; j < numBrainStats; j++)
 		{
-			BRAIN_STATS* psStats = asBrainStats + j;
+			CommanderStats* psStats = asBrainStats + j;
 			nlohmann::json br = register_common(psStats);
 			br["BaseCommandLimit"] = psStats->base.maxDroids;
 			br["CommandLimitByLevel"] = psStats->base.maxDroidsMult;
@@ -4445,7 +4445,7 @@ nlohmann::json wzapi::constructStatsObject()
 		nlohmann::json wbase = nlohmann::json::object();
 		for (int j = 0; j < numWeaponStats; j++)
 		{
-			WEAPON_STATS* psStats = asWeaponStats + j;
+			WeaponStats* psStats = asWeaponStats + j;
 			nlohmann::json weap = register_common(psStats);
 			weap["MaxRange"] = psStats->base.maxRange;
 			weap["ShortRange"] = psStats->base.shortRange;

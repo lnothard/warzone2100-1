@@ -730,7 +730,7 @@ void ResearchController::requestResearchCancellation(Structure* facility)
 
 static ImdObject getResearchObjectImage(RESEARCH* research)
 {
-	BASE_STATS* psResGraphic = research->psStat;
+	BaseStats* psResGraphic = research->psStat;
 
 	if (!psResGraphic)
 	{

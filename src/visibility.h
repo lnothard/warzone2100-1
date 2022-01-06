@@ -21,11 +21,57 @@
 #ifndef __INCLUDED_SRC_VISIBILITY__
 #define __INCLUDED_SRC_VISIBILITY__
 
+#include "basedef.h"
 #include "objectdef.h"
 #include "raycast.h"
 #include "stats.h"
 
-#define LINE_OF_FIRE_MINIMUM 5
+static constexpr auto MIN_VIS_HEIGHT = 80;
+
+/// Accuracy for the height gradient
+static constexpr auto GRADIENT_MULTIPLIER = 10000;
+
+/// Rate to change visibility level
+static constexpr auto VIS_LEVEL_INC = 255 * 2;
+static constexpr auto VIS_LEVEL_DEC = 50;
+
+enum class SENSOR_CLASS
+{
+    VISION,
+    RADAR
+};
+
+struct Spotter
+{
+    ~Spotter();
+    Spotter(int x, int y, int plr, int radius, SENSOR_CLASS type, std::size_t expiry = 0);
+
+    Position pos;
+    unsigned player;
+    int sensorRadius;
+    SENSOR_CLASS sensorType;
+
+    /// When to self-destruct, zero if never
+    std::size_t expiryTime;
+
+    int numWatchedTiles = 0;
+    std::vector<TILEPOS> watchedTiles;
+    unsigned id;
+};
+
+static std::vector<Spotter*> apsInvisibleViewers;
+
+struct VisibleObjectHelp_t
+{
+    bool rayStart; // Whether this is the first point on the ray
+    const bool wallsBlock; // Whether walls block line of sight
+    const int startHeight; // The height at the view point
+    const Vector2i final; // The final tile of the ray cast
+    int lastHeight, lastDist; // The last height and distance
+    int currGrad; // The current obscuring gradient
+    int numWalls; // Whether the LOS has hit a wall
+    Vector2i wall; // The position of a wall if it is on the LOS
+};
 
 // initialise the visibility stuff
 bool visInitialise();
@@ -35,10 +81,11 @@ void visTilesUpdate(SimpleObject* psObj);
 
 void revealAll(UBYTE player);
 
-/* Check whether psViewer can see psTarget
+/**
+ * Check whether psViewer can see psTarget.
  * psViewer should be an object that has some form of sensor,
- * currently droids and structures.
- * psTarget can be any type of SimpleObject (e.g. a tree).
+ * currently droids and structures. psTarget can be any
+ * type of SimpleObject (e.g. a tree).
  */
 int visibleObject(const SimpleObject* psViewer, const SimpleObject* psTarget, bool wallsBlock);
 
@@ -52,7 +99,7 @@ int areaOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int 
 int arcOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock);
 
 // Find the wall that is blocking LOS to a target (if any)
-STRUCTURE* visGetBlockingWall(const SimpleObject* psViewer, const SimpleObject* psTarget);
+Structure* visGetBlockingWall(const SimpleObject* psViewer, const SimpleObject* psTarget);
 
 bool hasSharedVision(unsigned viewer, unsigned ally);
 
@@ -101,19 +148,16 @@ static inline bool visObjInRange(SimpleObject* psObj1, SimpleObject* psObj2, SDW
 
 static inline int objJammerPower(const SimpleObject* psObj)
 {
-	if (psObj->type == OBJ_DROID)
-	{
+	if (psObj->type == DROID)  {
 		return asECMStats[((const DROID*)psObj)->asBits[COMP_ECM]].upgrade[psObj->player].range;
-	}
-	else if (psObj->type == OBJ_STRUCTURE)
-	{
+	} else if (psObj->type == STRUCTURE)  {
 		return ((const STRUCTURE*)psObj)->stats->ecm_stats->upgraded_stats[psObj->player].range;
 	}
 	return 0;
 }
 
 void removeSpotters();
-bool removeSpotter(uint32_t id);
-uint32_t addSpotter(int x, int y, int player, int radius, bool radar, uint32_t expiry = 0);
+bool removeSpotter(unsigned id);
+unsigned addSpotter(int x, int y, int player, int radius, bool radar, std::size_t expiry = 0);
 
 #endif // __INCLUDED_SRC_VISIBILITY__

@@ -573,7 +573,7 @@ static void updateCameraAcceleration(UBYTE update)
 	*/
 	const int angle = 90 - abs((playerPos.r.x / 182) % 90);
 
-	const PROPULSION_STATS* psPropStats = &asPropulsionStats[trackingCamera.target->asBits[COMP_PROPULSION]];
+	const PropulsionStats* psPropStats = &asPropulsionStats[trackingCamera.target->asBits[COMP_PROPULSION]];
 
 	if (psPropStats->propulsionType == PROPULSION_TYPE_LIFT)
 	{
@@ -680,7 +680,7 @@ static void updateCameraRotationAcceleration(UBYTE update)
 	float separation;
 	SDWORD xConcern, yConcern, zConcern;
 	bool bTooLow;
-	PROPULSION_STATS* psPropStats;
+	PropulsionStats* psPropStats;
 	bool bGotFlying = false;
 	SDWORD xPos = 0, yPos = 0, zPos = 0;
 
@@ -832,7 +832,7 @@ static void updateCameraRotationPosition(UBYTE update)
 /* Updates the viewpoint according to the object being tracked */
 static bool camTrackCamera()
 {
-	PROPULSION_STATS* psPropStats;
+	PropulsionStats* psPropStats;
 	bool bFlying = false;
 
 	/* Most importantly - see if the target we're tracking is dead! */

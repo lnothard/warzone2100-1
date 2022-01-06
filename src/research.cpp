@@ -83,7 +83,7 @@ std::vector<PlayerUpgradeCounts> playerUpgradeCounts;
 
 //set the iconID based on the name read in in the stats
 static UWORD setIconID(const char* pIconName, const char* pName);
-static void replaceComponent(COMPONENT_STATS* pNewComponent, COMPONENT_STATS* pOldComponent,
+static void replaceComponent(ComponentStats* pNewComponent, ComponentStats* pOldComponent,
                              UBYTE player);
 static bool checkResearchName(RESEARCH* psRes, UDWORD numStats);
 
@@ -385,7 +385,7 @@ bool loadResearch(WzConfig& ini)
 		for (size_t j = 0; j < compResults.size(); j++)
 		{
 			WzString compID = compResults[j].trimmed();
-			COMPONENT_STATS* pComp = getCompStatsFromName(compID);
+			ComponentStats* pComp = getCompStatsFromName(compID);
 			if (pComp != nullptr)
 			{
 				research.componentResults.push_back(pComp);
@@ -412,7 +412,7 @@ bool loadResearch(WzConfig& ini)
 			}
 			WzString oldCompID = pair[0].trimmed();
 			WzString newCompID = pair[1].trimmed();
-			COMPONENT_STATS* oldComp = getCompStatsFromName(oldCompID);
+			ComponentStats* oldComp = getCompStatsFromName(oldCompID);
 			if (oldComp == nullptr)
 			{
 				ASSERT(false,
@@ -420,7 +420,7 @@ bool loadResearch(WzConfig& ini)
 				       oldCompID.toUtf8().c_str(), getStatsName(&research));
 				continue;
 			}
-			COMPONENT_STATS* newComp = getCompStatsFromName(newCompID);
+			ComponentStats* newComp = getCompStatsFromName(newCompID);
 			if (newComp == nullptr)
 			{
 				ASSERT(false,
@@ -439,7 +439,7 @@ bool loadResearch(WzConfig& ini)
 		for (size_t j = 0; j < redComp.size(); j++)
 		{
 			WzString compID = redComp[j].trimmed();
-			COMPONENT_STATS* pComp = getCompStatsFromName(compID);
+			ComponentStats* pComp = getCompStatsFromName(compID);
 			if (pComp == nullptr)
 			{
 				ASSERT(false, "Invalid item '%s' in list of redundant components of research '%s' ",
@@ -1005,7 +1005,7 @@ void researchResult(UDWORD researchIndex, UBYTE player, bool bDisplay, Structure
 	{
 		for (auto& ri : pResearch->componentReplacement)
 		{
-			COMPONENT_STATS* pOldComp = ri.pOldComponent;
+			ComponentStats* pOldComp = ri.pOldComponent;
 			replaceComponent(ri.pNewComponent, pOldComp, player);
 			apCompLists[player][pOldComp->compType][pOldComp->index] = REDUNDANT;
 		}
@@ -1439,7 +1439,7 @@ RESEARCH* getResearch(const char* pName)
 
 /* looks through the players lists of structures and droids to see if any are using
  the old component - if any then replaces them with the new component */
-static void replaceComponent(COMPONENT_STATS* pNewComponent, COMPONENT_STATS* pOldComponent,
+static void replaceComponent(ComponentStats* pNewComponent, ComponentStats* pOldComponent,
                              UBYTE player)
 {
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "invalid player: %" PRIu8 "", player);

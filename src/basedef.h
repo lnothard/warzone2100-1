@@ -20,7 +20,6 @@
 
 /**
  * @file basedef.h
- *
  * Definitions for the base object type.
  */
 
@@ -31,10 +30,11 @@
 #include <bitset>
 
 #include "lib/framework/vector.h"
+
+#include "baseobject.h"
 #include "displaydef.h"
 #include "statsdef.h"
 #include "weapondef.h"
-#include "baseobject.h"
 
 // the died flag for a droid is set to this when it gets
 // added to the non-current list
@@ -63,7 +63,7 @@ class SimpleObject
 public:
     SimpleObject() = default;
     virtual ~SimpleObject() = default;
-    SimpleObject(const SimpleObject&) = delete;
+    SimpleObject(cost SimpleObject&) = delete;
     SimpleObject(SimpleObject&&) = delete;
     SimpleObject& operator=(const SimpleObject&) = delete;
     SimpleObject& operator=(SimpleObject&&) = delete;
@@ -116,8 +116,6 @@ namespace Impl
         std::array<uint8_t, MAX_PLAYERS> visibility_state;
     };
 }
-
-#define MAX_WEAPONS 3
 
 /// 4D spacetime coordinate and orientation
 struct Spacetime

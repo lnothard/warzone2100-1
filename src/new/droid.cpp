@@ -345,7 +345,7 @@ int Droid::calculate_height() const
 	const auto& weapon_stats = get_weapons()[0].get_stats();
 	switch (type)
 	{
-	case WEAPON:
+	case Weapon:
 		if (num_weapons(*this) == 0) break;
 
 		y_max = weapon_stats.imd_shape->max.y;
@@ -487,7 +487,7 @@ int Droid::calculate_attack_priority(const Unit* target, int weapon_slot) const
 
     switch (as_droid->get_type()) {
       case CYBORG:
-      case WEAPON:
+      case Weapon:
       case CYBORG_SUPER:
         target_type_modifier = WEAPON_DROID_WEIGHT;
         break;

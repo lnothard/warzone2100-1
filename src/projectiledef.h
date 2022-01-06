@@ -58,7 +58,7 @@ struct PROJECTILE : public SIMPLE_OBJECT
 
 	UBYTE state; ///< current projectile state
 	UBYTE bVisible; ///< whether the selected player should see the projectile
-	WEAPON_STATS* psWStats; ///< firing weapon stats
+	WeaponStats* psWStats; ///< firing weapon stats
 	SimpleObject* psSource; ///< what fired the projectile
 	SimpleObject* psDest; ///< target of this projectile
 	std::vector<SimpleObject*> psDamaged;

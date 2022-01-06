@@ -356,7 +356,7 @@ static bool tryDoRepairlikeAction(Droid* psDroid)
 			else if (damaged.second == BUILD)
 			{
 				psDroid->order.psStats = damaged.first->stats;
-				psDroid->order.direction = damaged.first->rot.direction;
+				psDroid->order.direction = damaged.first->rotation.direction;
 				actionDroid(psDroid, damaged.second, damaged.first->pos.x, damaged.first->pos.y);
 			}
 			break;
@@ -1315,7 +1315,7 @@ void orderDroidBase(Droid* psDroid, DROID_ORDER_DATA* psOrder)
 {
 	UDWORD iFactoryDistSq;
 	Structure *psStruct, *psFactory;
-	const PROPULSION_STATS* psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
+	const PropulsionStats* psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
 	const Vector3i rPos(psOrder->pos, 0);
 	syncDebugDroid(psDroid, '-');
 	syncDebug("%d ordered %s", psDroid->id, getDroidOrderName(psOrder->type));
@@ -2825,7 +2825,7 @@ void orderSelectedObjAdd(UDWORD player, SimpleObject* psObj, bool add)
 # pragma GCC diagnostic ignored "-Wnull-dereference"
 #endif
 					orderDroidStatsLocDirAdd(psCurr, BUILD, castStructure(psObj)->stats, psObj->pos.x,
-                                   psObj->pos.y, castStructure(psObj)->rot.direction, add);
+                                   psObj->pos.y, castStructure(psObj)->rotation.direction, add);
 #if defined(WZ_CC_GNU) && !defined(WZ_CC_INTEL) && !defined(WZ_CC_CLANG) && (7 <= __GNUC__)
 # pragma GCC diagnostic pop
 #endif
@@ -3016,7 +3016,7 @@ bool secondarySupported(Droid* psDroid, SECONDARY_ORDER sec)
 		{
 			for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 			{
-				const WEAPON_STATS* weaponStats = asWeaponStats + psDroid->asWeaps[i].nStat;
+				const WeaponStats* weaponStats = asWeaponStats + psDroid->asWeaps[i].nStat;
 
 				if (proj_GetLongRange(weaponStats, psDroid->player) == proj_GetShortRange(weaponStats, psDroid->player))
 				{

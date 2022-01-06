@@ -73,7 +73,7 @@ struct DROID_ACTION_DATA
 	UDWORD x, y;
 	//multiple action target info
 	SimpleObject* psObj;
-	BASE_STATS* psStats;
+	BaseStats* psStats;
 };
 
 //// Check if a droid has stopped moving
@@ -297,9 +297,9 @@ const char* getDroidActionName(DROID_ACTION action)
 //}
 
 /* returns true if on target */
-bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, WEAPON* psWeapon)
+bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon* psWeapon)
 {
-	WEAPON_STATS* psWeapStats = asWeaponStats + psWeapon->nStat;
+	WeaponStats* psWeapStats = asWeaponStats + psWeapon->nStat;
 	uint16_t tRotation, tPitch;
 	uint16_t targetRotation;
 	int32_t rotationTolerance = 0;
@@ -325,8 +325,8 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, WEAPON
 		pitchRate = rotRate / 2;
 	}
 
-	tRotation = psWeapon->rot.direction;
-	tPitch = psWeapon->rot.pitch;
+	tRotation = psWeapon->rotation.direction;
+	tPitch = psWeapon->rotation.pitch;
 
 	//set the pitch limits based on the weapon stats of the attacker
 	pitchLowerLimit = pitchUpperLimit = 0;
@@ -403,8 +403,8 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, WEAPON
 		onTarget = onTarget && targetPitch == tPitch;
 	}
 
-	psWeapon->rot.direction = tRotation;
-	psWeapon->rot.pitch = tPitch;
+	psWeapon->rotation.direction = tRotation;
+	psWeapon->rotation.pitch = tPitch;
 
 	return onTarget;
 }
@@ -545,7 +545,7 @@ static void actionUpdateTransporter(Droid* psDroid)
 
 
 // check whether a droid is in the neighboring tile to a build position
-bool actionReachedBuildPos(Droid const* psDroid, int x, int y, uint16_t dir, BASE_STATS const* psStats)
+bool actionReachedBuildPos(Droid const* psDroid, int x, int y, uint16_t dir, BaseStats const* psStats)
 {
 	ASSERT_OR_RETURN(false, psStats != nullptr && psDroid != nullptr, "Bad stat or droid");
 	CHECK_DROID(psDroid);
@@ -561,7 +561,7 @@ bool actionReachedBuildPos(Droid const* psDroid, int x, int y, uint16_t dir, BAS
 
 
 // check if a droid is on the foundations of a new building
-static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir, BASE_STATS* psStats)
+static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir, BaseStats* psStats)
 {
 	ASSERT_OR_RETURN(false, psStats != nullptr, "Bad stat");
 
@@ -685,7 +685,7 @@ void actionUpdateDroid(Droid* psDroid)
 
 	CHECK_DROID(psDroid);
 
-	PROPULSION_STATS* psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
+	PropulsionStats* psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
 	ASSERT_OR_RETURN(, psPropStats != nullptr, "Invalid propulsion stats pointer");
 
 	bool secHoldActive = secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_HOLD;
@@ -743,7 +743,7 @@ void actionUpdateDroid(Droid* psDroid)
 				{
 					SimpleObject* psTemp = nullptr;
 
-					WEAPON_STATS* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
+					WeaponStats* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
 					if (psDroid->asWeaps[i].nStat > 0
 						&& psWeapStats->rotate
 						&& aiBestNearestTarget(psDroid, &psTemp, i) >= 0)
@@ -843,7 +843,7 @@ void actionUpdateDroid(Droid* psDroid)
 					SimpleObject* psTemp = nullptr;
 
 					//I moved psWeapStats flag update there
-					WEAPON_STATS* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
+					WeaponStats* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
 					if (!isVtolDroid(psDroid)
 						&& psDroid->asWeaps[i].nStat > 0
 						&& psWeapStats->rotate
@@ -933,7 +933,7 @@ void actionUpdateDroid(Droid* psDroid)
 			for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 			{
 				const unsigned compIndex = psDroid->asWeaps[i].nStat;
-				const WEAPON_STATS* psStats = asWeaponStats + compIndex;
+				const WeaponStats* psStats = asWeaponStats + compIndex;
 				wallBlocked = false;
 
 				// has weapon a target? is target valid?
@@ -1064,7 +1064,7 @@ void actionUpdateDroid(Droid* psDroid)
 				&& actionVisibleTarget(psDroid, psActionTarget, i)
 				&& actionInRange(psDroid, psActionTarget, i))
 			{
-				WEAPON_STATS* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
+				WeaponStats* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
 				WEAPON_EFFECT weapEffect = psWeapStats->weaponEffect;
 				blockingWall = visGetBlockingWall(psDroid, psActionTarget);
 
@@ -1198,7 +1198,7 @@ void actionUpdateDroid(Droid* psDroid)
 
 	case DACTION_VTOLATTACK:
 		{
-			WEAPON_STATS* psWeapStats = nullptr;
+			WeaponStats* psWeapStats = nullptr;
 			const bool targetIsValid = validTarget(psDroid, psDroid->action_target[0], 0);
 			//uses vtResult
 			if (psDroid->action_target[0] != nullptr &&
@@ -1322,7 +1322,7 @@ void actionUpdateDroid(Droid* psDroid)
 						&& actionVisibleTarget(psDroid, psDroid->action_target[0], i))
 					{
 						bool chaseBloke = false;
-						WEAPON_STATS* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
+						WeaponStats* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
 
 						if (psWeapStats->rotate)
 						{
@@ -1391,8 +1391,8 @@ void actionUpdateDroid(Droid* psDroid)
 			{
 				for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 				{
-					if ((psDroid->asWeaps[i].rot.direction != 0) ||
-						(psDroid->asWeaps[i].rot.pitch != 0))
+					if ((psDroid->asWeaps[i].rotation.direction != 0) ||
+							(psDroid->asWeaps[i].rotation.pitch != 0))
 					{
 						actionAlignTurret(psDroid, i);
 					}
@@ -1404,7 +1404,7 @@ void actionUpdateDroid(Droid* psDroid)
 				/* Stopped moving but haven't reached the target - possibly move again */
 
 				//'hack' to make the droid to check the primary turrent instead of all
-				WEAPON_STATS* const psWeapStats = &asWeaponStats[psDroid->asWeaps[0].nStat];
+				WeaponStats* const psWeapStats = &asWeaponStats[psDroid->asWeaps[0].nStat];
 
 				if (order->type == DORDER_ATTACKTARGET && secHoldActive)
 				{
@@ -2098,7 +2098,7 @@ void actionUpdateDroid(Droid* psDroid)
 					{
 						SimpleObject* psTemp = nullptr;
 
-						WEAPON_STATS* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
+						WeaponStats* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
 						if (psDroid->asWeaps[i].nStat > 0 && psWeapStats->rotate
 							&& secondaryGetState(psDroid, DSO_ATTACK_LEVEL) == DSS_ALEV_ALWAYS
 							&& aiBestNearestTarget(psDroid, &psTemp, i) >= 0 && psTemp)
@@ -2243,7 +2243,7 @@ void actionUpdateDroid(Droid* psDroid)
 		//use 0 for all non-combat droid types
 		if (psDroid->numWeaps == 0)
 		{
-			if (psDroid->asWeaps[0].rot.direction != 0 || psDroid->asWeaps[0].rot.pitch != 0)
+			if (psDroid->asWeaps[0].rotation.direction != 0 || psDroid->asWeaps[0].rotation.pitch != 0)
 			{
 				actionAlignTurret(psDroid, 0);
 			}
@@ -2252,7 +2252,7 @@ void actionUpdateDroid(Droid* psDroid)
 		{
 			for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 			{
-				if (psDroid->asWeaps[i].rot.direction != 0 || psDroid->asWeaps[i].rot.pitch != 0)
+				if (psDroid->asWeaps[i].rotation.direction != 0 || psDroid->asWeaps[i].rotation.pitch != 0)
 				{
 					actionAlignTurret(psDroid, i);
 				}
@@ -2267,7 +2267,7 @@ static void actionDroidBase(Droid* psDroid, DROID_ACTION_DATA* psAction)
 {
 	ASSERT_OR_RETURN(, psAction->psObj == nullptr || !psAction->psObj->died, "Droid dead");
 
-	WEAPON_STATS* psWeapStats = getWeaponStats(psDroid, 0);
+	WeaponStats* psWeapStats = getWeaponStats(psDroid, 0);
 	Vector2i pos(0, 0);
 
 	CHECK_DROID(psDroid);

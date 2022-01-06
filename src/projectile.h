@@ -64,25 +64,25 @@ int32_t projCalcIndirectVelocities(const int32_t dx, const int32_t dz, int32_t v
                                    int min_angle);
 
 /** Send a single projectile against the given target. */
-bool proj_SendProjectile(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target, SimpleObject* psTarget,
+bool proj_SendProjectile(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target, SimpleObject* psTarget,
                          bool bVisible, int weapon_slot);
 
 /** Send a single projectile against the given target
  * with a minimum shot angle. */
-bool proj_SendProjectileAngled(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target,
+bool proj_SendProjectileAngled(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target,
                                SimpleObject* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
 
 /** Return whether a weapon is direct or indirect. */
-bool proj_Direct(const WEAPON_STATS* psStats);
+bool proj_Direct(const WeaponStats* psStats);
 
 /** Return the maximum range for a weapon. */
-int proj_GetLongRange(const WEAPON_STATS* psStats, int player);
+int proj_GetLongRange(const WeaponStats* psStats, int player);
 
 /** Return the minimum range for a weapon. */
-int proj_GetMinRange(const WEAPON_STATS* psStats, int player);
+int proj_GetMinRange(const WeaponStats* psStats, int player);
 
 /** Return the short range for a weapon. */
-int proj_GetShortRange(const WEAPON_STATS* psStats, int player);
+int proj_GetShortRange(const WeaponStats* psStats, int player);
 
 UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* psTarget);
 bool gfxVisible(PROJECTILE* psObj);

@@ -27,7 +27,7 @@
 #include "weapondef.h"
 
 /* Fire a weapon at something added int weapon_slot*/
-bool combFire(WEAPON* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, int weapon_slot);
+bool combFire(Weapon* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, int weapon_slot);
 
 /*checks through the target players list of structures and droids to see
 if any support a counter battery sensor*/
@@ -36,7 +36,7 @@ void counterBatteryFire(SimpleObject* psAttacker, SimpleObject* psTarget);
 int32_t objDamage(SimpleObject* psObj, unsigned damage, unsigned originalhp, WEAPON_CLASS weaponClass,
                   WEAPON_SUBCLASS weaponSubClass, bool isDamagePerSecond, int minDamage);
 
-unsigned int objGuessFutureDamage(WEAPON_STATS* psStats, unsigned int player, SimpleObject* psTarget);
+unsigned int objGuessFutureDamage(WeaponStats* psStats, unsigned int player, SimpleObject* psTarget);
 
 int objArmour(const SimpleObject* psObj, WEAPON_CLASS weaponClass);
 

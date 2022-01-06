@@ -270,7 +270,7 @@ bool initTemplates()
 
 		char const* failPart = nullptr;
 		WzString failPartName;
-		auto designablePart = [&](COMPONENT_STATS const& component, char const* part)
+		auto designablePart = [&](ComponentStats const& component, char const* part)
 		{
 			if (!component.designable)
 			{
@@ -447,7 +447,7 @@ bool shutdownTemplates()
 
 DroidTemplate::DroidTemplate()
 // This constructor replaces a memset in scrAssembleWeaponTemplate(), not needed elsewhere.
-	: BASE_STATS(STAT_TEMPLATE)
+	: BaseStats(STAT_TEMPLATE)
 	  //, asParts
 	  , weapon_count(0)
 	  //, asWeaps

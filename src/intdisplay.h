@@ -61,12 +61,12 @@ struct ImdObject
 		return ImdObject(p, IMDTYPE_DROID);
 	}
 
-	static ImdObject DroidTemplate(BASE_STATS* p)
+	static ImdObject DroidTemplate(BaseStats* p)
 	{
 		return ImdObject(p, IMDTYPE_DROIDTEMPLATE);
 	}
 
-	static ImdObject Component(BASE_STATS* p)
+	static ImdObject Component(BaseStats* p)
 	{
 		return ImdObject(p, IMDTYPE_COMPONENT);
 	}
@@ -76,17 +76,17 @@ struct ImdObject
 		return ImdObject(p, IMDTYPE_STRUCTURE);
 	}
 
-	static ImdObject Research(BASE_STATS* p)
+	static ImdObject Research(BaseStats* p)
 	{
 		return ImdObject(p, IMDTYPE_RESEARCH);
 	}
 
-	static ImdObject StructureStat(BASE_STATS* p)
+	static ImdObject StructureStat(BaseStats* p)
 	{
 		return ImdObject(p, IMDTYPE_STRUCTURESTAT);
 	}
 
-	static ImdObject Feature(BASE_STATS* p)
+	static ImdObject Feature(BaseStats* p)
 	{
 		FEATURE_STATS* fStat = (FEATURE_STATS*)p;
 		return ImdObject(fStat->psImd, IMDTYPE_FEATURE);
@@ -191,7 +191,7 @@ public:
 		theStats = nullptr;
 	}
 
-	void setObjectAndStats(SimpleObject* object, BASE_STATS* stats)
+	void setObjectAndStats(SimpleObject* object, BaseStats* stats)
 	{
 		psObj = object;
 		theStats = stats;
@@ -200,7 +200,7 @@ public:
 	virtual void display(int xOffset, int yOffset);
 
 protected:
-	BASE_STATS* theStats;
+	BaseStats* theStats;
 };
 
 class IntStatsButton : public IntFancyButton
@@ -210,19 +210,19 @@ public:
 
 	virtual void display(int xOffset, int yOffset);
 
-	void setStats(BASE_STATS* stats)
+	void setStats(BaseStats* stats)
 	{
 		Stat = stats;
 	}
 
-	void setStatsAndTip(BASE_STATS* stats)
+	void setStatsAndTip(BaseStats* stats)
 	{
 		setStats(stats);
 		setTip(getStatsName(stats));
 	}
 
 protected:
-	BASE_STATS* Stat;
+	BaseStats* Stat;
 };
 
 /// Form which only acts as a glass container.
@@ -266,7 +266,7 @@ void formatPower(W_BARGRAPH* barGraph, int neededPower, int powerToBuild);
 bool DroidIsBuilding(Droid* Droid);
 Structure* DroidGetBuildStructure(Droid* Droid);
 bool DroidGoingToBuild(Droid* Droid);
-BASE_STATS* DroidGetBuildStats(Droid* Droid);
+BaseStats* DroidGetBuildStats(Droid* Droid);
 iIMDShape* DroidGetIMD(Droid* Droid);
 
 bool StructureIsManufacturingPending(Structure* structure);
@@ -280,15 +280,15 @@ DroidTemplate* FactoryGetTemplate(FACTORY* Factory);
 RESEARCH_FACILITY* StructureGetResearch(Structure* Structure);
 FACTORY* StructureGetFactory(Structure* Structure);
 
-bool StatIsStructure(BASE_STATS const* Stat);
-iIMDShape* StatGetStructureIMD(BASE_STATS* Stat, UDWORD Player);
-bool StatIsTemplate(BASE_STATS* Stat);
-bool StatIsFeature(BASE_STATS const* Stat);
+bool StatIsStructure(BaseStats const* Stat);
+iIMDShape* StatGetStructureIMD(BaseStats* Stat, UDWORD Player);
+bool StatIsTemplate(BaseStats* Stat);
+bool StatIsFeature(BaseStats const* Stat);
 
-COMPONENT_TYPE StatIsComponent(BASE_STATS* Stat);
-bool StatGetComponentIMD(BASE_STATS* Stat, SDWORD compID, iIMDShape** CompIMD, iIMDShape** MountIMD);
+COMPONENT_TYPE StatIsComponent(BaseStats* Stat);
+bool StatGetComponentIMD(BaseStats* Stat, SDWORD compID, iIMDShape** CompIMD, iIMDShape** MountIMD);
 
-bool StatIsResearch(BASE_STATS* Stat);
+bool StatIsResearch(BaseStats* Stat);
 
 // Widget callback function to play an audio track.
 void WidgetAudioCallback(int AudioID);

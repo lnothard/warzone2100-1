@@ -1547,7 +1547,7 @@ void kf_Reload()
 		{
 			unsigned int firePause = weaponFirePause(&asWeaponStats[psCurr->asWeaps[0].nStat], psCurr->player);
 
-			psCurr->asWeaps[0].lastFired -= firePause;
+			psCurr->asWeaps[0].time_last_fired -= firePause;
 			CONPRINTF("%s", _("Selected buildings instantly recharged!"));
 		}
 	}
@@ -1575,7 +1575,7 @@ void kf_FinishResearch()
 	{
 		if (psCurr->pStructureType->type == REF_RESEARCH)
 		{
-			BASE_STATS* pSubject;
+			BaseStats* pSubject;
 
 			// find out what we are researching here
 			pSubject = ((ResearchFacility*)psCurr->pFunctionality)->psSubject;

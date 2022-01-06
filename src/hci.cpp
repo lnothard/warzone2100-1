@@ -177,7 +177,7 @@ OBJECT_MODE objMode;
 std::shared_ptr<BaseObjectsController> interfaceController = nullptr;
 
 /* The current stats list being used by the stats screen */
-static BASE_STATS** ppsStatsList;
+static BaseStats** ppsStatsList;
 
 /* The selected builder on the object screen when the build screen is displayed */
 static Droid* psSelectedBuilder;
@@ -186,7 +186,7 @@ static Droid* psSelectedBuilder;
 static UDWORD statID;
 
 /* The stats for the current getStructPos */
-static BASE_STATS* psPositionStats;
+static BaseStats* psPositionStats;
 
 /* Store a list of stats pointers from the main structure stats */
 static StructureStats** apsStructStatsList;
@@ -200,9 +200,9 @@ static FEATURE_STATS** apsFeatureList;
 
 /* Store a list of component stats pointers for the design screen */
 UDWORD numComponent;
-COMPONENT_STATS** apsComponentList;
+ComponentStats** apsComponentList;
 UDWORD numExtraSys;
-COMPONENT_STATS** apsExtraSysList;
+ComponentStats** apsExtraSysList;
 
 /* Flags to check whether the power bars are currently on the screen */
 static bool powerBarUp = false;
@@ -248,7 +248,7 @@ static std::vector<IntUpdateFunc> intUpdateFuncs;
 
 /* Add the stats widgets to the widget screen */
 /* If psSelected != NULL it specifies which stat should be hilited */
-static bool intAddDebugStatsForm(BASE_STATS** ppsStatsList, UDWORD numStats);
+static bool intAddDebugStatsForm(BaseStats** ppsStatsList, UDWORD numStats);
 
 /* Add the build widgets to the widget screen */
 static bool intAddBuild();
@@ -928,10 +928,10 @@ bool intInitialise()
 	apsFeatureList = (FEATURE_STATS**)malloc(sizeof(FEATURE_STATS*) * MAXFEATURES);
 
 	/* Create storage for the component list */
-	apsComponentList = (COMPONENT_STATS**)malloc(sizeof(COMPONENT_STATS*) * MAXCOMPONENT);
+	apsComponentList = (ComponentStats**)malloc(sizeof(ComponentStats*) * MAXCOMPONENT);
 
 	/* Create storage for the extra systems list */
-	apsExtraSysList = (COMPONENT_STATS**)malloc(sizeof(COMPONENT_STATS*) * MAXEXTRASYS);
+	apsExtraSysList = (ComponentStats**)malloc(sizeof(ComponentStats*) * MAXEXTRASYS);
 
 	psSelectedBuilder = nullptr;
 
@@ -1271,7 +1271,7 @@ void intOpenDebugMenu(OBJECT_TYPE id)
 		{
 			apsTemplateList.push_back(&localTemplate);
 		}
-		ppsStatsList = (BASE_STATS**)&apsTemplateList[0];
+		ppsStatsList = (BaseStats**)&apsTemplateList[0];
 	// FIXME Ugly cast, and is undefined behaviour (strict-aliasing violation) in C/C++.
 		objMode = IOBJ_DEBUG_DROID;
 		intAddDebugStatsForm(ppsStatsList, apsTemplateList.size());
@@ -1283,7 +1283,7 @@ void intOpenDebugMenu(OBJECT_TYPE id)
 		{
 			apsStructStatsList[i] = asStructureStats + i;
 		}
-		ppsStatsList = (BASE_STATS**)apsStructStatsList;
+		ppsStatsList = (BaseStats**)apsStructStatsList;
 		objMode = IOBJ_DEBUG_STRUCTURE;
 		intAddDebugStatsForm(ppsStatsList, std::min<unsigned>(numStructureStats, MAXSTRUCTURES));
 		intMode = INT_EDITSTAT;
@@ -1294,7 +1294,7 @@ void intOpenDebugMenu(OBJECT_TYPE id)
 		{
 			apsFeatureList[i] = asFeatureStats + i;
 		}
-		ppsStatsList = (BASE_STATS**)apsFeatureList;
+		ppsStatsList = (BaseStats**)apsFeatureList;
 		intAddDebugStatsForm(ppsStatsList, std::min<unsigned>(numFeatureStats, MAXFEATURES));
 		intMode = INT_EDITSTAT;
 		editPosMode = IED_NOPOS;
@@ -1861,7 +1861,7 @@ INT_RETVAL intRunWidgets()
 static void intRunPower()
 {
 	UDWORD highlightedStatID;
-	BASE_STATS* psStat;
+	BaseStats* psStat;
 	UDWORD quantity = 0;
 
 	/* Find out which button was hilited */
@@ -1964,7 +1964,7 @@ void intStartConstructionPosition(Droid* builder, StructureStats* structure)
 
 
 /* Start looking for a structure location */
-void intStartStructPosition(BASE_STATS* psStats)
+void intStartStructPosition(BaseStats* psStats)
 {
 	init3DBuilding(psStats, nullptr, nullptr);
 }
@@ -2231,7 +2231,7 @@ void makeObsoleteButton(const std::shared_ptr<WIDGET>& parent)
 /* Add the stats widgets to the widget screen */
 /* If psSelected != NULL it specifies which stat should be hilited
    psOwner specifies which object is hilighted on the object bar for this stat*/
-static bool intAddDebugStatsForm(BASE_STATS** _ppsStatsList, UDWORD numStats)
+static bool intAddDebugStatsForm(BaseStats** _ppsStatsList, UDWORD numStats)
 {
 	// should this ever be called with psOwner == NULL?
 
@@ -2315,7 +2315,7 @@ static bool intAddDebugStatsForm(BASE_STATS** _ppsStatsList, UDWORD numStats)
 		button->setStats(_ppsStatsList[i]);
 		statList->addWidgetToLayout(button);
 
-		BASE_STATS* Stat = _ppsStatsList[i];
+		BaseStats* Stat = _ppsStatsList[i];
 		WzString tipString = getStatsName(_ppsStatsList[i]);
 		unsigned powerCost = 0;
 		W_BARGRAPH* bar;
@@ -2362,7 +2362,7 @@ static bool intAddDebugStatsForm(BASE_STATS** _ppsStatsList, UDWORD numStats)
 }
 
 /* Return the stats for a research facility */
-static BASE_STATS* getResearchStats(SimpleObject* psObj)
+static BaseStats* getResearchStats(SimpleObject* psObj)
 {
 	ASSERT_OR_RETURN(nullptr, psObj != nullptr && psObj->type == OBJ_STRUCTURE, "Invalid Structure pointer");
 	Structure* psBuilding = (Structure*)psObj;

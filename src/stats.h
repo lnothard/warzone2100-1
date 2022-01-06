@@ -35,14 +35,14 @@
  */
 
 /* The stores for the different stats */
-extern BODY_STATS* asBodyStats;
-extern BRAIN_STATS* asBrainStats;
-extern PROPULSION_STATS* asPropulsionStats;
-extern SENSOR_STATS* asSensorStats;
-extern ECM_STATS* asECMStats;
-extern REPAIR_STATS* asRepairStats;
-extern WEAPON_STATS* asWeaponStats;
-extern CONSTRUCT_STATS* asConstructStats;
+extern BodyStats* asBodyStats;
+extern CommanderStats* asBrainStats;
+extern PropulsionStats* asPropulsionStats;
+extern SensorStats* asSensorStats;
+extern EcmStats* asECMStats;
+extern RepairStats* asRepairStats;
+extern WeaponStats* asWeaponStats;
+extern ConstructStats* asConstructStats;
 extern std::vector<PROPULSION_TYPES> asPropulsionTypes;
 
 //used to hold the modifiers cross refd by weapon effect and propulsion type
@@ -166,13 +166,13 @@ int getCompFromName(COMPONENT_TYPE compType, const WzString& name);
 int getCompFromID(COMPONENT_TYPE compType, const WzString& name);
 
 /// Get the component pointer for a component based on the name
-COMPONENT_STATS* getCompStatsFromName(const WzString& name);
+ComponentStats* getCompStatsFromName(const WzString& name);
 
 /// Get the structure pointer for a structure based on the name
 STRUCTURE_STATS* getStructStatsFromName(const WzString& name);
 
 /// Get the base stat pointer for a stat based on the name
-BASE_STATS* getBaseStatsFromName(const WzString& name);
+BaseStats* getBaseStatsFromName(const WzString& name);
 
 /*returns the weapon sub class based on the string name passed in */
 bool getWeaponSubClass(const char* subClass, WEAPON_SUBCLASS* wclass);
@@ -213,20 +213,20 @@ bool getPropulsionType(const char* typeName, PROPULSION_TYPE* type);
  */
 extern const StringToEnumMap<WEAPON_EFFECT> map_WEAPON_EFFECT;
 
-WZ_DECL_PURE int weaponROF(const WEAPON_STATS* psStat, int player);
-WZ_DECL_PURE int weaponFirePause(const WEAPON_STATS* psStats, int player);
-WZ_DECL_PURE int weaponReloadTime(const WEAPON_STATS* psStats, int player);
-WZ_DECL_PURE int weaponShortHit(const WEAPON_STATS* psStats, int player);
-WZ_DECL_PURE int weaponLongHit(const WEAPON_STATS* psStats, int player);
-WZ_DECL_PURE int weaponDamage(const WEAPON_STATS* psStats, int player);
-WZ_DECL_PURE int weaponRadDamage(const WEAPON_STATS* psStats, int player);
-WZ_DECL_PURE int weaponPeriodicalDamage(const WEAPON_STATS* psStats, int player);
-WZ_DECL_PURE int sensorRange(const SENSOR_STATS* psStats, int player);
-WZ_DECL_PURE int ecmRange(const ECM_STATS* psStats, int player);
-WZ_DECL_PURE int repairPoints(const REPAIR_STATS* psStats, int player);
-WZ_DECL_PURE int constructorPoints(const CONSTRUCT_STATS* psStats, int player);
-WZ_DECL_PURE int bodyPower(const BODY_STATS* psStats, int player);
-WZ_DECL_PURE int bodyArmour(const BODY_STATS* psStats, int player, WEAPON_CLASS weaponClass);
+WZ_DECL_PURE int weaponROF(const WeaponStats* psStat, int player);
+WZ_DECL_PURE int weaponFirePause(const WeaponStats* psStats, int player);
+WZ_DECL_PURE int weaponReloadTime(const WeaponStats* psStats, int player);
+WZ_DECL_PURE int weaponShortHit(const WeaponStats* psStats, int player);
+WZ_DECL_PURE int weaponLongHit(const WeaponStats* psStats, int player);
+WZ_DECL_PURE int weaponDamage(const WeaponStats* psStats, int player);
+WZ_DECL_PURE int weaponRadDamage(const WeaponStats* psStats, int player);
+WZ_DECL_PURE int weaponPeriodicalDamage(const WeaponStats* psStats, int player);
+WZ_DECL_PURE int sensorRange(const SensorStats* psStats, int player);
+WZ_DECL_PURE int ecmRange(const EcmStats* psStats, int player);
+WZ_DECL_PURE int repairPoints(const RepairStats* psStats, int player);
+WZ_DECL_PURE int constructorPoints(const ConstructStats* psStats, int player);
+WZ_DECL_PURE int bodyPower(const BodyStats* psStats, int player);
+WZ_DECL_PURE int bodyArmour(const BodyStats* psStats, int player, WEAPON_CLASS weaponClass);
 
 WZ_DECL_PURE bool objHasWeapon(const SimpleObject* psObj);
 
@@ -241,7 +241,7 @@ bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS* weaponClass);
 /* Wrappers */
 
 /** If object is an active radar (has sensor turret), then return a pointer to its sensor stats. If not, return NULL. */
-WZ_DECL_PURE SENSOR_STATS* objActiveRadar(const SimpleObject* psObj);
+WZ_DECL_PURE SensorStats* objActiveRadar(const SimpleObject* psObj);
 
 /** Returns whether object has a radar detector sensor. */
 WZ_DECL_PURE bool objRadarDetector(const SimpleObject* psObj);

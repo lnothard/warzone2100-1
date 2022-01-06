@@ -1495,7 +1495,7 @@ bool clipDroidOnScreen(Droid* psDroid, const glm::mat4& viewModelMatrix, int ove
 {
 	/* Get its absolute dimensions */
 	// NOTE: This only takes into account body, but is "good enough"
-	const BODY_STATS* psBStats = asBodyStats + psDroid->asBits[COMP_BODY];
+	const BodyStats* psBStats = asBodyStats + psDroid->asBits[COMP_BODY];
 	const iIMDShape* pIMD = (psBStats != nullptr) ? psBStats->pIMD : nullptr;
 
 	return clipShapeOnScreen(pIMD, viewModelMatrix, overdrawScreenPoints);
@@ -1577,7 +1577,7 @@ static void display3DProjectiles(const glm::mat4& viewMatrix)
 /// Draw a projectile to the screen
 void renderProjectile(PROJECTILE* psCurr, const glm::mat4& viewMatrix)
 {
-	WEAPON_STATS* psStats;
+	WeaponStats* psStats;
 	Vector3i dv;
 	iIMDShape* pIMD;
 	Spacetime st;
@@ -2465,8 +2465,8 @@ static void renderStructureTurrets(Structure* psStructure, iIMDShape* strImd, PI
 						if (flashImd[i]->numFrames == 0 || flashImd[i]->animInterval <= 0)
 						{
 							// no anim so display one frame for a fixed time
-							if (graphicsTime >= psStructure->asWeaps[i].lastFired && graphicsTime < psStructure->asWeaps
-								[i].lastFired + BASE_MUZZLE_FLASH_DURATION)
+							if (graphicsTime >= psStructure->asWeaps[i].time_last_fired && graphicsTime < psStructure->asWeaps
+								[i].time_last_fired + BASE_MUZZLE_FLASH_DURATION)
 							{
 								pie_Draw3DShape(flashImd[i], 0, colour, buildingBrightness, 0, 0,
 								                modelViewMatrix * matrix); //muzzle flash
@@ -2474,7 +2474,7 @@ static void renderStructureTurrets(Structure* psStructure, iIMDShape* strImd, PI
 						}
 						else
 						{
-							const int frame = (graphicsTime - psStructure->asWeaps[i].lastFired) / flashImd[i]->
+							const int frame = (graphicsTime - psStructure->asWeaps[i].time_last_fired) / flashImd[i]->
 								animInterval;
 							if (frame < flashImd[i]->numFrames && frame >= 0)
 							{
@@ -2808,7 +2808,7 @@ static void drawDragBox()
 
 
 /// Display reload bars for structures and droids
-static void drawWeaponReloadBar(SimpleObject* psObj, WEAPON* psWeap, int weapon_slot)
+static void drawWeaponReloadBar(SimpleObject* psObj, Weapon* psWeap, int weapon_slot)
 {
 	SDWORD scrX, scrY, scrR, scale;
 	Structure* psStruct;
@@ -3530,7 +3530,7 @@ static void drawDroidCmndNo(Droid* psDroid)
 void calcScreenCoords(Droid* psDroid, const glm::mat4& viewMatrix)
 {
 	/* Get it's absolute dimensions */
-	const BODY_STATS* psBStats = asBodyStats + psDroid->asBits[COMP_BODY];
+	const BodyStats* psBStats = asBodyStats + psDroid->asBits[COMP_BODY];
 	Vector3i origin;
 	Vector2i center(0, 0);
 	int wsRadius = 22; // World space radius, 22 = magic minimum
@@ -4000,7 +4000,7 @@ static void showEffectCircle(Position centre, int32_t radius, uint32_t auxVar, E
 // Note, it only does it for the first weapon slot!
 static void showWeaponRange(SimpleObject* psObj)
 {
-	WEAPON_STATS* psStats;
+	WeaponStats* psStats;
 
 	if (psObj->type == OBJ_DROID)
 	{
