@@ -515,7 +515,7 @@ static bool displayCompObj(Droid* psDroid, bool bButton, const glm::mat4& viewMa
 	psMoveAnim = asBodyStats[psDroid->asBits[COMP_BODY]].ppMoveIMDList[psDroid->asBits[COMP_PROPULSION]];
 	psStillAnim = asBodyStats[psDroid->asBits[COMP_BODY]].ppStillIMDList[psDroid->asBits[COMP_PROPULSION]];
 	glm::mat4 viewModelMatrix = viewMatrix * modelMatrix;
-	if (!bButton && psMoveAnim && psDroid->movement.Status != MOVEINACTIVE)
+	if (!bButton && psMoveAnim && psDroid->movement.status != MOVEINACTIVE)
 	{
 		if (pie_Draw3DShape(psMoveAnim, getModularScaledGraphicsTime(psMoveAnim->animInterval, psMoveAnim->numFrames),
 		                    colour, brightness, pie_ADDITIVE, 200, viewModelMatrix))
@@ -887,7 +887,7 @@ void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix)
 
 	if (psDroid->timeLastHit - graphicsTime < ELEC_DAMAGE_DURATION && psDroid->lastHitWeapon == WSC_ELECTRONIC)
 	{
-		modelMatrix *= objectShimmy((BASE_OBJECT*)psDroid);
+		modelMatrix *= objectShimmy((SimpleObject*)psDroid);
 	}
 
 	// now check if the projected circle is within the screen boundaries

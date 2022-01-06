@@ -40,7 +40,7 @@
 #include "objmem.h"
 
 /* Fire a weapon at something */
-bool combFire(WEAPON* psWeap, BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, int weapon_slot)
+bool combFire(WEAPON* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, int weapon_slot)
 {
 	WEAPON_STATS* psStats;
 	UDWORD firePause;
@@ -212,7 +212,7 @@ bool combFire(WEAPON* psWeap, BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, in
 		resultHitChance -= EXP_ACCURACY_BONUS * level * baseHitChance / 100;
 	}
 
-	if (psAttacker->type == OBJ_DROID && ((Droid*)psAttacker)->movement.Status != MOVEINACTIVE
+	if (psAttacker->type == OBJ_DROID && ((Droid*)psAttacker)->movement.status != MOVEINACTIVE
 		&& !psStats->fireOnMove)
 	{
 		return false; // Can't fire while moving
@@ -332,7 +332,7 @@ bool combFire(WEAPON* psWeap, BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, in
 
 /*checks through the target players list of structures and droids to see
 if any support a counter battery sensor*/
-void counterBatteryFire(BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget)
+void counterBatteryFire(SimpleObject* psAttacker, SimpleObject* psTarget)
 {
 	/*if a null target is passed in ignore - this will be the case when a 'miss'
 	projectile is sent - we may have to cater for these at some point*/
@@ -347,7 +347,7 @@ void counterBatteryFire(BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget)
 
 	CHECK_OBJECT(psTarget);
 
-	for (BASE_OBJECT* psViewer = apsSensorList[0]; psViewer; psViewer = psViewer->psNextFunc)
+	for (SimpleObject* psViewer = apsSensorList[0]; psViewer; psViewer = psViewer->psNextFunc)
 	{
 		if (aiCheckAlliances(psTarget->player, psViewer->player))
 		{
@@ -379,7 +379,7 @@ void counterBatteryFire(BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget)
 	}
 }
 
-int objArmour(const BASE_OBJECT* psObj, WEAPON_CLASS weaponClass)
+int objArmour(const SimpleObject* psObj, WEAPON_CLASS weaponClass)
 {
 	int armour = 0;
 	if (psObj->type == OBJ_DROID)
@@ -410,7 +410,7 @@ int objArmour(const BASE_OBJECT* psObj, WEAPON_CLASS weaponClass)
  * \param weaponSubClass the subclass of the weapon that deals the damage
  * \return < 0 when the dealt damage destroys the object, > 0 when the object survives
  */
-int32_t objDamage(BASE_OBJECT* psObj, unsigned damage, unsigned originalhp, WEAPON_CLASS weaponClass,
+int32_t objDamage(SimpleObject* psObj, unsigned damage, unsigned originalhp, WEAPON_CLASS weaponClass,
                   WEAPON_SUBCLASS weaponSubClass, bool isDamagePerSecond, int minDamage)
 {
 	int level = 1;
@@ -509,7 +509,7 @@ int32_t objDamage(BASE_OBJECT* psObj, unsigned damage, unsigned originalhp, WEAP
  * \param weaponSubClass the subclass of the weapon that deals the damage
  * \return guess at amount of damage
  */
-unsigned int objGuessFutureDamage(WEAPON_STATS* psStats, unsigned int player, BASE_OBJECT* psTarget)
+unsigned int objGuessFutureDamage(WEAPON_STATS* psStats, unsigned int player, SimpleObject* psTarget)
 {
 	unsigned int damage;
 	int actualDamage, armour, level = 1;

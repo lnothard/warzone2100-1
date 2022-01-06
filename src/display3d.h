@@ -104,7 +104,7 @@ extern iView playerPos;
 extern bool selectAttempt;
 
 extern SDWORD scrollSpeed;
-void assignSensorTarget(BASE_OBJECT* psObj);
+void assignSensorTarget(SimpleObject* psObj);
 void assignDestTarget();
 UDWORD getWaterTileNum();
 void setUnderwaterTile(UDWORD num);
@@ -145,7 +145,7 @@ extern bool CauseCrash;
 extern bool tuiTargetOrigin;
 
 /// Draws using the animation systems. Usually want to use in a while loop to get all model levels.
-bool drawShape(BASE_OBJECT* psObj, iIMDShape* strImd, int colour, PIELIGHT buildingBrightness, int pieFlag,
+bool drawShape(SimpleObject* psObj, iIMDShape* strImd, int colour, PIELIGHT buildingBrightness, int pieFlag,
                int pieFlagData, const glm::mat4& viewMatrix);
 
 int calculateCameraHeightAt(int tileX, int tileY);

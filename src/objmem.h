@@ -32,11 +32,11 @@ extern Structure* apsStructLists[MAX_PLAYERS];
 extern FEATURE* apsFeatureLists[MAX_PLAYERS];
 extern FLAG_POSITION* apsFlagPosLists[MAX_PLAYERS];
 extern Structure* apsExtractorLists[MAX_PLAYERS];
-extern BASE_OBJECT* apsSensorList[1];
+extern SimpleObject* apsSensorList[1];
 extern FEATURE* apsOilList[1];
 
 /* The list of destroyed objects */
-extern BASE_OBJECT* psDestroyedObj;
+extern SimpleObject* psDestroyedObj;
 
 /* Initialise the object heaps */
 bool objmemInitialise();
@@ -101,8 +101,8 @@ void removeFlagPosition(FLAG_POSITION* psDel);
 void freeAllFlagPositions();
 
 // Find a base object from it's id
-BASE_OBJECT* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type);
-BASE_OBJECT* getBaseObjFromId(UDWORD id);
+SimpleObject* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type);
+SimpleObject* getBaseObjFromId(UDWORD id);
 
 UDWORD getRepairIdFromFlag(FLAG_POSITION* psFlag);
 

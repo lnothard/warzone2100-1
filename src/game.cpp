@@ -2420,7 +2420,7 @@ static void sanityUpdate()
 	}
 }
 
-static void getIniBaseObject(WzConfig& ini, WzString const& key, BASE_OBJECT*& object)
+static void getIniBaseObject(WzConfig& ini, WzString const& key, SimpleObject*& object)
 {
 	object = nullptr;
 	if (ini.contains(key + "/id"))
@@ -2456,7 +2456,7 @@ static void getIniDroidOrder(WzConfig& ini, WzString const& key, Order& order)
 	getIniStructureStats(ini, key + "/stats", order.psStats);
 }
 
-static void setIniBaseObject(nlohmann::json& json, WzString const& key, BASE_OBJECT const* object)
+static void setIniBaseObject(nlohmann::json& json, WzString const& key, SimpleObject const* object)
 {
 	if (object != nullptr && object->died <= 1)
 	{
@@ -2792,7 +2792,7 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 				{
 					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psStr->player, selectedPlayer))
 					{
-						visTilesUpdate((BASE_OBJECT*)psStr);
+						visTilesUpdate((SimpleObject*)psStr);
 					}
 				}
 
@@ -2801,7 +2801,7 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 				{
 					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psDroid->player, selectedPlayer))
 					{
-						visTilesUpdate((BASE_OBJECT*)psDroid);
+						visTilesUpdate((SimpleObject*)psDroid);
 					}
 				}
 			}
@@ -5339,7 +5339,7 @@ static bool loadSaveDroidPointers(const WzString& pFileName, Droid** ppsCurrentD
 			int tplayer = ini.value("baseStruct/player", -1).toInt();
 			OBJECT_TYPE ttype = (OBJECT_TYPE)ini.value("baseStruct/type", 0).toInt();
 			ASSERT(tid >= 0 && tplayer >= 0, "Bad ID");
-			BASE_OBJECT* psObj = getBaseObjFromData(tid, tplayer, ttype);
+			SimpleObject* psObj = getBaseObjFromData(tid, tplayer, ttype);
 			ASSERT(psObj, "Failed to find droid base structure");
 			ASSERT(!psObj || psObj->type == OBJ_STRUCTURE, "Droid base structure not a structure");
 			setSaveDroidBase(psDroid, (Structure*)psObj);
@@ -5375,7 +5375,7 @@ static int healthValue(WzConfig& ini, int defaultValue)
 	}
 }
 
-static void loadSaveObject(WzConfig& ini, BASE_OBJECT* psObj)
+static void loadSaveObject(WzConfig& ini, SimpleObject* psObj)
 {
 	psObj->died = ini.value("died", 0).toInt();
 	memset(psObj->visible, 0, sizeof(psObj->visible));
@@ -5393,7 +5393,7 @@ static void loadSaveObject(WzConfig& ini, BASE_OBJECT* psObj)
 	psObj->born = ini.value("born", 2).toInt();
 }
 
-static void writeSaveObject(WzConfig& ini, BASE_OBJECT* psObj)
+static void writeSaveObject(WzConfig& ini, SimpleObject* psObj)
 {
 	ini.setValue("id", psObj->id);
 	setPlayer(ini, psObj->player);
@@ -5443,7 +5443,7 @@ static void writeSaveObject(WzConfig& ini, BASE_OBJECT* psObj)
 	}
 }
 
-static void writeSaveObjectJSON(nlohmann::json& jsonObj, BASE_OBJECT* psObj)
+static void writeSaveObjectJSON(nlohmann::json& jsonObj, SimpleObject* psObj)
 {
 	jsonObj["id"] = psObj->id;
 	setPlayerJSON(jsonObj, psObj->player);
@@ -5629,7 +5629,7 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 		psDroid->resistance_to_electric = ini.value("resistance", 0).toInt(); // zero resistance == no electronic damage
 		psDroid->lastFrustratedTime = ini.value("lastFrustratedTime", 0).toInt();
 
-		// common BASE_OBJECT info
+		// common SimpleObject info
 		loadSaveObject(ini, psDroid);
 
 		// copy the droid's weapon stats
@@ -5648,7 +5648,7 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 		int aigroup = ini.value("aigroup", -1).toInt();
 		if (aigroup >= 0)
 		{
-			DROID_GROUP* psGroup = grpFind(aigroup);
+			Group* psGroup = grpFind(aigroup);
 			psGroup->add(psDroid);
 			if (psGroup->type == GT_TRANSPORTER)
 			{
@@ -5660,7 +5660,7 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 		{
 			if (isTransporter(psDroid) || psDroid->type == DROID_COMMAND)
 			{
-				DROID_GROUP* psGroup = grpCreate();
+				Group* psGroup = grpCreate();
 				psGroup->add(psDroid);
 			}
 			else
@@ -5669,13 +5669,13 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 			}
 		}
 
-		psDroid->movement.Status = (MOVE_STATUS)ini.value("moveStatus", 0).toInt();
+		psDroid->movement.status = (MOVE_STATUS)ini.value("moveStatus", 0).toInt();
 		psDroid->movement.pathIndex = ini.value("pathIndex", 0).toInt();
 		const int numPoints = ini.value("pathLength", 0).toInt();
-		psDroid->movement.asPath.resize(numPoints);
+		psDroid->movement.path.resize(numPoints);
 		for (int j = 0; j < numPoints; j++)
 		{
-			psDroid->movement.asPath[j] = ini.vector2i("pathNode/" + WzString::number(j));
+			psDroid->movement.path[j] = ini.vector2i("pathNode/" + WzString::number(j));
 		}
 		psDroid->movement.destination = ini.vector2i("moveDestination");
 		psDroid->movement.src = ini.vector2i("moveSource");
@@ -5683,7 +5683,7 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 		psDroid->movement.speed = ini.value("moveSpeed").toInt();
 		psDroid->movement.moveDir = ini.value("moveDirection").toInt();
 		psDroid->movement.bumpDir = ini.value("bumpDir").toInt();
-		psDroid->movement.iVertSpeed = ini.value("vertSpeed").toInt();
+		psDroid->movement.vertical_speed = ini.value("vertSpeed").toInt();
 		psDroid->movement.bumpTime = ini.value("bumpTime").toInt();
 		psDroid->movement.shuffleStart = ini.value("shuffleStart").toInt();
 		for (int j = 0; j < MAX_WEAPONS; ++j)
@@ -5696,23 +5696,23 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 		psDroid->movement.bumpPos = Vector3i(tmp.x, tmp.y, 0);
 
 		// Recreate path-finding jobs
-		if (psDroid->movement.Status == MOVEWAITROUTE)
+		if (psDroid->movement.status == MOVEWAITROUTE)
 		{
-			psDroid->movement.Status = MOVEINACTIVE;
+			psDroid->movement.status = MOVEINACTIVE;
 			fpathDroidRoute(psDroid, psDroid->movement.destination.x, psDroid->movement.destination.y, FMT_MOVE);
-			psDroid->movement.Status = MOVEWAITROUTE;
+			psDroid->movement.status = MOVEWAITROUTE;
 
 			// Droid might be on a mission, so finish pathfinding now, in case pointers swap and map size changes.
 			FPATH_RETVAL dr = fpathDroidRoute(psDroid, psDroid->movement.destination.x, psDroid->movement.destination.y,
                                         FMT_MOVE);
 			if (dr == FPR_OK)
 			{
-				psDroid->movement.Status = MOVENAVIGATE;
+				psDroid->movement.status = MOVENAVIGATE;
 				psDroid->movement.pathIndex = 0;
 			}
 			else // if (retVal == FPR_FAILED)
 			{
-				psDroid->movement.Status = MOVEINACTIVE;
+				psDroid->movement.status = MOVEINACTIVE;
 				actionDroid(psDroid, DACTION_SULK);
 			}
 			ASSERT(dr != FPR_WAIT, " ");
@@ -5746,7 +5746,7 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 	nlohmann::json droidObj = nlohmann::json::object();
 	droidObj["name"] = psCurr->name;
 	droidObj["originalBody"] = psCurr->original_hp;
-	// write common BASE_OBJECT info
+	// write common SimpleObject info
 	writeSaveObjectJSON(droidObj, psCurr);
 
 	for (unsigned i = 0; i < psCurr->numWeaps; i++)
@@ -5829,12 +5829,12 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 		partsObj["weapon/" + WzString::number(j + 1).toStdString()] = (asWeaponStats + psCurr->asWeaps[j].nStat)->id;
 	}
 	droidObj["parts"] = partsObj;
-	droidObj["moveStatus"] = psCurr->movement.Status;
+	droidObj["moveStatus"] = psCurr->movement.status;
 	droidObj["pathIndex"] = psCurr->movement.pathIndex;
-	droidObj["pathLength"] = psCurr->movement.asPath.size();
-	for (unsigned i = 0; i < psCurr->movement.asPath.size(); i++)
+	droidObj["pathLength"] = psCurr->movement.path.size();
+	for (unsigned i = 0; i < psCurr->movement.path.size(); i++)
 	{
-		droidObj["pathNode/" + WzString::number(i).toStdString()] = psCurr->movement.asPath[i];
+		droidObj["pathNode/" + WzString::number(i).toStdString()] = psCurr->movement.path[i];
 	}
 	droidObj["moveDestination"] = psCurr->movement.destination;
 	droidObj["moveSource"] = psCurr->movement.src;
@@ -5842,7 +5842,7 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 	droidObj["moveSpeed"] = psCurr->movement.speed;
 	droidObj["moveDirection"] = psCurr->movement.moveDir;
 	droidObj["bumpDir"] = psCurr->movement.bumpDir;
-	droidObj["vertSpeed"] = psCurr->movement.iVertSpeed;
+	droidObj["vertSpeed"] = psCurr->movement.vertical_speed;
 	droidObj["bumpTime"] = psCurr->movement.bumpTime;
 	droidObj["shuffleStart"] = psCurr->movement.shuffleStart;
 	for (int i = 0; i < MAX_WEAPONS; ++i)
@@ -6192,10 +6192,10 @@ static bool loadSaveStructure2(const char* pFileName, Structure** ppList)
 	std::vector<WzString> list = ini.childGroups();
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		FACTORY* psFactory;
-		RESEARCH_FACILITY* psResearch;
-		REPAIR_FACILITY* psRepair;
-		REARM_PAD* psReArmPad;
+		Factory* psFactory;
+		ResearchFacility* psResearch;
+		RepairFacility* psRepair;
+		RearmPad* psReArmPad;
 		StructureStats* psModule;
 		int capacity, researchId;
 		Structure* psStructure;
@@ -6251,7 +6251,7 @@ static bool loadSaveStructure2(const char* pFileName, Structure** ppList)
 			psStructure->id = id; // force correct ID
 		}
 
-		// common BASE_OBJECT info
+		// common SimpleObject info
 		loadSaveObject(ini, psStructure);
 
 		if (psStructure->pStructureType->type == REF_HQ)
@@ -6267,7 +6267,7 @@ static bool loadSaveStructure2(const char* pFileName, Structure** ppList)
 		case REF_VTOL_FACTORY:
 		case REF_CYBORG_FACTORY:
 			//if factory save the current build info
-			psFactory = ((FACTORY*)psStructure->pFunctionality);
+			psFactory = ((Factory*)psStructure->pFunctionality);
 			psFactory->productionLoops = ini.value("Factory/productionLoops", psFactory->productionLoops).toUInt();
 			psFactory->timeStarted = ini.value("Factory/timeStarted", psFactory->timeStarted).toInt();
 			psFactory->buildPointsRemaining = ini.value("Factory/buildPointsRemaining", psFactory->buildPointsRemaining)
@@ -6328,7 +6328,7 @@ static bool loadSaveStructure2(const char* pFileName, Structure** ppList)
 			}
 			break;
 		case REF_RESEARCH:
-			psResearch = ((RESEARCH_FACILITY*)psStructure->pFunctionality);
+			psResearch = ((ResearchFacility*)psStructure->pFunctionality);
 		//adjust the module structures IMD
 			if (capacity)
 			{
@@ -6365,7 +6365,7 @@ static bool loadSaveStructure2(const char* pFileName, Structure** ppList)
 		case REF_RESOURCE_EXTRACTOR:
 			break;
 		case REF_REPAIR_FACILITY:
-			psRepair = ((REPAIR_FACILITY*)psStructure->pFunctionality);
+			psRepair = ((RepairFacility*)psStructure->pFunctionality);
 			if (ini.contains("Repair/deliveryPoint/pos"))
 			{
 				Position point = ini.vector3i("Repair/deliveryPoint/pos");
@@ -6374,7 +6374,7 @@ static bool loadSaveStructure2(const char* pFileName, Structure** ppList)
 			}
 			break;
 		case REF_REARM_PAD:
-			psReArmPad = ((REARM_PAD*)psStructure->pFunctionality);
+			psReArmPad = ((RearmPad*)psStructure->pFunctionality);
 			psReArmPad->timeStarted = ini.value("Rearm/timeStarted", psReArmPad->timeStarted).toInt();
 			psReArmPad->timeLastUpdated = ini.value("Rearm/timeLastUpdated", psReArmPad->timeLastUpdated).toInt();
 			break;
@@ -6527,7 +6527,7 @@ bool writeStructFile(const char* pFileName)
 				if (psCurr->pStructureType->type == REF_FACTORY || psCurr->pStructureType->type == REF_CYBORG_FACTORY
 					|| psCurr->pStructureType->type == REF_VTOL_FACTORY)
 				{
-					FACTORY* psFactory = (FACTORY*)psCurr->pFunctionality;
+					Factory* psFactory = (Factory*)psCurr->pFunctionality;
 					ini.setValue("modules", psCurr->capacity);
 					ini.setValue("Factory/productionLoops", psFactory->productionLoops);
 					ini.setValue("Factory/timeStarted", psFactory->timeStarted);
@@ -6541,7 +6541,7 @@ bool writeStructFile(const char* pFileName)
 					{
 						ini.setValue("Factory/template", psFactory->psSubject->id);
 					}
-					FLAG_POSITION* psFlag = ((FACTORY*)psCurr->pFunctionality)->psAssemblyPoint;
+					FLAG_POSITION* psFlag = ((Factory*)psCurr->pFunctionality)->psAssemblyPoint;
 					if (psFlag != nullptr)
 					{
 						ini.setVector3i("Factory/assemblyPoint/pos", psFlag->coords);
@@ -6587,10 +6587,10 @@ bool writeStructFile(const char* pFileName)
 				else if (psCurr->pStructureType->type == REF_RESEARCH)
 				{
 					ini.setValue("modules", psCurr->capacity);
-					ini.setValue("Research/timeStartHold", ((RESEARCH_FACILITY*)psCurr->pFunctionality)->timeStartHold);
-					if (((RESEARCH_FACILITY*)psCurr->pFunctionality)->psSubject)
+					ini.setValue("Research/timeStartHold", ((ResearchFacility*)psCurr->pFunctionality)->timeStartHold);
+					if (((ResearchFacility*)psCurr->pFunctionality)->psSubject)
 					{
-						ini.setValue("Research/target", ((RESEARCH_FACILITY*)psCurr->pFunctionality)->psSubject->id);
+						ini.setValue("Research/target", ((ResearchFacility*)psCurr->pFunctionality)->psSubject->id);
 					}
 				}
 				else if (psCurr->pStructureType->type == REF_POWER_GEN)
@@ -6599,7 +6599,7 @@ bool writeStructFile(const char* pFileName)
 				}
 				else if (psCurr->pStructureType->type == REF_REPAIR_FACILITY)
 				{
-					REPAIR_FACILITY* psRepair = ((REPAIR_FACILITY*)psCurr->pFunctionality);
+					RepairFacility* psRepair = ((RepairFacility*)psCurr->pFunctionality);
 					if (psRepair->psObj)
 					{
 						ini.setValue("Repair/target/id", psRepair->psObj->id);
@@ -6618,7 +6618,7 @@ bool writeStructFile(const char* pFileName)
 				}
 				else if (psCurr->pStructureType->type == REF_REARM_PAD)
 				{
-					REARM_PAD* psReArmPad = ((REARM_PAD*)psCurr->pFunctionality);
+					RearmPad* psReArmPad = ((RearmPad*)psCurr->pFunctionality);
 					ini.setValue("Rearm/timeStarted", psReArmPad->timeStarted);
 					ini.setValue("Rearm/timeLastUpdated", psReArmPad->timeLastUpdated);
 					if (psReArmPad->psObj)
@@ -6677,7 +6677,7 @@ bool loadSaveStructurePointers(const WzString& filename, Structure** ppList)
 		{
 			ASSERT(psStruct->pStructureType->type == REF_FACTORY || psStruct->pStructureType->type == REF_CYBORG_FACTORY
 			       || psStruct->pStructureType->type == REF_VTOL_FACTORY, "Bad type");
-			FACTORY* psFactory = (FACTORY*)psStruct->pFunctionality;
+			Factory* psFactory = (Factory*)psStruct->pFunctionality;
 			OBJECT_TYPE ttype = OBJ_DROID;
 			int tid = ini.value("Factory/commander/id", -1).toInt();
 			int tplayer = ini.value("Factory/commander/player", -1).toInt();
@@ -6696,7 +6696,7 @@ bool loadSaveStructurePointers(const WzString& filename, Structure** ppList)
 		if (ini.contains("Repair/target/id"))
 		{
 			ASSERT(psStruct->pStructureType->type == REF_REPAIR_FACILITY, "Bad type");
-			REPAIR_FACILITY* psRepair = ((REPAIR_FACILITY*)psStruct->pFunctionality);
+			RepairFacility* psRepair = ((RepairFacility*)psStruct->pFunctionality);
 			OBJECT_TYPE ttype = (OBJECT_TYPE)ini.value("Repair/target/type", OBJ_DROID).toInt();
 			int tid = ini.value("Repair/target/id", -1).toInt();
 			int tplayer = ini.value("Repair/target/player", -1).toInt();
@@ -6707,7 +6707,7 @@ bool loadSaveStructurePointers(const WzString& filename, Structure** ppList)
 		if (ini.contains("Rearm/target/id"))
 		{
 			ASSERT(psStruct->pStructureType->type == REF_REARM_PAD, "Bad type");
-			REARM_PAD* psReArmPad = ((REARM_PAD*)psStruct->pFunctionality);
+			RearmPad* psReArmPad = ((RearmPad*)psStruct->pFunctionality);
 			OBJECT_TYPE ttype = OBJ_DROID; // always, for now
 			int tid = ini.value("Rearm/target/id", -1).toInt();
 			int tplayer = ini.value("Rearm/target/player", -1).toInt();
@@ -6943,7 +6943,7 @@ bool loadSaveFeature2(const char* pFileName)
 		pFeature->rot = ini.vector3i("rotation");
 		pFeature->player = ini.value("player", PLAYER_FEATURE).toInt();
 
-		// common BASE_OBJECT info
+		// common SimpleObject info
 		loadSaveObject(ini, pFeature);
 
 		pFeature->body = healthValue(ini, pFeature->psStats->body);
@@ -7676,7 +7676,7 @@ static bool writeMessageFile(const char* pFileName)
 				else
 				{
 					// message has object so store Object Id
-					const BASE_OBJECT* psObj = psMessage->psObj;
+					const SimpleObject* psObj = psMessage->psObj;
 					if (psObj)
 					{
 						ini.setValue("obj/id", psObj->id);

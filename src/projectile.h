@@ -34,7 +34,7 @@
 
 /***************************************************************************/
 
-extern BASE_OBJECT* g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
+extern SimpleObject* g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
 
 #define PROJ_MAX_PITCH  45
 #define PROJ_ULTIMATE_PITCH  80
@@ -64,13 +64,13 @@ int32_t projCalcIndirectVelocities(const int32_t dx, const int32_t dz, int32_t v
                                    int min_angle);
 
 /** Send a single projectile against the given target. */
-bool proj_SendProjectile(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target, BASE_OBJECT* psTarget,
+bool proj_SendProjectile(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target, SimpleObject* psTarget,
                          bool bVisible, int weapon_slot);
 
 /** Send a single projectile against the given target
  * with a minimum shot angle. */
 bool proj_SendProjectileAngled(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target,
-                               BASE_OBJECT* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
+                               SimpleObject* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
 
 /** Return whether a weapon is direct or indirect. */
 bool proj_Direct(const WEAPON_STATS* psStats);
@@ -84,12 +84,12 @@ int proj_GetMinRange(const WEAPON_STATS* psStats, int player);
 /** Return the short range for a weapon. */
 int proj_GetShortRange(const WEAPON_STATS* psStats, int player);
 
-UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, BASE_OBJECT* psTarget);
+UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* psTarget);
 bool gfxVisible(PROJECTILE* psObj);
 
 /***************************************************************************/
 
-glm::mat4 objectShimmy(BASE_OBJECT* psObj);
+glm::mat4 objectShimmy(SimpleObject* psObj);
 
 static inline void setProjectileSource(PROJECTILE* psProj, SIMPLE_OBJECT* psObj)
 {
@@ -113,7 +113,7 @@ static inline void setProjectileSource(PROJECTILE* psProj, SIMPLE_OBJECT* psObj)
 	}
 }
 
-int establishTargetHeight(BASE_OBJECT const* psTarget);
+int establishTargetHeight(SimpleObject const* psTarget);
 
 /* @} */
 
@@ -153,6 +153,6 @@ struct ObjectShape
 	Vector2i size; ///< x == y if circular.
 };
 
-ObjectShape establishTargetShape(BASE_OBJECT* psTarget);
+ObjectShape establishTargetShape(SimpleObject* psTarget);
 
 #endif // __INCLUDED_SRC_PROJECTILE_H__

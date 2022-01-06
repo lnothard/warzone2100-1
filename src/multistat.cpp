@@ -462,7 +462,7 @@ void updateMultiStatsLoses()
 	++playerStats[selectedPlayer].losses;
 }
 
-static inline uint32_t calcObjectCost(const BASE_OBJECT* psObj)
+static inline uint32_t calcObjectCost(const SimpleObject* psObj)
 {
 	switch (psObj->type)
 	{
@@ -484,7 +484,7 @@ static inline uint32_t calcObjectCost(const BASE_OBJECT* psObj)
 }
 
 // update kills
-void updateMultiStatsKills(BASE_OBJECT* psKilled, UDWORD player)
+void updateMultiStatsKills(SimpleObject* psKilled, UDWORD player)
 {
 	if (player < MAX_PLAYERS)
 	{

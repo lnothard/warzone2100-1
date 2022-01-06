@@ -1578,7 +1578,7 @@ void kf_FinishResearch()
 			BASE_STATS* pSubject;
 
 			// find out what we are researching here
-			pSubject = ((RESEARCH_FACILITY*)psCurr->pFunctionality)->psSubject;
+			pSubject = ((ResearchFacility*)psCurr->pFunctionality)->psSubject;
 			if (pSubject)
 			{
 				int rindex = ((RESEARCH*)pSubject)->index;
@@ -2266,7 +2266,7 @@ void kf_RightOrderMenu()
 	if (bFound)
 	{
 		intResetScreen(true);
-		intObjectSelected((BASE_OBJECT*)psGotOne);
+		intObjectSelected((SimpleObject*)psGotOne);
 	}
 }
 

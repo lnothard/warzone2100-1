@@ -66,7 +66,7 @@ struct MISSION
 	Structure *apsStructLists[MAX_PLAYERS], *apsExtractorLists[MAX_PLAYERS]; //original object lists
 	Droid* apsDroidLists[MAX_PLAYERS];
 	FEATURE* apsFeatureLists[MAX_PLAYERS];
-	BASE_OBJECT* apsSensorList[1];
+	SimpleObject* apsSensorList[1];
 	FEATURE* apsOilList[1];
 	FLAG_POSITION* apsFlagPosLists[MAX_PLAYERS];
 	int32_t asCurrentPower[MAX_PLAYERS];

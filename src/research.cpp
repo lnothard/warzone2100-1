@@ -1114,7 +1114,7 @@ void holdResearch(Structure* psBuilding, QUEUE_MODE mode)
 {
 	ASSERT_OR_RETURN(, psBuilding->pStructureType->type == REF_RESEARCH, "structure not a research facility");
 
-	RESEARCH_FACILITY* psResFac = &psBuilding->pFunctionality->researchFacility;
+	ResearchFacility* psResFac = &psBuilding->pFunctionality->researchFacility;
 
 	if (mode == ModeQueue)
 	{
@@ -1142,7 +1142,7 @@ void releaseResearch(Structure* psBuilding, QUEUE_MODE mode)
 {
 	ASSERT_OR_RETURN(, psBuilding->pStructureType->type == REF_RESEARCH, "structure not a research facility");
 
-	RESEARCH_FACILITY* psResFac = &psBuilding->pFunctionality->researchFacility;
+	ResearchFacility* psResFac = &psBuilding->pFunctionality->researchFacility;
 
 	if (mode == ModeQueue)
 	{
@@ -1174,8 +1174,8 @@ void CancelAllResearch(UDWORD pl)
 		if (psCurr->pStructureType->type == REF_RESEARCH)
 		{
 			if (
-				(((RESEARCH_FACILITY*)psCurr->pFunctionality) != nullptr)
-				&& (((RESEARCH_FACILITY*)psCurr->pFunctionality)->psSubject != nullptr)
+				(((ResearchFacility*)psCurr->pFunctionality) != nullptr)
+				&& (((ResearchFacility*)psCurr->pFunctionality)->psSubject != nullptr)
 			)
 			{
 				debug(LOG_NEVER, "canceling research for %p\n", static_cast<void *>(psCurr));
@@ -1194,7 +1194,7 @@ void cancelResearch(Structure* psBuilding, QUEUE_MODE mode)
 	ASSERT_OR_RETURN(, psBuilding->pStructureType && psBuilding->pStructureType->type == REF_RESEARCH,
 	                   "Structure not a research facility");
 
-	RESEARCH_FACILITY* psResFac = &psBuilding->pFunctionality->researchFacility;
+	ResearchFacility* psResFac = &psBuilding->pFunctionality->researchFacility;
 	if (!(RESEARCH*)psResFac->psSubject)
 	{
 		debug(LOG_SYNC, "Invalid research topic");
@@ -1550,7 +1550,7 @@ void researchReward(UBYTE losingPlayer, UBYTE rewardPlayer)
 	{
 		if (psStruct->pStructureType->type == REF_RESEARCH)
 		{
-			RESEARCH_FACILITY* psFacility = (RESEARCH_FACILITY*)psStruct->pFunctionality;
+			ResearchFacility* psFacility = (ResearchFacility*)psStruct->pFunctionality;
 			if (psFacility->psBestTopic)
 			{
 				topicIndex = ((RESEARCH*)psFacility->psBestTopic)->ref - STAT_RESEARCH;
@@ -1761,7 +1761,7 @@ std::vector<AllyResearch> const& listAllyResearch(unsigned ref)
 			// Check each research facility to see if they are doing this topic. (As opposed to having started the topic, but stopped researching it.)
 			for (Structure* psStruct = apsStructLists[player]; psStruct != nullptr; psStruct = psStruct->psNext)
 			{
-				RESEARCH_FACILITY* res = (RESEARCH_FACILITY*)psStruct->pFunctionality;
+				ResearchFacility* res = (ResearchFacility*)psStruct->pFunctionality;
 				if (psStruct->pStructureType->type != REF_RESEARCH || res->psSubject == nullptr)
 				{
 					continue; // Not a researching research facility.

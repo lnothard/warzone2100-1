@@ -27,7 +27,7 @@
 #include "lib/framework/types.h"
 #include "lib/framework/vector.h"
 
-struct BASE_OBJECT;
+struct SimpleObject;
 struct BASE_STATS;
 struct SIMPLE_OBJECT;
 struct Spacetime;
@@ -49,7 +49,7 @@ void checkObject(const SIMPLE_OBJECT* psObject, const char* const location_descr
 void _syncDebugObject(const char* function, SIMPLE_OBJECT const* psObject, char ch);
 
 Vector2i getStatsSize(BASE_STATS const* pType, uint16_t direction);
-StructureBounds getStructureBounds(BASE_OBJECT const* object);
+StructureBounds getStructureBounds(SimpleObject const* object);
 StructureBounds getStructureBounds(BASE_STATS const* stats, Vector2i pos, uint16_t direction);
 
 #endif // __INCLUDED_BASEOBJECT_H__

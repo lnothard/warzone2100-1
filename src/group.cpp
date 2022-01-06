@@ -17,12 +17,13 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file group.c
- *
+ * @file group.cpp
  * Link droids together into a group for AI etc.
- *
  */
+
+#include <map>
 
 #include "lib/framework/frame.h"
 #include "lib/netplay/netplay.h"
@@ -31,10 +32,9 @@
 #include "group.h"
 #include "droid.h"
 #include "order.h"
-#include <map>
 
 // Group system variables: grpGlobalManager enables to remove all the groups to Shutdown the system
-static std::map<int, DROID_GROUP*> grpGlobalManager;
+static std::map<int, Group*> grpGlobalManager;
 static bool grpInitialized = false;
 
 // initialise the group system
@@ -50,7 +50,7 @@ void grpShutDown()
 {
 	/* Since we are not very diligent removing groups after we have
 	 * created them; we need this hack to remove them on level end. */
-	std::map<int, DROID_GROUP*>::iterator iter;
+	std::map<int, Group*>::iterator iter;
 
 	for (iter = grpGlobalManager.begin(); iter != grpGlobalManager.end(); iter++)
 	{
@@ -60,30 +60,17 @@ void grpShutDown()
 	grpInitialized = false;
 }
 
-// Constructor
-DROID_GROUP::DROID_GROUP()
-{
-	type = GT_NORMAL;
-	refCount = 0;
-	psList = nullptr;
-	psCommander = nullptr;
-}
-
-// create a new group
-DROID_GROUP* grpCreate(int id)
+std::unique_ptr<Group> grpCreate(unsigned id)
 {
 	ASSERT(grpInitialized, "Group code not initialized yet");
-	DROID_GROUP* psGroup = new DROID_GROUP;
-	if (id == -1)
-	{
+	auto psGroup = std::make_unique<Group>();
+	if (id == -1)  {
 		int i;
 		for (i = 0; grpGlobalManager.find(i) != grpGlobalManager.end(); i++)
 		{
 		} // surly hack
 		psGroup->id = i;
-	}
-	else
-	{
+	} else  {
 		ASSERT(grpGlobalManager.find(id) == grpGlobalManager.end(), "Group %d is already created!", id);
 		psGroup->id = id;
 	}
@@ -91,27 +78,38 @@ DROID_GROUP* grpCreate(int id)
 	return psGroup;
 }
 
-DROID_GROUP* grpFind(int id)
+Group* grpFind(unsigned id)
 {
-	DROID_GROUP* psGroup = nullptr;
-	std::map<int, DROID_GROUP*>::iterator it = grpGlobalManager.find(id);
-	if (it != grpGlobalManager.end())
-	{
+	Group* psGroup = nullptr;
+	auto it = grpGlobalManager.find(id);
+	if (it != grpGlobalManager.end())  {
 		psGroup = it->second;
 	}
-	if (!psGroup)
-	{
+	if (!psGroup)  {
 		psGroup = grpCreate(id);
 	}
 	return psGroup;
 }
 
-// add a droid to a group
-void DROID_GROUP::add(Droid* psDroid)
+Group::Group(unsigned id)
+  :id{id}
+{
+}
+
+Group::Group(unsigned id, GROUP_TYPE type)
+  : id{id}, type{type}
+{
+}
+
+Group::Group(unsigned id, GROUP_TYPE type, Droid& commander)
+  : id{id}, type{type}, psCommander{&commander}
+{
+}
+
+void Group::add(Droid* psDroid)
 {
 	ASSERT(grpInitialized, "Group code not initialized yet");
 
-	refCount += 1;
 	// if psDroid == NULL just increase the refcount don't add anything to the list
 	if (psDroid != nullptr)
 	{
@@ -131,7 +129,7 @@ void DROID_GROUP::add(Droid* psDroid)
 		{
 			ASSERT_OR_RETURN(, (type == GT_NORMAL), "grpJoin: Cannot have two transporters in a group");
 			ASSERT_OR_RETURN(, psList == nullptr, "Adding transporter to non-empty list.");
-			type = GT_TRANSPORTER;
+			type = TRANSPORTER;
 			psDroid->psGrpNext = psList;
 			psList = psDroid;
 		}
@@ -156,7 +154,7 @@ void DROID_GROUP::add(Droid* psDroid)
 }
 
 // remove a droid from a group
-void DROID_GROUP::remove(Droid* psDroid)
+void Group::remove(Droid* psDroid)
 {
 	Droid *psPrev, *psCurr;
 
@@ -227,25 +225,13 @@ void DROID_GROUP::remove(Droid* psDroid)
 	}
 }
 
-// count the members of a group
-unsigned int DROID_GROUP::getNumMembers()
+std::size_t Group::getNumMembers() const
 {
-	const Droid* psCurr;
-	unsigned int num;
-
-	ASSERT(grpInitialized, "Group code not initialized yet");
-
-	num = 0;
-	for (psCurr = psList; psCurr; psCurr = psCurr->psGrpNext)
-	{
-		num += 1;
-	}
-
-	return num;
+  return psList.size();
 }
 
 // Give a group of droids an order
-void DROID_GROUP::orderGroup(DROID_ORDER order)
+void Group::orderGroup(DROID_ORDER order)
 {
 	Droid* psCurr;
 
@@ -258,7 +244,7 @@ void DROID_GROUP::orderGroup(DROID_ORDER order)
 }
 
 // Give a group of droids an order (using a Location)
-void DROID_GROUP::orderGroup(DROID_ORDER order, UDWORD x, UDWORD y)
+void Group::orderGroup(DROID_ORDER order, UDWORD x, UDWORD y)
 {
 	Droid* psCurr;
 
@@ -271,28 +257,22 @@ void DROID_GROUP::orderGroup(DROID_ORDER order, UDWORD x, UDWORD y)
 	}
 }
 
-// Give a group of droids an order (using an Object)
-void DROID_GROUP::orderGroup(DROID_ORDER order, BASE_OBJECT* psObj)
+void Group::orderGroup(ORDER_TYPE order, SimpleObject* psObj)
 {
-	Droid* psCurr;
-
 	ASSERT_OR_RETURN(, validOrderForObj(order), "orderGroup: Bad order");
 
-	for (psCurr = psList; psCurr != nullptr; psCurr = psCurr->psGrpNext)
+	for (auto droid : psList)
 	{
-		orderDroidObj(psCurr, order, (BASE_OBJECT*)psObj, bMultiMessages ? ModeQueue : ModeImmediate);
+		orderDroidObj(droid, order, psObj, bMultiMessages ? ModeQueue : ModeImmediate);
 	}
 }
 
-// Set the secondary state for a group of droids
-void DROID_GROUP::setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state)
+void Group::setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state)
 {
-	Droid* psCurr;
-
 	ASSERT(grpInitialized, "Group code not initialized yet");
 
-	for (psCurr = psList; psCurr; psCurr = psCurr->psGrpNext)
+	for (auto& droid : psList)
 	{
-		secondarySetState(psCurr, sec, state);
+		secondarySetState(droid, sec, state);
 	}
 }

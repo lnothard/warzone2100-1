@@ -18,7 +18,7 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 /** \file
- *  Includes all object (as derived from BASE_OBJECT) definitions.
+ *  Includes all object (as derived from SimpleObject) definitions.
  */
 
 #ifndef __INCLUDED_OBJECTDEF_H__

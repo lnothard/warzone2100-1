@@ -85,7 +85,7 @@ RESEARCH* ResearchController::getObjectStatsAt(size_t objectIndex) const
 		return nullptr;
 	}
 
-	RESEARCH_FACILITY* psResearchFacility = &facility->pFunctionality->researchFacility;
+	ResearchFacility* psResearchFacility = &facility->pFunctionality->researchFacility;
 	if (psResearchFacility == nullptr)
 	{
 		return nullptr;
@@ -159,7 +159,7 @@ void ResearchController::startResearch(RESEARCH& research)
 	stopReticuleButtonFlash(IDRET_RESEARCH);
 }
 
-void ResearchController::setHighlightedObject(BASE_OBJECT* object)
+void ResearchController::setHighlightedObject(SimpleObject* object)
 {
 	if (object == nullptr)
 	{

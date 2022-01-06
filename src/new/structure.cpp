@@ -286,13 +286,13 @@ namespace Impl {
 		return structure.get_hp() < structure.get_original_hp();
 	}
 
-	StructureBounds get_bounds(const Structure& structure) noexcept
-	{
-		return  {
-			map_coord(structure.get_position().xy()) -
-        structure.get_size() / 2, structure.get_size()
-		};
-	}
+//	StructureBounds get_bounds(const Structure& structure) noexcept
+//	{
+//		return  {
+//			map_coord(structure.get_position().xy()) -
+//        structure.get_size() / 2, structure.get_size()
+//		};
+//	}
 
 	void adjust_tile_height(const Structure& structure, int new_height)
 	{

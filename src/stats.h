@@ -228,7 +228,7 @@ WZ_DECL_PURE int constructorPoints(const CONSTRUCT_STATS* psStats, int player);
 WZ_DECL_PURE int bodyPower(const BODY_STATS* psStats, int player);
 WZ_DECL_PURE int bodyArmour(const BODY_STATS* psStats, int player, WEAPON_CLASS weaponClass);
 
-WZ_DECL_PURE bool objHasWeapon(const BASE_OBJECT* psObj);
+WZ_DECL_PURE bool objHasWeapon(const SimpleObject* psObj);
 
 void statsInitVars();
 
@@ -241,9 +241,9 @@ bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS* weaponClass);
 /* Wrappers */
 
 /** If object is an active radar (has sensor turret), then return a pointer to its sensor stats. If not, return NULL. */
-WZ_DECL_PURE SENSOR_STATS* objActiveRadar(const BASE_OBJECT* psObj);
+WZ_DECL_PURE SENSOR_STATS* objActiveRadar(const SimpleObject* psObj);
 
 /** Returns whether object has a radar detector sensor. */
-WZ_DECL_PURE bool objRadarDetector(const BASE_OBJECT* psObj);
+WZ_DECL_PURE bool objRadarDetector(const SimpleObject* psObj);
 
 #endif // __INCLUDED_SRC_STATS_H__

@@ -186,7 +186,7 @@ void resetInput();
 bool CheckInScrollLimits(SDWORD* xPos, SDWORD* zPos);
 bool CheckScrollLimits();
 
-BASE_OBJECT* mouseTarget();
+SimpleObject* mouseTarget();
 
 void cancelDeliveryRepos();
 void startDeliveryPosition(FLAG_POSITION* psFlag);

@@ -19,7 +19,6 @@
 
 /**
  * @file
- *
  * Definitions for animation functions.
  */
 
@@ -49,25 +48,25 @@ public:
 	/// Returns true if currently tracking a value.
 	[[nodiscard]] bool currently_tracking() const;
 	/// Sets speed/smoothness of the interpolation. 1 is syrup, 100 is instant. Default 10.
-	ValueTracker* setSpeed(int value);
+	ValueTracker* set_speed(int value);
 	/// Sets the target delta value
-	ValueTracker* setTargetDelta(int value);
+	ValueTracker* set_target_delta(int value);
 	/// Sets the absolute target value
 	void set_target(int value);
 	/// Update current value
 	void update();
 	/// Get initial value
-	int getInitial();
+	[[nodiscard]] int get_initial() const;
 	/// Get current value
-	int getCurrent();
+	[[nodiscard]] int get_current() const;
 	/// Get current delta value
-	int getCurrentDelta();
+	[[nodiscard]] int get_current_delta() const;
 	/// Get absolute target value
-	int getTarget();
+	[[nodiscard]] int get_target() const;
 	/// Get target delta value
-	int getTargetDelta();
+	[[nodiscard]] int get_target_delta() const;
 	/// Returns if the tracker reached its target
-	bool reachedTarget();
+	[[nodiscard]] bool reachedTarget() const;
 };
 
 enum class EASING_FUNCTION
@@ -108,6 +107,19 @@ protected:
 	AnimatableData finalData;
 	AnimatableData currentData;
 };
+
+unsigned calculate_easing(EASING_FUNCTION easing_func, unsigned progress);
+
+/**
+ * Find the angle equivalent to `from` in the interval between `to - 180°` and to `to + 180°`.
+ *
+ * For example:
+ * - if `from` is `10°` and `to` is `350°`, it will return `370°`.
+ * - if `from` is `350°` and `to` is `0°`, it will return `-10°`.
+ *
+ * Useful while animating a rotation, to always animate the shortest angle delta.
+ */
+int calculate_relative_angle(unsigned from, unsigned to);
 
 class RotationAnimation : public Animation<Vector3f>
 {

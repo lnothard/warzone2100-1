@@ -105,11 +105,11 @@ int scripting_engine::GROUPMAP::newGroupID()
 	return newId;
 }
 
-void scripting_engine::GROUPMAP::insertObjectIntoGroup(const BASE_OBJECT* psObj,
+void scripting_engine::GROUPMAP::insertObjectIntoGroup(const SimpleObject* psObj,
                                                        scripting_engine::GROUPMAP::groupID groupId)
 {
 	std::pair<ObjectToGroupMap::iterator, bool> result = m_map.insert(
-		std::pair<const BASE_OBJECT*, scripting_engine::GROUPMAP::groupID>(psObj, groupId));
+		std::pair<const SimpleObject*, scripting_engine::GROUPMAP::groupID>(psObj, groupId));
 	if (result.second)
 	{
 		auto groupSetResult = m_groups[groupId].insert(psObj);
@@ -128,7 +128,7 @@ size_t scripting_engine::GROUPMAP::groupSize(GROUPMAP::groupID groupId) const
 }
 
 optional<scripting_engine::GROUPMAP::groupID> scripting_engine::GROUPMAP::removeObjectFromGroup(
-	const BASE_OBJECT* psObj)
+	const SimpleObject* psObj)
 {
 	auto it = m_map.find(psObj);
 	if (it != m_map.end())
@@ -143,9 +143,9 @@ optional<scripting_engine::GROUPMAP::groupID> scripting_engine::GROUPMAP::remove
 	return optional<groupID>();
 }
 
-std::vector<const BASE_OBJECT*> scripting_engine::GROUPMAP::getGroupObjects(groupID groupId) const
+std::vector<const SimpleObject*> scripting_engine::GROUPMAP::getGroupObjects(groupID groupId) const
 {
-	std::vector<const BASE_OBJECT*> result;
+	std::vector<const SimpleObject*> result;
 	auto it = m_groups.find(groupId);
 	if (it != m_groups.end())
 	{
@@ -226,7 +226,7 @@ uniqueTimerID scripting_engine::getNextAvailableTimerID()
 
 uniqueTimerID scripting_engine::setTimer(wzapi::scripting_instance* caller, const TimerFunc& timerFunc, int player,
                                          int milliseconds, std::string timerName /*= ""*/,
-                                         const BASE_OBJECT* obj /*= nullptr*/, timerType type /*= TIMER_REPEAT*/,
+                                         const SimpleObject* obj /*= nullptr*/, timerType type /*= TIMER_REPEAT*/,
                                          std::unique_ptr<timerAdditionalData> additionalParam /*= nullptr*/)
 {
 	uniqueTimerID newTimerID = getNextAvailableTimerID();
@@ -380,7 +380,7 @@ bool scripting_engine::removeTimer(uniqueTimerID timerID)
 	return false;
 }
 
-void scriptRemoveObject(const BASE_OBJECT* psObj)
+void scriptRemoveObject(const SimpleObject* psObj)
 {
 	// Weed out timers with dead objects
 	scripting_engine::instance().removeTimersIf([psObj](const scripting_engine::timerNode& node)
@@ -1069,7 +1069,7 @@ void jsShowDebug()
 //__ ## eventMenuManufacture()
 //__An event that is run when current user opens the manufacture menu.
 //__
-bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, BASE_OBJECT* psObj)
+bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, SimpleObject* psObj)
 {
 	// HACK: TRIGGER_VIDEO_QUIT is called before scripts for initial campaign video
 	ASSERT(scriptsReady || trigger == TRIGGER_VIDEO_QUIT, "Scripts not initialized yet");
@@ -1340,7 +1340,7 @@ bool triggerEventStructureUpgradeStarted(Structure* psStruct)
 //__ An event that is run when an object belonging to the script's controlling player is
 //__ attacked. The attacker parameter may be either a structure or a droid.
 //__
-bool triggerEventAttacked(BASE_OBJECT* psVictim, BASE_OBJECT* psAttacker, int lastHit)
+bool triggerEventAttacked(SimpleObject* psVictim, SimpleObject* psAttacker, int lastHit)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psAttacker)
@@ -1399,7 +1399,7 @@ bool triggerEventResearched(RESEARCH* psResearch, Structure* psStruct, int playe
 //__ An event that is run whenever an object is destroyed. Careful passing
 //__ the parameter object around, since it is about to vanish!
 //__
-bool triggerEventDestroyed(BASE_OBJECT* psVictim)
+bool triggerEventDestroyed(SimpleObject* psVictim)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psVictim) { return true; }
@@ -1441,12 +1441,12 @@ bool triggerEventPickup(FEATURE* psFeat, Droid* psDroid)
 //__ First parameter is **game object** doing the seeing, the next the id of the group
 //__ being seen.
 //__
-bool triggerEventSeen(BASE_OBJECT* psViewer, BASE_OBJECT* psSeen)
+bool triggerEventSeen(SimpleObject* psViewer, SimpleObject* psSeen)
 {
 	return scripting_engine::instance().triggerEventSeen(psViewer, psSeen);
 }
 
-bool scripting_engine::triggerEventSeen(BASE_OBJECT* psViewer, BASE_OBJECT* psSeen)
+bool scripting_engine::triggerEventSeen(SimpleObject* psViewer, SimpleObject* psSeen)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psSeen || !psViewer) { return true; }
@@ -1473,7 +1473,7 @@ bool scripting_engine::triggerEventSeen(BASE_OBJECT* psViewer, BASE_OBJECT* psSe
 //__ object has been transferred, so the target player is in object.player.
 //__ The event is called for both players.
 //__
-bool triggerEventObjectTransfer(BASE_OBJECT* psObj, int from)
+bool triggerEventObjectTransfer(SimpleObject* psObj, int from)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psObj) { return true; }
@@ -1580,7 +1580,7 @@ bool triggerEventSelected()
 //__ is the about to be killed object, the group's id, and the new group size.
 //__
 // Since groups are entities local to one context, we do not iterate over them here.
-bool triggerEventGroupLoss(const BASE_OBJECT* psObj, int group, int size, wzapi::scripting_instance* instance)
+bool triggerEventGroupLoss(const SimpleObject* psObj, int group, int size, wzapi::scripting_instance* instance)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	return instance->handle_eventGroupLoss(psObj, group, size);
@@ -1677,7 +1677,7 @@ bool triggerEventAllianceBroken(uint8_t from, uint8_t to)
 //__ to prevent desync from happening. Sync requests must be carefully validated to prevent
 //__ cheating!
 //__
-bool triggerEventSyncRequest(int from, int req_id, int x, int y, BASE_OBJECT* psObj, BASE_OBJECT* psObj2)
+bool triggerEventSyncRequest(int from, int req_id, int x, int y, SimpleObject* psObj, SimpleObject* psObj2)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
@@ -1857,7 +1857,7 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 	}
 	else if (l.type == OBJ_DROID || l.type == OBJ_FEATURE || l.type == OBJ_STRUCTURE)
 	{
-		BASE_OBJECT* psObj = IdToObject((OBJECT_TYPE)l.type, l.id, l.player);
+		SimpleObject* psObj = IdToObject((OBJECT_TYPE)l.type, l.id, l.player);
 		if (psObj)
 		{
 			if (jump_to)
@@ -1878,7 +1878,7 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 			{
 				if (iter->second == l.id)
 				{
-					const BASE_OBJECT* psObj = iter->first;
+					const SimpleObject* psObj = iter->first;
 					if (!cameraMoved && jump_to)
 					{
 						setViewPos(map_coord(psObj->pos.x), map_coord(psObj->pos.y), false); // move camera position
@@ -1894,8 +1894,8 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 
 // The bool return value is true when an object callback needs to be called.
 // The int return value holds group id when a group callback needs to be called, 0 otherwise.
-std::pair<bool, int> scripting_engine::seenLabelCheck(wzapi::scripting_instance* instance, const BASE_OBJECT* seen,
-                                                      const BASE_OBJECT* viewer)
+std::pair<bool, int> scripting_engine::seenLabelCheck(wzapi::scripting_instance* instance, const SimpleObject* seen,
+                                                      const SimpleObject* viewer)
 {
 	GROUPMAP* psMap = getGroupMap(instance);
 	ASSERT_OR_RETURN(std::make_pair(false, 0), psMap != nullptr, "Non-existent groupmap for engine");
@@ -1966,7 +1966,7 @@ scripting_engine::GROUPMAP* scripting_engine::getGroupMap(wzapi::scripting_insta
 	return psMap;
 }
 
-void scripting_engine::removeFromGroup(wzapi::scripting_instance* instance, GROUPMAP* psMap, const BASE_OBJECT* psObj)
+void scripting_engine::removeFromGroup(wzapi::scripting_instance* instance, GROUPMAP* psMap, const SimpleObject* psObj)
 {
 	auto result = psMap->removeObjectFromGroup(psObj);
 	if (result.has_value())
@@ -1978,7 +1978,7 @@ void scripting_engine::removeFromGroup(wzapi::scripting_instance* instance, GROU
 	}
 }
 
-void scripting_engine::groupRemoveObject(const BASE_OBJECT* psObj)
+void scripting_engine::groupRemoveObject(const SimpleObject* psObj)
 {
 	for (ENGINEMAP::iterator i = groups.begin(); i != groups.end(); ++i)
 	{
@@ -1986,7 +1986,7 @@ void scripting_engine::groupRemoveObject(const BASE_OBJECT* psObj)
 	}
 }
 
-bool scripting_engine::groupAddObject(const BASE_OBJECT* psObj, int groupId, wzapi::scripting_instance* instance)
+bool scripting_engine::groupAddObject(const SimpleObject* psObj, int groupId, wzapi::scripting_instance* instance)
 {
 	ASSERT_OR_RETURN(false, psObj && instance, "Bad parameter");
 	GROUPMAP* psMap = getGroupMap(instance);
@@ -1998,7 +1998,7 @@ bool scripting_engine::groupAddObject(const BASE_OBJECT* psObj, int groupId, wza
 
 bool scripting_engine::loadGroup(wzapi::scripting_instance* instance, int groupId, int objId)
 {
-	BASE_OBJECT* psObj = IdToPointer(objId, ANYPLAYER);
+	SimpleObject* psObj = IdToPointer(objId, ANYPLAYER);
 	ASSERT_OR_RETURN(false, psObj, "Non-existent object %d in group %d in savegame", objId, groupId);
 	return groupAddObject(psObj, groupId, instance);
 }
@@ -2011,7 +2011,7 @@ bool scripting_engine::saveGroups(nlohmann::json& result, wzapi::scripting_insta
 	result["lastNewGroupId"] = psMap->getLastNewGroupId();
 	for (auto i = psMap->map().begin(); i != psMap->map().end(); ++i)
 	{
-		const BASE_OBJECT* psObj = i->first;
+		const SimpleObject* psObj = i->first;
 		ASSERT(!isDead(psObj), "Wanted to save dead %s to savegame!", objInfo(psObj));
 		std::vector<WzString> value = json_getValue(result, WzString::number(psObj->id)).toWzStringList();
 		value.push_back(WzString::number(i->second));
@@ -2104,7 +2104,7 @@ bool scripting_engine::loadLabels(const char* filename)
 			for (WzString const& j : memberList)
 			{
 				int id = j.toInt();
-				BASE_OBJECT* psObj = IdToPointer(id, p.player);
+				SimpleObject* psObj = IdToPointer(id, p.player);
 				ASSERT(psObj, "Unit %d belonging to player %d not found from label %s",
 				       id, p.player, list[i].toUtf8().c_str());
 				p.idlist.push_back(id);
@@ -2344,7 +2344,7 @@ int generic_script_object::getGroupId() const // if type == SCRIPT_GROUP, return
 	return id;
 }
 
-generic_script_object generic_script_object::fromObject(const BASE_OBJECT* psObj)
+generic_script_object generic_script_object::fromObject(const SimpleObject* psObj)
 {
 	generic_script_object result;
 	if (psObj == nullptr)
@@ -2357,7 +2357,7 @@ generic_script_object generic_script_object::fromObject(const BASE_OBJECT* psObj
 	return result;
 }
 
-BASE_OBJECT* generic_script_object::getObject() const
+SimpleObject* generic_script_object::getObject() const
 // if type == OBJ_DROID, OBJ_FEATURE, OBJ_STRUCTURE, returns the game object
 {
 	ASSERT(isObject(), "generic_script_object is not an object; type: %d", type);
@@ -2401,7 +2401,7 @@ wzapi::no_return_value scripting_engine::addLabel(
 
 	if (value.type == OBJ_DROID || value.type == OBJ_STRUCTURE || value.type == OBJ_FEATURE)
 	{
-		BASE_OBJECT* psObj = IdToObject((OBJECT_TYPE)value.type, value.id, value.player);
+		SimpleObject* psObj = IdToObject((OBJECT_TYPE)value.type, value.id, value.player);
 		SCRIPT_ASSERT({}, context, psObj, "Object id %d not found belonging to player %d", value.id, value.player);
 	}
 
@@ -2436,7 +2436,7 @@ int scripting_engine::removeLabel(WZAPI_PARAMS(std::string label))
 //-- label found will be returned. If the object has no labels, undefined is returned.
 //-- This is a relatively slow operation of O(n) algorithmic complexity. (3.2+ only)
 //--
-optional<std::string> scripting_engine::getLabel(WZAPI_PARAMS(const BASE_OBJECT *psObj))
+optional<std::string> scripting_engine::getLabel(WZAPI_PARAMS(const SimpleObject *psObj))
 {
 	ASSERT_OR_RETURN(nullopt, psObj, "No valid object provided");
 	wzapi::game_object_identifier tmp;
@@ -2525,7 +2525,7 @@ generic_script_object scripting_engine::getObject(WZAPI_PARAMS(wzapi::object_req
 generic_script_object scripting_engine::getObjectFromLabel(WZAPI_PARAMS(const std::string& label))
 {
 	// get by label case
-	BASE_OBJECT* psObj = nullptr;
+	SimpleObject* psObj = nullptr;
 	if (labels.count(label) > 0)
 	{
 		const LABEL& p = labels[label];
@@ -2570,7 +2570,7 @@ generic_script_object scripting_engine::getObjectFromLabel(WZAPI_PARAMS(const st
 //-- positions or a label to an AREA. Calling this function is much faster than iterating over all
 //-- game objects using other enum functions. (3.2+ only)
 //--
-std::vector<const BASE_OBJECT*> scripting_engine::enumAreaByLabel(
+std::vector<const SimpleObject*> scripting_engine::enumAreaByLabel(
 	WZAPI_PARAMS(std::string label, optional<int> _playerFilter, optional<bool> _seen))
 {
 	SCRIPT_ASSERT({}, context, instance().labels.count(label) > 0, "Label %s not found", label.c_str());
@@ -2583,10 +2583,10 @@ std::vector<const BASE_OBJECT*> scripting_engine::enumAreaByLabel(
 	return _enumAreaWorldCoords(context, x1, y1, x2, y2, _playerFilter, _seen);
 }
 
-typedef std::vector<BASE_OBJECT*> GridList;
+typedef std::vector<SimpleObject*> GridList;
 #include "mapgrid.h"
 
-std::vector<const BASE_OBJECT*> scripting_engine::enumArea(
+std::vector<const SimpleObject*> scripting_engine::enumArea(
 	WZAPI_PARAMS(scr_area area, optional<int> _playerFilter, optional<bool> _seen))
 {
 	int x1 = world_coord(area.x1);
@@ -2596,7 +2596,7 @@ std::vector<const BASE_OBJECT*> scripting_engine::enumArea(
 	return _enumAreaWorldCoords(context, x1, y1, x2, y2, _playerFilter, _seen);
 }
 
-std::vector<const BASE_OBJECT*> scripting_engine::_enumAreaWorldCoords(
+std::vector<const SimpleObject*> scripting_engine::_enumAreaWorldCoords(
 	WZAPI_PARAMS(int x1, int y1, int x2, int y2, optional<int> _playerFilter, optional<bool> _seen))
 {
 	int player = context.player();
@@ -2605,10 +2605,10 @@ std::vector<const BASE_OBJECT*> scripting_engine::_enumAreaWorldCoords(
 
 	static GridList gridList; // static to avoid allocations. // not thread-safe
 	gridList = gridStartIterateArea(x1, y1, x2, y2);
-	std::vector<const BASE_OBJECT*> list;
+	std::vector<const SimpleObject*> list;
 	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
 	{
-		BASE_OBJECT* psObj = *gi;
+		SimpleObject* psObj = *gi;
 		if ((psObj->visible[player] || !seen) && !psObj->died)
 		{
 			if ((playerFilter >= 0 && psObj->player == playerFilter) || playerFilter == ALL_PLAYERS
@@ -2622,7 +2622,7 @@ std::vector<const BASE_OBJECT*> scripting_engine::_enumAreaWorldCoords(
 	return list;
 }
 
-std::vector<const BASE_OBJECT*> scripting_engine::enumAreaJS(WZAPI_PARAMS(
+std::vector<const SimpleObject*> scripting_engine::enumAreaJS(WZAPI_PARAMS(
 	scripting_engine::area_by_values_or_area_label_lookup area_lookup, optional<int> playerFilter, optional<bool> seen))
 {
 	if (area_lookup.isLabel())
@@ -2643,9 +2643,9 @@ std::vector<const BASE_OBJECT*> scripting_engine::enumAreaJS(WZAPI_PARAMS(
 //--
 //-- Return an array containing all the members of a given group.
 //--
-std::vector<const BASE_OBJECT*> scripting_engine::enumGroup(WZAPI_PARAMS(int groupId))
+std::vector<const SimpleObject*> scripting_engine::enumGroup(WZAPI_PARAMS(int groupId))
 {
-	std::vector<const BASE_OBJECT*> matches;
+	std::vector<const SimpleObject*> matches;
 	GROUPMAP* psMap = instance().getGroupMap(context.currentInstance());
 
 	if (psMap != nullptr)
@@ -2706,7 +2706,7 @@ wzapi::no_return_value scripting_engine::groupAddDroid(WZAPI_PARAMS(int groupId,
 //--
 //-- Add given game object to the given group.
 //--
-wzapi::no_return_value scripting_engine::groupAdd(WZAPI_PARAMS(int groupId, const BASE_OBJECT *psObj))
+wzapi::no_return_value scripting_engine::groupAdd(WZAPI_PARAMS(int groupId, const SimpleObject *psObj))
 {
 	SCRIPT_ASSERT({}, context, psObj, "No valid object provided");
 	scripting_engine::instance().groupAddObject(psObj, groupId, context.currentInstance());
@@ -2759,7 +2759,7 @@ void scripting_engine::prepareLabels()
 				for (std::vector<int>::const_iterator j = l.idlist.begin(); j != l.idlist.end(); j++)
 				{
 					int id = (*j);
-					BASE_OBJECT* psObj = IdToPointer(id, l.player);
+					SimpleObject* psObj = IdToPointer(id, l.player);
 					ASSERT(psObj, "Unit %d belonging to player %d not found", id, l.player);
 					if (psObj)
 					{

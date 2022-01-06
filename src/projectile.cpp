@@ -80,7 +80,7 @@ struct INTERVAL
 struct DAMAGE
 {
 	PROJECTILE* psProjectile;
-	BASE_OBJECT* psDest;
+	SimpleObject* psDest;
 	unsigned damage;
 	WEAPON_CLASS weaponClass;
 	WEAPON_SUBCLASS weaponSubClass;
@@ -105,7 +105,7 @@ static ProjectileIterator psProjectileNext;
 /***************************************************************************/
 
 // the last unit that did damage - used by script functions
-BASE_OBJECT* g_pProjLastAttacker;
+SimpleObject* g_pProjLastAttacker;
 
 /***************************************************************************/
 
@@ -116,7 +116,7 @@ static void proj_checkPeriodicalDamage(PROJECTILE* psProj);
 static int32_t objectDamage(DAMAGE* psDamage);
 
 
-//static inline void setProjectileDestination(PROJECTILE* psProj, BASE_OBJECT* psObj)
+//static inline void setProjectileDestination(PROJECTILE* psProj, SimpleObject* psObj)
 //{
 //	bool bDirect = proj_Direct(psProj->psWStats);
 //#if defined( _MSC_VER )
@@ -278,7 +278,7 @@ int getExpGain(int player)
 	return experienceGain[player];
 }
 
-Droid* getDesignatorAttackingObject(int player, BASE_OBJECT* target)
+Droid* getDesignatorAttackingObject(int player, SimpleObject* target)
 {
 	Droid* psCommander = cmdDroidGetDesignator(player);
 
@@ -292,7 +292,7 @@ Droid* getDesignatorAttackingObject(int player, BASE_OBJECT* target)
 static void proj_UpdateExperience(PROJECTILE* psObj, uint32_t experienceInc)
 {
 	Droid* psDroid;
-	BASE_OBJECT* psSensor;
+	SimpleObject* psSensor;
 
 	CHECK_PROJECTILE(psObj);
 
@@ -422,7 +422,7 @@ int32_t projCalcIndirectVelocities(const int32_t dx, const int32_t dz, int32_t v
 	return t;
 }
 
-bool proj_SendProjectile(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target, BASE_OBJECT* psTarget,
+bool proj_SendProjectile(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target, SimpleObject* psTarget,
                          bool bVisible, int weapon_slot)
 {
 	return proj_SendProjectileAngled(psWeap, psAttacker, player, target, psTarget, bVisible, weapon_slot, 0,
@@ -430,7 +430,7 @@ bool proj_SendProjectile(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, 
 }
 
 bool proj_SendProjectileAngled(WEAPON* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target,
-                               BASE_OBJECT* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime)
+                               SimpleObject* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime)
 {
 	WEAPON_STATS* psStats = &asWeaponStats[psWeap->nStat];
 
@@ -706,7 +706,7 @@ static void proj_InFlightFunc(PROJECTILE* psProj)
 	/* we want a delay between Las-Sats firing and actually hitting in multiPlayer
 	magic number but that's how long the audio countdown message lasts! */
 	const unsigned int LAS_SAT_DELAY = 4;
-	BASE_OBJECT* closestCollisionObject = nullptr;
+	SimpleObject* closestCollisionObject = nullptr;
 	Spacetime closestCollisionSpacetime;
 
 	CHECK_PROJECTILE(psProj);
@@ -841,7 +841,7 @@ static void proj_InFlightFunc(PROJECTILE* psProj)
 	gridList = gridStartIterate(psProj->pos.x, psProj->pos.y, PROJ_NEIGHBOUR_RANGE);
 	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
 	{
-		BASE_OBJECT* psTempObj = *gi;
+		SimpleObject* psTempObj = *gi;
 		CHECK_OBJECT(psTempObj);
 
 		if (std::find(psProj->psDamaged.begin(), psProj->psDamaged.end(), psTempObj) != psProj->psDamaged.end())
@@ -998,7 +998,7 @@ static void proj_ImpactFunc(PROJECTILE* psObj)
 	int32_t relativeDamage;
 	Vector3i position, scatter;
 	iIMDShape* imd;
-	BASE_OBJECT* temp;
+	SimpleObject* temp;
 
 	ASSERT_OR_RETURN(, psObj != nullptr, "Invalid pointer");
 	CHECK_PROJECTILE(psObj);
@@ -1230,7 +1230,7 @@ static void proj_ImpactFunc(PROJECTILE* psObj)
 
 		for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
 		{
-			BASE_OBJECT* psCurr = *gi;
+			SimpleObject* psCurr = *gi;
 			if (psCurr->died)
 			{
 				ASSERT(psCurr->type < OBJ_NUM_TYPES, "Bad pointer! type=%u", psCurr->type);
@@ -1255,7 +1255,7 @@ static void proj_ImpactFunc(PROJECTILE* psObj)
 			{
 			case OBJ_DROID:
 				bTargetInAir = asPropulsionTypes[asPropulsionStats[((Droid*)psCurr)->asBits[COMP_PROPULSION]].
-					propulsionType].travel == AIR && ((Droid*)psCurr)->movement.Status != MOVEINACTIVE;
+					propulsionType].travel == AIR && ((Droid*)psCurr)->movement.status != MOVEINACTIVE;
 				useSphere = true;
 				break;
 			case OBJ_STRUCTURE:
@@ -1368,7 +1368,7 @@ void PROJECTILE::update()
 	}
 	// Remove dead objects from psDamaged.
 	psDamaged.erase(std::remove_if(psDamaged.begin(), psDamaged.end(),
-	                               [](const BASE_OBJECT* psObj) { return ::isDead(psObj); }), psDamaged.end());
+	                               [](const SimpleObject* psObj) { return ::isDead(psObj); }), psDamaged.end());
 
 	// This extra check fixes a crash in cam2, mission1
 	if (worldOnMap(psObj->pos.x, psObj->pos.y) == false)
@@ -1436,7 +1436,7 @@ static void proj_checkPeriodicalDamage(PROJECTILE* psProj)
 	gridList = gridStartIterate(psProj->pos.x, psProj->pos.y, psStats->upgrade[psProj->player].periodicalDamageRadius);
 	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
 	{
-		BASE_OBJECT* psCurr = *gi;
+		SimpleObject* psCurr = *gi;
 		if (psCurr->died)
 		{
 			syncDebugObject(psCurr, '-');
@@ -1450,7 +1450,7 @@ static void proj_checkPeriodicalDamage(PROJECTILE* psProj)
 
 		if (psCurr->type == OBJ_DROID &&
         isVtolDroid((Droid*)psCurr) &&
-        ((Droid*)psCurr)->movement.Status != MOVEINACTIVE)
+        ((Droid*)psCurr)->movement.status != MOVEINACTIVE)
 		{
 			continue; // Can't set flying vtols on fire.
 		}
@@ -1532,7 +1532,7 @@ int proj_GetShortRange(const WEAPON_STATS* psStats, int player)
 }
 
 /***************************************************************************/
-ObjectShape establishTargetShape(BASE_OBJECT* psTarget)
+ObjectShape establishTargetShape(SimpleObject* psTarget)
 {
 	CHECK_OBJECT(psTarget);
 
@@ -1566,7 +1566,7 @@ ObjectShape establishTargetShape(BASE_OBJECT* psTarget)
 	case OBJ_FEATURE: // Rectangular.
 		return Vector2i(castFeature(psTarget)->psStats->base_width, castFeature(psTarget)->psStats->base_breadth) *
            TILE_UNITS / 2;
-	case OBJ_PROJECTILE: // Circular, but can't happen since a PROJECTILE isn't a BASE_OBJECT.
+	case OBJ_PROJECTILE: // Circular, but can't happen since a PROJECTILE isn't a SimpleObject.
 		//Watermelon 1/2 radius of a droid?
 		return TILE_UNITS / 8;
 	default:
@@ -1580,7 +1580,7 @@ ObjectShape establishTargetShape(BASE_OBJECT* psTarget)
 
 /*the damage depends on the weapon effect and the target propulsion type or
 structure strength*/
-UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, BASE_OBJECT* psTarget)
+UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* psTarget)
 {
 	if (baseDamage == 0)
 	{
@@ -1715,7 +1715,7 @@ static int32_t objectDamage(DAMAGE* psDamage)
 }
 
 /* Returns true if an object has just been hit by an electronic warfare weapon*/
-static bool justBeenHitByEW(BASE_OBJECT* psObj)
+static bool justBeenHitByEW(SimpleObject* psObj)
 {
 	Droid* psDroid;
 	FEATURE* psFeature;
@@ -1762,7 +1762,7 @@ static bool justBeenHitByEW(BASE_OBJECT* psObj)
 	return false;
 }
 
-glm::mat4 objectShimmy(BASE_OBJECT* psObj)
+glm::mat4 objectShimmy(SimpleObject* psObj)
 {
 	if (justBeenHitByEW(psObj))
 	{
@@ -1781,7 +1781,7 @@ glm::mat4 objectShimmy(BASE_OBJECT* psObj)
 #define BULLET_FLIGHT_HEIGHT 16
 
 
-int establishTargetHeight(BASE_OBJECT const* psTarget)
+int establishTargetHeight(SimpleObject const* psTarget)
 {
 	if (psTarget == nullptr)
 	{

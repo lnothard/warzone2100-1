@@ -163,7 +163,7 @@ bool intAddTransporter(Droid* psSelected, bool offWorld)
 
 	/*if transporter has died - close the interface - this can only happen in
 	multiPlayer where the transporter can be killed*/
-	if (bMultiPlayer && psCurrTransporter && isDead((BASE_OBJECT*)psCurrTransporter))
+	if (bMultiPlayer && psCurrTransporter && isDead((SimpleObject*)psCurrTransporter))
 	{
 		intRemoveTransNoAnim();
 		return true;
@@ -647,7 +647,7 @@ int calcRemainingCapacity(const Droid* psTransporter)
 	const Droid *psDroid, *psNext;
 
 	// If it's dead then just return 0.
-	if (isDead((const BASE_OBJECT*)psTransporter))
+	if (isDead((const SimpleObject*)psTransporter))
 	{
 		return 0;
 	}
@@ -679,7 +679,7 @@ bool transporterIsEmpty(const Droid* psTransporter)
 	ASSERT(isTransporter(psTransporter), "Non-transporter droid given");
 
 	// Assume dead droids and non-transporter droids to be empty
-	return (isDead((const BASE_OBJECT*)psTransporter)
+	return (isDead((const SimpleObject*)psTransporter)
 		|| !isTransporter(psTransporter)
 		|| psTransporter->group->psList == nullptr
 		|| psTransporter->group->psList == psTransporter);
@@ -954,7 +954,7 @@ void transporterRemoveDroid(Droid* psTransport, Droid* psDroid, QUEUE_MODE mode)
 	// check if it is a commander
 	if (psDroid->type == DROID_COMMAND)
 	{
-		DROID_GROUP* psGroup = grpCreate();
+		Group* psGroup = grpCreate();
 		psGroup->add(psDroid);
 	}
 	psDroid->selected = true;
@@ -1043,11 +1043,11 @@ void transporterAddDroid(Droid* psTransporter, Droid* psDroidToAdd)
 	}
 	if (onMission)
 	{
-		visRemoveVisibilityOffWorld((BASE_OBJECT*)psDroidToAdd);
+		visRemoveVisibilityOffWorld((SimpleObject*)psDroidToAdd);
 	}
 	else
 	{
-		visRemoveVisibility((BASE_OBJECT*)psDroidToAdd);
+		visRemoveVisibility((SimpleObject*)psDroidToAdd);
 	}
 	fpathRemoveDroidData(psDroidToAdd->id);
 
@@ -1175,8 +1175,8 @@ bool updateTransporter(Droid* psTransporter)
 	// moving to a location
 	// if we're coming back for more droids then we want the transporter to
 	// fly to edge of map before turning round again
-	if (psTransporter->movement.Status == MOVEINACTIVE ||
-      psTransporter->movement.Status == MOVEHOVER ||
+	if (psTransporter->movement.status == MOVEINACTIVE ||
+      psTransporter->movement.status == MOVEHOVER ||
       (psTransporter->action == DACTION_TRANSPORTOUT && !missionIsOffworld() &&
 			(gameTime > transporterGetLaunchTime() + TRANSPORTOUT_TIME) &&
 			!getDroidsToSafetyFlag()))
@@ -1204,7 +1204,7 @@ bool updateTransporter(Droid* psTransporter)
 		//Remove visibility so tiles are not bright around where the transporter left the map
 		if (psTransporter->action != DACTION_TRANSPORTIN)
 		{
-			visRemoveVisibility((BASE_OBJECT*)psTransporter);
+			visRemoveVisibility((SimpleObject*)psTransporter);
 		}
 
 		// Got to destination

@@ -67,7 +67,7 @@ struct FEATURE_STATS : public BASE_STATS
 	inline Vector2i size() const { return Vector2i(baseWidth, baseBreadth); }
 };
 
-struct FEATURE : public BASE_OBJECT
+struct FEATURE : public SimpleObject
 {
 	FEATURE(uint32_t id, FEATURE_STATS const* psStats);
 	~FEATURE();

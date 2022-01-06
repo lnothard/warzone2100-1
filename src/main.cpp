@@ -1798,8 +1798,8 @@ int realmain(int argc, char* argv[])
 	debug(LOG_WZ, "Using language: %s", getLanguage());
 	debug(LOG_WZ, "Backend: %s", BACKEND);
 	debug(LOG_MEMORY,
-        "sizeof: SIMPLE_OBJECT=%ld, BASE_OBJECT=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-        (long)sizeof(SIMPLE_OBJECT), (long)sizeof(BASE_OBJECT), (long)sizeof(Droid), (long)sizeof(Structure),
+        "sizeof: SIMPLE_OBJECT=%ld, SimpleObject=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
+        (long)sizeof(SIMPLE_OBJECT), (long)sizeof(SimpleObject), (long)sizeof(Droid), (long)sizeof(Structure),
         (long)sizeof(FEATURE), (long)sizeof(PROJECTILE));
 
 #if defined(WZ_OS_UNIX)
@@ -1941,8 +1941,8 @@ int realmain(int argc, char* argv[])
 	debug(LOG_WZ, "Using language: %s", getLanguage());
 	debug(LOG_WZ, "Backend: %s", BACKEND);
 	debug(LOG_MEMORY,
-        "sizeof: SIMPLE_OBJECT=%ld, BASE_OBJECT=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-        (long)sizeof(SIMPLE_OBJECT), (long)sizeof(BASE_OBJECT), (long)sizeof(Droid), (long)sizeof(Structure),
+        "sizeof: SIMPLE_OBJECT=%ld, SimpleObject=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
+        (long)sizeof(SIMPLE_OBJECT), (long)sizeof(SimpleObject), (long)sizeof(Droid), (long)sizeof(Structure),
         (long)sizeof(FEATURE), (long)sizeof(PROJECTILE));
 
 	int w = pie_GetVideoBufferWidth();

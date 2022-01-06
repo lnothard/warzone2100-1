@@ -72,7 +72,7 @@ struct MAPTILE
 	uint16_t texture; // Which graphics texture is on this tile
 	int32_t height; ///< The height at the top left of the tile
 	float level; ///< The visibility level of the top left of the tile, for this client.
-	BASE_OBJECT* psObject; // Any object sitting on the location (e.g. building)
+	SimpleObject* psObject; // Any object sitting on the location (e.g. building)
 	PIELIGHT colour;
 	uint16_t limitedContinent; ///< For land or sea limited propulsion types
 	uint16_t hoverContinent; ///< For hover type propulsions

@@ -669,7 +669,7 @@ void deleteTemplateFromProduction(DroidTemplate* psTemplate, unsigned player, QU
 				{
 					continue;
 				}
-				FACTORY* psFactory = &psStruct->pFunctionality->factory;
+				Factory* psFactory = &psStruct->pFunctionality->factory;
 
 				if (psFactory->psAssemblyPoint && psFactory->psAssemblyPoint->factoryType < NUM_FACTORY_TYPES
 					&& psFactory->psAssemblyPoint->factoryInc < asProductionRun[psFactory->psAssemblyPoint->factoryType]

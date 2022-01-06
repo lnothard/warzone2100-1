@@ -23,7 +23,7 @@
 
 #include "lib/framework/vector.h"
 
-struct BASE_OBJECT;
+struct SimpleObject;
 struct Droid;
 
 #define X_UPDATE 0x1

@@ -129,7 +129,7 @@ struct Spacetime
     Rotation rotation;
 };
 
-static inline bool isDead(const BASE_OBJECT* psObj)
+static inline bool isDead(const SimpleObject* psObj)
 {
 	// See objmem.c for comments on the NOT_CURRENT_LIST hack
 	return (psObj->died > NOT_CURRENT_LIST);

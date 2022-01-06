@@ -872,7 +872,7 @@ MESSAGE* findMessage(const VIEWDATA* pViewData, MESSAGE_TYPE type, UDWORD player
 	return nullptr;
 }
 
-MESSAGE* findMessage(const BASE_OBJECT* psObj, MESSAGE_TYPE type, UDWORD player)
+MESSAGE* findMessage(const SimpleObject* psObj, MESSAGE_TYPE type, UDWORD player)
 {
 	ASSERT_OR_RETURN(nullptr, player < MAX_PLAYERS, "Bad player");
 	ASSERT_OR_RETURN(nullptr, type < MSG_TYPES, "Bad message type");

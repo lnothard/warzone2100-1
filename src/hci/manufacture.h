@@ -44,7 +44,7 @@ public:
 		return factories[index];
 	}
 
-	bool findObject(std::function<bool (BASE_OBJECT*)> iteration) const override
+	bool findObject(std::function<bool (SimpleObject*)> iteration) const override
 	{
 		return BaseObjectsController::findObject(factories, iteration);
 	}
@@ -65,7 +65,7 @@ public:
 		return highlightedFactory;
 	}
 
-	void setHighlightedObject(BASE_OBJECT* object) override;
+	void setHighlightedObject(SimpleObject* object) override;
 
 private:
 	void updateFactoriesList();

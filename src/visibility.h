@@ -31,28 +31,28 @@
 bool visInitialise();
 
 /* Check which tiles can be seen by an object */
-void visTilesUpdate(BASE_OBJECT* psObj);
+void visTilesUpdate(SimpleObject* psObj);
 
 void revealAll(UBYTE player);
 
 /* Check whether psViewer can see psTarget
  * psViewer should be an object that has some form of sensor,
  * currently droids and structures.
- * psTarget can be any type of BASE_OBJECT (e.g. a tree).
+ * psTarget can be any type of SimpleObject (e.g. a tree).
  */
-int visibleObject(const BASE_OBJECT* psViewer, const BASE_OBJECT* psTarget, bool wallsBlock);
+int visibleObject(const SimpleObject* psViewer, const SimpleObject* psTarget, bool wallsBlock);
 
 /** Can shooter hit target with direct fire weapon? */
-bool lineOfFire(const SIMPLE_OBJECT* psViewer, const BASE_OBJECT* psTarget, int weapon_slot, bool wallsBlock);
+bool lineOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock);
 
 /** How much of target can the player hit with direct fire weapon? */
-int areaOfFire(const SIMPLE_OBJECT* psViewer, const BASE_OBJECT* psTarget, int weapon_slot, bool wallsBlock);
+int areaOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock);
 
 /** How much of target can the player hit with direct fire weapon? */
-int arcOfFire(const SIMPLE_OBJECT* psViewer, const BASE_OBJECT* psTarget, int weapon_slot, bool wallsBlock);
+int arcOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock);
 
 // Find the wall that is blocking LOS to a target (if any)
-STRUCTURE* visGetBlockingWall(const BASE_OBJECT* psViewer, const BASE_OBJECT* psTarget);
+STRUCTURE* visGetBlockingWall(const SimpleObject* psViewer, const SimpleObject* psTarget);
 
 bool hasSharedVision(unsigned viewer, unsigned ally);
 
@@ -61,13 +61,13 @@ void processVisibility(); ///< Calls processVisibilitySelf and processVisibility
 // update the visibility reduction
 void visUpdateLevel();
 
-void setUnderTilesVis(BASE_OBJECT* psObj, UDWORD player);
+void setUnderTilesVis(SimpleObject* psObj, UDWORD player);
 
-void visRemoveVisibilityOffWorld(BASE_OBJECT* psObj);
-void visRemoveVisibility(BASE_OBJECT* psObj);
+void visRemoveVisibilityOffWorld(SimpleObject* psObj);
+void visRemoveVisibility(SimpleObject* psObj);
 
 // fast test for whether obj2 is in range of obj1
-static inline bool visObjInRange(BASE_OBJECT* psObj1, BASE_OBJECT* psObj2, SDWORD range)
+static inline bool visObjInRange(SimpleObject* psObj1, SimpleObject* psObj2, SDWORD range)
 {
 	int32_t xdiff = psObj1->pos.x - psObj2->pos.x, ydiff = psObj1->pos.y - psObj2->pos.y;
 
@@ -76,7 +76,7 @@ static inline bool visObjInRange(BASE_OBJECT* psObj1, BASE_OBJECT* psObj2, SDWOR
 
 //// If we have ECM, use this for range instead. Otherwise, the sensor's range will be used for
 //// jamming range, which we do not want. Rather limit ECM unit sensor range to jammer range.
-//static inline int objSensorRange(const BASE_OBJECT* psObj)
+//static inline int objSensorRange(const SimpleObject* psObj)
 //{
 //	if (psObj->type == OBJ_DROID)
 //	{
@@ -99,7 +99,7 @@ static inline bool visObjInRange(BASE_OBJECT* psObj1, BASE_OBJECT* psObj2, SDWOR
 //	return 0;
 //}
 
-static inline int objJammerPower(const BASE_OBJECT* psObj)
+static inline int objJammerPower(const SimpleObject* psObj)
 {
 	if (psObj->type == OBJ_DROID)
 	{

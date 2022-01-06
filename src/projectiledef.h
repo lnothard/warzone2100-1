@@ -59,9 +59,9 @@ struct PROJECTILE : public SIMPLE_OBJECT
 	UBYTE state; ///< current projectile state
 	UBYTE bVisible; ///< whether the selected player should see the projectile
 	WEAPON_STATS* psWStats; ///< firing weapon stats
-	BASE_OBJECT* psSource; ///< what fired the projectile
-	BASE_OBJECT* psDest; ///< target of this projectile
-	std::vector<BASE_OBJECT*> psDamaged;
+	SimpleObject* psSource; ///< what fired the projectile
+	SimpleObject* psDest; ///< target of this projectile
+	std::vector<SimpleObject*> psDamaged;
 	///< the targets that have already been dealt damage to (don't damage the same target twice)
 
 	Vector3i src = Vector3i(0, 0, 0); ///< Where projectile started

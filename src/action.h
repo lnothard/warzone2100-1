@@ -74,23 +74,23 @@ void actionDroid(DROID* psDroid, DROID_ACTION action);
 void actionDroid(DROID* psDroid, DROID_ACTION action, UDWORD x, UDWORD y);
 
 /** Give a droid an action with an object target. */
-void actionDroid(DROID* psDroid, DROID_ACTION action, BASE_OBJECT* psObj);
+void actionDroid(DROID* psDroid, DROID_ACTION action, SimpleObject* psObj);
 
 /** Give a droid an action with an object target and a location. */
 void actionDroid(DROID* psDroid, DROID_ACTION action,
-                 BASE_OBJECT* psObj, UDWORD x, UDWORD y);
+                 SimpleObject* psObj, UDWORD x, UDWORD y);
 
 /** Rotate turret toward  target return True if locked on (Droid and Structure). */
-bool actionTargetTurret(BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, WEAPON* psWeapon);
+bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, WEAPON* psWeapon);
 
 /** Realign turret. */
-void actionAlignTurret(BASE_OBJECT* psObj, int weapon_slot);
+void actionAlignTurret(SimpleObject* psObj, int weapon_slot);
 
 /** Check if a target is within weapon range. */
-bool actionInRange(const DROID* psDroid, const BASE_OBJECT* psObj, int weapon_slot, bool useLongWithOptimum = true);
+bool actionInRange(const DROID* psDroid, const SimpleObject* psObj, int weapon_slot, bool useLongWithOptimum = true);
 
 /** Return whether a droid can see a target to fire on it. */
-bool actionVisibleTarget(DROID* psDroid, BASE_OBJECT* psTarget, int weapon_slot);
+bool actionVisibleTarget(DROID* psDroid, SimpleObject* psTarget, int weapon_slot);
 
 /** Check whether a droid is in the neighboring tile to a build position. */
 bool actionReachedBuildPos(DROID const* psDroid, int x, int y, uint16_t direction, BASE_STATS const* psStats);

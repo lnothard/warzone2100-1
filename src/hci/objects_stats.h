@@ -16,21 +16,21 @@ class BaseObjectsController
 public:
 	virtual ~BaseObjectsController() = default;
 	virtual size_t objectsSize() const = 0;
-	virtual BASE_OBJECT* getObjectAt(size_t index) const = 0;
+	virtual SimpleObject* getObjectAt(size_t index) const = 0;
 	virtual BASE_STATS* getObjectStatsAt(size_t index) const = 0;
-	virtual bool findObject(std::function<bool (BASE_OBJECT*)> iteration) const = 0;
+	virtual bool findObject(std::function<bool (SimpleObject*)> iteration) const = 0;
 	virtual void refresh() = 0;
 	virtual bool showInterface() = 0;
 	virtual void prepareToClose();
 	virtual void clearData() = 0;
-	void jumpToObject(BASE_OBJECT* object);
+	void jumpToObject(SimpleObject* object);
 	void updateHighlighted();
 	void clearSelection();
 	void clearStructureSelection();
-	void selectObject(BASE_OBJECT* object);
+	void selectObject(SimpleObject* object);
 
-	virtual BASE_OBJECT* getHighlightedObject() const = 0;
-	virtual void setHighlightedObject(BASE_OBJECT* object) = 0;
+	virtual SimpleObject* getHighlightedObject() const = 0;
+	virtual void setHighlightedObject(SimpleObject* object) = 0;
 
 	void closeInterface()
 	{
@@ -200,7 +200,7 @@ protected:
 
 	std::shared_ptr<IntListTabWidget> objectsList;
 	size_t buttonsCount = 0;
-	BASE_OBJECT* previousHighlighted = nullptr;
+	SimpleObject* previousHighlighted = nullptr;
 };
 
 class StatsForm : public IntFormAnimated

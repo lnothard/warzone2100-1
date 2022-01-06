@@ -96,7 +96,7 @@ SIMPLE_OBJECT::~SIMPLE_OBJECT()
 	// Hopefully this will trigger an assert and/or crash if someone uses the freed object.
 }
 
-BASE_OBJECT::BASE_OBJECT(OBJECT_TYPE type, uint32_t id, unsigned player)
+SimpleObject::SimpleObject(OBJECT_TYPE type, uint32_t id, unsigned player)
 	: SIMPLE_OBJECT(type, id, player)
 	  , selected(false)
 	  , lastEmission(0)
@@ -116,7 +116,7 @@ BASE_OBJECT::BASE_OBJECT(OBJECT_TYPE type, uint32_t id, unsigned player)
 	sDisplay.screen_r = 0;
 }
 
-BASE_OBJECT::~BASE_OBJECT()
+SimpleObject::~SimpleObject()
 {
 	visRemoveVisibility(this);
 
@@ -128,7 +128,7 @@ BASE_OBJECT::~BASE_OBJECT()
 
 //// Query visibility for display purposes (i.e. for `selectedPlayer`)
 //// *DO NOT USE TO QUERY VISIBILITY FOR CALCULATIONS INVOLVING GAME / SIMULATION STATE*
-//UBYTE BASE_OBJECT::visibleForLocalDisplay() const
+//UBYTE SimpleObject::visibleForLocalDisplay() const
 //{
 //	if (godMode)
 //	{
@@ -209,7 +209,7 @@ Vector2i getStatsSize(BASE_STATS const* pType, uint16_t direction)
 	return Vector2i(1, 1);
 }
 
-StructureBounds getStructureBounds(BASE_OBJECT const* object)
+StructureBounds getStructureBounds(SimpleObject const* object)
 {
 	Structure const* psStructure = castStructure(object);
 	FEATURE const* psFeature = castFeature(object);

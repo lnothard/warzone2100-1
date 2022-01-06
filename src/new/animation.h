@@ -65,7 +65,7 @@ class Rotation : public Animation
  *
  * Useful while animating a rotation, to always animate the shortest angle delta.
  */
-int calculateRelativeAngle(unsigned from, unsigned to);
+int calculate_relative_angle(unsigned from, unsigned to);
 
 /**
  *

@@ -57,13 +57,13 @@ Structure* apsStructLists[MAX_PLAYERS];
 FEATURE* apsFeatureLists[MAX_PLAYERS]; ///< Only player zero is valid for features. TODO: Reduce to single list.
 Structure* apsExtractorLists[MAX_PLAYERS];
 FEATURE* apsOilList[1];
-BASE_OBJECT* apsSensorList[1]; ///< List of sensors in the game.
+SimpleObject* apsSensorList[1]; ///< List of sensors in the game.
 
 /*The list of Flag Positions allocated */
 FLAG_POSITION* apsFlagPosLists[MAX_PLAYERS];
 
 /* The list of destroyed objects */
-BASE_OBJECT* psDestroyedObj = nullptr;
+SimpleObject* psDestroyedObj = nullptr;
 
 /* Forward function declarations */
 #ifdef DEBUG
@@ -94,7 +94,7 @@ void objmemShutdown()
 #else
 #define BADREF(func, line) "Illegal reference to object %d", psVictim->id
 #endif
-static bool checkReferences(BASE_OBJECT* psVictim)
+static bool checkReferences(SimpleObject* psVictim)
 {
 	for (int plr = 0; plr < MAX_PLAYERS; ++plr)
 	{
@@ -137,7 +137,7 @@ static bool checkReferences(BASE_OBJECT* psVictim)
 
 /* Remove an object from the destroyed list, finally freeing its memory
  * Hopefully by this time, no pointers still refer to it! */
-static bool objmemDestroy(BASE_OBJECT* psObj)
+static bool objmemDestroy(SimpleObject* psObj)
 {
 	switch (psObj->type)
 	{
@@ -160,7 +160,7 @@ static bool objmemDestroy(BASE_OBJECT* psObj)
 	{
 		return false;
 	}
-	debug(LOG_MEMORY, "BASE_OBJECT* 0x%p is freed.", static_cast<void *>(psObj));
+	debug(LOG_MEMORY, "SimpleObject* 0x%p is freed.", static_cast<void *>(psObj));
 	delete psObj;
 	return true;
 }
@@ -168,7 +168,7 @@ static bool objmemDestroy(BASE_OBJECT* psObj)
 /* General housekeeping for the object system */
 void objmemUpdate()
 {
-	BASE_OBJECT *psCurr, *psNext, *psPrev;
+	SimpleObject *psCurr, *psNext, *psPrev;
 
 #ifdef DEBUG
 	// do a general validity check first
@@ -266,7 +266,7 @@ static inline void destroyObject(OBJECT* list[], OBJECT* object)
 	{
 		list[object->player] = list[object->player]->psNext;
 		object->psNext = psDestroyedObj;
-		psDestroyedObj = (BASE_OBJECT*)object;
+		psDestroyedObj = (SimpleObject*)object;
 		object->died = gameTime;
 		scriptRemoveObject(object);
 		return;
@@ -393,7 +393,7 @@ static inline void releaseAllObjectsInList(OBJECT* list[])
 /* add the droid to the Droid Lists */
 void addDroid(Droid* psDroidToAdd, Droid* pList[MAX_PLAYERS])
 {
-	DROID_GROUP* psGroup;
+	Group* psGroup;
 
 	addObjectToList(pList, psDroidToAdd, psDroidToAdd->player);
 
@@ -405,7 +405,7 @@ void addDroid(Droid* psDroidToAdd, Droid* pList[MAX_PLAYERS])
 		psDroidToAdd->died = false;
 		if (psDroidToAdd->type == DROID_SENSOR)
 		{
-			addObjectToFuncList(apsSensorList, (BASE_OBJECT*)psDroidToAdd, 0);
+			addObjectToFuncList(apsSensorList, (SimpleObject*)psDroidToAdd, 0);
 		}
 
 		// commanders have to get their group back if not already loaded
@@ -419,7 +419,7 @@ void addDroid(Droid* psDroidToAdd, Droid* pList[MAX_PLAYERS])
 	{
 		if (psDroidToAdd->type == DROID_SENSOR)
 		{
-			addObjectToFuncList(mission.apsSensorList, (BASE_OBJECT*)psDroidToAdd, 0);
+			addObjectToFuncList(mission.apsSensorList, (SimpleObject*)psDroidToAdd, 0);
 		}
 	}
 }
@@ -442,7 +442,7 @@ void killDroid(Droid* psDel)
 	setDroidBase(psDel, nullptr);
 	if (psDel->type == DROID_SENSOR)
 	{
-		removeObjectFromFuncList(apsSensorList, (BASE_OBJECT*)psDel, 0);
+		removeObjectFromFuncList(apsSensorList, (SimpleObject*)psDel, 0);
 	}
 
 	destroyObject(apsDroidLists, psDel);
@@ -468,7 +468,7 @@ void removeDroid(Droid* psDroidToRemove, Droid* pList[MAX_PLAYERS])
 	{
 		if (psDroidToRemove->type == DROID_SENSOR)
 		{
-			removeObjectFromFuncList(apsSensorList, (BASE_OBJECT*)psDroidToRemove, 0);
+			removeObjectFromFuncList(apsSensorList, (SimpleObject*)psDroidToRemove, 0);
 		}
 		psDroidToRemove->died = NOT_CURRENT_LIST;
 	}
@@ -476,7 +476,7 @@ void removeDroid(Droid* psDroidToRemove, Droid* pList[MAX_PLAYERS])
 	{
 		if (psDroidToRemove->type == DROID_SENSOR)
 		{
-			removeObjectFromFuncList(mission.apsSensorList, (BASE_OBJECT*)psDroidToRemove, 0);
+			removeObjectFromFuncList(mission.apsSensorList, (SimpleObject*)psDroidToRemove, 0);
 		}
 	}
 }
@@ -502,7 +502,7 @@ void addStructure(Structure* psStructToAdd)
 	if (psStructToAdd->pStructureType->sensor_stats
 		&& psStructToAdd->pStructureType->sensor_stats->location == LOC_TURRET)
 	{
-		addObjectToFuncList(apsSensorList, (BASE_OBJECT*)psStructToAdd, 0);
+		addObjectToFuncList(apsSensorList, (SimpleObject*)psStructToAdd, 0);
 	}
 	else if (psStructToAdd->pStructureType->type == REF_RESOURCE_EXTRACTOR)
 	{
@@ -523,7 +523,7 @@ void killStruct(Structure* psBuilding)
 	if (psBuilding->pStructureType->sensor_stats
 		&& psBuilding->pStructureType->sensor_stats->location == LOC_TURRET)
 	{
-		removeObjectFromFuncList(apsSensorList, (BASE_OBJECT*)psBuilding, 0);
+		removeObjectFromFuncList(apsSensorList, (SimpleObject*)psBuilding, 0);
 	}
 	else if (psBuilding->pStructureType->type == REF_RESOURCE_EXTRACTOR)
 	{
@@ -539,7 +539,7 @@ void killStruct(Structure* psBuilding)
 	{
 		if (StructIsFactory(psBuilding))
 		{
-			FACTORY* psFactory = &psBuilding->pFunctionality->factory;
+			Factory* psFactory = &psBuilding->pFunctionality->factory;
 
 			// remove any commander from the factory
 			if (psFactory->psCommander != nullptr)
@@ -556,7 +556,7 @@ void killStruct(Structure* psBuilding)
 		}
 		else if (psBuilding->pStructureType->type == REF_REPAIR_FACILITY)
 		{
-			REPAIR_FACILITY* psRepair = &psBuilding->pFunctionality->repairFacility;
+			RepairFacility* psRepair = &psBuilding->pFunctionality->repairFacility;
 
 			if (psRepair->psDeliveryPoint)
 			{
@@ -587,7 +587,7 @@ void removeStructureFromList(Structure* psStructToRemove, Structure* pList[MAX_P
 	if (psStructToRemove->pStructureType->sensor_stats
 		&& psStructToRemove->pStructureType->sensor_stats->location == LOC_TURRET)
 	{
-		removeObjectFromFuncList(apsSensorList, (BASE_OBJECT*)psStructToRemove, 0);
+		removeObjectFromFuncList(apsSensorList, (SimpleObject*)psStructToRemove, 0);
 	}
 	else if (psStructToRemove->pStructureType->type == REF_RESOURCE_EXTRACTOR)
 	{
@@ -767,9 +767,9 @@ void checkFactoryFlags()
 /**************************  OBJECT ACCESS FUNCTIONALITY ********************************/
 
 // Find a base object from it's id
-BASE_OBJECT* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
+SimpleObject* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
 {
-	BASE_OBJECT* psObj;
+	SimpleObject* psObj;
 	Droid* psTrans;
 
 	for (int i = 0; i < 3; ++i)
@@ -821,7 +821,7 @@ BASE_OBJECT* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
 				{
 					if (psTrans->id == id)
 					{
-						return (BASE_OBJECT*)psTrans;
+						return (SimpleObject*)psTrans;
 					}
 				}
 			}
@@ -834,11 +834,11 @@ BASE_OBJECT* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
 }
 
 // Find a base object from it's id
-BASE_OBJECT* getBaseObjFromId(UDWORD id)
+SimpleObject* getBaseObjFromId(UDWORD id)
 {
 	unsigned int i;
 	UDWORD player;
-	BASE_OBJECT* psObj;
+	SimpleObject* psObj;
 	Droid* psTrans;
 
 	for (i = 0; i < 7; ++i)
@@ -848,15 +848,15 @@ BASE_OBJECT* getBaseObjFromId(UDWORD id)
 			switch (i)
 			{
 			case 0:
-				psObj = (BASE_OBJECT*)apsDroidLists[player];
+				psObj = (SimpleObject*)apsDroidLists[player];
 				break;
 			case 1:
-				psObj = (BASE_OBJECT*)apsStructLists[player];
+				psObj = (SimpleObject*)apsStructLists[player];
 				break;
 			case 2:
 				if (player == 0)
 				{
-					psObj = (BASE_OBJECT*)apsFeatureLists[0];
+					psObj = (SimpleObject*)apsFeatureLists[0];
 				}
 				else
 				{
@@ -864,15 +864,15 @@ BASE_OBJECT* getBaseObjFromId(UDWORD id)
 				}
 				break;
 			case 3:
-				psObj = (BASE_OBJECT*)mission.apsDroidLists[player];
+				psObj = (SimpleObject*)mission.apsDroidLists[player];
 				break;
 			case 4:
-				psObj = (BASE_OBJECT*)mission.apsStructLists[player];
+				psObj = (SimpleObject*)mission.apsStructLists[player];
 				break;
 			case 5:
 				if (player == 0)
 				{
-					psObj = (BASE_OBJECT*)mission.apsFeatureLists[0];
+					psObj = (SimpleObject*)mission.apsFeatureLists[0];
 				}
 				else
 				{
@@ -882,7 +882,7 @@ BASE_OBJECT* getBaseObjFromId(UDWORD id)
 			case 6:
 				if (player == 0)
 				{
-					psObj = (BASE_OBJECT*)apsLimboDroids[0];
+					psObj = (SimpleObject*)apsLimboDroids[0];
 				}
 				else
 				{
@@ -907,7 +907,7 @@ BASE_OBJECT* getBaseObjFromId(UDWORD id)
 					{
 						if (psTrans->id == id)
 						{
-							return (BASE_OBJECT*)psTrans;
+							return (SimpleObject*)psTrans;
 						}
 					}
 				}
@@ -925,7 +925,7 @@ UDWORD getRepairIdFromFlag(FLAG_POSITION* psFlag)
 	unsigned int i;
 	UDWORD player;
 	Structure* psObj;
-	REPAIR_FACILITY* psRepair;
+	RepairFacility* psRepair;
 
 
 	player = psFlag->player;
@@ -953,7 +953,7 @@ UDWORD getRepairIdFromFlag(FLAG_POSITION* psFlag)
 				if (psObj->pStructureType->type == REF_REPAIR_FACILITY)
 				{
 					//check for matching delivery point
-					psRepair = ((REPAIR_FACILITY*)psObj->pFunctionality);
+					psRepair = ((RepairFacility*)psObj->pFunctionality);
 					if (psRepair->psDeliveryPoint == psFlag)
 					{
 						return psObj->id;
@@ -973,11 +973,11 @@ UDWORD getRepairIdFromFlag(FLAG_POSITION* psFlag)
 static void objListIntegCheck()
 {
 	SDWORD player;
-	BASE_OBJECT* psCurr;
+	SimpleObject* psCurr;
 
 	for (player = 0; player < MAX_PLAYERS; player += 1)
 	{
-		for (psCurr = (BASE_OBJECT*)apsDroidLists[player]; psCurr; psCurr = psCurr->psNext)
+		for (psCurr = (SimpleObject*)apsDroidLists[player]; psCurr; psCurr = psCurr->psNext)
 		{
 			ASSERT(psCurr->type == OBJ_DROID &&
 			       (SDWORD)psCurr->player == player,
@@ -987,7 +987,7 @@ static void objListIntegCheck()
 	}
 	for (player = 0; player < MAX_PLAYERS; player += 1)
 	{
-		for (psCurr = (BASE_OBJECT*)apsStructLists[player]; psCurr; psCurr = psCurr->psNext)
+		for (psCurr = (SimpleObject*)apsStructLists[player]; psCurr; psCurr = psCurr->psNext)
 		{
 			ASSERT(psCurr->type == OBJ_STRUCTURE &&
 			       (SDWORD)psCurr->player == player,
@@ -995,12 +995,12 @@ static void objListIntegCheck()
 			       objInfo(psCurr), (void*) psCurr, player, (int)psCurr->player);
 		}
 	}
-	for (psCurr = (BASE_OBJECT*)apsFeatureLists[0]; psCurr; psCurr = psCurr->psNext)
+	for (psCurr = (SimpleObject*)apsFeatureLists[0]; psCurr; psCurr = psCurr->psNext)
 	{
 		ASSERT(psCurr->type == OBJ_FEATURE,
 		       "objListIntegCheck: misplaced object in the feature list");
 	}
-	for (psCurr = (BASE_OBJECT*)psDestroyedObj; psCurr; psCurr = psCurr->psNext)
+	for (psCurr = (SimpleObject*)psDestroyedObj; psCurr; psCurr = psCurr->psNext)
 	{
 		ASSERT(psCurr->died > 0, "objListIntegCheck: Object in destroyed list but not dead!");
 	}

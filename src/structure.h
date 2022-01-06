@@ -18,9 +18,9 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-/** @file structure.h
- *
- *  Definitions for the structures.
+/**
+ * @file structure.h
+ * Definitions for the structures.
  */
 
 #ifndef __INCLUDED_SRC_STRUCTURE_H__
@@ -78,7 +78,7 @@ enum class STRUCTURE_STATE
 	BLUEPRINT_VALID,
 	BLUEPRINT_INVALID,
 	BLUEPRINT_PLANNED,
-	BLUEPRINT_PLANNED_BY_ALLY,
+	BLUEPRINT_PLANNED_BY_ALLY
 };
 
 enum class STRUCTURE_STRENGTH
@@ -172,70 +172,6 @@ struct StructureStats : public BASE_STATS
     bool is_favourite = false; ///< on Favorites list
 };
 
-struct ResearchItem
-{
-    uint8_t tech_code;
-    unsigned research_point_cost;
-    unsigned power_cost;
-};
-
-struct RESEARCH_FACILITY
-{
-    RESEARCH* psSubject; // The subject the structure is working on.
-    RESEARCH* psSubjectPending;
-    // The subject the structure is going to work on when the GAME_RESEARCHSTATUS message is received.
-    StatusPending statusPending; ///< Pending = not yet synchronised.
-    unsigned pendingCount; ///< Number of messages sent but not yet processed.
-    RESEARCH* psBestTopic; // The topic with the most research points that was last performed
-    UDWORD timeStartHold; /* The time the research facility was put on hold*/
-};
-
-struct DroidTemplate;
-
-struct FACTORY
-{
-    uint8_t productionLoops; ///< Number of loops to perform. Not synchronised, and only meaningful for selectedPlayer.
-    UBYTE loopsPerformed; /* how many times the loop has been performed*/
-    DroidTemplate* psSubject; ///< The subject the structure is working on.
-    DroidTemplate* psSubjectPending;
-    ///< The subject the structure is going to working on. (Pending = not yet synchronised.)
-    StatusPending statusPending; ///< Pending = not yet synchronised.
-    unsigned pendingCount; ///< Number of messages sent but not yet processed.
-    UDWORD timeStarted; /* The time the building started on the subject*/
-    int buildPointsRemaining; ///< Build points required to finish building the droid.
-    UDWORD timeStartHold; /* The time the factory was put on hold*/
-    FLAG_POSITION* psAssemblyPoint; /* Place for the new droids to assemble at */
-    struct DROID* psCommander; // command droid to produce droids for (if any)
-    uint32_t secondaryOrder; ///< Secondary order state for all units coming out of the factory.
-};
-
-struct RES_EXTRACTOR
-{
-    struct Structure* psPowerGen; ///< owning power generator
-};
-
-struct POWER_GEN
-{
-    struct Structure* apResExtractors[NUM_POWER_MODULES]; ///< Pointers to associated oil derricks
-};
-
-class DROID_GROUP;
-
-struct REPAIR_FACILITY
-{
-    BASE_OBJECT* psObj; /* Object being repaired */
-    FLAG_POSITION* psDeliveryPoint; /* Place for the repaired droids to assemble at */
-    // The group the droids to be repaired by this facility belong to
-    DROID_GROUP* psGroup;
-    int droidQueue; ///< Last count of droid queue for this facility
-};
-
-struct REARM_PAD
-{
-    UDWORD timeStarted; /* Time reArm started on current object */
-    BASE_OBJECT* psObj; /* Object being rearmed */
-    UDWORD timeLastUpdated; /* Time rearm was last updated */
-};
 
 struct WALL
 {
@@ -245,7 +181,7 @@ struct WALL
 class Structure : public virtual Unit
 {
 public:
-    virtual ~Structure() = default;
+    ~Structure() override = default;
     Structure(const Structure&) = delete;
     Structure(Structure&&) = delete;
     Structure& operator=(const Structure&) = delete;
@@ -264,7 +200,7 @@ namespace Impl
     class Structure : public virtual ::Structure, public Impl::Unit
     {
     public:
-        Structure(uint32_t id, unsigned player);
+        Structure(unsigned id, unsigned player);
 
         [[nodiscard]] bool is_blueprint() const noexcept;
         [[nodiscard]] bool is_wall() const noexcept;
@@ -290,7 +226,7 @@ namespace Impl
         void print_info() const override;
         [[nodiscard]] unsigned build_points_to_completion() const;
         [[nodiscard]] unsigned calculate_refunded_power() const;
-        [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
+        [[nodiscard]] int calculate_attack_priority(const ::Unit* target, int weapon_slot) const final;
         [[nodiscard]] const ::SimpleObject& get_target(int weapon_slot) const final;
         [[nodiscard]] STRUCTURE_STATE get_state() const;
     private:
@@ -309,24 +245,86 @@ namespace Impl
 
         std::array<::SimpleObject*, MAX_WEAPONS> target;
 
+        /// Expected damage to be caused by all currently incoming projectiles.
+        /// This info is shared between all players, but shouldn't make a difference
+        /// unless 3 mutual enemies happen to be fighting each other at the same time.
         unsigned expected_damage;
-        ///< Expected damage to be caused by all currently incoming projectiles. This info is shared between all players,
-        ///< but shouldn't make a difference unless 3 mutual enemies happen to be fighting each other at the same time.
         uint32_t prevTime; ///< Time of structure's previous tick.
         int foundation_depth; ///< Depth of structure's foundation
         uint8_t capacity; ///< Lame name: current number of module upgrades (*not* maximum nb of upgrades)
         STRUCTURE_ANIMATION_STATE animation_state = NORMAL;
         std::size_t lastStateTime;
         iIMDShape *prebuiltImd;
-
-        inline Vector2i size() const { return stats->size(rot.direction); }
     };
+
+    StructureBounds get_bounds(const Structure& structure) noexcept;
 }
 #define LOTS_OF 0xFFFFFFFF  // highest number the limit can be set to
 
-//the three different types of factory (currently) - FACTORY, CYBORG_FACTORY, VTOL_FACTORY
-// added repair facilities as they need an assembly point as well
-enum FLAG_TYPE
+struct ResearchItem
+{
+    uint8_t tech_code;
+    unsigned research_point_cost;
+    unsigned power_cost;
+};
+
+class ResearchFacility : public virtual Structure, public Impl::Structure
+{
+private:
+    ResearchItem psSubject; // The subject the structure is working on.
+    ResearchItem psSubjectPending;
+    // The subject the structure is going to work on when the GAME_RESEARCHSTATUS message is received.
+    StatusPending statusPending; ///< Pending = not yet synchronised.
+    unsigned pendingCount; ///< Number of messages sent but not yet processed.
+    ResearchItem psBestTopic; // The topic with the most research points that was last performed
+    UDWORD timeStartHold; /* The time the research facility was put on hold*/
+};
+
+class Factory
+{
+    uint8_t productionLoops; ///< Number of loops to perform. Not synchronised, and only meaningful for selectedPlayer.
+    uint8_t loopsPerformed; /* how many times the loop has been performed*/
+    DroidTemplate* psSubject; ///< The subject the structure is working on.
+    DroidTemplate* psSubjectPending;
+    ///< The subject the structure is going to working on. (Pending = not yet synchronised.)
+    StatusPending statusPending; ///< Pending = not yet synchronised.
+    unsigned pendingCount; ///< Number of messages sent but not yet processed.
+    std::size_t timeStarted; /* The time the building started on the subject*/
+    int buildPointsRemaining; ///< Build points required to finish building the droid.
+    std::size_t timeStartHold; /* The time the factory was put on hold*/
+    std::unique_ptr<FlagPosition> psAssemblyPoint; /* Place for the new droids to assemble at */
+    Droid* psCommander; // command droid to produce droids for (if any)
+    unsigned secondaryOrder; ///< Secondary order state for all units coming out of the factory.
+};
+
+struct ResourceExtractor
+{
+    Structure* power_generator;
+};
+
+struct PowerGenerator
+{
+    /// Pointers to associated oil derricks
+    std::array<Structure*, NUM_POWER_MODULES> resource_extractors;
+};
+
+struct RepairFacility
+{
+    Unit* psObj; /* Object being repaired */
+    std::unique_ptr<FlagPosition> psDeliveryPoint; /* Place for the repaired droids to assemble at */
+    // The group the droids to be repaired by this facility belong to
+    DROID_GROUP* psGroup;
+    int droidQueue; /// Last count of droid queue for this facility
+};
+
+struct RearmPad
+{
+    std::size_t timeStarted; /* Time reArm started on current object */
+    Droid* psObj; /* Object being rearmed */
+    std::size_t timeLastUpdated; /* Time rearm was last updated */
+};
+
+enum class FLAG_TYPE
 {
     FACTORY_FLAG,
     CYBORG_FLAG,
@@ -551,7 +549,7 @@ if not a good combination!*/
 bool validTemplateForFactory(const DroidTemplate* psTemplate, Structure* psFactory, bool complain);
 
 /*calculates the damage caused to the resistance levels of structures*/
-bool electronicDamage(BASE_OBJECT* psTarget, UDWORD damage, UBYTE attackPlayer);
+bool electronicDamage(SimpleObject* psTarget, UDWORD damage, UBYTE attackPlayer);
 
 /* EW works differently in multiplayer mode compared with single player.*/
 bool validStructResistance(const Structure* psStruct);
@@ -665,7 +663,7 @@ bool IsStatExpansionModule(const StructureStats* psStats);
 
 /// is this a blueprint and not a real structure?
 bool structureIsBlueprint(const Structure* psStructure);
-bool isBlueprint(const BASE_OBJECT* psObject);
+bool isBlueprint(const SimpleObject* psObject);
 
 /*returns the power cost to build this structure, or to add its next module */
 UDWORD structPowerToBuildOrAddNextModule(const Structure* psStruct);
@@ -686,12 +684,12 @@ bool canStructureHaveAModuleAdded(const Structure* const structure);
 
 static inline int structSensorRange(const Structure* psObj)
 {
-	return objSensorRange((const BASE_OBJECT*)psObj);
+	return objSensorRange((const SimpleObject*)psObj);
 }
 
 static inline int structJammerPower(const Structure* psObj)
 {
-	return objJammerPower((const BASE_OBJECT*)psObj);
+	return objJammerPower((const SimpleObject*)psObj);
 }
 
 static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStructure, int weaponSlot, uint32_t time)
@@ -702,7 +700,7 @@ static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStruc
 
 #define setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin) _setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin, __LINE__, __FUNCTION__)
 
-static inline void _setStructureTarget(Structure* psBuilding, BASE_OBJECT* psNewTarget, UWORD idx,
+static inline void _setStructureTarget(Structure* psBuilding, SimpleObject* psNewTarget, UWORD idx,
                                        TARGET_ORIGIN targetOrigin, int line, const char* func)
 {
 	ASSERT_OR_RETURN(, idx < MAX_WEAPONS, "Bad index");

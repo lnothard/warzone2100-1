@@ -146,7 +146,7 @@ void BuildController::toggleBuilderSelection(Droid* droid)
 	triggerEventSelected();
 }
 
-void BuildController::setHighlightedObject(BASE_OBJECT* object)
+void BuildController::setHighlightedObject(SimpleObject* object)
 {
 	if (object == nullptr)
 	{

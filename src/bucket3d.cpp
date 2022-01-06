@@ -320,7 +320,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 		if (objectType == RENDER_DROID || objectType == RENDER_STRUCTURE)
 		{
 			/* Won't draw selection boxes */
-			((BASE_OBJECT*)pObject)->sDisplay.frame_number = 0;
+			((SimpleObject*)pObject)->sDisplay.frame_number = 0;
 		}
 
 		return;

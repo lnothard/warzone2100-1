@@ -293,14 +293,14 @@ static void updateCurrentPower(Structure* psStruct, UDWORD player, int ticks)
 {
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player %u", player);
 
-	POWER_GEN* psPowerGen = (POWER_GEN*)psStruct->pFunctionality;
+	PowerGenerator* psPowerGen = (PowerGenerator*)psStruct->pFunctionality;
 	ASSERT_OR_RETURN(, psPowerGen != nullptr, "Null pFunctionality?");
 
 	//each power gen can cope with its associated resource extractors
 	int64_t extractedPower = 0;
 	for (int i = 0; i < NUM_POWER_MODULES; ++i)
 	{
-		auto& extractor = psPowerGen->apResExtractors[i];
+		auto& extractor = psPowerGen->resource_extractors[i];
 		if (extractor && extractor->died)
 		{
 			syncDebugStructure(extractor, '-');

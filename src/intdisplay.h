@@ -56,7 +56,7 @@ struct ImdObject
 	{
 	}
 
-	static ImdObject Droid(BASE_OBJECT* p)
+	static ImdObject Droid(SimpleObject* p)
 	{
 		return ImdObject(p, IMDTYPE_DROID);
 	}
@@ -71,7 +71,7 @@ struct ImdObject
 		return ImdObject(p, IMDTYPE_COMPONENT);
 	}
 
-	static ImdObject Structure(BASE_OBJECT* p)
+	static ImdObject Structure(SimpleObject* p)
 	{
 		return ImdObject(p, IMDTYPE_STRUCTURE);
 	}
@@ -164,7 +164,7 @@ public:
 
 	virtual void display(int xOffset, int yOffset);
 
-	void setObject(BASE_OBJECT* object)
+	void setObject(SimpleObject* object)
 	{
 		psObj = object;
 	}
@@ -177,7 +177,7 @@ public:
 	}
 
 protected:
-	BASE_OBJECT* psObj;
+	SimpleObject* psObj;
 };
 
 class IntStatusButton : public IntObjectButton
@@ -185,13 +185,13 @@ class IntStatusButton : public IntObjectButton
 public:
 	IntStatusButton();
 
-	void setObject(BASE_OBJECT* object)
+	void setObject(SimpleObject* object)
 	{
 		psObj = object;
 		theStats = nullptr;
 	}
 
-	void setObjectAndStats(BASE_OBJECT* object, BASE_STATS* stats)
+	void setObjectAndStats(SimpleObject* object, BASE_STATS* stats)
 	{
 		psObj = object;
 		theStats = stats;

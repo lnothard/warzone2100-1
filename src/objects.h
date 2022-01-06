@@ -17,8 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  A header file that groups together all the object header files
+
+/**
+ * @file
+ * A header file that groups together all the object header files
  */
 
 #ifndef __INCLUDED_SRC_OBJECTS_H__
@@ -37,17 +39,17 @@ bool objInitialise();
 bool objShutdown();
 
 /// Goes through the list passed in reversing the order so the first entry becomes the last and the last entry becomes the first!
-void reverseObjectList(BASE_OBJECT** ppsList);
+void reverseObjectList(SimpleObject** ppsList);
 
 template <typename OBJECT>
 void reverseObjectList(OBJECT** ppsList)
 {
-	BASE_OBJECT* baseList = *ppsList;
+	SimpleObject* baseList = *ppsList;
 	reverseObjectList(&baseList);
 	*ppsList = static_cast<OBJECT*>(baseList);
 }
 
 /** Output an informative string about this object. For debugging. */
-const char* objInfo(const BASE_OBJECT* psObj);
+const char* objInfo(const SimpleObject* psObj);
 
 #endif // __INCLUDED_SRC_OBJECTS_H__

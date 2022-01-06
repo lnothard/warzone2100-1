@@ -32,7 +32,7 @@ public:
 		return facilities[index];
 	}
 
-	bool findObject(std::function<bool (BASE_OBJECT*)> iteration) const override
+	bool findObject(std::function<bool (SimpleObject*)> iteration) const override
 	{
 		return BaseObjectsController::findObject(facilities, iteration);
 	}
@@ -52,7 +52,7 @@ public:
 		return highlightedFacility;
 	}
 
-	void setHighlightedObject(BASE_OBJECT* object) override;
+	void setHighlightedObject(SimpleObject* object) override;
 
 private:
 	void updateFacilitiesList();

@@ -1898,7 +1898,7 @@ void intSetMapPos(UDWORD x, UDWORD y)
 //
 // There should be two version of this function, one for left clicking and one got right.
 //
-void intObjectSelected(BASE_OBJECT* psObj)
+void intObjectSelected(SimpleObject* psObj)
 {
 	if (psObj)
 	{
@@ -1909,13 +1909,13 @@ void intObjectSelected(BASE_OBJECT* psObj)
 			if (!OrderUp)
 			{
 				intResetScreen(false);
-				// changed to a BASE_OBJECT to accommodate the factories - AB 21/04/99
+				// changed to a SimpleObject to accommodate the factories - AB 21/04/99
 				intAddOrder(psObj);
 				intMode = INT_ORDER;
 			}
 			else
 			{
-				// changed to a BASE_OBJECT to accommodate the factories - AB 21/04/99
+				// changed to a SimpleObject to accommodate the factories - AB 21/04/99
 				intAddOrder(psObj);
 			}
 			break;
@@ -2362,11 +2362,11 @@ static bool intAddDebugStatsForm(BASE_STATS** _ppsStatsList, UDWORD numStats)
 }
 
 /* Return the stats for a research facility */
-static BASE_STATS* getResearchStats(BASE_OBJECT* psObj)
+static BASE_STATS* getResearchStats(SimpleObject* psObj)
 {
 	ASSERT_OR_RETURN(nullptr, psObj != nullptr && psObj->type == OBJ_STRUCTURE, "Invalid Structure pointer");
 	Structure* psBuilding = (Structure*)psObj;
-	RESEARCH_FACILITY* psResearchFacility = &psBuilding->pFunctionality->researchFacility;
+	ResearchFacility* psResearchFacility = &psBuilding->pFunctionality->researchFacility;
 
 	if (psResearchFacility->psSubjectPending != nullptr && !IsResearchCompleted(
 		&asPlayerResList[psObj->player][psResearchFacility->psSubjectPending->index]))

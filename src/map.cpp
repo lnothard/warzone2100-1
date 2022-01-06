@@ -1960,7 +1960,7 @@ static int dangerThreadFunc(WZ_DECL_UNUSED void* data)
 	return 0;
 }
 
-static inline void threatUpdateTarget(int player, BASE_OBJECT* psObj, bool ground, bool air)
+static inline void threatUpdateTarget(int player, SimpleObject* psObj, bool ground, bool air)
 {
 	if (psObj->visible[player] || psObj->born == 2)
 	{
@@ -2022,7 +2022,7 @@ static void threatUpdate(int player)
 			}
 			if (mode > 0)
 			{
-				threatUpdateTarget(player, (BASE_OBJECT*)psDroid, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
+				threatUpdateTarget(player, (SimpleObject*)psDroid, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
 			}
 		}
 
@@ -2041,7 +2041,7 @@ static void threatUpdate(int player)
 			}
 			if (mode > 0)
 			{
-				threatUpdateTarget(player, (BASE_OBJECT*)psStruct, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
+				threatUpdateTarget(player, (SimpleObject*)psStruct, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
 			}
 		}
 	}

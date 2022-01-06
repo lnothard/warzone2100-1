@@ -52,14 +52,14 @@ bool objShutdown()
 
 /*goes thru' the list passed in reversing the order so the first entry becomes
 the last and the last entry becomes the first!*/
-void reverseObjectList(BASE_OBJECT** ppsList)
+void reverseObjectList(SimpleObject** ppsList)
 {
-	BASE_OBJECT* psPrev = nullptr;
-	BASE_OBJECT* psCurrent = *ppsList;
+	SimpleObject* psPrev = nullptr;
+	SimpleObject* psCurrent = *ppsList;
 
 	while (psCurrent != nullptr)
 	{
-		BASE_OBJECT* psNext = psCurrent->psNext;
+		SimpleObject* psNext = psCurrent->psNext;
 		psCurrent->psNext = psPrev;
 		psPrev = psCurrent;
 		psCurrent = psNext;
@@ -68,7 +68,7 @@ void reverseObjectList(BASE_OBJECT** ppsList)
 	*ppsList = psPrev;
 }
 
-const char* objInfo(const BASE_OBJECT* psObj)
+const char* objInfo(const SimpleObject* psObj)
 {
 	static char info[PATH_MAX];
 

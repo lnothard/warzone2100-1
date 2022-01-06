@@ -283,7 +283,7 @@ FEATURE* buildFeature(FEATURE_STATS* psStats, UDWORD x, UDWORD y, bool FromSave)
 					removeFeature(psBlock);
 				}
 
-				psTile->psObject = (BASE_OBJECT*)psFeature;
+				psTile->psObject = (SimpleObject*)psFeature;
 
 				// if it's a tall feature then flag it in the map.
 				if (psFeature->sDisplay.imd->max.y > TALLOBJECT_YMAX)
@@ -310,7 +310,7 @@ FEATURE* buildFeature(FEATURE_STATS* psStats, UDWORD x, UDWORD y, bool FromSave)
 
 
 FEATURE::FEATURE(uint32_t id, FEATURE_STATS const* psStats)
-	: BASE_OBJECT(OBJ_FEATURE, id, PLAYER_FEATURE) // Set the default player out of range to avoid targeting confusions
+	: SimpleObject(OBJ_FEATURE, id, PLAYER_FEATURE) // Set the default player out of range to avoid targeting confusions
 	  , psStats(psStats)
 {
 }

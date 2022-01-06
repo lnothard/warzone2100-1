@@ -9,10 +9,10 @@
 
 Structure* ManufactureController::highlightedFactory = nullptr;
 
-FACTORY* getFactoryOrNullptr(Structure* factory)
+Factory* getFactoryOrNullptr(Structure* factory)
 {
 	ASSERT_OR_RETURN(nullptr, StructIsFactory(factory), "Invalid factory pointer");
-	return (FACTORY*)factory->pFunctionality;
+	return (Factory*)factory->pFunctionality;
 }
 
 static uint8_t getProductionLoops(Structure* structure)
@@ -162,7 +162,7 @@ void ManufactureController::clearData()
 	stats.clear();
 }
 
-void ManufactureController::setHighlightedObject(BASE_OBJECT* object)
+void ManufactureController::setHighlightedObject(SimpleObject* object)
 {
 	if (object == nullptr)
 	{

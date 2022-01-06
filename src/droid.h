@@ -484,7 +484,7 @@ bool droidUnderRepair(const Droid* psDroid);
 UBYTE checkCommandExist(UBYTE player);
 
 /// For a given repair droid, check if there are any damaged droids within a defined range
-BASE_OBJECT* checkForRepairRange(Droid* psDroid, Droid* psTarget);
+SimpleObject* checkForRepairRange(Droid* psDroid, Droid* psTarget);
 
 // Returns true if the droid is a transporter.
 bool isTransporter(Droid const* psDroid);
@@ -517,7 +517,7 @@ bool droidAttacking(const Droid* psDroid);
 bool allVtolsRearmed(const Droid* psDroid);
 
 /// Compares the droid sensor type with the droid weapon type to see if the FIRE_SUPPORT order can be assigned
-bool droidSensorDroidWeapon(const BASE_OBJECT* psObj, const Droid* psDroid);
+bool droidSensorDroidWeapon(const SimpleObject* psObj, const Droid* psDroid);
 
 /// Return whether a droid has a CB sensor on it
 bool cbSensorDroid(const Droid* psDroid);
@@ -556,7 +556,7 @@ bool droidAudioTrackStopped(void* psObj);
 bool cyborgDroid(const Droid* psDroid);
 
 bool isConstructionDroid(Droid const* psDroid);
-bool isConstructionDroid(BASE_OBJECT const* psObject);
+bool isConstructionDroid(SimpleObject const* psObject);
 
 /** Check if droid is in a legal world position and is not on its way to drive off the map. */
 bool droidOnMap(const Droid* psDroid);
@@ -564,11 +564,11 @@ bool droidOnMap(const Droid* psDroid);
 void droidSetPosition(Droid* psDroid, int x, int y);
 
 /// Return a percentage of how fully armed the object is, or -1 if N/A.
-int droidReloadBar(const BASE_OBJECT* psObj, const WEAPON* psWeap, int weapon_slot);
+int droidReloadBar(const SimpleObject* psObj, const WEAPON* psWeap, int weapon_slot);
 
 static inline int droidSensorRange(const Droid* psDroid)
 {
-	return objSensorRange((const BASE_OBJECT*)psDroid);
+	return objSensorRange((const SimpleObject*)psDroid);
 }
 
 /*
@@ -624,7 +624,7 @@ static inline Rotation getInterpolatedWeaponRotation(const Droid* psDroid, int w
 
 #define setDroidTarget(_psDroid, _psNewTarget) _setDroidTarget(_psDroid, _psNewTarget, __LINE__, __FUNCTION__)
 
-static inline void _setDroidTarget(Droid* psDroid, BASE_OBJECT* psNewTarget, int line, const char* func)
+static inline void _setDroidTarget(Droid* psDroid, SimpleObject* psNewTarget, int line, const char* func)
 {
 	psDroid->order.psObj = psNewTarget;
 	ASSERT(psNewTarget == nullptr || !psNewTarget->died, "setDroidTarget: Set dead target");
@@ -644,7 +644,7 @@ static inline void _setDroidTarget(Droid* psDroid, BASE_OBJECT* psNewTarget, int
 
 #define setDroidActionTarget(_psDroid, _psNewTarget, _idx) _setDroidActionTarget(_psDroid, _psNewTarget, _idx, __LINE__, __FUNCTION__)
 
-static inline void _setDroidActionTarget(Droid* psDroid, BASE_OBJECT* psNewTarget, UWORD idx, int line,
+static inline void _setDroidActionTarget(Droid* psDroid, SimpleObject* psNewTarget, UWORD idx, int line,
                                          const char* func)
 {
 	psDroid->action_target[idx] = psNewTarget;
@@ -678,7 +678,7 @@ static inline void _setDroidBase(Droid* psDroid, Structure* psNewBase, int line,
 #endif
 }
 
-static inline void setSaveDroidTarget(Droid* psSaveDroid, BASE_OBJECT* psNewTarget)
+static inline void setSaveDroidTarget(Droid* psSaveDroid, SimpleObject* psNewTarget)
 {
 	psSaveDroid->order.psObj = psNewTarget;
 #ifdef DEBUG
@@ -687,7 +687,7 @@ static inline void setSaveDroidTarget(Droid* psSaveDroid, BASE_OBJECT* psNewTarg
 #endif
 }
 
-static inline void setSaveDroidActionTarget(Droid* psSaveDroid, BASE_OBJECT* psNewTarget, UWORD idx)
+static inline void setSaveDroidActionTarget(Droid* psSaveDroid, SimpleObject* psNewTarget, UWORD idx)
 {
 	psSaveDroid->action_target[idx] = psNewTarget;
 #ifdef DEBUG
@@ -711,7 +711,7 @@ void checkDroid(const Droid* droid, const char* const location_description, cons
 #define CHECK_DROID(droid) checkDroid(droid, AT_MACRO, __FUNCTION__, max_check_object_recursion)
 
 /** If droid can get to given object using its current propulsion, return the square distance. Otherwise return -1. */
-int droidSqDist(Droid* psDroid, BASE_OBJECT* psObj);
+int droidSqDist(Droid* psDroid, SimpleObject* psObj);
 
 // Minimum damage a weapon will deal to its target
 #define	MIN_WEAPON_DAMAGE	1

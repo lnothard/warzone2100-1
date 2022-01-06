@@ -25,10 +25,10 @@
 
 void ValueTracker::start(int value)
 {
-  initial_value = value;
-  target_value = value;
+  initial = value;
+  target = value;
   target_delta = value;
-  current_value = value;
+  current = value;
   start_time = graphicsTime;
   target_reached = false;
 }
@@ -45,8 +45,8 @@ void ValueTracker::start(int value)
 
 void ValueTracker::stop()
 {
-  initial_value = 0;
-  current_value = 0;
+  initial = 0;
+  current = 0;
   start_time = 0;
   target_reached = false;
 }
@@ -68,13 +68,13 @@ bool ValueTracker::currently_tracking() const
 //	return this->startTime != 0;
 //}
 
-ValueTracker* ValueTracker::setSpeed(int value)
+ValueTracker* ValueTracker::set_speed(int value)
 {
 	this->speed = value;
 	return this;
 }
 
-ValueTracker* ValueTracker::setTargetDelta(int value)
+ValueTracker* ValueTracker::set_target_delta(int value)
 {
 	this->target_delta = value;
 	this->target = this->initial + value;
@@ -84,8 +84,8 @@ ValueTracker* ValueTracker::setTargetDelta(int value)
 
 void ValueTracker::set_target(int value)
 {
-  target_delta = value - initial_value;
-  target_value = value;
+  target_delta = value - initial;
+  target = value;
   target_reached = false;
 }
 //ValueTracker* ValueTracker::setTarget(int value)
@@ -102,15 +102,15 @@ void ValueTracker::update()
     return;
   }
 
-  if (std::abs(target_value - current_value) < 1) {
+  if (std::abs(target - current) < 1) {
     target_reached = true;
     return;
   }
 
-  current_value = (initial_value + target_delta - current_value) *
+  current = (initial + target_delta - current) *
                   static_cast<int>( realTimeAdjustedIncrement(
                           static_cast<float>( speed )) )
-                  + current_value;
+                  + current;
 }
 //ValueTracker* ValueTracker::update()
 //{
@@ -130,44 +130,57 @@ void ValueTracker::update()
 //	return this;
 //}
 
-int ValueTracker::getCurrent()
+int ValueTracker::get_current() const
 {
-	if (this->target_reached)
-	{
+	if (this->target_reached)  {
 		return this->target;
 	}
 	return static_cast<int>(this->current);
 }
 
-int ValueTracker::getCurrentDelta()
+int ValueTracker::get_current_delta() const
 {
-	if (this->target_reached)
-	{
+	if (this->target_reached)  {
 		return this->target_delta;
 	}
 	return static_cast<int>(this->current - this->initial);
 }
 
-int ValueTracker::getInitial()
+int ValueTracker::get_initial() const
 {
 	return this->initial;
 }
 
-int ValueTracker::getTarget()
+int ValueTracker::get_target() const
 {
 	return this->target;
 }
 
-int ValueTracker::getTargetDelta()
+int ValueTracker::get_target_delta() const
 {
 	return this->target_delta;
 }
 
-bool ValueTracker::reachedTarget()
+bool ValueTracker::reachedTarget() const
 {
 	return this->target_reached;
 }
-//
+
+unsigned calculate_easing(EASING_FUNCTION easing_func, unsigned progress)
+{
+  using enum EASING_FUNCTION;
+  switch (easing_func) {
+    case LINEAR:
+      return progress;
+    case EASE_IN_OUT:
+      return MAX(0, MIN(UINT16_MAX, iCos(UINT16_MAX / 2 + progress / 2)
+                                    / 2 + (1 << 15)));
+    case EASE_IN:
+      return progress * progress / UINT16_MAX;
+    case EASE_OUT:
+      return 2 * progress - progress * progress / (UINT16_MAX - 1);
+  }
+}
 //static uint16_t calculateEasing(EasingType easingType, uint16_t progress)
 //{
 //	switch (easingType)
@@ -187,7 +200,7 @@ bool ValueTracker::reachedTarget()
 
 template <class AnimatableData>
 Animation<AnimatableData>::Animation(std::size_t time)
-  : time(time),
+  : time{time}
 {
 }
 
@@ -201,13 +214,10 @@ void Animation<AnimatableData>::start()
 template <class AnimatableData>
 void Animation<AnimatableData>::update()
 {
-	if (duration > 0)
-	{
+	if (duration > 0)  {
 		auto deltaTime = time - (int64_t)startTime;
 		progress = MAX(0, MIN(UINT16_MAX, UINT16_MAX * deltaTime / duration));
-	}
-	else
-	{
+	} else  {
 		progress = UINT16_MAX;
 	}
 
@@ -233,9 +243,9 @@ const AnimatableData& Animation<AnimatableData>::getFinalData() const
 }
 
 template <class AnimatableData>
-uint16_t Animation<AnimatableData>::getEasedProgress() const
+unsigned Animation<AnimatableData>::getEasedProgress() const
 {
-	return calculateEasing(easingType, progress);
+	return calculate_easing(easingType, progress);
 }
 
 template <class AnimatableData>
@@ -267,6 +277,10 @@ Animation<AnimatableData>& Animation<AnimatableData>::setDuration(uint32_t durat
 	return *this;
 }
 
+int calculate_relative_angle(unsigned from, unsigned to)
+{
+  return static_cast<int>( to + (from - to) );
+}
 /**
  * Find the angle equivalent to `from` in the interval between `to - 180°` and to `to + 180°`.
  *
@@ -290,9 +304,9 @@ void RotationAnimation::start()
 {
 	finalData = Vector3f((uint16_t)finalData.x, (uint16_t)finalData.y, (uint16_t)finalData.z);
 	initialData = Vector3f(
-		calculateRelativeAngle(static_cast<uint16_t>(initialData.x), static_cast<uint16_t>(finalData.x)),
-		calculateRelativeAngle(static_cast<uint16_t>(initialData.y), static_cast<uint16_t>(finalData.y)),
-		calculateRelativeAngle(static_cast<uint16_t>(initialData.z), static_cast<uint16_t>(finalData.z))
+          calculate_relative_angle(static_cast<uint16_t>(initialData.x), static_cast<uint16_t>(finalData.x)),
+          calculate_relative_angle(static_cast<uint16_t>(initialData.y), static_cast<uint16_t>(finalData.y)),
+          calculate_relative_angle(static_cast<uint16_t>(initialData.z), static_cast<uint16_t>(finalData.z))
 	);
 	Animation::start();
 }

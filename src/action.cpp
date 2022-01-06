@@ -72,7 +72,7 @@ struct DROID_ACTION_DATA
 	DROID_ACTION action;
 	UDWORD x, y;
 	//multiple action target info
-	BASE_OBJECT* psObj;
+	SimpleObject* psObj;
 	BASE_STATS* psStats;
 };
 
@@ -154,7 +154,7 @@ const char* getDroidActionName(DROID_ACTION action)
 }
 
 // check if a target is within weapon range
-//bool actionInRange(const DROID* psDroid, const BASE_OBJECT* psObj, int weapon_slot, bool useLongWithOptimum)
+//bool actionInRange(const DROID* psDroid, const SimpleObject* psObj, int weapon_slot, bool useLongWithOptimum)
 //{
 //	CHECK_DROID(psDroid);
 //
@@ -215,7 +215,7 @@ const char* getDroidActionName(DROID_ACTION action)
 //}
 
 //// check if a target is inside minimum weapon range
-//static bool actionInsideMinRange(DROID *psDroid, BASE_OBJECT *psObj, WEAPON_STATS *psStats)
+//static bool actionInsideMinRange(DROID *psDroid, SimpleObject *psObj, WEAPON_STATS *psStats)
 //{
 //	CHECK_DROID(psDroid);
 //	CHECK_OBJECT(psObj);
@@ -248,7 +248,7 @@ const char* getDroidActionName(DROID_ACTION action)
 
 
 //// Realign turret
-//void actionAlignTurret(BASE_OBJECT *psObj, int weapon_slot)
+//void actionAlignTurret(SimpleObject *psObj, int weapon_slot)
 //{
 //	uint16_t        nearest = 0;
 //	uint16_t        tRot;
@@ -297,7 +297,7 @@ const char* getDroidActionName(DROID_ACTION action)
 //}
 
 /* returns true if on target */
-bool actionTargetTurret(BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, WEAPON* psWeapon)
+bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, WEAPON* psWeapon)
 {
 	WEAPON_STATS* psWeapStats = asWeaponStats + psWeapon->nStat;
 	uint16_t tRotation, tPitch;
@@ -411,7 +411,7 @@ bool actionTargetTurret(BASE_OBJECT* psAttacker, BASE_OBJECT* psTarget, WEAPON* 
 
 
 // return whether a droid can see a target to fire on it
-bool actionVisibleTarget(Droid* psDroid, BASE_OBJECT* psTarget, int weapon_slot)
+bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot)
 {
 	CHECK_DROID(psDroid);
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
@@ -431,7 +431,7 @@ bool actionVisibleTarget(Droid* psDroid, BASE_OBJECT* psTarget, int weapon_slot)
 
 //static void actionAddVtolAttackRun(DROID* psDroid)
 //{
-//	BASE_OBJECT* psTarget;
+//	SimpleObject* psTarget;
 //
 //	CHECK_DROID(psDroid);
 //
@@ -506,7 +506,7 @@ static void actionUpdateTransporter(Droid* psDroid)
 
 //// calculate a position for units to pull back to if they
 //// need to increase the range between them and a target
-//static void actionCalcPullBackPoint(BASE_OBJECT* psObj, BASE_OBJECT* psTarget, int* px, int* py)
+//static void actionCalcPullBackPoint(SimpleObject* psObj, SimpleObject* psTarget, int* px, int* py)
 //{
 //	// get the vector from the target to the object
 //	int xdiff = psObj->pos.x - psTarget->pos.x;
@@ -674,7 +674,7 @@ void actionUpdateDroid(Droid* psDroid)
 {
 	bool (*actionUpdateFunc)(Droid* psDroid) = nullptr;
 	bool nonNullWeapon[MAX_WEAPONS] = {false};
-	BASE_OBJECT* psTargets[MAX_WEAPONS] = {nullptr};
+	SimpleObject* psTargets[MAX_WEAPONS] = {nullptr};
 	bool hasValidWeapon = false;
 	bool hasVisibleTarget = false;
 	bool targetVisibile[MAX_WEAPONS] = {false};
@@ -741,7 +741,7 @@ void actionUpdateDroid(Droid* psDroid)
 			{
 				if (nonNullWeapon[i])
 				{
-					BASE_OBJECT* psTemp = nullptr;
+					SimpleObject* psTemp = nullptr;
 
 					WEAPON_STATS* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
 					if (psDroid->asWeaps[i].nStat > 0
@@ -840,7 +840,7 @@ void actionUpdateDroid(Droid* psDroid)
 			{
 				if (nonNullWeapon[i])
 				{
-					BASE_OBJECT* psTemp = nullptr;
+					SimpleObject* psTemp = nullptr;
 
 					//I moved psWeapStats flag update there
 					WEAPON_STATS* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
@@ -910,7 +910,7 @@ void actionUpdateDroid(Droid* psDroid)
 			else
 			{
 				// Can we find a good target for the weapon?
-				BASE_OBJECT* psTemp;
+				SimpleObject* psTemp;
 				if (aiBestNearestTarget(psDroid, &psTemp, i) >= 0)
 				// assuming aiBestNearestTarget checks for electronic warfare
 				{
@@ -942,7 +942,7 @@ void actionUpdateDroid(Droid* psDroid)
 					// is target visible and weapon is not a Nullweapon?
 					if (targetVisibile[i] && nonNullWeapon[i]) //to fix a AA-weapon attack ground unit exploit
 					{
-						BASE_OBJECT* psActionTarget = nullptr;
+						SimpleObject* psActionTarget = nullptr;
 						blockingWall = visGetBlockingWall(psDroid, psDroid->action_target[i]);
 
 						if (proj_Direct(psStats) && blockingWall)
@@ -1004,7 +1004,7 @@ void actionUpdateDroid(Droid* psDroid)
 
 		if (psDroid->action == DACTION_ROTATETOATTACK)
 		{
-			if (psDroid->movement.Status == MOVETURNTOTARGET)
+			if (psDroid->movement.status == MOVETURNTOTARGET)
 			{
 				moveTurnDroid(psDroid, psDroid->action_target[0]->pos.x, psDroid->action_target[0]->pos.y);
 				break; // Still turning.
@@ -1027,7 +1027,7 @@ void actionUpdateDroid(Droid* psDroid)
 		wallBlocked = false;
 		for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 		{
-			BASE_OBJECT* psActionTarget;
+			SimpleObject* psActionTarget;
 
 			if (i > 0)
 			{
@@ -1076,7 +1076,7 @@ void actionUpdateDroid(Droid* psDroid)
 						&& asStructStrengthModifier[weapEffect][blockingWall->pStructureType->strength] >=
 						MIN_STRUCTURE_BLOCK_STRENGTH)
 					{
-						psActionTarget = (BASE_OBJECT*)blockingWall;
+						psActionTarget = (SimpleObject*)blockingWall;
 						setDroidActionTarget(psDroid, psActionTarget, i);
 					}
 					else
@@ -1112,7 +1112,7 @@ void actionUpdateDroid(Droid* psDroid)
 								setDroidActionTarget(psDroid, nullptr, i);
 							}
 						}
-						else if (psDroid->movement.Status != MOVESHUFFLE)
+						else if (psDroid->movement.status != MOVESHUFFLE)
 						{
 							psDroid->action = DACTION_ROTATETOATTACK;
 							moveTurnDroid(psDroid, psActionTarget->pos.x, psActionTarget->pos.y);
@@ -1140,7 +1140,7 @@ void actionUpdateDroid(Droid* psDroid)
 
 		if (!bHasTarget || wallBlocked)
 		{
-			BASE_OBJECT* psTarget;
+			SimpleObject* psTarget;
 			bool supportsSensorTower = !isVtolDroid(psDroid) && (psTarget = orderStateObj(psDroid, DORDER_FIRESUPPORT))
 				&& psTarget->type == OBJ_STRUCTURE;
 
@@ -1376,7 +1376,7 @@ void actionUpdateDroid(Droid* psDroid)
 									MIN_STRUCTURE_BLOCK_STRENGTH)
 								{
 									//Shoot at wall if the weapon is good enough against them
-									combFire(&psDroid->asWeaps[i], psDroid, (BASE_OBJECT*)blockingWall, i);
+									combFire(&psDroid->asWeaps[i], psDroid, (SimpleObject*)blockingWall, i);
 								}
 							}
 							else
@@ -1713,7 +1713,7 @@ void actionUpdateDroid(Droid* psDroid)
 		{
 			objTrace(psDroid->id,
 			         "DACTION_MOVETOBUILD: Starting to drive toward construction site - move status was %d",
-			         (int)psDroid->movement.Status);
+			         (int)psDroid->movement.status);
 			moveDroidToNoFormation(psDroid, psDroid->actionPos.x, psDroid->actionPos.y);
 		}
 		break;
@@ -1732,8 +1732,8 @@ void actionUpdateDroid(Droid* psDroid)
 			moveDroidToNoFormation(psDroid, psDroid->actionPos.x, psDroid->actionPos.y);
 		}
 		else if (!DROID_STOPPED(psDroid) &&
-             psDroid->movement.Status != MOVETURNTOTARGET &&
-             psDroid->movement.Status != MOVESHUFFLE &&
+             psDroid->movement.status != MOVETURNTOTARGET &&
+             psDroid->movement.status != MOVESHUFFLE &&
              actionReachedBuildPos(psDroid, psDroid->actionPos.x, psDroid->actionPos.y, order->direction,
 			                      order->psStats))
 		{
@@ -1867,8 +1867,8 @@ void actionUpdateDroid(Droid* psDroid)
 			}
 		}
 		else if (!DROID_STOPPED(psDroid) &&
-             psDroid->movement.Status != MOVETURNTOTARGET &&
-             psDroid->movement.Status != MOVESHUFFLE &&
+             psDroid->movement.status != MOVETURNTOTARGET &&
+             psDroid->movement.status != MOVESHUFFLE &&
              actionReachedBuildPos(psDroid, psDroid->actionPos.x, psDroid->actionPos.y,
                                    ((Structure*)psDroid->action_target[0])->rot.direction, order->psStats))
 		{
@@ -2041,7 +2041,7 @@ void actionUpdateDroid(Droid* psDroid)
 		break;
 	case DACTION_MOVETODROIDREPAIR:
 		{
-			BASE_OBJECT* actionTargetObj = psDroid->action_target[0];
+			SimpleObject* actionTargetObj = psDroid->action_target[0];
 			ASSERT_OR_RETURN(, actionTargetObj != nullptr && actionTargetObj->type == OBJ_DROID,
 			                   "unexpected repair target");
 			const Droid* actionTarget = (const Droid*)actionTargetObj;
@@ -2096,7 +2096,7 @@ void actionUpdateDroid(Droid* psDroid)
 				{
 					if (nonNullWeapon[i])
 					{
-						BASE_OBJECT* psTemp = nullptr;
+						SimpleObject* psTemp = nullptr;
 
 						WEAPON_STATS* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
 						if (psDroid->asWeaps[i].nStat > 0 && psWeapStats->rotate
@@ -2147,7 +2147,7 @@ void actionUpdateDroid(Droid* psDroid)
 				else
 				{
 					// don't let the target for a repair shuffle
-					if (((Droid*)psDroid->action_target[0])->movement.Status == MOVESHUFFLE)
+					if (((Droid*)psDroid->action_target[0])->movement.status == MOVESHUFFLE)
 					{
 						moveStopDroid((Droid*)psDroid->action_target[0]);
 					}
@@ -2622,7 +2622,7 @@ void actionDroid(Droid* psDroid, DROID_ACTION action, UDWORD x, UDWORD y)
 }
 
 /* Give a droid an action with an object target */
-void actionDroid(Droid* psDroid, DROID_ACTION action, BASE_OBJECT* psObj)
+void actionDroid(Droid* psDroid, DROID_ACTION action, SimpleObject* psObj)
 {
 	DROID_ACTION_DATA sAction;
 
@@ -2636,7 +2636,7 @@ void actionDroid(Droid* psDroid, DROID_ACTION action, BASE_OBJECT* psObj)
 
 /* Give a droid an action with an object target and a location */
 void actionDroid(Droid* psDroid, DROID_ACTION action,
-                 BASE_OBJECT* psObj, UDWORD x, UDWORD y)
+                 SimpleObject* psObj, UDWORD x, UDWORD y)
 {
 	DROID_ACTION_DATA sAction;
 

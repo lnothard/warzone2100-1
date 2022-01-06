@@ -515,8 +515,8 @@ static UDWORD GetImageHeight(IMAGEFILE* ImageFile, UDWORD ImageID)
 // Add the droid order screen.
 // Returns true if the form was displayed ok.
 //
-//changed to a BASE_OBJECT to accommodate the factories - AB 21/04/99
-bool intAddOrder(BASE_OBJECT* psObj)
+//changed to a SimpleObject to accommodate the factories - AB 21/04/99
+bool intAddOrder(SimpleObject* psObj)
 {
 	bool Animate = true;
 	SECONDARY_STATE State;
@@ -554,7 +554,7 @@ bool intAddOrder(BASE_OBJECT* psObj)
 			psStructure = (Structure*)psObj;
 			psSelectedFactory = psStructure;
 			ASSERT_OR_RETURN(false, StructIsFactory(psSelectedFactory), "Trying to select a %s as a factory!",
-			                 objInfo((BASE_OBJECT *)psSelectedFactory));
+			                 objInfo((SimpleObject *)psSelectedFactory));
 		}
 		else
 		{
@@ -1209,11 +1209,11 @@ void intAddFactoryOrder(Structure* psStructure)
 	if (!OrderUp)
 	{
 		intResetScreen(false);
-		intAddOrder((BASE_OBJECT*)psStructure);
+		intAddOrder((SimpleObject*)psStructure);
 		intMode = INT_ORDER;
 	}
 	else
 	{
-		intAddOrder((BASE_OBJECT*)psStructure);
+		intAddOrder((SimpleObject*)psStructure);
 	}
 }

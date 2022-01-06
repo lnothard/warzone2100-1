@@ -240,7 +240,7 @@ bool multiplayerWinSequence(bool firstCall)
 		{
 			if (StructIsFactory(psStruct))
 			{
-				if (((FACTORY*)psStruct->pFunctionality)->psSubject) //check if active
+				if (((Factory*)psStruct->pFunctionality)->psSubject) //check if active
 				{
 					cancelProduction(psStruct, ModeQueue);
 				}
@@ -535,7 +535,7 @@ DroidTemplate* IdToTemplate(UDWORD tempId, UDWORD player)
 
 /////////////////////////////////////////////////////////////////////////////////
 //  Returns a pointer to base object, given an id and optionally a player.
-BASE_OBJECT* IdToPointer(UDWORD id, UDWORD player)
+SimpleObject* IdToPointer(UDWORD id, UDWORD player)
 {
 	Droid* pD;
 	Structure* pS;
@@ -545,21 +545,21 @@ BASE_OBJECT* IdToPointer(UDWORD id, UDWORD player)
 	pD = IdToDroid(id, player);
 	if (pD)
 	{
-		return (BASE_OBJECT*)pD;
+		return (SimpleObject*)pD;
 	}
 
 	// structures
 	pS = IdToStruct(id, player);
 	if (pS)
 	{
-		return (BASE_OBJECT*)pS;
+		return (SimpleObject*)pS;
 	}
 
 	// features
 	pF = IdToFeature(id, player);
 	if (pF)
 	{
-		return (BASE_OBJECT*)pF;
+		return (SimpleObject*)pF;
 	}
 
 	return nullptr;
@@ -721,7 +721,7 @@ Vector3i cameraToHome(UDWORD player, bool scroll)
 static void recvSyncRequest(NETQUEUE queue)
 {
 	int32_t req_id, x, y, obj_id, obj_id2, player_id, player_id2;
-	BASE_OBJECT *psObj = nullptr, *psObj2 = nullptr;
+	SimpleObject *psObj = nullptr, *psObj2 = nullptr;
 
 	NETbeginDecode(queue, GAME_SYNC_REQUEST);
 	NETint32_t(&req_id);
@@ -745,7 +745,7 @@ static void recvSyncRequest(NETQUEUE queue)
 	triggerEventSyncRequest(queue.index, req_id, x, y, psObj, psObj2);
 }
 
-static void sendObj(const BASE_OBJECT* psObj)
+static void sendObj(const SimpleObject* psObj)
 {
 	if (psObj)
 	{
@@ -762,7 +762,7 @@ static void sendObj(const BASE_OBJECT* psObj)
 	}
 }
 
-void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const BASE_OBJECT* psObj, const BASE_OBJECT* psObj2)
+void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const SimpleObject* psObj, const SimpleObject* psObj2)
 {
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_SYNC_REQUEST);
 	NETint32_t(&req_id);
@@ -1537,8 +1537,8 @@ Structure* findResearchingFacilityByResearchIndex(unsigned player, unsigned inde
 	for (Structure* psBuilding = apsStructLists[player]; psBuilding; psBuilding = psBuilding->psNext)
 	{
 		if (psBuilding->pStructureType->type == REF_RESEARCH
-			&& ((RESEARCH_FACILITY*)psBuilding->pFunctionality)->psSubject
-			&& ((RESEARCH_FACILITY*)psBuilding->pFunctionality)->psSubject->ref - STAT_RESEARCH == index)
+			&& ((ResearchFacility*)psBuilding->pFunctionality)->psSubject
+			&& ((ResearchFacility*)psBuilding->pFunctionality)->psSubject->ref - STAT_RESEARCH == index)
 		{
 			return psBuilding;
 		}
@@ -1550,7 +1550,7 @@ bool recvResearchStatus(NETQUEUE queue)
 {
 	Structure* psBuilding;
 	PLAYER_RESEARCH* pPlayerRes;
-	RESEARCH_FACILITY* psResFacilty;
+	ResearchFacility* psResFacilty;
 	RESEARCH* pResearch;
 	uint8_t player;
 	bool bStart = false;
@@ -1603,7 +1603,7 @@ bool recvResearchStatus(NETQUEUE queue)
 				return false;
 			}
 
-			psResFacilty = (RESEARCH_FACILITY*)psBuilding->pFunctionality;
+			psResFacilty = (ResearchFacility*)psBuilding->pFunctionality;
 
 			popStatusPending(*psResFacilty); // Research is no longer pending, as it's actually starting now.
 
@@ -1668,7 +1668,7 @@ bool recvResearchStatus(NETQUEUE queue)
 			}
 
 			cancelResearch(psBuilding, ModeImmediate);
-			popStatusPending(*(RESEARCH_FACILITY*)psBuilding->pFunctionality);
+			popStatusPending(*(ResearchFacility*)psBuilding->pFunctionality);
 			// Research cancellation is no longer pending, as it's actually cancelling now.
 		}
 	}

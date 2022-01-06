@@ -1345,7 +1345,7 @@ bool DroidGoingToBuild(Droid* Droid)
 //
 Structure* DroidGetBuildStructure(Droid* Droid)
 {
-	BASE_OBJECT* Structure = nullptr;
+	SimpleObject* Structure = nullptr;
 
 	if (orderStateObj(Droid, DORDER_BUILD))
 	{
@@ -1369,7 +1369,7 @@ Structure* droidGetCommandFactory(Droid* psDroid)
 			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
 			{
 				if ((psCurr->pStructureType->type == REF_FACTORY) &&
-					(((FACTORY*)psCurr->pFunctionality)->
+					(((Factory*)psCurr->pFunctionality)->
 					 psAssemblyPoint->factoryInc == inc))
 				{
 					return psCurr;
@@ -1382,7 +1382,7 @@ Structure* droidGetCommandFactory(Droid* psDroid)
 			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
 			{
 				if ((psCurr->pStructureType->type == REF_CYBORG_FACTORY) &&
-					(((FACTORY*)psCurr->pFunctionality)->
+					(((Factory*)psCurr->pFunctionality)->
 					 psAssemblyPoint->factoryInc == inc))
 				{
 					return psCurr;
@@ -1395,7 +1395,7 @@ Structure* droidGetCommandFactory(Droid* psDroid)
 			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
 			{
 				if ((psCurr->pStructureType->type == REF_VTOL_FACTORY) &&
-					(((FACTORY*)psCurr->pFunctionality)->
+					(((Factory*)psCurr->pFunctionality)->
 					 psAssemblyPoint->factoryInc == inc))
 				{
 					return psCurr;
@@ -1451,7 +1451,7 @@ bool StructureIsManufacturingPending(Structure* structure)
 	}
 }
 
-FACTORY* StructureGetFactory(Structure* Structure)
+Factory* StructureGetFactory(Structure* Structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Structure);
 	return &Structure->pFunctionality->factory;
@@ -1491,7 +1491,7 @@ bool StructureIsOnHoldPending(Structure* structure)
 	}
 }
 
-RESEARCH_FACILITY* StructureGetResearch(Structure* Structure)
+ResearchFacility* StructureGetResearch(Structure* Structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Structure);
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Structure->pFunctionality);
@@ -1499,7 +1499,7 @@ RESEARCH_FACILITY* StructureGetResearch(Structure* Structure)
 }
 
 
-DroidTemplate* FactoryGetTemplate(FACTORY* Factory)
+DroidTemplate* FactoryGetTemplate(Factory* Factory)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(nullptr, Factory);
 	if (Factory->psSubjectPending != nullptr)

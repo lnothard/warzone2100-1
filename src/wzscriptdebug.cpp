@@ -324,7 +324,7 @@ static nlohmann::ordered_json fillPlayerModel(int i)
 
 // MARK: - componentToString
 
-static const char* getObjType(const BASE_OBJECT* psObj)
+static const char* getObjType(const SimpleObject* psObj)
 {
 	switch (psObj->type)
 	{
@@ -2282,7 +2282,7 @@ void WZScriptDebugger::updateLabelModel()
 	}
 }
 
-void WZScriptDebugger::selected(const BASE_OBJECT* psObj)
+void WZScriptDebugger::selected(const SimpleObject* psObj)
 {
 	selectedObjectDetails = nlohmann::ordered_json::object();
 	selectedObjectId = nullopt;
@@ -2341,9 +2341,9 @@ void WZScriptDebugger::selected(const BASE_OBJECT* psObj)
 			selectedObjectDetails["Action points"] = psDroid->action_points_done;
 			selectedObjectDetails["Illumination"] = psDroid->illumination_level;
 			selectedObjectDetails["Blocked bits"] = psDroid->blockedBits;
-			selectedObjectDetails["Move status"] = psDroid->movement.Status;
+			selectedObjectDetails["Move status"] = psDroid->movement.status;
 			selectedObjectDetails["Move index"] = psDroid->movement.pathIndex;
-			selectedObjectDetails["Move points"] = psDroid->movement.asPath.size();
+			selectedObjectDetails["Move points"] = psDroid->movement.path.size();
 			selectedObjectDetails["Move destination"] = glm::to_string(psDroid->movement.destination);
 			selectedObjectDetails["Move source"] = glm::to_string(psDroid->movement.src);
 			selectedObjectDetails["Move target"] = glm::to_string(psDroid->movement.target);
@@ -2355,7 +2355,7 @@ void WZScriptDebugger::selected(const BASE_OBJECT* psObj)
 			selectedObjectDetails["Move last bump"] = psDroid->movement.lastBump;
 			selectedObjectDetails["Move pause time"] = psDroid->movement.pauseTime;
 			selectedObjectDetails["Move shuffle start"] = psDroid->movement.shuffleStart;
-			selectedObjectDetails["Move vert speed"] = psDroid->movement.iVertSpeed;
+			selectedObjectDetails["Move vert speed"] = psDroid->movement.vertical_speed;
 			selectedObjectDetails["Body"] = componentToString(asBodyStats + psDroid->asBits[COMP_BODY], psObj->player);
 			selectedObjectDetails["Brain"] = componentToString(asBrainStats + psDroid->asBits[COMP_BRAIN],
 			                                                   psObj->player);
@@ -2447,7 +2447,7 @@ void jsDebugMessageUpdate()
 	}
 }
 
-void jsDebugSelected(const BASE_OBJECT* psObj)
+void jsDebugSelected(const SimpleObject* psObj)
 {
 	if (globalDialog)
 	{

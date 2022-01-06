@@ -82,7 +82,7 @@ void cmdDroidUpdate()
  */
 bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 {
-	DROID_GROUP* psGroup;
+	Group* psGroup;
 	bool addedToGroup = false;
 
 	ASSERT_OR_RETURN(false, psCommander != nullptr, "psCommander is null?");
@@ -111,7 +111,7 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 		secondarySetState(psDroid, DSO_HALTTYPE, (SECONDARY_STATE)(psCommander->secondary_order & DSS_HALT_MASK),
 		                  ModeImmediate);
 
-		orderDroidObj(psDroid, DORDER_GUARD, (BASE_OBJECT*)psCommander, ModeImmediate);
+		orderDroidObj(psDroid, DORDER_GUARD, (SimpleObject*)psCommander, ModeImmediate);
 	}
 	else if (psCommander->player == selectedPlayer)
 	{

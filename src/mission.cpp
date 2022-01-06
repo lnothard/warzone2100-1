@@ -779,7 +779,7 @@ static void saveMissionData()
 void restoreMissionData()
 {
 	UDWORD inc;
-	BASE_OBJECT* psObj;
+	SimpleObject* psObj;
 
 	debug(LOG_SAVE, "called");
 
@@ -802,7 +802,7 @@ void restoreMissionData()
 	{
 		apsDroidLists[inc] = mission.apsDroidLists[inc];
 		mission.apsDroidLists[inc] = nullptr;
-		for (psObj = (BASE_OBJECT*)apsDroidLists[inc]; psObj; psObj = psObj->psNext)
+		for (psObj = (SimpleObject*)apsDroidLists[inc]; psObj; psObj = psObj->psNext)
 		{
 			psObj->died = false; //make sure the died flag is not set
 		}
@@ -1232,7 +1232,7 @@ static void clearCampaignUnits()
 	{
 		orderDroid(psDroid, DORDER_STOP, ModeImmediate);
 		setDroidBase(psDroid, nullptr);
-		visRemoveVisibilityOffWorld((BASE_OBJECT*)psDroid);
+		visRemoveVisibilityOffWorld((SimpleObject*)psDroid);
 		CHECK_DROID(psDroid);
 	}
 }
@@ -1254,7 +1254,7 @@ static void processMission()
 		//reset order - do this to all the droids that are returning from offWorld
 		orderDroid(psDroid, DORDER_STOP, ModeImmediate);
 		// clean up visibility
-		visRemoveVisibility((BASE_OBJECT*)psDroid);
+		visRemoveVisibility((SimpleObject*)psDroid);
 		//remove out of stored list and add to current Droid list
 		if (droidRemove(psDroid, apsDroidLists))
 		{
@@ -1588,11 +1588,11 @@ static void missionResetDroids()
 		if (psDroid->pos.x == INVALID_XY && psDroid->pos.y == INVALID_XY)
 		{
 			Structure* psStruct = psDroid->associated_structure;
-			FACTORY* psFactory = nullptr;
+			Factory* psFactory = nullptr;
 
 			if (psStruct && StructIsFactory(psStruct))
 			{
-				psFactory = (FACTORY*)psStruct->pFunctionality;
+				psFactory = (Factory*)psStruct->pFunctionality;
 			}
 			//find a location next to the factory
 			if (psFactory)
@@ -1692,7 +1692,7 @@ void unloadTransporter(Droid* psTransporter, UDWORD x, UDWORD y, bool goingHome)
 	Droid *psDroid, *psNext;
 	Droid** ppCurrentList;
 	UDWORD droidX, droidY;
-	DROID_GROUP* psGroup;
+	Group* psGroup;
 
 	ASSERT_OR_RETURN(, psTransporter != nullptr, "Invalid transporter");
 	if (goingHome)

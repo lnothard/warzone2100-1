@@ -316,32 +316,32 @@ public:
 	//__ An event that is run when the mission transporter has been ordered to fly off.
 	//__
 	virtual bool handle_eventLaunchTransporter() override; // DEPRECATED!
-	virtual bool handle_eventTransporterLaunch(const BASE_OBJECT* psTransport) override;
+	virtual bool handle_eventTransporterLaunch(const SimpleObject* psTransport) override;
 
 	//__ ## eventTransporterArrived(transport)
 	//__
 	//__ An event that is run when the mission transporter has arrived at the map edge with reinforcements.
 	//__
 	virtual bool handle_eventReinforcementsArrived() override; // DEPRECATED!
-	virtual bool handle_eventTransporterArrived(const BASE_OBJECT* psTransport) override;
+	virtual bool handle_eventTransporterArrived(const SimpleObject* psTransport) override;
 
 	//__ ## eventTransporterExit(transport)
 	//__
 	//__ An event that is run when the mission transporter has left the map.
 	//__
-	virtual bool handle_eventTransporterExit(const BASE_OBJECT* psObj) override;
+	virtual bool handle_eventTransporterExit(const SimpleObject* psObj) override;
 
 	//__ ## eventTransporterDone(transport)
 	//__
 	//__ An event that is run when the mission transporter has no more reinforcements to deliver.
 	//__
-	virtual bool handle_eventTransporterDone(const BASE_OBJECT* psTransport) override;
+	virtual bool handle_eventTransporterDone(const SimpleObject* psTransport) override;
 
 	//__ ## eventTransporterLanded(transport)
 	//__
 	//__ An event that is run when the mission transporter has landed with reinforcements.
 	//__
-	virtual bool handle_eventTransporterLanded(const BASE_OBJECT* psTransport) override;
+	virtual bool handle_eventTransporterLanded(const SimpleObject* psTransport) override;
 
 public:
 	// MARK: UI-related events (intended for the tutorial)
@@ -350,13 +350,13 @@ public:
 	//__
 	//__ An event that is run when the current player starts to move a delivery point.
 	//__
-	virtual bool handle_eventDeliveryPointMoving(const BASE_OBJECT* psStruct) override;
+	virtual bool handle_eventDeliveryPointMoving(const SimpleObject* psStruct) override;
 
 	//__ ## eventDeliveryPointMoved()
 	//__
 	//__ An event that is run after the current player has moved a delivery point.
 	//__
-	virtual bool handle_eventDeliveryPointMoved(const BASE_OBJECT* psStruct) override;
+	virtual bool handle_eventDeliveryPointMoved(const SimpleObject* psStruct) override;
 
 	//__ ## eventDesignBody()
 	//__
@@ -398,13 +398,13 @@ public:
 	//__
 	//__An event that is run when current user picks something new in the build menu.
 	//__
-	virtual bool handle_eventMenuBuildSelected(/*BASE_OBJECT *psObj*/) override;
+	virtual bool handle_eventMenuBuildSelected(/*SimpleObject *psObj*/) override;
 
 	//__ ## eventMenuResearchSelected()
 	//__
 	//__An event that is run when current user picks something new in the research menu.
 	//__
-	virtual bool handle_eventMenuResearchSelected(/*BASE_OBJECT *psObj*/) override;
+	virtual bool handle_eventMenuResearchSelected(/*SimpleObject *psObj*/) override;
 
 	//__ ## eventMenuBuild()
 	//__
@@ -436,7 +436,7 @@ public:
 	//__ deselected object. If all selected game objects are deselected, ```objects``` will
 	//__ be empty.
 	//__
-	virtual bool handle_eventSelectionChanged(const std::vector<const BASE_OBJECT*>& objects) override;
+	virtual bool handle_eventSelectionChanged(const std::vector<const SimpleObject*>& objects) override;
 
 public:
 	// MARK: Game state-change events
@@ -445,7 +445,7 @@ public:
 	//__
 	//__ An event that is run when an object (ex. droid, structure) is recycled.
 	//__
-	virtual bool handle_eventObjectRecycled(const BASE_OBJECT* psObj) override;
+	virtual bool handle_eventObjectRecycled(const SimpleObject* psObj) override;
 
 	//__ ## eventPlayerLeft(player)
 	//__
@@ -508,7 +508,7 @@ public:
 	//__ An event that is run when an object belonging to the script's controlling player is
 	//__ attacked. The attacker parameter may be either a structure or a droid.
 	//__
-	virtual bool handle_eventAttacked(const BASE_OBJECT* psVictim, const BASE_OBJECT* psAttacker) override;
+	virtual bool handle_eventAttacked(const SimpleObject* psVictim, const SimpleObject* psAttacker) override;
 
 	//__ ## eventResearched(research, structure, player)
 	//__
@@ -525,7 +525,7 @@ public:
 	//__ An event that is run whenever an object is destroyed. Careful passing
 	//__ the parameter object around, since it is about to vanish!
 	//__
-	virtual bool handle_eventDestroyed(const BASE_OBJECT* psVictim) override;
+	virtual bool handle_eventDestroyed(const SimpleObject* psVictim) override;
 
 	//__ ## eventPickup(feature, droid)
 	//__
@@ -542,7 +542,7 @@ public:
 	//__ An event that is run sometimes when an objectm  goes from not seen to seen.
 	//__ First parameter is **game object** doing the seeing, the next the game
 	//__ object being seen.
-	virtual bool handle_eventObjectSeen(const BASE_OBJECT* psViewer, const BASE_OBJECT* psSeen) override;
+	virtual bool handle_eventObjectSeen(const SimpleObject* psViewer, const SimpleObject* psSeen) override;
 
 	//__
 	//__ ## eventGroupSeen(viewer, group)
@@ -552,7 +552,7 @@ public:
 	//__ First parameter is **game object** doing the seeing, the next the id of the group
 	//__ being seen.
 	//__
-	virtual bool handle_eventGroupSeen(const BASE_OBJECT* psViewer, int groupId) override;
+	virtual bool handle_eventGroupSeen(const SimpleObject* psViewer, int groupId) override;
 
 	//__ ## eventObjectTransfer(object, from)
 	//__
@@ -561,7 +561,7 @@ public:
 	//__ object has been transferred, so the target player is in object.player.
 	//__ The event is called for both players.
 	//__
-	virtual bool handle_eventObjectTransfer(const BASE_OBJECT* psObj, int from) override;
+	virtual bool handle_eventObjectTransfer(const SimpleObject* psObj, int from) override;
 
 	//__ ## eventChat(from, to, message)
 	//__
@@ -592,7 +592,7 @@ public:
 	//__ is the about to be killed object, the group's id, and the new group size.
 	//__
 	//		// Since groups are entities local to one context, we do not iterate over them here.
-	virtual bool handle_eventGroupLoss(const BASE_OBJECT* psObj, int group, int size) override;
+	virtual bool handle_eventGroupLoss(const SimpleObject* psObj, int group, int size) override;
 
 	//__ ## eventArea<label>(droid)
 	//__
@@ -636,8 +636,8 @@ public:
 	//__ to prevent desync from happening. Sync requests must be carefully validated to prevent
 	//__ cheating!
 	//__
-	virtual bool handle_eventSyncRequest(int from, int req_id, int x, int y, const BASE_OBJECT* psObj,
-	                                     const BASE_OBJECT* psObj2) override;
+	virtual bool handle_eventSyncRequest(int from, int req_id, int x, int y, const SimpleObject* psObj,
+	                                     const SimpleObject* psObj2) override;
 
 	//__ ## eventKeyPressed(meta, key)
 	//__
@@ -719,9 +719,9 @@ int JS_DeletePropertyStr(JSContext* ctx, JSValueConst this_obj,
 // Forward-declare
 JSValue convDroid(const Droid* psDroid, JSContext* ctx);
 JSValue convStructure(const Structure* psStruct, JSContext* ctx);
-JSValue convObj(const BASE_OBJECT* psObj, JSContext* ctx);
+JSValue convObj(const SimpleObject* psObj, JSContext* ctx);
 JSValue convFeature(const FEATURE* psFeature, JSContext* ctx);
-JSValue convMax(const BASE_OBJECT* psObj, JSContext* ctx);
+JSValue convMax(const SimpleObject* psObj, JSContext* ctx);
 JSValue convTemplate(const DroidTemplate* psTemplate, JSContext* ctx);
 JSValue convResearch(const RESEARCH* psResearch, JSContext* ctx, int player);
 
@@ -1094,7 +1094,7 @@ JSValue convDroid(const Droid* psDroid, JSContext* ctx)
 //;; * ```thermal``` Amount of thermal protection that protect against heat based weapons.
 //;; * ```born``` The game time at which this object was produced or came into the world. (3.2+ only)
 //;;
-JSValue convObj(const BASE_OBJECT* psObj, JSContext* ctx)
+JSValue convObj(const SimpleObject* psObj, JSContext* ctx)
 {
 	JSValue value = JS_NewObject(ctx);
 	ASSERT_OR_RETURN(value, psObj, "No object for conversion");
@@ -1189,7 +1189,7 @@ JSValue convTemplate(const DroidTemplate* psTempl, JSContext* ctx)
 	return value;
 }
 
-JSValue convMax(const BASE_OBJECT* psObj, JSContext* ctx)
+JSValue convMax(const SimpleObject* psObj, JSContext* ctx)
 {
 	if (!psObj)
 	{
@@ -1547,9 +1547,9 @@ namespace
 	};
 
 	template <>
-	struct unbox<BASE_OBJECT*>
+	struct unbox<SimpleObject*>
 	{
-		BASE_OBJECT* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		SimpleObject* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
 			if (argc <= idx)
 				return {};
@@ -1557,18 +1557,18 @@ namespace
 			int oid = QuickJS_GetInt32(ctx, objVal, "id");
 			int oplayer = QuickJS_GetInt32(ctx, objVal, "player");
 			OBJECT_TYPE otype = (OBJECT_TYPE)QuickJS_GetInt32(ctx, objVal, "type");
-			BASE_OBJECT* psObj = IdToObject(otype, oid, oplayer);
+			SimpleObject* psObj = IdToObject(otype, oid, oplayer);
 			UNBOX_SCRIPT_ASSERT(context, psObj, "No such object id %d belonging to player %d", oid, oplayer);
 			return psObj;
 		}
 	};
 
 	template <>
-	struct unbox<const BASE_OBJECT*>
+	struct unbox<const SimpleObject*>
 	{
-		const BASE_OBJECT* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		const SimpleObject* operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
-			return unbox<BASE_OBJECT*>()(idx, ctx, argc, argv, function);
+			return unbox<SimpleObject*>()(idx, ctx, argc, argv, function);
 		}
 	};
 
@@ -1811,7 +1811,7 @@ namespace
 			{
 				int id = QuickJS_GetInt32(ctx, qval, "id");
 				int player = QuickJS_GetInt32(ctx, qval, "player");
-				BASE_OBJECT* psObj = IdToObject((OBJECT_TYPE)type, id, player);
+				SimpleObject* psObj = IdToObject((OBJECT_TYPE)type, id, player);
 				UNBOX_SCRIPT_ASSERT(context, psObj, "Object id %d not found belonging to player %d", id, player);
 				// TODO: fail out
 				return generic_script_object::fromObject(psObj);
@@ -1923,7 +1923,7 @@ namespace
 		return JS_UNDEFINED;
 	}
 
-	JSValue box(const BASE_OBJECT* psObj, JSContext* ctx)
+	JSValue box(const SimpleObject* psObj, JSContext* ctx)
 	{
 		if (!psObj)
 		{
@@ -2030,7 +2030,7 @@ namespace
 		case OBJ_FEATURE:
 		case OBJ_STRUCTURE:
 			{
-				BASE_OBJECT* psObj = p.getObject();
+				SimpleObject* psObj = p.getObject();
 				return convMax(psObj, ctx);
 			}
 			break;
@@ -2504,11 +2504,11 @@ public:
 };
 
 static uniqueTimerID SetQuickJSTimer(JSContext* ctx, int player, const std::string& funcName, int32_t ms,
-                                     const std::string& stringArg, BASE_OBJECT* psObj, timerType type)
+                                     const std::string& stringArg, SimpleObject* psObj, timerType type)
 {
 	return scripting_engine::instance().setTimer(engineToInstanceMap.at(ctx)
 	                                             // timerFunc
-	                                             , [ctx, funcName](uniqueTimerID timerID, BASE_OBJECT* baseObject,
+	                                             , [ctx, funcName](uniqueTimerID timerID, SimpleObject* baseObject,
 	                                                               timerAdditionalData* additionalParams)
 	                                             {
 		                                             quickjs_timer_additionaldata* pData = static_cast<
@@ -2569,7 +2569,7 @@ static JSValue js_setTimer(JSContext* ctx, JSValueConst this_val, int argc, JSVa
 	JS_FreeValue(ctx, funcObj);
 
 	std::string stringArg;
-	BASE_OBJECT* psObj = nullptr;
+	SimpleObject* psObj = nullptr;
 	if (argc == 3)
 	{
 		JSValue obj = argv[2];
@@ -2655,7 +2655,7 @@ static JSValue js_queue(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	int player = QuickJS_GetInt32(ctx, global_obj, "me");
 
 	std::string stringArg;
-	BASE_OBJECT* psObj = nullptr;
+	SimpleObject* psObj = nullptr;
 	if (argc == 3)
 	{
 		JSValue obj = argv[2];
@@ -2931,7 +2931,7 @@ std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>> quickjs_scripting_in
 
 	return std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>>{
 		// timerFunc
-		[pContext, funcName](uniqueTimerID timerID, BASE_OBJECT* baseObject, timerAdditionalData* additionalParams)
+		[pContext, funcName](uniqueTimerID timerID, SimpleObject* baseObject, timerAdditionalData* additionalParams)
 		{
 			quickjs_timer_additionaldata* pData = static_cast<quickjs_timer_additionaldata*>(additionalParams);
 			std::vector<JSValue> args;
@@ -3081,16 +3081,16 @@ IMPL_EVENT_HANDLER_NO_PARAMS(eventGameSaved)
 
 // MARK: Transporter events
 IMPL_EVENT_HANDLER_NO_PARAMS(eventLaunchTransporter) // DEPRECATED!
-IMPL_EVENT_HANDLER(eventTransporterLaunch, const BASE_OBJECT *)
+IMPL_EVENT_HANDLER(eventTransporterLaunch, const SimpleObject *)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventReinforcementsArrived) // DEPRECATED!
-IMPL_EVENT_HANDLER(eventTransporterArrived, const BASE_OBJECT *)
-IMPL_EVENT_HANDLER(eventTransporterExit, const BASE_OBJECT *)
-IMPL_EVENT_HANDLER(eventTransporterDone, const BASE_OBJECT *)
-IMPL_EVENT_HANDLER(eventTransporterLanded, const BASE_OBJECT *)
+IMPL_EVENT_HANDLER(eventTransporterArrived, const SimpleObject *)
+IMPL_EVENT_HANDLER(eventTransporterExit, const SimpleObject *)
+IMPL_EVENT_HANDLER(eventTransporterDone, const SimpleObject *)
+IMPL_EVENT_HANDLER(eventTransporterLanded, const SimpleObject *)
 
 // MARK: UI-related events (intended for the tutorial)
-IMPL_EVENT_HANDLER(eventDeliveryPointMoving, const BASE_OBJECT *)
-IMPL_EVENT_HANDLER(eventDeliveryPointMoved, const BASE_OBJECT *)
+IMPL_EVENT_HANDLER(eventDeliveryPointMoving, const SimpleObject *)
+IMPL_EVENT_HANDLER(eventDeliveryPointMoved, const SimpleObject *)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventDesignBody)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventDesignPropulsion)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventDesignWeapon)
@@ -3103,10 +3103,10 @@ IMPL_EVENT_HANDLER_NO_PARAMS(eventMenuBuild)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventMenuResearch)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventMenuDesign)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventMenuManufacture)
-IMPL_EVENT_HANDLER(eventSelectionChanged, const std::vector<const BASE_OBJECT *>&)
+IMPL_EVENT_HANDLER(eventSelectionChanged, const std::vector<const SimpleObject *>&)
 
 // MARK: Game state-change events
-IMPL_EVENT_HANDLER(eventObjectRecycled, const BASE_OBJECT *)
+IMPL_EVENT_HANDLER(eventObjectRecycled, const SimpleObject *)
 IMPL_EVENT_HANDLER(eventPlayerLeft, int)
 IMPL_EVENT_HANDLER(eventCheatMode, bool)
 IMPL_EVENT_HANDLER(eventDroidIdle, const Droid *)
@@ -3115,17 +3115,17 @@ IMPL_EVENT_HANDLER(eventStructureBuilt, const Structure *, optional<const Droid 
 IMPL_EVENT_HANDLER(eventStructureDemolish, const Structure *, optional<const Droid *>)
 IMPL_EVENT_HANDLER(eventStructureReady, const Structure *)
 IMPL_EVENT_HANDLER(eventStructureUpgradeStarted, const Structure *)
-IMPL_EVENT_HANDLER(eventAttacked, const BASE_OBJECT *, const BASE_OBJECT *)
+IMPL_EVENT_HANDLER(eventAttacked, const SimpleObject *, const SimpleObject *)
 IMPL_EVENT_HANDLER(eventResearched, const wzapi::researchResult&, wzapi::event_nullable_ptr<const Structure>, int)
-IMPL_EVENT_HANDLER(eventDestroyed, const BASE_OBJECT *)
+IMPL_EVENT_HANDLER(eventDestroyed, const SimpleObject *)
 IMPL_EVENT_HANDLER(eventPickup, const FEATURE *, const Droid *)
-IMPL_EVENT_HANDLER(eventObjectSeen, const BASE_OBJECT *, const BASE_OBJECT *)
-IMPL_EVENT_HANDLER(eventGroupSeen, const BASE_OBJECT *, int)
-IMPL_EVENT_HANDLER(eventObjectTransfer, const BASE_OBJECT *, int)
+IMPL_EVENT_HANDLER(eventObjectSeen, const SimpleObject *, const SimpleObject *)
+IMPL_EVENT_HANDLER(eventGroupSeen, const SimpleObject *, int)
+IMPL_EVENT_HANDLER(eventObjectTransfer, const SimpleObject *, int)
 IMPL_EVENT_HANDLER(eventChat, int, int, const char *)
 IMPL_EVENT_HANDLER(eventBeacon, int, int, int, int, optional<const char *>)
 IMPL_EVENT_HANDLER(eventBeaconRemoved, int, int)
-IMPL_EVENT_HANDLER(eventGroupLoss, const BASE_OBJECT *, int, int)
+IMPL_EVENT_HANDLER(eventGroupLoss, const SimpleObject *, int, int)
 
 bool quickjs_scripting_instance::handle_eventArea(const std::string& label, const Droid* psDroid)
 {
@@ -3144,7 +3144,7 @@ IMPL_EVENT_HANDLER(eventAllianceAccepted, uint8_t, uint8_t)
 IMPL_EVENT_HANDLER(eventAllianceBroken, uint8_t, uint8_t)
 
 // MARK: Special input events
-IMPL_EVENT_HANDLER(eventSyncRequest, int, int, int, int, const BASE_OBJECT *, const BASE_OBJECT *)
+IMPL_EVENT_HANDLER(eventSyncRequest, int, int, int, int, const SimpleObject *, const SimpleObject *)
 IMPL_EVENT_HANDLER(eventKeyPressed, int, int)
 
 // ----------------------------------------------------------------------------------------
