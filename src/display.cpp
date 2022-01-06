@@ -183,7 +183,7 @@ void animateToViewDistance(float target, float speed)
 	viewDistanceAnimation
 		.setInitialData(getViewDistance())
 		.setFinalData(target)
-		.setEasing(viewDistanceAnimation.isActive() ? EASE_OUT : EASE_IN_OUT)
+		.setEasing(viewDistanceAnimation.is_active() ? EASE_OUT : EASE_IN_OUT)
 		.setDuration(speed <= 0
 			             ? 0
 			             : static_cast<uint32_t>(glm::log(std::abs(target - getViewDistance())) * 100 *
@@ -200,8 +200,8 @@ void incrementViewDistance(float amount)
 
 	viewDistanceIncrementCooldownTime = realTime + GAME_TICKS_PER_SEC / 50;
 	const DebugInputManager& dbgInputManager = gInputManager.debugManager();
-	auto target = (viewDistanceAnimation.isActive() ? viewDistanceAnimation.getFinalData() : getViewDistance()) +
-		amount;
+	auto target = (viewDistanceAnimation.is_active() ? viewDistanceAnimation.getFinalData() : getViewDistance()) +
+                amount;
 	if (!dbgInputManager.debugMappingsAllowed())
 	{
 		CLIP(target, MINDISTANCE, (!NETisReplay()) ? MAXDISTANCE : MAXDISTANCE_REPLAY);
@@ -212,7 +212,7 @@ void incrementViewDistance(float amount)
 
 static void updateViewDistanceAnimation()
 {
-	if (viewDistanceAnimation.isActive())
+	if (viewDistanceAnimation.is_active())
 	{
 		viewDistanceAnimation.update();
 		setViewDistance(viewDistanceAnimation.getCurrent());
@@ -748,16 +748,16 @@ void processMouseClickInput()
 	if (mouseDrag(MOUSE_ROTATE, (UDWORD*)&rotX, (UDWORD*)&rotY) && !rotActive && !bRadarDragging && !
 		getRadarTrackingStatus())
 	{
-		rotationVerticalTracker->startTracking((UWORD)playerPos.r.x);
-		rotationHorizontalTracker->startTracking((UWORD)playerPos.r.y);
+		rotationVerticalTracker->start((UWORD) playerPos.r.x);
+		rotationHorizontalTracker->start((UWORD) playerPos.r.y);
 		// negative values caused problems with float conversion
 		rotActive = true;
 	}
 	if (mouseDrag(MOUSE_PAN, (UDWORD*)&panMouseX, (UDWORD*)&panMouseY) && !rotActive && !panActive && !bRadarDragging &&
 		!getRadarTrackingStatus())
 	{
-		panXTracker->startTracking(playerPos.p.x);
-		panZTracker->startTracking(playerPos.p.z);
+		panXTracker->start(playerPos.p.x);
+		panZTracker->start(playerPos.p.z);
 		panActive = true;
 	}
 

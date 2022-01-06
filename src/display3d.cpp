@@ -1888,21 +1888,21 @@ void displayBlueprints(const glm::mat4& viewMatrix)
 						z = std::max(z, map_TileHeight(b.map.x + i, b.map.y + j));
 					}
 
-				if (!playerBlueprintX->isTracking())
+				if (!playerBlueprintX->currently_tracking())
 				{
-					playerBlueprintX->startTracking(pos.x)->setSpeed(BlueprintTrackAnimationSpeed);
-					playerBlueprintY->startTracking(pos.y)->setSpeed(BlueprintTrackAnimationSpeed);
-					playerBlueprintZ->startTracking(z)->setSpeed(BlueprintTrackAnimationSpeed);
-					playerBlueprintDirection->startTracking(direction)->setSpeed(BlueprintTrackAnimationSpeed + 30);
+          playerBlueprintX->start(pos.x)->start(BlueprintTrackAnimationSpeed);
+          playerBlueprintY->start(pos.y)->start(BlueprintTrackAnimationSpeed);
+          playerBlueprintZ->start(z)->start(BlueprintTrackAnimationSpeed);
+          playerBlueprintDirection->start(direction)->start(BlueprintTrackAnimationSpeed + 30);
 				}
 
-				playerBlueprintX->setTarget(pos.x)->update();
-				playerBlueprintY->setTarget(pos.y)->update();
-				playerBlueprintZ->setTarget(z)->update();
+        playerBlueprintX->set_target(pos.x)->update();
+        playerBlueprintY->set_target(pos.y)->update();
+        playerBlueprintZ->set_target(z)->update();
 
 				if (playerBlueprintDirection->reachedTarget())
 				{
-					playerBlueprintDirection->startTracking(playerBlueprintDirection->getTarget());
+          playerBlueprintDirection->start(playerBlueprintDirection->getTarget());
 					playerBlueprintDirection->
 						setTargetDelta((SWORD)(direction - playerBlueprintDirection->getTarget()));
 				}
@@ -1924,10 +1924,10 @@ void displayBlueprints(const glm::mat4& viewMatrix)
 	}
 	else
 	{
-		playerBlueprintX->stopTracking();
-		playerBlueprintY->stopTracking();
-		playerBlueprintZ->stopTracking();
-		playerBlueprintDirection->stopTracking();
+    playerBlueprintX->stop();
+    playerBlueprintY->stop();
+    playerBlueprintZ->stop();
+    playerBlueprintDirection->stop();
 	}
 
 	// now we draw the blueprints for all ordered buildings

@@ -23,6 +23,15 @@
 
 #include "animation.h"
 
+void ValueTracker::start(int value)
+{
+  initial_value = value;
+  target_value = value;
+  target_delta = value;
+  current_value = value;
+  start_time = graphicsTime;
+  target_reached = false;
+}
 //ValueTracker* ValueTracker::startTracking(int value)
 //{
 //	this->initial = value;
@@ -33,7 +42,14 @@
 //	this->_reachedTarget = false;
 //	return this;
 //}
-//
+
+void ValueTracker::stop()
+{
+  initial_value = 0;
+  current_value = 0;
+  start_time = 0;
+  target_reached = false;
+}
 //ValueTracker* ValueTracker::stopTracking()
 //{
 //	this->initial = 0;
@@ -42,7 +58,11 @@
 //	this->_reachedTarget = false;
 //	return this;
 //}
-//
+
+bool ValueTracker::currently_tracking() const
+{
+  return start_time != 0;
+}
 //bool ValueTracker::isTracking()
 //{
 //	return this->startTime != 0;
@@ -56,12 +76,18 @@ ValueTracker* ValueTracker::setSpeed(int value)
 
 ValueTracker* ValueTracker::setTargetDelta(int value)
 {
-	this->targetDelta = value;
+	this->target_delta = value;
 	this->target = this->initial + value;
-	this->_reachedTarget = false;
+	this->target_reached = false;
 	return this;
 }
 
+void ValueTracker::set_target(int value)
+{
+  target_delta = value - initial_value;
+  target_value = value;
+  target_reached = false;
+}
 //ValueTracker* ValueTracker::setTarget(int value)
 //{
 //	this->targetDelta = value - this->initial;
@@ -70,6 +96,22 @@ ValueTracker* ValueTracker::setTargetDelta(int value)
 //	return this;
 //}
 
+void ValueTracker::update()
+{
+  if (target_reached) {
+    return;
+  }
+
+  if (std::abs(target_value - current_value) < 1) {
+    target_reached = true;
+    return;
+  }
+
+  current_value = (initial_value + target_delta - current_value) *
+                  static_cast<int>( realTimeAdjustedIncrement(
+                          static_cast<float>( speed )) )
+                  + current_value;
+}
 //ValueTracker* ValueTracker::update()
 //{
 //	if (this->_reachedTarget)
@@ -90,7 +132,7 @@ ValueTracker* ValueTracker::setTargetDelta(int value)
 
 int ValueTracker::getCurrent()
 {
-	if (this->_reachedTarget)
+	if (this->target_reached)
 	{
 		return this->target;
 	}
@@ -99,9 +141,9 @@ int ValueTracker::getCurrent()
 
 int ValueTracker::getCurrentDelta()
 {
-	if (this->_reachedTarget)
+	if (this->target_reached)
 	{
-		return this->targetDelta;
+		return this->target_delta;
 	}
 	return static_cast<int>(this->current - this->initial);
 }
@@ -118,12 +160,12 @@ int ValueTracker::getTarget()
 
 int ValueTracker::getTargetDelta()
 {
-	return this->targetDelta;
+	return this->target_delta;
 }
 
 bool ValueTracker::reachedTarget()
 {
-	return this->_reachedTarget;
+	return this->target_reached;
 }
 //
 //static uint16_t calculateEasing(EasingType easingType, uint16_t progress)
@@ -142,6 +184,12 @@ bool ValueTracker::reachedTarget()
 //
 //	return UINT16_MAX;
 //}
+
+template <class AnimatableData>
+Animation<AnimatableData>::Animation(std::size_t time)
+  : time(time),
+{
+}
 
 template <class AnimatableData>
 void Animation<AnimatableData>::start()
@@ -167,7 +215,7 @@ void Animation<AnimatableData>::update()
 }
 
 template <class AnimatableData>
-bool Animation<AnimatableData>::isActive() const
+bool Animation<AnimatableData>::is_active() const
 {
 	return progress < UINT16_MAX;
 }
@@ -206,7 +254,7 @@ Animation<AnimatableData>& Animation<AnimatableData>::setFinalData(AnimatableDat
 }
 
 template <class AnimatableData>
-Animation<AnimatableData>& Animation<AnimatableData>::setEasing(EasingType easing)
+Animation<AnimatableData>& Animation<AnimatableData>::setEasing(EASING_FUNCTION easing)
 {
 	easingType = easing;
 	return *this;
@@ -232,6 +280,11 @@ Animation<AnimatableData>& Animation<AnimatableData>::setDuration(uint32_t durat
 //{
 //	return to + (int16_t)(from - to);
 //}
+
+RotationAnimation::RotationAnimation(std::size_t time)
+  : Animation<Vector3f>{time}
+{
+}
 
 void RotationAnimation::start()
 {

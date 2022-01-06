@@ -912,7 +912,7 @@ static void camRadarJump()
 	playerPos.p = radarJumpAnimation.position.getCurrent();
 	playerPos.r = radarJumpAnimation.rotation.getCurrent();
 
-	if (!radarJumpAnimation.position.isActive() && !radarJumpAnimation.rotation.isActive())
+	if (!radarJumpAnimation.position.is_active() && !radarJumpAnimation.rotation.is_active())
 	{
 		trackingCamera.status = CAM_INACTIVE;
 	}
