@@ -319,7 +319,7 @@ void intUpdateQuantitySlider(WIDGET* psWidget, W_CONTEXT* psContext);
 
 void intDisplayMissionClock(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
-void intDisplayUpdateAllyBar(W_BARGRAPH* psBar, const RESEARCH& research, const std::vector<AllyResearch>& researches);
+void intDisplayUpdateAllyBar(W_BARGRAPH* psBar, const ResearchStats& research, const std::vector<AllyResearch>& researches);
 Structure* droidGetCommandFactory(Droid* psDroid);
 
 void intSetShadowPower(int quantity);

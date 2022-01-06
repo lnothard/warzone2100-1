@@ -6,9 +6,9 @@
 class ResearchController : public BaseObjectsStatsController, public std::enable_shared_from_this<ResearchController>
 {
 public:
-	RESEARCH* getObjectStatsAt(size_t objectIndex) const override;
+	ResearchStats* getObjectStatsAt(size_t objectIndex) const override;
 
-	RESEARCH* getStatsAt(size_t statsIndex) const override
+	ResearchStats* getStatsAt(size_t statsIndex) const override
 	{
 		ASSERT_OR_RETURN(nullptr, statsIndex < stats.size(), "Invalid stats index (%zu); max: (%zu)", statsIndex,
 		                 stats.size());
@@ -43,7 +43,7 @@ public:
 	void refresh() override;
 	void clearData() override;
 	std::shared_ptr<StatsForm> makeStatsForm() override;
-	void startResearch(RESEARCH& research);
+	void startResearch(ResearchStats& research);
 	void cancelResearch(Structure* facility);
 	void requestResearchCancellation(Structure* facility);
 
@@ -57,7 +57,7 @@ public:
 private:
 	void updateFacilitiesList();
 	void updateResearchOptionsList();
-	std::vector<RESEARCH*> stats;
+	std::vector<ResearchStats*> stats;
 	std::vector<Structure*> facilities;
 	static Structure* highlightedFacility;
 };

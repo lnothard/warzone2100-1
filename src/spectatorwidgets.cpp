@@ -777,16 +777,16 @@ if ((!NetPlay.players[playerIdx].allocated && NetPlay.players[playerIdx].ai < 0)
 	// Kinetic Armor (T/C)
 	columnWidgets.push_back(WzThrottledUpdateLabel::make([playerIdx](W_LABEL& label)
 	{
-		WzString armorStr = WzString::number(getNumBodyClassArmourUpgrades(playerIdx, BodyClass::Tank)) + "/" +
-			WzString::number(getNumBodyClassArmourUpgrades(playerIdx, BodyClass::Cyborg));
+		WzString armorStr = WzString::number(getNumBodyClassArmourUpgrades(playerIdx, BODY_CLASS::Tank)) + "/" +
+                        WzString::number(getNumBodyClassArmourUpgrades(playerIdx, BODY_CLASS::Cyborg));
 		label.setString(armorStr);
 		ADJUST_LABEL_COLOR_FOR_PLAYERS();
 	}, INFO_UPDATE_INTERVAL_TICKS));
 	// Thermal Armor (T/C)
 	columnWidgets.push_back(WzThrottledUpdateLabel::make([playerIdx](W_LABEL& label)
 	{
-		WzString armorStr = WzString::number(getNumBodyClassThermalArmourUpgrades(playerIdx, BodyClass::Tank)) + "/" +
-			WzString::number(getNumBodyClassThermalArmourUpgrades(playerIdx, BodyClass::Cyborg));
+		WzString armorStr = WzString::number(getNumBodyClassThermalArmourUpgrades(playerIdx, BODY_CLASS::Tank)) + "/" +
+                        WzString::number(getNumBodyClassThermalArmourUpgrades(playerIdx, BODY_CLASS::Cyborg));
 		label.setString(armorStr);
 		ADJUST_LABEL_COLOR_FOR_PLAYERS();
 	}, INFO_UPDATE_INTERVAL_TICKS));

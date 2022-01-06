@@ -19,7 +19,7 @@
 */
 
 /**
- * @file
+ * @file statsdef.h
  * Definitions for the stats system.
  */
  
@@ -34,7 +34,8 @@ struct iIMDShape;
 
 #include "lib/framework/wzstring.h"
 
-#include "droid.h"
+static constexpr auto SHOOT_ON_GROUND = 0x01;
+static constexpr auto SHOOT_IN_AIR = 0x02;
 
 static inline bool stringToEnumSortFunction(std::pair<char const*, unsigned> const& a,
                                             std::pair<char const*, unsigned> const& b)
@@ -251,17 +252,29 @@ struct BaseStats
 	{
 	}
 
-	[[nodiscard]] bool hasType(StatType type) const { return (ref & STAT_MASK) == type; }
+	[[nodiscard]] bool hasType(StatType type) const
+  {
+    return (ref & STAT_MASK) == type;
+  }
 
-	WzString id; ///< Text id (i.e. short language-independent name)
-	WzString name; ///< Full / real name of the item
-	unsigned ref; ///< Unique ID of the item
-	std::size_t index = 0; ///< Index into containing array
+  /// Text id (i.e. short language-independent name)
+	WzString id;
+
+  /// Full / real name of the item
+	WzString name;
+
+  /// Unique ID of the item
+	unsigned ref;
+
+  /// Index into containing array
+	std::size_t index = 0;
 };
 
 #define getStatsName(_psStats) ((_psStats)->name.isEmpty() ? "" : gettext((_psStats)->name.toUtf8().c_str()))
 #define getID(_psStats) (_psStats)->id.toUtf8().c_str()
 #define checkIfZNullStat(_psStats) ((_psStats)->id.toUtf8().find("ZNULL") != std::string::npos)
+
+enum class DROID_TYPE;
 
 /// Stats common to all droid components
 struct ComponentStats : public BaseStats
@@ -280,13 +293,12 @@ struct ComponentStats : public BaseStats
 	[[nodiscard]] virtual Upgradeable const& getUpgrade(unsigned player) const = 0;
 	Upgradeable& getBase() { return const_cast<Upgradeable&>(const_cast<ComponentStats const*>(this)->getBase()); }
 
-  using enum DROID_TYPE;
 	iIMDShape* pIMD = nullptr; /**< The IMD to draw for this component */
 	unsigned buildPower = 0; /**< Power required to build the component */
 	unsigned buildPoints = 0; /**< Time required to build the component */
 	unsigned weight = 0; /**< Component's weight */
 	COMPONENT_TYPE compType = COMPONENT_TYPE::COUNT;
-	DROID_TYPE droidTypeOverride = ANY;
+	DROID_TYPE droidTypeOverride;
 	bool designable = false; ///< Flag to indicate whether this component can be used in the design screen
 };
 
@@ -456,16 +468,14 @@ struct CommanderStats : public ComponentStats
 	std::vector<std::string> rankNames;
 };
 
-#define SHOOT_ON_GROUND 0x01
-#define SHOOT_IN_AIR	0x02
 
 struct BodyStats : public ComponentStats
 {
 	[[nodiscard]] Upgradeable const& getBase() const override { return base; }
 	[[nodiscard]] Upgradeable const& getUpgrade(unsigned player) const override { return upgrade[player]; }
 
-	BODY_SIZE size = BODY_SIZE::COUNT; ///< How big the body is - affects how hit
-	unsigned weaponSlots = 0; ///< The number of weapon slots on the body
+	BODY_SIZE size = BODY_SIZE::COUNT;
+	unsigned weaponSlots = 0;
 
 	std::vector<iIMDShape*> ppIMDList; ///< list of IMDs to use for propulsion unit - up to numPropulsionStats
 	std::vector<iIMDShape*> ppMoveIMDList; ///< list of IMDs to use when droid is moving - up to numPropulsionStats

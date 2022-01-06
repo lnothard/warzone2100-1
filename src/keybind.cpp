@@ -1581,7 +1581,7 @@ void kf_FinishResearch()
 			pSubject = ((ResearchFacility*)psCurr->pFunctionality)->psSubject;
 			if (pSubject)
 			{
-				int rindex = ((RESEARCH*)pSubject)->index;
+				int rindex = ((ResearchStats*)pSubject)->index;
 				if (bMultiMessages)
 				{
 					SendResearch(selectedPlayer, rindex, true);

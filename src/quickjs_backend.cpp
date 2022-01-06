@@ -723,7 +723,7 @@ JSValue convObj(const SimpleObject* psObj, JSContext* ctx);
 JSValue convFeature(const FEATURE* psFeature, JSContext* ctx);
 JSValue convMax(const SimpleObject* psObj, JSContext* ctx);
 JSValue convTemplate(const DroidTemplate* psTemplate, JSContext* ctx);
-JSValue convResearch(const RESEARCH* psResearch, JSContext* ctx, int player);
+JSValue convResearch(const ResearchStats* psResearch, JSContext* ctx, int player);
 
 static int QuickJS_DefinePropertyValue(JSContext* ctx, JSValueConst this_obj, const char* prop, JSValue val, int flags)
 {
@@ -745,23 +745,23 @@ static int QuickJS_DefinePropertyValue(JSContext* ctx, JSValueConst this_obj, co
 //;; * ```id``` A string containing the index name of the research.
 //;; * ```type``` The type will always be ```RESEARCH_DATA```.
 //;;
-JSValue convResearch(const RESEARCH* psResearch, JSContext* ctx, int player)
+JSValue convResearch(const ResearchStats* psResearch, JSContext* ctx, int player)
 {
 	if (psResearch == nullptr)
 	{
 		return JS_NULL;
 	}
 	JSValue value = JS_NewObject(ctx);
-	QuickJS_DefinePropertyValue(ctx, value, "power", JS_NewInt32(ctx, (int)psResearch->researchPower),
+	QuickJS_DefinePropertyValue(ctx, value, "power", JS_NewInt32(ctx, (int)psResearch->powerCost),
 	                            JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "points", JS_NewInt32(ctx, (int)psResearch->researchPoints),
+	QuickJS_DefinePropertyValue(ctx, value, "points", JS_NewInt32(ctx, (int)psResearch->researchPointsRequired),
 	                            JS_PROP_ENUMERABLE);
 	bool started = false;
 	for (int i = 0; i < game.maxPlayers; i++)
 	{
 		if (aiCheckAlliances(player, i) || player == i)
 		{
-			int bits = asPlayerResList[i][psResearch->index].ResearchStatus;
+			int bits = asPlayerResList[i][psResearch->index].researchStatus;
 			started = started || (bits & STARTED_RESEARCH) || (bits & STARTED_RESEARCH_PENDING) || (bits &
 				RESBITS_PENDING_ONLY);
 		}
@@ -2095,7 +2095,7 @@ namespace
 		JSValue result = JS_NewArray(ctx);
 		for (uint32_t i = 0; i < results.resList.size(); i++)
 		{
-			const RESEARCH* psResearch = results.resList.at(i);
+			const ResearchStats* psResearch = results.resList.at(i);
 			JS_DefinePropertyValueUint32(ctx, result, i, convResearch(psResearch, ctx, results.player), JS_PROP_C_W_E);
 			// TODO: Check return value?
 		}

@@ -1441,7 +1441,7 @@ static bool recvResearch(NETQUEUE queue)
 	uint8_t player;
 	uint32_t index;
 	int i;
-	PLAYER_RESEARCH* pPlayerRes;
+	PlayerResearch* pPlayerRes;
 
 	NETbeginDecode(queue, GAME_DEBUG_FINISH_RESEARCH);
 	NETuint8_t(&player);
@@ -1464,7 +1464,7 @@ static bool recvResearch(NETQUEUE queue)
 	}
 
 	pPlayerRes = &asPlayerResList[player][index];
-	syncDebug("research status = %d", pPlayerRes->ResearchStatus & RESBITS);
+	syncDebug("research status = %d", pPlayerRes->researchStatus & RESBITS);
 
 	if (!IsResearchCompleted(pPlayerRes))
 	{
@@ -1549,9 +1549,9 @@ Structure* findResearchingFacilityByResearchIndex(unsigned player, unsigned inde
 bool recvResearchStatus(NETQUEUE queue)
 {
 	Structure* psBuilding;
-	PLAYER_RESEARCH* pPlayerRes;
+	PlayerResearch* pPlayerRes;
 	ResearchFacility* psResFacilty;
-	RESEARCH* pResearch;
+	ResearchStats* pResearch;
 	uint8_t player;
 	bool bStart = false;
 	uint32_t index, structRef;

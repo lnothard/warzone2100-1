@@ -17,10 +17,19 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/* Alex McLean, Pumpkin Studios, EIDOS Interactive */
-/** \file
-	Functions for the in-game console.
-*/
+
+/**
+ * @file console.cpp
+ * Functions for the in-game console.
+ *
+ * Alex McLean, Pumpkin Studios, EIDOS Interactive
+ */
+
+#include <string>
+#include <sstream>
+#include <deque>
+#include <chrono>
+#include <set>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/input.h"
@@ -30,63 +39,15 @@
 #include "lib/ivis_opengl/textdraw.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
+
 #include "loadsave.h"
 #include "ai.h"
 #include "console.h"
 #include "main.h"
 #include "radar.h"
 #include "hci.h"
-#include "mission.h" //for TIMER_Y
-#include "challenge.h" //for challengeActive
-#include <string>
-#include <sstream>
-#include <deque>
-#include <chrono>
-#include <set>
-
-// FIXME: When we switch over to full JS, use class version of this file
-
-#define	DEFAULT_MESSAGE_DURATION			GAME_TICKS_PER_SEC * 5
-#define	DEFAULT_MESSAGE_DURATION_CAMPAIGN	GAME_TICKS_PER_SEC * 12
-// Chat/history "window"
-#define CON_BORDER_WIDTH			4
-#define CON_BORDER_HEIGHT			4
-#define HISTORYBOX_X 				RET_X
-#define HISTORYBOX_Y 				RET_Y - 80
-#define NumDisplayLines 			4
-
-struct CONSOLE
-{
-	UDWORD topX;
-	UDWORD topY;
-	UDWORD width;
-	UDWORD textDepth;
-	bool permanent;
-};
-
-struct CONSOLE_MESSAGE
-{
-	WzText display;
-	UDWORD timeAdded; // When was it added to our list?
-	UDWORD duration;
-	CONSOLE_TEXT_JUSTIFICATION JustifyType; // text justification
-	int player; // Player who sent this message or SYSTEM_MESSAGE
-	CONSOLE_MESSAGE(const std::string& text, iV_fonts fontID, UDWORD time, UDWORD duration,
-	                CONSOLE_TEXT_JUSTIFICATION justify, int plr)
-		: display(text, fontID), timeAdded(time), duration(duration), JustifyType(justify), player(plr)
-	{
-	}
-
-	CONSOLE_MESSAGE& operator =(CONSOLE_MESSAGE&& input) noexcept
-	{
-		display = std::move(input.display);
-		timeAdded = input.timeAdded;
-		duration = input.duration;
-		JustifyType = input.JustifyType;
-		player = input.player;
-		return *this;
-	}
-};
+#include "mission.h"
+#include "challenge.h"
 
 static std::deque<CONSOLE_MESSAGE> ActiveMessages; // we add all messages to this container
 static std::deque<CONSOLE_MESSAGE> TeamMessages; // history of team/private communications
@@ -99,14 +60,15 @@ static int linePitch = 0; // the pitch of a line
 static bool showBackgroundColor = false; // if user wants to add more contrast to the history display
 static CONSOLE mainConsole; // Stores the console dimensions and states
 static CONSOLE historyConsole; // Stores the History console dimensions and states
-static UDWORD messageDuration; /** How long do messages last for? */
+static unsigned messageDuration; /** How long do messages last for? */
 static bool bTextBoxActive = false; /** Is there a box under the console text? */
 static bool bConsoleDisplayEnabled = false; /** Is the console being displayed? */
-static UDWORD consoleVisibleLines; /** How many lines are displayed? */
+static unsigned consoleVisibleLines; /** How many lines are displayed? */
 static int allowNewMessages; /** Whether new messages are allowed to be added */
 static std::set<std::shared_ptr<CONSOLE_MESSAGE_LISTENER>> messageListeners;
 
-char ConsoleString[MAX_CONSOLE_TMP_STRING_LENGTH]; /// Globally available string for new console messages.
+/// Globally available string for new console messages.
+char ConsoleString[MAX_CONSOLE_TMP_STRING_LENGTH];
 
 void consoleAddMessageListener(const std::shared_ptr<CONSOLE_MESSAGE_LISTENER>& listener)
 {
@@ -121,9 +83,9 @@ void consoleRemoveMessageListener(const std::shared_ptr<CONSOLE_MESSAGE_LISTENER
 static CONSOLE_CALC_LAYOUT_FUNC calcLayoutFunc;
 
 /**
-	Specify how long messages will stay on screen.
-*/
-static void setConsoleMessageDuration(UDWORD time)
+ * Specify how long messages will stay on screen.
+ */
+static void setConsoleMessageDuration(std::size_t time)
 {
 	messageDuration = time;
 }
@@ -131,8 +93,7 @@ static void setConsoleMessageDuration(UDWORD time)
 void setConsoleCalcLayout(const CONSOLE_CALC_LAYOUT_FUNC& layoutFunc)
 {
 	calcLayoutFunc = layoutFunc;
-	if (calcLayoutFunc != nullptr)
-	{
+	if (calcLayoutFunc != nullptr)  {
 		calcLayoutFunc();
 	}
 }
@@ -224,20 +185,21 @@ bool addConsoleMessageDebounced(const char* Text, CONSOLE_TEXT_JUSTIFICATION jus
 }
 
 /** Add a string to the console. */
-bool addConsoleMessage(const char* Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDWORD player, bool team, UDWORD duration)
+bool addConsoleMessage(const std::string& text, CONSOLE_TEXT_JUSTIFICATION jusType,
+                       unsigned player, bool team, std::size_t duration)
 {
-	ConsoleMessage message = {Text, jusType, player, team, duration};
+	ConsoleMessage message = {text, jusType, player, team, duration};
 	for (const auto& listener : messageListeners)
 	{
 		(*listener)(message);
 	}
 
-	if (!allowNewMessages)
-	{
-		return false; // Don't allow it to be added if we've disabled adding of new messages
+	if (!allowNewMessages)  {
+    // don't allow it to be added if we've disabled adding of new messages
+		return false;
 	}
 
-	std::istringstream stream(Text);
+	std::istringstream stream(text);
 	std::string lines;
 
 	while (std::getline(stream, lines))
@@ -249,8 +211,7 @@ bool addConsoleMessage(const char* Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDW
 		while (!FitText.empty())
 		{
 			unsigned pixelWidth = iV_GetTextWidth(FitText.c_str(), font_regular);
-			if (pixelWidth <= mainConsole.width)
-			{
+			if (pixelWidth <= mainConsole.width)  {
 				break;
 			}
 			FitText.resize(FitText.length() - 1); // Erase last char.
@@ -281,15 +242,16 @@ bool addConsoleMessage(const char* Text, CONSOLE_TEXT_JUSTIFICATION jusType, SDW
 	return true;
 }
 
-/// \return The number of active console messages
-int getNumberConsoleMessages()
+/// @return The number of active console messages
+std::size_t getNumberConsoleMessages()
 {
-	return (ActiveMessages.size());
+	return ActiveMessages.size();
 }
 
-/** Update the console messages.
-	This function will remove messages that are overdue.
-*/
+/**
+ * Update the console messages.
+ * This function will remove messages that are overdue.
+ */
 void updateConsoleMessages()
 {
 	// If there are no messages or we're on permanent (usually for scripts) then exit
@@ -397,17 +359,17 @@ static PIELIGHT getConsoleTextColor(int player)
 	}
 }
 
-static void console_drawtext(WzText& display, PIELIGHT colour, int x, int y, CONSOLE_TEXT_JUSTIFICATION justify,
-                             int width)
+static void console_drawtext(WzText& display, PIELIGHT colour, int x, int y,
+                             CONSOLE_TEXT_JUSTIFICATION justify, int width)
 {
-	switch (justify)
-	{
-	case LEFT_JUSTIFY:
-		break; // do nothing
-	case RIGHT_JUSTIFY:
+  using enum CONSOLE_TEXT_JUSTIFICATION;
+	switch (justify)  {
+	case LEFT:
+		break;
+	case RIGHT:
 		x = x + width - display.width();
 		break;
-	case CENTRE_JUSTIFY:
+	case CENTRE:
 		x = x + (width - display.width()) / 2;
 		break;
 	}
@@ -538,7 +500,6 @@ void clearInfoMessages()
 	InfoMessages.clear();
 }
 
-
 /** Allows toggling of the box under the console text */
 void setConsoleBackdropStatus(bool state)
 {
@@ -573,7 +534,7 @@ void setConsoleSizePos(UDWORD x, UDWORD y, UDWORD width)
 /**	Establishes whether the console messages stay there */
 void setConsolePermanence(bool state, bool bClearOld)
 {
-	if (mainConsole.permanent == true && state == false)
+	if (mainConsole.permanent && !state)
 	{
 		if (bClearOld)
 		{
@@ -659,14 +620,14 @@ bool mouseOverHistoryConsoleBox()
 }
 
 /** Sets up how many lines are allowed and how many are visible */
-void setConsoleLineInfo(UDWORD vis)
+void setConsoleLineInfo(unsigned vis)
 {
 	ASSERT(vis <= MAX_CONSOLE_MESSAGES, "Request for more visible lines in the console than exist");
 	consoleVisibleLines = vis;
 }
 
 /** get how many lines are allowed and how many are visible */
-UDWORD getConsoleLineInfo()
+unsigned getConsoleLineInfo()
 {
 	return consoleVisibleLines;
 }
@@ -699,5 +660,5 @@ void console(const char* pFormat, ...)
 	va_end(pArgs);
 
 	/* Output it */
-	addConsoleMessage(aBuffer, DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+	addConsoleMessage(aBuffer, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 }

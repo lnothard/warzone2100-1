@@ -1249,7 +1249,7 @@ wzapi::researchResults wzapi::enumResearch(WZAPI_NO_PARAMS)
 	SCRIPT_ASSERT_PLAYER({}, context, player);
 	for (int i = 0; i < asResearch.size(); i++)
 	{
-		RESEARCH* psResearch = &asResearch[i];
+		ResearchStats* psResearch = &asResearch[i];
 		if (!IsResearchCompleted(&asPlayerResList[player][i]) && researchAvailable(i, player, ModeQueue))
 		{
 			result.resList.push_back(psResearch);
@@ -1313,12 +1313,12 @@ bool wzapi::pursueResearch(WZAPI_PARAMS(const Structure *psStruct, string_or_str
 	SCRIPT_ASSERT(false, context, psStruct, "No valid structure provided");
 	int player = psStruct->player;
 
-	RESEARCH* psResearch = nullptr; // Dummy initialisation.
+	ResearchStats* psResearch = nullptr; // Dummy initialisation.
 	for (const auto& researchName : research.strings)
 	{
-		RESEARCH* psCurrResearch = ::getResearch(researchName.c_str());
+		ResearchStats* psCurrResearch = ::getResearch(researchName.c_str());
 		SCRIPT_ASSERT(false, context, psCurrResearch, "No such research: %s", researchName.c_str());
-		PLAYER_RESEARCH* plrRes = &asPlayerResList[player][psCurrResearch->index];
+		PlayerResearch* plrRes = &asPlayerResList[player][psCurrResearch->index];
 		if (!IsResearchStartedPending(plrRes) && !IsResearchCompleted(plrRes))
 		{
 			// use this one
@@ -1344,8 +1344,8 @@ bool wzapi::pursueResearch(WZAPI_PARAMS(const Structure *psStruct, string_or_str
 	ResearchFacility* psResLab = (ResearchFacility*)psStruct->pFunctionality;
 	SCRIPT_ASSERT(false, context, psResLab->psSubject == nullptr, "Research lab not ready");
 	// Go down the requirements list for the desired tech
-	std::list<RESEARCH*> reslist;
-	RESEARCH* curResearch = psResearch;
+	std::list<ResearchStats*> reslist;
+	ResearchStats* curResearch = psResearch;
 	int iterations = 0; // Only used to assert we're not stuck in the loop.
 	while (curResearch)
 	{
@@ -1356,7 +1356,7 @@ bool wzapi::pursueResearch(WZAPI_PARAMS(const Structure *psStruct, string_or_str
 			{
 				if (i == player || (aiCheckAlliances(player, i) && alliancesSharedResearch(game.alliance)))
 				{
-					int bits = asPlayerResList[i][curResearch->index].ResearchStatus;
+					int bits = asPlayerResList[i][curResearch->index].researchStatus;
 					started = started || (bits & STARTED_RESEARCH) || (bits & STARTED_RESEARCH_PENDING)
 						|| (bits & RESBITS_PENDING_ONLY) || (bits & RESEARCHED);
 				}
@@ -1374,7 +1374,7 @@ bool wzapi::pursueResearch(WZAPI_PARAMS(const Structure *psStruct, string_or_str
 				return true;
 			}
 		}
-		RESEARCH* prevResearch = curResearch;
+		ResearchStats* prevResearch = curResearch;
 		curResearch = nullptr;
 		if (!prevResearch->pPRList.empty())
 		{
@@ -1411,9 +1411,9 @@ wzapi::researchResults wzapi::findResearch(WZAPI_PARAMS(std::string researchName
 	researchResults result;
 	result.player = player;
 
-	RESEARCH* psTarget = ::getResearch(researchName.c_str());
+	ResearchStats* psTarget = ::getResearch(researchName.c_str());
 	SCRIPT_ASSERT({}, context, psTarget, "No such research: %s", researchName.c_str());
-	PLAYER_RESEARCH* plrRes = &asPlayerResList[player][psTarget->index];
+	PlayerResearch* plrRes = &asPlayerResList[player][psTarget->index];
 	if (IsResearchStartedPending(plrRes) || IsResearchCompleted(plrRes))
 	{
 		debug(LOG_SCRIPT, "Find reqs for %s for player %d - research pending or completed", researchName.c_str(),
@@ -1422,16 +1422,16 @@ wzapi::researchResults wzapi::findResearch(WZAPI_PARAMS(std::string researchName
 	}
 	debug(LOG_SCRIPT, "Find reqs for %s for player %d", researchName.c_str(), player);
 	// Go down the requirements list for the desired tech
-	std::list<RESEARCH*> reslist;
-	RESEARCH* curResearch = psTarget;
+	std::list<ResearchStats*> reslist;
+	ResearchStats* curResearch = psTarget;
 	while (curResearch)
 	{
-		if (!(asPlayerResList[player][curResearch->index].ResearchStatus & RESEARCHED))
+		if (!(asPlayerResList[player][curResearch->index].researchStatus & RESEARCHED))
 		{
 			debug(LOG_SCRIPT, "Added research in %d's %s for %s", player, getID(curResearch), getID(psTarget));
 			result.resList.push_back(curResearch);
 		}
-		RESEARCH* prevResearch = curResearch;
+		ResearchStats* prevResearch = curResearch;
 		curResearch = nullptr;
 		if (!prevResearch->pPRList.empty())
 		{
@@ -2610,10 +2610,10 @@ wzapi::no_return_value wzapi::completeResearch(WZAPI_PARAMS(std::string research
 	int player = _player.value_or(context.player());
 	SCRIPT_ASSERT_PLAYER({}, context, player);
 	bool forceIt = _forceResearch.value_or(false);
-	RESEARCH* psResearch = ::getResearch(researchName.c_str());
+	ResearchStats* psResearch = ::getResearch(researchName.c_str());
 	SCRIPT_ASSERT({}, context, psResearch, "No such research %s for player %d", researchName.c_str(), player);
 	SCRIPT_ASSERT({}, context, psResearch->index < asResearch.size(), "Research index out of bounds");
-	PLAYER_RESEARCH* plrRes = &asPlayerResList[player][psResearch->index];
+	PlayerResearch* plrRes = &asPlayerResList[player][psResearch->index];
 	if (!forceIt && IsResearchCompleted(plrRes))
 	{
 		return {};
@@ -2640,8 +2640,8 @@ wzapi::no_return_value wzapi::completeAllResearch(WZAPI_PARAMS(optional<int> _pl
 	SCRIPT_ASSERT_PLAYER({}, context, player);
 	for (int i = 0; i < asResearch.size(); i++)
 	{
-		RESEARCH* psResearch = &asResearch[i];
-		PLAYER_RESEARCH* plrRes = &asPlayerResList[player][psResearch->index];
+		ResearchStats* psResearch = &asResearch[i];
+		PlayerResearch* plrRes = &asPlayerResList[player][psResearch->index];
 		if (!IsResearchCompleted(plrRes))
 		{
 			if (bMultiMessages && (gameTime > 2))
@@ -2666,7 +2666,7 @@ bool wzapi::enableResearch(WZAPI_PARAMS(std::string researchName, optional<int> 
 {
 	int player = _player.value_or(context.player());
 	SCRIPT_ASSERT_PLAYER(false, context, player);
-	RESEARCH* psResearch = ::getResearch(researchName.c_str());
+	ResearchStats* psResearch = ::getResearch(researchName.c_str());
 	SCRIPT_ASSERT(false, context, psResearch, "No such research %s for player %d", researchName.c_str(), player);
 	if (!::enableResearch(psResearch, player))
 	{

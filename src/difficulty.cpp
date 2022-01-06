@@ -17,25 +17,16 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/* Simple short file - only because there was nowhere else for it logically to go */
+
 /**
- * @file difficulty.c
- * Handes the difficulty level effects on gameplay.
+ * @file difficulty.cpp
+ * Handles the difficulty level effects on gameplay.
  */
 
-
-/*
-	Changed to allow separate modifiers for enemy and player damage.
-*/
-
-#include "lib/framework/frame.h"
 #include "difficulty.h"
 #include "src/multiplay.h"
 
-
-// ------------------------------------------------------------------------------------
-
-static DIFFICULTY_LEVEL presDifLevel = DL_NORMAL;
+static DIFFICULTY_LEVEL presDifLevel = DIFFICULTY_LEVEL::NORMAL;
 
 static int fDifPlayerModifier;
 static int fDifEnemyModifier;
@@ -46,30 +37,26 @@ void setDamageModifiers(int playerModifier, int enemyModifier)
 	fDifEnemyModifier = enemyModifier;
 }
 
-// ------------------------------------------------------------------------------------
-/* Sets the game difficulty level */
 void setDifficultyLevel(DIFFICULTY_LEVEL lev)
 {
-	switch (lev)
-	{
-	case DL_EASY:
+  using enum DIFFICULTY_LEVEL;
+  switch (lev) {
+	case EASY:
 		setDamageModifiers(120, 100);
 		break;
-	case DL_NORMAL:
+	case NORMAL:
 		setDamageModifiers(100, 100);
 		break;
-	case DL_HARD:
+	case HARD:
 		setDamageModifiers(100, 110);
 		break;
-	case DL_INSANE:
+	case INSANE:
 		setDamageModifiers(80, 120);
 		break;
 	}
 	presDifLevel = lev;
 }
 
-// ------------------------------------------------------------------------------------
-/* Returns the difficulty level */
 DIFFICULTY_LEVEL getDifficultyLevel()
 {
 	return presDifLevel;
@@ -87,8 +74,6 @@ int modifyForDifficultyLevel(int basicVal, bool IsPlayer)
 	}
 }
 
-// reset damage modifiers changed by "double up" or "biffer baker" cheat and
-// prevent campaign difficulty from influencing skirmish and multiplayer games
 void resetDamageModifiers()
 {
 	if (bMultiPlayer)

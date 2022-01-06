@@ -7409,7 +7409,7 @@ bool loadSaveResearch(const char* pFileName)
 		int statInc;
 		for (statInc = 0; statInc < asResearch.size(); statInc++)
 		{
-			RESEARCH* psStats = &asResearch[statInc];
+			ResearchStats* psStats = &asResearch[statInc];
 			//loop until find the same name
 			if (psStats->id.compare(name) == 0)
 
@@ -7436,14 +7436,14 @@ bool loadSaveResearch(const char* pFileName)
 		ASSERT(pointsList.size() == players, "Bad points list for %s", name.toUtf8().c_str());
 		for (int plr = 0; plr < players; plr++)
 		{
-			PLAYER_RESEARCH* psPlRes;
+			PlayerResearch* psPlRes;
 			int researched = json_getValue(researchedList, plr).toInt();
 			int possible = json_getValue(possiblesList, plr).toInt();
 			int points = json_getValue(pointsList, plr).toInt();
 
 			psPlRes = &asPlayerResList[plr][statInc];
 			// Copy the research status
-			psPlRes->ResearchStatus = (researched & RESBITS);
+			psPlRes->researchStatus = (researched & RESBITS);
 			SetResearchPossible(psPlRes, possible);
 			psPlRes->currentPoints = points;
 			//for any research that has been completed - perform so that upgrade values are set up
@@ -7465,15 +7465,15 @@ static bool writeResearchFile(char* pFileName)
 
 	for (size_t i = 0; i < asResearch.size(); ++i)
 	{
-		RESEARCH* psStats = &asResearch[i];
+		ResearchStats* psStats = &asResearch[i];
 		bool valid = false;
 		std::vector<WzString> possibles, researched, points;
 		for (int player = 0; player < game.maxPlayers; player++)
 		{
 			possibles.push_back(WzString::number(GetResearchPossible(&asPlayerResList[player][i])));
-			researched.push_back(WzString::number(asPlayerResList[player][i].ResearchStatus & RESBITS));
+			researched.push_back(WzString::number(asPlayerResList[player][i].researchStatus & RESBITS));
 			points.push_back(WzString::number(asPlayerResList[player][i].currentPoints));
-			if (IsResearchPossible(&asPlayerResList[player][i]) || (asPlayerResList[player][i].ResearchStatus & RESBITS)
+			if (IsResearchPossible(&asPlayerResList[player][i]) || (asPlayerResList[player][i].researchStatus & RESBITS)
 				|| asPlayerResList[player][i].currentPoints)
 			{
 				valid = true; // write this entry

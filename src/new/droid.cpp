@@ -77,15 +77,15 @@ bool Droid::is_stationary() const
 	return movement->is_stationary();
 }
 
-bool Droid::has_commander() const
-{
-	if (type == COMMAND &&
-		group != nullptr &&
-		group->is_command_group())
-		return true;
-
-	return false;
-}
+//bool Droid::has_commander() const
+//{
+//	if (type == COMMAND &&
+//		group != nullptr &&
+//		group->is_command_group())
+//		return true;
+//
+//	return false;
+//}
 
 //bool Droid::has_electronic_weapon() const
 //{
@@ -308,11 +308,11 @@ void Droid::move_to_rearm_pad()
 //	}
 //}
 
-void Droid::reset_action() noexcept
-{
-	time_action_started = gameTime;
-	action_points_done = 0;
-}
+//void Droid::reset_action() noexcept
+//{
+//	time_action_started = gameTime;
+//	action_points_done = 0;
+//}
 
 void Droid::update_expected_damage(unsigned damage, bool is_direct) noexcept
 {
@@ -415,13 +415,13 @@ void Droid::set_direct_route(int target_x, int target_y) const
 //  associated_structure = rearm_pad;
 //}
 
-int Droid::calculate_electronic_resistance() const
-{
-  auto resistance = experience /
-       (65536 / MAX(1, body->upgraded[get_player()].resistance));
-  resistance = MAX(resistance, body->upgraded[get_player()].resistance);
-  return MIN(resistance, INT16_MAX);
-}
+//int Droid::calculate_electronic_resistance() const
+//{
+//  auto resistance = experience /
+//       (65536 / MAX(1, body->upgraded[get_player()].resistance));
+//  resistance = MAX(resistance, body->upgraded[get_player()].resistance);
+//  return MIN(resistance, INT16_MAX);
+//}
 
 //bool Droid::is_selectable() const
 //{
@@ -773,16 +773,16 @@ void initialise_ai_bits()
 	satellite_uplink_bits = 0;
 }
 
-long get_commander_index(const Droid& commander)
-{
-	assert(is_commander(commander));
-
-	const auto& droids = droid_lists[commander.get_player()];
-	return std::find_if(droids.begin(), droids.end(), [&commander](const auto& droid)
-	{
-		return  is_commander(droid) && &droid == &commander;
-	}) - droids.begin();
-}
+//long get_commander_index(const Droid& commander)
+//{
+//	assert(is_commander(commander));
+//
+//	const auto& droids = droid_lists[commander.get_player()];
+//	return std::find_if(droids.begin(), droids.end(), [&commander](const auto& droid)
+//	{
+//		return  is_commander(droid) && &droid == &commander;
+//	}) - droids.begin();
+//}
 
 void add_VTOL_attack_run(const Droid& droid)
 {

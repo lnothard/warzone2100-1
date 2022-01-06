@@ -129,7 +129,7 @@ UDWORD getComponentRadius(BaseStats* psComponent)
 
 UDWORD getResearchRadius(BaseStats* Stat)
 {
-	iIMDShape* ResearchIMD = ((RESEARCH*)Stat)->pIMD;
+	iIMDShape* ResearchIMD = ((ResearchStats*)Stat)->pIMD;
 
 	if (ResearchIMD)
 	{
@@ -322,8 +322,8 @@ void displayComponentButton(BaseStats* Stat, const Vector3i* Rotation, const Vec
 //
 void displayResearchButton(BaseStats* Stat, const Vector3i* Rotation, const Vector3i* Position, int scale)
 {
-	iIMDShape* ResearchIMD = ((RESEARCH*)Stat)->pIMD;
-	iIMDShape* MountIMD = ((RESEARCH*)Stat)->pIMD2;
+	iIMDShape* ResearchIMD = ((ResearchStats*)Stat)->pIMD;
+	iIMDShape* MountIMD = ((ResearchStats*)Stat)->pIMD2;
 
 	ASSERT(ResearchIMD, "ResearchIMD is NULL");
 	if (ResearchIMD)

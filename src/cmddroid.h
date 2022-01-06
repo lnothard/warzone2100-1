@@ -17,18 +17,19 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- *
- * @file
- * Typedef's for command droids
- *
+ * @file cmddroid.h
+ * Type definitions and interface for command droids
  */
 
 #ifndef __INCLUDED_SRC_CMDDROID_H__
 #define __INCLUDED_SRC_CMDDROID_H__
 
-#include "cmddroiddef.h"
-#include "droiddef.h"
+#include "statsdef.h"
+
+/// The maximum number of command droids allowed per player.
+static constexpr auto MAX_CMDDROIDS =	5;
 
 /** \brief Initialises the global instance for command droids.*/
 bool cmdDroidInit();
@@ -44,22 +45,22 @@ void cmdDroidUpdate();
 bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid);
 
 /** \brief Returns the current target designator for a player.*/
-Droid* cmdDroidGetDesignator(UDWORD player);
+Droid* cmdDroidGetDesignator(unsigned player);
 
 /** \brief Sets the current target designator for a player.*/
 void cmdDroidSetDesignator(Droid* psDroid);
 
 /** \brief Clears the current target designator for a player.*/
-void cmdDroidClearDesignator(UDWORD player);
+void cmdDroidClearDesignator(unsigned player);
 
 /** \brief Gets the index of the command droid.*/
-SDWORD cmdDroidGetIndex(Droid* psCommander);
+int cmdDroidGetIndex(Droid* psCommander);
 
 /** \brief Gets the maximum group size for a command droid.*/
 unsigned int cmdDroidMaxGroup(const Droid* psCommander);
 
 /** \brief Updates the experience of a command droid if psShooter is in a command group.*/
-void cmdDroidUpdateExperience(Droid* psShooter, uint32_t experienceInc);
+void cmdDroidUpdateExperience(Droid* psShooter, unsigned experienceInc);
 
 /** \brief Gets the level of the droid group's commander, if any.*/
 unsigned int cmdGetCommanderLevel(const Droid* psDroid);

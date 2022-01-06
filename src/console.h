@@ -18,22 +18,39 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
+/**
+ * @file console.h
+ */
+
 #ifndef __INCLUDED_SRC_CONSOLE_H__
 #define __INCLUDED_SRC_CONSOLE_H__
 
 #include <functional>
 #include <memory>
+#include <string>
 
-#define MAX_CONSOLE_MESSAGES			(64)
-#define MAX_CONSOLE_STRING_LENGTH		(255)
-#define MAX_CONSOLE_TMP_STRING_LENGTH	(255)
+#include "hci.h"
 
-enum CONSOLE_TEXT_JUSTIFICATION
+static constexpr auto	DEFAULT_MESSAGE_DURATION = GAME_TICKS_PER_SEC * 5;
+static constexpr auto	DEFAULT_MESSAGE_DURATION_CAMPAIGN	= GAME_TICKS_PER_SEC * 12;
+
+// Chat/history "window"
+static constexpr auto CON_BORDER_WIDTH = 4;
+static constexpr auto CON_BORDER_HEIGHT	=	4;
+static constexpr auto HISTORYBOX_X = RET_X;
+static const auto HISTORYBOX_Y = RET_Y - 80;
+static constexpr auto NumDisplayLines = 4;
+
+static constexpr auto MAX_CONSOLE_MESSAGES = 64;
+static constexpr auto MAX_CONSOLE_STRING_LENGTH = 255;
+static constexpr auto MAX_CONSOLE_TMP_STRING_LENGTH =	255;
+
+enum class CONSOLE_TEXT_JUSTIFICATION
 {
-	LEFT_JUSTIFY,
-	DEFAULT_JUSTIFY = LEFT_JUSTIFY,
-	RIGHT_JUSTIFY,
-	CENTRE_JUSTIFY
+	LEFT,
+	RIGHT,
+	CENTRE,
+  DEFAULT = LEFT
 };
 
 // Declare any messages that you want to be debounced here, along with their debounce time.
@@ -46,15 +63,48 @@ struct DEBOUNCED_MESSAGE
 
 struct ConsoleMessage
 {
-	const char* text;
-	CONSOLE_TEXT_JUSTIFICATION justification;
-	int32_t sender;
+  using enum CONSOLE_TEXT_JUSTIFICATION;
+	std::string text;
+	CONSOLE_TEXT_JUSTIFICATION justification = DEFAULT;
+	unsigned sender;
 	bool team;
-	UDWORD duration;
+	std::size_t duration;
+};
+
+struct CONSOLE
+{
+    unsigned topX;
+    unsigned topY;
+    unsigned width;
+    unsigned textDepth;
+    bool permanent;
+};
+
+struct CONSOLE_MESSAGE
+{
+    WzText display;
+    unsigned timeAdded; // When was it added to our list?
+    unsigned duration;
+    CONSOLE_TEXT_JUSTIFICATION JustifyType; // text justification
+    unsigned player; // Player who sent this message or SYSTEM_MESSAGE
+    CONSOLE_MESSAGE(const std::string& text, iV_fonts fontID, UDWORD time, UDWORD duration,
+                    CONSOLE_TEXT_JUSTIFICATION justify, int plr)
+            : display(text, fontID), timeAdded(time), duration(duration), JustifyType(justify), player(plr)
+    {
+    }
+
+    CONSOLE_MESSAGE& operator =(CONSOLE_MESSAGE&& input) noexcept
+    {
+      display = std::move(input.display);
+      timeAdded = input.timeAdded;
+      duration = input.duration;
+      JustifyType = input.JustifyType;
+      player = input.player;
+      return *this;
+    }
 };
 
 const DEBOUNCED_MESSAGE CANNOT_BUILD_BURNING = {2500};
-
 
 /* ID to use for addConsoleMessage() in case of a system message */
 #define	SYSTEM_MESSAGE				(-1)
@@ -87,7 +137,7 @@ void setConsolePermanence(bool state, bool bClearOld);
 void clearActiveConsole();
 bool mouseOverConsoleBox();
 bool mouseOverHistoryConsoleBox();
-int getNumberConsoleMessages();
+std::size_t getNumberConsoleMessages();
 void setConsoleLineInfo(UDWORD vis);
 UDWORD getConsoleLineInfo();
 void permitNewConsoleMessages(bool allow);
@@ -121,9 +171,9 @@ template <typename... P>
 static inline void CONPRINTF(P&&... params)
 {
 	snprintf(ConsoleString, sizeof(ConsoleString), std::forward<P>(params)...);
-	addConsoleMessage(ConsoleString, DEFAULT_JUSTIFY, INFO_MESSAGE);
+	addConsoleMessage(ConsoleString, CONSOLE_TEXT_JUSTIFICATION::DEFAULT,
+                    INFO_MESSAGE);
 }
-
 
 #include <functional>
 
@@ -132,6 +182,5 @@ void setConsoleCalcLayout(const CONSOLE_CALC_LAYOUT_FUNC& layoutFunc);
 
 void consoleScreenDidChangeSize(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
                                 unsigned int newHeight);
-
 
 #endif // __INCLUDED_SRC_CONSOLE_H__

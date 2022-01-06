@@ -35,7 +35,7 @@ struct SimpleObject;
 struct Droid;
 struct DroidTemplate;
 struct FEATURE;
-struct RESEARCH;
+struct ResearchStats;
 struct Structure;
 
 enum SCRIPT_TRIGGER_TYPE
@@ -129,7 +129,7 @@ bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, SimpleObject* psObj = nullptr);
 // For each trigger with function parameters, a function to trigger it here
 bool triggerEventDroidBuilt(Droid* psDroid, Structure* psFactory);
 bool triggerEventAttacked(SimpleObject* psVictim, SimpleObject* psAttacker, int lastHit);
-bool triggerEventResearched(RESEARCH* psResearch, Structure* psStruct, int player);
+bool triggerEventResearched(ResearchStats* psResearch, Structure* psStruct, int player);
 bool triggerEventStructBuilt(Structure* psStruct, Droid* psDroid);
 bool triggerEventStructDemolish(Structure* psStruct, Droid* psDroid);
 bool triggerEventDroidIdle(Droid* psDroid);

@@ -866,19 +866,19 @@ namespace wzapi
 		{
 		}
 
-		researchResult(const RESEARCH* psResearch, int player)
+		researchResult(const ResearchStats* psResearch, int player)
 			: psResearch(psResearch)
 			  , player(player)
 		{
 		}
 
-		const RESEARCH* psResearch = nullptr;
+		const ResearchStats* psResearch = nullptr;
 		int player;
 	};
 
 	struct researchResults
 	{
-		std::vector<const RESEARCH*> resList;
+		std::vector<const ResearchStats*> resList;
 		int player;
 	};
 

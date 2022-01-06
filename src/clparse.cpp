@@ -17,12 +17,14 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * clParse.c
- *
+
+/**
+ * @file clparse.cpp
  * Parse command line arguments
- *
  */
+
+#include <cwchar>
+#include <utility>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/string_ext.h"
@@ -44,9 +46,6 @@
 #include "wrappers.h"
 #include "multilobbycommands.h"
 
-#include <cwchar>
-
-//////
 // Our fine replacement for the popt abomination follows
 
 #define POPT_ARG_STRING true
@@ -448,13 +447,13 @@ static const struct poptOption* getOptionsTable()
 			N_("startplayers")
 		},
 		// Terminating entry
-		{nullptr, 0, 0, nullptr, nullptr},
+		{nullptr, false, 0, nullptr, nullptr},
 	};
 
 	static struct poptOption TranslatedOptionsTable[sizeof(optionsTable) / sizeof(struct poptOption)];
 	static bool translated = false;
 
-	if (translated == false)
+	if (!translated)
 	{
 		unsigned int table_size = sizeof(optionsTable) / sizeof(struct poptOption) - 1;
 		unsigned int i;
@@ -502,7 +501,7 @@ bool ParseCommandLineEarly(int argc, const char* const * argv)
 	/* loop through command line */
 	while ((iOption = poptGetNextOpt(poptCon)) > 0 || iOption == POPT_ERROR_BADOPT)
 	{
-		CLI_OPTIONS option = (CLI_OPTIONS)iOption;
+		auto option = (CLI_OPTIONS)iOption;
 		const char* token;
 
 		if (iOption == POPT_ERROR_BADOPT)
@@ -577,7 +576,6 @@ bool ParseCommandLineEarly(int argc, const char* const * argv)
 #endif
 		case CLI_WZ_CRASH_RPT:
 			// this is currently a no-op because it must be parsed even earlier than ParseCommandLineEarly
-			break;
 		default:
 			break;
 		};
@@ -602,7 +600,7 @@ bool ParseCommandLine(int argc, const char* const * argv)
 	while ((iOption = poptGetNextOpt(poptCon)) > 0)
 	{
 		const char* token;
-		CLI_OPTIONS option = (CLI_OPTIONS)iOption;
+		auto option = (CLI_OPTIONS)iOption;
 
 		switch (option)
 		{
@@ -701,7 +699,7 @@ bool ParseCommandLine(int argc, const char* const * argv)
 					qFatal("Missing mod name?");
 				}
 
-				global_mods.push_back(token);
+				global_mods.emplace_back(token);
 				break;
 			}
 		case CLI_MOD_CA:
@@ -713,7 +711,7 @@ bool ParseCommandLine(int argc, const char* const * argv)
 					qFatal("Missing mod name?");
 				}
 
-				campaign_mods.push_back(token);
+				campaign_mods.emplace_back(token);
 				break;
 			}
 		case CLI_MOD_MP:
@@ -725,7 +723,7 @@ bool ParseCommandLine(int argc, const char* const * argv)
 					qFatal("Missing mod name?");
 				}
 
-				multiplay_mods.push_back(token);
+				multiplay_mods.emplace_back(token);
 				break;
 			}
 		case CLI_RESOLUTION:
@@ -1052,7 +1050,7 @@ std::string autoratingUrl(std::string const& hash)
 
 void setAutoratingUrl(std::string url)
 {
-	wz_autoratingUrl = url;
+	wz_autoratingUrl = std::move(url);
 }
 
 std::string getAutoratingUrl()

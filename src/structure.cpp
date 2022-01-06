@@ -3369,14 +3369,14 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 
 			int researchIndex = pSubject->ref - STAT_RESEARCH;
 
-			PLAYER_RESEARCH* pPlayerRes = &asPlayerResList[psStructure->player][researchIndex];
+			PlayerResearch* pPlayerRes = &asPlayerResList[psStructure->player][researchIndex];
 			//check research has not already been completed by another structure
 			if (!IsResearchCompleted(pPlayerRes))
 			{
-				RESEARCH* pResearch = (RESEARCH*)pSubject;
+				ResearchStats* pResearch = (ResearchStats*)pSubject;
 
 				unsigned pointsToAdd = gameTimeAdjustedAverage(getBuildingResearchPoints(psStructure));
-				pointsToAdd = MIN(pointsToAdd, pResearch->researchPoints - pPlayerRes->currentPoints);
+				pointsToAdd = MIN(pointsToAdd, pResearch->researchPointsRequired - pPlayerRes->currentPoints);
 
 				unsigned shareProgress = pPlayerRes->currentPoints;
 				// Share old research progress instead of new one, so it doesn't get sped up by multiple players researching.
@@ -3384,7 +3384,7 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 
 				if (pointsToAdd > 0 && pPlayerRes->currentPoints == 0)
 				{
-					bool haveEnoughPower = requestPowerFor(psStructure, pResearch->researchPower);
+					bool haveEnoughPower = requestPowerFor(psStructure, pResearch->powerCost);
 					if (haveEnoughPower)
 					{
 						shareProgress = 1;
@@ -3396,14 +3396,14 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 					}
 				}
 
-				if (pointsToAdd > 0 && pResearch->researchPoints > 0) // might be a "free" research
+				if (pointsToAdd > 0 && pResearch->researchPointsRequired > 0) // might be a "free" research
 				{
 					pPlayerRes->currentPoints += pointsToAdd;
 				}
-				syncDebug("Research at %u/%u.", pPlayerRes->currentPoints, pResearch->researchPoints);
+				syncDebug("Research at %u/%u.", pPlayerRes->currentPoints, pResearch->researchPointsRequired);
 
 				//check if Research is complete
-				if (pPlayerRes->currentPoints >= pResearch->researchPoints)
+				if (pPlayerRes->currentPoints >= pResearch->researchPointsRequired)
 				{
 					int prevState = intGetResearchState();
 
@@ -3414,7 +3414,7 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 					}
 					else
 					{
-						if (pResearch->researchPoints > psResFacility->psBestTopic->researchPoints)
+						if (pResearch->researchPointsRequired > psResFacility->psBestTopic->researchPointsRequired)
 						{
 							psResFacility->psBestTopic = psResFacility->psSubject;
 						}

@@ -262,11 +262,11 @@ static bool scriptsReady = false;
 /// Structure for research events put on hold
 struct researchEvent
 {
-	RESEARCH* research;
+	ResearchStats* research;
 	Structure* structure;
 	int player;
 
-	researchEvent(RESEARCH* r, Structure* s, int p): research(r), structure(s), player(p)
+	researchEvent(ResearchStats* r, Structure* s, int p): research(r), structure(s), player(p)
 	{
 	}
 };
@@ -1373,7 +1373,7 @@ bool triggerEventAttacked(SimpleObject* psVictim, SimpleObject* psAttacker, int 
 //__ current player. If an ally does the research, the structure parameter will
 //__ be set to null. The player parameter gives the player it is called for.
 //__
-bool triggerEventResearched(RESEARCH* psResearch, Structure* psStruct, int player)
+bool triggerEventResearched(ResearchStats* psResearch, Structure* psStruct, int player)
 {
 	//HACK: This event can be triggered when loading savegames, before the script engines are initialized.
 	// if this is the case, we need to store these events and replay them later

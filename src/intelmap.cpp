@@ -545,7 +545,7 @@ void intIntelButtonPressed(bool proxMsg, UDWORD id)
 {
 	MESSAGE* psMessage;
 	UDWORD currID;
-	RESEARCH* psResearch;
+	ResearchStats* psResearch;
 
 	ASSERT_OR_RETURN(, proxMsg != true, "Shouldn't be able to get a proximity message!");
 
@@ -795,7 +795,7 @@ IntMessageButton::IntMessageButton()
 /*Displays the buttons used on the intelligence map */
 void IntMessageButton::display(int xOffset, int yOffset)
 {
-	RESEARCH* pResearch = nullptr;
+	ResearchStats* pResearch = nullptr;
 	bool MovieButton = false;
 	ImdObject object;
 	Image image;
@@ -882,7 +882,7 @@ void intDisplayPIEView(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	MESSAGE* psMessage = (MESSAGE*)psWidget->pUserData;
 	SWORD image = -1;
-	RESEARCH* psResearch;
+	ResearchStats* psResearch;
 
 	// Should not have any proximity messages here...
 	if (!psMessage || psMessage->type == MSG_PROXIMITY)
@@ -1090,7 +1090,7 @@ void intRunIntelMap()
 
 static const char* getMessageTitle(const MESSAGE& message)
 {
-	RESEARCH* research;
+	ResearchStats* research;
 
 	switch (message.type)
 	{

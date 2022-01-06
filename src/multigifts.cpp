@@ -758,7 +758,7 @@ bool pickupArtefact(int toPlayer, int fromPlayer)
 				&& !IsResearchPossible(&asPlayerResList[toPlayer][topic]))
 			{
 				// Make sure the topic can be researched
-				if (asResearch[topic].researchPower && asResearch[topic].researchPoints)
+				if (asResearch[topic].powerCost && asResearch[topic].researchPointsRequired)
 				{
 					MakeResearchPossible(&asPlayerResList[toPlayer][topic]);
 					if (toPlayer == selectedPlayer)

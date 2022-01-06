@@ -1611,21 +1611,21 @@ bool StatIsResearch(BaseStats* Stat)
 static void StatGetResearchImage(BaseStats* psStat, Image* image, iIMDShape** Shape, BaseStats** ppGraphicData,
                                  bool drawTechIcon)
 {
-	if (drawTechIcon && ((RESEARCH*)psStat)->iconID != NO_RESEARCH_ICON)
+	if (drawTechIcon && ((ResearchStats*)psStat)->iconID != NO_RESEARCH_ICON)
 	{
-		*image = Image(IntImages, ((RESEARCH*)psStat)->iconID);
+		*image = Image(IntImages, ((ResearchStats*)psStat)->iconID);
 	}
 	//if the research has a Stat associated with it - use this as display in the button
-	if (((RESEARCH*)psStat)->psStat)
+	if (((ResearchStats*)psStat)->psStat)
 	{
-		*ppGraphicData = ((RESEARCH*)psStat)->psStat;
+		*ppGraphicData = ((ResearchStats*)psStat)->psStat;
 		//make sure the IMDShape is initialised
 		*Shape = nullptr;
 	}
 	else
 	{
 		//no stat so just just the IMD associated with the research
-		*Shape = ((RESEARCH*)psStat)->pIMD;
+		*Shape = ((ResearchStats*)psStat)->pIMD;
 		//make sure the stat is initialised
 		*ppGraphicData = nullptr;
 	}
@@ -1925,7 +1925,7 @@ void intUpdateQuantitySlider(WIDGET* psWidget, W_CONTEXT* psContext)
 	}
 }
 
-void intDisplayUpdateAllyBar(W_BARGRAPH* psBar, const RESEARCH& research, const std::vector<AllyResearch>& researches)
+void intDisplayUpdateAllyBar(W_BARGRAPH* psBar, const ResearchStats& research, const std::vector<AllyResearch>& researches)
 {
 	unsigned bestCompletion = 0;
 	const int researchNotStarted = 3600000;
@@ -1950,11 +1950,11 @@ void intDisplayUpdateAllyBar(W_BARGRAPH* psBar, const RESEARCH& research, const 
 		else
 		{
 			bestPowerNeeded = std::min<unsigned>(bestPowerNeeded, res.powerNeeded);
-			researchPowerCost = research.researchPower;
+			researchPowerCost = research.powerCost;
 		}
 	}
 
-	setBarGraphValue(psBar, psBar->majorCol, bestCompletion, research.researchPoints);
+	setBarGraphValue(psBar, psBar->majorCol, bestCompletion, research.researchPointsRequired);
 	if (bestTimeToResearch != researchNotStarted)
 	{
 		// Show research progress.

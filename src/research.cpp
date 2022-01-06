@@ -17,75 +17,88 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * Research.c
- *
- * Research tree and functions!
- *
- */
-#include <string.h>
-#include <map>
 
-#include "lib/framework/frame.h"
+/**
+ * @file research.cpp
+ * Research tree and functions
+ */
+ 
 #include "lib/netplay/netplay.h"
-#include "lib/ivis_opengl/imd.h"
-#include "objects.h"
-#include "lib/gamelib/gtime.h"
-#include "research.h"
-#include "message.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
-#include "hci.h"
-#include "console.h"
-#include "cmddroid.h"
-#include "power.h"
+
+#include "objects.h"
+#include "research.h"
 #include "mission.h"
-#include "frend.h"		// frontend ids.
 #include "intimage.h"
-#include "multiplay.h"
-#include "template.h"
 #include "qtscript.h"
-#include "stats.h"
-#include "wzapi.h"
 
 // The stores for the research stats
-std::vector<RESEARCH> asResearch;
+std::vector<ResearchStats> asResearch;
 nlohmann::json cachedStatsObject = nlohmann::json(nullptr);
 std::vector<wzapi::PerPlayerUpgrades> cachedPerPlayerUpgrades;
 
-//used for Callbacks to say which topic was last researched
-RESEARCH* psCBLastResearch;
+// Used for callbacks to say which topic was last researched
+ResearchStats* psCBLastResearch;
 Structure* psCBLastResStructure;
-SDWORD CBResFacilityOwner;
+int CBResFacilityOwner;
 
 //List of pointers to arrays of PLAYER_RESEARCH[numResearch] for each player
-std::vector<PLAYER_RESEARCH> asPlayerResList[MAX_PLAYERS];
+std::vector<PlayerResearch> asPlayerResList[MAX_PLAYERS];
 
 /* Default level of sensor, Repair and ECM */
-UDWORD aDefaultSensor[MAX_PLAYERS];
-UDWORD aDefaultECM[MAX_PLAYERS];
-UDWORD aDefaultRepair[MAX_PLAYERS];
-
-// Per-player statistics about research upgrades
-struct PlayerUpgradeCounts
-{
-	std::unordered_map<std::string, uint32_t> numBodyClassArmourUpgrades;
-	std::unordered_map<std::string, uint32_t> numBodyClassThermalUpgrades;
-	std::unordered_map<std::string, uint32_t> numWeaponImpactClassUpgrades;
-
-	// helper functions
-	uint32_t getNumWeaponImpactClassUpgrades(WEAPON_SUBCLASS subClass);
-	uint32_t getNumBodyClassArmourUpgrades(BodyClass bodyClass);
-	uint32_t getNumBodyClassThermalArmourUpgrades(BodyClass bodyClass);
-};
+unsigned aDefaultSensor[MAX_PLAYERS];
+unsigned aDefaultECM[MAX_PLAYERS];
+unsigned aDefaultRepair[MAX_PLAYERS];
 
 std::vector<PlayerUpgradeCounts> playerUpgradeCounts;
+
+nonstd::optional< std::deque<ResearchStats*> > CycleDetection::explore(ResearchStats* research)
+{
+  if (visited.find(research) != visited.end())
+  {
+    return nonstd::nullopt;
+  }
+
+  if (exploring.find(research) != exploring.end())
+  {
+    return {{research}};
+  }
+
+  exploring.insert(research);
+
+  for (auto requirementIndex : research->pPRList)
+  {
+    auto requirement = &asResearch[requirementIndex];
+    if (auto cycle = explore(requirement))
+    {
+      cycle->push_front(research);
+      return cycle;
+    }
+  }
+
+  exploring.erase(exploring.find(research));
+  visited.insert(research);
+  return nonstd::nullopt;
+}
+
+nonstd::optional< std::deque<ResearchStats*> > CycleDetection::detectCycle()
+{
+  CycleDetection detection;
+  for (auto& research : asResearch)
+  {
+    if (auto cycle = detection.explore(&research)) {
+      return cycle;
+    }
+  }
+  return nonstd::nullopt;
+}
 
 //set the iconID based on the name read in in the stats
 static UWORD setIconID(const char* pIconName, const char* pName);
 static void replaceComponent(ComponentStats* pNewComponent, ComponentStats* pOldComponent,
                              UBYTE player);
-static bool checkResearchName(RESEARCH* psRes, UDWORD numStats);
+static bool checkResearchName(ResearchStats* psRes, UDWORD numStats);
 
 //flag that indicates whether the player can self repair
 static UBYTE bSelfRepair[MAX_PLAYERS];
@@ -97,7 +110,6 @@ static void switchComponent(Droid* psDroid, UDWORD oldType, UDWORD oldCompInc,
                             UDWORD newCompInc);
 static void replaceTransDroidComponents(Droid* psTransporter, UDWORD oldType,
                                         UDWORD oldCompInc, UDWORD newCompInc);
-
 
 bool researchInitVars()
 {
@@ -116,39 +128,140 @@ bool researchInitVars()
 		aDefaultECM[i] = 0;
 		aDefaultRepair[i] = 0;
 	}
-
 	return true;
 }
 
-uint32_t PlayerUpgradeCounts::getNumWeaponImpactClassUpgrades(WEAPON_SUBCLASS subClass)
+static bool IsResearchPossible(const PlayerResearch* research)
+{
+  return research->possible == RESEARCH_POSSIBLE;
+}
+
+static bool IsResearchDisabled(const PlayerResearch* research)
+{
+  return research->possible == RESEARCH_DISABLED;
+}
+
+static void MakeResearchPossible(PlayerResearch* research)
+{
+  if (research->possible == RESEARCH_IMPOSSIBLE)
+  {
+    research->possible = RESEARCH_POSSIBLE;
+  }
+}
+
+static void DisableResearch(PlayerResearch* research)
+{
+  research->possible = RESEARCH_DISABLED;
+}
+
+static int GetResearchPossible(const PlayerResearch* research)
+{
+  return research->possible;
+}
+
+static void SetResearchPossible(PlayerResearch* research, UBYTE possible)
+{
+  research->possible = possible;
+}
+
+static bool IsResearchCompleted(PlayerResearch const* x)
+{
+  return (x->researchStatus & RESEARCHED) != 0;
+}
+
+static bool IsResearchCancelled(PlayerResearch const* x)
+{
+  return (x->researchStatus & CANCELLED_RESEARCH) != 0;
+}
+
+static bool IsResearchStarted(PlayerResearch const* x)
+{
+  return (x->researchStatus & STARTED_RESEARCH) != 0;
+}
+
+static bool IsResearchCancelledPending(PlayerResearch const* x)
+{
+  return (x->researchStatus & RESBITS_PENDING_ONLY) != 0
+         ? (x->researchStatus & CANCELLED_RESEARCH_PENDING) != 0
+         : (x->researchStatus & CANCELLED_RESEARCH) != 0;
+}
+
+static bool IsResearchStartedPending(PlayerResearch const* x)
+{
+  return (x->researchStatus & RESBITS_PENDING_ONLY) != 0
+         ? (x->researchStatus & STARTED_RESEARCH_PENDING) != 0
+         : (x->researchStatus & STARTED_RESEARCH) != 0;
+}
+
+static void MakeResearchCompleted(PlayerResearch* x)
+{
+  x->researchStatus &= ~RESBITS_PENDING;
+  x->researchStatus |= RESEARCHED;
+}
+
+static void MakeResearchCancelled(PlayerResearch* x)
+{
+  x->researchStatus &= ~RESBITS_PENDING;
+  x->researchStatus |= CANCELLED_RESEARCH;
+}
+
+static void MakeResearchStarted(PlayerResearch* x)
+{
+  x->researchStatus &= ~RESBITS_PENDING;
+  x->researchStatus |= STARTED_RESEARCH;
+}
+
+static void MakeResearchCancelledPending(PlayerResearch* x)
+{
+  x->researchStatus &= ~RESBITS_PENDING_ONLY;
+  x->researchStatus |= CANCELLED_RESEARCH_PENDING;
+}
+
+static void MakeResearchStartedPending(PlayerResearch* x)
+{
+  x->researchStatus &= ~RESBITS_PENDING_ONLY;
+  x->researchStatus |= STARTED_RESEARCH_PENDING;
+}
+
+static void ResetPendingResearchStatus(PlayerResearch* x)
+{
+  x->researchStatus &= ~RESBITS_PENDING_ONLY;
+}
+
+static void ResetResearchStatus(PlayerResearch* x)
+{
+  x->researchStatus &= ~RESBITS_PENDING;
+}
+
+unsigned PlayerUpgradeCounts::getNumWeaponImpactClassUpgrades(WEAPON_SUBCLASS subClass)
 {
 	auto subClassStr = getWeaponSubClass(subClass);
 	auto it = numWeaponImpactClassUpgrades.find(subClassStr);
-	if (it == numWeaponImpactClassUpgrades.end())
-	{
+	if (it == numWeaponImpactClassUpgrades.end()) {
 		return 0;
 	}
 	return it->second;
 }
 
-static inline const char* bodyClassToStr(BodyClass bodyClass)
+static const char* bodyClassToStr(BODY_CLASS bodyClass)
 {
 	const char* bodyClassStr = nullptr;
-	switch (bodyClass)
-	{
-	case BodyClass::Tank:
+	switch (bodyClass) {
+	case BODY_CLASS::Tank:
 		bodyClassStr = "Droids";
 		break;
-	case BodyClass::Cyborg:
+	case BODY_CLASS::Cyborg:
 		bodyClassStr = "Cyborgs";
 		break;
 	}
 	return bodyClassStr;
 }
 
-uint32_t PlayerUpgradeCounts::getNumBodyClassArmourUpgrades(BodyClass bodyClass)
+
+
+unsigned PlayerUpgradeCounts::getNumBodyClassArmourUpgrades(BODY_CLASS bodyClass)
 {
-	const char* bodyClassStr = bodyClassToStr(bodyClass);
+  const char* bodyClassStr = bodyClassToStr(bodyClass);
 	auto it = numBodyClassArmourUpgrades.find(bodyClassStr);
 	if (it == numBodyClassArmourUpgrades.end())
 	{
@@ -157,7 +270,7 @@ uint32_t PlayerUpgradeCounts::getNumBodyClassArmourUpgrades(BodyClass bodyClass)
 	return it->second;
 }
 
-uint32_t PlayerUpgradeCounts::getNumBodyClassThermalArmourUpgrades(BodyClass bodyClass)
+unsigned PlayerUpgradeCounts::getNumBodyClassThermalArmourUpgrades(BODY_CLASS bodyClass)
 {
 	const char* bodyClassStr = bodyClassToStr(bodyClass);
 	auto it = numBodyClassThermalUpgrades.find(bodyClassStr);
@@ -168,86 +281,31 @@ uint32_t PlayerUpgradeCounts::getNumBodyClassThermalArmourUpgrades(BodyClass bod
 	return it->second;
 }
 
-uint32_t getNumWeaponImpactClassUpgrades(uint32_t player, WEAPON_SUBCLASS subClass)
+unsigned getNumWeaponImpactClassUpgrades(uint32_t player, WEAPON_SUBCLASS subClass)
 {
 	ASSERT_OR_RETURN(0, player < playerUpgradeCounts.size(), "Out of bounds player: %" PRIu32 "", player);
 	return playerUpgradeCounts[player].getNumWeaponImpactClassUpgrades(subClass);
 }
 
-uint32_t getNumBodyClassArmourUpgrades(uint32_t player, BodyClass bodyClass)
+unsigned getNumBodyClassArmourUpgrades(uint32_t player, BODY_CLASS bodyClass)
 {
 	ASSERT_OR_RETURN(0, player < playerUpgradeCounts.size(), "Out of bounds player: %" PRIu32 "", player);
 	return playerUpgradeCounts[player].getNumBodyClassArmourUpgrades(bodyClass);
 }
 
-uint32_t getNumBodyClassThermalArmourUpgrades(uint32_t player, BodyClass bodyClass)
+unsigned getNumBodyClassThermalArmourUpgrades(uint32_t player, BODY_CLASS bodyClass)
 {
 	ASSERT_OR_RETURN(0, player < playerUpgradeCounts.size(), "Out of bounds player: %" PRIu32 "", player);
 	return playerUpgradeCounts[player].getNumBodyClassThermalArmourUpgrades(bodyClass);
 }
 
-class CycleDetection
-{
-private:
-	CycleDetection()
-	{
-	}
-
-	std::unordered_set<RESEARCH*> visited;
-	std::unordered_set<RESEARCH*> exploring;
-
-	nonstd::optional<std::deque<RESEARCH*>> explore(RESEARCH* research)
-	{
-		if (visited.find(research) != visited.end())
-		{
-			return nonstd::nullopt;
-		}
-
-		if (exploring.find(research) != exploring.end())
-		{
-			return {{research}};
-		}
-
-		exploring.insert(research);
-
-		for (auto requirementIndex : research->pPRList)
-		{
-			auto requirement = &asResearch[requirementIndex];
-			if (auto cycle = explore(requirement))
-			{
-				cycle->push_front(research);
-				return cycle;
-			}
-		}
-
-		exploring.erase(exploring.find(research));
-		visited.insert(research);
-		return nonstd::nullopt;
-	}
-
-public:
-	static nonstd::optional<std::deque<RESEARCH*>> detectCycle()
-	{
-		CycleDetection detection;
-
-		for (auto& research : asResearch)
-		{
-			if (auto cycle = detection.explore(&research))
-			{
-				return cycle;
-			}
-		}
-
-		return nonstd::nullopt;
-	}
-};
 
 /** Load the research stats */
 bool loadResearch(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	PLAYER_RESEARCH dummy;
+	PlayerResearch dummy;
 	memset(&dummy, 0, sizeof(dummy));
 	std::vector<std::vector<WzString>> preResearch;
 	preResearch.resize(list.size());
@@ -260,7 +318,7 @@ bool loadResearch(WzConfig& ini)
 		}
 
 		ini.beginGroup(list[inc]);
-		RESEARCH research;
+		ResearchStats research;
 		research.index = inc;
 		research.name = ini.string("name");
 		research.id = list[inc];
@@ -296,20 +354,19 @@ bool loadResearch(WzConfig& ini)
 			research.keyTopic = 0;
 		}
 
-		//set tech code
-		UBYTE techCode = ini.value("techCode", 0).toUInt();
+		uint8_t techCode = ini.value("techCode", 0).toUInt();
 		ASSERT(techCode <= 1, "Invalid tech code for research topic - '%s' ", getStatsName(&research));
 		if (techCode == 0)
 		{
-			research.techCode = TC_MAJOR;
+			research.techCode = static_cast<uint8_t>(TECH_CODE::MAJOR);
 		}
 		else
 		{
-			research.techCode = TC_MINOR;
+			research.techCode = static_cast<uint8_t>(TECH_CODE::MINOR);
 		}
 
 		//get flags when to disable tech
-		UBYTE disabledWhen = ini.value("disabledWhen", 0).toUInt();
+		uint8_t disabledWhen = ini.value("disabledWhen", 0).toUInt();
 		ASSERT(disabledWhen <= MPFLAGS_MAX, "Invalid disabled tech flag for research topic - '%s' ",
 		       getStatsName(&research));
 		research.disabledWhen = disabledWhen;
@@ -356,10 +413,10 @@ bool loadResearch(WzConfig& ini)
 		if (msgName.compare("") != 0)
 		{
 			//check its a major tech code
-			ASSERT(research.techCode == TC_MAJOR,
+			ASSERT(research.techCode == TECH_CODE::MAJOR,
 			       "This research should not have a message associated with it, '%s' the message will be ignored!",
 			       getStatsName(&research));
-			if (research.techCode == TC_MAJOR)
+			if (research.techCode == TECH_CODE::MAJOR)
 			{
 				research.pViewData = getViewData(msgName);
 			}
@@ -369,13 +426,13 @@ bool loadResearch(WzConfig& ini)
 		unsigned int resPoints = ini.value("researchPoints", 0).toUInt();
 		ASSERT_OR_RETURN(false, resPoints <= UWORD_MAX, "Research Points too high for research topic - '%s' ",
 		                 getStatsName(&research));
-		research.researchPoints = resPoints;
+		research.researchPointsRequired = resPoints;
 
 		//set the research power
 		unsigned int resPower = ini.value("researchPower", 0).toUInt();
 		ASSERT_OR_RETURN(false, resPower <= UWORD_MAX, "Research Power too high for research topic - '%s' ",
 		                 getStatsName(&research));
-		research.researchPower = resPower;
+		research.powerCost = resPower;
 
 		//remember research pre-requisites for futher checking
 		preResearch[inc] = ini.value("requiredResearch").toWzStringList();
@@ -504,7 +561,7 @@ bool loadResearch(WzConfig& ini)
 		for (size_t j = 0; j < preRes.size(); j++)
 		{
 			WzString resID = preRes[j].trimmed();
-			RESEARCH* preResItem = getResearch(resID.toUtf8().c_str());
+			ResearchStats* preResItem = getResearch(resID.toUtf8().c_str());
 			ASSERT(preResItem != nullptr, "Invalid item '%s' in list of pre-requisites of research '%s' ",
 			       resID.toUtf8().c_str(), getStatsName(&asResearch[inc]));
 			if (preResItem != nullptr)
@@ -535,8 +592,8 @@ bool researchAvailable(int inc, UDWORD playerID, QUEUE_MODE mode)
 	}
 
 	// Decide whether to use IsResearchCancelledPending/IsResearchStartedPending or IsResearchCancelled/IsResearchStarted.
-	bool (*IsResearchCancelledFunc)(PLAYER_RESEARCH const*) = IsResearchCancelledPending;
-	bool (*IsResearchStartedFunc)(PLAYER_RESEARCH const*) = IsResearchStartedPending;
+	bool (*IsResearchCancelledFunc)(PlayerResearch const*) = IsResearchCancelledPending;
+	bool (*IsResearchStartedFunc)(PlayerResearch const*) = IsResearchStartedPending;
 	if (mode == ModeImmediate)
 	{
 		IsResearchCancelledFunc = IsResearchCancelled;
@@ -577,7 +634,7 @@ bool researchAvailable(int inc, UDWORD playerID, QUEUE_MODE mode)
 	{
 		Structure* psBuilding = findResearchingFacilityByResearchIndex(playerID, inc);
 		// May fail to find the structure here, if the research is merely pending, not actually started.
-		if (psBuilding != nullptr && psBuilding->status == SS_BEING_BUILT)
+		if (psBuilding != nullptr && psBuilding->status == STRUCTURE_STATE::BEING_BUILT)
 		{
 			researchStarted = false;
 			// Although research is started, the facility is currently being upgraded or demolished, so we want to be able to research this elsewhere.
@@ -691,7 +748,7 @@ static inline int64_t iDivCeil(int64_t dividend, int64_t divisor)
 	return (dividend / divisor) + static_cast<int64_t>((dividend % divisor != 0 && hasPosQuotient));
 }
 
-static void eventResearchedHandleUpgrades(const RESEARCH* psResearch, const Structure* psStruct, int player)
+static void eventResearchedHandleUpgrades(const ResearchStats* psResearch, const Structure* psStruct, int player)
 {
 	if (cachedStatsObject.is_null()) { cachedStatsObject = wzapi::constructStatsObject(); }
 	if (cachedPerPlayerUpgrades.empty()) { cachedPerPlayerUpgrades = wzapi::getUpgradesObject(); }
@@ -976,7 +1033,7 @@ void researchResult(UDWORD researchIndex, UBYTE player, bool bDisplay, Structure
 	ASSERT_OR_RETURN(, researchIndex < asResearch.size(), "Invalid research index %u", researchIndex);
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "invalid player: %" PRIu8 "", player);
 
-	RESEARCH* pResearch = &asResearch[researchIndex];
+	ResearchStats* pResearch = &asResearch[researchIndex];
 	MESSAGE* pMessage;
 	//the message gets sent to console
 	char consoleMsg[MAX_RESEARCH_MSG_SIZE];
@@ -1048,7 +1105,7 @@ void researchResult(UDWORD researchIndex, UBYTE player, bool bDisplay, Structure
 	}
 
 	//Add message to player's list if Major Topic
-	if ((pResearch->techCode == TC_MAJOR) && bDisplay)
+	if ((pResearch->techCode == TECH_CODE::MAJOR) && bDisplay)
 	{
 		//only play sound if major topic
 		if (player == selectedPlayer)
@@ -1189,18 +1246,18 @@ void CancelAllResearch(UDWORD pl)
 void cancelResearch(Structure* psBuilding, QUEUE_MODE mode)
 {
 	UDWORD topicInc;
-	PLAYER_RESEARCH* pPlayerRes;
+	PlayerResearch* pPlayerRes;
 
 	ASSERT_OR_RETURN(, psBuilding->pStructureType && psBuilding->pStructureType->type == REF_RESEARCH,
 	                   "Structure not a research facility");
 
 	ResearchFacility* psResFac = &psBuilding->pFunctionality->researchFacility;
-	if (!(RESEARCH*)psResFac->psSubject)
+	if (!(ResearchStats*)psResFac->psSubject)
 	{
 		debug(LOG_SYNC, "Invalid research topic");
 		return;
 	}
-	topicInc = ((RESEARCH*)psResFac->psSubject)->index;
+	topicInc = ((ResearchStats*)psResFac->psSubject)->index;
 	ASSERT_OR_RETURN(, topicInc <= asResearch.size(), "Invalid research topic %u (max %d)", topicInc,
 	                   (int)asResearch.size());
 	pPlayerRes = &asPlayerResList[psBuilding->player][topicInc];
@@ -1236,7 +1293,7 @@ void cancelResearch(Structure* psBuilding, QUEUE_MODE mode)
 }
 
 /* For a given view data get the research this is related to */
-RESEARCH* getResearchForMsg(const VIEWDATA* pViewData)
+ResearchStats* getResearchForMsg(const VIEWDATA* pViewData)
 {
 	for (auto& inc : asResearch)
 	{
@@ -1424,7 +1481,7 @@ SDWORD mapIconToRID(UDWORD iconID)
 }
 
 //return a pointer to a research topic based on the name
-RESEARCH* getResearch(const char* pName)
+ResearchStats* getResearch(const char* pName)
 {
 	for (auto& inc : asResearch)
 	{
@@ -1499,7 +1556,7 @@ static void replaceComponent(ComponentStats* pNewComponent, ComponentStats* pOld
 
 /*Looks through all the currently allocated stats to check the name is not
 a duplicate*/
-static bool checkResearchName(RESEARCH* psResearch, UDWORD numStats)
+static bool checkResearchName(ResearchStats* psResearch, UDWORD numStats)
 {
 	for (size_t inc = 0; inc < numStats; inc++)
 	{
@@ -1511,7 +1568,7 @@ static bool checkResearchName(RESEARCH* psResearch, UDWORD numStats)
 
 /* Sets the 'possible' flag for a player's research so the topic will appear in
 the research list next time the Research Facility is selected */
-bool enableResearch(RESEARCH* psResearch, UDWORD player)
+bool enableResearch(ResearchStats* psResearch, UDWORD player)
 {
 	UDWORD inc;
 
@@ -1553,14 +1610,14 @@ void researchReward(UBYTE losingPlayer, UBYTE rewardPlayer)
 			ResearchFacility* psFacility = (ResearchFacility*)psStruct->pFunctionality;
 			if (psFacility->psBestTopic)
 			{
-				topicIndex = ((RESEARCH*)psFacility->psBestTopic)->ref - STAT_RESEARCH;
+				topicIndex = ((ResearchStats*)psFacility->psBestTopic)->ref - STAT_RESEARCH;
 				if (topicIndex)
 				{
 					//if it cost more - it is better (or should be)
-					if (researchPoints < asResearch[topicIndex].researchPoints)
+					if (researchPoints < asResearch[topicIndex].researchPointsRequired)
 					{
 						//store the 'best' topic
-						researchPoints = asResearch[topicIndex].researchPoints;
+						researchPoints = asResearch[topicIndex].researchPointsRequired;
 						rewardID = topicIndex;
 					}
 				}
@@ -1767,8 +1824,8 @@ std::vector<AllyResearch> const& listAllyResearch(unsigned ref)
 					continue; // Not a researching research facility.
 				}
 
-				RESEARCH const& subject = *res->psSubject;
-				PLAYER_RESEARCH const& playerRes = asPlayerResList[player][subject.index];
+				ResearchStats const& subject = *res->psSubject;
+				PlayerResearch const& playerRes = asPlayerResList[player][subject.index];
 				unsigned cRef = subject.ref;
 
 				AllyResearch r;
@@ -1778,7 +1835,7 @@ std::vector<AllyResearch> const& listAllyResearch(unsigned ref)
 				r.timeToResearch = -1;
 				if (r.powerNeeded == -1)
 				{
-					r.timeToResearch = (subject.researchPoints - playerRes.currentPoints) / std::max(
+					r.timeToResearch = (subject.researchPointsRequired - playerRes.currentPoints) / std::max(
 						getBuildingResearchPoints(psStruct), 1);
 				}
 				r.active = psStruct->status == SS_BUILT;

@@ -1,7 +1,7 @@
 /*
 	This file is part of Warzone 2100.
-	Copyright (C) 1999-2004  Eidos Interactive
-	Copyright (C) 2005-2020  Warzone 2100 Project
+	Copyright (C) 1999-2004 Eidos Interactive
+	Copyright (C) 2005-2020 Warzone 2100 Project
 
 	Warzone 2100 is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -17,44 +17,40 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file design.c
- *
+ * @file design.cpp
  * Functions for design screen.
- *
  */
-#include <string.h>
+ 
+#include <cstring>
 #include <algorithm>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/input.h"
-#include "lib/widget/widget.h"
-#include "lib/widget/bar.h"
-
-#include "objects.h"
-#include "loop.h"
-#include "map.h"
-
-/* Includes direct access to render library */
 #include "lib/ivis_opengl/ivisdef.h"
 #include "lib/ivis_opengl/bitimage.h"
 #include "lib/ivis_opengl/pieblitfunc.h"
-// FIXME Direct iVis implementation include!
-#include "lib/ivis_opengl/piematrix.h"//matrix code
+#include "lib/ivis_opengl/piematrix.h"
 #include "lib/ivis_opengl/screen.h"
 #include "lib/ivis_opengl/piemode.h"
 #include "lib/ivis_opengl/textdraw.h"
 #include "lib/ivis_opengl/ivisdef.h"
+#include "lib/widget/widget.h"
+#include "lib/widget/bar.h"
+#include "lib/widget/button.h"
+#include "lib/gamelib/gtime.h"
 
+#include "loop.h"
+#include "map.h"
+#include "objects.h"
 #include "objmem.h"
 #include "display3d.h"
 #include "structure.h"
 #include "research.h"
-#include "lib/gamelib/gtime.h"
 #include "hci.h"
 #include "stats.h"
 #include "power.h"
-#include "lib/widget/button.h"
 #include "order.h"
 #include "projectile.h"
 #include "intimage.h"
@@ -70,26 +66,20 @@
 #include "qtscript.h"
 #include "animation.h"
 
-#if defined(__clang__)
-#pragma clang diagnostic ignored "-Wcast-align"	// TODO: FIXME!
-#elif defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Wcast-align"	// TODO: FIXME!
-#endif
+// Max number of stats the design screen can cope with.
+static constexpr auto MAX_DESIGN_COMPONENTS = 40;
+static constexpr auto MAX_SYSTEM_COMPONENTS = 65535;
 
+/* Max values for the design bar graphs */
 
-#define MAX_DESIGN_COMPONENTS 40		// Max number of stats the design screen can cope with.
-#define MAX_SYSTEM_COMPONENTS 65535
+/// Maximum body points for a template
+static constexpr auto DBAR_TEMPLATEMAXPOINTS = 8400;
 
-
-/***************************************************************************************/
-/*                  Max values for the design bar graphs                               */
-
-#define DBAR_TEMPLATEMAXPOINTS      8400            //maximum body points for a template
-#define DBAR_TEMPLATEMAXPOWER       1000            //maximum power points for a template
+/// Maximum power points for a template
+static constexpr auto DBAR_TEMPLATEMAXPOWER = 1000;
 
 /* The maximum number of characters on the component buttons */
-#define DES_COMPBUTMAXCHAR			5
-
+static constexpr auto DES_COMPBUTMAXCHAR = 5;
 
 /* Which type of system is displayed on the design screen */
 enum DES_SYSMODE
@@ -113,8 +103,8 @@ enum DES_SYSMODE
 static DES_SYSMODE desSysMode;
 
 /* The major component tabs on the design screen */
-#define IDES_MAINTAB	0
-#define IDES_EXTRATAB	1
+static constexpr auto IDES_MAINTAB = 0;
+static constexpr auto IDES_EXTRATAB = 1;
 
 /* Which component type is being selected on the design screen */
 //added IDES_TURRET_A,IDES_TURRET_B,changing the name of IDES_TURRET might break exist codes
@@ -152,103 +142,104 @@ enum DES_PROPMODE
 static DES_PROPMODE desPropMode;
 
 
-#define STRING_BUFFER_SIZE (32 * MAX_STR_LENGTH)
+static constexpr auto STRING_BUFFER_SIZE = (32 * MAX_STR_LENGTH);
 char StringBuffer[STRING_BUFFER_SIZE];
 
 /* Design screen positions */
-#define DESIGN_Y				(59 + D_H)	//the top left y value for all forms on the design screen
+//the top left y value for all forms on the design screen
+static const auto DESIGN_Y = (59 + D_H);
 
-#define DES_TABBUTGAP		2
-#define DES_TABBUTWIDTH		60
-#define DES_TABBUTHEIGHT	46
+static constexpr auto DES_TABBUTGAP = 2;
+static constexpr auto DES_TABBUTWIDTH = 60;
+static constexpr auto DES_TABBUTHEIGHT = 46;
 
-#define DES_LEFTFORMX		RET_X
-#define DES_LEFTFORMY		DESIGN_Y
-#define DES_LEFTFORMWIDTH	RET_FORMWIDTH
-#define DES_LEFTFORMHEIGHT	273
-#define	DES_LEFTFORMBUTX	2
-#define	DES_LEFTFORMBUTY	2
+static constexpr auto DES_LEFTFORMX = RET_X;
+static const auto DES_LEFTFORMY = DESIGN_Y;
+static constexpr auto DES_LEFTFORMWIDTH = RET_FORMWIDTH;
+static constexpr auto DES_LEFTFORMHEIGHT = 273;
+static constexpr auto DES_LEFTFORMBUTX = 2;
+static constexpr auto DES_LEFTFORMBUTY = 2;
 
-#define DES_CENTERFORMWIDTH		315
-#define DES_CENTERFORMHEIGHT	262
-#define DES_CENTERFORMX			POW_X
-#define DES_CENTERFORMY			DESIGN_Y
+static constexpr auto DES_CENTERFORMWIDTH = 315;
+static constexpr auto DES_CENTERFORMHEIGHT = 262;
+static const auto DES_CENTERFORMX = POW_X;
+static const auto DES_CENTERFORMY = DESIGN_Y;
 
-#define DES_3DVIEWX				8
-#define DES_3DVIEWY				25
-#define DES_3DVIEWWIDTH			236
-#define DES_3DVIEWHEIGHT		192
+static constexpr auto DES_3DVIEWX = 8;
+static constexpr auto DES_3DVIEWY = 25;
+static constexpr auto DES_3DVIEWWIDTH = 236;
+static constexpr auto DES_3DVIEWHEIGHT = 192;
 
-#define	DES_STATSFORMX			POW_X
-#define	DES_STATSFORMY			(DES_CENTERFORMY + DES_CENTERFORMHEIGHT + 3)
-#define	DES_STATSFORMWIDTH		DES_CENTERFORMWIDTH
-#define	DES_STATSFORMHEIGHT		100
+static const auto DES_STATSFORMX = POW_X;
+static const auto DES_STATSFORMY = (DES_CENTERFORMY + DES_CENTERFORMHEIGHT + 3);
+static constexpr auto DES_STATSFORMWIDTH = DES_CENTERFORMWIDTH;
+static constexpr auto DES_STATSFORMHEIGHT = 100;
 
-#define	DES_PARTFORMX			DES_3DVIEWX + DES_3DVIEWWIDTH + 2
-#define	DES_PARTFORMY			DES_3DVIEWY
-#define	DES_PARTFORMHEIGHT		DES_3DVIEWHEIGHT
+static constexpr auto DES_PARTFORMX = DES_3DVIEWX + DES_3DVIEWWIDTH + 2;
+static constexpr auto DES_PARTFORMY = DES_3DVIEWY;
+static constexpr auto DES_PARTFORMHEIGHT = DES_3DVIEWHEIGHT;
 
-#define DES_POWERFORMX			DES_3DVIEWX
-#define DES_POWERFORMY			(DES_3DVIEWY + DES_3DVIEWHEIGHT + 2)
-#define DES_POWERFORMWIDTH		(DES_CENTERFORMWIDTH - 2*DES_POWERFORMX)
-#define DES_POWERFORMHEIGHT		40
+static constexpr auto DES_POWERFORMX = DES_3DVIEWX;
+static constexpr auto DES_POWERFORMY = (DES_3DVIEWY + DES_3DVIEWHEIGHT + 2);
+static constexpr auto DES_POWERFORMWIDTH = (DES_CENTERFORMWIDTH - 2*DES_POWERFORMX);
+static constexpr auto DES_POWERFORMHEIGHT = 40;
 
-#define DES_RIGHTFORMWIDTH	(RET_FORMWIDTH + 20)
-#define DES_RIGHTFORMHEIGHT DES_LEFTFORMHEIGHT
-#define	DES_RIGHTFORMBUTX	2
-#define	DES_RIGHTFORMBUTY	2
+static constexpr auto DES_RIGHTFORMWIDTH = (RET_FORMWIDTH + 20);
+static constexpr auto DES_RIGHTFORMHEIGHT = DES_LEFTFORMHEIGHT;
+static constexpr auto DES_RIGHTFORMBUTX = 2;
+static constexpr auto DES_RIGHTFORMBUTY = 2;
 
-#define DES_BARFORMX		6
-#define DES_BARFORMY		6
-#define	DES_BARFORMWIDTH	300
-#define	DES_BARFORMHEIGHT	85
+static constexpr auto DES_BARFORMX = 6;
+static constexpr auto DES_BARFORMY = 6;
+static constexpr auto DES_BARFORMWIDTH = 300;
+static constexpr auto DES_BARFORMHEIGHT = 85;
 
-#define DES_NAMEBOXX		DES_3DVIEWX
-#define DES_NAMEBOXY		6
-#define	DES_NAMEBOXWIDTH	DES_CENTERFORMWIDTH - 2*DES_NAMEBOXX
-#define	DES_NAMEBOXHEIGHT	14
+static constexpr auto DES_NAMEBOXX = DES_3DVIEWX;
+static constexpr auto DES_NAMEBOXY = 6;
+static constexpr auto DES_NAMEBOXWIDTH = DES_CENTERFORMWIDTH - 2*DES_NAMEBOXX;
+static constexpr auto DES_NAMEBOXHEIGHT = 14;
 
 /* The central boxes on the design screen */
-#define DES_COMPBUTWIDTH	150
-#define DES_COMPBUTHEIGHT	85
+static constexpr auto DES_COMPBUTWIDTH = 150;
+static constexpr auto DES_COMPBUTHEIGHT = 85;
 
-#define DES_POWERX				1
-#define DES_POWERY				6
-#define DES_POWERSEPARATIONX	4
-#define DES_POWERSEPARATIONY	2
+static constexpr auto DES_POWERX = 1;
+static constexpr auto DES_POWERY = 6;
+static constexpr auto DES_POWERSEPARATIONX = 4;
+static constexpr auto DES_POWERSEPARATIONY = 2;
 
-#define	DES_PARTSEPARATIONX		6
-#define	DES_PARTSEPARATIONY		6
+static constexpr auto DES_PARTSEPARATIONX = 6;
+static constexpr auto DES_PARTSEPARATIONY = 6;
 
 /* Positions of stuff on the clickable boxes (Design screen) */
-#define DES_CLICKBARX			154
-#define DES_CLICKBARY			7
-#define DES_CLICKBARWIDTH		140
-#define DES_CLICKBARHEIGHT		11
-#define DES_CLICKGAP			9
-#define DES_CLICKBARNAMEX		126
-#define DES_CLICKBARNAMEWIDTH	20
-#define DES_CLICKBARNAMEHEIGHT	19
+static constexpr auto DES_CLICKBARX = 154;
+static constexpr auto DES_CLICKBARY = 7;
+static constexpr auto DES_CLICKBARWIDTH = 140;
+static constexpr auto DES_CLICKBARHEIGHT = 11;
+static constexpr auto DES_CLICKGAP = 9;
+static constexpr auto DES_CLICKBARNAMEX = 126;
+static constexpr auto DES_CLICKBARNAMEWIDTH = 20;
+static constexpr auto DES_CLICKBARNAMEHEIGHT = 19;
 
-#define DES_CLICKBARMAJORRED	255		//0xcc
-#define DES_CLICKBARMAJORGREEN	235		//0
-#define DES_CLICKBARMAJORBLUE	19		//0
-#define DES_CLICKBARMINORRED	0x55
-#define DES_CLICKBARMINORGREEN	0
-#define DES_CLICKBARMINORBLUE	0
+//0xcc
+static constexpr auto DES_CLICKBARMAJORRED = 255;
+//0
+static constexpr auto DES_CLICKBARMAJORGREEN = 235;
+//0
+static constexpr auto DES_CLICKBARMAJORBLUE = 19;
+static constexpr auto DES_CLICKBARMINORRED = 0x55;
+static constexpr auto DES_CLICKBARMINORGREEN = 0;
+static constexpr auto DES_CLICKBARMINORBLUE = 0;
 
-#define DES_WEAPONBUTTON_X		26
-#define DES_SYSTEMBUTTON_X		68
-#define DES_SYSTEMBUTTON_Y		10
+static constexpr auto DES_WEAPONBUTTON_X = 26;
+static constexpr auto DES_SYSTEMBUTTON_X = 68;
+static constexpr auto DES_SYSTEMBUTTON_Y = 10;
 
 // Stat bar y positions.
-#define	DES_STATBAR_Y1	(DES_CLICKBARY)
-#define	DES_STATBAR_Y2	(DES_CLICKBARY+DES_CLICKBARHEIGHT + DES_CLICKGAP)
-#define	DES_STATBAR_Y3	(DES_CLICKBARY+(DES_CLICKBARHEIGHT + DES_CLICKGAP)*2)
-#define	DES_STATBAR_Y4	(DES_CLICKBARY+(DES_CLICKBARHEIGHT + DES_CLICKGAP)*3)
-
-/* the widget screen */
-extern std::shared_ptr<W_SCREEN> psWScreen;
+static constexpr auto DES_STATBAR_Y1 = (DES_CLICKBARY);
+static constexpr auto DES_STATBAR_Y2 = (DES_CLICKBARY+DES_CLICKBARHEIGHT + DES_CLICKGAP);
+static constexpr auto DES_STATBAR_Y3 = (DES_CLICKBARY+(DES_CLICKBARHEIGHT + DES_CLICKGAP)*2);
+static constexpr auto DES_STATBAR_Y4 = (DES_CLICKBARY+(DES_CLICKBARHEIGHT + DES_CLICKGAP)*3);
 
 /* default droid design template */
 static DroidTemplate sDefaultDesignTemplate;
@@ -439,7 +430,8 @@ protected:
 	WzText valueText;
 	WzText deltaText;
 	uint32_t maxValueTextWidth = iV_GetTextWidth("00000", font_regular);
-	Animation<float> minorAnimation = Animation<float>(realTime, EASE_IN, 200).setInitialData(0).setFinalData(0);
+	Animation<float> minorAnimation = Animation<float>(
+          realTime, EASING_FUNCTION::EASE_IN, 200).setInitialData(0).setFinalData(0);
 	const uint32_t PADDING = 3;
 	bool lessIsBetter = false;
 };
@@ -447,7 +439,7 @@ protected:
 class DesignPowerBar : public DesignStatsBar
 {
 public:
-	DesignPowerBar(W_BARINIT* init): DesignStatsBar(init)
+	explicit DesignPowerBar(W_BARINIT* init): DesignStatsBar(init)
 	{
 	}
 
@@ -897,7 +889,8 @@ bool intAddDesign(bool bShowCentreScreen)
 	sBarInit.formID = IDDES_BODYFORM;
 	sBarInit.id = IDDES_BODYARMOUR_K;
 	sBarInit.x = DES_CLICKBARX;
-	sBarInit.y = DES_STATBAR_Y1; //DES_CLICKBARY;
+//DES_CLICKBARY;
+	sBarInit.y = DES_STATBAR_Y1;
 	sBarInit.width = DES_CLICKBARWIDTH;
 	sBarInit.height = DES_CLICKBARHEIGHT;
 	sBarInit.size = 50;
@@ -912,19 +905,22 @@ bool intAddDesign(bool bShowCentreScreen)
 	bodyForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 	sBarInit.id = IDDES_BODYARMOUR_H;
-	sBarInit.y = DES_STATBAR_Y2; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+	sBarInit.y = DES_STATBAR_Y2;
 	sBarInit.pTip = _("Thermal Armour");
 	sBarInit.iRange = getDesignMaxBodyArmour(WC_HEAT);
 	bodyForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 	sBarInit.id = IDDES_BODYPOWER;
-	sBarInit.y = DES_STATBAR_Y3; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+	sBarInit.y = DES_STATBAR_Y3;
 	sBarInit.pTip = _("Engine Output");
 	sBarInit.iRange = getDesignMaxEngineOutput();
 	bodyForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 	sBarInit.id = IDDES_BODYWEIGHT;
-	sBarInit.y = DES_STATBAR_Y4; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+	sBarInit.y = DES_STATBAR_Y4;
 	sBarInit.pTip = _("Weight");
 	sBarInit.iRange = findMaxWeight(bodyIterator());
 	bodyForm->attach(DesignStatsBar::makeLessIsBetter(&sBarInit));
@@ -1008,7 +1004,8 @@ bool intAddDesign(bool bShowCentreScreen)
 		iV_GetImageWidth(IntImages, IMAGE_DES_BODYPOINTS));
 	sBarInit.height = iV_GetImageHeight(IntImages, IMAGE_DES_POWERBACK);
 	sBarInit.pTip = _("Total Power Required");
-	sBarInit.iRange = DBAR_TEMPLATEMAXPOWER; //WBAR_SCALE;
+//WBAR_SCALE;
+	sBarInit.iRange = DBAR_TEMPLATEMAXPOWER;
 	powerForm->attach(DesignPowerBar::makeLessIsBetter(&sBarInit));
 
 	/* Add the design template body points bar and label*/
@@ -1397,7 +1394,8 @@ const char* GetDefaultTemplateName(DroidTemplate* psTemplate)
 	/*
 		Now get the normal default droid name based on its components
 	*/
-	aCurrName[0] = '\0'; // Reset string to null
+// Reset string to null
+	aCurrName[0] = '\0';
 	psStats = intChooseSystemStats(psTemplate);
 	if (psTemplate->asWeaps[0] != 0 ||
 		psTemplate->asParts[COMP_CONSTRUCT] != 0 ||
@@ -1450,7 +1448,8 @@ static void intSetEditBoxTextFromTemplate(DroidTemplate* psTemplate)
 	}
 	else
 	{
-		GetDefaultTemplateName(psTemplate); // sets aCurrName
+// sets aCurrName
+		GetDefaultTemplateName(psTemplate);
 	}
 
 	widgSetString(psWScreen, IDDES_NAMEBOX, aCurrName);
@@ -1528,9 +1527,12 @@ static bool intSetSystemForm(ComponentStats* psStats)
 	sFormInit.style = (WFORM_CLICKABLE | WFORM_NOCLICKMOVE);
 	sFormInit.x = DES_BARFORMX;
 	sFormInit.y = DES_BARFORMY;
-	sFormInit.width = DES_BARFORMWIDTH; //COMPBUTWIDTH;
-	sFormInit.height = DES_BARFORMHEIGHT; //COMPBUTHEIGHT;
-	sFormInit.pTip = getStatsName(psStats); // set form tip to stats string
+//COMPBUTWIDTH;
+	sFormInit.width = DES_BARFORMWIDTH;
+//COMPBUTHEIGHT;
+	sFormInit.height = DES_BARFORMHEIGHT;
+// set form tip to stats string
+	sFormInit.pTip = getStatsName(psStats);
 	sFormInit.pUserData = psStats; /* store component stats */
 	sFormInit.pDisplay = intDisplayStatForm;
 	auto systemForm = widgAddForm(psWScreen, &sFormInit);
@@ -1544,7 +1546,8 @@ static bool intSetSystemForm(ComponentStats* psStats)
 	sBarInit.formID = IDDES_SYSTEMFORM;
 	//sBarInit.style = WBAR_DOUBLE;
 	sBarInit.x = DES_CLICKBARX;
-	sBarInit.y = DES_STATBAR_Y1; //DES_CLICKBARY;
+//DES_CLICKBARY;
+	sBarInit.y = DES_STATBAR_Y1;
 	sBarInit.width = DES_CLICKBARWIDTH;
 	sBarInit.height = DES_CLICKBARHEIGHT;
 	sBarInit.sCol.byte.r = DES_CLICKBARMAJORRED;
@@ -1577,7 +1580,8 @@ static bool intSetSystemForm(ComponentStats* psStats)
 		sBarInit.denominator = 0;
 		sBarInit.precision = 0;
 		sBarInit.id = IDDES_SYSTEMSWEIGHT;
-		sBarInit.y = DES_STATBAR_Y2; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+		sBarInit.y = DES_STATBAR_Y2;
 		sBarInit.iRange = findMaxWeight(extraSystemIterator());
 		sBarInit.pTip = _("Weight");
 		systemForm->attach(DesignStatsBar::makeLessIsBetter(&sBarInit));
@@ -1608,7 +1612,8 @@ static bool intSetSystemForm(ComponentStats* psStats)
 		systemForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 		sBarInit.id = IDDES_SYSTEMSWEIGHT;
-		sBarInit.y = DES_STATBAR_Y2; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+		sBarInit.y = DES_STATBAR_Y2;
 		sBarInit.iRange = findMaxWeight(extraSystemIterator());
 		sBarInit.pTip = _("Weight");
 		systemForm->attach(DesignStatsBar::makeLessIsBetter(&sBarInit));
@@ -1639,7 +1644,8 @@ static bool intSetSystemForm(ComponentStats* psStats)
 		systemForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 		sBarInit.id = IDDES_SYSTEMSWEIGHT;
-		sBarInit.y = DES_STATBAR_Y2; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+		sBarInit.y = DES_STATBAR_Y2;
 		sBarInit.pTip = _("Weight");
 		sBarInit.iRange = findMaxWeight(extraSystemIterator());
 		systemForm->attach(DesignStatsBar::makeLessIsBetter(&sBarInit));
@@ -1673,7 +1679,8 @@ static bool intSetSystemForm(ComponentStats* psStats)
 		systemForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 		sBarInit.id = IDDES_SYSTEMSWEIGHT;
-		sBarInit.y = DES_STATBAR_Y2; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+		sBarInit.y = DES_STATBAR_Y2;
 		sBarInit.pTip = _("Weight");
 		sBarInit.iRange = findMaxWeight(extraSystemIterator());
 		systemForm->attach(DesignStatsBar::makeLessIsBetter(&sBarInit));
@@ -1708,19 +1715,22 @@ static bool intSetSystemForm(ComponentStats* psStats)
 		sBarInit.denominator = 1;
 		sBarInit.precision = 0;
 		sBarInit.id = IDDES_WEAPDAMAGE;
-		sBarInit.y = DES_STATBAR_Y2; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+		sBarInit.y = DES_STATBAR_Y2;
 		sBarInit.iRange = findMaxWeaponAttribute(weaponDamage);
 		sBarInit.pTip = _("Damage");
 		systemForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 		sBarInit.id = IDDES_WEAPROF;
-		sBarInit.y = DES_STATBAR_Y3; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+		sBarInit.y = DES_STATBAR_Y3;
 		sBarInit.iRange = findMaxWeaponAttribute(weaponROF);
 		sBarInit.pTip = _("Rate-of-Fire");
 		systemForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 		sBarInit.id = IDDES_SYSTEMSWEIGHT;
-		sBarInit.y = DES_STATBAR_Y4; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+		sBarInit.y = DES_STATBAR_Y4;
 		sBarInit.iRange = findMaxWeight(weaponIterator());
 		sBarInit.pTip = _("Weight");
 		systemForm->attach(DesignStatsBar::makeLessIsBetter(&sBarInit));
@@ -1823,9 +1833,12 @@ static bool intSetPropulsionForm(PropulsionStats* psStats)
 	sFormInit.style = WFORM_CLICKABLE | WFORM_NOCLICKMOVE;
 	sFormInit.x = DES_BARFORMX;
 	sFormInit.y = DES_BARFORMY;
-	sFormInit.width = DES_BARFORMWIDTH; //DES_COMPBUTWIDTH;
-	sFormInit.height = DES_BARFORMHEIGHT; //DES_COMPBUTHEIGHT;
-	sFormInit.pTip = getStatsName(psStats); // set form tip to stats string
+//DES_COMPBUTWIDTH;
+	sFormInit.width = DES_BARFORMWIDTH;
+//DES_COMPBUTHEIGHT;
+	sFormInit.height = DES_BARFORMHEIGHT;
+// set form tip to stats string
+	sFormInit.pTip = getStatsName(psStats);
 	sFormInit.pDisplay = intDisplayStatForm;
 	auto propulsionForm = widgAddForm(psWScreen, &sFormInit);
 	if (!propulsionForm)
@@ -1838,7 +1851,8 @@ static bool intSetPropulsionForm(PropulsionStats* psStats)
 	sBarInit.formID = IDDES_PROPFORM;
 	//sBarInit.style = WBAR_DOUBLE;
 	sBarInit.x = DES_CLICKBARX;
-	sBarInit.y = DES_STATBAR_Y1; //DES_CLICKBARY;
+//DES_CLICKBARY;
+	sBarInit.y = DES_STATBAR_Y1;
 	sBarInit.width = DES_CLICKBARWIDTH;
 	sBarInit.height = DES_CLICKBARHEIGHT;
 	sBarInit.sCol.byte.r = DES_CLICKBARMAJORRED;
@@ -1854,7 +1868,8 @@ static bool intSetPropulsionForm(PropulsionStats* psStats)
 	sLabInit.x = DES_CLICKBARNAMEX;
 	sLabInit.y = DES_CLICKBARY - DES_CLICKBARHEIGHT / 3;
 	sLabInit.width = DES_CLICKBARNAMEWIDTH;
-	sLabInit.height = DES_CLICKBARNAMEHEIGHT; //DES_CLICKBARHEIGHT;
+//DES_CLICKBARHEIGHT;
+	sLabInit.height = DES_CLICKBARNAMEHEIGHT;
 	sLabInit.pDisplay = intDisplayImage;
 
 	/* See what type of propulsion we've got */
@@ -1872,7 +1887,8 @@ static bool intSetPropulsionForm(PropulsionStats* psStats)
 		sBarInit.denominator = 1;
 		sBarInit.precision = 0;
 		sBarInit.id = IDDES_PROPWEIGHT;
-		sBarInit.y = DES_STATBAR_Y2; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+		sBarInit.y = DES_STATBAR_Y2;
 		sBarInit.iRange = findMax(propulsionIterator(), calculatePropulsionWeight);
 		sBarInit.pTip = _("Weight");
 		propulsionForm->attach(DesignStatsBar::makeLessIsBetter(&sBarInit));
@@ -1904,13 +1920,15 @@ static bool intSetPropulsionForm(PropulsionStats* psStats)
 		propulsionForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 		sBarInit.id = IDDES_PROPCOUNTRY;
-		sBarInit.y = DES_STATBAR_Y2; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+		sBarInit.y = DES_STATBAR_Y2;
 		sBarInit.pTip = _("Off-Road Speed");
 		sBarInit.iRange = findMaxPropulsionSpeed(TER_SANDYBRUSH);
 		propulsionForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 		sBarInit.id = IDDES_PROPWATER;
-		sBarInit.y = DES_STATBAR_Y3; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+		sBarInit.y = DES_STATBAR_Y3;
 		sBarInit.pTip = _("Water Speed");
 		sBarInit.iRange = findMaxPropulsionSpeed(TER_WATER);
 		propulsionForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
@@ -1918,7 +1936,8 @@ static bool intSetPropulsionForm(PropulsionStats* psStats)
 		sBarInit.denominator = 1;
 		sBarInit.precision = 0;
 		sBarInit.id = IDDES_PROPWEIGHT;
-		sBarInit.y = DES_STATBAR_Y4; //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+//+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
+		sBarInit.y = DES_STATBAR_Y4;
 		sBarInit.pTip = _("Weight");
 		sBarInit.iRange = findMax(propulsionIterator(), calculatePropulsionWeight);
 		propulsionForm->attach(DesignStatsBar::makeLessIsBetter(&sBarInit));
@@ -1942,7 +1961,8 @@ static bool intSetPropulsionForm(PropulsionStats* psStats)
 		sLabInit.id = IDDES_PROPWATERLAB;
 		sLabInit.y += DES_CLICKBARHEIGHT + DES_CLICKGAP;
 		sLabInit.pTip = _("Water Speed");
-		sLabInit.UserData = IMAGE_DES_HOVER; //WATER;
+//WATER;
+		sLabInit.UserData = IMAGE_DES_HOVER;
 		if (!widgAddLabel(psWScreen, &sLabInit))
 		{
 			return false;
@@ -2849,7 +2869,7 @@ static void intSetPropulsionShadowStats(PropulsionStats* psStats)
 	}
 }
 
-#define ASSERT_PLAYER_OR_RETURN(retVal, player) \
+static constexpr auto ASSERT_PLAYER_OR_RETURN(retVal, = player) \;
 	ASSERT_OR_RETURN(retVal, player >= 0 && player < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
 /* Check whether a droid template is valid */
@@ -3397,7 +3417,8 @@ void intProcessDesign(UDWORD id)
 					/* get previous template and set as current */
 					psTempl = templateFromButtonId(droidTemplID - 1, true);
 					// droidTemplID - 1 always valid (might be the first template), since droidTemplID is not the first template.
-					ASSERT_OR_RETURN(, psTempl != nullptr, "template not found! - unexpected!"); // see above comment
+// see above comment
+					ASSERT_OR_RETURN(, psTempl != nullptr, "template not found! - unexpected!");
 
 					/* update local list */
 					desSetupDesignTemplates();
@@ -3439,7 +3460,8 @@ void intProcessDesign(UDWORD id)
 				break;
 			}
 		case IDDES_STOREBUTTON:
-			sCurrDesign.is_stored = !sCurrDesign.is_stored; // Invert the current status
+// Invert the current status
+			sCurrDesign.is_stored = !sCurrDesign.is_stored;
 			saveTemplate();
 			storeTemplates();
 			updateStoreButton(sCurrDesign.is_stored);
@@ -3813,7 +3835,7 @@ static void intDisplayViewForm(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 	displayComponentButtonTemplate(&sCurrDesign, &Rotation, &Position, falseScale);
 }
 
-/* General display window for the design form  SOLID BACKGROUND - NOT TRANSPARENT*/
+/* General display window for the design form SOLID BACKGROUND - NOT TRANSPARENT*/
 static void intDisplayDesignForm(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	int x0 = xOffset + psWidget->x();
@@ -3839,7 +3861,8 @@ static bool saveTemplate()
 	if (bMultiPlayer)
 	{
 		widgReveal(psWScreen, IDDES_STOREBUTTON);
-		updateStoreButton(sCurrDesign.is_stored); // Change the buttons icon
+// Change the buttons icon
+		updateStoreButton(sCurrDesign.is_stored);
 	}
 
 	/* if first (New Design) button selected find empty template

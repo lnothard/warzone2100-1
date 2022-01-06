@@ -18,21 +18,34 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
+/**
+ * @file difficulty.h
+ */
+
 #ifndef __INCLUDED_SRC_DIFFICULTY_H__
 #define __INCLUDED_SRC_DIFFICULTY_H__
 
-enum DIFFICULTY_LEVEL
+enum class DIFFICULTY_LEVEL
 {
-	DL_EASY,
-	DL_NORMAL,
-	DL_HARD,
-	DL_INSANE
+	EASY,
+	NORMAL,
+	HARD,
+	INSANE
 };
 
 void setDamageModifiers(int playerModifier, int enemyModifier);
+
 void setDifficultyLevel(DIFFICULTY_LEVEL lev);
+
 DIFFICULTY_LEVEL getDifficultyLevel();
+
 int modifyForDifficultyLevel(int basicVal, bool IsPlayer);
+
+/**
+ * Reset damage modifiers changed by "double up" or "biffer baker"
+ * cheat and prevent campaign difficulty from influencing skirmish
+ * and multiplayer games
+ */
 void resetDamageModifiers();
 
 #endif // __INCLUDED_SRC_DIFFICULTY_H__

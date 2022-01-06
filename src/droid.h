@@ -17,73 +17,81 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Definitions for the droid object.
+
+/**
+ * @file droid.h
+ * Type definitions and interface for droids
  */
 
 #ifndef __INCLUDED_SRC_DROID_H__
 #define __INCLUDED_SRC_DROID_H__
 
-#include "lib/framework/string_ext.h"
-#include "lib/gamelib/gtime.h"
-
-#include "objectdef.h"
-#include "stats.h"
-#include "visibility.h"
-#include "selection.h"
-#include "basedef.h"
-#include "movedef.h"
-#include "orderdef.h"
-#include "statsdef.h"
-#include "unit.h"
-#include "weapondef.h"
-
 #include <vector>
 #include <queue>
 
+#include "basedef.h"
+#include "order.h"
+#include "selection.h"
+#include "statsdef.h"
+#include "structure.h"
+#include "unit.h"
+#include "visibility.h"
+#include "weapondef.h"
+
 /// world->screen check - alex
-#define OFF_SCREEN 9999
+static constexpr auto OFF_SCREEN = 9999;
 
 // Percentage of body points remaining at which to repair droid automatically.
-#define REPAIRLEV_LOW	50
+static constexpr auto REPAIRLEV_LOW	= 50;
 // Ditto, but this will repair much sooner.
-#define REPAIRLEV_HIGH	75
+static constexpr auto REPAIRLEV_HIGH = 75;
 
-#define DROID_RESISTANCE_FACTOR     30
+static constexpr auto DROID_RESISTANCE_FACTOR = 30;
 
 /// Changing this breaks campaign saves!
-#define MAX_RECYCLED_DROIDS 450
+static constexpr auto MAX_RECYCLED_DROIDS  = 450;
 
 /// Used to stop structures being built too near the edge and droids
 /// being placed down
-#define TOO_NEAR_EDGE 3
+static constexpr auto TOO_NEAR_EDGE  = 3;
 
 /* Experience modifiers */
 
 /// Damage of a droid is reduced by this value per experience level (in percent)
-#define EXP_REDUCE_DAMAGE 6
+static constexpr auto EXP_REDUCE_DAMAGE  = 6;
 /// Accuracy of a droid is increased by this value per experience level (in percent)
-#define EXP_ACCURACY_BONUS	5
+static constexpr auto EXP_ACCURACY_BONUS = 5;
 /// Speed of a droid is increased by this value per experience level (in percent)
-#define EXP_SPEED_BONUS 5
+static constexpr auto EXP_SPEED_BONUS = 5;
 
-/*!
+/**
  * The number of components in the asParts / asBits arrays.
  * Weapons are stored separately, thus the maximum index into the array
  * is 1 smaller than the number of components.
  */
-#define DROID_MAXCOMP (COMP_NUMCOMPONENTS - 1)
+static constexpr auto DROID_MAXCOMP = COMP_NUMCOMPONENTS -  1;
 
 /// The maximum number of droid weapons
-#define DROID_DAMAGE_SCALING 400
+static constexpr auto DROID_DAMAGE_SCALING  = 400;
+
+static constexpr auto DEFAULT_RECOIL_TIME	= GAME_TICKS_PER_SEC / 4;
+
+static const auto	DROID_DAMAGE_SPREAD = 16 - rand() % 32;
+static const auto DROID_REPAIR_SPREAD=	20 - rand() % 40;
+
+/// Store the experience of recently recycled droids
+static std::priority_queue<int> recycled_experience[MAX_PLAYERS];
+
+/// Height the transporter hovers at above the terrain
+static constexpr auto TRANSPORTER_HOVER_HEIGHT	= 10;
 
 /// TODO This should really be logarithmic
-#define	CALC_DROID_SMOKE_INTERVAL(x) ((((100-x)+10)/10) * DROID_DAMAGE_SCALING)
+#define CALC_DROID_SMOKE_INTERVAL(x) ((((100-(x))+10)/10) * DROID_DAMAGE_SCALING)
 
 /// Defines how many times to perform the iteration on looking for a blank location
-#define LOOK_FOR_EMPTY_TILE 20
+static constexpr auto LOOK_FOR_EMPTY_TILE  = 20;
 
-typedef std::vector<DROID_ORDER_DATA> OrderList;
+typedef std::vector<Order> OrderList;
 
 enum class DROID_TYPE
 {
@@ -220,9 +228,10 @@ public:
     [[nodiscard]] int calculate_electronic_resistance() const;
     [[nodiscard]] bool is_selectable() const final;
     [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
-    [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
+    [[nodiscard]] int calculate_attack_priority(const ::Unit* target, int weapon_slot) const final;
     [[nodiscard]] bool is_hovering() const;
 private:
+    using enum DROID_TYPE;
     std::string name;
     DROID_TYPE type;
 
@@ -714,7 +723,7 @@ void checkDroid(const Droid* droid, const char* const location_description, cons
 int droidSqDist(Droid* psDroid, SimpleObject* psObj);
 
 // Minimum damage a weapon will deal to its target
-#define	MIN_WEAPON_DAMAGE	1
+static constexpr auto MIN_WEAPON_DAMAGE	 = 1;
 
 void templateSetParts(const Droid* psDroid, DroidTemplate* psTemplate);
 

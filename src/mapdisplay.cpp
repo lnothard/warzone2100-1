@@ -38,7 +38,7 @@
 
 /* renders the Research IMDs into the surface - used by message display in
 Intelligence Map */
-void renderResearchToBuffer(RESEARCH* psResearch, UDWORD OriginX, UDWORD OriginY)
+void renderResearchToBuffer(ResearchStats* psResearch, UDWORD OriginX, UDWORD OriginY)
 {
 	BaseStats* psResGraphic;
 	UDWORD IMDType;

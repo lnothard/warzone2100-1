@@ -10,7 +10,7 @@
 #include "../mission.h"
 
 Structure* ResearchController::highlightedFacility = nullptr;
-static ImdObject getResearchObjectImage(RESEARCH* research);
+static ImdObject getResearchObjectImage(ResearchStats* research);
 
 void ResearchController::updateData()
 {
@@ -51,7 +51,7 @@ void ResearchController::updateResearchOptionsList()
 	stats.clear();
 
 	auto highlightedIndex = getHighlightedFacilityIndex();
-	auto research = highlightedIndex.has_value() ? (RESEARCH*)getObjectStatsAt(highlightedIndex.value()) : nullptr;
+	auto research = highlightedIndex.has_value() ? (ResearchStats*)getObjectStatsAt(highlightedIndex.value()) : nullptr;
 	auto researchIndex = research != nullptr ? nonstd::optional<UWORD>(research->index) : nonstd::nullopt;
 
 	for (auto researchOption : fillResearchList(selectedPlayer, researchIndex, MAXRESEARCH))
@@ -59,7 +59,7 @@ void ResearchController::updateResearchOptionsList()
 		stats.push_back(&asResearch[researchOption]);
 	}
 
-	std::sort(stats.begin(), stats.end(), [](const RESEARCH* a, const RESEARCH* b)
+	std::sort(stats.begin(), stats.end(), [](const ResearchStats* a, const ResearchStats* b)
 	{
 		auto iconIdA = mapIconToRID(a->iconID);
 		auto iconIdB = mapIconToRID(b->iconID);
@@ -73,7 +73,7 @@ void ResearchController::updateResearchOptionsList()
 	});
 }
 
-RESEARCH* ResearchController::getObjectStatsAt(size_t objectIndex) const
+ResearchStats* ResearchController::getObjectStatsAt(size_t objectIndex) const
 {
 	auto facility = getObjectAt(objectIndex);
 	if (facility == nullptr)
@@ -117,7 +117,7 @@ void ResearchController::clearData()
 	stats.clear();
 }
 
-void ResearchController::startResearch(RESEARCH& research)
+void ResearchController::startResearch(ResearchStats& research)
 {
 	triggerEvent(TRIGGER_MENU_RESEARCH_SELECTED);
 
@@ -396,7 +396,7 @@ protected:
 	}
 
 private:
-	RESEARCH* getStats() override
+	ResearchStats* getStats() override
 	{
 		return controller->getObjectStatsAt(objectIndex);
 	}
@@ -429,14 +429,14 @@ private:
 		if (currentPoints != 0)
 		{
 			int researchRate = research->timeStartHold == 0 ? getBuildingResearchPoints(facility) : 0;
-			formatTime(progressBar.get(), currentPoints, research->psSubject->researchPoints, researchRate,
-			           _("Research Progress"));
+			formatTime(progressBar.get(), currentPoints, research->psSubject->researchPointsRequired, researchRate,
+                 _("Research Progress"));
 		}
 		else
 		{
 			// Not yet started production.
 			int neededPower = checkPowerRequest(facility);
-			int powerToBuild = research->psSubject != nullptr ? research->psSubject->researchPower : 0;
+			int powerToBuild = research->psSubject != nullptr ? research->psSubject->powerCost : 0;
 			formatPower(progressBar.get(), neededPower, powerToBuild);
 		}
 	}
@@ -497,7 +497,7 @@ public:
 	}
 
 private:
-	RESEARCH* getStats() override
+	ResearchStats* getStats() override
 	{
 		return controller->getStatsAt(researchOptionIndex);
 	}
@@ -556,12 +556,12 @@ private:
 		}
 	}
 
-	void updateCostBar(RESEARCH* stat)
+	void updateCostBar(ResearchStats* stat)
 	{
 		costBar->majorSize = std::min(100, (int32_t)(getCost() / POWERPOINTS_DROIDDIV));
 	}
 
-	void updateAllyStatus(RESEARCH* research)
+	void updateAllyStatus(ResearchStats* research)
 	{
 		costBar->move(STAT_TIMEBARX, STAT_TIMEBARY);
 		progressBar->hide();
@@ -589,7 +589,7 @@ private:
 	uint32_t getCost() override
 	{
 		auto research = getStats();
-		return research ? research->researchPower : 0;
+		return research ? research->powerCost : 0;
 	}
 
 	void clickPrimary() override
@@ -728,7 +728,7 @@ void ResearchController::requestResearchCancellation(Structure* facility)
 	audio_PlayTrack(ID_SOUND_WINDOWCLOSE);
 }
 
-static ImdObject getResearchObjectImage(RESEARCH* research)
+static ImdObject getResearchObjectImage(ResearchStats* research)
 {
 	BaseStats* psResGraphic = research->psStat;
 

@@ -291,7 +291,7 @@ bool addChallenges()
 		if (slotCount < slotsInColumn)
 		{
 			sButInit.x = 22 + CHALLENGE_HGAP;
-			sButInit.y = (SWORD)((CHALLENGE_BANNER_DEPTH + (2 * CHALLENGE_VGAP)) + (
+			sButInit.y = (int)((CHALLENGE_BANNER_DEPTH + (2 * CHALLENGE_VGAP)) + (
 				slotCount * (CHALLENGE_VGAP + CHALLENGE_ENTRY_H)));
 		}
 		else if (slotCount >= slotsInColumn && (slotCount < (slotsInColumn * 2)))

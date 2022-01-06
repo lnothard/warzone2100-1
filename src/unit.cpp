@@ -30,9 +30,10 @@ namespace Impl
 
 	void Unit::align_turret(int weapon_slot)
 	{
-		if (num_weapons(*this) == 0) return;
+		if (num_weapons(*this) == 0)  {
+      return;
+    }
 		auto& weapon = weapons[weapon_slot];
-
 		const auto turret_rotation = gameTimeAdjustedIncrement(DEG(TURRET_ROTATION_RATE));
 		auto weapon_rotation = weapon.get_rotation().direction;
 		auto weapon_pitch = weapon.get_rotation().pitch;
@@ -297,9 +298,12 @@ int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int w
 bool has_electronic_weapon(const Unit& unit) noexcept
 {
 	auto& weapons = unit.get_weapons();
-	if (weapons.empty()) return false;
+	if (weapons.empty()) {
+    return false;
+  }
 
-	return std::any_of(weapons.begin(), weapons.end(), [](const auto& weapon)
+	return std::any_of(weapons.begin(), weapons.end(),
+                     [](const auto& weapon)
 	{
 		return weapon.get_subclass() == WEAPON_SUBCLASS::ELECTRONIC;
 	});
@@ -309,15 +313,13 @@ bool target_in_line_of_fire(const Unit& unit, const ::Unit& target, int weapon_s
 {
 	const auto distance = iHypot((target.get_position() - unit.get_position()).xy());
 	auto range = unit.get_weapons()[weapon_slot].get_max_range(unit.get_player());
-	if (!has_artillery(unit))
-	{
-		return range >= distance && LINE_OF_FIRE_MINIMUM <= calculate_line_of_fire(unit, target, weapon_slot);
+	if (!has_artillery(unit)) {
+		return range >= distance && LINE_OF_FIRE_MINIMUM <=
+       calculate_line_of_fire(unit, target, weapon_slot);
 	}
 	auto min_angle = calculate_line_of_fire(unit, target, weapon_slot);
-	if (min_angle > DEG(PROJECTILE_MAX_PITCH))
-	{
-		if (iSin(2 * min_angle) < iSin(2 * DEG(PROJECTILE_MAX_PITCH)))
-		{
+	if (min_angle > DEG(PROJECTILE_MAX_PITCH)) {
+		if (iSin(2 * min_angle) < iSin(2 * DEG(PROJECTILE_MAX_PITCH))) {
 			range = range * iSin(2 * min_angle) / iSin(2 * DEG(PROJECTILE_MAX_PITCH));
 		}
 	}
@@ -396,8 +398,9 @@ unsigned get_max_weapon_range(const Unit& unit)
 	for (const auto& weapon : unit.get_weapons())
 	{
 		const auto max_weapon_range = weapon.get_max_range(unit.get_player());
-		if (max_weapon_range > max)
-			max = max_weapon_range;
+		if (max_weapon_range > max) {
+      max = max_weapon_range;
+    }
 	}
 	return max;
 }

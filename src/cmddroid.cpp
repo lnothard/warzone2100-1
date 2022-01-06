@@ -17,52 +17,47 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- *
- * @file
- * Code for command droids
- *
+ * @file cmddroid.cpp
+ * Function definitions for command droids
  */
 
-#include <string.h>
+#include <cstring>
+
 #include "lib/framework/frame.h"
-#include "objects.h"
-#include "cmddroiddef.h"
-#include "cmddroid.h"
-#include "group.h"
-#include "order.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
+
+#include "cmddroiddef.h"
+#include "cmddroid.h"
 #include "console.h"
-#include "objmem.h"
 #include "droid.h"
+#include "group.h"
+#include "objects.h"
+#include "objmem.h"
+#include "order.h"
 
-/**This represents the current selected player, which is the client's player.*/
-extern UDWORD selectedPlayer;
-
-/** This global instance is responsible for dealing with the each player's target designator.*/
+/// This global instance is responsible for dealing with each
+/// player's target designator
 Droid* apsCmdDesignator[MAX_PLAYERS];
 
 // Last time the max commander limit message was displayed
-static UDWORD lastMaxCmdLimitMsgTime = 0;
+static uint32_t lastMaxCmdLimitMsgTime = 0;
 
-#define MAX_COMMAND_LIMIT_MESSAGE_PAUSE 10000
+static constexpr auto MAX_COMMAND_LIMIT_MESSAGE_PAUSE = 10000;
 
-
-/** This function allocs the global instance apsCmdDesignator.*/
+/// This function allocates the global instance apsCmdDesignator
 bool cmdDroidInit()
 {
 	memset(apsCmdDesignator, 0, sizeof(Droid*) * MAX_PLAYERS);
 	return true;
 }
 
-// ShutDown the command droids
-void cmdDroidShutDown()
-{
-}
-
-/** This function runs on all players to check if the player's current target designator as died.
- * If it does, sets the target designator to NULL.
+/**
+ * This function runs on all players to check if the player's
+ * current target designator is dead. If it is, set the
+ * target designator to NULL.
  */
 void cmdDroidUpdate()
 {
@@ -70,19 +65,21 @@ void cmdDroidUpdate()
 	{
 		if (i && i->died)
 		{
-			ASSERT(i->type == OBJ_DROID, "Bad droid pointer! type=%u", i->type);
+			ASSERT(i->type == DROID_TYPE::DROID, "Bad droid pointer! type=%u", i->type);
 			i = nullptr;
 		}
 	}
 }
 
-/** This function adds the droid to the command group commanded by psCommander.
- * It creates a group if it doesn't exist.
- * If the group is not full, it adds the droid to it and sets all the droid's states and orders to the group's.
+/**
+ * This function adds the droid to the command group commanded by
+ * psCommander. It creates a group if it doesn't exist. If the
+ * group is not full, it adds the droid to it and sets all the
+ * droid's states and orders to the group's.
  */
 bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 {
-	Group* psGroup;
+	std::unique_ptr<Group> psGroup;
 	bool addedToGroup = false;
 
 	ASSERT_OR_RETURN(false, psCommander != nullptr, "psCommander is null?");
@@ -135,7 +132,7 @@ Droid* cmdDroidGetDesignator(UDWORD player)
 void cmdDroidSetDesignator(Droid* psDroid)
 {
 	ASSERT_OR_RETURN(, psDroid != nullptr, "Invalid droid!");
-	if (psDroid->type != DROID_COMMAND)
+	if (psDroid->type != DROID_TYPE::COMMAND)
 	{
 		return;
 	}
@@ -148,6 +145,17 @@ void cmdDroidClearDesignator(UDWORD player)
 	apsCmdDesignator[player] = nullptr;
 }
 
+long get_commander_index(const Droid& commander)
+{
+  assert(is_commander(commander));
+
+  const auto& droids = droid_lists[commander.get_player()];
+  return std::find_if(droids.begin(), droids.end(),
+                      [&commander](const auto& droid)
+  {
+      return  is_commander(droid) && &droid == &commander;
+  }) - droids.begin();
+}
 ///** This function returns the index of the command droid.
 // * It does this by searching throughout all the player's droids.
 // * @todo try to find something more efficient, has this function is of O(TotalNumberOfDroidsOfPlayer).
