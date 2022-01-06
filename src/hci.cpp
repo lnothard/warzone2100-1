@@ -278,7 +278,7 @@ static void processProximityButtons(UDWORD id);
 // count the number of selected droids of a type
 static SDWORD intNumSelectedDroids(UDWORD droidType);
 
-static void parseChatMessageModifiers(InGameChatMessage& message);
+static void parseChatMessageModifiers(ChatMessage& message);
 
 
 /***************************GAME CODE ****************************/
@@ -1570,12 +1570,12 @@ INT_RETVAL intRunWidgets()
 		// process our chatbox
 		case CHAT_EDITBOX:
 			{
-				auto message = InGameChatMessage(selectedPlayer, widgGetString(psWScreen, CHAT_EDITBOX));
+				auto message = ChatMessage(selectedPlayer, widgGetString(psWScreen, CHAT_EDITBOX));
 				attemptCheatCode(message.text); // parse the message
 
 				if ((int)widgGetUserData2(psWScreen, CHAT_EDITBOX) == CHAT_TEAM)
 				{
-					message.toAllies = true;
+					message.allies_only = true;
 				}
 				else
 				{
@@ -3044,11 +3044,11 @@ void setSecondaryWindowUp(bool value)
  * - "123hi there" sends "hi there" to players 1, 2 and 3.
  * - ".123hi there" sends "hi there" to allies and players 1, 2 and 3.
  **/
-static void parseChatMessageModifiers(InGameChatMessage& message)
+static void parseChatMessageModifiers(ChatMessage& message)
 {
 	if (*message.text == '.')
 	{
-		message.toAllies = true;
+		message.allies_only = true;
 		message.text++;
 	}
 

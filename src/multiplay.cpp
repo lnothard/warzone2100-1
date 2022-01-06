@@ -117,7 +117,7 @@ const std::chrono::milliseconds LagCheckInterval(LAG_CHECK_INTERVAL);
 
 static void sendTextMessage(const char* msg)
 {
-	auto message = InGameChatMessage(selectedPlayer, msg);
+	auto message = ChatMessage(selectedPlayer, msg);
 	message.send();
 }
 

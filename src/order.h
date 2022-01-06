@@ -17,17 +17,184 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc. , 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
+ * @file order.h
  *
- * @file
- * Function prototypes for giving droids orders.
+ * Data types and function prototypes for giving droids orders.
  *
  */
 
 #ifndef __INCLUDED_SRC_ORDER_H__
 #define __INCLUDED_SRC_ORDER_H__
 
-#include "orderdef.h"
+enum class ORDER_TYPE
+{
+    NONE,
+    STOP,
+    MOVE,
+    ATTACK,
+    BUILD,
+    HELP_BUILD,
+    LINE_BUILD,
+    DEMOLISH,
+    REPAIR,
+    OBSERVE,
+    FIRE_SUPPORT,
+    RETURN_TO_BASE,
+    RETURN_TO_REPAIR,
+    EMBARK,
+    DISEMBARK,
+    ATTACK_TARGET,
+    COMMANDER_SUPPORT,
+    BUILD_MODULE,
+    RECYCLE,
+    TRANSPORT_OUT,
+    TRANSPORT_IN,
+    TRANSPORT_RETURN,
+    GUARD,
+    DROID_REPAIR,
+    RESTORE,
+    SCOUT,
+    PATROL,
+    REARM,
+    RECOVER,
+    RTR_SPECIFIED,
+    CIRCLE,
+    HOLD
+};
+
+enum class SECONDARY_ORDER
+{
+    ATTACK_RANGE,
+    REPAIR_LEVEL,
+    ATTACK_LEVEL,
+    ASSIGN_PRODUCTION,
+    ASSIGN_CYBORG_PRODUCTION,
+    CLEAR_PRODUCTION,
+    RECYCLE,
+    PATROL,
+    HALT_TYPE,
+    RETURN_TO_LOCATION,
+    FIRE_DESIGNATOR,
+    ASSIGN_VTOL_PRODUCTION,
+    CIRCLE
+};
+
+enum SECONDARY_STATE
+{
+    DSS_NONE = 0x000000,
+    /**< no state. */
+    DSS_ARANGE_SHORT = 0x000001,
+    /**< state referred to secondary order DSO_ATTACK_RANGE. Droid can only attack with short range. */
+    DSS_ARANGE_LONG = 0x000002,
+    /**< state referred to secondary order DSO_ATTACK_RANGE. Droid can only attack with long range. */
+    DSS_ARANGE_OPTIMUM = 0x000003,
+    /**< state referred to secondary order DSO_ATTACK_RANGE. Droid can attacks with short or long range depending on what is the best hit chance. */
+    DSS_REPLEV_LOW = 0x000004,
+    /**< state referred to secondary order DSO_REPAIR_LEVEL. Droid falls back if its health decrease below 25%. */
+    DSS_REPLEV_HIGH = 0x000008,
+    /**< state referred to secondary order DSO_REPAIR_LEVEL. Droid falls back if its health decrease below 50%. */
+    DSS_REPLEV_NEVER = 0x00000c,
+    /**< state referred to secondary order DSO_REPAIR_LEVEL. Droid never falls back. */
+    DSS_ALEV_ALWAYS = 0x000010,
+    /**< state referred to secondary order DSO_ATTACK_LEVEL. Droid attacks by its free will everytime. */
+    DSS_ALEV_ATTACKED = 0x000020,
+    /**< state referred to secondary order DSO_ATTACK_LEVEL. Droid attacks if it is attacked. */
+    DSS_ALEV_NEVER = 0x000030,
+    /**< state referred to secondary order DSO_ATTACK_LEVEL. Droid never attacks. */
+    DSS_HALT_HOLD = 0x000040,
+    /**< state referred to secondary order DSO_HALTTYPE. If halted, droid never moves by its free will. */
+    DSS_HALT_GUARD = 0x000080,
+    /**< state referred to secondary order DSO_HALTTYPE. If halted, droid moves on a given region by its free will. */
+    DSS_HALT_PURSUE = 0x0000c0,
+    /**< state referred to secondary order DSO_HALTTYPE. If halted, droid pursues the target by its free will. */
+    DSS_RECYCLE_SET = 0x000100,
+    /**< state referred to secondary order DSO_RECYCLE. If set, the droid can be recycled. */
+    DSS_ASSPROD_START = 0x000200,
+    /**< @todo this state is not called on the code. Consider removing it. */
+    DSS_ASSPROD_MID = 0x002000,
+    /**< @todo this state is not called on the code. Consider removing it. */
+    DSS_ASSPROD_END = 0x040000,
+    /**< @todo this state is not called on the code. Consider removing it. */
+    DSS_RTL_REPAIR = 0x080000,
+    /**< state set to send order DORDER_RTR to droid. */
+    DSS_RTL_BASE = 0x100000,
+    /**< state set to send order DORDER_RTB to droid. */
+    DSS_RTL_TRANSPORT = 0x200000,
+    /**< state set to send order DORDER_EMBARK to droid. */
+    DSS_PATROL_SET = 0x400000,
+    /**< state referred to secondary order DSO_PATROL. If set, the droid is set to patrol. */
+    DSS_CIRCLE_SET = 0x400100,
+    /**< state referred to secondary order DSO_CIRCLE. If set, the droid is set to circle. */
+    DSS_FIREDES_SET = 0x800000,
+    /**< state referred to secondary order DSO_FIRE_DESIGNATOR. If set, the droid is set as a fire designator. */
+};
+
+/* Masks for the secondary order state */
+
+#define DSS_ARANGE_MASK             0x000003
+#define DSS_REPLEV_MASK             0x00000c
+#define DSS_ALEV_MASK               0x000030
+#define DSS_HALT_MASK               0x0000c0
+#define DSS_RECYCLE_MASK            0x000100
+#define DSS_ASSPROD_MASK            0x1f07fe00
+#define DSS_ASSPROD_FACT_MASK       0x003e00
+#define DSS_ASSPROD_CYB_MASK        0x07c000
+#define DSS_ASSPROD_VTOL_MASK       0x1f000000
+#define DSS_ASSPROD_SHIFT           9
+#define DSS_ASSPROD_CYBORG_SHIFT    (DSS_ASSPROD_SHIFT + 5)
+#define DSS_ASSPROD_VTOL_SHIFT      24
+#define DSS_RTL_MASK                0x380000
+#define DSS_PATROL_MASK             0x400000
+#define DSS_FIREDES_MASK            0x800000
+#define DSS_CIRCLE_MASK             0x400100
+
+enum class RTR_DATA_TYPE
+{
+    NO_RESULT,
+    REPAIR_FACILITY,
+    DROID,
+    HQ,
+};
+
+/**
+ * Struct that stores the data relevant to an order. This
+ * struct is needed to send orders that comes with information,
+ * such as position, target, etc.
+ */
+struct Order
+{
+    explicit Order(ORDER_TYPE type = NONE);
+    Order(ORDER_TYPE type, Vector2i pos);
+    Order(ORDER_TYPE type, Vector2i pos, RTR_DATA_TYPE rtrType);
+    Order(ORDER_TYPE type, StructureStats& stats, Vector2i pos, unsigned direction);
+    Order(ORDER_TYPE type, StructureStats& stats, Vector2i pos, Vector2i pos2, unsigned direction);
+    Order(ORDER_TYPE type, SimpleObject& target);
+    Order(ORDER_TYPE type, SimpleObject& target, RTR_DATA_TYPE rtrType);
+    Order(ORDER_TYPE type, SimpleObject& target, unsigned index);
+
+    using enum ORDER_TYPE;
+    using enum RTR_DATA_TYPE;
+    ORDER_TYPE type;
+    Vector2i pos;
+
+    /// The order's secondary position, in case those exist.
+    Vector2i pos2;
+
+    unsigned direction;
+
+    /// Module index, with ORDER_TYPE::BUILD_MODULE.
+    unsigned index;
+
+    /// Specifies where to repair.
+    RTR_DATA_TYPE rtrType;
+
+    /// The order's target, in case it exist.
+    SimpleObject* target;
+
+    std::shared_ptr<StructureStats> structure_stats;
+};
 
 /** \brief Gives the droid an order. */
 void orderDroidBase(Droid* psDroid, DROID_ORDER_DATA* psOrder);
@@ -146,6 +313,6 @@ void orderClearTargetFromDroidList(Droid* psDroid, BASE_OBJECT* psTarget);
 DROID_ORDER chooseOrderLoc(Droid* psDroid, UDWORD x, UDWORD y, bool altOrder);
 
 /** \brief Chooses an order from an object. */
-DroidOrder chooseOrderObj(Droid* psDroid, BASE_OBJECT* psObj, bool altOrder);
+Order chooseOrderObj(Droid* psDroid, BASE_OBJECT* psObj, bool altOrder);
 
 #endif // __INCLUDED_SRC_ORDER_H__

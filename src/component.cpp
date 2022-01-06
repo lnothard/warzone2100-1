@@ -437,7 +437,7 @@ static bool displayCompObj(Droid* psDroid, bool bButton, const glm::mat4& viewMa
 	else
 	{
 		pieFlag = pie_SHADOW;
-		brightness = pal_SetBrightness(psDroid->illumination);
+		brightness = pal_SetBrightness(psDroid->illumination_level);
 		// NOTE: Beware of transporters that are offscreen, on a mission!  We should *not* be checking tiles at this point in time!
 		if (!isTransporter(psDroid) && !missionIsOffworld())
 		{
@@ -915,7 +915,7 @@ void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix)
 		if (displayCompObj(psDroid, false, viewMatrix * modelMatrix))
 		{
 			// did draw something to the screen - update the framenumber
-			psDroid->sDisplay.frameNumber = frameGetFrameNumber();
+			psDroid->sDisplay.frame_number = frameGetFrameNumber();
 		}
 	}
 	else
@@ -925,7 +925,7 @@ void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix)
 		if (pie_Draw3DShape(getImdFromIndex(MI_BLIP), frame, 0, WZCOL_WHITE, pie_ADDITIVE,
 		                    psDroid->visibleForLocalDisplay() / 2, viewMatrix * modelMatrix))
 		{
-			psDroid->sDisplay.frameNumber = frameGetFrameNumber();
+			psDroid->sDisplay.frame_number = frameGetFrameNumber();
 		}
 	}
 }

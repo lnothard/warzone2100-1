@@ -67,7 +67,7 @@ Spacetime interpolateObjectSpacetime(const SIMPLE_OBJECT* obj, uint32_t t)
 	default:
 		return getSpacetime(obj);
 	case OBJ_DROID:
-		return interpolateSpacetime(castDroid(obj)->prevSpacetime, getSpacetime(obj), t);
+		return interpolateSpacetime(castDroid(obj)->previous_location, getSpacetime(obj), t);
 	case OBJ_PROJECTILE:
 		return interpolateSpacetime(castProjectile(obj)->prevSpacetime, getSpacetime(obj), t);
 	}
@@ -110,10 +110,10 @@ BASE_OBJECT::BASE_OBJECT(OBJECT_TYPE type, uint32_t id, unsigned player)
 {
 	memset(visible, 0, sizeof(visible));
 	sDisplay.imd = nullptr;
-	sDisplay.frameNumber = 0;
-	sDisplay.screenX = 0;
-	sDisplay.screenY = 0;
-	sDisplay.screenR = 0;
+	sDisplay.frame_number = 0;
+	sDisplay.screen_x = 0;
+	sDisplay.screen_y = 0;
+	sDisplay.screen_r = 0;
 }
 
 BASE_OBJECT::~BASE_OBJECT()

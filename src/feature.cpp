@@ -245,7 +245,7 @@ FEATURE* buildFeature(FEATURE_STATS* psStats, UDWORD x, UDWORD y, bool FromSave)
 	psFeature->periodicalDamage = 0;
 
 	// it has never been drawn
-	psFeature->sDisplay.frameNumber = 0;
+	psFeature->sDisplay.frame_number = 0;
 
 	memset(psFeature->seenThisTick, 0, sizeof(psFeature->seenThisTick));
 	memset(psFeature->visible, 0, sizeof(psFeature->visible));

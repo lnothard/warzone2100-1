@@ -263,7 +263,7 @@ bool SendDroid(DroidTemplate* pTemplate, uint32_t x, uint32_t y, uint8_t player,
                const INITIAL_DROID_ORDERS* initialOrders);
 bool SendDestroyDroid(const Droid* psDroid);
 void sendQueuedDroidInfo(); ///< Actually sends the droid orders which were queued by SendDroidInfo.
-void sendDroidInfo(Droid* psDroid, DroidOrder const& order, bool add);
+void sendDroidInfo(Droid* psDroid, Order const& order, bool add);
 
 bool sendDroidSecondary(const Droid* psDroid, SECONDARY_ORDER sec, SECONDARY_STATE state);
 bool sendDroidDisembark(Droid const* psTransporter, Droid const* psDroid);

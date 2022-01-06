@@ -1213,7 +1213,7 @@ void aiUpdateDroid(Droid* psDroid)
 				if (!orderState(psDroid, DORDER_HOLD)
 					&& secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_PURSUE)
 				{
-					psDroid->order = DroidOrder(DORDER_OBSERVE, psTarget);
+					psDroid->order = Order(DORDER_OBSERVE, psTarget);
 				}
 				actionDroid(psDroid, DACTION_OBSERVE, psTarget);
 			}
@@ -1225,7 +1225,7 @@ void aiUpdateDroid(Droid* psDroid)
 				if (!orderState(psDroid, DORDER_HOLD)
 					&& secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_PURSUE)
 				{
-					psDroid->order = DroidOrder(DORDER_ATTACK, psTarget);
+					psDroid->order = Order(DORDER_ATTACK, psTarget);
 				}
 				actionDroid(psDroid, DACTION_ATTACK, psTarget);
 			}

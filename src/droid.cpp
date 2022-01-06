@@ -348,7 +348,7 @@ Droid::Droid(uint32_t id, unsigned player)
 	iAudioID = NO_SOUND;
 	group = UBYTE_MAX;
   associated_structure = nullptr;
-	sDisplay.frameNumber = 0; // it was never drawn before
+	sDisplay.frame_number = 0; // it was never drawn before
 	for (unsigned vPlayer = 0; vPlayer < MAX_PLAYERS; ++vPlayer)
 	{
 		visible[vPlayer] = hasSharedVision(vPlayer, player) ? UINT8_MAX : 0;
@@ -356,11 +356,11 @@ Droid::Droid(uint32_t id, unsigned player)
 	memset(seenThisTick, 0, sizeof(seenThisTick));
 	periodicalDamageStart = 0;
 	periodicalDamage = 0;
-	sDisplay.screenX = OFF_SCREEN;
-	sDisplay.screenY = OFF_SCREEN;
-	sDisplay.screenR = 0;
+	sDisplay.screen_x = OFF_SCREEN;
+	sDisplay.screen_y = OFF_SCREEN;
+	sDisplay.screen_r = 0;
 	sDisplay.imd = nullptr;
-	illumination = UBYTE_MAX;
+  illumination_level = UBYTE_MAX;
   resistance_to_electric = ACTION_START_TIME; // init the resistance to indicate no EW performed on this droid
 	lastFrustratedTime = 0; // make sure we do not start the game frustrated
 }
@@ -712,7 +712,7 @@ void droidUpdate(Droid* psDroid)
 	}
 
 	// Save old droid position, update time.
-	psDroid->prevSpacetime = getSpacetime(psDroid);
+	psDroid->previous_location = getSpacetime(psDroid);
 	psDroid->time = gameTime;
 	for (i = 0; i < MAX(1, psDroid->numWeaps); ++i)
 	{
@@ -1735,8 +1735,8 @@ Droid* reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, UDWORD pla
 	}
 
 	// Avoid droid appearing to jump or turn on spawn.
-	psDroid->prevSpacetime.pos = psDroid->pos;
-	psDroid->prevSpacetime.rot = psDroid->rot;
+	psDroid->previous_location.pos = psDroid->pos;
+	psDroid->previous_location.rot = psDroid->rot;
 
 	debug(LOG_LIFE, "created droid for player %d, droid = %p, id=%d (%s): position: x(%d)y(%d)z(%d)", player,
         static_cast<void *>(psDroid), (int)psDroid->id, psDroid->name, psDroid->pos.x, psDroid->pos.y,
@@ -1779,7 +1779,7 @@ void droidSetBits(const DroidTemplate* pTemplate, Droid* psDroid)
 	psDroid->expected_damage_direct = 0; // Begin life optimistically.
 	psDroid->expected_damage_indirect = 0; // Begin life optimistically.
 	psDroid->time = gameTime - deltaGameTime + 1; // Start at beginning of tick.
-	psDroid->prevSpacetime.time = psDroid->time - 1; // -1 for interpolation.
+	psDroid->previous_location.time = psDroid->time - 1; // -1 for interpolation.
 
 	//create the droids weapons
 	for (int inc = 0; inc < MAX_WEAPONS; inc++)

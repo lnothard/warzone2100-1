@@ -188,12 +188,12 @@ static void processLeaderSelection()
 		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.
+			if (DrawnInLastFrame(psDroid->sDisplay.frame_number) && psDroid->selected && psDroid != trackingCamera.
 				target)
 			{
-				if (psDroid->sDisplay.screenX < trackingCamera.target->sDisplay.screenX)
+				if (psDroid->sDisplay.screen_x < trackingCamera.target->sDisplay.screen_x)
 				{
-					dif = trackingCamera.target->sDisplay.screenX - psDroid->sDisplay.screenX;
+					dif = trackingCamera.target->sDisplay.screen_x - psDroid->sDisplay.screen_x;
 					if (dif < bestSoFar)
 					{
 						bestSoFar = dif;
@@ -208,12 +208,12 @@ static void processLeaderSelection()
 		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.
+			if (DrawnInLastFrame(psDroid->sDisplay.frame_number) && psDroid->selected && psDroid != trackingCamera.
 				target)
 			{
-				if (psDroid->sDisplay.screenX > trackingCamera.target->sDisplay.screenX)
+				if (psDroid->sDisplay.screen_x > trackingCamera.target->sDisplay.screen_x)
 				{
-					dif = psDroid->sDisplay.screenX - trackingCamera.target->sDisplay.screenX;
+					dif = psDroid->sDisplay.screen_x - trackingCamera.target->sDisplay.screen_x;
 					if (dif < bestSoFar)
 					{
 						bestSoFar = dif;
@@ -228,12 +228,12 @@ static void processLeaderSelection()
 		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.
+			if (DrawnInLastFrame(psDroid->sDisplay.frame_number) && psDroid->selected && psDroid != trackingCamera.
 				target)
 			{
-				if (psDroid->sDisplay.screenY < trackingCamera.target->sDisplay.screenY)
+				if (psDroid->sDisplay.screen_y < trackingCamera.target->sDisplay.screen_y)
 				{
-					dif = trackingCamera.target->sDisplay.screenY - psDroid->sDisplay.screenY;
+					dif = trackingCamera.target->sDisplay.screen_y - psDroid->sDisplay.screen_y;
 					if (dif < bestSoFar)
 					{
 						bestSoFar = dif;
@@ -248,12 +248,12 @@ static void processLeaderSelection()
 		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.
+			if (DrawnInLastFrame(psDroid->sDisplay.frame_number) && psDroid->selected && psDroid != trackingCamera.
 				target)
 			{
-				if (psDroid->sDisplay.screenY > trackingCamera.target->sDisplay.screenY)
+				if (psDroid->sDisplay.screen_y > trackingCamera.target->sDisplay.screen_y)
 				{
-					dif = psDroid->sDisplay.screenY - trackingCamera.target->sDisplay.screenY;
+					dif = psDroid->sDisplay.screen_y - trackingCamera.target->sDisplay.screen_y;
 					if (dif < bestSoFar)
 					{
 						bestSoFar = dif;

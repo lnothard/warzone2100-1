@@ -2446,7 +2446,7 @@ static void getIniStructureStats(WzConfig& ini, WzString const& key, StructureSt
 	}
 }
 
-static void getIniDroidOrder(WzConfig& ini, WzString const& key, DroidOrder& order)
+static void getIniDroidOrder(WzConfig& ini, WzString const& key, Order& order)
 {
 	order.type = (DroidOrderType)ini.value(key + "/type", DORDER_NONE).toInt();
 	order.pos = ini.vector2i(key + "/pos");
@@ -2479,7 +2479,7 @@ static inline void setIniStructureStats(nlohmann::json& jsonObj, WzString const&
 	}
 }
 
-static inline void setIniDroidOrder(nlohmann::json& jsonObj, WzString const& key, DroidOrder const& order)
+static inline void setIniDroidOrder(nlohmann::json& jsonObj, WzString const& key, Order const& order)
 {
 	const auto& keyStr = key.toStdString();
 	jsonObj[keyStr + "/type"] = order.type;

@@ -1342,12 +1342,12 @@ BASE_OBJECT* mouseTarget()
 		/* Note the !psObject check isn't really necessary as the goto will jump out */
 		for (Droid* psDroid = apsDroidLists[i]; psDroid && !psReturn; psDroid = psDroid->psNext)
 		{
-			dispX = psDroid->sDisplay.screenX;
-			dispY = psDroid->sDisplay.screenY;
-			dispR = psDroid->sDisplay.screenR;
+			dispX = psDroid->sDisplay.screen_x;
+			dispY = psDroid->sDisplay.screen_y;
+			dispR = psDroid->sDisplay.screen_r;
 
 			// Has the droid been drawn since the start of the last frame
-			if (psDroid->visibleForLocalDisplay() && DrawnInLastFrame(psDroid->sDisplay.frameNumber))
+			if (psDroid->visibleForLocalDisplay() && DrawnInLastFrame(psDroid->sDisplay.frame_number))
 			{
 				if (mouseInBox(dispX - dispR, dispY - dispR, dispX + dispR, dispY + dispR))
 				{
@@ -1981,8 +1981,8 @@ static void dealWithLMBFeature(FEATURE* psFeature)
 					}
 
 					sendDroidInfo(
-						psCurr, DroidOrder(DORDER_BUILD, &asStructureStats[i], psFeature->pos.xy(), playerPos.r.y),
-						ctrlShiftDown());
+									psCurr, Order(DORDER_BUILD, &asStructureStats[i], psFeature->pos.xy(), playerPos.r.y),
+									ctrlShiftDown());
 					FeedbackOrderGiven();
 				}
 			}
@@ -2000,7 +2000,7 @@ static void dealWithLMBFeature(FEATURE* psFeature)
 				/* If so then find the nearest unit! */
 				if (psNearestUnit) // bloody well should be!!!
 				{
-					sendDroidInfo(psNearestUnit, DroidOrder(DORDER_RECOVER, psFeature), ctrlShiftDown());
+					sendDroidInfo(psNearestUnit, Order(DORDER_RECOVER, psFeature), ctrlShiftDown());
 					FeedbackOrderGiven();
 				}
 				break;
@@ -2190,10 +2190,10 @@ static FLAG_POSITION* findMouseDeliveryPoint()
 			continue;
 		}
 
-		auto dispX = psPoint->screenX;
-		auto dispY = psPoint->screenY;
-		auto dispR = psPoint->screenR;
-		if (DrawnInLastFrame(psPoint->frameNumber) == true) // Only check DP's that are on screen
+		auto dispX = psPoint->screen_x;
+		auto dispY = psPoint->screen_y;
+		auto dispR = psPoint->screen_r;
+		if (DrawnInLastFrame(psPoint->frame_number) == true) // Only check DP's that are on screen
 		{
 			if (mouseInBox(dispX - dispR, dispY - dispR, dispX + dispR, dispY + dispR))
 			{
@@ -2404,11 +2404,11 @@ static MOUSE_TARGET itemUnderMouse(BASE_OBJECT** ppObjectUnderMouse)
 		for (psDroid = apsDroidLists[i]; psDroid && retVal == MT_NOTARGET;
 		     psDroid = psDroid->psNext)
 		{
-			dispX = psDroid->sDisplay.screenX;
-			dispY = psDroid->sDisplay.screenY;
-			dispR = psDroid->sDisplay.screenR;
+			dispX = psDroid->sDisplay.screen_x;
+			dispY = psDroid->sDisplay.screen_y;
+			dispR = psDroid->sDisplay.screen_r;
 			/* Only check droids that're on screen */
-			if (psDroid->sDisplay.frameNumber + 1 == currentFrame && psDroid->visibleForLocalDisplay())
+			if (psDroid->sDisplay.frame_number + 1 == currentFrame && psDroid->visibleForLocalDisplay())
 			{
 				if (mouseInBox(dispX - dispR, dispY - dispR, dispX + dispR, dispY + dispR))
 				{

@@ -237,7 +237,7 @@ static void calcTileIllum(UDWORD tileX, UDWORD tileY)
 	}
 	ao *= 1.f / Dirs;
 
-	mapTile(tileX, tileY)->illumination = static_cast<uint8_t>(clip<
+	mapTile(tileX, tileY)->illumination_level = static_cast<uint8_t>(clip<
 		int>(static_cast<int>(abs(dotProduct * ao)), 1, 254));
 }
 
@@ -331,21 +331,21 @@ void calcDroidIllumination(Droid* psDroid)
 	/* Are we at the edge, or even on the map */
 	if (!tileOnMap(tileX, tileY))
 	{
-		psDroid->illumination = UBYTE_MAX;
+		psDroid->illumination_level = UBYTE_MAX;
 		return;
 	}
 	else if (tileX <= 1 || tileX >= mapWidth - 2 || tileY <= 1 || tileY >= mapHeight - 2)
 	{
-		lightVal = mapTile(tileX, tileY)->illumination;
+		lightVal = mapTile(tileX, tileY)->illumination_level;
 		lightVal += MIN_DROID_LIGHT_LEVEL;
 	}
 	else
 	{
-		lightVal = mapTile(tileX, tileY)->illumination + //
-			mapTile(tileX - 1, tileY)->illumination + //		 *
-			mapTile(tileX, tileY - 1)->illumination + //		***		pattern
-			mapTile(tileX + 1, tileY)->illumination + //		 *
-			mapTile(tileX + 1, tileY + 1)->illumination; //
+		lightVal = mapTile(tileX, tileY)->illumination_level + //
+			mapTile(tileX - 1, tileY)->illumination_level + //		 *
+			mapTile(tileX, tileY - 1)->illumination_level + //		***		pattern
+			mapTile(tileX + 1, tileY)->illumination_level + //		 *
+			mapTile(tileX + 1, tileY + 1)->illumination_level; //
 		lightVal /= 5;
 		lightVal += MIN_DROID_LIGHT_LEVEL;
 	}
@@ -355,7 +355,7 @@ void calcDroidIllumination(Droid* psDroid)
 	{
 		lightVal = 255;
 	}
-	presVal = psDroid->illumination;
+	presVal = psDroid->illumination_level;
 	adjust = (float)lightVal - (float)presVal;
 	adjust *= graphicsTimeAdjustedIncrement(DROID_SEEK_LIGHT_SPEED);
 	retVal = static_cast<int>(presVal + adjust);
@@ -363,7 +363,7 @@ void calcDroidIllumination(Droid* psDroid)
 	{
 		retVal = 255;
 	}
-	psDroid->illumination = retVal;
+	psDroid->illumination_level = retVal;
 }
 
 void doBuildingLights()

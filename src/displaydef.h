@@ -17,7 +17,9 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** \file
+
+/** @file
+ *
  *  Display structures.
  */
 
@@ -26,16 +28,17 @@
 
 struct iIMDShape;
 
-// for mouse scrolling. (how many pixels from the edge before pointer scrolls the screen in a direction)
+// for mouse scrolling. (how many pixels from the edge before pointer
+// scrolls the screen in a direction)
 #define	BOUNDARY_X	(2)
 #define	BOUNDARY_Y	(2)
 
-struct SCREEN_DISP_DATA
+struct DisplayData
 {
-	iIMDShape* imd;
-	UDWORD frameNumber; // last frame it was drawn
-	UDWORD screenX, screenY;
-	UDWORD screenR;
+	std::unique_ptr<iIMDShape> imd_shape;
+	unsigned frame_number; // last frame it was drawn
+	unsigned screen_x, screen_y;
+	unsigned screen_r;
 };
 
 #endif // __INCLUDED_DISPLAYDEF_H__

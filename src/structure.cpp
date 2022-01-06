@@ -973,7 +973,7 @@ void structureBuild(Structure* psStruct, Droid* psDroid, int buildPoints, int bu
 					         getDroidOrderName(psDroid->order.type),
 					         psIter->order.pos2.x, psIter->order.pos.y, psIter->order.pos2.x, psIter->order.pos2.y);
 					psIter->action = DACTION_NONE;
-					psIter->order = DroidOrder(DORDER_NONE);
+					psIter->order = Order(DORDER_NONE);
 					setDroidActionTarget(psIter, nullptr, 0);
 				}
 			}

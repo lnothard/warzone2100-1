@@ -19,7 +19,9 @@
 */
 
 /**
- * @file Definitions for the base object type.
+ * @file basedef.h
+ *
+ * Definitions for the base object type.
  */
 
 #ifndef __INCLUDED_BASEDEF_H__
@@ -34,7 +36,7 @@
 #include "weapondef.h"
 #include "baseobject.h"
 
-//the died flag for a droid is set to this when it gets
+// the died flag for a droid is set to this when it gets
 // added to the non-current list
 #define NOT_CURRENT_LIST 1
 
@@ -45,11 +47,11 @@ struct TILEPOS
 
 enum class OBJECT_FLAG
 {
-    JAMMED_TILES,
-    TARGETED,
-    DIRTY,
-    UNSELECTABLE,
-    COUNT // MUST BE LAST
+  JAMMED_TILES,
+  TARGETED,
+  DIRTY,
+  UNSELECTABLE,
+  COUNT // MUST BE LAST
 };
 
 /**

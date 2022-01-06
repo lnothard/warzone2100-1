@@ -17,6 +17,11 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
+/**
+ * @file chat.h
+ *
+ */
+
 #ifndef __INCLUDED_SRC_CHAT_H__
 #define __INCLUDED_SRC_CHAT_H__
 
@@ -25,29 +30,48 @@
 #include <sstream>
 #include "multiplay.h"
 
-struct InGameChatMessage
+struct ChatMessage
 {
-	uint32_t sender;
-	char const* text;
-	bool toAllies = false;
+  ChatMessage() = default;
+	ChatMessage(unsigned sender, std::string text);
 
-	InGameChatMessage(uint32_t messageSender, char const* messageText);
 	void send();
-	void addReceiverByPosition(uint32_t playerPosition);
-	void addReceiverByIndex(uint32_t playerIndex);
+	void addReceiverByPosition(unsigned playerPosition);
+	void addReceiverByIndex(unsigned playerIndex);
 
-private:
-	std::set<uint32_t> toPlayers;
+  /// @return `true` if visible to all players
+	[[nodiscard]] bool is_global() const;
 
-	bool isGlobal() const;
-	bool shouldReceive(uint32_t playerIndex) const;
-	std::vector<uint32_t> getReceivers() const;
-	std::string formatReceivers() const;
+  /// @return `true` if `player` is a valid recipient for this message
+	[[nodiscard]] bool should_receive(unsigned player) const;
+
+  /// @return A list of the actual recipients of this message
+	[[nodiscard]] std::unique_ptr< std::vector<unsigned> > get_recipients() const;
+
+	[[nodiscard]] std::string formatReceivers() const;
 	void sendToHumanPlayers();
 	void sendToAiPlayers();
-	void sendToAiPlayer(uint32_t receiver);
+	void sendToAiPlayer(unsigned receiver);
 	void sendToSpectators();
 	void enqueueSpectatorMessage(NETQUEUE queue, char const* formattedMsg);
+
+  unsigned sender = 0;
+
+  std::string text {};
+
+  /**
+   * Set to `true` if this message should be private, i.e.,
+   * it should only be visible to allies of `sender`
+   */
+  bool allies_only = false;
+
+  /**
+   * If `set.empty()` returns `true`, call `is_global()`. If
+   * `is_global()` returns `true`, send this message to all players.
+   * If `set.empty()` returned `false`, send only to the players
+   * contained within this set.
+   */
+  std::set<unsigned> intended_recipients;
 };
 
 #endif // __INCLUDED_SRC_CHAT_H__

@@ -41,23 +41,31 @@
 #include <vector>
 #include <queue>
 
-#define OFF_SCREEN 9999		// world->screen check - alex
+/// world->screen check - alex
+#define OFF_SCREEN 9999
 
-#define REPAIRLEV_LOW	50	// percentage of body points remaining at which to repair droid automatically.
-#define REPAIRLEV_HIGH	75	// ditto, but this will repair much sooner..
+// Percentage of body points remaining at which to repair droid automatically.
+#define REPAIRLEV_LOW	50
+// Ditto, but this will repair much sooner.
+#define REPAIRLEV_HIGH	75
 
 #define DROID_RESISTANCE_FACTOR     30
 
-// Changing this breaks campaign saves!
+/// Changing this breaks campaign saves!
 #define MAX_RECYCLED_DROIDS 450
 
-//used to stop structures being built too near the edge and droids being placed down
-#define TOO_NEAR_EDGE	3
+/// Used to stop structures being built too near the edge and droids
+/// being placed down
+#define TOO_NEAR_EDGE 3
 
-/* Experience modifies */
-#define EXP_REDUCE_DAMAGE		6		// damage of a droid is reduced by this value per experience level, in %
-#define EXP_ACCURACY_BONUS		5		// accuracy of a droid is increased by this value per experience level, in %
-#define EXP_SPEED_BONUS			5		// speed of a droid is increased by this value per experience level, in %
+/* Experience modifiers */
+
+/// Damage of a droid is reduced by this value per experience level (in percent)
+#define EXP_REDUCE_DAMAGE 6
+/// Accuracy of a droid is increased by this value per experience level (in percent)
+#define EXP_ACCURACY_BONUS	5
+/// Speed of a droid is increased by this value per experience level (in percent)
+#define EXP_SPEED_BONUS 5
 
 /*!
  * The number of components in the asParts / asBits arrays.
@@ -66,13 +74,14 @@
  */
 #define DROID_MAXCOMP (COMP_NUMCOMPONENTS - 1)
 
-/* The maximum number of droid weapons */
-#define	DROID_DAMAGE_SCALING	400
-// This should really be logarithmic
+/// The maximum number of droid weapons
+#define DROID_DAMAGE_SCALING 400
+
+/// TODO This should really be logarithmic
 #define	CALC_DROID_SMOKE_INTERVAL(x) ((((100-x)+10)/10) * DROID_DAMAGE_SCALING)
 
-//defines how many times to perform the iteration on looking for a blank location
-#define LOOK_FOR_EMPTY_TILE		20
+/// Defines how many times to perform the iteration on looking for a blank location
+#define LOOK_FOR_EMPTY_TILE 20
 
 typedef std::vector<DROID_ORDER_DATA> OrderList;
 
@@ -140,13 +149,15 @@ struct DroidTemplate : public BASE_STATS
     DroidTemplate() = default;
 
     using enum DROID_TYPE;
-    unsigned id;
+    unsigned id = 0;
     unsigned weapon_count = 0;
     DROID_TYPE type = ANY;
+
     /// Not player designed, not saved, never delete or change
-    bool is_prefab;
-    bool is_stored;
-    bool is_enabled;
+    bool is_prefab = false;
+
+    bool is_stored = false;
+    bool is_enabled = false;
 };
 
 class Droid : public virtual ::Unit, public Impl::Unit
@@ -214,14 +225,13 @@ public:
 private:
     std::string name;
     DROID_TYPE type;
+
     /** Holds the specifics for the component parts - allows damage
      *  per part to be calculated. Indexed by COMPONENT_TYPE.
      *  Weapons need to be dealt with separately.
      */
     uint8_t asBits[DROID_MAXCOMP];
-    /* The other droid data.  These are all derived from the components
-     * but stored here for easy access
-     */
+
     unsigned weight = 0;
 
     /// Base speed depends on propulsion type
@@ -231,46 +241,61 @@ private:
     unsigned experience = 0;
     unsigned kills = 0;
 
-    UDWORD lastFrustratedTime;
-    ///< Set when eg being stuck; used for eg firing indiscriminately
-    ///< at map features to clear the way
+    /// Set when stuck. Used for, e.g., firing indiscriminately
+    /// at map features to clear the way
+    unsigned lastFrustratedTime;
 
     int resistance_to_electric;
+
     DROID_GROUP* group;
 
     /// A structure that this droid might be associated with.
     /// For VTOLs this is the rearming pad
     Structure* associated_structure = nullptr;
 
-    // queued orders
-    SDWORD listSize;
+    // Number of queued orders
+    int listSize;
 
-    ///< Gives the number of synchronised orders. Orders from listSize to the real end of the list may not affect game state.
+    /// The number of synchronised orders. Orders from `listSize` to
+    /// the real end of the list may not affect game state.
     OrderList asOrderList;
 
-    ///< The range [0; listSize - 1] corresponds to synchronised orders, and the range [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will remain, once all orders are synchronised.
+    /// The range [0; listSize - 1] corresponds to synchronised orders, and the range
+    /// [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will
+    /// remain, once all orders are synchronised.
     unsigned listPendingBegin;
-    ///< Index of first order which will not be erased by a pending order. After all messages are processed, the orders in the range [listPendingBegin; listPendingEnd - 1] will remain.
 
-    DROID_ORDER_DATA order;
-    UDWORD secondary_order;
-    uint32_t secondaryOrderPending; ///< What the secondary order will be, after synchronisation.
-    int secondaryOrderPendingCount; ///< Number of pending secondary order changes.
+    /// Index of first order which will not be erased by a pending order. After all
+    /// messages are processed, the orders in the range [listPendingBegin; listPendingEnd - 1]
+    /// will remain.
+    std::unique_ptr<DROID_ORDER_DATA> order;
 
-    /* Action data */
+    unsigned secondary_order;
+
+    /// What `secondary_order` will be after synchronisation.
+    unsigned secondaryOrderPending;
+
+    /// Number of pending `secondary_order` synchronisations.
+    int secondaryOrderPendingCount;
+
     DROID_ACTION action;
     Vector2i actionPos;
+
     std::array<SimpleObject*, MAX_WEAPONS> action_target;
     std::size_t time_action_started;
     unsigned action_points_done;
     UDWORD expected_damage_direct = 0;
     UDWORD expected_damage_indirect = 0;
-    UBYTE illumination;
+    UBYTE illumination_level;
     MOVE_CONTROL movement;
-    Spacetime prevSpacetime; ///< Location of droid in previous tick.
-    uint8_t blockedBits; ///< Bit set telling which tiles block this type of droid (TODO)
-    /* anim data */
-    SDWORD iAudioID;
+
+    /// The location of this droid in the previous tick.
+    Spacetime previous_location;
+
+    /// Bit set telling which tiles block this type of droid (TODO)
+    uint8_t blockedBits;
+
+    int iAudioID;
 };
 
 enum PICKTILE
@@ -592,7 +617,7 @@ static inline WEAPON_STATS* getWeaponStats(const Droid* psDroid, int weapon_slot
 static inline Rotation getInterpolatedWeaponRotation(const Droid* psDroid, int weaponSlot, uint32_t time)
 {
 	return interpolateRot(psDroid->asWeaps[weaponSlot].prevRot, psDroid->asWeaps[weaponSlot].rot,
-	                      psDroid->prevSpacetime.time, psDroid->time, time);
+                        psDroid->previous_location.time, psDroid->time, time);
 }
 
 /** helper functions for future refcount patch **/

@@ -145,10 +145,10 @@ Vector2i positionInQuad(Vector2i const& pt, QUAD const& quad)
 //-----------------------------------------------------------------------------------
 bool objectOnScreen(BASE_OBJECT* object, SDWORD tolerance)
 {
-	if (DrawnInLastFrame(object->sDisplay.frameNumber) == true)
+	if (DrawnInLastFrame(object->sDisplay.frame_number) == true)
 	{
-		const int dX = object->sDisplay.screenX;
-		const int dY = object->sDisplay.screenY;
+		const int dX = object->sDisplay.screen_x;
+		const int dY = object->sDisplay.screen_y;
 		/* Is it on screen */
 		if (dX > (0 - tolerance) && dY > (0 - tolerance)
 			&& dX < (SDWORD)(pie_GetVideoBufferWidth() + tolerance)

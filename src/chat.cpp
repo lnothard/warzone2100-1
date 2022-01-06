@@ -17,63 +17,67 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
+/**
+ * @file chat.cpp
+ *
+ */
+
 #include "chat.h"
 #include "ai.h"
 #include "lib/netplay/netplay.h"
 #include "qtscript.h"
 
-InGameChatMessage::InGameChatMessage(uint32_t messageSender, char const* messageText)
+ChatMessage::ChatMessage(unsigned sender, std::string text)
+  : sender{sender}, text{std::move(text)}
 {
-	sender = messageSender;
-	text = messageText;
 }
 
-bool InGameChatMessage::isGlobal() const
+bool ChatMessage::is_global() const
 {
-	return !toAllies && toPlayers.empty();
+	return !allies_only && intended_recipients.empty();
 }
 
-bool InGameChatMessage::shouldReceive(uint32_t playerIndex) const
+bool ChatMessage::should_receive(unsigned player) const
 {
-	if ((playerIndex >= game.maxPlayers) && ((playerIndex >= NetPlay.players.size()) || (!NetPlay.players[playerIndex].
-		allocated)))
+  // if `is_global()` returns `true`, the `player` does not matter,
+  // since all receive the message
+  return is_global() ||
+         // if `player` is not found in `intended_recipients`, return `false`
+         // if `allies_only` is set to `true`, and there is an alliance between `player`
+         // and `sender_id`, return `true`
+         intended_recipients.find(player) != intended_recipients.end() ||
+         (allies_only && sender < MAX_PLAYERS && player < MAX_PLAYERS &&
+          alliance_formed(sender, player));
+}
+
+std::unique_ptr< std::vector<unsigned> > ChatMessage::get_recipients() const
+{
+	auto recipients = std::make_unique< std::vector<unsigned> >();
+
+	for (auto player = 0; player < MAX_CONNECTED_PLAYERS; player++)
 	{
-		return false;
-	}
-	return isGlobal() || toPlayers.find(playerIndex) != toPlayers.end() || (toAllies && sender < MAX_PLAYERS &&
-		playerIndex < MAX_PLAYERS && aiCheckAlliances(sender, playerIndex));
-}
-
-std::vector<uint32_t> InGameChatMessage::getReceivers() const
-{
-	std::vector<uint32_t> receivers;
-
-	for (auto playerIndex = 0; playerIndex < MAX_CONNECTED_PLAYERS; playerIndex++)
-	{
-		if (shouldReceive(playerIndex) && openchannels[playerIndex])
-		{
-			receivers.push_back(playerIndex);
+		if (should_receive(player) && openchannels[player])  {
+			recipients->push_back(player);
 		}
 	}
-
-	return receivers;
+  return recipients;
 }
 
-std::string InGameChatMessage::formatReceivers() const
+std::string ChatMessage::formatReceivers() const
 {
-	if (isGlobal())
+	if (is_global())
 	{
 		return _("Global");
 	}
 
-	if (toAllies && toPlayers.empty())
+	if (allies_only && intended_recipients.empty())
 	{
 		return _("Allies");
 	}
 
-	auto directs = toPlayers.begin();
+	auto directs = intended_recipients.begin();
 	std::stringstream ss;
-	if (toAllies)
+	if (allies_only)
 	{
 		ss << _("Allies");
 	}
@@ -83,40 +87,40 @@ std::string InGameChatMessage::formatReceivers() const
 		ss << getPlayerName(*directs++);
 	}
 
-	while (directs != toPlayers.end())
+	while (directs != intended_recipients.end())
 	{
 		auto nextName = getPlayerName(*directs++);
 		if (!nextName)
 		{
 			continue;
 		}
-		ss << (directs == toPlayers.end() ? _(" and ") : ", ");
+		ss << (directs == intended_recipients.end() ? _(" and ") : ", ");
 		ss << nextName;
 	}
 
 	return ss.str();
 }
 
-void InGameChatMessage::sendToHumanPlayers()
+void ChatMessage::sendToHumanPlayers()
 {
 	char formatted[MAX_CONSOLE_STRING_LENGTH];
 	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), formatReceivers().c_str(), text);
 
 	auto message = NetworkTextMessage(sender, formatted);
-	message.teamSpecific = toAllies && toPlayers.empty();
+	message.teamSpecific = allies_only && intended_recipients.empty();
 
-	if (sender == selectedPlayer || shouldReceive(selectedPlayer))
+	if (sender == selectedPlayer || should_receive(selectedPlayer))
 	{
 		printInGameTextMessage(message);
 	}
 
-	if (isGlobal())
+	if (is_global())
 	{
 		message.enqueue(NETbroadcastQueue());
 		return;
 	}
 
-	for (auto receiver : getReceivers())
+	for (auto receiver : get_recipients())
 	{
 		if (isHumanPlayer(receiver))
 		{
@@ -125,7 +129,7 @@ void InGameChatMessage::sendToHumanPlayers()
 	}
 }
 
-void InGameChatMessage::sendToAiPlayer(uint32_t receiver)
+void ChatMessage::sendToAiPlayer(uint32_t receiver)
 {
 	if (!ingame.localOptionsReceived)
 	{
@@ -153,9 +157,9 @@ void InGameChatMessage::sendToAiPlayer(uint32_t receiver)
 	NETend();
 }
 
-void InGameChatMessage::sendToAiPlayers()
+void ChatMessage::sendToAiPlayers()
 {
-	for (auto receiver : getReceivers())
+	for (auto receiver : get_recipients())
 	{
 		if (!isHumanPlayer(receiver))
 		{
@@ -171,7 +175,7 @@ void InGameChatMessage::sendToAiPlayers()
 	}
 }
 
-void InGameChatMessage::sendToSpectators()
+void ChatMessage::sendToSpectators()
 {
 	if (!ingame.localOptionsReceived)
 	{
@@ -181,13 +185,13 @@ void InGameChatMessage::sendToSpectators()
 	char formatted[MAX_CONSOLE_STRING_LENGTH];
 	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), _("Spectators"), text);
 
-	if ((sender == selectedPlayer || shouldReceive(selectedPlayer)) && NetPlay.players[selectedPlayer].isSpectator)
+	if ((sender == selectedPlayer || should_receive(selectedPlayer)) && NetPlay.players[selectedPlayer].isSpectator)
 	{
 		auto message = NetworkTextMessage(SPECTATOR_MESSAGE, formatted);
 		printInGameTextMessage(message);
 	}
 
-	for (auto receiver : getReceivers())
+	for (auto receiver : get_recipients())
 	{
 		if (isHumanPlayer(receiver) && NetPlay.players[receiver].isSpectator && receiver != selectedPlayer)
 		{
@@ -197,7 +201,7 @@ void InGameChatMessage::sendToSpectators()
 	}
 }
 
-void InGameChatMessage::enqueueSpectatorMessage(NETQUEUE queue, char const* formattedMsg)
+void ChatMessage::enqueueSpectatorMessage(NETQUEUE queue, char const* formattedMsg)
 {
 	NETbeginEncode(queue, NET_SPECTEXTMSG);
 	NETuint32_t(&sender);
@@ -205,21 +209,21 @@ void InGameChatMessage::enqueueSpectatorMessage(NETQUEUE queue, char const* form
 	NETend();
 }
 
-void InGameChatMessage::addReceiverByPosition(uint32_t playerPosition)
+void ChatMessage::addReceiverByPosition(uint32_t playerPosition)
 {
 	int32_t playerIndex = findPlayerIndexByPosition(playerPosition);
 	if (playerIndex >= 0)
 	{
-		toPlayers.insert(playerIndex);
+		intended_recipients.insert(playerIndex);
 	}
 }
 
-void InGameChatMessage::addReceiverByIndex(uint32_t playerIndex)
+void ChatMessage::addReceiverByIndex(uint32_t playerIndex)
 {
-	toPlayers.insert(playerIndex);
+	intended_recipients.insert(playerIndex);
 }
 
-void InGameChatMessage::send()
+void ChatMessage::send()
 {
 	if (NetPlay.players[selectedPlayer].isSpectator && !NetPlay.isHost)
 	{

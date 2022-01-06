@@ -875,7 +875,7 @@ static void proj_InFlightFunc(PROJECTILE* psProj)
 			continue;
 		}
 
-		Vector3i psTempObjPrevPos = isDroid(psTempObj) ? castDroid(psTempObj)->prevSpacetime.pos : psTempObj->pos;
+		Vector3i psTempObjPrevPos = isDroid(psTempObj) ? castDroid(psTempObj)->previous_location.pos : psTempObj->pos;
 
 		const Vector3i diff = psProj->pos - psTempObj->pos;
 		const Vector3i prevDiff = psProj->prevSpacetime.pos - psTempObjPrevPos;

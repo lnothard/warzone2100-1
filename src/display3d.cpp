@@ -475,14 +475,14 @@ bool drawShape(BASE_OBJECT* psObj, iIMDShape* strImd, int colour, PIELIGHT build
 	                       viewMatrix * modelMatrix);
 }
 
-static void setScreenDisp(SCREEN_DISP_DATA* sDisplay, const glm::mat4& modelViewMatrix)
+static void setScreenDisp(DisplayData* sDisplay, const glm::mat4& modelViewMatrix)
 {
 	Vector3i zero(0, 0, 0);
 	Vector2i s(0, 0);
 
 	pie_RotateProject(&zero, modelViewMatrix, &s);
-	sDisplay->screenX = s.x;
-	sDisplay->screenY = s.y;
+	sDisplay->screen_x = s.x;
+	sDisplay->screen_y = s.y;
 }
 
 void setSkyBox(const char* page, float mywind, float myscale)
@@ -943,7 +943,7 @@ void draw3DScene()
 		int undrawnDroids = 0;
 		for (Droid* psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 		{
-			if (psDroid->sDisplay.frameNumber != currentGameFrame)
+			if (psDroid->sDisplay.frame_number != currentGameFrame)
 			{
 				++undrawnDroids;
 				continue;
@@ -1786,7 +1786,7 @@ static void drawLineBuild(uint8_t player, StructureStats const* psStats, Vector2
 	}
 }
 
-static void renderBuildOrder(uint8_t droidPlayer, DroidOrder const& order, STRUCT_STATES state)
+static void renderBuildOrder(uint8_t droidPlayer, Order const& order, STRUCT_STATES state)
 {
 	StructureStats const* stats;
 	Vector2i pos = order.pos;
@@ -2124,7 +2124,7 @@ void renderFeature(FEATURE* psFeature, const glm::mat4& viewMatrix)
 	}
 
 	/* Mark it as having been drawn */
-	psFeature->sDisplay.frameNumber = currentGameFrame;
+	psFeature->sDisplay.frame_number = currentGameFrame;
 
 	/* Daft hack to get around the oil derrick issue */
 	if (!TileHasFeature(mapTile(map_coord(psFeature->pos.xy()))))
@@ -2554,7 +2554,7 @@ void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix)
 	// -------------------------------------------------------------------------------
 
 	/* Mark it as having been drawn */
-	psStructure->sDisplay.frameNumber = currentGameFrame;
+	psStructure->sDisplay.frame_number = currentGameFrame;
 
 	if (!defensive
 		&& psStructure->timeLastHit - graphicsTime < ELEC_DAMAGE_DURATION
@@ -2660,7 +2660,7 @@ void renderDeliveryPoint(FLAG_POSITION* psPosition, bool blueprint, const glm::m
 	PIELIGHT colour;
 
 	//store the frame number for when deciding what has been clicked on
-	psPosition->frameNumber = currentGameFrame;
+	psPosition->frame_number = currentGameFrame;
 
 	dv.x = psPosition->coords.x - playerPos.p.x;
 	dv.z = -(psPosition->coords.y - playerPos.p.z);
@@ -2695,9 +2695,9 @@ void renderDeliveryPoint(FLAG_POSITION* psPosition, bool blueprint, const glm::m
 
 	//get the screen coords for the DP
 	calcFlagPosScreenCoords(&x, &y, &r, viewMatrix * modelMatrix);
-	psPosition->screenX = x;
-	psPosition->screenY = y;
-	psPosition->screenR = r;
+	psPosition->screen_x = x;
+	psPosition->screen_y = y;
+	psPosition->screen_r = r;
 }
 
 static bool renderWallSection(Structure* psStructure, const glm::mat4& viewMatrix)
@@ -2719,7 +2719,7 @@ static bool renderWallSection(Structure* psStructure, const glm::mat4& viewMatri
 		ecmFlag = pie_ECM;
 	}
 
-	psStructure->sDisplay.frameNumber = currentGameFrame;
+	psStructure->sDisplay.frame_number = currentGameFrame;
 
 	brightness = structureBrightness(psStructure);
 	pie_SetShaderStretchDepth(psStructure->pos.z - psStructure->foundationDepth);
@@ -2819,9 +2819,9 @@ static void drawWeaponReloadBar(BASE_OBJECT* psObj, WEAPON* psWeap, int weapon_s
 	if (ctrlShiftDown() && (psObj->type == OBJ_DROID))
 	{
 		psDroid = (Droid*)psObj;
-		scrX = psObj->sDisplay.screenX;
-		scrY = psObj->sDisplay.screenY;
-		scrR = psObj->sDisplay.screenR;
+		scrX = psObj->sDisplay.screen_x;
+		scrY = psObj->sDisplay.screen_y;
+		scrR = psObj->sDisplay.screen_r;
 		scrY += scrR + 2;
 
 		if (weapon_slot != 0) // only rendering resistance in the first slot
@@ -2852,9 +2852,9 @@ static void drawWeaponReloadBar(BASE_OBJECT* psObj, WEAPON* psWeap, int weapon_s
 	armed = droidReloadBar(psObj, psWeap, weapon_slot);
 	if (armed >= 0 && armed < 100) // no need to draw if full
 	{
-		scrX = psObj->sDisplay.screenX;
-		scrY = psObj->sDisplay.screenY;
-		scrR = psObj->sDisplay.screenR;
+		scrX = psObj->sDisplay.screen_x;
+		scrY = psObj->sDisplay.screen_y;
+		scrR = psObj->sDisplay.screen_r;
 		switch (psObj->type)
 		{
 		case OBJ_DROID:
@@ -2896,8 +2896,8 @@ static void drawStructureTargetOriginIcon(Structure* psStruct, int weapon_slot)
 	}
 
 	scale = MAX(psStruct->pStructureType->base_width, psStruct->pStructureType->base_breadth);
-	scrX = psStruct->sDisplay.screenX;
-	scrY = psStruct->sDisplay.screenY + (scale * 10);
+	scrX = psStruct->sDisplay.screen_x;
+	scrY = psStruct->sDisplay.screen_y + (scale * 10);
 	scrR = scale * 20;
 
 	/* Render target origin graphics */
@@ -2939,8 +2939,8 @@ static void drawStructureHealth(Structure* psStruct)
 	int32_t scale = static_cast<int32_t>(
 		MAX(psStruct->pStructureType->base_width, psStruct->pStructureType->base_breadth));
 	width = scale * 20;
-	scrX = psStruct->sDisplay.screenX;
-	scrY = static_cast<int32_t>(psStruct->sDisplay.screenY) + (scale * 10);
+	scrX = psStruct->sDisplay.screen_x;
+	scrY = static_cast<int32_t>(psStruct->sDisplay.screen_y) + (scale * 10);
 	scrR = width;
 	//health = PERCENT(psStruct->body, psStruct->baseBodyPoints);
 	if (ctrlShiftDown())
@@ -2994,8 +2994,8 @@ static void drawStructureBuildProgress(Structure* psStruct)
 {
 	int32_t scale = static_cast<int32_t>(
 		MAX(psStruct->pStructureType->base_width, psStruct->pStructureType->base_breadth));
-	int32_t scrX = static_cast<int32_t>(psStruct->sDisplay.screenX);
-	int32_t scrY = static_cast<int32_t>(psStruct->sDisplay.screenY) + (scale * 10);
+	int32_t scrX = static_cast<int32_t>(psStruct->sDisplay.screen_x);
+	int32_t scrY = static_cast<int32_t>(psStruct->sDisplay.screen_y) + (scale * 10);
 	int32_t scrR = scale * 20;
 	auto progress = scale * 40 * structureCompletionProgress(*psStruct);
 	pie_BoxFillf(scrX - scrR - 1, scrY - 1 + 5, scrX + scrR + 1, scrY + 3 + 5, WZCOL_RELOAD_BACKGROUND);
@@ -3029,7 +3029,7 @@ static void drawStructureSelections()
 	/* Go thru' all the buildings */
 	for (psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
 	{
-		if (psStruct->sDisplay.frameNumber == currentGameFrame)
+		if (psStruct->sDisplay.frame_number == currentGameFrame)
 		{
 			/* If it's selected */
 			if (psStruct->selected ||
@@ -3060,10 +3060,10 @@ static void drawStructureSelections()
 		{
 			/* If it's targetted and on-screen */
 			if (psStruct->flags.test(OBJECT_FLAG_TARGETED)
-				&& psStruct->sDisplay.frameNumber == currentGameFrame)
+				&& psStruct->sDisplay.frame_number == currentGameFrame)
 			{
-				scrX = psStruct->sDisplay.screenX;
-				scrY = psStruct->sDisplay.screenY;
+				scrX = psStruct->sDisplay.screen_x;
+				scrY = psStruct->sDisplay.screen_y;
 				iV_DrawImage(IntImages, getTargettingGfx(), scrX, scrY);
 			}
 		}
@@ -3137,7 +3137,7 @@ bool eitherSelected(Droid* psDroid)
 
 void drawDroidSelection(Droid* psDroid, bool drawBox)
 {
-	if (psDroid->sDisplay.frameNumber != currentGameFrame)
+	if (psDroid->sDisplay.frame_number != currentGameFrame)
 	{
 		return; // Not visible, anyway. Don't bother with health bars.
 	}
@@ -3164,10 +3164,10 @@ void drawDroidSelection(Droid* psDroid, bool drawBox)
 	}
 
 	damage = static_cast<UDWORD>((float)psDroid->body / (float)psDroid->original_hp * (float)psDroid->sDisplay.
-		screenR);
-	if (damage > psDroid->sDisplay.screenR)
+		screen_r);
+	if (damage > psDroid->sDisplay.screen_r)
 	{
-		damage = psDroid->sDisplay.screenR;
+		damage = psDroid->sDisplay.screen_r;
 	}
 
 	damage *= 2;
@@ -3175,51 +3175,51 @@ void drawDroidSelection(Droid* psDroid, bool drawBox)
 	std::vector<PIERECT_DrawRequest> rectsToDraw;
 	if (drawBox)
 	{
-		rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screenX - psDroid->sDisplay.screenR,
-		                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR - 7,
-		                                          psDroid->sDisplay.screenX - psDroid->sDisplay.screenR + 1,
-		                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR, WZCOL_WHITE));
-		rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screenX - psDroid->sDisplay.screenR,
-		                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR,
-		                                          psDroid->sDisplay.screenX - psDroid->sDisplay.screenR + 7,
-		                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR + 1,
+		rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screen_x - psDroid->sDisplay.screen_r,
+                                              psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r - 7,
+                                              psDroid->sDisplay.screen_x - psDroid->sDisplay.screen_r + 1,
+                                              psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r, WZCOL_WHITE));
+		rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screen_x - psDroid->sDisplay.screen_r,
+                                              psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r,
+                                              psDroid->sDisplay.screen_x - psDroid->sDisplay.screen_r + 7,
+                                              psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r + 1,
 		                                          WZCOL_WHITE));
-		rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screenX + psDroid->sDisplay.screenR - 7,
-		                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR,
-		                                          psDroid->sDisplay.screenX + psDroid->sDisplay.screenR,
-		                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR + 1,
+		rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screen_x + psDroid->sDisplay.screen_r - 7,
+                                              psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r,
+                                              psDroid->sDisplay.screen_x + psDroid->sDisplay.screen_r,
+                                              psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r + 1,
 		                                          WZCOL_WHITE));
-		rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screenX + psDroid->sDisplay.screenR,
-		                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR - 7,
-		                                          psDroid->sDisplay.screenX + psDroid->sDisplay.screenR + 1,
-		                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR + 1,
+		rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screen_x + psDroid->sDisplay.screen_r,
+                                              psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r - 7,
+                                              psDroid->sDisplay.screen_x + psDroid->sDisplay.screen_r + 1,
+                                              psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r + 1,
 		                                          WZCOL_WHITE));
 	}
 
 	/* Power bars */
-	rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screenX - psDroid->sDisplay.screenR - 1,
-	                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR + 2,
-	                                          psDroid->sDisplay.screenX + psDroid->sDisplay.screenR + 1,
-	                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR + 6,
+	rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screen_x - psDroid->sDisplay.screen_r - 1,
+                                            psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r + 2,
+                                            psDroid->sDisplay.screen_x + psDroid->sDisplay.screen_r + 1,
+                                            psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r + 6,
 	                                          WZCOL_RELOAD_BACKGROUND));
-	rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screenX - psDroid->sDisplay.screenR,
-	                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR + 3,
-	                                          psDroid->sDisplay.screenX - psDroid->sDisplay.screenR + damage,
-	                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR + 4, powerCol));
-	rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screenX - psDroid->sDisplay.screenR,
-	                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR + 4,
-	                                          psDroid->sDisplay.screenX - psDroid->sDisplay.screenR + damage,
-	                                          psDroid->sDisplay.screenY + psDroid->sDisplay.screenR + 5,
+	rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screen_x - psDroid->sDisplay.screen_r,
+                                            psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r + 3,
+                                            psDroid->sDisplay.screen_x - psDroid->sDisplay.screen_r + damage,
+                                            psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r + 4, powerCol));
+	rectsToDraw.push_back(PIERECT_DrawRequest(psDroid->sDisplay.screen_x - psDroid->sDisplay.screen_r,
+                                            psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r + 4,
+                                            psDroid->sDisplay.screen_x - psDroid->sDisplay.screen_r + damage,
+                                            psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r + 5,
 	                                          powerColShadow));
 
 	pie_DrawMultiRect(rectsToDraw);
 
 
 	/* Write the droid rank out */
-	if ((psDroid->sDisplay.screenX + psDroid->sDisplay.screenR) > 0
-		&& (psDroid->sDisplay.screenX - psDroid->sDisplay.screenR) < pie_GetVideoBufferWidth()
-		&& (psDroid->sDisplay.screenY + psDroid->sDisplay.screenR) > 0
-		&& (psDroid->sDisplay.screenY - psDroid->sDisplay.screenR) < pie_GetVideoBufferHeight())
+	if ((psDroid->sDisplay.screen_x + psDroid->sDisplay.screen_r) > 0
+		&& (psDroid->sDisplay.screen_x - psDroid->sDisplay.screen_r) < pie_GetVideoBufferWidth()
+		&& (psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r) > 0
+		&& (psDroid->sDisplay.screen_y - psDroid->sDisplay.screen_r) < pie_GetVideoBufferHeight())
 	{
 		drawDroidRank(psDroid);
 		drawDroidSensorLock(psDroid);
@@ -3275,7 +3275,7 @@ static void drawDroidSelections()
 	{
 		if (mouseDown(getRightClickOrders() ? MOUSE_LMB : MOUSE_RMB))
 		{
-			if (psClickedOn->player != selectedPlayer && psClickedOn->sDisplay.frameNumber == currentGameFrame)
+			if (psClickedOn->player != selectedPlayer && psClickedOn->sDisplay.frame_number == currentGameFrame)
 			{
 				Droid* psDroid = (Droid*)psClickedOn;
 				UDWORD damage;
@@ -3328,16 +3328,16 @@ static void drawDroidSelections()
 				{
 					mulH = (float)psDroid->body / (float)psDroid->original_hp;
 				}
-				damage = static_cast<UDWORD>(mulH * (float)psDroid->sDisplay.screenR);
+				damage = static_cast<UDWORD>(mulH * (float)psDroid->sDisplay.screen_r);
 				// (((psDroid->sDisplay.screenR*10000)/100)*damage)/10000;
-				if (damage > psDroid->sDisplay.screenR)
+				if (damage > psDroid->sDisplay.screen_r)
 				{
-					damage = psDroid->sDisplay.screenR;
+					damage = psDroid->sDisplay.screen_r;
 				}
 				damage *= 2;
-				auto scrX = psDroid->sDisplay.screenX;
-				auto scrY = psDroid->sDisplay.screenY;
-				auto scrR = psDroid->sDisplay.screenR;
+				auto scrX = psDroid->sDisplay.screen_x;
+				auto scrY = psDroid->sDisplay.screen_y;
+				auto scrR = psDroid->sDisplay.screen_r;
 
 				/* Three DFX clips properly right now - not sure if software does */
 				if ((scrX + scrR) > 0
@@ -3366,13 +3366,13 @@ static void drawDroidSelections()
 			{
 				drawDroidOrder(psDroid);
 			}
-			if (!psDroid->died && psDroid->sDisplay.frameNumber == currentGameFrame)
+			if (!psDroid->died && psDroid->sDisplay.frame_number == currentGameFrame)
 			{
 				/* If it's selected */
 				if (psDroid->flags.test(OBJECT_FLAG_TARGETED) && psDroid->visibleForLocalDisplay() == UBYTE_MAX)
 				{
 					index = IMAGE_BLUE1 + getModularScaledRealTime(1020, 5);
-					iV_DrawImage(IntImages, index, psDroid->sDisplay.screenX, psDroid->sDisplay.screenY);
+					iV_DrawImage(IntImages, index, psDroid->sDisplay.screen_x, psDroid->sDisplay.screen_y);
 				}
 			}
 		}
@@ -3380,11 +3380,11 @@ static void drawDroidSelections()
 
 	for (const FEATURE* psFeature = apsFeatureLists[0]; psFeature; psFeature = psFeature->psNext)
 	{
-		if (!psFeature->died && psFeature->sDisplay.frameNumber == currentGameFrame)
+		if (!psFeature->died && psFeature->sDisplay.frame_number == currentGameFrame)
 		{
 			if (psFeature->flags.test(OBJECT_FLAG_TARGETED))
 			{
-				iV_DrawImage(IntImages, getTargettingGfx(), psFeature->sDisplay.screenX, psFeature->sDisplay.screenY);
+				iV_DrawImage(IntImages, getTargettingGfx(), psFeature->sDisplay.screen_x, psFeature->sDisplay.screen_y);
 			}
 		}
 	}
@@ -3436,9 +3436,9 @@ static void drawDroidGroupNumber(Droid* psDroid)
 
 	if (id != UWORD_MAX)
 	{
-		int xShift = psDroid->sDisplay.screenR + GN_X_OFFSET;
-		int yShift = psDroid->sDisplay.screenR;
-		iV_DrawImage(IntImages, id, psDroid->sDisplay.screenX - xShift, psDroid->sDisplay.screenY + yShift);
+		int xShift = psDroid->sDisplay.screen_r + GN_X_OFFSET;
+		int yShift = psDroid->sDisplay.screen_r;
+		iV_DrawImage(IntImages, id, psDroid->sDisplay.screen_x - xShift, psDroid->sDisplay.screen_y + yShift);
 	}
 }
 
@@ -3448,12 +3448,12 @@ static void drawDroidGroupNumber(Droid* psDroid)
 
 static void drawDroidOrder(const Droid* psDroid)
 {
-	const int xShift = psDroid->sDisplay.screenR + GN_X_OFFSET;
-	const int yShift = psDroid->sDisplay.screenR - CMND_GN_Y_OFFSET;
+	const int xShift = psDroid->sDisplay.screen_r + GN_X_OFFSET;
+	const int yShift = psDroid->sDisplay.screen_r - CMND_GN_Y_OFFSET;
 	const char* letter = getDroidOrderKey(psDroid->order.type);
 	iV_SetTextColour(WZCOL_TEXT_BRIGHT);
-	iV_DrawText(letter, psDroid->sDisplay.screenX - xShift - CMND_STAR_X_OFFSET, psDroid->sDisplay.screenY + yShift,
-	            font_regular);
+	iV_DrawText(letter, psDroid->sDisplay.screen_x - xShift - CMND_STAR_X_OFFSET, psDroid->sDisplay.screen_y + yShift,
+              font_regular);
 }
 
 /// Draw the number of the commander the droid is assigned to
@@ -3512,11 +3512,11 @@ static void drawDroidCmndNo(Droid* psDroid)
 
 	if (bDraw)
 	{
-		xShift = psDroid->sDisplay.screenR + GN_X_OFFSET;
-		yShift = psDroid->sDisplay.screenR - CMND_GN_Y_OFFSET;
-		iV_DrawImage(IntImages, id2, psDroid->sDisplay.screenX - xShift - CMND_STAR_X_OFFSET,
-		             psDroid->sDisplay.screenY + yShift);
-		iV_DrawImage(IntImages, id, psDroid->sDisplay.screenX - xShift, psDroid->sDisplay.screenY + yShift);
+		xShift = psDroid->sDisplay.screen_r + GN_X_OFFSET;
+		yShift = psDroid->sDisplay.screen_r - CMND_GN_Y_OFFSET;
+		iV_DrawImage(IntImages, id2, psDroid->sDisplay.screen_x - xShift - CMND_STAR_X_OFFSET,
+                 psDroid->sDisplay.screen_y + yShift);
+		iV_DrawImage(IntImages, id, psDroid->sDisplay.screen_x - xShift, psDroid->sDisplay.screen_y + yShift);
 	}
 }
 
@@ -3572,9 +3572,9 @@ void calcScreenCoords(Droid* psDroid, const glm::mat4& viewMatrix)
 	}
 
 	/* Store away the screen coordinates so we can select the droids without doing a transform */
-	psDroid->sDisplay.screenX = center.x;
-	psDroid->sDisplay.screenY = center.y;
-	psDroid->sDisplay.screenR = static_cast<UDWORD>(radius);
+	psDroid->sDisplay.screen_x = center.x;
+	psDroid->sDisplay.screen_y = center.y;
+	psDroid->sDisplay.screen_r = static_cast<UDWORD>(radius);
 }
 
 void screenCoordToWorld(Vector2i screenCoord, Vector2i& worldCoord, SDWORD& tileX, SDWORD& tileY)
@@ -3743,10 +3743,10 @@ static void processSensorTarget()
 	{
 		if ((realTime - lastTargetAssignation) < TARGET_TO_SENSOR_TIME)
 		{
-			if (!psSensorObj->died && psSensorObj->sDisplay.frameNumber == currentGameFrame)
+			if (!psSensorObj->died && psSensorObj->sDisplay.frame_number == currentGameFrame)
 			{
-				const int x = /*mouseX();*/(SWORD)psSensorObj->sDisplay.screenX;
-				const int y = (SWORD)psSensorObj->sDisplay.screenY;
+				const int x = /*mouseX();*/(SWORD)psSensorObj->sDisplay.screen_x;
+				const int y = (SWORD)psSensorObj->sDisplay.screen_y;
 				int index = IMAGE_BLUE1;
 				if (!gamePaused())
 				{
@@ -4112,8 +4112,8 @@ static void drawDroidRank(Droid* psDroid)
 	{
 		/* Render the rank graphic at the correct location */ // remove hardcoded numbers?!
 		iV_DrawImage(IntImages, (UWORD)gfxId,
-		             psDroid->sDisplay.screenX + psDroid->sDisplay.screenR + 8,
-		             psDroid->sDisplay.screenY + psDroid->sDisplay.screenR);
+                 psDroid->sDisplay.screen_x + psDroid->sDisplay.screen_r + 8,
+                 psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r);
 	}
 }
 
@@ -4126,7 +4126,7 @@ static void drawDroidSensorLock(Droid* psDroid)
 	if (orderState(psDroid, DORDER_FIRESUPPORT))
 	{
 		/* Render the sensor graphic at the correct location - which is what?!*/
-		iV_DrawImage(IntImages, IMAGE_GN_STAR, psDroid->sDisplay.screenX, psDroid->sDisplay.screenY);
+		iV_DrawImage(IntImages, IMAGE_GN_STAR, psDroid->sDisplay.screen_x, psDroid->sDisplay.screen_y);
 	}
 }
 

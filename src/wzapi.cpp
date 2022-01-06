@@ -2115,10 +2115,10 @@ bool wzapi::chat(WZAPI_PARAMS(int playerFilter, std::string message))
 	SCRIPT_ASSERT(false, context,
 	              (playerFilter >= 0 && playerFilter < MAX_PLAYERS) || playerFilter == ALL_PLAYERS || playerFilter ==
 	              ALLIES, "Message to invalid player %d", playerFilter);
-	auto chatMessage = InGameChatMessage(player, message.c_str());
+	auto chatMessage = ChatMessage(player, message.c_str());
 	if (playerFilter == ALLIES) // allies
 	{
-		chatMessage.toAllies = true;
+		chatMessage.allies_only = true;
 	}
 	else if (playerFilter != ALL_PLAYERS) // specific player
 	{

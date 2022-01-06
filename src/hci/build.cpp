@@ -323,7 +323,7 @@ private:
 
 		StructureStats const* stats = nullptr;
 		int count = 0;
-		auto processOrder = [&](DroidOrder const& order)
+		auto processOrder = [&](Order const& order)
 		{
 			StructureStats* newStats = nullptr;
 			int deltaCount = 0;

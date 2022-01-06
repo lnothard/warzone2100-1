@@ -2339,7 +2339,7 @@ void WZScriptDebugger::selected(const BASE_OBJECT* psObj)
 			selectedObjectDetails["Action position"] = glm::to_string(psDroid->actionPos);
 			selectedObjectDetails["Action started"] = psDroid->time_action_started;
 			selectedObjectDetails["Action points"] = psDroid->action_points_done;
-			selectedObjectDetails["Illumination"] = psDroid->illumination;
+			selectedObjectDetails["Illumination"] = psDroid->illumination_level;
 			selectedObjectDetails["Blocked bits"] = psDroid->blockedBits;
 			selectedObjectDetails["Move status"] = psDroid->movement.Status;
 			selectedObjectDetails["Move index"] = psDroid->movement.pathIndex;

@@ -644,7 +644,7 @@ bool createFlagPosition(FLAG_POSITION** ppsNew, UDWORD player)
 	}
 	(*ppsNew)->type = POS_DELIVERY;
 	(*ppsNew)->player = player;
-	(*ppsNew)->frameNumber = 0;
+	(*ppsNew)->frame_number = 0;
 	(*ppsNew)->selected = false;
 	(*ppsNew)->coords.x = ~0;
 	(*ppsNew)->coords.y = ~0;

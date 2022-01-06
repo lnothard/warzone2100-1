@@ -575,7 +575,7 @@ DROID_ORDER_DATA infoToOrderData(QueuedDroidInfo const& info, StructureStats con
 
 // ////////////////////////////////////////////////////////////////////////////
 // Droid update information
-void sendDroidInfo(Droid* psDroid, DroidOrder const& order, bool add)
+void sendDroidInfo(Droid* psDroid, Order const& order, bool add)
 {
 	if (!myResponsibility(psDroid->player))
 	{
