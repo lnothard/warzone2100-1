@@ -44,12 +44,12 @@ static inline Structure* getTileStructure(UDWORD x, UDWORD y)
 	return nullptr;
 }
 
-static inline FEATURE* getTileFeature(UDWORD x, UDWORD y)
+static inline Feature* getTileFeature(UDWORD x, UDWORD y)
 {
 	SimpleObject* psObj = mapTile(x, y)->psObject;
 	if (psObj && psObj->type == OBJ_FEATURE)
 	{
-		return (FEATURE*)psObj;
+		return (Feature*)psObj;
 	}
 	return nullptr;
 }

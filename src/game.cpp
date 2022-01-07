@@ -6726,9 +6726,9 @@ bool loadSaveFeature(char* pFileData, UDWORD filesize)
 {
 	FEATURE_SAVEHEADER* psHeader;
 	SAVE_FEATURE_V14* psSaveFeature;
-	FEATURE* pFeature;
+	Feature* pFeature;
 	UDWORD count, i, statInc;
-	FEATURE_STATS* psStats = nullptr;
+	FeatureStats* psStats = nullptr;
 	bool found;
 	UDWORD sizeOfSaveFeature;
 
@@ -6844,7 +6844,7 @@ static bool loadWzMapFeature(WzMap::Map& wzMap)
 
 	for (auto& feature : *pFeatures)
 	{
-		auto psStats = std::find_if(asFeatureStats, asFeatureStats + numFeatureStats, [&](FEATURE_STATS& stat)
+		auto psStats = std::find_if(asFeatureStats, asFeatureStats + numFeatureStats, [&](FeatureStats& stat)
 		{
 			return stat.id.compare(feature.name.c_str()) == 0;
 		});
@@ -6893,13 +6893,13 @@ bool loadSaveFeature2(const char* pFileName)
 
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		FEATURE* pFeature;
+		Feature* pFeature;
 		ini.beginGroup(list[i]);
 		WzString name = ini.string("name");
 		Position pos = ini.vector3i("position");
 		int statInc;
 		bool found = false;
-		FEATURE_STATS* psStats = nullptr;
+		FeatureStats* psStats = nullptr;
 
 		//get the stats for this feature
 		for (statInc = 0; statInc < numFeatureStats; statInc++)
@@ -6962,7 +6962,7 @@ bool writeFeatureFile(const char* pFileName)
 	WzConfig ini(WzString::fromUtf8(pFileName), WzConfig::ReadAndWrite);
 	int counter = 0;
 
-	for (FEATURE* psCurr = apsFeatureLists[0]; psCurr != nullptr; psCurr = psCurr->psNext)
+	for (Feature* psCurr = apsFeatureLists[0]; psCurr != nullptr; psCurr = psCurr->psNext)
 	{
 		ini.beginGroup(
 			"feature_" + (WzString::number(counter++).leftPadToMinimumLength(WzUniCodepoint::fromASCII('0'), 10)));

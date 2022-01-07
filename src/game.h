@@ -17,7 +17,9 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
+
+/**
+ * @file
  *
  *  load and save game routines.
  *  Very likely to ALL change! All the headers are separately defined at the
@@ -35,11 +37,10 @@
 #include <3rdparty/json/json_fwd.hpp>
 #include <optional-lite/optional.hpp>
 #include <sstream>
-/***************************************************************************/
+
 /*
  *	Global ProtoTypes
  */
-/***************************************************************************/
 
 bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool UserSaveGame);
 // UserSaveGame is true when the save game is not a new level (User Save Game)

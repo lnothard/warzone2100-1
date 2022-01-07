@@ -2392,7 +2392,7 @@ void WZScriptDebugger::selected(const SimpleObject* psObj)
 		}
 		else if (psObj->type == OBJ_FEATURE)
 		{
-			const FEATURE* psFeat = castFeature(psObj);
+			const Feature* psFeat = castFeature(psObj);
 			selectedObjectDetails["^Feature type"] = psFeat->psStats->subType;
 			selectedObjectDetails["^Needs drawn"] = psFeat->psStats->tileDraw;
 			selectedObjectDetails["^Visible at start"] = psFeat->psStats->visibleAtStart;

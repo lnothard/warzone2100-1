@@ -19,7 +19,7 @@
 */
 
 /**
- * @file
+ * @file group.h
  * Responsible for handling groups of droids.
  */
 

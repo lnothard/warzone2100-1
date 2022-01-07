@@ -1591,7 +1591,7 @@ Structure* buildStructureDir(StructureStats* pStructureType, UDWORD x, UDWORD y,
 		 * to remove when placing oil derricks! */
 		if (pStructureType->type == REF_RESOURCE_EXTRACTOR)
 		{
-			FEATURE* psFeature = getTileFeature(map_coord(x), map_coord(y));
+			Feature* psFeature = getTileFeature(map_coord(x), map_coord(y));
 
 			if (psFeature && psFeature->psStats->subType == FEAT_OIL_RESOURCE)
 			{
@@ -4355,7 +4355,7 @@ static STRUCTURE_PACKABILITY baseObjectPackability(SimpleObject* psObject)
 	switch (psObject->type)
 	{
 	case OBJ_STRUCTURE: return baseStructureTypePackability(((Structure*)psObject)->pStructureType->type);
-	case OBJ_FEATURE: return ((FEATURE*)psObject)->psStats->subType == FEAT_OIL_RESOURCE
+	case OBJ_FEATURE: return ((Feature*)psObject)->psStats->subType == FEAT_OIL_RESOURCE
 		                         ? PACKABILITY_NORMAL
 		                         : PACKABILITY_EMPTY;
 	default: return PACKABILITY_EMPTY;
@@ -4615,7 +4615,7 @@ bool validLocation(BaseStats* psStats, Vector2i pos, uint16_t direction, unsigne
 		case REF_RESOURCE_EXTRACTOR:
 			if (TileHasFeature(worldTile(pos)))
 			{
-				FEATURE const* psFeat = getTileFeature(map_coord(pos.x), map_coord(pos.y));
+				Feature const* psFeat = getTileFeature(map_coord(pos.x), map_coord(pos.y));
 				if (psFeat && psFeat->psStats->subType == FEAT_OIL_RESOURCE)
 				{
 					break;
@@ -4694,7 +4694,7 @@ bool removeStruct(Structure* psDel, bool bDestroy)
 		HOW MUCH IS THERE && NOT RES EXTRACTORS */
 		if (psDel->pStructureType->type == REF_RESOURCE_EXTRACTOR)
 		{
-			FEATURE* psOil = buildFeature(oilResFeature, psDel->pos.x, psDel->pos.y, false);
+			Feature* psOil = buildFeature(oilResFeature, psDel->pos.x, psDel->pos.y, false);
 			memcpy(psOil->seenThisTick, psDel->visible, sizeof(psOil->seenThisTick));
 			resourceFound = true;
 		}
@@ -6235,7 +6235,7 @@ void hqReward(UBYTE losingPlayer, UBYTE rewardPlayer)
 		}
 
 		//feature
-		for (FEATURE* psFeat = apsFeatureLists[i]; psFeat != nullptr; psFeat = psFeat->psNext)
+		for (Feature* psFeat = apsFeatureLists[i]; psFeat != nullptr; psFeat = psFeat->psNext)
 		{
 			if (psFeat->visible[losingPlayer])
 			{

@@ -29,11 +29,11 @@
 /* The lists of objects allocated */
 extern Droid* apsDroidLists[MAX_PLAYERS];
 extern Structure* apsStructLists[MAX_PLAYERS];
-extern FEATURE* apsFeatureLists[MAX_PLAYERS];
+extern Feature* apsFeatureLists[MAX_PLAYERS];
 extern FLAG_POSITION* apsFlagPosLists[MAX_PLAYERS];
 extern Structure* apsExtractorLists[MAX_PLAYERS];
 extern SimpleObject* apsSensorList[1];
-extern FEATURE* apsOilList[1];
+extern Feature* apsOilList[1];
 
 /* The list of destroyed objects */
 extern SimpleObject* psDestroyedObj;
@@ -83,10 +83,10 @@ void freeAllStructs();
 void removeStructureFromList(Structure* psStructToRemove, Structure* pList[MAX_PLAYERS]);
 
 /* add the feature to the Feature Lists */
-void addFeature(FEATURE* psFeatureToAdd);
+void addFeature(Feature* psFeatureToAdd);
 
 /* Destroy a feature */
-void killFeature(FEATURE* psDel);
+void killFeature(Feature* psDel);
 
 /* Remove all features */
 void freeAllFeatures();

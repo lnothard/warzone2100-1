@@ -17,11 +17,9 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file fpath.c
- *
- * Interface to the routing functions.
- *
+ * @file fpath.cpp
  */
 
 #include <future>
@@ -48,7 +46,7 @@ static volatile bool fpathQuit = false;
 
 struct PATHRESULT
 {
-	UDWORD droidID; ///< Unique droid ID.
+	unsigned droidID; ///< Unique droid ID.
 	MOVE_CONTROL sMove; ///< New movement values for the droid.
 	FPATH_RETVAL retval; ///< Result value from path-finding.
 	Vector2i originalDest; ///< Used to check if the pathfinding job is to the right destination.

@@ -17,14 +17,12 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file hci.c
- *
+ * @file hci.cpp
  * Functions for the in game interface.
  * (Human Computer Interface - thanks to Alex for the file name).
- *
  * Obviously HCI should mean "Hellish Code Incoming" -- Toksyuryel.
- *
  */
 
 #include <cstring>
@@ -196,7 +194,7 @@ std::vector<DroidTemplate*> apsTemplateList;
 std::list<DroidTemplate> localTemplates;
 
 /* Store a list of Feature pointers for features to be placed on the map */
-static FEATURE_STATS** apsFeatureList;
+static FeatureStats** apsFeatureList;
 
 /* Store a list of component stats pointers for the design screen */
 UDWORD numComponent;
@@ -925,7 +923,7 @@ bool intInitialise()
 	apsTemplateList.clear();
 
 	/* Create storage for the feature list */
-	apsFeatureList = (FEATURE_STATS**)malloc(sizeof(FEATURE_STATS*) * MAXFEATURES);
+	apsFeatureList = (FeatureStats**)malloc(sizeof(FeatureStats*) * MAXFEATURES);
 
 	/* Create storage for the component list */
 	apsComponentList = (ComponentStats**)malloc(sizeof(ComponentStats*) * MAXCOMPONENT);
@@ -1752,7 +1750,7 @@ INT_RETVAL intRunWidgets()
 						if (psBuilding->type == REF_DEMOLISH)
 						{
 							MAPTILE* psTile = mapTile(map_coord(pos.x), map_coord(pos.y));
-							FEATURE* psFeature = (FEATURE*)psTile->psObject;
+							Feature* psFeature = (Feature*)psTile->psObject;
 							Structure* psStructure = (Structure*)psTile->psObject;
 
 							if (psStructure && psTile->psObject->type == OBJ_STRUCTURE)
@@ -1796,8 +1794,8 @@ INT_RETVAL intRunWidgets()
 						Cheated = true;
 						// Notify the other hosts that we've just built ourselves a feature
 						//sendMultiPlayerFeature(result->psStats->subType, result->pos.x, result->pos.y, result->id);
-						sendMultiPlayerFeature(((FEATURE_STATS*)psPositionStats)->ref, pos.x, pos.y,
-						                       generateNewObjectId());
+						sendMultiPlayerFeature(((FeatureStats*)psPositionStats)->ref, pos.x, pos.y,
+                                   generateNewObjectId());
 					}
 					else if (psPositionStats->hasType(STAT_TEMPLATE))
 					{

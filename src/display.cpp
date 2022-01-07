@@ -17,11 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file display.c
- *
+ * @file display.cpp
  * Display routines.
- *
  */
 
 #include "lib/framework/frame.h"
@@ -34,6 +33,8 @@
 
 #include "action.h"
 #include "display.h"
+
+#include <memory>
 #include "droid.h"
 #include "fpath.h"
 #include "group.h"
@@ -114,7 +115,7 @@ static void dealWithLMBDClick();
 static void dealWithRMB();
 static void handleDeselectionClick();
 static bool mouseInBox(SDWORD x0, SDWORD y0, SDWORD x1, SDWORD y1);
-static FLAG_POSITION* findMouseDeliveryPoint();
+static FlagPosition* findMouseDeliveryPoint();
 
 void finishDeliveryPosition();
 
@@ -122,8 +123,8 @@ static UDWORD currentFrame;
 static UDWORD StartOfLastFrame;
 static SDWORD rotX;
 static SDWORD rotY;
-std::unique_ptr<ValueTracker> rotationHorizontalTracker = std::unique_ptr<ValueTracker>(new ValueTracker());
-std::unique_ptr<ValueTracker> rotationVerticalTracker = std::unique_ptr<ValueTracker>(new ValueTracker());
+std::unique_ptr<ValueTracker> rotationHorizontalTracker = std::make_unique<ValueTracker>();
+std::unique_ptr<ValueTracker> rotationVerticalTracker = std::make_unique<ValueTracker>();
 static uint32_t scrollRefTime;
 static float scrollSpeedLeftRight; //use two directions and add them because its simple
 static float scrollStepLeftRight;
@@ -1933,7 +1934,7 @@ static void dealWithLMBStructure(Structure* psStructure, SELECTION_TYPE selectio
 	}
 }
 
-static void dealWithLMBFeature(FEATURE* psFeature)
+static void dealWithLMBFeature(Feature* psFeature)
 {
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
@@ -2038,7 +2039,7 @@ static void dealWithLMBObject(SimpleObject* psClickedOn)
 		break;
 
 	case OBJ_FEATURE:
-		dealWithLMBFeature((FEATURE*)psClickedOn);
+		dealWithLMBFeature((Feature*)psClickedOn);
 		break;
 
 	default:
@@ -2495,17 +2496,17 @@ static MOUSE_TARGET itemUnderMouse(SimpleObject** ppObjectUnderMouse)
 
 		if (psNotDroid->type == OBJ_FEATURE)
 		{
-			if ((((FEATURE*)psNotDroid)->psStats->subType == FEAT_GEN_ARTE)
-				|| (((FEATURE*)psNotDroid)->psStats->subType == FEAT_OIL_DRUM))
+			if ((((Feature*)psNotDroid)->psStats->subType == FEAT_GEN_ARTE)
+				|| (((Feature*)psNotDroid)->psStats->subType == FEAT_OIL_DRUM))
 			{
 				retVal = MT_ARTIFACT;
 			}
-			else if (((FEATURE*)psNotDroid)->psStats->damageable)
+			else if (((Feature*)psNotDroid)->psStats->damageable)
 			//make damageable features return 'target' mouse pointer
 			{
 				retVal = MT_DAMFEATURE;
 			}
-			else if (((FEATURE*)psNotDroid)->psStats->subType == FEAT_OIL_RESOURCE)
+			else if (((Feature*)psNotDroid)->psStats->subType == FEAT_OIL_RESOURCE)
 			{
 				retVal = MT_RESOURCE;
 			}

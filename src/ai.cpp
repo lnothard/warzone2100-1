@@ -698,7 +698,7 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 			else if (targetInQuestion->type == OBJ_FEATURE
 				&& psDroid->lastFrustratedTime > 0
 				&& gameTime - psDroid->lastFrustratedTime < FRUSTRATED_TIME
-				&& ((FEATURE*)targetInQuestion)->psStats->damageable
+				&& ((Feature*)targetInQuestion)->psStats->damageable
 				&& psDroid->player != scavengerPlayer()) // hack to avoid scavs blowing up their nice feature walls
 			{
 				psTarget = targetInQuestion;

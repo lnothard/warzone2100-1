@@ -17,15 +17,16 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Function definitions for the in game interface code.
+
+/**
+ * @file
+ * Function definitions for the in game interface code.
  */
 
 #ifndef __INCLUDED_SRC_HCI_H__
 #define __INCLUDED_SRC_HCI_H__
 
 #include <list>
-
 #include <functional>
 typedef std::function<void (const int)> playerCallbackFunc; // callback function (that receives the player)
 

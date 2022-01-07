@@ -855,7 +855,7 @@ static void proj_InFlightFunc(PROJECTILE* psProj)
 			ASSERT(psTempObj->type < OBJ_NUM_TYPES, "Bad pointer! type=%u", psTempObj->type);
 			continue;
 		}
-		else if (psTempObj->type == OBJ_FEATURE && !((FEATURE*)psTempObj)->psStats->damageable)
+		else if (psTempObj->type == OBJ_FEATURE && !((Feature*)psTempObj)->psStats->damageable)
 		{
 			// Ignore oil resources, artifacts and other pickups
 			continue;
@@ -1104,7 +1104,7 @@ static void proj_ImpactFunc(PROJECTILE* psObj)
 		CHECK_OBJECT(psObj->psDest);
 
 		if (psObj->psDest->type == OBJ_FEATURE
-			&& ((FEATURE*)psObj->psDest)->psStats->damageable == 0)
+			&& ((Feature*)psObj->psDest)->psStats->damageable == 0)
 		{
 			debug(LOG_NEVER, "proj_ImpactFunc: trying to damage non-damageable target,projectile removed");
 			psObj->state = PROJ_INACTIVE;
@@ -1261,7 +1261,7 @@ static void proj_ImpactFunc(PROJECTILE* psObj)
 			case OBJ_STRUCTURE:
 				break;
 			case OBJ_FEATURE:
-				damageable = ((FEATURE*)psCurr)->psStats->damageable;
+				damageable = ((Feature*)psCurr)->psStats->damageable;
 				break;
 			default: ASSERT(false, "Bad type.");
 				continue;
@@ -1455,7 +1455,7 @@ static void proj_checkPeriodicalDamage(PROJECTILE* psProj)
 			continue; // Can't set flying vtols on fire.
 		}
 
-		if (psCurr->type == OBJ_FEATURE && !((FEATURE*)psCurr)->psStats->damageable)
+		if (psCurr->type == OBJ_FEATURE && !((Feature*)psCurr)->psStats->damageable)
 		{
 			continue; // Can't destroy oil wells.
 		}
@@ -1637,9 +1637,9 @@ static int32_t objectDamageDispatch(DAMAGE* psDamage)
 		break;
 
 	case OBJ_FEATURE:
-		return featureDamage((FEATURE*)psDamage->psDest, psDamage->damage, psDamage->weaponClass,
-		                     psDamage->weaponSubClass, psDamage->impactTime, psDamage->isDamagePerSecond,
-		                     psDamage->minDamage);
+		return featureDamage((Feature*)psDamage->psDest, psDamage->damage, psDamage->weaponClass,
+                         psDamage->weaponSubClass, psDamage->impactTime, psDamage->isDamagePerSecond,
+                         psDamage->minDamage);
 		break;
 
 	case OBJ_PROJECTILE:
@@ -1718,7 +1718,7 @@ static int32_t objectDamage(DAMAGE* psDamage)
 static bool justBeenHitByEW(SimpleObject* psObj)
 {
 	Droid* psDroid;
-	FEATURE* psFeature;
+	Feature* psFeature;
 	Structure* psStructure;
 
 	if (gamePaused())
@@ -1738,7 +1738,7 @@ static bool justBeenHitByEW(SimpleObject* psObj)
 		break;
 
 	case OBJ_FEATURE:
-		psFeature = (FEATURE*)psObj;
+		psFeature = (Feature*)psObj;
 		if ((gameTime - psFeature->timeLastHit) < ELEC_DAMAGE_DURATION)
 		{
 			return true;

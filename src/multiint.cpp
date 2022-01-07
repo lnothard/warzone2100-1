@@ -6670,7 +6670,7 @@ public:
 			debug(LOG_INFO, "Unable to change alliances to %" PRIu8 " - alliances are locked", allianceValue);
 			return false;
 		}
-		game.alliance = static_cast<AllianceType>(allianceValue);
+		game.alliance = static_cast<ALLIANCE_TYPE>(allianceValue);
 		resetReadyStatus(false);
 		netPlayersUpdated = true;
 		sendOptions();

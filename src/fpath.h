@@ -17,23 +17,16 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Interface to the routing functions
+
+/**
+ * @file fpath.h
+ * Interface to the routing functions
  */
 
 #ifndef __INCLUDED_SRC_FPATH_H__
 #define __INCLUDED_SRC_FPATH_H__
 
-#include "droiddef.h"
-
 #include <memory>
-
-
-/** Return values for routing
- *
- *  @ingroup pathfinding
- *  @{
- */
 
 enum FPATH_MOVETYPE
 {

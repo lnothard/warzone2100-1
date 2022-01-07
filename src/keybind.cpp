@@ -1305,7 +1305,7 @@ void kf_ToggleGodMode()
 	{
 		ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "Cannot disable godMode for spectator-only slots");
 
-		FEATURE* psFeat = apsFeatureLists[0];
+		Feature* psFeat = apsFeatureLists[0];
 
 		godMode = false;
 		setRevealStatus(pastReveal);

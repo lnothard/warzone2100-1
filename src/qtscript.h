@@ -34,7 +34,7 @@ class WzString;
 struct SimpleObject;
 struct Droid;
 struct DroidTemplate;
-struct FEATURE;
+struct Feature;
 struct ResearchStats;
 struct Structure;
 
@@ -141,7 +141,7 @@ bool triggerEventObjectTransfer(SimpleObject* psObj, int from);
 bool triggerEventChat(int from, int to, const char* message);
 bool triggerEventBeacon(int from, int to, const char* message, int x, int y);
 bool triggerEventBeaconRemoved(int from, int to);
-bool triggerEventPickup(FEATURE* psFeat, Droid* psDroid);
+bool triggerEventPickup(Feature* psFeat, Droid* psDroid);
 bool triggerEventCheatMode(bool entered);
 bool triggerEventGroupLoss(const SimpleObject* psObj, int group, int size, wzapi::scripting_instance* instance);
 bool triggerEventDroidMoved(Droid* psDroid, int oldx, int oldy);

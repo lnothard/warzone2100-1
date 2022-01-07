@@ -49,7 +49,7 @@ class Group;
 struct SimpleObject;
 struct Droid;
 struct DroidTemplate;
-struct FEATURE;
+struct Feature;
 struct INITIAL_DROID_ORDERS;
 struct Structure;
 
@@ -209,7 +209,7 @@ WZ_DECL_WARN_UNUSED_RESULT SimpleObject* IdToPointer(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT Structure* IdToStruct(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT Droid* IdToDroid(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT Droid* IdToMissionDroid(UDWORD id, UDWORD player);
-WZ_DECL_WARN_UNUSED_RESULT FEATURE* IdToFeature(UDWORD id, UDWORD player);
+WZ_DECL_WARN_UNUSED_RESULT Feature* IdToFeature(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT DroidTemplate* IdToTemplate(UDWORD tempId, UDWORD player);
 
 const char* getPlayerName(int player);

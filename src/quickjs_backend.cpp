@@ -533,7 +533,7 @@ public:
 	//__ all players / scripts.
 	//__ Careful passing the parameter object around, since it is about to vanish! (3.2+ only)
 	//__
-	virtual bool handle_eventPickup(const FEATURE* psFeat, const Droid* psDroid) override;
+	virtual bool handle_eventPickup(const Feature* psFeat, const Droid* psDroid) override;
 
 	//__ ## eventObjectSeen(viewer, seen)
 	//__
@@ -720,7 +720,7 @@ int JS_DeletePropertyStr(JSContext* ctx, JSValueConst this_obj,
 JSValue convDroid(const Droid* psDroid, JSContext* ctx);
 JSValue convStructure(const Structure* psStruct, JSContext* ctx);
 JSValue convObj(const SimpleObject* psObj, JSContext* ctx);
-JSValue convFeature(const FEATURE* psFeature, JSContext* ctx);
+JSValue convFeature(const Feature* psFeature, JSContext* ctx);
 JSValue convMax(const SimpleObject* psObj, JSContext* ctx);
 JSValue convTemplate(const DroidTemplate* psTemplate, JSContext* ctx);
 JSValue convResearch(const ResearchStats* psResearch, JSContext* ctx, int player);
@@ -892,10 +892,10 @@ JSValue convStructure(const Structure* psStruct, JSContext* ctx)
 //;; * ```stattype``` The type of feature. Defined types are ```OIL_RESOURCE```, ```OIL_DRUM``` and ```ARTIFACT```.
 //;; * ```damageable``` Can this feature be damaged?
 //;;
-JSValue convFeature(const FEATURE* psFeature, JSContext* ctx)
+JSValue convFeature(const Feature* psFeature, JSContext* ctx)
 {
 	JSValue value = convObj(psFeature, ctx);
-	const FEATURE_STATS* psStats = psFeature->psStats;
+	const FeatureStats* psStats = psFeature->psStats;
 	QuickJS_DefinePropertyValue(ctx, value, "health", JS_NewUint32(ctx, 100 * psStats->body / MAX(1, psFeature->body)),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "damageable", JS_NewBool(ctx, psStats->damageable), JS_PROP_ENUMERABLE);
@@ -1199,7 +1199,7 @@ JSValue convMax(const SimpleObject* psObj, JSContext* ctx)
 	{
 	case OBJ_DROID: return convDroid((const Droid*)psObj, ctx);
 	case OBJ_STRUCTURE: return convStructure((const Structure*)psObj, ctx);
-	case OBJ_FEATURE: return convFeature((const FEATURE*)psObj, ctx);
+	case OBJ_FEATURE: return convFeature((const Feature*)psObj, ctx);
 	default: ASSERT(false, "No such supported object type");
 		return convObj(psObj, ctx);
 	}
@@ -1950,7 +1950,7 @@ namespace
 		return convDroid(psDroid, ctx);
 	}
 
-	JSValue box(const FEATURE* psFeat, JSContext* ctx)
+	JSValue box(const Feature* psFeat, JSContext* ctx)
 	{
 		if (!psFeat)
 		{
@@ -3118,7 +3118,7 @@ IMPL_EVENT_HANDLER(eventStructureUpgradeStarted, const Structure *)
 IMPL_EVENT_HANDLER(eventAttacked, const SimpleObject *, const SimpleObject *)
 IMPL_EVENT_HANDLER(eventResearched, const wzapi::researchResult&, wzapi::event_nullable_ptr<const Structure>, int)
 IMPL_EVENT_HANDLER(eventDestroyed, const SimpleObject *)
-IMPL_EVENT_HANDLER(eventPickup, const FEATURE *, const Droid *)
+IMPL_EVENT_HANDLER(eventPickup, const Feature *, const Droid *)
 IMPL_EVENT_HANDLER(eventObjectSeen, const SimpleObject *, const SimpleObject *)
 IMPL_EVENT_HANDLER(eventGroupSeen, const SimpleObject *, int)
 IMPL_EVENT_HANDLER(eventObjectTransfer, const SimpleObject *, int)

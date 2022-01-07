@@ -17,8 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Data loading functions, deals with loading of all resource types.
+
+/**
+ * @file data.h
+ * Data loading functions, deals with loading of all resource types.
  */
 
 #ifndef __INCLUDED_SRC_DATA_H__
@@ -60,9 +62,9 @@ enum
 	DATA_MAXDATA // must be last
 };
 
-void calcDataHash(const uint8_t* pBuffer, uint32_t size, uint32_t index);
+void calcDataHash(const uint8_t* pBuffer, unsigned size, unsigned index);
 void resetDataHash();
-extern uint32_t DataHash[DATA_MAXDATA];
+extern unsigned DataHash[DATA_MAXDATA];
 
 /* Pass all the data loading functions to the framework library */
 bool dataInitLoadFuncs();

@@ -17,8 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** \file
- *  Definitions for features.
+
+/** 
+ * @file
+ * Definitions for features.
  */
 
 #ifndef __INCLUDED_FEATUREDEF_H__
@@ -27,54 +29,51 @@
 #include "basedef.h"
 #include "statsdef.h"
 
-enum FEATURE_TYPE
+enum class FEATURE_TYPE
 {
-	FEAT_TANK = 2,
-	// hack to keep enums the same value
-	FEAT_GEN_ARTE,
-	FEAT_OIL_RESOURCE,
-	FEAT_BOULDER,
-	FEAT_VEHICLE,
-	FEAT_BUILDING,
-	FEAT_UNUSED,
-	FEAT_LOS_OBJ,
-	FEAT_OIL_DRUM,
-	FEAT_TREE,
-	FEAT_SKYSCRAPER,
-	FEAT_COUNT
+	TANK,
+	GEN_ARTE,
+	OIL_RESOURCE,
+	BOULDER,
+	VEHICLE,
+	BUILDING,
+	UNUSED,
+	LOS_OBJ,
+	OIL_DRUM,
+	TREE,
+	SKYSCRAPER,
+	COUNT
 };
 
-/* Stats for a feature */
-struct FEATURE_STATS : public BaseStats
+struct FeatureStats : public BaseStats
 {
-	FEATURE_STATS(int idx = 0) : BaseStats(idx)
+	explicit FeatureStats(int idx = 0)
+    : BaseStats(idx)
 	{
 	}
 
-	FEATURE_TYPE subType = FEAT_COUNT; ///< type of feature
-
-	iIMDShape* psImd = nullptr; ///< Graphic for the feature
-	UWORD baseWidth = 0; ///< The width of the base in tiles
-	UWORD baseBreadth = 0; ///< The breadth of the base in tiles
-
+	FEATURE_TYPE subType = FEATURE_TYPE::COUNT; ///< type of feature
+	std::unique_ptr<iIMDShape> psImd = nullptr; ///< Graphic for the feature
+	unsigned baseWidth = 0; ///< The width of the base in tiles
+	unsigned baseBreadth = 0; ///< The breadth of the base in tiles
 	bool tileDraw = false; ///< Whether the tile needs to be drawn
 	bool allowLOS = false; ///< Whether the feature allows the LOS. true = can see through the feature
 	bool visibleAtStart = false; ///< Whether the feature is visible at the start of the mission
 	bool damageable = false; ///< Whether the feature can be destroyed
-	UDWORD body = 0; ///< Number of body points
-	UDWORD armourValue = 0; ///< Feature armour
+	unsigned body = 0; ///< Number of body points
+	unsigned armourValue = 0; ///< Feature armour
 
-	inline Vector2i size() const { return Vector2i(baseWidth, baseBreadth); }
+	[[nodiscard]] Vector2i size() const { return {baseWidth, baseBreadth}; }
 };
 
-struct FEATURE : public SimpleObject
+struct Feature : public SimpleObject
 {
-	FEATURE(uint32_t id, FEATURE_STATS const* psStats);
-	~FEATURE();
+	Feature(unsigned id, FeatureStats const* psStats);
+	~Feature() override;
 
-	FEATURE_STATS const* psStats;
+	[[nodiscard]] Vector2i size() const { return psStats->size(); }
 
-	inline Vector2i size() const { return psStats->size(); }
+  FeatureStats const* psStats;
 };
 
 #endif // __INCLUDED_FEATUREDEF_H__

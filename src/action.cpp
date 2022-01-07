@@ -1668,8 +1668,8 @@ void actionUpdateDroid(Droid* psDroid)
 					}
 					else if (TileHasFeature(psTile))
 					{
-						FEATURE* feature = getTileFeature(map_coord(psDroid->actionPos.x),
-						                                  map_coord(psDroid->actionPos.y));
+						Feature* feature = getTileFeature(map_coord(psDroid->actionPos.x),
+                                              map_coord(psDroid->actionPos.y));
 						objTrace(psDroid->id, "DACTION_MOVETOBUILD: tile has feature %d", feature->psStats->subType);
 						if (feature->psStats->subType == FEAT_OIL_RESOURCE && order->psStats->type ==
 							REF_RESOURCE_EXTRACTOR)

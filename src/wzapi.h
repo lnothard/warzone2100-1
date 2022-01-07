@@ -444,7 +444,7 @@ namespace wzapi
 		//__ all players / scripts.
 		//__ Careful passing the parameter object around, since it is about to vanish! (3.2+ only)
 		//__
-		virtual bool handle_eventPickup(const FEATURE* psFeat, const Droid* psDroid) = 0;
+		virtual bool handle_eventPickup(const Feature* psFeat, const Droid* psDroid) = 0;
 
 		//__ ## eventObjectSeen(viewer, seen)
 		//__
@@ -1105,7 +1105,7 @@ namespace wzapi
 	                                                              _structureType, optional<int> _playerFilter));
 	std::vector<const Droid*> enumDroid(WZAPI_PARAMS(optional<int> _player, optional<int> _droidType,
                                                    optional<int> _playerFilter));
-	std::vector<const FEATURE*> enumFeature(WZAPI_PARAMS(int playerFilter, optional<std::string> _featureName));
+	std::vector<const Feature*> enumFeature(WZAPI_PARAMS(int playerFilter, optional<std::string> _featureName));
 	std::vector<scr_position> enumBlips(WZAPI_PARAMS(int player));
 	std::vector<const SimpleObject*> enumSelected(WZAPI_NO_PARAMS_NO_CONTEXT);
 	GATEWAY_LIST enumGateways(WZAPI_NO_PARAMS);
@@ -1142,7 +1142,7 @@ namespace wzapi
                                                                  reservedParam reserved1,
                                                                  va_list<string_or_string_list> turrets));
 	bool addDroidToTransporter(WZAPI_PARAMS(game_object_identifier transporter, game_object_identifier droid));
-	returned_nullable_ptr<const FEATURE> addFeature(WZAPI_PARAMS(std::string featureName, int x, int y))
+	returned_nullable_ptr<const Feature> addFeature(WZAPI_PARAMS(std::string featureName, int x, int y))
 	MUTLIPLAY_UNSAFE;
 	bool componentAvailable(WZAPI_PARAMS(std::string componentType, optional<std::string> _componentName));
 	bool isVTOL(WZAPI_PARAMS(const Droid *psDroid));

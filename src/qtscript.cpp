@@ -1416,7 +1416,7 @@ bool triggerEventDestroyed(SimpleObject* psVictim)
 //__ all players / scripts.
 //__ Careful passing the parameter object around, since it is about to vanish! (3.2+ only)
 //__
-bool triggerEventPickup(FEATURE* psFeat, Droid* psDroid)
+bool triggerEventPickup(Feature* psFeat, Droid* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)

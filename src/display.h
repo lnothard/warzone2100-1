@@ -17,18 +17,21 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Definitions for the display system structures and routines.
+
+/**
+ * @file display.h
+ * Definitions for the display system structures and routines.
  */
 
 #ifndef __INCLUDED_SRC_DISPLAY_H__
 #define __INCLUDED_SRC_DISPLAY_H__
 
-#include "basedef.h"
-#include "structure.h"
+#include <glm/fwd.hpp>
 #include "input/manager.h"
 #include "input/keyconfig.h"
-#include <glm/fwd.hpp>
+
+#include "basedef.h"
+#include "structure.h"
 
 /* Initialise the display system */
 bool dispInitialise();
@@ -52,7 +55,7 @@ bool DrawnInLastFrame(SDWORD Frame);
 // Clear all selections
 void clearSelection();
 // deal with selecting a droid
-void dealWithDroidSelect(DROID* psDroid, bool bDragBox);
+void dealWithDroidSelect(Droid* psDroid, bool bDragBox);
 
 bool isMouseOverRadar();
 

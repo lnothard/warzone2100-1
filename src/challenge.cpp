@@ -17,24 +17,27 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file challenge.c
+ * @file challenge.cpp
  * Run challenges dialog.
- *
  */
 
-#include <physfs.h>
 #include <ctime>
 #include <string>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/input.h"
-#include "lib/framework/wzconfig.h"
 #include "lib/framework/physfs_ext.h"
-#include "lib/netplay/netplay.h"
+#include "lib/framework/wzconfig.h"
+#include "lib/framework/wztime.h"
 #include "lib/ivis_opengl/bitimage.h"
 #include "lib/ivis_opengl/pieblitfunc.h"
+#include "lib/netplay/netplay.h"
 #include "lib/widget/button.h"
+
+#include "titleui/titleui.h"
+#include "titleui/multiplayer.h"
 
 #include "challenge.h"
 #include "frontend.h"
@@ -43,9 +46,6 @@
 #include "loadsave.h"
 #include "multiplay.h"
 #include "mission.h"
-#include "lib/framework/wztime.h"
-#include "titleui/titleui.h"
-#include "titleui/multiplayer.h"
 
 #define totalslots 36			// challenge slots
 #define slotsInColumn 12		// # of slots in a column
@@ -89,13 +89,12 @@ static void displayLoadBanner(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 	pie_BoxFill(x + 2, y + 2, x + psWidget->width() - 2, y + psWidget->height() - 2, WZCOL_MENU_BACKGROUND);
 }
 
-const char* currentChallengeName()
+std::string currentChallengeName()
 {
-	if (challengeActive)
-	{
-		return challengeName.c_str();
+	if (challengeActive) {
+		return challengeName;
 	}
-	return nullptr;
+	return {};
 }
 
 // quite the hack, game name is stored in global sRequestResult
@@ -420,13 +419,12 @@ bool runChallenges()
 		}
 
 		// clicked a load entry
-		if (id >= CHALLENGE_ENTRY_START && id <= CHALLENGE_ENTRY_END)
-		{
-			W_BUTTON* psWidget = static_cast<W_BUTTON*>(widgGetFromID(psRequestScreen, id));
+		if (id >= CHALLENGE_ENTRY_START && id <= CHALLENGE_ENTRY_END) {
+			auto psWidget = static_cast<W_BUTTON*>(widgGetFromID(psRequestScreen, id));
 			assert(psWidget != nullptr);
 			if (!(psWidget->pText.isEmpty()))
 			{
-				DisplayLoadSlotData* data = static_cast<DisplayLoadSlotData*>(psWidget->pUserData);
+				auto data = static_cast<DisplayLoadSlotData*>(psWidget->pUserData);
 				assert(data != nullptr);
 				assert(data->filename != nullptr);
 				sstrcpy(sRequestResult, data->filename);

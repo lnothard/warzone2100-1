@@ -33,9 +33,9 @@ extern bool challengesUp;
 extern bool challengeActive;
 extern WzString challengeFileName;
 
-const char* currentChallengeName();
+std::string currentChallengeName();
 
-void challengesScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
-                                   unsigned int newHeight);
+void challengesScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight,
+                                   unsigned int newWidth, unsigned int newHeight);
 
 #endif // __INCLUDED_SRC_CHALLENGE_H__

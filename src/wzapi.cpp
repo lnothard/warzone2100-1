@@ -467,7 +467,7 @@ bool wzapi::setSunIntensity(WZAPI_PARAMS(float ambient_r, float ambient_g, float
 bool wzapi::setWeather(WZAPI_PARAMS(int weatherType))
 {
 	SCRIPT_ASSERT(false, context, weatherType >= 0 && weatherType <= WT_NONE, "Bad weather type");
-	atmosSetWeatherType((WT_CLASS)weatherType);
+	atmosSetWeatherType((WEATHER_TYPE)weatherType);
 	return true;
 }
 
@@ -621,7 +621,7 @@ bool wzapi::setHealth(WZAPI_PARAMS(SimpleObject* psObject, int health)) MULTIPLA
 	}
 	else
 	{
-		FEATURE* psFeat = (FEATURE*)psObject;
+		Feature* psFeat = (Feature*)psObject;
 		SCRIPT_ASSERT(false, context, psFeat, "No such feature id %d belonging to player %d", id, player);
 		psFeat->body = health * psFeat->psStats->body / 100;
 	}
@@ -1143,7 +1143,7 @@ std::vector<const Droid*> wzapi::enumDroid(WZAPI_PARAMS(optional<int> _player, o
 //-- If player is ```ALL_PLAYERS```, it will return all features irrespective of visibility to any player. If
 //-- name is empty, it will return any feature.
 //--
-std::vector<const FEATURE*> wzapi::enumFeature(WZAPI_PARAMS(int playerFilter, optional<std::string> _featureName))
+std::vector<const Feature*> wzapi::enumFeature(WZAPI_PARAMS(int playerFilter, optional<std::string> _featureName))
 {
 	SCRIPT_ASSERT({}, context, (playerFilter >= 0 && playerFilter < MAX_PLAYERS) || playerFilter == ALL_PLAYERS,
 	              "Player filter index out of range: %d", playerFilter);
@@ -1153,8 +1153,8 @@ std::vector<const FEATURE*> wzapi::enumFeature(WZAPI_PARAMS(int playerFilter, op
 		featureName = WzString::fromUtf8(_featureName.value());
 	}
 
-	std::vector<const FEATURE*> matches;
-	for (FEATURE* psFeat = apsFeatureLists[0]; psFeat; psFeat = psFeat->psNext)
+	std::vector<const Feature*> matches;
+	for (Feature* psFeat = apsFeatureLists[0]; psFeat; psFeat = psFeat->psNext)
 	{
 		if ((playerFilter == ALL_PLAYERS || psFeat->visible[playerFilter])
 			&& !psFeat->died
@@ -2036,17 +2036,17 @@ bool wzapi::addDroidToTransporter(WZAPI_PARAMS(game_object_identifier transporte
 //-- Create and place a feature at the given x, y position. Will cause a desync in multiplayer.
 //-- Returns the created game object on success, null otherwise. (3.2+ only)
 //--
-wzapi::returned_nullable_ptr<const FEATURE> wzapi::addFeature(WZAPI_PARAMS(std::string featureName, int x, int y))
+wzapi::returned_nullable_ptr<const Feature> wzapi::addFeature(WZAPI_PARAMS(std::string featureName, int x, int y))
 MUTLIPLAY_UNSAFE
 {
 	int feature = getFeatureStatFromName(WzString::fromUtf8(featureName));
-	FEATURE_STATS* psStats = &asFeatureStats[feature];
-	for (FEATURE* psFeat = apsFeatureLists[0]; psFeat; psFeat = psFeat->psNext)
+	FeatureStats* psStats = &asFeatureStats[feature];
+	for (Feature* psFeat = apsFeatureLists[0]; psFeat; psFeat = psFeat->psNext)
 	{
 		SCRIPT_ASSERT(nullptr, context, map_coord(psFeat->pos.x) != x || map_coord(psFeat->pos.y) != y,
 		              "Building feature on tile already occupied");
 	}
-	FEATURE* psFeature = buildFeature(psStats, world_coord(x), world_coord(y), false);
+	Feature* psFeature = buildFeature(psStats, world_coord(x), world_coord(y), false);
 	return psFeature;
 }
 
@@ -3005,7 +3005,7 @@ bool wzapi::removeObject(WZAPI_PARAMS(SimpleObject *psObj, optional<bool> _sfx))
 			break;
 		case OBJ_DROID: retval = destroyDroid((Droid*)psObj, gameTime);
 			break;
-		case OBJ_FEATURE: retval = destroyFeature((FEATURE*)psObj, gameTime);
+		case OBJ_FEATURE: retval = destroyFeature((Feature*)psObj, gameTime);
 			break;
 		default: SCRIPT_ASSERT(false, context, false, "Wrong game object type");
 			break;
@@ -3019,7 +3019,7 @@ bool wzapi::removeObject(WZAPI_PARAMS(SimpleObject *psObj, optional<bool> _sfx))
 			break;
 		case OBJ_DROID: retval = removeDroidBase((Droid*)psObj);
 			break;
-		case OBJ_FEATURE: retval = removeFeature((FEATURE*)psObj);
+		case OBJ_FEATURE: retval = removeFeature((Feature*)psObj);
 			break;
 		default: SCRIPT_ASSERT(false, context, false, "Wrong game object type");
 			break;

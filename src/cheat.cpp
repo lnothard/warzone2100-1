@@ -17,9 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file cheat.c
- * Handles cheat codes for Warzone.
+ * @file cheat.cpp
+ * Handles cheat codes
  */
 /* Alex M 19th - Jan. 1999 */
 
@@ -39,7 +40,7 @@
 
 struct CHEAT_ENTRY
 {
-	const char* pName;
+	std::string pName;
 	void (*function)(); // pointer to void* function
 };
 

@@ -18,9 +18,9 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-/** @file
- *
- *  Display structures.
+/**
+ * @file displaydef.h
+ * Display structures.
  */
 
 #ifndef __INCLUDED_DISPLAYDEF_H__

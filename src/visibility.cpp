@@ -779,12 +779,12 @@ static void processVisibilityLevel(SimpleObject* psObj, bool& addedMessage)
 
 				/* If this is an oil resource we want to add a proximity message for
 				 * the selected Player - if there isn't an Resource Extractor on it. */
-				if (((FEATURE*)psObj)->psStats->subType == FEAT_OIL_RESOURCE && !TileHasStructure(
+				if (((Feature*)psObj)->psStats->subType == FEAT_OIL_RESOURCE && !TileHasStructure(
 					mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y))))
 				{
 					type = ID_SOUND_RESOURCE_HERE;
 				}
-				else if (((FEATURE*)psObj)->psStats->subType == FEAT_GEN_ARTE)
+				else if (((Feature*)psObj)->psStats->subType == FEAT_GEN_ARTE)
 				{
 					type = ID_SOUND_ARTEFACT_DISC;
 				}
@@ -875,9 +875,9 @@ void setUnderTilesVis(SimpleObject* psObj, UDWORD player)
 {
 	UDWORD i, j;
 	UDWORD mapX, mapY, width, breadth;
-	FEATURE* psFeature;
+	Feature* psFeature;
 	Structure* psStructure;
-	FEATURE_STATS const* psStats;
+	FeatureStats const* psStats;
 	MAPTILE* psTile;
 
 	if (player >= MAX_PLAYERS)
@@ -887,7 +887,7 @@ void setUnderTilesVis(SimpleObject* psObj, UDWORD player)
 
 	if (psObj->type == OBJ_FEATURE)
 	{
-		psFeature = (FEATURE*)psObj;
+		psFeature = (Feature*)psObj;
 		psStats = psFeature->psStats;
 		width = psStats->baseWidth;
 		breadth = psStats->baseBreadth;

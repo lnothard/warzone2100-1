@@ -2584,8 +2584,8 @@ Order chooseOrderObj(Droid* psDroid, SimpleObject* psObj, bool altOrder)
 	}
 	// go to recover an artifact/oil drum - don't allow VTOL's to get this order
 	else if (psObj->type == OBJ_FEATURE &&
-		(((FEATURE*)psObj)->psStats->subType == FEAT_GEN_ARTE ||
-			((FEATURE*)psObj)->psStats->subType == FEAT_OIL_DRUM))
+		(((Feature*)psObj)->psStats->subType == FEAT_GEN_ARTE ||
+     ((Feature*)psObj)->psStats->subType == FEAT_OIL_DRUM))
 	{
 		if (!isVtolDroid(psDroid))
 		{

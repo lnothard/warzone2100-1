@@ -22,24 +22,19 @@
 #define __INCLUDED_SRC_COMPONENT_H__
 
 #include "lib/ivis_opengl/pietypes.h"
-#include "droiddef.h"
-#include "structuredef.h"
 #include <glm/fwd.hpp>
 
-/*
-	Header file for component.c
-	Pumpkin Studios, EIDOS Interactive.
-*/
+#include "droid.h"
 
-bool setPlayerColour(UDWORD player, UDWORD col);
-UBYTE getPlayerColour(UDWORD pl);
+bool setPlayerColour(unsigned player, unsigned col);
+uint8_t getPlayerColour(unsigned pl);
 
-UDWORD getComponentDroidRadius(DROID* psDroid);
-UDWORD getComponentDroidTemplateRadius(DroidTemplate* psDroid);
-UDWORD getComponentRadius(BASE_STATS* psComponent);
-UDWORD getResearchRadius(BASE_STATS* Stat);
-UDWORD getStructureSizeMax(STRUCTURE* psStructure);
-UDWORD getStructureStatSizeMax(STRUCTURE_STATS* Stats);
+unsigned getComponentDroidRadius(Droid* psDroid);
+unsigned getComponentDroidTemplateRadius(DroidTemplate* psDroid);
+unsigned getComponentRadius(BaseStats* psComponent);
+unsigned getResearchRadius(BaseStats* Stat);
+unsigned getStructureSizeMax(Structure* psStructure);
+unsigned getStructureStatSizeMax(StructureStats* Stats);
 
 #define BLIP_ANIM_DURATION			(200)
 #define OBJECT_RADIUS				(128)
@@ -57,9 +52,9 @@ UDWORD getStructureStatSizeMax(STRUCTURE_STATS* Stats);
 #define SMALL_FEATURE_SCALE			(55)
 #define MED_FEATURE_SCALE			(26)
 #define LARGE_FEATURE_SCALE			(16)
-
 #define TOWER_HEIGHT    100
-UDWORD getStructureStatHeight(STRUCTURE_STATS* psStat);
+
+unsigned getStructureStatHeight(STRUCTURE_STATS* psStat);
 
 void displayIMDButton(iIMDShape* IMDShape, const Vector3i* Rotation, const Vector3i* Position, int scale);
 void displayStructureButton(STRUCTURE* psStructure, const Vector3i* Rotation, const Vector3i* Position, int scale);

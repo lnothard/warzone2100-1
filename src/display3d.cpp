@@ -1994,7 +1994,7 @@ static void displayFeatures(const glm::mat4& viewMatrix)
 				&& (list->died == 0 || list->died > graphicsTime)
 				&& clipXY(list->pos.x, list->pos.y))
 			{
-				FEATURE* psFeature = castFeature(list);
+				Feature* psFeature = castFeature(list);
 				renderFeature(psFeature, viewMatrix);
 			}
 		}
@@ -2112,7 +2112,7 @@ void setViewDistance(float dist)
 }
 
 /// Draw a feature (tree/rock/etc.)
-void renderFeature(FEATURE* psFeature, const glm::mat4& viewMatrix)
+void renderFeature(Feature* psFeature, const glm::mat4& viewMatrix)
 {
 	PIELIGHT brightness = pal_SetBrightness(200);
 	bool bForceDraw = (getRevealStatus() && psFeature->psStats->visibleAtStart);
@@ -3378,7 +3378,7 @@ static void drawDroidSelections()
 		}
 	}
 
-	for (const FEATURE* psFeature = apsFeatureLists[0]; psFeature; psFeature = psFeature->psNext)
+	for (const Feature* psFeature = apsFeatureLists[0]; psFeature; psFeature = psFeature->psNext)
 	{
 		if (!psFeature->died && psFeature->sDisplay.frame_number == currentGameFrame)
 		{

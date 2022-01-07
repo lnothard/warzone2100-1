@@ -92,7 +92,7 @@ const char* objInfo(const SimpleObject* psObj)
 		}
 	case OBJ_FEATURE:
 		{
-			const FEATURE* psFeat = (const FEATURE*)psObj;
+			const Feature* psFeat = (const Feature*)psObj;
 			sstrcpy(info, getStatsName(psFeat->psStats));
 			break;
 		}

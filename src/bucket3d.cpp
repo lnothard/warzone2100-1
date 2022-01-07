@@ -74,9 +74,9 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm:
 	switch (objectType)
 	{
 	case RENDER_PARTICLE:
-		position.x = static_cast<int>(((ATPART*)pObject)->position.x);
-		position.y = static_cast<int>(((ATPART*)pObject)->position.y);
-		position.z = static_cast<int>(((ATPART*)pObject)->position.z);
+		position.x = static_cast<int>(((Particle*)pObject)->position.x);
+		position.y = static_cast<int>(((Particle*)pObject)->position.y);
+		position.z = static_cast<int>(((Particle*)pObject)->position.z);
 
 		position.x = position.x - playerPos.p.x;
 		position.z = -(position.z - playerPos.p.z);
@@ -86,7 +86,7 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm:
 		if (z > 0)
 		{
 			//particle use the image radius
-			radius = ((ATPART*)pObject)->imd->radius;
+			radius = ((Particle*)pObject)->imd->radius;
 			radius *= SCALE_DEPTH;
 			radius /= z;
 			if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
@@ -176,7 +176,7 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm:
 		if (z > 0)
 		{
 			//particle use the image radius
-			radius = ((FEATURE*)pObject)->sDisplay.imd->radius;
+			radius = ((Feature*)pObject)->sDisplay.imd->radius;
 			radius *= SCALE_DEPTH;
 			radius /= z;
 			if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
@@ -357,7 +357,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_FEATURE:
-		pie = ((FEATURE*)pObject)->sDisplay.imd;
+		pie = ((Feature*)pObject)->sDisplay.imd;
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_DELIVPOINT:
@@ -392,7 +392,7 @@ void bucketRenderCurrentList(const glm::mat4& viewMatrix)
 		switch (thisTag->objectType)
 		{
 		case RENDER_PARTICLE:
-			renderParticle((ATPART*)thisTag->pObject, viewMatrix);
+			renderParticle((Particle*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_EFFECT:
 			renderEffect((EFFECT*)thisTag->pObject, viewMatrix);
@@ -404,7 +404,7 @@ void bucketRenderCurrentList(const glm::mat4& viewMatrix)
 			renderStructure((Structure*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_FEATURE:
-			renderFeature((FEATURE*)thisTag->pObject, viewMatrix);
+			renderFeature((Feature*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_PROXMSG:
 			renderProximityMsg((PROXIMITY_DISPLAY*)thisTag->pObject, viewMatrix);

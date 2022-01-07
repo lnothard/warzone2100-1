@@ -2059,15 +2059,15 @@ static void checkLocalFeatures(Droid* psDroid)
 
 		if (psObj->type == OBJ_FEATURE && !psObj->died)
 		{
-			switch (((FEATURE*)psObj)->psStats->subType)
+			switch (((Feature*)psObj)->psStats->subType)
 			{
 			case FEAT_OIL_DRUM:
 				pickedUp = pickupOilDrum(psDroid->player, psObj->player);
-				triggerEventPickup((FEATURE*)psObj, psDroid);
+				triggerEventPickup((Feature*)psObj, psDroid);
 				break;
 			case FEAT_GEN_ARTE:
 				pickedUp = pickupArtefact(psDroid->player, psObj->player);
-				triggerEventPickup((FEATURE*)psObj, psDroid);
+				triggerEventPickup((Feature*)psObj, psDroid);
 				break;
 			default:
 				break;
@@ -2081,7 +2081,7 @@ static void checkLocalFeatures(Droid* psDroid)
 		}
 
 		turnOffMultiMsg(true);
-		removeFeature((FEATURE*)psObj); // remove artifact+.
+		removeFeature((Feature*)psObj); // remove artifact+.
 		turnOffMultiMsg(false);
 	}
 }

@@ -17,10 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
  * @file configuration.cpp
- * Saves your favourite options.
- *
+ * Saves your favourite options
  */
 
 #include "lib/framework/wzconfig.h"
@@ -54,36 +54,30 @@
 #include "clparse.h" // for autoratingUrl
 
 #include <type_traits>
+#include <utility>
 
 #include "mINI/ini.h"
 #define PHYFSPP_IMPL
 #include "3rdparty/physfs.hpp"
-
-// ////////////////////////////////////////////////////////////////////////////
 
 #define MASTERSERVERPORT	9990
 #define GAMESERVERPORT		2100
 
 static const char* fileName = "config";
 
-// ////////////////////////////////////////////////////////////////////////////
-
 // PhysFS implementation of mINI::INIFileStreamGenerator
-
 class PhysFSFileStreamGenerator : public mINI::INIFileStreamGenerator
 {
 public:
-	PhysFSFileStreamGenerator(std::string const& utf8Path)
+	explicit PhysFSFileStreamGenerator(std::string const& utf8Path)
 		: INIFileStreamGenerator(utf8Path)
 	{
 	}
 
-	virtual ~PhysFSFileStreamGenerator()
-	{
-	}
+	~PhysFSFileStreamGenerator() override = default;
 
 public:
-	virtual std::shared_ptr<std::istream> getFileReadStream() const override
+	[[nodiscard]] std::shared_ptr<std::istream> getFileReadStream() const override
 	{
 		if (utf8Path.empty())
 		{
@@ -100,7 +94,7 @@ public:
 		}
 	}
 
-	virtual std::shared_ptr<std::ostream> getFileWriteStream() const override
+	[[nodiscard]] std::shared_ptr<std::ostream> getFileWriteStream() const override
 	{
 		if (utf8Path.empty())
 		{
@@ -117,7 +111,7 @@ public:
 		}
 	}
 
-	virtual bool fileExists() const override
+	[[nodiscard]] bool fileExists() const override
 	{
 		if (utf8Path.empty())
 		{
@@ -126,7 +120,7 @@ public:
 		return PHYSFS_exists(utf8Path.c_str());
 	}
 
-	std::string realPath() const
+	[[nodiscard]] std::string realPath() const
 	{
 		std::string fullPath = WZ_PHYSFS_getRealDir_String(utf8Path.c_str());
 		if (fullPath.empty()) { return fullPath; }
@@ -294,7 +288,7 @@ bool loadConfig()
 	auto iniGetString = [&iniGeneral](const std::string& key,
 	                                  optional<std::string> defaultValue) -> optional<std::string>
 	{
-		return iniSectionGetString(iniGeneral, key, defaultValue);
+		return iniSectionGetString(iniGeneral, key, std::move(defaultValue));
 	};
 
 	ActivityManager::instance().beginLoadingSettings();

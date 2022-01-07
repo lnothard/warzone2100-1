@@ -54,9 +54,9 @@ uint32_t synchObjID;
 /* The lists of objects allocated */
 Droid* apsDroidLists[MAX_PLAYERS];
 Structure* apsStructLists[MAX_PLAYERS];
-FEATURE* apsFeatureLists[MAX_PLAYERS]; ///< Only player zero is valid for features. TODO: Reduce to single list.
+Feature* apsFeatureLists[MAX_PLAYERS]; ///< Only player zero is valid for features. TODO: Reduce to single list.
 Structure* apsExtractorLists[MAX_PLAYERS];
-FEATURE* apsOilList[1];
+Feature* apsOilList[1];
 SimpleObject* apsSensorList[1]; ///< List of sensors in the game.
 
 /*The list of Flag Positions allocated */
@@ -598,7 +598,7 @@ void removeStructureFromList(Structure* psStructToRemove, Structure* pList[MAX_P
 /**************************  FEATURE  *********************************/
 
 /* add the feature to the Feature Lists */
-void addFeature(FEATURE* psFeatureToAdd)
+void addFeature(Feature* psFeatureToAdd)
 {
 	addObjectToList(apsFeatureLists, psFeatureToAdd, 0);
 	if (psFeatureToAdd->psStats->subType == FEAT_OIL_RESOURCE)
@@ -610,7 +610,7 @@ void addFeature(FEATURE* psFeatureToAdd)
 /* Destroy a feature */
 // set the player to 0 since features have player = maxplayers+1. This screws up destroyObject
 // it's a bit of a hack, but hey, it works
-void killFeature(FEATURE* psDel)
+void killFeature(Feature* psDel)
 {
 	ASSERT(psDel->type == OBJ_FEATURE,
 	       "killFeature: pointer is not a feature");
@@ -1035,7 +1035,7 @@ void objCount(int* droids, int* structures, int* features)
 		}
 	}
 
-	for (FEATURE* psFeat = apsFeatureLists[0]; psFeat; psFeat = psFeat->psNext)
+	for (Feature* psFeat = apsFeatureLists[0]; psFeat; psFeat = psFeat->psNext)
 	{
 		(*features)++;
 	}

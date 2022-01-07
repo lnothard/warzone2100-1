@@ -495,10 +495,10 @@ Structure* IdToStruct(UDWORD id, UDWORD player)
 
 // ////////////////////////////////////////////////////////////////////////////
 // find a feature
-FEATURE* IdToFeature(UDWORD id, UDWORD player)
+Feature* IdToFeature(UDWORD id, UDWORD player)
 {
 	(void)player; // unused, all features go into player 0
-	for (FEATURE* d = apsFeatureLists[0]; d; d = d->psNext)
+	for (Feature* d = apsFeatureLists[0]; d; d = d->psNext)
 	{
 		if (d->id == id)
 		{
@@ -539,7 +539,7 @@ SimpleObject* IdToPointer(UDWORD id, UDWORD player)
 {
 	Droid* pD;
 	Structure* pS;
-	FEATURE* pF;
+	Feature* pF;
 	// droids.
 
 	pD = IdToDroid(id, player);
@@ -1895,7 +1895,7 @@ bool recvSpecInGameTextMessage(NETQUEUE queue)
 // process a destroy feature msg.
 bool recvDestroyFeature(NETQUEUE queue)
 {
-	FEATURE* pF;
+	Feature* pF;
 	uint32_t id;
 
 	NETbeginDecode(queue, GAME_DEBUG_REMOVE_FEATURE);

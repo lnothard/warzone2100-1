@@ -17,15 +17,14 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file combat.c
- *
+ * @file combat.cpp
  * Combat mechanics routines.
- *
  */
 
-#include "lib/framework/frame.h"
 #include "lib/framework/fixedpoint.h"
+#include "lib/framework/frame.h"
 #include "lib/netplay/netplay.h"
 
 #include "action.h"
@@ -33,19 +32,20 @@
 #include "difficulty.h"
 #include "geometry.h"
 #include "mapgrid.h"
+#include "qtscript.h"
+#include "objmem.h"
+#include "order.h"
 #include "projectile.h"
 #include "random.h"
-#include "qtscript.h"
-#include "order.h"
-#include "objmem.h"
 
 /* Fire a weapon at something */
-bool combFire(Weapon* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, int weapon_slot)
+bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
+              SimpleObject* psTarget, int weapon_slot)
 {
 	WeaponStats* psStats;
-	UDWORD firePause;
-	SDWORD longRange;
-	SDWORD shortRange;
+	unsigned firePause;
+	int longRange;
+	int shortRange;
 	int compIndex;
 
 	CHECK_OBJECT(psAttacker);
@@ -54,8 +54,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker, SimpleObject* psTarget, 
 
 	/* Don't shoot if the weapon_slot of a vtol is empty */
 	if (psAttacker->type == OBJ_DROID && isVtolDroid(((Droid*)psAttacker))
-		&& psWeap->ammo_used >= getNumAttackRuns(((Droid*)psAttacker), weapon_slot))
-	{
+		&& psWeap->ammo_used >= getNumAttackRuns(((Droid*)psAttacker), weapon_slot)) {
 		objTrace(psAttacker->id, "VTOL slot %d is empty", weapon_slot);
 		return false;
 	}
@@ -398,7 +397,7 @@ int objArmour(const SimpleObject* psObj, WEAPON_CLASS weaponClass)
 	}
 	else if (psObj->type == OBJ_FEATURE && weaponClass == WC_KINETIC)
 	{
-		armour = ((const FEATURE*)psObj)->psStats->armourValue;
+		armour = ((const Feature*)psObj)->psStats->armourValue;
 	}
 	return armour;
 }

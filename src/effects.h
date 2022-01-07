@@ -28,12 +28,12 @@
 	temporary world 'effects
 	Alex McLean, Pumpkin Studios, EIDOS Interactive, 1998.
 */
+
 #include "lib/ivis_opengl/piedef.h"
 #include "lib/framework/fixedpoint.h"
 #include "lib/ivis_opengl/pietypes.h"
 
 #define SHOCK_WAVE_HEIGHT	(64)
-
 
 /* All the effect groups */
 enum EFFECT_GROUP
@@ -48,10 +48,8 @@ enum EFFECT_GROUP
 	EFFECT_SAT_LASER,
 	EFFECT_FIRE,
 	EFFECT_FIREWORK,
-
-	EFFECT_FREED,
+	EFFECT_FREED
 };
-
 
 /* Might not even need this */
 enum EFFECT_TYPE
@@ -111,14 +109,12 @@ enum EFFECT_TYPE
 	FIREWORK_TYPE_LAUNCHER,
 };
 
-
 enum LAND_LIGHT_SPEC
 {
 	LL_MIDDLE,
 	LL_INNER,
 	LL_OUTER
 };
-
 
 struct EFFECT
 {

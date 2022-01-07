@@ -28,6 +28,7 @@
 #include <set>
 #include <vector>
 #include <sstream>
+
 #include "multiplay.h"
 
 struct ChatMessage
@@ -49,6 +50,8 @@ struct ChatMessage
 	[[nodiscard]] std::unique_ptr< std::vector<unsigned> > get_recipients() const;
 
 	[[nodiscard]] std::string formatReceivers() const;
+
+
 	void sendToHumanPlayers();
 	void sendToAiPlayers();
 	void sendToAiPlayer(unsigned receiver);

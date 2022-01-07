@@ -17,9 +17,12 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** \file
- *  Definitions for factions.
+
+/**
+ * @file faction.h
+ * Definitions for factions.
  */
+
 #ifndef __INCLUDED_FACTION_H__
 #define __INCLUDED_FACTION_H__
 

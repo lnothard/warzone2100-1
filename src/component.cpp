@@ -17,9 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file component.c
- * Draws component objects - oh yes indeed.
+ * @file component.cpp
+ * Draws component objects
 */
 
 #include "lib/framework/frame.h"

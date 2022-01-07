@@ -18,15 +18,16 @@
 */
 
 /**
- * @file
+ * @file animation.h
  * Definitions for animation functions.
  */
 
-#include <cstdint>
-#include "lib/gamelib/gtime.h"
-
 #ifndef __INCLUDED_SRC_ANIMATION_H__
 #define __INCLUDED_SRC_ANIMATION_H__
+
+#include <cstdint>
+
+#include "lib/gamelib/gtime.h"
 
 class ValueTracker
 {

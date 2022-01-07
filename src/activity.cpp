@@ -17,18 +17,24 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include "lib/framework/frame.h"
-#include "lib/framework/vector.h"
-#include "ai.h"
-#include "activity.h"
-#include "multiint.h"
-#include "mission.h"
-#include "challenge.h"
-#include "modding.h"
+/**
+ * @file activity.cpp
+ */
+
 #include <algorithm>
+#include <memory>
 #include <mutex>
 
+#include "lib/framework/frame.h"
+#include "lib/framework/vector.h"
 #include <SQLiteCpp/SQLiteCpp.h>
+
+#include "ai.h"
+#include "activity.h"
+#include "challenge.h"
+#include "mission.h"
+#include "modding.h"
+#include "multiint.h"
 
 //std::string ActivitySink::getTeamDescription(const ActivitySink::SkirmishGameInfo& info)
 //{
@@ -87,18 +93,16 @@
 //	return teamDescription;
 //}
 
-std::string to_string(const ActivitySink::GameEndReason& reason)
+std::string to_string(const GameEndReason& reason)
 {
-	switch (reason)
-	{
-	case ActivitySink::GameEndReason::WON:
+	switch (reason) {
+	case GameEndReason::WON:
 		return "Won";
-	case ActivitySink::GameEndReason::LOST:
+	case GameEndReason::LOST:
 		return "Lost";
-	case ActivitySink::GameEndReason::QUIT:
+	case GameEndReason::QUIT:
 		return "Quit";
 	}
-	return ""; // silence warning
 }
 
 std::string to_string(const END_GAME_STATS_DATA& stats)
@@ -112,18 +116,18 @@ class LoggingActivitySink : public ActivitySink
 {
 public:
 	// navigating main menus
-	virtual void navigatedToMenu(const std::string& menuName) override
+	void navigatedToMenu(const std::string& menuName) override
 	{
 		debug(LOG_ACTIVITY, "- navigatedToMenu: %s", menuName.c_str());
 	}
 
 	// campaign games
-	virtual void startedCampaignMission(const std::string& campaign, const std::string& levelName) override
+	void startedCampaignMission(const std::string& campaign, const std::string& levelName) override
 	{
 		debug(LOG_ACTIVITY, "- startedCampaignMission: %s:%s", campaign.c_str(), levelName.c_str());
 	}
 
-	virtual void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result,
+	void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result,
 	                                  END_GAME_STATS_DATA stats, bool cheatsUsed) override
 	{
 		debug(LOG_ACTIVITY, "- endedCampaignMission: %s:%s; result: %s; stats: (%s)", campaign.c_str(),
@@ -131,24 +135,24 @@ public:
 	}
 
 	// challenges
-	virtual void startedChallenge(const std::string& challengeName) override
+	void startedChallenge(const std::string& challengeName) override
 	{
 		debug(LOG_ACTIVITY, "- startedChallenge: %s", challengeName.c_str());
 	}
 
-	virtual void endedChallenge(const std::string& challengeName, GameEndReason result,
+	void endedChallenge(const std::string& challengeName, GameEndReason result,
 	                            const END_GAME_STATS_DATA& stats, bool cheatsUsed) override
 	{
 		debug(LOG_ACTIVITY, "- endedChallenge: %s; result: %s; stats: (%s)", challengeName.c_str(),
 		      to_string(result).c_str(), to_string(stats).c_str());
 	}
 
-	virtual void startedSkirmishGame(const SkirmishGameInfo& info) override
+	void startedSkirmishGame(const SkirmishGameInfo& info) override
 	{
 		debug(LOG_ACTIVITY, "- startedSkirmishGame: %s", info.game.name);
 	}
 
-	virtual void endedSkirmishGame(const SkirmishGameInfo& info, GameEndReason result,
+	void endedSkirmishGame(const SkirmishGameInfo& info, GameEndReason result,
 	                               const END_GAME_STATS_DATA& stats) override
 	{
 		debug(LOG_ACTIVITY, "- endedSkirmishGame: %s; result: %s; stats: (%s)", info.game.name,
@@ -156,18 +160,18 @@ public:
 	}
 
 	// multiplayer
-	virtual void hostingMultiplayerGame(const MultiplayerGameInfo& info) override
+	void hostingMultiplayerGame(const MultiplayerGameInfo& info) override
 	{
 		debug(LOG_ACTIVITY, "- hostingMultiplayerGame: %s; isLobbyGame: %s", info.game.name,
 		      (info.lobbyGameId != 0) ? "true" : "false");
 	}
 
-	virtual void joinedMultiplayerGame(const MultiplayerGameInfo& info) override
+	void joinedMultiplayerGame(const MultiplayerGameInfo& info) override
 	{
 		debug(LOG_ACTIVITY, "- joinedMultiplayerGame: %s", info.game.name);
 	}
 
-	virtual void updateMultiplayerGameInfo(const MultiplayerGameInfo& info) override
+	void updateMultiplayerGameInfo(const MultiplayerGameInfo& info) override
 	{
 		debug(LOG_ACTIVITY,
 		      "- updateMultiplayerGameInfo: (name: %s), (map: %s), maxPlayers: %u, numAvailableSlots: %zu, numHumanPlayers: %u, numAIBotPlayers: %u",
@@ -175,12 +179,12 @@ public:
 		      info.numAIBotPlayers);
 	}
 
-	virtual void startedMultiplayerGame(const MultiplayerGameInfo& info) override
+	void startedMultiplayerGame(const MultiplayerGameInfo& info) override
 	{
 		debug(LOG_ACTIVITY, "- startedMultiplayerGame: %s", info.game.name);
 	}
 
-	virtual void endedMultiplayerGame(const MultiplayerGameInfo& info, GameEndReason result,
+	void endedMultiplayerGame(const MultiplayerGameInfo& info, GameEndReason result,
 	                                  const END_GAME_STATS_DATA& stats) override
 	{
 		debug(LOG_ACTIVITY, "- endedMultiplayerGame: %s; result: %s; stats: (%s)", info.game.name,
@@ -188,19 +192,19 @@ public:
 	}
 
 	// changing settings
-	virtual void changedSetting(const std::string& settingKey, const std::string& settingValue) override
+	void changedSetting(const std::string& settingKey, const std::string& settingValue) override
 	{
 		debug(LOG_ACTIVITY, "- changedSetting: %s = %s", settingKey.c_str(), settingValue.c_str());
 	}
 
 	// cheats used
-	virtual void cheatUsed(const std::string& cheatName) override
+	void cheatUsed(const std::string& cheatName) override
 	{
 		debug(LOG_ACTIVITY, "- cheatUsed: %s", cheatName.c_str());
 	}
 
 	// loaded mods changed
-	virtual void loadedModsChanged(const std::vector<Sha256>& loadedModHashes) override
+	void loadedModsChanged(const std::vector<Sha256>& loadedModHashes) override
 	{
 		debug(LOG_ACTIVITY, "- loadedModsChanged: %s", modListToStr(loadedModHashes).c_str());
 	}
@@ -221,9 +225,7 @@ private:
 	}
 };
 
-ActivityDBProtocol::~ActivityDBProtocol()
-{
-}
+ActivityDBProtocol::~ActivityDBProtocol() = default;
 
 // Should be thread-safe
 class ActivityDatabase : public ActivityDBProtocol
@@ -232,23 +234,23 @@ private:
 #define FIRST_LAUNCH_DATE_KEY "first_launch"
 public:
 	// Caller is expected to handle thrown exceptions
-	ActivityDatabase(const std::string& activityDatabasePath)
+	explicit ActivityDatabase(const std::string& activityDatabasePath)
 	{
-		db = std::unique_ptr<SQLite::Database>(
-			new SQLite::Database(activityDatabasePath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE));
+		db = std::make_unique<SQLite::Database>(
+			activityDatabasePath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
 		db->exec("PRAGMA journal_mode=WAL");
 		createTables();
-		query_findValueByName = std::unique_ptr<SQLite::Statement>(
-			new SQLite::Statement(*db, "SELECT value FROM general_kv_storage WHERE name = ?"));
-		query_insertValueForName = std::unique_ptr<SQLite::Statement>(
-			new SQLite::Statement(*db, "INSERT OR IGNORE INTO general_kv_storage(name, value) VALUES(?, ?)"));
-		query_updateValueForName = std::unique_ptr<SQLite::Statement>(
-			new SQLite::Statement(*db, "UPDATE general_kv_storage SET value = ? WHERE name = ?"));
+		query_findValueByName = std::make_unique<SQLite::Statement>(
+			*db, "SELECT value FROM general_kv_storage WHERE name = ?");
+		query_insertValueForName = std::make_unique<SQLite::Statement>(
+			*db, "INSERT OR IGNORE INTO general_kv_storage(name, value) VALUES(?, ?)");
+		query_updateValueForName = std::make_unique<SQLite::Statement>(
+			*db, "UPDATE general_kv_storage SET value = ? WHERE name = ?");
 	}
 
 public:
 	// Must be thread-safe
-	virtual std::string getFirstLaunchDate() const override
+	std::string getFirstLaunchDate() const override
 	{
 		auto result = getValue(FIRST_LAUNCH_DATE_KEY);
 		ASSERT_OR_RETURN("", result.has_value(), "Should always be initialized");
@@ -788,15 +790,15 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 
 	ActivitySink::MultiplayerGameInfo::AllianceOption alliancesOpt =
 		ActivitySink::MultiplayerGameInfo::AllianceOption::NO_ALLIANCES;
-	if (multiGame.alliance == ::AllianceType::ALLIANCES)
+	if (multiGame.alliance == ::ALLIANCE_TYPE::ALLIANCES)
 	{
 		alliancesOpt = ActivitySink::MultiplayerGameInfo::AllianceOption::ALLIANCES;
 	}
-	else if (multiGame.alliance == ::AllianceType::ALLIANCES_TEAMS)
+	else if (multiGame.alliance == ::ALLIANCE_TYPE::ALLIANCES_TEAMS)
 	{
 		alliancesOpt = ActivitySink::MultiplayerGameInfo::AllianceOption::ALLIANCES_TEAMS;
 	}
-	else if (multiGame.alliance == ::AllianceType::ALLIANCES_UNSHARED)
+	else if (multiGame.alliance == ::ALLIANCE_TYPE::ALLIANCES_UNSHARED)
 	{
 		alliancesOpt = ActivitySink::MultiplayerGameInfo::AllianceOption::ALLIANCES_UNSHARED;
 	}

@@ -18,34 +18,35 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
+/**
+ * @file atmos.h
+ */
+
 #ifndef __INCLUDED_SRC_ATMOS_H__
 #define __INCLUDED_SRC_ATMOS_H__
 
-#include "lib/framework/vector.h"
-#include "lib/ivis_opengl/ivisdef.h"
-
-struct ATPART
+struct Particle
 {
-	UBYTE status;
-	UBYTE type;
-	UDWORD size;
+	uint8_t status;
+	uint8_t type;
+	unsigned size;
 	Vector3f position;
 	Vector3f velocity;
-	iIMDShape* imd;
+	std::unique_ptr<iIMDShape> imd;
 };
 
-enum WT_CLASS
+enum class WEATHER_TYPE
 {
-	WT_RAINING,
-	WT_SNOWING,
-	WT_NONE
+	RAINING,
+	SNOWING,
+	NONE
 };
 
 void atmosInitSystem();
 void atmosUpdateSystem();
-void renderParticle(ATPART* psPart, const glm::mat4& viewMatrix);
+void renderParticle(Particle* psPart, const glm::mat4& viewMatrix);
 void atmosDrawParticles(const glm::mat4& viewMatrix);
-void atmosSetWeatherType(WT_CLASS type);
-WT_CLASS atmosGetWeatherType();
+void atmosSetWeatherType(WEATHER_TYPE type);
+WEATHER_TYPE atmosGetWeatherType();
 
 #endif // __INCLUDED_SRC_ATMOS_H__

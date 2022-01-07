@@ -17,8 +17,9 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file atmos.c
+ * @file atmos.cpp
  *
  * Handles atmospherics such as snow and rain.
 */
@@ -41,10 +42,6 @@
 #endif
 #include <glm/gtx/transform.hpp>
 
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-// Shift all this gubbins into a .h file if it makes it into game
-// -----------------------------------------------------------------------------
 /* Roughly one per tile */
 #define	MAX_ATMOS_PARTICLES		(MAP_MAXWIDTH * MAP_MAXHEIGHT)
 #define	SNOW_SPEED_DRIFT		(40 - rand() % 80)
@@ -64,9 +61,9 @@ enum AP_STATUS
 	APS_ACTIVE
 };
 
-static ATPART* asAtmosParts = nullptr;
+static Particle* asAtmosParts = nullptr;
 static UDWORD freeParticle;
-static WT_CLASS weather = WT_NONE;
+static WEATHER_TYPE weather = WT_NONE;
 
 /* Setup all the particles */
 void atmosInitSystem()
@@ -74,7 +71,7 @@ void atmosInitSystem()
 	if (!asAtmosParts && weather != WT_NONE)
 	{
 		// calloc sets all to APS_INACTIVE initially
-		asAtmosParts = (ATPART*)calloc(MAX_ATMOS_PARTICLES, sizeof(*asAtmosParts));
+		asAtmosParts = (Particle*)calloc(MAX_ATMOS_PARTICLES, sizeof(*asAtmosParts));
 	}
 	/* Start at the beginning */
 	freeParticle = 0;
@@ -110,7 +107,7 @@ void atmosInitSystem()
 //}
 
 /* Moves one of the particles */
-static void processParticle(ATPART* psPart)
+static void processParticle(Particle* psPart)
 {
 	SDWORD groundHeight;
 	Vector3i pos;
@@ -335,7 +332,7 @@ void atmosDrawParticles(const glm::mat4& viewMatrix)
 	}
 }
 
-void renderParticle(ATPART* psPart, const glm::mat4& viewMatrix)
+void renderParticle(Particle* psPart, const glm::mat4& viewMatrix)
 {
 	glm::vec3 dv;
 
@@ -353,7 +350,7 @@ void renderParticle(ATPART* psPart, const glm::mat4& viewMatrix)
 	/* Draw it... */
 }
 
-void atmosSetWeatherType(WT_CLASS type)
+void atmosSetWeatherType(WEATHER_TYPE type)
 {
 	if (type != weather)
 	{
@@ -367,7 +364,7 @@ void atmosSetWeatherType(WT_CLASS type)
 	}
 }
 
-WT_CLASS atmosGetWeatherType()
+WEATHER_TYPE atmosGetWeatherType()
 {
 	return weather;
 }

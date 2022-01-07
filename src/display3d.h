@@ -81,7 +81,7 @@ void disp3d_getView(iView* newView);
 void screenCoordToWorld(const Vector2i, Vector2i&, SDWORD&, SDWORD&);
 void draw3DScene();
 void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix);
-void renderFeature(FEATURE* psFeature, const glm::mat4& viewMatrix);
+void renderFeature(Feature* psFeature, const glm::mat4& viewMatrix);
 void renderProximityMsg(PROXIMITY_DISPLAY* psProxDisp, const glm::mat4& viewMatrix);
 void renderProjectile(PROJECTILE* psCurr, const glm::mat4& viewMatrix);
 void renderDeliveryPoint(FLAG_POSITION* psPosition, bool blueprint, const glm::mat4& viewMatrix);

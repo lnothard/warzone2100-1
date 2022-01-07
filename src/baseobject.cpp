@@ -184,7 +184,7 @@ void _syncDebugObject(const char* function, SIMPLE_OBJECT const* psObject, char 
 		break;
 	case OBJ_STRUCTURE: _syncDebugStructure(function, (const Structure*)psObject, ch);
 		break;
-	case OBJ_FEATURE: _syncDebugFeature(function, (const FEATURE*)psObject, ch);
+	case OBJ_FEATURE: _syncDebugFeature(function, (const Feature*)psObject, ch);
 		break;
 	case OBJ_PROJECTILE: _syncDebugProjectile(function, (const PROJECTILE*)psObject, ch);
 		break;
@@ -204,7 +204,7 @@ Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 	}
 	else if (StatIsFeature(pType))
 	{
-		return static_cast<FEATURE_STATS const*>(pType)->size();
+		return static_cast<FeatureStats const*>(pType)->size();
 	}
 	return Vector2i(1, 1);
 }
@@ -212,7 +212,7 @@ Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 StructureBounds getStructureBounds(SimpleObject const* object)
 {
 	Structure const* psStructure = castStructure(object);
-	FEATURE const* psFeature = castFeature(object);
+	Feature const* psFeature = castFeature(object);
 
 	if (psStructure != nullptr)
 	{
@@ -234,7 +234,7 @@ StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos, uint16_
 	}
 	else if (StatIsFeature(stats))
 	{
-		return getStructureBounds(static_cast<FEATURE_STATS const*>(stats), pos);
+		return getStructureBounds(static_cast<FeatureStats const*>(stats), pos);
 	}
 
 	return StructureBounds(map_coord(pos), Vector2i(1, 1)); // Default to a 1×1 tile.

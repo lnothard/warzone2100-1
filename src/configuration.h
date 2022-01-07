@@ -17,8 +17,9 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  load and save favourites to the config file
+
+/** @file configuration.h
+ *  Load and save favourites to the config file
  */
 
 #ifndef __INCLUDED_SRC_CONFIGURATION_H__

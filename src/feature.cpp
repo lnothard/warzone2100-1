@@ -17,11 +17,12 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * Feature.c
- *
+
+/**
+ * @file feature.cpp
  * Load feature stats
  */
+
 #include "lib/framework/frame.h"
 
 #include "lib/gamelib/gtime.h"
@@ -52,11 +53,11 @@
 #include "random.h"
 
 /* The statistics for the features */
-FEATURE_STATS* asFeatureStats;
+FeatureStats* asFeatureStats;
 UDWORD numFeatureStats;
 
 //Value is stored for easy access to this feature in destroyDroid()/destroyStruct()
-FEATURE_STATS* oilResFeature = nullptr;
+FeatureStats* oilResFeature = nullptr;
 
 void featureInitVars()
 {
@@ -70,13 +71,13 @@ bool loadFeatureStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	asFeatureStats = new FEATURE_STATS[list.size()];
+	asFeatureStats = new FeatureStats[list.size()];
 	numFeatureStats = list.size();
 	for (int i = 0; i < list.size(); ++i)
 	{
 		ini.beginGroup(list[i]);
-		asFeatureStats[i] = FEATURE_STATS(STAT_FEATURE + i);
-		FEATURE_STATS* p = &asFeatureStats[i];
+		asFeatureStats[i] = FeatureStats(STAT_FEATURE + i);
+		FeatureStats* p = &asFeatureStats[i];
 		p->name = ini.string(WzString::fromUtf8("name"));
 		p->id = list[i];
 		WzString subType = ini.value("type").toWzString();
@@ -155,7 +156,7 @@ void featureStatsShutDown()
  *  \param weaponClass,weaponSubClass the class and subclass of the weapon that deals the damage
  *  \return < 0 never, >= 0 always
  */
-int32_t featureDamage(FEATURE* psFeature, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
+int32_t featureDamage(Feature* psFeature, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
                       unsigned impactTime, bool isDamagePerSecond, int minDamage)
 {
 	int32_t relativeDamage;
@@ -183,10 +184,10 @@ int32_t featureDamage(FEATURE* psFeature, unsigned damage, WEAPON_CLASS weaponCl
 
 
 /* Create a feature on the map */
-FEATURE* buildFeature(FEATURE_STATS* psStats, UDWORD x, UDWORD y, bool FromSave)
+Feature* buildFeature(FeatureStats* psStats, UDWORD x, UDWORD y, bool FromSave)
 {
 	//try and create the Feature
-	FEATURE* psFeature = new FEATURE(generateSynchronisedObjectId(), psStats);
+	Feature* psFeature = new Feature(generateSynchronisedObjectId(), psStats);
 
 	if (psFeature == nullptr)
 	{
@@ -271,7 +272,7 @@ FEATURE* buildFeature(FEATURE_STATS* psStats, UDWORD x, UDWORD y, bool FromSave)
 			{
 				if (TileHasFeature(psTile))
 				{
-					FEATURE* psBlock = (FEATURE*)psTile->psObject;
+					Feature* psBlock = (Feature*)psTile->psObject;
 
 					debug(LOG_ERROR,
 					      "%s(%d) already placed at (%d+%d, %d+%d) when trying to place %s(%d) at (%d+%d, %d+%d) - removing it",
@@ -309,20 +310,20 @@ FEATURE* buildFeature(FEATURE_STATS* psStats, UDWORD x, UDWORD y, bool FromSave)
 }
 
 
-FEATURE::FEATURE(uint32_t id, FEATURE_STATS const* psStats)
+Feature::Feature(uint32_t id, FeatureStats const* psStats)
 	: SimpleObject(OBJ_FEATURE, id, PLAYER_FEATURE) // Set the default player out of range to avoid targeting confusions
 	  , psStats(psStats)
 {
 }
 
 /* Release the resources associated with a feature */
-FEATURE::~FEATURE()
+Feature::~Feature()
 {
 	// Make sure to get rid of some final references in the sound code to this object first
 	audio_RemoveObj(this);
 }
 
-void _syncDebugFeature(const char* function, FEATURE const* psFeature, char ch)
+void _syncDebugFeature(const char* function, Feature const* psFeature, char ch)
 {
 	if (psFeature->type != OBJ_FEATURE)
 	{
@@ -346,7 +347,7 @@ void _syncDebugFeature(const char* function, FEATURE const* psFeature, char ch)
 }
 
 /* Update routine for features */
-void featureUpdate(FEATURE* psFeat)
+void featureUpdate(Feature* psFeat)
 {
 	syncDebugFeature(psFeat, '<');
 
@@ -365,7 +366,7 @@ void featureUpdate(FEATURE* psFeat)
 
 
 // free up a feature with no visual effects
-bool removeFeature(FEATURE* psDel)
+bool removeFeature(Feature* psDel)
 {
 	MESSAGE* psMessage;
 	Vector3i pos;
@@ -431,7 +432,7 @@ bool removeFeature(FEATURE* psDel)
 }
 
 /* Remove a Feature and free it's memory */
-bool destroyFeature(FEATURE* psDel, unsigned impactTime)
+bool destroyFeature(Feature* psDel, unsigned impactTime)
 {
 	UDWORD widthScatter, breadthScatter, heightScatter, i;
 	EFFECT_TYPE explosionSize;
@@ -539,7 +540,7 @@ bool destroyFeature(FEATURE* psDel, unsigned impactTime)
 
 SDWORD getFeatureStatFromName(const WzString& name)
 {
-	FEATURE_STATS* psStat;
+	FeatureStats* psStat;
 
 	for (unsigned inc = 0; inc < numFeatureStats; inc++)
 	{
@@ -552,12 +553,12 @@ SDWORD getFeatureStatFromName(const WzString& name)
 	return -1;
 }
 
-StructureBounds getStructureBounds(FEATURE const* object)
+StructureBounds getStructureBounds(Feature const* object)
 {
 	return getStructureBounds(object->psStats, object->pos.xy());
 }
 
-StructureBounds getStructureBounds(FEATURE_STATS const* stats, Vector2i pos)
+StructureBounds getStructureBounds(FeatureStats const* stats, Vector2i pos)
 {
 	const Vector2i size = stats->size();
 	const Vector2i map = map_coord(pos) - size / 2;

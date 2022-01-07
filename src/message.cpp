@@ -912,7 +912,7 @@ void displayProximityMessage(PROXIMITY_DISPLAY* psProxDisp)
 	{
 		ASSERT_OR_RETURN(, psProxDisp->psMessage->psObj, "Invalid proxobj - null object");
 		ASSERT_OR_RETURN(, psProxDisp->psMessage->psObj->type == OBJ_FEATURE, "Invalid proxobj - must be feature");
-		const FEATURE* psFeature = (FEATURE*)psProxDisp->psMessage->psObj;
+		const Feature* psFeature = (Feature*)psProxDisp->psMessage->psObj;
 
 		if (psFeature->psStats->subType == FEAT_OIL_RESOURCE)
 		{

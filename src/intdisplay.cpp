@@ -1757,7 +1757,7 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 		}
 		else
 		{
-			const FEATURE* psFeature = castFeature(psProxDisp->psMessage->psObj);
+			const Feature* psFeature = castFeature(psProxDisp->psMessage->psObj);
 
 			ASSERT_OR_RETURN(, psFeature && psFeature->psStats, "Bad feature message");
 			if (psFeature && psFeature->psStats && psFeature->psStats->subType == FEAT_OIL_RESOURCE)
