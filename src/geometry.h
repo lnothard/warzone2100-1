@@ -58,7 +58,7 @@ static inline Feature* getTileFeature(UDWORD x, UDWORD y)
 /// Must *NOT* be used for anything game-state/simulation-calculation related
 static inline SimpleObject* getTileOccupier(UDWORD x, UDWORD y)
 {
-	MAPTILE* psTile = mapTile(x, y);
+	Tile* psTile = mapTile(x, y);
 
 	if (TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile))
 	{

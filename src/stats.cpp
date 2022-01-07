@@ -17,33 +17,34 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file stats.c
- *
+ * @file stats.cpp
  * Store common stats for weapons, components, brains, etc.
- *
  */
-#include <string.h>
+
 #include <algorithm>
+#include <cstring>
+#include <unordered_map>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/strres.h"
 #include "lib/framework/frameresource.h"
 #include "lib/framework/fixedpoint.h"
-#include "lib/ivis_opengl/imd.h"
 #include "lib/gamelib/gtime.h"
+#include "lib/ivis_opengl/imd.h"
+#include "lib/sound/audio_id.h"
+
 #include "objects.h"
 #include "stats.h"
 #include "map.h"
 #include "main.h"
-#include "lib/sound/audio_id.h"
 #include "projectile.h"
 #include "text.h"
-#include <unordered_map>
 
-#define WEAPON_TIME		100
+#define WEAPON_TIME 100
 
-#define DEFAULT_DROID_RESISTANCE	150
+#define DEFAULT_DROID_TYPE::RESISTANCE	150
 
 /* The stores for the different stats */
 BodyStats* asBodyStats;
@@ -58,24 +59,24 @@ std::vector<PROPULSION_TYPES> asPropulsionTypes;
 static int* asTerrainTable;
 
 //used to hold the modifiers cross refd by weapon effect and propulsion type
-WEAPON_MODIFIER asWeaponModifier[WE_NUMEFFECTS][PROPULSION_TYPE_NUM];
-WEAPON_MODIFIER asWeaponModifierBody[WE_NUMEFFECTS][SIZE_NUM];
+WEAPON_MODIFIER asWeaponModifier[WEAPON_EFFECT::NUMEFFECTS][PROPULSION_TYPE_NUM];
+WEAPON_MODIFIER asWeaponModifierBody[WEAPON_EFFECT::NUMEFFECTS][SIZE_NUM];
 
 /* The number of different stats stored */
-UDWORD numBodyStats;
-UDWORD numBrainStats;
-UDWORD numPropulsionStats;
-UDWORD numSensorStats;
-UDWORD numECMStats;
-UDWORD numRepairStats;
-UDWORD numWeaponStats;
-UDWORD numConstructStats;
+unsigned numBodyStats;
+unsigned numBrainStats;
+unsigned numPropulsionStats;
+unsigned numSensorStats;
+unsigned numECMStats;
+unsigned numRepairStats;
+unsigned numWeaponStats;
+unsigned numConstructStats;
 
 //stores for each players component states - can be either UNAVAILABLE, REDUNDANT, FOUND or AVAILABLE
-UBYTE* apCompLists[MAX_PLAYERS][COMP_NUMCOMPONENTS];
+uint8_t* apCompLists[MAX_PLAYERS][COMP_NUMCOMPONENTS];
 
 //store for each players Structure states
-UBYTE* apStructTypeLists[MAX_PLAYERS];
+uint8_t* apStructTypeLists[MAX_PLAYERS];
 
 static std::unordered_map<WzString, BaseStats*> lookupStatPtr;
 static std::unordered_map<WzString, ComponentStats*> lookupCompStatPtr;
@@ -155,49 +156,49 @@ bool statsShutDown()
 *		Allocate stats functions
 *******************************************************************************/
 /* Allocate Weapon stats */
-bool statsAllocWeapons(UDWORD numStats)
+bool statsAllocWeapons(unsigned numStats)
 {
 	ALLOC_STATS(numStats, asWeaponStats, numWeaponStats, WeaponStats);
 }
 
 /* Allocate Body Stats */
-bool statsAllocBody(UDWORD numStats)
+bool statsAllocBody(unsigned numStats)
 {
 	ALLOC_STATS(numStats, asBodyStats, numBodyStats, BodyStats);
 }
 
 /* Allocate Brain Stats */
-bool statsAllocBrain(UDWORD numStats)
+bool statsAllocBrain(unsigned numStats)
 {
 	ALLOC_STATS(numStats, asBrainStats, numBrainStats, CommanderStats);
 }
 
 /* Allocate Propulsion Stats */
-bool statsAllocPropulsion(UDWORD numStats)
+bool statsAllocPropulsion(unsigned numStats)
 {
 	ALLOC_STATS(numStats, asPropulsionStats, numPropulsionStats, PropulsionStats);
 }
 
 /* Allocate Sensor Stats */
-bool statsAllocSensor(UDWORD numStats)
+bool statsAllocSensor(unsigned numStats)
 {
 	ALLOC_STATS(numStats, asSensorStats, numSensorStats, SensorStats);
 }
 
 /* Allocate Ecm Stats */
-bool statsAllocECM(UDWORD numStats)
+bool statsAllocECM(unsigned numStats)
 {
 	ALLOC_STATS(numStats, asECMStats, numECMStats, EcmStats);
 }
 
 /* Allocate Repair Stats */
-bool statsAllocRepair(UDWORD numStats)
+bool statsAllocRepair(unsigned numStats)
 {
 	ALLOC_STATS(numStats, asRepairStats, numRepairStats, RepairStats);
 }
 
 /* Allocate Construct Stats */
-bool statsAllocConstruct(UDWORD numStats)
+bool statsAllocConstruct(unsigned numStats)
 {
 	ALLOC_STATS(numStats, asConstructStats, numConstructStats, ConstructStats);
 }
@@ -263,54 +264,54 @@ static void loadCompStats(WzConfig& json, ComponentStats* psStats, size_t index)
 	psStats->getBase().hitpointPct = json.value("hitpointPct", 100).toUInt();
 
 	WzString dtype = json.value("droidType", "DROID").toWzString();
-	psStats->droidTypeOverride = DROID_ANY;
+	psStats->droidTypeOverride = DROID_TYPE::ANY;
 	if (dtype.compare("PERSON") == 0)
 	{
-		psStats->droidTypeOverride = DROID_PERSON;
+		psStats->droidTypeOverride = DROID_TYPE::PERSON;
 	}
 	else if (dtype.compare("TRANSPORTER") == 0)
 	{
-		psStats->droidTypeOverride = DROID_TRANSPORTER;
+		psStats->droidTypeOverride = DROID_TYPE::TRANSPORTER;
 	}
 	else if (dtype.compare("SUPERTRANSPORTER") == 0)
 	{
-		psStats->droidTypeOverride = DROID_SUPERTRANSPORTER;
+		psStats->droidTypeOverride = DROID_TYPE::SUPER_TRANSPORTER;
 	}
 	else if (dtype.compare("CYBORG") == 0)
 	{
-		psStats->droidTypeOverride = DROID_CYBORG;
+		psStats->droidTypeOverride = DROID_TYPE::CYBORG;
 	}
 	else if (dtype.compare("CYBORG_SUPER") == 0)
 	{
-		psStats->droidTypeOverride = DROID_CYBORG_SUPER;
+		psStats->droidTypeOverride = DROID_TYPE::CYBORG_SUPER;
 	}
 	else if (dtype.compare("CYBORG_CONSTRUCT") == 0)
 	{
-		psStats->droidTypeOverride = DROID_CYBORG_CONSTRUCT;
+		psStats->droidTypeOverride = DROID_TYPE::CYBORG_CONSTRUCT;
 	}
 	else if (dtype.compare("CYBORG_REPAIR") == 0)
 	{
-		psStats->droidTypeOverride = DROID_CYBORG_REPAIR;
+		psStats->droidTypeOverride = DROID_TYPE::CYBORG_REPAIR;
 	}
-	else if (dtype.compare("DROID_CONSTRUCT") == 0)
+	else if (dtype.compare("DROID_TYPE::CONSTRUCT") == 0)
 	{
-		psStats->droidTypeOverride = DROID_CONSTRUCT;
+		psStats->droidTypeOverride = DROID_TYPE::CONSTRUCT;
 	}
-	else if (dtype.compare("DROID_ECM") == 0)
+	else if (dtype.compare("DROID_TYPE::ECM") == 0)
 	{
-		psStats->droidTypeOverride = DROID_ECM;
+		psStats->droidTypeOverride = DROID_TYPE::ECM;
 	}
-	else if (dtype.compare("DROID_COMMAND") == 0)
+	else if (dtype.compare("DROID_TYPE::COMMAND") == 0)
 	{
-		psStats->droidTypeOverride = DROID_COMMAND;
+		psStats->droidTypeOverride = DROID_TYPE::COMMAND;
 	}
-	else if (dtype.compare("DROID_SENSOR") == 0)
+	else if (dtype.compare("DROID_TYPE::SENSOR") == 0)
 	{
-		psStats->droidTypeOverride = DROID_SENSOR;
+		psStats->droidTypeOverride = DROID_TYPE::SENSOR;
 	}
-	else if (dtype.compare("DROID_REPAIR") == 0)
+	else if (dtype.compare("DROID_TYPE::REPAIR") == 0)
 	{
-		psStats->droidTypeOverride = DROID_REPAIR;
+		psStats->droidTypeOverride = DROID_TYPE::REPAIRER;
 	}
 	else if (dtype.compare("DROID") != 0)
 	{
@@ -383,8 +384,8 @@ bool loadWeaponStats(WzConfig& ini)
 		psStats->vtolAttackRuns = ini.value("numAttackRuns", 0).toUInt();
 		psStats->penetrate = ini.value("penetrate", false).toBool();
 		// weapon size limitation
-		int weaponSize = ini.value("weaponSize", WEAPON_SIZE_ANY).toInt();
-		ASSERT(weaponSize <= WEAPON_SIZE_ANY, "Bad weapon size for %s", list[i].toUtf8().c_str());
+		int weaponSize = ini.value("weaponSize", WEAPON_SIZE::ANY).toInt();
+		ASSERT(weaponSize <= WEAPON_SIZE::ANY, "Bad weapon size for %s", list[i].toUtf8().c_str());
 		psStats->weaponSize = (WEAPON_SIZE)weaponSize;
 
 		ASSERT(psStats->flightSpeed > 0, "Invalid flight speed for %s", list[i].toUtf8().c_str());
@@ -409,7 +410,7 @@ bool loadWeaponStats(WzConfig& ini)
 		if (!getWeaponClass(ini.value("weaponClass").toWzString(), &psStats->weaponClass))
 		{
 			debug(LOG_ERROR, "Invalid weapon class for weapon %s - assuming KINETIC", getStatsName(psStats));
-			psStats->weaponClass = WC_KINETIC;
+			psStats->weaponClass = WEAPON_CLASS::KINETIC;
 		}
 
 		//set the subClass
@@ -419,11 +420,11 @@ bool loadWeaponStats(WzConfig& ini)
 		}
 
 		// set max extra weapon range on misses, make this modifiable one day by mod makers
-		if (psStats->weaponSubClass == WSC_MGUN || psStats->weaponSubClass == WSC_COMMAND)
+		if (psStats->weaponSubClass == WEAPON_SUBCLASS::MGUN || psStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND)
 		{
 			psStats->distanceExtensionFactor = 120;
 		}
-		else if (psStats->weaponSubClass == WSC_AAGUN)
+		else if (psStats->weaponSubClass == WEAPON_SUBCLASS::AAGUN)
 		{
 			psStats->distanceExtensionFactor = 100;
 		}
@@ -573,7 +574,7 @@ bool loadBodyStats(WzConfig& ini)
 		psStats->base.thermal = ini.value("armourHeat").toInt();
 		psStats->base.armour = ini.value("armourKinetic").toInt();
 		psStats->base.power = ini.value("powerOutput").toInt();
-		psStats->base.resistance = ini.value("resistance", DEFAULT_DROID_RESISTANCE).toInt();
+		psStats->base.resistance = ini.value("resistance", DEFAULT_DROID_TYPE::RESISTANCE).toInt();
 		for (int j = 0; j < MAX_PLAYERS; j++)
 		{
 			psStats->upgrade[j] = psStats->base;
@@ -1126,7 +1127,7 @@ static bool statsGetAudioIDFromString(const WzString& szStatName, const WzString
 bool loadWeaponModifiers(WzConfig& ini)
 {
 	//initialise to 100%
-	for (int i = 0; i < WE_NUMEFFECTS; i++)
+	for (int i = 0; i < WEAPON_EFFECT::NUMEFFECTS; i++)
 	{
 		for (int j = 0; j < PROPULSION_TYPE_NUM; j++)
 		{
@@ -1152,16 +1153,16 @@ bool loadWeaponModifiers(WzConfig& ini)
 			continue;
 		}
 		std::vector<WzString> keys = ini.childKeys();
-		for (int j = 0; j < keys.size(); j++)
+		for (auto & key : keys)
 		{
-			int modifier = ini.value(keys.at(j)).toInt();
-			if (!getPropulsionType(keys.at(j).toUtf8().data(), &propInc))
+			int modifier = ini.value(key).toInt();
+			if (!getPropulsionType(key.toUtf8().data(), &propInc))
 			{
 				// If not propulsion, must be body
-				BODY_SIZE body = SIZE_NUM;
-				if (!getBodySize(keys.at(j), &body))
+				BODY_SIZE body = BODY_SIZE::COUNT;
+				if (!getBodySize(key, &body))
 				{
-					debug(LOG_FATAL, "Invalid Propulsion or Body type - %s", keys.at(j).toUtf8().c_str());
+					debug(LOG_FATAL, "Invalid Propulsion or Body type - %s", key.toUtf8().c_str());
 					continue;
 				}
 				asWeaponModifierBody[effectInc][body] = modifier;
@@ -1182,7 +1183,7 @@ bool loadPropulsionSounds(const char* pFileName)
 	SDWORD i, startID, idleID, moveOffID, moveID, hissID, shutDownID;
 	PROPULSION_TYPE type;
 
-	ASSERT(asPropulsionTypes.size() != 0, "loadPropulsionSounds: Propulsion type stats not loaded");
+	ASSERT(!asPropulsionTypes.empty(), "loadPropulsionSounds: Propulsion type stats not loaded");
 
 	WzConfig ini(pFileName, WzConfig::ReadOnlyAndRequired);
 	std::vector<WzString> list = ini.childGroups();
@@ -1233,7 +1234,7 @@ bool loadPropulsionSounds(const char* pFileName)
 }
 
 //get the speed factor for a given terrain type and propulsion type
-UDWORD getSpeedFactor(UDWORD type, UDWORD propulsionType)
+unsigned getSpeedFactor(unsigned type, unsigned propulsionType)
 {
 	ASSERT(propulsionType < PROPULSION_TYPE_NUM, "The propulsion type is too large");
 	return asTerrainTable[type * PROPULSION_TYPE_NUM + propulsionType];
@@ -1296,12 +1297,12 @@ bool getBodySize(const WzString& size, BODY_SIZE* pStore)
 {
 	if (!strcmp(size.toUtf8().c_str(), "LIGHT"))
 	{
-		*pStore = SIZE_LIGHT;
+		*pStore = BODY_SIZE::LIGHT;
 		return true;
 	}
 	else if (!strcmp(size.toUtf8().c_str(), "MEDIUM"))
 	{
-		*pStore = SIZE_MEDIUM;
+		*pStore = BODY_SIZE::MEDIUM;
 		return true;
 	}
 	else if (!strcmp(size.toUtf8().c_str(), "HEAVY"))
@@ -1324,71 +1325,71 @@ bool getWeaponSubClass(const char* subClass, WEAPON_SUBCLASS* wclass)
 {
 	if (strcmp(subClass, "CANNON") == 0)
 	{
-		*wclass = WSC_CANNON;
+		*wclass = WEAPON_SUBCLASS::CANNON;
 	}
 	else if (strcmp(subClass, "MORTARS") == 0)
 	{
-		*wclass = WSC_MORTARS;
+		*wclass = WEAPON_SUBCLASS::MORTARS;
 	}
 	else if (strcmp(subClass, "MISSILE") == 0)
 	{
-		*wclass = WSC_MISSILE;
+		*wclass = WEAPON_SUBCLASS::MISSILE;
 	}
 	else if (strcmp(subClass, "ROCKET") == 0)
 	{
-		*wclass = WSC_ROCKET;
+		*wclass = WEAPON_SUBCLASS::ROCKET;
 	}
 	else if (strcmp(subClass, "ENERGY") == 0)
 	{
-		*wclass = WSC_ENERGY;
+		*wclass = WEAPON_SUBCLASS::ENERGY;
 	}
 	else if (strcmp(subClass, "GAUSS") == 0)
 	{
-		*wclass = WSC_GAUSS;
+		*wclass = WEAPON_SUBCLASS::GAUSS;
 	}
 	else if (strcmp(subClass, "FLAME") == 0)
 	{
-		*wclass = WSC_FLAME;
+		*wclass = WEAPON_SUBCLASS::FLAME;
 	}
 	else if (strcmp(subClass, "HOWITZERS") == 0)
 	{
-		*wclass = WSC_HOWITZERS;
+		*wclass = WEAPON_SUBCLASS::HOWITZERS;
 	}
 	else if (strcmp(subClass, "MACHINE GUN") == 0)
 	{
-		*wclass = WSC_MGUN;
+		*wclass = WEAPON_SUBCLASS::MACHINE_GUN;
 	}
 	else if (strcmp(subClass, "ELECTRONIC") == 0)
 	{
-		*wclass = WSC_ELECTRONIC;
+		*wclass = WEAPON_SUBCLASS::ELECTRONIC;
 	}
 	else if (strcmp(subClass, "A-A GUN") == 0)
 	{
-		*wclass = WSC_AAGUN;
+		*wclass = WEAPON_SUBCLASS::AA_GUN;
 	}
 	else if (strcmp(subClass, "SLOW MISSILE") == 0)
 	{
-		*wclass = WSC_SLOWMISSILE;
+		*wclass = WEAPON_SUBCLASS::SLOW_MISSILE;
 	}
 	else if (strcmp(subClass, "SLOW ROCKET") == 0)
 	{
-		*wclass = WSC_SLOWROCKET;
+		*wclass = WEAPON_SUBCLASS::SLOW_ROCKET;
 	}
 	else if (strcmp(subClass, "LAS_SAT") == 0)
 	{
-		*wclass = WSC_LAS_SAT;
+		*wclass = WEAPON_SUBCLASS::LAS_SAT;
 	}
 	else if (strcmp(subClass, "BOMB") == 0)
 	{
-		*wclass = WSC_BOMB;
+		*wclass = WEAPON_SUBCLASS::BOMB;
 	}
 	else if (strcmp(subClass, "COMMAND") == 0)
 	{
-		*wclass = WSC_COMMAND;
+		*wclass = WEAPON_SUBCLASS::COMMAND;
 	}
 	else if (strcmp(subClass, "EMP") == 0)
 	{
-		*wclass = WSC_EMP;
+		*wclass = WEAPON_SUBCLASS::EMP;
 	}
 	else
 	{
@@ -1399,29 +1400,47 @@ bool getWeaponSubClass(const char* subClass, WEAPON_SUBCLASS* wclass)
 	return true;
 }
 
-/*returns the weapon sub class based on the string name passed in */
+/*returns the weapon subclass based on the string name passed in */
 const char* getWeaponSubClass(WEAPON_SUBCLASS wclass)
 {
 	switch (wclass)
 	{
-	case WSC_CANNON: return "CANNON";
-	case WSC_MORTARS: return "MORTARS";
-	case WSC_MISSILE: return "MISSILE";
-	case WSC_ROCKET: return "ROCKET";
-	case WSC_ENERGY: return "ENERGY";
-	case WSC_GAUSS: return "GAUSS";
-	case WSC_FLAME: return "FLAME";
-	case WSC_HOWITZERS: return "HOWITZERS";
-	case WSC_MGUN: return "MACHINE GUN";
-	case WSC_ELECTRONIC: return "ELECTRONIC";
-	case WSC_AAGUN: return "A-A GUN";
-	case WSC_SLOWMISSILE: return "SLOW MISSILE";
-	case WSC_SLOWROCKET: return "SLOW ROCKET";
-	case WSC_LAS_SAT: return "LAS_SAT";
-	case WSC_BOMB: return "BOMB";
-	case WSC_COMMAND: return "COMMAND";
-	case WSC_EMP: return "EMP";
-	case WSC_NUM_WEAPON_SUBCLASSES: break;
+	case WEAPON_SUBCLASS::CANNON:
+    return "CANNON";
+	case WEAPON_SUBCLASS::MORTARS:
+    return "MORTARS";
+	case WEAPON_SUBCLASS::MISSILE:
+    return "MISSILE";
+	case WEAPON_SUBCLASS::ROCKET:
+    return "ROCKET";
+	case WEAPON_SUBCLASS::ENERGY:
+    return "ENERGY";
+	case WEAPON_SUBCLASS::GAUSS:
+    return "GAUSS";
+	case WEAPON_SUBCLASS::FLAME:
+    return "FLAME";
+	case WEAPON_SUBCLASS::HOWITZERS:
+    return "HOWITZERS";
+	case WEAPON_SUBCLASS::MACHINE_GUN:
+    return "MACHINE GUN";
+	case WEAPON_SUBCLASS::ELECTRONIC:
+    return "ELECTRONIC";
+	case WEAPON_SUBCLASS::AA_GUN:
+    return "A-A GUN";
+	case WEAPON_SUBCLASS::SLOW_MISSILE:
+    return "SLOW MISSILE";
+	case WEAPON_SUBCLASS::SLOW_ROCKET:
+    return "SLOW ROCKET";
+	case WEAPON_SUBCLASS::LAS_SAT:
+    return "LAS_SAT";
+	case WEAPON_SUBCLASS::BOMB:
+    return "BOMB";
+	case WEAPON_SUBCLASS::COMMAND:
+    return "COMMAND";
+	case WEAPON_SUBCLASS::EMP:
+    return "EMP";
+	case WEAPON_SUBCLASS::COUNT:
+    break;
 	}
 	ASSERT(false, "No such weapon subclass");
 	return "Bad weapon subclass";
@@ -1458,13 +1477,13 @@ bool getMovementModel(const WzString& movementModel, MOVEMENT_MODEL* model)
 
 const StringToEnum<WEAPON_EFFECT> mapUnsorted_WEAPON_EFFECT[] =
 {
-	{"ANTI PERSONNEL", WE_ANTI_PERSONNEL},
-	{"ANTI TANK", WE_ANTI_TANK},
-	{"BUNKER BUSTER", WE_BUNKER_BUSTER},
-	{"ARTILLERY ROUND", WE_ARTILLERY_ROUND},
-	{"FLAMER", WE_FLAMER},
-	{"ANTI AIRCRAFT", WE_ANTI_AIRCRAFT},
-	{"ALL ROUNDER", WE_ANTI_AIRCRAFT}, // Alternative name for WE_ANTI_AIRCRAFT.
+	{"ANTI PERSONNEL", WEAPON_EFFECT::ANTI_PERSONNEL},
+	{"ANTI TANK", WEAPON_EFFECT::ANTI_TANK},
+	{"BUNKER BUSTER", WEAPON_EFFECT::BUNKER_BUSTER},
+	{"ARTILLERY ROUND", WEAPON_EFFECT::ARTILLERY_ROUND},
+	{"FLAMER", WEAPON_EFFECT::FLAMER},
+	{"ANTI AIRCRAFT", WEAPON_EFFECT::ANTI_AIRCRAFT},
+	{"ALL ROUNDER", WEAPON_EFFECT::ANTI_AIRCRAFT}, // Alternative name for WEAPON_EFFECT::ANTI_AIRCRAFT.
 };
 const StringToEnumMap<WEAPON_EFFECT> map_WEAPON_EFFECT = mapUnsorted_WEAPON_EFFECT;
 
@@ -1472,28 +1491,28 @@ bool getWeaponEffect(const WzString& weaponEffect, WEAPON_EFFECT* effect)
 {
 	if (strcmp(weaponEffect.toUtf8().c_str(), "ANTI PERSONNEL") == 0)
 	{
-		*effect = WE_ANTI_PERSONNEL;
+		*effect = WEAPON_EFFECT::ANTI_PERSONNEL;
 	}
 	else if (strcmp(weaponEffect.toUtf8().c_str(), "ANTI TANK") == 0)
 	{
-		*effect = WE_ANTI_TANK;
+		*effect = WEAPON_EFFECT::ANTI_TANK;
 	}
 	else if (strcmp(weaponEffect.toUtf8().c_str(), "BUNKER BUSTER") == 0)
 	{
-		*effect = WE_BUNKER_BUSTER;
+		*effect = WEAPON_EFFECT::BUNKER_BUSTER;
 	}
 	else if (strcmp(weaponEffect.toUtf8().c_str(), "ARTILLERY ROUND") == 0)
 	{
-		*effect = WE_ARTILLERY_ROUND;
+		*effect = WEAPON_EFFECT::ARTILLERY_ROUND;
 	}
 	else if (strcmp(weaponEffect.toUtf8().c_str(), "FLAMER") == 0)
 	{
-		*effect = WE_FLAMER;
+		*effect = WEAPON_EFFECT::FLAMER;
 	}
 	else if (strcmp(weaponEffect.toUtf8().c_str(), "ANTI AIRCRAFT") == 0 || strcmp(
 		weaponEffect.toUtf8().c_str(), "ALL ROUNDER") == 0)
 	{
-		*effect = WE_ANTI_AIRCRAFT;
+		*effect = WEAPON_EFFECT::ANTI_AIRCRAFT;
 	}
 	else
 	{
@@ -1509,13 +1528,13 @@ const char* getWeaponEffect(WEAPON_EFFECT effect)
 {
 	switch (effect)
 	{
-	case WE_ANTI_PERSONNEL: return "ANTI PERSONNEL";
-	case WE_ANTI_TANK: return "ANTI TANK";
-	case WE_BUNKER_BUSTER: return "BUNKER BUSTER";
-	case WE_ARTILLERY_ROUND: return "ARTILLERY ROUND";
-	case WE_FLAMER: return "FLAMER";
-	case WE_ANTI_AIRCRAFT: return "ANTI AIRCRAFT";
-	case WE_NUMEFFECTS: break;
+	case WEAPON_EFFECT::ANTI_PERSONNEL: return "ANTI PERSONNEL";
+	case WEAPON_EFFECT::ANTI_TANK: return "ANTI TANK";
+	case WEAPON_EFFECT::BUNKER_BUSTER: return "BUNKER BUSTER";
+	case WEAPON_EFFECT::ARTILLERY_ROUND: return "ARTILLERY ROUND";
+	case WEAPON_EFFECT::FLAMER: return "FLAMER";
+	case WEAPON_EFFECT::ANTI_AIRCRAFT: return "ANTI AIRCRAFT";
+	case WEAPON_EFFECT::NUMEFFECTS: break;
 	}
 	ASSERT(false, "No such weapon effect");
 	return "Bad weapon effect";
@@ -1525,11 +1544,11 @@ bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS* weaponClass)
 {
 	if (weaponClassStr.compare("KINETIC") == 0)
 	{
-		*weaponClass = WC_KINETIC;
+		*weaponClass = WEAPON_CLASS::KINETIC;
 	}
 	else if (weaponClassStr.compare("HEAT") == 0)
 	{
-		*weaponClass = WC_HEAT;
+		*weaponClass = WEAPON_CLASS::HEAT;
 	}
 	else
 	{
@@ -1621,11 +1640,11 @@ int bodyPower(const BodyStats* psStats, int player)
 //	ASSERT_PLAYER_OR_RETURN(0, player);
 //	switch (weaponClass)
 //	{
-//	case WC_KINETIC:
+//	case WEAPON_CLASS::KINETIC:
 //		return psStats->upgrade[player].armour;
-//	case WC_HEAT:
+//	case WEAPON_CLASS::HEAT:
 //		return psStats->upgrade[player].thermal;
-//	case WC_NUM_WEAPON_CLASSES:
+//	case WEAPON_CLASS::NUM_WEAPON_CLASSES:
 //		break;
 //	}
 //	ASSERT(false, "Unknown weapon class");
@@ -1688,7 +1707,7 @@ SensorStats* objActiveRadar(const SimpleObject* psObj)
 	switch (psObj->type)
 	{
 	case OBJ_DROID:
-		if (((const Droid*)psObj)->type != DROID_SENSOR && ((const Droid*)psObj)->type != DROID_COMMAND)
+		if (((const Droid*)psObj)->type != DROID_TYPE::SENSOR && ((const Droid*)psObj)->type != DROID_TYPE::COMMAND)
 		{
 			return nullptr;
 		}

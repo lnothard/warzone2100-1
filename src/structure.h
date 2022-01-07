@@ -38,7 +38,6 @@
 #include "positiondef.h"
 #include "statsdef.h"
 #include "unit.h"
-#include "visibility.h"
 #include "weapondef.h"
 
 #define NUM_FACTORY_MODULES 2
@@ -114,9 +113,6 @@ struct FlagPosition : public ObjectPosition
     uint8_t factory_type = 0;
 };
 
-/**
- *
- */
 struct StructureBounds
 {
     StructureBounds();
@@ -234,6 +230,7 @@ namespace Impl
         [[nodiscard]] STRUCTURE_STATE get_state() const;
     private:
         using enum STRUCTURE_ANIMATION_STATE;
+        using enum STRUCTURE_STATE;
         std::shared_ptr<StructureStats> stats; /* pointer to the structure stats for this type of building */
         STRUCTURE_STATE state; /* defines whether the structure is being built, doing nothing or performing a function */
         unsigned current_build_points; /* the build points currently assigned to this structure */
@@ -280,7 +277,7 @@ private:
     StatusPending statusPending; ///< Pending = not yet synchronised.
     unsigned pendingCount; ///< Number of messages sent but not yet processed.
     ResearchItem psBestTopic; // The topic with the most research points that was last performed
-    UDWORD timeStartHold; /* The time the research facility was put on hold*/
+    std::size_t timeStartHold; /* The time the research facility was put on hold*/
 };
 
 class Factory
@@ -351,7 +348,7 @@ struct ProductionRun
     [[nodiscard]] bool is_complete() const;
     [[nodiscard]] int tasks_remaining() const;
 
-    std::shared_ptr<DroidTemplate> target;
+    std::shared_ptr<DroidTemplate> target = nullptr;
     int quantity_to_build = 0;
     int quantity_built = 0;
 };
@@ -683,7 +680,7 @@ void cbNewDroid(Structure* psFactory, Droid* psDroid);
 StructureBounds getStructureBounds(const Structure* object);
 StructureBounds getStructureBounds(const StructureStats* stats, Vector2i pos, uint16_t direction);
 
-bool canStructureHaveAModuleAdded(const Structure* const structure);
+bool canStructureHaveAModuleAdded(Structure* const structure);
 
 static inline int structSensorRange(const Structure* psObj)
 {
@@ -777,8 +774,8 @@ static inline void popStatusPending(Functionality& functionality)
 	}
 }
 
-void checkStructure(const Structure* psStructure, const char* const location_description, const char* function,
-                    const int recurse);
+void checkStructure(const Structure* psStructure, std::string location_description,
+                    std::string function, int recurse);
 
 #define CHECK_STRUCTURE(object) checkStructure((object), AT_MACRO, __FUNCTION__, max_check_object_recursion)
 
@@ -790,19 +787,19 @@ void _syncDebugStructure(const char* function, Structure const* psStruct, char c
 
 
 // True iff object is a structure.
-static inline bool isStructure(SIMPLE_OBJECT const* psObject)
+static inline bool isStructure(SimpleObject const* psObject)
 {
 	return psObject != nullptr && psObject->type == OBJ_STRUCTURE;
 }
 
 // Returns STRUCTURE * if structure or NULL if not.
-static inline Structure* castStructure(SIMPLE_OBJECT* psObject)
+static inline Structure* castStructure(SimpleObject* psObject)
 {
 	return isStructure(psObject) ? (Structure*)psObject : (Structure*)nullptr;
 }
 
 // Returns STRUCTURE const * if structure or NULL if not.
-static inline Structure const* castStructure(SIMPLE_OBJECT const* psObject)
+static inline Structure const* castStructure(SimpleObject const* psObject)
 {
 	return isStructure(psObject) ? (Structure const*)psObject : (Structure const*)nullptr;
 }
@@ -825,14 +822,14 @@ static inline int getBuildingPowerPoints(Structure* psStruct)
 	return upgrade.power + upgrade.modulePower * psStruct->capacity;
 }
 
-static inline int getBuildingRepairPoints(Structure* psStruct)
+static inline int getBuildingRepairPoints(Impl::Structure* psStruct)
 {
 	return psStruct->pStructureType->upgraded_stats[psStruct->player].repair;
 }
 
-static inline int getBuildingRearmPoints(Structure* psStruct)
+static inline int getBuildingRearmPoints(Impl::Structure* psStruct)
 {
-	return psStruct->pStructureType->upgraded_stats[psStruct->player].rearm;
+	return psStruct->stats->upgraded_stats[psStruct->get_player()].rearm;
 }
 
 WzString getFavoriteStructs();
@@ -840,7 +837,7 @@ void setFavoriteStructs(WzString list);
 
 struct LineBuild
 {
-	Vector2i back() const { return (*this)[count - 1]; }
+	[[nodiscard]] Vector2i back() const { return (*this)[count - 1]; }
 	Vector2i operator [](int i) const { return begin + i * step; }
 
 	Vector2i begin = {0, 0};

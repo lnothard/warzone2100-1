@@ -20,13 +20,16 @@
 
 /**
  * @file atmos.cpp
- *
  * Handles atmospherics such as snow and rain.
 */
 
+#include <cmath>
+
 #include "lib/framework/frame.h"
+#include "lib/gamelib/gtime.h"
 #include "lib/ivis_opengl/piematrix.h"
 #include "lib/ivis_opengl/piepalette.h"
+#include <glm/gtx/transform.hpp>
 
 #include "atmos.h"
 #include "display3d.h"
@@ -34,13 +37,10 @@
 #include "loop.h"
 #include "map.h"
 #include "miscimd.h"
-#include "lib/gamelib/gtime.h"
-#include <cmath>
 
 #ifndef GLM_ENABLE_EXPERIMENTAL
 #define GLM_ENABLE_EXPERIMENTAL
 #endif
-#include <glm/gtx/transform.hpp>
 
 /* Roughly one per tile */
 #define	MAX_ATMOS_PARTICLES		(MAP_MAXWIDTH * MAP_MAXHEIGHT)
@@ -49,28 +49,16 @@
 #define	RAIN_SPEED_DRIFT		(rand() % 50)
 #define	RAIN_SPEED_FALL			(0 - ((rand() % 300) + 700))
 
-enum AP_TYPE
-{
-	AP_RAIN,
-	AP_SNOW
-};
-
-enum AP_STATUS
-{
-	APS_INACTIVE,
-	APS_ACTIVE
-};
-
 static Particle* asAtmosParts = nullptr;
-static UDWORD freeParticle;
-static WEATHER_TYPE weather = WT_NONE;
+static unsigned freeParticle;
+static WEATHER_TYPE weather = WEATHER_TYPE::NONE;
 
 /* Setup all the particles */
 void atmosInitSystem()
 {
-	if (!asAtmosParts && weather != WT_NONE)
+	if (!asAtmosParts && weather != WEATHER_TYPE::NONE)
 	{
-		// calloc sets all to APS_INACTIVE initially
+		// calloc sets all to PARTICLE_STATUS::INACTIVE initially
 		asAtmosParts = (Particle*)calloc(MAX_ATMOS_PARTICLES, sizeof(*asAtmosParts));
 	}
 	/* Start at the beginning */
@@ -79,32 +67,32 @@ void atmosInitSystem()
 
 /*	Makes a particle wrap around - if it goes off the grid, then it returns
 	on the other side - provided it's still on world... Which it should be */
-//static void testParticleWrap(ATPART* psPart)
-//{
-//	/* Gone off left side */
-//	if (psPart->position.x < playerPos.p.x - world_coord(visibleTiles.x) / 2)
-//	{
-//		psPart->position.x += world_coord(visibleTiles.x);
-//	}
-//
-//	/* Gone off right side */
-//	else if (psPart->position.x > (playerPos.p.x + world_coord(visibleTiles.x) / 2))
-//	{
-//		psPart->position.x -= world_coord(visibleTiles.x);
-//	}
-//
-//	/* Gone off top */
-//	if (psPart->position.z < playerPos.p.z - world_coord(visibleTiles.y) / 2)
-//	{
-//		psPart->position.z += world_coord(visibleTiles.y);
-//	}
-//
-//	/* Gone off bottom */
-//	else if (psPart->position.z > (playerPos.p.z + world_coord(visibleTiles.y) / 2))
-//	{
-//		psPart->position.z -= world_coord(visibleTiles.y);
-//	}
-//}
+static void testParticleWrap(Particle* psPart)
+{
+	/* Gone off left side */
+	if (psPart->position.x < playerPos.p.x - world_coord(visibleTiles.x) / 2)
+	{
+		psPart->position.x += world_coord(visibleTiles.x);
+	}
+
+	/* Gone off right side */
+	else if (psPart->position.x > (playerPos.p.x + world_coord(visibleTiles.x) / 2))
+	{
+		psPart->position.x -= world_coord(visibleTiles.x);
+	}
+
+	/* Gone off top */
+	if (psPart->position.z < playerPos.p.z - world_coord(visibleTiles.y) / 2)
+	{
+		psPart->position.z += world_coord(visibleTiles.y);
+	}
+
+	/* Gone off bottom */
+	else if (psPart->position.z > (playerPos.p.z + world_coord(visibleTiles.y) / 2))
+	{
+		psPart->position.z -= world_coord(visibleTiles.y);
+	}
+}
 
 /* Moves one of the particles */
 static void processParticle(Particle* psPart)
@@ -112,7 +100,7 @@ static void processParticle(Particle* psPart)
 	SDWORD groundHeight;
 	Vector3i pos;
 	UDWORD x, y;
-	MAPTILE* psTile;
+	Tile* psTile;
 
 	/* Only move if the game isn't paused */
 	if (!gamePaused())
@@ -131,7 +119,7 @@ static void processParticle(Particle* psPart)
 			psPart->position.z > ((mapHeight - 1) * TILE_UNITS))
 		{
 			/* The kill it */
-			psPart->status = APS_INACTIVE;
+			psPart->status = PARTICLE_STATUS::INACTIVE;
 			return;
 		}
 
@@ -146,11 +134,11 @@ static void processParticle(Particle* psPart)
 				|| psPart->position.y < 0.f)
 			{
 				/* Kill it and return */
-				psPart->status = APS_INACTIVE;
-				if (psPart->type == AP_RAIN)
+				psPart->status = PARTICLE_STATUS::INACTIVE;
+				if (psPart->type == PARTICLE_TYPE::RAIN)
 				{
-					x = map_coord(static_cast<int32_t>(psPart->position.x));
-					y = map_coord(static_cast<int32_t>(psPart->position.z));
+					x = map_coord(static_cast<int>(psPart->position.x));
+					y = map_coord(static_cast<int>(psPart->position.z));
 					psTile = mapTile(x, y);
 					if (terrainType(psTile) == TER_WATER && TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile))
 					// display-only check for adding effect
@@ -166,7 +154,7 @@ static void processParticle(Particle* psPart)
 				return;
 			}
 		}
-		if (psPart->type == AP_SNOW)
+		if (psPart->type == PARTICLE_TYPE::SNOW)
 		{
 			if (rand() % 30 == 1)
 			{
@@ -181,12 +169,12 @@ static void processParticle(Particle* psPart)
 }
 
 /* Adds a particle to the system if it can */
-static void atmosAddParticle(const Vector3f& pos, AP_TYPE type)
+static void atmosAddParticle(const Vector3f& pos, PARTICLE_TYPE type)
 {
-	UDWORD activeCount;
-	UDWORD i;
+	unsigned activeCount;
+	unsigned i;
 
-	for (i = freeParticle, activeCount = 0; asAtmosParts[i].status == APS_ACTIVE && activeCount < MAX_ATMOS_PARTICLES; i
+	for (i = freeParticle, activeCount = 0; asAtmosParts[i].status == PARTICLE_STATUS::ACTIVE && activeCount < MAX_ATMOS_PARTICLES; i
 	     ++)
 	{
 		activeCount++;
@@ -210,19 +198,19 @@ static void atmosAddParticle(const Vector3f& pos, AP_TYPE type)
 	}
 
 	/* Record it's type */
-	asAtmosParts[freeParticle].type = (UBYTE)type;
+	asAtmosParts[freeParticle].type = type;
 
 	/* Make it active */
-	asAtmosParts[freeParticle].status = APS_ACTIVE;
+	asAtmosParts[freeParticle].status = PARTICLE_STATUS::ACTIVE;
 
 	/* Setup the imd */
 	switch (type)
 	{
-	case AP_SNOW:
+	case PARTICLE_TYPE::SNOW:
 		asAtmosParts[freeParticle].imd = getImdFromIndex(MI_SNOW);
 		asAtmosParts[freeParticle].size = 80;
 		break;
-	case AP_RAIN:
+    case PARTICLE_TYPE::RAIN:
 		asAtmosParts[freeParticle].imd = getImdFromIndex(MI_RAIN);
 		asAtmosParts[freeParticle].size = 50;
 		break;
@@ -234,7 +222,7 @@ static void atmosAddParticle(const Vector3f& pos, AP_TYPE type)
 	asAtmosParts[freeParticle].position = pos;
 
 	/* Setup its velocity */
-	if (type == AP_RAIN)
+	if (type == PARTICLE_TYPE::RAIN)
 	{
 		asAtmosParts[freeParticle].velocity = Vector3f(RAIN_SPEED_DRIFT, RAIN_SPEED_FALL, RAIN_SPEED_DRIFT);
 	}
@@ -252,12 +240,12 @@ void atmosUpdateSystem()
 	Vector3f pos;
 
 	// we don't want to do any of this while paused.
-	if (!gamePaused() && weather != WT_NONE)
+	if (!gamePaused() && weather != WEATHER_TYPE::NONE)
 	{
 		for (i = 0; i < MAX_ATMOS_PARTICLES; i++)
 		{
 			/* See if it's active */
-			if (asAtmosParts[i].status == APS_ACTIVE)
+			if (asAtmosParts[i].status == PARTICLE_STATUS::ACTIVE)
 			{
 				processParticle(&asAtmosParts[i]);
 			}
@@ -270,7 +258,7 @@ void atmosUpdateSystem()
 		double gameTimeModVal = gameTimeGetMod().asDouble();
 		if (!std::isnan(gameTimeModVal))
 		{
-			accumulatedParticlesToAdd += ((weather == WT_SNOWING) ? 2.0 : 4.0) * gameTimeModVal;
+			accumulatedParticlesToAdd += ((weather == WEATHER_TYPE::SNOWING) ? 2.0 : 4.0) * gameTimeModVal;
 		}
 
 		numberToAdd = static_cast<UDWORD>(accumulatedParticlesToAdd);
@@ -293,13 +281,12 @@ void atmosUpdateSystem()
 				/* On grid, so which particle shall we add? */
 				switch (weather)
 				{
-				case WT_SNOWING:
-					atmosAddParticle(pos, AP_SNOW);
+				case WEATHER_TYPE::SNOWING:
+					atmosAddParticle(pos, SNOW);
+				case WEATHER_TYPE::RAINING:
+					atmosAddParticle(pos, RAIN);
 					break;
-				case WT_RAINING:
-					atmosAddParticle(pos, AP_RAIN);
-					break;
-				case WT_NONE:
+				case WEATHER_TYPE::NONE:
 					break;
 				}
 			}
@@ -311,7 +298,7 @@ void atmosDrawParticles(const glm::mat4& viewMatrix)
 {
 	UDWORD i;
 
-	if (weather == WT_NONE)
+	if (weather == WEATHER_TYPE::NONE)
 	{
 		return;
 	}
@@ -320,7 +307,7 @@ void atmosDrawParticles(const glm::mat4& viewMatrix)
 	for (i = 0; i < MAX_ATMOS_PARTICLES; i++)
 	{
 		/* Don't bother unless it's active */
-		if (asAtmosParts[i].status == APS_ACTIVE)
+		if (asAtmosParts[i].status == PARTICLE_STATUS::ACTIVE)
 		{
 			/* Is it visible on the screen? */
 			if (clipXYZ(static_cast<int>(asAtmosParts[i].position.x), static_cast<int>(asAtmosParts[i].position.z),
@@ -346,7 +333,7 @@ void renderParticle(Particle* psPart, const glm::mat4& viewMatrix)
 		glm::rotate(UNDEG(-playerPos.r.y), glm::vec3(0.f, 1.f, 0.f)) *
 		glm::rotate(UNDEG(-playerPos.r.x), glm::vec3(0.f, 1.f, 0.f)) *
 		glm::scale(glm::vec3(psPart->size / 100.f));
-	pie_Draw3DShape(psPart->imd, 0, 0, WZCOL_WHITE, 0, 0, viewMatrix * modelMatrix);
+	pie_Draw3DShape(psPart->imd.get(), 0, 0, WZCOL_WHITE, 0, 0, viewMatrix * modelMatrix);
 	/* Draw it... */
 }
 
@@ -357,7 +344,7 @@ void atmosSetWeatherType(WEATHER_TYPE type)
 		weather = type;
 		atmosInitSystem();
 	}
-	if (type == WT_NONE && asAtmosParts)
+	if (type == WEATHER_TYPE::NONE && asAtmosParts)
 	{
 		free(asAtmosParts);
 		asAtmosParts = nullptr;

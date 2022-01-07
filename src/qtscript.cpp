@@ -1781,7 +1781,7 @@ void clearMarks()
 	{
 		for (int y = 0; y < mapHeight; y++)
 		{
-			MAPTILE* psTile = mapTile(x, y);
+			Tile* psTile = mapTile(x, y);
 			psTile->tileInfoBits &= ~BITS_MARKED;
 		}
 	}
@@ -1831,7 +1831,7 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 		{
 			for (int y = map_coord(l.p1.y); y < maxy; y++)
 			{
-				MAPTILE* psTile = mapTile(x, y);
+				Tile* psTile = mapTile(x, y);
 				psTile->tileInfoBits |= BITS_MARKED;
 			}
 		}
@@ -1849,7 +1849,7 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 			{
 				if (iHypot(map_coord(l.p1) - Vector2i(x, y)) < map_coord(l.p2.x))
 				{
-					MAPTILE* psTile = mapTile(x, y);
+					Tile* psTile = mapTile(x, y);
 					psTile->tileInfoBits |= BITS_MARKED;
 				}
 			}
@@ -1864,7 +1864,7 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 			{
 				setViewPos(map_coord(psObj->pos.x), map_coord(psObj->pos.y), false); // move camera position
 			}
-			MAPTILE* psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
+			Tile* psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
 			psTile->tileInfoBits |= BITS_MARKED;
 		}
 	}
@@ -1884,7 +1884,7 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 						setViewPos(map_coord(psObj->pos.x), map_coord(psObj->pos.y), false); // move camera position
 						cameraMoved = true;
 					}
-					MAPTILE* psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
+					Tile* psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
 					psTile->tileInfoBits |= BITS_MARKED;
 				}
 			}
@@ -2503,7 +2503,7 @@ generic_script_object scripting_engine::getObject(WZAPI_PARAMS(wzapi::object_req
 		int x = pos.x;
 		int y = pos.y;
 		SCRIPT_ASSERT({}, context, tileOnMap(x, y), "Map position (%d, %d) not on the map!", x, y);
-		const MAPTILE* psTile = mapTile(x, y);
+		const Tile* psTile = mapTile(x, y);
 		return generic_script_object::fromObject(psTile->psObject);
 	}
 	else if (request.requestType == wzapi::object_request::RequestType::OBJECTID_REQUEST)
@@ -2783,7 +2783,7 @@ wzapi::no_return_value scripting_engine::hackMarkTiles_ByLabel(WZAPI_PARAMS(cons
 		{
 			for (int y = map_coord(l.p1.y); y < map_coord(l.p2.y); y++)
 			{
-				MAPTILE* psTile = mapTile(x, y);
+				Tile* psTile = mapTile(x, y);
 				psTile->tileInfoBits |= BITS_MARKED;
 			}
 		}
@@ -2797,7 +2797,7 @@ wzapi::no_return_value scripting_engine::hackMarkTiles_ByLabel(WZAPI_PARAMS(cons
 				if (x >= -1 && x < mapWidth + 1 && y >= -1 && y < mapWidth + 1 && iHypot(
 					map_coord(l.p1) - Vector2i(x, y)) < map_coord(l.p2.x))
 				{
-					MAPTILE* psTile = mapTile(x, y);
+					Tile* psTile = mapTile(x, y);
 					psTile->tileInfoBits |= BITS_MARKED;
 				}
 			}

@@ -145,5 +145,4 @@ void moveToRearm(Droid* psDroid);
 /** Choose a landing position for a VTOL when it goes to rearm. */
 bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p);
 
-
 #endif // __INCLUDED_SRC_ACTION_H__

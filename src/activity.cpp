@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <memory>
 #include <mutex>
+#include <utility>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/vector.h"
@@ -35,6 +36,28 @@
 #include "mission.h"
 #include "modding.h"
 #include "multiint.h"
+
+std::string SkirmishGameInfo::gameName() const
+{
+  return game.name;
+}
+
+std::string SkirmishGameInfo::mapName() const
+{
+  return game.map;
+}
+
+uint8_t SkirmishGameInfo::numberOfPlayers() const
+{
+  return numAIBotPlayers + 1;
+}
+
+bool SkirmishGameInfo::hasLimits() const
+{
+  return limit_no_tanks || limit_no_cyborgs ||
+         limit_no_vtols || limit_no_uplink ||
+         limit_no_lassat || force_structure_limits;
+}
 
 //std::string ActivitySink::getTeamDescription(const ActivitySink::SkirmishGameInfo& info)
 //{
@@ -210,7 +233,7 @@ public:
 	}
 
 private:
-	std::string modListToStr(const std::vector<Sha256>& modHashes) const
+	[[nodiscard]] static std::string modListToStr(const std::vector<Sha256>& modHashes)
 	{
 		if (modHashes.empty())
 		{
@@ -409,7 +432,7 @@ void ActivityManager::shutdown()
 	activityDatabase.reset();
 }
 
-void ActivityManager::addActivitySink(std::shared_ptr<ActivitySink> sink)
+void ActivityManager::addActivitySink(const std::shared_ptr<ActivitySink>& sink)
 {
 	activitySinks.push_back(sink);
 }
@@ -419,32 +442,32 @@ void ActivityManager::removeActivitySink(const std::shared_ptr<ActivitySink>& si
 	activitySinks.erase(std::remove(activitySinks.begin(), activitySinks.end(), sink));
 }
 
-ActivitySink::GameMode ActivityManager::getCurrentGameMode() const
+GAME_MODE ActivityManager::getCurrentGameMode() const
 {
 	return currentMode;
 }
 
-ActivitySink::GameMode currentGameTypeToMode()
+GAME_MODE currentGameTypeToMode()
 {
-	ActivitySink::GameMode mode = ActivitySink::GameMode::CAMPAIGN;
+	GAME_MODE mode = GAME_MODE::CAMPAIGN;
 	if (challengeActive)
 	{
-		mode = ActivitySink::GameMode::CHALLENGE;
+		mode = GAME_MODE::CHALLENGE;
 	}
 	else if (game.type == LEVEL_TYPE::SKIRMISH)
 	{
-		mode = (NetPlay.bComms) ? ActivitySink::GameMode::MULTIPLAYER : ActivitySink::GameMode::SKIRMISH;
+		mode = (NetPlay.bComms) ? GAME_MODE::MULTIPLAYER : GAME_MODE::SKIRMISH;
 	}
 	else if (game.type == LEVEL_TYPE::CAMPAIGN)
 	{
-		mode = ActivitySink::GameMode::CAMPAIGN;
+		mode = GAME_MODE::CAMPAIGN;
 	}
 	return mode;
 }
 
 void ActivityManager::startingGame()
 {
-	ActivitySink::GameMode mode = currentGameTypeToMode();
+	GAME_MODE mode = currentGameTypeToMode();
 	bEndedCurrentMission = false;
 
 	currentMode = mode;
@@ -452,10 +475,10 @@ void ActivityManager::startingGame()
 
 void ActivityManager::startingSavedGame()
 {
-	ActivitySink::GameMode mode = currentGameTypeToMode();
+	GAME_MODE mode = currentGameTypeToMode();
 	bEndedCurrentMission = false;
 
-	if (mode == ActivitySink::GameMode::SKIRMISH || (mode == ActivitySink::GameMode::MULTIPLAYER && NETisReplay()))
+	if (mode == GAME_MODE::SKIRMISH || (mode == GAME_MODE::MULTIPLAYER && NETisReplay()))
 	{
 		// synthesize an "update multiplay game data" call on skirmish save game load (or loading MP replay)
 		ActivityManager::instance().updateMultiplayGameData(game, ingame, false);
@@ -476,7 +499,7 @@ void ActivityManager::loadedLevel(LEVEL_TYPE type, const std::string& levelName)
 {
 	bEndedCurrentMission = false;
 
-	if (currentMode == ActivitySink::GameMode::MENUS)
+	if (currentMode == GAME_MODE::MENUS)
 	{
 		// hit a case where startedGameMode is called *after* loadedLevel, so cache the loadedLevel call
 		// (for example, on save game load, the game mode isn't set until the save is loaded)
@@ -491,24 +514,24 @@ void ActivityManager::loadedLevel(LEVEL_TYPE type, const std::string& levelName)
 
 	switch (currentMode)
 	{
-	case ActivitySink::GameMode::CAMPAIGN:
-		for (auto sink : activitySinks) { sink->startedCampaignMission(getCampaignName(), levelName); }
+	case GAME_MODE::CAMPAIGN:
+		for (const auto& sink : activitySinks) { sink->startedCampaignMission(getCampaignName(), levelName); }
 		break;
-	case ActivitySink::GameMode::CHALLENGE:
-		for (auto sink : activitySinks) { sink->startedChallenge(currentChallengeName()); }
+	case GAME_MODE::CHALLENGE:
+		for (const auto& sink : activitySinks) { sink->startedChallenge(currentChallengeName()); }
 		break;
-	case ActivitySink::GameMode::SKIRMISH:
-		for (auto sink : activitySinks) { sink->startedSkirmishGame(currentMultiplayGameInfo); }
+	case GAME_MODE::SKIRMISH:
+		for (const auto& sink : activitySinks) { sink->startedSkirmishGame(currentMultiplayGameInfo); }
 		break;
-	case ActivitySink::GameMode::MULTIPLAYER:
-		for (auto sink : activitySinks) { sink->startedMultiplayerGame(currentMultiplayGameInfo); }
+	case GAME_MODE::MULTIPLAYER:
+		for (const auto& sink : activitySinks) { sink->startedMultiplayerGame(currentMultiplayGameInfo); }
 		break;
 	default:
 		debug(LOG_ACTIVITY, "loadedLevel: %s; Unhandled case: %u", levelName.c_str(), (unsigned int)currentMode);
 	}
 }
 
-void ActivityManager::_endedMission(ActivitySink::GameEndReason result, END_GAME_STATS_DATA stats, bool cheatsUsed)
+void ActivityManager::_endedMission(GameEndReason result, const END_GAME_STATS_DATA& stats, bool cheatsUsed)
 {
 	if (bEndedCurrentMission) return;
 
@@ -516,20 +539,20 @@ void ActivityManager::_endedMission(ActivitySink::GameEndReason result, END_GAME
 
 	switch (currentMode)
 	{
-	case ActivitySink::GameMode::CAMPAIGN:
-		for (auto sink : activitySinks)
+	case GAME_MODE::CAMPAIGN:
+		for (const auto& sink : activitySinks)
 		{
 			sink->endedCampaignMission(getCampaignName(), lastLoadedLevelEvent.levelName, result, stats, cheatsUsed);
 		}
 		break;
-	case ActivitySink::GameMode::CHALLENGE:
-		for (auto sink : activitySinks) { sink->endedChallenge(currentChallengeName(), result, stats, cheatsUsed); }
+	case GAME_MODE::CHALLENGE:
+		for (const auto& sink : activitySinks) { sink->endedChallenge(currentChallengeName(), result, stats, cheatsUsed); }
 		break;
-	case ActivitySink::GameMode::SKIRMISH:
-		for (auto sink : activitySinks) { sink->endedSkirmishGame(currentMultiplayGameInfo, result, stats); }
+	case GAME_MODE::SKIRMISH:
+		for (const auto& sink : activitySinks) { sink->endedSkirmishGame(currentMultiplayGameInfo, result, stats); }
 		break;
-	case ActivitySink::GameMode::MULTIPLAYER:
-		for (auto sink : activitySinks) { sink->endedMultiplayerGame(currentMultiplayGameInfo, result, stats); }
+	case GAME_MODE::MULTIPLAYER:
+		for (const auto& sink : activitySinks) { sink->endedMultiplayerGame(currentMultiplayGameInfo, result, stats); }
 		break;
 	default:
 		debug(LOG_ACTIVITY, "endedMission: Unhandled case: %u", (unsigned int)currentMode);
@@ -537,26 +560,26 @@ void ActivityManager::_endedMission(ActivitySink::GameEndReason result, END_GAME
 	bEndedCurrentMission = true;
 }
 
-void ActivityManager::completedMission(bool result, END_GAME_STATS_DATA stats, bool cheatsUsed)
+void ActivityManager::completedMission(bool result, const END_GAME_STATS_DATA& stats, bool cheatsUsed)
 {
-	_endedMission(result ? ActivitySink::GameEndReason::WON : ActivitySink::GameEndReason::LOST, stats, cheatsUsed);
+	_endedMission(result ? GameEndReason::WON : GameEndReason::LOST, stats, cheatsUsed);
 }
 
-void ActivityManager::quitGame(END_GAME_STATS_DATA stats, bool cheatsUsed)
+void ActivityManager::quitGame(const END_GAME_STATS_DATA& stats, bool cheatsUsed)
 {
-	if (currentMode != ActivitySink::GameMode::MENUS)
+	if (currentMode != GAME_MODE::MENUS)
 	{
-		_endedMission(ActivitySink::GameEndReason::QUIT, stats, cheatsUsed);
+		_endedMission(GameEndReason::QUIT, stats, cheatsUsed);
 	}
 
-	currentMode = ActivitySink::GameMode::MENUS;
+	currentMode = GAME_MODE::MENUS;
 }
 
 void ActivityManager::preSystemShutdown()
 {
 	// Synthesize appropriate events, as needed
 	// For example, may need to synthesize a "quitGame" event if the user quit directly from window menus, etc
-	if (currentMode != ActivitySink::GameMode::MENUS)
+	if (currentMode != GAME_MODE::MENUS)
 	{
 		// quitGame was never generated - synthesize it
 		ActivityManager::instance().quitGame(collectEndGameStatsData(), Cheated);
@@ -565,7 +588,7 @@ void ActivityManager::preSystemShutdown()
 
 void ActivityManager::navigateToMenu(const std::string& menuName)
 {
-	for (auto sink : activitySinks) { sink->navigatedToMenu(menuName); }
+	for (const auto& sink : activitySinks) { sink->navigatedToMenu(menuName); }
 }
 
 void ActivityManager::beginLoadingSettings()
@@ -577,7 +600,7 @@ void ActivityManager::changedSetting(const std::string& settingKey, const std::s
 {
 	if (bIsLoadingConfiguration) return;
 
-	for (auto sink : activitySinks) { sink->changedSetting(settingKey, settingValue); }
+	for (const auto& sink : activitySinks) { sink->changedSetting(settingKey, settingValue); }
 }
 
 void ActivityManager::endLoadingSettings()
@@ -588,7 +611,7 @@ void ActivityManager::endLoadingSettings()
 // cheats used
 void ActivityManager::cheatUsed(const std::string& cheatName)
 {
-	for (auto sink : activitySinks) { sink->cheatUsed(cheatName); }
+	for (const auto& sink : activitySinks) { sink->cheatUsed(cheatName); }
 }
 
 // mods reloaded / possibly changed
@@ -598,7 +621,7 @@ void ActivityManager::rebuiltSearchPath()
 	if (!lastLoadedMods.has_value() || newLoadedModHashes != lastLoadedMods.value())
 	{
 		// list of loaded mods changed!
-		for (auto sink : activitySinks) { sink->loadedModsChanged(newLoadedModHashes); }
+		for (const auto& sink : activitySinks) { sink->loadedModsChanged(newLoadedModHashes); }
 		lastLoadedMods = newLoadedModHashes;
 	}
 }
@@ -606,10 +629,10 @@ void ActivityManager::rebuiltSearchPath()
 // called when a joinable multiplayer game is hosted
 // lobbyGameId is 0 if the lobby can't be contacted / the game is not registered with the lobby
 void ActivityManager::hostGame(const char* SessionName, const char* PlayerName, const char* lobbyAddress,
-                               unsigned int lobbyPort, const ActivitySink::ListeningInterfaces& listeningInterfaces,
+                               unsigned int lobbyPort, const ListeningInterfaces& listeningInterfaces,
                                uint32_t lobbyGameId /*= 0*/)
 {
-	currentMode = ActivitySink::GameMode::HOSTING_IN_LOBBY;
+	currentMode = GAME_MODE::HOSTING_IN_LOBBY;
 
 	// updateMultiplayGameData should have already been called with the main details before this function is called
 
@@ -620,12 +643,12 @@ void ActivityManager::hostGame(const char* SessionName, const char* PlayerName, 
 	currentMultiplayGameInfo.lobbyGameId = lobbyGameId;
 	currentMultiplayGameInfo.isHost = true;
 
-	for (auto sink : activitySinks) { sink->hostingMultiplayerGame(currentMultiplayGameInfo); }
+	for (const auto& sink : activitySinks) { sink->hostingMultiplayerGame(currentMultiplayGameInfo); }
 }
 
 void ActivityManager::hostGameLobbyServerDisconnect()
 {
-	if (currentMode != ActivitySink::GameMode::HOSTING_IN_LOBBY)
+	if (currentMode != GAME_MODE::HOSTING_IN_LOBBY)
 	{
 		debug(LOG_ACTIVITY, "Unexpected call to hostGameLobbyServerDisconnect - currentMode (%u) - ignoring",
 		      (unsigned int)currentMode);
@@ -647,21 +670,21 @@ void ActivityManager::hostGameLobbyServerDisconnect()
 
 	// Inform the ActivitySinks
 	// Trigger a new hostingMultiplayerGame event
-	for (auto sink : activitySinks) { sink->hostingMultiplayerGame(currentMultiplayGameInfo); }
+	for (const auto& sink : activitySinks) { sink->hostingMultiplayerGame(currentMultiplayGameInfo); }
 }
 
 void ActivityManager::hostLobbyQuit()
 {
-	if (currentMode != ActivitySink::GameMode::HOSTING_IN_LOBBY)
+	if (currentMode != GAME_MODE::HOSTING_IN_LOBBY)
 	{
 		debug(LOG_ACTIVITY, "Unexpected call to hostLobbyQuit - currentMode (%u) - ignoring",
 		      (unsigned int)currentMode);
 		return;
 	}
-	currentMode = ActivitySink::GameMode::MENUS;
+	currentMode = GAME_MODE::MENUS;
 
 	// Notify the ActivitySink that we've left the game lobby
-	for (auto sink : activitySinks) { sink->leftMultiplayerGameLobby(true, getLobbyError()); }
+	for (const auto& sink : activitySinks) { sink->leftMultiplayerGameLobby(true, getLobbyError()); }
 }
 
 // called when attempting to join a lobby game
@@ -684,7 +707,7 @@ void ActivityManager::joinGameFailed(const std::vector<JoinConnectionDescription
 // called when joining a multiplayer game
 void ActivityManager::joinGameSucceeded(const char* host, uint32_t port)
 {
-	currentMode = ActivitySink::GameMode::JOINING_IN_PROGRESS;
+	currentMode = GAME_MODE::JOINING_IN_PROGRESS;
 	currentMultiplayGameInfo.isHost = false;
 
 	// If the host and port match information in the lastLobbyGameJoinAttempt.connections,
@@ -712,19 +735,22 @@ void ActivityManager::joinGameSucceeded(const char* host, uint32_t port)
 
 void ActivityManager::joinedLobbyQuit()
 {
-	if (currentMode != ActivitySink::GameMode::JOINING_IN_LOBBY)
+	if (currentMode != GAME_MODE::JOINING_IN_LOBBY)
 	{
-		if (currentMode != ActivitySink::GameMode::MENUS)
+		if (currentMode != GAME_MODE::MENUS)
 		{
 			debug(LOG_ACTIVITY, "Unexpected call to joinedLobbyQuit - currentMode (%u) - ignoring",
 			      (unsigned int)currentMode);
 		}
 		return;
 	}
-	currentMode = ActivitySink::GameMode::MENUS;
+	currentMode = GAME_MODE::MENUS;
 
 	// Notify the ActivitySink that we've left the game lobby
-	for (auto sink : activitySinks) { sink->leftMultiplayerGameLobby(false, getLobbyError()); }
+	for (const auto& sink : activitySinks)
+  {
+    sink->leftMultiplayerGameLobby(false, getLobbyError());
+  }
 }
 
 // for skirmish / multiplayer, provide additional data / state
@@ -741,11 +767,7 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 	for (size_t index = 0; index < std::min<size_t>(MAX_PLAYERS, (size_t)multiGame.maxPlayers); ++index)
 	{
 		PLAYER const& p = NetPlay.players[index];
-		if (p.ai == AI_CLOSED)
-		{
-			--maxPlayers;
-		}
-		else if (p.isSpectator)
+		if (p.ai == AI_CLOSED || p.isSpectator)
 		{
 			--maxPlayers;
 		}
@@ -788,19 +810,19 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 		}
 	}
 
-	ActivitySink::MultiplayerGameInfo::AllianceOption alliancesOpt =
-		ActivitySink::MultiplayerGameInfo::AllianceOption::NO_ALLIANCES;
+	MultiplayerGameInfo::AllianceOption; alliancesOpt =
+		MultiplayerGameInfo::AllianceOption::NO_ALLIANCES;
 	if (multiGame.alliance == ::ALLIANCE_TYPE::ALLIANCES)
 	{
-		alliancesOpt = ActivitySink::MultiplayerGameInfo::AllianceOption::ALLIANCES;
+		alliancesOpt = MultiplayerGameInfo::AllianceOption::ALLIANCES;
 	}
 	else if (multiGame.alliance == ::ALLIANCE_TYPE::ALLIANCES_TEAMS)
 	{
-		alliancesOpt = ActivitySink::MultiplayerGameInfo::AllianceOption::ALLIANCES_TEAMS;
+		alliancesOpt = MultiplayerGameInfo::AllianceOption::ALLIANCES_TEAMS;
 	}
 	else if (multiGame.alliance == ::ALLIANCE_TYPE::ALLIANCES_UNSHARED)
 	{
-		alliancesOpt = ActivitySink::MultiplayerGameInfo::AllianceOption::ALLIANCES_UNSHARED;
+		alliancesOpt = MultiplayerGameInfo::AllianceOption::ALLIANCES_UNSHARED;
 	}
 	currentMultiplayGameInfo.alliances = alliancesOpt;
 
@@ -833,22 +855,22 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 
 	currentMultiplayGameInfo.isReplay = NETisReplay();
 
-	if (currentMode == ActivitySink::GameMode::JOINING_IN_PROGRESS || currentMode ==
-		ActivitySink::GameMode::JOINING_IN_LOBBY)
+	if (currentMode == GAME_MODE::JOINING_IN_PROGRESS || currentMode ==
+		GAME_MODE::JOINING_IN_LOBBY)
 	{
 		currentMultiplayGameInfo.hostName = currentMultiplayGameInfo.players[0].name; // host is always player index 0?
 	}
 
-	if (currentMode == ActivitySink::GameMode::HOSTING_IN_LOBBY || currentMode ==
-		ActivitySink::GameMode::JOINING_IN_LOBBY)
+	if (currentMode == GAME_MODE::HOSTING_IN_LOBBY || currentMode ==
+		GAME_MODE::JOINING_IN_LOBBY)
 	{
-		for (auto sink : activitySinks) { sink->updateMultiplayerGameInfo(currentMultiplayGameInfo); }
+		for (const auto& sink : activitySinks) { sink->updateMultiplayerGameInfo(currentMultiplayGameInfo); }
 	}
-	else if (currentMode == ActivitySink::GameMode::JOINING_IN_PROGRESS)
+	else if (currentMode == GAME_MODE::JOINING_IN_PROGRESS)
 	{
 		// Have now received the initial game data, so trigger ActivitySink::joinedMultiplayerGame
-		currentMode = ActivitySink::GameMode::JOINING_IN_LOBBY;
-		for (auto sink : activitySinks) { sink->joinedMultiplayerGame(currentMultiplayGameInfo); }
+		currentMode = GAME_MODE::JOINING_IN_LOBBY;
+		for (const auto& sink : activitySinks) { sink->joinedMultiplayerGame(currentMultiplayGameInfo); }
 	}
 }
 

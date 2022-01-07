@@ -25,8 +25,8 @@
  * Obviously HCI should mean "Hellish Code Incoming" -- Toksyuryel.
  */
 
-#include <cstring>
 #include <algorithm>
+#include <cstring>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/stdio_ext.h"
@@ -87,7 +87,7 @@ static bool ChatDialogUp = false;
 
 struct BUTSTATE
 {
-	UDWORD id;
+	unsigned id;
 	bool Enabled;
 	bool Hidden;
 };
@@ -627,7 +627,7 @@ private:
 		PAUSE,
 	};
 
-	ReplayGameStatus getReplayGameStatus() const
+	static ReplayGameStatus getReplayGameStatus()
 	{
 		ReplayGameStatus status = (!gameTimeIsStopped()) ? ReplayGameStatus::PLAY : ReplayGameStatus::PAUSE;
 		// sanity check
@@ -1044,9 +1044,9 @@ bool intIsRefreshing()
 
 
 // see if a delivery point is selected
-static FLAG_POSITION* intFindSelectedDelivPoint()
+static FlagPosition* intFindSelectedDelivPoint()
 {
-	FLAG_POSITION* psFlagPos;
+	FlagPosition* psFlagPos;
 
 	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS, "Not supported selectedPlayer: %" PRIu32 "",
 	                 selectedPlayer);
@@ -1083,7 +1083,7 @@ void intDoScreenRefresh()
 	}
 
 	size_t objMajor = 0, statMajor = 0;
-	FLAG_POSITION* psFlag;
+	FlagPosition* psFlag;
 
 	if ((intMode == INT_OBJECT ||
 			intMode == INT_STAT ||
@@ -1312,7 +1312,7 @@ static void intProcessEditStats(UDWORD id)
 		psPositionStats = ppsStatsList[id - IDSTAT_START];
 		if (psPositionStats->hasType(STAT_TEMPLATE))
 		{
-			FLAG_POSITION debugMenuDroidDeliveryPoint;
+			FlagPosition debugMenuDroidDeliveryPoint;
 			// Placing a droid from the debug menu, set up the flag. (This would probably be safe to do, even if we're placing something else.)
 			debugMenuDroidDeliveryPoint.factoryType = REPAIR_FLAG;
 			debugMenuDroidDeliveryPoint.factoryInc = 0;
@@ -1714,7 +1714,7 @@ INT_RETVAL intRunWidgets()
 		else if (intMode == INT_EDITSTAT && editPosMode == IED_POS)
 		{
 			/* Directly positioning some type of object */
-			FLAG_POSITION flag;
+			FlagPosition flag;
 			Vector2i pos = {INT32_MAX, INT32_MAX}, pos2 = {INT32_MAX, INT32_MAX};
 			Vector2i size = {1, 1};
 			STRUCTURE_TYPE type = REF_WALL;
@@ -1749,7 +1749,7 @@ INT_RETVAL intRunWidgets()
 
 						if (psBuilding->type == REF_DEMOLISH)
 						{
-							MAPTILE* psTile = mapTile(map_coord(pos.x), map_coord(pos.y));
+							Tile* psTile = mapTile(map_coord(pos.x), map_coord(pos.y));
 							Feature* psFeature = (Feature*)psTile->psObject;
 							Structure* psStructure = (Structure*)psTile->psObject;
 
@@ -2163,7 +2163,7 @@ void intRemoveObject()
 	widgDelete(psWScreen, IDOBJ_TABFORM);
 
 	// Start the window close animation.
-	IntFormAnimated* Form = (IntFormAnimated*)widgGetFromID(psWScreen, IDOBJ_FORM);
+	auto Form = (IntFormAnimated*)widgGetFromID(psWScreen, IDOBJ_FORM);
 	if (Form)
 	{
 		Form->closeAnimateDelete();

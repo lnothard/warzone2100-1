@@ -20,7 +20,7 @@
 
 /**
  * @file data.cpp
- * Data loading functions used by the framework resource module.
+ * Data loading functions used by the framework resource module
  */
 
 #include <physfs.h>
@@ -51,7 +51,7 @@
 // whether a save game is currently being loaded
 static bool saveFlag = false;
 
-uint32_t DataHash[DATA_MAXDATA] = {0};
+std::array<unsigned, DATA_MAXDATA> DataHash = {0};
 
 /**
 *	hashBuffer()
@@ -63,13 +63,13 @@ uint32_t DataHash[DATA_MAXDATA] = {0};
 *	This is almost the same routine that Pumpkin had, minus the ugly bug :)
 *	And minus the old algorithm and debugging trace, replaced with a simple CRC...
 */
-static UDWORD hashBuffer(const uint8_t* pData, uint32_t size)
+static unsigned hashBuffer(const uint8_t* pData, unsigned size)
 {
 	char nl = '\n';
-	uint32_t crc = 0;
-	uint32_t i, j;
-	uint32_t lines = 0;
-	uint32_t bytes = 0;
+	unsigned crc = 0;
+	unsigned i, j;
+	unsigned lines = 0;
+	unsigned bytes = 0;
 	for (i = 0; i < size; i = j + 1)
 	{
 		for (j = i; j < size && pData[j] != '\n' && pData[j] != '\r'; ++j)
@@ -94,9 +94,9 @@ static UDWORD hashBuffer(const uint8_t* pData, uint32_t size)
 
 // create the hash for that data block.
 // Data should be converted to Network byte order
-void calcDataHash(const uint8_t* pBuffer, uint32_t size, uint32_t index)
+void calcDataHash(const uint8_t* pBuffer, unsigned size, unsigned index)
 {
-	const uint32_t oldHash = DataHash[index];
+	const unsigned oldHash = DataHash[index];
 
 	if (!bMultiPlayer)
 	{
@@ -111,11 +111,9 @@ void calcDataHash(const uint8_t* pBuffer, uint32_t size, uint32_t index)
 	}
 
 	debug(LOG_NET, "DataHash[%2u] = %08x", index, DataHash[index]);
-
-	return;
 }
 
-static void calcDataHash(const WzConfig& ini, uint32_t index)
+static void calcDataHash(const WzConfig& ini, unsigned index)
 {
 	std::string jsonDump = ini.compactStringRepresentation();
 	calcDataHash(reinterpret_cast<const uint8_t*>(jsonDump.data()), jsonDump.size(), index);
@@ -150,7 +148,7 @@ static bool bufferSBODYLoad(const char* fileName, void** ppData)
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	calcDataHash(ini, DATA_SBODY);
 
-	if (!loadBodyStats(ini) || !allocComponentList(COMP_BODY, numBodyStats))
+	if (!loadBodyStats(ini) || !allocComponentList(COMPONENT_TYPE::BODY, numBodyStats))
 	{
 		return false;
 	}
@@ -173,7 +171,7 @@ static bool bufferSWEAPONLoad(const char* fileName, void** ppData)
 	calcDataHash(ini, DATA_SWEAPON);
 
 	if (!loadWeaponStats(ini)
-		|| !allocComponentList(COMP_WEAPON, numWeaponStats))
+		|| !allocComponentList(COMPONENT_TYPE::WEAPON, numWeaponStats))
 	{
 		return false;
 	}
@@ -190,7 +188,7 @@ static bool bufferSCONSTRLoad(const char* fileName, void** ppData)
 	calcDataHash(ini, DATA_SCONSTR);
 
 	if (!loadConstructStats(ini)
-		|| !allocComponentList(COMP_CONSTRUCT, numConstructStats))
+		|| !allocComponentList(COMPONENT_TYPE::CONSTRUCT, numConstructStats))
 	{
 		return false;
 	}
@@ -207,7 +205,7 @@ static bool bufferSECMLoad(const char* fileName, void** ppData)
 	calcDataHash(ini, DATA_SECM);
 
 	if (!loadECMStats(ini)
-		|| !allocComponentList(COMP_ECM, numECMStats))
+		|| !allocComponentList(COMPONENT_TYPE::ECM, numECMStats))
 	{
 		return false;
 	}
@@ -223,7 +221,7 @@ static bool bufferSPROPLoad(const char* fileName, void** ppData)
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	calcDataHash(ini, DATA_SPROP);
 
-	if (!loadPropulsionStats(ini) || !allocComponentList(COMP_PROPULSION, numPropulsionStats))
+	if (!loadPropulsionStats(ini) || !allocComponentList(COMPONENT_TYPE::PROPULSION, numPropulsionStats))
 	{
 		return false;
 	}
@@ -239,7 +237,7 @@ static bool bufferSSENSORLoad(const char* fileName, void** ppData)
 	calcDataHash(ini, DATA_SSENSOR);
 
 	if (!loadSensorStats(ini)
-		|| !allocComponentList(COMP_SENSOR, numSensorStats))
+		|| !allocComponentList(COMPONENT_TYPE::SENSOR, numSensorStats))
 	{
 		return false;
 	}
@@ -255,7 +253,8 @@ static bool bufferSREPAIRLoad(const char* fileName, void** ppData)
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	calcDataHash(ini, DATA_SREPAIR);
 
-	if (!loadRepairStats(ini) || !allocComponentList(COMP_REPAIRUNIT, numRepairStats))
+	if (!loadRepairStats(ini) || !allocComponentList(
+          COMPONENT_TYPE::REPAIR_UNIT, numRepairStats))
 	{
 		return false;
 	}
@@ -271,7 +270,7 @@ static bool bufferSBRAINLoad(const char* fileName, void** ppData)
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	calcDataHash(ini, DATA_SBRAIN);
 
-	if (!loadBrainStats(ini) || !allocComponentList(COMP_BRAIN, numBrainStats))
+	if (!loadBrainStats(ini) || !allocComponentList(COMPONENT_TYPE::BRAIN, numBrainStats))
 	{
 		return false;
 	}
@@ -495,7 +494,7 @@ static bool dataResearchMsgLoad(const char* fileName, void** ppData)
 static void dataSMSGRelease(void* pData)
 {
 	ASSERT(pData, "pData unexpectedly null");
-	WzString* pFilename = static_cast<WzString*>(pData);
+	auto* pFilename = static_cast<WzString*>(pData);
 	viewDataShutDown(pFilename->toUtf8().c_str());
 	delete pFilename;
 }
@@ -505,7 +504,7 @@ static void dataSMSGRelease(void* pData)
  */
 static bool dataImageLoad(const char* fileName, void** ppData)
 {
-	iV_Image* psSprite = (iV_Image*)malloc(sizeof(iV_Image));
+	auto* psSprite = (iV_Image*)malloc(sizeof(iV_Image));
 	if (!psSprite)
 	{
 		return false;
@@ -560,7 +559,7 @@ static void dataIMGRelease(void* pData)
  */
 static void dataImageRelease(void* pData)
 {
-	iV_Image* psSprite = (iV_Image*)pData;
+	auto* psSprite = (iV_Image*)pData;
 
 	if (psSprite)
 	{
@@ -572,7 +571,7 @@ static void dataImageRelease(void* pData)
 /* Load an audio file */
 static bool dataAudioLoad(const char* fileName, void** ppData)
 {
-	if (audio_Disabled() == true)
+	if (audio_Disabled())
 	{
 		*ppData = nullptr;
 		// No error occurred (sound is just disabled), so we return true

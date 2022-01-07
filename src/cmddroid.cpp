@@ -29,7 +29,6 @@
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
 
-#include "cmddroiddef.h"
 #include "cmddroid.h"
 #include "console.h"
 #include "droid.h"
@@ -37,39 +36,16 @@
 #include "objects.h"
 #include "objmem.h"
 #include "order.h"
+#include "lib/gamelib/gtime.h"
 
 /// This global instance is responsible for dealing with each
 /// player's target designator
-Droid* apsCmdDesignator[MAX_PLAYERS];
+std::array<Droid*, MAX_PLAYERS> apsCmdDesignator;
 
 // Last time the max commander limit message was displayed
-static uint32_t lastMaxCmdLimitMsgTime = 0;
+static unsigned lastMaxCmdLimitMsgTime = 0;
 
 static constexpr auto MAX_COMMAND_LIMIT_MESSAGE_PAUSE = 10000;
-
-/// This function allocates the global instance apsCmdDesignator
-bool cmdDroidInit()
-{
-	memset(apsCmdDesignator, 0, sizeof(Droid*) * MAX_PLAYERS);
-	return true;
-}
-
-/**
- * This function runs on all players to check if the player's
- * current target designator is dead. If it is, set the
- * target designator to NULL.
- */
-void cmdDroidUpdate()
-{
-	for (auto& i : apsCmdDesignator)
-	{
-		if (i && i->died)
-		{
-			ASSERT(i->type == DROID_TYPE::DROID, "Bad droid pointer! type=%u", i->type);
-			i = nullptr;
-		}
-	}
-}
 
 /**
  * This function adds the droid to the command group commanded by
@@ -110,7 +86,7 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 
 		orderDroidObj(psDroid, DORDER_GUARD, (SimpleObject*)psCommander, ModeImmediate);
 	}
-	else if (psCommander->player == selectedPlayer)
+	else if (psCommander->get_player() == selectedPlayer)
 	{
 		//Do not potentially spam the console with this message
 		if (lastMaxCmdLimitMsgTime + MAX_COMMAND_LIMIT_MESSAGE_PAUSE < gameTime)
@@ -132,7 +108,7 @@ Droid* cmdDroidGetDesignator(UDWORD player)
 void cmdDroidSetDesignator(Droid* psDroid)
 {
 	ASSERT_OR_RETURN(, psDroid != nullptr, "Invalid droid!");
-	if (psDroid->type != DROID_TYPE::COMMAND)
+	if (psDroid->getType() != DROID_TYPE::COMMAND)
 	{
 		return;
 	}

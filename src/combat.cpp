@@ -20,7 +20,7 @@
 
 /**
  * @file combat.cpp
- * Combat mechanics routines.
+ * Combat mechanics routines
  */
 
 #include "lib/framework/fixedpoint.h"
@@ -250,7 +250,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 			flightTime = projCalcIndirectVelocities(dist, deltaPos.z, psStats->flightSpeed, &vXY, &vZ, min_angle);
 		}
 
-		if (psTarget->lastHitWeapon == WSC_EMP)
+		if (psTarget->lastHitWeapon == WEAPON_SUBCLASS::EMP)
 		{
 			int empTime = EMP_DISABLE_TIME - (gameTime - psTarget->timeLastHit);
 			CLIP(empTime, 0, EMP_DISABLE_TIME);
@@ -346,7 +346,7 @@ void counterBatteryFire(SimpleObject* psAttacker, SimpleObject* psTarget)
 
 	CHECK_OBJECT(psTarget);
 
-	for (SimpleObject* psViewer = apsSensorList[0]; psViewer; psViewer = psViewer->psNextFunc)
+	for (auto psViewer : apsSensorList)
 	{
 		if (aiCheckAlliances(psTarget->player, psViewer->player))
 		{
@@ -356,11 +356,13 @@ void counterBatteryFire(SimpleObject* psAttacker, SimpleObject* psTarget)
 			{
 				continue;
 			}
-			const int sensorRange = objSensorRange(psViewer);
+			const auto sensorRange = objSensorRange(psViewer);
 
 			// Check sensor distance from target
-			const int xDiff = psViewer->pos.x - psTarget->pos.x;
-			const int yDiff = psViewer->pos.y - psTarget->pos.y;
+			const auto xDiff = psViewer->get_position().x -
+              psTarget->get_position().x;
+			const auto yDiff = psViewer->get_position().y - 
+              psTarget->get_position().y;
 
 			if (xDiff * xDiff + yDiff * yDiff < sensorRange * sensorRange)
 			{
@@ -409,8 +411,9 @@ int objArmour(const SimpleObject* psObj, WEAPON_CLASS weaponClass)
  * \param weaponSubClass the subclass of the weapon that deals the damage
  * \return < 0 when the dealt damage destroys the object, > 0 when the object survives
  */
-int32_t objDamage(SimpleObject* psObj, unsigned damage, unsigned originalhp, WEAPON_CLASS weaponClass,
-                  WEAPON_SUBCLASS weaponSubClass, bool isDamagePerSecond, int minDamage)
+int objDamage(SimpleObject* psObj, unsigned damage, unsigned originalhp,
+              WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
+              bool isDamagePerSecond, int minDamage)
 {
 	int level = 1;
 	int armour = objArmour(psObj, weaponClass);
@@ -419,14 +422,15 @@ int32_t objDamage(SimpleObject* psObj, unsigned damage, unsigned originalhp, WEA
 	// If the previous hit was by an EMP cannon and this one is not:
 	// don't reset the weapon class and hit time
 	// (Giel: I guess we need this to determine when the EMP-"shock" is over)
-	if (psObj->lastHitWeapon != WSC_EMP || weaponSubClass == WSC_EMP)
+	if (psObj->lastHitWeapon != WEAPON_SUBCLASS::EMP ||
+      weaponSubClass == WEAPON_SUBCLASS::EMP)
 	{
 		psObj->timeLastHit = gameTime;
 		psObj->lastHitWeapon = weaponSubClass;
 	}
 
 	// EMP cannons do no damage, if we are one return now
-	if (weaponSubClass == WSC_EMP)
+	if (weaponSubClass == WEAPON_SUBCLASS::EMP)
 	{
 		return 0;
 	}
@@ -521,7 +525,7 @@ unsigned int objGuessFutureDamage(WeaponStats* psStats, unsigned int player, Sim
 	damage = calcDamage(weaponDamage(psStats, player), psStats->weaponEffect, psTarget);
 
 	// EMP cannons do no damage, if we are one return now
-	if (psStats->weaponSubClass == WSC_EMP)
+	if (psStats->weaponSubClass == WEAPON_SUBCLASS::EMP)
 	{
 		return 0;
 	}

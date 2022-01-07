@@ -1061,7 +1061,7 @@ static int calcAverageTerrainHeight(int tileX, int tileZ)
 			if (tileOnMap(tileX + j, tileZ + i))
 			{
 				/* Get a pointer to the tile at this location */
-				MAPTILE* psTile = mapTile(tileX + j, tileZ + i);
+				Tile* psTile = mapTile(tileX + j, tileZ + i);
 
 				result += psTile->height;
 				numTilesAveraged++;
@@ -1077,7 +1077,7 @@ static int calcAverageTerrainHeight(int tileX, int tileZ)
 	 * Work out the average height.
 	 * We use this information to keep the player camera above the terrain.
 	 */
-	MAPTILE* psTile = mapTile(tileX, tileZ);
+	Tile* psTile = mapTile(tileX, tileZ);
 
 	result /= numTilesAveraged;
 	if (result < psTile->height)
@@ -1178,7 +1178,7 @@ static void drawTiles(iView* player)
 
 			if (tileOnMap(playerXTile + j, playerZTile + i))
 			{
-				MAPTILE* psTile = mapTile(playerXTile + j, playerZTile + i);
+				Tile* psTile = mapTile(playerXTile + j, playerZTile + i);
 
 				pos.y = map_TileHeight(playerXTile + j, playerZTile + i);
 				setTileColour(playerXTile + j, playerZTile + i, pal_SetBrightness(static_cast<UBYTE>(psTile->level)));
@@ -1543,7 +1543,7 @@ static void calcFlagPosScreenCoords(SDWORD* pX, SDWORD* pY, SDWORD* pR, const gl
 /// Decide whether to render a projectile, and make sure it will be drawn
 static void display3DProjectiles(const glm::mat4& viewMatrix)
 {
-	PROJECTILE* psObj = proj_GetFirst();
+	Projectile* psObj = proj_GetFirst();
 	while (psObj != nullptr)
 	{
 		// If source or destination is visible, and projectile has been spawned and has not impacted.
@@ -1575,7 +1575,7 @@ static void display3DProjectiles(const glm::mat4& viewMatrix)
 } /* end of function display3DProjectiles */
 
 /// Draw a projectile to the screen
-void renderProjectile(PROJECTILE* psCurr, const glm::mat4& viewMatrix)
+void renderProjectile(Projectile* psCurr, const glm::mat4& viewMatrix)
 {
 	WeaponStats* psStats;
 	Vector3i dv;
@@ -1738,7 +1738,7 @@ static void displayStaticObjects(const glm::mat4& viewMatrix)
 	//	pie_SetDepthOffset(0.0f);
 }
 
-static bool tileHasIncompatibleStructure(MAPTILE const* tile, StructureStats const* stats, int moduleIndex)
+static bool tileHasIncompatibleStructure(Tile const* tile, StructureStats const* stats, int moduleIndex)
 {
 	Structure* psStruct = castStructure(tile->psObject);
 	if (psStruct == nullptr)
@@ -2512,7 +2512,7 @@ void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix)
 	bool bHitByElectronic = false;
 	bool defensive = false;
 	iIMDShape* strImd = psStructure->sDisplay.imd;
-	MAPTILE* psTile = worldTile(psStructure->pos.x, psStructure->pos.y);
+	Tile* psTile = worldTile(psStructure->pos.x, psStructure->pos.y);
 	const FACTION* faction = getPlayerFaction(psStructure->player);
 
 	glm::mat4 modelMatrix = glm::translate(glm::vec3(dv)) * glm::rotate(UNDEG(-psStructure->rot.direction),
@@ -2706,7 +2706,7 @@ static bool renderWallSection(Structure* psStructure, const glm::mat4& viewMatri
 	PIELIGHT brightness;
 	Vector3i dv;
 	int pieFlag, pieFlagData;
-	MAPTILE* psTile = worldTile(psStructure->pos.x, psStructure->pos.y);
+	Tile* psTile = worldTile(psStructure->pos.x, psStructure->pos.y);
 	const FACTION* faction = getPlayerFaction(psStructure->player);
 
 	if (!psStructure->visibleForLocalDisplay())

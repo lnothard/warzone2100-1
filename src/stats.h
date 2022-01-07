@@ -17,9 +17,12 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Interface to the common stats module
+
+/**
+ * @file stats.h
+ * Interface to the common stats module
  */
+
 #ifndef __INCLUDED_SRC_STATS_H__
 #define __INCLUDED_SRC_STATS_H__
 

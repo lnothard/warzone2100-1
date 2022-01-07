@@ -876,7 +876,7 @@ static bool updateGraviton(EFFECT* psEffect)
 {
 	float accel;
 	Vector3i dv;
-	MAPTILE* psTile;
+	Tile* psTile;
 	LIGHT light;
 
 	if (psEffect->type != GRAVITON_TYPE_GIBLET)

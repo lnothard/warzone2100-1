@@ -53,7 +53,7 @@ struct LANDING_ZONE
 struct MISSION
 {
 	LEVEL_TYPE type; //defines which start and end functions to use - see levels_type in levels.h
-	std::unique_ptr<MAPTILE[]> psMapTiles; //the original mapTiles
+	std::unique_ptr<Tile[]> psMapTiles; //the original mapTiles
 	int32_t mapWidth; //the original mapWidth
 	int32_t mapHeight; //the original mapHeight
 	std::unique_ptr<uint8_t[]> psBlockMap[AUX_MAX];

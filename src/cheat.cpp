@@ -21,8 +21,9 @@
 /**
  * @file cheat.cpp
  * Handles cheat codes
+ *
+ * Alex M 19th - Jan. 1999
  */
-/* Alex M 19th - Jan. 1999 */
 
 #include "lib/framework/frame.h"
 #include "lib/exceptionhandler/dumpinfo.h"
@@ -94,7 +95,7 @@ static CHEAT_ENTRY cheatCodes[] =
 
 };
 
-bool _attemptCheatCode(const char* cheat_name)
+bool _attemptCheatCode(const std::string& cheat_name)
 {
 	const CHEAT_ENTRY* curCheat;
 	static const CHEAT_ENTRY* const EndCheat = &cheatCodes[ARRAY_SIZE(cheatCodes)];

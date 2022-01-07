@@ -20,7 +20,7 @@
 
 /** 
  * @file weapondef.h
- * Definitions for the weapons.
+ * Definitions for the weapons
  */
 
 #ifndef __INCLUDED_WEAPONDEF_H__
@@ -48,11 +48,9 @@ enum class TARGET_ORIGIN
 	RADAR_DETECTOR,
 };
 
-class Weapon : public virtual ::SimpleObject, public Impl::SimpleObject
+class Weapon : public virtual SimpleObject, public Impl::SimpleObject
 {
 public:
-  Weapon() = default;
-
   [[nodiscard]] bool has_ammo() const;
   [[nodiscard]] bool has_full_ammo() const noexcept;
   [[nodiscard]] bool is_artillery() const noexcept;
@@ -90,7 +88,8 @@ private:
 	TARGET_ORIGIN origin = UNKNOWN;
 };
 
-/// Returns how much the weapon assembly should currently be rocked back due to firing.
+/// Returns how much the weapon assembly should currently
+/// be rocked back due to firing.
 int getRecoil(Weapon const& weapon);
 
 #endif // __INCLUDED_WEAPONDEF_H__

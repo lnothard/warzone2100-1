@@ -219,7 +219,7 @@ PIELIGHT getTileColour(int x, int y)
 /// Set the colour of the tile at the specified position
 void setTileColour(int x, int y, PIELIGHT colour)
 {
-	MAPTILE* psTile = mapTile(x, y);
+	Tile* psTile = mapTile(x, y);
 
 	psTile->colour = colour;
 }
@@ -1065,7 +1065,7 @@ static void updateLightMap()
 	{
 		for (int i = 0; i < mapWidth; ++i)
 		{
-			MAPTILE* psTile = mapTile(i, j);
+			Tile* psTile = mapTile(i, j);
 			PIELIGHT colour = psTile->colour;
 
 			if (psTile->tileInfoBits & BITS_GATEWAY && showGateways)

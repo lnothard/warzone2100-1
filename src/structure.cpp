@@ -325,20 +325,94 @@ void close_gate(const Impl::Structure& structure)
 //}
 //
 
-bool Structure::is_blueprint() const noexcept
+namespace Impl
 {
-  return state == BLUEPRINT_VALID ||
-         state == BLUEPRINT_INVALID ||
-         state == BLUEPRINT_PLANNED ||
-         state == BLUEPRINT_PLANNED_BY_ALLY;
+
+  Structure::Structure(unsigned id, unsigned player)
+          : Unit(id, player)
+
+          // initialise to 1 instead of 0, to make sure we don't
+          // get destroyed first tick due to inactivity.
+          , buildRate(1)
+          , lastBuildRate(0)
+          , prebuiltImd(nullptr)
+  {
+    pos = Vector3i(0, 0, 0);
+    rot = Vector3i(0, 0, 0);
+    capacity = 0;
+  }
+
+  Structure::~Structure()
+  {
+    // Make sure to get rid of some final references in the sound code to this object first
+    audio_RemoveObj(this);
+  }
+
+  bool Structure::is_blueprint() const noexcept
+  {
+    return state == BLUEPRINT_VALID ||
+           state == BLUEPRINT_INVALID ||
+           state == BLUEPRINT_PLANNED ||
+           state == BLUEPRINT_PLANNED_BY_ALLY;
+  }
+
+  unsigned Structure::build_points_to_completion() const
+  {
+    return stats->build_point_cost - current_build_points;
+  }
+
+  bool Structure::has_modules() const noexcept
+  {
+    return capacity > 0;
+  }
+
+  bool Structure::is_pulled_to_terrain() const
+  {
+    using enum STRUCTURE_TYPE;
+    return is_wall() || stats->type == DEFENSE ||
+           stats->type == GATE || stats->type == REARM_PAD;
+  }
+
+  bool Structure::has_CB_sensor() const
+  {
+    if (!has_sensor())  {
+      return false;
+    }
+    const auto sensor_type = stats->sensor_stats->type;
+    return sensor_type == SENSOR_TYPE::INDIRECT_CB ||
+           sensor_type == SENSOR_TYPE::SUPER;
+  }
+
+  bool Structure::has_standard_sensor() const
+  {
+    if (!has_sensor())  {
+      return false;
+    }
+    const auto sensor_type = stats->sensor_stats->type;
+    return sensor_type == SENSOR_TYPE::STANDARD ||
+           sensor_type == SENSOR_TYPE::SUPER;
+  }
+
+  bool Structure::has_VTOL_intercept_sensor() const
+  {
+    if (!has_sensor()) {
+      return false;
+    }
+    const auto sensor_type = stats->sensor_stats->type;
+    return sensor_type == SENSOR_TYPE::VTOL_INTERCEPT ||
+           sensor_type == SENSOR_TYPE::SUPER;
+  }
+
+  bool Structure::has_VTOL_CB_sensor() const
+  {
+    if (!has_sensor())  {
+      return false;
+    }
+    const auto sensor_type = stats->sensor_stats->type;
+    return sensor_type == SENSOR_TYPE::VTOL_CB ||
+           sensor_type == SENSOR_TYPE::SUPER;
+  }
 }
-//bool structureIsBlueprint(const STRUCTURE* psStructure)
-//{
-//	return (psStructure->status == SS_BLUEPRINT_VALID ||
-//		psStructure->status == SS_BLUEPRINT_INVALID ||
-//		psStructure->status == SS_BLUEPRINT_PLANNED ||
-//		psStructure->status == SS_BLUEPRINT_PLANNED_BY_ALLY);
-//}
 
 void initStructLimits()
 {
@@ -414,7 +488,7 @@ void initFactoryNumFlag()
 //called at start of missions
 void resetFactoryNumFlag()
 {
-	for (unsigned int i = 0; i < MAX_PLAYERS; i++)
+	for (auto psStruct : apsStructLists)
 	{
 		for (int type = 0; type < NUM_FLAG_TYPES; type++)
 		{
@@ -422,20 +496,25 @@ void resetFactoryNumFlag()
 			factoryNumFlag[i][type].clear();
 		}
 		//look through the list of structures to see which have been used
-		for (Structure* psStruct = apsStructLists[i]; psStruct != nullptr; psStruct = psStruct->psNext)
+		for (; psStruct != nullptr; psStruct = psStruct->psNext)
 		{
 			FLAG_TYPE type;
-			switch (psStruct->pStructureType->type)
+			switch (psStruct->type)
 			{
-			case REF_FACTORY: type = FACTORY_FLAG;
+			case REF_FACTORY:
+        type = FACTORY_FLAG;
 				break;
-			case REF_CYBORG_FACTORY: type = CYBORG_FLAG;
+			case REF_CYBORG_FACTORY:
+        type = CYBORG_FLAG;
 				break;
-			case REF_VTOL_FACTORY: type = VTOL_FLAG;
+			case REF_VTOL_FACTORY:
+        type = VTOL_FLAG;
 				break;
-			case REF_REPAIR_FACILITY: type = REPAIR_FLAG;
+			case REF_REPAIR_FACILITY:
+        type = REPAIR_FLAG;
 				break;
-			default: continue;
+			default:
+        continue;
 			}
 
 			int inc = -1;
@@ -859,10 +938,7 @@ int32_t getStructureDamage(const Structure* psStructure)
 	return 65536 - health;
 }
 
-unsigned Structure::build_points_to_completion() const
-{
-  return stats->build_point_cost - current_build_points;
-}
+
 //uint32_t structureBuildPointsToCompletion(const STRUCTURE& structure)
 //{
 //	if (structureHasModules(&structure))
@@ -1025,10 +1101,6 @@ void structureBuild(Structure* psStruct, Droid* psDroid, int buildPoints, int bu
 	{
 		intNotifyResearchButton(prevResearchState);
 	}
-}
-bool Structure::has_modules() const noexcept
-{
-  return num_modules > 0;
 }
 //static bool structureHasModules(const STRUCTURE* psStruct)
 //{
@@ -1243,7 +1315,7 @@ static void structFindWallBlueprints(Vector2i map, bool aWallPresent[5][5])
 
 static bool wallBlockingTerrainJoin(Vector2i map)
 {
-	MAPTILE* psTile = mapTile(map);
+	Tile* psTile = mapTile(map);
 	return terrainType(psTile) == TER_WATER || terrainType(psTile) == TER_CLIFFFACE || psTile->psObject != nullptr;
 }
 
@@ -1380,10 +1452,6 @@ The x and y passed in are the CENTRE of the structure*/
 //	}
 //}
 
-bool Structure::is_pulled_to_terrain() const
-{
-  return is_wall() || stats->type == DEFENSE || stats->type == GATE || stats->type == REARM_PAD;
-}
 //static bool isPulledToTerrain(const STRUCTURE *psBuilding)
 //{
 //	STRUCTURE_TYPE type = psBuilding->pStructureType->type;
@@ -1612,7 +1680,7 @@ Structure* buildStructureDir(StructureStats* pStructureType, UDWORD x, UDWORD y,
 		{
 			for (int tileX = map.x; tileX < map.x + size.x; ++tileX)
 			{
-				MAPTILE* psTile = mapTile(tileX, tileY);
+				Tile* psTile = mapTile(tileX, tileY);
 
 				/* Remove any walls underneath the building. You can build defense buildings on top
 				 * of walls, you see. This is not the place to test whether we own it! */
@@ -1642,7 +1710,7 @@ Structure* buildStructureDir(StructureStats* pStructureType, UDWORD x, UDWORD y,
 			for (int tileX = map.x; tileX < map.x + size.x; ++tileX)
 			{
 				// We now know the previous loop didn't return early, so it is safe to save references to psBuilding now.
-				MAPTILE* psTile = mapTile(tileX, tileY);
+				Tile* psTile = mapTile(tileX, tileY);
 				psTile->psObject = psBuilding;
 
 				// if it's a tall structure then flag it in the map.
@@ -4114,30 +4182,6 @@ void structureUpdate(Structure* psBuilding, bool bMission)
 	CHECK_STRUCTURE(psBuilding);
 }
 
-Structure::Structure(uint32_t id, unsigned player)
-	: SimpleObject(OBJ_STRUCTURE, id, player)
-	  , pFunctionality(nullptr)
-	  , buildRate(1) // Initialise to 1 instead of 0, to make sure we don't get destroyed first tick due to inactivity.
-	  , lastBuildRate(0)
-	  , prebuiltImd(nullptr)
-{
-	pos = Vector3i(0, 0, 0);
-	rot = Vector3i(0, 0, 0);
-	capacity = 0;
-}
-
-/* Release all resources associated with a structure */
-Structure::~Structure()
-{
-	// Make sure to get rid of some final references in the sound code to this object first
-	audio_RemoveObj(this);
-
-	Structure* psBuilding = this;
-
-	// free up the space used by the functionality array
-	free(psBuilding->pFunctionality);
-	psBuilding->pFunctionality = nullptr;
-}
 
 
 /*
@@ -4456,7 +4500,7 @@ bool validLocation(BaseStats* psStats, Vector2i pos, uint16_t direction, unsigne
 				for (int j = 0; j < b.size.y; ++j)
 					for (int i = 0; i < b.size.x; ++i)
 					{
-						MAPTILE const* psTile = mapTile(b.map.x + i, b.map.y + j);
+						Tile const* psTile = mapTile(b.map.x + i, b.map.y + j);
 						if ((terrainType(psTile) == TER_WATER) ||
 							(terrainType(psTile) == TER_CLIFFFACE))
 						{
@@ -4553,7 +4597,7 @@ bool validLocation(BaseStats* psStats, Vector2i pos, uint16_t direction, unsigne
 				for (int j = 0; j < b.size.y; ++j)
 					for (int i = 0; i < b.size.x; ++i)
 					{
-						MAPTILE const* psTile = mapTile(b.map.x + i, b.map.y + j);
+						Tile const* psTile = mapTile(b.map.x + i, b.map.y + j);
 						if (TileIsKnownOccupied(psTile, player))
 						{
 							if (TileHasWall(psTile) && (psBuilding->type == REF_DEFENSE || psBuilding->type == REF_GATE
@@ -4663,7 +4707,7 @@ static void removeStructFromMap(Structure* psStruct)
 	{
 		for (int i = 0; i < b.size.x; ++i)
 		{
-			MAPTILE* psTile = mapTile(b.map.x + i, b.map.y + j);
+			Tile* psTile = mapTile(b.map.x + i, b.map.y + j);
 			psTile->psObject = nullptr;
 			auxClearBlocking(b.map.x + i, b.map.y + j, AIR_BLOCKED);
 		}
@@ -4904,7 +4948,7 @@ bool destroyStruct(Structure* psDel, unsigned impactTime)
 		{
 			for (int width = 0; width < b.size.x; ++width)
 			{
-				MAPTILE* psTile = mapTile(b.map.x + width, b.map.y + breadth);
+				Tile* psTile = mapTile(b.map.x + width, b.map.y + breadth);
 				if (TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile))
 				{
 					psTile->illumination /= 2;
@@ -6215,7 +6259,7 @@ void hqReward(UBYTE losingPlayer, UBYTE rewardPlayer)
 	{
 		for (int x = 0; x < mapWidth; ++x)
 		{
-			MAPTILE* psTile = mapTile(x, y);
+			Tile* psTile = mapTile(x, y);
 			if (TEST_TILE_VISIBLE(losingPlayer, psTile))
 			{
 				psTile->tileExploredBits |= alliancebits[rewardPlayer];
@@ -6859,14 +6903,6 @@ bool structSensorDroidWeapon(const Structure* psStruct, const Droid* psDroid)
 }
 
 
-bool Structure::has_CB_sensor() const
-{
-  if (!has_sensor())  {
-    return false;
-  }
-  const auto sensor_type = stats->sensor_stats->type;
-  return sensor_type == INDIRECT_CB || sensor_type == SUPER;
-}
 ///*checks if the structure has a Counter Battery sensor attached - returns
 //true if it has*/
 //bool structCBSensor(const STRUCTURE* psStruct)
@@ -6884,14 +6920,6 @@ bool Structure::has_CB_sensor() const
 //}
 
 
-bool Structure::has_standard_sensor() const
-{
-  if (!has_sensor())  {
-    return false;
-  }
-  const auto sensor_type = stats->sensor_stats->type;
-  return sensor_type == STANDARD || sensor_type == SUPER;
-}
 ///*checks if the structure has a Standard Turret sensor attached - returns
 //true if it has*/
 //bool structStandardSensor(const STRUCTURE* psStruct)
@@ -6908,14 +6936,6 @@ bool Structure::has_standard_sensor() const
 //	return false;
 //}
 
-bool Structure::has_VTOL_intercept_sensor() const
-{
-  if (!has_sensor()) {
-    return false;
-  }
-  const auto sensor_type = stats->sensor_stats->type;
-  return sensor_type == VTOL_INTERCEPT || sensor_type == SUPER;
-}
 ///*checks if the structure has a VTOL Intercept sensor attached - returns
 //true if it has*/
 //bool structVTOLSensor(const STRUCTURE* psStruct)
@@ -6932,14 +6952,6 @@ bool Structure::has_VTOL_intercept_sensor() const
 //	return false;
 //}
 
-bool Structure::has_VTOL_CB_sensor() const
-{
-  if (!has_sensor())  {
-    return false;
-  }
-  const auto sensor_type = stats->sensor_stats->type;
-  return sensor_type == VTOL_CB || sensor_type == SUPER;
-}
 ///*checks if the structure has a VTOL Counter Battery sensor attached - returns
 //true if it has*/
 //bool structVTOLCBSensor(const STRUCTURE* psStruct)

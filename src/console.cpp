@@ -20,12 +20,11 @@
 
 /**
  * @file console.cpp
- * Functions for the in-game console.
+ * Functions for the in-game console
  *
  * Alex McLean, Pumpkin Studios, EIDOS Interactive
  */
 
-#include <string>
 #include <sstream>
 #include <deque>
 #include <chrono>
@@ -555,7 +554,7 @@ void setConsolePermanence(bool state, bool bClearOld)
 /** Check if mouse is over the Active console 'window' area */
 bool mouseOverConsoleBox()
 {
-	int gotMessages = getNumberConsoleMessages();
+	auto gotMessages = getNumberConsoleMessages();
 	if (gotMessages &&
 		((UDWORD)mouseX() > mainConsole.topX)
 		&& ((UDWORD)mouseY() > mainConsole.topY)

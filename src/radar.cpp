@@ -373,7 +373,7 @@ static void DrawNorth(const glm::mat4& modelViewProjectionMatrix)
 	             static_cast<int>(-(radarHeight / 2.f)), modelViewProjectionMatrix);
 }
 
-static PIELIGHT inline appliedRadarColour(RADAR_DRAW_MODE drawMode, MAPTILE* WTile)
+static PIELIGHT inline appliedRadarColour(RADAR_DRAW_MODE drawMode, Tile* WTile)
 {
 	PIELIGHT WScr = WZCOL_BLACK; // squelch warning
 
@@ -474,7 +474,7 @@ static void DrawRadarTiles()
 	{
 		for (y = scrollMinY; y < scrollMaxY; y++)
 		{
-			MAPTILE* psTile = mapTile(x, y);
+			Tile* psTile = mapTile(x, y);
 			size_t pos = radarTexWidth * (y - scrollMinY) + (x - scrollMinX);
 
 			ASSERT(pos * sizeof(*radarBuffer) < radarBufferSize, "Buffer overrun");
@@ -567,7 +567,7 @@ static void DrawRadarObjects()
 	{
 		for (SDWORD y = scrollMinY; y < scrollMaxY; y++)
 		{
-			MAPTILE* psTile = mapTile(x, y);
+			Tile* psTile = mapTile(x, y);
 			Structure* psStruct;
 			size_t pos = (x - scrollMinX) + (y - scrollMinY) * radarTexWidth;
 

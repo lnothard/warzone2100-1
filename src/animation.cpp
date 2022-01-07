@@ -16,9 +16,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file
- * Animation functions.
+ * @file animation.cpp
+ * Animation functions
  */
 
 #include "animation.h"
@@ -63,23 +64,17 @@ bool ValueTracker::currently_tracking() const
 {
   return start_time != 0;
 }
-//bool ValueTracker::isTracking()
-//{
-//	return this->startTime != 0;
-//}
 
-ValueTracker* ValueTracker::set_speed(int value)
+void ValueTracker::set_speed(int value)
 {
 	this->speed = value;
-	return this;
 }
 
-ValueTracker* ValueTracker::set_target_delta(int value)
+void ValueTracker::set_target_delta(int value)
 {
 	this->target_delta = value;
 	this->target = this->initial + value;
 	this->target_reached = false;
-	return this;
 }
 
 void ValueTracker::set_target(int value)
@@ -88,20 +83,12 @@ void ValueTracker::set_target(int value)
   target = value;
   target_reached = false;
 }
-//ValueTracker* ValueTracker::setTarget(int value)
-//{
-//	this->targetDelta = value - this->initial;
-//	this->target = value;
-//	this->_reachedTarget = false;
-//	return this;
-//}
 
 void ValueTracker::update()
 {
   if (target_reached) {
     return;
   }
-
   if (std::abs(target - current) < 1) {
     target_reached = true;
     return;

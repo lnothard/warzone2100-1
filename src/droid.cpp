@@ -163,7 +163,7 @@ void Droid::upgradeHitPoints()
 	templateSetParts(this, &sTemplate);
 
 	// update engine too
-	base_speed = calcDroidBaseSpeed(&sTemplate, weight, psDroid->player);
+	base_speed = calcDroidBaseSpeed(&sTemplate, weight, get_player());
 	if (isTransporter(*this)) {
 		for (auto droid : group->psList)
 		{
@@ -185,14 +185,13 @@ bool droidInit()
 	return true;
 }
 
-int droidReloadBar(const SimpleObject* psObj, const Weapon* psWeap, int weapon_slot)
+int droidReloadBar(const Unit& psObj, const Weapon* psWeap, int weapon_slot)
 {
 	WeaponStats* psStats;
 	bool bSalvo;
 	int firingStage, interval;
 
-	if (psWeap->nStat == 0) // no weapon
-	{
+	if (num_weapons(psObj) == 0) // no weapon {
 		return -1;
 	}
 	psStats = asWeaponStats + psWeap->nStat;
@@ -227,6 +226,7 @@ int droidReloadBar(const SimpleObject* psObj, const Weapon* psWeap, int weapon_s
 }
 
 #define UNIT_LOST_DELAY	(5*GAME_TICKS_PER_SEC)
+
 /* Deals damage to a droid
  * \param psDroid droid to deal damage to
  * \param damage amount of damage to deal
@@ -236,15 +236,17 @@ int droidReloadBar(const SimpleObject* psObj, const Weapon* psWeap, int weapon_s
  * \return > 0 when the dealt damage destroys the droid, < 0 when the droid survives
  *
  */
-int32_t droidDamage(Droid* psDroid, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
-                    unsigned impactTime, bool isDamagePerSecond, int minDamage)
+int droidDamage(Droid* psDroid, unsigned damage, WEAPON_CLASS weaponClass,
+                WEAPON_SUBCLASS weaponSubClass, unsigned impactTime,
+                bool isDamagePerSecond, int minDamage)
 {
-	int32_t relativeDamage;
+	int relativeDamage;
 
 	CHECK_DROID(psDroid);
 
 	// VTOLs (and transporters in MP) on the ground take triple damage
-	if ((isVtolDroid(psDroid) || (isTransporter(psDroid) && bMultiPlayer)) && (psDroid->movement.status == MOVEINACTIVE))
+	if ((isVtolDroid(psDroid) || (isTransporter(*psDroid) && bMultiPlayer)) &&
+      (psDroid->movement.status == MOVEINACTIVE))
 	{
 		damage *= 3;
 	}
@@ -339,10 +341,9 @@ Droid::Droid(unsigned id, unsigned player)
 	  , secondary_order(DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD)
 	  , secondaryOrderPending(DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD)
 	  , secondaryOrderPendingCount(0)
-	  , action(NONE)
+	  , action(ACTION::NONE)
 	  , actionPos(0, 0)
 {
-	memset(name, 0, sizeof(name));
 	memset(asBits, 0, sizeof(asBits));
 	order.type = NONE;
 	order.pos = Vector2i(0, 0);
@@ -350,7 +351,7 @@ Droid::Droid(unsigned id, unsigned player)
 	order.direction = 0;
 	order.psObj = nullptr;
 	order.psStats = nullptr;
-  movement.status = MOVE_TYPE::INACTIVE;
+  movement->status = MOVE_STATUS::INACTIVE;
 	listSize = 0;
 	listPendingBegin = 0;
 	iAudioID = NO_SOUND;
@@ -586,7 +587,7 @@ bool destroyDroid(Droid* psDel, unsigned impactTime)
 	if (psDel->lastHitWeapon == WSC_LAS_SAT) // darken tile if lassat.
 	{
 		UDWORD width, breadth, mapX, mapY;
-		MAPTILE* psTile;
+		Tile* psTile;
 
 		mapX = map_coord(psDel->pos.x);
 		mapY = map_coord(psDel->pos.y);

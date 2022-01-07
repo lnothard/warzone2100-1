@@ -110,7 +110,7 @@ struct GATEWAY_SAVE
 
 /* The size and contents of the map */
 SDWORD mapWidth = 0, mapHeight = 0;
-std::unique_ptr<MAPTILE[]> psMapTiles;
+std::unique_ptr<Tile[]> psMapTiles;
 std::unique_ptr<uint8_t[]> psBlockMap[AUX_MAX];
 std::unique_ptr<uint8_t[]> psAuxMap[MAX_PLAYERS + AUX_MAX];
 // yes, we waste one element... eyes wide open... makes API nicer
@@ -509,7 +509,7 @@ static int determineGroundType(int x, int y, const char* tileset)
 	int weight[2][2];
 	int i, j, tile;
 	int a, b, best;
-	MAPTILE* psTile;
+	Tile* psTile;
 
 	if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight)
 	{
@@ -664,7 +664,7 @@ static bool mapSetGroundTypes()
 	{
 		for (j = 0; j < mapHeight; j++)
 		{
-			MAPTILE* psTile = mapTile(i, j);
+			Tile* psTile = mapTile(i, j);
 
 			psTile->ground = determineGroundType(i, j, tilesetDir);
 
@@ -907,7 +907,7 @@ bool mapLoadFromWzMapData(std::shared_ptr<WzMap::MapData> loadedMap)
 	ASSERT(psMapTiles == nullptr, "Map has not been cleared before calling mapLoad()!");
 
 	/* Allocate the memory for the map */
-	psMapTiles = std::unique_ptr<MAPTILE[]>(new MAPTILE[width * height]());
+	psMapTiles = std::unique_ptr<Tile[]>(new Tile[width * height]());
 	ASSERT(psMapTiles != nullptr, "Out of memory");
 
 	mapWidth = width;
@@ -1013,7 +1013,7 @@ static bool afterMapLoad()
 	{
 		for (int x = 0; x < mapWidth; ++x)
 		{
-			MAPTILE* psTile = mapTile(x, y);
+			Tile* psTile = mapTile(x, y);
 
 			auxClearBlocking(x, y, AUXBITS_ALL);
 			auxClearAll(x, y, AUXBITS_ALL);
@@ -1762,7 +1762,7 @@ static const Vector2i aDirOffset[] =
 
 // Flood fill a "continent".
 // TODO take into account scroll limits and update continents on scroll limit changes
-static void mapFloodFill(int x, int y, int continent, uint8_t blockedBits, uint16_t MAPTILE::* varContinent)
+static void mapFloodFill(int x, int y, int continent, uint8_t blockedBits, uint16_t Tile::* varContinent)
 {
 	std::vector<Vector2i> open;
 	open.push_back(Vector2i(x, y));
@@ -1784,7 +1784,7 @@ static void mapFloodFill(int x, int y, int continent, uint8_t blockedBits, uint1
 			{
 				continue;
 			}
-			MAPTILE* psTile = mapTile(npos);
+			Tile* psTile = mapTile(npos);
 
 			if (!(blockTile(npos.x, npos.y, AUX_MAP) & blockedBits) && psTile->*varContinent == 0)
 			{
@@ -1804,7 +1804,7 @@ void mapFloodFillContinents()
 	{
 		for (x = 0; x < mapWidth; x++)
 		{
-			MAPTILE* psTile = mapTile(x, y);
+			Tile* psTile = mapTile(x, y);
 
 			psTile->limitedContinent = 0;
 			psTile->hoverContinent = 0;
@@ -1816,21 +1816,21 @@ void mapFloodFillContinents()
 	{
 		for (x = 1; x < mapWidth - 2; x++)
 		{
-			MAPTILE* psTile = mapTile(x, y);
+			Tile* psTile = mapTile(x, y);
 
 			if (psTile->limitedContinent == 0 && !fpathBlockingTile(x, y, PROPULSION_TYPE_WHEELED))
 			{
 				mapFloodFill(x, y, 1 + limitedContinents++, WATER_BLOCKED | FEATURE_BLOCKED,
-				             &MAPTILE::limitedContinent);
+				             &Tile::limitedContinent);
 			}
 			else if (psTile->limitedContinent == 0 && !fpathBlockingTile(x, y, PROPULSION_TYPE_PROPELLOR))
 			{
-				mapFloodFill(x, y, 1 + limitedContinents++, LAND_BLOCKED | FEATURE_BLOCKED, &MAPTILE::limitedContinent);
+				mapFloodFill(x, y, 1 + limitedContinents++, LAND_BLOCKED | FEATURE_BLOCKED, &Tile::limitedContinent);
 			}
 
 			if (psTile->hoverContinent == 0 && !fpathBlockingTile(x, y, PROPULSION_TYPE_HOVER))
 			{
-				mapFloodFill(x, y, 1 + hoverContinents++, FEATURE_BLOCKED, &MAPTILE::hoverContinent);
+				mapFloodFill(x, y, 1 + hoverContinents++, FEATURE_BLOCKED, &Tile::hoverContinent);
 			}
 		}
 	}
@@ -1841,7 +1841,7 @@ void tileSetFire(int32_t x, int32_t y, uint32_t duration)
 {
 	const int posX = map_coord(x);
 	const int posY = map_coord(y);
-	MAPTILE* const tile = mapTile(posX, posY);
+	Tile* const tile = mapTile(posX, posY);
 
 	uint16_t currentTime = gameTime / GAME_TICKS_PER_UPDATE;
 	uint16_t fireEndTime = (gameTime + duration) / GAME_TICKS_PER_UPDATE;
@@ -1867,7 +1867,7 @@ bool fireOnLocation(unsigned int x, unsigned int y)
 {
 	const int posX = map_coord(x);
 	const int posY = map_coord(y);
-	const MAPTILE* psTile = mapTile(posX, posY);
+	const Tile* psTile = mapTile(posX, posY);
 
 	ASSERT(psTile, "Checking fire on tile outside the map (%d, %d)", posX, posY);
 	return psTile != nullptr && TileIsBurning(psTile);
@@ -2083,7 +2083,7 @@ void mapUpdate()
 	for (posY = 0; posY < mapHeight; ++posY)
 		for (posX = 0; posX < mapWidth; ++posX)
 		{
-			MAPTILE* const tile = mapTile(posX, posY);
+			Tile* const tile = mapTile(posX, posY);
 
 			if ((tile->tileInfoBits & BITS_ON_FIRE) != 0 && tile->fireEndTime == currentTime)
 			{

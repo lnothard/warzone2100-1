@@ -49,9 +49,9 @@ public:
 	/// Returns true if currently tracking a value.
 	[[nodiscard]] bool currently_tracking() const;
 	/// Sets speed/smoothness of the interpolation. 1 is syrup, 100 is instant. Default 10.
-	ValueTracker* set_speed(int value);
+	void set_speed(int value);
 	/// Sets the target delta value
-	ValueTracker* set_target_delta(int value);
+	void set_target_delta(int value);
 	/// Sets the absolute target value
 	void set_target(int value);
 	/// Update current value

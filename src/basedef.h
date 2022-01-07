@@ -20,7 +20,7 @@
 
 /**
  * @file basedef.h
- * Definitions for the base object type.
+ * Definitions for the base object type
  */
 
 #ifndef __INCLUDED_BASEDEF_H__
@@ -34,16 +34,8 @@
 #include "baseobject.h"
 #include "displaydef.h"
 #include "statsdef.h"
-#include "weapondef.h"
 
-// the died flag for a droid is set to this when it gets
-// added to the non-current list
-#define NOT_CURRENT_LIST 1
 
-struct TILEPOS
-{
-	UBYTE x, y, type;
-};
 
 enum class OBJECT_FLAG
 {
@@ -54,6 +46,11 @@ enum class OBJECT_FLAG
   COUNT // MUST BE LAST
 };
 
+struct TILEPOS
+{
+  uint8_t x, y, type;
+};
+
 /**
  * The base type specification inherited by all persistent
  * game entities
@@ -61,12 +58,7 @@ enum class OBJECT_FLAG
 class SimpleObject
 {
 public:
-    SimpleObject() = default;
     virtual ~SimpleObject() = default;
-    SimpleObject(cost SimpleObject&) = delete;
-    SimpleObject(SimpleObject&&) = delete;
-    SimpleObject& operator=(const SimpleObject&) = delete;
-    SimpleObject& operator=(SimpleObject&&) = delete;
 
     /* Accessors */
     [[nodiscard]] virtual Spacetime get_spacetime() const = 0;
@@ -112,7 +104,8 @@ namespace Impl
         std::unique_ptr<DisplayData> display;
         std::bitset< static_cast<std::size_t>(OBJECT_FLAG::COUNT) > flags;
 
-        /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip, 0 if not visible
+        /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip,
+        /// 0 if not visible
         std::array<uint8_t, MAX_PLAYERS> visibility_state;
     };
 }
@@ -120,31 +113,19 @@ namespace Impl
 /// 4D spacetime coordinate and orientation
 struct Spacetime
 {
-    Spacetime(std::size_t time, Position position, Rotation rotation);
+    Spacetime() = default;
+    Spacetime(std::size_t time, Position position,
+              Rotation rotation);
 
-    std::size_t time;
-    Position position;
-    Rotation rotation;
+    std::size_t time = 0;
+    Position position {0, 0, 0};
+    Rotation rotation {0, 0,0};
 };
 
-static inline bool isDead(const SimpleObject* psObj)
-{
-	// See objmem.c for comments on the NOT_CURRENT_LIST hack
-	return (psObj->died > NOT_CURRENT_LIST);
-}
+int object_position_square_diff(const Position& first,
+                                const Position& second);
 
-inline int object_position_square_diff(const Position& first,
-                                       const Position& second)
-{
-  Vector2i diff = (first - second).xy();
-  return dot(diff, diff);
-}
-
-inline int object_position_square_diff(const SimpleObject& first,
-                                       const SimpleObject& second)
-{
-  return object_position_square_diff(first.get_position(),
-                                     second.get_position());
-}
+int object_position_square_diff(const SimpleObject& first,
+                                const SimpleObject& second);
 
 #endif // __INCLUDED_BASEDEF_H__

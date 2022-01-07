@@ -20,7 +20,7 @@
 
 /**
  * @file statsdef.h
- * Definitions for the stats system.
+ * Definitions for the stats system
  */
  
 #ifndef __INCLUDED_STATSDEF_H__

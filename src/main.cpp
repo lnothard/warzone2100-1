@@ -1800,7 +1800,7 @@ int realmain(int argc, char* argv[])
 	debug(LOG_MEMORY,
         "sizeof: SIMPLE_OBJECT=%ld, SimpleObject=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
         (long)sizeof(SIMPLE_OBJECT), (long)sizeof(SimpleObject), (long)sizeof(Droid), (long)sizeof(Structure),
-        (long)sizeof(Feature), (long)sizeof(PROJECTILE));
+        (long)sizeof(Feature), (long)sizeof(Projectile));
 
 #if defined(WZ_OS_UNIX)
 	debug(LOG_WZ, "Ignoring SIGPIPE: %s", (ignoredSIGPIPE) ? "true" : "false");
@@ -1943,7 +1943,7 @@ int realmain(int argc, char* argv[])
 	debug(LOG_MEMORY,
         "sizeof: SIMPLE_OBJECT=%ld, SimpleObject=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
         (long)sizeof(SIMPLE_OBJECT), (long)sizeof(SimpleObject), (long)sizeof(Droid), (long)sizeof(Structure),
-        (long)sizeof(Feature), (long)sizeof(PROJECTILE));
+        (long)sizeof(Feature), (long)sizeof(Projectile));
 
 	int w = pie_GetVideoBufferWidth();
 	int h = pie_GetVideoBufferHeight();

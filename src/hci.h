@@ -19,21 +19,22 @@
 */
 
 /**
- * @file
- * Function definitions for the in game interface code.
+ * @file hci.h
+ * Function definitions for the in-game interface code
  */
 
 #ifndef __INCLUDED_SRC_HCI_H__
 #define __INCLUDED_SRC_HCI_H__
 
-#include <list>
 #include <functional>
-typedef std::function<void (const int)> playerCallbackFunc; // callback function (that receives the player)
+#include <list>
 
 #include "lib/framework/types.h"
 #include "lib/ivis_opengl/pieclip.h"
 
 #include "message.h"
+
+typedef std::function<void (const int)> playerCallbackFunc; // callback function (that receives the player)
 
 class MultipleChoiceButton;
 class WIDGET;
@@ -43,7 +44,8 @@ struct Structure;
 struct W_SCREEN;
 struct iIMDShape;
 
-enum // Reticule button indecies.
+/// Reticule button indices
+enum 
 {
 	RETBUT_CANCEL,
 	RETBUT_FACTORY,
@@ -54,33 +56,32 @@ enum // Reticule button indecies.
 	RETBUT_COMMAND,
 };
 
-#define BASE_COORDS_X	(640)
-#define BASE_COORDS_Y	(460)
+static constexpr auto BASE_COORDS_X	= 640;
+static constexpr auto BASE_COORDS_Y	= 460;
+
 #define E_W (pie_GetVideoBufferWidth() - BASE_COORDS_X)
 #define E_H (pie_GetVideoBufferHeight() - BASE_COORDS_Y)
 #define D_W	((pie_GetVideoBufferWidth() - BASE_COORDS_X)/2)
 #define D_H ((pie_GetVideoBufferHeight() - BASE_COORDS_Y)/2)
 
-#define IDRET_FORM				1		// The reticule form
-#define IDRET_OPTIONS			2		// option button
-#define IDRET_BUILD				3		// build button
-#define IDRET_MANUFACTURE		4		// manufacture button
-#define IDRET_RESEARCH			5		// research button
-#define IDRET_INTEL_MAP			6		// intelligence map button
-#define IDRET_DESIGN			7		// design droids button
-#define IDRET_CANCEL			8		// central cancel button
-#define IDRET_COMMAND			9		// command droid button
-#define IDRET_TRANSPORTER		10		// transporter button
-#define IDPOW_POWERBAR_T		102		// power bar - trough
-#define	IDTRANTIMER_BUTTON		11012	//transporter button on timer display
-
+static constexpr auto IDRET_FORM				 = 1;		// The reticule form
+static constexpr auto IDRET_OPTIONS			 = 2;		// option button
+static constexpr auto IDRET_BUILD				 = 3;		// build button
+static constexpr auto IDRET_MANUFACTURE		 = 4;		// manufacture button
+static constexpr auto IDRET_RESEARCH			 = 5;		// research button
+static constexpr auto IDRET_INTEL_MAP			 = 6;		// intelligence map button
+static constexpr auto IDRET_DESIGN			 = 7;		// design droids button
+static constexpr auto IDRET_CANCEL			 = 8;		// central cancel button
+static constexpr auto IDRET_COMMAND			 = 9;		// command droid button
+static constexpr auto IDRET_TRANSPORTER		 = 10;		// transporter button
+static constexpr auto IDPOW_POWERBAR_T		 = 102;		// power bar - trough
+static constexpr auto IDTRANTIMER_BUTTON		 = 11012;	//transporter button on timer display
 
 /* Object screen IDs */
 
-#define IDOBJ_FORM			3000		// The object back form for build/manufacture/research
-#define IDOBJ_CLOSE 		3001        // The form for the close button
+#define IDOBJ_FORM	3000		// The object back form for build/manufacture/research
+#define IDOBJ_CLOSE 3001        // The form for the close button
 #define IDOBJ_TABFORM		3500		// The object tab form for build/manufacture/research
-
 #define IDSTAT_FORM				14000		// The stats form for structure/droid/research type
 #define IDSTAT_CLOSE			14003		// The stats close box
 #define IDSTAT_TABFORM			14004		// The tab form with the stats buttons
@@ -270,7 +271,7 @@ extern OBJECT_MODE objMode;
 extern std::shared_ptr<W_SCREEN> psWScreen;
 
 // The last widget ID from widgRunScreen
-extern UDWORD intLastWidget;
+extern unsigned intLastWidget;
 
 /* The current template for the design screen to start with*/
 extern std::vector<DroidTemplate*> apsTemplateList;
@@ -318,10 +319,7 @@ void setReticulesEnabled(bool enabled);
 void setReticuleFlash(int ButId, bool flash);
 
 /* Set the map view point to the world coordinates x,y */
-void intSetMapPos(UDWORD x, UDWORD y);
-
-/* Set the map view point to the world coordinates x,y */
-void intSetMapPos(UDWORD x, UDWORD y);
+void intSetMapPos(unsigned x, unsigned y);
 
 /* Tell the interface a research facility has completed a topic */
 void intResearchFinished(Structure* psBuilding);
@@ -359,10 +357,10 @@ Structure* interfaceStructList();
 void addTransporterInterface(Droid* psSelected, bool onMission);
 
 /*causes a reticule button to start flashing*/
-void flashReticuleButton(UDWORD buttonID);
+void flashReticuleButton(unsigned buttonID);
 
 // stop a reticule button flashing
-void stopReticuleButtonFlash(UDWORD buttonID);
+void stopReticuleButtonFlash(unsigned buttonID);
 
 //toggles the Power Bar display on and off
 void togglePowerBar();
@@ -375,13 +373,13 @@ void intShowWidget(int buttonID);
 void forceHidePowerBar(bool forceSetPowerBarUpState = false);
 
 /* Add the Proximity message buttons */
-bool intAddProximityButton(PROXIMITY_DISPLAY* psProxDisp, UDWORD inc);
+bool intAddProximityButton(PROXIMITY_DISPLAY* psProxDisp, unsigned inc);
 
 /*Remove a Proximity Button - when the message is deleted*/
 void intRemoveProximityButton(PROXIMITY_DISPLAY* psProxDisp);
 
 /* Allows us to fool the widgets with a keypress */
-void setKeyButtonMapping(UDWORD val);
+void setKeyButtonMapping(unsigned val);
 
 Structure* intFindAStructure();
 Droid* intGotoNextDroidType(Droid* CurrDroid, DROID_TYPE droidType, bool AllowGroup);
@@ -394,7 +392,7 @@ int intGetResearchState();
 void intNotifyResearchButton(int prevState);
 
 // see if a reticule button is enabled
-bool intCheckReticuleButEnabled(UDWORD id);
+bool intCheckReticuleButEnabled(unsigned id);
 
 //access function for selected object in the interface
 SimpleObject* getCurrentSelected();
@@ -410,7 +408,7 @@ bool isChatUp();
 bool isSecondaryWindowUp();
 void setSecondaryWindowUp(bool value);
 
-void intOpenDebugMenu(OBJECT_TYPE id);
+void intOpenDebugMenu();
 
 void intStartConstructionPosition(Droid* builder, StructureStats* structure);
 void intSetShouldShowRedundantDesign(bool value);

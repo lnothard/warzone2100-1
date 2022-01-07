@@ -64,7 +64,6 @@ enum
 
 void calcDataHash(const uint8_t* pBuffer, unsigned size, unsigned index);
 void resetDataHash();
-extern unsigned DataHash[DATA_MAXDATA];
 
 /* Pass all the data loading functions to the framework library */
 bool dataInitLoadFuncs();

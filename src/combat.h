@@ -20,7 +20,7 @@
 
 /**
  * @file combat.h
- * Interface to the combat routines.
+ * Interface to the combat routines
  */
 
 #ifndef __INCLUDED_SRC_COMBAT_H__

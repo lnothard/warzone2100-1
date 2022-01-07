@@ -30,6 +30,7 @@
 #include "audio_id.h"
 #include "openal_error.h"
 #include "mixer.h"
+#include "src/basedef.h"
 // defines
 #define NO_SAMPLE				- 2
 #define MAX_SAME_SAMPLES		2
@@ -1114,7 +1115,7 @@ SDWORD audio_GetTrackID(const char *fileName)
  *  \param psObj pointer to the object for which we must destroy all of its
  *               outstanding audio samples.
  */
-void audio_RemoveObj(SIMPLE_OBJECT const *psObj)
+void audio_RemoveObj(SimpleObject const* psObj)
 {
 	unsigned int count = 0;
 

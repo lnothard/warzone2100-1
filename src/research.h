@@ -42,10 +42,9 @@ static constexpr auto  RESEARCH_IMPOSSIBLE = 0x00; // research is (temporarily) 
 static constexpr auto  RESEARCH_POSSIBLE = 0x01; // research is possible
 static constexpr auto  RESEARCH_DISABLED = 0x02; // research is disabled (e.g. most VTOL research in no-VTOL games)
 
-#define RESBITS (STARTED_RESEARCH|CANCELLED_RESEARCH|RESEARCHED)
-#define RESBITS_PENDING_ONLY (STARTED_RESEARCH_PENDING|CANCELLED_RESEARCH_PENDING)
-#define RESBITS_PENDING (RESBITS|RESBITS_PENDING_ONLY)
-
+static constexpr auto RESBITS = STARTED_RESEARCH | CANCELLED_RESEARCH | RESEARCHED;
+static constexpr auto RESBITS_PENDING_ONLY = STARTED_RESEARCH_PENDING | CANCELLED_RESEARCH_PENDING;
+static constexpr auto RESBITS_PENDING = RESBITS | RESBITS_PENDING_ONLY;
 
 struct VIEWDATA;
 

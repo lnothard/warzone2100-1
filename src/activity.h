@@ -58,23 +58,15 @@ enum class GameEndReason
     QUIT
 };
 
-// skirmish
 struct SkirmishGameInfo
 {
-public:
     virtual ~SkirmishGameInfo() = default;
 
-    // some convenience functions to get data
-    [[nodiscard]] std::string gameName() const { return game.name; }
-    [[nodiscard]] std::string mapName() const { return game.map; }
-    virtual uint8_t numberOfPlayers() const { return numAIBotPlayers + 1; }
+    [[nodiscard]] std::string gameName() const;
+    [[nodiscard]] std::string mapName() const;
+    [[nodiscard]] virtual uint8_t numberOfPlayers() const;
+    [[nodiscard]] bool hasLimits() const;
 
-    [[nodiscard]] bool hasLimits() const
-    {
-      return limit_no_tanks || limit_no_cyborgs || limit_no_vtols || limit_no_uplink || limit_no_lassat ||
-             force_structure_limits;
-    }
-private:
     MULTIPLAYERGAME game;
     uint8_t numAIBotPlayers = 0;
     std::size_t currentPlayerIdx = 0;
@@ -90,7 +82,6 @@ private:
     bool limit_no_lassat; ///< Flag for Laser Satellite Command Post disabled
     bool force_structure_limits; ///< Flag to force structure limits
     std::vector<MULTISTRUCTLIMITS> structureLimits;
-
     ALLIANCE_TYPE alliances;
 
     // is this a loaded replay?
@@ -111,8 +102,8 @@ struct MultiplayerGameInfo : public SkirmishGameInfo
     std::string hostName; // host player name
     ListeningInterfaces listeningInterfaces;
     std::string lobbyAddress;
-    unsigned int lobbyPort;
-    uint32_t lobbyGameId = 0;
+    unsigned lobbyPort;
+    unsigned lobbyGameId = 0;
 
     bool isHost; // whether the current client is the game host
     bool privateGame; // whether game is password-protected
@@ -183,7 +174,7 @@ class ActivityDBProtocol
 public:
 	virtual ~ActivityDBProtocol();
 public:
-	virtual std::string getFirstLaunchDate() const = 0;
+	[[nodiscard]] virtual std::string getFirstLaunchDate() const = 0;
 };
 
 // ActivityManager accepts numerous event callbacks from the core game and synthesizes
@@ -197,8 +188,8 @@ public:
 	void startingGame();
 	void startingSavedGame();
 	void loadedLevel(LEVEL_TYPE type, const std::string& levelName);
-	void completedMission(bool result, END_GAME_STATS_DATA stats, bool cheatsUsed);
-	void quitGame(END_GAME_STATS_DATA stats, bool cheatsUsed);
+	void completedMission(bool result, const END_GAME_STATS_DATA& stats, bool cheatsUsed);
+	void quitGame(const END_GAME_STATS_DATA& stats, bool cheatsUsed);
 	void preSystemShutdown();
 
 	// navigating main menus
@@ -240,22 +231,22 @@ public:
 	static ActivityManager& instance();
 	bool initialize();
 	void shutdown();
-	void addActivitySink(std::shared_ptr<ActivitySink> sink);
+	void addActivitySink(const std::shared_ptr<ActivitySink>& sink);
 	void removeActivitySink(const std::shared_ptr<ActivitySink>& sink);
-	ActivitySink::GameMode getCurrentGameMode() const;
+	[[nodiscard]] GAME_MODE getCurrentGameMode() const;
 	inline std::shared_ptr<ActivityDBProtocol> getRecord() { return activityDatabase; }
 private:
 	ActivityManager();
-	void _endedMission(ActivitySink::GameEndReason result, END_GAME_STATS_DATA stats, bool cheatsUsed);
+	void _endedMission(GameEndReason result, const END_GAME_STATS_DATA& stats, bool cheatsUsed);
 private:
 	std::vector<std::shared_ptr<ActivitySink>> activitySinks;
 	std::shared_ptr<ActivityDBProtocol> activityDatabase;
 
 	// storing current game state, to aide in synthesizing events
 	bool bIsLoadingConfiguration = false;
-	ActivitySink::GameMode currentMode = ActivitySink::GameMode::MENUS;
+	GAME_MODE currentMode = GAME_MODE::MENUS;
 	bool bEndedCurrentMission = false;
-	ActivitySink::MultiplayerGameInfo currentMultiplayGameInfo;
+	MultiplayerGameInfo currentMultiplayGameInfo;
 
 	struct LoadedLevelEvent
 	{

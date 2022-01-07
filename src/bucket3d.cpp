@@ -17,10 +17,11 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file bucket3d.c
- *
- * Stores object render calls in a linked list renders after bucket sorting objects.
+ * @file bucket3d.cpp
+ * Stores object render calls in a linked list renders
+ * after bucket sorting objects
  */
 
 #include "lib/framework/frame.h"
@@ -59,16 +60,16 @@ struct BUCKET_TAG
 
 static std::vector<BUCKET_TAG> bucketArray;
 
-static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::mat4& viewMatrix)
+static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::mat4& viewMatrix)
 {
-	SDWORD z = 0, radius;
+	int z = 0, radius;
 	Vector2i pixel(0, 0);
 	Vector3i position(0, 0, 0);
-	UDWORD droidSize;
-	DROID* psDroid;
+	unsigned droidSize;
+	Droid* psDroid;
 	BodyStats* psBStats;
-	SIMPLE_OBJECT* psSimpObj;
-	const iIMDShape* pImd;
+	SimpleObject* psSimpObj;
+	iIMDShape* pImd;
 	Spacetime spacetime;
 
 	switch (objectType)
@@ -97,9 +98,9 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm:
 		}
 		break;
 	case RENDER_PROJECTILE:
-		if (((PROJECTILE*)pObject)->psWStats->weaponSubClass == WSC_FLAME ||
-			((PROJECTILE*)pObject)->psWStats->weaponSubClass == WSC_COMMAND ||
-			((PROJECTILE*)pObject)->psWStats->weaponSubClass == WSC_EMP)
+		if (((Projectile*)pObject)->psWStats->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
+        ((Projectile*)pObject)->psWStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND ||
+        ((Projectile*)pObject)->psWStats->weaponSubClass == WEAPON_SUBCLASS::EMP)
 		{
 			/* We don't do projectiles from these guys, cos there's an effect instead */
 			z = -1;
@@ -107,9 +108,9 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm:
 		else
 		{
 			//the weapon stats holds the reference to which graphic to use
-			pImd = ((PROJECTILE*)pObject)->psWStats->pInFlightGraphic;
+			pImd = ((Projectile*)pObject)->psWStats->pInFlightGraphic;
 
-			psSimpObj = (SIMPLE_OBJECT*)pObject;
+			psSimpObj = (SimpleObject*)pObject;
 			position.x = psSimpObj->pos.x - playerPos.p.x;
 			position.z = -(psSimpObj->pos.y - playerPos.p.z);
 
@@ -132,9 +133,9 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm:
 		}
 		break;
 	case RENDER_STRUCTURE: //not depth sorted
-		psSimpObj = (SIMPLE_OBJECT*)pObject;
-		position.x = psSimpObj->pos.x - playerPos.p.x;
-		position.z = -(psSimpObj->pos.y - playerPos.p.z);
+		psSimpObj = (SimpleObject*)pObject;
+		position.x = psSimpObj->get_position().x - playerPos.p.x;
+		position.z = -(psSimpObj->get_position().y - playerPos.p.z);
 
 		if ((objectType == RENDER_STRUCTURE) &&
 			((((Structure*)pObject)->pStructureType->type == REF_DEFENSE) ||
@@ -165,7 +166,7 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm:
 		}
 		break;
 	case RENDER_FEATURE: //not depth sorted
-		psSimpObj = (SIMPLE_OBJECT*)pObject;
+		psSimpObj = (SimpleObject*)pObject;
 		position.x = psSimpObj->pos.x - playerPos.p.x;
 		position.z = -(psSimpObj->pos.y - playerPos.p.z);
 
@@ -187,9 +188,9 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm:
 		}
 		break;
 	case RENDER_DROID:
-		psDroid = (DROID*)pObject;
+		psDroid = (Droid*)pObject;
 
-		psSimpObj = (SIMPLE_OBJECT*)pObject;
+		psSimpObj = (SimpleObject*)pObject;
 		position.x = psSimpObj->pos.x - playerPos.p.x;
 		position.z = -(psSimpObj->pos.y - playerPos.p.z);
 		position.y = psSimpObj->pos.z;
@@ -277,17 +278,17 @@ static SDWORD bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm:
 		break;
 
 	case RENDER_DELIVPOINT:
-		position.x = ((FLAG_POSITION*)pObject)->coords.x - playerPos.p.x;
-		position.z = -(((FLAG_POSITION*)pObject)->
+		position.x = ((FlagPosition*)pObject)->coords.x - playerPos.p.x;
+		position.z = -(((FlagPosition*)pObject)->
 		               coords.y - playerPos.p.z);
-		position.y = ((FLAG_POSITION*)pObject)->coords.z;
+		position.y = ((FlagPosition*)pObject)->coords.z;
 
 		z = pie_RotateProject(&position, viewMatrix, &pixel);
 
 		if (z > 0)
 		{
 			//particle use the image radius
-			radius = pAssemblyPointIMDs[((FLAG_POSITION*)pObject)->factoryType][((FLAG_POSITION*)pObject)->factoryInc]->
+			radius = pAssemblyPointIMDs[((FlagPosition*)pObject)->factoryType][((FlagPosition*)pObject)->factoryInc]->
 				radius;
 			radius *= SCALE_DEPTH;
 			radius /= z;
@@ -312,7 +313,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 {
 	const iIMDShape* pie;
 	BUCKET_TAG newTag;
-	int32_t z = bucketCalculateZ(objectType, pObject, viewMatrix);
+	auto z = bucketCalculateZ(objectType, pObject, viewMatrix);
 
 	if (z < 0)
 	{
@@ -349,7 +350,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 		}
 		break;
 	case RENDER_DROID:
-		pie = BODY_IMD(((DROID *)pObject), 0);
+		pie = BODY_IMD(((Droid *)pObject), 0);
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_STRUCTURE:
@@ -361,8 +362,8 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_DELIVPOINT:
-		pie = pAssemblyPointIMDs[((FLAG_POSITION*)pObject)->
-			factoryType][((FLAG_POSITION*)pObject)->factoryInc];
+		pie = pAssemblyPointIMDs[((FlagPosition*)pObject)->
+			factoryType][((FlagPosition*)pObject)->factoryInc];
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_PARTICLE:
@@ -387,33 +388,33 @@ void bucketRenderCurrentList(const glm::mat4& viewMatrix)
 {
 	std::sort(bucketArray.begin(), bucketArray.end());
 
-	for (std::vector<BUCKET_TAG>::const_iterator thisTag = bucketArray.begin(); thisTag != bucketArray.end(); ++thisTag)
+	for (auto& thisTag : bucketArray)
 	{
-		switch (thisTag->objectType)
+		switch (thisTag.objectType)
 		{
 		case RENDER_PARTICLE:
-			renderParticle((Particle*)thisTag->pObject, viewMatrix);
+			renderParticle((Particle*)thisTag.pObject, viewMatrix);
 			break;
 		case RENDER_EFFECT:
-			renderEffect((EFFECT*)thisTag->pObject, viewMatrix);
+			renderEffect((EFFECT*)thisTag.pObject, viewMatrix);
 			break;
 		case RENDER_DROID:
-			displayComponentObject((DROID*)thisTag->pObject, viewMatrix);
+			displayComponentObject((Droid*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_STRUCTURE:
-			renderStructure((Structure*)thisTag->pObject, viewMatrix);
+			renderStructure((Structure*)thisTag.pObject, viewMatrix);
 			break;
 		case RENDER_FEATURE:
 			renderFeature((Feature*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_PROXMSG:
-			renderProximityMsg((PROXIMITY_DISPLAY*)thisTag->pObject, viewMatrix);
+			renderProximityMsg((PROXIMITY_DISPLAY*)thisTag.pObject, viewMatrix);
 			break;
 		case RENDER_PROJECTILE:
-			renderProjectile((PROJECTILE*)thisTag->pObject, viewMatrix);
+			renderProjectile((Projectile*)thisTag->pObject, viewMatrix);
 			break;
 		case RENDER_DELIVPOINT:
-			renderDeliveryPoint((FLAG_POSITION*)thisTag->pObject, false, viewMatrix);
+			renderDeliveryPoint((FlagPosition*)thisTag->pObject, false, viewMatrix);
 			break;
 		}
 	}

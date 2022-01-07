@@ -21,19 +21,83 @@
 #ifndef __INCLUDED_SRC_PROJECTILE_H__
 #define __INCLUDED_SRC_PROJECTILE_H__
 
-#include "projectiledef.h"
-#include "weapondef.h"
+#include <vector>
+
+#include "lib/gamelib/gtime.h"
 #include <glm/fwd.hpp>
 
-/**
- *	@file projectile.h
- *	Projectile types and function headers
- *	@defgroup Projectile Projectile system
- *	@{
- */
+#include "basedef.h"
+#include "projectiledef.h"
+#include "weapondef.h"
 
-/***************************************************************************/
+/// Represents the current stage of a projectile's trajectory
+enum class PROJECTILE_STATE
+{
+  INFLIGHT,
+  IMPACT,
+  POST_IMPACT,
+  INACTIVE
+};
 
+class Projectile : public virtual SimpleObject, public Impl::SimpleObject
+{
+  Projectile(unsigned id, unsigned player);
+
+  void update();
+
+private:
+  uint8_t state; ///< current projectile state
+  uint8_t bVisible; ///< whether the selected player should see the projectile
+  WeaponStats* psWStats; ///< firing weapon stats
+  Unit* psSource; ///< what fired the projectile
+  Unit* psDest; ///< target of this projectile
+  std::vector<SimpleObject*> psDamaged;
+  ///< the targets that have already been dealt damage to (don't damage the same target twice)
+
+  Vector3i src = Vector3i(0, 0, 0); ///< Where projectile started
+  Vector3i dst = Vector3i(0, 0, 0); ///< The target coordinates
+  int vXY, vZ; ///< axis velocities
+  Spacetime prevSpacetime; ///< Location of projectile in previous tick.
+  unsigned expectedDamageCaused; ///< Expected damage that this projectile will cause to the target.
+  int partVisible; ///< how much of target was visible on shooting (important for homing)
+};
+
+struct INTERVAL
+{
+    int begin, end; // Time 1 = 0, time 2 = 1024. Or begin >= end if empty.
+};
+
+struct DAMAGE
+{
+    Projectile* psProjectile;
+    SimpleObject* psDest;
+    unsigned damage;
+    WEAPON_CLASS weaponClass;
+    WEAPON_SUBCLASS weaponSubClass;
+    unsigned impactTime;
+    bool isDamagePerSecond;
+    int minDamage;
+};
+
+typedef std::vector<Projectile*>::const_iterator ProjectileIterator;
+
+/// True iff object is a projectile.
+static inline bool isProjectile(SIMPLE_OBJECT const* psObject)
+{
+  return psObject != nullptr && psObject->type == OBJ_PROJECTILE;
+}
+
+/// Returns PROJECTILE * if projectile or NULL if not.
+static inline Projectile* castProjectile(SIMPLE_OBJECT* psObject)
+{
+  return isProjectile(psObject) ? (Projectile*)psObject : (Projectile*)nullptr;
+}
+
+/// Returns PROJECTILE const * if projectile or NULL if not.
+static inline Projectile const* castProjectile(SIMPLE_OBJECT const* psObject)
+{
+  return isProjectile(psObject) ? (Projectile const*)psObject : (Projectile const*)nullptr;
+}
 extern SimpleObject* g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
 
 #define PROJ_MAX_PITCH  45
@@ -51,8 +115,8 @@ bool proj_InitSystem(); ///< Initialize projectiles subsystem.
 void proj_UpdateAll(); ///< Frame update for projectiles.
 bool proj_Shutdown(); ///< Shut down projectile subsystem.
 
-PROJECTILE* proj_GetFirst(); ///< Get first projectile in the list.
-PROJECTILE* proj_GetNext(); ///< Get next projectile in the list.
+Projectile* proj_GetFirst(); ///< Get first projectile in the list.
+Projectile* proj_GetNext(); ///< Get next projectile in the list.
 
 void proj_FreeAllProjectiles(); ///< Free all projectiles in the list.
 
@@ -76,22 +140,22 @@ bool proj_SendProjectileAngled(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int pl
 bool proj_Direct(const WeaponStats* psStats);
 
 /** Return the maximum range for a weapon. */
-int proj_GetLongRange(const WeaponStats* psStats, int player);
+int proj_GetLongRange(const WeaponStats* psStats, unsigned player);
 
 /** Return the minimum range for a weapon. */
-int proj_GetMinRange(const WeaponStats* psStats, int player);
+int proj_GetMinRange(const WeaponStats* psStats, unsigned player);
 
 /** Return the short range for a weapon. */
 int proj_GetShortRange(const WeaponStats* psStats, int player);
 
-UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* psTarget);
-bool gfxVisible(PROJECTILE* psObj);
+unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* psTarget);
+bool gfxVisible(Projectile* psObj);
 
 /***************************************************************************/
 
 glm::mat4 objectShimmy(SimpleObject* psObj);
 
-static inline void setProjectileSource(PROJECTILE* psProj, SIMPLE_OBJECT* psObj)
+static inline void setProjectileSource(Projectile* psProj, SIMPLE_OBJECT* psObj)
 {
 	// use the source of the source of psProj if psAttacker is a projectile
 	psProj->psSource = nullptr;
@@ -100,7 +164,7 @@ static inline void setProjectileSource(PROJECTILE* psProj, SIMPLE_OBJECT* psObj)
 	}
 	else if (isProjectile(psObj))
 	{
-		PROJECTILE* psPrevProj = castProjectile(psObj);
+		Projectile* psPrevProj = castProjectile(psObj);
 
 		if (psPrevProj->psSource && !psPrevProj->psSource->died)
 		{
@@ -117,14 +181,14 @@ int establishTargetHeight(SimpleObject const* psTarget);
 
 /* @} */
 
-void checkProjectile(const PROJECTILE* psProjectile, const char* const location_description, const char* function,
+void checkProjectile(const Projectile* psProjectile, const char* const location_description, const char* function,
                      const int recurse);
 
 /* assert if projectile is bad */
 #define CHECK_PROJECTILE(object) checkProjectile((object), AT_MACRO, __FUNCTION__, max_check_object_recursion)
 
 #define syncDebugProjectile(psProj, ch) _syncDebugProjectile(__FUNCTION__, psProj, ch)
-void _syncDebugProjectile(const char* function, PROJECTILE const* psProj, char ch);
+void _syncDebugProjectile(const char* function, Projectile const* psProj, char ch);
 
 struct ObjectShape
 {

@@ -37,7 +37,6 @@
 #include "statsdef.h"
 #include "structure.h"
 #include "unit.h"
-#include "visibility.h"
 #include "weapondef.h"
 
 /// world->screen check - alex

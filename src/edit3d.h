@@ -37,7 +37,7 @@ bool process3DBuilding();
 void incrementBuildingDirection(uint16_t amount);
 uint16_t getBuildingDirection();
 
-void adjustTileHeight(MAPTILE* psTile, SDWORD adjust);
+void adjustTileHeight(Tile* psTile, SDWORD adjust);
 void raiseTile(int tile3dX, int tile3dY);
 void lowerTile(int tile3dX, int tile3dY);
 

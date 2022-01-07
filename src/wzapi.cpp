@@ -907,7 +907,7 @@ wzapi::no_return_value wzapi::hackMarkTiles(WZAPI_PARAMS(optional<wzapi::label_o
 				{
 					for (int y = y1; y < y2; y++)
 					{
-						MAPTILE* psTile = mapTile(x, y);
+						Tile* psTile = mapTile(x, y);
 						psTile->tileInfoBits |= BITS_MARKED;
 					}
 				}
@@ -916,7 +916,7 @@ wzapi::no_return_value wzapi::hackMarkTiles(WZAPI_PARAMS(optional<wzapi::label_o
 			{
 				int x = tilePosOrArea.x1;
 				int y = tilePosOrArea.y1;
-				MAPTILE* psTile = mapTile(x, y);
+				Tile* psTile = mapTile(x, y);
 				psTile->tileInfoBits |= BITS_MARKED;
 			}
 		}
@@ -1729,7 +1729,7 @@ int wzapi::terrainType(WZAPI_PARAMS(int x, int y))
 //--
 bool wzapi::tileIsBurning(WZAPI_PARAMS(int x, int y))
 {
-	const MAPTILE* psTile = mapTile(x, y);
+	const Tile* psTile = mapTile(x, y);
 	SCRIPT_ASSERT(false, context, psTile, "Checking fire on tile outside the map (%d, %d)", x, y);
 	return ::TileIsBurning(psTile);
 }
@@ -4677,7 +4677,7 @@ nlohmann::json wzapi::constructMapTilesArray()
 		nlohmann::json mapRow = nlohmann::json::array();
 		for (SDWORD x = 0; x < mapWidth; x++)
 		{
-			MAPTILE* psTile = mapTile(x, y);
+			Tile* psTile = mapTile(x, y);
 			nlohmann::json mapTile = nlohmann::json::object();
 			mapTile["terrainType"] = ::terrainType(psTile);
 			mapTile["height"] = psTile->height;

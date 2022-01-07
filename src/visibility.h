@@ -25,6 +25,7 @@
 #include "objectdef.h"
 #include "raycast.h"
 #include "stats.h"
+#include "structure.h"
 
 static constexpr auto MIN_VIS_HEIGHT = 80;
 
@@ -44,7 +45,8 @@ enum class SENSOR_CLASS
 struct Spotter
 {
     ~Spotter();
-    Spotter(int x, int y, int plr, int radius, SENSOR_CLASS type, std::size_t expiry = 0);
+    Spotter(int x, int y, unsigned plr, int radius,
+            SENSOR_CLASS type, std::size_t expiry = 0);
 
     Position pos;
     unsigned player;
@@ -64,9 +66,9 @@ static std::vector<Spotter*> apsInvisibleViewers;
 struct VisibleObjectHelp_t
 {
     bool rayStart; // Whether this is the first point on the ray
-    const bool wallsBlock; // Whether walls block line of sight
-    const int startHeight; // The height at the view point
-    const Vector2i final; // The final tile of the ray cast
+    bool wallsBlock; // Whether walls block line of sight
+    int startHeight; // The height at the view point
+    Vector2i final; // The final tile of the ray cast
     int lastHeight, lastDist; // The last height and distance
     int currGrad; // The current obscuring gradient
     int numWalls; // Whether the LOS has hit a wall
@@ -79,7 +81,7 @@ bool visInitialise();
 /* Check which tiles can be seen by an object */
 void visTilesUpdate(SimpleObject* psObj);
 
-void revealAll(UBYTE player);
+void revealAll(uint8_t player);
 
 /**
  * Check whether psViewer can see psTarget.
@@ -108,15 +110,16 @@ void processVisibility(); ///< Calls processVisibilitySelf and processVisibility
 // update the visibility reduction
 void visUpdateLevel();
 
-void setUnderTilesVis(SimpleObject* psObj, UDWORD player);
+void setUnderTilesVis(SimpleObject* psObj, unsigned player);
 
 void visRemoveVisibilityOffWorld(SimpleObject* psObj);
 void visRemoveVisibility(SimpleObject* psObj);
 
 // fast test for whether obj2 is in range of obj1
-static inline bool visObjInRange(SimpleObject* psObj1, SimpleObject* psObj2, SDWORD range)
+static inline bool visObjInRange(SimpleObject* psObj1, SimpleObject* psObj2, int range)
 {
-	int32_t xdiff = psObj1->pos.x - psObj2->pos.x, ydiff = psObj1->pos.y - psObj2->pos.y;
+	auto xdiff = psObj1->get_position().x - psObj2->get_position().x;
+  auto ydiff = psObj1->get_position().y - psObj2->get_position().y;
 
 	return abs(xdiff) <= range && abs(ydiff) <= range && xdiff * xdiff + ydiff * ydiff <= range;
 }
@@ -148,16 +151,19 @@ static inline bool visObjInRange(SimpleObject* psObj1, SimpleObject* psObj2, SDW
 
 static inline int objJammerPower(const SimpleObject* psObj)
 {
-	if (psObj->type == DROID)  {
-		return asECMStats[((const DROID*)psObj)->asBits[COMP_ECM]].upgrade[psObj->player].range;
+	if (auto as_droid = dynamic_cast<const Droid*>(psObj))  {
+		return asECMStats[as_droid->asBits[COMP_ECM]].upgrade[psObj->get_player()].range;
 	} else if (psObj->type == STRUCTURE)  {
-		return ((const STRUCTURE*)psObj)->stats->ecm_stats->upgraded_stats[psObj->player].range;
+		return psObj->stats->ecm_stats->upgraded_stats[psObj->get_player()].range;
 	}
 	return 0;
 }
 
 void removeSpotters();
+
 bool removeSpotter(unsigned id);
-unsigned addSpotter(int x, int y, int player, int radius, bool radar, std::size_t expiry = 0);
+
+unsigned addSpotter(int x, int y, int player, int radius,
+                    bool radar, std::size_t expiry = 0);
 
 #endif // __INCLUDED_SRC_VISIBILITY__

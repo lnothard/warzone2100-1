@@ -17,19 +17,17 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * Gateway.c
- *
- * Routing gateway code.
- *
+
+/**
+ * @file gateway.c
+ * Routing gateway code
  */
 
 #include "lib/framework/frame.h"
 
+#include "gateway.h"
 #include "map.h"
 #include "wrappers.h"
-
-#include "gateway.h"
 
 /// the list of gateways on the current map
 static GATEWAY_LIST psGateways;
@@ -37,30 +35,27 @@ static GATEWAY_LIST psGateways;
 // Prototypes
 static void gwFreeGateway(GATEWAY* psDel);
 
-/******************************************************************************************************/
-/*                   Gateway data access functions                                                    */
-
 // get the size of the map
-static SDWORD gwMapWidth()
+static int gwMapWidth()
 {
-	return (SDWORD)mapWidth;
+	return (int)mapWidth;
 }
 
-static SDWORD gwMapHeight()
+static int gwMapHeight()
 {
-	return (SDWORD)mapHeight;
+	return (int)mapHeight;
 }
 
 // set the gateway flag on a tile
-static void gwSetGatewayFlag(SDWORD x, SDWORD y)
+static void gwSetGatewayFlag(int x, int y)
 {
-	mapTile((UDWORD)x, (UDWORD)y)->tileInfoBits |= BITS_GATEWAY;
+	mapTile((unsigned)x, (unsigned)y)->tileInfoBits |= BITS_GATEWAY;
 }
 
 // clear the gateway flag on a tile
-static void gwClearGatewayFlag(SDWORD x, SDWORD y)
+static void gwClearGatewayFlag(int x, int y)
 {
-	mapTile((UDWORD)x, (UDWORD)y)->tileInfoBits &= ~BITS_GATEWAY;
+	mapTile((unsigned)x, (unsigned)y)->tileInfoBits &= ~BITS_GATEWAY;
 }
 
 
@@ -85,10 +80,10 @@ void gwShutDown()
 }
 
 // Add a gateway to the system
-bool gwNewGateway(SDWORD x1, SDWORD y1, SDWORD x2, SDWORD y2)
+bool gwNewGateway(int x1, int y1, int x2, int y2)
 {
 	GATEWAY* psNew;
-	SDWORD pos, temp;
+	int pos, temp;
 
 	ASSERT_OR_RETURN(false, x1 >= 0 && x1 < gwMapWidth() && y1 >= 0 && y1 < gwMapHeight()
 	                 && x2 >= 0 && x2 < gwMapWidth() && y2 >= 0 && y2 < gwMapHeight()

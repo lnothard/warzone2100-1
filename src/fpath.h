@@ -28,6 +28,8 @@
 
 #include <memory>
 
+#include "astar.h"
+
 enum FPATH_MOVETYPE
 {
 	FMT_MOVE,
@@ -38,32 +40,40 @@ enum FPATH_MOVETYPE
 	///< Don't go through obstacles, not even gates.
 };
 
+enum FPATH_RETVAL
+{
+    FPR_OK,
+    ///< found a route
+    FPR_FAILED,
+    ///< failed to find a route
+    FPR_WAIT,
+    ///< route is being calculated by the path-finding thread
+};
+
 struct PathBlockingMap;
 
-struct PATHJOB
+struct PathJob
 {
 	PROPULSION_TYPE propulsion;
 	DROID_TYPE droidType;
-	int destX, destY;
-	int origX, origY;
+	PathCoord destination {0, 0};
+	PathCoord origin {0, 0};
 	StructureBounds dstStructure;
-	UDWORD droidID;
+	unsigned droidID;
 	FPATH_MOVETYPE moveType;
-	int owner; ///< Player owner
+	unsigned owner; ///< Player owner
 	std::shared_ptr<PathBlockingMap> blockingMap; ///< Map of blocking tiles.
 	bool acceptNearest;
 	bool deleted;
 	///< Droid was deleted, so throw away result when complete. Must still process this PATHJOB, since processing order can affect resulting paths (but can't affect the path length).
 };
 
-enum FPATH_RETVAL
+struct PathResult
 {
-	FPR_OK,
-	///< found a route
-	FPR_FAILED,
-	///< failed to find a route
-	FPR_WAIT,
-	///< route is being calculated by the path-finding thread
+    unsigned droidID; ///< Unique droid ID.
+    MOVE_CONTROL sMove; ///< New movement values for the droid.
+    FPATH_RETVAL retval; ///< Result value from path-finding.
+    Vector2i originalDest; ///< Used to check if the pathfinding job is to the right destination.
 };
 
 /** Initialise the path-finding module.

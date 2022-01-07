@@ -18,9 +18,8 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-/*
+/**
  * @file astar.h
- *
  * Data types and function declarations for the A* pathfinding component
  */
 
@@ -99,7 +98,7 @@ struct PathBlockingType
     unsigned owner = 0;
 
     /// How does this region interact with colliding units?
-    MOVE_TYPE move_type;
+    FPATH_MOVETYPE move_type;
 
     /// Which movement class are we blocking?
     PROPULSION_TYPE propulsion;

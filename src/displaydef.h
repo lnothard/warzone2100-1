@@ -20,7 +20,7 @@
 
 /**
  * @file displaydef.h
- * Display structures.
+ * Display structures
  */
 
 #ifndef __INCLUDED_DISPLAYDEF_H__
@@ -28,10 +28,10 @@
 
 struct iIMDShape;
 
-// for mouse scrolling. (how many pixels from the edge before pointer
-// scrolls the screen in a direction)
-#define	BOUNDARY_X	(2)
-#define	BOUNDARY_Y	(2)
+/// For mouse scrolling (how many pixels from the edge
+/// before pointer scrolls the screen in a direction)
+static constexpr auto BOUNDARY_X = 2;
+static constexpr auto BOUNDARY_Y = 2;
 
 struct DisplayData
 {

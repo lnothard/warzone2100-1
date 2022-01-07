@@ -763,7 +763,7 @@ static void moveOpenGates(Droid* psDroid, Vector2i tile)
 	{
 		return;
 	}
-	MAPTILE* psTile = mapTile(tile);
+	Tile* psTile = mapTile(tile);
 	if (!isFlying(psDroid) && psTile && psTile->psObject && psTile->psObject->type == OBJ_STRUCTURE && aiCheckAlliances(
 		psTile->psObject->player, psDroid->player))
 	{

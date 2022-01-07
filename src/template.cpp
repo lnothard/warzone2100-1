@@ -17,19 +17,19 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
  * @file template.cpp
- *
- * Droid template functions.
- *
+ * Droid template functions
  */
+
 #include "lib/framework/frame.h"
 #include "lib/framework/wzconfig.h"
 #include "lib/framework/math_ext.h"
 #include "lib/framework/strres.h"
 #include "lib/netplay/netplay.h"
+
 #include "template.h"
-#include "cmddroiddef.h"
 #include "mission.h"
 #include "objects.h"
 #include "droid.h"
@@ -40,7 +40,7 @@
 #include "main.h"
 
 // Template storage
-std::map<UDWORD, std::unique_ptr<DroidTemplate>> droidTemplates[MAX_PLAYERS];
+std::map<unsigned, std::unique_ptr<DroidTemplate>> droidTemplates[MAX_PLAYERS];
 std::vector<std::unique_ptr<DroidTemplate>> replacedDroidTemplates[MAX_PLAYERS];
 
 #define ASSERT_PLAYER_OR_RETURN(retVal, player) \
@@ -49,7 +49,6 @@ std::vector<std::unique_ptr<DroidTemplate>> replacedDroidTemplates[MAX_PLAYERS];
 bool allowDesign = true;
 bool includeRedundantDesigns = false;
 bool playerBuiltHQ = false;
-
 
 static bool researchedItem(const DroidTemplate* /*psCurr*/, int player, COMPONENT_TYPE partIndex, int part,
                            bool allowZero, bool allowRedundant)

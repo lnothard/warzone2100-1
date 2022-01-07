@@ -44,17 +44,17 @@
 
 #ifndef WZ_TESTING
 #include "lib/framework/frame.h"
-
 #include "astar.h"
 #include "map.h"
 #endif
 
-#include <list>
-#include <vector>
 #include <algorithm>
+#include <list>
 #include <memory>
+#include <vector>
 
 #include "lib/netplay/netplay.h"
+#include "lib/gamelib/gtime.h"
 
 PathCoord::PathCoord(int x, int y)
   : x{x}, y{y}
@@ -107,15 +107,15 @@ bool PathContext::is_blocked(int x, int y) const
     return false;
   }
 
-  return x < 0 || y < 0 || x >= map_width ||
-         y >= map_height ||
-         blocking_map->map[x + y * map_width];
+  return x < 0 || y < 0 || x >= mapWidth ||
+         y >= mapHeight ||
+         blocking_map->map[x + y * mapWidth];
 }
 
 bool PathContext::is_dangerous(int x, int y) const
 {
   return !blocking_map->threat_map.empty() &&
-         blocking_map->threat_map[x + y * map_width];
+         blocking_map->threat_map[x + y * mapWidth];
 }
 
 void PathContext::reset(const PathBlockingMap& blocking,
@@ -139,7 +139,7 @@ void PathContext::reset(const PathBlockingMap& blocking,
   }
   // ensure the correct size is allocated for `map`,
   // corresponding to the total area of the game map
-  map.resize(static_cast<std::size_t>(map_width) * static_cast<std::size_t>(map_height));
+  map.resize(static_cast<std::size_t>(mapWidth) * static_cast<std::size_t>(mapHeight));
 }
 
 void PathContext::init(PathBlockingMap& blocking, PathCoord start,
@@ -152,12 +152,12 @@ void PathContext::init(PathBlockingMap& blocking, PathCoord start,
                     real_start, 0);
 }
 
-bool PathContext::matches(PathBlockingMap& blocking, PathCoord start, NonblockingArea dest) const
+bool PathContext::matches(PathBlockingMap& blocking, PathCoord start, NonBlockingArea dest) const
 {
   // Must check myGameTime == blockingMap_->type.gameTime, otherwise
   // blockingMap could be a deleted pointer which coincidentally
   // compares equal to the valid pointer blockingMap_.
-  return game_time == blocking.type.gameTime &&
+  return game_time == blocking.type.game_time &&
   blocking_map.get() == &blocking &&
   start == start_coord &&
   dest == destination_bounds;
@@ -333,7 +333,7 @@ void generate_new_node(PathContext& context, PathCoord destination,
                         current_pos.y - prev_pos.y} * 64;
   const bool is_diagonal = delta.x && delta.y;
 
-  auto& explored = context.map[current_pos.x + current_pos.y * map_width];
+  auto& explored = context.map[current_pos.x + current_pos.y * mapWidth];
   if (explored.iteration == context.iteration) {
     if (explored.visited) {
       // already visited this tile. Do nothing.
@@ -517,13 +517,13 @@ PathCoord find_nearest_explored_tile(PathContext& context, PathCoord tile)
   while (!target_found)
   {
     auto node = get_best_node(context.nodes);
-    if (context.map[node.path_coordinate.x + node.path_coordinate.y * map_width].visited) {
+    if (context.map[node.path_coordinate.x + node.path_coordinate.y * mapWidth].visited) {
       // already visited
       continue;
     }
 
     // now mark as visited
-    context.map[node.path_coordinate.x + node.path_coordinate.y * map_width].visited = true;
+    context.map[node.path_coordinate.x + node.path_coordinate.y * mapWidth].visited = true;
 
     // note the nearest node to the target so far
     if (node.estimated_distance_to_end - node.distance_from_start < nearest_dist) {
@@ -688,8 +688,8 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
   auto it = std::find_if(path_contexts.begin(), path_contexts.end(),
                          [&end, &must_reverse](const auto& context)
   {
-      if (context.map[origin_tile.x + origin_tile.y * map_width].iteration ==
-          context.map[origin_tile.x + origin_tile.y * map_width].visited)  {
+      if (context.map[origin_tile.x + origin_tile.y * mapWidth].iteration ==
+          context.map[origin_tile.x + origin_tile.y * mapWidth].visited)  {
         // already know the path
         end = origin_tile;
       } else {
@@ -743,7 +743,7 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
   {
     route.push_back(start);
     auto& tile = it->map[map_coord(start.x) +
-                         map_coord(start.y) * map_width];
+                         map_coord(start.y) * mapWidth];
     auto next = start - Vector2i{tile.x_diff, tile.y_diff} *
                         (TILE_UNITS / 64);
     auto map = map_coord(next);
@@ -757,7 +757,7 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
       // so move the point to the middle.
       next.x = world_coord(map.x) + TILE_UNITS / 2;
     }
-    if (it->is_blocked(map.x, map.y + y)  {
+    if (it->is_blocked(map.x, map.y + y)) {
       // point too close to a blocking tile on rop or bottom side,
       // so move the point to the middle.
       next.y = world_coord(map.y) + TILE_UNITS / 2;
@@ -793,7 +793,7 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
 
 			// next time, search starting from the nearest reachable
       // tile to the destination.
-			it->init(path_job->blocking_map, destination_tile,
+			it->init(path_job.blocking_map, destination_tile,
                it->nearestCoord, origin_tile, dstIgnore);
     }
   } else  {
@@ -985,9 +985,9 @@ void set_blocking_map(PathJob& path_job)
 	// figure out which map we are looking for.
 	PathBlockingType type;
 	type.game_time = gameTime;
-	type.propulsion = path_job->propulsion;
-	type.owner = path_job->owner;
-	type.move_type = path_job->moveType;
+	type.propulsion = path_job.propulsion;
+	type.owner = path_job.owner;
+	type.move_type = path_job.moveType;
 
 	// find the map.
 	auto it = std::find_if(blocking_maps.begin(), blocking_maps.end(),
@@ -1028,12 +1028,12 @@ void set_blocking_map(PathJob& path_job)
 				}
       }
 		}
-		syncDebug("blockingMap(%d,%d,%d,%d) = %08X %08X", gameTime, path_job->propulsion, path_job->owner, path_job->moveType,
+		syncDebug("blockingMap(%d,%d,%d,%d) = %08X %08X", gameTime, path_job.propulsion, path_job.owner, path_job.moveType,
               checksum_map, checksum_threat_map);
 
-    path_job->blocking_map = blocking_maps.back();
+    path_job.blocking_map = blocking_maps.back();
 	} else  {
-		syncDebug("blockingMap(%d,%d,%d,%d) = cached", gameTime, path_job->propulsion, path_job->owner, path_job->moveType);
-    path_job->blockingMap = *it;
+		syncDebug("blockingMap(%d,%d,%d,%d) = cached", gameTime, path_job.propulsion, path_job.owner, path_job.moveType);
+    path_job.blockingMap = *it;
 	}
 }

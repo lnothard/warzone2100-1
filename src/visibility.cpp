@@ -20,9 +20,9 @@
 
 /**
  * @file visibility.cpp
- * Functions for handling object visibility.
+ * Functions for handling object visibility
  *
- * Pumpkin Studios, Eidos Interactive 1996.
+ * Pumpkin Studios, EIDOS Interactive 1996
  */
 
 #include <limits>
@@ -53,9 +53,10 @@
 /// Integer amount to change visibility this turn
 static int visLevelInc, visLevelDec;
 
-Spotter::Spotter(int x, int y, int plr, int radius, SENSOR_CLASS type, std::size_t expiry)
-  : pos(x, y, 0), player(plr), sensorRadius(radius),
-    sensorType(type), expiryTime(expiry)
+Spotter::Spotter(int x, int y, unsigned plr, int radius,
+                 SENSOR_CLASS type, std::size_t expiry)
+  : pos{x, y, 0}, player{plr}, sensorRadius{radius},
+    sensorType{type}, expiryTime{expiry}
 {
   id = generateSynchronisedObjectId();
 }
@@ -64,8 +65,8 @@ Spotter::~Spotter()
 {
   for (auto& tilePos : watchedTiles)
   {
-    MAPTILE* psTile = mapTile(tilePos.x, tilePos.y);
-    uint8_t* visionType = (tilePos.type == 0) ? psTile->watchers : psTile->sensors;
+    auto psTile = mapTile(tilePos.x, tilePos.y);
+    auto visionType = (tilePos.type == 0) ? psTile->watchers : psTile->sensors;
     ASSERT(visionType[player] > 0, "Not watching watched tile (%d, %d)", (int)tilePos.x, (int)tilePos.y);
     visionType[player]--;
     updateTileVis(psTile);
@@ -125,7 +126,7 @@ unsigned addSpotter(int x, int y, int player, int radius, SENSOR_CLASS type, uns
 		{
 			continue;
 		}
-		MAPTILE* psTile = mapTile(mapX, mapY);
+		Tile* psTile = mapTile(mapX, mapY);
 		psTile->tileExploredBits |= alliancebits[player];
 		uint8_t* visionType = (!radar) ? psTile->watchers : psTile->sensors;
 		if (visionType[player] < UBYTE_MAX)
@@ -144,7 +145,7 @@ bool removeSpotter(unsigned id)
 {
 	for (unsigned i = 0; i < apsInvisibleViewers.size(); i++)
 	{
-		Spotter* psSpot = apsInvisibleViewers.at(i);
+		auto psSpot = apsInvisibleViewers.at(i);
 		if (psSpot->id == id)  {
 			delete psSpot;
 			apsInvisibleViewers.erase(apsInvisibleViewers.begin() + i);
@@ -194,7 +195,7 @@ static void updateSpotters()
  * once. Note that there is both a limit to how many objects can watch any given
  * tile. Strange but non-fatal things will happen if these limits are exceeded. */
 static inline void visMarkTile(const SimpleObject* psObj, int mapX, int mapY,
-                               MAPTILE* psTile, std::vector<TILEPOS>& watchedTiles)
+                               Tile* psTile, std::vector<TILEPOS>& watchedTiles)
 {
 	const int rayPlayer = psObj->player;
 	const int xdiff = map_coord(psObj->pos.x) - mapX;
@@ -253,7 +254,7 @@ static void doWaveTerrain(SimpleObject* psObj)
 			continue;
 		}
 
-		MAPTILE* psTile = mapTile(mapX, mapY);
+		Tile* psTile = mapTile(mapX, mapY);
 		int tileHeight = std::max(psTile->height, psTile->waterLevel);
 		// If we can see the water surface, then let us see water-covered tiles too.
 		int perspectiveHeight = (tileHeight - sz) * tiles[i].invRadius;
@@ -340,7 +341,7 @@ static bool rayLOSCallback(Vector2i pos, int32_t dist, void* data)
 
 		if (tile != help->final)
 		{
-			MAPTILE* psTile = mapTile(tile);
+			Tile* psTile = mapTile(tile);
 			if (TileHasWall(psTile) && !TileHasSmallStructure(psTile))
 			{
 				Structure* psStruct = (Structure*)psTile->psObject;
@@ -366,7 +367,7 @@ void visRemoveVisibility(SimpleObject* psObj)
 		for (TILEPOS pos : psObj->watchedTiles)
 		{
 			// FIXME: the mapTile might have been swapped out, see swapMissionPointers()
-			MAPTILE* psTile = mapTile(pos.x, pos.y);
+			Tile* psTile = mapTile(pos.x, pos.y);
 
 			ASSERT(pos.type < 2, "Invalid visibility type %d", (int)pos.type);
 			uint8_t* visionType = (pos.type == 0) ? psTile->sensors : psTile->watchers;
@@ -429,7 +430,7 @@ void visTilesUpdate(SimpleObject* psObj)
 void revealAll(UBYTE player)
 {
 	SDWORD i, j;
-	MAPTILE* psTile;
+	Tile* psTile;
 
 	if (player >= MAX_PLAYERS)
 	{
@@ -527,7 +528,7 @@ int visibleObject(const SimpleObject* psViewer, const SimpleObject* psTarget, bo
 		return UBYTE_MAX; // Should never be on top of each other, but ...
 	}
 
-	const MAPTILE* psTile = mapTile(map_coord(psTarget->pos.x), map_coord(psTarget->pos.y));
+	const Tile* psTile = mapTile(map_coord(psTarget->pos.x), map_coord(psTarget->pos.y));
 	const bool jammed = psTile->jammerBits & ~alliancebits[psViewer->player];
 
 	// Special rule for VTOLs, as they are not affected by ECM
@@ -878,7 +879,7 @@ void setUnderTilesVis(SimpleObject* psObj, UDWORD player)
 	Feature* psFeature;
 	Structure* psStructure;
 	FeatureStats const* psStats;
-	MAPTILE* psTile;
+	Tile* psTile;
 
 	if (player >= MAX_PLAYERS)
 	{
@@ -1106,7 +1107,7 @@ static int checkFireLine(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTa
 		// TODO: if there is a structure on the same tile as the shooter (and the shooter is not that structure) check if LOF is blocked by it.
 		if (wallsBlock && oldPartSq > 0)
 		{
-			const MAPTILE* psTile;
+			const Tile* psTile;
 			halfway = current + (next - current) / 2;
 			psTile = mapTile(map_coord(halfway.x), map_coord(halfway.y));
 			if (TileHasStructure(psTile) && psTile->psObject != psTarget)

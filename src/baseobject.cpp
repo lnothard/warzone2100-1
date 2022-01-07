@@ -30,29 +30,28 @@
 #include "intdisplay.h"
 #include "map.h"
 
-
-static inline uint16_t interpolateAngle(uint16_t v1, uint16_t v2, uint32_t t1, uint32_t t2, uint32_t t)
+static inline uint16_t interpolateAngle(uint16_t v1, uint16_t v2, unsigned t1, unsigned t2, unsigned t)
 {
-	const int numer = t - t1, denom = t2 - t1;
+	const auto numer = t - t1, denom = t2 - t1;
 	return v1 + angleDelta(v2 - v1) * numer / denom;
 }
 
-static Position interpolatePos(Position p1, Position p2, uint32_t t1, uint32_t t2, uint32_t t)
+static Position interpolatePos(Position p1, Position p2, unsigned t1, unsigned t2, unsigned t)
 {
 	const int numer = t - t1, denom = t2 - t1;
 	return p1 + (p2 - p1) * numer / denom;
 }
 
-Rotation interpolateRot(Rotation v1, Rotation v2, uint32_t t1, uint32_t t2, uint32_t t)
+Rotation interpolateRot(Rotation v1, Rotation v2, unsigned t1, unsigned t2, unsigned t)
 {
 	//return v1 + (v2 - v1) * (t - t1) / (t2 - t1);
-	return Rotation(interpolateAngle(v1.direction, v2.direction, t1, t2, t),
-	                interpolateAngle(v1.pitch, v2.pitch, t1, t2, t),
-	                interpolateAngle(v1.roll, v2.roll, t1, t2, t)
-	);
+	return {interpolateAngle(v1.direction, v2.direction, t1, t2, t),
+          interpolateAngle(v1.pitch, v2.pitch, t1, t2, t),
+          interpolateAngle(v1.roll, v2.roll, t1, t2, t)
+	};
 }
 
-static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, uint32_t t)
+static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, unsigned t)
 {
 	// Cyp says this should never happen, #3037 and #3238 say it does though.
 	ASSERT_OR_RETURN(st1, st1.time != st2.time, "Spacetime overlap!");
@@ -60,7 +59,7 @@ static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, uint32_t t)
 	                 interpolateRot(st1.rot, st2.rot, st1.time, st2.time, t), t);
 }
 
-Spacetime interpolateObjectSpacetime(const SIMPLE_OBJECT* obj, uint32_t t)
+Spacetime interpolateObjectSpacetime(const SIMPLE_OBJECT* obj, unsigned t)
 {
 	switch (obj->type)
 	{
@@ -71,49 +70,6 @@ Spacetime interpolateObjectSpacetime(const SIMPLE_OBJECT* obj, uint32_t t)
 	case OBJ_PROJECTILE:
 		return interpolateSpacetime(castProjectile(obj)->prevSpacetime, getSpacetime(obj), t);
 	}
-}
-
-SIMPLE_OBJECT::SIMPLE_OBJECT(OBJECT_TYPE type, uint32_t id, unsigned player)
-	: type(type)
-	  , id(id)
-	  , pos(0, 0, 0)
-	  , rot(0, 0, 0)
-	  , player(player)
-	  , born(gameTime)
-	  , died(0)
-	  , time(0)
-{
-}
-
-SIMPLE_OBJECT::~SIMPLE_OBJECT()
-{
-	// Make sure to get rid of some final references in the sound code to this object first
-	audio_RemoveObj(this);
-
-	const_cast<OBJECT_TYPE volatile&>(type) = (OBJECT_TYPE)(type + 1000000000);
-	// Hopefully this will trigger an assert              if someone uses the freed object.
-	const_cast<UBYTE volatile&>(player) += 100;
-	// Hopefully this will trigger an assert and/or crash if someone uses the freed object.
-}
-
-SimpleObject::SimpleObject(OBJECT_TYPE type, uint32_t id, unsigned player)
-	: SIMPLE_OBJECT(type, id, player)
-	  , selected(false)
-	  , lastEmission(0)
-	  , lastHitWeapon(WSC_NUM_WEAPON_SUBCLASSES) // No such weapon.
-	  , timeLastHit(UDWORD_MAX)
-	  , body(0)
-	  , periodicalDamageStart(0)
-	  , periodicalDamage(0)
-	  , timeAnimationStarted(0)
-	  , animationEvent(ANIM_EVENT_NONE)
-{
-	memset(visible, 0, sizeof(visible));
-	sDisplay.imd = nullptr;
-	sDisplay.frame_number = 0;
-	sDisplay.screen_x = 0;
-	sDisplay.screen_y = 0;
-	sDisplay.screen_r = 0;
 }
 
 SimpleObject::~SimpleObject()
@@ -163,7 +119,7 @@ void checkObject(const SIMPLE_OBJECT* psObject, const char* const location_descr
 		break;
 
 	case OBJ_PROJECTILE:
-		checkProjectile((const PROJECTILE*)psObject, location_description, function, recurse - 1);
+		checkProjectile((const Projectile*)psObject, location_description, function, recurse - 1);
 		break;
 
 	case OBJ_FEATURE:
@@ -186,7 +142,7 @@ void _syncDebugObject(const char* function, SIMPLE_OBJECT const* psObject, char 
 		break;
 	case OBJ_FEATURE: _syncDebugFeature(function, (const Feature*)psObject, ch);
 		break;
-	case OBJ_PROJECTILE: _syncDebugProjectile(function, (const PROJECTILE*)psObject, ch);
+	case OBJ_PROJECTILE: _syncDebugProjectile(function, (const Projectile*)psObject, ch);
 		break;
 	default: _syncDebug(function, "%c unidentified_object%d = p%d;objectType%d", ch, psObject->id, psObject->player,
 	                    psObject->type);
@@ -206,7 +162,7 @@ Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 	{
 		return static_cast<FeatureStats const*>(pType)->size();
 	}
-	return Vector2i(1, 1);
+	return {1, 1};
 }
 
 StructureBounds getStructureBounds(SimpleObject const* object)

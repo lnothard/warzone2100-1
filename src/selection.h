@@ -22,7 +22,6 @@
 #define __INCLUDED_SRC_SELECTION_H__
 
 #include "statsdef.h"
-#include "structuredef.h"
 
 enum SELECTION_CLASS
 {

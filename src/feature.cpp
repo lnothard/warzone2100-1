@@ -59,6 +59,21 @@ UDWORD numFeatureStats;
 //Value is stored for easy access to this feature in destroyDroid()/destroyStruct()
 FeatureStats* oilResFeature = nullptr;
 
+FeatureStats::FeatureStats(int idx)
+  : BaseStats(idx)
+{
+}
+
+Vector2i FeatureStats::size() const
+{
+  return {baseWidth, baseBreadth};
+}
+
+Vector2i Feature::size() const
+{
+  return psStats->size();
+}
+
 void featureInitVars()
 {
 	asFeatureStats = nullptr;
@@ -182,29 +197,26 @@ int32_t featureDamage(Feature* psFeature, unsigned damage, WEAPON_CLASS weaponCl
 	}
 }
 
-
 /* Create a feature on the map */
-Feature* buildFeature(FeatureStats* psStats, UDWORD x, UDWORD y, bool FromSave)
+Feature* buildFeature(FeatureStats const* psStats, unsigned x, unsigned y, bool fromSave)
 {
 	//try and create the Feature
-	Feature* psFeature = new Feature(generateSynchronisedObjectId(), psStats);
+	auto psFeature = std::make_unique<Feature>(
+          generateSynchronisedObjectId(), psStats);
 
-	if (psFeature == nullptr)
-	{
+	if (psFeature == nullptr) {
 		debug(LOG_WARNING, "Feature couldn't be built.");
 		return nullptr;
 	}
+
 	//add the feature to the list - this enables it to be drawn whilst being built
 	addFeature(psFeature);
 
 	// snap the coords to a tile
-	if (!FromSave)
-	{
+	if (!fromSave) {
 		x = (x & ~TILE_MASK) + psStats->baseWidth % 2 * TILE_UNITS / 2;
 		y = (y & ~TILE_MASK) + psStats->baseBreadth % 2 * TILE_UNITS / 2;
-	}
-	else
-	{
+	} else {
 		if ((x & TILE_MASK) != psStats->baseWidth % 2 * TILE_UNITS / 2 ||
 			(y & TILE_MASK) != psStats->baseBreadth % 2 * TILE_UNITS / 2)
 		{
@@ -260,7 +272,7 @@ Feature* buildFeature(FeatureStats* psStats, UDWORD x, UDWORD y, bool FromSave)
 	{
 		for (int width = 0; width < b.size.x; ++width)
 		{
-			MAPTILE* psTile = mapTile(b.map.x + width, b.map.y + breadth);
+			Tile* psTile = mapTile(b.map.x + width, b.map.y + breadth);
 
 			//check not outside of map - for load save game
 			ASSERT_OR_RETURN(nullptr, b.map.x + width < mapWidth, "x coord bigger than map width - %s, id = %d",
@@ -298,7 +310,7 @@ Feature* buildFeature(FeatureStats* psStats, UDWORD x, UDWORD y, bool FromSave)
 				}
 			}
 
-			if ((!psStats->tileDraw) && (FromSave == false))
+			if ((!psStats->tileDraw) && (fromSave == false))
 			{
 				psTile->height = height;
 			}
@@ -382,7 +394,7 @@ bool removeFeature(Feature* psDel)
 		{
 			if (tileOnMap(b.map.x + width, b.map.y + breadth))
 			{
-				MAPTILE* psTile = mapTile(b.map.x + width, b.map.y + breadth);
+				Tile* psTile = mapTile(b.map.x + width, b.map.y + breadth);
 
 				if (psTile->psObject == psDel)
 				{
@@ -509,7 +521,7 @@ bool destroyFeature(Feature* psDel, unsigned impactTime)
 		{
 			for (int width = 0; width < b.size.x; ++width)
 			{
-				MAPTILE* psTile = mapTile(b.map.x + width, b.map.y + breadth);
+				Tile* psTile = mapTile(b.map.x + width, b.map.y + breadth);
 				// stops water texture changing for underwater features
 				if (terrainType(psTile) != TER_WATER)
 				{

@@ -41,7 +41,6 @@ public:
   [[nodiscard]] virtual bool is_selected() const noexcept = 0;
   virtual void align_turret(int weapon_slot) = 0;
   virtual void update_expected_damage(unsigned damage, bool is_direct) noexcept = 0;
-  virtual void use_ammo(int weapon_slot) = 0;
   [[nodiscard]] virtual int calculate_attack_priority(const Unit* target, int weapon_slot) const = 0;
   [[nodiscard]] virtual const SimpleObject& get_target(int weapon_slot) const = 0;
 };
@@ -55,7 +54,7 @@ namespace Impl
 	class Unit : public virtual ::Unit, public Impl::SimpleObject
 	{
 	public:
-		Unit(uint32_t id, uint32_t player);
+		Unit(unsigned id, unsigned player);
 
     /* Accessors */
 		[[nodiscard]] unsigned get_hp() const noexcept final;
@@ -65,7 +64,6 @@ namespace Impl
     [[nodiscard]] bool is_selected() const noexcept final;
 
 		void align_turret(int weapon_slot) final;
-    void use_ammo(int weapon_slot) override;
 	private:
 		unsigned hit_points = 0;
     bool selected = false;

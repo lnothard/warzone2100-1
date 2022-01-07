@@ -51,20 +51,6 @@
 uint32_t unsynchObjID;
 uint32_t synchObjID;
 
-/* The lists of objects allocated */
-Droid* apsDroidLists[MAX_PLAYERS];
-Structure* apsStructLists[MAX_PLAYERS];
-Feature* apsFeatureLists[MAX_PLAYERS]; ///< Only player zero is valid for features. TODO: Reduce to single list.
-Structure* apsExtractorLists[MAX_PLAYERS];
-Feature* apsOilList[1];
-SimpleObject* apsSensorList[1]; ///< List of sensors in the game.
-
-/*The list of Flag Positions allocated */
-FLAG_POSITION* apsFlagPosLists[MAX_PLAYERS];
-
-/* The list of destroyed objects */
-SimpleObject* psDestroyedObj = nullptr;
-
 /* Forward function declarations */
 #ifdef DEBUG
 static void objListIntegCheck();
@@ -94,15 +80,16 @@ void objmemShutdown()
 #else
 #define BADREF(func, line) "Illegal reference to object %d", psVictim->id
 #endif
+
 static bool checkReferences(SimpleObject* psVictim)
 {
 	for (int plr = 0; plr < MAX_PLAYERS; ++plr)
 	{
-		for (Structure* psStruct = apsStructLists[plr]; psStruct != nullptr; psStruct = psStruct->psNext)
+		for (auto&& psStruct : apsStructLists[plr])
 		{
-			if (psStruct == psVictim)
-			{
-				continue; // Don't worry about self references.
+			if (psStruct.get() == psVictim) {
+        // don't worry about self references
+				continue;
 			}
 
 			for (unsigned i = 0; i < psStruct->numWeaps; ++i)
@@ -111,9 +98,9 @@ static bool checkReferences(SimpleObject* psVictim)
 				                 BADREF(psStruct->targetFunc[i], psStruct->targetLine[i]));
 			}
 		}
-		for (Droid* psDroid = apsDroidLists[plr]; psDroid != nullptr; psDroid = psDroid->psNext)
+		for (auto psDroid : apsDroidLists[plr])
 		{
-			if (psDroid == psVictim)
+			if (&psDroid == psVictim)
 			{
 				continue; // Don't worry about self references.
 			}
@@ -207,17 +194,17 @@ void objmemUpdate()
 	}
 }
 
-uint32_t generateNewObjectId()
+unsigned generateNewObjectId()
 {
 	// Generate even ID for unsynchronized objects. This is needed for debug objects, templates and other border lines cases that should preferably be removed one day.
 	return unsynchObjID++ * MAX_PLAYERS * 2 + selectedPlayer * 2;
 	// Was taken from createObject, where 'player' was used instead of 'selectedPlayer'. Hope there are no stupid hacks that try to recover 'player' from the last 3 bits.
 }
 
-uint32_t generateSynchronisedObjectId()
+unsigned generateSynchronisedObjectId()
 {
 	// Generate odd ID for synchronized objects
-	uint32_t ret = synchObjID++ * 2 + 1;
+	unsigned ret = synchObjID++ * 2 + 1;
 	syncDebug("New objectId = %u", ret);
 	return ret;
 }

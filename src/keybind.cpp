@@ -307,7 +307,7 @@ void kf_ToggleSensorDisplay()
 /* Halves all the heights of the map tiles */
 void kf_HalveHeights()
 {
-	MAPTILE* psTile;
+	Tile* psTile;
 
 	for (int i = 0; i < mapWidth; ++i)
 	{
@@ -830,7 +830,7 @@ void kf_AllAvailable()
 /* Flips the cut of a tile */
 void kf_TriFlip()
 {
-	MAPTILE* psTile;
+	Tile* psTile;
 	psTile = mapTile(mouseTileX, mouseTileY);
 	TOGGLE_TRIFLIP(psTile);
 	//	addConsoleMessage(_("Triangle flip status toggled"),DEFAULT_JUSTIFY,SYSTEM_MESSAGE);
@@ -841,7 +841,7 @@ void kf_TriFlip()
 /* Debug info about a map tile */
 void kf_TileInfo()
 {
-	MAPTILE* psTile = mapTile(mouseTileX, mouseTileY);
+	Tile* psTile = mapTile(mouseTileX, mouseTileY);
 
 	debug(LOG_ERROR, "Tile position=(%d, %d) Terrain=%d Texture=%u Height=%d Illumination=%u",
 	      mouseTileX, mouseTileY, (int)terrainType(psTile), TileNumber_tile(psTile->texture), psTile->height,

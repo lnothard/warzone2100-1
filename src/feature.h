@@ -28,11 +28,58 @@
 
 #include "lib/framework/wzconfig.h"
 
+#include "basedef.h"
 #include "objectdef.h"
+#include "statsdef.h"
+
+enum class FEATURE_TYPE
+{
+    TANK,
+    GEN_ARTE,
+    OIL_RESOURCE,
+    BOULDER,
+    VEHICLE,
+    BUILDING,
+    UNUSED,
+    LOS_OBJ,
+    OIL_DRUM,
+    TREE,
+    SKYSCRAPER,
+    COUNT
+};
+
+struct FeatureStats : public BaseStats
+{
+    explicit FeatureStats(int idx = 0);
+
+    [[nodiscard]] Vector2i size() const;
+
+    FEATURE_TYPE subType = FEATURE_TYPE::COUNT; ///< type of feature
+    std::unique_ptr<iIMDShape> psImd = nullptr; ///< Graphic for the feature
+    unsigned baseWidth = 0; ///< The width of the base in tiles
+    unsigned baseBreadth = 0; ///< The breadth of the base in tiles
+    bool tileDraw = false; ///< Whether the tile needs to be drawn
+    bool allowLOS = false; ///< Whether the feature allows the LOS. true = can see through the feature
+    bool visibleAtStart = false; ///< Whether the feature is visible at the start of the mission
+    bool damageable = false; ///< Whether the feature can be destroyed
+    unsigned body = 0; ///< Number of body points
+    unsigned armourValue = 0; ///< Feature armour
+};
+
+class Feature : public virtual SimpleObject, public Impl::SimpleObject
+{
+public:
+    Feature(unsigned id, FeatureStats const* psStats);
+    ~Feature() override;
+
+    [[nodiscard]] Vector2i size() const;
+private:
+    std::shared_ptr<FeatureStats> psStats;
+};
 
 /* The statistics for the features */
 extern FeatureStats* asFeatureStats;
-extern UDWORD numFeatureStats;
+extern unsigned numFeatureStats;
 
 //Value is stored for easy access to this feature in destroyDroid()/destroyStruct()
 extern FeatureStats* oilResFeature;

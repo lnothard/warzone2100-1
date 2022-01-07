@@ -17,13 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/***************************************************************************/
-/*
- * Projectile functions
- *
- */
-/***************************************************************************/
-#include <string.h>
+
+#include <algorithm>
+#include <cstring>
+#include <functional>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/trig.h"
@@ -58,11 +55,10 @@
 #include "random.h"
 #include "display3d.h"
 
-#include <algorithm>
-#include <functional>
 #ifndef GLM_ENABLE_EXPERIMENTAL
 #define GLM_ENABLE_EXPERIMENTAL
 #endif
+
 #include <glm/gtx/transform.hpp>
 
 #define VTOL_HITBOX_MODIFICATOR 100
@@ -72,32 +68,20 @@
 
 static int experienceGain[MAX_PLAYERS];
 
-struct INTERVAL
-{
-	int begin, end; // Time 1 = 0, time 2 = 1024. Or begin >= end if empty.
-};
-
-struct DAMAGE
-{
-	PROJECTILE* psProjectile;
-	SimpleObject* psDest;
-	unsigned damage;
-	WEAPON_CLASS weaponClass;
-	WEAPON_SUBCLASS weaponSubClass;
-	unsigned impactTime;
-	bool isDamagePerSecond;
-	int minDamage;
-};
-
-// Watermelon:they are from droid.c
 /* The range for neighbouring objects */
 #define PROJ_NEIGHBOUR_RANGE (TILE_UNITS*4)
+
+Projectile::Projectile(unsigned id, unsigned player)
+  : SimpleObject(id, player)
+{
+}
+
 // used to create a specific ID for projectile objects to facilitate tracking them.
-static const uint32_t ProjectileTrackerID = 0xdead0000;
-static uint32_t projectileTrackerIDIncrement = 0;
+static const unsigned ProjectileTrackerID = 0xdead0000;
+static unsigned projectileTrackerIDIncrement = 0;
 
 /* The list of projectiles in play */
-static std::vector<PROJECTILE*> psProjectileList;
+static std::vector<Projectile*> psProjectileList;
 
 /* The next projectile to give out in the proj_First / proj_Next methods */
 static ProjectileIterator psProjectileNext;
@@ -109,12 +93,11 @@ SimpleObject* g_pProjLastAttacker;
 
 /***************************************************************************/
 
-static void proj_ImpactFunc(PROJECTILE* psObj);
-static void proj_PostImpactFunc(PROJECTILE* psObj);
-static void proj_checkPeriodicalDamage(PROJECTILE* psProj);
+static void proj_ImpactFunc(Projectile* psObj);
+static void proj_PostImpactFunc(Projectile* psObj);
+static void proj_checkPeriodicalDamage(Projectile* psProj);
 
-static int32_t objectDamage(DAMAGE* psDamage);
-
+static int objectDamage(DAMAGE* psDamage);
 
 //static inline void setProjectileDestination(PROJECTILE* psProj, SimpleObject* psObj)
 //{
@@ -133,9 +116,7 @@ static int32_t objectDamage(DAMAGE* psDamage);
 //	// Let the new target know to say its prayers.
 //}
 
-
-/***************************************************************************/
-bool gfxVisible(PROJECTILE* psObj)
+bool gfxVisible(Projectile* psObj)
 {
 	// Already know it is visible
 	if (psObj->bVisible)
@@ -234,7 +215,7 @@ proj_Shutdown()
 /***************************************************************************/
 
 // Reset the first/next methods, and give out the first projectile in the list.
-PROJECTILE*
+Projectile*
 proj_GetFirst()
 {
 	psProjectileNext = psProjectileList.begin();
@@ -244,7 +225,7 @@ proj_GetFirst()
 /***************************************************************************/
 
 // Get the next projectile
-PROJECTILE*
+Projectile*
 proj_GetNext()
 {
 	++psProjectileNext;
@@ -289,7 +270,7 @@ Droid* getDesignatorAttackingObject(int player, SimpleObject* target)
 
 
 // update the source experience after a target is damaged/destroyed
-static void proj_UpdateExperience(PROJECTILE* psObj, uint32_t experienceInc)
+static void proj_UpdateExperience(Projectile* psObj, uint32_t experienceInc)
 {
 	Droid* psDroid;
 	SimpleObject* psSensor;
@@ -337,7 +318,7 @@ static void proj_UpdateExperience(PROJECTILE* psObj, uint32_t experienceInc)
 
 /***************************************************************************/
 
-void _syncDebugProjectile(const char* function, PROJECTILE const* psProj, char ch)
+void _syncDebugProjectile(const char* function, Projectile const* psProj, char ch)
 {
 	if (psProj->type != OBJ_PROJECTILE)
 	{
@@ -439,7 +420,7 @@ bool proj_SendProjectileAngled(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int pl
 	ASSERT_OR_RETURN(false, psStats != nullptr, "Invalid weapon stats");
 	ASSERT_OR_RETURN(false, psTarget == nullptr || !psTarget->died, "Aiming at dead target!");
 
-	PROJECTILE* psProj = new PROJECTILE(ProjectileTrackerID + ++projectileTrackerIDIncrement, player);
+	Projectile* psProj = new Projectile(ProjectileTrackerID + ++projectileTrackerIDIncrement, player);
 
 	/* get muzzle offset */
 	if (psAttacker == nullptr)
@@ -483,7 +464,7 @@ bool proj_SendProjectileAngled(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int pl
 	*/
 	if (psAttacker && psAttacker->type == OBJ_PROJECTILE)
 	{
-		PROJECTILE* psOldProjectile = (PROJECTILE*)psAttacker;
+		Projectile* psOldProjectile = (Projectile*)psAttacker;
 		psProj->born = psOldProjectile->born;
 		psProj->src = psOldProjectile->src;
 
@@ -701,7 +682,7 @@ static int32_t collisionXYZ(Vector3i v1, Vector3i v2, ObjectShape shape, int32_t
 	return -1;
 }
 
-static void proj_InFlightFunc(PROJECTILE* psProj)
+static void proj_InFlightFunc(Projectile* psProj)
 {
 	/* we want a delay between Las-Sats firing and actually hitting in multiPlayer
 	magic number but that's how long the audio countdown message lasts! */
@@ -991,7 +972,7 @@ static void proj_InFlightFunc(PROJECTILE* psProj)
 
 /***************************************************************************/
 
-static void proj_ImpactFunc(PROJECTILE* psObj)
+static void proj_ImpactFunc(Projectile* psObj)
 {
 	WeaponStats* psStats;
 	SDWORD iAudioImpactID;
@@ -1316,7 +1297,7 @@ static void proj_ImpactFunc(PROJECTILE* psObj)
 
 /***************************************************************************/
 
-static void proj_PostImpactFunc(PROJECTILE* psObj)
+static void proj_PostImpactFunc(Projectile* psObj)
 {
 	ASSERT_OR_RETURN(, psObj != nullptr, "Invalid pointer");
 	CHECK_PROJECTILE(psObj);
@@ -1343,9 +1324,9 @@ static void proj_PostImpactFunc(PROJECTILE* psObj)
 
 /***************************************************************************/
 
-void PROJECTILE::update()
+void Projectile::update()
 {
-	PROJECTILE* psObj = this;
+	Projectile* psObj = this;
 
 	CHECK_PROJECTILE(psObj);
 
@@ -1410,20 +1391,20 @@ void PROJECTILE::update()
 // iterate through all projectiles and update their status
 void proj_UpdateAll()
 {
-	std::vector<PROJECTILE*> psProjectileListOld = psProjectileList;
+	std::vector<Projectile*> psProjectileListOld = psProjectileList;
 
 	// Update all projectiles. Penetrating projectiles may add to psProjectileList.
-	std::for_each(psProjectileListOld.begin(), psProjectileListOld.end(), std::mem_fn(&PROJECTILE::update));
+	std::for_each(psProjectileListOld.begin(), psProjectileListOld.end(), std::mem_fn(&Projectile::update));
 
 	// Remove and free dead projectiles.
 	psProjectileList.erase(
-		std::remove_if(psProjectileList.begin(), psProjectileList.end(), std::mem_fn(&PROJECTILE::deleteIfDead)),
+		std::remove_if(psProjectileList.begin(), psProjectileList.end(), std::mem_fn(&Projectile::deleteIfDead)),
 		psProjectileList.end());
 }
 
 /***************************************************************************/
 
-static void proj_checkPeriodicalDamage(PROJECTILE* psProj)
+static void proj_checkPeriodicalDamage(Projectile* psProj)
 {
 	CHECK_PROJECTILE(psProj);
 
@@ -1511,21 +1492,21 @@ bool proj_Direct(const WeaponStats* psStats)
 	ASSERT_OR_RETURN(retVal, player >= 0 && player < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
 // return the maximum range for a weapon
-int proj_GetLongRange(const WeaponStats* psStats, int player)
+int proj_GetLongRange(const WeaponStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].maxRange;
 }
 
 // return the minimum range for a weapon
-int proj_GetMinRange(const WeaponStats* psStats, int player)
+int proj_GetMinRange(const WeaponStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].minRange;
 }
 
 // return the short range for a weapon
-int proj_GetShortRange(const WeaponStats* psStats, int player)
+int proj_GetShortRange(const WeaponStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgrade[player].shortRange;
@@ -1880,7 +1861,7 @@ int establishTargetHeight(SimpleObject const* psTarget)
 	}
 }
 
-void checkProjectile(const PROJECTILE* psProjectile, const char* const location_description, const char* function,
+void checkProjectile(const Projectile* psProjectile, const char* const location_description, const char* function,
                      const int recurse)
 {
 	if (recurse < 0)

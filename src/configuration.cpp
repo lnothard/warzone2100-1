@@ -57,8 +57,10 @@
 #include <utility>
 
 #include "mINI/ini.h"
-#define PHYFSPP_IMPL
 #include "3rdparty/physfs.hpp"
+
+#define PHYFSPP_IMPL
+
 
 #define MASTERSERVERPORT	9990
 #define GAMESERVERPORT		2100

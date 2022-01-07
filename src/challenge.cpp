@@ -20,7 +20,7 @@
 
 /**
  * @file challenge.cpp
- * Run challenges dialog.
+ * Run challenges dialog
  */
 
 #include <ctime>
@@ -46,22 +46,23 @@
 #include "loadsave.h"
 #include "multiplay.h"
 #include "mission.h"
+#include "lib/gamelib/gtime.h"
 
-#define totalslots 36			// challenge slots
-#define slotsInColumn 12		// # of slots in a column
-#define totalslotspace 256		// max chars for slot strings.
+static constexpr auto totalslots  = 36; 			// challenge slots
+static constexpr auto slotsInColumn  = 12; 		// # of slots in a column
+static constexpr auto totalslotspace  = 256; 		// max chars for slot strings.
 
-#define CHALLENGE_X				D_W + 16
-#define CHALLENGE_Y				D_H + 5
-#define CHALLENGE_W				610
-#define CHALLENGE_H				215
+static const auto CHALLENGE_X = D_W + 16; 
+static const auto CHALLENGE_Y = D_H + 5;
+static constexpr auto CHALLENGE_W = 610; 
+static constexpr auto CHALLENGE_H = 215; 
 
-#define CHALLENGE_HGAP			9
-#define CHALLENGE_VGAP			9
-#define CHALLENGE_BANNER_DEPTH	40 		//top banner which displays either load or save
+static constexpr auto CHALLENGE_HGAP = 9; 
+static constexpr auto CHALLENGE_VGAP = 9; 
+static constexpr auto CHALLENGE_BANNER_DEPTH = 40;  		//top banner which displays either load or save
 
 #define CHALLENGE_ENTRY_W				((CHALLENGE_W / 3 )-(3 * CHALLENGE_HGAP))
-#define CHALLENGE_ENTRY_H				(CHALLENGE_H -(5 * CHALLENGE_VGAP )- (CHALLENGE_BANNER_DEPTH+CHALLENGE_VGAP) ) /5
+#define CHALLENGE_ENTRY_H				(CHALLENGE_H -(5 * CHALLENGE_VGAP )- (CHALLENGE_BANNER_DEPTH+CHALLENGE_VGAP) ) / 5
 
 #define ID_LOADSAVE				21000
 #define CHALLENGE_FORM			ID_LOADSAVE+1		// back form.
@@ -79,11 +80,11 @@ bool challengeActive = false; ///< Whether we are running a challenge
 std::string challengeName;
 WzString challengeFileName;
 
-static void displayLoadBanner(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
+static void displayLoadBanner(WIDGET* psWidget, unsigned xOffset, unsigned yOffset)
 {
 	PIELIGHT col = WZCOL_GREEN;
-	UDWORD x = xOffset + psWidget->x();
-	UDWORD y = yOffset + psWidget->y();
+	auto x = xOffset + psWidget->x();
+	auto y = yOffset + psWidget->y();
 
 	pie_BoxFill(x, y, x + psWidget->width(), y + psWidget->height(), col);
 	pie_BoxFill(x + 2, y + 2, x + psWidget->width() - 2, y + psWidget->height() - 2, WZCOL_MENU_BACKGROUND);
@@ -101,8 +102,9 @@ std::string currentChallengeName()
 void updateChallenge(bool gameWon)
 {
 	char* fStr;
-	int seconds = 0, newtime = (gameTime - mission.startTime) / GAME_TICKS_PER_SEC;
-	bool victory = false;
+	auto seconds = 0;
+  auto newtime = (gameTime - mission.startTime) / GAME_TICKS_PER_SEC;
+	auto victory = false;
 	WzConfig scores(CHALLENGE_SCORES, WzConfig::ReadAndWrite);
 	ASSERT_OR_RETURN(, strlen(sRequestResult) > 0, "Empty sRequestResult");
 
@@ -155,17 +157,17 @@ struct DisplayLoadSlotCache
 struct DisplayLoadSlotData
 {
 	DisplayLoadSlotCache cache;
-	const char* filename;
+	std::string filename;
 };
 
-static void displayLoadSlot(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
+static void displayLoadSlot(WIDGET* psWidget, unsigned xOffset, unsigned yOffset)
 {
 	// Any widget using displayLoadSlot must have its pUserData initialized to a (DisplayLoadSlotData*)
 	assert(psWidget->pUserData != nullptr);
 	DisplayLoadSlotData& data = *static_cast<DisplayLoadSlotData*>(psWidget->pUserData);
 
-	UDWORD x = xOffset + psWidget->x();
-	UDWORD y = yOffset + psWidget->y();
+	unsigned x = xOffset + psWidget->x();
+	unsigned y = yOffset + psWidget->y();
 	char butString[64];
 
 	drawBlueBox(x, y, psWidget->width(), psWidget->height()); //draw box
@@ -189,8 +191,8 @@ static void displayLoadSlot(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 	}
 }
 
-void challengesScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
-                                   unsigned int newHeight)
+void challengesScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight,
+                                   unsigned int newWidth, unsigned int newHeight)
 {
 	if (psRequestScreen == nullptr) return;
 	psRequestScreen->screenSizeDidChange(oldWidth, oldHeight, newWidth, newHeight);
@@ -201,16 +203,16 @@ void challengesScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight
 //*****************************************************************************************
 bool addChallenges()
 {
-	char sPath[PATH_MAX];
-	const char* sSearchPath = "challenges";
-	UDWORD slotCount;
+	std::string sPath;
+	std::string sSearchPath = "challenges";
+	unsigned slotCount;
 	static char sSlotCaps[totalslots][totalslotspace];
 	static char sSlotTips[totalslots][totalslotspace];
 	static char sSlotFile[totalslots][totalslotspace];
 
 	psRequestScreen = W_SCREEN::make(); // init the screen
 
-	WIDGET* parent = psRequestScreen->psForm.get();
+	auto parent = psRequestScreen->psForm.get();
 
 	/* add a form to place the tabbed form on */
 	auto challengeForm = std::make_shared<IntFormAnimated>();

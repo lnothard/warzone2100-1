@@ -46,11 +46,6 @@ namespace Impl
 		weapon.set_rotation({weapon_rotation, weapon_pitch, weapon.get_rotation().roll});
 	}
 
-  void Unit::use_ammo(int weapon_slot)
-  {
-    weapons[weapon_slot].use_ammo();
-  }
-
   bool Unit::is_selected() const noexcept
   {
     return selected;

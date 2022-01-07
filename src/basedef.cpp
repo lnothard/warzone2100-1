@@ -77,3 +77,17 @@ namespace Impl
     return visibility_state[watcher];
   }
 }
+
+int object_position_square_diff(const Position& first,
+                                const Position& second)
+{
+  Vector2i diff = (first - second).xy();
+  return dot(diff, diff);
+}
+
+int object_position_square_diff(const SimpleObject& first,
+                                const SimpleObject& second)
+{
+  return object_position_square_diff(first.get_position(),
+                                     second.get_position());
+}

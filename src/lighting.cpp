@@ -92,7 +92,7 @@ void initLighting(UDWORD x1, UDWORD y1, UDWORD x2, UDWORD y2)
 	{
 		for (unsigned j = y1; j < y2; j++)
 		{
-			MAPTILE* psTile = mapTile(i, j);
+			Tile* psTile = mapTile(i, j);
 
 			// always make the edge tiles dark
 			if (i == 0 || j == 0 || i >= mapWidth - 1 || j >= mapHeight - 1)
@@ -119,7 +119,7 @@ static void normalsOnTile(unsigned int tileX, unsigned int tileY, unsigned int q
                           Vector3f normals[])
 {
 	Vector2i tiles[2][2];
-	MAPTILE* psTiles[2][2];
+	Tile* psTiles[2][2];
 	Vector3f corners[2][2];
 
 	for (unsigned j = 0; j < 2; ++j)

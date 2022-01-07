@@ -44,28 +44,22 @@ static volatile bool fpathQuit = false;
 /* Beware: Enabling this will cause significant slow-down. */
 #undef DEBUG_MAP
 
-struct PATHRESULT
-{
-	unsigned droidID; ///< Unique droid ID.
-	MOVE_CONTROL sMove; ///< New movement values for the droid.
-	FPATH_RETVAL retval; ///< Result value from path-finding.
-	Vector2i originalDest; ///< Used to check if the pathfinding job is to the right destination.
-};
+
 
 
 // threading stuff
 static WZ_THREAD* fpathThread = nullptr;
 static WZ_MUTEX* fpathMutex = nullptr;
 static WZ_SEMAPHORE* fpathSemaphore = nullptr;
-using packagedPathJob = wz::packaged_task<PATHRESULT()>;
+using packagedPathJob = wz::packaged_task<PathResult()>;
 static std::list<packagedPathJob> pathJobs;
-static std::unordered_map<uint32_t, wz::future<PATHRESULT>> pathResults;
+static std::unordered_map<uint32_t, wz::future<PathResult>> pathResults;
 
 static bool waitingForResult = false;
 static uint32_t waitingForResultId;
 static WZ_SEMAPHORE* waitingForResultSemaphore = nullptr;
 
-static PATHRESULT fpathExecute(PATHJOB psJob);
+static PathResult fpathExecute(PathJob psJob);
 
 
 /** This runs in a separate thread */
@@ -361,7 +355,7 @@ static FPATH_RETVAL fpathRoute(MOVE_CONTROL* psMove, unsigned id, int startX, in
 
 		auto const& I = pathResults.find(id);
 		ASSERT(I != pathResults.end(), "Missing path result promise");
-		PATHRESULT result = I->second.get();
+		PathResult result = I->second.get();
 		ASSERT(result.retval != FPR_OK || result.sMove.path.size() > 0, "Ok result but no path in list");
 
 		// Copy over select fields - preserve others
@@ -394,7 +388,7 @@ static FPATH_RETVAL fpathRoute(MOVE_CONTROL* psMove, unsigned id, int startX, in
 queuePathfinding:
 
 	// We were not waiting for a result, and found no trivial path, so create new job and start waiting
-	PATHJOB job;
+	PathJob job;
 	job.origX = startX;
 	job.origY = startY;
 	job.droidID = id;
@@ -488,9 +482,9 @@ FPATH_RETVAL fpathDroidRoute(Droid* psDroid, SDWORD tX, SDWORD tY, FPATH_MOVETYP
 }
 
 // Run only from path thread
-PATHRESULT fpathExecute(PATHJOB job)
+PathResult fpathExecute(PathJob job)
 {
-	PATHRESULT result;
+	PathResult result;
 	result.droidID = job.droidID;
 	result.retval = FPR_FAILED;
 	result.originalDest = Vector2i(job.destX, job.destY);
@@ -662,8 +656,8 @@ bool fpathCheck(Position orig, Position dest, PROPULSION_TYPE propulsion)
 		return false;
 	}
 
-	MAPTILE* origTile = worldTile(findNonblockingPosition(orig, propulsion).xy());
-	MAPTILE* destTile = worldTile(findNonblockingPosition(dest, propulsion).xy());
+	Tile* origTile = worldTile(findNonblockingPosition(orig, propulsion).xy());
+	Tile* destTile = worldTile(findNonblockingPosition(dest, propulsion).xy());
 
 	ASSERT_OR_RETURN(false, propulsion != PROPULSION_TYPE_NUM, "Bad propulsion type");
 	ASSERT_OR_RETURN(false, origTile != nullptr && destTile != nullptr, "Bad tile parameter");

@@ -25,22 +25,35 @@
 #ifndef __INCLUDED_SRC_ATMOS_H__
 #define __INCLUDED_SRC_ATMOS_H__
 
+enum class WEATHER_TYPE
+{
+    RAINING,
+    SNOWING,
+    NONE
+};
+
+enum class PARTICLE_TYPE
+{
+    RAIN,
+    SNOW
+};
+
+enum class PARTICLE_STATUS
+{
+    INACTIVE,
+    ACTIVE
+};
+
 struct Particle
 {
-	uint8_t status;
-	uint8_t type;
+	PARTICLE_STATUS status;
+	PARTICLE_TYPE type;
 	unsigned size;
 	Vector3f position;
 	Vector3f velocity;
 	std::unique_ptr<iIMDShape> imd;
 };
 
-enum class WEATHER_TYPE
-{
-	RAINING,
-	SNOWING,
-	NONE
-};
 
 void atmosInitSystem();
 void atmosUpdateSystem();

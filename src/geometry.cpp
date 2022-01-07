@@ -17,19 +17,23 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/* Geometry.c - holds trig/vector deliverance specific stuff for 3D */
-/* Alex McLean, Pumpkin Studios, EIDOS Interactive */
+
+/**
+ * @file geometry.cpp
+ * Holds trig/vector deliverance specific stuff for 3D
+ *
+ * Alex McLean, Pumpkin Studios, EIDOS Interactive
+ */
 
 #include "lib/framework/frame.h"
-
 #include "lib/ivis_opengl/ivisdef.h"
-#include "lib/ivis_opengl/piematrix.h"
 #include "lib/ivis_opengl/pieclip.h"
+#include "lib/ivis_opengl/piematrix.h"
 
-#include "geometry.h"
-#include "objectdef.h"
-#include "map.h"
 #include "display.h"
+#include "geometry.h"
+#include "map.h"
+#include "objectdef.h"
 
 uint16_t calcDirection(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
 {
@@ -139,7 +143,7 @@ Vector2i positionInQuad(Vector2i const& pt, QUAD const& quad)
 		long d2 = ptDot[i + 2] * lenSq[i];
 		ret[i] = d1 + d2 != 0 ? (int64_t)TILE_UNITS * d1 / (d1 + d2) : TILE_UNITS / 2;
 	}
-	return Vector2i(ret[0], ret[1]);
+	return {ret[0], ret[1]};
 }
 
 //-----------------------------------------------------------------------------------

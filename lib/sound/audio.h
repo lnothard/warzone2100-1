@@ -23,6 +23,7 @@
 
 #include "track.h"
 #include "sounddefs.h"
+#include "src/basedef.h"
 
 bool audio_Init(AUDIO_CALLBACK pStopTrackCallback, HRTFMode hrtf, bool really_init);
 void audio_Update();
@@ -53,7 +54,7 @@ void audio_ResumeAll();
 void audio_StopAll();
 
 SDWORD audio_GetTrackID(const char *fileName);
-void audio_RemoveObj(SIMPLE_OBJECT const *psObj);
+void audio_RemoveObj(SimpleObject const *psObj);
 unsigned int audio_GetSampleQueueCount();
 unsigned int audio_GetSampleListCount();
 unsigned int sound_GetActiveSamplesCount();

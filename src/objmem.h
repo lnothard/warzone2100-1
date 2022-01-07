@@ -17,8 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Routines for managing object's memory
+
+/**
+ * @file objmem.h
+ * Routines for managing object's memory
  */
 
 #ifndef __INCLUDED_SRC_OBJMEM_H__
@@ -27,16 +29,18 @@
 #include "objectdef.h"
 
 /* The lists of objects allocated */
-extern Droid* apsDroidLists[MAX_PLAYERS];
-extern Structure* apsStructLists[MAX_PLAYERS];
-extern Feature* apsFeatureLists[MAX_PLAYERS];
-extern FLAG_POSITION* apsFlagPosLists[MAX_PLAYERS];
-extern Structure* apsExtractorLists[MAX_PLAYERS];
-extern SimpleObject* apsSensorList[1];
-extern Feature* apsOilList[1];
+extern std::array<std::vector<Droid>,MAX_PLAYERS> apsDroidLists;
+
+extern std::array<std::vector<
+        std::unique_ptr<Impl::Structure> >, MAX_PLAYERS> apsStructLists;
+
+extern std::vector<FlagPosition*> apsFlagPosLists;
+extern std::array<Structure*, MAX_PLAYERS> apsExtractorLists;
+extern std::vector<Unit*> apsSensorList;
+extern std::vector<Feature*> apsOilList;
 
 /* The list of destroyed objects */
-extern SimpleObject* psDestroyedObj;
+extern std::vector<SimpleObject*> psDestroyedObj;
 
 /* Initialise the object heaps */
 bool objmemInitialise();
@@ -48,9 +52,10 @@ void objmemShutdown();
 void objmemUpdate();
 
 /// Generates a new, (hopefully) unique object id.
-uint32_t generateNewObjectId();
+unsigned generateNewObjectId();
+
 /// Generates a new, (hopefully) unique object id, which all clients agree on.
-uint32_t generateSynchronisedObjectId();
+unsigned generateSynchronisedObjectId();
 
 /* add the droid to the Droid Lists */
 void addDroid(Droid* psDroidToAdd, Droid* pList[MAX_PLAYERS]);
