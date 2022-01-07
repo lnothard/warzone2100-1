@@ -1179,7 +1179,7 @@ JSValue convTemplate(const DroidTemplate* psTempl, JSContext* ctx)
 		                            ctx, (asConstructStats + psTempl->asParts[COMP_CONSTRUCT])->id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
 	JSValue weaponlist = JS_NewArray(ctx);
-	for (int j = 0; j < psTempl->weapon_count; j++)
+	for (int j = 0; j < psTempl->weaponCount; j++)
 	{
 		JS_DefinePropertyValueUint32(ctx, weaponlist, j,
 		                             JS_NewString(ctx, (asWeaponStats + psTempl->asWeaps[j])->id.toUtf8().c_str()),

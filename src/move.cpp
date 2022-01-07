@@ -22,6 +22,7 @@
  * @file move.cpp
  * Routines for moving units about the map
  */
+
 #include "lib/framework/frame.h"
 
 #include "lib/framework/trig.h"
@@ -45,7 +46,7 @@
 #include "order.h"
 #include "astar.h"
 #include "mapgrid.h"
-#include "display.h"	// needed for widgetsOn flag.
+#include "display.h"
 #include "effects.h"
 #include "power.h"
 #include "scores.h"
@@ -103,7 +104,7 @@ Movement::Movement(Vector2i src, Vector2i destination)
 {
 }
 
-bool Movement::is_stationary() const noexcept
+bool Movement::isStationary() const noexcept
 {
   return status == INACTIVE || status == HOVER || status == SHUFFLE;
 }
@@ -358,7 +359,6 @@ static void moveShuffleDroid(Droid* psDroid, Vector2i s)
 
 	CHECK_DROID(psDroid);
 }
-
 
 /** Stop a droid from moving.
  */

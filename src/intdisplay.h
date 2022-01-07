@@ -29,7 +29,6 @@
 #include "template.h"
 #include "research.h"
 
-
 /* Power levels are divided by this for power bar display. The extra factor has
 been included so that the levels appear the same for the power bar as for the
 power values in the buttons */

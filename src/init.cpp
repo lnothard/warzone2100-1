@@ -17,15 +17,15 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
  * @file init.c
- *
  * Game initialisation routines.
- *
  */
+
 #include "lib/framework/frame.h"
 
-#include <string.h>
+#include <cstring>
 
 #include "lib/framework/frameresource.h"
 #include "lib/framework/file.h"
@@ -46,14 +46,13 @@
 #include "init.h"
 
 #include "input/manager.h"
-#include "advvis.h"
 #include "atmos.h"
 #include "challenge.h"
 #include "cmddroid.h"
 #include "configuration.h"
 #include "console.h"
 #include "data.h"
-#include "difficulty.h" // for "double up" and "biffer baker" cheats
+#include "difficulty.h"
 #include "display.h"
 #include "display3d.h"
 #include "edit3d.h"

@@ -26,10 +26,12 @@
 #ifndef __INCLUDED_SRC_DROID_H__
 #define __INCLUDED_SRC_DROID_H__
 
-#include <vector>
 #include <queue>
+#include <vector>
 
 #include "basedef.h"
+#include "group.h"
+#include "move.h"
 #include "order.h"
 #include "selection.h"
 #include "statsdef.h"
@@ -93,6 +95,12 @@ static constexpr auto LOOK_FOR_EMPTY_TILE  = 20;
 
 typedef std::vector<Order> OrderList;
 
+enum class PICKTILE
+{
+    NO_FREE_TILE,
+    FREE_TILE,
+};
+
 enum class DROID_TYPE
 {
     WEAPON,
@@ -149,7 +157,16 @@ enum class ACTION
     CLEAR_REARM_PAD,
     RETURN_TO_POS,
     FIRE_SUPPORT_RETREAT,
-    CIRCLE
+    CIRCLE,
+    COUNT // MUST BE LAST
+};
+
+struct INITIAL_DROID_ORDERS
+{
+    unsigned secondaryOrder;
+    int moveToX;
+    int moveToY;
+    unsigned factoryId;
 };
 
 struct DroidTemplate : public BaseStats
@@ -158,27 +175,27 @@ struct DroidTemplate : public BaseStats
 
     using enum DROID_TYPE;
     unsigned id = 0;
-    unsigned weapon_count = 0;
+    unsigned weaponCount = 0;
     DROID_TYPE type = ANY;
 
     /// Not player designed, not saved, never delete or change
-    bool is_prefab = false;
+    bool isPrefab = false;
 
-    bool is_stored = false;
-    bool is_enabled = false;
+    bool isStored = false;
+    bool isEnabled = false;
 };
 
-class Droid : public virtual ::Unit, public Impl::Unit
+class Droid : public virtual Unit, public Impl::Unit
 {
 public:
     Droid(unsigned id, unsigned player);
 
     /* Accessors */
-    [[nodiscard]] ACTION get_current_action() const noexcept;
-    [[nodiscard]] const Order& get_current_order() const;
-    [[nodiscard]] DROID_TYPE get_type() const noexcept;
-    [[nodiscard]] unsigned get_level() const;
-    [[nodiscard]] unsigned get_commander_level() const;
+    [[nodiscard]] ACTION getAction() const noexcept;
+    [[nodiscard]] const Order& getOrder() const;
+    [[nodiscard]] DROID_TYPE getType() const noexcept;
+    [[nodiscard]] unsigned getLevel() const;
+    [[nodiscard]] unsigned getCommanderLevel() const;
     [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
     [[nodiscard]] int get_vertical_speed() const noexcept;
     [[nodiscard]] unsigned get_secondary_order() const noexcept;
@@ -191,12 +208,9 @@ public:
     [[nodiscard]] bool is_flying() const;
     [[nodiscard]] bool is_radar_detector() const final;
     [[nodiscard]] bool is_stationary() const;
-    [[nodiscard]] bool is_rearming() const;
     [[nodiscard]] bool is_damaged() const;
     [[nodiscard]] bool is_attacking() const noexcept;
-    [[nodiscard]] bool is_VTOL_rearmed_and_repaired() const;
-    [[nodiscard]] bool is_VTOL_empty() const;
-    [[nodiscard]] bool is_VTOL_full() const;
+    void upgradeHitPoints();
 
     /**
      *
@@ -207,7 +221,7 @@ public:
     [[nodiscard]] bool is_valid_target(const ::Unit* attacker,
                                        int weapon_slot) const final;
 
-    [[nodiscard]] bool has_commander() const;
+    [[nodiscard]] bool hasCommander() const;
     [[nodiscard]] bool has_standard_sensor() const;
     [[nodiscard]] bool has_CB_sensor() const;
     [[nodiscard]] bool has_electronic_weapon() const;
@@ -235,9 +249,10 @@ private:
     std::string name;
     DROID_TYPE type;
 
-    /** Holds the specifics for the component parts - allows damage
-     *  per part to be calculated. Indexed by COMPONENT_TYPE.
-     *  Weapons need to be dealt with separately.
+    /**
+     * Holds the specifics for the component parts - allows damage
+     * per part to be calculated. Indexed by COMPONENT_TYPE.
+     * Weapons need to be dealt with separately.
      */
     uint8_t asBits[DROID_MAXCOMP];
 
@@ -256,7 +271,7 @@ private:
 
     int resistance_to_electric;
 
-    DROID_GROUP* group;
+    std::shared_ptr<Group> group;
 
     /// A structure that this droid might be associated with.
     /// For VTOLs this is the rearming pad
@@ -274,10 +289,11 @@ private:
     /// remain, once all orders are synchronised.
     unsigned listPendingBegin;
 
-    /// Index of first order which will not be erased by a pending order. After all
-    /// messages are processed, the orders in the range [listPendingBegin; listPendingEnd - 1]
+    /// Index of first order which will not be erased by
+    /// a pending order. After all messages are processed
+    /// the orders in the range [listPendingBegin; listPendingEnd - 1]
     /// will remain.
-    std::unique_ptr<DROID_ORDER_DATA> order;
+    std::unique_ptr<Order> order;
 
     unsigned secondary_order;
 
@@ -287,16 +303,16 @@ private:
     /// Number of pending `secondary_order` synchronisations.
     int secondaryOrderPendingCount;
 
-    DROID_ACTION action;
+    ACTION action;
     Vector2i actionPos;
 
     std::array<SimpleObject*, MAX_WEAPONS> action_target;
     std::size_t time_action_started;
     unsigned action_points_done;
-    UDWORD expected_damage_direct = 0;
-    UDWORD expected_damage_indirect = 0;
-    UBYTE illumination_level;
-    MOVE_CONTROL movement;
+    unsigned expected_damage_direct = 0;
+    unsigned expected_damage_indirect = 0;
+    uint8_t illumination_level;
+    std::unique_ptr<Movement> movement;
 
     /// The location of this droid in the previous tick.
     Spacetime previous_location;
@@ -305,12 +321,8 @@ private:
     uint8_t blockedBits;
 
     int iAudioID;
-};
 
-enum PICKTILE
-{
-	NO_FREE_TILE,
-	FREE_TILE,
+    std::optional<CommanderStats> brain;
 };
 
 // the structure that was last hit
@@ -323,14 +335,6 @@ void add_to_experience_queue(int player, int value);
 bool droidInit();
 
 bool removeDroidBase(Droid* psDel);
-
-struct INITIAL_DROID_ORDERS
-{
-	uint32_t secondaryOrder;
-	int32_t moveToX;
-	int32_t moveToY;
-	uint32_t factoryId;
-};
 
 /*Builds an instance of a Structure - the x/y passed in are in world coords.*/
 /// Sends a GAME_DROID message if bMultiMessages is true, or actually creates it if false. Only uses initialOrders if sending a GAME_DROID message.
@@ -495,30 +499,44 @@ UBYTE checkCommandExist(UBYTE player);
 /// For a given repair droid, check if there are any damaged droids within a defined range
 SimpleObject* checkForRepairRange(Droid* psDroid, Droid* psTarget);
 
-// Returns true if the droid is a transporter.
-bool isTransporter(Droid const* psDroid);
-bool isTransporter(DroidTemplate const* psTemplate);
+/// @return `true` if the droid is a transporter
+[[nodiscard]] bool isTransporter(const Droid& psDroid);
+
 /// Returns true if the droid has VTOL propulsion, and is not a transport.
 bool isVtolDroid(const Droid* psDroid);
+
 /// Returns true if the droid has VTOL propulsion and is moving.
 bool isFlying(const Droid* psDroid);
-/*returns true if a VTOL weapon droid which has completed all runs*/
-bool vtolEmpty(const Droid* psDroid);
-/*returns true if a VTOL weapon droid which still has full ammo*/
-bool vtolFull(const Droid* psDroid);
-/*Checks a vtol for being fully armed and fully repaired to see if ready to
-leave reArm pad */
-bool vtolHappy(const Droid* psDroid);
-/*checks if the droid is a VTOL droid and updates the attack runs as required*/
-void updateVtolAttackRun(Droid* psDroid, int weapon_slot);
+
+/// @return true if a VTOL weapon droid which has completed all runs
+bool vtolEmpty(const Droid& psDroid);
+
+/// @return true if a VTOL weapon droid which still has full ammo
+bool vtolFull(const Droid& psDroid);
+
+/**
+ * Checks a vtol for being fully armed and fully repaired
+ * to see if ready to leave the rearm pad
+ */
+bool vtolHappy(const Droid& droid);
+
+/**
+ * Checks if the droid is a VTOL droid and updates the
+ * attack runs as required
+ */
+void updateVtolAttackRun(Droid& droid, int weapon_slot);
+
 /*returns a count of the base number of attack runs for the weapon attached to the droid*/
-UWORD getNumAttackRuns(const Droid* psDroid, int weapon_slot);
+unsigned getNumAttackRuns(const Droid* psDroid, int weapon_slot);
 //assign rearmPad to the VTOL
 void assignVTOLPad(Droid* psNewDroid, Structure* psReArmPad);
-// true if a vtol is waiting to be rearmed by a particular rearm pad
-bool vtolReadyToRearm(Droid* psDroid, Structure* psStruct);
-// true if a vtol droid currently returning to be rearmed
-bool vtolRearming(const Droid* psDroid);
+
+/// @return true if a vtol is waiting to be rearmed by a particular rearm pad
+bool vtolReadyToRearm(Droid& droid, const RearmPad& rearmPad);
+
+/// @return true if a vtol droid is currently returning to be rearmed
+[[nodiscard]] bool vtolRearming(const Droid& droid);
+
 // true if a droid is currently attacking
 bool droidAttacking(const Droid* psDroid);
 // see if there are any other vtols attacking the same target

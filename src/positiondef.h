@@ -17,16 +17,16 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Definition for position objects.
+
+/**
+ * @file
+ * Definitions for position objects
  */
 
 #ifndef __INCLUDED_POSITIONDEF_H__
 #define __INCLUDED_POSITIONDEF_H__
 
-#include "lib/framework/frame.h"
-
-enum POSITION_TYPE
+enum class POSITION_TYPE
 {
 	POS_DELIVERY,
 	//Delivery Points NOT wayPoints
@@ -37,14 +37,14 @@ enum POSITION_TYPE
 	POS_TEMPDELIVERY //SAVE ONLY delivery point for factory currently assigned to commander
 };
 
-struct OBJECT_POSITION
+struct ObjectPosition
 {
 	POSITION_TYPE type; ///< the type of position obj - FlagPos or ProxDisp
-	UDWORD frameNumber; ///< when the Position was last drawn
-	UDWORD screenX; ///< screen coords and radius of Position imd
-	UDWORD screenY;
-	UDWORD screenR;
-	UDWORD player; ///< which player the Position belongs to
+	unsigned frameNumber; ///< when the Position was last drawn
+	unsigned screenX; ///< screen coords and radius of Position imd
+	unsigned screenY;
+	unsigned screenR;
+	unsigned player; ///< which player the Position belongs to
 	bool selected; ///< flag to indicate whether the Position is to be highlighted
 };
 

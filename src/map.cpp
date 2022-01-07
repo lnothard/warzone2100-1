@@ -17,19 +17,20 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file map.c
- *
+ * @file map.cpp
  * Utility functions for the map data structure.
- *
  */
-#include <time.h>
+
 #include <algorithm>
+#include <ctime>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/endian_hack.h"
 #include "lib/framework/file.h"
 #include "lib/framework/physfs_ext.h"
+#include "lib/framework/wzapp.h"
 #include "lib/ivis_opengl/tex.h"
 #include "lib/netplay/netplay.h"  // For syncDebug
 #include <wzmaplib/map.h>
@@ -40,7 +41,6 @@
 #include "display3d.h"
 #include "game.h"
 #include "texture.h"
-#include "advvis.h"
 #include "random.h"
 #include "research.h"
 #include "mission.h"
@@ -51,7 +51,6 @@
 #include "astar.h"
 #include "fpath.h"
 #include "levels.h"
-#include "lib/framework/wzapp.h"
 
 #define GAME_TICKS_FOR_DANGER (GAME_TICKS_PER_SEC * 2)
 

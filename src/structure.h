@@ -20,28 +20,31 @@
 
 /**
  * @file structure.h
- * Definitions for the structures.
+ * Definitions for the structures
  */
 
 #ifndef __INCLUDED_SRC_STRUCTURE_H__
 #define __INCLUDED_SRC_STRUCTURE_H__
 
+#include <vector>
+
 #include "lib/framework/string_ext.h"
 #include "lib/framework/wzconfig.h"
 
-#include "objectdef.h"
-#include "visibility.h"
-#include "baseobject.h"
-#include "positiondef.h"
 #include "basedef.h"
+#include "baseobject.h"
+#include "droid.h"
+#include "objectdef.h"
+#include "positiondef.h"
 #include "statsdef.h"
+#include "unit.h"
+#include "visibility.h"
 #include "weapondef.h"
-
-#include <vector>
 
 #define NUM_FACTORY_MODULES 2
 #define NUM_POWER_MODULES 4
-#define	REF_ANY 255		// Used to indicate any kind of building when calling intGotoNextStructureType()
+#define REF_ANY 255		// Used to indicate any kind of building when calling intGotoNextStructureType()
+#define LOTS_OF 0xFFFFFFFF  // highest number the limit can be set to
 
 enum class STRUCTURE_TYPE
 {
@@ -145,7 +148,7 @@ struct StructureStats : public BaseStats
     unsigned weapon_slots; /*Number of weapons that can be attached to the building*/
     unsigned numWeaps; /*Number of weapons for default */
     struct WeaponStats* psWeapStat[MAX_WEAPONS];
-    uint64_t flags;
+    unsigned long flags;
     bool combines_with_wall; //If the structure will trigger nearby walls to try combining with it
 
     unsigned minLimit; ///< lowest value user can set limit to (currently unused)
@@ -235,7 +238,7 @@ namespace Impl
         STRUCTURE_STATE state; /* defines whether the structure is being built, doing nothing or performing a function */
         unsigned current_build_points; /* the build points currently assigned to this structure */
         int resistance; /* current resistance points, 0 = cannot be attacked electrically */
-        UDWORD lastResistance; /* time the resistance was last increased*/
+        unsigned lastResistance; /* time the resistance was last increased*/
 
         ///< Rate that this structure is being built, calculated each tick. Only meaningful if status == SS_BEING_BUILT. If construction hasn't started and build rate is 0, remove the structure.
         int build_rate;
@@ -249,17 +252,17 @@ namespace Impl
         /// This info is shared between all players, but shouldn't make a difference
         /// unless 3 mutual enemies happen to be fighting each other at the same time.
         unsigned expected_damage;
-        uint32_t prevTime; ///< Time of structure's previous tick.
+        std::size_t prevTime; ///< Time of structure's previous tick.
         int foundation_depth; ///< Depth of structure's foundation
         uint8_t capacity; ///< Lame name: current number of module upgrades (*not* maximum nb of upgrades)
         STRUCTURE_ANIMATION_STATE animation_state = NORMAL;
         std::size_t lastStateTime;
-        iIMDShape *prebuiltImd;
+        std::unique_ptr<iIMDShape> prebuiltImd;
     };
 
     StructureBounds get_bounds(const Structure& structure) noexcept;
 }
-#define LOTS_OF 0xFFFFFFFF  // highest number the limit can be set to
+
 
 struct ResearchItem
 {
@@ -297,27 +300,27 @@ class Factory
     unsigned secondaryOrder; ///< Secondary order state for all units coming out of the factory.
 };
 
-struct ResourceExtractor
+class ResourceExtractor : public virtual Structure, public Impl::Structure
 {
     Structure* power_generator;
 };
 
-struct PowerGenerator
+class PowerGenerator : public virtual Structure, public Impl::Structure
 {
     /// Pointers to associated oil derricks
     std::array<Structure*, NUM_POWER_MODULES> resource_extractors;
 };
 
-struct RepairFacility
+class RepairFacility : public virtual Structure, public Impl::Structure
 {
     Unit* psObj; /* Object being repaired */
     std::unique_ptr<FlagPosition> psDeliveryPoint; /* Place for the repaired droids to assemble at */
     // The group the droids to be repaired by this facility belong to
-    DROID_GROUP* psGroup;
+    std::shared_ptr<Group> psGroup;
     int droidQueue; /// Last count of droid queue for this facility
 };
 
-struct RearmPad
+class RearmPad : public virtual Structure, public Impl::Structure
 {
     std::size_t timeStarted; /* Time reArm started on current object */
     Droid* psObj; /* Object being rearmed */

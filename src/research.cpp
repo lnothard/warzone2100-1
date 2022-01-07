@@ -1534,7 +1534,7 @@ static void replaceComponent(ComponentStats* pNewComponent, ComponentStats* pOld
 			}
 			break;
 		case COMP_WEAPON:
-			for (int inc = 0; inc < psTemplates->weapon_count; inc++)
+			for (int inc = 0; inc < psTemplates->weaponCount; inc++)
 			{
 				if (psTemplates->asWeaps[inc] == oldCompInc)
 				{

@@ -17,16 +17,19 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Functions for the messages shown in the Intelligence Map View
+
+/**
+ * @file
+ * Functions for the messages shown in the Intelligence Map View
  */
 
 #ifndef __INCLUDED_SRC_MESSAGE_H__
 #define __INCLUDED_SRC_MESSAGE_H__
 
-#include "structure.h"
-#include "messagedef.h"
 #include "lib/framework/wzstring.h"
+
+#include "messagedef.h"
+#include "structure.h"
 
 #define NO_AUDIO_MSG		-1
 

@@ -135,7 +135,7 @@ LOOP_MISSION_STATE loopMissionState = LMS_NORMAL;
 // this is set by scrStartMission to say what type of new level is to be started
 LEVEL_TYPE nextMissionType = LEVEL_TYPE::LDS_NONE;
 
-static GAMECODE renderLoop()
+static GAME_CODE renderLoop()
 {
 	if (bMultiPlayer && !NetPlay.isHostAlive && NetPlay.bComms && !NetPlay.isHost)
 	{
@@ -635,7 +635,7 @@ void setMaxFastForwardTicks(optional<size_t> value, bool fixedToNormalTickRate)
 }
 
 /* The main game loop */
-GAMECODE gameLoop()
+GAME_CODE gameLoop()
 {
 	static uint32_t lastFlushTime = 0;
 
@@ -713,7 +713,7 @@ GAMECODE gameLoop()
 	}
 
 	unsigned before = wzGetTicks();
-	GAMECODE renderReturn = renderLoop();
+	GAME_CODE renderReturn = renderLoop();
 	unsigned after = wzGetTicks();
 
 	renderBudget += (after - before) * updateFraction.n;

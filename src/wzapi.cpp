@@ -1805,7 +1805,7 @@ static std::unique_ptr<DroidTemplate> makeTemplate(int player, const std::string
 	psTemplate->asParts[COMP_BODY] = body;
 	psTemplate->asParts[COMP_PROPULSION] = prop;
 
-	psTemplate->weapon_count = 0;
+	psTemplate->weaponCount = 0;
 	numTurrets = std::min<size_t>(numTurrets, asBodyStats[body].weaponSlots); // Restrict max no. turrets
 	if (asBodyStats[body].droidTypeOverride != DROID_ANY)
 	{
@@ -1839,14 +1839,14 @@ static std::unique_ptr<DroidTemplate> makeTemplate(int player, const std::string
 				return nullptr;
 			}
 			psTemplate->asWeaps[i] = result;
-			psTemplate->weapon_count++;
+			psTemplate->weaponCount++;
 		}
 	}
 	else
 	{
 		if (psComp->compType == COMP_BRAIN)
 		{
-			psTemplate->weapon_count = 1; // hack, necessary to pass intValidTemplate
+			psTemplate->weaponCount = 1; // hack, necessary to pass intValidTemplate
 		}
 		result = get_first_available_component(player, SIZE_NUM, _turrets.va_list[0], psComp->compType, strict);
 		if (result < 0)
@@ -2750,14 +2750,14 @@ wzapi::no_return_value wzapi::setDesign(WZAPI_PARAMS(bool allowDesignValue))
 	enumerateTemplates(selectedPlayer, [allowDesignValue](DroidTemplate* psTempl)
 	{
 		bool researched = researchedTemplate(psTempl, selectedPlayer, true);
-		psTempl->is_enabled = (researched || allowDesignValue);
+		psTempl->isEnabled = (researched || allowDesignValue);
 		return true;
 	});
 	for (auto& localTemplate : localTemplates)
 	{
 		psCurr = &localTemplate;
 		bool researched = researchedTemplate(psCurr, selectedPlayer, true);
-		psCurr->is_enabled = (researched || allowDesignValue);
+		psCurr->isEnabled = (researched || allowDesignValue);
 	}
 	return {};
 }
@@ -2776,7 +2776,7 @@ bool wzapi::enableTemplate(WZAPI_PARAMS(std::string _templateName))
 	{
 		if (templateName.compare(psTempl->id) == 0)
 		{
-			psTempl->is_enabled = true;
+			psTempl->isEnabled = true;
 			found = true;
 			return false; // break;
 		}
@@ -2792,7 +2792,7 @@ bool wzapi::enableTemplate(WZAPI_PARAMS(std::string _templateName))
 		psCurr = &localTemplate;
 		if (templateName.compare(psCurr->id) == 0)
 		{
-			psCurr->is_enabled = true;
+			psCurr->isEnabled = true;
 			break;
 		}
 	}
@@ -2813,7 +2813,7 @@ bool wzapi::removeTemplate(WZAPI_PARAMS(std::string _templateName))
 	{
 		if (templateName.compare(psTempl->id) == 0)
 		{
-			psTempl->is_enabled = false;
+			psTempl->isEnabled = false;
 			found = true;
 			return false; // break;
 		}

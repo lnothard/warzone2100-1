@@ -301,8 +301,8 @@ void sendStructureInfo(Structure* psStruct, STRUCTURE_INFO structureInfo_, Droid
 		NETuint8_t(&pT->asParts[COMP_ECM]);
 		NETuint8_t(&pT->asParts[COMP_SENSOR]);
 		NETuint8_t(&pT->asParts[COMP_CONSTRUCT]);
-		NETint8_t(&pT->weapon_count);
-		for (int i = 0; i < pT->weapon_count; i++)
+		NETint8_t(&pT->weaponCount);
+		for (int i = 0; i < pT->weaponCount; i++)
 		{
 			NETuint32_t(&pT->asWeaps[i]);
 		}
@@ -337,10 +337,10 @@ void recvStructureInfo(NETQUEUE queue)
 		NETuint8_t(&pT->asParts[COMP_ECM]);
 		NETuint8_t(&pT->asParts[COMP_SENSOR]);
 		NETuint8_t(&pT->asParts[COMP_CONSTRUCT]);
-		NETint8_t(&pT->weapon_count);
-		ASSERT_OR_RETURN(, pT->weapon_count >= 0 && pT->weapon_count <= ARRAY_SIZE(pT->asWeaps), "Bad numWeaps %d",
-                       pT->weapon_count);
-		for (int i = 0; i < pT->weapon_count; i++)
+		NETint8_t(&pT->weaponCount);
+		ASSERT_OR_RETURN(, pT->weaponCount >= 0 && pT->weaponCount <= ARRAY_SIZE(pT->asWeaps), "Bad numWeaps %d",
+                       pT->weaponCount);
+		for (int i = 0; i < pT->weaponCount; i++)
 		{
 			NETuint32_t(&pT->asWeaps[i]);
 		}

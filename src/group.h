@@ -28,6 +28,8 @@
 
 #include "order.h"
 
+class Droid;
+
 enum class GROUP_TYPE
 {
 	NORMAL,
@@ -50,6 +52,8 @@ public:
 
   /// Remove a droid from the group.
 	void remove(Droid* psDroid);
+
+  [[nodiscard]] bool isCommandGroup() const noexcept;
 
   /// Count the number of members
 	[[nodiscard]] std::size_t getNumMembers() const;

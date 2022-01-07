@@ -1,7 +1,6 @@
 
 /**
  * @file movement.h
- *
  */
 
 #ifndef WARZONE2100_MOVEMENT_H
@@ -33,9 +32,8 @@ struct Movement
 
 	[[nodiscard]] bool is_inactive() const noexcept;
   [[nodiscard]] bool is_hovering() const noexcept;
-	[[nodiscard]] bool is_stationary() const noexcept;
+	[[nodiscard]] bool isStationary() const noexcept;
 
-  ///
   void move_droid_direct(Droid& droid, Vector2i position);
 
 	void stop_moving() noexcept;

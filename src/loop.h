@@ -17,7 +17,9 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
+
+/**
+ * @file
  * Interface to the main game loop routine.
  */
 
@@ -25,21 +27,21 @@
 #define __INCLUDED_SRC_LOOP_H__
 
 #include "lib/framework/frame.h"
-#include "levels.h"
-
 #include <optional-lite/optional.hpp>
 using nonstd::optional;
 using nonstd::nullopt;
 
-enum GAMECODE
+#include "levels.h"
+
+enum class GAME_CODE
 {
-	GAMECODE_CONTINUE,
-	GAMECODE_RESTARTGAME,
-	GAMECODE_QUITGAME,
-	GAMECODE_PLAYVIDEO,
-	GAMECODE_NEWLEVEL,
-	GAMECODE_FASTEXIT,
-	GAMECODE_LOADGAME,
+	CONTINUE,
+	RESTARTGAME,
+	QUITGAME,
+	PLAYVIDEO,
+	NEWLEVEL,
+	FASTEXIT,
+	LOADGAME
 };
 
 // the states the loop goes through before starting a new level
@@ -67,7 +69,7 @@ extern LEVEL_TYPE nextMissionType;
 extern size_t loopPieCount;
 extern size_t loopPolyCount;
 
-GAMECODE gameLoop();
+GAME_CODE gameLoop();
 void videoLoop();
 void loop_SetVideoPlaybackMode();
 void loop_ClearVideoPlaybackMode();

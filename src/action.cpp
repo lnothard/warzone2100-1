@@ -17,72 +17,31 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file action.c
- *
- * Functions for setting the action of a droid.
- *
+ * @file action.cpp
+ * Functions for setting the action of a droid
  */
 
-#include "lib/framework/frame.h"
-#include "lib/framework/math_ext.h"
 #include "lib/framework/fixedpoint.h"
+#include "lib/framework/math_ext.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
-#include "lib/netplay/netplay.h"
 
 #include "action.h"
-#include "combat.h"
+#include "cmddroid.h"
 #include "geometry.h"
+#include "mapgrid.h"
 #include "mission.h"
+#include "move.h"
 #include "projectile.h"
 #include "qtscript.h"
-#include "random.h"
 #include "transporter.h"
-#include "mapgrid.h"
-#include "hci.h"
-#include "order.h"
-#include "objmem.h"
-#include "move.h"
-#include "cmddroid.h"
-
-/* attack run distance */
-#define	VTOL_ATTACK_LENGTH		1000
-#define VTOL_ATTACK_TARDIST		400
-
-// turret rotation limit
-#define VTOL_TURRET_LIMIT               DEG(45)
-#define VTOL_TURRET_LIMIT_BOMB          DEG(60)
-
-#define	VTOL_ATTACK_AUDIO_DELAY		(3*GAME_TICKS_PER_SEC)
-
-/** Droids heavier than this rotate and pitch more slowly. */
-#define HEAVY_WEAPON_WEIGHT     50000
-
-#define ACTION_TURRET_ROTATION_RATE	45
-#define REPAIR_PITCH_LOWER		30
-#define	REPAIR_PITCH_UPPER		-15
-
-/* How many tiles to pull back. */
-#define PULL_BACK_DIST		10
-
-// data required for any action
-struct DROID_ACTION_DATA
-{
-	DROID_ACTION action;
-	UDWORD x, y;
-	//multiple action target info
-	SimpleObject* psObj;
-	BaseStats* psStats;
-};
 
 //// Check if a droid has stopped moving
 //#define DROID_STOPPED(psDroid) \
 //	(psDroid->sMove.Status == MOVEINACTIVE || psDroid->sMove.Status == MOVEHOVER || \
 //	 psDroid->sMove.Status == MOVESHUFFLE)
-
-/** Radius for search when looking for VTOL landing position */
-static const int vtolLandingRadius = 23;
 
 /**
  * @typedef tileMatchFunction
@@ -100,57 +59,50 @@ static const int vtolLandingRadius = 23;
  */
 typedef bool (*tileMatchFunction)(int x, int y, void* matchState);
 
-const char* getDroidActionName(DROID_ACTION action)
+std::string getDroidActionName(ACTION action)
 {
-	static const char* name[] =
-	{
-		"DACTION_NONE", // not doing anything
-		"DACTION_MOVE", // 1 moving to a location
-		"DACTION_BUILD", // building a structure
-		"DACTION_BUILD_FOUNDATION", // 3 building a foundation for a structure
-		"DACTION_DEMOLISH", // demolishing a structure
-		"DACTION_REPAIR", // 5 repairing a structure
-		"DACTION_ATTACK", // attacking something
-		"DACTION_OBSERVE", // 7 observing something
-		"DACTION_FIRESUPPORT", // attacking something visible by a sensor droid
-		"DACTION_SULK", // 9 refuse to do anything aggressive for a fixed time
-		"DACTION_DESTRUCT", // self destruct
-		"DACTION_TRANSPORTOUT", // 11 move transporter offworld
-		"DACTION_TRANSPORTWAITTOFLYIN", // wait for timer to move reinforcements in
-		"DACTION_TRANSPORTIN", // 13 move transporter onworld
-		"DACTION_DROIDREPAIR", // repairing a droid
-		"DACTION_RESTORE", // 15 restore resistance points of a structure
-		"DACTION_UNUSED",
-		"DACTION_MOVEFIRE", // 17
-		"DACTION_MOVETOBUILD", // moving to a new building location
-		"DACTION_MOVETODEMOLISH", // 19 moving to a new demolition location
-		"DACTION_MOVETOREPAIR", // moving to a new repair location
-		"DACTION_BUILDWANDER", // 21 moving around while building
-		"DACTION_FOUNDATION_WANDER", // moving around while building the foundation
-		"DACTION_MOVETOATTACK", // 23 moving to a target to attack
-		"DACTION_ROTATETOATTACK", // rotating to a target to attack
-		"DACTION_MOVETOOBSERVE", // 25 moving to be able to see a target
-		"DACTION_WAITFORREPAIR", // waiting to be repaired by a facility
-		"DACTION_MOVETOREPAIRPOINT", // 27 move to repair facility repair point
-		"DACTION_WAITDURINGREPAIR", // waiting to be repaired by a facility
-		"DACTION_MOVETODROIDREPAIR", // 29 moving to a new location next to droid to be repaired
-		"DACTION_MOVETORESTORE", // moving to a low resistance structure
-		"DACTION_UNUSED2",
-		"DACTION_MOVETOREARM", // (32)moving to a rearming pad - VTOLS
-		"DACTION_WAITFORREARM", // (33)waiting for rearm - VTOLS
-		"DACTION_MOVETOREARMPOINT", // (34)move to rearm point - VTOLS - this actually moves them onto the pad
-		"DACTION_WAITDURINGREARM", // (35)waiting during rearm process- VTOLS
-		"DACTION_VTOLATTACK", // (36) a VTOL droid doing attack runs
-		"DACTION_CLEARREARMPAD", // (37) a VTOL droid being told to get off a rearm pad
-		"DACTION_RETURNTOPOS", // (38) used by scout/patrol order when returning to route
-		"DACTION_FIRESUPPORT_RETREAT", // (39) used by firesupport order when sensor retreats
-		"ACTION UNKNOWN",
-		"DACTION_CIRCLE" // (41) circling while engaging
+	static std::array<std::string, 
+    static_cast<std::size_t>(ACTION::COUNT) + 1> name {
+		"NONE", 
+		"MOVE", 
+		"BUILD", 
+		"DEMOLISH",
+		"REPAIR", 
+		"ATTACK", 
+		"OBSERVE", 
+		"FIRE_SUPPORT", 
+		"SULK", 
+		"DESTRUCT", 
+		"TRANSPORT_OUT", 
+		"TRANSPORT_WAIT_TO_FLY_IN", 
+		"TRANSPORT_IN", 
+		"DROID_REPAIR", 
+		"RESTORE", 
+		"MOVE_FIRE", 
+		"MOVE_TO_BUILD", 
+		"MOVE_TO_DEMOLISH", 
+		"MOVE_TO_REPAIR",
+		"BUILD_WANDER", 
+		"MOVE_TO_ATTACK",
+		"ROTATE_TO_ATTACK",
+		"MOVE_TO_OBSERVE",
+		"WAIT_FOR_REPAIR",
+		"MOVE_TO_REPAIR_POINT",
+		"WAIT_DURING_REPAIR",
+		"MOVE_TO_DROID_REPAIR",
+		"MOVE_TO_RESTORE",
+		"MOVE_TO_REARM",
+		"WAIT_FOR_REARM",
+		"MOVE_TO_REARM_POINT",
+		"WAIT_DURING_REARM",
+		"VTOL_ATTACK",
+		"CLEAR_REARM_PAD",
+		"RETURN_TO_POS",
+		"FIRE_SUPPORT_RETREAT",
+		"CIRCLE"
 	};
 
-	ASSERT_OR_RETURN(nullptr, action < sizeof(name) / sizeof(name[0]), "DROID_ACTION out of range: %u", action);
-
-	return name[action];
+	return name[ static_cast<std::size_t>(action) ];
 }
 
 // check if a target is within weapon range
@@ -299,28 +251,25 @@ const char* getDroidActionName(DROID_ACTION action)
 /* returns true if on target */
 bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon* psWeapon)
 {
-	WeaponStats* psWeapStats = asWeaponStats + psWeapon->nStat;
-	uint16_t tRotation, tPitch;
-	uint16_t targetRotation;
-	int32_t rotationTolerance = 0;
-	int32_t pitchLowerLimit, pitchUpperLimit;
+  int rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
+  int pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
 
-	if (!psTarget)
-	{
+	auto& psWeapStats = psWeapon->get_stats();
+	unsigned tRotation, tPitch;
+	unsigned targetRotation;
+	int rotationTolerance = 0;
+	int pitchLowerLimit, pitchUpperLimit;
+
+	if (!psTarget) {
 		return false;
 	}
 
-	bool bRepair = psAttacker->type == OBJ_DROID && ((Droid*)psAttacker)->type == DROID_REPAIR;
-
-	// these are constants now and can be set up at the start of the function
-	int rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
-	int pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
+  auto as_droid = dynamic_cast<Droid*>(psAttacker);
+	bool bRepair = as_droid && as_droid->get_type() == DROID_TYPE::REPAIRER;
 
 	// extra heavy weapons on some structures need to rotate and pitch more slowly
-	if (psWeapStats->weight > HEAVY_WEAPON_WEIGHT && !bRepair)
-	{
-		UDWORD excess = DEG(100) * (psWeapStats->weight - HEAVY_WEAPON_WEIGHT) / psWeapStats->weight;
-
+	if (psWeapStats->weight > HEAVY_WEAPON_WEIGHT && !bRepair) {
+		unsigned excess = DEG(100) * (psWeapStats.weight - HEAVY_WEAPON_WEIGHT) / psWeapStats.weight;
 		rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2 - excess;
 		pitchRate = rotRate / 2;
 	}
@@ -328,17 +277,17 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 	tRotation = psWeapon->rotation.direction;
 	tPitch = psWeapon->rotation.pitch;
 
-	//set the pitch limits based on the weapon stats of the attacker
+	// set the pitch limits based on the weapon stats of the attacker
 	pitchLowerLimit = pitchUpperLimit = 0;
-	Vector3i attackerMuzzlePos = psAttacker->pos;
-	// Using for calculating the pitch, but not the direction, in case using the exact direction causes bugs somewhere.
-	if (psAttacker->type == OBJ_STRUCTURE)
-	{
-		Structure* psStructure = (Structure*)psAttacker;
-		int weapon_slot = psWeapon - psStructure->asWeaps; // Should probably be passed weapon_slot instead of psWeapon.
-		calcStructureMuzzleLocation(psStructure, &attackerMuzzlePos, weapon_slot);
-		pitchLowerLimit = DEG(psWeapStats->minElevation);
-		pitchUpperLimit = DEG(psWeapStats->maxElevation);
+	auto attackerMuzzlePos = psAttacker->get_position();
+
+	// using for calculating the pitch, but not the direction, in case
+  // using the exact direction causes bugs somewhere.
+	if (auto as_struct = dynamic_cast<Structure*>(psAttacker)) {
+		int weapon_slot = psWeapon - as_struct->asWeaps; // Should probably be passed weapon_slot instead of psWeapon.
+		calcStructureMuzzleLocation(as_struct, &attackerMuzzlePos, weapon_slot);
+		pitchLowerLimit = DEG(psWeapStats.minElevation);
+		pitchUpperLimit = DEG(psWeapStats.maxElevation);
 	}
 	else if (psAttacker->type == OBJ_DROID)
 	{
@@ -388,8 +337,7 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 
 	/* Set muzzle pitch if not repairing or outside minimum range */
 	const int minRange = proj_GetMinRange(psWeapStats, psAttacker->player);
-	if (!bRepair && (unsigned)objPosDiffSq(psAttacker, psTarget) > minRange * minRange)
-	{
+	if (!bRepair && (unsigned)objPosDiffSq(psAttacker, psTarget) > minRange * minRange) {
 		/* get target distance */
 		Vector3i delta = psTarget->pos - attackerMuzzlePos;
 		int32_t dxy = iHypot(delta.x, delta.y);
@@ -399,7 +347,8 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 		// Cast wrapping intended.
 		int pitchError = angleDelta(targetPitch - tPitch);
 
-		tPitch += clip(pitchError, -pitchRate, pitchRate); // Addition wrapping intended.
+    // addition wrapping intended
+		tPitch += clip(pitchError, -pitchRate, pitchRate);
 		onTarget = onTarget && targetPitch == tPitch;
 	}
 
@@ -409,7 +358,6 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 	return onTarget;
 }
 
-
 // return whether a droid can see a target to fire on it
 bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot)
 {
@@ -417,8 +365,7 @@ bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
 	ASSERT_OR_RETURN(false, psDroid->player < MAX_PLAYERS, "psDroid->player (%" PRIu8 ") must be < MAX_PLAYERS",
 	                 psDroid->player);
-	if (!psTarget->visible[psDroid->player])
-	{
+	if (!psTarget->visible[psDroid->player]) {
 		return false;
 	}
 	if ((psDroid->numWeaps == 0 || isVtolDroid(psDroid)) && visibleObject(psDroid, psTarget, false))
@@ -1261,11 +1208,11 @@ void actionUpdateDroid(Droid* psDroid)
 				// if the vtol is close to the target, go around again
 				Vector2i diff = (psDroid->pos - psDroid->action_target[0]->pos).xy();
 				const unsigned rangeSq = dot(diff, diff);
-				if (rangeSq < VTOL_ATTACK_TARDIST * VTOL_ATTACK_TARDIST)
+				if (rangeSq < VTOL_ATTACK_TARGET_DIST * VTOL_ATTACK_TARGET_DIST)
 				{
 					// don't do another attack run if already moving away from the target
 					diff = psDroid->movement.destination - psDroid->action_target[0]->pos.xy();
-					if (dot(diff, diff) < VTOL_ATTACK_TARDIST * VTOL_ATTACK_TARDIST)
+					if (dot(diff, diff) < VTOL_ATTACK_TARGET_DIST * VTOL_ATTACK_TARGET_DIST)
 					{
 						actionAddVtolAttackRun(psDroid);
 					}
@@ -1279,7 +1226,7 @@ void actionUpdateDroid(Droid* psDroid)
 					{
 						// don't do another attack run if already heading for the target
 						diff = psDroid->movement.destination - psDroid->action_target[0]->pos.xy();
-						if (dot(diff, diff) > VTOL_ATTACK_TARDIST * VTOL_ATTACK_TARDIST)
+						if (dot(diff, diff) > VTOL_ATTACK_TARGET_DIST * VTOL_ATTACK_TARGET_DIST)
 						{
 							moveDroidToDirect(psDroid, psDroid->action_target[0]->pos.x,
 							                  psDroid->action_target[0]->pos.y);
@@ -2263,7 +2210,7 @@ void actionUpdateDroid(Droid* psDroid)
 }
 
 /* Overall action function that is called by the specific action functions */
-static void actionDroidBase(Droid* psDroid, DROID_ACTION_DATA* psAction)
+static void actionDroidBase(Droid* psDroid, Action* psAction)
 {
 	ASSERT_OR_RETURN(, psAction->psObj == nullptr || !psAction->psObj->died, "Droid dead");
 
@@ -2600,21 +2547,21 @@ static void actionDroidBase(Droid* psDroid, DROID_ACTION_DATA* psAction)
 
 
 /* Give a droid an action */
-void actionDroid(Droid* psDroid, DROID_ACTION action)
+void actionDroid(Droid* psDroid, ACTION action)
 {
-	DROID_ACTION_DATA sAction;
+	Action sAction;
 
-	memset(&sAction, 0, sizeof(DROID_ACTION_DATA));
+	memset(&sAction, 0, sizeof(Action));
 	sAction.action = action;
 	actionDroidBase(psDroid, &sAction);
 }
 
 /* Give a droid an action with a location target */
-void actionDroid(Droid* psDroid, DROID_ACTION action, UDWORD x, UDWORD y)
+void actionDroid(Droid* psDroid, ACTION action, UDWORD x, UDWORD y)
 {
-	DROID_ACTION_DATA sAction;
+	Action sAction;
 
-	memset(&sAction, 0, sizeof(DROID_ACTION_DATA));
+	memset(&sAction, 0, sizeof(Action));
 	sAction.action = action;
 	sAction.x = x;
 	sAction.y = y;
@@ -2622,11 +2569,11 @@ void actionDroid(Droid* psDroid, DROID_ACTION action, UDWORD x, UDWORD y)
 }
 
 /* Give a droid an action with an object target */
-void actionDroid(Droid* psDroid, DROID_ACTION action, SimpleObject* psObj)
+void actionDroid(Droid* psDroid, ACTION action, SimpleObject* psObj)
 {
-	DROID_ACTION_DATA sAction;
+	Action sAction;
 
-	memset(&sAction, 0, sizeof(DROID_ACTION_DATA));
+	memset(&sAction, 0, sizeof(Action));
 	sAction.action = action;
 	sAction.psObj = psObj;
 	sAction.x = psObj->pos.x;
@@ -2635,12 +2582,12 @@ void actionDroid(Droid* psDroid, DROID_ACTION action, SimpleObject* psObj)
 }
 
 /* Give a droid an action with an object target and a location */
-void actionDroid(Droid* psDroid, DROID_ACTION action,
+void actionDroid(Droid* psDroid, ACTION action,
                  SimpleObject* psObj, UDWORD x, UDWORD y)
 {
-	DROID_ACTION_DATA sAction;
+	Action sAction;
 
-	memset(&sAction, 0, sizeof(DROID_ACTION_DATA));
+	memset(&sAction, 0, sizeof(Action));
 	sAction.action = action;
 	sAction.psObj = psObj;
 	sAction.x = x;

@@ -17,8 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Allows querying which objects are within a given radius of a given location.
+
+/**
+ * @file
+ * Allows querying which objects are within a given radius of a given location
  */
 
 #ifndef __INCLUDED_SRC_MAPGRID_H__

@@ -17,21 +17,24 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Control the data loading for game levels
+
+/**
+ * @file
+ * Control the data loading for game levels
  */
 
 #ifndef __INCLUDED_SRC_LEVELS_H__
 #define __INCLUDED_SRC_LEVELS_H__
 
+#include <list>
+
 #include "lib/framework/crc.h"
+
 #include "init.h"
 #include "gamedef.h"
 
-#include <list>
-
-/// maximum number of data files
-#define LEVEL_MAXFILES	9
+/// Maximum number of data files
+static constexpr auto LEVEL_MAXFILES = 9;
 
 /// types of level datasets
 enum class LEVEL_TYPE : uint8_t

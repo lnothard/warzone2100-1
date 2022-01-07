@@ -5569,7 +5569,7 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 			// Create fake template
 			templ.name = ini.string("name", "UNKNOWN");
 			templ.type = (DROID_TYPE)ini.value("droidType").toInt();
-			templ.weapon_count = ini.value("weapons", 0).toInt();
+			templ.weaponCount = ini.value("weapons", 0).toInt();
 			ini.beginGroup("parts"); // the following is copy-pasted from loadSaveTemplate() -- fixme somehow
 			templ.asParts[COMP_BODY] = getCompFromName(COMP_BODY, ini.value("body", "ZNULLBODY").toWzString());
 			templ.asParts[COMP_BRAIN] = getCompFromName(COMP_BRAIN, ini.value("brain", "ZNULLBRAIN").toWzString());
@@ -6990,9 +6990,9 @@ bool loadSaveTemplate(const char* pFileName)
 		}
 		t.name = ini.string("name");
 		t.id = ini.value("multiPlayerID", generateNewObjectId()).toInt();
-		t.is_enabled = ini.value("enabled", false).toBool();
-		t.is_stored = ini.value("stored", false).toBool();
-		t.is_prefab = ini.value("prefab", false).toBool();
+		t.isEnabled = ini.value("enabled", false).toBool();
+		t.isStored = ini.value("stored", false).toBool();
+		t.isPrefab = ini.value("prefab", false).toBool();
 		ini.nextArrayItem();
 		return t;
 	};
@@ -7042,9 +7042,9 @@ static nlohmann::json convGameTemplateToJSON(DroidTemplate* psCurr)
 	nlohmann::json templateObj = saveTemplateCommon(psCurr);
 	templateObj["ref"] = psCurr->ref;
 	templateObj["multiPlayerID"] = psCurr->id;
-	templateObj["enabled"] = psCurr->is_enabled;
-	templateObj["stored"] = psCurr->is_stored;
-	templateObj["prefab"] = psCurr->is_prefab;
+	templateObj["enabled"] = psCurr->isEnabled;
+	templateObj["stored"] = psCurr->isStored;
+	templateObj["prefab"] = psCurr->isPrefab;
 	return templateObj;
 }
 

@@ -189,7 +189,7 @@ char KeyMapPath[PATH_MAX];
 // Start game in title mode:
 static GS_GAMEMODE gameStatus = GS_TITLE_SCREEN;
 // Status of the gameloop
-static GAMECODE gameLoopStatus = GAMECODE_CONTINUE;
+static GAME_CODE gameLoopStatus = GAMECODE_CONTINUE;
 static FOCUS_STATE focusState = FOCUS_IN;
 
 #if defined(WZ_OS_UNIX)

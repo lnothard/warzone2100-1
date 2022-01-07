@@ -19,7 +19,7 @@ bool Movement::is_hovering() const noexcept
   return state == HOVER;
 }
 
-bool Movement::is_stationary() const noexcept
+bool Movement::isStationary() const noexcept
 {
   return state == INACTIVE || state == HOVER || state == SHUFFLE;
 }

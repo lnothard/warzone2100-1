@@ -95,7 +95,7 @@ bool researchedTemplate(const DroidTemplate* psCurr, int player, bool allowRedun
 		      (int)resBody, (int)resBrain, (int)resProp, (int)resSensor, (int)resEcm, (int)resRepair,
 		      (int)resConstruct);
 	}
-	for (int weapIndex = 0; weapIndex < psCurr->weapon_count && researchedEverything; ++weapIndex)
+	for (int weapIndex = 0; weapIndex < psCurr->weaponCount && researchedEverything; ++weapIndex)
 	{
 		researchedEverything = researchedWeap(psCurr, player, weapIndex, allowRedundant);
 		if (!researchedEverything && verbose)
@@ -231,7 +231,7 @@ bool loadTemplateCommon(WzConfig& ini, DroidTemplate& outputTemplate)
 	std::vector<WzString> weapons = ini.value("weapons").toWzStringList();
 	ASSERT(weapons.size() <= MAX_WEAPONS, "Number of weapons (%zu) exceeds MAX_WEAPONS (%d)", weapons.size(),
 	       MAX_WEAPONS);
-	design.weapon_count = (weapons.size() <= MAX_WEAPONS) ? (int8_t)weapons.size() : MAX_WEAPONS;
+	design.weaponCount = (weapons.size() <= MAX_WEAPONS) ? (int8_t)weapons.size() : MAX_WEAPONS;
 	if (!droidTemplate_LoadWeapByName(0, (weapons.size() >= 1) ? weapons[0] : "ZNULLWEAPON", design)) return false;
 	if (!droidTemplate_LoadWeapByName(1, (weapons.size() >= 2) ? weapons[1] : "ZNULLWEAPON", design)) return false;
 	if (!droidTemplate_LoadWeapByName(2, (weapons.size() >= 3) ? weapons[2] : "ZNULLWEAPON", design)) return false;
@@ -259,8 +259,8 @@ bool initTemplates()
 		DroidTemplate design;
 		bool loadCommonSuccess = loadTemplateCommon(ini, design);
 		design.id = generateNewObjectId();
-		design.is_prefab = false; // not AI template
-		design.is_stored = true;
+		design.isPrefab = false; // not AI template
+		design.isStored = true;
 
 		if (!loadCommonSuccess)
 		{
@@ -291,11 +291,11 @@ bool initTemplates()
 				designablePart(asSensorStats[design.asParts[COMP_SENSOR]], "Sensor"))
 			&& (design.asParts[COMP_CONSTRUCT] == 0 || designablePart(asConstructStats[design.asParts[COMP_CONSTRUCT]],
 			                                                          "Construction part"))
-			&& (design.weapon_count <= 0 || asBrainStats[design.asParts[COMP_BRAIN]].psWeaponStat == &asWeaponStats[design.
+			&& (design.weaponCount <= 0 || asBrainStats[design.asParts[COMP_BRAIN]].psWeaponStat == &asWeaponStats[design.
 					asWeaps[0]]
           || designablePart(asWeaponStats[design.asWeaps[0]], "Weapon 0"))
-			&& (design.weapon_count <= 1 || designablePart(asWeaponStats[design.asWeaps[1]], "Weapon 1"))
-			&& (design.weapon_count <= 2 || designablePart(asWeaponStats[design.asWeaps[2]], "Weapon 2"));
+			&& (design.weaponCount <= 1 || designablePart(asWeaponStats[design.asWeaps[1]], "Weapon 1"))
+			&& (design.weaponCount <= 2 || designablePart(asWeaponStats[design.asWeaps[2]], "Weapon 2"));
 		if (!designable)
 		{
 			debug(LOG_ERROR, "%s \"%s\" for \"%s\" from stored templates cannot be designed", failPart,
@@ -315,7 +315,7 @@ bool initTemplates()
 			// Check if template is identical to a loaded template
 			if (psDestTemplate->type == design.type
 				&& psDestTemplate->name.compare(design.name) == 0
-				&& psDestTemplate->weapon_count == design.weapon_count
+				&& psDestTemplate->weaponCount == design.weaponCount
 				&& psDestTemplate->asWeaps[0] == design.asWeaps[0]
 				&& psDestTemplate->asWeaps[1] == design.asWeaps[1]
 				&& psDestTemplate->asWeaps[2] == design.asWeaps[2]
@@ -333,10 +333,10 @@ bool initTemplates()
 		}
 		if (psDestTemplate)
 		{
-			psDestTemplate->is_stored = true; // assimilate it
+			psDestTemplate->isStored = true; // assimilate it
 			continue; // next!
 		}
-		design.is_enabled = allowDesign;
+		design.isEnabled = allowDesign;
 		copyTemplate(selectedPlayer, &design);
 		localTemplates.push_back(design);
 	}
@@ -403,7 +403,7 @@ nlohmann::json saveTemplateCommon(const DroidTemplate* psCurr)
 		templateObj["construct"] = (asConstructStats + psCurr->asParts[COMP_CONSTRUCT])->id;
 	}
 	nlohmann::json weapons = nlohmann::json::array();
-	for (int j = 0; j < psCurr->weapon_count; j++)
+	for (int j = 0; j < psCurr->weaponCount; j++)
 	{
 		weapons.push_back((asWeaponStats + psCurr->asWeaps[j])->id);
 	}
@@ -430,7 +430,7 @@ bool storeTemplates()
 	for (auto& keyvaluepair : droidTemplates[selectedPlayer])
 	{
 		const DroidTemplate* psCurr = keyvaluepair.second.get();
-		if (psCurr->is_stored)
+		if (psCurr->isStored)
 		{
 			ini.currentJsonValue() = saveTemplateCommon(psCurr);
 			ini.nextArrayItem();
@@ -449,13 +449,13 @@ DroidTemplate::DroidTemplate()
 // This constructor replaces a memset in scrAssembleWeaponTemplate(), not needed elsewhere.
 	: BaseStats(STAT_TEMPLATE)
 	  //, asParts
-	  , weapon_count(0)
+	  , weaponCount(0)
 	  //, asWeaps
 	  , type(DROID_WEAPON)
 	  , id(0)
-	  , is_prefab(false)
-	  , is_stored(false)
-	  , is_enabled(false)
+	  , isPrefab(false)
+	  , isStored(false)
+	  , isEnabled(false)
 {
 	std::fill_n(asParts, DROID_MAXCOMP, static_cast<uint8_t>(0));
 	std::fill_n(asWeaps, MAX_WEAPONS, 0);
@@ -478,9 +478,9 @@ bool loadDroidTemplates(const char* filename)
 		design.id = list[i];
 		design.name = ini.string("name");
 		design.id = generateNewObjectId();
-		design.is_prefab = true;
-		design.is_stored = false;
-		design.is_enabled = true;
+		design.isPrefab = true;
+		design.isStored = false;
+		design.isEnabled = true;
 		bool available = ini.value("available", false).toBool();
 		char const* droidResourceName = getDroidResourceName(list[i].toUtf8().c_str());
 		design.name = WzString::fromUtf8(droidResourceName != nullptr
@@ -493,7 +493,7 @@ bool loadDroidTemplates(const char* filename)
 			// Give those meant for humans to all human players.
 			if (NetPlay.players[playerIdx].allocated && available)
 			{
-				design.is_prefab = false;
+				design.isPrefab = false;
 				copyTemplate(playerIdx, &design);
 
 				// This sets up the UI templates for display purposes ONLY--we still only use droidTemplates for making them.
@@ -519,12 +519,12 @@ bool loadDroidTemplates(const char* filename)
 			}
 			else if (!NetPlay.players[playerIdx].allocated) // AI template
 			{
-				design.is_prefab = true; // prefabricated templates referenced from VLOs
+				design.isPrefab = true; // prefabricated templates referenced from VLOs
 				copyTemplate(playerIdx, &design);
 			}
 		}
 		debug(LOG_NEVER, "Droid template found, Name: %s, MP ID: %d, ref: %u, ID: %s, prefab: %s, type:%d (loading)",
-          getStatsName(&design), design.id, design.ref, getID(&design), design.is_prefab ? "yes" : "no",
+          getStatsName(&design), design.id, design.ref, getID(&design), design.isPrefab ? "yes" : "no",
           design.type);
 	}
 
@@ -737,8 +737,8 @@ void listTemplates()
 	{
 		DroidTemplate* t = keyvaluepair.second.get();
 		debug(LOG_INFO, "template %s : %ld : %s : %s : %s", getStatsName(t), (long)t->id,
-          t->is_enabled ? "Enabled" : "Disabled", t->is_stored ? "Stored" : "Temporal",
-          t->is_prefab ? "Prefab" : "Designed");
+          t->isEnabled ? "Enabled" : "Disabled", t->isStored ? "Stored" : "Temporal",
+          t->isPrefab ? "Prefab" : "Designed");
 	}
 }
 
@@ -770,7 +770,7 @@ std::vector<DroidTemplate*> fillTemplateList(Structure* psFactory)
 				}
 			}
 
-			if (!psCurr->is_enabled
+			if (!psCurr->isEnabled
 				|| (bMultiPlayer && !playerBuiltHQ && (psCurr->type != DROID_CONSTRUCT && psCurr->type !=
                                                                                   DROID_CYBORG_CONSTRUCT))
 				|| !validTemplateForFactory(psCurr, psFactory, false)

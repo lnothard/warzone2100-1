@@ -702,7 +702,7 @@ bool intAddDesign(bool bShowCentreScreen)
 	/* Initialise the current design */
 	sDefaultDesignTemplate.type = DROID_ANY;
 	sCurrDesign = sDefaultDesignTemplate;
-	sCurrDesign.is_stored = false;
+	sCurrDesign.isStored = false;
 	sstrcpy(aCurrName, _("New Vehicle"));
 	sCurrDesign.name = WzString::fromUtf8(aCurrName);
 
@@ -1233,7 +1233,7 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 		break;
 	case IDES_TURRET:
 		compList = intAddComponentForm();
-		weaponIndex = (sCurrDesign.weapon_count > 0) ? sCurrDesign.asWeaps[0] : 0;
+		weaponIndex = (sCurrDesign.weaponCount > 0) ? sCurrDesign.asWeaps[0] : 0;
 		intAddComponentButtons(compList, weaponIterator(), weaponIndex, true);
 		intAddSystemButtons(IDES_TURRET);
 		widgSetButtonState(psWScreen, IDDES_SYSTEMFORM, WBUT_LOCK);
@@ -1259,7 +1259,7 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 		break;
 	case IDES_TURRET_A:
 		compList = intAddComponentForm();
-		weaponIndex = (sCurrDesign.weapon_count > 1) ? sCurrDesign.asWeaps[1] : 0;
+		weaponIndex = (sCurrDesign.weaponCount > 1) ? sCurrDesign.asWeaps[1] : 0;
 		intAddComponentButtons(compList, weaponIterator(), weaponIndex, true);
 		intAddSystemButtons(IDES_TURRET_A);
 		widgSetButtonState(psWScreen, IDDES_SYSTEMFORM, WBUT_LOCK);
@@ -1272,7 +1272,7 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 		break;
 	case IDES_TURRET_B:
 		compList = intAddComponentForm();
-		weaponIndex = (sCurrDesign.weapon_count > 2) ? sCurrDesign.asWeaps[2] : 0;
+		weaponIndex = (sCurrDesign.weaponCount > 2) ? sCurrDesign.asWeaps[2] : 0;
 		intAddComponentButtons(compList, weaponIterator(), weaponIndex, true);
 		intAddSystemButtons(IDES_TURRET_B);
 		widgSetButtonState(psWScreen, IDDES_SYSTEMFORM, WBUT_LOCK);
@@ -1408,7 +1408,7 @@ const char* GetDefaultTemplateName(DroidTemplate* psTemplate)
 		sstrcat(aCurrName, " ");
 	}
 
-	if (psTemplate->weapon_count > 1)
+	if (psTemplate->weaponCount > 1)
 	{
 		sstrcat(aCurrName, _("Hydra "));
 	}
@@ -2588,7 +2588,7 @@ static void setTemplateStat(DroidTemplate* psTemplate, ComponentStats* psStats)
 		{
 			psTemplate->asWeaps[i] = 0;
 		}
-		psTemplate->weapon_count = std::min(psTemplate->weapon_count, newNumWeaps);
+		psTemplate->weaponCount = std::min(psTemplate->weaponCount, newNumWeaps);
 	};
 
 	auto clearNonWeapons = [&]
@@ -2630,7 +2630,7 @@ static void setTemplateStat(DroidTemplate* psTemplate, ComponentStats* psStats)
 			clearTurret();
 			psTemplate->asParts[COMP_BRAIN] = stats - asBrainStats;
 			psTemplate->asWeaps[0] = stats->psWeaponStat - asWeaponStats;
-			psTemplate->weapon_count = 1;
+			psTemplate->weaponCount = 1;
 			break;
 		}
 	case COMP_PROPULSION:
@@ -2665,7 +2665,7 @@ static void setTemplateStat(DroidTemplate* psTemplate, ComponentStats* psStats)
 			clearNonWeapons();
 			int i = desCompMode == IDES_TURRET_A ? 1 : desCompMode == IDES_TURRET_B ? 2 : 0;
 			psTemplate->asWeaps[i] = (WeaponStats*)psStats - asWeaponStats;
-			psTemplate->weapon_count = std::max<int>(psTemplate->weapon_count, i + 1);
+			psTemplate->weaponCount = std::max<int>(psTemplate->weaponCount, i + 1);
 			break;
 		}
 	case COMP_NUMCOMPONENTS:
@@ -2883,7 +2883,7 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 	// set the weapon for a command droid
 	if (psTempl->asParts[COMP_BRAIN] != 0)
 	{
-		psTempl->weapon_count = 1;
+		psTempl->weaponCount = 1;
 		psTempl->asWeaps[0] = asBrainStats[psTempl->asParts[COMP_BRAIN]].psWeaponStat - asWeaponStats;
 	}
 
@@ -2900,7 +2900,7 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 	}
 
 	// Check a turret has been installed
-	if (psTempl->weapon_count == 0 &&
+	if (psTempl->weaponCount == 0 &&
 		psTempl->asParts[COMP_SENSOR] == 0 &&
 		psTempl->asParts[COMP_ECM] == 0 &&
 		psTempl->asParts[COMP_BRAIN] == 0 &&
@@ -2913,7 +2913,7 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 	}
 
 	// Check the weapons
-	for (int i = 0; i < psTempl->weapon_count; i++)
+	for (int i = 0; i < psTempl->weaponCount; i++)
 	{
 		int weaponSize = asWeaponStats[psTempl->asWeaps[i]].weaponSize;
 
@@ -2933,14 +2933,14 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 	}
 
 	// Check number of weapon slots
-	if ((unsigned)psTempl->weapon_count > asBodyStats[psTempl->asParts[COMP_BODY]].weaponSlots)
+	if ((unsigned)psTempl->weaponCount > asBodyStats[psTempl->asParts[COMP_BODY]].weaponSlots)
 	{
 		debug(level, "Too many weapon turrets");
 		return false;
 	}
 
 	// Check no mixing of systems and weapons
-	if (psTempl->weapon_count != 0 &&
+	if (psTempl->weaponCount != 0 &&
       (psTempl->asParts[COMP_SENSOR] ||
 			psTempl->asParts[COMP_ECM] ||
 			(psTempl->asParts[COMP_REPAIRUNIT] && psTempl->asParts[COMP_REPAIRUNIT] != aDefaultRepair[player]) ||
@@ -2949,14 +2949,14 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 		debug(level, "Cannot mix system and weapon turrets in a template!");
 		return false;
 	}
-	if (psTempl->weapon_count != 1 && psTempl->asParts[COMP_BRAIN])
+	if (psTempl->weaponCount != 1 && psTempl->asParts[COMP_BRAIN])
 	{
 		debug(level, "Commander template needs 1 weapon turret");
 		return false;
 	}
 
 	//can only have a VTOL weapon on a VTOL propulsion
-	if (checkTemplateIsVtol(psTempl) && !isTransporter(psTempl) && psTempl->weapon_count == 0)
+	if (checkTemplateIsVtol(psTempl) && !isTransporter(psTempl) && psTempl->weaponCount == 0)
 	{
 		debug(level, "VTOL with system turret, not possible");
 		return false;
@@ -2985,7 +2985,7 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 	//set the droidtype
 	psTempl->type = droidTemplateType(psTempl);
 
-	psTempl->is_enabled = true;
+	psTempl->isEnabled = true;
 
 	/* copy name into template */
 	if (newName)
@@ -3000,7 +3000,7 @@ static void desCreateDefaultTemplate()
 {
 	/* set current design to default */
 	sCurrDesign = sDefaultDesignTemplate;
-	sCurrDesign.is_stored = false;
+	sCurrDesign.isStored = false;
 
 	/* reset stats */
 	intSetDesignStats(&sCurrDesign);
@@ -3123,7 +3123,7 @@ void intProcessDesign(UDWORD id)
 				intSetButtonFlash(IDDES_WPBBUTTON, false);
 
 				// reveal additional buttons
-				if (psTempl->weapon_count >= 2)
+				if (psTempl->weaponCount >= 2)
 				{
 					widgReveal(psWScreen, IDDES_WPABUTTON);
 				}
@@ -3131,7 +3131,7 @@ void intProcessDesign(UDWORD id)
 				{
 					intSetButtonFlash(IDDES_WPABUTTON, true);
 				}
-				if (psTempl->weapon_count == 3)
+				if (psTempl->weaponCount == 3)
 				{
 					widgReveal(psWScreen, IDDES_WPBBUTTON);
 				}
@@ -3143,7 +3143,7 @@ void intProcessDesign(UDWORD id)
 				if (bMultiPlayer)
 				{
 					widgReveal(psWScreen, IDDES_STOREBUTTON);
-					updateStoreButton(sCurrDesign.is_stored);
+					updateStoreButton(sCurrDesign.isStored);
 				}
 			}
 		}
@@ -3201,7 +3201,7 @@ void intProcessDesign(UDWORD id)
 		{
 		case IDES_SYSTEM:
 			//0 weapon for utility droid
-			sCurrDesign.weapon_count = 0;
+			sCurrDesign.weaponCount = 0;
 			break;
 		case IDES_TURRET:
 			setTemplateStat(&sCurrDesign, apsComponentList[id - IDDES_COMPSTART]);
@@ -3252,7 +3252,7 @@ void intProcessDesign(UDWORD id)
 				/* Set the new stats on the display */
 				intSetBodyStats((BodyStats*)apsComponentList[id - IDDES_COMPSTART]);
 
-				int numWeaps = sCurrDesign.asParts[COMP_BRAIN] != 0 ? 0 : sCurrDesign.weapon_count;
+				int numWeaps = sCurrDesign.asParts[COMP_BRAIN] != 0 ? 0 : sCurrDesign.weaponCount;
 				int maxWeaps = asBodyStats[sCurrDesign.asParts[COMP_BODY]].weaponSlots;
 				widgGetFromID(psWScreen, IDDES_WPABUTTON)->show(maxWeaps > 1 && numWeaps >= 1);
 				widgGetFromID(psWScreen, IDDES_WPBBUTTON)->show(maxWeaps > 2 && numWeaps >= 2);
@@ -3461,10 +3461,10 @@ void intProcessDesign(UDWORD id)
 			}
 		case IDDES_STOREBUTTON:
 // Invert the current status
-			sCurrDesign.is_stored = !sCurrDesign.is_stored;
+			sCurrDesign.isStored = !sCurrDesign.isStored;
 			saveTemplate();
 			storeTemplates();
-			updateStoreButton(sCurrDesign.is_stored);
+			updateStoreButton(sCurrDesign.isStored);
 			break;
 		case IDDES_SYSTEMBUTTON:
 			// Add the correct component form
@@ -3641,7 +3641,7 @@ void intProcessDesign(UDWORD id)
 			case IDES_SYSTEM:
 			case IDES_TURRET:
 				if ((asBodyStats + sCurrDesign.asParts[COMP_BODY])->weapon_slots > 1 &&
-            sCurrDesign.weapon_count == 1 && sCurrDesign.asParts[COMP_BRAIN] == 0)
+            sCurrDesign.weaponCount == 1 && sCurrDesign.asParts[COMP_BRAIN] == 0)
 				{
 					debug(LOG_GUI, "intProcessDesign: First weapon selected, doing next.");
 					intSetDesignMode(IDES_TURRET_A);
@@ -3862,7 +3862,7 @@ static bool saveTemplate()
 	{
 		widgReveal(psWScreen, IDDES_STOREBUTTON);
 // Change the buttons icon
-		updateStoreButton(sCurrDesign.is_stored);
+		updateStoreButton(sCurrDesign.isStored);
 	}
 
 	/* if first (New Design) button selected find empty template
@@ -4014,7 +4014,7 @@ static bool intCheckValidWeaponForProp(DroidTemplate* psTemplate)
 {
 	if (asPropulsionTypes[asPropulsionStats[psTemplate->asParts[COMP_PROPULSION]].propulsionType].travel != AIR)
 	{
-		if (psTemplate->weapon_count == 0 &&
+		if (psTemplate->weaponCount == 0 &&
         (psTemplate->asParts[COMP_SENSOR] ||
 				psTemplate->asParts[COMP_REPAIRUNIT] ||
 				psTemplate->asParts[COMP_CONSTRUCT] ||

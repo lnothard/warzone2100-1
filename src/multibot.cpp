@@ -349,8 +349,8 @@ bool SendDroid(DroidTemplate* pTemplate, uint32_t x, uint32_t y, uint8_t player,
 		NETuint8_t(&pTemplate->asParts[COMP_ECM]);
 		NETuint8_t(&pTemplate->asParts[COMP_SENSOR]);
 		NETuint8_t(&pTemplate->asParts[COMP_CONSTRUCT]);
-		NETint8_t(&pTemplate->weapon_count);
-		for (int i = 0; i < pTemplate->weapon_count; i++)
+		NETint8_t(&pTemplate->weaponCount);
+		for (int i = 0; i < pTemplate->weaponCount; i++)
 		{
 			NETuint32_t(&pTemplate->asWeaps[i]);
 		}
@@ -399,10 +399,10 @@ bool recvDroid(NETQUEUE queue)
 		NETuint8_t(&pT->asParts[COMP_ECM]);
 		NETuint8_t(&pT->asParts[COMP_SENSOR]);
 		NETuint8_t(&pT->asParts[COMP_CONSTRUCT]);
-		NETint8_t(&pT->weapon_count);
-		ASSERT_OR_RETURN(false, pT->weapon_count >= 0 && pT->weapon_count <= ARRAY_SIZE(pT->asWeaps), "Bad numWeaps %d",
-                     pT->weapon_count);
-		for (int i = 0; i < pT->weapon_count; i++)
+		NETint8_t(&pT->weaponCount);
+		ASSERT_OR_RETURN(false, pT->weaponCount >= 0 && pT->weaponCount <= ARRAY_SIZE(pT->asWeaps), "Bad numWeaps %d",
+                     pT->weaponCount);
+		for (int i = 0; i < pT->weaponCount; i++)
 		{
 			NETuint32_t(&pT->asWeaps[i]);
 		}

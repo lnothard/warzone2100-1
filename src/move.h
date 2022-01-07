@@ -50,7 +50,7 @@ struct Movement
     Movement() = default;
     Movement(Vector2i src, Vector2i destination);
 
-    [[nodiscard]] bool is_stationary() const noexcept;
+    [[nodiscard]] bool isStationary() const noexcept;
     void set_path_vars(int target_x, int target_y);
 
     using enum MOVE_STATUS;

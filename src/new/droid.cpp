@@ -74,7 +74,7 @@ bool Droid::is_radar_detector() const
 
 bool Droid::is_stationary() const
 {
-	return movement->is_stationary();
+	return movement->isStationary();
 }
 
 //bool Droid::has_commander() const
@@ -134,7 +134,7 @@ void Droid::gain_experience(unsigned exp)
 
 void Droid::commander_gain_experience(unsigned exp) const
 {
-	assert(has_commander());
+	assert(hasCommander());
 
 	group->commander_gain_experience(exp);
 }
@@ -253,9 +253,9 @@ bool Droid::is_valid_target(const ::Unit* attacker, int weapon_slot) const
 //	return rank_thresholds.size() - 1;
 //}
 
-unsigned Droid::get_commander_level() const
+unsigned Droid::getCommanderLevel() const
 {
-	if (!has_commander()) return 0;
+	if (!hasCommander()) return 0;
 
 	return group->get_commander_level();
 }
@@ -391,7 +391,7 @@ void Droid::increment_kills() noexcept
 
 void Droid::increment_commander_kills() const
 {
-  assert(has_commander());
+  assert(hasCommander());
   group->increment_commander_kills();
 }
 
@@ -459,7 +459,7 @@ int Droid::calculate_attack_priority(const Unit* target, int weapon_slot) const
     return -1;
   }
 
-  if (has_commander()) {
+  if (hasCommander()) {
     for (auto slot = 0; slot < num_weapons(*target); ++slot)
     {
       if (&(target->get_target(slot)) == &(group->get_commander())) {
@@ -650,9 +650,9 @@ bool can_assign_fire_support(const Droid& droid, const Structure& structure)
 unsigned get_effective_level(const Droid& droid)
 {
 	const auto level = droid.get_level();
-	if (!droid.has_commander()) return level;
+	if (!droid.hasCommander()) return level;
 
-	const auto cmd_level = droid.get_commander_level();
+	const auto cmd_level = droid.getCommanderLevel();
 	if (cmd_level > level + 1)
 		return cmd_level;
 
@@ -1020,7 +1020,7 @@ void set_blocking_flags(const Droid& droid)
   std::for_each(droids.begin(), droids.end(), [&droid](const auto &other_droid)
   {
       Vector2i tile{0, 0};
-      if (other_droid.is_stationary()) {
+      if (other_droid.isStationary()) {
         tile = map_coord(other_droid.get_position().xy());
       } else {
         tile = map_coord(other_droid.get_destination());
@@ -1040,7 +1040,7 @@ void clear_blocking_flags(const Droid& droid)
   std::for_each(droids.begin(), droids.end(), [&droid](const auto &other_droid)
   {
       Vector2i tile{0, 0};
-      if (other_droid.is_stationary()) {
+      if (other_droid.isStationary()) {
         tile = map_coord(other_droid.get_position().xy());
       } else {
         tile = map_coord(other_droid.get_destination());

@@ -30,7 +30,7 @@ void update_kills(const Damage& damage)
   if (auto droid = dynamic_cast<Droid*>(damage.projectile->source))
   {
     droid->increment_kills();
-    if (droid->has_commander())
+    if (droid->hasCommander())
     {
       droid->increment_commander_kills();
     }

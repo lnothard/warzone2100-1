@@ -156,7 +156,7 @@ public:
 	[[nodiscard]] const Order& get_current_order() const;
   [[nodiscard]] DROID_TYPE get_type() const noexcept;
   [[nodiscard]] unsigned get_level() const;
-  [[nodiscard]] unsigned get_commander_level() const;
+  [[nodiscard]] unsigned getCommanderLevel() const;
   [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
   [[nodiscard]] int get_vertical_speed() const noexcept;
   [[nodiscard]] unsigned get_secondary_order() const noexcept;
@@ -185,7 +185,7 @@ public:
 	[[nodiscard]] bool is_valid_target(const ::Unit* attacker,
 	                                   int weapon_slot) const final;
 
-	[[nodiscard]] bool has_commander() const;
+	[[nodiscard]] bool hasCommander() const;
 	[[nodiscard]] bool has_standard_sensor() const;
 	[[nodiscard]] bool has_CB_sensor() const;
 	[[nodiscard]] bool has_electronic_weapon() const;
@@ -357,10 +357,10 @@ struct DroidTemplate
 	using enum DROID_TYPE;
   unsigned id = 0;
 	DROID_TYPE type = ANY;
-	uint8_t weapon_count = 0;
-	bool is_prefab = false;
-	bool is_stored = false;
-	bool is_enabled = false;
+	uint8_t weaponCount = 0;
+	bool isPrefab = false;
+	bool isStored = false;
+	bool isEnabled = false;
 };
 
 template <typename T>

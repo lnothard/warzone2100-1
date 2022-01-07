@@ -17,8 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** \file
- *  Definitions for messages.
+
+/**
+ * @file
+ * Definitions for messages
  */
 
 #ifndef __INCLUDED_MESSAGEDEF_H__
@@ -32,7 +34,7 @@
 struct iIMDShape;
 struct SimpleObject;
 
-enum MESSAGE_TYPE
+enum class MESSAGE_TYPE
 {
 	MSG_RESEARCH,
 	// Research message
@@ -46,7 +48,7 @@ enum MESSAGE_TYPE
 	MSG_TYPES,
 };
 
-enum VIEW_TYPE
+enum class VIEW_TYPE
 {
 	VIEW_RES,
 	// research view
@@ -144,7 +146,7 @@ struct MESSAGE
 };
 
 //used to display the proximity messages
-struct PROXIMITY_DISPLAY : public OBJECT_POSITION
+struct PROXIMITY_DISPLAY : public ObjectPosition
 {
 	MESSAGE* psMessage = nullptr; // message associated with this 'button'
 	UDWORD timeLastDrawn = 0; // stores the time the 'button' was last drawn for animation

@@ -20,7 +20,6 @@
 
 /**
  * @file droid.cpp
- *
  */
 
 #include "lib/framework/frame.h"
@@ -72,7 +71,6 @@
 #include "template.h"
 #include "qtscript.h"
 
-
 // the structure that was last hit
 Droid* psLastDroidHit;
 
@@ -84,18 +82,34 @@ static void groupConsoleInformOfRemoval();
 static void droidUpdateDroidSelfRepair(Droid* psRepairDroid);
 static UDWORD calcDroidBaseBody(Droid* psDroid);
 
+ACTION Droid::getAction() const noexcept
+{
+  return action;
+}
+
+const Order& Droid::getOrder() const
+{
+  return *order;
+}
+
 void Droid::cancel_build()
 {
   using enum ORDER_TYPE;
   if (order->type == NONE || order->type == PATROL || order->type == HOLD ||
       order->type == SCOUT || order->type == GUARD)  {
-    order->target_object = nullptr;
+    order->target = nullptr;
     action = ACTION::NONE;
-    return;
   } else {
     action = ACTION::NONE;
     order->type = NONE;
-    movement->stop_moving();
+
+    // stop moving
+    if (isFlying(this)) {
+      movement->status = MOVE_STATUS::HOVER;
+    } else {
+      movement->status = MOVE_STATUS::INACTIVE;
+    }
+    triggerEventDroidIdle(this);
   }
 }
 //void cancelBuild(DROID *psDroid)
@@ -127,34 +141,34 @@ void Droid::cancel_build()
 //	}
 //}
 
-bool Droid::has_commander() const
+bool Droid::hasCommander() const
 {
   if (type == COMMAND &&
       group != nullptr &&
-      group->is_command_group()) {
+      group->isCommandGroup()) {
     return true;
   }
   return false;
 }
 
-static void droidBodyUpgrade(Droid* psDroid)
+void Droid::upgradeHitPoints()
 {
-	const int factor = 10000; // use big numbers to scare away rounding errors
-	int prev = psDroid->original_hp;
-	psDroid->original_hp = calcDroidBaseBody(psDroid);
-	int increase = psDroid->original_hp * factor / prev;
-	psDroid->body = MIN(psDroid->original_hp, (psDroid->body * increase) / factor + 1);
+  // use big numbers to scare away rounding errors
+	const auto factor = 10000;
+	auto prev = original_hp;
+	original_hp = calcDroidBaseBody(this);
+	auto increase = original_hp * factor / prev;
+	auto hp = MIN(original_hp, (get_hp() * increase) / factor + 1);
 	DroidTemplate sTemplate;
-	templateSetParts(psDroid, &sTemplate);
+	templateSetParts(this, &sTemplate);
+
 	// update engine too
-	psDroid->base_speed = calcDroidBaseSpeed(&sTemplate, psDroid->weight, psDroid->player);
-	if (isTransporter(psDroid))
-	{
-		for (Droid* psCurr = psDroid->group->psList; psCurr != nullptr; psCurr = psCurr->psGrpNext)
+	base_speed = calcDroidBaseSpeed(&sTemplate, weight, psDroid->player);
+	if (isTransporter(*this)) {
+		for (auto droid : group->psList)
 		{
-			if (psCurr != psDroid)
-			{
-				droidBodyUpgrade(psCurr);
+			if (droid != this) {
+				droid->upgradeHitPoints();
 			}
 		}
 	}
@@ -163,12 +177,11 @@ static void droidBodyUpgrade(Droid* psDroid)
 // initialise droid module
 bool droidInit()
 {
-	for (int i = 0; i < MAX_PLAYERS; i++)
+	for (auto & i : recycled_experience)
 	{
-		recycled_experience[i] = std::priority_queue<int>(); // clear it
+		i = std::priority_queue<int>(); // clear it
 	}
 	psLastDroidHit = nullptr;
-
 	return true;
 }
 
@@ -1331,7 +1344,7 @@ bool is_idf(const Droid& droid)
 //	return !proj_Direct(psDroid->asWeaps[0].nStat + asWeaponStats);
 //}
 
-DROID_TYPE Droid::get_type() const noexcept
+DROID_TYPE Droid::getType() const noexcept
 {
   return type;
 }
@@ -1381,7 +1394,7 @@ DROID_TYPE droidTemplateType(const DroidTemplate* psTemplate)
 		type = DROID_WEAPON;
 	}
 	/* with more than weapon is still a DROID_WEAPON */
-	else if (psTemplate->weapon_count > 1)
+	else if (psTemplate->weaponCount > 1)
 	{
 		type = DROID_WEAPON;
 	}
@@ -1455,7 +1468,7 @@ struct FilterDroidWeaps
 template <typename F, typename G>
 static unsigned calcSum(const DroidTemplate* psTemplate, F func, G propulsionFunc)
 {
-	return calcSum(psTemplate->asParts, psTemplate->weapon_count, psTemplate->asWeaps, func, propulsionFunc);
+	return calcSum(psTemplate->asParts, psTemplate->weaponCount, psTemplate->asWeaps, func, propulsionFunc);
 }
 
 template <typename F, typename G>
@@ -1468,7 +1481,7 @@ static unsigned calcSum(const Droid* psDroid, F func, G propulsionFunc)
 template <typename F, typename G>
 static unsigned calcUpgradeSum(const DroidTemplate* psTemplate, int player, F func, G propulsionFunc)
 {
-	return calcUpgradeSum(psTemplate->asParts, psTemplate->weapon_count, psTemplate->asWeaps, player, func, propulsionFunc);
+	return calcUpgradeSum(psTemplate->asParts, psTemplate->weaponCount, psTemplate->asWeaps, player, func, propulsionFunc);
 }
 
 template <typename F, typename G>
@@ -1774,7 +1787,7 @@ void initDroidMovement(Droid* psDroid)
 void droidSetBits(const DroidTemplate* pTemplate, Droid* psDroid)
 {
 	psDroid->type = droidTemplateType(pTemplate);
-	psDroid->numWeaps = pTemplate->weapon_count;
+	psDroid->numWeaps = pTemplate->weaponCount;
 	psDroid->body = calcTemplateBody(pTemplate, psDroid->player);
 	psDroid->original_hp = psDroid->body;
 	psDroid->expected_damage_direct = 0; // Begin life optimistically.
@@ -1797,7 +1810,7 @@ void droidSetBits(const DroidTemplate* pTemplate, Droid* psDroid)
 		psDroid->asWeaps[inc].rotation.roll = 0;
 		psDroid->asWeaps[inc].previous_rotation = psDroid->asWeaps[inc].rotation;
 		psDroid->asWeaps[inc].origin = ORIGIN_UNKNOWN;
-		if (inc < pTemplate->weapon_count)
+		if (inc < pTemplate->weaponCount)
 		{
 			psDroid->asWeaps[inc].nStat = pTemplate->asWeaps[inc];
 			psDroid->asWeaps[inc].ammo = (asWeaponStats + psDroid->asWeaps[inc].nStat)->upgraded_stats[psDroid->player].
@@ -1829,7 +1842,7 @@ void droidSetBits(const DroidTemplate* pTemplate, Droid* psDroid)
 // Sets the parts array in a template given a droid.
 void templateSetParts(const Droid* psDroid, DroidTemplate* psTemplate)
 {
-	psTemplate->weapon_count = 0;
+	psTemplate->weaponCount = 0;
 	psTemplate->type = psDroid->type;
 	for (int inc = 0; inc < MAX_WEAPONS; inc++)
 	{
@@ -1837,7 +1850,7 @@ void templateSetParts(const Droid* psDroid, DroidTemplate* psTemplate)
 		psTemplate->asWeaps[inc] = 0;
 		if (psDroid->asWeaps[inc].nStat > 0)
 		{
-			psTemplate->weapon_count += 1;
+			psTemplate->weaponCount += 1;
 			psTemplate->asWeaps[inc] = psDroid->asWeaps[inc].nStat;
 		}
 	}
@@ -2224,15 +2237,15 @@ struct rankMap
 	const char* name; // name of this rank
 };
 
-unsigned Droid::get_level() const
+unsigned Droid::getLevel() const
 {
-  if (!brain) return 0;
-
-  const auto& rank_thresholds = brain->upgraded[get_player()].rank_thresholds;
+  if (!brain) {
+    return 0;
+  }
+  const auto& rank_thresholds = brain->upgrade[get_player()].rank_thresholds;
   for (int i = 1; i < rank_thresholds.size(); ++i)
   {
-    if (kills < rank_thresholds.at(i))
-    {
+    if (kills < rank_thresholds.at(i)) {
       return i - 1;
     }
   }
@@ -2262,12 +2275,12 @@ unsigned Droid::get_level() const
 
 unsigned get_effective_level(const Droid& droid)
 {
-  const auto level = droid.get_level();
-  if (!droid.has_commander()) {
+  const auto level = droid.getLevel();
+  if (!droid.hasCommander()) {
     return level;
   }
 
-  const auto cmd_level = droid.get_commander_level();
+  const auto cmd_level = droid.getCommanderLevel();
   if (cmd_level > level + 1) {
     return cmd_level;
   }
@@ -2845,26 +2858,12 @@ unsigned count_player_command_droids(unsigned player)
 //	return quantity;
 //}
 
-bool is_transporter(const Droid& droid)
+bool isTransporter(const Droid& droid)
 {
   using enum DROID_TYPE;
   return droid.get_type() == TRANSPORTER ||
          droid.get_type() == SUPER_TRANSPORTER;
 }
-//static inline bool isTransporter(DROID_TYPE type)
-//{
-//	return type == DROID_TRANSPORTER || type == DROID_SUPERTRANSPORTER;
-//}
-//
-//bool isTransporter(DROID const *psDroid)
-//{
-//	return isTransporter(psDroid->droidType);
-//}
-//
-//bool isTransporter(DROID_TEMPLATE const *psTemplate)
-//{
-//	return isTransporter(psTemplate->droidType);
-//}
 
 bool Droid::is_VTOL() const
 {
@@ -2897,85 +2896,36 @@ bool Droid::is_flying() const
 //		   && (psDroid->sMove.Status != MOVEINACTIVE || isTransporter(psDroid));
 //}
 
-bool Droid::is_VTOL_empty() const
+bool vtolEmpty(const Droid& droid)
 {
-  assert(is_VTOL());
-  if (type != WEAPON) {
+  assert(droid.is_VTOL());
+  if (droid.get_type() != DROID_TYPE::WEAPON) {
     return false;
   }
 
-  return std::all_of(get_weapons().begin(), get_weapons().end(),
-                     [this](const auto& weapon)
+  return std::all_of(droid.get_weapons().begin(), droid.get_weapons().end(),
+                     [](const auto& weapon)
   {
-      return weapon.is_vtol_weapon() && weapon.is_empty_vtol_weapon(get_player());
+      return weapon.is_vtol_weapon() &&
+        weapon.is_empty_vtol_weapon(droid.get_player());
   });
 }
-/* returns true if it's a VTOL weapon droid which has completed all runs */
-//bool vtolEmpty(const DROID *psDroid)
-//{
-//	CHECK_DROID(psDroid);
-//
-//	if (!isVtolDroid(psDroid))
-//	{
-//		return false;
-//	}
-//	if (psDroid->droidType != DROID_WEAPON)
-//	{
-//		return false;
-//	}
-//
-//	for (int i = 0; i < psDroid->numWeaps; i++)
-//	{
-//		if (asWeaponStats[psDroid->asWeaps[i].nStat].vtolAttackRuns > 0 &&
-//			psDroid->asWeaps[i].usedAmmo < getNumAttackRuns(psDroid, i))
-//		{
-//			return false;
-//		}
-//	}
-//
-//	return true;
-//}
 
-bool Droid::is_VTOL_full() const
+bool vtolFull(const Droid& droid)
 {
-  assert(is_VTOL());
-  if (type != WEAPON) {
+  assert(droid.is_VTOL());
+  if (droid.get_type() != DROID_TYPE::WEAPON) {
     return false;
   }
 
-  return std::all_of(get_weapons().begin(), get_weapons().end(),
+  return std::all_of(droid.get_weapons().begin(), droid.get_weapons().end(),
                      [](const auto& weapon)
   {
       return weapon.is_vtol_weapon() && weapon.has_full_ammo();
   });
 }
-///* returns true if it's a VTOL weapon droid which still has full ammo */
-//bool vtolFull(const DROID *psDroid)
-//{
-//	CHECK_DROID(psDroid);
-//
-//	if (!isVtolDroid(psDroid))
-//	{
-//		return false;
-//	}
-//	if (psDroid->droidType != DROID_WEAPON)
-//	{
-//		return false;
-//	}
-//
-//	for (int i = 0; i < psDroid->numWeaps; i++)
-//	{
-//		if (asWeaponStats[psDroid->asWeaps[i].nStat].vtolAttackRuns > 0 &&
-//			psDroid->asWeaps[i].usedAmmo > 0)
-//		{
-//			return false;
-//		}
-//	}
-//
-//	return true;
-//}
 
-bool VTOL_ready_to_rearm(const Droid& droid, const RearmPad& rearm_pad)
+bool vtolReadyToRearm(const Droid& droid, const RearmPad& rearmPad)
 {
   if (droid.is_VTOL() || droid.get_current_action() == ACTION::WAIT_FOR_REARM ||
       !droid.is_VTOL_rearmed_and_repaired() || rearm_pad.is_clear() ||
@@ -3022,11 +2972,14 @@ bool VTOL_ready_to_rearm(const Droid& droid, const RearmPad& rearm_pad)
 //	return true;
 //}
 
-bool Droid::is_rearming() const
+bool vtolRearming(const Droid& droid)
 {
-  if (!is_VTOL() || type != WEAPON) {
+  if (!droid.is_VTOL() ||
+      droid.get_type() != DROID_TYPE::WEAPON) {
     return false;
   }
+  auto action = droid.getAction();
+  using enum ACTION;
   if (action == MOVE_TO_REARM ||
       action == WAIT_FOR_REARM ||
       action == MOVE_TO_REARM_POINT ||
@@ -3153,10 +3106,11 @@ UWORD getNumAttackRuns(const Droid* psDroid, int weapon_slot)
 	return asWeaponStats[psDroid->asWeaps[weapon_slot].nStat].vtolAttackRuns;
 }
 
-bool Droid::is_VTOL_rearmed_and_repaired() const
+bool vtolHappy(const Droid& droid)
 {
-  assert(is_VTOL());
-  if (is_damaged() || !has_full_ammo(*this) || type == WEAPON) {
+  assert(droid.is_VTOL());
+  if (droid.is_damaged() || !has_full_ammo(droid) ||
+       droid.get_type() == DROID_TYPE::WEAPON) {
     return false;
   }
   return true;
@@ -3201,7 +3155,7 @@ bool Droid::is_VTOL_rearmed_and_repaired() const
 //	return true;
 //}
 
-void update_vtol_attack_runs(Droid& droid, int weapon_slot)
+void updateVtolAttackRun(Droid& droid, int weapon_slot)
 {
   if (!droid.is_VTOL() || num_weapons(droid) == 0) {
     return;
@@ -3238,6 +3192,7 @@ void Droid::assign_vtol_to_rearm_pad(RearmPad* rearm_pad)
 {
   associated_structure = rearm_pad;
 }
+
 ////assign rearmPad to the VTOL
 //void assignVTOLPad(DROID* psNewDroid, STRUCTURE* psReArmPad)
 //{
@@ -3611,7 +3566,7 @@ bool checkValidWeaponForProp(DroidTemplate* psTemplate)
 	ASSERT_OR_RETURN(false, psPropStats != nullptr, "invalid propulsion stats pointer");
 
 	// if there are no weapons, then don't even bother continuing
-	if (psTemplate->weapon_count == 0)
+	if (psTemplate->weaponCount == 0)
 	{
 		return false;
 	}
