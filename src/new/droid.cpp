@@ -275,7 +275,7 @@ const iIMDShape& Droid::get_IMD_shape() const
 
 void Droid::move_to_rearm_pad()
 {
-	if (!is_VTOL() || is_rearming())
+	if (!isVtol() || is_rearming())
     return;
 
   auto* rearm_pad = find_nearest_rearm_pad(*this);
@@ -669,7 +669,7 @@ unsigned get_effective_level(const Droid& droid)
 
 void update_orientation(Droid& droid)
 {
-	if (is_cyborg(droid) || droid.is_flying() || is_transporter(droid))
+	if (is_cyborg(droid) || droid.isFlying() || is_transporter(droid))
 		return;
 }
 
@@ -708,12 +708,12 @@ uint8_t is_target_visible(const Droid& droid, const SimpleObject* target, bool w
 
 	if (distance < range)
 	{
-		if (droid.is_VTOL()) return VISIBLE;
+		if (droid.isVtol()) return VISIBLE;
 
 		else if (dynamic_cast<const Droid*>(target))
 		{
 			const auto* as_droid = dynamic_cast<const Droid*>(target);
-			if (as_droid->is_VTOL()) return VISIBLE;
+			if (as_droid->isVtol()) return VISIBLE;
 		}
 	}
 

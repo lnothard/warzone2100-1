@@ -88,7 +88,7 @@ void scripting_engine::GROUPMAP::saveLoadSetLastNewGroupId(int value)
 int scripting_engine::GROUPMAP::newGroupID()
 {
 	groupID newId = lastNewGroupId + 1;
-	while (m_groups.count(newId) != 0 && m_groups.at(newId).size() > 0)
+	while (m_groups.count(newId) != 0 && !m_groups.at(newId).empty())
 	{
 		if (newId < std::numeric_limits<int>::max())
 		{
@@ -140,7 +140,7 @@ optional<scripting_engine::GROUPMAP::groupID> scripting_engine::GROUPMAP::remove
 		ASSERT(numItemsErased == 1, "Object did not exist in group set??");
 		return optional<groupID>(groupId);
 	}
-	return optional<groupID>();
+	return {};
 }
 
 std::vector<const SimpleObject*> scripting_engine::GROUPMAP::getGroupObjects(groupID groupId) const
@@ -154,10 +154,10 @@ std::vector<const SimpleObject*> scripting_engine::GROUPMAP::getGroupObjects(gro
 	return result;
 }
 
-scripting_engine::timerNode::timerNode(wzapi::scripting_instance* caller, const TimerFunc& func,
-                                       const std::string& timerName, int plr, int frame,
+scripting_engine::timerNode::timerNode(wzapi::scripting_instance* caller, TimerFunc  func,
+                                       std::string  timerName, int plr, int frame,
                                        std::unique_ptr<timerAdditionalData> additionalParam /*= nullptr*/)
-	: function(func), timerName(timerName), instance(caller), baseobj(-1), baseobjtype(OBJ_NUM_TYPES),
+	: function(std::move(func)), timerName(std::move(timerName)), instance(caller), baseobj(-1), baseobjtype(OBJ_NUM_TYPES),
 	  additionalTimerFuncParam(std::move(additionalParam)),
 	  frameTime(frame + gameTime), ms(frame), player(plr), calls(0), type(TIMER_REPEAT)
 {
@@ -171,7 +171,7 @@ scripting_engine::timerNode::~timerNode()
 	}
 }
 
-scripting_engine::timerNode::timerNode(timerNode&& rhs) // move constructor
+scripting_engine::timerNode::timerNode(timerNode&& rhs)  noexcept // move constructor
 	: timerNode()
 {
 	swap(rhs);
@@ -194,12 +194,11 @@ void scripting_engine::timerNode::swap(timerNode& _rhs)
 }
 
 scripting_engine::area_by_values_or_area_label_lookup::area_by_values_or_area_label_lookup()
-{
-}
+= default;
 
-scripting_engine::area_by_values_or_area_label_lookup::area_by_values_or_area_label_lookup(const std::string& label)
+scripting_engine::area_by_values_or_area_label_lookup::area_by_values_or_area_label_lookup(std::string  label)
 	: m_isLabel(true)
-	  , m_label(label)
+	  , m_label(std::move(label))
 {
 }
 
@@ -337,11 +336,11 @@ nlohmann::json scripting_engine::constructDerrickPositions()
 	//== * ```derrickPositions``` An array of derrick starting positions on the current map. Each item in the array is an
 	//== object containing the x and y variables for a derrick.
 	nlohmann::json derrickPositions = nlohmann::json::array(); //engine->newArray(derricks.size());
-	for (int i = 0; i < derricks.size(); i++)
+	for (auto & derrick : derricks)
 	{
 		nlohmann::json vector = nlohmann::json::object();
-		vector["x"] = map_coord(derricks[i].x);
-		vector["y"] = map_coord(derricks[i].y);
+		vector["x"] = map_coord(derrick.x);
+		vector["y"] = map_coord(derrick.y);
 		vector["type"] = SCRIPT_POSITION;
 		derrickPositions.push_back(vector);
 	}
@@ -431,10 +430,10 @@ bool scripting_engine::shutdownScripts()
 		instance->dumpScriptLog("=== PERFORMANCE DATA ===\n");
 		instance->dumpScriptLog(
 			"    calls | avg (usec) | worst (usec) | worst call at | >=limit | >=limit/2 | function\n");
-		for (MONITOR::const_iterator iter = monitor->begin(); iter != monitor->end(); ++iter)
+		for (auto & iter : *monitor)
 		{
-			const std::string& function = iter->first;
-			MONITOR_BIN m = iter->second;
+			const std::string& function = iter.first;
+			MONITOR_BIN m = iter.second;
 			std::ostringstream info;
 			info << std::right << std::setw(9) << m.calls << " | ";
 			info << std::right << std::setw(10) << (m.time / m.calls) << " | ";
@@ -566,7 +565,7 @@ wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& pa
 	}
 
 	// Create group map
-	GROUPMAP* psMap = new GROUPMAP;
+	auto* psMap = new GROUPMAP;
 	auto insert_result = groups.insert(ENGINEMAP::value_type(pNewInstance, psMap));
 	ASSERT(insert_result.second, "Entry for this engine %p already exists in ENGINEMAP!",
 	       static_cast<void *>(pNewInstance));
@@ -741,7 +740,7 @@ bool scripting_engine::saveScriptStates(const char* filename)
 		saveGroups(groupsResult, instance);
 		groupsResult["me"] = instance->player();
 		groupsResult["scriptName"] = instance->scriptName();
-		ini.setValue("groups_" + WzString::number(i), std::move(groupsResult));
+		ini.setValue("groups_" + WzString::number(i), groupsResult);
 	}
 	size_t timerIdx = 0;
 	for (const auto& node : timers)
@@ -764,7 +763,7 @@ bool scripting_engine::saveScriptStates(const char* filename)
 		nodeInfo["calls"] = node->calls;
 		nodeInfo["type"] = (int)node->type;
 
-		ini.setValue("triggers_" + WzString::number(timerIdx), std::move(nodeInfo));
+		ini.setValue("triggers_" + WzString::number(timerIdx), nodeInfo);
 		++timerIdx;
 	}
 	return true;
@@ -885,11 +884,11 @@ bool scripting_engine::loadScriptStates(const char* filename)
 		else if (instance && list[i].startsWith("groups_"))
 		{
 			std::vector<WzString> keys = ini.childKeys();
-			for (size_t j = 0; j < keys.size(); ++j)
+			for (auto& key : keys)
 			{
-				std::vector<WzString> values = ini.value(keys.at(j)).toWzStringList();
+				std::vector<WzString> values = ini.value(key).toWzStringList();
 				bool ok = false; // check if number
-				int droidId = keys.at(j).toInt(&ok);
+				int droidId = key.toInt(&ok);
 				for (size_t k = 0; ok && k < values.size(); k++)
 				{
 					int groupId = values.at(k).toInt();

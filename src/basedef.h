@@ -35,8 +35,6 @@
 #include "displaydef.h"
 #include "statsdef.h"
 
-
-
 enum class OBJECT_FLAG
 {
   JAMMED_TILES,

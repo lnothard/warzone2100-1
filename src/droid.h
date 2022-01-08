@@ -27,17 +27,12 @@
 #define __INCLUDED_SRC_DROID_H__
 
 #include <queue>
-#include <vector>
 
-#include "basedef.h"
 #include "group.h"
 #include "move.h"
 #include "order.h"
-#include "selection.h"
-#include "statsdef.h"
-#include "structure.h"
+#include "stats.h"
 #include "unit.h"
-#include "weapondef.h"
 
 /// world->screen check - alex
 static constexpr auto OFF_SCREEN = 9999;
@@ -91,8 +86,6 @@ static constexpr auto TRANSPORTER_HOVER_HEIGHT	= 10;
 
 /// Defines how many times to perform the iteration on looking for a blank location
 static constexpr auto LOOK_FOR_EMPTY_TILE  = 20;
-
-typedef std::vector<Order> OrderList;
 
 enum class PICKTILE
 {
@@ -184,143 +177,158 @@ struct DroidTemplate : public BaseStats
     bool isEnabled = false;
 };
 
-class Droid : public virtual Unit, public Impl::Unit
+class Droid : public virtual Unit
 {
 public:
-    Droid(unsigned id, unsigned player);
+    ~Droid() override = default;
 
-    /* Accessors */
-    [[nodiscard]] ACTION getAction() const noexcept;
-    [[nodiscard]] const Order& getOrder() const;
-    [[nodiscard]] DROID_TYPE getType() const noexcept;
-    [[nodiscard]] unsigned getLevel() const;
-    [[nodiscard]] unsigned getCommanderLevel() const;
-    [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
-    [[nodiscard]] int get_vertical_speed() const noexcept;
-    [[nodiscard]] unsigned get_secondary_order() const noexcept;
-    [[nodiscard]] const Vector2i& get_destination() const;
-    [[nodiscard]] const ::SimpleObject& get_target(int weapon_slot) const final;
-    [[nodiscard]] const std::optional<PropulsionStats>& get_propulsion() const;
-
-    [[nodiscard]] bool is_probably_doomed(bool is_direct_damage) const;
-    [[nodiscard]] bool is_VTOL() const;
-    [[nodiscard]] bool is_flying() const;
-    [[nodiscard]] bool is_radar_detector() const final;
-    [[nodiscard]] bool is_stationary() const;
-    [[nodiscard]] bool is_damaged() const;
-    [[nodiscard]] bool is_attacking() const noexcept;
-    void upgradeHitPoints();
-
-    /**
-     *
-     * @param attacker
-     * @param weapon_slot
-     * @return
-     */
-    [[nodiscard]] bool is_valid_target(const ::Unit* attacker,
-                                       int weapon_slot) const final;
-
-    [[nodiscard]] bool hasCommander() const;
-    [[nodiscard]] bool has_standard_sensor() const;
-    [[nodiscard]] bool has_CB_sensor() const;
-    [[nodiscard]] bool has_electronic_weapon() const;
-    void gain_experience(unsigned exp);
-    void move_to_rearm_pad();
-    void cancel_build();
-    void reset_action() noexcept;
-    void update_expected_damage(unsigned damage, bool is_direct) noexcept final;
-    [[nodiscard]] unsigned commander_max_group_size() const;
-    [[nodiscard]] unsigned calculate_sensor_range() const final;
-    [[nodiscard]] int calculate_height() const;
-    [[nodiscard]] int space_occupied_on_transporter() const;
-    void set_direct_route(int target_x, int target_y) const;
-    void increment_kills() noexcept;
-    void assign_vtol_to_rearm_pad(RearmPad* rearm_pad);
-    [[nodiscard]] int calculate_electronic_resistance() const;
-    [[nodiscard]] bool is_selectable() const final;
-    [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
-    [[nodiscard]] int calculate_attack_priority(const ::Unit* target, int weapon_slot) const final;
-private:
-    using enum DROID_TYPE;
-    std::string name;
-    DROID_TYPE type;
-
-    /**
-     * Holds the specifics for the component parts - allows damage
-     * per part to be calculated. Indexed by COMPONENT_TYPE.
-     * Weapons need to be dealt with separately.
-     */
-    uint8_t asBits[DROID_MAXCOMP];
-
-    unsigned weight = 0;
-
-    /// Base speed depends on propulsion type
-    unsigned base_speed = 0;
-
-    unsigned original_hp = 0;
-    unsigned experience = 0;
-    unsigned kills = 0;
-
-    /// Set when stuck. Used for, e.g., firing indiscriminately
-    /// at map features to clear the way
-    unsigned lastFrustratedTime;
-
-    int resistance_to_electric;
-
-    std::shared_ptr<Group> group;
-
-    /// A structure that this droid might be associated with.
-    /// For VTOLs this is the rearming pad
-    Structure* associated_structure = nullptr;
-
-    // Number of queued orders
-    int listSize;
-
-    /// The number of synchronised orders. Orders from `listSize` to
-    /// the real end of the list may not affect game state.
-    OrderList asOrderList;
-
-    /// The range [0; listSize - 1] corresponds to synchronised orders, and the range
-    /// [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will
-    /// remain, once all orders are synchronised.
-    unsigned listPendingBegin;
-
-    /// Index of first order which will not be erased by
-    /// a pending order. After all messages are processed
-    /// the orders in the range [listPendingBegin; listPendingEnd - 1]
-    /// will remain.
-    std::unique_ptr<Order> order;
-
-    unsigned secondary_order;
-
-    /// What `secondary_order` will be after synchronisation.
-    unsigned secondaryOrderPending;
-
-    /// Number of pending `secondary_order` synchronisations.
-    int secondaryOrderPendingCount;
-
-    ACTION action;
-    Vector2i actionPos;
-
-    std::array<SimpleObject*, MAX_WEAPONS> action_target;
-    std::size_t time_action_started;
-    unsigned action_points_done;
-    unsigned expected_damage_direct = 0;
-    unsigned expected_damage_indirect = 0;
-    uint8_t illumination_level;
-    std::unique_ptr<Movement> movement;
-
-    /// The location of this droid in the previous tick.
-    Spacetime previous_location;
-
-    /// Bit set telling which tiles block this type of droid (TODO)
-    uint8_t blockedBits;
-
-    int iAudioID;
-
-    std::optional<CommanderStats> brain;
+    [[nodiscard]] virtual bool isVtol() const = 0;
+    [[nodiscard]] virtual bool isFlying() const = 0;
+    [[nodiscard]] virtual bool isDamaged() const = 0;
+    [[nodiscard]] virtual bool hasCommander() const = 0;
+    virtual void cancelBuild() = 0;
+    virtual void resetAction() = 0;
 };
 
+namespace Impl
+{
+  class Droid : public virtual ::Droid, public Impl::Unit
+  {
+  public:
+      ~Droid() override = default;
+
+      Droid(unsigned id, unsigned player);
+
+      /* Accessors */
+      [[nodiscard]] ACTION getAction() const noexcept;
+      [[nodiscard]] const Order &getOrder() const;
+      [[nodiscard]] DROID_TYPE getType() const noexcept;
+      [[nodiscard]] unsigned getLevel() const;
+      [[nodiscard]] unsigned getCommanderLevel() const;
+      [[nodiscard]] const iIMDShape &get_IMD_shape() const final;
+      [[nodiscard]] int get_vertical_speed() const noexcept;
+      [[nodiscard]] unsigned get_secondary_order() const noexcept;
+      [[nodiscard]] const Vector2i &get_destination() const;
+      [[nodiscard]] const SimpleObject &get_target(int weapon_slot) const final;
+      [[nodiscard]] const std::optional<PropulsionStats> &get_propulsion() const;
+
+      [[nodiscard]] bool is_probably_doomed(bool is_direct_damage) const;
+      [[nodiscard]] bool isVtol() const final;
+      [[nodiscard]] bool isFlying() const final;
+      [[nodiscard]] bool is_radar_detector() const final;
+      [[nodiscard]] bool is_stationary() const;
+      [[nodiscard]] bool isDamaged() const final;
+      [[nodiscard]] bool is_attacking() const noexcept;
+      void upgradeHitPoints();
+
+      /**
+       *
+       * @param attacker
+       * @param weapon_slot
+       * @return
+       */
+      [[nodiscard]] bool is_valid_target(const ::Unit *attacker,
+                                         int weapon_slot) const final;
+
+      [[nodiscard]] bool hasCommander() const final;
+      [[nodiscard]] bool has_standard_sensor() const;
+      [[nodiscard]] bool has_CB_sensor() const;
+      [[nodiscard]] bool has_electronic_weapon() const;
+      void gain_experience(unsigned exp);
+      void cancelBuild() final;
+      void resetAction() noexcept final;
+      void update_expected_damage(unsigned damage, bool is_direct) noexcept final;
+      [[nodiscard]] unsigned calculate_sensor_range() const final;
+      [[nodiscard]] int calculate_height() const;
+      [[nodiscard]] int space_occupied_on_transporter() const;
+      void increment_kills() noexcept;
+      void assign_vtol_to_rearm_pad(RearmPad *rearm_pad);
+      [[nodiscard]] int calculate_electronic_resistance() const;
+      [[nodiscard]] bool is_selectable() const final;
+      [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
+      [[nodiscard]] int calculate_attack_priority(const ::Unit *target, int weapon_slot) const final;
+
+  private:
+      using enum DROID_TYPE;
+      std::string name;
+      DROID_TYPE type;
+
+      /**
+       * Holds the specifics for the component parts - allows damage
+       * per part to be calculated. Indexed by COMPONENT_TYPE.
+       * Weapons need to be dealt with separately.
+       */
+      uint8_t asBits[DROID_MAXCOMP];
+
+      unsigned weight = 0;
+
+      /// Base speed depends on propulsion type
+      unsigned base_speed = 0;
+
+      unsigned original_hp = 0;
+      unsigned experience = 0;
+      unsigned kills = 0;
+
+      /// Set when stuck. Used for, e.g., firing indiscriminately
+      /// at map features to clear the way
+      unsigned lastFrustratedTime;
+
+      int resistance_to_electric;
+
+      std::shared_ptr<Group> group;
+
+      /// A structure that this droid might be associated with.
+      /// For VTOLs this is the rearming pad
+      Structure *associated_structure = nullptr;
+
+      // Number of queued orders
+      int listSize;
+
+      /// The number of synchronised orders. Orders from `listSize` to
+      /// the real end of the list may not affect game state.
+      std::vector<Order> asOrderList;
+
+      /// The range [0; listSize - 1] corresponds to synchronised orders, and the range
+      /// [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will
+      /// remain, once all orders are synchronised.
+      unsigned listPendingBegin;
+
+      /// Index of first order which will not be erased by
+      /// a pending order. After all messages are processed
+      /// the orders in the range [listPendingBegin; listPendingEnd - 1]
+      /// will remain.
+      std::unique_ptr<Order> order;
+
+      unsigned secondary_order;
+
+      /// What `secondary_order` will be after synchronisation.
+      unsigned secondaryOrderPending;
+
+      /// Number of pending `secondary_order` synchronisations.
+      int secondaryOrderPendingCount;
+
+      ACTION action;
+      Vector2i actionPos;
+
+      std::array<SimpleObject*, MAX_WEAPONS> action_target;
+      std::size_t time_action_started;
+      unsigned action_points_done;
+      unsigned expected_damage_direct = 0;
+      unsigned expected_damage_indirect = 0;
+      uint8_t illumination_level;
+      std::unique_ptr<Movement> movement;
+
+      /// The location of this droid in the previous tick.
+      Spacetime previous_location;
+
+      /// Bit set telling which tiles block this type of droid (TODO)
+      uint8_t blockedBits;
+
+      int iAudioID;
+
+      std::optional<CommanderStats> brain;
+  };
+}
 // the structure that was last hit
 extern Droid* psLastDroidHit;
 

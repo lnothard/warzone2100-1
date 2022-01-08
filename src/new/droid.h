@@ -165,8 +165,8 @@ public:
   [[nodiscard]] const std::optional<PropulsionStats>& get_propulsion() const;
   
 	[[nodiscard]] bool is_probably_doomed(bool is_direct_damage) const;
-	[[nodiscard]] bool is_VTOL() const;
-	[[nodiscard]] bool is_flying() const;
+	[[nodiscard]] bool isVtol() const;
+	[[nodiscard]] bool isFlying() const;
 	[[nodiscard]] bool is_radar_detector() const final;
 	[[nodiscard]] bool is_stationary() const;
 	[[nodiscard]] bool is_rearming() const;

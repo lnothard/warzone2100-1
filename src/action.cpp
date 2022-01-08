@@ -274,8 +274,8 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 		pitchRate = rotRate / 2;
 	}
 
-	tRotation = psWeapon->rotation.direction;
-	tPitch = psWeapon->rotation.pitch;
+	tRotation = psWeapon->get_rotation().direction;
+	tPitch = psWeapon->get_rotation().pitch;
 
 	// set the pitch limits based on the weapon stats of the attacker
 	pitchLowerLimit = pitchUpperLimit = 0;
@@ -326,7 +326,8 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 	{
 		// limit the rotation for vtols
 		int32_t limit = VTOL_TURRET_LIMIT;
-		if (psWeapStats->weaponSubClass == WSC_BOMB || psWeapStats->weaponSubClass == WSC_EMP)
+		if (psWeapStats.weaponSubClass == WEAPON_SUBCLASS::BOMB ||
+        psWeapStats.weaponSubClass == WEAPON_SUBCLASS::EMP)
 		{
 			limit = 0; // Don't turn bombs.
 			rotationTolerance = VTOL_TURRET_LIMIT_BOMB;
@@ -364,7 +365,7 @@ bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot
 	CHECK_DROID(psDroid);
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
 	ASSERT_OR_RETURN(false, psDroid->player < MAX_PLAYERS, "psDroid->player (%" PRIu8 ") must be < MAX_PLAYERS",
-	                 psDroid->player);
+	                 psDroid->get_player());
 	if (!psTarget->visible[psDroid->player]) {
 		return false;
 	}
@@ -450,7 +451,6 @@ static void actionUpdateTransporter(Droid* psDroid)
 	}
 }
 
-
 //// calculate a position for units to pull back to if they
 //// need to increase the range between them and a target
 //static void actionCalcPullBackPoint(SimpleObject* psObj, SimpleObject* psTarget, int* px, int* py)
@@ -521,9 +521,9 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(structureCentre.x, structureCentre.y, structureMaxRadius);
-	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+	for (auto& gi : gridList)
 	{
-		Droid* droid = castDroid(*gi);
+		Droid* droid = castDroid(gi);
 		if (droid == nullptr)
 		{
 			continue; // Only looking for droids.

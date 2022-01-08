@@ -5642,7 +5642,7 @@ unsigned count_assigned_droids(const Structure& structure)
   {
     if (droid.get_current_order().target_object->get_id() == structure.get_id() &&
         droid.get_player() == structure.get_player())  {
-      return droid.is_VTOL() || has_artillery(structure);
+      return droid.isVtol() || has_artillery(structure);
     }
   });
 }

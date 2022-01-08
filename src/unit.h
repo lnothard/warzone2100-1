@@ -6,11 +6,6 @@
 #ifndef WARZONE2100_UNIT_H
 #define WARZONE2100_UNIT_H
 
-#include <vector>
-
-#include "basedef.h"
-#include "weapondef.h"
-
 static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
 
 static constexpr auto TURRET_ROTATION_RATE = 45;

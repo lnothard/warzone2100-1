@@ -26,24 +26,18 @@
 #ifndef __INCLUDED_SRC_STRUCTURE_H__
 #define __INCLUDED_SRC_STRUCTURE_H__
 
-#include <vector>
-
-#include "lib/framework/string_ext.h"
 #include "lib/framework/wzconfig.h"
 
-#include "basedef.h"
-#include "baseobject.h"
-#include "droid.h"
-#include "objectdef.h"
 #include "positiondef.h"
-#include "statsdef.h"
 #include "unit.h"
-#include "weapondef.h"
 
 #define NUM_FACTORY_MODULES 2
 #define NUM_POWER_MODULES 4
 #define REF_ANY 255		// Used to indicate any kind of building when calling intGotoNextStructureType()
 #define LOTS_OF 0xFFFFFFFF  // highest number the limit can be set to
+#define STRUCTURE_CONNECTED 0x0001 ///< This structure must be built side by side with another of the same player
+#define SAS_OPEN_SPEED		(GAME_TICKS_PER_SEC)
+#define SAS_STAY_OPEN_TIME	(GAME_TICKS_PER_SEC * 6)
 
 enum class STRUCTURE_TYPE
 {
@@ -93,8 +87,6 @@ enum class STRUCTURE_STRENGTH
 
 typedef UWORD STRUCTSTRENGTH_MODIFIER;
 
-#define SAS_OPEN_SPEED		(GAME_TICKS_PER_SEC)
-#define SAS_STAY_OPEN_TIME	(GAME_TICKS_PER_SEC * 6)
 
 enum class STRUCTURE_ANIMATION_STATE
 {
@@ -104,7 +96,6 @@ enum class STRUCTURE_ANIMATION_STATE
     CLOSING
 };
 
-#define STRUCTURE_CONNECTED 0x0001 ///< This structure must be built side by side with another of the same player
 
 struct FlagPosition : public ObjectPosition
 {

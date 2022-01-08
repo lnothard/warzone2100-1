@@ -17,7 +17,7 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-#include <string.h>
+#include <cstring>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/fixedpoint.h"
@@ -30,7 +30,6 @@
 #include "lib/ivis_opengl/piefunc.h"
 #include "lib/ivis_opengl/bitimage.h"
 #include "lib/gamelib/gtime.h"
-#include "advvis.h"
 #include "objects.h"
 #include "display3d.h"
 #include "map.h"
@@ -142,10 +141,10 @@ PIELIGHT inline mix(PIELIGHT over, PIELIGHT base)
 	float newGreen = (overGreen * overAlpha + baseGreen * baseAlpha * (1 - overAlpha)) / newAlpha;
 	float newBlue = (overBlue * overAlpha + baseBlue * baseAlpha * (1 - overAlpha)) / newAlpha;
 
-	UBYTE returnAlpha = static_cast<UBYTE>(clip<int>(static_cast<int>(newAlpha * 255.0f), 0, 255));
-	UBYTE returnRed = static_cast<UBYTE>(clip<int>(static_cast<int>(newRed * 255.0f), 0, 255));
-	UBYTE returnGreen = static_cast<UBYTE>(clip<int>(static_cast<int>(newGreen * 255.0f), 0, 255));
-	UBYTE returnBlue = static_cast<UBYTE>(clip<int>(static_cast<int>(newBlue * 255.0f), 0, 255));
+	auto returnAlpha = static_cast<UBYTE>(clip<int>(static_cast<int>(newAlpha * 255.0f), 0, 255));
+	auto returnRed = static_cast<UBYTE>(clip<int>(static_cast<int>(newRed * 255.0f), 0, 255));
+	auto returnGreen = static_cast<UBYTE>(clip<int>(static_cast<int>(newGreen * 255.0f), 0, 255));
+	auto returnBlue = static_cast<UBYTE>(clip<int>(static_cast<int>(newBlue * 255.0f), 0, 255));
 
 	return {{returnRed, returnGreen, returnBlue, returnAlpha}};
 }

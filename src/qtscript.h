@@ -265,7 +265,7 @@ public:
 		{
 		}
 
-		timerNode(wzapi::scripting_instance* caller, const TimerFunc& func, const std::string& timerName, int plr,
+		timerNode(wzapi::scripting_instance* caller, TimerFunc  func, std::string  timerName, int plr,
 		          int frame, std::unique_ptr<timerAdditionalData> additionalParam = nullptr);
 		~timerNode();
 
@@ -427,7 +427,7 @@ public:
 	{
 	public:
 		area_by_values_or_area_label_lookup();
-		area_by_values_or_area_label_lookup(const std::string& label);
+		area_by_values_or_area_label_lookup(std::string  label);
 		area_by_values_or_area_label_lookup(int x1, int y1, int x2, int y2);
 
 		inline bool isLabel() { return m_isLabel; }
