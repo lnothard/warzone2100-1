@@ -42,6 +42,7 @@ using json = nlohmann::json;
 
 // MARK: - Notification Ignore List
 
+#include <memory>
 #include <typeinfo>
 #include <physfs.h>
 #include "lib/framework/file.h"
@@ -50,14 +51,14 @@ using json = nlohmann::json;
 class WZ_Notification_Preferences
 {
 public:
-	WZ_Notification_Preferences(const std::string& fileName);
+	explicit WZ_Notification_Preferences(const std::string& fileName);
 
 	void incrementNotificationRuns(const std::string& uniqueNotificationIdentifier);
-	uint32_t getNotificationRuns(const std::string& uniqueNotificationIdentifier) const;
+	[[nodiscard]] unsigned getNotificationRuns(const std::string& uniqueNotificationIdentifier) const;
 
 	void doNotShowNotificationAgain(const std::string& uniqueNotificationIdentifier);
-	bool getDoNotShowNotificationValue(const std::string& uniqueNotificationIdentifier) const;
-	bool canShowNotification(const WZ_Notification& notification) const;
+	[[nodiscard]] bool getDoNotShowNotificationValue(const std::string& uniqueNotificationIdentifier) const;
+	[[nodiscard]] bool canShowNotification(const WZ_Notification& notification) const;
 
 	void clearAllNotificationPreferences();
 	bool removeNotificationPreferencesIf(
@@ -66,19 +67,24 @@ public:
 	bool savePreferences();
 
 private:
-	void storeValueForNotification(const std::string& uniqueNotificationIdentifier, const std::string& key,
+	void storeValueForNotification(const std::string& uniqueNotificationIdentifier,
+                                 const std::string& key,
 	                               const json& value);
-	json getJSONValueForNotification(const std::string& uniqueNotificationIdentifier, const std::string& key,
-	                                 const json& defaultValue = json()) const;
+
+	[[nodiscard]] json getJSONValueForNotification(const std::string& uniqueNotificationIdentifier,
+                                                const std::string& key,
+	                                              const json& defaultValue = json()) const;
 
 	template <typename T>
-	T getValueForNotification(const std::string& uniqueNotificationIdentifier, const std::string& key,
-	                          T defaultValue) const
+	[[nodiscard]] T getValueForNotification(const std::string& uniqueNotificationIdentifier,
+                                          const std::string& key,
+                                          T defaultValue) const
 	{
 		T result = defaultValue;
 		try
 		{
-			result = getJSONValueForNotification(uniqueNotificationIdentifier, key, json(defaultValue)).get<T>();
+			result = getJSONValueForNotification(uniqueNotificationIdentifier, key,
+                                          json(defaultValue)).get<T>();
 		}
 		catch (const std::exception& e)
 		{
@@ -204,7 +210,7 @@ bool WZ_Notification_Preferences::removeNotificationPreferencesIf(
 	ASSERT_OR_RETURN(false, mRoot.contains("notifications"), "root missing notifications object");
 	json notificationsObjCopy = mRoot.at("notifications");
 	std::vector<std::string> identifiersToRemove;
-	for (auto it : notificationsObjCopy.items())
+	for (const auto& it : notificationsObjCopy.items())
 	{
 		const auto& uniqueNotificationIdentifier = it.key();
 		if (matchIdentifierFunc(uniqueNotificationIdentifier))
@@ -261,7 +267,7 @@ static WZ_Notification_Preferences* notificationPrefs = nullptr;
 class WZ_Notification_Status
 {
 public:
-	WZ_Notification_Status(uint32_t queuedTime)
+	explicit WZ_Notification_Status(uint32_t queuedTime)
 		: queuedTime(queuedTime)
 	{
 	}
@@ -290,9 +296,10 @@ public:
 class WZ_Queued_Notification
 {
 public:
-	WZ_Queued_Notification(const WZ_Notification& notification, const WZ_Notification_Status& status,
-	                       const WZ_Notification_Trigger& trigger)
-		: notification(notification)
+	WZ_Queued_Notification(WZ_Notification notification,
+                        const WZ_Notification_Status& status,
+	                      const WZ_Notification_Trigger& trigger)
+		: notification(std::move(notification))
 		  , status(status)
 		  , trigger(trigger)
 	{
@@ -301,13 +308,13 @@ public:
 public:
 	void setState(WZ_Notification_Status::NotificationState newState);
 
-	bool wasProgrammaticallyDismissed() const
+	[[nodiscard]] bool wasProgrammaticallyDismissed() const
 	{
 		return dismissalCause == WZ_Notification_Dismissal_Reason::ACTION_BUTTON_CLICK || dismissalCause ==
 			WZ_Notification_Dismissal_Reason::PROGRAMMATIC;
 	}
 
-	WZ_Notification_Dismissal_Reason dismissReason() const { return dismissalCause; }
+	[[nodiscard]] WZ_Notification_Dismissal_Reason dismissReason() const { return dismissalCause; }
 
 protected:
 	void setWasProgrammaticallyDismissed() { dismissalCause = WZ_Notification_Dismissal_Reason::PROGRAMMATIC; }
@@ -379,6 +386,7 @@ void removeInGameNotificationForm(WZ_Queued_Notification* request);
 #define GLM_ENABLE_EXPERIMENTAL
 #endif
 #include <glm/gtx/transform.hpp>
+#include <utility>
 #include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/widget/checkbox.h"
 
@@ -397,9 +405,9 @@ static W_FORMINIT MakeNotificationFormInit()
 class W_NOTIFICATION : public W_FORM
 {
 protected:
-	W_NOTIFICATION(WZ_Queued_Notification* request, W_FORMINIT init = MakeNotificationFormInit());
+	explicit W_NOTIFICATION(WZ_Queued_Notification* request, W_FORMINIT init = MakeNotificationFormInit());
 public:
-	~W_NOTIFICATION();
+	~W_NOTIFICATION() override;
 	static std::shared_ptr<W_NOTIFICATION> make(WZ_Queued_Notification* request,
 	                                            W_FORMINIT init = MakeNotificationFormInit());
 	void run(W_CONTEXT* psContext) override;
@@ -488,7 +496,7 @@ std::unique_ptr<WZ_Queued_Notification> popNextQueuedNotification()
 void displayNotificationAction(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	SDWORD fx, fy, fw;
-	W_BUTTON* psBut = (W_BUTTON*)psWidget;
+	auto psBut = (W_BUTTON*)psWidget;
 	bool hilight = false;
 	bool greyOut = /*psWidget->UserData ||*/ (psBut->getState() & WBUT_DISABLE); // if option is unavailable.
 	bool isActionButton = (psBut->UserData == 1);
@@ -554,8 +562,6 @@ void displayNotificationAction(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 		cache.wzText.render(fx + 1, fy + 1, pal_RGBA(0, 0, 0, 80));
 	}
 	cache.wzText.render(fx, fy, colour);
-
-	return;
 }
 
 bool W_NOTIFICATION::dismissNotification(float animationSpeed /*= 1.0f*/)
@@ -921,7 +927,7 @@ bool W_NOTIFICATION::calculateNotificationWidgetPos()
 						(float(realTime) - float(startTime)) / float(openAnimationDuration)) * (endingYPosition +
 						height()))
 					+ 1);
-				if (!(y + getDragOffset().y >= endingYPosition))
+				if (y + getDragOffset().y < endingYPosition)
 				{
 					break;
 				}
@@ -1316,8 +1322,8 @@ void addNotification(const WZ_Notification& notification, const WZ_Notification_
 
 	// Add the notification to the notification system's queue
 	notificationQueue.push_back(
-		std::unique_ptr<WZ_Queued_Notification>(
-			new WZ_Queued_Notification(notification, WZ_Notification_Status(realTime), trigger)));
+		std::make_unique<WZ_Queued_Notification>(
+			notification, WZ_Notification_Status(realTime), trigger));
 }
 
 bool removeNotificationPreferencesIf(

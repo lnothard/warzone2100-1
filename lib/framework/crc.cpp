@@ -20,7 +20,6 @@
 
 #include "crc.h"
 
-#include <functional>
 #include <limits>
 #include <memory>
 #include <algorithm>
@@ -92,6 +91,7 @@ uint32_t crcSumVector2i(uint32_t crc, const Vector2i *data, size_t dataLen)
 
 #include <sodium.h>
 #include <climits>
+#include <utility>
 Sha256 sha256Sum(void const *data, size_t dataLen)
 {
 	static_assert(Sha256::Bytes == crypto_hash_sha256_BYTES, "Size mismatch.");
@@ -196,19 +196,15 @@ struct EC_KEY
 	std::vector<unsigned char> privateKey;
 	std::vector<unsigned char> publicKey;
 
-	EC_KEY(const std::vector<unsigned char>& privateKey, const std::vector<unsigned char>& publicKey)
-		: privateKey(privateKey)
-		, publicKey(publicKey)
+	EC_KEY(std::vector<unsigned char>  privateKey, std::vector<unsigned char>  publicKey)
+		: privateKey(std::move(privateKey))
+		, publicKey(std::move(publicKey))
 	{
 	}
 
-	EC_KEY(EC_KEY const &b)
-		: privateKey(b.privateKey)
-		, publicKey(b.publicKey)
-	{
-	}
+	EC_KEY(EC_KEY const &b) = default;
 
-	EC_KEY(EC_KEY &&b)
+	EC_KEY(EC_KEY &&b) noexcept
 		: privateKey()
 		, publicKey()
 	{
@@ -220,7 +216,7 @@ struct EC_KEY
 	// vectors that are of the appropriate size.
 	static EC_KEY createAndReserveForCurve()
 	{
-		return EC_KEY(std::vector<unsigned char>(crypto_sign_ed25519_SECRETKEYBYTES), std::vector<unsigned char>(crypto_sign_ed25519_PUBLICKEYBYTES));
+		return {std::vector<unsigned char>(crypto_sign_ed25519_SECRETKEYBYTES), std::vector<unsigned char>(crypto_sign_ed25519_PUBLICKEYBYTES)};
 	}
 };
 
@@ -236,7 +232,7 @@ EcKey::EcKey(EcKey const &b)
 	vKey = b.vKey != nullptr ? new EC_KEY(*EC_KEY_CAST(b.vKey)) : nullptr;
 }
 
-EcKey::EcKey(EcKey &&b)
+EcKey::EcKey(EcKey &&b) noexcept
 	: vKey(nullptr)
 {
 	std::swap(vKey, b.vKey);

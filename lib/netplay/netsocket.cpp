@@ -101,7 +101,7 @@ bool socketReadReady(Socket const *sock)
 	return sock->ready;
 }
 
-int getSockErr(void)
+int getSockErr()
 {
 #if   defined(WZ_OS_UNIX)
 	return errno;
@@ -236,7 +236,7 @@ static int addressToText(const struct sockaddr *addr, char *buf, size_t size)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wcast-align"
 #endif
-			const struct sockaddr_in6 *mappedIP = reinterpret_cast<const sockaddr_in6 *>(addr);
+			const auto *mappedIP = reinterpret_cast<const sockaddr_in6 *>(addr);
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) && !defined(__clang__)
 # pragma GCC diagnostic pop
 #endif
@@ -404,11 +404,11 @@ static int socketThreadFunction(void *)
 #endif
 		fd_set fds;
 		FD_ZERO(&fds);
-		for (SocketThreadWriteMap::iterator i = socketThreadWrites.begin(); i != socketThreadWrites.end(); ++i)
+		for (auto& socketThreadWrite : socketThreadWrites)
 		{
-			if (!i->second.empty())
+			if (!socketThreadWrite.second.empty())
 			{
-				SOCKET fd = i->first->fd[SOCK_CONNECTION];
+				SOCKET fd = socketThreadWrite.first->fd[SOCK_CONNECTION];
 				maxfd = std::max(maxfd, fd);
 				ASSERT(!FD_ISSET(fd, &fds), "Duplicate file descriptor!");  // Shouldn't be possible, but blocking in send, after select says it won't block, shouldn't be possible either.
 				FD_SET(fd, &fds);
@@ -424,9 +424,9 @@ static int socketThreadFunction(void *)
 		// We can write to some sockets. (Ignore errors from select, we may have deleted the socket after unlocking the mutex, and before calling select.)
 		if (ret > 0)
 		{
-			for (SocketThreadWriteMap::iterator i = socketThreadWrites.begin(); i != socketThreadWrites.end();)
+			for (auto i = socketThreadWrites.begin(); i != socketThreadWrites.end();)
 			{
-				SocketThreadWriteMap::iterator w = i;
+				auto w = i;
 				++i;
 
 				Socket *sock = w->first;
@@ -938,17 +938,17 @@ int checkSockets(const SocketSet *set, unsigned int timeout)
 #endif
 
 	bool compressedReady = false;
-	for (size_t i = 0; i < set->fds.size(); ++i)
+	for (auto fd : set->fds)
 	{
-		ASSERT(set->fds[i]->fd[SOCK_CONNECTION] != INVALID_SOCKET, "Invalid file descriptor!");
+		ASSERT(fd->fd[SOCK_CONNECTION] != INVALID_SOCKET, "Invalid file descriptor!");
 
-		if (set->fds[i]->isCompressed && !set->fds[i]->zInflateNeedInput)
+		if (fd->isCompressed && !fd->zInflateNeedInput)
 		{
 			compressedReady = true;
 			break;
 		}
 
-		maxfd = std::max(maxfd, set->fds[i]->fd[SOCK_CONNECTION]);
+		maxfd = std::max(maxfd, fd->fd[SOCK_CONNECTION]);
 	}
 
 	if (compressedReady)
@@ -956,9 +956,9 @@ int checkSockets(const SocketSet *set, unsigned int timeout)
 		// A socket already has some data ready. Don't really poll the sockets.
 
 		int ret = 0;
-		for (size_t i = 0; i < set->fds.size(); ++i)
+		for (auto fd : set->fds)
 		{
-			set->fds[i]->ready = set->fds[i]->isCompressed && !set->fds[i]->zInflateNeedInput;
+			fd->ready = fd->isCompressed && !fd->zInflateNeedInput;
 			++ret;
 		}
 		return ret;
@@ -971,9 +971,9 @@ int checkSockets(const SocketSet *set, unsigned int timeout)
 		struct timeval tv = {(int)(timeout / 1000), (int)(timeout % 1000) * 1000};  // Cast to int to avoid narrowing needed for C++11.
 
 		FD_ZERO(&fds);
-		for (size_t i = 0; i < set->fds.size(); ++i)
+		for (auto i : set->fds)
 		{
-			const SOCKET fd = set->fds[i]->fd[SOCK_CONNECTION];
+			const SOCKET fd = i->fd[SOCK_CONNECTION];
 
 			FD_SET(fd, &fds);
 		}
@@ -988,9 +988,9 @@ int checkSockets(const SocketSet *set, unsigned int timeout)
 		return SOCKET_ERROR;
 	}
 
-	for (size_t i = 0; i < set->fds.size(); ++i)
+	for (auto fd : set->fds)
 	{
-		set->fds[i]->ready = FD_ISSET(set->fds[i]->fd[SOCK_CONNECTION], &fds);
+		fd->ready = FD_ISSET(fd->fd[SOCK_CONNECTION], &fds);
 	}
 
 	return ret;
@@ -1205,7 +1205,7 @@ Socket *socketOpen(const SocketAddress *addr, unsigned timeout)
 	unsigned int i;
 	int ret;
 
-	Socket *const conn = new Socket;
+	auto *const conn = new Socket;
 	if (conn == nullptr)
 	{
 		debug(LOG_ERROR, "Out of memory!");
@@ -1353,7 +1353,7 @@ Socket *socketListen(unsigned int port)
 	struct sockaddr_in6 addr6;
 	unsigned int i;
 
-	Socket *const conn = new Socket;
+	auto *const conn = new Socket;
 	if (conn == nullptr)
 	{
 		debug(LOG_ERROR, "Out of memory!");

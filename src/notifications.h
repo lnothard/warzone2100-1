@@ -26,6 +26,7 @@
 #include <list>
 #include <memory>
 #include <functional>
+#include <utility>
 #include <vector>
 
 // forward-declare
@@ -39,11 +40,8 @@ class WZ_Notification_Display_Options
 public:
 	// The default WZ_Notification_Display_Options is useful for notifications
 	// that should _always_ be displayed.
-	WZ_Notification_Display_Options()
-	{
-	}
+	WZ_Notification_Display_Options() = default;
 
-public:
 	// Sets a specific notification identifier to "display once".
 	//
 	// Once a notification with this identifier is seen once, future calls to `addNotification` with a
@@ -82,9 +80,9 @@ public:
 	}
 
 public:
-	const std::string& uniqueNotificationIdentifier() const { return _uniqueNotificationIdentifier; }
-	uint8_t numTimesSeenBeforeDoNotShowAgainOption() const { return _numTimesSeenBeforeDoNotShowAgainOption; }
-	bool isOneTimeNotification() const { return _isOneTimeNotification; }
+	[[nodiscard]] const std::string& uniqueNotificationIdentifier() const { return _uniqueNotificationIdentifier; }
+	[[nodiscard]] uint8_t numTimesSeenBeforeDoNotShowAgainOption() const { return _numTimesSeenBeforeDoNotShowAgainOption; }
+	[[nodiscard]] bool isOneTimeNotification() const { return _isOneTimeNotification; }
 
 private:
 	// A string that uniquely identifies the notification
@@ -118,29 +116,29 @@ public:
 	{
 	}
 
-	explicit WZ_Notification_Image(const std::string& imagePath, const ImageType& imageType = ImageType::PNG)
-		: _imagePath(imagePath)
+	explicit WZ_Notification_Image(std::string imagePath, const ImageType& imageType = ImageType::PNG)
+		: _imagePath(std::move(imagePath))
 		  , _type(imageType)
 	{
 	}
 
-	explicit WZ_Notification_Image(const std::vector<unsigned char>& memoryBuffer,
+	explicit WZ_Notification_Image(std::vector<unsigned char>  memoryBuffer,
 	                               const ImageType& imageType = ImageType::PNG)
-		: _memoryBuffer(memoryBuffer)
+		: _memoryBuffer(std::move(memoryBuffer))
 		  , _type(imageType)
 	{
 	}
 
 public:
-	bool empty() const
+	[[nodiscard]] bool empty() const
 	{
 		return _imagePath.empty() && _memoryBuffer.empty();
 	}
 
-	const std::string& imagePath() const { return _imagePath; }
-	const std::vector<unsigned char>& memoryBuffer() const { return _memoryBuffer; }
-	ImageType imageType() const { return _type; }
-	gfx_api::texture* loadImageToTexture() const;
+	[[nodiscard]] const std::string& imagePath() const { return _imagePath; }
+	[[nodiscard]] const std::vector<unsigned char>& memoryBuffer() const { return _memoryBuffer; }
+	[[nodiscard]] ImageType imageType() const { return _type; }
+	[[nodiscard]] gfx_api::texture* loadImageToTexture() const;
 private:
 	std::string _imagePath;
 	std::vector<unsigned char> _memoryBuffer;
@@ -152,12 +150,11 @@ class WZ_Notification; // forward-declare
 class WZ_Notification_Action
 {
 public:
-	WZ_Notification_Action()
-	{
-	}
+	WZ_Notification_Action() = default;
 
-	WZ_Notification_Action(std::string actionTitle, const std::function<void (const WZ_Notification&)>& onAction)
-		: title(actionTitle)
+	WZ_Notification_Action(std::string actionTitle,
+                        const std::function<void (const WZ_Notification&)>& onAction)
+		: title(std::move(actionTitle))
 		  , onAction(onAction)
 	{
 	}
@@ -216,7 +213,7 @@ public:
 	// Called if an ignorable notification is ignored / not displayed
 	std::function<void (const WZ_Notification&)> onIgnored;
 public:
-	bool isIgnorable() const { return !displayOptions.uniqueNotificationIdentifier().empty(); }
+	[[nodiscard]] bool isIgnorable() const { return !displayOptions.uniqueNotificationIdentifier().empty(); }
 };
 
 class WZ_Notification_Trigger
@@ -224,7 +221,7 @@ class WZ_Notification_Trigger
 public:
 	// A time interval, in game ticks (see: GAME_TICKS_PER_SEC),
 	// from the time the notification is submitted before it is displayed.
-	WZ_Notification_Trigger(uint32_t timeInterval)
+	explicit WZ_Notification_Trigger(unsigned timeInterval)
 		: timeInterval(timeInterval)
 	{
 	}
@@ -236,7 +233,7 @@ public:
 	}
 
 public:
-	uint32_t timeInterval = 0;
+	unsigned timeInterval = 0;
 };
 
 // Add a notification

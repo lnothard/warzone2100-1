@@ -38,7 +38,6 @@
 #include "lib/framework/cursors.h"
 #include "frontend.h"		// for textdisplay function
 #include "loadsave.h"		// for textdisplay function
-#include "console.h"		// to add console message
 #include "keybind.h"
 #include "keyedit.h"
 #include "multiplay.h"
@@ -523,7 +522,7 @@ bool intCloseInGameOptions(bool bPutUpLoadSave, bool bResetMissionWidgets)
 	{
 		// close the form.
 		// Start the window close animation.
-		IntFormAnimated* form = (IntFormAnimated*)widgGetFromID(psWScreen, INTINGAMEPOPUP);
+		auto form = (IntFormAnimated*)widgGetFromID(psWScreen, INTINGAMEPOPUP);
 		if (form) // FIXME: we hijack this routine for the popup close.
 		{
 			form->closeAnimateDelete();

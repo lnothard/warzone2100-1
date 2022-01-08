@@ -21,7 +21,7 @@
 #include <sstream>
 #include <vector>
 
-#include <locale.h>
+#include <clocale>
 #include <physfs.h>
 #include "wzpaths.h"
 
@@ -253,10 +253,10 @@ const char *getLanguage()
 const char *getLanguage()
 {
 	static char language[6] = { '\0' }; // large enough for xx_YY
-	const char *localeName = setlocale(LC_MESSAGES, NULL);
-	char *delim = NULL;
+	const char *localeName = setlocale(LC_MESSAGES, nullptr);
+	char *delim = nullptr;
 
-	if (selectedLanguage == 0 || localeName == NULL)
+	if (selectedLanguage == 0 || localeName == nullptr)
 	{
 		return "";  // Return empty string for system default and errors
 	}
@@ -356,7 +356,7 @@ static bool setLocaleUnix(const char *locale)
 
 	const char *actualLocale = setlocale(LC_ALL, locale);
 
-	if (actualLocale == NULL)
+	if (actualLocale == nullptr)
 	{
 		wz_info("Failed to set locale to \"%s\"", locale);
 #ifdef WZ_OS_MAC
@@ -378,7 +378,7 @@ static bool setLocaleUnix(const char *locale)
 	const char * numericLocale = setlocale(LC_NUMERIC, "C"); // set radix character to the period (".")
 	debug(LOG_WZ, "LC_NUMERIC: \"%s\"", (numericLocale != nullptr) ? numericLocale : "<null>");
 
-	return (actualLocale != NULL);
+	return (actualLocale != nullptr);
 }
 #  endif
 #endif
@@ -477,9 +477,9 @@ std::string wzBindTextDomain(const char *domainname, const char *dirname)
 	const char * pResult = bindtextdomain(domainname, dirname);
 	if (!pResult)
 	{
-		return std::string();
+		return {};
 	}
-	return std::string(pResult);
+	return {pResult};
 #endif
 }
 
@@ -506,7 +506,7 @@ void initI18n()
 			debug(LOG_ERROR, "Could not change to resources directory.");
 		}
 
-		if (resourceURL != NULL)
+		if (resourceURL != nullptr)
 		{
 			CFRelease(resourceURL);
 		}

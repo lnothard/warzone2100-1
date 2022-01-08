@@ -69,10 +69,10 @@
 /* First, we deal with  platform-specific or compiler-specific issues. */
 #include "lib/framework/frame.h"
 /* begin standard C headers. */
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <cerrno>
+#include <cstdlib>
 
 /* end standard C headers. */
 
@@ -94,7 +94,7 @@
 #define __STDC_LIMIT_MACROS 1
 #endif
 
-#include <inttypes.h>
+#include <cinttypes>
 typedef int8_t flex_int8_t;
 typedef uint8_t flex_uint8_t;
 typedef int16_t flex_int16_t;
@@ -328,7 +328,7 @@ struct yy_buffer_state
 /* Stack of input buffers. */
 static size_t yy_buffer_stack_top = 0; /**< index of top of stack. */
 static size_t yy_buffer_stack_max = 0; /**< capacity of stack. */
-static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
+static YY_BUFFER_STATE * yy_buffer_stack = nullptr; /**< Stack as an array. */
 
 /* We provide macros for accessing buffer states in case in the
  * future we want to put the buffer states in a more general
@@ -351,7 +351,7 @@ static int yy_n_chars;		/* number of characters read into yy_ch_buf */
 int res_leng;
 
 /* Points to current character in buffer. */
-static char *yy_c_buf_p = (char *) 0;
+static char *yy_c_buf_p = (char *) nullptr;
 static int yy_init = 0;		/* whether we need to initialize */
 static int yy_start = 0;	/* start state number */
 
@@ -366,10 +366,10 @@ YY_BUFFER_STATE res__create_buffer (FILE *file,int size  );
 void res__delete_buffer (YY_BUFFER_STATE b  );
 void res__flush_buffer (YY_BUFFER_STATE b  );
 void res_push_buffer_state (YY_BUFFER_STATE new_buffer  );
-void res_pop_buffer_state (void );
+void res_pop_buffer_state ( );
 
-static void res_ensure_buffer_stack (void );
-static void res__load_buffer_state (void );
+static void res_ensure_buffer_stack ( );
+static void res__load_buffer_state ( );
 static void res__init_buffer (YY_BUFFER_STATE b,FILE *file  );
 
 #define YY_FLUSH_BUFFER res__flush_buffer(YY_CURRENT_BUFFER )
@@ -413,7 +413,7 @@ void res_free (void *  );
 
 typedef unsigned char YY_CHAR;
 
-FILE *res_in = (FILE *) 0, *res_out = (FILE *) 0;
+FILE *res_in = (FILE *) nullptr, *res_out = (FILE *) nullptr;
 
 typedef int yy_state_type;
 
@@ -664,34 +664,34 @@ extern void res_set_debug(int bdebug);
 #define YY_EXTRA_TYPE void *
 #endif
 
-static int yy_init_globals (void );
+static int yy_init_globals ( );
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
-int res_lex_destroy (void );
+int res_lex_destroy ();
 
-int res_get_debug (void );
+int res_get_debug ();
 
 void res_set_debug (int debug_flag  );
 
-YY_EXTRA_TYPE res_get_extra (void );
+YY_EXTRA_TYPE res_get_extra ();
 
 void res_set_extra (YY_EXTRA_TYPE user_defined  );
 
-FILE *res_get_in (void );
+FILE *res_get_in ();
 
 void res_set_in  (FILE * in_str  );
 
-FILE *res_get_out (void );
+FILE *res_get_out ();
 
 void res_set_out  (FILE * out_str  );
 
-int res_get_leng (void );
+int res_get_leng ();
 
-char *res_get_text (void );
+char *res_get_text ();
 
-int res_get_lineno (void );
+int res_get_lineno ();
 
 void res_set_lineno (int line_number  );
 
@@ -718,7 +718,7 @@ static int yy_flex_strlen (yyconst char * );
 #ifndef YY_NO_INPUT
 
 #ifdef __cplusplus
-static int yyinput (void );
+static int yyinput ();
 #else
 static int input (void );
 #endif
@@ -1251,7 +1251,7 @@ static int yy_get_next_buffer (void)
 				}
 			else
 				/* Can't grow it, we don't own it. */
-				b->yy_ch_buf = 0;
+				b->yy_ch_buf = nullptr;
 
 			if ( ! b->yy_ch_buf )
 				YY_FATAL_ERROR(
@@ -1499,7 +1499,7 @@ static int yy_get_next_buffer (void)
 	(yy_did_buffer_switch_on_eof) = 1;
 }
 
-static void res__load_buffer_state  (void)
+static void res__load_buffer_state  ()
 {
     	(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
 	(yytext_ptr) = (yy_c_buf_p) = YY_CURRENT_BUFFER_LVALUE->yy_buf_pos;

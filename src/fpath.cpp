@@ -94,7 +94,6 @@ static int fpathThreadFunc(void*)
 	return 0;
 }
 
-
 // initialise the findpath module
 bool fpathInitialise()
 {
@@ -112,7 +111,6 @@ bool fpathInitialise()
 
 	return true;
 }
-
 
 void fpathShutdown()
 {
@@ -134,17 +132,6 @@ void fpathShutdown()
 	fpathHardTableReset();
 }
 
-
-/**
- *	Updates the pathfinding system.
- *	@ingroup pathfinding
- */
-void fpathUpdate()
-{
-	// Nothing now
-}
-
-
 bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_MOVETYPE moveType1,
                                PROPULSION_TYPE propulsion2, int player2, FPATH_MOVETYPE moveType2)
 {
@@ -153,22 +140,22 @@ bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_M
 	{
 	default: domain1 = 0;
 		break; // Land
-	case PROPULSION_TYPE_LIFT: domain1 = 1;
+	case PROPULSION_TYPE::LIFT: domain1 = 1;
 		break; // Air
-	case PROPULSION_TYPE_PROPELLOR: domain1 = 2;
+	case PROPULSION_TYPE::PROPELLOR: domain1 = 2;
 		break; // Water
-	case PROPULSION_TYPE_HOVER: domain1 = 3;
+	case PROPULSION_TYPE::HOVER: domain1 = 3;
 		break; // Land and water
 	}
 	switch (propulsion2)
 	{
 	default: domain2 = 0;
 		break; // Land
-	case PROPULSION_TYPE_LIFT: domain2 = 1;
+	case PROPULSION_TYPE::LIFT: domain2 = 1;
 		break; // Air
-	case PROPULSION_TYPE_PROPELLOR: domain2 = 2;
+	case PROPULSION_TYPE::PROPELLOR: domain2 = 2;
 		break; // Water
-	case PROPULSION_TYPE_HOVER: domain2 = 3;
+	case PROPULSION_TYPE::HOVER: domain2 = 3;
 		break; // Land and water
 	}
 
@@ -196,13 +183,13 @@ bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_M
 //
 //	switch (propulsion)
 //	{
-//	case PROPULSION_TYPE_LIFT:
+//	case PROPULSION_TYPE::LIFT:
 //		bits = AIR_BLOCKED;
 //		break;
-//	case PROPULSION_TYPE_HOVER:
+//	case PROPULSION_TYPE::HOVER:
 //		bits = FEATURE_BLOCKED;
 //		break;
-//	case PROPULSION_TYPE_PROPELLOR:
+//	case PROPULSION_TYPE::PROPELLOR:
 //		bits = FEATURE_BLOCKED | LAND_BLOCKED;
 //		break;
 //	default:
@@ -222,7 +209,7 @@ bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_M
 //	}
 //
 //	/* Check scroll limits (used in campaign to partition the map. */
-//	if (propulsion != PROPULSION_TYPE_LIFT && (x < scrollMinX + 1 || y < scrollMinY + 1 || x >= scrollMaxX - 1 || y >=
+//	if (propulsion != PROPULSION_TYPE::LIFT && (x < scrollMinX + 1 || y < scrollMinY + 1 || x >= scrollMaxX - 1 || y >=
 //		scrollMaxY - 1))
 //	{
 //		// coords off map - auto blocking tile
@@ -437,7 +424,7 @@ FPATH_RETVAL fpathDroidRoute(Droid* psDroid, SDWORD tX, SDWORD tY, FPATH_MOVETYP
 	PropulsionStats* psPropStats = getPropulsionStats(psDroid);
 
 	// override for AI to blast our way through stuff
-	if (!isHumanPlayer(psDroid->player) && moveType == FMT_MOVE)
+	if (!isHumanPlayer(psDroid->get_player()) && moveType == FMT_MOVE)
 	{
 		moveType = (psDroid->asWeaps[0].nStat == 0) ? FMT_MOVE : FMT_ATTACK;
 	}
@@ -449,8 +436,8 @@ FPATH_RETVAL fpathDroidRoute(Droid* psDroid, SDWORD tX, SDWORD tY, FPATH_MOVETYP
 	Position startPos = psDroid->pos;
 	Position endPos = Position(tX, tY, 0);
 	StructureBounds dstStructure = getStructureBounds(worldTile(endPos.xy())->psObject);
-	startPos = findNonblockingPosition(startPos, getPropulsionStats(psDroid)->propulsionType, psDroid->player,
-	                                   moveType);
+	startPos = findNonblockingPosition(startPos, getPropulsionStats(psDroid)->propulsionType,
+                                     psDroid->get_player(), moveType);
 	if (!dstStructure.valid())
 	// If there's a structure over the destination, ignore it, otherwise pathfind from somewhere around the obstruction.
 	{
@@ -509,7 +496,7 @@ PathResult fpathExecute(PathJob job)
 	case ASR_FAILED:
 		objTrace(job.droidID, "** Failed route **");
 	// Is this really a good idea? Was in original code.
-		if (job.propulsion == PROPULSION_TYPE_LIFT && (job.droidType != DROID_TRANSPORTER && job.droidType !=
+		if (job.propulsion == PROPULSION_TYPE::LIFT && (job.droidType != DROID_TRANSPORTER && job.droidType !=
 			DROID_SUPERTRANSPORTER))
 		{
 			objTrace(job.droidID, "Doing fallback for non-transport VTOL");
@@ -558,7 +545,7 @@ static size_t fpathResultQueueLength()
 // Only used by fpathTest.
 static FPATH_RETVAL fpathSimpleRoute(MOVE_CONTROL* psMove, int id, int startX, int startY, int tX, int tY)
 {
-	return fpathRoute(psMove, id, startX, startY, tX, tY, PROPULSION_TYPE_WHEELED, DROID_WEAPON, FMT_BLOCK, 0, true,
+	return fpathRoute(psMove, id, startX, startY, tX, tY, PROPULSION_TYPE::WHEELED, DROID_WEAPON, FMT_BLOCK, 0, true,
 	                  getStructureBounds((SimpleObject*)nullptr));
 }
 
@@ -659,20 +646,20 @@ bool fpathCheck(Position orig, Position dest, PROPULSION_TYPE propulsion)
 	Tile* origTile = worldTile(findNonblockingPosition(orig, propulsion).xy());
 	Tile* destTile = worldTile(findNonblockingPosition(dest, propulsion).xy());
 
-	ASSERT_OR_RETURN(false, propulsion != PROPULSION_TYPE_NUM, "Bad propulsion type");
+	ASSERT_OR_RETURN(false, propulsion != PROPULSION_TYPE::NUM, "Bad propulsion type");
 	ASSERT_OR_RETURN(false, origTile != nullptr && destTile != nullptr, "Bad tile parameter");
 
 	switch (propulsion)
 	{
-	case PROPULSION_TYPE_PROPELLOR:
-	case PROPULSION_TYPE_WHEELED:
-	case PROPULSION_TYPE_TRACKED:
-	case PROPULSION_TYPE_LEGGED:
-	case PROPULSION_TYPE_HALF_TRACKED:
+	case PROPULSION_TYPE::PROPELLOR:
+	case PROPULSION_TYPE::WHEELED:
+	case PROPULSION_TYPE::TRACKED:
+	case PROPULSION_TYPE::LEGGED:
+	case PROPULSION_TYPE::HALF_TRACKED:
 		return origTile->limitedContinent == destTile->limitedContinent;
-	case PROPULSION_TYPE_HOVER:
+	case PROPULSION_TYPE::HOVER:
 		return origTile->hoverContinent == destTile->hoverContinent;
-	case PROPULSION_TYPE_LIFT:
+	case PROPULSION_TYPE::LIFT:
 		return true; // assume no map uses skyscrapers to isolate areas
 	default:
 		break;

@@ -240,9 +240,9 @@ bool sendPing()
 		NETend();
 
 		// Note when we sent the ping
-		for (int i = 0; i < MAX_CONNECTED_PLAYERS; ++i)
+		for (unsigned& i : PingSend)
 		{
-			PingSend[i] = realTime;
+			i = realTime;
 		}
 	}
 

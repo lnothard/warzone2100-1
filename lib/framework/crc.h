@@ -36,9 +36,9 @@ struct Sha256
 
 	bool operator ==(Sha256 const &b) const;
 	bool operator !=(Sha256 const &b) const { return !(*this == b); }
-	bool isZero() const;
+	[[nodiscard]] bool isZero() const;
 	void setZero();
-	std::string toString() const;
+	[[nodiscard]] std::string toString() const;
 	void fromString(std::string const &s);
 
 	uint8_t bytes[Bytes];
@@ -54,15 +54,15 @@ public:
 
 	EcKey();
 	EcKey(EcKey const &b);
-	EcKey(EcKey &&b);
+	EcKey(EcKey &&b) noexcept;
 	~EcKey();
 	EcKey &operator =(EcKey const &b);
-	EcKey &operator =(EcKey &&b);
+	EcKey &operator =(EcKey &&b) noexcept;
 
 	void clear();
 
-	bool empty() const;
-	bool hasPrivate() const;
+	[[nodiscard]] bool empty() const;
+	[[nodiscard]] bool hasPrivate() const;
 
 	Sig sign(void const *data, size_t dataLen) const;
 	bool verify(Sig const &sig, void const *data, size_t dataLen) const;
@@ -74,7 +74,7 @@ public:
 	// function for EC public keys.)
 	//
 	// For the private key, the format is the DER-encoded ECPrivateKey SEQUENCE.
-	Key toBytes(Privacy privacy) const;
+	[[nodiscard]] Key toBytes(Privacy privacy) const;
 
 	// Imports the specified (public / private) Key previously exported via toBytes().
 	//
@@ -87,10 +87,10 @@ public:
 	static EcKey generate();
 
 	// Returns the SHA256 hash of the public key
-	std::string publicHashString(size_t truncateToLength = 0) const;
+	[[nodiscard]] std::string publicHashString(size_t truncateToLength = 0) const;
 
 	// Returns the public key, hex-encoded
-	std::string publicKeyHexString(size_t truncateToLength = 0) const;
+	[[nodiscard]] std::string publicKeyHexString(size_t truncateToLength = 0) const;
 
 private:
 	void *vKey;
@@ -104,6 +104,6 @@ std::string b64Tob64UrlSafe(const std::string& inputb64);
 std::string b64UrlSafeTob64(const std::string& inputb64urlsafe);
 
 std::vector<uint8_t> genSecRandomBytes(size_t numBytes);
-void genSecRandomBytes(void * const buf, const size_t size);
+void genSecRandomBytes(void * buf, size_t size);
 
 #endif //_CRC_H_

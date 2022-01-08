@@ -17,26 +17,44 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-#include <stdio.h>
-#include "pointtree.h"
 #include <algorithm>
+#include <cstdio>
 #include <vector>
 
-/*
-How this works:
+#include "pointtree.h"
 
-Points are sorted by their Morton numbers, which are interleaved x and y coordinate bits.
-See: http://en.wikipedia.org/wiki/Z-order_(curve)
-See also: http://en.wikipedia.org/wiki/Morton_number_(number_theory)
+/**
+ * @file pointtree.cpp
+ *
+ * How this works:
+ *
+ * Points are sorted by their Morton numbers, which are interleaved x and y coordinate bits.
+ * See: http://en.wikipedia.org/wiki/Z-order_(curve)
+ * See also: http://en.wikipedia.org/wiki/Morton_number_(number_theory)
+ *
+ * When looking for points in a particular area, a search square is split up into 4 rectangles
+ * of varying sizes, and a quick binary search for point in those ranges is performed. The ranges
+ * may overlap, in which case they are combined.
+ *
+ * For illustrations, run "make check" and look at tests/pointtree.ppm. (Different image each time.)
+ * The coloured areas are the points in the ranges (note that each range also contains some points
+ * outside the rectangles). The orange points are the search results.
+ */
 
-When looking for points in a particular area, a search square is split up into 4 rectangles
-of varying sizes, and a quick binary search for point in those ranges is performed. The ranges
-may overlap, in which case they are combined.
+Filter::Filter(const PointTree& pointTree)
+  : data{pointTree.points.size() + 1}
+{
+}
 
-For illustrations, run "make check" and look at tests/pointtree.ppm. (Different image each time.)
-The coloured areas are the points in the ranges (note that each range also contains some points
-outside the rectangles). The orange points are the search results.
-*/
+void Filter::reset(const PointTree& pointTree)
+{
+  data.assign(pointTree.points.size() + 1, 0);
+}
+
+void Filter::erase(unsigned index)
+{
+  data[index] = std::max(data[index], 1u);
+}
 
 // Expands bit pattern abcd efgh to 0a0b 0c0d 0e0f 0g0h
 static uint64_t expand(uint32_t x)

@@ -225,7 +225,6 @@ public:
     [[nodiscard]] bool has_CB_sensor() const;
     [[nodiscard]] bool has_electronic_weapon() const;
     void gain_experience(unsigned exp);
-    void commander_gain_experience(unsigned exp) const;
     void move_to_rearm_pad();
     void cancel_build();
     void reset_action() noexcept;
@@ -236,13 +235,11 @@ public:
     [[nodiscard]] int space_occupied_on_transporter() const;
     void set_direct_route(int target_x, int target_y) const;
     void increment_kills() noexcept;
-    void increment_commander_kills() const;
     void assign_vtol_to_rearm_pad(RearmPad* rearm_pad);
     [[nodiscard]] int calculate_electronic_resistance() const;
     [[nodiscard]] bool is_selectable() const final;
     [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
     [[nodiscard]] int calculate_attack_priority(const ::Unit* target, int weapon_slot) const final;
-    [[nodiscard]] bool is_hovering() const;
 private:
     using enum DROID_TYPE;
     std::string name;

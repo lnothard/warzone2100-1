@@ -34,10 +34,10 @@
 #include "src/component.h"		// FIXME: we need to handle this better
 #include "src/modding.h"		// FIXME: we need to handle this better
 
-#include <time.h>			// for stats
+#include <ctime>			// for stats
 #include <physfs.h>
 #include "lib/framework/physfs_ext.h"
-#include <string.h>
+#include <cstring>
 #include <memory>
 #include <thread>
 #include <atomic>
@@ -316,7 +316,7 @@ void physfs_file_safe_close(PHYSFS_file* f)
 }
 
 WZFile::~WZFile()
-{ }
+= default;
 
 bool WZFile::closeFile()
 {
@@ -609,7 +609,7 @@ void NET_InitPlayer(uint32_t i, bool initPosition, bool initTeams, bool initSpec
 	}
 }
 
-uint8_t NET_numHumanPlayers(void)
+uint8_t NET_numHumanPlayers()
 {
 	uint8_t RetVal = 0;
 	for (uint8_t Inc = 0; Inc < MAX_PLAYERS; ++Inc)
@@ -620,7 +620,7 @@ uint8_t NET_numHumanPlayers(void)
 	return RetVal;
 }
 
-std::vector<uint8_t> NET_getHumanPlayers(void)
+std::vector<uint8_t> NET_getHumanPlayers()
 {
 	std::vector<uint8_t> RetVal;
 	RetVal.reserve(MAX_PLAYERS);
@@ -978,7 +978,7 @@ bool NETchangePlayerName(UDWORD index, char *newName)
 	{
 		ASSERT_OR_RETURN(false, index <= static_cast<uint32_t>(std::numeric_limits<uint8_t>::max()), "index (%" PRIu32 ") exceeds supported bounds", index);
 		ASSERT_OR_RETURN(false, index == selectedPlayer, "Clients can only change their own name!");
-		uint8_t player = static_cast<uint8_t>(index);
+		auto player = static_cast<uint8_t>(index);
 		WzString newNameStr = NetPlay.players[index].name;
 		NETbeginEncode(NETnetQueue(NetPlay.hostPlayer), NET_PLAYERNAME_CHANGEREQUEST);
 		NETuint8_t(&player);
@@ -1826,12 +1826,12 @@ void NETflush()
 				nStats.rawBytes.sent += compressedRawLen;
 			}
 		}
-		for (int player = 0; player < MAX_TMP_SOCKETS; ++player)
+		for (auto& player : tmp_socket)
 		{
 			// We are the host, send directly to player.
-			if (tmp_socket[player] != nullptr)
+			if (player != nullptr)
 			{
-				socketFlush(tmp_socket[player], std::numeric_limits<uint8_t>::max(), &compressedRawLen);
+				socketFlush(player, std::numeric_limits<uint8_t>::max(), &compressedRawLen);
 				nStats.rawBytes.sent += compressedRawLen;
 			}
 		}
@@ -2886,7 +2886,7 @@ int NETsendFile(WZFile &file, unsigned player)
 		file.closeFile();
 		return 100;
 	}
-	uint32_t bytesToRead = static_cast<uint32_t>(readBytesResult);
+	auto bytesToRead = static_cast<uint32_t>(readBytesResult);
 
 	NETbeginEncode(NETnetQueue(player), NET_FILE_PAYLOAD);
 	NETbin(file.hash.bytes, file.hash.Bytes);
@@ -3131,7 +3131,7 @@ int NETrecvFile(NETQUEUE queue)
 		else
 		{
 			// Attach Quarantine / "downloaded" file attribute to file
-			markAsDownloadedFile(file->filename.c_str());
+			markAsDownloadedFile(file->filename);
 		}
 
 		DownloadingWzFiles.erase(file);
@@ -3614,7 +3614,7 @@ static void NETallowJoining()
 	uint32_t major, minor;
 	ssize_t recv_result = 0;
 
-	if (allow_joining == false)
+	if (!allow_joining)
 	{
 		return;
 	}
@@ -3624,7 +3624,7 @@ static void NETallowJoining()
 	if (bFirstTimeConnect)
 	{
 		ActivityManager::instance().updateMultiplayGameData(game, ingame, NETGameIsLocked());
-		ActivitySink::ListeningInterfaces listeningInterfaces;
+		ListeningInterfaces listeningInterfaces;
 		if (tcp_socket != nullptr)
 		{
 			listeningInterfaces.IPv4 = socketHasIPv4(tcp_socket);
@@ -4008,7 +4008,7 @@ void NETloadBanList() {
 	size_t BanListAppendFname = strlen(BanListPath);
 	strncpy(BanListPath+BanListAppendFname, "/banlist.txt", 4095-BanListAppendFname);
 	FILE* f = fopen(BanListPath, "r");
-	if(f == NULL) {
+	if(f == nullptr) {
 		return;
 	}
 	debug(LOG_INFO, "Reading banlist file: [%s]\n", BanListPath);
@@ -4024,8 +4024,7 @@ void NETloadBanList() {
 			addToBanList(ToBanIP, ToBanName);
 		}
 	}
-	return;
-}
+	}
 
 bool NEThostGame(const char *SessionName, const char *PlayerName, bool spectatorHost,
                  uint32_t gameType, uint32_t two, uint32_t three, uint32_t four,
@@ -4930,15 +4929,15 @@ struct SyncDebugLog
 		}
 		return index;
 	}
-	uint32_t getGameTime() const
+	[[nodiscard]] uint32_t getGameTime() const
 	{
 		return time;
 	}
-	uint32_t getCrc() const
+	[[nodiscard]] uint32_t getCrc() const
 	{
 		return ~crc;  // Invert bits, since everyone else seems to do that with CRCs...
 	}
-	size_t getNumEntries() const
+	[[nodiscard]] size_t getNumEntries() const
 	{
 		return log.size();
 	}
@@ -4964,8 +4963,8 @@ private:
 	std::vector<int> ints;
 
 private:
-	SyncDebugLog(SyncDebugLog const &)/* = delete*/;
-	SyncDebugLog &operator =(SyncDebugLog const &)/* = delete*/;
+	SyncDebugLog(SyncDebugLog const &) = delete/* = delete*/;
+	SyncDebugLog &operator =(SyncDebugLog const &) = delete/* = delete*/;
 };
 
 #define MAX_LEN_LOG_LINE 512  // From debug.c - no use printing something longer.
@@ -5051,9 +5050,9 @@ void syncDebugSetCrc(uint32_t crc)
 
 void resetSyncDebug()
 {
-	for (unsigned i = 0; i < MAX_SYNC_HISTORY; ++i)
+	for (auto& i : syncDebugLog)
 	{
-		syncDebugLog[i].clear();
+		i.clear();
 	}
 
 	syncDebugExtraGameTime = 0;
@@ -5222,7 +5221,7 @@ bool checkDebugSync(uint32_t checkGameTime, GameCrcType checkCrc)
 
 const char *messageTypeToString(unsigned messageType_)
 {
-	MESSAGE_TYPES messageType = (MESSAGE_TYPES)messageType_;  // Cast to enum, so switch gives a warning if new message types are added without updating the switch.
+	auto messageType = (MESSAGE_TYPES)messageType_;  // Cast to enum, so switch gives a warning if new message types are added without updating the switch.
 
 	switch (messageType)
 	{

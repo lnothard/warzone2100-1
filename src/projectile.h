@@ -27,8 +27,34 @@
 #include <glm/fwd.hpp>
 
 #include "basedef.h"
-#include "projectiledef.h"
 #include "weapondef.h"
+
+static constexpr auto PROJ_MAX_PITCH = 45;
+static constexpr auto PROJ_ULTIMATE_PITCH = 80;
+
+/// How long an object burns for after leaving a fire
+static constexpr auto BURN_TIME	= 10000;
+
+/// How much damage per second an object takes when it is burning
+static constexpr auto BURN_DAMAGE	= 15;
+
+/// Least percentage of damage an object takes when burning
+static constexpr auto BURN_MIN_DAMAGE = 30;
+
+/// Downward force against projectiles
+static constexpr auto ACC_GRAVITY = 1000;
+
+/// How long to display a single electronic warfare shimmer
+static constexpr auto ELEC_DAMAGE_DURATION = GAME_TICKS_PER_SEC / 5;
+
+static constexpr auto VTOL_HITBOX_MODIFICATOR = 100;
+static constexpr auto HOMINGINDIRECT_HEIGHT_MIN = 200;
+static constexpr auto HOMINGINDIRECT_HEIGHT_MAX = 450;
+
+static std::array<int, MAX_PLAYERS> experienceGain;
+
+/* The range for neighbouring objects */
+static constexpr auto PROJ_NEIGHBOUR_RANGE = TILE_UNITS * 4;
 
 /// Represents the current stage of a projectile's trajectory
 enum class PROJECTILE_STATE
@@ -41,33 +67,60 @@ enum class PROJECTILE_STATE
 
 class Projectile : public virtual SimpleObject, public Impl::SimpleObject
 {
+public:
   Projectile(unsigned id, unsigned player);
 
   void update();
-
+  
+  /// Update the source experience after a target is damaged/destroyed
+  void updateExperience(unsigned experienceInc);
+  
+  [[nodiscard]] bool gfxVisible() const;
 private:
-  uint8_t state; ///< current projectile state
-  uint8_t bVisible; ///< whether the selected player should see the projectile
-  WeaponStats* psWStats; ///< firing weapon stats
-  Unit* psSource; ///< what fired the projectile
-  Unit* psDest; ///< target of this projectile
-  std::vector<SimpleObject*> psDamaged;
-  ///< the targets that have already been dealt damage to (don't damage the same target twice)
+  using enum PROJECTILE_STATE;
+  PROJECTILE_STATE state;
 
-  Vector3i src = Vector3i(0, 0, 0); ///< Where projectile started
-  Vector3i dst = Vector3i(0, 0, 0); ///< The target coordinates
-  int vXY, vZ; ///< axis velocities
-  Spacetime prevSpacetime; ///< Location of projectile in previous tick.
-  unsigned expectedDamageCaused; ///< Expected damage that this projectile will cause to the target.
-  int partVisible; ///< how much of target was visible on shooting (important for homing)
+  /// Whether the selected player should see the projectile
+  bool bVisible;
+
+  /// Firing weapon stats
+  WeaponStats* psWStats;
+
+  /// What fired the projectile
+  Unit* psSource;
+
+  /// Target of this projectile
+  Unit* psDest;
+
+  /// Targets that have already been dealt damage to (don't damage the same target twice)
+  std::vector<SimpleObject*> psDamaged;
+
+  /// Where projectile started
+  Vector3i src = Vector3i(0, 0, 0);
+
+  /// The target coordinates
+  Vector3i dst = Vector3i(0, 0, 0);
+
+  /// Axis velocities
+  int vXY, vZ;
+
+  /// Location of projectile in previous tick
+  Spacetime prevSpacetime;
+
+  /// Expected damage that this projectile will cause to the target
+  unsigned expectedDamageCaused;
+
+  /// How much of target was visible on shooting (important for homing)
+  int partVisible;
 };
 
 struct INTERVAL
 {
-    int begin, end; // Time 1 = 0, time 2 = 1024. Or begin >= end if empty.
+    /// Time 1 = 0, time 2 = 1024. Or begin >= end if empty
+    int begin, end;
 };
 
-struct DAMAGE
+struct Damage
 {
     Projectile* psProjectile;
     SimpleObject* psDest;
@@ -79,39 +132,9 @@ struct DAMAGE
     int minDamage;
 };
 
-typedef std::vector<Projectile*>::const_iterator ProjectileIterator;
-
-/// True iff object is a projectile.
-static inline bool isProjectile(SIMPLE_OBJECT const* psObject)
-{
-  return psObject != nullptr && psObject->type == OBJ_PROJECTILE;
-}
-
-/// Returns PROJECTILE * if projectile or NULL if not.
-static inline Projectile* castProjectile(SIMPLE_OBJECT* psObject)
-{
-  return isProjectile(psObject) ? (Projectile*)psObject : (Projectile*)nullptr;
-}
-
-/// Returns PROJECTILE const * if projectile or NULL if not.
-static inline Projectile const* castProjectile(SIMPLE_OBJECT const* psObject)
-{
-  return isProjectile(psObject) ? (Projectile const*)psObject : (Projectile const*)nullptr;
-}
 extern SimpleObject* g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
 
-#define PROJ_MAX_PITCH  45
-#define PROJ_ULTIMATE_PITCH  80
-
-#define BURN_TIME	10000	///< How long an object burns for after leaving a fire.
-#define BURN_DAMAGE	15	///< How much damage per second an object takes when it is burning.
-#define BURN_MIN_DAMAGE	30	///< Least percentage of damage an object takes when burning.
-#define ACC_GRAVITY	1000	///< Downward force against projectiles.
-
-/** How long to display a single electronic warfare shimmmer. */
-#define ELEC_DAMAGE_DURATION    (GAME_TICKS_PER_SEC/5)
-
-bool proj_InitSystem(); ///< Initialize projectiles subsystem.
+void proj_InitSystem(); ///< Initialize projectiles subsystem.
 void proj_UpdateAll(); ///< Frame update for projectiles.
 bool proj_Shutdown(); ///< Shut down projectile subsystem.
 
@@ -120,11 +143,11 @@ Projectile* proj_GetNext(); ///< Get next projectile in the list.
 
 void proj_FreeAllProjectiles(); ///< Free all projectiles in the list.
 
-void setExpGain(int player, int gain);
-int getExpGain(int player);
+void setExpGain(unsigned player, int gain);
+int getExpGain(unsigned player);
 
 /// Calculate the initial velocities of an indirect projectile. Returns the flight time.
-int32_t projCalcIndirectVelocities(const int32_t dx, const int32_t dz, int32_t v, int32_t* vx, int32_t* vz,
+int projCalcIndirectVelocities(int32_t dx, int32_t dz, int32_t v, int32_t* vx, int32_t* vz,
                                    int min_angle);
 
 /** Send a single projectile against the given target. */
@@ -155,10 +178,10 @@ bool gfxVisible(Projectile* psObj);
 
 glm::mat4 objectShimmy(SimpleObject* psObj);
 
-static inline void setProjectileSource(Projectile* psProj, SIMPLE_OBJECT* psObj)
+void Projectile::setSource(Unit* psObj)
 {
 	// use the source of the source of psProj if psAttacker is a projectile
-	psProj->psSource = nullptr;
+	psSource = nullptr;
 	if (psObj == nullptr)
 	{
 	}
@@ -168,23 +191,21 @@ static inline void setProjectileSource(Projectile* psProj, SIMPLE_OBJECT* psObj)
 
 		if (psPrevProj->psSource && !psPrevProj->psSource->died)
 		{
-			psProj->psSource = psPrevProj->psSource;
+			psSource = psPrevProj->psSource;
 		}
 	}
 	else
 	{
-		psProj->psSource = castBaseObject(psObj);
+		psSource = castBaseObject(psObj);
 	}
 }
 
 int establishTargetHeight(SimpleObject const* psTarget);
 
-/* @} */
+void checkProjectile(const Projectile* psProjectile, std::string location_description,
+                     std::string function, int recurse);
 
-void checkProjectile(const Projectile* psProjectile, const char* const location_description, const char* function,
-                     const int recurse);
-
-/* assert if projectile is bad */
+/* Assert if projectile is bad */
 #define CHECK_PROJECTILE(object) checkProjectile((object), AT_MACRO, __FUNCTION__, max_check_object_recursion)
 
 #define syncDebugProjectile(psProj, ch) _syncDebugProjectile(__FUNCTION__, psProj, ch)
@@ -192,29 +213,18 @@ void _syncDebugProjectile(const char* function, Projectile const* psProj, char c
 
 struct ObjectShape
 {
-	ObjectShape() : isRectangular(false), size(0, 0)
-	{
-	}
+	ObjectShape() = default;
+	explicit ObjectShape(int radius);
+  explicit ObjectShape(Vector2i size);
+	ObjectShape(int width, int breadth);
 
-	ObjectShape(int radius) : isRectangular(false), size(radius, radius)
-	{
-	}
+	[[nodiscard]] int radius() const;
 
-	ObjectShape(int width, int breadth) : isRectangular(true), size(width, breadth)
-	{
-	}
+  /// True if rectangular, false if circular
+	bool isRectangular = false;
 
-	ObjectShape(Vector2i widthBreadth) : isRectangular(true), size(widthBreadth)
-	{
-	}
-
-	int radius() const
-	{
-		return size.x;
-	}
-
-	bool isRectangular; ///< True if rectangular, false if circular.
-	Vector2i size; ///< x == y if circular.
+  /// x == y if circular
+	Vector2i size {0, 0};
 };
 
 ObjectShape establishTargetShape(SimpleObject* psTarget);

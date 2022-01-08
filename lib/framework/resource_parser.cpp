@@ -81,8 +81,8 @@ extern char* res_get_text(void);
 #define FRAME_LIB_INCLUDE
 
 #include "lib/framework/frame.h"
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
 #include "lib/framework/string_ext.h"
 #include "lib/framework/frameresource.h"

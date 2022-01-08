@@ -75,12 +75,12 @@
 Droid* psLastDroidHit;
 
 //determines the best IMD to draw for the droid - A TEMP MEASURE!
-static void groupConsoleInformOfSelection(UDWORD groupNumber);
-static void groupConsoleInformOfCreation(UDWORD groupNumber);
-static void groupConsoleInformOfCentering(UDWORD groupNumber);
+static void groupConsoleInformOfSelection(unsigned groupNumber);
+static void groupConsoleInformOfCreation(unsigned groupNumber);
+static void groupConsoleInformOfCentering(unsigned groupNumber);
 static void groupConsoleInformOfRemoval();
 static void droidUpdateDroidSelfRepair(Droid* psRepairDroid);
-static UDWORD calcDroidBaseBody(Droid* psDroid);
+static unsigned calcDroidBaseBody(Droid* psDroid);
 
 ACTION Droid::getAction() const noexcept
 {
@@ -90,6 +90,22 @@ ACTION Droid::getAction() const noexcept
 const Order& Droid::getOrder() const
 {
   return *order;
+}
+
+bool Droid::is_probably_doomed(bool is_direct_damage) const
+{
+  auto is_doomed = [this](unsigned damage)
+  {
+      const auto hit_points = get_hp();
+      return damage > hit_points && damage - hit_points > hit_points / 5;
+  };
+
+  if (is_direct_damage)
+  {
+    return is_doomed(expected_damage_direct);
+  }
+
+  return is_doomed(expected_damage_indirect);
 }
 
 void Droid::cancel_build()
@@ -174,6 +190,85 @@ void Droid::upgradeHitPoints()
 	}
 }
 
+void Droid::gain_experience(unsigned exp)
+{
+  experience += exp;
+}
+
+void Droid::update_expected_damage(unsigned damage, bool is_direct) noexcept
+{
+  if (is_direct)
+    expected_damage_direct += damage;
+  else
+    expected_damage_indirect += damage;
+}
+
+unsigned Droid::calculate_sensor_range() const
+{
+  const auto ecm_range = ecm->upgraded[get_player()].range;
+  if (ecm_range > 0) return ecm_range;
+
+  return sensor->upgraded[get_player()].range;
+}
+
+int Droid::calculate_height() const
+{
+  const auto& imd = body->imd_shape;
+  const auto height = imd->max.y - imd->min.y;
+  auto utility_height = 0, y_max = 0, y_min = 0;
+
+  if (is_VTOL())
+  {
+    return height + VTOL_HITBOX_MODIFIER;
+  }
+
+  const auto& weapon_stats = get_weapons()[0].get_stats();
+  switch (type)
+  {
+    case WEAPON:
+      if (num_weapons(*this) == 0) break;
+
+      y_max = weapon_stats.imd_shape->max.y;
+      y_min = weapon_stats.imd_shape->min.y;
+      break;
+    case SENSOR:
+      y_max = sensor->imd_shape->max.y;
+      y_min = sensor->imd_shape->min.y;
+      break;
+    case ECM:
+      y_max = ecm->imd_shape->max.y;
+      y_min = ecm->imd_shape->min.y;
+      break;
+    case CONSTRUCT:
+      break;
+  }
+}
+
+int Droid::space_occupied_on_transporter() const
+{
+  return is_multiplayer ? static_cast<int>(body->size) + 1 : 1;
+}
+
+int Droid::get_vertical_speed() const noexcept
+{
+  return movement->vertical_speed;
+}
+
+unsigned Droid::get_secondary_order() const noexcept
+{
+  return secondary_order;
+}
+
+const Vector2i& Droid::get_destination() const
+{
+  return movement->destination;
+}
+
+void Droid::increment_kills() noexcept
+{
+  ++kills;
+}
+
 // initialise droid module
 bool droidInit()
 {
@@ -246,7 +341,7 @@ int droidDamage(Droid* psDroid, unsigned damage, WEAPON_CLASS weaponClass,
 
 	// VTOLs (and transporters in MP) on the ground take triple damage
 	if ((isVtolDroid(psDroid) || (isTransporter(*psDroid) && bMultiPlayer)) &&
-      (psDroid->movement.status == MOVEINACTIVE))
+      (psDroid->movement->status == MOVE_STATUS::INACTIVE))
 	{
 		damage *= 3;
 	}
@@ -291,9 +386,9 @@ int droidDamage(Droid* psDroid, unsigned damage, WEAPON_CLASS weaponClass,
 		{
 			bool useDeathAnimation = true;
 			//Babas should not burst into flames from non-heat weapons
-			if (psDroid->type == DROID_PERSON)
+			if (psDroid->getType() == DROID_TYPE::PERSON)
 			{
-				if (weaponClass == WC_HEAT)
+				if (weaponClass == WEAPON_CLASS::HEAT)
 				{
 					// NOTE: 3 types of screams are available ID_SOUND_BARB_SCREAM - ID_SOUND_BARB_SCREAM3
 					audio_PlayObjDynamicTrack(psDroid, ID_SOUND_BARB_SCREAM + (rand() % 3), nullptr);
@@ -345,7 +440,7 @@ Droid::Droid(unsigned id, unsigned player)
 	  , actionPos(0, 0)
 {
 	memset(asBits, 0, sizeof(asBits));
-	order.type = NONE;
+	order.type = ORDER_TYPE::NONE;
 	order.pos = Vector2i(0, 0);
 	order.pos2 = Vector2i(0, 0);
 	order.direction = 0;
@@ -2871,7 +2966,7 @@ bool Droid::is_VTOL() const
   if (!propulsion)
     return false;
 
-  return !is_transporter(*this) &&
+  return !isTransporter(*this) &&
          propulsion->propulsion_type == PROPULSION_TYPE::LIFT;
 }
 ////access functions for vtols
@@ -3189,6 +3284,18 @@ void updateVtolAttackRun(Droid& droid, int weapon_slot)
 //	}
 //}
 
+unsigned Droid::get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const
+{
+  assert(body);
+  switch (weapon_class)
+  {
+    case WEAPON_CLASS::KINETIC:
+      return body->upgraded[get_player()].armour;
+    case WEAPON_CLASS::HEAT:
+      return body->upgraded[get_player()].thermal;
+  }
+}
+
 void Droid::assign_vtol_to_rearm_pad(RearmPad* rearm_pad)
 {
   associated_structure = rearm_pad;
@@ -3349,6 +3456,15 @@ bool Droid::has_standard_sensor() const
 //
 //	return false;
 //}
+
+bool Droid::is_radar_detector() const
+{
+  if (!sensor) {
+    return false;
+  }
+
+  return sensor->type == SENSOR_TYPE::RADAR_DETECTOR;
+}
 
 // ////////////////////////////////////////////////////////////////////////////
 // Give a droid from one player to another - used in Electronic Warfare and multiplayer.
@@ -3770,4 +3886,214 @@ int droidSqDist(Droid* psDroid, SimpleObject* psObj)
 		return -1;
 	}
 	return objPosDiffSq(psDroid->pos, psObj->pos);
+}
+
+unsigned calculate_max_range(const Droid& droid)
+{
+  using enum DROID_TYPE;
+  if (droid.getType() == SENSOR)
+    return droid.calculate_sensor_range();
+  else if (num_weapons(droid) == 0)
+    return 0;
+  else
+    return get_max_weapon_range(droid);
+}
+
+bool transporter_is_flying(const Droid& transporter)
+{
+  assert(isTransporter(transporter));
+  auto& order = transporter.getOrder();
+
+  if (is_multiplayer) {
+    return order.type == ORDER_TYPE::MOVE ||
+           order.type == ORDER_TYPE::DISEMBARK ||
+           (order.type == ORDER_TYPE::NONE && transporter.get_vertical_speed() != 0);
+  }
+
+  return order.type == ORDER_TYPE::TRANSPORT_OUT ||
+         order.type == ORDER_TYPE::TRANSPORT_IN ||
+         order.type == ORDER_TYPE::TRANSPORT_RETURN;
+}
+
+bool still_building(const Droid& droid)
+{
+  return droid.is_alive() &&
+         droid.getAction() == ACTION::BUILD;
+}
+
+bool can_assign_fire_support(const Droid& droid, const Structure& structure)
+{
+  if (num_weapons(droid) == 0 || !structure.has_sensor()) return false;
+
+  if (droid.is_VTOL())
+  {
+    return structure.has_VTOL_intercept_sensor() ||
+           structure.has_VTOL_CB_sensor();
+  }
+  else if (has_artillery(droid))
+  {
+    return structure.has_standard_sensor() || structure.has_CB_sensor();
+  }
+  return false;
+}
+
+bool vtol_can_land_here(int x, int y)
+{
+  if (x < 0 || x >= mapWidth ||
+      y < 0 || y >= mapHeight) {
+    return false;
+  }
+
+  const auto tile = mapTile(x, y);
+  if (tile->info_bits & BLOCKING ||
+      tile_is_occupied(*tile) ||
+      get_terrain_type(*tile) == TER_CLIFFFACE ||
+      get_terrain_type(*tile) == TER_WATER) {
+    return false;
+  }
+  return true;
+}
+
+Vector2i choose_landing_position(const Droid& vtol, Vector2i position)
+{
+  Vector2i start_pos = {map_coord(position.x),
+                        map_coord(position.y)};
+
+  set_blocking_flags(vtol);
+
+  auto landing_tile = spiral_search(start_pos, VTOL_LANDING_RADIUS);
+  landing_tile.x = world_coord(landing_tile.x) + TILE_UNITS / 2;
+  landing_tile.y = world_coord(landing_tile.y) + TILE_UNITS / 2;
+
+  clear_blocking_flags(vtol);
+  return landing_tile;
+}
+
+Droid* find_nearest_droid(unsigned x, unsigned y, bool selected)
+{
+  auto& droids = droid_lists[selectedPlayer];
+  Droid* nearest_droid = nullptr;
+  auto shortest_distance = UDWORD_MAX;
+  std::for_each(droids.begin(), droids.end(), [&](auto& droid)
+  {
+      if (droid.is_VTOL())
+        return;
+      if (selected && !droid.is_selected())
+        return;
+
+      const auto distance = iHypot(droid.get_position().x - x,
+                                   droid.get_position().y - y);
+      if (distance < shortest_distance)
+      {
+        shortest_distance = distance;
+        nearest_droid = &droid;
+      }
+  });
+  return nearest_droid;
+}
+
+Vector2i spiral_search(Vector2i start_pos, int max_radius)
+{
+  // test center tile
+  if (vtol_can_land_here(start_pos.x, start_pos.y)) {
+    return start_pos;
+  }
+
+  // test for each radius, from 1 to max_radius (inclusive)
+  for (auto radius = 1; radius <= max_radius; ++radius)
+  {
+    // choose tiles that are between radius and radius+1 away from center
+    // distances are squared
+    const auto min_distance = radius * radius;
+    const auto max_distance = min_distance + 2 * radius;
+
+    // X offset from startX
+    // dx starts with 1, to visiting tiles on same row or col as start twice
+    for (auto dx = 1; dx <= max_radius; dx++)
+    {
+      // Y offset from startY
+      for (auto dy = 0; dy <= max_radius; dy++)
+      {
+        // Current distance, squared
+        const auto distance = dx * dx + dy * dy;
+
+        // Ignore tiles outside the current circle
+        if (distance < min_distance || distance > max_distance)
+        {
+          continue;
+        }
+
+        // call search function for each of the 4 quadrants of the circle
+        if (vtol_can_land_here(start_pos.x + dx, start_pos.y + dy))
+        {
+          return {start_pos.x + dx, start_pos.y + dy};
+        }
+        if (vtol_can_land_here(start_pos.x - dx, start_pos.y - dy))
+        {
+          return {start_pos.x - dx, start_pos.y - dy};
+        }
+        if (vtol_can_land_here(start_pos.x + dy, start_pos.y - dx))
+        {
+          return {start_pos.x + dy, start_pos.y - dx};
+        }
+        if (vtol_can_land_here(start_pos.x - dy, start_pos.y + dx))
+        {
+          return {start_pos.x - dy, start_pos.y + dx};
+        }
+      }
+    }
+  }
+}
+
+void set_blocking_flags(const Droid& droid)
+{
+  const auto &droids = apsDroidLists[droid.get_player()];
+  std::for_each(droids.begin(), droids.end(), [&droid](const auto &other_droid)
+  {
+      Vector2i tile{0, 0};
+      if (other_droid.isStationary()) {
+        tile = map_coord(other_droid.get_position().xy());
+      } else {
+        tile = map_coord(other_droid.get_destination());
+      }
+
+      if (&droid == &other_droid) {
+        return;
+      } else if (tile_on_map(tile)) {
+        mapTile(tile)->info_bits |= BLOCKING;
+      }
+  });
+}
+
+void clear_blocking_flags(const Droid& droid)
+{
+  const auto &droids = droid_lists[droid.get_player()];
+  std::for_each(droids.begin(), droids.end(), [&droid](const auto &other_droid)
+  {
+      Vector2i tile{0, 0};
+      if (other_droid.isStationary()) {
+        tile = map_coord(other_droid.get_position().xy());
+      } else {
+        tile = map_coord(other_droid.get_destination());
+      }
+
+      if (tile_on_map(tile)) {
+        get_map_tile(tile)->info_bits &= ~BLOCKING;
+      }
+  });
+}
+
+bool tile_occupied_by_droid(unsigned x, unsigned y)
+{
+  for (const auto& player_droids : apsDroidLists)
+  {
+    if (std::any_of(player_droids.begin(), player_droids.end(),
+                    [x, y](const auto& droid)  {
+        return map_coord(droid.get_position().x) == x &&
+               map_coord(droid.get_position().y == y);
+    }))  {
+      return true;
+    }
+  }
+  return false;
 }

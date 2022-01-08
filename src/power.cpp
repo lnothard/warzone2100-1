@@ -17,20 +17,22 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file power.c
- *
- * Store PlayerPower and other power related stuff!
- *
+ * @file power.cpp
+ * Store PlayerPower and other power related stuff
  */
-#include <string.h>
+
+#include <cstring>
+
+#include "lib/gamelib/gtime.h"
+#include "lib/netplay/netplay.h"
+#include "lib/sound/audio.h"
+
 #include "objectdef.h"
 #include "power.h"
-#include "lib/gamelib/gtime.h"
-#include "lib/sound/audio.h"
 #include "objmem.h"
 #include "frontend.h"
-#include "lib/netplay/netplay.h"
 #include "multiplay.h"
 #include "multiint.h"
 #include "feature.h"
@@ -40,8 +42,8 @@
 
 #include <fmt/core.h>
 
-#define EXTRACT_POINTS      1
-#define MAX_POWER           1000000
+static constexpr auto EXTRACT_POINTS = 1;
+static constexpr auto MAX_POWER = 1000000;
 
 #define FP_ONE ((int64_t)1 << 32)
 
@@ -95,6 +97,19 @@ bool allocPlayerPower()
 	return true;
 }
 
+void clearPlayerPower()
+{
+  std::for_each(power_list.begin(), power_list.end(), [](auto& player_power)
+  {
+      player_power.current = 0;
+      player_power.total_extracted = 0;
+      player_power.wasted = 0;
+      player_power.modifier = 100;
+      player_power.queue.clear();
+      player_power.max_store = MAX_POWER;
+      player_power.amount_generated_last_update = 0;
+  });
+}
 ///*clear the playerPower */
 //void clearPlayerPower()
 //{
@@ -110,6 +125,28 @@ bool allocPlayerPower()
 //	}
 //}
 
+bool add_power_request(unsigned player, unsigned requester_id, int amount)
+{
+  auto& player_power = power_list[player];
+  auto required_power = amount;
+
+  auto it = player_power.queue.begin();
+  for (; it->requester_id != requester_id; ++it)
+  {
+    required_power += it->amount;
+  }
+
+  if (it == player_power.queue.end())
+  {
+    player_power.queue.emplace_back(requester_id, amount);
+  }
+  else
+  {
+    it->amount = amount;
+  }
+
+  return required_power <= power_list[player].current;
+}
 ///// Returns true iff the power is available. New requests replace old ones (without losing the position in the queue).
 //static bool addPowerRequest(unsigned player, unsigned id, int64_t amount)
 //{
@@ -130,6 +167,15 @@ bool allocPlayerPower()
 //	return requiredPower <= p->currentPower;
 //}
 
+void remove_power_request(const Structure& structure)
+{
+  auto& player_power = power_list[structure.get_player()];
+
+  std::erase_if(player_power.queue, [&structure](auto& request)
+  {
+      return request.requester_id == structure.get_id();
+  });
+}
 //void delPowerRequest(STRUCTURE* psStruct)
 //{
 //	ASSERT_NOT_NULLPTR_OR_RETURN(, psStruct);
@@ -178,13 +224,22 @@ static int64_t getPreciseQueuedPower(unsigned player)
 	PlayerPower const* p = &asPower[player];
 
 	int64_t requiredPower = 0;
-	for (size_t n = 0; n < p->powerQueue.size(); ++n)
+	for (auto n : p->powerQueue)
 	{
-		requiredPower += p->powerQueue[n].amount;
+		requiredPower += n.amount;
 	}
 	return requiredPower;
 }
 
+int get_queued_power(unsigned player)
+{
+  const auto& queue = power_list[player].queue;
+  return std::accumulate(queue.begin(), queue.end(), 0,
+                         [](int sum, const auto& request)
+  {
+      return sum + request.amount;
+  });
+}
 //int getQueuedPower(int player)
 //{
 //	PlayerPower const* p = &asPower[player];
@@ -204,6 +259,20 @@ static void syncDebugEconomy(unsigned player, char ch)
 	syncDebug("%c economy%u = %" PRId64"", ch, player, asPower[player].currentPower);
 }
 
+void usePower(unsigned player, int amount)
+{
+  power_list[player].current = MAX(0, power_list[player].current - amount);
+}
+
+void addPower(unsigned player, int amount)
+{
+  power_list[player].current += amount;
+  if (power_list[player].current > power_list[player].max_store)
+  {
+    power_list[player].wasted += power_list[player].current - power_list[player].max_store;
+    power_list[player].current = power_list[player].max_store;
+  }
+}
 //void usePower(int player, uint32_t quantity)
 //{
 //	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player (%d)", player);
@@ -289,11 +358,11 @@ void updatePlayerPower(int player, int ticks)
 }
 
 /* Updates the current power based on the extracted power and a Power Generator*/
-static void updateCurrentPower(Structure* psStruct, UDWORD player, int ticks)
+static void updateCurrentPower(Structure* psStruct, unsigned player, int ticks)
 {
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player %u", player);
 
-	PowerGenerator* psPowerGen = (PowerGenerator*)psStruct->pFunctionality;
+	auto psPowerGen = (PowerGenerator*)psStruct->pFunctionality;
 	ASSERT_OR_RETURN(, psPowerGen != nullptr, "Null pFunctionality?");
 
 	//each power gen can cope with its associated resource extractors

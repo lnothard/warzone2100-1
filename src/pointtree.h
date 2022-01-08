@@ -17,47 +17,22 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 #ifndef _point_tree_h
 #define _point_tree_h
 
+#include <algorithm>
+#include <vector>
+
 #include "lib/framework/types.h"
 
-#include <vector>
-#include <algorithm>
+class Filter;
 
 class PointTree
 {
 public:
 	typedef std::vector<void*> ResultVector;
 	typedef std::vector<unsigned> IndexVector;
-
-	class Filter ///< Filters are invalidated when modifying the PointTree.
-	{
-	public:
-		Filter() : data(1)
-		{
-		} ///< Must be reset before use.
-		Filter(PointTree const& pointTree) : data(pointTree.points.size() + 1)
-		{
-		}
-
-		void reset(PointTree const& pointTree)
-		{
-			data.assign(pointTree.points.size() + 1, 0);
-		}
-
-		void erase(unsigned index)
-		{
-			data[index] = std::max(data[index], 1u); ///< Erases the point from query results using the filter.
-		}
-
-	private:
-		friend class PointTree;
-
-		typedef std::vector<unsigned> Data;
-
-		Data data;
-	};
 
 	void insert(void* pointData, int32_t x, int32_t y); ///< Inserts a point into the point tree.
 	void clear(); ///< Clears the PointTree.
@@ -75,15 +50,28 @@ public:
 
 	ResultVector lastQueryResults;
 	IndexVector lastFilteredQueryIndices;
-
 private:
+  friend class Filter;
 	typedef std::pair<uint64_t, void*> Point;
-	typedef std::vector<Point> Vector;
 
 	template <bool IsFiltered>
 	ResultVector& queryMaybeFilter(Filter& filter, int32_t minXo, int32_t maxXo, int32_t minYo, int32_t maxYo);
 
-	Vector points;
+	std::vector<Point> points;
+};
+
+/// Filters are invalidated when modifying the PointTree
+class Filter
+{
+public:
+    Filter() = default;
+    explicit Filter(PointTree const& pointTree);
+
+    void reset(PointTree const& pointTree);
+    void erase(unsigned index);
+
+private:
+    std::vector<unsigned> data {1};
 };
 
 #endif //_point_tree_h

@@ -47,20 +47,20 @@ void reset_power();
 /// @return the total power waiting to be transferred
 int get_queued_power(unsigned player);
 
-inline void use_power(unsigned player, int amount)
-{
-  power_list[player].current = MAX(0, power_list[player].current - amount);
-}
-
-inline void add_power(unsigned player, int amount)
-{
-  power_list[player].current += amount;
-  if (power_list[player].current > power_list[player].max_store)
-  {
-    power_list[player].wasted += power_list[player].current - power_list[player].max_store;
-    power_list[player].current = power_list[player].max_store;
-  }
-}
+//inline void use_power(unsigned player, int amount)
+//{
+//  power_list[player].current = MAX(0, power_list[player].current - amount);
+//}
+//
+//inline void add_power(unsigned player, int amount)
+//{
+//  power_list[player].current += amount;
+//  if (power_list[player].current > power_list[player].max_store)
+//  {
+//    power_list[player].wasted += power_list[player].current - power_list[player].max_store;
+//    power_list[player].current = power_list[player].max_store;
+//  }
+//}
 
 inline void set_power_modifier(unsigned player, int modifier)
 {

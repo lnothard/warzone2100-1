@@ -29,11 +29,11 @@
 using nonstd::optional;
 using nonstd::nullopt;
 
-enum FactionID : uint8_t
+enum class FactionID : uint8_t
 {
-	FACTION_NORMAL = 0,
-	FACTION_NEXUS = 1,
-	FACTION_COLLECTIVE = 2
+	NORMAL = 0,
+	NEXUS = 1,
+	COLLECTIVE = 2
 };
 
 #define MAX_FACTION_ID FACTION_COLLECTIVE
@@ -52,7 +52,7 @@ namespace std
 	template <>
 	struct hash<FactionID>
 	{
-		size_t operator()(const FactionID& faction) const
+		std::size_t operator()(const FactionID& faction) const
 		{
 			return hash<uint8_t>()(static_cast<uint8_t>(faction));
 		}

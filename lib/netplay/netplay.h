@@ -30,6 +30,8 @@
 #include "src/factionid.h"
 #include "nettypes.h"
 #include <physfs.h>
+#include <memory>
+#include <utility>
 #include <vector>
 #include <functional>
 #include <memory>
@@ -220,7 +222,7 @@ struct WZFile
 {
 public:
 //	WZFile() : handle_(nullptr, physfs_file_safe_close), size(0), pos(0) { hash.setZero(); }
-	WZFile(PHYSFS_file *handle, const std::string &filename, Sha256 hash, uint32_t size = 0) : handle_(handle, physfs_file_safe_close), filename(filename), hash(hash), size(size), pos(0) {}
+	WZFile(PHYSFS_file *handle, std::string filename, Sha256 hash, uint32_t size = 0) : handle_(handle, physfs_file_safe_close), filename(std::move(filename)), hash(hash), size(size), pos(0) {}
 
 	~WZFile();
 
@@ -234,7 +236,7 @@ public:
 
 public:
 	bool closeFile();
-	inline PHYSFS_file* handle() const
+	[[nodiscard]] inline PHYSFS_file* handle() const
 	{
 		return handle_.get();
 	}
@@ -291,7 +293,7 @@ struct PLAYER
 	// used on host-ONLY (not transmitted to other clients):
 	std::shared_ptr<std::vector<WZFile>> wzFiles = std::make_shared<std::vector<WZFile>>();            ///< for each player, we keep track of map/mod download progress
 	char                IPtextAddress[40];  ///< IP of this player
-	bool fileSendInProgress() const
+	[[nodiscard]] bool fileSendInProgress() const
 	{
 		ASSERT_OR_RETURN(false, wzFiles != nullptr, "Null wzFiles");
 		return !wzFiles->empty();
@@ -312,7 +314,7 @@ struct PLAYER
 		difficulty = AIDifficulty::DISABLED;
 		autoGame = false;
 		IPtextAddress[0] = '\0';
-		faction = FACTION_NORMAL;
+		faction = FACTION::NORMAL;
 		isSpectator = false;
 	}
 };
@@ -410,7 +412,7 @@ struct SpectatorInfo
 	uint16_t spectatorsJoined = 0;
 	uint16_t totalSpectatorSlots = 0;
 
-	inline uint16_t availableSpectatorSlots() const
+	[[nodiscard]] inline uint16_t availableSpectatorSlots() const
 	{
 		if (spectatorsJoined > totalSpectatorSlots)
 		{
@@ -429,17 +431,17 @@ struct SpectatorInfo
 
 	static SpectatorInfo currentNetPlayState();
 
-	inline uint32_t toUint32() const
+	[[nodiscard]] inline uint32_t toUint32() const
 	{
 		return static_cast<uint32_t>(spectatorsJoined << 16) | static_cast<uint32_t>(totalSpectatorSlots);
 	}
 
-	inline bool operator==(const SpectatorInfo& other)
+	inline bool operator==(const SpectatorInfo& other) const
 	{
 		return totalSpectatorSlots == other.totalSpectatorSlots
 		&& spectatorsJoined == other.spectatorsJoined;
 	}
-	inline bool operator!=(const SpectatorInfo& other)
+	inline bool operator!=(const SpectatorInfo& other) const
 	{
 		return !(*this == other);
 	}
@@ -482,9 +484,9 @@ uint32_t NETGetMinorVersion();
 void NET_InitPlayer(uint32_t i, bool initPosition, bool initTeams = false, bool initSpectator = false);
 void NET_InitPlayers(bool initTeams = false, bool initSpectator = false);
 
-uint8_t NET_numHumanPlayers(void);
-void NETsetLobbyOptField(const char *Value, const NET_LOBBY_OPT_FIELD Field);
-std::vector<uint8_t> NET_getHumanPlayers(void);
+uint8_t NET_numHumanPlayers();
+void NETsetLobbyOptField(const char *Value, NET_LOBBY_OPT_FIELD Field);
+std::vector<uint8_t> NET_getHumanPlayers();
 
 const std::vector<WZFile>& NET_getDownloadingWzFiles();
 void NET_addDownloadingWZFile(WZFile&& newFile);
@@ -527,13 +529,13 @@ bool checkDebugSync(uint32_t checkGameTime, GameCrcType checkCrc);  ///< Dumps a
  **/
 struct PlayerReference
 {
-	PlayerReference(uint32_t index): index(index)
+	explicit PlayerReference(uint32_t index): index(index)
 	{
 	}
 
 	void disconnect()
 	{
-		detached = std::unique_ptr<PLAYER>(new PLAYER(NetPlay.players[index]));
+		detached = std::make_unique<PLAYER>(NetPlay.players[index]);
 		detached->wzFiles = std::make_shared<std::vector<WZFile>>();
 	}
 
@@ -542,7 +544,7 @@ struct PlayerReference
 		return detached? detached.get(): &NetPlay.players[index];
 	}
 
-	bool isHost() const
+	[[nodiscard]] bool isHost() const
 	{
 		return index == NetPlay.hostPlayer;
 	}

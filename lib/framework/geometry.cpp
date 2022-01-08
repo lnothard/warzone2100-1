@@ -153,7 +153,7 @@ Affine3F &Affine3F::InvRot()
 
 Vector3i Affine3F::translation() const
 {
-	return Vector3i(m[0][3] / FP_MULTIPLIER, m[1][3] / FP_MULTIPLIER, m[2][3] / FP_MULTIPLIER);
+	return {m[0][3] / FP_MULTIPLIER, m[1][3] / FP_MULTIPLIER, m[2][3] / FP_MULTIPLIER};
 }
 
 Vector3i Affine3F::operator*(const Vector3i v) const

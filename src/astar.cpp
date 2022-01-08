@@ -20,7 +20,7 @@
 
 /**
  *  @file astar.cpp
- *  Function definitions implementing A*-based pathfinding for droids.
+ *  Function definitions implementing A*-based pathfinding for droids
  *
  *  How this works:
  *  * The first time (in a given tick) that some droid  wants to pathfind to a particular
@@ -106,9 +106,7 @@ bool PathContext::is_blocked(int x, int y) const
   if (destination_bounds.is_non_blocking(x, y))  {
     return false;
   }
-
-  return x < 0 || y < 0 || x >= mapWidth ||
-         y >= mapHeight ||
+  return x < 0 || y < 0 || x >= mapWidth || y >= mapHeight ||
          blocking_map->map[x + y * mapWidth];
 }
 

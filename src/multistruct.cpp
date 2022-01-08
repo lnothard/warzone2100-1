@@ -25,7 +25,7 @@
  * files to cope with multiplayer structure related stuff..
  */
 
-#include <string.h>
+#include <cstring>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/math_ext.h"
@@ -33,7 +33,6 @@
 #include "design.h"
 #include "template.h"
 #include "droid.h"
-#include "droiddef.h"
 #include "basedef.h"
 #include "power.h"
 #include "geometry.h"								// for gettilestructure
@@ -53,27 +52,22 @@
 #include "qtscript.h"
 #include "combat.h"
 
-// ////////////////////////////////////////////////////////////////////////////
-// structures
-
-// ////////////////////////////////////////////////////////////////////////////
 // INFORM others that a building has been completed.
 bool SendBuildFinished(Structure* psStruct)
 {
-	uint8_t player = psStruct->player;
+	uint8_t player = psStruct->get_player();
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "invalid player %u", player);
 
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_ADD_STRUCTURE);
-	NETuint32_t(&psStruct->id); // ID of building
+	NETuint32_t(psStruct->get_id()); // ID of building
 
 	// Along with enough info to build it (if needed)
 	NETuint32_t(&psStruct->pStructureType->ref);
-	NETPosition(&psStruct->pos);
+	NETPosition(&psStruct->get_position());
 	NETuint8_t(&player);
 	return NETend();
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 bool recvBuildFinished(NETQUEUE queue)
 {
 	uint32_t structId;

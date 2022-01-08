@@ -108,21 +108,18 @@ static int GetTrackListStartXPos(int ingame)
 class MusicManager_CDAudioEventSink : public CDAudioEventSink
 {
 public:
-	virtual ~MusicManager_CDAudioEventSink() override
-	{
-	};
-	virtual void startedPlayingTrack(const std::shared_ptr<const WZ_TRACK>& track) override;
-	virtual void trackEnded(const std::shared_ptr<const WZ_TRACK>& track) override;
-	virtual void musicStopped() override;
-	virtual void musicPaused(const std::shared_ptr<const WZ_TRACK>& track) override;
-	virtual void musicResumed(const std::shared_ptr<const WZ_TRACK>& track) override;
-	virtual bool unregisterEventSink() const override { return shouldUnregisterEventSink; }
-public:
+	~MusicManager_CDAudioEventSink() override = default;;
+
+	void startedPlayingTrack(const std::shared_ptr<const WZ_TRACK>& track) override;
+	void trackEnded(const std::shared_ptr<const WZ_TRACK>& track) override;
+	void musicStopped() override;
+	void musicPaused(const std::shared_ptr<const WZ_TRACK>& track) override;
+	void musicResumed(const std::shared_ptr<const WZ_TRACK>& track) override;
+	[[nodiscard]] bool unregisterEventSink() const override { return shouldUnregisterEventSink; }
 	void setUnregisterEventSink()
 	{
 		shouldUnregisterEventSink = true;
 	}
-
 private:
 	bool shouldUnregisterEventSink = false;
 };
@@ -156,7 +153,7 @@ public:
 	{
 		addOnClickHandler([](W_BUTTON& button)
 		{
-			W_MusicModeCheckboxButton& self = dynamic_cast<W_MusicModeCheckboxButton&>(button);
+			auto& self = dynamic_cast<W_MusicModeCheckboxButton&>(button);
 			if (!self.isEnabled()) { return; }
 			self.isChecked = !self.isChecked;
 		});
@@ -307,7 +304,7 @@ void W_TrackRow::initialize(bool ingame)
 		auto captureTrack = track;
 		pCheckBox->addOnClickHandler([captureTrack](W_BUTTON& button)
 		{
-			W_MusicModeCheckboxButton& self = dynamic_cast<W_MusicModeCheckboxButton&>(button);
+			auto& self = dynamic_cast<W_MusicModeCheckboxButton&>(button);
 			PlayList_SetTrackMusicMode(captureTrack, self.getMusicMode(), self.getIsChecked());
 		});
 		pCheckBox->setGeometry(
@@ -445,7 +442,7 @@ public:
 
 	virtual void display(int xOffset, int yOffset) override;
 
-	virtual ~TrackDetailsForm() override
+	~TrackDetailsForm() override
 	{
 		if (pAlbumCoverTexture)
 		{
@@ -636,7 +633,7 @@ class MusicListHeader : public W_FORM
 {
 public:
 	MusicListHeader();
-	virtual void display(int xOffset, int yOffset);
+	void display(int xOffset, int yOffset) override;
 };
 
 MusicListHeader::MusicListHeader()
@@ -669,7 +666,7 @@ public:
 		AudioCallback = nullptr;
 	}
 
-	virtual ~W_MusicListHeaderColImage() override
+	~W_MusicListHeaderColImage() override
 	{
 		if (pAlbumCoverTexture)
 		{
@@ -768,7 +765,7 @@ static void addTrackList(WIDGET* parent, bool ingame)
 		pTrackRow->setGeometry(0, 0, TL_ENTRYW, TL_ENTRYH);
 		pTrackRow->addOnClickHandler([](W_BUTTON& clickedButton)
 		{
-			W_TrackRow& pTrackRow = dynamic_cast<W_TrackRow&>(clickedButton);
+			auto& pTrackRow = dynamic_cast<W_TrackRow&>(clickedButton);
 			if (selectedTrack == pTrackRow.getTrack()) { return; }
 			cdAudio_PlaySpecificTrack(pTrackRow.getTrack());
 		});

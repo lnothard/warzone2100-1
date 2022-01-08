@@ -153,7 +153,7 @@ static void gwFreeGateway(GATEWAY* psDel)
 {
 	int pos;
 
-	if (psMapTiles) // this lines fixes the bug where we were closing the gateways after freeing the map
+	if (!psMapTiles.empty()) // this lines fixes the bug where we were closing the gateways after freeing the map
 	{
 		// clear the map flags
 		if (psDel->x1 == psDel->x2)

@@ -272,7 +272,7 @@ bool found3DBuildLocTwo(Vector2i& pos, Vector2i& pos2)
 	}
 
 	wallDrag.status = DRAG_INACTIVE;
-	StructureStats* stats = (StructureStats*)sBuildDetails.psStats;
+	auto stats = (StructureStats*)sBuildDetails.psStats;
 	LineBuild lb = calcLineBuild(stats, getBuildingDirection(), wallDrag.pos, wallDrag.pos2);
 	pos = lb.begin;
 	pos2 = lb.back();
