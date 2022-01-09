@@ -31,13 +31,42 @@
 #include "positiondef.h"
 #include "unit.h"
 
-#define NUM_FACTORY_MODULES 2
-#define NUM_POWER_MODULES 4
-#define REF_ANY 255		// Used to indicate any kind of building when calling intGotoNextStructureType()
-#define LOTS_OF 0xFFFFFFFF  // highest number the limit can be set to
-#define STRUCTURE_CONNECTED 0x0001 ///< This structure must be built side by side with another of the same player
-#define SAS_OPEN_SPEED		(GAME_TICKS_PER_SEC)
-#define SAS_STAY_OPEN_TIME	(GAME_TICKS_PER_SEC * 6)
+static constexpr auto NUM_FACTORY_MODULES = 2;
+static constexpr auto NUM_POWER_MODULES = 4;
+static constexpr auto NY = 255;		// Used to indicate any kind of building when calling intGotoNextStructureType()
+static constexpr auto LOTS_OF = 0xFFFFFFFF;  // highest number the limit can be set to
+static constexpr auto STRUCTURE_CONNECTED = 0x0001; ///< This structure must be built side by side with another of the same player
+static constexpr auto SAS_OPEN_SPEED = GAME_TICKS_PER_SEC;
+static constexpr auto SAS_STAY_OPEN_TIME = (GAME_TICKS_PER_SEC * 6);
+
+/// Maximum slope of the terrain for building a structure
+static constexpr auto MAX_INCLINE	= 50;
+
+/* droid construction smoke cloud constants */
+static constexpr auto DROID_CONSTRUCTION_SMOKE_OFFSET	= 30;
+static constexpr auto DROID_CONSTRUCTION_SMOKE_HEIGHT	= 20;
+
+/// How often to increase the resistance level of a structure
+static constexpr auto RESISTANCE_INTERVAL = 2000;
+
+// how long to wait between CALL_STRUCT_ATTACKED's - plus how long to flash on radar for
+static constexpr auto ATTACK_CB_PAUSE	= 5000;
+
+/// Extra z padding for assembly points
+static constexpr auto ASSEMBLY_POINT_Z_PADDING = 10;
+
+static constexpr auto STRUCTURE_DAMAGE_SCALING = 400;
+
+//production loop max
+static constexpr auto INFINITE_PRODUCTION = 9;
+
+/*This should correspond to the structLimits! */
+static constexpr auto MAX_FACTORY	=	5;
+
+//used to flag when the Factory is ready to start building
+static constexpr auto ACTION_START_TIME = 0;
+
+class DroidTemplate;
 
 enum class STRUCTURE_TYPE
 {
@@ -87,7 +116,6 @@ enum class STRUCTURE_STRENGTH
 
 typedef UWORD STRUCTSTRENGTH_MODIFIER;
 
-
 enum class STRUCTURE_ANIMATION_STATE
 {
     NORMAL,
@@ -96,6 +124,16 @@ enum class STRUCTURE_ANIMATION_STATE
     CLOSING
 };
 
+enum class FLAG_TYPE
+{
+    FACTORY_FLAG,
+    CYBORG_FLAG,
+    VTOL_FLAG,
+    REPAIR_FLAG,
+    //separate the numfactory from numflag
+    NUM_FLAG_TYPES,
+    NUM_FACTORY_TYPES = REPAIR_FLAG,
+};
 
 struct FlagPosition : public ObjectPosition
 {
@@ -177,12 +215,12 @@ public:
     Structure& operator=(const Structure&) = delete;
     Structure& operator=(Structure&&) = delete;
 
-    virtual void print_info() const = 0;
-    [[nodiscard]] virtual bool has_sensor() const = 0;
-    [[nodiscard]] virtual bool has_standard_sensor() const = 0;
-    [[nodiscard]] virtual bool has_CB_sensor() const = 0;
-    [[nodiscard]] virtual bool has_VTOL_intercept_sensor() const = 0;
-    [[nodiscard]] virtual bool has_VTOL_CB_sensor() const = 0;
+    virtual void printInfo() const = 0;
+    [[nodiscard]] virtual bool hasSensor() const = 0;
+    [[nodiscard]] virtual bool hasStandardSensor() const = 0;
+    [[nodiscard]] virtual bool hasCbSensor() const = 0;
+    [[nodiscard]] virtual bool hasVtolInterceptSensor() const = 0;
+    [[nodiscard]] virtual bool hasVtolCbSensor() const = 0;
 };
 
 namespace Impl
@@ -192,28 +230,28 @@ namespace Impl
     public:
         Structure(unsigned id, unsigned player);
 
-        [[nodiscard]] bool is_blueprint() const noexcept;
-        [[nodiscard]] bool is_wall() const noexcept;
+        [[nodiscard]] bool isBlueprint() const noexcept;
+        [[nodiscard]] bool isWall() const noexcept;
         [[nodiscard]] bool isRadarDetector() const final;
-        [[nodiscard]] bool is_probably_doomed() const;
-        [[nodiscard]] bool is_pulled_to_terrain() const;
-        [[nodiscard]] bool has_modules() const noexcept;
-        [[nodiscard]] bool has_sensor() const final;
-        [[nodiscard]] bool has_standard_sensor() const final;
-        [[nodiscard]] bool has_CB_sensor() const final;
-        [[nodiscard]] bool has_VTOL_intercept_sensor() const final;
-        [[nodiscard]] bool has_VTOL_CB_sensor() const final;
-        [[nodiscard]] bool smoke_when_damaged() const noexcept;
-        [[nodiscard]] unsigned get_original_hp() const;
-        [[nodiscard]] unsigned get_armour_value(WEAPON_CLASS weapon_class) const;
-        [[nodiscard]] Vector2i get_size() const;
+        [[nodiscard]] bool isProbablyDoomed() const;
+        [[nodiscard]] bool isPulledToTerrain() const;
+        [[nodiscard]] bool hasModules() const noexcept;
+        [[nodiscard]] bool hasSensor() const final;
+        [[nodiscard]] bool hasStandardSensor() const final;
+        [[nodiscard]] bool hasCbSensor() const final;
+        [[nodiscard]] bool hasVtolInterceptSensor() const final;
+        [[nodiscard]] bool hasVtolCbSensor() const final;
+        [[nodiscard]] bool smokeWhenDamaged() const noexcept;
+        [[nodiscard]] unsigned getOriginalHp() const;
+        [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
+        [[nodiscard]] Vector2i getSize() const;
         [[nodiscard]] int get_foundation_depth() const noexcept;
         [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
         void update_expected_damage(unsigned damage, bool is_direct) noexcept override;
-        [[nodiscard]] unsigned calculate_sensor_range() const final;
+        [[nodiscard]] unsigned calculateSensorRange() const final;
         [[nodiscard]] int calculate_gate_height(std::size_t time, int minimum) const;
         void set_foundation_depth(int depth) noexcept;
-        void print_info() const override;
+        void printInfo() const override;
         [[nodiscard]] unsigned build_points_to_completion() const;
         [[nodiscard]] unsigned calculate_refunded_power() const;
         [[nodiscard]] int calculate_attack_priority(const ::Unit* target, int weapon_slot) const final;
@@ -251,7 +289,6 @@ namespace Impl
     StructureBounds get_bounds(const Structure& structure) noexcept;
 }
 
-
 struct ResearchItem
 {
     uint8_t tech_code;
@@ -271,8 +308,12 @@ private:
     std::size_t timeStartHold; /* The time the research facility was put on hold*/
 };
 
-class Factory
+class Factory : public virtual Structure, public Impl::Structure
 {
+public:
+    bool setManufacture(DroidTemplate* droidTemplate, QUEUE_MODE mode);
+    void refundBuildPower();
+private:
     uint8_t productionLoops; ///< Number of loops to perform. Not synchronised, and only meaningful for selectedPlayer.
     uint8_t loopsPerformed; /* how many times the loop has been performed*/
     DroidTemplate* psSubject; ///< The subject the structure is working on.
@@ -315,16 +356,7 @@ class RearmPad : public virtual Structure, public Impl::Structure
     std::size_t timeLastUpdated; /* Time rearm was last updated */
 };
 
-enum class FLAG_TYPE
-{
-    FACTORY_FLAG,
-    CYBORG_FLAG,
-    VTOL_FLAG,
-    REPAIR_FLAG,
-    //separate the numfactory from numflag
-    NUM_FLAG_TYPES,
-    NUM_FACTORY_TYPES = REPAIR_FLAG,
-};
+
 
 //this is used for module graphics - factory and vtol factory
 static const int NUM_FACMOD_TYPES = 2;
@@ -353,22 +385,7 @@ typedef UPGRADE_MOD REPAIR_FACILITY_UPGRADE;
 typedef UPGRADE_MOD POWER_UPGRADE;
 typedef UPGRADE_MOD REARM_UPGRADE;
 
-// how long to wait between CALL_STRUCT_ATTACKED's - plus how long to flash on radar for
-#define ATTACK_CB_PAUSE		5000
 
-/// Extra z padding for assembly points
-#define ASSEMBLY_POINT_Z_PADDING 10
-
-#define	STRUCTURE_DAMAGE_SCALING	400
-
-//production loop max
-#define INFINITE_PRODUCTION	 9//10
-
-/*This should correspond to the structLimits! */
-#define	MAX_FACTORY			5
-
-//used to flag when the Factory is ready to start building
-#define ACTION_START_TIME	0
 
 extern std::vector<ProductionRun> asProductionRun[NUM_FACTORY_TYPES];
 

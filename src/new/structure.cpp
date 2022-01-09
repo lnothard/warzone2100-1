@@ -49,7 +49,7 @@ namespace Impl {
 //			state == BLUEPRINT_PLANNED_BY_ALLY;
 //	}
 
-	bool Structure::is_wall() const noexcept
+	bool Structure::isWall() const noexcept
 	{
 		if (stats->type == WALL || stats->type == WALL_CORNER)  {
       return true;
@@ -66,9 +66,9 @@ namespace Impl {
 		return stats->sensor_stats->type == RADAR_DETECTOR;
 	}
 
-	bool Structure::is_probably_doomed() const
+	bool Structure::isProbablyDoomed() const
 	{
-		const auto hit_points = get_hp();
+		const auto hit_points = getHp();
 		return expected_damage > hit_points && expected_damage - hit_points > hit_points / 15;
 	}
 
@@ -82,7 +82,7 @@ namespace Impl {
 //		return num_modules > 0;
 //	}
 
-	bool Structure::has_sensor() const
+	bool Structure::hasSensor() const
 	{
 		return stats->sensor_stats != nullptr;
 	}
@@ -123,7 +123,7 @@ namespace Impl {
 //		return sensor_type == VTOL_CB || sensor_type == SUPER;
 //	}
 
-	bool Structure::smoke_when_damaged() const noexcept
+	bool Structure::smokeWhenDamaged() const noexcept
 	{
 		if (is_wall() || stats->type == GATE || state == BEING_BUILT) {
       return false;
@@ -131,18 +131,18 @@ namespace Impl {
 		return true;
 	}
 
-	unsigned Structure::get_original_hp() const
+	unsigned Structure::getOriginalHp() const
 	{
 		return stats->upgraded_stats[getPlayer()].hit_points;
 	}
 
-  unsigned Structure::get_armour_value(WEAPON_CLASS weapon_class) const
+  unsigned Structure::getArmourValue(WEAPON_CLASS weaponClass) const
   {
     if (state != BEING_BUILT)
       return 0;
 
     using enum WEAPON_CLASS;
-    if (weapon_class == KINETIC)
+    if (weaponClass == KINETIC)
     {
       return stats->upgraded_stats[getPlayer()].armour;
     }
@@ -152,7 +152,7 @@ namespace Impl {
     }
   }
 
-	Vector2i Structure::get_size() const
+	Vector2i Structure::getSize() const
 	{
 		return stats->size(getRotation().direction);
 	}
@@ -173,7 +173,7 @@ namespace Impl {
 		assert(expected_damage >= 0);
 	}
 
-  unsigned Structure::calculate_sensor_range() const
+  unsigned Structure::calculateSensorRange() const
   {
     if (stats->ecm_stats) {
       return stats->ecm_stats->upgraded[getPlayer()].range;
@@ -236,7 +236,7 @@ namespace Impl {
     return state;
   }
 
-  void Structure::print_info() const
+  void Structure::printInfo() const
   {
     if (is_blueprint())  {
       return;
@@ -283,7 +283,7 @@ namespace Impl {
 
 	bool is_damaged(const Structure& structure)
 	{
-		return structure.get_hp() < structure.get_original_hp();
+		return structure.getHp() < structure.get_original_hp();
 	}
 
 //	StructureBounds get_bounds(const Structure& structure) noexcept
@@ -404,7 +404,7 @@ namespace Impl {
 		if (num_weapons(structure) == 0)  {
       return false;
     }
-		auto& weapon = structure.get_weapons()[weapon_slot];
+		auto& weapon = structure.getWeapons()[weapon_slot];
 		const auto max_range = weapon.get_max_range(structure.getPlayer());
 
 		return objectPositionSquareDiff(structure.getPosition(),
@@ -568,7 +568,7 @@ const Structure* find_repair_facility(unsigned player)
 //  return tasks_remaining() == 0;
 //}
 
-void PowerGenerator::print_info() const
+void PowerGenerator::printInfo() const
 {
   auto extractor_count = resource_extractors.size();
 }

@@ -2297,10 +2297,10 @@ bool readFXData(const char* fileName)
 	WzConfig ini(WzString::fromUtf8(fileName), WzConfig::ReadOnly);
 	std::vector<WzString> list = ini.childGroups();
 
-	for (int i = 0; i < list.size(); ++i)
+	for (auto& i : list)
 	{
-		ini.beginGroup(list[i]);
-		EFFECT* curEffect = new EFFECT();
+		ini.beginGroup(i);
+		auto curEffect = new EFFECT();
 
 		curEffect->control = ini.value("control").toInt();
 		curEffect->group = (EFFECT_GROUP)ini.value("group").toInt();

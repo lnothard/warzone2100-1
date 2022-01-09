@@ -145,7 +145,7 @@ namespace Impl
 
     bool Droid::isProbablyDoomed(bool is_direct_damage) const {
       auto is_doomed = [this](unsigned damage) {
-          const auto hit_points = get_hp();
+          const auto hit_points = getHp();
           return damage > hit_points && damage - hit_points > hit_points / 5;
       };
 
@@ -156,7 +156,8 @@ namespace Impl
       return is_doomed(expected_damage_indirect);
     }
 
-    void Droid::cancelBuild() {
+    void Droid::cancelBuild()
+    {
       using enum ORDER_TYPE;
       if (order->type == NONE || order->type == PATROL || order->type == HOLD ||
           order->type == SCOUT || order->type == GUARD) {
@@ -174,22 +175,312 @@ namespace Impl
         }
         triggerEventDroidIdle(this);
       }
+    }
 
-      unsigned Droid::getLevel() const
+    unsigned Droid::getLevel() const
+    {
+      if (!brain) {
+        return 0;
+      }
+      const auto& rank_thresholds = brain->upgraded[getPlayer()].rank_thresholds;
+      for (int i = 1; i < rank_thresholds.size(); ++i)
       {
-        if (!brain) {
-          return 0;
+        if (kills < rank_thresholds.at(i)) {
+          return i - 1;
         }
-        const auto& rank_thresholds = brain->upgraded[getPlayer()].rank_thresholds;
-        for (int i = 1; i < rank_thresholds.size(); ++i)
-        {
-          if (kills < rank_thresholds.at(i)) {
-            return i - 1;
-          }
+      }
+      return rank_thresholds.size() - 1;
+    }
+
+   bool Droid::isStationary() const
+   {
+      using enum MOVE_STATUS;
+      return movement->status == INACTIVE ||
+             movement->status == HOVER ||
+             movement->status == SHUFFLE;
+   }
+
+  bool Droid::hasCommander() const {
+    if (type == COMMAND &&
+        group != nullptr &&
+        group->isCommandGroup()) {
+      return true;
+    }
+    return false;
+  }
+
+  void Droid::upgradeHitPoints() {
+    // use big numbers to scare away rounding errors
+    const auto factor = 10000;
+    auto prev = original_hp;
+    original_hp = calcDroidBaseBody(this);
+    auto increase = original_hp * factor / prev;
+    auto hp = MIN(original_hp, (getHp() * increase) / factor + 1);
+    DroidTemplate sTemplate;
+    templateSetParts(this, &sTemplate);
+
+    // update engine too
+    baseSpeed = calcDroidBaseSpeed(&sTemplate, weight, getPlayer());
+    if (isTransporter(*this)) {
+      for (auto droid: group->psList) {
+        if (droid != this) {
+          droid->upgradeHitPoints();
         }
-        return rank_thresholds.size() - 1;
       }
     }
+  }
+
+  void Droid::resetAction() noexcept
+  {
+    time_action_started = gameTime;
+    action_points_done = 0;
+  }
+
+  bool Droid::isDamaged() const
+  {
+    return getHp() < original_hp;
+  }
+
+  void Droid::gainExperience(unsigned exp) {
+    experience += exp;
+  }
+
+  bool Droid::isVtol() const
+  {
+    if (!propulsion)
+      return false;
+
+    return !isTransporter(*this) &&
+           propulsion->propulsionType == PROPULSION_TYPE::LIFT;
+  }
+
+  void Droid::update_expected_damage(unsigned damage, bool is_direct) noexcept {
+    if (is_direct)
+      expected_damage_direct += damage;
+    else
+      expected_damage_indirect += damage;
+  }
+
+  unsigned Droid::calculateSensorRange() const {
+    const auto ecm_range = ecm->upgraded[getPlayer()].range;
+    if (ecm_range > 0) return ecm_range;
+
+    return sensor->upgraded[getPlayer()].range;
+  }
+
+  int Droid::calculateHeight() const {
+    const auto &imd = body->pIMD;
+    const auto height = imd->max.y - imd->min.y;
+    auto utility_height = 0, y_max = 0, y_min = 0;
+
+    if (isVtol()) {
+      return height + VTOL_HITBOX_MODIFIER;
+    }
+
+    const auto &weapon_stats = getWeapons()[0].get_stats();
+    switch (type) {
+      case WEAPON:
+        if (num_weapons(*this) == 0) break;
+
+        y_max = weapon_stats.imd_shape->max.y;
+        y_min = weapon_stats.imd_shape->min.y;
+        break;
+      case SENSOR:
+        y_max = sensor->pIMD->max.y;
+        y_min = sensor->pIMD->min.y;
+        break;
+      case ECM:
+        y_max = ecm->pIMD->max.y;
+        y_min = ecm->pIMD->min.y;
+        break;
+      case CONSTRUCT:
+        break;
+    }
+  }
+
+  DROID_TYPE Droid::getType() const noexcept
+  {
+    return type;
+  }
+
+  bool Droid::has_electronic_weapon() const
+  {
+    if (Impl::has_electronic_weapon(*this))  {
+      return true;
+    }
+    if (type != COMMAND)  {
+      return false;
+    }
+    return group->has_electronic_weapon();
+  }
+
+  int Droid::space_occupied_on_transporter() const {
+    return bMultiPlayer ? static_cast<int>(body->size) + 1 : 1;
+  }
+
+  int Droid::getVerticalSpeed() const noexcept {
+    return movement->vertical_speed;
+  }
+
+  bool Droid::isFlying() const
+  {
+    if (!propulsion)
+      return false;
+
+    return (movement->status != MOVE_STATUS::INACTIVE ||
+            isTransporter(*this)) &&
+           propulsion->propulsionType == PROPULSION_TYPE::LIFT;
+  }
+
+  unsigned Droid::getSecondaryOrder() const noexcept {
+    return secondary_order;
+  }
+
+  const Vector2i &Droid::getDestination() const {
+    return movement->destination;
+  }
+
+  void Droid::increment_kills() noexcept {
+    ++kills;
+  }
+
+  unsigned Droid::get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const
+  {
+    assert(body);
+    switch (weapon_class)
+    {
+      case WEAPON_CLASS::KINETIC:
+        return body->upgraded[getPlayer()].armour;
+      case WEAPON_CLASS::HEAT:
+        return body->upgraded[getPlayer()].thermal;
+    }
+  }
+
+  void Droid::assign_vtol_to_rearm_pad(RearmPad* rearm_pad)
+  {
+    associatedStructure = rearm_pad;
+  }
+
+  bool Droid::is_attacking() const noexcept
+  {
+    if (!(type == WEAPON || type == CYBORG || type == CYBORG_SUPER)) {
+      return false;
+    }
+    if (action == ATTACK || action == MOVE_TO_ATTACK ||
+        action == ROTATE_TO_ATTACK || action == VTOL_ATTACK ||
+        action == MOVE_FIRE) {
+      return true;
+    }
+    return false;
+  }
+
+  bool Droid::isSelectable() const
+  {
+    if (!SimpleObject::isSelectable()) {
+      return false;
+    }
+    if (isTransporter(*this) && !bMultiPlayer) {
+      return false;
+    }
+    return true;
+  }
+
+  int Droid::calculate_electronic_resistance() const
+  {
+    auto resistance = experience /
+                      (65536 / MAX(1, body->upgraded[getPlayer()].resistance));
+    resistance = MAX(resistance, body->upgraded[getPlayer()].resistance);
+    return MIN(resistance, INT16_MAX);
+  }
+
+  bool Droid::isRadarDetector() const
+  {
+    if (!sensor) {
+      return false;
+    }
+    return sensor->type == SENSOR_TYPE::RADAR_DETECTOR;
+  }
+
+  bool Droid::has_standard_sensor() const
+  {
+    if (type != SENSOR) {
+      return false;
+    }
+    if (sensor->type == SENSOR_TYPE::VTOL_INTERCEPT ||
+        sensor->type == SENSOR_TYPE::STANDARD ||
+        sensor->type == SENSOR_TYPE::SUPER)  {
+      return true;
+    }
+    return false;
+  }
+
+  bool Droid::has_CB_sensor() const
+  {
+    if (type != SENSOR) {
+      return false;
+    }
+    if (sensor->type == SENSOR_TYPE::VTOL_CB ||
+        sensor->type == SENSOR_TYPE::INDIRECT_CB)  {
+      return true;
+    }
+    return false;
+  }
+
+  void Droid::actionUpdateTransporter()
+  {
+    //check if transporter has arrived
+    if (updateTransporter(this))
+    {
+      // Got to destination
+      action = ACTION::NONE;
+    }
+  }
+
+  void Droid::actionSanity()
+  {
+    // Don't waste ammo unless given a direct attack order.
+    bool avoidOverkill = order->type != ORDER_TYPE::ATTACK &&
+                         (action == ACTION::ATTACK ||
+                          action == ACTION::MOVE_FIRE ||
+                          action == ACTION::MOVE_TO_ATTACK	||
+                          action == ACTION::ROTATE_TO_ATTACK ||
+                          action == ACTION::VTOL_ATTACK);
+
+    bool bDirect = false;
+
+    // clear the target if it has died
+    for (int i = 0; i < MAX_WEAPONS; i++)
+    {
+      bDirect = proj_Direct(&getWeapons()[i].get_stats());
+      if (!action_target[i] || !(avoidOverkill
+                                 ? aiObjectIsProbablyDoomed(action_target[i], bDirect)
+                                 : action_target[i]->died)) {
+        return;
+      }
+      syncDebugObject(action_target[i], '-');
+      setDroidActionTarget(this, nullptr, i);
+      if (i != 0) {
+        continue;
+      }
+      if (action == ACTION::MOVE_FIRE || action == ACTION::TRANSPORT_IN ||
+          action == ACTION::TRANSPORT_OUT) {
+        continue;
+      }
+      action = ACTION::NONE;
+      // if VTOL - return to rearm pad if not patrolling
+      if (!isVtolDroid(this)) {
+        continue;
+      }
+      if ((order->type == ORDER_TYPE::PATROL || order->type == ORDER_TYPE::CIRCLE) &&
+      (!vtolEmpty(*this) || (secondary_order & DSS_ALEV_MASK) == DSS_ALEV_NEVER)) {
+        // Back to the patrol.
+        actionDroid(this, ACTION::MOVE, order->pos.x, order->pos.y);
+      } else {
+        moveToRearm(this);
+      }
+    }
+  }
+}
 //void cancelBuild(DROID *psDroid)
 //{
 //	if (psDroid->order.type == DORDER_NONE || psDroid->order.type == DORDER_PATROL || psDroid->order.type == DORDER_HOLD || psDroid->order.type == DORDER_SCOUT || psDroid->order.type == DORDER_GUARD)
@@ -218,233 +509,6 @@ namespace Impl
 //		triggerEventDroidIdle(psDroid);
 //	}
 //}
-
-    bool Droid::hasCommander() const {
-      if (type == COMMAND &&
-          group != nullptr &&
-          group->isCommandGroup()) {
-        return true;
-      }
-      return false;
-    }
-
-    void Droid::upgradeHitPoints() {
-      // use big numbers to scare away rounding errors
-      const auto factor = 10000;
-      auto prev = original_hp;
-      original_hp = calcDroidBaseBody(this);
-      auto increase = original_hp * factor / prev;
-      auto hp = MIN(original_hp, (get_hp() * increase) / factor + 1);
-      DroidTemplate sTemplate;
-      templateSetParts(this, &sTemplate);
-
-      // update engine too
-      baseSpeed = calcDroidBaseSpeed(&sTemplate, weight, getPlayer());
-      if (isTransporter(*this)) {
-        for (auto droid: group->psList) {
-          if (droid != this) {
-            droid->upgradeHitPoints();
-          }
-        }
-      }
-    }
-
-    void Droid::resetAction() noexcept
-    {
-      time_action_started = gameTime;
-      action_points_done = 0;
-    }
-
-    bool Droid::isDamaged() const
-    {
-      return get_hp() < original_hp;
-    }
-
-    void Droid::gainExperience(unsigned exp) {
-      experience += exp;
-    }
-
-    bool Droid::isVtol() const
-    {
-      if (!propulsion)
-        return false;
-
-      return !isTransporter(*this) &&
-             propulsion->propulsionType == PROPULSION_TYPE::LIFT;
-    }
-
-    void Droid::update_expected_damage(unsigned damage, bool is_direct) noexcept {
-      if (is_direct)
-        expected_damage_direct += damage;
-      else
-        expected_damage_indirect += damage;
-    }
-
-    unsigned Droid::calculate_sensor_range() const {
-      const auto ecm_range = ecm->upgraded[getPlayer()].range;
-      if (ecm_range > 0) return ecm_range;
-
-      return sensor->upgraded[getPlayer()].range;
-    }
-
-    int Droid::calculateHeight() const {
-      const auto &imd = body->pIMD;
-      const auto height = imd->max.y - imd->min.y;
-      auto utility_height = 0, y_max = 0, y_min = 0;
-
-      if (isVtol()) {
-        return height + VTOL_HITBOX_MODIFIER;
-      }
-
-      const auto &weapon_stats = get_weapons()[0].get_stats();
-      switch (type) {
-        case WEAPON:
-          if (num_weapons(*this) == 0) break;
-
-          y_max = weapon_stats.imd_shape->max.y;
-          y_min = weapon_stats.imd_shape->min.y;
-          break;
-        case SENSOR:
-          y_max = sensor->pIMD->max.y;
-          y_min = sensor->pIMD->min.y;
-          break;
-        case ECM:
-          y_max = ecm->pIMD->max.y;
-          y_min = ecm->pIMD->min.y;
-          break;
-        case CONSTRUCT:
-          break;
-      }
-    }
-
-    DROID_TYPE Droid::getType() const noexcept
-    {
-      return type;
-    }
-
-    bool Droid::has_electronic_weapon() const
-    {
-      if (Impl::has_electronic_weapon(*this))  {
-        return true;
-      }
-      if (type != COMMAND)  {
-        return false;
-      }
-      return group->has_electronic_weapon();
-    }
-
-    int Droid::space_occupied_on_transporter() const {
-      return bMultiPlayer ? static_cast<int>(body->size) + 1 : 1;
-    }
-
-    int Droid::getVerticalSpeed() const noexcept {
-      return movement->vertical_speed;
-    }
-
-    bool Droid::isFlying() const
-    {
-      if (!propulsion)
-        return false;
-
-      return (movement->status != MOVE_STATUS::INACTIVE || 
-             isTransporter(*this)) &&
-             propulsion->propulsionType == PROPULSION_TYPE::LIFT;
-    }
-
-    unsigned Droid::getSecondaryOrder() const noexcept {
-      return secondary_order;
-    }
-
-    const Vector2i &Droid::getDestination() const {
-      return movement->destination;
-    }
-
-    void Droid::increment_kills() noexcept {
-      ++kills;
-    }
-
-    unsigned Droid::get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const
-    {
-      assert(body);
-      switch (weapon_class)
-      {
-        case WEAPON_CLASS::KINETIC:
-          return body->upgraded[getPlayer()].armour;
-        case WEAPON_CLASS::HEAT:
-          return body->upgraded[getPlayer()].thermal;
-      }
-    }
-
-    void Droid::assign_vtol_to_rearm_pad(RearmPad* rearm_pad)
-    {
-      associatedStructure = rearm_pad;
-    }
-
-    bool Droid::is_attacking() const noexcept
-    {
-      if (!(type == WEAPON || type == CYBORG || type == CYBORG_SUPER)) {
-        return false;
-      }
-      if (action == ATTACK || action == MOVE_TO_ATTACK ||
-          action == ROTATE_TO_ATTACK || action == VTOL_ATTACK ||
-          action == MOVE_FIRE) {
-        return true;
-      }
-      return false;
-    }
-
-    bool Droid::isSelectable() const
-    {
-      if (!SimpleObject::isSelectable()) {
-        return false;
-      }
-      if (isTransporter(*this) && !bMultiPlayer) {
-        return false;
-      }
-      return true;
-    }
-
-    int Droid::calculate_electronic_resistance() const
-    {
-      auto resistance = experience /
-                        (65536 / MAX(1, body->upgraded[getPlayer()].resistance));
-      resistance = MAX(resistance, body->upgraded[getPlayer()].resistance);
-      return MIN(resistance, INT16_MAX);
-    }
-
-    bool Droid::isRadarDetector() const
-    {
-      if (!sensor) {
-        return false;
-      }
-      return sensor->type == SENSOR_TYPE::RADAR_DETECTOR;
-    }
-
-    bool Droid::has_standard_sensor() const
-    {
-      if (type != SENSOR) {
-        return false;
-      }
-      if (sensor->type == SENSOR_TYPE::VTOL_INTERCEPT ||
-          sensor->type == SENSOR_TYPE::STANDARD ||
-          sensor->type == SENSOR_TYPE::SUPER)  {
-        return true;
-      }
-      return false;
-    }
-
-    bool Droid::has_CB_sensor() const
-    {
-      if (type != SENSOR) {
-        return false;
-      }
-      if (sensor->type == SENSOR_TYPE::VTOL_CB ||
-          sensor->type == SENSOR_TYPE::INDIRECT_CB)  {
-        return true;
-      }
-      return false;
-    }
-}
 
 // initialise droid module
 bool droidInit()
@@ -3053,7 +3117,7 @@ bool vtolEmpty(const Droid& droid)
     return false;
   }
 
-  return std::all_of(droid.get_weapons().begin(), droid.get_weapons().end(),
+  return std::all_of(droid.getWeapons().begin(), droid.getWeapons().end(),
                      [](const auto& weapon)
   {
       return weapon.is_vtol_weapon() &&
@@ -3068,7 +3132,7 @@ bool vtolFull(const Droid& droid)
     return false;
   }
 
-  return std::all_of(droid.get_weapons().begin(), droid.get_weapons().end(),
+  return std::all_of(droid.getWeapons().begin(), droid.getWeapons().end(),
                      [](const auto& weapon)
   {
       return weapon.is_vtol_weapon() && weapon.has_full_ammo();
@@ -3299,7 +3363,7 @@ void updateVtolAttackRun(Droid& droid, int weapon_slot)
     return;
   }
 
-  auto& weapon = droid.get_weapons()[weapon_slot];
+  auto& weapon = droid.getWeapons()[weapon_slot];
   if (weapon.get_stats().max_VTOL_attack_runs == 0) {
     return;
   }
@@ -3875,7 +3939,7 @@ unsigned calculate_max_range(const Droid& droid)
 {
   using enum DROID_TYPE;
   if (droid.getType() == SENSOR)
-    return droid.calculate_sensor_range();
+    return droid.calculateSensorRange();
   else if (num_weapons(droid) == 0)
     return 0;
   else
@@ -3900,22 +3964,22 @@ bool transporter_is_flying(const Droid& transporter)
 
 bool still_building(const Droid& droid)
 {
-  return droid.is_alive() &&
+  return droid.isAlive() &&
          droid.getAction() == ACTION::BUILD;
 }
 
 bool can_assign_fire_support(const Droid& droid, const Structure& structure)
 {
-  if (num_weapons(droid) == 0 || !structure.has_sensor()) return false;
+  if (num_weapons(droid) == 0 || !structure.hasSensor()) return false;
 
   if (droid.isVtol())
   {
-    return structure.has_VTOL_intercept_sensor() ||
-           structure.has_VTOL_CB_sensor();
+    return structure.hasVtolInterceptSensor() ||
+            structure.hasVtolCbSensor();
   }
   else if (has_artillery(droid))
   {
-    return structure.has_standard_sensor() || structure.has_CB_sensor();
+    return structure.hasStandardSensor() || structure.hasCbSensor();
   }
   return false;
 }

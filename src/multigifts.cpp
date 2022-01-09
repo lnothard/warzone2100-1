@@ -17,10 +17,11 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * MultiGift.c
- * gifts one player can give to another..
- * Also home to Deathmatch hardcoded RULES.
+
+/**
+ * @file multigift.cpp
+ * gifts one player can give to another
+ * Also home to Deathmatch hardcoded RULES
  */
 
 #include "lib/framework/frame.h"

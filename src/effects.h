@@ -33,26 +33,26 @@
 #include "lib/framework/fixedpoint.h"
 #include "lib/ivis_opengl/pietypes.h"
 
-#define SHOCK_WAVE_HEIGHT	(64)
+static constexpr auto SHOCK_WAVE_HEIGHT	= 64;
 
 /* All the effect groups */
-enum EFFECT_GROUP
+enum class EFFECT_GROUP
 {
-	EFFECT_EXPLOSION,
-	EFFECT_CONSTRUCTION,
-	EFFECT_SMOKE,
-	EFFECT_GRAVITON,
-	EFFECT_WAYPOINT,
-	EFFECT_BLOOD,
-	EFFECT_DESTRUCTION,
-	EFFECT_SAT_LASER,
-	EFFECT_FIRE,
-	EFFECT_FIREWORK,
-	EFFECT_FREED
+	EXPLOSION,
+	CONSTRUCTION,
+	SMOKE,
+	GRAVITON,
+	WAYPOINT,
+	BLOOD,
+	DESTRUCTION,
+	SAT_LASER,
+	FIRE,
+	FIREWORK,
+	FREED
 };
 
 /* Might not even need this */
-enum EFFECT_TYPE
+enum class EFFECT_TYPE
 {
 	EXPLOSION_TYPE_SMALL,
 	EXPLOSION_TYPE_VERY_SMALL,

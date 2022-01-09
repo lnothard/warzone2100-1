@@ -17,15 +17,14 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * Levels.c
- *
+
+/**
+ * @file levels.cpp
  * Control the data loading for game levels
- *
  */
 
-#include <ctype.h>
-#include <string.h>
+#include <cctype>
+#include <cstring>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/frameresource.h"
@@ -36,7 +35,6 @@
 #include "lib/exceptionhandler/dumpinfo.h"
 #include "clparse.h"
 #include "init.h"
-#include "objects.h"
 #include "hci.h"
 #include "levels.h"
 #include "mission.h"
@@ -718,7 +716,7 @@ bool levLoadData(char const* name, Sha256 const* hash, char* pSaveName, GAME_TYP
 	}
 
 	// Ensure that the LC_NUMERIC locale setting is "C"
-	ASSERT(strcmp(setlocale(LC_NUMERIC, NULL), "C") == 0,
+	ASSERT(strcmp(setlocale(LC_NUMERIC, nullptr), "C") == 0,
 	       "The LC_NUMERIC locale is not \"C\" - this may break level-data parsing depending on the user's system locale settings");
 
 	levelLoadType = saveType;

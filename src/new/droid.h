@@ -182,8 +182,8 @@ public:
    * @param weapon_slot
    * @return
    */
-	[[nodiscard]] bool is_valid_target(const ::Unit* attacker,
-	                                   int weapon_slot) const final;
+	[[nodiscard]] bool isValidTarget(const ::Unit* attacker,
+                                   int weapon_slot) const final;
 
 	[[nodiscard]] bool hasCommander() const;
 	[[nodiscard]] bool has_standard_sensor() const;
@@ -196,7 +196,7 @@ public:
 	void reset_action() noexcept;
 	void update_expected_damage(unsigned damage, bool is_direct) noexcept final;
 	[[nodiscard]] unsigned commander_max_group_size() const;
-	[[nodiscard]] unsigned calculate_sensor_range() const final;
+	[[nodiscard]] unsigned calculateSensorRange() const final;
 	[[nodiscard]] int calculate_height() const;
   [[nodiscard]] int space_occupied_on_transporter() const;
   void set_direct_route(int target_x, int target_y) const;

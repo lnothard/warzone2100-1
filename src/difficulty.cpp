@@ -20,7 +20,7 @@
 
 /**
  * @file difficulty.cpp
- * Handles the difficulty level effects on gameplay.
+ * Handles the difficulty level effects on gameplay
  */
 
 #include "difficulty.h"

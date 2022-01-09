@@ -28,7 +28,24 @@
 #include "objectdef.h"
 #include "message.h"
 
-#define HEIGHT_TRACK_INCREMENTS (50)
+static constexpr auto TILE_WIDTH = 128;
+static constexpr auto TILE_HEIGHT = 128;
+static constexpr auto TILE_SIZE = TILE_WIDTH * TILE_HEIGHT;
+
+// Amount of visible terrain tiles in x/y direction
+static constexpr auto VISIBLE_XTILES = 64;
+static constexpr auto VISIBLE_YTILES = 64;
+
+static const auto RADTLX = OBJ_BACKX + OBJ_BACKWIDTH + BASE_GAP + 1 + D_W;
+static const auto RADTLY  = RET_Y + 1;
+static constexpr auto RADWIDTH	= 128;
+static constexpr auto RADHEIGHT	= 128;
+
+static constexpr auto SKY_MULT	= 1;
+static const auto SKY_SHIMMY_BASE	= ((DEG(1)*SKY_MULT)/2);
+static const auto SKY_SHIMMY = SKY_SHIMMY_BASE - (rand() % (2 * SKY_SHIMMY_BASE));
+
+static constexpr auto HEIGHT_TRACK_INCREMENTS = 50;
 
 /*!
  * Special tile types

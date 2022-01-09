@@ -296,9 +296,9 @@ static void moveShuffleDroid(Droid* psDroid, Vector2i s)
 	// find any droids that could block the shuffle
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(psDroid->pos.x, psDroid->pos.y, SHUFFLE_DIST);
-	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+	for (auto & gi : gridList)
 	{
-		Droid* psCurr = castDroid(*gi);
+		Droid* psCurr = castDroid(gi);
 		if (psCurr == nullptr || psCurr->died || psCurr == psDroid)
 		{
 			continue;
@@ -458,7 +458,7 @@ struct BLOCKING_CALLBACK_DATA
 
 static bool moveBlockingTileCallback(Vector2i pos, int32_t dist, void* data_)
 {
-	BLOCKING_CALLBACK_DATA* data = (BLOCKING_CALLBACK_DATA*)data_;
+	auto* data = (BLOCKING_CALLBACK_DATA*)data_;
 	data->blocking |= pos != data->src && pos != data->dst && fpathBlockingTile(
 		map_coord(pos.x), map_coord(pos.y), data->propulsionType);
 	return !data->blocking;
@@ -616,10 +616,9 @@ static void moveCheckSquished(Droid* psDroid, int32_t emx, int32_t emy)
 
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(psDroid->pos.x, psDroid->pos.y, OBJ_MAXRADIUS);
-	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+	for (auto psObj : gridList)
 	{
-		SimpleObject* psObj = *gi;
-		if (psObj->type != OBJ_DROID || ((Droid*)psObj)->type != DROID_PERSON)
+			if (psObj->type != OBJ_DROID || ((Droid*)psObj)->type != DROID_PERSON)
 		{
 			// ignore everything but people
 			continue;
@@ -1063,10 +1062,9 @@ static void moveCalcDroidSlide(Droid* psDroid, int* pmx, int* pmy)
 	SimpleObject* psObst = nullptr;
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(psDroid->pos.x, psDroid->pos.y, OBJ_MAXRADIUS);
-	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+	for (auto psObj : gridList)
 	{
-		SimpleObject* psObj = *gi;
-		if (psObj->died)
+			if (psObj->died)
 		{
 			ASSERT(psObj->type < OBJ_NUM_TYPES, "Bad pointer! type=%u", psObj->type);
 			continue;
@@ -1187,14 +1185,14 @@ static Vector2i moveGetObstacleVector(Droid* psDroid, Vector2i dest)
 	// scan the neighbours for obstacles
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(psDroid->pos.x, psDroid->pos.y, AVOID_DIST);
-	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+	for (auto & gi : gridList)
 	{
-		if (*gi == psDroid)
+		if (gi == psDroid)
 		{
 			continue; // Don't try to avoid ourselves.
 		}
 
-		Droid* psObstacle = castDroid(*gi);
+		Droid* psObstacle = castDroid(gi);
 		if (psObstacle == nullptr)
 		{
 			// Object wrong type to worry about.
@@ -1597,7 +1595,7 @@ static void moveUpdateGroundModel(Droid* psDroid, SDWORD speed, uint16_t directi
 	CHECK_DROID(psDroid);
 
 	// nothing to do if the droid is stopped
-	if (moveDroidStopped(psDroid, speed) == true)
+	if (moveDroidStopped(psDroid, speed))
 	{
 		return;
 	}
@@ -1750,7 +1748,7 @@ static void moveUpdateVtolModel(Droid* psDroid, SDWORD speed, uint16_t direction
 	CHECK_DROID(psDroid);
 
 	// nothing to do if the droid is stopped
-	if (moveDroidStopped(psDroid, speed) == true)
+	if (moveDroidStopped(psDroid, speed))
 	{
 		return;
 	}
@@ -2052,10 +2050,9 @@ static void checkLocalFeatures(Droid* psDroid)
 #define DROIDDIST ((TILE_UNITS*5)/2)
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(psDroid->pos.x, psDroid->pos.y, DROIDDIST);
-	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+	for (auto psObj : gridList)
 	{
-		SimpleObject* psObj = *gi;
-		bool pickedUp = false;
+			bool pickedUp = false;
 
 		if (psObj->type == OBJ_FEATURE && !psObj->died)
 		{

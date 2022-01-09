@@ -17,6 +17,7 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 #include "lib/framework/frame.h"
 
 #include "lib/exceptionhandler/dumpinfo.h"
@@ -42,9 +43,7 @@ static std::vector<WzMods::LoadedMod> loaded_mods;
 static std::string mod_list;
 static std::vector<Sha256> mod_hash_list;
 
-
 static void addLoadedMod(std::string modname, std::string filename);
-
 
 static inline std::vector<std::string> split(std::string const& str, std::string const& sep)
 {
@@ -127,7 +126,7 @@ void addSubdirs(const char* basedir, const char* subdir, const bool appendToPath
 				snprintf(buf, sizeof(buf), "mod: %s", i);
 				addDumpInfo(buf);
 			}
-			PHYSFS_mount(tmpstr, NULL, appendToPath); // platform-dependent notation
+			PHYSFS_mount(tmpstr, nullptr, appendToPath); // platform-dependent notation
 		}
 		return true; // continue
 	});

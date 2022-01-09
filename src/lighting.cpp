@@ -17,8 +17,9 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file lighting.c
+ * @file lighting.cpp
  * Calculates the shading values for the terrain world.
  * The terrain intensity values are calculated at map load/creation time.
  * - Alex McLean, Pumpkin Studios, EIDOS Interactive.
@@ -253,7 +254,7 @@ static void colourTile(SDWORD xIndex, SDWORD yIndex, PIELIGHT light_colour, doub
 void processLight(LIGHT* psLight)
 {
 	/* Firstly - there's no point processing lights that are off the grid */
-	if (clipXY(psLight->position.x, psLight->position.z) == false)
+	if (!clipXY(psLight->position.x, psLight->position.z))
 	{
 		return;
 	}

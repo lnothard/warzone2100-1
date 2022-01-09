@@ -17,11 +17,13 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- *  MultiMenu.c
- *  Handles the In Game MultiPlayer Screen, alliances etc...
- *  Also the selection of disk files..
+
+/**
+ * @file multimenu.cpp
+ * Handles the In Game MultiPlayer Screen, alliances etc...
+ * Also the selection of disk files...
  */
+
 #include "lib/framework/frame.h"
 #include "lib/framework/wzapp.h"
 #include "lib/framework/strres.h"
@@ -57,6 +59,8 @@
 #include "multiplay.h"
 #include "multistat.h"
 #include "multimenu.h"
+
+#include <utility>
 #include "multiint.h"
 #include "multigifts.h"
 #include "multijoin.h"
@@ -201,7 +205,7 @@ public:
 
 struct DisplayRequestOptionData
 {
-	DisplayRequestOptionData(LEVEL_DATASET* pMapData = nullptr)
+	explicit DisplayRequestOptionData(LEVEL_DATASET* pMapData = nullptr)
 		: pMapData(pMapData)
 		  , cache()
 	{
@@ -508,7 +512,7 @@ void addMultiRequest(const char* searchDir, const char* fileExtension, UDWORD mo
 				delete static_cast<DisplayRequestOptionData*>(psWidget->pUserData);
 				psWidget->pUserData = nullptr;
 			});
-			buttons.push_back({stringRelevance(mapData->pName, searchString), button});
+			buttons.emplace_back(stringRelevance(mapData->pName, searchString), button);
 
 			++nextButtonId;
 		}
@@ -561,7 +565,6 @@ void closeMultiRequester()
 	multiRequestUp = false;
 	resetReadyStatus(false);
 	psRScreen = nullptr;
-	return;
 }
 
 bool runMultiRequester(UDWORD id, UDWORD* mode, WzString* chosen, LEVEL_DATASET** chosenValue, bool* isHoverPreview)
@@ -597,7 +600,7 @@ bool runMultiRequester(UDWORD id, UDWORD* mode, WzString* chosen, LEVEL_DATASET*
 	{
 		*chosen = ((W_BUTTON*)widgGetFromID(psRScreen, id))->pText;
 
-		DisplayRequestOptionData* pData = static_cast<DisplayRequestOptionData*>(((W_BUTTON*)
+		auto* pData = static_cast<DisplayRequestOptionData*>(((W_BUTTON*)
 			widgGetFromID(psRScreen, id))->pUserData);
 		assert(pData != nullptr);
 		*chosenValue = (LEVEL_DATASET*)pData->pMapData;
@@ -703,7 +706,7 @@ static void displayChannelState(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset
 class MultiMenuDroidView : public WIDGET
 {
 public:
-	MultiMenuDroidView(uint32_t player): player(player)
+	explicit MultiMenuDroidView(uint32_t player): player(player)
 	{
 		setGeometry(0, 0, 60, 32);
 	}
@@ -824,7 +827,7 @@ private:
 	std::shared_ptr<WIDGET> wrapGift(std::shared_ptr<WIDGET> gift)
 	{
 		auto alignment = Alignment(Alignment::Vertical::Center, Alignment::Horizontal::Center);
-		return alignment.wrap(Margin(0, 1, 0, 0).wrap(gift));
+		return alignment.wrap(Margin(0, 1, 0, 0).wrap(std::move(gift)));
 	}
 
 	void addPlayerWidgets(uint32_t player, uint32_t row)
@@ -1240,7 +1243,7 @@ bool intCloseMultiMenu()
 	}
 
 	// Start the window close animation.
-	IntFormAnimated* form = (IntFormAnimated*)widgGetFromID(psWScreen, MULTIMENU_FORM);
+	auto* form = (IntFormAnimated*)widgGetFromID(psWScreen, MULTIMENU_FORM);
 	if (form != nullptr)
 	{
 		form->closeAnimateDelete();
@@ -1310,8 +1313,8 @@ void intProcessMultiMenu(UDWORD id)
 			char buf[250];
 
 			// Allow the host to kick the AI only in a MP game, or if they activated cheats in a skirmish game
-			if ((NetPlay.bComms || Cheated) && (NetPlay.players[i].allocated || (NetPlay.players[i].allocated == false
-				&& NetPlay.players[i].ai != AI_OPEN)))
+			if ((NetPlay.bComms || Cheated) && (NetPlay.players[i].allocated || (!NetPlay.players[i].allocated
+                                                                           && NetPlay.players[i].ai != AI_OPEN)))
 			{
 				inputLoseFocus();
 				ssprintf(buf, _("The host has kicked %s from the game!"), getPlayerName((unsigned int)i));

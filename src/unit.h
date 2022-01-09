@@ -25,13 +25,13 @@ public:
 	Unit& operator=(const Unit&) = delete;
 	Unit& operator=(Unit&&) = delete;
 
-	[[nodiscard]] virtual bool is_alive() const = 0;
+	[[nodiscard]] virtual bool isAlive() const = 0;
 	[[nodiscard]] virtual bool isRadarDetector() const = 0;
-	virtual bool is_valid_target(const Unit* attacker, int weapon_slot) const = 0;
-	virtual uint8_t is_target_visible(const SimpleObject* target, bool walls_block) const = 0;
-	[[nodiscard]] virtual unsigned get_hp() const = 0;
-	[[nodiscard]] virtual unsigned calculate_sensor_range() const = 0;
-	[[nodiscard]] virtual const std::vector<Weapon>& get_weapons() const = 0;
+	virtual bool isValidTarget(const Unit* attacker, int weapon_slot) const = 0;
+	virtual uint8_t isTargetVisible(const SimpleObject* target, bool walls_block) const = 0;
+	[[nodiscard]] virtual unsigned getHp() const = 0;
+	[[nodiscard]] virtual unsigned calculateSensorRange() const = 0;
+	[[nodiscard]] virtual const std::vector<Weapon>& getWeapons() const = 0;
 	[[nodiscard]] virtual const iIMDShape& get_IMD_shape() const = 0;
   [[nodiscard]] virtual bool is_selected() const noexcept = 0;
   virtual void align_turret(int weapon_slot) = 0;
@@ -52,8 +52,8 @@ namespace Impl
 		Unit(unsigned id, unsigned player);
 
     /* Accessors */
-		[[nodiscard]] unsigned get_hp() const noexcept final;
-		[[nodiscard]] const std::vector<Weapon>& get_weapons() const final;
+		[[nodiscard]] unsigned getHp() const noexcept final;
+		[[nodiscard]] const std::vector<Weapon>& getWeapons() const final;
 
     /// @return `true` if this unit is being focused by its owner
     [[nodiscard]] bool is_selected() const noexcept final;
@@ -64,37 +64,39 @@ namespace Impl
     bool selected = false;
 		std::vector<Weapon> weapons;
 	};
-
-	void check_angle(int64_t& angle_tan, int start_coord, int height,
-                   int square_distance, int target_height, bool is_direct);
-
-	[[nodiscard]] bool has_full_ammo(const Unit& unit) noexcept;
-
-  /// @return `true` if `unit` has an indirect weapon attached
-	[[nodiscard]] bool has_artillery(const Unit& unit) noexcept;
-
-  /// @return `true` if `unit` has an electronic weapon attached
-	[[nodiscard]] bool has_electronic_weapon(const Unit& unit) noexcept;
-
-  /**
-   * @return `true` if `unit` may fire upon `target` with the weapon in
-   *    `weapon_slot`
-   */
-	[[nodiscard]] bool target_in_line_of_fire(const Unit& unit,
-                                           const ::Unit& target,
-                                           int weapon_slot);
-
-  /**
-   *
-   * @param walls_block `true` if
-   * @param is_direct `false` if this is an artillery weapon
-   * @return
-   */
-	[[nodiscard]] int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target,
-                                           int weapon_slot, bool walls_block, bool is_direct);
-
-	[[nodiscard]] unsigned num_weapons(const Unit& unit);
-
-	[[nodiscard]] unsigned get_max_weapon_range(const Unit& unit);
 }
+
+void check_angle(int64_t& angle_tan, int start_coord, int height,
+                 int square_distance, int target_height, bool is_direct);
+
+[[nodiscard]] bool has_full_ammo(const Unit& unit) noexcept;
+
+/// @return `true` if `unit` has an indirect weapon attached
+[[nodiscard]] bool has_artillery(const Unit& unit) noexcept;
+
+/// @return `true` if `unit` has an electronic weapon attached
+[[nodiscard]] bool has_electronic_weapon(const Unit& unit) noexcept;
+
+/**
+ * @return `true` if `unit` may fire upon `target` with the weapon in
+ *    `weapon_slot`
+ */
+[[nodiscard]] bool target_in_line_of_fire(const Unit& unit,
+                                          const ::Unit& target,
+                                          int weapon_slot);
+
+/**
+ *
+ * @param walls_block `true` if
+ * @param is_direct `false` if this is an artillery weapon
+ * @return
+ */
+[[nodiscard]] int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target,
+                                         int weapon_slot, bool walls_block, bool is_direct);
+
+
+[[nodiscard]] unsigned get_max_weapon_range(const Unit& unit);
+
+[[nodiscard]] unsigned num_weapons(const ::Unit& unit);
+
 #endif // WARZONE2100_UNIT_H

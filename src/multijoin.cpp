@@ -17,12 +17,13 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * Multijoin.c
+
+/**
+ * @file multijoin.cpp
  *
  * Alex Lee, pumpkin studios, bath,
  *
- * Stuff to handle the comings and goings of players.
+ * Stuff to handle the comings and goings of players
  */
 
 #include <physfs.h>
@@ -40,8 +41,6 @@
 #include "multijoin.h"
 
 #include "objmem.h"
-#include "statsdef.h"
-#include "droiddef.h"
 #include "game.h"
 #include "projectile.h"
 #include "droid.h"
@@ -52,7 +51,6 @@
 #include "message.h"				// for clearing game messages
 #include "order.h"
 #include "console.h"
-#include "orderdef.h"				// for droid_order_data
 #include "hci.h"
 #include "component.h"
 #include "research.h"
@@ -249,8 +247,7 @@ void clearPlayer(UDWORD player, bool quietly)
 		psStruct = psNext;
 	}
 
-	return;
-}
+	}
 
 // Reset visibility, so a new player can't see the old stuff!!
 static void resetMultiVisibility(UDWORD player)
@@ -281,8 +278,7 @@ static void resetMultiVisibility(UDWORD player)
 			}
 		}
 	}
-	return;
-}
+	}
 
 static void sendPlayerLeft(uint32_t playerIndex)
 {

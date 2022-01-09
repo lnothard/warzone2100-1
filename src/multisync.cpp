@@ -17,8 +17,9 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * MultiSync.c
+
+/**
+ * @file multisync.cpp
  *
  * synching issues
  * This file handles the constant backstream of net info, checking that recvd info
@@ -30,7 +31,6 @@
  */
 
 #include "lib/framework/frame.h"
-#include "lib/framework/input.h"
 #include "lib/gamelib/gtime.h"
 #include "lib/netplay/netplay.h"
 #include "multiplay.h"

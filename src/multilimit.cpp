@@ -17,11 +17,12 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * multilimit.c
- *
- * interface for setting limits to the game, bots, structlimits etc...
+
+/**
+ * @file multilimit.cpp
+ * interface for setting limits to the game, bots, struct limits etc...
  */
+
 #include "lib/framework/frame.h"
 #include "lib/framework/frameresource.h"
 #include "lib/framework/strres.h"
@@ -49,6 +50,8 @@
 #include "multirecv.h"
 #include "multiint.h"
 #include "multilimit.h"
+
+#include <utility>
 #include "lib/ivis_opengl/piemode.h"
 #include "challenge.h"
 #include "objmem.h"
@@ -97,7 +100,7 @@ static inline void freeLimitSet()
 }
 
 // ////////////////////////////////////////////////////////////////////////////
-WzMultiLimitTitleUI::WzMultiLimitTitleUI(std::shared_ptr<WzMultiplayerOptionsTitleUI> parent) : parent(parent)
+WzMultiLimitTitleUI::WzMultiLimitTitleUI(std::shared_ptr<WzMultiplayerOptionsTitleUI> parent) : parent(std::move(parent))
 {
 }
 
@@ -191,7 +194,7 @@ void WzMultiLimitTitleUI::start()
 	auto limitsList = IntListTabWidget::make();
 	limitsForm->attach(limitsList);
 	limitsList->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-			IntListTabWidget *limitsList = static_cast<IntListTabWidget *>(psWidget);
+			auto *limitsList = dynamic_cast<IntListTabWidget *>(psWidget);
 			assert(limitsList != nullptr);
 			limitsList->setChildSize(BARWIDTH, BARHEIGHT);
 			limitsList->setChildSpacing(5, 5);
@@ -419,9 +422,9 @@ bool applyLimitSet()
 		{
 			if (asStructureStats[i].numWeaps > 0 && asStructureStats[i].psWeapStat[0]->surfaceToAir == SHOOT_IN_AIR)
 			{
-				for (int player = 0; player < MAX_PLAYERS; player++)
+				for (auto& upgraded_stat : asStructureStats[i].upgraded_stats)
 				{
-					asStructureStats[i].upgraded_stats[player].limit = 0;
+					upgraded_stat.limit = 0;
 				}
 			}
 		}
@@ -511,11 +514,9 @@ static void displayStructureBar(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset
 	ssprintf(str, "%d", ((W_SLIDER*)widgGetFromID(psWScreen, psWidget->id + 1))->pos);
 	cache.wzLimitText.setText(str, font_regular);
 	cache.wzLimitText.render(x + 270, y + psWidget->height() / 2 + 3, WZCOL_TEXT_BRIGHT);
-
-	return;
 }
 
-void resetLimits(void)
+void resetLimits()
 {
 	for (unsigned i = 0; i < numStructureStats; ++i)
 	{

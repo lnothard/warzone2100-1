@@ -134,18 +134,18 @@ bool Projectile::gfxVisible() const
 
 	// someone else's structure firing at something you can't see
 	if (source != nullptr
-      && source->is_alive()
+      && source->isAlive()
       && dynamic_cast<Structure*>(source)
       && source->getPlayer() != selectedPlayer
       && (target == nullptr
-          || !target->is_alive()
+          || !target->isAlive()
           || !target->visibleForLocalDisplay())) {
 		return false;
 	}
 
 	// Something you cannot see firing at a structure that isn't yours
 	if (target != nullptr
-      && target->is_alive()
+      && target->isAlive()
       && dynamic_cast<Structure*>(target)
       && target->getPlayer() != selectedPlayer
       && (source == nullptr
@@ -155,14 +155,14 @@ bool Projectile::gfxVisible() const
 
 	// You can see the source
 	if (source != nullptr
-      && source->is_alive()
+      && source->isAlive()
       && source->visibleForLocalDisplay()) {
 		return true;
 	}
 
 	// You can see the destination
 	if (target != nullptr
-      && target->is_alive()
+      && target->isAlive()
       && target->visibleForLocalDisplay()) {
 		return true;
 	}
@@ -243,7 +243,7 @@ void Projectile::updateExperience(unsigned experienceInc)
 
 		psSensor = orderStateObj(psDroid, ORDER_TYPE::FIRE_SUPPORT);
 		if (psSensor && dynamic_cast<Droid*>(psSensor)) {
-			dynamic_cast<Droid*>(psSensor)->gain_experience(experienceInc);
+			dynamic_cast<Droid*>(psSensor)->gainExperience(experienceInc);
 		}
 	} else if (dynamic_cast<Structure*>(source))
 	{
@@ -251,18 +251,13 @@ void Projectile::updateExperience(unsigned experienceInc)
 		psDroid = getDesignatorAttackingObject(source->getPlayer(), target);
 
 		if (psDroid != nullptr) {
-			psDroid->gain_experience(experienceInc);
+			psDroid->gainExperience(experienceInc);
 		}
 	}
 }
 
 void _syncDebugProjectile(const char* function, Projectile const* psProj, char ch)
 {
-	if (psProj->type != OBJ_PROJECTILE)
-	{
-		ASSERT(false, "%c Broken psProj->type %u!", ch, psProj->type);
-		syncDebug("Broken psProj->type %u!", psProj->type);
-	}
 	int list[] =
 	{
 		ch,
@@ -1481,25 +1476,22 @@ ObjectShape establishTargetShape(SimpleObject* psTarget)
 	return 0; // Huh?
 }
 
-/***************************************************************************/
-
 /*the damage depends on the weapon effect and the target propulsion type or
 structure strength*/
-UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* psTarget)
+unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* psTarget)
 {
-	if (baseDamage == 0)
-	{
+	if (baseDamage == 0) {
 		return 0;
 	}
 
-	UDWORD damage = baseDamage * 100;
+	auto damage = baseDamage * 100;
 
-	if (psTarget->type == OBJ_STRUCTURE)
+	if (dynamic_cast<Structure*>(psTarget))
 	{
 		damage += baseDamage * (asStructStrengthModifier[weaponEffect][((Structure*)psTarget)->pStructureType->strength]
 			- 100);
 	}
-	else if (psTarget->type == OBJ_DROID)
+	else if (dynamic_cast<Droid*>(psTarget))
 	{
 		const int propulsion = (asPropulsionStats + ((Droid*)psTarget)->asBits[COMP_PROPULSION])->propulsionType;
 		const int body = (asBodyStats + ((Droid*)psTarget)->asBits[COMP_BODY])->size;
@@ -1512,7 +1504,7 @@ UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* p
 }
 
 /*
- * A quick explanation about hown this function works:
+ * A quick explanation about how this function works:
  *  - It returns an integer between 0 and 100 (see note for exceptions);
  *  - this represents the amount of damage inflicted on the droid by the weapon
  *    in relation to its original health.
@@ -1526,7 +1518,7 @@ UDWORD calcDamage(UDWORD baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* p
  *    multiplied by -1, resulting in a negative number. Killed features do not
  *    result in negative numbers.
  */
-static int32_t objectDamageDispatch(Damage* psDamage)
+static int objectDamageDispatch(Damage* psDamage)
 {
 	switch (psDamage->target->type)
 	{

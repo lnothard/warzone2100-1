@@ -283,8 +283,8 @@ static Position findNonblockingPosition(Position pos, PROPULSION_TYPE propulsion
 	Vector2i minCoord = world_coord(bestTile);
 	Vector2i maxCoord = minCoord + Vector2i(TILE_UNITS - 1, TILE_UNITS - 1);
 
-	return Position(std::min(std::max(pos.x, minCoord.x), maxCoord.x),
-	                std::min(std::max(pos.y, minCoord.y), maxCoord.y), pos.z);
+	return {std::min(std::max(pos.x, minCoord.x), maxCoord.x),
+	                std::min(std::max(pos.y, minCoord.y), maxCoord.y), pos.z};
 }
 
 

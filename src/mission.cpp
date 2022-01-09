@@ -17,12 +17,13 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file mission.c
- *
- * All the stuff relevant to a mission.
+ * @file mission.cpp
+ * All the stuff relevant to a mission
  */
-#include <time.h>
+
+#include <ctime>
 
 #include "mission.h"
 
@@ -623,7 +624,7 @@ void missionFlyTransportersIn(SDWORD iPlayer, bool bTrackTransporter)
 				psTransporter->rot.direction = iAtan2(iDx, iDy);
 
 				// Camera track requested and it's the selected player.
-				if ((bTrackTransporter == true) && (iPlayer == (SDWORD)selectedPlayer))
+				if (bTrackTransporter && (iPlayer == (SDWORD)selectedPlayer))
 				{
 					/* deselect all droids */
 					selDroidDeselect(selectedPlayer);
@@ -1992,7 +1993,7 @@ static void fillTimeDisplay(W_LABEL& Label, UDWORD time, bool bHours)
 //update function for the mission timer
 void intUpdateMissionTimer(WIDGET* psWidget, W_CONTEXT* psContext)
 {
-	W_LABEL* Label = (W_LABEL*)psWidget;
+	auto Label = (W_LABEL*)psWidget;
 	UDWORD timeElapsed;
 	SDWORD timeRemaining;
 
@@ -2079,7 +2080,7 @@ void intUpdateMissionTimer(WIDGET* psWidget, W_CONTEXT* psContext)
 //update function for the transporter timer
 void intUpdateTransporterTimer(WIDGET* psWidget, W_CONTEXT* psContext)
 {
-	W_LABEL* Label = (W_LABEL*)psWidget;
+	auto Label = (W_LABEL*)psWidget;
 	Droid* psTransporter;
 	SDWORD timeRemaining;
 	SDWORD ETA;

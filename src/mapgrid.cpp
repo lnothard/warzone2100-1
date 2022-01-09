@@ -17,13 +17,13 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * mapgrid.cpp
- *
+
+/**
+ * @file mapgrid.cpp
  * Functions for storing objects in a quad-tree like object over the map.
- * The objects are stored in the quad-tree.
- *
+ * The objects are stored in the quad-tree
  */
+
 #include "lib/framework/types.h"
 #include "objects.h"
 #include "map.h"
@@ -33,16 +33,16 @@
 
 
 static PointTree* gridPointTree = nullptr; // A quad-tree-like object.
-static PointTree::Filter* gridFiltersUnseen;
-static PointTree::Filter* gridFiltersDroidsByPlayer;
+static Filter* gridFiltersUnseen;
+static Filter* gridFiltersDroidsByPlayer;
 
 // initialise the grid system
 bool gridInitialise()
 {
 	ASSERT(gridPointTree == nullptr, "gridInitialise already called, without calling gridShutDown.");
 	gridPointTree = new PointTree;
-	gridFiltersUnseen = new PointTree::Filter[MAX_PLAYERS];
-	gridFiltersDroidsByPlayer = new PointTree::Filter[MAX_PLAYERS];
+	gridFiltersUnseen = new Filter[MAX_PLAYERS];
+	gridFiltersDroidsByPlayer = new Filter[MAX_PLAYERS];
 
 	return true; // Yay, nothing failed!
 }
@@ -59,9 +59,9 @@ void gridReset()
 			(SimpleObject*)apsDroidLists[player], (SimpleObject*)apsStructLists[player],
 			(SimpleObject*)apsFeatureLists[player]
 		};
-		for (unsigned type = 0; type != sizeof(start) / sizeof(*start); ++type)
+		for (auto psObj : start)
 		{
-			for (SimpleObject* psObj = start[type]; psObj != nullptr; psObj = psObj->psNext)
+			for (; psObj != nullptr; psObj = psObj->psNext)
 			{
 				if (!psObj->died)
 				{
@@ -180,7 +180,7 @@ GridList const& gridStartIterateArea(int32_t x, int32_t y, uint32_t x2, uint32_t
 
 struct ConditionDroidsByPlayer
 {
-	ConditionDroidsByPlayer(int32_t player_) : player(player_)
+	explicit ConditionDroidsByPlayer(int32_t player_) : player(player_)
 	{
 	}
 
@@ -199,7 +199,7 @@ GridList const& gridStartIterateDroidsByPlayer(int32_t x, int32_t y, uint32_t ra
 
 struct ConditionUnseen
 {
-	ConditionUnseen(int32_t player_) : player(player_)
+	explicit ConditionUnseen(int32_t player_) : player(player_)
 	{
 	}
 
@@ -219,7 +219,7 @@ GridList const& gridStartIterateUnseen(int32_t x, int32_t y, uint32_t radius, in
 SimpleObject** gridIterateDup()
 {
 	size_t bytes = gridPointTree->lastQueryResults.size() * sizeof(void*);
-	SimpleObject** ret = (SimpleObject**)malloc(bytes);
+	auto ret = (SimpleObject**)malloc(bytes);
 	memcpy(ret, &gridPointTree->lastQueryResults[0], bytes);
 	return ret;
 }

@@ -30,13 +30,13 @@ public:
 	Unit& operator=(const Unit&) = delete;
 	Unit& operator=(Unit&&) = delete;
 
-	[[nodiscard]] virtual bool is_alive() const = 0;
+	[[nodiscard]] virtual bool isAlive() const = 0;
 	[[nodiscard]] virtual bool isRadarDetector() const = 0;
-	virtual bool is_valid_target(const Unit* attacker, int weapon_slot) const = 0;
-	virtual uint8_t is_target_visible(const SimpleObject* target, bool walls_block) const = 0;
-	[[nodiscard]] virtual unsigned get_hp() const = 0;
-	[[nodiscard]] virtual unsigned calculate_sensor_range() const = 0;
-	[[nodiscard]] virtual const std::vector<Weapon>& get_weapons() const = 0;
+	virtual bool isValidTarget(const Unit* attacker, int weapon_slot) const = 0;
+	virtual uint8_t isTargetVisible(const SimpleObject* target, bool walls_block) const = 0;
+	[[nodiscard]] virtual unsigned getHp() const = 0;
+	[[nodiscard]] virtual unsigned calculateSensorRange() const = 0;
+	[[nodiscard]] virtual const std::vector<Weapon>& getWeapons() const = 0;
 	[[nodiscard]] virtual const iIMDShape& get_IMD_shape() const = 0;
   [[nodiscard]] virtual bool is_selected() const noexcept = 0;
   virtual void align_turret(int weapon_slot) = 0;
@@ -58,8 +58,8 @@ namespace Impl
 		Unit(uint32_t id, uint32_t player);
 
     /* Accessors */
-		[[nodiscard]] unsigned get_hp() const noexcept final;
-		[[nodiscard]] const std::vector<Weapon>& get_weapons() const final;
+		[[nodiscard]] unsigned getHp() const noexcept final;
+		[[nodiscard]] const std::vector<Weapon>& getWeapons() const final;
 
     /// @return `true` if this unit is being focused by its owner
     [[nodiscard]] bool is_selected() const noexcept final;

@@ -2013,7 +2013,7 @@ static ListTabWidget* intAddComponentForm()
 	auto compList = IntListTabWidget::make();
 	rightBase->attach(compList);
 	compList->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-			IntListTabWidget *compList = static_cast<IntListTabWidget *>(psWidget);
+			auto *compList = dynamic_cast<IntListTabWidget *>(psWidget);
 			assert(compList != nullptr);
 			compList->setChildSize(DES_TABBUTWIDTH, DES_TABBUTHEIGHT);
 			compList->setChildSpacing(DES_TABBUTGAP, DES_TABBUTGAP);

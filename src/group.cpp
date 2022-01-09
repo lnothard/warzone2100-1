@@ -182,17 +182,6 @@ void Group::remove(Droid* psDroid)
 				psPrev = psCurr;
 			}
 			ASSERT(psCurr != nullptr, "grpLeave: droid not found");
-			if (psCurr != nullptr)
-			{
-				if (psPrev)
-				{
-					psPrev->psGrpNext = psCurr->psGrpNext;
-				}
-				else
-				{
-					psList = psList->psGrpNext;
-				}
-			}
 		}
 
 		psDroid->group = nullptr;

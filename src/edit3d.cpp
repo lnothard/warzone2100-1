@@ -17,11 +17,13 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
-Edit3D.c - to ultimately contain the map editing functions -
-they are presently scattered in various files .
-Alex McLean, Pumpkin Studios, EIDOS Interactive, 1997
-*/
+
+/**
+ * @file edit3d.cpp - to ultimately contain the map editing functions -
+ * they are presently scattered in various files
+ *
+ * Alex McLean, Pumpkin Studios, EIDOS Interactive, 1997
+ */
 
 #include "lib/framework/frame.h"
 #include "lib/framework/math_ext.h"
@@ -176,7 +178,7 @@ bool process3DBuilding()
 			wallDrag.pos2 = mousePos;
 			// Why must this be done here? If not doing it here, dragging works almost normally, except it suddenly stops working if the drag becomes invalid.
 
-			auto lb = calcLineBuild(static_cast<StructureStats*>(sBuildDetails.psStats), getBuildingDirection(),
+			auto lb = calcLineBuild(dynamic_cast<StructureStats*>(sBuildDetails.psStats), getBuildingDirection(),
                               wallDrag.pos, wallDrag.pos2);
 			for (int i = 0; i < lb.count && isValid; ++i)
 			{

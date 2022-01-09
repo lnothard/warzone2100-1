@@ -17,12 +17,12 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * ObjMem.c
- *
- * Object memory management functions.
- *
+
+/**
+ * @file objmem.cpp
+ * Object memory management functions
  */
+
 #include <cstring>
 
 #include "lib/framework/frame.h"
@@ -42,7 +42,7 @@
 #include "qtscript.h"
 
 // the initial value for the object ID
-#define OBJ_ID_INIT 20000
+static constexpr auto OBJ_ID_INIT = 20000;
 
 /* The id number for the next object allocated
  * Each object will have a unique id number irrespective of type

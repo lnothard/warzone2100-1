@@ -27,6 +27,7 @@
 #define __INCLUDED_WEAPONDEF_H__
 
 #include "basedef.h"
+#include "stats.h"
 
 /// Maximum difference in direction for a fixed turret to fire
 static constexpr auto FIXED_TURRET_DIR = DEG(1);

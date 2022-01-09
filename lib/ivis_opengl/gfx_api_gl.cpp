@@ -1328,7 +1328,7 @@ GLint get_size(const gfx_api::vertex_attribute_type& type)
 		case gfx_api::vertex_attribute_type::u8x4_norm:
 			return 4;
 	}
-	debug(LOG_FATAL, "get_size(%d) failed", (int)type);
+	debug(LOG_FATAL, "getSize(%d) failed", (int)type);
 	return 0; // silence warning
 }
 

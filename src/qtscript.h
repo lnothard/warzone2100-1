@@ -103,7 +103,7 @@ bool prepareScripts(bool loadGame);
 bool updateScripts();
 
 // Load and evaluate the given script, kept in memory
-bool loadGlobalScript(WzString path);
+bool loadGlobalScript(const WzString& path);
 wzapi::scripting_instance* loadPlayerScript(const WzString& path, int player, AIDifficulty difficulty);
 
 // Set/write variables in the script's global context, run after loading script,

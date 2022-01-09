@@ -20,7 +20,7 @@
 
 /**
  * @file display.cpp
- * Display routines.
+ * Display routines
  */
 
 #include "lib/framework/frame.h"
@@ -566,10 +566,9 @@ static void handleAreaDemolition()
 	      worldCoord2.y);
 	std::vector<SimpleObject*> gridList = gridStartIterateArea(worldCoord1.x, worldCoord1.y, worldCoord2.x,
 	                                                          worldCoord2.y);
-	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+	for (auto psObj : gridList)
 	{
-		SimpleObject* psObj = *gi;
-		if (psObj->type == OBJ_STRUCTURE && psObj->player == selectedPlayer)
+			if (psObj->type == OBJ_STRUCTURE && psObj->player == selectedPlayer)
 		{
 			// add demolish order to queue for every selected unit
 			orderSelectedObjAdd(selectedPlayer, (SimpleObject*)psObj, true);
@@ -655,8 +654,8 @@ static void HandleDrag()
 unsigned panMouseX;
 // Mouse Y coordinate at start of panning.
 unsigned panMouseY;
-std::unique_ptr<ValueTracker> panXTracker = std::unique_ptr<ValueTracker>(new ValueTracker());
-std::unique_ptr<ValueTracker> panZTracker = std::unique_ptr<ValueTracker>(new ValueTracker());
+auto panXTracker = std::make_unique<ValueTracker>();
+auto panZTracker = std::make_unique<ValueTracker>();
 bool panActive;
 
 //don't want to do any of these whilst in the Intelligence Screen
@@ -2214,7 +2213,7 @@ static void dealWithRMB()
 	Droid* psDroid;
 	Structure* psStructure;
 
-	if (mouseOverRadar || InGameOpUp == true || widgGetFromID(psWScreen, INTINGAMEOP))
+	if (mouseOverRadar || InGameOpUp || widgGetFromID(psWScreen, INTINGAMEOP))
 	{
 		return;
 	}

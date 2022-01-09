@@ -16,9 +16,9 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
  * @file qtscript.cpp
- *
  * New scripting system
  */
 
@@ -73,7 +73,7 @@
 #include "wzscriptdebug.h"
 #include "quickjs_backend.h"
 
-#define ATTACK_THROTTLE 1000
+static constexpr auto ATTACK_THROTTLE = 1000;
 
 /// selection changes are too often and too erratic to trigger immediately,
 /// so until we have a queue system for events, delay triggering this way.
@@ -711,7 +711,7 @@ wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& pa
 	return pNewInstance;
 }
 
-bool loadGlobalScript(WzString path)
+bool loadGlobalScript(const WzString& path)
 {
 	return loadPlayerScript(path, selectedPlayer, AIDifficulty::DISABLED);
 }
@@ -1078,7 +1078,7 @@ bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, SimpleObject* psObj)
 		{
 			int player = instance->player();
 			bool receiveAll = instance->isReceivingAllEvents();
-			if (player != psObj->player && !receiveAll)
+			if (player != psObj->getPlayer() && !receiveAll)
 			{
 				continue;
 			}
@@ -1870,14 +1870,14 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 	else if (l.type == SCRIPT_GROUP)
 	{
 		bool cameraMoved = false;
-		for (ENGINEMAP::iterator i = groups.begin(); i != groups.end(); ++i)
+		for (auto & group : groups)
 		{
-			const GROUPMAP* pGroupMap = i->second;
-			for (auto iter = pGroupMap->map().cbegin(); iter != pGroupMap->map().cend(); ++iter)
+			const GROUPMAP* pGroupMap = group.second;
+			for (auto iter : pGroupMap->map())
 			{
-				if (iter->second == l.id)
+				if (iter.second == l.id)
 				{
-					const SimpleObject* psObj = iter->first;
+					const SimpleObject* psObj = iter.first;
 					if (!cameraMoved && jump_to)
 					{
 						setViewPos(map_coord(psObj->pos.x), map_coord(psObj->pos.y), false); // move camera position
@@ -1934,9 +1934,9 @@ bool scripting_engine::areaLabelCheck(Droid* psDroid)
 	int x = psDroid->pos.x;
 	int y = psDroid->pos.y;
 	bool activated = false;
-	for (LABELMAP::iterator i = labels.begin(); i != labels.end(); i++)
+	for (auto & label : labels)
 	{
-		LABEL& l = i->second;
+		LABEL& l = label.second;
 		if (l.triggered == 0 && (l.subscriber == ALL_PLAYERS || l.subscriber == psDroid->player)
 			&& ((l.type == SCRIPT_AREA && l.p1.x < x && l.p1.y < y && l.p2.x > x && l.p2.y > y)
 				|| (l.type == SCRIPT_RADIUS && iHypot(l.p1 - psDroid->pos.xy()) < l.p2.x)))
@@ -1944,7 +1944,7 @@ bool scripting_engine::areaLabelCheck(Droid* psDroid)
 			// We're inside an untriggered area
 			activated = true;
 			l.triggered = psDroid->id;
-			triggerEventArea(i->first, psDroid);
+			triggerEventArea(label.first, psDroid);
 		}
 	}
 	if (activated)
@@ -1979,9 +1979,9 @@ void scripting_engine::removeFromGroup(wzapi::scripting_instance* instance, GROU
 
 void scripting_engine::groupRemoveObject(const SimpleObject* psObj)
 {
-	for (ENGINEMAP::iterator i = groups.begin(); i != groups.end(); ++i)
+	for (auto & group : groups)
 	{
-		removeFromGroup(i->first, i->second, psObj);
+		removeFromGroup(group.first, group.second, psObj);
 	}
 }
 
@@ -2008,12 +2008,12 @@ bool scripting_engine::saveGroups(nlohmann::json& result, wzapi::scripting_insta
 	GROUPMAP* psMap = getGroupMap(instance);
 	ASSERT_OR_RETURN(false, psMap, "Non-existent groupmap for engine");
 	result["lastNewGroupId"] = psMap->getLastNewGroupId();
-	for (auto i = psMap->map().begin(); i != psMap->map().end(); ++i)
+	for (auto i : psMap->map())
 	{
-		const SimpleObject* psObj = i->first;
+		const SimpleObject* psObj = i.first;
 		ASSERT(!isDead(psObj), "Wanted to save dead %s to savegame!", objInfo(psObj));
 		std::vector<WzString> value = json_getValue(result, WzString::number(psObj->id)).toWzStringList();
-		value.push_back(WzString::number(i->second));
+		value.push_back(WzString::number(i.second));
 		result[WzString::number(psObj->id).toUtf8()] = value;
 	}
 	return true;
@@ -2131,10 +2131,10 @@ bool scripting_engine::writeLabels(const char* filename)
 	int c[5]; // make unique, incremental section names
 	memset(c, 0, sizeof(c));
 	WzConfig ini(filename, WzConfig::ReadAndWrite);
-	for (auto i = labels.begin(); i != labels.end(); i++)
+	for (auto & label : labels)
 	{
-		const std::string& key = i->first;
-		const LABEL& l = i->second;
+		const std::string& key = label.first;
+		const LABEL& l = label.second;
 		if (l.type == SCRIPT_POSITION)
 		{
 			ini.beginGroup("position_" + WzString::number(c[0]++));
@@ -2278,7 +2278,7 @@ generic_script_object::generic_script_object()
 
 generic_script_object generic_script_object::Null()
 {
-	return generic_script_object();
+	return {};
 }
 
 generic_script_object generic_script_object::fromRadius(int x, int y, int radius)

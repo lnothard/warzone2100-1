@@ -113,7 +113,7 @@ void cmdDroidSetDesignator(Droid* psDroid)
 		return;
 	}
 
-	apsCmdDesignator[psDroid->player] = psDroid;
+	apsCmdDesignator[psDroid->getPlayer()] = psDroid;
 }
 
 void cmdDroidClearDesignator(UDWORD player)

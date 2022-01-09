@@ -33,16 +33,6 @@ void ValueTracker::start(int value)
   start_time = graphicsTime;
   target_reached = false;
 }
-//ValueTracker* ValueTracker::startTracking(int value)
-//{
-//	this->initial = value;
-//	this->target = value;
-//	this->targetDelta = 0;
-//	this->current = value;
-//	this->startTime = graphicsTime;
-//	this->_reachedTarget = false;
-//	return this;
-//}
 
 void ValueTracker::stop()
 {
@@ -51,14 +41,6 @@ void ValueTracker::stop()
   start_time = 0;
   target_reached = false;
 }
-//ValueTracker* ValueTracker::stopTracking()
-//{
-//	this->initial = 0;
-//	this->current = 0;
-//	this->startTime = 0;
-//	this->_reachedTarget = false;
-//	return this;
-//}
 
 bool ValueTracker::currently_tracking() const
 {
@@ -99,23 +81,6 @@ void ValueTracker::update()
                           static_cast<float>( speed )) )
                   + current;
 }
-//ValueTracker* ValueTracker::update()
-//{
-//	if (this->_reachedTarget)
-//	{
-//		return this;
-//	}
-//
-//	if (std::abs(this->target - this->current) < 1)
-//	{
-//		this->_reachedTarget = true;
-//		return this;
-//	}
-//
-//	this->current = (this->initial + this->targetDelta - this->current) * realTimeAdjustedIncrement(this->speed) + this
-//		->current;
-//	return this;
-//}
 
 int ValueTracker::get_current() const
 {
@@ -168,22 +133,6 @@ unsigned calculate_easing(EASING_FUNCTION easing_func, unsigned progress)
       return 2 * progress - progress * progress / (UINT16_MAX - 1);
   }
 }
-//static uint16_t calculateEasing(EasingType easingType, uint16_t progress)
-//{
-//	switch (easingType)
-//	{
-//	case LINEAR:
-//		return progress;
-//	case EASE_IN_OUT:
-//		return MAX(0, MIN(UINT16_MAX, iCos(UINT16_MAX / 2 + progress / 2) / 2 + (1 << 15)));
-//	case EASE_IN:
-//		return (progress * (uint32_t)progress) / UINT16_MAX;
-//	case EASE_OUT:
-//		return 2 * progress - (progress * (uint32_t)progress) / (UINT16_MAX - 1);
-//	}
-//
-//	return UINT16_MAX;
-//}
 
 template <class AnimatableData>
 Animation<AnimatableData>::Animation(std::size_t time)

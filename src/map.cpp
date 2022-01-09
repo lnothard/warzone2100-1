@@ -20,7 +20,7 @@
 
 /**
  * @file map.cpp
- * Utility functions for the map data structure.
+ * Utility functions for the map data structure
  */
 
 #include <algorithm>
@@ -780,7 +780,7 @@ public:
 		}
 	}
 
-	virtual ~WzMapBinaryPhysFSStream()
+	~WzMapBinaryPhysFSStream() override
 	{
 		if (pFile)
 		{
@@ -789,9 +789,9 @@ public:
 		}
 	};
 
-	bool openedFile() const { return pFile != nullptr; }
+	[[nodiscard]] bool openedFile() const { return pFile != nullptr; }
 
-	virtual optional<size_t> readBytes(void* buffer, size_t len) override
+	optional<size_t> readBytes(void* buffer, size_t len) override
 	{
 		if (!pFile) { return nullopt; }
 		PHYSFS_sint64 result = WZ_PHYSFS_readBytes(pFile, buffer, static_cast<uint32_t>(len));
@@ -803,7 +803,7 @@ public:
 		return static_cast<size_t>(result);
 	}
 
-	virtual optional<size_t> writeBytes(const void* buffer, size_t len) override
+	optional<size_t> writeBytes(const void* buffer, size_t len) override
 	{
 		if (!pFile) { return nullopt; }
 		PHYSFS_sint64 result = WZ_PHYSFS_writeBytes(pFile, buffer, static_cast<uint32_t>(len));
@@ -815,7 +815,7 @@ public:
 		return static_cast<size_t>(result);
 	}
 
-	virtual bool endOfStream() override
+	bool endOfStream() override
 	{
 		if (!pFile) { return false; }
 		return PHYSFS_eof(pFile);
@@ -828,7 +828,7 @@ private:
 std::unique_ptr<WzMap::BinaryIOStream> WzMapPhysFSIO::openBinaryStream(const std::string& filename,
                                                                        WzMap::BinaryIOStream::OpenMode mode)
 {
-	WzMapBinaryPhysFSStream* pStream = new WzMapBinaryPhysFSStream(filename.c_str(), mode);
+	auto pStream = new WzMapBinaryPhysFSStream(filename.c_str(), mode);
 	if (!pStream->openedFile())
 	{
 		delete pStream;
@@ -851,9 +851,7 @@ bool WzMapPhysFSIO::writeFullFile(const std::string& filename, const char* ppFil
 	return saveFile(filename.c_str(), ppFileData, fileSize);
 }
 
-WzMapDebugLogger::~WzMapDebugLogger()
-{
-}
+WzMapDebugLogger::~WzMapDebugLogger() = default;
 
 void WzMapDebugLogger::printLog(WzMap::LoggingProtocol::LogLevel level, const char* function, int line, const char* str)
 {

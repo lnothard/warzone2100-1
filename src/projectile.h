@@ -53,7 +53,7 @@ static constexpr auto HOMINGINDIRECT_HEIGHT_MAX = 450;
 
 static std::array<int, MAX_PLAYERS> experienceGain;
 
-/* The range for neighbouring objects */
+/// The range for neighbouring objects
 static constexpr auto PROJ_NEIGHBOUR_RANGE = TILE_UNITS * 4;
 
 /// Represents the current stage of a projectile's trajectory
@@ -84,7 +84,7 @@ private:
   bool isVisible;
 
   /// Firing weapon stats
-  WeaponStats* weaponStats;
+  std::shared_ptr<WeaponStats> weaponStats;
 
   /// What fired the projectile
   Unit* source;

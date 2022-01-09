@@ -240,18 +240,20 @@ namespace Impl
        * @param weapon_slot
        * @return
        */
-      [[nodiscard]] bool is_valid_target(const ::Unit *attacker,
-                                         int weapon_slot) const final;
+      [[nodiscard]] bool isValidTarget(const ::Unit *attacker,
+                                       int weapon_slot) const final;
 
       [[nodiscard]] bool hasCommander() const final;
       [[nodiscard]] bool has_standard_sensor() const;
       [[nodiscard]] bool has_CB_sensor() const;
       [[nodiscard]] bool has_electronic_weapon() const;
+      void actionUpdateTransporter();
       void gainExperience(unsigned exp) final;
       void cancelBuild() final;
       void resetAction() noexcept final;
+      void actionSanity();
       void update_expected_damage(unsigned damage, bool is_direct) noexcept final;
-      [[nodiscard]] unsigned calculate_sensor_range() const final;
+      [[nodiscard]] unsigned calculateSensorRange() const final;
       [[nodiscard]] int calculateHeight() const final;
       [[nodiscard]] int space_occupied_on_transporter() const;
       void increment_kills() noexcept;

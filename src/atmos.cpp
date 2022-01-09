@@ -20,7 +20,7 @@
 
 /**
  * @file atmos.cpp
- * Handles atmospherics such as snow and rain.
+ * Handles atmospherics such as snow and rain
 */
 
 #include <cmath>
@@ -37,10 +37,6 @@
 #include "loop.h"
 #include "map.h"
 #include "miscimd.h"
-
-#ifndef GLM_ENABLE_EXPERIMENTAL
-#define GLM_ENABLE_EXPERIMENTAL
-#endif
 
 /* Roughly one per tile */
 #define	MAX_ATMOS_PARTICLES		(MAP_MAXWIDTH * MAP_MAXHEIGHT)

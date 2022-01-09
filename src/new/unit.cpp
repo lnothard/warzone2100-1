@@ -18,12 +18,12 @@ namespace Impl
 	{
 	}
 
-	unsigned Unit::get_hp() const noexcept
+	unsigned Unit::getHp() const noexcept
 	{
 		return hit_points;
 	}
 
-	const std::vector<Weapon>& Unit::get_weapons() const
+	const std::vector<Weapon>& Unit::getWeapons() const
 	{
 		return weapons;
 	}
@@ -58,7 +58,7 @@ namespace Impl
 
 bool has_full_ammo(const Unit& unit) noexcept
 {
-	auto& weapons = unit.get_weapons();
+	auto& weapons = unit.getWeapons();
 	return std::all_of(weapons.begin(), weapons.end(),
 	                   [](const auto& weapon)
   {
@@ -68,7 +68,7 @@ bool has_full_ammo(const Unit& unit) noexcept
 
 bool has_artillery(const Unit& unit) noexcept
 {
-	auto& weapons = unit.get_weapons();
+	auto& weapons = unit.getWeapons();
 	return std::any_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon)
 	{
@@ -107,7 +107,7 @@ Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot)
 Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot)
 {
 	const auto& imd_shape = unit.get_IMD_shape();
-	const auto& weapon = unit.get_weapons()[weapon_slot];
+	const auto& weapon = unit.getWeapons()[weapon_slot];
 	const auto& position = unit.getPosition();
 	const auto& rotation = unit.getRotation();
 	auto muzzle = Vector3i{0, 0, 0};
@@ -296,7 +296,7 @@ int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int w
 
 bool has_electronic_weapon(const Unit& unit) noexcept
 {
-	auto& weapons = unit.get_weapons();
+	auto& weapons = unit.getWeapons();
 	if (weapons.empty()) return false;
 
 	return std::any_of(weapons.begin(), weapons.end(), [](const auto& weapon)
@@ -308,7 +308,7 @@ bool has_electronic_weapon(const Unit& unit) noexcept
 bool target_in_line_of_fire(const Unit& unit, const ::Unit& target, int weapon_slot)
 {
 	const auto distance = iHypot((target.getPosition() - unit.getPosition()).xy());
-	auto range = unit.get_weapons()[weapon_slot].get_max_range(unit.getPlayer());
+	auto range = unit.getWeapons()[weapon_slot].get_max_range(unit.getPlayer());
 	if (!has_artillery(unit))
 	{
 		return range >= distance && LINE_OF_FIRE_MINIMUM <= calculate_line_of_fire(unit, target, weapon_slot);
@@ -363,9 +363,9 @@ Unit* find_target(Unit& unit, ATTACKER_TYPE attacker_type,
     is_cb_sensor = sensor.has_CB_sensor();
 
     if (!target ||
-        !target->is_alive() ||
+        !target->isAlive() ||
         target->is_probably_doomed() ||
-        !target->is_valid_target() ||
+        !target->isValidTarget() ||
         alliance_formed(target->getPlayer(),
                         unit.getPlayer())) {
       continue;
@@ -387,13 +387,13 @@ Unit* find_target(Unit& unit, ATTACKER_TYPE attacker_type,
 
 unsigned num_weapons(const Unit& unit)
 {
-	return static_cast<unsigned>(unit.get_weapons().size());
+	return static_cast<unsigned>(unit.getWeapons().size());
 }
 
 unsigned get_max_weapon_range(const Unit& unit)
 {
 	auto max = unsigned{0};
-	for (const auto& weapon : unit.get_weapons())
+	for (const auto& weapon : unit.getWeapons())
 	{
 		const auto max_weapon_range = weapon.get_max_range(unit.getPlayer());
 		if (max_weapon_range > max)

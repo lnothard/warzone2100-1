@@ -17,13 +17,19 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file selection.c
+ * @file selection.cpp
  * Attempt to rationalise the unit selection procedure and
  * also necessary as we now need to return the number of
  * units selected according to specified criteria.
- * Alex McLean, Pumpkin studios, EIDOS.
+ *
+ * Alex McLean, Pumpkin studios, EIDOS
 */
+
+#include <algorithm>
+#include <functional>
+#include <vector>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/math_ext.h"
@@ -41,12 +47,9 @@
 #include "warcam.h"
 #include "display.h"
 #include "qtscript.h"
-#include <algorithm>
-#include <functional>
-#include <vector>
 
 // stores combinations of unit components
-static std::vector<std::vector<uint32_t>> combinations;
+static std::vector<std::vector<unsigned>> combinations;
 
 template <typename T>
 static unsigned selSelectUnitsIf(unsigned player, T condition, bool onlyOnScreen)

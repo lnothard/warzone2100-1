@@ -17,14 +17,13 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
+
+/** @file multijoin.h
  *  multijoin caters for all the player comings and goings of each player
  */
 
 #ifndef __INCLUDED_SRC_MULTIJOIN_H__
 #define __INCLUDED_SRC_MULTIJOIN_H__
-
-#include "droiddef.h"
 
 void clearDisplayMultiJoiningStatusCache(); // Call when bDisplayMultiJoiningStatus is set to 0
 bool intDisplayMultiJoiningStatus(UBYTE joinCount);

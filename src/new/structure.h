@@ -271,7 +271,7 @@ class PowerGenerator : public virtual Structure, public Impl::Structure
 {
 public:
   void update_current_power();
-  void print_info() const final;
+  void printInfo() const final;
 private:
 	std::vector<Structure*> resource_extractors;
 };

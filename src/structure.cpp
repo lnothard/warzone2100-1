@@ -79,16 +79,6 @@
 #include "gateway.h"
 #include "random.h"
 
-/// Maximum slope of the terrain for building a structure
-#define MAX_INCLINE		50//80//40
-
-/* droid construction smoke cloud constants */
-#define	DROID_CONSTRUCTION_SMOKE_OFFSET	30
-#define	DROID_CONSTRUCTION_SMOKE_HEIGHT	20
-
-/// How often to increase the resistance level of a structure
-#define RESISTANCE_INTERVAL 2000
-
 //Value is stored for easy access to this structure stat
 UDWORD factoryModuleStat;
 UDWORD powerModuleStat;
@@ -337,8 +327,6 @@ namespace Impl
           , lastBuildRate(0)
           , prebuiltImd(nullptr)
   {
-    pos = Vector3i(0, 0, 0);
-    rot = Vector3i(0, 0, 0);
     capacity = 0;
   }
 
@@ -348,7 +336,7 @@ namespace Impl
     audio_RemoveObj(this);
   }
 
-  bool Structure::is_blueprint() const noexcept
+  bool Structure::isBlueprint() const noexcept
   {
     return state == BLUEPRINT_VALID ||
            state == BLUEPRINT_INVALID ||
@@ -361,21 +349,21 @@ namespace Impl
     return stats->build_point_cost - current_build_points;
   }
 
-  bool Structure::has_modules() const noexcept
+  bool Structure::hasModules() const noexcept
   {
     return capacity > 0;
   }
 
-  bool Structure::is_pulled_to_terrain() const
+  bool Structure::isPulledToTerrain() const
   {
     using enum STRUCTURE_TYPE;
-    return is_wall() || stats->type == DEFENSE ||
+    return isWall() || stats->type == DEFENSE ||
            stats->type == GATE || stats->type == REARM_PAD;
   }
 
-  bool Structure::has_CB_sensor() const
+  bool Structure::hasCbSensor() const
   {
-    if (!has_sensor())  {
+    if (!hasSensor())  {
       return false;
     }
     const auto sensor_type = stats->sensor_stats->type;
@@ -383,9 +371,9 @@ namespace Impl
            sensor_type == SENSOR_TYPE::SUPER;
   }
 
-  bool Structure::has_standard_sensor() const
+  bool Structure::hasStandardSensor() const
   {
-    if (!has_sensor())  {
+    if (!hasSensor())  {
       return false;
     }
     const auto sensor_type = stats->sensor_stats->type;
@@ -393,9 +381,9 @@ namespace Impl
            sensor_type == SENSOR_TYPE::SUPER;
   }
 
-  bool Structure::has_VTOL_intercept_sensor() const
+  bool Structure::hasVtolInterceptSensor() const
   {
-    if (!has_sensor()) {
+    if (!hasSensor()) {
       return false;
     }
     const auto sensor_type = stats->sensor_stats->type;
@@ -403,9 +391,9 @@ namespace Impl
            sensor_type == SENSOR_TYPE::SUPER;
   }
 
-  bool Structure::has_VTOL_CB_sensor() const
+  bool Structure::hasVtolCbSensor() const
   {
-    if (!has_sensor())  {
+    if (!hasSensor())  {
       return false;
     }
     const auto sensor_type = stats->sensor_stats->type;
@@ -799,7 +787,7 @@ void setCurrentStructQuantity(bool displayError)
 		{
 			asStructureStats[inc].curCount[player] = 0;
 		}
-		for (const Structure* psCurr = apsStructLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (const auto& psCurr : apsStructLists[player])
 		{
 			unsigned inc = psCurr->pStructureType - asStructureStats;
 			asStructureStats[inc].curCount[player]++;
@@ -1142,28 +1130,23 @@ void structureRepair(Structure* psStruct, Droid* psDroid, int buildRate)
 	psStruct->body = clip<UDWORD>(psStruct->body + repairAmount, 0, structureBody(psStruct));
 }
 
-static void refundFactoryBuildPower(Structure* psBuilding)
+void Factory::refundBuildPower()
 {
 	ASSERT_OR_RETURN(, StructIsFactory(psBuilding), "structure not a factory");
-	Factory* psFactory = &psBuilding->pFunctionality->factory;
 
-	if (psFactory->psSubject)
+	if (psSubject)
 	{
-		if (psFactory->buildPointsRemaining < (int)calcTemplateBuild(psFactory->psSubject))
+		if (buildPointsRemaining < (int)calcTemplateBuild(psSubject))
 		{
 			// We started building, so give the power back that was used.
-			addPower(psBuilding->player, calcTemplatePower(psFactory->psSubject));
+			addPower(player, calcTemplatePower(psSubject));
 		}
 	}
 }
 
 /* Set the type of droid for a factory to build */
-bool structSetManufacture(Structure* psStruct, DroidTemplate* psTempl, QUEUE_MODE mode)
+bool Factory::structSetManufacture(DroidTemplate* psTempl, QUEUE_MODE mode)
 {
-	CHECK_STRUCTURE(psStruct);
-
-	ASSERT_OR_RETURN(false, StructIsFactory(psStruct), "structure not a factory");
-
 	/* psTempl might be NULL if the build is being cancelled in the middle */
 	ASSERT_OR_RETURN(false, !psTempl
 	                 || (validTemplateForFactory(psTempl, psStruct, true) && researchedTemplate(psTempl, psStruct->
@@ -1172,39 +1155,34 @@ bool structSetManufacture(Structure* psStruct, DroidTemplate* psTempl, QUEUE_MOD
 	                 "Wrong template for player %d factory, type %d.", psStruct->player,
 	                 psStruct->pStructureType->type);
 
-	Factory* psFact = &psStruct->pFunctionality->factory;
-
-	if (mode == ModeQueue)
-	{
+	if (mode == ModeQueue) {
 		sendStructureInfo(psStruct, STRUCTUREINFO_MANUFACTURE, psTempl);
 		setStatusPendingStart(*psFact, psTempl);
 		return true; // Wait for our message before doing anything.
 	}
 
 	//assign it to the Factory
-	refundFactoryBuildPower(psStruct);
-	psFact->psSubject = psTempl;
+  refundBuildPower(psStruct);
+	psSubject = psTempl;
 
 	//set up the start time and build time
 	if (psTempl != nullptr)
 	{
 		//only use this for non selectedPlayer
-		if (psStruct->player != selectedPlayer)
-		{
+		if (psStruct->player != selectedPlayer) {
 			//set quantity to produce
-			psFact->productionLoops = 1;
+			productionLoops = 1;
 		}
 
-		psFact->timeStarted = ACTION_START_TIME; //gameTime;
-		psFact->timeStartHold = 0;
+		timeStarted = ACTION_START_TIME; //gameTime;
+		timeStartHold = 0;
 
-		psFact->buildPointsRemaining = calcTemplateBuild(psTempl);
+		buildPointsRemaining = calcTemplateBuild(psTempl);
 		//check for zero build time - usually caused by 'silly' data! If so, set to 1 build point - ie very fast!
-		psFact->buildPointsRemaining = std::max(psFact->buildPointsRemaining, 1);
+		buildPointsRemaining = std::max(buildPointsRemaining, 1);
 	}
 	return true;
 }
-
 
 /*****************************************************************************/
 /*
@@ -6408,7 +6386,7 @@ void cancelProduction(Structure* psBuilding, QUEUE_MODE mode, bool mayClearProdu
 	}
 
 	//clear the factory's subject
-	refundFactoryBuildPower(psBuilding);
+  refundBuildPower(psBuilding);
 	psFactory->psSubject = nullptr;
 	delPowerRequest(psBuilding);
 }

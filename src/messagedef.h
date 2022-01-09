@@ -19,7 +19,7 @@
 */
 
 /**
- * @file
+ * @file messagedef.h
  * Definitions for messages
  */
 

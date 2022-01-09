@@ -200,7 +200,7 @@ void Droid::commander_gain_experience(unsigned exp) const
 //	});
 //}
 
-bool Droid::is_valid_target(const ::Unit* attacker, int weapon_slot) const
+bool Droid::isValidTarget(const ::Unit* attacker, int weapon_slot) const
 {
 	auto target_airborne = bool{false};
 	auto valid_target = bool{false};
@@ -219,7 +219,7 @@ bool Droid::is_valid_target(const ::Unit* attacker, int weapon_slot) const
 		if (num_weapons(*as_droid) == 0)
 			return false;
 
-		auto& weapon_stats = attacker->get_weapons()[weapon_slot].get_stats();
+		auto& weapon_stats = attacker->getWeapons()[weapon_slot].get_stats();
 
 		if (auto surface_to_air = weapon_stats.surface_to_air; ((surface_to_air & SHOOT_IN_AIR) && target_airborne) ||
 			((surface_to_air & SHOOT_ON_GROUND) && !target_airborne))
@@ -447,14 +447,14 @@ void Droid::set_direct_route(int target_x, int target_y) const
 
 int Droid::calculate_attack_priority(const Unit* target, int weapon_slot) const
 {
-  auto& attacker_weapon = get_weapons()[weapon_slot];
+  auto& attacker_weapon = getWeapons()[weapon_slot];
   auto targeting_commander = false;
   auto is_direct = false;
   auto damage_ratio = 0;
   auto target_type_modifier = 0;
   auto attack_weight = 0;
 
-  if (!target || !target->is_alive()) {
+  if (!target || !target->isAlive()) {
     return -1;
   }
 
@@ -478,11 +478,11 @@ int Droid::calculate_attack_priority(const Unit* target, int weapon_slot) const
   auto distance = iHypot((getPosition() - target->getPosition()).xy());
   if (distance <= attacker_weapon.get_min_range(getPlayer())) {
     // If object is too close to fire at, consider it to be at maximum range.
-    distance = calculate_sensor_range();
+    distance = calculateSensorRange();
   }
 
   if (auto as_droid = dynamic_cast<const Droid*>(target)) {
-    damage_ratio = 100 - 100 * as_droid->get_hp() / as_droid->original_hp;
+    damage_ratio = 100 - 100 * as_droid->getHp() / as_droid->original_hp;
 
     switch (as_droid->get_type()) {
       case CYBORG:
@@ -698,7 +698,7 @@ uint8_t is_target_visible(const Droid& droid, const SimpleObject* target, bool w
 	if (droid.get_current_order().target_object->getId() == target->getId() && droid.has_CB_sensor())
 		return VISIBLE;
 
-	const auto range = droid.calculate_sensor_range();
+	const auto range = droid.calculateSensorRange();
 	const auto distance = iHypot((target_position - droid_position).xy());
 
 	if (distance == 0) return VISIBLE;
@@ -744,7 +744,7 @@ bool action_target_inside_minimum_weapon_range(const Droid& droid, const Unit& t
 	if (num_weapons(droid) == 0) return false;
 
   const auto square_diff = objectPositionSquareDiff(droid, target);
-	const auto min_range = droid.get_weapons()[weapon_slot].get_min_range(droid.getPlayer());
+	const auto min_range = droid.getWeapons()[weapon_slot].get_min_range(droid.getPlayer());
 	const auto range_squared = min_range * min_range;
 
 	if (square_diff <= range_squared) return true;
@@ -753,7 +753,7 @@ bool action_target_inside_minimum_weapon_range(const Droid& droid, const Unit& t
 
 bool target_within_weapon_range(const Droid& droid, const Unit& target, int weapon_slot)
 {
-	const auto max_range = droid.get_weapons()[weapon_slot].get_max_range(droid.getPlayer());
+	const auto max_range = droid.getWeapons()[weapon_slot].get_max_range(droid.getPlayer());
 	return objectPositionSquareDiff(droid, target) < max_range * max_range;
 }
 

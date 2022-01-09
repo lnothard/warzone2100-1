@@ -17,16 +17,16 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * Multibot.c
+
+/**
+ * @file multibot.cpp
+ * Multiplayer stuff relevant to droids only
  *
  * Alex Lee , 97/98 Pumpkin Studios, Bath
- * Multiplay stuff relevant to droids only.
  */
 #include "lib/framework/frame.h"
 
 #include "droid.h"						// for droid sending and ordering.
-#include "droiddef.h"
 #include "stats.h"
 #include "move.h"						// for ordering droids
 #include "objmem.h"
@@ -69,7 +69,7 @@ struct QueuedDroidInfo
 	}
 
 	/// Returns 0 if order is the same, non-zero otherwise.
-	int orderCompare(QueuedDroidInfo const& z) const
+	[[nodiscard]] int orderCompare(QueuedDroidInfo const& z) const
 	{
 		if (player != z.player)
 		{

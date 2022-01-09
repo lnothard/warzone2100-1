@@ -38,11 +38,6 @@
 #include "qtscript.h"
 #include "transporter.h"
 
-//// Check if a droid has stopped moving
-//#define DROID_STOPPED(psDroid) \
-//	(psDroid->sMove.Status == MOVEINACTIVE || psDroid->sMove.Status == MOVEHOVER || \
-//	 psDroid->sMove.Status == MOVESHUFFLE)
-
 /**
  * @typedef tileMatchFunction
  *
@@ -249,7 +244,7 @@ std::string getDroidActionName(ACTION action)
 //}
 
 /* returns true if on target */
-bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon* psWeapon)
+bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, const Weapon* psWeapon)
 {
   int rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
   int pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
@@ -289,20 +284,20 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 		pitchLowerLimit = DEG(psWeapStats.minElevation);
 		pitchUpperLimit = DEG(psWeapStats.maxElevation);
 	}
-	else if (psAttacker->type == OBJ_DROID)
+	else if (auto psDroid = dynamic_cast<Droid*>(psAttacker))
 	{
-		Droid* psDroid = (Droid*)psAttacker;
 		int weapon_slot = psWeapon - psDroid->asWeaps; // Should probably be passed weapon_slot instead of psWeapon.
 		calcDroidMuzzleLocation(psDroid, &attackerMuzzlePos, weapon_slot);
 
-		if (psDroid->type == DROID_WEAPON || isTransporter(psDroid)
-        || psDroid->type == DROID_COMMAND || psDroid->type == DROID_CYBORG
-        || psDroid->type == DROID_CYBORG_SUPER)
-		{
+		if (psDroid->getType() == DROID_TYPE::WEAPON ||
+       isTransporter(*psDroid) ||
+       psDroid->getType() == DROID_TYPE::COMMAND ||
+       psDroid->getType() == DROID_TYPE::CYBORG ||
+       psDroid->getType() == DROID_TYPE::CYBORG_SUPER) {
 			pitchLowerLimit = DEG(psWeapStats->minElevation);
 			pitchUpperLimit = DEG(psWeapStats->maxElevation);
 		}
-		else if (psDroid->type == DROID_REPAIR)
+		else if (psDroid->getType() == DROID_TYPE::REPAIRER)
 		{
 			pitchLowerLimit = DEG(REPAIR_PITCH_LOWER);
 			pitchUpperLimit = DEG(REPAIR_PITCH_UPPER);
@@ -316,7 +311,8 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 	pitchRate = MAX(pitchRate, DEG(1));
 
 	//and point the turret at target
-	targetRotation = calcDirection(psAttacker->pos.x, psAttacker->pos.y, psTarget->pos.x, psTarget->pos.y);
+	targetRotation = calcDirection(psAttacker->getPosition().x, psAttacker->getPosition().y,
+                                 psTarget->getPosition().x, psTarget->getPosition().y);
 
 	//restrict rotationerror to =/- 180 degrees
 	int rotationError = angleDelta(targetRotation - (tRotation + psAttacker->rot.direction));
@@ -338,9 +334,9 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 
 	/* Set muzzle pitch if not repairing or outside minimum range */
 	const int minRange = proj_GetMinRange(psWeapStats, psAttacker->player);
-	if (!bRepair && (unsigned)objPosDiffSq(psAttacker, psTarget) > minRange * minRange) {
+	if (!bRepair && (unsigned)objectPositionSquareDiff(psAttacker, psTarget) > minRange * minRange) {
 		/* get target distance */
-		Vector3i delta = psTarget->pos - attackerMuzzlePos;
+		Vector3i delta = psTarget->getPosition() - attackerMuzzlePos;
 		int32_t dxy = iHypot(delta.x, delta.y);
 
 		uint16_t targetPitch = iAtan2(delta.z, dxy);
@@ -364,7 +360,7 @@ bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot
 {
 	CHECK_DROID(psDroid);
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
-	ASSERT_OR_RETURN(false, psDroid->player < MAX_PLAYERS, "psDroid->player (%" PRIu8 ") must be < MAX_PLAYERS",
+	ASSERT_OR_RETURN(false, psDroid->getPlayer() < MAX_PLAYERS, "psDroid->player (%" PRIu8 ") must be < MAX_PLAYERS",
                    psDroid->getPlayer());
 	if (!psTarget->visible[psDroid->player]) {
 		return false;
@@ -373,7 +369,7 @@ bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot
 	{
 		return true;
 	}
-	return (orderState(psDroid, DORDER_FIRESUPPORT) || visibleObject(psDroid, psTarget, false) > UBYTE_MAX / 2)
+	return (orderState(psDroid, ORDER_TYPE::FIRE_SUPPORT) || visibleObject(psDroid, psTarget, false) > UBYTE_MAX / 2)
 		&& lineOfFire(psDroid, psTarget, weapon_slot, true);
 }
 
@@ -420,7 +416,7 @@ bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot
 //	CHECK_DROID(psDroid);
 //
 //	/* don't do attack runs whilst returning to base */
-//	if (psDroid->order.type == DORDER_RTB)
+//	if (psDroid->order.type == ORDER_TYPE::RTB)
 //	{
 //		return;
 //	}
@@ -438,18 +434,6 @@ bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot
 //		actionAddVtolAttackRun(psDroid);
 //	}
 //}
-
-static void actionUpdateTransporter(Droid* psDroid)
-{
-	CHECK_DROID(psDroid);
-
-	//check if transporter has arrived
-	if (updateTransporter(psDroid))
-	{
-		// Got to destination
-		psDroid->action = ACTION::NONE;
-	}
-}
 
 //// calculate a position for units to pull back to if they
 //// need to increase the range between them and a target
@@ -497,13 +481,14 @@ bool actionReachedBuildPos(Droid const* psDroid, int x, int y, uint16_t dir, Bas
 	ASSERT_OR_RETURN(false, psStats != nullptr && psDroid != nullptr, "Bad stat or droid");
 	CHECK_DROID(psDroid);
 
-	StructureBounds b = getStructureBounds(psStats, Vector2i(x, y), dir);
+	auto b = getStructureBounds(psStats, Vector2i(x, y), dir);
 
 	// do all calculations in half tile units so that
 	// the droid moves to within half a tile of the target
 	// NOT ANY MORE - JOHN
-	Vector2i delta = map_coord(psDroid->pos.xy()) - b.map;
-	return delta.x >= -1 && delta.x <= b.size.x && delta.y >= -1 && delta.y <= b.size.y;
+	Vector2i delta = map_coord(psDroid->getPosition().xy()) - b.top_left_coords;
+	return delta.x >= -1 && delta.x <= b.size_in_coords.x &&
+         delta.y >= -1 && delta.y <= b.size_in_coords.y;
 }
 
 
@@ -523,13 +508,13 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 	gridList = gridStartIterate(structureCentre.x, structureCentre.y, structureMaxRadius);
 	for (auto& gi : gridList)
 	{
-		Droid* droid = castDroid(gi);
+		auto droid = dynamic_cast<Droid*>(gi);
 		if (droid == nullptr)
 		{
 			continue; // Only looking for droids.
 		}
 
-		Vector2i delta = map_coord(droid->pos.xy()) - b.map;
+		Vector2i delta = map_coord(droid->getPosition().xy()) - b.map;
 		if (delta.x < 0 || delta.x >= b.size.x || delta.y < 0 || delta.y >= b.size.y || isFlying(droid))
 		{
 			continue; // Droid not under new structure (just near it).
@@ -537,7 +522,7 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 
 		buildPosEmpty = false; // Found a droid, have to move it away.
 
-		if (!aiCheckAlliances(player, droid->player))
+		if (!aiCheckAlliances(player, droid->getPlayer()))
 		{
 			continue; // Enemy droids probably don't feel like moving.
 		}
@@ -570,52 +555,6 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 }
 
 
-void actionSanity(Droid* psDroid)
-{
-	// Don't waste ammo unless given a direct attack order.
-	bool avoidOverkill = psDroid->order.type != DORDER_ATTACK &&
-	(psDroid->action == ACTION::ATTACK || psDroid->action == ACTION::MOVEFIRE || psDroid->action == ACTION::MOVETOATTACK
-		||
-		psDroid->action == ACTION::ROTATETOATTACK || psDroid->action == ACTION::VTOLATTACK);
-	bool bDirect = false;
-
-	// clear the target if it has died
-	for (int i = 0; i < MAX_WEAPONS; i++)
-	{
-		bDirect = proj_Direct(asWeaponStats + psDroid->asWeaps[i].nStat);
-		if (psDroid->action_target[i] && (avoidOverkill
-			                                   ? aiObjectIsProbablyDoomed(psDroid->action_target[i], bDirect)
-			                                   : psDroid->action_target[i]->died))
-		{
-			syncDebugObject(psDroid->action_target[i], '-');
-			setDroidActionTarget(psDroid, nullptr, i);
-			if (i == 0)
-			{
-				if (psDroid->action != ACTION::MOVEFIRE &&
-					psDroid->action != ACTION::TRANSPORTIN &&
-					psDroid->action != ACTION::TRANSPORTOUT)
-				{
-					psDroid->action = ACTION::NONE;
-					// if VTOL - return to rearm pad if not patrolling
-					if (isVtolDroid(psDroid))
-					{
-						if ((psDroid->order.type == DORDER_PATROL || psDroid->order.type == DORDER_CIRCLE) && (!
-							vtolEmpty(psDroid) || (psDroid->secondary_order & DSS_ALEV_MASK) == DSS_ALEV_NEVER))
-						{
-							// Back to the patrol.
-							actionDroid(psDroid, ACTION::MOVE, psDroid->order.pos.x, psDroid->order.pos.y);
-						}
-						else
-						{
-							moveToRearm(psDroid);
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
 // Update the action state for a droid
 void actionUpdateDroid(Droid* psDroid)
 {
@@ -632,7 +571,7 @@ void actionUpdateDroid(Droid* psDroid)
 
 	CHECK_DROID(psDroid);
 
-	PropulsionStats* psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
+	auto& psPropStats = psDroid->getPropulsion();
 	ASSERT_OR_RETURN(, psPropStats != nullptr, "Invalid propulsion stats pointer");
 
 	bool secHoldActive = secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_HOLD;
@@ -674,15 +613,15 @@ void actionUpdateDroid(Droid* psDroid)
 
 	Order* order = &psDroid->order;
 
-	switch (psDroid->action)
+	switch (psDroid->getAction())
 	{
 	case ACTION::NONE:
-	case ACTION::WAITFORREPAIR:
+	case ACTION::WAIT_FOR_REPAIR:
 		// doing nothing
 		// see if there's anything to shoot.
 		if (psDroid->numWeaps > 0 && !isVtolDroid(psDroid)
-			&& (order->type == DORDER_NONE || order->type == DORDER_HOLD || order->type == DORDER_RTR || order->type ==
-				DORDER_GUARD))
+			&& (order->type == ORDER_TYPE::NONE || order->type == ORDER_TYPE::HOLD || order->type == ORDER_TYPE::RTR || order->type ==
+				ORDER_TYPE::GUARD))
 		{
 			for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 			{
@@ -712,7 +651,7 @@ void actionUpdateDroid(Droid* psDroid)
 			psDroid->action = ACTION::NONE;
 			break;
 		}
-		if (order->type == DORDER_RTR && order->rtrType == RTR_TYPE_REPAIR_FACILITY)
+		if (order->type == ORDER_TYPE::RTR && order->rtrType == RTR_TYPE_REPAIR_FACILITY)
 		{
 			// move back to the repair facility if necessary
 			if (DROID_STOPPED(psDroid) &&
@@ -724,7 +663,7 @@ void actionUpdateDroid(Droid* psDroid)
 				moveDroidToNoFormation(psDroid, order->psObj->pos.x, order->psObj->pos.y);
 			}
 		}
-		else if (order->type == DORDER_RTR && order->rtrType == RTR_TYPE_DROID && DROID_STOPPED(psDroid))
+		else if (order->type == ORDER_TYPE::RTR && order->rtrType == RTR_TYPE_DROID && DROID_STOPPED(psDroid))
 		{
 			if (!actionReachedDroid(psDroid, static_cast<Droid*>(order->psObj)))
 			{
@@ -738,7 +677,7 @@ void actionUpdateDroid(Droid* psDroid)
 		break;
 	case ACTION::TRANSPORTWAITTOFLYIN:
 		//if we're moving droids to safety and currently waiting to fly back in, see if time is up
-		if (psDroid->player == selectedPlayer && getDroidsToSafetyFlag())
+		if (psDroid->getPlayer() == selectedPlayer && getDroidsToSafetyFlag())
 		{
 			bool enoughTimeRemaining = (mission.time - (gameTime - mission.startTime)) >= (60 * GAME_TICKS_PER_SEC);
 			if (((SDWORD)(mission.ETA - (gameTime - missionGetReinforcementTime())) <= 0) && enoughTimeRemaining)
@@ -755,15 +694,15 @@ void actionUpdateDroid(Droid* psDroid)
 				psDroid->pos.x = droidX;
 				psDroid->pos.y = droidY;
 				//fly Transporter back to get some more droids
-				orderDroidLoc(psDroid, DORDER_TRANSPORTIN,
+				orderDroidLoc(psDroid, ORDER_TYPE::TRANSPORT_IN,
 				              getLandingX(selectedPlayer), getLandingY(selectedPlayer), ModeImmediate);
 			}
 		}
 		break;
 
 	case ACTION::MOVE:
-	case ACTION::RETURNTOPOS:
-	case ACTION::FIRESUPPORT_RETREAT:
+	case ACTION::RETURN_TO_POS:
+	case ACTION::FIRE_SUPPORT_RETREAT:
 		// moving to a location
 		if (DROID_STOPPED(psDroid))
 		{
@@ -797,9 +736,9 @@ void actionUpdateDroid(Droid* psDroid)
 						&& psWeapStats->fireOnMove
 						&& aiBestNearestTarget(psDroid, &psTemp, i) >= 0)
 					{
-						if (secondaryGetState(psDroid, DSO_ATTACK_LEVEL) == DSS_ALEV_ALWAYS)
+						if (secondaryGetState(psDroid, SECONDARY_ORDER::ATTACK_LEVEL) == DSS_ALEV_ALWAYS)
 						{
-							psDroid->action = ACTION::MOVEFIRE;
+							psDroid->action = ACTION::MOVE_FIRE;
 							setDroidActionTarget(psDroid, psTemp, i);
 						}
 					}
@@ -979,7 +918,7 @@ void actionUpdateDroid(Droid* psDroid)
 			if (i > 0)
 			{
 				// If we're ordered to shoot something, and we can, shoot it
-				if ((order->type == DORDER_ATTACK || order->type == DORDER_ATTACKTARGET) &&
+				if ((order->type == ORDER_TYPE::ATTACK || order->type == ORDER_TYPE::ATTACKTARGET) &&
             psDroid->action_target[i] != psDroid->action_target[0] &&
             validTarget(psDroid, psDroid->action_target[0], i) &&
             actionInRange(psDroid, psDroid->action_target[0], i))
@@ -1088,17 +1027,17 @@ void actionUpdateDroid(Droid* psDroid)
 		if (!bHasTarget || wallBlocked)
 		{
 			SimpleObject* psTarget;
-			bool supportsSensorTower = !isVtolDroid(psDroid) && (psTarget = orderStateObj(psDroid, DORDER_FIRESUPPORT))
+			bool supportsSensorTower = !isVtolDroid(psDroid) && (psTarget = orderStateObj(psDroid, ORDER_TYPE::FIRESUPPORT))
 				&& psTarget->type == OBJ_STRUCTURE;
 
-			if (secHoldActive && (order->type == DORDER_ATTACKTARGET || order->type == DORDER_FIRESUPPORT))
+			if (secHoldActive && (order->type == ORDER_TYPE::ATTACKTARGET || order->type == ORDER_TYPE::FIRESUPPORT))
 			{
 				psDroid->action = ACTION::NONE; // secondary holding, cancel the order.
 			}
 			else if (secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_PURSUE &&
 				!supportsSensorTower &&
-				!(order->type == DORDER_HOLD ||
-					order->type == DORDER_RTR))
+				!(order->type == ORDER_TYPE::HOLD ||
+					order->type == ORDER_TYPE::RTR))
 			{
 				//We need this so pursuing doesn't stop if a unit is ordered to move somewhere while
 				//it is still in weapon range of the target when reaching the end destination.
@@ -1106,22 +1045,22 @@ void actionUpdateDroid(Droid* psDroid)
 				psDroid->action = ACTION::MOVETOATTACK; // out of range - chase it
 			}
 			else if (supportsSensorTower ||
-				order->type == DORDER_NONE ||
-				order->type == DORDER_HOLD ||
-				order->type == DORDER_RTR)
+				order->type == ORDER_TYPE::NONE ||
+				order->type == ORDER_TYPE::HOLD ||
+				order->type == ORDER_TYPE::RTR)
 			{
 				// don't move if on hold or firesupport for a sensor tower
 				// also don't move if we're holding position or waiting for repair
 				psDroid->action = ACTION::NONE; // holding, cancel the order.
 			}
 			//Units attached to commanders are always guarding the commander
-			else if (secHoldActive && order->type == DORDER_GUARD && hasCommander(psDroid))
+			else if (secHoldActive && order->type == ORDER_TYPE::GUARD && hasCommander(psDroid))
 			{
 				Droid* commander = psDroid->group->psCommander;
 
-				if (commander->order.type == DORDER_ATTACKTARGET ||
-					commander->order.type == DORDER_FIRESUPPORT ||
-					commander->order.type == DORDER_ATTACK)
+				if (commander->order.type == ORDER_TYPE::ATTACKTARGET ||
+					commander->order.type == ORDER_TYPE::FIRESUPPORT ||
+					commander->order.type == ORDER_TYPE::ATTACK)
 				{
 					psDroid->action = ACTION::MOVETOATTACK;
 				}
@@ -1353,13 +1292,13 @@ void actionUpdateDroid(Droid* psDroid)
 				//'hack' to make the droid to check the primary turrent instead of all
 				WeaponStats* const psWeapStats = &asWeaponStats[psDroid->asWeaps[0].nStat];
 
-				if (order->type == DORDER_ATTACKTARGET && secHoldActive)
+				if (order->type == ORDER_TYPE::ATTACKTARGET && secHoldActive)
 				{
 					psDroid->action = ACTION::NONE; // on hold, give up.
 				}
 				else if (actionInsideMinRange(psDroid, psDroid->action_target[0], psWeapStats))
 				{
-					if (proj_Direct(psWeapStats) && order->type != DORDER_HOLD)
+					if (proj_Direct(psWeapStats) && order->type != ORDER_TYPE::HOLD)
 					{
 						SDWORD pbx, pby;
 
@@ -1381,7 +1320,7 @@ void actionUpdateDroid(Droid* psDroid)
 						}
 					}
 				}
-				else if (order->type != DORDER_HOLD) // approach closer?
+				else if (order->type != ORDER_TYPE::HOLD) // approach closer?
 				{
 					// try to close the range
 					moveDroidTo(psDroid, psDroid->action_target[0]->pos.x, psDroid->action_target[0]->pos.y);
@@ -1452,7 +1391,7 @@ void actionUpdateDroid(Droid* psDroid)
 
 				if (droidCannotBuild)
 				{
-					if (order->type == DORDER_LINEBUILD && map_coord(psDroid->order.pos) != map_coord(
+					if (order->type == ORDER_TYPE::LINEBUILD && map_coord(psDroid->order.pos) != map_coord(
 						psDroid->order.pos2))
 					{
 						// The droid is doing a line build, and there's more to build. This will force the droid to move to the next structure in the line build
@@ -1493,7 +1432,7 @@ void actionUpdateDroid(Droid* psDroid)
 			uint16_t dir = order->direction;
 			moveStopDroid(psDroid);
 			objTrace(psDroid->id, "Halted in our tracks - at construction site");
-			if (order->type == DORDER_BUILD && order->psObj == nullptr)
+			if (order->type == ORDER_TYPE::BUILD && order->psObj == nullptr)
 			{
 				// Starting a new structure
 				const Vector2i pos = psDroid->actionPos;
@@ -1552,7 +1491,7 @@ void actionUpdateDroid(Droid* psDroid)
 					psDroid->action_points_done = 0;
 				}
 			}
-			else if (order->type == DORDER_LINEBUILD || order->type == DORDER_BUILD)
+			else if (order->type == ORDER_TYPE::LINEBUILD || order->type == ORDER_TYPE::BUILD)
 			{
 				// building a wall.
 				Tile* const psTile = worldTile(psDroid->actionPos);
@@ -1717,7 +1656,7 @@ void actionUpdateDroid(Droid* psDroid)
 				psDroid->action = ACTION::NONE;
 				break;
 			}
-			else if (order->type != DORDER_RESTORE)
+			else if (order->type != ORDER_TYPE::RESTORE)
 			{
 				bool cantDoRepairLikeAction = false;
 
@@ -1725,11 +1664,11 @@ void actionUpdateDroid(Droid* psDroid)
 				{
 					cantDoRepairLikeAction = true;
 				}
-				else if (order->type != DORDER_DEMOLISH && structureAtPos->body == structureBody(structureAtPos))
+				else if (order->type != ORDER_TYPE::DEMOLISH && structureAtPos->body == structureBody(structureAtPos))
 				{
 					cantDoRepairLikeAction = true;
 				}
-				else if (order->type == DORDER_DEMOLISH && structureAtPos->player != psDroid->player)
+				else if (order->type == ORDER_TYPE::DEMOLISH && structureAtPos->player != psDroid->player)
 				{
 					cantDoRepairLikeAction = true;
 				}
@@ -1803,7 +1742,7 @@ void actionUpdateDroid(Droid* psDroid)
 		                                                     ((Structure*)psDroid->action_target[0])->rot.direction,
 		                                                     order->psStats))
 		{
-			if (order->type != DORDER_HOLD && (!secHoldActive || (secHoldActive && order->type != DORDER_NONE)))
+			if (order->type != ORDER_TYPE::HOLD && (!secHoldActive || (secHoldActive && order->type != ORDER_TYPE::NONE)))
 			{
 				objTrace(psDroid->id, "Secondary order: Go to construction site");
 				moveDroidToNoFormation(psDroid, psDroid->actionPos.x, psDroid->actionPos.y);
@@ -1870,7 +1809,7 @@ void actionUpdateDroid(Droid* psDroid)
 					psDroid->body = psDroid->original_hp;
 					// if completely repaired then reset order
 					secondarySetState(psDroid, DSO_RETURN_TO_LOC, DSS_NONE);
-					orderDroidObj(psDroid, DORDER_GUARD, psDroid->order.psObj, ModeImmediate);
+					orderDroidObj(psDroid, ORDER_TYPE::GUARD, psDroid->order.psObj, ModeImmediate);
 				}
 				else
 				{
@@ -1900,13 +1839,13 @@ void actionUpdateDroid(Droid* psDroid)
 			if (!visibleObject(psDroid, psDroid->action_target[0], false)
 				|| xdiff * xdiff + ydiff * ydiff >= rangeSq)
 			{
-				if (secondaryGetState(psDroid, DSO_HALTTYPE) != DSS_HALT_GUARD && (order->type == DORDER_NONE || order->
-					type == DORDER_HOLD))
+				if (secondaryGetState(psDroid, DSO_HALTTYPE) != DSS_HALT_GUARD && (order->type == ORDER_TYPE::NONE || order->
+					type == ORDER_TYPE::HOLD))
 				{
 					psDroid->action = ACTION::NONE;
 				}
-				else if ((!secHoldActive && order->type != DORDER_HOLD) || (secHoldActive && order->type ==
-					DORDER_OBSERVE))
+				else if ((!secHoldActive && order->type != ORDER_TYPE::HOLD) || (secHoldActive && order->type ==
+					ORDER_TYPE::OBSERVE))
 				{
 					psDroid->action = ACTION::MOVETOOBSERVE;
 					moveDroidTo(psDroid, psDroid->action_target[0]->pos.x, psDroid->action_target[0]->pos.y);
@@ -1914,7 +1853,7 @@ void actionUpdateDroid(Droid* psDroid)
 			}
 		}
 		break;
-	case ACTION::MOVETOOBSERVE:
+	case ACTION::MOVE_TO_OBSERVE:
 		// align the turret
 		actionTargetTurret(psDroid, psDroid->action_target[0], &psDroid->asWeaps[0]);
 
@@ -1937,7 +1876,7 @@ void actionUpdateDroid(Droid* psDroid)
 			moveDroidTo(psDroid, psDroid->action_target[0]->pos.x, psDroid->action_target[0]->pos.y);
 		}
 		break;
-	case ACTION::FIRESUPPORT:
+	case ACTION::FIRE_SUPPORT:
 		if (!order->psObj)
 		{
 			psDroid->action = ACTION::NONE;
@@ -2002,7 +1941,7 @@ void actionUpdateDroid(Droid* psDroid)
 			Vector2i diff = (psDroid->pos - psDroid->action_target[0]->pos).xy();
 			// moving to repair a droid
 			if (!psDroid->action_target[0] || // Target missing.
-				(psDroid->order.type != DORDER_DROIDREPAIR && dot(diff, diff) > 2 * REPAIR_MAXDIST * REPAIR_MAXDIST))
+				(psDroid->order.type != ORDER_TYPE::DROIDREPAIR && dot(diff, diff) > 2 * REPAIR_MAXDIST * REPAIR_MAXDIST))
 			// Target farther then 1.4142 * REPAIR_MAXDIST and we aren't ordered to follow.
 			{
 				psDroid->action = ACTION::NONE;
@@ -2037,7 +1976,7 @@ void actionUpdateDroid(Droid* psDroid)
 			// Just self-repairing.
 			// See if there's anything to shoot.
 			else if (psDroid->numWeaps > 0 && !isVtolDroid(psDroid)
-				&& (order->type == DORDER_NONE || order->type == DORDER_HOLD || order->type == DORDER_RTR))
+				&& (order->type == ORDER_TYPE::NONE || order->type == ORDER_TYPE::HOLD || order->type == ORDER_TYPE::RTR))
 			{
 				for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 				{
@@ -2067,7 +2006,7 @@ void actionUpdateDroid(Droid* psDroid)
 			ydiff = (SDWORD)psDroid->pos.y - (SDWORD)psDroid->action_target[0]->pos.y;
 			if (xdiff * xdiff + ydiff * ydiff > REPAIR_RANGE * REPAIR_RANGE)
 			{
-				if (order->type == DORDER_DROIDREPAIR)
+				if (order->type == ORDER_TYPE::DROIDREPAIR)
 				{
 					// damaged droid has moved off - follow if we're not holding position!
 					psDroid->actionPos = psDroid->action_target[0]->pos.xy();
@@ -2086,9 +2025,9 @@ void actionUpdateDroid(Droid* psDroid)
 					psDroid->action = ACTION::NONE;
 					moveStopDroid(psDroid);
 					//if the order is RTR then resubmit order so that the unit will go to repair facility point
-					if (orderState(psDroid, DORDER_RTR))
+					if (orderState(psDroid, ORDER_TYPE::RTR))
 					{
-						orderDroid(psDroid, DORDER_RTR, ModeImmediate);
+						orderDroid(psDroid, ORDER_TYPE::RTR, ModeImmediate);
 					}
 				}
 				else
@@ -2123,7 +2062,7 @@ void actionUpdateDroid(Droid* psDroid)
 		{
 			psDroid->action = ACTION::NONE;
 			objTrace(psDroid->id, "clearing rearm pad");
-			if (!vtolHappy(psDroid))
+			if (!vtolHappy(*psDroid))
 			// Droid has cleared the rearm pad without getting rearmed. One way this can happen if a rearming pad was built under the VTOL while it was waiting for a pad.
 			{
 				moveToRearm(psDroid); // Rearm somewhere else instead.
@@ -2165,7 +2104,7 @@ void actionUpdateDroid(Droid* psDroid)
 			{
 				// totally bunged up - give up
 				objTrace(psDroid->id, "Couldn't find a clear tile near rearm pad - returning to base");
-				orderDroid(psDroid, DORDER_RTB, ModeImmediate);
+				orderDroid(psDroid, ORDER_TYPE::RTB, ModeImmediate);
 				break;
 			}
 			objTrace(psDroid->id, "moving to rearm pad at %d,%d (%d,%d)", (int)pos.x, (int)pos.y,
@@ -2257,12 +2196,12 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 		}
 		break;
 
-	case ACTION::TRANSPORTWAITTOFLYIN:
+	case ACTION::TRANSPORT_WAIT_TO_FLY_IN:
 		psDroid->action = ACTION::TRANSPORTWAITTOFLYIN;
 		break;
 
 	case ACTION::ATTACK:
-		if (psDroid->asWeaps[0].nStat == 0 || isTransporter(psDroid) || psAction->psObj == psDroid)
+		if (num_weapons(*psDroid) == 0 || isTransporter(*psDroid) || psAction->psObj == psDroid)
 		{
 			break;
 		}
@@ -2299,13 +2238,13 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 		psDroid->actionPos = psDroid->pos.xy();
 		setDroidActionTarget(psDroid, psAction->psObj, 0);
 
-		if (((order->type == DORDER_ATTACKTARGET
-					|| order->type == DORDER_NONE
-					|| order->type == DORDER_HOLD
-					|| (order->type == DORDER_GUARD && hasCommander(psDroid))
-					|| order->type == DORDER_FIRESUPPORT)
+		if (((order->type == ORDER_TYPE::ATTACKTARGET
+					|| order->type == ORDER_TYPE::NONE
+					|| order->type == ORDER_TYPE::HOLD
+					|| (order->type == ORDER_TYPE::GUARD && hasCommander(psDroid))
+					|| order->type == ORDER_TYPE::FIRESUPPORT)
 				&& secHoldActive)
-			|| (!isVtolDroid(psDroid) && (orderStateObj(psDroid, DORDER_FIRESUPPORT) != nullptr)))
+			|| (!isVtolDroid(psDroid) && (orderStateObj(psDroid, ORDER_TYPE::FIRESUPPORT) != nullptr)))
 		{
 			psDroid->action = ACTION::ATTACK; // holding, try attack straightaway
 		}
@@ -2323,7 +2262,7 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 					moveTurnDroid(psDroid, psDroid->action_target[0]->pos.x, psDroid->action_target[0]->pos.y);
 				}
 			}
-			else if (order->type != DORDER_HOLD && secondaryGetState(psDroid, DSO_HALTTYPE) != DSS_HALT_HOLD)
+			else if (order->type != ORDER_TYPE::HOLD && secondaryGetState(psDroid, DSO_HALTTYPE) != DSS_HALT_HOLD)
 			{
 				int pbx = 0;
 				int pby = 0;
@@ -2336,7 +2275,7 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 				turnOffMultiMsg(false);
 			}
 		}
-		else if (order->type != DORDER_HOLD && secondaryGetState(psDroid, DSO_HALTTYPE) != DSS_HALT_HOLD)
+		else if (order->type != ORDER_TYPE::HOLD && secondaryGetState(psDroid, DSO_HALTTYPE) != DSS_HALT_HOLD)
 		// approach closer?
 		{
 			psDroid->action = ACTION::MOVETOATTACK;
@@ -2344,7 +2283,7 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 			moveDroidTo(psDroid, psAction->psObj->pos.x, psAction->psObj->pos.y);
 			turnOffMultiMsg(false);
 		}
-		else if (order->type != DORDER_HOLD && secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_HOLD)
+		else if (order->type != ORDER_TYPE::HOLD && secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_HOLD)
 		{
 			psDroid->action = ACTION::ATTACK;
 		}
@@ -2360,7 +2299,7 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 		{
 			// totally bunged up - give up
 			objTrace(psDroid->id, "move to rearm action failed!");
-			orderDroid(psDroid, DORDER_RTB, ModeImmediate);
+			orderDroid(psDroid, ORDER_TYPE::RTB, ModeImmediate);
 			break;
 		}
 		objTrace(psDroid->id, "move to rearm");
@@ -2375,17 +2314,17 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 		{
 			// totally bunged up - give up
 			objTrace(psDroid->id, "clear rearm pad action failed!");
-			orderDroid(psDroid, DORDER_RTB, ModeImmediate);
+			orderDroid(psDroid, ORDER_TYPE::RTB, ModeImmediate);
 			break;
 		}
 		objTrace(psDroid->id, "move to clear rearm pad");
 		moveDroidToDirect(psDroid, pos.x, pos.y);
 		break;
 	case ACTION::MOVE:
-	case ACTION::TRANSPORTIN:
-	case ACTION::TRANSPORTOUT:
-	case ACTION::RETURNTOPOS:
-	case ACTION::FIRESUPPORT_RETREAT:
+	case ACTION::TRANSPORT_IN:
+	case ACTION::TRANSPORT_OUT:
+	case ACTION::RETURN_TO_POS:
+	case ACTION::FIRE_SUPPORT_RETREAT:
 		psDroid->action = psAction->action;
 		psDroid->actionPos.x = psAction->x;
 		psDroid->actionPos.y = psAction->y;
@@ -2400,15 +2339,15 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 			psDroid->action = ACTION::NONE;
 			break;
 		}
-	//ASSERT_OR_RETURN(, order->type == DORDER_BUILD || order->type == DORDER_HELPBUILD || order->type == DORDER_LINEBUILD, "cannot start build action without a build order");
+	//ASSERT_OR_RETURN(, order->type == ORDER_TYPE::BUILD || order->type == ORDER_TYPE::HELPBUILD || order->type == ORDER_TYPE::LINEBUILD, "cannot start build action without a build order");
 		ASSERT_OR_RETURN(, psAction->x > 0 && psAction->y > 0, "Bad build order position");
-		psDroid->action = ACTION::MOVETOBUILD;
+		psDroid->action = ACTION::MOVE_TO_BUILD;
 		psDroid->actionPos.x = psAction->x;
 		psDroid->actionPos.y = psAction->y;
 		moveDroidToNoFormation(psDroid, psDroid->actionPos.x, psDroid->actionPos.y);
 		break;
 	case ACTION::DEMOLISH:
-		ASSERT_OR_RETURN(, order->type == DORDER_DEMOLISH, "cannot start demolish action without a demolish order");
+		ASSERT_OR_RETURN(, order->type == ORDER_TYPE::DEMOLISH, "cannot start demolish action without a demolish order");
 		psDroid->action = ACTION::MOVETODEMOLISH;
 		psDroid->actionPos.x = psAction->x;
 		psDroid->actionPos.y = psAction->y;
@@ -2428,11 +2367,11 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
             (psDroid->action_target[0] != nullptr) && (psDroid->action_target[0]->type == OBJ_STRUCTURE),
 			"invalid target for repair order");
 		order->psStats = ((Structure*)psDroid->action_target[0])->pStructureType;
-		if (secHoldActive && (order->type == DORDER_NONE || order->type == DORDER_HOLD))
+		if (secHoldActive && (order->type == ORDER_TYPE::NONE || order->type == ORDER_TYPE::HOLD))
 		{
 			psDroid->action = ACTION::REPAIR;
 		}
-		else if ((!secHoldActive && order->type != DORDER_HOLD) || (secHoldActive && order->type == DORDER_REPAIR))
+		else if ((!secHoldActive && order->type != ORDER_TYPE::HOLD) || (secHoldActive && order->type == ORDER_TYPE::REPAIR))
 		{
 			psDroid->action = ACTION::MOVETOREPAIR;
 			moveDroidTo(psDroid, psAction->x, psAction->y);
@@ -2443,15 +2382,15 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 		setDroidActionTarget(psDroid, psAction->psObj, 0);
 		psDroid->actionPos.x = psDroid->pos.x;
 		psDroid->actionPos.y = psDroid->pos.y;
-		if (secondaryGetState(psDroid, DSO_HALTTYPE) != DSS_HALT_GUARD && (order->type == DORDER_NONE || order->type ==
-			DORDER_HOLD))
+		if (secondaryGetState(psDroid, DSO_HALTTYPE) != DSS_HALT_GUARD && (order->type == ORDER_TYPE::NONE || order->type ==
+			ORDER_TYPE::HOLD))
 		{
 			psDroid->action = visibleObject(psDroid, psDroid->action_target[0], false)
 				                  ? ACTION::OBSERVE
 				                  : ACTION::NONE;
 		}
-		else if (!cbSensorDroid(psDroid) && ((!secHoldActive && order->type != DORDER_HOLD) || (secHoldActive && order->
-			type == DORDER_OBSERVE)))
+		else if (!cbSensorDroid(psDroid) && ((!secHoldActive && order->type != ORDER_TYPE::HOLD) || (secHoldActive && order->
+			type == ORDER_TYPE::OBSERVE)))
 		{
 			psDroid->action = ACTION::MOVETOOBSERVE;
 			moveDroidTo(psDroid, psDroid->action_target[0]->pos.x, psDroid->action_target[0]->pos.y);
@@ -2508,12 +2447,12 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 			psDroid->time_action_started = gameTime;
 			const auto xdiff = (SDWORD)psDroid->pos.x - (SDWORD)psAction->x;
 			const auto ydiff = (SDWORD)psDroid->pos.y - (SDWORD)psAction->y;
-			if (secHoldActive && (order->type == DORDER_NONE || order->type == DORDER_HOLD))
+			if (secHoldActive && (order->type == ORDER_TYPE::NONE || order->type == ORDER_TYPE::HOLD))
 			{
-				psDroid->action = ACTION::DROIDREPAIR;
+				psDroid->action = ACTION::DROID_REPAIR;
 			}
-			else if (((!secHoldActive && order->type != DORDER_HOLD) || (secHoldActive && order->type ==
-					DORDER_DROIDREPAIR))
+			else if (((!secHoldActive && order->type != ORDER_TYPE::HOLD) || (secHoldActive && order->type ==
+					ORDER_TYPE::DROIDREPAIR))
 				// check that we actually need to move closer
 				&& ((xdiff * xdiff + ydiff * ydiff) > REPAIR_RANGE * REPAIR_RANGE))
 			{
@@ -2523,7 +2462,7 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 			break;
 		}
 	case ACTION::RESTORE:
-		ASSERT_OR_RETURN(, order->type == DORDER_RESTORE, "cannot start restore action without a restore order");
+		ASSERT_OR_RETURN(, order->type == ORDER_TYPE::RESTORE, "cannot start restore action without a restore order");
 		psDroid->action = psAction->action;
 		psDroid->actionPos.x = psAction->x;
 		psDroid->actionPos.y = psAction->y;
@@ -2531,7 +2470,7 @@ static void actionDroidBase(Droid* psDroid, Action* psAction)
 		                   "invalid target for restore order");
 		order->psStats = ((Structure*)order->psObj)->pStructureType;
 		setDroidActionTarget(psDroid, psAction->psObj, 0);
-		if (order->type != DORDER_HOLD)
+		if (order->type != ORDER_TYPE::HOLD)
 		{
 			psDroid->action = ACTION::MOVETORESTORE;
 			moveDroidTo(psDroid, psAction->x, psAction->y);
@@ -2625,11 +2564,11 @@ void moveToRearm(Droid* psDroid)
 		}
 
 		//return to re-arming pad
-		if (psDroid->order.type == DORDER_NONE)
+		if (psDroid->order.type == ORDER_TYPE::NONE)
 		{
 			// no order set - use the rearm order to ensure the unit goes back
 			// to the landing pad
-			orderDroidObj(psDroid, DORDER_REARM, psStruct, ModeImmediate);
+			orderDroidObj(psDroid, ORDER_TYPE::REARM, psStruct, ModeImmediate);
 		}
 		else
 		{
@@ -2640,7 +2579,7 @@ void moveToRearm(Droid* psDroid)
 	{
 		//return to base un-armed
 		objTrace(psDroid->id, "Did not find an available rearm pad - RTB instead");
-		orderDroid(psDroid, DORDER_RTB, ModeImmediate);
+		orderDroid(psDroid, ORDER_TYPE::RTB, ModeImmediate);
 	}
 }
 
