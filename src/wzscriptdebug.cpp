@@ -379,7 +379,7 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, int play
 	case COMP_PROPULSION:
 		{
 			const PropulsionStats* psProp = (const PropulsionStats*)psStats;
-			key["^Hit points +% of body"] = psProp->upgrade[player].hitpointPctOfBody;
+			key["^Hit points +% of body"] = psProp->upgraded[player].hitpointPctOfBody;
 			key["^Max speed"] = psProp->maxSpeed;
 			key["^Propulsion type"] = psProp->propulsionType;
 			key["^Turn speed"] = psProp->turnSpeed;
@@ -403,7 +403,7 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, int play
 				ranks += s;
 			}
 			std::string thresholds;
-			for (int t : psBrain->upgrade[player].rankThresholds)
+			for (int t : psBrain->upgraded[player].rankThresholds)
 			{
 				if (!thresholds.empty())
 				{
@@ -411,8 +411,8 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, int play
 				}
 				thresholds += WzString::number(t).toUtf8();
 			}
-			key["^Base command limit"] = psBrain->upgrade[player].maxDroids;
-			key["^Extra command limit by level"] = psBrain->upgrade[player].maxDroidsMult;
+			key["^Base command limit"] = psBrain->upgraded[player].maxDroids;
+			key["^Extra command limit by level"] = psBrain->upgraded[player].maxDroidsMult;
 			key["^Rank names"] = ranks;
 			key["^Rank thresholds"] = thresholds;
 			break;
@@ -421,45 +421,45 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, int play
 		{
 			const RepairStats* psRepair = (const RepairStats*)psStats;
 			key["^Repair time"] = psRepair->time;
-			key["^Base repair points"] = psRepair->upgrade[player].repairPoints;
+			key["^Base repair points"] = psRepair->upgraded[player].repairPoints;
 			break;
 		}
 	case COMP_ECM:
 		{
 			const EcmStats* psECM = (const EcmStats*)psStats;
-			key["^Base range"] = psECM->upgrade[player].range;
+			key["^Base range"] = psECM->upgraded[player].range;
 			break;
 		}
 	case COMP_SENSOR:
 		{
 			const SensorStats* psSensor = (const SensorStats*)psStats;
 			key["^Sensor type"] = psSensor->type;
-			key["^Base range"] = psSensor->upgrade[player].range;
+			key["^Base range"] = psSensor->upgraded[player].range;
 			break;
 		}
 	case COMP_CONSTRUCT:
 		{
 			const ConstructStats* psCon = (const ConstructStats*)psStats;
-			key["^Base construct points"] = psCon->upgrade[player].constructPoints;
+			key["^Base construct points"] = psCon->upgraded[player].constructPoints;
 			break;
 		}
 	case COMP_WEAPON:
 		{
 			const WeaponStats* psWeap = (const WeaponStats*)psStats;
-			key["Max range"] = psWeap->upgrade[player].maxRange;
-			key["Min range"] = psWeap->upgrade[player].minRange;
-			key["Radius"] = psWeap->upgrade[player].radius;
-			key["Number of Rounds"] = psWeap->upgrade[player].numRounds;
-			key["Damage"] = psWeap->upgrade[player].damage;
-			key["Minimum damage"] = psWeap->upgrade[player].minimumDamage;
-			key["Periodical damage"] = psWeap->upgrade[player].periodicalDamage;
-			key["Periodical damage radius"] = psWeap->upgrade[player].periodicalDamageRadius;
-			key["Periodical damage time"] = psWeap->upgrade[player].periodicalDamageTime;
-			key["Radius damage"] = psWeap->upgrade[player].radiusDamage;
-			key["Reload time"] = psWeap->upgrade[player].reloadTime;
-			key["Hit chance"] = psWeap->upgrade[player].hitChance;
-			key["Short hit chance"] = psWeap->upgrade[player].shortHitChance;
-			key["Short range"] = psWeap->upgrade[player].shortRange;
+			key["Max range"] = psWeap->upgraded[player].maxRange;
+			key["Min range"] = psWeap->upgraded[player].minRange;
+			key["Radius"] = psWeap->upgraded[player].radius;
+			key["Number of Rounds"] = psWeap->upgraded[player].numRounds;
+			key["Damage"] = psWeap->upgraded[player].damage;
+			key["Minimum damage"] = psWeap->upgraded[player].minimumDamage;
+			key["Periodical damage"] = psWeap->upgraded[player].periodicalDamage;
+			key["Periodical damage radius"] = psWeap->upgraded[player].periodicalDamageRadius;
+			key["Periodical damage time"] = psWeap->upgraded[player].periodicalDamageTime;
+			key["Radius damage"] = psWeap->upgraded[player].radiusDamage;
+			key["Reload time"] = psWeap->upgraded[player].reloadTime;
+			key["Hit chance"] = psWeap->upgraded[player].hitChance;
+			key["Short hit chance"] = psWeap->upgraded[player].shortHitChance;
+			key["Short range"] = psWeap->upgraded[player].shortRange;
 			break;
 		}
 	case COMP_NUMCOMPONENTS:
@@ -2345,7 +2345,7 @@ void WZScriptDebugger::selected(const SimpleObject* psObj)
 			selectedObjectDetails["Move index"] = psDroid->movement.pathIndex;
 			selectedObjectDetails["Move points"] = psDroid->movement.path.size();
 			selectedObjectDetails["Move destination"] = glm::to_string(psDroid->movement.destination);
-			selectedObjectDetails["Move source"] = glm::to_string(psDroid->movement.src);
+			selectedObjectDetails["Move source"] = glm::to_string(psDroid->movement.origin);
 			selectedObjectDetails["Move target"] = glm::to_string(psDroid->movement.target);
 			selectedObjectDetails["Move bump pos"] = glm::to_string(psDroid->movement.bumpPos);
 			selectedObjectDetails["Move speed"] = psDroid->movement.speed;

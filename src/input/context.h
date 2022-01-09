@@ -88,7 +88,7 @@ struct InputContext
 	typedef std::function<bool()> PriorityCondition;
 
 	/* Display name to be shown in e.g. edit keymap options */
-	const std::string getDisplayName() const;
+	std::string getDisplayName() const;
 
 	/* Returns boolean indicating whether or not the context is always active. Always active contexts
 	   cannot be disabled e.g. via `ContextManager::makeAllInactive()`. This also means that any mappings
@@ -101,7 +101,7 @@ public:
 	             const State initialState, const char* const displayName);
 
 	InputContext(const ContextId id, const bool bIsAlwaysActive, const ContextPriority priority,
-	             const State initialState, const char* const displayName, const PriorityCondition condition);
+	             const State initialState, const char* const displayName, PriorityCondition  condition);
 
 private:
 	const ContextId id;
@@ -155,7 +155,7 @@ public:
 	void updatePriorityStatus();
 
 public:
-	void registerContext(InputContext context);
+	void registerContext(const InputContext& context);
 
 private:
 	bool isDirty() const;

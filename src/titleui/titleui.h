@@ -50,7 +50,7 @@ extern std::shared_ptr<WzTitleUI> wzTitleUICurrent;
 
 extern char serverName[128];
 
-void changeTitleUI(std::shared_ptr<WzTitleUI> ui);
+void changeTitleUI(const std::shared_ptr<WzTitleUI>& ui);
 
 // - old.cpp -
 class WzOldTitleUI : public WzTitleUI

@@ -16,7 +16,7 @@ bool is_friendly_fire(const Damage& damage)
   const auto& target = damage.projectile->target;
   const auto& source = damage.projectile->source;
 
-  return source->get_player() == target->get_player();
+  return source->getPlayer() == target->getPlayer();
 }
 
 bool should_increase_experience(const Damage& damage)

@@ -61,7 +61,7 @@ struct Spotter
     unsigned id;
 };
 
-static std::vector<Spotter*> apsInvisibleViewers;
+static std::vector<Spotter> apsInvisibleViewers;
 
 struct VisibleObjectHelp_t
 {
@@ -118,8 +118,8 @@ void visRemoveVisibility(SimpleObject* psObj);
 // fast test for whether obj2 is in range of obj1
 static inline bool visObjInRange(SimpleObject* psObj1, SimpleObject* psObj2, int range)
 {
-	auto xdiff = psObj1->get_position().x - psObj2->get_position().x;
-  auto ydiff = psObj1->get_position().y - psObj2->get_position().y;
+	auto xdiff = psObj1->getPosition().x - psObj2->getPosition().x;
+  auto ydiff = psObj1->getPosition().y - psObj2->getPosition().y;
 
 	return abs(xdiff) <= range && abs(ydiff) <= range && xdiff * xdiff + ydiff * ydiff <= range;
 }
@@ -152,9 +152,9 @@ static inline bool visObjInRange(SimpleObject* psObj1, SimpleObject* psObj2, int
 static inline int objJammerPower(const SimpleObject* psObj)
 {
 	if (auto as_droid = dynamic_cast<const Droid*>(psObj))  {
-		return asECMStats[as_droid->asBits[COMP_ECM]].upgrade[psObj->get_player()].range;
+		return asECMStats[as_droid->asBits[COMP_ECM]].upgraded[psObj->getPlayer()].range;
 	} else if (psObj->type == STRUCTURE)  {
-		return psObj->stats->ecm_stats->upgraded_stats[psObj->get_player()].range;
+		return psObj->stats->ecm_stats->upgraded_stats[psObj->getPlayer()].range;
 	}
 	return 0;
 }

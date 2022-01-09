@@ -168,17 +168,17 @@ struct KeyFunctionInfo
 	KeyFunctionInfo(
 		const ContextId& context,
 		const KeyMappingType type,
-		const MappableFunction function,
-		const std::string name
+		const MappableFunction& function,
+		const std::string& name
 	);
 
 	KeyFunctionInfo(
 		const ContextId& context,
 		const KeyMappingType type,
-		const MappableFunction function,
-		const std::string name,
-		const std::string displayName,
-		const std::vector<std::pair<KeyMappingSlot, KeyCombination>> defaultMappings,
+		MappableFunction  function,
+		std::string  name,
+		std::string  displayName,
+		std::vector<std::pair<KeyMappingSlot, KeyCombination>>  defaultMappings,
 		const bool bIsDebugOnly = false
 	);
 

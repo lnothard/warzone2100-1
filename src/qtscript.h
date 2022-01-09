@@ -341,7 +341,7 @@ public:
 	// MARK: TIMERS
 public:
 	uniqueTimerID setTimer(wzapi::scripting_instance* caller, const TimerFunc& timerFunc, int player, int milliseconds,
-	                       std::string timerName = "", const SimpleObject* obj = nullptr, timerType type = TIMER_REPEAT,
+	                       const std::string& timerName = "", const SimpleObject* obj = nullptr, timerType type = TIMER_REPEAT,
 	                       std::unique_ptr<timerAdditionalData> additionalParam = nullptr);
 
 	// removes any timer(s) that satisfy _pred

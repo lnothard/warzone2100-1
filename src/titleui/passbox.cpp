@@ -29,10 +29,11 @@
  * As this comes from multiint.cpp, see that for original origin details of the UI code
  */
 
+#include <utility>
+
 #include "titleui.h"
 #include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/ivis_opengl/piemode.h"
-#include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/screen.h"
 
 #include "lib/widget/editbox.h"
@@ -41,18 +42,14 @@
 #include "lib/widget/widgint.h"
 #include "lib/widget/label.h"
 
-#include "lib/netplay/netplay.h"
 #include "../multiplay.h"
 #include "../intdisplay.h"
-#include "../hci.h"
 #include "../multiint.h"
 #include "../warzoneconfig.h"
 #include "../frend.h"
 #include "../init.h"
-
-WzPassBoxTitleUI::WzPassBoxTitleUI(std::function<void(const char*)> next) : next(next)
+WzPassBoxTitleUI::WzPassBoxTitleUI(std::function<void(const char*)> next) : next(std::move(next))
 {
-}
 
 void WzPassBoxTitleUI::start()
 {

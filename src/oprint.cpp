@@ -175,10 +175,10 @@ static void printWeaponInfo(const WeaponStats* psStats)
 	{
 		CONPRINTF("   rad %d radDam %d\n"
 		          "   inTime %d inDam %d inRad %d\n",
-		          psStats->upgrade[selectedPlayer].radius, psStats->upgrade[selectedPlayer].radiusDamage,
-		          psStats->upgrade[selectedPlayer].periodicalDamageTime,
-		          psStats->upgrade[selectedPlayer].periodicalDamage,
-		          psStats->upgrade[selectedPlayer].periodicalDamageRadius);
+              psStats->upgraded[selectedPlayer].radius, psStats->upgraded[selectedPlayer].radiusDamage,
+              psStats->upgraded[selectedPlayer].periodicalDamageTime,
+              psStats->upgraded[selectedPlayer].periodicalDamage,
+              psStats->upgraded[selectedPlayer].periodicalDamageRadius);
 	}
 	CONPRINTF("   flSpd %d %s\n",
 	          psStats->flightSpeed, psStats->fireOnMove ? "fireOnMove" : "not fireOnMove");

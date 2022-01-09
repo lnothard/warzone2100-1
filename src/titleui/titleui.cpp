@@ -31,15 +31,14 @@ std::shared_ptr<WzTitleUI> wzTitleUICurrent;
 char serverName[128];
 
 WzTitleUI::~WzTitleUI()
-{
-}
+= default;
 
 void WzTitleUI::screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
                                     unsigned int newHeight)
 {
 }
 
-void changeTitleUI(std::shared_ptr<WzTitleUI> target)
+void changeTitleUI(const std::shared_ptr<WzTitleUI>& target)
 {
 	wzTitleUICurrent = target;
 	if (psWScreen)

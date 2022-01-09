@@ -6,8 +6,8 @@
 
 bool objects_in_vis_range(const SimpleObject& first, const SimpleObject& second, int range)
 {
-  const auto x_diff = first.get_position().x - second.get_position().x;
-  const auto y_diff = first.get_position().y - second.get_position().y;
+  const auto x_diff = first.getPosition().x - second.getPosition().x;
+  const auto y_diff = first.getPosition().y - second.getPosition().y;
 
   return abs(x_diff) <= range && x_diff * x_diff + y_diff * y_diff <= range;
 }
@@ -72,7 +72,7 @@ void update_tile_sensors(Tile& tile)
 
 unsigned get_object_light_level(const SimpleObject& object, unsigned original_level)
 {
-  const auto divisor = object.visible_to_selected_player() / 255.f;
+  const auto divisor = object.visibleToSelectedPlayer() / 255.f;
   const auto lowest_level = original_level / BASE_DIVISOR;
 
   auto new_level = static_cast<unsigned>(divisor * original_level);

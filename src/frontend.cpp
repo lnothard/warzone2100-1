@@ -43,6 +43,7 @@
 #include "lib/widget/alignment.h"
 
 #include <limits>
+#include <utility>
 
 #include "advvis.h"
 #include "challenge.h"
@@ -450,7 +451,7 @@ static void frontEndNewGame(int which)
 		path += "campaigns";
 		path += PHYSFS_getDirSeparator();
 		path += list[which].package;
-		if (!PHYSFS_mount(path.toUtf8().c_str(), NULL, PHYSFS_APPEND))
+		if (!PHYSFS_mount(path.toUtf8().c_str(), nullptr, PHYSFS_APPEND))
 		{
 			debug(LOG_ERROR, "Failed to load campaign mod \"%s\": %s",
 			      path.toUtf8().c_str(), WZ_PHYSFS_getLastError());
@@ -1108,7 +1109,7 @@ void startAudioAndZoomOptionsMenu()
 	auto addSliderWrap = [](std::shared_ptr<WIDGET> widget)
 	{
 		Alignment sliderAlignment(Alignment::Vertical::Center, Alignment::Horizontal::Left);
-		return sliderAlignment.wrap(addMargin(widget));
+		return sliderAlignment.wrap(addMargin(std::move(widget)));
 	};
 
 	auto grid = std::make_shared<GridLayout>();
@@ -1247,7 +1248,7 @@ bool runAudioAndZoomOptionsMenu()
 			{
 				current = seqCycle(current, modesToCycle.begin(), 1, modesToCycle.end() - 1);
 			}
-			while ((current != startingPoint) && ((successfulChange = sound_SetHRTFMode(*current)) == false));
+			while ((current != startingPoint) && !(successfulChange = sound_SetHRTFMode(*current)));
 			if (successfulChange)
 			{
 				war_SetHRTFMode(*current);
@@ -1430,17 +1431,17 @@ public:
 	{
 	}
 
-	const_iterator begin() const
+	[[nodiscard]] const_iterator begin() const
 	{
 		return modes.begin();
 	}
 
-	const_iterator end() const
+	[[nodiscard]] const_iterator end() const
 	{
 		return modes.end();
 	}
 
-	const_iterator findResolutionClosestToCurrent() const
+	[[nodiscard]] const_iterator findResolutionClosestToCurrent() const
 	{
 		auto currentResolution = getCurrentResolution();
 		auto closest = std::lower_bound(modes.begin(), modes.end(), currentResolution, compareLess);
@@ -1891,7 +1892,7 @@ bool runVideoOptionsMenu()
 	case FRONTEND_GFXBACKEND_R:
 		{
 			const std::vector<video_backend> availableBackends = wzAvailableGfxBackends();
-			if (availableBackends.size() >= 1)
+			if (!availableBackends.empty())
 			{
 				auto current = std::find(availableBackends.begin(), availableBackends.end(), war_getGfxBackend());
 				if (current == availableBackends.end())
@@ -2634,7 +2635,7 @@ static void displayLogo(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 // show, well have a guess..
 static void displayBigSlider(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
-	W_SLIDER* Slider = (W_SLIDER*)psWidget;
+	auto* Slider = (W_SLIDER*)psWidget;
 	int x = xOffset + psWidget->x();
 	int y = yOffset + psWidget->y();
 

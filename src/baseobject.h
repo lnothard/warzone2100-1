@@ -40,7 +40,7 @@ static const unsigned int max_check_object_recursion = 4;
 Rotation interpolateRot(Rotation v1, Rotation v2, unsigned t1,
                         unsigned t2, unsigned t);
 
-/// Get interpolated object get_spacetime at time t.
+/// Get interpolated object getSpacetime at time t.
 Spacetime interpolateObjectSpacetime(const SimpleObject* obj, unsigned t);
 
 void checkObject(const SimpleObject* psObject,

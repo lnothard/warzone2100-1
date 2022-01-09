@@ -34,15 +34,15 @@ namespace Impl
 		auto& weapon = weapons[weapon_slot];
 
 		const auto turret_rotation = gameTimeAdjustedIncrement(DEG(TURRET_ROTATION_RATE));
-		auto weapon_rotation = weapon.get_rotation().direction;
-		auto weapon_pitch = weapon.get_rotation().pitch;
+		auto weapon_rotation = weapon.getRotation().direction;
+		auto weapon_pitch = weapon.getRotation().pitch;
 		const auto nearest_right_angle = (weapon_rotation + DEG(45)) / DEG(90) * DEG(90);
 
 		weapon_rotation += clip(angleDelta(nearest_right_angle - weapon_rotation), -turret_rotation / 2,
 		                        turret_rotation / 2);
 		weapon_pitch += clip(angleDelta(0 - weapon_pitch), -turret_rotation / 2, turret_rotation / 2);
 
-		weapon.set_rotation({weapon_rotation, weapon_pitch, weapon.get_rotation().roll});
+    weapon.setRotation({weapon_rotation, weapon_pitch, weapon.getRotation().roll});
 	}
 
   void Unit::use_ammo(int weapon_slot)
@@ -79,13 +79,13 @@ bool has_artillery(const Unit& unit) noexcept
 Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot)
 {
 	auto& imd_shape = unit.get_IMD_shape();
-	const auto position = unit.get_position();
+	const auto position = unit.getPosition();
 	auto muzzle = Vector3i{0, 0, 0};
 
 	if (imd_shape.nconnectors)
 	{
 		Affine3F af;
-		auto rotation = unit.get_rotation();
+		auto rotation = unit.getRotation();
 		af.Trans(position.x, -position.z, position.y);
 		af.RotY(rotation.direction);
 		af.RotX(rotation.pitch);
@@ -99,7 +99,7 @@ Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot)
 	}
 	else
 	{
-		muzzle = position + Vector3i{0, 0, unit.get_display_data().imd_shape->max.y};
+		muzzle = position + Vector3i{0, 0, unit.getDisplayData().imd_shape->max.y};
 	}
 	return muzzle;
 }
@@ -108,8 +108,8 @@ Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot)
 {
 	const auto& imd_shape = unit.get_IMD_shape();
 	const auto& weapon = unit.get_weapons()[weapon_slot];
-	const auto& position = unit.get_position();
-	const auto& rotation = unit.get_rotation();
+	const auto& position = unit.getPosition();
+	const auto& rotation = unit.getRotation();
 	auto muzzle = Vector3i{0, 0, 0};
 
 	if (imd_shape.nconnectors)
@@ -126,13 +126,13 @@ Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot)
 		af.Trans(imd_shape.connectors[weapon_slot].x, -imd_shape.connectors[weapon_slot].z,
 		         -imd_shape.connectors[weapon_slot].y);
 
-		af.RotY(weapon.get_rotation().direction);
+		af.RotY(weapon.getRotation().direction);
 
 		if (mount_imd.nconnectors)
 		{
 			af.Trans(mount_imd.connectors->x, -mount_imd.connectors->z, -mount_imd.connectors->y);
 		}
-		af.RotX(weapon.get_rotation().pitch);
+		af.RotX(weapon.getRotation().pitch);
 
 		if (weapon_imd.nconnectors)
 		{
@@ -149,7 +149,7 @@ Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot)
 	}
 	else
 	{
-		muzzle = position + Vector3i{0, 0, 0 + unit.get_display_data().imd_shape->max.y};
+		muzzle = position + Vector3i{0, 0, 0 + unit.getDisplayData().imd_shape->max.y};
 	}
 	return muzzle;
 }
@@ -198,7 +198,7 @@ int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int w
 	muzzle = calculate_muzzle_base_location(unit, weapon_slot);
 
 	pos = muzzle;
-	dest = target.get_position();
+	dest = target.getPosition();
 	diff = (dest - pos).xy();
 
 	distSq = dot(diff, diff);
@@ -268,7 +268,7 @@ int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int w
 				if (partSq > 0)
 				{
 					check_angle(angletan, oldPartSq,
-					            psTile->occupying_object->get_position().z + establishTargetHeight(
+                      psTile->occupying_object->getPosition().z + establishTargetHeight(
 						            psTile->occupying_object) - pos.z,
 					            distSq, dest.z - pos.z, is_direct);
 				}
@@ -307,8 +307,8 @@ bool has_electronic_weapon(const Unit& unit) noexcept
 
 bool target_in_line_of_fire(const Unit& unit, const ::Unit& target, int weapon_slot)
 {
-	const auto distance = iHypot((target.get_position() - unit.get_position()).xy());
-	auto range = unit.get_weapons()[weapon_slot].get_max_range(unit.get_player());
+	const auto distance = iHypot((target.getPosition() - unit.getPosition()).xy());
+	auto range = unit.get_weapons()[weapon_slot].get_max_range(unit.getPlayer());
 	if (!has_artillery(unit))
 	{
 		return range >= distance && LINE_OF_FIRE_MINIMUM <= calculate_line_of_fire(unit, target, weapon_slot);
@@ -330,12 +330,12 @@ Unit* find_target(Unit& unit, ATTACKER_TYPE attacker_type,
   Unit* target = nullptr;
   bool is_cb_sensor = false;
   bool found_cb = false;
-  auto target_dist = weapon.get_max_range(unit.get_player());
-  auto min_dist = weapon.get_min_range(unit.get_player());
+  auto target_dist = weapon.get_max_range(unit.getPlayer());
+  auto min_dist = weapon.get_min_range(unit.getPlayer());
 
   for (const auto& sensor : sensor_list)
   {
-    if (!alliance_formed(sensor.get_player(), unit.get_player())) {
+    if (!alliance_formed(sensor.get_player(), unit.getPlayer())) {
       continue;
     }
     // Artillery should not fire at objects observed
@@ -366,13 +366,13 @@ Unit* find_target(Unit& unit, ATTACKER_TYPE attacker_type,
         !target->is_alive() ||
         target->is_probably_doomed() ||
         !target->is_valid_target() ||
-        alliance_formed(target->get_player(),
-                        unit.get_player())) {
+        alliance_formed(target->getPlayer(),
+                        unit.getPlayer())) {
       continue;
     }
 
-    auto square_dist = object_position_square_diff(target->get_position(),
-                                                   unit.get_position());
+    auto square_dist = objectPositionSquareDiff(target->getPosition(),
+                                                unit.getPosition());
     if (target_within_weapon_range(unit, target, weapon_slot) &&
         is_target_visible()) {
       target_dist = square_dist;
@@ -395,7 +395,7 @@ unsigned get_max_weapon_range(const Unit& unit)
 	auto max = unsigned{0};
 	for (const auto& weapon : unit.get_weapons())
 	{
-		const auto max_weapon_range = weapon.get_max_range(unit.get_player());
+		const auto max_weapon_range = weapon.get_max_range(unit.getPlayer());
 		if (max_weapon_range > max)
 			max = max_weapon_range;
 	}

@@ -424,7 +424,7 @@ FPATH_RETVAL fpathDroidRoute(Droid* psDroid, SDWORD tX, SDWORD tY, FPATH_MOVETYP
 	PropulsionStats* psPropStats = getPropulsionStats(psDroid);
 
 	// override for AI to blast our way through stuff
-	if (!isHumanPlayer(psDroid->get_player()) && moveType == FMT_MOVE)
+	if (!isHumanPlayer(psDroid->getPlayer()) && moveType == FMT_MOVE)
 	{
 		moveType = (psDroid->asWeaps[0].nStat == 0) ? FMT_MOVE : FMT_ATTACK;
 	}
@@ -437,7 +437,7 @@ FPATH_RETVAL fpathDroidRoute(Droid* psDroid, SDWORD tX, SDWORD tY, FPATH_MOVETYP
 	Position endPos = Position(tX, tY, 0);
 	StructureBounds dstStructure = getStructureBounds(worldTile(endPos.xy())->psObject);
 	startPos = findNonblockingPosition(startPos, getPropulsionStats(psDroid)->propulsionType,
-                                     psDroid->get_player(), moveType);
+                                     psDroid->getPlayer(), moveType);
 	if (!dstStructure.valid())
 	// If there's a structure over the destination, ignore it, otherwise pathfind from somewhere around the obstruction.
 	{

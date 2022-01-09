@@ -224,7 +224,7 @@ public:
 
 	void setTop(int y)
 	{
-		for (auto icon : allyIcons)
+		for (const auto& icon : allyIcons)
 		{
 			icon->move(icon->x(), y);
 		}
@@ -336,7 +336,7 @@ protected:
 
 	ResearchController& getController() const override
 	{
-		return *controller.get();
+		return *controller;
 	}
 
 private:
@@ -646,7 +646,7 @@ public:
 protected:
 	ResearchController& getController() const override
 	{
-		return *controller.get();
+		return *controller;
 	}
 
 private:
@@ -679,7 +679,7 @@ public:
 protected:
 	ResearchController& getController() const override
 	{
-		return *controller.get();
+		return *controller;
 	}
 
 private:
@@ -742,7 +742,7 @@ static ImdObject getResearchObjectImage(ResearchStats* research)
 			return ImdObject::Research(research);
 		}
 
-		return ImdObject();
+		return {};
 	}
 
 	// we have a Stat associated with this research topic

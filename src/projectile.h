@@ -47,7 +47,7 @@ static constexpr auto ACC_GRAVITY = 1000;
 /// How long to display a single electronic warfare shimmer
 static constexpr auto ELEC_DAMAGE_DURATION = GAME_TICKS_PER_SEC / 5;
 
-static constexpr auto VTOL_HITBOX_MODIFICATOR = 100;
+static constexpr auto VTOL_HITBOX_MODIFIER = 100;
 static constexpr auto HOMINGINDIRECT_HEIGHT_MIN = 200;
 static constexpr auto HOMINGINDIRECT_HEIGHT_MAX = 450;
 
@@ -81,25 +81,25 @@ private:
   PROJECTILE_STATE state;
 
   /// Whether the selected player should see the projectile
-  bool bVisible;
+  bool isVisible;
 
   /// Firing weapon stats
-  WeaponStats* psWStats;
+  WeaponStats* weaponStats;
 
   /// What fired the projectile
-  Unit* psSource;
+  Unit* source;
 
   /// Target of this projectile
-  Unit* psDest;
+  Unit* target;
 
   /// Targets that have already been dealt damage to (don't damage the same target twice)
-  std::vector<SimpleObject*> psDamaged;
+  std::vector<SimpleObject*> damaged;
 
   /// Where projectile started
-  Vector3i src = Vector3i(0, 0, 0);
+  Vector3i origin {0, 0, 0};
 
   /// The target coordinates
-  Vector3i dst = Vector3i(0, 0, 0);
+  Vector3i destination {0, 0, 0};
 
   /// Axis velocities
   int vXY, vZ;
@@ -122,12 +122,12 @@ struct INTERVAL
 
 struct Damage
 {
-    Projectile* psProjectile;
-    SimpleObject* psDest;
+    Projectile* projectile;
+    SimpleObject* target;
     unsigned damage;
     WEAPON_CLASS weaponClass;
     WEAPON_SUBCLASS weaponSubClass;
-    unsigned impactTime;
+    std::size_t impactTime;
     bool isDamagePerSecond;
     int minDamage;
 };
@@ -177,28 +177,6 @@ bool gfxVisible(Projectile* psObj);
 /***************************************************************************/
 
 glm::mat4 objectShimmy(SimpleObject* psObj);
-
-void Projectile::setSource(Unit* psObj)
-{
-	// use the source of the source of psProj if psAttacker is a projectile
-	psSource = nullptr;
-	if (psObj == nullptr)
-	{
-	}
-	else if (isProjectile(psObj))
-	{
-		Projectile* psPrevProj = castProjectile(psObj);
-
-		if (psPrevProj->psSource && !psPrevProj->psSource->died)
-		{
-			psSource = psPrevProj->psSource;
-		}
-	}
-	else
-	{
-		psSource = castBaseObject(psObj);
-	}
-}
 
 int establishTargetHeight(SimpleObject const* psTarget);
 

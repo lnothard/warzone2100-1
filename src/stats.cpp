@@ -46,6 +46,16 @@
 
 #define DEFAULT_DROID_TYPE::RESISTANCE	150
 
+BaseStats::BaseStats(unsigned ref)
+  : ref{ref}
+{
+}
+
+bool BaseStats::hasType(StatType type) const
+{
+  return (ref & STAT_MASK) == type;
+}
+
 /* The stores for the different stats */
 BodyStats* asBodyStats;
 CommanderStats* asBrainStats;
@@ -59,7 +69,7 @@ std::vector<PROPULSION_TYPES> asPropulsionTypes;
 static int* asTerrainTable;
 
 //used to hold the modifiers cross refd by weapon effect and propulsion type
-WEAPON_MODIFIER asWeaponModifier[WEAPON_EFFECT::NUMEFFECTS][PROPULSION_TYPE_NUM];
+WEAPON_MODIFIER asWeaponModifier[WEAPON_EFFECT::COUNT][PROPULSION_TYPE::COUNT];
 WEAPON_MODIFIER asWeaponModifierBody[WEAPON_EFFECT::NUMEFFECTS][SIZE_NUM];
 
 /* The number of different stats stored */
@@ -99,10 +109,6 @@ static void deallocTerrainTable()
 	free(asTerrainTable);
 	asTerrainTable = nullptr;
 }
-
-/*******************************************************************************
-*		Generic stats macros/functions
-*******************************************************************************/
 
 /* Macro to allocate memory for a set of stats */
 #define ALLOC_STATS(numEntries, list, listSize, type) \
@@ -361,9 +367,9 @@ bool loadWeaponStats(WzConfig& ini)
 		psStats->radiusLife *= WEAPON_TIME;
 		psStats->base.reloadTime *= WEAPON_TIME;
 		// copy for upgrades
-		for (int j = 0; j < MAX_PLAYERS; j++)
+		for (auto& j : psStats->upgraded)
 		{
-			psStats->upgrade[j] = psStats->base;
+			j = psStats->base;
 		}
 
 		psStats->numExplosions = ini.value("numExplosions").toUInt();
@@ -490,10 +496,10 @@ bool loadWeaponStats(WzConfig& ini)
 			return false;
 		}
 
-		unsigned int shortRange = psStats->upgrade[0].shortRange;
-		unsigned int longRange = psStats->upgrade[0].maxRange;
-		unsigned int shortHit = psStats->upgrade[0].shortHitChance;
-		unsigned int longHit = psStats->upgrade[0].hitChance;
+		unsigned int shortRange = psStats->upgraded[0].shortRange;
+		unsigned int longRange = psStats->upgraded[0].maxRange;
+		unsigned int shortHit = psStats->upgraded[0].shortHitChance;
+		unsigned int longHit = psStats->upgraded[0].hitChance;
 		if (shortRange > longRange)
 		{
 			debug(LOG_ERROR, "%s, Short range (%d) is greater than long range (%d)", getStatsName(psStats), shortRange,
@@ -577,7 +583,7 @@ bool loadBodyStats(WzConfig& ini)
 		psStats->base.resistance = ini.value("resistance", DEFAULT_DROID_TYPE::RESISTANCE).toInt();
 		for (int j = 0; j < MAX_PLAYERS; j++)
 		{
-			psStats->upgrade[j] = psStats->base;
+			psStats->upgraded[j] = psStats->base;
 		}
 		psStats->ref = STAT_BODY + i;
 		if (!getBodySize(ini.value("size").toWzString(), &psStats->size))
@@ -601,13 +607,13 @@ bool loadBodyStats(WzConfig& ini)
 		psBodyStat->ppMoveIMDList.resize(numPropulsionStats * NUM_PROP_SIDES, nullptr);
 		psBodyStat->ppStillIMDList.resize(numPropulsionStats * NUM_PROP_SIDES, nullptr);
 	}
-	for (size_t i = 0; i < list.size(); ++i)
+	for (auto& i : list)
 	{
 		WzString propulsionName, leftIMD, rightIMD;
 		BodyStats* psBodyStat = nullptr;
 		int numStats;
 
-		ini.beginGroup(list[i]);
+		ini.beginGroup(i);
 		if (!ini.contains("propulsionExtraModels"))
 		{
 			ini.endGroup();
@@ -618,30 +624,30 @@ bool loadBodyStats(WzConfig& ini)
 		for (numStats = 0; numStats < numBodyStats; ++numStats)
 		{
 			psBodyStat = &asBodyStats[numStats];
-			if (list[i].compare(psBodyStat->id) == 0)
+			if (i.compare(psBodyStat->id) == 0)
 			{
 				break;
 			}
 		}
 		if (numStats == numBodyStats) // not found
 		{
-			debug(LOG_FATAL, "Invalid body name %s", list[i].toUtf8().c_str());
+			debug(LOG_FATAL, "Invalid body name %s", i.toUtf8().c_str());
 			return false;
 		}
 		std::vector<WzString> keys = ini.childKeys();
-		for (size_t j = 0; j < keys.size(); j++)
+		for (auto& key : keys)
 		{
 			for (numStats = 0; numStats < numPropulsionStats; numStats++)
 			{
 				PropulsionStats* psPropulsionStat = &asPropulsionStats[numStats];
-				if (keys[j].compare(psPropulsionStat->id) == 0)
+				if (key.compare(psPropulsionStat->id) == 0)
 				{
 					break;
 				}
 			}
 			if (numStats == numPropulsionStats)
 			{
-				debug(LOG_FATAL, "Invalid propulsion name %s", keys[j].toUtf8().c_str());
+				debug(LOG_FATAL, "Invalid propulsion name %s", key.toUtf8().c_str());
 				return false;
 			}
 			//allocate the left and right propulsion IMDs + movement and standing still animations
@@ -649,8 +655,8 @@ bool loadBodyStats(WzConfig& ini)
 				ini, psBodyStat, keys[j], WzString::fromUtf8("left"));
 			psBodyStat->ppIMDList[numStats * NUM_PROP_SIDES + RIGHT_PROP] = statsGetIMD(
 				ini, psBodyStat, keys[j], WzString::fromUtf8("right"));
-			psBodyStat->ppMoveIMDList[numStats] = statsGetIMD(ini, psBodyStat, keys[j], WzString::fromUtf8("moving"));
-			psBodyStat->ppStillIMDList[numStats] = statsGetIMD(ini, psBodyStat, keys[j], WzString::fromUtf8("still"));
+			psBodyStat->ppMoveIMDList[numStats] = statsGetIMD(ini, psBodyStat, key, WzString::fromUtf8("moving"));
+			psBodyStat->ppStillIMDList[numStats] = statsGetIMD(ini, psBodyStat, key, WzString::fromUtf8("still"));
 		}
 		ini.endGroup();
 		ini.endGroup();
@@ -695,7 +701,7 @@ bool loadBrainStats(WzConfig& ini)
 
 		for (int j = 0; j < MAX_PLAYERS; j++)
 		{
-			psStats->upgrade[j] = psStats->base;
+			psStats->upgraded[j] = psStats->base;
 		}
 
 		// check weapon attached
@@ -786,7 +792,7 @@ bool loadPropulsionStats(WzConfig& ini)
 		psStats->pIMD = statsGetIMD(ini, psStats, "model");
 		for (int j = 0; j < MAX_PLAYERS; j++)
 		{
-			psStats->upgrade[j] = psStats->base;
+			psStats->upgraded[j] = psStats->base;
 		}
 		if (!getPropulsionType(ini.value("type").toWzString().toUtf8().c_str(), &psStats->propulsionType))
 		{
@@ -820,7 +826,7 @@ bool loadSensorStats(WzConfig& ini)
 		psStats->base.range = ini.value("range").toInt();
 		for (int j = 0; j < MAX_PLAYERS; j++)
 		{
-			psStats->upgrade[j] = psStats->base;
+			psStats->upgraded[j] = psStats->base;
 		}
 
 		psStats->ref = STAT_SENSOR + i;
@@ -898,7 +904,7 @@ bool loadECMStats(WzConfig& ini)
 		psStats->base.range = ini.value("range").toInt();
 		for (int j = 0; j < MAX_PLAYERS; j++)
 		{
-			psStats->upgrade[j] = psStats->base;
+			psStats->upgraded[j] = psStats->base;
 		}
 
 		psStats->ref = STAT_ECM + i;
@@ -947,7 +953,7 @@ bool loadRepairStats(WzConfig& ini)
 		psStats->base.repairPoints = ini.value("repairPoints").toInt();
 		for (int j = 0; j < MAX_PLAYERS; j++)
 		{
-			psStats->upgrade[j] = psStats->base;
+			psStats->upgraded[j] = psStats->base;
 		}
 		psStats->time = ini.value("time", 0).toInt() * WEAPON_TIME;
 
@@ -1000,7 +1006,7 @@ bool loadConstructStats(WzConfig& ini)
 		psStats->base.constructPoints = ini.value("constructPoints").toInt();
 		for (int j = 0; j < MAX_PLAYERS; j++)
 		{
-			psStats->upgrade[j] = psStats->base;
+			psStats->upgraded[j] = psStats->base;
 		}
 		psStats->ref = STAT_CONSTRUCT + i;
 
@@ -1451,19 +1457,19 @@ bool getMovementModel(const WzString& movementModel, MOVEMENT_MODEL* model)
 {
 	if (strcmp(movementModel.toUtf8().c_str(), "DIRECT") == 0)
 	{
-		*model = MM_DIRECT;
+		*model = MOVEMENT_MODEL::DIRECT;
 	}
 	else if (strcmp(movementModel.toUtf8().c_str(), "INDIRECT") == 0)
 	{
-		*model = MM_INDIRECT;
+		*model = MOVEMENT_MODEL::INDIRECT;
 	}
 	else if (strcmp(movementModel.toUtf8().c_str(), "HOMING-DIRECT") == 0)
 	{
-		*model = MM_HOMINGDIRECT;
+		*model = MOVEMENT_MODEL::HOMING_DIRECT;
 	}
 	else if (strcmp(movementModel.toUtf8().c_str(), "HOMING-INDIRECT") == 0)
 	{
-		*model = MM_HOMINGINDIRECT;
+		*model = MOVEMENT_MODEL::HOMING_INDIRECT;
 	}
 	else
 	{
@@ -1565,74 +1571,74 @@ bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS* weaponClass)
 int weaponFirePause(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].firePause;
+	return psStats->upgraded[player].firePause;
 }
 
 /* Reload time is reduced for weapons with salvo fire */
 int weaponReloadTime(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].reloadTime;
+	return psStats->upgraded[player].reloadTime;
 }
 
 int weaponLongHit(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].hitChance;
+	return psStats->upgraded[player].hitChance;
 }
 
 int weaponShortHit(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].shortHitChance;
+	return psStats->upgraded[player].shortHitChance;
 }
 
 int weaponDamage(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].damage;
+	return psStats->upgraded[player].damage;
 }
 
 int weaponRadDamage(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].radiusDamage;
+	return psStats->upgraded[player].radiusDamage;
 }
 
 int weaponPeriodicalDamage(const WeaponStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].periodicalDamage;
+	return psStats->upgraded[player].periodicalDamage;
 }
 
 int sensorRange(const SensorStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].range;
+	return psStats->upgraded[player].range;
 }
 
 int ecmRange(const EcmStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].range;
+	return psStats->upgraded[player].range;
 }
 
 int repairPoints(const RepairStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].repairPoints;
+	return psStats->upgraded[player].repairPoints;
 }
 
 int constructorPoints(const ConstructStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].constructPoints;
+	return psStats->upgraded[player].constructPoints;
 }
 
 int bodyPower(const BodyStats* psStats, int player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
-	return psStats->upgrade[player].power;
+	return psStats->upgraded[player].power;
 }
 
 //int bodyArmour(const BODY_STATS* psStats, int player, WEAPON_CLASS weaponClass)
@@ -1658,11 +1664,11 @@ int weaponROF(const WeaponStats* psStat, int player)
 	int rof = 0;
 	// if there are salvos
 	if (player >= 0
-		&& psStat->upgrade[player].numRounds
-		&& psStat->upgrade[player].reloadTime != 0)
+		&& psStat->upgraded[player].numRounds
+		&& psStat->upgraded[player].reloadTime != 0)
 	{
 		// Rounds per salvo multiplied with the number of salvos per minute
-		rof = psStat->upgrade[player].numRounds * 60 * GAME_TICKS_PER_SEC / weaponReloadTime(psStat, player);
+		rof = psStat->upgraded[player].numRounds * 60 * GAME_TICKS_PER_SEC / weaponReloadTime(psStat, player);
 	}
 
 	if (rof == 0)

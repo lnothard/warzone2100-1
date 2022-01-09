@@ -18,10 +18,10 @@ void create_structure(unsigned id, unsigned player)
 
 void destroy_droid(Droid& droid)
 {
-	std::erase(droid_lists[droid.get_player()], droid);
+	std::erase(droid_lists[droid.getPlayer()], droid);
 }
 
 void destroy_structure(Structure& structure)
 {
-	std::erase(structure_lists[structure.get_player()], structure);
+	std::erase(structure_lists[structure.getPlayer()], structure);
 }

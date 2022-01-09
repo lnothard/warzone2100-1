@@ -182,12 +182,25 @@ class Droid : public virtual Unit
 public:
     ~Droid() override = default;
 
+    /* Accessors */
+    [[nodiscard]] virtual ACTION getAction() const noexcept = 0;
+    [[nodiscard]] virtual const Order& getOrder() const = 0;
+    [[nodiscard]] virtual DROID_TYPE getType() const noexcept = 0;
+    [[nodiscard]] virtual unsigned getLevel() const = 0;
+    [[nodiscard]] virtual unsigned getCommanderLevel() const = 0;
+    [[nodiscard]] virtual int getVerticalSpeed() const noexcept = 0;
+    [[nodiscard]] virtual unsigned getSecondaryOrder() const noexcept = 0;
+    [[nodiscard]] virtual const Vector2i& getDestination() const = 0;
+    [[nodiscard]] virtual const std::optional<PropulsionStats>& getPropulsion() const = 0;
+
     [[nodiscard]] virtual bool isVtol() const = 0;
     [[nodiscard]] virtual bool isFlying() const = 0;
     [[nodiscard]] virtual bool isDamaged() const = 0;
     [[nodiscard]] virtual bool hasCommander() const = 0;
     virtual void cancelBuild() = 0;
     virtual void resetAction() = 0;
+    virtual void gainExperience(unsigned exp) = 0;
+    [[nodiscard]] virtual int calculateHeight() const = 0;
 };
 
 namespace Impl
@@ -200,23 +213,23 @@ namespace Impl
       Droid(unsigned id, unsigned player);
 
       /* Accessors */
-      [[nodiscard]] ACTION getAction() const noexcept;
-      [[nodiscard]] const Order &getOrder() const;
-      [[nodiscard]] DROID_TYPE getType() const noexcept;
-      [[nodiscard]] unsigned getLevel() const;
-      [[nodiscard]] unsigned getCommanderLevel() const;
-      [[nodiscard]] const iIMDShape &get_IMD_shape() const final;
-      [[nodiscard]] int get_vertical_speed() const noexcept;
-      [[nodiscard]] unsigned get_secondary_order() const noexcept;
-      [[nodiscard]] const Vector2i &get_destination() const;
-      [[nodiscard]] const SimpleObject &get_target(int weapon_slot) const final;
-      [[nodiscard]] const std::optional<PropulsionStats> &get_propulsion() const;
+      [[nodiscard]] ACTION getAction() const noexcept final;
+      [[nodiscard]] const Order& getOrder() const final;
+      [[nodiscard]] DROID_TYPE getType() const noexcept final;
+      [[nodiscard]] unsigned getLevel() const final;
+      [[nodiscard]] unsigned getCommanderLevel() const final;
+      [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
+      [[nodiscard]] int getVerticalSpeed() const noexcept final;
+      [[nodiscard]] unsigned getSecondaryOrder() const noexcept final;
+      [[nodiscard]] const Vector2i& getDestination() const final;
+      [[nodiscard]] const SimpleObject& get_target(int weapon_slot) const final;
+      [[nodiscard]] const std::optional<PropulsionStats>& getPropulsion() const final;
 
-      [[nodiscard]] bool is_probably_doomed(bool is_direct_damage) const;
+      [[nodiscard]] bool isProbablyDoomed(bool is_direct_damage) const;
       [[nodiscard]] bool isVtol() const final;
       [[nodiscard]] bool isFlying() const final;
-      [[nodiscard]] bool is_radar_detector() const final;
-      [[nodiscard]] bool is_stationary() const;
+      [[nodiscard]] bool isRadarDetector() const final;
+      [[nodiscard]] bool isStationary() const;
       [[nodiscard]] bool isDamaged() const final;
       [[nodiscard]] bool is_attacking() const noexcept;
       void upgradeHitPoints();
@@ -234,36 +247,30 @@ namespace Impl
       [[nodiscard]] bool has_standard_sensor() const;
       [[nodiscard]] bool has_CB_sensor() const;
       [[nodiscard]] bool has_electronic_weapon() const;
-      void gain_experience(unsigned exp);
+      void gainExperience(unsigned exp) final;
       void cancelBuild() final;
       void resetAction() noexcept final;
       void update_expected_damage(unsigned damage, bool is_direct) noexcept final;
       [[nodiscard]] unsigned calculate_sensor_range() const final;
-      [[nodiscard]] int calculate_height() const;
+      [[nodiscard]] int calculateHeight() const final;
       [[nodiscard]] int space_occupied_on_transporter() const;
       void increment_kills() noexcept;
       void assign_vtol_to_rearm_pad(RearmPad *rearm_pad);
       [[nodiscard]] int calculate_electronic_resistance() const;
-      [[nodiscard]] bool is_selectable() const final;
+      [[nodiscard]] bool isSelectable() const final;
       [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
       [[nodiscard]] int calculate_attack_priority(const ::Unit *target, int weapon_slot) const final;
 
   private:
       using enum DROID_TYPE;
+      using enum ACTION;
       std::string name;
       DROID_TYPE type;
-
-      /**
-       * Holds the specifics for the component parts - allows damage
-       * per part to be calculated. Indexed by COMPONENT_TYPE.
-       * Weapons need to be dealt with separately.
-       */
-      uint8_t asBits[DROID_MAXCOMP];
 
       unsigned weight = 0;
 
       /// Base speed depends on propulsion type
-      unsigned base_speed = 0;
+      unsigned baseSpeed = 0;
 
       unsigned original_hp = 0;
       unsigned experience = 0;
@@ -279,7 +286,7 @@ namespace Impl
 
       /// A structure that this droid might be associated with.
       /// For VTOLs this is the rearming pad
-      Structure *associated_structure = nullptr;
+      Structure *associatedStructure = nullptr;
 
       // Number of queued orders
       int listSize;
@@ -307,9 +314,8 @@ namespace Impl
       /// Number of pending `secondary_order` synchronisations.
       int secondaryOrderPendingCount;
 
-      ACTION action;
+      ACTION action = NONE;
       Vector2i actionPos;
-
       std::array<SimpleObject*, MAX_WEAPONS> action_target;
       std::size_t time_action_started;
       unsigned action_points_done;
@@ -326,6 +332,10 @@ namespace Impl
 
       int iAudioID;
 
+      std::unique_ptr<BodyStats> body;
+      std::optional<PropulsionStats> propulsion;
+      std::optional<SensorStats> sensor;
+      std::optional<EcmStats> ecm;
       std::optional<CommanderStats> brain;
   };
 }
@@ -532,6 +542,7 @@ void updateVtolAttackRun(Droid& droid, int weapon_slot);
 
 /*returns a count of the base number of attack runs for the weapon attached to the droid*/
 unsigned getNumAttackRuns(const Droid* psDroid, int weapon_slot);
+
 //assign rearmPad to the VTOL
 void assignVTOLPad(Droid* psNewDroid, Structure* psReArmPad);
 
@@ -550,12 +561,6 @@ bool allVtolsRearmed(const Droid* psDroid);
 /// Compares the droid sensor type with the droid weapon type to see if the FIRE_SUPPORT order can be assigned
 bool droidSensorDroidWeapon(const SimpleObject* psObj, const Droid* psDroid);
 
-/// Return whether a droid has a CB sensor on it
-bool cbSensorDroid(const Droid* psDroid);
-
-/// Return whether a droid has a standard sensor on it (standard, VTOL strike, or wide spectrum)
-bool standardSensorDroid(const Droid* psDroid);
-
 // give a droid from one player to another - used in Electronic Warfare and multiplayer
 Droid* giftSingleDroid(Droid* psD, UDWORD to, bool electronic = false);
 
@@ -570,9 +575,6 @@ const char* getDroidNameForRank(UDWORD rank);
 /*called when a Template is deleted in the Design screen*/
 void deleteTemplateFromProduction(DroidTemplate* psTemplate, unsigned player, QUEUE_MODE mode);
 // ModeQueue deletes from production queues, which are not yet synchronised. ModeImmediate deletes from current production which is synchronised.
-
-// Check if a droid can be selected.
-bool isSelectable(Droid const* psDroid);
 
 // Select a droid and do any necessary housekeeping.
 void SelectDroid(Droid* psDroid);
@@ -600,49 +602,6 @@ int droidReloadBar(const SimpleObject* psObj, const Weapon* psWeap, int weapon_s
 static inline int droidSensorRange(const Droid* psDroid)
 {
 	return objSensorRange((const SimpleObject*)psDroid);
-}
-
-/*
- * Component stat helper functions
- */
-static inline BodyStats* getBodyStats(const Droid* psDroid)
-{
-	return asBodyStats + psDroid->asBits[COMP_BODY];
-}
-
-static inline CommanderStats* getBrainStats(const Droid* psDroid)
-{
-	return asBrainStats + psDroid->asBits[COMP_BRAIN];
-}
-
-static inline PropulsionStats* getPropulsionStats(const Droid* psDroid)
-{
-	return asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
-}
-
-static inline SensorStats* getSensorStats(const Droid* psDroid)
-{
-	return asSensorStats + psDroid->asBits[COMP_SENSOR];
-}
-
-static inline EcmStats* getECMStats(const Droid* psDroid)
-{
-	return asECMStats + psDroid->asBits[COMP_ECM];
-}
-
-static inline RepairStats* getRepairStats(const Droid* psDroid)
-{
-	return asRepairStats + psDroid->asBits[COMP_REPAIRUNIT];
-}
-
-static inline ConstructStats* getConstructStats(const Droid* psDroid)
-{
-	return asConstructStats + psDroid->asBits[COMP_CONSTRUCT];
-}
-
-static inline WeaponStats* getWeaponStats(const Droid* psDroid, int weapon_slot)
-{
-	return asWeaponStats + psDroid->asWeaps[weapon_slot].nStat;
 }
 
 static inline Rotation getInterpolatedWeaponRotation(const Droid* psDroid, int weaponSlot, uint32_t time)
@@ -736,7 +695,7 @@ static inline void setSaveDroidBase(Droid* psSaveDroid, Structure* psNewBase)
 #endif
 }
 
-void checkDroid(const Droid* droid, const char* const location_description, const char* function, const int recurse);
+void checkDroid(const Droid* droid, char* location_description, char* function, int recurse);
 
 /** assert if droid is bad */
 #define CHECK_DROID(droid) checkDroid(droid, AT_MACRO, __FUNCTION__, max_check_object_recursion)

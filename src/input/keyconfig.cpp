@@ -18,6 +18,7 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
+#include <utility>
 #include <vector>
 
 #include "keyconfig.h"
@@ -782,18 +783,18 @@ const KeyFunctionEntries KeyFunctionConfiguration::allKeyFunctionEntries() const
 KeyFunctionInfo::KeyFunctionInfo(
 	const ContextId& context,
 	const KeyMappingType type,
-	const MappableFunction function,
-	const std::string name,
-	const std::string displayName,
-	const std::vector<std::pair<KeyMappingSlot, KeyCombination>> defaultMappings,
+	MappableFunction  function,
+	std::string  name,
+	std::string  displayName,
+	std::vector<std::pair<KeyMappingSlot, KeyCombination>>  defaultMappings,
 	const bool bIsDebugOnly
 )
 	: context(context)
 	  , type(type)
-	  , function(function)
-	  , name(name)
-	  , displayName(displayName)
-	  , defaultMappings(defaultMappings)
+	  , function(std::move(function))
+	  , name(std::move(name))
+	  , displayName(std::move(displayName))
+	  , defaultMappings(std::move(defaultMappings))
 	  , bIsDebugOnly(bIsDebugOnly)
 {
 }
@@ -801,8 +802,8 @@ KeyFunctionInfo::KeyFunctionInfo(
 KeyFunctionInfo::KeyFunctionInfo(
 	const ContextId& context,
 	const KeyMappingType type,
-	const MappableFunction function,
-	const std::string name
+	const MappableFunction& function,
+	const std::string& name
 )
 	: KeyFunctionInfo(context, type, function, name, "", {})
 {

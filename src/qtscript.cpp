@@ -138,7 +138,7 @@ optional<scripting_engine::GROUPMAP::groupID> scripting_engine::GROUPMAP::remove
 
 		size_t numItemsErased = m_groups[groupId].erase(psObj);
 		ASSERT(numItemsErased == 1, "Object did not exist in group set??");
-		return optional<groupID>(groupId);
+		return {groupId};
 	}
 	return {};
 }
@@ -224,7 +224,7 @@ uniqueTimerID scripting_engine::getNextAvailableTimerID()
 }
 
 uniqueTimerID scripting_engine::setTimer(wzapi::scripting_instance* caller, const TimerFunc& timerFunc, int player,
-                                         int milliseconds, std::string timerName /*= ""*/,
+                                         int milliseconds, const std::string& timerName /*= ""*/,
                                          const SimpleObject* obj /*= nullptr*/, timerType type /*= TIMER_REPEAT*/,
                                          std::unique_ptr<timerAdditionalData> additionalParam /*= nullptr*/)
 {
@@ -703,7 +703,7 @@ wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& pa
 	// Register script
 	scripts.push_back(pNewInstance);
 
-	MONITOR* monitor = new MONITOR;
+	auto* monitor = new MONITOR;
 	monitors[pNewInstance] = monitor;
 
 	debug(LOG_SAVE, "Created script engine %zu for player %d from %s", scripts.size() - 1, player,
@@ -713,7 +713,7 @@ wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& pa
 
 bool loadGlobalScript(WzString path)
 {
-	return loadPlayerScript(std::move(path), selectedPlayer, AIDifficulty::DISABLED);
+	return loadPlayerScript(path, selectedPlayer, AIDifficulty::DISABLED);
 }
 
 bool saveScriptStates(const char* filename)
@@ -1715,11 +1715,11 @@ scripting_engine& scripting_engine::instance()
 std::vector<scripting_engine::LabelInfo> scripting_engine::debug_GetLabelInfo() const
 {
 	std::vector<scripting_engine::LabelInfo> results;
-	for (LABELMAP::const_iterator i = labels.cbegin(); i != labels.cend(); i++)
+	for (const auto& label : labels)
 	{
-		const LABEL& l = i->second;
+		const LABEL& l = label.second;
 		scripting_engine::LabelInfo labelInfo;
-		labelInfo.label = WzString::fromUtf8(i->first);
+		labelInfo.label = WzString::fromUtf8(label.first);
 		const char* c = "?";
 		switch (l.type)
 		{
@@ -2042,16 +2042,16 @@ bool scripting_engine::loadLabels(const char* filename)
 	labels.clear();
 	std::vector<WzString> list = ini.childGroups();
 	debug(LOG_SAVE, "Loading %zu labels...", list.size());
-	for (int i = 0; i < list.size(); ++i)
+	for (auto& i : list)
 	{
-		ini.beginGroup(list[i]);
+		ini.beginGroup(i);
 		LABEL p;
 		std::string label = ini.value("label").toWzString().toUtf8();
 		if (labels.count(label) > 0)
 		{
 			debug(LOG_ERROR, "Duplicate label found");
 		}
-		else if (list[i].startsWith("position"))
+		else if (i.startsWith("position"))
 		{
 			p.p1 = ini.vector2i("pos");
 			p.p2 = p.p1;
@@ -2062,7 +2062,7 @@ bool scripting_engine::loadLabels(const char* filename)
 			p.subscriber = ALL_PLAYERS;
 			labels[label] = p;
 		}
-		else if (list[i].startsWith("area"))
+		else if (i.startsWith("area"))
 		{
 			p.p1 = ini.vector2i("pos1");
 			p.p2 = ini.vector2i("pos2");
@@ -2073,7 +2073,7 @@ bool scripting_engine::loadLabels(const char* filename)
 			p.subscriber = ini.value("subscriber", ALL_PLAYERS).toInt();
 			labels[label] = p;
 		}
-		else if (list[i].startsWith("radius"))
+		else if (i.startsWith("radius"))
 		{
 			p.p1 = ini.vector2i("pos");
 			p.p2.x = ini.value("radius").toInt();
@@ -2085,7 +2085,7 @@ bool scripting_engine::loadLabels(const char* filename)
 			p.id = -1;
 			labels[label] = p;
 		}
-		else if (list[i].startsWith("object"))
+		else if (i.startsWith("object"))
 		{
 			p.id = ini.value("id").toInt();
 			p.type = ini.value("type").toInt();
@@ -2094,7 +2094,7 @@ bool scripting_engine::loadLabels(const char* filename)
 			p.subscriber = ini.value("subscriber", ALL_PLAYERS).toInt();
 			labels[label] = p;
 		}
-		else if (list[i].startsWith("group"))
+		else if (i.startsWith("group"))
 		{
 			p.id = groupidx--;
 			p.type = SCRIPT_GROUP;
@@ -2105,7 +2105,7 @@ bool scripting_engine::loadLabels(const char* filename)
 				int id = j.toInt();
 				SimpleObject* psObj = IdToPointer(id, p.player);
 				ASSERT(psObj, "Unit %d belonging to player %d not found from label %s",
-				       id, p.player, list[i].toUtf8().c_str());
+				       id, p.player, i.toUtf8().c_str());
 				p.idlist.push_back(id);
 			}
 			p.triggered = ini.value("triggered", -1).toInt(); // deactivated by default
@@ -2131,7 +2131,7 @@ bool scripting_engine::writeLabels(const char* filename)
 	int c[5]; // make unique, incremental section names
 	memset(c, 0, sizeof(c));
 	WzConfig ini(filename, WzConfig::ReadAndWrite);
-	for (LABELMAP::const_iterator i = labels.begin(); i != labels.end(); i++)
+	for (auto i = labels.begin(); i != labels.end(); i++)
 	{
 		const std::string& key = i->first;
 		const LABEL& l = i->second;
@@ -2246,22 +2246,22 @@ std::vector<std::string> scripting_engine::enumLabels(WZAPI_PARAMS(optional<int>
 	std::vector<std::string> matches;
 	if (filterLabelType.has_value()) // filter
 	{
-		SCRIPT_TYPE type = (SCRIPT_TYPE)filterLabelType.value();
-		for (LABELMAP::const_iterator i = labels.begin(); i != labels.end(); i++)
+		auto type = (SCRIPT_TYPE)filterLabelType.value();
+		for (const auto& i : labels)
 		{
-			const LABEL& label = i->second;
+			const LABEL& label = i.second;
 			if (label.type == type)
 			{
-				matches.push_back(i->first);
+				matches.push_back(i.first);
 			}
 		}
 	}
 	else // fast path, give all
 	{
 		matches.reserve(labels.size());
-		for (LABELMAP::const_iterator i = labels.begin(); i != labels.end(); i++)
+		for (const auto& label : labels)
 		{
-			matches.push_back(i->first);
+			matches.push_back(label.first);
 		}
 	}
 	return matches;
@@ -2494,7 +2494,7 @@ optional<std::string> scripting_engine::_findMatchingLabel(wzapi::game_object_id
 //-- its ID, in which case you need to pass its type, owner and unique object ID. This is an
 //-- operation of O(n) algorithmic complexity. (3.2+ only)
 //--
-generic_script_object scripting_engine::getObject(WZAPI_PARAMS(wzapi::object_request request))
+generic_script_object scripting_engine::getObject(WZAPI_PARAMS(const wzapi::object_request& request))
 {
 	if (request.requestType == wzapi::object_request::RequestType::MAPPOS_REQUEST)
 	{
@@ -2570,7 +2570,7 @@ generic_script_object scripting_engine::getObjectFromLabel(WZAPI_PARAMS(const st
 //-- game objects using other enum functions. (3.2+ only)
 //--
 std::vector<const SimpleObject*> scripting_engine::enumAreaByLabel(
-	WZAPI_PARAMS(std::string label, optional<int> _playerFilter, optional<bool> _seen))
+	WZAPI_PARAMS(const std::string& label, optional<int> _playerFilter, optional<bool> _seen))
 {
 	SCRIPT_ASSERT({}, context, instance().labels.count(label) > 0, "Label %s not found", label.c_str());
 	const LABEL& p = instance().labels[label];
@@ -2605,10 +2605,9 @@ std::vector<const SimpleObject*> scripting_engine::_enumAreaWorldCoords(
 	static GridList gridList; // static to avoid allocations. // not thread-safe
 	gridList = gridStartIterateArea(x1, y1, x2, y2);
 	std::vector<const SimpleObject*> list;
-	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
+	for (auto psObj : gridList)
 	{
-		SimpleObject* psObj = *gi;
-		if ((psObj->visible[player] || !seen) && !psObj->died)
+			if ((psObj->visible[player] || !seen) && !psObj->died)
 		{
 			if ((playerFilter >= 0 && psObj->player == playerFilter) || playerFilter == ALL_PLAYERS
 				|| (playerFilter == ALLIES && psObj->type != OBJ_FEATURE && aiCheckAlliances(psObj->player, player))
@@ -2747,15 +2746,15 @@ bool scripting_engine::unregisterFunctions(wzapi::scripting_instance* instance)
 void scripting_engine::prepareLabels()
 {
 	// load the label group data into every scripting context, with the same negative group id
-	for (ENGINEMAP::iterator iter = groups.begin(); iter != groups.end(); ++iter)
+	for (auto & group : groups)
 	{
-		wzapi::scripting_instance* instance = iter->first;
-		for (LABELMAP::iterator i = labels.begin(); i != labels.end(); ++i)
+		wzapi::scripting_instance* instance = group.first;
+		for (auto & label : labels)
 		{
-			const LABEL& l = i->second;
+			const LABEL& l = label.second;
 			if (l.type == SCRIPT_GROUP)
 			{
-				for (std::vector<int>::const_iterator j = l.idlist.begin(); j != l.idlist.end(); j++)
+				for (auto j = l.idlist.begin(); j != l.idlist.end(); j++)
 				{
 					int id = (*j);
 					SimpleObject* psObj = IdToPointer(id, l.player);
@@ -2811,7 +2810,7 @@ void scripting_engine::logFunctionPerformance(wzapi::scripting_instance* instanc
 {
 	MONITOR* monitor = monitors.at(instance); // pick right one for this instance
 	MONITOR_BIN m;
-	MONITOR::iterator it = monitor->find(function);
+	auto it = monitor->find(function);
 	if (it != monitor->end())
 	{
 		m = it->second;

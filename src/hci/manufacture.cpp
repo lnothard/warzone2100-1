@@ -4,6 +4,8 @@
 #include "lib/sound/audio_id.h"
 #include "lib/sound/audio.h"
 #include "manufacture.h"
+
+#include <utility>
 #include "../mission.h"
 #include "../qtscript.h"
 
@@ -46,12 +48,12 @@ void ManufactureController::updateData()
 	updateManufactureOptionsList();
 }
 
-void ManufactureController::adjustFactoryProduction(DroidTemplate* manufactureOption, bool add)
+void ManufactureController::adjustFactoryProduction(DroidTemplate* manufactureOption, bool add) const
 {
 	factoryProdAdjust(getHighlightedObject(), manufactureOption, add);
 }
 
-void ManufactureController::adjustFactoryLoop(bool add)
+void ManufactureController::adjustFactoryLoop(bool add) const
 {
 	factoryLoopAdjust(getHighlightedObject(), add);
 }
@@ -78,7 +80,7 @@ void ManufactureController::cancelFactoryProduction(Structure* structure)
 	audio_PlayTrack(ID_SOUND_WINDOWCLOSE);
 }
 
-void ManufactureController::startDeliveryPointPosition()
+void ManufactureController::startDeliveryPointPosition() const
 {
 	auto factory = getHighlightedObject();
 	ASSERT_NOT_NULLPTR_OR_RETURN(, factory);
@@ -182,8 +184,7 @@ private:
 
 protected:
 	ManufactureObjectButton()
-	{
-	}
+	= default;
 
 public:
 	static std::shared_ptr<ManufactureObjectButton> make(const std::shared_ptr<ManufactureController>& controller,
@@ -260,7 +261,7 @@ protected:
 
 	ManufactureController& getController() const override
 	{
-		return *controller.get();
+		return *controller;
 	}
 
 private:
@@ -275,8 +276,7 @@ private:
 
 protected:
 	ManufactureStatsButton()
-	{
-	}
+	= default;
 
 public:
 	static std::shared_ptr<ManufactureStatsButton> make(const std::shared_ptr<ManufactureController>& controller,
@@ -567,7 +567,7 @@ public:
 protected:
 	ManufactureController& getController() const override
 	{
-		return *controller.get();
+		return *controller;
 	}
 
 private:
@@ -600,7 +600,7 @@ public:
 protected:
 	ManufactureController& getController() const override
 	{
-		return *controller.get();
+		return *controller;
 	}
 
 private:
@@ -677,7 +677,7 @@ private:
 		}
 
 	protected:
-		void display(int xOffset, int yOffset)
+		void display(int xOffset, int yOffset) override
 		{
 			updateLayout();
 			BaseWidget::display(xOffset, yOffset);
@@ -716,8 +716,8 @@ private:
 		typedef W_BUTTON BaseWidget;
 
 	public:
-		LoopProductionButton(const std::shared_ptr<ManufactureController>& controller): BaseWidget(),
-			controller(controller)
+		explicit LoopProductionButton(std::shared_ptr<ManufactureController>  controller): BaseWidget(),
+			controller(std::move(controller))
 		{
 			style |= WBUT_SECONDARY;
 			setImages(Image(IntImages, IMAGE_LOOP_UP), Image(IntImages, IMAGE_LOOP_DOWN),
@@ -753,8 +753,8 @@ private:
 		typedef W_LABEL BaseWidget;
 
 	public:
-		LoopProductionLabel(const std::shared_ptr<ManufactureController>& controller): BaseWidget(),
-			controller(controller)
+		explicit LoopProductionLabel(std::shared_ptr<ManufactureController>  controller): BaseWidget(),
+			controller(std::move(controller))
 		{
 		}
 
@@ -776,7 +776,7 @@ private:
 		}
 
 	private:
-		std::string getNewString()
+		std::string getNewString() const
 		{
 			switch (lastProductionLoop)
 			{

@@ -25,22 +25,13 @@
  */
 
 #include "titleui.h"
-#include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/ivis_opengl/piemode.h"
 #include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/screen.h"
-#include "lib/netplay/netplay.h"
-#include "../intdisplay.h"
-#include "../frontend.h"
-#include "../hci.h"
 #include "../keyedit.h"
 #include "../mission.h"
-#include "../multiint.h"
-#include "../multilimit.h"
-#include "../multistat.h"
 #include "../musicmanager.h"
 #include "../warzoneconfig.h"
-#include "../frend.h"
 #include "../activity.h"
 
 WzOldTitleUI::WzOldTitleUI(tMode mode) : mode(mode)
@@ -121,8 +112,7 @@ void WzOldTitleUI::start()
 		break;
 	}
 
-	return;
-}
+	}
 
 TITLECODE WzOldTitleUI::run()
 {

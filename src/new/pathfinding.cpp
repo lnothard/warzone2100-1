@@ -83,11 +83,11 @@ bool is_tile_blocked_by_droid(const Droid& droid,
 {
   // ensure propulsion data exists for this droid,
   // otherwise, call to `is_tile_blocking` will fail
-  assert(droid.get_propulsion());
+  assert(droid.getPropulsion());
 
   return is_tile_blocking(x, y,
-                          droid.get_propulsion()->propulsion_type,
-                          droid.get_player(), move_type);
+                          droid.getPropulsion()->propulsion_type,
+                          droid.getPlayer(), move_type);
 }
 
 bool is_droid_blocked_by_tile(int x, int y,

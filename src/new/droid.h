@@ -158,16 +158,16 @@ public:
   [[nodiscard]] unsigned get_level() const;
   [[nodiscard]] unsigned getCommanderLevel() const;
   [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
-  [[nodiscard]] int get_vertical_speed() const noexcept;
-  [[nodiscard]] unsigned get_secondary_order() const noexcept;
-  [[nodiscard]] const Vector2i& get_destination() const;
+  [[nodiscard]] int getVerticalSpeed() const noexcept;
+  [[nodiscard]] unsigned getSecondaryOrder() const noexcept;
+  [[nodiscard]] const Vector2i& getDestination() const;
   [[nodiscard]] const ::SimpleObject& get_target(int weapon_slot) const final;
-  [[nodiscard]] const std::optional<PropulsionStats>& get_propulsion() const;
+  [[nodiscard]] const std::optional<PropulsionStats>& getPropulsion() const;
   
 	[[nodiscard]] bool is_probably_doomed(bool is_direct_damage) const;
 	[[nodiscard]] bool isVtol() const;
 	[[nodiscard]] bool isFlying() const;
-	[[nodiscard]] bool is_radar_detector() const final;
+	[[nodiscard]] bool isRadarDetector() const final;
 	[[nodiscard]] bool is_stationary() const;
 	[[nodiscard]] bool is_rearming() const;
 	[[nodiscard]] bool is_damaged() const;
@@ -204,7 +204,7 @@ public:
   void increment_commander_kills() const;
   void assign_vtol_to_rearm_pad(RearmPad* rearm_pad);
   [[nodiscard]] int calculate_electronic_resistance() const;
-  [[nodiscard]] bool is_selectable() const final;
+  [[nodiscard]] bool isSelectable() const final;
   [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
   [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
   [[nodiscard]] bool is_hovering() const;

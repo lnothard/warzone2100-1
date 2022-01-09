@@ -22,7 +22,7 @@
  *
  * Code to deal with loading/unloading, interface and flight of transporters.
  */
-#include <string.h>
+#include <cstring>
 #include <sys/stat.h>
 
 #include "lib/framework/frame.h"

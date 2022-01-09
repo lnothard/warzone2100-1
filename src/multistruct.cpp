@@ -55,15 +55,15 @@
 // INFORM others that a building has been completed.
 bool SendBuildFinished(Structure* psStruct)
 {
-	uint8_t player = psStruct->get_player();
+	uint8_t player = psStruct->getPlayer();
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "invalid player %u", player);
 
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_ADD_STRUCTURE);
-	NETuint32_t(psStruct->get_id()); // ID of building
+	NETuint32_t(psStruct->getId()); // ID of building
 
 	// Along with enough info to build it (if needed)
 	NETuint32_t(&psStruct->pStructureType->ref);
-	NETPosition(&psStruct->get_position());
+	NETPosition(&psStruct->getPosition());
 	NETuint8_t(&player);
 	return NETend();
 }

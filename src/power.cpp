@@ -169,11 +169,11 @@ bool add_power_request(unsigned player, unsigned requester_id, int amount)
 
 void remove_power_request(const Structure& structure)
 {
-  auto& player_power = power_list[structure.get_player()];
+  auto& player_power = power_list[structure.getPlayer()];
 
   std::erase_if(player_power.queue, [&structure](auto& request)
   {
-      return request.requester_id == structure.get_id();
+      return request.requester_id == structure.getId();
   });
 }
 //void delPowerRequest(STRUCTURE* psStruct)

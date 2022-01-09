@@ -74,7 +74,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 	unsigned fireTime = gameTime - deltaGameTime + 1; // Can fire earliest at the start of the tick.
 
 	// See if reloadable weapon.
-	if (psStats->upgrade[psAttacker->player].reloadTime)
+	if (psStats->upgraded[psAttacker->player].reloadTime)
 	{
 		unsigned reloadTime = psWeap->time_last_fired + weaponReloadTime(psStats, psAttacker->player);
 		if (psWeap->ammo == 0) // Out of ammo?
@@ -89,7 +89,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 		if (reloadTime <= fireTime)
 		{
 			//reset the ammo level
-			psWeap->ammo = psStats->upgrade[psAttacker->player].numRounds;
+			psWeap->ammo = psStats->upgraded[psAttacker->player].numRounds;
 		}
 	}
 
@@ -223,7 +223,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 	psWeap->time_last_fired = fireTime;
 
 	/* reduce ammo if salvo */
-	if (psStats->upgrade[psAttacker->player].reloadTime)
+	if (psStats->upgraded[psAttacker->player].reloadTime)
 	{
 		psWeap->ammo--;
 	}
@@ -359,10 +359,10 @@ void counterBatteryFire(SimpleObject* psAttacker, SimpleObject* psTarget)
 			const auto sensorRange = objSensorRange(psViewer);
 
 			// Check sensor distance from target
-			const auto xDiff = psViewer->get_position().x -
-              psTarget->get_position().x;
-			const auto yDiff = psViewer->get_position().y - 
-              psTarget->get_position().y;
+			const auto xDiff = psViewer->getPosition().x -
+												 psTarget->getPosition().x;
+			const auto yDiff = psViewer->getPosition().y -
+												 psTarget->getPosition().y;
 
 			if (xDiff * xDiff + yDiff * yDiff < sensorRange * sensorRange)
 			{
@@ -547,7 +547,7 @@ unsigned int objGuessFutureDamage(WeaponStats* psStats, unsigned int player, Sim
 	actualDamage = (damage * (100 - EXP_REDUCE_DAMAGE * level)) / 100;
 
 	// You always do at least a third of the experience modified damage
-	actualDamage = MAX(actualDamage - armour, actualDamage * psStats->upgrade[player].minimumDamage / 100);
+	actualDamage = MAX(actualDamage - armour, actualDamage * psStats->upgraded[player].minimumDamage / 100);
 
 	// And at least MIN_WEAPON_DAMAGE points
 	actualDamage = MAX(actualDamage, MIN_WEAPON_DAMAGE);

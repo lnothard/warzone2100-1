@@ -82,9 +82,7 @@ class CommanderObjectButton : public ObjectButton
 	typedef ObjectButton BaseWidget;
 
 protected:
-	CommanderObjectButton()
-	{
-	}
+	CommanderObjectButton() = default;
 
 public:
 	static std::shared_ptr<CommanderObjectButton> make(const std::shared_ptr<CommanderController>& controller,
@@ -162,7 +160,7 @@ protected:
 
 	CommanderController& getController() const override
 	{
-		return *controller.get();
+		return *controller;
 	}
 
 	std::string getTip() override
@@ -185,8 +183,7 @@ private:
 
 protected:
 	CommanderStatsButton()
-	{
-	}
+	= default;
 
 public:
 	static std::shared_ptr<CommanderStatsButton> make(const std::shared_ptr<CommanderController>& controller,
@@ -337,7 +334,7 @@ public:
 protected:
 	BaseObjectsController& getController() const override
 	{
-		return *controller.get();
+		return *controller;
 	}
 
 private:

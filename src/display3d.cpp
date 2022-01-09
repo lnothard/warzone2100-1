@@ -1554,13 +1554,13 @@ static void display3DProjectiles(const glm::mat4& viewMatrix)
 			   whatever for Y (height) coord - arcing ?
 			*/
 			/* these guys get drawn last */
-			if (psObj->psWStats->weaponSubClass == WSC_ROCKET ||
-				psObj->psWStats->weaponSubClass == WSC_MISSILE ||
-				psObj->psWStats->weaponSubClass == WSC_COMMAND ||
-				psObj->psWStats->weaponSubClass == WSC_SLOWMISSILE ||
-				psObj->psWStats->weaponSubClass == WSC_SLOWROCKET ||
-				psObj->psWStats->weaponSubClass == WSC_ENERGY ||
-				psObj->psWStats->weaponSubClass == WSC_EMP)
+			if (psObj->weaponStats->weaponSubClass == WSC_ROCKET ||
+          psObj->weaponStats->weaponSubClass == WSC_MISSILE ||
+          psObj->weaponStats->weaponSubClass == WSC_COMMAND ||
+          psObj->weaponStats->weaponSubClass == WSC_SLOWMISSILE ||
+          psObj->weaponStats->weaponSubClass == WSC_SLOWROCKET ||
+          psObj->weaponStats->weaponSubClass == WSC_ENERGY ||
+          psObj->weaponStats->weaponSubClass == WSC_EMP)
 			{
 				bucketAddTypeToList(RENDER_PROJECTILE, psObj, viewMatrix);
 			}
@@ -1582,7 +1582,7 @@ void renderProjectile(Projectile* psCurr, const glm::mat4& viewMatrix)
 	iIMDShape* pIMD;
 	Spacetime st;
 
-	psStats = psCurr->psWStats;
+	psStats = psCurr->weaponStats;
 	/* Reject flame or command since they have interim drawn fx */
 	if (psStats->weaponSubClass == WSC_FLAME ||
 		psStats->weaponSubClass == WSC_COMMAND || // || psStats->weaponSubClass == WSC_ENERGY)

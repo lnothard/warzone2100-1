@@ -27,20 +27,17 @@
  * -- 20kdc
  */
 
+#include <utility>
+
 #include "titleui.h"
-#include "lib/ivis_opengl/pieblitfunc.h"
-#include "lib/ivis_opengl/piemode.h"
-#include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/screen.h"
 #include "lib/netplay/netplay.h"
 #include "../multiplay.h"
-#include "../intdisplay.h"
-#include "../hci.h"
 #include "../multiint.h"
 #include "../warzoneconfig.h"
 #include "../frend.h"
 
-WzMsgBoxTitleUI::WzMsgBoxTitleUI(WzString text, std::shared_ptr<WzTitleUI> next) : text(text), next(next)
+WzMsgBoxTitleUI::WzMsgBoxTitleUI(WzString text, std::shared_ptr<WzTitleUI> next) : text(std::move(text)), next(std::move(next))
 {
 }
 

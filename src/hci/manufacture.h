@@ -50,11 +50,11 @@ public:
 	}
 
 	void updateData();
-	void adjustFactoryProduction(DroidTemplate* manufactureOption, bool add);
-	void adjustFactoryLoop(bool add);
+	void adjustFactoryProduction(DroidTemplate* manufactureOption, bool add) const;
+	void adjustFactoryLoop(bool add) const;
 	void releaseFactoryProduction(Structure* structure);
 	void cancelFactoryProduction(Structure* structure);
-	void startDeliveryPointPosition();
+	void startDeliveryPointPosition() const;
 	bool showInterface() override;
 	void refresh() override;
 	void clearData() override;

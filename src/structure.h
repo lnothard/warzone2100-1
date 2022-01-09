@@ -194,7 +194,7 @@ namespace Impl
 
         [[nodiscard]] bool is_blueprint() const noexcept;
         [[nodiscard]] bool is_wall() const noexcept;
-        [[nodiscard]] bool is_radar_detector() const final;
+        [[nodiscard]] bool isRadarDetector() const final;
         [[nodiscard]] bool is_probably_doomed() const;
         [[nodiscard]] bool is_pulled_to_terrain() const;
         [[nodiscard]] bool has_modules() const noexcept;
@@ -820,7 +820,7 @@ static inline int getBuildingRepairPoints(Impl::Structure* psStruct)
 
 static inline int getBuildingRearmPoints(Impl::Structure* psStruct)
 {
-	return psStruct->stats->upgraded_stats[psStruct->get_player()].rearm;
+	return psStruct->stats->upgraded_stats[psStruct->getPlayer()].rearm;
 }
 
 WzString getFavoriteStructs();

@@ -209,7 +209,7 @@ std::vector<std::reference_wrapper<KeyMapping>> KeyMappings::find(const KEY_CODE
 	{
 		if (mapping.keys.meta == meta && mapping.keys.input == input)
 		{
-			matches.push_back(mapping);
+			matches.emplace_back(mapping);
 		}
 	}
 
@@ -239,14 +239,14 @@ std::vector<std::reference_wrapper<KeyMapping>> KeyMappings::findConflicting(
 	std::vector<std::reference_wrapper<KeyMapping>> conflicts;
 	for (KeyMapping& mapping : matches)
 	{
-		const InputContext mappingContext = contexts.get(mapping.info.context);
+		const InputContext& mappingContext = contexts.get(mapping.info.context);
 
 		/* Keys conflict if they are for the same context. Always active contexts are special (always have highest priority), so those keys will always conflict. */
 		const bool bConflicts = mappingContext.isAlwaysActive() || std::string(mapping.info.context) ==
 			std::string(contextId);
 		if (bConflicts)
 		{
-			conflicts.push_back(mapping);
+			conflicts.emplace_back(mapping);
 		}
 	}
 

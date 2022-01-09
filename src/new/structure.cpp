@@ -58,7 +58,7 @@ namespace Impl {
 		return false;
 	}
 
-	bool Structure::is_radar_detector() const
+	bool Structure::isRadarDetector() const
 	{
 		if (!has_sensor() || state != BUILT)  {
       return false;
@@ -133,7 +133,7 @@ namespace Impl {
 
 	unsigned Structure::get_original_hp() const
 	{
-		return stats->upgraded_stats[get_player()].hit_points;
+		return stats->upgraded_stats[getPlayer()].hit_points;
 	}
 
   unsigned Structure::get_armour_value(WEAPON_CLASS weapon_class) const
@@ -144,17 +144,17 @@ namespace Impl {
     using enum WEAPON_CLASS;
     if (weapon_class == KINETIC)
     {
-      return stats->upgraded_stats[get_player()].armour;
+      return stats->upgraded_stats[getPlayer()].armour;
     }
     else
     {
-      return stats->upgraded_stats[get_player()].thermal;
+      return stats->upgraded_stats[getPlayer()].thermal;
     }
   }
 
 	Vector2i Structure::get_size() const
 	{
-		return stats->size(get_rotation().direction);
+		return stats->size(getRotation().direction);
 	}
 
 	const iIMDShape& Structure::get_IMD_shape() const
@@ -176,9 +176,9 @@ namespace Impl {
   unsigned Structure::calculate_sensor_range() const
   {
     if (stats->ecm_stats) {
-      return stats->ecm_stats->upgraded[get_player()].range;
+      return stats->ecm_stats->upgraded[getPlayer()].range;
     }
-    return stats->sensor_stats->upgraded[get_player()].range;
+    return stats->sensor_stats->upgraded[getPlayer()].range;
   }
 
 	int Structure::calculate_gate_height(const std::size_t time, const int minimum) const
@@ -187,7 +187,7 @@ namespace Impl {
       return 0;
     }
 
-		const auto height = get_display_data().imd_shape->max.y;
+		const auto height = getDisplayData().imd_shape->max.y;
 		int open_height;
 		switch (animation_state)  {
 		case OPEN:
@@ -259,25 +259,25 @@ namespace Impl {
 
 	bool being_built(const Structure& structure)
 	{
-		const auto& droids = droid_lists[structure.get_player()];
+		const auto& droids = droid_lists[structure.getPlayer()];
 		return std::any_of(droids.begin(), droids.end(),
                        [&structure](const auto& droid)
 		{
 			auto& order = droid.get_current_order();
 			return order.type == ORDER_TYPE::BUILD &&
-				order.target_object->get_id() == structure.get_id();
+              order.target_object->getId() == structure.getId();
 		});
 	}
 
 	bool being_demolished(const Structure& structure)
 	{
-		const auto& droids = droid_lists[structure.get_player()];
+		const auto& droids = droid_lists[structure.getPlayer()];
 		return std::any_of(droids.begin(), droids.end(),
                        [&structure](const auto& droid)
 		{
 			auto& order = droid.get_current_order();
 			return order.type == ORDER_TYPE::DEMOLISH &&
-				order.target_object->get_id() == structure.get_id();
+              order.target_object->getId() == structure.getId();
 		});
 	}
 
@@ -308,7 +308,7 @@ namespace Impl {
 				set_tile_height(coords.x + width, coords.y + breadth, new_height);
 
 				if (tile_is_occupied_by_feature(*get_map_tile(coords.x + width, coords.y + breadth)))  {
-					get_feature_from_tile(coords.x + width, coords.y + breadth)->set_height(new_height);
+          get_feature_from_tile(coords.x + width, coords.y + breadth)->setHeight(new_height);
 				}
 			}
 		}
@@ -405,11 +405,11 @@ namespace Impl {
       return false;
     }
 		auto& weapon = structure.get_weapons()[weapon_slot];
-		const auto max_range = weapon.get_max_range(structure.get_player());
+		const auto max_range = weapon.get_max_range(structure.getPlayer());
 
-		return object_position_square_diff(structure.get_position(),
-  target.get_position()) < max_range * max_range &&
-    			target_in_line_of_fire(structure, target, weapon_slot);
+		return objectPositionSquareDiff(structure.getPosition(),
+                                    target.getPosition()) < max_range * max_range &&
+           target_in_line_of_fire(structure, target, weapon_slot);
 	}
 }
 
@@ -421,7 +421,7 @@ namespace Impl {
 
 void Factory::increment_production_loops()
 {
-  assert(get_player() == selectedPlayer);
+  assert(getPlayer() == selectedPlayer);
 
   if (production_loops == MAX_IN_RUN)  {
     production_loops = 0;
@@ -435,7 +435,7 @@ void Factory::increment_production_loops()
 
 void Factory::decrement_production_loops()
 {
-  assert(get_player() == selectedPlayer);
+  assert(getPlayer() == selectedPlayer);
 
   if (production_loops == 0)  {
     production_loops = MAX_IN_RUN;
@@ -449,7 +449,7 @@ int ResourceExtractor::get_extracted_power() const
   if (!owning_power_generator) {
     return 0;
   }
-  return power_list[get_player()].modifier * EXTRACT_POINTS /
+  return power_list[getPlayer()].modifier * EXTRACT_POINTS /
          (100 * GAME_UPDATES_PER_SEC);
 }
 

@@ -61,7 +61,7 @@ public:
 
 	void updateData();
 	void toggleFavorites(StructureStats* buildOption);
-	void startBuildPosition(StructureStats* buildOption);
+	void startBuildPosition(StructureStats* buildOption) const;
 	bool showInterface() override;
 	void refresh() override;
 	void clearData() override;

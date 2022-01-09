@@ -274,12 +274,12 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 		pitchRate = rotRate / 2;
 	}
 
-	tRotation = psWeapon->get_rotation().direction;
-	tPitch = psWeapon->get_rotation().pitch;
+	tRotation = psWeapon->getRotation().direction;
+	tPitch = psWeapon->getRotation().pitch;
 
 	// set the pitch limits based on the weapon stats of the attacker
 	pitchLowerLimit = pitchUpperLimit = 0;
-	auto attackerMuzzlePos = psAttacker->get_position();
+	auto attackerMuzzlePos = psAttacker->getPosition();
 
 	// using for calculating the pitch, but not the direction, in case
   // using the exact direction causes bugs somewhere.
@@ -365,7 +365,7 @@ bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot
 	CHECK_DROID(psDroid);
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
 	ASSERT_OR_RETURN(false, psDroid->player < MAX_PLAYERS, "psDroid->player (%" PRIu8 ") must be < MAX_PLAYERS",
-	                 psDroid->get_player());
+                   psDroid->getPlayer());
 	if (!psTarget->visible[psDroid->player]) {
 		return false;
 	}
@@ -1954,7 +1954,7 @@ void actionUpdateDroid(Droid* psDroid)
 		{
 			Vector2i diff = (psDroid->pos - order->psObj->pos).xy();
 			//Consider .shortRange here
-			int rangeSq = asWeaponStats[psDroid->asWeaps[0].nStat].upgrade[psDroid->player].maxRange / 2;
+			int rangeSq = asWeaponStats[psDroid->asWeaps[0].nStat].upgraded[psDroid->player].maxRange / 2;
 			// move close to sensor
 			rangeSq = rangeSq * rangeSq;
 			if (dot(diff, diff) < rangeSq)

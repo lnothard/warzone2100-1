@@ -172,7 +172,7 @@ bool StructureBounds::is_valid() const
 StructureBounds get_bounds(const Structure& structure) noexcept
 {
   return  {
-          map_coord(structure.get_position().xy()) -
+					map_coord(structure.getPosition().xy()) -
           structure.get_size() / 2, structure.get_size()
   };
 }
@@ -229,7 +229,7 @@ void set_structure_blocking(const Impl::Structure& structure)
     {
       aux_set_allied(bounds.top_left_coords.x + i,
                      bounds.top_left_coords.y + j,
-                     structure.get_player(),
+                     structure.getPlayer(),
                      AUX_OUR_BUILDING);
 
       aux_set_all(bounds.top_left_coords.x + i,
@@ -288,7 +288,7 @@ void close_gate(const Impl::Structure& structure)
     {
       aux_set_enemy(bounds.top_left_coords.x + i,
                     bounds.top_left_coords.y + j,
-                    structure.get_player(),
+                    structure.getPlayer(),
                     AUX_NON_PASSABLE);
 
       aux_set_all(bounds.top_left_coords.x + i,
@@ -1466,8 +1466,8 @@ void align_structure(Structure& structure)
   {
     const auto map_height = calculate_foundation_height(structure);
     adjust_tile_height(structure, map_height);
-    structure.set_height(map_height);
-    structure.set_foundation_depth(structure.get_position().z);
+    structure.setHeight(map_height);
+    structure.set_foundation_depth(structure.getPosition().z);
 
     const auto& bounds = get_bounds(structure);
     const auto x_max = bounds.size_in_coords.x;
@@ -1489,28 +1489,28 @@ void align_structure(Structure& structure)
   }
   else
   {
-    const auto& imd = structure.get_display_data().imd_shape;
-    structure.set_height(TILE_MIN_HEIGHT);
+    const auto& imd = structure.getDisplayData().imd_shape;
+    structure.setHeight(TILE_MIN_HEIGHT);
     structure.set_foundation_depth(TILE_MAX_HEIGHT);
 
-    const auto dir = iSinCosR(structure.get_rotation().direction, 1);
+    const auto dir = iSinCosR(structure.getRotation().direction, 1);
 
     // rotate imd->max.{x, z} and imd->min.{x, z} by angle rot.direction.
     Vector2i pos1{imd->max.x * dir.y - imd->max.z * dir.x, imd->max.x * dir.x + imd->max.z * dir.y};
     Vector2i pos2{imd->min.x * dir.y - imd->min.z * dir.x, imd->min.x * dir.x + imd->min.z * dir.y};
 
-    const auto height1 = calculate_map_height(structure.get_position().x + pos1.x,
-                                              structure.get_position().y + pos2.y);
-    const auto height2 = calculate_map_height(structure.get_position().x + pos1.x,
-                                              structure.get_position().y + pos1.y);
-    const auto height3 = calculate_map_height(structure.get_position().x + pos2.x,
-                                              structure.get_position().y + pos1.y);
-    const auto height4 = calculate_map_height(structure.get_position().x + pos2.x,
-                                              structure.get_position().y + pos2.y);
+    const auto height1 = calculate_map_height(structure.getPosition().x + pos1.x,
+																							structure.getPosition().y + pos2.y);
+    const auto height2 = calculate_map_height(structure.getPosition().x + pos1.x,
+																							structure.getPosition().y + pos1.y);
+    const auto height3 = calculate_map_height(structure.getPosition().x + pos2.x,
+																							structure.getPosition().y + pos1.y);
+    const auto height4 = calculate_map_height(structure.getPosition().x + pos2.x,
+																							structure.getPosition().y + pos2.y);
 
     const auto min_height = std::min({height1, height2, height3, height4});
     const auto max_height = std::max({height1, height2, height3, height4});
-    structure.set_height(std::max(structure.get_position().z, max_height));
+    structure.setHeight(std::max(structure.getPosition().z, max_height));
     structure.set_foundation_depth(std::min<int>(structure.get_foundation_depth(), min_height));
   }
 }
@@ -3739,7 +3739,7 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 					{
 						// set rearm value to no runs made
 						psDroid->asWeaps[i].ammo_used = 0;
-						psDroid->asWeaps[i].ammo = asWeaponStats[psDroid->asWeaps[i].nStat].upgrade[psDroid->player].
+						psDroid->asWeaps[i].ammo = asWeaponStats[psDroid->asWeaps[i].nStat].upgraded[psDroid->player].
 							numRounds;
 						psDroid->asWeaps[i].time_last_fired = 0;
 					}
@@ -3750,7 +3750,7 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 					for (unsigned i = 0; i < psDroid->numWeaps; i++) // rearm one weapon at a time
 					{
 						// Make sure it's a rearmable weapon (and so we don't divide by zero)
-						if (psDroid->asWeaps[i].ammo_used > 0 && asWeaponStats[psDroid->asWeaps[i].nStat].upgrade[psDroid
+						if (psDroid->asWeaps[i].ammo_used > 0 && asWeaponStats[psDroid->asWeaps[i].nStat].upgraded[psDroid
 							->player].numRounds > 0)
 						{
 							// Do not "simplify" this formula.
@@ -3763,7 +3763,7 @@ static void aiUpdateStructure(Structure* psStructure, bool isMission)
 							if (ammoToAddThisTime)
 							{
 								// reset ammo and lastFired
-								psDroid->asWeaps[i].ammo = asWeaponStats[psDroid->asWeaps[i].nStat].upgrade[psDroid->
+								psDroid->asWeaps[i].ammo = asWeaponStats[psDroid->asWeaps[i].nStat].upgraded[psDroid->
 									player].numRounds;
 								psDroid->asWeaps[i].time_last_fired = 0;
 								break;
@@ -5640,8 +5640,8 @@ unsigned count_assigned_droids(const Structure& structure)
   return std::count_if(droids.begin(), droids.end(),
                        [&structure](const auto& droid)
   {
-    if (droid.get_current_order().target_object->get_id() == structure.get_id() &&
-        droid.get_player() == structure.get_player())  {
+    if (droid.get_current_order().target_object->getId() == structure.getId() &&
+            droid.getPlayer() == structure.getPlayer())  {
       return droid.isVtol() || has_artillery(structure);
     }
   });

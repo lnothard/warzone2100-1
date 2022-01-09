@@ -102,7 +102,7 @@ static void asyncGetDiscordDefaultUserAvatar(const std::string& discord_user_dis
 		callback(memoryBuffer);
 	};
 	urlRequest.onFailure = [callback](const std::string& url, URLRequestFailureType type,
-	                                  optional<HTTPResponseDetails> transferDetails)
+	                                  const optional<HTTPResponseDetails>& transferDetails)
 	{
 		callback(nullopt);
 	};
@@ -167,7 +167,7 @@ static void asyncGetDiscordUserAvatar(const DiscordUser* request,
 		callback(memoryBuffer);
 	};
 	urlRequest.onFailure = [callback, discord_user_discriminator](const std::string& url, URLRequestFailureType type,
-	                                                              optional<HTTPResponseDetails> transferDetails)
+	                                                              const optional<HTTPResponseDetails>& transferDetails)
 	{
 		// fallback
 		asyncGetDiscordDefaultUserAvatar(discord_user_discriminator, callback);
@@ -193,7 +193,7 @@ static std::string getAllianceString(const ActivitySink::MultiplayerGameInfo& in
 }
 
 static std::string truncateStringIfExceedsLength(const std::string& inputStr, size_t maxLen,
-                                                 std::string ellipsis = "...")
+                                                 const std::string& ellipsis = "...")
 {
 	if (inputStr.size() > maxLen)
 	{
@@ -299,7 +299,7 @@ static bool isTrustedLobbyServer(const std::string& lobbyAddress, unsigned int l
 	return lobbyAddress == "lobby.wz2100.net";
 }
 
-static void joinGameFromSecret_v1(const std::string joinSecretStr)
+static void joinGameFromSecret_v1(const std::string& joinSecretStr)
 {
 	std::vector<JoinConnectionDescription> joinConnectionDetails;
 
@@ -454,7 +454,7 @@ static void joinGameFromSecret_v1(const std::string joinSecretStr)
 				displayErrorNotification("Join code: Invalid connecting port");
 				return;
 			}
-			joinConnectionDetails.push_back(JoinConnectionDescription(ipAddressStr, port));
+			joinConnectionDetails.emplace_back(ipAddressStr, port);
 		}
 
 		if (joinConnectionDetails.empty())
@@ -490,7 +490,7 @@ static void joinGameFromSecret_v1(const std::string joinSecretStr)
 }
 
 // May complete asynchronously / prompt the user / etc
-static void joinGameFromSecret(const std::string joinSecret)
+static void joinGameFromSecret(const std::string& joinSecret)
 {
 	if (joinSecret.rfind("v1/", 0) == 0)
 	{
@@ -502,7 +502,7 @@ static void joinGameFromSecret(const std::string joinSecret)
 	{
 		// unknown / unsupported join code version
 		std::string firstComponent;
-		size_t firstComponentEnd = joinSecret.find("/");
+		size_t firstComponentEnd = joinSecret.find('/');
 		if (firstComponentEnd != std::string::npos)
 		{
 			firstComponent = joinSecret.substr(0, firstComponentEnd);
@@ -578,7 +578,7 @@ public:
 	}
 
 	// campaign games
-	virtual void startedCampaignMission(const std::string& campaign, const std::string& levelName) override
+	void startedCampaignMission(const std::string& campaign, const std::string& levelName) override
 	{
 		cancelOrDismissJoinNotifications();
 		int64_t oldStartTimestamp = currentRichPresenceData.startTimestamp;
@@ -593,7 +593,7 @@ public:
 		updateDiscordPresence();
 	}
 
-	virtual void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result,
+	void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result,
 	                                  END_GAME_STATS_DATA stats, bool cheatsUsed) override
 	{
 		if (result == GameEndReason::QUIT)
@@ -607,7 +607,7 @@ public:
 	}
 
 	// challenges
-	virtual void startedChallenge(const std::string& challengeName) override
+	void startedChallenge(const std::string& challengeName) override
 	{
 		cancelOrDismissJoinNotifications();
 
@@ -619,14 +619,14 @@ public:
 		updateDiscordPresence();
 	}
 
-	virtual void endedChallenge(const std::string& challengeName, GameEndReason result,
+	void endedChallenge(const std::string& challengeName, GameEndReason result,
 	                            const END_GAME_STATS_DATA& stats, bool cheatsUsed) override
 	{
 		setDiscordStatus_InMenus();
 		updateDiscordPresence();
 	}
 
-	virtual void startedSkirmishGame(const SkirmishGameInfo& info) override
+	void startedSkirmishGame(const SkirmishGameInfo& info) override
 	{
 		cancelOrDismissJoinNotifications();
 
@@ -652,7 +652,7 @@ public:
 		updateDiscordPresence();
 	}
 
-	virtual void endedSkirmishGame(const SkirmishGameInfo& info, GameEndReason result,
+	void endedSkirmishGame(const SkirmishGameInfo& info, GameEndReason result,
 	                               const END_GAME_STATS_DATA& stats) override
 	{
 		setDiscordStatus_InMenus();
@@ -660,9 +660,9 @@ public:
 	}
 
 	// multiplayer
-	virtual void hostingMultiplayerGame(const MultiplayerGameInfo& info) override;
+	void hostingMultiplayerGame(const MultiplayerGameInfo& info) override;
 
-	virtual void joinedMultiplayerGame(const MultiplayerGameInfo& info) override
+	void joinedMultiplayerGame(const MultiplayerGameInfo& info) override
 	{
 		cancelOrDismissNotificationsWithTag(JOIN_FIND_AND_CONNECT_TAG);
 		currentRichPresenceData.clear();
@@ -674,19 +674,19 @@ public:
 		updateDiscordPresence();
 	}
 
-	virtual void updateMultiplayerGameInfo(const MultiplayerGameInfo& info) override
+	void updateMultiplayerGameInfo(const MultiplayerGameInfo& info) override
 	{
 		setBaseMultiplayerGameInfo(info);
 		updateDiscordPresence();
 	}
 
-	virtual void leftMultiplayerGameLobby(bool wasHost, LOBBY_ERROR_TYPES type) override
+	void leftMultiplayerGameLobby(bool wasHost, LOBBY_ERROR_TYPES type) override
 	{
 		setDiscordStatus_InMenus();
 		updateDiscordPresence();
 	}
 
-	virtual void startedMultiplayerGame(const MultiplayerGameInfo& info) override
+	void startedMultiplayerGame(const MultiplayerGameInfo& info) override
 	{
 		cancelOrDismissJoinNotifications();
 		lastDismissedJoinRequestByUserId.clear();
@@ -703,7 +703,7 @@ public:
 		updateDiscordPresence();
 	}
 
-	virtual void endedMultiplayerGame(const MultiplayerGameInfo& info, GameEndReason result,
+	void endedMultiplayerGame(const MultiplayerGameInfo& info, GameEndReason result,
 	                                  const END_GAME_STATS_DATA& stats) override
 	{
 		lastDismissedJoinRequestByUserId.clear();
@@ -940,23 +940,23 @@ void DiscordRPCActivitySink::setBaseMultiplayerGameInfo(const MultiplayerGameInf
 		std::vector<std::string> limits;
 		if (info.limit_no_tanks) ///< Flag for tanks disabled
 		{
-			limits.push_back("Tanks");
+			limits.emplace_back("Tanks");
 		}
 		if (info.limit_no_cyborgs) ///< Flag for cyborgs disabled
 		{
-			limits.push_back("Cyborgs");
+			limits.emplace_back("Cyborgs");
 		}
 		if (info.limit_no_vtols) ///< Flag for VTOLs disabled
 		{
-			limits.push_back("VTOLs");
+			limits.emplace_back("VTOLs");
 		}
 		if (info.limit_no_uplink) ///< Flag for Satellite Uplink disabled
 		{
-			limits.push_back("Uplink");
+			limits.emplace_back("Uplink");
 		}
 		if (info.limit_no_lassat) ///< Flag for Laser Satellite Command Post disabled
 		{
-			limits.push_back("Lassat");
+			limits.emplace_back("Lassat");
 		}
 		if (!limits.empty())
 		{
@@ -1136,7 +1136,7 @@ static void handleDiscordJoinRequest(const DiscordUser* request)
 
 	// Asynchronously request the user's avatar, and then prompt for permission to join
 	asyncGetDiscordUserAvatar(
-		request, [userId, username, discriminator, notificationTag](optional<std::vector<unsigned char>> imageData)
+		request, [userId, username, discriminator, notificationTag](const optional<std::vector<unsigned char>>& imageData)
 		{
 			// dispatch back to main thread
 			wzAsyncExecOnMainThread([userId, username, discriminator, notificationTag, imageData]()

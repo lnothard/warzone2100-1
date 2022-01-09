@@ -264,7 +264,7 @@ unsigned Droid::commander_max_group_size() const
 {
 	assert(is_commander(*this) && group->is_command_group());
 
-	auto& cmd_stats = brain->upgraded[get_player()];
+	auto& cmd_stats = brain->upgraded[getPlayer()];
 	return get_level() * cmd_stats.max_droids_multiplier + cmd_stats.max_droids_assigned;
 }
 
@@ -399,7 +399,7 @@ const SimpleObject& Droid::get_target(int weapon_slot) const
   return *action_target[weapon_slot];
 }
 
-const std::optional<PropulsionStats>& Droid::get_propulsion() const
+const std::optional<PropulsionStats>& Droid::getPropulsion() const
 {
   return propulsion;
 }
@@ -475,8 +475,8 @@ int Droid::calculate_attack_priority(const Unit* target, int weapon_slot) const
     is_direct = !attacker_weapon.is_artillery();
   }
 
-  auto distance = iHypot((get_position() - target->get_position()).xy());
-  if (distance <= attacker_weapon.get_min_range(get_player())) {
+  auto distance = iHypot((getPosition() - target->getPosition()).xy());
+  if (distance <= attacker_weapon.get_min_range(getPlayer())) {
     // If object is too close to fire at, consider it to be at maximum range.
     distance = calculate_sensor_range();
   }
@@ -688,14 +688,14 @@ uint8_t is_target_visible(const Droid& droid, const SimpleObject* target, bool w
 	constexpr static uint8_t RADAR_BLIP = UBYTE_MAX / 2;
 	constexpr static uint8_t NOT_VISIBLE = 0;
 
-	auto& droid_position = droid.get_position();
-	auto& target_position = target->get_position();
+	auto& droid_position = droid.getPosition();
+	auto& target_position = target->getPosition();
 
 	if (!is_coord_on_map(droid_position.x, droid_position.y) ||
 		!is_coord_on_map(target_position.x, target_position.y))
 		return 0;
 
-	if (droid.get_current_order().target_object->get_id() == target->get_id() && droid.has_CB_sensor())
+	if (droid.get_current_order().target_object->getId() == target->getId() && droid.has_CB_sensor())
 		return VISIBLE;
 
 	const auto range = droid.calculate_sensor_range();
@@ -704,7 +704,7 @@ uint8_t is_target_visible(const Droid& droid, const SimpleObject* target, bool w
 	if (distance == 0) return VISIBLE;
 
 	const auto target_tile = get_map_tile(map_coord(target_position.x), map_coord(target_position.y));
-	bool is_jammed = target_tile->jammer_bits & ~alliance_bits[droid.get_player()];
+	bool is_jammed = target_tile->jammer_bits & ~alliance_bits[droid.getPlayer()];
 
 	if (distance < range)
 	{
@@ -717,8 +717,8 @@ uint8_t is_target_visible(const Droid& droid, const SimpleObject* target, bool w
 		}
 	}
 
-	const auto is_tile_watched = target_tile->watchers[droid.get_player()] > 0;
-	const auto is_tile_watched_by_sensors = target_tile->watching_sensors[droid.get_player()] > 0;
+	const auto is_tile_watched = target_tile->watchers[droid.getPlayer()] > 0;
+	const auto is_tile_watched_by_sensors = target_tile->watching_sensors[droid.getPlayer()] > 0;
 
 	if (is_tile_watched || is_tile_watched_by_sensors)
 	{
@@ -733,7 +733,7 @@ uint8_t is_target_visible(const Droid& droid, const SimpleObject* target, bool w
 		}
 	}
 
-	if (droid.is_radar_detector() &&)
+	if (droid.isRadarDetector() &&)
 		return RADAR_BLIP;
 
 	return NOT_VISIBLE;
@@ -743,8 +743,8 @@ bool action_target_inside_minimum_weapon_range(const Droid& droid, const Unit& t
 {
 	if (num_weapons(droid) == 0) return false;
 
-  const auto square_diff = object_position_square_diff(droid, target);
-	const auto min_range = droid.get_weapons()[weapon_slot].get_min_range(droid.get_player());
+  const auto square_diff = objectPositionSquareDiff(droid, target);
+	const auto min_range = droid.get_weapons()[weapon_slot].get_min_range(droid.getPlayer());
 	const auto range_squared = min_range * min_range;
 
 	if (square_diff <= range_squared) return true;
@@ -753,8 +753,8 @@ bool action_target_inside_minimum_weapon_range(const Droid& droid, const Unit& t
 
 bool target_within_weapon_range(const Droid& droid, const Unit& target, int weapon_slot)
 {
-	const auto max_range = droid.get_weapons()[weapon_slot].get_max_range(droid.get_player());
-	return object_position_square_diff(droid, target) < max_range * max_range;
+	const auto max_range = droid.get_weapons()[weapon_slot].get_max_range(droid.getPlayer());
+	return objectPositionSquareDiff(droid, target) < max_range * max_range;
 }
 
 void initialise_ai_bits()
@@ -791,9 +791,9 @@ void add_VTOL_attack_run(const Droid& droid)
     target = droid.get_current_order().target_object;
     if (!target) return;
   }
-  const auto delta = (target->get_position() - droid.get_position()).xy();
+  const auto delta = (target->getPosition() - droid.getPosition()).xy();
   const auto distance = std::max(iHypot(delta), 1);
-  auto destination = target->get_position().xy() + delta * VTOL_ATTACK_LENGTH / distance;
+  auto destination = target->getPosition().xy() + delta * VTOL_ATTACK_LENGTH / distance;
 
   if (is_coord_on_map(destination))
   {
@@ -824,8 +824,8 @@ void update_vtol_attack(Droid& droid)
 
 Vector2i determine_fallback_position(Unit& unit, Unit& target)
 {
-  auto x_diff = unit.get_position().x - target.get_position().x;
-  auto y_diff = unit.get_position().y - target.get_position().y;
+  auto x_diff = unit.getPosition().x - target.getPosition().x;
+  auto y_diff = unit.getPosition().y - target.getPosition().y;
   const auto length = iHypot(x_diff, y_diff);
 
   if (length == 0)  {
@@ -836,8 +836,8 @@ Vector2i determine_fallback_position(Unit& unit, Unit& target)
   }
 
   auto fallback_position =
-          Vector2i{unit.get_position().x + x_diff * FALLBACK_DISTANCE,
-                   unit.get_position().y + y_diff * FALLBACK_DISTANCE};
+          Vector2i{unit.getPosition().x + x_diff * FALLBACK_DISTANCE,
+                   unit.getPosition().y + y_diff * FALLBACK_DISTANCE};
 
   clip_coords(fallback_position);
   return fallback_position;
@@ -845,8 +845,8 @@ Vector2i determine_fallback_position(Unit& unit, Unit& target)
 
 bool droids_are_neighbours(const Droid& first, const Droid& second)
 {
-  const auto first_coord = map_coord(first.get_position().xy());
-  const auto second_coord = map_coord(second.get_position().xy());
+  const auto first_coord = map_coord(first.getPosition().xy());
+  const auto second_coord = map_coord(second.getPosition().xy());
   const auto delta = first_coord - second_coord;
 
   return delta.x >= -1 && delta.x <= 1 &&
@@ -867,7 +867,7 @@ bool droids_are_neighbours(const Droid& first, const Droid& second)
 
 const RearmPad* find_nearest_rearm_pad(const Droid& droid)
 {
-  const auto& structures = structure_lists[droid.get_player()];
+  const auto& structures = structure_lists[droid.getPlayer()];
   const RearmPad* nearest = nullptr;
   auto shortest_distance = INT32_MAX;
 
@@ -880,7 +880,7 @@ const RearmPad* find_nearest_rearm_pad(const Droid& droid)
     if (!rearm_pad->is_clear())
       return;
 
-    const auto distance = object_position_square_diff(droid.get_position(), rearm_pad->get_position());
+    const auto distance = objectPositionSquareDiff(droid.getPosition(), rearm_pad->getPosition());
     if (distance < shortest_distance) {
       shortest_distance = distance;
       nearest = rearm_pad;

@@ -23,7 +23,7 @@
  * Object memory management functions.
  *
  */
-#include <string.h>
+#include <cstring>
 
 #include "lib/framework/frame.h"
 #include "objects.h"
@@ -106,7 +106,7 @@ static bool checkReferences(SimpleObject* psVictim)
 
 			ASSERT_OR_RETURN(false, psDroid->order.psObj != psVictim, "Illegal reference to object %d", psVictim->id);
 
-			ASSERT_OR_RETURN(false, psDroid->associated_structure != psVictim, "Illegal reference to object %d", psVictim->id);
+			ASSERT_OR_RETURN(false, psDroid->associatedStructure != psVictim, "Illegal reference to object %d", psVictim->id);
 
 			for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 			{

@@ -11,7 +11,7 @@ Spacetime::Spacetime(std::size_t time, Position position, Rotation rotation)
 
 namespace Impl
 {
-	Spacetime SimpleObject::get_spacetime() const noexcept
+	Spacetime SimpleObject::getSpacetime() const noexcept
 	{
 		return {time, position, rotation};
 	}
@@ -21,52 +21,52 @@ namespace Impl
 	{
 	}
 
-	const Position& SimpleObject::get_position() const noexcept
+	const Position& SimpleObject::getPosition() const noexcept
 	{
 		return position;
 	}
 
-	const Rotation& SimpleObject::get_rotation() const noexcept
+	const Rotation& SimpleObject::getRotation() const noexcept
 	{
 		return rotation;
 	}
 
-	unsigned SimpleObject::get_player() const noexcept
+	unsigned SimpleObject::getPlayer() const noexcept
 	{
 		return player;
 	}
 
-	unsigned SimpleObject::get_id() const noexcept
+	unsigned SimpleObject::getId() const noexcept
 	{
 		return id;
 	}
 
-  const DisplayData& SimpleObject::get_display_data() const noexcept
+  const DisplayData& SimpleObject::getDisplayData() const noexcept
   {
     return *display;
   }
 
-	void SimpleObject::set_height(int height) noexcept
+	void SimpleObject::setHeight(int height) noexcept
 	{
 		position.z = height;
 	}
 
-	void SimpleObject::set_rotation(Rotation new_rotation) noexcept
+	void SimpleObject::setRotation(Rotation new_rotation) noexcept
 	{
 		rotation = new_rotation;
 	}
 
-  bool SimpleObject::is_selectable() const
+  bool SimpleObject::isSelectable() const
   {
     return flags.test(static_cast<std::size_t>(OBJECT_FLAG::UNSELECTABLE));
   }
 
-  uint8_t SimpleObject::visible_to_selected_player() const
+  uint8_t SimpleObject::visibleToSelectedPlayer() const
   {
-    return visible_to_player(selectedPlayer);
+    return visibleToPlayer(selectedPlayer);
   }
 
-  uint8_t SimpleObject::visible_to_player(unsigned watcher) const
+  uint8_t SimpleObject::visibleToPlayer(unsigned watcher) const
   {
     if (god_mode) {
       return UBYTE_MAX;
@@ -74,20 +74,20 @@ namespace Impl
     if (watcher >= MAX_PLAYERS) {
       return 0;
     }
-    return visibility_state[watcher];
+    return visibilityState[watcher];
   }
 }
 
-int object_position_square_diff(const Position& first,
-                                const Position& second)
+int objectPositionSquareDiff(const Position& first,
+                             const Position& second)
 {
   Vector2i diff = (first - second).xy();
   return dot(diff, diff);
 }
 
-int object_position_square_diff(const SimpleObject& first,
-                                const SimpleObject& second)
+int objectPositionSquareDiff(const SimpleObject& first,
+                             const SimpleObject& second)
 {
-  return object_position_square_diff(first.get_position(),
-                                     second.get_position());
+  return objectPositionSquareDiff(first.getPosition(),
+                                  second.getPosition());
 }

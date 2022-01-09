@@ -352,7 +352,7 @@ static void moveShuffleDroid(Droid* psDroid, Vector2i s)
 		psDroid->movement.shuffleStart = gameTime;
 	}
 	psDroid->movement.status = MOVESHUFFLE;
-	psDroid->movement.src = psDroid->pos.xy();
+	psDroid->movement.origin = psDroid->pos.xy();
 	psDroid->movement.target = tar;
 	psDroid->movement.path.clear();
 	psDroid->movement.pathIndex = 0;
@@ -517,7 +517,7 @@ static bool moveBestTarget(Droid* psDroid)
 		}
 	}
 	psDroid->movement.pathIndex = positionIndex + 1;
-	psDroid->movement.src = psDroid->pos.xy();
+	psDroid->movement.origin = psDroid->pos.xy();
 	psDroid->movement.target = psDroid->movement.path[positionIndex];
 	return true;
 }
@@ -538,11 +538,11 @@ static bool moveNextTarget(Droid* psDroid)
 
 	if (psDroid->movement.pathIndex == 0)
 	{
-		psDroid->movement.src = psDroid->pos.xy();
+		psDroid->movement.origin = psDroid->pos.xy();
 	}
 	else
 	{
-		psDroid->movement.src = psDroid->movement.path[psDroid->movement.pathIndex - 1];
+		psDroid->movement.origin = psDroid->movement.path[psDroid->movement.pathIndex - 1];
 	}
 	psDroid->movement.target = psDroid->movement.path[psDroid->movement.pathIndex];
 	++psDroid->movement.pathIndex;

@@ -30,6 +30,8 @@
 #include "lib/netplay/netplay.h"
 
 #include "template.h"
+
+#include <memory>
 #include "mission.h"
 #include "objects.h"
 #include "droid.h"
@@ -231,7 +233,7 @@ bool loadTemplateCommon(WzConfig& ini, DroidTemplate& outputTemplate)
 	ASSERT(weapons.size() <= MAX_WEAPONS, "Number of weapons (%zu) exceeds MAX_WEAPONS (%d)", weapons.size(),
 	       MAX_WEAPONS);
 	design.weaponCount = (weapons.size() <= MAX_WEAPONS) ? (int8_t)weapons.size() : MAX_WEAPONS;
-	if (!droidTemplate_LoadWeapByName(0, (weapons.size() >= 1) ? weapons[0] : "ZNULLWEAPON", design)) return false;
+	if (!droidTemplate_LoadWeapByName(0, (!weapons.empty()) ? weapons[0] : "ZNULLWEAPON", design)) return false;
 	if (!droidTemplate_LoadWeapByName(1, (weapons.size() >= 2) ? weapons[1] : "ZNULLWEAPON", design)) return false;
 	if (!droidTemplate_LoadWeapByName(2, (weapons.size() >= 3) ? weapons[2] : "ZNULLWEAPON", design)) return false;
 
@@ -464,9 +466,9 @@ bool loadDroidTemplates(const char* filename)
 {
 	WzConfig ini(filename, WzConfig::ReadOnlyAndRequired);
 	std::vector<WzString> list = ini.childGroups();
-	for (int i = 0; i < list.size(); ++i)
+	for (auto & i : list)
 	{
-		ini.beginGroup(list[i]);
+		ini.beginGroup(i);
 		DroidTemplate design;
 		if (!loadTemplateCommon(ini, design))
 		{
@@ -474,14 +476,14 @@ bool loadDroidTemplates(const char* filename)
 			      ini.string("name").toUtf8().c_str());
 			continue;
 		}
-		design.id = list[i];
+		design.id = i;
 		design.name = ini.string("name");
 		design.id = generateNewObjectId();
 		design.isPrefab = true;
 		design.isStored = false;
 		design.isEnabled = true;
 		bool available = ini.value("available", false).toBool();
-		char const* droidResourceName = getDroidResourceName(list[i].toUtf8().c_str());
+		char const* droidResourceName = getDroidResourceName(i.toUtf8().c_str());
 		design.name = WzString::fromUtf8(droidResourceName != nullptr
 			                                 ? droidResourceName
 			                                 : GetDefaultTemplateName(&design));
@@ -532,7 +534,7 @@ bool loadDroidTemplates(const char* filename)
 
 DroidTemplate* copyTemplate(int player, DroidTemplate* psTemplate)
 {
-	auto dup = std::unique_ptr<DroidTemplate>(new DroidTemplate(*psTemplate));
+	auto dup = std::make_unique<DroidTemplate>(*psTemplate);
 	return addTemplate(player, std::move(dup));
 }
 
@@ -751,7 +753,7 @@ std::vector<DroidTemplate*> fillTemplateList(Structure* psFactory)
 	std::vector<DroidTemplate*> pList;
 	const int player = psFactory->player;
 
-	BODY_SIZE iCapacity = (BODY_SIZE)psFactory->capacity;
+	auto iCapacity = (BODY_SIZE)psFactory->capacity;
 
 	/* Add the templates to the list*/
 	for (DroidTemplate& i : localTemplates)

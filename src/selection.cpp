@@ -31,8 +31,6 @@
 
 #include "objects.h"
 #include "basedef.h"
-#include "droiddef.h"
-#include "statsdef.h"
 #include "geometry.h"
 #include "console.h"
 #include "selection.h"
@@ -60,12 +58,12 @@ static unsigned selSelectUnitsIf(unsigned player, T condition, bool onlyOnScreen
 	selDroidDeselect(player);
 
 	// Go through all.
-	for (Droid* psDroid = apsDroidLists[player]; psDroid != nullptr; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[player])
 	{
-		bool shouldSelect = (!onlyOnScreen || objectOnScreen(psDroid, 0)) &&
-			condition(psDroid);
+		bool shouldSelect = (!onlyOnScreen || objectOnScreen(&psDroid, 0)) &&
+			condition(&psDroid);
 		count += shouldSelect;
-		if (shouldSelect && !psDroid->selected && !psDroid->flags.test(OBJECT_FLAG_UNSELECTABLE))
+		if (shouldSelect && !psDroid.selected && !psDroid.flags.test(OBJECT_FLAG_UNSELECTABLE))
 		{
 			SelectDroid(psDroid);
 		}

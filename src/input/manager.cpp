@@ -31,7 +31,6 @@
 #include "mapping.h"
 
 #include "../keybind.h"
-#include "../keyedit.h"
 #include "../display3d.h"   // For playerPos
 #include "../qtscript.h"    // For triggerEventKeyPressed
 #include "../main.h"        // For KeyMapPath
@@ -188,7 +187,7 @@ void InputManager::updateMapMarkers()
 	}
 
 	const auto existing = keyMappings.find(KEY_CODE::KEY_LSHIFT, qKey);
-	if (existing.size() > 0 && std::any_of(existing.begin(), existing.end(), [](const KeyMapping& mapping)
+	if (!existing.empty() && std::any_of(existing.begin(), existing.end(), [](const KeyMapping& mapping)
 	{
 		return mapping.info.name != "JumpToMapMarker";
 	}))

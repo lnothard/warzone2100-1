@@ -4,6 +4,8 @@
 #include "lib/widget/label.h"
 #include "lib/widget/bar.h"
 #include "build.h"
+
+#include <utility>
 #include "../objmem.h"
 #include "../order.h"
 #include "../qtscript.h"
@@ -85,7 +87,7 @@ StructureStats* BuildController::getObjectStatsAt(size_t objectIndex) const
 }
 
 
-void BuildController::startBuildPosition(StructureStats* buildOption)
+void BuildController::startBuildPosition(StructureStats* buildOption) const
 {
 	auto builder = getHighlightedObject();
 	ASSERT_NOT_NULLPTR_OR_RETURN(, builder);
@@ -166,8 +168,8 @@ private:
 	typedef ObjectButton BaseWidget;
 
 public:
-	BuildObjectButton(const std::shared_ptr<BuildController>& controller, size_t newObjectIndex)
-		: controller(controller)
+	BuildObjectButton(std::shared_ptr<BuildController>  controller, size_t newObjectIndex)
+		: controller(std::move(controller))
 	{
 		objectIndex = newObjectIndex;
 	}
@@ -209,7 +211,7 @@ protected:
 
 	BuildController& getController() const override
 	{
-		return *controller.get();
+		return *controller;
 	}
 
 	std::string getTip() override
@@ -230,8 +232,7 @@ private:
 
 protected:
 	BuildStatsButton()
-	{
-	}
+	= default;
 
 public:
 	static std::shared_ptr<BuildStatsButton> make(const std::shared_ptr<BuildController>& controller,
@@ -548,7 +549,7 @@ public:
 protected:
 	BuildController& getController() const override
 	{
-		return *controller.get();
+		return *controller;
 	}
 
 private:
@@ -581,7 +582,7 @@ public:
 protected:
 	BuildController& getController() const override
 	{
-		return *controller.get();
+		return *controller;
 	}
 
 private:

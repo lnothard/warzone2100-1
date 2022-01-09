@@ -19,8 +19,8 @@
 */
 
 #include <limits>
-#include <list>
 #include <functional>
+#include <utility>
 
 #include "context.h"
 #include "debugmappings.h"
@@ -94,18 +94,18 @@ InputContext::InputContext(const ContextId id, const bool bIsAlwaysActive, const
 static unsigned int inputCtxIndexCounter = 0;
 
 InputContext::InputContext(const ContextId id, const bool bIsAlwaysActive, const ContextPriority priority,
-                           const State initialState, const char* const displayName, const PriorityCondition condition)
+                           const State initialState, const char* const displayName, PriorityCondition  condition)
 	: id(id)
 	  , bIsAlwaysActive(bIsAlwaysActive)
 	  , priority(priority)
 	  , index(inputCtxIndexCounter++)
 	  , displayName(displayName)
 	  , defaultState(initialState)
-	  , condition(condition)
+	  , condition(std::move(condition))
 {
 }
 
-const std::string InputContext::getDisplayName() const
+std::string InputContext::getDisplayName() const
 {
 	return displayName;
 }
@@ -219,7 +219,7 @@ void ContextManager::updatePriorityStatus()
 	}
 }
 
-void ContextManager::registerContext(InputContext context)
+void ContextManager::registerContext(const InputContext& context)
 {
 	contexts.insert({context.id, context});
 }

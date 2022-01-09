@@ -5678,7 +5678,7 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 			psDroid->movement.path[j] = ini.vector2i("pathNode/" + WzString::number(j));
 		}
 		psDroid->movement.destination = ini.vector2i("moveDestination");
-		psDroid->movement.src = ini.vector2i("moveSource");
+		psDroid->movement.origin = ini.vector2i("moveSource");
 		psDroid->movement.target = ini.vector2i("moveTarget");
 		psDroid->movement.speed = ini.value("moveSpeed").toInt();
 		psDroid->movement.moveDir = ini.value("moveDirection").toInt();
@@ -5837,7 +5837,7 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 		droidObj["pathNode/" + WzString::number(i).toStdString()] = psCurr->movement.path[i];
 	}
 	droidObj["moveDestination"] = psCurr->movement.destination;
-	droidObj["moveSource"] = psCurr->movement.src;
+	droidObj["moveSource"] = psCurr->movement.origin;
 	droidObj["moveTarget"] = psCurr->movement.target;
 	droidObj["moveSpeed"] = psCurr->movement.speed;
 	droidObj["moveDirection"] = psCurr->movement.moveDir;

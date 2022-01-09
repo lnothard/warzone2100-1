@@ -98,9 +98,9 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 		}
 		break;
 	case RENDER_PROJECTILE:
-		if (((Projectile*)pObject)->psWStats->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
-        ((Projectile*)pObject)->psWStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND ||
-        ((Projectile*)pObject)->psWStats->weaponSubClass == WEAPON_SUBCLASS::EMP)
+		if (((Projectile*)pObject)->weaponStats->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
+        ((Projectile*)pObject)->weaponStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND ||
+        ((Projectile*)pObject)->weaponStats->weaponSubClass == WEAPON_SUBCLASS::EMP)
 		{
 			/* We don't do projectiles from these guys, cos there's an effect instead */
 			z = -1;
@@ -108,7 +108,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 		else
 		{
 			//the weapon stats holds the reference to which graphic to use
-			pImd = ((Projectile*)pObject)->psWStats->pInFlightGraphic;
+			pImd = ((Projectile*)pObject)->weaponStats->pInFlightGraphic;
 
 			psSimpObj = (SimpleObject*)pObject;
 			position.x = psSimpObj->pos.x - playerPos.p.x;
@@ -134,8 +134,8 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 		break;
 	case RENDER_STRUCTURE: //not depth sorted
 		psSimpObj = (SimpleObject*)pObject;
-		position.x = psSimpObj->get_position().x - playerPos.p.x;
-		position.z = -(psSimpObj->get_position().y - playerPos.p.z);
+		position.x = psSimpObj->getPosition().x - playerPos.p.x;
+		position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
 		if ((objectType == RENDER_STRUCTURE) &&
 			((((Structure*)pObject)->pStructureType->type == REF_DEFENSE) ||

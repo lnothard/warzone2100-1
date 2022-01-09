@@ -416,7 +416,7 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 	}
 	else
 	{
-		colour = getPlayerColour(psDroid->get_player());
+		colour = getPlayerColour(psDroid->getPlayer());
 	}
 
 	/* get propulsion stats */
@@ -917,7 +917,7 @@ void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix)
 	}
 	else
 	{
-		auto frame = graphicsTime / BLIP_ANIM_DURATION + psDroid->get_id() % 8192;
+		auto frame = graphicsTime / BLIP_ANIM_DURATION + psDroid->getId() % 8192;
 		// de-sync the blip effect, but don't overflow the int
 		if (pie_Draw3DShape(getImdFromIndex(MI_BLIP), frame, 0, WZCOL_WHITE, pie_ADDITIVE,
 		                    psDroid->visibleForLocalDisplay() / 2, viewMatrix * modelMatrix))
@@ -938,7 +938,7 @@ void destroyFXDroid(Droid* psDroid, unsigned impactTime)
 		int heightScatter = TILE_UNITS / 5;
 		Vector2i horizontalScatter = iSinCosR(rand(), rand() % maxHorizontalScatter);
 
-		Vector3i pos = (psDroid->get_position() + Vector3i(horizontalScatter, 16 + heightScatter)).xzy();
+		Vector3i pos = (psDroid->getPosition() + Vector3i(horizontalScatter, 16 + heightScatter)).xzy();
 		switch (i) {
 		case 0:
 			switch (psDroid->getType())
@@ -1029,7 +1029,7 @@ void compPersonToBits(Droid* psDroid)
 	position.z = psDroid->pos.y;
 
 	/* Tell about player colour */
-	col = getPlayerColour(psDroid->get_player());
+	col = getPlayerColour(psDroid->getPlayer());
 
 	addEffect(&position, EFFECT_GRAVITON, GRAVITON_TYPE_GIBLET, true, headImd, col, gameTime - deltaGameTime + 1);
 	addEffect(&position, EFFECT_GRAVITON, GRAVITON_TYPE_GIBLET, true, legsImd, col, gameTime - deltaGameTime + 1);

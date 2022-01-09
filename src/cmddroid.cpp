@@ -86,7 +86,7 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 
 		orderDroidObj(psDroid, DORDER_GUARD, (SimpleObject*)psCommander, ModeImmediate);
 	}
-	else if (psCommander->get_player() == selectedPlayer)
+	else if (psCommander->getPlayer() == selectedPlayer)
 	{
 		//Do not potentially spam the console with this message
 		if (lastMaxCmdLimitMsgTime + MAX_COMMAND_LIMIT_MESSAGE_PAUSE < gameTime)
@@ -125,7 +125,7 @@ long get_commander_index(const Droid& commander)
 {
   assert(is_commander(commander));
 
-  const auto& droids = droid_lists[commander.get_player()];
+  const auto& droids = droid_lists[commander.getPlayer()];
   return std::find_if(droids.begin(), droids.end(),
                       [&commander](const auto& droid)
   {

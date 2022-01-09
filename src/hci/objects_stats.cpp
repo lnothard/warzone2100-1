@@ -258,7 +258,7 @@ void ObjectsForm::addTabList()
 	attach(objectsList = IntListTabWidget::make());
 	objectsList->id = IDOBJ_TABFORM;
 	objectsList->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-			IntListTabWidget *pObjectsList = static_cast<IntListTabWidget *>(psWidget);
+			auto pObjectsList = static_cast<IntListTabWidget *>(psWidget);
 			assert(pObjectsList != nullptr);
 			pObjectsList->setChildSize(OBJ_BUTWIDTH, OBJ_BUTHEIGHT * 2);
 			pObjectsList->setChildSpacing(OBJ_GAP, OBJ_GAP);

@@ -58,8 +58,7 @@ struct DisplayRemoteGameCache
 static std::vector<GAMESTRUCT> gamesList;
 
 WzGameFindTitleUI::WzGameFindTitleUI()
-{
-}
+= default;
 
 WzGameFindTitleUI::~WzGameFindTitleUI()
 {
@@ -237,7 +236,6 @@ void WzGameFindTitleUI::addConsoleBox()
 
 	addConsoleMessage(_("Connecting to the lobby server..."), DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
 	displayConsoleMessages();
-	return;
 }
 
 // ////////////////////////////////////////////////////////////////////////////
@@ -247,8 +245,7 @@ class GameListHeader : public WIDGET
 {
 protected:
 	GameListHeader()
-	{
-	}
+	= default;
 
 public:
 	static std::shared_ptr<GameListHeader> make()
@@ -265,7 +262,7 @@ public:
 	}
 
 public:
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		const int xPos = xOffset + x();
 		const int yPos = yOffset + y();
@@ -324,7 +321,7 @@ static bool joinLobbyGame(uint32_t gameNumber, bool asSpectator = false)
 class WzLobbyGameDetails : public W_BUTTON
 {
 protected:
-	WzLobbyGameDetails(UDWORD gameIdx)
+	explicit WzLobbyGameDetails(UDWORD gameIdx)
 		: W_BUTTON()
 		  , gameIdx(gameIdx)
 	{
@@ -336,7 +333,7 @@ public:
 		class make_shared_enabler : public WzLobbyGameDetails
 		{
 		public:
-			make_shared_enabler(UDWORD gameIdx)
+			explicit make_shared_enabler(UDWORD gameIdx)
 				: WzLobbyGameDetails(gameIdx)
 			{
 			}
@@ -344,7 +341,7 @@ public:
 		return std::make_shared<make_shared_enabler>(gameIdx);
 	}
 
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		int x0 = xOffset + x();
 		int y0 = yOffset + y();
@@ -491,7 +488,7 @@ public:
 		return widget;
 	}
 
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		int x0 = xOffset + x();
 		int y0 = yOffset + y();
@@ -499,7 +496,7 @@ public:
 		iV_DrawImage(FrontImages, IMAGE_SPECTATE_SM, x0, y0 + 5);
 	}
 
-	virtual int32_t idealWidth() override
+	int32_t idealWidth() override
 	{
 		return iV_GetImageWidth(FrontImages, IMAGE_SPECTATE_SM);
 	}
@@ -600,7 +597,7 @@ public:
 		return widget;
 	}
 
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		int x0 = xOffset + x();
 		int y0 = yOffset + y();
@@ -624,12 +621,12 @@ public:
 		iV_DrawImage(FrontImages, lamp, x0 + 5, y0 + 8);
 	}
 
-	virtual int32_t idealWidth() override
+	int32_t idealWidth() override
 	{
 		return 20 + GAMES_GAMEWIDTH + ((spectateButton) ? (2 + spectateButton->idealWidth()) : 0);
 	}
 
-	virtual int32_t idealHeight() override
+	int32_t idealHeight() override
 	{
 		return GAMES_GAMEHEIGHT;
 	}
