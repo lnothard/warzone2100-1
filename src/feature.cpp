@@ -54,7 +54,7 @@
 
 /* The statistics for the features */
 FeatureStats* asFeatureStats;
-UDWORD numFeatureStats;
+unsigned numFeatureStats;
 
 //Value is stored for easy access to this feature in destroyDroid()/destroyStruct()
 FeatureStats* oilResFeature = nullptr;
@@ -98,39 +98,39 @@ bool loadFeatureStats(WzConfig& ini)
 		WzString subType = ini.value("type").toWzString();
 		if (subType == "TANK WRECK")
 		{
-			p->subType = FEAT_TANK;
+			p->subType = FEATURE_TYPE::TANK;
 		}
 		else if (subType == "GENERIC ARTEFACT")
 		{
-			p->subType = FEAT_GEN_ARTE;
+			p->subType = FEATURE_TYPE::GEN_ARTE;
 		}
 		else if (subType == "OIL RESOURCE")
 		{
-			p->subType = FEAT_OIL_RESOURCE;
+			p->subType = FEATURE_TYPE::OIL_RESOURCE;
 		}
 		else if (subType == "BOULDER")
 		{
-			p->subType = FEAT_BOULDER;
+			p->subType = FEATURE_TYPE::BOULDER;
 		}
 		else if (subType == "VEHICLE")
 		{
-			p->subType = FEAT_VEHICLE;
+			p->subType = FEATURE_TYPE::VEHICLE;
 		}
 		else if (subType == "BUILDING")
 		{
-			p->subType = FEAT_BUILDING;
+			p->subType = FEATURE_TYPE::BUILDING;
 		}
 		else if (subType == "OIL DRUM")
 		{
-			p->subType = FEAT_OIL_DRUM;
+			p->subType = FEATURE_TYPE::OIL_DRUM;
 		}
 		else if (subType == "TREE")
 		{
-			p->subType = FEAT_TREE;
+			p->subType = FEATURE_TYPE::TREE;
 		}
 		else if (subType == "SKYSCRAPER")
 		{
-			p->subType = FEAT_SKYSCRAPER;
+			p->subType = FEATURE_TYPE::SKYSCRAPER;
 		}
 		else
 		{
@@ -147,7 +147,7 @@ bool loadFeatureStats(WzConfig& ini)
 		p->armourValue = ini.value("armour", 1).toInt();
 
 		//and the oil resource - assumes only one!
-		if (asFeatureStats[i].subType == FEAT_OIL_RESOURCE)
+		if (asFeatureStats[i].subType == FEATURE_TYPE::OIL_RESOURCE)
 		{
 			oilResFeature = &asFeatureStats[i];
 		}
@@ -179,7 +179,7 @@ int32_t featureDamage(Feature* psFeature, unsigned damage, WEAPON_CLASS weaponCl
 	ASSERT_OR_RETURN(0, psFeature != nullptr, "Invalid feature pointer");
 
 	debug(LOG_ATTACK, "feature (id %d): body %d armour %d damage: %d",
-	      psFeature->id, psFeature->body, psFeature->psStats->armourValue, damage);
+	      psFeature->getId(), psFeature->getHp(), psFeature->psStats->armourValue, damage);
 
 	relativeDamage = objDamage(psFeature, damage, psFeature->psStats->body, weaponClass, weaponSubClass,
 	                           isDamagePerSecond, minDamage);
@@ -245,7 +245,7 @@ Feature* buildFeature(FeatureStats const* psStats, unsigned x, unsigned y, bool 
 	//return the average of max/min height
 	int height = (foundationMin + foundationMax) / 2;
 
-	if (psStats->subType == FEAT_TREE)
+	if (psStats->subType == FEATURE_TYPE::TREE)
 	{
 		psFeature->rot.direction = gameRand(DEG_360);
 	}
@@ -304,7 +304,7 @@ Feature* buildFeature(FeatureStats const* psStats, unsigned x, unsigned y, bool 
 					auxSetBlocking(b.map.x + width, b.map.y + breadth, AIR_BLOCKED);
 				}
 
-				if (psStats->subType != FEAT_GEN_ARTE && psStats->subType != FEAT_OIL_DRUM)
+				if (psStats->subType != FEATURE_TYPE::GEN_ARTE && psStats->subType != FEATURE_TYPE::OIL_DRUM)
 				{
 					auxSetBlocking(b.map.x + width, b.map.y + breadth, FEATURE_BLOCKED);
 				}
@@ -322,8 +322,8 @@ Feature* buildFeature(FeatureStats const* psStats, unsigned x, unsigned y, bool 
 }
 
 
-Feature::Feature(uint32_t id, FeatureStats const* psStats)
-	: SimpleObject(OBJ_FEATURE, id, PLAYER_FEATURE) // Set the default player out of range to avoid targeting confusions
+Feature::Feature(unsigned id, FeatureStats const* psStats)
+	: SimpleObject(id, PLAYER_FEATURE) // Set the default player out of range to avoid targeting confusions
 	  , psStats(psStats)
 {
 }
@@ -337,11 +337,6 @@ Feature::~Feature()
 
 void _syncDebugFeature(const char* function, Feature const* psFeature, char ch)
 {
-	if (psFeature->type != OBJ_FEATURE)
-	{
-		ASSERT(false, "%c Broken psFeature->type %u!", ch, psFeature->type);
-		syncDebug("Broken psFeature->type %u!", psFeature->type);
-	}
 	int list[] =
 	{
 		ch,
@@ -405,13 +400,13 @@ bool removeFeature(Feature* psDel)
 		}
 	}
 
-	if (psDel->psStats->subType == FEAT_GEN_ARTE || psDel->psStats->subType == FEAT_OIL_DRUM)
+	if (psDel->psStats->subType == FEATURE_TYPE::GEN_ARTE || psDel->psStats->subType == FEATURE_TYPE::OIL_DRUM)
 	{
 		pos.x = psDel->pos.x;
 		pos.z = psDel->pos.y;
 		pos.y = map_Height(pos.x, pos.z) + 30;
 		addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_DISCOVERY, false, nullptr, 0, gameTime - deltaGameTime + 1);
-		if (psDel->psStats->subType == FEAT_GEN_ARTE)
+		if (psDel->psStats->subType == FEATURE_TYPE::GEN_ARTE)
 		{
 			scoreUpdateVar(WD_ARTEFACTS_FOUND);
 			intRefreshScreen();
@@ -419,7 +414,7 @@ bool removeFeature(Feature* psDel)
 	}
 
 	bool removedAMessage = false;
-	if (psDel->psStats->subType == FEAT_GEN_ARTE || psDel->psStats->subType == FEAT_OIL_RESOURCE)
+	if (psDel->psStats->subType == FEATURE_TYPE::GEN_ARTE || psDel->psStats->subType == FEATURE_TYPE::OIL_RESOURCE)
 	{
 		for (unsigned player = 0; player < MAX_PLAYERS; ++player)
 		{
@@ -446,7 +441,7 @@ bool removeFeature(Feature* psDel)
 /* Remove a Feature and free it's memory */
 bool destroyFeature(Feature* psDel, unsigned impactTime)
 {
-	UDWORD widthScatter, breadthScatter, heightScatter, i;
+	unsigned widthScatter, breadthScatter, heightScatter, i;
 	EFFECT_TYPE explosionSize;
 	Vector3i pos;
 
@@ -455,7 +450,7 @@ bool destroyFeature(Feature* psDel, unsigned impactTime)
 	       gameTime - deltaGameTime, impactTime, gameTime);
 
 	/* Only add if visible and damageable*/
-	if (psDel->visibleForLocalDisplay() && psDel->psStats->damageable)
+	if (psDel->visibleToSelectedPlayer() && psDel->psStats->damageable)
 	{
 		/* Set off a destruction effect */
 		/* First Explosions */
@@ -483,7 +478,7 @@ bool destroyFeature(Feature* psDel, unsigned impactTime)
 			addEffect(&pos, EFFECT_EXPLOSION, explosionSize, false, nullptr, 0, impactTime);
 		}
 
-		if (psDel->psStats->subType == FEAT_SKYSCRAPER)
+		if (psDel->psStats->subType == FEATURE_TYPE::SKYSCRAPER)
 		{
 			pos.x = psDel->pos.x;
 			pos.z = psDel->pos.y;
@@ -502,7 +497,7 @@ bool destroyFeature(Feature* psDel, unsigned impactTime)
 
 		//play sound
 		// ffs gj
-		if (psDel->psStats->subType == FEAT_SKYSCRAPER)
+		if (psDel->psStats->subType == FEATURE_TYPE::SKYSCRAPER)
 		{
 			audio_PlayStaticTrack(psDel->pos.x, psDel->pos.y, ID_SOUND_BUILDING_FALL);
 		}
@@ -512,7 +507,7 @@ bool destroyFeature(Feature* psDel, unsigned impactTime)
 		}
 	}
 
-	if (psDel->psStats->subType == FEAT_SKYSCRAPER)
+	if (psDel->psStats->subType == FEATURE_TYPE::SKYSCRAPER)
 	{
 		// ----- Flip all the tiles under the skyscraper to a rubble tile
 		// smoke effect should disguise this happening

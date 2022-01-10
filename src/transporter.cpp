@@ -17,11 +17,12 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file transporter.c
- *
- * Code to deal with loading/unloading, interface and flight of transporters.
+ * @file transporter.cpp
+ * Code to deal with loading/unloading, interface and flight of transporters
  */
+
 #include <cstring>
 #include <sys/stat.h>
 
@@ -275,7 +276,7 @@ bool intAddTransporterContents()
 		W_LABINIT sLabInit;
 		sLabInit.formID = IDTRANS_CONTENTFORM;
 		sLabInit.id = IDTRANS_CAPACITY;
-		sLabInit.x = (SWORD)sButInit.x - 40;
+		sLabInit.x = (int)sButInit.x - 40;
 		sLabInit.y = 0;
 		sLabInit.width = 16;
 		sLabInit.height = 16;
@@ -422,9 +423,8 @@ bool intAddTransButtonForm()
 	for (Droid* psDroid = transInterfaceDroidList(); psDroid; psDroid = psDroid->psNext)
 	{
 		//only interested in Transporter droids
-		if ((isTransporter(psDroid) && (psDroid->action == DACTION_TRANSPORTOUT ||
-			psDroid->action == DACTION_TRANSPORTIN)) || !isTransporter(psDroid))
-		{
+		if ((isTransporter(*psDroid) && (psDroid->getAction() == ACTION::TRANSPORT_OUT ||
+			  psDroid->getAction() == ACTION::TRANSPORT_IN)) || !isTransporter(*psDroid)) {
 			continue;
 		}
 
@@ -475,7 +475,7 @@ bool intAddTransButtonForm()
 /* Add the Transporter Contents form */
 bool intAddTransContentsForm()
 {
-	WIDGET* contForm = widgGetFromID(psWScreen, IDTRANS_CONTENTFORM);
+	auto contForm = widgGetFromID(psWScreen, IDTRANS_CONTENTFORM);
 
 	/* Add the contents form */
 	auto contList = IntListTabWidget::make();
@@ -568,7 +568,7 @@ bool intAddDroidsAvailForm()
 	transDroids->attach(droidList);
 	droidList->id = IDTRANS_DROIDTAB;
 	droidList->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-			IntListTabWidget *droidList = static_cast<IntListTabWidget *>(psWidget);
+			auto droidList = static_cast<IntListTabWidget *>(psWidget);
 			assert(droidList != nullptr);
 			droidList->setChildSize(OBJ_BUTWIDTH, OBJ_BUTHEIGHT);
 			droidList->setChildSpacing(OBJ_GAP, OBJ_GAP);
@@ -600,7 +600,7 @@ bool intAddDroidsAvailForm()
 			break;
 		}
 		//don't add Transporter Droids!
-		if (!isTransporter(psDroid))
+		if (!isTransporter(*psDroid))
 		{
 			/* Set the tip and add the button */
 			auto button = std::make_shared<IntTransportButton>();
@@ -676,11 +676,11 @@ int calcRemainingCapacity(const Droid* psTransporter)
 
 bool transporterIsEmpty(const Droid* psTransporter)
 {
-	ASSERT(isTransporter(psTransporter), "Non-transporter droid given");
+	ASSERT(isTransporter(*psTransporter), "Non-transporter droid given");
 
 	// Assume dead droids and non-transporter droids to be empty
 	return (isDead((const SimpleObject*)psTransporter)
-		|| !isTransporter(psTransporter)
+		|| !isTransporter(*psTransporter)
 		|| psTransporter->group->members == nullptr
 		|| psTransporter->group->members == psTransporter);
 }
@@ -703,8 +703,7 @@ static void intSetTransCapacityLabel(W_LABEL& Label)
 /*updates the capacity of the current Transporter*/
 void intUpdateTransCapacity(WIDGET* psWidget, W_CONTEXT* psContext)
 {
-	W_LABEL* Label = (W_LABEL*)psWidget;
-
+	auto Label = (W_LABEL*)psWidget;
 	intSetTransCapacityLabel(*Label);
 }
 
@@ -781,7 +780,7 @@ void intProcessTransporter(UDWORD id)
 void intRemoveTrans(bool skipIntModeReset /*= false*/)
 {
 	// Start the window close animation.
-	IntFormAnimated* form = (IntFormAnimated*)widgGetFromID(psWScreen, IDTRANS_FORM);
+	auto form = (IntFormAnimated*)widgGetFromID(psWScreen, IDTRANS_FORM);
 	if (form)
 	{
 		form->closeAnimateDelete();
@@ -812,9 +811,8 @@ void intRemoveTransNoAnim(bool skipIntModeReset /*= false*/)
 void intRemoveTransContent()
 {
 	// Start the window close animation.
-	IntFormAnimated* form = (IntFormAnimated*)widgGetFromID(psWScreen, IDTRANS_CONTENTFORM);
-	if (form)
-	{
+	auto form = (IntFormAnimated*)widgGetFromID(psWScreen, IDTRANS_CONTENTFORM);
+	if (form) {
 		form->closeAnimateDelete();
 	}
 }
@@ -830,11 +828,10 @@ void intRemoveTransContentNoAnim()
 void intRemoveTransDroidsAvail()
 {
 	// Start the window close animation.
-	IntFormAnimated* form = (IntFormAnimated*)widgGetFromID(psWScreen, IDTRANS_DROIDS);
-	if (form)
-	{
+	auto form = (IntFormAnimated*)widgGetFromID(psWScreen, IDTRANS_DROIDS);
+	if (form) {
 		//remember which tab we were on
-		ListTabWidget* droidList = (ListTabWidget*)widgGetFromID(psWScreen, IDTRANS_DROIDTAB);
+		auto droidList = (ListTabWidget*)widgGetFromID(psWScreen, IDTRANS_DROIDTAB);
 		objMajor = droidList->currentPage();
 		form->closeAnimateDelete();
 	}
@@ -843,11 +840,10 @@ void intRemoveTransDroidsAvail()
 /* Remove the Transporter Droids Avail widgets from the screen w/o animation!*/
 void intRemoveTransDroidsAvailNoAnim()
 {
-	IntFormAnimated* form = (IntFormAnimated*)widgGetFromID(psWScreen, IDTRANS_DROIDS);
-	if (form != nullptr)
-	{
+	auto form = (IntFormAnimated*)widgGetFromID(psWScreen, IDTRANS_DROIDS);
+	if (form != nullptr) {
 		//remember which tab we were on
-		ListTabWidget* droidList = (ListTabWidget*)widgGetFromID(psWScreen, IDTRANS_DROIDTAB);
+		auto droidList = (ListTabWidget*)widgGetFromID(psWScreen, IDTRANS_DROIDTAB);
 		objMajor = droidList->currentPage();
 
 		//remove main screen

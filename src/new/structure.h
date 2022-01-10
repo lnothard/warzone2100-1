@@ -94,8 +94,8 @@ struct StructureBounds
 struct FlagPosition : public ObjectPosition
 {
 	Vector3i coords {0, 0, 0};
-	uint8_t factory_inc = 0;
-	uint8_t factory_type = 0;
+	uint8_t factoryInc = 0;
+	uint8_t factoryType = 0;
 };
 
 /**

@@ -19,7 +19,7 @@
 */
 
 /**
- * @file terrain.c
+ * @file terrain.cpp
  * Draws the terrain.
  * It uses the ground property of every MAPTILE to divide the terrain into different layers.
  * For every layer the GROUND_TYPE (from psGroundTypes) determines the texture and size.
@@ -237,7 +237,7 @@ static Vector2f getTileTexCoords(Vector2f* uv, unsigned int tileNumber)
 	/* Used to calculate texture coordinates */
 	const float xMult = 1.0f / TILES_IN_PAGE_COLUMN;
 	const float yMult = 1.0f / TILES_IN_PAGE_ROW;
-	float texsize = (float)getTextureSize();
+	auto texsize = (float)getTextureSize();
 
 	// the decals are 128x128 (at this time), we should not go above this value.  See note above
 	if (texsize > MAX_TILE_TEXTURE_SIZE)

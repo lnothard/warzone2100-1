@@ -2,6 +2,8 @@
 // Created by Luna Nothard on 06/01/2022.
 //
 
+#include "lib/gamelib/gtime.h"
+
 #include "weapondef.h"
 
 bool Weapon::has_full_ammo() const noexcept
@@ -11,13 +13,13 @@ bool Weapon::has_full_ammo() const noexcept
 
 bool Weapon::is_artillery() const noexcept
 {
-  return stats->movement_type == MOVEMENT_MODEL::INDIRECT ||
-         stats->movement_type == MOVEMENT_MODEL::HOMING_INDIRECT;
+  return stats->movementModel == MOVEMENT_MODEL::INDIRECT ||
+         stats->movementModel == MOVEMENT_MODEL::HOMING_INDIRECT;
 }
 
 bool Weapon::is_vtol_weapon() const
 {
-  return stats->max_VTOL_attack_runs;
+  return stats->vtolAttackRuns;
 }
 
 bool Weapon::is_empty_vtol_weapon(unsigned player) const
@@ -39,7 +41,7 @@ unsigned Weapon::get_recoil() const
     const auto recoil_time = static_cast<int>(graphicsTime - time_last_fired);
     const auto recoil_amount = DEFAULT_RECOIL_TIME / 2 - abs(
             recoil_time - static_cast<int>(DEFAULT_RECOIL_TIME) / 2);
-    const auto max_recoil = stats->recoil_value;
+    const auto max_recoil = stats->recoilValue;
     return max_recoil * recoil_amount / (DEFAULT_RECOIL_TIME / 2 * 10);
   }
   return 0;
@@ -57,22 +59,22 @@ unsigned Weapon::get_min_range(unsigned player) const
 
 unsigned Weapon::get_short_range(unsigned player) const
 {
-  return stats->upgraded_stats[player].short_range;
+  return stats->upgraded[player].shortRange;
 }
 
 unsigned Weapon::get_hit_chance(unsigned int player) const
 {
-  return stats->upgraded_stats[player].hit_chance;
+  return stats->upgraded[player].hitChance;
 }
 
 unsigned Weapon::get_short_range_hit_chance(unsigned int player) const
 {
-  return stats->upgraded_stats[player].short_range_hit_chance;
+  return stats->upgraded[player].shortHitChance;
 }
 
 WEAPON_SUBCLASS Weapon::get_subclass() const
 {
-  return stats->subclass;
+  return stats->weaponSubClass;
 }
 
 unsigned Weapon::get_num_attack_runs(unsigned player) const
@@ -80,9 +82,9 @@ unsigned Weapon::get_num_attack_runs(unsigned player) const
   const auto u_stats = stats->upgraded[player];
 
   if (u_stats.reloadTime > 0)
-    return u_stats.rounds_per_volley * stats->max_VTOL_attack_runs;
+    return u_stats.numRounds * stats->vtolAttackRuns;
 
-  return stats->max_VTOL_attack_runs;
+  return stats->vtolAttackRuns;
 }
 
 unsigned Weapon::get_shots_fired() const noexcept
@@ -92,7 +94,7 @@ unsigned Weapon::get_shots_fired() const noexcept
 
 const iIMDShape& Weapon::get_IMD_shape() const
 {
-  return *stats->weapon_graphic;
+  return *stats->pIMD;
 }
 
 const iIMDShape& Weapon::get_mount_graphic() const

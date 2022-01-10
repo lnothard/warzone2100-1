@@ -95,21 +95,21 @@ void visUpdateLevel()
 	visLevelDec = gameTimeAdjustedAverage(VIS_LEVEL_DEC);
 }
 
-//static inline void updateTileVis(MAPTILE* psTile)
-//{
-//	for (int i = 0; i < MAX_PLAYERS; i++)
-//	{
-//		/// The definition of whether a player can see something on a given tile or not
-//		if (psTile->watchers[i] > 0 || (psTile->sensors[i] > 0 && !(psTile->jammerBits & ~alliancebits[i])))
-//		{
-//			psTile->sensorBits |= (1 << i); // mark it as being seen
-//		}
-//		else
-//		{
-//			psTile->sensorBits &= ~(1 << i); // mark as hidden
-//		}
-//	}
-//}
+static inline void updateTileVis(Tile* psTile)
+{
+	for (int i = 0; i < MAX_PLAYERS; i++)
+	{
+		/// The definition of whether a player can see something on a given tile or not
+		if (psTile->watchers[i] > 0 || (psTile->sensors[i] > 0 && !(psTile->jammerBits & ~alliancebits[i])))
+		{
+			psTile->sensorBits |= (1 << i); // mark it as being seen
+		}
+		else
+		{
+			psTile->sensorBits &= ~(1 << i); // mark as hidden
+		}
+	}
+}
 
 unsigned addSpotter(int x, int y, int player, int radius, SENSOR_CLASS type, unsigned expiry)
 {
@@ -146,8 +146,7 @@ bool removeSpotter(unsigned id)
 	for (unsigned i = 0; i < apsInvisibleViewers.size(); i++)
 	{
 		auto psSpot = apsInvisibleViewers.at(i);
-		if (psSpot->id == id)  {
-			delete psSpot;
+		if (psSpot.id == id)  {
 			apsInvisibleViewers.erase(apsInvisibleViewers.begin() + i);
 			return true;
 		}
@@ -160,7 +159,6 @@ void removeSpotters()
 	while (!apsInvisibleViewers.empty())
 	{
 		auto psSpot = apsInvisibleViewers.back();
-		delete psSpot;
 		apsInvisibleViewers.pop_back();
 	}
 }
@@ -171,25 +169,22 @@ static void updateSpotters()
 	for (unsigned i = 0; i < apsInvisibleViewers.size(); i++)
 	{
 		auto psSpot = apsInvisibleViewers.at(i);
-		if (psSpot->expiryTime != 0 && psSpot->expiryTime < gameTime)  {
-			delete psSpot;
+		if (psSpot.expiryTime != 0 && psSpot.expiryTime < gameTime)  {
 			apsInvisibleViewers.erase(apsInvisibleViewers.begin() + i);
 			continue;
 		}
 		// else, if not expired, show objects around it
-		gridList = gridStartIterateUnseen(world_coord(psSpot->pos.x),
-                                      world_coord(psSpot->pos.y),
-                                      psSpot->sensorRadius,
-		                                  psSpot->player);
+		gridList = gridStartIterateUnseen(world_coord(psSpot.pos.x),
+                                      world_coord(psSpot.pos.y),
+                                      psSpot.sensorRadius,
+		                                  psSpot.player);
 		for (auto psObj : gridList)
 		{
 			// tell system that this side can see this object
-			setSeenBy(psObj, psSpot->player, UBYTE_MAX);
+			setSeenBy(psObj, psSpot.player, UBYTE_MAX);
 		}
 	}
 }
-
-
 
 /* Record all tiles that some object confers visibility to. Only record each tile
  * once. Note that there is both a limit to how many objects can watch any given
@@ -197,9 +192,9 @@ static void updateSpotters()
 static inline void visMarkTile(const SimpleObject* psObj, int mapX, int mapY,
                                Tile* psTile, std::vector<TILEPOS>& watchedTiles)
 {
-	const int rayPlayer = psObj->player;
-	const int xdiff = map_coord(psObj->pos.x) - mapX;
-	const int ydiff = map_coord(psObj->pos.y) - mapY;
+	const int rayPlayer = psObj->getPlayer();
+	const int xdiff = map_coord(psObj->getPosition().x) - mapX;
+	const int ydiff = map_coord(psObj->getPosition().y) - mapY;
 	const int distSq = xdiff * xdiff + ydiff * ydiff;
 	const bool inRange = (distSq < 16);
 	uint8_t* visionType = inRange ? psTile->watchers : psTile->sensors;
@@ -220,17 +215,18 @@ static inline void visMarkTile(const SimpleObject* psObj, int mapX, int mapY,
 	}
 }
 
+#define MAX_WAVECAST_LIST_SIZE 1360  // Trivial upper bound to what a fully upgraded WSS can use (its number of angles). Should probably be some factor times the maximum possible radius. Is probably a lot more than needed. Tested to need at least 180.
+
 /* The terrain revealing ray callback */
 static void doWaveTerrain(SimpleObject* psObj)
 {
-	const int sx = psObj->pos.x;
-	const int sy = psObj->pos.y;
-	const int sz = psObj->pos.z + MAX(MIN_VIS_HEIGHT, psObj->sDisplay.imd->max.y);
-	const unsigned radius = objSensorRange(psObj);
-	const int rayPlayer = psObj->player;
+	const auto sx = psObj->getPosition().x;
+	const auto sy = psObj->getPosition().y;
+	const auto sz = psObj->getPosition().z + MAX(MIN_VIS_HEIGHT, psObj->getDisplayData().imd_shape->max.y);
+	const auto radius = objSensorRange(psObj);
+	const auto rayPlayer = psObj->getPlayer();
 	std::size_t size;
 	const WavecastTile* tiles = getWavecastTable(radius, &size);
-#define MAX_WAVECAST_LIST_SIZE 1360  // Trivial upper bound to what a fully upgraded WSS can use (its number of angles). Should probably be some factor times the maximum possible radius. Is probably a lot more than needed. Tested to need at least 180.
 
 	int heights[2][MAX_WAVECAST_LIST_SIZE];
 	size_t angles[2][MAX_WAVECAST_LIST_SIZE + 1];
@@ -312,7 +308,7 @@ static void doWaveTerrain(SimpleObject* psObj)
 /* The los ray callback */
 static bool rayLOSCallback(Vector2i pos, int32_t dist, void* data)
 {
-	VisibleObjectHelp_t* help = (VisibleObjectHelp_t*)data;
+	auto help = (VisibleObjectHelp_t*)data;
 
 	ASSERT(pos.x >= 0 && pos.x < world_coord(mapWidth) && pos.y >= 0 && pos.y < world_coord(mapHeight),
 	       "rayLOSCallback: coords off map");
@@ -354,7 +350,6 @@ static bool rayLOSCallback(Vector2i pos, int32_t dist, void* data)
 			}
 		}
 	}
-
 	return true;
 }
 
@@ -429,7 +424,7 @@ void visTilesUpdate(SimpleObject* psObj)
 /*reveals all the terrain in the map*/
 void revealAll(UBYTE player)
 {
-	SDWORD i, j;
+	int i, j;
 	Tile* psTile;
 
 	if (player >= MAX_PLAYERS)
@@ -446,7 +441,6 @@ void revealAll(UBYTE player)
 			psTile->tileExploredBits |= alliancebits[player];
 		}
 	}
-
 	//the objects gets revealed in processVisibility()
 }
 
@@ -463,8 +457,8 @@ int visibleObject(const SimpleObject* psViewer, const SimpleObject* psTarget, bo
 
 	int range = objSensorRange(psViewer);
 
-	if (!worldOnMap(psViewer->pos.x, psViewer->pos.y) || !worldOnMap(psTarget->pos.x, psTarget->pos.y))
-	{
+	if (!worldOnMap(psViewer->getPosition().x, psViewer->getPosition().y) ||
+      !worldOnMap(psTarget->getPosition().x, psTarget->getPosition().y)) {
 		//Most likely a VTOL or transporter
 		debug(LOG_WARNING, "Trying to view something off map!");
 		return 0;
@@ -489,26 +483,22 @@ int visibleObject(const SimpleObject* psViewer, const SimpleObject* psTarget, bo
 			const Structure* psStruct = (const Structure*)psViewer;
 
 			// a structure that is being built cannot see anything
-			if (psStruct->status != SS_BUILT)
-			{
+			if (psStruct->getState() != STRUCTURE_STATE::BUILT) {
 				return 0;
 			}
 
 			if (psStruct->pStructureType->type == REF_WALL
 				|| psStruct->pStructureType->type == REF_GATE
-				|| psStruct->pStructureType->type == REF_WALLCORNER)
-			{
+				|| psStruct->pStructureType->type == REF_WALLCORNER) {
 				return 0;
 			}
 
 			if (psTarget->type == OBJ_DROID && isVtolDroid((const Droid*)psTarget)
-				&& asWeaponStats[psStruct->asWeaps[0].nStat].surfaceToAir == SHOOT_IN_AIR)
-			{
+				&& asWeaponStats[psStruct->asWeaps[0].nStat].surfaceToAir == SHOOT_IN_AIR) {
 				range = 3 * range / 2; // increase vision range of AA vs VTOL
 			}
 
-			if (psStruct->psTarget[0] == psTarget && (structCBSensor(psStruct) || structVTOLCBSensor(psStruct)))
-			{
+			if (psStruct->psTarget[0] == psTarget && (structCBSensor(psStruct) || structVTOLCBSensor(psStruct))) {
 				// if a unit is targetted by a counter battery sensor
 				// it is automatically seen
 				return UBYTE_MAX;

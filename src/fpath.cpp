@@ -44,9 +44,6 @@ static volatile bool fpathQuit = false;
 /* Beware: Enabling this will cause significant slow-down. */
 #undef DEBUG_MAP
 
-
-
-
 // threading stuff
 static WZ_THREAD* fpathThread = nullptr;
 static WZ_MUTEX* fpathMutex = nullptr;
@@ -60,7 +57,6 @@ static uint32_t waitingForResultId;
 static WZ_SEMAPHORE* waitingForResultSemaphore = nullptr;
 
 static PathResult fpathExecute(PathJob psJob);
-
 
 /** This runs in a separate thread */
 static int fpathThreadFunc(void*)

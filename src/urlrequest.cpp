@@ -53,9 +53,10 @@
 #include <list>
 #include <algorithm>
 #include <cstdio>
+#include <utility>
 #include <vector>
 #include <regex>
-#include <stdlib.h>
+#include <cstdlib>
 #include <chrono>
 #include <sstream>
 #include <stdexcept>
@@ -72,7 +73,7 @@
 # ifndef _POSIX_SOURCE
 #  define _POSIX_SOURCE
 # endif
-# include <stdio.h>
+# include <cstdio>
 #endif
 
 #undef max
@@ -102,16 +103,13 @@ MemoryStruct::~MemoryStruct()
 }
 
 HTTPResponseHeaders::~HTTPResponseHeaders()
-{
-}
+= default;
 
 HTTPResponseDetails::~HTTPResponseDetails()
-{
-}
+= default;
 
 AsyncRequest::~AsyncRequest()
-{
-}
+= default;
 
 bool URLRequestBase::setRequestHeader(const std::string& name, const std::string& value)
 {
@@ -233,7 +231,7 @@ struct SemVer
 	{
 	}
 
-	bool operator <(const SemVer& b)
+	bool operator <(const SemVer& b) const
 	{
 		return (maj < b.maj) ||
 		((maj == b.maj) && (
@@ -242,7 +240,7 @@ struct SemVer
 		));
 	}
 
-	bool operator <=(const SemVer& b)
+	bool operator <=(const SemVer& b) const
 	{
 		return (maj < b.maj) ||
 		((maj == b.maj) && (
@@ -251,12 +249,12 @@ struct SemVer
 		));
 	}
 
-	bool operator >(const SemVer& b)
+	bool operator >(const SemVer& b) const
 	{
 		return !(*this <= b);
 	}
 
-	bool operator >=(const SemVer& b)
+	bool operator >=(const SemVer& b) const
 	{
 		return !(*this < b);
 	}
@@ -271,7 +269,7 @@ bool verify_curl_ssl_thread_safe_setup()
 	const char* ssl_version_str = info->ssl_version;
 
 	// GnuTLS
-	std::regex gnutls_regex("^GnuTLS\\/([\\d]+)\\.([\\d]+)\\.([\\d]+).*");
+	std::regex gnutls_regex(R"(^GnuTLS\/([\d]+)\.([\d]+)\.([\d]+).*)");
 	std::regex_match(ssl_version_str, cm, gnutls_regex);
 	if (!cm.empty())
 	{
@@ -304,7 +302,7 @@ bool verify_curl_ssl_thread_safe_setup()
 	}
 
 	// OpenSSL, libressl, BoringSSL
-	std::regex e("^(OpenSSL|libressl|BoringSSL)\\/([\\d]+)\\.([\\d]+)\\.([\\d]+).*");
+	std::regex e(R"(^(OpenSSL|libressl|BoringSSL)\/([\d]+)\.([\d]+)\.([\d]+).*)");
 	std::regex_match(ssl_version_str, cm, e);
 	if (!cm.empty())
 	{
@@ -413,12 +411,12 @@ ResponseHeaderContainer;
 class HTTPResponseHeadersContainer : public HTTPResponseHeaders
 {
 public:
-	virtual bool hasHeader(const std::string& name) const override
+	[[nodiscard]] bool hasHeader(const std::string& name) const override
 	{
 		return responseHeaders.count(name) > 0;
 	}
 
-	virtual bool getHeader(const std::string& name, std::string& output_value) const override
+	bool getHeader(const std::string& name, std::string& output_value) const override
 	{
 		const auto it = responseHeaders.find(name);
 		if (it == responseHeaders.end()) { return false; }
@@ -465,8 +463,8 @@ public:
 	std::shared_ptr<AsyncRequestImpl> requestHandle;
 
 public:
-	URLTransferRequest(const std::shared_ptr<AsyncRequestImpl>& requestHandle)
-		: requestHandle(requestHandle)
+	explicit URLTransferRequest(std::shared_ptr<AsyncRequestImpl>  requestHandle)
+		: requestHandle(std::move(requestHandle))
 	{
 	}
 
@@ -478,11 +476,11 @@ public:
 		}
 	}
 
-	virtual const std::string& url() const = 0;
-	virtual InternetProtocol protocol() const = 0;
-	virtual bool noProxy() const = 0;
-	virtual const std::unordered_map<std::string, std::string>& requestHeaders() const = 0;
-	virtual curl_off_t maxDownloadSize() const { return MAXIMUM_DOWNLOAD_SIZE; }
+	[[nodiscard]] virtual const std::string& url() const = 0;
+	[[nodiscard]] virtual InternetProtocol protocol() const = 0;
+	[[nodiscard]] virtual bool noProxy() const = 0;
+	[[nodiscard]] virtual const std::unordered_map<std::string, std::string>& requestHeaders() const = 0;
+	[[nodiscard]] virtual curl_off_t maxDownloadSize() const { return MAXIMUM_DOWNLOAD_SIZE; }
 
 	virtual CURL* createCURLHandle()
 	{
@@ -541,7 +539,7 @@ public:
 		}
 
 		const auto& _requestHeaders = requestHeaders();
-		for (auto it : _requestHeaders)
+		for (const auto& it : _requestHeaders)
 		{
 			const auto& header_key = it.first;
 			const auto& header_value = it.second;
@@ -618,7 +616,7 @@ public:
 
 	virtual bool onProgressUpdate(int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow) { return false; }
 
-	virtual bool waitOnShutdown() const { return false; }
+	[[nodiscard]] virtual bool waitOnShutdown() const { return false; }
 
 	virtual void handleRequestDone(CURLcode result)
 	{
@@ -644,7 +642,7 @@ WriteMemoryCallback_URLTransferRequest(void* contents, size_t size, size_t nmemb
 		return 0;
 	}
 
-	URLTransferRequest* pRequest = static_cast<URLTransferRequest*>(userp);
+	auto* pRequest = static_cast<URLTransferRequest*>(userp);
 	return pRequest->writeMemoryCallback(contents, size, nmemb);
 }
 
@@ -654,7 +652,7 @@ static int xferinfo(void* p,
                     curl_off_t ultotal, curl_off_t ulnow)
 {
 	int retValue = 0;
-	struct myprogress* myp = (struct myprogress*)p;
+	auto* myp = (struct myprogress*)p;
 	CURL* curl = myp->request->handle;
 	TIMETYPE curtime = 0;
 
@@ -715,7 +713,7 @@ static size_t header_callback(char* buffer, size_t size,
 	/* 'userdata' is set with CURLOPT_HEADERDATA */
 	if (userdata != nullptr)
 	{
-		URLTransferRequest* pRequest = static_cast<URLTransferRequest*>(userdata);
+		auto* pRequest = static_cast<URLTransferRequest*>(userdata);
 		std::string header_line = std::string(buffer, size * nitems);
 		const size_t header_separator = header_line.find_first_of(":");
 		if (header_separator != std::string::npos)
@@ -733,34 +731,34 @@ static size_t header_callback(char* buffer, size_t size,
 class RunningURLTransferRequestBase : public URLTransferRequest
 {
 public:
-	virtual const URLRequestBase& getBaseRequest() const = 0;
+	[[nodiscard]] virtual const URLRequestBase& getBaseRequest() const = 0;
 public:
-	RunningURLTransferRequestBase(const std::shared_ptr<AsyncRequestImpl>& requestHandle)
+	explicit RunningURLTransferRequestBase(const std::shared_ptr<AsyncRequestImpl>& requestHandle)
 		: URLTransferRequest(requestHandle)
 	{
 	}
 
-	virtual const std::string& url() const override
+	[[nodiscard]] const std::string& url() const override
 	{
 		return getBaseRequest().url;
 	}
 
-	virtual InternetProtocol protocol() const override
+	[[nodiscard]] InternetProtocol protocol() const override
 	{
 		return getBaseRequest().protocol;
 	}
 
-	virtual bool noProxy() const override
+	[[nodiscard]] bool noProxy() const override
 	{
 		return getBaseRequest().noProxy;
 	}
 
-	virtual const std::unordered_map<std::string, std::string>& requestHeaders() const override
+	[[nodiscard]] const std::unordered_map<std::string, std::string>& requestHeaders() const override
 	{
 		return getBaseRequest().getRequestHeaders();
 	}
 
-	virtual bool onProgressUpdate(int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow) override
+	bool onProgressUpdate(int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow) override
 	{
 		auto request = getBaseRequest();
 		if (request.progressCallback)
@@ -770,7 +768,7 @@ public:
 		return false;
 	}
 
-	virtual void handleRequestDone(CURLcode result) override
+	void handleRequestDone(CURLcode result) override
 	{
 		long code;
 		if (curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &code) != CURLE_OK)
@@ -788,7 +786,7 @@ public:
 		}
 	}
 
-	virtual void requestFailedToFinish(URLRequestFailureType type) override
+	void requestFailedToFinish(URLRequestFailureType type) override
 	{
 		ASSERT_OR_RETURN(, type != URLRequestFailureType::TRANSFER_FAILED,
 		                   "TRANSFER_FAILED should be handled by handleRequestDone");
@@ -798,7 +796,7 @@ public:
 private:
 	virtual void onSuccess(const HTTPResponseDetails& responseDetails) = 0;
 
-	void onFailure(URLRequestFailureType type, optional<HTTPResponseDetails> transferDetails)
+	void onFailure(URLRequestFailureType type, optional<HTTPResponseDetails> transferDetails) const
 	{
 		auto request = getBaseRequest();
 
@@ -873,26 +871,26 @@ public:
 		}
 	}
 
-	virtual const URLRequestBase& getBaseRequest() const override
+	[[nodiscard]] const URLRequestBase& getBaseRequest() const override
 	{
 		return request;
 	}
 
-	virtual curl_off_t maxDownloadSize() const override
+	[[nodiscard]] curl_off_t maxDownloadSize() const override
 	{
 		// For downloading to memory, set a lower default max download limit
 		return _maxDownloadSize;
 	}
 
-	virtual bool hasWriteMemoryCallback() override { return true; }
+	bool hasWriteMemoryCallback() override { return true; }
 
-	virtual size_t writeMemoryCallback(void* contents, size_t size, size_t nmemb) override
+	size_t writeMemoryCallback(void* contents, size_t size, size_t nmemb) override
 	{
 		size_t realsize = size * nmemb;
 		MemoryStruct* mem = chunk.get();
 
 		char* ptr = (char*)realloc(mem->memory, mem->size + realsize + 1);
-		if (ptr == NULL)
+		if (ptr == nullptr)
 		{
 			/* out of memory! */
 			return 0;
@@ -971,21 +969,21 @@ public:
 #endif
 	}
 
-	virtual const URLRequestBase& getBaseRequest() const override
+	[[nodiscard]] const URLRequestBase& getBaseRequest() const override
 	{
 		return request;
 	}
 
-	virtual bool hasWriteMemoryCallback() override { return true; }
+	bool hasWriteMemoryCallback() override { return true; }
 
-	virtual size_t writeMemoryCallback(void* contents, size_t size, size_t nmemb) override
+	size_t writeMemoryCallback(void* contents, size_t size, size_t nmemb) override
 	{
 		if (!outFile) return 0;
 		size_t written = fwrite(contents, size, nmemb, outFile);
 		return written;
 	}
 
-	virtual void handleRequestDone(CURLcode result) override
+	void handleRequestDone(CURLcode result) override
 	{
 		if (outFile)
 		{
@@ -1024,7 +1022,7 @@ static int urlRequestThreadFunc(void*)
 		{
 			/* wait for activity, timeout or "nothing" */
 #if LIBCURL_VERSION_NUM >= 0x071C00	// cURL 7.28.0+ required for curl_multi_wait
-			multiCode = curl_multi_wait(multi_handle, NULL, 0, 1000, NULL);
+			multiCode = curl_multi_wait(multi_handle, nullptr, 0, 1000, nullptr);
 #else
 			#error "Needs a fallback for lack of curl_multi_wait (or, even better, update libcurl!)"
 #endif
@@ -1202,7 +1200,7 @@ AsyncURLRequestHandle urlRequestData(const URLDataRequest& request)
 	                 "Requested maxDownloadSizeLimit exceeds maximum in-memory download size limit %zu",
 	                 (size_t)MAXIMUM_IN_MEMORY_DOWNLOAD_SIZE);
 	std::shared_ptr<AsyncRequestImpl> requestHandle = std::make_shared<AsyncRequestImpl>();
-	RunningURLDataRequest* pNewRequest = new RunningURLDataRequest(request, requestHandle);
+	auto* pNewRequest = new RunningURLDataRequest(request, requestHandle);
 	wzMutexLock(urlRequestMutex);
 	bool isFirstJob = newUrlRequests.empty();
 	newUrlRequests.push_back(pNewRequest);
@@ -1265,14 +1263,14 @@ std::vector<std::pair<std::string, curl_sslbackend>> listSSLBackends()
 
 	const curl_ssl_backend** list;
 	int i;
-	CURLsslset result = curl_global_sslset((curl_sslbackend)-1, NULL, &list);
+	CURLsslset result = curl_global_sslset((curl_sslbackend)-1, nullptr, &list);
 	if (result != CURLSSLSET_UNKNOWN_BACKEND)
 	{
 		return output;
 	}
 	for (i = 0; list[i]; i++)
 	{
-		output.push_back({list[i]->name, list[i]->id});
+		output.emplace_back(list[i]->name, list[i]->id);
 	}
 	return output;
 }

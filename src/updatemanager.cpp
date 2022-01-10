@@ -74,7 +74,7 @@ static std::string configureLinkURL(const std::string& url, BuildPropertyProvide
 static bool isValidExpiry(const json& updateData);
 static void initProcessData(const std::vector<std::string>& updateDataUrls, ProcessJSONDataFileFunc processDataFunc,
                             CachePaths outputPaths);
-static void fetchLatestData(const std::vector<std::string>& updateDataUrls, ProcessJSONDataFileFunc processDataFunc,
+static void fetchLatestData(const std::vector<std::string>& updateDataUrls, const ProcessJSONDataFileFunc& processDataFunc,
                             CachePaths outputPaths);
 
 class WzUpdateManager
@@ -440,7 +440,7 @@ ProcessResult WzCompatCheckManager::processCompatCheckJSONFile(const json& updat
 						// use default compat info link
 						infoLink = WZ_DEFAULT_COMPATINFO_LINK;
 					}
-					infoLink = configureLinkURL(infoLink, (*buildPropProvider.get()));
+					infoLink = configureLinkURL(infoLink, (*buildPropProvider));
 					// submit notification (on main thread)
 					wzAsyncExecOnMainThread(
 						[validSignature, channelNameStr, compatNoticeIdStr, notificationInfo, infoLink]
@@ -701,7 +701,7 @@ static void initProcessData(const std::vector<std::string>& updateDataUrls, Proc
 }
 
 // May be called from a background thread
-static void fetchLatestData(const std::vector<std::string>& updateDataUrls, ProcessJSONDataFileFunc processDataFunc,
+static void fetchLatestData(const std::vector<std::string>& updateDataUrls, const ProcessJSONDataFileFunc& processDataFunc,
                             CachePaths outputPaths)
 {
 	if (updateDataUrls.empty())
@@ -714,7 +714,7 @@ static void fetchLatestData(const std::vector<std::string>& updateDataUrls, Proc
 		return;
 	}
 
-	URLDataRequest* pRequest = new URLDataRequest();
+	auto* pRequest = new URLDataRequest();
 	pRequest->url = updateDataUrls.front();
 	std::vector<std::string> additionalUrls(updateDataUrls.begin() + 1, updateDataUrls.end());
 	pRequest->onSuccess = [additionalUrls, processDataFunc, outputPaths](
@@ -825,7 +825,7 @@ static void fetchLatestData(const std::vector<std::string>& updateDataUrls, Proc
 					json cacheInfoObj = json::object();
 					cacheInfoObj[WZ_CACHE_INFO_JSON_WZVERSION_KEY] = version_getBuildIdentifierReleaseString();
 					std::string cacheInfoData = cacheInfoObj.dump(2, ' ', true, json::error_handler_t::replace);
-					PHYSFS_uint32 size = static_cast<PHYSFS_uint32>(cacheInfoData.size());
+					auto size = static_cast<PHYSFS_uint32>(cacheInfoData.size());
 					PHYSFS_file* fileHandle = PHYSFS_openWrite(outputPaths.cache_info_path);
 					if (fileHandle)
 					{

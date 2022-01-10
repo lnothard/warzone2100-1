@@ -211,7 +211,7 @@ static SimpleObject* aiSearchSensorTargets(SimpleObject* psObj, int weapon_slot,
 		else if (auto psCStruct = dynamic_cast<Structure*>(psSensor))
 		{
 			// skip incomplete structures
-			if (psCStruct->status != STRUCTURE_STATE::BUILT) {
+			if (psCStruct->getState() != STRUCTURE_STATE::BUILT) {
 				continue;
 			}
 			// Artillery should not fire at objects observed by VTOL CB/Strike sensors.
@@ -288,7 +288,7 @@ static int targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacker, 
                              weaponSlot < numWeapons(*psDroid); weaponSlot++)
 				{
 					//see if this weapon is targeting our commander
-					if (psDroid->action_target[weaponSlot] == (SimpleObject*)psAttackerDroid->group->psCommander)
+					if (psDroid->actionTarget[weaponSlot] == (SimpleObject*)psAttackerDroid->group->psCommander)
 					{
 						bTargetingCmd = true;
 					}
@@ -350,7 +350,7 @@ static int targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacker, 
 		}
 
 		/* Calculate damage this target suffered */
-		if (targetDroid->original_hp == 0) // FIXME Somewhere we get 0HP droids from
+		if (targetDroid->originalHp == 0) // FIXME Somewhere we get 0HP droids from
 		{
 			damageRatio = 0;
 			debug(LOG_ERROR, "targetAttackWeight: 0HP droid detected!");
@@ -359,9 +359,9 @@ static int targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacker, 
 		}
 		else
 		{
-			damageRatio = 100 - 100 * targetDroid->body / targetDroid->original_hp;
+			damageRatio = 100 - 100 * targetDroid->getHp() / targetDroid->originalHp;
 		}
-		assert(targetDroid->original_hp != 0); // Assert later so we get the info from above
+		assert(targetDroid->originalHp != 0); // Assert later so we get the info from above
 
 		/* See if this type of a droid should be prioritized */
 		switch (targetDroid->getType())
@@ -623,7 +623,7 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 			}
 			else if (targetInQuestion->type == OBJ_STRUCTURE)
 			{
-				Structure* psStruct = (Structure*)targetInQuestion;
+				auto psStruct = (Structure*)targetInQuestion;
 
 				if (electronic)
 				{

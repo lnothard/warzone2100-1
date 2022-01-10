@@ -71,6 +71,14 @@ static constexpr auto ACTION_START_TIME = 0;
 
 class DroidTemplate;
 
+enum class PENDING_STATUS
+{
+	NOTHING_PENDING,
+	START_PENDING,
+	HOLD_PENDING,
+	CANCEL_PENDING
+};
+
 enum class STRUCTURE_TYPE
 {
     HQ,
@@ -141,8 +149,8 @@ enum class FLAG_TYPE
 struct FlagPosition : public ObjectPosition
 {
     Vector3i coords {0, 0, 0};
-    uint8_t factory_inc = 0;
-    uint8_t factory_type = 0;
+    uint8_t factoryInc = 0;
+    uint8_t factoryType = 0;
 };
 
 struct StructureBounds
@@ -219,6 +227,7 @@ public:
     Structure& operator=(Structure&&) = delete;
 
     [[nodiscard]] virtual Vector2i getSize() const = 0;
+    [[nodiscard]] virtual STRUCTURE_STATE getState() const = 0;
     virtual void printInfo() const = 0;
     [[nodiscard]] virtual bool hasSensor() const = 0;
 };
@@ -256,7 +265,7 @@ namespace Impl
         [[nodiscard]] unsigned calculateRefundedPower() const;
         [[nodiscard]] int calculateAttackPriority(const ::Unit* target, int weapon_slot) const final;
         [[nodiscard]] const ::SimpleObject& getTarget(int weapon_slot) const final;
-        [[nodiscard]] STRUCTURE_STATE getState() const;
+        [[nodiscard]] STRUCTURE_STATE getState() const final;
     private:
         using enum STRUCTURE_ANIMATION_STATE;
         using enum STRUCTURE_STATE;
@@ -330,13 +339,15 @@ class Factory : public virtual Structure, public Impl::Structure
 public:
     bool setManufacture(DroidTemplate* droidTemplate, QUEUE_MODE mode);
     void refundBuildPower();
+    void releaseProduction(QUEUE_MODE mode);
+    void holdProduction(QUEUE_MODE mode);
 private:
     uint8_t productionLoops; ///< Number of loops to perform. Not synchronised, and only meaningful for selectedPlayer.
     uint8_t loopsPerformed; /* how many times the loop has been performed*/
     DroidTemplate* psSubject; ///< The subject the structure is working on.
     DroidTemplate* psSubjectPending;
     ///< The subject the structure is going to working on. (Pending = not yet synchronised.)
-    StatusPending statusPending; ///< Pending = not yet synchronised.
+    PENDING_STATUS statusPending; ///< Pending = not yet synchronised.
     unsigned pendingCount; ///< Number of messages sent but not yet processed.
     std::size_t timeStarted; /* The time the building started on the subject*/
     int buildPointsRemaining; ///< Build points required to finish building the droid.
@@ -348,17 +359,20 @@ private:
 
 class ResourceExtractor : public virtual Structure, public Impl::Structure
 {
+private:
     Structure* power_generator;
 };
 
 class PowerGenerator : public virtual Structure, public Impl::Structure
 {
+private:
     /// Pointers to associated oil derricks
     std::array<Structure*, NUM_POWER_MODULES> resource_extractors;
 };
 
 class RepairFacility : public virtual Structure, public Impl::Structure
 {
+private:
     Unit* psObj; /* Object being repaired */
     std::unique_ptr<FlagPosition> psDeliveryPoint; /* Place for the repaired droids to assemble at */
     // The group the droids to be repaired by this facility belong to
@@ -368,6 +382,9 @@ class RepairFacility : public virtual Structure, public Impl::Structure
 
 class RearmPad : public virtual Structure, public Impl::Structure
 {
+public:
+    [[nodiscard]] bool isClear() const;
+private:
     std::size_t timeStarted; /* Time reArm started on current object */
     Droid* psObj; /* Object being rearmed */
     std::size_t timeLastUpdated; /* Time rearm was last updated */
@@ -399,8 +416,6 @@ struct UPGRADE_MOD
 typedef UPGRADE_MOD REPAIR_FACILITY_UPGRADE;
 typedef UPGRADE_MOD POWER_UPGRADE;
 typedef UPGRADE_MOD REARM_UPGRADE;
-
-
 
 extern std::vector<ProductionRun> asProductionRun[NUM_FACTORY_TYPES];
 
@@ -807,25 +822,6 @@ void initStructLimits();
 
 #define syncDebugStructure(psStruct, ch) _syncDebugStructure(__FUNCTION__, psStruct, ch)
 void _syncDebugStructure(const char* function, Structure const* psStruct, char ch);
-
-
-// True iff object is a structure.
-static inline bool isStructure(SimpleObject const* psObject)
-{
-	return psObject != nullptr && psObject->type == OBJ_STRUCTURE;
-}
-
-// Returns STRUCTURE * if structure or NULL if not.
-static inline Structure* castStructure(SimpleObject* psObject)
-{
-	return isStructure(psObject) ? (Structure*)psObject : (Structure*)nullptr;
-}
-
-// Returns STRUCTURE const * if structure or NULL if not.
-static inline Structure const* castStructure(SimpleObject const* psObject)
-{
-	return isStructure(psObject) ? (Structure const*)psObject : (Structure const*)nullptr;
-}
 
 static inline int getBuildingResearchPoints(Structure* psStruct)
 {

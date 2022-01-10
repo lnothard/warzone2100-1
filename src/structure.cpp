@@ -678,10 +678,9 @@ bool loadStructureStats(WzConfig& ini)
 
 		psStats->flags = 0;
 		std::vector<WzString> flags = ini.value("flags").toWzStringList();
-		for (size_t i = 0; i < flags.size(); i++)
+		for (auto& flag : flags)
 		{
-			if (flags[i] == "Connected")
-			{
+			if (flag == "Connected") {
 				psStats->flags |= STRUCTURE_CONNECTED;
 			}
 		}
@@ -708,11 +707,11 @@ bool loadStructureStats(WzConfig& ini)
 
 		// set structure models
 		std::vector<WzString> models = ini.value("structureModel").toWzStringList();
-		for (size_t j = 0; j < models.size(); j++)
+		for (auto& model : models)
 		{
-			iIMDShape* imd = modelGet(models[j].trimmed());
+			iIMDShape* imd = modelGet(model.trimmed());
 			ASSERT(imd != nullptr, "Cannot find the PIE structureModel '%s' for structure '%s'",
-			       models[j].toUtf8().c_str(), getID(psStats));
+			       model.toUtf8().c_str(), getID(psStats));
 			psStats->IMDs.push_back(imd);
 		}
 
@@ -6329,7 +6328,7 @@ FLAG_POSITION* FindFactoryDelivery(const Structure* Struct)
 
 
 //Find the factory associated with the delivery point - returns NULL if none exist
-Structure* findDeliveryFactory(FLAG_POSITION* psDelPoint)
+Structure* findDeliveryFactory(FlagPosition* psDelPoint)
 {
 	Structure* psCurr;
 	Factory* psFactory;
@@ -6393,59 +6392,40 @@ void cancelProduction(Structure* psBuilding, QUEUE_MODE mode, bool mayClearProdu
 
 
 /*set a factory's production run to hold*/
-void holdProduction(Structure* psBuilding, QUEUE_MODE mode)
+void Factory::holdProduction(QUEUE_MODE mode)
 {
-	Factory* psFactory;
-
-	ASSERT_OR_RETURN(, StructIsFactory(psBuilding), "structure not a factory");
-
-	psFactory = &psBuilding->pFunctionality->factory;
-
-	if (mode == ModeQueue)
-	{
-		sendStructureInfo(psBuilding, STRUCTUREINFO_HOLDPRODUCTION, nullptr);
-		setStatusPendingHold(*psFactory);
-
+	if (mode == ModeQueue) {
+		sendStructureInfo(this,STRUCTUREINFO_HOLDPRODUCTION, nullptr);
+		setStatusPendingHold(*this);
 		return;
 	}
 
-	if (psFactory->psSubject)
-	{
+	if (psSubject) {
 		//set the time the factory was put on hold
-		psFactory->timeStartHold = gameTime;
+		timeStartHold = gameTime;
 		//play audio to indicate on hold
-		if (psBuilding->player == selectedPlayer)
-		{
+		if (getPlayer() == selectedPlayer) {
 			audio_PlayTrack(ID_SOUND_WINDOWCLOSE);
 		}
 	}
-
-	delPowerRequest(psBuilding);
+	delPowerRequest(this);
 }
 
 /*release a factory's production run from hold*/
-void releaseProduction(Structure* psBuilding, QUEUE_MODE mode)
+void Factory::releaseProduction(QUEUE_MODE mode)
 {
-	ASSERT_OR_RETURN(, StructIsFactory(psBuilding), "structure not a factory");
-
-	Factory* psFactory = &psBuilding->pFunctionality->factory;
-
-	if (mode == ModeQueue)
-	{
-		sendStructureInfo(psBuilding, STRUCTUREINFO_RELEASEPRODUCTION, nullptr);
-		setStatusPendingRelease(*psFactory);
-
+	if (mode == ModeQueue) {
+		sendStructureInfo(this, STRUCTUREINFO_RELEASEPRODUCTION, nullptr);
+		setStatusPendingRelease(*this);
 		return;
 	}
 
-	if (psFactory->psSubject && psFactory->timeStartHold)
-	{
+	if (psSubject && timeStartHold) {
 		//adjust the start time for the current subject
-		if (psFactory->timeStarted != ACTION_START_TIME)
-		{
-			psFactory->timeStarted += (gameTime - psFactory->timeStartHold);
+		if (timeStarted != ACTION_START_TIME) {
+			timeStarted += (gameTime - timeStartHold);
 		}
-		psFactory->timeStartHold = 0;
+		timeStartHold = 0;
 	}
 }
 
@@ -6464,42 +6444,29 @@ void doNextProduction(Structure* psStructure, DroidTemplate* current, QUEUE_MODE
 	}
 }
 
-bool ProductionRunEntry::operator ==(DroidTemplate* t) const
-{
-	return psTemplate->id == t->id;
-}
-
 /*this is called when a factory produces a droid. The Template returned is the next
 one to build - if any*/
-DroidTemplate* factoryProdUpdate(Structure* psStructure, DroidTemplate* psTemplate)
+DroidTemplate* Factory::factoryProdUpdate(DroidTemplate* psTemplate)
 {
-	CHECK_STRUCTURE(psStructure);
-	if (psStructure->player != productionPlayer)
-	{
+	CHECK_STRUCTURE(this);
+	if (getPlayer() != productionPlayer) {
 		return nullptr; // Production lists not currently synchronised.
 	}
 
-	Factory* psFactory = &psStructure->pFunctionality->factory;
-	if (psFactory->psAssemblyPoint->factoryInc >= asProductionRun[psFactory->psAssemblyPoint->factoryType].size())
-	{
+	if (psAssemblyPoint->factoryInc >= asProductionRun[psAssemblyPoint->factoryType].size()) {
 		return nullptr; // Don't even have a production list.
 	}
-	ProductionRun& productionRun = asProductionRun[psFactory->psAssemblyPoint->factoryType][psFactory->psAssemblyPoint->
-		factoryInc];
+	auto productionRun = asProductionRun[psAssemblyPoint->factoryType][psAssemblyPoint->factoryInc];
 
-	if (psTemplate != nullptr)
-	{
-		//find the entry in the array for this template
-		ProductionRun::iterator entry = std::find(productionRun.begin(), productionRun.end(), psTemplate);
-		if (entry != productionRun.end())
-		{
+	if (psTemplate != nullptr) {
+		// find the entry in the array for this template
+		auto entry = std::find(productionRun.begin(), productionRun.end(), psTemplate);
+		if (entry != productionRun.end()) {
 			entry->built = std::min(entry->built + 1, entry->quantity);
-			if (!entry->isComplete())
-			{
+			if (!entry->isComplete()) {
 				return psTemplate; // Build another of the same type.
 			}
-			if (psFactory->productionLoops == 0)
-			{
+			if (productionLoops == 0) {
 				productionRun.erase(entry);
 			}
 		}
@@ -6515,18 +6482,16 @@ DroidTemplate* factoryProdUpdate(Structure* psStructure, DroidTemplate* psTempla
 	// Check that we aren't looping doing nothing.
 	if (productionRun.empty())
 	{
-		if (psFactory->productionLoops != INFINITE_PRODUCTION)
-		{
-			psFactory->productionLoops = 0; // Reset number of loops, unless set to infinite.
+		if (productionLoops != INFINITE_PRODUCTION) {
+			productionLoops = 0; // Reset number of loops, unless set to infinite.
 		}
 	}
-	else if (psFactory->productionLoops != 0)
+	else if (productionLoops != 0)
 	//If you've got here there's nothing left to build unless factory is on loop production
 	{
 		//reduce the loop count if not infinite
-		if (psFactory->productionLoops != INFINITE_PRODUCTION)
-		{
-			psFactory->productionLoops--;
+		if (productionLoops != INFINITE_PRODUCTION) {
+			productionLoops--;
 		}
 
 		//need to reset the quantity built for each entry in the production list
@@ -6647,7 +6612,7 @@ ProductionRunEntry getProduction(Structure* psStructure, DroidTemplate* psTempla
 
 /*looks through a players production list to see how many command droids
 are being built*/
-UBYTE checkProductionForCommand(UBYTE player)
+uint8_t checkProductionForCommand(UBYTE player)
 {
 	unsigned quantity = 0;
 
@@ -6664,7 +6629,7 @@ UBYTE checkProductionForCommand(UBYTE player)
 				ProductionRun& productionRun = asProductionRun[factoryType][factoryInc];
 				for (unsigned inc = 0; inc < productionRun.size(); ++inc)
 				{
-					if (productionRun[inc].psTemplate->type == DROID_COMMAND)
+					if (productionRun[inc].psTemplate->type == DROID_TYPE::COMMAND)
 					{
 						quantity += productionRun[inc].numRemaining();
 					}
@@ -6697,7 +6662,6 @@ UWORD countAssignableFactories(UBYTE player, UWORD factoryType)
 
 	return quantity;
 }
-
 
 // check whether a factory of a certain number and type exists
 bool checkFactoryExists(UDWORD player, UDWORD factoryType, UDWORD inc)
@@ -6828,13 +6792,11 @@ void checkDeliveryPoints(UDWORD version)
 //	}
 //}
 
-
 /*Used for determining how much of the structure to draw as being built or demolished*/
 float structHeightScale(const Structure* psStruct)
 {
 	return MAX(structureCompletionProgress(*psStruct), 0.05f);
 }
-
 
 /*compares the structure sensor type with the droid weapon type to see if the
 FIRE_SUPPORT order can be assigned*/
@@ -6842,36 +6804,31 @@ bool structSensorDroidWeapon(const Structure* psStruct, const Droid* psDroid)
 {
 	//another crash when nStat is marked as 0xcd... FIXME: Why is nStat not initialized properly?
 	//Added a safety check: Only units with weapons can be assigned.
-	if (psDroid->numWeaps > 0)
-	{
+	if (numWeapons(*psStruct) > 0) {
 		//Standard Sensor Tower + indirect weapon droid (non VTOL)
 		//else if (structStandardSensor(psStruct) && (psDroid->numWeaps &&
 		if (structStandardSensor(psStruct) && (psDroid->asWeaps[0].nStat > 0 &&
 				!proj_Direct(asWeaponStats + psDroid->asWeaps[0].nStat)) &&
-			!isVtolDroid(psDroid))
-		{
+			!psDroid->isVtol()) {
 			return true;
 		}
 		//CB Sensor Tower + indirect weapon droid (non VTOL)
 		//if (structCBSensor(psStruct) && (psDroid->numWeaps &&
 		else if (structCBSensor(psStruct) && (psDroid->asWeaps[0].nStat > 0 &&
 				!proj_Direct(asWeaponStats + psDroid->asWeaps[0].nStat)) &&
-			!isVtolDroid(psDroid))
-		{
+			!psDroid->isVtol()) {
 			return true;
 		}
 		//VTOL Intercept Sensor Tower + any weapon VTOL droid
 		//else if (structVTOLSensor(psStruct) && psDroid->numWeaps &&
 		else if (structVTOLSensor(psStruct) && psDroid->asWeaps[0].nStat > 0 &&
-			isVtolDroid(psDroid))
-		{
+			psDroid->isVtol()) {
 			return true;
 		}
 		//VTOL CB Sensor Tower + any weapon VTOL droid
 		//else if (structVTOLCBSensor(psStruct) && psDroid->numWeaps &&
 		else if (structVTOLCBSensor(psStruct) && psDroid->asWeaps[0].nStat > 0 &&
-			isVtolDroid(psDroid))
-		{
+			psDroid->isVtol()) {
 			return true;
 		}
 	}
@@ -6946,12 +6903,12 @@ bool structSensorDroidWeapon(const Structure* psStruct, const Droid* psDroid)
 //	return false;
 //}
 
-
-bool RearmPad::is_clear() const
+bool RearmPad::isClear() const
 {
-  return rearm_target == nullptr ||
-         rearm_target->is_VTOL_rearmed_and_repaired();
+  return psObj == nullptr ||
+         vtolHappy(*psObj);
 }
+
 //// check whether a rearm pad is clear
 //bool clearRearmPad(const STRUCTURE* psStruct)
 //{
@@ -7086,7 +7043,7 @@ bool vtolOnRearmPad(Structure* psStruct, Droid* psDroid)
   {
     return &droid != psDroid &&
            map_coord(droid.getPosition().x) == tx &&
-           map_coord(droid.getPosition().y) == ty);
+           map_coord(droid.getPosition().y) == ty;
   });
 }
 
@@ -7123,7 +7080,7 @@ Structure* giftSingleStructure(Structure* psStructure, UBYTE attackPlayer, bool 
 		//certain structures give specific results - the rest swap sides!
 		if (!electronic_warfare || !reward)
 		{
-			originalPlayer = psStructure->player;
+			originalPlayer = psStructure->getPlayer();
 			//tell the system the structure no longer exists
 			(void)removeStruct(psStructure, false);
 
@@ -7142,18 +7099,16 @@ Structure* giftSingleStructure(Structure* psStructure, UBYTE attackPlayer, bool 
 			addStructure(psStructure);
 
 			//check through the 'attackPlayer' players list of droids to see if any are targetting it
-			for (psCurr = apsDroidLists[attackPlayer]; psCurr != nullptr; psCurr = psCurr->psNext)
+			for (auto& psCurr : apsDroidLists[attackPlayer])
 			{
-				if (psCurr->order.psObj == psStructure)
-				{
-					orderDroid(psCurr, DORDER_STOP, ModeImmediate);
+				if (psCurr->getOrder().target == psStructure) {
+					orderDroid(&psCurr, ORDER_TYPE::STOP, ModeImmediate);
 					break;
 				}
 				for (unsigned i = 0; i < psCurr->numWeaps; ++i)
 				{
-					if (psCurr->action_target[i] == psStructure)
-					{
-						orderDroid(psCurr, DORDER_STOP, ModeImmediate);
+					if (psCurr.actionTarget[i] == psStructure) {
+						orderDroid(&psCurr, ORDER_TYPE::STOP, ModeImmediate);
 						break;
 					}
 				}
@@ -7162,16 +7117,14 @@ Structure* giftSingleStructure(Structure* psStructure, UBYTE attackPlayer, bool 
 			}
 
 			//check through the 'attackPlayer' players list of structures to see if any are targetting it
-			for (psStruct = apsStructLists[attackPlayer]; psStruct != nullptr; psStruct = psStruct->psNext)
+			for (auto& psStruct : apsStructLists[attackPlayer])
 			{
-				if (psStruct->psTarget[0] == psStructure)
-				{
-					setStructureTarget(psStruct, nullptr, 0, ORIGIN_UNKNOWN);
+				if (psStruct->psTarget[0] == psStructure) {
+					setStructureTarget(psStruct.get(), nullptr, 0, TARGET_ORIGIN::UNKNOWN);
 				}
 			}
 
-			if (psStructure->status == SS_BUILT)
-			{
+			if (psStructure->getState() == STRUCTURE_STATE::BUILT) {
 				buildingComplete(psStructure);
 			}
 			//since the structure isn't being rebuilt, the visibility code needs to be adjusted
@@ -7185,13 +7138,12 @@ Structure* giftSingleStructure(Structure* psStructure, UBYTE attackPlayer, bool 
 
 	//save info about the structure
 	psType = psStructure->pStructureType;
-	x = psStructure->pos.x;
-	y = psStructure->pos.y;
-	direction = psStructure->rot.direction;
-	originalPlayer = psStructure->player;
+	x = psStructure->getPosition().x;
+	y = psStructure->getPosition().y;
+	direction = psStructure->getRotation().direction;
+	originalPlayer = psStructure->getPlayer();
 	//save how complete the build process is
-	if (psStructure->status == SS_BEING_BUILT)
-	{
+	if (psStructure->getState() == STRUCTURE_STATE::BEING_BUILT) {
 		buildPoints = psStructure->currentBuildPts;
 	}
 	//check module not attached
@@ -7264,7 +7216,7 @@ Structure* giftSingleStructure(Structure* psStructure, UBYTE attackPlayer, bool 
 }
 
 /*returns the power cost to build this structure, or to add its next module */
-UDWORD structPowerToBuildOrAddNextModule(const Structure* psStruct)
+unsigned structPowerToBuildOrAddNextModule(const Structure* psStruct)
 {
 	if (psStruct->capacity)
 	{
@@ -7312,14 +7264,13 @@ void resetResistanceLag(Structure* psBuilding)
 	}
 }
 
-
 /*checks the structure passed in is a Las Sat structure which is currently
 selected - returns true if valid*/
 bool lasSatStructSelected(const Structure* psStruct)
 {
-	if ((psStruct->selected || (bMultiPlayer && !isHumanPlayer(psStruct->player)))
+	if ((psStruct->selected || (bMultiPlayer && !isHumanPlayer(psStruct->getPlayer())))
 		&& psStruct->asWeaps[0].nStat
-		&& (asWeaponStats[psStruct->asWeaps[0].nStat].weaponSubClass == WSC_LAS_SAT))
+		&& (asWeaponStats[psStruct->asWeaps[0].nStat].weaponSubClass == WEAPON_SUBCLASS::LAS_SAT))
 	{
 		return true;
 	}
@@ -7336,16 +7287,16 @@ void cbNewDroid(Structure* psFactory, Droid* psDroid)
 
 StructureBounds getStructureBounds(const Structure* object)
 {
-	const Vector2i size = object->size();
-	const Vector2i map = map_coord(object->pos.xy()) - size / 2;
-	return StructureBounds(map, size);
+	const Vector2i size = object->getSize();
+	const Vector2i map = map_coord(object->getPosition().xy()) - size / 2;
+	return {map, size};
 }
 
 StructureBounds getStructureBounds(const StructureStats* stats, Vector2i pos, uint16_t direction)
 {
 	const Vector2i size = stats->size(direction);
 	const Vector2i map = map_coord(pos) - size / 2;
-	return StructureBounds(map, size);
+	return {map, size};
 }
 
 void checkStructure(const Structure* psStructure, const char* const location_description, const char* function,

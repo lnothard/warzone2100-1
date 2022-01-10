@@ -30,7 +30,6 @@
 
 #include "basedef.h"
 #include "objectdef.h"
-#include "statsdef.h"
 
 enum class FEATURE_TYPE
 {
@@ -91,7 +90,7 @@ bool loadFeatureStats(WzConfig& ini);
 void featureStatsShutDown();
 
 /* Create a feature on the map */
-Feature* buildFeature(FeatureStats* psStats, UDWORD x, UDWORD y, bool FromSave);
+Feature* buildFeature(FeatureStats* psStats, unsigned x, unsigned y, bool FromSave);
 
 /* Update routine for features */
 void featureUpdate(Feature* psFeat);
@@ -103,9 +102,9 @@ bool removeFeature(Feature* psDel);
 bool destroyFeature(Feature* psDel, unsigned impactTime);
 
 /* get a feature stat id from its name */
-SDWORD getFeatureStatFromName(const WzString& name);
+int getFeatureStatFromName(const WzString& name);
 
-int32_t featureDamage(Feature* psFeature, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
+int featureDamage(Feature* psFeature, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
                       unsigned impactTime, bool isDamagePerSecond, int minDamage);
 
 void featureInitVars();
@@ -115,24 +114,5 @@ StructureBounds getStructureBounds(FeatureStats const* stats, Vector2i pos);
 
 #define syncDebugFeature(psFeature, ch) _syncDebugFeature(__FUNCTION__, psFeature, ch)
 void _syncDebugFeature(const char* function, Feature const* psFeature, char ch);
-
-
-// True iff object is a feature.
-static inline bool isFeature(SIMPLE_OBJECT const* psObject)
-{
-	return psObject != nullptr && psObject->type == OBJ_FEATURE;
-}
-
-// Returns FEATURE * if feature or NULL if not.
-static inline Feature* castFeature(SIMPLE_OBJECT* psObject)
-{
-	return isFeature(psObject) ? (Feature*)psObject : (Feature*)nullptr;
-}
-
-// Returns FEATURE const * if feature or NULL if not.
-static inline Feature const* castFeature(SIMPLE_OBJECT const* psObject)
-{
-	return isFeature(psObject) ? (Feature const*)psObject : (Feature const*)nullptr;
-}
 
 #endif // __INCLUDED_SRC_FEATURE_H__
