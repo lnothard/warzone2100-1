@@ -422,7 +422,7 @@ bool runChallenges()
 
 		// clicked a load entry
 		if (id >= CHALLENGE_ENTRY_START && id <= CHALLENGE_ENTRY_END) {
-			auto psWidget = static_cast<W_BUTTON*>(widgGetFromID(psRequestScreen, id));
+			auto psWidget = dynamic_cast<W_BUTTON*>(widgGetFromID(psRequestScreen, id));
 			assert(psWidget != nullptr);
 			if (!(psWidget->pText.isEmpty()))
 			{

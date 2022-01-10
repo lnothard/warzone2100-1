@@ -30,7 +30,6 @@
 #include "map.h"
 #include "edit3d.h"
 #include "display3d.h"
-#include "objects.h"
 #include "display.h"
 #include "hci.h"
 

@@ -17,13 +17,14 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * multiopt.cpp
+
+/**
+ * @file multiopt.cpp
+ * Routines for setting the game options and starting the init process
  *
  * Alex Lee,97/98, Pumpkin Studios
- *
- * Routines for setting the game options and starting the init process.
  */
+
 #include "lib/framework/frame.h"			// for everything
 
 #include "lib/framework/file.h"
@@ -78,12 +79,12 @@ void sendOptions()
 	// First send information about the game
 	NETuint8_t(reinterpret_cast<uint8_t*>(&game.type));
 	NETstring(game.map, 128);
-	NETbin(game.hash.bytes, game.hash.Bytes);
+	NETbin(game.hash.bytes, Sha256::Bytes);
 	uint32_t modHashesSize = game.modHashes.size();
 	NETuint32_t(&modHashesSize);
 	for (auto& hash : game.modHashes)
 	{
-		NETbin(hash.bytes, hash.Bytes);
+		NETbin(hash.bytes, Sha256::Bytes);
 	}
 	NETuint8_t(&game.maxPlayers);
 	NETstring(game.name, 128);
@@ -107,9 +108,9 @@ void sendOptions()
 	}
 
 	// Send the list of who is still joining
-	for (unsigned i = 0; i < MAX_CONNECTED_PLAYERS; i++)
+	for (bool& JoiningInProgres : ingame.JoiningInProgress)
 	{
-		NETbool(&ingame.JoiningInProgress[i]);
+		NETbool(&JoiningInProgres);
 	}
 
 	// Same goes for the alliances
@@ -122,7 +123,7 @@ void sendOptions()
 	}
 
 	// Send the number of structure limits to expect
-	uint32_t numStructureLimits = static_cast<uint32_t>(ingame.structureLimits.size());
+	auto numStructureLimits = static_cast<uint32_t>(ingame.structureLimits.size());
 	NETuint32_t(&numStructureLimits);
 	debug(LOG_NET, "(Host) Structure limits to process on client is %zu", ingame.structureLimits.size());
 	// Send the structures changed
@@ -159,14 +160,14 @@ bool recvOptions(NETQUEUE queue)
 	// Get general information about the game
 	NETuint8_t(reinterpret_cast<uint8_t*>(&game.type));
 	NETstring(game.map, 128);
-	NETbin(game.hash.bytes, game.hash.Bytes);
+	NETbin(game.hash.bytes, Sha256::Bytes);
 	uint32_t modHashesSize;
 	NETuint32_t(&modHashesSize);
 	ASSERT_OR_RETURN(false, modHashesSize < 1000000, "Way too many mods %u", modHashesSize);
 	game.modHashes.resize(modHashesSize);
 	for (auto& hash : game.modHashes)
 	{
-		NETbin(hash.bytes, hash.Bytes);
+		NETbin(hash.bytes, Sha256::Bytes);
 	}
 	NETuint8_t(&game.maxPlayers);
 	NETstring(game.name, 128);
@@ -281,7 +282,7 @@ bool recvOptions(NETQUEUE queue)
 
 		// Request the map/mod from the host
 		NETbeginEncode(NETnetQueue(NetPlay.hostPlayer), NET_FILE_REQUESTED);
-		NETbin(hash.bytes, hash.Bytes);
+		NETbin(hash.bytes, Sha256::Bytes);
 		NETend();
 
 		return FileRequestResult::StartingDownload; // Starting download now.

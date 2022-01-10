@@ -193,6 +193,7 @@ public:
     [[nodiscard]] virtual unsigned getSecondaryOrder() const noexcept = 0;
     [[nodiscard]] virtual const Vector2i& getDestination() const = 0;
     [[nodiscard]] virtual const std::optional<PropulsionStats>& getPropulsion() const = 0;
+    [[nodiscard]] virtual const Movement& getMovementData() const = 0;
 
     [[nodiscard]] virtual bool hasElectronicWeapon() const = 0;
     [[nodiscard]] virtual bool isVtol() const = 0;
@@ -205,6 +206,10 @@ public:
     [[nodiscard]] virtual int calculateHeight() const = 0;
     [[nodiscard]] virtual bool isStationary() const = 0;
     virtual void upgradeHitPoints() = 0;
+    virtual bool moveDroidToBase(unsigned x, unsigned y, bool bFormation, FPATH_MOVETYPE moveType) = 0;
+    virtual void moveDroidToDirect(unsigned x, unsigned y) = 0;
+    virtual void moveTurnDroid(unsigned x, unsigned y) = 0;
+    virtual void moveShuffleDroid(Vector2i s) = 0;
 };
 
 namespace Impl
@@ -228,6 +233,7 @@ namespace Impl
       [[nodiscard]] const Vector2i& getDestination() const final;
       [[nodiscard]] const SimpleObject& getTarget(int weapon_slot) const final;
       [[nodiscard]] const std::optional<PropulsionStats>& getPropulsion() const final;
+      [[nodiscard]] const Movement& getMovementData() const final;
 
       [[nodiscard]] bool isProbablyDoomed(bool is_direct_damage) const;
       [[nodiscard]] bool isVtol() const final;
@@ -245,6 +251,14 @@ namespace Impl
       int droidDamage(unsigned damage, WEAPON_CLASS weaponClass,
                       WEAPON_SUBCLASS weaponSubClass, unsigned impactTime,
                       bool isDamagePerSecond, int minDamage);
+
+      bool moveDroidToBase(unsigned x, unsigned y, bool bFormation, FPATH_MOVETYPE moveType) final;
+
+      void moveDroidToDirect(unsigned x, unsigned y) final;
+
+      void moveTurnDroid(unsigned x, unsigned y) final;
+
+      void moveShuffleDroid(Vector2i s) final;
 
       /**
        *

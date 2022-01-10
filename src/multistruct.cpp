@@ -17,37 +17,37 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * Multistruct.c
+
+/**
+ * @file multistruct.cpp
+ * Files to cope with multiplayer structure related stuff
  *
  * Alex Lee 98, Pumpkin Studios.
- *
- * files to cope with multiplayer structure related stuff..
  */
 
 #include <cstring>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/math_ext.h"
+#include "lib/netplay/netplay.h"
+#include "lib/sound/audio_id.h"
+#include "lib/sound/audio.h"
 
 #include "design.h"
 #include "template.h"
 #include "droid.h"
 #include "basedef.h"
 #include "power.h"
-#include "geometry.h"								// for gettilestructure
+#include "geometry.h"
 #include "stats.h"
 #include "map.h"
 #include "console.h"
 #include "action.h"
 #include "order.h"
 #include "projectile.h"
-#include "lib/netplay/netplay.h"								// the netplay library.
 #include "multiplay.h"
 #include "multigifts.h"
 #include "multirecv.h"
-#include "lib/sound/audio_id.h"
-#include "lib/sound/audio.h"
 #include "research.h"
 #include "qtscript.h"
 #include "combat.h"
@@ -55,7 +55,7 @@
 // INFORM others that a building has been completed.
 bool SendBuildFinished(Structure* psStruct)
 {
-	uint8_t player = psStruct->getPlayer();
+	auto player = psStruct->getPlayer();
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "invalid player %u", player);
 
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_ADD_STRUCTURE);
@@ -94,13 +94,11 @@ bool recvBuildFinished(NETQUEUE queue)
 
 	psStruct = IdToStruct(structId, ANYPLAYER);
 
-	if (psStruct)
-	{
+	if (psStruct) {
 		// make it complete.
 		psStruct->currentBuildPts = structureBuildPointsToCompletion(*psStruct) + 1;
 
-		if (psStruct->status != SS_BUILT)
-		{
+		if (psStruct->getState() != STRUCTURE_STATE::BUILT) {
 			debug(LOG_SYNC, "Synch error, structure %u was not complete, and should have been.", structId);
 			psStruct->status = SS_BUILT;
 			buildingComplete(psStruct);

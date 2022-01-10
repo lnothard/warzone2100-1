@@ -46,6 +46,7 @@
 #include "scores.h"
 #include "research.h"
 #include "qtscript.h"
+#include "mapgrid.h"
 
 // the structure that was last hit
 Droid* psLastDroidHit;
@@ -128,8 +129,13 @@ namespace Impl
       return action;
     }
 
-    const Order &Droid::getOrder() const {
+    const Order& Droid::getOrder() const {
       return *order;
+    }
+
+    const Movement& Droid::getMovementData() const
+    {
+      return *movement;
     }
 
     bool Droid::isProbablyDoomed(bool is_direct_damage) const {
@@ -2814,7 +2820,7 @@ if (psDroid->droidType == DROID_SENSOR)
         objTrace(getId(), "DroidStartBuildFailed: buildStructureDir failed");
         return DroidStartBuildFailed;
       }
-      psStruct->hitPoints = (psStruct->hitPoints + 9) / 10; // Structures start at 10% health. Round up.
+      psStruct->hitPoints = (psStruct->getHp() + 9) / 10; // Structures start at 10% health. Round up.
     }
     else {
       /* Check the structure is still there to build (joining a partially built struct) */
@@ -2831,7 +2837,8 @@ if (psDroid->droidType == DROID_SENSOR)
 
     //check structure not already built, and we still 'own' it
     if (psStruct) {
-      if (psStruct->status != SS_BUILT && aiCheckAlliances(psStruct->getPlayer(), getPlayer())) {
+      if (psStruct->getState() != STRUCTURE_STATE::BUILT &&
+          aiCheckAlliances(psStruct->getPlayer(), getPlayer())) {
         timeActionStarted = gameTime;
         actionPointsDone = 0;
         setDroidTarget(this, psStruct);
@@ -2848,7 +2855,188 @@ if (psDroid->droidType == DROID_SENSOR)
     objTrace(getId(), "DroidStartBuildSuccess");
     return DroidStartBuildSuccess;
   }
+
+ /**
+  * Set a target location in world coordinates for a droid to move to.
+  *
+  * @return true if the routing was successful, if false then the calling code
+  *         should not try to route here again for a while
+  */
+  bool Droid::moveDroidToBase(unsigned x, unsigned y, bool bFormation, FPATH_MOVETYPE moveType)
+  {
+    using enum MOVE_STATUS;
+    FPATH_RETVAL retVal = FPR_OK;
+
+    // in multiPlayer make Transporter move like the vtols
+    if (isTransporter(*this) && game.maxPlayers == 0) {
+      fpathSetDirectRoute(this, x, y);
+      movement->status = NAVIGATE;
+      movement->pathIndex = 0;
+      return true;
+    }
+      // NOTE: While Vtols can fly, then can't go through things, like the transporter.
+    else if ((game.maxPlayers > 0 && isTransporter(*this))) {
+      fpathSetDirectRoute(this, x, y);
+      retVal = FPR_OK;
+    }
+    else {
+      retVal = fpathDroidRoute(this, x, y, moveType);
+    }
+
+    if (retVal == FPR_OK) {
+      // bit of a hack this - john
+      // if astar doesn't have a complete route, it returns a route to the nearest clear tile.
+      // the location of the clear tile is in DestinationX,DestinationY.
+      // reset x,y to this position so the formation gets set up correctly
+      x = movement->destination.x;
+      y = movement->destination.y;
+
+      objTrace(getId(), "unit %d: path ok - base Speed %u, speed %d, target(%u|%d, %u|%d)",
+               (int)getId(), baseSpeed, movement->speed, x, map_coord(x), y, map_coord(y));
+
+      movement->status = NAVIGATE;
+      movement->pathIndex = 0;
+    }
+    else if (retVal == FPR_WAIT) {
+      // the route will be calculated by the path-finding thread
+      movement->status = WAIT_FOR_ROUTE;
+      movement->destination.x = x;
+      movement->destination.y = y;
+    }
+    else // if (retVal == FPR_FAILED)
+    {
+      objTrace(getId(), "Path to (%d, %d) failed for droid %d", (int)x, (int)y, (int)getId());
+      movement->status = INACTIVE;
+      actionDroid(this, SULK);
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Move a droid directly to a location.
+   * @note This is (or should be) used for VTOLs only.
+   */
+  void Droid::moveDroidToDirect(unsigned x, unsigned y)
+  {
+    ASSERT_OR_RETURN(, isVtol(), "Only valid for a VTOL unit");
+
+    fpathSetDirectRoute(this, x, y);
+    movement->status = MOVE_STATUS::NAVIGATE;
+    movement->pathIndex = 0;
+  }
+
+  /**
+   * Turn a droid towards a given location.
+   */
+  void Droid::moveTurnDroid(unsigned x, unsigned y)
+  {
+    auto moveDir = calcDirection(getPosition().x, getPosition().y, x, y);
+
+    if (getRotation().direction != moveDir) {
+      movement->target.x = x;
+      movement->target.y = y;
+      movement->status = MOVE_STATUS::TURN_TO_TARGET;
+    }
+  }
+
+  // Tell a droid to move out the way for a shuffle
+  void Droid::moveShuffleDroid(Vector2i s)
+  {
+    int mx, my;
+    bool frontClear = true, leftClear = true, rightClear = true;
+    int lvx, lvy, rvx, rvy, svx, svy;
+    int shuffleMove;
+
+    auto shuffleDir = iAtan2(s);
+    auto shuffleMag = iHypot(s);
+
+    if (shuffleMag == 0) {
+      return;
+    }
+
+    shuffleMove = SHUFFLE_MOVE;
+
+    // calculate the possible movement vectors
+    svx = s.x * shuffleMove / shuffleMag; // Straight in the direction of s.
+    svy = s.y * shuffleMove / shuffleMag;
+
+    lvx = -svy; // 90° to the... right?
+    lvy = svx;
+
+    rvx = svy; // 90° to the... left?
+    rvy = -svx;
+
+    // check for blocking tiles
+    if (fpathBlockingTile(map_coord((int)getPosition().x + lvx),
+                          map_coord((int)getPosition().y + lvy), propulsion->propulsionType)) {
+      leftClear = false;
+    }
+    else if (fpathBlockingTile(map_coord((int)getPosition().x + rvx),
+                               map_coord((int)getPosition().y + rvy), propulsion->propulsionType)) {
+      rightClear = false;
+    }
+    else if (fpathBlockingTile(map_coord((int)getPosition().x + svx),
+                               map_coord((int)getPosition().y + svy), propulsion->propulsionType)) {
+      frontClear = false;
+    }
+
+    // find any droids that could block the shuffle
+    static GridList gridList; // static to avoid allocations.
+    gridList = gridStartIterate(getPosition().x, getPosition().y, SHUFFLE_DIST);
+    for (auto & gi : gridList)
+    {
+      auto psCurr = dynamic_cast<Droid*>(gi);
+      if (psCurr == nullptr || psCurr->died || psCurr == this) {
+        continue;
+      }
+
+      auto droidDir = iAtan2((psCurr->getPosition() - getPosition()).xy());
+      auto diff = angleDelta(shuffleDir - droidDir);
+      if (diff > -DEG(135) && diff < -DEG(45)) {
+        leftClear = false;
+      }
+      else if (diff > DEG(45) && diff < DEG(135)) {
+        rightClear = false;
+      }
+    }
+
+    // calculate a target
+    if (leftClear) {
+      mx = lvx;
+      my = lvy;
+    }
+    else if (rightClear) {
+      mx = rvx;
+      my = rvy;
+    }
+    else if (frontClear) {
+      mx = svx;
+      my = svy;
+    }
+    else {
+      // nowhere to shuffle to, quit
+      return;
+    }
+
+    // check the location for vtols
+    auto tar = getPosition().xy() + Vector2i(mx, my);
+    if (isVtol()) {
+      actionVTOLLandingPos(this, &tar);
+    }
+
+    // set up the move state
+    if (movement->status != MOVE_STATUS::SHUFFLE) {
+      movement->shuffleStart = gameTime;
+    }
+    movement->status = MOVE_STATUS::SHUFFLE;
+    movement->src = getPosition().xy();
+    movement->target = tar;
+    movement->path.clear();
+    movement->pathIndex = 0;
+  }
 }
+
 //void cancelBuild(DROID *psDroid)
 //{
 //	if (psDroid->order.type == DORDER_NONE || psDroid->order.type == DORDER_PATROL || psDroid->order.type == DORDER_HOLD || psDroid->order.type == DORDER_SCOUT || psDroid->order.type == DORDER_GUARD)

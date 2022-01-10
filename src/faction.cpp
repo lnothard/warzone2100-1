@@ -22,9 +22,10 @@
  * Functions for factions
  */
 
-#include "faction.h"
 #include "lib/framework/frame.h"
 #include "lib/netplay/netplay.h"
+
+#include "faction.h"
 
 static const struct FACTION factions[NUM_FACTIONS] = {
 	{
@@ -164,14 +165,12 @@ std::unordered_set<FactionID> getEnabledFactions(bool ignoreNormalFaction /*= fa
 	for (uint8_t f_id = 0; f_id < NUM_FACTIONS; ++f_id)
 	{
 		const auto faction = static_cast<FactionID>(f_id);
-		if (ignoreNormalFaction && (faction == FactionID::NORMAL))
-		{
+		if (ignoreNormalFaction && (faction == FactionID::NORMAL)) {
 			continue;
 		}
 		for (const auto& player : NetPlay.players)
 		{
-			if (player.faction == faction)
-			{
+			if (player.faction == faction) {
 				enabledFactions.insert(faction);
 				continue;
 			}
@@ -180,10 +179,9 @@ std::unordered_set<FactionID> getEnabledFactions(bool ignoreNormalFaction /*= fa
 	return enabledFactions;
 }
 
-const char* to_string(FactionID faction)
+std::string to_string(FactionID faction)
 {
-	switch (faction)
-	{
+	switch (faction) {
 	case FactionID::NORMAL:
 		return "Normal";
 	case FactionID::NEXUS:
@@ -191,13 +189,11 @@ const char* to_string(FactionID faction)
 	case FactionID::COLLECTIVE:
 		return "Collective";
 	}
-	return ""; // silence warning - switch above should be complete
 }
 
-const char* to_localized_string(FactionID faction)
+std::string to_localized_string(FactionID faction)
 {
-	switch (faction)
-	{
+	switch (faction) {
 	case FactionID::NORMAL:
 		// TRANSLATORS: "Normal" Faction
 		return _("Normal");
@@ -208,5 +204,4 @@ const char* to_localized_string(FactionID faction)
 		// TRANSLATORS: "Collective" Faction
 		return _("Collective");
 	}
-	return ""; // silence warning - switch above should be complete
 }

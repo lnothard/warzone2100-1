@@ -17,24 +17,24 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
-	Spot FX code - will handle every miscellaneous imd render and update for temporary
-	entities except projectiles.
-	Handles stuff like
-	- Smoke sprites on the card.
-	- Explosions
-	- Building body kit - flashing lights etc etc
-	- Construction graphics
-	- Gravitons
-	- Dust
-	- Blood
 
-	It's now PSX friendly in that there's no floats
+/**
+ * @file effects.cpp
+ *
+ * Spot FX code - will handle every miscellaneous imd render and update for temporary
+ * entities except projectiles.
+ * Handles stuff like
+ *	- Smoke sprites on the card.
+ *	- Explosions
+ *	- Building body kit - flashing lights etc etc
+ *	- Construction graphics
+ *	- Gravitons
+ *	- Dust
+ *	- Blood
+ *
+ * It's now PSX friendly in that there's no floats
+ */
 
-	************************************************************
-	* STILL NEED TO REMOVE SOME MAGIC NUMBERS INTO #DEFINES!!! *
-	************************************************************
-*/
 #include "lib/framework/wzapp.h"
 #include "lib/framework/wzconfig.h"
 #include "lib/framework/frameresource.h"
@@ -305,11 +305,10 @@ void addEffect(const Vector3i* pos, EFFECT_GROUP group, EFFECT_TYPE type, bool s
 void addEffect(const Vector3i* pos, EFFECT_GROUP group, EFFECT_TYPE type, bool specified, iIMDShape* imd, int lit,
                unsigned effectTime)
 {
-	if (gamePaused())
-	{
+	if (gamePaused()) {
 		return;
 	}
-	EFFECT* psEffect = new EFFECT();
+	auto psEffect = new EFFECT();
 	/* Reset control bits */
 	psEffect->control = 0;
 
@@ -412,19 +411,17 @@ void processEffects(const glm::mat4& viewMatrix)
 {
 	for (auto it = activeList.begin(); it != activeList.end();)
 	{
-		EFFECT* psEffect = *it;
+		auto psEffect = *it;
 
 		if (psEffect->birthTime <= graphicsTime) // Don't process, if it doesn't exist yet
 		{
-			if (!updateEffect(psEffect))
-			{
+			if (!updateEffect(psEffect)) {
 				delete psEffect;
 				it = activeList.erase(it);
 				continue;
 			}
 			if (psEffect->group != EFFECT_FREED && clipXY(static_cast<SDWORD>(psEffect->position.x),
-			                                              static_cast<SDWORD>(psEffect->position.z)))
-			{
+			                                              static_cast<SDWORD>(psEffect->position.z))) {
 				bucketAddTypeToList(RENDER_EFFECT, psEffect, viewMatrix);
 			}
 		}
@@ -1810,7 +1807,6 @@ void effectSetupSatLaser(EFFECT* psEffect)
 {
 	/* Does nothing at all..... Runs only for one frame! */
 	psEffect->baseScale = 1;
-	return;
 }
 
 void effectSetupGraviton(EFFECT* psEffect)

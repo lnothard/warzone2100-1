@@ -25,6 +25,7 @@
 using nonstd::optional;
 using nonstd::nullopt;
 #include <3rdparty/json/json.hpp>
+#include <utility>
 using json = nlohmann::json;
 
 static std::string publicIPv4LookupService = WZ_DEFAULT_PUBLIC_IPv4_LOOKUP_SERVICE_URL;
@@ -152,12 +153,12 @@ private:
 	optional<std::string> ipv6_error;
 	std::mutex ip_mutex;
 
-	bool allRequestsFinished() const
+	[[nodiscard]] bool allRequestsFinished() const
 	{
 		return (ipv4.has_value() || ipv4_error.has_value()) && (ipv6.has_value() || ipv6_error.has_value());
 	}
 
-	bool dispatchCallbackIfDone() const
+	[[nodiscard]] bool dispatchCallbackIfDone() const
 	{
 		if (!allRequestsFinished())
 		{
@@ -177,8 +178,8 @@ private:
 	}
 
 public:
-	GetPublicIPAddress(const IPAddressResultCallbackFunc& resultCallback)
-		: resultCallback(resultCallback)
+	explicit GetPublicIPAddress(IPAddressResultCallbackFunc  resultCallback)
+		: resultCallback(std::move(resultCallback))
 	{
 	}
 
@@ -199,7 +200,7 @@ public:
 		if (ipv4)
 		{
 			requestPublicIPAddress(publicIPv4LookupService, InternetProtocol::IPv4, publicIPv4LookupServiceJSONKey,
-			                       [pPublicIpAddresses](optional<std::string> ipAddressString,
+			                       [pPublicIpAddresses](const optional<std::string>& ipAddressString,
 			                                            optional<std::string> errorString)
 			                       {
 				                       std::lock_guard<std::mutex> guard(pPublicIpAddresses->ip_mutex);
@@ -225,7 +226,7 @@ public:
 		if (ipv6)
 		{
 			requestPublicIPAddress(publicIPv6LookupService, InternetProtocol::IPv6, publicIPv6LookupServiceJSONKey,
-			                       [pPublicIpAddresses](optional<std::string> ipAddressString,
+			                       [pPublicIpAddresses](const optional<std::string>& ipAddressString,
 			                                            optional<std::string> errorString)
 			                       {
 				                       std::lock_guard<std::mutex> guard(pPublicIpAddresses->ip_mutex);

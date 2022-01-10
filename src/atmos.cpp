@@ -143,7 +143,7 @@ static void processParticle(Particle* psPart)
 						pos.z = static_cast<int>(psPart->position.z);
 						pos.y = groundHeight;
 						effectSetSize(60);
-						addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_SPECIFIED, true, getImdFromIndex(MI_SPLASH),
+						addEffect(&pos, EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_SPECIFIED, true, getImdFromIndex(MI_SPLASH),
 						          0);
 					}
 				}
@@ -278,9 +278,9 @@ void atmosUpdateSystem()
 				switch (weather)
 				{
 				case WEATHER_TYPE::SNOWING:
-					atmosAddParticle(pos, SNOW);
+					atmosAddParticle(pos, PARTICLE_TYPE::SNOW);
 				case WEATHER_TYPE::RAINING:
-					atmosAddParticle(pos, RAIN);
+					atmosAddParticle(pos, PARTICLE_TYPE::RAIN);
 					break;
 				case WEATHER_TYPE::NONE:
 					break;

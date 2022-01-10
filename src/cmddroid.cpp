@@ -100,7 +100,7 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 	return addedToGroup;
 }
 
-Droid* cmdDroidGetDesignator(UDWORD player)
+Droid* cmdDroidGetDesignator(unsigned player)
 {
 	return apsCmdDesignator[player];
 }
@@ -108,28 +108,28 @@ Droid* cmdDroidGetDesignator(UDWORD player)
 void cmdDroidSetDesignator(Droid* psDroid)
 {
 	ASSERT_OR_RETURN(, psDroid != nullptr, "Invalid droid!");
-	if (psDroid->getType() != DROID_TYPE::COMMAND)
-	{
+	if (psDroid->getType() != DROID_TYPE::COMMAND) {
 		return;
 	}
 
 	apsCmdDesignator[psDroid->getPlayer()] = psDroid;
 }
 
-void cmdDroidClearDesignator(UDWORD player)
+void cmdDroidClearDesignator(unsigned player)
 {
 	apsCmdDesignator[player] = nullptr;
 }
 
 long get_commander_index(const Droid& commander)
 {
-  assert(is_commander(commander));
+  assert(commander.getType() == DROID_TYPE::COMMAND);
 
-  const auto& droids = droid_lists[commander.getPlayer()];
+  const auto& droids = apsDroidLists[commander.getPlayer()];
   return std::find_if(droids.begin(), droids.end(),
                       [&commander](const auto& droid)
   {
-      return  is_commander(droid) && &droid == &commander;
+      return droid.getType() == DROID_TYPE::COMMAND &&
+             &droid == &commander;
   }) - droids.begin();
 }
 ///** This function returns the index of the command droid.

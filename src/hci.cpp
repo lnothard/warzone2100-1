@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <utility>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/stdio_ext.h"
@@ -211,8 +212,8 @@ struct IntUpdateFunc
 public:
 	typedef std::function<void ()> UpdateFunc;
 public:
-	IntUpdateFunc(const UpdateFunc& func, uint32_t intervalTicks = GAME_TICKS_PER_SEC)
-		: func(func)
+	explicit IntUpdateFunc(UpdateFunc  func, uint32_t intervalTicks = GAME_TICKS_PER_SEC)
+		: func(std::move(func))
 		  , intervalTicks(intervalTicks)
 		  , realTimeLastCalled(0)
 	{
@@ -363,12 +364,12 @@ void setReticuleButtonDimensions(W_BUTTON& button, const WzString& filename)
 	}
 }
 
-void setReticuleStats(int ButId, std::string tip, std::string filename, std::string filenameDown,
+void setReticuleStats(int ButId, std::string tip, const std::string& filename, const std::string& filenameDown,
                       const playerCallbackFunc& callbackFunc)
 {
 	ASSERT_OR_RETURN(, (ButId >= 0) && (ButId < NUMRETBUTS), "Invalid ButId: %d", ButId);
 
-	retbutstats[ButId].tip = tip;
+	retbutstats[ButId].tip = std::move(tip);
 	retbutstats[ButId].filename = WzString::fromUtf8(filename.c_str());
 	retbutstats[ButId].filenameDown = WzString::fromUtf8(filenameDown.c_str());
 	retbutstats[ButId].downTime = 0;
@@ -431,7 +432,7 @@ static void intDisplayReticuleButton(WIDGET* psWidget, UDWORD xOffset, UDWORD yO
 	bool flashing = retbutstats[psWidget->UserData].flashing;
 	int flashTime = retbutstats[psWidget->UserData].flashTime;
 	ASSERT_OR_RETURN(, psWidget->type == WIDG_BUTTON, "Not a button");
-	W_BUTTON* psButton = (W_BUTTON*)psWidget;
+	auto* psButton = (W_BUTTON*)psWidget;
 	bool butDisabled = psButton->state & WBUT_DISABLE;
 
 	if (retbutstats[psWidget->UserData].filename.isEmpty() && !butDisabled)
@@ -522,24 +523,23 @@ public:
 	{
 	}
 
-	~ReplayControllerWidget()
-	{
-	}
+	~ReplayControllerWidget() override
+	= default;
 
 public:
 	static std::shared_ptr<ReplayControllerWidget> make();
 
 public:
-	virtual void display(int xOffset, int yOffset) override;
-	virtual void geometryChanged() override;
-	virtual void screenSizeDidChange(int oldWidth, int oldHeight, int newWidth, int newHeight) override;
-	virtual void run(W_CONTEXT* psContext) override;
+	void display(int xOffset, int yOffset) override;
+	void geometryChanged() override;
+	void screenSizeDidChange(int oldWidth, int oldHeight, int newWidth, int newHeight) override;
+	void run(W_CONTEXT* psContext) override;
 
 private:
 	class W_REPLAY_CONTROL_BUTTON : public W_BUTTON
 	{
 	public:
-		W_REPLAY_CONTROL_BUTTON(W_BUTINIT const* init)
+		explicit W_REPLAY_CONTROL_BUTTON(W_BUTINIT const* init)
 			: W_BUTTON(init)
 		{
 		}
@@ -549,7 +549,7 @@ private:
 		{
 		}
 
-		~W_REPLAY_CONTROL_BUTTON()
+		~W_REPLAY_CONTROL_BUTTON() override
 		{
 			if (pButtonImage)
 			{
@@ -1185,7 +1185,7 @@ void intHidePowerBar()
 /* Reset the widget screen to just the reticule */
 void intResetScreen(bool NoAnim, bool skipMissionResultScreen /*= false*/)
 {
-	if (getWidgetsStatus() == false)
+	if (!getWidgetsStatus())
 	{
 		NoAnim = true;
 	}
@@ -1751,7 +1751,7 @@ INT_RETVAL intRunWidgets()
 						{
 							Tile* psTile = mapTile(map_coord(pos.x), map_coord(pos.y));
 							Feature* psFeature = (Feature*)psTile->psObject;
-							Structure* psStructure = (Structure*)psTile->psObject;
+							auto* psStructure = (Structure*)psTile->psObject;
 
 							if (psStructure && psTile->psObject->type == OBJ_STRUCTURE)
 							{
@@ -2107,7 +2107,7 @@ bool intAddReticule()
 
 void intRemoveReticule()
 {
-	if (ReticuleUp == true)
+	if (ReticuleUp)
 	{
 		widgDelete(psWScreen, IDRET_FORM); // remove reticule
 		ReticuleUp = false;
@@ -2191,7 +2191,7 @@ void intRemoveStats()
 	setSecondaryWindowUp(false);
 
 	// Start the window close animation.
-	IntFormAnimated* Form = (IntFormAnimated*)widgGetFromID(psWScreen, IDSTAT_FORM);
+	auto* Form = (IntFormAnimated*)widgGetFromID(psWScreen, IDSTAT_FORM);
 	if (Form)
 	{
 		Form->closeAnimateDelete();
@@ -2363,7 +2363,7 @@ static bool intAddDebugStatsForm(BaseStats** _ppsStatsList, UDWORD numStats)
 static BaseStats* getResearchStats(SimpleObject* psObj)
 {
 	ASSERT_OR_RETURN(nullptr, psObj != nullptr && psObj->type == OBJ_STRUCTURE, "Invalid Structure pointer");
-	Structure* psBuilding = (Structure*)psObj;
+	auto* psBuilding = (Structure*)psObj;
 	ResearchFacility* psResearchFacility = &psBuilding->pFunctionality->researchFacility;
 
 	if (psResearchFacility->psSubjectPending != nullptr && !IsResearchCompleted(
@@ -2375,7 +2375,7 @@ static BaseStats* getResearchStats(SimpleObject* psObj)
 	return psResearchFacility->psSubject;
 }
 
-bool setController(std::shared_ptr<BaseObjectsController> controller, INTMODE newIntMode, OBJECT_MODE newObjMode)
+bool setController(const std::shared_ptr<BaseObjectsController>& controller, INTMODE newIntMode, OBJECT_MODE newObjMode)
 {
 	intResetScreen(true);
 
@@ -2727,12 +2727,12 @@ int intGetResearchState()
 		//calculate the list
 		auto researchList = fillResearchList(selectedPlayer, nonstd::nullopt, MAXRESEARCH);
 		count = researchList.size();
-		for (int n = 0; n < researchList.size(); ++n)
+		for (unsigned int n : researchList)
 		{
 			for (int player = 0; player < MAX_PLAYERS; ++player)
 			{
 				if (aiCheckAlliances(player, selectedPlayer) && IsResearchStarted(
-					&asPlayerResList[player][researchList[n]]))
+					&asPlayerResList[player][n]))
 				{
 					--count; // An ally is already researching this topic, so don't flash the button because of it.
 					break;
@@ -2927,7 +2927,7 @@ Droid* intGotoNextDroidType(Droid* CurrDroid, DROID_TYPE droidType, bool AllowGr
 		}
 	}
 
-	if (Found == true)
+	if (Found)
 	{
 		// Center it on screen.
 		if (CurrentDroid)

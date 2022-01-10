@@ -23,10 +23,10 @@
 
 #include "map.h"
 
-#define TILE_RAISE	1
-#define TILE_LOWER	-1
+static constexpr auto TILE_RAISE = 1;
+static constexpr auto TILE_LOWER	= -1;
 
-typedef void (*BUILDCALLBACK)(UDWORD xPos, UDWORD yPos, void* UserData);
+typedef void (*BUILDCALLBACK)(unsigned xPos, unsigned yPos, void* UserData);
 
 void Edit3DInitVars();
 bool found3DBuilding(Vector2i& pos);
@@ -63,8 +63,8 @@ struct BUILDDETAILS
 {
 	BUILDCALLBACK CallBack;
 	void* UserData; //this holds the OBJECT_POSITION pointer for a Deliv Point
-	UDWORD x, y;
-	UDWORD width, height;
+	unsigned x, y;
+	unsigned width, height;
 	BaseStats* psStats;
 	uint16_t directionShift;
 };

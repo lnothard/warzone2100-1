@@ -367,8 +367,8 @@ bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot
 	if (!psTarget->visible[psDroid->getPlayer()]) {
 		return false;
 	}
-	if ((numWeapons(*psDroid) == 0 || psDroid->isVtol() && visibleObject(psDroid, psTarget, false))
-	{
+	if ((numWeapons(*psDroid) == 0 || psDroid->isVtol() &&
+      visibleObject(psDroid, psTarget, false))) {
 		return true;
 	}
 	return (orderState(psDroid, ORDER_TYPE::FIRE_SUPPORT) ||
@@ -482,7 +482,6 @@ bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot
 bool actionReachedBuildPos(Droid const* psDroid, int x, int y, uint16_t dir, BaseStats const* psStats)
 {
 	ASSERT_OR_RETURN(false, psStats != nullptr && psDroid != nullptr, "Bad stat or droid");
-	CHECK_DROID(psDroid);
 
 	auto b = getStructureBounds(psStats, Vector2i(x, y), dir);
 
@@ -493,7 +492,6 @@ bool actionReachedBuildPos(Droid const* psDroid, int x, int y, uint16_t dir, Bas
 	return delta.x >= -1 && delta.x <= b.size.x &&
          delta.y >= -1 && delta.y <= b.size.y;
 }
-
 
 // check if a droid is on the foundations of a new building
 static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir, BaseStats* psStats)
@@ -611,47 +609,39 @@ void actionDroid(Droid* psDroid, ACTION action,
 return to base*/
 void moveToRearm(Droid* psDroid)
 {
-	CHECK_DROID(psDroid);
-
-	if (!isVtolDroid(psDroid))
-	{
+	if (!psDroid->isVtol()) {
 		return;
 	}
 
 	//if droid is already returning - ignore
-	if (vtolRearming(psDroid))
-	{
+	if (vtolRearming(*psDroid)) {
 		return;
 	}
 
 	//get the droid to fly back to a ReArming Pad
 	// don't worry about finding a clear one for the minute
-	Structure* psStruct = findNearestReArmPad(psDroid, psDroid->associated_structure, false);
-	if (psStruct)
-	{
+	Structure* psStruct = findNearestReArmPad(psDroid, psDroid->associatedStructure, false);
+	if (psStruct) {
 		// note a base rearm pad if the vtol doesn't have one
-		if (psDroid->associated_structure == nullptr)
-		{
+		if (psDroid->associated_structure == nullptr) {
 			setDroidBase(psDroid, psStruct);
 		}
 
 		//return to re-arming pad
-		if (psDroid->order.type == ORDER_TYPE::NONE)
-		{
+		if (psDroid->order.type == ORDER_TYPE::NONE) {
 			// no order set - use the rearm order to ensure the unit goes back
 			// to the landing pad
 			orderDroidObj(psDroid, ORDER_TYPE::REARM, psStruct, ModeImmediate);
 		}
-		else
-		{
-			actionDroid(psDroid, ACTION::MOVETOREARM, psStruct);
+		else {
+			actionDroid(psDroid, ACTION::MOVE_TO_REARM, psStruct);
 		}
 	}
 	else
 	{
 		//return to base un-armed
 		objTrace(psDroid->id, "Did not find an available rearm pad - RTB instead");
-		orderDroid(psDroid, ORDER_TYPE::RTB, ModeImmediate);
+		orderDroid(psDroid, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
 	}
 }
 

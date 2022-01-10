@@ -451,7 +451,7 @@ int objDamage(SimpleObject* psObj, unsigned damage, unsigned originalhp,
 
 	if (psObj->type == OBJ_DROID)
 	{
-		Droid* psDroid = (Droid*)psObj;
+		auto* psDroid = (Droid*)psObj;
 
 		// Retrieve highest, applicable, experience level
 		level = getDroidEffectiveLevel(psDroid);
@@ -536,7 +536,7 @@ unsigned int objGuessFutureDamage(WeaponStats* psStats, unsigned int player, Sim
 
 	if (psTarget->type == OBJ_DROID)
 	{
-		Droid* psDroid = (Droid*)psTarget;
+		auto* psDroid = (Droid*)psTarget;
 
 		// Retrieve highest, applicable, experience level
 		level = getDroidEffectiveLevel(psDroid);

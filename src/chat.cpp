@@ -19,12 +19,12 @@
 
 /**
  * @file chat.cpp
- *
  */
 
-#include "chat.h"
-#include "ai.h"
 #include "lib/netplay/netplay.h"
+
+#include "ai.h"
+#include "chat.h"
 #include "qtscript.h"
 
 ChatMessage::ChatMessage(unsigned sender, std::string text)
@@ -56,7 +56,7 @@ std::unique_ptr< std::vector<unsigned> > ChatMessage::get_recipients() const
 
 	for (auto player = 0; player < MAX_CONNECTED_PLAYERS; player++)
 	{
-		if (should_receive(player) && openchannels[player])  {
+		if (should_receive(player) && openchannels[player]) {
 			recipients->push_back(player);
 		}
 	}
@@ -109,43 +109,39 @@ void ChatMessage::sendToHumanPlayers()
 	auto message = NetworkTextMessage(sender, formatted);
 	message.teamSpecific = allies_only && intended_recipients.empty();
 
-	if (sender == selectedPlayer || should_receive(selectedPlayer))
-	{
+	if (sender == selectedPlayer ||
+      should_receive(selectedPlayer)) {
 		printInGameTextMessage(message);
 	}
 
-	if (is_global())
-	{
+	if (is_global()) {
 		message.enqueue(NETbroadcastQueue());
 		return;
 	}
 
-	for (auto receiver : get_recipients())
+	for (auto& receiver : get_recipients())
 	{
-		if (isHumanPlayer(receiver))
-		{
+		if (isHumanPlayer(receiver)) {
 			message.enqueue(NETnetQueue(receiver));
 		}
 	}
 }
 
-void ChatMessage::sendToAiPlayer(uint32_t receiver)
+void ChatMessage::sendToAiPlayer(unsigned receiver)
 {
-	if (!ingame.localOptionsReceived)
-	{
+	if (!ingame.localOptionsReceived) {
 		return;
 	}
 
-	uint32_t responsiblePlayer = whosResponsible(receiver);
+	auto responsiblePlayer = whosResponsible(receiver);
 
-	if (responsiblePlayer >= MAX_PLAYERS && responsiblePlayer != NetPlay.hostPlayer)
-	{
+	if (responsiblePlayer >= MAX_PLAYERS &&
+      responsiblePlayer != NetPlay.hostPlayer) {
 		debug(LOG_ERROR, "sendToAiPlayer() - responsiblePlayer >= MAX_PLAYERS");
 		return;
 	}
 
-	if (!isHumanPlayer(responsiblePlayer))
-	{
+	if (!isHumanPlayer(responsiblePlayer)) {
 		debug(LOG_ERROR, "sendToAiPlayer() - responsiblePlayer is not human.");
 		return;
 	}
@@ -161,18 +157,16 @@ void ChatMessage::sendToAiPlayers()
 {
 	for (auto receiver : get_recipients())
 	{
-		if (!isHumanPlayer(receiver))
-		{
-			if (myResponsibility(receiver))
-			{
-				triggerEventChat(sender, receiver, text);
-			}
-			else
-			{
-				sendToAiPlayer(receiver);
-			}
-		}
-	}
+    if (isHumanPlayer(receiver)) {
+      continue;
+    }
+    if (myResponsibility(receiver)) {
+      triggerEventChat(sender, receiver, text);
+    }
+    else {
+      sendToAiPlayer(receiver);
+    }
+  }
 }
 
 void ChatMessage::sendToSpectators()

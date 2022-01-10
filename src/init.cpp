@@ -19,8 +19,8 @@
 */
 
 /**
- * @file init.c
- * Game initialisation routines.
+ * @file init.cpp
+ * Game initialisation routines
  */
 
 #include "lib/framework/frame.h"
@@ -100,6 +100,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <array>
+#include <utility>
 
 static void initMiscVars();
 
@@ -315,13 +316,13 @@ std::list<std::string> getPhysFSSearchPathsAsStr()
 {
 	std::list<std::string> results;
 	char** list = PHYSFS_getSearchPath();
-	if (list == NULL)
+	if (list == nullptr)
 	{
 		return {};
 	}
-	for (char** i = list; *i != NULL; i++)
+	for (char** i = list; *i != nullptr; i++)
 	{
-		results.push_back(*i);
+		results.emplace_back(*i);
 	}
 	PHYSFS_freeList(list);
 	return results;
@@ -473,7 +474,7 @@ bool rebuildSearchPath(searchPathMode mode, bool force, const char* current_map)
 				// make sure videos override included files
 				sstrcpy(tmpstr, curSearchPath->path);
 				sstrcat(tmpstr, "sequences.wz");
-				PHYSFS_mount(tmpstr, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(tmpstr, nullptr, PHYSFS_APPEND);
 				curSearchPath = curSearchPath->higherPriority;
 			}
 			curSearchPath = searchPathRegistry;
@@ -487,7 +488,7 @@ bool rebuildSearchPath(searchPathMode mode, bool force, const char* current_map)
 				debug(LOG_WZ, "Adding [%s] to search path", curSearchPath->path);
 #endif // DEBUG
 				// Add global and campaign mods
-				PHYSFS_mount(curSearchPath->path, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(curSearchPath->path, nullptr, PHYSFS_APPEND);
 
 				addSubdirs(curSearchPath->path, versionedModsPath(MODS_MUSIC), PHYSFS_APPEND, nullptr, false);
 				addSubdirs(curSearchPath->path, versionedModsPath(MODS_GLOBAL), PHYSFS_APPEND,
@@ -502,15 +503,15 @@ bool rebuildSearchPath(searchPathMode mode, bool force, const char* current_map)
 				}
 
 				// Add plain dir
-				PHYSFS_mount(curSearchPath->path, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(curSearchPath->path, nullptr, PHYSFS_APPEND);
 
 				// Add base files
 				sstrcpy(tmpstr, curSearchPath->path);
 				sstrcat(tmpstr, "base");
-				PHYSFS_mount(tmpstr, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(tmpstr, nullptr, PHYSFS_APPEND);
 				sstrcpy(tmpstr, curSearchPath->path);
 				sstrcat(tmpstr, "base.wz");
-				PHYSFS_mount(tmpstr, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(tmpstr, nullptr, PHYSFS_APPEND);
 
 				curSearchPath = curSearchPath->higherPriority;
 			}
@@ -524,7 +525,7 @@ bool rebuildSearchPath(searchPathMode mode, bool force, const char* current_map)
 				// make sure videos override included files
 				sstrcpy(tmpstr, curSearchPath->path);
 				sstrcat(tmpstr, "sequences.wz");
-				PHYSFS_mount(tmpstr, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(tmpstr, nullptr, PHYSFS_APPEND);
 				curSearchPath = curSearchPath->higherPriority;
 			}
 		// Add the selected map first, for mapmod support
@@ -535,13 +536,13 @@ bool rebuildSearchPath(searchPathMode mode, bool force, const char* current_map)
 					// mount it as a normal physical map path
 					WzString realPathAndDir = WzString::fromUtf8(PHYSFS_getRealDir(current_map)) + current_map;
 					realPathAndDir.replace("/", PHYSFS_getDirSeparator()); // Windows fix
-					PHYSFS_mount(realPathAndDir.toUtf8().c_str(), NULL, PHYSFS_APPEND);
+					PHYSFS_mount(realPathAndDir.toUtf8().c_str(), nullptr, PHYSFS_APPEND);
 				}
 				else if (!inMemoryMapArchiveData.empty())
 				{
 					// mount the in-memory map archive as a virtual file
 					if (PHYSFS_mountMemory_fixed(inMemoryMapArchiveData.data(), inMemoryMapArchiveData.size(),
-					                             clearInMemoryMapFile, inMemoryMapVirtualFilenameUID.c_str(), NULL,
+					                             clearInMemoryMapFile, inMemoryMapVirtualFilenameUID.c_str(), nullptr,
 					                             PHYSFS_APPEND) != 0)
 					{
 						inMemoryMapArchiveMounted++;
@@ -563,7 +564,7 @@ bool rebuildSearchPath(searchPathMode mode, bool force, const char* current_map)
 				debug(LOG_WZ, "Adding [%s] to search path", curSearchPath->path);
 #endif // DEBUG
 				// Add global and multiplay mods
-				PHYSFS_mount(curSearchPath->path, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(curSearchPath->path, nullptr, PHYSFS_APPEND);
 				addSubdirs(curSearchPath->path, versionedModsPath(MODS_MUSIC), PHYSFS_APPEND, nullptr, false);
 
 				// Only load if we are host or singleplayer (Initial mod load relies on this, too)
@@ -591,21 +592,21 @@ bool rebuildSearchPath(searchPathMode mode, bool force, const char* current_map)
 				// Add multiplay patches
 				sstrcpy(tmpstr, curSearchPath->path);
 				sstrcat(tmpstr, "mp");
-				PHYSFS_mount(tmpstr, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(tmpstr, nullptr, PHYSFS_APPEND);
 				sstrcpy(tmpstr, curSearchPath->path);
 				sstrcat(tmpstr, "mp.wz");
-				PHYSFS_mount(tmpstr, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(tmpstr, nullptr, PHYSFS_APPEND);
 
 				// Add plain dir
-				PHYSFS_mount(curSearchPath->path, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(curSearchPath->path, nullptr, PHYSFS_APPEND);
 
 				// Add base files
 				sstrcpy(tmpstr, curSearchPath->path);
 				sstrcat(tmpstr, "base");
-				PHYSFS_mount(tmpstr, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(tmpstr, nullptr, PHYSFS_APPEND);
 				sstrcpy(tmpstr, curSearchPath->path);
 				sstrcat(tmpstr, "base.wz");
-				PHYSFS_mount(tmpstr, NULL, PHYSFS_APPEND);
+				PHYSFS_mount(tmpstr, nullptr, PHYSFS_APPEND);
 
 				curSearchPath = curSearchPath->higherPriority;
 			}
@@ -628,7 +629,7 @@ bool rebuildSearchPath(searchPathMode mode, bool force, const char* current_map)
 
 		// User's home dir must be first so we always see what we write
 		WZ_PHYSFS_unmount(PHYSFS_getWriteDir());
-		PHYSFS_mount(PHYSFS_getWriteDir(), NULL, PHYSFS_PREPEND);
+		PHYSFS_mount(PHYSFS_getWriteDir(), nullptr, PHYSFS_PREPEND);
 
 #ifdef DEBUG
 		printSearchPath();
@@ -647,9 +648,9 @@ bool rebuildSearchPath(searchPathMode mode, bool force, const char* current_map)
 struct MapFileListPath
 {
 public:
-	MapFileListPath(const std::string& platformIndependentNotation, const std::string& platformDependentNotation)
-		: platformIndependent(platformIndependentNotation)
-		  , platformDependent(platformDependentNotation)
+	MapFileListPath(std::string  platformIndependentNotation, std::string  platformDependentNotation)
+		: platformIndependent(std::move(platformIndependentNotation))
+		  , platformDependent(std::move(platformDependentNotation))
 	{
 	}
 
@@ -684,7 +685,7 @@ static MapFileList listMapFiles()
 	for (char** i = searchPath; *i != nullptr; i++)
 	{
 		debug(LOG_WZ, "    [%s]", *i);
-		oldSearchPath.push_back(*i);
+		oldSearchPath.emplace_back(*i);
 		WZ_PHYSFS_unmount(*i);
 	}
 	PHYSFS_freeList(searchPath);
@@ -692,7 +693,7 @@ static MapFileList listMapFiles()
 	for (const auto& realFileName : ret)
 	{
 		std::string realFilePathAndName = PHYSFS_getWriteDir() + realFileName.platformDependent;
-		if (PHYSFS_mount(realFilePathAndName.c_str(), NULL, PHYSFS_APPEND))
+		if (PHYSFS_mount(realFilePathAndName.c_str(), nullptr, PHYSFS_APPEND))
 		{
 			int unsafe = 0;
 			bool enumSuccess = WZ_PHYSFS_enumerateFiles("multiplay/maps",
@@ -740,7 +741,7 @@ static MapFileList listMapFiles()
 	// restore our search path(s) again
 	for (const auto& restorePaths : oldSearchPath)
 	{
-		PHYSFS_mount(restorePaths.c_str(), NULL, PHYSFS_APPEND);
+		PHYSFS_mount(restorePaths.c_str(), nullptr, PHYSFS_APPEND);
 	}
 	debug(LOG_WZ, "Search paths restored");
 	printSearchPath();
@@ -800,7 +801,7 @@ static inline optional<WZmapInfo> CheckInMap(const char* archive, const std::str
 	bool mapmod = false;
 	bool isRandom = false;
 
-	for (auto lookin_subdir : lookin_list)
+	for (const auto& lookin_subdir : lookin_list)
 	{
 		std::string lookin = mountpoint;
 		if (!lookin_subdir.empty())
@@ -813,18 +814,14 @@ static inline optional<WZmapInfo> CheckInMap(const char* archive, const std::str
 			std::string checkfile = file;
 			if (WZ_PHYSFS_isDirectory((lookin + "/" + checkfile).c_str()))
 			{
-				if (checkfile.compare("wrf") == 0 || checkfile.compare("stats") == 0 || checkfile.compare("components")
-					== 0
-					|| checkfile.compare("effects") == 0 || checkfile.compare("messages") == 0
-					|| checkfile.compare("audio") == 0 || checkfile.compare("sequenceaudio") == 0 || checkfile.
-					compare("misc") == 0
-					|| checkfile.compare("features") == 0 || checkfile.compare("script") == 0 || checkfile.compare(
-						"structs") == 0
-					|| checkfile.compare("tileset") == 0 || checkfile.compare("images") == 0 || checkfile.compare(
-						"texpages") == 0
-					|| checkfile.compare("skirmish") == 0 || checkfile.compare("shaders") == 0 || checkfile.
-					compare("fonts") == 0
-					|| checkfile.compare("icons") == 0)
+				if (checkfile == "wrf" || checkfile == "stats" || checkfile
+					== "components"
+					|| checkfile == "effects" || checkfile == "messages"
+					|| checkfile == "audio" || checkfile == "sequenceaudio" || checkfile == "misc"
+					|| checkfile == "features" || checkfile == "script" || checkfile == "structs"
+					|| checkfile == "tileset" || checkfile == "images" || checkfile == "texpages"
+					|| checkfile == "skirmish" || checkfile == "shaders" || checkfile == "fonts"
+					|| checkfile == "icons")
 				{
 					debug(LOG_WZ, "Detected: %s %s", archive, checkfile.c_str());
 					mapmod = true;
@@ -1117,7 +1114,7 @@ void systemShutdown()
 	debug(LOG_MAIN, "shutting down CD audio");
 	cdAudio_Close();
 
-	if (audio_Disabled() == false && !audio_Shutdown())
+	if (!audio_Disabled() && !audio_Shutdown())
 	{
 		debug(LOG_FATAL, "Unable to audio_Shutdown() cleanly!");
 		abort();
@@ -1357,7 +1354,7 @@ bool stageOneShutDown()
 
 	pie_FreeShaders();
 
-	if (audio_Disabled() == false)
+	if (!audio_Disabled())
 	{
 		sound_CheckAllUnloaded();
 	}

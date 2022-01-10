@@ -57,47 +57,48 @@
 #include "qtscript.h"
 
 /* max and min vtol heights above terrain */
-#define	VTOL_HEIGHT_MIN				250
-#define	VTOL_HEIGHT_LEVEL			300
-#define	VTOL_HEIGHT_MAX				350
+static constexpr auto VTOL_HEIGHT_MIN	= 250;
+static constexpr auto VTOL_HEIGHT_LEVEL	=	300;
+static constexpr auto VTOL_HEIGHT_MAX =	350;
 
 // Maximum size of an object for collision
-#define OBJ_MAXRADIUS	(TILE_UNITS * 4)
+static constexpr auto OBJ_MAXRADIUS	= TILE_UNITS * 4;
 
 // how long a shuffle can propagate before they all stop
-#define MOVE_SHUFFLETIME	10000
+static constexpr auto VE_SHUFFLETIME = 10000;
 
 // Length of time a droid has to be stationery to be considered blocked
-#define BLOCK_TIME		6000
-#define SHUFFLE_BLOCK_TIME	2000
+static constexpr auto BLOCK_TIME = 6000;
+static constexpr auto SHUFFLE_BLOCK_TIME = 2000;
 // How long a droid has to be stationary before stopping trying to move
-#define BLOCK_PAUSETIME	1500
-#define BLOCK_PAUSERELEASE 500
+static constexpr auto BLOCK_PAUSETIME = 1500;
+static constexpr auto BLOCK_PAUSERELEASE = 500;
 // How far a droid has to move before it is no longer 'stationary'
-#define BLOCK_DIST		64
+static constexpr auto BLOCK_DIST	=	64;
 // How far a droid has to rotate before it is no longer 'stationary'
-#define BLOCK_DIR		90
+static constexpr auto BLOCK_DIR =	90;
 
 // How far out from an obstruction to start avoiding it
-#define AVOID_DIST		(TILE_UNITS*2)
+static constexpr auto AVOID_DIST = TILE_UNITS * 2;
 
 // Speed to approach a final way point, if possible.
-#define MIN_END_SPEED		60
+static constexpr auto MIN_END_SPEED	= 60;
 
 // distance from final way point to start slowing
-#define END_SPEED_RANGE		(3 * TILE_UNITS)
+static constexpr auto END_SPEED_RANGE	= 3 * TILE_UNITS;
 
 // how long to pause after firing a FOM_NO weapon
-#define FOM_MOVEPAUSE		1500
+static constexpr auto FOM_MOVEPAUSE	=	1500;
 
 // distance to consider droids for a shuffle
-#define SHUFFLE_DIST		(3*TILE_UNITS/2)
+static constexpr auto SHUFFLE_DIST = 3 * TILE_UNITS / 2;
+
 // how far to move for a shuffle
-#define SHUFFLE_MOVE		(2*TILE_UNITS/2)
+static constexpr auto SHUFFLE_MOVE = 2 * TILE_UNITS / 2;
 
 /// Extra precision added to movement calculations.
-#define EXTRA_BITS                              8
-#define EXTRA_PRECISION                         (1 << EXTRA_BITS)
+static constexpr auto EXTRA_BITS = 8;
+static constexpr auto EXTRA_PRECISION = 1 << EXTRA_BITS;
 
 Movement::Movement(Vector2i src, Vector2i destination)
   : src{src}, destination{destination}
@@ -117,254 +118,48 @@ void Movement::set_path_vars(int target_x, int target_y)
 }
 
 /* Function prototypes */
-static void moveUpdatePersonModel(Droid* psDroid, SDWORD speed, uint16_t direction);
+static void moveUpdatePersonModel(Droid* psDroid, int speed, uint16_t direction);
 
-const char* moveDescription(MOVE_STATUS status)
+std::string moveDescription(MOVE_STATUS status)
 {
-	switch (status)
-	{
-	case MOVEINACTIVE: return "Inactive";
-	case MOVENAVIGATE: return "Navigate";
-	case MOVETURN: return "Turn";
-	case MOVEPAUSE: return "Pause";
-	case MOVEPOINTTOPOINT: return "P2P";
-	case MOVETURNTOTARGET: return "Turn2target";
-	case MOVEHOVER: return "Hover";
-	case MOVEWAITROUTE: return "Waitroute";
-	case MOVESHUFFLE: return "Shuffle";
+  using enum MOVE_STATUS;
+	switch (status) {
+	case INACTIVE: return "Inactive";
+	case NAVIGATE: return "Navigate";
+	case TURN: return "Turn";
+	case PAUSE: return "Pause";
+	case POINT_TO_POINT: return "P2P";
+	case TURN_TO_TARGET: return "Turn2target";
+	case HOVER: return "Hover";
+	case WAIT_FOR_ROUTE: return "Waitroute";
+	case SHUFFLE: return "Shuffle";
 	}
 	return "Error"; // satisfy compiler
 }
 
-/** Set a target location in world coordinates for a droid to move to
- *  @return true if the routing was successful, if false then the calling code
- *          should not try to route here again for a while
- *  @todo Document what "should not try to route here again for a while" means.
+/**
+ * Move a droid to a location, joining a formation
+ * @see moveDroidToBase() for the parameter and return value specification
  */
-static bool moveDroidToBase(Droid* psDroid, UDWORD x, UDWORD y, bool bFormation, FPATH_MOVETYPE moveType)
+bool moveDroidTo(Droid* psDroid, unsigned x, unsigned y, FPATH_MOVETYPE moveType)
 {
-	FPATH_RETVAL retVal = FPR_OK;
-
-	CHECK_DROID(psDroid);
-
-	// in multiPlayer make Transporter move like the vtols
-	if (isTransporter(psDroid) && game.maxPlayers == 0)
-	{
-		fpathSetDirectRoute(psDroid, x, y);
-		psDroid->movement.status = MOVENAVIGATE;
-		psDroid->movement.pathIndex = 0;
-		return true;
-	}
-	// NOTE: While Vtols can fly, then can't go through things, like the transporter.
-	else if ((game.maxPlayers > 0 && isTransporter(psDroid)))
-	{
-		fpathSetDirectRoute(psDroid, x, y);
-		retVal = FPR_OK;
-	}
-	else
-	{
-		retVal = fpathDroidRoute(psDroid, x, y, moveType);
-	}
-
-	if (retVal == FPR_OK)
-	{
-		// bit of a hack this - john
-		// if astar doesn't have a complete route, it returns a route to the nearest clear tile.
-		// the location of the clear tile is in DestinationX,DestinationY.
-		// reset x,y to this position so the formation gets set up correctly
-		x = psDroid->movement.destination.x;
-		y = psDroid->movement.destination.y;
-
-		objTrace(psDroid->id, "unit %d: path ok - base Speed %u, speed %d, target(%u|%d, %u|%d)",
-             (int)psDroid->id, psDroid->base_speed, psDroid->movement.speed, x, map_coord(x), y, map_coord(y));
-
-		psDroid->movement.status = MOVENAVIGATE;
-		psDroid->movement.pathIndex = 0;
-	}
-	else if (retVal == FPR_WAIT)
-	{
-		// the route will be calculated by the path-finding thread
-		psDroid->movement.status = MOVEWAITROUTE;
-		psDroid->movement.destination.x = x;
-		psDroid->movement.destination.y = y;
-	}
-	else // if (retVal == FPR_FAILED)
-	{
-		objTrace(psDroid->id, "Path to (%d, %d) failed for droid %d", (int)x, (int)y, (int)psDroid->id);
-		psDroid->movement.status = MOVEINACTIVE;
-		actionDroid(psDroid, DACTION_SULK);
-		return (false);
-	}
-
-	CHECK_DROID(psDroid);
-	return true;
+	return psDroid->moveDroidToBase(x, y, true, moveType);
 }
 
-/** Move a droid to a location, joining a formation
- *  @see moveDroidToBase() for the parameter and return value specification
+/**
+ * Move a droid to a location, not joining a formation
+ * @see moveDroidToBase() for the parameter and return value specification
  */
-bool moveDroidTo(Droid* psDroid, UDWORD x, UDWORD y, FPATH_MOVETYPE moveType)
-{
-	return moveDroidToBase(psDroid, x, y, true, moveType);
-}
-
-/** Move a droid to a location, not joining a formation
- *  @see moveDroidToBase() for the parameter and return value specification
- */
-bool moveDroidToNoFormation(Droid* psDroid, UDWORD x, UDWORD y, FPATH_MOVETYPE moveType)
+bool moveDroidToNoFormation(Droid* psDroid, unsigned x, unsigned y, FPATH_MOVETYPE moveType)
 {
 	ASSERT_OR_RETURN(false, x > 0 && y > 0, "Bad movement position");
-	return moveDroidToBase(psDroid, x, y, false, moveType);
-}
-
-
-/** Move a droid directly to a location.
- *  @note This is (or should be) used for VTOLs only.
- */
-void moveDroidToDirect(Droid* psDroid, UDWORD x, UDWORD y)
-{
-	ASSERT_OR_RETURN(, psDroid != nullptr && isVtolDroid(psDroid), "Only valid for a VTOL unit");
-
-	fpathSetDirectRoute(psDroid, x, y);
-	psDroid->movement.status = MOVENAVIGATE;
-	psDroid->movement.pathIndex = 0;
-}
-
-
-/** Turn a droid towards a given location.
- */
-void moveTurnDroid(Droid* psDroid, UDWORD x, UDWORD y)
-{
-	uint16_t moveDir = calcDirection(psDroid->pos.x, psDroid->pos.y, x, y);
-
-	if (psDroid->rot.direction != moveDir)
-	{
-		psDroid->movement.target.x = x;
-		psDroid->movement.target.y = y;
-		psDroid->movement.status = MOVETURNTOTARGET;
-	}
-}
-
-// Tell a droid to move out the way for a shuffle
-static void moveShuffleDroid(Droid* psDroid, Vector2i s)
-{
-	SDWORD mx, my;
-	bool frontClear = true, leftClear = true, rightClear = true;
-	SDWORD lvx, lvy, rvx, rvy, svx, svy;
-	SDWORD shuffleMove;
-
-	ASSERT_OR_RETURN(, psDroid != nullptr, "Bad droid pointer");
-	CHECK_DROID(psDroid);
-
-	uint16_t shuffleDir = iAtan2(s);
-	int32_t shuffleMag = iHypot(s);
-
-	if (shuffleMag == 0)
-	{
-		return;
-	}
-
-	shuffleMove = SHUFFLE_MOVE;
-
-	// calculate the possible movement vectors
-	svx = s.x * shuffleMove / shuffleMag; // Straight in the direction of s.
-	svy = s.y * shuffleMove / shuffleMag;
-
-	lvx = -svy; // 90° to the... right?
-	lvy = svx;
-
-	rvx = svy; // 90° to the... left?
-	rvy = -svx;
-
-	// check for blocking tiles
-	if (fpathBlockingTile(map_coord((SDWORD)psDroid->pos.x + lvx),
-	                      map_coord((SDWORD)psDroid->pos.y + lvy), getPropulsionStats(psDroid)->propulsionType))
-	{
-		leftClear = false;
-	}
-	else if (fpathBlockingTile(map_coord((SDWORD)psDroid->pos.x + rvx),
-	                           map_coord((SDWORD)psDroid->pos.y + rvy), getPropulsionStats(psDroid)->propulsionType))
-	{
-		rightClear = false;
-	}
-	else if (fpathBlockingTile(map_coord((SDWORD)psDroid->pos.x + svx),
-	                           map_coord((SDWORD)psDroid->pos.y + svy), getPropulsionStats(psDroid)->propulsionType))
-	{
-		frontClear = false;
-	}
-
-	// find any droids that could block the shuffle
-	static GridList gridList; // static to avoid allocations.
-	gridList = gridStartIterate(psDroid->pos.x, psDroid->pos.y, SHUFFLE_DIST);
-	for (auto & gi : gridList)
-	{
-		Droid* psCurr = castDroid(gi);
-		if (psCurr == nullptr || psCurr->died || psCurr == psDroid)
-		{
-			continue;
-		}
-
-		uint16_t droidDir = iAtan2((psCurr->pos - psDroid->pos).xy());
-		int diff = angleDelta(shuffleDir - droidDir);
-		if (diff > -DEG(135) && diff < -DEG(45))
-		{
-			leftClear = false;
-		}
-		else if (diff > DEG(45) && diff < DEG(135))
-		{
-			rightClear = false;
-		}
-	}
-
-	// calculate a target
-	if (leftClear)
-	{
-		mx = lvx;
-		my = lvy;
-	}
-	else if (rightClear)
-	{
-		mx = rvx;
-		my = rvy;
-	}
-	else if (frontClear)
-	{
-		mx = svx;
-		my = svy;
-	}
-	else
-	{
-		// nowhere to shuffle to, quit
-		return;
-	}
-
-	// check the location for vtols
-	Vector2i tar = psDroid->pos.xy() + Vector2i(mx, my);
-	if (isVtolDroid(psDroid))
-	{
-		actionVTOLLandingPos(psDroid, &tar);
-	}
-
-
-	// set up the move state
-	if (psDroid->movement.status != MOVESHUFFLE)
-	{
-		psDroid->movement.shuffleStart = gameTime;
-	}
-	psDroid->movement.status = MOVESHUFFLE;
-	psDroid->movement.origin = psDroid->pos.xy();
-	psDroid->movement.target = tar;
-	psDroid->movement.path.clear();
-	psDroid->movement.pathIndex = 0;
-
-	CHECK_DROID(psDroid);
+	return psDroid->moveDroidToBase(x, y, false, moveType);
 }
 
 /** Stop a droid from moving.
  */
 void moveStopDroid(Droid* psDroid)
 {
-	CHECK_DROID(psDroid);
 	PropulsionStats* psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
 	ASSERT_OR_RETURN(, psPropStats != nullptr, "invalid propulsion stats pointer");
 
@@ -1759,7 +1554,7 @@ static void moveUpdateVtolModel(Droid* psDroid, SDWORD speed, uint16_t direction
 
 	moveCheckFinalWaypoint(psDroid, &speed);
 
-	if (isTransporter(psDroid))
+	if (isTransporter(*psDroid))
 	{
 		moveUpdateDroidDirection(psDroid, &speed, direction, DEG(psPropStats->spinAngle), spinSpeed, turnSpeed,
 		                         &iDroidDir);
@@ -1780,7 +1575,7 @@ static void moveUpdateVtolModel(Droid* psDroid, SDWORD speed, uint16_t direction
 	moveGetDroidPosDiffs(psDroid, &dx, &dy);
 
 	/* set slide blocking tile for map edge */
-	if (!isTransporter(psDroid))
+	if (!isTransporter(*psDroid))
 	{
 		moveCalcBlockingSlide(psDroid, &dx, &dy, direction, &slideDir);
 	}
@@ -1801,10 +1596,8 @@ static void moveUpdateVtolModel(Droid* psDroid, SDWORD speed, uint16_t direction
 	}
 }
 
-static void moveUpdateCyborgModel(Droid* psDroid, SDWORD moveSpeed, uint16_t moveDir, UBYTE oldStatus)
+static void moveUpdateCyborgModel(Droid* psDroid, int moveSpeed, uint16_t moveDir, uint8_t oldStatus)
 {
-	CHECK_DROID(psDroid);
-
 	// nothing to do if the droid is stopped
 	if (moveDroidStopped(psDroid, moveSpeed))
 	{
@@ -1854,21 +1647,18 @@ static void moveDescending(Droid* psDroid)
 	}
 }
 
-
 bool moveCheckDroidMovingAndVisible(void* psObj)
 {
-	Droid* psDroid = (Droid*)psObj;
+	auto psDroid = static_cast<Droid*>(psObj);
 
-	if (psDroid == nullptr)
-	{
+	if (psDroid == nullptr) {
 		return false;
 	}
 
 	/* check for dead, not moving or invisible to player */
 	if (psDroid->died || moveDroidStopped(psDroid, 0) ||
-		(isTransporter(psDroid) && psDroid->order.type == DORDER_NONE) ||
-		!(psDroid->visibleForLocalDisplay()))
-	{
+		(isTransporter(*psDroid) && psDroid->getOrder().type == ORDER_TYPE::NONE) ||
+		!(psDroid->visibleToSelectedPlayer())) {
 		psDroid->iAudioID = NO_SOUND;
 		return false;
 	}
@@ -1876,18 +1666,15 @@ bool moveCheckDroidMovingAndVisible(void* psObj)
 	return true;
 }
 
-
 static void movePlayDroidMoveAudio(Droid* psDroid)
 {
-	SDWORD iAudioID = NO_SOUND;
+	int iAudioID = NO_SOUND;
 	PROPULSION_TYPES* psPropType;
 	UBYTE iPropType = 0;
 
 	ASSERT_OR_RETURN(, psDroid != nullptr, "Unit pointer invalid");
 
-	if ((psDroid != nullptr) &&
-		(psDroid->visibleForLocalDisplay()))
-	{
+	if ((psDroid != nullptr) && (psDroid->visibleToSelectedPlayer())) {
 		PropulsionStats* psPropStats = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
 		ASSERT_OR_RETURN(, psPropStats != nullptr, "Invalid propulsion stats pointer");
 		iPropType = asPropulsionStats[(psDroid)->asBits[COMP_PROPULSION]].propulsionType;
@@ -1898,7 +1685,7 @@ static void movePlayDroidMoveAudio(Droid* psDroid)
 		{
 			iAudioID = ID_SOUND_TREAD;
 		}
-		else if (isTransporter(psDroid))
+		else if (isTransporter(*psDroid))
 		{
 			iAudioID = ID_SOUND_BLIMP_FLIGHT;
 		}
@@ -1922,29 +1709,25 @@ static void movePlayDroidMoveAudio(Droid* psDroid)
 	}
 }
 
-
 static bool moveDroidStartCallback(void* psObj)
 {
-	Droid* psDroid = (Droid*)psObj;
+	auto* psDroid = (Droid*)psObj;
 
-	if (psDroid == nullptr)
-	{
+	if (psDroid == nullptr) {
 		return false;
 	}
-
 	movePlayDroidMoveAudio(psDroid);
-
 	return true;
 }
 
 
-static void movePlayAudio(Droid* psDroid, bool bStarted, bool bStoppedBefore, SDWORD iMoveSpeed)
+static void movePlayAudio(Droid* psDroid, bool bStarted, bool bStoppedBefore, int iMoveSpeed)
 {
-	UBYTE propType;
+	PROPULSION_TYPE propType;
 	PropulsionStats* psPropStats;
 	PROPULSION_TYPES* psPropType;
 	bool bStoppedNow;
-	SDWORD iAudioID = NO_SOUND;
+	int iAudioID = NO_SOUND;
 	AUDIO_CALLBACK pAudioCallback = nullptr;
 
 	/* get prop stats */
@@ -1956,21 +1739,18 @@ static void movePlayAudio(Droid* psDroid, bool bStarted, bool bStoppedBefore, SD
 	/* get current droid motion status */
 	bStoppedNow = moveDroidStopped(psDroid, iMoveSpeed);
 
-	if (bStarted)
-	{
+	if (bStarted) {
 		/* play start audio */
-		if ((propType == PROPULSION_TYPE_WHEELED && psDroid->type != DROID_CONSTRUCT)
-			|| psPropType->startID == NO_SOUND)
-		{
+		if ((propType == PROPULSION_TYPE::WHEELED &&
+         psDroid->getType() != DROID_TYPE::CONSTRUCT) ||
+         psPropType->startID == NO_SOUND) {
 			movePlayDroidMoveAudio(psDroid);
 			return;
 		}
-		else if (isTransporter(psDroid))
-		{
+		else if (isTransporter(*psDroid)) {
 			iAudioID = ID_SOUND_BLIMP_TAKE_OFF;
 		}
-		else
-		{
+		else {
 			iAudioID = psPropType->startID;
 		}
 
@@ -1980,11 +1760,11 @@ static void movePlayAudio(Droid* psDroid, bool bStarted, bool bStoppedBefore, SD
 		(psPropType->shutDownID != NO_SOUND))
 	{
 		/* play stop audio */
-		if (isTransporter(psDroid))
+		if (isTransporter(*psDroid))
 		{
 			iAudioID = ID_SOUND_BLIMP_LAND;
 		}
-		else if (propType != PROPULSION_TYPE_WHEELED || psDroid->type == DROID_CONSTRUCT)
+		else if (propType != PROPULSION_TYPE::WHEELED || psDroid->type == DROID_CONSTRUCT)
 		{
 			iAudioID = psPropType->shutDownID;
 		}
@@ -1997,7 +1777,7 @@ static void movePlayAudio(Droid* psDroid, bool bStarted, bool bStoppedBefore, SD
 	}
 
 	if ((iAudioID != NO_SOUND) &&
-		(psDroid->visibleForLocalDisplay()))
+		(psDroid->visibleToSelectedPlayer()))
 	{
 		if (audio_PlayObjDynamicTrack(psDroid, iAudioID,
 		                              pAudioCallback))
@@ -2040,8 +1820,8 @@ static bool pickupOilDrum(int toPlayer, int fromPlayer)
 static void checkLocalFeatures(Droid* psDroid)
 {
 	// NOTE: Why not do this for AI units also?
-	if ((!isHumanPlayer(psDroid->player) && psDroid->order.type != DORDER_RECOVER) || isVtolDroid(psDroid) ||
-		isTransporter(psDroid)) // VTOLs or transporters can't pick up features!
+	if ((!isHumanPlayer(psDroid->getPlayer()) && psDroid->order.type != DORDER_RECOVER) || isVtolDroid(psDroid) ||
+		isTransporter(*psDroid)) // VTOLs or transporters can't pick up features!
 	{
 		return;
 	}
@@ -2368,6 +2148,5 @@ void moveUpdateDroid(Droid* psDroid)
 
 	movePlayAudio(psDroid, bStarted, bStopped, moveSpeed);
 	ASSERT(droidOnMap(psDroid), "%s moved off map (%u, %u)->(%u, %u)", droidGetName(psDroid), oldx, oldy,
-	       (UDWORD)psDroid->pos.x, (UDWORD)psDroid->pos.y);
-	CHECK_DROID(psDroid);
+	       (unsigned)psDroid->pos.x, (unsigned)psDroid->pos.y);
 }

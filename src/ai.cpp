@@ -404,7 +404,7 @@ static int targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacker, 
 
 		/* If attacking with EMP try to avoid targets that were already "EMPed" */
 		if (bEmpWeap &&
-			(targetDroid->lastHitWeapon == WSC_EMP) &&
+			(targetDroid->lastHitWeapon == WEAPON_SUBCLASS::EMP) &&
 			((gameTime - targetDroid->timeLastHit) < EMP_DISABLE_TIME)) //target still disabled
 		{
 			attackWeight /= EMP_DISABLED_PENALTY_F;
@@ -621,27 +621,21 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 					psTarget = targetInQuestion;
 				}
 			}
-			else if (targetInQuestion->type == OBJ_STRUCTURE)
+			else if (auto psStruct = dynamic_cast<Structure*>(targetInQuestion))
 			{
-				auto psStruct = (Structure*)targetInQuestion;
-
-				if (electronic)
-				{
+				if (electronic) {
 					/* don't want to target structures with resistance of zero if using electronic warfare */
-					if (validStructResistance((Structure*)targetInQuestion))
-					{
+					if (validStructResistance((Structure*)targetInQuestion)) {
 						psTarget = targetInQuestion;
 					}
 				}
-				else if (psStruct->asWeaps[0].nStat > 0)
-				{
+				else if (psStruct->asWeaps[0].nStat > 0) {
 					// structure with weapons - go for this
 					psTarget = targetInQuestion;
 				}
 				else if ((isHumanPlayer(psDroid->getPlayer()) && (psStruct->pStructureType->type != REF_WALL && psStruct->
 						pStructureType->type != REF_WALLCORNER))
-					|| !isHumanPlayer(psDroid->getPlayer()))
-				{
+					|| !isHumanPlayer(psDroid->getPlayer())) {
 					psTarget = targetInQuestion;
 				}
 			}
@@ -671,8 +665,7 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 		}
 	}
 
-	if (bestTarget)
-	{
+	if (bestTarget) {
 		ASSERT(!bestTarget->died, "AI gave us a target that is already dead.");
 		targetStructure = visGetBlockingWall(psDroid, bestTarget);
 

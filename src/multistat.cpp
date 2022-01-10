@@ -17,12 +17,12 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * MultiStat.c
+
+/**
+ * @file multistat.cpp
+ * load / update / store multiplayer statistics for league tables etc.
  *
  * Alex Lee , pumpkin studios, EIDOS
- *
- * load / update / store multiplayer statistics for league tables etc...
  */
 
 #include <3rdparty/json/json.hpp> // Must come before WZ includes
@@ -40,20 +40,16 @@
 #include "urlrequest.h"
 #include "stdinreader.h"
 
+#include <memory>
 #include <utility>
 #include <memory>
 #include <SQLiteCpp/SQLiteCpp.h>
 
 
-// ////////////////////////////////////////////////////////////////////////////
-// STATS STUFF
-// ////////////////////////////////////////////////////////////////////////////
 static PLAYERSTATS playerStats[MAX_CONNECTED_PLAYERS];
 
-
-// ////////////////////////////////////////////////////////////////////////////
 // Get Player's stats
-PLAYERSTATS const& getMultiStats(UDWORD player)
+PLAYERSTATS const& getMultiStats(unsigned player)
 {
 	return playerStats[player];
 }
@@ -118,7 +114,7 @@ void lookupRatingAsync(uint32_t playerIndex)
 	                                    std::shared_ptr<MemoryStruct> const& data)
 	{
 		long httpStatusCode = response.httpStatusCode();
-		std::string urlCopy = url;
+		const std::string& urlCopy = url;
 		if (httpStatusCode != 200 || !data || data->size == 0)
 		{
 			wzAsyncExecOnMainThread([urlCopy, httpStatusCode]
@@ -128,7 +124,7 @@ void lookupRatingAsync(uint32_t playerIndex)
 			return;
 		}
 
-		std::shared_ptr<MemoryStruct> dataCopy = data;
+		const std::shared_ptr<MemoryStruct>& dataCopy = data;
 		wzAsyncExecOnMainThread([playerIndex, hash, urlCopy, dataCopy]
 		{
 			if (playerStats[playerIndex].identity.publicHashString() != hash)
@@ -156,9 +152,9 @@ void lookupRatingAsync(uint32_t playerIndex)
 		});
 	};
 	req.onFailure = [](std::string const& url, WZ_DECL_UNUSED URLRequestFailureType type,
-	                   WZ_DECL_UNUSED optional<HTTPResponseDetails> transferDetails)
+	                   WZ_DECL_UNUSED optional<HTTPResponseDetails> const& transferDetails)
 	{
-		std::string urlCopy = url;
+		const std::string& urlCopy = url;
 		wzAsyncExecOnMainThread([urlCopy]
 		{
 			debug(LOG_WARNING, "Failure fetching \"%s\".", urlCopy.c_str());
@@ -214,22 +210,19 @@ bool setMultiStats(uint32_t playerIndex, PLAYERSTATS plStats, bool bLocal)
 
 void recvMultiStats(NETQUEUE queue)
 {
-	uint32_t playerIndex;
+	unsigned playerIndex;
 
 	NETbeginDecode(queue, NET_PLAYER_STATS);
 	// Retrieve the ID number of the player for which we need to
 	// update the stats
 	NETuint32_t(&playerIndex);
 
-	if (playerIndex >= MAX_CONNECTED_PLAYERS)
-	{
+	if (playerIndex >= MAX_CONNECTED_PLAYERS) {
 		NETend();
 		return;
 	}
 
-
-	if (playerIndex != queue.index && queue.index != NetPlay.hostPlayer)
-	{
+	if (playerIndex != queue.index && queue.index != NetPlay.hostPlayer) {
 		HandleBadParam("NET_PLAYER_STATS given incorrect params.", playerIndex, queue.index);
 		NETend();
 		return;
@@ -238,8 +231,7 @@ void recvMultiStats(NETQUEUE queue)
 	NETauto(playerStats[playerIndex].autorating);
 
 	// we don't what to update ourselves, we already know our score (FIXME: rewrite setMultiStats())
-	if (!myResponsibility(playerIndex))
-	{
+	if (!myResponsibility(playerIndex)) {
 		// Retrieve the actual stats
 		NETuint32_t(&playerStats[playerIndex].played);
 		NETuint32_t(&playerStats[playerIndex].wins);
@@ -288,7 +280,7 @@ void recvMultiStats(NETQUEUE queue)
 static bool loadMultiStatsFile(const std::string& fileName, PLAYERSTATS* st, bool skipLoadingIdentity = false)
 {
 	char* pFileData = nullptr;
-	UDWORD size = 0;
+	unsigned size = 0;
 
 	if (loadFile(fileName.c_str(), &pFileData, &size))
 	{
@@ -336,28 +328,22 @@ bool loadMultiStats(char* sPlayerName, PLAYERSTATS* st)
 	debug(LOG_WZ, "loadMultiStats: %s", fileName.c_str());
 
 	// check player .sta2 already exists
-	if (PHYSFS_exists(fileName.c_str()))
-	{
-		if (!loadMultiStatsFile(fileName, st))
-		{
+	if (PHYSFS_exists(fileName.c_str())) {
+		if (!loadMultiStatsFile(fileName, st)) {
 			return false;
 		}
 	}
-	else
-	{
+	else {
 		// one-time porting of old .sta player files to .sta2
 		fileName = std::string(MultiPlayersPath) + sPlayerName + ".sta";
-		if (PHYSFS_exists(fileName.c_str()))
-		{
-			if (!loadMultiStatsFile(fileName, st, true))
-			{
+		if (PHYSFS_exists(fileName.c_str())) {
+			if (!loadMultiStatsFile(fileName, st, true)) {
 				return false;
 			}
 		}
 	}
 
-	if (st->identity.empty())
-	{
+	if (st->identity.empty()) {
 		st->identity = EcKey::generate(); // Generate new identity.
 		saveMultiStats(sPlayerName, sPlayerName, st); // Save new identity.
 	}
@@ -368,10 +354,10 @@ bool loadMultiStats(char* sPlayerName, PLAYERSTATS* st)
 	st->recentPowerLost = 0;
 
 	// clear any skirmish stats.
-	for (size_t size = 0; size < MAX_PLAYERS; size++)
+	for (auto & skScore : ingame.skScores)
 	{
-		ingame.skScores[size][0] = 0;
-		ingame.skScores[size][1] = 0;
+		skScore[0] = 0;
+		skScore[1] = 0;
 	}
 
 	return true;
@@ -381,8 +367,7 @@ bool loadMultiStats(char* sPlayerName, PLAYERSTATS* st)
 // Save Player Stats
 bool saveMultiStats(const char* sFileName, const char* sPlayerName, const PLAYERSTATS* st)
 {
-	if (Cheated)
-	{
+	if (Cheated) {
 		return false;
 	}
 	char buffer[1000];
@@ -398,14 +383,10 @@ bool saveMultiStats(const char* sFileName, const char* sPlayerName, const PLAYER
 	return true;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
-// score update functions
-
 // update players damage stats.
-void updateMultiStatsDamage(UDWORD attacker, UDWORD defender, UDWORD inflicted)
+void updateMultiStatsDamage(unsigned attacker, unsigned defender, unsigned inflicted)
 {
-	if (defender == PLAYER_FEATURE)
-	{
+	if (defender == PLAYER_FEATURE) {
 		// damaging features like skyscrapers does not count
 		return;
 	}
@@ -435,8 +416,7 @@ void updateMultiStatsDamage(UDWORD attacker, UDWORD defender, UDWORD inflicted)
 // update games played.
 void updateMultiStatsGames()
 {
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return;
 	}
 	++playerStats[selectedPlayer].played;
@@ -445,8 +425,7 @@ void updateMultiStatsGames()
 // games won
 void updateMultiStatsWins()
 {
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return;
 	}
 	++playerStats[selectedPlayer].wins;
@@ -455,14 +434,13 @@ void updateMultiStatsWins()
 //games lost.
 void updateMultiStatsLoses()
 {
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return;
 	}
 	++playerStats[selectedPlayer].losses;
 }
 
-static inline uint32_t calcObjectCost(const SimpleObject* psObj)
+static inline unsigned calcObjectCost(const SimpleObject* psObj)
 {
 	switch (psObj->type)
 	{
@@ -484,29 +462,25 @@ static inline uint32_t calcObjectCost(const SimpleObject* psObj)
 }
 
 // update kills
-void updateMultiStatsKills(SimpleObject* psKilled, UDWORD player)
+void updateMultiStatsKills(SimpleObject* psKilled, unsigned player)
 {
-	if (player < MAX_PLAYERS)
-	{
-		if (NetPlay.bComms)
-		{
-			// killing scavengers does not count in MP games
-			if (psKilled != nullptr && psKilled->player != scavengerSlot())
-			{
-				// FIXME: Why in the world are we using two different structs for stats when we can use only one?
-				++playerStats[player].totalKills;
-				++playerStats[player].recentKills;
-				if (psKilled->player < MAX_PLAYERS)
-				{
-					playerStats[psKilled->player].recentPowerLost += static_cast<uint64_t>(calcObjectCost(psKilled));
-				}
-			}
-		}
-		else
-		{
-			ingame.skScores[player][1]++;
-		}
-	}
+  if (player >= MAX_PLAYERS){
+    return;
+  }
+  if (NetPlay.bComms) {
+    // killing scavengers does not count in MP games
+    if (psKilled != nullptr && psKilled->getPlayer() != scavengerSlot()) {
+      // FIXME: Why in the world are we using two different structs for stats when we can use only one?
+      ++playerStats[player].totalKills;
+      ++playerStats[player].recentKills;
+      if (psKilled->getPlayer() < MAX_PLAYERS) {
+        playerStats[psKilled->getPlayer()].recentPowerLost += static_cast<uint64_t>(calcObjectCost(psKilled));
+      }
+    }
+  }
+  else {
+    ingame.skScores[player][1]++;
+  }
 }
 
 class KnownPlayersDB
@@ -521,18 +495,18 @@ public:
 
 public:
 	// Caller is expected to handle thrown exceptions
-	KnownPlayersDB(const std::string& knownPlayersDBPath)
+	explicit KnownPlayersDB(const std::string& knownPlayersDBPath)
 	{
-		db = std::unique_ptr<SQLite::Database>(
-			new SQLite::Database(knownPlayersDBPath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE));
+		db = std::make_unique<SQLite::Database>(
+			knownPlayersDBPath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
 		db->exec("PRAGMA journal_mode=WAL");
 		createKnownPlayersDBTables();
-		query_findPlayerByName = std::unique_ptr<SQLite::Statement>(
-			new SQLite::Statement(*db, "SELECT local_id, name, pk FROM known_players WHERE name = ?"));
-		query_insertNewKnownPlayer = std::unique_ptr<SQLite::Statement>(
-			new SQLite::Statement(*db, "INSERT OR IGNORE INTO known_players(name, pk) VALUES(?, ?)"));
-		query_updateKnownPlayerKey = std::unique_ptr<SQLite::Statement>(
-			new SQLite::Statement(*db, "UPDATE known_players SET pk = ? WHERE name = ?"));
+		query_findPlayerByName = std::make_unique<SQLite::Statement>(
+			*db, "SELECT local_id, name, pk FROM known_players WHERE name = ?");
+		query_insertNewKnownPlayer = std::make_unique<SQLite::Statement>(
+			*db, "INSERT OR IGNORE INTO known_players(name, pk) VALUES(?, ?)");
+		query_updateKnownPlayerKey = std::make_unique<SQLite::Statement>(
+			*db, "UPDATE known_players SET pk = ? WHERE name = ?");
 	}
 
 public:
@@ -641,30 +615,30 @@ private:
 	std::unique_ptr<SQLite::Statement> query_insertNewKnownPlayer;
 	std::unique_ptr<SQLite::Statement> query_updateKnownPlayerKey;
 	std::unordered_map<std::string, std::pair<optional<PlayerInfo>, UDWORD>> findPlayerCache;
-	UDWORD lastCacheClean = 0;
+	unsigned lastCacheClean = 0;
 };
 
 static std::unique_ptr<KnownPlayersDB> knownPlayersDB;
 
 void initKnownPlayers()
 {
-	if (!knownPlayersDB)
-	{
-		const char* pWriteDir = PHYSFS_getWriteDir();
-		ASSERT_OR_RETURN(, pWriteDir, "PHYSFS_getWriteDir returned null");
-		std::string knownPlayersDBPath = std::string(pWriteDir) + "/" + "knownPlayers.db";
-		try
-		{
-			knownPlayersDB = std::unique_ptr<KnownPlayersDB>(new KnownPlayersDB(knownPlayersDBPath));
-		}
-		catch (std::exception& e)
-		{
-			// error loading SQLite database
-			debug(LOG_ERROR, "Unable to load or initialize SQLite3 database (%s); error: %s",
-			      knownPlayersDBPath.c_str(), e.what());
-			return;
-		}
-	}
+  if (knownPlayersDB) {
+    return;
+  }
+  const char* pWriteDir = PHYSFS_getWriteDir();
+  ASSERT_OR_RETURN(, pWriteDir, "PHYSFS_getWriteDir returned null");
+  std::string knownPlayersDBPath = std::string(pWriteDir) + "/" + "knownPlayers.db";
+  try
+  {
+    knownPlayersDB = std::make_unique<KnownPlayersDB>(knownPlayersDBPath);
+  }
+  catch (std::exception& e)
+  {
+    // error loading SQLite database
+    debug(LOG_ERROR, "Unable to load or initialize SQLite3 database (%s); error: %s",
+          knownPlayersDBPath.c_str(), e.what());
+    return;
+  }
 }
 
 void shutdownKnownPlayers()
@@ -675,13 +649,11 @@ void shutdownKnownPlayers()
 bool isLocallyKnownPlayer(std::string const& name, EcKey const& key)
 {
 	ASSERT_OR_RETURN(false, knownPlayersDB.operator bool(), "knownPlayersDB is uninitialized");
-	if (key.empty())
-	{
+	if (key.empty()) {
 		return false;
 	}
 	auto result = knownPlayersDB->findPlayerByName(name);
-	if (!result.has_value())
-	{
+	if (!result.has_value()) {
 		return false;
 	}
 	return result.value().pk == key.toBytes(EcKey::Public);
@@ -689,23 +661,20 @@ bool isLocallyKnownPlayer(std::string const& name, EcKey const& key)
 
 void addKnownPlayer(std::string const& name, EcKey const& key, bool override)
 {
-	if (key.empty())
-	{
+	if (key.empty()) {
 		return;
 	}
 	ASSERT_OR_RETURN(, knownPlayersDB.operator bool(), "knownPlayersDB is uninitialized");
 
-	try
-	{
+	try {
 		knownPlayersDB->addKnownPlayer(name, key, override);
 	}
-	catch (const std::exception& e)
-	{
+	catch (const std::exception& e) {
 		debug(LOG_ERROR, "Failed to add known_player with error: %s", e.what());
 	}
 }
 
-uint32_t getMultiPlayUnitsKilled(uint32_t player)
+unsigned getMultiPlayUnitsKilled(unsigned player)
 {
 	// Let's use the real score for MP games
 	// FIXME: Why in the world are we using two different structs for stats when we can use only one?
@@ -716,23 +685,19 @@ uint32_t getMultiPlayUnitsKilled(uint32_t player)
 	else
 	{
 		// estimated kills
-		return static_cast<uint32_t>(ingame.skScores[player][1]);
+		return static_cast<unsigned>(ingame.skScores[player][1]);
 	}
 }
 
-uint32_t getSelectedPlayerUnitsKilled()
+unsigned getSelectedPlayerUnitsKilled()
 {
-	if (ActivityManager::instance().getCurrentGameMode() != ActivitySink::GameMode::CAMPAIGN)
-	{
+	if (ActivityManager::instance().getCurrentGameMode() != GAME_MODE::CAMPAIGN) {
 		return getMultiPlayUnitsKilled(selectedPlayer);
 	}
-	else
-	{
+	else {
 		return missionData.unitsKilled;
 	}
 }
-
-// MARK: -
 
 inline void to_json(nlohmann::json& j, const EcKey& k)
 {
@@ -789,9 +754,9 @@ bool saveMultiStatsToJSON(nlohmann::json& json)
 {
 	json = nlohmann::json::array();
 
-	for (size_t idx = 0; idx < MAX_CONNECTED_PLAYERS; idx++)
+	for (auto & playerStat : playerStats)
 	{
-		json.push_back(playerStats[idx]);
+		json.push_back(playerStat);
 	}
 
 	return true;
@@ -816,10 +781,10 @@ bool loadMultiStatsFromJSON(const nlohmann::json& json)
 	}
 
 	// clear any skirmish stats.
-	for (size_t size = 0; size < MAX_PLAYERS; size++)
+	for (auto & skScore : ingame.skScores)
 	{
-		ingame.skScores[size][0] = 0;
-		ingame.skScores[size][1] = 0;
+		skScore[0] = 0;
+		skScore[1] = 0;
 	}
 
 	return true;

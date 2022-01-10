@@ -20,6 +20,7 @@
 
 /**
  * @file bucket3d.cpp
+ *
  * Stores object render calls in a linked list renders
  * after bucket sorting objects
  */
@@ -399,13 +400,13 @@ void bucketRenderCurrentList(const glm::mat4& viewMatrix)
 			renderEffect((EFFECT*)thisTag.pObject, viewMatrix);
 			break;
 		case RENDER_DROID:
-			displayComponentObject((Droid*)thisTag->pObject, viewMatrix);
+			displayComponentObject((Droid*)thisTag.pObject, viewMatrix);
 			break;
 		case RENDER_STRUCTURE:
 			renderStructure((Structure*)thisTag.pObject, viewMatrix);
 			break;
 		case RENDER_FEATURE:
-			renderFeature((Feature*)thisTag->pObject, viewMatrix);
+			renderFeature((Feature*)thisTag.pObject, viewMatrix);
 			break;
 		case RENDER_PROXMSG:
 			renderProximityMsg((PROXIMITY_DISPLAY*)thisTag.pObject, viewMatrix);

@@ -180,8 +180,7 @@ void Group::remove(Droid* psDroid)
 	if (psDroid != nullptr)
 	{
 		// update group list of droids and droids' psGrpNext
-		if (psDroid->type != DROID_COMMAND || type != COMMAND)
-		{
+		if (psDroid->getType() != DROID_TYPE::COMMAND || type != COMMAND) {
 			psPrev = nullptr;
 			for (psCurr = members; psCurr; psCurr = psCurr->psGrpNext)
 			{

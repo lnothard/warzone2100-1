@@ -111,6 +111,6 @@ void updateDroidOrientation(Droid* psDroid);
 /* audio callback used to kill movement sounds */
 bool moveCheckDroidMovingAndVisible(void* psObj);
 
-const char* moveDescription(MOVE_STATUS status);
+std::string moveDescription(MOVE_STATUS status);
 
 #endif // __INCLUDED_SRC_MOVE_H__

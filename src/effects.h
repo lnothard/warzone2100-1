@@ -21,13 +21,16 @@
 #ifndef __INCLUDED_SRC_EFFECTS_H__
 #define __INCLUDED_SRC_EFFECTS_H__
 
-/*
-	All singing, all dancing new effects code. Does all the stuff
-	that explosion.c and most of particle.c used to do as well as
-	all the construction dust clouds, body parts and all other
-	temporary world 'effects
-	Alex McLean, Pumpkin Studios, EIDOS Interactive, 1998.
-*/
+/**
+ * @file effects.h
+ *
+ * All singing, all dancing new effects code. Does all the stuff
+ * that explosion.c and most of particle.c used to do as well as
+ * all the construction dust clouds, body parts and all other
+ * temporary world effects
+ *
+ * Alex McLean, Pumpkin Studios, EIDOS Interactive, 1998.
+ */
 
 #include "lib/ivis_opengl/piedef.h"
 #include "lib/framework/fixedpoint.h"
@@ -135,10 +138,10 @@ struct EFFECT
 	uint16_t frameDelay; // how many game ticks between each frame?
 	uint16_t lifeSpan; // what is it's life expectancy?
 	uint16_t radius; // Used for area effects
-	iIMDShape* imd; // pointer to the imd the effect uses.
+	std::unique_ptr<iIMDShape> imd; // pointer to the imd the effect uses.
 	EFFECT *prev, *next; // Previous and next element in linked list
 
-	EFFECT() : player(MAX_PLAYERS), control(0), group(EFFECT_FREED), type(EXPLOSION_TYPE_SMALL), frameNumber(0),
+	EFFECT() : player(MAX_PLAYERS), control(0), group(EFFECT_GROUP::FREED), type(EFFECT_TYPE::EXPLOSION_TYPE_SMALL), frameNumber(0),
 	           size(0),
 	           baseScale(0), specific(0), position(0.f, 0.f, 0.f), velocity(0.f, 0.f, 0.f), rotation(0, 0, 0),
 	           spin(0, 0, 0), birthTime(0), lastFrame(0), frameDelay(0), lifeSpan(0), radius(0),

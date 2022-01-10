@@ -29,8 +29,8 @@
 #include "lib/exceptionhandler/dumpinfo.h"
 #include "lib/netplay/netplay.h"
 #include "lib/framework/string_ext.h"
-
 #include "input/debugmappings.h"
+
 #include "display.h"
 #include "cheat.h"
 #include "keybind.h"

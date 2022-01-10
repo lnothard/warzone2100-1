@@ -22,31 +22,19 @@
  * @file multibot.cpp
  * Multiplayer stuff relevant to droids only
  *
- * Alex Lee , 97/98 Pumpkin Studios, Bath
+ * Alex Lee, 97/98 Pumpkin Studios, Bath
  */
-#include "lib/framework/frame.h"
 
-#include "droid.h"						// for droid sending and ordering.
-#include "stats.h"
-#include "move.h"						// for ordering droids
-#include "objmem.h"
-#include "power.h"						// for powercalculated
-#include "order.h"
-#include "map.h"
-#include "group.h"
-#include "lib/netplay/netplay.h"					// the netplay library.
-#include "multiplay.h"					// warzone net stuff.
-#include "multijoin.h"
-#include "cmddroid.h"					// command droids
-#include "action.h"
-#include "console.h"
-#include "mapgrid.h"
-#include "multirecv.h"
-#include "transporter.h"
-
-#include <vector>
 #include <algorithm>
+#include <vector>
 
+#include "lib/netplay/netplay.h"
+
+#include "action.h"
+#include "cmddroid.h"
+#include "multiplay.h"
+#include "objmem.h"
+#include "transporter.h"
 
 enum SubType
 {
@@ -161,7 +149,7 @@ struct QueuedDroidInfo
 	uint32_t droidId = 0;
 	SubType subType = ObjOrder;
 	// subType == ObjOrder || subType == LocOrder
-	DROID_ORDER order = DORDER_NONE;
+	ORDER_TYPE order = ORDER_TYPE::NONE;
 	uint32_t destId = 0; // if (subType == ObjOrder)
 	OBJECT_TYPE destType = OBJ_DROID; // if (subType == ObjOrder)
 	Vector2i pos = Vector2i(0, 0); // if (subType == LocOrder)
@@ -182,31 +170,21 @@ static std::vector<QueuedDroidInfo> queuedOrders;
 // ////////////////////////////////////////////////////////////////////////////
 // Local Prototypes
 
-static SimpleObject* processDroidTarget(OBJECT_TYPE desttype, uint32_t destid);
+static SimpleObject* processDroidTarget(OBJECT_TYPE desttype, unsigned destid);
 static SimpleObject TargetMissing_(OBJ_NUM_TYPES, 0, 0); // This memory is never referenced.
 static SimpleObject* const TargetMissing = &TargetMissing_; // Error return value for processDroidTarget.
-
-// ////////////////////////////////////////////////////////////////////////////
-// Command Droids.
-
-// sod em.
-
-
-// ////////////////////////////////////////////////////////////////////////////
-// Secondary Orders.
 
 // Send
 bool sendDroidSecondary(const Droid* psDroid, SECONDARY_ORDER sec, SECONDARY_STATE state)
 {
-	if (!bMultiMessages)
-	{
+	if (!bMultiMessages) {
 		return true;
 	}
 
 	QueuedDroidInfo info;
 
-	info.player = psDroid->player;
-	info.droidId = psDroid->id;
+	info.player = psDroid->getPlayer();
+	info.droidId = psDroid->getId();
 	info.subType = SecondaryOrder;
 	info.secOrder = sec;
 	info.secState = state;
@@ -802,7 +780,7 @@ bool SendDestroyDroid(const Droid* psDroid)
 
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_REMOVE_DROID);
 	{
-		uint32_t id = psDroid->id;
+		unsigned id = psDroid->getId();
 
 		// Send the droid's ID
 		debug(LOG_DEATH, "Requested all players to destroy droid %u", (unsigned int)id);
@@ -819,7 +797,7 @@ bool recvDestroyDroid(NETQUEUE queue)
 
 	NETbeginDecode(queue, GAME_DEBUG_REMOVE_DROID);
 	{
-		uint32_t id;
+		unsigned id;
 
 		// Retrieve the droid
 		NETuint32_t(&id);
@@ -844,14 +822,14 @@ bool recvDestroyDroid(NETQUEUE queue)
 	if (!psDroid->died)
 	{
 		turnOffMultiMsg(true);
-		debug(LOG_DEATH, "Killing droid %d on request from player %d - huh?", psDroid->id, queue.index);
+		debug(LOG_DEATH, "Killing droid %d on request from player %d - huh?", psDroid->getId(), queue.index);
 		destroyDroid(psDroid, gameTime - deltaGameTime + 1);
 		// deltaGameTime is actually 0 here, since we're between updates. However, the value of gameTime - deltaGameTime + 1 will not change when we start the next tick.
 		turnOffMultiMsg(false);
 	}
 	else
 	{
-		debug(LOG_DEATH, "droid %d is confirmed dead by player %d.", psDroid->id, queue.index);
+		debug(LOG_DEATH, "droid %d is confirmed dead by player %d.", psDroid->getId(), queue.index);
 	}
 
 	return true;

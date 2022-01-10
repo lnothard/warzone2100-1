@@ -20,6 +20,7 @@
 
 /**
  * @file clparse.cpp
+ *
  * Parse command line arguments
  */
 
@@ -48,10 +49,10 @@
 
 // Our fine replacement for the popt abomination follows
 
-#define POPT_ARG_STRING true
-#define POPT_ARG_NONE false
-#define POPT_ERROR_BADOPT -1
-#define POPT_SKIP_MAC_PSN 666
+static constexpr auto POPT_ARG_STRING = true;
+static constexpr auto POPT_ARG_NONE = false;
+static constexpr auto POPT_ERROR_BADOPT = -1;
+static constexpr auto POPT_SKIP_MAC_PSN = 666;
 
 struct poptOption
 {

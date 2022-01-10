@@ -44,7 +44,7 @@ struct FACTION
 	std::map<WzString, WzString> replaceIMD;
 };
 
-optional<WzString> getFactionModelName(const FactionID faction, const WzString& normalFactionName);
+optional<WzString> getFactionModelName(FactionID faction, const WzString& normalFactionName);
 iIMDShape* getFactionIMD(const FACTION* faction, iIMDShape* imd);
 
 const FACTION* getPlayerFaction(uint8_t player);
@@ -52,7 +52,7 @@ const FACTION* getFactionByID(FactionID faction);
 
 std::unordered_set<FactionID> getEnabledFactions(bool ignoreNormalFaction = false);
 
-const char* to_string(FactionID faction);
-const char* to_localized_string(FactionID faction);
+std::string to_string(FactionID faction);
+std::string to_localized_string(FactionID faction);
 
 #endif

@@ -364,7 +364,7 @@ static void intDisplayViewForm(WIDGET* psWidget, unsigned xOffset, unsigned yOff
 class DesignStatsBar : public W_BARGRAPH
 {
 public:
-	DesignStatsBar(W_BARINIT* init): W_BARGRAPH(init)
+	explicit DesignStatsBar(W_BARINIT* init): W_BARGRAPH(init)
 	{
 	}
 
@@ -466,7 +466,7 @@ protected:
 static ComponentIterator componentIterator(ComponentStats* psStats, unsigned size, const UBYTE* aAvailable,
                                            unsigned numEntries)
 {
-	return [=](std::function<bool(ComponentStats&, size_t index)> callback)
+	return [=](const std::function<bool(ComponentStats&, size_t index)>& callback)
 	{
 		for (unsigned i = 0; i < numEntries; ++i)
 		{
@@ -544,7 +544,7 @@ static ComponentIterator brainIterator()
 
 static ComponentIterator concatIterators(const std::vector<ComponentIterator>& iterators)
 {
-	return [=](std::function<bool(ComponentStats&, size_t index)> callback)
+	return [=](const std::function<bool(ComponentStats&, size_t index)>& callback)
 	{
 		for (const auto& iterator : iterators)
 		{
@@ -577,9 +577,9 @@ static uint32_t findMax(const ComponentIterator& componentIterator,
 	return max;
 }
 
-static uint32_t findMaxWeight(ComponentIterator componentIterator)
+static uint32_t findMaxWeight(const ComponentIterator& componentIterator)
 {
-	return findMax(std::move(componentIterator),
+	return findMax(componentIterator,
                  [](ComponentStats& stats)
                  { return stats.weight; });
 }
@@ -592,7 +592,7 @@ static uint32_t findMaxPropulsionSpeed(TYPE_OF_TERRAIN terrainType)
 	);
 }
 
-static uint32_t findMaxWeaponAttribute(std::function<uint32_t(WeaponStats*, int)> attributeGetter)
+static uint32_t findMaxWeaponAttribute(const std::function<uint32_t(WeaponStats*, int)>& attributeGetter)
 {
 	return findMax(
 		weaponIterator(),
@@ -1099,7 +1099,7 @@ static bool intAddTemplateForm(DroidTemplate* psSelected)
 	auto templList = IntListTabWidget::make();
 	templbaseForm->attach(templList);
 	templList->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-			auto templList = static_cast<IntListTabWidget *>(psWidget);
+			auto templList = dynamic_cast<IntListTabWidget *>(psWidget);
 			assert(templList != nullptr);
 			templList->setChildSize(DES_TABBUTWIDTH, DES_TABBUTHEIGHT);
 			templList->setChildSpacing(DES_TABBUTGAP, DES_TABBUTGAP);

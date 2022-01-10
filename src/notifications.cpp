@@ -16,18 +16,17 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file init.c
- *
- * Game initialisation routines.
- *
+ * @file notifications.cpp
  */
 
 #include <3rdparty/json/json.hpp> // Must come before WZ includes
 using json = nlohmann::json;
 
-#include "lib/framework/frame.h"
-#include "notifications.h"
+#include <algorithm>
+#include <limits>
+
 #include "lib/gamelib/gtime.h"
 #include "lib/widget/form.h"
 #include "lib/widget/button.h"
@@ -35,10 +34,11 @@ using json = nlohmann::json;
 #include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/ivis_opengl/screen.h"
 #include "lib/ivis_opengl/pietypes.h"
-#include "init.h"
+#include "lib/framework/frame.h"
+
 #include "frend.h"
-#include <algorithm>
-#include <limits>
+#include "init.h"
+#include "notifications.h"
 
 // MARK: - Notification Ignore List
 
@@ -405,11 +405,11 @@ static W_FORMINIT MakeNotificationFormInit()
 class W_NOTIFICATION : public W_FORM
 {
 protected:
-	explicit W_NOTIFICATION(WZ_Queued_Notification* request, W_FORMINIT init = MakeNotificationFormInit());
+	explicit W_NOTIFICATION(WZ_Queued_Notification* request, const W_FORMINIT& init = MakeNotificationFormInit());
 public:
 	~W_NOTIFICATION() override;
 	static std::shared_ptr<W_NOTIFICATION> make(WZ_Queued_Notification* request,
-	                                            W_FORMINIT init = MakeNotificationFormInit());
+	                                            const W_FORMINIT& init = MakeNotificationFormInit());
 	void run(W_CONTEXT* psContext) override;
 	void clicked(W_CONTEXT* psContext, WIDGET_KEY key) override;
 	void released(W_CONTEXT* psContext, WIDGET_KEY key) override;
@@ -604,19 +604,19 @@ void W_NOTIFICATION::internalDismissNotification(float animationSpeed /*= 1.0f*/
 	}
 }
 
-W_NOTIFICATION::W_NOTIFICATION(WZ_Queued_Notification* request, W_FORMINIT init /*= MakeNotificationFormInit()*/)
+W_NOTIFICATION::W_NOTIFICATION(WZ_Queued_Notification* request, const W_FORMINIT& init /*= MakeNotificationFormInit()*/)
 	: W_FORM(&init)
 	  , request(request)
 {
 }
 
 std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* request,
-                                                     W_FORMINIT init /*= MakeNotificationFormInit()*/)
+                                                     const W_FORMINIT& init /*= MakeNotificationFormInit()*/)
 {
 	class make_shared_enabler : public W_NOTIFICATION
 	{
 	public:
-		make_shared_enabler(WZ_Queued_Notification* request, W_FORMINIT init): W_NOTIFICATION(request, init)
+		make_shared_enabler(WZ_Queued_Notification* request, const W_FORMINIT& init): W_NOTIFICATION(request, init)
 		{
 		}
 	};

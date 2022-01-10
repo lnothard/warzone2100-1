@@ -426,12 +426,11 @@ bool loadWeaponStats(WzConfig& ini)
 		}
 
 		// set max extra weapon range on misses, make this modifiable one day by mod makers
-		if (psStats->weaponSubClass == WEAPON_SUBCLASS::MGUN || psStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND)
-		{
+		if (psStats->weaponSubClass == WEAPON_SUBCLASS::MACHINE_GUN ||
+        psStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND) {
 			psStats->distanceExtensionFactor = 120;
 		}
-		else if (psStats->weaponSubClass == WEAPON_SUBCLASS::AAGUN)
-		{
+		else if (psStats->weaponSubClass == WEAPON_SUBCLASS::AA_GUN) {
 			psStats->distanceExtensionFactor = 100;
 		}
 		else // default
@@ -722,38 +721,39 @@ bool loadBrainStats(WzConfig& ini)
 /*returns the propulsion type based on the string name passed in */
 bool getPropulsionType(const char* typeName, PROPULSION_TYPE* type)
 {
+  using enum PROPULSION_TYPE;
 	if (strcmp(typeName, "Wheeled") == 0)
 	{
-		*type = PROPULSION_TYPE_WHEELED;
+		*type = WHEELED;
 	}
 	else if (strcmp(typeName, "Tracked") == 0)
 	{
-		*type = PROPULSION_TYPE_TRACKED;
+		*type = TRACKED;
 	}
 	else if (strcmp(typeName, "Legged") == 0)
 	{
-		*type = PROPULSION_TYPE_LEGGED;
+		*type = LEGGED;
 	}
 	else if (strcmp(typeName, "Hover") == 0)
 	{
-		*type = PROPULSION_TYPE_HOVER;
+		*type = HOVER;
 	}
 	else if (strcmp(typeName, "Lift") == 0)
 	{
-		*type = PROPULSION_TYPE_LIFT;
+		*type = LIFT;
 	}
 	else if (strcmp(typeName, "Propellor") == 0)
 	{
-		*type = PROPULSION_TYPE_PROPELLOR;
+		*type = PROPELLOR;
 	}
 	else if (strcmp(typeName, "Half-Tracked") == 0)
 	{
-		*type = PROPULSION_TYPE_HALF_TRACKED;
+		*type = HALF_TRACKED;
 	}
 	else
 	{
 		debug(LOG_ERROR, "getPropulsionType: Invalid Propulsion type %s - assuming Hover", typeName);
-		*type = PROPULSION_TYPE_HOVER;
+		*type = HOVER;
 
 		return false;
 	}

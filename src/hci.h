@@ -313,8 +313,8 @@ void intDisplayWidgets();
 bool intAddReticule();
 bool intAddPower();
 void intRemoveReticule();
-void setReticuleStats(int ButId, std::string tip = std::string(), std::string filename = std::string(),
-                      std::string filenameDown = std::string(), const playerCallbackFunc& callbackFunc = nullptr);
+void setReticuleStats(int ButId, std::string tip = std::string(), const std::string& filename = std::string(),
+                      const std::string& filenameDown = std::string(), const playerCallbackFunc& callbackFunc = nullptr);
 void setReticulesEnabled(bool enabled);
 void setReticuleFlash(int ButId, bool flash);
 

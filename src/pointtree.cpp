@@ -17,6 +17,7 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 #include <algorithm>
 #include <cstdio>
 #include <vector>
@@ -97,7 +98,7 @@ static uint64_t interleave(int32_t x, int32_t y)
 
 void PointTree::insert(void* pointData, int32_t x, int32_t y)
 {
-	points.push_back(Point(interleave(x, y), pointData));
+	points.emplace_back(interleave(x, y), pointData);
 }
 
 void PointTree::clear()
