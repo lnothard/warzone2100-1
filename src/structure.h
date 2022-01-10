@@ -217,10 +217,6 @@ public:
 
     virtual void printInfo() const = 0;
     [[nodiscard]] virtual bool hasSensor() const = 0;
-    [[nodiscard]] virtual bool hasStandardSensor() const = 0;
-    [[nodiscard]] virtual bool hasCbSensor() const = 0;
-    [[nodiscard]] virtual bool hasVtolInterceptSensor() const = 0;
-    [[nodiscard]] virtual bool hasVtolCbSensor() const = 0;
 };
 
 namespace Impl
@@ -245,48 +241,65 @@ namespace Impl
         [[nodiscard]] unsigned getOriginalHp() const;
         [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
         [[nodiscard]] Vector2i getSize() const;
-        [[nodiscard]] int get_foundation_depth() const noexcept;
+        [[nodiscard]] int getFoundationDepth() const noexcept;
         [[nodiscard]] const iIMDShape& getImdShape() const final;
         void updateExpectedDamage(unsigned damage, bool is_direct) noexcept override;
         [[nodiscard]] unsigned calculateSensorRange() const final;
-        [[nodiscard]] int calculate_gate_height(std::size_t time, int minimum) const;
-        void set_foundation_depth(int depth) noexcept;
+        [[nodiscard]] int calculateGateHeight(std::size_t time, int minimum) const;
+        void setFoundationDepth(int depth) noexcept;
         void printInfo() const override;
-        [[nodiscard]] unsigned build_points_to_completion() const;
-        [[nodiscard]] unsigned calculate_refunded_power() const;
+        [[nodiscard]] unsigned buildPointsToCompletion() const;
+        [[nodiscard]] unsigned calculateRefundedPower() const;
         [[nodiscard]] int calculateAttackPriority(const ::Unit* target, int weapon_slot) const final;
         [[nodiscard]] const ::SimpleObject& getTarget(int weapon_slot) const final;
-        [[nodiscard]] STRUCTURE_STATE get_state() const;
+        [[nodiscard]] STRUCTURE_STATE getState() const;
     private:
         using enum STRUCTURE_ANIMATION_STATE;
         using enum STRUCTURE_STATE;
-        std::shared_ptr<StructureStats> stats; /* pointer to the structure stats for this type of building */
-        STRUCTURE_STATE state; /* defines whether the structure is being built, doing nothing or performing a function */
-        unsigned current_build_points; /* the build points currently assigned to this structure */
-        int resistance; /* current resistance points, 0 = cannot be attacked electrically */
-        unsigned lastResistance; /* time the resistance was last increased*/
+        std::shared_ptr<StructureStats> stats;
 
-        ///< Rate that this structure is being built, calculated each tick. Only meaningful if status == SS_BEING_BUILT. If construction hasn't started and build rate is 0, remove the structure.
-        int build_rate;
+        /// Whether the structure is being built, doing nothing or performing a function
+        STRUCTURE_STATE state;
 
-        ///< Needed if wanting the buildRate between buildRate being reset to 0 each tick and the trucks calculating it.
-        int previous_build_rate;
+        /// The build points currently assigned to this structure
+        unsigned currentBuildPoints;
+
+        /// Current resistance points, 0 = cannot be attacked electrically
+        int resistance;
+
+        /// Time the resistance was last increased
+        std::size_t lastResistance;
+
+        /// Rate that this structure is being built, calculated each tick. Only
+        /// meaningful if status == BEING_BUILT. If construction hasn't started
+        /// and build rate is 0, remove the structure
+        int buildRate;
+
+        /// Needed if wanting the buildRate between buildRate being reset to 0
+        /// each tick and the trucks calculating it
+        int previousBuildRate;
 
         std::array<::SimpleObject*, MAX_WEAPONS> target;
 
         /// Expected damage to be caused by all currently incoming projectiles.
         /// This info is shared between all players, but shouldn't make a difference
         /// unless 3 mutual enemies happen to be fighting each other at the same time.
-        unsigned expected_damage;
-        std::size_t prevTime; ///< Time of structure's previous tick.
-        int foundation_depth; ///< Depth of structure's foundation
-        uint8_t capacity; ///< Lame name: current number of module upgrades (*not* maximum nb of upgrades)
-        STRUCTURE_ANIMATION_STATE animation_state = NORMAL;
+        unsigned expectedDamage;
+
+        /// Time of structure's previous tick
+        std::size_t prevTime;
+        int foundationDepth;
+
+        /// Lame name: current number of module upgrades
+        /// (*not* maximum number of upgrades)
+        uint8_t capacity;
+
+        STRUCTURE_ANIMATION_STATE animationState = NORMAL;
         std::size_t lastStateTime;
         std::unique_ptr<iIMDShape> prebuiltImd;
     };
 
-    StructureBounds get_bounds(const Structure& structure) noexcept;
+    StructureBounds getBounds(const Structure& structure) noexcept;
 }
 
 struct ResearchItem

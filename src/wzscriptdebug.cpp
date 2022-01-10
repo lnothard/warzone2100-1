@@ -363,7 +363,7 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, int play
 	key["^Power"] = psStats->buildPower;
 	key["^Build Points"] = psStats->buildPoints;
 	key["^Weight"] = psStats->weight;
-	key["^Hit points"] = psStats->getUpgrade(player).hit_points;
+	key["^Hit points"] = psStats->getUpgrade(player).hitPoints;
 	key["^Hit points +% of total"] = psStats->getUpgrade(player).hitpointPct;
 	key["^Designable"] = psStats->designable;
 	switch (psStats->compType)

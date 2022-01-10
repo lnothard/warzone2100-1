@@ -191,15 +191,15 @@ namespace Impl
 		using enum SENSOR_TYPE;
 
 		STRUCTURE_STATE state;
-		STRUCTURE_ANIMATION_STATE animation_state = NORMAL;
+		STRUCTURE_ANIMATION_STATE animationState = NORMAL;
 		std::shared_ptr<Structure_Stats> stats;
     std::array<::SimpleObject*, MAX_WEAPONS> target;
-		unsigned current_build_points = 0;
-		int build_rate = 0;
-		int previous_build_rate = 0;
-		unsigned expected_damage = 0;
+		unsigned currentBuildPoints = 0;
+		int buildRate = 0;
+		int previousBuildRate = 0;
+		unsigned expectedDamage = 0;
 		uint8_t num_modules = 0;
-		int foundation_depth = 0;
+		int foundationDepth = 0;
 		std::size_t last_state_time = 0;
 	};
 
@@ -209,7 +209,7 @@ namespace Impl
 	[[nodiscard]] bool being_built(const Structure& structure);
 	[[nodiscard]] bool being_demolished(const Structure& structure);
 	[[nodiscard]] bool is_damaged(const Structure& structure);
-	[[nodiscard]] StructureBounds get_bounds(const Structure& structure) noexcept;
+	[[nodiscard]] StructureBounds getBounds(const Structure& structure) noexcept;
 	void adjust_tile_height(const Structure& structure, int new_height);
 	[[nodiscard]] int calculate_height(const Structure& structure);
 	[[nodiscard]] int calculate_foundation_height(const Structure& structure);

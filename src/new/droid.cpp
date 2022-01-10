@@ -669,7 +669,7 @@ unsigned get_effective_level(const Droid& droid)
 
 void update_orientation(Droid& droid)
 {
-	if (is_cyborg(droid) || droid.isFlying() || is_transporter(droid))
+	if (isCyborg(droid) || droid.isFlying() || is_transporter(droid))
 		return;
 }
 
@@ -817,7 +817,7 @@ void update_vtol_attack(Droid& droid)
   }
 
   // circle target if hovering and not cyborg
-  if (!is_cyborg(droid) && droid.is_hovering()) {
+  if (!isCyborg(droid) && droid.is_hovering()) {
     add_VTOL_attack_run(droid);
   }
 }

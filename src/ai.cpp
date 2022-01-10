@@ -285,7 +285,7 @@ static int targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacker, 
 			{
 				//go through all enemy weapon slots
 				for (weaponSlot = 0; !bTargetingCmd &&
-				     weaponSlot < num_weapons(*psDroid); weaponSlot++)
+                             weaponSlot < numWeapons(*psDroid); weaponSlot++)
 				{
 					//see if this weapon is targeting our commander
 					if (psDroid->action_target[weaponSlot] == (SimpleObject*)psAttackerDroid->group->psCommander)
@@ -299,7 +299,7 @@ static int targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacker, 
 				if (auto psStruct = dynamic_cast<Structure*>(psTarget))
 				{
 					//go through all enemy weapons
-					for (weaponSlot = 0; !bTargetingCmd && weaponSlot < num_weapons(*psStruct); weaponSlot++)
+					for (weaponSlot = 0; !bTargetingCmd && weaponSlot < numWeapons(*psStruct); weaponSlot++)
 					{
 						if (psStruct->psTarget[weaponSlot] ==
                 psAttackerDroid->group->psCommander)
@@ -536,7 +536,7 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 
 	/* Return if have no weapons */
 	// The ai orders a non-combat droid to patrol = crash without it...
-	if ((psDroid->asWeaps[0].nStat == 0 || num_weapons(*psDroid) == 0) &&
+	if ((psDroid->asWeaps[0].nStat == 0 || numWeapons(*psDroid) == 0) &&
       psDroid->getType() != DROID_TYPE::SENSOR) {
 		return failure;
 	}
@@ -574,7 +574,7 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 					tempTarget = friendlyDroid->action_target[0];
 					if (tempTarget && !tempTarget->died) {
 						//make sure a weapon droid is targeting it
-						if (num_weapons(*friendlyDroid) > 0) {
+						if (numWeapons(*friendlyDroid) > 0) {
 							// make sure this target wasn't assigned explicitly to this droid
 							if (friendlyDroid->getOrder().type != ORDER_TYPE::ATTACK) {
 								targetInQuestion = tempTarget; //consider this target

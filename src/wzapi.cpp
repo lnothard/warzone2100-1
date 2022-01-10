@@ -4322,7 +4322,7 @@ nlohmann::json register_common(ComponentStats* psStats)
 	v["Weight"] = psStats->weight;
 	v["BuildPower"] = psStats->buildPower;
 	v["BuildTime"] = psStats->buildPoints;
-	v["HitPoints"] = psStats->getBase().hit_points;
+	v["HitPoints"] = psStats->getBase().hitPoints;
 	v["HitPointPct"] = psStats->getBase().hitpointPct;
 	return v;
 }

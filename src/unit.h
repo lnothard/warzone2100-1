@@ -17,7 +17,6 @@ static constexpr auto MAX_WEAPONS = 3;
 class Unit : public virtual ::SimpleObject
 {
 public:
-	Unit() = default;
 	~Unit() override = default;
 
 	Unit(const Unit&) = delete;
@@ -33,16 +32,20 @@ public:
 	[[nodiscard]] virtual unsigned calculateSensorRange() const = 0;
 	[[nodiscard]] virtual const std::vector<Weapon>& getWeapons() const = 0;
 	[[nodiscard]] virtual const iIMDShape& getImdShape() const = 0;
-  [[nodiscard]] virtual bool is_selected() const noexcept = 0;
-  virtual void align_turret(int weapon_slot) = 0;
+  [[nodiscard]] virtual bool isSelected() const noexcept = 0;
+  virtual void alignTurret(int weapon_slot) = 0;
   virtual void updateExpectedDamage(unsigned damage, bool is_direct) noexcept = 0;
   [[nodiscard]] virtual int calculateAttackPriority(const Unit* target, int weapon_slot) const = 0;
   [[nodiscard]] virtual const SimpleObject& getTarget(int weapon_slot) const = 0;
+  [[nodiscard]] virtual bool hasCbSensor() const = 0;
+  [[nodiscard]] virtual bool hasStandardSensor() const = 0;
+  [[nodiscard]] virtual bool hasVtolInterceptSensor() const = 0;
+  [[nodiscard]] virtual bool hasVtolCbSensor() const = 0;
 };
 
-Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot);
+Vector3i calculateMuzzleBaseLocation(const Unit& unit, int weapon_slot);
 
-Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot);
+Vector3i calculateMuzzleTipLocation(const Unit& unit, int weapon_slot);
 
 namespace Impl
 {
@@ -56,34 +59,34 @@ namespace Impl
 		[[nodiscard]] const std::vector<Weapon>& getWeapons() const final;
 
     /// @return `true` if this unit is being focused by its owner
-    [[nodiscard]] bool is_selected() const noexcept final;
+    [[nodiscard]] bool isSelected() const noexcept final;
 
-		void align_turret(int weapon_slot) final;
+		void alignTurret(int weapon_slot) final;
 	private:
-		unsigned hit_points = 0;
+		unsigned hitPoints = 0;
     bool selected = false;
 		std::vector<Weapon> weapons;
 	};
 }
 
-void check_angle(int64_t& angle_tan, int start_coord, int height,
-                 int square_distance, int target_height, bool is_direct);
+void checkAngle(int64_t& angle_tan, int start_coord, int height,
+                int square_distance, int target_height, bool is_direct);
 
-[[nodiscard]] bool has_full_ammo(const Unit& unit) noexcept;
+[[nodiscard]] bool hasFullAmmo(const Unit& unit) noexcept;
 
 /// @return `true` if `unit` has an indirect weapon attached
-[[nodiscard]] bool has_artillery(const Unit& unit) noexcept;
+[[nodiscard]] bool hasArtillery(const Unit& unit) noexcept;
 
 /// @return `true` if `unit` has an electronic weapon attached
-[[nodiscard]] bool has_electronic_weapon(const Unit& unit) noexcept;
+[[nodiscard]] bool hasElectronicWeapon(const Unit& unit) noexcept;
 
 /**
  * @return `true` if `unit` may fire upon `target` with the weapon in
  *    `weapon_slot`
  */
-[[nodiscard]] bool target_in_line_of_fire(const Unit& unit,
-                                          const ::Unit& target,
-                                          int weapon_slot);
+[[nodiscard]] bool targetInLineOfFire(const Unit& unit,
+                                      const ::Unit& target,
+                                      int weapon_slot);
 
 /**
  *
@@ -91,12 +94,12 @@ void check_angle(int64_t& angle_tan, int start_coord, int height,
  * @param is_direct `false` if this is an artillery weapon
  * @return
  */
-[[nodiscard]] int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target,
-                                         int weapon_slot, bool walls_block, bool is_direct);
+[[nodiscard]] int calculateLineOfFire(const Unit& unit, const ::SimpleObject& target,
+                                      int weapon_slot, bool walls_block, bool is_direct);
 
 
-[[nodiscard]] unsigned get_max_weapon_range(const Unit& unit);
+[[nodiscard]] unsigned getMaxWeaponRange(const Unit& unit);
 
-[[nodiscard]] unsigned num_weapons(const ::Unit& unit);
+[[nodiscard]] unsigned numWeapons(const ::Unit& unit);
 
 #endif // WARZONE2100_UNIT_H

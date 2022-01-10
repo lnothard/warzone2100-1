@@ -237,9 +237,9 @@ private:
 	std::size_t time_action_started = 0;
 };
 
-[[nodiscard]] bool is_cyborg(const Droid& droid);
+[[nodiscard]] bool isCyborg(const Droid& droid);
 [[nodiscard]] bool is_transporter(const Droid& droid);
-[[nodiscard]] bool is_builder(const Droid& droid);
+[[nodiscard]] bool isBuilder(const Droid& droid);
 [[nodiscard]] bool is_repairer(const Droid& droid);
 [[nodiscard]] bool is_idf(const Droid& droid);
 [[nodiscard]] bool is_commander(const Droid& droid) noexcept;

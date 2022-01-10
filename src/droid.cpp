@@ -70,18 +70,16 @@ namespace Impl
             , action(ACTION::NONE)
             , actionPos(0, 0)
     {
-      memset(asBits, 0, sizeof(asBits));
       order->type = ORDER_TYPE::NONE;
-      order->getPosition() = Vector2i(0, 0);
-      order->getPosition()2 = Vector2i(0, 0);
+      order->pos = Vector2i(0, 0);
+      order->pos2 = Vector2i(0, 0);
       order->direction = 0;
-      order.psObj = nullptr;
-      order.psStats = nullptr;
+      order->target = nullptr;
+      order->structure_stats = nullptr;
       movement->status = MOVE_STATUS::INACTIVE;
       listSize = 0;
       listPendingBegin = 0;
       iAudioID = NO_SOUND;
-      group = UBYTE_MAX;
       associatedStructure = nullptr;
       display->frame_number = 0; // it was never drawn before
 
@@ -96,7 +94,7 @@ namespace Impl
       display->screen_x = OFF_SCREEN;
       display->screen_y = OFF_SCREEN;
       display->screen_r = 0;
-      display.imd = nullptr;
+      display->imd = nullptr;
       illuminationLevel = UBYTE_MAX;
       resistance_to_electric = ACTION_START_TIME; // init the resistance to indicate no EW performed on this droid
       lastFrustratedTime = 0; // make sure we do not start the game frustrated
@@ -114,7 +112,7 @@ namespace Impl
       Droid* psDroid = this;
       Droid *psCurr, *pNextGroupDroid = nullptr;
 
-      if (isTransporter(psDroid))
+      if (isTransporter(*psDroid))
       {
         if (psDroid->group)
         {
@@ -129,8 +127,7 @@ namespace Impl
       fpathRemoveDroidData(psDroid->getId());
 
       // leave the current group if any
-      if (psDroid->group)
-      {
+      if (psDroid->group) {
         psDroid->group->remove(psDroid);
       }
     }
@@ -182,14 +179,14 @@ namespace Impl
       if (!brain) {
         return 0;
       }
-      const auto& rank_thresholds = brain->upgraded[getPlayer()].rank_thresholds;
-      for (int i = 1; i < rank_thresholds.size(); ++i)
+      const auto& rankThresholds = brain->upgraded[getPlayer()].rankThresholds;
+      for (int i = 1; i < rankThresholds.size(); ++i)
       {
-        if (kills < rank_thresholds.at(i)) {
+        if (kills < rankThresholds.at(i)) {
           return i - 1;
         }
       }
-      return rank_thresholds.size() - 1;
+      return rankThresholds.size() - 1;
     }
 
    bool Droid::isStationary() const
@@ -280,10 +277,11 @@ namespace Impl
     const auto &weapon_stats = getWeapons()[0].get_stats();
     switch (type) {
       case WEAPON:
-        if (num_weapons(*this) == 0) break;
-
-        y_max = weapon_stats.imd_shape->max.y;
-        y_min = weapon_stats.imd_shape->min.y;
+        if (numWeapons(*this) == 0) {
+          break;
+        }
+        y_max = weapon_stats.pIMD->max.y;
+        y_min = weapon_stats.pIMD->min.y;
         break;
       case SENSOR:
         y_max = sensor->pIMD->max.y;
@@ -305,13 +303,13 @@ namespace Impl
 
   bool Droid::hasElectronicWeapon() const
   {
-    if (has_electronic_weapon(*this))  {
+    if (::hasElectronicWeapon(*this))  {
       return true;
     }
     if (type != COMMAND)  {
       return false;
     }
-    return group->has_electronic_weapon();
+    return group->hasElectronicWeapon();
   }
 
   int Droid::spaceOccupiedOnTransporter() const {
@@ -344,10 +342,10 @@ namespace Impl
     ++kills;
   }
 
-  unsigned Droid::getArmourPointsAgainstWeapon(WEAPON_CLASS weapon_class) const
+  unsigned Droid::getArmourPointsAgainstWeapon(WEAPON_CLASS weaponClass) const
   {
     assert(body);
-    switch (weapon_class)
+    switch (weaponClass)
     {
       case WEAPON_CLASS::KINETIC:
         return body->upgraded[getPlayer()].armour;
@@ -356,9 +354,9 @@ namespace Impl
     }
   }
 
-  void Droid::assignVtolToRearmPad(RearmPad* rearm_pad)
+  void Droid::assignVtolToRearmPad(RearmPad* rearmPad)
   {
-    associatedStructure = rearm_pad;
+    associatedStructure = rearmPad;
   }
 
   bool Droid::isAttacking() const noexcept
@@ -462,29 +460,348 @@ namespace Impl
       if (i != 0) {
         continue;
       }
-      if (action == ACTION::MOVE_FIRE || action == ACTION::TRANSPORT_IN ||
-          action == ACTION::TRANSPORT_OUT) {
+      if (action == MOVE_FIRE || action == TRANSPORT_IN ||
+          action == TRANSPORT_OUT) {
         continue;
       }
-      action = ACTION::NONE;
+      action = NONE;
       // if VTOL - return to rearm pad if not patrolling
-      if (!isVtolDroid(this)) {
+      if (!isVtol()) {
         continue;
       }
       if ((order->type == ORDER_TYPE::PATROL || order->type == ORDER_TYPE::CIRCLE) &&
       (!vtolEmpty(*this) || (secondaryOrder & DSS_ALEV_MASK) == DSS_ALEV_NEVER)) {
         // Back to the patrol.
-        actionDroid(this, ACTION::MOVE, order->getPosition().x, order->getPosition().y);
+        actionDroid(this, ACTION::MOVE, order->pos.x, order->pos.y);
       } else {
         moveToRearm(this);
       }
     }
   }
 
+  /* Overall action function that is called by the specific action functions */
+  void Droid::actionDroidBase(Action* psAction)
+  {
+    ASSERT_OR_RETURN(, psAction->psObj == nullptr || !psAction->psObj->died, "Droid dead");
+
+    WeaponStats* psWeapStats = getWeaponStats(this, 0);
+    Vector2i pos(0, 0);
+
+    bool secHoldActive = secondaryGetState(this, SECONDARY_ORDER::HALT_TYPE) == DSS_HALT_HOLD;
+    timeActionStarted = gameTime;
+    syncDebugDroid(this, '-');
+    syncDebug("%d does %s", getId(), getDroidActionName(psAction->action));
+    objTrace(getId(), "base set action to %s (was %s)", getDroidActionName(psAction->action),
+             getDroidActionName(action));
+
+    bool hasValidWeapon = false;
+    for (int i = 0; i < MAX_WEAPONS; i++)
+    {
+      hasValidWeapon |= validTarget(this, psAction->psObj, i);
+    }
+    switch (psAction->action)
+    {
+      case NONE:
+        // Clear up what ever the droid was doing before if necessary
+        if (!isStationary())
+        {
+          moveStopDroid(this);
+        }
+        action = NONE;
+        actionPos = Vector2i(0, 0);
+        timeActionStarted = 0;
+        actionPointsDone = 0;
+        if (psDroid->numWeaps > 0) {
+          for (int i = 0; i < psDroid->numWeaps; i++)
+          {
+            setDroidActionTarget(this, nullptr, i);
+          }
+        }
+        else {
+          setDroidActionTarget(this, nullptr, 0);
+        }
+        break;
+
+      case ACTION::TRANSPORT_WAIT_TO_FLY_IN:
+        action = TRANSPORT_WAIT_TO_FLY_IN;
+        break;
+
+      case ACTION::ATTACK:
+        if (numWeapons(*this) == 0 || isTransporter(*this) || psAction->psObj == this) {
+          break;
+        }
+        if (!hasValidWeapon) {
+          // continuing is pointless, we were given an invalid target
+          // for ex. AA gun can't attack ground unit
+          break;
+        }
+        if (hasElectronicWeapon()) {
+          //check for low or zero resistance - just zero resistance!
+          if (psAction->psObj->type == OBJ_STRUCTURE
+              && !validStructResistance((Structure*)psAction->psObj))
+          {
+            //structure is low resistance already so don't attack
+            action = NONE;
+            break;
+          }
+
+          //in multiPlayer cannot electronically attack a transporter
+          if (bMultiPlayer
+              && psAction->psObj->type == OBJ_DROID
+              && isTransporter((Droid*)psAction->psObj)) {
+            action = NONE;
+            break;
+          }
+        }
+
+        // note the droid's current pos so that scout & patrol orders know how far the
+        // droid has gone during an attack
+        // slightly strange place to store this I know, but I didn't want to add any more to the droid
+        actionPos = pos.xy();
+        setDroidActionTarget(this, psAction->psObj, 0);
+
+        if (((order->type == ORDER_TYPE::ATTACK_TARGET
+              || order->type == ORDER_TYPE::NONE
+              || order->type == ORDER_TYPE::HOLD
+              || (order->type == ORDER_TYPE::GUARD && hasCommander())
+              || order->type == ORDER_TYPE::FIRE_SUPPORT)
+             && secHoldActive)
+            || (!isVtol() && (orderStateObj(this, ORDER_TYPE::FIRE_SUPPORT) != nullptr)))
+        {
+          action = ATTACK; // holding, try attack straightaway
+        }
+        else if (actionInsideMinRange(this, psAction->psObj, psWeapStats)) // too close?
+        {
+          if (!proj_Direct(psWeapStats))
+          {
+            if (psWeapStats->rotate)
+            {
+              action = ATTACK;
+            }
+            else
+            {
+              action = ROTATE_TO_ATTACK;
+              moveTurnDroid(this, actionTarget[0]->getPosition().x, actionTarget[0]->getPosition().y);
+            }
+          }
+          else if (order->type != ORDER_TYPE::HOLD && secondaryGetState(this, DSO_HALTTYPE) != DSS_HALT_HOLD)
+          {
+            int pbx = 0;
+            int pby = 0;
+            /* direct fire - try and extend the range */
+            action = MOVE_TO_ATTACK;
+            actionCalcPullBackPoint(this, psAction->psObj, &pbx, &pby);
+
+            turnOffMultiMsg(true);
+            moveDroidTo(this, (UDWORD)pbx, (UDWORD)pby);
+            turnOffMultiMsg(false);
+          }
+        }
+        else if (order->type != ORDER_TYPE::HOLD && secondaryGetState(this, DSO_HALTTYPE) != DSS_HALT_HOLD)
+          // approach closer?
+        {
+          action = MOVE_TO_ATTACK;
+          turnOffMultiMsg(true);
+          moveDroidTo(this, psAction->psObj->getPosition().x, psAction->psObj->getPosition().y);
+          turnOffMultiMsg(false);
+        }
+        else if (order->type != ORDER_TYPE::HOLD && secondaryGetState(this, DSO_HALTTYPE) == DSS_HALT_HOLD)
+        {
+          action = ATTACK;
+        }
+        break;
+
+      case MOVE_TO_REARM:
+        action = MOVE_TO_REARM;
+        actionPos = psAction->psObj->getPosition().xy();
+        timeActionStarted = gameTime;
+        setDroidActionTarget(this, psAction->psObj, 0);
+        pos = actionTarget[0]->pos.xy();
+        if (!actionVTOLLandingPos(this, &pos)) {
+          // totally bunged up - give up
+          objTrace(getId(), "move to rearm action failed!");
+          orderDroid(this, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
+          break;
+        }
+        objTrace(getId(), "move to rearm");
+        moveDroidToDirect(this, pos.x, pos.y);
+        break;
+      case CLEAR_REARM_PAD:
+        debug(LOG_NEVER, "Unit %d clearing rearm pad", getId());
+        action = CLEAR_REARM_PAD;
+        setDroidActionTarget(this, psAction->psObj, 0);
+        pos = actionTarget[0]->getPosition().xy();
+        if (!actionVTOLLandingPos(this, &pos))
+        {
+          // totally bunged up - give up
+          objTrace(getId(), "clear rearm pad action failed!");
+          orderDroid(this, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
+          break;
+        }
+        objTrace(getId(), "move to clear rearm pad");
+        moveDroidToDirect(this, pos.x, pos.y);
+        break;
+      case MOVE:
+      case TRANSPORT_IN:
+      case TRANSPORT_OUT:
+      case RETURN_TO_POS:
+      case FIRE_SUPPORT_RETREAT:
+        action = psAction->action;
+        actionPos.x = psAction->x;
+        actionPos.y = psAction->y;
+        timeActionStarted = gameTime;
+        setDroidActionTarget(this, psAction->psObj, 0);
+        moveDroidTo(this, psAction->x, psAction->y);
+        break;
+
+      case BUILD:
+        if (!order->structure_stats) {
+          action = NONE;
+          break;
+        }
+        //ASSERT_OR_RETURN(, order->type == ORDER_TYPE::BUILD || order->type == ORDER_TYPE::HELPBUILD || order->type == ORDER_TYPE::LINEBUILD, "cannot start build action without a build order");
+        ASSERT_OR_RETURN(, psAction->x > 0 && psAction->y > 0, "Bad build order position");
+        action = MOVE_TO_BUILD;
+        actionPos.x = psAction->x;
+        actionPos.y = psAction->y;
+        moveDroidToNoFormation(this, actionPos.x, actionPos.y);
+        break;
+      case DEMOLISH:
+        ASSERT_OR_RETURN(, order->type == ORDER_TYPE::DEMOLISH, "cannot start demolish action without a demolish order");
+        action = MOVE_TO_DEMOLISH;
+        actionPos.x = psAction->x;
+        actionPos.y = psAction->y;
+        ASSERT_OR_RETURN(, (order->target != nullptr) && (order->target->type == OBJ_STRUCTURE),
+                           "invalid target for demolish order");
+        order->structure_stats = ((Structure*)order->target)->pStructureType;
+        setDroidActionTarget(this, psAction->psObj, 0);
+        moveDroidTo(this, psAction->x, psAction->y);
+        break;
+      case REPAIR:
+        action = psAction->action;
+        actionPos.x = psAction->x;
+        actionPos.y = psAction->y;
+        //this needs setting so that automatic repair works
+        setDroidActionTarget(this, psAction->psObj, 0);
+        ASSERT_OR_RETURN(,
+                (actionTarget[0] != nullptr) && (actionTarget[0]->type == OBJ_STRUCTURE),
+                "invalid target for repair order");
+        order->structure_stats = ((Structure*)actionTarget[0])->pStructureType;
+        if (secHoldActive && (order->type == ORDER_TYPE::NONE || order->type == ORDER_TYPE::HOLD)) {
+          action = REPAIR;
+        }
+        else if ((!secHoldActive && order->type != ORDER_TYPE::HOLD) || (secHoldActive && order->type == ORDER_TYPE::REPAIR)) {
+          action = MOVE_TO_REPAIR;
+          moveDroidTo(this, psAction->x, psAction->y);
+        }
+        break;
+      case OBSERVE:
+        action = psAction->action;
+        setDroidActionTarget(this, psAction->psObj, 0);
+        actionPos.x = getPosition().x;
+        actionPos.y = getPosition().y;
+        if (secondaryGetState(this, SECONDARY_ORDER::HALT_TYPE) != DSS_HALT_GUARD && (order->type == ORDER_TYPE::NONE || order->type ==
+                                                                                                              ORDER_TYPE::HOLD))
+        {
+          action = visibleObject(this, actionTarget[0], false)
+                            ? OBSERVE
+                            : NONE;
+        }
+        else if (!hasCbSensor() && ((!secHoldActive && order->type != ORDER_TYPE::HOLD) || (secHoldActive && order->
+                type == ORDER_TYPE::OBSERVE)))
+        {
+          action = MOVE_TO_OBSERVE;
+          moveDroidTo(this, actionTarget[0]->getPosition().x, actionTarget[0]->getPosition().y);
+        }
+        break;
+      case FIRE_SUPPORT:
+        action = FIRE_SUPPORT;
+        if (!isVtol() && !secHoldActive && order->target->type != OBJ_STRUCTURE) {
+          moveDroidTo(this, order->target->getPosition().x, order->target->getPosition().y); // movetotarget.
+        }
+        break;
+      case SULK:
+        action = SULK;
+        // hmmm, hope this doesn't cause any problems!
+        timeActionStarted = gameTime + MIN_SULK_TIME + (gameRand(MAX_SULK_TIME - MIN_SULK_TIME));
+        break;
+      case WAIT_FOR_REPAIR:
+        action = WAIT_FOR_REPAIR;
+        // set the time so we can tell whether the start the self repair or not
+        timeActionStarted = gameTime;
+        break;
+      case MOVE_TO_REPAIR_POINT:
+        action = psAction->action;
+        actionPos.x = psAction->x;
+        actionPos.y = psAction->y;
+        timeActionStarted = gameTime;
+        setDroidActionTarget(this, psAction->psObj, 0);
+        moveDroidToNoFormation(this, psAction->x, psAction->y);
+        break;
+      case WAIT_DURING_REPAIR:
+        action = WAIT_DURING_REPAIR;
+        break;
+      case MOVE_TO_REARM_POINT:
+        objTrace(getId(), "set to move to rearm pad");
+        action = psAction->action;
+        actionPos.x = psAction->x;
+        actionPos.y = psAction->y;
+        timeActionStarted = gameTime;
+        setDroidActionTarget(this, psAction->psObj, 0);
+        moveDroidToDirect(this, psAction->x, psAction->y);
+
+        // make sure there aren't any other VTOLs on the rearm pad
+        ensureRearmPadClear((Structure*)psAction->psObj, this);
+        break;
+      case DROID_REPAIR:
+      {
+        action = psAction->action;
+        actionPos.x = psAction->x;
+        actionPos.y = psAction->y;
+        setDroidActionTarget(this, psAction->psObj, 0);
+        //initialise the action points
+        actionPointsDone = 0;
+        timeActionStarted = gameTime;
+        const auto xdiff = (int)getPosition().x - (int)psAction->x;
+        const auto ydiff = (int)getPosition().y - (int)psAction->y;
+        if (secHoldActive && (order->type == ORDER_TYPE::NONE || order->type == ORDER_TYPE::HOLD))
+        {
+          action = DROID_REPAIR;
+        }
+        else if (((!secHoldActive && order->type != ORDER_TYPE::HOLD) ||
+                 (secHoldActive && order->type == ORDER_TYPE::DROID_REPAIR))
+                 // check that we actually need to move closer
+                 && ((xdiff * xdiff + ydiff * ydiff) > REPAIR_RANGE * REPAIR_RANGE)) {
+          action = MOVE_TO_DROID_REPAIR;
+          moveDroidTo(this, psAction->x, psAction->y);
+        }
+        break;
+      }
+      case ACTION::RESTORE:
+        ASSERT_OR_RETURN(, order->type == ORDER_TYPE::RESTORE, "cannot start restore action without a restore order");
+        psDroid->action = psAction->action;
+        psDroid->actionPos.x = psAction->x;
+        psDroid->actionPos.y = psAction->y;
+        ASSERT_OR_RETURN(, (order->psObj != nullptr) && (order->psObj->type == OBJ_STRUCTURE),
+                           "invalid target for restore order");
+        order->psStats = ((Structure*)order->psObj)->pStructureType;
+        setDroidActionTarget(psDroid, psAction->psObj, 0);
+        if (order->type != ORDER_TYPE::HOLD)
+        {
+          psDroid->action = ACTION::MOVETORESTORE;
+          moveDroidTo(psDroid, psAction->x, psAction->y);
+        }
+        break;
+      default:
+        ASSERT(!"unknown action", "actionUnitBase: unknown action");
+        break;
+    }
+    syncDebugDroid(psDroid, '+');
+  }
+
   // Update the action state for a droid
   void Droid::actionUpdateDroid()
   {
-    using enum ACTION;
     bool (*actionUpdateFunc)(Droid* psDroid) = nullptr;
     bool nonNullWeapon[MAX_WEAPONS] = {false};
     SimpleObject* psTargets[MAX_WEAPONS] = {nullptr};
@@ -519,7 +836,7 @@ namespace Impl
 
     // HACK: Apparently we can't deal with a droid that only has NULL weapons ?
     // FIXME: Find out whether this is really necessary
-    if (num_weapons(*this) <= 1) {
+    if (numWeapons(*this) <= 1) {
       nonNullWeapon[0] = true;
     }
 
@@ -528,7 +845,7 @@ namespace Impl
       case WAIT_FOR_REPAIR:
         // doing nothing
         // see if there's anything to shoot.
-        if (num_weapons(*this) > 0 && !isVtol()
+        if (numWeapons(*this) > 0 && !isVtol()
             && (order->type == ORDER_TYPE::NONE || order->type == ORDER_TYPE::HOLD ||
                 order->type == ORDER_TYPE::RETURN_TO_REPAIR || order->type == ORDER_TYPE::GUARD)) {
           for (unsigned i = 0; i < psDroid->numWeaps; ++i)
@@ -566,7 +883,7 @@ namespace Impl
                                      order->target->getPosition().x, order->target->getPosition().y,
                                      (dynamic_cast<Structure*>(order->target))->getRotation().direction,
                                      (dynamic_cast<Structure*>(order->target))->pStructureType)) {
-            moveDroidToNoFormation(this, order->psObj->getPosition().x, order->target->getPosition().y);
+            moveDroidToNoFormation(this, order->target->getPosition().x, order->target->getPosition().y);
           }
         }
         else if (order->type == ORDER_TYPE::RETURN_TO_REPAIR && 
@@ -757,7 +1074,7 @@ namespace Impl
         //check its a VTOL unit since adding Transporter's into multiPlayer
         /* check vtol attack runs */
         if (isVtol()) {
-          actionUpdateVtolAttack(psDroid);
+          actionUpdateVtolAttack(this);
         }
         break;
       case ACTION::ATTACK:
@@ -848,7 +1165,8 @@ namespace Impl
 
               if (!psWeapStats->rotate) {
                 // no rotating turret - need to check aligned with target
-                const uint16_t targetDir = calcDirection(psDroid->getPosition().x, psDroid->getPosition().y, psActionTarget->getPosition().x,
+                const uint16_t targetDir = calcDirection(getPosition().x, getPosition().y,
+                                                         psActionTarget->getPosition().x,
                                                          psActionTarget->getPosition().y);
                 dirDiff = abs(angleDelta(targetDir - getRotation().direction));
               }
@@ -913,16 +1231,17 @@ namespace Impl
           else if (secHoldActive && order->type == ORDER_TYPE::GUARD && hasCommander()) {
             auto commander = group->psCommander;
 
-            if (commander->order->type == ORDER_TYPE::ATTACK_TARGET ||
-                commander->order.type == ORDER_TYPE::FIRE_SUPPORT ||
-                commander->order.type == ORDER_TYPE::ATTACK) {
+            if (commander->getOrder().type == ORDER_TYPE::ATTACK_TARGET ||
+                commander->getOrder().type == ORDER_TYPE::FIRE_SUPPORT ||
+                commander->getOrder().type == ORDER_TYPE::ATTACK) {
               action = MOVE_TO_ATTACK;
             }
             else {
               action = NONE;
             }
           }
-          else if (secondaryGetState(this, SECONDARY_ORDER::HALT_TYPE) != DSS_HALT_HOLD) {
+          else if (secondaryGetState(this,
+                                     SECONDARY_ORDER::HALT_TYPE) != DSS_HALT_HOLD) {
             action = MOVE_TO_ATTACK; // out of range - chase it
           }
           else {
@@ -979,7 +1298,7 @@ namespace Impl
         }
 
         /* circle around target if hovering and not cyborg */
-        Vector2i attackRunDelta = psDroid->getPosition().xy() - psDroid->movement.destination;
+        Vector2i attackRunDelta = getPosition().xy() - movement->destination;
         if (isStationary() || dot(attackRunDelta, attackRunDelta) < TILE_UNITS * TILE_UNITS) {
           actionAddVtolAttackRun(this);
         }
@@ -991,24 +1310,21 @@ namespace Impl
           if (rangeSq < VTOL_ATTACK_TARGET_DIST * VTOL_ATTACK_TARGET_DIST)
           {
             // don't do another attack run if already moving away from the target
-            diff = psDroid->movement.destination - actionTarget[0]->getPosition().xy();
+            diff = movement->destination - actionTarget[0]->getPosition().xy();
             if (dot(diff, diff) < VTOL_ATTACK_TARGET_DIST * VTOL_ATTACK_TARGET_DIST)
             {
-              actionAddVtolAttackRun(psDroid);
+              actionAddVtolAttackRun(this);
             }
           }
             // in case psWeapStats is still NULL
-          else if (psWeapStats)
-          {
+          else if (psWeapStats) {
             // if the vtol is far enough away head for the target again
-            const int maxRange = proj_GetLongRange(psWeapStats, psDroid->player);
-            if (rangeSq > maxRange * maxRange)
-            {
+            const int maxRange = proj_GetLongRange(psWeapStats, getPlayer());
+            if (rangeSq > maxRange * maxRange) {
               // don't do another attack run if already heading for the target
-              diff = psDroid->movement.destination - actionTarget[0]->getPosition().xy();
-              if (dot(diff, diff) > VTOL_ATTACK_TARGET_DIST * VTOL_ATTACK_TARGET_DIST)
-              {
-                moveDroidToDirect(psDroid, actionTarget[0]->getPosition().x,
+              diff = movement->destination - actionTarget[0]->getPosition().xy();
+              if (dot(diff, diff) > VTOL_ATTACK_TARGET_DIST * VTOL_ATTACK_TARGET_DIST) {
+                moveDroidToDirect(this, actionTarget[0]->getPosition().x,
                                   actionTarget[0]->getPosition().y);
               }
             }
@@ -1022,11 +1338,10 @@ namespace Impl
           moveToRearm(this);
           break;
         }
-
         ASSERT_OR_RETURN(, actionTarget[0] != nullptr, "action update move to attack target is NULL");
         for (unsigned i = 0; i < psDroid->numWeaps; ++i)
         {
-          hasValidWeapon |= validTarget(psDroid, actionTarget[0], i);
+          hasValidWeapon |= validTarget(this, actionTarget[0], i);
         }
         //check the target hasn't become one the same player ID - Electronic Warfare, and that the target is still valid.
         if ((hasElectronicWeapon() && getPlayer() == actionTarget[0]->getPlayer()) || !hasValidWeapon) {
@@ -1037,7 +1352,7 @@ namespace Impl
           action = NONE;
         }
         else {
-          if (actionVisibleTarget(this, actionTarget[0], 0) {
+          if (actionVisibleTarget(this, actionTarget[0], 0)) {
             for (unsigned i = 0; i < psDroid->numWeaps; ++i)
             {
               if (nonNullWeapon[i]
@@ -1047,7 +1362,7 @@ namespace Impl
                 WeaponStats* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
 
                 if (psWeapStats->rotate) {
-                  actionTargetTurret(psDroid, actionTarget[0], &psDroid->asWeaps[i]);
+                  actionTargetTurret(this, actionTarget[0], &psDroid->asWeaps[i]);
                 }
 
                 if (!isVtol() &&
@@ -1057,7 +1372,7 @@ namespace Impl
                   chaseBloke = true;
                 }
 
-                if (actionInRange(psDroid, actionTarget[0], i) && !chaseBloke) {
+                if (actionInRange(this, actionTarget[0], i) && !chaseBloke) {
                   /* init vtol attack runs count if necessary */
                   if (psPropStats->propulsionType == PROPULSION_TYPE::LIFT) {
                     action = VTOL_ATTACK;
@@ -1077,25 +1392,22 @@ namespace Impl
                     }
                   }
                 }
-                else if (actionInRange(psDroid, actionTarget[0], i))
+                else if (actionInRange(this, actionTarget[0], i))
                 {
                   // fire while closing range
                   if ((blockingWall = visGetBlockingWall(psDroid, actionTarget[0])) && proj_Direct(
-                          psWeapStats))
-                  {
+                          psWeapStats)) {
                     WEAPON_EFFECT weapEffect = psWeapStats->weaponEffect;
 
-                    if (!aiCheckAlliances(psDroid->player, blockingWall->player)
+                    if (!aiCheckAlliances(getPlayer(), blockingWall->getPlayer())
                         && asStructStrengthModifier[weapEffect][blockingWall->pStructureType->strength] >=
-                           MIN_STRUCTURE_BLOCK_STRENGTH)
-                    {
+                           MIN_STRUCTURE_BLOCK_STRENGTH) {
                       //Shoot at wall if the weapon is good enough against them
-                      combFire(&psDroid->asWeaps[i], psDroid, (SimpleObject*)blockingWall, i);
+                      combFire(&psDroid->asWeaps[i], this, (SimpleObject*)blockingWall, i);
                     }
                   }
-                  else
-                  {
-                    combFire(&psDroid->asWeaps[i], psDroid, actionTarget[0], i);
+                  else {
+                    combFire(&psDroid->asWeaps[i], this, actionTarget[0], i);
                   }
                 }
               }
@@ -1108,42 +1420,35 @@ namespace Impl
               if ((psDroid->asWeaps[i].rotation.direction != 0) ||
                   (psDroid->asWeaps[i].rotation.pitch != 0))
               {
-                actionAlignTurret(psDroid, i);
+                actionAlignTurret(this, i);
               }
             }
           }
 
-          if (DROID_STOPPED(psDroid) && psDroid->action != ACTION::ATTACK)
-          {
+          if (isStationary() && action != ATTACK) {
             /* Stopped moving but haven't reached the target - possibly move again */
 
             //'hack' to make the droid to check the primary turrent instead of all
             WeaponStats* const psWeapStats = &asWeaponStats[psDroid->asWeaps[0].nStat];
 
-            if (order->type == ORDER_TYPE::ATTACKTARGET && secHoldActive)
-            {
-              psDroid->action = ACTION::NONE; // on hold, give up.
+            if (order->type == ORDER_TYPE::ATTACK_TARGET && secHoldActive) {
+              action = NONE; // on hold, give up.
             }
-            else if (actionInsideMinRange(psDroid, actionTarget[0], psWeapStats))
-            {
-              if (proj_Direct(psWeapStats) && order->type != ORDER_TYPE::HOLD)
-              {
-                SDWORD pbx, pby;
+            else if (actionInsideMinRange(this, actionTarget[0], psWeapStats)) {
+              if (proj_Direct(psWeapStats) && order->type != ORDER_TYPE::HOLD) {
+                int pbx, pby;
 
                 // try and extend the range
-                actionCalcPullBackPoint(psDroid, actionTarget[0], &pbx, &pby);
-                moveDroidTo(psDroid, (UDWORD)pbx, (UDWORD)pby);
+                actionCalcPullBackPoint(this, actionTarget[0], &pbx, &pby);
+                moveDroidTo(this, (unsigned)pbx, (unsigned)pby);
               }
-              else
-              {
-                if (psWeapStats->rotate)
-                {
-                  psDroid->action = ACTION::ATTACK;
+              else {
+                if (psWeapStats->rotate) {
+                  action = ATTACK;
                 }
-                else
-                {
-                  psDroid->action = ACTION::ROTATETOATTACK;
-                  moveTurnDroid(psDroid, actionTarget[0]->getPosition().x,
+                else {
+                  action = ROTATE_TO_ATTACK;
+                  moveTurnDroid(this, actionTarget[0]->getPosition().x,
                                 actionTarget[0]->getPosition().y);
                 }
               }
@@ -1151,51 +1456,45 @@ namespace Impl
             else if (order->type != ORDER_TYPE::HOLD) // approach closer?
             {
               // try to close the range
-              moveDroidTo(psDroid, actionTarget[0]->getPosition().x, actionTarget[0]->getPosition().y);
+              moveDroidTo(this, actionTarget[0]->getPosition().x, actionTarget[0]->getPosition().y);
             }
           }
         }
         break;
 
-      case ACTION::SULK:
+      case SULK:
         // unable to route to target ... don't do anything aggressive until time is up
         // we need to do something defensive at this point ???
 
         //hmmm, hope this doesn't cause any problems!
-        if (gameTime > psDroid->time_action_started)
-        {
-          psDroid->action = ACTION::NONE;
+        if (gameTime > timeActionStarted) {
+          action = NONE;
           // Sulking is over lets get back to the action ... is this all I need to do to get it back into the action?
         }
         break;
 
-      case ACTION::MOVETOBUILD:
-        if (!order->psStats)
-        {
-          psDroid->action = ACTION::NONE;
+      case MOVE_TO_BUILD:
+        if (!order->structure_stats) {
+          action = NONE;
           break;
         }
-        else
-        {
+        else {
           // Determine if the droid can still build or help to build the ordered structure at the specified location
-          const StructureStats* const desiredStructure = order->psStats;
-          const Structure* const structureAtBuildPosition = getTileStructure(
-                  map_coord(psDroid->actionPos.x), map_coord(psDroid->actionPos.y));
+          auto desiredStructure = order->structure_stats;
+          auto structureAtBuildPosition = getTileStructure(
+                  map_coord(actionPos.x), map_coord(actionPos.y));
 
-          if (nullptr != structureAtBuildPosition)
-          {
+          if (nullptr != structureAtBuildPosition) {
             bool droidCannotBuild = false;
 
-            if (!aiCheckAlliances(structureAtBuildPosition->player, psDroid->player))
-            {
+            if (!aiCheckAlliances(structureAtBuildPosition->getPlayer(), getPlayer())) {
               // Not our structure
               droidCannotBuild = true;
             }
             else
               // There's an allied structure already there.  Is it a wall, and can the droid upgrade it to a defence or gate?
             if (isWall(structureAtBuildPosition->pStructureType->type) &&
-                (desiredStructure->type == REF_DEFENSE || desiredStructure->type == REF_GATE))
-            {
+                (desiredStructure->type == REF_DEFENSE || desiredStructure->type == REF_GATE)) {
               // It's always valid to upgrade a wall to a defence or gate
               droidCannotBuild = false; // Just to avoid an empty branch
             }
@@ -1209,150 +1508,130 @@ namespace Impl
             }
             else
               // So it's a structure that the droid could help to build, but is it already complete?
-            if (structureAtBuildPosition->status == SS_BUILT &&
+            if (structureAtBuildPosition->status == STRUCTURE_STATE::BUILT &&
                 (!IsStatExpansionModule(desiredStructure) || !canStructureHaveAModuleAdded(
-                        structureAtBuildPosition)))
-            {
+                        structureAtBuildPosition))) {
               // The building is complete and the droid hasn't been told to add a module, or can't add one, so can't help with that.
               droidCannotBuild = true;
             }
 
-            if (droidCannotBuild)
-            {
-              if (order->type == ORDER_TYPE::LINEBUILD && map_coord(psDroid->order.pos) != map_coord(
-                      psDroid->order.pos2))
-              {
+            if (droidCannotBuild) {
+              if (order->type == ORDER_TYPE::LINE_BUILD &&
+                  map_coord(order->pos) != map_coord(order->pos2)) {
                 // The droid is doing a line build, and there's more to build. This will force the droid to move to the next structure in the line build
-                objTrace(psDroid->id,
+                objTrace(getId(),
                          "ACTION::MOVETOBUILD: line target is already built, or can't be built - moving to next structure in line")
                         ;
-                psDroid->action = ACTION::NONE;
+                action = NONE;
               }
-              else
-              {
+              else {
                 // Cancel the current build order. This will move the truck onto the next order, if it has one, or halt in place.
-                objTrace(psDroid->id,
+                objTrace(getId(),
                          "ACTION::MOVETOBUILD: target is already built, or can't be built - executing next order or halting")
                         ;
-                cancelBuild(psDroid);
+                cancelBuild();
               }
-
               break;
             }
           }
         } // End of check for whether the droid can still succesfully build the ordered structure
 
         // The droid can still build or help with a build, and is moving to a location to do so - are we there yet, are we there yet, are we there yet?
-        if (actionReachedBuildPos(psDroid, psDroid->actionPos.x, psDroid->actionPos.y, order->direction,
-                                  order->psStats))
-        {
+        if (actionReachedBuildPos(this, actionPos.x, actionPos.y, order->direction,
+                                  order->structure_stats)) {
           // We're there, go ahead and build or help to build the structure
-          bool buildPosEmpty = actionRemoveDroidsFromBuildPos(psDroid->player, psDroid->actionPos, order->direction,
-                                                              order->psStats);
-          if (!buildPosEmpty)
-          {
+          bool buildPosEmpty = actionRemoveDroidsFromBuildPos(getPlayer(), actionPos, order->direction,
+                                                              order->structure_stats);
+          if (!buildPosEmpty) {
             break;
           }
-
           bool helpBuild = false;
           // Got to destination - start building
-          StructureStats* const psStructStats = order->psStats;
+          auto psStructStats = order->structure_stats;
           uint16_t dir = order->direction;
-          moveStopDroid(psDroid);
-          objTrace(psDroid->id, "Halted in our tracks - at construction site");
-          if (order->type == ORDER_TYPE::BUILD && order->psObj == nullptr)
-          {
+          moveStopDroid(this);
+          objTrace(getId(), "Halted in our tracks - at construction site");
+          if (order->type == ORDER_TYPE::BUILD && order->target == nullptr) {
             // Starting a new structure
-            const Vector2i pos = psDroid->actionPos;
+            const Vector2i pos = actionPos;
 
             //need to check if something has already started building here?
             //unless its a module!
-            if (IsStatExpansionModule(psStructStats))
-            {
+            if (IsStatExpansionModule(psStructStats)) {
               syncDebug("Reached build target: module");
               debug(LOG_NEVER, "ACTION::MOVETOBUILD: setUpBuildModule");
-              setUpBuildModule(psDroid);
+              setUpBuildModule(this);
             }
-            else if (TileHasStructure(worldTile(pos)))
-            {
+            else if (TileHasStructure(worldTile(pos))) {
               // structure on the build location - see if it is the same type
-              Structure* const psStruct = getTileStructure(map_coord(pos.x), map_coord(pos.y));
-              if (psStruct->pStructureType == order->psStats ||
-                  (order->psStats->type == REF_WALL && psStruct->pStructureType->type == REF_WALLCORNER))
-              {
+              auto psStruct = getTileStructure(map_coord(pos.x), map_coord(pos.y));
+              if (psStruct->pStructureType == order->structure_stats ||
+                  (order->structure_stats->type == REF_WALL && psStruct->pStructureType->type == REF_WALLCORNER)) {
                 // same type - do a help build
                 syncDebug("Reached build target: do-help");
-                setDroidTarget(psDroid, psStruct);
+                setDroidTarget(this, psStruct);
                 helpBuild = true;
               }
               else if ((psStruct->pStructureType->type == REF_WALL ||
                         psStruct->pStructureType->type == REF_WALLCORNER) &&
-                       (order->psStats->type == REF_DEFENSE ||
-                        order->psStats->type == REF_GATE))
-              {
+                       (order->structure_stats->type == REF_DEFENSE ||
+                        order->structure_stats->type == REF_GATE)) {
                 // building a gun tower or gate over a wall - OK
-                if (droidStartBuild(psDroid))
-                {
+                if (droidStartBuild(this)) {
                   syncDebug("Reached build target: tower");
-                  psDroid->action = ACTION::BUILD;
+                  action = BUILD;
                 }
               }
-              else
-              {
+              else {
                 syncDebug("Reached build target: already-structure");
-                objTrace(psDroid->id, "ACTION::MOVETOBUILD: tile has structure already");
-                cancelBuild(psDroid);
+                objTrace(getId(), "ACTION::MOVETOBUILD: tile has structure already");
+                cancelBuild();
               }
             }
-            else if (!validLocation(order->psStats, pos, dir, psDroid->player, false))
+            else if (!validLocation(order->structure_stats, pos, dir, getPlayer(), false))
             {
               syncDebug("Reached build target: invalid");
-              objTrace(psDroid->id, "ACTION::MOVETOBUILD: !validLocation");
-              cancelBuild(psDroid);
+              objTrace(getId(), "ACTION::MOVETOBUILD: !validLocation");
+              cancelBuild();
             }
-            else if (droidStartBuild(psDroid) == DroidStartBuildSuccess)
+            else if (droidStartBuild(this) == DroidStartBuildSuccess)
               // If DroidStartBuildPending, then there's a burning oil well, and we don't want to change to ACTION::BUILD until it stops burning.
             {
               syncDebug("Reached build target: build");
-              psDroid->action = ACTION::BUILD;
-              psDroid->time_action_started = gameTime;
-              psDroid->action_points_done = 0;
+              action = ACTION::BUILD;
+              timeActionStarted = gameTime;
+              actionPointsDone = 0;
             }
           }
-          else if (order->type == ORDER_TYPE::LINEBUILD || order->type == ORDER_TYPE::BUILD)
-          {
+          else if (order->type == ORDER_TYPE::LINE_BUILD ||
+                   order->type == ORDER_TYPE::BUILD) {
             // building a wall.
-            Tile* const psTile = worldTile(psDroid->actionPos);
+            auto psTile = worldTile(actionPos);
             syncDebug("Reached build target: wall");
-            if (order->psObj == nullptr
+            if (order->target == nullptr
                 && (TileHasStructure(psTile)
-                    || TileHasFeature(psTile)))
-            {
-              if (TileHasStructure(psTile))
-              {
+                    || TileHasFeature(psTile))) {
+              if (TileHasStructure(psTile)) {
                 // structure on the build location - see if it is the same type
-                Structure* const psStruct = getTileStructure(map_coord(psDroid->actionPos.x),
-                                                             map_coord(psDroid->actionPos.y));
+                auto psStruct = getTileStructure(map_coord(actionPos.x),
+                                                             map_coord(actionPos.y));
                 ASSERT(psStruct, "TileHasStructure, but getTileStructure returned nullptr");
 #if defined(WZ_CC_GNU) && !defined(WZ_CC_INTEL) && !defined(WZ_CC_CLANG) && (7 <= __GNUC__)
                 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wnull-dereference"
 #endif
-                if (psStruct->pStructureType == order->psStats)
-                {
+                if (psStruct->pStructureType == order->structure_stats) {
                   // same type - do a help build
-                  setDroidTarget(psDroid, psStruct);
+                  setDroidTarget(this, psStruct);
                   helpBuild = true;
                 }
                 else if ((psStruct->pStructureType->type == REF_WALL || psStruct->pStructureType->type ==
                                                                         REF_WALLCORNER) &&
-                         (order->psStats->type == REF_DEFENSE || order->psStats->type == REF_GATE))
-                {
+                         (order->psStats->type == REF_DEFENSE || order->psStats->type == REF_GATE)) {
                   // building a gun tower over a wall - OK
-                  if (droidStartBuild(psDroid))
-                  {
-                    objTrace(psDroid->id, "ACTION::MOVETOBUILD: start building defense");
-                    psDroid->action = ACTION::BUILD;
+                  if (droidStartBuild(this)) {
+                    objTrace(getId(), "ACTION::MOVETOBUILD: start building defense");
+                    action = BUILD;
                   }
                 }
                 else if ((psStruct->pStructureType->type == REF_FACTORY && order->psStats->type ==
@@ -1362,19 +1641,16 @@ namespace Impl
                          (psStruct->pStructureType->type == REF_POWER_GEN && order->psStats->type ==
                                                                              REF_POWER_MODULE) ||
                          (psStruct->pStructureType->type == REF_VTOL_FACTORY && order->psStats->type ==
-                                                                                REF_FACTORY_MODULE))
-                {
+                                                                                REF_FACTORY_MODULE)) {
                   // upgrade current structure in a row
-                  if (droidStartBuild(psDroid))
-                  {
-                    objTrace(psDroid->id, "ACTION::MOVETOBUILD: start building module");
-                    psDroid->action = ACTION::BUILD;
+                  if (droidStartBuild(this)) {
+                    objTrace(getId(), "ACTION::MOVETOBUILD: start building module");
+                    action = BUILD;
                   }
                 }
-                else
-                {
-                  objTrace(psDroid->id, "ACTION::MOVETOBUILD: line build hit building");
-                  cancelBuild(psDroid);
+                else {
+                  objTrace(getId(), "ACTION::MOVETOBUILD: line build hit building");
+                  cancelBuild();
                 }
 #if defined(WZ_CC_GNU) && !defined(WZ_CC_INTEL) && !defined(WZ_CC_CLANG) && (7 <= __GNUC__)
 # pragma GCC diagnostic pop
@@ -1384,180 +1660,157 @@ namespace Impl
               {
                 Feature* feature = getTileFeature(map_coord(psDroid->actionPos.x),
                                                   map_coord(psDroid->actionPos.y));
-                objTrace(psDroid->id, "ACTION::MOVETOBUILD: tile has feature %d", feature->psStats->subType);
+                objTrace(getId(), "ACTION::MOVETOBUILD: tile has feature %d", feature->psStats->subType);
                 if (feature->psStats->subType == FEAT_OIL_RESOURCE && order->psStats->type ==
-                                                                      REF_RESOURCE_EXTRACTOR)
-                {
-                  if (droidStartBuild(psDroid))
-                  {
-                    objTrace(psDroid->id, "ACTION::MOVETOBUILD: start building oil derrick");
-                    psDroid->action = ACTION::BUILD;
+                                                                      REF_RESOURCE_EXTRACTOR) {
+                  if (droidStartBuild(this)) {
+                    objTrace(getId(), "ACTION::MOVETOBUILD: start building oil derrick");
+                    action = BUILD;
                   }
                 }
               }
-              else
-              {
-                objTrace(psDroid->id, "ACTION::MOVETOBUILD: blocked line build");
-                cancelBuild(psDroid);
+              else {
+                objTrace(getId(), "ACTION::MOVETOBUILD: blocked line build");
+                cancelBuild();
               }
             }
-            else if (droidStartBuild(psDroid))
-            {
-              psDroid->action = ACTION::BUILD;
+            else if (droidStartBuild(this)) {
+              action = BUILD;
             }
           }
-          else
-          {
+          else {
             syncDebug("Reached build target: planned-help");
-            objTrace(psDroid->id, "ACTION::MOVETOBUILD: planned-help");
+            objTrace(getId(), "ACTION::MOVETOBUILD: planned-help");
             helpBuild = true;
           }
 
-          if (helpBuild)
-          {
+          if (helpBuild) {
             // continuing a partially built structure (order = helpBuild)
-            if (droidStartBuild(psDroid))
-            {
-              objTrace(psDroid->id, "ACTION::MOVETOBUILD: starting help build");
-              psDroid->action = ACTION::BUILD;
+            if (droidStartBuild()) {
+              objTrace(getId(), "ACTION::MOVETOBUILD: starting help build");
+              action = BUILD;
             }
           }
         }
-        else if (DROID_STOPPED(psDroid))
-        {
-          objTrace(psDroid->id,
+        else if (isStationary()) {
+          objTrace(getId(),
                    "ACTION::MOVETOBUILD: Starting to drive toward construction site - move status was %d",
-                   (int)psDroid->movement.status);
-          moveDroidToNoFormation(psDroid, psDroid->actionPos.x, psDroid->actionPos.y);
+                   (int)movement->status);
+          moveDroidToNoFormation(this, actionPos.x, actionPos.y);
         }
         break;
-      case ACTION::BUILD:
-        if (!order->psStats)
+      case BUILD:
+        if (!order->structure_stats)
         {
-          objTrace(psDroid->id, "No target stats for build order - resetting");
-          psDroid->action = ACTION::NONE;
+          objTrace(getId(), "No target stats for build order - resetting");
+          action = NONE;
           break;
         }
-        if (DROID_STOPPED(psDroid) &&
-            !actionReachedBuildPos(psDroid, psDroid->actionPos.x, psDroid->actionPos.y, order->direction,
-                                   order->psStats))
-        {
-          objTrace(psDroid->id, "ACTION::BUILD: Starting to drive toward construction site");
-          moveDroidToNoFormation(psDroid, psDroid->actionPos.x, psDroid->actionPos.y);
+        if (isStationary() &&
+            !actionReachedBuildPos(this, actionPos.x, actionPos.y, order->direction,
+                                   order->structure_stats)) {
+          objTrace(getId(), "ACTION::BUILD: Starting to drive toward construction site");
+          moveDroidToNoFormation(this, actionPos.x, actionPos.y);
         }
-        else if (!DROID_STOPPED(psDroid) &&
-                 psDroid->movement.status != MOVETURNTOTARGET &&
-                 psDroid->movement.status != MOVESHUFFLE &&
-                 actionReachedBuildPos(psDroid, psDroid->actionPos.x, psDroid->actionPos.y, order->direction,
-                                       order->psStats))
+        else if (!isStationary() &&
+                 movement->status != MOVE_STATUS::TURN_TO_TARGET &&
+                 movement->status != MOVE_STATUS::SHUFFLE &&
+                 actionReachedBuildPos(this, actionPos.x, actionPos.y, order->direction,
+                                       order->structure_stats))
         {
-          objTrace(psDroid->id, "ACTION::BUILD: Stopped - at construction site");
-          moveStopDroid(psDroid);
+          objTrace(getId(), "ACTION::BUILD: Stopped - at construction site");
+          moveStopDroid(this);
         }
-        if (psDroid->action == ACTION::SULK)
-        {
-          objTrace(psDroid->id, "Failed to go to objective, aborting build action");
-          psDroid->action = ACTION::NONE;
+        if (action == SULK) {
+          objTrace(getId(), "Failed to go to objective, aborting build action");
+          action = NONE;
           break;
         }
-        if (droidUpdateBuild(psDroid))
-        {
-          actionTargetTurret(psDroid, actionTarget[0], &psDroid->asWeaps[0]);
+        if (droidUpdateBuild(this)) {
+          actionTargetTurret(this, actionTarget[0], &psDroid->asWeaps[0]);
         }
         break;
-      case ACTION::MOVETODEMOLISH:
-      case ACTION::MOVETOREPAIR:
-      case ACTION::MOVETORESTORE:
-        if (!order->psStats)
-        {
-          psDroid->action = ACTION::NONE;
+      case MOVE_TO_DEMOLISH:
+      case MOVE_TO_REPAIR:
+      case MOVE_TO_RESTORE:
+        if (!order->structure_stats) {
+          action = NONE;
           break;
         }
-        else
-        {
-          const Structure* structureAtPos = getTileStructure(map_coord(psDroid->actionPos.x),
-                                                             map_coord(psDroid->actionPos.y));
+        else {
+          auto structureAtPos = getTileStructure(map_coord(actionPos.x), map_coord(actionPos.y));
 
-          if (structureAtPos == nullptr)
-          {
-            //No structure located at desired position. Move on.
-            psDroid->action = ACTION::NONE;
+          if (structureAtPos == nullptr) {
+            // no structure located at desired position. Move on
+            action = NONE;
             break;
           }
-          else if (order->type != ORDER_TYPE::RESTORE)
-          {
+          else if (order->type != ORDER_TYPE::RESTORE) {
             bool cantDoRepairLikeAction = false;
 
-            if (!aiCheckAlliances(structureAtPos->player, psDroid->player))
-            {
+            if (!aiCheckAlliances(structureAtPos->getPlayer(), getPlayer())) {
               cantDoRepairLikeAction = true;
             }
-            else if (order->type != ORDER_TYPE::DEMOLISH && structureAtPos->body == structureBody(structureAtPos))
-            {
+            else if (order->type != ORDER_TYPE::DEMOLISH &&
+                     structureAtPos->body == structureBody(structureAtPos)) {
               cantDoRepairLikeAction = true;
             }
-            else if (order->type == ORDER_TYPE::DEMOLISH && structureAtPos->player != psDroid->player)
-            {
+            else if (order->type == ORDER_TYPE::DEMOLISH &&
+                     structureAtPos->getPlayer() != getPlayer()) {
               cantDoRepairLikeAction = true;
             }
 
-            if (cantDoRepairLikeAction)
-            {
-              psDroid->action = ACTION::NONE;
-              moveStopDroid(psDroid);
+            if (cantDoRepairLikeAction) {
+              action = NONE;
+              moveStopDroid(this);
               break;
             }
           }
         }
         // see if the droid is at the edge of what it is moving to
-        if (actionReachedBuildPos(psDroid, psDroid->actionPos.x, psDroid->actionPos.y,
-                                  ((Structure*)actionTarget[0])->rot.direction, order->psStats))
-        {
-          moveStopDroid(psDroid);
+        if (actionReachedBuildPos(this, actionPos.x, actionPos.y,
+                                  ((Structure*)actionTarget[0])->getRotation().direction,
+                                  order->structure_stats)) {
+          moveStopDroid(this);
 
           // got to the edge - start doing whatever it was meant to do
-          droidStartAction(psDroid);
-          switch (psDroid->action)
-          {
-            case ACTION::MOVETODEMOLISH:
-              psDroid->action = ACTION::DEMOLISH;
+          droidStartAction(this);
+          switch (action) {
+            case MOVE_TO_DEMOLISH:
+              action = DEMOLISH;
               break;
-            case ACTION::MOVETOREPAIR:
-              psDroid->action = ACTION::REPAIR;
+            case MOVE_TO_REPAIR:
+              action = REPAIR;
               break;
-            case ACTION::MOVETORESTORE:
-              psDroid->action = ACTION::RESTORE;
+            case MOVE_TO_RESTORE:
+              action = RESTORE;
               break;
             default:
               break;
           }
         }
-        else if (DROID_STOPPED(psDroid))
-        {
-          moveDroidToNoFormation(psDroid, psDroid->actionPos.x, psDroid->actionPos.y);
+        else if (isStationary()) {
+          moveDroidToNoFormation(this, actionPos.x, actionPos.y);
         }
         break;
 
-      case ACTION::DEMOLISH:
-      case ACTION::REPAIR:
-      case ACTION::RESTORE:
-        if (!order->psStats)
-        {
-          psDroid->action = ACTION::NONE;
+      case DEMOLISH:
+      case REPAIR:
+      case RESTORE:
+        if (!order->structure_stats) {
+          action = NONE;
           break;
         }
         // set up for the specific action
-        switch (psDroid->action)
-        {
-          case ACTION::DEMOLISH:
-            // ACTION::MOVETODEMOLISH;
+        switch (action) {
+          case DEMOLISH:
             actionUpdateFunc = droidUpdateDemolishing;
             break;
-          case ACTION::REPAIR:
+          case REPAIR:
             // ACTION::MOVETOREPAIR;
             actionUpdateFunc = droidUpdateRepair;
             break;
-          case ACTION::RESTORE:
+          case RESTORE:
             // ACTION::MOVETORESTORE;
             actionUpdateFunc = droidUpdateRestore;
             break;
@@ -1566,55 +1819,53 @@ namespace Impl
         }
 
         // now do the action update
-        if (DROID_STOPPED(psDroid) && !actionReachedBuildPos(psDroid, psDroid->actionPos.x, psDroid->actionPos.y,
-                                                             ((Structure*)actionTarget[0])->rot.direction,
-                                                             order->psStats))
+        if (isStationary() && !actionReachedBuildPos(this, actionPos.x, actionPos.y,
+                                                             ((Structure*)actionTarget[0])->getRotation().direction,
+                                                             order->structure_stats))
         {
-          if (order->type != ORDER_TYPE::HOLD && (!secHoldActive || (secHoldActive && order->type != ORDER_TYPE::NONE)))
-          {
-            objTrace(psDroid->id, "Secondary order: Go to construction site");
-            moveDroidToNoFormation(psDroid, psDroid->actionPos.x, psDroid->actionPos.y);
+          if (order->type != ORDER_TYPE::HOLD && (!secHoldActive ||
+              (secHoldActive && order->type != ORDER_TYPE::NONE))) {
+            objTrace(getId(), "Secondary order: Go to construction site");
+            moveDroidToNoFormation(this, actionPos.x, actionPos.y);
           }
-          else
-          {
-            psDroid->action = ACTION::NONE;
+          else {
+            action = NONE;
           }
         }
-        else if (!DROID_STOPPED(psDroid) &&
-                 psDroid->movement.status != MOVETURNTOTARGET &&
-                 psDroid->movement.status != MOVESHUFFLE &&
-                 actionReachedBuildPos(psDroid, psDroid->actionPos.x, psDroid->actionPos.y,
-                                       ((Structure*)actionTarget[0])->rot.direction, order->psStats))
+        else if (!isStationary() &&
+                 movement->status != MOVE_STATUS::TURN_TO_TARGET &&
+                 movement->status != MOVE_STATUS::SHUFFLE &&
+                 actionReachedBuildPos(this, actionPos.x, actionPos.y,
+                                       ((Structure*)actionTarget[0])->getRotation().direction, order->structure_stats))
         {
-          objTrace(psDroid->id, "Stopped - reached build position");
-          moveStopDroid(psDroid);
+          objTrace(getId(), "Stopped - reached build position");
+          moveStopDroid(this);
         }
-        else if (actionUpdateFunc(psDroid))
+        else if (actionUpdateFunc(this))
         {
           //use 0 for non-combat(only 1 'weapon')
-          actionTargetTurret(psDroid, actionTarget[0], &psDroid->asWeaps[0]);
+          actionTargetTurret(this, actionTarget[0], &psDroid->asWeaps[0]);
         }
-        else
-        {
-          psDroid->action = ACTION::NONE;
+        else {
+          action = NONE;
         }
         break;
 
-      case ACTION::MOVE_TO_REARM_POINT:
+      case MOVE_TO_REARM_POINT:
         if (isStationary()) {
           objTrace(getId(), "Finished moving onto the rearm pad");
-          action = ACTION::WAIT_DURING_REARM;
+          action = WAIT_DURING_REARM;
         }
         break;
-      case ACTION::MOVE_TO_REPAIR_POINT:
+      case MOVE_TO_REPAIR_POINT:
         if (order->rtrType == RTR_DATA_TYPE::REPAIR_FACILITY) {
           /* moving from front to rear of repair facility or rearm pad */
-          if (actionReachedBuildPos(psDroid, actionTarget[0]->getPosition().x, actionTarget[0]->getPosition().y,
-                                    ((Structure*)actionTarget[0])->rot.direction,
+          if (actionReachedBuildPos(this, actionTarget[0]->getPosition().x, actionTarget[0]->getPosition().y,
+                                    ((Structure*)actionTarget[0])->getRotation().direction,
                                     ((Structure*)actionTarget[0])->pStructureType)) {
             objTrace(getId(), "Arrived at repair point - waiting for our turn");
             moveStopDroid(this);
-            action = ACTION::WAIT_DURING_REPAIR;
+            action = WAIT_DURING_REPAIR;
           }
           else if (isStationary()) {
             moveDroidToNoFormation(this, actionTarget[0]->getPosition().x,
@@ -1637,7 +1888,7 @@ namespace Impl
             else {
               objTrace(getId(), "Stopping and waiting for repairs %d", (int)getId());
               moveStopDroid(this);
-              action = ACTION::WAIT_DURING_REPAIR;
+              action = WAIT_DURING_REPAIR;
             }
           }
           else if (isStationary()) {
@@ -1646,68 +1897,67 @@ namespace Impl
           }
         }
         break;
-      case ACTION::OBSERVE:
+      case OBSERVE:
         // align the turret
         actionTargetTurret(this, actionTarget[0], &psDroid->asWeaps[0]);
 
         if (!hasCbSensor()) {
           // make sure the target is within sensor range
-          const auto xdiff = (SDWORD)psDroid->getPosition().x - (SDWORD)actionTarget[0]->getPosition().x;
-          const auto ydiff = (SDWORD)pos.y - (SDWORD)actionTarget[0]->getPosition().y;
+          const auto xdiff = (int)getPosition().x - (int)actionTarget[0]->getPosition().x;
+          const auto ydiff = (int)getPosition().y - (int)actionTarget[0]->getPosition().y;
           int rangeSq = droidSensorRange(this);
           rangeSq = rangeSq * rangeSq;
           if (!visibleObject(this, actionTarget[0], false)
               || xdiff * xdiff + ydiff * ydiff >= rangeSq) {
             if (secondaryGetState(this, SECONDARY_ORDER::HALT_TYPE) != DSS_HALT_GUARD && 
                 (order->type == ORDER_TYPE::NONE || order->type == ORDER_TYPE::HOLD)) {
-              action = ACTION::NONE;
+              action = NONE;
             }
             else if ((!secHoldActive && order->type != ORDER_TYPE::HOLD) || 
                      (secHoldActive && order->type == ORDER_TYPE::OBSERVE)) {
-              action = ACTION::MOVE_TO_OBSERVE;
+              action = MOVE_TO_OBSERVE;
               moveDroidTo(this, actionTarget[0]->getPosition().x, 
                           actionTarget[0]->getPosition().y);
             }
           }
         }
         break;
-      case ACTION::MOVE_TO_OBSERVE:
+      case MOVE_TO_OBSERVE:
         // align the turret
         actionTargetTurret(this, actionTarget[0], &psDroid->asWeaps[0]);
 
-        if (visibleObject(psDroid, actionTarget[0], false)) {
+        if (visibleObject(this, actionTarget[0], false)) {
           // make sure the target is within sensor range
-          const int xdiff = (SDWORD)psDroid->getPosition().x - (SDWORD)actionTarget[0]->getPosition().x;
-          const int ydiff = (SDWORD)psDroid->getPosition().y - (SDWORD)actionTarget[0]->getPosition().y;
+          const int xdiff = (int)getPosition().x - (int)actionTarget[0]->getPosition().x;
+          const int ydiff = (int)getPosition().y - (int)actionTarget[0]->getPosition().y;
           int rangeSq = droidSensorRange(this);
           rangeSq = rangeSq * rangeSq;
           if ((xdiff * xdiff + ydiff * ydiff < rangeSq) &&
               !isStationary()) {
-            action = ACTION::OBSERVE;
+            action = OBSERVE;
             moveStopDroid(this);
           }
         }
-        if (isStationary() && action == ACTION::MOVE_TO_OBSERVE) {
-          moveDroidTo(psDroid, actionTarget[0]->getPosition().x, actionTarget[0]->getPosition().y);
+        if (isStationary() && action == MOVE_TO_OBSERVE) {
+          moveDroidTo(this, actionTarget[0]->getPosition().x, actionTarget[0]->getPosition().y);
         }
         break;
-      case ACTION::FIRE_SUPPORT:
+      case FIRE_SUPPORT:
         if (!order->target) {
-          action = ACTION::NONE;
+          action = NONE;
           return;
         }
         //can be either a droid or a structure now - AB 7/10/98
-        ASSERT_OR_RETURN(, (order->psObj->type == OBJ_DROID || order->psObj->type == OBJ_STRUCTURE)
-                           && aiCheckAlliances(order->psObj->player, psDroid->player),
+        ASSERT_OR_RETURN(, (order->target->type == OBJ_DROID || order->target->type == OBJ_STRUCTURE)
+                           && aiCheckAlliances(order->target->getPlayer(), getPlayer()),
                            "ACTION::FIRESUPPORT: incorrect target type");
 
-        //don't move VTOL's
+        // don't move VTOL's
         // also don't move closer to sensor towers
-        if (!isVtol() && !dynamic_cast<Structure*>(order->target))
-        {
+        if (!isVtol() && !dynamic_cast<Structure*>(order->target)) {
           Vector2i diff = (getPosition() - order->target->getPosition()).xy();
           //Consider .shortRange here
-          int rangeSq = asWeaponStats[psDroid->asWeaps[0].nStat].upgraded[psDroid->player].maxRange / 2;
+          int rangeSq = asWeaponStats[psDroid->asWeaps[0].nStat].upgraded[getPlayer()].maxRange / 2;
           // move close to sensor
           rangeSq = rangeSq * rangeSq;
           if (dot(diff, diff) < rangeSq) {
@@ -1722,7 +1972,7 @@ namespace Impl
             if (isStationary() || dot(diff, diff) > rangeSq) {
               if (secHoldActive) {
                 // droid on hold, don't allow moves.
-                action = ACTION::NONE;
+                action = NONE;
               }
               else {
                 // move in range
@@ -1733,26 +1983,25 @@ namespace Impl
           }
         }
         break;
-      case ACTION::MOVETODROIDREPAIR:
+      case MOVE_TO_DROID_REPAIR:
       {
-        SimpleObject* actionTargetObj = actionTarget[0];
+        auto actionTargetObj = actionTarget[0];
         ASSERT_OR_RETURN(, actionTargetObj != nullptr && actionTargetObj->type == OBJ_DROID,
                            "unexpected repair target");
-        const Droid* actionTarget = (const Droid*)actionTargetObj;
-        if (actionTarget->body == actionTarget->original_hp)
-        {
+        auto actionTarget = (const Droid*)actionTargetObj;
+        if (actionTarget->hitPoints == actionTarget->originalHp) {
           // target is healthy: nothing to do
-          psDroid->action = ACTION::NONE;
-          moveStopDroid(psDroid);
+          action = NONE;
+          moveStopDroid(this);
           break;
         }
-        Vector2i diff = (psDroid->getPosition() - actionTarget[0]->getPosition()).xy();
+        Vector2i diff = (getPosition() - actionTarget[0].getPosition()).xy();
         // moving to repair a droid
         if (!actionTarget[0] || // Target missing.
-            (psDroid->order.type != ORDER_TYPE::DROIDREPAIR && dot(diff, diff) > 2 * REPAIR_MAXDIST * REPAIR_MAXDIST))
+            (order->type != ORDER_TYPE::DROID_REPAIR && dot(diff, diff) > 2 * REPAIR_MAXDIST * REPAIR_MAXDIST))
           // Target farther then 1.4142 * REPAIR_MAXDIST and we aren't ordered to follow.
         {
-          psDroid->action = ACTION::NONE;
+          action = NONE;
           return;
         }
         if (dot(diff, diff) < REPAIR_RANGE * REPAIR_RANGE)
@@ -1760,31 +2009,29 @@ namespace Impl
           // Got to destination - start repair
           //rotate turret to point at droid being repaired
           //use 0 for repair droid
-          actionTargetTurret(psDroid, actionTarget[0], &psDroid->asWeaps[0]);
-          droidStartAction(psDroid);
-          psDroid->action = ACTION::DROIDREPAIR;
+          actionTargetTurret(this, actionTarget[0], &psDroid->asWeaps[0]);
+          droidStartAction(this);
+          action = DROID_REPAIR;
         }
-        if (DROID_STOPPED(psDroid))
-        {
+        if (isStationary()) {
           // Couldn't reach destination - try and find a new one
-          psDroid->actionPos = actionTarget[0]->getPosition().xy();
-          moveDroidTo(psDroid, psDroid->actionPos.x, psDroid->actionPos.y);
+          actionPos = actionTarget[0].getPosition().xy();
+          moveDroidTo(this, actionPos.x, actionPos.y);
         }
         break;
       }
-      case ACTION::DROIDREPAIR:
+      case DROID_REPAIR:
       {
         int xdiff, ydiff;
 
         // If not doing self-repair (psActionTarget[0] is repair target)
-        if (actionTarget[0] != psDroid)
-        {
-          actionTargetTurret(psDroid, actionTarget[0], &psDroid->asWeaps[0]);
+        if (actionTarget[0] != this) {
+          actionTargetTurret(this, actionTarget[0], &psDroid->asWeaps[0]);
         }
           // Just self-repairing.
           // See if there's anything to shoot.
-        else if (psDroid->numWeaps > 0 && !isVtolDroid(psDroid)
-                 && (order->type == ORDER_TYPE::NONE || order->type == ORDER_TYPE::HOLD || order->type == ORDER_TYPE::RTR))
+        else if (psDroid->numWeaps > 0 && !isVtol()
+                 && (order->type == ORDER_TYPE::NONE || order->type == ORDER_TYPE::HOLD || order->type == ORDER_TYPE::RETURN_TO_REPAIR))
         {
           for (unsigned i = 0; i < psDroid->numWeaps; ++i)
           {
@@ -1794,54 +2041,53 @@ namespace Impl
 
               WeaponStats* const psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
               if (psDroid->asWeaps[i].nStat > 0 && psWeapStats->rotate
-                  && secondaryGetState(psDroid, DSO_ATTACK_LEVEL) == DSS_ALEV_ALWAYS
-                  && aiBestNearestTarget(psDroid, &psTemp, i) >= 0 && psTemp)
+                  && secondaryGetState(this, SECONDARY_ORDER::ATTACK_LEVEL) == DSS_ALEV_ALWAYS
+                  && aiBestNearestTarget(this, &psTemp, i) >= 0 && psTemp)
               {
-                psDroid->action = ACTION::ATTACK;
-                setDroidActionTarget(psDroid, psTemp, 0);
+                action = ATTACK;
+                setDroidActionTarget(this, psTemp, 0);
                 break;
               }
             }
           }
         }
-        if (psDroid->action != ACTION::DROIDREPAIR)
-        {
+        if (action != DROID_REPAIR) {
           break; // action has changed
         }
 
         //check still next to the damaged droid
-        xdiff = (SDWORD)psDroid->getPosition().x - (SDWORD)actionTarget[0]->getPosition().x;
-        ydiff = (SDWORD)psDroid->getPosition().y - (SDWORD)actionTarget[0]->getPosition().y;
+        xdiff = (int)getPosition().x - (int)actionTarget[0]->getPosition().x;
+        ydiff = (int)getPosition().y - (int)actionTarget[0]->getPosition().y;
         if (xdiff * xdiff + ydiff * ydiff > REPAIR_RANGE * REPAIR_RANGE)
         {
-          if (order->type == ORDER_TYPE::DROIDREPAIR)
+          if (order->type == ORDER_TYPE::DROID_REPAIR)
           {
             // damaged droid has moved off - follow if we're not holding position!
-            psDroid->actionPos = actionTarget[0]->getPosition().xy();
-            psDroid->action = ACTION::MOVETODROIDREPAIR;
-            moveDroidTo(psDroid, psDroid->actionPos.x, psDroid->actionPos.y);
+            actionPos = actionTarget[0]->getPosition().xy();
+            action = MOVE_TO_DROID_REPAIR;
+            moveDroidTo(this, actionPos.x, actionPos.y);
           }
           else
           {
-            psDroid->action = ACTION::NONE;
+            action = NONE;
           }
         }
         else
         {
-          if (!droidUpdateDroidRepair(psDroid))
+          if (!droidUpdateDroidRepair(this))
           {
-            psDroid->action = ACTION::NONE;
-            moveStopDroid(psDroid);
+            action = NONE;
+            moveStopDroid(this);
             //if the order is RTR then resubmit order so that the unit will go to repair facility point
-            if (orderState(psDroid, ORDER_TYPE::RTR))
+            if (orderState(this, ORDER_TYPE::RETURN_TO_REPAIR))
             {
-              orderDroid(psDroid, ORDER_TYPE::RTR, ModeImmediate);
+              orderDroid(this, ORDER_TYPE::RETURN_TO_REPAIR, ModeImmediate);
             }
           }
           else
           {
             // don't let the target for a repair shuffle
-            if (((Droid*)actionTarget[0])->movement.status == MOVESHUFFLE)
+            if (((Droid*)actionTarget[0])->movement->status == MOVE_STATUS::SHUFFLE)
             {
               moveStopDroid((Droid*)actionTarget[0]);
             }
@@ -1849,75 +2095,75 @@ namespace Impl
         }
         break;
       }
-      case ACTION::WAITFORREARM:
+      case WAIT_FOR_REARM:
         // wait here for the rearm pad to instruct the vtol to move
         if (actionTarget[0] == nullptr)
         {
           // rearm pad destroyed - move to another
-          objTrace(psDroid->id, "rearm pad gone - switch to new one");
-          moveToRearm(psDroid);
+          objTrace(getId(), "rearm pad gone - switch to new one");
+          moveToRearm(this);
           break;
         }
-        if (DROID_STOPPED(psDroid) && vtolHappy(psDroid))
+        if (isStationary() && vtolHappy(*this))
         {
-          objTrace(psDroid->id, "do not need to rearm after all");
+          objTrace(getId(), "do not need to rearm after all");
           // don't actually need to rearm so just sit next to the rearm pad
-          psDroid->action = ACTION::NONE;
+          action = NONE;
         }
         break;
-      case ACTION::CLEARREARMPAD:
-        if (DROID_STOPPED(psDroid))
+      case CLEAR_REARM_PAD:
+        if (isStationary())
         {
-          psDroid->action = ACTION::NONE;
-          objTrace(psDroid->id, "clearing rearm pad");
-          if (!vtolHappy(*psDroid))
+          action = NONE;
+          objTrace(getId(), "clearing rearm pad");
+          if (!vtolHappy(*this))
             // Droid has cleared the rearm pad without getting rearmed. One way this can happen if a rearming pad was built under the VTOL while it was waiting for a pad.
           {
-            moveToRearm(psDroid); // Rearm somewhere else instead.
+            moveToRearm(this); // Rearm somewhere else instead.
           }
         }
         break;
-      case ACTION::WAITDURINGREARM:
+      case WAIT_DURING_REARM:
         // this gets cleared by the rearm pad
         break;
-      case ACTION::MOVETOREARM:
+      case MOVE_TO_REARM:
         if (actionTarget[0] == nullptr)
         {
           // base destroyed - find another
-          objTrace(psDroid->id, "rearm gone - find another");
-          moveToRearm(psDroid);
+          objTrace(getId(), "rearm gone - find another");
+          moveToRearm(this);
           break;
         }
 
-        if (visibleObject(psDroid, actionTarget[0], false))
+        if (visibleObject(this, actionTarget[0], false))
         {
-          Structure* const psStruct = findNearestReArmPad(psDroid, (Structure*)actionTarget[0], true);
+          auto psStruct = findNearestReArmPad(this, (Structure*)actionTarget[0], true);
           // got close to the rearm pad - now find a clear one
-          objTrace(psDroid->id, "Seen rearm pad - searching for available one");
+          objTrace(getId(), "Seen rearm pad - searching for available one");
 
           if (psStruct != nullptr)
           {
             // found a clear landing pad - go for it
-            objTrace(psDroid->id, "Found clear rearm pad");
-            setDroidActionTarget(psDroid, psStruct, 0);
+            objTrace(getId(), "Found clear rearm pad");
+            setDroidActionTarget(this, psStruct, 0);
           }
 
-          psDroid->action = ACTION::WAITFORREARM;
+          action = WAIT_FOR_REARM;
         }
 
-        if (DROID_STOPPED(psDroid) || psDroid->action == ACTION::WAITFORREARM)
+        if (isStationary() || action == WAIT_FOR_REARM)
         {
           Vector2i pos = actionTarget[0]->getPosition().xy();
-          if (!actionVTOLLandingPos(psDroid, &pos))
+          if (!actionVTOLLandingPos(this, &pos))
           {
             // totally bunged up - give up
-            objTrace(psDroid->id, "Couldn't find a clear tile near rearm pad - returning to base");
-            orderDroid(psDroid, ORDER_TYPE::RTB, ModeImmediate);
+            objTrace(getId(), "Couldn't find a clear tile near rearm pad - returning to base");
+            orderDroid(this, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
             break;
           }
-          objTrace(psDroid->id, "moving to rearm pad at %d,%d (%d,%d)", (int)pos.x, (int)pos.y,
+          objTrace(getId(), "moving to rearm pad at %d,%d (%d,%d)", (int)pos.x, (int)pos.y,
                    (int)(pos.x/TILE_UNITS), (int)(pos.y/TILE_UNITS));
-          moveDroidToDirect(psDroid, pos.x, pos.y);
+          moveDroidToDirect(this, pos.x, pos.y);
         }
         break;
       default:
@@ -1925,30 +2171,28 @@ namespace Impl
         break;
     }
 
-    if (psDroid->action != ACTION::MOVEFIRE &&
-        psDroid->action != ACTION::ATTACK &&
-        psDroid->action != ACTION::MOVETOATTACK &&
-        psDroid->action != ACTION::MOVETODROIDREPAIR &&
-        psDroid->action != ACTION::DROIDREPAIR &&
-        psDroid->action != ACTION::BUILD &&
-        psDroid->action != ACTION::OBSERVE &&
-        psDroid->action != ACTION::MOVETOOBSERVE)
-    {
+    if (action != MOVE_FIRE &&
+        action != ATTACK &&
+        action != MOVE_TO_ATTACK &&
+        action != MOVE_TO_DROID_REPAIR &&
+        action != DROID_REPAIR &&
+        action != BUILD &&
+        action != OBSERVE &&
+        action != MOVE_TO_OBSERVE) {
       //use 0 for all non-combat droid types
       if (psDroid->numWeaps == 0)
       {
         if (psDroid->asWeaps[0].rotation.direction != 0 || psDroid->asWeaps[0].rotation.pitch != 0)
         {
-          actionAlignTurret(psDroid, 0);
+          actionAlignTurret(this, 0);
         }
       }
       else
       {
         for (unsigned i = 0; i < psDroid->numWeaps; ++i)
         {
-          if (psDroid->asWeaps[i].rotation.direction != 0 || psDroid->asWeaps[i].rotation.pitch != 0)
-          {
-            actionAlignTurret(psDroid, i);
+          if (psDroid->asWeaps[i].rotation.direction != 0 || psDroid->asWeaps[i].rotation.pitch != 0) {
+            actionAlignTurret(this, i);
           }
         }
       }
@@ -2001,7 +2245,7 @@ int droidReloadBar(const Impl::Unit& psObj, const Weapon* psWeap, int weapon_slo
 	bool bSalvo;
 	int firingStage, interval;
 
-	if (Impl::num_weapons(psObj) == 0) // no weapon {
+	if (numWeapons(psObj) == 0) // no weapon {
 		return -1;
 	}
 	psStats = asWeaponStats + psWeap->nStat;
@@ -2052,10 +2296,8 @@ int droidDamage(Droid* psDroid, unsigned damage, WEAPON_CLASS weaponClass,
 {
 	int relativeDamage;
 
-	CHECK_DROID(psDroid);
-
 	// VTOLs (and transporters in MP) on the ground take triple damage
-	if ((isVtolDroid(psDroid) || (isTransporter(*psDroid) && bMultiPlayer)) &&
+	if ((psDroid->isVtol() || (isTransporter(*psDroid) && bMultiPlayer)) &&
       (psDroid->movement->status == MOVE_STATUS::INACTIVE))
 	{
 		damage *= 3;
@@ -2073,8 +2315,6 @@ int droidDamage(Droid* psDroid, unsigned damage, WEAPON_CLASS weaponClass,
 		}
 		// Now check for auto return on droid's secondary orders (i.e. return on medium/heavy damage)
 		secondaryCheckDamageLevel(psDroid);
-
-		CHECK_DROID(psDroid);
 	}
 	else if (relativeDamage < 0)
 	{
@@ -2139,7 +2379,6 @@ int droidDamage(Droid* psDroid, unsigned damage, WEAPON_CLASS weaponClass,
 			}
 		}
 	}
-
 	return relativeDamage;
 }
 
@@ -2157,8 +2396,6 @@ void add_to_experience_queue(int player, int value)
 // recycle a droid (retain it's experience and some of it's cost)
 void recycleDroid(Droid* psDroid)
 {
-	CHECK_DROID(psDroid);
-
 	// store the droids kills
 	if (psDroid->experience > 0)
 	{
@@ -2189,8 +2426,6 @@ void recycleDroid(Droid* psDroid)
 		addEffect(&position, EFFECT_EXPLOSION, EXPLOSION_TYPE_DISCOVERY, false, nullptr, false,
 		          gameTime - deltaGameTime + 1);
 	}
-
-	CHECK_DROID(psDroid);
 }
 
 
@@ -2355,8 +2590,6 @@ TAKE CARE with removeDroid() - usually want droidRemove since it deal with grid 
 //returns false if the droid wasn't removed - because it died!
 bool droidRemove(Droid* psDroid, Droid* pList[MAX_PLAYERS])
 {
-	CHECK_DROID(psDroid);
-
 	if (isDead(psDroid))
 	{
 		// droid has already been killed, quit
@@ -2647,15 +2880,11 @@ void droidUpdate(Droid* psDroid)
 	}
 
 	syncDebugDroid(psDroid, '>');
-
-	CHECK_DROID(psDroid);
 }
 
 /* See if a droid is next to a structure */
 static bool droidNextToStruct(Droid* psDroid, Structure* psStruct)
 {
-	CHECK_DROID(psDroid);
-
 	auto pos = map_coord(psDroid->getPosition());
 	int minX = std::max(pos.x - 1, 0);
 	int minY = std::max(pos.y - 1, 0);
@@ -2684,7 +2913,6 @@ static bool droidCheckBuildStillInProgress(void* psObj)
 	}
 
 	auto psDroid = (Droid*)psObj;
-	CHECK_DROID(psDroid);
 
 	return !psDroid->died && psDroid->action == DACTION_BUILD;
 }
@@ -2707,7 +2935,6 @@ DroidStartBuild droidStartBuild(Droid* psDroid)
 {
 	Structure* psStruct = nullptr;
 	ASSERT_OR_RETURN(DroidStartBuildFailed, psDroid != nullptr, "Bad Droid");
-	CHECK_DROID(psDroid);
 
 	/* See if we are starting a new structure */
 	if (psDroid->order.psObj == nullptr &&
@@ -2716,7 +2943,7 @@ DroidStartBuild droidStartBuild(Droid* psDroid)
 	{
 		StructureStats* psStructStat = psDroid->order.psStats;
 
-		ItemAvailability ia = (ItemAvailability)apStructTypeLists[psDroid->player][psStructStat - asStructureStats];
+		auto ia = (ItemAvailability)apStructTypeLists[psDroid->getPlayer()][psStructStat - asStructureStats];
 		if (ia != AVAILABLE && ia != REDUNDANT)
 		{
 			ASSERT(false, "Cannot build \"%s\" for player %d.", psStructStat->name.toUtf8().c_str(), psDroid->player);
@@ -2783,7 +3010,6 @@ DroidStartBuild droidStartBuild(Droid* psDroid)
 			audio_PlayObjStaticTrackCallback(psDroid, ID_SOUND_CONSTRUCTION_START, droidBuildStartAudioCallback);
 		}
 	}
-	CHECK_DROID(psDroid);
 
 	objTrace(psDroid->id, "DroidStartBuildSuccess");
 	return DroidStartBuildSuccess;
@@ -2818,7 +3044,6 @@ static void addConstructorEffect(Structure* psStruct)
    returns true while building continues */
 bool droidUpdateBuild(Droid* psDroid)
 {
-	CHECK_DROID(psDroid);
 	ASSERT_OR_RETURN(false, psDroid->action == DACTION_BUILD, "%s (order %s) has wrong action for construction: %s",
 	                 droidGetName(psDroid), getDroidOrderName(psDroid->order.type),
 	                 getDroidActionName(psDroid->action));
@@ -2877,10 +3102,8 @@ bool droidUpdateBuild(Droid* psDroid)
 
 bool droidUpdateDemolishing(Droid* psDroid)
 {
-	CHECK_DROID(psDroid);
-
 	ASSERT_OR_RETURN(false, psDroid->action == DACTION_DEMOLISH, "unit is not demolishing");
-	Structure* psStruct = (Structure*)psDroid->order.psObj;
+	auto psStruct = (Structure*)psDroid->order.psObj;
 	ASSERT_OR_RETURN(false, psStruct->type == OBJ_STRUCTURE, "target is not a structure");
 
 	int constructRate = 5 * constructorPoints(asConstructStats + psDroid->asBits[COMP_CONSTRUCT], psDroid->player);
@@ -2889,8 +3112,6 @@ bool droidUpdateDemolishing(Droid* psDroid)
 	structureDemolish(psStruct, psDroid, pointsToAdd);
 
 	addConstructorEffect(psStruct);
-
-	CHECK_DROID(psDroid);
 
 	return true;
 }
@@ -2905,17 +3126,15 @@ bool droidUpdateDemolishing(Droid* psDroid)
 /*continue restoring a structure*/
 bool droidUpdateRestore(Droid* psDroid)
 {
-	CHECK_DROID(psDroid);
-
-	ASSERT_OR_RETURN(false, psDroid->action == DACTION_RESTORE, "Unit is not restoring");
-	Structure* psStruct = (Structure*)psDroid->order.psObj;
+	ASSERT_OR_RETURN(false, psDroid->action == ACTION::RESTORE, "Unit is not restoring");
+	auto psStruct = (Structure*)psDroid->order.psObj;
 	ASSERT_OR_RETURN(false, psStruct->type == OBJ_STRUCTURE, "Target is not a structure");
 	ASSERT_OR_RETURN(false, psDroid->asWeaps[0].nStat > 0, "Droid doesn't have any weapons");
 
 	unsigned compIndex = psDroid->asWeaps[0].nStat;
 	ASSERT_OR_RETURN(false, compIndex < numWeaponStats, "Invalid range referenced for numWeaponStats, %u > %u",
 	                 compIndex, numWeaponStats);
-	WeaponStats* psStats = &asWeaponStats[compIndex];
+	auto psStats = &asWeaponStats[compIndex];
 
 	ASSERT_OR_RETURN(false, psStats->weaponSubClass == WSC_ELECTRONIC, "unit's weapon is not EW");
 
@@ -2929,8 +3148,6 @@ bool droidUpdateRestore(Droid* psDroid)
 
 	//store the amount just added
 	psDroid->action_points_done = pointsToAdd;
-
-	CHECK_DROID(psDroid);
 
 	/* check if structure is restored */
 	if (psStruct->resistance < (SDWORD)structureResistance(psStruct->
@@ -3060,8 +3277,8 @@ static void droidUpdateDroidSelfRepair(Droid* psRepairDroid)
 bool is_idf(const Droid& droid)
 {
   using enum DROID_TYPE;
-  return (droid.get_type() != WEAPON || !is_cyborg(droid)) &&
-         has_artillery(droid);
+  return (droid.get_type() != WEAPON || !isCyborg(droid)) &&
+         hasArtillery(droid);
 }
 //bool idfDroid(DROID *psDroid)
 //{
@@ -4504,17 +4721,17 @@ char const* getDroidResourceName(char const* pName)
 bool being_repaired(const Droid& droid)
 {
   using enum ACTION;
-  if (!droid.is_damaged()) {
+  if (!droid.isDamaged()) {
     return false;
   }
 
-  const auto& droids = droid_lists[droid.getPlayer()];
+  const auto& droids = apsDroidLists[droid.getPlayer()];
   return std::any_of(droids.begin(), droids.end(),
                      [&droid](const auto& other_droid)
   {
       return is_repairer(other_droid) &&
-             other_droid.get_current_action() == DROID_REPAIR &&
-              other_droid.get_current_order().target_object->getId() == droid.getId();
+             other_droid.getAction() == DROID_REPAIR &&
+              other_droid.getOrder().target->getId() == droid.getId();
   });
 }
 //bool droidUnderRepair(const DROID *psDroid)
@@ -4540,11 +4757,11 @@ bool being_repaired(const Droid& droid)
 
 unsigned count_player_command_droids(unsigned player)
 {
-  const auto& droids = droid_lists[player];
+  const auto& droids = apsDroidLists[player];
   return std::count_if(droids.begin(), droids.end(),
                        [](const auto& droid)
   {
-      return is_commander(droid);
+      return droid.isCommander();
   });
 }
 //UBYTE checkCommandExist(UBYTE player)
@@ -4564,8 +4781,8 @@ unsigned count_player_command_droids(unsigned player)
 bool isTransporter(const Droid& droid)
 {
   using enum DROID_TYPE;
-  return droid.get_type() == TRANSPORTER ||
-         droid.get_type() == SUPER_TRANSPORTER;
+  return droid.getType() == TRANSPORTER ||
+         droid.getType() == SUPER_TRANSPORTER;
 }
 
 ////access functions for vtols
@@ -4586,12 +4803,12 @@ bool isTransporter(const Droid& droid)
 bool vtolEmpty(const Droid& droid)
 {
   assert(droid.isVtol());
-  if (droid.get_type() != DROID_TYPE::WEAPON) {
+  if (droid.getType() != DROID_TYPE::WEAPON) {
     return false;
   }
 
   return std::all_of(droid.getWeapons().begin(), droid.getWeapons().end(),
-                     [](const auto& weapon)
+                     [&droid](const auto& weapon)
   {
       return weapon.is_vtol_weapon() &&
         weapon.is_empty_vtol_weapon(droid.getPlayer());
@@ -4601,22 +4818,22 @@ bool vtolEmpty(const Droid& droid)
 bool vtolFull(const Droid& droid)
 {
   assert(droid.isVtol());
-  if (droid.get_type() != DROID_TYPE::WEAPON) {
+  if (droid.getType() != DROID_TYPE::WEAPON) {
     return false;
   }
 
   return std::all_of(droid.getWeapons().begin(), droid.getWeapons().end(),
                      [](const auto& weapon)
   {
-      return weapon.is_vtol_weapon() && weapon.has_full_ammo();
+      return weapon.is_vtol_weapon() && weapon.hasFullAmmo();
   });
 }
 
 bool vtolReadyToRearm(const Droid& droid, const RearmPad& rearmPad)
 {
-  if (droid.isVtol() || droid.get_current_action() == ACTION::WAIT_FOR_REARM ||
-      !droid.is_VTOL_rearmed_and_repaired() || rearm_pad.is_clear() ||
-      !droid.is_rearming()) {
+  if (droid.isVtol() || droid.getAction() == ACTION::WAIT_FOR_REARM ||
+      !vtolHappy(droid) || rearmPad.is_clear() ||
+      !vtolRearming(droid)) {
     return true;
   }
   return false;
@@ -4662,7 +4879,7 @@ bool vtolReadyToRearm(const Droid& droid, const RearmPad& rearmPad)
 bool vtolRearming(const Droid& droid)
 {
   if (!droid.isVtol() ||
-      droid.get_type() != DROID_TYPE::WEAPON) {
+      droid.getType() != DROID_TYPE::WEAPON) {
     return false;
   }
   auto action = droid.getAction();
@@ -4730,15 +4947,15 @@ bool all_VTOLs_rearmed(const Droid& droid)
     return true;
   }
 
-  const auto& droids = droid_lists[droid.getPlayer()];
+  const auto& droids = apsDroidLists[droid.getPlayer()];
   return std::none_of(droids.begin(), droids.end(),
                       [&droid](const auto& other_droid)
   {
-      return other_droid.is_rearming() &&
-             other_droid.get_current_order().type ==
-               droid.get_current_order().type &&
-             other_droid.get_current_order().target_object ==
-              droid.get_current_order().target_object;
+      return vtolRearming(other_droid) &&
+             other_droid.getOrder().type ==
+               droid.getOrder().type &&
+             other_droid.getOrder().target ==
+              droid.getOrder().target;
   });
 }
 //// see if there are any other vtols attacking the same target
@@ -4771,11 +4988,11 @@ bool all_VTOLs_rearmed(const Droid& droid)
 /*returns a count of the base number of attack runs for the weapon attached to the droid*/
 UWORD getNumAttackRuns(const Droid* psDroid, int weapon_slot)
 {
-	ASSERT_OR_RETURN(0, isVtolDroid(psDroid), "not a VTOL Droid");
+	ASSERT_OR_RETURN(0, psDroid->isVtol(), "not a VTOL Droid");
 	// if weapon is a salvo weapon, then number of shots that can be fired = vtolAttackRuns * numRounds
-	if (asWeaponStats[psDroid->asWeaps[weapon_slot].nStat].upgraded[psDroid->player].reloadTime)
+	if (asWeaponStats[psDroid->asWeaps[weapon_slot].nStat].upgraded[psDroid->getPlayer()].reloadTime)
 	{
-		return asWeaponStats[psDroid->asWeaps[weapon_slot].nStat].upgraded[psDroid->player].numRounds
+		return asWeaponStats[psDroid->asWeaps[weapon_slot].nStat].upgraded[psDroid->getPlayer()].numRounds
 			* asWeaponStats[psDroid->asWeaps[weapon_slot].nStat].vtolAttackRuns;
 	}
 	return asWeaponStats[psDroid->asWeaps[weapon_slot].nStat].vtolAttackRuns;
@@ -4784,8 +5001,8 @@ UWORD getNumAttackRuns(const Droid* psDroid, int weapon_slot)
 bool vtolHappy(const Droid& droid)
 {
   assert(droid.isVtol());
-  if (droid.is_damaged() || !has_full_ammo(droid) ||
-       droid.get_type() == DROID_TYPE::WEAPON) {
+  if (droid.isDamaged() || !hasFullAmmo(droid) ||
+       droid.getType() == DROID_TYPE::WEAPON) {
     return false;
   }
   return true;
@@ -4832,7 +5049,7 @@ bool vtolHappy(const Droid& droid)
 
 void updateVtolAttackRun(Droid& droid, int weapon_slot)
 {
-  if (!droid.isVtol() || num_weapons(droid) == 0) {
+  if (!droid.isVtol() || numWeapons(droid) == 0) {
     return;
   }
 
@@ -4880,73 +5097,58 @@ FIRE_SUPPORT order can be assigned*/
 bool droidSensorDroidWeapon(const SimpleObject* psObj, const Droid* psDroid)
 {
 	const SensorStats* psStats = nullptr;
-	int compIndex;
 
-	CHECK_DROID(psDroid);
-
-	if (!psObj || !psDroid)
-	{
+	if (!psObj || !psDroid) {
 		return false;
 	}
 
 	//first check if the object is a droid or a structure
-	if ((psObj->type != OBJ_DROID) &&
-		(psObj->type != OBJ_STRUCTURE))
-	{
+	if (!dynamic_cast<const Droid*>(psObj) &&
+		  !dynamic_cast<const Structure*>(psObj)) {
 		return false;
 	}
 	//check same player
-	if (psObj->player != psDroid->player)
-	{
+	if (psObj->getPlayer() != psDroid->getPlayer()) {
 		return false;
 	}
 	//check obj is a sensor droid/structure
-	switch (psObj->type)
-	{
-	case OBJ_DROID:
-		if (((const Droid*)psObj)->type != DROID_SENSOR &&
-        ((const Droid*)psObj)->type != DROID_COMMAND)
-		{
-			return false;
-		}
-		compIndex = ((const Droid*)psObj)->asBits[COMP_SENSOR];
-		ASSERT_OR_RETURN(false, compIndex < numSensorStats, "Invalid range referenced for numSensorStats, %d > %d",
-		                 compIndex, numSensorStats);
-		psStats = asSensorStats + compIndex;
-		break;
-	case OBJ_STRUCTURE:
-		psStats = ((const Structure*)psObj)->pStructureType->sensor_stats;
+	if (auto psDroid = dynamic_cast<const Droid*>(psObj)) {
+    if (psDroid->getType() != DROID_TYPE::SENSOR &&
+        psDroid->getType() != DROID_TYPE::COMMAND) {
+      return false;
+    }
+    compIndex = psDroid->sensor;
+    ASSERT_OR_RETURN(false, compIndex < numSensorStats, "Invalid range referenced for numSensorStats, %d > %d",
+                     compIndex, numSensorStats);
+    psStats = asSensorStats + compIndex;
+  }
+  else {
+    auto psStruct = dynamic_cast<const Structure*>(psObj);
+		psStats = psStruct->sensor_stats;
 		if ((psStats == nullptr) ||
-			(psStats->location != LOC_TURRET))
-		{
+			(psStats->location != LOC_TURRET)) {
 			return false;
 		}
-		break;
-	default:
-		break;
 	}
 
 	//check droid is a weapon droid - or Cyborg!!
-	if (!(psDroid->type == DROID_WEAPON || psDroid->type ==
-                                         DROID_CYBORG || psDroid->type == DROID_CYBORG_SUPER))
-	{
+	if (!(psDroid->getType() == DROID_TYPE::WEAPON ||
+        psDroid->getType() == DROID_TYPE::CYBORG ||
+        psDroid->getType() == DROID_TYPE::CYBORG_SUPER)) {
 		return false;
 	}
 
 	//finally check the right droid/sensor combination
 	// check vtol droid with commander
-	if ((isVtolDroid(psDroid) || !proj_Direct(asWeaponStats + psDroid->asWeaps[0].nStat)) &&
-		psObj->type == OBJ_DROID && ((const Droid*)psObj)->type == DROID_COMMAND)
-	{
+	if ((psDroid->isVtol() || !proj_Direct(asWeaponStats + psDroid->asWeaps[0].nStat)) &&
+		psObj->type == OBJ_DROID && ((const Droid*)psObj)->type == DROID_COMMAND) {
 		return true;
 	}
 
 	//check vtol droid with vtol sensor
-	if (isVtolDroid(psDroid) && psDroid->asWeaps[0].nStat > 0)
-	{
+	if (psDroid->isVtol() && psDroid->asWeaps[0].nStat > 0) {
 		if (psStats->type == VTOL_INTERCEPT_SENSOR || psStats->type == VTOL_CB_SENSOR || psStats->type == SUPER_SENSOR
-			/*|| psStats->type == RADAR_DETECTOR_SENSOR*/)
-		{
+			/*|| psStats->type == RADAR_DETECTOR_SENSOR*/) {
 			return true;
 		}
 		return false;
@@ -5004,11 +5206,10 @@ bool droidSensorDroidWeapon(const SimpleObject* psObj, const Droid* psDroid)
 // Give a droid from one player to another - used in Electronic Warfare and multiplayer.
 // Got to destroy the droid and build another since there are too many complications otherwise.
 // Returns the droid created.
-Droid* giftSingleDroid(Droid* psD, UDWORD to, bool electronic)
+Droid* giftSingleDroid(Droid* psD, unsigned to, bool electronic)
 {
-	CHECK_DROID(psD);
 	ASSERT_OR_RETURN(nullptr, !isDead(psD), "Cannot gift dead unit");
-	ASSERT_OR_RETURN(psD, psD->player != to, "Cannot gift to self");
+	ASSERT_OR_RETURN(psD, psD->getPlayer() != to, "Cannot gift to self");
 	ASSERT_OR_RETURN(nullptr, to < MAX_PLAYERS, "Cannot gift to = %" PRIu32 "", to);
 
 	// Check unit limits (multiplayer only)
@@ -5016,11 +5217,12 @@ Droid* giftSingleDroid(Droid* psD, UDWORD to, bool electronic)
 	          getMaxConstructors(to), getNumCommandDroids(to), getMaxCommanders(to));
 	if (bMultiPlayer
 		&& ((int)getNumDroids(to) >= getMaxDroids(to)
-			|| ((psD->type == DROID_CYBORG_CONSTRUCT || psD->type == DROID_CONSTRUCT)
+			|| ((psD->getType() == DROID_TYPE::CYBORG_CONSTRUCT ||
+           psD->getType() == DROID_TYPE::CONSTRUCT)
 				&& (int)getNumConstructorDroids(to) >= getMaxConstructors(to))
-			|| (psD->type == DROID_COMMAND && (int)getNumCommandDroids(to) >= getMaxCommanders(to))))
+			|| (psD->getType() == DROID_TYPE::COMMAND && (int)getNumCommandDroids(to) >= getMaxCommanders(to))))
 	{
-		if (to == selectedPlayer || psD->player == selectedPlayer)
+		if (to == selectedPlayer || psD->getPlayer() == selectedPlayer)
 		{
 			CONPRINTF("%s", _("Unit transfer failed -- unit limits exceeded"));
 		}
@@ -5028,23 +5230,21 @@ Droid* giftSingleDroid(Droid* psD, UDWORD to, bool electronic)
 	}
 
 	// electronic or campaign will destroy and recreate the droid.
-	if (electronic || !bMultiPlayer)
-	{
+	if (electronic || !bMultiPlayer) {
 		DroidTemplate sTemplate;
 		Droid* psNewDroid;
 
 		templateSetParts(psD, &sTemplate); // create a template based on the droid
 		sTemplate.name = WzString::fromUtf8(psD->name); // copy the name across
 		// update score
-		if (psD->player == selectedPlayer && to != selectedPlayer && !bMultiPlayer)
-		{
+		if (psD->getPlayer() == selectedPlayer && to != selectedPlayer && !bMultiPlayer) {
 			scoreUpdateVar(WD_UNITS_LOST);
 		}
 		// make the old droid vanish (but is not deleted until next tick)
 		adjustDroidCount(psD, -1);
 		vanishDroid(psD);
 		// create a new droid
-		psNewDroid = reallyBuildDroid(&sTemplate, Position(psD->getPosition().x, psD->getPosition().y, 0), to, false, psD->rot);
+		psNewDroid = reallyBuildDroid(&sTemplate, Position(psD->getPosition().x, psD->getPosition().y, 0), to, false, psD->getRotation());
 		ASSERT_OR_RETURN(nullptr, psNewDroid, "Unable to build unit");
 
 		addDroid(psNewDroid, apsDroidLists);
@@ -5056,7 +5256,7 @@ Droid* giftSingleDroid(Droid* psD, UDWORD to, bool electronic)
 		psNewDroid->experience = psD->experience;
 		psNewDroid->kills = psD->kills;
 
-		if (!(psNewDroid->type == DROID_PERSON || cyborgDroid(psNewDroid) || isTransporter(psNewDroid)))
+		if (!(psNewDroid->type == DROID_TYPE::PERSON || cyborgDroid(psNewDroid) || isTransporter(*psNewDroid)))
 		{
 			updateDroidOrientation(psNewDroid);
 		}
@@ -5065,7 +5265,7 @@ Droid* giftSingleDroid(Droid* psD, UDWORD to, bool electronic)
 		return psNewDroid;
 	}
 
-	int oldPlayer = psD->player;
+	int oldPlayer = psD->getPlayer();
 
 	// reset the assigned state of units attached to a leader
 	for (Droid* psCurr = apsDroidLists[oldPlayer]; psCurr != nullptr; psCurr = psCurr->psNext)
@@ -5288,23 +5488,21 @@ void DeSelectDroid(Droid* psDroid)
 	triggerEventSelected();
 }
 
-/** Callback function for stopped audio tracks
- *  Sets the droid's current track id to NO_SOUND
- *  \return true on success, false on failure
+/**
+ * Callback function for stopped audio tracks
+ * Sets the droid's current track id to NO_SOUND
+ *
+ * @return true on success, false on failure
  */
 bool droidAudioTrackStopped(void* psObj)
 {
-	Droid* psDroid;
+	auto psDroid = (Droid*)psObj;
 
-	psDroid = (Droid*)psObj;
-	if (psDroid == nullptr)
-	{
+	if (psDroid == nullptr) {
 		debug(LOG_ERROR, "droid pointer invalid");
 		return false;
 	}
-
-	if (psDroid->type != OBJ_DROID || psDroid->died)
-	{
+	if (psDroid->type != OBJ_DROID || psDroid->died) {
 		return false;
 	}
 
@@ -5312,13 +5510,13 @@ bool droidAudioTrackStopped(void* psObj)
 	return true;
 }
 
-bool is_cyborg(const Droid& droid)
+bool isCyborg(const Droid& droid)
 {
   using enum DROID_TYPE;
-  return droid.get_type() == CYBORG ||
-         droid.get_type() == CYBORG_CONSTRUCT ||
-         droid.get_type() == CYBORG_REPAIR ||
-         droid.get_type() == CYBORG_SUPER;
+  return droid.getType() == CYBORG ||
+         droid.getType() == CYBORG_CONSTRUCT ||
+         droid.getType() == CYBORG_REPAIR ||
+         droid.getType() == CYBORG_SUPER;
 }
 ///*returns true if droid type is one of the Cyborg types*/
 //bool cyborgDroid(const DROID* psDroid)
@@ -5329,11 +5527,11 @@ bool is_cyborg(const Droid& droid)
 //		|| psDroid->droidType == DROID_CYBORG_SUPER);
 //}
 
-bool is_builder(const Droid& droid)
+bool isBuilder(const Droid& droid)
 {
   using enum DROID_TYPE;
-  return droid.get_type() == CONSTRUCT ||
-         droid.get_type() == CYBORG_CONSTRUCT;
+  return droid.getType() == CONSTRUCT ||
+         droid.getType() == CYBORG_CONSTRUCT;
 }
 //bool isConstructionDroid(DROID const* psDroid)
 //{
@@ -5405,7 +5603,7 @@ int droidSqDist(Droid* psDroid, SimpleObject* psObj)
 	{
 		return -1;
 	}
-	return objPosDiffSq(psDroid->getPosition(), psObj->getPosition());
+	return objectPositionSquareDiff(psDroid->getPosition(), psObj->getPosition());
 }
 
 unsigned calculate_max_range(const Droid& droid)
@@ -5413,10 +5611,10 @@ unsigned calculate_max_range(const Droid& droid)
   using enum DROID_TYPE;
   if (droid.getType() == SENSOR)
     return droid.calculateSensorRange();
-  else if (num_weapons(droid) == 0)
+  else if (numWeapons(droid) == 0)
     return 0;
   else
-    return get_max_weapon_range(droid);
+    return getMaxWeaponRange(droid);
 }
 
 bool transporter_is_flying(const Droid& transporter)
@@ -5424,7 +5622,7 @@ bool transporter_is_flying(const Droid& transporter)
   assert(isTransporter(transporter));
   auto& order = transporter.getOrder();
 
-  if (is_multiplayer) {
+  if (bMultiPlayer) {
     return order.type == ORDER_TYPE::MOVE ||
            order.type == ORDER_TYPE::DISEMBARK ||
            (order.type == ORDER_TYPE::NONE && transporter.getVerticalSpeed() != 0);
@@ -5443,14 +5641,14 @@ bool still_building(const Droid& droid)
 
 bool can_assign_fire_support(const Droid& droid, const Structure& structure)
 {
-  if (num_weapons(droid) == 0 || !structure.hasSensor()) return false;
+  if (numWeapons(droid) == 0 || !structure.hasSensor()) return false;
 
   if (droid.isVtol())
   {
     return structure.hasVtolInterceptSensor() ||
-            structure.hasVtolCbSensor();
+           structure.hasVtolCbSensor();
   }
-  else if (has_artillery(droid))
+  else if (hasArtillery(droid))
   {
     return structure.hasStandardSensor() || structure.hasCbSensor();
   }
@@ -5491,14 +5689,14 @@ Vector2i choose_landing_position(const Droid& vtol, Vector2i position)
 
 Droid* find_nearest_droid(unsigned x, unsigned y, bool selected)
 {
-  auto& droids = droid_lists[selectedPlayer];
+  auto& droids = apsDroidLists[selectedPlayer];
   Droid* nearest_droid = nullptr;
   auto shortest_distance = UDWORD_MAX;
   std::for_each(droids.begin(), droids.end(), [&](auto& droid)
   {
       if (droid.isVtol())
         return;
-      if (selected && !droid.is_selected())
+      if (selected && !droid.isSelected())
         return;
 
       const auto distance = iHypot(droid.getPosition().x - x,
@@ -5587,7 +5785,7 @@ void set_blocking_flags(const Droid& droid)
 
 void clear_blocking_flags(const Droid& droid)
 {
-  const auto &droids = droid_lists[droid.getPlayer()];
+  const auto &droids = apsDroidLists[droid.getPlayer()];
   std::for_each(droids.begin(), droids.end(), [&droid](const auto &other_droid)
   {
       Vector2i tile{0, 0};
@@ -5598,7 +5796,7 @@ void clear_blocking_flags(const Droid& droid)
       }
 
       if (tile_on_map(tile)) {
-        get_map_tile(tile)->info_bits &= ~BLOCKING;
+        mapTile(tile)->info_bits &= ~BLOCKING;
       }
   });
 }

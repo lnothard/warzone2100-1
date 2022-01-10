@@ -69,7 +69,7 @@ namespace Impl {
 	bool Structure::isProbablyDoomed() const
 	{
 		const auto hit_points = getHp();
-		return expected_damage > hit_points && expected_damage - hit_points > hit_points / 15;
+		return expectedDamage > hit_points && expectedDamage - hit_points > hit_points / 15;
 	}
 
 //	bool Structure::is_pulled_to_terrain() const
@@ -162,15 +162,15 @@ namespace Impl {
 		return *stats->base_imd;
 	}
 
-	int Structure::get_foundation_depth() const noexcept
+	int Structure::getFoundationDepth() const noexcept
 	{
-		return foundation_depth;
+		return foundationDepth;
 	}
 
 	void Structure::updateExpectedDamage(unsigned damage, bool is_direct) noexcept
 	{
-		expected_damage += damage;
-		assert(expected_damage >= 0);
+    expectedDamage += damage;
+		assert(expectedDamage >= 0);
 	}
 
   unsigned Structure::calculateSensorRange() const
@@ -181,7 +181,7 @@ namespace Impl {
     return stats->sensor_stats->upgraded[getPlayer()].range;
   }
 
-	int Structure::calculate_gate_height(const std::size_t time, const int minimum) const
+	int Structure::calculateGateHeight(size_t time, int minimum) const
 	{
 		if (stats->type != GATE)  {
       return 0;
@@ -189,7 +189,7 @@ namespace Impl {
 
 		const auto height = getDisplayData().imd_shape->max.y;
 		int open_height;
-		switch (animation_state)  {
+		switch (animationState)  {
 		case OPEN:
 			open_height = height;
 			break;
@@ -206,9 +206,9 @@ namespace Impl {
 		return std::max(std::min(open_height, height - minimum), 0);
 	}
 
-	void Structure::set_foundation_depth(int depth) noexcept
+	void Structure::setFoundationDepth(int depth) noexcept
 	{
-		foundation_depth = depth;
+    foundationDepth = depth;
 	}
 
 //  unsigned Structure::build_points_to_completion() const
@@ -216,7 +216,7 @@ namespace Impl {
 //    return stats->build_point_cost - current_build_points;
 //  }
 
-  unsigned Structure::calculate_refunded_power() const
+  unsigned Structure::calculateRefundedPower() const
   {
     return stats->power_to_build / 2;
   }
@@ -231,7 +231,7 @@ namespace Impl {
 
   }
 
-  STRUCTURE_STATE Structure::get_state() const
+  STRUCTURE_STATE Structure::getState() const
   {
     return state;
   }
@@ -296,7 +296,7 @@ namespace Impl {
 
 	void adjust_tile_height(const Structure& structure, int new_height)
 	{
-		const auto bounds = get_bounds(structure);
+		const auto bounds = getBounds(structure);
 		const auto x_max = bounds.size.x;
 		const auto y_max = bounds.size.y;
 		const auto coords = bounds.map;
@@ -324,7 +324,7 @@ namespace Impl {
 
 	int calculate_foundation_height(const Structure& structure)
 	{
-		const auto bounds = get_bounds(structure);
+		const auto bounds = getBounds(structure);
 		auto foundation_min = INT32_MIN;
 		auto foundation_max = INT32_MAX;
 		const auto x_max = bounds.size.x;

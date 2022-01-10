@@ -62,7 +62,7 @@ static void printComponentInfo(const ComponentStats* psStats)
 	CONPRINTF("%s ref %d\n"
 	          "   bPwr %d bPnts %d wt %d bdy %d imd %p\n",
 	          getStatsName(psStats), psStats->ref, psStats->buildPower,
-	          psStats->buildPoints, psStats->weight, psStats->getBase().hit_points,
+	          psStats->buildPoints, psStats->weight, psStats->getBase().hitPoints,
 	          static_cast<void*>(psStats->pIMD));
 }
 

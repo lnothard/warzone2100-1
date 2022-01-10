@@ -38,17 +38,17 @@ public:
 	[[nodiscard]] virtual unsigned calculateSensorRange() const = 0;
 	[[nodiscard]] virtual const std::vector<Weapon>& getWeapons() const = 0;
 	[[nodiscard]] virtual const iIMDShape& getImdShape() const = 0;
-  [[nodiscard]] virtual bool is_selected() const noexcept = 0;
-  virtual void align_turret(int weapon_slot) = 0;
+  [[nodiscard]] virtual bool isSelected() const noexcept = 0;
+  virtual void alignTurret(int weapon_slot) = 0;
   virtual void updateExpectedDamage(unsigned damage, bool is_direct) noexcept = 0;
   virtual void use_ammo(int weapon_slot) = 0;
   [[nodiscard]] virtual int calculateAttackPriority(const Unit* target, int weapon_slot) const = 0;
   [[nodiscard]] virtual const SimpleObject& getTarget(int weapon_slot) const = 0;
 };
 
-Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot);
+Vector3i calculateMuzzleBaseLocation(const Unit& unit, int weapon_slot);
 
-Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot);
+Vector3i calculateMuzzleTipLocation(const Unit& unit, int weapon_slot);
 
 namespace Impl
 {
@@ -62,12 +62,12 @@ namespace Impl
 		[[nodiscard]] const std::vector<Weapon>& getWeapons() const final;
 
     /// @return `true` if this unit is being focused by its owner
-    [[nodiscard]] bool is_selected() const noexcept final;
+    [[nodiscard]] bool isSelected() const noexcept final;
 
-		void align_turret(int weapon_slot) final;
+		void alignTurret(int weapon_slot) final;
     void use_ammo(int weapon_slot) override;
 	private:
-		unsigned hit_points = 0;
+		unsigned hitPoints = 0;
     bool selected = false;
 		std::vector<Weapon> weapons;
 	};

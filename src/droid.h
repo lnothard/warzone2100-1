@@ -202,6 +202,7 @@ public:
     virtual void resetAction() = 0;
     virtual void gainExperience(unsigned exp) = 0;
     [[nodiscard]] virtual int calculateHeight() const = 0;
+    [[nodiscard]] virtual bool isStationary() const = 0;
 };
 
 namespace Impl
@@ -230,7 +231,7 @@ namespace Impl
       [[nodiscard]] bool isVtol() const final;
       [[nodiscard]] bool isFlying() const final;
       [[nodiscard]] bool isRadarDetector() const final;
-      [[nodiscard]] bool isStationary() const;
+      [[nodiscard]] bool isStationary() const final;
       [[nodiscard]] bool isDamaged() const final;
       [[nodiscard]] bool isAttacking() const noexcept;
       void upgradeHitPoints();
@@ -245,10 +246,11 @@ namespace Impl
                                        int weapon_slot) const final;
 
       [[nodiscard]] bool hasCommander() const final;
-      [[nodiscard]] bool hasStandardSensor() const;
-      [[nodiscard]] bool hasCbSensor() const;
+      [[nodiscard]] bool hasStandardSensor() const final;
+      [[nodiscard]] bool hasCbSensor() const final;
       [[nodiscard]] bool hasElectronicWeapon() const final;
       void actionUpdateTransporter();
+      void actionUpdateDroid();
       void gainExperience(unsigned exp) final;
       void cancelBuild() final;
       void resetAction() noexcept final;
@@ -258,10 +260,10 @@ namespace Impl
       [[nodiscard]] int calculateHeight() const final;
       [[nodiscard]] int spaceOccupiedOnTransporter() const;
       void incrementKills() noexcept;
-      void assignVtolToRearmPad(RearmPad *rearm_pad);
+      void assignVtolToRearmPad(RearmPad *rearmPad);
       [[nodiscard]] int calculateElectronicResistance() const;
       [[nodiscard]] bool isSelectable() const final;
-      [[nodiscard]] unsigned getArmourPointsAgainstWeapon(WEAPON_CLASS weapon_class) const;
+      [[nodiscard]] unsigned getArmourPointsAgainstWeapon(WEAPON_CLASS weaponClass) const;
       [[nodiscard]] int calculateAttackPriority(const ::Unit *target, int weapon_slot) const final;
 
   private:
@@ -702,11 +704,6 @@ static inline void setSaveDroidBase(Droid* psSaveDroid, Structure* psNewBase)
 #endif
 }
 
-void checkDroid(const Droid* droid, char* location_description, char* function, int recurse);
-
-/** assert if droid is bad */
-#define CHECK_DROID(droid) checkDroid(droid, AT_MACRO, __FUNCTION__, max_check_object_recursion)
-
 /** If droid can get to given object using its current propulsion, return the square distance. Otherwise return -1. */
 int droidSqDist(Droid* psDroid, SimpleObject* psObj);
 
@@ -715,29 +712,7 @@ static constexpr auto MIN_WEAPON_DAMAGE	 = 1;
 
 void templateSetParts(const Droid* psDroid, DroidTemplate* psTemplate);
 
-void cancelBuild(Droid* psDroid);
-
 #define syncDebugDroid(psDroid, ch) _syncDebugDroid(__FUNCTION__, psDroid, ch)
 void _syncDebugDroid(const char* function, Droid const* psDroid, char ch);
-
-
-// True iff object is a droid.
-static inline bool isDroid(SIMPLE_OBJECT const* psObject)
-{
-	return psObject != nullptr && psObject->type == OBJ_DROID;
-}
-
-// Returns DROID * if droid or NULL if not.
-static inline Droid* castDroid(SIMPLE_OBJECT* psObject)
-{
-	return isDroid(psObject) ? (Droid*)psObject : (Droid*)nullptr;
-}
-
-// Returns DROID const * if droid or NULL if not.
-static inline Droid const* castDroid(SIMPLE_OBJECT const* psObject)
-{
-	return isDroid(psObject) ? (Droid const*)psObject : (Droid const*)nullptr;
-}
-
 
 #endif // __INCLUDED_SRC_DROID_H__

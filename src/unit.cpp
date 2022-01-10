@@ -20,7 +20,7 @@ namespace Impl
 
 	unsigned Unit::getHp() const noexcept
 	{
-		return hit_points;
+		return hitPoints;
 	}
 
 	const std::vector<Weapon>& Unit::getWeapons() const
@@ -28,9 +28,9 @@ namespace Impl
 		return weapons;
 	}
 
-	void Unit::align_turret(int weapon_slot)
+	void Unit::alignTurret(int weapon_slot)
 	{
-		if (num_weapons(*this) == 0)  {
+		if (numWeapons(*this) == 0)  {
       return;
     }
 		auto& weapon = weapons[weapon_slot];
@@ -46,23 +46,23 @@ namespace Impl
     weapon.setRotation({weapon_rotation, weapon_pitch, weapon.getRotation().roll});
 	}
 
-  bool Unit::is_selected() const noexcept
+  bool Unit::isSelected() const noexcept
   {
     return selected;
   }
 }
 
-bool has_full_ammo(const Unit& unit) noexcept
+bool hasFullAmmo(const Unit& unit) noexcept
 {
 	auto& weapons = unit.getWeapons();
 	return std::all_of(weapons.begin(), weapons.end(),
 	                   [](const auto& weapon)
   {
-       return weapon.has_full_ammo();
+       return weapon.hasFullAmmo();
   });
 }
 
-bool has_artillery(const Unit& unit) noexcept
+bool hasArtillery(const Unit& unit) noexcept
 {
 	auto& weapons = unit.getWeapons();
 	return std::any_of(weapons.begin(), weapons.end(),
@@ -72,7 +72,7 @@ bool has_artillery(const Unit& unit) noexcept
 	});
 }
 
-Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot)
+Vector3i calculateMuzzleBaseLocation(const Unit& unit, int weapon_slot)
 {
 	auto& imd_shape = unit.getImdShape();
 	const auto position = unit.getPosition();
@@ -100,7 +100,7 @@ Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot)
 	return muzzle;
 }
 
-Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot)
+Vector3i calculateMuzzleTipLocation(const Unit& unit, int weapon_slot)
 {
 	const auto& imd_shape = unit.getImdShape();
 	const auto& weapon = unit.getWeapons()[weapon_slot];
@@ -150,8 +150,8 @@ Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot)
 	return muzzle;
 }
 
-void check_angle(int64_t& angle_tan, int start_coord, int height,
-                 int square_distance, int target_height, bool is_direct)
+void checkAngle(int64_t& angle_tan, int start_coord, int height,
+                int square_distance, int target_height, bool is_direct)
 {
 	auto current_angle = int64_t{0};
 
@@ -182,8 +182,8 @@ void check_angle(int64_t& angle_tan, int start_coord, int height,
  * Check fire line from psViewer to psTarget
  * psTarget can be any type of SimpleObject (e.g. a tree).
  */
-int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int weapon_slot, bool walls_block,
-                           bool is_direct)
+int calculateLineOfFire(const Unit& unit, const ::SimpleObject& target, int weapon_slot, bool walls_block,
+                        bool is_direct)
 {
 	Vector3i pos(0, 0, 0), dest(0, 0, 0);
 	Vector2i start(0, 0), diff(0, 0), current(0, 0), halfway(0, 0), next(0, 0), part(0, 0);
@@ -191,7 +191,7 @@ int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int w
 	int distSq, partSq, oldPartSq;
 	int64_t angletan;
 
-	muzzle = calculate_muzzle_base_location(unit, weapon_slot);
+	muzzle = calculateMuzzleBaseLocation(unit, weapon_slot);
 
 	pos = muzzle;
 	dest = target.getPosition();
@@ -217,7 +217,7 @@ int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int w
 
 		if (partSq > 0)
 		{
-			check_angle(angletan, partSq, calculate_map_height(current) - pos.z, distSq, dest.z - pos.z, is_direct);
+      checkAngle(angletan, partSq, calculate_map_height(current) - pos.z, distSq, dest.z - pos.z, is_direct);
 		}
 
 		// intersect current tile with line of fire
@@ -237,7 +237,7 @@ int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int w
 
 			if (partSq > 0)
 			{
-				check_angle(angletan, partSq, calculate_map_height(halfway) - pos.z, distSq, dest.z - pos.z, is_direct);
+        checkAngle(angletan, partSq, calculate_map_height(halfway) - pos.z, distSq, dest.z - pos.z, is_direct);
 			}
 		}
 
@@ -263,10 +263,10 @@ int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int w
 				// allowed to shoot over enemy structures if they are NOT the target
 				if (partSq > 0)
 				{
-					check_angle(angletan, oldPartSq,
-                      psTile->occupying_object->getPosition().z + establishTargetHeight(
-						            psTile->occupying_object) - pos.z,
-					            distSq, dest.z - pos.z, is_direct);
+          checkAngle(angletan, oldPartSq,
+                     psTile->occupying_object->getPosition().z + establishTargetHeight(
+                             psTile->occupying_object) - pos.z,
+                     distSq, dest.z - pos.z, is_direct);
 				}
 			}
 		}
@@ -290,7 +290,7 @@ int calculate_line_of_fire(const Unit& unit, const ::SimpleObject& target, int w
 	}
 }
 
-bool has_electronic_weapon(const Unit& unit) noexcept
+bool hasElectronicWeapon(const Unit& unit) noexcept
 {
 	auto& weapons = unit.getWeapons();
 	if (weapons.empty()) {
@@ -304,24 +304,24 @@ bool has_electronic_weapon(const Unit& unit) noexcept
 	});
 }
 
-bool target_in_line_of_fire(const Unit& unit, const ::Unit& target, int weapon_slot)
+bool targetInLineOfFire(const Unit& unit, const ::Unit& target, int weapon_slot)
 {
 	const auto distance = iHypot((target.getPosition() - unit.getPosition()).xy());
 	auto range = unit.getWeapons()[weapon_slot].get_max_range(unit.getPlayer());
-	if (!has_artillery(unit)) {
+	if (!hasArtillery(unit)) {
 		return range >= distance && LINE_OF_FIRE_MINIMUM <=
-       calculate_line_of_fire(unit, target, weapon_slot);
+                                        calculateLineOfFire(unit, target, weapon_slot);
 	}
-	auto min_angle = calculate_line_of_fire(unit, target, weapon_slot);
-	if (min_angle > DEG(PROJECTILE_MAX_PITCH)) {
-		if (iSin(2 * min_angle) < iSin(2 * DEG(PROJECTILE_MAX_PITCH))) {
-			range = range * iSin(2 * min_angle) / iSin(2 * DEG(PROJECTILE_MAX_PITCH));
+	auto min_angle = calculateLineOfFire(unit, target, weapon_slot);
+	if (min_angle > DEG(PROJ_MAX_PITCH)) {
+		if (iSin(2 * min_angle) < iSin(2 * DEG(PROJ_MAX_PITCH))) {
+			range = range * iSin(2 * min_angle) / iSin(2 * DEG(PROJ_MAX_PITCH));
 		}
 	}
 	return range >= distance;
 }
 
-Unit* find_target(Unit& unit, ATTACKER_TYPE attacker_type,
+Unit* find_target(Unit& unit, TARGET_ORIGIN attacker_type,
                  int weapon_slot, Weapon weapon)
 {
   Unit* target = nullptr;
@@ -330,16 +330,16 @@ Unit* find_target(Unit& unit, ATTACKER_TYPE attacker_type,
   auto target_dist = weapon.get_max_range(unit.getPlayer());
   auto min_dist = weapon.get_min_range(unit.getPlayer());
 
-  for (const auto& sensor : sensor_list)
+  for (const auto& sensor : apsSensorList)
   {
-    if (!alliance_formed(sensor.getPlayer(), unit.getPlayer())) {
+    if (!alliance_formed(sensor->getPlayer(), unit.getPlayer())) {
       continue;
     }
     // Artillery should not fire at objects observed
     // by VTOL CB/Strike sensors.
-    if (sensor.hasVtolCbSensor() ||
-        sensor.hasVtolInterceptSensor() ||
-        sensor.isRadarDetector()) {
+    if (sensor->hasVtolCbSensor() ||
+        sensor->hasVtolInterceptSensor() ||
+        sensor->isRadarDetector()) {
       continue;
     }
 
@@ -382,12 +382,12 @@ Unit* find_target(Unit& unit, ATTACKER_TYPE attacker_type,
   return target;
 }
 
-unsigned num_weapons(const Unit& unit)
+unsigned numWeapons(const Unit& unit)
 {
 	return static_cast<unsigned>(unit.getWeapons().size());
 }
 
-unsigned get_max_weapon_range(const Unit& unit)
+unsigned getMaxWeaponRange(const Unit& unit)
 {
 	auto max = unsigned{0};
 	for (const auto& weapon : unit.getWeapons())

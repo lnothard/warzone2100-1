@@ -186,7 +186,7 @@ bool StructureStats::is_expansion_module() const noexcept
 
 void set_structure_non_blocking(const Impl::Structure& structure)
 {
-  const auto bounds = Impl::get_bounds(structure);
+  const auto bounds = Impl::getBounds(structure);
   for (int i = 0; i < bounds.size.x; ++i)
   {
     for (int j = 0; j < bounds.size.y; ++j)
@@ -212,7 +212,7 @@ void set_structure_non_blocking(const Impl::Structure& structure)
 
 void set_structure_blocking(const Impl::Structure& structure)
 {
-  const auto bounds = Impl::get_bounds(structure);
+  const auto bounds = Impl::getBounds(structure);
   for (int i = 0; i < bounds.size.x; ++i)
   {
     for (int j = 0; j < bounds.size.y; ++j)
@@ -244,7 +244,7 @@ void set_structure_blocking(const Impl::Structure& structure)
 
 void open_gate(const Impl::Structure& structure)
 {
-  const auto bounds = Impl::get_bounds(structure);
+  const auto bounds = Impl::getBounds(structure);
   for (int i = 0; i < bounds.size.x; ++i)
   {
     for (int j = 0; j < bounds.size.y; ++j)
@@ -271,7 +271,7 @@ void open_gate(const Impl::Structure& structure)
 
 void close_gate(const Impl::Structure& structure)
 {
-  const auto bounds = Impl::get_bounds(structure);
+  const auto bounds = Impl::getBounds(structure);
   for (int i = 0; i < bounds.size.x; ++i)
   {
     for (int j = 0; j < bounds.size.y; ++j)
@@ -344,9 +344,9 @@ namespace Impl
            state == BLUEPRINT_PLANNED_BY_ALLY;
   }
 
-  unsigned Structure::build_points_to_completion() const
+  unsigned Structure::buildPointsToCompletion() const
   {
-    return stats->build_point_cost - current_build_points;
+    return stats->build_point_cost - currentBuildPoints;
   }
 
   bool Structure::hasModules() const noexcept
@@ -5620,7 +5620,7 @@ unsigned count_assigned_droids(const Structure& structure)
   {
     if (droid.get_current_order().target_object->getId() == structure.getId() &&
             droid.getPlayer() == structure.getPlayer())  {
-      return droid.isVtol() || has_artillery(structure);
+      return droid.isVtol() || hasArtillery(structure);
     }
   });
 }
@@ -6052,7 +6052,7 @@ unsigned structureBodyBuilt(const Structure* psStructure)
 /*Access functions for the upgradeable stats of a structure*/
 UDWORD structureBody(const Structure* psStructure)
 {
-	return psStructure->pStructureType->upgraded_stats[psStructure->player].hit_points;
+	return psStructure->pStructureType->upgraded_stats[psStructure->player].hitPoints;
 }
 
 UDWORD structureResistance(const StructureStats* psStats, UBYTE player)
