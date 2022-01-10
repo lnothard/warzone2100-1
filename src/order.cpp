@@ -840,7 +840,7 @@ void orderUpdateDroid(Droid* psDroid)
 			// only place it can be trapped - in multiPlayer can only put cyborgs onto a Cyborg Transporter
 			Droid* temp = (Droid*)psDroid->order.psObj; // NOTE: It is possible to have a NULL here
 
-			if (temp && temp->type == DROID_TRANSPORTER && !cyborgDroid(psDroid))
+			if (temp && temp->type == DROID_TRANSPORTER && !isCyborg(psDroid))
 			{
 				psDroid->order = Order(NONE);
 				actionDroid(psDroid, NONE);
@@ -2571,7 +2571,7 @@ Order chooseOrderObj(Droid* psDroid, SimpleObject* psObj, bool altOrder)
 		{
 			return Order(DROIDREPAIR, psObj);
 		}
-		else if ((psDroid->type == DROID_WEAPON) || cyborgDroid(psDroid) ||
+		else if ((psDroid->type == DROID_WEAPON) || isCyborg(psDroid) ||
              (psDroid->type == DROID_COMMAND))
 		{
 			return Order(ATTACK, psObj);
@@ -2914,7 +2914,7 @@ void orderSelectedStatsTwoLocDir(UDWORD player, DROID_ORDER order, StructureStat
 /** This function runs though all player's droids to check if any of then is a transporter. Returns the transporter droid if any was found, and NULL else.*/
 Droid* FindATransporter(Droid const* embarkee)
 {
-	bool isCyborg = cyborgDroid(embarkee);
+	bool isCyborg = isCyborg(embarkee);
 
 	Droid* bestDroid = nullptr;
 	unsigned bestDist = ~0u;

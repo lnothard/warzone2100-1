@@ -2933,7 +2933,7 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 			{
 				if (psCurr->type != DROID_PERSON
 					// && psCurr->droidType != DROID_CYBORG
-					&& !cyborgDroid(psCurr)
+					&& !isCyborg(psCurr)
 					&& (!isTransporter(psCurr))
 					&& psCurr->pos.x != INVALID_XY)
 				{
@@ -3099,7 +3099,7 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 			for (psCurr = apsDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
 			{
 				if (psCurr->type != DROID_PERSON
-					&& !cyborgDroid(psCurr)
+					&& !isCyborg(psCurr)
 					&& (!isTransporter(psCurr))
 					&& psCurr->pos.x != INVALID_XY)
 				{

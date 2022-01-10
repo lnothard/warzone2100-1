@@ -31,6 +31,9 @@
 #include "positiondef.h"
 #include "unit.h"
 
+class Droid;
+class Group;
+
 static constexpr auto NUM_FACTORY_MODULES = 2;
 static constexpr auto NUM_POWER_MODULES = 4;
 static constexpr auto NY = 255;		// Used to indicate any kind of building when calling intGotoNextStructureType()
@@ -215,6 +218,7 @@ public:
     Structure& operator=(const Structure&) = delete;
     Structure& operator=(Structure&&) = delete;
 
+    [[nodiscard]] virtual Vector2i getSize() const = 0;
     virtual void printInfo() const = 0;
     [[nodiscard]] virtual bool hasSensor() const = 0;
 };
@@ -240,7 +244,7 @@ namespace Impl
         [[nodiscard]] bool smokeWhenDamaged() const noexcept;
         [[nodiscard]] unsigned getOriginalHp() const;
         [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
-        [[nodiscard]] Vector2i getSize() const;
+        [[nodiscard]] Vector2i getSize() const final;
         [[nodiscard]] int getFoundationDepth() const noexcept;
         [[nodiscard]] const iIMDShape& getImdShape() const final;
         void updateExpectedDamage(unsigned damage, bool is_direct) noexcept override;
@@ -369,8 +373,6 @@ class RearmPad : public virtual Structure, public Impl::Structure
     std::size_t timeLastUpdated; /* Time rearm was last updated */
 };
 
-
-
 //this is used for module graphics - factory and vtol factory
 static const int NUM_FACMOD_TYPES = 2;
 
@@ -495,7 +497,7 @@ int32_t getStructStatFromName(const WzString& name);
 /*check to see if the structure is 'doing' anything  - return true if idle*/
 bool structureIdle(const Structure* psBuilding);
 /*sets the point new droids go to - x/y in world coords for a Factory*/
-void setAssemblyPoint(FLAG_POSITION* psAssemblyPoint, UDWORD x, UDWORD y, UDWORD player, bool bCheck);
+void setAssemblyPoint(FlagPosition* psAssemblyPoint, unsigned x, unsigned y, unsigned player, bool bCheck);
 
 /*initialises the flag before a new data set is loaded up*/
 void initFactoryNumFlag();

@@ -203,9 +203,8 @@ struct RtrBestResult
 
     RtrBestResult();
     RtrBestResult(RTR_DATA_TYPE type, SimpleObject* obj);
-    RtrBestResult(Order& order);
-  
-    
+    explicit RtrBestResult(Order& order);
+
     using enum RTR_DATA_TYPE;
     RTR_DATA_TYPE type;
     SimpleObject* target;

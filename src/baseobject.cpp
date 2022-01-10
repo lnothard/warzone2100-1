@@ -44,27 +44,27 @@ static Position interpolatePos(Position p1, Position p2, unsigned t1, unsigned t
 
 Rotation interpolateRot(Rotation v1, Rotation v2, unsigned t1, unsigned t2, unsigned t)
 {
-	//return v1 + (v2 - v1) * (t - t1) / (t2 - t1);
+	// return v1 + (v2 - v1) * (t - t1) / (t2 - t1);
 	return {interpolateAngle(v1.direction, v2.direction, t1, t2, t),
           interpolateAngle(v1.pitch, v2.pitch, t1, t2, t),
           interpolateAngle(v1.roll, v2.roll, t1, t2, t)
 	};
 }
 
-static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, unsigned t)
+static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, std::size_t t)
 {
 	// Cyp says this should never happen, #3037 and #3238 say it does though.
 	ASSERT_OR_RETURN(st1, st1.time != st2.time, "Spacetime overlap!");
-	return Spacetime(interpolatePos(st1.pos, st2.pos, st1.time, st2.time, t),
-	                 interpolateRot(st1.rot, st2.rot, st1.time, st2.time, t), t);
+	return {t, interpolatePos(st1.position, st2.position, st1.time, st2.time, t),
+	                 interpolateRot(st1.rotation, st2.rotation, st1.time, st2.time, t)};
 }
 
-Spacetime interpolateObjectSpacetime(const SIMPLE_OBJECT* obj, unsigned t)
+Spacetime interpolateObjectSpacetime(const SimpleObject* obj, unsigned t)
 {
 	switch (obj->type)
 	{
 	default:
-		return getSpacetime(obj);
+		return obj->getSpacetime();
 	case OBJ_DROID:
 		return interpolateSpacetime(castDroid(obj)->previous_location, getSpacetime(obj), t);
 	case OBJ_PROJECTILE:
@@ -82,27 +82,26 @@ SimpleObject::~SimpleObject()
 #endif //DEBUG
 }
 
-//// Query visibility for display purposes (i.e. for `selectedPlayer`)
-//// *DO NOT USE TO QUERY VISIBILITY FOR CALCULATIONS INVOLVING GAME / SIMULATION STATE*
-//UBYTE SimpleObject::visibleForLocalDisplay() const
-//{
-//	if (godMode)
-//	{
-//		// is visible to selectedPlayer
-//		return UBYTE_MAX;
-//	}
-//	if (selectedPlayer >= MAX_PLAYERS)
-//	{
-//		return 0;
-//	}
-//	return visible[selectedPlayer];
-//}
+// Query visibility for display purposes (i.e. for `selectedPlayer`)
+// *DO NOT USE TO QUERY VISIBILITY FOR CALCULATIONS INVOLVING GAME / SIMULATION STATE*
+UBYTE SimpleObject::visibleForLocalDisplay() const
+{
+	if (godMode)
+	{
+		// is visible to selectedPlayer
+		return UBYTE_MAX;
+	}
+	if (selectedPlayer >= MAX_PLAYERS)
+	{
+		return 0;
+	}
+	return visible[selectedPlayer];
+}
 
 void checkObject(const SIMPLE_OBJECT* psObject, const char* const location_description, const char* function,
                  const int recurse)
 {
-	if (recurse < 0)
-	{
+	if (recurse < 0) {
 		return;
 	}
 
@@ -160,7 +159,7 @@ Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 	}
 	else if (StatIsFeature(pType))
 	{
-		return static_cast<FeatureStats const*>(pType)->size();
+		return dynamic_cast<FeatureStats const*>(pType)->size();
 	}
 	return {1, 1};
 }
@@ -170,28 +169,24 @@ StructureBounds getStructureBounds(SimpleObject const* object)
 	Structure const* psStructure = castStructure(object);
 	Feature const* psFeature = castFeature(object);
 
-	if (psStructure != nullptr)
-	{
+	if (psStructure != nullptr) {
 		return getStructureBounds(psStructure);
 	}
-	else if (psFeature != nullptr)
-	{
+	else if (psFeature != nullptr) {
 		return getStructureBounds(psFeature);
 	}
 
-	return StructureBounds(Vector2i(32767, 32767), Vector2i(-65535, -65535)); // Default to an invalid area.
+	return {Vector2i(32767, 32767), Vector2i(-65535, -65535)}; // Default to an invalid area.
 }
 
 StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos, uint16_t direction)
 {
-	if (StatIsStructure(stats))
-	{
+	if (StatIsStructure(stats)) {
 		return getStructureBounds(static_cast<StructureStats const*>(stats), pos, direction);
 	}
-	else if (StatIsFeature(stats))
-	{
+	else if (StatIsFeature(stats)) {
 		return getStructureBounds(static_cast<FeatureStats const*>(stats), pos);
 	}
 
-	return StructureBounds(map_coord(pos), Vector2i(1, 1)); // Default to a 1×1 tile.
+	return {map_coord(pos), Vector2i(1, 1)}; // Default to a 1×1 tile.
 }

@@ -35,10 +35,12 @@ static constexpr auto BOUNDARY_Y = 2;
 
 struct DisplayData
 {
+  DisplayData() = default;
+
 	std::unique_ptr<iIMDShape> imd_shape;
-	unsigned frame_number; // last frame it was drawn
-	unsigned screen_x, screen_y;
-	unsigned screen_r;
+	unsigned frame_number = 0; // last frame it was drawn
+	unsigned screen_x = OFF_SCREEN, screen_y = OFF_SCREEN;
+	unsigned screen_r = 0;
 };
 
 #endif // __INCLUDED_DISPLAYDEF_H__

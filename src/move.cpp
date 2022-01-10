@@ -402,8 +402,8 @@ void updateDroidOrientation(Droid* psDroid)
 	const int d = 20;
 	int32_t vX, vY;
 
-	if (psDroid->type == DROID_PERSON || cyborgDroid(psDroid) || isTransporter(psDroid)
-			|| isFlying(psDroid))
+	if (psDroid->type == DROID_PERSON || isCyborg(psDroid) || isTransporter(psDroid)
+      || isFlying(psDroid))
 	{
 		/* The ground doesn't affect the pitch/roll of these droids*/
 		return;
@@ -566,7 +566,7 @@ static SDWORD moveObjRadius(const SimpleObject* psObj)
 			{
 				return mvPersRad;
 			}
-			else if (cyborgDroid(psDroid))
+			else if (isCyborg(psDroid))
 			{
 				return mvCybRad;
 			}
@@ -1051,7 +1051,7 @@ static void moveCalcDroidSlide(Droid* psDroid, int* pmx, int* pmy)
 	CHECK_DROID(psDroid);
 
 	bLegs = false;
-	if (psDroid->type == DROID_PERSON || cyborgDroid(psDroid))
+	if (psDroid->type == DROID_PERSON || isCyborg(psDroid))
 	{
 		bLegs = true;
 	}
@@ -1902,7 +1902,7 @@ static void movePlayDroidMoveAudio(Droid* psDroid)
 		{
 			iAudioID = ID_SOUND_BLIMP_FLIGHT;
 		}
-		else if (iPropType == PROPULSION_TYPE_LEGGED && cyborgDroid(psDroid))
+		else if (iPropType == PROPULSION_TYPE_LEGGED && isCyborg(psDroid))
 		{
 			iAudioID = ID_SOUND_CYBORG_MOVE;
 		}
@@ -2293,7 +2293,7 @@ void moveUpdateDroid(Droid* psDroid)
 	{
 		moveUpdatePersonModel(psDroid, moveSpeed, moveDir);
 	}
-	else if (cyborgDroid(psDroid))
+	else if (isCyborg(psDroid))
 	{
 		moveUpdateCyborgModel(psDroid, moveSpeed, moveDir, oldStatus);
 	}

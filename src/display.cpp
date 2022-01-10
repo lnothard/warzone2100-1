@@ -2777,7 +2777,7 @@ bool cyborgDroidSelected(unsigned player)
 
 	for (psCurr = apsDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
 	{
-		if (psCurr->selected && cyborgDroid(psCurr))
+		if (psCurr->selected && isCyborg(psCurr))
 		{
 			return true;
 		}

@@ -1669,7 +1669,7 @@ static void missionResetDroids()
 				}
 
 				// People always stand upright
-				if (psDroid->type != DROID_PERSON && !cyborgDroid(psDroid))
+				if (psDroid->type != DROID_PERSON && !isCyborg(psDroid))
 				{
 					updateDroidOrientation(psDroid);
 				}

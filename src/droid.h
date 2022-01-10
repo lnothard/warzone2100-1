@@ -33,6 +33,7 @@
 #include "order.h"
 #include "stats.h"
 #include "unit.h"
+#include "action.h"
 
 /// world->screen check - alex
 static constexpr auto OFF_SCREEN = 9999;
@@ -203,6 +204,7 @@ public:
     virtual void gainExperience(unsigned exp) = 0;
     [[nodiscard]] virtual int calculateHeight() const = 0;
     [[nodiscard]] virtual bool isStationary() const = 0;
+    virtual void upgradeHitPoints() = 0;
 };
 
 namespace Impl
@@ -235,6 +237,14 @@ namespace Impl
       [[nodiscard]] bool isDamaged() const final;
       [[nodiscard]] bool isAttacking() const noexcept;
       void upgradeHitPoints();
+
+      void setUpBuildModule();
+
+      void actionDroidBase(Action* psAction);
+
+      int droidDamage(unsigned damage, WEAPON_CLASS weaponClass,
+                      WEAPON_SUBCLASS weaponSubClass, unsigned impactTime,
+                      bool isDamagePerSecond, int minDamage);
 
       /**
        *
@@ -398,7 +408,7 @@ UDWORD calcTemplateBuild(const DroidTemplate* psTemplate);
 UDWORD calcTemplatePower(const DroidTemplate* psTemplate);
 
 // return whether a droid is IDF
-bool idfDroid(Droid* psDroid);
+bool isIdf(Droid* psDroid);
 
 /* Do damage to a droid */
 int32_t droidDamage(Droid* psDroid, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
@@ -595,7 +605,7 @@ void DeSelectDroid(Droid* psDroid);
 bool droidAudioTrackStopped(void* psObj);
 
 /*returns true if droid type is one of the Cyborg types*/
-bool cyborgDroid(const Droid* psDroid);
+bool isCyborg(const Droid* psDroid);
 
 bool isConstructionDroid(Droid const* psDroid);
 bool isConstructionDroid(SimpleObject const* psObject);

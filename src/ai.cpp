@@ -204,8 +204,8 @@ static SimpleObject* aiSearchSensorTargets(SimpleObject* psObj, int weapon_slot,
 			{
 				continue;
 			}
-			psTemp = psDroid->action_target[0];
-			isCB = asSensorStats[psDroid->asBits[COMP_SENSOR]].type == INDIRECT_CB_SENSOR;
+			psTemp = psDroid->actionTarget[0];
+			isCB = asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SENSOR_TYPE::INDIRECT_CB;
 			//isRD = objRadarDetector((SimpleObject *)psDroid);
 		}
 		else if (auto psCStruct = dynamic_cast<Structure*>(psSensor))
@@ -273,7 +273,7 @@ static int targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacker, 
 	/* Get attacker weapon effect */
 	if (auto psAttackerDroid = dynamic_cast<Droid*>(psAttacker))
 	{
-		attackerWeapon = psAttackerDroid->getWeapons()[weapon_slot].get_stats());
+		attackerWeapon = psAttackerDroid->getWeapons()[weapon_slot].get_stats();
 
 		//check if this droid is assigned to a commander
 		bCmdAttached = hasCommander(psAttackerDroid);
@@ -1045,151 +1045,14 @@ static bool updateAttackTarget(SimpleObject* psAttacker, SDWORD weapon_slot)
 	return false;
 }
 
-/* Do the AI for a droid */
-void aiUpdateDroid(Droid* psDroid)
-{
-	bool lookForTarget, updateTarget;
-
-	ASSERT(psDroid != nullptr, "Invalid droid pointer");
-	if (!psDroid || isDead((SimpleObject*)psDroid))
-	{
-		return;
-	}
-
-	if (psDroid->type != DROID_SENSOR && psDroid->numWeaps == 0)
-	{
-		return;
-	}
-
-	lookForTarget = false;
-	updateTarget = false;
-
-	// look for a target if doing nothing
-	if (orderState(psDroid, DORDER_NONE) ||
-		orderState(psDroid, DORDER_GUARD) ||
-		orderState(psDroid, DORDER_HOLD))
-	{
-		lookForTarget = true;
-	}
-	// but do not choose another target if doing anything while guarding
-	// exception for sensors, to allow re-targetting when target is doomed
-	if (orderState(psDroid, DORDER_GUARD) && psDroid->action != DACTION_NONE && psDroid->type != DROID_SENSOR)
-	{
-		lookForTarget = false;
-	}
-	// don't look for a target if sulking
-	if (psDroid->action == DACTION_SULK)
-	{
-		lookForTarget = false;
-	}
-
-	/* Only try to update target if already have some target */
-	if (psDroid->action == DACTION_ATTACK ||
-		psDroid->action == DACTION_MOVEFIRE ||
-		psDroid->action == DACTION_MOVETOATTACK ||
-		psDroid->action == DACTION_ROTATETOATTACK)
-	{
-		updateTarget = true;
-	}
-	if ((orderState(psDroid, DORDER_OBSERVE) || orderState(psDroid, DORDER_ATTACKTARGET)) &&
-		psDroid->order.psObj && psDroid->order.psObj->died)
-	{
-		lookForTarget = true;
-		updateTarget = false;
-	}
-
-	/* Don't update target if we are sent to attack and reached attack destination (attacking our target) */
-	if (orderState(psDroid, DORDER_ATTACK) && psDroid->action_target[0] == psDroid->order.psObj)
-	{
-		updateTarget = false;
-	}
-
-	// don't look for a target if there are any queued orders
-	if (psDroid->listSize > 0)
-	{
-		lookForTarget = false;
-		updateTarget = false;
-	}
-
-	// don't allow units to start attacking if they will switch to guarding the commander
-	// except for sensors: they still look for targets themselves, because
-	// they have wider view
-	if (hasCommander(psDroid) && psDroid->type != DROID_SENSOR)
-	{
-		lookForTarget = false;
-		updateTarget = false;
-	}
-
-	if (bMultiPlayer && isVtolDroid(psDroid) && isHumanPlayer(psDroid->getPlayer()))
-	{
-		lookForTarget = false;
-		updateTarget = false;
-	}
-
-	// CB and VTOL CB droids can't autotarget.
-	if (psDroid->type == DROID_SENSOR && !standardSensorDroid(psDroid))
-	{
-		lookForTarget = false;
-		updateTarget = false;
-	}
-
-	// do not attack if the attack level is wrong
-	if (secondaryGetState(psDroid, DSO_ATTACK_LEVEL) != DSS_ALEV_ALWAYS)
-	{
-		lookForTarget = false;
-	}
-
-	/* For commanders and non-assigned non-commanders: look for a better target once in a while */
-	if (!lookForTarget && updateTarget && psDroid->numWeaps > 0 && !hasCommander(psDroid)
-		&& (psDroid->id + gameTime) / TARGET_UPD_SKIP_FRAMES != (psDroid->id + gameTime - deltaGameTime) /
-		TARGET_UPD_SKIP_FRAMES)
-	{
-		for (unsigned i = 0; i < psDroid->numWeaps; ++i)
-		{
-			updateAttackTarget((SimpleObject*)psDroid, i);
-		}
-	}
-
-	/* Null target - see if there is an enemy to attack */
-
-	if (lookForTarget && !updateTarget)
-	{
-		SimpleObject* psTarget;
-		if (psDroid->type == DROID_SENSOR)
-		{
-			if (aiChooseSensorTarget(psDroid, &psTarget))
-			{
-				if (!orderState(psDroid, DORDER_HOLD)
-					&& secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_PURSUE)
-				{
-					psDroid->order = Order(DORDER_OBSERVE, psTarget);
-				}
-				actionDroid(psDroid, DACTION_OBSERVE, psTarget);
-			}
-		}
-		else
-		{
-			if (aiChooseTarget((SimpleObject*)psDroid, &psTarget, 0, true, nullptr))
-			{
-				if (!orderState(psDroid, DORDER_HOLD)
-					&& secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_PURSUE)
-				{
-					psDroid->order = Order(DORDER_ATTACK, psTarget);
-				}
-				actionDroid(psDroid, DACTION_ATTACK, psTarget);
-			}
-		}
-	}
-}
 
 /* Check if any of our weapons can hit the target... */
 bool checkAnyWeaponsTarget(SimpleObject* psObject, SimpleObject* psTarget)
 {
-	Droid* psDroid = (Droid*)psObject;
+	auto psDroid = dynamic_cast<Droid*>(psObject);
 	for (int i = 0; i < psDroid->numWeaps; i++)
 	{
-		if (validTarget(psObject, psTarget, i))
-		{
+		if (validTarget(psObject, psTarget, i)) {
 			return true;
 		}
 	}
@@ -1200,94 +1063,70 @@ bool checkAnyWeaponsTarget(SimpleObject* psObject, SimpleObject* psTarget)
 bool validTarget(SimpleObject* psObject, SimpleObject* psTarget, int weapon_slot)
 {
 	bool bTargetInAir = false, bValidTarget = false;
-	UBYTE surfaceToAir = 0;
+	uint8_t surfaceToAir = 0;
 
-	if (!psTarget)
-	{
+	if (!psTarget) {
 		return false;
 	}
 
 	// Need to check propulsion type of target
-	switch (psTarget->type)
-	{
-	case OBJ_DROID:
-		if (asPropulsionTypes[asPropulsionStats[((Droid*)psTarget)->asBits[COMP_PROPULSION]].propulsionType].travel ==
-        AIR)
-		{
-			if (((Droid*)psTarget)->movement.status != MOVEINACTIVE)
-			{
-				bTargetInAir = true;
-			}
-			else
-			{
-				bTargetInAir = false;
-			}
-		}
-		else
-		{
-			bTargetInAir = false;
-		}
-		break;
-	case OBJ_STRUCTURE:
-	default:
-		//lets hope so!
+	if (auto psDroid = dynamic_cast<Droid*>(psTarget)) {
+    if (asPropulsionTypes[asPropulsionStats[((Droid *) psTarget)->asBits[COMP_PROPULSION]].propulsionType].travel ==
+        TRAVEL_MEDIUM::AIR) {
+      if (psDroid->movement->status != MOVE_STATUS::INACTIVE) {
+        bTargetInAir = true;
+      } else {
+        bTargetInAir = false;
+      }
+    } else {
+      bTargetInAir = false;
+    }
+  }
+	else if (dynamic_cast<Structure*>(psTarget)) {
+		// let's hope so!
 		bTargetInAir = false;
-		break;
 	}
 
-	//need what can shoot at
-	switch (psObject->type)
-	{
-	case OBJ_DROID:
-		if (((Droid*)psObject)->type == DROID_SENSOR)
-		{
-			return !bTargetInAir; // Sensor droids should not target anything in the air.
-		}
+	// need what can shoot at
+	if (auto psDroid= dynamic_cast<Droid*>(psObject)) {
+    if (psDroid->getType() == DROID_TYPE::SENSOR) {
+      return !bTargetInAir; // Sensor droids should not target anything in the air.
+    }
 
-	// Can't attack without a weapon
-		if (((Droid*)psObject)->numWeaps != 0 && ((Droid*)psObject)->asWeaps[weapon_slot].nStat != 0)
-		{
-			surfaceToAir = asWeaponStats[((Droid*)psObject)->asWeaps[weapon_slot].nStat].surfaceToAir;
-			if (((surfaceToAir & SHOOT_IN_AIR) && bTargetInAir) || ((surfaceToAir & SHOOT_ON_GROUND) && !bTargetInAir))
-			{
-				return true;
-			}
-		}
-		else
-		{
-			return false;
-		}
-		break;
-	case OBJ_STRUCTURE:
-		// Can't attack without a weapon
-		if (((Structure*)psObject)->numWeaps != 0 && ((Structure*)psObject)->asWeaps[weapon_slot].nStat != 0)
-		{
-			surfaceToAir = asWeaponStats[((Structure*)psObject)->asWeaps[weapon_slot].nStat].surfaceToAir;
-		}
-		else
-		{
-			surfaceToAir = 0;
-		}
+    // Can't attack without a weapon
+    if (numWeapons(*psDroid) != 0 && psDroid->asWeaps[weapon_slot].nStat != 0) {
+      surfaceToAir = asWeaponStats[((Droid *) psObject)->asWeaps[weapon_slot].nStat].surfaceToAir;
+      if (((surfaceToAir & SHOOT_IN_AIR) && bTargetInAir) || ((surfaceToAir & SHOOT_ON_GROUND) && !bTargetInAir)) {
+        return true;
+      }
+    } else {
+      return false;
+    }
+  }
+	else if (auto psStruct = dynamic_cast<Structure*>(psObject)) {
+    // Can't attack without a weapon
+    if (numWeapons(*psStruct) != 0 && ((Structure *) psObject)->asWeaps[weapon_slot].nStat != 0) {
+      surfaceToAir = asWeaponStats[((Structure *) psObject)->asWeaps[weapon_slot].nStat].surfaceToAir;
+    }
+    else {
+      surfaceToAir = 0;
+    }
 
-		if (((surfaceToAir & SHOOT_IN_AIR) && bTargetInAir) || ((surfaceToAir & SHOOT_ON_GROUND) && !bTargetInAir))
-		{
-			return true;
-		}
-		break;
-	default:
-		surfaceToAir = 0;
-		break;
-	}
+    if (((surfaceToAir & SHOOT_IN_AIR) && bTargetInAir) || ((surfaceToAir & SHOOT_ON_GROUND) && !bTargetInAir)) {
+      return true;
+    }
+  }
+  else {
+    surfaceToAir = 0;
+  }
 
 	//if target is in the air and you can shoot in the air - OK
-	if (bTargetInAir && (surfaceToAir & SHOOT_IN_AIR))
-	{
+	if (bTargetInAir && (surfaceToAir & SHOOT_IN_AIR)) {
 		bValidTarget = true;
 	}
 
 	//if target is on the ground and can shoot at it - OK
-	if (!bTargetInAir && (surfaceToAir & SHOOT_ON_GROUND))
-	{
+	if (!bTargetInAir && (surfaceToAir & SHOOT_ON_GROUND)) {
 		bValidTarget = true;
 	}
 

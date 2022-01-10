@@ -163,7 +163,7 @@ StructureBounds get_bounds(const Structure& structure) noexcept
 {
   return  {
 					map_coord(structure.getPosition().xy()) -
-          structure.get_size() / 2, structure.get_size()
+          structure.getSize() / 2, structure.getSize()
   };
 }
 
@@ -487,7 +487,7 @@ void resetFactoryNumFlag()
 		for (; psStruct != nullptr; psStruct = psStruct->psNext)
 		{
 			FLAG_TYPE type;
-			switch (psStruct->type)
+			switch (psStruct.type)
 			{
 			case REF_FACTORY:
         type = FACTORY_FLAG;
@@ -2636,8 +2636,8 @@ static bool structPlaceDroid(Structure* psStructure, DroidTemplate* psTempl, Dro
 				orderDroidLoc(psNewDroid, DORDER_MOVE, psFact->psCommander->pos.x, psFact->psCommander->pos.y,
 				              ModeQueue);
 			}
-			else if (idfDroid(psNewDroid) ||
-				isVtolDroid(psNewDroid))
+			else if (isIdf(psNewDroid) ||
+               isVtolDroid(psNewDroid))
 			{
 				orderDroidObj(psNewDroid, DORDER_FIRESUPPORT, psFact->psCommander, ModeQueue);
 				//moveToRearm(psNewDroid);
@@ -7029,21 +7029,19 @@ bool RearmPad::is_clear() const
 // clear a rearm pad for a droid to land on it
 void ensureRearmPadClear(Structure* psStruct, Droid* psDroid)
 {
-	const int tx = map_coord(psStruct->pos.x);
-	const int ty = map_coord(psStruct->pos.y);
+	const int tx = map_coord(psStruct->getPosition().x);
+	const int ty = map_coord(psStruct->getPosition().y);
 
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if (aiCheckAlliances(psStruct->player, i))
-		{
-			for (Droid* psCurr = apsDroidLists[i]; psCurr; psCurr = psCurr->psNext)
+		if (aiCheckAlliances(psStruct->getPlayer(), i)) {
+			for (auto& psCurr : apsDroidLists[i])
 			{
-				if (psCurr != psDroid
-					&& map_coord(psCurr->pos.x) == tx
-					&& map_coord(psCurr->pos.y) == ty
-					&& isVtolDroid(psCurr))
-				{
-					actionDroid(psCurr, DACTION_CLEARREARMPAD, psStruct);
+				if (&psCurr != psDroid
+					&& map_coord(psCurr.getPosition().x) == tx
+					&& map_coord(psCurr.getPosition().y) == ty
+					&& psCurr.isVtol()) {
+					actionDroid(&psCurr, ACTION::CLEAR_REARM_PAD, psStruct);
 				}
 			}
 		}
@@ -7079,30 +7077,24 @@ bool ProductionRun::is_complete() const
 // return whether a rearm pad has a vtol on it
 bool vtolOnRearmPad(Structure* psStruct, Droid* psDroid)
 {
-	Droid* psCurr;
-	SDWORD tx, ty;
+	auto tx = map_coord(psStruct->getPosition().x);
+	auto ty = map_coord(psStruct->getPosition().y);
+  auto droids = apsDroidLists[psStruct->getPlayer()];
 
-	tx = map_coord(psStruct->pos.x);
-	ty = map_coord(psStruct->pos.y);
-
-	for (psCurr = apsDroidLists[psStruct->player]; psCurr; psCurr = psCurr->psNext)
-	{
-		if (psCurr != psDroid
-			&& map_coord(psCurr->pos.x) == tx
-			&& map_coord(psCurr->pos.y) == ty)
-		{
-			return true;
-		}
-	}
-
-	return false;
+  return std::any_of(droids.begin(), droids.end(),
+                     [&](const auto& droid)
+  {
+    return &droid != psDroid &&
+           map_coord(droid.getPosition().x) == tx &&
+           map_coord(droid.getPosition().y) == ty);
+  });
 }
 
 
 /* Just returns true if the structure's present body points aren't as high as the original*/
 bool structIsDamaged(Structure* psStruct)
 {
-	return psStruct->body < structureBody(psStruct);
+	return psStruct->getHp() < structureBody(psStruct);
 }
 
 // give a structure from one player to another - used in Electronic Warfare

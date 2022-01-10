@@ -727,7 +727,7 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 				}
 
 				/* translate for construct mount point if cyborg */
-				if (cyborgDroid(psDroid) && psMountShape && psMountShape->nconnectors)
+				if (isCyborg(psDroid) && psMountShape && psMountShape->nconnectors)
 				{
 					localModelMatrix *= glm::translate(glm::vec3(psMountShape->connectors[0].xzy()));
 				}
@@ -1007,7 +1007,7 @@ void compPersonToBits(Droid* psDroid)
 		return;
 	}
 	/* get bits pointers according to whether baba or cyborg*/
-	if (cyborgDroid(psDroid))
+	if (isCyborg(psDroid))
 	{
 		// This is probably unused now, since there's a more appropriate effect for cyborgs.
 		headImd = getImdFromIndex(MI_CYBORG_HEAD);
