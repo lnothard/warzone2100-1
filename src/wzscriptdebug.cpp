@@ -81,6 +81,7 @@
 #include <numeric>
 #include <algorithm>
 #include <limits>
+#include <utility>
 
 static std::shared_ptr<W_SCREEN> debugScreen = nullptr;
 static std::shared_ptr<WZScriptDebugger> globalDialog = nullptr;
@@ -110,7 +111,7 @@ static const std::vector<WzString> view_type = {"RES", "RPL", "PROX", "RPLX", "B
 struct RowDataModel
 {
 public:
-	RowDataModel(size_t numberOfColumns)
+	explicit RowDataModel(size_t numberOfColumns)
 	{
 		m_currentMaxColumnWidths.resize(numberOfColumns, 0);
 	}
@@ -127,8 +128,8 @@ public:
 		return m_rows.back();
 	}
 
-	const std::vector<std::shared_ptr<TableRow>>& rows() const { return m_rows; }
-	const std::vector<size_t> currentMaxColumnWidths() const { return m_currentMaxColumnWidths; }
+	[[nodiscard]] const std::vector<std::shared_ptr<TableRow>>& rows() const { return m_rows; }
+	[[nodiscard]] std::vector<size_t> currentMaxColumnWidths() const { return m_currentMaxColumnWidths; }
 
 private:
 	std::shared_ptr<W_LABEL> newColumnLabel(size_t colIdx, const WzString& text,
@@ -175,9 +176,9 @@ static RowDataModel fillMessageModel()
 	const std::vector<WzString> obj_type = {"DROID", "STRUCTURE", "FEATURE", "PROJECTILE", "TARGET"};
 
 	RowDataModel result(6);
-	for (int i = 0; i < MAX_PLAYERS; i++)
+	for (auto psCurr : apsMessages)
 	{
-		for (const MESSAGE* psCurr = apsMessages[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
 			ASSERT(psCurr->type < msg_type.size(), "Bad message type");
 			ASSERT(psCurr->dataType < msg_data_type.size(), "Bad viewdata type");
@@ -195,13 +196,13 @@ static RowDataModel fillMessageModel()
 			}
 			else if (psCurr->psObj)
 			{
-				columnTexts.push_back((objInfo(psCurr->psObj)));
+				columnTexts.emplace_back((objInfo(psCurr->psObj)));
 				columnTexts.push_back(obj_type.at(psCurr->psObj->type));
 			}
 			else
 			{
-				columnTexts.push_back("");
-				columnTexts.push_back("");
+				columnTexts.emplace_back("");
+				columnTexts.emplace_back("");
 			}
 			result.newRow(columnTexts, SCRIPTDEBUG_ROW_HEIGHT);
 		}
@@ -228,21 +229,21 @@ static RowDataModel fillTriggersModel(const std::vector<scripting_engine::timerN
 		}
 		else
 		{
-			columnTexts.push_back("-");
+			columnTexts.emplace_back("-");
 		}
 		columnTexts.push_back(WzString::number(node.frameTime));
 		columnTexts.push_back(WzString::number(node.ms));
 		if (node.type == TIMER_ONESHOT_READY)
 		{
-			columnTexts.push_back("Oneshot");
+			columnTexts.emplace_back("Oneshot");
 		}
 		else if (node.type == TIMER_ONESHOT_DONE)
 		{
-			columnTexts.push_back("Done");
+			columnTexts.emplace_back("Done");
 		}
 		else
 		{
-			columnTexts.push_back("Repeat");
+			columnTexts.emplace_back("Repeat");
 		}
 		columnTexts.push_back(WzString::number(node.calls));
 		result.newRow(columnTexts, SCRIPTDEBUG_ROW_HEIGHT);
@@ -262,8 +263,8 @@ static nlohmann::ordered_json fillMainModel()
 	const std::vector<std::string> difficulty_type = {"EASY", "NORMAL", "HARD", "INSANE"};
 	nlohmann::ordered_json result = nlohmann::ordered_json::object();
 
-	int8_t gameType = static_cast<int8_t>(game.type);
-	int8_t missionType = static_cast<int8_t>(mission.type);
+	auto gameType = static_cast<int8_t>(game.type);
+	auto missionType = static_cast<int8_t>(mission.type);
 	ASSERT(gameType < lev_type.size() && gameType != 13 && gameType != 15 && gameType != 16 && gameType != 17,
 	       "Bad LEVEL_TYPE for game.type");
 	result["game.type"] = lev_type.at(gameType);
@@ -370,7 +371,7 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, int play
 	{
 	case COMP_BODY:
 		{
-			const BodyStats* psBody = (const BodyStats*)psStats;
+			const auto* psBody = (const BodyStats*)psStats;
 			key["^Size"] = psBody->size;
 			key["^Max weapons"] = psBody->weaponSlots;
 			key["^Body class"] = psBody->bodyClass.toUtf8();
@@ -378,7 +379,7 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, int play
 		}
 	case COMP_PROPULSION:
 		{
-			const PropulsionStats* psProp = (const PropulsionStats*)psStats;
+			const auto* psProp = (const PropulsionStats*)psStats;
 			key["^Hit points +% of body"] = psProp->upgraded[player].hitpointPctOfBody;
 			key["^Max speed"] = psProp->maxSpeed;
 			key["^Propulsion type"] = psProp->propulsionType;
@@ -392,7 +393,7 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, int play
 		}
 	case COMP_BRAIN:
 		{
-			const CommanderStats* psBrain = (const CommanderStats*)psStats;
+			const auto* psBrain = (const CommanderStats*)psStats;
 			std::string ranks;
 			for (const std::string& s : psBrain->rankNames)
 			{
@@ -419,33 +420,33 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, int play
 		}
 	case COMP_REPAIRUNIT:
 		{
-			const RepairStats* psRepair = (const RepairStats*)psStats;
+			const auto* psRepair = (const RepairStats*)psStats;
 			key["^Repair time"] = psRepair->time;
 			key["^Base repair points"] = psRepair->upgraded[player].repairPoints;
 			break;
 		}
 	case COMP_ECM:
 		{
-			const EcmStats* psECM = (const EcmStats*)psStats;
+			const auto* psECM = (const EcmStats*)psStats;
 			key["^Base range"] = psECM->upgraded[player].range;
 			break;
 		}
 	case COMP_SENSOR:
 		{
-			const SensorStats* psSensor = (const SensorStats*)psStats;
+			const auto* psSensor = (const SensorStats*)psStats;
 			key["^Sensor type"] = psSensor->type;
 			key["^Base range"] = psSensor->upgraded[player].range;
 			break;
 		}
 	case COMP_CONSTRUCT:
 		{
-			const ConstructStats* psCon = (const ConstructStats*)psStats;
+			const auto* psCon = (const ConstructStats*)psStats;
 			key["^Base construct points"] = psCon->upgraded[player].constructPoints;
 			break;
 		}
 	case COMP_WEAPON:
 		{
-			const WeaponStats* psWeap = (const WeaponStats*)psStats;
+			const auto* psWeap = (const WeaponStats*)psStats;
 			key["Max range"] = psWeap->upgraded[player].maxRange;
 			key["Min range"] = psWeap->upgraded[player].minRange;
 			key["Radius"] = psWeap->upgraded[player].radius;
@@ -476,11 +477,11 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, int play
 class NoBackgroundTabWidget : public MultichoiceWidget
 {
 public:
-	NoBackgroundTabWidget(int value = -1) : MultichoiceWidget(value)
+	explicit NoBackgroundTabWidget(int value = -1) : MultichoiceWidget(value)
 	{
 	}
 
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 	}
 };
@@ -498,7 +499,7 @@ static void TabButtonDisplayFunc(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffse
 	assert(psWidget->pUserData != nullptr);
 	TabButtonDisplayCache& cache = *static_cast<TabButtonDisplayCache*>(psWidget->pUserData);
 
-	W_BUTTON* psButton = dynamic_cast<W_BUTTON*>(psWidget);
+	auto* psButton = dynamic_cast<W_BUTTON*>(psWidget);
 	ASSERT_OR_RETURN(, psButton, "psWidget is null");
 
 	int x0 = psButton->x() + xOffset;
@@ -560,23 +561,22 @@ static std::shared_ptr<W_BUTTON> makeDebugButton(const char* text)
 class WzMainPanel : public W_FORM
 {
 public:
-	WzMainPanel(bool readOnly)
+	explicit WzMainPanel(bool readOnly)
 		: W_FORM()
 		  , readOnly(readOnly)
 	{
 	}
 
-	~WzMainPanel()
-	{
-	}
+	~WzMainPanel() override
+	= default;
 
 public:
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		// no background
 	}
 
-	virtual void geometryChanged() override
+	void geometryChanged() override
 	{
 		playersDropdown->callCalcLayout();
 		powerUpdateButton->callCalcLayout();
@@ -797,7 +797,7 @@ public:
 		panel->aiPlayerDropdown->setSelectedIndex(0);
 		panel->aiPlayerDropdown->setCalcLayout([maxButtonTextWidth](WIDGET* psWidget)
 		{
-			auto pAiPlayerDropdown = static_cast<DropdownWidget*>(psWidget);
+			auto pAiPlayerDropdown = dynamic_cast<DropdownWidget*>(psWidget);
 			auto psParent = std::dynamic_pointer_cast<WzMainPanel>(psWidget->parent());
 			ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
 			int width = maxButtonTextWidth + pAiPlayerDropdown->getScrollbarWidth();
@@ -822,7 +822,7 @@ public:
 		panel->aiDropdown->setSelectedIndex(0);
 		panel->aiDropdown->setCalcLayout([](WIDGET* psWidget)
 		{
-			auto pAiDropdown = static_cast<DropdownWidget*>(psWidget);
+			auto pAiDropdown = dynamic_cast<DropdownWidget*>(psWidget);
 			auto psParent = std::dynamic_pointer_cast<WzMainPanel>(psWidget->parent());
 			ASSERT_OR_RETURN(, psParent != nullptr, "No parent");
 			int x0 = psParent->attachAItoPlayerLabel->x() + psParent->attachAItoPlayerLabel->width() +
@@ -883,7 +883,7 @@ private:
 		return button;
 	}
 
-	void playerButtonClicked(int value)
+	void playerButtonClicked(int value) const
 	{
 		if (readOnly)
 		{
@@ -925,16 +925,15 @@ public:
 	}
 
 	~WzScriptContextsPanel()
-	{
-	}
+	override = default;
 
 public:
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		// no background
 	}
 
-	virtual void geometryChanged() override
+	void geometryChanged() override
 	{
 		contextDropdown->callCalcLayout();
 		runCommandButton->callCalcLayout();
@@ -1128,17 +1127,16 @@ public:
 	{
 	}
 
-	~WzScriptPlayersPanel()
-	{
-	}
+	~WzScriptPlayersPanel() override
+	= default;
 
 public:
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		// no background
 	}
 
-	virtual void geometryChanged() override
+	void geometryChanged() override
 	{
 		playersDropdown->callCalcLayout();
 		table->callCalcLayout();
@@ -1243,16 +1241,15 @@ public:
 	}
 
 	~WzScriptTriggersPanel()
-	{
-	}
+	override = default;
 
 public:
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		// no background
 	}
 
-	virtual void geometryChanged() override
+	void geometryChanged() override
 	{
 		updateButton->callCalcLayout();
 		contextDropdown->callCalcLayout();
@@ -1434,7 +1431,7 @@ private:
 		return label;
 	}
 
-	void resizeTableColumnWidths()
+	void resizeTableColumnWidths() const
 	{
 		table->changeColumnWidths(currentMaxColumnWidths);
 	}
@@ -1457,17 +1454,15 @@ public:
 	{
 	}
 
-	~WzScriptMessagesPanel()
-	{
-	}
+	~WzScriptMessagesPanel() override = default;
 
 public:
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		// no background
 	}
 
-	virtual void geometryChanged() override
+	void geometryChanged() override
 	{
 		pageTabs->callCalcLayout();
 		updateButton->callCalcLayout();
@@ -1570,7 +1565,7 @@ public:
 			result->attach(table);
 			result->currentMaxColumnWidths.push_back(table->getMinimumColumnWidths());
 			table->setCalcLayout(tableCalcLayout);
-			result->updateButtonFuncs.push_back(nullptr);
+			result->updateButtonFuncs.emplace_back(nullptr);
 		}
 
 		// set update func for Messages table
@@ -1739,17 +1734,15 @@ public:
 	{
 	}
 
-	~WzScriptLabelsPanel()
-	{
-	}
+	~WzScriptLabelsPanel() override = default;
 
 public:
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		// no background
 	}
 
-	virtual void geometryChanged() override
+	void geometryChanged() override
 	{
 		updateButton->callCalcLayout();
 		for (auto& button : bottomButtons)
@@ -1877,7 +1870,7 @@ public:
 		populateLabels();
 	}
 
-	void labelClicked(const std::string& label)
+	void labelClicked(const std::string& label) const
 	{
 		if (auto scriptDebuggerStrong = scriptDebugger.lock())
 		{
@@ -1919,7 +1912,7 @@ private:
 		return label;
 	}
 
-	void resizeTableColumnWidths()
+	void resizeTableColumnWidths() const
 	{
 		table->changeColumnWidths(currentMaxColumnWidths);
 	}
@@ -2071,9 +2064,9 @@ void WZScriptDebugger::switchPanel(WZScriptDebugger::ScriptDebuggerPanel newPane
 	currentPanel = newPanel;
 }
 
-WZScriptDebugger::WZScriptDebugger(const std::shared_ptr<scripting_engine::DebugInterface>& _debugInterface,
+WZScriptDebugger::WZScriptDebugger(std::shared_ptr<scripting_engine::DebugInterface>  _debugInterface,
                                    bool readOnly)
-	: debugInterface(_debugInterface)
+	: debugInterface(std::move(_debugInterface))
 	  , readOnly(readOnly)
 {
 	modelMap = debugInterface->debug_GetGlobalsSnapshot();
@@ -2113,7 +2106,7 @@ void WZScriptDebugger::display(int xOffset, int yOffset)
 	cachedTitleText.render(textBoundingBoxOffset.x + fx, fy, WZCOL_FORM_TEXT);
 }
 
-std::shared_ptr<W_FORM> WZScriptDebugger::createMainPanel()
+std::shared_ptr<W_FORM> WZScriptDebugger::createMainPanel() const
 {
 	return WzMainPanel::make(readOnly);
 }
@@ -2432,10 +2425,7 @@ void WZScriptDebugger::labelClicked(const std::string& label)
 	debugInterface->showLabel(label);
 }
 
-WZScriptDebugger::~WZScriptDebugger()
-{
-	// currently nothing
-}
+WZScriptDebugger::~WZScriptDebugger() = default;
 
 // MARK: - jsDebug APIs
 

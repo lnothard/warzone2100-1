@@ -17,11 +17,13 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * FrontEnd.c
+
+/**
+ * @file frontend.cpp
  *
- * front end title and options screens.
- * Alex Lee. Pumpkin Studios. Eidos PLC 98,
+ * Front end title and options screens
+ *
+ * Alex Lee. Pumpkin Studios. Eidos PLC 98
  */
 
 #include "lib/framework/wzapp.h"
@@ -45,7 +47,6 @@
 #include <limits>
 #include <utility>
 
-#include "advvis.h"
 #include "challenge.h"
 #include "component.h"
 #include "configuration.h"
@@ -2725,8 +2726,6 @@ void displayTextOption(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 	}
 
 	cache.wzText.render(fx, fy, colour);
-
-	return;
 }
 
 
@@ -2924,7 +2923,7 @@ static std::shared_ptr<W_BUTTON> makeTextButton(UDWORD id, const std::string& tx
 
 static std::shared_ptr<WIDGET> addMargin(std::shared_ptr<WIDGET> widget)
 {
-	return Margin(0, 20).wrap(widget);
+	return Margin(0, 20).wrap(std::move(widget));
 }
 
 void addTextButton(UDWORD id, UDWORD PosX, UDWORD PosY, const std::string& txt, unsigned int style)

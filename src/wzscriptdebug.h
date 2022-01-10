@@ -47,7 +47,7 @@ typedef std::unordered_map<wzapi::scripting_instance*, nlohmann::json> MODELMAP;
 class WZScriptDebugger : public W_FORM
 {
 public:
-	WZScriptDebugger(const std::shared_ptr<scripting_engine::DebugInterface>& debugInterface, bool readOnly);
+	WZScriptDebugger(std::shared_ptr<scripting_engine::DebugInterface>  debugInterface, bool readOnly);
 	~WZScriptDebugger();
 
 	static std::shared_ptr<WZScriptDebugger> make(
@@ -76,7 +76,7 @@ protected:
 	void labelClicked(const std::string& label);
 
 private:
-	std::shared_ptr<W_FORM> createMainPanel();
+	std::shared_ptr<W_FORM> createMainPanel() const;
 	std::shared_ptr<WIDGET> createSelectedPanel();
 	std::shared_ptr<WIDGET> createContextsPanel();
 	std::shared_ptr<WIDGET> createPlayersPanel();

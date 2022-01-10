@@ -57,41 +57,41 @@ struct ImdObject
 
 	static ImdObject Droid(SimpleObject* p)
 	{
-		return ImdObject(p, IMDTYPE_DROID);
+		return {p, IMDTYPE_DROID};
 	}
 
 	static ImdObject DroidTemplate(BaseStats* p)
 	{
-		return ImdObject(p, IMDTYPE_DROIDTEMPLATE);
+		return {p, IMDTYPE_DROIDTEMPLATE};
 	}
 
 	static ImdObject Component(BaseStats* p)
 	{
-		return ImdObject(p, IMDTYPE_COMPONENT);
+		return {p, IMDTYPE_COMPONENT};
 	}
 
 	static ImdObject Structure(SimpleObject* p)
 	{
-		return ImdObject(p, IMDTYPE_STRUCTURE);
+		return {p, IMDTYPE_STRUCTURE};
 	}
 
 	static ImdObject Research(BaseStats* p)
 	{
-		return ImdObject(p, IMDTYPE_RESEARCH);
+		return {p, IMDTYPE_RESEARCH};
 	}
 
 	static ImdObject StructureStat(BaseStats* p)
 	{
-		return ImdObject(p, IMDTYPE_STRUCTURESTAT);
+		return {p, IMDTYPE_STRUCTURESTAT};
 	}
 
 	static ImdObject Feature(BaseStats* p)
 	{
-		FeatureStats* fStat = (FeatureStats*)p;
+		auto* fStat = (FeatureStats*)p;
 		return ImdObject(fStat->psImd, IMDTYPE_FEATURE);
 	}
 
-	bool empty() const
+	[[nodiscard]] bool empty() const
 	{
 		return ptr == nullptr;
 	}
@@ -114,7 +114,7 @@ bool intInitialiseGraphics();
 class PowerBar : public W_BARGRAPH
 {
 public:
-	PowerBar(W_BARINIT* init): W_BARGRAPH(init)
+	explicit PowerBar(W_BARINIT* init): W_BARGRAPH(init)
 	{
 	}
 
@@ -161,7 +161,7 @@ class IntObjectButton : public IntFancyButton
 public:
 	IntObjectButton();
 
-	virtual void display(int xOffset, int yOffset);
+	void display(int xOffset, int yOffset) override;
 
 	void setObject(SimpleObject* object)
 	{
@@ -196,7 +196,7 @@ public:
 		theStats = stats;
 	}
 
-	virtual void display(int xOffset, int yOffset);
+	void display(int xOffset, int yOffset) override;
 
 protected:
 	BaseStats* theStats;
@@ -207,7 +207,7 @@ class IntStatsButton : public IntFancyButton
 public:
 	IntStatsButton();
 
-	virtual void display(int xOffset, int yOffset);
+	void display(int xOffset, int yOffset) override;
 
 	void setStats(BaseStats* stats)
 	{
@@ -230,16 +230,16 @@ class IntFormTransparent : public W_FORM
 public:
 	IntFormTransparent();
 
-	virtual void display(int xOffset, int yOffset);
+	void display(int xOffset, int yOffset) override;
 };
 
 /// Form which animates opening/closing.
 class IntFormAnimated : public W_FORM
 {
 public:
-	IntFormAnimated(bool openAnimate = true);
+	explicit IntFormAnimated(bool openAnimate = true);
 
-	virtual void display(int xOffset, int yOffset);
+	void display(int xOffset, int yOffset) override;
 
 	void closeAnimateDelete(); ///< Animates the form closing, and deletes itself when done.
 	bool isClosing() const;
@@ -274,10 +274,10 @@ bool structureIsResearchingPending(Structure* structure);
 ///< Returns true iff the structure is either researching or on hold (even if not yet synchronised). (But ignores manufacturing.)
 bool StructureIsOnHoldPending(Structure* structure);
 ///< Returns true iff the structure is on hold (even if not yet synchronised).
-DroidTemplate* FactoryGetTemplate(FACTORY* Factory);
+DroidTemplate* FactoryGetTemplate(Factory* Factory);
 
-RESEARCH_FACILITY* StructureGetResearch(Structure* Structure);
-FACTORY* StructureGetFactory(Structure* Structure);
+ResearchFacility* StructureGetResearch(Structure* Structure);
+Factory* StructureGetFactory(Structure* Structure);
 
 bool StatIsStructure(BaseStats const* Stat);
 iIMDShape* StatGetStructureIMD(BaseStats* Stat, UDWORD Player);
@@ -297,7 +297,7 @@ class IntTransportButton : public IntFancyButton
 public:
 	IntTransportButton();
 
-	virtual void display(int xOffset, int yOffset);
+	void display(int xOffset, int yOffset) override;
 
 	void setObject(Droid* object)
 	{

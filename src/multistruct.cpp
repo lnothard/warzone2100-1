@@ -254,7 +254,7 @@ bool recvLasSat(NETQUEUE queue)
 		if (isHumanPlayer(player) && gameTime - psStruct->asWeaps[0].time_last_fired <= firePause)
 		{
 			/* Too soon to fire again */
-			return true ^ false; // Return value meaningless and ignored.
+			return true; // Return value meaningless and ignored.
 		}
 
 		// Give enemy no quarter, unleash the lasat

@@ -893,7 +893,7 @@ bool mapLoad(char const* filename)
 }
 
 ///* Initialise the map structure */
-bool mapLoadFromWzMapData(std::shared_ptr<WzMap::MapData> loadedMap)
+bool mapLoadFromWzMapData(const std::shared_ptr<WzMap::MapData>& loadedMap)
 {
 	uint32_t width, height;
 	const bool preview = false;
@@ -923,13 +923,9 @@ bool mapLoadFromWzMapData(std::shared_ptr<WzMap::MapData> loadedMap)
 		return false;
 	}
 
-	if (!preview)
-	{
-		//preload the terrain textures
-		loadTerrainTextures();
-	}
+  //preload the terrain textures
 
-	//load in the map data itself
+  //load in the map data itself
 
 	/* Load in the map data */
 	for (int i = 0; i < mapWidth * mapHeight; ++i)
@@ -948,8 +944,9 @@ bool mapLoadFromWzMapData(std::shared_ptr<WzMap::MapData> loadedMap)
 		psMapTiles[i].jammerBits = 0;
 		psMapTiles[i].tileExploredBits = 0;
 	}
+  loadTerrainTextures();
 
-	if (preview)
+  if (preview)
 	{
 		// no need to do anything else for the map preview
 		return true;
@@ -1065,7 +1062,7 @@ bool mapSaveToWzMapData(WzMap::MapData& output)
 		{
 			mapDataTile.height = psMapTiles[i].height;
 		}
-		output.mMapTiles.push_back(std::move(mapDataTile));
+		output.mMapTiles.push_back(mapDataTile);
 	}
 
 	// Write out the gateway data
@@ -1082,7 +1079,7 @@ bool mapSaveToWzMapData(WzMap::MapData& output)
 		       gw.x1, gw.y1, gw.x2, gw.y2);
 		ASSERT(gw.x1 < mapWidth && gw.y1 < mapHeight && gw.x2 < mapWidth && gw.y2 < mapHeight,
 		       "Bad gateway dimensions for savegame");
-		output.mGateways.push_back(std::move(gw));
+		output.mGateways.push_back(gw);
 	}
 
 	return true;
@@ -1326,11 +1323,11 @@ static Vector3i rotateWorldQuadrant(Vector3i v, int quadrant)
 	default: // Can't get here.
 	case 0: return v;
 		break; // 0°.
-	case 1: return Vector3i(TILE_UNITS - v.y, v.x, v.z);
+	case 1: return {TILE_UNITS - v.y, v.x, v.z};
 		break; // 90° clockwise.
-	case 2: return Vector3i(TILE_UNITS - v.x, TILE_UNITS - v.y, v.z);
+	case 2: return {TILE_UNITS - v.x, TILE_UNITS - v.y, v.z};
 		break; // 180°.
-	case 3: return Vector3i(v.y, TILE_UNITS - v.x, v.z);
+	case 3: return {v.y, TILE_UNITS - v.x, v.z};
 		break; // 90° anticlockwise.
 	}
 }
@@ -1340,7 +1337,7 @@ static Vector2i quadrantCorner(int quadrant)
 {
 	int dx[4] = {0, 1, 1, 0};
 	int dy[4] = {0, 0, 1, 1};
-	return Vector2i(dx[quadrant & 3], dy[quadrant & 3]);
+	return {dx[quadrant & 3], dy[quadrant & 3]};
 }
 
 // Returns (0, -1) rotated clockwise quadrant*90° around (0, 0). (Considering x to be to the right, and y down.)
@@ -1348,7 +1345,7 @@ static Vector2i quadrantDelta(int quadrant)
 {
 	int dx[4] = {0, 1, 0, -1};
 	int dy[4] = {-1, 0, 1, 0};
-	return Vector2i(dx[quadrant & 3], dy[quadrant & 3]);
+	return {dx[quadrant & 3], dy[quadrant & 3]};
 }
 
 
@@ -1763,7 +1760,7 @@ static const Vector2i aDirOffset[] =
 static void mapFloodFill(int x, int y, int continent, uint8_t blockedBits, uint16_t Tile::* varContinent)
 {
 	std::vector<Vector2i> open;
-	open.push_back(Vector2i(x, y));
+	open.emplace_back(x, y);
 	mapTile(x, y)->*varContinent = continent; // Set continent value
 
 	while (!open.empty())
@@ -1773,10 +1770,10 @@ static void mapFloodFill(int x, int y, int continent, uint8_t blockedBits, uint1
 		open.pop_back();
 
 		// Add accessible neighbouring tiles to the open list
-		for (int i = 0; i < NUM_DIR; ++i)
+		for (auto i : aDirOffset)
 		{
 			// rely on the fact that all border tiles are inaccessible to avoid checking explicitly
-			Vector2i npos = pos + aDirOffset[i];
+			Vector2i npos = pos + i;
 
 			if (npos.x < 1 || npos.y < 1 || npos.x > mapWidth - 2 || npos.y > mapHeight - 2)
 			{

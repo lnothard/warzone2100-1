@@ -410,7 +410,7 @@ bool addLoadSave(LOADSAVE_MODE savemode, const char* title)
 			                           const auto saveInfoDataOpt = parseJsonFile(saveInfoFilename.c_str());
 			                           if (saveInfoDataOpt.has_value())
 			                           {
-				                           const auto saveInfoData = saveInfoDataOpt.value();
+				                           const auto& saveInfoData = saveInfoDataOpt.value();
 				                           // decide what savegames are viewable/loadable
 				                           // assume that we can safely load games older than current version
 				                           const auto saveLatestTagArray = saveInfoData.at("latestTagArray").get<
@@ -490,7 +490,7 @@ bool addLoadSave(LOADSAVE_MODE savemode, const char* title)
 		                  strftime(sSlotTips[slotCount], sizeof(sSlotTips[slotCount]), "%F %H:%M:%S", &newtime);
 
 		                  /* Add a button that references the static strings */
-		                  W_BUTTON* button = (W_BUTTON*)widgGetFromID(psRequestScreen, LOADENTRY_START + slotCount);
+		                  auto* button = (W_BUTTON*)widgGetFromID(psRequestScreen, LOADENTRY_START + slotCount);
 		                  button->pTip = sSlotTips[slotCount];
 		                  button->pText = WzString::fromUtf8(sSlotCaps[slotCount]);
 		                  slotCount++;
@@ -637,7 +637,7 @@ static bool findLastSaveFrom(SAVEGAME_LOC loc)
 					debug(LOG_SAVEGAME, "wierd directory without save-info.json: %s", dirName);
 					return true;
 				}
-				const auto saveInfo = saveInfoDataOpt.value();
+				const auto& saveInfo = saveInfoDataOpt.value();
 				const auto epoch = saveInfo.at("epoch").get<int64_t>();
 				if (epoch > lastSaveTime)
 				{
@@ -818,7 +818,7 @@ bool runLoadSave(bool bResetMissionWidgets)
 	// clicked a load entry
 	else if (id > LOADENTRY_START && id <= LOADENTRY_END)
 	{
-		W_BUTTON* slotButton = (W_BUTTON*)widgGetFromID(psRequestScreen, id);
+		auto* slotButton = (W_BUTTON*)widgGetFromID(psRequestScreen, id);
 
 		if (modeLoad) // Loading, return that entry.
 		{
@@ -1104,7 +1104,7 @@ static void freeAutoSaveSlot(SAVEGAME_LOC loc)
 	{
 		return;
 	}
-	ASSERT(oldestKey.size() > 0, "Bug: oldestKey can't be empty here");
+	ASSERT(!oldestKey.empty(), "Bug: oldestKey can't be empty here");
 	char savefile[PATH_MAX];
 	snprintf(savefile, sizeof(savefile), "%s/%s.gam", path, oldestKey.c_str());
 	debug(LOG_SAVEGAME, "deleting the oldest autosave file %s", savefile);

@@ -373,7 +373,7 @@ bool mapShutdown();
 /* Load the map data */
 bool mapLoad(char const* filename);
 struct ScriptMapData;
-bool mapLoadFromWzMapData(std::shared_ptr<WzMap::MapData> mapData);
+bool mapLoadFromWzMapData(const std::shared_ptr<WzMap::MapData>& mapData);
 
 class WzMapPhysFSIO : public WzMap::IOProvider
 {

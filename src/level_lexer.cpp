@@ -66,10 +66,10 @@
 /* First, we deal with  platform-specific or compiler-specific issues. */
 #include "lib/framework/frame.h"
 /* begin standard C headers. */
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <cerrno>
+#include <cstdlib>
 
 /* end standard C headers. */
 
@@ -91,7 +91,7 @@
 #define __STDC_LIMIT_MACROS 1
 #endif
 
-#include <inttypes.h>
+#include <cinttypes>
 typedef int8_t flex_int8_t;
 typedef uint8_t flex_uint8_t;
 typedef int16_t flex_int16_t;
@@ -325,7 +325,7 @@ struct yy_buffer_state
 /* Stack of input buffers. */
 static size_t yy_buffer_stack_top = 0; /**< index of top of stack. */
 static size_t yy_buffer_stack_max = 0; /**< capacity of stack. */
-static YY_BUFFER_STATE* yy_buffer_stack = 0; /**< Stack as an array. */
+static YY_BUFFER_STATE* yy_buffer_stack = nullptr; /**< Stack as an array. */
 
 /* We provide macros for accessing buffer states in case in the
  * future we want to put the buffer states in a more general
@@ -348,7 +348,7 @@ static int yy_n_chars; /* number of characters read into yy_ch_buf */
 int lev_leng;
 
 /* Points to current character in buffer. */
-static char* yy_c_buf_p = (char*)0;
+static char* yy_c_buf_p = (char*)nullptr;
 static int yy_init = 0; /* whether we need to initialize */
 static int yy_start = 0; /* start state number */
 
@@ -363,10 +363,10 @@ YY_BUFFER_STATE lev__create_buffer(FILE* file, int size);
 void lev__delete_buffer(YY_BUFFER_STATE b);
 void lev__flush_buffer(YY_BUFFER_STATE b);
 void lev_push_buffer_state(YY_BUFFER_STATE new_buffer);
-void lev_pop_buffer_state(void);
+void lev_pop_buffer_state();
 
-static void lev_ensure_buffer_stack(void);
-static void lev__load_buffer_state(void);
+static void lev_ensure_buffer_stack();
+static void lev__load_buffer_state();
 static void lev__init_buffer(YY_BUFFER_STATE b, FILE* file);
 
 #define YY_FLUSH_BUFFER lev__flush_buffer(YY_CURRENT_BUFFER )
@@ -410,7 +410,7 @@ void lev_free(void*);
 
 typedef unsigned char YY_CHAR;
 
-FILE *lev_in = (FILE*)0, *lev_out = (FILE*)0;
+FILE *lev_in = (FILE*)nullptr, *lev_out = (FILE*)nullptr;
 
 typedef int yy_state_type;
 
@@ -421,9 +421,9 @@ int lev_lineno = 1;
 extern char* lev_text;
 #define yytext_ptr lev_text
 
-static yy_state_type yy_get_previous_state(void);
+static yy_state_type yy_get_previous_state();
 static yy_state_type yy_try_NUL_trans(yy_state_type current_state);
-static int yy_get_next_buffer(void);
+static int yy_get_next_buffer();
 [[ noreturn ]] static void yy_fatal_error(yyconst char msg[]);
 
 /* Done after the current pattern has been matched and before the
@@ -729,34 +729,34 @@ extern void lev_set_extra(YY_EXTRA_TYPE user_defined);
 #define YY_EXTRA_TYPE void *
 #endif
 
-static int yy_init_globals(void);
+static int yy_init_globals();
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
-int lev_lex_destroy(void);
+int lev_lex_destroy();
 
-int lev_get_debug(void);
+int lev_get_debug();
 
 void lev_set_debug(int debug_flag);
 
-YY_EXTRA_TYPE lev_get_extra(void);
+YY_EXTRA_TYPE lev_get_extra();
 
 void lev_set_extra(YY_EXTRA_TYPE user_defined);
 
-FILE* lev_get_in(void);
+FILE* lev_get_in();
 
 void lev_set_in(FILE* in_str);
 
-FILE* lev_get_out(void);
+FILE* lev_get_out();
 
 void lev_set_out(FILE* out_str);
 
-int lev_get_leng(void);
+int lev_get_leng();
 
-char* lev_get_text(void);
+char* lev_get_text();
 
-int lev_get_lineno(void);
+int lev_get_lineno();
 
 void lev_set_lineno(int line_number);
 
@@ -783,7 +783,7 @@ static int yy_flex_strlen (yyconst char * );
 #ifndef YY_NO_INPUT
 
 #ifdef __cplusplus
-static int yyinput(void);
+static int yyinput();
 #else
 static int input (void );
 #endif
@@ -870,7 +870,7 @@ static int input (void );
 #ifndef YY_DECL
 #define YY_DECL_IS_OURS 1
 
-extern int lev_lex(void);
+extern int lev_lex();
 
 #define YY_DECL int lev_lex (void)
 #endif /* !YY_DECL */
@@ -931,7 +931,7 @@ YY_DECL
 		lev__load_buffer_state();
 	}
 
-	while (1) /* loops until end-of-file is reached */
+	while (true) /* loops until end-of-file is reached */
 	{
 		yy_cp = (yy_c_buf_p);
 
@@ -1330,7 +1330,7 @@ YY_DECL
  *	EOB_ACT_CONTINUE_SCAN - continue scanning from current position
  *	EOB_ACT_END_OF_FILE - end of file
  */
-static int yy_get_next_buffer(void)
+static int yy_get_next_buffer()
 {
 	char* dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
 	char* source = (yytext_ptr);
@@ -1405,7 +1405,7 @@ static int yy_get_next_buffer(void)
 			}
 			else
 			/* Can't grow it, we don't own it. */
-				b->yy_ch_buf = 0;
+				b->yy_ch_buf = nullptr;
 
 			if (! b->yy_ch_buf)
 				YY_FATAL_ERROR(
@@ -1466,7 +1466,7 @@ static int yy_get_next_buffer(void)
 
 /* yy_get_previous_state - get the state just before the EOB char was reached */
 
-static yy_state_type yy_get_previous_state(void)
+static yy_state_type yy_get_previous_state()
 {
 	yy_state_type yy_current_state;
 	char* yy_cp;
@@ -1523,9 +1523,9 @@ static yy_state_type yy_try_NUL_trans(yy_state_type yy_current_state)
 
 #ifndef YY_NO_INPUT
 #ifdef __cplusplus
-static int yyinput(void)
+static int yyinput()
 #else
-    static int input  (void)
+    static int input  ()
 #endif
 
 {
@@ -1652,7 +1652,7 @@ void lev__switch_to_buffer(YY_BUFFER_STATE new_buffer)
 	(yy_did_buffer_switch_on_eof) = 1;
 }
 
-static void lev__load_buffer_state(void)
+static void lev__load_buffer_state()
 {
 	(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
 	(yytext_ptr) = (yy_c_buf_p) = YY_CURRENT_BUFFER_LVALUE->yy_buf_pos;
@@ -1700,7 +1700,7 @@ void lev__delete_buffer(YY_BUFFER_STATE b)
 		return;
 
 	if (b == YY_CURRENT_BUFFER) /* Not sure if we should pop here. */
-		YY_CURRENT_BUFFER_LVALUE = (YY_BUFFER_STATE)0;
+		YY_CURRENT_BUFFER_LVALUE = (YY_BUFFER_STATE)nullptr;
 
 	if (b->yy_is_our_buffer)
 		lev_free((void*)b->yy_ch_buf);
@@ -1772,7 +1772,7 @@ void lev__flush_buffer(YY_BUFFER_STATE b)
  */
 void lev_push_buffer_state(YY_BUFFER_STATE new_buffer)
 {
-	if (new_buffer == NULL)
+	if (new_buffer == nullptr)
 		return;
 
 	lev_ensure_buffer_stack();
@@ -1800,13 +1800,13 @@ void lev_push_buffer_state(YY_BUFFER_STATE new_buffer)
  *  The next element becomes the new top.
  *
  */
-void lev_pop_buffer_state(void)
+void lev_pop_buffer_state()
 {
 	if (!YY_CURRENT_BUFFER)
 		return;
 
 	lev__delete_buffer(YY_CURRENT_BUFFER);
-	YY_CURRENT_BUFFER_LVALUE = NULL;
+	YY_CURRENT_BUFFER_LVALUE = nullptr;
 	if ((yy_buffer_stack_top) > 0)
 		--(yy_buffer_stack_top);
 
@@ -1820,7 +1820,7 @@ void lev_pop_buffer_state(void)
 /* Allocates the stack if it does not exist.
  *  Guarantees space for at least one push.
  */
-static void lev_ensure_buffer_stack(void)
+static void lev_ensure_buffer_stack()
 {
 	int num_to_alloc;
 
@@ -1877,7 +1877,7 @@ YY_BUFFER_STATE lev__scan_buffer(char* base, yy_size_t size)
 		base[size - 2] != YY_END_OF_BUFFER_CHAR ||
 		base[size - 1] != YY_END_OF_BUFFER_CHAR)
 		/* They forgot to leave room for the EOB's. */
-		return 0;
+		return nullptr;
 
 	b = (YY_BUFFER_STATE)lev_alloc(sizeof(struct yy_buffer_state));
 	if (! b)
@@ -1886,7 +1886,7 @@ YY_BUFFER_STATE lev__scan_buffer(char* base, yy_size_t size)
 	b->yy_buf_size = size - 2; /* "- 2" to take care of EOB's */
 	b->yy_buf_pos = b->yy_ch_buf = base;
 	b->yy_is_our_buffer = 0;
-	b->yy_input_file = 0;
+	b->yy_input_file = nullptr;
 	b->yy_n_chars = b->yy_buf_size;
 	b->yy_is_interactive = 0;
 	b->yy_at_bol = 1;
@@ -1980,7 +1980,7 @@ YY_BUFFER_STATE lev__scan_bytes(yyconst char* yybytes, int _yybytes_len)
 /** Get the current line number.
  *
  */
-int lev_get_lineno(void)
+int lev_get_lineno()
 {
 	return lev_lineno;
 }
@@ -1988,7 +1988,7 @@ int lev_get_lineno(void)
 /** Get the input stream.
  *
  */
-FILE* lev_get_in(void)
+FILE* lev_get_in()
 {
 	return lev_in;
 }
@@ -1996,7 +1996,7 @@ FILE* lev_get_in(void)
 /** Get the output stream.
  *
  */
-FILE* lev_get_out(void)
+FILE* lev_get_out()
 {
 	return lev_out;
 }
@@ -2004,7 +2004,7 @@ FILE* lev_get_out(void)
 /** Get the length of the current token.
  *
  */
-int lev_get_leng(void)
+int lev_get_leng()
 {
 	return lev_leng;
 }
@@ -2013,7 +2013,7 @@ int lev_get_leng(void)
  *
  */
 
-char* lev_get_text(void)
+char* lev_get_text()
 {
 	return lev_text;
 }
@@ -2043,7 +2043,7 @@ void lev_set_out(FILE* out_str)
 	lev_out = out_str;
 }
 
-int lev_get_debug(void)
+int lev_get_debug()
 {
 	return lev__flex_debug;
 }
@@ -2053,7 +2053,7 @@ void lev_set_debug(int bdebug)
 	lev__flex_debug = bdebug;
 }
 
-static int yy_init_globals(void)
+static int yy_init_globals()
 {
 	/* Initialization is the same as for the non-reentrant scanner.
  * This function is called from lev_lex_destroy(), so don't allocate here.
@@ -2062,10 +2062,10 @@ static int yy_init_globals(void)
 	/* We do not touch lev_lineno unless the option is enabled. */
 	lev_lineno = 1;
 
-	(yy_buffer_stack) = 0;
+	(yy_buffer_stack) = nullptr;
 	(yy_buffer_stack_top) = 0;
 	(yy_buffer_stack_max) = 0;
-	(yy_c_buf_p) = (char*)0;
+	(yy_c_buf_p) = (char*)nullptr;
 	(yy_init) = 0;
 	(yy_start) = 0;
 
@@ -2074,8 +2074,8 @@ static int yy_init_globals(void)
     lev_in = stdin;
     lev_out = stdout;
 #else
-	lev_in = (FILE*)0;
-	lev_out = (FILE*)0;
+	lev_in = (FILE*)nullptr;
+	lev_out = (FILE*)nullptr;
 #endif
 
 	/* For future reference: Set errno on error, since we are called by
@@ -2085,19 +2085,19 @@ static int yy_init_globals(void)
 }
 
 /* lev_lex_destroy is for both reentrant and non-reentrant scanners. */
-int lev_lex_destroy(void)
+int lev_lex_destroy()
 {
 	/* Pop the buffer stack, destroying each element. */
 	while (YY_CURRENT_BUFFER)
 	{
 		lev__delete_buffer(YY_CURRENT_BUFFER);
-		YY_CURRENT_BUFFER_LVALUE = NULL;
+		YY_CURRENT_BUFFER_LVALUE = nullptr;
 		lev_pop_buffer_state();
 	}
 
 	/* Destroy the stack itself. */
 	lev_free((yy_buffer_stack));
-	(yy_buffer_stack) = NULL;
+	(yy_buffer_stack) = nullptr;
 
 	/* Reset the globals. This is important in a non-reentrant scanner so the next time
 	 * lev_lex() is called, initialization will occur. */
@@ -2157,7 +2157,7 @@ void lev_free(void* ptr)
 #line 154 "level_lexer.lpp"
 
 
-static YY_EXTRA_TYPE pBuffer = NULL;
+static YY_EXTRA_TYPE pBuffer = nullptr;
 
 void lev_set_extra(YY_EXTRA_TYPE user_defined)
 {

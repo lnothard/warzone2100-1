@@ -130,7 +130,7 @@ void rayCast(Vector2i src, Vector2i dst, RAY_CALLBACK callback, void* data)
 /* Will return false when we've hit the edge of the grid */
 static bool getTileHeightCallback(Vector2i pos, int32_t dist, void* data)
 {
-	HeightCallbackHelp_t* help = (HeightCallbackHelp_t*)data;
+	auto* help = (HeightCallbackHelp_t*)data;
 #ifdef TEST_RAY
 	Vector3i effect;
 #endif

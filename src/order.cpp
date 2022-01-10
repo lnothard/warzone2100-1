@@ -838,7 +838,7 @@ void orderUpdateDroid(Droid* psDroid)
 	case EMBARK:
 		{
 			// only place it can be trapped - in multiPlayer can only put cyborgs onto a Cyborg Transporter
-			Droid* temp = (Droid*)psDroid->order.psObj; // NOTE: It is possible to have a NULL here
+			auto* temp = (Droid*)psDroid->order.psObj; // NOTE: It is possible to have a NULL here
 
 			if (temp && temp->type == DROID_TRANSPORTER && !isCyborg(psDroid))
 			{
@@ -864,7 +864,7 @@ void orderUpdateDroid(Droid* psDroid)
 					&& abs((SDWORD)psDroid->pos.y - (SDWORD)psDroid->order.psObj->pos.y) < TILE_UNITS)
 				{
 					// save the target of current droid (the transporter)
-					Droid* transporter = (Droid*)psDroid->order.psObj;
+					auto* transporter = (Droid*)psDroid->order.psObj;
 
 					// Make sure that it really is a valid droid
 					CHECK_DROID(transporter);
@@ -992,7 +992,7 @@ void orderUpdateDroid(Droid* psDroid)
 
 			if (psDroid->order.psObj->type == OBJ_DROID)
 			{
-				Droid* psSpotter = (Droid*)psDroid->order.psObj;
+				auto* psSpotter = (Droid*)psDroid->order.psObj;
 
 				if (psSpotter->action == OBSERVE
 					|| (psSpotter->type == DROID_COMMAND && psSpotter->action == ATTACK))
@@ -1002,7 +1002,7 @@ void orderUpdateDroid(Droid* psDroid)
 			}
 			else if (psDroid->order.psObj->type == OBJ_STRUCTURE)
 			{
-				Structure* psSpotter = (Structure*)psDroid->order.psObj;
+				auto* psSpotter = (Structure*)psDroid->order.psObj;
 
 				psFireTarget = psSpotter->psTarget[0];
 			}
@@ -3949,7 +3949,7 @@ bool setFactoryState(Structure* psStruct, SECONDARY_ORDER sec, SECONDARY_STATE S
 		return false;
 	}
 
-	Factory* psFactory = (Factory*)psStruct->pFunctionality;
+	auto* psFactory = (Factory*)psStruct->pFunctionality;
 
 	UDWORD CurrState = psFactory->secondaryOrder;
 

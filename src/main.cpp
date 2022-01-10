@@ -52,7 +52,7 @@
 #endif
 #  endif
 #elif defined(WZ_OS_UNIX)
-#  include <errno.h>
+#  include <cerrno>
 #endif // WZ_OS_WIN
 
 #include "lib/framework/input.h"
@@ -101,7 +101,7 @@
 #include "keybind.h"
 #include "random.h"
 #include "urlrequest.h"
-#include <time.h>
+#include <ctime>
 #include <LaunchInfo.h>
 #include <sodium.h>
 #include "updatemanager.h"
@@ -115,8 +115,8 @@
 #include "3rdparty/gsl_finally.h"
 
 #if defined(WZ_OS_UNIX)
-# include <signal.h>
-# include <time.h>
+# include <csignal>
+# include <ctime>
 #endif
 
 #if defined(WZ_OS_MAC)
@@ -164,7 +164,7 @@ const char* SaveGameLocToPath[] = {
 	SAVEGAME_SKI_AUTO,
 };
 
-std::string SaveGamePath_t::toPath(SaveGamePath_t::Extension ext)
+std::string SaveGamePath_t::toPath(SaveGamePath_t::Extension ext) const
 {
 	std::string out;
 	switch (ext)
@@ -276,7 +276,7 @@ static std::string getCurrentApplicationFolder()
 	return std::string(u8_buffer.data());
 #else
 	// Not yet implemented for this platform
-	return std::string();
+	return {};
 #endif
 }
 
@@ -302,7 +302,7 @@ static std::string getCurrentApplicationFolderPrefix()
 	{
 		// Did not find a path separator - does not appear to be a valid app folder?
 		debug(LOG_ERROR, "Unable to find path separator in application executable path");
-		return std::string();
+		return {};
 	}
 
 	// Trim off the last path component
@@ -540,7 +540,7 @@ static std::string getPlatformPrefDir(const char* org, const std::string& app)
 			exit(1);
 		}
 
-		std::string appendPath = app;
+		const std::string& appendPath = app;
 
 		// Create the folders within the prefixPath if they don't exist
 		if (!PHYSFS_setWriteDir(prefixPath.c_str())) // Workaround for PhysFS not creating the writedir as expected.
@@ -684,7 +684,7 @@ static void initialize_ConfigDir()
 
 
 	// Config dir first so we always see what we write
-	PHYSFS_mount(PHYSFS_getWriteDir(), NULL, PHYSFS_PREPEND);
+	PHYSFS_mount(PHYSFS_getWriteDir(), nullptr, PHYSFS_PREPEND);
 
 	// Do not follow symlinks *inside* search paths / archives
 	PHYSFS_permitSymbolicLinks(0);
@@ -862,7 +862,7 @@ static void scanDataDirs()
 			debug(LOG_ERROR, "Could not change to resources directory.");
 		}
 
-		if (resourceURL != NULL)
+		if (resourceURL != nullptr)
 		{
 			CFRelease(resourceURL);
 		}
@@ -1535,7 +1535,7 @@ void osSpecificFirstChanceProcessSetup()
 	sigemptyset(&sa.sa_mask);
 	sa.sa_handler = SIG_IGN;
 	sa.sa_flags = 0;
-	ignoredSIGPIPE = sigaction(SIGPIPE, &sa, 0) == 0;
+	ignoredSIGPIPE = sigaction(SIGPIPE, &sa, nullptr) == 0;
 
 	// Initialize time conversion information
 	tzset();
@@ -1789,7 +1789,7 @@ int realmain(int argc, char* argv[])
 	}
 
 	// Initialize random number generators
-	srand((unsigned int)time(NULL));
+	srand((unsigned int)time(nullptr));
 	gameSRand((uint32_t)rand());
 
 	// NOTE: it is now safe to use debug() calls to make sure output gets captured.

@@ -207,7 +207,8 @@ std::string const& getModList()
 	{
 		// Construct mod list.
 		std::vector<std::string> mods;
-		for (auto const& mod : loaded_mods)
+		mods.reserve(loaded_mods.size());
+for (auto const& mod : loaded_mods)
 		{
 			mods.push_back(mod.name);
 		}

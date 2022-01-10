@@ -17,8 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  definitions for order interface functions.
+
+/**
+ * @file intorder.h
+ * Definitions for order interface functions
  */
 
 #ifndef __INCLUDED_SRC_INTORDER_H__

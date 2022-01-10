@@ -121,7 +121,7 @@ static void calcDataHash(const WzConfig& ini, unsigned index)
 
 void resetDataHash()
 {
-	UDWORD i;
+	unsigned i;
 	for (i = 0; i < DATA_MAXDATA; i++)
 	{
 		DataHash[i] = 0;
@@ -148,8 +148,7 @@ static bool bufferSBODYLoad(const char* fileName, void** ppData)
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	calcDataHash(ini, DATA_SBODY);
 
-	if (!loadBodyStats(ini) || !allocComponentList(COMPONENT_TYPE::BODY, numBodyStats))
-	{
+	if (!loadBodyStats(ini) || !allocComponentList(COMPONENT_TYPE::BODY, numBodyStats)) {
 		return false;
 	}
 	*ppData = (void*)1;

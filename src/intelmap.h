@@ -17,7 +17,8 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
+
+/** @file intelmap.h
  *  Functions for the display of the Intelligence Map
  */
 

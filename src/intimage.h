@@ -51,7 +51,7 @@ protected:
 	{
 	}
 
-	virtual void initialize() override;
+	void initialize() override;
 
 public:
 	static std::shared_ptr<IntListTabWidget> make()

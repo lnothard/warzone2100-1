@@ -17,13 +17,14 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * IntelMap.c		(Intelligence Map)
+
+/**
+ * @file intelmap.cpp		(Intelligence Map)
  *
  * Functions for the display of the Intelligence Map
- *
  */
-#include <string.h>
+
+#include <cstring>
 
 #include "lib/framework/frame.h"
 #include "lib/framework/strres.h"
@@ -127,7 +128,7 @@
 /* the widget screen */
 extern std::shared_ptr<W_SCREEN> psWScreen;
 
-static UDWORD messageID;
+static unsigned messageID;
 static bool immediateMessage = false;
 
 //flags whether to open the Intel Screen with a message
@@ -143,7 +144,7 @@ class IntMessageButton : public IntFancyButton
 public:
 	IntMessageButton();
 
-	virtual void display(int xOffset, int yOffset) override;
+	void display(int xOffset, int yOffset) override;
 
 	void setMessage(MESSAGE* msg)
 	{
@@ -514,7 +515,7 @@ static void StartMessageSequences(MESSAGE* psMessage, bool Start)
 			addVideoText(&psViewReplay->seqList.at(Sequence), Sequence);
 		}
 		//play first full screen video
-		if (Start == true)
+		if (Start)
 		{
 			seq_StartNextFullScreenVideo();
 		}
@@ -530,7 +531,7 @@ static void StartMessageSequences(MESSAGE* psMessage, bool Start)
 		seq_ClearSeqList();
 		seq_AddSeqToList(psViewReplay->sequenceName, psViewReplay->audio, nullptr, false);
 		//play first full screen video
-		if (Start == true)
+		if (Start)
 		{
 			seq_StartNextFullScreenVideo();
 		}
@@ -711,7 +712,7 @@ void intRemoveIntelMap()
 	}
 
 	// Start the window close animation.
-	IntFormAnimated* form = (IntFormAnimated*)widgGetFromID(psWScreen, IDINTMAP_FORM);
+	auto* form = (IntFormAnimated*)widgGetFromID(psWScreen, IDINTMAP_FORM);
 	if (form)
 	{
 		form->closeAnimateDelete();
@@ -755,14 +756,14 @@ void intRemoveIntelMapNoAnim()
 void intRemoveMessageView(bool animated)
 {
 	//remove 3dView if still there
-	IntFormAnimated* form = (IntFormAnimated*)widgGetFromID(psWScreen, IDINTMAP_MSGVIEW);
+	auto* form = (IntFormAnimated*)widgGetFromID(psWScreen, IDINTMAP_MSGVIEW);
 	if (form == nullptr)
 	{
 		return;
 	}
 
 	//stop the video
-	VIEW_RESEARCH* psViewResearch = (VIEW_RESEARCH*)form->pUserData;
+	auto* psViewResearch = (VIEW_RESEARCH*)form->pUserData;
 
 	if (psViewResearch != nullptr)
 	{
@@ -880,7 +881,7 @@ void IntMessageButton::display(int xOffset, int yOffset)
 /* displays the PIE view for the current message */
 void intDisplayPIEView(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
-	MESSAGE* psMessage = (MESSAGE*)psWidget->pUserData;
+	auto* psMessage = (MESSAGE*)psWidget->pUserData;
 	SWORD image = -1;
 	ResearchStats* psResearch;
 
@@ -922,7 +923,7 @@ void intDisplayPIEView(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 /* displays the FLIC view for the current message */
 void intDisplayFLICView(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
-	MESSAGE* psMessage = (MESSAGE*)psWidget->pUserData;
+	auto* psMessage = (MESSAGE*)psWidget->pUserData;
 	VIEW_RESEARCH* psViewResearch;
 
 	//shouldn't have any proximity messages here...

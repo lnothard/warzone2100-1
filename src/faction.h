@@ -20,23 +20,25 @@
 
 /**
  * @file faction.h
- * Definitions for factions.
+ * Definitions for factions
  */
 
 #ifndef __INCLUDED_FACTION_H__
 #define __INCLUDED_FACTION_H__
 
-#include "lib/framework/wzstring.h"
-#include "lib/ivis_opengl/imd.h"
-#include "src/factionid.h"
-#include "structure.h"
 #include <map>
 #include <unordered_set>
+
+#include "lib/framework/wzstring.h"
+#include "lib/ivis_opengl/imd.h"
 #include <optional-lite/optional.hpp>
 using nonstd::optional;
 using nonstd::nullopt;
 
-#define NUM_FACTIONS 3
+#include "factionid.h"
+#include "structure.h"
+
+static constexpr auto NUM_FACTIONS = 3;
 
 struct FACTION
 {

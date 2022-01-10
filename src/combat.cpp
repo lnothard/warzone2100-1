@@ -37,6 +37,7 @@
 #include "order.h"
 #include "projectile.h"
 #include "random.h"
+#include "visibility.h"
 
 /* Fire a weapon at something */
 bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
@@ -52,10 +53,11 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 	CHECK_OBJECT(psTarget);
 	ASSERT(psWeap != nullptr, "Invalid weapon pointer");
 
+  auto psDroid = dynamic_cast<Droid*>(psAttacker);
 	/* Don't shoot if the weapon_slot of a vtol is empty */
-	if (psAttacker->type == OBJ_DROID && isVtolDroid(((Droid*)psAttacker))
-		&& psWeap->ammo_used >= getNumAttackRuns(((Droid*)psAttacker), weapon_slot)) {
-		objTrace(psAttacker->id, "VTOL slot %d is empty", weapon_slot);
+	if (psDroid && psDroid->isVtol()
+		&& psWeap->ammoUsed >= getNumAttackRuns(psDroid, weapon_slot)) {
+		objTrace(psAttacker->getId(), "VTOL slot %d is empty", weapon_slot);
 		return false;
 	}
 
@@ -66,94 +68,89 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 	psStats = asWeaponStats + compIndex;
 
 	// check valid weapon/prop combination
-	if (!validTarget(psAttacker, psTarget, weapon_slot))
-	{
+	if (!validTarget(psAttacker, psTarget, weapon_slot)) {
 		return false;
 	}
 
-	unsigned fireTime = gameTime - deltaGameTime + 1; // Can fire earliest at the start of the tick.
+	auto fireTime = gameTime - deltaGameTime + 1; // Can fire earliest at the start of the tick.
 
-	// See if reloadable weapon.
-	if (psStats->upgraded[psAttacker->player].reloadTime)
-	{
-		unsigned reloadTime = psWeap->time_last_fired + weaponReloadTime(psStats, psAttacker->player);
+	// see if reloadable weapon.
+	if (psStats->upgraded[psAttacker->getPlayer()].reloadTime) {
+		auto reloadTime = psWeap->time_last_fired + weaponReloadTime(psStats, psAttacker->getPlayer());
 		if (psWeap->ammo == 0) // Out of ammo?
 		{
 			fireTime = std::max(fireTime, reloadTime); // Have to wait for weapon to reload before firing.
-			if (gameTime < fireTime)
-			{
+			if (gameTime < fireTime) {
 				return false;
 			}
 		}
 
-		if (reloadTime <= fireTime)
-		{
+		if (reloadTime <= fireTime) {
 			//reset the ammo level
-			psWeap->ammo = psStats->upgraded[psAttacker->player].numRounds;
+			psWeap->ammo = psStats->upgraded[psAttacker->getPlayer()].numRounds;
 		}
 	}
 
 	/* See when the weapon last fired to control it's rate of fire */
-	firePause = weaponFirePause(psStats, psAttacker->player);
+	firePause = weaponFirePause(psStats, psAttacker->getPlayer());
 	firePause = std::max(firePause, 1u); // Don't shoot infinitely many shots at once.
 	fireTime = std::max(fireTime, psWeap->time_last_fired + firePause);
 
-	if (gameTime < fireTime)
-	{
+	if (gameTime < fireTime) {
 		/* Too soon to fire again */
 		return false;
 	}
 
-	ASSERT(psAttacker->player < MAX_PLAYERS, "psAttacker->player = %" PRIu8 "", psAttacker->player);
-	if (psTarget->visible[psAttacker->player] != UBYTE_MAX)
-	{
+	ASSERT(psAttacker->getPlayer() < MAX_PLAYERS,
+         "psAttacker->player = %" PRIu8 "",
+         psAttacker->getPlayer());
+
+	if (psTarget->visible[psAttacker->getPlayer()] != UBYTE_MAX) {
 		// Can't see it - can't hit it
-		objTrace(psAttacker->id, "combFire(%u[%s]->%u): Object has no indirect sight of target", psAttacker->id,
-		         getStatsName(psStats), psTarget->id);
+		objTrace(psAttacker->getId(),
+             "combFire(%u[%s]->%u): Object has no indirect sight of target",
+             psAttacker->getId(),
+		         getStatsName(psStats),
+             psTarget->getId());
 		return false;
 	}
 
 	/* Check we can hit the target */
 	bool tall = (psAttacker->type == OBJ_DROID && isVtolDroid((Droid*)psAttacker))
 		|| (psAttacker->type == OBJ_STRUCTURE && ((Structure*)psAttacker)->pStructureType->height > 1);
-	if (proj_Direct(psStats) && !lineOfFire(psAttacker, psTarget, weapon_slot, tall))
-	{
+	if (proj_Direct(psStats) && !lineOfFire(psAttacker, psTarget, weapon_slot, tall)) {
 		// Can't see the target - can't hit it with direct fire
-		objTrace(psAttacker->id, "combFire(%u[%s]->%u): No direct line of sight to target",
-		         psAttacker->id, objInfo(psAttacker), psTarget->id);
+		objTrace(psAttacker->getId(), "combFire(%u[%s]->%u): No direct line of sight to target",
+		         psAttacker->getId(), objInfo(psAttacker), psTarget->getId());
 		return false;
 	}
 
-	Vector3i deltaPos = psTarget->pos - psAttacker->pos;
+	Vector3i deltaPos = psTarget->getPosition() - psAttacker->getPosition();
 
 	// if the turret doesn't turn, check if the attacker is in alignment with the target
-	if (psAttacker->type == OBJ_DROID && !psStats->rotate)
-	{
-		uint16_t targetDir = iAtan2(deltaPos.xy());
-		int dirDiff = abs(angleDelta(targetDir - psAttacker->rot.direction));
-		if (dirDiff > FIXED_TURRET_DIR)
-		{
+	if (psAttacker->type == OBJ_DROID && !psStats->rotate) {
+		auto targetDir = iAtan2(deltaPos.xy());
+		auto dirDiff = abs(angleDelta(targetDir - psAttacker->getRotation().direction));
+		if (dirDiff > FIXED_TURRET_DIR) {
 			return false;
 		}
 	}
 
 	/* Now see if the target is in range  - also check not too near */
-	int dist = iHypot(deltaPos.xy());
-	longRange = proj_GetLongRange(psStats, psAttacker->player);
-	shortRange = proj_GetShortRange(psStats, psAttacker->player);
+	auto dist = iHypot(deltaPos.xy());
+	longRange = proj_GetLongRange(psStats, psAttacker->getPlayer());
+	shortRange = proj_GetShortRange(psStats, psAttacker->getPlayer());
 
 	int min_angle = 0;
 	// Calculate angle for indirect shots
-	if (!proj_Direct(psStats) && dist > 0)
-	{
+	if (!proj_Direct(psStats) && dist > 0) {
 		min_angle = arcOfFire(psAttacker, psTarget, weapon_slot, true);
 
 		// prevent extremely steep shots
 		min_angle = std::min(min_angle, DEG(PROJ_ULTIMATE_PITCH));
 
 		// adjust maximum range of unit if forced to shoot very steep
-		if (min_angle > DEG(PROJ_MAX_PITCH))
-		{
+		if (min_angle > DEG(PROJ_MAX_PITCH)) {
 			//do not allow increase of max range though
 			if (iSin(2 * min_angle) < iSin(2 * DEG(PROJ_MAX_PITCH)))
 			// If PROJ_MAX_PITCH == 45, then always iSin(2*min_angle) <= iSin(2*DEG(PROJ_MAX_PITCH)), and the test is redundant.
@@ -164,28 +161,24 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 	}
 
 	int baseHitChance = 0;
-	const int min_range = proj_GetMinRange(psStats, psAttacker->player);
-	if (dist <= shortRange && dist >= min_range)
-	{
+	const auto min_range = proj_GetMinRange(psStats, psAttacker->getPlayer());
+	if (dist <= shortRange && dist >= min_range) {
 		// get weapon chance to hit in the short range
-		baseHitChance = weaponShortHit(psStats, psAttacker->player);
+		baseHitChance = weaponShortHit(psStats, psAttacker->getPlayer());
 	}
-	else if (dist <= longRange && dist >= min_range)
-	{
+	else if (dist <= longRange && dist >= min_range) {
 		// get weapon chance to hit in the long range
-		baseHitChance = weaponLongHit(psStats, psAttacker->player);
+		baseHitChance = weaponLongHit(psStats, psAttacker->getPlayer());
 	}
-	else
-	{
+	else {
 		/* Out of range */
-		objTrace(psAttacker->id, "combFire(%u[%s]->%u): Out of range", psAttacker->id, getStatsName(psStats),
-		         psTarget->id);
+		objTrace(psAttacker->getId(), "combFire(%u[%s]->%u): Out of range",
+             psAttacker->getId(), getStatsName(psStats), psTarget->getId());
 		return false;
 	}
 
 	// adapt for height adjusted artillery shots
-	if (min_angle > DEG(PROJ_MAX_PITCH))
-	{
+	if (min_angle > DEG(PROJ_MAX_PITCH)) {
 		baseHitChance = baseHitChance * iCos(min_angle) / iCos(DEG(PROJ_MAX_PITCH));
 	}
 
@@ -194,26 +187,24 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 	int resultHitChance = baseHitChance;
 
 	// add the attacker's experience
-	if (psAttacker->type == OBJ_DROID)
-	{
-		SDWORD level = getDroidEffectiveLevel((Droid*)psAttacker);
+	if (psAttacker->type == OBJ_DROID) {
+		auto level = getDroidEffectiveLevel((Droid*)psAttacker);
 
 		// increase total accuracy by EXP_ACCURACY_BONUS % for each experience level
 		resultHitChance += EXP_ACCURACY_BONUS * level * baseHitChance / 100;
 	}
 
 	// subtract the defender's experience
-	if (psTarget->type == OBJ_DROID)
-	{
-		SDWORD level = getDroidEffectiveLevel((Droid*)psTarget);
+	if (psTarget->type == OBJ_DROID) {
+		auto level = getDroidEffectiveLevel((Droid*)psTarget);
 
 		// decrease weapon accuracy by EXP_ACCURACY_BONUS % for each experience level
 		resultHitChance -= EXP_ACCURACY_BONUS * level * baseHitChance / 100;
 	}
 
-	if (psAttacker->type == OBJ_DROID && ((Droid*)psAttacker)->movement.status != MOVEINACTIVE
-		&& !psStats->fireOnMove)
-	{
+	if (psAttacker->type == OBJ_DROID &&
+      ((Droid*)psAttacker)->getMovementData().status != MOVE_STATUS::INACTIVE
+		&& !psStats->fireOnMove) {
 		return false; // Can't fire while moving
 	}
 
@@ -223,8 +214,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 	psWeap->time_last_fired = fireTime;
 
 	/* reduce ammo if salvo */
-	if (psStats->upgraded[psAttacker->player].reloadTime)
-	{
+	if (psStats->upgraded[psAttacker->player].reloadTime) {
 		psWeap->ammo--;
 	}
 
@@ -240,7 +230,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 		Droid* psDroid = castDroid(psTarget);
 
 		int32_t flightTime;
-		if (proj_Direct(psStats) || dist <= proj_GetMinRange(psStats, psAttacker->player))
+		if (proj_Direct(psStats) || dist <= proj_GetMinRange(psStats, psAttacker->getPlayer()))
 		{
 			flightTime = dist * GAME_TICKS_PER_SEC / psStats->flightSpeed;
 		}

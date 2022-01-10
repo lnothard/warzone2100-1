@@ -25,7 +25,7 @@
 
 #include "lib/framework/frame.h"
 
-#include <string.h>
+#include <cstring>
 #include <physfs.h>
 
 #include "lib/framework/file.h"

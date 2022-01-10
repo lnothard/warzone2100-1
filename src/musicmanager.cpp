@@ -440,7 +440,7 @@ public:
 	{
 	}
 
-	virtual void display(int xOffset, int yOffset) override;
+	void display(int xOffset, int yOffset) override;
 
 	~TrackDetailsForm() override
 	{

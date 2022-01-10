@@ -1160,7 +1160,7 @@ bool intRefreshOrder()
 		{
 			// Refresh it by re-adding it.
 			Ret = intAddOrder(nullptr);
-			if (Ret == false)
+			if (!Ret)
 			{
 				intMode = INT_NORMAL;
 			}
@@ -1180,7 +1180,7 @@ void intRemoveOrder()
 	setSecondaryWindowUp(false);
 
 	// Start the window close animation.
-	IntFormAnimated* form = (IntFormAnimated*)widgGetFromID(psWScreen, IDORDER_FORM);
+	auto* form = (IntFormAnimated*)widgGetFromID(psWScreen, IDORDER_FORM);
 	if (form != nullptr)
 	{
 		form->closeAnimateDelete();

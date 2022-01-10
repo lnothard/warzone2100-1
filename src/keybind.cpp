@@ -17,6 +17,7 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 #include <cstring>
 
 #include "lib/framework/frame.h"
@@ -54,7 +55,6 @@
 #include "multiplay.h"
 #include "multimenu.h"
 #include "atmos.h"
-#include "advvis.h"
 
 #include "intorder.h"
 #include "lib/widget/listwidget.h"
@@ -2286,7 +2286,7 @@ void kf_ToggleMouseInvert()
 }
 
 // --------------------------------------------------------------------------
-void kf_ToggleShakeStatus(void)
+void kf_ToggleShakeStatus()
 {
 	if (getShakeStatus())
 	{
@@ -2551,7 +2551,7 @@ void kf_NoAssert()
 void kf_BuildPrevPage()
 {
 	ASSERT_OR_RETURN(, psWScreen != nullptr, " Invalid screen pointer!");
-	ListTabWidget* psTForm = (ListTabWidget*)widgGetFromID(psWScreen, IDSTAT_TABFORM);
+	auto* psTForm = (ListTabWidget*)widgGetFromID(psWScreen, IDSTAT_TABFORM);
 	if (psTForm == nullptr)
 	{
 		return;
@@ -2570,7 +2570,7 @@ void kf_BuildPrevPage()
 void kf_BuildNextPage()
 {
 	ASSERT_OR_RETURN(, psWScreen != nullptr, " Invalid screen pointer!");
-	ListTabWidget* psTForm = (ListTabWidget*)widgGetFromID(psWScreen, IDSTAT_TABFORM);
+	auto* psTForm = (ListTabWidget*)widgGetFromID(psWScreen, IDSTAT_TABFORM);
 	if (psTForm == nullptr)
 	{
 		return;

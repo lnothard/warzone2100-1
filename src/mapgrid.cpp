@@ -118,7 +118,7 @@ static GridList const& gridStartIterateFiltered(int32_t x, int32_t y, uint32_t r
 	PointTree::ResultVector::iterator w = gridPointTree->lastQueryResults.begin(), i;
 	for (i = w; i != gridPointTree->lastQueryResults.end(); ++i)
 	{
-		SimpleObject* obj = static_cast<SimpleObject*>(*i);
+		auto* obj = static_cast<SimpleObject*>(*i);
 		if (!condition.test(obj)) // Check if we should skip this object.
 		{
 			filter->erase(gridPointTree->lastFilteredQueryIndices[i - gridPointTree->lastQueryResults.begin()]);

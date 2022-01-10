@@ -388,7 +388,7 @@ bool loadConfig()
 	war_SetFMVmode((FMV_MODE)iniGetInteger("FMVmode", FMV_FULLSCREEN).value());
 	war_setScanlineMode((SCANLINE_MODE)iniGetInteger("scanlines", SCANLINES_OFF).value());
 	seq_SetSubtitles(iniGetBool("subtitles", true).value());
-	setDifficultyLevel((DIFFICULTY_LEVEL)iniGetInteger("difficulty", DL_NORMAL).value());
+	setDifficultyLevel((DIFFICULTY_LEVEL)iniGetInteger("difficulty", DIFFICULTY_LEVEL::NORMAL).value());
 	war_SetSPcolor(iniGetInteger("colour", 0).value()); // default is green (0)
 	war_setMPcolour(iniGetInteger("colourMP", -1).value()); // default is random (-1)
 	sstrcpy(game.name, iniGetString("gameName", _("My Game")).value().c_str());

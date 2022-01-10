@@ -166,7 +166,7 @@ public:
 		engineToInstanceMap.insert(std::pair<JSContext*, quickjs_scripting_instance*>(ctx, this));
 	}
 
-	virtual ~quickjs_scripting_instance()
+	~quickjs_scripting_instance() override
 	{
 		engineToInstanceMap.erase(ctx);
 
@@ -199,14 +199,14 @@ private:
 
 public:
 	// save / restore state
-	virtual bool saveScriptGlobals(nlohmann::json& result) override;
-	virtual bool loadScriptGlobals(const nlohmann::json& result) override;
+	bool saveScriptGlobals(nlohmann::json& result) override;
+	bool loadScriptGlobals(const nlohmann::json& result) override;
 
-	virtual nlohmann::json saveTimerFunction(uniqueTimerID timerID, std::string timerName,
+	nlohmann::json saveTimerFunction(uniqueTimerID timerID, std::string timerName,
 	                                         const timerAdditionalData* additionalParam) override;
 
 	// recreates timer functions (and additional userdata) based on the information saved by the saveTimerFunction() method
-	virtual std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>> restoreTimerFunction(
+	std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>> restoreTimerFunction(
 		const nlohmann::json& savedTimerFuncData) override;
 
 public:
@@ -259,7 +259,7 @@ private:
 	/// Separate event namespaces for libraries
 public: // temporary
 	std::vector<std::string> eventNamespaces;
-	JSValue Get_Global_Obj() const { return global_obj; }
+	[[nodiscard]] JSValue Get_Global_Obj() const { return global_obj; }
 
 public:
 	// MARK: General events
@@ -269,43 +269,43 @@ public:
 	//__ An event that is run once as the game is initialized. Not all game state may have been
 	//__ properly initialized by this time, so use this only to initialize script state.
 	//__
-	virtual bool handle_eventGameInit() override;
+	bool handle_eventGameInit() override;
 
 	//__ ## eventStartLevel()
 	//__
 	//__ An event that is run once the game has started and all game data has been loaded.
 	//__
-	virtual bool handle_eventStartLevel() override;
+	bool handle_eventStartLevel() override;
 
 	//__ ## eventMissionTimeout()
 	//__
 	//__ An event that is run when the mission timer has run out.
 	//__
-	virtual bool handle_eventMissionTimeout() override;
+	bool handle_eventMissionTimeout() override;
 
 	//__ ## eventVideoDone()
 	//__
 	//__ An event that is run when a video show stopped playing.
 	//__
-	virtual bool handle_eventVideoDone() override;
+	bool handle_eventVideoDone() override;
 
 	//__ ## eventGameLoaded()
 	//__
 	//__ An event that is run when game is loaded from a saved game. There is usually no need to use this event.
 	//__
-	virtual bool handle_eventGameLoaded() override;
+	bool handle_eventGameLoaded() override;
 
 	//__ ## eventGameSaving()
 	//__
 	//__ An event that is run before game is saved. There is usually no need to use this event.
 	//__
-	virtual bool handle_eventGameSaving() override;
+	bool handle_eventGameSaving() override;
 
 	//__ ## eventGameSaved()
 	//__
 	//__ An event that is run after game is saved. There is usually no need to use this event.
 	//__
-	virtual bool handle_eventGameSaved() override;
+	bool handle_eventGameSaved() override;
 
 public:
 	// MARK: Transporter events
@@ -315,33 +315,33 @@ public:
 	//__
 	//__ An event that is run when the mission transporter has been ordered to fly off.
 	//__
-	virtual bool handle_eventLaunchTransporter() override; // DEPRECATED!
-	virtual bool handle_eventTransporterLaunch(const SimpleObject* psTransport) override;
+	bool handle_eventLaunchTransporter() override; // DEPRECATED!
+	bool handle_eventTransporterLaunch(const SimpleObject* psTransport) override;
 
 	//__ ## eventTransporterArrived(transport)
 	//__
 	//__ An event that is run when the mission transporter has arrived at the map edge with reinforcements.
 	//__
-	virtual bool handle_eventReinforcementsArrived() override; // DEPRECATED!
-	virtual bool handle_eventTransporterArrived(const SimpleObject* psTransport) override;
+	bool handle_eventReinforcementsArrived() override; // DEPRECATED!
+	bool handle_eventTransporterArrived(const SimpleObject* psTransport) override;
 
 	//__ ## eventTransporterExit(transport)
 	//__
 	//__ An event that is run when the mission transporter has left the map.
 	//__
-	virtual bool handle_eventTransporterExit(const SimpleObject* psObj) override;
+	bool handle_eventTransporterExit(const SimpleObject* psObj) override;
 
 	//__ ## eventTransporterDone(transport)
 	//__
 	//__ An event that is run when the mission transporter has no more reinforcements to deliver.
 	//__
-	virtual bool handle_eventTransporterDone(const SimpleObject* psTransport) override;
+	bool handle_eventTransporterDone(const SimpleObject* psTransport) override;
 
 	//__ ## eventTransporterLanded(transport)
 	//__
 	//__ An event that is run when the mission transporter has landed with reinforcements.
 	//__
-	virtual bool handle_eventTransporterLanded(const SimpleObject* psTransport) override;
+	bool handle_eventTransporterLanded(const SimpleObject* psTransport) override;
 
 public:
 	// MARK: UI-related events (intended for the tutorial)
@@ -350,13 +350,13 @@ public:
 	//__
 	//__ An event that is run when the current player starts to move a delivery point.
 	//__
-	virtual bool handle_eventDeliveryPointMoving(const SimpleObject* psStruct) override;
+	bool handle_eventDeliveryPointMoving(const SimpleObject* psStruct) override;
 
 	//__ ## eventDeliveryPointMoved()
 	//__
 	//__ An event that is run after the current player has moved a delivery point.
 	//__
-	virtual bool handle_eventDeliveryPointMoved(const SimpleObject* psStruct) override;
+	bool handle_eventDeliveryPointMoved(const SimpleObject* psStruct) override;
 
 	//__ ## eventDesignBody()
 	//__
@@ -533,7 +533,7 @@ public:
 	//__ all players / scripts.
 	//__ Careful passing the parameter object around, since it is about to vanish! (3.2+ only)
 	//__
-	virtual bool handle_eventPickup(const Feature* psFeat, const Droid* psDroid) override;
+	bool handle_eventPickup(const Feature* psFeat, const Droid* psDroid) override;
 
 	//__ ## eventObjectSeen(viewer, seen)
 	//__
@@ -542,7 +542,7 @@ public:
 	//__ An event that is run sometimes when an objectm  goes from not seen to seen.
 	//__ First parameter is **game object** doing the seeing, the next the game
 	//__ object being seen.
-	virtual bool handle_eventObjectSeen(const SimpleObject* psViewer, const SimpleObject* psSeen) override;
+	bool handle_eventObjectSeen(const SimpleObject* psViewer, const SimpleObject* psSeen) override;
 
 	//__
 	//__ ## eventGroupSeen(viewer, group)
@@ -552,7 +552,7 @@ public:
 	//__ First parameter is **game object** doing the seeing, the next the id of the group
 	//__ being seen.
 	//__
-	virtual bool handle_eventGroupSeen(const SimpleObject* psViewer, int groupId) override;
+	bool handle_eventGroupSeen(const SimpleObject* psViewer, int groupId) override;
 
 	//__ ## eventObjectTransfer(object, from)
 	//__
@@ -561,7 +561,7 @@ public:
 	//__ object has been transferred, so the target player is in object.player.
 	//__ The event is called for both players.
 	//__
-	virtual bool handle_eventObjectTransfer(const SimpleObject* psObj, int from) override;
+	bool handle_eventObjectTransfer(const SimpleObject* psObj, int from) override;
 
 	//__ ## eventChat(from, to, message)
 	//__
@@ -569,7 +569,7 @@ public:
 	//__ player sending the chat message. For the moment, the ```to``` parameter is always the script
 	//__ player.
 	//__
-	virtual bool handle_eventChat(int from, int to, const char* message) override;
+	bool handle_eventChat(int from, int to, const char* message) override;
 
 	//__ ## eventBeacon(x, y, from, to[, message])
 	//__
@@ -577,14 +577,14 @@ public:
 	//__ player sending the beacon. For the moment, the ```to``` parameter is always the script player.
 	//__ Message may be undefined.
 	//__
-	virtual bool handle_eventBeacon(int x, int y, int from, int to, optional<const char*> message) override;
+	bool handle_eventBeacon(int x, int y, int from, int to, optional<const char*> message) override;
 
 	//__ ## eventBeaconRemoved(from, to)
 	//__
 	//__ An event that is run whenever a beacon message is removed. The ```from``` parameter is the
 	//__ player sending the beacon. For the moment, the ```to``` parameter is always the script player.
 	//__
-	virtual bool handle_eventBeaconRemoved(int from, int to) override;
+	bool handle_eventBeaconRemoved(int from, int to) override;
 
 	//__ ## eventGroupLoss(object, groupId, newSize)
 	//__
@@ -592,7 +592,7 @@ public:
 	//__ is the about to be killed object, the group's id, and the new group size.
 	//__
 	//		// Since groups are entities local to one context, we do not iterate over them here.
-	virtual bool handle_eventGroupLoss(const SimpleObject* psObj, int group, int size) override;
+	bool handle_eventGroupLoss(const SimpleObject* psObj, int group, int size) override;
 
 	//__ ## eventArea<label>(droid)
 	//__
@@ -600,32 +600,32 @@ public:
 	//__ deactived. Call resetArea() to reactivate it. The name of the event is
 	//__ `eventArea${label}`.
 	//__
-	virtual bool handle_eventArea(const std::string& label, const Droid* psDroid) override;
+	bool handle_eventArea(const std::string& label, const Droid* psDroid) override;
 
 	//__ ## eventDesignCreated(template)
 	//__
 	//__ An event that is run whenever a new droid template is created. It is only
 	//__ run on the client of the player designing the template.
 	//__
-	virtual bool handle_eventDesignCreated(const DroidTemplate* psTemplate) override;
+	bool handle_eventDesignCreated(const DroidTemplate* psTemplate) override;
 
 	//__ ## eventAllianceOffer(from, to)
 	//__
 	//__ An event that is called whenever an alliance offer is requested.
 	//__
-	virtual bool handle_eventAllianceOffer(uint8_t from, uint8_t to) override;
+	bool handle_eventAllianceOffer(uint8_t from, uint8_t to) override;
 
 	//__ ## eventAllianceAccepted(from, to)
 	//__
 	//__ An event that is called whenever an alliance is accepted.
 	//__
-	virtual bool handle_eventAllianceAccepted(uint8_t from, uint8_t to) override;
+	bool handle_eventAllianceAccepted(uint8_t from, uint8_t to) override;
 
 	//__ ## eventAllianceBroken(from, to)
 	//__
 	//__ An event that is called whenever an alliance is broken.
 	//__
-	virtual bool handle_eventAllianceBroken(uint8_t from, uint8_t to) override;
+	bool handle_eventAllianceBroken(uint8_t from, uint8_t to) override;
 
 public:
 	// MARK: Special input events
@@ -636,14 +636,14 @@ public:
 	//__ to prevent desync from happening. Sync requests must be carefully validated to prevent
 	//__ cheating!
 	//__
-	virtual bool handle_eventSyncRequest(int from, int req_id, int x, int y, const SimpleObject* psObj,
+	bool handle_eventSyncRequest(int from, int req_id, int x, int y, const SimpleObject* psObj,
 	                                     const SimpleObject* psObj2) override;
 
 	//__ ## eventKeyPressed(meta, key)
 	//__
 	//__ An event that is called whenever user presses a key in the game, not counting chat
 	//__ or other pop-up user interfaces. The key values are currently undocumented.
-	virtual bool handle_eventKeyPressed(int meta, int key) override;
+	bool handle_eventKeyPressed(int meta, int key) override;
 };
 
 // private QuickJS bureaucracy
@@ -1287,27 +1287,26 @@ class quickjs_execution_context : public wzapi::execution_context
 private:
 	JSContext* ctx = nullptr;
 public:
-	quickjs_execution_context(JSContext* ctx)
+	explicit quickjs_execution_context(JSContext* ctx)
 		: ctx(ctx)
 	{
 	}
 
-	~quickjs_execution_context()
-	{
-	}
+	~quickjs_execution_context() override
+	= default;
 
 public:
-	virtual wzapi::scripting_instance* currentInstance() const override
+	[[nodiscard]] wzapi::scripting_instance* currentInstance() const override
 	{
 		return engineToInstanceMap.at(ctx);
 	}
 
-	virtual void throwError(const char* expr, int line, const char* function) const override
+	void throwError(const char* expr, int line, const char* function) const override
 	{
 		JS_ThrowReferenceError(ctx, "%s failed in %s at line %d", expr, function, line);
 	}
 
-	virtual playerCallbackFunc getNamedScriptCallback(const WzString& func) const override
+	[[nodiscard]] playerCallbackFunc getNamedScriptCallback(const WzString& func) const override
 	{
 		JSContext* pCtx = ctx;
 		return [pCtx, func](const int player)
@@ -1319,7 +1318,7 @@ public:
 		};
 	}
 
-	virtual void doNotSaveGlobal(const std::string& name) const override
+	void doNotSaveGlobal(const std::string& name) const override
 	{
 		engineToInstanceMap.at(ctx)->doNotSaveGlobal(name);
 	}
@@ -1420,7 +1419,7 @@ namespace
 		}
 	};
 
-	static inline int32_t JSValueToInt32(JSContext* ctx, JSValue& value)
+	inline int32_t JSValueToInt32(JSContext* ctx, JSValue& value)
 	{
 		int intVal = -1;
 		if (JS_ToInt32(ctx, &intVal, value))
@@ -1431,7 +1430,7 @@ namespace
 		return intVal;
 	}
 
-	static int32_t QuickJS_GetInt32(JSContext* ctx, JSValueConst this_obj, const char* prop)
+	int32_t QuickJS_GetInt32(JSContext* ctx, JSValueConst this_obj, const char* prop)
 	{
 		JSValue val = JS_GetPropertyStr(ctx, this_obj, prop);
 		int32_t result = JSValueToInt32(ctx, val);
@@ -1439,7 +1438,7 @@ namespace
 		return result;
 	}
 
-	static inline uint32_t JSValueToUint32(JSContext* ctx, JSValue& value)
+	inline uint32_t JSValueToUint32(JSContext* ctx, JSValue& value)
 	{
 		uint32_t uintVal = 0;
 		if (JS_ToUint32(ctx, &uintVal, value))
@@ -1450,7 +1449,7 @@ namespace
 		return uintVal;
 	}
 
-	static uint32_t QuickJS_GetUint32(JSContext* ctx, JSValueConst this_obj, const char* prop)
+	uint32_t QuickJS_GetUint32(JSContext* ctx, JSValueConst this_obj, const char* prop)
 	{
 		JSValue val = JS_GetPropertyStr(ctx, this_obj, prop);
 		uint32_t result = JSValueToUint32(ctx, val);
@@ -1458,7 +1457,7 @@ namespace
 		return result;
 	}
 
-	static inline std::string JSValueToStdString(JSContext* ctx, JSValue& value)
+	inline std::string JSValueToStdString(JSContext* ctx, JSValue& value)
 	{
 		const char* pStr = JS_ToCString(ctx, value);
 		std::string result;
@@ -1467,7 +1466,7 @@ namespace
 		return result;
 	}
 
-	static std::string QuickJS_GetStdString(JSContext* ctx, JSValueConst this_obj, const char* prop)
+	std::string QuickJS_GetStdString(JSContext* ctx, JSValueConst this_obj, const char* prop)
 	{
 		JSValue val = JS_GetPropertyStr(ctx, this_obj, prop);
 		std::string result = JSValueToStdString(ctx, val);
@@ -1697,7 +1696,7 @@ namespace
 				{
 					break;
 				}
-				strings.strings.push_back(std::string(pStr));
+				strings.strings.emplace_back(pStr);
 				JS_FreeCString(ctx, pStr);
 			}
 			return strings;
@@ -1738,7 +1737,7 @@ namespace
 
 			if (JS_IsString(argv[idx]))
 			{
-				return scripting_engine::area_by_values_or_area_label_lookup(JSValueToStdString(ctx, argv[idx++]));
+				return {JSValueToStdString(ctx, argv[idx++])};
 			}
 			else if ((argc - idx) >= 4)
 			{
@@ -1748,7 +1747,7 @@ namespace
 				x2 = JSValueToInt32(ctx, argv[idx + 2]);
 				y2 = JSValueToInt32(ctx, argv[idx + 3]);
 				idx += 4;
-				return scripting_engine::area_by_values_or_area_label_lookup(x1, y1, x2, y2);
+				return {x1, y1, x2, y2};
 			}
 			else
 			{
@@ -1840,13 +1839,13 @@ namespace
 			{
 				int x = JSValueToInt32(ctx, argv[idx++]);
 				int y = JSValueToInt32(ctx, argv[idx++]);
-				return wzapi::object_request(x, y);
+				return {x, y};
 			}
 			else
 			{
 				// get by label case (1 parameter)
 				std::string label = JSValueToStdString(ctx, argv[idx++]);
-				return wzapi::object_request(label);
+				return {label};
 			}
 		}
 	};
@@ -1863,20 +1862,20 @@ namespace
 				int y1 = JSValueToInt32(ctx, argv[idx++]);
 				int x2 = JSValueToInt32(ctx, argv[idx++]);
 				int y2 = JSValueToInt32(ctx, argv[idx++]);
-				return wzapi::label_or_position_values(x1, y1, x2, y2);
+				return {x1, y1, x2, y2};
 			}
 			else if ((argc - idx) >= 2) // single tile
 			{
 				int x = JSValueToInt32(ctx, argv[idx++]);
 				int y = JSValueToInt32(ctx, argv[idx++]);
-				return wzapi::label_or_position_values(x, y);
+				return {x, y};
 			}
 			else if ((argc - idx) >= 1) // label
 			{
 				std::string label = JSValueToStdString(ctx, argv[idx++]);
 				return wzapi::label_or_position_values(label);
 			}
-			return wzapi::label_or_position_values();
+			return {};
 		}
 	};
 
@@ -1913,7 +1912,7 @@ namespace
 		return JS_NewString(ctx, str);
 	}
 
-	JSValue box(std::string str, JSContext* ctx)
+	JSValue box(const std::string& str, JSContext* ctx)
 	{
 		return JS_NewStringLen(ctx, str.c_str(), str.length());
 	}
@@ -2154,7 +2153,7 @@ namespace
 		}
 	}
 
-	JSValue box(nlohmann::json results, JSContext* ctx)
+	JSValue box(const nlohmann::json& results, JSContext* ctx)
 	{
 		return mapJsonToQuickJSValue(ctx, results, JS_PROP_C_W_E);
 	}
@@ -2497,8 +2496,8 @@ class quickjs_timer_additionaldata : public timerAdditionalData
 public:
 	std::string stringArg;
 
-	quickjs_timer_additionaldata(const std::string& _stringArg)
-		: stringArg(_stringArg)
+	explicit quickjs_timer_additionaldata(std::string  _stringArg)
+		: stringArg(std::move(_stringArg))
 	{
 	}
 };
@@ -2511,7 +2510,7 @@ static uniqueTimerID SetQuickJSTimer(JSContext* ctx, int player, const std::stri
 	                                             , [ctx, funcName](uniqueTimerID timerID, SimpleObject* baseObject,
 	                                                               timerAdditionalData* additionalParams)
 	                                             {
-		                                             quickjs_timer_additionaldata* pData = static_cast<
+		                                             auto* pData = dynamic_cast<
 			                                             quickjs_timer_additionaldata*>(additionalParams);
 		                                             std::vector<JSValue> args;
 		                                             if (baseObject != nullptr)
@@ -2614,7 +2613,7 @@ static JSValue js_removeTimer(JSContext* ctx, JSValueConst this_val, int argc, J
 	if (removedTimerIDs.empty())
 	{
 		// Friendly warning
-		std::string warnName = functionName;
+		const std::string& warnName = functionName;
 		debug(LOG_ERROR, "Did not find timer %s to remove", warnName.c_str());
 		return JS_FALSE;
 	}
@@ -2726,7 +2725,7 @@ static JSValue debugGetBacktrace(JSContext* ctx, JSValueConst this_val, int argc
 wzapi::scripting_instance* createQuickJSScriptInstance(const WzString& path, int player, int difficulty)
 {
 	WzPathInfo basename = WzPathInfo::fromPlatformIndependentPath(path.toUtf8());
-	quickjs_scripting_instance* pNewInstance = new quickjs_scripting_instance(
+	auto* pNewInstance = new quickjs_scripting_instance(
 		player, basename.baseName(), basename.path());
 	if (!pNewInstance->loadScript(path, player, difficulty))
 	{
@@ -2872,7 +2871,7 @@ bool quickjs_scripting_instance::saveScriptGlobals(nlohmann::json& result)
 bool quickjs_scripting_instance::loadScriptGlobals(const nlohmann::json& result)
 {
 	ASSERT_OR_RETURN(false, result.is_object(), "Can't load script globals from non-json-object");
-	for (auto it : result.items())
+	for (const auto& it : result.items())
 	{
 		// IMPORTANT: "null" JSON values *MUST* map to JS_UNDEFINED.
 		//			  If they are set to JS_NULL, it causes issues for libcampaign.js. (As the values become "defined".)
@@ -2907,7 +2906,7 @@ nlohmann::json quickjs_scripting_instance::saveTimerFunction(uniqueTimerID timer
 {
 	nlohmann::json result = nlohmann::json::object();
 	result["function"] = timerName;
-	const quickjs_timer_additionaldata* pData = static_cast<const quickjs_timer_additionaldata*>(additionalParam);
+	const auto* pData = dynamic_cast<const quickjs_timer_additionaldata*>(additionalParam);
 	if (pData)
 	{
 		result["stringArg"] = pData->stringArg;
@@ -2933,7 +2932,7 @@ std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>> quickjs_scripting_in
 		// timerFunc
 		[pContext, funcName](uniqueTimerID timerID, SimpleObject* baseObject, timerAdditionalData* additionalParams)
 		{
-			quickjs_timer_additionaldata* pData = static_cast<quickjs_timer_additionaldata*>(additionalParams);
+			auto* pData = dynamic_cast<quickjs_timer_additionaldata*>(additionalParams);
 			std::vector<JSValue> args;
 			if (baseObject != nullptr)
 			{
@@ -3037,7 +3036,7 @@ void quickjs_scripting_instance::setSpecifiedGlobalVariables(const nlohmann::jso
 	int propertyFlags = toQuickJSPropertyFlags(flags) | JS_PROP_ENUMERABLE;
 	bool markGlobalAsInternal = (flags & wzapi::GlobalVariableFlags::DoNotSave) ==
 		wzapi::GlobalVariableFlags::DoNotSave;
-	for (auto it : variables.items())
+	for (const auto& it : variables.items())
 	{
 		ASSERT(!it.key().empty(), "Empty key");
 		JS_DefinePropertyValueStr(ctx, global_obj, it.key().c_str(),
@@ -3404,12 +3403,12 @@ static void setStatsFunc(JSValue& base, JSContext* ctx, const std::string& name,
 	                          0);
 
 	JSValue funcObjects[2] = {getter, setter};
-	for (size_t i = 0; i < 2; i++)
+	for (auto & funcObject : funcObjects)
 	{
-		QuickJS_DefinePropertyValue(ctx, funcObjects[i], "player", JS_NewInt32(ctx, player), 0);
-		QuickJS_DefinePropertyValue(ctx, funcObjects[i], "type", JS_NewInt32(ctx, type), 0);
-		QuickJS_DefinePropertyValue(ctx, funcObjects[i], "index", JS_NewUint32(ctx, index), 0);
-		QuickJS_DefinePropertyValue(ctx, funcObjects[i], "name", JS_NewStringLen(ctx, name.c_str(), name.length()), 0);
+		QuickJS_DefinePropertyValue(ctx, funcObject, "player", JS_NewInt32(ctx, player), 0);
+		QuickJS_DefinePropertyValue(ctx, funcObject, "type", JS_NewInt32(ctx, type), 0);
+		QuickJS_DefinePropertyValue(ctx, funcObject, "index", JS_NewUint32(ctx, index), 0);
+		QuickJS_DefinePropertyValue(ctx, funcObject, "name", JS_NewStringLen(ctx, name.c_str(), name.length()), 0);
 	}
 
 	JS_DefinePropertyGetSet(ctx, base, atom, getter, setter,

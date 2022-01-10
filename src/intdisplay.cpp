@@ -17,10 +17,11 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * IntDisplay.c
+
+/**
+ * @file intdisplay.cpp
  *
- * Callback and display functions for interface.
+ * Callback and display functions for interface
  *
  */
 #include "lib/framework/frame.h"
@@ -1118,7 +1119,7 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 			Radius = getComponentRadius((BaseStats*)Object);
 			model.scale = rescaleButtonObject(Radius, COMP_BUT_SCALE, COMPONENT_RADIUS);
 			// NOTE: The Super transport is huge, and is considered a component type, so refit it to inside the button.
-			BaseStats* psStats = (BaseStats*)Object;
+			auto* psStats = (BaseStats*)Object;
 			if (psStats->id.compare("SuperTransportBody") == 0)
 			{
 				model.scale = static_cast<int>(model.scale * .4f);
@@ -1844,8 +1845,8 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 /*Displays the proximity messages blips over the world*/
 void intDisplayProximityBlips(WIDGET* psWidget, WZ_DECL_UNUSED UDWORD xOffset, WZ_DECL_UNUSED UDWORD yOffset)
 {
-	W_CLICKFORM* psButton = (W_CLICKFORM*)psWidget;
-	PROXIMITY_DISPLAY* psProxDisp = (PROXIMITY_DISPLAY*)psButton->pUserData;
+	auto* psButton = (W_CLICKFORM*)psWidget;
+	auto* psProxDisp = (PROXIMITY_DISPLAY*)psButton->pUserData;
 	MESSAGE* psMsg = psProxDisp->psMessage;
 	SDWORD x = 0, y = 0;
 
@@ -1883,7 +1884,7 @@ void intDisplayProximityBlips(WIDGET* psWidget, WZ_DECL_UNUSED UDWORD xOffset, W
 
 static UWORD sliderMouseUnit(W_SLIDER* Slider)
 {
-	UWORD posStops = (UWORD)(Slider->numStops / 20);
+	auto posStops = (UWORD)(Slider->numStops / 20);
 
 	if (posStops == 0 || Slider->pos == 0 || Slider->pos == Slider->numStops)
 	{
@@ -1904,7 +1905,7 @@ static UWORD sliderMouseUnit(W_SLIDER* Slider)
 
 void intUpdateQuantitySlider(WIDGET* psWidget, W_CONTEXT* psContext)
 {
-	W_SLIDER* Slider = (W_SLIDER*)psWidget;
+	auto* Slider = (W_SLIDER*)psWidget;
 
 	if (Slider->isHighlighted())
 	{

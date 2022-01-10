@@ -24,7 +24,7 @@
  *
  * Contains the day to day networking stuff, and received message handler.
  */
-#include <string.h>
+#include <cstring>
 #include <algorithm>
 #include <chrono>
 
@@ -38,7 +38,7 @@
 #include "game.h"									// for loading maps
 #include "hci.h"
 
-#include <time.h>									// for recording ping times.
+#include <ctime>									// for recording ping times.
 #include "research.h"
 #include "display3d.h"								// for changing the viewpoint
 #include "console.h"								// for screen messages
@@ -368,7 +368,7 @@ bool multiPlayerLoop()
 				int index;
 				for (index = 0; index < MAX_CONNECTED_PLAYERS; index++)
 				{
-					if (ingame.DataIntegrity[index] == false && isHumanPlayer(index) && index != NetPlay.hostPlayer)
+					if (!ingame.DataIntegrity[index] && isHumanPlayer(index) && index != NetPlay.hostPlayer)
 					{
 						char msg[256] = {'\0'};
 
@@ -442,9 +442,9 @@ Droid* IdToMissionDroid(UDWORD id, UDWORD player)
 {
 	if (player == ANYPLAYER)
 	{
-		for (int i = 0; i < MAX_PLAYERS; i++)
+		for (auto d : mission.apsDroidLists)
 		{
-			for (Droid* d = mission.apsDroidLists[i]; d; d = d->psNext)
+			for (; d; d = d->psNext)
 			{
 				if (d->id == id)
 				{
@@ -477,11 +477,11 @@ Structure* IdToStruct(UDWORD id, UDWORD player)
 		endPlayer = std::min<int>(player + 1, MAX_PLAYERS);
 	}
 	Structure** lists[2] = {apsStructLists, mission.apsStructLists};
-	for (int j = 0; j < 2; ++j)
+	for (auto & list : lists)
 	{
 		for (int i = beginPlayer; i < endPlayer; ++i)
 		{
-			for (Structure* d = lists[j][i]; d; d = d->psNext)
+			for (Structure* d = list[i]; d; d = d->psNext)
 			{
 				if (d->id == id)
 				{
@@ -838,7 +838,7 @@ static bool sendDataCheck2()
 		layers[zOrder]++;
 		return true;
 	});
-	uint32_t layersSize = static_cast<uint32_t>(layers.size());
+	auto layersSize = static_cast<uint32_t>(layers.size());
 	NETuint32_t(&layersSize);
 	for (auto& layer : layers)
 	{
@@ -894,9 +894,9 @@ static bool recvDataCheck2(NETQUEUE queue)
 		NETuint32_t(&layerCount);
 		layers[zOrder] = layerCount;
 	}
-	for (size_t i = 0; i < DATA_MAXDATA; ++i)
+	for (unsigned int & i : tempBuffer)
 	{
-		NETuint32_t(&tempBuffer[i]);
+		NETuint32_t(&i);
 	}
 	NETint8_t(&aiIndex);
 	NETbool(&recvGM);
@@ -1998,7 +1998,7 @@ bool recvMapFileRequested(NETQUEUE queue)
 	PHYSFS_sint64 fileSize_64 = PHYSFS_fileLength(pFileHandle);
 	ASSERT_OR_RETURN(false, fileSize_64 <= 0xFFFFFFFF, "File is too big!");
 	ASSERT_OR_RETURN(false, fileSize_64 >= 0, "Filesize < 0; can't be determined");
-	uint32_t fileSize_u32 = (uint32_t)fileSize_64;
+	auto fileSize_u32 = (uint32_t)fileSize_64;
 	ASSERT_OR_RETURN(false, fileSize_u32 <= MAX_NET_TRANSFERRABLE_FILE_SIZE,
 	                 "Filesize is too large; (size: %" PRIu32")", fileSize_u32);
 

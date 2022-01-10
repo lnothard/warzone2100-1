@@ -121,7 +121,7 @@ static StdInReadyStatus stdInHasDataToBeRead(int quitSignalFd, int msTimeout = 2
 	tv.tv_sec = msTimeout / 1000;
 	tv.tv_usec = (msTimeout % 1000) * 1000;
 
-	int retval = select(std::max<int>(STDIN_FILENO, quitSignalFd)+1, &rfds, NULL, NULL, (quitSignalFd >= 0) ? NULL : &tv);
+	int retval = select(std::max<int>(STDIN_FILENO, quitSignalFd)+1, &rfds, nullptr, nullptr, (quitSignalFd >= 0) ? nullptr : &tv);
 	if (retval == -1)
 	{
 		return StdInReadyStatus::Error;
@@ -179,7 +179,7 @@ int stdinThreadFunc(void *)
 			}
 		}
 
-		char *line = NULL;
+		char *line = nullptr;
 		size_t len = 0;
 		ssize_t lineSize = 0;
 		lineSize = getline(&line, &len, stdin);

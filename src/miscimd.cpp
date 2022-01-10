@@ -18,8 +18,8 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 #include "lib/framework/frame.h"
 #include "lib/framework/frameresource.h"
 #include "lib/ivis_opengl/imd.h"

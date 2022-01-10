@@ -117,13 +117,11 @@ unsigned getComponentRadius(BaseStats* psComponent)
 	}
 
 	/* VTOL bombs are only stats allowed to have NULL ComponentIMD */
-	if (StatIsComponent(psComponent) != COMP_WEAPON
+	if (StatIsComponent(psComponent) != COMPONENT_TYPE::WEAPON
 		|| (((WeaponStats*)psComponent)->weaponSubClass != WEAPON_SUBCLASS::BOMB
-			&& ((WeaponStats*)psComponent)->weaponSubClass != WEAPON_SUBCLASS::EMP))
-	{
+			&& ((WeaponStats*)psComponent)->weaponSubClass != WEAPON_SUBCLASS::EMP)) {
 		ASSERT(ComponentIMD, "No ComponentIMD!");
 	}
-
 	return COMPONENT_RADIUS;
 }
 
@@ -184,8 +182,8 @@ static void sharedStructureButton(StructureStats* Stats, iIMDShape* strImd, cons
 
 	/* HACK HACK HACK!
 	if its a 'tall thin (ie tower)' structure stat with something on the top - offset the position to show the object on top */
-	if (strImd->nconnectors && scale == SMALL_STRUCT_SCALE && getStructureStatHeight(Stats) > TOWER_HEIGHT)
-	{
+	if (strImd->nconnectors && scale == SMALL_STRUCT_SCALE &&
+      getStructureStatHeight(Stats) > TOWER_HEIGHT) {
 		pos.y -= 20;
 	}
 
@@ -194,15 +192,13 @@ static void sharedStructureButton(StructureStats* Stats, iIMDShape* strImd, cons
 	/* Draw the building's base first */
 	baseImd = Stats->base_imd.get();
 
-	if (baseImd != nullptr)
-	{
+	if (baseImd != nullptr) {
 		draw_player_3d_shape(selectedPlayer, baseImd, 0, WZCOL_WHITE, pie_BUTTON, 0, matrix);
 	}
 	draw_player_3d_shape(selectedPlayer, strImd, 0, WZCOL_WHITE, pie_BUTTON, 0, matrix);
 
 	//and draw the turret
-	if (strImd->nconnectors)
-	{
+	if (strImd->nconnectors) {
 		weaponImd[0] = nullptr;
 		mountImd[0] = nullptr;
 		for (int i = 0; i < Stats->numWeaps; i++)
@@ -424,8 +420,7 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 	ASSERT_OR_RETURN(didDrawSomething, psPropStats != nullptr, "invalid propulsion stats pointer");
 
 	//set pieflag for button object or ingame object
-	if (bButton)
-	{
+	if (bButton) {
 		pieFlag = pie_BUTTON;
 		brightness = WZCOL_WHITE;
 	}
@@ -434,11 +429,9 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 		pieFlag = pie_SHADOW;
 		brightness = pal_SetBrightness(psDroid->illumination_level);
 		// NOTE: Beware of transporters that are offscreen, on a mission!  We should *not* be checking tiles at this point in time!
-		if (!isTransporter(psDroid) && !missionIsOffworld())
-		{
-			Tile* psTile = worldTile(psDroid->pos.x, psDroid->pos.y);
-			if (psTile->jammerBits & alliancebits[psDroid->player])
-			{
+		if (!isTransporter(*psDroid) && !missionIsOffworld()) {
+			auto psTile = worldTile(psDroid->pos.x, psDroid->pos.y);
+			if (psTile->jammerBits & alliancebits[psDroid->getPlayer()]) {
 				pieFlag |= pie_ECM;
 			}
 		}

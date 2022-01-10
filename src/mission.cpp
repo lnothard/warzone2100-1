@@ -2379,7 +2379,7 @@ static bool _intAddMissionResult(bool result, bool bPlaySuccess, bool showBackDr
 	MissionResUp = true;
 
 	/* play result audio */
-	if (result == true && bPlaySuccess)
+	if (result && bPlaySuccess)
 	{
 		audio_QueueTrack(ID_SOUND_OBJECTIVE_ACCOMPLISHED);
 	}

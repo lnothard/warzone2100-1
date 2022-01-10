@@ -41,6 +41,7 @@
 
 #include <unordered_set>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <functional>
 
@@ -61,10 +62,10 @@ public:
 	static std::shared_ptr<SpectatorStatsView> make();
 
 public:
-	virtual void display(int xOffset, int yOffset) override;
-	virtual void geometryChanged() override;
-	virtual int32_t idealWidth() override;
-	virtual int32_t idealHeight() override;
+	void display(int xOffset, int yOffset) override;
+	void geometryChanged() override;
+	int32_t idealWidth() override;
+	int32_t idealHeight() override;
 private:
 	std::shared_ptr<TableRow> newPlayerStatsRow(uint32_t playerIdx, int rowHeight = 0);
 	void resizeTableColumnWidths();
@@ -227,9 +228,9 @@ class WzThrottledUpdateLabel : public W_LABEL
 public:
 	typedef std::function<void (W_LABEL& label)> UpdateFunc;
 public:
-	WzThrottledUpdateLabel(const UpdateFunc& updateFunc, uint32_t updateInterval)
+	WzThrottledUpdateLabel(UpdateFunc  updateFunc, uint32_t updateInterval)
 		: W_LABEL()
-		  , updateFunc(updateFunc)
+		  , updateFunc(std::move(updateFunc))
 		  , updateInterval(updateInterval)
 	{
 	}
@@ -250,7 +251,7 @@ public:
 	}
 
 public:
-	virtual void run(W_CONTEXT* pContext) override
+	void run(W_CONTEXT* pContext) override
 	{
 		W_LABEL::run(pContext);
 		if (gameTime - lastGameTimeUpdated >= updateInterval)
@@ -358,7 +359,7 @@ public:
 	{
 	}
 
-	virtual ~WzCenteredColumnIcon()
+	~WzCenteredColumnIcon() override
 	{
 		if (pImageTexture)
 		{
@@ -367,7 +368,7 @@ public:
 		}
 	}
 
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		int x0 = x() + xOffset;
 		int y0 = y() + yOffset;
@@ -415,7 +416,7 @@ public:
 		return result;
 	}
 
-	virtual void run(W_CONTEXT* pContext) override
+	void run(W_CONTEXT* pContext) override
 	{
 		if (gameTime - lastGameTimeUpdated >= updateInterval)
 		{
@@ -428,12 +429,12 @@ public:
 		}
 	}
 
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		// no-op
 	}
 
-	virtual void geometryChanged() override
+	void geometryChanged() override
 	{
 		for (auto& icon : columnIcons)
 		{
@@ -441,13 +442,13 @@ public:
 		}
 	}
 
-	virtual int32_t idealWidth() override
+	int32_t idealWidth() override
 	{
-		int32_t numColumns = static_cast<int32_t>(visibleColumnOrder.size());
+		auto numColumns = static_cast<int32_t>(visibleColumnOrder.size());
 		return (numColumns * WEAP_GRADES_COL_WIDTH) + (std::max(numColumns - 1, 0) * WEAP_GRADES_COL_PADDING);
 	}
 
-	virtual int32_t idealHeight() override
+	int32_t idealHeight() override
 	{
 		return std::max(idealHeightForEachRow, WEAP_GRADES_COL_WIDTH);
 	}
@@ -485,7 +486,7 @@ public:
 
 	WzRect getColumnRectFromIndex(size_t colIndex)
 	{
-		return WzRect(getColumnLeftPositionFromIndex(colIndex), 0, WEAP_GRADES_COL_WIDTH, WEAP_GRADES_COL_IMAGE_HEIGHT);
+		return {getColumnLeftPositionFromIndex(colIndex), 0, WEAP_GRADES_COL_WIDTH, WEAP_GRADES_COL_IMAGE_HEIGHT};
 	}
 
 	std::shared_ptr<WzCachedText> getWzCachedTextForNumber(uint32_t number)
@@ -624,7 +625,7 @@ private:
 			return result;
 		}
 
-		virtual std::string getTip() override
+		std::string getTip() override
 		{
 			std::string tip = _("Weapon Grade");
 			tip += "\n";
@@ -663,15 +664,15 @@ private:
 class WeaponGradesCol : public WIDGET
 {
 public:
-	WeaponGradesCol(const std::shared_ptr<WzWeaponGradesColumnManager>& manager, uint32_t playerIdx)
+	WeaponGradesCol(std::shared_ptr<WzWeaponGradesColumnManager>  manager, uint32_t playerIdx)
 		: WIDGET()
-		  , manager(manager)
+		  , manager(std::move(manager))
 		  , playerIdx(playerIdx)
 	{
 	}
 
 public:
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		ASSERT_OR_RETURN(, manager != nullptr, "null manager");
 		int x0 = x() + xOffset;
@@ -692,7 +693,7 @@ public:
 		}
 	}
 
-	virtual int32_t idealWidth() override
+	int32_t idealWidth() override
 	{
 		ASSERT_OR_RETURN(0, manager != nullptr, "null manager");
 		return manager->idealWidth();
@@ -706,14 +707,14 @@ private:
 class PlayerColorColumn : public WIDGET
 {
 public:
-	PlayerColorColumn(uint32_t playerIdx)
+	explicit PlayerColorColumn(uint32_t playerIdx)
 		: WIDGET()
 		  , playerIdx(playerIdx)
 	{
 	}
 
 public:
-	virtual void display(int xOffset, int yOffset) override
+	void display(int xOffset, int yOffset) override
 	{
 		int x0 = x() + xOffset;
 		int y0 = y() + yOffset;
@@ -726,12 +727,12 @@ public:
 		pie_UniTransBoxFill(posX0, posY0, posX0 + width(), posY0 + (height() - 1), playerColor);
 	}
 
-	virtual int32_t idealHeight() override
+	int32_t idealHeight() override
 	{
 		return PLAYER_COLOR_COL_SIZE + 1;
 	}
 
-	virtual int32_t idealWidth() override
+	int32_t idealWidth() override
 	{
 		return PLAYER_COLOR_COL_SIZE;
 	}
@@ -985,7 +986,7 @@ std::pair<std::vector<size_t>, size_t> SpectatorStatsView::getMaxTableColumnData
 			// restrict player name column to a fixed maximum width
 			maxIdealContentWidth = std::min<int32_t>(maxIdealContentWidth, MAX_PLAYER_NAME_COLUMN_WIDTH);
 		}
-		size_t maxIdealContentWidth_sizet = static_cast<size_t>(maxIdealContentWidth);
+		auto maxIdealContentWidth_sizet = static_cast<size_t>(maxIdealContentWidth);
 		maxColumnDataWidths.push_back(maxIdealContentWidth_sizet);
 		totalNeededColumnWidth += maxIdealContentWidth_sizet;
 	}

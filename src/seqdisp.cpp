@@ -26,7 +26,7 @@
 
 #include "lib/framework/frame.h"
 
-#include <string.h>
+#include <cstring>
 #include <physfs.h>
 
 #include "lib/framework/file.h"
@@ -266,7 +266,7 @@ static bool seq_StartFullScreenVideo(const WzString& videoName, const WzString& 
 		// NOT controlled by sliders for now?
 		static const float maxVolume = 1.f;
 
-		bAudioPlaying = audio_PlayStream(aAudioName.toUtf8().c_str(), maxVolume, nullptr, nullptr) ? true : false;
+		bAudioPlaying = audio_PlayStream(aAudioName.toUtf8().c_str(), maxVolume, nullptr, nullptr) != nullptr;
 		ASSERT(bAudioPlaying == true, "unable to initialise sound %s", aAudioName.toUtf8().c_str());
 	}
 
@@ -517,7 +517,7 @@ static bool seq_AddTextFromFile(const char* pTextName, SEQ_TEXT_POSITIONING text
 	D_W2 = 0; //( pie_GetVideoBufferWidth() - 640)/2;
 	ssprintf(aTextName, "sequenceaudio/%s", pTextName);
 
-	if (loadFileToBufferNoError(aTextName, fileLoadBuffer, FILE_LOAD_BUFFER_SIZE, &fileSize) == false)
+	if (!loadFileToBufferNoError(aTextName, fileLoadBuffer, FILE_LOAD_BUFFER_SIZE, &fileSize))
 	//Did I mention this is lame? -Q
 	{
 		return false;
@@ -562,9 +562,9 @@ void seq_ClearSeqList()
 {
 	currentSeq = -1;
 	currentPlaySeq = -1;
-	for (int i = 0; i < MAX_SEQ_LIST; ++i)
+	for (auto & i : aSeqList)
 	{
-		aSeqList[i].reset();
+		i.reset();
 	}
 }
 
@@ -631,7 +631,7 @@ void seq_StartNextFullScreenVideo()
 		                                     VIDEO_USER_CHOSEN_RESOLUTION);
 	}
 
-	if (bPlayedOK == false)
+	if (!bPlayedOK)
 	{
 		//don't do the callback if we're playing the win/lose video
 		if (getScriptWinLoseVideo())

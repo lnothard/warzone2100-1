@@ -18,8 +18,8 @@
 */
 
 /**
- * \file
- * FactionID definitions.
+ * @file factionid.h
+ * FactionID definitions
  */
 
 #ifndef __INCLUDED_FACTIONID_H__
@@ -36,7 +36,7 @@ enum class FactionID : uint8_t
 	COLLECTIVE = 2
 };
 
-#define MAX_FACTION_ID FACTION_COLLECTIVE
+#define MAX_FACTION_ID FactionID::COLLECTIVE
 
 inline optional<FactionID> uintToFactionID(uint8_t value)
 {

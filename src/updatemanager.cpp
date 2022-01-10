@@ -72,7 +72,7 @@ struct CachePaths
 
 static std::string configureLinkURL(const std::string& url, BuildPropertyProvider& propProvider);
 static bool isValidExpiry(const json& updateData);
-static void initProcessData(const std::vector<std::string>& updateDataUrls, ProcessJSONDataFileFunc processDataFunc,
+static void initProcessData(const std::vector<std::string>& updateDataUrls, const ProcessJSONDataFileFunc& processDataFunc,
                             CachePaths outputPaths);
 static void fetchLatestData(const std::vector<std::string>& updateDataUrls, const ProcessJSONDataFileFunc& processDataFunc,
                             CachePaths outputPaths);
@@ -627,7 +627,7 @@ static bool cacheInfoIsUsable(CachePaths& paths)
 }
 
 // May be called from a background thread
-static void initProcessData(const std::vector<std::string>& updateDataUrls, ProcessJSONDataFileFunc processDataFunc,
+static void initProcessData(const std::vector<std::string>& updateDataUrls, const ProcessJSONDataFileFunc& processDataFunc,
                             CachePaths outputPaths)
 {
 	if (PHYSFS_exists(outputPaths.cache_data_path) && cacheInfoIsUsable(outputPaths))

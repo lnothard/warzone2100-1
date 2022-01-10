@@ -474,12 +474,12 @@ WzString* loadViewData(const char* pViewMsgData, UDWORD bufferSize)
 	SDWORD LocX, LocY, LocZ, audioID;
 	PROX_TYPE proxType;
 	int cnt;
-	WzString* filename = new WzString(GetLastResourceFilename());
+	auto* filename = new WzString(GetLastResourceFilename());
 
 	numData = numCR(pViewMsgData, bufferSize);
 	for (unsigned i = 0; i < numData; i++)
 	{
-		VIEWDATA* psViewData = new VIEWDATA;
+		auto* psViewData = new VIEWDATA;
 		UDWORD numText;
 		int readint;
 
@@ -570,7 +570,7 @@ WzString* loadViewData(const char* pViewMsgData, UDWORD bufferSize)
 			psViewReplay->seqList.resize(count);
 
 		//read in the data for the sequences
-			for (unsigned dataInc = 0; dataInc < psViewReplay->seqList.size(); dataInc++)
+			for (auto & dataInc : psViewReplay->seqList)
 			{
 				int numSeqText = 0;
 
@@ -581,7 +581,7 @@ WzString* loadViewData(const char* pViewMsgData, UDWORD bufferSize)
 					sscanf(pViewMsgData, ",%255[^,'\r\n],%u%n", name, &count, &cnt);
 					pViewMsgData += cnt;
 					//set the flag to default
-					psViewReplay->seqList[dataInc].flag = 0;
+					dataInc.flag = 0;
 					numSeqText = count;
 				}
 				else //extended type
@@ -589,10 +589,10 @@ WzString* loadViewData(const char* pViewMsgData, UDWORD bufferSize)
 					int count2;
 					sscanf(pViewMsgData, ",%255[^,'\r\n],%u,%d%n", name, &count, &count2, &cnt);
 					pViewMsgData += cnt;
-					psViewReplay->seqList[dataInc].flag = (UBYTE)count;
+					dataInc.flag = (UBYTE)count;
 					numSeqText = count2;
 				}
-				psViewReplay->seqList[dataInc].sequenceName = name;
+				dataInc.sequenceName = name;
 
 				//get the text strings for this sequence - if any
 				for (unsigned seqInc = 0; seqInc < numSeqText; seqInc++)
@@ -605,7 +605,7 @@ WzString* loadViewData(const char* pViewMsgData, UDWORD bufferSize)
 					const char* str = strresGetString(psStringRes, name);
 					ASSERT(str, "Cannot find the view data string with id \"%s\"", name);
 					WzString qstr = WzString::fromUtf8(str);
-					psViewReplay->seqList[dataInc].textMsg.push_back(qstr);
+					dataInc.textMsg.push_back(qstr);
 				}
 				//get the audio text string
 				sscanf(pViewMsgData, ",%255[^,'\r\n],%d%n", audioName, &dummy, &cnt);
@@ -614,7 +614,7 @@ WzString* loadViewData(const char* pViewMsgData, UDWORD bufferSize)
 				if (strcmp(audioName, "0"))
 				{
 					//allocate space
-					psViewReplay->seqList[dataInc].audio = audioName;
+					dataInc.audio = audioName;
 				}
 			}
 			psViewData->type = VIEW_RPL; //no longer need to know if it is extended type
@@ -701,23 +701,23 @@ WzString* loadResearchViewData(const char* fileName)
 	ASSERT_OR_RETURN(nullptr, PHYSFS_exists(fileName), "%s not found", fileName);
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	std::vector<WzString> list = ini.childGroups();
-	for (size_t i = 0; i < list.size(); ++i)
+	for (auto & i : list)
 	{
-		VIEWDATA* v = new VIEWDATA;
-		VIEW_RESEARCH* r = new VIEW_RESEARCH;
+		auto* v = new VIEWDATA;
+		auto* r = new VIEW_RESEARCH;
 
 		v->pData = nullptr;
-		v->name = list[i];
+		v->name = i;
 		v->fileName = fileName;
 
-		ini.beginGroup(list[i]);
+		ini.beginGroup(i);
 
 		v->textMsg = ini.value("text").toWzStringList();
-		for (size_t j = 0; j < v->textMsg.size(); j++)
+		for (auto & j : v->textMsg)
 		{
-			v->textMsg[j].remove("\t");
-			v->textMsg[j] = WzString::fromUtf8(_(v->textMsg[j].toUtf8().c_str()));
-			v->textMsg[j].replace("%%", "%");
+			j.remove("\t");
+			j = WzString::fromUtf8(_(j.toUtf8().c_str()));
+			j.replace("%%", "%");
 		}
 		v->type = VIEW_RES;
 		v->pData = r;
@@ -747,11 +747,11 @@ WzString* loadResearchViewData(const char* fileName)
 /* Get the view data identified by the name */
 VIEWDATA* getViewData(const WzString& name)
 {
-	std::map<WzString, VIEWDATA*>::iterator it = apsViewData.find(name);
+	auto it = apsViewData.find(name);
 	VIEWDATA* ptr = (it != apsViewData.end()) ? it->second : nullptr;
 	if (!ptr) // dump for debugging
 	{
-		std::map<WzString, VIEWDATA*>::iterator iter = apsViewData.begin();
+		auto iter = apsViewData.begin();
 		while (iter != apsViewData.end())
 		{
 			VIEWDATA* psViewData = iter->second;
@@ -829,7 +829,7 @@ void releaseAllFlicMessages(MESSAGE* list[])
 void viewDataShutDown(const char* fileName)
 {
 	debug(LOG_MSG, "calling shutdown for %s", fileName);
-	std::map<WzString, VIEWDATA*>::iterator iter = apsViewData.begin();
+	auto iter = apsViewData.begin();
 	while (iter != apsViewData.end())
 	{
 		VIEWDATA* psViewData = iter->second;

@@ -24,7 +24,7 @@
  * Alex W. McLean
 */
 
-#include <string.h>
+#include <cstring>
 
 // --------------------------------------------------------------------
 #include "lib/framework/wzapp.h"

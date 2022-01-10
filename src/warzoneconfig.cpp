@@ -28,7 +28,6 @@
 #include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/piepalette.h"
 #include "lib/sound/sounddefs.h"
-#include "advvis.h"
 #include "component.h"
 #include "display.h"
 #include "keybind.h"

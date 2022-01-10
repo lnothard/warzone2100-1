@@ -233,8 +233,7 @@ static const std::unordered_map<std::string, BuildProperty> strToBuildPropertyMa
 };
 
 BuildPropertyProvider::~BuildPropertyProvider()
-{
-}
+= default;
 
 bool BuildPropertyProvider::getPropertyValue(const std::string& property, std::string& output_value)
 {
@@ -479,8 +478,7 @@ std::string EnvironmentPropertyProvider::GetCurrentEnvironmentPropertyValue(cons
 }
 
 EnvironmentPropertyProvider::~EnvironmentPropertyProvider()
-{
-}
+= default;
 
 bool EnvironmentPropertyProvider::getPropertyValue(const std::string& property, std::string& output_value)
 {
@@ -496,8 +494,7 @@ bool EnvironmentPropertyProvider::getPropertyValue(const std::string& property, 
 // MARK: - CombinedPropertyProvider
 
 CombinedPropertyProvider::~CombinedPropertyProvider()
-{
-}
+= default;
 
 bool CombinedPropertyProvider::getPropertyValue(const std::string& property, std::string& output_value)
 {

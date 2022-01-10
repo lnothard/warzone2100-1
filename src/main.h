@@ -58,7 +58,7 @@ struct SaveGamePath_t
 	SAVEGAME_LOC loc;
 	// not a path, just the name
 	std::string gameName;
-	std::string toPath(Extension ext);
+	std::string toPath(Extension ext) const;
 };
 
 

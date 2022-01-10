@@ -23,7 +23,6 @@
 
 #include "console.h"
 #include "selection.h"
-#include "orderdef.h"
 #include "lib/framework/fixedpoint.h"
 
 #define	MAP_ZOOM_RATE_MAX	(1000)
@@ -58,7 +57,7 @@ void kf_ToggleCamera();
 void kf_RaiseTile();
 void kf_LowerTile();
 void kf_MapCheck();
-MappableFunction kf_Zoom(const int multiplier);
+MappableFunction kf_Zoom(int multiplier);
 void kf_RotateLeft();
 void kf_RotateRight();
 void kf_RotateBuildingCW();
@@ -68,20 +67,20 @@ void kf_PitchForward();
 void kf_ResetPitch();
 void kf_ShowMappings();
 void kf_SelectGrouping(UDWORD groupNumber);
-MappableFunction kf_SelectGrouping_N(const unsigned int n);
-MappableFunction kf_AssignGrouping_N(const unsigned int n);
-MappableFunction kf_AddGrouping_N(const unsigned int n);
+MappableFunction kf_SelectGrouping_N(unsigned int n);
+MappableFunction kf_AssignGrouping_N(unsigned int n);
+MappableFunction kf_AddGrouping_N(unsigned int n);
 MappableFunction kf_RemoveFromGrouping();
 void kf_ToggleDroidInfo();
 void kf_addInGameOptions();
 void kf_addMultiMenu();
-MappableFunction kf_JumpToMapMarker(const unsigned int x, const unsigned int z, const int yaw);
+MappableFunction kf_JumpToMapMarker(unsigned int x, unsigned int z, int yaw);
 void kf_TogglePowerBar();
 void kf_ToggleDebugMappings();
 void kf_PrioritizeDebugMappings();
 void kf_ToggleLevelEditor();
 void kf_ToggleGodMode();
-MappableFunction kf_ScrollCamera(const int horizontal, const int vertical);
+MappableFunction kf_ScrollCamera(int horizontal, int vertical);
 void kf_SeekNorth();
 void kf_MaxScrollLimits();
 void kf_toggleTrapCursor();
@@ -105,14 +104,14 @@ void kf_SendGlobalMessage();
 void kf_SendTeamMessage();
 void kf_ToggleConsole();
 void kf_ToggleTeamChat();
-MappableFunction kf_SelectUnits(const SELECTIONTYPE selectionType,
-                                const SELECTION_CLASS selectionClass = SELECTION_CLASS::DS_BY_TYPE,
-                                const bool bOnScreen = false);
-MappableFunction kf_SelectNoGroupUnits(const SELECTIONTYPE selectionType,
-                                       const SELECTION_CLASS selectionClass = SELECTION_CLASS::DS_BY_TYPE,
-                                       const bool bOnScreen = false);
-MappableFunction kf_SetDroid(const SECONDARY_ORDER order, const SECONDARY_STATE state);
-MappableFunction kf_OrderDroid(const DroidOrderType order);
+MappableFunction kf_SelectUnits(SELECTIONTYPE selectionType,
+                                SELECTION_CLASS selectionClass = SELECTION_CLASS::DS_BY_TYPE,
+                                bool bOnScreen = false);
+MappableFunction kf_SelectNoGroupUnits(SELECTIONTYPE selectionType,
+                                       SELECTION_CLASS selectionClass = SELECTION_CLASS::DS_BY_TYPE,
+                                       bool bOnScreen = false);
+MappableFunction kf_SetDroid(SECONDARY_ORDER order, SECONDARY_STATE state);
+MappableFunction kf_OrderDroid(Order order);
 
 void kf_CentreOnBase();
 void kf_ToggleFog();
@@ -125,16 +124,16 @@ void kf_TriggerRayCast();
 void kf_ToggleFormationSpeedLimiting();
 void kf_ToggleSensorDisplay();
 void kf_JumpToResourceExtractor();
-MappableFunction kf_JumpToUnits(const DROID_TYPE droidType);
+MappableFunction kf_JumpToUnits(DROID_TYPE droidType);
 void kf_AddHelpBlip();
 void kf_ToggleProximitys();
 
 void kf_JumpToUnassignedUnits();
 void kf_ToggleVisibility();
-MappableFunction kf_RadarZoom(const int multiplier);
-MappableFunction kf_SelectNextFactory(const STRUCTURE_TYPE factoryType, const bool bJumpToSelected = false);
-MappableFunction kf_SelectNextPowerStation(const bool bJumpToSelected = false);
-MappableFunction kf_SelectNextResearch(const bool bJumpToSelected = false);
+MappableFunction kf_RadarZoom(int multiplier);
+MappableFunction kf_SelectNextFactory(STRUCTURE_TYPE factoryType, bool bJumpToSelected = false);
+MappableFunction kf_SelectNextPowerStation(bool bJumpToSelected = false);
+MappableFunction kf_SelectNextResearch(bool bJumpToSelected = false);
 void kf_ToggleConsoleDrop();
 void kf_ToggleShakeStatus();
 void kf_ToggleMouseInvert();
@@ -149,7 +148,7 @@ void kf_ToggleMissionTimer();
 void kf_TraceObject();
 
 void kf_SetHardLevel();
-MappableFunction kf_SelectCommander_N(const unsigned int n);
+MappableFunction kf_SelectCommander_N(unsigned int n);
 
 void kf_ToggleShowGateways();
 void kf_ToggleShowPath();

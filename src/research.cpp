@@ -439,9 +439,9 @@ bool loadResearch(WzConfig& ini)
 
 		//set components results
 		std::vector<WzString> compResults = ini.value("resultComponents").toWzStringList();
-		for (size_t j = 0; j < compResults.size(); j++)
+		for (auto & compResult : compResults)
 		{
-			WzString compID = compResults[j].trimmed();
+			WzString compID = compResult.trimmed();
 			ComponentStats* pComp = getCompStatsFromName(compID);
 			if (pComp != nullptr)
 			{
@@ -456,13 +456,13 @@ bool loadResearch(WzConfig& ini)
 
 		//set replaced components
 		std::vector<WzString> replacedComp = ini.value("replacedComponents").toWzStringList();
-		for (size_t j = 0; j < replacedComp.size(); j++)
+		for (auto & j : replacedComp)
 		{
 			//read pair of components oldComponent:newComponent
-			std::vector<WzString> pair = replacedComp[j].split(":");
+			std::vector<WzString> pair = j.split(":");
 			ASSERT(pair.size() == 2,
 			       "Invalid item '%s' in list of replaced components of research '%s'. Required format: 'oldItem:newItem, item1:item2'",
-			       replacedComp[j].toUtf8().c_str(), getStatsName(&research));
+			       j.toUtf8().c_str(), getStatsName(&research));
 			if (pair.size() != 2)
 			{
 				continue; //skip invalid entries
@@ -493,9 +493,9 @@ bool loadResearch(WzConfig& ini)
 
 		//set redundant components
 		std::vector<WzString> redComp = ini.value("redComponents").toWzStringList();
-		for (size_t j = 0; j < redComp.size(); j++)
+		for (auto & j : redComp)
 		{
-			WzString compID = redComp[j].trimmed();
+			WzString compID = j.trimmed();
 			ComponentStats* pComp = getCompStatsFromName(compID);
 			if (pComp == nullptr)
 			{
@@ -510,9 +510,9 @@ bool loadResearch(WzConfig& ini)
 
 		//set result structures
 		std::vector<WzString> resStruct = ini.value("resultStructures").toWzStringList();
-		for (size_t j = 0; j < resStruct.size(); j++)
+		for (auto & j : resStruct)
 		{
-			WzString strucID = resStruct[j].trimmed();
+			WzString strucID = j.trimmed();
 			int structIndex = getStructStatFromName(strucID);
 			ASSERT(structIndex >= 0, "Invalid item '%s' in list of result structures of research '%s' ",
 			       strucID.toUtf8().c_str(), getStatsName(&research));
@@ -524,9 +524,9 @@ bool loadResearch(WzConfig& ini)
 
 		//set required structures
 		std::vector<WzString> reqStruct = ini.value("requiredStructures").toWzStringList();
-		for (size_t j = 0; j < reqStruct.size(); j++)
+		for (auto & j : reqStruct)
 		{
-			WzString strucID = reqStruct[j].trimmed();
+			WzString strucID = j.trimmed();
 			int structIndex = getStructStatFromName(strucID.toUtf8().c_str());
 			ASSERT(structIndex >= 0, "Invalid item '%s' in list of required structures of research '%s' ",
 			       strucID.toUtf8().c_str(), getStatsName(&research));
@@ -538,9 +538,9 @@ bool loadResearch(WzConfig& ini)
 
 		//set redundant structures
 		std::vector<WzString> redStruct = ini.value("redStructures").toWzStringList();
-		for (size_t j = 0; j < redStruct.size(); j++)
+		for (auto & j : redStruct)
 		{
-			WzString strucID = redStruct[j].trimmed();
+			WzString strucID = j.trimmed();
 			int structIndex = getStructStatFromName(strucID.toUtf8().c_str());
 			ASSERT(structIndex >= 0, "Invalid item '%s' in list of redundant structures of research '%s' ",
 			       strucID.toUtf8().c_str(), getStatsName(&research));
@@ -558,9 +558,9 @@ bool loadResearch(WzConfig& ini)
 	for (size_t inc = 0; inc < asResearch.size(); inc++)
 	{
 		std::vector<WzString>& preRes = preResearch[inc];
-		for (size_t j = 0; j < preRes.size(); j++)
+		for (auto & preRe : preRes)
 		{
-			WzString resID = preRes[j].trimmed();
+			WzString resID = preRe.trimmed();
 			ResearchStats* preResItem = getResearch(resID.toUtf8().c_str());
 			ASSERT(preResItem != nullptr, "Invalid item '%s' in list of pre-requisites of research '%s' ",
 			       resID.toUtf8().c_str(), getStatsName(&asResearch[inc]));
@@ -729,12 +729,11 @@ std::vector<uint16_t> fillResearchList(UDWORD playerID, nonstd::optional<UWORD> 
 class internal_execution_context_base : public wzapi::execution_context_base
 {
 public:
-	virtual ~internal_execution_context_base()
-	{
-	}
+	~internal_execution_context_base() override
+	= default;
 
 public:
-	virtual void throwError(const char* expr, int line, const char* function) const override
+	void throwError(const char* expr, int line, const char* function) const override
 	{
 		// do nothing, since the error was already logged and we're not actually running a script
 	}
@@ -1607,7 +1606,7 @@ void researchReward(UBYTE losingPlayer, UBYTE rewardPlayer)
 	{
 		if (psStruct->pStructureType->type == REF_RESEARCH)
 		{
-			ResearchFacility* psFacility = (ResearchFacility*)psStruct->pFunctionality;
+			auto* psFacility = (ResearchFacility*)psStruct->pFunctionality;
 			if (psFacility->psBestTopic)
 			{
 				topicIndex = ((ResearchStats*)psFacility->psBestTopic)->ref - STAT_RESEARCH;
@@ -1818,7 +1817,7 @@ std::vector<AllyResearch> const& listAllyResearch(unsigned ref)
 			// Check each research facility to see if they are doing this topic. (As opposed to having started the topic, but stopped researching it.)
 			for (Structure* psStruct = apsStructLists[player]; psStruct != nullptr; psStruct = psStruct->psNext)
 			{
-				ResearchFacility* res = (ResearchFacility*)psStruct->pFunctionality;
+				auto* res = (ResearchFacility*)psStruct->pFunctionality;
 				if (psStruct->pStructureType->type != REF_RESEARCH || res->psSubject == nullptr)
 				{
 					continue; // Not a researching research facility.
@@ -1848,7 +1847,7 @@ std::vector<AllyResearch> const& listAllyResearch(unsigned ref)
 		}
 	}
 
-	std::map<unsigned, std::vector<AllyResearch>>::const_iterator i = researches.find(ref);
+	auto i = researches.find(ref);
 	if (i == researches.end())
 	{
 		return noAllyResearch;
@@ -1864,9 +1863,9 @@ static void RecursivelyDisableResearchByID(size_t index)
 		return;
 	}
 
-	for (int player = 0; player < MAX_PLAYERS; ++player)
+	for (auto & player : asPlayerResList)
 	{
-		DisableResearch(&asPlayerResList[player][index]);
+		DisableResearch(&player[index]);
 	}
 
 	for (size_t inc = 0; inc < asResearch.size(); inc++)

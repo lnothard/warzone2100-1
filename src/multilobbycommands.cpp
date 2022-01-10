@@ -211,8 +211,7 @@ if (!senderHasLobbyCommandAdminPrivs(message.sender)) \
 }
 
 HostLobbyOperationsInterface::~HostLobbyOperationsInterface()
-{
-}
+= default;
 
 bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyOperationsInterface& cmdInterface)
 {
@@ -420,7 +419,7 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 				return false;
 			}
 
-			uint8_t alliancesType = static_cast<uint8_t>(s1);
+			auto alliancesType = static_cast<uint8_t>(s1);
 			// flip 2nd and 3rd values to match the order displayed in UI
 			if (alliancesType == 3)
 			{
