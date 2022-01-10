@@ -17,13 +17,16 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
- * @file warcam.c
- * Handles tracking/following of in game objects.
+ * @file warcam.cpp
+ * Handles tracking/following of in game objects
+ *
+ * Alex McLean, Pumpkin Studios, EIDOS Interactive, 1998
  */
-/* Alex McLean, Pumpkin Studios, EIDOS Interactive, 1998 */
+
 /*	23rd September, 1998 - This code is now so hideously complex
-	and unreadable that's it's inadvisable to attempt changing
+	and unreadable that it's inadvisable to attempt changing
 	how the camera works, since I'm not sure that I'll be able to even
 	get it working the way it used to, should anything get broken.
 	I really hope that no further changes are needed here...:-(
@@ -350,7 +353,7 @@ void setWarCamActive(bool status)
 	debug(LOG_NEVER, "setWarCamActive(%d)\n", status);
 
 	/* We're trying to switch it on */
-	if (status == true)
+	if (status)
 	{
 		/* If it's not inactive then it's already in use - so return */
 		/* We're tracking a droid */
@@ -467,7 +470,7 @@ static uint16_t getAverageTrackAngle(unsigned groupNumber, bool bCheckOnScreen)
 		/* Is he worth selecting? */
 		if (groupNumber == GROUP_SELECTED ? psDroid->selected : psDroid->group == groupNumber)
 		{
-			if (bCheckOnScreen ? objectOnScreen(psDroid, pie_GetVideoBufferWidth() / 6) : true)
+			if (!bCheckOnScreen || objectOnScreen(psDroid, pie_GetVideoBufferWidth() / 6))
 			{
 				xTotal += iSin(psDroid->rot.direction);
 				yTotal += iCos(psDroid->rot.direction);

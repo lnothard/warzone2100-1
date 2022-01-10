@@ -16,6 +16,7 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
  * @file qtscriptfuncs.cpp
  *
@@ -78,6 +79,7 @@
 #include "data.h"
 
 #include <list>
+#include <utility>
 
 /// Assert for scripts that give useful backtraces and other info.
 #if defined(SCRIPT_ASSERT)
@@ -111,16 +113,15 @@ SimpleObject* IdToObject(OBJECT_TYPE type, int id, int player)
 	}
 }
 
-wzapi::scripting_instance::scripting_instance(int player, const std::string& scriptName, const std::string& scriptPath)
+wzapi::scripting_instance::scripting_instance(int player, std::string  scriptName, std::string  scriptPath)
 	: m_player(player)
-	  , m_scriptName(scriptName)
-	  , m_scriptPath(scriptPath)
+	  , m_scriptName(std::move(scriptName))
+	  , m_scriptPath(std::move(scriptPath))
 {
 }
 
 wzapi::scripting_instance::~scripting_instance()
-{
-}
+= default;
 
 bool wzapi::scripting_instance::isHostAI() const
 {
@@ -139,7 +140,7 @@ bool wzapi::scripting_instance::isHostAI() const
 // - 4.) The filePath is checked relative to the main scriptPath (LoadFileSearchOptions::ScriptPath)
 bool wzapi::scripting_instance::loadFileForInclude(const std::string& filePath, std::string& loadedFilePath,
                                                    char** ppFileData, UDWORD* pFileSize,
-                                                   uint32_t searchFlags /*= LoadFileSearchOptions::All*/)
+                                                   uint32_t searchFlags /*= LoadFileSearchOptions::All*/) const
 {
 	WzPathInfo filePathInfo = WzPathInfo::fromPlatformIndependentPath(filePath);
 	std::string path;
@@ -204,12 +205,12 @@ wzapi::scripting_instance::debugGetScriptGlobalSpecialStringValues()
 	return {};
 }
 
-void wzapi::scripting_instance::dumpScriptLog(const std::string& info)
+void wzapi::scripting_instance::dumpScriptLog(const std::string& info) const
 {
 	dumpScriptLog(info, player());
 }
 
-void wzapi::scripting_instance::dumpScriptLog(const std::string& info, int me)
+void wzapi::scripting_instance::dumpScriptLog(const std::string& info, int me) const
 {
 	WzString path = PHYSFS_getWriteDir();
 	path += WzString("/logs/") + WzString::fromUtf8(scriptName()) + "." + WzString::number(me) + ".log";
@@ -223,12 +224,10 @@ void wzapi::scripting_instance::dumpScriptLog(const std::string& info, int me)
 }
 
 wzapi::execution_context_base::~execution_context_base()
-{
-}
+= default;
 
 wzapi::execution_context::~execution_context()
-{
-}
+= default;
 
 int wzapi::execution_context::player() const
 {
@@ -250,9 +249,9 @@ wzapi::object_request::object_request()
 {
 }
 
-wzapi::object_request::object_request(const std::string& label)
+wzapi::object_request::object_request(std::string  label)
 	: requestType(wzapi::object_request::RequestType::LABEL_REQUEST)
-	  , str(label)
+	  , str(std::move(label))
 {
 }
 
@@ -298,9 +297,9 @@ std::tuple<OBJECT_TYPE, int, int> wzapi::object_request::getObjectIDRequest() co
 //--
 //-- Mark string for translation.
 //--
-std::string wzapi::translate(WZAPI_PARAMS(std::string str))
+std::string wzapi::translate(WZAPI_PARAMS(const std::string& str))
 {
-	return std::string(gettext(str.c_str()));
+	return {gettext(str.c_str())};
 }
 
 //-- ## syncRandom(limit)
@@ -2327,7 +2326,7 @@ std::vector<const Droid*> wzapi::enumCargo(WZAPI_PARAMS(const Droid *psDroid))
 	std::vector<const Droid*> result;
 	result.reserve(psDroid->group->getNumMembers());
 	int i = 0;
-	for (Droid* psCurr = psDroid->group->psList; psCurr; psCurr = psCurr->psGrpNext, i++)
+	for (Droid* psCurr = psDroid->group->members; psCurr; psCurr = psCurr->psGrpNext, i++)
 	{
 		if (psDroid != psCurr)
 		{
@@ -3384,7 +3383,7 @@ wzapi::no_return_value wzapi::fireWeaponAtLoc(WZAPI_PARAMS(std::string weaponNam
 //--
 //-- Fires a weapon at a game object (3.3+ only). The player is who owns the projectile.
 //--
-wzapi::no_return_value wzapi::fireWeaponAtObj(WZAPI_PARAMS(std::string weaponName, SimpleObject *psObj,
+wzapi::no_return_value wzapi::fireWeaponAtObj(WZAPI_PARAMS(const std::string& weaponName, SimpleObject *psObj,
                                                            optional<int> _player))
 {
 	int weaponIndex = getCompFromName(COMP_WEAPON, WzString::fromUtf8(weaponName));
@@ -4111,7 +4110,7 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::s
 			break;
 		}
 	}
-	return nlohmann::json();
+	return {};
 }
 
 
@@ -4122,7 +4121,7 @@ wzapi::GameEntityRules::value_type wzapi::GameEntityRules::getPropertyValue(
 	if (it == propertyNameToTypeMap.end())
 	{
 		// Failed to find `name`
-		return GameEntityRules::value_type();
+		return {};
 	}
 	int type = it->second;
 	return wzapi::getUpgradeStats(context, getPlayer(), name, type, getIndex());
@@ -4135,7 +4134,7 @@ wzapi::GameEntityRules::value_type wzapi::GameEntityRules::setPropertyValue(
 	if (it == propertyNameToTypeMap.end())
 	{
 		// Failed to find `name`
-		return GameEntityRules::value_type();
+		return {};
 	}
 	int type = it->second;
 	return wzapi::setUpgradeStats(context, getPlayer(), name, type, getIndex(), newValue);
@@ -4151,7 +4150,7 @@ std::vector<wzapi::PerPlayerUpgrades> wzapi::getUpgradesObject()
 	upgrades.reserve(MAX_PLAYERS);
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
-		upgrades.push_back(PerPlayerUpgrades(i));
+		upgrades.emplace_back(i);
 		PerPlayerUpgrades& node = upgrades.back();
 
 		//==   * ```Body``` Droid bodies

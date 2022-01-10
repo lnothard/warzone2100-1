@@ -157,7 +157,7 @@ namespace Impl {
 		return stats->size(getRotation().direction);
 	}
 
-	const iIMDShape& Structure::get_IMD_shape() const
+	const iIMDShape& Structure::getImdShape() const
 	{
 		return *stats->base_imd;
 	}
@@ -167,7 +167,7 @@ namespace Impl {
 		return foundation_depth;
 	}
 
-	void Structure::update_expected_damage(unsigned damage, bool is_direct) noexcept
+	void Structure::updateExpectedDamage(unsigned damage, bool is_direct) noexcept
 	{
 		expected_damage += damage;
 		assert(expected_damage >= 0);
@@ -221,7 +221,7 @@ namespace Impl {
     return stats->power_to_build / 2;
   }
 
-  const ::SimpleObject& Structure::get_target(int weapon_slot) const
+  const ::SimpleObject& Structure::getTarget(int weapon_slot) const
   {
     return *target[weapon_slot];
   }
@@ -297,9 +297,9 @@ namespace Impl {
 	void adjust_tile_height(const Structure& structure, int new_height)
 	{
 		const auto bounds = get_bounds(structure);
-		const auto x_max = bounds.size_in_coords.x;
-		const auto y_max = bounds.size_in_coords.y;
-		const auto coords = bounds.top_left_coords;
+		const auto x_max = bounds.size.x;
+		const auto y_max = bounds.size.y;
+		const auto coords = bounds.map;
 
 		for (int breadth = 0; breadth <= y_max; ++breadth)
 		{
@@ -316,7 +316,7 @@ namespace Impl {
 
 	int calculate_height(const Structure& structure)
 	{
-		auto& imd = structure.get_IMD_shape();
+		auto& imd = structure.getImdShape();
 		const auto height = imd.max.y + imd.min.y;
 		return height - structure.calculate_gate_height(gameTime, 2);
 		// Treat gate as at least 2 units tall, even if open, so that it's possible to hit.
@@ -327,14 +327,14 @@ namespace Impl {
 		const auto bounds = get_bounds(structure);
 		auto foundation_min = INT32_MIN;
 		auto foundation_max = INT32_MAX;
-		const auto x_max = bounds.size_in_coords.x;
-		const auto y_max = bounds.size_in_coords.y;
+		const auto x_max = bounds.size.x;
+		const auto y_max = bounds.size.y;
 
 		for (int breadth = 0; breadth <= y_max; ++breadth)
 		{
 			for (int width = 0; width <= x_max; ++width)
 			{
-				const auto height = map_tile_height(bounds.top_left_coords.x, bounds.top_left_coords.y + breadth);
+				const auto height = map_tile_height(bounds.map.x, bounds.map.y + breadth);
 				foundation_min = std::min(foundation_min, height);
 				foundation_max = std::min(foundation_max, height);
 			}

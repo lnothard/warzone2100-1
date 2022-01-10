@@ -28,6 +28,8 @@
 #ifndef __INCLUDED_SRC_ORDER_H__
 #define __INCLUDED_SRC_ORDER_H__
 
+#include "structure.h"
+
 enum class ORDER_TYPE
 {
     NONE,

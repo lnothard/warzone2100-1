@@ -45,7 +45,7 @@ void set_projectile_target(Projectile& projectile, Unit& unit)
 {
   const auto is_direct = !projectile.firing_weapon->is_artillery();
   projectile.target = &unit;
-  projectile.target->update_expected_damage(projectile.base_damage, is_direct);
+  projectile.target->updateExpectedDamage(projectile.base_damage, is_direct);
 }
 
 Interval resolve_xy_collision(Vector2i pos1, Vector2i pos2, int radius)

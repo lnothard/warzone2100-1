@@ -32,12 +32,12 @@ public:
 	[[nodiscard]] virtual unsigned getHp() const = 0;
 	[[nodiscard]] virtual unsigned calculateSensorRange() const = 0;
 	[[nodiscard]] virtual const std::vector<Weapon>& getWeapons() const = 0;
-	[[nodiscard]] virtual const iIMDShape& get_IMD_shape() const = 0;
+	[[nodiscard]] virtual const iIMDShape& getImdShape() const = 0;
   [[nodiscard]] virtual bool is_selected() const noexcept = 0;
   virtual void align_turret(int weapon_slot) = 0;
-  virtual void update_expected_damage(unsigned damage, bool is_direct) noexcept = 0;
-  [[nodiscard]] virtual int calculate_attack_priority(const Unit* target, int weapon_slot) const = 0;
-  [[nodiscard]] virtual const SimpleObject& get_target(int weapon_slot) const = 0;
+  virtual void updateExpectedDamage(unsigned damage, bool is_direct) noexcept = 0;
+  [[nodiscard]] virtual int calculateAttackPriority(const Unit* target, int weapon_slot) const = 0;
+  [[nodiscard]] virtual const SimpleObject& getTarget(int weapon_slot) const = 0;
 };
 
 Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot);

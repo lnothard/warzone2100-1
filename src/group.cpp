@@ -42,6 +42,15 @@ bool Group::isCommandGroup() const noexcept
   return type == COMMAND;
 }
 
+bool Group::hasElectronicWeapon() const
+{
+  return std::any_of(members.begin(), members.end(),
+                     [](const auto droid)
+  {
+    return droid->hasElectronicWeapon();
+  });
+}
+
 // initialise the group system
 bool grpInitialise()
 {
@@ -117,7 +126,7 @@ void Group::add(Droid* psDroid)
 
 	// if psDroid == NULL just increase the refcount don't add anything to the list
 	if (psDroid != nullptr) {
-		if (psList && psDroid->player != psList->player) {
+		if (members && psDroid->player != members->player) {
 			ASSERT(false, "grpJoin: Cannot have more than one players droids in a group");
 			return;
 		}
@@ -131,7 +140,7 @@ void Group::add(Droid* psDroid)
 			ASSERT_OR_RETURN(, (type == NORMAL), "grpJoin: Cannot have two transporters in a group");
 
 			type = TRANSPORTER;
-      psList.push_back(psDroid);
+      members.push_back(psDroid);
 		} else if (psDroid->getType() == DROID_TYPE::COMMAND &&
              type != TRANSPORTER) {
 			ASSERT_OR_RETURN(, (type == NORMAL) && (psCommander == nullptr),
@@ -140,7 +149,7 @@ void Group::add(Droid* psDroid)
 			psCommander = psDroid;
 		}
 		else {
-			psList.push_back(psDroid);
+			members.push_back(psDroid);
 		}
 
 		if (type == COMMAND) {
@@ -174,7 +183,7 @@ void Group::remove(Droid* psDroid)
 		if (psDroid->type != DROID_COMMAND || type != COMMAND)
 		{
 			psPrev = nullptr;
-			for (psCurr = psList; psCurr; psCurr = psCurr->psGrpNext)
+			for (psCurr = members; psCurr; psCurr = psCurr->psGrpNext)
 			{
 				if (psCurr == psDroid) {
 					break;
@@ -199,7 +208,7 @@ void Group::remove(Droid* psDroid)
 
 std::size_t Group::getNumMembers() const
 {
-  return psList.size();
+  return members.size();
 }
 
 // Give a group of droids an order
@@ -207,7 +216,7 @@ void Group::orderGroup(ORDER_TYPE order)
 {
 	ASSERT(grpInitialized, "Group code not initialized yet");
 
-	for (auto droid : psList)
+	for (auto droid : members)
 	{
 		orderDroid(droid, order, ModeQueue);
 	}
@@ -219,7 +228,7 @@ void Group::orderGroup(ORDER_TYPE order, unsigned x, unsigned y)
 	ASSERT(grpInitialized, "Group code not initialized yet");
 	ASSERT_OR_RETURN(, validOrderForLoc(order), "orderGroup: Bad order");
 
-	for (auto droid : psList)
+	for (auto droid : members)
 	{
 		orderDroidLoc(droid, order, x, y, bMultiMessages ? ModeQueue : ModeImmediate);
 	}
@@ -229,7 +238,7 @@ void Group::orderGroup(ORDER_TYPE order, SimpleObject* psObj)
 {
 	ASSERT_OR_RETURN(, validOrderForObj(order), "orderGroup: Bad order");
 
-	for (auto droid : psList)
+	for (auto droid : members)
 	{
 		orderDroidObj(droid, order, psObj, bMultiMessages ? ModeQueue : ModeImmediate);
 	}
@@ -239,7 +248,7 @@ void Group::setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state)
 {
 	ASSERT(grpInitialized, "Group code not initialized yet");
 
-	for (auto& droid : psList)
+	for (auto& droid : members)
 	{
 		secondarySetState(droid, sec, state);
 	}

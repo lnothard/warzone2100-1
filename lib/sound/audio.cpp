@@ -818,8 +818,7 @@ bool audio_PlayObjStaticTrackCallback(SIMPLE_OBJECT *psObj, int iTrack, AUDIO_CA
 	//~~~~~~~~~~~~~~~
 
 	// if audio not enabled return true to carry on game without audio
-	if (g_bAudioEnabled == false)
-	{
+	if (!g_bAudioEnabled) {
 		return false;
 	}
 
@@ -831,15 +830,12 @@ bool audio_PlayObjStaticTrackCallback(SIMPLE_OBJECT *psObj, int iTrack, AUDIO_CA
 // =======================================================================================================================
 // =======================================================================================================================
 //
-bool audio_PlayObjDynamicTrack(SIMPLE_OBJECT *psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
+bool audio_PlayObjDynamicTrack(SimpleObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
 {
-	//~~~~~~~~~~~~~~~
-	SDWORD	iX, iY, iZ;
-	//~~~~~~~~~~~~~~~
+	int	iX, iY, iZ;
 
 	// if audio not enabled return true to carry on game without audio
-	if (g_bAudioEnabled == false)
-	{
+	if (!g_bAudioEnabled) {
 		return false;
 	}
 

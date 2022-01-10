@@ -83,10 +83,10 @@ bool PathNode::operator <(const PathNode& rhs) const
 }
 
 NonBlockingArea::NonBlockingArea(const StructureBounds& bounds)
-  : x_1(bounds.top_left_coords.x),
-    x_2(bounds.top_left_coords.x + bounds.size_in_coords.x),
-    y_1(bounds.top_left_coords.y),
-    y_2(bounds.top_left_coords.y + bounds.size_in_coords.y)
+  : x_1(bounds.map.x),
+    x_2(bounds.map.x + bounds.size.x),
+    y_1(bounds.map.y),
+    y_2(bounds.map.y + bounds.size.y)
 {
 }
 

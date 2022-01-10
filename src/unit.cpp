@@ -74,7 +74,7 @@ bool has_artillery(const Unit& unit) noexcept
 
 Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot)
 {
-	auto& imd_shape = unit.get_IMD_shape();
+	auto& imd_shape = unit.getImdShape();
 	const auto position = unit.getPosition();
 	auto muzzle = Vector3i{0, 0, 0};
 
@@ -102,7 +102,7 @@ Vector3i calculate_muzzle_base_location(const Unit& unit, int weapon_slot)
 
 Vector3i calculate_muzzle_tip_location(const Unit& unit, int weapon_slot)
 {
-	const auto& imd_shape = unit.get_IMD_shape();
+	const auto& imd_shape = unit.getImdShape();
 	const auto& weapon = unit.getWeapons()[weapon_slot];
 	const auto& position = unit.getPosition();
 	const auto& rotation = unit.getRotation();
@@ -356,7 +356,7 @@ Unit* find_target(Unit& unit, ATTACKER_TYPE attacker_type,
         continue;
       }
     }
-    target = &sensor.get_target(0);
+    target = &sensor.getTarget(0);
     is_cb_sensor = sensor.hasCbSensor();
 
     if (!target ||

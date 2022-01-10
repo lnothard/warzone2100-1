@@ -37,7 +37,7 @@ void update_tile_visibility()
 
   std::for_each(map_tiles.begin(), map_tiles.end(), [&](auto& tile)
   {
-    auto max_level = tile.illumination_level;
+    auto max_level = tile.illuminationLevel;
     // if seen
     if (tile.visibility_level > MIN_ILLUMINATION ||
         tile.explored_bits & player_mask) {

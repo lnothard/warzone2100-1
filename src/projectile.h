@@ -70,6 +70,8 @@ class Projectile : public virtual SimpleObject, public Impl::SimpleObject
 public:
   Projectile(unsigned id, unsigned player);
 
+  [[nodiscard]] PROJECTILE_STATE getState() const noexcept;
+
   void update();
   
   /// Update the source experience after a target is damaged/destroyed

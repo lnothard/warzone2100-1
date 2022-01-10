@@ -30,25 +30,23 @@
 
 #include "display3d.h"
 #include "map.h"
+#include "projectile.h"
 
-bool audio_ObjectDead(const SIMPLE_OBJECT* psSimpleObj)
+bool audio_ObjectDead(const SimpleObject* psSimpleObj)
 {
 	/* check is valid simple object pointer */
-	if (psSimpleObj == nullptr)
-	{
+	if (psSimpleObj == nullptr) {
 		debug(LOG_NEVER, "audio_ObjectDead: simple object pointer invalid");
 		return true;
 	}
 
 	/* check projectiles */
-	if (isProjectile(psSimpleObj))
-	{
-		return castProjectile(psSimpleObj)->state == PROJ_POSTIMPACT;
+	if (auto psProj = dynamic_cast<const Projectile*>(psSimpleObj)) {
+		return psProj->getState() == PROJECTILE_STATE::POST_IMPACT;
 	}
-	else
-	{
+	else {
 		/* check base object */
-		return psSimpleObj->died;
+		return !psSimpleObj->isAlive();
 	}
 }
 
@@ -81,7 +79,7 @@ void audio_Get3DPlayerRotAboutVerticalAxis(float* angle)
  * Get QSound axial position from world (x,y)
 @FIXME we don't need to do this, since we are not using qsound.
  */
-void audio_GetStaticPos(SDWORD iWorldX, SDWORD iWorldY, SDWORD* piX, SDWORD* piY, SDWORD* piZ)
+void audio_GetStaticPos(int iWorldX, int iWorldY, int* piX, int* piY, int* piZ)
 {
 	*piX = iWorldX;
 	*piZ = map_TileHeight(map_coord(iWorldX), map_coord(iWorldY));
@@ -90,19 +88,20 @@ void audio_GetStaticPos(SDWORD iWorldX, SDWORD iWorldY, SDWORD* piX, SDWORD* piY
 }
 
 // @FIXME we don't need to do this, since we are not using qsound.
-void audio_GetObjectPos(const SIMPLE_OBJECT* psBaseObj, SDWORD* piX, SDWORD* piY, SDWORD* piZ)
+void audio_GetObjectPos(const SimpleObject* psBaseObj, int* piX, int* piY, int* piZ)
 {
 	/* check is valid pointer */
 	ASSERT_OR_RETURN(, psBaseObj != nullptr, "Game object pointer invalid");
 
-	*piX = psBaseObj->pos.x;
-	*piZ = map_TileHeight(map_coord(psBaseObj->pos.x), map_coord(psBaseObj->pos.y));
+	*piX = psBaseObj->getPosition().x;
+	*piZ = map_TileHeight(map_coord(psBaseObj->getPosition().x), 
+                        map_coord(psBaseObj->getPosition().y));
 
 	/* invert y to match QSOUND axes */
-	*piY = world_coord(mapHeight) - psBaseObj->pos.y;
+	*piY = world_coord(mapHeight) - psBaseObj->getPosition().y;
 }
 
-UDWORD sound_GetGameTime()
+unsigned sound_GetGameTime()
 {
 	return gameTime;
 }

@@ -1686,7 +1686,7 @@ void replaceTransDroidComponents(Droid* psTransporter, UDWORD oldType,
 
 	ASSERT(isTransporter(psTransporter), "invalid unit type");
 
-	for (psCurr = psTransporter->group->psList; psCurr != nullptr; psCurr =
+	for (psCurr = psTransporter->group->members; psCurr != nullptr; psCurr =
 	     psCurr->psGrpNext)
 	{
 		if (psCurr != psTransporter)

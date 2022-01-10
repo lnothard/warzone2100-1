@@ -940,7 +940,7 @@ void droidCountsInTransporter(Droid* droid, int player)
 	numTransporterDroids[player] += droid->group->refCount - 1;
 
 	// and count the units inside it...
-	for (psDroid = droid->group->psList; psDroid != nullptr && psDroid != droid; psDroid = psDroid->psGrpNext)
+	for (psDroid = droid->group->members; psDroid != nullptr && psDroid != droid; psDroid = psDroid->psGrpNext)
 	{
 		if (psDroid->type == DROID_CYBORG_CONSTRUCT || psDroid->type == DROID_CONSTRUCT)
 		{

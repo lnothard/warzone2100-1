@@ -110,9 +110,9 @@ static bool checkReferences(SimpleObject* psVictim)
 
 			for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 			{
-				if (psDroid->action_target[i] == psVictim)
+				if (psDroid->actionTarget[i] == psVictim)
 				{
-					ASSERT_OR_RETURN(false, psDroid->action_target[i] != psVictim,
+					ASSERT_OR_RETURN(false, psDroid->actionTarget[i] != psVictim,
 					                 BADREF(psDroid->actionTargetFunc[i], psDroid->actionTargetLine[i]));
 				}
 			}
@@ -803,7 +803,7 @@ SimpleObject* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
 			// if transporter check any droids in the grp
 			if ((psObj->type == OBJ_DROID) && isTransporter((Droid*)psObj))
 			{
-				for (psTrans = ((Droid*)psObj)->group->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
+				for (psTrans = ((Droid*)psObj)->group->members; psTrans != nullptr; psTrans = psTrans->psGrpNext)
 				{
 					if (psTrans->id == id)
 					{
@@ -889,7 +889,7 @@ SimpleObject* getBaseObjFromId(UDWORD id)
 				// if transporter check any droids in the grp
 				if ((psObj->type == OBJ_DROID) && isTransporter((Droid*)psObj))
 				{
-					for (psTrans = ((Droid*)psObj)->group->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
+					for (psTrans = ((Droid*)psObj)->group->members; psTrans != nullptr; psTrans = psTrans->psGrpNext)
 					{
 						if (psTrans->id == id)
 						{
@@ -1006,7 +1006,7 @@ void objCount(int* droids, int* structures, int* features)
 			(*droids)++;
 			if (isTransporter(psDroid))
 			{
-				Droid* psTrans = psDroid->group->psList;
+				Droid* psTrans = psDroid->group->members;
 
 				for (psTrans = psTrans->psGrpNext; psTrans != nullptr; psTrans = psTrans->psGrpNext)
 				{

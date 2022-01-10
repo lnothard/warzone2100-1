@@ -157,11 +157,11 @@ public:
   [[nodiscard]] DROID_TYPE get_type() const noexcept;
   [[nodiscard]] unsigned get_level() const;
   [[nodiscard]] unsigned getCommanderLevel() const;
-  [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
+  [[nodiscard]] const iIMDShape& getImdShape() const final;
   [[nodiscard]] int getVerticalSpeed() const noexcept;
   [[nodiscard]] unsigned getSecondaryOrder() const noexcept;
   [[nodiscard]] const Vector2i& getDestination() const;
-  [[nodiscard]] const ::SimpleObject& get_target(int weapon_slot) const final;
+  [[nodiscard]] const ::SimpleObject& getTarget(int weapon_slot) const final;
   [[nodiscard]] const std::optional<PropulsionStats>& getPropulsion() const;
   
 	[[nodiscard]] bool is_probably_doomed(bool is_direct_damage) const;
@@ -194,7 +194,7 @@ public:
 	void move_to_rearm_pad();
 	void cancel_build();
 	void reset_action() noexcept;
-	void update_expected_damage(unsigned damage, bool is_direct) noexcept final;
+	void updateExpectedDamage(unsigned damage, bool is_direct) noexcept final;
 	[[nodiscard]] unsigned commander_max_group_size() const;
 	[[nodiscard]] unsigned calculateSensorRange() const final;
 	[[nodiscard]] int calculate_height() const;
@@ -206,7 +206,7 @@ public:
   [[nodiscard]] int calculate_electronic_resistance() const;
   [[nodiscard]] bool isSelectable() const final;
   [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
-  [[nodiscard]] int calculate_attack_priority(const Unit* target, int weapon_slot) const final;
+  [[nodiscard]] int calculateAttackPriority(const Unit* target, int weapon_slot) const final;
   [[nodiscard]] bool is_hovering() const;
 private:
 	using enum ACTION;

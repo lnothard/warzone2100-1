@@ -17,69 +17,67 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-#include "map.h"
-#include "wavecast.h"
-#include <vector>
+
 #include <algorithm>
 #include <map>
+#include <vector>
 
-// Angles are sorted in this order. Can only be created and compared to each other, nothing else.
-// (1, 0) < (0, 1) < (-1, 0) < (0, -1) < (1, -ε) < (0, 0)
-// (0, 0) = special case, compares greater than all other angles.
-struct RationalAngle
+#include "map.h"
+#include "wavecast.h"
+
+RationalAngle::RationalAngle(int x, int y)
+  : myX{x}, myY{y}
 {
-	RationalAngle(int x, int y) : myX(x), myY(y)
-	{
-	}
+}
 
-	bool operator <(RationalAngle const& v2) const
-	{
-		int x1, y1, x2, y2;
-		int qa = quadrant(x1, y1), qb = v2.quadrant(x2, y2);
-		return qa != qb
-			       ? qa < qb
-			       : y1 * x2 < y2 * x1;
-		// Same as y1/x1 < y2/x2, using real numbers. (And works even with x1 or x2 = 0.)
-	}
+bool RationalAngle::operator <(RationalAngle const& v2) const
+{
+  int x1, y1, x2, y2;
+  int qa = quadrant(x1, y1), qb = v2.quadrant(x2, y2);
+  return qa != qb
+         ? qa < qb
+         : y1 * x2 < y2 * x1;
+  // Same as y1/x1 < y2/x2, using real numbers. (And works even with x1 or x2 = 0.)
+}
 
-	bool operator ==(RationalAngle const& v2) const
-	{
-		int x1, y1, x2, y2;
-		int qa = quadrant(x1, y1), qb = v2.quadrant(x2, y2);
-		return qa == qb && y1 * x2 == y2 * x1;
-		// Same as y1/x1 == y2/x2, using real numbers. (And works even with x1 or x2 = 0.)
-	}
+bool RationalAngle::operator ==(RationalAngle const& v2) const
+{
+  int x1, y1, x2, y2;
+  int qa = quadrant(x1, y1), qb = v2.quadrant(x2, y2);
+  return qa == qb && y1 * x2 == y2 * x1;
+  // Same as y1/x1 == y2/x2, using real numbers. (And works even with x1 or x2 = 0.)
+}
 
-private:
-	int quadrant(int& x, int& y) const
-	{
-		int q = myY >= 0
-			        ? (myX >= 0 ? (myX != 0 || myY != 0 ? 0 : 4) : 1)
-			        // Quadrant is arbitrarily chosen for myX == 0 || myY == 0, just needs to be consistent. Quadrant is 4 for myX == 0 && myY == 0.
-			        : (myX >= 0 ? 3 : 2);
-		switch (q)
-		{
-		case 0: x = myX;
-			y = myY;
-			break;
-		case 1: x = myY;
-			y = -myX;
-			break;
-		case 2: x = -myX;
-			y = -myY;
-			break;
-		case 3: x = -myY;
-			y = myX;
-			break;
-		case 4: x = 0;
-			y = 0;
-			break; // myX and myY are both 0, set x, y to arbitrary constant so (0, 0) compares equal to itself.
-		}
-		return q;
-	}
-
-	int myX, myY;
-};
+int RationalAngle::quadrant(int& x, int& y) const
+{
+  int q = myY >= 0
+          ? (myX >= 0 ? (myX != 0 || myY != 0 ? 0 : 4) : 1)
+          // Quadrant is arbitrarily chosen for myX == 0 || myY == 0, just needs to be consistent. Quadrant is 4 for myX == 0 && myY == 0.
+          : (myX >= 0 ? 3 : 2);
+  switch (q) {
+    case 0:
+      x = myX;
+      y = myY;
+      break;
+    case 1:
+      x = myY;
+      y = -myX;
+      break;
+    case 2:
+      x = -myX;
+      y = -myY;
+      break;
+    case 3:
+      x = -myY;
+      y = myX;
+      break;
+    case 4:
+      x = 0;
+      y = 0;
+      break; // myX and myY are both 0, set x, y to arbitrary constant so (0, 0) compares equal to itself.
+  }
+  return q;
+}
 
 // Create a list of all tiles within the given radius, and the leftmost and rightmost angles of the tiles, for field of vision.
 // Radius in tiles*TILE_UNITS.

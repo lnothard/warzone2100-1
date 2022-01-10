@@ -11,8 +11,8 @@ bool Weapon::has_full_ammo() const noexcept
 
 bool Weapon::is_artillery() const noexcept
 {
-  return stats->movement_type == MOVEMENT_TYPE::INDIRECT ||
-         stats->movement_type == MOVEMENT_TYPE::HOMING_INDIRECT;
+  return stats->movement_type == MOVEMENT_MODEL::INDIRECT ||
+         stats->movement_type == MOVEMENT_MODEL::HOMING_INDIRECT;
 }
 
 bool Weapon::is_vtol_weapon() const
@@ -47,12 +47,12 @@ unsigned Weapon::get_recoil() const
 
 unsigned Weapon::get_max_range(unsigned player) const
 {
-  return stats->upgraded_stats[player].max_range;
+  return stats->upgraded[player].maxRange;
 }
 
 unsigned Weapon::get_min_range(unsigned player) const
 {
-  return stats->upgraded_stats[player].min_range;
+  return stats->upgraded[player].minRange;
 }
 
 unsigned Weapon::get_short_range(unsigned player) const
@@ -77,9 +77,9 @@ WEAPON_SUBCLASS Weapon::get_subclass() const
 
 unsigned Weapon::get_num_attack_runs(unsigned player) const
 {
-  const auto u_stats = stats->upgraded_stats[player];
+  const auto u_stats = stats->upgraded[player];
 
-  if (u_stats.reload_time > 0)
+  if (u_stats.reloadTime > 0)
     return u_stats.rounds_per_volley * stats->max_VTOL_attack_runs;
 
   return stats->max_VTOL_attack_runs;
@@ -102,7 +102,7 @@ const iIMDShape& Weapon::get_mount_graphic() const
 
 unsigned Weapon::calculate_rate_of_fire(unsigned player) const
 {
-  const auto& w_stats = stats->upgrade[player];
+  const auto& w_stats = stats->upgraded[player];
   return w_stats.numRounds
          * 60 * GAME_TICKS_PER_SEC / w_stats.reloadTime;
 }

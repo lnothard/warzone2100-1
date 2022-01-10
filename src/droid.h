@@ -193,6 +193,7 @@ public:
     [[nodiscard]] virtual const Vector2i& getDestination() const = 0;
     [[nodiscard]] virtual const std::optional<PropulsionStats>& getPropulsion() const = 0;
 
+    [[nodiscard]] virtual bool hasElectronicWeapon() const = 0;
     [[nodiscard]] virtual bool isVtol() const = 0;
     [[nodiscard]] virtual bool isFlying() const = 0;
     [[nodiscard]] virtual bool isDamaged() const = 0;
@@ -218,11 +219,11 @@ namespace Impl
       [[nodiscard]] DROID_TYPE getType() const noexcept final;
       [[nodiscard]] unsigned getLevel() const final;
       [[nodiscard]] unsigned getCommanderLevel() const final;
-      [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
+      [[nodiscard]] const iIMDShape& getImdShape() const final;
       [[nodiscard]] int getVerticalSpeed() const noexcept final;
       [[nodiscard]] unsigned getSecondaryOrder() const noexcept final;
       [[nodiscard]] const Vector2i& getDestination() const final;
-      [[nodiscard]] const SimpleObject& get_target(int weapon_slot) const final;
+      [[nodiscard]] const SimpleObject& getTarget(int weapon_slot) const final;
       [[nodiscard]] const std::optional<PropulsionStats>& getPropulsion() const final;
 
       [[nodiscard]] bool isProbablyDoomed(bool is_direct_damage) const;
@@ -231,7 +232,7 @@ namespace Impl
       [[nodiscard]] bool isRadarDetector() const final;
       [[nodiscard]] bool isStationary() const;
       [[nodiscard]] bool isDamaged() const final;
-      [[nodiscard]] bool is_attacking() const noexcept;
+      [[nodiscard]] bool isAttacking() const noexcept;
       void upgradeHitPoints();
 
       /**
@@ -244,24 +245,24 @@ namespace Impl
                                        int weapon_slot) const final;
 
       [[nodiscard]] bool hasCommander() const final;
-      [[nodiscard]] bool has_standard_sensor() const;
-      [[nodiscard]] bool has_CB_sensor() const;
-      [[nodiscard]] bool has_electronic_weapon() const;
+      [[nodiscard]] bool hasStandardSensor() const;
+      [[nodiscard]] bool hasCbSensor() const;
+      [[nodiscard]] bool hasElectronicWeapon() const final;
       void actionUpdateTransporter();
       void gainExperience(unsigned exp) final;
       void cancelBuild() final;
       void resetAction() noexcept final;
       void actionSanity();
-      void update_expected_damage(unsigned damage, bool is_direct) noexcept final;
+      void updateExpectedDamage(unsigned damage, bool is_direct) noexcept final;
       [[nodiscard]] unsigned calculateSensorRange() const final;
       [[nodiscard]] int calculateHeight() const final;
-      [[nodiscard]] int space_occupied_on_transporter() const;
-      void increment_kills() noexcept;
-      void assign_vtol_to_rearm_pad(RearmPad *rearm_pad);
-      [[nodiscard]] int calculate_electronic_resistance() const;
+      [[nodiscard]] int spaceOccupiedOnTransporter() const;
+      void incrementKills() noexcept;
+      void assignVtolToRearmPad(RearmPad *rearm_pad);
+      [[nodiscard]] int calculateElectronicResistance() const;
       [[nodiscard]] bool isSelectable() const final;
-      [[nodiscard]] unsigned get_armour_points_against_weapon(WEAPON_CLASS weapon_class) const;
-      [[nodiscard]] int calculate_attack_priority(const ::Unit *target, int weapon_slot) const final;
+      [[nodiscard]] unsigned getArmourPointsAgainstWeapon(WEAPON_CLASS weapon_class) const;
+      [[nodiscard]] int calculateAttackPriority(const ::Unit *target, int weapon_slot) const final;
 
   private:
       using enum DROID_TYPE;
@@ -274,7 +275,7 @@ namespace Impl
       /// Base speed depends on propulsion type
       unsigned baseSpeed = 0;
 
-      unsigned original_hp = 0;
+      unsigned originalHp = 0;
       unsigned experience = 0;
       unsigned kills = 0;
 
@@ -308,7 +309,7 @@ namespace Impl
       /// will remain.
       std::unique_ptr<Order> order;
 
-      unsigned secondary_order;
+      unsigned secondaryOrder;
 
       /// What `secondary_order` will be after synchronisation.
       unsigned secondaryOrderPending;
@@ -318,21 +319,28 @@ namespace Impl
 
       ACTION action = NONE;
       Vector2i actionPos;
-      std::array<SimpleObject*, MAX_WEAPONS> action_target;
-      std::size_t time_action_started;
-      unsigned action_points_done;
-      unsigned expected_damage_direct = 0;
-      unsigned expected_damage_indirect = 0;
-      uint8_t illumination_level;
+      std::array<SimpleObject*, MAX_WEAPONS> actionTarget;
+      std::size_t timeActionStarted;
+      std::size_t timeLastHit;
+      unsigned actionPointsDone;
+      unsigned expectedDamageDirect = 0;
+      unsigned expectedDamageIndirect = 0;
+      uint8_t illuminationLevel;
       std::unique_ptr<Movement> movement;
 
+      /* Animation stuff */
+      std::size_t timeAnimationStarted;
+      ANIMATION_EVENTS animationEvent;
+
       /// The location of this droid in the previous tick.
-      Spacetime previous_location;
+      Spacetime previousLocation;
 
       /// Bit set telling which tiles block this type of droid (TODO)
       uint8_t blockedBits;
 
       int iAudioID;
+
+      WEAPON_SUBCLASS lastHitWeapon;
 
       std::unique_ptr<BodyStats> body;
       std::optional<PropulsionStats> propulsion;
@@ -517,9 +525,6 @@ SimpleObject* checkForRepairRange(Droid* psDroid, Droid* psTarget);
 
 /// @return `true` if the droid is a transporter
 [[nodiscard]] bool isTransporter(const Droid& psDroid);
-
-/// Returns true if the droid has VTOL propulsion, and is not a transport.
-bool isVtolDroid(const Droid* psDroid);
 
 /// Returns true if the droid has VTOL propulsion and is moving.
 bool isFlying(const Droid* psDroid);

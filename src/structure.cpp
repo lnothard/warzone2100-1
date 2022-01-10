@@ -144,19 +144,19 @@ static WzString favoriteStructs;
 #define MAX_UNIT_MESSAGE_PAUSE 40000
 
 StructureBounds::StructureBounds()
-  : top_left_coords(0, 0), size_in_coords(0, 0)
+  : map(0, 0), size(0, 0)
 {
 }
 
 StructureBounds::StructureBounds(const Vector2i& top_left_coords,
                                  const Vector2i& size_in_coords)
- : top_left_coords{top_left_coords}, size_in_coords{size_in_coords}
+ : map{top_left_coords}, size{size_in_coords}
 {
 }
 
-bool StructureBounds::is_valid() const
+bool StructureBounds::isValid() const
 {
-  return size_in_coords.x >= 0;
+  return size.x >= 0;
 }
 
 StructureBounds get_bounds(const Structure& structure) noexcept
@@ -187,12 +187,12 @@ bool StructureStats::is_expansion_module() const noexcept
 void set_structure_non_blocking(const Impl::Structure& structure)
 {
   const auto bounds = Impl::get_bounds(structure);
-  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+  for (int i = 0; i < bounds.size.x; ++i)
   {
-    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+    for (int j = 0; j < bounds.size.y; ++j)
     {
-      aux_clear(bounds.top_left_coords.x + i,
-                bounds.top_left_coords.y + j,
+      aux_clear(bounds.map.x + i,
+                bounds.map.y + j,
                 AUX_BLOCKING | AUX_OUR_BUILDING | AUX_NON_PASSABLE);
     }
   }
@@ -213,17 +213,17 @@ void set_structure_non_blocking(const Impl::Structure& structure)
 void set_structure_blocking(const Impl::Structure& structure)
 {
   const auto bounds = Impl::get_bounds(structure);
-  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+  for (int i = 0; i < bounds.size.x; ++i)
   {
-    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+    for (int j = 0; j < bounds.size.y; ++j)
     {
-      aux_set_allied(bounds.top_left_coords.x + i,
-                     bounds.top_left_coords.y + j,
+      aux_set_allied(bounds.map.x + i,
+                     bounds.map.y + j,
                      structure.getPlayer(),
                      AUX_OUR_BUILDING);
 
-      aux_set_all(bounds.top_left_coords.x + i,
-                  bounds.top_left_coords.y + j,
+      aux_set_all(bounds.map.x + i,
+                  bounds.map.y + j,
                   AUX_BLOCKING | AUX_NON_PASSABLE);
     }
   }
@@ -245,12 +245,12 @@ void set_structure_blocking(const Impl::Structure& structure)
 void open_gate(const Impl::Structure& structure)
 {
   const auto bounds = Impl::get_bounds(structure);
-  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+  for (int i = 0; i < bounds.size.x; ++i)
   {
-    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+    for (int j = 0; j < bounds.size.y; ++j)
     {
-      aux_clear(bounds.top_left_coords.x + i,
-                bounds.top_left_coords.y + j,
+      aux_clear(bounds.map.x + i,
+                bounds.map.y + j,
                 AUX_BLOCKING);
     }
   }
@@ -272,17 +272,17 @@ void open_gate(const Impl::Structure& structure)
 void close_gate(const Impl::Structure& structure)
 {
   const auto bounds = Impl::get_bounds(structure);
-  for (int i = 0; i < bounds.size_in_coords.x; ++i)
+  for (int i = 0; i < bounds.size.x; ++i)
   {
-    for (int j = 0; j < bounds.size_in_coords.y; ++j)
+    for (int j = 0; j < bounds.size.y; ++j)
     {
-      aux_set_enemy(bounds.top_left_coords.x + i,
-                    bounds.top_left_coords.y + j,
+      aux_set_enemy(bounds.map.x + i,
+                    bounds.map.y + j,
                     structure.getPlayer(),
                     AUX_NON_PASSABLE);
 
-      aux_set_all(bounds.top_left_coords.x + i,
-                  bounds.top_left_coords.y + j,
+      aux_set_all(bounds.map.x + i,
+                  bounds.map.y + j,
                   AUX_BLOCKING);
     }
   }
@@ -1448,9 +1448,9 @@ void align_structure(Structure& structure)
     structure.set_foundation_depth(structure.getPosition().z);
 
     const auto& bounds = get_bounds(structure);
-    const auto x_max = bounds.size_in_coords.x;
-    const auto y_max = bounds.size_in_coords.y;
-    const auto coords = bounds.top_left_coords;
+    const auto x_max = bounds.size.x;
+    const auto y_max = bounds.size.y;
+    const auto coords = bounds.map;
 
     for (int breadth = -1; breadth <= y_max; ++breadth)
     {

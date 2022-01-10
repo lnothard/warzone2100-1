@@ -268,7 +268,7 @@ unsigned Droid::commander_max_group_size() const
 	return get_level() * cmd_stats.max_droids_multiplier + cmd_stats.max_droids_assigned;
 }
 
-const iIMDShape& Droid::get_IMD_shape() const
+const iIMDShape& Droid::getImdShape() const
 {
 	return *body->imd_shape;
 }
@@ -394,7 +394,7 @@ void Droid::increment_commander_kills() const
   group->increment_commander_kills();
 }
 
-const SimpleObject& Droid::get_target(int weapon_slot) const
+const SimpleObject& Droid::getTarget(int weapon_slot) const
 {
   return *action_target[weapon_slot];
 }
@@ -445,7 +445,7 @@ void Droid::set_direct_route(int target_x, int target_y) const
 //  }
 //}
 
-int Droid::calculate_attack_priority(const Unit* target, int weapon_slot) const
+int Droid::calculateAttackPriority(const Unit* target, int weapon_slot) const
 {
   auto& attacker_weapon = getWeapons()[weapon_slot];
   auto targeting_commander = false;
@@ -461,7 +461,7 @@ int Droid::calculate_attack_priority(const Unit* target, int weapon_slot) const
   if (hasCommander()) {
     for (auto slot = 0; slot < num_weapons(*target); ++slot)
     {
-      if (&(target->get_target(slot)) == &(group->get_commander())) {
+      if (&(target->getTarget(slot)) == &(group->get_commander())) {
         targeting_commander = true;
       }
     }
@@ -785,7 +785,7 @@ void initialise_ai_bits()
 
 void add_VTOL_attack_run(const Droid& droid)
 {
-  auto target = &droid.get_target(0);
+  auto target = &droid.getTarget(0);
   if (!target)
   {
     target = droid.get_current_order().target_object;

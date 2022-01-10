@@ -497,13 +497,13 @@ static int targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacker, 
 		}
 
 		//fire support - go through all droids assigned to the commander
-		for (psGroupDroid = psAttackerDroid->group->psList; psGroupDroid; psGroupDroid = psGroupDroid->psGrpNext)
+		for (psGroupDroid = psAttackerDroid->group->members; psGroupDroid; psGroupDroid = psGroupDroid->psGrpNext)
 		{
 			for (weaponSlot = 0; weaponSlot < psGroupDroid->numWeaps; weaponSlot++)
 			{
 				//see if this droid is currently targeting current target
 				if (psGroupDroid->order.psObj == psTarget ||
-            psGroupDroid->action_target[weaponSlot] == psTarget)
+            psGroupDroid->actionTarget[weaponSlot] == psTarget)
 				{
 					//we prefer targets that are already targeted and hence will be destroyed faster
 					attackWeight += WEIGHT_CMD_SAME_TARGET;

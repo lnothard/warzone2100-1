@@ -47,7 +47,6 @@
 #include "feature.h"
 #include "loop.h"
 #include "scores.h"
-#include "display3ddef.h"
 #include "display.h"
 #include "multiplay.h"
 #include "multistat.h"
@@ -65,6 +64,11 @@
 Projectile::Projectile(unsigned id, unsigned player)
   : SimpleObject(id, player)
 {
+}
+
+PROJECTILE_STATE Projectile::getState() const noexcept
+{
+  return state;
 }
 
 ObjectShape::ObjectShape(int radius)
@@ -792,7 +796,7 @@ static void proj_InFlightFunc(Projectile* psProj)
 			continue;
 		}
 
-		Vector3i psTempObjPrevPos = isDroid(psTempObj) ? castDroid(psTempObj)->previous_location.pos : psTempObj->pos;
+		Vector3i psTempObjPrevPos = isDroid(psTempObj) ? castDroid(psTempObj)->previousLocation.pos : psTempObj->pos;
 
 		const Vector3i diff = psProj->pos - psTempObj->pos;
 		const Vector3i prevDiff = psProj->prevSpacetime.pos - psTempObjPrevPos;

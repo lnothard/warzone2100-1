@@ -374,7 +374,7 @@ bool intAddTransporterLaunch(Droid* psDroid)
 	if (psCurrTransporter && psCurrTransporter->group)
 	{
 		capacity = TRANSPORTER_CAPACITY;
-		for (psCurr = psCurrTransporter->group->psList; psCurr != nullptr; psCurr = psNext)
+		for (psCurr = psCurrTransporter->group->members; psCurr != nullptr; psCurr = psNext)
 		{
 			psNext = psCurr->psGrpNext;
 			if (psCurr != psCurrTransporter)
@@ -495,7 +495,7 @@ bool intAddTransContentsForm()
 		return true;
 	}
 
-	for (Droid* psDroid = psCurrTransporter->group->psList; psDroid != nullptr && psDroid != psCurrTransporter;
+	for (Droid* psDroid = psCurrTransporter->group->members; psDroid != nullptr && psDroid != psCurrTransporter;
 	     psDroid = psDroid->psGrpNext)
 	{
 		if (psDroid->selected)
@@ -658,7 +658,7 @@ int calcRemainingCapacity(const Droid* psTransporter)
 		return 0;
 	}
 
-	for (psDroid = psTransporter->group->psList; psDroid != nullptr && psDroid != psTransporter; psDroid = psNext)
+	for (psDroid = psTransporter->group->members; psDroid != nullptr && psDroid != psTransporter; psDroid = psNext)
 	{
 		psNext = psDroid->psGrpNext;
 		const int space = transporterSpaceRequired(psDroid);
@@ -681,8 +681,8 @@ bool transporterIsEmpty(const Droid* psTransporter)
 	// Assume dead droids and non-transporter droids to be empty
 	return (isDead((const SimpleObject*)psTransporter)
 		|| !isTransporter(psTransporter)
-		|| psTransporter->group->psList == nullptr
-		|| psTransporter->group->psList == psTransporter);
+		|| psTransporter->group->members == nullptr
+		|| psTransporter->group->members == psTransporter);
 }
 
 static void intSetTransCapacityLabel(W_LABEL& Label)
@@ -725,7 +725,7 @@ void intProcessTransporter(UDWORD id)
 		{
 			unsigned currID = IDTRANS_CONTSTART;
 			Droid* psDroid;
-			for (psDroid = psCurrTransporter->group->psList; psDroid != nullptr && psDroid != psCurrTransporter;
+			for (psDroid = psCurrTransporter->group->members; psDroid != nullptr && psDroid != psCurrTransporter;
 			     psDroid = psDroid->psGrpNext)
 			{
 				if (psDroid->selected)
@@ -1068,7 +1068,7 @@ bool checkTransporterSpace(Droid const* psTransporter, Droid const* psAssigned, 
 
 	//work out how much space is currently left
 	capacity = TRANSPORTER_CAPACITY;
-	for (psDroid = psTransporter->group->psList; psDroid != nullptr && psDroid != psTransporter; psDroid = psNext)
+	for (psDroid = psTransporter->group->members; psDroid != nullptr && psDroid != psTransporter; psDroid = psNext)
 	{
 		psNext = psDroid->psGrpNext;
 		capacity -= transporterSpaceRequired(psDroid);

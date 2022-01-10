@@ -85,10 +85,10 @@ struct StructureBounds
 	StructureBounds();
 	StructureBounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords);
 
-  [[nodiscard]] bool is_valid() const;
+  [[nodiscard]] bool isValid() const;
 
-	Vector2i top_left_coords {0, 0};
-	Vector2i size_in_coords {0, 0};
+	Vector2i map {0, 0};
+	Vector2i size {0, 0};
 };
 
 struct FlagPosition : public ObjectPosition

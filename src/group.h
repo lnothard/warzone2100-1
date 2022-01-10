@@ -45,7 +45,8 @@ public:
   Group(unsigned id, GROUP_TYPE type);
   Group(unsigned id, GROUP_TYPE type, Droid& commander);
 
-  /** Add a droid to the group. Remove it from its existing
+  /**
+   * Add a droid to the group. Remove it from its existing
    * group if it exists
    */
 	void add(Droid* psDroid);
@@ -54,6 +55,8 @@ public:
 	void remove(Droid* psDroid);
 
   [[nodiscard]] bool isCommandGroup() const noexcept;
+
+  [[nodiscard]] bool hasElectronicWeapon() const;
 
   /// Count the number of members
 	[[nodiscard]] std::size_t getNumMembers() const;
@@ -72,7 +75,7 @@ private:
   unsigned id = 0;
 
   /// List of droids in the group
-	std::vector<Droid*> psList;
+	std::vector<Droid*> members;
 
   /**
    * Non-owning pointer to this group's commander.

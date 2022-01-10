@@ -1131,10 +1131,10 @@ void orderUpdateDroid(Droid* psDroid)
 		if (hasCommander(psDroid) && (psDroid->numWeaps > 0))
 		{
 			if (psDroid->group->psCommander->action == ATTACK &&
-          psDroid->group->psCommander->action_target[0] != nullptr &&
-          !psDroid->group->psCommander->action_target[0]->died)
+          psDroid->group->psCommander->actionTarget[0] != nullptr &&
+          !psDroid->group->psCommander->actionTarget[0]->died)
 			{
-				psObj = psDroid->group->psCommander->action_target[0];
+				psObj = psDroid->group->psCommander->actionTarget[0];
 				if (psDroid->action == ATTACK ||
 					psDroid->action == MOVETOATTACK)
 				{
@@ -1197,7 +1197,7 @@ static void orderCmdGroupBase(Group* psGroup, DROID_ORDER_DATA* psData)
 		// picking up an artifact - only need to send one unit
 		Droid* psChosen = nullptr;
 		int mindist = SDWORD_MAX;
-		for (Droid* psCurr = psGroup->psList; psCurr; psCurr = psCurr->psGrpNext)
+		for (Droid* psCurr = psGroup->members; psCurr; psCurr = psCurr->psGrpNext)
 		{
 			if (psCurr->order.type == RTR || psCurr->order.type == RTB || psCurr->order.type ==
 				RTR_SPECIFIED)
@@ -1221,7 +1221,7 @@ static void orderCmdGroupBase(Group* psGroup, DROID_ORDER_DATA* psData)
 	else
 	{
 		const bool isAttackOrder = psData->type == ATTACKTARGET || psData->type == ATTACK;
-		for (Droid* psCurr = psGroup->psList; psCurr; psCurr = psCurr->psGrpNext)
+		for (Droid* psCurr = psGroup->members; psCurr; psCurr = psCurr->psGrpNext)
 		{
 			syncDebug("command %d", psCurr->id);
 			if (!orderState(psCurr, RTR)) // if you change this, youll need to change sendcmdgroup()
@@ -1377,7 +1377,7 @@ void orderDroidBase(Droid* psDroid, DROID_ORDER_DATA* psOrder)
 		// the commander doesn't have to pick up artifacts, one
 		// of his units will do it for him (if there are any in his group).
 		if ((psOrder->type == RECOVER) &&
-			(psDroid->group->psList != nullptr))
+			(psDroid->group->members != nullptr))
 		{
 			psOrder->type = NONE;
 		}
@@ -3673,7 +3673,7 @@ bool secondarySetState(Droid* psDroid, SECONDARY_ORDER sec, SECONDARY_STATE Stat
 				if (psDroid->type == DROID_COMMAND)
 				{
 					// remove all the units from the commanders group
-					for (psCurr = psDroid->group->psList; psCurr; psCurr = psNext)
+					for (psCurr = psDroid->group->members; psCurr; psCurr = psNext)
 					{
 						psNext = psCurr->psGrpNext;
 						psCurr->group->remove(psCurr);

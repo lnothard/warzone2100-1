@@ -595,7 +595,7 @@ namespace wzapi
 	class scripting_instance : public scripting_event_handling_interface
 	{
 	public:
-		scripting_instance(int player, const std::string& scriptName, const std::string& scriptPath);
+		scripting_instance(int player, std::string  scriptName, std::string  scriptPath);
 		virtual ~scripting_instance();
 
 	public:
@@ -633,7 +633,7 @@ namespace wzapi
 		// - 3.) The filename *only* is checked relative to the main scriptPath (LoadFileSearchOptions::ScriptPath_FileNameOnlyBackwardsCompat) - for backwards-compat only
 		// - 4.) The filePath is checked relative to the main scriptPath (LoadFileSearchOptions::ScriptPath)
 		bool loadFileForInclude(const std::string& filePath, std::string& loadedFilePath, char** ppFileData,
-		                        UDWORD* pFileSize, uint32_t searchFlags = LoadFileSearchOptions::All);
+		                        UDWORD* pFileSize, uint32_t searchFlags = LoadFileSearchOptions::All) const const;
 
 	public:
 		// event handling
@@ -667,7 +667,7 @@ namespace wzapi
 	public:
 		// output to debug log file
 		void dumpScriptLog(const std::string& info);
-		void dumpScriptLog(const std::string& info, int me);
+		void dumpScriptLog(const std::string& info, int me) const;
 
 	public:
 		virtual void updateGameTime(uint32_t gameTime) = 0;
@@ -788,7 +788,7 @@ namespace wzapi
 	{
 	public:
 		object_request();
-		object_request(const std::string& label);
+		object_request(std::string  label);
 		object_request(int x, int y);
 		object_request(OBJECT_TYPE type, int player, int id);
 	public:

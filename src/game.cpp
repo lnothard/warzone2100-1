@@ -5295,7 +5295,7 @@ static bool loadSaveDroidPointers(const WzString& pFileName, Droid** ppsCurrentD
 		{
 			if (isTransporter(psDroid) && psDroid->group != nullptr) // Check for droids in the transporter.
 			{
-				for (Droid* psTrDroid = psDroid->group->psList; psTrDroid != nullptr; psTrDroid = psTrDroid->
+				for (Droid* psTrDroid = psDroid->group->members; psTrDroid != nullptr; psTrDroid = psTrDroid->
 				     psGrpNext)
 				{
 					if (psTrDroid->id == id)
@@ -5872,7 +5872,7 @@ static bool writeDroidFile(const char* pFileName, Droid** ppsCurrentDroidLists)
 			mRoot[droidKey.toStdString()] = writeDroid(psCurr, onMission, counter);
 			if (isTransporter(psCurr)) // if transporter save any droids in the grp
 			{
-				for (Droid* psTrans = psCurr->group->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
+				for (Droid* psTrans = psCurr->group->members; psTrans != nullptr; psTrans = psTrans->psGrpNext)
 				{
 					if (psTrans != psCurr)
 					{

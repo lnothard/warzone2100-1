@@ -1006,7 +1006,7 @@ void saveCampaignData()
 				// Empty the transporter into the mission list
 				ASSERT_OR_RETURN(, psDroid->group != nullptr, "Transporter does not have a group");
 
-				for (psCurr = psDroid->group->psList; psCurr != nullptr && psCurr != psDroid; psCurr = psCurrNext)
+				for (psCurr = psDroid->group->members; psCurr != nullptr && psCurr != psDroid; psCurr = psCurrNext)
 				{
 					psCurrNext = psCurr->psGrpNext;
 					// Remove it from the transporter group
@@ -1709,7 +1709,7 @@ void unloadTransporter(Droid* psTransporter, UDWORD x, UDWORD y, bool goingHome)
 	if (isTransporter(psTransporter))
 	{
 		ASSERT(psTransporter->group != nullptr, "psTransporter->psGroup is null??");
-		for (psDroid = psTransporter->group->psList; psDroid != nullptr && psDroid != psTransporter; psDroid =
+		for (psDroid = psTransporter->group->members; psDroid != nullptr && psDroid != psTransporter; psDroid =
 		     psNext)
 		{
 			psNext = psDroid->psGrpNext;
@@ -1760,8 +1760,8 @@ void unloadTransporter(Droid* psTransporter, UDWORD x, UDWORD y, bool goingHome)
 		transporterSetScriptCurrent(nullptr);
 
 		/* remove droids from transporter group if not already transferred to script group */
-		for (psDroid = psTransporter->group->psList; psDroid != nullptr
-                                                 && psDroid != psTransporter; psDroid = psNext)
+		for (psDroid = psTransporter->group->members; psDroid != nullptr
+                                                  && psDroid != psTransporter; psDroid = psNext)
 		{
 			psNext = psDroid->psGrpNext;
 			psTransporter->group->remove(psDroid);
@@ -3049,7 +3049,7 @@ void moveDroidsToSafety(Droid* psTransporter)
 	ASSERT_OR_RETURN(, isTransporter(psTransporter), "unit not a Transporter");
 
 	//move droids out of Transporter into mission list
-	for (psDroid = psTransporter->group->psList; psDroid != nullptr && psDroid != psTransporter; psDroid = psNext)
+	for (psDroid = psTransporter->group->members; psDroid != nullptr && psDroid != psTransporter; psDroid = psNext)
 	{
 		psNext = psDroid->psGrpNext;
 		psTransporter->group->remove(psDroid);
@@ -3206,8 +3206,8 @@ void emptyTransporters(bool bOffWorld)
 				and processMission() will assign them a location etc */
 				if (bOffWorld)
 				{
-					for (psDroid = psTransporter->group->psList; psDroid != nullptr
-                                                       && psDroid != psTransporter; psDroid = psNext)
+					for (psDroid = psTransporter->group->members; psDroid != nullptr
+                                                        && psDroid != psTransporter; psDroid = psNext)
 					{
 						psNext = psDroid->psGrpNext;
 						//take it out of the Transporter group
@@ -3220,8 +3220,8 @@ void emptyTransporters(bool bOffWorld)
 				processed by the endMission function */
 				else
 				{
-					for (psDroid = psTransporter->group->psList; psDroid != nullptr
-                                                       && psDroid != psTransporter; psDroid = psNext)
+					for (psDroid = psTransporter->group->members; psDroid != nullptr
+                                                        && psDroid != psTransporter; psDroid = psNext)
 					{
 						psNext = psDroid->psGrpNext;
 						//take it out of the Transporter group
@@ -3242,8 +3242,8 @@ void emptyTransporters(bool bOffWorld)
 		if (isTransporter(psTransporter))
 		{
 			//for each droid within the transporter...
-			for (psDroid = psTransporter->group->psList; psDroid != nullptr
-                                                   && psDroid != psTransporter; psDroid = psNext)
+			for (psDroid = psTransporter->group->members; psDroid != nullptr
+                                                    && psDroid != psTransporter; psDroid = psNext)
 			{
 				psNext = psDroid->psGrpNext;
 				//take it out of the Transporter group

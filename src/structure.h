@@ -147,10 +147,10 @@ struct StructureBounds
     StructureBounds();
     StructureBounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords);
 
-    [[nodiscard]] bool is_valid() const;
+    [[nodiscard]] bool isValid() const;
 
-    Vector2i top_left_coords {0, 0};
-    Vector2i size_in_coords {0, 0};
+    Vector2i map {0, 0};
+    Vector2i size {0, 0};
 };
 
 struct StructureStats : public BaseStats
@@ -246,16 +246,16 @@ namespace Impl
         [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
         [[nodiscard]] Vector2i getSize() const;
         [[nodiscard]] int get_foundation_depth() const noexcept;
-        [[nodiscard]] const iIMDShape& get_IMD_shape() const final;
-        void update_expected_damage(unsigned damage, bool is_direct) noexcept override;
+        [[nodiscard]] const iIMDShape& getImdShape() const final;
+        void updateExpectedDamage(unsigned damage, bool is_direct) noexcept override;
         [[nodiscard]] unsigned calculateSensorRange() const final;
         [[nodiscard]] int calculate_gate_height(std::size_t time, int minimum) const;
         void set_foundation_depth(int depth) noexcept;
         void printInfo() const override;
         [[nodiscard]] unsigned build_points_to_completion() const;
         [[nodiscard]] unsigned calculate_refunded_power() const;
-        [[nodiscard]] int calculate_attack_priority(const ::Unit* target, int weapon_slot) const final;
-        [[nodiscard]] const ::SimpleObject& get_target(int weapon_slot) const final;
+        [[nodiscard]] int calculateAttackPriority(const ::Unit* target, int weapon_slot) const final;
+        [[nodiscard]] const ::SimpleObject& getTarget(int weapon_slot) const final;
         [[nodiscard]] STRUCTURE_STATE get_state() const;
     private:
         using enum STRUCTURE_ANIMATION_STATE;
