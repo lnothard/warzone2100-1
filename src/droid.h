@@ -211,8 +211,14 @@ public:
     virtual void moveTurnDroid(unsigned x, unsigned y) = 0;
     virtual void moveShuffleDroid(Vector2i s) = 0;
     virtual bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode) = 0;
+    virtual void actionDroidBase(Action* psAction) = 0;
     virtual RtrBestResult decideWhereToRepairAndBalance() = 0;
     virtual SECONDARY_STATE Droid::secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode) = 0;
+    virtual void orderDroidAdd(Order* order_) = 0;
+    virtual void orderDroidAddPending(Order* order_) = 0;
+    virtual void orderCheckList() = 0;
+    virtual void orderDroidBase(Order* psOrder) = 0;
+    virtual bool tryDoRepairlikeAction() = 0;
 };
 
 namespace Impl
@@ -247,11 +253,21 @@ namespace Impl
       [[nodiscard]] bool isAttacking() const noexcept;
       void upgradeHitPoints();
 
+      bool tryDoRepairlikeAction() final;
+
+      void orderDroidBase(Order* psOrder) final;
+
+      void orderCheckList() final;
+
+      void orderDroidAdd(Order* order_) final;
+
+      void orderDroidAddPending(Order* order_) final;
+
       bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode) final;
 
       void setUpBuildModule();
 
-      void actionDroidBase(Action* psAction);
+      void actionDroidBase(Action* psAction) final;
 
       int droidDamage(unsigned damage, WEAPON_CLASS weaponClass,
                       WEAPON_SUBCLASS weaponSubClass, unsigned impactTime,

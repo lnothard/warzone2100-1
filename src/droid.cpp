@@ -3598,7 +3598,7 @@ if (psDroid->droidType == DROID_SENSOR)
         }
         return (SECONDARY_STATE)(state & DSS_HALT_MASK);
         break;
-      case RETURN_TO_LOC:
+      case RETURN_TO_LOCATION:
         return (SECONDARY_STATE)(state & DSS_RTL_MASK);
         break;
       case FIRE_DESIGNATOR:
@@ -3610,6 +3610,612 @@ if (psDroid->droidType == DROID_SENSOR)
         break;
     }
     return DSS_NONE;
+  }
+
+  /**
+   * Add an order to a droid's order list
+   */
+  void Droid::orderDroidAdd(Order* order_)
+  {
+    if (listSize >= asOrderList.size()) {
+      // Make more room to store the order.
+      asOrderList.resize(asOrderList.size() + 1);
+    }
+
+    asOrderList[listSize] = *order_;
+    listSize += 1;
+
+    using enum ORDER_TYPE;
+    // if not doing anything - do it immediately
+    if (listSize <= 1 &&
+        (order->type == NONE ||
+         order->type == GUARD ||
+         order->type == PATROL ||
+         order->type == CIRCLE ||
+         order->type == HOLD)) {
+
+      orderDroidList(this);
+    }
+  }
+
+  void Droid::orderDroidAddPending(Order* order_)
+  {
+    asOrderList.push_back(*order_);
+
+    // only display one arrow, bOrderEffectDisplayed must be set
+    // to false once per arrow.
+    if (!bOrderEffectDisplayed) {
+      Vector3i position(0, 0, 0);
+      if (order_->target == nullptr) {
+        position.x = order_->pos.x;
+        position.z = order_->pos.y;
+      }
+      else {
+        position = order_->target->pos.xzy();
+      }
+      position.y = map_Height(position.x, position.z) + 32;
+      if (order_->target != nullptr &&
+          order_->target->getDisplayData().imd_shape != nullptr) {
+        position.y += order_->target->getDisplayData().imd_shape->max.y;
+      }
+      addEffect(&position, EFFECT_GROUP::WAYPOINT,EFFECT_TYPE::WAYPOINT_TYPE,
+                false, nullptr, 0);
+      bOrderEffectDisplayed = true;
+    }
+  }
+
+  /**
+   * This function checks its order list: if a given order needs a target and
+   * the target has died, the order is removed from the list.
+   */
+  void Droid::orderCheckList()
+  {
+    for (unsigned i = 0; i < asOrderList.size(); ++i)
+    {
+      auto psTarget = asOrderList[i].target;
+      if (psTarget == nullptr || !psTarget->died) {
+        continue;
+      }
+      if ((int)i < listSize) {
+        syncDebugObject(psTarget, '-');
+        syncDebug("droid%d list erase dead droid%d", getId(), psTarget->getId());
+      }
+      orderDroidListEraseRange(this, i, i + 1);
+      --i; // If this underflows, the ++i will overflow it back.
+    }
+  }
+
+  /** This function actually tells the droid to perform the psOrder.
+   * This function is called everytime to send a direct order to a droid.
+   */
+  void Droid::orderDroidBase(Order* psOrder)
+  {
+    unsigned iFactoryDistSq;
+    Structure* psStruct;
+    Structure* psFactory;
+    auto& psPropStats = propulsion;
+    const Vector3i rPos(psOrder->pos, 0);
+    syncDebugDroid(this, '-');
+    syncDebug("%d ordered %s", getId(),
+              getDroidOrderName(psOrder->type).c_str());
+    objTrace(getId(), "base set order to %s (was %s)",
+             getDroidOrderName(psOrder->type).c_str(),
+             getDroidOrderName(order->type).c_str());
+
+    using enum ORDER_TYPE;
+    if (psOrder->type != TRANSPORT_IN // transporters special
+        && psOrder->target == nullptr // location-type order
+        && (validOrderForLoc(psOrder->type) || psOrder->type == BUILD)
+        && !fpathCheck(getPosition(), rPos, psPropStats->propulsionType)) {
+      if (!isHumanPlayer(getPlayer())) {
+        debug(LOG_SCRIPT, "Invalid order %s given to player %d's %s for position (%d, %d) - ignoring",
+              getDroidOrderName(psOrder->type).c_str(), getPlayer(),
+              droidGetName(this), psOrder->pos.x, psOrder->pos.y);
+      }
+      objTrace(getId(), "Invalid order %s for position (%d, %d) - ignoring",
+               getDroidOrderName(psOrder->type).c_str(),
+               psOrder->pos.x, psOrder->pos.y);
+      syncDebugDroid(this, '?');
+      return;
+    }
+
+    // deal with a droid receiving a primary order
+    if (!isTransporter(*this) && psOrder->type != NONE &&
+        psOrder->type != STOP && psOrder->type != GUARD) {
+
+      // reset secondary order
+      const unsigned oldState = secondaryOrder;
+      secondaryOrder &= ~(DSS_RTL_MASK | DSS_RECYCLE_MASK | DSS_PATROL_MASK);
+      secondaryOrderPending &= ~(DSS_RTL_MASK | DSS_RECYCLE_MASK | DSS_PATROL_MASK);
+      objTrace(getId(), "secondary order reset due to primary order set");
+
+      if (oldState != secondaryOrder && getPlayer() == selectedPlayer) {
+        intRefreshScreen();
+      }
+    }
+
+    // if this is a command droid - all it's units do the same thing
+    if ((type == DROID_TYPE::COMMAND) &&
+        (group != nullptr) &&
+        (group->isCommandGroup()) &&
+        (psOrder->type != GUARD) && //(psOrder->psObj == NULL)) &&
+        (psOrder->type != RETURN_TO_REPAIR) &&
+        (psOrder->type != RECYCLE)) {
+
+      if (psOrder->type == ATTACK) {
+        // change to attack target so that the group members
+        // guard order does not get canceled
+        psOrder->type = ATTACK_TARGET;
+        orderCmdGroupBase(group, psOrder);
+        psOrder->type = ATTACK;
+      }
+      else {
+        orderCmdGroupBase(group, psOrder);
+      }
+
+      // the commander doesn't have to pick up artifacts, one
+      // of his units will do it for him (if there are any in his group).
+      if ((psOrder->type == RECOVER) &&
+          (group->members != nullptr)) {
+        psOrder->type = NONE;
+      }
+    }
+
+    // A selected campaign transporter shouldn't be given orders by the player.
+    // Campaign transporter selection is required for it to be tracked by the camera, and
+    // should be the only case when it does get selected.
+    if (isTransporter(*this) &&
+        !bMultiPlayer &&
+        selected &&
+        (psOrder->type != TRANSPORT_OUT &&
+         psOrder->type != TRANSPORT_IN &&
+         psOrder->type != TRANSPORT_RETURN)) {
+      return;
+    }
+
+    switch (psOrder->type) {
+      case NONE:
+        // used when choose order cannot assign an order
+        break;
+      case STOP:
+        // get the droid to stop doing whatever it is doing
+        actionDroid(this, ACTION::NONE);
+        order = std::make_unique<Order>(Order(NONE));
+        break;
+      case HOLD:
+        // get the droid to stop doing whatever it is doing and temp hold
+        actionDroid(this, ACTION::NONE);
+        order = std::make_unique<Order>(*psOrder);
+        break;
+      case MOVE:
+      case SCOUT:
+        // can't move vtols to blocking tiles
+        if (isVtol() &&
+            fpathBlockingTile(map_coord(psOrder->pos),
+                              propulsion->propulsionType)) {
+          break;
+        }
+        //in multiPlayer, cannot move Transporter to blocking tile either
+        if (game.type == LEVEL_TYPE::SKIRMISH
+            && isTransporter(*this)
+            && fpathBlockingTile(map_coord(psOrder->pos), propulsion->propulsionType)) {
+          break;
+        }
+        // move a droid to a location
+        order = std::make_unique<Order>(*psOrder);
+        actionDroid(this, ACTION::MOVE, psOrder->pos.x, psOrder->pos.y);
+        break;
+      case PATROL:
+        order = std::make_unique<Order>(*psOrder);
+        order->pos2 = getPosition().xy();
+        actionDroid(this, ACTION::MOVE, psOrder->pos.x, psOrder->pos.y);
+        break;
+      case RECOVER:
+        order = std::make_unique<Order>(*psOrder);
+        actionDroid(this, ACTION::MOVE,
+                    psOrder->target->getPosition().x,
+                    psOrder->target->getPosition().y);
+        break;
+      case TRANSPORT_OUT:
+        // tell a (transporter) droid to leave home base for the offworld mission
+        order = std::make_unique<Order>(*psOrder);
+        actionDroid(this, ACTION::TRANSPORT_OUT, psOrder->pos.x, psOrder->pos.y);
+        break;
+      case TRANSPORT_RETURN:
+        // tell a (transporter) droid to return after unloading
+        order = std::make_unique<Order>(*psOrder);
+        actionDroid(this, ACTION::TRANSPORT_OUT, psOrder->pos.x, psOrder->pos.y);
+        break;
+      case TRANSPORT_IN:
+        // tell a (transporter) droid to fly onworld
+        order = std::make_unique<Order>(*psOrder);
+        actionDroid(this, ACTION::TRANSPORT_IN, psOrder->pos.x, psOrder->pos.y);
+        break;
+      case ATTACK:
+      case ATTACK_TARGET:
+        if (numWeapons(*this) == 0
+            || asWeaps[0].nStat == 0
+            || isTransporter(*this)) {
+          break;
+        }
+        else if (order->type == GUARD && psOrder->type == ATTACK_TARGET) {
+          // attacking something while guarding, don't change the order
+          actionDroid(this, ACTION::ATTACK, psOrder->target);
+        }
+        else if (psOrder->target && !psOrder->target->died) {
+          //cannot attack a Transporter with EW in multiPlayer
+          // FIXME: Why not ?
+          if (game.type == LEVEL_TYPE::SKIRMISH &&
+              hasElectronicWeapon() &&
+              dynamic_cast<Droid*>(psOrder->target) &&
+              isTransporter(*dynamic_cast<Droid*>(psOrder->target))) {
+            break;
+          }
+          order = std::make_unique<Order>(*psOrder);
+
+          if (isVtol() || actionInRange(this, psOrder->target, 0) ||
+              ((psOrder->type == ATTACK_TARGET ||
+                psOrder->type == ATTACK) && secondaryGetState(
+                this, SECONDARY_ORDER::HALT_TYPE) == DSS_HALT_HOLD)) {
+            // when DSS_HALT_HOLD, don't move to attack
+            actionDroid(this, ACTION::ATTACK, psOrder->target);
+          }
+          else {
+            actionDroid(this, ACTION::MOVE,
+                        psOrder->target->getPosition().x,
+                        psOrder->target->getPosition().y);
+          }
+        }
+        break;
+      case BUILD:
+      case LINE_BUILD:
+        // build a new structure or line of structures
+        ASSERT_OR_RETURN(, isConstructionDroid(this), "%s cannot construct things!", objInfo(this));
+        ASSERT_OR_RETURN(, psOrder->structure_stats != nullptr, "invalid structure stats pointer");
+        order = std::make_unique<Order>(*psOrder);
+        ASSERT_OR_RETURN(, !order->structure_stats ||
+                         order->structure_stats->type != DEMOLISH,
+                         "Cannot build demolition");
+        actionDroid(this, ACTION::BUILD, psOrder->pos.x, psOrder->pos.y);
+        objTrace(getId(), "Starting new construction effort of %s",
+                 psOrder->structure_stats ? getStatsName(psOrder->structure_stats) : "NULL");
+        break;
+      case BUILD_MODULE:
+        //build a module onto the structure
+        if (!isConstructionDroid(this) ||
+            psOrder->index < nextModuleToBuild(dynamic_cast<Structure*>(psOrder->target), -1)) {
+          break;
+        }
+        order = std::make_unique<Order>(
+                  BUILD,
+                  getModuleStat(dynamic_cast<Structure*>(psOrder->target)),
+                  psOrder->target->getPosition().xy(), 0);
+
+        ASSERT_OR_RETURN(, order->structure_stats != nullptr, "should have found a module stats");
+        ASSERT_OR_RETURN(, !order->structure_stats || order->structure_stats->type != DEMOLISH,
+                           "Cannot build demolition");
+        actionDroid(this, ACTION::BUILD,
+                    psOrder->target->getPosition().x,
+                    psOrder->target->getPosition().y);
+        objTrace(getId(), "Starting new upgrade of %s", psOrder->structure_stats
+          ? getStatsName(psOrder->structure_stats)
+          : "NULL");
+        break;
+      case HELP_BUILD:
+        // help to build a structure that is starting to be built
+        ASSERT_OR_RETURN(, isConstructionDroid(this), "Not a constructor droid");
+        ASSERT_OR_RETURN(, psOrder->target != nullptr, "Help to build a NULL pointer?");
+        if (action == ACTION::BUILD && psOrder->target == actionTarget[0]
+            // skip LINEBUILD -> we still want to drop pending structure blueprints
+            // this isn't a perfect solution, because ordering a LINEBUILD with negative energy, and then clicking
+            // on first structure being built, will remove it, as we change order from DORDR_LINEBUILD to BUILD
+            && (order->type != LINE_BUILD)) {
+          // we are already building it, nothing to do
+          objTrace(getId(), "Ignoring HELPBUILD because already building object %i", psOrder->target->getId());
+          break;
+        }
+        order = std::make_unique<Order>(*psOrder);
+        order->pos = psOrder->target->getPosition().xy();
+        order->structure_stats = dynamic_cast<Structure*>(psOrder->target)->getStats();
+        ASSERT_OR_RETURN(, !order->structure_stats || order->structure_stats->type != STRUCTURE_TYPE::DEMOLISH,
+                           "Cannot build demolition");
+        actionDroid(this, ACTION::BUILD, order->pos.x, order->pos.y);
+        objTrace(getId(), "Helping construction of %s",
+                 psOrder->structure_stats ? getStatsName(order->structure_stats) : "NULL");
+        break;
+      case DEMOLISH:
+        if (!(type == DROID_TYPE::CONSTRUCT ||
+              type == DROID_TYPE::CYBORG_CONSTRUCT)) {
+          break;
+        }
+        order = std::make_unique<Order>(*psOrder);
+        order->pos = psOrder->target->getPosition().xy();
+        actionDroid(this, ACTION::DEMOLISH, psOrder->target);
+        break;
+      case REPAIR:
+        if (!(type == DROID_TYPE::CONSTRUCT ||
+              type == DROID_TYPE::CYBORG_CONSTRUCT)) {
+          break;
+        }
+        order = std::make_unique<Order>(*psOrder);
+        order->pos = psOrder->target->getPosition().xy();
+        actionDroid(this, ACTION::REPAIR, psOrder->target);
+        break;
+      case DROID_REPAIR:
+        if (!(type == DROID_TYPE::REPAIRER ||
+              type == DROID_TYPE::CYBORG_REPAIR)) {
+          break;
+        }
+        order = std::make_unique<Order>(*psOrder);
+        actionDroid(this, ACTION::DROID_REPAIR, psOrder->target);
+        break;
+      case OBSERVE:
+        // keep an object within sensor view
+        order = std::make_unique<Order>(*psOrder);
+        actionDroid(this, ACTION::OBSERVE, psOrder->target);
+        break;
+      case FIRE_SUPPORT:
+        if (isTransporter(*this)) {
+          debug(LOG_ERROR, "Sorry, transports cannot be assigned to commanders.");
+          order = std::make_unique<Order>(NONE);
+          break;
+        }
+        if (psDroid->asWeaps[0].nStat == 0) {
+          break;
+        }
+        order = std::make_unique<Order>(*psOrder);
+        // let the order update deal with vtol droids
+        if (!isVtol()) {
+          actionDroid(this, ACTION::FIRE_SUPPORT, psOrder->target);
+        }
+
+        if (getPlayer() == selectedPlayer) {
+          orderPlayFireSupportAudio(psOrder->target);
+        }
+        break;
+      case COMMANDER_SUPPORT:
+        if (isTransporter(*this)) {
+          debug(LOG_ERROR, "Sorry, transports cannot be assigned to commanders.");
+          order = std::make_unique<Order>(NONE);
+          break;
+        }
+          ASSERT_OR_RETURN(, psOrder->target != nullptr, "Can't command a NULL");
+        if (cmdDroidAddDroid((Droid*)psOrder->target, this) &&
+            getPlayer() == selectedPlayer) {
+          orderPlayFireSupportAudio(psOrder->target);
+        }
+        else if (getPlayer() == selectedPlayer) {
+          audio_PlayBuildFailedOnce();
+        }
+        break;
+      case RETURN_TO_BASE:
+        for (auto& psStruct : apsStructLists[getPlayer()])
+        {
+          if (psStruct->getStats().type == STRUCTURE_TYPE::HQ) {
+            auto pos = psStruct->getPosition().xy();
+
+            order = std::make_unique<Order>(*psOrder);
+            // find a place to land for vtols (and transporters in a multiplayer game)
+            if (isVtol() || (game.type == LEVEL_TYPE::SKIRMISH &&
+                             isTransporter(*this))) {
+              actionVTOLLandingPos(this, &pos);
+            }
+            actionDroid(this, ACTION::MOVE, pos.x, pos.y);
+            break;
+          }
+        }
+        // no HQ so go to the landing zone
+        if (order->type != RETURN_TO_BASE) {
+          // see if the LZ has been set up
+          auto iDX = getLandingX(getPlayer());
+          auto iDY = getLandingY(getPlayer());
+
+          if (iDX && iDY) {
+            order = std::make_unique<Order>(*psOrder);
+            actionDroid(this, ACTION::MOVE, iDX, iDY);
+          }
+          else {
+            // haven't got an LZ set up so don't do anything
+            actionDroid(this, NONE);
+            order = std::make_unique<Order>(NONE);
+          }
+        }
+        break;
+      case RETURN_TO_REPAIR:
+      case RTR_SPECIFIED:
+      {
+        if (isVtol()) {
+          moveToRearm(this);
+          break;
+        }
+        // if already has a target repair, don't override it: it might be different
+        // and we don't want come back and forth between 2 repair points
+        if (order->type == RETURN_TO_REPAIR && psOrder->target && !psOrder->target->died) {
+          objTrace(getId(), "DONE FOR NOW");
+          break;
+        }
+        RtrBestResult rtrData;
+        if (psOrder->rtrType == RTR_DATA_TYPE::NO_RESULT ||
+            !psOrder->target) {
+          rtrData = decideWhereToRepairAndBalance();
+        }
+        else {
+          rtrData = RtrBestResult(*psOrder);
+        }
+
+        /* give repair order if repair facility found */
+        if (rtrData.type == RTR_DATA_TYPE::REPAIR_FACILITY) {
+          /* move to front of structure */
+          order = std::make_unique<Order>(psOrder->type, rtrData.target, RTR_DATA_TYPE::REPAIR_FACILITY);
+          order->pos = rtrData.target->getPosition().xy();
+          /* If in multiPlayer, and the Transporter has been sent to be
+            * repaired, need to find a suitable location to drop down. */
+          if (game.type == LEVEL_TYPE::SKIRMISH && isTransporter(*this)) {
+            Vector2i pos = order->pos;
+
+            objTrace(getId(), "Repair transport");
+            actionVTOLLandingPos(this, &pos);
+            actionDroid(this, ACTION::MOVE, pos.x, pos.y);
+          }
+          else {
+            objTrace(getId(), "Go to repair facility at (%d, %d) using (%d, %d)!", rtrData.target->getPosition().x,
+                     rtrData.target->getPosition().y, order->pos.x, order->pos.y);
+            actionDroid(this, ACTION::MOVE, rtrData.target, order->pos.x, order->pos.y);
+          }
+        }
+          /* give repair order if repair droid found */
+        else if (rtrData.type == RTR_DATA_TYPE::DROID && !isTransporter(*this)) {
+          order = std::make_unique<Order>(psOrder->type, Vector2i(rtrData.target->getPosition().x, rtrData.psObj->pos.y),
+                                 RTR_DATA_TYPE::DROID);
+          psDroid->order.pos = rtrData.target->getPosition().xy();
+          psDroid->order.psObj = rtrData.target;
+          objTrace(getId(), "Go to repair at (%d, %d) using (%d, %d), time %i!", rtrData.target->getPosition().x,
+                   rtrData.target->getPosition().y, order->pos.x, order->pos.y, gameTime);
+          actionDroid(this, ACTION::MOVE, order->pos.x, order->pos.y);
+        }
+        else {
+          // no repair facility or HQ go to the landing zone
+          if (!bMultiPlayer && selectedPlayer == 0) {
+            objTrace(getId(), "could not RTR, doing RTL instead");
+            orderDroid(this, RETURN_TO_BASE, ModeImmediate);
+          }
+        }
+      }
+        break;
+      case EMBARK:
+      {
+        auto embarkee = dynamic_cast<Droid*>(psOrder->target);
+        if (isTransporter(*this) // require a transporter for embarking.
+            || embarkee == nullptr || !isTransporter(*embarkee)) // nor can a transporter load another transporter
+        {
+          debug(LOG_ERROR, "Sorry, can only load things that aren't transporters into things that are.");
+          order = std::make_unique<Order>(NONE);
+          break;
+        }
+        // move the droid to the transporter location
+        order = std::make_unique<Order>(*psOrder);
+        order->pos = psOrder->target->getPosition().xy();
+        actionDroid(this, ACTION::MOVE, psOrder->target->getPosition().x, psOrder->target->getPosition().y);
+        break;
+      }
+      case DISEMBARK:
+        //only valid in multiPlayer mode
+        if (bMultiPlayer) {
+          //this order can only be given to Transporter droids
+          if (isTransporter(*this)) {
+            order = std::make_unique<Order>(*psOrder);
+            //move the Transporter to the requested location
+            actionDroid(this, ACTION::MOVE, psOrder->pos.x, psOrder->pos.y);
+            //close the Transporter interface - if up
+            if (widgGetFromID(psWScreen, IDTRANS_FORM) != nullptr) {
+              intRemoveTrans();
+            }
+          }
+        }
+        break;
+      case RECYCLE:
+        psFactory = nullptr;
+        iFactoryDistSq = 0;
+        for (psStruct : apsStructLists[getPlayer()])
+        {
+          // Look for nearest factory or repair facility
+          if (psStruct->pStructureType->type == REF_FACTORY || psStruct->pStructureType->type == REF_CYBORG_FACTORY
+              || psStruct->pStructureType->type == REF_VTOL_FACTORY || psStruct->pStructureType->type ==
+                                                                       REF_REPAIR_FACILITY)
+          {
+            /* get droid->facility distance squared */
+            int iStructDistSq = droidSqDist(this, psStruct);
+
+            /* Choose current structure if first facility found or nearer than previously chosen facility */
+            if (psStruct->getState() == STRUCTURE_STATE::BUILT &&
+                iStructDistSq > 0 && (psFactory == nullptr || iFactoryDistSq > iStructDistSq)) {
+              psFactory = psStruct;
+              iFactoryDistSq = iStructDistSq;
+            }
+          }
+        }
+
+        /* give recycle order if facility found */
+        if (psFactory != nullptr) {
+          /* move to front of structure */
+          order = Order(psOrder->type, psFactory);
+          order->pos = psFactory->pos.xy();
+          setDroidTarget(this, psFactory);
+          actionDroid(this, ACTION::MOVE, psFactory, order->pos.x, order->pos.y);
+        }
+        break;
+      case GUARD:
+        order = std::make_unique<Order>(*psOrder);
+        if (psOrder->target != nullptr) {
+          order->pos = psOrder->target->getPosition().xy();
+        }
+        actionDroid(this, ACTION::NONE);
+        break;
+      case RESTORE:
+        if (!hasElectronicWeapon()) {
+          break;
+        }
+        if (!dynamic_cast<Structure*>(psOrder->target)) {
+          ASSERT(false, "orderDroidBase: invalid object type for Restore order");
+          break;
+        }
+        order = std::make_unique<Order>(*psOrder);
+        order->pos = psOrder->target->getPosition().xy();
+        actionDroid(this, ACTION::RESTORE, psOrder->target);
+        break;
+      case REARM:
+        // didn't get executed before
+        if (!vtolRearming(*this)) {
+          order = std::make_unique<Order>(*psOrder);
+          actionDroid(this, ACTION::MOVE_TO_REARM, psOrder->target);
+          assignVTOLPad(this, (Structure*)psOrder->target);
+        }
+        break;
+      case CIRCLE:
+        if (!isVtol()) {
+          break;
+        }
+        order = std::make_unique<Order>(*psOrder);
+        actionDroid(this, ACTION::MOVE, psOrder->pos.x, psOrder->pos.y);
+        break;
+      default:
+        ASSERT(false, "orderUnitBase: unknown order");
+        break;
+    }
+    syncDebugDroid(this, '+');
+  }
+
+  bool Droid::tryDoRepairlikeAction()
+  {
+    if (isRepairlikeAction(action)) {
+      return true; // Already doing something.
+    }
+
+    switch (type) {
+      case REPAIRER:
+      case CYBORG_REPAIR:
+        //repair droids default to repairing droids within a given range
+        if (Droid* repairTarget = checkForRepairRange(psDroid)) {
+          actionDroid(this, ACTION::DROID_REPAIR, repairTarget);
+        }
+        break;
+      case CONSTRUCT:
+      case CYBORG_CONSTRUCT:
+        //construct droids default to repairing and helping structures within a given range
+        auto damaged = checkForDamagedStruct(this);
+        if (damaged.second == REPAIR) {
+          actionDroid(this, damaged.second, damaged.first);
+        }
+        else if (damaged.second == BUILD) {
+          order->structure_stats = damaged.first->stats;
+          order->direction = damaged.first->rotation.direction;
+          actionDroid(this, damaged.second, damaged.first->pos.x, damaged.first->pos.y);
+        }
+        break;
+      default:
+        return false;
+    }
+    return true;
   }
 }
 

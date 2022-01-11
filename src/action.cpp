@@ -562,11 +562,11 @@ void actionDroid(Droid* psDroid, ACTION action)
 
 	memset(&sAction, 0, sizeof(Action));
 	sAction.action = action;
-	actionDroidBase(psDroid, &sAction);
+	psDroid->actionDroidBase(&sAction);
 }
 
 /* Give a droid an action with a location target */
-void actionDroid(Droid* psDroid, ACTION action, UDWORD x, UDWORD y)
+void actionDroid(Droid* psDroid, ACTION action, unsigned x, unsigned y)
 {
 	Action sAction;
 
@@ -574,7 +574,7 @@ void actionDroid(Droid* psDroid, ACTION action, UDWORD x, UDWORD y)
 	sAction.action = action;
 	sAction.x = x;
 	sAction.y = y;
-	actionDroidBase(psDroid, &sAction);
+	psDroid->actionDroidBase(&sAction);
 }
 
 /* Give a droid an action with an object target */
@@ -587,7 +587,7 @@ void actionDroid(Droid* psDroid, ACTION action, SimpleObject* psObj)
 	sAction.psObj = psObj;
 	sAction.x = psObj->pos.x;
 	sAction.y = psObj->pos.y;
-	actionDroidBase(psDroid, &sAction);
+	psDroid->actionDroidBase(&sAction);
 }
 
 /* Give a droid an action with an object target and a location */
@@ -601,7 +601,7 @@ void actionDroid(Droid* psDroid, ACTION action,
 	sAction.psObj = psObj;
 	sAction.x = x;
 	sAction.y = y;
-	actionDroidBase(psDroid, &sAction);
+	psDroid->actionDroidBase(&sAction);
 }
 
 
