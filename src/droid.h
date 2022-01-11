@@ -219,6 +219,7 @@ public:
     virtual void orderCheckList() = 0;
     virtual void orderDroidBase(Order* psOrder) = 0;
     virtual bool tryDoRepairlikeAction() = 0;
+    virtual void orderUpdateDroid() = 0;
 };
 
 namespace Impl
@@ -251,6 +252,7 @@ namespace Impl
       [[nodiscard]] bool isStationary() const final;
       [[nodiscard]] bool isDamaged() const final;
       [[nodiscard]] bool isAttacking() const noexcept;
+
       void upgradeHitPoints();
 
       bool tryDoRepairlikeAction() final;
@@ -258,6 +260,8 @@ namespace Impl
       void orderDroidBase(Order* psOrder) final;
 
       void orderCheckList() final;
+
+      void orderUpdateDroid() final;
 
       void orderDroidAdd(Order* order_) final;
 
