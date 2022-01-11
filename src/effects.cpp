@@ -356,50 +356,50 @@ void addEffect(const Vector3i* pos, EFFECT_GROUP group, EFFECT_TYPE type, bool s
 	}
 
 	/* Do all the effect type specific stuff */
-	switch (group)
-	{
-	case EFFECT_SMOKE:
+	switch (group) {
+    using enum EFFECT_GROUP;
+	case SMOKE:
 		effectSetupSmoke(psEffect);
 		break;
-	case EFFECT_GRAVITON:
+	case GRAVITON:
 		effectSetupGraviton(psEffect);
 		break;
-	case EFFECT_EXPLOSION:
+	case EXPLOSION:
 		effectSetupExplosion(psEffect);
 		break;
-	case EFFECT_CONSTRUCTION:
+	case CONSTRUCTION:
 		effectSetupConstruction(psEffect);
 		break;
-	case EFFECT_WAYPOINT:
+	case WAYPOINT:
 		effectSetupWayPoint(psEffect);
 		break;
-	case EFFECT_BLOOD:
+	case BLOOD:
 		effectSetupBlood(psEffect);
 		break;
-	case EFFECT_DESTRUCTION:
+	case DESTRUCTION:
 		effectSetupDestruction(psEffect);
 		break;
-	case EFFECT_FIRE:
+	case FIRE:
 		effectSetupFire(psEffect);
 		break;
-	case EFFECT_SAT_LASER:
+	case SAT_LASER:
 		effectSetupSatLaser(psEffect);
 		break;
-	case EFFECT_FIREWORK:
+	case FIREWORK:
 		effectSetupFirework(psEffect);
 		break;
-	case EFFECT_FREED:
+	case FREED:
 		ASSERT(false, "Weirdy group type for an effect");
 		break;
 	}
 
 	/* As of yet, it hasn't bounced (or whatever)... */
-	if (type != EXPLOSION_TYPE_LAND_LIGHT)
-	{
+	if (type != EFFECT_TYPE::EXPLOSION_TYPE_LAND_LIGHT) {
 		psEffect->specific = 0;
 	}
 
-	ASSERT(psEffect->imd != nullptr || group == EFFECT_DESTRUCTION || group == EFFECT_FIRE || group == EFFECT_SAT_LASER,
+	ASSERT(psEffect->imd != nullptr || group == EFFECT_GROUP::DESTRUCTION || 
+         group == EFFECT_GROUP::FIRE || group == EFFECT_SAT_LASER,
 	       "null effect imd");
 
 	activeList.push_back(psEffect);
@@ -420,7 +420,7 @@ void processEffects(const glm::mat4& viewMatrix)
 				it = activeList.erase(it);
 				continue;
 			}
-			if (psEffect->group != EFFECT_FREED && clipXY(static_cast<SDWORD>(psEffect->position.x),
+			if (psEffect->group != EFFECT_GROUP::FREED && clipXY(static_cast<SDWORD>(psEffect->position.x),
 			                                              static_cast<SDWORD>(psEffect->position.z))) {
 				bucketAddTypeToList(RENDER_EFFECT, psEffect, viewMatrix);
 			}
@@ -436,79 +436,69 @@ void processEffects(const glm::mat4& viewMatrix)
 static bool updateEffect(EFFECT* psEffect)
 {
 	/* What type of effect are we dealing with? */
-	switch (psEffect->group)
-	{
-	case EFFECT_EXPLOSION:
+	switch (psEffect->group) {
+    using enum EFFECT_GROUP;
+	case EXPLOSION:
 		return updateExplosion(psEffect);
-	case EFFECT_WAYPOINT:
-		if (!gamePaused())
-		{
+	case WAYPOINT:
+		if (!gamePaused()) {
 			return updateWaypoint(psEffect);
 		}
 		return true;
-	case EFFECT_CONSTRUCTION:
-		if (!gamePaused())
-		{
+	case CONSTRUCTION:
+		if (!gamePaused()) {
 			return updateConstruction(psEffect);
 		}
 		return true;
-	case EFFECT_SMOKE:
-		if (!gamePaused())
-		{
+	case SMOKE:
+		if (!gamePaused()) {
 			return updatePolySmoke(psEffect);
 		}
 		return true;
-	case EFFECT_GRAVITON:
-		if (!gamePaused())
-		{
+	case GRAVITON:
+		if (!gamePaused()) {
 			return updateGraviton(psEffect);
 		}
 		return true;
-	case EFFECT_BLOOD:
-		if (!gamePaused())
-		{
+	case BLOOD:
+		if (!gamePaused()) {
 			return updateBlood(psEffect);
 		}
 		return true;
-	case EFFECT_DESTRUCTION:
-		if (!gamePaused())
-		{
+	case DESTRUCTION:
+		if (!gamePaused()) {
 			return updateDestruction(psEffect);
 		}
 		return true;
-	case EFFECT_FIRE:
-		if (!gamePaused())
-		{
+	case FIRE:
+		if (!gamePaused()) {
 			return updateFire(psEffect);
 		}
 		return true;
-	case EFFECT_SAT_LASER:
-		if (!gamePaused())
-		{
+	case SAT_LASER:
+		if (!gamePaused()) {
 			return updateSatLaser(psEffect);
 		}
 		return true;
-	case EFFECT_FIREWORK:
-		if (!gamePaused())
-		{
+	case FIREWORK:
+		if (!gamePaused()) {
 			return updateFirework(psEffect);
 		}
 		return true;
-	case EFFECT_FREED:
+	case FREED:
 		break;
 	}
 	debug(LOG_ERROR, "Weirdy class of effect passed to updateEffect");
 	abort();
 }
 
-// ----------------------------------------------------------------------------------------
 // ALL THE UPDATE FUNCTIONS
-// ----------------------------------------------------------------------------------------
+
 /** Update the waypoint effects.*/
 static bool updateWaypoint(EFFECT* psEffect)
 {
-	if (!(keyDown(KEY_LCTRL) || keyDown(KEY_RCTRL) || keyDown(KEY_LSHIFT) || keyDown(KEY_RSHIFT)))
-	{
+	if (!(keyDown(KEY_LCTRL) || keyDown(KEY_RCTRL) ||
+        keyDown(KEY_LSHIFT) || keyDown(KEY_RSHIFT))) {
 		return false;
 	}
 	return true;
@@ -516,37 +506,33 @@ static bool updateWaypoint(EFFECT* psEffect)
 
 static bool updateFirework(EFFECT* psEffect)
 {
-	UDWORD height;
-	UDWORD xDif, yDif, radius, val;
+	unsigned height;
+	unsigned xDif, yDif, radius, val;
 	Vector3i dv;
-	SDWORD dif;
-	UDWORD drop;
+	int dif;
+	unsigned drop;
 
 	/* Move it */
 	psEffect->position.x += graphicsTimeAdjustedIncrement(psEffect->velocity.x);
 	psEffect->position.y += graphicsTimeAdjustedIncrement(psEffect->velocity.y);
 	psEffect->position.z += graphicsTimeAdjustedIncrement(psEffect->velocity.z);
 
-	if (psEffect->type == FIREWORK_TYPE_LAUNCHER)
-	{
-		height = static_cast<UDWORD>(psEffect->position.y);
-		if (height > psEffect->size)
-		{
+	if (psEffect->type == EFFECT_TYPE::FIREWORK_TYPE_LAUNCHER) {
+		height = static_cast<unsigned>(psEffect->position.y);
+		if (height > psEffect->size) {
 			dv.x = static_cast<int>(psEffect->position.x);
 			dv.z = static_cast<int>(psEffect->position.z);
 			dv.y = static_cast<int>(psEffect->position.y + (psEffect->radius / 2));
-			addEffect(&dv, EFFECT_EXPLOSION, EXPLOSION_TYPE_MEDIUM, false, nullptr, 0);
-			audio_PlayStaticTrack(static_cast<SDWORD>(psEffect->position.x), static_cast<SDWORD>(psEffect->position.z),
+			addEffect(&dv, EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_MEDIUM, false, nullptr, 0);
+			audio_PlayStaticTrack(static_cast<int>(psEffect->position.x), static_cast<int>(psEffect->position.z),
 			                      ID_SOUND_EXPLOSION);
 
 			for (dif = 0; dif < (psEffect->radius * 2); dif += 20)
 			{
-				if (dif < psEffect->radius)
-				{
+				if (dif < psEffect->radius) {
 					drop = psEffect->radius - dif;
 				}
-				else
-				{
+				else {
 					drop = dif - psEffect->radius;
 				}
 				radius = (UDWORD)sqrtf(psEffect->radius * psEffect->radius - drop * drop);
@@ -1653,52 +1639,45 @@ static void renderSmokeEffect(const EFFECT* psEffect, const glm::mat4& viewMatri
 	transparency = (transparency * 3) / 2; //JPS smoke strength increased for d3d 12 may 99
 
 	/* Make imds be transparent on 3dfx */
-	if (psEffect->type == SMOKE_TYPE_STEAM)
-	{
-		pie_Draw3DShape(psEffect->imd, psEffect->frameNumber, 0, brightness, pie_TRANSLUCENT,
+	if (psEffect->type == SMOKE_TYPE_STEAM) {
+		pie_Draw3DShape(psEffect->imd.get(), psEffect->frameNumber, 0, brightness, pie_TRANSLUCENT,
 		                EFFECT_STEAM_TRANSPARENCY / 2, viewMatrix * modelMatrix);
 	}
-	else
-	{
-		if (psEffect->type == SMOKE_TYPE_TRAIL)
-		{
-			pie_Draw3DShape(psEffect->imd, psEffect->frameNumber, 0, brightness, pie_TRANSLUCENT,
+	else {
+		if (psEffect->type == SMOKE_TYPE_TRAIL) {
+			pie_Draw3DShape(psEffect->imd.get(), psEffect->frameNumber, 0, brightness, pie_TRANSLUCENT,
 			                (2 * transparency) / 3, viewMatrix * modelMatrix);
 		}
 		else
 		{
-			pie_Draw3DShape(psEffect->imd, psEffect->frameNumber, 0, brightness, pie_TRANSLUCENT, transparency / 2,
+			pie_Draw3DShape(psEffect->imd.get(), psEffect->frameNumber, 0, brightness, pie_TRANSLUCENT, transparency / 2,
 			                viewMatrix * modelMatrix);
 		}
 	}
 }
 
 
-// ----------------------------------------------------------------------------------------
 // ALL THE SETUP FUNCTIONS
-// ----------------------------------------------------------------------------------------
+
 void effectSetupFirework(EFFECT* psEffect)
 {
-	if (psEffect->type == FIREWORK_TYPE_LAUNCHER)
-	{
+	if (psEffect->type == FIREWORK_TYPE_LAUNCHER) {
 		psEffect->velocity.x = 200 - rand() % 400;
 		psEffect->velocity.z = 200 - rand() % 400;
 		psEffect->velocity.y = 400 + rand() % 200; //height
 		psEffect->lifeSpan = GAME_TICKS_PER_SEC * 3;
 		psEffect->radius = 80 + rand() % 150;
 		psEffect->size = 300 + rand() % 300; //height it goes off
-		psEffect->imd = getImdFromIndex(MI_FIREWORK); // not actually drawn
+		psEffect->imd = std::make_unique<iIMDShape>(getImdFromIndex(MI_FIREWORK)); // not actually drawn
 	}
-	else
-	{
+	else {
 		psEffect->velocity.x = 20 - rand() % 40;
 		psEffect->velocity.z = 20 - rand() % 40;
 		psEffect->velocity.y = 0 - (20 + rand() % 40); //height
 		psEffect->lifeSpan = GAME_TICKS_PER_SEC * 4;
 
 		/* setup the imds */
-		switch (rand() % 3)
-		{
+		switch (rand() % 3) {
 		case 0:
 			psEffect->imd = getImdFromIndex(MI_FIREWORK);
 			psEffect->size = 45; //size of graphic

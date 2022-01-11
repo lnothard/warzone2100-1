@@ -245,15 +245,13 @@ Feature* buildFeature(FeatureStats const* psStats, unsigned x, unsigned y, bool 
 	//return the average of max/min height
 	int height = (foundationMin + foundationMax) / 2;
 
-	if (psStats->subType == FEATURE_TYPE::TREE)
-	{
+	if (psStats->subType == FEATURE_TYPE::TREE) {
 		psFeature->rot.direction = gameRand(DEG_360);
 	}
-	else
-	{
+	else {
 		psFeature->rot.direction = 0;
 	}
-	psFeature->body = psStats->body;
+	psFeature->hitPoints = psStats->body;
 	psFeature->periodicalDamageStart = 0;
 	psFeature->periodicalDamage = 0;
 
@@ -402,20 +400,19 @@ bool removeFeature(Feature* psDel)
 
 	if (psDel->psStats->subType == FEATURE_TYPE::GEN_ARTE || psDel->psStats->subType == FEATURE_TYPE::OIL_DRUM)
 	{
-		pos.x = psDel->pos.x;
-		pos.z = psDel->pos.y;
+		pos.x = psDel->getPosition().x;
+		pos.z = psDel->getPosition().y;
 		pos.y = map_Height(pos.x, pos.z) + 30;
-		addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_DISCOVERY, false, nullptr, 0, gameTime - deltaGameTime + 1);
-		if (psDel->psStats->subType == FEATURE_TYPE::GEN_ARTE)
-		{
+		addEffect(&pos, EFFECT_GROUP::EXPLOSION, EXPLOSION_TYPE_DISCOVERY, false, nullptr, 0, gameTime - deltaGameTime + 1);
+		if (psDel->psStats->subType == FEATURE_TYPE::GEN_ARTE) {
 			scoreUpdateVar(WD_ARTEFACTS_FOUND);
 			intRefreshScreen();
 		}
 	}
 
 	bool removedAMessage = false;
-	if (psDel->psStats->subType == FEATURE_TYPE::GEN_ARTE || psDel->psStats->subType == FEATURE_TYPE::OIL_RESOURCE)
-	{
+	if (psDel->psStats->subType == FEATURE_TYPE::GEN_ARTE ||
+      psDel->psStats->subType == FEATURE_TYPE::OIL_RESOURCE) {
 		for (unsigned player = 0; player < MAX_PLAYERS; ++player)
 		{
 			psMessage = findMessage(psDel, MSG_PROXIMITY, player);
@@ -427,14 +424,14 @@ bool removeFeature(Feature* psDel)
 			}
 		}
 	}
-	if (removedAMessage)
-	{
+	if (removedAMessage) {
 		jsDebugMessageUpdate();
 	}
 
-	debug(LOG_DEATH, "Killing off feature %s id %d (%p)", objInfo(psDel), psDel->id, static_cast<void *>(psDel));
-	killFeature(psDel);
+	debug(LOG_DEATH, "Killing off feature %s id %d (%p)", objInfo(psDel),
+        psDel->getId(), static_cast<void *>(psDel));
 
+	killFeature(psDel);
 	return true;
 }
 
@@ -458,52 +455,48 @@ bool destroyFeature(Feature* psDel, unsigned impactTime)
 		breadthScatter = TILE_UNITS / 2;
 		heightScatter = TILE_UNITS / 4;
 		//set which explosion to use based on size of feature
-		if (psDel->psStats->baseWidth < 2 && psDel->psStats->baseBreadth < 2)
-		{
+		if (psDel->psStats->baseWidth < 2 && psDel->psStats->baseBreadth < 2) {
 			explosionSize = EXPLOSION_TYPE_SMALL;
 		}
-		else if (psDel->psStats->baseWidth < 3 && psDel->psStats->baseBreadth < 3)
-		{
+		else if (psDel->psStats->baseWidth < 3 && psDel->psStats->baseBreadth < 3) {
 			explosionSize = EXPLOSION_TYPE_MEDIUM;
 		}
-		else
-		{
+		else {
 			explosionSize = EXPLOSION_TYPE_LARGE;
 		}
 		for (i = 0; i < 4; i++)
 		{
-			pos.x = psDel->pos.x + widthScatter - rand() % (2 * widthScatter);
-			pos.z = psDel->pos.y + breadthScatter - rand() % (2 * breadthScatter);
-			pos.y = psDel->pos.z + 32 + rand() % heightScatter;
-			addEffect(&pos, EFFECT_EXPLOSION, explosionSize, false, nullptr, 0, impactTime);
+			pos.x = psDel->getPosition().x + widthScatter - rand() % (2 * widthScatter);
+			pos.z = psDel->getPosition().y + breadthScatter - rand() % (2 * breadthScatter);
+			pos.y = psDel->getPosition().z + 32 + rand() % heightScatter;
+			addEffect(&pos, EFFECT_GROUP::EXPLOSION, explosionSize, false, nullptr, 0, impactTime);
 		}
 
-		if (psDel->psStats->subType == FEATURE_TYPE::SKYSCRAPER)
-		{
-			pos.x = psDel->pos.x;
-			pos.z = psDel->pos.y;
-			pos.y = psDel->pos.z;
-			addEffect(&pos, EFFECT_DESTRUCTION, DESTRUCTION_TYPE_SKYSCRAPER, true, psDel->sDisplay.imd, 0, impactTime);
-			initPerimeterSmoke(psDel->sDisplay.imd, pos);
+		if (psDel->psStats->subType == FEATURE_TYPE::SKYSCRAPER) {
+			pos.x = psDel->getPosition().x;
+			pos.z = psDel->getPosition().y;
+			pos.y = psDel->getPosition().z;
+			addEffect(&pos, EFFECT_GROUP::DESTRUCTION, EFFECT_TYPE::DESTRUCTION_TYPE_SKYSCRAPER,
+                true, psDel->getDisplayData().imd_shape.get(), 0, impactTime);
+			initPerimeterSmoke(psDel->getDisplayData().imd_shape.get(), pos);
 
 			shakeStart(250); // small shake
 		}
 
 		/* Then a sequence of effects */
-		pos.x = psDel->pos.x;
-		pos.z = psDel->pos.y;
+		pos.x = psDel->getPosition().x;
+    pos.z = psDel->getPosition().y;
 		pos.y = map_Height(pos.x, pos.z);
-		addEffect(&pos, EFFECT_DESTRUCTION, DESTRUCTION_TYPE_FEATURE, false, nullptr, 0, impactTime);
+		addEffect(&pos, EFFECT_GROUP::DESTRUCTION,
+              EFFECT_TYPE::DESTRUCTION_TYPE_FEATURE, false, nullptr, 0, impactTime);
 
 		//play sound
 		// ffs gj
-		if (psDel->psStats->subType == FEATURE_TYPE::SKYSCRAPER)
-		{
-			audio_PlayStaticTrack(psDel->pos.x, psDel->pos.y, ID_SOUND_BUILDING_FALL);
+		if (psDel->psStats->subType == FEATURE_TYPE::SKYSCRAPER) {
+			audio_PlayStaticTrack(psDel->getPosition().x, psDel->getPosition().y, ID_SOUND_BUILDING_FALL);
 		}
-		else
-		{
-			audio_PlayStaticTrack(psDel->pos.x, psDel->pos.y, ID_SOUND_EXPLOSION);
+		else {
+			audio_PlayStaticTrack(psDel->getPosition().x, psDel->getPosition().y, ID_SOUND_EXPLOSION);
 		}
 	}
 
@@ -545,15 +538,14 @@ bool destroyFeature(Feature* psDel, unsigned impactTime)
 }
 
 
-SDWORD getFeatureStatFromName(const WzString& name)
+int getFeatureStatFromName(const WzString& name)
 {
 	FeatureStats* psStat;
 
 	for (unsigned inc = 0; inc < numFeatureStats; inc++)
 	{
 		psStat = &asFeatureStats[inc];
-		if (psStat->id.compare(name) == 0)
-		{
+		if (psStat->id.compare(name) == 0) {
 			return inc;
 		}
 	}
@@ -562,7 +554,7 @@ SDWORD getFeatureStatFromName(const WzString& name)
 
 StructureBounds getStructureBounds(Feature const* object)
 {
-	return getStructureBounds(object->psStats, object->pos.xy());
+	return getStructureBounds(object->psStats, object->getPosition().xy());
 }
 
 StructureBounds getStructureBounds(FeatureStats const* stats, Vector2i pos)

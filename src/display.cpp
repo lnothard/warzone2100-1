@@ -86,8 +86,8 @@ KeyFunctionConfiguration gKeyFuncConfig;
 DragBox3D dragBox3D;
 WallDrag wallDrag;
 
-#define POSSIBLE_SELECTIONS		14
-#define POSSIBLE_TARGETS		23
+static constexpr auto POSSIBLE_SELECTIONS	= 14;
+static constexpr auto POSSIBLE_TARGETS = 23;
 
 extern std::string DROIDDOING; // holds the string on what the droid is doing
 
@@ -417,23 +417,20 @@ void resetInput()
 
 static bool localPlayerHasSelection()
 {
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return false;
 	}
 
 	for (Droid* psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
-		if (psDroid->selected)
-		{
+		if (psDroid->selected) {
 			return true;
 		}
 	}
 
 	for (Structure* psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
 	{
-		if (psStruct->selected)
-		{
+		if (psStruct->selected) {
 			return true;
 		}
 	}
@@ -767,18 +764,15 @@ void processMouseClickInput()
 	{
 		wzSetCursor(CURSOR_DEFAULT);
 	}
-	if (buildState == BUILD3D_VALID)
-	{
+	if (buildState == BUILD3D_VALID) {
 		// special casing for building
 		wzSetCursor(CURSOR_BUILD);
 	}
-	else if (buildState == BUILD3D_POS)
-	{
+	else if (buildState == BUILD3D_POS) {
 		// special casing for building - can't build here
 		wzSetCursor(CURSOR_NOTPOSSIBLE);
 	}
-	else if (selection != SC_INVALID)
-	{
+	else if (selection != SC_INVALID) {
 		SimpleObject* ObjUnderMouse;
 		bool ObjAllied;
 
@@ -786,17 +780,15 @@ void processMouseClickInput()
 		ASSERT(item < POSSIBLE_TARGETS, "Weirdy target!");
 
 		ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer is too high: %" PRIu32 "", selectedPlayer);
-		ObjAllied = (ObjUnderMouse && selectedPlayer != ObjUnderMouse->player && aiCheckAlliances(
-			selectedPlayer, ObjUnderMouse->player));
+		ObjAllied = (ObjUnderMouse && selectedPlayer != ObjUnderMouse->getPlayer() && aiCheckAlliances(
+			selectedPlayer, ObjUnderMouse->getPlayer()));
 
-		if (item != MT_NOTARGET)
-		{
+		if (item != MT_NOTARGET) {
 			// exceptions to the lookup table.
 			if (ctrlShiftDown() &&
 				(ObjUnderMouse != nullptr) &&
-				(ObjUnderMouse->player == selectedPlayer) &&
-				(ObjUnderMouse->type == OBJ_DROID))
-			{
+				(ObjUnderMouse->getPlayer() == selectedPlayer) &&
+				(ObjUnderMouse->type == OBJ_DROID)) {
 				item = MT_OWNDROID;
 			}
 			else if (specialOrderKeyDown() &&
@@ -820,9 +812,8 @@ void processMouseClickInput()
 				{
 					if (psCurr->selected)
 					{
-						if ((ObjUnderMouse != nullptr) && ObjUnderMouse->player == selectedPlayer && psCurr->id ==
-							ObjUnderMouse->id)
-						{
+						if ((ObjUnderMouse != nullptr) && ObjUnderMouse->getPlayer() == selectedPlayer && psCurr->id ==
+							ObjUnderMouse->getId()) {
 							item = MT_BLOCKING;
 						}
 						break;
@@ -833,47 +824,37 @@ void processMouseClickInput()
 			{
 				// Can't demolish allied objects, or something that isn't built yet
 				if (ObjAllied || (ObjUnderMouse && (ObjUnderMouse->type != OBJ_STRUCTURE || (((Structure*)ObjUnderMouse)
-					->status == SS_BLUEPRINT_PLANNED))))
-				{
+					->getState() == STRUCTURE_STATE::BLUEPRINT_PLANNED)))) {
 					item = MT_BLOCKING;
 				}
 			}
 			// in multiPlayer check for what kind of unit can use it (TODO)
-			else if (bMultiPlayer && item == MT_TRANDROID)
-			{
-				if (ObjUnderMouse->player != selectedPlayer)
-				{
+			else if (bMultiPlayer && item == MT_TRANDROID) {
+				if (ObjUnderMouse->getPlayer() != selectedPlayer){
 					item = MT_OWNDROID;
 				}
 			}
-			else if (selection == SC_DROID_CONSTRUCT)
-			{
+			else if (selection == SC_DROID_CONSTRUCT) {
 				// We don't allow the build cursor under certain circumstances ....
 				// can't build if res extractors arent available.
-				if (item == MT_RESOURCE)
-				{
-					for (i = 0; i < numStructureStats && asStructureStats[i].type != REF_RESOURCE_EXTRACTOR; i++)
+				if (item == MT_RESOURCE) {
+					for (i = 0; i < numStructureStats && asStructureStats[i].type != STRUCTURE_TYPE::RESOURCE_EXTRACTOR; i++)
 					{
 					} // find resource stat
 					if (i < numStructureStats && apStructTypeLists[selectedPlayer][i] != AVAILABLE)
-					// check if you can build it!
-					{
+					// check if you can build it! {
 						item = MT_BLOCKING; // don't allow build pointer.
 					}
 				}
-
 				// repair instead of sensor/guard with cons. droids.
-				else if (item == MT_SENSOR)
-				{
+				else if (item == MT_SENSOR) {
 					if (ObjUnderMouse // something valid
 						&& (ObjUnderMouse->type == OBJ_STRUCTURE)) // check if struct
 					{
-						if (buildingDamaged((Structure*)ObjUnderMouse))
-						{
+						if (buildingDamaged((Structure*)ObjUnderMouse)) {
 							item = MT_OWNSTRDAM; // replace guard/sense with usual icons.
 						}
-						else
-						{
+						else {
 							item = MT_OWNSTROK;
 						}
 					}
@@ -881,17 +862,14 @@ void processMouseClickInput()
 			}
 			else if (item == MT_SENSOR
 				&& selection == SC_DROID_INDIRECT
-				&& (keyDown(KEY_LSHIFT) || keyDown(KEY_RSHIFT)))
-			{
+				&& (keyDown(KEY_LSHIFT) || keyDown(KEY_RSHIFT))) {
 				selection = SC_DROID_SENSOR;
 			}
 
 			// check the type of sensor for indirect weapons
 			else if ((item == MT_SENSOR || item == MT_SENSORSTRUCT || item == MT_SENSORSTRUCTDAM)
-				&& selection == SC_DROID_INDIRECT)
-			{
-				if (ObjUnderMouse && !droidSensorDroidWeapon(ObjUnderMouse, psDominantSelected))
-				{
+				&& selection == SC_DROID_INDIRECT) {
+				if (ObjUnderMouse && !droidSensorDroidWeapon(ObjUnderMouse, psDominantSelected)) {
 					item = MT_BLOCKING;
 				}
 			}
@@ -899,16 +877,12 @@ void processMouseClickInput()
 			//check for VTOL droids being assigned to a sensor droid/structure
 			else if ((item == MT_SENSOR || item == MT_SENSORSTRUCT || item == MT_SENSORSTRUCTDAM)
 				&& selection == SC_DROID_DIRECT
-				&& vtolDroidSelected((UBYTE)selectedPlayer))
-			{
+				&& vtolDroidSelected((UBYTE)selectedPlayer)) {
 				// NB. psSelectedVtol was set by vtolDroidSelected - yes I know its horrible, but it
 				// only smells as much as the rest of display.c so I don't feel so bad
-				if (ObjUnderMouse && droidSensorDroidWeapon(ObjUnderMouse, psSelectedVtol))
-				{
+				if (ObjUnderMouse && droidSensorDroidWeapon(ObjUnderMouse, psSelectedVtol)) {
 					selection = SC_DROID_INDIRECT;
-				}
-				else
-				{
+				} else {
 					item = MT_BLOCKING;
 				}
 			}
@@ -956,7 +930,7 @@ void processMouseClickInput()
 				wzSetCursor(CURSOR_SCOUT);
 			}
 			else if (arnMPointers[item][selection] == CURSOR_NOTPOSSIBLE &&
-							 ObjUnderMouse && (ObjUnderMouse->player == selectedPlayer) &&
+							 ObjUnderMouse && (ObjUnderMouse->getPlayer() == selectedPlayer) &&
 				ObjUnderMouse->type == OBJ_STRUCTURE && ((Structure*)ObjUnderMouse)->asWeaps[0].nStat &&
 							 (asWeaponStats[((Structure*)ObjUnderMouse)->asWeaps[0].nStat].weaponSubClass == WSC_LAS_SAT))
 			{
@@ -1753,20 +1727,18 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 		for (psCurr = apsDroidLists[selectedPlayer]; psCurr; psCurr = psCurr->psNext)
 		{
 			//must be indirect weapon droid or VTOL weapon droid
-			if ((psCurr->type == DROID_WEAPON) &&
+			if ((psCurr->getType() == DROID_TYPE::WEAPON) &&
 					(psCurr->selected) &&
 					(psCurr->asWeaps[0].nStat > 0) &&
 					((!proj_Direct(asWeaponStats + psCurr->asWeaps[0].nStat)) ||
-					isVtolDroid(psCurr)) &&
-					droidSensorDroidWeapon((SimpleObject*)psDroid, psCurr))
-			{
+					psCurr->isVtol()) &&
+					droidSensorDroidWeapon((SimpleObject*)psDroid, psCurr)) {
 				bSensorAssigned = true;
-				orderDroidObj(psCurr, DORDER_FIRESUPPORT, (SimpleObject*)psDroid, ModeQueue);
+				orderDroidObj(psCurr, ORDER_TYPE::FIRE_SUPPORT, (SimpleObject*)psDroid, ModeQueue);
 				FeedbackOrderGiven();
 			}
 		}
-		if (bSensorAssigned)
-		{
+		if (bSensorAssigned) {
 			clearSelection();
 			assignSensorTarget((SimpleObject*)psDroid);
 		}

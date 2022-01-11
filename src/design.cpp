@@ -1297,45 +1297,45 @@ intChooseSystemStats(DroidTemplate* psTemplate)
 	int compIndex;
 
 	// Choose correct system stats
-	switch (droidTemplateType(psTemplate))
-	{
-	case DROID_COMMAND:
+	switch (droidTemplateType(psTemplate)) {
+    using enum DROID_TYPE;
+	case COMMAND:
 		compIndex = psTemplate->asParts[COMPONENT_TYPE::BRAIN];
 		ASSERT_OR_RETURN(nullptr, compIndex < numBrainStats, "Invalid range referenced for numBrainStats, %d > %d",
 		                 compIndex, numBrainStats);
 		psStats = (ComponentStats*)(asBrainStats + compIndex);
 		break;
-	case DROID_SENSOR:
+	case SENSOR:
 		compIndex = psTemplate->asParts[COMPONENT_TYPE::SENSOR];
 		ASSERT_OR_RETURN(nullptr, compIndex < numSensorStats, "Invalid range referenced for numSensorStats, %d > %d",
 		                 compIndex, numSensorStats);
 		psStats = (ComponentStats*)(asSensorStats + compIndex);
 		break;
-	case DROID_ECM:
+	case ECM:
 		compIndex = psTemplate->asParts[COMPONENT_TYPE::ECM];
 		ASSERT_OR_RETURN(nullptr, compIndex < numECMStats, "Invalid range referenced for numECMStats, %d > %d",
 		                 compIndex, numECMStats);
 		psStats = (ComponentStats*)(asECMStats + compIndex);
 		break;
-	case DROID_CONSTRUCT:
-	case DROID_CYBORG_CONSTRUCT:
+	case CONSTRUCT:
+	case CYBORG_CONSTRUCT:
 		compIndex = psTemplate->asParts[COMPONENT_TYPE::CONSTRUCT];
 		ASSERT_OR_RETURN(nullptr, compIndex < numConstructStats,
 		                 "Invalid range referenced for numConstructStats, %d > %d", compIndex, numConstructStats);
 		psStats = (ComponentStats*)(asConstructStats + compIndex);
 		break;
-	case DROID_REPAIR:
-	case DROID_CYBORG_REPAIR:
-		compIndex = psTemplate->asParts[COMPONENT_TYPE::REPAIRUNIT];
+	case REPAIRER:
+	case CYBORG_REPAIR:
+		compIndex = psTemplate->asParts[COMPONENT_TYPE::REPAIR_UNIT];
 		ASSERT_OR_RETURN(nullptr, compIndex < numRepairStats, "Invalid range referenced for numRepairStats, %d > %d",
 		                 compIndex, numRepairStats);
 		psStats = (ComponentStats*)(asRepairStats + compIndex);
 		break;
-	case DROID_WEAPON:
-	case DROID_PERSON:
-	case DROID_CYBORG:
-	case DROID_CYBORG_SUPER:
-	case DROID_DEFAULT:
+	case WEAPON:
+	case PERSON:
+	case CYBORG:
+	case CYBORG_SUPER:
+	case DEFAULT:
 		compIndex = psTemplate->asWeaps[0];
 		ASSERT_OR_RETURN(nullptr, compIndex < numWeaponStats, "Invalid range referenced for numWeaponStats, %d > %d",
 		                 compIndex, numWeaponStats);
@@ -1370,26 +1370,24 @@ const char* GetDefaultTemplateName(DroidTemplate* psTemplate)
 	ComponentStats* psStats = nullptr;
 	int compIndex;
 
+  using enum DROID_TYPE;
 	/*
 		First we check for the special cases of the Transporter & Cyborgs
 	*/
-	if (psTemplate->type == DROID_TRANSPORTER)
-	{
+	if (psTemplate->type == TRANSPORTER) {
 		sstrcpy(aCurrName, _("Transport"));
 		return aCurrName;
 	}
-	if (psTemplate->type == DROID_SUPERTRANSPORTER)
-	{
+	if (psTemplate->type == SUPER_TRANSPORTER) {
 		sstrcpy(aCurrName, _("Super Transport"));
 		return aCurrName;
 	}
 
 	// For cyborgs, we don't need to add the body name nor the propulsion name. We can just use the template name.
-	if (psTemplate->type == DROID_CYBORG ||
-      psTemplate->type == DROID_CYBORG_CONSTRUCT ||
-      psTemplate->type == DROID_CYBORG_REPAIR ||
-      psTemplate->type == DROID_CYBORG_SUPER)
-	{
+	if (psTemplate->type == CYBORG ||
+      psTemplate->type == CYBORG_CONSTRUCT ||
+      psTemplate->type == CYBORG_REPAIR ||
+      psTemplate->type == CYBORG_SUPER) {
 		const char* cyborgName = _(psTemplate->name.toUtf8().c_str());
 		sstrcpy(aCurrName, cyborgName);
 		return aCurrName;
@@ -1405,15 +1403,13 @@ const char* GetDefaultTemplateName(DroidTemplate* psTemplate)
 		psTemplate->asParts[COMPONENT_TYPE::CONSTRUCT] != 0 ||
 		psTemplate->asParts[COMPONENT_TYPE::SENSOR] != 0 ||
 		psTemplate->asParts[COMPONENT_TYPE::ECM] != 0 ||
-		psTemplate->asParts[COMPONENT_TYPE::REPAIRUNIT] != 0 ||
-		psTemplate->asParts[COMPONENT_TYPE::BRAIN] != 0)
-	{
+		psTemplate->asParts[COMPONENT_TYPE::REPAIR_UNIT] != 0 ||
+		psTemplate->asParts[COMPONENT_TYPE::BRAIN] != 0) {
 		sstrcpy(aCurrName, getStatsName(psStats));
 		sstrcat(aCurrName, " ");
 	}
 
-	if (psTemplate->weaponCount > 1)
-	{
+	if (psTemplate->weaponCount > 1) {
 		sstrcat(aCurrName, _("Hydra "));
 	}
 
@@ -1446,12 +1442,10 @@ static void intSetEditBoxTextFromTemplate(DroidTemplate* psTemplate)
 	sstrcpy(aCurrName, "");
 
 	/* show component names if default template else show stat name */
-	if (psTemplate->type != DROID_DEFAULT)
-	{
+	if (psTemplate->type != DROID_TYPE::DEFAULT) {
 		sstrcpy(aCurrName, getStatsName(psTemplate));
 	}
-	else
-	{
+	else {
 // sets aCurrName
 		GetDefaultTemplateName(psTemplate);
 	}
@@ -1500,7 +1494,7 @@ static bool intSetSystemForm(ComponentStats* psStats)
 	case COMPONENT_TYPE::BRAIN:
 		newSysMode = IDES_COMMAND;
 		break;
-	case COMPONENT_TYPE::REPAIRUNIT:
+	case COMPONENT_TYPE::REPAIR_UNIT:
 		newSysMode = IDES_REPAIR;
 		break;
 	default:
@@ -1508,10 +1502,8 @@ static bool intSetSystemForm(ComponentStats* psStats)
 	}
 
 	/* If the correct form is already displayed just set the stats */
-	if (newSysMode == desSysMode)
-	{
+	if (newSysMode == desSysMode) {
 		intSetSystemStats(psStats);
-
 		return true;
 	}
 

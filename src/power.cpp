@@ -136,8 +136,7 @@ bool add_power_request(unsigned player, unsigned requester_id, int amount)
     required_power += it->amount;
   }
 
-  if (it == player_power.queue.end())
-  {
+  if (it == player_power.queue.end()) {
     player_power.queue.emplace_back(requester_id, amount);
   }
   else
@@ -194,16 +193,14 @@ void remove_power_request(const Structure& structure)
 static int64_t checkPrecisePowerRequest(Structure* psStruct)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(-1, psStruct);
-	PlayerPower const* p = &asPower[psStruct->player];
+	PlayerPower const* p = &asPower[psStruct->getPlayer()];
 
 	int64_t requiredPower = 0;
 	for (size_t n = 0; n < p->powerQueue.size(); ++n)
 	{
 		requiredPower += p->powerQueue[n].amount;
-		if (p->powerQueue[n].id == psStruct->id)
-		{
-			if (requiredPower <= p->currentPower)
-			{
+		if (p->powerQueue[n].id == psStruct->getId()) {
+			if (requiredPower <= p->currentPower) {
 				return -1; // Have enough power.
 			}
 			return requiredPower - p->currentPower;
@@ -213,7 +210,7 @@ static int64_t checkPrecisePowerRequest(Structure* psStruct)
 	return -1;
 }
 
-int32_t checkPowerRequest(Structure* psStruct)
+int checkPowerRequest(Structure* psStruct)
 {
 	int64_t power = checkPrecisePowerRequest(psStruct);
 	return power != -1 ? power / FP_ONE : -1;
@@ -337,17 +334,16 @@ Structure* powerStructList(int player)
 /* Update current power based on what Power Generators exist */
 void updatePlayerPower(int player, int ticks)
 {
-	Structure* psStruct; //, *psList;
 	int64_t powerBefore = asPower[player].currentPower;
 
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player %d", player);
 
 	syncDebugEconomy(player, '<');
 
-	for (psStruct = powerStructList(player); psStruct != nullptr; psStruct = psStruct->psNext)
+	for (auto& psStruct : powerStructList(player))
 	{
-		if (psStruct->pStructureType->type == REF_POWER_GEN && psStruct->status == SS_BUILT)
-		{
+		if (psStruct->getStats().type == STRUCTURE_TYPE::POWER_GEN &&
+        psStruct->getState() == STRUCTURE_STATE::BUILT) {
 			updateCurrentPower(psStruct, player, ticks);
 		}
 	}
@@ -370,13 +366,11 @@ static void updateCurrentPower(Structure* psStruct, unsigned player, int ticks)
 	for (int i = 0; i < NUM_POWER_MODULES; ++i)
 	{
 		auto& extractor = psPowerGen->resource_extractors[i];
-		if (extractor && extractor->died)
-		{
+		if (extractor && extractor->died) {
 			syncDebugStructure(extractor, '-');
 			extractor = nullptr; // Clear pointer.
 		}
-		if (extractor)
-		{
+		if (extractor) {
 			extractedPower += updateExtractedPower(extractor);
 		}
 	}
@@ -403,7 +397,7 @@ void setPower(unsigned player, int32_t power)
 	ASSERT(asPower[player].currentPower >= 0, "negative power");
 }
 
-int32_t getPower(unsigned player)
+int getPower(unsigned player)
 {
 	ASSERT_OR_RETURN(0, player < MAX_PLAYERS, "Invalid player (%u)", player);
 
@@ -431,10 +425,9 @@ int64_t getWastedPower(unsigned player)
 	return asPower[player].wastedPower / FP_ONE;
 }
 
-int32_t getPowerMinusQueued(unsigned player)
+int getPowerMinusQueued(unsigned player)
 {
-	if (player >= MAX_PLAYERS)
-	{
+	if (player >= MAX_PLAYERS) {
 		return 0;
 	}
 
@@ -444,8 +437,7 @@ int32_t getPowerMinusQueued(unsigned player)
 /// Get the approximate power generated per second for the specified player (for display purposes - not to be used for calculations)
 std::string getApproxPowerGeneratedPerSecForDisplay(unsigned player)
 {
-	if (player >= MAX_PLAYERS)
-	{
+	if (player >= MAX_PLAYERS) {
 		return 0;
 	}
 
@@ -461,20 +453,18 @@ bool requestPowerFor(Structure* psStruct, int32_t amount)
 
 bool requestPrecisePowerFor(Structure* psStruct, int64_t amount)
 {
-	if (amount <= 0 || !powerCalculated)
-	{
+	if (amount <= 0 || !powerCalculated) {
 		return true;
 	}
 
-	bool haveEnoughPower = addPowerRequest(psStruct->player, psStruct->id, amount);
-	if (haveEnoughPower)
-	{
+	bool haveEnoughPower = addPowerRequest(psStruct->getPlayer(), psStruct->getId(), amount);
+	if (haveEnoughPower) {
 		// you can have it
-		asPower[psStruct->player].currentPower -= amount;
+		asPower[psStruct->getPlayer()].currentPower -= amount;
 		delPowerRequest(psStruct);
-		syncDebug("requestPrecisePowerFor%d,%u amount%" PRId64"", psStruct->player, psStruct->id, amount);
+		syncDebug("requestPrecisePowerFor%d,%u amount%" PRId64"", psStruct->getPlayer(), psStruct->getId(), amount);
 		return true;
 	}
-	syncDebug("requestPrecisePowerFor%d,%u wait,amount%" PRId64"", psStruct->player, psStruct->id, amount);
+	syncDebug("requestPrecisePowerFor%d,%u wait,amount%" PRId64"", psStruct->getPlayer(), psStruct->getId(), amount);
 	return false; // Not enough power in the queue.
 }

@@ -221,7 +221,7 @@ Droid* getDesignatorAttackingObject(unsigned player, SimpleObject* target)
 
 	return psCommander != nullptr && 
          psCommander->getAction() == ACTION::ATTACK &&
-         psCommander->action_target[0] == target
+         psCommander->actionTarget[0] == target
 		       ? psCommander
 		       : nullptr;
 }

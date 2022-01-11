@@ -378,8 +378,7 @@ bool addChallenges()
 		assert(button->pUserData != nullptr);
 		static_cast<DisplayLoadSlotData*>(button->pUserData)->filename = sSlotFile[slotCount];
 		slotCount++; // go to next button...
-		if (slotCount == totalslots)
-		{
+		if (slotCount == totalslots) {
 			return false; // break;
 		}
 		challenge.endGroup();

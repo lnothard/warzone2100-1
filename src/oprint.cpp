@@ -17,8 +17,10 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Object information printing routines
+
+/** 
+ * @file oprint.cpp
+ * Object information printing routines
  */
 
 #include "lib/framework/frame.h"
@@ -34,8 +36,7 @@
 static void printBaseObjInfo(const SimpleObject* psObj)
 {
 	const char* pType;
-	switch (psObj->type)
-	{
+	switch (psObj->type) {
 	case OBJ_DROID:
 		pType = "UNIT";
 		break;
@@ -50,19 +51,21 @@ static void printBaseObjInfo(const SimpleObject* psObj)
 		break;
 	}
 
-	CONPRINTF("%s id %d at (%d,%d,%d) dpr (%hu,%hu,%hu)\n", pType, psObj->id, psObj->pos.x, psObj->pos.y, psObj->pos.z,
-	          psObj->rot.direction, psObj->rot.pitch, psObj->rot.roll);
+	CONPRINTF("%s id %d at (%d,%d,%d) dpr (%hu,%hu,%hu)\n", pType, psObj->getId(), 
+            psObj->getPosition().x, psObj->getPosition().y, psObj->getPosition().z,
+	          psObj->getRotation().direction, psObj->getRotation().pitch, psObj->getRotation().roll);
 }
 
-/** print out information about a general component
- *  \param psStats the component to print the info for
+/** 
+ * print out information about a general component
+ * @param psStats the component to print the info for
  */
 static void printComponentInfo(const ComponentStats* psStats)
 {
 	CONPRINTF("%s ref %d\n"
 	          "   bPwr %d bPnts %d wt %d bdy %d imd %p\n",
 	          getStatsName(psStats), psStats->ref, psStats->buildPower,
-	          psStats->buildPoints, psStats->weight, psStats->getBase().hitPoints,
+	          psStats->buildPoints, psStats->weight, psStats->base.hitPoints,
 	          static_cast<void*>(psStats->pIMD));
 }
 
@@ -73,87 +76,86 @@ static void printWeaponInfo(const WeaponStats* psStats)
 {
 	const char *pWC, *pWSC, *pMM;
 
-	switch (psStats->weaponClass)
-	{
-	case WC_KINETIC: //bullets etc
-		pWC = "WC_KINETIC";
-		break;
-	case WC_HEAT: //laser etc
-		pWC = "WC_HEAT";
-		break;
-	default:
-		pWC = "UNKNOWN CLASS";
-		break;
+	switch (psStats->weaponClass) {
+    case WEAPON_CLASS::KINETIC: //bullets etc
+      pWC = "WC_KINETIC";
+      break;
+    case WEAPON_CLASS::HEAT: //laser etc
+      pWC = "WC_HEAT";
+      break;
+    default:
+      pWC = "UNKNOWN CLASS";
+      break;
 	}
-	switch (psStats->weaponSubClass)
-	{
-	case WSC_MGUN:
-		pWSC = "WSC_MGUN";
+	switch (psStats->weaponSubClass) {
+    using enum WEAPON_SUBCLASS;
+	case MACHINE_GUN:
+		pWSC = "MGUN";
 		break;
-	case WSC_CANNON:
-		pWSC = "WSC_CANNON";
+	case CANNON:
+		pWSC = "CANNON";
 		break;
-	case WSC_MORTARS:
-		pWSC = "WSC_MORTARS";
+	case MORTARS:
+		pWSC = "MORTARS";
 		break;
-	case WSC_MISSILE:
-		pWSC = "WSC_MISSILE";
+	case MISSILE:
+		pWSC = "MISSILE";
 		break;
-	case WSC_ROCKET:
-		pWSC = "WSC_ROCKET";
+	case ROCKET:
+		pWSC = "ROCKET";
 		break;
-	case WSC_ENERGY:
-		pWSC = "WSC_ENERGY";
+	case ENERGY:
+		pWSC = "ENERGY";
 		break;
-	case WSC_GAUSS:
-		pWSC = "WSC_GAUSS";
+	case GAUSS:
+		pWSC = "GAUSS";
 		break;
-	case WSC_FLAME:
-		pWSC = "WSC_FLAME";
+	case FLAME:
+		pWSC = "FLAME";
 		break;
-	case WSC_HOWITZERS:
-		pWSC = "WSC_HOWITZERS";
+	case HOWITZERS:
+		pWSC = "HOWITZERS";
 		break;
-	case WSC_ELECTRONIC:
-		pWSC = "WSC_ELECTRONIC";
+	case ELECTRONIC:
+		pWSC = "ELECTRONIC";
 		break;
-	case WSC_AAGUN:
-		pWSC = "WSC_AAGUN";
+	case AA_GUN:
+		pWSC = "AAGUN";
 		break;
-	case WSC_SLOWMISSILE:
-		pWSC = "WSC_SLOWMISSILE";
+	case SLOW_MISSILE:
+		pWSC = "SLOWMISSILE";
 		break;
-	case WSC_SLOWROCKET:
-		pWSC = "WSC_SLOWROCKET";
+	case SLOW_ROCKET:
+		pWSC = "SLOWROCKET";
 		break;
-	case WSC_LAS_SAT:
-		pWSC = "WSC_LAS_SAT";
+	case LAS_SAT:
+		pWSC = "LAS_SAT";
 		break;
-	case WSC_BOMB:
-		pWSC = "WSC_BOMB";
+	case BOMB:
+		pWSC = "BOMB";
 		break;
-	case WSC_COMMAND:
-		pWSC = "WSC_COMMAND";
+	case COMMAND:
+		pWSC = "COMMAND";
 		break;
-	case WSC_EMP:
-		pWSC = "WSC_EMP";
+	case EMP:
+		pWSC = "EMP";
 		break;
 	default:
 		pWSC = "UNKNOWN SUB CLASS";
 		break;
 	}
-	switch (psStats->movementModel)
-	{
-	case MM_DIRECT:
+	switch (psStats->movementModel) {
+    using enum MOVEMENT_MODEL;
+	case DIRECT:
 		pMM = "MM_DIRECT";
 		break;
-	case MM_INDIRECT:
+	case INDIRECT:
 		pMM = "MM_INDIRECT";
 		break;
-	case MM_HOMINGDIRECT:
+	case HOMING_DIRECT:
 		pMM = "MM_HOMINGDIRECT";
 		break;
-	case MM_HOMINGINDIRECT:
+	case HOMING_INDIRECT:
 		pMM = "MM_HOMINGINDIRECT";
 		break;
 	default:
@@ -171,8 +173,7 @@ static void printWeaponInfo(const WeaponStats* psStats)
 	          weaponShortHit(psStats, selectedPlayer), weaponLongHit(psStats, selectedPlayer),
 	          weaponFirePause(psStats, selectedPlayer),
 	          weaponDamage(psStats, selectedPlayer));
-	if (selectedPlayer < MAX_PLAYERS)
-	{
+	if (selectedPlayer < MAX_PLAYERS) {
 		CONPRINTF("   rad %d radDam %d\n"
 		          "   inTime %d inDam %d inRad %d\n",
               psStats->upgraded[selectedPlayer].radius, psStats->upgraded[selectedPlayer].radiusDamage,
@@ -204,17 +205,15 @@ void printDroidInfo(const Droid* psDroid)
 	printBaseObjInfo((const SimpleObject*)psDroid);
 
 	CONPRINTF("   wt %d bSpeed %d sRng %d ECM %d bdy %d\n",
-						psDroid->weight, psDroid->base_speed, droidSensorRange(psDroid), objJammerPower(psDroid), psDroid->body);
+						psDroid->weight, psDroid->base_speed, droidSensorRange(psDroid), objJammerPower(psDroid), psDroid->getHp());
 
-	if (psDroid->asWeaps[0].nStat > 0)
-	{
+	if (psDroid->asWeaps[0].nStat > 0) {
 		printWeaponInfo(asWeaponStats + psDroid->asWeaps[0].nStat);
 	}
 
 	for (int i = 0; i < COMP_NUMCOMPONENTS; ++i)
 	{
-		switch (i)
-		{
+		switch (i) {
 		case COMP_BODY:
 			if (psDroid->asBits[i] > 0)
 			{
