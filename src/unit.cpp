@@ -23,6 +23,11 @@ namespace Impl
 		return hitPoints;
 	}
 
+  void Unit::setHp(unsigned hp)
+  {
+    hitPoints = hp;
+  }
+
 	const std::vector<Weapon>& Unit::getWeapons() const
 	{
 		return weapons;

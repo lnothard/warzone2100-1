@@ -508,10 +508,10 @@ extern unsigned numConstructStats;
 extern unsigned numTerrainTypes;
 
 //stores for each players component states - see below
-extern UBYTE* apCompLists[MAX_PLAYERS][COMP_NUMCOMPONENTS];
+extern uint8_t* apCompLists[MAX_PLAYERS][COMPONENT_TYPE::COUNT];
 
 //store for each players Structure states
-extern UBYTE* apStructTypeLists[MAX_PLAYERS];
+extern uint8_t* apStructTypeLists[MAX_PLAYERS];
 
 //Values to fill apCompLists and apStructTypeLists. Not a bitfield, values are in case that helps with savegame compatibility.
 enum ItemAvailability
@@ -553,12 +553,12 @@ bool statsAllocRepair(unsigned numEntries);
 /*Allocate Construct Stats*/
 bool statsAllocConstruct(unsigned numEntries);
 
-/*******************************************************************************
-*		Load stats functions
-*******************************************************************************/
+/* Load stats functions */
+
+struct StructureStats;
 // Used from structure.cpp
-void loadStructureStats_BaseStats(WzConfig& json, STRUCTURE_STATS* psStats, size_t index);
-void unloadStructureStats_BaseStats(const STRUCTURE_STATS& psStats);
+void loadStructureStats_BaseStats(WzConfig& json, StructureStats* psStats, size_t index);
+void unloadStructureStats_BaseStats(const StructureStats& psStats);
 
 /*Load the weapon stats from the file exported from Access*/
 bool loadWeaponStats(WzConfig& ini);
@@ -616,7 +616,7 @@ int getCompFromID(COMPONENT_TYPE compType, const WzString& name);
 ComponentStats* getCompStatsFromName(const WzString& name);
 
 /// Get the structure pointer for a structure based on the name
-STRUCTURE_STATS* getStructStatsFromName(const WzString& name);
+StructureStats* getStructStatsFromName(const WzString& name);
 
 /// Get the base stat pointer for a stat based on the name
 BaseStats* getBaseStatsFromName(const WzString& name);

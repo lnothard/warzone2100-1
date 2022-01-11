@@ -210,6 +210,9 @@ public:
     virtual void moveDroidToDirect(unsigned x, unsigned y) = 0;
     virtual void moveTurnDroid(unsigned x, unsigned y) = 0;
     virtual void moveShuffleDroid(Vector2i s) = 0;
+    virtual bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode) = 0;
+    virtual RtrBestResult decideWhereToRepairAndBalance() = 0;
+    virtual SECONDARY_STATE Droid::secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode) = 0;
 };
 
 namespace Impl
@@ -243,6 +246,8 @@ namespace Impl
       [[nodiscard]] bool isDamaged() const final;
       [[nodiscard]] bool isAttacking() const noexcept;
       void upgradeHitPoints();
+
+      bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode) final;
 
       void setUpBuildModule();
 
@@ -289,10 +294,12 @@ namespace Impl
       [[nodiscard]] bool isSelectable() const final;
       [[nodiscard]] unsigned getArmourPointsAgainstWeapon(WEAPON_CLASS weaponClass) const;
       [[nodiscard]] int calculateAttackPriority(const ::Unit *target, int weapon_slot) const final;
-
+      RtrBestResult decideWhereToRepairAndBalance() final;
+      SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode) final;
   private:
       using enum DROID_TYPE;
       using enum ACTION;
+      using enum SECONDARY_ORDER;
       std::string name;
       DROID_TYPE type;
 

@@ -3035,6 +3035,582 @@ if (psDroid->droidType == DROID_SENSOR)
     movement->path.clear();
     movement->pathIndex = 0;
   }
+
+  /** 
+   * This function assigns a state to a droid. It returns true if
+   * it assigned and false if it failed to assign.
+   */
+  bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode)
+  {
+    unsigned currState;
+    STRUCTURE_TYPE factType;
+    STRUCTURE_TYPE prodType;
+    Structure* psStruct;
+    int factoryInc;
+    bool retVal;
+    Droid *psTransport, *psCurr, *psNext;
+    ORDER_TYPE order_;
+
+    currState = secondaryOrder;
+    if (bMultiMessages && mode == ModeQueue) {
+      currState = secondaryOrderPending;
+    }
+
+    // figure out what the new secondary state will be (once the order is synchronised).
+    // why does this have to be so ridiculously complicated?
+    auto secondaryMask = 0;
+    auto secondarySet = 0;
+    switch (sec) {
+      case ATTACK_RANGE:
+        secondaryMask = DSS_ARANGE_MASK;
+        secondarySet = state;
+        break;
+      case REPAIR_LEVEL:
+        secondaryMask = DSS_REPLEV_MASK;
+        secondarySet = state;
+        break;
+      case ATTACK_LEVEL:
+        secondaryMask = DSS_ALEV_MASK;
+        secondarySet = state;
+        break;
+      case ASSIGN_PRODUCTION:
+        if (type == COMMAND) {
+          secondaryMask = DSS_ASSPROD_FACT_MASK;
+          secondarySet = state & DSS_ASSPROD_MASK;
+        }
+        break;
+      case ASSIGN_CYBORG_PRODUCTION:
+        if (type == COMMAND) {
+          secondaryMask = DSS_ASSPROD_CYB_MASK;
+          secondarySet = state & DSS_ASSPROD_MASK;
+        }
+        break;
+      case ASSIGN_VTOL_PRODUCTION:
+        if (type == COMMAND) {
+          secondaryMask = DSS_ASSPROD_VTOL_MASK;
+          secondarySet = state & DSS_ASSPROD_MASK;
+        }
+        break;
+      case CLEAR_PRODUCTION:
+        if (type == COMMAND) {
+          secondaryMask = state & DSS_ASSPROD_MASK;
+        }
+        break;
+      case RECYCLE:
+        if (state & DSS_RECYCLE_MASK) {
+          secondaryMask = DSS_RTL_MASK | DSS_RECYCLE_MASK | DSS_HALT_MASK;
+          secondarySet = DSS_RECYCLE_SET | DSS_HALT_GUARD;
+        }
+        else {
+          secondaryMask = DSS_RECYCLE_MASK;
+        }
+        break;
+      case SECONDARY_ORDER::CIRCLE: 
+        secondaryMask = DSS_CIRCLE_MASK;
+        secondarySet = (state & DSS_CIRCLE_SET) ? DSS_CIRCLE_SET : 0;
+        break;
+      case PATROL:
+        secondaryMask = DSS_PATROL_MASK;
+        secondarySet = (state & DSS_PATROL_SET) ? DSS_PATROL_SET : 0;
+        break;
+      case HALT_TYPE:
+        switch (state & DSS_HALT_MASK) {
+          case DSS_HALT_PURSUE:
+          case DSS_HALT_GUARD:
+          case DSS_HALT_HOLD:
+            secondaryMask = DSS_HALT_MASK;
+            secondarySet = state;
+            break;
+        }
+        break;
+      case RETURN_TO_LOCATION:
+        secondaryMask = DSS_RTL_MASK;
+        switch (state & DSS_RTL_MASK) {
+          case DSS_RTL_REPAIR:
+          case DSS_RTL_BASE:
+            secondarySet = state;
+            break;
+          case DSS_RTL_TRANSPORT:
+            psTransport = FindATransporter(this);
+            if (psTransport != nullptr) {
+              secondarySet = state;
+            }
+            break;
+        }
+        if ((currState & DSS_HALT_MASK) == DSS_HALT_HOLD) {
+          secondaryMask |= DSS_HALT_MASK;
+          secondarySet |= DSS_HALT_GUARD;
+        }
+        break;
+      case FIRE_DESIGNATOR:
+        // do nothing.
+        break;
+    }
+    auto newSecondaryState = (currState & ~secondaryMask) | secondarySet;
+
+    if (bMultiMessages && mode == ModeQueue) {
+      if (sec == REPAIR_LEVEL) {
+        secondaryCheckDamageLevelDeselect(this, state);
+        // deselect droid immediately, if applicable, so it isn't 
+        // ordered around by mistake.
+      }
+
+      sendDroidSecondary(this, sec, state);
+      secondaryOrderPending = newSecondaryState;
+      ++secondaryOrderPendingCount;
+      // wait for our order before changing the droid
+      return true; 
+    }
+
+
+    // set the state for any droids in the command group
+    if ((sec != RECYCLE) &&
+        type == COMMAND &&
+        group &&
+        group->isCommandGroup()) {
+      group->setSecondary(sec, state);
+    }
+
+    retVal = true;
+    switch (sec) {
+      case ATTACK_RANGE:
+        currState = (currState & ~DSS_ARANGE_MASK) | state;
+        break;
+
+      case REPAIR_LEVEL:
+        currState = (currState & ~DSS_REPLEV_MASK) | state;
+        secondaryOrder = currState;
+        secondaryCheckDamageLevel(this);
+        break;
+
+      case ATTACK_LEVEL:
+        currState = (currState & ~DSS_ALEV_MASK) | state;
+        if (state == DSS_ALEV_NEVER) {
+          if (orderState(this, ATTACK)) {
+            // just kill these orders
+            orderDroid(this, STOP, ModeImmediate);
+            if (isVtol()) {
+              moveToRearm(this);
+            }
+          }
+          else if (droidAttacking(this)) {
+            // send the unit back to the guard position
+            actionDroid(this, NONE);
+          }
+          else if (orderState(this, PATROL)) {
+            // send the unit back to the patrol
+            actionDroid(this, RETURN_TO_POS, actionPos.x, actionPos.y);
+          }
+        }
+        break;
+
+
+      case ASSIGN_PRODUCTION:
+      case ASSIGN_CYBORG_PRODUCTION:
+      case ASSIGN_VTOL_PRODUCTION:
+        
+      #ifdef DEBUG
+         debug(LOG_NEVER, "order factories %s\n", secondaryPrintFactories(State));
+      #endif
+                
+        if (sec == ASSIGN_PRODUCTION) {
+          prodType = STRUCTURE_TYPE::FACTORY;
+        }
+        else if (sec == ASSIGN_CYBORG_PRODUCTION) {
+          prodType = STRUCTURE_TYPE::CYBORG_FACTORY;
+        }
+        else {
+          prodType = STRUCTURE_TYPE::VTOL_FACTORY;
+        }
+
+        if (type == COMMAND) {
+          // look for the factories
+          for (psStruct = apsStructLists[psDroid->player]; psStruct;
+               psStruct = psStruct->psNext)
+          {
+            factType = psStruct->pStructureType->type;
+            if (factType == STRUCTURE_TYPE::FACTORY ||
+                factType == STRUCTURE_TYPE::VTOL_FACTORY ||
+                factType == STRUCTURE_TYPE::CYBORG_FACTORY) {
+              factoryInc = ((Factory*)psStruct->pFunctionality)->psAssemblyPoint->factoryInc;
+              if (factType == STRUCTURE_TYPE::FACTORY) {
+                factoryInc += DSS_ASSPROD_SHIFT;
+              }
+              else if (factType == STRUCTURE_TYPE::CYBORG_FACTORY) {
+                factoryInc += DSS_ASSPROD_CYBORG_SHIFT;
+              }
+              else {
+                factoryInc += DSS_ASSPROD_VTOL_SHIFT;
+              }
+              if (!(currState & (1 << factoryInc)) &&
+                  (state & (1 << factoryInc))) {
+                assignFactoryCommandDroid(psStruct, this); // assign this factory to the command droid
+              }
+              else if ((prodType == factType) &&
+                       (currState & (1 << factoryInc)) &&
+                       !(state & (1 << factoryInc))) {
+                // remove this factory from the command droid
+                assignFactoryCommandDroid(psStruct, nullptr);
+              }
+            }
+          }
+          if (prodType == STRUCTURE_TYPE::FACTORY) {
+            currState &= ~DSS_ASSPROD_FACT_MASK;
+          }
+          else if (prodType == STRUCTURE_TYPE::CYBORG_FACTORY)
+          {
+            currState &= ~DSS_ASSPROD_CYB_MASK;
+          }
+          else {
+            currState &= ~DSS_ASSPROD_VTOL_MASK;
+          }
+          currState |= (state & DSS_ASSPROD_MASK);
+
+          #ifdef DEBUG
+              debug(LOG_NEVER, "final factories %s\n", secondaryPrintFactories(CurrState));
+          #endif
+        }
+        break;
+
+      case CLEAR_PRODUCTION:
+        if (type == COMMAND) {
+          // simply clear the flag - all the factory stuff is done
+          // in assignFactoryCommandDroid
+          currState &= ~(state & DSS_ASSPROD_MASK);
+        }
+        break;
+
+      case RECYCLE:
+        if (state & DSS_RECYCLE_MASK) {
+          if (!orderState(this, ORDER_TYPE::RECYCLE)) {
+            orderDroid(this, ORDER_TYPE::RECYCLE, ModeImmediate);
+          }
+          currState &= ~(DSS_RTL_MASK | DSS_RECYCLE_MASK | DSS_HALT_MASK);
+          currState |= DSS_RECYCLE_SET | DSS_HALT_GUARD;
+          group = UBYTE_MAX;
+          if (group) {
+            if (type == COMMAND) {
+              // remove all the units from the commanders group
+              for (psCurr = psDroid->group->members; psCurr; psCurr = psNext)
+              {
+                psNext = psCurr->psGrpNext;
+                psCurr->group->remove(psCurr);
+                orderDroid(psCurr, ORDER_TYPE::STOP, ModeImmediate);
+              }
+            }
+            else if (group->isCommandGroup()) {
+              group->remove(this);
+            }
+          }
+        }
+        else {
+          if (orderState(this, ORDER_TYPE::RECYCLE)) {
+            orderDroid(this, ORDER_TYPE::STOP, ModeImmediate);
+          }
+          currState &= ~DSS_RECYCLE_MASK;
+        }
+        break;
+      case SECONDARY_ORDER::CIRCLE:
+        if (state & DSS_CIRCLE_SET) {
+          currState |= DSS_CIRCLE_SET;
+        }
+        else {
+          currState &= ~DSS_CIRCLE_MASK;
+        }
+        break;
+      case PATROL:
+        if (state & DSS_PATROL_SET) {
+          currState |= DSS_PATROL_SET;
+        }
+        else
+        {
+          currState &= ~DSS_PATROL_MASK;
+        }
+        break;
+      case HALT_TYPE:
+        switch (state & DSS_HALT_MASK) {
+          case DSS_HALT_PURSUE:
+            currState &= ~ DSS_HALT_MASK;
+            currState |= DSS_HALT_PURSUE;
+            if (orderState(this, ORDER_TYPE::GUARD)) {
+              orderDroid(this, ORDER_TYPE::STOP, ModeImmediate);
+            }
+            break;
+          case DSS_HALT_GUARD:
+            currState &= ~ DSS_HALT_MASK;
+            currState |= DSS_HALT_GUARD;
+            orderDroidLoc(this, ORDER_TYPE::GUARD, getPosition().x,
+                          getPosition().y, ModeImmediate);
+            break;
+          case DSS_HALT_HOLD:
+            currState &= ~ DSS_HALT_MASK;
+            currState |= DSS_HALT_HOLD;
+            if (!orderState(this, ORDER_TYPE::FIRE_SUPPORT)) {
+              orderDroid(this, ORDER_TYPE::STOP, ModeImmediate);
+            }
+            break;
+        }
+        break;
+      case RETURN_TO_LOCATION:
+        if ((state & DSS_RTL_MASK) == 0) {
+          if (orderState(this, ORDER_TYPE::RETURN_TO_REPAIR) ||
+              orderState(this, ORDER_TYPE::RETURN_TO_BASE) ||
+              orderState(this, ORDER_TYPE::EMBARK)) {
+
+                orderDroid(this, ORDER_TYPE::STOP, ModeImmediate);
+          }
+          currState &= ~DSS_RTL_MASK;
+        }
+        else {
+          order_ = ORDER_TYPE::NONE;
+          currState &= ~DSS_RTL_MASK;
+          if ((currState & DSS_HALT_MASK) == DSS_HALT_HOLD) {
+            currState &= ~DSS_HALT_MASK;
+            currState |= DSS_HALT_GUARD;
+          }
+          switch (state & DSS_RTL_MASK) {
+            case DSS_RTL_REPAIR:
+              order_ = ORDER_TYPE::RETURN_TO_REPAIR;
+              currState |= DSS_RTL_REPAIR;
+              // can't clear the selection here as it breaks the
+              // secondary order screen
+              break;
+            case DSS_RTL_BASE:
+              order_ = ORDER_TYPE::RETURN_TO_BASE;
+              currState |= DSS_RTL_BASE;
+              break;
+            case DSS_RTL_TRANSPORT:
+              psTransport = FindATransporter(this);
+              if (psTransport != nullptr) {
+                order_ = ORDER_TYPE::EMBARK;
+                currState |= DSS_RTL_TRANSPORT;
+                if (!orderState(this, ORDER_TYPE::EMBARK)) {
+                  orderDroidObj(this, ORDER_TYPE::EMBARK, psTransport, ModeImmediate);
+                }
+              }
+              else {
+                retVal = false;
+              }
+              break;
+            default:
+              order_ = ORDER_TYPE::NONE;
+              break;
+          }
+          if (!orderState(this, order_)) {
+            orderDroid(this, order_, ModeImmediate);
+          }
+        }
+        break;
+
+      case FIRE_DESIGNATOR:
+        // don't actually set any secondary flags - the cmdDroid array is
+        // always used to determine which commander is the designator
+        if (state & DSS_FIREDES_SET) {
+          cmdDroidSetDesignator(this);
+        }
+        else if (cmdDroidGetDesignator(getPlayer()) == this) {
+          cmdDroidClearDesignator(getPlayer());
+        }
+        break;
+      default:
+        break;
+    }
+
+    if (currState != newSecondaryState) {
+      debug(LOG_WARNING,
+            "Guessed the new secondary state incorrectly, expected 0x%08X, got 0x%08X, "
+            "was 0x%08X, sec = %d, state = 0x%08X.",
+            newSecondaryState, currState, secondaryOrder, sec, state);
+    }
+    secondaryOrder = currState;
+    secondaryOrderPendingCount = std::max(secondaryOrderPendingCount - 1, 0);
+    if (secondaryOrderPendingCount == 0) {
+      secondaryOrderPending = secondaryOrder;
+      // if no orders are pending, make sure UI uses the actual state.
+    }
+    return retVal;
+  }
+
+  /// Balance the load at random - always prefer faster repairs
+  RtrBestResult Droid::decideWhereToRepairAndBalance()
+  {
+    int bestDistToRepairFac = INT32_MAX, bestDistToRepairDroid = INT32_MAX;
+    int thisDistToRepair = 0;
+    Structure* psHq = nullptr;
+    Position bestDroidPos, bestFacPos;
+    // static to save allocations
+    static std::vector<Position> vFacilityPos;
+    static std::vector<Structure*> vFacility;
+    static std::vector<int> vFacilityCloseEnough;
+    static std::vector<Position> vDroidPos;
+    static std::vector<Droid*> vDroid;
+    static std::vector<int> vDroidCloseEnough;
+    // clear vectors from previous invocations
+    vFacilityPos.clear();
+    vFacility.clear();
+    vFacilityCloseEnough.clear();
+    vDroidCloseEnough.clear();
+    vDroidPos.clear();
+    vDroid.clear();
+
+    using enum STRUCTURE_TYPE;
+    for (auto& psStruct : apsStructLists[getPlayer()])
+    {
+      if (psStruct->getStats().type == HQ) {
+        psHq = psStruct.get();
+        continue;
+      }
+      if (psStruct->getStats().type == REPAIR_FACILITY &&
+          psStruct->getState() == STRUCTURE_STATE::BUILT) {
+        thisDistToRepair = droidSqDist(this, psStruct);
+        if (thisDistToRepair <= 0) {
+          continue; // cannot reach position
+        }
+        vFacilityPos.push_back(psStruct->getPosition());
+        vFacility.push_back(psStruct.get());
+        if (bestDistToRepairFac > thisDistToRepair) {
+          bestDistToRepairFac = thisDistToRepair;
+          bestFacPos = psStruct->getPosition();
+        }
+      }
+    }
+    // if we are repair droid ourselves, don't consider other repairs droids
+    // because that causes havoc on front line: RT repairing themselves,
+    // blocking everyone else. And everyone else moving toward RT, also toward front line.s
+    // Ideally, we should just avoid retreating toward "danger", but dangerMap is only for multiplayer
+    if (type != DROID_TYPE::REPAIRER && type != DROID_TYPE::CYBORG_REPAIR) {
+      // one of these lists is empty when on mission
+      auto psdroidList = !(apsDroidLists[getPlayer()].empty())
+                           ? apsDroidLists[getPlayer()]
+                           : mission.apsDroidLists[getPlayer()];
+      
+      for (auto& psCurr : psdroidList)
+      {
+        if (psCurr->type == DROID_TYPE::REPAIRER || psCurr->type == DROID_TYPE::CYBORG_REPAIR) {
+          thisDistToRepair = droidSqDist(this, psCurr);
+          if (thisDistToRepair <= 0) {
+            continue; // unreachable
+          }
+          vDroidPos.push_back(psCurr->pos);
+          vDroid.push_back(psCurr);
+          if (bestDistToRepairDroid > thisDistToRepair) {
+            bestDistToRepairDroid = thisDistToRepair;
+            bestDroidPos = psCurr->pos;
+          }
+        }
+      }
+    }
+
+    ASSERT(bestDistToRepairFac > 0, "Bad distance to repair facility");
+    ASSERT(bestDistToRepairDroid > 0, "Bad distance to repair droid");
+    // debug(LOG_INFO, "found a total of %lu RT, and %lu RF", vDroid.size(), vFacility.size());
+
+    // the center of this area starts at the closest repair droid/facility!
+    static constexpr auto MAGIC_SUITABLE_REPAIR_AREA = (REPAIR_RANGE * 3) * (REPAIR_RANGE * 3);
+    
+    auto bestRepairPoint = bestDistToRepairFac < bestDistToRepairDroid
+            ? bestFacPos 
+            : bestDroidPos;
+    
+    // find all close enough repairing candidates
+    for (int i = 0; i < vFacilityPos.size(); i++)
+    {
+      Vector2i diff = (bestRepairPoint - vFacilityPos[i]).xy();
+      if (dot(diff, diff) < MAGIC_SUITABLE_REPAIR_AREA) {
+        vFacilityCloseEnough.push_back(i);
+      }
+    }
+    for (int i = 0; i < vDroidPos.size(); i++)
+    {
+      Vector2i diff = (bestRepairPoint - vDroidPos[i]).xy();
+      if (dot(diff, diff) < MAGIC_SUITABLE_REPAIR_AREA) {
+        vDroidCloseEnough.push_back(i);
+      }
+    }
+
+    // debug(LOG_INFO, "found  %lu RT, and %lu RF in suitable area", vDroidCloseEnough.size(), vFacilityCloseEnough.size());
+    // prefer facilities, they re much more efficient than droids
+    if (vFacilityCloseEnough.size() == 1) {
+      return {RTR_DATA_TYPE::REPAIR_FACILITY, vFacility[vFacilityCloseEnough[0]]};
+    }
+    else if (vFacilityCloseEnough.size() > 1) {
+      auto which = gameRand(vFacilityCloseEnough.size());
+      return {RTR_DATA_TYPE::REPAIR_FACILITY, vFacility[vFacilityCloseEnough[which]]};
+    }
+
+    // no facilities :( fallback on droids
+    if (vDroidCloseEnough.size() == 1) {
+      return {RTR_DATA_TYPE::DROID, vDroid[vDroidCloseEnough[0]]};
+    }
+    else if (vDroidCloseEnough.size() > 1) {
+      auto which = gameRand(vDroidCloseEnough.size());
+      return {RTR_DATA_TYPE::DROID, vDroid[vDroidCloseEnough[which]]};
+    }
+
+    // go to headquarters, if any
+    if (psHq != nullptr) {
+      return {RTR_DATA_TYPE::HQ, psHq};
+    }
+
+    // screw it
+    return {RTR_DATA_TYPE::NO_RESULT, nullptr};
+  }
+
+  /** This function returns the droid order's secondary state of the secondary order.*/
+  SECONDARY_STATE Droid::secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode)
+  {
+    auto state = secondaryOrder;
+
+    if (mode == ModeQueue) {
+      state = secondaryOrderPending;
+      // the UI wants to know the state, so return what the state
+      // will be after orders are synchronised.
+    }
+
+    using enum SECONDARY_ORDER;
+    switch (sec) {
+      case ATTACK_RANGE:
+        return (SECONDARY_STATE)(state & DSS_ARANGE_MASK);
+        break;
+      case REPAIR_LEVEL:
+        return (SECONDARY_STATE)(state & DSS_REPLEV_MASK);
+        break;
+      case ATTACK_LEVEL:
+        return (SECONDARY_STATE)(state & DSS_ALEV_MASK);
+        break;
+      case ASSIGN_PRODUCTION:
+      case ASSIGN_CYBORG_PRODUCTION:
+      case ASSIGN_VTOL_PRODUCTION:
+        return (SECONDARY_STATE)(state & DSS_ASSPROD_MASK);
+        break;
+      case RECYCLE:
+        return (SECONDARY_STATE)(state & DSS_RECYCLE_MASK);
+        break;
+      case PATROL:
+        return (SECONDARY_STATE)(state & DSS_PATROL_MASK);
+        break;
+      case CIRCLE:
+        return (SECONDARY_STATE)(state & DSS_CIRCLE_MASK);
+        break;
+      case HALT_TYPE:
+        if (order->type == ORDER_TYPE::HOLD) {
+          return DSS_HALT_HOLD;
+        }
+        return (SECONDARY_STATE)(state & DSS_HALT_MASK);
+        break;
+      case RETURN_TO_LOC:
+        return (SECONDARY_STATE)(state & DSS_RTL_MASK);
+        break;
+      case FIRE_DESIGNATOR:
+        if (cmdDroidGetDesignator(getPlayer()) == this) {
+          return DSS_FIREDES_SET;
+        }
+        break;
+      default:
+        break;
+    }
+    return DSS_NONE;
+  }
 }
 
 //void cancelBuild(DROID *psDroid)

@@ -97,19 +97,19 @@ void killFeature(Feature* psDel);
 void freeAllFeatures();
 
 /* Create a new Flag Position */
-bool createFlagPosition(FLAG_POSITION** ppsNew, UDWORD player);
+bool createFlagPosition(FlagPosition** ppsNew, unsigned player);
 /* add the Flag Position to the Flag Position Lists */
-void addFlagPosition(FLAG_POSITION* psFlagPosToAdd);
+void addFlagPosition(FlagPosition* psFlagPosToAdd);
 /* Remove a Flag Position from the Lists */
-void removeFlagPosition(FLAG_POSITION* psDel);
+void removeFlagPosition(FlagPosition* psDel);
 // free all flag positions
 void freeAllFlagPositions();
 
 // Find a base object from it's id
-SimpleObject* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type);
-SimpleObject* getBaseObjFromId(UDWORD id);
+SimpleObject* getBaseObjFromData(unsigned id, unsigned player);
+SimpleObject* getBaseObjFromId(unsigned id);
 
-UDWORD getRepairIdFromFlag(FLAG_POSITION* psFlag);
+unsigned getRepairIdFromFlag(FlagPosition* psFlag);
 
 void objCount(int* droids, int* structures, int* features);
 

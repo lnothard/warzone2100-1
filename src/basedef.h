@@ -65,6 +65,7 @@ public:
     [[nodiscard]] virtual unsigned getId() const = 0;
     [[nodiscard]] virtual const DisplayData& getDisplayData() const = 0;
 
+    virtual void setPlayer(unsigned p) = 0;
     virtual void setHeight(int height) = 0;
     virtual void setRotation(Rotation newRotation) = 0;
     [[nodiscard]] virtual bool isSelectable() const = 0;
@@ -87,6 +88,7 @@ namespace Impl
         [[nodiscard]] unsigned getId() const noexcept final;
         [[nodiscard]] const DisplayData& getDisplayData() const noexcept final;
 
+        void setPlayer(unsigned p) noexcept final;
         void setHeight(int height) noexcept final;
         void setRotation(Rotation new_rotation) noexcept final;
         [[nodiscard]] bool isSelectable() const override;

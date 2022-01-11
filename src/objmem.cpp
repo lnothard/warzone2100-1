@@ -615,14 +615,14 @@ void freeAllFeatures()
 	releaseAllObjectsInList(apsFeatureLists);
 }
 
-/**************************  FLAG_POSITION ********************************/
+/**************************  FlagPosition ********************************/
 
 /* Create a new Flag Position */
-bool createFlagPosition(FLAG_POSITION** ppsNew, UDWORD player)
+bool createFlagPosition(FlagPosition** ppsNew, UDWORD player)
 {
 	ASSERT(player < MAX_PLAYERS, "createFlagPosition: invalid player number");
 
-	*ppsNew = (FLAG_POSITION*)calloc(1, sizeof(FLAG_POSITION));
+	*ppsNew = (FlagPosition*)calloc(1, sizeof(FlagPosition));
 	if (*ppsNew == nullptr)
 	{
 		debug(LOG_ERROR, "Out of memory");
@@ -638,12 +638,12 @@ bool createFlagPosition(FLAG_POSITION** ppsNew, UDWORD player)
 	return true;
 }
 
-static bool isFlagPositionInList(FLAG_POSITION* psFlagPosToAdd)
+static bool isFlagPositionInList(FlagPosition* psFlagPosToAdd)
 {
 	ASSERT_OR_RETURN(false, psFlagPosToAdd != nullptr, "Invalid FlagPosition pointer");
 	ASSERT_OR_RETURN(false, psFlagPosToAdd->player < MAX_PLAYERS, "Invalid FlagPosition player: %u",
 	                 psFlagPosToAdd->player);
-	for (FLAG_POSITION* psCurr = apsFlagPosLists[psFlagPosToAdd->player]; (psCurr != nullptr); psCurr = psCurr->psNext)
+	for (FlagPosition* psCurr = apsFlagPosLists[psFlagPosToAdd->player]; (psCurr != nullptr); psCurr = psCurr->psNext)
 	{
 		if (psCurr == psFlagPosToAdd)
 		{
@@ -654,7 +654,7 @@ static bool isFlagPositionInList(FLAG_POSITION* psFlagPosToAdd)
 }
 
 /* add the Flag Position to the Flag Position Lists */
-void addFlagPosition(FLAG_POSITION* psFlagPosToAdd)
+void addFlagPosition(FlagPosition* psFlagPosToAdd)
 {
 	ASSERT_OR_RETURN(, psFlagPosToAdd != nullptr, "Invalid FlagPosition pointer");
 	ASSERT_OR_RETURN(, psFlagPosToAdd->coords.x != ~0, "flag has invalid position");
@@ -666,9 +666,9 @@ void addFlagPosition(FLAG_POSITION* psFlagPosToAdd)
 }
 
 /* Remove a Flag Position from the Lists */
-void removeFlagPosition(FLAG_POSITION* psDel)
+void removeFlagPosition(FlagPosition* psDel)
 {
-	FLAG_POSITION *psPrev = nullptr, *psCurr;
+	FlagPosition *psPrev = nullptr, *psCurr;
 
 	ASSERT_OR_RETURN(, psDel != nullptr, "Invalid Flag Position pointer");
 
@@ -696,7 +696,7 @@ void removeFlagPosition(FLAG_POSITION* psDel)
 // free all flag positions
 void freeAllFlagPositions()
 {
-	FLAG_POSITION* psNext;
+	FlagPosition* psNext;
 	SDWORD player;
 
 	for (player = 0; player < MAX_PLAYERS; player++)
@@ -726,7 +726,7 @@ void checkFactoryFlags()
 			factoryDeliveryPointCheck[type].clear();
 		}
 
-		FLAG_POSITION* psFlag = apsFlagPosLists[player];
+		FlagPosition* psFlag = apsFlagPosLists[player];
 		while (psFlag)
 		{
 			if ((psFlag->type == POS_DELIVERY) && //check this is attached to a unique factory
@@ -906,7 +906,7 @@ SimpleObject* getBaseObjFromId(UDWORD id)
 	return nullptr;
 }
 
-UDWORD getRepairIdFromFlag(FLAG_POSITION* psFlag)
+UDWORD getRepairIdFromFlag(FlagPosition* psFlag)
 {
 	unsigned int i;
 	UDWORD player;
@@ -949,7 +949,7 @@ UDWORD getRepairIdFromFlag(FLAG_POSITION* psFlag)
 			psObj = psObj->psNext;
 		}
 	}
-	ASSERT(!"unable to find repair id for FLAG_POSITION", "getRepairIdFromFlag() failed");
+	ASSERT(!"unable to find repair id for FlagPosition", "getRepairIdFromFlag() failed");
 
 	return UDWORD_MAX;
 }

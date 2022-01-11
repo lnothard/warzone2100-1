@@ -36,6 +36,11 @@ namespace Impl
 		return player;
 	}
 
+  void SimpleObject::setPlayer(unsigned p) noexcept
+  {
+    player = p;
+  }
+
 	unsigned SimpleObject::getId() const noexcept
 	{
 		return id;

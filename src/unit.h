@@ -41,6 +41,7 @@ public:
   [[nodiscard]] virtual bool hasStandardSensor() const = 0;
   [[nodiscard]] virtual bool hasVtolInterceptSensor() const = 0;
   [[nodiscard]] virtual bool hasVtolCbSensor() const = 0;
+  virtual void setHp(unsigned hp) = 0;
 };
 
 Vector3i calculateMuzzleBaseLocation(const Unit& unit, int weapon_slot);
@@ -57,6 +58,8 @@ namespace Impl
     /* Accessors */
 		[[nodiscard]] unsigned getHp() const noexcept final;
 		[[nodiscard]] const std::vector<Weapon>& getWeapons() const final;
+
+    void setHp(unsigned hp) final;
 
     /// @return `true` if this unit is being focused by its owner
     [[nodiscard]] bool isSelected() const noexcept final;

@@ -27,32 +27,39 @@
 #define __INCLUDED_SRC_STRUCTURE_H__
 
 #include "lib/framework/wzconfig.h"
+#include "lib/gamelib/gtime.h"
 
+#include "droid.h"
 #include "positiondef.h"
 #include "unit.h"
 
-class Droid;
-class Group;
-
 static constexpr auto NUM_FACTORY_MODULES = 2;
 static constexpr auto NUM_POWER_MODULES = 4;
-static constexpr auto NY = 255;		// Used to indicate any kind of building when calling intGotoNextStructureType()
-static constexpr auto LOTS_OF = 0xFFFFFFFF;  // highest number the limit can be set to
-static constexpr auto STRUCTURE_CONNECTED = 0x0001; ///< This structure must be built side by side with another of the same player
+
+/// Used to indicate any kind of building when calling intGotoNextStructureType()
+static constexpr auto NY = 255;
+
+/// Highest number the limit can be set to
+static constexpr auto LOTS_OF = 0xFFFFFFFF;
+
+/// This structure must be built side by side with another of the same player
+static constexpr auto STRUCTURE_CONNECTED = 0x0001;
+
 static constexpr auto SAS_OPEN_SPEED = GAME_TICKS_PER_SEC;
-static constexpr auto SAS_STAY_OPEN_TIME = (GAME_TICKS_PER_SEC * 6);
+static constexpr auto SAS_STAY_OPEN_TIME = GAME_TICKS_PER_SEC * 6;
 
 /// Maximum slope of the terrain for building a structure
 static constexpr auto MAX_INCLINE	= 50;
 
-/* droid construction smoke cloud constants */
+/* Droid construction smoke cloud constants */
+
 static constexpr auto DROID_CONSTRUCTION_SMOKE_OFFSET	= 30;
 static constexpr auto DROID_CONSTRUCTION_SMOKE_HEIGHT	= 20;
 
 /// How often to increase the resistance level of a structure
 static constexpr auto RESISTANCE_INTERVAL = 2000;
 
-// how long to wait between CALL_STRUCT_ATTACKED's - plus how long to flash on radar for
+/// How long to wait between CALL_STRUCT_ATTACKED's - plus how long to flash on radar for
 static constexpr auto ATTACK_CB_PAUSE	= 5000;
 
 /// Extra z padding for assembly points
@@ -60,13 +67,13 @@ static constexpr auto ASSEMBLY_POINT_Z_PADDING = 10;
 
 static constexpr auto STRUCTURE_DAMAGE_SCALING = 400;
 
-//production loop max
+/// Production loop max
 static constexpr auto INFINITE_PRODUCTION = 9;
 
-/*This should correspond to the structLimits! */
+/// This should correspond to the structLimits!
 static constexpr auto MAX_FACTORY	=	5;
 
-//used to flag when the Factory is ready to start building
+/// Used to flag when the Factory is ready to start building
 static constexpr auto ACTION_START_TIME = 0;
 
 class DroidTemplate;
@@ -122,7 +129,8 @@ enum class STRUCTURE_STRENGTH
     SOFT,
     MEDIUM,
     HARD,
-    BUNKER
+    BUNKER,
+    COUNT // MUST BE LAST
 };
 
 typedef UWORD STRUCTSTRENGTH_MODIFIER;
@@ -135,7 +143,7 @@ enum class STRUCTURE_ANIMATION_STATE
     CLOSING
 };
 
-enum class FLAG_TYPE
+enum FLAG_TYPE
 {
     FACTORY_FLAG,
     CYBORG_FLAG,
@@ -143,7 +151,7 @@ enum class FLAG_TYPE
     REPAIR_FLAG,
     //separate the numfactory from numflag
     NUM_FLAG_TYPES,
-    NUM_FACTORY_TYPES = REPAIR_FLAG,
+    NUM_FACTORY_TYPES = REPAIR_FLAG
 };
 
 struct FlagPosition : public ObjectPosition
@@ -230,6 +238,9 @@ public:
     [[nodiscard]] virtual STRUCTURE_STATE getState() const = 0;
     virtual void printInfo() const = 0;
     [[nodiscard]] virtual bool hasSensor() const = 0;
+    virtual Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare) = 0;
+    [[nodiscard]] virtual float Structure::structureCompletionProgress() const = 0;
+    [[nodiscard]] virtual const StructureStats& getStats() const = 0;
 };
 
 namespace Impl
@@ -266,6 +277,9 @@ namespace Impl
         [[nodiscard]] int calculateAttackPriority(const ::Unit* target, int weapon_slot) const final;
         [[nodiscard]] const ::SimpleObject& getTarget(int weapon_slot) const final;
         [[nodiscard]] STRUCTURE_STATE getState() const final;
+        Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare) final;
+        [[nodiscard]] float Structure::structureCompletionProgress() const final;
+        [[nodiscard]] const StructureStats& getStats() const final;
     private:
         using enum STRUCTURE_ANIMATION_STATE;
         using enum STRUCTURE_STATE;
@@ -341,6 +355,8 @@ public:
     void refundBuildPower();
     void releaseProduction(QUEUE_MODE mode);
     void holdProduction(QUEUE_MODE mode);
+    void assignFactoryCommandDroid(Droid* commander);
+    bool setFactoryState(SECONDARY_ORDER sec, SECONDARY_STATE state);
 private:
     uint8_t productionLoops; ///< Number of loops to perform. Not synchronised, and only meaningful for selectedPlayer.
     uint8_t loopsPerformed; /* how many times the loop has been performed*/
@@ -428,7 +444,7 @@ extern UDWORD researchModuleStat;
 extern Structure* psLastStructHit;
 
 //stores which player the production list has been set up for
-extern SBYTE productionPlayer;
+extern unsigned productionPlayer;
 
 //holder for all StructureStats
 extern StructureStats* asStructureStats;
@@ -694,9 +710,8 @@ bool structIsDamaged(Structure* psStruct);
 Structure* giftSingleStructure(Structure* psStructure, UBYTE attackPlayer, bool electronic_warfare = true);
 
 /*Initialise the production list and set up the production player*/
-void changeProductionPlayer(UBYTE player);
+void changeProductionPlayer(unsigned player);
 
-// La!
 bool IsStatExpansionModule(const StructureStats* psStats);
 
 /// is this a blueprint and not a real structure?

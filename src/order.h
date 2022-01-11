@@ -302,8 +302,8 @@ void secondaryCheckDamageLevel(Droid* psDroid);
 void secondarySetAverageGroupState(UDWORD player, UDWORD group);
 
 /** \brief Gets the name of an order. */
-const char* getDroidOrderName(ORDER_TYPE order);
-const char* getDroidOrderKey(ORDER_TYPE order);
+std::string getDroidOrderName(ORDER_TYPE order);
+std::string getDroidOrderKey(ORDER_TYPE order);
 
 /** \brief Gets a player's transporter. */
 Droid* FindATransporter(Droid const* embarkee);
