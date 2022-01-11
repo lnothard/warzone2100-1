@@ -210,10 +210,10 @@ public:
     virtual void moveDroidToDirect(unsigned x, unsigned y) = 0;
     virtual void moveTurnDroid(unsigned x, unsigned y) = 0;
     virtual void moveShuffleDroid(Vector2i s) = 0;
-    virtual bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode) = 0;
+    virtual bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode = ModeQueue) = 0;
     virtual void actionDroidBase(Action* psAction) = 0;
     virtual RtrBestResult decideWhereToRepairAndBalance() = 0;
-    virtual SECONDARY_STATE Droid::secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode) = 0;
+    virtual SECONDARY_STATE Droid::secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate) = 0;
     virtual void orderDroidAdd(Order* order_) = 0;
     virtual void orderDroidAddPending(Order* order_) = 0;
     virtual void orderCheckList() = 0;
@@ -263,7 +263,7 @@ namespace Impl
 
       void orderDroidAddPending(Order* order_) final;
 
-      bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode) final;
+      bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode = ModeQueue) final;
 
       void setUpBuildModule();
 
@@ -311,7 +311,7 @@ namespace Impl
       [[nodiscard]] unsigned getArmourPointsAgainstWeapon(WEAPON_CLASS weaponClass) const;
       [[nodiscard]] int calculateAttackPriority(const ::Unit *target, int weapon_slot) const final;
       RtrBestResult decideWhereToRepairAndBalance() final;
-      SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode) final;
+      SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate) final;
   private:
       using enum DROID_TYPE;
       using enum ACTION;
@@ -521,7 +521,7 @@ bool calcDroidMuzzleBaseLocation(const Droid* psDroid, Vector3i* muzzle, int wea
 /* Droid experience stuff */
 unsigned int getDroidLevel(const Droid* psDroid);
 UDWORD getDroidEffectiveLevel(const Droid* psDroid);
-const char* getDroidLevelName(const Droid* psDroid);
+std::string getDroidLevelName(const Droid* psDroid);
 
 // Get a droid's name.
 const char* droidGetName(const Droid* psDroid);

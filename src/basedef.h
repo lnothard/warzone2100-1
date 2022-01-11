@@ -68,6 +68,7 @@ public:
     virtual void setPlayer(unsigned p) = 0;
     virtual void setHeight(int height) = 0;
     virtual void setRotation(Rotation newRotation) = 0;
+    virtual void setPosition(Position pos) = 0;
     [[nodiscard]] virtual bool isSelectable() const = 0;
     [[nodiscard]] virtual uint8_t visibleToPlayer(unsigned watcher) const = 0;
     [[nodiscard]] virtual uint8_t visibleToSelectedPlayer() const = 0;
@@ -91,6 +92,7 @@ namespace Impl
         void setPlayer(unsigned p) noexcept final;
         void setHeight(int height) noexcept final;
         void setRotation(Rotation new_rotation) noexcept final;
+        void setPosition(Position pos) final;
         [[nodiscard]] bool isSelectable() const override;
         [[nodiscard]] uint8_t visibleToPlayer(unsigned watcher) const final;
         [[nodiscard]] uint8_t visibleToSelectedPlayer() const final;

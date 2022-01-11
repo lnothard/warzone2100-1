@@ -39,45 +39,45 @@
 /* Weights used for target selection code,
  * target distance is used as 'common currency'
  */
-#define	WEIGHT_DIST_TILE			13						//In points used in weaponmodifier.txt and structuremodifier.txt
-#define	WEIGHT_DIST_TILE_DROID		WEIGHT_DIST_TILE		//How much weight a distance of 1 tile (128 world units) has when looking for the best nearest target
+static constexpr auto	WEIGHT_DIST_TILE = 13;						//In points used in weaponmodifier.txt and structuremodifier.txt
+static constexpr auto	WEIGHT_DIST_TILE_DROID = WEIGHT_DIST_TILE; //How much weight a distance of 1 tile (128 world units) has when looking for the best nearest target
 
-#define	WEIGHT_DIST_TILE_STRUCT		WEIGHT_DIST_TILE
-#define	WEIGHT_HEALTH_DROID			(WEIGHT_DIST_TILE * 10)	//How much weight unit damage has (100% of damage is equally weighted as 10 tiles distance)
+static constexpr auto	WEIGHT_DIST_TILE_STRUCT =	WEIGHT_DIST_TILE;
+static constexpr auto	WEIGHT_HEALTH_DROID	=	WEIGHT_DIST_TILE * 10; //How much weight unit damage has (100% of damage is equally weighted as 10 tiles distance)
 
 //~100% damage should be ~8 tiles (max sensor range)
-#define	WEIGHT_HEALTH_STRUCT		(WEIGHT_DIST_TILE * 7)
+static constexpr auto	WEIGHT_HEALTH_STRUCT = WEIGHT_DIST_TILE * 7;
 
-#define	WEIGHT_NOT_VISIBLE_F		10						//We really don't like objects we can't see
+static constexpr auto	WEIGHT_NOT_VISIBLE_F = 10;						//We really don't like objects we can't see
 
-#define	WEIGHT_SERVICE_DROIDS		(WEIGHT_DIST_TILE_DROID * 5)		//We don't want them to be repairing droids or structures while we are after them
+static constexpr auto	WEIGHT_SERVICE_DROIDS	=	WEIGHT_DIST_TILE_DROID * 5;		//We don't want them to be repairing droids or structures while we are after them
 
-#define	WEIGHT_WEAPON_DROIDS		(WEIGHT_DIST_TILE_DROID * 4)		//We prefer to go after anything that has a gun and can hurt us
+static constexpr auto	WEIGHT_WEAPON_DROIDS =	WEIGHT_DIST_TILE_DROID * 4;		//We prefer to go after anything that has a gun and can hurt us
 
-#define	WEIGHT_COMMAND_DROIDS		(WEIGHT_DIST_TILE_DROID * 6)		//Commanders get a higher priority
-#define	WEIGHT_MILITARY_STRUCT		WEIGHT_DIST_TILE_STRUCT				//Droid/cyborg factories, repair facility; shouldn't have too much weight
+static constexpr auto	WEIGHT_COMMAND_DROIDS	=	WEIGHT_DIST_TILE_DROID * 6;		//Commanders get a higher priority
+static constexpr auto	WEIGHT_MILITARY_STRUCT = WEIGHT_DIST_TILE_STRUCT;				//Droid/cyborg factories, repair facility; shouldn't have too much weight
 
-#define	WEIGHT_WEAPON_STRUCT		WEIGHT_WEAPON_DROIDS				//Same as weapon droids (?)
-#define	WEIGHT_DERRICK_STRUCT		(WEIGHT_MILITARY_STRUCT + WEIGHT_DIST_TILE_STRUCT * 4)	//Even if it's 4 tiles further away than defenses we still choose it
-
-
-#define	WEIGHT_STRUCT_NOTBUILT_F	8						//Humans won't fool us anymore!
-
-#define OLD_TARGET_THRESHOLD		(WEIGHT_DIST_TILE * 4)	//it only makes sense to switch target if new one is 4+ tiles closer
+static constexpr auto	WEIGHT_WEAPON_STRUCT = WEIGHT_WEAPON_DROIDS;	//Same as weapon droids (?)
+static constexpr auto	WEIGHT_DERRICK_STRUCT	=	WEIGHT_MILITARY_STRUCT + WEIGHT_DIST_TILE_STRUCT * 4;	//Even if it's 4 tiles further away than defenses we still choose it
 
 
-#define	EMP_DISABLED_PENALTY_F		10								//EMP shouldn't attack emped targets again
-#define	EMP_STRUCT_PENALTY_F		(EMP_DISABLED_PENALTY_F * 2)	//EMP don't attack structures, should be bigger than EMP_DISABLED_PENALTY_F
+static constexpr auto	WEIGHT_STRUCT_NOTBUILT_F = 8;						//Humans won't fool us anymore!
+
+static constexpr auto OLD_TARGET_THRESHOLD = WEIGHT_DIST_TILE * 4;	//it only makes sense to switch target if new one is 4+ tiles closer
 
 
-#define TOO_CLOSE_PENALTY_F             20
+static constexpr auto	EMP_DISABLED_PENALTY_F = 10;								//EMP shouldn't attack emped targets again
+static constexpr auto	EMP_STRUCT_PENALTY_F = EMP_DISABLED_PENALTY_F * 2;	//EMP don't attack structures, should be bigger than EMP_DISABLED_PENALTY_F
 
-#define TARGET_DOOMED_PENALTY_F		10	// Targets that have a lot of damage incoming are less attractive
-#define TARGET_DOOMED_SLOW_RELOAD_T	21	// Weapon ROF threshold for above penalty. per minute.
+
+static constexpr auto TOO_CLOSE_PENALTY_F = 20;
+
+static constexpr auto TARGET_DOOMED_PENALTY_F	= 10;	// Targets that have a lot of damage incoming are less attractive
+static constexpr auto TARGET_DOOMED_SLOW_RELOAD_T	= 21;	// Weapon ROF threshold for above penalty. per minute.
 
 //Some weights for the units attached to a commander
-#define	WEIGHT_CMD_RANK				(WEIGHT_DIST_TILE * 4)			//A single rank is as important as 4 tiles distance
-#define	WEIGHT_CMD_SAME_TARGET		WEIGHT_DIST_TILE				//Don't want this to be too high, since a commander can have many units assigned
+static constexpr auto	WEIGHT_CMD_RANK	=	WEIGHT_DIST_TILE * 4;			//A single rank is as important as 4 tiles distance
+static constexpr auto	WEIGHT_CMD_SAME_TARGET = WEIGHT_DIST_TILE;				//Don't want this to be too high, since a commander can have many units assigned
 
 
 uint8_t alliances[MAX_PLAYER_SLOTS][MAX_PLAYER_SLOTS];

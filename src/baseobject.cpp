@@ -61,14 +61,14 @@ static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, std::size_t 
 
 Spacetime interpolateObjectSpacetime(const SimpleObject* obj, unsigned t)
 {
-	switch (obj->type)
-	{
-	default:
-		return obj->getSpacetime();
-	case OBJ_DROID:
-		return interpolateSpacetime(castDroid(obj)->previous_location, getSpacetime(obj), t);
-	case OBJ_PROJECTILE:
-		return interpolateSpacetime(castProjectile(obj)->prevSpacetime, getSpacetime(obj), t);
+	if (auto psDroid = dynamic_cast<const Droid*>(obj)) {
+    return interpolateSpacetime(psDroid->previousLocation, obj->getSpacetime(), t);
+  }
+  else if (auto psStruct = dynamic_cast<const Structure*>(obj)) {
+    return interpolateSpacetime(psStruct->prevSpacetime, obj->getSpacetime(), t);
+  }
+  else {
+    return obj->getSpacetime();
 	}
 }
 
@@ -82,21 +82,21 @@ SimpleObject::~SimpleObject()
 #endif //DEBUG
 }
 
-// Query visibility for display purposes (i.e. for `selectedPlayer`)
-// *DO NOT USE TO QUERY VISIBILITY FOR CALCULATIONS INVOLVING GAME / SIMULATION STATE*
-UBYTE SimpleObject::visibleForLocalDisplay() const
-{
-	if (godMode)
-	{
-		// is visible to selectedPlayer
-		return UBYTE_MAX;
-	}
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
-		return 0;
-	}
-	return visible[selectedPlayer];
-}
+//// Query visibility for display purposes (i.e. for `selectedPlayer`)
+//// *DO NOT USE TO QUERY VISIBILITY FOR CALCULATIONS INVOLVING GAME / SIMULATION STATE*
+//UBYTE SimpleObject::visibleForLocalDisplay() const
+//{
+//	if (godMode)
+//	{
+//		// is visible to selectedPlayer
+//		return UBYTE_MAX;
+//	}
+//	if (selectedPlayer >= MAX_PLAYERS)
+//	{
+//		return 0;
+//	}
+//	return visible[selectedPlayer];
+//}
 
 void checkObject(const SIMPLE_OBJECT* psObject, const char* const location_description, const char* function,
                  const int recurse)
@@ -107,8 +107,7 @@ void checkObject(const SIMPLE_OBJECT* psObject, const char* const location_descr
 
 	ASSERT(psObject != nullptr, "NULL pointer");
 
-	switch (psObject->type)
-	{
+	switch (psObject->type) {
 	case OBJ_DROID:
 		checkDroid((const Droid*)psObject, location_description, function, recurse - 1);
 		break;
@@ -185,7 +184,7 @@ StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos, uint16_
 		return getStructureBounds(static_cast<StructureStats const*>(stats), pos, direction);
 	}
 	else if (StatIsFeature(stats)) {
-		return getStructureBounds(static_cast<FeatureStats const*>(stats), pos);
+		return getStructureBounds(dynamic_cast<FeatureStats const*>(stats), pos);
 	}
 
 	return {map_coord(pos), Vector2i(1, 1)}; // Default to a 1×1 tile.

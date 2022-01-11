@@ -41,6 +41,11 @@ namespace Impl
     player = p;
   }
 
+  void SimpleObject::setPosition(Position pos)
+  {
+    position = pos;
+  }
+
 	unsigned SimpleObject::getId() const noexcept
 	{
 		return id;

@@ -375,12 +375,16 @@ private:
 
 class ResourceExtractor : public virtual Structure, public Impl::Structure
 {
+public:
+    void releaseResExtractor();
 private:
     Structure* power_generator;
 };
 
 class PowerGenerator : public virtual Structure, public Impl::Structure
 {
+public:
+    void releasePowerGen();
 private:
     /// Pointers to associated oil derricks
     std::array<Structure*, NUM_POWER_MODULES> resource_extractors;
