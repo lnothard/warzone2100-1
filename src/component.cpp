@@ -346,17 +346,17 @@ void drawMuzzleFlash(const Weapon& sWeap, const iIMDShape* weaponImd, iIMDShape*
                      const glm::mat4& viewMatrix, uint8_t colour)
 {
 	if (!weaponImd || !flashImd || !weaponImd->nconnectors ||
-      graphicsTime < sWeap.time_last_fired) {
+      graphicsTime < sWeap.timeLastFired) {
 		return;
 	}
 
 	auto connector_num = 0;
 
 	// which barrel is firing if model have multiple muzzle connectors?
-	if (sWeap.shots_fired && (weaponImd->nconnectors > 1))
+	if (sWeap.shotsFired && (weaponImd->nconnectors > 1))
 	{
 		// shoot first, draw later - substract one shot to get correct results
-		connector_num = (sWeap.shots_fired - 1) % (weaponImd->nconnectors);
+		connector_num = (sWeap.shotsFired - 1) % (weaponImd->nconnectors);
 	}
 
 	/* Now we need to move to the end of the firing barrel */
@@ -367,19 +367,19 @@ void drawMuzzleFlash(const Weapon& sWeap, const iIMDShape* weaponImd, iIMDShape*
 	if (flashImd->numFrames == 0 || flashImd->animInterval <= 0)
 	{
 		// no anim so display one frame for a fixed time
-		if (graphicsTime >= sWeap.time_last_fired && graphicsTime < sWeap.time_last_fired + BASE_MUZZLE_FLASH_DURATION)
+		if (graphicsTime >= sWeap.timeLastFired && graphicsTime < sWeap.timeLastFired + BASE_MUZZLE_FLASH_DURATION)
 		{
 			pie_Draw3DShape(flashImd, 0, colour, buildingBrightness, pieFlag | pie_ADDITIVE, EFFECT_MUZZLE_ADDITIVE,
 			                viewMatrix * modelMatrix);
 		}
 	}
-	else if (graphicsTime >= sWeap.time_last_fired)
+	else if (graphicsTime >= sWeap.timeLastFired)
 	{
 		// animated muzzle
 		const int DEFAULT_ANIM_INTERVAL = 17;
 		// A lot of PIE files specify 1, which is too small, so set something bigger as a fallback
 		int animRate = MAX(flashImd->animInterval, DEFAULT_ANIM_INTERVAL);
-		int frame = (graphicsTime - sWeap.time_last_fired) / animRate;
+		int frame = (graphicsTime - sWeap.timeLastFired) / animRate;
 		if (frame < flashImd->numFrames)
 		{
 			pie_Draw3DShape(flashImd, frame, colour, buildingBrightness, pieFlag | pie_ADDITIVE, EFFECT_MUZZLE_ADDITIVE,

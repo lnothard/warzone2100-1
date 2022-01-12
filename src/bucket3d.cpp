@@ -112,10 +112,10 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 			pImd = ((Projectile*)pObject)->weaponStats->pInFlightGraphic;
 
 			psSimpObj = (SimpleObject*)pObject;
-			position.x = psSimpObj->pos.x - playerPos.p.x;
-			position.z = -(psSimpObj->pos.y - playerPos.p.z);
+			position.x = psSimpObj->getPosition().x - playerPos.p.x;
+			position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
-			position.y = psSimpObj->pos.z;
+			position.y = psSimpObj->getPosition().z;
 
 			z = pie_RotateProject(&position, viewMatrix, &pixel);
 

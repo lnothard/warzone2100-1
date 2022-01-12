@@ -198,21 +198,21 @@ public:
 	static generic_script_object fromGroup(int groupId);
 	static generic_script_object fromObject(const SimpleObject* psObj);
 public:
-	inline bool isNull() const { return type < 0; }
-	inline bool isRadius() const { return type == SCRIPT_RADIUS; }
-	inline bool isArea() const { return type == SCRIPT_AREA; }
-	inline bool isPosition() const { return type == SCRIPT_POSITION; }
-	inline bool isGroup() const { return type == SCRIPT_GROUP; }
-	inline bool isObject() const { return type == OBJ_DROID || type == OBJ_FEATURE || type == OBJ_STRUCTURE; }
+	[[nodiscard]] inline bool isNull() const { return type < 0; }
+	[[nodiscard]] inline bool isRadius() const { return type == SCRIPT_RADIUS; }
+	[[nodiscard]] inline bool isArea() const { return type == SCRIPT_AREA; }
+	[[nodiscard]] inline bool isPosition() const { return type == SCRIPT_POSITION; }
+	[[nodiscard]] inline bool isGroup() const { return type == SCRIPT_GROUP; }
+	[[nodiscard]] inline bool isObject() const { return type == OBJ_DROID || type == OBJ_FEATURE || type == OBJ_STRUCTURE; }
 public:
-	inline int getType() const { return type; }
-	scr_radius getRadius() const; // if type == SCRIPT_RADIUS, returns the radius
-	scr_area getArea() const; // if type == SCRIPT_AREA, returns the area
-	scr_position getPosition() const; // if type == SCRIPT_POSITION, returns the position
-	int getGroupId() const; // if type == SCRIPT_GROUP, returns the groupId
-	SimpleObject* getObject() const; // if type == OBJ_DROID, OBJ_FEATURE, OBJ_STRUCTURE, returns the game object
+	[[nodiscard]] inline int getType() const { return type; }
+	[[nodiscard]] scr_radius getRadius() const; // if type == SCRIPT_RADIUS, returns the radius
+	[[nodiscard]] scr_area getArea() const; // if type == SCRIPT_AREA, returns the area
+	[[nodiscard]] scr_position getPosition() const; // if type == SCRIPT_POSITION, returns the position
+	[[nodiscard]] int getGroupId() const; // if type == SCRIPT_GROUP, returns the groupId
+	[[nodiscard]] SimpleObject* getObject() const; // if type == OBJ_DROID, OBJ_FEATURE, OBJ_STRUCTURE, returns the game object
 public:
-	LABEL toNewLabel() const;
+	[[nodiscard]] LABEL toNewLabel() const;
 };
 
 /// Load map labels
@@ -235,15 +235,15 @@ public:
 		int lastNewGroupId = 0;
 	protected:
 		friend class scripting_engine;
-		int getLastNewGroupId() const { return lastNewGroupId; }
+		[[nodiscard]] int getLastNewGroupId() const { return lastNewGroupId; }
 		void saveLoadSetLastNewGroupId(int value);
 	public:
 		groupID newGroupID();
 		void insertObjectIntoGroup(const SimpleObject* psObj, groupID groupId);
 		inline const ObjectToGroupMap& map() const { return m_map; }
-		size_t groupSize(groupID groupId) const;
+		[[nodiscard]] size_t groupSize(groupID groupId) const;
 		optional<groupID> removeObjectFromGroup(const SimpleObject* psObj);
-		std::vector<const SimpleObject*> getGroupObjects(groupID groupId) const;
+		[[nodiscard]] std::vector<const SimpleObject*> getGroupObjects(groupID groupId) const;
 	};
 
 	struct timerNode
@@ -276,7 +276,7 @@ public:
 
 		// implement operator less TODO
 
-		timerNode(timerNode&& rhs); // move constructor
+		timerNode(timerNode&& rhs) noexcept ; // move constructor
 
 	private:
 		// non-copyable
@@ -301,9 +301,7 @@ private:
 	std::unordered_map<uniqueTimerID, std::list<std::shared_ptr<timerNode>>::iterator> timerIDMap;
 	// a map from uniqueTimerID -> entry in the timers list
 private:
-	scripting_engine()
-	{
-	}
+	scripting_engine() = default;
 
 public:
 	static scripting_engine& instance();
@@ -382,20 +380,20 @@ public:
 	}
 
 private:
-	void logFunctionPerformance(wzapi::scripting_instance* instance, const std::string& function, int ticks);
+	static void logFunctionPerformance(wzapi::scripting_instance* instance, const std::string& function, int ticks);
 	uniqueTimerID getNextAvailableTimerID();
 	// internal-only function that adds a Timer node (used for restoring saved games)
 	void addTimerNode(std::shared_ptr<timerNode>&& node);
 
 	// MARK: triggering events (from wz game code)
 public:
-	bool triggerEventSeen(SimpleObject* psViewer, SimpleObject* psSeen);
+	static bool triggerEventSeen(SimpleObject* psViewer, SimpleObject* psSeen);
 
 	// MARK: wzapi functions
 public:
 	// Used for retrieving information to set up script instance environments
-	nlohmann::json constructDerrickPositions();
-	nlohmann::json constructStartPositions();
+	static nlohmann::json constructDerrickPositions();
+	static nlohmann::json constructStartPositions();
 public:
 	// Label functions
 	static wzapi::no_return_value resetLabel(WZAPI_PARAMS(std::string labelName, optional<int> playerFilter));
@@ -458,7 +456,7 @@ public:
 	static wzapi::no_return_value groupAdd(WZAPI_PARAMS(int groupId, const SimpleObject *psObj));
 	static int groupSize(WZAPI_PARAMS(int groupId));
 private:
-	wzapi::scripting_instance* findInstanceForPlayer(int match, const WzString& scriptName);
+	static wzapi::scripting_instance* findInstanceForPlayer(int match, const WzString& scriptName);
 
 public:
 	// debug APIs
@@ -477,11 +475,9 @@ public:
 		timerType type = TIMER_REMOVED;
 		nlohmann::json instanceTimerRestoreData;
 
-		timerNodeSnapshot()
-		{
-		}
+		timerNodeSnapshot() = default;
 
-		timerNodeSnapshot(const std::shared_ptr<timerNode>& node)
+		explicit timerNodeSnapshot(const std::shared_ptr<timerNode>& node)
 		{
 			ASSERT_OR_RETURN(, node != nullptr, "null timerNode");
 			timerID = node->timerID;
@@ -513,26 +509,24 @@ public:
 	protected:
 		friend class scripting_engine;
 
-		DebugInterface()
-		{
-		}
+		DebugInterface() = default;
 
 	public:
-		std::unordered_map<wzapi::scripting_instance*, nlohmann::json> debug_GetGlobalsSnapshot() const;
-		std::vector<scripting_engine::timerNodeSnapshot> debug_GetTimersSnapshot() const;
-		std::vector<scripting_engine::LabelInfo> debug_GetLabelInfo() const;
+		static std::unordered_map<wzapi::scripting_instance*, nlohmann::json> debug_GetGlobalsSnapshot() ;
+		static std::vector<scripting_engine::timerNodeSnapshot> debug_GetTimersSnapshot() ;
+		[[nodiscard]] static std::vector<scripting_engine::LabelInfo> debug_GetLabelInfo() ;
 		/// Show all labels or all currently active labels
-		void markAllLabels(bool only_active);
+		static void markAllLabels(bool only_active);
 		/// Mark and show label
-		void showLabel(const std::string& key, bool clear_old = true, bool jump_to = true);
+		static void showLabel(const std::string& key, bool clear_old = true, bool jump_to = true);
 	};
 
 protected:
 	friend void jsShowDebug();
 
-	std::unordered_map<wzapi::scripting_instance*, nlohmann::json> debug_GetGlobalsSnapshot() const;
-	std::vector<scripting_engine::timerNodeSnapshot> debug_GetTimersSnapshot() const;
-	std::vector<scripting_engine::LabelInfo> debug_GetLabelInfo() const;
+	[[nodiscard]] std::unordered_map<wzapi::scripting_instance*, nlohmann::json> debug_GetGlobalsSnapshot() const;
+	[[nodiscard]] std::vector<scripting_engine::timerNodeSnapshot> debug_GetTimersSnapshot() const;
+	[[nodiscard]] std::vector<scripting_engine::LabelInfo> debug_GetLabelInfo() const;
 
 	/// Show all labels or all currently active labels
 	void markAllLabels(bool only_active);
@@ -548,7 +542,7 @@ protected:
 private:
 	std::pair<bool, int> seenLabelCheck(wzapi::scripting_instance* instance, const SimpleObject* seen,
 	                                    const SimpleObject* viewer);
-	void removeFromGroup(wzapi::scripting_instance* instance, GROUPMAP* psMap, const SimpleObject* psObj);
+	static void removeFromGroup(wzapi::scripting_instance* instance, GROUPMAP* psMap, const SimpleObject* psObj);
 	bool groupAddObject(const SimpleObject* psObj, int groupId, wzapi::scripting_instance* instance);
 };
 

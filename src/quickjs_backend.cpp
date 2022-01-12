@@ -876,7 +876,7 @@ JSValue convStructure(const Structure* psStruct, JSContext* ctx)
 		                            JS_PROP_ENUMERABLE); // will be changed to contain full name
 		QuickJS_DefinePropertyValue(ctx, weapon, "id", JS_NewString(ctx, psStats->id.toUtf8().c_str()),
 		                            JS_PROP_ENUMERABLE);
-		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psStruct->asWeaps[j].time_last_fired),
+		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psStruct->asWeaps[j].timeLastFired),
 		                            JS_PROP_ENUMERABLE);
 		JS_DefinePropertyValueUint32(ctx, weaponlist, j, weapon, JS_PROP_ENUMERABLE);
 	}
@@ -1063,7 +1063,7 @@ JSValue convDroid(const Droid* psDroid, JSContext* ctx)
 		                            JS_PROP_ENUMERABLE); // will be changed to contain full name
 		QuickJS_DefinePropertyValue(ctx, weapon, "id", JS_NewString(ctx, psStats->id.toUtf8().c_str()),
 		                            JS_PROP_ENUMERABLE);
-		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psDroid->asWeaps[j].time_last_fired),
+		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psDroid->asWeaps[j].timeLastFired),
 		                            JS_PROP_ENUMERABLE);
 		QuickJS_DefinePropertyValue(ctx, weapon, "armed", JS_NewInt32(ctx, armed), JS_PROP_ENUMERABLE);
 		JS_DefinePropertyValueUint32(ctx, weaponlist, j, weapon, JS_PROP_ENUMERABLE);

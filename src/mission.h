@@ -39,7 +39,7 @@
 
 extern MISSION mission;
 extern bool offWorldKeepLists;
-extern Droid* apsLimboDroids[MAX_PLAYERS];
+extern std::array< std::vector<Droid*>, MAX_PLAYERS> apsLimboDroids;
 
 extern bool Cheated;
 

@@ -17,29 +17,32 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** \file
- *  Definitions for missions.
+
+/**
+ * @file missiondef.h
+ * Definitions for missions
  */
 
 #ifndef __INCLUDED_MISSIONDEF_H__
 #define __INCLUDED_MISSIONDEF_H__
 
-#include "map.h"
-#include "structuredef.h"
-#include "droiddef.h"
-#include "featuredef.h"
-#include "power.h"
 #include "gateway.h"
+#include "map.h"
+#include "power.h"
 
-//mission types
+/* Mission types */
 
-//used to set the reinforcement time on hold whilst the Transporter is unable to land
-//hopefully they'll never need to set it this high for other reasons!
-#define SCR_LZ_COMPROMISED_TIME     999990
-//this is used to compare the value passed in from the scripts with which is multiplied by 100
-#define LZ_COMPROMISED_TIME         99999000
-//same value in seconds, as passed from JavaScript
-#define JS_LZ_COMPROMISED_TIME         99999
+// used to set the reinforcement time on hold whilst the transporter
+// is unable to land hopefully they'll never need to set it this high
+// for other reasons!
+static constexpr auto SCR_LZ_COMPROMISED_TIME = 999990;
+
+// this is used to compare the value passed in from the scripts with
+// which is multiplied by 100
+static constexpr auto LZ_COMPROMISED_TIME = 99999000;
+
+// same value in seconds, as passed from JavaScript
+static constexpr auto JS_LZ_COMPROMISED_TIME = 99999;
 
 struct LANDING_ZONE
 {
@@ -54,40 +57,41 @@ struct MISSION
 {
 	LEVEL_TYPE type; //defines which start and end functions to use - see levels_type in levels.h
 	std::unique_ptr<Tile[]> psMapTiles; //the original mapTiles
-	int32_t mapWidth; //the original mapWidth
-	int32_t mapHeight; //the original mapHeight
+	int mapWidth; //the original mapWidth
+	int mapHeight; //the original mapHeight
 	std::unique_ptr<uint8_t[]> psBlockMap[AUX_MAX];
 	std::unique_ptr<uint8_t[]> psAuxMap[MAX_PLAYERS + AUX_MAX];
 	GATEWAY_LIST psGateways; //the gateway list
-	int32_t scrollMinX; //scroll coords for original map
-	int32_t scrollMinY;
-	int32_t scrollMaxX;
-	int32_t scrollMaxY;
-	Structure *apsStructLists[MAX_PLAYERS], *apsExtractorLists[MAX_PLAYERS]; //original object lists
-	Droid* apsDroidLists[MAX_PLAYERS];
-	Feature* apsFeatureLists[MAX_PLAYERS];
+	int scrollMinX; //scroll coords for original map
+	int scrollMinY;
+	int scrollMaxX;
+	int scrollMaxY;
+	std::array< std::vector<Structure*>, MAX_PLAYERS> apsStructLists;
+  Structure* apsExtractorLists[MAX_PLAYERS];
+	std::array< std::vector<Droid*>, MAX_PLAYERS> apsDroidLists;
+	std::array< std::vector<Feature*>, MAX_PLAYERS> apsFeatureLists;
 	SimpleObject* apsSensorList[1];
 	Feature* apsOilList[1];
-	FLAG_POSITION* apsFlagPosLists[MAX_PLAYERS];
-	int32_t asCurrentPower[MAX_PLAYERS];
+	FlagPosition* apsFlagPosLists[MAX_PLAYERS];
+	int asCurrentPower[MAX_PLAYERS];
 
-	UDWORD startTime; //time the mission started
-	SDWORD time; //how long the mission can last
+	unsigned startTime; //time the mission started
+	int time; //how long the mission can last
 	// < 0 = no limit
-	SDWORD ETA; //time taken for reinforcements to arrive
+	int ETA; //time taken for reinforcements to arrive
 	// < 0 = none allowed
-	UDWORD cheatTime; //time the cheating started (mission time-wise!)
+	unsigned cheatTime; //time the cheating started (mission time-wise!)
 
-	UWORD homeLZ_X; //selectedPlayer's LZ x and y
-	UWORD homeLZ_Y;
-	SDWORD playerX; //original view position
-	SDWORD playerY;
+	uint16_t homeLZ_X; //selectedPlayer's LZ x and y
+	uint16_t homeLZ_Y;
+	int playerX; //original view position
+	int playerY;
 
 	/* transporter entry/exit tiles */
-	UWORD iTranspEntryTileX[MAX_PLAYERS];
-	UWORD iTranspEntryTileY[MAX_PLAYERS];
-	UWORD iTranspExitTileX[MAX_PLAYERS];
-	UWORD iTranspExitTileY[MAX_PLAYERS];
+	uint16_t iTranspEntryTileX[MAX_PLAYERS];
+	uint16_t iTranspEntryTileY[MAX_PLAYERS];
+	uint16_t iTranspExitTileX[MAX_PLAYERS];
+	uint16_t iTranspExitTileY[MAX_PLAYERS];
 };
 
 #endif // __INCLUDED_MISSIONDEF_H__

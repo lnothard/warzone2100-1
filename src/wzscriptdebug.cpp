@@ -2308,9 +2308,9 @@ void WZScriptDebugger::selected(const SimpleObject* psObj)
 				WeaponStats* psWeap = asWeaponStats + psObj->asWeaps[i].nStat;
 				auto component = componentToString(psWeap, psObj->player);
 				component["Ammo"] = psObj->asWeaps[i].ammo;
-				component["Last fired time"] = psObj->asWeaps[i].time_last_fired;
-				component["Shots fired"] = psObj->asWeaps[i].shots_fired;
-				component["Used ammo"] = psObj->asWeaps[i].ammo_used;
+				component["Last fired time"] = psObj->asWeaps[i].timeLastFired;
+				component["Shots fired"] = psObj->asWeaps[i].shotsFired;
+				component["Used ammo"] = psObj->asWeaps[i].ammoUsed;
 				component["Origin"] = psObj->asWeaps[i].origin;
 				weapons.push_back(component);
 			}

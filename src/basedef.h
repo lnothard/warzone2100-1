@@ -63,8 +63,10 @@ public:
     [[nodiscard]] virtual const Rotation& getRotation() const = 0;
     [[nodiscard]] virtual unsigned getPlayer() const = 0;
     [[nodiscard]] virtual unsigned getId() const = 0;
+    [[nodiscard]] virtual std::size_t getTime() const = 0;
     [[nodiscard]] virtual const DisplayData& getDisplayData() const = 0;
 
+    virtual void setTime(unsigned t) = 0;
     virtual void setPlayer(unsigned p) = 0;
     virtual void setHeight(int height) = 0;
     virtual void setRotation(Rotation newRotation) = 0;
@@ -87,8 +89,10 @@ namespace Impl
         [[nodiscard]] const Rotation& getRotation() const noexcept final;
         [[nodiscard]] unsigned getPlayer() const noexcept final;
         [[nodiscard]] unsigned getId() const noexcept final;
+        [[nodiscard]] std::size_t getTime() const noexcept final;
         [[nodiscard]] const DisplayData& getDisplayData() const noexcept final;
 
+        void setTime(unsigned t) noexcept final;
         void setPlayer(unsigned p) noexcept final;
         void setHeight(int height) noexcept final;
         void setRotation(Rotation new_rotation) noexcept final;
@@ -103,11 +107,11 @@ namespace Impl
         Position position {0, 0, 0};
         Rotation rotation {0, 0, 0};
         std::unique_ptr<DisplayData> display;
-        std::bitset< static_cast<std::size_t>(OBJECT_FLAG::COUNT) > flags;
-
+    protected:
         /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip,
         /// 0 if not visible
         std::array<uint8_t, MAX_PLAYERS> visibilityState;
+        std::bitset< static_cast<std::size_t>(OBJECT_FLAG::COUNT) > flags;
     };
 }
 
@@ -115,18 +119,15 @@ namespace Impl
 struct Spacetime
 {
     Spacetime() = default;
-    Spacetime(std::size_t time, Position position,
-              Rotation rotation);
+    Spacetime(std::size_t time, Position position, Rotation rotation);
 
     std::size_t time = 0;
     Position position {0, 0, 0};
     Rotation rotation {0, 0,0};
 };
 
-int objectPositionSquareDiff(const Position& first,
-                             const Position& second);
+int objectPositionSquareDiff(const Position& first, const Position& second);
 
-int objectPositionSquareDiff(const SimpleObject& first,
-                             const SimpleObject& second);
+int objectPositionSquareDiff(const SimpleObject& first, const SimpleObject& second);
 
 #endif // __INCLUDED_BASEDEF_H__

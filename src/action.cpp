@@ -250,7 +250,7 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
   int rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
   int pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
 
-	auto& psWeapStats = psWeapon->get_stats();
+	auto& psWeapStats = psWeapon->getStats();
 	unsigned tRotation, tPitch;
 	unsigned targetRotation;
 	int rotationTolerance = 0;

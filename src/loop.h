@@ -19,8 +19,8 @@
 */
 
 /**
- * @file
- * Interface to the main game loop routine.
+ * @file loop.h
+ * Interface to the main game loop routine
  */
 
 #ifndef __INCLUDED_SRC_LOOP_H__
@@ -31,6 +31,7 @@
 using nonstd::optional;
 using nonstd::nullopt;
 
+#include "droid.h"
 #include "levels.h"
 
 enum class GAME_CODE
@@ -66,15 +67,15 @@ extern LOOP_MISSION_STATE loopMissionState;
 // this is set by scrStartMission to say what type of new level is to be started
 extern LEVEL_TYPE nextMissionType;
 
-extern size_t loopPieCount;
-extern size_t loopPolyCount;
+extern std::size_t loopPieCount;
+extern std::size_t loopPolyCount;
 
 GAME_CODE gameLoop();
 void videoLoop();
 void loop_SetVideoPlaybackMode();
 void loop_ClearVideoPlaybackMode();
 bool loop_GetVideoStatus();
-SDWORD loop_GetVideoMode();
+int loop_GetVideoMode();
 bool gamePaused();
 void setGamePauseStatus(bool val);
 
@@ -84,9 +85,10 @@ bool scriptPaused();
 bool scrollPaused();
 bool consolePaused();
 
-constexpr size_t WZ_DEFAULT_MAX_FASTFORWARD_TICKS = 1;
-size_t getMaxFastForwardTicks();
-void setMaxFastForwardTicks(optional<size_t> value = nullopt, bool fixedToNormalTickRate = true);
+constexpr std::size_t WZ_DEFAULT_MAX_FASTFORWARD_TICKS = 1;
+std::size_t getMaxFastForwardTicks();
+void setMaxFastForwardTicks(optional<std::size_t> value = nullopt,
+                            bool fixedToNormalTickRate = true);
 
 void setGameUpdatePause(bool state);
 void setAudioPause(bool state);
@@ -97,17 +99,17 @@ void setConsolePause(bool state);
 void setAllPauseStates(bool state);
 
 // Number of units in the current list.
-UDWORD getNumDroids(UDWORD player);
+unsigned getNumDroids(unsigned player);
 // Number of units on transporters.
-UDWORD getNumTransporterDroids(UDWORD player);
+unsigned getNumTransporterDroids(unsigned player);
 // Number of units in the mission list.
-UDWORD getNumMissionDroids(UDWORD player);
-UDWORD getNumCommandDroids(UDWORD player);
-UDWORD getNumConstructorDroids(UDWORD player);
+unsigned getNumMissionDroids(unsigned player);
+unsigned getNumCommandDroids(unsigned player);
+unsigned getNumConstructorDroids(unsigned player);
 // increase the droid counts - used by update factory to keep the counts in sync
-void adjustDroidCount(struct DROID* droid, int delta);
+void adjustDroidCount(Droid* droid, int delta);
 // Increase counts of droids in a transporter
-void droidCountsInTransporter(DROID* droid, int player);
+void droidCountsInTransporter(Droid* droid, int player);
 
 void countUpdate(bool synch = false);
 

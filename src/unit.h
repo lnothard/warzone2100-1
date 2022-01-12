@@ -68,6 +68,7 @@ namespace Impl
 	private:
 		unsigned hitPoints = 0;
     bool selected = false;
+	protected:
 		std::vector<Weapon> weapons;
 	};
 }

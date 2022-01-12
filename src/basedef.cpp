@@ -36,6 +36,16 @@ namespace Impl
 		return player;
 	}
 
+  std::size_t SimpleObject::getTime() const noexcept
+  {
+    return time;
+  }
+
+  void SimpleObject::setTime(unsigned t) noexcept
+  {
+    time = t;
+  }
+
   void SimpleObject::setPlayer(unsigned p) noexcept
   {
     player = p;

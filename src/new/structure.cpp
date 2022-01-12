@@ -405,7 +405,7 @@ namespace Impl {
       return false;
     }
 		auto& weapon = structure.getWeapons()[weapon_slot];
-		const auto max_range = weapon.get_max_range(structure.getPlayer());
+		const auto max_range = weapon.getMaxRange(structure.getPlayer());
 
 		return objectPositionSquareDiff(structure.getPosition(),
                                     target.getPosition()) < max_range * max_range &&

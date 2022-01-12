@@ -2417,14 +2417,14 @@ static void renderStructureTurrets(Structure* psStructure, iIMDShape* strImd,
 						// assume no clan colours for muzzle effects
 						if (flashImd[i]->numFrames == 0 || flashImd[i]->animInterval <= 0) {
 							// no anim so display one frame for a fixed time
-							if (graphicsTime >= psStructure->asWeaps[i].time_last_fired && graphicsTime < psStructure->asWeaps
-								[i].time_last_fired + BASE_MUZZLE_FLASH_DURATION) {
+							if (graphicsTime >= psStructure->asWeaps[i].timeLastFired && graphicsTime < psStructure->asWeaps
+								[i].timeLastFired + BASE_MUZZLE_FLASH_DURATION) {
 								pie_Draw3DShape(flashImd[i], 0, colour, buildingBrightness, 0, 0,
 								                modelViewMatrix * matrix); //muzzle flash
 							}
 						}
 						else {
-							const auto frame = (graphicsTime - psStructure->asWeaps[i].time_last_fired) / flashImd[i]->
+							const auto frame = (graphicsTime - psStructure->asWeaps[i].timeLastFired) / flashImd[i]->
 								animInterval;
 							if (frame < flashImd[i]->numFrames && frame >= 0) {
 								pie_Draw3DShape(flashImd[i], 0, colour, buildingBrightness, 0, 0,

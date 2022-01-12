@@ -231,9 +231,8 @@ uniqueTimerID scripting_engine::setTimer(wzapi::scripting_instance* caller, cons
 	uniqueTimerID newTimerID = getNextAvailableTimerID();
 	std::shared_ptr<timerNode> node = std::make_shared<timerNode>(caller, timerFunc, timerName, player, milliseconds,
 	                                                              std::move(additionalParam));
-	if (obj != nullptr)
-	{
-		node->baseobj = obj->id;
+	if (obj != nullptr) {
+		node->baseobj = obj->getId();
 		node->baseobjtype = obj->type;
 	}
 	node->type = type;
@@ -276,7 +275,7 @@ static std::queue<struct researchEvent> eventQueue;
 typedef struct monitor_bin
 {
 	int worst;
-	uint32_t worstGameTime;
+	unsigned worstGameTime;
 	int calls;
 	int overMaxTimeCalls;
 	int overHalfMaxTimeCalls;
@@ -1221,7 +1220,7 @@ bool triggerEventDroidIdle(Droid* psDroid)
 	for (auto* instance : scripts)
 	{
 		int player = instance->player();
-		if (player == psDroid->player)
+		if (player == psDroid->getPlayer())
 		{
 			instance->handle_eventDroidIdle(psDroid);
 		}
@@ -1241,10 +1240,9 @@ bool triggerEventDroidBuilt(Droid* psDroid, Structure* psFactory)
 	optional<const Structure*> opt_factory = (psFactory) ? optional<const Structure*>(psFactory) : nullopt;
 	for (auto* instance : scripts)
 	{
-		int player = instance->player();
+		auto player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psDroid->player || receiveAll)
-		{
+		if (player == psDroid->getPlayer() || receiveAll) {
 			instance->handle_eventDroidBuilt(psDroid, opt_factory);
 		}
 	}
@@ -1263,10 +1261,9 @@ bool triggerEventStructBuilt(Structure* psStruct, Droid* psDroid)
 	optional<const Droid*> opt_droid = (psDroid) ? optional<const Droid*>(psDroid) : nullopt;
 	for (auto* instance : scripts)
 	{
-		int player = instance->player();
+		auto player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psStruct->player || receiveAll)
-		{
+		if (player == psStruct->getPlayer() || receiveAll) {
 			instance->handle_eventStructureBuilt(psStruct, opt_droid);
 		}
 	}
@@ -1286,8 +1283,7 @@ bool triggerEventStructDemolish(Structure* psStruct, Droid* psDroid)
 	{
 		int player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psStruct->player || receiveAll)
-		{
+		if (player == psStruct->getPlayer() || receiveAll) {
 			instance->handle_eventStructureDemolish(psStruct, opt_droid);
 		}
 	}
@@ -1305,10 +1301,9 @@ bool triggerEventStructureReady(Structure* psStruct)
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
 	{
-		int player = instance->player();
+		auto player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psStruct->player || receiveAll)
-		{
+		if (player == psStruct->getPlayer() || receiveAll) {
 			instance->handle_eventStructureReady(psStruct);
 		}
 	}
@@ -1324,10 +1319,9 @@ bool triggerEventStructureUpgradeStarted(Structure* psStruct)
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
 	{
-		int player = instance->player();
+		auto player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psStruct->player || receiveAll)
-		{
+		if (player == psStruct->getPlayer() || receiveAll) {
 			instance->handle_eventStructureUpgradeStarted(psStruct);
 		}
 	}
@@ -1342,23 +1336,20 @@ bool triggerEventStructureUpgradeStarted(Structure* psStruct)
 bool triggerEventAttacked(SimpleObject* psVictim, SimpleObject* psAttacker, int lastHit)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
-	if (!psAttacker)
-	{
+	if (!psAttacker) {
 		// do not fire off this event if there is no attacker -- nothing do respond to
 		// (FIXME -- consider this carefully)
 		return false;
 	}
 	// throttle the event for performance
-	if (gameTime - lastHit < ATTACK_THROTTLE)
-	{
+	if (gameTime - lastHit < ATTACK_THROTTLE) {
 		return false;
 	}
 	for (auto* instance : scripts)
 	{
-		int player = instance->player();
+		auto player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psVictim->player || receiveAll)
-		{
+		if (player == psVictim->getPlayer() || receiveAll) {
 			instance->handle_eventAttacked(psVictim, psAttacker);
 		}
 	}
@@ -1480,8 +1471,7 @@ bool triggerEventObjectTransfer(SimpleObject* psObj, int from)
 	{
 		int me = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (me == psObj->player || me == from || receiveAll)
-		{
+		if (me == psObj->getPlayer() || me == from || receiveAll) {
 			instance->handle_eventObjectTransfer(psObj, from);
 		}
 	}
@@ -1835,10 +1825,8 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 			}
 		}
 	}
-	else if (l.type == SCRIPT_RADIUS)
-	{
-		if (jump_to)
-		{
+	else if (l.type == SCRIPT_RADIUS) {
+		if (jump_to) {
 			setViewPos(map_coord(l.p1.x), map_coord(l.p1.y), false); // move camera position
 		}
 		for (int x = MAX(map_coord(l.p1.x - l.p2.x), 0); x < MIN(map_coord(l.p1.x + l.p2.x), mapWidth); x++)
@@ -1846,44 +1834,38 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 			for (int y = MAX(map_coord(l.p1.y - l.p2.x), 0); y < MIN(map_coord(l.p1.y + l.p2.x), mapHeight); y++)
 			// l.p2.x is radius, not a bug
 			{
-				if (iHypot(map_coord(l.p1) - Vector2i(x, y)) < map_coord(l.p2.x))
-				{
-					Tile* psTile = mapTile(x, y);
+				if (iHypot(map_coord(l.p1) - Vector2i(x, y)) < map_coord(l.p2.x)) {
+					auto psTile = mapTile(x, y);
 					psTile->tileInfoBits |= BITS_MARKED;
 				}
 			}
 		}
 	}
-	else if (l.type == OBJ_DROID || l.type == OBJ_FEATURE || l.type == OBJ_STRUCTURE)
-	{
-		SimpleObject* psObj = IdToObject((OBJECT_TYPE)l.type, l.id, l.player);
-		if (psObj)
-		{
-			if (jump_to)
-			{
+	else if (l.type == OBJ_DROID || l.type == OBJ_FEATURE || l.type == OBJ_STRUCTURE) {
+		auto psObj = IdToObject((OBJECT_TYPE)l.type, l.id, l.player);
+		if (psObj) 	{
+			if (jump_to) {
 				setViewPos(map_coord(psObj->pos.x), map_coord(psObj->pos.y), false); // move camera position
 			}
-			Tile* psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
+			auto psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
 			psTile->tileInfoBits |= BITS_MARKED;
 		}
 	}
-	else if (l.type == SCRIPT_GROUP)
-	{
+	else if (l.type == SCRIPT_GROUP) {
 		bool cameraMoved = false;
 		for (auto & group : groups)
 		{
 			const GROUPMAP* pGroupMap = group.second;
 			for (auto iter : pGroupMap->map())
 			{
-				if (iter.second == l.id)
-				{
-					const SimpleObject* psObj = iter.first;
-					if (!cameraMoved && jump_to)
-					{
-						setViewPos(map_coord(psObj->pos.x), map_coord(psObj->pos.y), false); // move camera position
+				if (iter.second == l.id) {
+					const auto psObj = iter.first;
+					if (!cameraMoved && jump_to) {
+						setViewPos(map_coord(psObj->getPosition().x),
+                       map_coord(psObj->getPosition().y), false); // move camera position
 						cameraMoved = true;
 					}
-					Tile* psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
+					auto psTile = mapTile(map_coord(psObj->getPosition().x), map_coord(psObj->getPosition().y));
 					psTile->tileInfoBits |= BITS_MARKED;
 				}
 			}
@@ -1904,21 +1886,21 @@ std::pair<bool, int> scripting_engine::seenLabelCheck(wzapi::scripting_instance*
 	for (auto& it : labels)
 	{
 		LABEL& l = it.second;
-		if (l.triggered != 0 || !(l.subscriber == ALL_PLAYERS || l.subscriber == viewer->player))
+		if (l.triggered != 0 || !(l.subscriber == ALL_PLAYERS || l.subscriber == viewer->getPlayer()))
 		{
 			continue;
 		}
 
 		// Don't let a seen game object ID which matches a group label ID to prematurely
 		// trigger a group label.
-		if (l.type != SCRIPT_GROUP && l.id == seen->id)
+		if (l.type != SCRIPT_GROUP && l.id == seen->getId())
 		{
-			l.triggered = viewer->id; // record who made the discovery
+			l.triggered = viewer->getId(); // record who made the discovery
 			foundObj = true;
 		}
 		else if (l.type == SCRIPT_GROUP && l.id == groupId)
 		{
-			l.triggered = viewer->id; // record who made the discovery
+			l.triggered = viewer->getId(); // record who made the discovery
 			foundGroup = true;
 		}
 	}
@@ -1931,19 +1913,19 @@ std::pair<bool, int> scripting_engine::seenLabelCheck(wzapi::scripting_instance*
 
 bool scripting_engine::areaLabelCheck(Droid* psDroid)
 {
-	int x = psDroid->pos.x;
-	int y = psDroid->pos.y;
+	auto x = psDroid->getPosition().x;
+	auto y = psDroid->getPosition().y;
 	bool activated = false;
 	for (auto & label : labels)
 	{
 		LABEL& l = label.second;
-		if (l.triggered == 0 && (l.subscriber == ALL_PLAYERS || l.subscriber == psDroid->player)
+		if (l.triggered == 0 && (l.subscriber == ALL_PLAYERS || l.subscriber == psDroid->getPlayer())
 			&& ((l.type == SCRIPT_AREA && l.p1.x < x && l.p1.y < y && l.p2.x > x && l.p2.y > y)
-				|| (l.type == SCRIPT_RADIUS && iHypot(l.p1 - psDroid->pos.xy()) < l.p2.x)))
+				|| (l.type == SCRIPT_RADIUS && iHypot(l.p1 - psDroid->getPosition().xy()) < l.p2.x)))
 		{
 			// We're inside an untriggered area
 			activated = true;
-			l.triggered = psDroid->id;
+			l.triggered = psDroid->getId();
 			triggerEventArea(label.first, psDroid);
 		}
 	}
@@ -1968,10 +1950,9 @@ scripting_engine::GROUPMAP* scripting_engine::getGroupMap(wzapi::scripting_insta
 void scripting_engine::removeFromGroup(wzapi::scripting_instance* instance, GROUPMAP* psMap, const SimpleObject* psObj)
 {
 	auto result = psMap->removeObjectFromGroup(psObj);
-	if (result.has_value())
-	{
-		int groupId = result.value();
-		const int newGroupSize = psMap->groupSize(groupId);
+	if (result.has_value()) {
+		auto groupId = result.value();
+		const auto newGroupSize = psMap->groupSize(groupId);
 		instance->updateGroupSizes(groupId, newGroupSize);
 		triggerEventGroupLoss(psObj, groupId, newGroupSize, instance);
 	}
@@ -1988,7 +1969,7 @@ void scripting_engine::groupRemoveObject(const SimpleObject* psObj)
 bool scripting_engine::groupAddObject(const SimpleObject* psObj, int groupId, wzapi::scripting_instance* instance)
 {
 	ASSERT_OR_RETURN(false, psObj && instance, "Bad parameter");
-	GROUPMAP* psMap = getGroupMap(instance);
+	auto psMap = getGroupMap(instance);
 	removeFromGroup(instance, psMap, psObj);
 	psMap->insertObjectIntoGroup(psObj, groupId);
 	instance->updateGroupSizes(groupId, psMap->groupSize(groupId));
@@ -1997,7 +1978,7 @@ bool scripting_engine::groupAddObject(const SimpleObject* psObj, int groupId, wz
 
 bool scripting_engine::loadGroup(wzapi::scripting_instance* instance, int groupId, int objId)
 {
-	SimpleObject* psObj = IdToPointer(objId, ANYPLAYER);
+	auto psObj = IdToPointer(objId, ANYPLAYER);
 	ASSERT_OR_RETURN(false, psObj, "Non-existent object %d in group %d in savegame", objId, groupId);
 	return groupAddObject(psObj, groupId, instance);
 }
@@ -2012,9 +1993,9 @@ bool scripting_engine::saveGroups(nlohmann::json& result, wzapi::scripting_insta
 	{
 		const SimpleObject* psObj = i.first;
 		ASSERT(!isDead(psObj), "Wanted to save dead %s to savegame!", objInfo(psObj));
-		std::vector<WzString> value = json_getValue(result, WzString::number(psObj->id)).toWzStringList();
+		std::vector<WzString> value = json_getValue(result, WzString::number(psObj->getId())).toWzStringList();
 		value.push_back(WzString::number(i.second));
-		result[WzString::number(psObj->id).toUtf8()] = value;
+		result[WzString::number(psObj->getId()).toUtf8()] = value;
 	}
 	return true;
 }
@@ -2225,7 +2206,7 @@ bool scripting_engine::writeLabels(const char* filename)
 //-- be a specific player to watch for, or ```ALL_PLAYERS``` by default.
 //-- This is a fast operation of O(log n) algorithmic complexity. DEPRECATED - use resetLabel instead. (3.2+ only)
 //--
-wzapi::no_return_value scripting_engine::resetLabel(WZAPI_PARAMS(std::string labelName, optional<int> playerFilter))
+wzapi::no_return_value scripting_engine::resetLabel(WZAPI_PARAMS(const std::string& labelName, optional<int> playerFilter))
 {
 	LABELMAP& labels = scripting_engine::instance().labels;
 	SCRIPT_ASSERT({}, context, labels.count(labelName) > 0, "Label %s not found", labelName.c_str());
@@ -2351,8 +2332,8 @@ generic_script_object generic_script_object::fromObject(const SimpleObject* psOb
 		return generic_script_object::Null();
 	}
 	result.type = psObj->type;
-	result.id = psObj->id;
-	result.player = psObj->player;
+	result.id = psObj->getId();
+	result.player = psObj->getPlayer();
 	return result;
 }
 
@@ -2393,10 +2374,10 @@ LABEL generic_script_object::toNewLabel() const
 //-- Can optionally specify an initial "triggered" value for the label. (3.4+ only)
 //--
 wzapi::no_return_value scripting_engine::addLabel(
-	WZAPI_PARAMS(generic_script_object object, std::string label, optional<int> _triggered))
+	WZAPI_PARAMS(generic_script_object object, const std::string& label, optional<int> _triggered))
 {
-	LABELMAP& labels = scripting_engine::instance().labels;
-	LABEL value = object.toNewLabel();
+	auto& labels = scripting_engine::instance().labels;
+	auto value = object.toNewLabel();
 
 	if (value.type == OBJ_DROID || value.type == OBJ_STRUCTURE || value.type == OBJ_FEATURE)
 	{
@@ -2421,7 +2402,7 @@ wzapi::no_return_value scripting_engine::addLabel(
 //-- Remove a label from the game. Returns the number of labels removed, which should normally be
 //-- either 1 (label found) or 0 (label not found). (3.2+ only)
 //--
-int scripting_engine::removeLabel(WZAPI_PARAMS(std::string label))
+int scripting_engine::removeLabel(WZAPI_PARAMS(const std::string& label))
 {
 	LABELMAP& labels = scripting_engine::instance().labels;
 	int result = labels.erase(label);
@@ -2439,8 +2420,8 @@ optional<std::string> scripting_engine::getLabel(WZAPI_PARAMS(const SimpleObject
 {
 	ASSERT_OR_RETURN(nullopt, psObj, "No valid object provided");
 	wzapi::game_object_identifier tmp;
-	tmp.id = psObj->id;
-	tmp.player = psObj->player;
+	tmp.id = psObj->getId();
+	tmp.player = psObj->getPlayer();
 	tmp.type = psObj->type;
 	return _findMatchingLabel(tmp);
 }
@@ -2609,9 +2590,9 @@ std::vector<const SimpleObject*> scripting_engine::_enumAreaWorldCoords(
 	{
 			if ((psObj->visible[player] || !seen) && !psObj->died)
 		{
-			if ((playerFilter >= 0 && psObj->player == playerFilter) || playerFilter == ALL_PLAYERS
-				|| (playerFilter == ALLIES && psObj->type != OBJ_FEATURE && aiCheckAlliances(psObj->player, player))
-				|| (playerFilter == ENEMIES && psObj->type != OBJ_FEATURE && !aiCheckAlliances(psObj->player, player)))
+			if ((playerFilter >= 0 && psObj->getPlayer() == playerFilter) || playerFilter == ALL_PLAYERS
+				|| (playerFilter == ALLIES && psObj->type != OBJ_FEATURE && aiCheckAlliances(psObj->getPlayer(), player))
+				|| (playerFilter == ENEMIES && psObj->type != OBJ_FEATURE && !aiCheckAlliances(psObj->getPlayer(), player)))
 			{
 				list.push_back(psObj);
 			}
@@ -2673,17 +2654,16 @@ int scripting_engine::newGroup(WZAPI_NO_PARAMS)
 //--
 wzapi::no_return_value scripting_engine::groupAddArea(WZAPI_PARAMS(int groupId, int _x1, int _y1, int _x2, int _y2))
 {
-	int player = context.player();
-	int x1 = world_coord(_x1);
-	int y1 = world_coord(_y1);
-	int x2 = world_coord(_x2);
-	int y2 = world_coord(_y2);
+	auto player = context.player();
+	auto x1 = world_coord(_x1);
+	auto y1 = world_coord(_y1);
+	auto x2 = world_coord(_x2);
+	auto y2 = world_coord(_y2);
 
-	for (Droid* psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[player])
 	{
-		if (psDroid->pos.x >= x1 && psDroid->pos.x <= x2 && psDroid->pos.y >= y1 && psDroid->pos.y <= y2)
-		{
-			scripting_engine::instance().groupAddObject(psDroid, groupId, context.currentInstance());
+		if (psDroid.getPosition().x >= x1 && psDroid.getPosition().x <= x2 && psDroid.getPosition().y >= y1 && psDroid.getPosition().y <= y2) {
+			scripting_engine::instance().groupAddObject(&psDroid, groupId, context.currentInstance());
 		}
 	}
 	return {};
@@ -2727,11 +2707,10 @@ int scripting_engine::groupSize(WZAPI_PARAMS(int groupId))
 
 bool scripting_engine::unregisterFunctions(wzapi::scripting_instance* instance)
 {
-	int num = 0;
+	auto num = 0;
 	auto it = groups.find(instance);
-	if (it != groups.end())
-	{
-		GROUPMAP* psMap = groups.at(instance);
+	if (it != groups.end()) {
+		auto psMap = groups.at(instance);
 		groups.erase(it);
 		delete psMap;
 		num = 1;
@@ -2751,16 +2730,14 @@ void scripting_engine::prepareLabels()
 		wzapi::scripting_instance* instance = group.first;
 		for (auto & label : labels)
 		{
-			const LABEL& l = label.second;
-			if (l.type == SCRIPT_GROUP)
-			{
+			const auto& l = label.second;
+			if (l.type == SCRIPT_GROUP) {
 				for (auto j = l.idlist.begin(); j != l.idlist.end(); j++)
 				{
-					int id = (*j);
-					SimpleObject* psObj = IdToPointer(id, l.player);
+					auto id = (*j);
+					auto psObj = IdToPointer(id, l.player);
 					ASSERT(psObj, "Unit %d belonging to player %d not found", id, l.player);
-					if (psObj)
-					{
+					if (psObj) {
 						groupAddObject(psObj, l.id, instance);
 					}
 				}
@@ -2774,28 +2751,27 @@ wzapi::no_return_value scripting_engine::hackMarkTiles_ByLabel(WZAPI_PARAMS(cons
 {
 	SCRIPT_ASSERT({}, context, labels.count(label) > 0, "Label %s not found", label.c_str());
 
-	const LABEL& l = labels[label];
-	if (l.type == SCRIPT_AREA)
-	{
+	const auto& l = labels[label];
+	if (l.type == SCRIPT_AREA) {
 		for (int x = map_coord(l.p1.x); x < map_coord(l.p2.x); x++)
 		{
 			for (int y = map_coord(l.p1.y); y < map_coord(l.p2.y); y++)
 			{
-				Tile* psTile = mapTile(x, y);
+				auto psTile = mapTile(x, y);
 				psTile->tileInfoBits |= BITS_MARKED;
 			}
 		}
 	}
-	else if (l.type == SCRIPT_RADIUS)
-	{
+	else if (l.type == SCRIPT_RADIUS) {
 		for (int x = map_coord(l.p1.x - l.p2.x); x < map_coord(l.p1.x + l.p2.x); x++)
 		{
 			for (int y = map_coord(l.p1.y - l.p2.x); y < map_coord(l.p1.y + l.p2.x); y++)
 			{
-				if (x >= -1 && x < mapWidth + 1 && y >= -1 && y < mapWidth + 1 && iHypot(
-					map_coord(l.p1) - Vector2i(x, y)) < map_coord(l.p2.x))
-				{
-					Tile* psTile = mapTile(x, y);
+				if (x >= -1 && x < mapWidth + 1 &&
+            y >= -1 && y < mapWidth + 1 &&
+            iHypot(map_coord(l.p1) -
+              Vector2i(x, y)) < map_coord(l.p2.x)) {
+					auto psTile = mapTile(x, y);
 					psTile->tileInfoBits |= BITS_MARKED;
 				}
 			}
@@ -2808,11 +2784,10 @@ wzapi::no_return_value scripting_engine::hackMarkTiles_ByLabel(WZAPI_PARAMS(cons
 void scripting_engine::logFunctionPerformance(wzapi::scripting_instance* instance, const std::string& function,
                                               int ticks)
 {
-	MONITOR* monitor = monitors.at(instance); // pick right one for this instance
+	auto monitor = monitors.at(instance); // pick right one for this instance
 	MONITOR_BIN m;
 	auto it = monitor->find(function);
-	if (it != monitor->end())
-	{
+	if (it != monitor->end()) {
 		m = it->second;
 	}
 	if (ticks > MAX_US)
@@ -2837,17 +2812,17 @@ void scripting_engine::logFunctionPerformance(wzapi::scripting_instance* instanc
 // MARK: - DebugInterface
 
 std::unordered_map<wzapi::scripting_instance*, nlohmann::json>
-scripting_engine::DebugInterface::debug_GetGlobalsSnapshot() const
+scripting_engine::DebugInterface::debug_GetGlobalsSnapshot()
 {
 	return scripting_engine::instance().debug_GetGlobalsSnapshot();
 }
 
-std::vector<scripting_engine::timerNodeSnapshot> scripting_engine::DebugInterface::debug_GetTimersSnapshot() const
+std::vector<scripting_engine::timerNodeSnapshot> scripting_engine::DebugInterface::debug_GetTimersSnapshot()
 {
 	return scripting_engine::instance().debug_GetTimersSnapshot();
 }
 
-std::vector<scripting_engine::LabelInfo> scripting_engine::DebugInterface::debug_GetLabelInfo() const
+std::vector<scripting_engine::LabelInfo> scripting_engine::DebugInterface::debug_GetLabelInfo()
 {
 	return scripting_engine::instance().debug_GetLabelInfo();
 }

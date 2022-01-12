@@ -129,14 +129,16 @@ MISSION mission;
 
 bool offWorldKeepLists;
 
-/*lists of droids that are held separate over several missions. There should
-only be selectedPlayer's droids but have possibility for MAX_PLAYERS -
-also saves writing out list functions to cater for just one player*/
-Droid* apsLimboDroids[MAX_PLAYERS];
+/**
+ * Lists of droids that are held separate over several missions. There should
+ * only be selectedPlayer's droids but have possibility for MAX_PLAYERS -
+ * also saves writing out list functions to cater for just one player
+ */
+std::array<Droid*, MAX_PLAYERS> apsLimboDroids;
 
 //Where the Transporter lands for player 0 (sLandingZone[0]), and the rest are
 //a list of areas that cannot be built on, used for landing the enemy transporters
-static LANDING_ZONE sLandingZone[MAX_NOGO_AREAS];
+static std::array<LANDING_ZONE, MAX_NOGO_AREAS> sLandingZone;
 
 //flag to indicate when the droids in a Transporter are flown to safety and not the next mission
 static bool bDroidsToSafety;
@@ -145,8 +147,7 @@ static UBYTE missionCountDown;
 //flag to indicate whether the coded mission countdown is played
 static UBYTE bPlayCountDown;
 
-//FUNCTIONS**************
-static void addLandingLights(UDWORD x, UDWORD y);
+static void addLandingLights(unsigned x, unsigned y);
 static bool startMissionOffClear(char* pGame);
 static bool startMissionOffKeep(char* pGame);
 static bool startMissionCampaignStart(char* pGame);

@@ -251,7 +251,7 @@ bool recvLasSat(NETQUEUE queue)
 			firePause += firePause;
 		}
 
-		if (isHumanPlayer(player) && gameTime - psStruct->asWeaps[0].time_last_fired <= firePause)
+		if (isHumanPlayer(player) && gameTime - psStruct->asWeaps[0].timeLastFired <= firePause)
 		{
 			/* Too soon to fire again */
 			return true; // Return value meaningless and ignored.
@@ -259,7 +259,7 @@ bool recvLasSat(NETQUEUE queue)
 
 		// Give enemy no quarter, unleash the lasat
 		proj_SendProjectile(&psStruct->asWeaps[0], nullptr, player, psObj->pos, psObj, true, 0);
-		psStruct->asWeaps[0].time_last_fired = gameTime;
+		psStruct->asWeaps[0].timeLastFired = gameTime;
 		psStruct->asWeaps[0].ammo = 1; // abducting this field for keeping track of triggers
 
 		// Play 5 second countdown message

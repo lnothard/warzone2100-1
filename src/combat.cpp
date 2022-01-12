@@ -76,7 +76,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 
 	// see if reloadable weapon.
 	if (psStats->upgraded[psAttacker->getPlayer()].reloadTime) {
-		auto reloadTime = psWeap->time_last_fired + weaponReloadTime(psStats, psAttacker->getPlayer());
+		auto reloadTime = psWeap->timeLastFired + weaponReloadTime(psStats, psAttacker->getPlayer());
 		if (psWeap->ammo == 0) // Out of ammo?
 		{
 			fireTime = std::max(fireTime, reloadTime); // Have to wait for weapon to reload before firing.
@@ -94,7 +94,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 	/* See when the weapon last fired to control it's rate of fire */
 	firePause = weaponFirePause(psStats, psAttacker->getPlayer());
 	firePause = std::max(firePause, 1u); // Don't shoot infinitely many shots at once.
-	fireTime = std::max(fireTime, psWeap->time_last_fired + firePause);
+	fireTime = std::max(fireTime, psWeap->timeLastFired + firePause);
 
 	if (gameTime < fireTime) {
 		/* Too soon to fire again */
@@ -211,7 +211,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 	/* -------!!! From that point we are sure that we are firing !!!------- */
 
 	/* note when the weapon fired */
-	psWeap->time_last_fired = fireTime;
+	psWeap->timeLastFired = fireTime;
 
 	/* reduce ammo if salvo */
 	if (psStats->upgraded[psAttacker->player].reloadTime) {
@@ -219,7 +219,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 	}
 
 	// increment the shots counter
-	psWeap->shots_fired++;
+	psWeap->shotsFired++;
 
 	// predicted X,Y offset per sec
 	Vector3i predict = psTarget->pos;

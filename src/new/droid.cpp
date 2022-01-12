@@ -219,7 +219,7 @@ bool Droid::isValidTarget(const ::Unit* attacker, int weapon_slot) const
 		if (num_weapons(*as_droid) == 0)
 			return false;
 
-		auto& weapon_stats = attacker->getWeapons()[weapon_slot].get_stats();
+		auto& weapon_stats = attacker->getWeapons()[weapon_slot].getStats();
 
 		if (auto surface_to_air = weapon_stats.surface_to_air; ((surface_to_air & SHOOT_IN_AIR) && target_airborne) ||
 			((surface_to_air & SHOOT_ON_GROUND) && !target_airborne))
@@ -472,11 +472,11 @@ int Droid::calculateAttackPriority(const Unit* target, int weapon_slot) const
     // but for computing expected damage it makes more sense to use indirect damage
     is_direct = false;
   } else {
-    is_direct = !attacker_weapon.is_artillery();
+    is_direct = !attacker_weapon.isArtillery();
   }
 
   auto distance = iHypot((getPosition() - target->getPosition()).xy());
-  if (distance <= attacker_weapon.get_min_range(getPlayer())) {
+  if (distance <= attacker_weapon.getMinRange(getPlayer())) {
     // If object is too close to fire at, consider it to be at maximum range.
     distance = calculateSensorRange();
   }
@@ -505,7 +505,7 @@ int Droid::calculateAttackPriority(const Unit* target, int weapon_slot) const
 
     attack_weight = ;
 
-    if (attacker_weapon.get_subclass() == WEAPON_SUBCLASS::EMP &&
+    if (attacker_weapon.getSubclass() == WEAPON_SUBCLASS::EMP &&
         gameTime - as_droid->) {
 
     }
@@ -744,7 +744,7 @@ bool action_target_inside_minimum_weapon_range(const Droid& droid, const Unit& t
 	if (num_weapons(droid) == 0) return false;
 
   const auto square_diff = objectPositionSquareDiff(droid, target);
-	const auto min_range = droid.getWeapons()[weapon_slot].get_min_range(droid.getPlayer());
+	const auto min_range = droid.getWeapons()[weapon_slot].getMinRange(droid.getPlayer());
 	const auto range_squared = min_range * min_range;
 
 	if (square_diff <= range_squared) return true;
@@ -753,7 +753,7 @@ bool action_target_inside_minimum_weapon_range(const Droid& droid, const Unit& t
 
 bool target_within_weapon_range(const Droid& droid, const Unit& target, int weapon_slot)
 {
-	const auto max_range = droid.getWeapons()[weapon_slot].get_max_range(droid.getPlayer());
+	const auto max_range = droid.getWeapons()[weapon_slot].getMaxRange(droid.getPlayer());
 	return objectPositionSquareDiff(droid, target) < max_range * max_range;
 }
 

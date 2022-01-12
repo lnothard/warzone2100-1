@@ -165,24 +165,24 @@ enum class ATTACKER_TYPE
 class Weapon final : public virtual ::SimpleObject, public Impl::SimpleObject
 {
 public:
-	[[nodiscard]] bool has_ammo() const;
-	[[nodiscard]] bool has_full_ammo() const noexcept;
-	[[nodiscard]] bool is_artillery() const noexcept;
-	[[nodiscard]] bool is_vtol_weapon() const;
-	[[nodiscard]] bool is_empty_vtol_weapon(unsigned player) const;
-	[[nodiscard]] const WeaponStats& get_stats() const;
-	[[nodiscard]] unsigned get_recoil() const;
-	[[nodiscard]] unsigned get_max_range(unsigned player) const;
-	[[nodiscard]] unsigned get_min_range(unsigned player) const;
-  [[nodiscard]] unsigned get_short_range(unsigned player) const;
-  [[nodiscard]] unsigned get_hit_chance(unsigned player) const;
-  [[nodiscard]] unsigned get_short_range_hit_chance(unsigned player) const;
-	[[nodiscard]] unsigned get_num_attack_runs(unsigned player) const;
-	[[nodiscard]] unsigned get_shots_fired() const noexcept;
-	[[nodiscard]] const iIMDShape& get_IMD_shape() const;
-	[[nodiscard]] const iIMDShape& get_mount_graphic() const;
-	[[nodiscard]] WEAPON_SUBCLASS get_subclass() const;
-  [[nodiscard]] unsigned calculate_rate_of_fire(unsigned player) const;
+	[[nodiscard]] bool hasAmmo() const;
+	[[nodiscard]] bool hasFullAmmo() const noexcept;
+	[[nodiscard]] bool isArtillery() const noexcept;
+	[[nodiscard]] bool isVtolWeapon() const;
+	[[nodiscard]] bool isEmptyVtolWeapon(unsigned player) const;
+	[[nodiscard]] const WeaponStats& getStats() const;
+	[[nodiscard]] unsigned getRecoil() const;
+	[[nodiscard]] unsigned getMaxRange(unsigned player) const;
+	[[nodiscard]] unsigned getMinRange(unsigned player) const;
+  [[nodiscard]] unsigned getShortRange(unsigned player) const;
+  [[nodiscard]] unsigned getHitChance(unsigned player) const;
+  [[nodiscard]] unsigned getShortRangeHitChance(unsigned player) const;
+	[[nodiscard]] unsigned getNumAttackRuns(unsigned player) const;
+	[[nodiscard]] unsigned getShotsFired() const noexcept;
+	[[nodiscard]] const iIMDShape& getImdShape() const;
+	[[nodiscard]] const iIMDShape& getMountGraphic() const;
+	[[nodiscard]] WEAPON_SUBCLASS getSubclass() const;
+  [[nodiscard]] unsigned calculateRateOfFire(unsigned player) const;
   void use_ammo();
 private:
 	using enum ATTACKER_TYPE;
@@ -196,11 +196,11 @@ private:
 	std::shared_ptr<WeaponStats> stats;
 
 	Rotation rotation { 0, 0, 0};
-	Rotation previous_rotation {0, 0, 0};
+	Rotation previousRotation {0, 0, 0};
 	unsigned ammo = 0;
-	unsigned ammo_used = 0;
-	unsigned shots_fired = 0;
-	std::size_t time_last_fired = gameTime;
+	unsigned ammoUsed = 0;
+	unsigned shotsFired = 0;
+	std::size_t timeLastFired = gameTime;
 };
 
 #endif // WARZONE2100_WEAPON_H

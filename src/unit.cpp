@@ -73,7 +73,7 @@ bool hasArtillery(const Unit& unit) noexcept
 	return std::any_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon)
 	{
-		return weapon.is_artillery();
+		return weapon.isArtillery();
 	});
 }
 
@@ -116,8 +116,8 @@ Vector3i calculateMuzzleTipLocation(const Unit& unit, int weapon_slot)
 	if (imd_shape.nconnectors)
 	{
 		auto barrel = Vector3i{0, 0, 0};
-		const auto weapon_imd = weapon.get_IMD_shape();
-		const auto mount_imd = weapon.get_mount_graphic();
+		const auto weapon_imd = weapon.getImdShape();
+		const auto mount_imd = weapon.getMountGraphic();
 
 		Affine3F af;
 		af.Trans(position.x, -position.z, position.y);
@@ -138,9 +138,9 @@ Vector3i calculateMuzzleTipLocation(const Unit& unit, int weapon_slot)
 		if (weapon_imd.nconnectors)
 		{
 			auto connector_num = unsigned{0};
-			if (weapon.get_shots_fired() && weapon_imd.nconnectors > 1)
+			if (weapon.getShotsFired() && weapon_imd.nconnectors > 1)
 			{
-				connector_num = (weapon.get_shots_fired() - 1) % weapon_imd.nconnectors;
+				connector_num = (weapon.getShotsFired() - 1) % weapon_imd.nconnectors;
 			}
 			const auto connector = weapon_imd.connectors[connector_num];
 			barrel = Vector3i{connector.x, -connector.z, -connector.y};
@@ -305,14 +305,14 @@ bool hasElectronicWeapon(const Unit& unit) noexcept
 	return std::any_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon)
 	{
-		return weapon.get_subclass() == WEAPON_SUBCLASS::ELECTRONIC;
+		return weapon.getSubclass() == WEAPON_SUBCLASS::ELECTRONIC;
 	});
 }
 
 bool targetInLineOfFire(const Unit& unit, const ::Unit& target, int weapon_slot)
 {
 	const auto distance = iHypot((target.getPosition() - unit.getPosition()).xy());
-	auto range = unit.getWeapons()[weapon_slot].get_max_range(unit.getPlayer());
+	auto range = unit.getWeapons()[weapon_slot].getMaxRange(unit.getPlayer());
 	if (!hasArtillery(unit)) {
 		return range >= distance && LINE_OF_FIRE_MINIMUM <=
                                         calculateLineOfFire(unit, target, weapon_slot);
@@ -332,8 +332,8 @@ Unit* find_target(Unit& unit, TARGET_ORIGIN attacker_type,
   Unit* target = nullptr;
   bool is_cb_sensor = false;
   bool found_cb = false;
-  auto target_dist = weapon.get_max_range(unit.getPlayer());
-  auto min_dist = weapon.get_min_range(unit.getPlayer());
+  auto target_dist = weapon.getMaxRange(unit.getPlayer());
+  auto min_dist = weapon.getMinRange(unit.getPlayer());
 
   for (const auto& sensor : apsSensorList)
   {
@@ -397,7 +397,7 @@ unsigned getMaxWeaponRange(const Unit& unit)
 	auto max = unsigned{0};
 	for (const auto& weapon : unit.getWeapons())
 	{
-		const auto max_weapon_range = weapon.get_max_range(unit.getPlayer());
+		const auto max_weapon_range = weapon.getMaxRange(unit.getPlayer());
 		if (max_weapon_range > max) {
       max = max_weapon_range;
     }

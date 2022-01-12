@@ -213,13 +213,23 @@ public:
     virtual bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode = ModeQueue) = 0;
     virtual void actionDroidBase(Action* psAction) = 0;
     virtual RtrBestResult decideWhereToRepairAndBalance() = 0;
-    virtual SECONDARY_STATE Droid::secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate) = 0;
+    virtual SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate) = 0;
     virtual void orderDroidAdd(Order* order_) = 0;
     virtual void orderDroidAddPending(Order* order_) = 0;
     virtual void orderCheckList() = 0;
     virtual void orderDroidBase(Order* psOrder) = 0;
     virtual bool tryDoRepairlikeAction() = 0;
     virtual void orderUpdateDroid() = 0;
+    virtual std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission, Rotation rot) = 0;
+    [[nodiscard]] virtual bool isRepairDroid() const = 0;
+    virtual void droidUpdate() = 0;
+    [[nodiscard]] virtual unsigned getOriginalHp() const = 0;
+    virtual DroidStartBuild droidStartBuild() = 0;
+    virtual void aiUpdateDroid() = 0;
+    virtual void droidUpdateRestore() = 0;
+    virtual bool droidUpdateDroidRepair() = 0;
+    virtual bool droidUpdateBuild() = 0;
+    virtual void recycleDroid() = 0;
 };
 
 namespace Impl
@@ -244,14 +254,32 @@ namespace Impl
       [[nodiscard]] const SimpleObject& getTarget(int weapon_slot) const final;
       [[nodiscard]] const std::optional<PropulsionStats>& getPropulsion() const final;
       [[nodiscard]] const Movement& getMovementData() const final;
+      [[nodiscard]] unsigned getOriginalHp() const final;
 
-      [[nodiscard]] bool isProbablyDoomed(bool is_direct_damage) const;
+      [[nodiscard]] bool isProbablyDoomed(bool isDirectDamage) const;
       [[nodiscard]] bool isVtol() const final;
       [[nodiscard]] bool isFlying() const final;
       [[nodiscard]] bool isRadarDetector() const final;
       [[nodiscard]] bool isStationary() const final;
       [[nodiscard]] bool isDamaged() const final;
       [[nodiscard]] bool isAttacking() const noexcept;
+      [[nodiscard]] bool isRepairDroid() const noexcept final;
+
+      void recycleDroid() final;
+
+      bool droidUpdateDroidRepair() final;
+
+      void aiUpdateDroid() final;
+
+      bool droidUpdateBuild() final;
+
+      DroidStartBuild droidStartBuild() final;
+
+      bool droidUpdateRestore() final;
+
+      std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission, Rotation rot) final;
+
+      void droidUpdate() final;
 
       void upgradeHitPoints();
 
@@ -415,38 +443,45 @@ bool removeDroidBase(Droid* psDel);
 
 /*Builds an instance of a Structure - the x/y passed in are in world coords.*/
 /// Sends a GAME_DROID message if bMultiMessages is true, or actually creates it if false. Only uses initialOrders if sending a GAME_DROID message.
-Droid* buildDroid(DroidTemplate* pTemplate, UDWORD x, UDWORD y, UDWORD player, bool onMission,
+Droid* buildDroid(DroidTemplate* pTemplate, unsigned x, unsigned y, unsigned player, bool onMission,
                   const INITIAL_DROID_ORDERS* initialOrders, Rotation rot = Rotation());
 /// Creates a droid locally, instead of sending a message, even if the bMultiMessages HACK is set to true.
-Droid* reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, UDWORD player, bool onMission,
+std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission,
                         Rotation rot = Rotation());
 
 /* Set the asBits in a DROID structure given it's template. */
 void droidSetBits(const DroidTemplate* pTemplate, Droid* psDroid);
 
+/* See if a droid is next to a structure */
+static bool droidNextToStruct(Droid* psDroid, Structure* psStruct);
+
+static bool droidBuildStartAudioCallback(void* psObj);
+
+static void addConstructorEffect(Structure* psStruct);
+
 /* Calculate the weight of a droid from it's template */
-UDWORD calcDroidWeight(const DroidTemplate* psTemplate);
+unsigned calcDroidWeight(const DroidTemplate* psTemplate);
 
 /* Calculate the power points required to build/maintain a droid */
-UDWORD calcDroidPower(const Droid* psDroid);
+unsigned calcDroidPower(const Droid* psDroid);
 
 // Calculate the number of points required to build a droid
-UDWORD calcDroidPoints(Droid* psDroid);
+unsigned calcDroidPoints(Droid* psDroid);
 
 /* Calculate the body points of a droid from it's template */
-UDWORD calcTemplateBody(const DroidTemplate* psTemplate, UBYTE player);
+unsigned calcTemplateBody(const DroidTemplate* psTemplate, UBYTE player);
 
 /* Calculate the base speed of a droid from it's template */
-UDWORD calcDroidBaseSpeed(const DroidTemplate* psTemplate, UDWORD weight, UBYTE player);
+unsigned calcDroidBaseSpeed(const DroidTemplate* psTemplate, unsigned weight, UBYTE player);
 
 /* Calculate the speed of a droid over a terrain */
-UDWORD calcDroidSpeed(UDWORD baseSpeed, UDWORD terrainType, UDWORD propIndex, UDWORD level);
+unsigned calcDroidSpeed(unsigned baseSpeed, unsigned terrainType, unsigned propIndex, unsigned level);
 
 /* Calculate the points required to build the template */
-UDWORD calcTemplateBuild(const DroidTemplate* psTemplate);
+unsigned calcTemplateBuild(const DroidTemplate* psTemplate);
 
 /* Calculate the power points required to build/maintain the droid */
-UDWORD calcTemplatePower(const DroidTemplate* psTemplate);
+unsigned calcTemplatePower(const DroidTemplate* psTemplate);
 
 // return whether a droid is IDF
 bool isIdf(Droid* psDroid);
@@ -506,17 +541,17 @@ DROID_TYPE droidType(Droid* psDroid);
 /* Return the type of a droid from it's template */
 DROID_TYPE droidTemplateType(const DroidTemplate* psTemplate);
 
-void assignDroidsToGroup(UDWORD playerNumber, UDWORD groupNumber, bool clearGroup);
-void removeDroidsFromGroup(UDWORD playerNumber);
+void assignDroidsToGroup(unsigned playerNumber, unsigned groupNumber, bool clearGroup);
+void removeDroidsFromGroup(unsigned playerNumber);
 
-bool activateNoGroup(UDWORD playerNumber, const SELECTIONTYPE selectionType, const SELECTION_CLASS selectionClass,
+bool activateNoGroup(unsigned playerNumber, const SELECTIONTYPE selectionType, const SELECTION_CLASS selectionClass,
                      const bool bOnScreen);
 
-bool activateGroup(UDWORD playerNumber, UDWORD groupNumber);
+bool activateGroup(unsigned playerNumber, unsigned groupNumber);
 
-UDWORD getNumDroidsForLevel(uint32_t player, UDWORD level);
+unsigned getNumDroidsForLevel(uint32_t player, unsigned level);
 
-bool activateGroupAndMove(UDWORD playerNumber, UDWORD groupNumber);
+bool activateGroupAndMove(unsigned playerNumber, unsigned groupNumber);
 /* calculate muzzle tip location in 3d world added int weapon_slot to fix the always slot 0 hack*/
 bool calcDroidMuzzleLocation(const Droid* psDroid, Vector3i* muzzle, int weapon_slot);
 /* calculate muzzle base location in 3d world added int weapon_slot to fix the always slot 0 hack*/
@@ -524,7 +559,7 @@ bool calcDroidMuzzleBaseLocation(const Droid* psDroid, Vector3i* muzzle, int wea
 
 /* Droid experience stuff */
 unsigned int getDroidLevel(const Droid* psDroid);
-UDWORD getDroidEffectiveLevel(const Droid* psDroid);
+unsigned getDroidEffectiveLevel(const Droid* psDroid);
 std::string getDroidLevelName(const Droid* psDroid);
 
 // Get a droid's name.
@@ -534,14 +569,14 @@ const char* droidGetName(const Droid* psDroid);
 void droidSetName(Droid* psDroid, const char* pName);
 
 // returns true when no droid on x,y square.
-bool noDroid(UDWORD x, UDWORD y); // true if no droid at x,y
+bool noDroid(unsigned x, unsigned y); // true if no droid at x,y
 // returns an x/y coord to place a droid
-PICKTILE pickHalfATile(UDWORD* x, UDWORD* y, UBYTE numIterations);
-bool zonedPAT(UDWORD x, UDWORD y);
-bool pickATileGen(UDWORD* x, UDWORD* y, UBYTE numIterations, bool (*function)(UDWORD x, UDWORD y));
-bool pickATileGen(Vector2i* pos, unsigned numIterations, bool (*function)(UDWORD x, UDWORD y));
-bool pickATileGenThreat(UDWORD* x, UDWORD* y, UBYTE numIterations, SDWORD threatRange,
-                        SDWORD player, bool (*function)(UDWORD x, UDWORD y));
+PICKTILE pickHalfATile(unsigned* x, unsigned* y, UBYTE numIterations);
+bool zonedPAT(unsigned x, unsigned y);
+bool pickATileGen(unsigned* x, unsigned* y, UBYTE numIterations, bool (*function)(unsigned x, unsigned y));
+bool pickATileGen(Vector2i* pos, unsigned numIterations, bool (*function)(unsigned x, unsigned y));
+bool pickATileGenThreat(unsigned* x, unsigned* y, UBYTE numIterations, SDWORD threatRange,
+                        SDWORD player, bool (*function)(unsigned x, unsigned y));
 
 
 //initialises the droid movement model
@@ -622,7 +657,7 @@ bool allVtolsRearmed(const Droid* psDroid);
 bool droidSensorDroidWeapon(const SimpleObject* psObj, const Droid* psDroid);
 
 // give a droid from one player to another - used in Electronic Warfare and multiplayer
-Droid* giftSingleDroid(Droid* psD, UDWORD to, bool electronic = false);
+Droid* giftSingleDroid(Droid* psD, unsigned to, bool electronic = false);
 
 /// Calculates the electronic resistance of a droid based on its experience level
 SWORD droidResistance(const Droid* psDroid);
@@ -630,7 +665,7 @@ SWORD droidResistance(const Droid* psDroid);
 /// This is called to check the weapon is allowed
 bool checkValidWeaponForProp(DroidTemplate* psTemplate);
 
-const char* getDroidNameForRank(UDWORD rank);
+const char* getDroidNameForRank(unsigned rank);
 
 /*called when a Template is deleted in the Design screen*/
 void deleteTemplateFromProduction(DroidTemplate* psTemplate, unsigned player, QUEUE_MODE mode);
@@ -666,7 +701,7 @@ static inline int droidSensorRange(const Droid* psDroid)
 
 static inline Rotation getInterpolatedWeaponRotation(const Droid* psDroid, int weaponSlot, uint32_t time)
 {
-	return interpolateRot(psDroid->asWeaps[weaponSlot].previous_rotation, psDroid->asWeaps[weaponSlot].rotation,
+	return interpolateRot(psDroid->asWeaps[weaponSlot].previousRotation, psDroid->asWeaps[weaponSlot].rotation,
                         psDroid->previous_location.time, psDroid->time, time);
 }
 

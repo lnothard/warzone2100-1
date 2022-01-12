@@ -51,6 +51,16 @@ bool Group::hasElectronicWeapon() const
   });
 }
 
+std::vector<Droid*> Group::getMembers() const
+{
+  return members;
+}
+
+const Droid& Group::getCommander() const
+{
+  return *psCommander;
+}
+
 // initialise the group system
 bool grpInitialise()
 {

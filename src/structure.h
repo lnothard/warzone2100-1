@@ -234,13 +234,26 @@ public:
     Structure& operator=(const Structure&) = delete;
     Structure& operator=(Structure&&) = delete;
 
+    [[nodiscard]] virtual int getFoundationDepth() const = 0;
     [[nodiscard]] virtual Vector2i getSize() const = 0;
     [[nodiscard]] virtual STRUCTURE_STATE getState() const = 0;
     virtual void printInfo() const = 0;
     [[nodiscard]] virtual bool hasSensor() const = 0;
     virtual Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare) = 0;
-    [[nodiscard]] virtual float Structure::structureCompletionProgress() const = 0;
+    [[nodiscard]] virtual float structureCompletionProgress() const = 0;
     [[nodiscard]] virtual const StructureStats& getStats() const = 0;
+     virtual void aiUpdateStructure(bool isMission) = 0;
+     virtual void structureUpdate(bool bMission) = 0;
+     virtual void setFoundationDepth(int depth) = 0;
+     virtual int requestOpenGate() = 0;
+     [[nodiscard]] virtual int getResistance() const = 0;
+     virtual void structureBuild(Droid* psDroid, int builtPoints, int buildRate_) = 0;
+
+    [[nodiscard]] virtual std::unique_ptr<Structure> buildStructureDir(StructureStats* pStructureType,
+                                                                        unsigned x, unsigned y,
+                                                                        uint16_t direction,
+                                                                        unsigned player,
+                                                                        bool FromSave) = 0;
 };
 
 namespace Impl
@@ -254,7 +267,6 @@ namespace Impl
         [[nodiscard]] bool isWall() const noexcept;
         [[nodiscard]] bool isRadarDetector() const final;
         [[nodiscard]] bool isProbablyDoomed() const;
-        [[nodiscard]] bool isPulledToTerrain() const;
         [[nodiscard]] bool hasModules() const noexcept;
         [[nodiscard]] bool hasSensor() const final;
         [[nodiscard]] bool hasStandardSensor() const final;
@@ -264,13 +276,14 @@ namespace Impl
         [[nodiscard]] bool smokeWhenDamaged() const noexcept;
         [[nodiscard]] unsigned getOriginalHp() const;
         [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
+        [[nodiscard]] int getResistance() const final;
         [[nodiscard]] Vector2i getSize() const final;
-        [[nodiscard]] int getFoundationDepth() const noexcept;
+        [[nodiscard]] int getFoundationDepth() const noexcept final;
         [[nodiscard]] const iIMDShape& getImdShape() const final;
         void updateExpectedDamage(unsigned damage, bool is_direct) noexcept override;
         [[nodiscard]] unsigned calculateSensorRange() const final;
         [[nodiscard]] int calculateGateHeight(std::size_t time, int minimum) const;
-        void setFoundationDepth(int depth) noexcept;
+        void setFoundationDepth(int depth) noexcept final;
         void printInfo() const override;
         [[nodiscard]] unsigned buildPointsToCompletion() const;
         [[nodiscard]] unsigned calculateRefundedPower() const;
@@ -280,6 +293,16 @@ namespace Impl
         Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare) final;
         [[nodiscard]] float Structure::structureCompletionProgress() const final;
         [[nodiscard]] const StructureStats& getStats() const final;
+        void aiUpdateStructure(bool isMission) final;
+        void structureUpdate(bool bMission) final;
+        int requestOpenGate() final;
+        void structureBuild(Droid* psDroid, int builtPoints, int buildRate_) final;
+
+        [[nodiscard]] std::unique_ptr<Structure> buildStructureDir(StructureStats* pStructureType,
+                                                                           unsigned x, unsigned y,
+                                                                           uint16_t direction,
+                                                                           unsigned player,
+                                                                           bool FromSave) final;
     private:
         using enum STRUCTURE_ANIMATION_STATE;
         using enum STRUCTURE_STATE;
@@ -338,30 +361,39 @@ struct ResearchItem
 
 class ResearchFacility : public virtual Structure, public Impl::Structure
 {
+public:
+    [[nodiscard]] const ResearchItem* getSubject() const;
 private:
-    ResearchItem psSubject; // The subject the structure is working on.
-    ResearchItem psSubjectPending;
+    std::unique_ptr<ResearchItem> psSubject; // The subject the structure is working on.
+    std::unique_ptr<ResearchItem> psSubjectPending;
     // The subject the structure is going to work on when the GAME_RESEARCHSTATUS message is received.
     StatusPending statusPending; ///< Pending = not yet synchronised.
     unsigned pendingCount; ///< Number of messages sent but not yet processed.
-    ResearchItem psBestTopic; // The topic with the most research points that was last performed
+    std::unique_ptr<ResearchItem> psBestTopic; // The topic with the most research points that was last performed
     std::size_t timeStartHold; /* The time the research facility was put on hold*/
 };
 
 class Factory : public virtual Structure, public Impl::Structure
 {
 public:
-    bool setManufacture(DroidTemplate* droidTemplate, QUEUE_MODE mode);
+    bool structSetManufacture(DroidTemplate* psTempl, QUEUE_MODE mode);
     void refundBuildPower();
     void releaseProduction(QUEUE_MODE mode);
     void holdProduction(QUEUE_MODE mode);
     void assignFactoryCommandDroid(Droid* commander);
     bool setFactoryState(SECONDARY_ORDER sec, SECONDARY_STATE state);
+    bool getFactoryState(SECONDARY_ORDER sec, SECONDARY_STATE* pState);
+    bool structPlaceDroid(DroidTemplate* psTempl, Droid** ppsDroid);
+    [[nodiscard]] bool IsFactoryCommanderGroupFull();
+    bool checkHaltOnMaxUnitsReached(bool isMission);
+    ProductionRun getProduction(DroidTemplate *psTemplate);
+    void factoryLoopAdjust(bool add);
+    [[nodiscard]] const DroidTemplate* getSubject() const;
 private:
     uint8_t productionLoops; ///< Number of loops to perform. Not synchronised, and only meaningful for selectedPlayer.
     uint8_t loopsPerformed; /* how many times the loop has been performed*/
-    DroidTemplate* psSubject; ///< The subject the structure is working on.
-    DroidTemplate* psSubjectPending;
+    std::shared_ptr<DroidTemplate> psSubject; ///< The subject the structure is working on.
+    std::shared_ptr<DroidTemplate> psSubjectPending;
     ///< The subject the structure is going to working on. (Pending = not yet synchronised.)
     PENDING_STATUS statusPending; ///< Pending = not yet synchronised.
     unsigned pendingCount; ///< Number of messages sent but not yet processed.
@@ -428,6 +460,8 @@ struct ProductionRun
     int quantity_built = 0;
 };
 
+extern std::array< std::vector<ProductionRun>, NUM_FACTORY_TYPES> asProductionRun;
+
 struct UPGRADE_MOD
 {
     UWORD modifier; //% to increase the stat by
@@ -437,12 +471,11 @@ typedef UPGRADE_MOD REPAIR_FACILITY_UPGRADE;
 typedef UPGRADE_MOD POWER_UPGRADE;
 typedef UPGRADE_MOD REARM_UPGRADE;
 
-extern std::vector<ProductionRun> asProductionRun[NUM_FACTORY_TYPES];
 
 //Value is stored for easy access to this structure stat
-extern UDWORD factoryModuleStat;
-extern UDWORD powerModuleStat;
-extern UDWORD researchModuleStat;
+extern unsigned factoryModuleStat;
+extern unsigned powerModuleStat;
+extern unsigned researchModuleStat;
 
 // the structure that was last hit
 extern Structure* psLastStructHit;
@@ -452,19 +485,19 @@ extern unsigned productionPlayer;
 
 //holder for all StructureStats
 extern StructureStats* asStructureStats;
-extern UDWORD numStructureStats;
+extern unsigned numStructureStats;
 
 //used to hold the modifiers cross refd by weapon effect and structureStrength
 extern STRUCTSTRENGTH_MODIFIER asStructStrengthModifier[WE_NUMEFFECTS][NUM_STRUCT_STRENGTH];
 
 void handleAbandonedStructures();
 
-int getMaxDroids(UDWORD player);
-int getMaxCommanders(UDWORD player);
-int getMaxConstructors(UDWORD player);
-void setMaxDroids(UDWORD player, int value);
-void setMaxCommanders(UDWORD player, int value);
-void setMaxConstructors(UDWORD player, int value);
+int getMaxDroids(unsigned player);
+int getMaxCommanders(unsigned player);
+int getMaxConstructors(unsigned player);
+void setMaxDroids(unsigned player, int value);
+void setMaxCommanders(unsigned player, int value);
+void setMaxConstructors(unsigned player, int value);
 
 bool structureExists(int player, STRUCTURE_TYPE type, bool built, bool isMission);
 
@@ -480,25 +513,24 @@ int requestOpenGate(Structure* psStructure);
 int gateCurrentOpenHeight(const Structure* psStructure, uint32_t time, int minimumStub);
 ///< Returns how far open the gate is, or 0 if the structure is not a gate.
 
-int32_t structureDamage(Structure* psStructure, unsigned damage, WEAPON_CLASS weaponClass,
+int structureDamage(Structure* psStructure, unsigned damage, WEAPON_CLASS weaponClass,
                         WEAPON_SUBCLASS weaponSubClass, unsigned impactTime, bool isDamagePerSecond, int minDamage);
 void structureBuild(Structure* psStructure, Droid* psDroid, int buildPoints, int buildRate = 1);
 void structureDemolish(Structure* psStructure, Droid* psDroid, int buildPoints);
 void structureRepair(Structure* psStruct, Droid* psDroid, int buildRate);
 /* Set the type of droid for a factory to build */
 bool structSetManufacture(Structure* psStruct, DroidTemplate* psTempl, QUEUE_MODE mode);
-uint32_t structureBuildPointsToCompletion(const Structure& structure);
+unsigned structureBuildPointsToCompletion(const Structure& structure);
 float structureCompletionProgress(const Structure& structure);
 
 //builds a specified structure at a given location
-Structure* buildStructure(StructureStats* pStructureType, UDWORD x, UDWORD y, UDWORD player, bool FromSave);
-Structure* buildStructureDir(StructureStats* pStructureType, UDWORD x, UDWORD y, uint16_t direction, UDWORD player,
+Structure* buildStructure(StructureStats* pStructureType, unsigned x, unsigned y, unsigned player, bool FromSave);
+Structure* buildStructureDir(StructureStats* pStructureType, unsigned x, unsigned y, uint16_t direction, unsigned player,
                              bool FromSave);
+
 /// Create a blueprint structure, with just enough information to render it
 Structure* buildBlueprint(StructureStats const* psStats, Vector3i xy, uint16_t direction, unsigned moduleIndex,
                           STRUCT_STATES state, uint8_t ownerPlayer);
-/* The main update routine for all Structures */
-void structureUpdate(Structure* psBuilding, bool bMission);
 
 /* Remove a structure and free it's memory */
 bool destroyStruct(Structure* psDel, unsigned impactTime);
@@ -509,7 +541,7 @@ bool destroyStruct(Structure* psDel, unsigned impactTime);
 bool removeStruct(Structure* psDel, bool bDestroy);
 
 //fills the list with Structures that can be built
-std::vector<StructureStats*> fillStructureList(UDWORD selectedPlayer, UDWORD limit, bool showFavorites);
+std::vector<StructureStats*> fillStructureList(unsigned selectedPlayer, unsigned limit, bool showFavorites);
 
 /// Checks if the two structures would be too close to build together.
 bool isBlueprintTooClose(StructureStats const* stats1, Vector2i pos1, uint16_t dir1, StructureStats const* stats2,
@@ -544,7 +576,7 @@ void resetFactoryNumFlag();
 StructureStats* structGetDemolishStat();
 
 /*find a location near to the factory to start the droid of*/
-bool placeDroid(Structure* psStructure, UDWORD* droidX, UDWORD* droidY);
+bool placeDroid(Structure* psStructure, unsigned* droidX, unsigned* droidY);
 
 //Set the factory secondary orders to a droid
 void setFactorySecondaryState(Droid* psDroid, Structure* psStructure);
@@ -559,13 +591,13 @@ static inline bool isLasSat(StructureStats* pStructureType)
 }
 
 /*sets the flag to indicate a SatUplink Exists - so draw everything!*/
-void setSatUplinkExists(bool state, UDWORD player);
+void setSatUplinkExists(bool state, unsigned player);
 
 /*returns the status of the flag*/
-bool getSatUplinkExists(UDWORD player);
+bool getSatUplinkExists(unsigned player);
 
 /*sets the flag to indicate a Las Sat Exists - ONLY EVER WANT ONE*/
-void setLasSatExists(bool state, UDWORD player);
+void setLasSatExists(bool state, unsigned player);
 
 /* added int weapon_slot to fix the alway slot 0 hack */
 bool calcStructureMuzzleLocation(const Structure* psStructure, Vector3i* muzzle, int weapon_slot);
@@ -607,21 +639,21 @@ if not a good combination!*/
 bool validTemplateForFactory(const DroidTemplate* psTemplate, Structure* psFactory, bool complain);
 
 /*calculates the damage caused to the resistance levels of structures*/
-bool electronicDamage(SimpleObject* psTarget, UDWORD damage, UBYTE attackPlayer);
+bool electronicDamage(SimpleObject* psTarget, unsigned damage, UBYTE attackPlayer);
 
 /* EW works differently in multiplayer mode compared with single player.*/
 bool validStructResistance(const Structure* psStruct);
 
 /*checks to see if a specific structure type exists -as opposed to a structure
 stat type*/
-bool checkSpecificStructExists(UDWORD structInc, UDWORD player);
+bool checkSpecificStructExists(unsigned structInc, unsigned player);
 
 int32_t getStructureDamage(const Structure* psStructure);
 
 unsigned structureBodyBuilt(const Structure* psStruct);
 ///< Returns the maximum body points of a structure with the current number of build points.
-UDWORD structureBody(const Structure* psStruct);
-UDWORD structureResistance(const StructureStats* psStats, UBYTE player);
+unsigned structureBody(const Structure* psStruct);
+unsigned structureResistance(const StructureStats* psStats, UBYTE player);
 
 void hqReward(UBYTE losingPlayer, UBYTE rewardPlayer);
 
@@ -651,7 +683,7 @@ ProductionRunEntry getProduction(Structure* psStructure, DroidTemplate* psTempla
 UBYTE checkProductionForCommand(UBYTE player);
 
 //check that delivery points haven't been put down in invalid location
-void checkDeliveryPoints(UDWORD version);
+void checkDeliveryPoints(unsigned version);
 
 //adjust the loop quantity for this factory
 void factoryLoopAdjust(Structure* psStruct, bool add);
@@ -723,10 +755,10 @@ bool structureIsBlueprint(const Structure* psStructure);
 bool isBlueprint(const SimpleObject* psObject);
 
 /*returns the power cost to build this structure, or to add its next module */
-UDWORD structPowerToBuildOrAddNextModule(const Structure* psStruct);
+unsigned structPowerToBuildOrAddNextModule(const Structure* psStruct);
 
 // check whether a factory of a certain number and type exists
-bool checkFactoryExists(UDWORD player, UDWORD factoryType, UDWORD inc);
+bool checkFactoryExists(unsigned player, unsigned factoryType, unsigned inc);
 
 /*checks the structure passed in is a Las Sat structure which is currently
 selected - returns true if valid*/
@@ -751,7 +783,7 @@ static inline int structJammerPower(const Structure* psObj)
 
 static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStructure, int weaponSlot, uint32_t time)
 {
-	return interpolateRot(psStructure->asWeaps[weaponSlot].previous_rotation, psStructure->asWeaps[weaponSlot].rotation,
+	return interpolateRot(psStructure->asWeaps[weaponSlot].previousRotation, psStructure->asWeaps[weaponSlot].rotation,
                         psStructure->prevTime, psStructure->time, time);
 }
 

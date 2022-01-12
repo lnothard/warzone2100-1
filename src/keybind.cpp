@@ -1547,7 +1547,7 @@ void kf_Reload()
 		{
 			unsigned int firePause = weaponFirePause(&asWeaponStats[psCurr->asWeaps[0].nStat], psCurr->player);
 
-			psCurr->asWeaps[0].time_last_fired -= firePause;
+			psCurr->asWeaps[0].timeLastFired -= firePause;
 			CONPRINTF("%s", _("Selected buildings instantly recharged!"));
 		}
 	}

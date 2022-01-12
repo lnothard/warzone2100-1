@@ -20,7 +20,7 @@
 
 /**
  * @file group.h
- * Responsible for handling groups of droids.
+ * Responsible for handling groups of droids
  */
 
 #ifndef __INCLUDED_SRC_GROUP_H__
@@ -58,8 +58,12 @@ public:
 
   [[nodiscard]] bool hasElectronicWeapon() const;
 
+  [[nodiscard]] std::vector<Droid*> getMembers() const;
+
   /// Count the number of members
 	[[nodiscard]] std::size_t getNumMembers() const;
+
+  [[nodiscard]] const Droid& getCommander() const;
 
 	void orderGroup(ORDER_TYPE order); // give an order all the droids of the group
 	void orderGroup(ORDER_TYPE order, unsigned x, unsigned y);

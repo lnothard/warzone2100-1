@@ -72,6 +72,7 @@ public:
     ~Feature() override;
 
     [[nodiscard]] Vector2i size() const;
+    [[nodiscard]] FeatureStats const* getStats() const;
 private:
     std::shared_ptr<FeatureStats> psStats;
 };

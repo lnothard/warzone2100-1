@@ -5638,8 +5638,8 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 			if (psDroid->asWeaps[j].nStat > 0)
 			{
 				psDroid->asWeaps[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
-				psDroid->asWeaps[j].time_last_fired = ini.value("lastFired/" + WzString::number(j)).toInt();
-				psDroid->asWeaps[j].shots_fired = ini.value("shotsFired/" + WzString::number(j)).toInt();
+				psDroid->asWeaps[j].timeLastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
+				psDroid->asWeaps[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
 				psDroid->asWeaps[j].rotation = ini.vector3i("rotation/" + WzString::number(j));
 			}
 		}
@@ -5688,7 +5688,7 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 		psDroid->movement.shuffleStart = ini.value("shuffleStart").toInt();
 		for (int j = 0; j < MAX_WEAPONS; ++j)
 		{
-			psDroid->asWeaps[j].ammo_used = ini.value("attackRun/" + WzString::number(j)).toInt();
+			psDroid->asWeaps[j].ammoUsed = ini.value("attackRun/" + WzString::number(j)).toInt();
 		}
 		psDroid->movement.lastBump = ini.value("lastBump").toInt();
 		psDroid->movement.pauseTime = ini.value("pauseTime").toInt();
@@ -5756,8 +5756,8 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 			auto numberWzStr = WzString::number(i);
 			const std::string& numStr = numberWzStr.toStdString();
 			droidObj["ammo/" + numStr] = psCurr->asWeaps[i].ammo;
-			droidObj["lastFired/" + numStr] = psCurr->asWeaps[i].time_last_fired;
-			droidObj["shotsFired/" + numStr] = psCurr->asWeaps[i].shots_fired;
+			droidObj["lastFired/" + numStr] = psCurr->asWeaps[i].timeLastFired;
+			droidObj["shotsFired/" + numStr] = psCurr->asWeaps[i].shotsFired;
 			droidObj["rotation/" + numStr] = toVector(psCurr->asWeaps[i].rotation);
 		}
 	}
@@ -5847,7 +5847,7 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 	droidObj["shuffleStart"] = psCurr->movement.shuffleStart;
 	for (int i = 0; i < MAX_WEAPONS; ++i)
 	{
-		droidObj["attackRun/" + WzString::number(i).toStdString()] = psCurr->asWeaps[i].ammo_used;
+		droidObj["attackRun/" + WzString::number(i).toStdString()] = psCurr->asWeaps[i].ammoUsed;
 	}
 	droidObj["lastBump"] = psCurr->movement.lastBump;
 	droidObj["pauseTime"] = psCurr->movement.pauseTime;
@@ -6415,8 +6415,8 @@ static bool loadSaveStructure2(const char* pFileName, Structure** ppList)
 			if (psStructure->asWeaps[j].nStat > 0)
 			{
 				psStructure->asWeaps[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
-				psStructure->asWeaps[j].time_last_fired = ini.value("lastFired/" + WzString::number(j)).toInt();
-				psStructure->asWeaps[j].shots_fired = ini.value("shotsFired/" + WzString::number(j)).toInt();
+				psStructure->asWeaps[j].timeLastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
+				psStructure->asWeaps[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
 				psStructure->asWeaps[j].rotation = ini.vector3i("rotation/" + WzString::number(j));
 			}
 		}
@@ -6502,8 +6502,8 @@ bool writeStructFile(const char* pFileName)
 				if (psCurr->asWeaps[j].nStat > 0)
 				{
 					ini.setValue("ammo/" + WzString::number(j), psCurr->asWeaps[j].ammo);
-					ini.setValue("lastFired/" + WzString::number(j), psCurr->asWeaps[j].time_last_fired);
-					ini.setValue("shotsFired/" + WzString::number(j), psCurr->asWeaps[j].shots_fired);
+					ini.setValue("lastFired/" + WzString::number(j), psCurr->asWeaps[j].timeLastFired);
+					ini.setValue("shotsFired/" + WzString::number(j), psCurr->asWeaps[j].shotsFired);
 					ini.setVector3i("rotation/" + WzString::number(j), toVector(psCurr->asWeaps[j].rotation));
 				}
 			}

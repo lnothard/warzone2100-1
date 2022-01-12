@@ -273,7 +273,7 @@ static int targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacker, 
 	/* Get attacker weapon effect */
 	if (auto psAttackerDroid = dynamic_cast<Droid*>(psAttacker))
 	{
-		attackerWeapon = psAttackerDroid->getWeapons()[weapon_slot].get_stats();
+		attackerWeapon = psAttackerDroid->getWeapons()[weapon_slot].getStats();
 
 		//check if this droid is assigned to a commander
 		bCmdAttached = hasCommander(psAttackerDroid);
@@ -541,7 +541,7 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 		return failure;
 	}
 	// Check if we have a CB target to begin with
-	if (!proj_Direct(psDroid->getWeapons()[weapon_slot].get_stats())) {
+	if (!proj_Direct(psDroid->getWeapons()[weapon_slot].getStats())) {
 		WeaponStats* psWStats = psDroid->asWeaps[weapon_slot].nStat + asWeaponStats;
 
 		bestTarget = aiSearchSensorTargets((SimpleObject*)psDroid, weapon_slot, psWStats, &tmpOrigin);
