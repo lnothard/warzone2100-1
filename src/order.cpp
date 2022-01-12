@@ -59,36 +59,6 @@
 #include "console.h"
 #include "mapgrid.h"
 
-/** How long a droid runs after it fails do respond due to low moral. */
-static constexpr auto RUN_TIME = 8000;
-
-/** How long a droid runs burning after it fails do respond due to low moral. */
-static constexpr auto RUN_BURN_TIME = 10000;
-
-/** The distance a droid has in guard mode. */
-static constexpr auto DEFEND_MAXDIST = TILE_UNITS * 3;
-
-/** The distance a droid has in guard mode.
- * @todo seems to be used as equivalent to GUARD_MAXDIST.
- */
-static constexpr auto DEFEND_BASEDIST = TILE_UNITS * 3;
-
-/** The distance a droid has in guard mode. Equivalent to GUARD_MAXDIST,
- * but used for droids being on a command group. */
-static constexpr auto DEFEND_CMD_MAXDIST = TILE_UNITS * 8;
-
-/** The distance a droid has in guard mode. Equivalent to GUARD_BASEDIST, but used for droids being on a command group. */
-#define DEFEND_CMD_BASEDIST		(TILE_UNITS * 5)
-
-/** The maximum distance a constructor droid has in guard mode. */
-#define CONSTRUCT_MAXDIST		(TILE_UNITS * 8)
-
-/** The maximum distance allowed to a droid to move out of the path on a patrol/scout. */
-#define SCOUT_DIST			(TILE_UNITS * 8)
-
-/** The maximum distance allowed to a droid to move out of the path if already attacking a target on a patrol/scout. */
-#define SCOUT_ATTACK_DIST	(TILE_UNITS * 5)
-
 static void orderClearDroidList(Droid* psDroid);
 
 /** Whether an order effect has been displayed
@@ -96,8 +66,6 @@ static void orderClearDroidList(Droid* psDroid);
  */
 static bool bOrderEffectDisplayed = false;
 
-/** What the droid's action/order it is currently. This is used to debug purposes, jointly with showSAMPLES(). */
-extern char DROIDDOING[512];
 //////////////////////////////////////////////////////////////////
 
 #define ASSERT_PLAYER_OR_RETURN(retVal, player) \

@@ -35,6 +35,34 @@
 #include "unit.h"
 #include "action.h"
 
+/** How long a droid runs after it fails do respond due to low moral. */
+static constexpr auto RUN_TIME = 8000;
+
+/** How long a droid runs burning after it fails do respond due to low moral. */
+static constexpr auto RUN_BURN_TIME = 10000;
+
+/** The distance a droid has in guard mode. */
+static constexpr auto DEFEND_MAXDIST = TILE_UNITS * 3;
+
+/// The distance a droid has in guard mode.
+static constexpr auto DEFEND_BASEDIST = TILE_UNITS * 3;
+
+/** The distance a droid has in guard mode. Equivalent to GUARD_MAXDIST,
+ * but used for droids being on a command group. */
+static constexpr auto DEFEND_CMD_MAXDIST = TILE_UNITS * 8;
+
+/** The distance a droid has in guard mode. Equivalent to GUARD_BASEDIST, but used for droids being on a command group. */
+static constexpr auto DEFEND_CMD_BASEDIST	= TILE_UNITS * 5;
+
+/** The maximum distance a constructor droid has in guard mode. */
+static constexpr auto CONSTRUCT_MAXDIST = TILE_UNITS * 8;
+
+/** The maximum distance allowed to a droid to move out of the path on a patrol/scout. */
+static constexpr auto SCOUT_DIST = TILE_UNITS * 8;
+
+/** The maximum distance allowed to a droid to move out of the path if already attacking a target on a patrol/scout. */
+static constexpr auto SCOUT_ATTACK_DIST	= TILE_UNITS * 5;
+
 /// world->screen check - alex
 static constexpr auto OFF_SCREEN = 9999;
 
@@ -85,8 +113,13 @@ static constexpr auto TRANSPORTER_HOVER_HEIGHT	= 10;
 /// TODO This should really be logarithmic
 #define CALC_DROID_SMOKE_INTERVAL(x) ((((100-(x))+10)/10) * DROID_DAMAGE_SCALING)
 
+#define UNIT_LOST_DELAY	(5*GAME_TICKS_PER_SEC)
+
 /// Defines how many times to perform the iteration on looking for a blank location
 static constexpr auto LOOK_FOR_EMPTY_TILE  = 20;
+
+/** What the droid's action/order it is currently. This is used to debug purposes, jointly with showSAMPLES(). */
+extern char DROIDDOING[512];
 
 enum class PICKTILE
 {
@@ -230,6 +263,9 @@ public:
     virtual bool droidUpdateDroidRepair() = 0;
     virtual bool droidUpdateBuild() = 0;
     virtual void recycleDroid() = 0;
+    virtual void initDroidMovement() = 0;
+    virtual Droid* giftSingleDroid(unsigned to, bool electronic) = 0;
+    virtual void droidSetBits(const DroidTemplate* pTemplate) = 0;
 };
 
 namespace Impl
@@ -264,6 +300,10 @@ namespace Impl
       [[nodiscard]] bool isDamaged() const final;
       [[nodiscard]] bool isAttacking() const noexcept;
       [[nodiscard]] bool isRepairDroid() const noexcept final;
+
+      void droidSetBits(const DroidTemplate* pTemplate) final;
+
+      Droid* giftSingleDroid(unsigned to, bool electronic) final;
 
       void recycleDroid() final;
 
@@ -344,6 +384,7 @@ namespace Impl
       [[nodiscard]] int calculateAttackPriority(const ::Unit *target, int weapon_slot) const final;
       RtrBestResult decideWhereToRepairAndBalance() final;
       SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate) final;
+      void initDroidMovement() final;
   private:
       using enum DROID_TYPE;
       using enum ACTION;
@@ -443,7 +484,7 @@ bool removeDroidBase(Droid* psDel);
 
 /*Builds an instance of a Structure - the x/y passed in are in world coords.*/
 /// Sends a GAME_DROID message if bMultiMessages is true, or actually creates it if false. Only uses initialOrders if sending a GAME_DROID message.
-Droid* buildDroid(DroidTemplate* pTemplate, unsigned x, unsigned y, unsigned player, bool onMission,
+std::unique_ptr<Droid> buildDroid(DroidTemplate* pTemplate, unsigned x, unsigned y, unsigned player, bool onMission,
                   const INITIAL_DROID_ORDERS* initialOrders, Rotation rot = Rotation());
 /// Creates a droid locally, instead of sending a message, even if the bMultiMessages HACK is set to true.
 std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission,
