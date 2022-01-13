@@ -58,6 +58,7 @@
 
 #include "mINI/ini.h"
 #include "3rdparty/physfs.hpp"
+#include "lib/framework/physfs_ext.h"
 
 #define PHYFSPP_IMPL
 
@@ -388,7 +389,7 @@ bool loadConfig()
 	war_SetFMVmode((FMV_MODE)iniGetInteger("FMVmode", FMV_FULLSCREEN).value());
 	war_setScanlineMode((SCANLINE_MODE)iniGetInteger("scanlines", SCANLINES_OFF).value());
 	seq_SetSubtitles(iniGetBool("subtitles", true).value());
-	setDifficultyLevel((DIFFICULTY_LEVEL)iniGetInteger("difficulty", DIFFICULTY_LEVEL::NORMAL).value());
+	setDifficultyLevel((DIFFICULTY_LEVEL)iniGetInteger("difficulty", static_cast<int>(DIFFICULTY_LEVEL::NORMAL)).value());
 	war_SetSPcolor(iniGetInteger("colour", 0).value()); // default is green (0)
 	war_setMPcolour(iniGetInteger("colourMP", -1).value()); // default is random (-1)
 	sstrcpy(game.name, iniGetString("gameName", _("My Game")).value().c_str());
@@ -403,7 +404,7 @@ bool loadConfig()
 
 	game.power = iniGetInteger("powerLevel", LEV_MED).value();
 	game.base = iniGetInteger("base", CAMP_BASE).value();
-	game.alliance = iniGetInteger("alliance", NO_ALLIANCES).value();
+	game.alliance = iniGetInteger("alliance", static_cast<int>(ALLIANCE_TYPE::FFA)).value();
 	game.scavengers = iniGetInteger("newScavengers", SCAVENGERS).value();
 	war_setMPInactivityMinutes(iniGetInteger("inactivityMinutesMP", war_getMPInactivityMinutes()).value());
 	game.inactivityMinutes = war_getMPInactivityMinutes();
@@ -442,7 +443,7 @@ bool loadConfig()
 	{
 		displayScale = 500;
 	}
-	war_SetDisplayScale(static_cast<unsigned int>(displayScale));
+	war_SetDisplayScale(static_cast<unsigned>(displayScale));
 	war_setAutoAdjustDisplayScale(iniGetBool("autoAdjustDisplayScale", true).value());
 	// 640x480 is minimum that we will support, but default to something more sensible
 	int width = iniGetInteger("width", war_GetWidth()).value();
@@ -755,7 +756,7 @@ bool reloadMPConfig()
 
 	game.power = iniSectionGetInteger(iniGeneral, "powerLevel", LEV_MED).value();
 	game.base = iniSectionGetInteger(iniGeneral, "base", CAMP_BASE).value();
-	game.alliance = iniSectionGetInteger(iniGeneral, "alliance", NO_ALLIANCES).value();
+	game.alliance = iniSectionGetInteger(iniGeneral, "alliance", static_cast<int>(ALLIANCE_TYPE::FFA)).value();
 	game.inactivityMinutes = war_getMPInactivityMinutes();
 
 	return true;

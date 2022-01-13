@@ -106,6 +106,10 @@ void actionSanity(Droid* psDroid);
 /** Give a droid an action. */
 void actionDroid(Droid* psDroid, ACTION action);
 
+static void actionAddVtolAttackRun(Droid* psDroid);
+static void actionUpdateVtolAttack(Droid* psDroid);
+static void actionCalcPullBackPoint(SimpleObject* psObj, SimpleObject* psTarget, int* px, int* py);
+
 /** Give a droid an action with a location target. */
 void actionDroid(Droid* psDroid, ACTION action,
                  unsigned x, unsigned y);

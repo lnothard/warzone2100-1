@@ -23,19 +23,13 @@
  * Draws component objects
 */
 
-#include "lib/framework/frame.h"
-#include "lib/ivis_opengl/piematrix.h"
-#include "lib/ivis_opengl/ivisdef.h"
 #include "lib/netplay/netplay.h"
 #include <glm/gtx/transform.hpp>
 
-#include "action.h"
-#include "component.h"
 #include "display3d.h"
 #include "effects.h"
 #include "intdisplay.h"
 #include "loop.h"
-#include "map.h"
 #include "miscimd.h"
 #include "projectile.h"
 #include "transporter.h"
@@ -139,7 +133,7 @@ unsigned getResearchRadius(BaseStats* Stat)
 unsigned getStructureSizeMax(Structure* psStructure)
 {
 	//radius based on base plate size
-	return MAX(psStructure->pStructureType->base_width, psStructure->pStructureType->base_breadth);
+	return MAX(psStructure->getStats().base_width, psStructure->getStats().base_breadth);
 }
 
 unsigned getStructureStatSizeMax(StructureStats* Stats)
@@ -214,8 +208,8 @@ static void sharedStructureButton(StructureStats* Stats, iIMDShape* strImd, cons
 			//can only have the one
 			if (Stats->psWeapStat[i] != nullptr)
 			{
-				weaponImd[i] = Stats->psWeapStat[i]->pIMD;
-				mountImd[i] = Stats->psWeapStat[i]->pMountGraphic;
+				weaponImd[i] = Stats->psWeapStat[i]->pIMD.get();
+				mountImd[i] = Stats->psWeapStat[i]->pMountGraphic.get();
 			}
 
 			if (weaponImd[i] == nullptr)
@@ -223,8 +217,8 @@ static void sharedStructureButton(StructureStats* Stats, iIMDShape* strImd, cons
 				//check for ECM
 				if (Stats->ecm_stats != nullptr)
 				{
-					weaponImd[i] = Stats->ecm_stats->pIMD;
-					mountImd[i] = Stats->ecm_stats->pMountGraphic;
+					weaponImd[i] = Stats->ecm_stats->pIMD.get();
+					mountImd[i] = Stats->ecm_stats->pMountGraphic.get();
 				}
 			}
 
@@ -233,8 +227,8 @@ static void sharedStructureButton(StructureStats* Stats, iIMDShape* strImd, cons
 				//check for sensor
 				if (Stats->sensor_stats != nullptr)
 				{
-					weaponImd[i] = Stats->sensor_stats->pIMD;
-					mountImd[i] = Stats->sensor_stats->pMountGraphic;
+					weaponImd[i] = Stats->sensor_stats->pIMD.get();
+					mountImd[i] = Stats->sensor_stats->pMountGraphic.get();
 				}
 			}
 		}
@@ -263,12 +257,12 @@ static void sharedStructureButton(StructureStats* Stats, iIMDShape* strImd, cons
 
 void displayStructureButton(Structure* psStructure, const Vector3i* rotation, const Vector3i* Position, int scale)
 {
-	sharedStructureButton(psStructure->pStructureType, psStructure->sDisplay.imd, rotation, Position, scale);
+	sharedStructureButton(psStructure->getStats(), psStructure->display.imd, rotation, Position, scale);
 }
 
 void displayStructureStatButton(StructureStats* Stats, const Vector3i* rotation, const Vector3i* Position, int scale)
 {
-	sharedStructureButton(Stats, Stats->IMDs[0], rotation, Position, scale);
+	sharedStructureButton(Stats, Stats->IMDs[0].get(), rotation, Position, scale);
 }
 
 // Render a component given a BASE_STATS structure.
@@ -430,7 +424,7 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 		brightness = pal_SetBrightness(psDroid->illumination_level);
 		// NOTE: Beware of transporters that are offscreen, on a mission!  We should *not* be checking tiles at this point in time!
 		if (!isTransporter(*psDroid) && !missionIsOffworld()) {
-			auto psTile = worldTile(psDroid->pos.x, psDroid->pos.y);
+			auto psTile = worldTile(psDroid->getPosition().x, psDroid->getPosition().y);
 			if (psTile->jammerBits & alliancebits[psDroid->getPlayer()]) {
 				pieFlag |= pie_ECM;
 			}
@@ -476,7 +470,7 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 	}
 
 	/* Get the body graphic now*/
-	iIMDShape* psShapeBody = BODY_IMD(psDroid, psDroid->player);
+	iIMDShape* psShapeBody = BODY_IMD(psDroid, psDroid->getPlayer());
 	if (psShapeBody)
 	{
 		iIMDShape* strImd = psShapeBody;
@@ -851,12 +845,12 @@ void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix)
 	Vector3i position, rotation;
 	Spacetime st = interpolateObjectSpacetime(psDroid, graphicsTime);
 
-	leftFirst = angleDelta(playerPos.r.y - st.rot.direction) <= 0;
+	leftFirst = angleDelta(playerPos.r.y - st.rotation.direction) <= 0;
 
 	/* Get the real position */
-	position.x = st.pos.x - playerPos.p.x;
-	position.z = -(st.pos.y - playerPos.p.z);
-	position.y = st.pos.z;
+	position.x = st.position.x - playerPos.p.x;
+	position.z = -(st.position.y - playerPos.p.z);
+	position.y = st.position.z;
 
 	if (isTransporter(*psDroid))
 	{
@@ -895,17 +889,17 @@ void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix)
 		effectPosition.y = st.position.z + rand() % 8;
 		effectPosition.z = st.position.y + DROID_EMP_SPREAD;
 		effectGiveAuxVar(90 + rand() % 20);
-		addEffect(&effectPosition, EFFECT_EXPLOSION, EXPLOSION_TYPE_PLASMA, false, nullptr, 0);
+		addEffect(&effectPosition, EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_PLASMA, false, nullptr, 0);
 	}
 
-	if (psDroid->visibleForLocalDisplay() == UBYTE_MAX)
+	if (psDroid->visibleToSelectedPlayer() == UBYTE_MAX)
 	{
 		//ingame not button object
 		//should render 3 mounted weapons now
 		if (displayCompObj(psDroid, false, viewMatrix * modelMatrix))
 		{
 			// did draw something to the screen - update the framenumber
-			psDroid->sDisplay.frame_number = frameGetFrameNumber();
+			psDroid->display.frame_number = frameGetFrameNumber();
 		}
 	}
 	else
@@ -913,9 +907,9 @@ void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix)
 		auto frame = graphicsTime / BLIP_ANIM_DURATION + psDroid->getId() % 8192;
 		// de-sync the blip effect, but don't overflow the int
 		if (pie_Draw3DShape(getImdFromIndex(MI_BLIP), frame, 0, WZCOL_WHITE, pie_ADDITIVE,
-		                    psDroid->visibleForLocalDisplay() / 2, viewMatrix * modelMatrix))
+		                    psDroid->visibleToSelectedPlayer() / 2, viewMatrix * modelMatrix))
 		{
-			psDroid->sDisplay.frame_number = frameGetFrameNumber();
+			psDroid->display.frame_number = frameGetFrameNumber();
 		}
 	}
 }
@@ -934,45 +928,44 @@ void destroyFXDroid(Droid* psDroid, unsigned impactTime)
 		Vector3i pos = (psDroid->getPosition() + Vector3i(horizontalScatter, 16 + heightScatter)).xzy();
 		switch (i) {
 		case 0:
-			switch (psDroid->getType())
-			{
-			case DROID_DEFAULT:
-			case DROID_CYBORG:
-			case DROID_CYBORG_SUPER:
-			case DROID_CYBORG_CONSTRUCT:
-			case DROID_CYBORG_REPAIR:
-			case DROID_WEAPON:
-			case DROID_COMMAND:
-				if (psDroid->numWeaps > 0)
-				{
-					if (psDroid->asWeaps[0].nStat > 0)
-					{
-						psImd = WEAPON_MOUNT_IMD(psDroid, 0);
-					}
-				}
-				break;
-			default:
-				break;
+			switch (psDroid->getType()) {
+        using enum DROID_TYPE;
+			  case DEFAULT:
+			  case CYBORG:
+			  case CYBORG_SUPER:
+			  case CYBORG_CONSTRUCT:
+			  case CYBORG_REPAIR:
+			  case WEAPON:
+			  case COMMAND:
+			  	if (psDroid->numWeaps > 0)
+			  	{
+			  		if (psDroid->asWeaps[0].nStat > 0)
+			  		{
+			  			psImd = WEAPON_MOUNT_IMD(psDroid, 0);
+			  		}
+			  	}
+			  	break;
+		  	default:
+		  		break;
 			}
 			break;
 		case 1:
-			switch (psDroid->type)
-			{
-			case DROID_DEFAULT:
-			case DROID_CYBORG:
-			case DROID_CYBORG_SUPER:
-			case DROID_CYBORG_CONSTRUCT:
-			case DROID_CYBORG_REPAIR:
-			case DROID_WEAPON:
-			case DROID_COMMAND:
-				if (psDroid->numWeaps)
-				{
-					// get main weapon
-					psImd = WEAPON_IMD(psDroid, 0);
-				}
-				break;
-			default:
-				break;
+			switch (psDroid->getType()) {
+        using enum DROID_TYPE;
+			  case DEFAULT:
+			  case CYBORG:
+			  case CYBORG_SUPER:
+			  case CYBORG_CONSTRUCT:
+			  case CYBORG_REPAIR:
+			  case WEAPON:
+			  case COMMAND:
+			  	if (psDroid->numWeaps) {
+			  		// get main weapon
+			  		psImd = WEAPON_IMD(psDroid, 0);
+			  	}
+			  	break;
+			  default:
+			  	break;
 			}
 			break;
 		}
@@ -981,8 +974,8 @@ void destroyFXDroid(Droid* psDroid, unsigned impactTime)
 			psImd = getRandomDebrisImd();
 		}
 		// Tell the effect system that it needs to use this player's color for the next effect
-		SetEffectForPlayer(psDroid->player);
-		addEffect(&pos, EFFECT_GRAVITON, GRAVITON_TYPE_EMITTING_DR, true, psImd, getPlayerColour(psDroid->player),
+		SetEffectForPlayer(psDroid->getPlayer());
+		addEffect(&pos, EFFECT_GROUP::GRAVITON, EFFECT_TYPE::GRAVITON_TYPE_EMITTING_DR, true, psImd, getPlayerColour(psDroid->getPlayer()),
 		          impactTime);
 	}
 }
@@ -994,7 +987,7 @@ void compPersonToBits(Droid* psDroid)
 	iIMDShape *headImd, *legsImd, *armImd, *bodyImd;
 	unsigned col;
 
-	if (!psDroid->visibleForLocalDisplay()) // display only - should not affect game state
+	if (!psDroid->visibleToSelectedPlayer()) // display only - should not affect game state
 	{
 		/* We can't see the person or cyborg - so get out */
 		return;
@@ -1017,17 +1010,17 @@ void compPersonToBits(Droid* psDroid)
 	}
 
 	/* Get where he's at */
-	position.x = psDroid->pos.x;
-	position.y = psDroid->pos.z + 1;
-	position.z = psDroid->pos.y;
+	position.x = psDroid->getPosition().x;
+	position.y = psDroid->getPosition().z + 1;
+	position.z = psDroid->getPosition().y;
 
 	/* Tell about player colour */
 	col = getPlayerColour(psDroid->getPlayer());
 
-	addEffect(&position, EFFECT_GRAVITON, GRAVITON_TYPE_GIBLET, true, headImd, col, gameTime - deltaGameTime + 1);
-	addEffect(&position, EFFECT_GRAVITON, GRAVITON_TYPE_GIBLET, true, legsImd, col, gameTime - deltaGameTime + 1);
-	addEffect(&position, EFFECT_GRAVITON, GRAVITON_TYPE_GIBLET, true, armImd, col, gameTime - deltaGameTime + 1);
-	addEffect(&position, EFFECT_GRAVITON, GRAVITON_TYPE_GIBLET, true, bodyImd, col, gameTime - deltaGameTime + 1);
+	addEffect(&position, EFFECT_GROUP::GRAVITON, EFFECT_TYPE::GRAVITON_TYPE_GIBLET, true, headImd, col, gameTime - deltaGameTime + 1);
+	addEffect(&position, EFFECT_GROUP::GRAVITON, EFFECT_TYPE::GRAVITON_TYPE_GIBLET, true, legsImd, col, gameTime - deltaGameTime + 1);
+	addEffect(&position, EFFECT_GROUP::GRAVITON, EFFECT_TYPE::GRAVITON_TYPE_GIBLET, true, armImd, col, gameTime - deltaGameTime + 1);
+	addEffect(&position, EFFECT_GROUP::GRAVITON, EFFECT_TYPE::GRAVITON_TYPE_GIBLET, true, bodyImd, col, gameTime - deltaGameTime + 1);
 }
 
 

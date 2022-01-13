@@ -7563,14 +7563,6 @@ bool isCyborg(const Droid& droid)
          droid.getType() == CYBORG_REPAIR ||
          droid.getType() == CYBORG_SUPER;
 }
-///*returns true if droid type is one of the Cyborg types*/
-//bool cyborgDroid(const DROID* psDroid)
-//{
-//	return (psDroid->droidType == DROID_CYBORG
-//		|| psDroid->droidType == DROID_CYBORG_CONSTRUCT
-//		|| psDroid->droidType == DROID_CYBORG_REPAIR
-//		|| psDroid->droidType == DROID_CYBORG_SUPER);
-//}
 
 bool isBuilder(const Droid& droid)
 {
@@ -7578,15 +7570,6 @@ bool isBuilder(const Droid& droid)
   return droid.getType() == CONSTRUCT ||
          droid.getType() == CYBORG_CONSTRUCT;
 }
-//bool isConstructionDroid(DROID const* psDroid)
-//{
-//	return psDroid->droidType == DROID_CONSTRUCT || psDroid->droidType == DROID_CYBORG_CONSTRUCT;
-//}
-//
-//bool isConstructionDroid(SimpleObject const* psObject)
-//{
-//	return isDroid(psObject) && isConstructionDroid(castDroid(psObject));
-//}
 
 bool droidOnMap(const Droid* psDroid)
 {

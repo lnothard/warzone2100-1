@@ -389,6 +389,9 @@ public:
     ProductionRun getProduction(DroidTemplate *psTemplate);
     void factoryLoopAdjust(bool add);
     [[nodiscard]] const DroidTemplate* getSubject() const;
+    FlagPosition* FindFactoryDelivery() const;
+    void cancelProduction(QUEUE_MODE mode, bool mayClearProductionRun);
+    DroidTemplate* factoryProdUpdate(DroidTemplate* psTemplate);
 private:
     uint8_t productionLoops; ///< Number of loops to perform. Not synchronised, and only meaningful for selectedPlayer.
     uint8_t loopsPerformed; /* how many times the loop has been performed*/
@@ -405,12 +408,15 @@ private:
     unsigned secondaryOrder; ///< Secondary order state for all units coming out of the factory.
 };
 
+class PowerGenerator;
+
 class ResourceExtractor : public virtual Structure, public Impl::Structure
 {
 public:
     void releaseResExtractor();
+    void checkForPowerGen();
 private:
-    Structure* power_generator;
+    PowerGenerator* power_generator;
 };
 
 class PowerGenerator : public virtual Structure, public Impl::Structure
@@ -419,7 +425,7 @@ public:
     void releasePowerGen();
 private:
     /// Pointers to associated oil derricks
-    std::array<Structure*, NUM_POWER_MODULES> resource_extractors;
+    std::array<ResourceExtractor*, NUM_POWER_MODULES> resource_extractors;
 };
 
 class RepairFacility : public virtual Structure, public Impl::Structure

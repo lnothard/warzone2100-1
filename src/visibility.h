@@ -21,12 +21,6 @@
 #ifndef __INCLUDED_SRC_VISIBILITY__
 #define __INCLUDED_SRC_VISIBILITY__
 
-#include "basedef.h"
-#include "objectdef.h"
-#include "raycast.h"
-#include "stats.h"
-#include "structure.h"
-
 static constexpr auto MIN_VIS_HEIGHT = 80;
 
 /// Accuracy for the height gradient
@@ -124,36 +118,32 @@ static inline bool visObjInRange(SimpleObject* psObj1, SimpleObject* psObj2, int
 	return abs(xdiff) <= range && abs(ydiff) <= range && xdiff * xdiff + ydiff * ydiff <= range;
 }
 
-//// If we have ECM, use this for range instead. Otherwise, the sensor's range will be used for
-//// jamming range, which we do not want. Rather limit ECM unit sensor range to jammer range.
-//static inline int objSensorRange(const SimpleObject* psObj)
-//{
-//	if (psObj->type == OBJ_DROID)
-//	{
-//		const int ecmrange = asECMStats[((const DROID*)psObj)->asBits[COMP_ECM]].upgrade[psObj->player].range;
-//		if (ecmrange > 0)
-//		{
-//			return ecmrange;
-//		}
-//		return asSensorStats[((const DROID*)psObj)->asBits[COMP_SENSOR]].upgrade[psObj->player].range;
-//	}
-//	else if (psObj->type == OBJ_STRUCTURE)
-//	{
-//		const int ecmrange = ((const STRUCTURE*)psObj)->pStructureType->pECM->upgrade[psObj->player].range;
-//		if (ecmrange)
-//		{
-//			return ecmrange;
-//		}
-//		return ((const STRUCTURE*)psObj)->pStructureType->pSensor->upgrade[psObj->player].range;
-//	}
-//	return 0;
-//}
+// If we have ECM, use this for range instead. Otherwise, the sensor's range will be used for
+// jamming range, which we do not want. Rather limit ECM unit sensor range to jammer range.
+static inline int objSensorRange(const SimpleObject* psObj)
+{
+	if (psObj->type == OBJ_DROID) {
+		const auto ecmrange = asECMStats[((const Droid*)psObj)->asBits[COMP_ECM]].upgrade[psObj->getPlayer()].range;
+		if (ecmrange > 0) {
+			return ecmrange;
+		}
+		return asSensorStats[((const Droid*)psObj)->asBits[COMP_SENSOR]].upgrade[psObj->getPlayer()].range;
+	}
+	else if (psObj->type == OBJ_STRUCTURE) {
+		const auto ecmrange = ((const Structure*)psObj)->pStructureType->pECM->upgrade[psObj->getPlayer()].range;
+		if (ecmrange) {
+			return ecmrange;
+		}
+		return ((const Structure*)psObj)->pStructureType->pSensor->upgrade[psObj->player].range;
+	}
+	return 0;
+}
 
 static inline int objJammerPower(const SimpleObject* psObj)
 {
 	if (auto as_droid = dynamic_cast<const Droid*>(psObj))  {
 		return asECMStats[as_droid->asBits[COMP_ECM]].upgraded[psObj->getPlayer()].range;
-	} else if (psObj->type == STRUCTURE)  {
+	} else if (psObj->type == Structure)  {
 		return psObj->stats->ecm_stats->upgraded_stats[psObj->getPlayer()].range;
 	}
 	return 0;

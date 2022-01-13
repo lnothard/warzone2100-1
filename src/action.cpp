@@ -334,7 +334,7 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 	bool onTarget = abs(angleDelta(targetRotation - (tRotation + psAttacker->getRotation().direction))) <= rotationTolerance;
 
 	/* Set muzzle pitch if not repairing or outside minimum range */
-	const int minRange = proj_GetMinRange(psWeapStats, psAttacker->getPlayer());
+	const auto minRange = proj_GetMinRange(&psWeapStats, psAttacker->getPlayer());
 	if (!bRepair && (unsigned)objectPositionSquareDiff(psAttacker->getPosition(),
                                                      psTarget->getPosition()) > minRange * minRange) {
 		/* get target distance */
@@ -344,7 +344,7 @@ bool actionTargetTurret(SimpleObject* psAttacker, SimpleObject* psTarget, Weapon
 		uint16_t targetPitch = iAtan2(delta.z, dxy);
 		targetPitch = (uint16_t)clip(angleDelta(targetPitch), pitchLowerLimit, pitchUpperLimit);
 		// Cast wrapping intended.
-		int pitchError = angleDelta(targetPitch - tPitch);
+		auto pitchError = angleDelta(targetPitch - tPitch);
 
     // addition wrapping intended
 		tPitch += clip(pitchError, -pitchRate, pitchRate);
@@ -376,106 +376,89 @@ bool actionVisibleTarget(Droid* psDroid, SimpleObject* psTarget, int weapon_slot
          lineOfFire(psDroid, psTarget, weapon_slot, true);
 }
 
-//static void actionAddVtolAttackRun(DROID* psDroid)
-//{
-//	SimpleObject* psTarget;
-//
-//	CHECK_DROID(psDroid);
-//
-//	if (psDroid->psActionTarget[0] != nullptr)
-//	{
-//		psTarget = psDroid->psActionTarget[0];
-//	}
-//	else if (psDroid->order.psObj != nullptr)
-//	{
-//		psTarget = psDroid->order.psObj;
-//	}
-//	else
-//	{
-//		return;
-//	}
-//
-//	/* get normal vector from droid to target */
-//	Vector2i delta = (psTarget->pos - psDroid->pos).xy();
-//
-//	/* get magnitude of normal vector (Pythagorean theorem) */
-//	int dist = std::max(iHypot(delta), 1);
-//
-//	/* add waypoint behind target attack length away*/
-//	Vector2i dest = psTarget->pos.xy() + delta * VTOL_ATTACK_LENGTH / dist;
-//
-//	if (!worldOnMap(dest))
-//	{
-//		debug(LOG_NEVER, "*** actionAddVtolAttackRun: run off map! ***");
-//	}
-//	else
-//	{
-//		moveDroidToDirect(psDroid, dest.x, dest.y);
-//	}
-//}
+static void actionAddVtolAttackRun(Droid* psDroid)
+{
+  auto& psTarget = psDroid->getTarget(0);
 
-//static void actionUpdateVtolAttack(DROID* psDroid)
-//{
-//	CHECK_DROID(psDroid);
-//
-//	/* don't do attack runs whilst returning to base */
-//	if (psDroid->order.type == ORDER_TYPE::RTB)
-//	{
-//		return;
-//	}
-//
-//	/* order back to base after fixed number of attack runs */
-//	if (psDroid->numWeaps > 0 && psDroid->asWeaps[0].nStat > 0 && vtolEmpty(psDroid))
-//	{
-//		moveToRearm(psDroid);
-//		return;
-//	}
-//
-//	/* circle around target if hovering and not cyborg */
-//	if (psDroid->sMove.Status == MOVEHOVER && !cyborgDroid(psDroid))
-//	{
-//		actionAddVtolAttackRun(psDroid);
-//	}
-//}
+	if (psDroid->getOrder().target != nullptr) {
+		psTarget = psDroid->getOrder().target;
+	}
+	else {
+		return;
+	}
 
-//// calculate a position for units to pull back to if they
-//// need to increase the range between them and a target
-//static void actionCalcPullBackPoint(SimpleObject* psObj, SimpleObject* psTarget, int* px, int* py)
-//{
-//	// get the vector from the target to the object
-//	int xdiff = psObj->pos.x - psTarget->pos.x;
-//	int ydiff = psObj->pos.y - psTarget->pos.y;
-//	const int len = iHypot(xdiff, ydiff);
-//
-//	if (len == 0)
-//	{
-//		xdiff = TILE_UNITS;
-//		ydiff = TILE_UNITS;
-//	}
-//	else
-//	{
-//		xdiff = (xdiff * TILE_UNITS) / len;
-//		ydiff = (ydiff * TILE_UNITS) / len;
-//	}
-//
-//	// create the position
-//	*px = psObj->pos.x + xdiff * PULL_BACK_DIST;
-//	*py = psObj->pos.y + ydiff * PULL_BACK_DIST;
-//
-//	// make sure coordinates stay inside of the map
-//	clip_world_offmap(px, py);
-//}
+	/* get normal vector from droid to target */
+	Vector2i delta = (psTarget.getPosition() - psDroid->getPosition()).xy();
 
-//// check whether a droid is in the neighboring tile of another droid
-//bool actionReachedDroid(DROID const* psDroid, DROID const* psOther)
-//{
-//	ASSERT_OR_RETURN(false, psDroid != nullptr && psOther != nullptr, "Bad droids");
-//	CHECK_DROID(psDroid);
-//	Vector2i xy = map_coord(psDroid->pos.xy());
-//	Vector2i otherxy = map_coord(psOther->pos.xy());
-//	Vector2i delta = xy - otherxy;
-//	return delta.x >= -1 && delta.x <= 1 && delta.y >= -1 && delta.y <= 1;
-//}
+	/* get magnitude of normal vector (Pythagorean theorem) */
+	int dist = std::max(iHypot(delta), 1);
+
+	/* add waypoint behind target attack length away*/
+	Vector2i dest = psTarget.getPosition().xy() + delta * VTOL_ATTACK_LENGTH / dist;
+
+	if (!worldOnMap(dest)) {
+		debug(LOG_NEVER, "*** actionAddVtolAttackRun: run off map! ***");
+	}
+	else {
+		moveDroidToDirect(psDroid, dest.x, dest.y);
+	}
+}
+
+static void actionUpdateVtolAttack(Droid* psDroid)
+{
+	/* don't do attack runs whilst returning to base */
+	if (psDroid->getOrder().type == ORDER_TYPE::RETURN_TO_BASE) {
+		return;
+	}
+
+	/* order back to base after fixed number of attack runs */
+	if (numWeapons(*psDroid) > 0 && vtolEmpty(*psDroid)) {
+		moveToRearm(psDroid);
+		return;
+	}
+
+	/* circle around target if hovering and not cyborg */
+	if (psDroid->getMovementData().status == MOVE_STATUS::HOVER &&
+      !isCyborg(psDroid)) {
+		actionAddVtolAttackRun(psDroid);
+	}
+}
+
+// calculate a position for units to pull back to if they
+// need to increase the range between them and a target
+static void actionCalcPullBackPoint(SimpleObject* psObj, SimpleObject* psTarget, int* px, int* py)
+{
+	// get the vector from the target to the object
+	auto xdiff = psObj->getPosition().x - psTarget->getPosition().x;
+	auto ydiff = psObj->getPosition().y - psTarget->getPosition().y;
+	const auto len = iHypot(xdiff, ydiff);
+
+	if (len == 0) {
+		xdiff = TILE_UNITS;
+		ydiff = TILE_UNITS;
+	}
+	else {
+		xdiff = (xdiff * TILE_UNITS) / len;
+		ydiff = (ydiff * TILE_UNITS) / len;
+	}
+
+	// create the position
+	*px = psObj->getPosition().x + xdiff * PULL_BACK_DIST;
+	*py = psObj->getPosition().y + ydiff * PULL_BACK_DIST;
+
+	// make sure coordinates stay inside of the map
+	clip_world_offmap(px, py);
+}
+
+// check whether a droid is in the neighboring tile of another droid
+bool actionReachedDroid(Droid const* psDroid, Droid const* psOther)
+{
+	ASSERT_OR_RETURN(false, psDroid != nullptr && psOther != nullptr, "Bad droids");
+	Vector2i xy = map_coord(psDroid->getPosition().xy());
+	Vector2i otherxy = map_coord(psOther->getPosition().xy());
+	Vector2i delta = xy - otherxy;
+	return delta.x >= -1 && delta.x <= 1 && delta.y >= -1 && delta.y <= 1;
+}
 
 
 // check whether a droid is in the neighboring tile to a build position
@@ -523,8 +506,7 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 
 		buildPosEmpty = false; // Found a droid, have to move it away.
 
-		if (!aiCheckAlliances(player, droid->getPlayer()))
-		{
+		if (!aiCheckAlliances(player, droid->getPlayer())) {
 			continue; // Enemy droids probably don't feel like moving.
 		}
 
@@ -535,16 +517,14 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 			for (int x = -1; x <= b.size.x; x += y >= 0 && y < b.size.y ? b.size.x + 1 : 1)
 			{
 				Vector2i dest = world_coord(b.map + Vector2i(x, y)) + Vector2i(TILE_UNITS, TILE_UNITS) / 2;
-				unsigned dist = iHypot(droid->pos.xy() - dest);
+				unsigned dist = iHypot(droid->getPosition().xy() - dest);
 				if (dist < bestDist && !fpathBlockingTile(map_coord(dest.x), map_coord(dest.y),
-				                                          getPropulsionStats(droid)->propulsionType))
-				{
+				                                          droid->getPropulsion()->propulsionType)) {
 					bestDest = dest;
 					bestDist = dist;
 				}
 			}
-		if (bestDist != UINT32_MAX)
-		{
+		if (bestDist != UINT32_MAX) {
 			// Push the droid out of the way.
 			Vector2i newPos = droid->getPosition().xy() + iSinCosR(iAtan2(bestDest - droid->getPosition().xy()),
 			                                             gameTimeAdjustedIncrement(TILE_UNITS));
@@ -585,8 +565,8 @@ void actionDroid(Droid* psDroid, ACTION action, SimpleObject* psObj)
 	memset(&sAction, 0, sizeof(Action));
 	sAction.action = action;
 	sAction.psObj = psObj;
-	sAction.x = psObj->pos.x;
-	sAction.y = psObj->pos.y;
+	sAction.x = psObj->getPosition().x;
+	sAction.y = psObj->getPosition().y;
 	psDroid->actionDroidBase(&sAction);
 }
 
@@ -620,15 +600,15 @@ void moveToRearm(Droid* psDroid)
 
 	//get the droid to fly back to a ReArming Pad
 	// don't worry about finding a clear one for the minute
-	Structure* psStruct = findNearestReArmPad(psDroid, psDroid->associatedStructure, false);
+	auto psStruct = findNearestReArmPad(psDroid, psDroid->associatedStructure, false);
 	if (psStruct) {
 		// note a base rearm pad if the vtol doesn't have one
-		if (psDroid->associated_structure == nullptr) {
+		if (psDroid->associatedStructure == nullptr) {
 			setDroidBase(psDroid, psStruct);
 		}
 
 		//return to re-arming pad
-		if (psDroid->order.type == ORDER_TYPE::NONE) {
+		if (psDroid->getOrder().type == ORDER_TYPE::NONE) {
 			// no order set - use the rearm order to ensure the unit goes back
 			// to the landing pad
 			orderDroidObj(psDroid, ORDER_TYPE::REARM, psStruct, ModeImmediate);
@@ -637,10 +617,9 @@ void moveToRearm(Droid* psDroid)
 			actionDroid(psDroid, ACTION::MOVE_TO_REARM, psStruct);
 		}
 	}
-	else
-	{
+	else {
 		//return to base un-armed
-		objTrace(psDroid->id, "Did not find an available rearm pad - RTB instead");
+		objTrace(psDroid->getId(), "Did not find an available rearm pad - RTB instead");
 		orderDroid(psDroid, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
 	}
 }

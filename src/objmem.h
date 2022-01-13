@@ -35,7 +35,7 @@ extern std::array<std::vector<
         std::unique_ptr<Impl::Structure> >, MAX_PLAYERS> apsStructLists;
 
 extern std::vector<FlagPosition*> apsFlagPosLists;
-extern std::array<Structure*, MAX_PLAYERS> apsExtractorLists;
+extern std::array<ResourceExtractor*, MAX_PLAYERS> apsExtractorLists;
 extern std::vector<Unit*> apsSensorList;
 extern std::vector<Feature*> apsOilList;
 
