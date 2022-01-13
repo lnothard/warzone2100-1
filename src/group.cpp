@@ -136,7 +136,7 @@ void Group::add(Droid* psDroid)
 
 	// if psDroid == NULL just increase the refcount don't add anything to the list
 	if (psDroid != nullptr) {
-		if (members && psDroid->player != members->player) {
+		if (members && psDroid->getPlayer() != members->player) {
 			ASSERT(false, "grpJoin: Cannot have more than one players droids in a group");
 			return;
 		}
@@ -163,7 +163,7 @@ void Group::add(Droid* psDroid)
 		}
 
 		if (type == COMMAND) {
-			syncDebug("Droid %d joining command group %d", psDroid->id, psCommander != nullptr ? psCommander->id : 0);
+			syncDebug("Droid %d joining command group %d", psDroid->getId(), psCommander != nullptr ? psCommander->getId() : 0);
 		}
 	}
 }
@@ -183,7 +183,7 @@ void Group::remove(Droid* psDroid)
 	// SyncDebug
 	if (psDroid != nullptr && type == COMMAND)
 	{
-		syncDebug("Droid %d leaving command group %d", psDroid->id, psCommander != nullptr ? psCommander->id : 0);
+		syncDebug("Droid %d leaving command group %d", psDroid->getId(), psCommander != nullptr ? psCommander->getId() : 0);
 	}
 
 	// if psDroid == NULL just decrease the refcount don't remove anything from the list
@@ -227,7 +227,7 @@ void Group::orderGroup(ORDER_TYPE order)
 
 	for (auto droid : members)
 	{
-		orderDroid(droid, order, ModeQueue);
+		::orderDroid(droid, order, ModeQueue);
 	}
 }
 
@@ -239,7 +239,7 @@ void Group::orderGroup(ORDER_TYPE order, unsigned x, unsigned y)
 
 	for (auto droid : members)
 	{
-		orderDroidLoc(droid, order, x, y, bMultiMessages ? ModeQueue : ModeImmediate);
+		::orderDroidLoc(droid, order, x, y, bMultiMessages ? ModeQueue : ModeImmediate);
 	}
 }
 
@@ -249,7 +249,7 @@ void Group::orderGroup(ORDER_TYPE order, SimpleObject* psObj)
 
 	for (auto droid : members)
 	{
-		orderDroidObj(droid, order, psObj, bMultiMessages ? ModeQueue : ModeImmediate);
+		::orderDroidObj(droid, order, psObj, bMultiMessages ? ModeQueue : ModeImmediate);
 	}
 }
 
@@ -259,6 +259,6 @@ void Group::setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state)
 
 	for (auto& droid : members)
 	{
-		secondarySetState(droid, sec, state);
+		droid.secondarySetState(sec, state);
 	}
 }

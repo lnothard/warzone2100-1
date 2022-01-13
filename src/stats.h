@@ -315,7 +315,7 @@ struct PropulsionStats : public ComponentStats
 struct SensorStats : public ComponentStats
 {
     std::unique_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
-    unsigned location = 0; ///< specifies whether the Sensor is default or for the Turret
+    LOC location; ///< specifies whether the Sensor is default or for the Turret
     SENSOR_TYPE type = SENSOR_TYPE::STANDARD; ///< used for combat
 
     struct : Upgradeable

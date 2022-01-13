@@ -2448,12 +2448,12 @@ static void getIniStructureStats(WzConfig& ini, WzString const& key, StructureSt
 
 static void getIniDroidOrder(WzConfig& ini, WzString const& key, Order& order)
 {
-	order.type = (DroidOrderType)ini.value(key + "/type", DORDER_NONE).toInt();
+	order.type = (ORDER_TYPE)ini.value(key + "/type", ORDER_TYPE::NONE).toInt();
 	order.pos = ini.vector2i(key + "/pos");
 	order.pos2 = ini.vector2i(key + "/pos2");
 	order.direction = ini.value(key + "/direction").toInt();
-	getIniBaseObject(ini, key + "/obj", order.psObj);
-	getIniStructureStats(ini, key + "/stats", order.psStats);
+	getIniBaseObject(ini, key + "/obj", order.target);
+	getIniStructureStats(ini, key + "/stats", order.structure_stats);
 }
 
 static void setIniBaseObject(nlohmann::json& json, WzString const& key, SimpleObject const* object)

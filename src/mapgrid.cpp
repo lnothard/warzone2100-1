@@ -65,7 +65,7 @@ void gridReset()
 			{
 				if (!psObj->died)
 				{
-					gridPointTree->insert(psObj, psObj->pos.x, psObj->pos.y);
+					gridPointTree->insert(psObj, psObj->getPosition().x, psObj->getPosition().y);
 					for (unsigned char& viewer : psObj->seenThisTick)
 					{
 						viewer = 0;
@@ -104,7 +104,7 @@ static bool isInRadius(int32_t x, int32_t y, uint32_t radius)
 // initialise the grid system to start iterating through units that
 // could affect a location (x,y in world coords)
 template <class Condition>
-static GridList const& gridStartIterateFiltered(int32_t x, int32_t y, uint32_t radius, PointTree::Filter* filter,
+static GridList const& gridStartIterateFiltered(int32_t x, int32_t y, uint32_t radius, Filter* filter,
                                                 Condition const& condition)
 {
 	if (filter == nullptr)
@@ -124,7 +124,7 @@ static GridList const& gridStartIterateFiltered(int32_t x, int32_t y, uint32_t r
 			filter->erase(gridPointTree->lastFilteredQueryIndices[i - gridPointTree->lastQueryResults.begin()]);
 			// Stop the object from appearing in future searches.
 		}
-		else if (isInRadius(obj->pos.x - x, obj->pos.y - y, radius))
+		else if (isInRadius(obj->getPosition().x - x, obj->getPosition().y - y, radius))
 		// Check that search result is less than radius (since they can be up to a factor of sqrt(2) more).
 		{
 			*w = *i;
@@ -162,7 +162,7 @@ static GridList const& gridStartIterateFilteredArea(int32_t x, int32_t y, int32_
 
 struct ConditionTrue
 {
-	bool test(SimpleObject*) const
+	static bool test(SimpleObject*)
 	{
 		return true;
 	}
@@ -186,7 +186,7 @@ struct ConditionDroidsByPlayer
 
 	bool test(SimpleObject* obj) const
 	{
-		return obj->type == OBJ_DROID && obj->player == player;
+		return obj->type == OBJ_DROID && obj->getPlayer() == player;
 	}
 
 	unsigned player;

@@ -310,7 +310,7 @@ bool recvOptions(NETQUEUE queue)
 		{
 		case FileRequestResult::StartingDownload:
 			debug(LOG_INFO, "Map was not found, requesting map %s from host, type %d", game.map, game.isMapMod);
-			addConsoleMessage(_("MAP REQUESTED!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+			addConsoleMessage(_("MAP REQUESTED!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 			break;
 		case FileRequestResult::DownloadInProgress:
 			// do nothing - just wait
@@ -335,11 +335,10 @@ bool recvOptions(NETQUEUE queue)
 		{
 		case FileRequestResult::StartingDownload:
 			debug(LOG_INFO, "Mod was not found, requesting mod %s from host", hash.toString().c_str());
-			addConsoleMessage(_("MOD REQUESTED!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+			addConsoleMessage(_("MOD REQUESTED!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 			break;
 		case FileRequestResult::DownloadInProgress:
 			// do nothing - just wait
-			break;
 		case FileRequestResult::FileExists:
 			// Mod already exists / downloaded
 			break;
@@ -355,7 +354,7 @@ bool recvOptions(NETQUEUE queue)
 		char const* str = game.isMapMod
 			                  ? _("Warning, this is a map-mod, it could alter normal gameplay.")
 			                  : _("Warning, HOST has altered the game code, and can't be trusted!");
-		addConsoleMessage(str, DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
+		addConsoleMessage(str, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, NOTIFY_MESSAGE);
 		game.isMapMod = true;
 	}
 	game.isRandom = mapData && CheckForRandom(mapData->realFileName, mapData->apDataFiles[0]);

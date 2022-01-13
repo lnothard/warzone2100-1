@@ -331,7 +331,7 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 
 	for (psD = apsDroidLists[from]; psD && totalToSend != 0; psD = psD->psNext)
 	{
-		if (isTransporter(psD)
+		if (isTransporter(*psD)
 			&& !transporterIsEmpty(psD))
 		{
 			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD->name);
@@ -549,18 +549,18 @@ void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allow
 	// Clear out any attacking orders
 	for (psDroid = apsDroidLists[p1]; psDroid; psDroid = psDroid->psNext) // from -> to
 	{
-		if (psDroid->order.type == DORDER_ATTACK
-			&& psDroid->order.psObj
-			&& psDroid->order.psObj->player == p2)
+		if (psDroid->getOrder().type == DORDER_ATTACK
+			&& psDroid->getOrder().target
+			&& psDroid->getOrder().target->player == p2)
 		{
 			orderDroid(psDroid, DORDER_STOP, ModeImmediate);
 		}
 	}
 	for (psDroid = apsDroidLists[p2]; psDroid; psDroid = psDroid->psNext) // to -> from
 	{
-		if (psDroid->order.type == DORDER_ATTACK
-			&& psDroid->order.psObj
-			&& psDroid->order.psObj->player == p1)
+		if (psDroid->getOrder().type == DORDER_ATTACK
+			&& psDroid->getOrder().target
+			&& psDroid->getOrder().target->player == p1)
 		{
 			orderDroid(psDroid, DORDER_STOP, ModeImmediate);
 		}

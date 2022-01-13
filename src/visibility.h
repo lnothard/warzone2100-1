@@ -86,13 +86,13 @@ void revealAll(uint8_t player);
 int visibleObject(const SimpleObject* psViewer, const SimpleObject* psTarget, bool wallsBlock);
 
 /** Can shooter hit target with direct fire weapon? */
-bool lineOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock);
+bool lineOfFire(const SimpleObject* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock);
 
 /** How much of target can the player hit with direct fire weapon? */
-int areaOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock);
+int areaOfFire(const SimpleObject* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock);
 
 /** How much of target can the player hit with direct fire weapon? */
-int arcOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock);
+int arcOfFire(const SimpleObject* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock);
 
 // Find the wall that is blocking LOS to a target (if any)
 Structure* visGetBlockingWall(const SimpleObject* psViewer, const SimpleObject* psTarget);

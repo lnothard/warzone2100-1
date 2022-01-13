@@ -83,7 +83,7 @@ unsigned numWeaponStats;
 unsigned numConstructStats;
 
 //stores for each players component states - can be either UNAVAILABLE, REDUNDANT, FOUND or AVAILABLE
-uint8_t* apCompLists[MAX_PLAYERS][COMP_NUMCOMPONENTS];
+uint8_t* apCompLists[MAX_PLAYERS][COMPONENT_TYPE::COUNT];
 
 //store for each players Structure states
 uint8_t* apStructTypeLists[MAX_PLAYERS];
@@ -401,14 +401,13 @@ bool loadWeaponStats(WzConfig& ini)
 		//get the IMD for the component
 		psStats->pIMD = statsGetIMD(ini, psStats, "model");
 		psStats->pMountGraphic = statsGetIMD(ini, psStats, "mountModel");
-		if (GetGameMode() == GS_NORMAL)
-		{
-			psStats->pMuzzleGraphic = statsGetIMD(ini, psStats, "muzzleGfx");
-			psStats->pInFlightGraphic = statsGetIMD(ini, psStats, "flightGfx");
-			psStats->pTargetHitGraphic = statsGetIMD(ini, psStats, "hitGfx");
-			psStats->pTargetMissGraphic = statsGetIMD(ini, psStats, "missGfx");
-			psStats->pWaterHitGraphic = statsGetIMD(ini, psStats, "waterGfx");
-			psStats->pTrailGraphic = statsGetIMD(ini, psStats, "trailGfx");
+		if (GetGameMode() == GS_NORMAL) {
+			psStats->pMuzzleGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "muzzleGfx"));
+			psStats->pInFlightGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "flightGfx"));
+			psStats->pTargetHitGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "hitGfx"));
+			psStats->pTargetMissGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "missGfx"));
+			psStats->pWaterHitGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "waterGfx"));
+			psStats->pTrailGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "trailGfx"));
 		}
 		psStats->fireOnMove = ini.value("fireOnMove", true).toBool();
 
@@ -834,40 +833,41 @@ bool loadSensorStats(WzConfig& ini)
 		WzString location = ini.value("location").toWzString();
 		if (location.compare("DEFAULT") == 0)
 		{
-			psStats->location = LOC_DEFAULT;
+			psStats->location = LOC::DEFAULT;
 		}
 		else if (location.compare("TURRET") == 0)
 		{
-			psStats->location = LOC_TURRET;
+			psStats->location = LOC::TURRET;
 		}
 		else
 		{
 			ASSERT(false, "Invalid Sensor location: %s", location.toUtf8().c_str());
 		}
 		WzString type = ini.value("type").toWzString();
+    using enum SENSOR_TYPE;
 		if (type.compare("STANDARD") == 0)
 		{
-			psStats->type = STANDARD_SENSOR;
+			psStats->type = STANDARD;
 		}
 		else if (type.compare("INDIRECT CB") == 0)
 		{
-			psStats->type = INDIRECT_CB_SENSOR;
+			psStats->type = INDIRECT_CB;
 		}
 		else if (type.compare("VTOL CB") == 0)
 		{
-			psStats->type = VTOL_CB_SENSOR;
+			psStats->type = VTOL_CB;
 		}
 		else if (type.compare("VTOL INTERCEPT") == 0)
 		{
-			psStats->type = VTOL_INTERCEPT_SENSOR;
+			psStats->type = VTOL_INTERCEPT;
 		}
 		else if (type.compare("SUPER") == 0)
 		{
-			psStats->type = SUPER_SENSOR;
+			psStats->type = SUPER;
 		}
 		else if (type.compare("RADAR DETECTOR") == 0)
 		{
-			psStats->type = RADAR_DETECTOR_SENSOR;
+			psStats->type = RADAR_DETECTOR;
 		}
 		else
 		{
@@ -916,7 +916,7 @@ bool loadECMStats(WzConfig& ini)
 		}
 		else if (location.compare("TURRET") == 0)
 		{
-			psStats->location = LOC_TURRET;
+			psStats->location = LOC::TURRET;
 		}
 		else
 		{
@@ -1710,8 +1710,7 @@ SensorStats* objActiveRadar(const SimpleObject* psObj)
 	SensorStats* psStats = nullptr;
 	int compIndex;
 
-	switch (psObj->type)
-	{
+	switch (psObj->type) {
 	case OBJ_DROID:
 		if (((const Droid*)psObj)->type != DROID_TYPE::SENSOR && ((const Droid*)psObj)->type != DROID_TYPE::COMMAND)
 		{
@@ -1724,8 +1723,8 @@ SensorStats* objActiveRadar(const SimpleObject* psObj)
 		break;
 	case OBJ_STRUCTURE:
 		psStats = ((const Structure*)psObj)->pStructureType->sensor_stats;
-		if (psStats == nullptr || psStats->location != LOC_TURRET || ((const Structure*)psObj)->status != SS_BUILT)
-		{
+		if (psStats == nullptr || psStats->location != LOC::TURRET ||
+        ((const Structure*)psObj)->status != SS_BUILT) {
 			return nullptr;
 		}
 		break;
@@ -1735,20 +1734,16 @@ SensorStats* objActiveRadar(const SimpleObject* psObj)
 	return psStats;
 }
 
-//bool objRadarDetector(const SimpleObject *psObj)
-//{
-//	if (psObj->type == OBJ_STRUCTURE)
-//	{
-//		const STRUCTURE *psStruct = (const STRUCTURE *)psObj;
-//
-//		return (psStruct->status == SS_BUILT && psStruct->pStructureType->pSensor && psStruct->pStructureType->pSensor->type == RADAR_DETECTOR_SENSOR);
-//	}
-//	else if (psObj->type == OBJ_DROID)
-//	{
-//		const DROID *psDroid = (const DROID *)psObj;
-//		SENSOR_STATS *psSensor = getSensorStats(psDroid);
-//
-//		return (psSensor && psSensor->type == RADAR_DETECTOR_SENSOR);
-//	}
-//	return false;
-//}
+bool objRadarDetector(const SimpleObject *psObj)
+{
+	if (const auto& psStruct = dynamic_cast<const Structure*>(psObj)) {
+		return (psStruct->getState() == STRUCTURE_STATE::BUILT &&
+            psStruct->getStats().sensor_stats &&
+            psStruct->getStats().sensor_stats->type == SENSOR_TYPE::RADAR_DETECTOR);
+	}
+	else if (const auto& psDroid = dynamic_cast<const Droid*>(psObj)) {
+		auto psSensor = getSensorStats(psDroid);
+		return (psSensor && psSensor->type == SENSOR_TYPE::RADAR_DETECTOR);
+	}
+	return false;
+}

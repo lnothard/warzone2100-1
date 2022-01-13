@@ -366,29 +366,29 @@ void visRemoveVisibility(SimpleObject* psObj)
 
 			ASSERT(pos.type < 2, "Invalid visibility type %d", (int)pos.type);
 			uint8_t* visionType = (pos.type == 0) ? psTile->sensors : psTile->watchers;
-			if (visionType[psObj->player] == 0 && game.type == LEVEL_TYPE::CAMPAIGN) // hack
+			if (visionType[psObj->getPlayer()] == 0 && game.type == LEVEL_TYPE::CAMPAIGN) // hack
 			{
 				continue;
 			}
-			ASSERT(visionType[psObj->player] > 0, "No %s on watched tile (%d, %d)", pos.type ? "radar" : "vision",
+			ASSERT(visionType[psObj->getPlayer()] > 0, "No %s on watched tile (%d, %d)", pos.type ? "radar" : "vision",
 			       (int)pos.x, (int)pos.y);
-			visionType[psObj->player]--;
-			if (psObj->flags.test(OBJECT_FLAG_JAMMED_TILES))
+			visionType[psObj->getPlayer()]--;
+			if (psObj->flags.test(OBJECT_FLAG::JAMMED_TILES))
 			// we are a jammer object — we cannot check objJammerPower(psObj) > 0 directly here, we may be in the SimpleObject destructor).
 			{
 				// No jammers in campaign, no need for special hack
-				ASSERT(psTile->jammers[psObj->player] > 0, "Not jamming watched tile (%d, %d)", (int)pos.x, (int)pos.y);
-				psTile->jammers[psObj->player]--;
-				if (psTile->jammers[psObj->player] == 0)
+				ASSERT(psTile->jammers[psObj->getPlayer()] > 0, "Not jamming watched tile (%d, %d)", (int)pos.x, (int)pos.y);
+				psTile->jammers[psObj->getPlayer()]--;
+				if (psTile->jammers[psObj->getPlayer()] == 0)
 				{
-					psTile->jammerBits &= ~(1 << psObj->player);
+					psTile->jammerBits &= ~(1 << psObj->getPlayer());
 				}
 			}
 			updateTileVis(psTile);
 		}
 	}
 	psObj->watchedTiles.clear();
-	psObj->flags.set(OBJECT_FLAG_JAMMED_TILES, false);
+	psObj->flags.set(OBJECT_FLAG::JAMMED_TILES, false);
 }
 
 void visRemoveVisibilityOffWorld(SimpleObject* psObj)
@@ -407,7 +407,7 @@ void visTilesUpdate(SimpleObject* psObj)
 	if (psObj->type == OBJ_STRUCTURE)
 	{
 		Structure* psStruct = (Structure*)psObj;
-		if (psStruct->status != SS_BUILT ||
+		if (psStruct->getState() != STRUCTURE_STATE::BUILT ||
 			psStruct->pStructureType->type == REF_WALL || psStruct->pStructureType->type == REF_WALLCORNER || psStruct->
 			pStructureType->type == REF_GATE)
 		{
@@ -417,7 +417,7 @@ void visTilesUpdate(SimpleObject* psObj)
 	}
 
 	// Do the whole circle in ∞ steps. No more pretty moiré patterns.
-	psObj->flags.set(OBJECT_FLAG_JAMMED_TILES, objJammerPower(psObj) > 0);
+	psObj->flags.set(OBJECT_FLAG::JAMMED_TILES, objJammerPower(psObj) > 0);
 	doWaveTerrain(psObj);
 }
 
@@ -730,7 +730,7 @@ static void processVisibilityLevel(SimpleObject* psObj, bool& addedMessage)
 		bool justBecameVisible = false;
 		int visLevel = psObj->seenThisTick[player];
 
-		if (player == psObj->player)
+		if (player == psObj->getPlayer())
 		{
 			// owner can always see it fully
 			psObj->visible[player] = UBYTE_MAX;
@@ -909,14 +909,14 @@ void setUnderTilesVis(SimpleObject* psObj, UDWORD player)
 }
 
 //forward declaration
-static int checkFireLine(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock,
+static int checkFireLine(const SimpleObject* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock,
                          bool direct);
 
 /**
  * Check whether psViewer can fire directly at psTarget.
  * psTarget can be any type of SimpleObject (e.g. a tree).
  */
-bool lineOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock)
+bool lineOfFire(const SimpleObject* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock)
 {
 	WeaponStats* psStats = nullptr;
 
@@ -933,8 +933,8 @@ bool lineOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int
 		psStats = asWeaponStats + ((const Structure*)psViewer)->asWeaps[weapon_slot].nStat;
 	}
 	// 2d distance
-	int distance = iHypot((psTarget->pos - psViewer->pos).xy());
-	int range = proj_GetLongRange(psStats, psViewer->player);
+	int distance = iHypot((psTarget->getPosition() - psViewer->getPosition()).xy());
+	int range = proj_GetLongRange(psStats, psViewer->getPlayer());
 	if (proj_Direct(psStats))
 	{
 		/** direct shots could collide with ground **/
@@ -961,7 +961,7 @@ bool lineOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int
 }
 
 /* Check how much of psTarget is hitable from psViewer's gun position */
-int areaOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock)
+int areaOfFire(const SimpleObject* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock)
 {
 	if (psViewer == nullptr)
 	{
@@ -972,7 +972,7 @@ int areaOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int 
 }
 
 /* Check the minimum angle to hitpsTarget from psViewer via indirect shots */
-int arcOfFire(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock)
+int arcOfFire(const SimpleObject* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock)
 {
 	return checkFireLine(psViewer, psTarget, weapon_slot, wallsBlock, false);
 }
@@ -1015,7 +1015,7 @@ static inline void angle_check(int64_t* angletan, int positionSq, int height, in
  * Check fire line from psViewer to psTarget
  * psTarget can be any type of SimpleObject (e.g. a tree).
  */
-static int checkFireLine(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock,
+static int checkFireLine(const SimpleObject* psViewer, const SimpleObject* psTarget, int weapon_slot, bool wallsBlock,
                          bool direct)
 {
 	Vector3i pos(0, 0, 0), dest(0, 0, 0);
@@ -1042,11 +1042,11 @@ static int checkFireLine(const SIMPLE_OBJECT* psViewer, const SimpleObject* psTa
 	}
 	else // incase anything wants a projectile
 	{
-		muzzle = psViewer->pos;
+		muzzle = psViewer->getPosition();
 	}
 
 	pos = muzzle;
-	dest = psTarget->pos;
+	dest = psTarget->getPosition();
 	diff = (dest - pos).xy();
 
 	distSq = dot(diff, diff);

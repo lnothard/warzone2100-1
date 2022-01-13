@@ -208,7 +208,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 {
 	{
 		ORDBUTCLASS_NORMAL,
-		DSO_ATTACK_RANGE,
+		SECONDARY_ORDER::ATTACK_RANGE,
 		DSS_ARANGE_MASK,
 		ORD_BTYPE_RADIO,
 		ORD_JUSTIFY_CENTER | ORD_JUSTIFY_NEWLINE,
@@ -222,7 +222,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 	{
 		ORDBUTCLASS_NORMAL,
-		DSO_REPAIR_LEVEL,
+		SECONDARY_ORDER::REPAIR_LEVEL,
 		DSS_REPLEV_MASK,
 		ORD_BTYPE_RADIO,
 		ORD_JUSTIFY_CENTER | ORD_JUSTIFY_NEWLINE,
@@ -236,7 +236,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 	{
 		ORDBUTCLASS_NORMAL,
-		DSO_ATTACK_LEVEL,
+		SECONDARY_ORDER::ATTACK_LEVEL,
 		DSS_ALEV_MASK,
 		ORD_BTYPE_RADIO,
 		ORD_JUSTIFY_CENTER | ORD_JUSTIFY_NEWLINE,
@@ -250,7 +250,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 	{
 		ORDBUTCLASS_NORMAL,
-		DSO_FIRE_DESIGNATOR,
+		SECONDARY_ORDER::FIRE_DESIGNATOR,
 		DSS_FIREDES_MASK,
 		ORD_BTYPE_BOOLEAN,
 		ORD_JUSTIFY_COMBINE,
@@ -264,7 +264,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 	{
 		ORDBUTCLASS_NORMAL,
-		DSO_PATROL,
+		SECONDARY_ORDER::PATROL,
 		DSS_PATROL_MASK,
 		ORD_BTYPE_BOOLEAN,
 		ORD_JUSTIFY_COMBINE,
@@ -278,7 +278,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 	{
 		ORDBUTCLASS_NORMAL,
-		DSO_CIRCLE,
+		SECONDARY_ORDER::CIRCLE,
 		DSS_CIRCLE_MASK,
 		ORD_BTYPE_BOOLEAN,
 		ORD_JUSTIFY_COMBINE,
@@ -292,7 +292,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 	{
 		ORDBUTCLASS_NORMAL,
-		DSO_HALTTYPE,
+		SECONDARY_ORDER::HALT_TYPE,
 		DSS_HALT_MASK,
 		ORD_BTYPE_RADIO,
 		ORD_JUSTIFY_CENTER | ORD_JUSTIFY_NEWLINE,
@@ -306,7 +306,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 	{
 		ORDBUTCLASS_NORMAL,
-		DSO_RETURN_TO_LOC,
+		SECONDARY_ORDER::RETURN_TO_LOCATION,
 		DSS_RTL_MASK,
 		ORD_BTYPE_RADIO,
 		ORD_JUSTIFY_CENTER | ORD_JUSTIFY_NEWLINE,
@@ -322,7 +322,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 	{
 		ORDBUTCLASS_NORMAL,
-		DSO_RECYCLE,
+		SECONDARY_ORDER::RECYCLE,
 		DSS_RECYCLE_MASK,
 		ORD_BTYPE_BOOLEAN_DEPEND,
 		ORD_JUSTIFY_CENTER | ORD_JUSTIFY_NEWLINE,
@@ -336,7 +336,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 	{
 		ORDBUTCLASS_FACTORY,
-		DSO_ASSIGN_PRODUCTION,
+		SECONDARY_ORDER::ASSIGN_PRODUCTION,
 		DSS_ASSPROD_MASK,
 		ORD_BTYPE_BOOLEAN_COMBINE,
 		ORD_JUSTIFY_CENTER | ORD_JUSTIFY_NEWLINE,
@@ -353,7 +353,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 	{
 		ORDBUTCLASS_CYBORGFACTORY,
-		DSO_ASSIGN_CYBORG_PRODUCTION,
+		SECONDARY_ORDER::ASSIGN_CYBORG_PRODUCTION,
 		DSS_ASSPROD_MASK,
 		ORD_BTYPE_BOOLEAN_COMBINE,
 		ORD_JUSTIFY_CENTER | ORD_JUSTIFY_NEWLINE,
@@ -373,7 +373,7 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 	{
 		ORDBUTCLASS_VTOLFACTORY,
-		DSO_ASSIGN_VTOL_PRODUCTION,
+		SECONDARY_ORDER::ASSIGN_VTOL_PRODUCTION,
 		DSS_ASSPROD_MASK,
 		ORD_BTYPE_BOOLEAN_COMBINE,
 		ORD_JUSTIFY_CENTER | ORD_JUSTIFY_NEWLINE,
@@ -411,11 +411,11 @@ static bool BuildSelectedDroidList()
 		return false;
 	}
 
-	for (Droid* psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		if (psDroid->selected)
+		if (psDroid.selected)
 		{
-			SelectedDroids.push_back(psDroid);
+			SelectedDroids.push_back(&psDroid);
 		}
 	}
 
@@ -433,7 +433,7 @@ static std::vector<AVORDER> buildDroidOrderList()
 		for (unsigned OrdIndex = 0; OrdIndex < NUM_ORDERS; ++OrdIndex)
 		{
 			// Is the order available?
-			if (secondarySupported(SelectedDroid, OrderButtons[OrdIndex].Order))
+			if (::secondarySupported(SelectedDroid, OrderButtons[OrdIndex].Order))
 			{
 				AVORDER avOrder;
 				avOrder.OrderIndex = OrdIndex;
@@ -445,7 +445,7 @@ static std::vector<AVORDER> buildDroidOrderList()
 		}
 	}
 
-	return std::vector<AVORDER>(orders.begin(), orders.end());
+	return {orders.begin(), orders.end()};
 }
 
 // Build a list of orders available for the selected structure.
@@ -456,10 +456,10 @@ static std::vector<AVORDER> buildStructureOrderList(Structure* psStructure)
 
 	//this can be hard-coded!
 	std::vector<AVORDER> orders(4);
-	orders[0].OrderIndex = 0; //DSO_ATTACK_RANGE;
-	orders[1].OrderIndex = 1; //DSO_REPAIR_LEVEL;
-	orders[2].OrderIndex = 2; //DSO_ATTACK_LEVEL;
-	orders[3].OrderIndex = 6; //DSO_HALTTYPE;
+	orders[0].OrderIndex = 0; //SECONDARY_ORDER::ATTACK_RANGE;
+	orders[1].OrderIndex = 1; //SECONDARY_ORDER::REPAIR_LEVEL;
+	orders[2].OrderIndex = 2; //SECONDARY_ORDER::ATTACK_LEVEL;
+	orders[3].OrderIndex = 6; //SECONDARY_ORDER::HALTTYPE;
 
 	return orders;
 }
@@ -575,7 +575,7 @@ bool intAddOrder(SimpleObject* psObj)
 	SelectedDroids.clear();
 
 	// Selected droid is a command droid?
-	if ((Droid != nullptr) && (Droid->type == DROID_COMMAND))
+	if ((Droid != nullptr) && (Droid->getType() == DROID_TYPE::COMMAND))
 	{
 		// displaying for a command droid - ignore any other droids
 		SelectedDroids.push_back(Droid);
@@ -895,7 +895,7 @@ static bool SetSecondaryState(SECONDARY_ORDER sec, unsigned State)
 		if (SelectedDroid)
 		{
 			//Only set the state if it's not a transporter.
-			if (!isTransporter(SelectedDroid))
+			if (!isTransporter(*SelectedDroid))
 			{
 				if (!secondarySetState(SelectedDroid, sec, (SECONDARY_STATE)State))
 				{

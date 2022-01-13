@@ -2083,10 +2083,10 @@ static char const* gameOptionsDifficultyString()
 {
 	switch (getDifficultyLevel())
 	{
-	case DL_EASY: return _("Easy");
-	case DL_NORMAL: return _("Normal");
-	case DL_HARD: return _("Hard");
-	case DL_INSANE: return _("Insane");
+	case DIFFICULTY_LEVEL::EASY: return _("Easy");
+	case DIFFICULTY_LEVEL::NORMAL: return _("Normal");
+	case DIFFICULTY_LEVEL::HARD: return _("Hard");
+	case DIFFICULTY_LEVEL::INSANE: return _("Insane");
 	}
 	return _("Unsupported");
 }
@@ -2216,9 +2216,9 @@ bool runGameOptionsMenu()
 
 	case FRONTEND_DIFFICULTY:
 	case FRONTEND_DIFFICULTY_R:
-		setDifficultyLevel(seqCycle(getDifficultyLevel(), DL_EASY, 1, DL_INSANE));
+		setDifficultyLevel(seqCycle(getDifficultyLevel(), DIFFICULTY_LEVEL::EASY, 1, DIFFICULTY_LEVEL::INSANE));
 		widgSetString(psWScreen, FRONTEND_DIFFICULTY_R, gameOptionsDifficultyString());
-		if (getDifficultyLevel() == DL_INSANE)
+		if (getDifficultyLevel() == DIFFICULTY_LEVEL::INSANE)
 		{
 			const std::string DIFF_TAG = "difficulty";
 
@@ -2675,7 +2675,7 @@ static void displayTextAt270(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 void displayTextOption(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	SDWORD fx, fy, fw;
-	W_BUTTON* psBut = (W_BUTTON*)psWidget;
+	auto psBut = (W_BUTTON*)psWidget;
 	bool hilight = false;
 	bool greyOut = psWidget->UserData || (psBut->getState() & WBUT_DISABLE); // if option is unavailable.
 

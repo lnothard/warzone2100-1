@@ -286,61 +286,61 @@ widgScheduleTask([](){ \
 static gfx_api::texture* loadImageForWeapSubclass(WEAPON_SUBCLASS subClass)
 {
 	const char* imagePath = nullptr;
-	switch (subClass)
-	{
-	case WSC_MGUN:
-		imagePath = "images/intfac/wsc_mgun.png";
+	switch (subClass){
+    using enum WEAPON_SUBCLASS;
+	case MACHINE_GUN:
+		imagePath = "images/intfac/mgun.png";
 		break;
-	case WSC_CANNON:
-		imagePath = "images/intfac/wsc_cannon.png";
+	case CANNON:
+		imagePath = "images/intfac/cannon.png";
 		break;
-	case WSC_MORTARS:
-		imagePath = "images/intfac/wsc_mortars.png";
+	case MORTARS:
+		imagePath = "images/intfac/mortars.png";
 		break;
-	case WSC_MISSILE:
-		imagePath = "images/intfac/wsc_missile.png";
+	case MISSILE:
+		imagePath = "images/intfac/missile.png";
 		break;
-	case WSC_ROCKET:
-		imagePath = "images/intfac/wsc_rocket.png";
+	case ROCKET:
+		imagePath = "images/intfac/rocket.png";
 		break;
-	case WSC_ENERGY:
-		imagePath = "images/intfac/wsc_energy.png";
+	case ENERGY:
+		imagePath = "images/intfac/energy.png";
 		break;
-	case WSC_GAUSS:
-		imagePath = "images/intfac/wsc_gauss.png";
+	case GAUSS:
+		imagePath = "images/intfac/gauss.png";
 		break;
-	case WSC_FLAME:
-		imagePath = "images/intfac/wsc_flame.png";
+	case FLAME:
+		imagePath = "images/intfac/flame.png";
 		break;
-	//case WSC_CLOSECOMBAT:
-	case WSC_HOWITZERS:
-		imagePath = "images/intfac/wsc_howitzers.png";
+	//case CLOSECOMBAT:
+	case HOWITZERS:
+		imagePath = "images/intfac/howitzers.png";
 		break;
-	case WSC_ELECTRONIC:
-		imagePath = "images/intfac/wsc_electronic.png";
+	case ELECTRONIC:
+		imagePath = "images/intfac/electronic.png";
 		break;
-	case WSC_AAGUN:
-		imagePath = "images/intfac/wsc_aagun.png";
+	case AA_GUN:
+		imagePath = "images/intfac/aagun.png";
 		break;
-	case WSC_SLOWMISSILE:
-		imagePath = "images/intfac/wsc_slowmissile.png";
+	case SLOW_MISSILE:
+		imagePath = "images/intfac/slowmissile.png";
 		break;
-	case WSC_SLOWROCKET:
-		imagePath = "images/intfac/wsc_slowrocket.png";
+	case SLOW_ROCKET:
+		imagePath = "images/intfac/slowrocket.png";
 		break;
-	case WSC_LAS_SAT:
-		imagePath = "images/intfac/wsc_las_sat.png";
+	case LAS_SAT:
+		imagePath = "images/intfac/las_sat.png";
 		break;
-	case WSC_BOMB:
-		imagePath = "images/intfac/wsc_bomb.png";
+	case BOMB:
+		imagePath = "images/intfac/bomb.png";
 		break;
-	case WSC_COMMAND:
-		imagePath = "images/intfac/wsc_command.png";
+	case COMMAND:
+		imagePath = "images/intfac/command.png";
 		break;
-	case WSC_EMP:
-		imagePath = "images/intfac/wsc_emp.png";
+	case EMP:
+		imagePath = "images/intfac/emp.png";
 		break;
-	case WSC_NUM_WEAPON_SUBCLASSES: /** The number of enumerators in this enum.	 */
+	case COUNT: /** The number of enumerators in this enum.	 */
 		break;
 	}
 	ASSERT_OR_RETURN(nullptr, imagePath != nullptr, "No image path");
@@ -479,12 +479,12 @@ public:
 		return weapSubclassInfo[subClass].playersWithMaxGrade;
 	}
 
-	int getColumnLeftPositionFromIndex(size_t colIndex)
+	static int getColumnLeftPositionFromIndex(size_t colIndex)
 	{
 		return colIndex * (WEAP_GRADES_COL_WIDTH + WEAP_GRADES_COL_PADDING);
 	}
 
-	WzRect getColumnRectFromIndex(size_t colIndex)
+	static WzRect getColumnRectFromIndex(size_t colIndex)
 	{
 		return {getColumnLeftPositionFromIndex(colIndex), 0, WEAP_GRADES_COL_WIDTH, WEAP_GRADES_COL_IMAGE_HEIGHT};
 	}
@@ -505,7 +505,7 @@ public:
 private:
 	void buildWeaponSubclassInfo()
 	{
-		for (int i = 0; i < WSC_NUM_WEAPON_SUBCLASSES; ++i)
+		for (int i = 0; i < static_cast<int>(WEAPON_SUBCLASS::COUNT); ++i)
 		{
 			for (uint32_t playerIdx = 0; playerIdx < game.maxPlayers; ++playerIdx)
 			{
@@ -646,7 +646,7 @@ private:
 	};
 
 private:
-	std::vector<WeaponSubclassInfo> weapSubclassInfo = std::vector<WeaponSubclassInfo>(WSC_NUM_WEAPON_SUBCLASSES);
+	std::vector<WeaponSubclassInfo> weapSubclassInfo = std::vector<WeaponSubclassInfo>(static_cast<size_t>(WEAPON_SUBCLASS::COUNT));
 	std::vector<WEAPON_SUBCLASS> visibleColumnOrder;
 
 	std::unordered_map<uint32_t, std::shared_ptr<WzCachedText>> cachedNumberTexts;
@@ -778,16 +778,16 @@ if ((!NetPlay.players[playerIdx].allocated && NetPlay.players[playerIdx].ai < 0)
 	// Kinetic Armor (T/C)
 	columnWidgets.push_back(WzThrottledUpdateLabel::make([playerIdx](W_LABEL& label)
 	{
-		WzString armorStr = WzString::number(getNumBodyClassArmourUpgrades(playerIdx, BODY_CLASS::Tank)) + "/" +
-                        WzString::number(getNumBodyClassArmourUpgrades(playerIdx, BODY_CLASS::Cyborg));
+		WzString armorStr = WzString::number(getNumBodyClassArmourUpgrades(playerIdx, BODY_CLASS::TANK)) + "/" +
+                        WzString::number(getNumBodyClassArmourUpgrades(playerIdx, BODY_CLASS::CYBORG));
 		label.setString(armorStr);
 		ADJUST_LABEL_COLOR_FOR_PLAYERS();
 	}, INFO_UPDATE_INTERVAL_TICKS));
 	// Thermal Armor (T/C)
 	columnWidgets.push_back(WzThrottledUpdateLabel::make([playerIdx](W_LABEL& label)
 	{
-		WzString armorStr = WzString::number(getNumBodyClassThermalArmourUpgrades(playerIdx, BODY_CLASS::Tank)) + "/" +
-                        WzString::number(getNumBodyClassThermalArmourUpgrades(playerIdx, BODY_CLASS::Cyborg));
+		WzString armorStr = WzString::number(getNumBodyClassThermalArmourUpgrades(playerIdx, BODY_CLASS::TANK)) + "/" +
+                        WzString::number(getNumBodyClassThermalArmourUpgrades(playerIdx, BODY_CLASS::CYBORG));
 		label.setString(armorStr);
 		ADJUST_LABEL_COLOR_FOR_PLAYERS();
 	}, INFO_UPDATE_INTERVAL_TICKS));

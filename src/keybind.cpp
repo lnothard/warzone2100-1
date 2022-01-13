@@ -217,7 +217,7 @@ void kf_DamageMe()
 			if (val > 0)
 			{
 				psDroid->body = val;
-				addConsoleMessage(_("Ouch! Droid's health is down 20%!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+				addConsoleMessage(_("Ouch! Droid's health is down 20%!"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 			}
 			else
 			{
@@ -233,7 +233,7 @@ void kf_DamageMe()
 			if (val > 0)
 			{
 				psStruct->body = val;
-				addConsoleMessage(_("Ouch! Structure's health is down 20%!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+				addConsoleMessage(_("Ouch! Structure's health is down 20%!"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 			}
 			else
 			{
@@ -268,8 +268,8 @@ void kf_TraceObject()
 		psNStruct = psCStruct->psNext;
 		if (psCStruct->selected)
 		{
-			objTraceEnable(psCStruct->id);
-			CONPRINTF("Tracing structure %d", (int)psCStruct->id);
+			objTraceEnable(psCStruct->getId());
+			CONPRINTF("Tracing structure %d", (int)psCStruct->getId());
 			return;
 		}
 	}
@@ -293,12 +293,12 @@ void kf_ToggleSensorDisplay()
 
 	if (rangeOnScreen)
 	{
-		addConsoleMessage(_("Lets us see what you see!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Lets us see what you see!"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 		//added this message... Yeah, its lame. :)
 	}
 	else
 	{
-		addConsoleMessage(_("Fine, weapon & sensor display is off!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Fine, weapon & sensor display is off!"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 		//added this message... Yeah, its lame. :)
 	}
 }
@@ -462,7 +462,7 @@ void kf_MakeMeHero()
 
 	for (Droid* psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
-		if (psDroid->selected && psDroid->type == DROID_COMMAND)
+		if (psDroid->selected && psDroid->getType() == DROID_TYPE::COMMAND)
 		{
 			psDroid->experience = 8 * 65536 * 128;
 		}
@@ -518,7 +518,7 @@ void kf_Unselectable()
 	{
 		if (psDroid->selected)
 		{
-			psDroid->flags.set(OBJECT_FLAG_UNSELECTABLE, true);
+			psDroid->flags.set(OBJECT_FLAG::UNSELECTABLE, true);
 			psDroid->selected = false;
 		}
 	}
@@ -526,7 +526,7 @@ void kf_Unselectable()
 	{
 		if (psStruct->selected)
 		{
-			psStruct->flags.set(OBJECT_FLAG_UNSELECTABLE, true);
+			psStruct->flags.set(OBJECT_FLAG::UNSELECTABLE, true);
 			psStruct->selected = false;
 		}
 	}
@@ -587,7 +587,7 @@ void kf_SetEasyLevel()
 	}
 
 	setDifficultyLevel(DL_EASY);
-	addConsoleMessage(_("Takings thing easy!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+	addConsoleMessage(_("Takings thing easy!"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 }
 
 // --------------------------------------------------------------------------
@@ -631,7 +631,7 @@ void kf_SetNormalLevel()
 	}
 
 	setDifficultyLevel(DL_NORMAL);
-	addConsoleMessage(_("Back to normality!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+	addConsoleMessage(_("Back to normality!"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 }
 
 // --------------------------------------------------------------------------
@@ -645,7 +645,7 @@ void kf_SetHardLevel()
 	}
 
 	setDifficultyLevel(DL_HARD);
-	addConsoleMessage(_("Getting tricky!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+	addConsoleMessage(_("Getting tricky!"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 }
 
 // --------------------------------------------------------------------------
@@ -903,7 +903,7 @@ void kf_MapCheck()
 
 	Droid* psDroid;
 	Structure* psStruct;
-	FLAG_POSITION* psCurrFlag;
+	FlagPosition* psCurrFlag;
 
 	if (selectedPlayer >= MAX_PLAYERS) { return; }
 
@@ -1606,13 +1606,13 @@ void kf_ToggleEnergyBars()
 	switch (toggleEnergyBars())
 	{
 	case BAR_SELECTED:
-		addConsoleMessage(_("Only displaying energy bars when selected"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Only displaying energy bars when selected"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 		break;
 	case BAR_DROIDS:
-		addConsoleMessage(_("Always displaying energy bars for units"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Always displaying energy bars for units"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 		break;
 	case BAR_DROIDS_AND_STRUCTURES:
-		addConsoleMessage(_("Always displaying energy bars for units and structures"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Always displaying energy bars for units and structures"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 		break;
 	default:
 		ASSERT(false, "Bad energy bar status");
@@ -1656,7 +1656,7 @@ void kf_JumpToResourceExtractor()
 	}
 	else
 	{
-		addConsoleMessage(_("Unable to locate any oil derricks!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Unable to locate any oil derricks!"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 	}
 }
 
@@ -1823,18 +1823,18 @@ void kf_ToggleWeather()
 	if (atmosGetWeatherType() == WT_NONE)
 	{
 		atmosSetWeatherType(WT_SNOWING);
-		addConsoleMessage(_("Oh, the weather outside is frightful... SNOW"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Oh, the weather outside is frightful... SNOW"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 	}
 	else if (atmosGetWeatherType() == WT_SNOWING)
 	{
 		atmosSetWeatherType(WT_RAINING);
-		addConsoleMessage(_("Singing in the rain, I'm singing in the rain... RAIN"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Singing in the rain, I'm singing in the rain... RAIN"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 	}
 	else
 	{
 		atmosInitSystem();
 		atmosSetWeatherType(WT_NONE);
-		addConsoleMessage(_("Forecast : Clear skies for all areas... NO WEATHER"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Forecast : Clear skies for all areas... NO WEATHER"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 	}
 }
 
@@ -1859,7 +1859,7 @@ MappableFunction kf_SelectNextFactory(const STRUCTURE_TYPE factoryType, const bo
 		//deselect factories of other types
 		for (psCurrent = apsStructLists[selectedPlayer]; psCurrent; psCurrent = psCurrent->psNext)
 		{
-			const STRUCTURE_TYPE currentType = psCurrent->pStructureType->type;
+			const STRUCTURE_TYPE currentType = psCurrent->getStats().type;
 			const bool bIsAnotherTypeOfFactory = currentType != factoryType && std::any_of(
 				FACTORY_TYPES.begin(), FACTORY_TYPES.end(), [currentType](const STRUCTURE_TYPE type)
 				{
@@ -2152,7 +2152,7 @@ static void kfsf_SetSelectedDroidsState(SECONDARY_ORDER sec, SECONDARY_STATE sta
 	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
 		// Only set the state if it's not a transporter.
-		if (psDroid->selected && !isTransporter(psDroid))
+		if (psDroid->selected && !isTransporter(*psDroid))
 		{
 			secondarySetState(psDroid, sec, state);
 		}
@@ -2215,7 +2215,7 @@ void kf_CentreOnBase()
 	/* If we found it, then jump to it! */
 	if (bGotHQ)
 	{
-		addConsoleMessage(_("Centered on player HQ, direction NORTH"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Centered on player HQ, direction NORTH"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 		playerPos.p.x = xJump;
 		playerPos.p.z = yJump;
 		playerPos.r.y = 0; // face north
@@ -2227,7 +2227,7 @@ void kf_CentreOnBase()
 	}
 	else
 	{
-		addConsoleMessage(_("Unable to locate HQ!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Unable to locate HQ!"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 	}
 }
 
@@ -2235,7 +2235,7 @@ void kf_CentreOnBase()
 void kf_ToggleFormationSpeedLimiting()
 {
 	addConsoleMessage(
-		_("Formation speed limiting has been removed from the game due to bugs."), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		_("Formation speed limiting has been removed from the game due to bugs."), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 }
 
 // --------------------------------------------------------------------------

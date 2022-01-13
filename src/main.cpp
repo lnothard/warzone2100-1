@@ -189,7 +189,7 @@ char KeyMapPath[PATH_MAX];
 // Start game in title mode:
 static GS_GAMEMODE gameStatus = GS_TITLE_SCREEN;
 // Status of the gameloop
-static GAME_CODE gameLoopStatus = GAMECODE_CONTINUE;
+static GAME_CODE gameLoopStatus = GAME_CODE::CONTINUE;
 static FOCUS_STATE focusState = FOCUS_IN;
 
 #if defined(WZ_OS_UNIX)
@@ -950,16 +950,16 @@ static void setCDAudioForCurrentGameMode()
 	auto gameMode = ActivityManager::instance().getCurrentGameMode();
 	switch (gameMode)
 	{
-	case ActivitySink::GameMode::CAMPAIGN:
+	case GAME_MODE::CAMPAIGN:
 		cdAudio_SetGameMode(MusicGameMode::CAMPAIGN);
 		break;
-	case ActivitySink::GameMode::CHALLENGE:
+	case GAME_MODE::CHALLENGE:
 		cdAudio_SetGameMode(MusicGameMode::CHALLENGE);
 		break;
-	case ActivitySink::GameMode::SKIRMISH:
+	case GAME_MODE::SKIRMISH:
 		cdAudio_SetGameMode(MusicGameMode::SKIRMISH);
 		break;
-	case ActivitySink::GameMode::MULTIPLAYER:
+	case GAME_MODE::MULTIPLAYER:
 		cdAudio_SetGameMode(MusicGameMode::MULTIPLAYER);
 		break;
 	default:
@@ -1020,22 +1020,22 @@ static void startGameLoop()
 	auto currentGameMode = ActivityManager::instance().getCurrentGameMode();
 	switch (currentGameMode)
 	{
-	case ActivitySink::GameMode::MENUS:
+	case GAME_MODE::MENUS:
 		// should not happen
 		break;
-	case ActivitySink::GameMode::CAMPAIGN:
-	case ActivitySink::GameMode::CHALLENGE:
+	case GAME_MODE::CAMPAIGN:
+	case GAME_MODE::CHALLENGE:
 		// replays not currently supported
 		break;
-	case ActivitySink::GameMode::SKIRMISH:
-	case ActivitySink::GameMode::MULTIPLAYER:
+	case GAME_MODE::SKIRMISH:
+	case GAME_MODE::MULTIPLAYER:
 		{
 			// start saving a replay
 			if (!war_getDisableReplayRecording())
 			{
 				WZGameReplayOptionsHandler replayOptions;
-				NETreplaySaveStart((currentGameMode == ActivitySink::GameMode::MULTIPLAYER) ? "multiplay" : "skirmish",
-				                   replayOptions, (currentGameMode == ActivitySink::GameMode::MULTIPLAYER));
+				NETreplaySaveStart((currentGameMode == GAME_MODE::MULTIPLAYER) ? "multiplay" : "skirmish",
+				                   replayOptions, (currentGameMode == GAME_MODE::MULTIPLAYER));
 			}
 			break;
 		}
@@ -1063,11 +1063,11 @@ static void stopGameLoop()
 	NETreplaySaveStop();
 	NETshutdownReplay();
 
-	if (gameLoopStatus != GAMECODE_NEWLEVEL)
+	if (gameLoopStatus != GAME_CODE::NEWLEVEL)
 	{
 		clearBlueprints();
 		initLoadingScreen(true); // returning to f.e. do a loader.render not active
-		if (gameLoopStatus != GAMECODE_LOADGAME)
+		if (gameLoopStatus != GAME_CODE::LOADGAME)
 		{
 			if (!levReleaseAll())
 			{
@@ -1119,7 +1119,7 @@ static bool initSaveGameLoad()
 		      "Failed to load a save game! It is either corrupted or a unsupported format.\n\nRestarting main menu.");
 		// FIXME: If we bomb out on a in game load, then we would crash if we don't do the next two calls
 		// Doesn't seem to be a way to tell where we are in game loop to determine if/when we should do the two calls.
-		gameLoopStatus = GAMECODE_FASTEXIT; // clear out all old data
+		gameLoopStatus = GAME_CODE::FASTEXIT; // clear out all old data
 		stopGameLoop();
 		startTitleLoop(); // Restart into titleloop
 		SetGameMode(GS_TITLE_SCREEN);
@@ -1155,31 +1155,31 @@ static bool initSaveGameLoad()
 static void runGameLoop()
 {
 	gameLoopStatus = gameLoop();
-	switch (gameLoopStatus)
-	{
-	case GAMECODE_CONTINUE:
-	case GAMECODE_PLAYVIDEO:
+	switch (gameLoopStatus) {
+    using enum GAME_CODE;
+	case CONTINUE:
+	case PLAYVIDEO:
 		break;
-	case GAMECODE_QUITGAME:
+	case QUITGAME:
 		debug(LOG_MAIN, "GAMECODE_QUITGAME");
 		ActivityManager::instance().quitGame(collectEndGameStatsData(), Cheated);
 		cdAudio_SetGameMode(MusicGameMode::MENUS);
 		stopGameLoop();
 		startTitleLoop(); // Restart into titleloop
 		break;
-	case GAMECODE_LOADGAME:
+	case LOADGAME:
 		debug(LOG_MAIN, "GAMECODE_LOADGAME");
 		stopGameLoop();
 		initSaveGameLoad(); // Restart and load a savegame
 		break;
-	case GAMECODE_NEWLEVEL:
+	case NEWLEVEL:
 		debug(LOG_MAIN, "GAMECODE_NEWLEVEL");
 		stopGameLoop();
 		startGameLoop(); // Restart gameloop
 		break;
 	// Never thrown:
-	case GAMECODE_FASTEXIT:
-	case GAMECODE_RESTARTGAME:
+	case FASTEXIT:
+	case RESTARTGAME:
 		break;
 	default:
 		debug(LOG_ERROR, "Unknown code returned by gameLoop");
@@ -1799,7 +1799,7 @@ int realmain(int argc, char* argv[])
 	debug(LOG_WZ, "Backend: %s", BACKEND);
 	debug(LOG_MEMORY,
         "sizeof: SIMPLE_OBJECT=%ld, SimpleObject=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-        (long)sizeof(SIMPLE_OBJECT), (long)sizeof(SimpleObject), (long)sizeof(Droid), (long)sizeof(Structure),
+        (long)sizeof(SimpleObject), (long)sizeof(SimpleObject), (long)sizeof(Droid), (long)sizeof(Structure),
         (long)sizeof(Feature), (long)sizeof(Projectile));
 
 #if defined(WZ_OS_UNIX)
@@ -1942,7 +1942,7 @@ int realmain(int argc, char* argv[])
 	debug(LOG_WZ, "Backend: %s", BACKEND);
 	debug(LOG_MEMORY,
         "sizeof: SIMPLE_OBJECT=%ld, SimpleObject=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-        (long)sizeof(SIMPLE_OBJECT), (long)sizeof(SimpleObject), (long)sizeof(Droid), (long)sizeof(Structure),
+        (long)sizeof(SimpleObject), (long)sizeof(SimpleObject), (long)sizeof(Droid), (long)sizeof(Structure),
         (long)sizeof(Feature), (long)sizeof(Projectile));
 
 	int w = pie_GetVideoBufferWidth();

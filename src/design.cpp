@@ -2875,7 +2875,7 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 	ASSERT_PLAYER_OR_RETURN(false, player);
 
 	code_part level = complain ? LOG_ERROR : LOG_NEVER;
-	int bodysize = asBodyStats[psTempl->asParts[COMPONENT_TYPE::BODY]].size;
+	auto bodysize = asBodyStats[psTempl->asParts[COMPONENT_TYPE::BODY]].size;
 
 	// set the weapon for a command droid
 	if (psTempl->asParts[COMPONENT_TYPE::BRAIN] != 0)
@@ -2901,7 +2901,7 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 		psTempl->asParts[COMPONENT_TYPE::SENSOR] == 0 &&
 		psTempl->asParts[COMPONENT_TYPE::ECM] == 0 &&
 		psTempl->asParts[COMPONENT_TYPE::BRAIN] == 0 &&
-		psTempl->asParts[COMPONENT_TYPE::REPAIRUNIT] == 0 &&
+		psTempl->asParts[COMPONENT_TYPE::REPAIR_UNIT] == 0 &&
 		psTempl->asParts[COMPONENT_TYPE::CONSTRUCT] == 0 &&
       !isTransporter(psTempl))
 	{
@@ -2912,10 +2912,10 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 	// Check the weapons
 	for (int i = 0; i < psTempl->weaponCount; i++)
 	{
-		int weaponSize = asWeaponStats[psTempl->asWeaps[i]].weaponSize;
+		auto weaponSize = asWeaponStats[psTempl->asWeaps[i]].weaponSize;
 
-		if ((weaponSize == WEAPON_SIZE_LIGHT && bodysize != SIZE_LIGHT)
-			|| (weaponSize == WEAPON_SIZE_HEAVY && bodysize == SIZE_LIGHT)
+		if ((weaponSize == WEAPON_SIZE::LIGHT && bodysize != BODY_SIZE::LIGHT)
+			|| (weaponSize == WEAPON_SIZE::HEAVY && bodysize == BODY_SIZE::LIGHT)
 			|| psTempl->asWeaps[i] == 0)
 		{
 			debug(level, "No weapon given for weapon droid, or wrong weapon size");
@@ -2940,7 +2940,7 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 	if (psTempl->weaponCount != 0 &&
       (psTempl->asParts[COMPONENT_TYPE::SENSOR] ||
 			psTempl->asParts[COMPONENT_TYPE::ECM] ||
-			(psTempl->asParts[COMPONENT_TYPE::REPAIRUNIT] && psTempl->asParts[COMPONENT_TYPE::REPAIRUNIT] != aDefaultRepair[player]) ||
+			(psTempl->asParts[COMPONENT_TYPE::REPAIR_UNIT] && psTempl->asParts[COMPONENT_TYPE::REPAIR_UNIT] != aDefaultRepair[player]) ||
 			psTempl->asParts[COMPONENT_TYPE::CONSTRUCT]))
 	{
 		debug(level, "Cannot mix system and weapon turrets in a template!");
@@ -3928,35 +3928,35 @@ void runTemplateShadowStats(unsigned id)
 		if (templType == droidTemplateType(&sCurrDesign))
 		{
 			unsigned compIndex;
-			switch (templType)
-			{
-			case DROID_WEAPON:
+			switch (templType) {
+        using enum DROID_TYPE;
+			case WEAPON:
 				compIndex = psTempl->asWeaps[0];
 				ASSERT_OR_RETURN(, compIndex < numWeaponStats, "Invalid range referenced for numWeaponStats, %d > %d",
 				                   compIndex, numWeaponStats);
 				psStats = &asWeaponStats[compIndex];
 				break;
-			case DROID_SENSOR:
+			case SENSOR:
 				compIndex = psTempl->asParts[COMPONENT_TYPE::SENSOR];
 				ASSERT_OR_RETURN(, compIndex < numSensorStats, "Invalid range referenced for numSensorStats, %d > %d",
 				                   compIndex, numSensorStats);
 				psStats = &asSensorStats[compIndex];
 				break;
-			case DROID_ECM:
+			case ECM:
 				compIndex = psTempl->asParts[COMPONENT_TYPE::ECM];
 				ASSERT_OR_RETURN(, compIndex < numECMStats, "Invalid range referenced for numECMStats, %d > %d",
 				                   compIndex, numECMStats);
 				psStats = &asECMStats[compIndex];
 				break;
-			case DROID_CONSTRUCT:
+			case CONSTRUCT:
 				compIndex = psTempl->asParts[COMPONENT_TYPE::CONSTRUCT];
 				ASSERT_OR_RETURN(, compIndex < numConstructStats,
 				                   "Invalid range referenced for numConstructStats, %d > %d", compIndex,
 				                   numConstructStats);
 				psStats = &asConstructStats[compIndex];
 				break;
-			case DROID_REPAIR:
-				compIndex = psTempl->asParts[COMPONENT_TYPE::REPAIRUNIT];
+			case REPAIRER:
+				compIndex = psTempl->asParts[COMPONENT_TYPE::REPAIR_UNIT];
 				ASSERT_OR_RETURN(, compIndex < numRepairStats, "Invalid range referenced for numRepairStats, %d > %d",
 				                   compIndex, numRepairStats);
 				psStats = &asRepairStats[compIndex];

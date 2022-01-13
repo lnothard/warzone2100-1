@@ -528,17 +528,17 @@ static void DrawRadarObjects()
 		/* Go through all droids */
 		for (psDroid = apsDroidLists[clan]; psDroid != nullptr; psDroid = psDroid->psNext)
 		{
-			if (psDroid->pos.x < world_coord(scrollMinX) || psDroid->pos.y < world_coord(scrollMinY)
-				|| psDroid->pos.x >= world_coord(scrollMaxX) || psDroid->pos.y >= world_coord(scrollMaxY))
+			if (psDroid->getPosition().x < world_coord(scrollMinX) || psDroid->getPosition().y < world_coord(scrollMinY)
+				|| psDroid->getPosition().x >= world_coord(scrollMaxX) || psDroid->getPosition().y >= world_coord(scrollMaxY))
 			{
 				continue;
 			}
-			if (psDroid->visibleForLocalDisplay()
+			if (psDroid->visibleToSelectedPlayer()
 				|| (bMultiPlayer && alliancesSharedVision(game.alliance)
-					&& selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psDroid->player)))
+					&& selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psDroid->getPlayer())))
 			{
-				int x = psDroid->pos.x / TILE_UNITS;
-				int y = psDroid->pos.y / TILE_UNITS;
+				int x = psDroid->getPosition().x / TILE_UNITS;
+				int y = psDroid->getPosition().y / TILE_UNITS;
 				size_t pos = (x - scrollMinX) + (y - scrollMinY) * radarTexWidth;
 
 				ASSERT(pos * sizeof(*radarOverlayBuffer) < radarBufferSize, "Buffer overrun");

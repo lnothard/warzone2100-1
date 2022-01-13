@@ -362,69 +362,69 @@ public:
 	//__
 	//__An event that is run when current user picks a body in the design menu.
 	//__
-	virtual bool handle_eventDesignBody() override;
+	bool handle_eventDesignBody() override;
 
 	//__ ## eventDesignPropulsion()
 	//__
 	//__An event that is run when current user picks a propulsion in the design menu.
 	//__
-	virtual bool handle_eventDesignPropulsion() override;
+	bool handle_eventDesignPropulsion() override;
 
 	//__ ## eventDesignWeapon()
 	//__
 	//__An event that is run when current user picks a weapon in the design menu.
 	//__
-	virtual bool handle_eventDesignWeapon() override;
+	bool handle_eventDesignWeapon() override;
 
 	//__ ## eventDesignCommand()
 	//__
 	//__An event that is run when current user picks a command turret in the design menu.
 	//__
-	virtual bool handle_eventDesignCommand() override;
+	bool handle_eventDesignCommand() override;
 
 	//__ ## eventDesignSystem()
 	//__
 	//__An event that is run when current user picks a system other than command turret in the design menu.
 	//__
-	virtual bool handle_eventDesignSystem() override;
+	bool handle_eventDesignSystem() override;
 
 	//__ ## eventDesignQuit()
 	//__
 	//__An event that is run when current user leaves the design menu.
 	//__
-	virtual bool handle_eventDesignQuit() override;
+	bool handle_eventDesignQuit() override;
 
 	//__ ## eventMenuBuildSelected()
 	//__
 	//__An event that is run when current user picks something new in the build menu.
 	//__
-	virtual bool handle_eventMenuBuildSelected(/*SimpleObject *psObj*/) override;
+	bool handle_eventMenuBuildSelected(/*SimpleObject *psObj*/) override;
 
 	//__ ## eventMenuResearchSelected()
 	//__
 	//__An event that is run when current user picks something new in the research menu.
 	//__
-	virtual bool handle_eventMenuResearchSelected(/*SimpleObject *psObj*/) override;
+	bool handle_eventMenuResearchSelected(/*SimpleObject *psObj*/) override;
 
 	//__ ## eventMenuBuild()
 	//__
 	//__An event that is run when current user opens the build menu.
 	//__
-	virtual bool handle_eventMenuBuild() override;
+	bool handle_eventMenuBuild() override;
 
 	//__ ## eventMenuResearch()
 	//__
 	//__An event that is run when current user opens the research menu.
 	//__
-	virtual bool handle_eventMenuResearch() override;
+	bool handle_eventMenuResearch() override;
 
 
-	virtual bool handle_eventMenuDesign() override;
+	bool handle_eventMenuDesign() override;
 
 	//__ ## eventMenuManufacture()
 	//__An event that is run when current user opens the manufacture menu.
 	//__
-	virtual bool handle_eventMenuManufacture() override;
+	bool handle_eventMenuManufacture() override;
 
 	//__ ## eventSelectionChanged(objects)
 	//__
@@ -436,7 +436,7 @@ public:
 	//__ deselected object. If all selected game objects are deselected, ```objects``` will
 	//__ be empty.
 	//__
-	virtual bool handle_eventSelectionChanged(const std::vector<const SimpleObject*>& objects) override;
+	bool handle_eventSelectionChanged(const std::vector<const SimpleObject*>& objects) override;
 
 public:
 	// MARK: Game state-change events
@@ -445,26 +445,26 @@ public:
 	//__
 	//__ An event that is run when an object (ex. droid, structure) is recycled.
 	//__
-	virtual bool handle_eventObjectRecycled(const SimpleObject* psObj) override;
+	bool handle_eventObjectRecycled(const SimpleObject* psObj) override;
 
 	//__ ## eventPlayerLeft(player)
 	//__
 	//__ An event that is run after a player has left the game.
 	//__
-	virtual bool handle_eventPlayerLeft(unsigned player) override;
+	bool handle_eventPlayerLeft(unsigned player) override;
 
 	//__ ## eventCheatMode(entered)
 	//__
 	//__ Game entered or left cheat/debug mode.
 	//__ The entered parameter is true if cheat mode entered, false otherwise.
 	//__
-	virtual bool handle_eventCheatMode(bool entered) override;
+	bool handle_eventCheatMode(bool entered) override;
 
 	//__ ## eventDroidIdle(droid)
 	//__
 	//__ A droid should be given new orders.
 	//__
-	virtual bool handle_eventDroidIdle(const Droid* psDroid) override;
+	bool handle_eventDroidIdle(const Droid* psDroid) override;
 
 	//__ ## eventDroidBuilt(droid[, structure])
 	//__
@@ -472,7 +472,7 @@ public:
 	//__ if the droid was produced in a factory. It is not triggered for droid theft or
 	//__ gift (check ```eventObjectTransfer``` for that).
 	//__
-	virtual bool handle_eventDroidBuilt(const Droid* psDroid, optional<const Structure*> psFactory) override;
+	bool handle_eventDroidBuilt(const Droid* psDroid, optional<const Structure*> psFactory) override;
 
 	//__ ## eventStructureBuilt(structure[, droid])
 	//__
@@ -480,14 +480,14 @@ public:
 	//__ if the structure was built by a droid. It is not triggered for building theft
 	//__ (check ```eventObjectTransfer``` for that).
 	//__
-	virtual bool handle_eventStructureBuilt(const Structure* psStruct, optional<const Droid*> psDroid) override;
+	bool handle_eventStructureBuilt(const Structure* psStruct, optional<const Droid*> psDroid) override;
 
 	//__ ## eventStructureDemolish(structure[, droid])
 	//__
 	//__ An event that is run every time a structure begins to be demolished. This does
 	//__ not trigger again if the structure is partially demolished.
 	//__
-	virtual bool handle_eventStructureDemolish(const Structure* psStruct, optional<const Droid*> psDroid) override;
+	bool handle_eventStructureDemolish(const Structure* psStruct, optional<const Droid*> psDroid) override;
 
 	//__ ## eventStructureReady(structure)
 	//__
@@ -495,20 +495,20 @@ public:
 	//__ special ability. It will only fire once, so if the time is not right,
 	//__ register your own timer to keep checking.
 	//__
-	virtual bool handle_eventStructureReady(const Structure* psStruct) override;
+	bool handle_eventStructureReady(const Structure* psStruct) override;
 
 	//__ ## eventStructureUpgradeStarted(structure)
 	//__
 	//__ An event that is run every time a structure starts to be upgraded.
 	//__
-	virtual bool handle_eventStructureUpgradeStarted(const Structure* psStruct) override;
+	bool handle_eventStructureUpgradeStarted(const Structure* psStruct) override;
 
 	//__ ## eventAttacked(victim, attacker)
 	//__
 	//__ An event that is run when an object belonging to the script's controlling player is
 	//__ attacked. The attacker parameter may be either a structure or a droid.
 	//__
-	virtual bool handle_eventAttacked(const SimpleObject* psVictim, const SimpleObject* psAttacker) override;
+	bool handle_eventAttacked(const SimpleObject* psVictim, const SimpleObject* psAttacker) override;
 
 	//__ ## eventResearched(research, structure, player)
 	//__
@@ -517,7 +517,7 @@ public:
 	//__ current player. If an ally does the research, the structure parameter will
 	//__ be set to null. The player parameter gives the player it is called for.
 	//__
-	virtual bool handle_eventResearched(const wzapi::researchResult& research,
+	bool handle_eventResearched(const wzapi::researchResult& research,
 																			wzapi::event_nullable_ptr<const Structure> psStruct, unsigned player) override;
 
 	//__ ## eventDestroyed(object)
@@ -525,7 +525,7 @@ public:
 	//__ An event that is run whenever an object is destroyed. Careful passing
 	//__ the parameter object around, since it is about to vanish!
 	//__
-	virtual bool handle_eventDestroyed(const SimpleObject* psVictim) override;
+	bool handle_eventDestroyed(const SimpleObject* psVictim) override;
 
 	//__ ## eventPickup(feature, droid)
 	//__
@@ -895,7 +895,7 @@ JSValue convStructure(const Structure* psStruct, JSContext* ctx)
 JSValue convFeature(const Feature* psFeature, JSContext* ctx)
 {
 	JSValue value = convObj(psFeature, ctx);
-	const FeatureStats* psStats = psFeature->psStats;
+	const FeatureStats* psStats = psFeature->getStats();
 	QuickJS_DefinePropertyValue(ctx, value, "health", JS_NewUint32(ctx, 100 * psStats->body / MAX(1, psFeature->body)),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "damageable", JS_NewBool(ctx, psStats->damageable), JS_PROP_ENUMERABLE);

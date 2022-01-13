@@ -41,9 +41,7 @@
 #include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/piepalette.h"
 #include "objects.h"
-#include "droiddef.h"
 #include "basedef.h"
-#include "statsdef.h"
 #include "hci.h"
 #include "miscimd.h"
 #include "lib/ivis_opengl/piematrix.h"
@@ -289,11 +287,10 @@ END_GAME_STATS_DATA collectEndGameStatsData()
 	fullStats.numUnits = 0;
 	if (selectedPlayer < MAX_PLAYERS)
 	{
-		for (Droid* psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext, fullStats.numUnits++)
+		for (auto& psDroid : apsDroidLists[selectedPlayer])
 		{
 		}
-		for (Droid* psDroid = mission.apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext, fullStats.
-		     numUnits++)
+		for (auto& psDroid : mission.apsDroidLists[selectedPlayer])
 		{
 		}
 	}
@@ -334,7 +331,7 @@ void scoreDataToScreen(WIDGET* psWidget, ScoreDataToScreenCache& cache)
 		if (infoBars[index].bActive)
 		{
 			/* Has it been queued before? */
-			if (infoBars[index].bQueued == false)
+			if (!infoBars[index].bQueued)
 			{
 				/* Don't do this next time...! */
 				infoBars[index].bQueued = true;
@@ -593,7 +590,7 @@ void stdOutGameSummary(UDWORD realTimeThrottleSeconds, bool flush_output /* = tr
 			}
 			uint32_t unitsKilled = getMultiPlayUnitsKilled(n);
 			uint32_t numUnits = 0;
-			for (Droid* psDroid = apsDroidLists[n]; psDroid; psDroid = psDroid->psNext, numUnits++)
+			for (auto& psDroid : apsDroidLists[n])
 			{
 			}
 			uint32_t numStructs = 0;
@@ -602,20 +599,20 @@ void stdOutGameSummary(UDWORD realTimeThrottleSeconds, bool flush_output /* = tr
 			uint32_t numFactoriesThatCanProduceConstructionUnits = 0;
 			for (Structure* psStruct = apsStructLists[n]; psStruct; psStruct = psStruct->psNext, numStructs++)
 			{
-				if (psStruct->status != SS_BUILT || psStruct->died != 0)
+				if (psStruct->getState() != STRUCTURE_STATE::BUILT || psStruct->died != 0)
 				{
 					continue; // ignore structures that aren't completely built, or are "dead"
 				}
 				if (StructIsFactory(psStruct))
 				{
 					numFactories++;
-					if (psStruct->pStructureType->type == REF_FACTORY ||
-						psStruct->pStructureType->type == REF_CYBORG_FACTORY)
+					if (psStruct->getStats().type == STRUCTURE_TYPE::FACTORY ||
+						psStruct->getStats().type == STRUCTURE_TYPE::CYBORG_FACTORY)
 					{
 						numFactoriesThatCanProduceConstructionUnits++;
 					}
 				}
-				else if (psStruct->pStructureType->type == REF_RESEARCH)
+				else if (psStruct->getStats().type == STRUCTURE_TYPE::RESEARCH)
 				{
 					numResearch++;
 				}

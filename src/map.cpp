@@ -138,7 +138,7 @@ static std::unique_ptr<bool[]> mapDecals; // array that tells us what tile is a 
 /* Look up table that returns the terrain type of a given tile texture */
 UBYTE terrainTypes[MAX_TILE_TEXTURES];
 
-static void init_tileNames(int type)
+static void init_tileNames(TILE_SET type)
 {
 	char* pFileData = nullptr;
 	char name[MAX_STR_LENGTH] = {'\0'};
@@ -147,8 +147,8 @@ static void init_tileNames(int type)
 
 	pFileData = fileLoadBuffer;
 
-	switch (type)
-	{
+	switch (type) {
+    using enum TILE_SET;
 	case ARIZONA:
 		{
 			if (!loadFileToBuffer("tileset/arizona_enum.txt", pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize))
@@ -185,7 +185,7 @@ static void init_tileNames(int type)
 			}
 			break;
 		}
-	case ROCKIE:
+	case ROCKIES:
 		{
 			if (!loadFileToBuffer("tileset/rockie_enum.txt", pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize))
 			{

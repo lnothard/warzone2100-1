@@ -721,8 +721,8 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
      * nearest reachable tile to dest is.
      */
     auto new_context = PathContext();
-    new_context.init(--it, path_job.blocking_map, origin_tile, origin_tile,
-                     destination_tile, path_job.destination_structure);
+    new_context.init(--it, path_job.blockingMap, origin_tile, origin_tile,
+                     destination_tile, path_job.dstStructure);
     end = find_nearest_explored_tile(it, destination_tile);
     it->nearest_reachable_tile = end;
   }
@@ -760,7 +760,7 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
       // so move the point to the middle.
       next.y = world_coord(map.y) + TILE_UNITS / 2;
     }
-    if (map_coord(start) == {it->start.x, it->start.y} ||
+    if (map_coord(start) == Vector2i{it->start_coord.x, it->start_coord.y} ||
         start == next)  {
       // we stopped moving, because we reached the destination or
       // the closest reachable tile to it->start. give up now.
@@ -791,8 +791,8 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
 
 			// next time, search starting from the nearest reachable
       // tile to the destination.
-			it->init(path_job.blocking_map, destination_tile,
-               it->nearestCoord, origin_tile, dstIgnore);
+			it->init(path_job.blockingMap, destination_tile,
+               it->nearest_reachable_tile, origin_tile, dstIgnore);
     }
   } else  {
     std::copy(route.begin(), route.end(), movement.path.data());
@@ -1029,9 +1029,9 @@ void set_blocking_map(PathJob& path_job)
 		syncDebug("blockingMap(%d,%d,%d,%d) = %08X %08X", gameTime, path_job.propulsion, path_job.owner, path_job.moveType,
               checksum_map, checksum_threat_map);
 
-    path_job.blocking_map = blocking_maps.back();
+    path_job.blockingMap = std::make_shared<PathBlockingMap>(blocking_maps.back());
 	} else  {
 		syncDebug("blockingMap(%d,%d,%d,%d) = cached", gameTime, path_job.propulsion, path_job.owner, path_job.moveType);
-    path_job.blockingMap = *it;
+    path_job.blockingMap = std::make_shared<PathBlockingMap>(*it);
 	}
 }

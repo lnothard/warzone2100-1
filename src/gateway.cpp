@@ -27,7 +27,6 @@
 
 #include "gateway.h"
 #include "map.h"
-#include "wrappers.h"
 
 /// the list of gateways on the current map
 static GATEWAY_LIST psGateways;

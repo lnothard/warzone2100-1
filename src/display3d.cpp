@@ -121,7 +121,7 @@ static void drawDroidSensorLock(Droid* psDroid);
 static int calcAverageTerrainHeight(int tileX, int tileZ);
 static int calculateCameraHeight(int height);
 static void updatePlayerAverageCentreTerrainHeight();
-bool doWeDrawProximitys();
+
 static PIELIGHT getBlueprintColour(STRUCTURE_STATE state);
 
 static void NetworkDisplayImage(WIDGET* psWidget, unsigned xOffset, unsigned yOffset);
@@ -297,7 +297,7 @@ struct Blueprint
 	}
 
 	Blueprint(StructureStats const* stats, Vector3i pos, uint16_t dir, 
-            unsigned index, STRUCTURE_STATE state, uint8_t player)
+            unsigned index, STRUCTURE_STATE state, unsigned player)
 		: stats(stats)
 		  , pos(pos)
 		  , dir(dir)
@@ -500,7 +500,7 @@ static Blueprint getTileBlueprint(int mapX, int mapY)
 	{
 		const Vector2i size = blueprint.stats.size(blueprint.dir) * TILE_UNITS;
 		if (abs(mouse.x - blueprint.pos.x) < size.x / 2 && abs(mouse.y - blueprint.pos.y) < size.y / 2) {
-			return *blueprint;
+			return blueprint;
 		}
 	}
 	return {nullptr, Vector3i(), 0, 0, STRUCTURE_STATE::BEING_BUILT, selectedPlayer};
@@ -1531,7 +1531,7 @@ static void display3DProjectiles(const glm::mat4& viewMatrix)
 				bucketAddTypeToList(RENDER_PROJECTILE, psObj, viewMatrix);
 			}
 			else {
-				renderProjectile(psObj, viewMatrix);
+				::renderProjectile(psObj, viewMatrix);
 			}
 		}
 		psObj = proj_GetNext();
@@ -1546,7 +1546,7 @@ void renderProjectile(Projectile* psCurr, const glm::mat4& viewMatrix)
 	iIMDShape* pIMD;
 	Spacetime st;
 
-	psStats = psCurr->weaponStats;
+	psStats = psCurr->weaponStats.get();
 	/* Reject flame or command since they have interim drawn fx */
 	if (psStats->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
 		psStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND || // || psStats->weaponSubClass == WEAPON_SUBCLASS::ENERGY)
@@ -1613,10 +1613,10 @@ void renderProjectile(Projectile* psCurr, const glm::mat4& viewMatrix)
 		camera -= dv;
 
 		/* Rotate it to the direction it's facing */
-		rotateSomething(camera.z, camera.x, -(-st.rot.direction));
+		rotateSomething(camera.z, camera.x, -(-st.rotation.direction));
 
 		/* pitch it */
-		rotateSomething(camera.y, camera.z, -st.rot.pitch);
+		rotateSomething(camera.y, camera.z, -st.rotation.pitch);
 
 		glm::mat4 modelMatrix =
 			glm::translate(glm::vec3(dv)) *
@@ -1967,7 +1967,7 @@ static void displayProximityMsgs(const glm::mat4& viewMatrix)
       continue;
     }
     unsigned x, y;
-    if (psProxDisp->type == POS_PROXDATA) {
+    if (psProxDisp->type == POSITION_TYPE::POS_PROXDATA) {
       auto pViewProximity = (VIEW_PROXIMITY*)psProxDisp->psMessage->pViewData->pData;
       x = pViewProximity->x;
       y = pViewProximity->y;
@@ -2074,7 +2074,7 @@ void renderFeature(Feature* psFeature, const glm::mat4& viewMatrix)
 	}
 
 	/* Mark it as having been drawn */
-	psFeature->display.frame_number = currentGameFrame;
+	psFeature->display->frame_number = currentGameFrame;
 
 	/* Daft hack to get around the oil derrick issue */
 	if (!TileHasFeature(mapTile(map_coord(
@@ -2122,7 +2122,7 @@ void renderFeature(Feature* psFeature, const glm::mat4& viewMatrix)
 	{
 		/* Translate the feature  - N.B. We can also do rotations here should we require
 		buildings to face different ways - Don't know if this is necessary - should be IMO */
-		pie_Draw3DShape(imd, 0, 0, brightness, pieFlags, 0, viewMatrix * modelMatrix);
+		pie_Draw3DShape(imd.get(), 0, 0, brightness, pieFlags, 0, viewMatrix * modelMatrix);
 		imd = imd->next;
 	}
 
@@ -2141,7 +2141,7 @@ void renderProximityMsg(PROXIMITY_DISPLAY* psProxDisp, const glm::mat4& viewMatr
 	psProxDisp->frameNumber = currentGameFrame;
 
 	/* Get it's x and y coordinates so we don't have to deref. struct later */
-	if (psProxDisp->type == POS_PROXDATA)
+	if (psProxDisp->type == POSITION_TYPE::POS_PROXDATA)
 	{
 		pViewProximity = (VIEW_PROXIMITY*)psProxDisp->psMessage->pViewData->pData;
 		if (pViewProximity)
@@ -2161,7 +2161,7 @@ void renderProximityMsg(PROXIMITY_DISPLAY* psProxDisp, const glm::mat4& viewMatr
 			}
 		}
 	}
-	else if (psProxDisp->type == POS_PROXOBJ)
+	else if (psProxDisp->type == POSITION_TYPE::POS_PROXOBJ)
 	{
 		msgX = psProxDisp->psMessage->psObj->getPosition().x;
 		msgY = psProxDisp->psMessage->psObj->getPosition().y;
@@ -2471,7 +2471,7 @@ void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix)
 	UBYTE visibilityAmount = psStructure->visibleToSelectedPlayer();
 	if (visibilityAmount < UBYTE_MAX && visibilityAmount > 0)
 	{
-		int frame = graphicsTime / BLIP_ANIM_DURATION + psStructure->id % 8192;
+		int frame = graphicsTime / BLIP_ANIM_DURATION + psStructure->getId() % 8192;
 		// de-sync the blip effect, but don't overflow the int
 		pie_Draw3DShape(getFactionIMD(faction, getImdFromIndex(MI_BLIP)), frame, 0, WZCOL_WHITE, pie_ADDITIVE,
 		                visibilityAmount / 2,
@@ -2852,7 +2852,7 @@ static void drawStructureTargetOriginIcon(Structure* psStruct, int weapon_slot)
 	case TARGET_ORIGIN::CB_SENSOR:
 		iV_DrawImage(IntImages, IMAGE_ORIGIN_SENSOR_CB, scrX + scrR + 5, scrY - 1);
 		break;
-	case TARGET_ORIGIN::AIRDEF_SENSOR:
+	case TARGET_ORIGIN::AIR_DEFENSE_SENSOR:
 		iV_DrawImage(IntImages, IMAGE_ORIGIN_SENSOR_AIRDEF, scrX + scrR + 5, scrY - 1);
 		break;
 	case TARGET_ORIGIN::RADAR_DETECTOR:
@@ -2996,7 +2996,7 @@ static void drawStructureSelections()
 		for (psStruct = apsStructLists[i]; psStruct; psStruct = psStruct->psNext)
 		{
 			/* If it's targetted and on-screen */
-			if (psStruct->flags.test(OBJECT_FLAG_TARGETED)
+			if (psStruct->flags.test(OBJECT_FLAG::TARGETED)
 				&& psStruct->sDisplay.frame_number == currentGameFrame)
 			{
 				scrX = psStruct->sDisplay.screen_x;
@@ -3100,11 +3100,11 @@ void drawDroidSelection(Droid* psDroid, bool drawBox)
 		powerColShadow = WZCOL_HEALTH_LOW_SHADOW;
 	}
 
-	damage = static_cast<UDWORD>((float)psDroid->getHp() / (float)psDroid->getOriginalHp() * (float)psDroid->sDisplay.
+	damage = static_cast<UDWORD>((float)psDroid->getHp() / (float)psDroid->getOriginalHp() * (float)psDroid->getDisplayData().
 		screen_r);
-	if (damage > psDroid->sDisplay.screen_r)
+	if (damage > psDroid->getDisplayData().screen_r)
 	{
-		damage = psDroid->sDisplay.screen_r;
+		damage = psDroid->getDisplayData().screen_r;
 	}
 
 	damage *= 2;
@@ -3319,7 +3319,7 @@ static void drawDroidSelections()
 	{
 		if (!psFeature->died && psFeature->sDisplay.frame_number == currentGameFrame)
 		{
-			if (psFeature->flags.test(OBJECT_FLAG_TARGETED))
+			if (psFeature->flags.test(OBJECT_FLAG::TARGETED))
 			{
 				iV_DrawImage(IntImages, getTargettingGfx(), psFeature->sDisplay.screen_x, psFeature->sDisplay.screen_y);
 			}
@@ -3386,9 +3386,9 @@ static void drawDroidOrder(const Droid* psDroid)
 {
 	const int xShift = psDroid->getDisplayData().screen_r + GN_X_OFFSET;
 	const int yShift = psDroid->getDisplayData().screen_r - CMND_GN_Y_OFFSET;
-	const char* letter = getDroidOrderKey(psDroid->getOrder().type);
+	auto letter = getDroidOrderKey(psDroid->getOrder().type);
 	iV_SetTextColour(WZCOL_TEXT_BRIGHT);
-	iV_DrawText(letter, psDroid->getDisplayData().screen_x - xShift - CMND_STAR_X_OFFSET, psDroid->getDisplayData().screen_y + yShift,
+	iV_DrawText(letter.c_str(), psDroid->getDisplayData().screen_x - xShift - CMND_STAR_X_OFFSET, psDroid->getDisplayData().screen_y + yShift,
               font_regular);
 }
 
@@ -3842,7 +3842,7 @@ static void structureEffectsPlayer(UDWORD player)
 		}
 		/* Might be a re-arm pad! */
 		else if (psStructure->getStats().type == STRUCTURE_TYPE::REARM_PAD
-			&& psStructure->visibleForLocalDisplay())
+			&& psStructure->visibleToSelectedPlayer())
 		{
 			RearmPad* psReArmPad = &psStructure->pFunctionality->rearmPad;
 			SimpleObject* psChosenObj = psReArmPad->psObj;
@@ -3974,7 +3974,7 @@ static void showSensorRange2(SimpleObject* psObj)
 static void drawRangeAtPos(SDWORD centerX, SDWORD centerY, SDWORD radius)
 {
 	Position pos(centerX, centerY, 0); // .z ignored.
-	showEffectCircle(pos, radius, 80, EFFECT_EXPLOSION, EXPLOSION_TYPE_SMALL);
+	showEffectCircle(pos, radius, 80, EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_SMALL);
 }
 
 /** Turn on drawing some effects at certain position to visualize the radius.
@@ -4046,8 +4046,8 @@ static void drawDroidRank(Droid* psDroid)
 	if (gfxId != UDWORD_MAX) {
 		/* Render the rank graphic at the correct location */ // remove hardcoded numbers?!
 		iV_DrawImage(IntImages, (UWORD)gfxId,
-                 psDroid->sDisplay.screen_x + psDroid->sDisplay.screen_r + 8,
-                 psDroid->sDisplay.screen_y + psDroid->sDisplay.screen_r);
+                 psDroid->getDisplayData().screen_x + psDroid->getDisplayData().screen_r + 8,
+                 psDroid->getDisplayData().screen_y + psDroid->getDisplayData().screen_r);
 	}
 }
 
@@ -4057,10 +4057,10 @@ static void drawDroidRank(Droid* psDroid)
 static void drawDroidSensorLock(Droid* psDroid)
 {
 	//if on fire support duty - must be locked to a Sensor Droid/Structure
-	if (orderState(psDroid, DORDER_FIRESUPPORT))
+	if (orderState(psDroid, ORDER_TYPE::FIRE_SUPPORT))
 	{
 		/* Render the sensor graphic at the correct location - which is what?!*/
-		iV_DrawImage(IntImages, IMAGE_GN_STAR, psDroid->sDisplay.screen_x, psDroid->sDisplay.screen_y);
+		iV_DrawImage(IntImages, IMAGE_GN_STAR, psDroid->getDisplayData().screen_x, psDroid->getDisplayData().screen_y);
 	}
 }
 
@@ -4135,13 +4135,13 @@ static void addConstructionLine(Droid* psDroid, Structure* psStructure, const gl
                                       psStructure->getId(), 
                                       psDroid->timeActionStarted, t, c}) % psStructure->
 			sDisplay.imd->points.size();
-		auto pointIndexB = randHash({psDroid->getId(), psStructure->id, psDroid->time_action_started, t + 1, c}) % psStructure
+		auto pointIndexB = randHash({psDroid->getId(), psStructure->getId(), psDroid->time_action_started, t + 1, c}) % psStructure
 			->sDisplay.imd->points.size();
 		auto& pointA = psStructure->sDisplay.imd->points[pointIndexA];
 		auto& pointB = psStructure->sDisplay.imd->points[pointIndexB];
 		auto point = mix(pointA, pointB, s);
 
-		each = Vector3f(psStructure->pos.x, psStructure->pos.z, psStructure->pos.y)
+		each = Vector3f(psStructure->getPosition().x, psStructure->getPosition().z, psStructure->getPosition().y)
 			+ Vector3f(point.x, structHeightScale(psStructure) * point.y, -point.z);
 		return Vector3f(each.x, each.y, -each.z) + deltaPlayer;
 	};
@@ -4149,9 +4149,9 @@ static void addConstructionLine(Droid* psDroid, Structure* psStructure, const gl
 	auto pt1 = getPoint(250);
 	auto pt2 = getPoint(750);
 
-	if (psStructure->currentBuildPts < 10) {
-		auto pointC = Vector3f(psStructure->pos.x, psStructure->pos.z + 10, -psStructure->pos.y) + deltaPlayer;
-		auto cross = Vector3f(psStructure->pos.y - psDroid->pos.y, 0, psStructure->pos.x - psDroid->pos.x);
+	if (psStructure->currentBuildPoints < 10) {
+		auto pointC = Vector3f(psStructure->getPosition().x, psStructure->getPosition().z + 10, -psStructure->getPosition().y) + deltaPlayer;
+		auto cross = Vector3f(psStructure->getPosition().y - psDroid->getPosition().y, 0, psStructure->getPosition().x - psDroid->getPosition().x);
 		auto shift = 40.f * normalize(cross);
 		pt1 = mix(pointC - shift, pt1, psStructure->currentBuildPts * .1f);
 		pt2 = mix(pointC + shift, pt1, psStructure->currentBuildPts * .1f);

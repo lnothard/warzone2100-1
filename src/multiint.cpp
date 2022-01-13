@@ -610,12 +610,10 @@ static inline WzMap::MapPreviewColor PIELIGHT_to_MapPreviewColor(PIELIGHT color)
 class WzLobbyPreviewPlayerColorProvider : public WzMap::MapPlayerColorProvider
 {
 public:
-	~WzLobbyPreviewPlayerColorProvider()
-	{
-	}
+	~WzLobbyPreviewPlayerColorProvider() = default;
 
 	// -1 = scavs
-	virtual WzMap::MapPreviewColor getPlayerColor(int8_t mapPlayer) override
+	WzMap::MapPreviewColor getPlayerColor(int8_t mapPlayer) override
 	{
 		unsigned player = mapPlayer == -1 ? scavengerSlot() : mapPlayer;
 		if (player >= MAX_PLAYERS)
@@ -632,7 +630,7 @@ public:
 private:
 	// -----------------------------------------------------------------------------------------
 	// Remaps old player number based on position on map to new owner
-	UDWORD RemapPlayerNumber(UDWORD OldNumber)
+	static UDWORD RemapPlayerNumber(UDWORD OldNumber)
 	{
 		int i;
 

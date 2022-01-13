@@ -238,7 +238,7 @@ static void calcTileIllum(UDWORD tileX, UDWORD tileY)
 	}
 	ao *= 1.f / Dirs;
 
-	mapTile(tileX, tileY)->illumination_level = static_cast<uint8_t>(clip<
+	mapTile(tileX, tileY)->illumination = static_cast<uint8_t>(clip<
 		int>(static_cast<int>(abs(dotProduct * ao)), 1, 254));
 }
 
@@ -326,8 +326,8 @@ void calcDroidIllumination(Droid* psDroid)
 {
 	int lightVal, presVal, retVal;
 	float adjust;
-	const int tileX = map_coord(psDroid->pos.x);
-	const int tileY = map_coord(psDroid->pos.y);
+	const int tileX = map_coord(psDroid->getPosition().x);
+	const int tileY = map_coord(psDroid->getPosition().y);
 
 	/* Are we at the edge, or even on the map */
 	if (!tileOnMap(tileX, tileY))
@@ -337,16 +337,16 @@ void calcDroidIllumination(Droid* psDroid)
 	}
 	else if (tileX <= 1 || tileX >= mapWidth - 2 || tileY <= 1 || tileY >= mapHeight - 2)
 	{
-		lightVal = mapTile(tileX, tileY)->illumination_level;
+		lightVal = mapTile(tileX, tileY)->illumination;
 		lightVal += MIN_DROID_LIGHT_LEVEL;
 	}
 	else
 	{
-		lightVal = mapTile(tileX, tileY)->illumination_level + //
-			mapTile(tileX - 1, tileY)->illumination_level + //		 *
-			mapTile(tileX, tileY - 1)->illumination_level + //		***		pattern
-			mapTile(tileX + 1, tileY)->illumination_level + //		 *
-			mapTile(tileX + 1, tileY + 1)->illumination_level; //
+		lightVal = mapTile(tileX, tileY)->illumination + //
+			mapTile(tileX - 1, tileY)->illumination + //		 *
+			mapTile(tileX, tileY - 1)->illumination + //		***		pattern
+			mapTile(tileX + 1, tileY)->illumination + //		 *
+			mapTile(tileX + 1, tileY + 1)->illumination; //
 		lightVal /= 5;
 		lightVal += MIN_DROID_LIGHT_LEVEL;
 	}
@@ -377,11 +377,11 @@ void doBuildingLights()
 	{
 		for (psStructure = apsStructLists[i]; psStructure; psStructure = psStructure->psNext)
 		{
-			light.range = psStructure->pStructureType->base_width * TILE_UNITS;
-			light.position.x = psStructure->pos.x;
-			light.position.z = psStructure->pos.y;
+			light.range = psStructure->getStats().base_width * TILE_UNITS;
+			light.position.x = psStructure->getPosition().x;
+			light.position.z = psStructure->getPosition().y;
 			light.position.y = map_Height(light.position.x, light.position.z);
-			light.range = psStructure->pStructureType->base_width * TILE_UNITS;
+			light.range = psStructure->getStats().base_width * TILE_UNITS;
 			light.colour = pal_Colour(255, 255, 255);
 			processLight(&light);
 		}

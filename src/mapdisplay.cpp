@@ -48,7 +48,7 @@ void renderResearchToBuffer(ResearchStats* psResearch, UDWORD OriginX, UDWORD Or
 
 	// Rotate round
 	// full rotation once every 2 seconds..
-	const int angle = (realTime % ROTATE_TIME) * 360 / ROTATE_TIME;
+	const auto angle = (realTime % ROTATE_TIME) * 360 / ROTATE_TIME;
 	Vector3i Position = Vector3i(0, 0, BUTTON_DEPTH);
 	Vector3i Rotation = Vector3i(-30, angle, 0);
 
@@ -56,21 +56,21 @@ void renderResearchToBuffer(ResearchStats* psResearch, UDWORD OriginX, UDWORD Or
 	if (psResearch->psStat)
 	{
 		//we have a Stat associated with this research topic
-		if (StatIsStructure(psResearch->psStat))
+		if (StatIsStructure(psResearch->psStat.get()))
 		{
 			//this defines how the button is drawn
 			IMDType = IMDTYPE_STRUCTURESTAT;
-			psResGraphic = psResearch->psStat;
+			psResGraphic = psResearch->psStat.get();
 			//set up the scale
-			unsigned basePlateSize = getStructureStatSizeMax((StructureStats*)psResearch->psStat);
+			unsigned basePlateSize = getStructureStatSizeMax((StructureStats*)psResearch->psStat.get());
 			if (basePlateSize == 1)
 			{
 				scale = RESEARCH_COMPONENT_SCALE / 2;
 				/*HACK HACK HACK!
 				if its a 'tall thin (ie tower)' structure stat with something on
 				the top - offset the position to show the object on top*/
-				if (((StructureStats*)psResearch->psStat)->pIMD[0]->nconnectors &&
-            getStructureStatHeight((StructureStats*)psResearch->psStat) > TOWER_HEIGHT)
+				if (((StructureStats*)psResearch->psStat.get())->IMDs[0]->nconnectors &&
+            getStructureStatHeight((StructureStats*)psResearch->psStat.get()) > TOWER_HEIGHT)
 				{
 					Position.y -= 30;
 				}
@@ -86,12 +86,12 @@ void renderResearchToBuffer(ResearchStats* psResearch, UDWORD OriginX, UDWORD Or
 		}
 		else
 		{
-			unsigned compID = StatIsComponent(psResearch->psStat);
-			if (compID != COMP_NUMCOMPONENTS)
+			auto compID = StatIsComponent(psResearch->psStat.get());
+			if (compID != COMPONENT_TYPE::COUNT)
 			{
 				//this defines how the button is drawn
 				IMDType = IMDTYPE_COMPONENT;
-				psResGraphic = psResearch->psStat;
+				psResGraphic = psResearch->psStat.get();
 				// FIXME: Another kludge to deal with the superTransport to make it "fit" the display.
 				if (psResearch->id.compare("R-SuperTransport") == 0)
 				{

@@ -96,6 +96,7 @@
 #include "spectatorwidgets.h"
 #include "seqdisp.h"
 #include "version.h"
+#include "visibility.h"
 
 #include <algorithm>
 #include <unordered_map>
@@ -1349,7 +1350,7 @@ bool stageOneShutDown()
 {
 	debug(LOG_WZ, "== stageOneShutDown ==");
 
-	atmosSetWeatherType(WT_NONE); // reset weather and free its data
+	atmosSetWeatherType(WEATHER_TYPE::NONE); // reset weather and free its data
 	wzPerfShutdown();
 
 	pie_FreeShaders();
@@ -1623,7 +1624,7 @@ bool stageThreeInitialise()
 	bInTutorial = false;
 	rangeOnScreen = false;
 
-	if (fromSave && ActivityManager::instance().getCurrentGameMode() == ActivitySink::GameMode::CHALLENGE)
+	if (fromSave && ActivityManager::instance().getCurrentGameMode() == GAME_MODE::CHALLENGE)
 	{
 		challengeActive = true;
 	}
@@ -1646,7 +1647,7 @@ bool stageThreeInitialise()
 			triggerEventCheatMode(true);
 		}
 		triggerEvent(TRIGGER_GAME_INIT);
-		playerBuiltHQ = structureExists(selectedPlayer, REF_HQ, true, false);
+		playerBuiltHQ = structureExists(selectedPlayer, STRUCTURE_TYPE::HQ, true, false);
 	}
 
 	// Start / randomize in-game music
