@@ -581,6 +581,8 @@ bool placeDroid(Structure* psStructure, unsigned* droidX, unsigned* droidY);
 //Set the factory secondary orders to a droid
 void setFactorySecondaryState(Droid* psDroid, Structure* psStructure);
 
+static float CalcStructureSmokeInterval(float damage)
+
 /* is this a lassat structure? */
 static inline bool isLasSat(StructureStats* pStructureType)
 {
