@@ -55,7 +55,7 @@ static void updateCurrentPower(Structure* psStruct, UDWORD player, int ticks);
 static int64_t updateExtractedPower(Structure* psBuilding);
 
 //returns the relevant list based on OffWorld or OnWorld
-static Structure* powerStructList(int player);
+static Structure* powerStructList(unsigned player);
 
 struct PowerRequest
 {
@@ -78,12 +78,12 @@ struct PlayerPower
 
 static PlayerPower asPower[MAX_PLAYERS];
 
-//void setPowerModifier(int player, int modifier)
+//void setPowerModifier(unsigned player, int modifier)
 //{
 //	asPower[player].powerModifier = modifier;
 //}
 
-void setPowerMaxStorage(int player, int max)
+void setPowerMaxStorage(unsigned player, int max)
 {
 	asPower[player].maxStorage = max * FP_ONE;
 	asPower[player].currentPower = std::min<int64_t>(asPower[player].maxStorage, asPower[player].currentPower);
@@ -237,7 +237,7 @@ int get_queued_power(unsigned player)
       return sum + request.amount;
   });
 }
-//int getQueuedPower(int player)
+//int getQueuedPower(unsigned player)
 //{
 //	PlayerPower const* p = &asPower[player];
 //
@@ -270,14 +270,14 @@ void addPower(unsigned player, int amount)
     power_list[player].current = power_list[player].max_store;
   }
 }
-//void usePower(int player, uint32_t quantity)
+//void usePower(unsigned player, uint32_t quantity)
 //{
 //	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player (%d)", player);
 //	syncDebug("usePower%d %" PRId64"-=%u", player, asPower[player].currentPower, quantity);
 //	asPower[player].currentPower = MAX(0, asPower[player].currentPower - quantity * FP_ONE);
 //}
 //
-//void addPower(int player, int32_t quantity)
+//void addPower(unsigned player, int32_t quantity)
 //{
 //	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Bad player (%d)", player);
 //	syncDebug("addPower%d %" PRId64"+=%d", player, asPower[player].currentPower, quantity);
@@ -318,7 +318,7 @@ void powerCalc(bool on)
 //}
 
 //returns the relevant list based on OffWorld or OnWorld
-Structure* powerStructList(int player)
+Structure* powerStructList(unsigned player)
 {
 	ASSERT_OR_RETURN(nullptr, player < MAX_PLAYERS, "Invalid player %d", player);
 	if (offWorldKeepLists)
@@ -332,7 +332,7 @@ Structure* powerStructList(int player)
 }
 
 /* Update current power based on what Power Generators exist */
-void updatePlayerPower(int player, int ticks)
+void updatePlayerPower(unsigned player, int ticks)
 {
 	int64_t powerBefore = asPower[player].currentPower;
 

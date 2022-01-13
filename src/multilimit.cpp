@@ -377,7 +377,7 @@ bool applyLimitSet()
 		// So long as the ID is valid
 		if (id < numStructureStats)
 		{
-			for (int player = 0; player < MAX_PLAYERS; player++)
+			for (unsigned player = 0; player < MAX_PLAYERS; player++)
 			{
 				asStructureStats[id].upgraded_stats[player].limit = structLimit.limit;
 

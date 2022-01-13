@@ -88,7 +88,7 @@ extern bool bInTutorial;
 bool scriptInit();
 void scriptSetStartPos(int position, int x, int y);
 void scriptSetDerrickPos(int x, int y);
-Vector2i getPlayerStartPosition(int player);
+Vector2i getPlayerStartPosition(unsigned player);
 
 /// Initialize script system
 bool initScripts();
@@ -104,7 +104,7 @@ bool updateScripts();
 
 // Load and evaluate the given script, kept in memory
 bool loadGlobalScript(const WzString& path);
-wzapi::scripting_instance* loadPlayerScript(const WzString& path, int player, AIDifficulty difficulty);
+wzapi::scripting_instance* loadPlayerScript(const WzString& path, unsigned player, AIDifficulty difficulty);
 
 // Set/write variables in the script's global context, run after loading script,
 // but before triggering any events.
@@ -118,7 +118,7 @@ void scriptRemoveObject(const SimpleObject* psObj);
 void jsShowDebug();
 
 /// Choose a specific autogame AI
-void jsAutogameSpecific(const WzString& name, int player);
+void jsAutogameSpecific(const WzString& name, unsigned player);
 
 // ----------------------------------------------
 // Event functions
@@ -129,7 +129,7 @@ bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, SimpleObject* psObj = nullptr);
 // For each trigger with function parameters, a function to trigger it here
 bool triggerEventDroidBuilt(Droid* psDroid, Structure* psFactory);
 bool triggerEventAttacked(SimpleObject* psVictim, SimpleObject* psAttacker, int lastHit);
-bool triggerEventResearched(ResearchStats* psResearch, Structure* psStruct, int player);
+bool triggerEventResearched(ResearchStats* psResearch, Structure* psStruct, unsigned player);
 bool triggerEventStructBuilt(Structure* psStruct, Droid* psDroid);
 bool triggerEventStructDemolish(Structure* psStruct, Droid* psDroid);
 bool triggerEventDroidIdle(Droid* psDroid);
@@ -137,23 +137,23 @@ bool triggerEventDestroyed(SimpleObject* psVictim);
 bool triggerEventStructureReady(Structure* psStruct);
 bool triggerEventStructureUpgradeStarted(Structure* psStruct);
 bool triggerEventSeen(SimpleObject* psViewer, SimpleObject* psSeen);
-bool triggerEventObjectTransfer(SimpleObject* psObj, int from);
-bool triggerEventChat(int from, int to, const char* message);
-bool triggerEventBeacon(int from, int to, const char* message, int x, int y);
-bool triggerEventBeaconRemoved(int from, int to);
+bool triggerEventObjectTransfer(SimpleObject* psObj, unsigned from);
+bool triggerEventChat(unsigned from, unsigned to, const char* message);
+bool triggerEventBeacon(unsigned from, unsigned to, const char* message, int x, int y);
+bool triggerEventBeaconRemoved(unsigned from, unsigned to);
 bool triggerEventPickup(Feature* psFeat, Droid* psDroid);
 bool triggerEventCheatMode(bool entered);
 bool triggerEventGroupLoss(const SimpleObject* psObj, int group, int size, wzapi::scripting_instance* instance);
 bool triggerEventDroidMoved(Droid* psDroid, int oldx, int oldy);
 bool triggerEventArea(const std::string& label, Droid* psDroid);
 bool triggerEventSelected();
-bool triggerEventPlayerLeft(int player);
+bool triggerEventPlayerLeft(unsigned player);
 bool triggerEventDesignCreated(DroidTemplate* psTemplate);
-bool triggerEventSyncRequest(int from, int req_id, int x, int y, SimpleObject* psObj, SimpleObject* psObj2);
+bool triggerEventSyncRequest(unsigned from, int req_id, int x, int y, SimpleObject* psObj, SimpleObject* psObj2);
 bool triggerEventKeyPressed(int meta, int key);
-bool triggerEventAllianceOffer(uint8_t from, uint8_t to);
-bool triggerEventAllianceAccepted(uint8_t from, uint8_t to);
-bool triggerEventAllianceBroken(uint8_t from, uint8_t to);
+bool triggerEventAllianceOffer(unsigned from, unsigned to);
+bool triggerEventAllianceAccepted(unsigned from, unsigned to);
+bool triggerEventAllianceBroken(unsigned from, unsigned to);
 
 // ----------------------------------------------
 // Debug functions
@@ -169,7 +169,7 @@ struct LABEL
 	Vector2i p2 = Vector2i(0, 0); // world coordinates
 	int id;
 	int type;
-	int player;
+	unsigned player;
 	int subscriber;
 	std::vector<int> idlist;
 	int triggered;
@@ -186,7 +186,7 @@ private:
 	Vector2i p1 = {};
 	Vector2i p2 = {};
 	int id;
-	int player;
+	unsigned player;
 	int type;
 public:
 	generic_script_object();
@@ -257,7 +257,7 @@ public:
 		std::unique_ptr<timerAdditionalData> additionalTimerFuncParam;
 		int frameTime;
 		int ms;
-		int player;
+		unsigned player;
 		int calls;
 		timerType type;
 
@@ -311,7 +311,7 @@ public:
 	bool updateScripts();
 	bool shutdownScripts();
 
-	wzapi::scripting_instance* loadPlayerScript(const WzString& path, int player, AIDifficulty difficulty);
+	wzapi::scripting_instance* loadPlayerScript(const WzString& path, unsigned player, AIDifficulty difficulty);
 
 	// Set/write variables in the script's global context, run after loading script,
 	// but before triggering any events.
@@ -338,7 +338,7 @@ public:
 
 	// MARK: TIMERS
 public:
-	uniqueTimerID setTimer(wzapi::scripting_instance* caller, const TimerFunc& timerFunc, int player, int milliseconds,
+	uniqueTimerID setTimer(wzapi::scripting_instance* caller, const TimerFunc& timerFunc, unsigned player, int milliseconds,
 	                       const std::string& timerName = "", const SimpleObject* obj = nullptr, timerType type = TIMER_REPEAT,
 	                       std::unique_ptr<timerAdditionalData> additionalParam = nullptr);
 
@@ -470,7 +470,7 @@ public:
 		OBJECT_TYPE baseobjtype = OBJ_NUM_TYPES;
 		int frameTime = -1;
 		int ms = -1;
-		int player = -1;
+		unsigned player = -1;
 		int calls = 0;
 		timerType type = TIMER_REMOVED;
 		nlohmann::json instanceTimerRestoreData;

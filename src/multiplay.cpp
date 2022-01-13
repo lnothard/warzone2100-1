@@ -17,16 +17,18 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/*
- * Multiplay.c
+
+/**
+ * @file multiplay.cpp
+ * Contains the day to day networking stuff, and received message handler
  *
  * Alex Lee, Sep97, Pumpkin Studios
- *
- * Contains the day to day networking stuff, and received message handler.
  */
-#include <cstring>
+
 #include <algorithm>
 #include <chrono>
+#include <cstring>
+#include <ctime>
 
 #include "lib/framework/frame.h"
 #include "lib/ivis_opengl/piepalette.h" // for pal_Init()
@@ -38,7 +40,6 @@
 #include "game.h"									// for loading maps
 #include "hci.h"
 
-#include <ctime>									// for recording ping times.
 #include "research.h"
 #include "display3d.h"								// for changing the viewpoint
 #include "console.h"								// for screen messages
@@ -62,7 +63,6 @@
 #include "keybind.h"
 #include "qtscript.h"
 #include "design.h"
-#include "advvis.h"
 
 #include "template.h"
 #include "lib/netplay/netplay.h"								// the netplay library.
@@ -83,13 +83,11 @@
 #include "stdinreader.h"
 #include "spectatorwidgets.h"
 
-// ////////////////////////////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////
 // globals.
 bool bMultiPlayer = false; // true when more than 1 player.
 bool bMultiMessages = false; // == bMultiPlayer unless multimessages are disabled
 bool openchannels[MAX_CONNECTED_PLAYERS] = {true};
-UBYTE bDisplayMultiJoiningStatus;
+uint8_t bDisplayMultiJoiningStatus;
 
 MULTIPLAYERGAME game; //info to describe game.
 MULTIPLAYERINGAME ingame;
@@ -99,16 +97,12 @@ char playerName[MAX_PLAYERS][MAX_STR_LENGTH]; //Array to store all player names 
 
 #define DATACHECK2_INTERVAL_MS 10000
 
-// ////////////////////////////////////////////////////////////////////////////
 // Local Prototypes
 
 static bool recvBeacon(NETQUEUE queue);
 static bool recvResearch(NETQUEUE queue);
 static bool sendDataCheck2();
 
-void startMultiplayerGame();
-
-// ////////////////////////////////////////////////////////////////////////////
 // Auto Lag Kick Handling
 
 #define LAG_INITIAL_LOAD_GRACEPERIOD 60
@@ -141,15 +135,15 @@ static void autoLagKickRoutine()
 	}
 
 	ingame.lastLagCheck = now;
-	uint32_t playerCheckLimit = (!ingame.TimeEveryoneIsInGame.has_value()) ? MAX_CONNECTED_PLAYERS : MAX_PLAYERS;
-	for (uint32_t i = 0; i < playerCheckLimit; ++i)
+	unsigned playerCheckLimit = (!ingame.TimeEveryoneIsInGame.has_value())
+          ? MAX_CONNECTED_PLAYERS
+          : MAX_PLAYERS;
+	for (unsigned i = 0; i < playerCheckLimit; ++i)
 	{
-		if (!isHumanPlayer(i))
-		{
+		if (!isHumanPlayer(i)) {
 			continue;
 		}
-		if (i > MAX_PLAYERS && !gtimeShouldWaitForPlayer(i))
-		{
+		if (i > MAX_PLAYERS && !gtimeShouldWaitForPlayer(i)) {
 			continue;
 		}
 		bool isLagging = (ingame.PingTimes[i] >= PING_LIMIT);
@@ -160,10 +154,8 @@ static void autoLagKickRoutine()
 			isLagging = false;
 			isWaitingForInitialLoad = false;
 		}
-		if (!isLagging && !isWaitingForInitialLoad)
-		{
-			if (ingame.LagCounter[i] > 0)
-			{
+		if (!isLagging && !isWaitingForInitialLoad) {
+			if (ingame.LagCounter[i] > 0) {
 				ingame.LagCounter[i]--;
 			}
 			continue;
@@ -199,36 +191,28 @@ static void autoLagKickRoutine()
 	}
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // temporarily disable multiplayer mode.
 void turnOffMultiMsg(bool bDoit)
 {
-	if (!bMultiPlayer)
-	{
+	if (!bMultiPlayer) {
 		return;
 	}
 
 	bMultiMessages = !bDoit;
-	return;
 }
 
-
-// ////////////////////////////////////////////////////////////////////////////
 // throw a party when you win!
 bool multiplayerWinSequence(bool firstCall)
 {
-	static Position pos = Position(0, 0, 0);
-	static UDWORD last = 0;
+	static auto pos = Position{0, 0, 0};
+	static auto last = 0;
 	float rotAmount;
-	Structure* psStruct;
 
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return false;
 	}
 
-	if (firstCall)
-	{
+	if (firstCall) {
 		pos = cameraToHome(selectedPlayer, true); // pan the camera to home if not already doing so
 		last = 0;
 
@@ -236,27 +220,24 @@ bool multiplayerWinSequence(bool firstCall)
 		CancelAllResearch(selectedPlayer);
 
 		// stop all manufacture.
-		for (psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
+		for (auto& psStruct : apsStructLists[selectedPlayer])
 		{
-			if (StructIsFactory(psStruct))
-			{
-				if (((Factory*)psStruct->pFunctionality)->psSubject) //check if active
+			if (StructIsFactory(psStruct.get())) {
+				if (dynamic_cast<Factory*>(psStruct.get())->psSubject) //check if active
 				{
-					cancelProduction(psStruct, ModeQueue);
+					cancelProduction(psStruct.get(), ModeQueue);
 				}
 			}
 		}
 	}
 
 	// rotate world
-	if (MissionResUp && !getWarCamStatus())
-	{
+	if (MissionResUp && !getWarCamStatus()) {
 		rotAmount = graphicsTimeAdjustedIncrement(MAP_SPIN_RATE / 12);
 		playerPos.r.y = static_cast<int>(playerPos.r.y + rotAmount);
 	}
 
-	if (last > gameTime)
-	{
+	if (last > gameTime) {
 		last = 0;
 	}
 	if ((gameTime - last) < 500) // only  if not done recently.
@@ -265,43 +246,36 @@ bool multiplayerWinSequence(bool firstCall)
 	}
 	last = gameTime;
 
-	if (rand() % 3 == 0)
-	{
+	if (rand() % 3 == 0) {
 		Position pos2 = pos;
 		pos2.x += (rand() % world_coord(8)) - world_coord(4);
 		pos2.z += (rand() % world_coord(8)) - world_coord(4);
 
-		if (pos2.x < 0)
-		{
+		if (pos2.x < 0) {
 			pos2.x = 128;
 		}
 
-		if ((unsigned)pos2.x > world_coord(mapWidth))
-		{
+		if ((unsigned)pos2.x > world_coord(mapWidth)) {
 			pos2.x = world_coord(mapWidth);
 		}
 
-		if (pos2.z < 0)
-		{
+		if (pos2.z < 0) {
 			pos2.z = 128;
 		}
 
-		if ((unsigned)pos2.z > world_coord(mapHeight))
-		{
+		if ((unsigned)pos2.z > world_coord(mapHeight)) {
 			pos2.z = world_coord(mapHeight);
 		}
 
-		addEffect(&pos2, EFFECT_FIREWORK, FIREWORK_TYPE_LAUNCHER, false, nullptr, 0); // throw up some fire works.
+		addEffect(&pos2, EFFECT_GROUP::FIREWORK,
+              EFFECT_TYPE::FIREWORK_TYPE_LAUNCHER,
+              false, nullptr, 0); // throw up some fire works.
 	}
 
 	// show the score..
-
-
 	return true;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////
 // MultiPlayer main game loop code.
 bool multiPlayerLoop()
 {
@@ -376,7 +350,7 @@ bool multiPlayerLoop()
 						         _("Kicking player %s, because they tried to bypass data integrity check!"),
 						         getPlayerName(index));
 						sendInGameSystemMessage(msg);
-						addConsoleMessage(msg, LEFT_JUSTIFY, NOTIFY_MESSAGE);
+						addConsoleMessage(msg, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, NOTIFY_MESSAGE);
 						NETlogEntry(msg, SYNC_FLAG, index);
 
 #ifndef DEBUG
@@ -405,32 +379,27 @@ bool multiPlayerLoop()
 }
 
 
-// ////////////////////////////////////////////////////////////////////////////
 // quikie functions.
 
 // to get droids ...
-Droid* IdToDroid(UDWORD id, UDWORD player)
+Droid* IdToDroid(unsigned id, unsigned player)
 {
-	if (player == ANYPLAYER)
-	{
-		for (int i = 0; i < MAX_PLAYERS; i++)
+	if (player == ANYPLAYER) {
+		for (auto i = 0; i < MAX_PLAYERS; i++)
 		{
-			for (Droid* d = apsDroidLists[i]; d; d = d->psNext)
+			for (auto& d : apsDroidLists[i])
 			{
-				if (d->id == id)
-				{
-					return d;
+				if (d.getId() == id) {
+					return &d;
 				}
 			}
 		}
 	}
-	else if (player < MAX_PLAYERS)
-	{
-		for (Droid* d = apsDroidLists[player]; d; d = d->psNext)
+	else if (player < MAX_PLAYERS) {
+		for (auto& d : apsDroidLists[player])
 		{
-			if (d->id == id)
-			{
-				return d;
+			if (d.getId() == id) {
+				return &d;
 			}
 		}
 	}
@@ -442,22 +411,22 @@ Droid* IdToMissionDroid(UDWORD id, UDWORD player)
 {
 	if (player == ANYPLAYER)
 	{
-		for (auto d : mission.apsDroidLists)
+		for (const auto& d : mission.apsDroidLists)
 		{
-			for (; d; d = d->psNext)
+			for (auto droid : d)
 			{
-				if (d->id == id)
+				if (droid->getId() == id)
 				{
-					return d;
+					return droid;
 				}
 			}
 		}
 	}
 	else if (player < MAX_PLAYERS)
 	{
-		for (Droid* d = mission.apsDroidLists[player]; d; d = d->psNext)
+		for (auto d : mission.apsDroidLists[player])
 		{
-			if (d->id == id)
+			if (d->getId() == id)
 			{
 				return d;
 			}
@@ -466,25 +435,22 @@ Droid* IdToMissionDroid(UDWORD id, UDWORD player)
 	return nullptr;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // find a structure
 Structure* IdToStruct(UDWORD id, UDWORD player)
 {
-	int beginPlayer = 0, endPlayer = MAX_PLAYERS;
-	if (player != ANYPLAYER)
-	{
+	unsigned beginPlayer = 0, endPlayer = MAX_PLAYERS;
+	if (player != ANYPLAYER) {
 		beginPlayer = player;
-		endPlayer = std::min<int>(player + 1, MAX_PLAYERS);
+		endPlayer = std::min<unsigned>(player + 1, MAX_PLAYERS);
 	}
 	Structure** lists[2] = {apsStructLists, mission.apsStructLists};
 	for (auto & list : lists)
 	{
-		for (int i = beginPlayer; i < endPlayer; ++i)
+		for (auto i = beginPlayer; i < endPlayer; ++i)
 		{
-			for (Structure* d = list[i]; d; d = d->psNext)
+			for (auto& d : list[i])
 			{
-				if (d->id == id)
-				{
+				if (d->getId() == id) {
 					return d;
 				}
 			}
@@ -493,29 +459,24 @@ Structure* IdToStruct(UDWORD id, UDWORD player)
 	return nullptr;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // find a feature
-Feature* IdToFeature(UDWORD id, UDWORD player)
+Feature* IdToFeature(unsigned id, unsigned player)
 {
 	(void)player; // unused, all features go into player 0
-	for (Feature* d = apsFeatureLists[0]; d; d = d->psNext)
+	for (auto d : apsFeatureLists[0])
 	{
-		if (d->id == id)
-		{
+		if (d->getId() == id) {
 			return d;
 		}
 	}
 	return nullptr;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
-
-DroidTemplate* IdToTemplate(UDWORD tempId, UDWORD player)
+DroidTemplate* IdToTemplate(unsigned tempId, unsigned player)
 {
 	// Check if we know which player this is from, in that case, assume it is a player template
 	// FIXME: nuke the ANYPLAYER hack
-	if (player != ANYPLAYER && player < MAX_PLAYERS)
-	{
+	if (player != ANYPLAYER && player < MAX_PLAYERS) {
 		return findPlayerTemplateById(player, tempId);
 	}
 
@@ -523,19 +484,17 @@ DroidTemplate* IdToTemplate(UDWORD tempId, UDWORD player)
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
 		auto psTempl = findPlayerTemplateById(i, tempId);
-		if (psTempl)
-		{
+		if (psTempl) {
 			return psTempl;
 		}
 	}
-
 	// no error, since it is possible that we don't have this template defined yet.
 	return nullptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////////
 //  Returns a pointer to base object, given an id and optionally a player.
-SimpleObject* IdToPointer(UDWORD id, UDWORD player)
+SimpleObject* IdToPointer(unsigned id, unsigned player)
 {
 	Droid* pD;
 	Structure* pS;
@@ -543,32 +502,27 @@ SimpleObject* IdToPointer(UDWORD id, UDWORD player)
 	// droids.
 
 	pD = IdToDroid(id, player);
-	if (pD)
-	{
+	if (pD) {
 		return (SimpleObject*)pD;
 	}
 
 	// structures
 	pS = IdToStruct(id, player);
-	if (pS)
-	{
+	if (pS) {
 		return (SimpleObject*)pS;
 	}
 
 	// features
 	pF = IdToFeature(id, player);
-	if (pF)
-	{
+	if (pF) {
 		return (SimpleObject*)pF;
 	}
 
 	return nullptr;
 }
 
-
-// ////////////////////////////////////////////////////////////////////////////
 // return a players name.
-const char* getPlayerName(int player)
+const char* getPlayerName(unsigned player)
 {
 	ASSERT_OR_RETURN(nullptr, player >= 0, "Wrong player index: %d", player);
 
@@ -598,59 +552,58 @@ const char* getPlayerName(int player)
 	return NetPlay.players[player].name;
 }
 
-bool setPlayerName(int player, const char* sName)
+bool setPlayerName(unsigned player, const char* sName)
 {
-	ASSERT_OR_RETURN(false, player < MAX_PLAYERS && player >= 0, "Player index (%u) out of range", player);
+	ASSERT_OR_RETURN(false, player < MAX_PLAYERS &&
+                   player >= 0,
+                   "Player index (%u) out of range",
+                   player);
+
 	sstrcpy(playerName[player], sName);
 	return true;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // to determine human/computer players and responsibilities of each..
-bool isHumanPlayer(int player)
+bool isHumanPlayer(unsigned player)
 {
-	if (player >= MAX_CONNECTED_PLAYERS || player < 0)
-	{
+	if (player >= MAX_CONNECTED_PLAYERS ||
+      player < 0) {
 		return false; // obvious, really
 	}
 	return NetPlay.players[player].allocated;
 }
 
 // returns player responsible for 'player'
-int whosResponsible(int player)
+unsigned whosResponsible(unsigned player)
 {
-	if (isHumanPlayer(player))
-	{
+	if (isHumanPlayer(player) || player == selectedPlayer) {
 		return player; // Responsible for him or her self
 	}
-	else if (player == selectedPlayer)
-	{
-		return player; // We are responsibly for ourselves
-	}
-	else
-	{
+	else {
 		return NetPlay.hostPlayer; // host responsible for all AIs
 	}
 }
 
 //returns true if selected player is responsible for 'player'
-bool myResponsibility(int player)
+bool myResponsibility(unsigned player)
 {
-	return (whosResponsible(player) == selectedPlayer || whosResponsible(player) == realSelectedPlayer);
+	return whosResponsible(player) == selectedPlayer ||
+         whosResponsible(player) == realSelectedPlayer;
 }
 
 //returns true if 'player' is responsible for 'playerinquestion'
-bool responsibleFor(int player, int playerinquestion)
+bool responsibleFor(unsigned player, unsigned playerinquestion)
 {
 	return whosResponsible(playerinquestion) == player;
 }
 
-bool canGiveOrdersFor(int player, int playerInQuestion)
+bool canGiveOrdersFor(unsigned player, unsigned playerInQuestion)
 {
-	const DebugInputManager& dbgInputManager = gInputManager.debugManager();
+	const auto& dbgInputManager = gInputManager.debugManager();
 	return playerInQuestion >= 0 && playerInQuestion < MAX_PLAYERS &&
-	(player == playerInQuestion || responsibleFor(player, playerInQuestion) || dbgInputManager.
-		debugMappingsAllowed());
+	(player == playerInQuestion ||
+   responsibleFor(player, playerInQuestion) ||
+   dbgInputManager.debugMappingsAllowed());
 }
 
 int scavengerSlot()
@@ -665,16 +618,14 @@ int scavengerPlayer()
 	return (game.scavengers != NO_SCAVENGERS) ? scavengerSlot() : -1;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // probably temporary. Places the camera on the players 1st droid or struct.
-Vector3i cameraToHome(UDWORD player, bool scroll)
+Vector3i cameraToHome(unsigned player, bool scroll)
 {
-	UDWORD x, y;
+	int x, y;
 	Structure* psBuilding = nullptr;
 
-	if (player < MAX_PLAYERS)
-	{
-		for (psBuilding = apsStructLists[player]; psBuilding && (psBuilding->pStructureType->type != REF_HQ); psBuilding
+	if (player < MAX_PLAYERS) {
+		for (psBuilding = apsStructLists[player]; psBuilding && (psBuilding->pStructureType->type != STRUCTURE_TYPE::HQ); psBuilding
 		     = psBuilding->psNext)
 		{
 		}
@@ -682,8 +633,8 @@ Vector3i cameraToHome(UDWORD player, bool scroll)
 
 	if (psBuilding)
 	{
-		x = map_coord(psBuilding->pos.x);
-		y = map_coord(psBuilding->pos.y);
+		x = map_coord(psBuilding->getPosition().x);
+		y = map_coord(psBuilding->getPosition().y);
 	}
 	else if ((player < MAX_PLAYERS) && apsDroidLists[player]) // or first droid
 	{
@@ -749,8 +700,8 @@ static void sendObj(const SimpleObject* psObj)
 {
 	if (psObj)
 	{
-		int32_t obj_id = psObj->id;
-		int32_t player = psObj->player;
+		int32_t obj_id = psObj->getId();
+		int32_t player = psObj->getPlayer();
 		NETint32_t(&obj_id);
 		NETint32_t(&player);
 	}
@@ -806,7 +757,7 @@ static bool sendDataCheck2()
 				std::string msg = astringf(
 					_("%s (%u) has an incompatible mod, and has been kicked."), getPlayerName(player), player);
 				sendInGameSystemMessage(msg.c_str());
-				addConsoleMessage(msg.c_str(), LEFT_JUSTIFY, NOTIFY_MESSAGE);
+				addConsoleMessage(msg.c_str(), CONSOLE_TEXT_JUSTIFICATION::LEFT, NOTIFY_MESSAGE);
 
 				kickPlayer(player, _("Your data doesn't match the host's!"), ERROR_WRONGDATA);
 				debug(LOG_INFO,
@@ -1005,7 +956,7 @@ static bool recvDataCheck2(NETQUEUE queue)
 		std::string msg = astringf(
 			_("%s (%u) has an incompatible mod, and has been kicked."), getPlayerName(player), player);
 		sendInGameSystemMessage(msg.c_str());
-		addConsoleMessage(msg.c_str(), LEFT_JUSTIFY, NOTIFY_MESSAGE);
+		addConsoleMessage(msg.c_str(), CONSOLE_TEXT_JUSTIFICATION::LEFT, NOTIFY_MESSAGE);
 
 		kickPlayer(player, _("Your data doesn't match the host's!"), ERROR_WRONGDATA);
 		return false;
@@ -1258,9 +1209,9 @@ bool recvMessage()
 					// ignore
 					break;
 				}
-				addConsoleMessage(_("REPLAY HAS ENDED"), CENTRE_JUSTIFY, SYSTEM_MESSAGE, false,
+				addConsoleMessage(_("REPLAY HAS ENDED"), CONSOLE_TEXT_JUSTIFICATION::CENTRE, SYSTEM_MESSAGE, false,
 				                  MAX_CONSOLE_MESSAGE_DURATION);
-				addConsoleMessage(_("(Press ESC to quit.)"), CENTRE_JUSTIFY, SYSTEM_MESSAGE, false,
+				addConsoleMessage(_("(Press ESC to quit.)"), CONSOLE_TEXT_JUSTIFICATION::CENTRE, SYSTEM_MESSAGE, false,
 				                  MAX_CONSOLE_MESSAGE_DURATION);
 				break;
 			default:
@@ -1534,13 +1485,13 @@ bool sendResearchStatus(const Structure* psBuilding, uint32_t index, uint8_t pla
 Structure* findResearchingFacilityByResearchIndex(unsigned player, unsigned index)
 {
 	// Go through the structs to find the one doing this topic
-	for (Structure* psBuilding = apsStructLists[player]; psBuilding; psBuilding = psBuilding->psNext)
+	for (auto& psBuilding : apsStructLists[player])
 	{
-		if (psBuilding->pStructureType->type == REF_RESEARCH
-			&& ((ResearchFacility*)psBuilding->pFunctionality)->psSubject
-			&& ((ResearchFacility*)psBuilding->pFunctionality)->psSubject->ref - STAT_RESEARCH == index)
+		if (psBuilding->getStats().type == STRUCTURE_TYPE::RESEARCH
+			&& (dynamic_cast<ResearchFacility*>(psBuilding.get()))->psSubject
+			&& (dynamic_cast<ResearchFacility*>(psBuilding.get()))->psSubject->ref - STAT_RESEARCH == index)
 		{
-			return psBuilding;
+			return psBuilding.get();
 		}
 	}
 	return nullptr; // Not found.
@@ -1594,21 +1545,18 @@ bool recvResearchStatus(NETQUEUE queue)
 		psBuilding = IdToStruct(structRef, player);
 
 		// Set that facility to research
-		if (psBuilding && psBuilding->pFunctionality)
-		{
-			if (!psBuilding->pStructureType || psBuilding->pStructureType->type != REF_RESEARCH)
-			{
+		if (psBuilding) {
+			if (psBuilding->getStats().type != STRUCTURE_TYPE::RESEARCH) {
 				debug(LOG_INFO, "Structure is not a research facility: \"%s\".",
-				      (psBuilding->pStructureType) ? psBuilding->pStructureType->id.toUtf8().c_str() : "");
+				      psBuilding->getStats().id.toUtf8().c_str());
 				return false;
 			}
 
-			psResFacilty = (ResearchFacility*)psBuilding->pFunctionality;
+			psResFacilty = dynamic_cast<ResearchFacility*>(psBuilding);
 
 			popStatusPending(*psResFacilty); // Research is no longer pending, as it's actually starting now.
 
-			if (psResFacilty->psSubject)
-			{
+			if (psResFacilty->psSubject) {
 				cancelResearch(psBuilding, ModeImmediate);
 			}
 
@@ -1631,7 +1579,7 @@ bool recvResearchStatus(NETQUEUE queue)
 
 			// Set the subject up
 			pResearch = &asResearch[index];
-			psResFacilty->psSubject = pResearch;
+			psResFacilty->psSubject = std::make_unique<ResearchStats>(pResearch);
 
 			// Start the research
 			MakeResearchStarted(pPlayerRes);
@@ -1658,17 +1606,15 @@ bool recvResearchStatus(NETQUEUE queue)
 		}
 
 		// Stop the facility doing any research
-		if (psBuilding)
-		{
-			if (!psBuilding->pStructureType || psBuilding->pStructureType->type != REF_RESEARCH)
-			{
+		if (psBuilding) {
+			if (psBuilding->getStats().type != STRUCTURE_TYPE::RESEARCH) {
 				debug(LOG_INFO, "Structure is not a research facility: \"%s\".",
-				      (psBuilding->pStructureType) ? psBuilding->pStructureType->id.toUtf8().c_str() : "");
+				      psBuilding->getStats().id.toUtf8().c_str());
 				return false;
 			}
 
 			cancelResearch(psBuilding, ModeImmediate);
-			popStatusPending(*(ResearchFacility*)psBuilding->pFunctionality);
+			popStatusPending(*dynamic_cast<ResearchFacility*>(psBuilding));
 			// Research cancellation is no longer pending, as it's actually cancelling now.
 		}
 	}
@@ -1727,13 +1673,13 @@ void printInGameTextMessage(NetworkTextMessage const& message)
 	{
 	case SYSTEM_MESSAGE:
 	case NOTIFY_MESSAGE:
-		addConsoleMessage(message.text, DEFAULT_JUSTIFY, message.sender, message.teamSpecific);
+		addConsoleMessage(message.text, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, message.sender, message.teamSpecific);
 		break;
 
 	default:
 		char formatted[MAX_CONSOLE_STRING_LENGTH];
 		ssprintf(formatted, "[%s] %s", formatLocalDateTime("%H:%M").c_str(), message.text);
-		addConsoleMessage(formatted, DEFAULT_JUSTIFY, message.sender, message.teamSpecific);
+		addConsoleMessage(formatted, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, message.sender, message.teamSpecific);
 		break;
 	}
 }
@@ -1757,12 +1703,10 @@ void printConsoleNameChange(const char* oldName, const char* newName)
 	displayRoomSystemMessage(msg);
 }
 
-//
 // At this time, we do NOT support messages for beacons
-//
-bool sendBeacon(int32_t locX, int32_t locY, int32_t forPlayer, int32_t sender, const char* pStr)
+bool sendBeacon(int32_t locX, int32_t locY, unsigned forPlayer, unsigned sender, const char* pStr)
 {
-	int sendPlayer;
+	unsigned sendPlayer;
 	//debug(LOG_WZ, "sendBeacon: '%s'",pStr);
 
 	//find machine that is hosting this human or AI
@@ -1856,14 +1800,13 @@ bool recvSpecInGameTextMessage(NETQUEUE queue)
 	NETstring(newmsg, MAX_CONSOLE_STRING_LENGTH);
 	NETend();
 
-	if (whosResponsible(sender) != queue.index)
-	{
+	if (whosResponsible(sender) != queue.index) {
 		sender = queue.index; // Fix corrupted sender.
 	}
 
-	if (sender >= MAX_CONNECTED_PLAYERS || (!NetPlay.players[sender].allocated && NetPlay.players[sender].ai ==
-		AI_OPEN))
-	{
+	if (sender >= MAX_CONNECTED_PLAYERS ||
+      (!NetPlay.players[sender].allocated &&
+       NetPlay.players[sender].ai == AI_OPEN)) {
 		return false;
 	}
 
@@ -1903,24 +1846,26 @@ bool recvDestroyFeature(NETQUEUE queue)
 	NETend();
 
 	const DebugInputManager& dbgInputManager = gInputManager.debugManager();
-	if (!dbgInputManager.debugMappingsAllowed() && bMultiPlayer)
-	{
-		debug(LOG_WARNING, "Failed to remove feature for player %u.", NetPlay.players[queue.index].position);
+	if (!dbgInputManager.debugMappingsAllowed() && bMultiPlayer) {
+		debug(LOG_WARNING, "Failed to remove feature for player %u.",
+          NetPlay.players[queue.index].position);
 		return false;
 	}
 
 	pF = IdToFeature(id, ANYPLAYER);
-	if (pF == nullptr)
-	{
+	if (pF == nullptr) {
 		debug(LOG_FEATURE, "feature id %d not found (probably already destroyed)", id);
 		return false;
 	}
 
-	debug(LOG_FEATURE, "p%d feature id %d destroyed (%s)", pF->player, pF->id, getStatsName(pF->psStats));
+	debug(LOG_FEATURE, "p%d feature id %d destroyed (%s)", pF->getPlayer(),
+        pF->getId(), getStatsName(pF->getStats()));
 	// Remove the feature locally
 	turnOffMultiMsg(true);
 	destroyFeature(pF, gameTime - deltaGameTime + 1);
-	// deltaGameTime is actually 0 here, since we're between updates. However, the value of gameTime - deltaGameTime + 1 will not change when we start the next tick.
+	// deltaGameTime is actually 0 here, since we're between updates.
+  // However, the value of gameTime - deltaGameTime + 1 will not
+  // change when we start the next tick.
 	turnOffMultiMsg(false);
 
 	return true;
@@ -1950,9 +1895,10 @@ bool recvMapFileRequested(NETQUEUE queue)
 	netPlayersUpdated = true; // Show download icon on player.
 
 	std::string filename;
-	if (hash == game.hash)
-	{
-		addConsoleMessage(_("Map was requested: SENDING MAP!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+	if (hash == game.hash) {
+		addConsoleMessage(_("Map was requested: SENDING MAP!"),
+                      CONSOLE_TEXT_JUSTIFICATION::DEFAULT,
+                      SYSTEM_MESSAGE);
 
 		LEVEL_DATASET* mapData = levFindDataSet(game.map, &game.hash);
 		ASSERT_OR_RETURN(false, mapData, "levFindDataSet failed for game.map: %s", game.map);
@@ -1960,23 +1906,22 @@ bool recvMapFileRequested(NETQUEUE queue)
 		                 "levFindDataSet found game.map: %s; but realFileName is empty - requesting a built-in map??",
 		                 game.map);
 		filename = mapData->realFileName;
-		if (filename.empty())
-		{
+		if (filename.empty()) {
 			debug(LOG_INFO, "Unknown map requested by %u.", player);
 			return false;
 		}
 		debug(LOG_INFO, "Map was requested. Looking for %s", filename.c_str());
 	}
-	else
-	{
+	else {
 		filename = getModFilename(hash);
-		if (filename.empty())
-		{
+		if (filename.empty()) {
 			debug(LOG_INFO, "Unknown file requested by %u.", player);
 			return false;
 		}
 
-		addConsoleMessage(_("Mod was requested: SENDING MOD!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Mod was requested: SENDING MOD!"),
+                      CONSOLE_TEXT_JUSTIFICATION::DEFAULT,
+                      SYSTEM_MESSAGE);
 	}
 
 	// Checking to see if file is available...
@@ -2051,7 +1996,7 @@ void sendMap()
 			if (done == 100)
 			{
 				netPlayersUpdated = true; // Remove download icon from player.
-				addConsoleMessage(_("FILE SENT!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+				addConsoleMessage(_("FILE SENT!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 				debug(LOG_INFO, "=== File has been sent to player %d ===", i);
 			}
 		}
@@ -2069,7 +2014,7 @@ bool recvMapFileData(NETQUEUE queue)
 	if (NET_getDownloadingWzFiles().empty())
 	{
 		netPlayersUpdated = true; // Remove download icon from ourselves.
-		addConsoleMessage(_("MAP DOWNLOADED!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("MAP DOWNLOADED!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 		sendInGameSystemMessage("MAP DOWNLOADED");
 		debug(LOG_INFO, "=== File has been received. ===");
 
@@ -2095,7 +2040,7 @@ bool recvMapFileData(NETQUEUE queue)
 			{
 				ssprintf(buf, "%s", _("Warning, HOST has altered the game code, and can't be trusted!"));
 			}
-			addConsoleMessage(buf, DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
+			addConsoleMessage(buf, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, NOTIFY_MESSAGE);
 			game.isMapMod = true;
 			widgReveal(psWScreen, MULTIOP_MAP_MOD);
 		}
@@ -2108,13 +2053,11 @@ bool recvMapFileData(NETQUEUE queue)
 		loadMapPreview(false);
 		return true;
 	}
-
 	return false;
 }
 
-
 //prepare viewdata for help blip
-VIEWDATA* CreateBeaconViewData(SDWORD sender, UDWORD LocX, UDWORD LocY)
+VIEWDATA* CreateBeaconViewData(SDWORD sender, int LocX, int LocY)
 {
 	UDWORD height;
 	VIEWDATA* psViewData = nullptr;
@@ -2132,7 +2075,7 @@ VIEWDATA* CreateBeaconViewData(SDWORD sender, UDWORD LocX, UDWORD LocY)
 	psViewData->textMsg.push_back(WzString::fromUtf8(getPlayerName(sender)));
 
 	//store message type
-	psViewData->type = VIEW_BEACON;
+	psViewData->type = VIEW_TYPE::VIEW_BEACON;
 
 	//allocate memory for blip location etc
 	psViewData->pData = new VIEW_PROXIMITY;
@@ -2173,7 +2116,7 @@ MESSAGE* findBeaconMsg(UDWORD player, SDWORD sender)
 		//look for VIEW_BEACON, should only be 1 per player
 		if (psCurr->dataType == MSG_DATA_BEACON)
 		{
-			if (psCurr->pViewData->type == VIEW_BEACON)
+			if (psCurr->pViewData->type == VIEW_TYPE::VIEW_BEACON)
 			{
 				debug(LOG_WZ, "findBeaconMsg: %d ALREADY HAS A MESSAGE STORED", player);
 				if (((VIEW_PROXIMITY*)psCurr->pViewData->pData)->sender == sender)
@@ -2209,7 +2152,7 @@ bool addBeaconBlip(SDWORD locX, SDWORD locY, SDWORD forPlayer, SDWORD sender, co
 	}
 
 	//create new message
-	psMessage = addBeaconMessage(MSG_PROXIMITY, false, forPlayer);
+	psMessage = addBeaconMessage(MESSAGE_TYPE::MSG_PROXIMITY, false, forPlayer);
 	if (psMessage)
 	{
 		VIEWDATA* pTempData = CreateBeaconViewData(sender, locX, locY);
@@ -2282,7 +2225,7 @@ static bool recvBeacon(NETQUEUE queue)
 	return addBeaconBlip(locX, locY, receiver, sender, beaconReceiveMsg[sender]);
 }
 
-const char* getPlayerColourName(int player)
+const char* getPlayerColourName(unsigned player)
 {
 	static const char* playerColors[] =
 	{
@@ -2371,11 +2314,10 @@ bool makePlayerSpectator(uint32_t playerIndex, bool removeAllStructs, bool quiet
 
 		// Destroy HQ
 		std::vector<Structure*> hqStructs;
-		for (Structure* psStruct = apsStructLists[playerIndex]; psStruct; psStruct = psStruct->psNext)
+		for (auto& psStruct : apsStructLists[playerIndex])
 		{
-			if (REF_HQ == psStruct->pStructureType->type)
-			{
-				hqStructs.push_back(psStruct);
+			if (STRUCTURE_TYPE::HQ == psStruct->getStats().type) {
+				hqStructs.push_back(psStruct.get());
 			}
 		}
 		for (auto psStruct : hqStructs)
@@ -2406,29 +2348,25 @@ bool makePlayerSpectator(uint32_t playerIndex, bool removeAllStructs, bool quiet
 
 		// Destroy structs
 		debug(LOG_DEATH, "killing off structures for player %d", playerIndex);
-		Structure* psStruct = apsStructLists[playerIndex];
-		while (psStruct) // delete structs
+		auto psStructs = apsStructLists[playerIndex];
+		for (auto& psStruct : psStructs) // delete structs
 		{
-			Structure* psNext = psStruct->psNext;
-
 			if (removeAllStructs
-				|| psStruct->pStructureType->type == REF_POWER_GEN
-				|| psStruct->pStructureType->type == REF_RESEARCH
-				|| psStruct->pStructureType->type == REF_COMMAND_CONTROL
-				|| StructIsFactory(psStruct))
+				|| psStruct->getStats().type == STRUCTURE_TYPE::POWER_GEN
+				|| psStruct->getStats().type == STRUCTURE_TYPE::RESEARCH
+				|| psStruct->getStats().type == STRUCTURE_TYPE::COMMAND_CONTROL
+				|| StructIsFactory(psStruct.get()))
 			{
 				// FIXME: look why destroyStruct() doesn't put back the feature like removeStruct() does
-				if (quietly || psStruct->pStructureType->type == REF_RESOURCE_EXTRACTOR) // don't show effects
+				if (quietly || psStruct->getStats().type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR) // don't show effects
 				{
-					removeStruct(psStruct, true);
+					removeStruct(psStruct.get(), true);
 				}
 				else // show effects
 				{
-					destroyStruct(psStruct, gameTime);
+					destroyStruct(psStruct.get(), gameTime);
 				}
 			}
-
-			psStruct = psNext;
 		}
 	}
 
@@ -2470,10 +2408,10 @@ bool makePlayerSpectator(uint32_t playerIndex, bool removeAllStructs, bool quiet
 
 		// add spectator mode message
 		bool lowUISpectatorMode = streamer_spectator_mode() || NETisReplay();
-		addConsoleMessage(_("Spectator Mode"), CENTRE_JUSTIFY, SYSTEM_MESSAGE, false,
+		addConsoleMessage(_("Spectator Mode"), CONSOLE_TEXT_JUSTIFICATION::CENTRE, SYSTEM_MESSAGE, false,
 		                  (!lowUISpectatorMode) ? MAX_CONSOLE_MESSAGE_DURATION : 15);
 		addConsoleMessage(
-			_("You are a spectator. Enjoy watching the game!"), CENTRE_JUSTIFY, SYSTEM_MESSAGE, false,
+			_("You are a spectator. Enjoy watching the game!"), CONSOLE_TEXT_JUSTIFICATION::CENTRE, SYSTEM_MESSAGE, false,
 			(!lowUISpectatorMode) ? 30 : 15);
 
 		specLayerInit(!streamer_spectator_mode());

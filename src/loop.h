@@ -109,7 +109,7 @@ unsigned getNumConstructorDroids(unsigned player);
 // increase the droid counts - used by update factory to keep the counts in sync
 void adjustDroidCount(Droid* droid, int delta);
 // Increase counts of droids in a transporter
-void droidCountsInTransporter(Droid* droid, int player);
+void droidCountsInTransporter(Droid* droid, unsigned player);
 
 void countUpdate(bool synch = false);
 

@@ -91,8 +91,8 @@ void fpathUpdate();
 FPATH_RETVAL fpathDroidRoute(Droid* psDroid, SDWORD targetX, SDWORD targetY, FPATH_MOVETYPE moveType);
 
 /// Returns true iff the parameters have equivalent behaviour in fpathBaseBlockingTile.
-bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_MOVETYPE moveType1,
-                               PROPULSION_TYPE propulsion2, int player2, FPATH_MOVETYPE moveType2);
+bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, unsigned player1, FPATH_MOVETYPE moveType1,
+                               PROPULSION_TYPE propulsion2, unsigned player2, FPATH_MOVETYPE moveType2);
 
 /** Function pointer to the currently in-use blocking tile check function.
  *
@@ -108,7 +108,7 @@ bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_M
  */
 bool fpathBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion);
 bool fpathDroidBlockingTile(Droid* psDroid, int x, int y, FPATH_MOVETYPE moveType);
-bool fpathBaseBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion, int player, FPATH_MOVETYPE moveType);
+bool fpathBaseBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion, unsigned player, FPATH_MOVETYPE moveType);
 
 static inline bool fpathBlockingTile(Vector2i tile, PROPULSION_TYPE propulsion)
 {

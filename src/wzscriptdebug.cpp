@@ -355,7 +355,7 @@ static std::string arrayToString(const T* array, int length)
 
 // Using ^ to denote stats that are in templates, and as such do not change.
 // Using : to denote stats that come from structure specializations.
-nlohmann::ordered_json componentToString(const ComponentStats* psStats, int player)
+nlohmann::ordered_json componentToString(const ComponentStats* psStats, unsigned player)
 {
 	nlohmann::ordered_json key = nlohmann::ordered_json::object();
 
@@ -770,7 +770,7 @@ public:
 			auto selectedAiPlayerButton = psParent->aiPlayerDropdown->getSelectedItem();
 			ASSERT_OR_RETURN(, selectedAiPlayerButton != nullptr, "No selected AI player?");
 			const WzString script = selectedAiButton->getString();
-			const int player = static_cast<int>(selectedAiPlayerButton->UserData);
+			const unsigned player = static_cast<int>(selectedAiPlayerButton->UserData);
 			jsAutogameSpecific(WzString::fromUtf8("multiplay/skirmish/") + script, player);
 			debug(LOG_INFO, "Script attached - close and reopen debug window to see its context");
 		});
@@ -1219,7 +1219,7 @@ public:
 	}
 
 public:
-	void viewPlayerModel(int playerIdx)
+	void viewPlayerModel(unsigned playerIdx)
 	{
 		ASSERT_OR_RETURN(, playerIdx >= 0 && playerIdx <= MAX_PLAYERS, "Invalid player index: %d", playerIdx);
 		table->updateData(fillPlayerModel(playerIdx), true);

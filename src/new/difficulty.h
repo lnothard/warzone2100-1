@@ -6,7 +6,7 @@
 #define WARZONE2100_DIFFICULTY_H
 
 ///
-extern int player_modifier;
+extern unsigned player_modifier;
 
 ///
 extern int enemy_modifier;

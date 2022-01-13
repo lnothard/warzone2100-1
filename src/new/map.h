@@ -130,7 +130,7 @@ void set_tile_height(int x, int y, int height);
  */
 void clip_coords(Vector2i& pos);
 
-[[nodiscard]] uint8_t aux_tile(int x, int y, int player);
+[[nodiscard]] uint8_t aux_tile(int x, int y, unsigned player);
 
 [[nodiscard]] uint8_t block_tile(int x, int y, int slot);
 

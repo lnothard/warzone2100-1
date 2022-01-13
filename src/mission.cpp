@@ -1557,7 +1557,7 @@ static void missionResetDroids()
 
 	ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer %" PRIu32 " exceeds MAX_PLAYERS", selectedPlayer);
 
-	for (unsigned int player = 0; player < MAX_PLAYERS; player++)
+	for (unsigned unsigned player = 0; player < MAX_PLAYERS; player++)
 	{
 		for (Droid* psDroid = apsDroidLists[player]; psDroid != nullptr; psDroid = psDroid->psNext)
 		{

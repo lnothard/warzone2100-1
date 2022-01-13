@@ -153,12 +153,12 @@ int projCalcIndirectVelocities(int32_t dx, int32_t dz, int32_t v, int32_t* vx, i
                                    int min_angle);
 
 /** Send a single projectile against the given target. */
-bool proj_SendProjectile(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target, SimpleObject* psTarget,
+bool proj_SendProjectile(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, unsigned player, Vector3i target, SimpleObject* psTarget,
                          bool bVisible, int weapon_slot);
 
 /** Send a single projectile against the given target
  * with a minimum shot angle. */
-bool proj_SendProjectileAngled(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int player, Vector3i target,
+bool proj_SendProjectileAngled(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, unsigned player, Vector3i target,
                                SimpleObject* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
 
 /** Return whether a weapon is direct or indirect. */
@@ -171,7 +171,7 @@ int proj_GetLongRange(const WeaponStats* psStats, unsigned player);
 int proj_GetMinRange(const WeaponStats* psStats, unsigned player);
 
 /** Return the short range for a weapon. */
-int proj_GetShortRange(const WeaponStats* psStats, int player);
+int proj_GetShortRange(const WeaponStats* psStats, unsigned player);
 
 unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* psTarget);
 bool gfxVisible(Projectile* psObj);

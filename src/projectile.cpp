@@ -205,12 +205,12 @@ static unsigned qualityFactor(Droid* psAttacker, Droid* psVictim)
 	return (powerRatio + pointsRatio) / 2;
 }
 
-void setExpGain(int player, int gain)
+void setExpGain(unsigned player, int gain)
 {
 	experienceGain[player] = gain;
 }
 
-int getExpGain(int player)
+int getExpGain(unsigned player)
 {
 	return experienceGain[player];
 }
@@ -340,7 +340,7 @@ int projCalcIndirectVelocities(int32_t dx, const int32_t dz, int32_t v,
 	return t;
 }
 
-bool proj_SendProjectile(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int player,
+bool proj_SendProjectile(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, unsigned player,
                          Vector3i target, SimpleObject* psTarget, bool bVisible,
                          int weapon_slot)
 {
@@ -348,7 +348,7 @@ bool proj_SendProjectile(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int player,
                                    bVisible, weapon_slot, 0, gameTime - 1);
 }
 
-bool proj_SendProjectileAngled(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, int player,
+bool proj_SendProjectileAngled(Weapon* psWeap, SIMPLE_OBJECT* psAttacker, unsigned player,
                                Vector3i target, SimpleObject* psTarget, bool bVisible,
                                int weapon_slot, int min_angle, unsigned fireTime)
 {

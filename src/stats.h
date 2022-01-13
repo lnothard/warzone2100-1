@@ -660,20 +660,20 @@ bool getPropulsionType(const char* typeName, PROPULSION_TYPE* type);
  */
 extern const StringToEnumMap<WEAPON_EFFECT> map_WEAPON_EFFECT;
 
-WZ_DECL_PURE int weaponROF(const WeaponStats* psStat, int player);
-WZ_DECL_PURE int weaponFirePause(const WeaponStats* psStats, int player);
-WZ_DECL_PURE int weaponReloadTime(const WeaponStats* psStats, int player);
-WZ_DECL_PURE int weaponShortHit(const WeaponStats* psStats, int player);
-WZ_DECL_PURE int weaponLongHit(const WeaponStats* psStats, int player);
-WZ_DECL_PURE int weaponDamage(const WeaponStats* psStats, int player);
-WZ_DECL_PURE int weaponRadDamage(const WeaponStats* psStats, int player);
-WZ_DECL_PURE int weaponPeriodicalDamage(const WeaponStats* psStats, int player);
-WZ_DECL_PURE int sensorRange(const SensorStats* psStats, int player);
-WZ_DECL_PURE int ecmRange(const EcmStats* psStats, int player);
-WZ_DECL_PURE int repairPoints(const RepairStats* psStats, int player);
-WZ_DECL_PURE int constructorPoints(const ConstructStats* psStats, int player);
-WZ_DECL_PURE int bodyPower(const BodyStats* psStats, int player);
-WZ_DECL_PURE int bodyArmour(const BodyStats* psStats, int player, WEAPON_CLASS weaponClass);
+WZ_DECL_PURE int weaponROF(const WeaponStats* psStat, unsigned player);
+WZ_DECL_PURE int weaponFirePause(const WeaponStats* psStats, unsigned player);
+WZ_DECL_PURE int weaponReloadTime(const WeaponStats* psStats, unsigned player);
+WZ_DECL_PURE int weaponShortHit(const WeaponStats* psStats, unsigned player);
+WZ_DECL_PURE int weaponLongHit(const WeaponStats* psStats, unsigned player);
+WZ_DECL_PURE int weaponDamage(const WeaponStats* psStats, unsigned player);
+WZ_DECL_PURE int weaponRadDamage(const WeaponStats* psStats, unsigned player);
+WZ_DECL_PURE int weaponPeriodicalDamage(const WeaponStats* psStats, unsigned player);
+WZ_DECL_PURE int sensorRange(const SensorStats* psStats, unsigned player);
+WZ_DECL_PURE int ecmRange(const EcmStats* psStats, unsigned player);
+WZ_DECL_PURE int repairPoints(const RepairStats* psStats, unsigned player);
+WZ_DECL_PURE int constructorPoints(const ConstructStats* psStats, unsigned player);
+WZ_DECL_PURE int bodyPower(const BodyStats* psStats, unsigned player);
+WZ_DECL_PURE int bodyArmour(const BodyStats* psStats, unsigned player, WEAPON_CLASS weaponClass);
 
 WZ_DECL_PURE bool objHasWeapon(const SimpleObject* psObj);
 

@@ -247,7 +247,7 @@ public:
      virtual void setFoundationDepth(int depth) = 0;
      virtual int requestOpenGate() = 0;
      [[nodiscard]] virtual int getResistance() const = 0;
-     virtual void structureBuild(Droid* psDroid, int builtPoints, int buildRate_) = 0;
+     virtual void structureBuild(::Droid* psDroid, int builtPoints, int buildRate_) = 0;
 
     [[nodiscard]] virtual std::unique_ptr<Structure> buildStructureDir(StructureStats* pStructureType,
                                                                         unsigned x, unsigned y,
@@ -296,7 +296,7 @@ namespace Impl
         void aiUpdateStructure(bool isMission) final;
         void structureUpdate(bool bMission) final;
         int requestOpenGate() final;
-        void structureBuild(Droid* psDroid, int builtPoints, int buildRate_) final;
+        void structureBuild(::Droid* psDroid, int builtPoints, int buildRate_) final;
 
         [[nodiscard]] std::unique_ptr<Structure> buildStructureDir(StructureStats* pStructureType,
                                                                            unsigned x, unsigned y,
@@ -499,9 +499,9 @@ void setMaxDroids(unsigned player, int value);
 void setMaxCommanders(unsigned player, int value);
 void setMaxConstructors(unsigned player, int value);
 
-bool structureExists(int player, STRUCTURE_TYPE type, bool built, bool isMission);
+bool structureExists(unsigned player, STRUCTURE_TYPE type, bool built, bool isMission);
 
-bool IsPlayerDroidLimitReached(int player);
+bool IsPlayerDroidLimitReached(unsigned player);
 
 bool loadStructureStats(WzConfig& ini);
 /*Load the Structure Strength Modifiers from the file exported from Access*/

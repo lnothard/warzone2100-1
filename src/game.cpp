@@ -578,7 +578,7 @@ static bool deserializeMultiplayerGame(PHYSFS_file* fileHandle, MULTIPLAYERGAME*
 	return true;
 }
 
-static void serializePlayer_json(nlohmann::json& o, const PLAYER* serializePlayer, int player)
+static void serializePlayer_json(nlohmann::json& o, const PLAYER* serializePlayer, unsigned player)
 {
 	o["position"] = serializePlayer->position;
 	o["name"] = serializePlayer->name;
@@ -589,7 +589,7 @@ static void serializePlayer_json(nlohmann::json& o, const PLAYER* serializePlaye
 	o["team"] = serializePlayer->team;
 }
 
-static bool serializePlayer(PHYSFS_file* fileHandle, const PLAYER* serializePlayer, int player)
+static bool serializePlayer(PHYSFS_file* fileHandle, const PLAYER* serializePlayer, unsigned player)
 {
 	return (PHYSFS_writeUBE32(fileHandle, serializePlayer->position)
 		&& WZ_PHYSFS_writeBytes(fileHandle, serializePlayer->name, StringSize) == StringSize
@@ -600,7 +600,7 @@ static bool serializePlayer(PHYSFS_file* fileHandle, const PLAYER* serializePlay
 		&& PHYSFS_writeUBE32(fileHandle, serializePlayer->team));
 }
 
-static void deserializePlayer_json(const nlohmann::json& o, PLAYER* serializePlayer, int player)
+static void deserializePlayer_json(const nlohmann::json& o, PLAYER* serializePlayer, unsigned player)
 {
 	char aiName[MAX_LEN_AI_NAME] = {"THEREISNOAI"};
 	ASSERT(o.is_object(), "unexpected type, wanted object");
@@ -619,7 +619,7 @@ static void deserializePlayer_json(const nlohmann::json& o, PLAYER* serializePla
 	serializePlayer->team = o.at("team").get<uint32_t>();
 }
 
-static bool deserializePlayer(PHYSFS_file* fileHandle, PLAYER* serializePlayer, int player)
+static bool deserializePlayer(PHYSFS_file* fileHandle, PLAYER* serializePlayer, unsigned player)
 {
 	char aiName[MAX_LEN_AI_NAME] = {"THEREISNOAI"};
 	uint32_t position = 0, colour = 0, team = 0;
@@ -2410,7 +2410,7 @@ bool loadMissionExtras(const char* pGameToLoad, LEVEL_TYPE levelType)
 
 static void sanityUpdate()
 {
-	for (int player = 0; player < game.maxPlayers; player++)
+	for (unsigned player = 0; player < game.maxPlayers; player++)
 	{
 		for (Droid* psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
 		{
@@ -5229,7 +5229,7 @@ static int getPlayer(WzConfig& ini)
 	return 0;
 }
 
-static void setPlayer(WzConfig& ini, int player)
+static void setPlayer(WzConfig& ini, unsigned player)
 {
 	if (scavengerSlot() == player)
 	{
@@ -5241,7 +5241,7 @@ static void setPlayer(WzConfig& ini, int player)
 	}
 }
 
-static inline void setPlayerJSON(nlohmann::json& jsonObj, int player)
+static inline void setPlayerJSON(nlohmann::json& jsonObj, unsigned player)
 {
 	if (scavengerSlot() == player)
 	{
@@ -5253,7 +5253,7 @@ static inline void setPlayerJSON(nlohmann::json& jsonObj, int player)
 	}
 }
 
-static bool skipForDifficulty(WzConfig& ini, int player)
+static bool skipForDifficulty(WzConfig& ini, unsigned player)
 {
 	if (ini.contains("difficulty")) // optionally skip this object
 	{
@@ -5278,7 +5278,7 @@ static bool loadSaveDroidPointers(const WzString& pFileName, Droid** ppsCurrentD
 		ini.beginGroup(list[i]);
 		Droid* psDroid;
 		int id = ini.value("id", -1).toInt();
-		int player = getPlayer(ini);
+		unsigned player = getPlayer(ini);
 
 		if (id <= 0)
 		{
@@ -5537,7 +5537,7 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 	{
 		ini.beginGroup(sortedList[i].second);
 		Droid* psDroid;
-		int player = getPlayer(ini);
+		unsigned player = getPlayer(ini);
 		int id = ini.value("id", -1).toInt();
 		Position pos = ini.vector3i("position");
 		Rotation rot = ini.vector3i("rotation");
@@ -5862,7 +5862,7 @@ static bool writeDroidFile(const char* pFileName, Droid** ppsCurrentDroidLists)
 	int counter = 0;
 	bool onMission = (ppsCurrentDroidLists[0] == mission.apsDroidLists[0]);
 
-	for (int player = 0; player < MAX_PLAYERS; player++)
+	for (unsigned player = 0; player < MAX_PLAYERS; player++)
 	{
 		for (Droid* psCurr = ppsCurrentDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
@@ -6201,7 +6201,7 @@ static bool loadSaveStructure2(const char* pFileName, Structure** ppList)
 		Structure* psStructure;
 
 		ini.beginGroup(list[i]);
-		int player = getPlayer(ini);
+		unsigned player = getPlayer(ini);
 		int id = ini.value("id", -1).toInt();
 		Position pos = ini.vector3i("position");
 		Rotation rot = ini.vector3i("rotation");
@@ -6476,7 +6476,7 @@ bool writeStructFile(const char* pFileName)
 	WzConfig ini(WzString::fromUtf8(pFileName), WzConfig::ReadAndWrite);
 	int counter = 0;
 
-	for (int player = 0; player < MAX_PLAYERS; player++)
+	for (unsigned player = 0; player < MAX_PLAYERS; player++)
 	{
 		for (Structure* psCurr = apsStructLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
 		{
@@ -6649,7 +6649,7 @@ bool loadSaveStructurePointers(const WzString& filename, Structure** ppList)
 	{
 		ini.beginGroup(list[i]);
 		Structure* psStruct;
-		int player = getPlayer(ini);
+		unsigned player = getPlayer(ini);
 		int id = ini.value("id", -1).toInt();
 		for (psStruct = ppList[player]; psStruct && psStruct->id != id; psStruct = psStruct->psNext)
 		{
@@ -7005,7 +7005,7 @@ bool loadSaveTemplate(const char* pFileName)
 	for (size_t i = 0; i < list.size(); ++i)
 	{
 		ini.beginGroup(list[i]);
-		int player = getPlayer(ini);
+		unsigned player = getPlayer(ini);
 		ini.beginArray("templates");
 		while (ini.remainingArrayItems() > 0)
 		{
@@ -7053,7 +7053,7 @@ bool writeTemplateFile(const char* pFileName)
 	nlohmann::json mRoot = nlohmann::json::object();
 
 	mRoot["version"] = 1;
-	for (int player = 0; player < MAX_PLAYERS; player++)
+	for (unsigned player = 0; player < MAX_PLAYERS; player++)
 	{
 		if (!apsDroidLists[player] && !apsStructLists[player])
 		// only write out templates of players that are still 'alive'
@@ -7228,7 +7228,7 @@ bool loadSaveCompList(const char* pFileName)
 {
 	WzConfig ini(WzString::fromUtf8(pFileName), WzConfig::ReadOnly);
 
-	for (int player = 0; player < MAX_PLAYERS; player++)
+	for (unsigned player = 0; player < MAX_PLAYERS; player++)
 	{
 		ini.beginGroup("player_" + WzString::number(player));
 		std::vector<WzString> list = ini.childKeys();
@@ -7256,7 +7256,7 @@ static bool writeCompListFile(const char* pFileName)
 	WzConfig ini(WzString::fromUtf8(pFileName), WzConfig::ReadAndWrite);
 
 	// Save each type of struct type
-	for (int player = 0; player < MAX_PLAYERS; player++)
+	for (unsigned player = 0; player < MAX_PLAYERS; player++)
 	{
 		ini.beginGroup("player_" + WzString::number(player));
 		for (int i = 0; i < numBodyStats; i++)
@@ -7342,7 +7342,7 @@ static bool loadSaveStructTypeList(const char* pFileName)
 {
 	WzConfig ini(pFileName, WzConfig::ReadOnly);
 
-	for (int player = 0; player < MAX_PLAYERS; player++)
+	for (unsigned player = 0; player < MAX_PLAYERS; player++)
 	{
 		ini.beginGroup("player_" + WzString::number(player));
 		std::vector<WzString> list = ini.childKeys();
@@ -7378,7 +7378,7 @@ static bool writeStructTypeListFile(const char* pFileName)
 	WzConfig ini(pFileName, WzConfig::ReadAndWrite);
 
 	// Save each type of struct type
-	for (int player = 0; player < MAX_PLAYERS; player++)
+	for (unsigned player = 0; player < MAX_PLAYERS; player++)
 	{
 		ini.beginGroup("player_" + WzString::number(player));
 		StructureStats* psStats = asStructureStats;
@@ -7399,7 +7399,7 @@ static bool writeStructTypeListFile(const char* pFileName)
 bool loadSaveResearch(const char* pFileName)
 {
 	WzConfig ini(pFileName, WzConfig::ReadOnly);
-	const int players = game.maxPlayers;
+	const unsigned players = game.maxPlayers;
 	std::vector<WzString> list = ini.childGroups();
 	for (size_t i = 0; i < list.size(); ++i)
 	{
@@ -7468,7 +7468,7 @@ static bool writeResearchFile(char* pFileName)
 		ResearchStats* psStats = &asResearch[i];
 		bool valid = false;
 		std::vector<WzString> possibles, researched, points;
-		for (int player = 0; player < game.maxPlayers; player++)
+		for (unsigned player = 0; player < game.maxPlayers; player++)
 		{
 			possibles.push_back(WzString::number(GetResearchPossible(&asPlayerResList[player][i])));
 			researched.push_back(WzString::number(asPlayerResList[player][i].researchStatus & RESBITS));
@@ -7518,7 +7518,7 @@ bool loadSaveMessage(const char* pFileName, LEVEL_TYPE levelType)
 		ini.beginGroup(list[i]);
 		MESSAGE_TYPE type = (MESSAGE_TYPE)ini.value("type").toInt();
 		bool bObj = ini.contains("obj/id");
-		int player = ini.value("player").toInt();
+		unsigned player = ini.value("player").toInt();
 		int id = ini.value("id").toInt();
 		int dataType = ini.value("dataType").toInt();
 
@@ -7636,7 +7636,7 @@ static bool writeMessageFile(const char* pFileName)
 	int numMessages = 0;
 
 	// save each type of research
-	for (int player = 0; player < game.maxPlayers; player++)
+	for (unsigned player = 0; player < game.maxPlayers; player++)
 	{
 		ASSERT(player < MAX_PLAYERS, "player out of bounds: %d", player);
 		for (MESSAGE* psMessage = apsMessages[player]; psMessage != nullptr; psMessage = psMessage->psNext)
@@ -7708,7 +7708,7 @@ bool loadSaveStructLimits(const char* pFileName)
 {
 	WzConfig ini(pFileName, WzConfig::ReadOnly);
 
-	for (int player = 0; player < game.maxPlayers; player++)
+	for (unsigned player = 0; player < game.maxPlayers; player++)
 	{
 		ini.beginGroup("player_" + WzString::number(player));
 		std::vector<WzString> list = ini.childKeys();
@@ -7759,7 +7759,7 @@ bool writeStructLimitsFile(const char* pFileName)
 	WzConfig ini(pFileName, WzConfig::ReadAndWrite);
 
 	// Save each type of struct type
-	for (int player = 0; player < game.maxPlayers; player++)
+	for (unsigned player = 0; player < game.maxPlayers; player++)
 	{
 		ini.beginGroup("player_" + WzString::number(player));
 
@@ -7805,7 +7805,7 @@ bool readFiresupportDesignators(const char* pFileName)
  */
 bool writeFiresupportDesignators(const char* pFileName)
 {
-	int player;
+	unsigned player;
 	WzConfig ini(pFileName, WzConfig::ReadAndWrite);
 
 	for (player = 0; player < MAX_PLAYERS; player++)

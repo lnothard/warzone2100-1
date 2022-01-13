@@ -35,16 +35,16 @@ bool initTemplates();
 
 /// Take ownership of template given by pointer.
 /// Returns a new usable DroidTemplate *
-DroidTemplate* addTemplate(int player, std::unique_ptr<DroidTemplate> psTemplate);
+DroidTemplate* addTemplate(unsigned player, std::unique_ptr<DroidTemplate> psTemplate);
 
 /// Make a duplicate of template given by pointer and store it. Then return pointer to copy.
-DroidTemplate* copyTemplate(int player, DroidTemplate* psTemplate);
+DroidTemplate* copyTemplate(unsigned player, DroidTemplate* psTemplate);
 
-void enumerateTemplates(int player, const std::function<bool (DroidTemplate* psTemplate)>& func);
-DroidTemplate* findPlayerTemplateById(int player, UDWORD templateId);
-std::size_t templateCount(int player);
+void enumerateTemplates(unsigned player, const std::function<bool (DroidTemplate* psTemplate)>& func);
+DroidTemplate* findPlayerTemplateById(unsigned player, UDWORD templateId);
+std::size_t templateCount(unsigned player);
 
-void clearTemplates(int player);
+void clearTemplates(unsigned player);
 bool shutdownTemplates();
 bool storeTemplates();
 
@@ -63,7 +63,7 @@ const DroidTemplate* getTemplateFromTranslatedNameNoPlayer(char const* pName);
 DroidTemplate* getTemplateFromMultiPlayerID(UDWORD multiPlayerID);
 
 /// Have we researched the components of this template?
-bool researchedTemplate(const DroidTemplate* psCurr, int player, bool allowRedundant = false, bool verbose = false);
+bool researchedTemplate(const DroidTemplate* psCurr, unsigned player, bool allowRedundant = false, bool verbose = false);
 
 void listTemplates();
 

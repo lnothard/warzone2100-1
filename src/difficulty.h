@@ -33,7 +33,7 @@ enum class DIFFICULTY_LEVEL
 	INSANE
 };
 
-void setDamageModifiers(int playerModifier, int enemyModifier);
+void setDamageModifiers(unsigned playerModifier, int enemyModifier);
 
 void setDifficultyLevel(DIFFICULTY_LEVEL lev);
 

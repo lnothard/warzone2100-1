@@ -502,7 +502,7 @@ int objDamage(SimpleObject* psObj, unsigned damage, unsigned originalhp,
  * \param weaponSubClass the subclass of the weapon that deals the damage
  * \return guess at amount of damage
  */
-unsigned int objGuessFutureDamage(WeaponStats* psStats, unsigned int player, SimpleObject* psTarget)
+unsigned int objGuessFutureDamage(WeaponStats* psStats, unsigned unsigned player, SimpleObject* psTarget)
 {
 	unsigned int damage;
 	int actualDamage, armour, level = 1;

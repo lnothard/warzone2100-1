@@ -2110,7 +2110,7 @@ static std::string gameOptionsCameraSpeedString()
 void startGameOptionsMenu()
 {
 	UDWORD w, h;
-	int playercolor;
+	unsigned playercolor;
 
 	addBackdrop();
 	addTopForm(false);

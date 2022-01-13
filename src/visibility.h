@@ -163,7 +163,7 @@ void removeSpotters();
 
 bool removeSpotter(unsigned id);
 
-unsigned addSpotter(int x, int y, int player, int radius,
+unsigned addSpotter(int x, int y, unsigned player, int radius,
                     bool radar, std::size_t expiry = 0);
 
 #endif // __INCLUDED_SRC_VISIBILITY__

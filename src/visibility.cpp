@@ -111,7 +111,7 @@ static inline void updateTileVis(Tile* psTile)
 	}
 }
 
-unsigned addSpotter(int x, int y, int player, int radius, SENSOR_CLASS type, unsigned expiry)
+unsigned addSpotter(int x, int y, unsigned player, int radius, SENSOR_CLASS type, unsigned expiry)
 {
 	ASSERT_OR_RETURN(0, player >= 0 && player < MAX_PLAYERS, "invalid player: %d", player);
 	auto psSpot = std::make_unique<Spotter>(x, y, player, radius, type, expiry);
@@ -595,7 +595,7 @@ Structure* visGetBlockingWall(const SimpleObject* psViewer, const SimpleObject* 
 	if (numWalls > 0)
 	{
 		Vector2i tile = map_coord(wall);
-		unsigned int player;
+		unsigned unsigned player;
 
 		for (player = 0; player < MAX_PLAYERS; player++)
 		{
@@ -804,7 +804,7 @@ static void processVisibilityLevel(SimpleObject* psObj, bool& addedMessage)
 void processVisibility()
 {
 	updateSpotters();
-	for (int player = 0; player < MAX_PLAYERS; ++player)
+	for (unsigned player = 0; player < MAX_PLAYERS; ++player)
 	{
 		SimpleObject* lists[] = {apsDroidLists[player], apsStructLists[player], apsFeatureLists[player]};
 		unsigned list;
@@ -816,7 +816,7 @@ void processVisibility()
 			}
 		}
 	}
-	for (int player = 0; player < MAX_PLAYERS; ++player)
+	for (unsigned player = 0; player < MAX_PLAYERS; ++player)
 	{
 		SimpleObject* lists[] = {apsDroidLists[player], apsStructLists[player]};
 		unsigned list;
@@ -844,7 +844,7 @@ void processVisibility()
 		}
 	}
 	bool addedMessage = false;
-	for (int player = 0; player < MAX_PLAYERS; ++player)
+	for (unsigned player = 0; player < MAX_PLAYERS; ++player)
 	{
 		SimpleObject* lists[] = {apsDroidLists[player], apsStructLists[player], apsFeatureLists[player]};
 		unsigned list;

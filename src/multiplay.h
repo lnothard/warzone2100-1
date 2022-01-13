@@ -212,14 +212,14 @@ WZ_DECL_WARN_UNUSED_RESULT Droid* IdToMissionDroid(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT Feature* IdToFeature(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT DroidTemplate* IdToTemplate(UDWORD tempId, UDWORD player);
 
-const char* getPlayerName(int player);
-bool setPlayerName(int player, const char* sName);
-const char* getPlayerColourName(int player);
-bool isHumanPlayer(int player); //to tell if the player is a computer or not.
-bool myResponsibility(int player);
-bool responsibleFor(int player, int playerinquestion);
-int whosResponsible(int player);
-bool canGiveOrdersFor(int player, int playerInQuestion);
+const char* getPlayerName(unsigned player);
+bool setPlayerName(unsigned player, const char* sName);
+const char* getPlayerColourName(unsigned player);
+bool isHumanPlayer(unsigned player); //to tell if the player is a computer or not.
+bool myResponsibility(unsigned player);
+bool responsibleFor(unsigned player, unsigned playerinquestion);
+unsigned whosResponsible(unsigned player);
+bool canGiveOrdersFor(unsigned player, unsigned playerInQuestion);
 int scavengerSlot(); // Returns the player number that scavengers would have if they were enabled.
 int scavengerPlayer(); // Returns the player number that the scavengers have, or -1 if disabled.
 Vector3i cameraToHome(UDWORD player, bool scroll);

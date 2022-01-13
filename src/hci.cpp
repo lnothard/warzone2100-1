@@ -2729,7 +2729,7 @@ int intGetResearchState()
 		count = researchList.size();
 		for (unsigned int n : researchList)
 		{
-			for (int player = 0; player < MAX_PLAYERS; ++player)
+			for (unsigned player = 0; player < MAX_PLAYERS; ++player)
 			{
 				if (aiCheckAlliances(player, selectedPlayer) && IsResearchStarted(
 					&asPlayerResList[player][n]))

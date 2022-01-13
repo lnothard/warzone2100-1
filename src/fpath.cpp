@@ -128,8 +128,8 @@ void fpathShutdown()
 	fpathHardTableReset();
 }
 
-bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_MOVETYPE moveType1,
-                               PROPULSION_TYPE propulsion2, int player2, FPATH_MOVETYPE moveType2)
+bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, unsigned player1, FPATH_MOVETYPE moveType1,
+                               PROPULSION_TYPE propulsion2, unsigned player2, FPATH_MOVETYPE moveType2)
 {
 	int domain1, domain2;
 	switch (propulsion1)
@@ -251,7 +251,7 @@ bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, int player1, FPATH_M
 
 
 // Returns the closest non-blocking tile to pos, or returns pos if no non-blocking tiles are present within a 2 tile distance.
-static Position findNonblockingPosition(Position pos, PROPULSION_TYPE propulsion, int player = 0,
+static Position findNonblockingPosition(Position pos, PROPULSION_TYPE propulsion, unsigned player = 0,
                                         FPATH_MOVETYPE moveType = FMT_BLOCK)
 {
 	Vector2i centreTile = map_coord(pos.xy());

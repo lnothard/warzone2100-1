@@ -304,8 +304,8 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 	else if (strncmp(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "kick", 4) == 0)
 	{
 		ADMIN_REQUIRED_FOR_COMMAND("kick");
-		unsigned int playerPos = MAX_PLAYERS + 1;
-		unsigned int playerIdx = MAX_CONNECTED_PLAYERS + 1;
+		unsigned unsigned playerPos = MAX_PLAYERS + 1;
+		unsigned unsigned playerIdx = MAX_CONNECTED_PLAYERS + 1;
 		int r = sscanf(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "kick %u", &playerPos);
 		if (r == 1)
 		{
@@ -346,7 +346,7 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 		ADMIN_REQUIRED_FOR_COMMAND("swap");
 		unsigned int s1, s2;
 		int r = sscanf(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "swap %u %u", &s1, &s2);
-		int playerIdxA = posToNetPlayer(s1);
+		unsigned playerIdxA = posToNetPlayer(s1);
 		if (r != 2)
 		{
 			sendRoomNotifyMessage("Usage: " LOBBY_COMMAND_PREFIX "swap <slot-from> <slot-to>");
@@ -468,9 +468,9 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 	else if (strncmp(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "makespec", 8) == 0)
 	{
 		ADMIN_REQUIRED_FOR_COMMAND("makespec");
-		unsigned int playerPos = MAX_PLAYERS + 1;
+		unsigned unsigned playerPos = MAX_PLAYERS + 1;
 		int r = sscanf(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "makespec %u", &playerPos);
-		unsigned int playerIdx = posToNetPlayer(playerPos);
+		unsigned unsigned playerIdx = posToNetPlayer(playerPos);
 		if (r != 1 || playerPos >= MAX_PLAYERS)
 		{
 			sendRoomNotifyMessage("Usage: " LOBBY_COMMAND_PREFIX "makespec <slot>");

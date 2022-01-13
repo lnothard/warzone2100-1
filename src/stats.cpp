@@ -1568,80 +1568,80 @@ bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS* weaponClass)
 	ASSERT_OR_RETURN(retVal, player >= 0 && player < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
 /*Access functions for the upgradeable stats of a weapon*/
-int weaponFirePause(const WeaponStats* psStats, int player)
+int weaponFirePause(const WeaponStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].firePause;
 }
 
 /* Reload time is reduced for weapons with salvo fire */
-int weaponReloadTime(const WeaponStats* psStats, int player)
+int weaponReloadTime(const WeaponStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].reloadTime;
 }
 
-int weaponLongHit(const WeaponStats* psStats, int player)
+int weaponLongHit(const WeaponStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].hitChance;
 }
 
-int weaponShortHit(const WeaponStats* psStats, int player)
+int weaponShortHit(const WeaponStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].shortHitChance;
 }
 
-int weaponDamage(const WeaponStats* psStats, int player)
+int weaponDamage(const WeaponStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].damage;
 }
 
-int weaponRadDamage(const WeaponStats* psStats, int player)
+int weaponRadDamage(const WeaponStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].radiusDamage;
 }
 
-int weaponPeriodicalDamage(const WeaponStats* psStats, int player)
+int weaponPeriodicalDamage(const WeaponStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].periodicalDamage;
 }
 
-int sensorRange(const SensorStats* psStats, int player)
+int sensorRange(const SensorStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].range;
 }
 
-int ecmRange(const EcmStats* psStats, int player)
+int ecmRange(const EcmStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].range;
 }
 
-int repairPoints(const RepairStats* psStats, int player)
+int repairPoints(const RepairStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].repairPoints;
 }
 
-int constructorPoints(const ConstructStats* psStats, int player)
+int constructorPoints(const ConstructStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].constructPoints;
 }
 
-int bodyPower(const BodyStats* psStats, int player)
+int bodyPower(const BodyStats* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].power;
 }
 
-//int bodyArmour(const BODY_STATS* psStats, int player, WEAPON_CLASS weaponClass)
+//int bodyArmour(const BODY_STATS* psStats, unsigned player, WEAPON_CLASS weaponClass)
 //{
 //	ASSERT_PLAYER_OR_RETURN(0, player);
 //	switch (weaponClass)
@@ -1658,7 +1658,7 @@ int bodyPower(const BodyStats* psStats, int player)
 //}
 
 //calculates the weapons ROF based on the fire pause and the salvos
-int weaponROF(const WeaponStats* psStat, int player)
+int weaponROF(const WeaponStats* psStat, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	int rof = 0;

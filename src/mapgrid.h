@@ -46,10 +46,10 @@ GridList const& gridStartIterate(int32_t x, int32_t y, uint32_t radius);
 GridList const& gridStartIterateArea(int32_t x, int32_t y, uint32_t x2, uint32_t y2);
 
 /// Find all objects within radius where object->type == OBJ_DROID && object->player == player.
-GridList const& gridStartIterateDroidsByPlayer(int32_t x, int32_t y, uint32_t radius, int player);
+GridList const& gridStartIterateDroidsByPlayer(int32_t x, int32_t y, uint32_t radius, unsigned player);
 
 // Used for visibility.
 /// Find all objects within radius where object->seenThisTick[player] != 255.
-GridList const& gridStartIterateUnseen(int32_t x, int32_t y, uint32_t radius, int player);
+GridList const& gridStartIterateUnseen(int32_t x, int32_t y, uint32_t radius, unsigned player);
 
 #endif // __INCLUDED_SRC_MAPGRID_H__

@@ -189,10 +189,10 @@ struct ConditionDroidsByPlayer
 		return obj->type == OBJ_DROID && obj->player == player;
 	}
 
-	int player;
+	unsigned player;
 };
 
-GridList const& gridStartIterateDroidsByPlayer(int32_t x, int32_t y, uint32_t radius, int player)
+GridList const& gridStartIterateDroidsByPlayer(int32_t x, int32_t y, uint32_t radius, unsigned player)
 {
 	return gridStartIterateFiltered(x, y, radius, &gridFiltersDroidsByPlayer[player], ConditionDroidsByPlayer(player));
 }
@@ -208,10 +208,10 @@ struct ConditionUnseen
 		return obj->seenThisTick[player] < UINT8_MAX;
 	}
 
-	int player;
+	unsigned player;
 };
 
-GridList const& gridStartIterateUnseen(int32_t x, int32_t y, uint32_t radius, int player)
+GridList const& gridStartIterateUnseen(int32_t x, int32_t y, uint32_t radius, unsigned player)
 {
 	return gridStartIterateFiltered(x, y, radius, &gridFiltersUnseen[player], ConditionUnseen(player));
 }

@@ -45,25 +45,25 @@ int32_t checkPowerRequest(Structure* psStruct);
 bool requestPowerFor(Structure* psStruct, int32_t amount);
 bool requestPrecisePowerFor(Structure* psStruct, int64_t amount);
 
-void addPower(int player, int32_t quantity);
+void addPower(unsigned player, int32_t quantity);
 
-void usePower(int player, uint32_t quantity);
+void usePower(unsigned player, uint32_t quantity);
 
 /** Update current power based on what was extracted during the last cycle and what Power Generators exist.
   * If ticks is set, this is the number of game ticks to process for at once. */
-void updatePlayerPower(int player, int ticks = 1);
+void updatePlayerPower(unsigned player, int ticks = 1);
 
 /** Used in multiplayer to force power levels. */
 void setPower(unsigned player, int32_t power);
 
-void setPowerModifier(int player, int modifier);
-void setPowerMaxStorage(int player, int max);
+void setPowerModifier(unsigned player, int modifier);
+void setPowerMaxStorage(unsigned player, int max);
 
 /** Get the amount of power current held by the given player. */
 int32_t getPower(unsigned player);
 int64_t getPrecisePower(unsigned player);
 int32_t getPowerMinusQueued(unsigned player);
-int getQueuedPower(int player);
+int getQueuedPower(unsigned player);
 
 /// Get amount of power extracted during the whole game
 int64_t getExtractedPower(unsigned player);

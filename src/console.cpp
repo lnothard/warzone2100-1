@@ -312,7 +312,7 @@ void flushConsoleMessages()
 }
 
 /** Sets console text color depending on message type */
-static PIELIGHT getConsoleTextColor(int player)
+static PIELIGHT getConsoleTextColor(unsigned player)
 {
 	// System messages
 	if (player == SYSTEM_MESSAGE)

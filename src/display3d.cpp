@@ -205,7 +205,7 @@ bool rangeOnScreen = false; // For now, most likely will change later!  -Q 5-10-
 bool tuiTargetOrigin = false;
 
 /// Temporary values for the terrain render - center of grid to be rendered
-static int playerXTile, playerZTile;
+static unsigned playerXTile, playerZTile;
 
 /// The cached value of frameGetFrameNumber()
 static UDWORD currentGameFrame;

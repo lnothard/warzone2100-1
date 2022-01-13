@@ -154,7 +154,7 @@ static void QJSRuntimeFree_LeakHandler_Error(const char* msg)
 class quickjs_scripting_instance : public wzapi::scripting_instance
 {
 public:
-	quickjs_scripting_instance(int player, const std::string& scriptName, const std::string& scriptPath)
+	quickjs_scripting_instance(unsigned player, const std::string& scriptName, const std::string& scriptPath)
 		: scripting_instance(player, scriptName, scriptPath)
 	{
 		rt = JS_NewRuntime();
@@ -191,7 +191,7 @@ public:
 		}
 	}
 
-	bool loadScript(const WzString& path, int player, int difficulty);
+	bool loadScript(const WzString& path, unsigned player, int difficulty);
 	bool readyInstanceForExecution() override;
 
 private:
@@ -451,7 +451,7 @@ public:
 	//__
 	//__ An event that is run after a player has left the game.
 	//__
-	virtual bool handle_eventPlayerLeft(int player) override;
+	virtual bool handle_eventPlayerLeft(unsigned player) override;
 
 	//__ ## eventCheatMode(entered)
 	//__
@@ -518,7 +518,7 @@ public:
 	//__ be set to null. The player parameter gives the player it is called for.
 	//__
 	virtual bool handle_eventResearched(const wzapi::researchResult& research,
-																			wzapi::event_nullable_ptr<const Structure> psStruct, int player) override;
+																			wzapi::event_nullable_ptr<const Structure> psStruct, unsigned player) override;
 
 	//__ ## eventDestroyed(object)
 	//__
@@ -723,7 +723,7 @@ JSValue convObj(const SimpleObject* psObj, JSContext* ctx);
 JSValue convFeature(const Feature* psFeature, JSContext* ctx);
 JSValue convMax(const SimpleObject* psObj, JSContext* ctx);
 JSValue convTemplate(const DroidTemplate* psTemplate, JSContext* ctx);
-JSValue convResearch(const ResearchStats* psResearch, JSContext* ctx, int player);
+JSValue convResearch(const ResearchStats* psResearch, JSContext* ctx, unsigned player);
 
 static int QuickJS_DefinePropertyValue(JSContext* ctx, JSValueConst this_obj, const char* prop, JSValue val, int flags)
 {
@@ -745,7 +745,7 @@ static int QuickJS_DefinePropertyValue(JSContext* ctx, JSValueConst this_obj, co
 //;; * ```id``` A string containing the index name of the research.
 //;; * ```type``` The type will always be ```RESEARCH_DATA```.
 //;;
-JSValue convResearch(const ResearchStats* psResearch, JSContext* ctx, int player)
+JSValue convResearch(const ResearchStats* psResearch, JSContext* ctx, unsigned player)
 {
 	if (psResearch == nullptr)
 	{
@@ -1309,7 +1309,7 @@ public:
 	[[nodiscard]] playerCallbackFunc getNamedScriptCallback(const WzString& func) const override
 	{
 		JSContext* pCtx = ctx;
-		return [pCtx, func](const int player)
+		return [pCtx, func](const unsigned player)
 		{
 			std::vector<JSValue> args;
 			args.push_back(JS_NewInt32(pCtx, player));
@@ -1504,7 +1504,7 @@ namespace
 				return {};
 			JSValue droidVal = argv[idx++];
 			int id = QuickJS_GetInt32(ctx, droidVal, "id");
-			int player = QuickJS_GetInt32(ctx, droidVal, "player");
+			unsigned player = QuickJS_GetInt32(ctx, droidVal, "player");
 			Droid* psDroid = IdToDroid(id, player);
 			UNBOX_SCRIPT_ASSERT(context, psDroid, "No such droid id %d belonging to player %d", id, player);
 			return psDroid;
@@ -1529,7 +1529,7 @@ namespace
 				return {};
 			JSValue structVal = argv[idx++];
 			int id = QuickJS_GetInt32(ctx, structVal, "id");
-			int player = QuickJS_GetInt32(ctx, structVal, "player");
+			unsigned player = QuickJS_GetInt32(ctx, structVal, "player");
 			Structure* psStruct = IdToStruct(id, player);
 			UNBOX_SCRIPT_ASSERT(context, psStruct, "No such structure id %d belonging to player %d", id, player);
 			return psStruct;
@@ -1809,7 +1809,7 @@ namespace
 			else if (type == OBJ_DROID || type == OBJ_STRUCTURE || type == OBJ_FEATURE)
 			{
 				int id = QuickJS_GetInt32(ctx, qval, "id");
-				int player = QuickJS_GetInt32(ctx, qval, "player");
+				unsigned player = QuickJS_GetInt32(ctx, qval, "player");
 				SimpleObject* psObj = IdToObject((OBJECT_TYPE)type, id, player);
 				UNBOX_SCRIPT_ASSERT(context, psObj, "Object id %d not found belonging to player %d", id, player);
 				// TODO: fail out
@@ -1831,7 +1831,7 @@ namespace
 			if ((argc - idx) >= 3) // get by ID case (3 parameters)
 			{
 				OBJECT_TYPE type = (OBJECT_TYPE)JSValueToInt32(ctx, argv[idx++]);
-				int player = JSValueToInt32(ctx, argv[idx++]);
+				unsigned player = JSValueToInt32(ctx, argv[idx++]);
 				int id = JSValueToInt32(ctx, argv[idx++]);
 				return wzapi::object_request(type, player, id);
 			}
@@ -2502,7 +2502,7 @@ public:
 	}
 };
 
-static uniqueTimerID SetQuickJSTimer(JSContext* ctx, int player, const std::string& funcName, int32_t ms,
+static uniqueTimerID SetQuickJSTimer(JSContext* ctx, unsigned player, const std::string& funcName, int32_t ms,
                                      const std::string& stringArg, SimpleObject* psObj, timerType type)
 {
 	return scripting_engine::instance().setTimer(engineToInstanceMap.at(ctx)
@@ -2561,7 +2561,7 @@ static JSValue js_setTimer(JSContext* ctx, JSValueConst this_val, int argc, JSVa
 
 	JSValue global_obj = JS_GetGlobalObject(ctx);
 	auto free_global_obj = gsl::finally([ctx, global_obj] { JS_FreeValue(ctx, global_obj); }); // establish exit action
-	int player = QuickJS_GetInt32(ctx, global_obj, "me");
+	unsigned player = QuickJS_GetInt32(ctx, global_obj, "me");
 
 	JSValue funcObj = JS_GetPropertyStr(ctx, global_obj, functionName.c_str()); // check existence
 	SCRIPT_ASSERT(ctx, JS_IsFunction(ctx, funcObj), "No such function: %s", functionName.c_str());
@@ -2602,7 +2602,7 @@ static JSValue js_removeTimer(JSContext* ctx, JSValueConst this_val, int argc, J
 
 	JSValue global_obj = JS_GetGlobalObject(ctx);
 	auto free_global_obj = gsl::finally([ctx, global_obj] { JS_FreeValue(ctx, global_obj); }); // establish exit action
-	int player = QuickJS_GetInt32(ctx, global_obj, "me");
+	unsigned player = QuickJS_GetInt32(ctx, global_obj, "me");
 
 	wzapi::scripting_instance* instance = engineToInstanceMap.at(ctx);
 	std::vector<uniqueTimerID> removedTimerIDs = scripting_engine::instance().removeTimersIf(
@@ -2651,7 +2651,7 @@ static JSValue js_queue(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	{
 		ms = JSValueToInt32(ctx, argv[1]);
 	}
-	int player = QuickJS_GetInt32(ctx, global_obj, "me");
+	unsigned player = QuickJS_GetInt32(ctx, global_obj, "me");
 
 	std::string stringArg;
 	SimpleObject* psObj = nullptr;
@@ -2722,7 +2722,7 @@ static JSValue debugGetBacktrace(JSContext* ctx, JSValueConst this_val, int argc
 	return js_debugger_build_backtrace(ctx, nullptr);
 }
 
-wzapi::scripting_instance* createQuickJSScriptInstance(const WzString& path, int player, int difficulty)
+wzapi::scripting_instance* createQuickJSScriptInstance(const WzString& path, unsigned player, int difficulty)
 {
 	WzPathInfo basename = WzPathInfo::fromPlatformIndependentPath(path.toUtf8());
 	auto* pNewInstance = new quickjs_scripting_instance(
@@ -2786,7 +2786,7 @@ static const JSCFunctionListEntry js_builtin_funcs[] = {
 	QJS_CFUNC_DEF("debugGetBacktrace", 0, debugGetBacktrace) // backend-specific
 };
 
-bool quickjs_scripting_instance::loadScript(const WzString& path, int player, int difficulty)
+bool quickjs_scripting_instance::loadScript(const WzString& path, unsigned player, int difficulty)
 {
 	UDWORD size;
 	char* bytes = nullptr;
@@ -3171,7 +3171,7 @@ static JSValue js_enumTemplates(JSContext* ctx, JSValueConst this_val, int argc,
 {
 	SCRIPT_ASSERT(ctx, argc == 1, "Must have one parameter");
 	SCRIPT_ASSERT(ctx, JS_IsNumber(argv[0]), "Supplied parameter must be a player number");
-	int player = JSValueToInt32(ctx, argv[0]);
+	unsigned player = JSValueToInt32(ctx, argv[0]);
 
 	JSValue result = JS_NewArray(ctx); //engine->newArray(droidTemplates[player].size());
 	uint32_t count = 0;
@@ -3356,7 +3356,7 @@ static JSValue js_stats_get(JSContext* ctx, JSValueConst this_val)
 {
 	JSValue currentFuncObj = js_debugger_get_current_funcObject(ctx);
 	int type = QuickJS_GetInt32(ctx, currentFuncObj, "type");
-	int player = QuickJS_GetInt32(ctx, currentFuncObj, "player");
+	unsigned player = QuickJS_GetInt32(ctx, currentFuncObj, "player");
 	unsigned index = QuickJS_GetUint32(ctx, currentFuncObj, "index");
 	std::string name = QuickJS_GetStdString(ctx, currentFuncObj, "name");
 	JS_FreeValue(ctx, currentFuncObj);
@@ -3369,7 +3369,7 @@ static JSValue js_stats_set(JSContext* ctx, JSValueConst this_val, JSValueConst 
 {
 	JSValue currentFuncObj = js_debugger_get_current_funcObject(ctx);
 	int type = QuickJS_GetInt32(ctx, currentFuncObj, "type");
-	int player = QuickJS_GetInt32(ctx, currentFuncObj, "player");
+	unsigned player = QuickJS_GetInt32(ctx, currentFuncObj, "player");
 	unsigned index = QuickJS_GetUint32(ctx, currentFuncObj, "index");
 	std::string name = QuickJS_GetStdString(ctx, currentFuncObj, "name");
 	JS_FreeValue(ctx, currentFuncObj);
@@ -3381,7 +3381,7 @@ static JSValue js_stats_set(JSContext* ctx, JSValueConst this_val, JSValueConst 
 }
 
 
-static void setStatsFunc(JSValue& base, JSContext* ctx, const std::string& name, int player, int type, unsigned index)
+static void setStatsFunc(JSValue& base, JSContext* ctx, const std::string& name, unsigned player, int type, unsigned index)
 {
 	const JSCFunctionListEntry js_stats_getter_setter_func[] = {
 		QJS_CGETSET_DEF(name.c_str(), js_stats_get, js_stats_set)

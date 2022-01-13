@@ -121,6 +121,6 @@ void intRunDesign();
 
 const char* GetDefaultTemplateName(DroidTemplate* psTemplate);
 
-bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain, int player);
+bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain, unsigned player);
 
 #endif // __INCLUDED_SRC_DESIGN_H__

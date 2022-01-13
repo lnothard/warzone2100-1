@@ -116,7 +116,7 @@ extern std::array<std::vector<uint8_t>, AUX_MAX> psBlockMap;
 extern std::array<std::vector<uint8_t>, AUX_MAX + MAX_PLAYERS> psAuxMap;
 
 /// Find aux bitfield for a given tile
-WZ_DECL_ALWAYS_INLINE static inline uint8_t auxTile(int x, int y, int player)
+WZ_DECL_ALWAYS_INLINE static inline uint8_t auxTile(int x, int y, unsigned player)
 {
 	ASSERT_OR_RETURN(AUXBITS_ALL, player >= 0 && player < MAX_PLAYERS + AUX_MAX, "invalid player: %d", player);
 	return psAuxMap[player][x + y * mapWidth];
@@ -129,14 +129,14 @@ WZ_DECL_ALWAYS_INLINE static inline uint8_t blockTile(int x, int y, int slot)
 }
 
 /// Store a shadow copy of a player's aux map for use in threaded calculations
-static inline void auxMapStore(int player, int slot)
+static inline void auxMapStore(unsigned player, int slot)
 {
 	memcpy(psBlockMap[slot].get(), psBlockMap[0].get(), sizeof(uint8_t) * mapWidth * mapHeight);
 	memcpy(psAuxMap[MAX_PLAYERS + slot].get(), psAuxMap[player].get(), sizeof(uint8_t) * mapWidth * mapHeight);
 }
 
 /// Restore selected fields from the shadow copy of a player's aux map (ignoring the block map)
-static inline void auxMapRestore(int player, int slot, int mask)
+static inline void auxMapRestore(unsigned player, int slot, int mask)
 {
 	int i;
 	uint8_t original, cached;
@@ -150,7 +150,7 @@ static inline void auxMapRestore(int player, int slot, int mask)
 }
 
 /// Set aux bits. Always set identically for all players. States not set are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxSet(int x, int y, int player, int state)
+WZ_DECL_ALWAYS_INLINE static inline void auxSet(int x, int y, unsigned player, int state)
 {
 	psAuxMap[player][x + y * mapWidth] |= state;
 }
@@ -167,7 +167,7 @@ WZ_DECL_ALWAYS_INLINE static inline void auxSetAll(int x, int y, int state)
 }
 
 /// Set aux bits. Always set identically for all players. States not set are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxSetAllied(int x, int y, int player, int state)
+WZ_DECL_ALWAYS_INLINE static inline void auxSetAllied(int x, int y, unsigned player, int state)
 {
 	int i;
 
@@ -181,7 +181,7 @@ WZ_DECL_ALWAYS_INLINE static inline void auxSetAllied(int x, int y, int player, 
 }
 
 /// Set aux bits. Always set identically for all players. States not set are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxSetEnemy(int x, int y, int player, int state)
+WZ_DECL_ALWAYS_INLINE static inline void auxSetEnemy(int x, int y, unsigned player, int state)
 {
 	int i;
 
@@ -195,7 +195,7 @@ WZ_DECL_ALWAYS_INLINE static inline void auxSetEnemy(int x, int y, int player, i
 }
 
 /// Clear aux bits. Always set identically for all players. States not cleared are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxClear(int x, int y, int player, int state)
+WZ_DECL_ALWAYS_INLINE static inline void auxClear(int x, int y, unsigned player, int state)
 {
 	psAuxMap[player][x + y * mapWidth] &= ~state;
 }

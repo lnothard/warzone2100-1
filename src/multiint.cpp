@@ -402,7 +402,7 @@ const std::vector<WzString> getAINames()
 	return l;
 }
 
-const char* getAIName(int player)
+const char* getAIName(unsigned player)
 {
 	if (NetPlay.players[player].ai >= 0 && NetPlay.players[player].ai != AI_CUSTOM)
 	{
@@ -1712,10 +1712,10 @@ int WzMultiplayerOptionsTitleUI::playerRowY0(uint32_t row) const
 	return playerRows[row]->y();
 }
 
-static int playerBoxHeight(uint32_t rowPosition)
+static unsigned playerBoxHeight(uint32_t rowPosition)
 {
 	bool hasPlayersTabs = widgGetFromID(psWScreen, MULTIOP_PLAYERS_TABS) != nullptr;
-	int playersTop = (hasPlayersTabs) ? MULTIOP_PLAYERS_TABS_H + 1 : 1;
+	unsigned playersTop = (hasPlayersTabs) ? MULTIOP_PLAYERS_TABS_H + 1 : 1;
 	int gap = (MULTIOP_PLAYERSH - playersTop) - MULTIOP_TEAMSHEIGHT * numSlotsToBeDisplayed();
 	int gapDiv = numSlotsToBeDisplayed() - 1;
 	gap = std::min(gap, 5 * gapDiv);
@@ -4643,7 +4643,7 @@ public:
 		{
 			// Add AI difficulty chooser in place of normal "ready" button
 			deleteExistingReadyButton();
-			int playerDifficulty = static_cast<int8_t>(NetPlay.players[playerIdx].difficulty);
+			unsigned playerDifficulty = static_cast<int8_t>(NetPlay.players[playerIdx].difficulty);
 			int icon = difficultyIcon(playerDifficulty);
 			char tooltip[128 + 255];
 			if (playerDifficulty >= 0)
@@ -5754,7 +5754,7 @@ static void loadMapChallengeSettings(WzConfig& ini)
 }
 
 
-static void resolveAIForPlayer(int player, WzString& aiValue)
+static void resolveAIForPlayer(unsigned player, WzString& aiValue)
 {
 	if (aiValue.compare("null") == 0)
 	{
@@ -5888,7 +5888,7 @@ static void loadMapPlayerSettings(WzConfig& ini)
 	}
 }
 
-static int playersPerTeam()
+static unsigned playersPerTeam()
 {
 	for (unsigned numTeams = game.maxPlayers - 1; numTeams > 1; --numTeams)
 	{
@@ -6058,7 +6058,7 @@ static void randomizeOptions()
 		do
 		{
 			// don't kick out already joined players because of randomize
-			int players = NET_numHumanPlayers();
+			unsigned players = NET_numHumanPlayers();
 			int minimumPlayers = std::max(players, 2);
 			current_numplayers = minimumPlayers;
 			if (minimumPlayers < MAX_PLAYERS_IN_GUI)
@@ -6935,7 +6935,7 @@ void WzMultiplayerOptionsTitleUI::frontendMultiMessages(bool running)
 				int minAutoStartPlayerCount = getBoundedMinAutostartPlayerCount();
 				if (minAutoStartPlayerCount > 0)
 				{
-					int playersPresent = 0;
+					unsigned playersPresent = 0;
 					for (int j = 0; j < MAX_PLAYERS; j++)
 					{
 						if (!NetPlay.players[j].allocated)
@@ -8013,7 +8013,7 @@ void displayColour(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 	if (!NetPlay.players[j].fileSendInProgress() && NetPlay.players[j].difficulty != AIDifficulty::DISABLED && !NetPlay.
 		players[j].isSpectator)
 	{
-		int player = getPlayerColour(j);
+		unsigned player = getPlayerColour(j);
 		STATIC_ASSERT(MAX_PLAYERS <= 16);
 		iV_DrawImageTc(FrontImages, IMAGE_PLAYERN, IMAGE_PLAYERN_TC, x + 7, y + 9, pal_GetTeamColour(player));
 	}

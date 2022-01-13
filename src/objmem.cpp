@@ -212,7 +212,7 @@ unsigned generateSynchronisedObjectId()
  * \param list is a pointer to the object list
  */
 template <typename OBJECT>
-static inline void addObjectToList(OBJECT* list[], OBJECT* object, int player)
+static inline void addObjectToList(OBJECT* list[], OBJECT* object, unsigned player)
 {
 	ASSERT_OR_RETURN(, object != nullptr, "Invalid pointer");
 
@@ -225,7 +225,7 @@ static inline void addObjectToList(OBJECT* list[], OBJECT* object, int player)
  * \param list is a pointer to the object list
  */
 template <typename OBJECT>
-static inline void addObjectToFuncList(OBJECT* list[], OBJECT* object, int player)
+static inline void addObjectToFuncList(OBJECT* list[], OBJECT* object, unsigned player)
 {
 	ASSERT_OR_RETURN(, object != nullptr, "Invalid pointer");
 	ASSERT_OR_RETURN(, static_cast<OBJECT *>(object->psNextFunc) == nullptr, "%s(%p) is already in a function list!",
@@ -289,7 +289,7 @@ static inline void destroyObject(OBJECT* list[], OBJECT* object)
  * \param type is the type of the object
  */
 template <typename OBJECT>
-static inline void removeObjectFromList(OBJECT* list[], OBJECT* object, int player)
+static inline void removeObjectFromList(OBJECT* list[], OBJECT* object, unsigned player)
 {
 	ASSERT_OR_RETURN(, object != nullptr, "Invalid pointer");
 
@@ -320,7 +320,7 @@ static inline void removeObjectFromList(OBJECT* list[], OBJECT* object, int play
  * \param type is the type of the object
  */
 template <typename OBJECT>
-static inline void removeObjectFromFuncList(OBJECT* list[], OBJECT* object, int player)
+static inline void removeObjectFromFuncList(OBJECT* list[], OBJECT* object, unsigned player)
 {
 	ASSERT_OR_RETURN(, object != nullptr, "Invalid pointer");
 

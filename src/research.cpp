@@ -747,7 +747,7 @@ static inline int64_t iDivCeil(int64_t dividend, int64_t divisor)
 	return (dividend / divisor) + static_cast<int64_t>((dividend % divisor != 0 && hasPosQuotient));
 }
 
-static void eventResearchedHandleUpgrades(const ResearchStats* psResearch, const Structure* psStruct, int player)
+static void eventResearchedHandleUpgrades(const ResearchStats* psResearch, const Structure* psStruct, unsigned player)
 {
 	if (cachedStatsObject.is_null()) { cachedStatsObject = wzapi::constructStatsObject(); }
 	if (cachedPerPlayerUpgrades.empty()) { cachedPerPlayerUpgrades = wzapi::getUpgradesObject(); }
@@ -1806,7 +1806,7 @@ std::vector<AllyResearch> const& listAllyResearch(unsigned ref)
 		lastGameTime = gameTime;
 		researches.clear();
 
-		for (int player = 0; player < MAX_PLAYERS; ++player)
+		for (unsigned player = 0; player < MAX_PLAYERS; ++player)
 		{
 			if (player == selectedPlayer || !aiCheckAlliances(selectedPlayer, player) || !alliancesSharedResearch(
 				game.alliance))

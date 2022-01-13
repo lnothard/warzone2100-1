@@ -20,8 +20,10 @@
 
 /**
  * @file structure.cpp
- * Store structure stats.
+ * Store structure stats
  */
+
+#include <utility>
 
 #include "lib/ivis_opengl/imd.h"
 #include "lib/framework/math_ext.h"
@@ -31,7 +33,6 @@
 #include "visibility.h"
 #include "structure.h"
 
-#include <utility>
 #include "miscimd.h"
 #include "effects.h"
 #include "combat.h"
@@ -60,16 +61,14 @@ unsigned numStructureStats;
 static std::unordered_map<WzString, StructureStats*> lookupStructStatPtr;
 
 /// Used to hold the modifiers cross-referenced by weapon effect and structureStrength
-STRUCTSTRENGTH_MODIFIER asStructStrengthModifier[WE_NUMEFFECTS][NUM_STRUCT_STRENGTH];
+std::array<std::array<STRUCTSTRENGTH_MODIFIER, static_cast<std::size_t>(WEAPON_EFFECT::COUNT)>,
+        static_cast<std::size_t>(STRUCTURE_STRENGTH::COUNT)> asStructStrengthModifier;
 
 /// Specifies which numbers have been allocated for the assembly points for the factories
 static std::vector<bool> factoryNumFlag[MAX_PLAYERS][NUM_FLAG_TYPES];
 
 // The number of different (types of) droids that can be put into a production run
 static constexpr auto MAX_IN_RUN = 9;
-
-/// The list of what to build - only for selectedPlayer
-std::vector<ProductionRun> asProductionRun[NUM_FACTORY_TYPES];
 
 /// Stores which player the production list has been set up for
 unsigned productionPlayer;
@@ -87,7 +86,7 @@ static std::array<uint8_t, MAX_PLAYERS> satUplinkExists;
 static std::array<uint8_t, MAX_PLAYERS> lasSatExists;
 
 static bool setFunctionality(Structure* psBuilding, STRUCTURE_TYPE functionType);
-static void setFlagPositionInc(FUNCTIONALITY* pFunctionality, unsigned player, uint8_t factoryType);
+static void setFlagPositionInc(unsigned player, uint8_t factoryType);
 static void informPowerGen(Structure* psStruct);
 static bool electronicReward(Structure* psStructure, uint8_t attackPlayer);
 static void factoryReward(uint8_t losingPlayer, uint8_t rewardPlayer);
@@ -162,9 +161,9 @@ void set_structure_non_blocking(const Impl::Structure& structure)
   {
     for (int j = 0; j < bounds.size.y; ++j)
     {
-      aux_clear(bounds.map.x + i,
+      auxClearBlocking(bounds.map.x + i,
                 bounds.map.y + j,
-                AUX_BLOCKING | AUX_OUR_BUILDING | AUX_NON_PASSABLE);
+                AUXBITS_BLOCKING | AUXBITS_OUR_BUILDING | AUXBITS_NONPASSABLE);
     }
   }
 }
@@ -188,14 +187,14 @@ void set_structure_blocking(const Impl::Structure& structure)
   {
     for (int j = 0; j < bounds.size.y; ++j)
     {
-      aux_set_allied(bounds.map.x + i,
+      auxSetAllied(bounds.map.x + i,
                      bounds.map.y + j,
                      structure.getPlayer(),
-                     AUX_OUR_BUILDING);
+                     AUXBITS_OUR_BUILDING);
 
-      aux_set_all(bounds.map.x + i,
+      auxSetAll(bounds.map.x + i,
                   bounds.map.y + j,
-                  AUX_BLOCKING | AUX_NON_PASSABLE);
+                  AUXBITS_BLOCKING | AUXBITS_NONPASSABLE);
     }
   }
 }
@@ -220,9 +219,9 @@ void open_gate(const Impl::Structure& structure)
   {
     for (int j = 0; j < bounds.size.y; ++j)
     {
-      aux_clear(bounds.map.x + i,
-                bounds.map.y + j,
-                AUX_BLOCKING);
+      auxClearBlocking(bounds.map.x + i,
+                       bounds.map.y + j,
+                       AUXBITS_BLOCKING);
     }
   }
 }
@@ -247,14 +246,14 @@ void close_gate(const Impl::Structure& structure)
   {
     for (int j = 0; j < bounds.size.y; ++j)
     {
-      aux_set_enemy(bounds.map.x + i,
+      auxSetEnemy(bounds.map.x + i,
                     bounds.map.y + j,
                     structure.getPlayer(),
-                    AUX_NON_PASSABLE);
+                    AUXBITS_NONPASSABLE);
 
-      aux_set_all(bounds.map.x + i,
+      auxSetAll(bounds.map.x + i,
                   bounds.map.y + j,
-                  AUX_BLOCKING);
+                  AUXBITS_BLOCKING);
     }
   }
 }
@@ -367,7 +366,7 @@ namespace Impl
 
   /// Add buildPoints to the structures currentBuildPts, due to construction work by the droid
   /// Also can deconstruct (demolish) a building if passed negative buildpoints
-  void Structure::structureBuild(Droid* psDroid, int buildPoints, int buildRate_)
+  void Structure::structureBuild(::Droid* psDroid, int buildPoints, int buildRate_)
   {
     auto checkResearchButton = state == STRUCTURE_STATE::BUILT; // We probably just started demolishing, if this is true.
     auto prevResearchState = 0;
@@ -456,7 +455,7 @@ namespace Impl
                  map_coord(psIter.getOrder().pos2))) {
 
             objTrace(psIter.getId(), "Construction order %s complete (%d, %d -> %d, %d)",
-                     getDroidOrderName(psDroid->getOrder().type),
+                     getDroidOrderName(psDroid->getOrder().type).c_str(),
                      psIter.getOrder().pos2.x, psIter.getOrder().pos.y, psIter.getOrder().pos2.x, psIter.getOrder().pos2.y);
 
             psIter.action = ACTION::NONE;
@@ -680,9 +679,9 @@ namespace Impl
 
     syncDebugStructure(this, '<');
 
-    if (flags.test(OBJECT_FLAG::DIRTY) && !bMission) {
+    if (flags.test(static_cast<std::size_t>(OBJECT_FLAG::DIRTY)) && !bMission) {
       visTilesUpdate(this);
-      flags.set(OBJECT_FLAG::DIRTY, false);
+      flags.set(static_cast<std::size_t>(OBJECT_FLAG::DIRTY), false);
     }
 
     if (stats->type == GATE) {
@@ -3944,7 +3943,7 @@ bool Factory::IsFactoryCommanderGroupFull()
 
 // Check if a player has a certain structure. Optionally, checks if there is
 // at least one that is built.
-bool structureExists(int player, STRUCTURE_TYPE type, bool built, bool isMission)
+bool structureExists(unsigned player, STRUCTURE_TYPE type, bool built, bool isMission)
 {
 	bool found = false;
 
@@ -4004,7 +4003,7 @@ int getMaxConstructors(unsigned player)
 	return constructorLimit[player];
 }
 
-bool IsPlayerDroidLimitReached(int player)
+bool IsPlayerDroidLimitReached(unsigned player)
 {
 	auto numDroids = getNumDroids(player) + 
           getNumMissionDroids(player) + getNumTransporterDroids(player);

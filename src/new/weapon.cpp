@@ -62,12 +62,12 @@ unsigned Weapon::getShortRange(unsigned player) const
   return stats->upgraded_stats[player].short_range;
 }
 
-unsigned Weapon::getHitChance(unsigned int player) const
+unsigned Weapon::getHitChance(unsigned unsigned player) const
 {
   return stats->upgraded_stats[player].hit_chance;
 }
 
-unsigned Weapon::getShortRangeHitChance(unsigned int player) const
+unsigned Weapon::getShortRangeHitChance(unsigned unsigned player) const
 {
   return stats->upgraded_stats[player].short_range_hit_chance;
 }

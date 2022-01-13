@@ -31,7 +31,7 @@ static DIFFICULTY_LEVEL presDifLevel = DIFFICULTY_LEVEL::NORMAL;
 static int fDifPlayerModifier;
 static int fDifEnemyModifier;
 
-void setDamageModifiers(int playerModifier, int enemyModifier)
+void setDamageModifiers(unsigned playerModifier, int enemyModifier)
 {
 	fDifPlayerModifier = playerModifier;
 	fDifEnemyModifier = enemyModifier;

@@ -223,7 +223,7 @@ uniqueTimerID scripting_engine::getNextAvailableTimerID()
 	return lastTimerID;
 }
 
-uniqueTimerID scripting_engine::setTimer(wzapi::scripting_instance* caller, const TimerFunc& timerFunc, int player,
+uniqueTimerID scripting_engine::setTimer(wzapi::scripting_instance* caller, const TimerFunc& timerFunc, unsigned player,
                                          int milliseconds, const std::string& timerName /*= ""*/,
                                          const SimpleObject* obj /*= nullptr*/, timerType type /*= TIMER_REPEAT*/,
                                          std::unique_ptr<timerAdditionalData> additionalParam /*= nullptr*/)
@@ -262,7 +262,7 @@ struct researchEvent
 {
 	ResearchStats* research;
 	Structure* structure;
-	int player;
+	unsigned player;
 
 	researchEvent(ResearchStats* r, Structure* s, int p): research(r), structure(s), player(p)
 	{
@@ -324,7 +324,7 @@ bool scriptInit()
 	return true;
 }
 
-Vector2i getPlayerStartPosition(int player)
+Vector2i getPlayerStartPosition(unsigned player)
 {
 	return positions[player];
 }
@@ -519,12 +519,12 @@ bool scripting_engine::updateScripts()
 	return true;
 }
 
-wzapi::scripting_instance* loadPlayerScript(const WzString& path, int player, AIDifficulty difficulty)
+wzapi::scripting_instance* loadPlayerScript(const WzString& path, unsigned player, AIDifficulty difficulty)
 {
 	return scripting_engine::instance().loadPlayerScript(path, player, difficulty);
 }
 
-static wzapi::scripting_instance* loadPlayerScriptByBackend(const WzString& path, int player, int realDifficulty)
+static wzapi::scripting_instance* loadPlayerScriptByBackend(const WzString& path, unsigned player, int realDifficulty)
 {
 	// JS scripts:
 	switch (war_getJSBackend())
@@ -537,7 +537,7 @@ static wzapi::scripting_instance* loadPlayerScriptByBackend(const WzString& path
 	return nullptr;
 }
 
-wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& path, int player, AIDifficulty difficulty)
+wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& path, unsigned player, AIDifficulty difficulty)
 {
 	ASSERT_OR_RETURN(nullptr, player >= 0 && (player < MAX_PLAYERS || player == selectedPlayer),
 	                 "Player index %d out of bounds", player);
@@ -773,7 +773,7 @@ wzapi::scripting_instance* scripting_engine::findInstanceForPlayer(int match, co
 	WzString scriptName = _scriptName.normalized(WzString::NormalizationForm_KD);
 	for (auto* instance : scripts)
 	{
-		int player = instance->player();
+		unsigned player = instance->player();
 		WzString matchName = WzString::fromUtf8(instance->scriptName()).normalized(WzString::NormalizationForm_KD);
 		if (match == player && (matchName.compare(scriptName) == 0 || scriptName.isEmpty()))
 		{
@@ -799,7 +799,7 @@ bool scripting_engine::loadScriptStates(const char* filename)
 	for (size_t i = 0; i < list.size(); ++i)
 	{
 		ini.beginGroup(list[i]);
-		int player = ini.value("me").toInt();
+		unsigned player = ini.value("me").toInt();
 		WzString scriptName = ini.value("scriptName").toWzString();
 		wzapi::scripting_instance* instance = findInstanceForPlayer(player, scriptName);
 		if (instance && list[i].startsWith("triggers_"))
@@ -939,7 +939,7 @@ std::vector<scripting_engine::timerNodeSnapshot> scripting_engine::debug_GetTime
 	return debug_timer_snapshot;
 }
 
-void jsAutogameSpecific(const WzString& name, int player)
+void jsAutogameSpecific(const WzString& name, unsigned player)
 {
 	wzapi::scripting_instance* instance = loadPlayerScript(name, player, AIDifficulty::MEDIUM);
 	if (!instance)
@@ -1075,7 +1075,7 @@ bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, SimpleObject* psObj)
 	{
 		if (psObj)
 		{
-			int player = instance->player();
+			unsigned player = instance->player();
 			bool receiveAll = instance->isReceivingAllEvents();
 			if (player != psObj->getPlayer() && !receiveAll)
 			{
@@ -1185,7 +1185,7 @@ bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, SimpleObject* psObj)
 //__
 //__ An event that is run after a player has left the game.
 //__
-bool triggerEventPlayerLeft(int player)
+bool triggerEventPlayerLeft(unsigned player)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
@@ -1219,7 +1219,7 @@ bool triggerEventDroidIdle(Droid* psDroid)
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
 	{
-		int player = instance->player();
+		unsigned player = instance->player();
 		if (player == psDroid->getPlayer())
 		{
 			instance->handle_eventDroidIdle(psDroid);
@@ -1281,7 +1281,7 @@ bool triggerEventStructDemolish(Structure* psStruct, Droid* psDroid)
 	optional<const Droid*> opt_droid = (psDroid) ? optional<const Droid*>(psDroid) : nullopt;
 	for (auto* instance : scripts)
 	{
-		int player = instance->player();
+		unsigned player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
 		if (player == psStruct->getPlayer() || receiveAll) {
 			instance->handle_eventStructureDemolish(psStruct, opt_droid);
@@ -1363,7 +1363,7 @@ bool triggerEventAttacked(SimpleObject* psVictim, SimpleObject* psAttacker, int 
 //__ current player. If an ally does the research, the structure parameter will
 //__ be set to null. The player parameter gives the player it is called for.
 //__
-bool triggerEventResearched(ResearchStats* psResearch, Structure* psStruct, int player)
+bool triggerEventResearched(ResearchStats* psResearch, Structure* psStruct, unsigned player)
 {
 	//HACK: This event can be triggered when loading savegames, before the script engines are initialized.
 	// if this is the case, we need to store these events and replay them later
@@ -1463,7 +1463,7 @@ bool scripting_engine::triggerEventSeen(SimpleObject* psViewer, SimpleObject* ps
 //__ object has been transferred, so the target player is in object.player.
 //__ The event is called for both players.
 //__
-bool triggerEventObjectTransfer(SimpleObject* psObj, int from)
+bool triggerEventObjectTransfer(SimpleObject* psObj, unsigned from)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psObj) { return true; }
@@ -1484,7 +1484,7 @@ bool triggerEventObjectTransfer(SimpleObject* psObj, int from)
 //__ player sending the chat message. For the moment, the ```to``` parameter is always the script
 //__ player.
 //__
-bool triggerEventChat(int from, int to, const char* message)
+bool triggerEventChat(unsigned from, unsigned to, const char* message)
 {
 	if (!scriptsReady)
 	{
@@ -1496,8 +1496,7 @@ bool triggerEventChat(int from, int to, const char* message)
 	{
 		int me = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (me == to || (receiveAll && to == from))
-		{
+		if (me == to || (receiveAll && to == from)) {
 			instance->handle_eventChat(from, to, message);
 		}
 	}
@@ -1510,7 +1509,7 @@ bool triggerEventChat(int from, int to, const char* message)
 //__ player sending the beacon. For the moment, the ```to``` parameter is always the script player.
 //__ Message may be undefined.
 //__
-bool triggerEventBeacon(int from, int to, const char* message, int x, int y)
+bool triggerEventBeacon(unsigned from, unsigned to, const char* message, int x, int y)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	optional<const char*> opt_message = (message) ? optional<const char*>(message) : nullopt;
@@ -2490,7 +2489,7 @@ generic_script_object scripting_engine::getObject(WZAPI_PARAMS(const wzapi::obje
 	{
 		auto type_player_id = request.getObjectIDRequest();
 		OBJECT_TYPE type = std::get<0>(type_player_id);
-		int player = std::get<1>(type_player_id);
+		unsigned player = std::get<1>(type_player_id);
 		int id = std::get<2>(type_player_id);
 		SCRIPT_ASSERT_PLAYER({}, context, player);
 		return generic_script_object::fromObject(IdToObject(type, id, player));
@@ -2579,8 +2578,8 @@ std::vector<const SimpleObject*> scripting_engine::enumArea(
 std::vector<const SimpleObject*> scripting_engine::_enumAreaWorldCoords(
 	WZAPI_PARAMS(int x1, int y1, int x2, int y2, optional<int> _playerFilter, optional<bool> _seen))
 {
-	int player = context.player();
-	int playerFilter = _playerFilter.value_or(ALL_PLAYERS);
+	unsigned player = context.player();
+	unsigned playerFilter = _playerFilter.value_or(ALL_PLAYERS);
 	bool seen = _seen.value_or(true);
 
 	static GridList gridList; // static to avoid allocations. // not thread-safe

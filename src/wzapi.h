@@ -50,16 +50,16 @@
 //;;
 
 #include "lib/framework/frame.h"
-#include <optional-lite/optional.hpp>
-#include "basedef.h"
-#include "structuredef.h"
-#include "featuredef.h"
 #include "lib/framework/wzconfig.h"
-#include "hci.h"
-#include "gateway.h"
-
+#include <optional-lite/optional.hpp>
 using nonstd::optional;
 using nonstd::nullopt;
+
+#include "basedef.h"
+#include "gateway.h"
+#include "hci.h"
+#include "research.h"
+
 
 #include <string>
 #include <vector>
@@ -71,9 +71,7 @@ typedef uint64_t uniqueTimerID;
 class timerAdditionalData
 {
 public:
-	virtual ~timerAdditionalData()
-	{
-	}
+	virtual ~timerAdditionalData() = default;
 
 public:
 	virtual void onTimerDelete(uniqueTimerID, SimpleObject*)
@@ -96,27 +94,27 @@ enum timerType
 
 struct scr_radius
 {
-	int32_t x;
-	int32_t y;
-	int32_t radius;
+	int x;
+	int y;
+	int radius;
 };
 
 struct scr_area
 {
-	int32_t x1;
-	int32_t y1;
-	int32_t x2;
-	int32_t y2;
+	int x1;
+	int y1;
+	int x2;
+	int y2;
 };
 
 struct scr_position
 {
-	int32_t x;
-	int32_t y;
+	int x;
+	int y;
 };
 
 // Utility conversion functions
-SimpleObject* IdToObject(OBJECT_TYPE type, int id, int player);
+SimpleObject* IdToObject(unsigned id, unsigned player);
 
 // MARK: - wzapi
 
@@ -139,7 +137,7 @@ namespace wzapi
 		TYPE_POINTER pt;
 
 	public:
-		event_nullable_ptr(TYPE_POINTER _pt)
+		explicit event_nullable_ptr(TYPE_POINTER _pt)
 			: pt(_pt)
 		{
 		}
@@ -149,12 +147,12 @@ namespace wzapi
 		{
 		}
 
-		operator TYPE_POINTER&()
+		explicit operator TYPE_POINTER&()
 		{
 			return pt;
 		}
 
-		operator TYPE_POINTER() const
+		explicit operator TYPE_POINTER() const
 		{
 			return pt;
 		}
@@ -168,9 +166,7 @@ namespace wzapi
 	class scripting_event_handling_interface
 	{
 	public:
-		virtual ~scripting_event_handling_interface()
-		{
-		};
+		virtual ~scripting_event_handling_interface() = default;
 	public:
 		// MARK: General events
 
@@ -362,7 +358,7 @@ namespace wzapi
 		//__
 		//__ An event that is run after a player has left the game.
 		//__
-		virtual bool handle_eventPlayerLeft(int player) = 0;
+		virtual bool handle_eventPlayerLeft(unsigned player) = 0;
 
 		//__ ## eventCheatMode(entered)
 		//__
@@ -429,7 +425,7 @@ namespace wzapi
 		//__ be set to null. The player parameter gives the player it is called for.
 		//__
 		virtual bool handle_eventResearched(const researchResult& research,
-                                        event_nullable_ptr<const Structure> psStruct, int player) = 0;
+                                        event_nullable_ptr<const Structure> psStruct, unsigned player) = 0;
 
 		//__ ## eventDestroyed(object)
 		//__
@@ -472,7 +468,7 @@ namespace wzapi
 		//__ object has been transferred, so the target player is in object.player.
 		//__ The event is called for both players.
 		//__
-		virtual bool handle_eventObjectTransfer(const SimpleObject* psObj, int from) = 0;
+		virtual bool handle_eventObjectTransfer(const SimpleObject* psObj, unsigned from) = 0;
 
 		//__ ## eventChat(from, to, message)
 		//__
@@ -480,7 +476,7 @@ namespace wzapi
 		//__ player sending the chat message. For the moment, the ```to``` parameter is always the script
 		//__ player.
 		//__
-		virtual bool handle_eventChat(int from, int to, const char* message) = 0;
+		virtual bool handle_eventChat(unsigned from, unsigned to, const char* message) = 0;
 
 		//__ ## eventBeacon(x, y, from, to[, message])
 		//__
@@ -488,14 +484,14 @@ namespace wzapi
 		//__ player sending the beacon. For the moment, the ```to``` parameter is always the script player.
 		//__ Message may be undefined.
 		//__
-		virtual bool handle_eventBeacon(int x, int y, int from, int to, optional<const char*> message) = 0;
+		virtual bool handle_eventBeacon(int x, int y, unsigned from, unsigned to, optional<const char*> message) = 0;
 
 		//__ ## eventBeaconRemoved(from, to)
 		//__
 		//__ An event that is run whenever a beacon message is removed. The ```from``` parameter is the
 		//__ player sending the beacon. For the moment, the ```to``` parameter is always the script player.
 		//__
-		virtual bool handle_eventBeaconRemoved(int from, int to) = 0;
+		virtual bool handle_eventBeaconRemoved(unsigned from, unsigned to) = 0;
 
 		//__ ## eventGroupLoss(gameObject, groupId, newSize)
 		//__
@@ -524,19 +520,19 @@ namespace wzapi
 		//__
 		//__ An event that is called whenever an alliance offer is requested.
 		//__
-		virtual bool handle_eventAllianceOffer(uint8_t from, uint8_t to) = 0;
+		virtual bool handle_eventAllianceOffer(unsigned from, unsigned to) = 0;
 
 		//__ ## eventAllianceAccepted(from, to)
 		//__
 		//__ An event that is called whenever an alliance is accepted.
 		//__
-		virtual bool handle_eventAllianceAccepted(uint8_t from, uint8_t to) = 0;
+		virtual bool handle_eventAllianceAccepted(unsigned from, unsigned to) = 0;
 
 		//__ ## eventAllianceBroken(from, to)
 		//__
 		//__ An event that is called whenever an alliance is broken.
 		//__
-		virtual bool handle_eventAllianceBroken(uint8_t from, uint8_t to) = 0;
+		virtual bool handle_eventAllianceBroken(unsigned from, unsigned to) = 0;
 
 	public:
 		// MARK: Special input events
@@ -547,7 +543,7 @@ namespace wzapi
 		//__ to prevent desync from happening. Sync requests must be carefully validated to prevent
 		//__ cheating!
 		//__
-		virtual bool handle_eventSyncRequest(int from, int req_id, int x, int y, const SimpleObject* psObj,
+		virtual bool handle_eventSyncRequest(unsigned from, int req_id, int x, int y, const SimpleObject* psObj,
 		                                     const SimpleObject* psObj2) = 0;
 
 		//__ ## eventKeyPressed(meta, key)
@@ -595,33 +591,33 @@ namespace wzapi
 	class scripting_instance : public scripting_event_handling_interface
 	{
 	public:
-		scripting_instance(int player, std::string  scriptName, std::string  scriptPath);
-		virtual ~scripting_instance();
+		scripting_instance(unsigned player, const std::string& scriptName, const std::string& scriptPath);
+		~scripting_instance() override;
 
 	public:
 		virtual bool readyInstanceForExecution() = 0;
 
 	public:
-		const std::string& scriptName() const { return m_scriptName; }
-		const std::string& scriptPath() const { return m_scriptPath; }
-		int player() const { return m_player; }
-		bool isHostAI() const;
+		[[nodiscard]] const std::string& scriptName() const { return m_scriptName; }
+		[[nodiscard]] const std::string& scriptPath() const { return m_scriptPath; }
+		[[nodiscard]] unsigned player() const { return m_player; }
+		[[nodiscard]] bool isHostAI() const;
 
 	public:
 		inline void setReceiveAllEvents(bool value) { m_isReceivingAllEvents = value; }
-		inline bool isReceivingAllEvents() const { return m_isReceivingAllEvents; }
+		[[nodiscard]] inline bool isReceivingAllEvents() const { return m_isReceivingAllEvents; }
 
 	public:
 		// Helpers for loading a file from the "context" of a scripting_instance
 		class LoadFileSearchOptions
 		{
 		public:
-			static const uint32_t ScriptPath_FileNameOnlyBackwardsCompat = 0x00000001;
-			static const uint32_t ScriptPath = 0x00000002;
-			static const uint32_t DataDir = 0x00000004;
-			static const uint32_t ConfigScriptDir = 0x00000008;
-			static const uint32_t All = ScriptPath | DataDir | ConfigScriptDir;
-			static const uint32_t All_BackwardsCompat = ScriptPath_FileNameOnlyBackwardsCompat | All;
+			static const unsigned ScriptPath_FileNameOnlyBackwardsCompat = 0x00000001;
+			static const unsigned ScriptPath = 0x00000002;
+			static const unsigned DataDir = 0x00000004;
+			static const unsigned ConfigScriptDir = 0x00000008;
+			static const unsigned All = ScriptPath | DataDir | ConfigScriptDir;
+			static const unsigned All_BackwardsCompat = ScriptPath_FileNameOnlyBackwardsCompat | All;
 		};
 
 		// Loads a file.
@@ -633,7 +629,7 @@ namespace wzapi
 		// - 3.) The filename *only* is checked relative to the main scriptPath (LoadFileSearchOptions::ScriptPath_FileNameOnlyBackwardsCompat) - for backwards-compat only
 		// - 4.) The filePath is checked relative to the main scriptPath (LoadFileSearchOptions::ScriptPath)
 		bool loadFileForInclude(const std::string& filePath, std::string& loadedFilePath, char** ppFileData,
-		                        UDWORD* pFileSize, uint32_t searchFlags = LoadFileSearchOptions::All) const const;
+		                        std::size_t* pFileSize, unsigned searchFlags = LoadFileSearchOptions::All) const;
 
 	public:
 		// event handling
@@ -670,7 +666,7 @@ namespace wzapi
 		void dumpScriptLog(const std::string& info, int me) const;
 
 	public:
-		virtual void updateGameTime(uint32_t gameTime) = 0;
+		virtual void updateGameTime(unsigned gameTime) = 0;
 		virtual void updateGroupSizes(int group, int size) = 0;
 
 		// set "global" variables
@@ -695,7 +691,7 @@ namespace wzapi
 			                                        GlobalVariableFlags::DoNotSave) = 0;
 
 	private:
-		int m_player;
+		unsigned m_player;
 		std::string m_scriptName;
 		std::string m_scriptPath;
 		bool m_isReceivingAllEvents = false;
@@ -712,38 +708,33 @@ namespace wzapi
 	class execution_context : public execution_context_base
 	{
 	public:
-		virtual ~execution_context();
+		~execution_context() override;
 	public:
-		virtual wzapi::scripting_instance* currentInstance() const = 0;
-		int player() const;
+		[[nodiscard]] virtual wzapi::scripting_instance* currentInstance() const = 0;
+		[[nodiscard]] unsigned player() const;
 		void set_isReceivingAllEvents(bool value) const;
-		bool get_isReceivingAllEvents() const;
-		virtual playerCallbackFunc getNamedScriptCallback(const WzString& func) const = 0;
+		[[nodiscard]] bool get_isReceivingAllEvents() const;
+		[[nodiscard]] virtual playerCallbackFunc getNamedScriptCallback(const WzString& func) const = 0;
 		virtual void doNotSaveGlobal(const std::string& global) const = 0;
 	};
 
 	struct game_object_identifier
 	{
-		game_object_identifier()
+		game_object_identifier() = default;
+
+		explicit game_object_identifier(const SimpleObject* psObj)
+			  : id(psObj->getId()), player(psObj->getPlayer())
 		{
 		}
 
-		game_object_identifier(const SimpleObject* psObj)
-			: type(psObj->type)
-			  , id(psObj->id)
-			  , player(psObj->player)
-		{
-		}
-
-		int type;
-		int id = -1;
-		int player = -1;
+		unsigned id = -1;
+		unsigned player = -1;
 	};
 
 	struct droid_id_player
 	{
-		int id = -1;
-		int player = -1;
+		unsigned id = -1;
+		unsigned player = -1;
 	};
 
 	struct reservedParam
@@ -775,7 +766,7 @@ namespace wzapi
 
 	struct specified_player
 	{
-		int player = -1;
+		unsigned player = -1;
 	};
 
 	struct STRUCTURE_TYPE_or_statsName_string
@@ -788,9 +779,9 @@ namespace wzapi
 	{
 	public:
 		object_request();
-		object_request(std::string  label);
+		explicit object_request(std::string label);
 		object_request(int x, int y);
-		object_request(OBJECT_TYPE type, int player, int id);
+		object_request(unsigned player, unsigned id);
 	public:
 		enum class RequestType
 		{
@@ -801,43 +792,41 @@ namespace wzapi
 		};
 
 	public:
-		const std::string& getLabel() const;
-		scr_position getMapPosition() const;
-		std::tuple<OBJECT_TYPE, int, int> getObjectIDRequest() const;
+		[[nodiscard]] const std::string& getLabel() const;
+		[[nodiscard]] scr_position getMapPosition() const;
+		[[nodiscard]] std::tuple<int, int> getObjectIDRequest() const;
 	public:
-		const RequestType requestType;
+		RequestType requestType;
 	private:
-		const std::string str;
-		const int val1 = -1;
-		const int val2 = -1;
-		const int val3 = -1;
+		std::string str;
+		int val1 = -1;
+		int val2 = -1;
+		int val3 = -1;
 	};
 
 	struct label_or_position_values
 	{
 	private:
-		const int VERY_LOW_INVALID_POS_VALUE = -2;
+		int VERY_LOW_INVALID_POS_VALUE = -2;
 	public:
-		label_or_position_values()
-		{
-		}
+		label_or_position_values() = default;
 
-		label_or_position_values(const std::string& label)
+		explicit label_or_position_values(std::string label)
 			: type(Type::Label_Request)
-			  , label(label)
+			  , label(std::move(label))
 		{
 		}
 
-		label_or_position_values(int32_t x1, int32_t y1, optional<int32_t> x2 = nullopt, optional<int32_t> y2 = nullopt)
+		label_or_position_values(int x1, int y1, optional<int> x2 = nullopt, optional<int> y2 = nullopt)
 			: type(Type::Position_Values_Request)
 			  , x1(x1), y1(y1), x2(x2), y2(y2)
 		{
 		}
 
 	public:
-		inline bool isValid() { return type != Type::Invalid_Request; }
-		inline bool isLabel() { return type == Type::Label_Request; }
-		inline bool isPositionValues() { return type == Type::Position_Values_Request; }
+		[[nodiscard]] bool isValid() const { return type != Type::Invalid_Request; }
+		[[nodiscard]] bool isLabel() const { return type == Type::Label_Request; }
+		[[nodiscard]] bool isPositionValues() const { return type == Type::Position_Values_Request; }
 	public:
 		enum Type
 		{
@@ -848,10 +837,10 @@ namespace wzapi
 
 		Type type = Invalid_Request;
 
-		int32_t x1 = VERY_LOW_INVALID_POS_VALUE;
-		int32_t y1 = VERY_LOW_INVALID_POS_VALUE;
-		optional<int32_t> x2;
-		optional<int32_t> y2;
+		int x1 = VERY_LOW_INVALID_POS_VALUE;
+		int y1 = VERY_LOW_INVALID_POS_VALUE;
+		optional<int> x2;
+		optional<int> y2;
 		std::string label;
 	};
 
@@ -862,24 +851,22 @@ namespace wzapi
 
 	struct researchResult
 	{
-		researchResult()
-		{
-		}
+		researchResult() = default;
 
-		researchResult(const ResearchStats* psResearch, int player)
+		researchResult(ResearchStats* psResearch, unsigned player)
 			: psResearch(psResearch)
 			  , player(player)
 		{
 		}
 
-		const ResearchStats* psResearch = nullptr;
-		int player;
+		ResearchStats* psResearch = nullptr;
+		unsigned player;
 	};
 
 	struct researchResults
 	{
 		std::vector<const ResearchStats*> resList;
-		int player;
+		unsigned player;
 	};
 
 	template <typename T>
@@ -890,7 +877,7 @@ namespace wzapi
 		TYPE_POINTER pt;
 
 	public:
-		returned_nullable_ptr(TYPE_POINTER _pt)
+		explicit returned_nullable_ptr(TYPE_POINTER _pt)
 			: pt(_pt)
 		{
 		}
@@ -900,12 +887,12 @@ namespace wzapi
 		{
 		}
 
-		operator TYPE_POINTER&()
+		explicit operator TYPE_POINTER&()
 		{
 			return pt;
 		}
 
-		operator TYPE_POINTER() const
+		explicit operator TYPE_POINTER() const
 		{
 			return pt;
 		}
@@ -921,34 +908,34 @@ namespace wzapi
 	public:
 		typedef std::map<std::string, int> NameToTypeMap;
 
-		GameEntityRules(int player, unsigned index, const NameToTypeMap& nameToTypeMap)
-			: player(player)
-			  , index(index)
-			  , propertyNameToTypeMap(nameToTypeMap)
+		GameEntityRules(unsigned player, unsigned index, NameToTypeMap nameToTypeMap)
+			: player(player), index(index), propertyNameToTypeMap(std::move(nameToTypeMap))
 		{
 		}
 
 	public:
 		using value_type = nlohmann::json;
-		value_type getPropertyValue(const wzapi::execution_context_base& context, const std::string& name) const;
-		value_type setPropertyValue(const wzapi::execution_context_base& context, const std::string& name,
+		[[nodiscard]] value_type getPropertyValue(const wzapi::execution_context_base& context,
+																							const std::string& name) const;
+		value_type setPropertyValue(const wzapi::execution_context_base& context,
+																const std::string& name,
 		                            const value_type& newValue);
 	public:
-		inline NameToTypeMap::const_iterator begin() const
+		[[nodiscard]] NameToTypeMap::const_iterator begin() const
 		{
 			return propertyNameToTypeMap.cbegin();
 		}
 
-		inline NameToTypeMap::const_iterator end() const
+		[[nodiscard]] NameToTypeMap::const_iterator end() const
 		{
 			return propertyNameToTypeMap.cend();
 		}
 
-		inline int getPlayer() const { return player; }
-		inline int getIndex() const { return index; }
+		[[nodiscard]] unsigned getPlayer() const { return player; }
+		[[nodiscard]] unsigned getIndex() const { return index; }
 	private:
 		// context
-		int player = -1;
+		unsigned player = -1;
 		unsigned index = 0;
 		NameToTypeMap propertyNameToTypeMap;
 	};
@@ -959,28 +946,26 @@ namespace wzapi
 		typedef std::string GameEntityName;
 		typedef std::pair<GameEntityName, GameEntityRules> GameEntityRulesPair;
 	public:
-		GameEntityRuleContainer()
-		{
-		}
+		GameEntityRuleContainer() = default;
 
-		inline void addRules(const GameEntityName& statsName, GameEntityRules&& entityRules)
+		void addRules(const GameEntityName& statsName, GameEntityRules&& entityRules)
 		{
 			rules.emplace_back(GameEntityRulesPair{statsName, std::move(entityRules)});
 			lookup_table[statsName] = rules.size() - 1;
 		}
 
 	public:
-		inline GameEntityRules& operator[](const GameEntityName& statsName)
+		GameEntityRules& operator[](const GameEntityName& statsName)
 		{
 			return rules.at(lookup_table.at(statsName)).second;
 		}
 
-		inline std::vector<GameEntityRulesPair>::const_iterator begin() const
+		[[nodiscard]] std::vector<GameEntityRulesPair>::const_iterator begin() const
 		{
 			return rules.cbegin();
 		}
 
-		inline std::vector<GameEntityRulesPair>::const_iterator end() const
+		[[nodiscard]] std::vector<GameEntityRulesPair>::const_iterator end() const
 		{
 			return rules.cend();
 		}
@@ -995,47 +980,46 @@ namespace wzapi
 	public:
 		typedef std::string GameEntityClass;
 	public:
-		PerPlayerUpgrades(int player)
+		explicit PerPlayerUpgrades(unsigned player)
 			: player(player)
 		{
 		}
 
-		inline void addGameEntity(const GameEntityClass& entityClass, GameEntityRuleContainer&& rulesContainer)
+		void addGameEntity(const GameEntityClass& entityClass, GameEntityRuleContainer&& rulesContainer)
 		{
 			upgrades.emplace(entityClass, std::move(rulesContainer));
 		}
 
 	public:
-		inline GameEntityRuleContainer& operator[](const GameEntityClass& entityClass)
+		GameEntityRuleContainer& operator[](const GameEntityClass& entityClass)
 		{
 			return upgrades[entityClass];
 		}
 
-		inline const GameEntityRuleContainer* find(const GameEntityClass& entityClass) const
+		[[nodiscard]] const GameEntityRuleContainer* find(const GameEntityClass& entityClass) const
 		{
 			auto it = upgrades.find(entityClass);
-			if (it == upgrades.end())
-			{
+			if (it == upgrades.end()) {
 				return nullptr;
 			}
 			return &(it->second);
 		}
 
-		inline int getPlayer() const { return player; }
+		[[nodiscard]] unsigned getPlayer() const { return player; }
 
-		inline std::map<GameEntityClass, GameEntityRuleContainer>::const_iterator begin() const
+		[[nodiscard]] std::map<GameEntityClass, GameEntityRuleContainer>::const_iterator begin() const
 		{
 			return upgrades.cbegin();
 		}
 
-		inline std::map<GameEntityClass, GameEntityRuleContainer>::const_iterator end() const
+		[[nodiscard]] std::map<GameEntityClass, GameEntityRuleContainer>::const_iterator end() const
 		{
 			return upgrades.cend();
 		}
 
 	private:
 		std::map<GameEntityClass, GameEntityRuleContainer> upgrades;
-		int player = 0;
+		unsigned player = 0;
 	};
 
 #define MULTIPLAY_SYNCREQUEST_REQUIRED
@@ -1044,9 +1028,9 @@ namespace wzapi
 #define WZAPI_AI_UNSAFE
 
 	std::string translate(WZAPI_PARAMS(std::string str));
-	int32_t syncRandom(WZAPI_PARAMS(uint32_t limit));
-	bool setAlliance(WZAPI_PARAMS(int player1, int player2, bool areAllies));
-	no_return_value sendAllianceRequest(WZAPI_PARAMS(int player2));
+	int syncRandom(WZAPI_PARAMS(unsigned limit));
+	bool setAlliance(WZAPI_PARAMS(unsigned player1, unsigned player2, bool areAllies));
+	no_return_value sendAllianceRequest(WZAPI_PARAMS(unsigned player2));
 	bool orderDroid(WZAPI_PARAMS(Droid* psDroid, int order));
 	bool orderDroidBuild(WZAPI_PARAMS(Droid* psDroid, int order, std::string structureName, int x, int y,
                                     optional<float> direction));
@@ -1060,19 +1044,19 @@ namespace wzapi
 	bool cameraSlide(WZAPI_PARAMS(float x, float y));
 	bool cameraZoom(WZAPI_PARAMS(float viewDistance, float speed));
 	bool cameraTrack(WZAPI_PARAMS(optional<Droid *> _droid));
-	uint32_t addSpotter(WZAPI_PARAMS(int x, int y, int player, int range, bool radar, uint32_t expiry));
-	bool removeSpotter(WZAPI_PARAMS(uint32_t spotterId));
-	bool syncRequest(WZAPI_PARAMS(int32_t req_id, int32_t x, int32_t y, optional<const SimpleObject *> _psObj,
+	unsigned addSpotter(WZAPI_PARAMS(int x, int y, unsigned player, int range, bool radar, unsigned expiry));
+	bool removeSpotter(WZAPI_PARAMS(unsigned spotterId));
+	bool syncRequest(WZAPI_PARAMS(int req_id, int x, int y, optional<const SimpleObject *> _psObj,
 	                              optional<const SimpleObject *> _psObj2));
 	bool replaceTexture(WZAPI_PARAMS(std::string oldFilename, std::string newFilename));
-	bool changePlayerColour(WZAPI_PARAMS(int player, int colour));
+	bool changePlayerColour(WZAPI_PARAMS(unsigned player, int colour));
 	bool setHealth(WZAPI_PARAMS(SimpleObject* psObject, int health));
 	MULTIPLAY_SYNCREQUEST_REQUIRED
 	bool useSafetyTransport(WZAPI_PARAMS(bool flag));
 	bool restoreLimboMissionData(WZAPI_NO_PARAMS);
-	uint32_t getMultiTechLevel(WZAPI_NO_PARAMS);
+	unsigned getMultiTechLevel(WZAPI_NO_PARAMS);
 	bool setCampaignNumber(WZAPI_PARAMS(int campaignNumber));
-	int32_t getMissionType(WZAPI_NO_PARAMS);
+	int getMissionType(WZAPI_NO_PARAMS);
 	bool getRevealStatus(WZAPI_NO_PARAMS);
 	bool setRevealStatus(WZAPI_PARAMS(bool status));
 	bool autoSave(WZAPI_NO_PARAMS);
@@ -1080,9 +1064,9 @@ namespace wzapi
 	// horrible hacks follow -- do not rely on these being present!
 	no_return_value hackNetOff(WZAPI_NO_PARAMS);
 	no_return_value hackNetOn(WZAPI_NO_PARAMS);
-	no_return_value hackAddMessage(WZAPI_PARAMS(std::string message, int messageType, int player, bool immediate));
-	no_return_value hackRemoveMessage(WZAPI_PARAMS(std::string message, int messageType, int player));
-	returned_nullable_ptr<const SimpleObject> hackGetObj(WZAPI_PARAMS(int _objectType, int player, int id))
+	no_return_value hackAddMessage(WZAPI_PARAMS(std::string message, int messageType, unsigned player, bool immediate));
+	no_return_value hackRemoveMessage(WZAPI_PARAMS(std::string message, int messageType, unsigned player));
+	returned_nullable_ptr<const SimpleObject> hackGetObj(WZAPI_PARAMS(int _objectType, unsigned player, unsigned id))
 	WZAPI_DEPRECATED;
 	no_return_value hackAssert(WZAPI_PARAMS(bool condition, va_list_treat_as_strings message));
 	bool receiveAllEvents(WZAPI_PARAMS(optional<bool> enabled));
@@ -1097,29 +1081,29 @@ namespace wzapi
 	bool console(WZAPI_PARAMS(va_list_treat_as_strings strings));
 	bool clearConsole(WZAPI_NO_PARAMS);
 	bool structureIdle(WZAPI_PARAMS(const Structure *psStruct));
-	std::vector<const Structure*> enumStruct(WZAPI_PARAMS(optional<int> _player,
+	std::vector<const Structure*> enumStruct(WZAPI_PARAMS(optional<unsigned> _player,
                                                         optional<STRUCTURE_TYPE_or_statsName_string> _structureType,
                                                         optional<int> _playerFilter));
-	std::vector<const Structure*> enumStructOffWorld(WZAPI_PARAMS(optional<int> _player,
+	std::vector<const Structure*> enumStructOffWorld(WZAPI_PARAMS(optional<unsigned> _player,
                                                                 optional<STRUCTURE_TYPE_or_statsName_string>
-	                                                              _structureType, optional<int> _playerFilter));
-	std::vector<const Droid*> enumDroid(WZAPI_PARAMS(optional<int> _player, optional<int> _droidType,
-                                                   optional<int> _playerFilter));
-	std::vector<const Feature*> enumFeature(WZAPI_PARAMS(int playerFilter, optional<std::string> _featureName));
-	std::vector<scr_position> enumBlips(WZAPI_PARAMS(int player));
+	                                                              _structureType, optional<unsigned> _playerFilter));
+	std::vector<const Droid*> enumDroid(WZAPI_PARAMS(optional<unsigned> _player, optional<int> _droidType,
+                                                   optional<unsigned> _playerFilter));
+	std::vector<const Feature*> enumFeature(WZAPI_PARAMS(unsigned playerFilter, optional<std::string> _featureName));
+	std::vector<scr_position> enumBlips(WZAPI_PARAMS(unsigned player));
 	std::vector<const SimpleObject*> enumSelected(WZAPI_NO_PARAMS_NO_CONTEXT);
 	GATEWAY_LIST enumGateways(WZAPI_NO_PARAMS);
-	researchResult getResearch(WZAPI_PARAMS(std::string researchName, optional<int> _player));
+	researchResult getResearch(WZAPI_PARAMS(std::string researchName, optional<unsigned> _player));
 	researchResults enumResearch(WZAPI_NO_PARAMS);
-	std::vector<const SimpleObject*> enumRange(WZAPI_PARAMS(int x, int y, int range, optional<int> _playerFilter,
+	std::vector<const SimpleObject*> enumRange(WZAPI_PARAMS(int x, int y, int range, optional<unsigned> _playerFilter,
 	                                                       optional<bool> _seen));
 	bool pursueResearch(WZAPI_PARAMS(const Structure *psStruct, string_or_string_list research));
-	researchResults findResearch(WZAPI_PARAMS(std::string researchName, optional<int> _player));
-	int32_t distBetweenTwoPoints(WZAPI_PARAMS(int32_t x1, int32_t y1, int32_t x2, int32_t y2));
+	researchResults findResearch(WZAPI_PARAMS(std::string researchName, optional<unsigned> _player));
+	int distBetweenTwoPoints(WZAPI_PARAMS(int x1, int y1, int x2, int y2));
 	bool orderDroidLoc(WZAPI_PARAMS(Droid *psDroid, int order_, int x, int y));
-	int32_t playerPower(WZAPI_PARAMS(int player));
-	int queuedPower(WZAPI_PARAMS(int player));
-	bool isStructureAvailable(WZAPI_PARAMS(std::string structureName, optional<int> _player));
+	unsigned playerPower(WZAPI_PARAMS(unsigned player));
+	int queuedPower(WZAPI_PARAMS(unsigned player));
+	bool isStructureAvailable(WZAPI_PARAMS(std::string structureName, optional<unsigned> _player));
 	optional<scr_position> pickStructLocation(WZAPI_PARAMS(const Droid *psDroid, std::string structureName, int startX,
                                                          int startY, optional<int> _maxBlockingTiles));
 	bool droidCanReach(WZAPI_PARAMS(const Droid *psDroid, int x, int y));
@@ -1130,13 +1114,13 @@ namespace wzapi
 	bool buildDroid(WZAPI_PARAMS(Structure *psFactory, std::string templateName, string_or_string_list body,
                                string_or_string_list propulsion, reservedParam reserved1, reservedParam reserved2,
                                va_list<string_or_string_list> turrets));
-	returned_nullable_ptr<const Droid> addDroid(WZAPI_PARAMS(int player, int x, int y, std::string templateName,
+	returned_nullable_ptr<const Droid> addDroid(WZAPI_PARAMS(unsigned player, int x, int y, std::string templateName,
                                                            string_or_string_list body,
                                                            string_or_string_list propulsion, reservedParam reserved1,
                                                            reservedParam reserved2,
                                                            va_list<string_or_string_list> turrets));
 	MUTLIPLAY_UNSAFE
-	std::unique_ptr<const DroidTemplate> makeTemplate(WZAPI_PARAMS(int player, std::string templateName,
+	std::unique_ptr<const DroidTemplate> makeTemplate(WZAPI_PARAMS(unsigned player, std::string templateName,
                                                                  string_or_string_list body,
                                                                  string_or_string_list propulsion,
                                                                  reservedParam reserved1,
@@ -1146,20 +1130,20 @@ namespace wzapi
 	MUTLIPLAY_UNSAFE;
 	bool componentAvailable(WZAPI_PARAMS(std::string componentType, optional<std::string> _componentName));
 	bool isVTOL(WZAPI_PARAMS(const Droid *psDroid));
-	bool safeDest(WZAPI_PARAMS(int player, int x, int y));
+	bool safeDest(WZAPI_PARAMS(unsigned player, int x, int y));
 	bool activateStructure(WZAPI_PARAMS(Structure *psStruct, optional<SimpleObject *> _psTarget));
-	bool chat(WZAPI_PARAMS(int playerFilter, std::string message));
-	bool addBeacon(WZAPI_PARAMS(int x, int y, int playerFilter, optional<std::string> _message));
-	bool removeBeacon(WZAPI_PARAMS(int playerFilter));
+	bool chat(WZAPI_PARAMS(unsigned playerFilter, std::string message));
+	bool addBeacon(WZAPI_PARAMS(int x, int y, unsigned playerFilter, optional<std::string> _message));
+	bool removeBeacon(WZAPI_PARAMS(unsigned playerFilter));
 	std::unique_ptr<const Droid> getDroidProduction(WZAPI_PARAMS(const Structure *_psFactory));
-	int getDroidLimit(WZAPI_PARAMS(optional<int> _player, optional<int> _droidType));
-	int getExperienceModifier(WZAPI_PARAMS(int player));
-	bool setDroidLimit(WZAPI_PARAMS(int player, int maxNumber, optional<int> _droidType));
-	bool setCommanderLimit(WZAPI_PARAMS(int player, int maxNumber));
-	bool setConstructorLimit(WZAPI_PARAMS(int player, int maxNumber));
-	bool setExperienceModifier(WZAPI_PARAMS(int player, int percent));
+	int getDroidLimit(WZAPI_PARAMS(optional<unsigned> _player, optional<int> _droidType));
+	int getExperienceModifier(WZAPI_PARAMS(unsigned player));
+	bool setDroidLimit(WZAPI_PARAMS(unsigned player, int maxNumber, optional<int> _droidType));
+	bool setCommanderLimit(WZAPI_PARAMS(unsigned player, int maxNumber));
+	bool setConstructorLimit(WZAPI_PARAMS(unsigned player, int maxNumber));
+	bool setExperienceModifier(WZAPI_PARAMS(unsigned player, int percent));
 	std::vector<const Droid*> enumCargo(WZAPI_PARAMS(const Droid *psDroid));
-	bool isSpectator(WZAPI_PARAMS(int player));
+	bool isSpectator(WZAPI_PARAMS(unsigned player));
 
 	nlohmann::json getWeaponInfo(WZAPI_PARAMS(std::string weaponName)) WZAPI_DEPRECATED;
 
@@ -1169,22 +1153,22 @@ namespace wzapi
 	bool gameOverMessage(WZAPI_PARAMS(bool gameWon, optional<bool> _showBackDrop, optional<bool> _showOutro));
 
 	// MARK: - Global state manipulation -- not for use with skirmish AI (unless you want it to cheat, obviously)
-	bool setStructureLimits(WZAPI_PARAMS(std::string structureName, int limit, optional<int> _player));
+	bool setStructureLimits(WZAPI_PARAMS(std::string structureName, int limit, optional<unsigned> _player));
 	bool applyLimitSet(WZAPI_NO_PARAMS);
 	no_return_value setMissionTime(WZAPI_PARAMS(int _time));
 	int getMissionTime(WZAPI_NO_PARAMS);
 	no_return_value setReinforcementTime(WZAPI_PARAMS(int _time));
-	no_return_value completeResearch(WZAPI_PARAMS(std::string researchName, optional<int> _player,
+	no_return_value completeResearch(WZAPI_PARAMS(std::string researchName, optional<unsigned> _player,
 	                                              optional<bool> _forceResearch));
 	no_return_value completeAllResearch(WZAPI_PARAMS(optional<int> _player));
-	bool enableResearch(WZAPI_PARAMS(std::string researchName, optional<int> _player));
-	no_return_value setPower(WZAPI_PARAMS(int power, optional<int> _player));
+	bool enableResearch(WZAPI_PARAMS(std::string researchName, optional<unsigned> _player));
+	no_return_value setPower(WZAPI_PARAMS(int power, optional<unsigned> _player));
 	WZAPI_AI_UNSAFE
-	no_return_value setPowerModifier(WZAPI_PARAMS(int powerModifier, optional<int> _player));
+	no_return_value setPowerModifier(WZAPI_PARAMS(int powerModifier, optional<unsigned> _player));
 	WZAPI_AI_UNSAFE
-	no_return_value setPowerStorageMaximum(WZAPI_PARAMS(int powerMaximum, optional<int> _player));
+	no_return_value setPowerStorageMaximum(WZAPI_PARAMS(int powerMaximum, optional<unsigned> _player));
 	WZAPI_AI_UNSAFE
-	no_return_value extraPowerTime(WZAPI_PARAMS(int time, optional<int> _player));
+	no_return_value extraPowerTime(WZAPI_PARAMS(int time, optional<unsigned> _player));
 	no_return_value setTutorialMode(WZAPI_PARAMS(bool enableTutorialMode));
 	no_return_value setDesign(WZAPI_PARAMS(bool allowDesignValue));
 	bool enableTemplate(WZAPI_PARAMS(std::string _templateName));
@@ -1196,34 +1180,34 @@ namespace wzapi
 	no_return_value showReticuleWidget(WZAPI_PARAMS(int buttonId));
 	no_return_value showInterface(WZAPI_NO_PARAMS);
 	no_return_value hideInterface(WZAPI_NO_PARAMS);
-	no_return_value enableStructure(WZAPI_PARAMS(std::string structureName, optional<int> _player));
-	no_return_value enableComponent(WZAPI_PARAMS(std::string componentName, int player));
-	no_return_value makeComponentAvailable(WZAPI_PARAMS(std::string componentName, int player));
-	bool allianceExistsBetween(WZAPI_PARAMS(int player1, int player2));
+	no_return_value enableStructure(WZAPI_PARAMS(std::string structureName, optional<unsigned> _player));
+	no_return_value enableComponent(WZAPI_PARAMS(std::string componentName, unsigned player));
+	no_return_value makeComponentAvailable(WZAPI_PARAMS(std::string componentName, unsigned player));
+	bool allianceExistsBetween(WZAPI_PARAMS(unsigned player1, unsigned player2));
 	bool removeStruct(WZAPI_PARAMS(Structure *psStruct)) WZAPI_DEPRECATED;
 	bool removeObject(WZAPI_PARAMS(SimpleObject *psObj, optional<bool> _sfx));
 	no_return_value setScrollLimits(WZAPI_PARAMS(int x1, int y1, int x2, int y2));
 	scr_area getScrollLimits(WZAPI_NO_PARAMS);
 	returned_nullable_ptr<const Structure> addStructure(
-		WZAPI_PARAMS(std::string structureName, int player, int x, int y));
-	unsigned int getStructureLimit(WZAPI_PARAMS(std::string structureName, optional<int> _player));
-	int countStruct(WZAPI_PARAMS(std::string structureName, optional<int> _playerFilter));
-	int countDroid(WZAPI_PARAMS(optional<int> _droidType, optional<int> _playerFilter));
+		WZAPI_PARAMS(std::string structureName, unsigned player, int x, int y));
+	unsigned int getStructureLimit(WZAPI_PARAMS(std::string structureName, optional<unsigned> _player));
+	int countStruct(WZAPI_PARAMS(std::string structureName, optional<unsigned> _playerFilter));
+	int countDroid(WZAPI_PARAMS(optional<int> _droidType, optional<unsigned> _playerFilter));
 	no_return_value loadLevel(WZAPI_PARAMS(std::string levelName));
 	no_return_value setDroidExperience(WZAPI_PARAMS(Droid *psDroid, double experience));
-	bool donateObject(WZAPI_PARAMS(SimpleObject *psObject, int player));
-	bool donatePower(WZAPI_PARAMS(int amount, int player));
-	no_return_value setNoGoArea(WZAPI_PARAMS(int x1, int y1, int x2, int y2, int playerFilter));
-	no_return_value startTransporterEntry(WZAPI_PARAMS(int x, int y, int player));
-	no_return_value setTransporterExit(WZAPI_PARAMS(int x, int y, int player));
+	bool donateObject(WZAPI_PARAMS(SimpleObject *psObject, unsigned player));
+	bool donatePower(WZAPI_PARAMS(int amount, unsigned player));
+	no_return_value setNoGoArea(WZAPI_PARAMS(int x1, int y1, int x2, int y2, unsigned playerFilter));
+	no_return_value startTransporterEntry(WZAPI_PARAMS(int x, int y, unsigned player));
+	no_return_value setTransporterExit(WZAPI_PARAMS(int x, int y, unsigned player));
 	no_return_value setObjectFlag(WZAPI_PARAMS(SimpleObject *psObj, int _flag, bool flagValue))
 	MULTIPLAY_SYNCREQUEST_REQUIRED;
-	no_return_value fireWeaponAtLoc(WZAPI_PARAMS(std::string weaponName, int x, int y, optional<int> _player));
-	no_return_value fireWeaponAtObj(WZAPI_PARAMS(std::string weaponName, SimpleObject *psObj, optional<int> _player));
-	bool setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& name, int type, unsigned index,
+	no_return_value fireWeaponAtLoc(WZAPI_PARAMS(std::string weaponName, int x, int y, optional<unsigned> _player));
+	no_return_value fireWeaponAtObj(WZAPI_PARAMS(std::string weaponName, SimpleObject *psObj, optional<unsigned> _player));
+	bool setUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string& name, int type, unsigned index,
 	                                       const nlohmann::json& newValue));
-	nlohmann::json getUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& name, int type, unsigned index));
-	bool transformPlayerToSpectator(WZAPI_PARAMS(int player));
+	nlohmann::json getUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string& name, int type, unsigned index));
+	bool transformPlayerToSpectator(WZAPI_PARAMS(unsigned player));
 
 	// MARK: - Used for retrieving information to set up script instance environments
 	nlohmann::json constructStatsObject();

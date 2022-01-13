@@ -2870,7 +2870,7 @@ static constexpr auto ASSERT_PLAYER_OR_RETURN(retVal, = player) \;
 	ASSERT_OR_RETURN(retVal, player >= 0 && player < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
 /* Check whether a droid template is valid */
-bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain, int player)
+bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(false, player);
 

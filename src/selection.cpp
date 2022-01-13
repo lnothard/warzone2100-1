@@ -151,7 +151,7 @@ static bool selCombatLandMildlyOrNotDamaged(Droid* psDroid)
 
 // ---------------------------------------------------------------------
 // Deselects all units for the player
-unsigned int selDroidDeselect(unsigned int player)
+unsigned int selDroidDeselect(unsigned unsigned player)
 {
 	unsigned int count = 0;
 	if (player >= MAX_PLAYERS) { return 0; }
@@ -170,7 +170,7 @@ unsigned int selDroidDeselect(unsigned int player)
 
 // ---------------------------------------------------------------------
 // Lets you know how many are selected for a given player
-unsigned int selNumSelected(unsigned int player)
+unsigned int selNumSelected(unsigned unsigned player)
 {
 	unsigned int count = 0;
 	if (player >= MAX_PLAYERS) { return 0; }
@@ -246,7 +246,7 @@ static bool componentsInCombinations(Droid* psDroid, bool add)
 }
 
 // Selects all units with the same propulsion, body and turret(s) as the one(s) selected
-static unsigned int selSelectAllSame(unsigned int player, bool bOnScreen)
+static unsigned int selSelectAllSame(unsigned unsigned player, bool bOnScreen)
 {
 	unsigned int i = 0, selected = 0;
 	std::vector<unsigned int> excluded;
@@ -600,7 +600,7 @@ void selCommander(int n)
    Selects the units of a given player according to given criteria.
    It is also possible to request whether the units be onscreen or not.
    */
-unsigned int selDroidSelection(unsigned int player, SELECTION_CLASS droidClass, SELECTIONTYPE droidType, bool bOnScreen)
+unsigned int selDroidSelection(unsigned unsigned player, SELECTION_CLASS droidClass, SELECTIONTYPE droidType, bool bOnScreen)
 {
 	if (player >= MAX_PLAYERS) { return 0; }
 

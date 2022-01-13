@@ -1869,7 +1869,7 @@ bool fireOnLocation(unsigned int x, unsigned int y)
 }
 
 // This function runs in a separate thread!
-static int dangerFloodFill(int player)
+static int dangerFloodFill(unsigned player)
 {
 	int i;
 	Vector2i pos = getPlayerStartPosition(player);
@@ -1954,7 +1954,7 @@ static int dangerThreadFunc(WZ_DECL_UNUSED void* data)
 	return 0;
 }
 
-static inline void threatUpdateTarget(int player, SimpleObject* psObj, bool ground, bool air)
+static inline void threatUpdateTarget(unsigned player, SimpleObject* psObj, bool ground, bool air)
 {
 	if (psObj->visible[player] || psObj->born == 2)
 	{
@@ -1972,7 +1972,7 @@ static inline void threatUpdateTarget(int player, SimpleObject* psObj, bool grou
 	}
 }
 
-static void threatUpdate(int player)
+static void threatUpdate(unsigned player)
 {
 	int i, weapon, x, y;
 
@@ -2043,7 +2043,7 @@ static void threatUpdate(int player)
 
 void mapInit()
 {
-	int player;
+	unsigned player;
 
 	free(floodbucket);
 	floodbucket = (struct floodtile*)malloc(mapWidth * mapHeight * sizeof(*floodbucket));

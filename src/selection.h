@@ -53,10 +53,10 @@ enum SELECTIONTYPE
 	DST_ALL_LAND_MILDLY_OR_NOT_DAMAGED,
 };
 
-unsigned int selDroidSelection(unsigned int player, SELECTION_CLASS droidClass, SELECTIONTYPE droidType,
+unsigned int selDroidSelection(unsigned unsigned player, SELECTION_CLASS droidClass, SELECTIONTYPE droidType,
                                bool bOnScreen);
-unsigned int selDroidDeselect(unsigned int player);
-unsigned int selNumSelected(unsigned int player);
+unsigned int selDroidDeselect(unsigned unsigned player);
+unsigned int selNumSelected(unsigned unsigned player);
 void selNextUnassignedUnit();
 void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump);
 void selNextSpecifiedUnit(DROID_TYPE unitType);

@@ -1933,7 +1933,7 @@ void kf_KillEnemy()
 	sendInGameSystemMessage(cmsg.c_str());
 	Cheated = true;
 
-	for (int playerId = 0; playerId < MAX_PLAYERS; playerId++)
+	for (unsigned playerId = 0; playerId < MAX_PLAYERS; playerId++)
 	{
 		if (playerId != selectedPlayer)
 		{

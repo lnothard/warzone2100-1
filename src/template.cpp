@@ -52,7 +52,7 @@ bool allowDesign = true;
 bool includeRedundantDesigns = false;
 bool playerBuiltHQ = false;
 
-static bool researchedItem(const DroidTemplate* /*psCurr*/, int player, COMPONENT_TYPE partIndex, int part,
+static bool researchedItem(const DroidTemplate* /*psCurr*/, unsigned player, COMPONENT_TYPE partIndex, int part,
                            bool allowZero, bool allowRedundant)
 {
 	ASSERT_PLAYER_OR_RETURN(false, player);
@@ -64,20 +64,20 @@ static bool researchedItem(const DroidTemplate* /*psCurr*/, int player, COMPONEN
 	return availability == AVAILABLE || (allowRedundant && availability == REDUNDANT);
 }
 
-static bool researchedPart(const DroidTemplate* psCurr, int player, COMPONENT_TYPE partIndex, bool allowZero,
+static bool researchedPart(const DroidTemplate* psCurr, unsigned player, COMPONENT_TYPE partIndex, bool allowZero,
                            bool allowRedundant)
 {
 	return researchedItem(psCurr, player, partIndex, psCurr->asParts[partIndex], allowZero, allowRedundant);
 }
 
-static bool researchedWeap(const DroidTemplate* psCurr, int player, int weapIndex, bool allowRedundant)
+static bool researchedWeap(const DroidTemplate* psCurr, unsigned player, int weapIndex, bool allowRedundant)
 {
 	ASSERT_PLAYER_OR_RETURN(false, player);
 	int availability = apCompLists[player][COMP_WEAPON][psCurr->asWeaps[weapIndex]];
 	return availability == AVAILABLE || (allowRedundant && availability == REDUNDANT);
 }
 
-bool researchedTemplate(const DroidTemplate* psCurr, int player, bool allowRedundant, bool verbose)
+bool researchedTemplate(const DroidTemplate* psCurr, unsigned player, bool allowRedundant, bool verbose)
 {
 	ASSERT_OR_RETURN(false, psCurr, "Given a null template");
 	ASSERT_PLAYER_OR_RETURN(false, player);
@@ -489,7 +489,7 @@ bool loadDroidTemplates(const char* filename)
 			                                 : GetDefaultTemplateName(&design));
 		ini.endGroup();
 
-		for (int playerIdx = 0; playerIdx < MAX_PLAYERS; ++playerIdx)
+		for (unsigned playerIdx = 0; playerIdx < MAX_PLAYERS; ++playerIdx)
 		{
 			// Give those meant for humans to all human players.
 			if (NetPlay.players[playerIdx].allocated && available)
@@ -532,13 +532,13 @@ bool loadDroidTemplates(const char* filename)
 	return true;
 }
 
-DroidTemplate* copyTemplate(int player, DroidTemplate* psTemplate)
+DroidTemplate* copyTemplate(unsigned player, DroidTemplate* psTemplate)
 {
 	auto dup = std::make_unique<DroidTemplate>(*psTemplate);
 	return addTemplate(player, std::move(dup));
 }
 
-DroidTemplate* addTemplate(int player, std::unique_ptr<DroidTemplate> psTemplate)
+DroidTemplate* addTemplate(unsigned player, std::unique_ptr<DroidTemplate> psTemplate)
 {
 	ASSERT_PLAYER_OR_RETURN(nullptr, player);
 	UDWORD multiPlayerID = psTemplate->id;
@@ -559,7 +559,7 @@ DroidTemplate* addTemplate(int player, std::unique_ptr<DroidTemplate> psTemplate
 	}
 }
 
-void enumerateTemplates(int player, const std::function<bool (DroidTemplate* psTemplate)>& func)
+void enumerateTemplates(unsigned player, const std::function<bool (DroidTemplate* psTemplate)>& func)
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 	for (auto& keyvaluepair : droidTemplates[player])
@@ -571,7 +571,7 @@ void enumerateTemplates(int player, const std::function<bool (DroidTemplate* psT
 	}
 }
 
-DroidTemplate* findPlayerTemplateById(int player, UDWORD templateId)
+DroidTemplate* findPlayerTemplateById(unsigned player, UDWORD templateId)
 {
 	ASSERT_PLAYER_OR_RETURN(nullptr, player);
 	auto it = droidTemplates[player].find(templateId);
@@ -582,13 +582,13 @@ DroidTemplate* findPlayerTemplateById(int player, UDWORD templateId)
 	return nullptr;
 }
 
-size_t templateCount(int player)
+size_t templateCount(unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return droidTemplates[player].size();
 }
 
-void clearTemplates(int player)
+void clearTemplates(unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 	droidTemplates[player].clear();
@@ -598,7 +598,7 @@ void clearTemplates(int player)
 //free the storage for the droid templates
 bool droidTemplateShutDown()
 {
-	for (int player = 0; player < MAX_PLAYERS; player++)
+	for (unsigned player = 0; player < MAX_PLAYERS; player++)
 	{
 		clearTemplates(player);
 	}
@@ -751,7 +751,7 @@ at any one time.
 std::vector<DroidTemplate*> fillTemplateList(Structure* psFactory)
 {
 	std::vector<DroidTemplate*> pList;
-	const int player = psFactory->player;
+	const unsigned player = psFactory->player;
 
 	auto iCapacity = (BODY_SIZE)psFactory->capacity;
 

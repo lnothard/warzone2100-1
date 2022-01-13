@@ -158,7 +158,7 @@ void clip_coords(Vector2i& pos)
   pos.y = MIN(world_coord(map_height) - 1, pos.y);
 }
 
-uint8_t aux_tile(int x, int y, int player)
+uint8_t aux_tile(int x, int y, unsigned player)
 {
   return aux_map[player][x + y * map_width];
 }

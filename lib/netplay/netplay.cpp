@@ -537,7 +537,7 @@ static size_t NET_fillBuffer(Socket **pSocket, SocketSet *pSocketSet, uint8_t *b
 	return 0;
 }
 
-static int playersPerTeam()
+static unsigned playersPerTeam()
 {
 	for (int v = game.maxPlayers - 1; v > 1; --v)
 	{
@@ -556,7 +556,7 @@ static int playersPerTeam()
  * Used to reset the player slot in NET_InitPlayer and to reset players slot without modifying ai/team/
  * position configuration for the players.
  */
-static void initPlayerNetworkProps(int playerIndex)
+static void initPlayerNetworkProps(unsigned playerIndex)
 {
 	NetPlay.players[playerIndex].allocated = false;
 	NetPlay.players[playerIndex].autoGame = false;
@@ -1817,7 +1817,7 @@ void NETflush()
 	size_t compressedRawLen;
 	if (NetPlay.isHost)
 	{
-		for (int player = 0; player < MAX_CONNECTED_PLAYERS; ++player)
+		for (unsigned player = 0; player < MAX_CONNECTED_PLAYERS; ++player)
 		{
 			// We are the host, send directly to player.
 			if (connected_bsocket[player] != nullptr)

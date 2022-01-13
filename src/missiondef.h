@@ -84,8 +84,8 @@ struct MISSION
 
 	uint16_t homeLZ_X; //selectedPlayer's LZ x and y
 	uint16_t homeLZ_Y;
-	int playerX; //original view position
-	int playerY;
+	unsigned playerX; //original view position
+	unsigned playerY;
 
 	/* transporter entry/exit tiles */
 	uint16_t iTranspEntryTileX[MAX_PLAYERS];

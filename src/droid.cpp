@@ -98,7 +98,8 @@ namespace Impl
       lastFrustratedTime = 0; // make sure we do not start the game frustrated
     }
 
-   /* DROID::~DROID: release all resources associated with a droid -
+   /**
+    * DROID::~DROID: release all resources associated with a droid --
     * should only be called by objmem - use vanishDroid preferably
     */
     Droid::~Droid()
@@ -334,15 +335,152 @@ namespace Impl
   unsigned Droid::getSecondaryOrder() const noexcept {
     return secondaryOrder;
   }
+  
+  const Group& Droid::getGroup() const {
+      return *group;
+  }
 
-  const Vector2i &Droid::getDestination() const {
+  const Vector2i& Droid::getDestination() const {
     return movement->destination;
   }
 
   void Droid::incrementKills() noexcept {
     ++kills;
   }
+  
+  /**
+   * This function clears all the orders from droid's order list 
+   * that don't have target as psTarget.
+   */
+  void Droid::orderClearTargetFromDroidList(SimpleObject* psTarget)
+  {
+    for (auto i = 0; i < asOrderList.size(); ++i)
+    {
+      if (asOrderList[i].target == psTarget) {
+        if ((int)i < listSize) {
+          syncDebug("droid%d list erase%d", getId(), psTarget->getId());
+        }
+        orderDroidListEraseRange(i, i + 1);
+        // if this underflows, the ++i will overflow it back
+        --i; 
+      }
+    }
+  }
 
+  /**
+   * This function checks if the droid is off range. If yes, it uses
+   * actionDroid() to make the droid to move to its target if its
+   * target is on range, or to move to its order position if not.
+   * @todo droid doesn't shoot while returning to the guard position.
+   */
+  void Droid::orderCheckGuardPosition(int range)
+  {
+    if (order->target)  {
+      unsigned x, y;
+  
+      // repair droids always follow behind - we don't want them 
+      // jumping into the line of fire
+      if ((!(type == DROID_TYPE::REPAIRER ||
+             type == DROID_TYPE::CYBORG_REPAIR)) &&
+          dynamic_cast<Droid*>(order->target) &&
+          orderStateLoc(dynamic_cast<Droid*>(order->target),
+                        ORDER_TYPE::MOVE, &x, &y))  {
+        // got a moving droid - check against where the unit is going
+        order->pos = {x, y};
+      } 
+      else  {
+        order->pos = order->target->getPosition().xy();
+      }
+    }
+  
+    auto xdiff = getPosition().x - order->pos.x;
+    auto ydiff = getPosition().y - order->pos.y;
+  
+    if (xdiff * xdiff + ydiff * ydiff > range * range)  {
+      if (movement->status != MOVE_STATUS::INACTIVE &&
+          (action == ACTION::MOVE ||
+           action == ACTION::MOVE_FIRE)) {
+  
+        xdiff = movement->destination.x - order->pos.x;
+        ydiff = movement->destination.y - order->pos.y;
+  
+        if (xdiff * xdiff + ydiff * ydiff > range * range)  {
+          ::actionDroid(this, ACTION::MOVE, order->pos.x, order->pos.y);
+        }
+      } else  {
+        ::actionDroid(this, ACTION::MOVE, order->pos.x, order->pos.y);
+      }
+    }
+  }
+    
+ /** 
+  * This function goes to the droid's order list and erases its 
+  * elements from indexBegin to indexEnd.
+  */
+  void Droid::orderDroidListEraseRange(int indexBegin, int indexEnd)
+  {
+    // do nothing if trying to pop an empty list
+    indexEnd = MIN(indexEnd, asOrderList.size());
+    asOrderList.erase(asOrderList.begin() + indexBegin, asOrderList.begin() + indexEnd);
+
+    // update the indices into list
+    listSize -= MIN(indexEnd, listSize) - MIN(indexBegin, listSize);
+    listPendingBegin -= MIN(indexEnd, listPendingBegin) - MIN(indexBegin, listPendingBegin);
+  }
+
+  /// This function goes to the droid's order list and sets a new order 
+  /// to it from its order list
+  bool Droid::orderDroidList()
+  {
+    if (listSize > 0) {
+      // there are some orders to give
+      Order sOrder = asOrderList[0];
+      orderDroidListEraseRange(0, 1);
+
+      using enum ORDER_TYPE;
+      switch (sOrder.type) {
+        case MOVE:
+        case SCOUT:
+        case DISEMBARK:
+          ASSERT(sOrder.target == nullptr && 
+                 sOrder.structure_stats == nullptr,
+                 "Extra %s parameters.",
+                 getDroidOrderName(sOrder.type).c_str());
+          sOrder.target = nullptr;
+          sOrder.structure_stats = nullptr;
+          break;
+        case ATTACK:
+        case REPAIR:
+        case OBSERVE:
+        case DROID_REPAIR:
+        case FIRE_SUPPORT:
+        case DEMOLISH:
+        case HELP_BUILD:
+        case BUILD_MODULE:
+        case RECOVER:
+          ASSERT(sOrder.structure_stats == nullptr,
+                 "Extra %s parameters.",
+                 getDroidOrderName(sOrder.type).c_str());
+          sOrder.structure_stats = nullptr;
+          break;
+        case BUILD:
+        case LINE_BUILD:
+          ASSERT(sOrder.target == nullptr,
+                 "Extra %s parameters.",
+                 getDroidOrderName(sOrder.type).c_str());
+          sOrder.target = nullptr;
+          break;
+        default:
+          ASSERT(false, "orderDroidList: Invalid order");
+          return false;
+      }
+      orderDroidBase(&sOrder);
+      syncDebugDroid(this, 'o');
+      return true;
+    }
+    return false;
+  }
+    
   unsigned Droid::getArmourPointsAgainstWeapon(WEAPON_CLASS weaponClass) const
   {
     assert(body);
@@ -575,7 +713,7 @@ namespace Impl
         }
         else if (actionInsideMinRange(this, psAction->psObj, psWeapStats)) // too close?
         {
-          if (!proj_Direct(psWeapStats)) {
+          if (!proj_Direct(&psWeapStats)) {
             if (psWeapStats.rotate) {
               action = ATTACK;
             }
@@ -835,7 +973,7 @@ namespace Impl
       case NONE:
       case HOLD:
         // see if there are any orders queued up
-        if (orderDroidList(this)) {
+        if (orderDroidList()) {
           // started a new order, quit
           break;
         }
@@ -1010,7 +1148,7 @@ namespace Impl
           if (xdiff * xdiff + ydiff * ydiff < SCOUT_DIST * SCOUT_DIST) {
             if (order->type == PATROL) {
               // see if we have anything queued up
-              if (orderDroidList(this)) {
+              if (orderDroidList()) {
                 // started a new order, quit
                 break;
               }
@@ -1074,7 +1212,7 @@ namespace Impl
         else if (action == ACTION::NONE || action == ACTION::MOVE) {
           if (action == ACTION::MOVE) {
             // see if we have anything queued up
-            if (orderDroidList(this)) {
+            if (orderDroidList()) {
               // started a new order, quit
               break;
             }
@@ -1149,7 +1287,7 @@ namespace Impl
           // if vtol then return to rearm pad as long as there are no other
           // orders queued up
           if (isVtol()) {
-            if (!orderDroidList(this)) {
+            if (!orderDroidList()) {
               order = std::make_unique<Order>(NONE);
               moveToRearm(this);
             }
@@ -1407,7 +1545,7 @@ namespace Impl
         }
         break;
       case GUARD:
-        if (orderDroidList(this)) {
+        if (orderDroidList()) {
           // started a queued order - quit
           break;
         }
@@ -1420,20 +1558,20 @@ namespace Impl
               && order->target != nullptr && dynamic_cast<Droid*>(order->target)
               && (dynamic_cast<Droid*>(order->target))->type == COMMAND) {
             // guarding a commander, allow more space
-            orderCheckGuardPosition(this, DEFEND_CMD_BASEDIST);
+            orderCheckGuardPosition(DEFEND_CMD_BASEDIST);
           }
           else {
-            orderCheckGuardPosition(this, DEFEND_BASEDIST);
+            orderCheckGuardPosition(DEFEND_BASEDIST);
           }
         }
         else if (type == REPAIRER ||
                  type == CYBORG_REPAIR) {
           // repairing something, make sure the droid doesn't go too far
-          orderCheckGuardPosition(this, REPAIR_MAXDIST);
+          orderCheckGuardPosition(REPAIR_MAXDIST);
         }
         else if (type == CONSTRUCT || type == CYBORG_CONSTRUCT) {
           // repairing something, make sure the droid doesn't go too far
-          orderCheckGuardPosition(this, CONSTRUCT_MAXDIST);
+          orderCheckGuardPosition(CONSTRUCT_MAXDIST);
         }
         else if (isTransporter(*this)) {
         }
@@ -1444,10 +1582,10 @@ namespace Impl
             if (order->target != nullptr && dynamic_cast<Droid*>(order->target) &&
                 (dynamic_cast<Droid*>(order->target))->type == COMMAND) {
               // guarding a commander, allow more space
-              orderCheckGuardPosition(this, DEFEND_CMD_MAXDIST);
+              orderCheckGuardPosition(DEFEND_CMD_MAXDIST);
             }
             else {
-              orderCheckGuardPosition(this, DEFEND_MAXDIST);
+              orderCheckGuardPosition(DEFEND_MAXDIST);
             }
           }
         }
@@ -1678,7 +1816,7 @@ namespace Impl
         bHasTarget = false;
         for (auto i = 0; i < numWeapons(*this); ++i)
         {
-          bDirect = proj_Direct(weapons[i].getStats());
+          bDirect = proj_Direct(&weapons[i].getStats());
           blockingWall = nullptr;
           // Does this weapon have a target?
           if (actionTarget[i] != nullptr) {
@@ -1735,7 +1873,7 @@ namespace Impl
                 ::SimpleObject* psActionTarget = nullptr;
                 blockingWall = dynamic_cast<Structure*>(visGetBlockingWall(this, actionTarget[i]));
 
-                if (proj_Direct(psStats) && blockingWall) {
+                if (proj_Direct(&psStats) && blockingWall) {
                   WEAPON_EFFECT weapEffect = psStats.weaponEffect;
 
                   if (!aiCheckAlliances(getPlayer(), blockingWall->getPlayer()) &&
@@ -1848,7 +1986,7 @@ namespace Impl
 
             // if a wall is inbetween us and the target, try firing at the wall if our
             // weapon is good enough
-            if (proj_Direct(psWeapStats) && blockingWall) {
+            if (proj_Direct(&psWeapStats) && blockingWall) {
               if (!aiCheckAlliances(getPlayer(), blockingWall->getPlayer()
                   && asStructStrengthModifier[weapEffect][blockingWall->getStats().strength] >=
                      MIN_STRUCTURE_BLOCK_STRENGTH) {
@@ -2100,8 +2238,8 @@ namespace Impl
                 }
                 else if (actionInRange(this, actionTarget[0], i)) {
                   // fire while closing range
-                  if ((blockingWall = visGetBlockingWall(this, actionTarget[0])) && proj_Direct(
-                          psWeapStats)) {
+                  if ((blockingWall = visGetBlockingWall(this, actionTarget[0])) &&
+                      proj_Direct(&psWeapStats)) {
                     auto weapEffect = psWeapStats.weaponEffect;
 
                     if (!aiCheckAlliances(getPlayer(), blockingWall->getPlayer())
@@ -2131,14 +2269,14 @@ namespace Impl
           if (isStationary() && action != ATTACK) {
             /* Stopped moving but haven't reached the target - possibly move again */
 
-            //'hack' to make the droid to check the primary turrent instead of all
+            // 'hack' to make the droid to check the primary turrent instead of all
             const auto& psWeapStats = weapons[0].getStats();
 
             if (order->type == ORDER_TYPE::ATTACK_TARGET && secHoldActive) {
               action = NONE; // on hold, give up.
             }
             else if (actionInsideMinRange(this, actionTarget[0], psWeapStats)) {
-              if (proj_Direct(psWeapStats) && order->type != ORDER_TYPE::HOLD) {
+              if (proj_Direct(&psWeapStats) && order->type != ORDER_TYPE::HOLD) {
                 int pbx, pby;
 
                 // try and extend the range
@@ -4336,7 +4474,7 @@ if (psDroid->droidType == DROID_SENSOR)
          order->type == CIRCLE ||
          order->type == HOLD)) {
 
-      orderDroidList(this);
+      orderDroidList();
     }
   }
 
@@ -4382,7 +4520,7 @@ if (psDroid->droidType == DROID_SENSOR)
         syncDebugObject(psTarget, '-');
         syncDebug("droid%d list erase dead droid%d", getId(), psTarget->getId());
       }
-      orderDroidListEraseRange(this, i, i + 1);
+      orderDroidListEraseRange(i, i + 1);
       --i; // If this underflows, the ++i will overflow it back.
     }
   }
@@ -4895,7 +5033,7 @@ if (psDroid->droidType == DROID_SENSOR)
 
   bool Droid::tryDoRepairlikeAction()
   {
-    if (isRepairlikeAction(action)) {
+    if (isRepairLikeAction(action)) {
       return true; // Already doing something.
     }
 
@@ -4972,7 +5110,7 @@ if (psDroid->droidType == DROID_SENSOR)
     }
     psDroid->kills = 0;
 
-    droidSetBits(pTemplate, psDroid.get());
+    droidSetBits(pTemplate);
 
     //calculate the droids total weight
     psDroid->weight = calcDroidWeight(pTemplate);
@@ -4980,7 +5118,7 @@ if (psDroid->droidType == DROID_SENSOR)
     // Initialise the movement stuff
     psDroid->baseSpeed = calcDroidBaseSpeed(pTemplate, psDroid->weight, (UBYTE)player);
 
-    initDroidMovement(psDroid.get());
+    initDroidMovement();
 
     //allocate 'easy-access' data!
     psDroid->setHp(calcDroidBaseBody(psDroid.get())); // includes upgrades
@@ -5337,12 +5475,12 @@ int droidReloadBar(const Impl::Unit& psObj, const Weapon* psWeap, int weapon_slo
 
 
 
-std::priority_queue<int> copy_experience_queue(int player)
+std::priority_queue<int> copy_experience_queue(unsigned player)
 {
 	return recycled_experience[player];
 }
 
-void add_to_experience_queue(int player, int value)
+void add_to_experience_queue(unsigned player, int value)
 {
 	recycled_experience[player].push(value);
 }
@@ -5870,7 +6008,7 @@ static unsigned calcSum(const Droid* psDroid, F func, G propulsionFunc)
 }
 
 template <typename F, typename G>
-static unsigned calcUpgradeSum(const DroidTemplate* psTemplate, int player, F func, G propulsionFunc)
+static unsigned calcUpgradeSum(const DroidTemplate* psTemplate, unsigned player, F func, G propulsionFunc)
 {
 	return calcUpgradeSum(psTemplate->asParts,
                         psTemplate->weaponCount,
@@ -5879,7 +6017,7 @@ static unsigned calcUpgradeSum(const DroidTemplate* psTemplate, int player, F fu
 }
 
 template <typename F, typename G>
-static unsigned calcUpgradeSum(const Droid* psDroid, int player, F func, G propulsionFunc)
+static unsigned calcUpgradeSum(const Droid* psDroid, unsigned player, F func, G propulsionFunc)
 {
 	FilterDroidWeaps f {numWeapons(*psDroid), psDroid->getWeapons()};
 	return calcUpgradeSum(psDroid->asBits, f.numWeaps, f.asWeaps, player, func, propulsionFunc);

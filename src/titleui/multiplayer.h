@@ -71,7 +71,7 @@ public:
 
 	void updatePlayers();
 
-	int playerRowY0(uint32_t row) const;
+	unsigned playerRowY0(uint32_t row) const;
 
 	std::shared_ptr<WzTitleUI> getParentTitleUI();
 

@@ -390,8 +390,8 @@ public:
 
 			ssprintf(tmp, "%d/%d", gamesList[gameIdx].desc.dwCurrentPlayers, gamesList[gameIdx].desc.dwMaxPlayers);
 			wzText_CurrentVsMaxNumPlayers.setText(tmp, font_regular);
-			int playersWidth = GAMES_STATUS_START - 8 - GAMES_PLAYERS_START;
-			int playersPadding = (playersWidth - wzText_CurrentVsMaxNumPlayers.width()) / 2;
+			unsigned playersWidth = GAMES_STATUS_START - 8 - GAMES_PLAYERS_START;
+			unsigned playersPadding = (playersWidth - wzText_CurrentVsMaxNumPlayers.width()) / 2;
 			wzText_CurrentVsMaxNumPlayers.render(x0 + GAMES_PLAYERS_START + playersPadding, y0 + 18, textColor);
 
 			// see what host limits are... then draw them.

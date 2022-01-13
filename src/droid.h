@@ -266,6 +266,11 @@ public:
     virtual void initDroidMovement() = 0;
     virtual Droid* giftSingleDroid(unsigned to, bool electronic) = 0;
     virtual void droidSetBits(const DroidTemplate* pTemplate) = 0;
+    [[nodiscard]] virtual const Group& getGroup() const = 0;
+    virtual void orderDroidListEraseRange(int indexBegin, int indexEnd) = 0;
+    virtual void orderClearTargetFromDroidList(SimpleObject* psTarget) = 0;
+    virtual void orderCheckGuardPosition(int range) = 0;
+    virtual bool orderDroidList() = 0;
 };
 
 namespace Impl
@@ -282,7 +287,6 @@ namespace Impl
       [[nodiscard]] const Order& getOrder() const final;
       [[nodiscard]] DROID_TYPE getType() const noexcept final;
       [[nodiscard]] unsigned getLevel() const final;
-      [[nodiscard]] unsigned getCommanderLevel() const final;
       [[nodiscard]] const iIMDShape& getImdShape() const final;
       [[nodiscard]] int getVerticalSpeed() const noexcept final;
       [[nodiscard]] unsigned getSecondaryOrder() const noexcept final;
@@ -291,7 +295,9 @@ namespace Impl
       [[nodiscard]] const std::optional<PropulsionStats>& getPropulsion() const final;
       [[nodiscard]] const Movement& getMovementData() const final;
       [[nodiscard]] unsigned getOriginalHp() const final;
+      [[nodiscard]] const Group& getGroup() const final;
 
+      [[nodiscard]] unsigned getCommanderLevel() const final;
       [[nodiscard]] bool isProbablyDoomed(bool isDirectDamage) const;
       [[nodiscard]] bool isVtol() const final;
       [[nodiscard]] bool isFlying() const final;
@@ -301,9 +307,17 @@ namespace Impl
       [[nodiscard]] bool isAttacking() const noexcept;
       [[nodiscard]] bool isRepairDroid() const noexcept final;
 
+      void orderCheckGuardPosition(int range) final;
+
+      bool orderDroidList() final;
+
+      void orderClearTargetFromDroidList(SimpleObject* psTarget) final;
+
+      void orderDroidListEraseRange(int indexBegin, int indexEnd) final;
+
       void droidSetBits(const DroidTemplate* pTemplate) final;
 
-      Droid* giftSingleDroid(unsigned to, bool electronic) final;
+      std::unique_ptr<Droid> giftSingleDroid(unsigned to, bool electronic) final;
 
       void recycleDroid() final;
 
@@ -474,8 +488,8 @@ namespace Impl
 // the structure that was last hit
 extern Droid* psLastDroidHit;
 
-std::priority_queue<int> copy_experience_queue(int player);
-void add_to_experience_queue(int player, int value);
+std::priority_queue<int> copy_experience_queue(unsigned player);
+void add_to_experience_queue(unsigned player, int value);
 
 // initialise droid module
 bool droidInit();
