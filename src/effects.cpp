@@ -247,17 +247,17 @@ void effectSetLandLightSpec(LAND_LIGHT_SPEC spec)
 	ellSpec = spec;
 }
 
-void effectSetSize(UDWORD size)
+void effectSetSize(unsigned size)
 {
 	specifiedSize = size;
 }
 
-void addMultiEffect(const Vector3i* basePos, Vector3i* scatter, EFFECT_GROUP group,
-                    EFFECT_TYPE type, bool specified, iIMDShape* imd, unsigned int number, bool lit, unsigned int size,
-                    unsigned effectTime)
+void addMultiEffect(const Vector3i* basePos, Vector3i* scatter,
+                    EFFECT_GROUP group, EFFECT_TYPE type,
+                    bool specified, iIMDShape* imd, unsigned number,
+                    bool lit, unsigned size, unsigned effectTime)
 {
-	if (number == 0)
-	{
+	if (number == 0) {
 		return;
 	}
 
@@ -265,19 +265,15 @@ void addMultiEffect(const Vector3i* basePos, Vector3i* scatter, EFFECT_GROUP gro
 	specifiedSize = size;
 
 	/* If there's only one, make sure it's in the centre */
-	if (number == 1)
-	{
+	if (number == 1) {
 		addEffect(basePos, group, type, specified, imd, lit, effectTime);
 	}
-	else
-	{
-		unsigned int i;
-
+	else {
 		/* Fix for jim */
 		*scatter = *scatter / 10;
 
 		/* There are multiple effects - so scatter them around according to parameter */
-		for (i = 0; i < number; i++)
+		for (auto i = 0; i < number; i++)
 		{
 			// This scatters in a cube - is there a good reason for that, or just legacy?
 			Vector3i scatPos = *basePos + *scatter - Vector3i(rand() % (scatter->x * 2 + 1),
@@ -290,20 +286,23 @@ void addMultiEffect(const Vector3i* basePos, Vector3i* scatter, EFFECT_GROUP gro
 }
 
 // When we need to set the effect for the player's color
-void SetEffectForPlayer(uint8_t player)
+void SetEffectForPlayer(unsigned player)
 {
-	ASSERT(player < MAX_PLAYERS, "player is set to a invalid number of %d", (int) player);
+	ASSERT(player < MAX_PLAYERS,
+         "player is set to a invalid number of %d",
+         (int)player);
 
 	EffectForPlayer = getPlayerColour(player);
 }
 
-void addEffect(const Vector3i* pos, EFFECT_GROUP group, EFFECT_TYPE type, bool specified, iIMDShape* imd, int lit)
+void addEffect(const Vector3i* pos, EFFECT_GROUP group, EFFECT_TYPE type,
+               bool specified, iIMDShape* imd, int lit)
 {
 	return addEffect(pos, group, type, specified, imd, lit, graphicsTime);
 }
 
-void addEffect(const Vector3i* pos, EFFECT_GROUP group, EFFECT_TYPE type, bool specified, iIMDShape* imd, int lit,
-               unsigned effectTime)
+void addEffect(const Vector3i* pos, EFFECT_GROUP group, EFFECT_TYPE type,
+               bool specified, iIMDShape* imd, int lit, unsigned effectTime)
 {
 	if (gamePaused()) {
 		return;

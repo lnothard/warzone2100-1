@@ -68,12 +68,29 @@ enum class PROJECTILE_STATE
 class Projectile : public virtual SimpleObject, public Impl::SimpleObject
 {
 public:
+  friend class Damage;
+
   Projectile(unsigned id, unsigned player);
+
+  void debug_(const char* function, char ch) const;
+  void checkProjectile(const char* location_description,
+                       const char* function, int recurse) const;
 
   [[nodiscard]] PROJECTILE_STATE getState() const noexcept;
 
   void update();
-  
+
+  void setTarget(Unit* psObj);
+
+  void proj_InFlightFunc();
+  void proj_ImpactFunc();
+  void proj_PostImpactFunc();
+  void proj_checkPeriodicalDamage();
+
+  bool proj_SendProjectileAngled(Weapon* psWeap, Unit* psAttacker, unsigned player,
+                                 Vector3i dest, Unit* psTarget, bool bVisible,
+                                 int weapon_slot, int min_angle, unsigned fireTime);
+
   /// Update the source experience after a target is damaged/destroyed
   void updateExperience(unsigned experienceInc);
   
@@ -91,11 +108,12 @@ private:
   /// What fired the projectile
   Unit* source;
 
-  /// Target of this projectile
-  Unit* target;
+  /// Target of this projectile (not a Unit because it can
+  /// be a feature I guess)
+  SimpleObject* target;
 
   /// Targets that have already been dealt damage to (don't damage the same target twice)
-  std::vector<SimpleObject*> damaged;
+  std::vector<Unit*> damaged;
 
   /// Where projectile started
   Vector3i origin {0, 0, 0};
@@ -110,22 +128,30 @@ private:
   Spacetime prevSpacetime;
 
   /// Expected damage that this projectile will cause to the target
-  unsigned expectedDamageCaused;
+  int expectedDamageCaused;
 
   /// How much of target was visible on shooting (important for homing)
   int partVisible;
 };
 
-struct INTERVAL
+struct Interval
 {
+    [[nodiscard]] bool isEmpty() const;
+
     /// Time 1 = 0, time 2 = 1024. Or begin >= end if empty
     int begin, end;
 };
 
-struct Damage
+class Damage
 {
-    Projectile* projectile;
-    SimpleObject* target;
+public:
+    [[nodiscard]] bool isFriendlyFire() const;
+    [[nodiscard]] bool shouldIncreaseExperience() const;
+    [[nodiscard]] int objectDamage();
+    void updateKills();
+private:
+    Projectile* projectile = nullptr;
+    SimpleObject* target = nullptr;
     unsigned damage;
     WEAPON_CLASS weaponClass;
     WEAPON_SUBCLASS weaponSubClass;
@@ -165,13 +191,13 @@ bool proj_SendProjectileAngled(Weapon* psWeap, SimpleObject* psAttacker, unsigne
 bool proj_Direct(const WeaponStats* psStats);
 
 /** Return the maximum range for a weapon. */
-int proj_GetLongRange(const WeaponStats* psStats, unsigned player);
+unsigned proj_GetLongRange(const WeaponStats* psStats, unsigned player);
 
 /** Return the minimum range for a weapon. */
-int proj_GetMinRange(const WeaponStats* psStats, unsigned player);
+unsigned proj_GetMinRange(const WeaponStats* psStats, unsigned player);
 
 /** Return the short range for a weapon. */
-int proj_GetShortRange(const WeaponStats* psStats, unsigned player);
+unsigned proj_GetShortRange(const WeaponStats* psStats, unsigned player);
 
 unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* psTarget);
 bool gfxVisible(Projectile* psObj);
@@ -187,9 +213,6 @@ void checkProjectile(const Projectile* psProjectile, std::string location_descri
 
 /* Assert if projectile is bad */
 #define CHECK_PROJECTILE(object) checkProjectile((object), AT_MACRO, __FUNCTION__, max_check_object_recursion)
-
-#define syncDebugProjectile(psProj, ch) _syncDebugProjectile(__FUNCTION__, psProj, ch)
-void _syncDebugProjectile(const char* function, Projectile const* psProj, char ch);
 
 struct ObjectShape
 {

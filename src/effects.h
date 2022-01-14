@@ -121,7 +121,7 @@ enum LAND_LIGHT_SPEC
 
 struct EFFECT
 {
-	uint8_t player; //	when the effect in question needs a player's color
+	unsigned player; //	when the effect in question needs a player's color
 	uint8_t control; // Controls the bits above - essential,flips etc
 	EFFECT_GROUP group; // what group is it - explosion, building effect etc....
 	EFFECT_TYPE type; // what type is it within the group?
@@ -141,11 +141,12 @@ struct EFFECT
 	std::unique_ptr<iIMDShape> imd; // pointer to the imd the effect uses.
 	EFFECT *prev, *next; // Previous and next element in linked list
 
-	EFFECT() : player(MAX_PLAYERS), control(0), group(EFFECT_GROUP::FREED), type(EFFECT_TYPE::EXPLOSION_TYPE_SMALL), frameNumber(0),
-	           size(0),
-	           baseScale(0), specific(0), position(0.f, 0.f, 0.f), velocity(0.f, 0.f, 0.f), rotation(0, 0, 0),
-	           spin(0, 0, 0), birthTime(0), lastFrame(0), frameDelay(0), lifeSpan(0), radius(0),
-	           imd(nullptr), prev(nullptr), next(nullptr)
+	EFFECT() : player(MAX_PLAYERS), control(0), group(EFFECT_GROUP::FREED),
+             type(EFFECT_TYPE::EXPLOSION_TYPE_SMALL), frameNumber(0),
+	           size(0), baseScale(0), specific(0), position(0.f, 0.f, 0.f),
+             velocity(0.f, 0.f, 0.f), rotation(0, 0, 0),
+	           spin(0, 0, 0), birthTime(0), lastFrame(0), frameDelay(0),
+             lifeSpan(0), radius(0), imd(nullptr), prev(nullptr), next(nullptr)
 	{
 	}
 };

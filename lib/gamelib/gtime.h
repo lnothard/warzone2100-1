@@ -43,19 +43,19 @@ struct NETQUEUE;
 
 /// The current time in the game world.
 /// Changes in GAME_UNITS_PER_TICK increments.
-extern UDWORD gameTime;
+extern std::size_t gameTime;
 /// The current time in the graphical display of the game world.
 /// Should be close to gameTime, up to GAME_UNITS_PER_TICK behind.
-extern UDWORD graphicsTime;
+extern std::size_t graphicsTime;
 /// The current time in the real world - never stops, and not reset between games.
-extern UDWORD realTime;
+extern std::size_t realTime;
 
 /// The difference between the previous and current gameTime.
-extern UDWORD deltaGameTime;
+extern std::size_t deltaGameTime;
 /// The difference between the previous and current graphicsTime.
-extern UDWORD deltaGraphicsTime;
+extern std::size_t deltaGraphicsTime;
 /// The difference between the previous and current realTime.
-extern UDWORD deltaRealTime;
+extern std::size_t deltaRealTime;
 
 /** Initialise the game clock. */
 void gameTimeInit();
