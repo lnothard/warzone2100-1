@@ -18,21 +18,9 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#pragma once
-#include <cstdint>
-#include <string>
-#include <vector>
-#include <memory>
 #include <unordered_map>
 
-#include <optional-lite/optional.hpp>
-using nonstd::optional;
-using nonstd::nullopt;
-
-#include "map_types.h"
-#include "map_debug.h"
 #include "map_io.h"
-#include "terrain_type.h"
 #include "map_terrain_types.h"
 
 class Droid;

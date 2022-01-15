@@ -72,16 +72,17 @@ public:
 
   void update();
 
-  void setTarget(Unit* psObj);
+  void setTarget(::SimpleObject* psObj);
+  void setSource(::SimpleObject* psObj);
 
   void proj_InFlightFunc();
   void proj_ImpactFunc();
   void proj_PostImpactFunc();
   void proj_checkPeriodicalDamage();
 
-  bool proj_SendProjectileAngled(Weapon* psWeap, Unit* psAttacker, unsigned player,
-                                 Vector3i dest, Unit* psTarget, bool bVisible,
-                                 int weapon_slot, int min_angle, unsigned fireTime);
+  bool proj_SendProjectileAngled(Weapon* psWeap, ::SimpleObject* psAttacker, unsigned player,
+                                 Vector3i dest, ::SimpleObject* psTarget, bool bVisible,
+                                 int weapon_slot, int min_angle, unsigned fireTime) const;
 
   /// Update the source experience after a target is damaged/destroyed
   void updateExperience(unsigned experienceInc);
@@ -98,14 +99,14 @@ private:
   std::shared_ptr<WeaponStats> weaponStats;
 
   /// What fired the projectile
-  Unit* source;
+  ::SimpleObject* source;
 
   /// Target of this projectile (not a Unit because it can
   /// be a feature I guess)
-  SimpleObject* target;
+  ::SimpleObject* target;
 
   /// Targets that have already been dealt damage to (don't damage the same target twice)
-  std::vector<Unit*> damaged;
+  std::vector<::SimpleObject*> damaged;
 
   /// Where projectile started
   Vector3i origin {0, 0, 0};
@@ -204,7 +205,10 @@ void checkProjectile(const Projectile* psProjectile, std::string location_descri
                      std::string function, int recurse);
 
 /* Assert if projectile is bad */
-#define CHECK_PROJECTILE(object) checkProjectile((object), AT_MACRO, __FUNCTION__, max_check_object_recursion)
+#define CHECK_PROJECTILE(object) checkProjectile((object), \
+        AT_MACRO, __FUNCTION__, max_check_object_recursion)
+
+static void setProjectileSource(Projectile *psProj, Unit *psObj);
 
 struct ObjectShape
 {

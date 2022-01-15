@@ -29,6 +29,8 @@
 #include "multiplay.h"
 #include "scores.h"
 
+enum class ALLIANCE_TYPE;
+
 enum class GAME_MODE
 {
     MENUS,
@@ -156,10 +158,10 @@ public:
 	virtual void loadedModsChanged(const std::vector<Sha256>& loadedModHashes);
 
 	// Helper Functions
-	static std::string getTeamDescription(const ActivitySink::SkirmishGameInfo& info);
+	static std::string getTeamDescription(const SkirmishGameInfo& info);
 };
 
-std::string to_string(const ActivitySink::GameEndReason& reason);
+std::string to_string(GameEndReason reason);
 std::string to_string(const END_GAME_STATS_DATA& stats);
 
 // Thread-safe class for retrieving and setting ActivityRecord data
@@ -203,7 +205,7 @@ public:
 	// called when a joinable multiplayer game is hosted
 	// lobbyGameId is 0 if the lobby can't be contacted / the game is not registered with the lobby
 	void hostGame(const char* SessionName, const char* PlayerName, const char* lobbyAddress, unsigned int lobbyPort,
-	              const ActivitySink::ListeningInterfaces& listeningInterfaces, uint32_t lobbyGameId = 0);
+	              const ListeningInterfaces& listeningInterfaces, uint32_t lobbyGameId = 0);
 	void hostGameLobbyServerDisconnect();
 	void hostLobbyQuit();
 	// called when attempting to join a lobby game

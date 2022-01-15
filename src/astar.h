@@ -93,13 +93,13 @@ struct ExploredTile
 struct PathBlockingType
 {
     /// Internal representation of game time
-    std::size_t game_time = 0;
+    std::size_t gameTime = 0;
 
     /// The player id for the owner of this region
     unsigned owner = 0;
 
     /// How does this region interact with colliding units?
-    FPATH_MOVETYPE move_type;
+    FPATH_MOVETYPE moveType;
 
     /// Which movement class are we blocking?
     PROPULSION_TYPE propulsion;
@@ -255,6 +255,6 @@ PathCoord find_nearest_explored_tile(PathContext& context, PathCoord tile);
  *
  * @return Whether we successfully found a path
  */
-ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job);
+ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob);
 
 #endif // __INCLUDED_SRC_ASTAR_H__

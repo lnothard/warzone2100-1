@@ -3720,7 +3720,7 @@ if (psDroid->droidType == DROID_SENSOR)
   bool Droid::moveDroidToBase(unsigned x, unsigned y, bool bFormation, FPATH_MOVETYPE moveType)
   {
     using enum MOVE_STATUS;
-    FPATH_RETVAL retVal = FPR_OK;
+    FPATH_RESULT retVal = OK;
 
     // in multiPlayer make Transporter move like the vtols
     if (isTransporter(*this) && game.maxPlayers == 0) {
@@ -3732,13 +3732,13 @@ if (psDroid->droidType == DROID_SENSOR)
       // NOTE: While Vtols can fly, then can't go through things, like the transporter.
     else if ((game.maxPlayers > 0 && isTransporter(*this))) {
       fpathSetDirectRoute(this, x, y);
-      retVal = FPR_OK;
+      retVal = OK;
     }
     else {
       retVal = fpathDroidRoute(this, x, y, moveType);
     }
 
-    if (retVal == FPR_OK) {
+    if (retVal == OK) {
       // bit of a hack this - john
       // if astar doesn't have a complete route, it returns a route to the nearest clear tile.
       // the location of the clear tile is in DestinationX,DestinationY.
@@ -3752,7 +3752,7 @@ if (psDroid->droidType == DROID_SENSOR)
       movement->status = NAVIGATE;
       movement->pathIndex = 0;
     }
-    else if (retVal == FPR_WAIT) {
+    else if (retVal == WAIT) {
       // the route will be calculated by the path-finding thread
       movement->status = WAIT_FOR_ROUTE;
       movement->destination.x = x;

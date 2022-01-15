@@ -26,7 +26,11 @@
 #ifndef __INCLUDED_SRC_ACTION_H__
 #define __INCLUDED_SRC_ACTION_H__
 
-#include "map.h"
+#include "lib/gamelib/gtime.h"
+
+class Droid;
+class Weapon;
+enum class ACTION;
 
 /* Attack run distances */
 static constexpr auto	VTOL_ATTACK_LENGTH = 1000;

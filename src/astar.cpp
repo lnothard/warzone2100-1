@@ -42,8 +42,12 @@
  *  stored in the `ExploredTile` 2D array of tiles.
  */
 
+#include "lib/wzmaplib/include/wzmaplib/map.h"
+
 #include "astar.h"
 #include "map.h"
+#include "move.h"
+#include "structure.h"
 
 bool isHumanPlayer(unsigned);
 
@@ -114,7 +118,7 @@ void PathContext::reset(const PathBlockingMap& blocking,
   blocking_map = std::make_unique<PathBlockingMap>(blocking);
   start_coord = start;
   destination_bounds = bounds;
-  game_time = blocking_map->type.game_time;
+  game_time = blocking_map->type.gameTime;
 
   // reset route
   nodes.clear();
@@ -146,7 +150,7 @@ bool PathContext::matches(PathBlockingMap& blocking, PathCoord start, NonBlockin
   // Must check myGameTime == blockingMap_->type.gameTime, otherwise
   // blockingMap could be a deleted pointer which coincidentally
   // compares equal to the valid pointer blockingMap_.
-  return game_time == blocking.type.game_time &&
+  return game_time == blocking.type.gameTime &&
   blocking_map.get() == &blocking &&
   start == start_coord &&
   dest == destination_bounds;
@@ -657,17 +661,19 @@ PathCoord find_nearest_explored_tile(PathContext& context, PathCoord tile)
 //	ASSERT(!context.nodes.empty(), "fpathNewNode failed to add node.");
 //}
 
-ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
+ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
 {
   PathCoord end {};
   auto result = ASTAR_RESULT::OK;
   auto must_reverse = true;
 
-  const auto origin_tile = PathCoord{map_coord(path_job.origin.x),
-                                     map_coord(path_job.origin.y)};
+  const auto origin_tile = PathCoord{map_coord(pathJob.origin.x),
+                                     map_coord(pathJob.origin.y)};
 
-  const auto destination_tile = PathCoord{map_coord(path_job.destination.x),
-                                          map_coord(path_job.destination.y)};
+  const auto destination_tile = PathCoord{map_coord(pathJob.destination.x),
+                                          map_coord(pathJob.destination.y)};
+
+  const auto dstIgnore = NonBlockingArea{pathJob.dstStructure};
 
   auto it = std::find_if(path_contexts.begin(), path_contexts.end(),
                          [&end, &must_reverse](const auto& context)
@@ -676,7 +682,8 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
           context.map[origin_tile.x + origin_tile.y * mapWidth].visited)  {
         // already know the path
         end = origin_tile;
-      } else {
+      }
+      else {
         // continue previous exploration
         recalculate_estimates(context, origin_tile);
         end = find_nearest_explored_tile(context, origin_tile);
@@ -707,8 +714,8 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
      * nearest reachable tile to dest is.
      */
     auto new_context = PathContext();
-    new_context.init(--it, path_job.blockingMap, origin_tile, origin_tile,
-                     destination_tile, path_job.dstStructure);
+    new_context.init(--it, pathJob.blockingMap, origin_tile, origin_tile,
+                     destination_tile, pathJob.dstStructure);
     end = find_nearest_explored_tile(it, destination_tile);
     it->nearest_reachable_tile = end;
   }
@@ -756,12 +763,13 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
   if (result == ASTAR_RESULT::OK)  {
     // found exact path, so use the exact coordinates for
     // last point. no reason to lose precision
-    auto coord = Vector2i{path_job.destination.x,
-                          path_job.destination.y};
+    auto coord = Vector2i{pathJob.destination.x,
+                          pathJob.destination.y};
 
     if (must_reverse)  {
       route.front() = coord;
-    } else  {
+    }
+    else  {
       route.back() = coord;
     }
   }
@@ -777,7 +785,7 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
 
 			// next time, search starting from the nearest reachable
       // tile to the destination.
-			it->init(path_job.blockingMap, destination_tile,
+			it->init(pathJob.blockingMap, destination_tile,
                it->nearest_reachable_tile, origin_tile, dstIgnore);
     }
   } else  {
@@ -786,7 +794,7 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
 
   // move context to beginning of last recently used list.
   if (it != path_contexts.begin())  {
-    path_contexts.splice(path_contexts.begin(), path_contexts, it);
+    path_contexts.insert(path_contexts.begin(), *it);
   }
 
   movement.destination = movement.path[route.size() - 1];
@@ -968,10 +976,10 @@ void fpathSetBlockingMap(PathJob& path_job)
 
 	// figure out which map we are looking for.
 	PathBlockingType type;
-	type.game_time = gameTime;
+	type.gameTime = gameTime;
 	type.propulsion = path_job.propulsion;
 	type.owner = path_job.owner;
-	type.move_type = path_job.moveType;
+	type.moveType = path_job.moveType;
 
 	// find the map.
 	auto it = std::find_if(blocking_maps.begin(), blocking_maps.end(),
@@ -995,11 +1003,11 @@ void fpathSetBlockingMap(PathJob& path_job)
       for (int x = 0; x < mapWidth; ++x)
       {
         map[x + y * mapWidth] = fpathBaseBlockingTile(x, y, type.propulsion,
-                                                      type.owner, type.move_type);
+                                                      type.owner, type.moveType);
         checksum_map ^= map[x + y * mapWidth] * (factor = 3 * factor + 1);
       }
     }
-		if (!isHumanPlayer(type.owner) && type.move_type == FMT_MOVE)  {
+		if (!isHumanPlayer(type.owner) && type.moveType == FMT_MOVE)  {
 			auto threat = blocking.threat_map;
 			threat.resize(static_cast<size_t>(mapWidth) *
                     static_cast<size_t>(mapHeight));
@@ -1020,4 +1028,11 @@ void fpathSetBlockingMap(PathJob& path_job)
 		syncDebug("blockingMap(%d,%d,%d,%d) = cached", gameTime, path_job.propulsion, path_job.owner, path_job.moveType);
     path_job.blockingMap = std::make_shared<PathBlockingMap>(*it);
 	}
+}
+
+bool PathBlockingMap::operator==(const PathBlockingType &rhs) const
+{
+  return type.gameTime == rhs.gameTime &&
+         fpathIsEquivalentBlocking(type.propulsion, type.owner, type.moveType,
+                                   rhs.propulsion, rhs.owner, rhs.moveType);;
 }

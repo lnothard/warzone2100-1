@@ -34,17 +34,17 @@ enum FPATH_MOVETYPE
 	///< Move around all obstacles
 	FMT_ATTACK,
 	///< Assume that we will destroy enemy obstacles
-	FMT_BLOCK,
+	FMT_BLOCK
 	///< Don't go through obstacles, not even gates.
 };
 
-enum FPATH_RETVAL
+enum class FPATH_RESULT
 {
-    FPR_OK,
+    OK,
     ///< found a route
-    FPR_FAILED,
+    FAILED,
     ///< failed to find a route
-    FPR_WAIT,
+    WAIT
     ///< route is being calculated by the path-finding thread
 };
 
@@ -70,7 +70,7 @@ struct PathResult
 {
     unsigned droidID; ///< Unique droid ID.
     Movement sMove; ///< New movement values for the droid.
-    FPATH_RETVAL retval; ///< Result value from path-finding.
+    FPATH_RESULT retval; ///< Result value from path-finding.
     Vector2i originalDest; ///< Used to check if the pathfinding job is to the right destination.
 };
 
@@ -86,7 +86,7 @@ void fpathUpdate();
 
 /** Find a route for a droid to a location.
  */
-FPATH_RETVAL fpathDroidRoute(Droid* psDroid, SDWORD targetX, SDWORD targetY, FPATH_MOVETYPE moveType);
+FPATH_RESULT fpathDroidRoute(Droid* psDroid, SDWORD targetX, SDWORD targetY, FPATH_MOVETYPE moveType);
 
 /// Returns true iff the parameters have equivalent behaviour in fpathBaseBlockingTile.
 bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, unsigned player1, FPATH_MOVETYPE moveType1,

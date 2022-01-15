@@ -27,13 +27,18 @@
 #define __INCLUDED_SRC_MAP_H__
 
 #include "lib/ivis_opengl/pietypes.h"
+#include "wzmaplib/map_types.h"
+#include "wzmaplib/map_debug.h"
+#include "wzmaplib/map_io.h"
 
 #include "ai.h"
 #include "objects.h"
+#include "structure.h"
 
 /* forward decl */
 bool godMode;
 void markTileDirty(int, int);
+
 
 static constexpr auto TALLOBJECT_YMAX	= 200;
 static constexpr auto TALLOBJECT_ADJUST	= 300;

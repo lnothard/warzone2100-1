@@ -28,7 +28,10 @@
 #include "lib/sound/audio.h"
 
 #include "action.h"
+#include "droid.h"
+#include "map.h"
 #include "mapgrid.h"
+#include "projectile.h"
 #include "visibility.h"
 
 /**

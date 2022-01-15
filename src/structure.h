@@ -34,6 +34,9 @@
 
 class Droid;
 class DroidTemplate;
+class Group;
+enum class SECONDARY_ORDER;
+enum class SECONDARY_STATE;
 enum class WEAPON_CLASS;
 enum class TARGET_ORIGIN;
 
@@ -241,7 +244,9 @@ public:
     [[nodiscard]] virtual const StructureStats& getStats() const = 0;
     [[nodiscard]] virtual STRUCTURE_ANIMATION_STATE getAnimationState() const = 0;
     [[nodiscard]] virtual unsigned getArmourValue(WEAPON_CLASS weaponClass) const = 0;
+    [[nodiscard]] virtual uint8_t getCapacity() const = 0;
 
+    [[nodiscard]] virtual bool isWall() const = 0;
     virtual void printInfo() const = 0;
     [[nodiscard]] virtual bool hasSensor() const = 0;
     virtual Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare) = 0;
@@ -274,9 +279,10 @@ namespace Impl
         [[nodiscard]] const ::SimpleObject& getTarget(int weapon_slot) const final;
         [[nodiscard]] STRUCTURE_STATE getState() const final;
         [[nodiscard]] const StructureStats& getStats() const final;
+        [[nodiscard]] uint8_t getCapacity() const final;
 
         [[nodiscard]] bool isBlueprint() const noexcept;
-        [[nodiscard]] bool isWall() const noexcept;
+        [[nodiscard]] bool isWall() const noexcept final;
         [[nodiscard]] bool isRadarDetector() const final;
         [[nodiscard]] bool isProbablyDoomed() const;
         [[nodiscard]] bool hasModules() const noexcept;
@@ -366,10 +372,25 @@ private:
     std::unique_ptr<ResearchItem> psSubject; // The subject the structure is working on.
     std::unique_ptr<ResearchItem> psSubjectPending;
     // The subject the structure is going to work on when the GAME_RESEARCHSTATUS message is received.
-    StatusPending statusPending; ///< Pending = not yet synchronised.
+    PENDING_STATUS statusPending; ///< Pending = not yet synchronised.
     unsigned pendingCount; ///< Number of messages sent but not yet processed.
     std::unique_ptr<ResearchItem> psBestTopic; // The topic with the most research points that was last performed
     std::size_t timeStartHold; /* The time the research facility was put on hold*/
+};
+
+struct ProductionRun
+{
+    ProductionRun() = default;
+    bool operator ==(const DroidTemplate& rhs) const;
+
+    void restart();
+    [[nodiscard]] bool is_valid() const;
+    [[nodiscard]] bool is_complete() const;
+    [[nodiscard]] int tasks_remaining() const;
+
+    std::shared_ptr<DroidTemplate> target = nullptr;
+    int quantity_to_build = 0;
+    int quantity_built = 0;
 };
 
 class Factory : public virtual Structure, public Impl::Structure
@@ -388,7 +409,7 @@ public:
     ProductionRun getProduction(DroidTemplate *psTemplate);
     void factoryLoopAdjust(bool add);
     [[nodiscard]] const DroidTemplate* getSubject() const;
-    FlagPosition* FindFactoryDelivery() const;
+    [[nodiscard]] FlagPosition* FindFactoryDelivery() const;
     void cancelProduction(QUEUE_MODE mode, bool mayClearProductionRun);
     DroidTemplate* factoryProdUpdate(DroidTemplate* psTemplate);
 private:
@@ -450,20 +471,7 @@ private:
 //this is used for module graphics - factory and vtol factory
 static const int NUM_FACMOD_TYPES = 2;
 
-struct ProductionRun
-{
-    ProductionRun() = default;
-    bool operator ==(const DroidTemplate& rhs) const;
 
-    void restart();
-    [[nodiscard]] bool is_valid() const;
-    [[nodiscard]] bool is_complete() const;
-    [[nodiscard]] int tasks_remaining() const;
-
-    std::shared_ptr<DroidTemplate> target = nullptr;
-    int quantity_to_build = 0;
-    int quantity_built = 0;
-};
 
 extern std::array< std::vector<ProductionRun>, NUM_FACTORY_TYPES> asProductionRun;
 
@@ -534,8 +542,9 @@ Structure* buildStructureDir(StructureStats* pStructureType, unsigned x, unsigne
                              bool FromSave);
 
 /// Create a blueprint structure, with just enough information to render it
-Structure* buildBlueprint(StructureStats const* psStats, Vector3i xy, uint16_t direction, unsigned moduleIndex,
-                          STRUCT_STATES state, uint8_t ownerPlayer);
+Structure* buildBlueprint(StructureStats const* psStats, Vector3i xy,
+                          uint16_t direction, unsigned moduleIndex,
+                          STRUCTURE_STATE state, uint8_t ownerPlayer);
 
 /* Remove a structure and free it's memory */
 bool destroyStruct(Structure* psDel, unsigned impactTime);
@@ -586,15 +595,15 @@ bool placeDroid(Structure* psStructure, unsigned* droidX, unsigned* droidY);
 //Set the factory secondary orders to a droid
 void setFactorySecondaryState(Droid* psDroid, Structure* psStructure);
 
-static float CalcStructureSmokeInterval(float damage)
+static float CalcStructureSmokeInterval(float damage);
 
 /* is this a lassat structure? */
 static inline bool isLasSat(StructureStats* pStructureType)
 {
 	ASSERT_OR_RETURN(false, pStructureType != nullptr, "LasSat is invalid?");
 
-	return (pStructureType->psWeapStat[0]
-		&& pStructureType->psWeapStat[0]->weaponSubClass == WSC_LAS_SAT);
+	return (pStructureType->psWeapStat[0] &&
+          pStructureType->psWeapStat[0]->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT);
 }
 
 /*sets the flag to indicate a SatUplink Exists - so draw everything!*/
@@ -664,17 +673,17 @@ unsigned structureResistance(const StructureStats* psStats, UBYTE player);
 
 void hqReward(UBYTE losingPlayer, UBYTE rewardPlayer);
 
-// Is a structure a factory of somekind?
+// Is a structure a factory of some kind?
 bool StructIsFactory(const Structure* Struct);
 
 // Is a flag a factory delivery point?
-bool FlagIsFactory(const FLAG_POSITION* psCurrFlag);
+bool FlagIsFactory(const FlagPosition* psCurrFlag);
 
-// Find a factories corresonding delivery point.
-FLAG_POSITION* FindFactoryDelivery(const Structure* Struct);
+// Find a factories corresponding delivery point.
+FlagPosition* FindFactoryDelivery(const Structure* Struct);
 
 //Find the factory associated with the delivery point - returns NULL if none exist
-Structure* findDeliveryFactory(FLAG_POSITION* psDelPoint);
+Structure* findDeliveryFactory(FlagPosition* psDelPoint);
 
 /*this is called when a factory produces a droid. The Template returned is the next
 one to build - if any*/
@@ -684,7 +693,7 @@ DroidTemplate* factoryProdUpdate(Structure* psStructure, DroidTemplate* psTempla
 void factoryProdAdjust(Structure* psStructure, DroidTemplate* psTemplate, bool add);
 
 //returns the quantity of a specific template in the production list
-ProductionRunEntry getProduction(Structure* psStructure, DroidTemplate* psTemplate);
+ProductionRun getProduction(Structure* psStructure, DroidTemplate* psTemplate);
 
 //looks through a players production list to see if a command droid is being built
 UBYTE checkProductionForCommand(UBYTE player);
@@ -750,7 +759,8 @@ bool vtolOnRearmPad(Structure* psStruct, Droid* psDroid);
 bool structIsDamaged(Structure* psStruct);
 
 // give a structure from one player to another - used in Electronic Warfare
-Structure* giftSingleStructure(Structure* psStructure, UBYTE attackPlayer, bool electronic_warfare = true);
+Structure* giftSingleStructure(Structure* psStructure, UBYTE attackPlayer,
+                               bool electronic_warfare = true);
 
 /*Initialise the production list and set up the production player*/
 void changeProductionPlayer(unsigned player);
@@ -778,19 +788,20 @@ StructureBounds getStructureBounds(const StructureStats* stats, Vector2i pos, ui
 
 bool canStructureHaveAModuleAdded(Structure* const structure);
 
-static inline int structSensorRange(const Structure* psObj)
+static inline unsigned structSensorRange(const Structure* psObj)
 {
 	return objSensorRange((const SimpleObject*)psObj);
 }
 
-static inline int structJammerPower(const Structure* psObj)
+static inline unsigned structJammerPower(const Structure* psObj)
 {
 	return objJammerPower((const SimpleObject*)psObj);
 }
 
 static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStructure, int weaponSlot, uint32_t time)
 {
-	return interpolateRot(psStructure->asWeaps[weaponSlot].previousRotation, psStructure->asWeaps[weaponSlot].rotation,
+	return interpolateRot(psStructure->asWeaps[weaponSlot].previousRotation,
+                        psStructure->asWeaps[weaponSlot].rotation,
                         psStructure->prevTime, psStructure->time, time);
 }
 
@@ -818,7 +829,7 @@ template <typename Functionality, typename Subject>
 static inline void setStatusPendingStart(Functionality& functionality, Subject* subject)
 {
 	functionality.psSubjectPending = subject;
-	functionality.statusPending = FACTORY_START_PENDING;
+	functionality.statusPending = PENDING_STATUS::START_PENDING;
 	++functionality.pendingCount;
 }
 
@@ -826,7 +837,7 @@ template <typename Functionality>
 static inline void setStatusPendingCancel(Functionality& functionality)
 {
 	functionality.psSubjectPending = nullptr;
-	functionality.statusPending = FACTORY_CANCEL_PENDING;
+	functionality.statusPending = PENDING_STATUS::CANCEL_PENDING;
 	++functionality.pendingCount;
 }
 
@@ -837,20 +848,20 @@ static inline void setStatusPendingHold(Functionality& functionality)
 	{
 		functionality.psSubjectPending = functionality.psSubject;
 	}
-	functionality.statusPending = FACTORY_HOLD_PENDING;
+	functionality.statusPending = PENDING_STATUS::HOLD_PENDING;
 	++functionality.pendingCount;
 }
 
 template <typename Functionality>
 static inline void setStatusPendingRelease(Functionality& functionality)
 {
-	if (functionality.psSubjectPending == nullptr && functionality.statusPending != FACTORY_CANCEL_PENDING)
+	if (functionality.psSubjectPending == nullptr && functionality.statusPending != PENDING_STATUS::CANCEL_PENDING)
 	{
 		functionality.psSubjectPending = functionality.psSubject;
 	}
 	if (functionality.psSubjectPending != nullptr)
 	{
-		functionality.statusPending = FACTORY_START_PENDING;
+		functionality.statusPending = PENDING_STATUS::START_PENDING;
 	}
 	++functionality.pendingCount;
 }
@@ -866,7 +877,7 @@ static inline void popStatusPending(Functionality& functionality)
 	{
 		// Subject is now synchronised, remove pending.
 		functionality.psSubjectPending = nullptr;
-		functionality.statusPending = FACTORY_NOTHING_PENDING;
+		functionality.statusPending = PENDING_STATUS::NOTHING_PENDING;
 	}
 }
 
@@ -883,30 +894,30 @@ void _syncDebugStructure(const char* function, Structure const* psStruct, char c
 
 static inline int getBuildingResearchPoints(Structure* psStruct)
 {
-	auto& upgrade = psStruct->pStructureType->upgraded_stats[psStruct->player];
+	auto& upgrade = psStruct->getStats().upgraded_stats[psStruct->getPlayer()];
 	return upgrade.research + upgrade.moduleResearch * psStruct->capacity;
 }
 
 static inline int getBuildingProductionPoints(Structure* psStruct)
 {
-	auto& upgrade = psStruct->pStructureType->upgraded_stats[psStruct->player];
+	auto& upgrade = psStruct->getStats().upgraded_stats[psStruct->getPlayer()];
 	return upgrade.production + upgrade.moduleProduction * psStruct->capacity;
 }
 
 static inline int getBuildingPowerPoints(Structure* psStruct)
 {
-	auto& upgrade = psStruct->pStructureType->upgraded_stats[psStruct->player];
+	auto& upgrade = psStruct->getStats().upgraded_stats[psStruct->getPlayer()];
 	return upgrade.power + upgrade.modulePower * psStruct->capacity;
 }
 
-static inline int getBuildingRepairPoints(Impl::Structure* psStruct)
+static inline unsigned getBuildingRepairPoints(Structure* psStruct)
 {
-	return psStruct->pStructureType->upgraded_stats[psStruct->player].repair;
+	return psStruct->getStats().upgraded_stats[psStruct->getPlayer()].repair;
 }
 
-static inline int getBuildingRearmPoints(Impl::Structure* psStruct)
+static inline unsigned getBuildingRearmPoints(Structure* psStruct)
 {
-	return psStruct->stats->upgraded_stats[psStruct->getPlayer()].rearm;
+	return psStruct->getStats().upgraded_stats[psStruct->getPlayer()].rearm;
 }
 
 WzString getFavoriteStructs();

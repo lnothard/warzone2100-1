@@ -5703,9 +5703,9 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 			psDroid->movement.status = MOVEWAITROUTE;
 
 			// Droid might be on a mission, so finish pathfinding now, in case pointers swap and map size changes.
-			FPATH_RETVAL dr = fpathDroidRoute(psDroid, psDroid->movement.destination.x, psDroid->movement.destination.y,
+			FPATH_RESULT dr = fpathDroidRoute(psDroid, psDroid->movement.destination.x, psDroid->movement.destination.y,
                                         FMT_MOVE);
-			if (dr == FPR_OK)
+			if (dr == OK)
 			{
 				psDroid->movement.status = MOVENAVIGATE;
 				psDroid->movement.pathIndex = 0;
@@ -5715,7 +5715,7 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 				psDroid->movement.status = MOVEINACTIVE;
 				actionDroid(psDroid, DACTION_SULK);
 			}
-			ASSERT(dr != FPR_WAIT, " ");
+			ASSERT(dr != WAIT, " ");
 		}
 
 		// HACK!!

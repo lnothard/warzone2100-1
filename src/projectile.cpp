@@ -19,15 +19,20 @@
 */
 
 #include "lib/framework/math_ext.h"
-#include "lib/gamelib/gtime.h"
 #include "lib/ivis_opengl/ivisdef.h"
 #include "lib/netplay/netplay.h"
 #include "lib/sound/audio_id.h"
 #include "lib/sound/audio.h"
+#include <glm/gtx/transform.hpp>
 
+#include "action.h"
+#include "cmddroid.h"
 #include "combat.h"
 #include "display3d.h"
+#include "displaydef.h"
+#include "droid.h"
 #include "effects.h"
+#include "feature.h"
 #include "map.h"
 #include "mapgrid.h"
 #include "multistat.h"
@@ -36,9 +41,7 @@
 #include "scores.h"
 #include "visibility.h"
 
-#include <glm/gtx/transform.hpp>
-
-bool GamePaused();
+bool bMultiPlayer;
 
 Projectile::Projectile(unsigned id, unsigned player)
   : SimpleObject(id, player)
@@ -86,21 +89,27 @@ static void proj_checkPeriodicalDamage(Projectile* psProj);
 
 static int objectDamage(Damage* psDamage);
 
-void Projectile::setTarget(Unit* psObj)
+void Projectile::setTarget(::SimpleObject* psObj)
 {
 	bool bDirect = proj_Direct(weaponStats.get());
-#if defined( _MSC_VER )
-#pragma warning( push )
-#pragma warning( disable : 4146 ) // warning C4146: unary minus operator applied to unsigned type, result still unsigned
-#endif
-	aiObjectAddExpectedDamage(target, -expectedDamageCaused, bDirect);
-	// The old target shouldn't be expecting any more damage from this projectile.
-#if defined( _MSC_VER )
-#pragma warning( pop )
-#endif
+  #if defined( _MSC_VER )
+    #pragma warning( push )
+    // warning C4146: unary minus operator applied to unsigned
+    // type, result still unsigned
+    #pragma warning( disable : 4146 )
+  #endif
+	aiObjectAddExpectedDamage(target,
+                            -expectedDamageCaused,
+                            bDirect);
+	// the old target shouldn't be expecting any more damage from this projectile
+  #if defined( _MSC_VER )
+    #pragma warning( pop )
+  #endif
 	target = psObj;
-	aiObjectAddExpectedDamage(target, expectedDamageCaused, bDirect);
-	// Let the new target know to say its prayers.
+	aiObjectAddExpectedDamage(target,
+                            expectedDamageCaused,
+                            bDirect);
+	// let the new target know to say its prayers
 }
 
 bool Projectile::gfxVisible() const
@@ -116,13 +125,11 @@ bool Projectile::gfxVisible() const
 	}
 
 	// someone else's structure firing at something you can't see
-	if (source != nullptr
-      && source->isAlive()
-      && dynamic_cast<Structure*>(source)
-      && source->getPlayer() != selectedPlayer
-      && (target == nullptr
-          || !target->isAlive()
-          || !target->visibleToSelectedPlayer())) {
+	if (source != nullptr && source->isAlive() &&
+      dynamic_cast<Structure*>(source) &&
+      source->getPlayer() != selectedPlayer &&
+      (target == nullptr || !target->isAlive() ||
+       !target->visibleToSelectedPlayer())) {
 		return false;
 	}
 
@@ -170,7 +177,8 @@ void proj_FreeAllProjectiles()
 
 /**
  * Relates the quality of the attacker to the quality of the victim.
- * The value returned satisfies the following inequality: 0.5 <= ret/65536 <= 2.0
+ * The value returned satisfies the following inequality:
+ * \f(0.5 <= ret/65536 <= 2.0)\f
  */
 static unsigned qualityFactor(Droid* psAttacker, Droid* psVictim)
 {
@@ -220,7 +228,8 @@ void Projectile::updateExperience(unsigned experienceInc)
                       qualityFactor(psDroid,
                             dynamic_cast<Droid*>(target)) / 65536;
 		}
-		ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536), "Experience increase out of range");
+		ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536),
+                     "Experience increase out of range");
 		psDroid->gainExperience(experienceInc);
 		cmdDroidUpdateExperience(psDroid, experienceInc);
 
@@ -230,10 +239,11 @@ void Projectile::updateExperience(unsigned experienceInc)
 		}
 	} else if (dynamic_cast<Structure*>(source))
 	{
-		ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536), "Experience increase out of range");
+		ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536),
+                     "Experience increase out of range");
 		psDroid = getDesignatorAttackingObject(source->getPlayer(), target);
 
-		if (psDroid != nullptr) {
+		if (psDroid) {
 			psDroid->gainExperience(experienceInc);
 		}
 	}
@@ -327,9 +337,9 @@ bool proj_SendProjectile(Weapon* psWeap, SimpleObject* psAttacker, unsigned play
                                    bVisible, weapon_slot, 0, gameTime - 1);
 }
 
-bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, Unit* psAttacker, unsigned player,
-                                           Vector3i dest, Unit* psTarget, bool bVisible,
-                                           int weapon_slot, int min_angle, unsigned fireTime)
+bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, ::SimpleObject* psAttacker, unsigned player,
+                                           Vector3i dest, ::SimpleObject* psTarget, bool bVisible,
+                                           int weapon_slot, int min_angle, unsigned fireTime) const
 {
 	auto& psStats = psWeap->getStats();
 
@@ -393,7 +403,7 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, Unit* psAttacker, uns
     psProj->prevSpacetime.time -= psProj->
               prevSpacetime.time == psProj->getTime();
 
-		setProjectileSource(psProj, psOldProjectile->source);
+		psProj->setSource(psOldProjectile->source);
 		psProj->damaged = psOldProjectile->damaged;
 
 		// TODO Should finish the tick, when penetrating.
@@ -404,7 +414,7 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, Unit* psAttacker, uns
 		psProj->prevSpacetime.time = fireTime;
 		psProj->setTime(psProj->prevSpacetime.time);
 
-		setProjectileSource(psProj, psAttacker);
+		psProj->setSource(psAttacker);
 	}
 
 	if (psTarget) {
@@ -594,7 +604,7 @@ void Projectile::proj_InFlightFunc()
 	/* we want a delay between Las-Sats firing and actually hitting in multiPlayer
 	magic number but that's how long the audio countdown message lasts! */
 	const auto LAS_SAT_DELAY = 4;
-	Unit* closestCollisionObject = nullptr;
+	::SimpleObject* closestCollisionObject = nullptr;
 	Spacetime closestCollisionSpacetime;
 
 	CHECK_PROJECTILE(this);
@@ -732,22 +742,24 @@ void Projectile::proj_InFlightFunc()
 	for (::SimpleObject* psTempObj : gridList)
 	{
 		CHECK_OBJECT(psTempObj);
-		if (std::find(damaged.begin(), damaged.end(), psTempObj) != damaged.end()) {
+		if (std::find(damaged.begin(), damaged.end(),
+                  psTempObj) != damaged.end()) {
 			// don't damage the same target twice
 			continue;
 		}
 		else if (psTempObj->died) {
-			// Do not damage dead objects further
+			// do not damage dead objects further
 			continue;
 		}
-		else if (psTempObj->type == OBJ_FEATURE && 
-             !((Feature*)psTempObj)->getStats()->damageable) {
+		else if (dynamic_cast<Feature*>(psTempObj) &&
+             !dynamic_cast<Feature*>(psTempObj)->getStats()->damageable) {
 			// ignore oil resources, artifacts and other pickups
 			continue;
 		}
-		else if (aiCheckAlliances(psTempObj->getPlayer(), getPlayer()) && psTempObj != target)
-		{
-			// No friendly fire unless intentional
+		else if (aiCheckAlliances(
+            psTempObj->getPlayer(), getPlayer()) &&
+            psTempObj != target) {
+			// no friendly fire unless intentional
 			continue;
 		}
 		else if (!(psStats->surfaceToAir & SHOOT_ON_GROUND) &&
@@ -771,7 +783,8 @@ void Projectile::proj_InFlightFunc()
 		const auto collisionTime = prevSpacetime.time + (getTime() - prevSpacetime.time) *
 			collision / 1024;
 
-		if (collision >= 0 && collisionTime < closestCollisionSpacetime.time) {
+		if (collision >= 0 &&
+        collisionTime < closestCollisionSpacetime.time) {
 			// We hit!
 			closestCollisionSpacetime = interpolateObjectSpacetime(this, collisionTime);
 			closestCollisionObject = psTempObj;
@@ -809,7 +822,7 @@ void Projectile::proj_InFlightFunc()
                 1.25 * proj_GetLongRange(psStats.get(),
                                          getPlayer()))) {
 			Weapon asWeap;
-			asWeap.nStat = psStats - asWeaponStats;
+			asWeap.stats = psStats;
 
 			// Assume we damaged the chosen target
 			damaged.push_back(closestCollisionObject);
@@ -887,9 +900,7 @@ void Projectile::proj_InFlightFunc()
 
 void Projectile::proj_ImpactFunc()
 {
-	int iAudioImpactID;
-	int relativeDamage;
-	Vector3i position, scatter;
+  Vector3i position;
 	std::unique_ptr<iIMDShape> imd;
 	SimpleObject* temp;
 
@@ -908,7 +919,7 @@ void Projectile::proj_ImpactFunc()
 			if (target != nullptr &&
           psStats->weaponSubClass == WEAPON_SUBCLASS::MACHINE_GUN
           && ONEINTHREE) {
-				iAudioImpactID = ID_SOUND_RICOCHET_1 + (rand() % 3);
+				auto iAudioImpactID = ID_SOUND_RICOCHET_1 + (rand() % 3);
         
 				audio_PlayStaticTrack(target->getPosition().x,
                               target->getPosition().y, 
@@ -921,7 +932,9 @@ void Projectile::proj_ImpactFunc()
                             psStats->iAudioImpactID);
 		}
 
-		/* Shouldn't need to do this check but the stats aren't all at a value yet... */ // FIXME
+		/** Shouldn't need to do this check but the stats aren't all
+		 * at a value yet...
+		 */ // FIXME
 		if (psStats->upgraded[getPlayer()].periodicalDamageRadius != 0 &&
         psStats->upgraded[getPlayer()].periodicalDamageTime != 0) {
 			position.x = getPosition().x;
@@ -940,7 +953,9 @@ void Projectile::proj_ImpactFunc()
 			position.x = getPosition().x;
 			position.z = getPosition().y; // z = y [sic] intentional
 			position.y = map_Height(position.x, position.z);
-			addEffect(&position, EFFECT_GROUP::SAT_LASER, EFFECT_TYPE::SAT_LASER_STANDARD, false, nullptr, 0, getTime());
+			addEffect(&position, EFFECT_GROUP::SAT_LASER,
+                EFFECT_TYPE::SAT_LASER_STANDARD,
+                false, nullptr, 0, getTime());
 
 			if (clipXY(getPosition().x, getPosition().y)) {
         // takes out lots of stuff so shake length is greater
@@ -955,13 +970,14 @@ void Projectile::proj_ImpactFunc()
                 psStats->upgraded[getPlayer()].periodicalDamageTime);
 	}
 
-	// Set the effects position and radius
+	// set the effects position and radius
 	position.x = getPosition().x;
 	position.z = getPosition().y; // z = y [sic] intentional
 	position.y = getPosition().z; // y = z [sic] intentional
-	scatter.x = psStats->upgraded[getPlayer()].radius;
-	scatter.y = 0;
-	scatter.z = psStats->upgraded[getPlayer()].radius;
+	auto x = psStats->upgraded[getPlayer()].radius;
+	auto y = 0;
+	auto z = psStats->upgraded[getPlayer()].radius;
+  auto scatter = Vector3i{x, y, z};
 
 	// If the projectile missed its target (or the target died)
 	if (target == nullptr) {
@@ -971,20 +987,22 @@ void Projectile::proj_ImpactFunc()
               ? EFFECT_TYPE::EXPLOSION_TYPE_SPECIFIED
               : EFFECT_TYPE::EXPLOSION_TYPE_NOT_FACING);
 
-			// The graphic to show depends on if we hit water or not
+			// the graphic to show depends on if we hit water or not
 			if (terrainType(mapTile(
               map_coord(getPosition().x),
               map_coord(getPosition().y))) == TER_WATER) {
 				imd = psStats->pWaterHitGraphic;
 			}
-			// We did not hit water, the regular miss graphic will do the trick
+			// we did not hit water, the regular miss graphic will do the trick
 			else {
-				imd = psStats->pTargetMissGraphic;
+				imd = std::make_unique<iIMDShape>(*psStats->pTargetMissGraphic);
 			}
 
-			addMultiEffect(&position, &scatter, EFFECT_GROUP::EXPLOSION,
-                     facing, true, imd.get(), psStats->numExplosions,
-			               psStats->lightWorld, psStats->effectSize, getTime());
+			addMultiEffect(&position, &scatter,
+                     EFFECT_GROUP::EXPLOSION,
+                     facing, true, imd.get(),
+                     psStats->numExplosions, psStats->lightWorld,
+                     psStats->effectSize, getTime());
 
 			// If the target was a VTOL hit in the air add smoke
 			if ((psStats->surfaceToAir & SHOOT_IN_AIR) && 
@@ -999,9 +1017,10 @@ void Projectile::proj_ImpactFunc()
 	else {
 		CHECK_OBJECT(target);
 
-		if (target->type == OBJ_FEATURE && 
-        ((Feature*)target)->getStats()->damageable == 0) {
-			debug(LOG_NEVER, "proj_ImpactFunc: trying to damage non-damageable target,projectile removed");
+		if (dynamic_cast<Feature*>(target) &&
+        dynamic_cast<Feature*>(target)->getStats()->damageable == 0) {
+			debug(LOG_NEVER, "proj_ImpactFunc: trying to damage "
+                       "non-damageable target, projectile removed");
 			state = PROJECTILE_STATE::INACTIVE;
 			return;
 		}
@@ -1012,7 +1031,7 @@ void Projectile::proj_ImpactFunc()
               ? EFFECT_TYPE::EXPLOSION_TYPE_SPECIFIED 
               : EFFECT_TYPE::EXPLOSION_TYPE_NOT_FACING);
 
-			// If we hit a VTOL with an AA gun use the miss graphic and add some smoke
+			// if we hit a VTOL with an AA gun use the miss graphic and add some smoke
 			if ((psStats->surfaceToAir & SHOOT_IN_AIR) && 
           !(psStats->surfaceToAir & SHOOT_ON_GROUND) && 
           psStats->weaponSubClass == WEAPON_SUBCLASS::AA_GUN) {
@@ -1024,7 +1043,7 @@ void Projectile::proj_ImpactFunc()
                        false, nullptr, 3,
                        0, 0, getTime());
 			}
-			// otherwise we just hit it plain and simple
+			// otherwise, we just hit it plain and simple
 			else {
 				imd = std::make_unique<iIMDShape>(*psStats->pTargetHitGraphic);
 			}
@@ -1036,32 +1055,24 @@ void Projectile::proj_ImpactFunc()
 
 		// check for electronic warfare damage where we know the subclass and source
 		if (proj_Direct(psStats) &&
-        psStats->weaponSubClass == WEAPON_SUBCLASS::ELECTRONIC &&
-        source) {
+        psStats->weaponSubClass == WEAPON_SUBCLASS::ELECTRONIC && source) {
 			// if we did enough `damage' to capture the target
 			if (electronicDamage(target,
 			                     calcDamage(
                                    weaponDamage(psStats, getPlayer()), 
                                    psStats->weaponEffect, target),
-			                     getPlayer())) {
-				switch (source->type) {
-				case OBJ_DROID:
-					((Droid*)source)->order.type = ORDER_TYPE::NONE;
-					actionDroid((Droid*)(source), ACTION::NONE);
-					break;
-
-				case OBJ_STRUCTURE:
-					((Structure*)source)->psTarget[0] = nullptr;
-					break;
-
-				// This is only here to prevent the compiler from producing
-				// warnings for unhandled enumeration values
-				default:
-					break;
-				}
+                           getPlayer())) {
+				if (auto psDroid = dynamic_cast<Droid*>(source)) {
+          psDroid->order.type = ORDER_TYPE::NONE;
+          actionDroid(psDroid, ACTION::NONE);
+        }
+        else if (auto psStruct = dynamic_cast<Structure*>(source)) {
+          OBJ_STRUCTURE:
+          psStruct->psTarget[0] = nullptr;
+        }
 			}
 		}
-		// Else it is just a regular weapon (direct or indirect)
+		// else it is just a regular weapon (direct or indirect)
 		else {
 			// Calculate the damage the weapon does to its target
 			auto damage = calcDamage(
@@ -1070,7 +1081,7 @@ void Projectile::proj_ImpactFunc()
                                       psStats->weaponEffect,
                                       target);
 
-			// If we are in a multi-player game and the attacker is our responsibility
+			// if we are in a multiplayer game and the attacker is our responsibility
 			if (bMultiPlayer && source) {
 				updateMultiStatsDamage(source->getPlayer(), 
                                target->getPlayer(), 
@@ -1092,10 +1103,10 @@ void Projectile::proj_ImpactFunc()
 			};
 
 			// Damage the object
-			relativeDamage = objectDamage(&sDamage);
+			auto relativeDamage = objectDamage(&sDamage);
 
-			if (relativeDamage >= 0) // So long as the target wasn't killed
-			{
+      // so long as the target wasn't killed
+			if (relativeDamage >= 0) {
 				damaged.push_back(target);
 			}
 		}
@@ -1741,5 +1752,22 @@ void Projectile::checkProjectile(const char* location_description,
 	for (auto n : damaged)
 	{
 		checkObject(n, location_description, function, recurse - 1);
+	}
+}
+
+void Projectile::setSource(::SimpleObject *psObj)
+{
+	// use the source of the source of psProj if psAttacker is a projectile
+	source = nullptr;
+	if (psObj == nullptr) {
+    return;
+  }
+	else if (auto psPrevProj = dynamic_cast<Projectile*>(psObj)) {
+		if (psPrevProj->source && !psPrevProj->source->died) {
+			source = psPrevProj->source;
+		}
+	}
+	else {
+		source = psObj;
 	}
 }

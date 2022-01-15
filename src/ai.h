@@ -95,34 +95,40 @@ bool validTarget(SimpleObject* psObject, SimpleObject* psTarget, int weapon_slot
 bool checkAnyWeaponsTarget(SimpleObject* psObject, SimpleObject* psTarget);
 
 // Check properties of the AllianceType enum.
-static inline bool alliancesFixed(int t)
+static inline bool alliancesFixed(ALLIANCE_TYPE t)
 {
+  using enum ALLIANCE_TYPE;
 	return t != ALLIANCES;
 }
 
-static inline bool alliancesSharedVision(int t)
+static inline bool alliancesSharedVision(ALLIANCE_TYPE t)
 {
+  using enum ALLIANCE_TYPE;
 	return t == ALLIANCES_TEAMS || t == ALLIANCES_UNSHARED;
 }
 
-static inline bool alliancesSharedResearch(int t)
+static inline bool alliancesSharedResearch(ALLIANCE_TYPE t)
 {
+  using enum ALLIANCE_TYPE;
 	return t == ALLIANCES || t == ALLIANCES_TEAMS;
 }
 
-static inline bool alliancesSetTeamsBeforeGame(int t)
+static inline bool alliancesSetTeamsBeforeGame(ALLIANCE_TYPE t)
 {
+  using enum ALLIANCE_TYPE;
 	return t == ALLIANCES_TEAMS || t == ALLIANCES_UNSHARED;
 }
 
-static inline bool alliancesCanGiveResearchAndRadar(int t)
+static inline bool alliancesCanGiveResearchAndRadar(ALLIANCE_TYPE t)
 {
+  using enum ALLIANCE_TYPE;
 	return t == ALLIANCES;
 }
 
-static inline bool alliancesCanGiveAnything(int t)
+static inline bool alliancesCanGiveAnything(ALLIANCE_TYPE t)
 {
-	return t != NO_ALLIANCES;
+  using enum ALLIANCE_TYPE;
+	return t != FFA;
 }
 
 #endif // __INCLUDED_SRC_AI_H__

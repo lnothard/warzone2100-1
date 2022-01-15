@@ -127,6 +127,6 @@ struct Spacetime
 
 int objectPositionSquareDiff(const Position& first, const Position& second);
 
-int objectPositionSquareDiff(const SimpleObject& first, const SimpleObject& second);
+int objectPositionSquareDiff(const SimpleObject* first, const SimpleObject* second);
 
 #endif // __INCLUDED_BASEDEF_H__
