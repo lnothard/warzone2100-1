@@ -26,11 +26,7 @@
 #ifndef __INCLUDED_SRC_OBJECTS_H__
 #define __INCLUDED_SRC_OBJECTS_H__
 
-#include "objectdef.h"
-#include "droid.h"
-#include "structure.h"
-#include "feature.h"
-#include "objmem.h"
+#include "basedef.h"
 
 /* Initialise the object system */
 bool objInitialise();

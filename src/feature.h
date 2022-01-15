@@ -26,10 +26,7 @@
 #ifndef __INCLUDED_SRC_FEATURE_H__
 #define __INCLUDED_SRC_FEATURE_H__
 
-#include "lib/framework/wzconfig.h"
-
-#include "basedef.h"
-#include "objectdef.h"
+#include "stats.h"
 
 enum class FEATURE_TYPE
 {

@@ -26,7 +26,7 @@
 #ifndef __INCLUDED_SRC_AI_H__
 #define __INCLUDED_SRC_AI_H__
 
-#include "weapondef.h"
+#include "weapon.h"
 
 struct SimpleObject;
 struct Droid;

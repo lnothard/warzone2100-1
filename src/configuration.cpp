@@ -466,7 +466,7 @@ bool loadConfig()
 	}
 	setFavoriteStructs(WzString::fromUtf8(iniGetString("favoriteStructs", "").value()));
 
-	video_backend gfxBackend;
+	VIDEO_BACKEND gfxBackend;
 	if (iniGeneral.has("gfxbackend"))
 	{
 		std::string gfxbackendStr = iniGetString("gfxbackend", "").value();

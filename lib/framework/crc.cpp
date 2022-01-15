@@ -243,14 +243,17 @@ EcKey::~EcKey()
 	clear();
 }
 
-EcKey &EcKey::operator =(EcKey const &b)
+EcKey &EcKey::operator =(EcKey const& b)
 {
+  if (&b == this) {
+    return *this;
+  }
 	clear();
 	vKey = b.vKey != nullptr ? new EC_KEY(*EC_KEY_CAST(b.vKey)) : nullptr;
 	return *this;
 }
 
-EcKey &EcKey::operator =(EcKey &&b)
+EcKey &EcKey::operator =(EcKey &&b) noexcept
 {
 	std::swap(vKey, b.vKey);
 	return *this;
@@ -277,7 +280,7 @@ EcKey::Sig EcKey::sign(void const *data, size_t dataLen) const
 	if (vKey == nullptr || EC_KEY_CAST(vKey)->privateKey.empty())
 	{
 		debug(LOG_ERROR, "No key");
-		return Sig();
+		return {};
 	}
 
 	Sig signature(currentSignatureSizeInBytes);
@@ -285,9 +288,9 @@ EcKey::Sig EcKey::sign(void const *data, size_t dataLen) const
 	if (dataLen > std::numeric_limits<unsigned long long>::max())
 	{
 		debug(LOG_ERROR, "Overflow. Data to sign has a greater length than supported. You should probably be hashing and signing the hash.");
-		return Sig();
+		return {};
 	}
-	unsigned long long uLLDataLen = (unsigned long long)dataLen;
+	auto uLLDataLen = (unsigned long long)dataLen;
 
 	auto privateKey = EC_KEY_CAST(vKey)->privateKey;
 
@@ -295,7 +298,7 @@ EcKey::Sig EcKey::sign(void const *data, size_t dataLen) const
 	if (signSuccess != 0)
 	{
 		debug(LOG_ERROR, "Creating a signature failed");
-		return Sig();
+		return {};
 	}
 
 	return signature;
@@ -338,7 +341,7 @@ EcKey::Key EcKey::toBytes(Privacy privacy) const
 	if (empty())
 	{
 		debugBacktrace(LOG_ERROR, "No key");
-		return Key();
+		return {};
 	}
 	assert(EC_KEY_CAST(vKey) != nullptr);
 	assert(EC_KEY_CAST(vKey)->publicKey.size() == crypto_sign_ed25519_PUBLICKEYBYTES);
@@ -352,7 +355,7 @@ EcKey::Key EcKey::toBytes(Privacy privacy) const
 		if (EC_KEY_CAST(vKey)->privateKey.size() != crypto_sign_ed25519_SECRETKEYBYTES)
 		{
 			debug(LOG_ERROR, "Failed to create external representation of private key");
-			return Key();
+			return {};
 		}
 
 		return EC_KEY_CAST(vKey)->privateKey;
@@ -360,7 +363,7 @@ EcKey::Key EcKey::toBytes(Privacy privacy) const
 	else
 	{
 		debug(LOG_FATAL, "Unsupported privacy level");
-		return Key();
+		return {};
 	}
 }
 
@@ -407,17 +410,15 @@ void EcKey::fromBytes(EcKey::Key const &key, EcKey::Privacy privacy)
 
 EcKey EcKey::generate()
 {
-	EC_KEY * key = new EC_KEY(EC_KEY::createAndReserveForCurve());
+	auto key = new EC_KEY(EC_KEY::createAndReserveForCurve());
 
-	int genResult = crypto_sign_ed25519_keypair(&(key->publicKey[0]), &(key->privateKey[0]));
-	if (genResult != 0)
-	{
+	auto genResult = crypto_sign_ed25519_keypair(&(key->publicKey[0]), &(key->privateKey[0]));
+	if (genResult != 0) {
 		// crypto_sign_ed25519_keypair failed
 		debug(LOG_ERROR, "Failed to generate key pair");
 		delete key;
-		return EcKey();
+		return {};
 	}
-
 	EcKey ret;
 	ret.vKey = (void *)key;
 	return ret;
@@ -426,13 +427,11 @@ EcKey EcKey::generate()
 std::string EcKey::publicHashString(size_t truncateToLength /*= 0*/) const
 {
 	auto bytes = toBytes(EcKey::Public);
-	if (bytes.empty())
-	{
+	if (bytes.empty()) {
 		return std::string{};
 	}
 	auto shaStr = sha256Sum(&bytes[0], bytes.size()).toString();
-	if (truncateToLength > 0 && truncateToLength < shaStr.length())
-	{
+	if (truncateToLength > 0 && truncateToLength < shaStr.length()) {
 		return shaStr.substr(0, truncateToLength);
 	}
 	return shaStr;

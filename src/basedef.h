@@ -29,10 +29,9 @@
 #include <array>
 #include <bitset>
 
-#include "lib/framework/vector.h"
-
 #include "baseobject.h"
-#include "displaydef.h"
+
+struct DisplayData;
 
 enum class OBJECT_FLAG
 {

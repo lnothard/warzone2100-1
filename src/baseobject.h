@@ -26,9 +26,6 @@
 #ifndef __INCLUDED_BASEOBJECT_H__
 #define __INCLUDED_BASEOBJECT_H__
 
-#include "lib/framework/types.h"
-#include "lib/framework/vector.h"
-
 class SimpleObject;
 struct StructureBounds;
 struct BaseStats;

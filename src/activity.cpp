@@ -21,16 +21,8 @@
  * @file activity.cpp
  */
 
-#include <algorithm>
-#include <memory>
-#include <mutex>
-#include <utility>
-
-#include "lib/framework/frame.h"
-#include "lib/framework/vector.h"
 #include <SQLiteCpp/SQLiteCpp.h>
 
-#include "ai.h"
 #include "activity.h"
 #include "challenge.h"
 #include "mission.h"

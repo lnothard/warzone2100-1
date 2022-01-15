@@ -864,7 +864,7 @@ bool ParseCommandLine(int argc, const char* const * argv)
 				{
 					qFatal("Unrecognised backend");
 				}
-				video_backend gfxBackend;
+				VIDEO_BACKEND gfxBackend;
 				if (video_backend_from_str(token, gfxBackend))
 				{
 					war_setGfxBackend(gfxBackend);

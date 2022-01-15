@@ -23,22 +23,7 @@
  * Object memory management functions
  */
 
-#include <cstring>
-
-#include "lib/framework/frame.h"
-#include "objects.h"
-#include "lib/gamelib/gtime.h"
-#include "lib/netplay/netplay.h"
-#include "hci.h"
-#include "map.h"
-#include "power.h"
-#include "objects.h"
-#include "mission.h"
-#include "structure.h"
-#include "droid.h"
-#include "mapgrid.h"
-#include "combat.h"
-#include "visibility.h"
+#include "objmem.h"
 #include "qtscript.h"
 
 // the initial value for the object ID

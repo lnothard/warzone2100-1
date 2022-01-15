@@ -20,16 +20,12 @@
 #ifndef __INCLUDED_QTSCRIPT_H__
 #define __INCLUDED_QTSCRIPT_H__
 
-#include "lib/framework/frame.h"
-#include "lib/netplay/netplay.h"
-#include "random.h"
-#include "wzapi.h"
-#include <chrono>
-#include <memory>
 #include <unordered_set>
-#include <unordered_map>
 
-class QString;
+#include "lib/netplay/netplay.h"
+
+#include "wzapi.h"
+
 class WzString;
 struct SimpleObject;
 struct Droid;
@@ -240,7 +236,7 @@ public:
 	public:
 		groupID newGroupID();
 		void insertObjectIntoGroup(const SimpleObject* psObj, groupID groupId);
-		inline const ObjectToGroupMap& map() const { return m_map; }
+		[[nodiscard]] inline const ObjectToGroupMap& map() const { return m_map; }
 		[[nodiscard]] size_t groupSize(groupID groupId) const;
 		optional<groupID> removeObjectFromGroup(const SimpleObject* psObj);
 		[[nodiscard]] std::vector<const SimpleObject*> getGroupObjects(groupID groupId) const;

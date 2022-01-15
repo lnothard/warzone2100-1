@@ -25,19 +25,14 @@
  * Alex M 19th - Jan. 1999
  */
 
-#include "lib/framework/frame.h"
 #include "lib/exceptionhandler/dumpinfo.h"
-#include "lib/netplay/netplay.h"
-#include "lib/framework/string_ext.h"
-#include "input/debugmappings.h"
 
-#include "display.h"
+#include "activity.h"
 #include "cheat.h"
+#include "display.h"
 #include "keybind.h"
-#include "multiplay.h"
 #include "qtscript.h"
 #include "template.h"
-#include "activity.h"
 
 struct CHEAT_ENTRY
 {

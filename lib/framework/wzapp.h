@@ -70,8 +70,8 @@ struct screeninfo
 };
 
 void wzMain(int &argc, char **argv);
-bool wzMainScreenSetup(optional<video_backend> backend, int antialiasing = 0, WINDOW_MODE fullscreen = WINDOW_MODE::windowed, int vsync = 1, bool highDPI = true);
-video_backend wzGetDefaultGfxBackendForCurrentSystem();
+bool wzMainScreenSetup(optional<VIDEO_BACKEND> backend, int antialiasing = 0, WINDOW_MODE fullscreen = WINDOW_MODE::windowed, int vsync = 1, bool highDPI = true);
+VIDEO_BACKEND wzGetDefaultGfxBackendForCurrentSystem();
 void wzGetGameToRendererScaleFactor(float *horizScaleFactor, float *vertScaleFactor);
 void wzMainEventLoop();
 void wzPumpEventsWhileLoading();
@@ -110,7 +110,7 @@ WZ_DECL_NONNULL(2, 3) void wzDisplayDialog(DialogType type, const char *title, c
 WzString wzGetPlatform();
 std::vector<screeninfo> wzAvailableResolutions();
 std::vector<unsigned int> wzAvailableDisplayScales();
-std::vector<video_backend> wzAvailableGfxBackends();
+std::vector<VIDEO_BACKEND> wzAvailableGfxBackends();
 WzString wzGetSelection();
 unsigned int wzGetCurrentKey();
 void wzDelay(unsigned int delay);	//delay in ms

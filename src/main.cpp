@@ -1572,7 +1572,7 @@ static std::string getDefaultLogFilePath(const char* platformDirSeparator)
 	return std::string("logs") + platformDirSeparator + defaultLogFileName;
 }
 
-static bool initializeCrashHandlingContext(optional<video_backend> gfxbackend)
+static bool initializeCrashHandlingContext(optional<VIDEO_BACKEND> gfxbackend)
 {
 	std::string gfxBackendString = "null backend";
 	if (gfxbackend.has_value())
@@ -1922,7 +1922,7 @@ int realmain(int argc, char* argv[])
 		}
 	}
 
-	optional<video_backend> gfxbackend;
+	optional<VIDEO_BACKEND> gfxbackend;
 	if (!headlessGameMode())
 	{
 		gfxbackend = war_getGfxBackend();

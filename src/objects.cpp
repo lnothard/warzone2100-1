@@ -23,10 +23,16 @@
  * The object system
  */
 
-
 #include "lib/framework/frame.h"
-#include "objects.h"
 
+#include "droid.h"
+#include "feature.h"
+#include "objects.h"
+#include "structure.h"
+
+class Droid;
+bool objmemInitialise();
+void objmemShutdown();
 
 /* Initialise the object system */
 bool objInitialise()

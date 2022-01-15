@@ -23,20 +23,15 @@
  * Handles atmospherics such as snow and rain
 */
 
-#include <cmath>
-
-#include "lib/framework/frame.h"
-#include "lib/gamelib/gtime.h"
-#include "lib/ivis_opengl/piematrix.h"
-#include "lib/ivis_opengl/piepalette.h"
 #include <glm/gtx/transform.hpp>
 
 #include "atmos.h"
 #include "display3d.h"
 #include "effects.h"
-#include "loop.h"
 #include "map.h"
 #include "miscimd.h"
+
+bool gamePaused();
 
 /* Roughly one per tile */
 #define	MAX_ATMOS_PARTICLES		(MAP_MAXWIDTH * MAP_MAXHEIGHT)

@@ -42,19 +42,10 @@
  *  stored in the `ExploredTile` 2D array of tiles.
  */
 
-#ifndef WZ_TESTING
-#include "lib/framework/frame.h"
 #include "astar.h"
 #include "map.h"
-#endif
 
-#include <algorithm>
-#include <list>
-#include <memory>
-#include <vector>
-
-#include "lib/netplay/netplay.h"
-#include "lib/gamelib/gtime.h"
+bool isHumanPlayer(unsigned);
 
 PathCoord::PathCoord(int x, int y)
   : x{x}, y{y}
@@ -241,16 +232,11 @@ bool PathContext::matches(PathBlockingMap& blocking, PathCoord start, NonBlockin
 /// Game time for all blocking maps in fpathBlockingMaps.
 static std::size_t fpathCurrentGameTime;
 
-void path_table_reset()
+void fpathHardTableReset()
 {
   path_contexts.clear();
   blocking_maps.clear();
 }
-//void fpathHardTableReset()
-//{
-//	fpathContexts.clear();
-//	fpathBlockingMaps.clear();
-//}
 
 PathNode get_best_node(std::vector<PathNode>& nodes)
 {
@@ -972,7 +958,7 @@ ASTAR_RESULT find_astar_route(Movement& movement, PathJob& path_job)
 //	return retval;
 //}
 
-void set_blocking_map(PathJob& path_job)
+void fpathSetBlockingMap(PathJob& path_job)
 {
 	if (fpathCurrentGameTime != gameTime)  {
 		// new tick, remove maps which are no longer needed.

@@ -23,6 +23,11 @@ namespace Impl
 		return hitPoints;
 	}
 
+  int Unit::getResistance() const
+  {
+    return resistance;
+  }
+
   void Unit::setHp(unsigned hp)
   {
     hitPoints = hp;

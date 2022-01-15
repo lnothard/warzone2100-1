@@ -6,6 +6,11 @@
 #ifndef WARZONE2100_UNIT_H
 #define WARZONE2100_UNIT_H
 
+#include "basedef.h"
+
+struct iIMDShape;
+class Weapon;
+
 static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
 
 static constexpr auto TURRET_ROTATION_RATE = 45;
@@ -19,24 +24,22 @@ class Unit : public virtual ::SimpleObject
 public:
 	~Unit() override = default;
 
-	Unit(const Unit&) = delete;
-	Unit(Unit&&) = delete;
-	Unit& operator=(const Unit&) = delete;
-	Unit& operator=(Unit&&) = delete;
+  [[nodiscard]] virtual const std::vector<Weapon>& getWeapons() const = 0;
+  [[nodiscard]] virtual const iIMDShape& getImdShape() const = 0;
+  [[nodiscard]] virtual unsigned getHp() const = 0;
+  [[nodiscard]] virtual const SimpleObject& getTarget(int weapon_slot) const = 0;
+  [[nodiscard]] virtual int getResistance() const = 0;
+  [[nodiscard]] virtual unsigned getOriginalHp() const = 0;
 
 	[[nodiscard]] virtual bool isAlive() const = 0;
 	[[nodiscard]] virtual bool isRadarDetector() const = 0;
 	virtual bool isValidTarget(const Unit* attacker, int weapon_slot) const = 0;
 	virtual uint8_t isTargetVisible(const SimpleObject* target, bool walls_block) const = 0;
-	[[nodiscard]] virtual unsigned getHp() const = 0;
 	[[nodiscard]] virtual unsigned calculateSensorRange() const = 0;
-	[[nodiscard]] virtual const std::vector<Weapon>& getWeapons() const = 0;
-	[[nodiscard]] virtual const iIMDShape& getImdShape() const = 0;
   [[nodiscard]] virtual bool isSelected() const noexcept = 0;
   virtual void alignTurret(int weapon_slot) = 0;
   virtual void updateExpectedDamage(unsigned damage, bool is_direct) noexcept = 0;
   [[nodiscard]] virtual int calculateAttackPriority(const Unit* target, int weapon_slot) const = 0;
-  [[nodiscard]] virtual const SimpleObject& getTarget(int weapon_slot) const = 0;
   [[nodiscard]] virtual bool hasCbSensor() const = 0;
   [[nodiscard]] virtual bool hasStandardSensor() const = 0;
   [[nodiscard]] virtual bool hasVtolInterceptSensor() const = 0;
@@ -55,9 +58,10 @@ namespace Impl
 	public:
 		Unit(unsigned id, unsigned player);
 
-    /* Accessors */
+    /************************** Accessors *************************/
 		[[nodiscard]] unsigned getHp() const noexcept final;
 		[[nodiscard]] const std::vector<Weapon>& getWeapons() const final;
+    [[nodiscard]] int getResistance() const final;
 
     void setHp(unsigned hp) final;
 
@@ -68,7 +72,11 @@ namespace Impl
 	private:
 		unsigned hitPoints = 0;
     bool selected = false;
-	protected:
+
+    /// Current resistance points, 0 = cannot be attacked electrically
+    int resistance = 0;
+
+  protected:
 		std::vector<Weapon> weapons;
 	};
 }

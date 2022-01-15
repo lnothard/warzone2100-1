@@ -284,7 +284,7 @@ bool recvDroidDisEmbark(NETQUEUE queue)
 // ////////////////////////////////////////////////////////////////////////////
 // Send a new Droid to the other players
 bool SendDroid(DroidTemplate* pTemplate, uint32_t x, uint32_t y, uint8_t player, uint32_t id,
-               const INITIAL_DROID_ORDERS* initialOrdersP)
+               const InitialOrders* initialOrdersP)
 {
 	if (!bMultiMessages)
 	{
@@ -335,7 +335,7 @@ bool SendDroid(DroidTemplate* pTemplate, uint32_t x, uint32_t y, uint8_t player,
 		NETbool(&haveInitialOrders);
 		if (haveInitialOrders)
 		{
-			INITIAL_DROID_ORDERS initialOrders = *initialOrdersP;
+			InitialOrders initialOrders = *initialOrdersP;
 			NETuint32_t(&initialOrders.secondaryOrder);
 			NETint32_t(&initialOrders.moveToX);
 			NETint32_t(&initialOrders.moveToY);
@@ -356,7 +356,7 @@ bool recvDroid(NETQUEUE queue)
 	uint32_t id = 0;
 	Position pos(0, 0, 0);
 	bool haveInitialOrders = false;
-	INITIAL_DROID_ORDERS initialOrders = {0, 0, 0, 0};
+	InitialOrders initialOrders = {0, 0, 0, 0};
 
 	NETbeginDecode(queue, GAME_DEBUG_ADD_DROID);
 	{

@@ -26,9 +26,6 @@
 #ifndef __INCLUDED_SRC_ACTION_H__
 #define __INCLUDED_SRC_ACTION_H__
 
-#include "lib/gamelib/gtime.h"
-
-#include "droid.h"
 #include "map.h"
 
 /* Attack run distances */

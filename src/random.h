@@ -28,7 +28,7 @@
 class MersenneTwister
 {
 public:
-	MersenneTwister(uint32_t seed = 42);
+	explicit MersenneTwister(uint32_t seed = 42);
 	uint32_t u32(); ///< Generates a random number in the interval [0...UINT32_MAX].
 
 private:

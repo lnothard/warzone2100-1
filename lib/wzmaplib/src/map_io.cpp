@@ -325,7 +325,7 @@ bool StdIOProvider::loadFullFile(const std::string& filename, std::vector<char>&
 	return true;
 }
 
-bool StdIOProvider::writeFullFile(const std::string& filename, const char *ppFileData, uint32_t fileSize)
+bool StdIOProvider::writeFullFile(const std::string& filename, const char *ppFileData, size_t fileSize)
 {
 	auto pStream = openBinaryStream(filename, BinaryIOStream::OpenMode::WRITE);
 	if (!pStream)
@@ -333,8 +333,7 @@ bool StdIOProvider::writeFullFile(const std::string& filename, const char *ppFil
 		return false;
 	}
 	optional<size_t> bytesWritten = pStream->writeBytes(ppFileData, fileSize);
-	if (!bytesWritten.has_value())
-	{
+	if (!bytesWritten.has_value()) {
 		// failed writing
 		return false;
 	}

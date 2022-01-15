@@ -30,6 +30,12 @@ static constexpr auto GRADIENT_MULTIPLIER = 10000;
 static constexpr auto VIS_LEVEL_INC = 255 * 2;
 static constexpr auto VIS_LEVEL_DEC = 50;
 
+// Trivial upper bound to what a fully upgraded WSS can use
+// (its number of angles). Should probably be some factor times
+// the maximum possible radius. Is probably a lot more than needed.
+// Tested to need at least 180.
+static constexpr auto MAX_WAVECAST_LIST_SIZE = 1360;
+
 enum class SENSOR_CLASS
 {
     VISION,
@@ -55,7 +61,7 @@ struct Spotter
     unsigned id;
 };
 
-static std::vector<Spotter> apsInvisibleViewers;
+static std::vector<std::unique_ptr<Spotter>> apsInvisibleViewers;
 
 struct VisibleObjectHelp_t
 {
@@ -110,48 +116,17 @@ void visRemoveVisibilityOffWorld(SimpleObject* psObj);
 void visRemoveVisibility(SimpleObject* psObj);
 
 // fast test for whether obj2 is in range of obj1
-static inline bool visObjInRange(SimpleObject* psObj1, SimpleObject* psObj2, int range)
-{
-	auto xdiff = psObj1->getPosition().x - psObj2->getPosition().x;
-  auto ydiff = psObj1->getPosition().y - psObj2->getPosition().y;
-
-	return abs(xdiff) <= range && abs(ydiff) <= range && xdiff * xdiff + ydiff * ydiff <= range;
-}
+static bool visObjInRange(SimpleObject* psObj1, SimpleObject* psObj2, int range);
 
 // If we have ECM, use this for range instead. Otherwise, the sensor's range will be used for
 // jamming range, which we do not want. Rather limit ECM unit sensor range to jammer range.
-static inline int objSensorRange(const SimpleObject* psObj)
-{
-	if (psObj->type == OBJ_DROID) {
-		const auto ecmrange = asECMStats[((const Droid*)psObj)->asBits[COMP_ECM]].upgrade[psObj->getPlayer()].range;
-		if (ecmrange > 0) {
-			return ecmrange;
-		}
-		return asSensorStats[((const Droid*)psObj)->asBits[COMP_SENSOR]].upgrade[psObj->getPlayer()].range;
-	}
-	else if (psObj->type == OBJ_STRUCTURE) {
-		const auto ecmrange = ((const Structure*)psObj)->pStructureType->pECM->upgrade[psObj->getPlayer()].range;
-		if (ecmrange) {
-			return ecmrange;
-		}
-		return ((const Structure*)psObj)->pStructureType->pSensor->upgrade[psObj->player].range;
-	}
-	return 0;
-}
+static unsigned objSensorRange(const SimpleObject* psObj);
 
-static inline int objJammerPower(const SimpleObject* psObj)
-{
-	if (auto as_droid = dynamic_cast<const Droid*>(psObj))  {
-		return asECMStats[as_droid->asBits[COMP_ECM]].upgraded[psObj->getPlayer()].range;
-	} else if (psObj->type == Structure)  {
-		return psObj->stats->ecm_stats->upgraded_stats[psObj->getPlayer()].range;
-	}
-	return 0;
-}
+static unsigned objJammerPower(const SimpleObject* psObj);
 
 void removeSpotters();
 
-bool removeSpotter(unsigned id);
+void removeSpotter(unsigned id);
 
 unsigned addSpotter(int x, int y, unsigned player, int radius,
                     bool radar, std::size_t expiry = 0);

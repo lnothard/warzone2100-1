@@ -22,6 +22,8 @@
  * @file droid.cpp
  */
 
+#include <queue>
+
 #include "lib/framework/math_ext.h"
 #include "lib/framework/strres.h"
 #include "lib/ivis_opengl/ivisdef.h"
@@ -49,6 +51,7 @@
 #include "qtscript.h"
 #include "mapgrid.h"
 #include "combat.h"
+#include "component.h"
 
 // the structure that was last hit
 Droid* psLastDroidHit;
@@ -128,6 +131,16 @@ namespace Impl
 
     ACTION Droid::getAction() const noexcept {
       return action;
+    }
+
+    const std::string &Droid::getName() const
+    {
+      return name;
+    }
+
+    unsigned Droid::getWeight() const
+    {
+      return weight;
     }
 
     const Order& Droid::getOrder() const {
@@ -5663,7 +5676,7 @@ void _syncDebugDroid(const char* function, Droid const* psDroid, char ch)
           psDroid->getOrder().pos.y,
           psDroid->listSize,
           (int)psDroid->getAction(),
-          (int)psDroid->secondaryOrder,
+          (int)psDroid->getSecondaryOrder(),
           (int)psDroid->getHp(),
           (int)psDroid->getMovementData().status,
           psDroid->getMovementData().speed,
@@ -6178,7 +6191,7 @@ unsigned calcDroidPower(const Droid* psDroid)
 
 
 std::unique_ptr<Droid> buildDroid(DroidTemplate* pTemplate, unsigned x, unsigned y, unsigned player, bool onMission,
-                  const INITIAL_DROID_ORDERS* initialOrders, Rotation rot)
+                                  const InitialOrders* initialOrders, Rotation rot)
 {
 	ASSERT_OR_RETURN(nullptr, player < MAX_PLAYERS, "invalid player?: %" PRIu32 "", player);
 	// ajl. droid will be created, so inform others
@@ -6923,7 +6936,7 @@ bool pickATileGenThreat(unsigned* x, unsigned* y, UBYTE numIterations, SDWORD th
 }
 
 /// find a tile for a wheeled droid with only one other droid present
-PICKTILE pickHalfATile(unsigned* x, unsigned* y, UBYTE numIterations)
+PICK_TILE pickHalfATile(unsigned* x, unsigned* y, UBYTE numIterations)
 {
 	return pickATileGen(x, y, numIterations, canFitDroid) ? FREE_TILE : NO_FREE_TILE;
 }
@@ -7818,4 +7831,103 @@ bool tile_occupied_by_droid(unsigned x, unsigned y)
     }
   }
   return false;
+}
+
+static void _setDroidBase(Droid* psDroid, Structure* psNewBase, int line, const char* func)
+{
+  psDroid->associatedStructure = psNewBase;
+  ASSERT(psNewBase == nullptr ||
+         !psNewBase->died,
+         "setDroidBase: Set dead target");
+
+  #ifdef DEBUG
+    psDroid->baseLine = line;
+  	sstrcpy(psDroid->baseFunc, func);
+  #else
+  // Prevent warnings about unused parameters
+  (void)line;
+  (void)func;
+  #endif
+}
+
+static void setSaveDroidTarget(Droid* psSaveDroid, SimpleObject* psNewTarget)
+{
+  psSaveDroid->order->target = psNewTarget;
+  #ifdef DEBUG
+    psSaveDroid->targetLine = 0;
+  	sstrcpy(psSaveDroid->targetFunc, "savegame");
+  #endif
+}
+
+static void setSaveDroidActionTarget(Droid* psSaveDroid, SimpleObject* psNewTarget, UWORD idx)
+{
+  psSaveDroid->actionTarget[idx] = psNewTarget;
+  #ifdef DEBUG
+    psSaveDroid->actionTargetLine[idx] = 0;
+  	sstrcpy(psSaveDroid->actionTargetFunc[idx], "savegame");
+  #endif
+}
+
+static void setSaveDroidBase(Droid* psSaveDroid, Structure* psNewBase)
+{
+  psSaveDroid->associatedStructure = psNewBase;
+  #ifdef DEBUG
+    psSaveDroid->baseLine = 0;
+  	sstrcpy(psSaveDroid->baseFunc, "savegame");
+  #endif
+}
+
+static void _setDroidActionTarget(Droid* psDroid, SimpleObject* psNewTarget,
+                                  uint16_t idx, int line, const char* func)
+{
+  psDroid->actionTarget[idx] = psNewTarget;
+
+  ASSERT(psNewTarget == nullptr || !psNewTarget->died ||
+         (psNewTarget->died == NOT_CURRENT_LIST &&
+          psDroid->died == NOT_CURRENT_LIST),
+         "setDroidActionTarget: Set dead target");
+
+  #ifdef DEBUG
+    psDroid->actionTargetLine[idx] = line;
+  	sstrcpy(psDroid->actionTargetFunc[idx], func);
+  #else
+  // Prevent warnings about unused parameters
+  (void)line;
+  (void)func;
+  #endif
+}
+
+static void _setDroidTarget(Droid* psDroid, SimpleObject* psNewTarget,
+                            int line, const char* func)
+{
+  psDroid->order->target = psNewTarget;
+  ASSERT(psNewTarget == nullptr || !psNewTarget->died,
+         "setDroidTarget: Set dead target");
+
+  ASSERT(psNewTarget == nullptr || !psNewTarget->died ||
+         (psNewTarget->died == NOT_CURRENT_LIST &&
+          psDroid->died == NOT_CURRENT_LIST),
+         "setDroidTarget: Set dead target");
+
+  #ifdef DEBUG
+    psDroid->targetLine = line;
+  	sstrcpy(psDroid->targetFunc, func);
+  #else
+  // Prevent warnings about unused parameters
+  (void)line;
+  (void)func;
+  #endif
+}
+
+static unsigned droidSensorRange(const Droid* psDroid)
+{
+  return objSensorRange(psDroid);
+}
+
+static Rotation getInterpolatedWeaponRotation(const Droid* psDroid, int weaponSlot, unsigned time)
+{
+  return interpolateRot(psDroid->getWeapons()[weaponSlot].previousRotation,
+                        psDroid->getWeapons()[weaponSlot].getRotation(),
+                        psDroid->previousLocation.time,
+                        psDroid->getTime(), time);
 }

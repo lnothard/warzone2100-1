@@ -21,8 +21,6 @@
 #ifndef __INCLUDED_SRC_SELECTION_H__
 #define __INCLUDED_SRC_SELECTION_H__
 
-#include "statsdef.h"
-
 enum SELECTION_CLASS
 {
 	DS_ALL_UNITS,

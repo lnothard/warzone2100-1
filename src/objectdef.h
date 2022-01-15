@@ -29,7 +29,7 @@
 #include "movedef.h"
 #include "statsdef.h"
 #include "researchdef.h"
-#include "weapondef.h"
+#include "weapon.h"
 
 #include "basedef.h"
 #include "droiddef.h"

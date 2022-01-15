@@ -35,6 +35,10 @@ using nonstd::nullopt;
 #include "terrain_type.h"
 #include "map_terrain_types.h"
 
+class Droid;
+class Feature;
+class Structure;
+
 // MARK: - Various defines needed by both maplib and the game's map-handling code
 
 #define MAP_MAXWIDTH	256

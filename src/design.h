@@ -25,8 +25,6 @@
 #ifndef __INCLUDED_SRC_DESIGN_H__
 #define __INCLUDED_SRC_DESIGN_H__
 
-#include "lib/widget/widgbase.h"
-
 /* Design screen ID's */
 static constexpr auto IDDES_FORM = 5000; // The base form for the design screen
 static constexpr auto IDDES_STATSFORM = 5001; // The design screen stats form

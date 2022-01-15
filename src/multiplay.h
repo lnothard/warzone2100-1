@@ -50,7 +50,7 @@ struct SimpleObject;
 struct Droid;
 struct DroidTemplate;
 struct Feature;
-struct INITIAL_DROID_ORDERS;
+struct InitialOrders;
 struct Structure;
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -260,7 +260,7 @@ void sendStructureInfo(Structure* psStruct, STRUCTURE_INFO structureInfo, DroidT
 
 // droids . multibot
 bool SendDroid(DroidTemplate* pTemplate, uint32_t x, uint32_t y, uint8_t player, uint32_t id,
-               const INITIAL_DROID_ORDERS* initialOrders);
+               const InitialOrders* initialOrders);
 bool SendDestroyDroid(const Droid* psDroid);
 void sendQueuedDroidInfo(); ///< Actually sends the droid orders which were queued by SendDroidInfo.
 void sendDroidInfo(Droid* psDroid, Order const& order, bool add);

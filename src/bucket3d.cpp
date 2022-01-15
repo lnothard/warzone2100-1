@@ -25,8 +25,6 @@
  * after bucket sorting objects
  */
 
-#include "lib/framework/frame.h"
-#include "lib/framework/vector.h"
 #include "lib/ivis_opengl/piematrix.h"
 #include "lib/ivis_opengl/pieclip.h"
 
@@ -36,8 +34,6 @@
 #include "display3d.h"
 #include "effects.h"
 #include "miscimd.h"
-
-#include <algorithm>
 
 #define CLIP_LEFT	((SDWORD)0)
 #define CLIP_RIGHT	((SDWORD)pie_GetVideoBufferWidth())

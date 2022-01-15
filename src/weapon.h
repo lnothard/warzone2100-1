@@ -26,8 +26,7 @@
 #ifndef __INCLUDED_WEAPONDEF_H__
 #define __INCLUDED_WEAPONDEF_H__
 
-#include "basedef.h"
-#include "stats.h"
+enum class WEAPON_SUBCLASS;
 
 /// Maximum difference in direction for a fixed turret to fire
 static constexpr auto FIXED_TURRET_DIR = DEG(1);
@@ -52,11 +51,7 @@ enum class TARGET_ORIGIN
 class Weapon : public virtual SimpleObject, public Impl::SimpleObject
 {
 public:
-  [[nodiscard]] bool hasAmmo() const;
-  [[nodiscard]] bool hasFullAmmo() const noexcept;
-  [[nodiscard]] bool isArtillery() const noexcept;
-  [[nodiscard]] bool isVtolWeapon() const;
-  [[nodiscard]] bool isEmptyVtolWeapon(unsigned player) const;
+  /* Accessors */
   [[nodiscard]] const WeaponStats& getStats() const;
   [[nodiscard]] unsigned getRecoil() const;
   [[nodiscard]] unsigned getMaxRange(unsigned player) const;
@@ -69,6 +64,13 @@ public:
   [[nodiscard]] const iIMDShape& getImdShape() const;
   [[nodiscard]] const iIMDShape& getMountGraphic() const;
   [[nodiscard]] WEAPON_SUBCLASS getSubclass() const;
+  [[nodiscard]] TARGET_ORIGIN getTargetOrigin() const;
+
+  [[nodiscard]] bool hasAmmo() const;
+  [[nodiscard]] bool hasFullAmmo() const noexcept;
+  [[nodiscard]] bool isArtillery() const noexcept;
+  [[nodiscard]] bool isVtolWeapon() const;
+  [[nodiscard]] bool isEmptyVtolWeapon(unsigned player) const;
   [[nodiscard]] unsigned calculateRateOfFire(unsigned player) const;
 private:
   using enum TARGET_ORIGIN;

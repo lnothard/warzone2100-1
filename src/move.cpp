@@ -1669,7 +1669,7 @@ bool moveCheckDroidMovingAndVisible(void* psObj)
 static void movePlayDroidMoveAudio(Droid* psDroid)
 {
 	int iAudioID = NO_SOUND;
-	PROPULSION_TYPES* psPropType;
+	Propulsion* psPropType;
 	UBYTE iPropType = 0;
 
 	ASSERT_OR_RETURN(, psDroid != nullptr, "Unit pointer invalid");
@@ -1725,7 +1725,7 @@ static void movePlayAudio(Droid* psDroid, bool bStarted, bool bStoppedBefore, in
 {
 	PROPULSION_TYPE propType;
 	PropulsionStats* psPropStats;
-	PROPULSION_TYPES* psPropType;
+	Propulsion* psPropType;
 	bool bStoppedNow;
 	int iAudioID = NO_SOUND;
 	AUDIO_CALLBACK pAudioCallback = nullptr;

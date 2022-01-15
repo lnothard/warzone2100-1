@@ -29,6 +29,7 @@
 #include "feature.h"
 #include "intdisplay.h"
 #include "map.h"
+#include "visibility.h"
 
 static inline uint16_t interpolateAngle(uint16_t v1, uint16_t v2, unsigned t1, unsigned t2, unsigned t)
 {
@@ -98,7 +99,7 @@ SimpleObject::~SimpleObject()
 //	return visible[selectedPlayer];
 //}
 
-void checkObject(const SIMPLE_OBJECT* psObject, const char* const location_description, const char* function,
+void checkObject(const SimpleObject* psObject, const char* const location_description, const char* function,
                  const int recurse)
 {
 	if (recurse < 0) {
@@ -130,7 +131,7 @@ void checkObject(const SIMPLE_OBJECT* psObject, const char* const location_descr
 	}
 }
 
-void _syncDebugObject(const char* function, SIMPLE_OBJECT const* psObject, char ch)
+void _syncDebugObject(const char* function, SimpleObject const* psObject, char ch)
 {
 	switch (psObject->type)
 	{
@@ -140,7 +141,7 @@ void _syncDebugObject(const char* function, SIMPLE_OBJECT const* psObject, char 
 		break;
 	case OBJ_FEATURE: _syncDebugFeature(function, (const Feature*)psObject, ch);
 		break;
-	case OBJ_PROJECTILE: _syncDebugProjectile(function, (const Projectile*)psObject, ch);
+	case OBJ_PROJECTILE: dynamic_cast<const Projectile*>(psObject)->debug_(function, ch);
 		break;
 	default: _syncDebug(function, "%c unidentified_object%d = p%d;objectType%d", ch, psObject->id, psObject->player,
 	                    psObject->type);
@@ -152,12 +153,10 @@ void _syncDebugObject(const char* function, SIMPLE_OBJECT const* psObject, char 
 
 Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 {
-	if (StatIsStructure(pType))
-	{
+	if (StatIsStructure(pType)) {
 		return static_cast<StructureStats const*>(pType)->size(direction);
 	}
-	else if (StatIsFeature(pType))
-	{
+	else if (StatIsFeature(pType)) {
 		return dynamic_cast<FeatureStats const*>(pType)->size();
 	}
 	return {1, 1};
@@ -165,8 +164,8 @@ Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 
 StructureBounds getStructureBounds(SimpleObject const* object)
 {
-	Structure const* psStructure = castStructure(object);
-	Feature const* psFeature = castFeature(object);
+	auto const psStructure = dynamic_cast<const Structure*>(object);
+	auto const psFeature = dynamic_cast<const Feature*>(object);
 
 	if (psStructure != nullptr) {
 		return getStructureBounds(psStructure);

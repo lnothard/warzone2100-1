@@ -61,7 +61,7 @@ struct WARZONE_GLOBALS
 	int radarZoom = DEFAULT_RADARZOOM;
 	int cameraSpeed = CAMERASPEED_DEFAULT;
 	bool radarJump = false;
-	video_backend gfxBackend = video_backend::opengl; // the actual default value is determined in loadConfig()
+	VIDEO_BACKEND gfxBackend = VIDEO_BACKEND::opengl; // the actual default value is determined in loadConfig()
 	JS_BACKEND jsBackend = (JS_BACKEND)0;
 	bool autoAdjustDisplayScale = true;
 	int autoLagKickSeconds = 60;
@@ -378,12 +378,12 @@ void war_SetRadarJump(bool radarJump)
 	ActivityManager::instance().changedSetting("radarJump", std::to_string(radarJump));
 }
 
-video_backend war_getGfxBackend()
+VIDEO_BACKEND war_getGfxBackend()
 {
 	return warGlobs.gfxBackend;
 }
 
-void war_setGfxBackend(video_backend backend)
+void war_setGfxBackend(VIDEO_BACKEND backend)
 {
 	warGlobs.gfxBackend = backend;
 }

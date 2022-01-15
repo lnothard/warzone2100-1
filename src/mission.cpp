@@ -911,7 +911,7 @@ void placeLimboDroids()
 {
 	Droid *psDroid, *psNext;
 	UDWORD droidX, droidY;
-	PICKTILE pickRes;
+	PICK_TILE pickRes;
 
 	debug(LOG_SAVE, "called");
 
@@ -1245,7 +1245,7 @@ static void processMission()
 	Droid* psNext;
 	Droid* psDroid;
 	UDWORD droidX, droidY;
-	PICKTILE pickRes;
+	PICK_TILE pickRes;
 
 	ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer %" PRIu32 " exceeds MAX_PLAYERS", selectedPlayer);
 
@@ -1599,7 +1599,7 @@ static void missionResetDroids()
 			//find a location next to the factory
 			if (psFactory)
 			{
-				PICKTILE pickRes;
+				PICK_TILE pickRes;
 				UDWORD x, y;
 
 				// Use factory DP if one
@@ -1636,7 +1636,7 @@ static void missionResetDroids()
 					{
 						UDWORD x = map_coord(psStruct->getPosition().x);
 						UDWORD y = map_coord(psStruct->getPosition().y);
-						PICKTILE pickRes = pickHalfATile(&x, &y, LOOK_FOR_EMPTY_TILE);
+						PICK_TILE pickRes = pickHalfATile(&x, &y, LOOK_FOR_EMPTY_TILE);
 
 						if (pickRes == NO_FREE_TILE)
 						{

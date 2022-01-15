@@ -23,20 +23,9 @@
  * Function definitions for command droids
  */
 
-#include <cstring>
-
-#include "lib/framework/frame.h"
-#include "lib/sound/audio.h"
-#include "lib/sound/audio_id.h"
-
 #include "cmddroid.h"
 #include "console.h"
-#include "droid.h"
-#include "group.h"
-#include "objects.h"
 #include "objmem.h"
-#include "order.h"
-#include "lib/gamelib/gtime.h"
 
 /// This global instance is responsible for dealing with each
 /// player's target designator

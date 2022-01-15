@@ -18,47 +18,27 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include <algorithm>
-#include <cstring>
-#include <functional>
-
-#include "lib/framework/frame.h"
-#include "lib/framework/trig.h"
-#include "lib/framework/fixedpoint.h"
 #include "lib/framework/math_ext.h"
 #include "lib/gamelib/gtime.h"
+#include "lib/ivis_opengl/ivisdef.h"
+#include "lib/netplay/netplay.h"
 #include "lib/sound/audio_id.h"
 #include "lib/sound/audio.h"
-#include "lib/ivis_opengl/ivisdef.h"
-#include "lib/ivis_opengl/piestate.h"
-#include "lib/ivis_opengl/piematrix.h"
 
-#include "objects.h"
-#include "move.h"
-#include "action.h"
 #include "combat.h"
+#include "display3d.h"
 #include "effects.h"
 #include "map.h"
-#include "order.h"
-#include "projectile.h"
-#include "visibility.h"
-#include "group.h"
-#include "cmddroid.h"
-#include "feature.h"
-#include "loop.h"
-#include "scores.h"
-#include "display.h"
-#include "multiplay.h"
-#include "multistat.h"
 #include "mapgrid.h"
+#include "multistat.h"
+#include "projectile.h"
 #include "random.h"
-#include "display3d.h"
-
-#ifndef GLM_ENABLE_EXPERIMENTAL
-#define GLM_ENABLE_EXPERIMENTAL
-#endif
+#include "scores.h"
+#include "visibility.h"
 
 #include <glm/gtx/transform.hpp>
+
+bool GamePaused();
 
 Projectile::Projectile(unsigned id, unsigned player)
   : SimpleObject(id, player)

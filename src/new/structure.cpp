@@ -2,8 +2,6 @@
 // Created by luna on 08/12/2021.
 //
 
-#include "map.h"
-#include "power.h"
 #include "structure.h"
 
 //StructureBounds::StructureBounds()
@@ -34,8 +32,8 @@
 //         type == RESEARCH_MODULE;
 //}
 
-namespace Impl {
-
+namespace Impl
+{
   Structure::Structure(unsigned id, unsigned player)
     : Unit(id, player)
 	{

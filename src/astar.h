@@ -26,10 +26,11 @@
 #ifndef __INCLUDED_SRC_ASTAR_H__
 #define __INCLUDED_SRC_ASTAR_H__
 
-#include "lib/framework/vector.h"
+#include <vector>
 
 #include "fpath.h"
-#include "structure.h"
+
+struct StructureBounds;
 
 /**
  * Conversion table from direction to offset
@@ -220,7 +221,7 @@ extern std::vector<PathContext> path_contexts;
  * Call from the main thread. Sets `path_job.blocking_map` for later use by
  * the pathfinding thread, generating the required map if not already generated.
  */
-void set_blocking_map(PathJob& path_job);
+void fpathSetBlockingMap(PathJob& path_job);
 
 /**
  * Clear the global path contexts and blocking maps
@@ -228,7 +229,7 @@ void set_blocking_map(PathJob& path_job);
  * @note Call this on shutdown to prevent memory from leaking,
  * or if loading/saving, to prevent stale data from being reused.
  */
-void path_table_reset();
+void fpathHardTableReset();
 
 /// Finds the current best node, and removes it from the node heap
 PathNode get_best_node(std::vector<PathNode>& nodes);

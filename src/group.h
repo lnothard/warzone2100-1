@@ -101,6 +101,6 @@ void grpShutDown();
 std::unique_ptr<Group> grpCreate(unsigned id = -1);
 
 /// Lookup group by its unique id, or create it if not found
-Group* grpFind(unsigned id);
+std::unique_ptr<Group> grpFind(unsigned id);
 
 #endif // __INCLUDED_SRC_GROUP_H__

@@ -27,7 +27,6 @@
 
 #include "display.h"
 
-#include <memory>
 #include "loop.h"
 #include "display3d.h"
 #include "edit3d.h"
@@ -48,7 +47,6 @@
 #include "warzoneconfig.h"
 #include "animation.h"
 #include "mapgrid.h"
-#include "visibility.h"
 
 InputManager gInputManager;
 KeyFunctionConfiguration gKeyFuncConfig;

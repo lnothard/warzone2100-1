@@ -2,7 +2,12 @@
 // Created by luna on 08/12/2021.
 //
 
+#include "lib/framework/vector.h"
+
 #include "basedef.h"
+
+// forward declaration (declared in display.h)
+bool godMode;
 
 Spacetime::Spacetime(std::size_t time, Position position, Rotation rotation)
 	: time{time}, position{position}, rotation{rotation}
@@ -88,7 +93,7 @@ namespace Impl
 
   uint8_t SimpleObject::visibleToPlayer(unsigned watcher) const
   {
-    if (god_mode) {
+    if (godMode) {
       return UBYTE_MAX;
     }
     if (watcher >= MAX_PLAYERS) {

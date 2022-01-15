@@ -1652,8 +1652,7 @@ namespace Impl
         }
         if (psDroid->getAction() == ACTION::WAIT_DURING_REARM &&
             psDroid->getMovementData().status == MOVE_STATUS::INACTIVE) {
-          if (psReArmPad->timeStarted == ACTION_START_TIME)
-          {
+          if (psReArmPad->timeStarted == ACTION_START_TIME) {
             //set the time started and last updated
             psReArmPad->timeStarted = gameTime;
             psReArmPad->timeLastUpdated = gameTime;
@@ -1662,30 +1661,30 @@ namespace Impl
                                  GAME_TICKS_PER_SEC;
           pointsAlreadyAdded = getBuildingRearmPoints(this) * (psReArmPad->timeLastUpdated - psReArmPad->
                   timeStarted) / GAME_TICKS_PER_SEC;
-          if (pointsToAdd >= psDroid->weight) // amount required is a factor of the droid weight
+          if (pointsToAdd >= psDroid->getWeight()) // amount required is a factor of the droid weight
           {
             // We should be fully loaded by now.
-            for (unsigned i = 0; i < psDroid->numWeaps; i++)
+            for (auto i = 0; i < numWeapons(*psDroid); i++)
             {
               // set rearm value to no runs made
               psDroid->asWeaps[i].ammoUsed = 0;
-              psDroid->asWeaps[i].ammo = asWeaponStats[psDroid->asWeaps[i].nStat].upgraded[psDroid->getPlayer()].
-                      numRounds;
+              psDroid->asWeaps[i].ammo = psDroid->getWeapons()[i].getStats().upgraded[psDroid->getPlayer()].numRounds;
               psDroid->asWeaps[i].timeLastFired = 0;
             }
             objTrace(psDroid->getId(), "fully loaded");
           }
           else {
-            for (unsigned i = 0; i < psDroid->numWeaps; i++) // rearm one weapon at a time
+            for (unsigned i = 0; i < numWeapons(*psDroid); i++) // rearm one weapon at a time
             {
               // Make sure it's a rearmable weapon (and so we don't divide by zero)
-              if (psDroid->asWeaps[i].ammoUsed > 0 && asWeaponStats[psDroid->asWeaps[i].nStat].upgraded[psDroid
+              if (psDroid->getWeapons()[i].ammoUsed > 0 &&
+                  psDroid->getWeapons()[i].getStats().upgraded[psDroid
                       ->getPlayer()].numRounds > 0) {
                 // Do not "simplify" this formula.
                 // It is written this way to prevent rounding errors.
-                int ammoToAddThisTime =
-                        pointsToAdd * getNumAttackRuns(psDroid, i) / psDroid->weight -
-                        pointsAlreadyAdded * getNumAttackRuns(psDroid, i) / psDroid->weight;
+                auto ammoToAddThisTime =
+                        pointsToAdd * getNumAttackRuns(psDroid, i) / psDroid->getWeight() -
+                        pointsAlreadyAdded * getNumAttackRuns(psDroid, i) / psDroid->getWeight();
                 psDroid->asWeaps[i].ammoUsed -= std::min<unsigned>(
                         ammoToAddThisTime, psDroid->asWeaps[i].ammoUsed);
                 if (ammoToAddThisTime) {
@@ -1698,11 +1697,11 @@ namespace Impl
               }
             }
           }
-          if (psDroid->getHp() < psDroid->originalHp) // do repairs
+          if (psDroid->getHp() < psDroid->getOriginalHp()) // do repairs
           {
             psDroid->setHp(psDroid->getHp() + gameTimeAdjustedAverage(getBuildingRepairPoints(this)));
-            if (psDroid->getHp() >= psDroid->originalHp) {
-              psDroid->setHp(psDroid->originalHp);
+            if (psDroid->getHp() >= psDroid->getOriginalHp()) {
+              psDroid->setHp(psDroid->getOriginalHp());
             }
           }
           psReArmPad->timeLastUpdated = gameTime;
@@ -1710,9 +1709,9 @@ namespace Impl
           //check for fully armed and fully repaired
           if (vtolHappy(*psDroid)) {
             //clear the rearm pad
-            psDroid->action = ACTION::NONE;
+            psDroid->getAction() = ACTION::NONE;
             psReArmPad->psObj = nullptr;
-            auxStructureNonblocking(this);
+            auxStructureNonblocking(*this);
             triggerEventDroidIdle(psDroid);
             objTrace(psDroid->getId(), "VTOL happy and ready for action!");
           }
@@ -1743,7 +1742,7 @@ namespace Impl
       int imdIndex = std::min<int>(numStructureModules(this) * 2, IMDs.size() - 1);
       // *2 because even-numbered IMDs are structures, odd-numbered IMDs are just the modules.
       prebuiltImd = nullptr;
-      display.imd_shape = IMDs[imdIndex];
+      display->imd_shape = IMDs[imdIndex];
     }
 
     switch (stats->type) {
@@ -1771,8 +1770,8 @@ namespace Impl
         revealAll(getPlayer());
         break;
       case GATE:
-        auxStructureNonblocking(this); // Clear outdated flags.
-        auxStructureClosedGate(this); // Don't block for the sake of allied pathfinding.
+        auxStructureNonblocking(*this); // Clear outdated flags.
+        auxStructureClosedGate(*this); // Don't block for the sake of allied pathfinding.
         break;
       default:
         //do nothing
@@ -1853,7 +1852,7 @@ namespace Impl
       Vector2i map = map_coord(Vector2i(x, y)) - size / 2;
 
       //set up the imd to use for the display
-      psBuilding->display->imd_shape = std::make_unique<iIMDShape>(pStructureType->IMDs[0]);
+      psBuilding->display->imd_shape = std::make_unique<iIMDShape>(*pStructureType->IMDs[0]);
 
       psBuilding->animationState = STRUCTURE_ANIMATION_STATE::NORMAL;
       psBuilding->lastStateTime = gameTime;
@@ -1886,7 +1885,7 @@ namespace Impl
            * of walls, you see. This is not the place to test whether we own it! */
           if (isBuildableOnWalls(pStructureType->type) &&
               TileHasWall(psTile)) {
-            removeStruct((Structure*)psTile->psObject, true);
+            removeStruct(dynamic_cast<Structure*>(psTile->psObject), true);
           }
           else if (TileHasStructure(psTile)) {
 #if defined(WZ_CC_GNU) && !defined(WZ_CC_INTEL) && !defined(WZ_CC_CLANG) && (7 <= __GNUC__)
@@ -1922,7 +1921,7 @@ namespace Impl
         case STRUCTURE_TYPE::REARM_PAD:
           break; // Not blocking.
         default:
-          auxStructureBlocking(psBuilding);
+          auxStructureBlocking(*psBuilding);
           break;
       }
 
@@ -1944,8 +1943,7 @@ namespace Impl
       alignStructure(psBuilding.get());
 
       /* Store the weapons */
-      psBuilding->numWeaps = 0;
-      if (pStructureType->numWeaps > 0) {
+      if (numWeapons(*pStructureType) > 0) {
         unsigned weapon;
 
         for (weapon = 0; weapon < pStructureType->numWeaps; weapon++)
@@ -2073,7 +2071,7 @@ namespace Impl
       auto bounds = getStructureBounds(psBuilding.get());
       for (unsigned playerNum = 0; playerNum < MAX_PLAYERS; ++playerNum)
       {
-        for (Structure* psStruct = apsStructLists[playerNum]; psStruct != nullptr; psStruct = psStruct->psNext)
+        for (auto& psStruct : apsStructLists[playerNum])
         {
           FlagPosition* fp = nullptr;
           if (StructIsFactory(psStruct)) {
@@ -2169,8 +2167,8 @@ namespace Impl
           debug(LOG_ERROR, "No upgraded structure model to draw.");
           imdIndex = 0;
         }
-        psBuilding->prebuiltImd = std::make_unique<iIMDShape>(psBuilding->getDisplayData().imd_shape);
-        psBuilding->display->imd_shape = std::make_unique<iIMDShape>(IMDs[imdIndex]);
+        psBuilding->prebuiltImd = std::make_unique<iIMDShape>(*psBuilding->getDisplayData().imd_shape);
+        psBuilding->display->imd_shape = std::make_unique<iIMDShape>(*IMDs[imdIndex]);
 
         //calculate the new body points of the owning structure
         psBuilding->setHp(structureBody(psBuilding.get()) * bodyDiff / 65536);
@@ -2307,11 +2305,6 @@ namespace Impl
         return 0; // Busy
     }
     return lastStateTime + SAS_OPEN_SPEED - gameTime;
-  }
-
-  int Structure::getResistance() const
-  {
-    return resistance;
   }
 }
 
@@ -2743,7 +2736,7 @@ bool loadStructureStats(WzConfig& ini)
 		psStats->base.modulePower = ini.value("modulePowerPoints", 0).toInt();
 		psStats->base.rearm = ini.value("rearmPoints", 0).toInt();
 		psStats->base.resistance = ini.value("resistance", 0).toUInt();
-		psStats->base.hitpoints = ini.value("hitpoints", 1).toUInt();
+		psStats->base.hitPoints = ini.value("hitpoints", 1).toUInt();
 		psStats->base.armour = ini.value("armour", 0).toUInt();
 		psStats->base.thermal = ini.value("thermal", 0).toUInt();
 		for (auto& upgraded_stat : psStats->upgraded_stats)
@@ -2758,7 +2751,7 @@ bool loadStructureStats(WzConfig& ini)
 			upgraded_stat.moduleProduction = psStats->base.moduleProduction;
 			upgraded_stat.rearm = psStats->base.rearm;
 			upgraded_stat.resistance = ini.value("resistance", 0).toUInt();
-			upgraded_stat.hitpoints = ini.value("hitpoints", 1).toUInt();
+			upgraded_stat.hitPoints = ini.value("hitpoints", 1).toUInt();
 			upgraded_stat.armour = ini.value("armour", 0).toUInt();
 			upgraded_stat.thermal = ini.value("thermal", 0).toUInt();
 		}
@@ -3759,7 +3752,7 @@ bool Factory::structPlaceDroid(DroidTemplate* psTempl, Droid** ppsDroid)
 	placed = placeDroid(this, &x, &y);
 
 	if (placed) {
-		INITIAL_DROID_ORDERS initialOrders = {
+		InitialOrders initialOrders = {
 			secondaryOrder,
 			psAssemblyPoint->coords.x,
 			psAssemblyPoint->coords.y, getId()
@@ -5786,7 +5779,7 @@ unsigned structureBodyBuilt(const Structure* psStructure)
 /*Access functions for the upgradeable stats of a structure*/
 unsigned structureBody(const Structure* psStructure)
 {
-	return psStructure->getStats().upgraded_stats[psStructure->getPlayer()].hitpoints;
+	return psStructure->getStats().upgraded_stats[psStructure->getPlayer()].hitPoints;
 }
 
 unsigned structureResistance(const StructureStats* psStats, uint8_t player)

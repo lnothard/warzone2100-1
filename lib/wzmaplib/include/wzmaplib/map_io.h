@@ -66,15 +66,15 @@ public:
 class IOProvider
 {
 protected:
-	IOProvider() {};
+	IOProvider() = default;
 
 public:
-	virtual ~IOProvider() {};
+	virtual ~IOProvider() = default;
 
 public:
 	virtual std::unique_ptr<BinaryIOStream> openBinaryStream(const std::string& filename, BinaryIOStream::OpenMode mode) = 0;
 	virtual bool loadFullFile(const std::string& filename, std::vector<char>& fileData) = 0;
-	virtual bool writeFullFile(const std::string& filename, const char *ppFileData, uint32_t fileSize) = 0;
+	virtual bool writeFullFile(const std::string& filename, const char *ppFileData, size_t fileSize) = 0;
 };
 
 // MARK: - Default implementation, using C stdio
@@ -82,9 +82,16 @@ public:
 class StdIOProvider : public IOProvider
 {
 public:
-	virtual std::unique_ptr<BinaryIOStream> openBinaryStream(const std::string& filename, BinaryIOStream::OpenMode mode) override;
-	virtual bool loadFullFile(const std::string& filename, std::vector<char>& fileData) override;
-	virtual bool writeFullFile(const std::string& filename, const char *ppFileData, uint32_t fileSize) override;
+	std::unique_ptr<BinaryIOStream> openBinaryStream(
+          const std::string& filename,
+          BinaryIOStream::OpenMode mode) override;
+
+	bool loadFullFile(const std::string& filename,
+                    std::vector<char>& fileData) override;
+
+	bool writeFullFile(
+          const std::string& filename,
+          const char *ppFileData, size_t fileSize) override;
 };
 
 } // namespace WzMap

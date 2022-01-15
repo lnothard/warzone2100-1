@@ -23,37 +23,24 @@
  * Control the data loading for game levels
  */
 
-#include <cctype>
-#include <cstring>
-
-#include "lib/framework/frame.h"
+#include "3rdparty/gsl_finally.h"
+#include "lib/exceptionhandler/dumpinfo.h"
 #include "lib/framework/frameresource.h"
 #include "lib/framework/file.h"
-#include "lib/framework/crc.h"
 #include "lib/framework/physfs_ext.h"
-#include "lib/gamelib/gtime.h"
-#include "lib/exceptionhandler/dumpinfo.h"
+#include "lib/framework/lexer_input.h"
+
+#include "activity.h"
 #include "clparse.h"
+#include "data.h"
+#include "effects.h"
+#include "game.h"
 #include "init.h"
-#include "hci.h"
+#include "levelint.h"
 #include "levels.h"
 #include "mission.h"
-#include "levelint.h"
-#include "game.h"
-#include "lib/ivis_opengl/piestate.h"
-#include "data.h"
-#include "research.h"
-#include "lib/framework/lexer_input.h"
-#include "effects.h"
-#include "main.h"
 #include "multiint.h"
 #include "qtscript.h"
-#include "wrappers.h"
-#include "activity.h"
-
-#include <unordered_set>
-
-#include "3rdparty/gsl_finally.h"
 
 extern int lev_get_lineno();
 extern char* lev_get_text();

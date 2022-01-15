@@ -23,30 +23,18 @@
  * Run challenges dialog
  */
 
-#include <ctime>
-#include <string>
-
-#include "lib/framework/frame.h"
 #include "lib/framework/input.h"
-#include "lib/framework/physfs_ext.h"
-#include "lib/framework/wzconfig.h"
 #include "lib/framework/wztime.h"
 #include "lib/ivis_opengl/bitimage.h"
-#include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/netplay/netplay.h"
 #include "lib/widget/button.h"
-
-#include "titleui/titleui.h"
 #include "titleui/multiplayer.h"
 
 #include "challenge.h"
-#include "frontend.h"
-#include "hci.h"
 #include "intdisplay.h"
 #include "loadsave.h"
-#include "multiplay.h"
 #include "mission.h"
-#include "lib/gamelib/gtime.h"
+#include "multiplay.h"
 
 static constexpr auto totalslots  = 36; 			// challenge slots
 static constexpr auto slotsInColumn  = 12; 		// # of slots in a column

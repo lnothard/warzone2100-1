@@ -23,36 +23,16 @@
  * Utility functions for the map data structure
  */
 
-#include <algorithm>
-#include <ctime>
-
-#include "lib/framework/frame.h"
-#include "lib/framework/endian_hack.h"
 #include "lib/framework/file.h"
 #include "lib/framework/physfs_ext.h"
 #include "lib/framework/wzapp.h"
-#include "lib/ivis_opengl/tex.h"
-#include "lib/netplay/netplay.h"  // For syncDebug
-#include <wzmaplib/map.h>
 
-#include "map.h"
-#include "hci.h"
-#include "projectile.h"
-#include "display3d.h"
 #include "game.h"
-#include "texture.h"
-#include "random.h"
-#include "research.h"
-#include "mission.h"
-#include "gateway.h"
-#include "wrappers.h"
-#include "mapgrid.h"
+#include "map.h"
+#include "multiplay.h"
 #include "qtscript.h"
-#include "astar.h"
-#include "fpath.h"
-#include "levels.h"
 
-#define GAME_TICKS_FOR_DANGER (GAME_TICKS_PER_SEC * 2)
+static constexpr auto GAME_TICKS_FOR_DANGER = GAME_TICKS_PER_SEC * 2;
 
 static WZ_THREAD* dangerThread = nullptr;
 static WZ_SEMAPHORE* dangerSemaphore = nullptr;
@@ -66,11 +46,11 @@ struct floodtile
 
 static struct floodtile* floodbucket = nullptr;
 static int bucketcounter;
-static UDWORD lastDangerUpdate = 0;
+static unsigned lastDangerUpdate = 0;
 static int lastDangerPlayer = -1;
 
 //scroll min and max values
-SDWORD scrollMinX, scrollMaxX, scrollMinY, scrollMaxY;
+int scrollMinX, scrollMaxX, scrollMinY, scrollMaxY;
 
 //For saves to determine if loading the terrain type override should occur
 bool builtInMap;
@@ -79,44 +59,40 @@ bool builtInMap;
 struct MAP_SAVEHEADER // : public GAME_SAVEHEADER
 {
 	char aFileType[4];
-	UDWORD version;
-	UDWORD width;
-	UDWORD height;
+	unsigned version;
+	unsigned width;
+	unsigned height;
 };
 
 struct MAP_SAVETILE
 {
-	UWORD texture;
-	UBYTE height;
+	uint16_t texture;
+	uint8_t height;
 };
 
 struct GATEWAY_SAVEHEADER
 {
-	UDWORD version;
-	UDWORD numGateways;
+	unsigned version;
+	unsigned numGateways;
 };
 
 struct GATEWAY_SAVE
 {
-	UBYTE x0, y0, x1, y1;
+	uint8_t x0, y0, x1, y1;
 };
 
 /* Sanity check definitions for the save struct file sizes */
-#define SAVE_HEADER_SIZE	16
-#define SAVE_TILE_SIZE		3
+static constexpr auto SAVE_HEADER_SIZE = 16;
+static constexpr auto SAVE_TILE_SIZE = 3;
 
 // Maximum expected return value from get height
-#define	MAX_HEIGHT			(256 * ELEVATION_SCALE)
+static constexpr auto	MAX_HEIGHT = 256 * ELEVATION_SCALE;
 
 /* The size and contents of the map */
-SDWORD mapWidth = 0, mapHeight = 0;
-std::unique_ptr<Tile[]> psMapTiles;
-std::unique_ptr<uint8_t[]> psBlockMap[AUX_MAX];
-std::unique_ptr<uint8_t[]> psAuxMap[MAX_PLAYERS + AUX_MAX];
-// yes, we waste one element... eyes wide open... makes API nicer
+int mapWidth = 0, mapHeight = 0;
 
-#define WATER_MIN_DEPTH 500
-#define WATER_MAX_DEPTH (WATER_MIN_DEPTH + 400)
+static constexpr auto WATER_MIN_DEPTH = 500;
+static constexpr auto WATER_MAX_DEPTH = WATER_MIN_DEPTH + 400;
 
 static void SetGroundForTile(const char* filename, const char* nametype);
 static int getTextureType(const char* textureType);
@@ -125,7 +101,6 @@ static void SetDecals(const char* filename, const char* decal_type);
 static void init_tileNames(int type);
 
 /// The different ground types
-std::unique_ptr<GROUND_TYPE[]> psGroundTypes;
 int numGroundTypes;
 char* tilesetDir = nullptr;
 static int numTile_names;
@@ -133,10 +108,8 @@ static std::unique_ptr<char[]> Tile_names = nullptr;
 
 static std::unique_ptr<int[]> map; // 3D array pointer that holds the texturetype
 static std::unique_ptr<bool[]> mapDecals; // array that tells us what tile is a decal
-#define MAX_TERRAIN_TILES 0x0200  // max that we support (for now), see TILE_NUMMASK
 
-/* Look up table that returns the terrain type of a given tile texture */
-UBYTE terrainTypes[MAX_TILE_TEXTURES];
+static constexpr auto MAX_TERRAIN_TILES = 0x0200;  // max that we support (for now), see TILE_NUMMASK
 
 static void init_tileNames(TILE_SET type)
 {
@@ -149,63 +122,63 @@ static void init_tileNames(TILE_SET type)
 
 	switch (type) {
     using enum TILE_SET;
-	case ARIZONA:
-		{
-			if (!loadFileToBuffer("tileset/arizona_enum.txt", pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize))
-			{
-				debug(LOG_FATAL, "tileset/arizona_enum.txt not found.  Aborting.");
-				abort();
-			}
+	  case ARIZONA:
+	  	{
+	  		if (!loadFileToBuffer("tileset/arizona_enum.txt",
+                              pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize)) {
+	  			debug(LOG_FATAL, "tileset/arizona_enum.txt not found.  Aborting.");
+	  			abort();
+	  		}
 
-			sscanf(pFileData, "%255[^,'\r\n],%d%n", name, &numlines, &cnt);
-			pFileData += cnt;
+	  		sscanf(pFileData, "%255[^,'\r\n],%d%n", name, &numlines, &cnt);
+	  		pFileData += cnt;
 
-			if (strcmp("arizona_enum", name))
-			{
-				debug(LOG_FATAL, "%s found, but was expecting arizona_enum, aborting.", name);
-				abort();
-			}
-			break;
-		}
-	case URBAN:
-		{
-			if (!loadFileToBuffer("tileset/urban_enum.txt", pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize))
-			{
-				debug(LOG_FATAL, "tileset/urban_enum.txt not found.  Aborting.");
-				abort();
-			}
+	  		if (strcmp("arizona_enum", name))
+	  		{
+	  			debug(LOG_FATAL, "%s found, but was expecting arizona_enum, aborting.", name);
+	  			abort();
+	  		}
+	  		break;
+	  	}
+	  case URBAN:
+	  	{
+	  		if (!loadFileToBuffer("tileset/urban_enum.txt", pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize))
+	  		{
+	  			debug(LOG_FATAL, "tileset/urban_enum.txt not found.  Aborting.");
+	  			abort();
+	  		}
 
-			sscanf(pFileData, "%255[^,'\r\n],%d%n", name, &numlines, &cnt);
-			pFileData += cnt;
+	  		sscanf(pFileData, "%255[^,'\r\n],%d%n", name, &numlines, &cnt);
+	  		pFileData += cnt;
 
-			if (strcmp("urban_enum", name))
-			{
-				debug(LOG_FATAL, "%s found, but was expecting urban_enum, aborting.", name);
-				abort();
-			}
-			break;
-		}
-	case ROCKIES:
-		{
-			if (!loadFileToBuffer("tileset/rockie_enum.txt", pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize))
-			{
-				debug(LOG_FATAL, "tileset/rockie_enum.txt not found.  Aborting.");
-				abort();
-			}
+	  		if (strcmp("urban_enum", name))
+	  		{
+	  			debug(LOG_FATAL, "%s found, but was expecting urban_enum, aborting.", name);
+	  			abort();
+	  		}
+	  		break;
+	  	}
+	  case ROCKIES:
+	  	{
+	  		if (!loadFileToBuffer("tileset/rockie_enum.txt", pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize))
+	  		{
+	  			debug(LOG_FATAL, "tileset/rockie_enum.txt not found.  Aborting.");
+	  			abort();
+	  		}
 
-			sscanf(pFileData, "%255[^,'\r\n],%d%n", name, &numlines, &cnt);
-			pFileData += cnt;
+	  		sscanf(pFileData, "%255[^,'\r\n],%d%n", name, &numlines, &cnt);
+	  		pFileData += cnt;
 
-			if (strcmp("rockie_enum", name))
-			{
-				debug(LOG_FATAL, "%s found, but was expecting rockie_enum, aborting.", name);
-				abort();
-			}
-			break;
-		}
-	default:
-		debug(LOG_FATAL, "Unknown type (%d) given.  Aborting.", type);
-		abort();
+	  		if (strcmp("rockie_enum", name))
+	  		{
+	  			debug(LOG_FATAL, "%s found, but was expecting rockie_enum, aborting.", name);
+	  			abort();
+	  		}
+	  		break;
+	  	}
+	  default:
+	  	debug(LOG_FATAL, "Unknown type (%d) given.  Aborting.", type);
+	  	abort();
 	}
 
 	debug(LOG_TERRAIN, "name: %s, with %d entries", name, numlines);
@@ -247,15 +220,14 @@ static bool mapLoadGroundTypes(bool preview)
 
 	debug(LOG_TERRAIN, "tileset: %s", tilesetDir);
 	// For Arizona
-	if (strcmp(tilesetDir, "texpages/tertilesc1hw") == 0)
-	{
+	if (strcmp(tilesetDir, "texpages/tertilesc1hw") == 0) {
 	fallback:
 		// load the override terrain types
-		if (!preview && builtInMap && !loadTerrainTypeMapOverride(ARIZONA))
-		{
+		if (!preview && builtInMap &&
+        !loadTerrainTypeMapOverride(TILE_SET::ARIZONA)) {
 			debug(LOG_POPUP, "Failed to load terrain type override");
 		}
-		init_tileNames(ARIZONA);
+		init_tileNames(TILE_SET::ARIZONA);
 		if (!loadFileToBuffer("tileset/tertilesc1hwGtype.txt", pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize))
 		{
 			debug(LOG_FATAL, "tileset/tertilesc1hwGtype.txt not found, aborting.");
@@ -295,13 +267,13 @@ static bool mapLoadGroundTypes(bool preview)
 	else if (strcmp(tilesetDir, "texpages/tertilesc2hw") == 0)
 	{
 		// load the override terrain types
-		if (!preview && builtInMap && !loadTerrainTypeMapOverride(URBAN))
-		{
+		if (!preview && builtInMap &&
+        !loadTerrainTypeMapOverride(TILE_SET::URBAN)) {
 			debug(LOG_POPUP, "Failed to load terrain type override");
 		}
-		init_tileNames(URBAN);
-		if (!loadFileToBuffer("tileset/tertilesc2hwGtype.txt", pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize))
-		{
+		init_tileNames(TILE_SET::URBAN);
+		if (!loadFileToBuffer("tileset/tertilesc2hwGtype.txt",
+                          pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize)) {
 			debug(LOG_POPUP, "tileset/tertilesc2hwGtype.txt not found, using default terrain ground types.");
 			goto fallback;
 		}
@@ -309,8 +281,7 @@ static bool mapLoadGroundTypes(bool preview)
 		sscanf(pFileData, "%255[^,'\r\n],%d%n", tilename, &numlines, &cnt);
 		pFileData += cnt;
 
-		if (strcmp(tilename, "tertilesc2hw"))
-		{
+		if (strcmp(tilename, "tertilesc2hw")) {
 			debug(LOG_POPUP, "%s found, but was expecting tertilesc2hw!", tilename);
 			goto fallback;
 		}
@@ -339,11 +310,11 @@ static bool mapLoadGroundTypes(bool preview)
 	else if (strcmp(tilesetDir, "texpages/tertilesc3hw") == 0)
 	{
 		// load the override terrain types
-		if (!preview && builtInMap && !loadTerrainTypeMapOverride(ROCKIE))
+		if (!preview && builtInMap && !loadTerrainTypeMapOverride(TILE_SET::ROCKIES))
 		{
 			debug(LOG_POPUP, "Failed to load terrain type override");
 		}
-		init_tileNames(ROCKIE);
+		init_tileNames(TILE_SET::ROCKIES);
 		if (!loadFileToBuffer("tileset/tertilesc3hwGtype.txt", pFileData, FILE_LOAD_BUFFER_SIZE, &fileSize))
 		{
 			debug(LOG_POPUP, "tileset/tertilesc3hwGtype.txt not found, using default terrain ground types.");
@@ -846,7 +817,7 @@ bool WzMapPhysFSIO::loadFullFile(const std::string& filename, std::vector<char>&
 	return loadFileToBufferVector(filename.c_str(), fileData, true, true);
 }
 
-bool WzMapPhysFSIO::writeFullFile(const std::string& filename, const char* ppFileData, uint32_t fileSize)
+bool WzMapPhysFSIO::writeFullFile(const std::string& filename, const char* ppFileData, size_t fileSize)
 {
 	return saveFile(filename.c_str(), ppFileData, fileSize);
 }
@@ -1090,8 +1061,7 @@ bool mapShutdown()
 {
 	int x;
 
-	if (dangerThread)
-	{
+	if (dangerThread) {
 		wzSemaphoreWait(dangerDoneSemaphore);
 		lastDangerPlayer = -1;
 		wzSemaphorePost(dangerSemaphore);
@@ -1251,47 +1221,39 @@ bool map_Intersect(int* Cx, int* Cy, int* Vx, int* Vy, int* Sx, int* Sy)
 	       "map_Intersect(): map Bounds %i %i, %i %i -> %i,%i,%i,%i", x, y, Dx, Dy, *Cx, *Cy, *Vx, *Vy);
 
 	//calculate midway line intersection points
-	if (((map_coord(itx) == tileX) == (map_coord(ily) == tileY)) && ((map_coord(ibx) == tileX) == (map_coord(iry) ==
-		tileY)))
-	{
+	if (((map_coord(itx) == tileX) == (map_coord(ily) == tileY)) &&
+      ((map_coord(ibx) == tileX) == (map_coord(iry) == tileY))) {
 		// line crosses diagonal only
-		if (Dx - Dy == 0)
-		{
+		if (Dx - Dy == 0) {
 			return false;
 		}
 		*Sx = world_coord(tileX) + (Dx * oy - Dy * ox) / (Dx - Dy);
 		*Sy = world_coord(tileY) + (Dx * oy - Dy * ox) / (Dx - Dy);
-		if (map_coord(*Sx) != tileX || map_coord(*Sy) != tileY)
-		{
+		if (map_coord(*Sx) != tileX || map_coord(*Sy) != tileY) {
 			return false;
 		}
 		return true;
 	}
-	else if (((map_coord(ibx) == tileX) == (map_coord(ily) == tileY)) && ((map_coord(itx) == tileX) == (map_coord(iry)
-		== tileY)))
-	{
+	else if (((map_coord(ibx) == tileX) == (map_coord(ily) == tileY)) &&
+           ((map_coord(itx) == tileX) == (map_coord(iry) == tileY))) {
 		//line crosses anti-diagonal only
-		if (Dx + Dy == 0)
-		{
+		if (Dx + Dy == 0) {
 			return false;
 		}
 		*Sx = world_coord(tileX) + (Dx * (TILE_UNITS - oy) + Dy * ox) / (Dx + Dy);
 		*Sy = world_coord(tileY) + (Dy * (TILE_UNITS - ox) + Dx * oy) / (Dx + Dy);
-		if (map_coord(*Sx) != tileX || map_coord(*Sy) != tileY)
-		{
+		if (map_coord(*Sx) != tileX || map_coord(*Sy) != tileY) {
 			return false;
 		}
 		return true;
 	}
-	else
-	{
+	else {
 		//line crosses both tile diagonals
 		//TODO: trunk divides tiles into 4 parts instead of 2 in 2.3.
 		//We would need to check and return both intersections here now,
 		//but that would require an additional return parameter!
 		//Instead we check only one of them and know it might be wrong!
-		if (Dx + Dy != 0)
-		{
+		if (Dx + Dy != 0) {
 			// check anti-diagonal
 			*Sx = world_coord(tileX) + (Dx * (TILE_UNITS - oy) + Dy * ox) / (Dx + Dy);
 			*Sy = world_coord(tileY) + (Dy * (TILE_UNITS - ox) + Dx * oy) / (Dx + Dy);
@@ -1300,13 +1262,11 @@ bool map_Intersect(int* Cx, int* Cy, int* Vx, int* Vy, int* Sx, int* Sy)
 				return true;
 			}
 		}
-		if (Dx - Dy != 0)
-		{
+		if (Dx - Dy != 0) {
 			// check diagonal
 			*Sx = world_coord(tileX) + (Dx * oy - Dy * ox) / (Dx - Dy);
 			*Sy = world_coord(tileY) + (Dx * oy - Dy * ox) / (Dx - Dy);
-			if (map_coord(*Sx) == tileX && map_coord(*Sy) == tileY)
-			{
+			if (map_coord(*Sx) == tileX && map_coord(*Sy) == tileY) {
 				return true;
 			}
 		}
@@ -1318,17 +1278,16 @@ bool map_Intersect(int* Cx, int* Cy, int* Vx, int* Vy, int* Sx, int* Sy)
 // Rotate vector clockwise by quadrant*90° around (TILE_UNITS/2, TILE_UNITS/2). (Considering x to be to the right, and y down.)
 static Vector3i rotateWorldQuadrant(Vector3i v, int quadrant)
 {
-	switch (quadrant & 3)
-	{
-	default: // Can't get here.
-	case 0: return v;
-		break; // 0°.
-	case 1: return {TILE_UNITS - v.y, v.x, v.z};
-		break; // 90° clockwise.
-	case 2: return {TILE_UNITS - v.x, TILE_UNITS - v.y, v.z};
-		break; // 180°.
-	case 3: return {v.y, TILE_UNITS - v.x, v.z};
-		break; // 90° anticlockwise.
+	switch (quadrant & 3) {
+	  default: // Can't get here.
+	  case 0: return v;
+	  	break; // 0°.
+	  case 1: return {TILE_UNITS - v.y, v.x, v.z};
+	  	break; // 90° clockwise.
+	  case 2: return {TILE_UNITS - v.x, TILE_UNITS - v.y, v.z};
+	  	break; // 180°.
+	  case 3: return {v.y, TILE_UNITS - v.x, v.z};
+	  	break; // 90° anticlockwise.
 	}
 }
 
@@ -1349,23 +1308,23 @@ static Vector2i quadrantDelta(int quadrant)
 }
 
 
-static inline bool fracTest(int numerA, int denomA, int numerB, int denomB)
+static bool fracTest(int numerA, int denomA, int numerB, int denomB)
 {
-	return denomA > 0 && numerA >= 0 && (denomB <= 0 || numerB < 0 || (int64_t)numerA * denomB < (int64_t)numerB *
-		denomA);
+	return denomA > 0 && numerA >= 0 && (denomB <= 0 || numerB < 0 ||
+         (int64_t)numerA * denomB < (int64_t)numerB * denomA);
 }
 
 unsigned map_LineIntersect(Vector3i src, Vector3i dst, unsigned tMax)
 {
 	// Transform src and dst to a coordinate system such that the tile quadrant containing src has
 	// corners at (0, 0), (TILE_UNITS, 0), (TILE_UNITS/2, TILE_UNITS/2).
-	Vector2i tile = map_coord(src.xy());
+	auto tile = map_coord(src.xy());
 	src -= Vector3i(world_coord(tile), 0);
 	dst -= Vector3i(world_coord(tile), 0);
 	//            +0+
 	// quadrant = 3×1
 	//            +2+
-	int quadrant = ((src.x < src.y) * 3) ^ (TILE_UNITS - src.x < src.y);
+	auto quadrant = ((src.x < src.y) * 3) ^ (TILE_UNITS - src.x < src.y);
 	src = rotateWorldQuadrant(src, -quadrant);
 	dst = rotateWorldQuadrant(dst, -quadrant);
 	while (true)
@@ -1377,7 +1336,7 @@ unsigned map_LineIntersect(Vector3i src, Vector3i dst, unsigned tMax)
 			height[q] = map_TileHeightSurface(corner.x, corner.y);
 		}
 		Vector3i dif = dst - src;
-		//     We are considering the volume of a quadrant (the volume above a quarter of a map tile, which is
+    // We are considering the volume of a quadrant (the volume above a quarter of a map tile, which is
 		// a degenerate tetrahedron with a point at infinity). We have a line segment, and want to know where
 		// it exits the quadrant volume.
 		//     There are 5 possible cases. Cases 0-2, our line can exit one of the three sides of the quadrant
@@ -1405,57 +1364,56 @@ unsigned map_LineIntersect(Vector3i src, Vector3i dst, unsigned tMax)
 		denom[3] = dot(dif, normal);
 		numer[4] = 1;
 		denom[4] = 1;
-		int firstIntersection = 0;
+		auto firstIntersection = 0;
 		for (int test = 0; test < 5; ++test)
 		{
-			if (!fracTest(numer[firstIntersection], denom[firstIntersection], numer[test], denom[test]))
-			{
+			if (!fracTest(numer[firstIntersection],
+                    denom[firstIntersection],
+                    numer[test],
+                    denom[test])) {
 				firstIntersection = test;
 			}
 		}
-		switch (firstIntersection)
-		{
-		case 0: // Cross top line first (the tile boundary).
-			tile += quadrantDelta(quadrant);
-			quadrant += 2;
-			src = rotateWorldQuadrant(src, -2) + Vector3i(0, -TILE_UNITS, 0);
-			dst = rotateWorldQuadrant(dst, -2) + Vector3i(0, -TILE_UNITS, 0);
+		switch (firstIntersection) {
+		  case 0: // Cross top line first (the tile boundary).
+		  	tile += quadrantDelta(quadrant);
+		  	quadrant += 2;
+		  	src = rotateWorldQuadrant(src, -2) + Vector3i(0, -TILE_UNITS, 0);
+		  	dst = rotateWorldQuadrant(dst, -2) + Vector3i(0, -TILE_UNITS, 0);
 
-			if (tile.x < 0 || tile.x >= mapWidth || tile.y < 0 || tile.y >= mapHeight)
-			{
-				// Intersect edge of map.
-				return (int64_t)tMax * numer[firstIntersection] / denom[firstIntersection];
-			}
-			break;
-		case 1: // Cross bottom-right line first.
-			// Change to the new quadrant, and transform appropriately.
-			++quadrant;
-			src = rotateWorldQuadrant(src, -1);
-			dst = rotateWorldQuadrant(dst, -1);
-			break;
-		case 2: // Cross bottom-left line first.
-			// Change to the new quadrant, and transform appropriately.
-			--quadrant;
-			src = rotateWorldQuadrant(src, 1);
-			dst = rotateWorldQuadrant(dst, 1);
-			break;
-		case 3: // Intersect terrain!
-			return (int64_t)tMax * numer[firstIntersection] / denom[firstIntersection];
-		case 4: // Line segment ends.
-			return UINT32_MAX;
+		  	if (tile.x < 0 || tile.x >= mapWidth ||
+            tile.y < 0 || tile.y >= mapHeight) {
+		  		// intersect edge of map
+		  		return (int64_t)tMax * numer[firstIntersection] / denom[firstIntersection];
+		  	}
+		  	break;
+		  case 1: // Cross bottom-right line first.
+		  	// Change to the new quadrant, and transform appropriately.
+		  	++quadrant;
+		  	src = rotateWorldQuadrant(src, -1);
+		  	dst = rotateWorldQuadrant(dst, -1);
+		  	break;
+		  case 2: // Cross bottom-left line first.
+		  	// Change to the new quadrant, and transform appropriately.
+		  	--quadrant;
+		  	src = rotateWorldQuadrant(src, 1);
+		  	dst = rotateWorldQuadrant(dst, 1);
+		  	break;
+		  case 3: // Intersect terrain!
+		  	return (int64_t)tMax * numer[firstIntersection] / denom[firstIntersection];
+		  case 4: // Line segment ends.
+		  	return UINT32_MAX;
 		}
 	}
 }
 
 /// The max height of the terrain and water at the specified world coordinates
-extern int32_t map_Height(int x, int y)
+extern int map_Height(int x, int y)
 {
-	int tileX, tileY;
-	int i, j;
-	int32_t height[2][2], center;
-	int32_t onTileX, onTileY;
-	int32_t left, right, middle;
-	int32_t onBottom, result;
+	int height[2][2], center;
+	int onTileX, onTileY;
+	int left, right, middle;
+	int onBottom, result;
 	int towardsCenter, towardsRight;
 
 	// Clamp x and y values to actual ones
@@ -1474,8 +1432,8 @@ extern int32_t map_Height(int x, int y)
 	y = MIN(y, world_coord(mapHeight) - 1);
 
 	// on which tile are these coords?
-	tileX = map_coord(x);
-	tileY = map_coord(y);
+	auto tileX = map_coord(x);
+	auto tileY = map_coord(y);
 
 	// where on the tile? (scale to (0,1))
 	onTileX = x - world_coord(tileX);
@@ -1483,9 +1441,9 @@ extern int32_t map_Height(int x, int y)
 
 	// get the height for the corners and center
 	center = 0;
-	for (i = 0; i < 2; i++)
+	for (auto i = 0; i < 2; i++)
 	{
-		for (j = 0; j < 2; j++)
+		for (auto j = 0; j < 2; j++)
 		{
 			height[i][j] = map_TileHeightSurface(tileX + i, tileY + j);
 			center += height[i][j];
@@ -1502,18 +1460,15 @@ extern int32_t map_Height(int x, int y)
 	//   0,1--B--1,1
 
 	// get heights for left and right corners and the distances
-	if (onTileY > onTileX)
-	{
-		if (onTileY < TILE_UNITS - onTileX)
-		{
+	if (onTileY > onTileX) {
+		if (onTileY < TILE_UNITS - onTileX) {
 			// A
 			right = height[0][0];
 			left = height[0][1];
 			towardsCenter = onTileX;
 			towardsRight = TILE_UNITS - onTileY;
 		}
-		else
-		{
+		else {
 			// B
 			right = height[0][1];
 			left = height[1][1];
@@ -1521,18 +1476,15 @@ extern int32_t map_Height(int x, int y)
 			towardsRight = TILE_UNITS - onTileX;
 		}
 	}
-	else
-	{
-		if (onTileX > TILE_UNITS - onTileY)
-		{
+	else {
+		if (onTileX > TILE_UNITS - onTileY) {
 			// C
 			right = height[1][1];
 			left = height[1][0];
 			towardsCenter = TILE_UNITS - onTileX;
 			towardsRight = onTileY;
 		}
-		else
-		{
+		else {
 			// D
 			right = height[1][0];
 			left = height[0][0];
@@ -1554,34 +1506,42 @@ extern int32_t map_Height(int x, int y)
 }
 
 /* returns true if object is above ground */
-bool mapObjIsAboveGround(const SIMPLE_OBJECT* psObj)
+bool mapObjIsAboveGround(const SimpleObject* psObj)
 {
 	// min is used to make sure we don't go over array bounds!
 	// TODO Using the corner of the map instead doesn't make sense. Fix this...
-	const int mapsize = mapWidth * mapHeight - 1;
-	const int tileX = map_coord(psObj->pos.x);
-	const int tileY = map_coord(psObj->pos.y);
-	const int tileYOffset1 = (tileY * mapWidth);
-	const int tileYOffset2 = ((tileY + 1) * mapWidth);
-	const int h1 = psMapTiles[MIN(mapsize, tileYOffset1 + tileX)].height;
-	const int h2 = psMapTiles[MIN(mapsize, tileYOffset1 + tileX + 1)].height;
-	const int h3 = psMapTiles[MIN(mapsize, tileYOffset2 + tileX)].height;
-	const int h4 = psMapTiles[MIN(mapsize, tileYOffset2 + tileX + 1)].height;
+	const auto mapsize = mapWidth * mapHeight - 1;
+	const auto tileX = map_coord(
+          psObj->getPosition().x);
+	const auto tileY = map_coord(
+          psObj->getPosition().y);
+
+	const auto tileYOffset1 = (tileY * mapWidth);
+	const auto tileYOffset2 = ((tileY + 1) * mapWidth);
+	const auto h1 = psMapTiles[MIN(mapsize, tileYOffset1 + tileX)].height;
+	const auto h2 = psMapTiles[MIN(mapsize, tileYOffset1 + tileX + 1)].height;
+	const auto h3 = psMapTiles[MIN(mapsize, tileYOffset2 + tileX)].height;
+	const auto h4 = psMapTiles[MIN(mapsize, tileYOffset2 + tileX + 1)].height;
 
 	/* trivial test above */
-	if (psObj->pos.z > h1 && psObj->pos.z > h2 && psObj->pos.z > h3 && psObj->pos.z > h4)
-	{
+	if (psObj->getPosition().z > h1 &&
+      psObj->getPosition().z > h2 &&
+      psObj->getPosition().z > h3 &&
+      psObj->getPosition().z > h4) {
 		return true;
 	}
 
 	/* trivial test below */
-	if (psObj->pos.z <= h1 && psObj->pos.z <= h2 && psObj->pos.z <= h3 && psObj->pos.z <= h4)
-	{
+	if (psObj->getPosition().z <= h1 &&
+      psObj->getPosition().z <= h2 &&
+      psObj->getPosition().z <= h3 &&
+      psObj->getPosition().z <= h4) {
 		return false;
 	}
 
 	/* exhaustive test */
-	return psObj->pos.z > map_Height(psObj->pos.x, psObj->pos.y);
+	return psObj->getPosition().z > map_Height(
+          psObj->getPosition().x, psObj->getPosition().y);
 }
 
 /* returns the max and min height of a tile by looking at the four corners
@@ -1591,10 +1551,10 @@ void getTileMaxMin(int x, int y, int* pMax, int* pMin)
 	*pMin = INT32_MAX;
 	*pMax = INT32_MIN;
 
-	for (int j = 0; j < 2; ++j)
-		for (int i = 0; i < 2; ++i)
+	for (auto j = 0; j < 2; ++j)
+		for (auto i = 0; i < 2; ++i)
 		{
-			int height = map_TileHeight(x + i, y + j);
+			auto height = map_TileHeight(x + i, y + j);
 			*pMin = std::min(*pMin, height);
 			*pMax = std::max(*pMax, height);
 		}
@@ -1605,17 +1565,14 @@ void getTileMaxMin(int x, int y, int* pMax, int* pMin)
 /* This will save out the visibility data */
 bool writeVisibilityData(const char* fileName)
 {
-	unsigned int i;
-	VIS_SAVEHEADER fileHeader;
-
 	PHYSFS_file* fileHandle = openSaveFile(fileName);
-	if (!fileHandle)
-	{
+	if (!fileHandle) {
 		return false;
 	}
 
 	WZ_PHYSFS_SETBUFFER(fileHandle, 4096) //;
 
+  VIS_SAVEHEADER fileHeader;
 	fileHeader.aFileType[0] = 'v';
 	fileHeader.aFileType[1] = 'i';
 	fileHeader.aFileType[2] = 's';
@@ -1623,71 +1580,62 @@ bool writeVisibilityData(const char* fileName)
 
 	fileHeader.version = CURRENT_VERSION_NUM;
 
-	// Write out the current file header
-	if (WZ_PHYSFS_writeBytes(fileHandle, fileHeader.aFileType, sizeof(fileHeader.aFileType)) != sizeof(fileHeader.
-			aFileType)
-		|| !PHYSFS_writeUBE32(fileHandle, fileHeader.version))
-	{
-		debug(LOG_ERROR, "writeVisibilityData: could not write header to %s; PHYSFS error: %s", fileName,
-		      WZ_PHYSFS_getLastError());
+	// write out the current file header
+	if (WZ_PHYSFS_writeBytes(fileHandle, fileHeader.aFileType,
+                           sizeof(fileHeader.aFileType)) != sizeof(fileHeader.
+          aFileType) || !PHYSFS_writeUBE32(fileHandle, fileHeader.version)) {
+
+		debug(LOG_ERROR, "writeVisibilityData: could not write header to %s;"
+                     " PHYSFS error: %s", fileName, WZ_PHYSFS_getLastError());
 		PHYSFS_close(fileHandle);
 		return false;
 	}
 
-	int planes = (game.maxPlayers + 7) / 8;
+	auto planes = (game.maxPlayers + 7) / 8;
 
-	for (unsigned plane = 0; plane < planes; ++plane)
+	for (auto plane = 0; plane < planes; ++plane)
 	{
-		for (i = 0; i < mapWidth * mapHeight; ++i)
+		for (auto i = 0; i < mapWidth * mapHeight; ++i)
 		{
-			if (!PHYSFS_writeUBE8(fileHandle, psMapTiles[i].tileExploredBits >> (plane * 8)))
-			{
-				debug(LOG_ERROR, "writeVisibilityData: could not write to %s; PHYSFS error: %s", fileName,
-				      WZ_PHYSFS_getLastError());
+			if (!PHYSFS_writeUBE8(fileHandle,
+                            psMapTiles[i].tileExploredBits >> (plane * 8))) {
+				debug(LOG_ERROR, "writeVisibilityData: could not write to %s;"
+                         " PHYSFS error: %s", fileName, WZ_PHYSFS_getLastError());
 				PHYSFS_close(fileHandle);
 				return false;
 			}
 		}
 	}
-
-	// Everything is just fine!
+	// everything is just fine!
 	PHYSFS_close(fileHandle);
 	return true;
 }
 
-// -----------------------------------------------------------------------------------
-/* This will read in the visibility data */
 bool readVisibilityData(const char* fileName)
 {
 	VIS_SAVEHEADER fileHeader;
-	unsigned int expectedFileSize, fileSize;
-	unsigned int i;
-
 	PHYSFS_file* fileHandle = openLoadFile(fileName, false);
-	if (!fileHandle)
-	{
-		// Failure to open the file is no failure to read it
+
+	if (!fileHandle) {
+		// failure to open the file is no failure to read it
 		return true;
 	}
-
-	// Read the header from the file
-	if (WZ_PHYSFS_readBytes(fileHandle, fileHeader.aFileType, sizeof(fileHeader.aFileType)) != sizeof(fileHeader.
-			aFileType)
-		|| !PHYSFS_readUBE32(fileHandle, &fileHeader.version))
-	{
-		debug(LOG_ERROR, "readVisibilityData: error while reading header from file: %s", WZ_PHYSFS_getLastError());
+	// read the header from the file
+	if (WZ_PHYSFS_readBytes(fileHandle, fileHeader.aFileType,
+                          sizeof(fileHeader.aFileType)) != sizeof(fileHeader. aFileType) ||
+                          !PHYSFS_readUBE32(fileHandle, &fileHeader.version)) {
+		debug(LOG_ERROR, "readVisibilityData: error while reading header "
+                     "from file: %s", WZ_PHYSFS_getLastError());
 		PHYSFS_close(fileHandle);
 		return false;
 	}
 
 	// Check the header to see if we've been given a file of the right type
-	if (fileHeader.aFileType[0] != 'v'
-		|| fileHeader.aFileType[1] != 'i'
-		|| fileHeader.aFileType[2] != 's'
-		|| fileHeader.aFileType[3] != 'd')
-	{
+	if (fileHeader.aFileType[0] != 'v' || fileHeader.aFileType[1] != 'i' ||
+      fileHeader.aFileType[2] != 's' || fileHeader.aFileType[3] != 'd') {
 		debug(LOG_ERROR,
-		      "readVisibilityData: Weird file type found? Has header letters - '%c' '%c' '%c' '%c' (should be 'v' 'i' 's' 'd')",
+		      "readVisibilityData: Weird file type found? Has header letters - "
+          "'%c' '%c' '%c' '%c' (should be 'v' 'i' 's' 'd')",
 		      fileHeader.aFileType[0],
 		      fileHeader.aFileType[1],
 		      fileHeader.aFileType[2],
@@ -1697,35 +1645,36 @@ bool readVisibilityData(const char* fileName)
 		return false;
 	}
 
-	int planes = (game.maxPlayers + 7) / 8;
+	auto planes = (game.maxPlayers + 7) / 8;
 
 	// Validate the filesize
-	expectedFileSize = sizeof(fileHeader.aFileType) + sizeof(fileHeader.version) + mapWidth * mapHeight * planes;
-	fileSize = PHYSFS_fileLength(fileHandle);
-	if (fileSize != expectedFileSize)
-	{
+	auto expectedFileSize = sizeof(fileHeader.aFileType) + sizeof(fileHeader.version) + mapWidth * mapHeight * planes;
+	auto fileSize = PHYSFS_fileLength(fileHandle);
+	if (fileSize != expectedFileSize) {
 		PHYSFS_close(fileHandle);
 		ASSERT(!"readVisibilityData: unexpected filesize",
-		       "readVisibilityData: unexpected filesize; should be %u, but is %u", expectedFileSize, fileSize);
+		       "readVisibilityData: unexpected filesize; should be %u,"
+           " but is %u", expectedFileSize, fileSize);
 
 		return false;
 	}
 
-	// For every tile...
-	for (i = 0; i < mapWidth * mapHeight; i++)
+	// for every tile...
+	for (auto i = 0; i < mapWidth * mapHeight; i++)
 	{
 		psMapTiles[i].tileExploredBits = 0;
 	}
-	for (unsigned plane = 0; plane < planes; ++plane)
+	for (auto plane = 0; plane < planes; ++plane)
 	{
-		for (i = 0; i < mapWidth * mapHeight; i++)
+		for (auto i = 0; i < mapWidth * mapHeight; i++)
 		{
 			/* Get the visibility data */
 			uint8_t val = 0;
-			if (!PHYSFS_readUBE8(fileHandle, &val))
-			{
-				debug(LOG_ERROR, "readVisibilityData: could not read from %s; PHYSFS error: %s", fileName,
-				      WZ_PHYSFS_getLastError());
+			if (!PHYSFS_readUBE8(fileHandle, &val)) {
+				debug(LOG_ERROR, "readVisibilityData: could not read from %s;"
+                         " PHYSFS error: %s", fileName,
+              WZ_PHYSFS_getLastError());
+
 				PHYSFS_close(fileHandle);
 				return false;
 			}
@@ -1733,10 +1682,10 @@ bool readVisibilityData(const char* fileName)
 		}
 	}
 
-	// Close the file
+	// close the file
 	PHYSFS_close(fileHandle);
 
-	/* Hopefully everything's just fine by now */
+	// hopefully everything's just fine by now
 	return true;
 }
 
@@ -1766,23 +1715,23 @@ static void mapFloodFill(int x, int y, int continent, uint8_t blockedBits, uint1
 	while (!open.empty())
 	{
 		// Pop the first open node off the list for this iteration
-		Vector2i pos = open.back();
+		auto pos = open.back();
 		open.pop_back();
 
 		// Add accessible neighbouring tiles to the open list
 		for (auto i : aDirOffset)
 		{
 			// rely on the fact that all border tiles are inaccessible to avoid checking explicitly
-			Vector2i npos = pos + i;
+			auto npos = pos + i;
 
-			if (npos.x < 1 || npos.y < 1 || npos.x > mapWidth - 2 || npos.y > mapHeight - 2)
-			{
+			if (npos.x < 1 || npos.y < 1 ||
+			    npos.x > mapWidth - 2 ||
+          npos.y > mapHeight - 2) {
 				continue;
 			}
-			Tile* psTile = mapTile(npos);
-
-			if (!(blockTile(npos.x, npos.y, AUX_MAP) & blockedBits) && psTile->*varContinent == 0)
-			{
+			auto psTile = mapTile(npos);
+			if (!(blockTile(npos.x, npos.y, AUX_MAP) & blockedBits) &&
+          psTile->*varContinent == 0) {
 				open.push_back(npos); // add to open list
 				psTile->*varContinent = continent; // Set continent value
 			}
@@ -1792,39 +1741,38 @@ static void mapFloodFill(int x, int y, int continent, uint8_t blockedBits, uint1
 
 void mapFloodFillContinents()
 {
-	int x, y, limitedContinents = 0, hoverContinents = 0;
+	auto limitedContinents = 0, hoverContinents = 0;
 
 	/* Clear continents */
-	for (y = 0; y < mapHeight; y++)
+	for (auto y = 0; y < mapHeight; y++)
 	{
-		for (x = 0; x < mapWidth; x++)
+		for (auto x = 0; x < mapWidth; x++)
 		{
-			Tile* psTile = mapTile(x, y);
-
+			auto psTile = mapTile(x, y);
 			psTile->limitedContinent = 0;
 			psTile->hoverContinent = 0;
 		}
 	}
 
 	/* Iterate over the whole map, looking for unset continents */
-	for (y = 1; y < mapHeight - 2; y++)
+	for (auto y = 1; y < mapHeight - 2; y++)
 	{
-		for (x = 1; x < mapWidth - 2; x++)
+		for (auto x = 1; x < mapWidth - 2; x++)
 		{
-			Tile* psTile = mapTile(x, y);
+			auto* psTile = mapTile(x, y);
 
-			if (psTile->limitedContinent == 0 && !fpathBlockingTile(x, y, PROPULSION_TYPE_WHEELED))
-			{
+			if (psTile->limitedContinent == 0 &&
+          !fpathBlockingTile(x, y, PROPULSION_TYPE::WHEELED)) {
 				mapFloodFill(x, y, 1 + limitedContinents++, WATER_BLOCKED | FEATURE_BLOCKED,
 				             &Tile::limitedContinent);
 			}
-			else if (psTile->limitedContinent == 0 && !fpathBlockingTile(x, y, PROPULSION_TYPE_PROPELLOR))
-			{
+			else if (psTile->limitedContinent == 0 &&
+               !fpathBlockingTile(x, y, PROPULSION_TYPE::PROPELLOR)) {
 				mapFloodFill(x, y, 1 + limitedContinents++, LAND_BLOCKED | FEATURE_BLOCKED, &Tile::limitedContinent);
 			}
 
-			if (psTile->hoverContinent == 0 && !fpathBlockingTile(x, y, PROPULSION_TYPE_HOVER))
-			{
+			if (psTile->hoverContinent == 0 &&
+          !fpathBlockingTile(x, y, PROPULSION_TYPE::HOVER)) {
 				mapFloodFill(x, y, 1 + hoverContinents++, FEATURE_BLOCKED, &Tile::hoverContinent);
 			}
 		}
@@ -1832,21 +1780,20 @@ void mapFloodFillContinents()
 	debug(LOG_MAP, "Found %d limited and %d hover continents", limitedContinents, hoverContinents);
 }
 
-void tileSetFire(int32_t x, int32_t y, uint32_t duration)
+void tileSetFire(int x, int y, unsigned duration)
 {
-	const int posX = map_coord(x);
-	const int posY = map_coord(y);
-	Tile* const tile = mapTile(posX, posY);
+	const auto posX = map_coord(x);
+	const auto posY = map_coord(y);
+	auto* const tile = mapTile(posX, posY);
 
-	uint16_t currentTime = gameTime / GAME_TICKS_PER_UPDATE;
-	uint16_t fireEndTime = (gameTime + duration) / GAME_TICKS_PER_UPDATE;
-	if (currentTime == fireEndTime)
-	{
+	auto currentTime = gameTime / GAME_TICKS_PER_UPDATE;
+	auto fireEndTime = (gameTime + duration) / GAME_TICKS_PER_UPDATE;
+	if (currentTime == fireEndTime) {
 		return; // Fire already ended.
 	}
-	if ((tile->tileInfoBits & BITS_ON_FIRE) != 0 && (uint16_t)(fireEndTime - currentTime) < (uint16_t)(tile->fireEndTime
-		- currentTime))
-	{
+	if ((tile->tileInfoBits & BITS_ON_FIRE) != 0 &&
+      (uint16_t)(fireEndTime - currentTime) <
+        (uint16_t)(tile->fireEndTime - currentTime)) {
 		return; // Tile already on fire, and that fire lasts longer.
 	}
 
@@ -1854,15 +1801,16 @@ void tileSetFire(int32_t x, int32_t y, uint32_t duration)
 	tile->tileInfoBits |= BITS_ON_FIRE;
 	tile->fireEndTime = fireEndTime;
 
-	syncDebug("Fire tile{%d, %d} dur%u end%d", posX, posY, duration, fireEndTime);
+	syncDebug("Fire tile{%d, %d} dur%u end%d",
+            posX, posY, duration, fireEndTime);
 }
 
 /** Check if tile contained within the given world coordinates is burning. */
-bool fireOnLocation(unsigned int x, unsigned int y)
+bool fireOnLocation(int x, int y)
 {
-	const int posX = map_coord(x);
-	const int posY = map_coord(y);
-	const Tile* psTile = mapTile(posX, posY);
+	const auto posX = map_coord(x);
+	const auto posY = map_coord(y);
+	const auto psTile = mapTile(posX, posY);
 
 	ASSERT(psTile, "Checking fire on tile outside the map (%d, %d)", posX, posY);
 	return psTile != nullptr && TileIsBurning(psTile);
@@ -1871,20 +1819,21 @@ bool fireOnLocation(unsigned int x, unsigned int y)
 // This function runs in a separate thread!
 static int dangerFloodFill(unsigned player)
 {
-	int i;
 	Vector2i pos = getPlayerStartPosition(player);
-	Vector2i npos(0, 0);
-	uint8_t aux, block;
-	int x, y;
 	bool start = true; // hack to disregard the blocking status of any building exactly on the starting position
 
-	// Set our danger bits
-	for (y = 0; y < mapHeight; y++)
+	// Sst our danger bits
+	for (auto y = 0; y < mapHeight; y++)
 	{
-		for (x = 0; x < mapWidth; x++)
+		for (auto x = 0; x < mapWidth; x++)
 		{
-			auxSet(x, y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_DANGER);
-			auxClear(x, y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_TEMPORARY);
+			auxSet(x, y,
+            MAX_PLAYERS + AUX_DANGERMAP,
+            AUXBITS_DANGER);
+
+			auxClear(x, y,
+              MAX_PLAYERS + AUX_DANGERMAP,
+              AUXBITS_TEMPORARY);
 		}
 	}
 
@@ -1894,56 +1843,60 @@ static int dangerFloodFill(unsigned player)
 
 	do
 	{
-		// Add accessible neighbouring tiles to the open list
-		for (i = 0; i < NUM_DIR; i++)
+		// add accessible neighbouring tiles to the open list
+		for (auto i : aDirOffset)
 		{
-			npos.x = pos.x + aDirOffset[i].x;
-			npos.y = pos.y + aDirOffset[i].y;
-			if (!tileOnMap(npos.x, npos.y))
-			{
+			auto npos = Vector2i{pos.x + i.x, pos.y + i.y};
+
+			if (!tileOnMap(npos.x, npos.y)) {
 				continue;
 			}
-			aux = auxTile(npos.x, npos.y, MAX_PLAYERS + AUX_DANGERMAP);
-			block = blockTile(pos.x, pos.y, AUX_DANGERMAP);
-			if (!(aux & AUXBITS_TEMPORARY) && !(aux & AUXBITS_THREAT) && (aux & AUXBITS_DANGER))
-			{
-				// Note that we do not consider water to be a blocker here. This may or may not be a feature...
-				if (!(block & FEATURE_BLOCKED) && (!(aux & AUXBITS_NONPASSABLE) || start))
-				{
+			auto aux = auxTile(npos.x, npos.y, MAX_PLAYERS + AUX_DANGERMAP);
+			auto block = blockTile(pos.x, pos.y, AUX_DANGERMAP);
+			if (!(aux & AUXBITS_TEMPORARY) &&
+          !(aux & AUXBITS_THREAT) &&
+          (aux & AUXBITS_DANGER)) {
+				// note that we do not consider water to be a blocker here.
+        // this may or may not be a feature...
+				if (!(block & FEATURE_BLOCKED) &&
+            (!(aux & AUXBITS_NONPASSABLE) || start)) {
 					floodbucket[bucketcounter].x = npos.x;
 					floodbucket[bucketcounter].y = npos.y;
 					bucketcounter++;
-					if (start && !(aux & AUXBITS_NONPASSABLE))
-					{
+					if (start && !(aux & AUXBITS_NONPASSABLE)) {
 						start = false;
 					}
 				}
-				else
-				{
-					auxClear(npos.x, npos.y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_DANGER);
+				else {
+					auxClear(npos.x, npos.y,
+                   MAX_PLAYERS + AUX_DANGERMAP,
+                   AUXBITS_DANGER);
 				}
-				auxSet(npos.x, npos.y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_TEMPORARY);
+				auxSet(npos.x, npos.y,
+               MAX_PLAYERS + AUX_DANGERMAP,
+               AUXBITS_TEMPORARY);
 				// make sure we do not process it more than once
 			}
 		}
 
 		// Clear danger
-		auxClear(pos.x, pos.y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_DANGER);
+		auxClear(pos.x, pos.y,
+             MAX_PLAYERS + AUX_DANGERMAP,
+             AUXBITS_DANGER);
 
 		// Pop the last open node off the bucket list for the next iteration
-		if (bucketcounter)
-		{
+		if (bucketcounter) {
 			bucketcounter--;
 			pos.x = floodbucket[bucketcounter].x;
 			pos.y = floodbucket[bucketcounter].y;
 		}
-	}
-	while (bucketcounter);
+	} while (bucketcounter);
+
 	return 0;
 }
 
 // This function runs in a separate thread!
-static int dangerThreadFunc(WZ_DECL_UNUSED void* data)
+static int dangerThreadFunc()
 {
 	while (lastDangerPlayer != -1)
 	{
@@ -1954,19 +1907,19 @@ static int dangerThreadFunc(WZ_DECL_UNUSED void* data)
 	return 0;
 }
 
-static inline void threatUpdateTarget(unsigned player, SimpleObject* psObj, bool ground, bool air)
+static void threatUpdateTarget(unsigned player, SimpleObject* psObj, bool ground, bool air)
 {
 	if (psObj->visible[player] || psObj->born == 2)
 	{
-		for (TILEPOS pos : psObj->watchedTiles)
+		for (auto pos : psObj->watchedTiles)
 		{
-			if (ground)
-			{
-				auxSet(pos.x, pos.y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_THREAT); // set ground threat for this tile
+			if (ground) {
+        // set ground threat for this tile
+				auxSet(pos.x, pos.y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_THREAT);
 			}
-			if (air)
-			{
-				auxSet(pos.x, pos.y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_AATHREAT); // set air threat for this tile
+			if (air) {
+        // set air threat for this tile
+				auxSet(pos.x, pos.y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_AATHREAT);
 			}
 		}
 	}
@@ -1974,68 +1927,64 @@ static inline void threatUpdateTarget(unsigned player, SimpleObject* psObj, bool
 
 static void threatUpdate(unsigned player)
 {
-	int i, weapon, x, y;
-
-	// Step 1: Clear our threat bits
-	for (y = 0; y < mapHeight; y++)
+	// step 1: clear our threat bits
+	for (auto y = 0; y < mapHeight; y++)
 	{
-		for (x = 0; x < mapWidth; x++)
+		for (auto x = 0; x < mapWidth; x++)
 		{
-			auxClear(x, y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_THREAT | AUXBITS_AATHREAT);
+			auxClear(x, y, MAX_PLAYERS + AUX_DANGERMAP,
+               AUXBITS_THREAT | AUXBITS_AATHREAT);
 		}
 	}
 
-	// Step 2: Set threat bits
-	for (i = 0; i < MAX_PLAYERS; i++)
+	// step 2: set threat bits
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		Droid* psDroid;
-		Structure* psStruct;
-
-		if (aiCheckAlliances(player, i))
-		{
-			// No need to iterate friendly objects
+		if (aiCheckAlliances(player, i)) {
+			// no need to iterate friendly objects
 			continue;
 		}
 
-		for (psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[i])
 		{
-			UBYTE mode = 0;
+      using enum DROID_TYPE;
+			uint8_t mode = 0;
 
-			if (psDroid->type == DROID_CONSTRUCT || psDroid->type == DROID_CYBORG_CONSTRUCT
-					|| psDroid->type == DROID_REPAIR || psDroid->type == DROID_CYBORG_REPAIR)
-			{
-				continue; // hack that really should not be needed, but is -- trucks can SHOOT_ON_GROUND...!
+			if (psDroid.getType() == CONSTRUCT || psDroid.getType() == CYBORG_CONSTRUCT ||
+          psDroid.getType() == REPAIRER || psDroid.getType() == CYBORG_REPAIR) {
+        // hack that really should not be needed, but is -- trucks can SHOOT_ON_GROUND...!
+				continue;
 			}
-			for (weapon = 0; weapon < psDroid->numWeaps; weapon++)
+			for (auto weapon = 0; weapon < numWeapons(psDroid); weapon++)
 			{
-				mode |= asWeaponStats[psDroid->asWeaps[weapon].nStat].surfaceToAir;
+				mode |= psDroid.getWeapons()[weapon].getStats().surfaceToAir;
 			}
-			if (psDroid->type == DROID_SENSOR) // special treatment for sensor turrets, no multiweapon support
-			{
+			if (psDroid.getType() == SENSOR) {
+        // special treatment for sensor turrets, no multi weapon support
 				mode |= SHOOT_ON_GROUND; // assume it only shoots at ground targets for now
 			}
-			if (mode > 0)
-			{
-				threatUpdateTarget(player, (SimpleObject*)psDroid, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
+			if (mode > 0) {
+				threatUpdateTarget(player, &psDroid, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
 			}
 		}
 
-		for (psStruct = apsStructLists[i]; psStruct; psStruct = psStruct->psNext)
+		for (auto& psStruct : apsStructLists[i])
 		{
-			UBYTE mode = 0;
+			uint8_t mode = 0;
 
-			for (weapon = 0; weapon < psStruct->numWeaps; weapon++)
+			for (auto weapon = 0; weapon < numWeapons(*psStruct); weapon++)
 			{
-				mode |= asWeaponStats[psStruct->asWeaps[weapon].nStat].surfaceToAir;
+				mode |= psStruct->getWeapons()[weapon].getStats().surfaceToAir;
 			}
-			if (psStruct->pStructureType->sensor_stats && psStruct->pStructureType->sensor_stats->location == LOC_TURRET)
-			// special treatment for sensor turrets
-			{
+			if (psStruct->getStats().sensor_stats &&
+          psStruct->getStats().sensor_stats->location == LOC::TURRET) {
+        // special treatment for sensor turrets
 				mode |= SHOOT_ON_GROUND; // assume it only shoots at ground targets for now
 			}
-			if (mode > 0)
-			{
-				threatUpdateTarget(player, (SimpleObject*)psStruct, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
+			if (mode > 0) {
+				threatUpdateTarget(player, psStruct.get(),
+                           mode & SHOOT_ON_GROUND,
+                           mode & SHOOT_IN_AIR);
 			}
 		}
 	}
@@ -2043,8 +1992,6 @@ static void threatUpdate(unsigned player)
 
 void mapInit()
 {
-	unsigned player;
-
 	free(floodbucket);
 	floodbucket = (struct floodtile*)malloc(mapWidth * mapHeight * sizeof(*floodbucket));
 
@@ -2052,52 +1999,57 @@ void mapInit()
 	lastDangerPlayer = -1;
 
 	// Start danger thread (not used for campaign for now - mission map swaps too icky)
-	ASSERT(dangerSemaphore == nullptr && dangerThread == nullptr, "Map data not cleaned up before starting!");
-	if (game.type == LEVEL_TYPE::SKIRMISH)
-	{
-		for (player = 0; player < MAX_PLAYERS; player++)
-		{
-			auxMapStore(player, AUX_DANGERMAP);
-			threatUpdate(player);
-			dangerFloodFill(player);
-			auxMapRestore(player, AUX_DANGERMAP, AUXBITS_DANGER | AUXBITS_THREAT | AUXBITS_AATHREAT);
-		}
-		lastDangerPlayer = 0;
-		dangerSemaphore = wzSemaphoreCreate(0);
-		dangerDoneSemaphore = wzSemaphoreCreate(0);
-		dangerThread = wzThreadCreate(dangerThreadFunc, nullptr);
-		wzThreadStart(dangerThread);
-	}
+	ASSERT(!dangerSemaphore && !dangerThread,
+         "Map data not cleaned up before starting!");
+
+  if (game.type != LEVEL_TYPE::SKIRMISH) {
+    return;
+  }
+
+  for (auto player = 0; player < MAX_PLAYERS; player++)
+  {
+    auxMapStore(player, AUX_DANGERMAP);
+    threatUpdate(player);
+    dangerFloodFill(player);
+    auxMapRestore(player, AUX_DANGERMAP,
+                  AUXBITS_DANGER | AUXBITS_THREAT | AUXBITS_AATHREAT);
+  }
+
+  lastDangerPlayer = 0;
+  dangerSemaphore = wzSemaphoreCreate(0);
+  dangerDoneSemaphore = wzSemaphoreCreate(0);
+  dangerThread = wzThreadCreate(dangerThreadFunc, nullptr);
+  wzThreadStart(dangerThread);
 }
 
 void mapUpdate()
 {
-	const uint16_t currentTime = gameTime / GAME_TICKS_PER_UPDATE;
-	int posX, posY;
+	const auto currentTime = gameTime / GAME_TICKS_PER_UPDATE;
 
-	for (posY = 0; posY < mapHeight; ++posY)
-		for (posX = 0; posX < mapWidth; ++posX)
+	for (auto posY = 0; posY < mapHeight; ++posY)
+		for (auto posX = 0; posX < mapWidth; ++posX)
 		{
-			Tile* const tile = mapTile(posX, posY);
+			auto const tile = mapTile(posX, posY);
 
-			if ((tile->tileInfoBits & BITS_ON_FIRE) != 0 && tile->fireEndTime == currentTime)
-			{
+			if ((tile->tileInfoBits & BITS_ON_FIRE) != 0 &&
+          tile->fireEndTime == currentTime) {
 				// Extinguish, tile, extinguish!
 				tile->tileInfoBits &= ~BITS_ON_FIRE;
-
 				syncDebug("Extinguished tile{%d, %d}", posX, posY);
 			}
 		}
 
-	if (gameTime > lastDangerUpdate + GAME_TICKS_FOR_DANGER && game.type == LEVEL_TYPE::SKIRMISH)
-	{
+	if (gameTime > lastDangerUpdate + GAME_TICKS_FOR_DANGER &&
+      game.type == LEVEL_TYPE::SKIRMISH) {
 		syncDebug("Do danger maps.");
 		lastDangerUpdate = gameTime;
 
-		// Lock if previous job not done yet
+		// lock if previous job not done yet
 		wzSemaphoreWait(dangerDoneSemaphore);
 
-		auxMapRestore(lastDangerPlayer, AUX_DANGERMAP, AUXBITS_THREAT | AUXBITS_AATHREAT | AUXBITS_DANGER);
+		auxMapRestore(lastDangerPlayer, AUX_DANGERMAP,
+                  AUXBITS_THREAT | AUXBITS_AATHREAT | AUXBITS_DANGER);
+
 		lastDangerPlayer = (lastDangerPlayer + 1) % game.maxPlayers;
 		auxMapStore(lastDangerPlayer, AUX_DANGERMAP);
 		threatUpdate(lastDangerPlayer);

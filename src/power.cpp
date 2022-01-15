@@ -23,24 +23,12 @@
  * Store PlayerPower and other power related stuff
  */
 
-#include <cstring>
-
-#include "lib/gamelib/gtime.h"
-#include "lib/netplay/netplay.h"
-#include "lib/sound/audio.h"
-
-#include "objectdef.h"
-#include "power.h"
-#include "objmem.h"
-#include "frontend.h"
-#include "multiplay.h"
-#include "multiint.h"
-#include "feature.h"
-#include "structure.h"
-#include "mission.h"
-#include "intdisplay.h"
-
 #include <fmt/core.h>
+
+#include "multiint.h"
+#include "power.h"
+
+bool offWorldKeepLists;
 
 static constexpr auto EXTRACT_POINTS = 1;
 static constexpr auto MAX_POWER = 1000000;

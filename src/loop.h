@@ -26,13 +26,8 @@
 #ifndef __INCLUDED_SRC_LOOP_H__
 #define __INCLUDED_SRC_LOOP_H__
 
-#include "lib/framework/frame.h"
-#include <optional-lite/optional.hpp>
-using nonstd::optional;
-using nonstd::nullopt;
-
-#include "droid.h"
-#include "levels.h"
+class Droid;
+enum class LEVEL_TYPE;
 
 enum class GAME_CODE
 {

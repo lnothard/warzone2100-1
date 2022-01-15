@@ -26,13 +26,22 @@
 #ifndef __INCLUDED_SRC_OBJMEM_H__
 #define __INCLUDED_SRC_OBJMEM_H__
 
-#include "objectdef.h"
+#include "lib/framework/frame.h"
+
+#include "droid.h"
+#include "feature.h"
+
+class FlagPosition;
+class ResourceExtractor;
+class SimpleObject;
+class Structure;
+class Unit;
 
 /* The lists of objects allocated */
 extern std::array<std::vector<Droid>,MAX_PLAYERS> apsDroidLists;
 
 extern std::array<std::vector<
-        std::unique_ptr<Impl::Structure> >, MAX_PLAYERS> apsStructLists;
+        std::unique_ptr<Structure> >, MAX_PLAYERS> apsStructLists;
 
 extern std::vector<FlagPosition*> apsFlagPosLists;
 extern std::array<ResourceExtractor*, MAX_PLAYERS> apsExtractorLists;

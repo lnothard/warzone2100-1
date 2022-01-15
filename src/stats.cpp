@@ -23,28 +23,17 @@
  * Store common stats for weapons, components, brains, etc.
  */
 
-#include <algorithm>
-#include <cstring>
-#include <unordered_map>
-
-#include "lib/framework/frame.h"
-#include "lib/framework/strres.h"
-#include "lib/framework/frameresource.h"
 #include "lib/framework/fixedpoint.h"
-#include "lib/gamelib/gtime.h"
 #include "lib/ivis_opengl/imd.h"
 #include "lib/sound/audio_id.h"
 
-#include "objects.h"
 #include "stats.h"
 #include "map.h"
 #include "main.h"
-#include "projectile.h"
-#include "text.h"
 
-#define WEAPON_TIME 100
+static constexpr auto WEAPON_TIME = 100;
 
-#define DEFAULT_DROID_TYPE::RESISTANCE	150
+static constexpr auto DEFAULT_DROID_RESISTANCE = 150;
 
 BaseStats::BaseStats(unsigned ref)
   : ref{ref}
@@ -65,12 +54,12 @@ EcmStats* asECMStats;
 RepairStats* asRepairStats;
 WeaponStats* asWeaponStats;
 ConstructStats* asConstructStats;
-std::vector<PROPULSION_TYPES> asPropulsionTypes;
+std::vector<Propulsion> asPropulsionTypes;
 static int* asTerrainTable;
 
 //used to hold the modifiers cross refd by weapon effect and propulsion type
-WEAPON_MODIFIER asWeaponModifier[WEAPON_EFFECT::COUNT][PROPULSION_TYPE::COUNT];
-WEAPON_MODIFIER asWeaponModifierBody[WEAPON_EFFECT::NUMEFFECTS][SIZE_NUM];
+WEAPON_MODIFIER asWeaponModifier[(size_t)WEAPON_EFFECT::COUNT][(size_t)PROPULSION_TYPE::COUNT];
+WEAPON_MODIFIER asWeaponModifierBody[(size_t)WEAPON_EFFECT::COUNT][(size_t)BODY_SIZE::COUNT];
 
 /* The number of different stats stored */
 unsigned numBodyStats;
@@ -83,7 +72,7 @@ unsigned numWeaponStats;
 unsigned numConstructStats;
 
 //stores for each players component states - can be either UNAVAILABLE, REDUNDANT, FOUND or AVAILABLE
-uint8_t* apCompLists[MAX_PLAYERS][COMPONENT_TYPE::COUNT];
+uint8_t* apCompLists[MAX_PLAYERS][(size_t)COMPONENT_TYPE::COUNT];
 
 //store for each players Structure states
 uint8_t* apStructTypeLists[MAX_PLAYERS];
@@ -158,9 +147,6 @@ bool statsShutDown()
 }
 
 
-/*******************************************************************************
-*		Allocate stats functions
-*******************************************************************************/
 /* Allocate Weapon stats */
 bool statsAllocWeapons(unsigned numStats)
 {
@@ -342,7 +328,7 @@ bool loadWeaponStats(WzConfig& ini)
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
-		psStats->compType = COMP_WEAPON;
+		psStats->compType = COMPONENT_TYPE::WEAPON;
 
 		psStats->radiusLife = ini.value("radiusLife", 0).toUInt();
 
@@ -390,8 +376,8 @@ bool loadWeaponStats(WzConfig& ini)
 		psStats->vtolAttackRuns = ini.value("numAttackRuns", 0).toUInt();
 		psStats->penetrate = ini.value("penetrate", false).toBool();
 		// weapon size limitation
-		int weaponSize = ini.value("weaponSize", WEAPON_SIZE::ANY).toInt();
-		ASSERT(weaponSize <= WEAPON_SIZE::ANY, "Bad weapon size for %s", list[i].toUtf8().c_str());
+		auto weaponSize = ini.value("weaponSize", (int)WEAPON_SIZE::ANY).toInt();
+		ASSERT(weaponSize <= (int)WEAPON_SIZE::ANY, "Bad weapon size for %s", list[i].toUtf8().c_str());
 		psStats->weaponSize = (WEAPON_SIZE)weaponSize;
 
 		ASSERT(psStats->flightSpeed > 0, "Invalid flight speed for %s", list[i].toUtf8().c_str());
@@ -530,7 +516,7 @@ bool loadWeaponStats(WzConfig& ini)
 		}
 		if (std::find(flags.begin(), flags.end(), "nofriendlyfire") != flags.end()) // "NoFriendlyFire"
 		{
-			psStats->flags.set(WEAPON_FLAG_NO_FRIENDLY_FIRE, true);
+			psStats->flags.set(static_cast<size_t>(WEAPON_FLAGS::NO_FRIENDLY_FIRE), true);
 		}
 
 		//set the weapon sounds to default value
@@ -571,14 +557,14 @@ bool loadBodyStats(WzConfig& ini)
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
-		psStats->compType = COMP_BODY;
+		psStats->compType = COMPONENT_TYPE::BODY;
 
 		psStats->weaponSlots = ini.value("weaponSlots").toInt();
 		psStats->bodyClass = ini.value("class").toWzString();
 		psStats->base.thermal = ini.value("armourHeat").toInt();
 		psStats->base.armour = ini.value("armourKinetic").toInt();
 		psStats->base.power = ini.value("powerOutput").toInt();
-		psStats->base.resistance = ini.value("resistance", DEFAULT_DROID_TYPE::RESISTANCE).toInt();
+		psStats->base.resistance = ini.value("resistance", DEFAULT_DROID_RESISTANCE).toInt();
 		for (int j = 0; j < MAX_PLAYERS; j++)
 		{
 			psStats->upgraded[j] = psStats->base;
@@ -601,9 +587,9 @@ bool loadBodyStats(WzConfig& ini)
 	for (int numStats = 0; numStats < numBodyStats; ++numStats)
 	{
 		BodyStats* psBodyStat = &asBodyStats[numStats];
-		psBodyStat->ppIMDList.resize(numPropulsionStats * NUM_PROP_SIDES, nullptr);
-		psBodyStat->ppMoveIMDList.resize(numPropulsionStats * NUM_PROP_SIDES, nullptr);
-		psBodyStat->ppStillIMDList.resize(numPropulsionStats * NUM_PROP_SIDES, nullptr);
+		psBodyStat->ppIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT, nullptr);
+		psBodyStat->ppMoveIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT, nullptr);
+		psBodyStat->ppStillIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT, nullptr);
 	}
 	for (auto& i : list)
 	{
@@ -649,9 +635,9 @@ bool loadBodyStats(WzConfig& ini)
 				return false;
 			}
 			//allocate the left and right propulsion IMDs + movement and standing still animations
-			psBodyStat->ppIMDList[numStats * NUM_PROP_SIDES + LEFT_PROP] = statsGetIMD(
+			psBodyStat->ppIMDList[numStats * (int)PROP_SIDE::COUNT + (int)PROP_SIDE::LEFT] = statsGetIMD(
 				ini, psBodyStat, keys[j], WzString::fromUtf8("left"));
-			psBodyStat->ppIMDList[numStats * NUM_PROP_SIDES + RIGHT_PROP] = statsGetIMD(
+			psBodyStat->ppIMDList[numStats * (int)PROP_SIDE::COUNT + (int)PROP_SIDE::RIGHT] = statsGetIMD(
 				ini, psBodyStat, keys[j], WzString::fromUtf8("right"));
 			psBodyStat->ppMoveIMDList[numStats] = statsGetIMD(ini, psBodyStat, key, WzString::fromUtf8("moving"));
 			psBodyStat->ppStillIMDList[numStats] = statsGetIMD(ini, psBodyStat, key, WzString::fromUtf8("still"));
@@ -679,7 +665,7 @@ bool loadBrainStats(WzConfig& ini)
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
-		psStats->compType = COMP_BRAIN;
+		psStats->compType = COMPONENT_TYPE::BRAIN;
 
 		psStats->weight = ini.value("weight", 0).toInt();
 		psStats->base.maxDroids = ini.value("maxDroids").toInt();
@@ -706,7 +692,7 @@ bool loadBrainStats(WzConfig& ini)
 		psStats->psWeaponStat = nullptr;
 		if (ini.contains("turret"))
 		{
-			int weapon = getCompFromName(COMP_WEAPON, ini.value("turret").toWzString());
+			int weapon = getCompFromName(COMPONENT_TYPE::WEAPON, ini.value("turret").toWzString());
 			ASSERT_OR_RETURN(false, weapon >= 0, "Unable to find weapon for brain %s", getStatsName(psStats));
 			psStats->psWeaponStat = asWeaponStats + weapon;
 		}
@@ -776,7 +762,7 @@ bool loadPropulsionStats(WzConfig& ini)
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
-		psStats->compType = COMP_PROPULSION;
+		psStats->compType = COMPONENT_TYPE::PROPULSION;
 
 		psStats->base.hitpointPctOfBody = ini.value("hitpointPctOfBody", 0).toInt();
 		psStats->maxSpeed = ini.value("speed").toInt();
@@ -820,7 +806,7 @@ bool loadSensorStats(WzConfig& ini)
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
-		psStats->compType = COMP_SENSOR;
+		psStats->compType = COMPONENT_TYPE::SENSOR;
 
 		psStats->base.range = ini.value("range").toInt();
 		for (int j = 0; j < MAX_PLAYERS; j++)
@@ -899,7 +885,7 @@ bool loadECMStats(WzConfig& ini)
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
-		psStats->compType = COMP_ECM;
+		psStats->compType = COMPONENT_TYPE::ECM;
 
 		psStats->base.range = ini.value("range").toInt();
 		for (int j = 0; j < MAX_PLAYERS; j++)
@@ -912,7 +898,7 @@ bool loadECMStats(WzConfig& ini)
 		WzString location = ini.value("location").toWzString();
 		if (location.compare("DEFAULT") == 0)
 		{
-			psStats->location = LOC_DEFAULT;
+			psStats->location = LOC::DEFAULT;
 		}
 		else if (location.compare("TURRET") == 0)
 		{
@@ -948,7 +934,7 @@ bool loadRepairStats(WzConfig& ini)
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
-		psStats->compType = COMP_REPAIRUNIT;
+		psStats->compType = COMPONENT_TYPE::REPAIR_UNIT;
 
 		psStats->base.repairPoints = ini.value("repairPoints").toInt();
 		for (int j = 0; j < MAX_PLAYERS; j++)
@@ -962,11 +948,11 @@ bool loadRepairStats(WzConfig& ini)
 		WzString location = ini.value("location").toWzString();
 		if (location.compare("DEFAULT") == 0)
 		{
-			psStats->location = LOC_DEFAULT;
+			psStats->location = LOC::DEFAULT;
 		}
 		else if (location.compare("TURRET") == 0)
 		{
-			psStats->location = LOC_TURRET;
+			psStats->location = LOC::TURRET;
 		}
 		else
 		{
@@ -1001,7 +987,7 @@ bool loadConstructStats(WzConfig& ini)
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
-		psStats->compType = COMP_CONSTRUCT;
+		psStats->compType = COMPONENT_TYPE::CONSTRUCT;
 
 		psStats->base.constructPoints = ini.value("constructPoints").toInt();
 		for (int j = 0; j < MAX_PLAYERS; j++)
@@ -1044,16 +1030,16 @@ bool loadPropulsionTypes(WzConfig& ini)
 			return false;
 		}
 
-		PROPULSION_TYPES* pPropType = &asPropulsionTypes[type];
+		Propulsion* pPropType = &asPropulsionTypes[type];
 
 		WzString flightName = ini.value("flightName").toWzString();
 		if (flightName.compare("GROUND") == 0)
 		{
-			pPropType->travel = GROUND;
+			pPropType->travel = TRAVEL_MEDIUM::GROUND;
 		}
 		else if (flightName.compare("AIR") == 0)
 		{
-			pPropType->travel = AIR;
+			pPropType->travel = TRAVEL_MEDIUM::AIR;
 		}
 		else
 		{
@@ -1086,7 +1072,7 @@ bool loadPropulsionTypes(WzConfig& ini)
 
 bool loadTerrainTable(WzConfig& ini)
 {
-	asTerrainTable = (int*)malloc(sizeof(*asTerrainTable) * PROPULSION_TYPE_NUM * TER_MAX);
+	asTerrainTable = (int*)malloc(sizeof(*asTerrainTable) * (int)PROPULSION_TYPE::COUNT * TER_MAX);
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
 	for (int i = 0; i < list.size(); ++i)
@@ -1094,16 +1080,16 @@ bool loadTerrainTable(WzConfig& ini)
 		ini.beginGroup(list[i]);
 		int terrainType = ini.value("id").toInt();
 		ini.beginGroup("speedFactor");
-		asTerrainTable[terrainType * PROPULSION_TYPE_NUM + PROPULSION_TYPE_WHEELED] = ini.value("wheeled", 100).
+		asTerrainTable[terrainType * (int)PROPULSION_TYPE::COUNT + (int)PROPULSION_TYPE::WHEELED] = ini.value("wheeled", 100).
 			toUInt();
-		asTerrainTable[terrainType * PROPULSION_TYPE_NUM + PROPULSION_TYPE_TRACKED] = ini.value("tracked", 100).
+		asTerrainTable[terrainType * (int)PROPULSION_TYPE::COUNT + (int)PROPULSION_TYPE::TRACKED] = ini.value("tracked", 100).
 			toUInt();
-		asTerrainTable[terrainType * PROPULSION_TYPE_NUM + PROPULSION_TYPE_LEGGED] = ini.value("legged", 100).toUInt();
-		asTerrainTable[terrainType * PROPULSION_TYPE_NUM + PROPULSION_TYPE_HOVER] = ini.value("hover", 100).toUInt();
-		asTerrainTable[terrainType * PROPULSION_TYPE_NUM + PROPULSION_TYPE_LIFT] = ini.value("lift", 100).toUInt();
-		asTerrainTable[terrainType * PROPULSION_TYPE_NUM + PROPULSION_TYPE_PROPELLOR] = ini.value("propellor", 100).
+		asTerrainTable[terrainType * (int)PROPULSION_TYPE::COUNT + (int)PROPULSION_TYPE::LEGGED] = ini.value("legged", 100).toUInt();
+		asTerrainTable[terrainType * (int)PROPULSION_TYPE::COUNT + (int)PROPULSION_TYPE::HOVER] = ini.value("hover", 100).toUInt();
+		asTerrainTable[terrainType * (int)PROPULSION_TYPE::COUNT + (int)PROPULSION_TYPE::LIFT] = ini.value("lift", 100).toUInt();
+		asTerrainTable[terrainType * (int)PROPULSION_TYPE::COUNT + (int)PROPULSION_TYPE::PROPELLOR] = ini.value("propellor", 100).
 			toUInt();
-		asTerrainTable[terrainType * PROPULSION_TYPE_NUM + PROPULSION_TYPE_HALF_TRACKED] = ini.value(
+		asTerrainTable[terrainType * (int)PROPULSION_TYPE::COUNT + (int)PROPULSION_TYPE::HALF_TRACKED] = ini.value(
 			"half-tracked", 100).toUInt();
 		ini.endGroup();
 		ini.endGroup();
@@ -1133,13 +1119,13 @@ static bool statsGetAudioIDFromString(const WzString& szStatName, const WzString
 bool loadWeaponModifiers(WzConfig& ini)
 {
 	//initialise to 100%
-	for (int i = 0; i < WEAPON_EFFECT::NUMEFFECTS; i++)
+	for (auto i = 0; i < (int)WEAPON_EFFECT::COUNT; i++)
 	{
-		for (int j = 0; j < PROPULSION_TYPE_NUM; j++)
+		for (auto j = 0; j < (int)PROPULSION_TYPE::COUNT; j++)
 		{
 			asWeaponModifier[i][j] = 100;
 		}
-		for (int j = 0; j < SIZE_NUM; j++)
+		for (auto j = 0; j < (int)BODY_SIZE::COUNT; j++)
 		{
 			asWeaponModifierBody[i][j] = 100;
 		}
@@ -1225,7 +1211,7 @@ bool loadPropulsionSounds(const char* pFileName)
 			debug(LOG_FATAL, "Invalid Propulsion type - %s", list[i].toUtf8().c_str());
 			return false;
 		}
-		PROPULSION_TYPES* pPropType = &asPropulsionTypes[type];
+		Propulsion* pPropType = &asPropulsionTypes[type];
 		pPropType->startID = (SWORD)startID;
 		pPropType->idleID = (SWORD)idleID;
 		pPropType->moveOffID = (SWORD)moveOffID;
@@ -1242,8 +1228,8 @@ bool loadPropulsionSounds(const char* pFileName)
 //get the speed factor for a given terrain type and propulsion type
 unsigned getSpeedFactor(unsigned type, unsigned propulsionType)
 {
-	ASSERT(propulsionType < PROPULSION_TYPE_NUM, "The propulsion type is too large");
-	return asTerrainTable[type * PROPULSION_TYPE_NUM + propulsionType];
+	ASSERT(propulsionType < (unsigned)PROPULSION_TYPE::COUNT, "The propulsion type is too large");
+	return asTerrainTable[type * (unsigned)PROPULSION_TYPE::COUNT + propulsionType];
 }
 
 int getCompFromName(COMPONENT_TYPE compType, const WzString& name)
@@ -1313,12 +1299,12 @@ bool getBodySize(const WzString& size, BODY_SIZE* pStore)
 	}
 	else if (!strcmp(size.toUtf8().c_str(), "HEAVY"))
 	{
-		*pStore = SIZE_HEAVY;
+		*pStore = BODY_SIZE::HEAVY;
 		return true;
 	}
 	else if (!strcmp(size.toUtf8().c_str(), "SUPER HEAVY"))
 	{
-		*pStore = SIZE_SUPER_HEAVY;
+		*pStore = BODY_SIZE::SUPER_HEAVY;
 		return true;
 	}
 
@@ -1530,17 +1516,16 @@ bool getWeaponEffect(const WzString& weaponEffect, WEAPON_EFFECT* effect)
 }
 
 /*returns the weapon effect string based on the enum passed in */
-const char* getWeaponEffect(WEAPON_EFFECT effect)
+std::string getWeaponEffect(WEAPON_EFFECT effect)
 {
-	switch (effect)
-	{
-	case WEAPON_EFFECT::ANTI_PERSONNEL: return "ANTI PERSONNEL";
-	case WEAPON_EFFECT::ANTI_TANK: return "ANTI TANK";
-	case WEAPON_EFFECT::BUNKER_BUSTER: return "BUNKER BUSTER";
-	case WEAPON_EFFECT::ARTILLERY_ROUND: return "ARTILLERY ROUND";
-	case WEAPON_EFFECT::FLAMER: return "FLAMER";
-	case WEAPON_EFFECT::ANTI_AIRCRAFT: return "ANTI AIRCRAFT";
-	case WEAPON_EFFECT::NUMEFFECTS: break;
+	switch (effect) {
+	  case WEAPON_EFFECT::ANTI_PERSONNEL: return "ANTI PERSONNEL";
+	  case WEAPON_EFFECT::ANTI_TANK: return "ANTI TANK";
+	  case WEAPON_EFFECT::BUNKER_BUSTER: return "BUNKER BUSTER";
+	  case WEAPON_EFFECT::ARTILLERY_ROUND: return "ARTILLERY ROUND";
+	  case WEAPON_EFFECT::FLAMER: return "FLAMER";
+	  case WEAPON_EFFECT::ANTI_AIRCRAFT: return "ANTI AIRCRAFT";
+	  case WEAPON_EFFECT::COUNT: break;
 	}
 	ASSERT(false, "No such weapon effect");
 	return "Bad weapon effect";
@@ -1687,63 +1672,52 @@ int weaponROF(const WeaponStats* psStat, unsigned player)
 bool objHasWeapon(const SimpleObject* psObj)
 {
 	//check if valid type
-	if (psObj->type == OBJ_DROID)
-	{
-		if (((const Droid*)psObj)->numWeaps > 0)
-		{
+	if (psObj->type == OBJ_DROID) {
+		if (((const Droid*)psObj)->numWeaps > 0) {
 			return true;
 		}
 	}
-	else if (psObj->type == OBJ_STRUCTURE)
-	{
-		if (((const Structure*)psObj)->numWeaps > 0)
-		{
+	else if (psObj->type == OBJ_STRUCTURE) {
+		if (((const Structure*)psObj)->numWeaps > 0) {
 			return true;
 		}
 	}
-
 	return false;
 }
 
 SensorStats* objActiveRadar(const SimpleObject* psObj)
 {
 	SensorStats* psStats = nullptr;
-	int compIndex;
 
-	switch (psObj->type) {
-	case OBJ_DROID:
-		if (((const Droid*)psObj)->type != DROID_TYPE::SENSOR && ((const Droid*)psObj)->type != DROID_TYPE::COMMAND)
-		{
-			return nullptr;
-		}
-		compIndex = ((const Droid*)psObj)->asBits[COMP_SENSOR];
-		ASSERT_OR_RETURN(nullptr, compIndex < numSensorStats, "Invalid range referenced for numSensorStats, %d > %d",
-		                 compIndex, numSensorStats);
-		psStats = asSensorStats + compIndex;
-		break;
-	case OBJ_STRUCTURE:
-		psStats = ((const Structure*)psObj)->pStructureType->sensor_stats;
-		if (psStats == nullptr || psStats->location != LOC::TURRET ||
-        ((const Structure*)psObj)->status != SS_BUILT) {
-			return nullptr;
-		}
-		break;
-	default:
-		break;
-	}
+	if (auto psDroid = dynamic_cast<const Droid*>(psObj)) {
+
+    if (psDroid->getType() != DROID_TYPE::SENSOR &&
+        psDroid->getType() != DROID_TYPE::COMMAND) {
+      return nullptr;
+    }
+    psStats = psDroid->getSensor();
+  }
+	else if (auto psStruct = dynamic_cast<const Structure*>(psObj)) {
+    psStats = psStruct->getStats().sensor_stats;
+    if (!psStats || psStats->location != LOC::TURRET ||
+        psStruct->getState() != STRUCTURE_STATE::BUILT) {
+      return nullptr;
+    }
+  }
+
 	return psStats;
 }
 
 bool objRadarDetector(const SimpleObject *psObj)
 {
 	if (const auto& psStruct = dynamic_cast<const Structure*>(psObj)) {
-		return (psStruct->getState() == STRUCTURE_STATE::BUILT &&
+		return psStruct->getState() == STRUCTURE_STATE::BUILT &&
             psStruct->getStats().sensor_stats &&
-            psStruct->getStats().sensor_stats->type == SENSOR_TYPE::RADAR_DETECTOR);
+            psStruct->getStats().sensor_stats->type == SENSOR_TYPE::RADAR_DETECTOR;
 	}
 	else if (const auto& psDroid = dynamic_cast<const Droid*>(psObj)) {
 		auto psSensor = getSensorStats(psDroid);
-		return (psSensor && psSensor->type == SENSOR_TYPE::RADAR_DETECTOR);
+		return psSensor && psSensor->type == SENSOR_TYPE::RADAR_DETECTOR;
 	}
 	return false;
 }

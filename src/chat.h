@@ -26,10 +26,6 @@
 #define __INCLUDED_SRC_CHAT_H__
 
 #include <set>
-#include <vector>
-#include <sstream>
-
-#include "multiplay.h"
 
 struct ChatMessage
 {

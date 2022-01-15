@@ -26,8 +26,6 @@
 #ifndef __INCLUDED_SRC_FPATH_H__
 #define __INCLUDED_SRC_FPATH_H__
 
-#include <memory>
-
 #include "astar.h"
 
 enum FPATH_MOVETYPE
@@ -71,7 +69,7 @@ struct PathJob
 struct PathResult
 {
     unsigned droidID; ///< Unique droid ID.
-    MOVE_CONTROL sMove; ///< New movement values for the droid.
+    Movement sMove; ///< New movement values for the droid.
     FPATH_RETVAL retval; ///< Result value from path-finding.
     Vector2i originalDest; ///< Used to check if the pathfinding job is to the right destination.
 };

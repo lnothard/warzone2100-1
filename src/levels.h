@@ -19,19 +19,16 @@
 */
 
 /**
- * @file
+ * @file levels.h
  * Control the data loading for game levels
  */
 
 #ifndef __INCLUDED_SRC_LEVELS_H__
 #define __INCLUDED_SRC_LEVELS_H__
 
-#include <list>
-
-#include "lib/framework/crc.h"
-
 #include "init.h"
-#include "gamedef.h"
+
+enum class GAME_TYPE;
 
 /// Maximum number of data files
 static constexpr auto LEVEL_MAXFILES = 9;

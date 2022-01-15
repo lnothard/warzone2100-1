@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 
 // At this time, we only have 1 window.
 static SDL_Window *WZwindow = nullptr;
-static optional<video_backend> WZbackend = video_backend::opengl;
+static optional<VIDEO_BACKEND> WZbackend = VIDEO_BACKEND::opengl;
 
 #if defined(WZ_OS_MAC)
 // on macOS, SDL_WINDOW_FULLSCREEN_DESKTOP *must* be used (or high-DPI fullscreen toggling breaks)
@@ -313,7 +313,7 @@ std::vector<unsigned int> wzAvailableDisplayScales()
 	return std::vector<unsigned int>(wzDisplayScales, wzDisplayScales + (sizeof(wzDisplayScales) / sizeof(wzDisplayScales[0])));
 }
 
-static std::vector<video_backend>& sortGfxBackendsForCurrentSystem(std::vector<video_backend>& backends)
+static std::vector<VIDEO_BACKEND>& sortGfxBackendsForCurrentSystem(std::vector<VIDEO_BACKEND>& backends)
 {
 #if defined(_WIN32) && defined(WZ_BACKEND_DIRECTX) && (defined(_M_ARM64) || defined(_M_ARM))
 	// On ARM-based Windows, DirectX should be first (for compatibility)
@@ -328,10 +328,10 @@ static std::vector<video_backend>& sortGfxBackendsForCurrentSystem(std::vector<v
 	return backends;
 }
 
-std::vector<video_backend> wzAvailableGfxBackends()
+std::vector<VIDEO_BACKEND> wzAvailableGfxBackends()
 {
-	std::vector<video_backend> availableBackends;
-	availableBackends.push_back(video_backend::opengl);
+	std::vector<VIDEO_BACKEND> availableBackends;
+	availableBackends.push_back(VIDEO_BACKEND::opengl);
 #if !defined(WZ_OS_MAC) // OpenGL ES is not supported on macOS, and WZ doesn't currently ship with an OpenGL ES library on macOS
 	availableBackends.push_back(video_backend::opengles);
 #endif
@@ -345,7 +345,7 @@ std::vector<video_backend> wzAvailableGfxBackends()
 	return availableBackends;
 }
 
-video_backend wzGetDefaultGfxBackendForCurrentSystem()
+VIDEO_BACKEND wzGetDefaultGfxBackendForCurrentSystem()
 {
 	// SDL backend supports: OpenGL, OpenGLES, Vulkan (if compiled with support), DirectX (on Windows, via LibANGLE)
 
@@ -359,13 +359,13 @@ video_backend wzGetDefaultGfxBackendForCurrentSystem()
 	//	- Check if Vulkan appears to be properly supported on a Windows / Linux system, and default to Vulkan backend?
 
 	// For now, default to OpenGL (which automatically falls back to OpenGL ES if needed)
-	return video_backend::opengl;
+	return VIDEO_BACKEND::opengl;
 #endif
 }
 
-static video_backend wzGetNextFallbackGfxBackendForCurrentSystem(const video_backend& current_failed_backend)
+static VIDEO_BACKEND wzGetNextFallbackGfxBackendForCurrentSystem(const VIDEO_BACKEND& current_failed_backend)
 {
-	video_backend next_backend;
+	VIDEO_BACKEND next_backend;
 #if defined(_WIN32) && defined(WZ_BACKEND_DIRECTX)
 	switch (current_failed_backend)
 	{
@@ -387,9 +387,9 @@ static video_backend wzGetNextFallbackGfxBackendForCurrentSystem(const video_bac
 #elif defined(WZ_OS_MAC)
 	switch (current_failed_backend)
 	{
-		case video_backend::opengl:
+		case VIDEO_BACKEND::opengl:
 			// offer Vulkan (which uses Vulkan -> Metal) as a fallback option if OpenGL failed
-			next_backend = video_backend::vulkan;
+			next_backend = VIDEO_BACKEND::vulkan;
 			break;
 		default:
 			// offer usual default
@@ -424,10 +424,10 @@ void SDL_WZBackend_GetDrawableSize(SDL_Window* window,
 #if defined(WZ_BACKEND_DIRECTX)
 		case video_backend::directx: // because DirectX is supported via OpenGLES (LibANGLE)
 #endif
-		case video_backend::opengl:
-		case video_backend::opengles:
+		case VIDEO_BACKEND::opengl:
+		case VIDEO_BACKEND::opengles:
 			return SDL_GL_GetDrawableSize(window, w, h);
-		case video_backend::vulkan:
+		case VIDEO_BACKEND::vulkan:
 #if defined(HAVE_SDL_VULKAN_H)
 			return SDL_Vulkan_GetDrawableSize(window, w, h);
 #else
@@ -438,7 +438,7 @@ void SDL_WZBackend_GetDrawableSize(SDL_Window* window,
 			if (h) { h = 0; }
 			return;
 #endif
-		case video_backend::num_backends:
+		case VIDEO_BACKEND::num_backends:
 			debug(LOG_FATAL, "Should never happen");
 			return;
 	}
@@ -2007,31 +2007,31 @@ void wzGetWindowResolution(int *screen, unsigned int *width, unsigned int *heigh
 	}
 }
 
-static SDL_WindowFlags SDL_backend(const video_backend& backend)
+static SDL_WindowFlags SDL_backend(const VIDEO_BACKEND& backend)
 {
 	switch (backend)
 	{
 #if defined(WZ_BACKEND_DIRECTX)
 		case video_backend::directx: // because DirectX is supported via OpenGLES (LibANGLE)
 #endif
-		case video_backend::opengl:
-		case video_backend::opengles:
+		case VIDEO_BACKEND::opengl:
+		case VIDEO_BACKEND::opengles:
 			return SDL_WINDOW_OPENGL;
-		case video_backend::vulkan:
+		case VIDEO_BACKEND::vulkan:
 #if SDL_VERSION_ATLEAST(2, 0, 6)
 			return SDL_WINDOW_VULKAN;
 #else
 			debug(LOG_FATAL, "The version of SDL used for compilation does not support SDL_WINDOW_VULKAN");
 			break;
 #endif
-		case video_backend::num_backends:
+		case VIDEO_BACKEND::num_backends:
 			debug(LOG_FATAL, "Should never happen");
 			break;
 	}
 	return SDL_WindowFlags{};
 }
 
-bool shouldResetGfxBackendPrompt(video_backend currentBackend, video_backend newBackend, std::string failedToInitializeObject = "graphics", std::string additionalErrorDetails = "")
+bool shouldResetGfxBackendPrompt(VIDEO_BACKEND currentBackend, VIDEO_BACKEND newBackend, std::string failedToInitializeObject = "graphics", std::string additionalErrorDetails = "")
 {
 	// Offer to reset to the specified gfx backend
 	std::string resetString = std::string("Reset to ") + to_display_string(newBackend) + "";
@@ -2068,7 +2068,7 @@ bool shouldResetGfxBackendPrompt(video_backend currentBackend, video_backend new
 	return false;
 }
 
-void resetGfxBackend(video_backend newBackend, bool displayRestartMessage = true)
+void resetGfxBackend(VIDEO_BACKEND newBackend, bool displayRestartMessage = true)
 {
 	war_setGfxBackend(newBackend);
 	if (displayRestartMessage)
@@ -2188,9 +2188,9 @@ void wzSDLPreWindowCreate_InitVulkanLibrary()
 }
 
 // This stage, we handle display mode setting
-optional<SDL_gfx_api_Impl_Factory::Configuration> wzMainScreenSetup_CreateVideoWindow(const video_backend& backend, int antialiasing, WINDOW_MODE fullscreen, int vsync, bool highDPI)
+optional<SDL_gfx_api_Impl_Factory::Configuration> wzMainScreenSetup_CreateVideoWindow(const VIDEO_BACKEND& backend, int antialiasing, WINDOW_MODE fullscreen, int vsync, bool highDPI)
 {
-	const bool useOpenGLES = (backend == video_backend::opengles)
+	const bool useOpenGLES = (backend == VIDEO_BACKEND::opengles)
 #if defined(WZ_BACKEND_DIRECTX)
 		|| (backend == video_backend::directx)
 #endif
@@ -2200,7 +2200,7 @@ optional<SDL_gfx_api_Impl_Factory::Configuration> wzMainScreenSetup_CreateVideoW
 		|| (backend == video_backend::directx)
 #endif
 	;
-	const bool usesSDLBackend_OpenGL = useOpenGLES || (backend == video_backend::opengl);
+	const bool usesSDLBackend_OpenGL = useOpenGLES || (backend == VIDEO_BACKEND::opengl);
 
 	// populate with the saved configuration values (if we had any)
 	int width = war_GetWidth();
@@ -2221,7 +2221,7 @@ optional<SDL_gfx_api_Impl_Factory::Configuration> wzMainScreenSetup_CreateVideoW
 	{
 		wzSDLPreWindowCreate_InitOpenGLAttributes(antialiasing, useOpenGLES, useOpenGLESLibrary);
 	}
-	else if (backend == video_backend::vulkan)
+	else if (backend == VIDEO_BACKEND::vulkan)
 	{
 		wzSDLPreWindowCreate_InitVulkanLibrary();
 	}
@@ -2400,7 +2400,7 @@ optional<SDL_gfx_api_Impl_Factory::Configuration> wzMainScreenSetup_CreateVideoW
 	if (!WZwindow)
 	{
 		std::string createWindowErrorStr = SDL_GetError();
-		video_backend defaultBackend = wzGetNextFallbackGfxBackendForCurrentSystem(backend);
+		VIDEO_BACKEND defaultBackend = wzGetNextFallbackGfxBackendForCurrentSystem(backend);
 		if ((backend != defaultBackend) && shouldResetGfxBackendPrompt(backend, defaultBackend, "window", createWindowErrorStr))
 		{
 			resetGfxBackend(defaultBackend);
@@ -2554,7 +2554,7 @@ bool wzMainScreenSetup_VerifyWindow()
 	return true;
 }
 
-bool wzMainScreenSetup(optional<video_backend> backend, int antialiasing, WINDOW_MODE fullscreen, int vsync, bool highDPI)
+bool wzMainScreenSetup(optional<VIDEO_BACKEND> backend, int antialiasing, WINDOW_MODE fullscreen, int vsync, bool highDPI)
 {
 	// Output linked SDL version
 	char buf[512];
@@ -2616,7 +2616,7 @@ bool wzMainScreenSetup(optional<video_backend> backend, int antialiasing, WINDOW
 	gfx_api::backend_type gfxapi_backend = gfx_api::backend_type::null_backend;
 	if (backend.has_value())
 	{
-		if (backend.value() == video_backend::vulkan)
+		if (backend.value() == VIDEO_BACKEND::vulkan)
 		{
 			gfxapi_backend = gfx_api::backend_type::vulkan_backend;
 		}
@@ -2631,7 +2631,7 @@ bool wzMainScreenSetup(optional<video_backend> backend, int antialiasing, WINDOW
 		// Failed to initialize desired backend / renderer settings
 		if (backend.has_value())
 		{
-			video_backend defaultBackend = wzGetNextFallbackGfxBackendForCurrentSystem(backend.value());
+			VIDEO_BACKEND defaultBackend = wzGetNextFallbackGfxBackendForCurrentSystem(backend.value());
 			if ((backend.value() != defaultBackend) && shouldResetGfxBackendPrompt(backend.value(), defaultBackend))
 			{
 				resetGfxBackend(defaultBackend);

@@ -1892,7 +1892,7 @@ bool runVideoOptionsMenu()
 	case FRONTEND_GFXBACKEND:
 	case FRONTEND_GFXBACKEND_R:
 		{
-			const std::vector<video_backend> availableBackends = wzAvailableGfxBackends();
+			const std::vector<VIDEO_BACKEND> availableBackends = wzAvailableGfxBackends();
 			if (!availableBackends.empty())
 			{
 				auto current = std::find(availableBackends.begin(), availableBackends.end(), war_getGfxBackend());

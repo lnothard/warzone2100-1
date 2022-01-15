@@ -89,11 +89,11 @@ enum DragState
 
 struct DragBox3D
 {
-	int x1;
-	int y1;
-	int x2;
-	int y2;
-	DragState status;
+	int x1 = 0;
+	int y1 = 0;
+	int x2 = 0;
+	int y2 = 0;
+	DragState status = DRAG_INACTIVE;
 	float pulse = 0;
 };
 
@@ -192,32 +192,34 @@ bool CheckScrollLimits();
 SimpleObject* mouseTarget();
 
 void cancelDeliveryRepos();
-void startDeliveryPosition(FLAG_POSITION* psFlag);
+void startDeliveryPosition(FlagPosition* psFlag);
 bool deliveryReposValid();
 void processDeliveryRepos();
 void renderDeliveryRepos(const glm::mat4& viewMatrix);
-bool deliveryReposFinished(FLAG_POSITION* psFlag = nullptr);
+bool deliveryReposFinished(FlagPosition* psFlag = nullptr);
 
 bool getRotActive();
 
-#define MAX_PLAYER_X_ANGLE	(-1)
-#define MIN_PLAYER_X_ANGLE	(-90)
+static constexpr auto MAX_PLAYER_X_ANGLE	= -1;
+static constexpr auto MIN_PLAYER_X_ANGLE	= -90;
 
-#define MAXDISTANCE_REPLAY	(7000)
-#define MAXDISTANCE	(5000)
-#define MINDISTANCE	(0)
-#define MINDISTANCE_CONFIG (1600)
-#define MAP_ZOOM_CONFIG_STEP (200)
-#define STARTDISTANCE	(2600)
-#define OLD_START_HEIGHT (1500) // only used in savegames <= 10
+static constexpr auto MAXDISTANCE_REPLAY	= 7000;
+static constexpr auto MAXDISTANCE	= 5000;
+static constexpr auto MINDISTANCE	= 0;
+static constexpr auto MINDISTANCE_CONFIG = 1600;
+static constexpr auto MAP_ZOOM_CONFIG_STEP = 200;
+static constexpr auto STARTDISTANCE	= 2600;
+static constexpr auto OLD_START_HEIGHT = 1500; // only used in savegames <= 1
 
-#define CAMERA_PIVOT_HEIGHT (500)
+static constexpr auto CAMERA_PIVOT_HEIGHT = 500;
 
-#define INITIAL_STARTING_PITCH (-40)
-#define OLD_INITIAL_ROTATION (-45) // only used in savegames <= 10
+static constexpr auto INITIAL_STARTING_PITCH = -40;
+static constexpr auto OLD_INITIAL_ROTATION = -45; // only used in savegames <= 1
 
-#define	HIDDEN_FRONTEND_WIDTH	(640)
-#define	HIDDEN_FRONTEND_HEIGHT	(480)
+static constexpr auto	HIDDEN_FRONTEND_WIDTH	= 640;
+static constexpr auto	HIDDEN_FRONTEND_HEIGHT	= 480;
+
+static constexpr auto	DEFAULT_VIEW_DISTANCE_ANIMATION_SPEED = 5000;
 
 //access function for bSensorAssigned variable
 void setSensorAssigned();
@@ -227,7 +229,6 @@ void AddDerrickBurningMessage();
 // check whether the queue order keys are pressed
 bool ctrlShiftDown();
 
-#define	DEFAULT_VIEW_DISTANCE_ANIMATION_SPEED (5000)
 
 void animateToViewDistance(float target, float speed = DEFAULT_VIEW_DISTANCE_ANIMATION_SPEED);
 void incrementViewDistance(float amount);

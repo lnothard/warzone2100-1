@@ -26,15 +26,9 @@
 #ifndef __INCLUDED_SRC_STATS_H__
 #define __INCLUDED_SRC_STATS_H__
 
-#include <algorithm>
-#include <bitset>
-#include <vector>
-#include <utility>
-
 #include "lib/framework/wzconfig.h"
-#include "lib/framework/wzstring.h"
 
-#include "objectdef.h"
+enum class DROID_TYPE;
 
 static constexpr auto SHOOT_ON_GROUND = 0x01;
 static constexpr auto SHOOT_IN_AIR = 0x02;
@@ -256,7 +250,7 @@ struct BaseStats
     /// Text id (i.e. short language-independent name)
     WzString id;
 
-    /// Full / real name of the item
+    /// Full/real name of the item
     WzString name;
 
     /// Unique ID of the item
@@ -270,8 +264,6 @@ struct BaseStats
 #define getID(_psStats) (_psStats)->id.toUtf8().c_str()
 #define checkIfZNullStat(_psStats) ((_psStats)->id.toUtf8().find("ZNULL") != std::string::npos)
 
-enum class DROID_TYPE;
-
 /// Stats common to all droid components
 struct ComponentStats : public BaseStats
 {
@@ -280,18 +272,26 @@ struct ComponentStats : public BaseStats
     struct Upgradeable
     {
         /// Number of upgradeable hit points
-        unsigned hit_points = 0;
+        unsigned hitPoints = 0;
         /// Adjust final droid hit points by this percentage amount
         int hitpointPct = 100;
-    };
+    } base, upgraded[MAX_PLAYERS];
 
-    std::unique_ptr<iIMDShape> pIMD; /**< The IMD to draw for this component */
-    unsigned buildPower = 0; /**< Power required to build the component */
-    unsigned buildPoints = 0; /**< Time required to build the component */
-    unsigned weight = 0; /**< Component's weight */
+    /// The IMD to draw for this component
+    std::unique_ptr<iIMDShape> pIMD;
+
+    /// Power required to build the component
+    unsigned buildPower = 0;
+
+    /// Time required to build the component
+    unsigned buildPoints = 0;
+
+    unsigned weight = 0;
     COMPONENT_TYPE compType = COMPONENT_TYPE::COUNT;
     DROID_TYPE droidTypeOverride;
-    bool designable = false; ///< Flag to indicate whether this component can be used in the design screen
+
+    /// `true` iff this component may be used in the design screen
+    bool designable = false;
 };
 
 struct PropulsionStats : public ComponentStats
@@ -327,7 +327,7 @@ struct SensorStats : public ComponentStats
 struct EcmStats : public ComponentStats
 {
     std::unique_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
-    unsigned location = 0; ///< Specifies whether the ECM is default or for the Turret
+    LOC location; ///< Specifies whether the ECM is default or for the Turret
 
     struct : Upgradeable
     {
@@ -338,7 +338,7 @@ struct EcmStats : public ComponentStats
 struct RepairStats : public ComponentStats
 {
     std::unique_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
-    unsigned location = 0; ///< Specifies whether the Repair is default or for the Turret
+    LOC location; ///< Specifies whether the Repair is default or for the Turret
     unsigned time = 0; ///< Time delay for repair cycle
 
     struct : Upgradeable
@@ -421,7 +421,8 @@ struct ConstructStats : public ComponentStats
 
     struct : Upgradeable
     {
-        unsigned constructPoints; ///< The number of points contributed each cycle
+        /// The number of points contributed each cycle
+        unsigned constructPoints;
     } upgraded[MAX_PLAYERS], base;
 };
 
@@ -433,13 +434,16 @@ struct CommanderStats : public ComponentStats
     struct : Upgradeable
     {
         std::vector<int> rankThresholds;
-        int maxDroids = 0; ///< base maximum number of droids that the commander can control
-        int maxDroidsMult = 0; ///< maximum number of controlled droids multiplied by level
+
+        /// base maximum number of droids that the commander can control
+        int maxDroids = 0;
+
+        /// maximum number of controlled droids multiplied by level
+        int maxDroidsMult = 0;
     } upgraded[MAX_PLAYERS], base;
 
     std::vector<std::string> rankNames;
 };
-
 
 struct BodyStats : public ComponentStats
 {
@@ -467,16 +471,31 @@ struct BodyStats : public ComponentStats
     } upgraded[MAX_PLAYERS], base;
 };
 
-struct PROPULSION_TYPES
+struct Propulsion
 {
-    TRAVEL_MEDIUM travel = TRAVEL_MEDIUM::GROUND; ///< Which medium the propulsion travels in
-    uint16_t powerRatioMult = 0; ///< Multiplier for the calculated power ratio of the droid
-    int16_t startID = 0; ///< sound to play when this prop type starts
-    int16_t idleID = 0; ///< sound to play when this prop type is idle
-    int16_t moveOffID = 0; ///< sound to link moveID and idleID
-    int16_t moveID = 0; ///< sound to play when this prop type is moving
-    int16_t hissID = 0; ///< sound to link moveID and idleID
-    int16_t shutDownID = 0; ///< sound to play when this prop type shuts down
+    /// Which medium the propulsion travels through
+    TRAVEL_MEDIUM travel = TRAVEL_MEDIUM::GROUND;
+
+    /// Multiplier for the calculated power ratio of the droid
+    uint16_t powerRatioMult = 0;
+
+    /// The Sound to play when this prop type starts
+    int16_t startID = 0;
+
+    /// The sound to play when this prop type is idle
+    int16_t idleID = 0;
+
+    /// The sound to link moveID and idleID
+    int16_t moveOffID = 0;
+
+    /// The sound to play when this prop type is moving
+    int16_t moveID = 0;
+
+    /// The sound to link moveID and idleID
+    int16_t hissID = 0;
+
+    /// The sound to play when this prop type shuts down
+    int16_t shutDownID = 0;
 };
 
 typedef uint16_t WEAPON_MODIFIER;
@@ -490,11 +509,11 @@ extern EcmStats* asECMStats;
 extern RepairStats* asRepairStats;
 extern WeaponStats* asWeaponStats;
 extern ConstructStats* asConstructStats;
-extern std::vector<PROPULSION_TYPES> asPropulsionTypes;
+extern std::vector<Propulsion> asPropulsionTypes;
 
 //used to hold the modifiers cross refd by weapon effect and propulsion type
-extern WEAPON_MODIFIER asWeaponModifier[WE_NUMEFFECTS][PROPULSION_TYPE_NUM];
-extern WEAPON_MODIFIER asWeaponModifierBody[WE_NUMEFFECTS][SIZE_NUM];
+extern WEAPON_MODIFIER asWeaponModifier[(size_t)WEAPON_EFFECT::COUNT][(size_t)PROPULSION_TYPE::COUNT];
+extern WEAPON_MODIFIER asWeaponModifierBody[(size_t)WEAPON_EFFECT::COUNT][(size_t)BODY_SIZE::COUNT];
 
 /* The number of different stats stored */
 extern unsigned numBodyStats;
@@ -508,7 +527,7 @@ extern unsigned numConstructStats;
 extern unsigned numTerrainTypes;
 
 //stores for each players component states - see below
-extern uint8_t* apCompLists[MAX_PLAYERS][COMPONENT_TYPE::COUNT];
+extern uint8_t* apCompLists[MAX_PLAYERS][(size_t)COMPONENT_TYPE::COUNT];
 
 //store for each players Structure states
 extern uint8_t* apStructTypeLists[MAX_PLAYERS];
@@ -526,9 +545,6 @@ enum ItemAvailability
 	// The player no longer needs this item.
 };
 
-/*******************************************************************************
-*		Allocate stats functions
-*******************************************************************************/
 /* Allocate Weapon stats */
 bool statsAllocWeapons(unsigned numEntries);
 
@@ -595,10 +611,6 @@ bool loadTerrainTable(WzConfig& ini);
 
 /*Load the Weapon Effect Modifiers from the file exported from Access*/
 bool loadWeaponModifiers(WzConfig& ini);
-
-/*******************************************************************************
-*		Generic stats functions
-*******************************************************************************/
 
 /*calls the STATS_DEALLOC macro for each set of stats*/
 bool statsShutDown();
@@ -681,7 +693,7 @@ void statsInitVars();
 
 bool getWeaponEffect(const WzString& weaponEffect, WEAPON_EFFECT* effect);
 /*returns the weapon effect string based on the enum passed in */
-const char* getWeaponEffect(WEAPON_EFFECT effect);
+std::string getWeaponEffect(WEAPON_EFFECT effect);
 
 bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS* weaponClass);
 

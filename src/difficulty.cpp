@@ -24,7 +24,8 @@
  */
 
 #include "difficulty.h"
-#include "src/multiplay.h"
+
+bool bMultiPlayer;
 
 static DIFFICULTY_LEVEL presDifLevel = DIFFICULTY_LEVEL::NORMAL;
 

@@ -23,34 +23,20 @@
  * Load feature stats
  */
 
-#include "lib/framework/frame.h"
-
 #include "lib/gamelib/gtime.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
-#include "lib/netplay/netplay.h"
 #include "lib/ivis_opengl/imd.h"
 #include "lib/ivis_opengl/ivisdef.h"
 
+#include "combat.h"
+#include "display3d.h"
+#include "displaydef.h"
+#include "effects.h"
 #include "feature.h"
 #include "map.h"
-#include "hci.h"
-#include "power.h"
-#include "objects.h"
-#include "display.h"
-#include "order.h"
-#include "structure.h"
-#include "miscimd.h"
-#include "visibility.h"
-#include "effects.h"
-#include "scores.h"
-#include "combat.h"
-#include "multiplay.h"
 #include "qtscript.h"
-
-#include "mapgrid.h"
-#include "display3d.h"
-#include "random.h"
+#include "scores.h"
 
 /* The statistics for the features */
 FeatureStats* asFeatureStats;
@@ -263,7 +249,7 @@ std::unique_ptr<Feature> buildFeature(FeatureStats const* stats, unsigned x, uns
 	// set up the imd for the feature
 	psFeature->display->imd_shape = std::make_unique<iIMDShape>(*stats->psImd);
 
-	ASSERT_OR_RETURN(nullptr, psFeature->display->imd_shape.get(), "No IMD for feature"); // make sure we have an imd.
+	ASSERT_OR_RETURN(nullptr, psFeature->getDisplayData().imd_shape.get(), "No IMD for feature"); // make sure we have an imd.
 
 	for (int breadth = 0; breadth < b.size.y; ++breadth)
 	{
@@ -296,7 +282,7 @@ std::unique_ptr<Feature> buildFeature(FeatureStats const* stats, unsigned x, uns
 				psTile->psObject = dynamic_cast<SimpleObject*>(psFeature.get());
 
 				// if it's a tall feature then flag it in the map.
-				if (psFeature->display->imd_shape->max.y > TALLOBJECT_YMAX)
+				if (psFeature->getDisplayData().imd_shape->max.y > TALLOBJECT_YMAX)
 				{
 					auxSetBlocking(b.map.x + width, b.map.y + breadth, AIR_BLOCKED);
 				}

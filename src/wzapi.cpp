@@ -3792,19 +3792,19 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string
 			// dozens of buildings one at a time!
 			for (Structure* psCurr = apsStructLists[player]; psCurr; psCurr = psCurr->psNext)
 			{
-				if (psStats == psCurr->pStructureType && psStats->upgraded_stats[player].hitpoints < value)
+				if (psStats == psCurr->pStructureType && psStats->upgraded_stats[player].hitPoints < value)
 				{
-					psCurr->body = (psCurr->body * value) / psStats->upgraded_stats[player].hitpoints;
+					psCurr->body = (psCurr->body * value) / psStats->upgraded_stats[player].hitPoints;
 				}
 			}
 			for (Structure* psCurr = mission.apsStructLists[player]; psCurr; psCurr = psCurr->psNext)
 			{
-				if (psStats == psCurr->pStructureType && psStats->upgraded_stats[player].hitpoints < value)
+				if (psStats == psCurr->pStructureType && psStats->upgraded_stats[player].hitPoints < value)
 				{
-					psCurr->body = (psCurr->body * value) / psStats->upgraded_stats[player].hitpoints;
+					psCurr->body = (psCurr->body * value) / psStats->upgraded_stats[player].hitPoints;
 				}
 			}
-			psStats->upgraded_stats[player].hitpoints = value;
+			psStats->upgraded_stats[player].hitPoints = value;
 			break;
 		case SCRCB_LIMIT:
 			psStats->upgraded_stats[player].limit = value;
@@ -4099,7 +4099,7 @@ nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const s
 			break;
 		case SCRCB_ARM: return psStats->upgraded_stats[player].armour;
 			break;
-		case SCRCB_HIT: return psStats->upgraded_stats[player].hitpoints;
+		case SCRCB_HIT: return psStats->upgraded_stats[player].hitPoints;
 		case SCRCB_LIMIT: return psStats->upgraded_stats[player].limit;
 		default: SCRIPT_ASSERT(nlohmann::json(), context, false, "Component type not found for upgrade");
 			break;
@@ -4510,7 +4510,7 @@ nlohmann::json wzapi::constructStatsObject()
 			strct["RearmPoints"] = psStats->base.rearm;
 			strct["Armour"] = psStats->base.armour;
 			strct["Thermal"] = psStats->base.thermal;
-			strct["HitPoints"] = psStats->base.hitpoints;
+			strct["HitPoints"] = psStats->base.hitPoints;
 			strct["Resistance"] = psStats->base.resistance;
 			structbase[psStats->name.toUtf8()] = std::move(strct);
 		}

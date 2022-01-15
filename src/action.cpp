@@ -26,17 +26,9 @@
 #include "lib/framework/fixedpoint.h"
 #include "lib/framework/math_ext.h"
 #include "lib/sound/audio.h"
-#include "lib/sound/audio_id.h"
 
 #include "action.h"
-#include "cmddroid.h"
-#include "geometry.h"
 #include "mapgrid.h"
-#include "mission.h"
-#include "move.h"
-#include "projectile.h"
-#include "qtscript.h"
-#include "transporter.h"
 #include "visibility.h"
 
 /**

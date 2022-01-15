@@ -19,13 +19,11 @@
 
 /**
  * @file animation.h
- * Definitions for animation functions.
+ * Definitions for animation functions
  */
 
 #ifndef __INCLUDED_SRC_ANIMATION_H__
 #define __INCLUDED_SRC_ANIMATION_H__
-
-#include <cstdint>
 
 #include "lib/gamelib/gtime.h"
 

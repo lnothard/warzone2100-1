@@ -24,8 +24,11 @@
 #ifndef __INCLUDED_SRC_POWER_H__
 #define __INCLUDED_SRC_POWER_H__
 
+#include <cstdint>
+#include <string>
+
 /** Free power on collection of oildrum. */
-#define OILDRUM_POWER		100
+static constexpr auto OILDRUM_POWER	= 100;
 
 class Structure;
 
@@ -40,7 +43,7 @@ void delPowerRequest(Structure* psStruct);
 
 /// Checks how much power must be accumulated, before the power request from this Structure can be satisfied.
 /// Returns -1 if there is no power request or if there is enough power already.
-int32_t checkPowerRequest(Structure* psStruct);
+int checkPowerRequest(Structure* psStruct);
 
 bool requestPowerFor(Structure* psStruct, int32_t amount);
 bool requestPrecisePowerFor(Structure* psStruct, int64_t amount);

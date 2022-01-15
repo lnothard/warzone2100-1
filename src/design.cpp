@@ -23,49 +23,23 @@
  * Functions for the design screen
  */
 
-#include <algorithm>
-#include <cstring>
-#include <utility>
-
-#include "lib/framework/frame.h"
-#include "lib/framework/input.h"
-#include "lib/ivis_opengl/ivisdef.h"
 #include "lib/ivis_opengl/bitimage.h"
-#include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/ivis_opengl/piematrix.h"
-#include "lib/ivis_opengl/screen.h"
-#include "lib/ivis_opengl/piemode.h"
-#include "lib/ivis_opengl/textdraw.h"
-#include "lib/ivis_opengl/ivisdef.h"
-#include "lib/widget/widget.h"
-#include "lib/widget/bar.h"
 #include "lib/widget/button.h"
-#include "lib/gamelib/gtime.h"
 
-#include "loop.h"
-#include "map.h"
-#include "objects.h"
-#include "objmem.h"
-#include "display3d.h"
-#include "structure.h"
-#include "research.h"
-#include "hci.h"
-#include "stats.h"
-#include "power.h"
-#include "order.h"
-#include "projectile.h"
-#include "intimage.h"
-#include "intdisplay.h"
-#include "design.h"
-#include "component.h"
-#include "main.h"
-#include "display.h"
-#include "cmddroid.h"
-#include "mission.h"
-#include "template.h"
-#include "multiplay.h"
-#include "qtscript.h"
 #include "animation.h"
+#include "component.h"
+#include "design.h"
+#include "display.h"
+#include "intdisplay.h"
+#include "loop.h"
+#include "projectile.h"
+#include "qtscript.h"
+
+bool bMultiPlayer;
+void resetMissionWidgets();
+void clearMissionWidgets();
+unsigned generateNewObjectId();
 
 // Max number of stats the design screen can cope with.
 static constexpr auto MAX_DESIGN_COMPONENTS = 40;

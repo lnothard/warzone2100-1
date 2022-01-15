@@ -26,27 +26,21 @@
  */
 
 #include <sstream>
-#include <deque>
-#include <chrono>
 #include <set>
 
-#include "lib/framework/frame.h"
 #include "lib/framework/input.h"
-#include "lib/gamelib/gtime.h"
 #include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/textdraw.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
 
-#include "loadsave.h"
-#include "ai.h"
 #include "console.h"
-#include "main.h"
-#include "radar.h"
-#include "hci.h"
+#include "loadsave.h"
 #include "mission.h"
-#include "challenge.h"
+
+bool challengeActive;
+bool bEnemyAllyRadarColor;
 
 static std::deque<CONSOLE_MESSAGE> ActiveMessages; // we add all messages to this container
 static std::deque<CONSOLE_MESSAGE> TeamMessages; // history of team/private communications

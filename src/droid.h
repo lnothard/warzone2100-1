@@ -26,49 +26,59 @@
 #ifndef __INCLUDED_SRC_DROID_H__
 #define __INCLUDED_SRC_DROID_H__
 
-#include <queue>
+#include "wzmaplib/map.h"
 
 #include "group.h"
 #include "move.h"
-#include "order.h"
 #include "stats.h"
-#include "unit.h"
-#include "action.h"
 
-/** How long a droid runs after it fails do respond due to low moral. */
+class Action;
+enum class SELECTIONTYPE;
+enum class SELECTION_CLASS;
+enum class SECONDARY_ORDER;
+
+/// How long a droid runs after it fails do respond due to low morale
 static constexpr auto RUN_TIME = 8000;
 
-/** How long a droid runs burning after it fails do respond due to low moral. */
+/// How long a droid runs burning after it fails to respond due to low morale
 static constexpr auto RUN_BURN_TIME = 10000;
 
-/** The distance a droid has in guard mode. */
+/// The distance a droid has in guard mode
 static constexpr auto DEFEND_MAXDIST = TILE_UNITS * 3;
 
-/// The distance a droid has in guard mode.
+/// The distance a droid has in guard mode
 static constexpr auto DEFEND_BASEDIST = TILE_UNITS * 3;
 
-/** The distance a droid has in guard mode. Equivalent to GUARD_MAXDIST,
- * but used for droids being on a command group. */
+/**
+ * The distance a droid has in guard mode. Equivalent to GUARD_MAXDIST,
+ * but used for droids being on a command group
+ */
 static constexpr auto DEFEND_CMD_MAXDIST = TILE_UNITS * 8;
 
-/** The distance a droid has in guard mode. Equivalent to GUARD_BASEDIST, but used for droids being on a command group. */
+/**
+ * The distance a droid has in guard mode. Equivalent to GUARD_BASEDIST,
+ * but used for droids being on a command group
+ */
 static constexpr auto DEFEND_CMD_BASEDIST	= TILE_UNITS * 5;
 
-/** The maximum distance a constructor droid has in guard mode. */
+/// The maximum distance a constructor droid has in guard mode
 static constexpr auto CONSTRUCT_MAXDIST = TILE_UNITS * 8;
 
-/** The maximum distance allowed to a droid to move out of the path on a patrol/scout. */
+/**
+ * The maximum distance allowed to a droid to move out of the
+ * path on a patrol/scout
+ */
 static constexpr auto SCOUT_DIST = TILE_UNITS * 8;
 
-/** The maximum distance allowed to a droid to move out of the path if already attacking a target on a patrol/scout. */
+/**
+ * The maximum distance allowed to a droid to move out of the
+ * path if already attacking a target on a patrol/scout
+ */
 static constexpr auto SCOUT_ATTACK_DIST	= TILE_UNITS * 5;
 
-/// world->screen check - alex
-static constexpr auto OFF_SCREEN = 9999;
-
-// Percentage of body points remaining at which to repair droid automatically.
+/// Percentage of body points remaining at which to repair droid automatically
 static constexpr auto REPAIRLEV_LOW	= 50;
-// Ditto, but this will repair much sooner.
+/// Ditto, but this will repair much sooner
 static constexpr auto REPAIRLEV_HIGH = 75;
 
 static constexpr auto DROID_RESISTANCE_FACTOR = 30;
@@ -76,11 +86,8 @@ static constexpr auto DROID_RESISTANCE_FACTOR = 30;
 /// Changing this breaks campaign saves!
 static constexpr auto MAX_RECYCLED_DROIDS  = 450;
 
-/// Used to stop structures being built too near the edge and droids
-/// being placed down
+/// Used to stop structures being built too near the edge and droids being placed down
 static constexpr auto TOO_NEAR_EDGE  = 3;
-
-/* Experience modifiers */
 
 /// Damage of a droid is reduced by this value per experience level (in percent)
 static constexpr auto EXP_REDUCE_DAMAGE  = 6;
@@ -92,11 +99,10 @@ static constexpr auto EXP_SPEED_BONUS = 5;
 /**
  * The number of components in the asParts / asBits arrays.
  * Weapons are stored separately, thus the maximum index into the array
- * is 1 smaller than the number of components.
+ * is 1 smaller than the number of components
  */
-static constexpr auto DROID_MAXCOMP = COMP_NUMCOMPONENTS -  1;
+static constexpr auto DROID_MAXCOMP = (int)COMPONENT_TYPE::COUNT -  1;
 
-/// The maximum number of droid weapons
 static constexpr auto DROID_DAMAGE_SCALING  = 400;
 
 static constexpr auto DEFAULT_RECOIL_TIME	= GAME_TICKS_PER_SEC / 4;
@@ -107,7 +113,7 @@ static const auto DROID_REPAIR_SPREAD=	20 - rand() % 40;
 /// Store the experience of recently recycled droids
 static std::priority_queue<int> recycled_experience[MAX_PLAYERS];
 
-/// Height the transporter hovers at above the terrain
+/// The height at which the transporter hovers above the terrain
 static constexpr auto TRANSPORTER_HOVER_HEIGHT	= 10;
 
 /// TODO This should really be logarithmic
@@ -118,13 +124,24 @@ static constexpr auto TRANSPORTER_HOVER_HEIGHT	= 10;
 /// Defines how many times to perform the iteration on looking for a blank location
 static constexpr auto LOOK_FOR_EMPTY_TILE  = 20;
 
-/** What the droid's action/order it is currently. This is used to debug purposes, jointly with showSAMPLES(). */
+/**
+ * The droid's current action/order. This is used for
+ * debugging purposes, jointly with showSAMPLES()
+ */
 extern char DROIDDOING[512];
 
-enum class PICKTILE
+/* Set up a droid to build a structure - returns true if successful */
+enum DroidStartBuild
+{
+  DroidStartBuildFailed,
+  DroidStartBuildSuccess,
+  DroidStartBuildPending
+};
+
+enum class PICK_TILE
 {
     NO_FREE_TILE,
-    FREE_TILE,
+    FREE_TILE
 };
 
 enum class DROID_TYPE
@@ -187,7 +204,7 @@ enum class ACTION
     COUNT // MUST BE LAST
 };
 
-struct INITIAL_DROID_ORDERS
+struct InitialOrders
 {
     unsigned secondaryOrder;
     int moveToX;
@@ -216,7 +233,7 @@ class Droid : public virtual Unit
 public:
     ~Droid() override = default;
 
-    /* Accessors */
+    /************************** Accessors *************************/
     [[nodiscard]] virtual ACTION getAction() const noexcept = 0;
     [[nodiscard]] virtual const Order& getOrder() const = 0;
     [[nodiscard]] virtual DROID_TYPE getType() const noexcept = 0;
@@ -227,6 +244,9 @@ public:
     [[nodiscard]] virtual const Vector2i& getDestination() const = 0;
     [[nodiscard]] virtual const std::optional<PropulsionStats>& getPropulsion() const = 0;
     [[nodiscard]] virtual const Movement& getMovementData() const = 0;
+    [[nodiscard]] virtual const std::string& getName() const = 0;
+    [[nodiscard]] virtual unsigned getWeight() const = 0;
+    [[nodiscard]] virtual const Group& getGroup() const = 0;
 
     [[nodiscard]] virtual bool hasElectronicWeapon() const = 0;
     [[nodiscard]] virtual bool isVtol() const = 0;
@@ -256,17 +276,15 @@ public:
     virtual std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission, Rotation rot) = 0;
     [[nodiscard]] virtual bool isRepairDroid() const = 0;
     virtual void droidUpdate() = 0;
-    [[nodiscard]] virtual unsigned getOriginalHp() const = 0;
     virtual DroidStartBuild droidStartBuild() = 0;
     virtual void aiUpdateDroid() = 0;
-    virtual void droidUpdateRestore() = 0;
+    virtual bool droidUpdateRestore() = 0;
     virtual bool droidUpdateDroidRepair() = 0;
     virtual bool droidUpdateBuild() = 0;
     virtual void recycleDroid() = 0;
     virtual void initDroidMovement() = 0;
-    virtual Droid* giftSingleDroid(unsigned to, bool electronic) = 0;
+    virtual std::unique_ptr<Droid> giftSingleDroid(unsigned to, bool electronic) = 0;
     virtual void droidSetBits(const DroidTemplate* pTemplate) = 0;
-    [[nodiscard]] virtual const Group& getGroup() const = 0;
     virtual void orderDroidListEraseRange(int indexBegin, int indexEnd) = 0;
     virtual void orderClearTargetFromDroidList(SimpleObject* psTarget) = 0;
     virtual void orderCheckGuardPosition(int range) = 0;
@@ -282,7 +300,7 @@ namespace Impl
 
       Droid(unsigned id, unsigned player);
 
-      /* Accessors */
+      /************************** Accessors *************************/
       [[nodiscard]] ACTION getAction() const noexcept final;
       [[nodiscard]] const Order& getOrder() const final;
       [[nodiscard]] DROID_TYPE getType() const noexcept final;
@@ -296,6 +314,8 @@ namespace Impl
       [[nodiscard]] const Movement& getMovementData() const final;
       [[nodiscard]] unsigned getOriginalHp() const final;
       [[nodiscard]] const Group& getGroup() const final;
+      [[nodiscard]] const std::string& getName() const final;
+      [[nodiscard]] unsigned getWeight() const final;
 
       [[nodiscard]] unsigned getCommanderLevel() const final;
       [[nodiscard]] bool isProbablyDoomed(bool isDirectDamage) const;
@@ -311,13 +331,13 @@ namespace Impl
 
       bool orderDroidList() final;
 
-      void orderClearTargetFromDroidList(SimpleObject* psTarget) final;
+      void orderClearTargetFromDroidList(::SimpleObject* psTarget) final;
 
       void orderDroidListEraseRange(int indexBegin, int indexEnd) final;
 
       void droidSetBits(const DroidTemplate* pTemplate) final;
 
-      std::unique_ptr<Droid> giftSingleDroid(unsigned to, bool electronic) final;
+      std::unique_ptr<::Droid> giftSingleDroid(unsigned to, bool electronic) final;
 
       void recycleDroid() final;
 
@@ -331,7 +351,7 @@ namespace Impl
 
       bool droidUpdateRestore() final;
 
-      std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission, Rotation rot) final;
+      std::unique_ptr<::Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission, Rotation rot) final;
 
       void droidUpdate() final;
 
@@ -402,7 +422,6 @@ namespace Impl
   private:
       using enum DROID_TYPE;
       using enum ACTION;
-      using enum SECONDARY_ORDER;
       std::string name;
       DROID_TYPE type;
 
@@ -418,8 +437,6 @@ namespace Impl
       /// Set when stuck. Used for, e.g., firing indiscriminately
       /// at map features to clear the way
       unsigned lastFrustratedTime;
-
-      int resistance_to_electric;
 
       std::shared_ptr<Group> group;
 
@@ -499,7 +516,7 @@ bool removeDroidBase(Droid* psDel);
 /*Builds an instance of a Structure - the x/y passed in are in world coords.*/
 /// Sends a GAME_DROID message if bMultiMessages is true, or actually creates it if false. Only uses initialOrders if sending a GAME_DROID message.
 std::unique_ptr<Droid> buildDroid(DroidTemplate* pTemplate, unsigned x, unsigned y, unsigned player, bool onMission,
-                  const INITIAL_DROID_ORDERS* initialOrders, Rotation rot = Rotation());
+                                  const InitialOrders* initialOrders, Rotation rot = Rotation());
 /// Creates a droid locally, instead of sending a message, even if the bMultiMessages HACK is set to true.
 std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission,
                         Rotation rot = Rotation());
@@ -548,8 +565,6 @@ int32_t droidDamage(Droid* psDroid, unsigned damage, WEAPON_CLASS weaponClass, W
 /* The main update routine for all droids */
 void droidUpdate(Droid* psDroid);
 
-/* Set up a droid to build a structure - returns true if successful */
-enum DroidStartBuild { DroidStartBuildFailed, DroidStartBuildSuccess, DroidStartBuildPending };
 
 DroidStartBuild droidStartBuild(Droid* psDroid);
 
@@ -599,8 +614,8 @@ DROID_TYPE droidTemplateType(const DroidTemplate* psTemplate);
 void assignDroidsToGroup(unsigned playerNumber, unsigned groupNumber, bool clearGroup);
 void removeDroidsFromGroup(unsigned playerNumber);
 
-bool activateNoGroup(unsigned playerNumber, const SELECTIONTYPE selectionType, const SELECTION_CLASS selectionClass,
-                     const bool bOnScreen);
+bool activateNoGroup(unsigned playerNumber, SELECTIONTYPE selectionType,
+                     SELECTION_CLASS selectionClass, bool bOnScreen);
 
 bool activateGroup(unsigned playerNumber, unsigned groupNumber);
 
@@ -626,7 +641,7 @@ void droidSetName(Droid* psDroid, const char* pName);
 // returns true when no droid on x,y square.
 bool noDroid(unsigned x, unsigned y); // true if no droid at x,y
 // returns an x/y coord to place a droid
-PICKTILE pickHalfATile(unsigned* x, unsigned* y, UBYTE numIterations);
+PICK_TILE pickHalfATile(unsigned* x, unsigned* y, UBYTE numIterations);
 bool zonedPAT(unsigned x, unsigned y);
 bool pickATileGen(unsigned* x, unsigned* y, UBYTE numIterations, bool (*function)(unsigned x, unsigned y));
 bool pickATileGen(Vector2i* pos, unsigned numIterations, bool (*function)(unsigned x, unsigned y));
@@ -749,101 +764,11 @@ void droidSetPosition(Droid* psDroid, int x, int y);
 /// Return a percentage of how fully armed the object is, or -1 if N/A.
 int droidReloadBar(const SimpleObject* psObj, const Weapon* psWeap, int weapon_slot);
 
-static inline int droidSensorRange(const Droid* psDroid)
-{
-	return objSensorRange((const SimpleObject*)psDroid);
-}
-
-static inline Rotation getInterpolatedWeaponRotation(const Droid* psDroid, int weaponSlot, uint32_t time)
-{
-	return interpolateRot(psDroid->asWeaps[weaponSlot].previousRotation, psDroid->asWeaps[weaponSlot].rotation,
-                        psDroid->previous_location.time, psDroid->time, time);
-}
-
-/** helper functions for future refcount patch **/
-
 #define setDroidTarget(_psDroid, _psNewTarget) _setDroidTarget(_psDroid, _psNewTarget, __LINE__, __FUNCTION__)
-
-static inline void _setDroidTarget(Droid* psDroid, SimpleObject* psNewTarget, int line, const char* func)
-{
-	psDroid->order.psObj = psNewTarget;
-	ASSERT(psNewTarget == nullptr || !psNewTarget->died, "setDroidTarget: Set dead target");
-	ASSERT(
-		psNewTarget == nullptr || !psNewTarget->died || (psNewTarget->died == NOT_CURRENT_LIST && psDroid->died ==
-			NOT_CURRENT_LIST),
-		"setDroidTarget: Set dead target");
-#ifdef DEBUG
-	psDroid->targetLine = line;
-	sstrcpy(psDroid->targetFunc, func);
-#else
-	// Prevent warnings about unused parameters
-	(void)line;
-	(void)func;
-#endif
-}
 
 #define setDroidActionTarget(_psDroid, _psNewTarget, _idx) _setDroidActionTarget(_psDroid, _psNewTarget, _idx, __LINE__, __FUNCTION__)
 
-static inline void _setDroidActionTarget(Droid* psDroid, SimpleObject* psNewTarget, UWORD idx, int line,
-                                         const char* func)
-{
-	psDroid->action_target[idx] = psNewTarget;
-	ASSERT(
-		psNewTarget == nullptr || !psNewTarget->died || (psNewTarget->died == NOT_CURRENT_LIST && psDroid->died ==
-			NOT_CURRENT_LIST),
-		"setDroidActionTarget: Set dead target");
-#ifdef DEBUG
-	psDroid->actionTargetLine[idx] = line;
-	sstrcpy(psDroid->actionTargetFunc[idx], func);
-#else
-	// Prevent warnings about unused parameters
-	(void)line;
-	(void)func;
-#endif
-}
-
 #define setDroidBase(_psDroid, _psNewTarget) _setDroidBase(_psDroid, _psNewTarget, __LINE__, __FUNCTION__)
-
-static inline void _setDroidBase(Droid* psDroid, Structure* psNewBase, int line, const char* func)
-{
-	psDroid->associated_structure = psNewBase;
-	ASSERT(psNewBase == nullptr || !psNewBase->died, "setDroidBase: Set dead target");
-#ifdef DEBUG
-	psDroid->baseLine = line;
-	sstrcpy(psDroid->baseFunc, func);
-#else
-	// Prevent warnings about unused parameters
-	(void)line;
-	(void)func;
-#endif
-}
-
-static inline void setSaveDroidTarget(Droid* psSaveDroid, SimpleObject* psNewTarget)
-{
-	psSaveDroid->order.psObj = psNewTarget;
-#ifdef DEBUG
-	psSaveDroid->targetLine = 0;
-	sstrcpy(psSaveDroid->targetFunc, "savegame");
-#endif
-}
-
-static inline void setSaveDroidActionTarget(Droid* psSaveDroid, SimpleObject* psNewTarget, UWORD idx)
-{
-	psSaveDroid->action_target[idx] = psNewTarget;
-#ifdef DEBUG
-	psSaveDroid->actionTargetLine[idx] = 0;
-	sstrcpy(psSaveDroid->actionTargetFunc[idx], "savegame");
-#endif
-}
-
-static inline void setSaveDroidBase(Droid* psSaveDroid, Structure* psNewBase)
-{
-	psSaveDroid->associated_structure = psNewBase;
-#ifdef DEBUG
-	psSaveDroid->baseLine = 0;
-	sstrcpy(psSaveDroid->baseFunc, "savegame");
-#endif
-}
 
 /** If droid can get to given object using its current propulsion, return the square distance. Otherwise return -1. */
 int droidSqDist(Droid* psDroid, SimpleObject* psObj);

@@ -23,76 +23,43 @@
  * The main game loop
  */
 
-#include "lib/framework/frame.h"
-#include "lib/framework/input.h"
-#include "lib/framework/strres.h"
 #include "lib/framework/wzapp.h"
-
-#include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/ivis_opengl/piestate.h" //ivis render code
 #include "lib/ivis_opengl/piemode.h"
-// FIXME Direct iVis implementation include!
-#include "lib/ivis_opengl/screen.h"
-
-#include "lib/gamelib/gtime.h"
-#include "lib/sound/audio.h"
 #include "lib/sound/cdaudio.h"
 #include "lib/sound/mixer.h"
 #include "lib/netplay/netplay.h"
 
 #include "loop.h"
-#include "objects.h"
-#include "display.h"
-#include "map.h"
-#include "hci.h"
 #include "ingameop.h"
-#include "miscimd.h"
-#include "effects.h"
-#include "radar.h"
-#include "projectile.h"
-#include "console.h"
-#include "power.h"
-#include "message.h"
-#include "bucket3d.h"
 #include "display3d.h"
-#include "warzoneconfig.h"
-
 #include "multiplay.h" //ajl
-#include "levels.h"
-#include "visibility.h"
-#include "multimenu.h"
 #include "intelmap.h"
 #include "loadsave.h"
 #include "game.h"
 #include "multijoin.h"
-#include "lighting.h"
 #include "intimage.h"
-#include "lib/framework/cursors.h"
 #include "seqdisp.h"
 #include "mission.h"
-#include "warcam.h"
 #include "lighting.h"
 #include "mapgrid.h"
 #include "edit3d.h"
-#include "fpath.h"
 #include "cmddroid.h"
 #include "keybind.h"
 #include "wrappers.h"
-#include "random.h"
 #include "qtscript.h"
 #include "version.h"
 #include "notifications.h"
 #include "scores.h"
 #include "clparse.h"
 
-#include "warzoneconfig.h"
-
 #ifdef DEBUG
 #include "objmem.h"
 #endif
 
-#include <numeric>
-
+void proj_UpdateAll();
+void visUpdateLevel();
+void processVisibility();
 
 /*
  * Global variables

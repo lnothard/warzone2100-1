@@ -21,14 +21,6 @@
 #ifndef __INCLUDED_SRC_PROJECTILE_H__
 #define __INCLUDED_SRC_PROJECTILE_H__
 
-#include <vector>
-
-#include "lib/gamelib/gtime.h"
-#include <glm/fwd.hpp>
-
-#include "basedef.h"
-#include "weapondef.h"
-
 static constexpr auto PROJ_MAX_PITCH = 45;
 static constexpr auto PROJ_ULTIMATE_PITCH = 80;
 

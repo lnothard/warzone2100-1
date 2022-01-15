@@ -22,21 +22,13 @@
  * @file fpath.cpp
  */
 
-#include <future>
-#include <unordered_map>
-
-#include "lib/framework/frame.h"
-#include "lib/framework/crc.h"
 #include "lib/netplay/netplay.h"
-
 #include "lib/framework/wzapp.h"
 
-#include "objects.h"
-#include "map.h"
-#include "multiplay.h"
-#include "astar.h"
-
 #include "fpath.h"
+#include "map.h"
+
+bool isHumanPlayer(unsigned);
 
 // If the path finding system is shutdown or not
 static volatile bool fpathQuit = false;
@@ -382,7 +374,7 @@ queuePathfinding:
 	job.owner = owner;
 	job.acceptNearest = acceptNearest;
 	job.deleted = false;
-	fpathSetBlockingMap(&job);
+	::fpathSetBlockingMap(job);
 
 	debug(LOG_NEVER, "starting new job for droid %d 0x%x", id, id);
 	// Clear any results or jobs waiting already. It is a vital assumption that there is only one

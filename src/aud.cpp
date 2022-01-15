@@ -20,16 +20,12 @@
 /**
  * @file
  *
- * Warzone audio wrapper functions.
+ * Warzone audio wrapper functions
  */
 
-#include "lib/framework/frame.h"
-#include "lib/framework/math_ext.h"
 #include "lib/framework/fixedpoint.h"
-#include "lib/sound/aud.h"
 
 #include "display3d.h"
-#include "map.h"
 #include "projectile.h"
 
 bool audio_ObjectDead(const SimpleObject* psSimpleObj)

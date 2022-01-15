@@ -28,6 +28,9 @@
 
 struct iIMDShape;
 
+/// world->screen check - alex
+static constexpr auto OFF_SCREEN = 9999;
+
 /// For mouse scrolling (how many pixels from the edge
 /// before pointer scrolls the screen in a direction)
 static constexpr auto BOUNDARY_X = 2;

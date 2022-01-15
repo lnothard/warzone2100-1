@@ -26,12 +26,16 @@
 #ifndef __INCLUDED_SRC_STRUCTURE_H__
 #define __INCLUDED_SRC_STRUCTURE_H__
 
-#include "lib/framework/wzconfig.h"
 #include "lib/gamelib/gtime.h"
 
-#include "droid.h"
 #include "positiondef.h"
+#include "stats.h"
 #include "unit.h"
+
+class Droid;
+class DroidTemplate;
+enum class WEAPON_CLASS;
+enum class TARGET_ORIGIN;
 
 static constexpr auto NUM_FACTORY_MODULES = 2;
 static constexpr auto NUM_POWER_MODULES = 4;
@@ -75,8 +79,6 @@ static constexpr auto MAX_FACTORY	=	5;
 
 /// Used to flag when the Factory is ready to start building
 static constexpr auto ACTION_START_TIME = 0;
-
-class DroidTemplate;
 
 enum class PENDING_STATUS
 {
@@ -211,7 +213,7 @@ struct StructureStats : public BaseStats
         unsigned rearm;
         unsigned armour;
         unsigned thermal;
-        unsigned hitpoints;
+        unsigned hitPoints;
         unsigned resistance; // resist enemy takeover; 0 = immune
         unsigned limit; // current max limit for this type, LOTS_OF = no limit
     } upgraded_stats[MAX_PLAYERS], base;
@@ -222,38 +224,37 @@ struct StructureStats : public BaseStats
 
 struct WALL
 {
-    unsigned type; // Type of wall, 0 = ─, 1 = ┼, 2 = ┴, 3 = ┘.
+    /// Type of wall --
+    /// 0 = ─, 1 = ┼, 2 = ┴, 3 = ┘
+    unsigned type;
 };
 
 class Structure : public virtual Unit
 {
 public:
     ~Structure() override = default;
-    Structure(const Structure&) = delete;
-    Structure(Structure&&) = delete;
-    Structure& operator=(const Structure&) = delete;
-    Structure& operator=(Structure&&) = delete;
 
+    /************************** Accessors *************************/
     [[nodiscard]] virtual int getFoundationDepth() const = 0;
     [[nodiscard]] virtual Vector2i getSize() const = 0;
     [[nodiscard]] virtual STRUCTURE_STATE getState() const = 0;
+    [[nodiscard]] virtual const StructureStats& getStats() const = 0;
+    [[nodiscard]] virtual STRUCTURE_ANIMATION_STATE getAnimationState() const = 0;
+    [[nodiscard]] virtual unsigned getArmourValue(WEAPON_CLASS weaponClass) const = 0;
+
     virtual void printInfo() const = 0;
     [[nodiscard]] virtual bool hasSensor() const = 0;
     virtual Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare) = 0;
     [[nodiscard]] virtual float structureCompletionProgress() const = 0;
-    [[nodiscard]] virtual const StructureStats& getStats() const = 0;
      virtual void aiUpdateStructure(bool isMission) = 0;
      virtual void structureUpdate(bool bMission) = 0;
      virtual void setFoundationDepth(int depth) = 0;
      virtual int requestOpenGate() = 0;
-     [[nodiscard]] virtual int getResistance() const = 0;
      virtual void structureBuild(::Droid* psDroid, int builtPoints, int buildRate_) = 0;
 
-    [[nodiscard]] virtual std::unique_ptr<Structure> buildStructureDir(StructureStats* pStructureType,
-                                                                        unsigned x, unsigned y,
-                                                                        uint16_t direction,
-                                                                        unsigned player,
-                                                                        bool FromSave) = 0;
+    [[nodiscard]] virtual std::unique_ptr<Structure> buildStructureDir(
+            StructureStats* pStructureType, unsigned x, unsigned y,
+            uint16_t direction, unsigned player, bool FromSave) = 0;
 };
 
 namespace Impl
@@ -262,6 +263,17 @@ namespace Impl
     {
     public:
         Structure(unsigned id, unsigned player);
+
+        /************************** Accessors *************************/
+        [[nodiscard]] STRUCTURE_ANIMATION_STATE getAnimationState() const final;
+        [[nodiscard]] unsigned getOriginalHp() const final;
+        [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const final;
+        [[nodiscard]] Vector2i getSize() const final;
+        [[nodiscard]] int getFoundationDepth() const noexcept final;
+        [[nodiscard]] const iIMDShape& getImdShape() const final;
+        [[nodiscard]] const ::SimpleObject& getTarget(int weapon_slot) const final;
+        [[nodiscard]] STRUCTURE_STATE getState() const final;
+        [[nodiscard]] const StructureStats& getStats() const final;
 
         [[nodiscard]] bool isBlueprint() const noexcept;
         [[nodiscard]] bool isWall() const noexcept;
@@ -274,12 +286,6 @@ namespace Impl
         [[nodiscard]] bool hasVtolInterceptSensor() const final;
         [[nodiscard]] bool hasVtolCbSensor() const final;
         [[nodiscard]] bool smokeWhenDamaged() const noexcept;
-        [[nodiscard]] unsigned getOriginalHp() const;
-        [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
-        [[nodiscard]] int getResistance() const final;
-        [[nodiscard]] Vector2i getSize() const final;
-        [[nodiscard]] int getFoundationDepth() const noexcept final;
-        [[nodiscard]] const iIMDShape& getImdShape() const final;
         void updateExpectedDamage(unsigned damage, bool is_direct) noexcept override;
         [[nodiscard]] unsigned calculateSensorRange() const final;
         [[nodiscard]] int calculateGateHeight(std::size_t time, int minimum) const;
@@ -288,21 +294,16 @@ namespace Impl
         [[nodiscard]] unsigned buildPointsToCompletion() const;
         [[nodiscard]] unsigned calculateRefundedPower() const;
         [[nodiscard]] int calculateAttackPriority(const ::Unit* target, int weapon_slot) const final;
-        [[nodiscard]] const ::SimpleObject& getTarget(int weapon_slot) const final;
-        [[nodiscard]] STRUCTURE_STATE getState() const final;
-        Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare) final;
-        [[nodiscard]] float Structure::structureCompletionProgress() const final;
-        [[nodiscard]] const StructureStats& getStats() const final;
+        ::Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare) final;
+        [[nodiscard]] float structureCompletionProgress() const final;
         void aiUpdateStructure(bool isMission) final;
         void structureUpdate(bool bMission) final;
         int requestOpenGate() final;
         void structureBuild(::Droid* psDroid, int builtPoints, int buildRate_) final;
 
-        [[nodiscard]] std::unique_ptr<Structure> buildStructureDir(StructureStats* pStructureType,
-                                                                           unsigned x, unsigned y,
-                                                                           uint16_t direction,
-                                                                           unsigned player,
-                                                                           bool FromSave) final;
+        [[nodiscard]] std::unique_ptr<::Structure> buildStructureDir(
+                StructureStats* pStructureType, unsigned x, unsigned y,
+                uint16_t direction, unsigned player, bool FromSave) final;
     private:
         using enum STRUCTURE_ANIMATION_STATE;
         using enum STRUCTURE_STATE;
@@ -314,8 +315,6 @@ namespace Impl
         /// The build points currently assigned to this structure
         unsigned currentBuildPoints;
 
-        /// Current resistance points, 0 = cannot be attacked electrically
-        int resistance;
 
         /// Time the resistance was last increased
         std::size_t lastResistance;

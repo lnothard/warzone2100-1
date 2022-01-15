@@ -21,10 +21,12 @@
  * @file chat.cpp
  */
 
+#include <sstream>
+
 #include "lib/netplay/netplay.h"
 
-#include "ai.h"
 #include "chat.h"
+#include "multiplay.h"
 #include "qtscript.h"
 
 ChatMessage::ChatMessage(unsigned sender, std::string text)

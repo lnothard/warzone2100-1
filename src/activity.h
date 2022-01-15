@@ -24,13 +24,7 @@
 #ifndef __INCLUDED_SRC_ACTIVITY_H__
 #define __INCLUDED_SRC_ACTIVITY_H__
 
-#include <vector>
-#include <string>
-
 #include "lib/netplay/netplay.h"
-#include <optional-lite/optional.hpp>
-using nonstd::optional;
-using nonstd::nullopt;
 
 #include "multiplay.h"
 #include "scores.h"

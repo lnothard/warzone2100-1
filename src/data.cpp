@@ -23,30 +23,22 @@
  * Data loading functions used by the framework resource module
  */
 
-#include <physfs.h>
 #include "lib/framework/physfs_ext.h"
-
-#include "lib/framework/frame.h"
 #include "lib/framework/frameresource.h"
 #include "lib/framework/strres.h"
-#include "lib/framework/crc.h"
 #include "lib/gamelib/parser.h"
 #include "lib/ivis_opengl/bitimage.h"
-#include "lib/ivis_opengl/png_util.h"
 #include "lib/sound/audio.h"
 
-#include "qtscript.h"
 #include "data.h"
-#include "droid.h"
 #include "feature.h"
 #include "mechanics.h"
-#include "message.h"
-#include "multiplay.h"
-#include "research.h"
-#include "stats.h"
+#include "qtscript.h"
 #include "template.h"
 #include "text.h"
 #include "texture.h"
+
+bool bMultiPlayer;
 
 // whether a save game is currently being loaded
 static bool saveFlag = false;

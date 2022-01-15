@@ -23,15 +23,11 @@
  * Link droids together into a group for AI etc.
  */
 
-#include <map>
-
-#include "lib/framework/frame.h"
 #include "lib/netplay/netplay.h"
 
-#include "multiplay.h"
-#include "group.h"
 #include "droid.h"
-#include "order.h"
+#include "group.h"
+#include "multiplay.h"
 
 // Group system variables: grpGlobalManager enables to remove all the groups to shut down the system
 static std::map<int, Group*> grpGlobalManager;
@@ -102,9 +98,9 @@ std::unique_ptr<Group> grpCreate(unsigned id)
 	return psGroup;
 }
 
-Group* grpFind(unsigned id)
+std::unique_ptr<Group> grpFind(unsigned id)
 {
-	Group* psGroup = nullptr;
+	std::unique_ptr<Group> psGroup = nullptr;
 	auto it = grpGlobalManager.find(id);
 	if (it != grpGlobalManager.end())  {
 		psGroup = it->second;
@@ -136,7 +132,7 @@ void Group::add(Droid* psDroid)
 
 	// if psDroid == NULL just increase the refcount don't add anything to the list
 	if (psDroid != nullptr) {
-		if (members && psDroid->getPlayer() != members->player) {
+		if (members && psDroid->getPlayer() != members.player) {
 			ASSERT(false, "grpJoin: Cannot have more than one players droids in a group");
 			return;
 		}
@@ -181,16 +177,18 @@ void Group::remove(Droid* psDroid)
 	}
 
 	// SyncDebug
-	if (psDroid != nullptr && type == COMMAND)
-	{
-		syncDebug("Droid %d leaving command group %d", psDroid->getId(), psCommander != nullptr ? psCommander->getId() : 0);
+	if (psDroid != nullptr && type == COMMAND) {
+		syncDebug("Droid %d leaving command group %d",
+              psDroid->getId(), psCommander != nullptr
+              ? psCommander->getId() : 0);
 	}
 
 	// if psDroid == NULL just decrease the refcount don't remove anything from the list
 	if (psDroid != nullptr)
 	{
 		// update group list of droids and droids' psGrpNext
-		if (psDroid->getType() != DROID_TYPE::COMMAND || type != COMMAND) {
+		if (psDroid->getType() != DROID_TYPE::COMMAND ||
+        type != COMMAND) {
 			psPrev = nullptr;
 			for (psCurr = members; psCurr; psCurr = psCurr->psGrpNext)
 			{
@@ -209,7 +207,8 @@ void Group::remove(Droid* psDroid)
         type == COMMAND) {
 			type = NORMAL;
 			psCommander = nullptr;
-		} else if (isTransporter(*psDroid) && (type == TRANSPORTER)) {
+		} else if (isTransporter(*psDroid) &&
+               type == TRANSPORTER) {
 			type = NORMAL;
 		}
 	}

@@ -26,19 +26,17 @@
 #ifndef __INCLUDED_SRC_MAP_H__
 #define __INCLUDED_SRC_MAP_H__
 
-#include "lib/framework/frame.h"
-#include "lib/framework/debug.h"
-#include <wzmaplib/map.h>
-#include <wzmaplib/terrain_type.h>
+#include "lib/ivis_opengl/pietypes.h"
 
-#include "objects.h"
-#include "terrain.h"
-#include "multiplay.h"
-#include "display.h"
 #include "ai.h"
+#include "objects.h"
 
-#define TALLOBJECT_YMAX		(200)
-#define TALLOBJECT_ADJUST	(300)
+/* forward decl */
+bool godMode;
+void markTileDirty(int, int);
+
+static constexpr auto TALLOBJECT_YMAX	= 200;
+static constexpr auto TALLOBJECT_ADJUST	= 300;
 
 static constexpr auto BITS_MARKED = 0x01;    ///< Is this tile marked?
 static constexpr auto BITS_DECAL = 0x02;    ///< Does this tile has a decal? If so, the tile from "texture" is drawn on top of the terrain.
@@ -47,25 +45,23 @@ static constexpr auto BITS_FPATHBLOCK = 0x10;    ///< Bit set temporarily by fin
 static constexpr auto BITS_ON_FIRE = 0x20;    ///< Whether tile is burning
 static constexpr auto BITS_GATEWAY = 0x40;    ///< Bit set to show a gateway on the tile
 
-static constexpr auto AIR_BLOCKED		 = 0x01;	///< Aircraft cannot pass tile
-static constexpr auto FEATURE_BLOCKED		 = 0x02;	///< Ground units cannot pass tile due to item in the way
-static constexpr auto WATER_BLOCKED		 = 0x04;	///< Units that cannot pass water are blocked by this tile
-static constexpr auto LAND_BLOCKED		 = 0x08;	///< The inverse of the above -- for propeller driven crafts
+static constexpr auto AIR_BLOCKED	= 0x01;	///< Aircraft cannot pass tile
+static constexpr auto FEATURE_BLOCKED	= 0x02;	///< Ground units cannot pass tile due to item in the way
+static constexpr auto WATER_BLOCKED	= 0x04;	///< Units that cannot pass water are blocked by this tile
+static constexpr auto LAND_BLOCKED = 0x08;	///< The inverse of the above -- for propeller driven crafts
 
-#define AUXBITS_NONPASSABLE 0x01    ///< Is there any building blocking here, other than a gate that would open for us?
-
-#define AUXBITS_OUR_BUILDING	0x02	///< Do we or our allies have a building at this tile
-#define AUXBITS_BLOCKING 0x04    ///< Is there any building currently blocking here?
-#define AUXBITS_TEMPORARY 0x08	///< Temporary bit used in calculations
-#define AUXBITS_DANGER	0x10	///< Does AI sense danger going there?
-#define AUXBITS_THREAT	0x20	///< Can hostile players shoot here?
-#define AUXBITS_AATHREAT	0x40	///< Can hostile players shoot at my VTOLs here?
-#define AUXBITS_ALL 0xff
-
-#define AUX_MAP 0
-#define AUX_ASTARMAP	1
-#define AUX_DANGERMAP 2
-#define AUX_MAX 3
+static constexpr auto AUXBITS_NONPASSABLE = 0x01;   ///< Is there any building blocking here, other than a gate that would open for us?
+static constexpr auto AUXBITS_OUR_BUILDING = 0x02;	///< Do we or our allies have a building at this tile
+static constexpr auto AUXBITS_BLOCKING = 0x04;   ///< Is there any building currently blocking here?
+static constexpr auto AUXBITS_TEMPORARY = 0x08; ///< Temporary bit used in calculations
+static constexpr auto AUXBITS_DANGER = 0x10; ///< Does AI sense danger going there?
+static constexpr auto AUXBITS_THREAT = 0x20; ///< Can hostile players shoot here?
+static constexpr auto AUXBITS_AATHREAT = 0x40; ///< Can hostile players shoot at my VTOLs here?
+static constexpr auto AUXBITS_ALL = 0xff;
+static constexpr auto AUX_MAP = 0;
+static constexpr auto AUX_ASTARMAP = 1;
+static constexpr auto AUX_DANGERMAP = 2;
+static constexpr auto AUX_MAX = 3;
 
 enum class TILE_SET
 {
@@ -87,7 +83,7 @@ struct Tile
 	PlayerMask tileExploredBits;
 	PlayerMask sensorBits; ///< bit per player, who can see tile with sensor
 	uint8_t illumination; // How bright is this tile?
-	uint8_t watchers[MAX_PLAYERS]; // player sees through fog of war here with this many objects
+	std::array<uint8_t, MAX_PLAYERS> watchers; // player sees through fog of war here with this many objects
 	uint16_t texture; // Which graphics texture is on this tile
 	int height; ///< The height at the top left of the tile
 	float level; ///< The visibility level of the top left of the tile, for this client.
@@ -116,14 +112,14 @@ extern std::array<std::vector<uint8_t>, AUX_MAX> psBlockMap;
 extern std::array<std::vector<uint8_t>, AUX_MAX + MAX_PLAYERS> psAuxMap;
 
 /// Find aux bitfield for a given tile
-WZ_DECL_ALWAYS_INLINE static inline uint8_t auxTile(int x, int y, unsigned player)
+ static inline uint8_t auxTile(int x, int y, unsigned player)
 {
 	ASSERT_OR_RETURN(AUXBITS_ALL, player >= 0 && player < MAX_PLAYERS + AUX_MAX, "invalid player: %d", player);
 	return psAuxMap[player][x + y * mapWidth];
 }
 
 /// Find blocking bitfield for a given tile
-WZ_DECL_ALWAYS_INLINE static inline uint8_t blockTile(int x, int y, int slot)
+ static inline uint8_t blockTile(int x, int y, int slot)
 {
 	return psBlockMap[slot][x + y * mapWidth];
 }
@@ -131,8 +127,8 @@ WZ_DECL_ALWAYS_INLINE static inline uint8_t blockTile(int x, int y, int slot)
 /// Store a shadow copy of a player's aux map for use in threaded calculations
 static inline void auxMapStore(unsigned player, int slot)
 {
-	memcpy(psBlockMap[slot].get(), psBlockMap[0].get(), sizeof(uint8_t) * mapWidth * mapHeight);
-	memcpy(psAuxMap[MAX_PLAYERS + slot].get(), psAuxMap[player].get(), sizeof(uint8_t) * mapWidth * mapHeight);
+	memcpy(psBlockMap[slot], psBlockMap[0], sizeof(uint8_t) * mapWidth * mapHeight);
+	memcpy(psAuxMap[MAX_PLAYERS + slot], psAuxMap[player], sizeof(uint8_t) * mapWidth * mapHeight);
 }
 
 /// Restore selected fields from the shadow copy of a player's aux map (ignoring the block map)
@@ -150,13 +146,13 @@ static inline void auxMapRestore(unsigned player, int slot, int mask)
 }
 
 /// Set aux bits. Always set identically for all players. States not set are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxSet(int x, int y, unsigned player, int state)
+ static inline void auxSet(int x, int y, unsigned player, int state)
 {
 	psAuxMap[player][x + y * mapWidth] |= state;
 }
 
 /// Set aux bits. Always set identically for all players. States not set are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxSetAll(int x, int y, int state)
+ static inline void auxSetAll(int x, int y, int state)
 {
 	int i;
 
@@ -167,7 +163,7 @@ WZ_DECL_ALWAYS_INLINE static inline void auxSetAll(int x, int y, int state)
 }
 
 /// Set aux bits. Always set identically for all players. States not set are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxSetAllied(int x, int y, unsigned player, int state)
+ static inline void auxSetAllied(int x, int y, unsigned player, int state)
 {
 	int i;
 
@@ -181,7 +177,7 @@ WZ_DECL_ALWAYS_INLINE static inline void auxSetAllied(int x, int y, unsigned pla
 }
 
 /// Set aux bits. Always set identically for all players. States not set are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxSetEnemy(int x, int y, unsigned player, int state)
+ static inline void auxSetEnemy(int x, int y, unsigned player, int state)
 {
 	int i;
 
@@ -195,13 +191,13 @@ WZ_DECL_ALWAYS_INLINE static inline void auxSetEnemy(int x, int y, unsigned play
 }
 
 /// Clear aux bits. Always set identically for all players. States not cleared are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxClear(int x, int y, unsigned player, int state)
+ static inline void auxClear(int x, int y, unsigned player, int state)
 {
 	psAuxMap[player][x + y * mapWidth] &= ~state;
 }
 
 /// Clear all aux bits. Always set identically for all players. States not cleared are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxClearAll(int x, int y, int state)
+ static inline void auxClearAll(int x, int y, int state)
 {
 	int i;
 
@@ -212,13 +208,13 @@ WZ_DECL_ALWAYS_INLINE static inline void auxClearAll(int x, int y, int state)
 }
 
 /// Set blocking bits. Always set identically for all players. States not set are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxSetBlocking(int x, int y, int state)
+ static inline void auxSetBlocking(int x, int y, int state)
 {
 	psBlockMap[0][x + y * mapWidth] |= state;
 }
 
 /// Clear blocking bits. Always set identically for all players. States not cleared are retained.
-WZ_DECL_ALWAYS_INLINE static inline void auxClearBlocking(int x, int y, int state)
+ static inline void auxClearBlocking(int x, int y, int state)
 {
 	psBlockMap[0][x + y * mapWidth] &= ~state;
 }
@@ -227,71 +223,80 @@ WZ_DECL_ALWAYS_INLINE static inline void auxClearBlocking(int x, int y, int stat
  * Check if tile contains a structure or feature. Function is thread-safe,
  * but do not rely on the result if you mean to alter the object pointer.
  */
-WZ_DECL_ALWAYS_INLINE static inline bool TileIsOccupied(const Tile* tile)
+static bool TileIsOccupied(const Tile* tile)
 {
 	return tile->psObject != nullptr;
 }
 
-static inline bool TileIsKnownOccupied(Tile const* tile, unsigned player)
+static bool TileIsKnownOccupied(const Tile* tile, unsigned player)
 {
 	return TileIsOccupied(tile) &&
-	(tile->psObject->type != OBJ_STRUCTURE || ((Structure*)tile->psObject)->visible[player] || aiCheckAlliances(
-		player, ((Structure *)tile->psObject)->player));
+         (!dynamic_cast<Structure*>(tile->psObject) ||
+          dynamic_cast<Structure*>(tile->psObject)->visible[player] ||
+           aiCheckAlliances(
+                   player, dynamic_cast<Structure*>(tile->psObject)->getPlayer()));
 }
 
 /** Check if tile contains a structure. Function is NOT thread-safe. */
-static inline bool TileHasStructure(const Tile* tile)
+static bool TileHasStructure(const Tile* tile)
 {
-	return TileIsOccupied(tile)
-		&& tile->psObject->type == OBJ_STRUCTURE;
+	return TileIsOccupied(tile) &&
+         dynamic_cast<Structure*>(tile->psObject);
 }
 
 /** Check if tile contains a feature. Function is NOT thread-safe. */
-static inline bool TileHasFeature(const Tile* tile)
+static bool TileHasFeature(const Tile* tile)
 {
-	return TileIsOccupied(tile)
-		&& tile->psObject->type == OBJ_FEATURE;
+	return TileIsOccupied(tile) &&
+         dynamic_cast<Feature*>(tile->psObject);
 }
 
 /** Check if tile contains a wall structure. Function is NOT thread-safe. */
-static inline bool TileHasWall(const Tile* tile)
+static bool TileHasWall(const Tile* tile)
 {
-	return TileHasStructure(tile)
-		&& (((Structure*)tile->psObject)->pStructureType->type == REF_WALL
-			|| ((Structure*)tile->psObject)->pStructureType->type == REF_GATE
-			|| ((Structure*)tile->psObject)->pStructureType->type == REF_WALLCORNER);
+  using enum STRUCTURE_TYPE;
+	return TileHasStructure(tile) &&
+          (dynamic_cast<Structure*>(tile->psObject)->getStats().type == WALL ||
+           dynamic_cast<Structure*>(tile->psObject)->getStats().type == GATE ||
+           dynamic_cast<Structure*>(tile->psObject)->getStats().type == WALL_CORNER);
 }
 
 /** Check if tile is burning. */
-static inline bool TileIsBurning(const Tile* tile)
+static bool TileIsBurning(const Tile* tile)
 {
 	return tile->tileInfoBits & BITS_ON_FIRE;
 }
 
 /** Check if tile has been explored. */
-static inline bool tileIsExplored(const Tile* psTile)
+static bool tileIsExplored(const Tile* psTile)
 {
-	if (selectedPlayer >= MAX_PLAYERS) { return true; }
-	return psTile->tileExploredBits & (1 << selectedPlayer);
+	if (selectedPlayer >= MAX_PLAYERS) {
+    return true;
+  }
+	return psTile->tileExploredBits & (1LLU << selectedPlayer);
 }
 
-/** Is the tile ACTUALLY, 100% visible? -- (For DISPLAY-ONLY purposes - *NOT* game-state calculations!)
- * This is not the same as for ex. psStructure->visible[selectedPlayer],
- * because that would only mean the psStructure is in *explored Tile*
- * psDroid->visible on the other hand, works correctly,
- * because its visibility fades away in fog of war
-*/
-static inline bool tileIsClearlyVisible(const Tile* psTile)
+/**
+ * Is the tile ACTUALLY, 100% visible? -- (For DISPLAY-ONLY purposes
+ * - *NOT* game-state calculations!) This is not the same as, e.g.,
+ * psStructure->visible[selectedPlayer], because that would only
+ * mean the psStructure is in an *explored Tile*. psDroid->visible, on
+ * the other hand, works correctly because its visibility fades
+ * away in fog of war
+ */
+static bool tileIsClearlyVisible(const Tile* psTile)
 {
-	if (selectedPlayer >= MAX_PLAYERS || godMode) { return true; }
+	if (selectedPlayer >= MAX_PLAYERS || godMode) {
+    return true;
+  }
 	return psTile->sensorBits & (1 << selectedPlayer);
 }
 
-/** Check if tile contains a small structure. Function is NOT thread-safe. */
-static inline bool TileHasSmallStructure(const Tile* tile)
+/// Check if @c tile contains a small structure (NOT thread-safe)
+static bool TileHasSmallStructure(const Tile* tile)
 {
-	return TileHasStructure(tile)
-		&& ((Structure*)tile->psObject)->pStructureType->height == 1;
+	return TileHasStructure(tile) &&
+         dynamic_cast<Structure*>(tile->psObject)->getStats().height == 1;
 }
 
 #define SET_TILE_DECAL(x)	((x)->tileInfoBits |= BITS_DECAL)
@@ -310,14 +315,16 @@ static inline bool TileHasSmallStructure(const Tile* tile)
 /* To be used for *DISPLAY* purposes only (*not* game-state/calculation related) */
 static inline bool TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(Tile* pTile)
 {
-	if (godMode)
-	{
+	if (godMode) {
 		// always visible
 		return true;
 	}
 	ASSERT_OR_RETURN(false, selectedPlayer < MAX_PLAYERS,
-	                 "Players should always have a selectedPlayer / player index < MAX_PLAYERS; non-players are always expected to have godMode enabled; selectedPlayer: %"
-	                 PRIu32 "", selectedPlayer);
+	                 "Players should always have a selectedPlayer / player "
+                   "index < MAX_PLAYERS; non-players are always expected to "
+                   "have godMode enabled; selectedPlayer: %" PRIu32 "",
+                   selectedPlayer);
+  
 	return TEST_TILE_VISIBLE(selectedPlayer, pTile);
 }
 
@@ -325,16 +332,14 @@ static inline bool TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(Tile* pTile)
 #define SET_TILE_VISIBLE(p,t) ((t)->tileExploredBits |= alliancebits[p])
 
 /* Arbitrary maximum number of terrain textures - used in look up table for terrain type */
-#define MAX_TILE_TEXTURES	255
+static constexpr auto MAX_TILE_TEXTURES	= 255;
 
-extern UBYTE terrainTypes[MAX_TILE_TEXTURES];
+extern std::array<uint8_t, MAX_TILE_TEXTURES> terrainTypes;
 
-static inline unsigned char terrainType(const Tile* tile)
+static inline uint8_t terrainType(const Tile* tile)
 {
 	return terrainTypes[TileNumber_tile(tile->texture)];
 }
-
-/* Additional tile <-> world coordinate overloads */
 
 static inline Vector2i world_coord(Vector2i const& mapCoord)
 {
@@ -351,12 +356,12 @@ static inline Vector2i round_to_nearest_tile(Vector2i const& worldCoord)
 	return {round_to_nearest_tile(worldCoord.x), round_to_nearest_tile(worldCoord.y)};
 }
 
-/* Make sure world coordinates are inside the map */
-/** Clip world coordinates to make sure they're inside the map's boundaries
- *  \param worldX a pointer to a X coordinate inside the map
- *  \param worldY a pointer to a Y coordinate inside the map
- *  \post 1 <= *worldX <= world_coord(mapWidth)-1 and
- *        1 <= *worldy <= world_coord(mapHeight)-1
+/** 
+ * Clip world coordinates to ensure they're within the map boundaries
+ * @param worldX a pointer to an X coordinate inside the map
+ * @param worldY a pointer to a Y coordinate inside the map
+ * @post 1 <= *worldX <= world_coord(mapWidth)-1 and
+ *   1 <= *worldy <= world_coord(mapHeight)-1
  */
 static inline void clip_world_offmap(int* worldX, int* worldY)
 {
@@ -378,25 +383,32 @@ bool mapLoadFromWzMapData(const std::shared_ptr<WzMap::MapData>& mapData);
 class WzMapPhysFSIO : public WzMap::IOProvider
 {
 public:
-	virtual std::unique_ptr<WzMap::BinaryIOStream> openBinaryStream(const std::string& filename,
-	                                                                WzMap::BinaryIOStream::OpenMode mode) override;
-	virtual bool loadFullFile(const std::string& filename, std::vector<char>& fileData) override;
-	virtual bool writeFullFile(const std::string& filename, const char* ppFileData, uint32_t fileSize) override;
+	std::unique_ptr<WzMap::BinaryIOStream> openBinaryStream(
+          const std::string& filename, 
+          WzMap::BinaryIOStream::OpenMode mode) override;
+  
+	bool loadFullFile(const std::string& filename,
+                    std::vector<char>& fileData) override;
+  
+	bool writeFullFile(const std::string& filename,
+                     const char* ppFileData, 
+                     size_t fileSize) override;
 };
 
 class WzMapDebugLogger : public WzMap::LoggingProtocol
 {
 public:
-	virtual ~WzMapDebugLogger();
-	virtual void printLog(WzMap::LoggingProtocol::LogLevel level, const char* function, int line,
-	                      const char* str) override;
+	~WzMapDebugLogger() override;
+  
+	void printLog(WzMap::LoggingProtocol::LogLevel level, 
+                const char* function, int line, const char* str) override;
 };
 
 /* Save the map data */
 bool mapSaveToWzMapData(WzMap::MapData& output);
 
 /** Return a pointer to the tile structure at x,y in map coordinates */
-static inline WZ_DECL_PURE Tile* mapTile(int32_t x, int32_t y)
+static inline WZ_DECL_PURE Tile* mapTile(int x, int y)
 {
 	// Clamp x and y values to actual ones
 	// Give one tile worth of leeway before asserting, for units/transporters coming in from off-map.
@@ -418,7 +430,7 @@ static inline WZ_DECL_PURE Tile* mapTile(Vector2i const& v)
 }
 
 /** Return a pointer to the tile structure at x,y in world coordinates */
-static inline WZ_DECL_PURE Tile* worldTile(int32_t x, int32_t y)
+static inline WZ_DECL_PURE Tile* worldTile(int x, int y)
 {
 	return mapTile(map_coord(x), map_coord(y));
 }
@@ -429,67 +441,72 @@ static inline WZ_DECL_PURE Tile* worldTile(Vector2i const& v)
 }
 
 /// Return ground height of top-left corner of tile at x,y
-static inline WZ_DECL_PURE int32_t map_TileHeight(int32_t x, int32_t y)
+static inline WZ_DECL_PURE int map_TileHeight(int x, int y)
 {
-	if (x >= mapWidth || y >= mapHeight || x < 0 || y < 0)
-	{
+	if (x >= mapWidth || y >= mapHeight ||
+      x < 0 || y < 0)	{
 		return 0;
 	}
 	return psMapTiles[x + (y * mapWidth)].height;
 }
 
-/// Return water height of top-left corner of tile at x,y
-static inline WZ_DECL_PURE int32_t map_WaterHeight(int32_t x, int32_t y)
+/// @return the water height of the top-left corner of tile at (x,y)
+static inline WZ_DECL_PURE int map_WaterHeight(int x, int y)
 {
-	if (x >= mapWidth || y >= mapHeight || x < 0 || y < 0)
-	{
+	if (x >= mapWidth || y >= mapHeight || x < 0 || y < 0) {
 		return 0;
 	}
 	return psMapTiles[x + (y * mapWidth)].waterLevel;
 }
 
 /// Return max(ground, water) height of top-left corner of tile at x,y
-static inline WZ_DECL_PURE int32_t map_TileHeightSurface(int32_t x, int32_t y)
+static inline WZ_DECL_PURE int map_TileHeightSurface(int x, int y)
 {
-	if (x >= mapWidth || y >= mapHeight || x < 0 || y < 0)
-	{
+	if (x >= mapWidth || y >= mapHeight || 
+      x < 0 || y < 0) {
 		return 0;
 	}
-	return MAX(psMapTiles[x + (y * mapWidth)].height, psMapTiles[x + (y * mapWidth)].waterLevel);
+	return MAX(psMapTiles[x + (y * mapWidth)].height, 
+             psMapTiles[x + (y * mapWidth)].waterLevel);
 }
 
-
 /*sets the tile height */
-static inline void setTileHeight(int32_t x, int32_t y, int32_t height)
+static inline void setTileHeight(int x, int y, int height)
 {
-	ASSERT_OR_RETURN(, x < mapWidth && x >= 0, "x coordinate %d bigger than map width %u", x, mapWidth);
-	ASSERT_OR_RETURN(, y < mapHeight && x >= 0, "y coordinate %d bigger than map height %u", y, mapHeight);
+	ASSERT_OR_RETURN(, x < mapWidth && x >= 0, 
+                   "x coordinate %d bigger than map width %u",
+                   x, mapWidth);
+  
+	ASSERT_OR_RETURN(, y < mapHeight && x >= 0,
+                   "y coordinate %d bigger than map height %u",
+                   y, mapHeight);
 
 	psMapTiles[x + (y * mapWidth)].height = height;
 	markTileDirty(x, y);
 }
 
 /* Return whether a tile coordinate is on the map */
-WZ_DECL_ALWAYS_INLINE static inline bool tileOnMap(SDWORD x, SDWORD y)
+static inline bool tileOnMap(int x, int y)
 {
-	return (x >= 0) && (x < (SDWORD)mapWidth) && (y >= 0) && (y < (SDWORD)mapHeight);
+	return x >= 0 && x < (int)mapWidth &&
+         y >= 0 && y < (int)mapHeight;
 }
 
-WZ_DECL_ALWAYS_INLINE static inline bool tileOnMap(Vector2i pos)
+static inline bool tileOnMap(Vector2i pos)
 {
 	return tileOnMap(pos.x, pos.y);
 }
 
 /* Return whether a world coordinate is on the map */
-WZ_DECL_ALWAYS_INLINE static inline bool worldOnMap(int x, int y)
+static inline bool worldOnMap(int x, int y)
 {
-	return (x >= 0) && (x < ((SDWORD)mapWidth << TILE_SHIFT)) &&
-		(y >= 0) && (y < ((SDWORD)mapHeight << TILE_SHIFT));
+	return x >= 0 && x < (int)mapWidth << TILE_SHIFT &&
+         y >= 0 && y < (int)mapHeight << TILE_SHIFT;
 }
 
 
 /* Return whether a world coordinate is on the map */
-WZ_DECL_ALWAYS_INLINE static inline bool worldOnMap(Vector2i pos)
+ static inline bool worldOnMap(Vector2i pos)
 {
 	return worldOnMap(pos.x, pos.y);
 }
@@ -507,15 +524,15 @@ bool map_Intersect(int* Cx, int* Cy, int* Vx, int* Vy, int* Sx, int* Sy);
 unsigned map_LineIntersect(Vector3i src, Vector3i dst, unsigned tMax);
 
 /// The max height of the terrain and water at the specified world coordinates
-int32_t map_Height(int x, int y);
+int map_Height(int x, int y);
 
-static inline int32_t map_Height(Vector2i const& v)
+static inline int map_Height(Vector2i const& v)
 {
 	return map_Height(v.x, v.y);
 }
 
 /* returns true if object is above ground */
-bool mapObjIsAboveGround(const SIMPLE_OBJECT* psObj);
+bool mapObjIsAboveGround(const SimpleObject* psObj);
 
 /* returns the max and min height of a tile by looking at the four corners
    in tile coords */
@@ -529,14 +546,14 @@ extern int scrollMinX, scrollMaxX, scrollMinY, scrollMaxY;
 
 void mapFloodFillContinents();
 
-void tileSetFire(int32_t x, int32_t y, uint32_t duration);
+void tileSetFire(int x, int y, uint duration);
 bool fireOnLocation(unsigned int x, unsigned int y);
 
 /**
  * Transitive sensor check for tile. Has to be here rather than
  * visibility.h due to header include order issues.
  */
-WZ_DECL_ALWAYS_INLINE static inline bool hasSensorOnTile(Tile* psTile, unsigned player)
+ static inline bool hasSensorOnTile(Tile* psTile, unsigned player)
 {
 	return ((player == selectedPlayer && godMode) ||
 		((player < MAX_PLAYER_SLOTS) && (alliancebits[selectedPlayer] & (satuplinkbits | psTile->sensorBits)))

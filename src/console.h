@@ -25,10 +25,6 @@
 #ifndef __INCLUDED_SRC_CONSOLE_H__
 #define __INCLUDED_SRC_CONSOLE_H__
 
-#include <functional>
-#include <memory>
-#include <string>
-
 #include "hci.h"
 
 static constexpr auto	DEFAULT_MESSAGE_DURATION = GAME_TICKS_PER_SEC * 5;

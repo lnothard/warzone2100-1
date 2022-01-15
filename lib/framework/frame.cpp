@@ -159,44 +159,39 @@ PHYSFS_file *openLoadFile(const char *fileName, bool hard_fail)
 	return fileHandle;
 }
 
-/***************************************************************************
-  Load the file with name pointed to by pFileName into a memory buffer.
-  If AllocateMem is true then the memory is allocated ... else it is
-  already in allocated in ppFileData, and the max size is in pFileSize
-  ... this is adjusted to the actual loaded file size.
-
-  If hard_fail is true, we will assert and report on failures.
-***************************************************************************/
+/**
+ * Load the file with name pointed to by pFileName into a memory buffer.
+ * If AllocateMem is true then the memory is allocated ... else it is
+ * already in allocated in ppFileData, and the max size is in pFileSize
+ * ... this is adjusted to the actual loaded file size
+ *
+ * If hard_fail is true, we will assert and report on failures
+ */
 static bool loadFile2(const char *pFileName, char **ppFileData, UDWORD *pFileSize, bool AllocateMem, bool hard_fail)
 {
-	if (WZ_PHYSFS_isDirectory(pFileName))
-	{
+	if (WZ_PHYSFS_isDirectory(pFileName)) {
 		return false;
 	}
 
-	PHYSFS_file *pfile = openLoadFile(pFileName, hard_fail);
-	if (!pfile)
-	{
+	auto pfile = openLoadFile(pFileName, hard_fail);
+	if (!pfile) {
 		return false;
 	}
 
 	PHYSFS_sint64 filesize = PHYSFS_fileLength(pfile);
-	if (filesize < 0)
-	{
-		return false;  // File size could not be determined. Is a directory?
+	if (filesize < 0) {
+    // File size could not be determined. Is a directory?
+		return false;
 	}
 	ASSERT_OR_RETURN(false, filesize < static_cast<PHYSFS_sint64>(std::numeric_limits<PHYSFS_sint32>::max()), "\"%s\" filesize >= std::numeric_limits<PHYSFS_sint32>::max()", pFileName);
 	ASSERT_OR_RETURN(false, static_cast<PHYSFS_uint64>(filesize) < static_cast<PHYSFS_uint64>(std::numeric_limits<size_t>::max()), "\"%s\" filesize >= std::numeric_limits<size_t>::max()", pFileName);
 
-	if (AllocateMem)
-	{
+	if (AllocateMem) {
 		// Allocate a buffer to store the data and a terminating zero
 		*ppFileData = (char *)malloc(static_cast<size_t>(filesize + 1));
 	}
-	else
-	{
-		if (filesize > *pFileSize)
-		{
+	else {
+		if (filesize > *pFileSize) {
 			debug(LOG_ERROR, "No room for file %s, buffer is too small! Got: %d Need: %ld", pFileName, *pFileSize, (long)filesize);
 			assert(false);
 			return false;
@@ -206,10 +201,8 @@ static bool loadFile2(const char *pFileName, char **ppFileData, UDWORD *pFileSiz
 
 	/* Load the file data */
 	PHYSFS_sint64 length_read = WZ_PHYSFS_readBytes(pfile, *ppFileData, static_cast<PHYSFS_uint32>(filesize));
-	if (length_read != filesize)
-	{
-		if (AllocateMem)
-		{
+	if (length_read != filesize) {
+		if (AllocateMem) {
 			free(*ppFileData);
 			*ppFileData = nullptr;
 		}
@@ -219,10 +212,8 @@ static bool loadFile2(const char *pFileName, char **ppFileData, UDWORD *pFileSiz
 		return false;
 	}
 
-	if (!PHYSFS_close(pfile))
-	{
-		if (AllocateMem)
-		{
+	if (!PHYSFS_close(pfile)) {
+		if (AllocateMem) {
 			free(*ppFileData);
 			*ppFileData = nullptr;
 		}
@@ -244,20 +235,17 @@ static bool loadFile2(const char *pFileName, char **ppFileData, UDWORD *pFileSiz
 
 bool loadFileToBufferVector(const char *pFileName, std::vector<char>& outputBuffer, bool hard_fail, bool appendNullCharacter)
 {
-	if (WZ_PHYSFS_isDirectory(pFileName))
-	{
+	if (WZ_PHYSFS_isDirectory(pFileName)) {
 		return false;
 	}
 
 	PHYSFS_file *pfile = openLoadFile(pFileName, hard_fail);
-	if (!pfile)
-	{
+	if (!pfile) {
 		return false;
 	}
 
 	PHYSFS_sint64 filesize = PHYSFS_fileLength(pfile);
-	if (filesize < 0)
-	{
+	if (filesize < 0) {
 		return false;  // File size could not be determined. Is a directory?
 	}
 	ASSERT_OR_RETURN(false, filesize < static_cast<PHYSFS_sint64>(std::numeric_limits<PHYSFS_sint32>::max()), "\"%s\" filesize >= std::numeric_limits<PHYSFS_sint32>::max()", pFileName);
@@ -268,8 +256,7 @@ bool loadFileToBufferVector(const char *pFileName, std::vector<char>& outputBuff
 
 	/* Load the file data */
 	PHYSFS_sint64 length_read = WZ_PHYSFS_readBytes(pfile, outputBuffer.data(), static_cast<PHYSFS_uint32>(filesize));
-	if (length_read != filesize)
-	{
+	if (length_read != filesize) {
 		outputBuffer.clear();
 
 		debug(LOG_ERROR, "Reading %s short: %s", pFileName, WZ_PHYSFS_getLastError());
@@ -277,8 +264,7 @@ bool loadFileToBufferVector(const char *pFileName, std::vector<char>& outputBuff
 		return false;
 	}
 
-	if (!PHYSFS_close(pfile))
-	{
+	if (!PHYSFS_close(pfile)) {
 		outputBuffer.clear();
 
 		debug(LOG_ERROR, "Error closing %s: %s", pFileName, WZ_PHYSFS_getLastError());
@@ -286,8 +272,7 @@ bool loadFileToBufferVector(const char *pFileName, std::vector<char>& outputBuff
 		return false;
 	}
 
-	if (appendNullCharacter)
-	{
+	if (appendNullCharacter) {
 		outputBuffer[outputBuffer.size() - 1] = 0;
 	}
 
@@ -299,27 +284,22 @@ bool loadFileToBufferVector(const char *pFileName, std::vector<char>& outputBuff
 PHYSFS_file *openSaveFile(const char *fileName)
 {
 	PHYSFS_file *fileHandle = PHYSFS_openWrite(fileName);
-	if (!fileHandle)
-	{
+	if (!fileHandle) {
 		const char *found = PHYSFS_getRealDir(fileName);
 
 		debug(LOG_ERROR, "%s could not be opened: %s", fileName, WZ_PHYSFS_getLastError());
-		if (found)
-		{
+		if (found) {
 			debug(LOG_ERROR, "%s found as %s", fileName, found);
 		}
 
 		assert(!"openSaveFile: couldn't open file for writing");
 		return nullptr;
 	}
-
 	return fileHandle;
 }
 
-/***************************************************************************
-	Save the data in the buffer into the given file.
-***************************************************************************/
-bool saveFile(const char *pFileName, const char *pFileData, UDWORD fileSize)
+///	Save the data in the buffer into the given file
+bool saveFile(const char *pFileName, const char *pFileData, unsigned fileSize)
 {
 	PHYSFS_file *pfile;
 	PHYSFS_uint32 size = fileSize;
@@ -414,41 +394,38 @@ std::string video_backend_names[] =
 	"invalid" // Must be last!
 };
 
-static_assert((size_t)video_backend::num_backends == (sizeof(video_backend_names) / sizeof(std::string)) - 1, "video_backend_names must match video_backend enum");
+static_assert((size_t)VIDEO_BACKEND::num_backends == (sizeof(video_backend_names) / sizeof(std::string)) - 1, "video_backend_names must match video_backend enum");
 
-bool video_backend_from_str(const char *str, video_backend &output_backend)
+std::optional<VIDEO_BACKEND> video_backend_from_str(const std::string& str)
 {
-	for (size_t i = 0; i < (size_t)video_backend::num_backends; i++)
+	for (size_t i = 0; i < (size_t)VIDEO_BACKEND::num_backends; i++)
 	{
-		if (strcasecmp(video_backend_names[i].c_str(), str) == 0)
-		{
-			output_backend = (video_backend)i;
-			return true;
+		if (strcasecmp(video_backend_names[i].c_str(), str.c_str()) == 0) {
+			return (VIDEO_BACKEND)i;
 		}
 	}
-	return false;
+	return std::nullopt;
 }
 
-std::string to_string(video_backend backend)
+std::string to_string(VIDEO_BACKEND backend)
 {
 	return video_backend_names[(size_t)backend];
 }
 
-std::string to_display_string(const video_backend& backend)
+std::string to_display_string(const VIDEO_BACKEND& backend)
 {
-	switch (backend)
-	{
-		case video_backend::opengl:
+	switch (backend) {
+		case VIDEO_BACKEND::opengl:
 			return "OpenGL";
-		case video_backend::opengles:
+		case VIDEO_BACKEND::opengles:
 			return "OpenGL ES";
-		case video_backend::vulkan:
+		case VIDEO_BACKEND::vulkan:
 			return "Vulkan";
 #if defined(WZ_BACKEND_DIRECTX)
 		case video_backend::directx:
 			return "DirectX (ANGLE)";
 #endif
-		case video_backend::num_backends:
+		case VIDEO_BACKEND::num_backends:
 			debug(LOG_FATAL, "Should never happen");
 			break;
 	}
@@ -457,8 +434,7 @@ std::string to_display_string(const video_backend& backend)
 
 std::string to_display_string(const WINDOW_MODE& mode)
 {
-	switch (mode)
-	{
+	switch (mode) {
 		case WINDOW_MODE::desktop_fullscreen:
 			return "Desktop Full";
 		case WINDOW_MODE::windowed:

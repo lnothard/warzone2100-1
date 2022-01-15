@@ -39,39 +39,23 @@
 //__ to start receiving all events unfiltered.
 //__
 
-#include "lib/framework/wzapp.h"
-#include "lib/framework/wzconfig.h"
-#include "lib/framework/wzpaths.h"
-
-#include "qtscript.h"
-
-#include "lib/framework/file.h"
-#include "lib/gamelib/gtime.h"
-#include "lib/netplay/netplay.h"
-#include "multiplay.h"
-#include "levels.h"
-#include "map.h"
-#include "difficulty.h"
-#include "console.h"
-#include "clparse.h"
-#include "mission.h"
-#include "modding.h"
-#include "version.h"
-#include "game.h"
-#include "warzoneconfig.h"
-#include "challenge.h"
-
-#include <set>
-#include <memory>
-#include <utility>
-#include <unordered_map>
 #include <sstream>
-#include <iomanip>
 #include <queue>
-#include <limits>
 
-#include "wzscriptdebug.h"
+#include "lib/framework/wzapp.h"
+#include "lib/framework/wzpaths.h"
+#include "lib/wzmaplib/include/wzmaplib/map.h"
+
+#include "challenge.h"
+#include "clparse.h"
+#include "difficulty.h"
+#include "modding.h"
+#include "multiplay.h"
+#include "qtscript.h"
 #include "quickjs_backend.h"
+#include "version.h"
+#include "warzoneconfig.h"
+#include "wzscriptdebug.h"
 
 static constexpr auto ATTACK_THROTTLE = 1000;
 

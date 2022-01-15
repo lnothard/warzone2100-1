@@ -50,6 +50,7 @@
 #ifndef GLM_ENABLE_EXPERIMENTAL
 #define GLM_ENABLE_EXPERIMENTAL
 #endif
+#include <memory>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/matrix_interpolation.hpp>
 
@@ -143,7 +144,6 @@ static WzText txtShowOrders;
 static WzText droidText;
 
 
-/********************  Variables  ********************/
 // Should be cleaned up properly and be put in structures.
 
 // Initialised at start of drawTiles().
@@ -309,32 +309,25 @@ struct Blueprint
 
 	[[nodiscard]] int compare(Blueprint const& b) const
 	{
-		if (stats->ref != b.stats->ref)
-		{
-			return stats->ref < b.stats->ref ? -1 : 1;
+		if (stats.ref != b.stats.ref) {
+			return stats.ref < b.stats.ref ? -1 : 1;
 		}
-		if (pos.x != b.pos.x)
-		{
+		if (pos.x != b.pos.x) {
 			return pos.x < b.pos.x ? -1 : 1;
 		}
-		if (pos.y != b.pos.y)
-		{
+		if (pos.y != b.pos.y) {
 			return pos.y < b.pos.y ? -1 : 1;
 		}
-		if (pos.z != b.pos.z)
-		{
+		if (pos.z != b.pos.z) {
 			return pos.z < b.pos.z ? -1 : 1;
 		}
-		if (dir != b.dir)
-		{
+		if (dir != b.dir) {
 			return dir < b.dir ? -1 : 1;
 		}
-		if (index != b.index)
-		{
+		if (index != b.index) {
 			return index < b.index ? -1 : 1;
 		}
-		if (state != b.state)
-		{
+		if (state != b.state) {
 			return state < b.state ? -1 : 1;
 		}
 		return 0;
@@ -1790,11 +1783,11 @@ static void renderBuildOrder(uint8_t droidPlayer, Order const& order, STRUCTURE_
 	}
 }
 
-std::unique_ptr<Blueprint> playerBlueprint = std::unique_ptr<Blueprint>(new Blueprint());
-std::unique_ptr<ValueTracker> playerBlueprintX = std::unique_ptr<ValueTracker>(new ValueTracker());
-std::unique_ptr<ValueTracker> playerBlueprintY = std::unique_ptr<ValueTracker>(new ValueTracker());
-std::unique_ptr<ValueTracker> playerBlueprintZ = std::unique_ptr<ValueTracker>(new ValueTracker());
-std::unique_ptr<ValueTracker> playerBlueprintDirection = std::unique_ptr<ValueTracker>(new ValueTracker());
+std::unique_ptr<Blueprint> playerBlueprint = std::make_unique<Blueprint>();
+std::unique_ptr<ValueTracker> playerBlueprintX = std::make_unique<ValueTracker>();
+std::unique_ptr<ValueTracker> playerBlueprintY = std::make_unique<ValueTracker>();
+std::unique_ptr<ValueTracker> playerBlueprintZ = std::make_unique<ValueTracker>();
+std::unique_ptr<ValueTracker> playerBlueprintDirection = std::make_unique<ValueTracker>();
 
 void displayBlueprints(const glm::mat4& viewMatrix)
 {
@@ -2748,36 +2741,32 @@ static void drawDragBox()
 /// Display reload bars for structures and droids
 static void drawWeaponReloadBar(SimpleObject* psObj, Weapon* psWeap, int weapon_slot)
 {
-	SDWORD scrX, scrY, scrR, scale;
-	Structure* psStruct;
+	int scrX, scrY, scrR, scale;
 	float mulH; // display unit resistance instead of reload!
-	Droid* psDroid;
 	int armed, firingStage;
 
-	if (ctrlShiftDown() && (psObj->type == OBJ_DROID))
-	{
-		psDroid = (Droid*)psObj;
-		scrX = psObj->sDisplay.screen_x;
-		scrY = psObj->sDisplay.screen_y;
-		scrR = psObj->sDisplay.screen_r;
+	if (ctrlShiftDown() &&
+      dynamic_cast<Droid*>(psObj)) {
+		auto psDroid = dynamic_cast<Droid*>(psObj);
+		scrX = psObj->getDisplayData().screen_x;
+		scrY = psObj->getDisplayData().screen_y;
+		scrR = psObj->getDisplayData().screen_r;
 		scrY += scrR + 2;
 
 		if (weapon_slot != 0) // only rendering resistance in the first slot
 		{
 			return;
 		}
-		if (psDroid->resistance)
-		{
+		if (psDroid->resistance) {
 			mulH = (float)psDroid->resistance / (float)droidResistance(psDroid);
 		}
-		else
-		{
+		else {
 			mulH = 100.f;
 		}
 		firingStage = static_cast<int>(mulH);
 		firingStage = ((((2 * scrR) * 10000) / 100) * firingStage) / 10000;
-		if (firingStage >= (UDWORD)(2 * scrR))
-		{
+
+		if (firingStage >= (UDWORD)(2 * scrR)) {
 			firingStage = (2 * scrR);
 		}
 		pie_BoxFill(scrX - scrR - 1, 3 + scrY + 0 + (weapon_slot * 2), scrX - scrR + (2 * scrR) + 1,
@@ -2788,29 +2777,24 @@ static void drawWeaponReloadBar(SimpleObject* psObj, Weapon* psWeap, int weapon_
 	}
 
 	armed = droidReloadBar(psObj, psWeap, weapon_slot);
-	if (armed >= 0 && armed < 100) // no need to draw if full
-	{
-		scrX = psObj->sDisplay.screen_x;
-		scrY = psObj->sDisplay.screen_y;
-		scrR = psObj->sDisplay.screen_r;
-		switch (psObj->type)
-		{
-		case OBJ_DROID:
-			scrY += scrR + 2;
-			break;
-		case OBJ_STRUCTURE:
-			psStruct = (Structure*)psObj;
-			scale = MAX(psStruct->getStats().base_width, psStruct->getStats().base_breadth);
-			scrY += scale * 10;
-			scrR = scale * 20;
-			break;
-		default:
-			break;
-		}
+	if (armed >= 0 && armed < 100) {
+    // no need to draw if full
+		scrX = psObj->getDisplayData().screen_x;
+		scrY = psObj->getDisplayData().screen_y;
+		scrR = psObj->getDisplayData().screen_r;
+    if (dynamic_cast<Droid*>(psObj)) {
+      scrY += scrR + 2;
+    }
+    if (auto psStruct = dynamic_cast<Structure*>(psObj)) {
+      scale = MAX(psStruct->getStats().base_width,
+                  psStruct->getStats().base_breadth);
+      scrY += scale * 10;
+      scrR = scale * 20;
+    }
 		/* Scale it into an appropriate range */
 		firingStage = ((((2 * scrR) * 10000) / 100) * armed) / 10000;
-		if (firingStage >= 2 * scrR)
-		{
+
+		if (firingStage >= 2 * scrR) {
 			firingStage = (2 * scrR);
 		}
 		/* Power bars */
@@ -2824,8 +2808,8 @@ static void drawWeaponReloadBar(SimpleObject* psObj, Weapon* psWeap, int weapon_
 /// draw target origin icon for the specified structure
 static void drawStructureTargetOriginIcon(Structure* psStruct, int weapon_slot)
 {
-	SDWORD scrX, scrY, scrR;
-	UDWORD scale;
+	int scrX, scrY, scrR;
+	unsigned scale;
 
 	// Process main weapon only for now
 	if (!tuiTargetOrigin || weapon_slot || !((psStruct->asWeaps[weapon_slot]).nStat)) {
@@ -2833,36 +2817,35 @@ static void drawStructureTargetOriginIcon(Structure* psStruct, int weapon_slot)
 	}
 
 	scale = MAX(psStruct->getStats().base_width, psStruct->getStats().base_breadth);
-	scrX = psStruct->sDisplay.screen_x;
-	scrY = psStruct->sDisplay.screen_y + (scale * 10);
+	scrX = psStruct->getDisplayData().screen_x;
+	scrY = psStruct->getDisplayData().screen_y + (scale * 10);
 	scrR = scale * 20;
 
 	/* Render target origin graphics */
-	switch (psStruct->getWeapons()[weapon_slot].origin)
-	{
-	case TARGET_ORIGIN::VISUAL:
-		iV_DrawImage(IntImages, IMAGE_ORIGIN_VISUAL, scrX + scrR + 5, scrY - 1);
-		break;
-	case TARGET_ORIGIN::COMMANDER:
-		iV_DrawImage(IntImages, IMAGE_ORIGIN_COMMANDER, scrX + scrR + 5, scrY - 1);
-		break;
-	case TARGET_ORIGIN::SENSOR:
-		iV_DrawImage(IntImages, IMAGE_ORIGIN_SENSOR_STANDARD, scrX + scrR + 5, scrY - 1);
-		break;
-	case TARGET_ORIGIN::CB_SENSOR:
-		iV_DrawImage(IntImages, IMAGE_ORIGIN_SENSOR_CB, scrX + scrR + 5, scrY - 1);
-		break;
-	case TARGET_ORIGIN::AIR_DEFENSE_SENSOR:
-		iV_DrawImage(IntImages, IMAGE_ORIGIN_SENSOR_AIRDEF, scrX + scrR + 5, scrY - 1);
-		break;
-	case TARGET_ORIGIN::RADAR_DETECTOR:
-		iV_DrawImage(IntImages, IMAGE_ORIGIN_RADAR_DETECTOR, scrX + scrR + 5, scrY - 1);
-		break;
-    case TARGET_ORIGIN::UNKNOWN:
-		// Do nothing
-		break;
-	default:
-		debug(LOG_WARNING, "Unexpected target origin in structure(%d)!", psStruct->id);
+	switch (psStruct->getWeapons()[weapon_slot].getTargetOrigin()) {
+    using enum TARGET_ORIGIN;
+	  case VISUAL:
+	  	iV_DrawImage(IntImages, IMAGE_ORIGIN_VISUAL, scrX + scrR + 5, scrY - 1);
+	  	break;
+	  case COMMANDER:
+	  	iV_DrawImage(IntImages, IMAGE_ORIGIN_COMMANDER, scrX + scrR + 5, scrY - 1);
+	  	break;
+	  case SENSOR:
+	  	iV_DrawImage(IntImages, IMAGE_ORIGIN_SENSOR_STANDARD, scrX + scrR + 5, scrY - 1);
+	  	break;
+	  case CB_SENSOR:
+	  	iV_DrawImage(IntImages, IMAGE_ORIGIN_SENSOR_CB, scrX + scrR + 5, scrY - 1);
+	  	break;
+	  case AIR_DEFENSE_SENSOR:
+	  	iV_DrawImage(IntImages, IMAGE_ORIGIN_SENSOR_AIRDEF, scrX + scrR + 5, scrY - 1);
+	  	break;
+	  case RADAR_DETECTOR:
+	  	iV_DrawImage(IntImages, IMAGE_ORIGIN_RADAR_DETECTOR, scrX + scrR + 5, scrY - 1);
+	  	break;
+      case UNKNOWN:
+	  	break;
+	  default:
+	  	debug(LOG_WARNING, "Unexpected target origin in structure(%d)!", psStruct->getId());
 	}
 }
 
@@ -2873,17 +2856,17 @@ static void drawStructureHealth(Structure* psStruct)
 	PIELIGHT powerCol = WZCOL_BLACK, powerColShadow = WZCOL_BLACK;
 	int32_t health, width;
 
-	int32_t scale = static_cast<int32_t>(
+	auto scale = static_cast<int32_t>(
 		MAX(psStruct->getStats().base_width, psStruct->getStats().base_breadth));
 	width = scale * 20;
-	scrX = psStruct->sDisplay.screen_x;
-	scrY = static_cast<int32_t>(psStruct->sDisplay.screen_y) + (scale * 10);
+	scrX = psStruct->getDisplayData().screen_x;
+	scrY = static_cast<int32_t>(psStruct->getDisplayData().screen_y) + (scale * 10);
 	scrR = width;
 	//health = PERCENT(psStruct->body, psStruct->baseBodyPoints);
 	if (ctrlShiftDown())
 	{
 		//show resistance values if CTRL/SHIFT depressed
-		UDWORD resistance = structureResistance(
+		auto resistance = structureResistance(
 			&psStruct->getStats(), psStruct->getPlayer());
 		if (resistance)
 		{
@@ -2929,10 +2912,10 @@ static void drawStructureHealth(Structure* psStruct)
 /// draw the construction bar for the specified structure
 static void drawStructureBuildProgress(Structure* psStruct)
 {
-	int32_t scale = static_cast<int32_t>(
+	auto scale = static_cast<int32_t>(
 		MAX(psStruct->getStats().base_width, psStruct->getStats().base_breadth));
-	int32_t scrX = static_cast<int32_t>(psStruct->sDisplay.screen_x);
-	int32_t scrY = static_cast<int32_t>(psStruct->sDisplay.screen_y) + (scale * 10);
+	auto scrX = static_cast<int32_t>(psStruct->getDisplayData().screen_x);
+	int32_t scrY = static_cast<int32_t>(psStruct->getDisplayData().screen_y) + (scale * 10);
 	int32_t scrR = scale * 20;
 	auto progress = scale * 40 * structureCompletionProgress(*psStruct);
 	pie_BoxFillf(scrX - scrR - 1, scrY - 1 + 5, scrX + scrR + 1, scrY + 3 + 5, WZCOL_RELOAD_BACKGROUND);
@@ -2940,7 +2923,7 @@ static void drawStructureBuildProgress(Structure* psStruct)
 	pie_BoxFillf(scrX - scrR, scrY + 1 + 5, scrX - scrR + progress, scrY + 2 + 5, WZCOL_HEALTH_MEDIUM);
 }
 
-/// Draw the health of structures and show enemy structures being targetted
+/// Draw the health of structures and show enemy structures being targeted
 static void drawStructureSelections()
 {
 	Structure* psStruct;
@@ -2951,7 +2934,7 @@ static void drawStructureSelections()
 	bool bMouseOverOwnStructure = false;
 
 	psClickedOn = mouseTarget();
-	if (psClickedOn != nullptr && psClickedOn->type == OBJ_STRUCTURE)
+	if (psClickedOn != nullptr && dynamic_cast<Structure*>(psClickedOn))
 	{
 		bMouseOverStructure = true;
 		if (psClickedOn->getPlayer() == selectedPlayer)
@@ -2966,15 +2949,14 @@ static void drawStructureSelections()
 	/* Go thru' all the buildings */
 	for (psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
 	{
-		if (psStruct->sDisplay.frame_number == currentGameFrame)
+		if (psStruct->getDisplayData().frame_number == currentGameFrame)
 		{
 			/* If it's selected */
 			if (psStruct->selected ||
 				(barMode == BAR_DROIDS_AND_STRUCTURES && psStruct->getStats().type != STRUCTURE_TYPE::WALL && psStruct->
 					getStats().type != STRUCTURE_TYPE::WALL_CORNER) ||
-				(bMouseOverOwnStructure && psStruct == (Structure*)psClickedOn)
-			)
-			{
+				(bMouseOverOwnStructure &&
+         psStruct == dynamic_cast<Structure*>(psClickedOn))) {
 				drawStructureHealth(psStruct);
 
 				for (i = 0; i < psStruct->numWeaps; i++)
@@ -2997,10 +2979,10 @@ static void drawStructureSelections()
 		{
 			/* If it's targetted and on-screen */
 			if (psStruct->flags.test(OBJECT_FLAG::TARGETED)
-				&& psStruct->sDisplay.frame_number == currentGameFrame)
+				&& psStruct->getDisplayData().frame_number == currentGameFrame)
 			{
-				scrX = psStruct->sDisplay.screen_x;
-				scrY = psStruct->sDisplay.screen_y;
+				scrX = psStruct->getDisplayData().screen_x;
+				scrY = psStruct->getDisplayData().screen_y;
 				iV_DrawImage(IntImages, getTargettingGfx(), scrX, scrY);
 			}
 		}
@@ -3010,7 +2992,7 @@ static void drawStructureSelections()
 	{
 		if (mouseDown(getRightClickOrders() ? MOUSE_LMB : MOUSE_RMB))
 		{
-			psStruct = (Structure*)psClickedOn;
+			psStruct = dynamic_cast<Structure*>(psClickedOn);
 			drawStructureHealth(psStruct);
 			if (psStruct->getState() == STRUCTURE_STATE::BEING_BUILT)
 			{
@@ -3166,7 +3148,7 @@ void drawDroidSelection(Droid* psDroid, bool drawBox)
 
 	for (int i = 0; i < numWeapons(*psDroid); i++)
 	{
-		drawWeaponReloadBar((SimpleObject*)psDroid, &psDroid->getWeapons()[i], i);
+		drawWeaponReloadBar(psDroid, &psDroid->getWeapons()[i], i);
 	}
 }
 
@@ -3178,15 +3160,15 @@ static void drawDroidSelections()
 	SimpleObject* psClickedOn;
 	bool bMouseOverDroid = false;
 	bool bMouseOverOwnDroid = false;
-	UDWORD index;
+	unsigned index;
 	float mulH;
 
 	psClickedOn = mouseTarget();
-	if (psClickedOn != nullptr && psClickedOn->type == OBJ_DROID)
-	{
+	if (psClickedOn != nullptr &&
+      dynamic_cast<Droid*>(psClickedOn)) {
 		bMouseOverDroid = true;
-		if (psClickedOn->getPlayer() == selectedPlayer && !psClickedOn->selected)
-		{
+		if (psClickedOn->getPlayer() == selectedPlayer &&
+        !psClickedOn->selected) {
 			bMouseOverOwnDroid = true;
 		}
 	}
@@ -3201,35 +3183,28 @@ static void drawDroidSelections()
         (bMouseOverOwnDroid && psDroid == (Droid*)psClickedOn) ||
         droidUnderRepair(&psDroid) ||
 			barMode == BAR_DROIDS || barMode == BAR_DROIDS_AND_STRUCTURES
-		)
-		{
+		) {
 			drawDroidSelection(psDroid, psDroid.selected);
 		}
 	}
 
 	/* Are we over an enemy droid */
-	if (bMouseOverDroid && !bMouseOverOwnDroid)
-	{
-		if (mouseDown(getRightClickOrders() ? MOUSE_LMB : MOUSE_RMB))
-		{
-			if (psClickedOn->getPlayer() != selectedPlayer && psClickedOn->sDisplay.frame_number == currentGameFrame)
-			{
+	if (bMouseOverDroid && !bMouseOverOwnDroid) {
+		if (mouseDown(getRightClickOrders() ? MOUSE_LMB : MOUSE_RMB)) {
+			if (psClickedOn->getPlayer() != selectedPlayer &&
+          psClickedOn->getDisplayData().frame_number == currentGameFrame) {
 				Droid* psDroid = (Droid*)psClickedOn;
 				UDWORD damage;
 				//show resistance values if CTRL/SHIFT depressed
-				if (ctrlShiftDown())
-				{
-					if (psDroid->resistance)
-					{
+				if (ctrlShiftDown()) {
+					if (psDroid->resistance) {
 						damage = PERCENT(psDroid->resistance, droidResistance(psDroid));
 					}
-					else
-					{
+					else {
 						damage = 100;
 					}
 				}
-				else
-				{
+				else {
 					damage = PERCENT(psDroid->getHp(), psDroid->getOriginalHp());
 				}
 
@@ -3317,19 +3292,19 @@ static void drawDroidSelections()
 
 	for (const Feature* psFeature = apsFeatureLists[0]; psFeature; psFeature = psFeature->psNext)
 	{
-		if (!psFeature->died && psFeature->sDisplay.frame_number == currentGameFrame)
-		{
-			if (psFeature->flags.test(OBJECT_FLAG::TARGETED))
-			{
-				iV_DrawImage(IntImages, getTargettingGfx(), psFeature->sDisplay.screen_x, psFeature->sDisplay.screen_y);
+		if (!psFeature->died && psFeature->getDisplayData().frame_number == currentGameFrame) {
+			if (psFeature->flags.test((size_t)OBJECT_FLAG::TARGETED)) {
+				iV_DrawImage(IntImages, getTargettingGfx(),
+                     psFeature->getDisplayData().screen_x,
+                     psFeature->getDisplayData().screen_y);
 			}
 		}
 	}
 }
 
-/* ---------------------------------------------------------------------------- */
 /// X offset to display the group number at
-#define GN_X_OFFSET	(8)
+static constexpr auto GN_X_OFFSET = 8;
+
 /// Draw the number of the group the droid is in next to the droid
 static void drawDroidGroupNumber(Droid* psDroid)
 {
