@@ -47,6 +47,17 @@ struct TILEPOS
   uint8_t x, y, type;
 };
 
+/// 4D spacetime coordinate and orientation
+struct Spacetime
+{
+    Spacetime() = default;
+    Spacetime(std::size_t time, Position position, Rotation rotation);
+
+    std::size_t time = 0;
+    Position position {0, 0, 0};
+    Rotation rotation {0, 0,0};
+};
+
 /**
  * The base type specification inherited by all persistent
  * game entities
@@ -64,6 +75,7 @@ public:
     [[nodiscard]] virtual unsigned getId() const = 0;
     [[nodiscard]] virtual std::size_t getTime() const = 0;
     [[nodiscard]] virtual const DisplayData& getDisplayData() const = 0;
+    [[nodiscard]] virtual Spacetime getPreviousLocation() const = 0;
 
     virtual void setTime(unsigned t) = 0;
     virtual void setPlayer(unsigned p) = 0;
@@ -80,6 +92,7 @@ namespace Impl
     class SimpleObject : public virtual ::SimpleObject
     {
     public:
+        ~SimpleObject() override;
         SimpleObject(unsigned id, unsigned player);
 
         /* Accessors */
@@ -90,6 +103,7 @@ namespace Impl
         [[nodiscard]] unsigned getId() const noexcept final;
         [[nodiscard]] std::size_t getTime() const noexcept final;
         [[nodiscard]] const DisplayData& getDisplayData() const noexcept final;
+        [[nodiscard]] Spacetime getPreviousLocation() const final;
 
         void setTime(unsigned t) noexcept final;
         void setPlayer(unsigned p) noexcept final;
@@ -105,6 +119,7 @@ namespace Impl
         std::size_t time = 0;
         Position position {0, 0, 0};
         Rotation rotation {0, 0, 0};
+        Spacetime previousLocation;
         std::unique_ptr<DisplayData> display;
     protected:
         /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip,
@@ -113,17 +128,6 @@ namespace Impl
         std::bitset< static_cast<std::size_t>(OBJECT_FLAG::COUNT) > flags;
     };
 }
-
-/// 4D spacetime coordinate and orientation
-struct Spacetime
-{
-    Spacetime() = default;
-    Spacetime(std::size_t time, Position position, Rotation rotation);
-
-    std::size_t time = 0;
-    Position position {0, 0, 0};
-    Rotation rotation {0, 0,0};
-};
 
 int objectPositionSquareDiff(const Position& first, const Position& second);
 

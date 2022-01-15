@@ -18,18 +18,10 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include "lib/framework/frame.h"
-#include "lib/netplay/netplay.h"
-#include "lib/sound/audio.h"
-
 #include "baseobject.h"
-#include "droid.h"
-#include "projectile.h"
-#include "structure.h"
 #include "feature.h"
 #include "intdisplay.h"
 #include "map.h"
-#include "visibility.h"
 
 static inline uint16_t interpolateAngle(uint16_t v1, uint16_t v2, unsigned t1, unsigned t2, unsigned t)
 {
@@ -56,100 +48,76 @@ static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, std::size_t 
 {
 	// Cyp says this should never happen, #3037 and #3238 say it does though.
 	ASSERT_OR_RETURN(st1, st1.time != st2.time, "Spacetime overlap!");
-	return {t, interpolatePos(st1.position, st2.position, st1.time, st2.time, t),
-	                 interpolateRot(st1.rotation, st2.rotation, st1.time, st2.time, t)};
+	return {t, interpolatePos(st1.position, st2.position,
+                            st1.time, st2.time, t),
+	                 interpolateRot(st1.rotation, st2.rotation,
+                                  st1.time, st2.time, t)};
 }
 
 Spacetime interpolateObjectSpacetime(const SimpleObject* obj, unsigned t)
 {
 	if (auto psDroid = dynamic_cast<const Droid*>(obj)) {
-    return interpolateSpacetime(psDroid->previousLocation, obj->getSpacetime(), t);
+    return interpolateSpacetime(psDroid->getPreviousLocation(),
+                                obj->getSpacetime(), t);
   }
-  else if (auto psStruct = dynamic_cast<const Structure*>(obj)) {
-    return interpolateSpacetime(psStruct->prevSpacetime, obj->getSpacetime(), t);
+  if (auto psStruct = dynamic_cast<const Structure*>(obj)) {
+    return interpolateSpacetime(psStruct->getPreviousLocation(),
+                                obj->getSpacetime(), t);
   }
-  else {
-    return obj->getSpacetime();
-	}
+  return obj->getSpacetime();
 }
 
-SimpleObject::~SimpleObject()
-{
-	visRemoveVisibility(this);
-
-#ifdef DEBUG
-	psNext = this; // Hopefully this will trigger an infinite loop       if someone uses the freed object.
-	psNextFunc = this; // Hopefully this will trigger an infinite loop       if someone uses the freed object.
-#endif //DEBUG
-}
-
-//// Query visibility for display purposes (i.e. for `selectedPlayer`)
-//// *DO NOT USE TO QUERY VISIBILITY FOR CALCULATIONS INVOLVING GAME / SIMULATION STATE*
-//UBYTE SimpleObject::visibleForLocalDisplay() const
+//void checkObject(const SimpleObject* psObject, const char* const location_description, const char* function,
+//                 const int recurse)
 //{
-//	if (godMode)
-//	{
-//		// is visible to selectedPlayer
-//		return UBYTE_MAX;
+//	if (recurse < 0) {
+//		return;
 //	}
-//	if (selectedPlayer >= MAX_PLAYERS)
-//	{
-//		return 0;
+//
+//	ASSERT(psObject != nullptr, "NULL pointer");
+//
+//	switch (psObject->type) {
+//	case OBJ_DROID:
+//		checkDroid((const Droid*)psObject, location_description, function, recurse - 1);
+//		break;
+//
+//	case OBJ_STRUCTURE:
+//		checkStructure((const Structure*)psObject, location_description, function, recurse - 1);
+//		break;
+//
+//	case OBJ_PROJECTILE:
+//		checkProjectile((const Projectile*)psObject, location_description, function, recurse - 1);
+//		break;
+//
+//	case OBJ_FEATURE:
+//		break;
+//
+//	default:
+//		ASSERT_HELPER(!"invalid object type", location_description, function,
+//		              "CHECK_OBJECT: Invalid object type (type num %u)", (unsigned int)psObject->type);
+//		break;
 //	}
-//	return visible[selectedPlayer];
 //}
-
-void checkObject(const SimpleObject* psObject, const char* const location_description, const char* function,
-                 const int recurse)
-{
-	if (recurse < 0) {
-		return;
-	}
-
-	ASSERT(psObject != nullptr, "NULL pointer");
-
-	switch (psObject->type) {
-	case OBJ_DROID:
-		checkDroid((const Droid*)psObject, location_description, function, recurse - 1);
-		break;
-
-	case OBJ_STRUCTURE:
-		checkStructure((const Structure*)psObject, location_description, function, recurse - 1);
-		break;
-
-	case OBJ_PROJECTILE:
-		checkProjectile((const Projectile*)psObject, location_description, function, recurse - 1);
-		break;
-
-	case OBJ_FEATURE:
-		break;
-
-	default:
-		ASSERT_HELPER(!"invalid object type", location_description, function,
-		              "CHECK_OBJECT: Invalid object type (type num %u)", (unsigned int)psObject->type);
-		break;
-	}
-}
-
-void _syncDebugObject(const char* function, SimpleObject const* psObject, char ch)
-{
-	switch (psObject->type)
-	{
-	case OBJ_DROID: _syncDebugDroid(function, (const Droid*)psObject, ch);
-		break;
-	case OBJ_STRUCTURE: _syncDebugStructure(function, (const Structure*)psObject, ch);
-		break;
-	case OBJ_FEATURE: _syncDebugFeature(function, (const Feature*)psObject, ch);
-		break;
-	case OBJ_PROJECTILE: dynamic_cast<const Projectile*>(psObject)->debug_(function, ch);
-		break;
-	default: _syncDebug(function, "%c unidentified_object%d = p%d;objectType%d", ch, psObject->id, psObject->player,
-	                    psObject->type);
-		ASSERT_HELPER(!"invalid object type", "_syncDebugObject", function,
-		              "syncDebug: Invalid object type (type num %u)", (unsigned int)psObject->type);
-		break;
-	}
-}
+//
+//void _syncDebugObject(const char* function, SimpleObject const* psObject, char ch)
+//{
+//	switch (psObject->type)
+//	{
+//	case OBJ_DROID: _syncDebugDroid(function, (const Droid*)psObject, ch);
+//		break;
+//	case OBJ_STRUCTURE: _syncDebugStructure(function, (const Structure*)psObject, ch);
+//		break;
+//	case OBJ_FEATURE: _syncDebugFeature(function, (const Feature*)psObject, ch);
+//		break;
+//	case OBJ_PROJECTILE: dynamic_cast<const Projectile*>(psObject)->debug_(function, ch);
+//		break;
+//	default: _syncDebug(function, "%c unidentified_object%d = p%d;objectType%d", ch, psObject->id, psObject->player,
+//	                    psObject->type);
+//		ASSERT_HELPER(!"invalid object type", "_syncDebugObject", function,
+//		              "syncDebug: Invalid object type (type num %u)", (unsigned int)psObject->type);
+//		break;
+//	}
+//}
 
 Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 {

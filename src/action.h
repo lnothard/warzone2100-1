@@ -27,9 +27,11 @@
 #define __INCLUDED_SRC_ACTION_H__
 
 #include "lib/gamelib/gtime.h"
+#include "wzmaplib/map.h"
 
 class Droid;
 class Weapon;
+class WeaponStats;
 enum class ACTION;
 
 /* Attack run distances */
@@ -149,5 +151,9 @@ void moveToRearm(Droid* psDroid);
 
 /** Choose a landing position for a VTOL when it goes to rearm. */
 bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p);
+
+static bool actionInsideMinRange(Droid *psDroid, SimpleObject *psObj, WeaponStats *psStats);
+
+static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir, BaseStats* psStats);
 
 #endif // __INCLUDED_SRC_ACTION_H__

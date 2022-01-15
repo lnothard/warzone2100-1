@@ -68,7 +68,7 @@ struct MISSION
 	int scrollMaxY;
 	std::array< std::vector<Structure*>, MAX_PLAYERS> apsStructLists;
   Structure* apsExtractorLists[MAX_PLAYERS];
-	std::array< std::vector<Droid*>, MAX_PLAYERS> apsDroidLists;
+	std::array< std::vector<Droid>, MAX_PLAYERS> apsDroidLists;
 	std::array< std::vector<Feature*>, MAX_PLAYERS> apsFeatureLists;
 	SimpleObject* apsSensorList[1];
 	Feature* apsOilList[1];

@@ -21,7 +21,7 @@
 #ifndef __INCLUDED_SRC_BUCKET3D_H__
 #define __INCLUDED_SRC_BUCKET3D_H__
 
-enum RENDER_TYPE
+enum class RENDER_TYPE
 {
 	RENDER_DROID,
 	RENDER_STRUCTURE,
@@ -32,8 +32,6 @@ enum RENDER_TYPE
 	RENDER_DELIVPOINT,
 	RENDER_PARTICLE
 };
-
-//function prototypes
 
 /* add an object to the current render list */
 void bucketAddTypeToList(RENDER_TYPE objectType, void* object, const glm::mat4& viewMatrix);

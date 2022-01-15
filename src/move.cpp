@@ -56,50 +56,6 @@
 #include "mission.h"
 #include "qtscript.h"
 
-/* max and min vtol heights above terrain */
-static constexpr auto VTOL_HEIGHT_MIN	= 250;
-static constexpr auto VTOL_HEIGHT_LEVEL	=	300;
-static constexpr auto VTOL_HEIGHT_MAX =	350;
-
-// Maximum size of an object for collision
-static constexpr auto OBJ_MAXRADIUS	= TILE_UNITS * 4;
-
-// how long a shuffle can propagate before they all stop
-static constexpr auto VE_SHUFFLETIME = 10000;
-
-// Length of time a droid has to be stationery to be considered blocked
-static constexpr auto BLOCK_TIME = 6000;
-static constexpr auto SHUFFLE_BLOCK_TIME = 2000;
-// How long a droid has to be stationary before stopping trying to move
-static constexpr auto BLOCK_PAUSETIME = 1500;
-static constexpr auto BLOCK_PAUSERELEASE = 500;
-// How far a droid has to move before it is no longer 'stationary'
-static constexpr auto BLOCK_DIST	=	64;
-// How far a droid has to rotate before it is no longer 'stationary'
-static constexpr auto BLOCK_DIR =	90;
-
-// How far out from an obstruction to start avoiding it
-static constexpr auto AVOID_DIST = TILE_UNITS * 2;
-
-// Speed to approach a final way point, if possible.
-static constexpr auto MIN_END_SPEED	= 60;
-
-// distance from final way point to start slowing
-static constexpr auto END_SPEED_RANGE	= 3 * TILE_UNITS;
-
-// how long to pause after firing a FOM_NO weapon
-static constexpr auto FOM_MOVEPAUSE	=	1500;
-
-// distance to consider droids for a shuffle
-static constexpr auto SHUFFLE_DIST = 3 * TILE_UNITS / 2;
-
-// how far to move for a shuffle
-static constexpr auto SHUFFLE_MOVE = 2 * TILE_UNITS / 2;
-
-/// Extra precision added to movement calculations.
-static constexpr auto EXTRA_BITS = 8;
-static constexpr auto EXTRA_PRECISION = 1 << EXTRA_BITS;
-
 Movement::Movement(Vector2i src, Vector2i destination)
   : src{src}, destination{destination}
 {

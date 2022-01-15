@@ -64,7 +64,6 @@ static void orderClearDroidList(Droid* psDroid);
 /** Whether an order effect has been displayed
  * @todo better documentation required.
  */
-static bool bOrderEffectDisplayed = false;
 
 //////////////////////////////////////////////////////////////////
 

@@ -24,6 +24,9 @@
 */
 
 #include <glm/gtx/transform.hpp>
+#include "lib/ivis_opengl/ivisdef.h"
+#include "lib/ivis_opengl/piepalette.h"
+#include "lib/wzmaplib/include/wzmaplib/map.h"
 
 #include "atmos.h"
 #include "display3d.h"
@@ -34,26 +37,24 @@
 bool gamePaused();
 
 /* Roughly one per tile */
-#define	MAX_ATMOS_PARTICLES		(MAP_MAXWIDTH * MAP_MAXHEIGHT)
-#define	SNOW_SPEED_DRIFT		(40 - rand() % 80)
-#define SNOW_SPEED_FALL			(0 - (rand() % 40 + 80))
-#define	RAIN_SPEED_DRIFT		(rand() % 50)
-#define	RAIN_SPEED_FALL			(0 - ((rand() % 300) + 700))
+static constexpr auto	MAX_ATMOS_PARTICLES	= MAP_MAXWIDTH * MAP_MAXHEIGHT;
+static const auto	SNOW_SPEED_DRIFT = (40 - rand() % 80);
+static const auto SNOW_SPEED_FALL  = (0 - (rand() % 40 + 80));
+static const auto	RAIN_SPEED_DRIFT = (rand() % 50);
+static const auto	RAIN_SPEED_FALL  = (0 - ((rand() % 300) + 700));
 
-static Particle* asAtmosParts = nullptr;
+static std::vector<Particle> asAtmosParts;
 static unsigned freeParticle;
 static WEATHER_TYPE weather = WEATHER_TYPE::NONE;
 
 /* Setup all the particles */
 void atmosInitSystem()
 {
-	if (!asAtmosParts && weather != WEATHER_TYPE::NONE)
-	{
-		// calloc sets all to PARTICLE_STATUS::INACTIVE initially
-		asAtmosParts = (Particle*)calloc(MAX_ATMOS_PARTICLES, sizeof(*asAtmosParts));
+	if (asAtmosParts.empty() &&
+      weather != WEATHER_TYPE::NONE) {
+		asAtmosParts.resize(MAX_ATMOS_PARTICLES);
 	}
-	/* Start at the beginning */
-	freeParticle = 0;
+  freeParticle = 0;
 }
 
 /*	Makes a particle wrap around - if it goes off the grid, then it returns
@@ -61,26 +62,22 @@ void atmosInitSystem()
 static void testParticleWrap(Particle* psPart)
 {
 	/* Gone off left side */
-	if (psPart->position.x < playerPos.p.x - world_coord(visibleTiles.x) / 2)
-	{
+	if (psPart->position.x < playerPos.p.x - world_coord(visibleTiles.x) / 2) {
 		psPart->position.x += world_coord(visibleTiles.x);
 	}
 
 	/* Gone off right side */
-	else if (psPart->position.x > (playerPos.p.x + world_coord(visibleTiles.x) / 2))
-	{
+	else if (psPart->position.x > (playerPos.p.x + world_coord(visibleTiles.x) / 2)) {
 		psPart->position.x -= world_coord(visibleTiles.x);
 	}
 
 	/* Gone off top */
-	if (psPart->position.z < playerPos.p.z - world_coord(visibleTiles.y) / 2)
-	{
+	if (psPart->position.z < playerPos.p.z - world_coord(visibleTiles.y) / 2) {
 		psPart->position.z += world_coord(visibleTiles.y);
 	}
 
 	/* Gone off bottom */
-	else if (psPart->position.z > (playerPos.p.z + world_coord(visibleTiles.y) / 2))
-	{
+	else if (psPart->position.z > (playerPos.p.z + world_coord(visibleTiles.y) / 2)) {
 		psPart->position.z -= world_coord(visibleTiles.y);
 	}
 }
@@ -88,103 +85,87 @@ static void testParticleWrap(Particle* psPart)
 /* Moves one of the particles */
 static void processParticle(Particle* psPart)
 {
-	SDWORD groundHeight;
-	Vector3i pos;
-	UDWORD x, y;
-	Tile* psTile;
-
 	/* Only move if the game isn't paused */
-	if (!gamePaused())
-	{
-		/* Move the particle - frame rate controlled */
-		psPart->position.x += graphicsTimeAdjustedIncrement(psPart->velocity.x);
-		psPart->position.y += graphicsTimeAdjustedIncrement(psPart->velocity.y);
-		psPart->position.z += graphicsTimeAdjustedIncrement(psPart->velocity.z);
+  if (gamePaused()) {
+    return;
+  }
 
-		/* Wrap it around if it's gone off grid... */
-		testParticleWrap(psPart);
+  /* Move the particle - frame rate controlled */
+  psPart->position.x += graphicsTimeAdjustedIncrement(psPart->velocity.x);
+  psPart->position.y += graphicsTimeAdjustedIncrement(psPart->velocity.y);
+  psPart->position.z += graphicsTimeAdjustedIncrement(psPart->velocity.z);
 
-		/* If it's gone off the WORLD... */
-		if (psPart->position.x < 0 || psPart->position.z < 0 ||
-			psPart->position.x > ((mapWidth - 1) * TILE_UNITS) ||
-			psPart->position.z > ((mapHeight - 1) * TILE_UNITS))
-		{
-			/* The kill it */
-			psPart->status = PARTICLE_STATUS::INACTIVE;
-			return;
-		}
+  /* Wrap it around if it's gone off grid... */
+  testParticleWrap(psPart);
 
-		/* What height is the ground under it? Only do if low enough...*/
-		if (psPart->position.y < TILE_MAX_HEIGHT)
-		{
-			/* Get ground height */
-			groundHeight = map_Height(static_cast<int>(psPart->position.x), static_cast<int>(psPart->position.z));
+  /* If it's gone off the WORLD... */
+  if (psPart->position.x < 0 || psPart->position.z < 0 ||
+      psPart->position.x > ((mapWidth - 1) * TILE_UNITS) ||
+      psPart->position.z > ((mapHeight - 1) * TILE_UNITS)) {
+    /* The kill it */
+    psPart->status = PARTICLE_STATUS::INACTIVE;
+    return;
+  }
 
-			/* Are we below ground? */
-			if ((int)psPart->position.y < groundHeight
-				|| psPart->position.y < 0.f)
-			{
-				/* Kill it and return */
-				psPart->status = PARTICLE_STATUS::INACTIVE;
-				if (psPart->type == PARTICLE_TYPE::RAIN)
-				{
-					x = map_coord(static_cast<int>(psPart->position.x));
-					y = map_coord(static_cast<int>(psPart->position.z));
-					psTile = mapTile(x, y);
-					if (terrainType(psTile) == TER_WATER && TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile))
-					// display-only check for adding effect
-					{
-						pos.x = static_cast<int>(psPart->position.x);
-						pos.z = static_cast<int>(psPart->position.z);
-						pos.y = groundHeight;
-						effectSetSize(60);
-						addEffect(&pos, EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_SPECIFIED, true, getImdFromIndex(MI_SPLASH),
-						          0);
-					}
-				}
-				return;
-			}
-		}
-		if (psPart->type == PARTICLE_TYPE::SNOW)
-		{
-			if (rand() % 30 == 1)
-			{
-				psPart->velocity.z = (float)SNOW_SPEED_DRIFT;
-			}
-			if (rand() % 30 == 1)
-			{
-				psPart->velocity.x = (float)SNOW_SPEED_DRIFT;
-			}
-		}
-	}
+  /* What height is the ground under it? Only do if low enough...*/
+  if (psPart->position.y < TILE_MAX_HEIGHT) {
+    /* Get ground height */
+    auto groundHeight = map_Height(static_cast<int>(psPart->position.x),
+                                   static_cast<int>(psPart->position.z));
+
+    /* Are we below ground? */
+    if ((int)psPart->position.y < groundHeight
+      || psPart->position.y < 0.f) {
+      /* Kill it and return */
+      psPart->status = PARTICLE_STATUS::INACTIVE;
+      if (psPart->type == PARTICLE_TYPE::RAIN) {
+        auto x = map_coord(static_cast<int>(psPart->position.x));
+        auto y = map_coord(static_cast<int>(psPart->position.z));
+        auto psTile = mapTile(x, y);
+        if (terrainType(psTile) == TER_WATER &&
+            TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile)) {
+          // display-only check for adding effect
+          auto pos = Position{psPart->position.x, groundHeight, psPart->position.z};
+          effectSetSize(60);
+          addEffect(&pos, EFFECT_GROUP::EXPLOSION,
+                    EFFECT_TYPE::EXPLOSION_TYPE_SPECIFIED,
+                    true, getImdFromIndex(MI_SPLASH), 0);
+        }
+      }
+      return;
+    }
+  }
+  if (psPart->type == PARTICLE_TYPE::SNOW) {
+    if (rand() % 30 == 1) {
+      psPart->velocity.z = (float)SNOW_SPEED_DRIFT;
+    }
+    if (rand() % 30 == 1) {
+      psPart->velocity.x = (float)SNOW_SPEED_DRIFT;
+    }
+  }
 }
 
 /* Adds a particle to the system if it can */
 static void atmosAddParticle(const Vector3f& pos, PARTICLE_TYPE type)
 {
 	unsigned activeCount;
-	unsigned i;
+  int i;
 
-	for (i = freeParticle, activeCount = 0; asAtmosParts[i].status == PARTICLE_STATUS::ACTIVE && activeCount < MAX_ATMOS_PARTICLES; i
-	     ++)
-	{
+	for (i = freeParticle, activeCount = 0; asAtmosParts[i].status == PARTICLE_STATUS::ACTIVE && activeCount < MAX_ATMOS_PARTICLES; i++) {
 		activeCount++;
 		/* Check for wrap around */
-		if (i >= (MAX_ATMOS_PARTICLES - 1))
-		{
+		if (i >= (MAX_ATMOS_PARTICLES - 1)) {
 			/* Go back to the first one */
 			i = 0;
 		}
 	}
 
 	/* Check the list isn't just full of essential effects */
-	if (activeCount >= MAX_ATMOS_PARTICLES - 1)
-	{
+	if (activeCount >= MAX_ATMOS_PARTICLES - 1) {
 		/* All of the particles active!?!? */
 		return;
 	}
-	else
-	{
+	else {
 		freeParticle = i;
 	}
 
@@ -195,30 +176,27 @@ static void atmosAddParticle(const Vector3f& pos, PARTICLE_TYPE type)
 	asAtmosParts[freeParticle].status = PARTICLE_STATUS::ACTIVE;
 
 	/* Setup the imd */
-	switch (type)
-	{
-	case PARTICLE_TYPE::SNOW:
-		asAtmosParts[freeParticle].imd = getImdFromIndex(MI_SNOW);
-		asAtmosParts[freeParticle].size = 80;
-		break;
-    case PARTICLE_TYPE::RAIN:
-		asAtmosParts[freeParticle].imd = getImdFromIndex(MI_RAIN);
-		asAtmosParts[freeParticle].size = 50;
-		break;
-	default:
-		break;
+	switch (type) {
+	  case PARTICLE_TYPE::SNOW:
+	  	asAtmosParts[freeParticle].imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_SNOW));
+	  	asAtmosParts[freeParticle].size = 80;
+	  	break;
+      case PARTICLE_TYPE::RAIN:
+	  	asAtmosParts[freeParticle].imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_RAIN));
+	  	asAtmosParts[freeParticle].size = 50;
+	  	break;
+	  default:
+	  	break;
 	}
 
 	/* Setup position */
 	asAtmosParts[freeParticle].position = pos;
 
 	/* Setup its velocity */
-	if (type == PARTICLE_TYPE::RAIN)
-	{
+	if (type == PARTICLE_TYPE::RAIN) {
 		asAtmosParts[freeParticle].velocity = Vector3f(RAIN_SPEED_DRIFT, RAIN_SPEED_FALL, RAIN_SPEED_DRIFT);
 	}
-	else
-	{
+	else {
 		asAtmosParts[freeParticle].velocity = Vector3f(SNOW_SPEED_DRIFT, SNOW_SPEED_FALL, SNOW_SPEED_DRIFT);
 	}
 }
@@ -226,8 +204,8 @@ static void atmosAddParticle(const Vector3f& pos, PARTICLE_TYPE type)
 /* Move the particles */
 void atmosUpdateSystem()
 {
-	UDWORD i;
-	UDWORD numberToAdd;
+	unsigned i;
+	unsigned numberToAdd;
 	Vector3f pos;
 
 	// we don't want to do any of this while paused.
@@ -330,15 +308,12 @@ void renderParticle(Particle* psPart, const glm::mat4& viewMatrix)
 
 void atmosSetWeatherType(WEATHER_TYPE type)
 {
-	if (type != weather)
-	{
+	if (type != weather) {
 		weather = type;
 		atmosInitSystem();
 	}
-	if (type == WEATHER_TYPE::NONE && asAtmosParts)
-	{
-		free(asAtmosParts);
-		asAtmosParts = nullptr;
+	if (type == WEATHER_TYPE::NONE && !asAtmosParts.empty()) {
+    asAtmosParts.clear();
 	}
 }
 

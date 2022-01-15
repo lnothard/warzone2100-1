@@ -131,4 +131,6 @@ static inline bool alliancesCanGiveAnything(ALLIANCE_TYPE t)
 	return t != FFA;
 }
 
+static bool updateAttackTarget(SimpleObject* psAttacker, int weapon_slot);
+
 #endif // __INCLUDED_SRC_AI_H__

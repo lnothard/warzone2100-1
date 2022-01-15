@@ -396,12 +396,12 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, ::SimpleObject* psAtt
 		psProj->origin = psOldProjectile->origin;
 
     // have partially ticked already
-		psProj->prevSpacetime.time = psOldProjectile->getTime();
+		psProj->previousLocation.time = psOldProjectile->getTime();
 		psProj->setTime(gameTime);
 
     // times should not be equal, for interpolation
-    psProj->prevSpacetime.time -= psProj->
-              prevSpacetime.time == psProj->getTime();
+    psProj->previousLocation.time -= psProj->
+              previousLocation.time == psProj->getTime();
 
 		psProj->setSource(psOldProjectile->source);
 		psProj->damaged = psOldProjectile->damaged;
@@ -411,8 +411,8 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, ::SimpleObject* psAtt
 	else {
 		psProj->born = fireTime; // Born at the start of the tick.
 
-		psProj->prevSpacetime.time = fireTime;
-		psProj->setTime(psProj->prevSpacetime.time);
+		psProj->previousLocation.time = fireTime;
+		psProj->setTime(psProj->previousLocation.time);
 
 		psProj->setSource(psAttacker);
 	}
@@ -612,7 +612,7 @@ void Projectile::proj_InFlightFunc()
 	auto timeSoFar = gameTime - born;
 
 	setTime(gameTime);
-	auto deltaProjectileTime = getTime() - prevSpacetime.time;
+	auto deltaProjectileTime = getTime() - previousLocation.time;
 
 	auto& psStats = weaponStats;
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid weapon stats pointer");
@@ -710,10 +710,10 @@ void Projectile::proj_InFlightFunc()
 	  		}
 	  		currentDistance = timeSoFar * psStats->flightSpeed / GAME_TICKS_PER_SEC;
 	  		Vector3i step = quantiseFraction(delta * int(psStats->flightSpeed), GAME_TICKS_PER_SEC * targetDistance,
-	  		                                 getTime(), prevSpacetime.time);
+                                         getTime(), previousLocation.time);
 	  		if (psStats->movementModel == HOMING_INDIRECT && target != nullptr) {
-	  			for (int tries = 0; tries < 10 && map_LineIntersect(prevSpacetime.position, getPosition() + step,
-	  			                                                    iHypot(step)) < targetDistance - 1u; ++tries)
+	  			for (int tries = 0; tries < 10 && map_LineIntersect(previousLocation.position, getPosition() + step,
+                                                              iHypot(step)) < targetDistance - 1u; ++tries)
 	  			{
 	  				destination.z += iHypot((destination - getPosition()).xy());
 	  				// Would collide with terrain this tick, change trajectory.
@@ -721,7 +721,7 @@ void Projectile::proj_InFlightFunc()
 	  				delta = destination - getPosition();
 	  				targetDistance = std::max(iHypot(delta), 1);
 	  				step = quantiseFraction(delta * int(psStats->flightSpeed), GAME_TICKS_PER_SEC * targetDistance,
-	  				                        getTime(), prevSpacetime.time);
+                                    getTime(), previousLocation.time);
 	  			}
 	  		}
 	  		setPosition(getPosition() + step);
@@ -776,12 +776,12 @@ void Projectile::proj_InFlightFunc()
             : psTempObj->getPosition();
 
 		const Vector3i diff = getPosition() - psTempObj->getPosition();
-		const Vector3i prevDiff = prevSpacetime.position - psTempObjPrevPos;
+		const Vector3i prevDiff = previousLocation.position - psTempObjPrevPos;
 		const auto targetHeight = establishTargetHeight(psTempObj);
 		const auto targetShape = establishTargetShape(psTempObj);
 		const auto collision = collisionXYZ(prevDiff, diff, targetShape, targetHeight);
-		const auto collisionTime = prevSpacetime.time + (getTime() - prevSpacetime.time) *
-			collision / 1024;
+		const auto collisionTime = previousLocation.time + (getTime() - previousLocation.time) *
+                                                       collision / 1024;
 
 		if (collision >= 0 &&
         collisionTime < closestCollisionSpacetime.time) {
@@ -793,10 +793,10 @@ void Projectile::proj_InFlightFunc()
 		}
 	}
 
-	unsigned terrainIntersectTime = map_LineIntersect(prevSpacetime.position, getPosition(),
-	                                                  getTime() - prevSpacetime.time);
+	unsigned terrainIntersectTime = map_LineIntersect(previousLocation.position, getPosition(),
+                                                    getTime() - previousLocation.time);
 	if (terrainIntersectTime != UINT32_MAX) {
-		const uint collisionTime = prevSpacetime.time + terrainIntersectTime;
+		const uint collisionTime = previousLocation.time + terrainIntersectTime;
 		if (collisionTime < closestCollisionSpacetime.time) {
 			// We hit the terrain!
 			closestCollisionSpacetime = interpolateObjectSpacetime(this, collisionTime);
@@ -809,8 +809,8 @@ void Projectile::proj_InFlightFunc()
 		setSpacetime(this, closestCollisionSpacetime);
 		setTime(std::max(getTime(), gameTime - deltaGameTime + 1));
 		// Make sure .died gets set in the interval [gameTime - deltaGameTime + 1; gameTime].
-		if (getTime() == prevSpacetime.time) {
-			--prevSpacetime.time;
+		if (getTime() == previousLocation.time) {
+			--previousLocation.time;
 		}
 		setTarget(closestCollisionObject); // We hit something.
 
@@ -848,7 +848,7 @@ void Projectile::proj_InFlightFunc()
 	/* Paint effects if visible */
 	if (gfxVisible()) {
 		uint effectTime;
-		for (effectTime = ((prevSpacetime.time + 31) & ~31);
+		for (effectTime = ((previousLocation.time + 31) & ~31);
          effectTime < getTime(); effectTime += 32)
 		{
 			Spacetime st = interpolateObjectSpacetime(this, effectTime);
@@ -1249,7 +1249,7 @@ void Projectile::update()
 	CHECK_PROJECTILE(this);
 	syncDebugProjectile(this, '<');
 
-	prevSpacetime = getSpacetime();
+  previousLocation = getSpacetime();
 
 	// see if any of the stored objects have died
 	// since the projectile was created

@@ -5,6 +5,7 @@
 #include "lib/framework/vector.h"
 
 #include "basedef.h"
+#include "visibility.h"
 
 // forward declaration (declared in display.h)
 bool godMode;
@@ -16,15 +17,27 @@ Spacetime::Spacetime(std::size_t time, Position position, Rotation rotation)
 
 namespace Impl
 {
-	Spacetime SimpleObject::getSpacetime() const noexcept
-	{
-		return {time, position, rotation};
-	}
-
 	SimpleObject::SimpleObject(unsigned id, unsigned player)
 		: id{id}, player{player}
 	{
 	}
+
+  SimpleObject::~SimpleObject()
+  {
+    visRemoveVisibility(this);
+
+    #ifdef DEBUG
+      // hopefully this will trigger an infinite loop
+      // if someone uses the freed object
+      psNext = this;
+      psNextFunc = this;
+    #endif
+  }
+
+  Spacetime SimpleObject::getSpacetime() const noexcept
+  {
+    return {time, position, rotation};
+  }
 
 	const Position& SimpleObject::getPosition() const noexcept
 	{
@@ -44,6 +57,11 @@ namespace Impl
   std::size_t SimpleObject::getTime() const noexcept
   {
     return time;
+  }
+
+  Spacetime SimpleObject::getPreviousLocation() const
+  {
+    return previousLocation;
   }
 
   void SimpleObject::setTime(unsigned t) noexcept

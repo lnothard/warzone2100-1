@@ -944,7 +944,7 @@ bool aiChooseSensorTarget(SimpleObject* psObj, SimpleObject** ppsTarget)
 }
 
 /// Make droid/structure look for a better target
-static bool updateAttackTarget(Unit* psAttacker, int weapon_slot)
+static bool updateAttackTarget(SimpleObject* psAttacker, int weapon_slot)
 {
 	SimpleObject* psBetterTarget = nullptr;
 	TARGET_ORIGIN tmpOrigin = TARGET_ORIGIN::UNKNOWN;

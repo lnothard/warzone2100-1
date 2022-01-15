@@ -117,9 +117,6 @@ private:
   /// Axis velocities
   int vXY, vZ;
 
-  /// Location of projectile in previous tick
-  Spacetime prevSpacetime;
-
   /// Expected damage that this projectile will cause to the target
   int expectedDamageCaused;
 

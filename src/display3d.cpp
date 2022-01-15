@@ -1507,7 +1507,7 @@ static void display3DProjectiles(const glm::mat4& viewMatrix)
 	while (psObj != nullptr)
 	{
 		// If source or destination is visible, and projectile has been spawned and has not impacted.
-		if (graphicsTime >= psObj->prevSpacetime.time && 
+		if (graphicsTime >= psObj->previousLocation.time &&
         graphicsTime <= psObj->getTime() && gfxVisible(psObj)) {
 			/* Draw a bullet at psObj->pos.x for X coord
 			   psObj->pos.y for Z coord

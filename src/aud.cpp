@@ -17,6 +17,7 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /**
  * @file
  *
@@ -24,8 +25,10 @@
  */
 
 #include "lib/framework/fixedpoint.h"
+#include "lib/wzmaplib/include/wzmaplib/map.h"
 
 #include "display3d.h"
+#include "map.h"
 #include "projectile.h"
 
 bool audio_ObjectDead(const SimpleObject* psSimpleObj)

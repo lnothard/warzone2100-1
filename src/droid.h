@@ -485,9 +485,6 @@ namespace Impl
       std::size_t timeAnimationStarted;
       ANIMATION_EVENTS animationEvent;
 
-      /// The location of this droid in the previous tick.
-      Spacetime previousLocation;
-
       /// Bit set telling which tiles block this type of droid (TODO)
       uint8_t blockedBits;
 
@@ -600,7 +597,7 @@ void vanishDroid(Droid* psDel);
 
 /* Remove a droid from the apsDroidLists so doesn't update or get drawn etc*/
 //returns true if successfully removed from the list
-bool droidRemove(Droid* psDroid, Droid* pList[MAX_PLAYERS]);
+bool droidRemove(Droid* psDroid, std::vector<Droid> pList);
 
 //free the storage for the droid templates
 bool droidTemplateShutDown();
@@ -764,9 +761,17 @@ void droidSetPosition(Droid* psDroid, int x, int y);
 /// Return a percentage of how fully armed the object is, or -1 if N/A.
 int droidReloadBar(const SimpleObject* psObj, const Weapon* psWeap, int weapon_slot);
 
+static void _setDroidTarget(Droid* psDroid, SimpleObject* psNewTarget,
+                            int line, const char* func);
+
 #define setDroidTarget(_psDroid, _psNewTarget) _setDroidTarget(_psDroid, _psNewTarget, __LINE__, __FUNCTION__)
 
+static void _setDroidActionTarget(Droid* psDroid, SimpleObject* psNewTarget,
+                                  uint16_t idx, int line, const char* func);
+
 #define setDroidActionTarget(_psDroid, _psNewTarget, _idx) _setDroidActionTarget(_psDroid, _psNewTarget, _idx, __LINE__, __FUNCTION__)
+
+static void _setDroidBase(Droid* psDroid, Structure* psNewBase, int line, const char* func);
 
 #define setDroidBase(_psDroid, _psNewTarget) _setDroidBase(_psDroid, _psNewTarget, __LINE__, __FUNCTION__)
 
@@ -780,5 +785,9 @@ void templateSetParts(const Droid* psDroid, DroidTemplate* psTemplate);
 
 #define syncDebugDroid(psDroid, ch) _syncDebugDroid(__FUNCTION__, psDroid, ch)
 void _syncDebugDroid(const char* function, Droid const* psDroid, char ch);
+
+static unsigned droidSensorRange(const Droid* psDroid);
+
+static bool droidUpdateDroidRepairBase(Droid* psRepairDroid, Droid* psDroidToRepair);
 
 #endif // __INCLUDED_SRC_DROID_H__

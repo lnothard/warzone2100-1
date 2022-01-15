@@ -29,23 +29,38 @@ class Structure;
 
 // MARK: - Various defines needed by both maplib and the game's map-handling code
 
-#define MAP_MAXWIDTH	256
-#define MAP_MAXHEIGHT	256
-#define MAP_MAXAREA		(256*256)
+static constexpr auto MAP_MAXWIDTH	= 256;
+static constexpr auto MAP_MAXHEIGHT	= 256;
+static constexpr auto MAP_MAXAREA	= 256 * 256;
 
 // Multiplier for the tile height - used for older map formats (which stored tile height as a byte)
-#define ELEVATION_SCALE	2
+static constexpr auto ELEVATION_SCALE	= 2;
 
-#define TILE_MAX_HEIGHT	(255 * ELEVATION_SCALE)
-#define TILE_MIN_HEIGHT	0
+static constexpr auto TILE_MAX_HEIGHT	= 255 * ELEVATION_SCALE;
+static constexpr auto TILE_MIN_HEIGHT	= 0;
 
 /* Flags for whether texture tiles are flipped in X and Y or rotated */
-#define TILE_XFLIP		0x8000
-#define TILE_YFLIP		0x4000
-#define TILE_ROTMASK	0x3000
-#define TILE_ROTSHIFT	12
-#define TILE_TRIFLIP	0x0800	// This bit describes the direction the tile is split into 2 triangles (same as triangleFlip)
-#define TILE_NUMMASK	0x01ff
+static constexpr auto TILE_XFLIP		= 0x8000;
+static constexpr auto TILE_YFLIP		= 0x4000;
+static constexpr auto TILE_ROTMASK	= 0x3000;
+static constexpr auto TILE_ROTSHIFT	= 12;
+static constexpr auto TILE_TRIFLIP	= 0x0800;	// This bit describes the direction the tile is split into 2 triangles (same as triangleFlip)
+static constexpr auto TILE_NUMMASK	= 0x01ff;
+
+/*
+ * Usage-Example:
+ * tile_coordinate = (world_coordinate / TILE_UNITS) = (world_coordinate >> TILE_SHIFT)
+ * world_coordinate = (tile_coordinate * TILE_UNITS) = (tile_coordinate << TILE_SHIFT)
+ */
+
+/* The shift on a world coordinate to get the tile coordinate */
+static constexpr auto TILE_SHIFT = 7;
+
+/* The mask to get internal tile coords from a full coordinate */
+static constexpr auto TILE_MASK = 0x7f;
+
+/* The number of units across a tile */
+static constexpr auto TILE_UNITS = 1 << TILE_SHIFT;
 
 static WZMAPLIB_FORCE_INLINE unsigned short TileNumber_tile(unsigned short tilenumber)
 {
@@ -56,21 +71,6 @@ static WZMAPLIB_FORCE_INLINE unsigned short TileNumber_texture(unsigned short ti
 {
 	return tilenumber & ~TILE_NUMMASK;
 }
-
-/*
- * Usage-Example:
- * tile_coordinate = (world_coordinate / TILE_UNITS) = (world_coordinate >> TILE_SHIFT)
- * world_coordinate = (tile_coordinate * TILE_UNITS) = (tile_coordinate << TILE_SHIFT)
- */
-
-/* The shift on a world coordinate to get the tile coordinate */
-#define TILE_SHIFT 7
-
-/* The mask to get internal tile coords from a full coordinate */
-#define TILE_MASK 0x7f
-
-/* The number of units across a tile */
-#define TILE_UNITS (1<<TILE_SHIFT)
 
 static WZMAPLIB_FORCE_INLINE int32_t world_coord(int32_t mapCoord)
 {
@@ -96,17 +96,17 @@ static WZMAPLIB_FORCE_INLINE int32_t round_to_nearest_tile(int32_t worldCoord)
 /* maps a position down to the corner of a tile */
 #define map_round(coord) ((coord) & (TILE_UNITS - 1))
 
-//
-
 namespace WzMap {
 
 // MARK: - Handling game.map / MapData files
 
 // Load the map data
-std::shared_ptr<MapData> loadMapData(const std::string &mapFile, IOProvider& mapIO, LoggingProtocol* pCustomLogger = nullptr);
+std::shared_ptr<MapData> loadMapData(const std::string &mapFile,
+                                     IOProvider& mapIO, LoggingProtocol* pCustomLogger = nullptr);
 
 // Write the map data
-bool writeMapData(const MapData& map, const std::string &filename, IOProvider& mapIO, OutputFormat format, LoggingProtocol* pCustomLogger = nullptr);
+bool writeMapData(const MapData& map, const std::string &filename,
+                  IOProvider& mapIO, OutputFormat format, LoggingProtocol* pCustomLogger = nullptr);
 
 // MARK: - High-level interface for loading a map
 
@@ -120,7 +120,9 @@ enum class MapType
 class Map
 {
 private:
-	Map(const std::string& mapFolderPath, MapType mapType, uint32_t mapMaxPlayers, std::unique_ptr<LoggingProtocol> logger, std::unique_ptr<IOProvider> mapIO = std::unique_ptr<IOProvider>(new StdIOProvider()));
+	Map(const std::string& mapFolderPath, MapType mapType, uint32_t mapMaxPlayers,
+      std::unique_ptr<LoggingProtocol> logger,
+      std::unique_ptr<IOProvider> mapIO = std::unique_ptr<IOProvider>(new StdIOProvider()));
 
 public:
 	// Construct an empty Map, for modification
@@ -176,8 +178,8 @@ public:
 	optional<LoadedFormat> loadedMapFormat();
 
 	// Other Map instance data
-	bool wasScriptGenerated() const { return m_wasScriptGenerated; }
-	const std::string& mapFolderPath() const { return m_mapFolderPath; }
+	[[nodiscard]] bool wasScriptGenerated() const { return m_wasScriptGenerated; }
+	[[nodiscard]] const std::string& mapFolderPath() const { return m_mapFolderPath; }
 
 private:
 	std::string m_mapFolderPath;
@@ -202,15 +204,15 @@ private:
 			ScriptGenerated
 		};
 	public:
-		LoadedFileVersion()
-		{ }
+		LoadedFileVersion() = default;
 		LoadedFileVersion(FileType type, uint32_t version)
 		: m_fileType(type)
 		, m_fileVersion(version)
-		{ }
+		{
+    }
 	public:
-		inline FileType fileType() const { return m_fileType; }
-		inline uint32_t fileVersion() const { return m_fileVersion; }
+		[[nodiscard]] inline FileType fileType() const { return m_fileType; }
+		[[nodiscard]] inline uint32_t fileVersion() const { return m_fileVersion; }
 	private:
 		FileType m_fileType = FileType::ScriptGenerated;
 		uint32_t m_fileVersion = 0;

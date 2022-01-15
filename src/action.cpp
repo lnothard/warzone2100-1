@@ -157,37 +157,32 @@ std::string getDroidActionName(ACTION action)
 //	return false;
 //}
 
-//// check if a target is inside minimum weapon range
-//static bool actionInsideMinRange(DROID *psDroid, SimpleObject *psObj, WEAPON_STATS *psStats)
-//{
-//	CHECK_DROID(psDroid);
-//	CHECK_OBJECT(psObj);
-//
-//	if (!psStats)
-//	{
-//		psStats = getWeaponStats(psDroid, 0);
-//	}
-//
-//	/* if I am a multi-turret droid */
-//	if (psDroid->asWeaps[0].nStat == 0)
-//	{
-//		return false;
-//	}
-//
-//	const int dx = psDroid->pos.x - psObj->pos.x;
-//	const int dy = psDroid->pos.y - psObj->pos.y;
-//	const int radSq = dx * dx + dy * dy;
-//	const int minRange = proj_GetMinRange(psStats, psDroid->player);
-//	const int rangeSq = minRange * minRange;
-//
-//	// check min range
-//	if (radSq <= rangeSq)
-//	{
-//		return true;
-//	}
-//
-//	return false;
-//}
+// check if a target is inside minimum weapon range
+static bool actionInsideMinRange(Droid *psDroid, SimpleObject *psObj, WeaponStats *psStats)
+{
+	CHECK_OBJECT(psObj);
+
+	if (!psStats) {
+		psStats = getWeaponStats(psDroid, 0);
+	}
+
+	/* if I am a multi-turret droid */
+	if (psDroid->asWeaps[0].nStat == 0) {
+		return false;
+	}
+
+	const int dx = psDroid->getPosition().x - psObj->getPosition().x;
+	const int dy = psDroid->getPosition().y - psObj->getPosition().y;
+	const int radSq = dx * dx + dy * dy;
+	const int minRange = proj_GetMinRange(psStats, psDroid->getPlayer());
+	const int rangeSq = minRange * minRange;
+
+	// check min range
+	if (radSq <= rangeSq) {
+		return true;
+	}
+	return false;
+}
 
 
 //// Realign turret

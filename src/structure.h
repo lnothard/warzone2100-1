@@ -28,6 +28,7 @@
 
 #include "lib/gamelib/gtime.h"
 
+#include "order.h"
 #include "positiondef.h"
 #include "stats.h"
 #include "unit.h"
@@ -35,8 +36,6 @@
 class Droid;
 class DroidTemplate;
 class Group;
-enum class SECONDARY_ORDER;
-enum class SECONDARY_STATE;
 enum class WEAPON_CLASS;
 enum class TARGET_ORIGIN;
 

@@ -30,6 +30,8 @@
 
 #include "structure.h"
 
+static bool bOrderEffectDisplayed = false;
+
 enum class ORDER_TYPE
 {
     NONE,
@@ -328,5 +330,12 @@ ORDER_TYPE chooseOrderLoc(Droid* psDroid, UDWORD x, UDWORD y, bool altOrder);
 
 /** \brief Chooses an order from an object. */
 Order chooseOrderObj(Droid* psDroid, SimpleObject* psObj, bool altOrder);
+
+static bool secondaryCheckDamageLevelDeselect(Droid* psDroid, SECONDARY_STATE repairState);
+static void orderCmdGroupBase(Group* psGroup, Order* psData);
+static void orderPlayFireSupportAudio(SimpleObject* psObj);
+Droid* checkForRepairRange(Droid* psDroid);
+static std::pair<Structure*, ACTION> checkForDamagedStruct(Droid* psDroid);
+static bool isRepairLikeAction(ACTION action);
 
 #endif // __INCLUDED_SRC_ORDER_H__
