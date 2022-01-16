@@ -289,7 +289,7 @@ namespace Impl
 {
 
   Structure::Structure(unsigned id, unsigned player)
-          : Unit(id, player)
+          : ConstructedObject(id, player)
 
           // initialise to 1 instead of 0, to make sure we don't
           // get destroyed first tick due to inactivity.
@@ -902,8 +902,8 @@ namespace Impl
   {
     STRUCTURE_TYPE structureMode;
     ::Droid* psDroid;
-    ::SimpleObject* psChosenObjs[MAX_WEAPONS] = {nullptr};
-    ::SimpleObject* psChosenObj = nullptr;
+    ::PersistentObject* psChosenObjs[MAX_WEAPONS] = {nullptr};
+    ::PersistentObject* psChosenObj = nullptr;
     Factory* psFactory;
     RepairFacility* psRepairFac = nullptr;
     Vector3i iVecEffect;
@@ -1135,7 +1135,7 @@ namespace Impl
           psRepairFac->droidQueue = 0;
           for (psDroid = apsDroidLists[getPlayer()])
           {
-            SimpleObject* const psTarget = orderStateObj(psDroid, ORDER_TYPE::RETURN_TO_REPAIR);
+            PersistentObject* const psTarget = orderStateObj(psDroid, ORDER_TYPE::RETURN_TO_REPAIR);
 
             // Highest priority:
             // Take any droid with orders to Return to Repair (DORDER_RTR),
@@ -4343,7 +4343,7 @@ static STRUCTURE_PACKABILITY baseStructureTypePackability(STRUCTURE_TYPE type)
 	}
 }
 
-static STRUCTURE_PACKABILITY baseObjectPackability(SimpleObject* psObject)
+static STRUCTURE_PACKABILITY baseObjectPackability(PersistentObject* psObject)
 {
 	if (psObject == nullptr) {
 		return PACKABILITY_EMPTY;
@@ -5627,7 +5627,7 @@ bool validTemplateForFactory(const DroidTemplate* psTemplate, Structure* psFacto
 
 /*calculates the damage caused to the resistance levels of structures - returns
 true when captured*/
-bool electronicDamage(SimpleObject* psTarget, unsigned damage, uint8_t attackPlayer)
+bool electronicDamage(PersistentObject* psTarget, unsigned damage, uint8_t attackPlayer)
 {
 	bool bCompleted = true;
 	Vector3i pos;

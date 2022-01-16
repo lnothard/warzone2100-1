@@ -1799,7 +1799,7 @@ int realmain(int argc, char* argv[])
 	debug(LOG_WZ, "Backend: %s", BACKEND);
 	debug(LOG_MEMORY,
         "sizeof: SIMPLE_OBJECT=%ld, SimpleObject=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-        (long)sizeof(SimpleObject), (long)sizeof(SimpleObject), (long)sizeof(Droid), (long)sizeof(Structure),
+        (long)sizeof(PersistentObject), (long)sizeof(PersistentObject), (long)sizeof(Droid), (long)sizeof(Structure),
         (long)sizeof(Feature), (long)sizeof(Projectile));
 
 #if defined(WZ_OS_UNIX)
@@ -1942,7 +1942,7 @@ int realmain(int argc, char* argv[])
 	debug(LOG_WZ, "Backend: %s", BACKEND);
 	debug(LOG_MEMORY,
         "sizeof: SIMPLE_OBJECT=%ld, SimpleObject=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-        (long)sizeof(SimpleObject), (long)sizeof(SimpleObject), (long)sizeof(Droid), (long)sizeof(Structure),
+        (long)sizeof(PersistentObject), (long)sizeof(PersistentObject), (long)sizeof(Droid), (long)sizeof(Structure),
         (long)sizeof(Feature), (long)sizeof(Projectile));
 
 	int w = pie_GetVideoBufferWidth();

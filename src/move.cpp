@@ -306,7 +306,7 @@ static bool moveNextTarget(Droid* psDroid)
 static int mvPersRad = 20, mvCybRad = 30, mvSmRad = 40, mvMedRad = 50, mvLgRad = 60;
 
 // Get the radius of a base object for collision
-static SDWORD moveObjRadius(const SimpleObject* psObj)
+static SDWORD moveObjRadius(const PersistentObject* psObj)
 {
 	switch (psObj->type)
 	{
@@ -361,7 +361,7 @@ static SDWORD moveObjRadius(const SimpleObject* psObj)
 static void moveCheckSquished(Droid* psDroid, int32_t emx, int32_t emy)
 {
 	int32_t rad, radSq, objR, xdiff, ydiff, distSq;
-	const int32_t droidR = moveObjRadius((SimpleObject*)psDroid);
+	const int32_t droidR = moveObjRadius((PersistentObject*)psDroid);
 	const int32_t mx = gameTimeAdjustedAverage(emx, EXTRA_PRECISION);
 	const int32_t my = gameTimeAdjustedAverage(emy, EXTRA_PRECISION);
 
@@ -809,8 +809,8 @@ static void moveCalcDroidSlide(Droid* psDroid, int* pmx, int* pmy)
 	spmx = gameTimeAdjustedAverage(*pmx, EXTRA_PRECISION);
 	spmy = gameTimeAdjustedAverage(*pmy, EXTRA_PRECISION);
 
-	droidR = moveObjRadius((SimpleObject*)psDroid);
-	SimpleObject* psObst = nullptr;
+	droidR = moveObjRadius((PersistentObject*)psDroid);
+	PersistentObject* psObst = nullptr;
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(psDroid->pos.x, psDroid->pos.y, OBJ_MAXRADIUS);
 	for (auto psObj : gridList)
@@ -1296,7 +1296,7 @@ static void moveUpdateDroidPos(Droid* psDroid, int32_t dx, int32_t dy)
 {
 	CHECK_DROID(psDroid);
 
-	if (psDroid->movement.status == MOVEPAUSE || isDead((SimpleObject*)psDroid))
+	if (psDroid->movement.status == MOVEPAUSE || isDead((PersistentObject*)psDroid))
 	{
 		// don't actually move if the move is paused
 		return;
@@ -2045,7 +2045,7 @@ void moveUpdateDroid(Droid* psDroid)
 	if (map_coord(oldx) != map_coord(psDroid->pos.x)
 		|| map_coord(oldy) != map_coord(psDroid->pos.y))
 	{
-		visTilesUpdate((SimpleObject*)psDroid);
+		visTilesUpdate((PersistentObject*)psDroid);
 
 		// object moved from one tile to next, check to see if droid is near stuff.(oil)
 		checkLocalFeatures(psDroid);

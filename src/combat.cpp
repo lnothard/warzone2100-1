@@ -32,8 +32,8 @@
 #include "visibility.h"
 
 /* Fire a weapon at something */
-bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
-              SimpleObject* psTarget, int weapon_slot)
+bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
+              PersistentObject* psTarget, int weapon_slot)
 {
 	unsigned firePause;
 	int longRange;
@@ -306,7 +306,7 @@ bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
 
 /*checks through the target players list of structures and droids to see
 if any support a counter battery sensor*/
-void counterBatteryFire(SimpleObject* psAttacker, SimpleObject* psTarget)
+void counterBatteryFire(PersistentObject* psAttacker, PersistentObject* psTarget)
 {
 	/*if a null target is passed in ignore - this will be the case when a 'miss'
 	projectile is sent - we may have to cater for these at some point*/
@@ -351,7 +351,7 @@ void counterBatteryFire(SimpleObject* psAttacker, SimpleObject* psTarget)
 	}
 }
 
-int objArmour(const SimpleObject* psObj, WEAPON_CLASS weaponClass)
+int objArmour(const PersistentObject* psObj, WEAPON_CLASS weaponClass)
 {
 	int armour = 0;
 	if (psObj->type == OBJ_DROID)
@@ -382,7 +382,7 @@ int objArmour(const SimpleObject* psObj, WEAPON_CLASS weaponClass)
  * \param weaponSubClass the subclass of the weapon that deals the damage
  * \return < 0 when the dealt damage destroys the object, > 0 when the object survives
  */
-int objDamage(SimpleObject* psObj, unsigned damage, unsigned originalhp,
+int objDamage(PersistentObject* psObj, unsigned damage, unsigned originalhp,
               WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
               bool isDamagePerSecond, int minDamage)
 {
@@ -483,7 +483,7 @@ int objDamage(SimpleObject* psObj, unsigned damage, unsigned originalhp,
  * \param weaponSubClass the subclass of the weapon that deals the damage
  * \return guess at amount of damage
  */
-unsigned int objGuessFutureDamage(WeaponStats* psStats, unsigned unsigned player, SimpleObject* psTarget)
+unsigned int objGuessFutureDamage(WeaponStats* psStats, unsigned unsigned player, PersistentObject* psTarget)
 {
 	unsigned int damage;
 	int actualDamage, armour, level = 1;

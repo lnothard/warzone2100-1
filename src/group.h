@@ -69,7 +69,7 @@ public:
 	void orderGroup(ORDER_TYPE order, unsigned x, unsigned y);
 
 	/// Give an order all the droids of the group (using location)
-	void orderGroup(ORDER_TYPE order, SimpleObject* psObj); // give an order all the droids of the group (using object)
+	void orderGroup(ORDER_TYPE order, PersistentObject* psObj); // give an order all the droids of the group (using object)
 
 	void setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state); // set the secondary state for a group of droids
 

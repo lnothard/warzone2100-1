@@ -22,7 +22,7 @@ public:
 		return commanders[index];
 	}
 
-	bool findObject(std::function<bool (SimpleObject*)> iteration) const override
+	bool findObject(std::function<bool (PersistentObject*)> iteration) const override
 	{
 		return BaseObjectsController::findObject(commanders, iteration);
 	}
@@ -38,7 +38,7 @@ public:
 		return highlightedCommander;
 	}
 
-	void setHighlightedObject(SimpleObject* object) override;
+	void setHighlightedObject(PersistentObject* object) override;
 
 private:
 	void updateCommandersList();

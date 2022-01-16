@@ -58,30 +58,37 @@ struct Spacetime
     Rotation rotation {0, 0,0};
 };
 
-/**
- * The base type specification inherited by all persistent
- * game entities
- */
-class SimpleObject
+/// The base type specification inherited by all game entities
+class BaseObject
 {
 public:
-    virtual ~SimpleObject() = default;
+    virtual ~BaseObject() = default;
 
-    /* Accessors */
     [[nodiscard]] virtual Spacetime getSpacetime() const = 0;
     [[nodiscard]] virtual const Position& getPosition() const = 0;
     [[nodiscard]] virtual const Rotation& getRotation() const = 0;
-    [[nodiscard]] virtual unsigned getPlayer() const = 0;
-    [[nodiscard]] virtual unsigned getId() const = 0;
     [[nodiscard]] virtual unsigned getTime() const = 0;
     [[nodiscard]] virtual const DisplayData& getDisplayData() const = 0;
     [[nodiscard]] virtual Spacetime getPreviousLocation() const = 0;
 
     virtual void setTime(unsigned t) = 0;
-    virtual void setPlayer(unsigned p) = 0;
-    virtual void setHeight(int height) = 0;
     virtual void setRotation(Rotation newRotation) = 0;
     virtual void setPosition(Position pos) = 0;
+};
+
+class PersistentObject : public virtual BaseObject
+{
+public:
+    ~PersistentObject() override = default;
+
+    /* Accessors */
+    [[nodiscard]] virtual unsigned getPlayer() const = 0;
+    [[nodiscard]] virtual unsigned getId() const = 0;
+    [[nodiscard]] virtual unsigned getHp() const = 0;
+
+    virtual void setHp(unsigned hp) = 0;
+    virtual void setPlayer(unsigned p) = 0;
+    virtual void setHeight(int height) = 0;
     [[nodiscard]] virtual bool isSelectable() const = 0;
     [[nodiscard]] virtual uint8_t visibleToPlayer(unsigned watcher) const = 0;
     [[nodiscard]] virtual uint8_t visibleToSelectedPlayer() const = 0;
@@ -89,44 +96,55 @@ public:
 
 namespace Impl
 {
-    class SimpleObject : public virtual ::SimpleObject
+    class BaseObject : public virtual ::BaseObject
     {
     public:
-        ~SimpleObject() override;
-        SimpleObject(unsigned id, unsigned player);
+        ~BaseObject() override = default;
 
-        /* Accessors */
         [[nodiscard]] Spacetime getSpacetime() const noexcept final;
         [[nodiscard]] const Position& getPosition() const noexcept final;
         [[nodiscard]] const Rotation& getRotation() const noexcept final;
-        [[nodiscard]] unsigned getPlayer() const noexcept final;
-        [[nodiscard]] unsigned getId() const noexcept final;
         [[nodiscard]] unsigned getTime() const noexcept final;
         [[nodiscard]] const DisplayData& getDisplayData() const noexcept final;
         [[nodiscard]] Spacetime getPreviousLocation() const final;
 
         void setTime(unsigned t) noexcept final;
-        void setPlayer(unsigned p) noexcept final;
-        void setHeight(int height) noexcept final;
         void setRotation(Rotation new_rotation) noexcept final;
         void setPosition(Position pos) final;
-        [[nodiscard]] bool isSelectable() const override;
-        [[nodiscard]] uint8_t visibleToPlayer(unsigned watcher) const final;
-        [[nodiscard]] uint8_t visibleToSelectedPlayer() const final;
-    private:
-        unsigned id;
-        unsigned player;
-        unsigned bornTime;
-        unsigned diedTime = 0;
+    protected:
         unsigned time = 0;
-        unsigned periodicalDamage;
-        unsigned periodicalDamageStartTime;
         Position position {0, 0, 0};
         Rotation rotation {0, 0, 0};
         Spacetime previousLocation;
         std::unique_ptr<DisplayData> display;
-        bool isSelected = false;
+    };
+
+    class PersistentObject : public virtual ::PersistentObject, public BaseObject
+    {
+    public:
+        PersistentObject(unsigned id, unsigned player);
+        ~PersistentObject() override;
+
+        /* Accessors */
+        [[nodiscard]] unsigned getPlayer() const noexcept final;
+        [[nodiscard]] unsigned getId() const noexcept final;
+        [[nodiscard]] unsigned getHp() const noexcept final;
+
+        void setHp(unsigned hp) final;
+        void setPlayer(unsigned p) noexcept final;
+        void setHeight(int height) noexcept final;
+        [[nodiscard]] bool isSelectable() const override;
+        [[nodiscard]] uint8_t visibleToPlayer(unsigned watcher) const final;
+        [[nodiscard]] uint8_t visibleToSelectedPlayer() const final;
     protected:
+        unsigned id;
+        unsigned player;
+        unsigned bornTime;
+        unsigned diedTime = 0;
+        unsigned periodicalDamage;
+        unsigned periodicalDamageStartTime;
+        unsigned hitPoints = 0;
+        bool isSelected = false;
         /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip, 0 if not visible
         std::array<uint8_t, MAX_PLAYERS> visibilityState;
         std::array<uint8_t, MAX_PLAYERS> seenThisTick;
@@ -136,7 +154,6 @@ namespace Impl
 }
 
 int objectPositionSquareDiff(const Position& first, const Position& second);
-
-int objectPositionSquareDiff(const SimpleObject* first, const SimpleObject* second);
+int objectPositionSquareDiff(const BaseObject* first, const BaseObject* second);
 
 #endif // __INCLUDED_BASEDEF_H__

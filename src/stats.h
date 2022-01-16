@@ -28,7 +28,7 @@
 
 #include "lib/framework/wzconfig.h"
 
-class SimpleObject;
+class PersistentObject;
 enum class DROID_TYPE;
 
 static constexpr auto SHOOT_ON_GROUND = 0x01;
@@ -688,7 +688,7 @@ WZ_DECL_PURE int constructorPoints(const ConstructStats* psStats, unsigned playe
 WZ_DECL_PURE int bodyPower(const BodyStats* psStats, unsigned player);
 WZ_DECL_PURE int bodyArmour(const BodyStats* psStats, unsigned player, WEAPON_CLASS weaponClass);
 
-WZ_DECL_PURE bool objHasWeapon(const SimpleObject* psObj);
+WZ_DECL_PURE bool objHasWeapon(const PersistentObject* psObj);
 
 void statsInitVars();
 
@@ -701,9 +701,9 @@ bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS* weaponClass);
 /* Wrappers */
 
 /** If object is an active radar (has sensor turret), then return a pointer to its sensor stats. If not, return NULL. */
-WZ_DECL_PURE SensorStats* objActiveRadar(const SimpleObject* psObj);
+WZ_DECL_PURE SensorStats* objActiveRadar(const PersistentObject* psObj);
 
 /** Returns whether object has a radar detector sensor. */
-WZ_DECL_PURE bool objRadarDetector(const SimpleObject* psObj);
+WZ_DECL_PURE bool objRadarDetector(const PersistentObject* psObj);
 
 #endif // __INCLUDED_SRC_STATS_H__

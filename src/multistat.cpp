@@ -440,7 +440,7 @@ void updateMultiStatsLoses()
 	++playerStats[selectedPlayer].losses;
 }
 
-static inline unsigned calcObjectCost(const SimpleObject* psObj)
+static inline unsigned calcObjectCost(const PersistentObject* psObj)
 {
 	switch (psObj->type)
 	{
@@ -462,7 +462,7 @@ static inline unsigned calcObjectCost(const SimpleObject* psObj)
 }
 
 // update kills
-void updateMultiStatsKills(SimpleObject* psKilled, unsigned player)
+void updateMultiStatsKills(PersistentObject* psKilled, unsigned player)
 {
   if (player >= MAX_PLAYERS){
     return;

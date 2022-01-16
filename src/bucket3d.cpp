@@ -69,7 +69,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	unsigned droidSize;
 	Droid* psDroid;
 	BodyStats* psBStats;
-	SimpleObject* psSimpObj;
+	PersistentObject* psSimpObj;
 	iIMDShape* pImd;
 	Spacetime spacetime;
 
@@ -109,7 +109,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  		//the weapon stats holds the reference to which graphic to use
 	  		pImd = ((Projectile*)pObject)->weaponStats->pInFlightGraphic;
 
-	  		psSimpObj = (SimpleObject*)pObject;
+	  		psSimpObj = (PersistentObject*)pObject;
 	  		position.x = psSimpObj->getPosition().x - playerPos.p.x;
 	  		position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
@@ -132,7 +132,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  	}
 	  	break;
 	  case RENDER_STRUCTURE: //not depth sorted
-	  	psSimpObj = (SimpleObject*)pObject;
+	  	psSimpObj = (PersistentObject*)pObject;
 	  	position.x = psSimpObj->getPosition().x - playerPos.p.x;
 	  	position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
@@ -165,7 +165,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  	}
 	  	break;
 	  case RENDER_FEATURE: //not depth sorted
-	  	psSimpObj = (SimpleObject*)pObject;
+	  	psSimpObj = (PersistentObject*)pObject;
 	  	position.x = psSimpObj->getPosition().x - playerPos.p.x;
 	  	position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
@@ -189,7 +189,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  case RENDER_DROID:
 	  	psDroid = (Droid*)pObject;
 
-	  	psSimpObj = (SimpleObject*)pObject;
+	  	psSimpObj = (PersistentObject*)pObject;
 	  	position.x = psSimpObj->getPosition().x - playerPos.p.x;
 	  	position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 	  	position.y = psSimpObj->getPosition().z;
@@ -320,7 +320,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 		if (objectType == RENDER_DROID || objectType == RENDER_STRUCTURE)
 		{
 			/* Won't draw selection boxes */
-			((SimpleObject*)pObject)->sDisplay.frame_number = 0;
+			((PersistentObject*)pObject)->sDisplay.frame_number = 0;
 		}
 
 		return;

@@ -31,7 +31,7 @@
 
 extern bool OrderUp;
 
-bool intAddOrder(SimpleObject* psObj); // create and open order form
+bool intAddOrder(PersistentObject* psObj); // create and open order form
 void intRunOrder();
 void intProcessOrder(UDWORD id);
 void intRemoveOrder();

@@ -326,7 +326,7 @@ void intResearchFinished(Structure* psBuilding);
 void intAlliedResearchChanged();
 
 /* Sync the interface to an object */
-void intObjectSelected(SimpleObject* psObj);
+void intObjectSelected(PersistentObject* psObj);
 
 bool intBuildSelectMode();
 bool intDemolishSelectMode();
@@ -395,7 +395,7 @@ void intNotifyResearchButton(int prevState);
 bool intCheckReticuleButEnabled(unsigned id);
 
 //access function for selected object in the interface
-SimpleObject* getCurrentSelected();
+PersistentObject* getCurrentSelected();
 
 bool intIsRefreshing();
 

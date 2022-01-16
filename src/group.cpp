@@ -242,7 +242,7 @@ void Group::orderGroup(ORDER_TYPE order, unsigned x, unsigned y)
 	}
 }
 
-void Group::orderGroup(ORDER_TYPE order, SimpleObject* psObj)
+void Group::orderGroup(ORDER_TYPE order, PersistentObject* psObj)
 {
 	ASSERT_OR_RETURN(, validOrderForObj(order), "orderGroup: Bad order");
 

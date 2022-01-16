@@ -29,19 +29,19 @@
 #include "weapon.h"
 
 /* Fire a weapon at something added int weapon_slot*/
-bool combFire(Weapon* psWeap, SimpleObject* psAttacker,
-              SimpleObject* psTarget, int weapon_slot);
+bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
+              PersistentObject* psTarget, int weapon_slot);
 
 /*checks through the target players list of structures and droids to see
 if any support a counter battery sensor*/
-void counterBatteryFire(SimpleObject* psAttacker, SimpleObject* psTarget);
+void counterBatteryFire(PersistentObject* psAttacker, PersistentObject* psTarget);
 
-int objDamage(SimpleObject* psObj, unsigned damage, unsigned originalhp,
-              WEAPON_CLASS weaponClass,WEAPON_SUBCLASS weaponSubClass,
+int objDamage(PersistentObject* psObj, unsigned damage, unsigned originalhp,
+              WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
               bool isDamagePerSecond, int minDamage);
 
-unsigned objGuessFutureDamage(WeaponStats* psStats, unsigned player, SimpleObject* psTarget);
+unsigned objGuessFutureDamage(WeaponStats* psStats, unsigned player, PersistentObject* psTarget);
 
-int objArmour(const SimpleObject* psObj, WEAPON_CLASS weaponClass);
+int objArmour(const PersistentObject* psObj, WEAPON_CLASS weaponClass);
 
 #endif // __INCLUDED_SRC_COMBAT_H__

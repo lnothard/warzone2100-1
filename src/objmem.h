@@ -33,9 +33,9 @@
 
 class FlagPosition;
 class ResourceExtractor;
-class SimpleObject;
+class PersistentObject;
 class Structure;
-class Unit;
+class ConstructedObject;
 
 /* The lists of objects allocated */
 extern std::array<std::vector<Droid>,MAX_PLAYERS> apsDroidLists;
@@ -45,11 +45,11 @@ extern std::array<std::vector<
 
 extern std::vector<FlagPosition*> apsFlagPosLists;
 extern std::array<ResourceExtractor*, MAX_PLAYERS> apsExtractorLists;
-extern std::vector<Unit*> apsSensorList;
+extern std::vector<ConstructedObject*> apsSensorList;
 extern std::vector<Feature*> apsOilList;
 
 /* The list of destroyed objects */
-extern std::vector<SimpleObject*> psDestroyedObj;
+extern std::vector<PersistentObject*> psDestroyedObj;
 
 /* Initialise the object heaps */
 bool objmemInitialise();
@@ -115,8 +115,8 @@ void removeFlagPosition(FlagPosition* psDel);
 void freeAllFlagPositions();
 
 // Find a base object from it's id
-SimpleObject* getBaseObjFromData(unsigned id, unsigned player);
-SimpleObject* getBaseObjFromId(unsigned id);
+PersistentObject* getBaseObjFromData(unsigned id, unsigned player);
+PersistentObject* getBaseObjFromId(unsigned id);
 
 unsigned getRepairIdFromFlag(FlagPosition* psFlag);
 

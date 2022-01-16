@@ -1353,7 +1353,7 @@ bool DroidGoingToBuild(Droid* Droid)
 //
 Structure* DroidGetBuildStructure(Droid* Droid)
 {
-	SimpleObject* Structure = nullptr;
+	PersistentObject* Structure = nullptr;
 
 	if (orderStateObj(Droid, DORDER_BUILD))
 	{

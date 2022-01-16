@@ -17,42 +17,43 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  Definition for in game,multiplayer, interface.
+
+/**
+ * @file multimenu.h
+ * Definition for in-game multiplayer interface
  */
 
 #ifndef __INCLUDED_SRC_MULTIMENU__
 #define __INCLUDED_SRC_MULTIMENU__
 
-#include "lib/widget/widgbase.h"
-#include "stringdef.h"
+static constexpr auto MULTIMENU				= 10600;
+static constexpr auto MULTIMENU_FORM			= MULTIMENU;
 
 // requester
-void addMultiRequest(const char* searchDir, const char* fileExtension, UDWORD id, UBYTE numPlayers,
+void addMultiRequest(const char* searchDir, const char* fileExtension, unsigned id, UBYTE numPlayers,
                      std::string const& searchString = std::string());
 void closeMultiRequester();
 
 extern bool multiRequestUp;
 extern std::shared_ptr<W_SCREEN> psRScreen; // requester stuff.
 
-bool runMultiRequester(UDWORD id, UDWORD* mode, WzString* chosen, LEVEL_DATASET** chosenValue, bool* isHoverPreview);
-void displayRequestOption(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
+bool runMultiRequester(unsigned id, unsigned* mode, WzString* chosen,
+                       LEVEL_DATASET** chosenValue, bool* isHoverPreview);
+
+void displayRequestOption(WIDGET* psWidget, unsigned xOffset, unsigned yOffset);
 
 // multimenu
-void intProcessMultiMenu(UDWORD id);
+void intProcessMultiMenu(unsigned id);
 bool intRunMultiMenu();
 bool intCloseMultiMenu();
 void intCloseMultiMenuNoAnim();
 bool intAddMultiMenu();
 
-void multiMenuScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
-                                  unsigned int newHeight);
+void multiMenuScreenSizeDidChange(unsigned oldWidth, unsigned oldHeight,
+                                  unsigned newWidth, unsigned newHeight);
 
 extern bool MultiMenuUp;
 
-extern UDWORD current_numplayers;
-
-#define MULTIMENU				10600
-#define MULTIMENU_FORM			MULTIMENU
+extern unsigned current_numplayers;
 
 #endif // __INCLUDED_SRC_MULTIMENU__

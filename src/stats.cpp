@@ -1669,7 +1669,7 @@ int weaponROF(const WeaponStats* psStat, unsigned player)
 }
 
 /* Check if an object has a weapon */
-bool objHasWeapon(const SimpleObject* psObj)
+bool objHasWeapon(const PersistentObject* psObj)
 {
 	//check if valid type
 	if (psObj->type == OBJ_DROID) {
@@ -1685,7 +1685,7 @@ bool objHasWeapon(const SimpleObject* psObj)
 	return false;
 }
 
-SensorStats* objActiveRadar(const SimpleObject* psObj)
+SensorStats* objActiveRadar(const PersistentObject* psObj)
 {
 	SensorStats* psStats = nullptr;
 
@@ -1708,7 +1708,7 @@ SensorStats* objActiveRadar(const SimpleObject* psObj)
 	return psStats;
 }
 
-bool objRadarDetector(const SimpleObject *psObj)
+bool objRadarDetector(const PersistentObject *psObj)
 {
 	if (const auto& psStruct = dynamic_cast<const Structure*>(psObj)) {
 		return psStruct->getState() == STRUCTURE_STATE::BUILT &&

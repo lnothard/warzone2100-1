@@ -48,7 +48,7 @@ enum class TARGET_ORIGIN
 	RADAR_DETECTOR,
 };
 
-class Weapon : public virtual SimpleObject, public Impl::SimpleObject
+class Weapon : public virtual PersistentObject, public Impl::PersistentObject
 {
 public:
   /* Accessors */
@@ -76,7 +76,6 @@ public:
   [[nodiscard]] unsigned calculateRateOfFire(unsigned player) const;
 private:
   using enum TARGET_ORIGIN;
-
 	unsigned ammo = 0;
   std::shared_ptr<WeaponStats> stats;
 

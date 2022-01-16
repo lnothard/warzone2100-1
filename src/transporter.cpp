@@ -164,7 +164,7 @@ bool intAddTransporter(Droid* psSelected, bool offWorld)
 
 	/*if transporter has died - close the interface - this can only happen in
 	multiPlayer where the transporter can be killed*/
-	if (bMultiPlayer && psCurrTransporter && isDead((SimpleObject*)psCurrTransporter))
+	if (bMultiPlayer && psCurrTransporter && isDead((PersistentObject*)psCurrTransporter))
 	{
 		intRemoveTransNoAnim();
 		return true;
@@ -647,7 +647,7 @@ int calcRemainingCapacity(const Droid* psTransporter)
 	const Droid *psDroid, *psNext;
 
 	// If it's dead then just return 0.
-	if (isDead((const SimpleObject*)psTransporter))
+	if (isDead((const PersistentObject*)psTransporter))
 	{
 		return 0;
 	}
@@ -679,7 +679,7 @@ bool transporterIsEmpty(const Droid* psTransporter)
 	ASSERT(isTransporter(*psTransporter), "Non-transporter droid given");
 
 	// Assume dead droids and non-transporter droids to be empty
-	return (isDead((const SimpleObject*)psTransporter)
+	return (isDead((const PersistentObject*)psTransporter)
 		|| !isTransporter(*psTransporter)
 		|| psTransporter->group->members == nullptr
 		|| psTransporter->group->members == psTransporter);
@@ -1039,11 +1039,11 @@ void transporterAddDroid(Droid* psTransporter, Droid* psDroidToAdd)
 	}
 	if (onMission)
 	{
-		visRemoveVisibilityOffWorld((SimpleObject*)psDroidToAdd);
+		visRemoveVisibilityOffWorld((PersistentObject*)psDroidToAdd);
 	}
 	else
 	{
-		visRemoveVisibility((SimpleObject*)psDroidToAdd);
+		visRemoveVisibility((PersistentObject*)psDroidToAdd);
 	}
 	fpathRemoveDroidData(psDroidToAdd->id);
 
@@ -1200,7 +1200,7 @@ bool updateTransporter(Droid* psTransporter)
 		//Remove visibility so tiles are not bright around where the transporter left the map
 		if (psTransporter->action != DACTION_TRANSPORTIN)
 		{
-			visRemoveVisibility((SimpleObject*)psTransporter);
+			visRemoveVisibility((PersistentObject*)psTransporter);
 		}
 
 		// Got to destination

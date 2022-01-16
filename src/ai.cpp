@@ -104,7 +104,7 @@ static unsigned aiDroidRange(Droid *psDroid, int weapon_slot)
 }
 
 // see if a structure has the range to fire on a target
-static bool aiStructHasRange(Structure *psStruct, SimpleObject *psTarget, int weapon_slot)
+static bool aiStructHasRange(Structure *psStruct, PersistentObject *psTarget, int weapon_slot)
 {
 	if (numWeapons(*psStruct) == 0) {
 		// can't attack without a weapon
@@ -120,14 +120,14 @@ static bool aiStructHasRange(Structure *psStruct, SimpleObject *psTarget, int we
           lineOfFire(psStruct, psTarget, weapon_slot, true);
 }
 
-static bool aiDroidHasRange(Droid *psDroid, SimpleObject *psTarget, int weapon_slot)
+static bool aiDroidHasRange(Droid *psDroid, PersistentObject *psTarget, int weapon_slot)
 {
 	auto longRange = aiDroidRange(psDroid, weapon_slot);
 	return objectPositionSquareDiff(psDroid->getPosition(),
                                   psTarget->getPosition()) < longRange * longRange;
 }
 
-static bool aiObjHasRange(SimpleObject *psObj, SimpleObject *psTarget, int weapon_slot)
+static bool aiObjHasRange(PersistentObject *psObj, PersistentObject *psTarget, int weapon_slot)
 {
 	if (auto psDroid = dynamic_cast<Droid*>(psObj)) {
 		return aiDroidHasRange(psDroid, psTarget, weapon_slot);
@@ -160,15 +160,15 @@ bool aiInitialise()
 }
 
 /** Search the global list of sensors for a possible target for psObj. */
-static SimpleObject* aiSearchSensorTargets(SimpleObject* psObj, int weapon_slot, 
-                                           WeaponStats* psWStats, TARGET_ORIGIN* targetOrigin)
+static PersistentObject* aiSearchSensorTargets(PersistentObject* psObj, int weapon_slot,
+																							 WeaponStats* psWStats, TARGET_ORIGIN* targetOrigin)
 {
 	auto longRange = proj_GetLongRange(psWStats, psObj->getPlayer());
 	auto tarDist = longRange * longRange;
 	auto foundCB = false;
 	auto minDist = proj_GetMinRange(psWStats, psObj->getPlayer()) *
                  proj_GetMinRange(psWStats, psObj->getPlayer());
-	SimpleObject* psTarget = nullptr;
+	PersistentObject* psTarget = nullptr;
 
 	if (targetOrigin) {
 		*targetOrigin = TARGET_ORIGIN::UNKNOWN;
@@ -176,7 +176,7 @@ static SimpleObject* aiSearchSensorTargets(SimpleObject* psObj, int weapon_slot,
 
 	for (auto psSensor : apsSensorList)
 	{
-		SimpleObject* psTemp = nullptr;
+		PersistentObject* psTemp = nullptr;
 		bool isCB = false;
 
 		if (!aiCheckAlliances(psSensor->getPlayer(), psObj->getPlayer())) {
@@ -194,7 +194,7 @@ static SimpleObject* aiSearchSensorTargets(SimpleObject* psObj, int weapon_slot,
 			// Artillery should not fire at objects observed by VTOL CB/Strike sensors.
 			if (asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SENSOR_TYPE::VTOL_CB ||
 				asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SENSOR_TYPE::VTOL_INTERCEPT ||
-				objRadarDetector((SimpleObject*)psDroid))
+				objRadarDetector((PersistentObject*)psDroid))
 			{
 				continue;
 			}
@@ -211,7 +211,7 @@ static SimpleObject* aiSearchSensorTargets(SimpleObject* psObj, int weapon_slot,
 			// Artillery should not fire at objects observed by VTOL CB/Strike sensors.
 			if (psCStruct->getStats().sensor_stats->type == SENSOR_TYPE::VTOL_CB ||
           psCStruct->getStats().sensor_stats->type == SENSOR_TYPE::VTOL_INTERCEPT ||
-          objRadarDetector((SimpleObject*)psCStruct)) {
+          objRadarDetector((PersistentObject*)psCStruct)) {
 				continue;
 			}
 			psTemp = psCStruct->getTarget(0);
@@ -251,7 +251,7 @@ static SimpleObject* aiSearchSensorTargets(SimpleObject* psObj, int weapon_slot,
 }
 
 /* Calculates attack priority for a certain target */
-static int targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacker, int weapon_slot)
+static int targetAttackWeight(PersistentObject* psTarget, PersistentObject* psAttacker, int weapon_slot)
 {
   Droid* psAttackerDroid;
 	int targetTypeBonus = 0, damageRatio = 0, attackWeight = 0, noTarget = -1;
@@ -508,11 +508,11 @@ static int targetAttackWeight(SimpleObject* psTarget, SimpleObject* psAttacker, 
 // Find the best nearest target for a droid.
 // If extraRange is higher than zero, then this is the range it accepts for movement to target.
 // Returns integer representing target priority, -1 if failed
-int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, int extraRange)
+int aiBestNearestTarget(Droid* psDroid, PersistentObject** ppsObj, int weapon_slot, int extraRange)
 {
 	int failure = -1;
 	int bestMod = 0;
-	SimpleObject *psTarget = nullptr, *bestTarget = nullptr, *tempTarget;
+	PersistentObject *psTarget = nullptr, *bestTarget = nullptr, *tempTarget;
 	bool electronic = false;
 	Structure* targetStructure;
 	WEAPON_EFFECT weaponEffect;
@@ -534,7 +534,7 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 		auto& psWStats = psDroid->getWeapons()[weapon_slot].getStats();
 
 		bestTarget = aiSearchSensorTargets(psDroid, weapon_slot, psWStats, &tmpOrigin);
-		bestMod = targetAttackWeight(bestTarget, (SimpleObject*)psDroid, weapon_slot);
+		bestMod = targetAttackWeight(bestTarget, (PersistentObject*)psDroid, weapon_slot);
 	}
 
 	weaponEffect = psDroid->getWeapons()[weapon_slot].getStats().weaponEffect;
@@ -549,7 +549,7 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 	gridList = gridStartIterate(psDroid->getPosition().x, psDroid->getPosition().y, droidRange);
 	for (auto targetInQuestion : gridList)
 	{
-		SimpleObject* friendlyObj = nullptr;
+		PersistentObject* friendlyObj = nullptr;
 			/* This is a friendly unit, check if we can reuse its target */
 		if (aiCheckAlliances(targetInQuestion->getPlayer(), psDroid->getPlayer())) {
 			friendlyObj = targetInQuestion;
@@ -636,7 +636,7 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 
 			// check if our weapon is most effective against this object
 			if (psTarget != nullptr && psTarget == targetInQuestion) { //< was assigned?
-				auto newMod = targetAttackWeight(psTarget, (SimpleObject*)psDroid, weapon_slot);
+				auto newMod = targetAttackWeight(psTarget, (PersistentObject*)psDroid, weapon_slot);
 
 				// remember this one if it's our best target so far
 				if (newMod >= 0 &&
@@ -660,7 +660,7 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 			//are we any good against walls?
 			if (asStructStrengthModifier[weaponEffect][targetStructure->getStats().strength] >=
 				MIN_STRUCTURE_BLOCK_STRENGTH) {
-				bestTarget = (SimpleObject*)targetStructure; //attack wall
+				bestTarget = (PersistentObject*)targetStructure; //attack wall
 			}
 		}
 		*ppsObj = bestTarget;
@@ -742,10 +742,10 @@ int aiBestNearestTarget(Droid* psDroid, SimpleObject** ppsObj, int weapon_slot, 
 }
 
 /* See if there is a target in range */
-bool aiChooseTarget(Unit* psObj, SimpleObject** ppsTarget, int weapon_slot,
-                    bool bUpdateTarget, TARGET_ORIGIN* targetOrigin)
+bool aiChooseTarget(ConstructedObject* psObj, PersistentObject** ppsTarget, int weapon_slot,
+										bool bUpdateTarget, TARGET_ORIGIN* targetOrigin)
 {
-	SimpleObject* psTarget = nullptr;
+	PersistentObject* psTarget = nullptr;
 	Droid* psCommander;
 	SDWORD curTargetWeight = -1;
 	TARGET_ORIGIN tmpOrigin = TARGET_ORIGIN::UNKNOWN;
@@ -790,7 +790,7 @@ bool aiChooseTarget(Unit* psObj, SimpleObject** ppsTarget, int weapon_slot,
 		psTarget = nullptr;
 		psCommander = cmdDroidGetDesignator(psObj->getPlayer());
 		if (!proj_Direct(psWStats) && (psCommander != nullptr) &&
-			aiStructHasRange(structure, (SimpleObject*)psCommander, weapon_slot)) {
+			aiStructHasRange(structure, (PersistentObject*)psCommander, weapon_slot)) {
 			// there is a commander that can fire designate for this structure
 			// set bCommanderBlock so that the structure does not fire until the commander
 			// has a target - (slow firing weapons will not be ready to fire otherwise).
@@ -871,7 +871,7 @@ bool aiChooseTarget(Unit* psObj, SimpleObject** ppsTarget, int weapon_slot,
 }
 
 /// See if there is a target in range for sensor objects
-bool aiChooseSensorTarget(SimpleObject* psObj, SimpleObject** ppsTarget)
+bool aiChooseSensorTarget(PersistentObject* psObj, PersistentObject** ppsTarget)
 {
 	int sensorRange = objSensorRange(psObj);
 	unsigned int radSquared = sensorRange * sensorRange;
@@ -884,7 +884,7 @@ bool aiChooseSensorTarget(SimpleObject* psObj, SimpleObject** ppsTarget)
 
 	/* See if there is something in range */
 	if (auto droid = dynamic_cast<Droid*>(psObj)) {
-		SimpleObject* psTarget = nullptr;
+		PersistentObject* psTarget = nullptr;
 
 		if (aiBestNearestTarget(droid, &psTarget, 0) >= 0) {
 			/* See if in sensor range */
@@ -903,7 +903,7 @@ bool aiChooseSensorTarget(SimpleObject* psObj, SimpleObject** ppsTarget)
 	}
 	else {
   // structure
-		SimpleObject* psTemp = nullptr;
+		PersistentObject* psTemp = nullptr;
 		unsigned tarDist = UINT32_MAX;
 
 		static GridList gridList; // static to save on allocations.
@@ -944,9 +944,9 @@ bool aiChooseSensorTarget(SimpleObject* psObj, SimpleObject** ppsTarget)
 }
 
 /// Make droid/structure look for a better target
-static bool updateAttackTarget(SimpleObject* psAttacker, int weapon_slot)
+static bool updateAttackTarget(PersistentObject* psAttacker, int weapon_slot)
 {
-	SimpleObject* psBetterTarget = nullptr;
+	PersistentObject* psBetterTarget = nullptr;
 	TARGET_ORIGIN tmpOrigin = TARGET_ORIGIN::UNKNOWN;
 
 	if (aiChooseTarget(psAttacker, &psBetterTarget, weapon_slot,
@@ -973,7 +973,7 @@ static bool updateAttackTarget(SimpleObject* psAttacker, int weapon_slot)
 }
 
 /// Check if any of our weapons can hit the target
-bool checkAnyWeaponsTarget(SimpleObject* psObject, SimpleObject* psTarget)
+bool checkAnyWeaponsTarget(PersistentObject* psObject, PersistentObject* psTarget)
 {
 	auto psDroid = dynamic_cast<Droid*>(psObject);
 	for (int i = 0; i < numWeapons(*psDroid); i++)
@@ -989,7 +989,7 @@ bool checkAnyWeaponsTarget(SimpleObject* psObject, SimpleObject* psTarget)
  * Set of rules which determine whether the weapon associated with
  * the object can fire on the propulsion type of the target
  */
-bool validTarget(SimpleObject* psObject, SimpleObject* psTarget, int weapon_slot)
+bool validTarget(PersistentObject* psObject, PersistentObject* psTarget, int weapon_slot)
 {
 	bool bTargetInAir = false, bValidTarget = false;
 	uint8_t surfaceToAir = 0;

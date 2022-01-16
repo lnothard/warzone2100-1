@@ -7,38 +7,33 @@
 #include "lib/framework/fixedpoint.h"
 #include "lib/framework/geometry.h"
 #include "lib/framework/math_ext.h"
+#include "lib/ivis_opengl/ivisdef.h"
+#include "lib/wzmaplib/include/wzmaplib/map.h"
+
 #include "map.h"
 #include "projectile.h"
-#include "unit.h"
+#include "constructedobject.h"
 
 namespace Impl
 {
-	Unit::Unit(unsigned id, unsigned player)
-		: Impl::SimpleObject(id, player)
+	ConstructedObject::ConstructedObject(unsigned id, unsigned player)
+		: Impl::PersistentObject(id, player)
 	{
 	}
 
-	unsigned Unit::getHp() const noexcept
-	{
-		return hitPoints;
-	}
 
-  int Unit::getResistance() const
+  int ConstructedObject::getResistance() const
   {
     return resistance;
   }
 
-  void Unit::setHp(unsigned hp)
-  {
-    hitPoints = hp;
-  }
 
-	const std::vector<Weapon>& Unit::getWeapons() const
+	const std::vector<Weapon>& ConstructedObject::getWeapons() const
 	{
 		return weapons;
 	}
 
-	void Unit::alignTurret(int weapon_slot)
+	void ConstructedObject::alignTurret(int weapon_slot)
 	{
 		if (numWeapons(*this) == 0)  {
       return;
@@ -56,13 +51,13 @@ namespace Impl
     weapon.setRotation({weapon_rotation, weapon_pitch, weapon.getRotation().roll});
 	}
 
-  bool Unit::isSelected() const noexcept
+  bool ConstructedObject::isSelected() const noexcept
   {
     return selected;
   }
 }
 
-bool hasFullAmmo(const Unit& unit) noexcept
+bool hasFullAmmo(const ConstructedObject& unit) noexcept
 {
 	auto& weapons = unit.getWeapons();
 	return std::all_of(weapons.begin(), weapons.end(),
@@ -72,7 +67,7 @@ bool hasFullAmmo(const Unit& unit) noexcept
   });
 }
 
-bool hasArtillery(const Unit& unit) noexcept
+bool hasArtillery(const ConstructedObject& unit) noexcept
 {
 	auto& weapons = unit.getWeapons();
 	return std::any_of(weapons.begin(), weapons.end(),
@@ -82,7 +77,7 @@ bool hasArtillery(const Unit& unit) noexcept
 	});
 }
 
-Vector3i calculateMuzzleBaseLocation(const Unit& unit, int weapon_slot)
+Vector3i calculateMuzzleBaseLocation(const ConstructedObject& unit, int weapon_slot)
 {
 	auto& imd_shape = unit.getImdShape();
 	const auto position = unit.getPosition();
@@ -110,7 +105,7 @@ Vector3i calculateMuzzleBaseLocation(const Unit& unit, int weapon_slot)
 	return muzzle;
 }
 
-Vector3i calculateMuzzleTipLocation(const Unit& unit, int weapon_slot)
+Vector3i calculateMuzzleTipLocation(const ConstructedObject& unit, int weapon_slot)
 {
 	const auto& imd_shape = unit.getImdShape();
 	const auto& weapon = unit.getWeapons()[weapon_slot];
@@ -192,7 +187,7 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
  * Check fire line from psViewer to psTarget
  * psTarget can be any type of SimpleObject (e.g. a tree).
  */
-int calculateLineOfFire(const Unit& unit, const ::SimpleObject& target, int weapon_slot, bool walls_block,
+int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject& target, int weapon_slot, bool walls_block,
                         bool is_direct)
 {
 	Vector3i pos(0, 0, 0), dest(0, 0, 0);
@@ -259,23 +254,20 @@ int calculateLineOfFire(const Unit& unit, const ::SimpleObject& target, int weap
 			halfway = current + (next - current) / 2;
 			psTile = mapTile(map_coord(halfway.x), map_coord(halfway.y));
 			if (tile_is_occupied_by_structure(*psTile) &&
-          psTile->occupying_object != &target)
-			{
+          psTile->psObject != &target) {
 				// check whether target was reached before tile's "half way" line
 				part = halfway - start;
 				partSq = dot(part, part);
 
-				if (partSq >= distSq)
-				{
+				if (partSq >= distSq) {
 					break;
 				}
 
 				// allowed to shoot over enemy structures if they are NOT the target
-				if (partSq > 0)
-				{
+				if (partSq > 0) {
           checkAngle(angletan, oldPartSq,
-                     psTile->occupying_object->getPosition().z + establishTargetHeight(
-                             psTile->occupying_object) - pos.z,
+                     psTile->psObject->getPosition().z + establishTargetHeight(
+                             psTile->psObject) - pos.z,
                      distSq, dest.z - pos.z, is_direct);
 				}
 			}
@@ -288,9 +280,9 @@ int calculateLineOfFire(const Unit& unit, const ::SimpleObject& target, int weap
 		       map_coord(pos.x), map_coord(pos.y), map_coord(dest.x), map_coord(dest.y), map_coord(current.x),
 		       map_coord(current.y));
 	}
-	if (is_direct)
-	{
-		return establishTargetHeight(target) - (pos.z + (angletan * iSqrt(distSq)) / 65536 - dest.z);
+	if (is_direct) {
+		return establishTargetHeight(&target) -
+            (pos.z + (angletan * iSqrt(distSq)) / 65536 - dest.z);
 	}
 	else
 	{
@@ -300,7 +292,7 @@ int calculateLineOfFire(const Unit& unit, const ::SimpleObject& target, int weap
 	}
 }
 
-bool hasElectronicWeapon(const Unit& unit) noexcept
+bool hasElectronicWeapon(const ConstructedObject& unit) noexcept
 {
 	auto& weapons = unit.getWeapons();
 	if (weapons.empty()) {
@@ -314,7 +306,7 @@ bool hasElectronicWeapon(const Unit& unit) noexcept
 	});
 }
 
-bool targetInLineOfFire(const Unit& unit, const ::Unit& target, int weapon_slot)
+bool targetInLineOfFire(const ConstructedObject& unit, const ::ConstructedObject& target, int weapon_slot)
 {
 	const auto distance = iHypot((target.getPosition() - unit.getPosition()).xy());
 	auto range = unit.getWeapons()[weapon_slot].getMaxRange(unit.getPlayer());
@@ -331,10 +323,10 @@ bool targetInLineOfFire(const Unit& unit, const ::Unit& target, int weapon_slot)
 	return range >= distance;
 }
 
-Unit* find_target(Unit& unit, TARGET_ORIGIN attacker_type,
-                 int weapon_slot, Weapon weapon)
+ConstructedObject* find_target(ConstructedObject& unit, TARGET_ORIGIN attacker_type,
+                               int weapon_slot, Weapon weapon)
 {
-  Unit* target = nullptr;
+  ConstructedObject* target = nullptr;
   bool is_cb_sensor = false;
   bool found_cb = false;
   auto target_dist = weapon.getMaxRange(unit.getPlayer());
@@ -392,12 +384,12 @@ Unit* find_target(Unit& unit, TARGET_ORIGIN attacker_type,
   return target;
 }
 
-unsigned numWeapons(const Unit& unit)
+unsigned numWeapons(const ConstructedObject& unit)
 {
 	return static_cast<unsigned>(unit.getWeapons().size());
 }
 
-unsigned getMaxWeaponRange(const Unit& unit)
+unsigned getMaxWeaponRange(const ConstructedObject& unit)
 {
 	auto max = unsigned{0};
 	for (const auto& weapon : unit.getWeapons())

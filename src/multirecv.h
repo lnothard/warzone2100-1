@@ -17,11 +17,12 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-/** @file
- *  header for multiplay files that receive netmessages
- *  this is a little lower level than multiplay.h
- *  so we don't include it in other warzone stuff
- *  to avoid a load of warnings
+
+/**
+ * @file multirecv.h
+ * Header for multiplayer files that receive net messages
+ * this is a little lower level than \c multiplay.h so we don't
+ * include it in other Warzone stuff to avoid a load of warnings
  */
 
 #ifndef __INCLUDED_SRC_MULTIRECV_H__
@@ -41,13 +42,11 @@ bool recvFactionRequest(NETQUEUE queue);
 bool recvPositionRequest(NETQUEUE queue);
 bool recvOptions(NETQUEUE queue);
 void sendOptions();
-
 bool recvResearchStatus(NETQUEUE queue);
 bool recvLasSat(NETQUEUE queue);
 void recvStructureInfo(NETQUEUE queue);
 bool recvMapFileData(NETQUEUE queue);
 bool recvMapFileRequested(NETQUEUE queue);
-
 bool recvTextMessageAI(NETQUEUE queue); //AI multiplayer message
 bool recvTeamRequest(NETQUEUE queue);
 bool recvReadyRequest(NETQUEUE queue);

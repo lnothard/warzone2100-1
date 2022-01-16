@@ -1506,7 +1506,7 @@ extern int map_Height(int x, int y)
 }
 
 /* returns true if object is above ground */
-bool mapObjIsAboveGround(const SimpleObject* psObj)
+bool mapObjIsAboveGround(const PersistentObject* psObj)
 {
 	// min is used to make sure we don't go over array bounds!
 	// TODO Using the corner of the map instead doesn't make sense. Fix this...
@@ -1907,7 +1907,7 @@ static int dangerThreadFunc()
 	return 0;
 }
 
-static void threatUpdateTarget(unsigned player, SimpleObject* psObj, bool ground, bool air)
+static void threatUpdateTarget(unsigned player, PersistentObject* psObj, bool ground, bool air)
 {
 	if (psObj->visible[player] || psObj->born == 2)
 	{

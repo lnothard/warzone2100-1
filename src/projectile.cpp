@@ -44,7 +44,7 @@
 bool bMultiPlayer;
 
 Projectile::Projectile(unsigned id, unsigned player)
-  : SimpleObject(id, player)
+  : PersistentObject(id, player)
 {
 }
 
@@ -81,7 +81,7 @@ static auto projectileTrackerIDIncrement = 0;
 static std::vector<std::unique_ptr<Projectile>> psProjectileList;
 
 // the last unit that did damage - used by script functions
-SimpleObject* g_pProjLastAttacker;
+PersistentObject* g_pProjLastAttacker;
 
 static void proj_ImpactFunc(Projectile* psObj);
 static void proj_PostImpactFunc(Projectile* psObj);
@@ -89,7 +89,7 @@ static void proj_checkPeriodicalDamage(Projectile* psProj);
 
 static int objectDamage(Damage* psDamage);
 
-void Projectile::setTarget(::SimpleObject* psObj)
+void Projectile::setTarget(::PersistentObject* psObj)
 {
 	bool bDirect = proj_Direct(weaponStats.get());
   #if defined( _MSC_VER )
@@ -202,7 +202,7 @@ int getExpGain(unsigned player)
 	return experienceGain[player];
 }
 
-Droid* getDesignatorAttackingObject(unsigned player, SimpleObject* target)
+Droid* getDesignatorAttackingObject(unsigned player, PersistentObject* target)
 {
 	const auto psCommander = cmdDroidGetDesignator(player);
 
@@ -215,7 +215,7 @@ Droid* getDesignatorAttackingObject(unsigned player, SimpleObject* target)
 
 void Projectile::updateExperience(unsigned experienceInc)
 {
-	::SimpleObject* psSensor;
+	::PersistentObject* psSensor;
 	CHECK_PROJECTILE(this);
 
   /* update droid kills */
@@ -329,16 +329,16 @@ int projCalcIndirectVelocities(int dx, int dz, int v,
 	return t;
 }
 
-bool proj_SendProjectile(Weapon* psWeap, SimpleObject* psAttacker, unsigned player,
-                         Vector3i target, SimpleObject* psTarget, bool bVisible,
+bool proj_SendProjectile(Weapon* psWeap, PersistentObject* psAttacker, unsigned player,
+                         Vector3i target, PersistentObject* psTarget, bool bVisible,
                          int weapon_slot)
 {
 	return proj_SendProjectileAngled(psWeap, psAttacker, player, target, psTarget,
                                    bVisible, weapon_slot, 0, gameTime - 1);
 }
 
-bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, ::SimpleObject* psAttacker, unsigned player,
-                                           Vector3i dest, ::SimpleObject* psTarget, bool bVisible,
+bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, ::PersistentObject* psAttacker, unsigned player,
+                                           Vector3i dest, ::PersistentObject* psTarget, bool bVisible,
                                            int weapon_slot, int min_angle, unsigned fireTime) const
 {
 	auto& psStats = psWeap->getStats();
@@ -604,7 +604,7 @@ void Projectile::proj_InFlightFunc()
 	/* we want a delay between Las-Sats firing and actually hitting in multiPlayer
 	magic number but that's how long the audio countdown message lasts! */
 	const auto LAS_SAT_DELAY = 4;
-	::SimpleObject* closestCollisionObject = nullptr;
+	::PersistentObject* closestCollisionObject = nullptr;
 	Spacetime closestCollisionSpacetime;
 
 	CHECK_PROJECTILE(this);
@@ -739,7 +739,7 @@ void Projectile::proj_InFlightFunc()
 	/* Check nearby objects for possible collisions */
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(getPosition().x, getPosition().y, PROJ_NEIGHBOUR_RANGE);
-	for (::SimpleObject* psTempObj : gridList)
+	for (::PersistentObject* psTempObj : gridList)
 	{
 		CHECK_OBJECT(psTempObj);
 		if (std::find(damaged.begin(), damaged.end(),
@@ -902,7 +902,7 @@ void Projectile::proj_ImpactFunc()
 {
   Vector3i position;
 	std::unique_ptr<iIMDShape> imd;
-	SimpleObject* temp;
+	PersistentObject* temp;
 
 	CHECK_PROJECTILE(this);
 
@@ -1264,7 +1264,7 @@ void Projectile::update()
 
 	// remove dead objects from psDamaged.
 	damaged.erase(std::remove_if(damaged.begin(), damaged.end(),
-                               [](const SimpleObject* psObj)
+                               [](const PersistentObject* psObj)
                                  { return ::isDead(psObj); }), damaged.end());
 
 	// This extra check fixes a crash in cam2, mission1
@@ -1412,7 +1412,7 @@ unsigned proj_GetShortRange(const WeaponStats* psStats, unsigned player)
 	return psStats->upgraded[player].shortRange;
 }
 
-ObjectShape establishTargetShape(SimpleObject* psTarget)
+ObjectShape establishTargetShape(PersistentObject* psTarget)
 {
 	CHECK_OBJECT(psTarget);
 
@@ -1458,7 +1458,7 @@ ObjectShape establishTargetShape(SimpleObject* psTarget)
 
 /*the damage depends on the weapon effect and the target propulsion type or
 structure strength*/
-unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* psTarget)
+unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, PersistentObject* psTarget)
 {
 	if (baseDamage == 0) {
 		return 0;
@@ -1584,7 +1584,7 @@ int Damage::objectDamage()
 }
 
 /// @return true if `psObj` has just been hit by an electronic warfare weapon
-static bool justBeenHitByEW(SimpleObject* psObj)
+static bool justBeenHitByEW(PersistentObject* psObj)
 {
 	if (gamePaused()) {
 		return false;
@@ -1614,7 +1614,7 @@ static bool justBeenHitByEW(SimpleObject* psObj)
 	return false;
 }
 
-glm::mat4 objectShimmy(SimpleObject* psObj)
+glm::mat4 objectShimmy(PersistentObject* psObj)
 {
 	if (justBeenHitByEW(psObj)) {
 		const glm::mat4 rotations =
@@ -1634,7 +1634,7 @@ glm::mat4 objectShimmy(SimpleObject* psObj)
 
 static constexpr auto BULLET_FLIGHT_HEIGHT = 16;
 
-int establishTargetHeight(SimpleObject const* psTarget)
+int establishTargetHeight(PersistentObject const* psTarget)
 {
 	if (!psTarget) {
 		return 0;
@@ -1755,7 +1755,7 @@ void Projectile::checkProjectile(const char* location_description,
 	}
 }
 
-void Projectile::setSource(::SimpleObject *psObj)
+void Projectile::setSource(::PersistentObject *psObj)
 {
 	// use the source of the source of psProj if psAttacker is a projectile
 	source = nullptr;

@@ -87,7 +87,7 @@ void viewDataShutDown(const char* fileName);
 /** Looks through the players list of messages to find one with the same viewData
   * pointer and which is the same type of message - used in scriptFuncs. */
 MESSAGE* findMessage(const VIEWDATA* pViewdata, MESSAGE_TYPE type, UDWORD player);
-MESSAGE* findMessage(const SimpleObject* psObj, MESSAGE_TYPE type, UDWORD player);
+MESSAGE* findMessage(const PersistentObject* psObj, MESSAGE_TYPE type, UDWORD player);
 
 /** 'Displays' a proximity display. */
 void displayProximityMessage(PROXIMITY_DISPLAY* psProxDisp);

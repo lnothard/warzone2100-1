@@ -62,7 +62,7 @@ struct FeatureStats : public BaseStats
     unsigned armourValue = 0; ///< Feature armour
 };
 
-class Feature : public virtual SimpleObject, public Impl::SimpleObject
+class Feature : public virtual PersistentObject, public Impl::PersistentObject
 {
 public:
     Feature(unsigned id, FeatureStats const* psStats);

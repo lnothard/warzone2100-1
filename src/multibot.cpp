@@ -170,9 +170,9 @@ static std::vector<QueuedDroidInfo> queuedOrders;
 // ////////////////////////////////////////////////////////////////////////////
 // Local Prototypes
 
-static SimpleObject* processDroidTarget(OBJECT_TYPE desttype, unsigned destid);
-static SimpleObject TargetMissing_(OBJ_NUM_TYPES, 0, 0); // This memory is never referenced.
-static SimpleObject* const TargetMissing = &TargetMissing_; // Error return value for processDroidTarget.
+static PersistentObject* processDroidTarget(OBJECT_TYPE desttype, unsigned destid);
+static PersistentObject TargetMissing_(OBJ_NUM_TYPES, 0, 0); // This memory is never referenced.
+static PersistentObject* const TargetMissing = &TargetMissing_; // Error return value for processDroidTarget.
 
 // Send
 bool sendDroidSecondary(const Droid* psDroid, SECONDARY_ORDER sec, SECONDARY_STATE state)
@@ -724,7 +724,7 @@ bool recvDroidInfo(NETQUEUE queue)
 
 // ////////////////////////////////////////////////////////////////////////////
 // process droid order
-static SimpleObject* processDroidTarget(OBJECT_TYPE desttype, uint32_t destid)
+static PersistentObject* processDroidTarget(OBJECT_TYPE desttype, uint32_t destid)
 {
 	// Target is a location
 	if (destid == 0 && desttype == 0)
@@ -734,7 +734,7 @@ static SimpleObject* processDroidTarget(OBJECT_TYPE desttype, uint32_t destid)
 	// Target is an object
 	else
 	{
-		SimpleObject* psObj = nullptr;
+		PersistentObject* psObj = nullptr;
 
 		switch (desttype)
 		{

@@ -20,14 +20,9 @@
  * multilobbycommands.cpp
  */
 
-#include "multilobbycommands.h"
-#include "lib/netplay/netplay.h"
-#include "multistat.h"
 #include "multiint.h"
-#include "stdinreader.h"
-
-#include <cstring>
-#include <unordered_set>
+#include "multilobbycommands.h"
+#include "multistat.h"
 
 #define PREFIXED_LOBBY_COMMAND(x) LOBBY_COMMAND_PREFIX x
 

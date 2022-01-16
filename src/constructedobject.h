@@ -3,8 +3,8 @@
  * @file unit.h
  */
 
-#ifndef WARZONE2100_UNIT_H
-#define WARZONE2100_UNIT_H
+#ifndef WARZONE2100_CONSTRUCTEDOBJECT_H
+#define WARZONE2100_CONSTRUCTEDOBJECT_H
 
 #include "basedef.h"
 
@@ -19,58 +19,51 @@ static constexpr auto TURRET_ROTATION_RATE = 45;
 static constexpr auto MAX_WEAPONS = 3;
 
 /// Abstract base class with shared methods for both structures and droids
-class Unit : public virtual ::SimpleObject
+class ConstructedObject : public virtual ::PersistentObject
 {
 public:
-	~Unit() override = default;
+	~ConstructedObject() override = default;
 
   [[nodiscard]] virtual const std::vector<Weapon>& getWeapons() const = 0;
   [[nodiscard]] virtual const iIMDShape& getImdShape() const = 0;
-  [[nodiscard]] virtual unsigned getHp() const = 0;
-  [[nodiscard]] virtual const SimpleObject& getTarget(int weapon_slot) const = 0;
+  [[nodiscard]] virtual const PersistentObject& getTarget(int weapon_slot) const = 0;
   [[nodiscard]] virtual int getResistance() const = 0;
   [[nodiscard]] virtual unsigned getOriginalHp() const = 0;
 
 	[[nodiscard]] virtual bool isAlive() const = 0;
 	[[nodiscard]] virtual bool isRadarDetector() const = 0;
-	virtual bool isValidTarget(const Unit* attacker, int weapon_slot) const = 0;
-	virtual uint8_t isTargetVisible(const SimpleObject* target, bool walls_block) const = 0;
+	virtual bool isValidTarget(const ConstructedObject* attacker, int weapon_slot) const = 0;
+	virtual uint8_t isTargetVisible(const PersistentObject* target, bool walls_block) const = 0;
 	[[nodiscard]] virtual unsigned calculateSensorRange() const = 0;
   [[nodiscard]] virtual bool isSelected() const noexcept = 0;
   virtual void alignTurret(int weapon_slot) = 0;
   virtual void updateExpectedDamage(unsigned damage, bool is_direct) noexcept = 0;
-  [[nodiscard]] virtual int calculateAttackPriority(const Unit* target, int weapon_slot) const = 0;
+  [[nodiscard]] virtual int calculateAttackPriority(const ConstructedObject* target, int weapon_slot) const = 0;
   [[nodiscard]] virtual bool hasCbSensor() const = 0;
   [[nodiscard]] virtual bool hasStandardSensor() const = 0;
   [[nodiscard]] virtual bool hasVtolInterceptSensor() const = 0;
   [[nodiscard]] virtual bool hasVtolCbSensor() const = 0;
-  virtual void setHp(unsigned hp) = 0;
 };
 
-Vector3i calculateMuzzleBaseLocation(const Unit& unit, int weapon_slot);
+Vector3i calculateMuzzleBaseLocation(const ConstructedObject& unit, int weapon_slot);
 
-Vector3i calculateMuzzleTipLocation(const Unit& unit, int weapon_slot);
+Vector3i calculateMuzzleTipLocation(const ConstructedObject& unit, int weapon_slot);
 
 namespace Impl
 {
-	class Unit : public virtual ::Unit, public Impl::SimpleObject
+	class ConstructedObject : public virtual ::ConstructedObject, public Impl::PersistentObject
 	{
 	public:
-		Unit(unsigned id, unsigned player);
+		ConstructedObject(unsigned id, unsigned player);
 
     /************************** Accessors *************************/
-		[[nodiscard]] unsigned getHp() const noexcept final;
 		[[nodiscard]] const std::vector<Weapon>& getWeapons() const final;
     [[nodiscard]] int getResistance() const final;
 
-    void setHp(unsigned hp) final;
 		void alignTurret(int weapon_slot) final;
-	private:
-		unsigned hitPoints = 0;
-
+  protected:
     /// Current resistance points, 0 = cannot be attacked electrically
     int resistance = 0;
-  protected:
     unsigned lastEmissionTime;
     WEAPON_SUBCLASS lastHitWeapon;
     std::vector<TILEPOS> watchedTiles;
@@ -81,20 +74,20 @@ namespace Impl
 void checkAngle(int64_t& angle_tan, int start_coord, int height,
                 int square_distance, int target_height, bool is_direct);
 
-[[nodiscard]] bool hasFullAmmo(const Unit& unit) noexcept;
+[[nodiscard]] bool hasFullAmmo(const ConstructedObject& unit) noexcept;
 
 /// @return `true` if `unit` has an indirect weapon attached
-[[nodiscard]] bool hasArtillery(const Unit& unit) noexcept;
+[[nodiscard]] bool hasArtillery(const ConstructedObject& unit) noexcept;
 
 /// @return `true` if `unit` has an electronic weapon attached
-[[nodiscard]] bool hasElectronicWeapon(const Unit& unit) noexcept;
+[[nodiscard]] bool hasElectronicWeapon(const ConstructedObject& unit) noexcept;
 
 /**
  * @return `true` if `unit` may fire upon `target` with the weapon in
  *    `weapon_slot`
  */
-[[nodiscard]] bool targetInLineOfFire(const Unit& unit,
-                                      const ::Unit& target,
+[[nodiscard]] bool targetInLineOfFire(const ConstructedObject& unit,
+                                      const ::ConstructedObject& target,
                                       int weapon_slot);
 
 /**
@@ -103,12 +96,12 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
  * @param is_direct `false` if this is an artillery weapon
  * @return
  */
-[[nodiscard]] int calculateLineOfFire(const Unit& unit, const ::SimpleObject& target,
+[[nodiscard]] int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject& target,
                                       int weapon_slot, bool walls_block, bool is_direct);
 
 
-[[nodiscard]] unsigned getMaxWeaponRange(const Unit& unit);
+[[nodiscard]] unsigned getMaxWeaponRange(const ConstructedObject& unit);
 
-[[nodiscard]] unsigned numWeapons(const ::Unit& unit);
+[[nodiscard]] unsigned numWeapons(const ::ConstructedObject& unit);
 
-#endif // WARZONE2100_UNIT_H
+#endif // WARZONE2100_CONSTRUCTEDOBJECT_H

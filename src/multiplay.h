@@ -46,7 +46,7 @@ using nonstd::nullopt;
 #include <3rdparty/json/json_fwd.hpp>
 
 class Group;
-struct SimpleObject;
+struct PersistentObject;
 struct Droid;
 struct DroidTemplate;
 struct Feature;
@@ -205,7 +205,7 @@ extern UBYTE bDisplayMultiJoiningStatus; // draw load progress?
 #define MAX_KICK_REASON			80			// max array size for the reason your kicking someone
 // functions
 
-WZ_DECL_WARN_UNUSED_RESULT SimpleObject* IdToPointer(UDWORD id, UDWORD player);
+WZ_DECL_WARN_UNUSED_RESULT PersistentObject* IdToPointer(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT Structure* IdToStruct(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT Droid* IdToDroid(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT Droid* IdToMissionDroid(UDWORD id, UDWORD player);
@@ -255,7 +255,7 @@ bool multiplayerWinSequence(bool firstCall);
 // Buildings . multistruct
 bool SendDestroyStructure(Structure* s);
 bool SendBuildFinished(Structure* psStruct);
-bool sendLasSat(UBYTE player, Structure* psStruct, SimpleObject* psObj);
+bool sendLasSat(UBYTE player, Structure* psStruct, PersistentObject* psObj);
 void sendStructureInfo(Structure* psStruct, STRUCTURE_INFO structureInfo, DroidTemplate* psTempl);
 
 // droids . multibot
@@ -326,7 +326,7 @@ void resetReadyStatus(bool bSendOptions, bool ignoreReadyReset = false);
 
 Structure* findResearchingFacilityByResearchIndex(unsigned player, unsigned index);
 
-void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const SimpleObject* psObj, const SimpleObject* psObj2);
+void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const PersistentObject* psObj, const PersistentObject* psObj2);
 
 
 bool sendBeaconToPlayer(SDWORD locX, SDWORD locY, SDWORD forPlayer, SDWORD sender, const char* beaconMsg);

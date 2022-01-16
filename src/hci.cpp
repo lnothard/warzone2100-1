@@ -1896,7 +1896,7 @@ void intSetMapPos(UDWORD x, UDWORD y)
 //
 // There should be two version of this function, one for left clicking and one got right.
 //
-void intObjectSelected(SimpleObject* psObj)
+void intObjectSelected(PersistentObject* psObj)
 {
 	if (psObj)
 	{
@@ -2360,7 +2360,7 @@ static bool intAddDebugStatsForm(BaseStats** _ppsStatsList, UDWORD numStats)
 }
 
 /* Return the stats for a research facility */
-static BaseStats* getResearchStats(SimpleObject* psObj)
+static BaseStats* getResearchStats(PersistentObject* psObj)
 {
 	ASSERT_OR_RETURN(nullptr, psObj != nullptr && psObj->type == OBJ_STRUCTURE, "Invalid Structure pointer");
 	auto* psBuilding = (Structure*)psObj;

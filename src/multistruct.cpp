@@ -205,7 +205,7 @@ bool recvDestroyStructure(NETQUEUE queue)
 // ////////////////////////////////////////////////////////////////////////////
 //lassat is firing
 
-bool sendLasSat(UBYTE player, Structure* psStruct, SimpleObject* psObj)
+bool sendLasSat(UBYTE player, Structure* psStruct, PersistentObject* psObj)
 {
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_LASSAT);
 
@@ -220,7 +220,7 @@ bool sendLasSat(UBYTE player, Structure* psStruct, SimpleObject* psObj)
 // recv lassat info on the receiving end.
 bool recvLasSat(NETQUEUE queue)
 {
-	SimpleObject* psObj;
+	PersistentObject* psObj;
 	UBYTE player, targetplayer;
 	Structure* psStruct;
 	uint32_t id, targetid;

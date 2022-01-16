@@ -17,31 +17,32 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#pragma once
-
 #include <cstdint>
-#include "multiplay.h"
+#include <string>
 
-#define LOBBY_COMMAND_PREFIX "/"
-#define LOBBY_COMMAND_PREFIX_LENGTH 1
+class NetworkTextMessage;
+
+
+static constexpr auto LOBBY_COMMAND_PREFIX = '/';
+static constexpr auto LOBBY_COMMAND_PREFIX_LENGTH = 1;
 
 class HostLobbyOperationsInterface
 {
 public:
 	virtual ~HostLobbyOperationsInterface();
 
-public:
-	virtual bool changeTeam(uint32_t player, uint8_t team) = 0;
-	virtual bool changePosition(uint32_t player, uint8_t position) = 0;
+	virtual bool changeTeam(unsigned player, uint8_t team) = 0;
+	virtual bool changePosition(unsigned player, uint8_t position) = 0;
 	virtual bool changeBase(uint8_t baseValue) = 0;
 	virtual bool changeAlliances(uint8_t allianceValue) = 0;
 	virtual bool changeScavengers(uint8_t scavsValue) = 0;
-	virtual bool kickPlayer(uint32_t player_id, const char* reason) = 0;
-	virtual bool movePlayerToSpectators(uint32_t player_id) = 0;
+	virtual bool kickPlayer(unsigned player_id, const char* reason) = 0;
+	virtual bool movePlayerToSpectators(unsigned player_id) = 0;
 	virtual void quitGame(int exitCode) = 0;
 };
 
-bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyOperationsInterface& cmdInterface);
+bool processChatLobbySlashCommands(const NetworkTextMessage& message,
+                                   HostLobbyOperationsInterface& cmdInterface);
 
 bool addLobbyAdminIdentityHash(const std::string& playerIdentityHash);
 bool removeLobbyAdminIdentityHash(const std::string& playerIdentityHash);

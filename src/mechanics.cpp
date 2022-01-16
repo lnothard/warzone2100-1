@@ -36,7 +36,7 @@
 /* Shutdown the mechanics system */
 bool mechanicsShutdown()
 {
-	SimpleObject *psObj, *psNext;
+	PersistentObject *psObj, *psNext;
 
 	for (psObj = psDestroyedObj; psObj != nullptr; psObj = psNext)
 	{

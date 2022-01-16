@@ -878,7 +878,7 @@ void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix)
 
 	if (psDroid->timeLastHit - graphicsTime < ELEC_DAMAGE_DURATION &&
       psDroid->lastHitWeapon == WEAPON_SUBCLASS::ELECTRONIC) {
-		modelMatrix *= objectShimmy((SimpleObject*)psDroid);
+		modelMatrix *= objectShimmy((PersistentObject*)psDroid);
 	}
 
 	// now check if the projected circle is within the screen boundaries

@@ -516,7 +516,7 @@ static UDWORD GetImageHeight(IMAGEFILE* ImageFile, UDWORD ImageID)
 // Returns true if the form was displayed ok.
 //
 //changed to a SimpleObject to accommodate the factories - AB 21/04/99
-bool intAddOrder(SimpleObject* psObj)
+bool intAddOrder(PersistentObject* psObj)
 {
 	bool Animate = true;
 	SECONDARY_STATE State;
@@ -554,7 +554,7 @@ bool intAddOrder(SimpleObject* psObj)
 			psStructure = (Structure*)psObj;
 			psSelectedFactory = psStructure;
 			ASSERT_OR_RETURN(false, StructIsFactory(psSelectedFactory), "Trying to select a %s as a factory!",
-			                 objInfo((SimpleObject *)psSelectedFactory));
+			                 objInfo((PersistentObject *)psSelectedFactory));
 		}
 		else
 		{
@@ -1209,11 +1209,11 @@ void intAddFactoryOrder(Structure* psStructure)
 	if (!OrderUp)
 	{
 		intResetScreen(false);
-		intAddOrder((SimpleObject*)psStructure);
+		intAddOrder((PersistentObject*)psStructure);
 		intMode = INT_ORDER;
 	}
 	else
 	{
-		intAddOrder((SimpleObject*)psStructure);
+		intAddOrder((PersistentObject*)psStructure);
 	}
 }

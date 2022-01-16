@@ -325,7 +325,7 @@ static nlohmann::ordered_json fillPlayerModel(int i)
 
 // MARK: - componentToString
 
-static const char* getObjType(const SimpleObject* psObj)
+static const char* getObjType(const PersistentObject* psObj)
 {
 	switch (psObj->type)
 	{
@@ -2275,7 +2275,7 @@ void WZScriptDebugger::updateLabelModel()
 	}
 }
 
-void WZScriptDebugger::selected(const SimpleObject* psObj)
+void WZScriptDebugger::selected(const PersistentObject* psObj)
 {
 	selectedObjectDetails = nlohmann::ordered_json::object();
 	selectedObjectId = nullopt;
@@ -2437,7 +2437,7 @@ void jsDebugMessageUpdate()
 	}
 }
 
-void jsDebugSelected(const SimpleObject* psObj)
+void jsDebugSelected(const PersistentObject* psObj)
 {
 	if (globalDialog)
 	{

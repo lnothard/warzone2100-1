@@ -174,9 +174,9 @@ struct Order
     Order(ORDER_TYPE type, Vector2i pos, RTR_DATA_TYPE rtrType);
     Order(ORDER_TYPE type, StructureStats& stats, Vector2i pos, unsigned direction);
     Order(ORDER_TYPE type, StructureStats& stats, Vector2i pos, Vector2i pos2, unsigned direction);
-    Order(ORDER_TYPE type, SimpleObject& target);
-    Order(ORDER_TYPE type, SimpleObject& target, RTR_DATA_TYPE rtrType);
-    Order(ORDER_TYPE type, SimpleObject& target, unsigned index);
+    Order(ORDER_TYPE type, PersistentObject& target);
+    Order(ORDER_TYPE type, PersistentObject& target, RTR_DATA_TYPE rtrType);
+    Order(ORDER_TYPE type, PersistentObject& target, unsigned index);
 
     using enum ORDER_TYPE;
     using enum RTR_DATA_TYPE;
@@ -195,7 +195,7 @@ struct Order
     RTR_DATA_TYPE rtrType;
 
     /// The order's target, in case it exist.
-    SimpleObject* target;
+    PersistentObject* target;
 
     std::shared_ptr<StructureStats> structure_stats;
 };
@@ -204,12 +204,12 @@ struct RtrBestResult
 {
 
     RtrBestResult();
-    RtrBestResult(RTR_DATA_TYPE type, SimpleObject* obj);
+    RtrBestResult(RTR_DATA_TYPE type, PersistentObject* obj);
     explicit RtrBestResult(Order& order);
 
     using enum RTR_DATA_TYPE;
     RTR_DATA_TYPE type;
-    SimpleObject* target;
+    PersistentObject* target;
 };
 
 /** \brief Gives the droid an order. */
@@ -240,10 +240,10 @@ void orderDroidLoc(Droid* psDroid, ORDER_TYPE order, UDWORD x, UDWORD y, QUEUE_M
 bool orderStateLoc(Droid* psDroid, ORDER_TYPE order, UDWORD* pX, UDWORD* pY);
 
 /** \brief Sends an order with an object target to a droid. */
-void orderDroidObj(Droid* psDroid, ORDER_TYPE order, SimpleObject* psObj, QUEUE_MODE mode);
+void orderDroidObj(Droid* psDroid, ORDER_TYPE order, PersistentObject* psObj, QUEUE_MODE mode);
 
 /** \brief Gets the state of a droid's order with an object. */
-SimpleObject* orderStateObj(Droid* psDroid, ORDER_TYPE order);
+PersistentObject* orderStateObj(Droid* psDroid, ORDER_TYPE order);
 
 /** \brief Sends an order with a location and a stat to a droid. */
 void orderDroidStatsLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, UDWORD x, UDWORD y,
@@ -264,8 +264,8 @@ void orderDroidStatsTwoLocDirAdd(Droid* psDroid, ORDER_TYPE order, StructureStat
 void orderSelectedLoc(uint32_t player, uint32_t x, uint32_t y, bool add);
 
 /** \brief Sends an order with an object target to all selected droids. add = true queues the order. */
-void orderSelectedObj(UDWORD player, SimpleObject* psObj);
-void orderSelectedObjAdd(UDWORD player, SimpleObject* psObj, bool add);
+void orderSelectedObj(UDWORD player, PersistentObject* psObj);
+void orderSelectedObjAdd(UDWORD player, PersistentObject* psObj, bool add);
 
 /** \brief Adds an order to a droids order list. */
 void orderDroidAdd(Droid* psDroid, Order* psOrder);
@@ -317,23 +317,23 @@ bool setFactoryState(Structure* psStruct, SECONDARY_ORDER sec, SECONDARY_STATE S
 bool getFactoryState(Structure* psStruct, SECONDARY_ORDER sec, SECONDARY_STATE* pState);
 
 /** \brief lasSat structure can select a target. */
-void orderStructureObj(UDWORD player, SimpleObject* psObj);
+void orderStructureObj(UDWORD player, PersistentObject* psObj);
 
 /** \brief Pops orders (including pending orders) from the order list. */
 void orderDroidListEraseRange(Droid* psDroid, unsigned indexBegin, unsigned indexEnd);
 
 /** \brief Clears all orders for the given target (including pending orders) from the order list. */
-void orderClearTargetFromDroidList(Droid* psDroid, SimpleObject* psTarget);
+void orderClearTargetFromDroidList(Droid* psDroid, PersistentObject* psTarget);
 
 /** \brief Chooses an order from a location. */
 ORDER_TYPE chooseOrderLoc(Droid* psDroid, UDWORD x, UDWORD y, bool altOrder);
 
 /** \brief Chooses an order from an object. */
-Order chooseOrderObj(Droid* psDroid, SimpleObject* psObj, bool altOrder);
+Order chooseOrderObj(Droid* psDroid, PersistentObject* psObj, bool altOrder);
 
 static bool secondaryCheckDamageLevelDeselect(Droid* psDroid, SECONDARY_STATE repairState);
 static void orderCmdGroupBase(Group* psGroup, Order* psData);
-static void orderPlayFireSupportAudio(SimpleObject* psObj);
+static void orderPlayFireSupportAudio(PersistentObject* psObj);
 Droid* checkForRepairRange(Droid* psDroid);
 static std::pair<Structure*, ACTION> checkForDamagedStruct(Droid* psDroid);
 static bool isRepairLikeAction(ACTION action);

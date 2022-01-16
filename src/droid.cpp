@@ -62,7 +62,7 @@ static unsigned calcDroidBaseBody(Droid* psDroid);
 namespace Impl
 {
     Droid::Droid(unsigned id, unsigned player)
-            : Unit(id, player)
+            : ConstructedObject(id, player)
             , type(ANY)
             , group(nullptr)
             , secondaryOrder(DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD)
@@ -361,7 +361,7 @@ namespace Impl
    * This function clears all the orders from droid's order list 
    * that don't have target as psTarget.
    */
-  void Droid::orderClearTargetFromDroidList(::SimpleObject* psTarget)
+  void Droid::orderClearTargetFromDroidList(::PersistentObject* psTarget)
   {
     for (auto i = 0; i < asOrderList.size(); ++i)
     {
@@ -527,7 +527,7 @@ namespace Impl
 
   bool Droid::isSelectable() const
   {
-    if (!SimpleObject::isSelectable()) {
+    if (!PersistentObject::isSelectable()) {
       return false;
     }
     if (isTransporter(*this) && !bMultiPlayer) {
@@ -956,7 +956,7 @@ namespace Impl
    */
   void Droid::orderUpdateDroid()
   {
-    ::SimpleObject* psObj = nullptr;
+    ::PersistentObject* psObj = nullptr;
     ::Structure *psStruct, *psWall;
     int xdiff, ydiff;
     bool bAttack;
@@ -1497,7 +1497,7 @@ namespace Impl
         }
           //indirect weapon droid attached to (standard)sensor droid
         else {
-          ::SimpleObject* psFireTarget = nullptr;
+          ::PersistentObject* psFireTarget = nullptr;
 
           if (dynamic_cast<Droid*>(order->target)) {
             auto psSpotter = dynamic_cast<Droid*>(order->target);
@@ -1637,8 +1637,8 @@ namespace Impl
           // make sure units in a command group are actually guarding the commander
           psObj = orderStateObj(this, GUARD); // find out who is being guarded by the droid
           if (psObj == nullptr ||
-              psObj != dynamic_cast<const SimpleObject*>(&group->getCommander())) {
-            orderDroidObj(this, GUARD, dynamic_cast<SimpleObject*>(&group->getCommander()), ModeImmediate);
+              psObj != dynamic_cast<const PersistentObject*>(&group->getCommander())) {
+            orderDroidObj(this, GUARD, dynamic_cast<PersistentObject*>(&group->getCommander()), ModeImmediate);
           }
         }
 
@@ -1669,7 +1669,7 @@ namespace Impl
   {
     bool (*actionUpdateFunc)(Droid* psDroid) = nullptr;
     bool nonNullWeapon[MAX_WEAPONS] = {false};
-    ::SimpleObject* psTargets[MAX_WEAPONS] = {nullptr};
+    ::PersistentObject* psTargets[MAX_WEAPONS] = {nullptr};
     bool hasValidWeapon = false;
     bool hasVisibleTarget = false;
     bool targetVisibile[MAX_WEAPONS] = {false};
@@ -1717,7 +1717,7 @@ namespace Impl
           for (auto i = 0; i < numWeapons(*this); ++i)
           {
             if (nonNullWeapon[i]) {
-              ::SimpleObject* psTemp = nullptr;
+              ::PersistentObject* psTemp = nullptr;
 
               auto const& psWeapStats = getWeapons()[i].getStats();
               if (psWeapStats.rotate &&
@@ -1809,7 +1809,7 @@ namespace Impl
           for (auto i = 0; i < numWeapons(*this); ++i)
           {
             if (nonNullWeapon[i]) {
-              ::SimpleObject* psTemp = nullptr;
+              ::PersistentObject* psTemp = nullptr;
 
               // i moved psWeapStats flag update there
               const auto& psWeapStats = getWeapons()[i].getStats();
@@ -1869,7 +1869,7 @@ namespace Impl
             // This weapon doesn't have a target
           else {
             // Can we find a good target for the weapon?
-            ::SimpleObject* psTemp;
+            ::PersistentObject* psTemp;
             if (aiBestNearestTarget(this, &psTemp, i) >= 0) {
               // assuming aiBestNearestTarget checks for electronic warfare
               bHasTarget = true;
@@ -1899,7 +1899,7 @@ namespace Impl
               // is target visible and weapon is not a Nullweapon?
               if (targetVisibile[i] && nonNullWeapon[i]) {
                 // to fix a AA-weapon attack ground unit exploit 
-                ::SimpleObject* psActionTarget = nullptr;
+                ::PersistentObject* psActionTarget = nullptr;
                 blockingWall = dynamic_cast<Structure*>(visGetBlockingWall(this, actionTarget[i]));
 
                 if (proj_Direct(&psStats) && blockingWall) {
@@ -1977,7 +1977,7 @@ namespace Impl
         wallBlocked = false;
         for (auto i = 0; i < numWeapons(*this); ++i)
         {
-          ::SimpleObject* psActionTarget;
+          ::PersistentObject* psActionTarget;
 
           if (i > 0) {
             // if we're ordered to shoot something, and we can, shoot it
@@ -2019,7 +2019,7 @@ namespace Impl
               if (!aiCheckAlliances(getPlayer(), blockingWall->getPlayer()
                   && asStructStrengthModifier[weapEffect][blockingWall->getStats().strength] >=
                      MIN_STRUCTURE_BLOCK_STRENGTH) {
-                psActionTarget = (SimpleObject*)blockingWall;
+                psActionTarget = (PersistentObject*)blockingWall;
                 setDroidActionTarget(psDroid, psActionTarget, i);
               }
               else {
@@ -2077,7 +2077,7 @@ namespace Impl
         }
 
         if (!bHasTarget || wallBlocked) {
-          ::SimpleObject* psTarget;
+          ::PersistentObject* psTarget;
           bool supportsSensorTower = !isVtol() &&
                   (psTarget = orderStateObj(this, ORDER_TYPE::FIRE_SUPPORT))
                   && dynamic_cast<Structure*>(psTarget);
@@ -2906,7 +2906,7 @@ namespace Impl
           for (auto i = 0; i < numWeapons(*this); ++i)
           {
             if (nonNullWeapon[i]) {
-              ::SimpleObject* psTemp = nullptr;
+              ::PersistentObject* psTemp = nullptr;
 
               const auto& psWeapStats = weapons[i].getStats();
               if (psWeapStats.rotate &&
@@ -3065,7 +3065,7 @@ namespace Impl
       if (checkDroidsBuilding(psStruct)) {
         // set up the help build scenario
         order->type = ORDER_TYPE::HELP_BUILD;
-        setDroidTarget(this, (SimpleObject *)psStruct);
+        setDroidTarget(this, (PersistentObject *)psStruct);
         if (droidStartBuild()) {
           action = BUILD;
           return;
@@ -3178,7 +3178,7 @@ namespace Impl
   {
     bool lookForTarget, updateTarget;
 
-    if (isDead((SimpleObject*)this)) {
+    if (isDead((PersistentObject*)this)) {
       return;
     }
 
@@ -3270,7 +3270,7 @@ namespace Impl
 
     /* Null target - see if there is an enemy to attack */
     if (lookForTarget && !updateTarget) {
-      ::SimpleObject* psTarget;
+      ::PersistentObject* psTarget;
       if (type == SENSOR) {
         if (aiChooseSensorTarget(this, &psTarget)) {
           if (!orderState(this, ORDER_TYPE::HOLD)
@@ -3281,7 +3281,7 @@ namespace Impl
         }
       }
       else {
-        if (aiChooseTarget((SimpleObject*)this, &psTarget, 0, true, nullptr)) {
+        if (aiChooseTarget((PersistentObject*)this, &psTarget, 0, true, nullptr)) {
           if (!orderState(this, ORDER_TYPE::HOLD) &&
               secondaryGetState(SECONDARY_ORDER::HALT_TYPE) == DSS_HALT_PURSUE) {
             order = std::make_unique<Order>(ORDER_TYPE::ATTACK, *psTarget);
@@ -3307,7 +3307,7 @@ namespace Impl
                      "unit's weapon is not EW");
 
     auto restorePoints = calcDamage(weaponDamage(psStats, getPlayer()),
-                                        psStats->weaponEffect, (SimpleObject*)psStruct);
+                                        psStats->weaponEffect, (PersistentObject*)psStruct);
 
     auto pointsToAdd = restorePoints * (gameTime - timeActionStarted) /
                            GAME_TICKS_PER_SEC;
@@ -3455,7 +3455,7 @@ namespace Impl
   {
     Vector3i dv;
     unsigned percentDamage, emissionInterval;
-    ::SimpleObject* psBeingTargetted = nullptr;
+    ::PersistentObject* psBeingTargetted = nullptr;
     unsigned i;
 
 #ifdef DEBUG
@@ -5280,10 +5280,10 @@ if (psDroid->droidType == DROID_SENSOR)
     // reset the assigned state of units attached to a leader
     for (auto& psCurr : apsDroidLists[oldPlayer])
     {
-      ::SimpleObject* psLeader;
+      ::PersistentObject* psLeader;
 
       if (psCurr.hasCommander()) {
-        psLeader = (SimpleObject*)psCurr.group->psCommander;
+        psLeader = (PersistentObject*)psCurr.group->psCommander;
       }
       else {
         //psLeader can be either a droid or a structure
@@ -5296,7 +5296,7 @@ if (psDroid->droidType == DROID_SENSOR)
       }
     }
 
-    visRemoveVisibility((SimpleObject*)this);
+    visRemoveVisibility((PersistentObject*)this);
     selected = false;
 
     adjustDroidCount(this, -1);
@@ -5336,7 +5336,7 @@ if (psDroid->droidType == DROID_SENSOR)
     }
 
     // Update visibility
-    visTilesUpdate((SimpleObject*)this);
+    visTilesUpdate((PersistentObject*)this);
 
     // check through the players, and our allies, list of droids to see if any are targeting it
     for (unsigned int i = 0; i < MAX_PLAYERS; ++i)
@@ -5434,7 +5434,7 @@ if (psDroid->droidType == DROID_SENSOR)
     }
   }
   
-  void Droid::setTarget(::SimpleObject* psNewTarget)
+  void Droid::setTarget(::PersistentObject* psNewTarget)
   {
     order->target = psNewTarget;
     ASSERT(psNewTarget == nullptr || !psNewTarget->died,
@@ -5446,7 +5446,7 @@ if (psDroid->droidType == DROID_SENSOR)
            "setDroidTarget: Set dead target");
   }
   
-  void Droid::setActionTarget(::SimpleObject* psNewTarget, unsigned idx)
+  void Droid::setActionTarget(::PersistentObject* psNewTarget, unsigned idx)
   {
     actionTarget[idx] = psNewTarget;
 
@@ -5505,7 +5505,7 @@ bool droidInit()
 	return true;
 }
 
-int droidReloadBar(const Unit& psObj, const Weapon* psWeap, int weapon_slot)
+int droidReloadBar(const ConstructedObject& psObj, const Weapon* psWeap, int weapon_slot)
 {
 	bool bSalvo;
 	int firingStage, interval;
@@ -6882,7 +6882,7 @@ static bool ThreatInRange(SDWORD player, SDWORD range, SDWORD rangeX, SDWORD ran
 		for (psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
 		{
 			if (psDroid->visible[player]) //can see this droid? {
-				if (!objHasWeapon((SimpleObject*)psDroid)) {
+				if (!objHasWeapon((PersistentObject*)psDroid)) {
 					continue;
 				}
 
@@ -7377,7 +7377,7 @@ void updateVtolAttackRun(Droid& droid, int weapon_slot)
 
 /*compares the droid sensor type with the droid weapon type to see if the
 FIRE_SUPPORT order can be assigned*/
-bool droidSensorDroidWeapon(const SimpleObject* psObj, const Droid* psDroid)
+bool droidSensorDroidWeapon(const PersistentObject* psObj, const Droid* psDroid)
 {
 	const SensorStats* psStats = nullptr;
 
@@ -7638,10 +7638,10 @@ void droidSetPosition(Droid* psDroid, int x, int y)
   psDroid->setPosition({x, y, map_Height(psDroid->getPosition().x,
                                           psDroid->getPosition().y)});
 	initDroidMovement(psDroid);
-	visTilesUpdate((SimpleObject*)psDroid);
+	visTilesUpdate((PersistentObject*)psDroid);
 }
 
-int droidSqDist(Droid* psDroid, SimpleObject* psObj)
+int droidSqDist(Droid* psDroid, PersistentObject* psObj)
 {
 	auto& psPropStats = psDroid->getPropulsion();
 
@@ -7867,7 +7867,7 @@ bool tile_occupied_by_droid(unsigned x, unsigned y)
   return false;
 }
 
-static void setSaveDroidTarget(Droid* psSaveDroid, SimpleObject* psNewTarget)
+static void setSaveDroidTarget(Droid* psSaveDroid, PersistentObject* psNewTarget)
 {
   psSaveDroid->order->target = psNewTarget;
   #ifdef DEBUG
@@ -7876,7 +7876,7 @@ static void setSaveDroidTarget(Droid* psSaveDroid, SimpleObject* psNewTarget)
   #endif
 }
 
-static void setSaveDroidActionTarget(Droid* psSaveDroid, SimpleObject* psNewTarget, UWORD idx)
+static void setSaveDroidActionTarget(Droid* psSaveDroid, PersistentObject* psNewTarget, UWORD idx)
 {
   psSaveDroid->actionTarget[idx] = psNewTarget;
   #ifdef DEBUG

@@ -31,7 +31,7 @@
 #include "order.h"
 #include "positiondef.h"
 #include "stats.h"
-#include "unit.h"
+#include "constructedobject.h"
 
 class Droid;
 class DroidTemplate;
@@ -231,7 +231,7 @@ struct WALL
     unsigned type;
 };
 
-class Structure : public virtual Unit
+class Structure : public virtual ConstructedObject
 {
 public:
     ~Structure() override = default;
@@ -263,7 +263,7 @@ public:
 
 namespace Impl
 {
-    class Structure : public virtual ::Structure, public Impl::Unit
+    class Structure : public virtual ::Structure, public Impl::ConstructedObject
     {
     public:
         Structure(unsigned id, unsigned player);
@@ -275,7 +275,7 @@ namespace Impl
         [[nodiscard]] Vector2i getSize() const final;
         [[nodiscard]] int getFoundationDepth() const noexcept final;
         [[nodiscard]] const iIMDShape& getImdShape() const final;
-        [[nodiscard]] const ::SimpleObject& getTarget(int weapon_slot) const final;
+        [[nodiscard]] const ::PersistentObject& getTarget(int weapon_slot) const final;
         [[nodiscard]] STRUCTURE_STATE getState() const final;
         [[nodiscard]] const StructureStats& getStats() const final;
         [[nodiscard]] uint8_t getCapacity() const final;
@@ -298,7 +298,7 @@ namespace Impl
         void printInfo() const override;
         [[nodiscard]] unsigned buildPointsToCompletion() const;
         [[nodiscard]] unsigned calculateRefundedPower() const;
-        [[nodiscard]] int calculateAttackPriority(const ::Unit* target, int weapon_slot) const final;
+        [[nodiscard]] int calculateAttackPriority(const ::ConstructedObject* target, int weapon_slot) const final;
         ::Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare) final;
         [[nodiscard]] float structureCompletionProgress() const final;
         void aiUpdateStructure(bool isMission) final;
@@ -332,7 +332,7 @@ namespace Impl
         /// each tick and the trucks calculating it
         int previousBuildRate;
 
-        std::array<::SimpleObject*, MAX_WEAPONS> target;
+        std::array<::PersistentObject*, MAX_WEAPONS> target;
 
         /// Expected damage to be caused by all currently incoming projectiles.
         /// This info is shared between all players, but shouldn't make a difference
@@ -449,7 +449,7 @@ private:
 class RepairFacility : public virtual Structure, public Impl::Structure
 {
 private:
-    Unit* psObj; /* Object being repaired */
+    ConstructedObject* psObj; /* Object being repaired */
     std::unique_ptr<FlagPosition> psDeliveryPoint; /* Place for the repaired droids to assemble at */
     // The group the droids to be repaired by this facility belong to
     std::shared_ptr<Group> psGroup;
@@ -653,7 +653,7 @@ if not a good combination!*/
 bool validTemplateForFactory(const DroidTemplate* psTemplate, Structure* psFactory, bool complain);
 
 /*calculates the damage caused to the resistance levels of structures*/
-bool electronicDamage(SimpleObject* psTarget, unsigned damage, UBYTE attackPlayer);
+bool electronicDamage(PersistentObject* psTarget, unsigned damage, UBYTE attackPlayer);
 
 /* EW works differently in multiplayer mode compared with single player.*/
 bool validStructResistance(const Structure* psStruct);
@@ -767,7 +767,7 @@ bool IsStatExpansionModule(const StructureStats* psStats);
 
 /// is this a blueprint and not a real structure?
 bool structureIsBlueprint(const Structure* psStructure);
-bool isBlueprint(const SimpleObject* psObject);
+bool isBlueprint(const PersistentObject* psObject);
 
 /*returns the power cost to build this structure, or to add its next module */
 unsigned structPowerToBuildOrAddNextModule(const Structure* psStruct);
@@ -788,12 +788,12 @@ bool canStructureHaveAModuleAdded(Structure* const structure);
 
 static inline unsigned structSensorRange(const Structure* psObj)
 {
-	return objSensorRange((const SimpleObject*)psObj);
+	return objSensorRange((const PersistentObject*)psObj);
 }
 
 static inline unsigned structJammerPower(const Structure* psObj)
 {
-	return objJammerPower((const SimpleObject*)psObj);
+	return objJammerPower((const PersistentObject*)psObj);
 }
 
 static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStructure, int weaponSlot, uint32_t time)
@@ -805,7 +805,7 @@ static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStruc
 
 #define setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin) _setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin, __LINE__, __FUNCTION__)
 
-static inline void _setStructureTarget(Structure* psBuilding, SimpleObject* psNewTarget, UWORD idx,
+static inline void _setStructureTarget(Structure* psBuilding, PersistentObject* psNewTarget, UWORD idx,
                                        TARGET_ORIGIN targetOrigin, int line, const char* func)
 {
 	ASSERT_OR_RETURN(, idx < MAX_WEAPONS, "Bad index");

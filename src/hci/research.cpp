@@ -159,7 +159,7 @@ void ResearchController::startResearch(ResearchStats& research)
 	stopReticuleButtonFlash(IDRET_RESEARCH);
 }
 
-void ResearchController::setHighlightedObject(SimpleObject* object)
+void ResearchController::setHighlightedObject(PersistentObject* object)
 {
 	if (object == nullptr)
 	{

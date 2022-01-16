@@ -494,7 +494,7 @@ DroidTemplate* IdToTemplate(unsigned tempId, unsigned player)
 
 /////////////////////////////////////////////////////////////////////////////////
 //  Returns a pointer to base object, given an id and optionally a player.
-SimpleObject* IdToPointer(unsigned id, unsigned player)
+PersistentObject* IdToPointer(unsigned id, unsigned player)
 {
 	Droid* pD;
 	Structure* pS;
@@ -503,19 +503,19 @@ SimpleObject* IdToPointer(unsigned id, unsigned player)
 
 	pD = IdToDroid(id, player);
 	if (pD) {
-		return (SimpleObject*)pD;
+		return (PersistentObject*)pD;
 	}
 
 	// structures
 	pS = IdToStruct(id, player);
 	if (pS) {
-		return (SimpleObject*)pS;
+		return (PersistentObject*)pS;
 	}
 
 	// features
 	pF = IdToFeature(id, player);
 	if (pF) {
-		return (SimpleObject*)pF;
+		return (PersistentObject*)pF;
 	}
 
 	return nullptr;
@@ -672,7 +672,7 @@ Vector3i cameraToHome(unsigned player, bool scroll)
 static void recvSyncRequest(NETQUEUE queue)
 {
 	int32_t req_id, x, y, obj_id, obj_id2, player_id, player_id2;
-	SimpleObject *psObj = nullptr, *psObj2 = nullptr;
+	PersistentObject *psObj = nullptr, *psObj2 = nullptr;
 
 	NETbeginDecode(queue, GAME_SYNC_REQUEST);
 	NETint32_t(&req_id);
@@ -696,7 +696,7 @@ static void recvSyncRequest(NETQUEUE queue)
 	triggerEventSyncRequest(queue.index, req_id, x, y, psObj, psObj2);
 }
 
-static void sendObj(const SimpleObject* psObj)
+static void sendObj(const PersistentObject* psObj)
 {
 	if (psObj)
 	{
@@ -713,7 +713,7 @@ static void sendObj(const SimpleObject* psObj)
 	}
 }
 
-void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const SimpleObject* psObj, const SimpleObject* psObj2)
+void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const PersistentObject* psObj, const PersistentObject* psObj2)
 {
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_SYNC_REQUEST);
 	NETint32_t(&req_id);

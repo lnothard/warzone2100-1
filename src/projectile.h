@@ -57,7 +57,7 @@ enum class PROJECTILE_STATE
   INACTIVE
 };
 
-class Projectile : public virtual SimpleObject, public Impl::SimpleObject
+class Projectile : public virtual PersistentObject, public Impl::PersistentObject
 {
 public:
   friend class Damage;
@@ -72,16 +72,16 @@ public:
 
   void update();
 
-  void setTarget(::SimpleObject* psObj);
-  void setSource(::SimpleObject* psObj);
+  void setTarget(::PersistentObject* psObj);
+  void setSource(::PersistentObject* psObj);
 
   void proj_InFlightFunc();
   void proj_ImpactFunc();
   void proj_PostImpactFunc();
   void proj_checkPeriodicalDamage();
 
-  bool proj_SendProjectileAngled(Weapon* psWeap, ::SimpleObject* psAttacker, unsigned player,
-                                 Vector3i dest, ::SimpleObject* psTarget, bool bVisible,
+  bool proj_SendProjectileAngled(Weapon* psWeap, ::PersistentObject* psAttacker, unsigned player,
+                                 Vector3i dest, ::PersistentObject* psTarget, bool bVisible,
                                  int weapon_slot, int min_angle, unsigned fireTime) const;
 
   /// Update the source experience after a target is damaged/destroyed
@@ -99,14 +99,14 @@ private:
   std::shared_ptr<WeaponStats> weaponStats;
 
   /// What fired the projectile
-  ::SimpleObject* source;
+  ::PersistentObject* source;
 
   /// Target of this projectile (not a Unit because it can
   /// be a feature I guess)
-  ::SimpleObject* target;
+  ::PersistentObject* target;
 
   /// Targets that have already been dealt damage to (don't damage the same target twice)
-  std::vector<::SimpleObject*> damaged;
+  std::vector<::PersistentObject*> damaged;
 
   /// Where projectile started
   Vector3i origin {0, 0, 0};
@@ -141,7 +141,7 @@ public:
     void updateKills();
 private:
     Projectile* projectile = nullptr;
-    SimpleObject* target = nullptr;
+    PersistentObject* target = nullptr;
     unsigned damage;
     WEAPON_CLASS weaponClass;
     WEAPON_SUBCLASS weaponSubClass;
@@ -150,7 +150,7 @@ private:
     int minDamage;
 };
 
-extern SimpleObject* g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
+extern PersistentObject* g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
 
 void proj_InitSystem(); ///< Initialize projectiles subsystem.
 void proj_UpdateAll(); ///< Frame update for projectiles.
@@ -169,13 +169,13 @@ int projCalcIndirectVelocities(int32_t dx, int32_t dz, int32_t v, int32_t* vx, i
                                    int min_angle);
 
 /** Send a single projectile against the given target. */
-bool proj_SendProjectile(Weapon* psWeap, SimpleObject* psAttacker, unsigned player, Vector3i target, SimpleObject* psTarget,
+bool proj_SendProjectile(Weapon* psWeap, PersistentObject* psAttacker, unsigned player, Vector3i target, PersistentObject* psTarget,
                          bool bVisible, int weapon_slot);
 
 /** Send a single projectile against the given target
  * with a minimum shot angle. */
-bool proj_SendProjectileAngled(Weapon* psWeap, SimpleObject* psAttacker, unsigned player, Vector3i target,
-                               SimpleObject* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
+bool proj_SendProjectileAngled(Weapon* psWeap, PersistentObject* psAttacker, unsigned player, Vector3i target,
+                               PersistentObject* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
 
 /** Return whether a weapon is direct or indirect. */
 bool proj_Direct(const WeaponStats* psStats);
@@ -189,14 +189,14 @@ unsigned proj_GetMinRange(const WeaponStats* psStats, unsigned player);
 /** Return the short range for a weapon. */
 unsigned proj_GetShortRange(const WeaponStats* psStats, unsigned player);
 
-unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, SimpleObject* psTarget);
+unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, PersistentObject* psTarget);
 bool gfxVisible(Projectile* psObj);
 
 /***************************************************************************/
 
-glm::mat4 objectShimmy(SimpleObject* psObj);
+glm::mat4 objectShimmy(PersistentObject* psObj);
 
-int establishTargetHeight(SimpleObject const* psTarget);
+int establishTargetHeight(PersistentObject const* psTarget);
 
 void checkProjectile(const Projectile* psProjectile, std::string location_description,
                      std::string function, int recurse);
@@ -205,7 +205,7 @@ void checkProjectile(const Projectile* psProjectile, std::string location_descri
 #define CHECK_PROJECTILE(object) checkProjectile((object), \
         AT_MACRO, __FUNCTION__, max_check_object_recursion)
 
-static void setProjectileSource(Projectile *psProj, Unit *psObj);
+static void setProjectileSource(Projectile *psProj, ConstructedObject *psObj);
 
 struct ObjectShape
 {
@@ -223,6 +223,6 @@ struct ObjectShape
 	Vector2i size {0, 0};
 };
 
-ObjectShape establishTargetShape(SimpleObject* psTarget);
+ObjectShape establishTargetShape(PersistentObject* psTarget);
 
 #endif // __INCLUDED_SRC_PROJECTILE_H__

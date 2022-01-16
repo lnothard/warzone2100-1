@@ -54,7 +54,7 @@ public:
 		return builders[index];
 	}
 
-	bool findObject(std::function<bool (SimpleObject*)> iteration) const override
+	bool findObject(std::function<bool (PersistentObject*)> iteration) const override
 	{
 		return BaseObjectsController::findObject(builders, iteration);
 	}
@@ -78,7 +78,7 @@ public:
 		return highlightedBuilder;
 	}
 
-	void setHighlightedObject(SimpleObject* object) override;
+	void setHighlightedObject(PersistentObject* object) override;
 
 private:
 	void updateBuildersList();

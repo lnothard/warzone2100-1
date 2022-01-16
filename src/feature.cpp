@@ -279,7 +279,7 @@ std::unique_ptr<Feature> buildFeature(FeatureStats const* stats, unsigned x, uns
 					removeFeature(psBlock);
 				}
 
-				psTile->psObject = dynamic_cast<SimpleObject*>(psFeature.get());
+				psTile->psObject = dynamic_cast<PersistentObject*>(psFeature.get());
 
 				// if it's a tall feature then flag it in the map.
 				if (psFeature->getDisplayData().imd_shape->max.y > TALLOBJECT_YMAX)
@@ -309,7 +309,7 @@ std::unique_ptr<Feature> buildFeature(FeatureStats const* stats, unsigned x, uns
 
 
 Feature::Feature(unsigned id, FeatureStats const* psStats)
-	: SimpleObject(id, PLAYER_FEATURE) // Set the default player out of range to avoid targeting confusions
+	: PersistentObject(id, PLAYER_FEATURE) // Set the default player out of range to avoid targeting confusions
 	  , psStats(std::make_shared<FeatureStats>(psStats))
 {
 }

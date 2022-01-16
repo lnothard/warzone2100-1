@@ -17,12 +17,12 @@ Spacetime::Spacetime(std::size_t time, Position position, Rotation rotation)
 
 namespace Impl
 {
-	SimpleObject::SimpleObject(unsigned id, unsigned player)
+	PersistentObject::PersistentObject(unsigned id, unsigned player)
 		: id{id}, player{player}
 	{
 	}
 
-  SimpleObject::~SimpleObject()
+  PersistentObject::~PersistentObject()
   {
     visRemoveVisibility(this);
 
@@ -34,82 +34,82 @@ namespace Impl
     #endif
   }
 
-  Spacetime SimpleObject::getSpacetime() const noexcept
+  Spacetime BaseObject::getSpacetime() const noexcept
   {
     return {time, position, rotation};
   }
 
-	const Position& SimpleObject::getPosition() const noexcept
+	const Position& BaseObject::getPosition() const noexcept
 	{
 		return position;
 	}
 
-	const Rotation& SimpleObject::getRotation() const noexcept
+	const Rotation& BaseObject::getRotation() const noexcept
 	{
 		return rotation;
 	}
 
-	unsigned SimpleObject::getPlayer() const noexcept
+	unsigned PersistentObject::getPlayer() const noexcept
 	{
 		return player;
 	}
 
-  std::size_t SimpleObject::getTime() const noexcept
+  unsigned BaseObject::getTime() const noexcept
   {
     return time;
   }
 
-  Spacetime SimpleObject::getPreviousLocation() const
+  Spacetime BaseObject::getPreviousLocation() const
   {
     return previousLocation;
   }
 
-  void SimpleObject::setTime(unsigned t) noexcept
+  void BaseObject::setTime(unsigned t) noexcept
   {
     time = t;
   }
 
-  void SimpleObject::setPlayer(unsigned p) noexcept
+  void PersistentObject::setPlayer(unsigned p) noexcept
   {
     player = p;
   }
 
-  void SimpleObject::setPosition(Position pos)
+  void BaseObject::setPosition(Position pos)
   {
     position = pos;
   }
 
-	unsigned SimpleObject::getId() const noexcept
+	unsigned PersistentObject::getId() const noexcept
 	{
 		return id;
 	}
 
-  const DisplayData& SimpleObject::getDisplayData() const noexcept
+  const DisplayData& BaseObject::getDisplayData() const noexcept
   {
     return *display;
   }
 
-	void SimpleObject::setHeight(int height) noexcept
+	void PersistentObject::setHeight(int height) noexcept
 	{
 		position.z = height;
 	}
 
-	void SimpleObject::setRotation(Rotation new_rotation) noexcept
+	void BaseObject::setRotation(Rotation new_rotation) noexcept
 	{
 		rotation = new_rotation;
 	}
 
-  bool SimpleObject::isSelectable() const
+  bool PersistentObject::isSelectable() const
   {
     return flags.test(static_cast<std::size_t>(OBJECT_FLAG::UNSELECTABLE));
   }
 
-  uint8_t SimpleObject::visibleToSelectedPlayer() const
+  uint8_t PersistentObject::visibleToSelectedPlayer() const
   {
     return visibleToPlayer(selectedPlayer);
   }
 
-  uint8_t SimpleObject::visibleToPlayer(unsigned watcher) const
+  uint8_t PersistentObject::visibleToPlayer(unsigned watcher) const
   {
     if (godMode) {
       return UBYTE_MAX;
@@ -119,18 +119,25 @@ namespace Impl
     }
     return visibilityState[watcher];
   }
+
+  unsigned PersistentObject::getHp() const noexcept
+  {
+    return hitPoints;
+  }
+
+  void PersistentObject::setHp(unsigned hp)
+  {
+    hitPoints = hp;
+  }
 }
 
-int objectPositionSquareDiff(const Position& first,
-                             const Position& second)
+int objectPositionSquareDiff(const Position& first, const Position& second)
 {
   Vector2i diff = (first - second).xy();
   return dot(diff, diff);
 }
 
-int objectPositionSquareDiff(const SimpleObject& first,
-                             const SimpleObject& second)
+int objectPositionSquareDiff(const BaseObject& first, const BaseObject& second)
 {
-  return objectPositionSquareDiff(first.getPosition(),
-                                  second.getPosition());
+  return objectPositionSquareDiff(first.getPosition(), second.getPosition());
 }

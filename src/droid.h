@@ -228,7 +228,7 @@ struct DroidTemplate : public BaseStats
     bool isEnabled = false;
 };
 
-class Droid : public virtual Unit
+class Droid : public virtual ConstructedObject
 {
 public:
     ~Droid() override = default;
@@ -253,8 +253,8 @@ public:
     [[nodiscard]] virtual bool isFlying() const = 0;
     [[nodiscard]] virtual bool isDamaged() const = 0;
     [[nodiscard]] virtual bool hasCommander() const = 0;
-    virtual void setActionTarget(SimpleObject* psNewTarget, unsigned idx) = 0;
-    virtual void setTarget(SimpleObject* psNewTarget) = 0;
+    virtual void setActionTarget(PersistentObject* psNewTarget, unsigned idx) = 0;
+    virtual void setTarget(PersistentObject* psNewTarget) = 0;
     virtual void setBase(Structure* psNewBase) = 0;
     virtual void cancelBuild() = 0;
     virtual void resetAction() = 0;
@@ -289,14 +289,14 @@ public:
     virtual std::unique_ptr<Droid> giftSingleDroid(unsigned to, bool electronic) = 0;
     virtual void droidSetBits(const DroidTemplate* pTemplate) = 0;
     virtual void orderDroidListEraseRange(int indexBegin, int indexEnd) = 0;
-    virtual void orderClearTargetFromDroidList(SimpleObject* psTarget) = 0;
+    virtual void orderClearTargetFromDroidList(PersistentObject* psTarget) = 0;
     virtual void orderCheckGuardPosition(int range) = 0;
     virtual bool orderDroidList() = 0;
 };
 
 namespace Impl
 {
-  class Droid : public virtual ::Droid, public Impl::Unit
+  class Droid : public virtual ::Droid, public Impl::ConstructedObject
   {
   public:
       ~Droid() override;
@@ -312,7 +312,7 @@ namespace Impl
       [[nodiscard]] int getVerticalSpeed() const noexcept final;
       [[nodiscard]] unsigned getSecondaryOrder() const noexcept final;
       [[nodiscard]] const Vector2i& getDestination() const final;
-      [[nodiscard]] const SimpleObject& getTarget(int weapon_slot) const final;
+      [[nodiscard]] const PersistentObject& getTarget(int weapon_slot) const final;
       [[nodiscard]] const std::optional<PropulsionStats>& getPropulsion() const final;
       [[nodiscard]] const Movement& getMovementData() const final;
       [[nodiscard]] unsigned getOriginalHp() const final;
@@ -330,15 +330,15 @@ namespace Impl
       [[nodiscard]] bool isAttacking() const noexcept;
       [[nodiscard]] bool isRepairDroid() const noexcept final;
 
-      void setActionTarget(::SimpleObject* psNewTarget, unsigned idx) final;
-      void setTarget(::SimpleObject* psNewTarget) final;
+      void setActionTarget(::PersistentObject* psNewTarget, unsigned idx) final;
+      void setTarget(::PersistentObject* psNewTarget) final;
       void setBase(::Structure* psNewBase) final;
 
       void orderCheckGuardPosition(int range) final;
 
       bool orderDroidList() final;
 
-      void orderClearTargetFromDroidList(::SimpleObject* psTarget) final;
+      void orderClearTargetFromDroidList(::PersistentObject* psTarget) final;
 
       void orderDroidListEraseRange(int indexBegin, int indexEnd) final;
 
@@ -400,7 +400,7 @@ namespace Impl
        * @param weapon_slot
        * @return
        */
-      [[nodiscard]] bool isValidTarget(const ::Unit *attacker,
+      [[nodiscard]] bool isValidTarget(const ::ConstructedObject *attacker,
                                        int weapon_slot) const final;
 
       [[nodiscard]] bool hasCommander() const final;
@@ -422,7 +422,7 @@ namespace Impl
       [[nodiscard]] int calculateElectronicResistance() const;
       [[nodiscard]] bool isSelectable() const final;
       [[nodiscard]] unsigned getArmourPointsAgainstWeapon(WEAPON_CLASS weaponClass) const;
-      [[nodiscard]] int calculateAttackPriority(const ::Unit *target, int weapon_slot) const final;
+      [[nodiscard]] int calculateAttackPriority(const ::ConstructedObject *target, int weapon_slot) const final;
       RtrBestResult decideWhereToRepairAndBalance() final;
       SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate) final;
       void initDroidMovement() final;
@@ -472,7 +472,7 @@ namespace Impl
 
       ACTION action = NONE;
       Vector2i actionPos;
-      std::array<SimpleObject*, MAX_WEAPONS> actionTarget;
+      std::array<PersistentObject*, MAX_WEAPONS> actionTarget;
       std::size_t timeActionStarted;
       unsigned actionPointsDone;
 
@@ -675,7 +675,7 @@ bool droidUnderRepair(const Droid* psDroid);
 UBYTE checkCommandExist(UBYTE player);
 
 /// For a given repair droid, check if there are any damaged droids within a defined range
-SimpleObject* checkForRepairRange(Droid* psDroid, Droid* psTarget);
+PersistentObject* checkForRepairRange(Droid* psDroid, Droid* psTarget);
 
 /// @return `true` if the droid is a transporter
 [[nodiscard]] bool isTransporter(const Droid& psDroid);
@@ -720,7 +720,7 @@ bool droidAttacking(const Droid* psDroid);
 bool allVtolsRearmed(const Droid* psDroid);
 
 /// Compares the droid sensor type with the droid weapon type to see if the FIRE_SUPPORT order can be assigned
-bool droidSensorDroidWeapon(const SimpleObject* psObj, const Droid* psDroid);
+bool droidSensorDroidWeapon(const PersistentObject* psObj, const Droid* psDroid);
 
 // give a droid from one player to another - used in Electronic Warfare and multiplayer
 Droid* giftSingleDroid(Droid* psD, unsigned to, bool electronic = false);
@@ -750,7 +750,7 @@ bool droidAudioTrackStopped(void* psObj);
 bool isCyborg(const Droid* psDroid);
 
 bool isConstructionDroid(Droid const* psDroid);
-bool isConstructionDroid(SimpleObject const* psObject);
+bool isConstructionDroid(PersistentObject const* psObject);
 
 /** Check if droid is in a legal world position and is not on its way to drive off the map. */
 bool droidOnMap(const Droid* psDroid);
@@ -758,10 +758,10 @@ bool droidOnMap(const Droid* psDroid);
 void droidSetPosition(Droid* psDroid, int x, int y);
 
 /// Return a percentage of how fully armed the object is, or -1 if N/A.
-int droidReloadBar(const SimpleObject* psObj, const Weapon* psWeap, int weapon_slot);
+int droidReloadBar(const PersistentObject* psObj, const Weapon* psWeap, int weapon_slot);
 
 /** If droid can get to given object using its current propulsion, return the square distance. Otherwise return -1. */
-int droidSqDist(Droid* psDroid, SimpleObject* psObj);
+int droidSqDist(Droid* psDroid, PersistentObject* psObj);
 
 // Minimum damage a weapon will deal to its target
 static constexpr auto MIN_WEAPON_DAMAGE	 = 1;

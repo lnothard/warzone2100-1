@@ -32,7 +32,7 @@
 #include "stringdef.h"
 
 struct iIMDShape;
-struct SimpleObject;
+struct PersistentObject;
 
 enum class MESSAGE_TYPE
 {
@@ -137,7 +137,7 @@ struct MESSAGE
 	MESSAGE_TYPE type; // The type of message
 	UDWORD id; // ID number of the message
 	VIEWDATA* pViewData = nullptr; // Pointer to view data - if any - should be some!
-	SimpleObject* psObj = nullptr;
+	PersistentObject* psObj = nullptr;
 	bool read = false; // flag to indicate whether message has been read
 	UDWORD player; // which player this message belongs to
 	MSG_DATA_TYPE dataType;

@@ -564,7 +564,7 @@ static FPATH_RESULT fpathSimpleRoute(Movement* psMove, int id, int startX,
                     PROPULSION_TYPE::WHEELED, 
                     DROID_TYPE::WEAPON,
                     FMT_BLOCK, 0, true, 
-                    getStructureBounds((SimpleObject*)nullptr));
+                    getStructureBounds((PersistentObject*)nullptr));
 }
 
 void fpathTest(int x, int y, int x2, int y2)

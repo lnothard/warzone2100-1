@@ -23,7 +23,7 @@
 
 #include "lib/framework/vector.h"
 
-struct SimpleObject;
+struct PersistentObject;
 struct Droid;
 
 #define X_UPDATE 0x1
