@@ -253,6 +253,9 @@ public:
     [[nodiscard]] virtual bool isFlying() const = 0;
     [[nodiscard]] virtual bool isDamaged() const = 0;
     [[nodiscard]] virtual bool hasCommander() const = 0;
+    virtual void setActionTarget(SimpleObject* psNewTarget, unsigned idx) = 0;
+    virtual void setTarget(SimpleObject* psNewTarget) = 0;
+    virtual void setBase(Structure* psNewBase) = 0;
     virtual void cancelBuild() = 0;
     virtual void resetAction() = 0;
     virtual void gainExperience(unsigned exp) = 0;
@@ -296,7 +299,7 @@ namespace Impl
   class Droid : public virtual ::Droid, public Impl::Unit
   {
   public:
-      ~Droid() override = default;
+      ~Droid() override;
 
       Droid(unsigned id, unsigned player);
 
@@ -326,6 +329,10 @@ namespace Impl
       [[nodiscard]] bool isDamaged() const final;
       [[nodiscard]] bool isAttacking() const noexcept;
       [[nodiscard]] bool isRepairDroid() const noexcept final;
+
+      void setActionTarget(::SimpleObject* psNewTarget, unsigned idx) final;
+      void setTarget(::SimpleObject* psNewTarget) final;
+      void setBase(::Structure* psNewBase) final;
 
       void orderCheckGuardPosition(int range) final;
 
@@ -444,29 +451,22 @@ namespace Impl
       /// For VTOLs this is the rearming pad
       Structure *associatedStructure = nullptr;
 
-      // Number of queued orders
-      int listSize;
-
-      /// The number of synchronised orders. Orders from `listSize` to
-      /// the real end of the list may not affect game state.
-      std::vector<Order> asOrderList;
-
       /// The range [0; listSize - 1] corresponds to synchronised orders, and the range
       /// [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will
       /// remain, once all orders are synchronised.
       unsigned listPendingBegin;
 
+      /// The number of synchronised orders. Orders from `listSize` to
+      /// the real end of the list may not affect game state.
+      std::vector<Order> asOrderList;
       /// Index of first order which will not be erased by
       /// a pending order. After all messages are processed
       /// the orders in the range [listPendingBegin; listPendingEnd - 1]
       /// will remain.
       std::unique_ptr<Order> order;
-
       unsigned secondaryOrder;
-
       /// What `secondary_order` will be after synchronisation.
       unsigned secondaryOrderPending;
-
       /// Number of pending `secondary_order` synchronisations.
       int secondaryOrderPendingCount;
 
@@ -474,8 +474,9 @@ namespace Impl
       Vector2i actionPos;
       std::array<SimpleObject*, MAX_WEAPONS> actionTarget;
       std::size_t timeActionStarted;
-      std::size_t timeLastHit;
       unsigned actionPointsDone;
+
+      std::size_t timeLastHit;
       unsigned expectedDamageDirect = 0;
       unsigned expectedDamageIndirect = 0;
       uint8_t illuminationLevel;
@@ -489,8 +490,6 @@ namespace Impl
       uint8_t blockedBits;
 
       int iAudioID;
-
-      WEAPON_SUBCLASS lastHitWeapon;
 
       std::unique_ptr<BodyStats> body;
       std::optional<PropulsionStats> propulsion;
@@ -761,20 +760,6 @@ void droidSetPosition(Droid* psDroid, int x, int y);
 /// Return a percentage of how fully armed the object is, or -1 if N/A.
 int droidReloadBar(const SimpleObject* psObj, const Weapon* psWeap, int weapon_slot);
 
-static void _setDroidTarget(Droid* psDroid, SimpleObject* psNewTarget,
-                            int line, const char* func);
-
-#define setDroidTarget(_psDroid, _psNewTarget) _setDroidTarget(_psDroid, _psNewTarget, __LINE__, __FUNCTION__)
-
-static void _setDroidActionTarget(Droid* psDroid, SimpleObject* psNewTarget,
-                                  uint16_t idx, int line, const char* func);
-
-#define setDroidActionTarget(_psDroid, _psNewTarget, _idx) _setDroidActionTarget(_psDroid, _psNewTarget, _idx, __LINE__, __FUNCTION__)
-
-static void _setDroidBase(Droid* psDroid, Structure* psNewBase, int line, const char* func);
-
-#define setDroidBase(_psDroid, _psNewTarget) _setDroidBase(_psDroid, _psNewTarget, __LINE__, __FUNCTION__)
-
 /** If droid can get to given object using its current propulsion, return the square distance. Otherwise return -1. */
 int droidSqDist(Droid* psDroid, SimpleObject* psObj);
 
@@ -789,5 +774,6 @@ void _syncDebugDroid(const char* function, Droid const* psDroid, char ch);
 static unsigned droidSensorRange(const Droid* psDroid);
 
 static bool droidUpdateDroidRepairBase(Droid* psRepairDroid, Droid* psDroidToRepair);
+static Rotation getInterpolatedWeaponRotation(const Droid* psDroid, int weaponSlot, unsigned time);
 
 #endif // __INCLUDED_SRC_DROID_H__

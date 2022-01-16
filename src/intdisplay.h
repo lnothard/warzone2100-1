@@ -285,7 +285,7 @@ bool StatIsTemplate(BaseStats* Stat);
 bool StatIsFeature(BaseStats const* Stat);
 
 COMPONENT_TYPE StatIsComponent(BaseStats* Stat);
-bool StatGetComponentIMD(BaseStats* Stat, SDWORD compID, iIMDShape** CompIMD, iIMDShape** MountIMD);
+bool StatGetComponentIMD(BaseStats* Stat, COMPONENT_TYPE compID, iIMDShape** CompIMD, iIMDShape** MountIMD);
 
 bool StatIsResearch(BaseStats* Stat);
 

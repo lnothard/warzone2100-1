@@ -64,19 +64,16 @@ namespace Impl
     [[nodiscard]] int getResistance() const final;
 
     void setHp(unsigned hp) final;
-
-    /// @return `true` if this unit is being focused by its owner
-    [[nodiscard]] bool isSelected() const noexcept final;
-
 		void alignTurret(int weapon_slot) final;
 	private:
 		unsigned hitPoints = 0;
-    bool selected = false;
 
     /// Current resistance points, 0 = cannot be attacked electrically
     int resistance = 0;
-
   protected:
+    unsigned lastEmissionTime;
+    WEAPON_SUBCLASS lastHitWeapon;
+    std::vector<TILEPOS> watchedTiles;
 		std::vector<Weapon> weapons;
 	};
 }

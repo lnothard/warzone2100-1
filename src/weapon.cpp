@@ -4,6 +4,8 @@
 
 #include "lib/gamelib/gtime.h"
 
+#include "droid.h"
+#include "stats.h"
 #include "weapon.h"
 
 bool Weapon::hasAmmo() const
@@ -18,8 +20,9 @@ bool Weapon::hasFullAmmo() const noexcept
 
 bool Weapon::isArtillery() const noexcept
 {
-  return stats->movementModel == MOVEMENT_MODEL::INDIRECT ||
-         stats->movementModel == MOVEMENT_MODEL::HOMING_INDIRECT;
+  using enum MOVEMENT_MODEL;
+  return stats->movementModel == INDIRECT ||
+         stats->movementModel == HOMING_INDIRECT;
 }
 
 bool Weapon::isVtolWeapon() const
@@ -93,8 +96,9 @@ unsigned Weapon::getNumAttackRuns(unsigned player) const
 {
   const auto u_stats = stats->upgraded[player];
 
-  if (u_stats.reloadTime > 0)
+  if (u_stats.reloadTime > 0) {
     return u_stats.numRounds * stats->vtolAttackRuns;
+  }
 
   return stats->vtolAttackRuns;
 }
@@ -117,6 +121,15 @@ const iIMDShape& Weapon::getMountGraphic() const
 unsigned Weapon::calculateRateOfFire(unsigned player) const
 {
   const auto& w_stats = stats->upgraded[player];
+
   return w_stats.numRounds
          * 60 * GAME_TICKS_PER_SEC / w_stats.reloadTime;
+}
+
+Rotation Weapon::getPreviousRotation() const {
+  return previousRotation;
+}
+
+void Weapon::useAmmo() {
+  ++ammoUsed;
 }

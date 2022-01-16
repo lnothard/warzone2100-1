@@ -1234,27 +1234,33 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		/* all non droid buttons */
 		if (IMDType == IMDTYPE_COMPONENT)
 		{
-			displayComponentButton((BaseStats*)Object, &model.rotation, &model.position, model.scale);
+			displayComponentButton((BaseStats*)Object, &model.rotation,
+                             &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_RESEARCH)
 		{
-			displayResearchButton((BaseStats*)Object, &model.rotation, &model.position, model.scale);
+			displayResearchButton((BaseStats*)Object, &model.rotation,
+                            &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_STRUCTURE)
 		{
-			displayStructureButton((Structure*)Object, &model.rotation, &model.position, model.scale);
+			displayStructureButton((Structure*)Object, &model.rotation,
+                             &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_STRUCTURESTAT)
 		{
-			displayStructureStatButton((StructureStats*)Object, &model.rotation, &model.position, model.scale);
+			displayStructureStatButton((StructureStats*)Object, &model.rotation,
+                                 &model.position, model.scale);
 		}
 		else if (IMDType == IMDTYPE_FEATURE)
 		{
-			displayIMDButton((iIMDShape*)Object, &model.rotation, &model.position, model.scale);
+			displayIMDButton((iIMDShape*)Object, &model.rotation,
+                       &model.position, model.scale);
 		}
 		else
 		{
-			displayIMDButton((iIMDShape*)Object, &model.rotation, &model.position, model.scale);
+			displayIMDButton((iIMDShape*)Object, &model.rotation,
+                       &model.position, model.scale);
 		}
 	}
 }
@@ -1289,7 +1295,8 @@ void IntFancyButton::displayBlank(int xOffset, int yOffset)
 	displayClear(xOffset, yOffset);
 
 	// Draw a question mark, bit of quick hack this.
-	iV_DrawImage(IntImages, IMAGE_QUESTION_MARK, xOffset + x() + ox + 10, yOffset + y() + oy + 3);
+	iV_DrawImage(IntImages, IMAGE_QUESTION_MARK,
+               xOffset + x() + ox + 10, yOffset + y() + oy + 3);
 }
 
 // Returns true if the droid is currently building something.
@@ -1548,7 +1555,7 @@ COMPONENT_TYPE StatIsComponent(BaseStats* Stat)
 	}
 }
 
-bool StatGetComponentIMD(BaseStats* Stat, SDWORD compID, iIMDShape** CompIMD, iIMDShape** MountIMD)
+bool StatGetComponentIMD(BaseStats* Stat, COMPONENT_TYPE compID, iIMDShape** CompIMD, iIMDShape** MountIMD)
 {
 	WeaponStats* psWStat;
 

@@ -25,38 +25,28 @@
 #include <queue>
 
 #include "lib/framework/math_ext.h"
-#include "lib/framework/strres.h"
 #include "lib/ivis_opengl/ivisdef.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
 
-#include "objects.h"
-#include "loop.h"
-#include "visibility.h"
+#include "action.h"
+#include "combat.h"
+#include "displaydef.h"
 #include "droid.h"
 #include "effects.h"
-#include "action.h"
 #include "geometry.h"
-#include "lighting.h"
-#include "warcam.h"
-#include "text.h"
 #include "cmddroid.h"
-#include "projectile.h"
+#include "loop.h"
 #include "mission.h"
-#include "transporter.h"
-#include "selection.h"
-#include "edit3d.h"
-#include "scores.h"
-#include "research.h"
-#include "qtscript.h"
-#include "mapgrid.h"
-#include "combat.h"
-#include "component.h"
 #include "multiplay.h"
-#include "random.h"
 #include "objmem.h"
-#include "displaydef.h"
-#include "display3d.h"
+#include "projectile.h"
+#include "qtscript.h"
+#include "scores.h"
+#include "selection.h"
+#include "transporter.h"
+#include "visibility.h"
+#include "warcam.h"
 
 // the structure that was last hit
 Droid* psLastDroidHit;
@@ -620,7 +610,7 @@ namespace Impl
         return;
       }
       syncDebugObject(actionTarget[i], '-');
-      setDroidActionTarget(this, nullptr, i);
+      setActionTarget(nullptr, i);
       if (i != 0) {
         continue;
       }
@@ -678,7 +668,7 @@ namespace Impl
         if (numWeapons(*this) > 0) {
           for (int i = 0; i < numWeapons(*this); i++)
           {
-            setDroidActionTarget(this, nullptr, i);
+            setActionTarget(nullptr, i);
           }
         }
         else {
@@ -949,7 +939,7 @@ namespace Impl
         order->structure_stats = std::make_shared<StructureStats>(
                 dynamic_cast<Structure*>(order->target)->getStats());
 
-        setDroidActionTarget(this, psAction->psObj, 0);
+        setActionTarget(psAction->psObj, 0);
         if (order->type != ORDER_TYPE::HOLD) {
           action = MOVE_TO_RESTORE;
           moveDroidTo(this, psAction->x, psAction->y);
@@ -975,14 +965,14 @@ namespace Impl
     // clear the target if it has died
     if (order->target && order->target->died) {
       syncDebugObject(order->target, '-');
-      setDroidTarget(this, nullptr);
+      setTarget(nullptr);
       objTrace(getId(), "Target dead");
     }
 
     //clear its base struct if its died
     if (associatedStructure && associatedStructure->died) {
       syncDebugStructure(associatedStructure, '-');
-      setDroidBase(this, nullptr);
+      setBase(nullptr);
       objTrace(getId(), "Base struct dead");
     }
 
@@ -1402,7 +1392,7 @@ namespace Impl
 
             // order the droid to stop so moveUpdateDroid does not process this unit
             orderDroid(this, STOP, ModeImmediate);
-            setDroidTarget(this, nullptr);
+            setTarget(nullptr);
             order->target = nullptr;
             secondarySetState(SECONDARY_ORDER::RETURN_TO_LOCATION, DSS_NONE);
 
@@ -1486,7 +1476,7 @@ namespace Impl
           order->pos = lb[1];
 
           // build another structure
-          setDroidTarget(this, nullptr);
+          setTarget(nullptr);
           ::actionDroid(this, ACTION::BUILD, order->pos.x, order->pos.y);
           //intRefreshScreen();
         }
@@ -1734,7 +1724,7 @@ namespace Impl
                   aiBestNearestTarget(this, &psTemp, i) >= 0) {
                 if (secondaryGetState(SECONDARY_ORDER::ATTACK_LEVEL) == DSS_ALEV_ALWAYS) {
                   action = ATTACK;
-                  setDroidActionTarget(this, psTemp, i);
+                  setActionTarget(psTemp, i);
                 }
               }
             }
@@ -1829,7 +1819,7 @@ namespace Impl
                   aiBestNearestTarget(this, &psTemp, i) >= 0) {
                 if (secondaryGetState(SECONDARY_ORDER::ATTACK_LEVEL) == DSS_ALEV_ALWAYS) {
                   action = MOVE_FIRE;
-                  setDroidActionTarget(this, psTemp, i);
+                  setActionTarget(psTemp, i);
                 }
               }
             }
@@ -1860,16 +1850,16 @@ namespace Impl
           if (actionTarget[i] != nullptr) {
             // Is target worth shooting yet?
             if (aiObjectIsProbablyDoomed(actionTarget[i], bDirect)) {
-              setDroidActionTarget(this, nullptr, i);
+              setActionTarget(nullptr, i);
             }
               // Is target from our team now? (Electronic Warfare)
             else if (electronicDroid(this) &&
                      getPlayer() == actionTarget[i]->getPlayer()) {
-              setDroidActionTarget(this, nullptr, i);
+              setActionTarget(nullptr, i);
             }
               // Is target blocked by a wall?
             else if (bDirect && visGetBlockingWall(this, actionTarget[i])) {
-              setDroidActionTarget(this, nullptr, i);
+              setActionTarget(nullptr, i);
             }
               // I have a target!
             else {
@@ -1977,7 +1967,7 @@ namespace Impl
             getPlayer() == actionTarget[0]->getPlayer()) {
           for (unsigned i = 0; i < numWeapons(*this); ++i)
           {
-            setDroidActionTarget(this, nullptr, i);
+            setActionTarget(nullptr, i);
           }
           action = NONE;
           break;
@@ -2060,7 +2050,7 @@ namespace Impl
                 if (i > 0) {
                   if (actionTarget[i] != actionTarget[0]) {
                     // Nope, can't shoot this, try something else next time
-                    setDroidActionTarget(this, nullptr, i);
+                    setActionTarget(nullptr, i);
                   }
                 }
                 else if (movement->status != MOVE_STATUS::SHUFFLE) {
@@ -2077,12 +2067,12 @@ namespace Impl
             }
             else if (i > 0) {
               // Nope, can't shoot this, try something else next time
-              setDroidActionTarget(this, nullptr, i);
+              setActionTarget(nullptr, i);
             }
           }
           else if (i > 0) {
             // Nope, can't shoot this, try something else next time
-            setDroidActionTarget(this, nullptr, i);
+            setActionTarget(nullptr, i);
           }
         }
 
@@ -2230,7 +2220,7 @@ namespace Impl
         if ((hasElectronicWeapon() && getPlayer() == actionTarget[0]->getPlayer()) || !hasValidWeapon) {
           for (auto i = 0; i < numWeapons(*this); ++i)
           {
-            setDroidActionTarget(this, nullptr, i);
+            setActionTarget(nullptr, i);
           }
           action = NONE;
         }
@@ -2446,7 +2436,7 @@ namespace Impl
                   psStruct->getStats().type == STRUCTURE_TYPE::WALL_CORNER)) {
                 // same type - do a help build
                 syncDebug("Reached build target: do-help");
-                setDroidTarget(this, psStruct);
+                setTarget(psStruct);
                 helpBuild = true;
               }
               else if ((psStruct->getStats().type == STRUCTURE_TYPE::WALL ||
@@ -2501,7 +2491,7 @@ namespace Impl
 
                 if (&psStruct->getStats() == order->structure_stats.get()) {
                   // same type - do a help build
-                  setDroidTarget(this, psStruct);
+                  setTarget(psStruct);
                   helpBuild = true;
                 }
                 else if ((psStruct->getStats().type == STRUCTURE_TYPE::WALL ||
@@ -5443,6 +5433,36 @@ if (psDroid->droidType == DROID_SENSOR)
         break;
     }
   }
+  
+  void Droid::setTarget(::SimpleObject* psNewTarget)
+  {
+    order->target = psNewTarget;
+    ASSERT(psNewTarget == nullptr || !psNewTarget->died,
+           "setDroidTarget: Set dead target");
+
+    ASSERT(psNewTarget == nullptr || !psNewTarget->died ||
+           (psNewTarget->died == NOT_CURRENT_LIST &&
+            died == NOT_CURRENT_LIST),
+           "setDroidTarget: Set dead target");
+  }
+  
+  void Droid::setActionTarget(::SimpleObject* psNewTarget, unsigned idx)
+  {
+    actionTarget[idx] = psNewTarget;
+
+    ASSERT(psNewTarget == nullptr || !psNewTarget->died ||
+           (psNewTarget->died == NOT_CURRENT_LIST &&
+            died == NOT_CURRENT_LIST),
+           "setDroidActionTarget: Set dead target");
+  }
+
+  void Droid::setBase(::Structure* psNewBase)
+  {
+    associatedStructure = psNewBase;
+    ASSERT(psNewBase == nullptr ||
+           !psNewBase->died,
+           "setDroidBase: Set dead target");
+  }
 }
 
 //void cancelBuild(DROID *psDroid)
@@ -5682,7 +5702,7 @@ bool droidRemove(Droid* psDroid, std::vector<Droid> pList)
 	}
 
 	// reset the baseStruct
-	setDroidBase(psDroid, nullptr);
+	psDroid->setBase(nullptr);
 
 	removeDroid(psDroid, pList);
 
@@ -5818,26 +5838,6 @@ bool droidUpdateDemolishing(Droid* psDroid)
 	structureDemolish(psStruct, psDroid, pointsToAdd);
 	addConstructorEffect(psStruct);
 	return true;
-}
-
-//void droidStartAction(DROID *psDroid)
-//{
-//	psDroid->actionStarted = gameTime;
-//	psDroid->actionPoints  = 0;
-//}
-
-// Declared in weapondef.h.
-int getRecoil(Weapon const& weapon)
-{
-		if (graphicsTime >= weapon.timeLastFired &&
-        graphicsTime < weapon.timeLastFired + DEFAULT_RECOIL_TIME) {
-			int recoilTime = graphicsTime - weapon.timeLastFired;
-			auto recoilAmount = DEFAULT_RECOIL_TIME / 2 - abs(recoilTime - DEFAULT_RECOIL_TIME / 2);
-			auto maxRecoil = weapon.getStats().recoilValue; // Max recoil is 1/10 of this value.
-			return maxRecoil * recoilAmount / (DEFAULT_RECOIL_TIME / 2 * 10);
-		  // recoil effect is over
-	}
-	return 0;
 }
 
 bool droidUpdateRepair(Droid* psDroid)
@@ -7650,7 +7650,8 @@ int droidSqDist(Droid* psDroid, SimpleObject* psObj)
                   psPropStats->propulsionType)) {
 		return -1;
 	}
-	return objectPositionSquareDiff(psDroid->getPosition(), psObj->getPosition());
+	return objectPositionSquareDiff(psDroid->getPosition(), 
+                                  psObj->getPosition());
 }
 
 unsigned calculate_max_range(const Droid& droid)
@@ -7866,23 +7867,6 @@ bool tile_occupied_by_droid(unsigned x, unsigned y)
   return false;
 }
 
-static void _setDroidBase(Droid* psDroid, Structure* psNewBase, int line, const char* func)
-{
-  psDroid->associatedStructure = psNewBase;
-  ASSERT(psNewBase == nullptr ||
-         !psNewBase->died,
-         "setDroidBase: Set dead target");
-
-  #ifdef DEBUG
-    psDroid->baseLine = line;
-  	sstrcpy(psDroid->baseFunc, func);
-  #else
-  // Prevent warnings about unused parameters
-  (void)line;
-  (void)func;
-  #endif
-}
-
 static void setSaveDroidTarget(Droid* psSaveDroid, SimpleObject* psNewTarget)
 {
   psSaveDroid->order->target = psNewTarget;
@@ -7910,48 +7894,6 @@ static void setSaveDroidBase(Droid* psSaveDroid, Structure* psNewBase)
   #endif
 }
 
-static void _setDroidActionTarget(Droid* psDroid, SimpleObject* psNewTarget,
-                                  uint16_t idx, int line, const char* func)
-{
-  psDroid->actionTarget[idx] = psNewTarget;
-
-  ASSERT(psNewTarget == nullptr || !psNewTarget->died ||
-         (psNewTarget->died == NOT_CURRENT_LIST &&
-          psDroid->died == NOT_CURRENT_LIST),
-         "setDroidActionTarget: Set dead target");
-
-  #ifdef DEBUG
-    psDroid->actionTargetLine[idx] = line;
-  	sstrcpy(psDroid->actionTargetFunc[idx], func);
-  #else
-  // Prevent warnings about unused parameters
-  (void)line;
-  (void)func;
-  #endif
-}
-
-static void _setDroidTarget(Droid* psDroid, SimpleObject* psNewTarget,
-                            int line, const char* func)
-{
-  psDroid->order->target = psNewTarget;
-  ASSERT(psNewTarget == nullptr || !psNewTarget->died,
-         "setDroidTarget: Set dead target");
-
-  ASSERT(psNewTarget == nullptr || !psNewTarget->died ||
-         (psNewTarget->died == NOT_CURRENT_LIST &&
-          psDroid->died == NOT_CURRENT_LIST),
-         "setDroidTarget: Set dead target");
-
-  #ifdef DEBUG
-    psDroid->targetLine = line;
-  	sstrcpy(psDroid->targetFunc, func);
-  #else
-  // Prevent warnings about unused parameters
-  (void)line;
-  (void)func;
-  #endif
-}
-
 static unsigned droidSensorRange(const Droid* psDroid)
 {
   return objSensorRange(psDroid);
@@ -7959,8 +7901,8 @@ static unsigned droidSensorRange(const Droid* psDroid)
 
 static Rotation getInterpolatedWeaponRotation(const Droid* psDroid, int weaponSlot, unsigned time)
 {
-  return interpolateRot(psDroid->getWeapons()[weaponSlot].previousRotation,
+  return interpolateRot(psDroid->getWeapons()[weaponSlot].getPreviousRotation(),
                         psDroid->getWeapons()[weaponSlot].getRotation(),
-                        psDroid->previousLocation.time,
+                        psDroid->getPreviousLocation().time,
                         psDroid->getTime(), time);
 }

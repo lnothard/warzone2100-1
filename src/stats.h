@@ -28,6 +28,7 @@
 
 #include "lib/framework/wzconfig.h"
 
+class SimpleObject;
 enum class DROID_TYPE;
 
 static constexpr auto SHOOT_ON_GROUND = 0x01;

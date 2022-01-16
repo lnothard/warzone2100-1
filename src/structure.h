@@ -320,7 +320,6 @@ namespace Impl
         /// The build points currently assigned to this structure
         unsigned currentBuildPoints;
 
-
         /// Time the resistance was last increased
         std::size_t lastResistance;
 

@@ -73,7 +73,7 @@ public:
     [[nodiscard]] virtual const Rotation& getRotation() const = 0;
     [[nodiscard]] virtual unsigned getPlayer() const = 0;
     [[nodiscard]] virtual unsigned getId() const = 0;
-    [[nodiscard]] virtual std::size_t getTime() const = 0;
+    [[nodiscard]] virtual unsigned getTime() const = 0;
     [[nodiscard]] virtual const DisplayData& getDisplayData() const = 0;
     [[nodiscard]] virtual Spacetime getPreviousLocation() const = 0;
 
@@ -101,7 +101,7 @@ namespace Impl
         [[nodiscard]] const Rotation& getRotation() const noexcept final;
         [[nodiscard]] unsigned getPlayer() const noexcept final;
         [[nodiscard]] unsigned getId() const noexcept final;
-        [[nodiscard]] std::size_t getTime() const noexcept final;
+        [[nodiscard]] unsigned getTime() const noexcept final;
         [[nodiscard]] const DisplayData& getDisplayData() const noexcept final;
         [[nodiscard]] Spacetime getPreviousLocation() const final;
 
@@ -116,16 +116,22 @@ namespace Impl
     private:
         unsigned id;
         unsigned player;
-        std::size_t time = 0;
+        unsigned bornTime;
+        unsigned diedTime = 0;
+        unsigned time = 0;
+        unsigned periodicalDamage;
+        unsigned periodicalDamageStartTime;
         Position position {0, 0, 0};
         Rotation rotation {0, 0, 0};
         Spacetime previousLocation;
         std::unique_ptr<DisplayData> display;
+        bool isSelected = false;
     protected:
-        /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip,
-        /// 0 if not visible
+        /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip, 0 if not visible
         std::array<uint8_t, MAX_PLAYERS> visibilityState;
-        std::bitset< static_cast<std::size_t>(OBJECT_FLAG::COUNT) > flags;
+        std::array<uint8_t, MAX_PLAYERS> seenThisTick;
+    public:
+        std::bitset<static_cast<size_t>(OBJECT_FLAG::COUNT)> flags;
     };
 }
 

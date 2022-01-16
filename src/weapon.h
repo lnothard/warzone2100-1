@@ -65,7 +65,9 @@ public:
   [[nodiscard]] const iIMDShape& getMountGraphic() const;
   [[nodiscard]] WEAPON_SUBCLASS getSubclass() const;
   [[nodiscard]] TARGET_ORIGIN getTargetOrigin() const;
+  [[nodiscard]] Rotation getPreviousRotation() const;
 
+  void useAmmo();
   [[nodiscard]] bool hasAmmo() const;
   [[nodiscard]] bool hasFullAmmo() const noexcept;
   [[nodiscard]] bool isArtillery() const noexcept;

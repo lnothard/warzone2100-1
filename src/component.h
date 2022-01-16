@@ -21,12 +21,39 @@
 #ifndef __INCLUDED_SRC_COMPONENT_H__
 #define __INCLUDED_SRC_COMPONENT_H__
 
-#include "lib/ivis_opengl/pietypes.h"
 #include <glm/fwd.hpp>
 
-#include "droid.h"
+/* forward decl */
+class BaseStats;
+class Droid;
+class DroidTemplate;
+class iIMDShape;
+class PIELIGHT;
+class Structure;
+class StructureStats;
+class Weapon;
 
-bool setPlayerColour(unsigned player, unsigned col);
+
+static constexpr auto BLIP_ANIM_DURATION			= 200;
+static constexpr auto OBJECT_RADIUS				= 128;
+static constexpr auto COMPONENT_RADIUS			= 64;
+static constexpr auto DESIGN_Droid_SCALE			= 200;
+static constexpr auto DESIGN_COMPONENT_SCALE			= 150;
+static constexpr auto RESEARCH_COMPONENT_SCALE		= 300;
+static constexpr auto COMP_BUT_SCALE				= 100;
+static constexpr auto Droid_BUT_SCALE				= 72;
+static constexpr auto SMALL_STRUCT_SCALE			= 55;
+static constexpr auto MED_STRUCT_SCALE			= 25;  //< Reduced from 30 to fit command entre in window
+static constexpr auto LARGE_STRUCT_SCALE			= 25;
+static constexpr auto ULTRA_SMALL_FEATURE_SCALE		= 146;
+static constexpr auto REALLY_SMALL_FEATURE_SCALE		= 116;
+static constexpr auto SMALL_FEATURE_SCALE			= 55;
+static constexpr auto MED_FEATURE_SCALE			= 26;
+static constexpr auto LARGE_FEATURE_SCALE			= 16;
+static constexpr auto TOWER_HEIGHT    = 10;
+
+
+bool setPlayerColour(unsigned player, int col);
 uint8_t getPlayerColour(unsigned pl);
 
 unsigned getComponentDroidRadius(Droid* psDroid);
@@ -36,34 +63,23 @@ unsigned getResearchRadius(BaseStats* Stat);
 unsigned getStructureSizeMax(Structure* psStructure);
 unsigned getStructureStatSizeMax(StructureStats* Stats);
 
-#define BLIP_ANIM_DURATION			(200)
-#define OBJECT_RADIUS				(128)
-#define COMPONENT_RADIUS			(64)
-#define DESIGN_Droid_SCALE			(200)
-#define DESIGN_COMPONENT_SCALE			(150)
-#define RESEARCH_COMPONENT_SCALE		(300)
-#define COMP_BUT_SCALE				(100)
-#define Droid_BUT_SCALE				(72)
-#define SMALL_STRUCT_SCALE			(55)
-#define MED_STRUCT_SCALE			(25)  //reduced from 30 to fit command centre in window
-#define LARGE_STRUCT_SCALE			(25)
-#define ULTRA_SMALL_FEATURE_SCALE		(146)
-#define REALLY_SMALL_FEATURE_SCALE		(116)
-#define SMALL_FEATURE_SCALE			(55)
-#define MED_FEATURE_SCALE			(26)
-#define LARGE_FEATURE_SCALE			(16)
-#define TOWER_HEIGHT    100
-
 unsigned getStructureStatHeight(StructureStats* psStat);
 
 void displayIMDButton(iIMDShape* IMDShape, const Vector3i* Rotation, const Vector3i* Position, int scale);
 void displayStructureButton(Structure* psStructure, const Vector3i* Rotation, const Vector3i* Position, int scale);
 void displayStructureStatButton(StructureStats* Stats, const Vector3i* Rotation, const Vector3i* Position, int scale);
 void displayComponentButton(BaseStats* Stat, const Vector3i* Rotation, const Vector3i* Position, int scale);
+
+/// Render a research item given a \c BaseStats structure
 void displayResearchButton(BaseStats* Stat, const Vector3i* Rotation, const Vector3i* Position, int scale);
+
+/// Render a composite droid given a \c DroidTemplate structure
 void displayComponentButtonTemplate(DroidTemplate* psTemplate, const Vector3i* Rotation, const Vector3i* Position,
                                     int scale);
+
+/// Render a composite droid given a \c Droid structure.
 void displayComponentButtonObject(Droid* psDroid, const Vector3i* Rotation, const Vector3i* Position, int scale);
+
 void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix);
 
 void compPersonToBits(Droid* psDroid);
