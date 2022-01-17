@@ -55,6 +55,11 @@ Vector2i FeatureStats::size() const
   return {baseWidth, baseBreadth};
 }
 
+int Feature::objRadius() const
+{
+  return display->imd_shape->radius / 2;
+}
+
 Vector2i Feature::size() const
 {
   return psStats->size();

@@ -70,6 +70,7 @@ public:
 
     [[nodiscard]] Vector2i size() const;
     [[nodiscard]] FeatureStats const* getStats() const;
+    int objRadius() const final;
 private:
     std::shared_ptr<FeatureStats> psStats;
 };

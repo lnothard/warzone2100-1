@@ -275,6 +275,7 @@ namespace Impl
         [[nodiscard]] const StructureStats& getStats() const final;
         [[nodiscard]] uint8_t getCapacity() const final;
 
+        int objRadius() const final;
         [[nodiscard]] bool isBlueprint() const noexcept;
         [[nodiscard]] bool isWall() const noexcept final;
         [[nodiscard]] bool isRadarDetector() const final;

@@ -33,6 +33,9 @@
 #include "fpath.h"
 #include "wzmaplib/map.h"
 
+
+#define	VTOL_VERTICAL_SPEED		(((baseSpeed / 4) > 60) ? ((SDWORD)baseSpeed / 4) : 60)
+
 /* max and min vtol heights above terrain */
 static constexpr auto VTOL_HEIGHT_MIN	= 250;
 static constexpr auto VTOL_HEIGHT_LEVEL	=	300;
@@ -157,5 +160,11 @@ void updateDroidOrientation(Droid* psDroid);
 bool moveCheckDroidMovingAndVisible(void* psObj);
 
 std::string moveDescription(MOVE_STATUS status);
+static void moveOpenGates(Droid* psDroid);
+static void moveOpenGates(Droid* psDroid, Vector2i tile);
+static void moveCalcSlideVector(Droid* psDroid, int objX, int objY, int* pMx, int* pMy);
+static bool moveDroidStopped(Droid* psDroid, SDWORD speed);
+static void movePlayDroidMoveAudio(Droid* psDroid);
+static bool moveDroidStartCallback(void* psObj);
 
 #endif // __INCLUDED_SRC_MOVE_H__

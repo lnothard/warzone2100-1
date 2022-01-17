@@ -33,6 +33,13 @@
 #include "move.h"
 #include "stats.h"
 
+
+// Watermelon:fix these magic number...the collision radius
+// should be based on pie imd radius not some static int's...
+static constexpr auto mvPersRad = 20, mvCybRad = 30, mvSmRad = 40, mvMedRad = 50, mvLgRad = 60;
+
+static constexpr auto PITCH_LIMIT = 150;
+
 /// How long a droid runs after it fails do respond due to low morale
 static constexpr auto RUN_TIME = 8000;
 
@@ -288,6 +295,19 @@ public:
     virtual void orderClearTargetFromDroidList(PersistentObject* psTarget) = 0;
     virtual void orderCheckGuardPosition(int range) = 0;
     virtual bool orderDroidList() = 0;
+    virtual void moveStopDroid() = 0;
+    virtual void moveReallyStopDroid() = 0;
+    virtual void updateDroidOrientation() = 0;
+    virtual int moveDirectPathToWaypoint(unsigned positionIndex) = 0;
+    virtual bool moveBestTarget() = 0;
+    virtual bool moveNextTarget() = 0;
+    virtual bool moveBlocked() = 0;
+    virtual void moveCalcBlockingSlide(int* pmx, int* pmy, uint16_t tarDir, uint16_t* pSlideDir) = 0;
+    virtual void movePlayAudio(bool bStarted, bool bStoppedBefore, int iMoveSpeed) = 0;
+    virtual void movePlayDroidMoveAudio() = 0;
+    virtual void moveDescending() = 0;
+    virtual void moveAdjustVtolHeight(int32_t iMapHeight) = 0;
+    virtual Vector2i moveGetObstacleVector(Vector2i dest) = 0;
 };
 
 namespace Impl
@@ -325,13 +345,26 @@ namespace Impl
       [[nodiscard]] bool isDamaged() const final;
       [[nodiscard]] bool isAttacking() const noexcept;
       [[nodiscard]] bool isRepairDroid() const noexcept final;
+      void moveStopDroid() final;
+      void updateDroidOrientation() final;
+      int objRadius() const final;
 
+      void moveDescending() final;
+      void movePlayDroidMoveAudio() final;
+      bool moveNextTarget() final;
       void setActionTarget(::PersistentObject* psNewTarget, unsigned idx) final;
       void setTarget(::PersistentObject* psNewTarget) final;
       void setBase(::Structure* psNewBase) final;
 
       void orderCheckGuardPosition(int range) final;
+      void movePlayAudio(bool bStarted, bool bStoppedBefore, int iMoveSpeed) final;
 
+      Vector2i moveGetObstacleVector(Vector2i dest) final;
+      void moveAdjustVtolHeight(int32_t iMapHeight) final;
+      void moveCalcBlockingSlide(int* pmx, int* pmy, uint16_t tarDir, uint16_t* pSlideDir) final;
+      bool moveBlocked() final;
+      bool moveBestTarget() final;
+      int moveDirectPathToWaypoint(unsigned positionIndex) final;
       bool orderDroidList() final;
 
       void orderClearTargetFromDroidList(::PersistentObject* psTarget) final;
@@ -422,6 +455,7 @@ namespace Impl
       RtrBestResult decideWhereToRepairAndBalance() final;
       SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate) final;
       void initDroidMovement() final;
+      void moveReallyStopDroid() final;
   private:
       using enum DROID_TYPE;
       using enum ACTION;
@@ -487,11 +521,6 @@ namespace Impl
 
       int iAudioID;
 
-      std::unique_ptr<BodyStats> body;
-      std::optional<PropulsionStats> propulsion;
-      std::optional<SensorStats> sensor;
-      std::optional<EcmStats> ecm;
-      std::optional<CommanderStats> brain;
       std::unordered_map<std::string, std::unique_ptr<BaseStats>> components;
   };
 }

@@ -314,6 +314,21 @@ namespace Impl
     return stats->build_point_cost - currentBuildPoints;
   }
 
+  const iIMDShape& Structure::getImdShape() const
+  {
+    return *prebuiltImd;
+  }
+
+  void Structure::setFoundationDepth(int depth) noexcept
+  {
+    foundationDepth = depth;
+  }
+
+  int Structure::objRadius() const
+  {
+    return display->imd_shape->radius / 2;
+  }
+
   bool Structure::hasModules() const noexcept
   {
     return capacity > 0;

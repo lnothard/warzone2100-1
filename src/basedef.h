@@ -90,6 +90,7 @@ public:
     [[nodiscard]] virtual bool isSelectable() const = 0;
     [[nodiscard]] virtual uint8_t visibleToPlayer(unsigned watcher) const = 0;
     [[nodiscard]] virtual uint8_t visibleToSelectedPlayer() const = 0;
+    virtual int objRadius() const = 0;
 };
 
 namespace Impl
