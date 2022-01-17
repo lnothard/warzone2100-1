@@ -5,10 +5,9 @@
 #include "lib/framework/vector.h"
 
 #include "basedef.h"
+#include "display.h"
 #include "visibility.h"
 
-// forward declaration (declared in display.h)
-bool godMode;
 
 Spacetime::Spacetime(std::size_t time, Position position, Rotation rotation)
 	: time{time}, position{position}, rotation{rotation}

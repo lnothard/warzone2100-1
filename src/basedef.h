@@ -29,9 +29,7 @@
 #include <array>
 #include <bitset>
 
-#include "baseobject.h"
-
-struct DisplayData;
+#include "displaydef.h"
 
 enum class OBJECT_FLAG
 {

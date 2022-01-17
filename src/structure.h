@@ -28,16 +28,10 @@
 
 #include "lib/gamelib/gtime.h"
 
-#include "order.h"
-#include "positiondef.h"
-#include "stats.h"
 #include "constructedobject.h"
+#include "droid.h"
+#include "order.h"
 
-class Droid;
-class DroidTemplate;
-class Group;
-enum class WEAPON_CLASS;
-enum class TARGET_ORIGIN;
 
 static constexpr auto NUM_FACTORY_MODULES = 2;
 static constexpr auto NUM_POWER_MODULES = 4;
@@ -191,11 +185,11 @@ struct StructureStats : public BaseStats
     unsigned power_cost; /*How much power the structure requires to build*/
     std::vector< std::unique_ptr<iIMDShape> > IMDs; // The IMDs to draw for this structure, for each possible number of modules.
     std::unique_ptr<iIMDShape> base_imd; /*The base IMD to draw for this structure */
-    struct EcmStats* ecm_stats; /*Which ECM is standard for the structure -if any*/
-    struct SensorStats* sensor_stats; /*Which Sensor is standard for the structure -if any*/
+    std::shared_ptr<EcmStats> ecm_stats; /*Which ECM is standard for the structure -if any*/
+    std::shared_ptr<SensorStats> sensor_stats;/*Which Sensor is standard for the structure -if any*/
     unsigned weapon_slots; /*Number of weapons that can be attached to the building*/
     unsigned numWeaps; /*Number of weapons for default */
-    struct WeaponStats* psWeapStat[MAX_WEAPONS];
+    std::array<WeaponStats*, MAX_WEAPONS> psWeapStat;
     unsigned long flags;
     bool combines_with_wall; //If the structure will trigger nearby walls to try combining with it
 
@@ -263,9 +257,10 @@ public:
 
 namespace Impl
 {
-    class Structure : public virtual ::Structure, public Impl::ConstructedObject
+    class Structure : public virtual ::Structure, public ConstructedObject
     {
     public:
+        ~Structure() override;
         Structure(unsigned id, unsigned player);
 
         /************************** Accessors *************************/
@@ -283,7 +278,7 @@ namespace Impl
         [[nodiscard]] bool isBlueprint() const noexcept;
         [[nodiscard]] bool isWall() const noexcept final;
         [[nodiscard]] bool isRadarDetector() const final;
-        [[nodiscard]] bool isProbablyDoomed() const;
+        [[nodiscard]] bool isProbablyDoomed() const final;
         [[nodiscard]] bool hasModules() const noexcept;
         [[nodiscard]] bool hasSensor() const final;
         [[nodiscard]] bool hasStandardSensor() const final;
@@ -309,7 +304,7 @@ namespace Impl
         [[nodiscard]] std::unique_ptr<::Structure> buildStructureDir(
                 StructureStats* pStructureType, unsigned x, unsigned y,
                 uint16_t direction, unsigned player, bool FromSave) final;
-    private:
+    protected:
         using enum STRUCTURE_ANIMATION_STATE;
         using enum STRUCTURE_STATE;
         std::shared_ptr<StructureStats> stats;

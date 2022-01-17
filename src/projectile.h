@@ -57,7 +57,7 @@ enum class PROJECTILE_STATE
   INACTIVE
 };
 
-class Projectile : public virtual PersistentObject, public Impl::PersistentObject
+class Projectile : public virtual BaseObject, public Impl::BaseObject
 {
 public:
   friend class Damage;

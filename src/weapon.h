@@ -19,14 +19,16 @@
 */
 
 /** 
- * @file weapondef.h
+ * @file weapon.h
  * Definitions for the weapons
  */
 
 #ifndef __INCLUDED_WEAPONDEF_H__
 #define __INCLUDED_WEAPONDEF_H__
 
-enum class WEAPON_SUBCLASS;
+#include "lib/framework/fixedpoint.h"
+
+#include "stats.h"
 
 /// Maximum difference in direction for a fixed turret to fire
 static constexpr auto FIXED_TURRET_DIR = DEG(1);
@@ -48,7 +50,7 @@ enum class TARGET_ORIGIN
 	RADAR_DETECTOR,
 };
 
-class Weapon : public virtual PersistentObject, public Impl::PersistentObject
+class Weapon : public virtual BaseObject, public Impl::BaseObject
 {
 public:
   /* Accessors */

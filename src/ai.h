@@ -28,9 +28,6 @@
 
 #include "weapon.h"
 
-struct PersistentObject;
-struct Droid;
-
 static constexpr auto ALLIANCE_BROKEN	= 0;			// states of alliance between players
 static constexpr auto ALLIANCE_REQUESTED = 1;
 static constexpr auto ALLIANCE_INVITATION	= 2;
@@ -73,9 +70,6 @@ void aiUpdateDroid(Droid* psDroid);
 /// Find the nearest best target for a droid
 /// returns integer representing quality of choice, -1 if failed
 int aiBestNearestTarget(Droid* psDroid, PersistentObject** ppsObj, int weapon_slot, int extraRange = 0);
-
-/// Are there a lot of bullets heading towards the structure?
-bool aiObjectIsProbablyDoomed(PersistentObject* psObject, bool isDirect);
 
 /// Update the expected damage to the object.
 void aiObjectAddExpectedDamage(PersistentObject* psObject, SDWORD damage, bool isDirect);

@@ -30,23 +30,20 @@
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
 
-#include "visibility.h"
-#include "structure.h"
-
-#include "miscimd.h"
-#include "effects.h"
-#include "combat.h"
+#include "console.h"
 #include "display3d.h"
-#include "geometry.h"
-#include "mission.h"
-#include "cmddroid.h"
-#include "projectile.h"
-#include "intdisplay.h"
+#include "effects.h"
 #include "game.h"
+#include "geometry.h"
+#include "intdisplay.h"
+#include "mission.h"
+#include "projectile.h"
 #include "qtscript.h"
-#include "multigifts.h"
-#include "loop.h"
 #include "scores.h"
+#include "structure.h"
+#include "objmem.h"
+#include "visibility.h"
+#include "multiplay.h"
 #include "mapgrid.h"
 
 /* Value is stored for easy access to this structure stat */
@@ -131,9 +128,8 @@ bool StructureBounds::isValid() const
 
 StructureBounds get_bounds(const Structure& structure) noexcept
 {
-  return  {
-					map_coord(structure.getPosition().xy()) -
-          structure.getSize() / 2, structure.getSize()
+  return  {map_coord(structure.getPosition().xy()) -
+                    structure.getSize() / 2, structure.getSize()
   };
 }
 
@@ -287,7 +283,6 @@ void auxStructureClosedGate(const Impl::Structure& structure)
 
 namespace Impl
 {
-
   Structure::Structure(unsigned id, unsigned player)
           : ConstructedObject(id, player)
 
@@ -322,6 +317,16 @@ namespace Impl
   bool Structure::hasModules() const noexcept
   {
     return capacity > 0;
+  }
+
+  bool Structure::isRadarDetector() const
+  {
+    return stats->sensor_stats->type == SENSOR_TYPE::RADAR_DETECTOR;
+  }
+
+  bool Structure::hasSensor() const
+  {
+    return stats->sensor_stats != nullptr;
   }
 
   bool Structure::hasCbSensor() const
@@ -375,7 +380,7 @@ namespace Impl
       prevResearchState = intGetResearchState();
     }
 
-    if (psDroid && !aiCheckAlliances(getPlayer(), psDroid->getPlayer())) {
+    if (psDroid && !aiCheckAlliances(player, psDroid->getPlayer())) {
       // Enemy structure
       return;
     }
@@ -387,7 +392,7 @@ namespace Impl
         {
           // An enemy droid is blocking it
           if (dynamic_cast<Structure*>(orderStateObj(&psCurr, ORDER_TYPE::BUILD)) == this
-              && !aiCheckAlliances(getPlayer(), psCurr.getPlayer())) {
+              && !aiCheckAlliances(player, psCurr.getPlayer())) {
             return;
           }
         }
@@ -504,7 +509,7 @@ namespace Impl
   
   /// Give a structure from one player to another - used in Electronic Warfare.
   /// @return a pointer to the new structure
-  Structure* Structure::giftSingleStructure(unsigned attackPlayer, bool electronic_warfare)
+  ::Structure* Structure::giftSingleStructure(unsigned attackPlayer, bool electronic_warfare)
   {
     Structure *psNewStruct;
     StructureStats *psType, *psModule;
@@ -666,6 +671,21 @@ namespace Impl
     return *stats;
   }
 
+  STRUCTURE_STATE Structure::getState() const 
+  {
+    return state; 
+  }
+  
+  uint8_t Structure::getCapacity() const
+  {
+    return capacity;
+  }
+
+  int Structure::getFoundationDepth() const noexcept 
+  {
+    return foundationDepth;
+  }
+
   /* The main update routine for all Structures */
   void Structure::structureUpdate(bool bMission)
   {
@@ -727,7 +747,7 @@ namespace Impl
       {
         animationEvent = ANIM_EVENT_ACTIVE;
 
-        auto strFirstImd = getDisplayData().imd_shape->objanimpie[static_cast<int>(animationState)];
+        auto strFirstImd = display->imd_shape->objanimpie[static_cast<int>(animationState)];
         if (strFirstImd != nullptr && strFirstImd->next != nullptr) {
           auto strImd = strFirstImd->next; // first imd isn't animated
           timeAnimationStarted = gameTime + (rand() % (strImd->objanimframes * strImd->objanimtime));
@@ -739,7 +759,7 @@ namespace Impl
         }
       }
 
-      if (getPlayer() == selectedPlayer) {
+      if (player == selectedPlayer) {
         if (visibleToSelectedPlayer()
             // check for display(audio)-only - does not impact simulation / game state
             && psBuilding->pFunctionality->resourceExtractor.power_generator
@@ -799,7 +819,7 @@ namespace Impl
       // Is there any damage?
       if (damage > 0.) {
         emissionInterval = static_cast<unsigned>(CalcStructureSmokeInterval(damage / 65536.f));
-        auto effectTime = std::max(gameTime - deltaGameTime + 1, lastEmission + emissionInterval);
+        auto effectTime = std::max(gameTime - deltaGameTime + 1, lastEmissionTime + emissionInterval);
         if (gameTime >= effectTime) {
           const auto size = getSize();
           widthScatter = size.x * TILE_UNITS / 2 / 3;
@@ -807,26 +827,26 @@ namespace Impl
           dv.x = getPosition().x + widthScatter - rand() % (2 * widthScatter);
           dv.z = getPosition().y + breadthScatter - rand() % (2 * breadthScatter);
           dv.y = getPosition().z;
-          dv.y += (getDisplayData().imd_shape->max.y * 3) / 4;
+          dv.y += (display.imd_shape->max.y * 3) / 4;
           addEffect(&dv, EFFECT_GROUP::SMOKE, EFFECT_TYPE::SMOKE_TYPE_DRIFTING_HIGH,
                     false, nullptr, 0, effectTime);
-          lastEmission = effectTime;
+          lastEmissionTime = effectTime;
         }
       }
     }
 
     /* Update the fire damage data */
-    if (periodicalDamageStart != 0 && periodicalDamageStart != gameTime - deltaGameTime)
+    if (periodicalDamageStartTime != 0 && periodicalDamageStartTime != gameTime - deltaGameTime)
       // -deltaGameTime, since projectiles are updated after structures.
     {
-      // The periodicalDamageStart has been set, but is not from the previous tick, so we must be out of the fire.
+      // The periodicalDamageStartTime has been set, but is not from the previous tick, so we must be out of the fire.
       periodicalDamage = 0; // Reset burn damage done this tick.
       // Finished burning.
-      periodicalDamageStart = 0;
+      periodicalDamageStartTime = 0;
     }
 
     //check the resistance level of the structure
-    iPointsRequired = structureResistance(stats.get(), getPlayer());
+    iPointsRequired = structureResistance(stats.get(), player);
     if (resistance < (SWORD)iPointsRequired) {
       //start the resistance increase
       if (lastResistance == ACTION_START_TIME) {
@@ -852,7 +872,7 @@ namespace Impl
       //if selfrepair has been researched then check the health level of the
       //structure once resistance is fully up
       iPointsRequired = structureBody(this);
-      if (selfRepairEnabled(getPlayer()) && getHp() < iPointsRequired && state != BEING_BUILT) {
+      if (selfRepairEnabled(player) && hitPoints < iPointsRequired && state != BEING_BUILT) {
         //start the self repair off
         if (lastResistance == ACTION_START_TIME) {
           lastResistance = gameTime;
@@ -860,7 +880,7 @@ namespace Impl
 
         /*since self repair, then add half repair points depending on the time delay for the stat*/
         iPointsToAdd = (repairPoints(asRepairStats + aDefaultRepair[
-                getPlayer()], getPlayer()) / 4) * ((gameTime - lastResistance) / (asRepairStats + aDefaultRepair[getPlayer()])->time);
+                player], player) / 4) * ((gameTime - lastResistance) / (asRepairStats + aDefaultRepair[getPlayer()])->time);
 
         //add the blue flashing effect for multiPlayer
         if (bMultiPlayer && ONEINTEN && !bMission) {
@@ -869,8 +889,8 @@ namespace Impl
           int realY;
           unsigned pointIndex;
 
-          pointIndex = rand() % (getDisplayData().imd_shape->points.size() - 1);
-          point = &(getDisplayData().imd_shape->points.at(pointIndex));
+          pointIndex = rand() % (display.imd_shape->points.size() - 1);
+          point = &(display.imd_shape->points.at(pointIndex));
           position.x = static_cast<int>(getPosition().x + point->x);
           realY = static_cast<int>(structHeightScale(this) * point->y);
           position.y = getPosition().z + realY;
@@ -885,9 +905,9 @@ namespace Impl
         }
 
         if (iPointsToAdd) {
-          setHp((getHp() + iPointsToAdd));
+          setHp((hitPoints + iPointsToAdd));
           lastResistance = gameTime;
-          if (getHp() > iPointsRequired) {
+          if (hitPoints > iPointsRequired) {
             setHp(iPointsRequired);
             lastResistance = ACTION_START_TIME;
           }
@@ -898,6 +918,22 @@ namespace Impl
     CHECK_STRUCTURE(this);
   }
 
+  bool Structure::isWall() const noexcept
+  {
+    return stats->type == STRUCTURE_TYPE::WALL ||
+           stats->type == STRUCTURE_TYPE::WALL_CORNER;
+  }
+
+  unsigned Structure::getOriginalHp() const
+  {
+    return stats->upgraded_stats[player].hitPoints - hitPoints;
+  }
+
+  STRUCTURE_ANIMATION_STATE Structure::getAnimationState() const
+  {
+    return animationState;
+  }
+    
   void Structure::aiUpdateStructure(bool isMission)
   {
     STRUCTURE_TYPE structureMode;
@@ -915,26 +951,26 @@ namespace Impl
 
     CHECK_STRUCTURE(this);
 
-    if (getTime() == gameTime) {
+    if (time == gameTime) {
       // This isn't supposed to happen, and really shouldn't be possible - if this happens, maybe a structure is being updated twice?
       int count1 = 0, count2 = 0;
-      for (auto& s : apsStructLists[getPlayer()])
+      for (auto& s : apsStructLists[player])
       {
         count1 += s == this;
       }
-      for (auto& s : mission.apsStructLists[getPlayer()])
+      for (auto s : mission.apsStructLists[player])
       {
         count2 += s == this;
       }
       debug(LOG_ERROR, "psStructure->prevTime = %u, psStructure->time = %u, gameTime = %u, count1 = %d, count2 = %d",
-            prevTime, getTime(), gameTime, count1, count2);
-      setTime(getTime() - 1);
+            prevTime, time, gameTime, count1, count2);
+      setTime(time - 1);
     }
-    prevTime = getTime();
+    prevTime = time;
     setTime(gameTime);
     for (unsigned i = 0; i < MAX(1, numWeapons(*this)); ++i)
     {
-      getWeapons()[i].previousRotation = getWeapons()[i].getRotation();
+      weapons[i].previousRotation = weapons[i].getRotation();
     }
 
     if (isMission) {
@@ -967,7 +1003,7 @@ namespace Impl
     /* Check lassat */
     if (isLasSat(stats.get()) &&
         gameTime - weapons[0].timeLastFired > weaponFirePause(
-                &weapons[0].getStats(), getPlayer()) &&
+                &weapons[0].getStats(), player) &&
         weapons[0].ammo > 0) {
 
       triggerEventStructureReady(this);
@@ -1437,7 +1473,7 @@ namespace Impl
             }
             psResFacility->psSubject = nullptr;
             intResearchFinished(this);
-            researchResult(researchIndex, getPlayer(), true, this, true);
+            researchResult(researchIndex, player, true, this, true);
 
             shareIsFinished = true;
 
@@ -1449,7 +1485,7 @@ namespace Impl
           if (game.type == LEVEL_TYPE::SKIRMISH && alliancesSharedResearch(game.alliance)) {
             for (uint8_t i = 0; i < MAX_PLAYERS; i++)
             {
-              if (alliances[i][getPlayer()] == ALLIANCE_FORMED)
+              if (alliances[i][player] == ALLIANCE_FORMED)
               {
                 if (!IsResearchCompleted(&asPlayerResList[i][researchIndex]))
                 {
@@ -1474,7 +1510,7 @@ namespace Impl
         }
       }
         //check for manufacture
-      else if (structureMode == REF_FACTORY) {
+      else if (structureMode == FACTORY) {
         psFactory = &psStructure->pFunctionality->factory;
 
         //if on hold don't do anything
@@ -1485,7 +1521,7 @@ namespace Impl
 
         //electronic warfare affects the functionality of some structures in multiPlayer
         if (bMultiPlayer && resistance < (int)structureResistance(
-                stats.get(), getPlayer())) {
+                stats.get(), player)) {
           return;
         }
 
@@ -1557,7 +1593,7 @@ namespace Impl
     /* check base object (for repair / rearm) */
     if (psChosenObj != nullptr)
     {
-      if (structureMode == REF_REPAIR_FACILITY)
+      if (structureMode == REPAIR_FACILITY)
       {
         psDroid = (Droid*)psChosenObj;
         ASSERT_OR_RETURN(, psDroid != nullptr, "invalid droid pointer");
@@ -1934,7 +1970,7 @@ namespace Impl
         psBuilding->weapons[i] = nullptr;
       }
 
-      psBuilding->periodicalDamageStart = 0;
+      psBuilding->periodicalDamageStartTime = 0;
       psBuilding->periodicalDamage = 0;
 
       psBuilding->state = STRUCTURE_STATE::BEING_BUILT;
@@ -3164,11 +3200,7 @@ static bool isWallCombiningStructureType(StructureStats const* pStructureType)
 		     pStructureType->combines_with_wall; // hardpoints and fortresses by default
 }
 
-bool isWall(STRUCTURE_TYPE type)
-{
-	return type == STRUCTURE_TYPE::WALL || 
-         type == STRUCTURE_TYPE::WALL_CORNER;
-}
+
 
 bool isBuildableOnWalls(STRUCTURE_TYPE type)
 {

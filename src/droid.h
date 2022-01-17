@@ -28,14 +28,10 @@
 
 #include "wzmaplib/map.h"
 
+#include "action.h"
 #include "group.h"
 #include "move.h"
 #include "stats.h"
-
-class Action;
-enum class SELECTIONTYPE;
-enum class SELECTION_CLASS;
-enum class SECONDARY_ORDER;
 
 /// How long a droid runs after it fails do respond due to low morale
 static constexpr auto RUN_TIME = 8000;
@@ -321,7 +317,7 @@ namespace Impl
       [[nodiscard]] unsigned getWeight() const final;
 
       [[nodiscard]] unsigned getCommanderLevel() const final;
-      [[nodiscard]] bool isProbablyDoomed(bool isDirectDamage) const;
+      [[nodiscard]] bool isProbablyDoomed(bool isDirectDamage) const final;
       [[nodiscard]] bool isVtol() const final;
       [[nodiscard]] bool isFlying() const final;
       [[nodiscard]] bool isRadarDetector() const final;
@@ -496,6 +492,7 @@ namespace Impl
       std::optional<SensorStats> sensor;
       std::optional<EcmStats> ecm;
       std::optional<CommanderStats> brain;
+      std::unordered_map<std::string, std::unique_ptr<BaseStats>> components;
   };
 }
 // the structure that was last hit

@@ -6,20 +6,19 @@
 #ifndef WARZONE2100_CONSTRUCTEDOBJECT_H
 #define WARZONE2100_CONSTRUCTEDOBJECT_H
 
-#include "basedef.h"
+#include "lib/ivis_opengl/ivisdef.h"
 
-struct iIMDShape;
-class Weapon;
+#include "basedef.h"
+#include "weapon.h"
 
 static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
-
 static constexpr auto TURRET_ROTATION_RATE = 45;
 
 /// The maximum number of weapons attached to a single unit
 static constexpr auto MAX_WEAPONS = 3;
 
 /// Abstract base class with shared methods for both structures and droids
-class ConstructedObject : public virtual ::PersistentObject
+class ConstructedObject : public virtual PersistentObject
 {
 public:
 	~ConstructedObject() override = default;
@@ -30,7 +29,8 @@ public:
   [[nodiscard]] virtual int getResistance() const = 0;
   [[nodiscard]] virtual unsigned getOriginalHp() const = 0;
 
-	[[nodiscard]] virtual bool isAlive() const = 0;
+  [[nodiscard]] virtual bool isProbablyDoomed(bool isDirectDamage) const = 0;
+  [[nodiscard]] virtual bool isAlive() const = 0;
 	[[nodiscard]] virtual bool isRadarDetector() const = 0;
 	virtual bool isValidTarget(const ConstructedObject* attacker, int weapon_slot) const = 0;
 	virtual uint8_t isTargetVisible(const PersistentObject* target, bool walls_block) const = 0;
@@ -51,7 +51,7 @@ Vector3i calculateMuzzleTipLocation(const ConstructedObject& unit, int weapon_sl
 
 namespace Impl
 {
-	class ConstructedObject : public virtual ::ConstructedObject, public Impl::PersistentObject
+	class ConstructedObject : public virtual ::ConstructedObject, public PersistentObject
 	{
 	public:
 		ConstructedObject(unsigned id, unsigned player);
@@ -102,6 +102,6 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
 
 [[nodiscard]] unsigned getMaxWeaponRange(const ConstructedObject& unit);
 
-[[nodiscard]] unsigned numWeapons(const ::ConstructedObject& unit);
+[[nodiscard]] unsigned numWeapons(const Impl::ConstructedObject& unit);
 
 #endif // WARZONE2100_CONSTRUCTEDOBJECT_H

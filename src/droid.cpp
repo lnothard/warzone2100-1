@@ -78,7 +78,6 @@ namespace Impl
       order->target = nullptr;
       order->structure_stats = nullptr;
       movement->status = MOVE_STATUS::INACTIVE;
-      listSize = 0;
       listPendingBegin = 0;
       iAudioID = NO_SOUND;
       associatedStructure = nullptr;
@@ -88,10 +87,9 @@ namespace Impl
         visibilityState[vPlayer] = hasSharedVision(vPlayer, player) ? UINT8_MAX : 0;
       }
 
-      memset(seenThisTick, 0, sizeof(seenThisTick));
-      periodicalDamageStart = 0;
+      periodicalDamageStartTime = 0;
       periodicalDamage = 0;
-      illuminationLevel = UBYTE_MAX;
+      illuminationLevel = UINT8_MAX;
       resistance = ACTION_START_TIME; // init the resistance to indicate no EW performed on this droid
       lastFrustratedTime = 0; // make sure we do not start the game frustrated
     }

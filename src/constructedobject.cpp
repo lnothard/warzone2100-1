@@ -7,12 +7,13 @@
 #include "lib/framework/fixedpoint.h"
 #include "lib/framework/geometry.h"
 #include "lib/framework/math_ext.h"
-#include "lib/ivis_opengl/ivisdef.h"
 #include "lib/wzmaplib/include/wzmaplib/map.h"
 
+#include "constructedobject.h"
+#include "droid.h"
 #include "map.h"
 #include "projectile.h"
-#include "constructedobject.h"
+#include "objmem.h"
 
 namespace Impl
 {
@@ -187,11 +188,12 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
  * Check fire line from psViewer to psTarget
  * psTarget can be any type of SimpleObject (e.g. a tree).
  */
-int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject& target, int weapon_slot, bool walls_block,
-                        bool is_direct)
+int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject& target,
+                        int weapon_slot, bool walls_block, bool is_direct)
 {
 	Vector3i pos(0, 0, 0), dest(0, 0, 0);
-	Vector2i start(0, 0), diff(0, 0), current(0, 0), halfway(0, 0), next(0, 0), part(0, 0);
+	Vector2i start(0, 0), diff(0, 0), current(0, 0),
+          halfway(0, 0), next(0, 0), part(0, 0);
 	Vector3i muzzle(0, 0, 0);
 	int distSq, partSq, oldPartSq;
 	int64_t angletan;
@@ -203,8 +205,7 @@ int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject&
 	diff = (dest - pos).xy();
 
 	distSq = dot(diff, diff);
-	if (distSq == 0)
-	{
+	if (distSq == 0) {
 		// Should never be on top of each other, but ...
 		return 1000;
 	}
@@ -220,29 +221,28 @@ int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject&
 
 		oldPartSq = partSq;
 
-		if (partSq > 0)
-		{
-      checkAngle(angletan, partSq, calculate_map_height(current) - pos.z, distSq, dest.z - pos.z, is_direct);
+		if (partSq > 0) {
+      checkAngle(angletan, partSq, map_Height(current) - pos.z,
+                 distSq, dest.z - pos.z, is_direct);
 		}
 
 		// intersect current tile with line of fire
 		next = diff;
-		hasSplitIntersection = map_Intersect(&current.x, &current.y, &next.x, &next.y, &halfway.x, &halfway.y);
+		hasSplitIntersection = map_Intersect(&current.x, &current.y, &next.x,
+                                         &next.y, &halfway.x, &halfway.y);
 
-		if (hasSplitIntersection)
-		{
+		if (hasSplitIntersection) {
 			// check whether target was reached before tile split line:
 			part = halfway - start;
 			partSq = dot(part, part);
 
-			if (partSq >= distSq)
-			{
+			if (partSq >= distSq) {
 				break;
 			}
 
-			if (partSq > 0)
-			{
-        checkAngle(angletan, partSq, calculate_map_height(halfway) - pos.z, distSq, dest.z - pos.z, is_direct);
+			if (partSq > 0) {
+        checkAngle(angletan, partSq, map_Height(halfway) - pos.z,
+                   distSq, dest.z - pos.z, is_direct);
 			}
 		}
 
@@ -332,7 +332,7 @@ ConstructedObject* find_target(ConstructedObject& unit, TARGET_ORIGIN attacker_t
   auto target_dist = weapon.getMaxRange(unit.getPlayer());
   auto min_dist = weapon.getMinRange(unit.getPlayer());
 
-  for (const auto& sensor : apsSensorList)
+  for (const auto sensor : apsSensorList)
   {
     if (!alliance_formed(sensor->getPlayer(), unit.getPlayer())) {
       continue;
@@ -345,25 +345,25 @@ ConstructedObject* find_target(ConstructedObject& unit, TARGET_ORIGIN attacker_t
       continue;
     }
 
-    if (auto as_droid = dynamic_cast<const Droid&>(sensor)) {
+    if (auto as_droid = dynamic_cast<const Droid*>(sensor)) {
       // Skip non-observing droids. This includes Radar Detectors
       // at the moment since they never observe anything.
-      if (as_droid.get_current_action() == ACTION::OBSERVE) {
+      if (as_droid->getAction() == ACTION::OBSERVE) {
         continue;
       }
     } else { // structure
-      auto as_structure = dynamic_cast<const Structure &>(sensor);
+      auto as_structure = dynamic_cast<const Structure*>(sensor);
       // skip incomplete structures
-      if (as_structure.get_state() != STRUCTURE_STATE::BUILT) {
+      if (as_structure->getState() != STRUCTURE_STATE::BUILT) {
         continue;
       }
     }
-    target = &sensor.getTarget(0);
-    is_cb_sensor = sensor.hasCbSensor();
+    target = sensor->getTarget(0);
+    is_cb_sensor = sensor->hasCbSensor();
 
     if (!target ||
         !target->isAlive() ||
-        target->is_probably_doomed() ||
+        target->isProbablyDoomed() ||
         !target->isValidTarget() ||
         alliance_formed(target->getPlayer(),
                         unit.getPlayer())) {
@@ -373,7 +373,7 @@ ConstructedObject* find_target(ConstructedObject& unit, TARGET_ORIGIN attacker_t
     auto square_dist = objectPositionSquareDiff(target->getPosition(),
                                                 unit.getPosition());
     if (target_within_weapon_range(unit, target, weapon_slot) &&
-        is_target_visible()) {
+        target->isTargetVisible()) {
       target_dist = square_dist;
       if (is_cb_sensor) {
         // got CB target, drop everything and shoot!

@@ -29,10 +29,8 @@
 #include "lib/gamelib/gtime.h"
 #include "wzmaplib/map.h"
 
-class Droid;
-class Weapon;
-class WeaponStats;
-enum class ACTION;
+#include "droid.h"
+#include "stats.h"
 
 /* Attack run distances */
 static constexpr auto	VTOL_ATTACK_LENGTH = 1000;
