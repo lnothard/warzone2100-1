@@ -34,6 +34,8 @@
 #include "stats.h"
 
 
+#define MAX_SPEED_PITCH  60
+
 // Watermelon:fix these magic number...the collision radius
 // should be based on pie imd radius not some static int's...
 static constexpr auto mvPersRad = 20, mvCybRad = 30, mvSmRad = 40, mvMedRad = 50, mvLgRad = 60;
@@ -308,6 +310,17 @@ public:
     virtual void moveDescending() = 0;
     virtual void moveAdjustVtolHeight(int32_t iMapHeight) = 0;
     virtual Vector2i moveGetObstacleVector(Vector2i dest) = 0;
+    virtual int moveCalcDroidSpeed() = 0;
+    virtual void moveCombineNormalAndPerpSpeeds(int fNormalSpeed, int fPerpSpeed, uint16_t iDroidDir) = 0;
+    virtual void moveUpdateGroundModel(int speed, uint16_t direction) = 0;
+    virtual void moveCalcDroidSlide(int* pmx, int* pmy) = 0;
+    virtual void moveUpdatePersonModel(int speed, uint16_t direction) = 0;
+    virtual void moveUpdateVtolModel(int speed, uint16_t direction) = 0;
+    virtual void moveUpdateCyborgModel(int moveSpeed, uint16_t moveDir, MOVE_STATUS oldStatus) = 0;
+    virtual void moveUpdateDroid() = 0;
+    virtual bool droidUpdateDemolishing() = 0;
+    virtual std::string getDroidLevelName() const = 0;
+    virtual bool droidSensorDroidWeapon(const PersistentObject* psObj) const = 0;
 };
 
 namespace Impl
@@ -336,6 +349,14 @@ namespace Impl
       [[nodiscard]] const std::string& getName() const final;
       [[nodiscard]] unsigned getWeight() const final;
 
+      bool droidSensorDroidWeapon(const PersistentObject* psObj) const final;
+      std::string getDroidLevelName() const final;
+      void moveUpdateDroid() final;
+      void moveUpdatePersonModel(int speed, uint16_t direction) final;
+      void moveCalcDroidSlide(int* pmx, int* pmy) final;
+      void moveUpdateGroundModel(int speed, uint16_t direction) final;
+      void moveCombineNormalAndPerpSpeeds(int fNormalSpeed, int fPerpSpeed, uint16_t iDroidDir) final;
+      int moveCalcDroidSpeed() final;
       [[nodiscard]] unsigned getCommanderLevel() const final;
       [[nodiscard]] bool isProbablyDoomed(bool isDirectDamage) const final;
       [[nodiscard]] bool isVtol() const final;
@@ -349,6 +370,8 @@ namespace Impl
       void updateDroidOrientation() final;
       int objRadius() const final;
 
+      void moveUpdateCyborgModel(int moveSpeed, uint16_t moveDir, MOVE_STATUS oldStatus) final;
+      void moveUpdateVtolModel(int speed, uint16_t direction) final;
       void moveDescending() final;
       void movePlayDroidMoveAudio() final;
       bool moveNextTarget() final;
@@ -456,6 +479,7 @@ namespace Impl
       SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate) final;
       void initDroidMovement() final;
       void moveReallyStopDroid() final;
+      bool droidUpdateDemolishing() final;
   private:
       using enum DROID_TYPE;
       using enum ACTION;
@@ -479,7 +503,7 @@ namespace Impl
 
       /// A structure that this droid might be associated with.
       /// For VTOLs this is the rearming pad
-      Structure *associatedStructure = nullptr;
+      ::Structure *associatedStructure = nullptr;
 
       /// The range [0; listSize - 1] corresponds to synchronised orders, and the range
       /// [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will

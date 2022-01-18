@@ -45,7 +45,7 @@ static constexpr auto VTOL_HEIGHT_MAX =	350;
 static constexpr auto OBJ_MAXRADIUS	= TILE_UNITS * 4;
 
 // how long a shuffle can propagate before they all stop
-static constexpr auto VE_SHUFFLETIME = 10000;
+static constexpr auto MOVE_SHUFFLETIME = 10000;
 
 // Length of time a droid has to be stationery to be considered blocked
 static constexpr auto BLOCK_TIME = 6000;
@@ -91,6 +91,14 @@ enum class MOVE_STATUS
     HOVER,
     WAIT_FOR_ROUTE,
     SHUFFLE
+};
+
+struct BLOCKING_CALLBACK_DATA
+{
+    PROPULSION_TYPE propulsionType;
+    bool blocking;
+    Vector2i src;
+    Vector2i dst;
 };
 
 struct Movement
@@ -165,6 +173,18 @@ static void moveOpenGates(Droid* psDroid, Vector2i tile);
 static void moveCalcSlideVector(Droid* psDroid, int objX, int objY, int* pMx, int* pMy);
 static bool moveDroidStopped(Droid* psDroid, SDWORD speed);
 static void movePlayDroidMoveAudio(Droid* psDroid);
+static void moveCheckFinalWaypoint(Droid* psDroid, SDWORD* pSpeed);
 static bool moveDroidStartCallback(void* psObj);
+static void moveUpdateDroidDirection(Droid* psDroid, SDWORD* pSpeed, uint16_t direction,
+                                     uint16_t iSpinAngle, int iSpinSpeed, int iTurnSpeed, uint16_t* pDroidDir);
+static int moveCalcNormalSpeed(Droid* psDroid, int fSpeed, uint16_t iDroidDir, int iAccel, int iDecel);
+static int moveCalcPerpSpeed(Droid* psDroid, uint16_t iDroidDir, int iSkidDecel);
+static void moveGetDroidPosDiffs(Droid* psDroid, int32_t* pDX, int32_t* pDY);
+static void moveCheckSquished(Droid* psDroid, int emx, int emy);
+static void moveUpdateDroidPos(Droid* psDroid, int32_t dx, int32_t dy);
+static bool moveReachedWayPoint(Droid* psDroid);
+static uint16_t moveGetDirection(Droid* psDroid);
+static void checkLocalFeatures(Droid* psDroid);
+static bool moveBlockingTileCallback(Vector2i pos, int32_t dist, void* data_);
 
 #endif // __INCLUDED_SRC_MOVE_H__

@@ -426,11 +426,10 @@ void freeAllDroids()
 }
 
 /*Remove a single Droid from a list*/
-void removeDroid(Droid* psDroidToRemove, Droid* pList[MAX_PLAYERS])
+void removeDroid(Droid* psDroidToRemove, std::array<std::vector<Droid>, MAX_PLAYERS> pList)
 {
-	ASSERT_OR_RETURN(, psDroidToRemove->type == OBJ_DROID, "Pointer is not a unit");
-	ASSERT_OR_RETURN(, psDroidToRemove->player < MAX_PLAYERS, "Invalid player for unit");
-	removeObjectFromList(pList, psDroidToRemove, psDroidToRemove->player);
+	ASSERT_OR_RETURN(, psDroidToRemove->getPlayer() < MAX_PLAYERS, "Invalid player for unit");
+	removeObjectFromList(pList, psDroidToRemove, psDroidToRemove->getPlayer());
 
 	/* Whenever a droid is removed from the current list its died
 	 * flag is set to NOT_CURRENT_LIST so that anything targetting
