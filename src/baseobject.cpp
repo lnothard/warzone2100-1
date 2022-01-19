@@ -18,10 +18,18 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
+#include "lib/framework/vector.h"
+
+#include "basedef.h"
 #include "baseobject.h"
+#include "droid.h"
 #include "feature.h"
-#include "intdisplay.h"
-#include "map.h"
+#include "structure.h"
+
+Vector2i map_coord(Vector2i);
+bool StatIsStructure(const BaseStats*);
+bool StatIsFeature(const BaseStats*);
+
 
 static inline uint16_t interpolateAngle(uint16_t v1, uint16_t v2, unsigned t1, unsigned t2, unsigned t)
 {

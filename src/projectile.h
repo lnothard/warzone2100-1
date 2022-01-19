@@ -21,6 +21,23 @@
 #ifndef __INCLUDED_SRC_PROJECTILE_H__
 #define __INCLUDED_SRC_PROJECTILE_H__
 
+#include <vector>
+
+#include "3rdparty/glm/glm/fwd.hpp"
+#include "lib/framework/vector.h"
+#include "lib/gamelib/gtime.h"
+#include "wzmaplib/map.h"
+
+#include "basedef.h"
+
+enum class WEAPON_CLASS;
+enum class WEAPON_EFFECT;
+enum class WEAPON_SUBCLASS;
+struct ConstructedObject;
+struct Weapon;
+struct WeaponStats;
+
+
 static constexpr auto PROJ_MAX_PITCH = 45;
 static constexpr auto PROJ_ULTIMATE_PITCH = 80;
 
@@ -57,16 +74,16 @@ enum class PROJECTILE_STATE
   INACTIVE
 };
 
-class Projectile : public virtual BaseObject, public Impl::BaseObject
+class Projectile : public virtual PersistentObject, public Impl::PersistentObject
 {
 public:
   friend class Damage;
 
-  Projectile(unsigned id, unsigned player);
+  Projectile(unsigned id, unsigned  player);
 
-  void debug_(const char* function, char ch) const;
-  void checkProjectile(const char* location_description,
-                       const char* function, int recurse) const;
+//  void debug_(const char* function, char ch) const;
+//  void checkProjectile(const char* location_description,
+//                       const char* function, int recurse) const;
 
   [[nodiscard]] PROJECTILE_STATE getState() const noexcept;
 
@@ -80,7 +97,7 @@ public:
   void proj_PostImpactFunc();
   void proj_checkPeriodicalDamage();
 
-  bool proj_SendProjectileAngled(Weapon* psWeap, ::PersistentObject* psAttacker, unsigned player,
+  bool proj_SendProjectileAngled(Weapon* psWeap, ::PersistentObject* psAttacker, unsigned plr,
                                  Vector3i dest, ::PersistentObject* psTarget, bool bVisible,
                                  int weapon_slot, int min_angle, unsigned fireTime) const;
 
@@ -90,6 +107,7 @@ public:
   [[nodiscard]] bool gfxVisible() const;
 private:
   using enum PROJECTILE_STATE;
+
   PROJECTILE_STATE state;
 
   /// Whether the selected player should see the projectile

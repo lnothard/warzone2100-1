@@ -23,6 +23,9 @@
  * Draws component objects
 */
 
+#include "lib/framework/fixedpoint.h"
+#include "lib/ivis_opengl/ivisdef.h"
+#include "lib/ivis_opengl/piepalette.h"
 #include "lib/netplay/netplay.h"
 #include <glm/gtx/transform.hpp>
 
@@ -30,21 +33,29 @@
   #define GLM_ENABLE_EXPERIMENTAL
 #endif
 
-#include "action.h"
 #include "component.h"
 #include "display3d.h"
 #include "displaydef.h"
 #include "effects.h"
-#include "faction.h"
-#include "intdisplay.h"
 #include "map.h"
 #include "miscimd.h"
-#include "projectile.h"
-#include "transporter.h"
+#include "move.h"
+#include "research.h"
+#include "stats.h"
+#include "structure.h"
+
+static constexpr auto EMP_DISABLE_TIME = 10000;
 
 /* forward decl */
+enum class FACTION;
+int bobTransporterHeight();
+const FACTION* getPlayerFaction(uint8_t);
+iIMDShape* getFactionIMD(const FACTION*, iIMDShape*);
+Spacetime interpolateObjectSpacetime(const PersistentObject*, unsigned);
 bool missionIsOffworld();
 bool gamePaused();
+COMPONENT_TYPE StatIsComponent(BaseStats*);
+bool StatGetComponentIMD(BaseStats*, COMPONENT_TYPE, iIMDShape**, iIMDShape**);
 
 
 #define GetRadius(x) ((x)->sradius)

@@ -23,41 +23,30 @@
  * Functions for setting the orders of a droid or group of droids.
  */
 
-#include <cstring>
-
-#include "lib/framework/frame.h"
-#include "lib/framework/input.h"
-#include "lib/framework/math_ext.h"
-#include "lib/gamelib/gtime.h"
-#include "lib/ivis_opengl/ivisdef.h"
+#include "lib/framework/vector.h"
 #include "lib/netplay/netplay.h"
-#include "lib/sound/audio_id.h"
 #include "lib/sound/audio.h"
+#include "lib/sound/audio_id.h"
 
-#include "objects.h"
-#include "order.h"
 #include "action.h"
-#include "map.h"
-#include "projectile.h"
-#include "effects.h"
-#include "intorder.h"
-#include "transporter.h"
-#include "qtscript.h"
-#include "group.h"
-#include "cmddroid.h"
-#include "move.h"
-#include "multiplay.h"
-#include "random.h"
-#include "mission.h"
-#include "hci.h"
-#include "visibility.h"
-#include "display.h"
 #include "ai.h"
-#include "warcam.h"
-#include "fpath.h"
-#include "display3d.h"
-#include "console.h"
-#include "mapgrid.h"
+#include "droid.h"
+#include "map.h"
+#include "multiplay.h"
+#include "objmem.h"
+#include "order.h"
+#include "projectile.h"
+
+typedef std::vector<PersistentObject*> GridList;
+GridList const& gridStartIterate(int, int, unsigned);
+bool checkTransporterSpace(Droid*, Droid*, bool);
+bool ctrlShiftDown();
+bool missionLimboExpand();
+bool specialOrderKeyDown();
+bool fpathBlockingTile(int x, int y, PROPULSION_TYPE propulsion);
+void assignSensorTarget(PersistentObject*);
+void setSensorAssigned();
+int visibleObject(PersistentObject*, PersistentObject*, bool);
 
 static void orderClearDroidList(Droid* psDroid);
 
@@ -1172,7 +1161,7 @@ void orderSelectedObjAdd(unsigned player, PersistentObject* psObj, bool add)
 				if (isConstructionDroid(&psCurr)) {
           // help build the planned structure.
           orderDroidStatsLocDirAdd(&psCurr, ORDER_TYPE::BUILD,
-                                   dynamic_cast<Structure*>(psObj)->getStats(),
+                                   &dynamic_cast<Structure*>(psObj)->getStats(),
                                    psObj->getPosition().x, psObj->getPosition().y,
                                    dynamic_cast<Structure *>(psObj)->getRotation().direction,
                                    add);

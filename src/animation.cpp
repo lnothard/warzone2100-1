@@ -22,7 +22,10 @@
  * Animation functions
  */
 
+#include "lib/gamelib/gtime.h"
+
 #include "animation.h"
+
 
 void ValueTracker::start(int value)
 {

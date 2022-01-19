@@ -24,31 +24,35 @@
  * Parse command line arguments
  */
 
-#include <cwchar>
-#include <utility>
-
-#include "lib/framework/frame.h"
-#include "lib/framework/string_ext.h"
-#include "lib/ivis_opengl/screen.h"
+#include "lib/framework/debug.h"
+#include "lib/framework/i18n.h"
+#include "lib/framework/wzstring.h"
 #include "lib/netplay/netplay.h"
-#include "lib/ivis_opengl/pieclip.h"
 
-#include "levels.h"
 #include "clparse.h"
-#include "display3d.h"
 #include "frontend.h"
-#include "keybind.h"
-#include "loadsave.h"
 #include "main.h"
 #include "modding.h"
 #include "multiplay.h"
-#include "version.h"
 #include "warzoneconfig.h"
 #include "wrappers.h"
-#include "multilobbycommands.h"
+
+char saveGameName[256];
+bool CauseCrash;
+bool customDebugfile;
+bool addLobbyAdminIdentityHash(const std::string&);
+bool addLobbyAdminPublicKey(const std::string&);
+const char* version_getFormattedVersionString(bool = true);
+void kf_NoAssert();
+bool findLastSave();
+void setDrawShadows(bool);
+
+#define PATH_MAX 1024
+char configdir[PATH_MAX];
+char sRequestResult[PATH_MAX];
+
 
 // Our fine replacement for the popt abomination follows
-
 static constexpr auto POPT_ARG_STRING = true;
 static constexpr auto POPT_ARG_NONE = false;
 static constexpr auto POPT_ERROR_BADOPT = -1;

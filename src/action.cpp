@@ -158,10 +158,8 @@ std::string getDroidActionName(ACTION action)
 //}
 
 // check if a target is inside minimum weapon range
-static bool actionInsideMinRange(Droid *psDroid, PersistentObject *psObj, WeaponStats *psStats)
+static bool actionInsideMinRange(Droid const* psDroid, PersistentObject const* psObj, WeaponStats const* psStats)
 {
-	CHECK_OBJECT(psObj);
-
 	if (!psStats) {
 		psStats = getWeaponStats(psDroid, 0);
 	}
@@ -171,11 +169,11 @@ static bool actionInsideMinRange(Droid *psDroid, PersistentObject *psObj, Weapon
 		return false;
 	}
 
-	const int dx = psDroid->getPosition().x - psObj->getPosition().x;
-	const int dy = psDroid->getPosition().y - psObj->getPosition().y;
-	const int radSq = dx * dx + dy * dy;
-	const int minRange = proj_GetMinRange(psStats, psDroid->getPlayer());
-	const int rangeSq = minRange * minRange;
+	const auto dx = psDroid->getPosition().x - psObj->getPosition().x;
+	const auto dy = psDroid->getPosition().y - psObj->getPosition().y;
+	const auto radSq = dx * dx + dy * dy;
+	const auto minRange = proj_GetMinRange(psStats, psDroid->getPlayer());
+	const auto rangeSq = minRange * minRange;
 
 	// check min range
 	if (radSq <= rangeSq) {

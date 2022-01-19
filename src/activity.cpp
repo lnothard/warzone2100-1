@@ -24,10 +24,15 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 
 #include "activity.h"
-#include "challenge.h"
-#include "mission.h"
 #include "modding.h"
 #include "multiint.h"
+#include "scores.h"
+
+bool challengeActive;
+bool Cheated;
+std::string currentChallengeName();
+std::string getCampaignName();
+
 
 std::string SkirmishGameInfo::gameName() const
 {

@@ -21,12 +21,13 @@
 #ifndef __INCLUDED_SRC_DISPLAY3D_H__
 #define __INCLUDED_SRC_DISPLAY3D_H__
 
-#include "display.h"
-#include "display3ddef.h"	// This should be the only place including this file
 #include "lib/ivis_opengl/pietypes.h"
 #include "lib/ivis_opengl/piedef.h"
-#include "objectdef.h"
+
+#include "display.h"
 #include "message.h"
+#include "objectdef.h"
+#include "projectile.h"
 
 static constexpr auto TILE_WIDTH = 128;
 static constexpr auto TILE_HEIGHT = 128;
@@ -101,7 +102,7 @@ void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix);
 void renderFeature(Feature* psFeature, const glm::mat4& viewMatrix);
 void renderProximityMsg(PROXIMITY_DISPLAY* psProxDisp, const glm::mat4& viewMatrix);
 void renderProjectile(Projectile* psCurr, const glm::mat4& viewMatrix);
-void renderDeliveryPoint(FLAG_POSITION* psPosition, bool blueprint, const glm::mat4& viewMatrix);
+void renderDeliveryPoint(FlagPosition* psPosition, bool blueprint, const glm::mat4& viewMatrix);
 
 void calcScreenCoords(Droid* psDroid, const glm::mat4& viewMatrix);
 ENERGY_BAR toggleEnergyBars();

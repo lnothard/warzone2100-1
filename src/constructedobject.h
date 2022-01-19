@@ -6,10 +6,12 @@
 #ifndef WARZONE2100_CONSTRUCTEDOBJECT_H
 #define WARZONE2100_CONSTRUCTEDOBJECT_H
 
-#include "lib/ivis_opengl/ivisdef.h"
-
 #include "basedef.h"
-#include "weapon.h"
+
+enum class WEAPON_SUBCLASS;
+struct iIMDShape;
+struct Weapon;
+
 
 static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
 static constexpr auto TURRET_ROTATION_RATE = 45;
@@ -25,17 +27,15 @@ public:
 
   [[nodiscard]] virtual const std::vector<Weapon>& getWeapons() const = 0;
   [[nodiscard]] virtual const iIMDShape& getImdShape() const = 0;
-  [[nodiscard]] virtual const PersistentObject& getTarget(int weapon_slot) const = 0;
+  [[nodiscard]] virtual const PersistentObject* getTarget(int weapon_slot) const = 0;
   [[nodiscard]] virtual int getResistance() const = 0;
   [[nodiscard]] virtual unsigned getOriginalHp() const = 0;
 
-  [[nodiscard]] virtual bool isProbablyDoomed(bool isDirectDamage) const = 0;
   [[nodiscard]] virtual bool isAlive() const = 0;
 	[[nodiscard]] virtual bool isRadarDetector() const = 0;
 	virtual bool isValidTarget(const ConstructedObject* attacker, int weapon_slot) const = 0;
 	virtual uint8_t isTargetVisible(const PersistentObject* target, bool walls_block) const = 0;
 	[[nodiscard]] virtual unsigned calculateSensorRange() const = 0;
-  [[nodiscard]] virtual bool isSelected() const noexcept = 0;
   virtual void alignTurret(int weapon_slot) = 0;
   virtual void updateExpectedDamage(unsigned damage, bool is_direct) noexcept = 0;
   [[nodiscard]] virtual int calculateAttackPriority(const ConstructedObject* target, int weapon_slot) const = 0;
@@ -97,7 +97,7 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
  * @return
  */
 [[nodiscard]] int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject& target,
-                                      int weapon_slot, bool walls_block, bool is_direct);
+                                      int weapon_slot, bool walls_block = true, bool is_direct = true);
 
 
 [[nodiscard]] unsigned getMaxWeaponRange(const ConstructedObject& unit);

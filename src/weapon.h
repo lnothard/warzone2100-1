@@ -54,7 +54,7 @@ class Weapon : public virtual BaseObject, public Impl::BaseObject
 {
 public:
   /* Accessors */
-  [[nodiscard]] const WeaponStats& getStats() const;
+  [[nodiscard]] const WeaponStats* getStats() const;
   [[nodiscard]] unsigned getRecoil() const;
   [[nodiscard]] unsigned getMaxRange(unsigned player) const;
   [[nodiscard]] unsigned getMinRange(unsigned player) const;

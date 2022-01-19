@@ -25,18 +25,30 @@
  * after bucket sorting objects
  */
 
-#include "lib/ivis_opengl/ivisdef.h"
-#include "lib/ivis_opengl/piematrix.h"
-#include "lib/ivis_opengl/pieclip.h"
+#include <vector>
+
+#include "lib/framework/fixedpoint.h"
+#include "lib/framework/vector.h"
 
 #include "atmos.h"
 #include "bucket3d.h"
-#include "component.h"
 #include "display3d.h"
 #include "displaydef.h"
 #include "effects.h"
+#include "feature.h"
 #include "miscimd.h"
+#include "positiondef.h"
 #include "projectile.h"
+
+struct BodyStats;
+struct Droid;
+struct iIMDShape;
+struct PersistentObject;
+void displayComponentObject(Droid*, const glm::mat4&);
+int pie_GetVideoBufferHeight();
+int pie_GetVideoBufferWidth();
+int pie_RotateProject(const Vector3i*, const glm::mat4&, Vector2i*);
+
 
 static constexpr int CLIP_LEFT	 = 0;
 static const int CLIP_RIGHT = 	pie_GetVideoBufferWidth();
@@ -97,7 +109,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  	}
 	  	break;
 	  case RENDER_PROJECTILE:
-	  	if (((Projectile*)pObject)->->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
+	  	if (((Projectile*)pObject)->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
           ((Projectile*)pObject)->weaponStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND ||
           ((Projectile*)pObject)->weaponStats->weaponSubClass == WEAPON_SUBCLASS::EMP)
 	  	{
@@ -412,10 +424,10 @@ void bucketRenderCurrentList(const glm::mat4& viewMatrix)
 			renderProximityMsg((PROXIMITY_DISPLAY*)thisTag.pObject, viewMatrix);
 			break;
 		case RENDER_PROJECTILE:
-			renderProjectile((Projectile*)thisTag->pObject, viewMatrix);
+			renderProjectile((Projectile*)thisTag.pObject, viewMatrix);
 			break;
 		case RENDER_DELIVPOINT:
-			renderDeliveryPoint((FlagPosition*)thisTag->pObject, false, viewMatrix);
+			renderDeliveryPoint((FlagPosition*)thisTag.pObject, false, viewMatrix);
 			break;
 		}
 	}

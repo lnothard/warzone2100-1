@@ -26,11 +26,14 @@
 #ifndef __INCLUDED_SRC_ASTAR_H__
 #define __INCLUDED_SRC_ASTAR_H__
 
-#include <vector>
+#include "lib/framework/vector.h"
 
-#include "fpath.h"
-
+enum class FPATH_MOVETYPE;
+enum class PROPULSION_TYPE;
+struct Movement;
+struct PathJob;
 struct StructureBounds;
+
 
 /**
  * Conversion table from direction to offset

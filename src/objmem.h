@@ -28,14 +28,11 @@
 
 #include "lib/framework/frame.h"
 
+#include "constructedobject.h"
 #include "droid.h"
 #include "feature.h"
+#include "structure.h"
 
-class FlagPosition;
-class ResourceExtractor;
-class PersistentObject;
-class Structure;
-class ConstructedObject;
 
 /* The lists of objects allocated */
 extern std::array<std::vector<Droid>,MAX_PLAYERS> apsDroidLists;

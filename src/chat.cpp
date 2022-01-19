@@ -27,7 +27,6 @@
 
 #include "chat.h"
 #include "multiplay.h"
-#include "qtscript.h"
 
 ChatMessage::ChatMessage(unsigned sender, std::string text)
   : sender{sender}, text{std::move(text)}

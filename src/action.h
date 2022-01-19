@@ -29,8 +29,12 @@
 #include "lib/gamelib/gtime.h"
 #include "wzmaplib/map.h"
 
-#include "droid.h"
-#include "stats.h"
+enum class ACTION;
+struct BaseStats;
+struct Droid;
+struct Weapon;
+struct WeaponStats;
+
 
 /* Attack run distances */
 static constexpr auto	VTOL_ATTACK_LENGTH = 1000;
@@ -150,7 +154,7 @@ void moveToRearm(Droid* psDroid);
 /** Choose a landing position for a VTOL when it goes to rearm. */
 bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p);
 
-static bool actionInsideMinRange(Droid *psDroid, PersistentObject *psObj, WeaponStats *psStats);
+static bool actionInsideMinRange(Droid const* psDroid, PersistentObject const* psObj, WeaponStats const* psStats);
 
 static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir, BaseStats* psStats);
 

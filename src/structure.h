@@ -26,12 +26,23 @@
 #ifndef __INCLUDED_SRC_STRUCTURE_H__
 #define __INCLUDED_SRC_STRUCTURE_H__
 
-#include "lib/gamelib/gtime.h"
+#include <memory>
+#include <vector>
 
+#include "lib/framework/frame.h"
+#include "lib/framework/vector.h"
+#include "lib/framework/wzconfig.h"
+#include "lib/gamelib/gtime.h"
+#include "lib/ivis_opengl/ivisdef.h"
+
+#include "basedef.h"
 #include "constructedobject.h"
 #include "droid.h"
+#include "group.h"
 #include "order.h"
-
+#include "positiondef.h"
+#include "stats.h"
+#include "weapon.h"
 
 static constexpr auto NUM_FACTORY_MODULES = 2;
 static constexpr auto NUM_POWER_MODULES = 4;
@@ -184,7 +195,7 @@ struct StructureStats : public BaseStats
     unsigned height; /*The height above/below the terrain - negative values denote below the terrain*/
     unsigned power_cost; /*How much power the structure requires to build*/
     std::vector< std::unique_ptr<iIMDShape> > IMDs; // The IMDs to draw for this structure, for each possible number of modules.
-    std::unique_ptr<iIMDShape> base_imd; /*The base IMD to draw for this structure */
+    std::shared_ptr<iIMDShape> base_imd; /*The base IMD to draw for this structure */
     std::shared_ptr<EcmStats> ecm_stats; /*Which ECM is standard for the structure -if any*/
     std::shared_ptr<SensorStats> sensor_stats;/*Which Sensor is standard for the structure -if any*/
     unsigned weapon_slots; /*Number of weapons that can be attached to the building*/
@@ -234,7 +245,7 @@ public:
     [[nodiscard]] virtual int getFoundationDepth() const = 0;
     [[nodiscard]] virtual Vector2i getSize() const = 0;
     [[nodiscard]] virtual STRUCTURE_STATE getState() const = 0;
-    [[nodiscard]] virtual const StructureStats& getStats() const = 0;
+    [[nodiscard]] virtual const StructureStats* getStats() const = 0;
     [[nodiscard]] virtual STRUCTURE_ANIMATION_STATE getAnimationState() const = 0;
     [[nodiscard]] virtual unsigned getArmourValue(WEAPON_CLASS weaponClass) const = 0;
     [[nodiscard]] virtual uint8_t getCapacity() const = 0;
@@ -270,16 +281,16 @@ namespace Impl
         [[nodiscard]] Vector2i getSize() const final;
         [[nodiscard]] int getFoundationDepth() const noexcept final;
         [[nodiscard]] const iIMDShape& getImdShape() const final;
-        [[nodiscard]] const ::PersistentObject& getTarget(int weapon_slot) const final;
+        [[nodiscard]] const ::PersistentObject* getTarget(int weapon_slot) const final;
         [[nodiscard]] STRUCTURE_STATE getState() const final;
-        [[nodiscard]] const StructureStats& getStats() const final;
+        [[nodiscard]] const StructureStats* getStats() const final;
         [[nodiscard]] uint8_t getCapacity() const final;
 
         int objRadius() const final;
         [[nodiscard]] bool isBlueprint() const noexcept;
         [[nodiscard]] bool isWall() const noexcept final;
         [[nodiscard]] bool isRadarDetector() const final;
-        [[nodiscard]] bool isProbablyDoomed() const final;
+        [[nodiscard]] bool isProbablyDoomed(bool isDirect) const final;
         [[nodiscard]] bool hasModules() const noexcept;
         [[nodiscard]] bool hasSensor() const final;
         [[nodiscard]] bool hasStandardSensor() const final;

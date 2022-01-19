@@ -2,18 +2,23 @@
 // Created by luna on 08/12/2021.
 //
 
-#include <algorithm>
+#include <vector>
 
 #include "lib/framework/fixedpoint.h"
 #include "lib/framework/geometry.h"
 #include "lib/framework/math_ext.h"
-#include "lib/wzmaplib/include/wzmaplib/map.h"
+#include "lib/ivis_opengl/ivisdef.h"
+#include "wzmaplib/map.h"
 
 #include "constructedobject.h"
-#include "droid.h"
+#include "displaydef.h"
 #include "map.h"
-#include "projectile.h"
 #include "objmem.h"
+#include "weapon.h"
+
+int establishTargetHeight(PersistentObject const* psTarget);
+static constexpr auto PROJ_MAX_PITCH = 45;
+
 
 namespace Impl
 {
@@ -51,11 +56,6 @@ namespace Impl
 
     weapon.setRotation({weapon_rotation, weapon_pitch, weapon.getRotation().roll});
 	}
-
-  bool ConstructedObject::isSelected() const noexcept
-  {
-    return selected;
-  }
 }
 
 bool hasFullAmmo(const ConstructedObject& unit) noexcept
@@ -247,13 +247,11 @@ int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject&
 		}
 
 		// check for walls and other structures
-		// TODO: if there is a structure on the same tile as the shooter (and the shooter is not that structure) check if LOF is blocked by it.
-		if (walls_block && oldPartSq > 0)
-		{
+		if (walls_block && oldPartSq > 0) {
 			const Tile* psTile;
 			halfway = current + (next - current) / 2;
 			psTile = mapTile(map_coord(halfway.x), map_coord(halfway.y));
-			if (tile_is_occupied_by_structure(*psTile) &&
+			if (TileHasStructure(psTile) &&
           psTile->psObject != &target) {
 				// check whether target was reached before tile's "half way" line
 				part = halfway - start;
@@ -334,7 +332,7 @@ ConstructedObject* find_target(ConstructedObject& unit, TARGET_ORIGIN attacker_t
 
   for (const auto sensor : apsSensorList)
   {
-    if (!alliance_formed(sensor->getPlayer(), unit.getPlayer())) {
+    if (!aiCheckAlliances(sensor->getPlayer(), unit.getPlayer())) {
       continue;
     }
     // Artillery should not fire at objects observed
@@ -365,14 +363,14 @@ ConstructedObject* find_target(ConstructedObject& unit, TARGET_ORIGIN attacker_t
         !target->isAlive() ||
         target->isProbablyDoomed() ||
         !target->isValidTarget() ||
-        alliance_formed(target->getPlayer(),
+        aiCheckAlliances(target->getPlayer(),
                         unit.getPlayer())) {
       continue;
     }
 
     auto square_dist = objectPositionSquareDiff(target->getPosition(),
                                                 unit.getPosition());
-    if (target_within_weapon_range(unit, target, weapon_slot) &&
+    if (targetInLineOfFire(unit, *target, weapon_slot) &&
         target->isTargetVisible()) {
       target_dist = square_dist;
       if (is_cb_sensor) {

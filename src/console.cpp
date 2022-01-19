@@ -25,22 +25,30 @@
  * Alex McLean, Pumpkin Studios, EIDOS Interactive
  */
 
-#include <sstream>
+#include <deque>
 #include <set>
 
-#include "lib/framework/input.h"
-#include "lib/ivis_opengl/pieblitfunc.h"
-#include "lib/ivis_opengl/piestate.h"
-#include "lib/ivis_opengl/textdraw.h"
+#include "lib/ivis_opengl/piepalette.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
 
+#include "ai.h"
 #include "console.h"
-#include "loadsave.h"
-#include "mission.h"
+#include "lib/framework/input.h"
+#include "levels.h"
+#include "main.h"
+#include "multiplay.h"
+
+
+#define		TIMER_Y					22
+#define RET_FORMWIDTH		132
 
 bool challengeActive;
 bool bEnemyAllyRadarColor;
+bool isSecondaryWindowUp();
+void iV_TransBoxFill(float, float, float, float);
+void pie_SetFogStatus(bool);
+void drawBlueBox(unsigned, unsigned, unsigned, unsigned);
 
 static std::deque<CONSOLE_MESSAGE> ActiveMessages; // we add all messages to this container
 static std::deque<CONSOLE_MESSAGE> TeamMessages; // history of team/private communications

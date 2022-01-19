@@ -23,46 +23,45 @@
  * Saves your favourite options
  */
 
-#include "lib/framework/wzconfig.h"
-#include "lib/framework/input.h"
-#include "lib/netplay/netplay.h"
-#include "lib/sound/mixer.h"
-#include "lib/sound/sounddefs.h"
-#include "lib/ivis_opengl/screen.h"
-#include "lib/ivis_opengl/pieclip.h"
-#include "lib/ivis_opengl/piestate.h" // for fog
-
-#include "ai.h"
-#include "component.h"
-#include "configuration.h"
-#include "difficulty.h"
-#include "ingameop.h"
-#include "multiint.h"
-#include "multiplay.h"
-#include "radar.h"
-#include "seqdisp.h"
-#include "texture.h"
-#include "warzoneconfig.h"
-#include "titleui/titleui.h"
-#include "activity.h"
-#include "nethelpers.h"
-#include "lib/framework/wzapp.h"
-#include "display3d.h" // for building animation speed
-#include "display.h"
-#include "keybind.h" // for MAP_ZOOM_RATE_STEP
-#include "loadsave.h" // for autosaveEnabled
-#include "clparse.h" // for autoratingUrl
-
-#include <type_traits>
-#include <utility>
-
-#include "mINI/ini.h"
+#include "3rdparty/mINI/ini.h"
 #include "3rdparty/physfs.hpp"
 #include "lib/framework/physfs_ext.h"
+#include "lib/netplay/netplay.h"
+#include "lib/sound/mixer.h"
+
+#include "activity.h"
+#include "ai.h"
+#include "configuration.h"
+#include "difficulty.h"
+#include "display.h"
+#include "keybind.h"
+#include "multiplay.h"
+#include "nethelpers.h"
+#include "radar.h"
+#include "warzoneconfig.h"
+
+char sPlayer[128];
+bool autosaveEnabled;
+bool showFPS;
+bool showUNITCOUNT;
+bool hostQuitConfirmation;
+int BlueprintTrackAnimationSpeed;
+void pie_EnableFog(bool);
+void pie_SetFogStatus(bool);
+bool pie_GetFogEnabled();
+void setAutoratingUrl(std::string);
+void mpSetServerName(const char*);
+void seq_SetSubtitles(bool);
+void setTextureSize(int);
+int getTextureSize();
+VIDEO_BACKEND wzGetDefaultGfxBackendForCurrentSystem();
+const char* mpGetServerName();
+std::string getAutoratingUrl();
+bool seq_GetSubtitles();
+const char* getPlayerColour(unsigned);
+
 
 #define PHYFSPP_IMPL
-
-
 #define MASTERSERVERPORT	9990
 #define GAMESERVERPORT		2100
 

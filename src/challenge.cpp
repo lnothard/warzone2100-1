@@ -23,18 +23,33 @@
  * Run challenges dialog
  */
 
-#include "lib/framework/input.h"
-#include "lib/framework/wztime.h"
-#include "lib/ivis_opengl/bitimage.h"
+#include <string>
+
+#include "lib/ivis_opengl/piepalette.h"
 #include "lib/netplay/netplay.h"
 #include "lib/widget/button.h"
+#include "lib/widget/form.h"
+#include "lib/widget/widgbase.h"
 #include "titleui/multiplayer.h"
 
 #include "challenge.h"
+#include "hci.h"
 #include "intdisplay.h"
+#include "intfac.h"
 #include "loadsave.h"
 #include "mission.h"
 #include "multiplay.h"
+
+struct IMAGEFILE;
+IMAGEFILE* IntImages;
+bool CancelPressed();
+tm getUtcTime(std::time_t const&);
+void inputLoseFocus();
+unsigned short iV_GetImageHeight(const IMAGEFILE*, unsigned short);
+unsigned short iV_GetImageWidth(const IMAGEFILE*, unsigned short);
+void pie_BoxFill(int, int, int, int, PIELIGHT);
+bool WZ_PHYSFS_enumerateFiles(const char*, const std::function<bool (char*)>&);
+
 
 static constexpr auto totalslots  = 36; 			// challenge slots
 static constexpr auto slotsInColumn  = 12; 		// # of slots in a column

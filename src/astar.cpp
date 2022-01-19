@@ -42,14 +42,21 @@
  *  stored in the `ExploredTile` 2D array of tiles.
  */
 
-#include "lib/wzmaplib/include/wzmaplib/map.h"
+#include "lib/netplay/netplay.h"
+#include "wzmaplib/map.h"
 
 #include "astar.h"
-#include "map.h"
+#include "fpath.h"
 #include "move.h"
 #include "structure.h"
 
+int mapWidth, mapHeight;
+uint8_t auxTile(int, int, unsigned);
 bool isHumanPlayer(unsigned);
+Vector2i map_coord(Vector2i);
+
+
+static constexpr auto AUXBITS_THREAT = 0x20; ///< Can hostile players shoot here?
 
 PathCoord::PathCoord(int x, int y)
   : x{x}, y{y}
@@ -676,7 +683,7 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
   const auto dstIgnore = NonBlockingArea{pathJob.dstStructure};
 
   auto it = std::find_if(path_contexts.begin(), path_contexts.end(),
-                         [&end, &must_reverse](const auto& context)
+                         [&origin_tile, &end, &must_reverse](const auto& context)
   {
       if (context.map[origin_tile.x + origin_tile.y * mapWidth].iteration ==
           context.map[origin_tile.x + origin_tile.y * mapWidth].visited)  {
@@ -1007,7 +1014,8 @@ void fpathSetBlockingMap(PathJob& path_job)
         checksum_map ^= map[x + y * mapWidth] * (factor = 3 * factor + 1);
       }
     }
-		if (!isHumanPlayer(type.owner) && type.moveType == FMT_MOVE)  {
+		if (!isHumanPlayer(type.owner) &&
+        type.moveType == FPATH_MOVETYPE::FMT_MOVE)  {
 			auto threat = blocking.threat_map;
 			threat.resize(static_cast<size_t>(mapWidth) *
                     static_cast<size_t>(mapHeight));
@@ -1020,12 +1028,14 @@ void fpathSetBlockingMap(PathJob& path_job)
 				}
       }
 		}
-		syncDebug("blockingMap(%d,%d,%d,%d) = %08X %08X", gameTime, path_job.propulsion, path_job.owner, path_job.moveType,
+		syncDebug("blockingMap(%d,%d,%d,%d) = %08X %08X", gameTime,
+              path_job.propulsion, path_job.owner, path_job.moveType,
               checksum_map, checksum_threat_map);
 
     path_job.blockingMap = std::make_shared<PathBlockingMap>(blocking_maps.back());
 	} else  {
-		syncDebug("blockingMap(%d,%d,%d,%d) = cached", gameTime, path_job.propulsion, path_job.owner, path_job.moveType);
+		syncDebug("blockingMap(%d,%d,%d,%d) = cached", gameTime,
+              path_job.propulsion, path_job.owner, path_job.moveType);
     path_job.blockingMap = std::make_shared<PathBlockingMap>(*it);
 	}
 }

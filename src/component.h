@@ -28,7 +28,6 @@ class BaseStats;
 class Droid;
 class DroidTemplate;
 class iIMDShape;
-class PIELIGHT;
 class Structure;
 class StructureStats;
 class Weapon;

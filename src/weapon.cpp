@@ -38,9 +38,9 @@ bool Weapon::isEmptyVtolWeapon(unsigned player) const
   return ammoUsed >= getNumAttackRuns(player);
 }
 
-const WeaponStats& Weapon::getStats() const
+const WeaponStats* Weapon::getStats() const
 {
-  return *stats;
+  return stats.get();
 }
 
 TARGET_ORIGIN Weapon::getTargetOrigin() const

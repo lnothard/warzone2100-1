@@ -21,9 +21,10 @@
 #ifndef __INCLUDED_LIB_SOUND_AUDIO_H__
 #define __INCLUDED_LIB_SOUND_AUDIO_H__
 
-#include "track.h"
-#include "sounddefs.h"
-#include "src/basedef.h"
+enum class HRTFMode;
+struct AUDIO_STREAM;
+struct PersistentObject;
+typedef bool (* AUDIO_CALLBACK)(void *psObj);
 
 bool audio_Init(AUDIO_CALLBACK pStopTrackCallback, HRTFMode hrtf, bool really_init);
 void audio_Update();
@@ -33,7 +34,7 @@ bool audio_Disabled();
 bool audio_LoadTrackFromFile(char szFileName[]);
 unsigned int audio_SetTrackVals(const char *fileName, bool loop, unsigned int volume, unsigned int audibleRadius);
 void audio_PlayBuildFailedOnce();
-bool audio_PlayStaticTrack(SDWORD iX, SDWORD iY, int iTrack);
+bool audio_PlayStaticTrack(int iX, int iY, int iTrack);
 bool audio_PlayObjStaticTrack(PersistentObject *psObj, int iTrack);
 bool audio_PlayObjStaticTrackCallback(PersistentObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback);
 bool audio_PlayObjDynamicTrack(PersistentObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback);
@@ -41,19 +42,19 @@ void audio_StopObjTrack(PersistentObject *psObj, int iTrack);
 void audio_PlayTrack(int iTrack);
 void audio_PlayCallbackTrack(int iTrack, AUDIO_CALLBACK pUserCallback);
 AUDIO_STREAM *audio_PlayStream(const char *fileName, float volume, void (*onFinished)(const void *), const void *user_data);
-void audio_QueueTrack(SDWORD iTrack);
-void audio_QueueTrackMinDelay(SDWORD iTrack, UDWORD iMinDelay);
-void audio_QueueTrackMinDelayPos(SDWORD iTrack, UDWORD iMinDelay, SDWORD iX, SDWORD iY, SDWORD iZ);
-void audio_QueueTrackGroup(SDWORD iTrack, SDWORD iGroup);
-void audio_QueueTrackPos(SDWORD iTrack, SDWORD iX, SDWORD iY, SDWORD iZ);
-void audio_QueueTrackGroupPos(SDWORD iTrack, SDWORD iGroup, SDWORD iX, SDWORD iY, SDWORD iZ);
-bool audio_GetPreviousQueueTrackPos(SDWORD *iX, SDWORD *iY, SDWORD *iZ);
-bool audio_GetPreviousQueueTrackRadarBlipPos(SDWORD *iX, SDWORD *iY);
+void audio_QueueTrack(int iTrack);
+void audio_QueueTrackMinDelay(int iTrack, unsigned iMinDelay);
+void audio_QueueTrackMinDelayPos(int iTrack, unsigned iMinDelay, int iX, int iY, int iZ);
+void audio_QueueTrackGroup(int iTrack, int iGroup);
+void audio_QueueTrackPos(int iTrack, int iX, int iY, int iZ);
+void audio_QueueTrackGroupPos(int iTrack, int iGroup, int iX, int iY, int iZ);
+bool audio_GetPreviousQueueTrackPos(int *iX, int *iY, int *iZ);
+bool audio_GetPreviousQueueTrackRadarBlipPos(int *iX, int *iY);
 void audio_PauseAll();
 void audio_ResumeAll();
 void audio_StopAll();
 
-SDWORD audio_GetTrackID(const char *fileName);
+int audio_GetTrackID(const char *fileName);
 void audio_RemoveObj(PersistentObject const *psObj);
 unsigned int audio_GetSampleQueueCount();
 unsigned int audio_GetSampleListCount();

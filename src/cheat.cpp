@@ -25,14 +25,19 @@
  * Alex M 19th - Jan. 1999
  */
 
-#include "lib/exceptionhandler/dumpinfo.h"
+#include "input/debugmappings.h"
+#include "lib/netplay/netplay.h"
 
 #include "activity.h"
 #include "cheat.h"
 #include "display.h"
 #include "keybind.h"
-#include "qtscript.h"
-#include "template.h"
+
+void addDumpInfo(const char*);
+void listTemplates();
+void jsShowDebug();
+bool triggerEventCheatMode(bool);
+
 
 struct CHEAT_ENTRY
 {

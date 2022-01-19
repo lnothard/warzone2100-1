@@ -26,7 +26,12 @@
 #ifndef __INCLUDED_SRC_COMBAT_H__
 #define __INCLUDED_SRC_COMBAT_H__
 
-#include "weapon.h"
+enum class WEAPON_CLASS;
+enum class WEAPON_SUBCLASS;
+struct PersistentObject;
+struct Weapon;
+struct WeaponStats;
+
 
 /* Fire a weapon at something added int weapon_slot*/
 bool combFire(Weapon* psWeap, PersistentObject* psAttacker,

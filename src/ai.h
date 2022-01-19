@@ -26,7 +26,12 @@
 #ifndef __INCLUDED_SRC_AI_H__
 #define __INCLUDED_SRC_AI_H__
 
+#include "lib/framework/frame.h"
+
+#include "basedef.h"
+#include "droid.h"
 #include "weapon.h"
+
 
 static constexpr auto ALLIANCE_BROKEN	= 0;			// states of alliance between players
 static constexpr auto ALLIANCE_REQUESTED = 1;

@@ -24,12 +24,13 @@
  * Warzone audio wrapper functions
  */
 
-#include "lib/framework/fixedpoint.h"
-#include "lib/wzmaplib/include/wzmaplib/map.h"
-
 #include "display3d.h"
-#include "map.h"
 #include "projectile.h"
+
+int mapHeight;
+int map_TileHeight(int, int);
+struct PersistentObject;
+
 
 bool audio_ObjectDead(const PersistentObject* psSimpleObj)
 {

@@ -30,6 +30,7 @@
 
 class Droid;
 
+
 enum class GROUP_TYPE
 {
 	NORMAL,
@@ -51,17 +52,14 @@ public:
    */
 	void add(Droid* psDroid);
 
+  [[nodiscard]] static std::unique_ptr<Group> create(unsigned id);
+
   /// Remove a droid from the group.
-	void remove(Droid* psDroid);
+	void remove(Impl::Droid* psDroid);
 
   [[nodiscard]] bool isCommandGroup() const noexcept;
 
   [[nodiscard]] bool hasElectronicWeapon() const;
-
-  [[nodiscard]] std::vector<Droid*> getMembers() const;
-
-  /// Count the number of members
-	[[nodiscard]] std::size_t getNumMembers() const;
 
   [[nodiscard]] const Droid& getCommander() const;
 
@@ -72,14 +70,14 @@ public:
 	void orderGroup(ORDER_TYPE order, PersistentObject* psObj); // give an order all the droids of the group (using object)
 
 	void setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state); // set the secondary state for a group of droids
-
 private:
+  friend class Impl::Droid;
   using enum GROUP_TYPE;
 	GROUP_TYPE type = NORMAL;
   unsigned id = 0;
 
   /// List of droids in the group
-	std::vector<Droid*> members;
+	std::vector<Impl::Droid*> members;
 
   /**
    * Non-owning pointer to this group's commander.
@@ -88,19 +86,10 @@ private:
 	Droid* psCommander = nullptr;
 };
 
-// initialise the group system
-bool grpInitialise();
-
-// shutdown the group system
-void grpShutDown();
-
 /**
  * Create a new group, use -1 to generate a new ID. Never
  * use id != -1 unless loading from a save game.
  */
 std::unique_ptr<Group> grpCreate(unsigned id = -1);
-
-/// Lookup group by its unique id, or create it if not found
-std::unique_ptr<Group> grpFind(unsigned id);
 
 #endif // __INCLUDED_SRC_GROUP_H__

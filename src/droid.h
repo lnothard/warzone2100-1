@@ -26,15 +26,27 @@
 #ifndef __INCLUDED_SRC_DROID_H__
 #define __INCLUDED_SRC_DROID_H__
 
-#include "wzmaplib/map.h"
+#include <queue>
 
-#include "action.h"
-#include "group.h"
-#include "move.h"
+#include "lib/ivis_opengl/ivisdef.h"
+
+#include "constructedobject.h"
+#include "order.h"
 #include "stats.h"
 
+/* forward declarations */
+struct Action;
+struct Group;
+struct Movement;
+struct RearmPad;
+struct RtrBestResult;
+enum class FPATH_MOVETYPE;
+enum class MOVE_STATUS;
+enum class SELECTIONTYPE;
+enum class SELECTION_CLASS;
 
-#define MAX_SPEED_PITCH  60
+
+static constexpr auto MAX_SPEED_PITCH = 60;
 
 // Watermelon:fix these magic number...the collision radius
 // should be based on pie imd radius not some static int's...
@@ -252,6 +264,7 @@ public:
     [[nodiscard]] virtual const std::string& getName() const = 0;
     [[nodiscard]] virtual unsigned getWeight() const = 0;
     [[nodiscard]] virtual const Group& getGroup() const = 0;
+    [[nodiscard]] virtual const ComponentStats* getComponent(const std::string& compName) const = 0;
 
     [[nodiscard]] virtual bool hasElectronicWeapon() const = 0;
     [[nodiscard]] virtual bool isVtol() const = 0;
@@ -348,8 +361,9 @@ namespace Impl
       [[nodiscard]] const Group& getGroup() const final;
       [[nodiscard]] const std::string& getName() const final;
       [[nodiscard]] unsigned getWeight() const final;
+      [[nodiscard]] const ComponentStats* getComponent(const std::string& compName) const final;
 
-      bool droidSensorDroidWeapon(const PersistentObject* psObj) const final;
+      bool droidSensorDroidWeapon(const ::PersistentObject* psObj) const final;
       std::string getDroidLevelName() const final;
       void moveUpdateDroid() final;
       void moveUpdatePersonModel(int speed, uint16_t direction) final;
@@ -545,7 +559,7 @@ namespace Impl
 
       int iAudioID;
 
-      std::unordered_map<std::string, std::unique_ptr<BaseStats>> components;
+      std::unordered_map<std::string, std::unique_ptr<ComponentStats>> components;
   };
 }
 // the structure that was last hit
@@ -646,7 +660,7 @@ void vanishDroid(Droid* psDel);
 
 /* Remove a droid from the apsDroidLists so doesn't update or get drawn etc*/
 //returns true if successfully removed from the list
-bool droidRemove(Droid* psDroid, std::vector<Droid> pList);
+bool droidRemove(Droid* psDroid, const std::vector<Droid>& pList);
 
 //free the storage for the droid templates
 bool droidTemplateShutDown();

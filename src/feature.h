@@ -26,7 +26,12 @@
 #ifndef __INCLUDED_SRC_FEATURE_H__
 #define __INCLUDED_SRC_FEATURE_H__
 
+#include "basedef.h"
 #include "stats.h"
+
+struct iIMDShape;
+struct StructureBounds;
+
 
 enum class FEATURE_TYPE
 {
@@ -51,7 +56,7 @@ struct FeatureStats : public BaseStats
     [[nodiscard]] Vector2i size() const;
 
     FEATURE_TYPE subType = FEATURE_TYPE::COUNT; ///< type of feature
-    std::unique_ptr<iIMDShape> psImd = nullptr; ///< Graphic for the feature
+    std::shared_ptr<iIMDShape> psImd = nullptr; ///< Graphic for the feature
     unsigned baseWidth = 0; ///< The width of the base in tiles
     unsigned baseBreadth = 0; ///< The breadth of the base in tiles
     bool tileDraw = false; ///< Whether the tile needs to be drawn
@@ -70,7 +75,12 @@ public:
 
     [[nodiscard]] Vector2i size() const;
     [[nodiscard]] FeatureStats const* getStats() const;
-    int objRadius() const final;
+
+    std::unique_ptr<Feature> buildFeature(FeatureStats const* stats,
+                                          unsigned x, unsigned y, bool fromSave) const;
+
+    [[nodiscard]] int objRadius() const final;
+    void update();
 private:
     std::shared_ptr<FeatureStats> psStats;
 };
@@ -97,7 +107,7 @@ void featureUpdate(Feature* psFeat);
 // free up a feature with no visual effects
 bool removeFeature(Feature* psDel);
 
-/* Remove a Feature and free it's memory */
+/* Remove a Feature and free its memory */
 bool destroyFeature(Feature* psDel, unsigned impactTime);
 
 /* get a feature stat id from its name */
@@ -111,7 +121,7 @@ void featureInitVars();
 StructureBounds getStructureBounds(Feature const* object);
 StructureBounds getStructureBounds(FeatureStats const* stats, Vector2i pos);
 
-#define syncDebugFeature(psFeature, ch) _syncDebugFeature(__FUNCTION__, psFeature, ch)
-void _syncDebugFeature(const char* function, Feature const* psFeature, char ch);
+//#define syncDebugFeature(psFeature, ch) _syncDebugFeature(__FUNCTION__, psFeature, ch)
+//void _syncDebugFeature(const char* function, Feature const* psFeature, char ch);
 
 #endif // __INCLUDED_SRC_FEATURE_H__

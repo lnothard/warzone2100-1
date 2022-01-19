@@ -25,7 +25,10 @@
 #ifndef __INCLUDED_SRC_ANIMATION_H__
 #define __INCLUDED_SRC_ANIMATION_H__
 
-#include "lib/gamelib/gtime.h"
+#include <cstdlib>
+
+#include "lib/framework/vector.h"
+
 
 class ValueTracker
 {

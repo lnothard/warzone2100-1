@@ -26,10 +26,15 @@
 #ifndef __INCLUDED_BASEOBJECT_H__
 #define __INCLUDED_BASEOBJECT_H__
 
-class PersistentObject;
-struct StructureBounds;
+#include <cstdlib>
+#include <string>
+
 struct BaseStats;
+class PersistentObject;
+struct Rotation;
 struct Spacetime;
+struct StructureBounds;
+
 
 static const unsigned int max_check_object_recursion = 4;
 

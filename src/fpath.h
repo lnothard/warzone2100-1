@@ -28,7 +28,8 @@
 
 #include "astar.h"
 
-enum FPATH_MOVETYPE
+
+enum class FPATH_MOVETYPE
 {
 	FMT_MOVE,
 	///< Move around all obstacles

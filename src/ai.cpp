@@ -25,14 +25,24 @@
 
 #include "action.h"
 #include "ai.h"
-#include "cmddroid.h"
-#include "combat.h"
-#include "multiplay.h"
-#include "projectile.h"
+#include "move.h"
 #include "objmem.h"
-#include "order.h"
-#include "visibility.h"
-#include "mapgrid.h"
+#include "projectile.h"
+#include "structure.h"
+
+bool bMultiPlayer;
+bool isHumanPlayer(unsigned);
+typedef std::vector<PersistentObject*> GridList;
+Droid* cmdDroidGetDesignator(unsigned);
+const char* getPlayerName(unsigned);
+const GridList& gridStartIterate(int, int, unsigned);
+bool lineOfFire(const PersistentObject*, const PersistentObject*, int, bool);
+const char* objInfo(const PersistentObject*);
+unsigned objSensorRange(PersistentObject*);
+int scavengerPlayer();
+Structure* visGetBlockingWall(const PersistentObject*, const PersistentObject*);
+int visibleObject(const PersistentObject*, const PersistentObject*, bool);
+
 
 /* Weights used for target selection code,
  * target distance is used as 'common currency'
@@ -275,7 +285,7 @@ static int targetAttackWeight(PersistentObject* psTarget, PersistentObject* psAt
 		attackerWeapon = psAttackerDroid->getWeapons()[weapon_slot].getStats();
 
 		// check if this droid is assigned to a commander
-		bCmdAttached = hasCommander(psAttackerDroid);
+		bCmdAttached = psAttackerDroid->hasCommander();
 
 		// find out if current target is targeting our commander
 		if (bCmdAttached) {

@@ -29,7 +29,8 @@
 #include <array>
 #include <bitset>
 
-#include "displaydef.h"
+struct DisplayData;
+
 
 enum class OBJECT_FLAG
 {
@@ -87,10 +88,12 @@ public:
     virtual void setHp(unsigned hp) = 0;
     virtual void setPlayer(unsigned p) = 0;
     virtual void setHeight(int height) = 0;
+    [[nodiscard]] virtual bool isDead() const = 0;
+    [[nodiscard]] virtual bool isProbablyDoomed(bool isDirectDamage) const = 0;
     [[nodiscard]] virtual bool isSelectable() const = 0;
     [[nodiscard]] virtual uint8_t visibleToPlayer(unsigned watcher) const = 0;
     [[nodiscard]] virtual uint8_t visibleToSelectedPlayer() const = 0;
-    virtual int objRadius() const = 0;
+    [[nodiscard]] virtual int objRadius() const = 0;
 };
 
 namespace Impl
@@ -132,14 +135,17 @@ namespace Impl
         void setHp(unsigned hp) final;
         void setPlayer(unsigned p) noexcept final;
         void setHeight(int height) noexcept final;
+        [[nodiscard]] bool isDead() const final;
         [[nodiscard]] bool isSelectable() const override;
         [[nodiscard]] uint8_t visibleToPlayer(unsigned watcher) const final;
         [[nodiscard]] uint8_t visibleToSelectedPlayer() const final;
+    public:
+        std::bitset<static_cast<size_t>(OBJECT_FLAG::COUNT)> flags;
     protected:
         unsigned id;
         unsigned player;
         unsigned bornTime;
-        unsigned diedTime = 0;
+        unsigned timeOfDeath = 0;
         unsigned periodicalDamage;
         unsigned periodicalDamageStartTime;
         unsigned hitPoints = 0;
@@ -147,8 +153,6 @@ namespace Impl
         /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip, 0 if not visible
         std::array<uint8_t, MAX_PLAYERS> visibilityState;
         std::array<uint8_t, MAX_PLAYERS> seenThisTick;
-    public:
-        std::bitset<static_cast<size_t>(OBJECT_FLAG::COUNT)> flags;
     };
 }
 

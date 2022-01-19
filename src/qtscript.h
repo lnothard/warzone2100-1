@@ -20,19 +20,22 @@
 #ifndef __INCLUDED_QTSCRIPT_H__
 #define __INCLUDED_QTSCRIPT_H__
 
+#include <list>
+#include <map>
+#include <memory>
+#include <string>
 #include <unordered_set>
+#include <vector>
 
+#include "lib/framework/vector.h"
+#include "lib/framework/wzstring.h"
 #include "lib/netplay/netplay.h"
 
+#include "basedef.h"
+#include "droid.h"
+#include "research.h"
+#include "structure.h"
 #include "wzapi.h"
-
-class WzString;
-struct PersistentObject;
-struct Droid;
-struct DroidTemplate;
-struct Feature;
-struct ResearchStats;
-struct Structure;
 
 enum SCRIPT_TRIGGER_TYPE
 {
@@ -265,7 +268,7 @@ public:
 		          int frame, std::unique_ptr<timerAdditionalData> additionalParam = nullptr);
 		~timerNode();
 
-		inline bool operator==(const timerNode& t)
+		inline bool operator==(const timerNode& t) const
 		{
 			return (timerID == t.timerID) && (timerName == t.timerName) && (player == t.player);
 		}
@@ -421,10 +424,10 @@ public:
 	{
 	public:
 		area_by_values_or_area_label_lookup();
-		area_by_values_or_area_label_lookup(std::string  label);
+		explicit area_by_values_or_area_label_lookup(std::string  label);
 		area_by_values_or_area_label_lookup(int x1, int y1, int x2, int y2);
 
-		inline bool isLabel() { return m_isLabel; }
+		inline bool isLabel() const { return m_isLabel; }
 		inline optional<std::string> label() { return (m_isLabel) ? optional<std::string>(m_label) : nullopt; }
 
 		inline optional<scr_area> area()

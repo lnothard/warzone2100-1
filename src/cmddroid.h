@@ -26,7 +26,8 @@
 #ifndef __INCLUDED_SRC_CMDDROID_H__
 #define __INCLUDED_SRC_CMDDROID_H__
 
-class Droid;
+struct Droid;
+
 
 /// The maximum number of command droids allowed per player.
 static constexpr auto MAX_CMDDROIDS =	5;

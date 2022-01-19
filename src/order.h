@@ -28,7 +28,11 @@
 #ifndef __INCLUDED_SRC_ORDER_H__
 #define __INCLUDED_SRC_ORDER_H__
 
-#include "structure.h"
+enum class ACTION;
+struct Droid;
+struct Group;
+struct Structure;
+struct StructureStats;
 
 static bool bOrderEffectDisplayed = false;
 

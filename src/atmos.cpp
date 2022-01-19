@@ -24,17 +24,18 @@
 */
 
 #include <glm/gtx/transform.hpp>
-#include "lib/ivis_opengl/ivisdef.h"
 #include "lib/ivis_opengl/piepalette.h"
-#include "lib/wzmaplib/include/wzmaplib/map.h"
+#include "wzmaplib/map.h"
 
 #include "atmos.h"
 #include "display3d.h"
 #include "effects.h"
-#include "map.h"
 #include "miscimd.h"
 
+int mapWidth, mapHeight;
+int map_Height(int, int);
 bool gamePaused();
+
 
 /* Roughly one per tile */
 static constexpr auto	MAX_ATMOS_PARTICLES	= MAP_MAXWIDTH * MAP_MAXHEIGHT;

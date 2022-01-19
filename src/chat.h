@@ -27,6 +27,7 @@
 
 #include <set>
 
+
 struct ChatMessage
 {
   ChatMessage() = default;

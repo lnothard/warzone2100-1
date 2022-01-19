@@ -25,11 +25,12 @@
 #include "lib/framework/wzapp.h"
 #include "lib/netplay/netplay.h"
 
-#include "droid.h"
 #include "fpath.h"
 #include "map.h"
 
 bool isHumanPlayer(unsigned);
+bool worldOnMap(int, int);
+
 
 // If the path finding system is shutdown or not
 static volatile bool fpathQuit = false;
@@ -244,7 +245,7 @@ bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, unsigned player1, FP
 
 // Returns the closest non-blocking tile to pos, or returns pos if no non-blocking tiles are present within a 2 tile distance.
 static Position findNonblockingPosition(Position pos, PROPULSION_TYPE propulsion, unsigned player = 0,
-                                        FPATH_MOVETYPE moveType = FMT_BLOCK)
+                                        FPATH_MOVETYPE moveType = FPATH_MOVETYPE::FMT_BLOCK)
 {
 	Vector2i centreTile = map_coord(pos.xy());
 	if (!fpathBaseBlockingTile(centreTile.x, centreTile.y, propulsion, player, moveType))
@@ -328,7 +329,7 @@ static FPATH_RESULT fpathRoute(Movement* psMove, unsigned id, int startX,
 		auto const& I = pathResults.find(id);
 		ASSERT(I != pathResults.end(), "Missing path result promise");
 		PathResult result = I->second.get();
-		ASSERT(result.retval != OK || result.sMove.path.size() > 0,
+		ASSERT(result.retval != OK || !result.sMove.path.empty(),
            "Ok result but no path in list");
 
 		// copy over select fields - preserve others
@@ -413,6 +414,7 @@ queuePathfinding:
 // Find a route for an DROID to a location in world coordinates
 FPATH_RESULT fpathDroidRoute(Droid* psDroid, int tX, int tY, FPATH_MOVETYPE moveType)
 {
+  using enum FPATH_MOVETYPE;
 	bool acceptNearest;
 	auto& psPropStats = psDroid->getPropulsion();
 
@@ -563,8 +565,8 @@ static FPATH_RESULT fpathSimpleRoute(Movement* psMove, int id, int startX,
 	return fpathRoute(psMove, id, startX, startY, tX, tY, 
                     PROPULSION_TYPE::WHEELED, 
                     DROID_TYPE::WEAPON,
-                    FMT_BLOCK, 0, true, 
-                    getStructureBounds((PersistentObject*)nullptr));
+                    FPATH_MOVETYPE::FMT_BLOCK, 0, true,
+                    getStructureBounds(nullptr));
 }
 
 void fpathTest(int x, int y, int x2, int y2)

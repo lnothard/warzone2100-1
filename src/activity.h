@@ -24,12 +24,15 @@
 #ifndef __INCLUDED_SRC_ACTIVITY_H__
 #define __INCLUDED_SRC_ACTIVITY_H__
 
-#include "lib/netplay/netplay.h"
+#include <vector>
 
 #include "multiplay.h"
-#include "scores.h"
 
 enum class ALLIANCE_TYPE;
+enum class LOBBY_ERROR_TYPES;
+struct END_GAME_STATS_DATA;
+struct PLAYER;
+
 
 enum class GAME_MODE
 {

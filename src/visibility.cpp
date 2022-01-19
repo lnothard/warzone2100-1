@@ -25,20 +25,31 @@
  * Pumpkin Studios, EIDOS Interactive 1996
  */
 
-#include "lib/framework/fixedpoint.h"
-#include "lib/sound/audio_id.h"
+#include <vector>
 
-#include "displaydef.h"
-#include "geometry.h"
-#include "qtscript.h"
+#include "lib/sound/audio_id.h"
+#include "wzmaplib/map.h"
+
+#include "map.h"
+#include "multiplay.h"
+#include "objmem.h"
+#include "projectile.h"
 #include "visibility.h"
 #include "wavecast.h"
 
+
 /* forward decl */
+bool bInTutorial;
+void jsDebugMessageUpdate();
+struct PersistentObject;
 typedef std::vector<PersistentObject*> GridList;
 typedef GridList::const_iterator GridIterator;
 GridList const& gridStartIterateUnseen(int x, int y, int radius, unsigned player);
 int establishTargetHeight(PersistentObject const* psTarget);
+unsigned generateSynchronisedObjectId();
+Vector2i world_coord(Vector2i);
+bool triggerEventSeen(PersistentObject*, PersistentObject*);
+
 
 /// Integer amount to change visibility this turn
 static int visLevelInc, visLevelDec;
@@ -111,7 +122,7 @@ unsigned addSpotter(int x, int y, unsigned player, int radius,
 {
 	ASSERT_OR_RETURN(0, player >= 0 && player < MAX_PLAYERS, "invalid player: %d", player);
 	auto psSpot = std::make_unique<Spotter>(x, y, player, radius, type, expiry);
-	std::size_t size;
+	size_t size;
 	auto tiles = getWavecastTable(radius, &size);
 	psSpot->watchedTiles.resize(size * psSpot->watchedTiles.size());
 	for (auto i = 0; i < size; ++i)
@@ -639,18 +650,18 @@ static void setSeenByInstantly(PersistentObject* psObj, unsigned viewer, int val
 // Calculate which objects we should know about based on alliances and satellite view.
 static void processVisibilitySelf(PersistentObject* psObj)
 {
-	if (psObj->type != OBJ_FEATURE && objSensorRange(psObj) > 0)
-	{
+	if (!dynamic_cast<Feature*>(psObj) &&
+      objSensorRange(psObj) > 0) {
 		// one can trivially see oneself
-		setSeenBy(psObj, psObj->player, UBYTE_MAX);
+		setSeenBy(psObj, psObj->getPlayer(), UBYTE_MAX);
 	}
 
 	// if a player has a SAT_UPLINK structure, or has godMode enabled,
 	// they can see everything!
 	for (unsigned viewer = 0; viewer < MAX_PLAYERS; viewer++)
 	{
-		if (getSatUplinkExists(viewer) || (viewer == selectedPlayer && godMode))
-		{
+		if (getSatUplinkExists(viewer) ||
+        viewer == selectedPlayer && godMode) {
 			setSeenBy(psObj, viewer, UBYTE_MAX);
 		}
 	}
@@ -658,47 +669,48 @@ static void processVisibilitySelf(PersistentObject* psObj)
 	psObj->flags.set(OBJECT_FLAG_TARGETED, false); // Remove any targetting locks from last update.
 
 	// If we're a CB sensor, make our target visible instantly. Although this is actually checking visibility of our target, we do it here anyway.
-	Structure* psStruct = castStructure(psObj);
+	auto psStruct = dynamic_cast<Structure*>(psObj);
 	// you can always see anything that a CB sensor is targetting
 	// Anyone commenting this out again will get a knee capping from John.
 	// You have been warned!!
-	if (psStruct != nullptr && psStruct->status == SS_BUILT && (structCBSensor(psStruct) ||
-		structVTOLCBSensor(psStruct)) && psStruct->psTarget[0] != nullptr)
-	{
-		setSeenByInstantly(psStruct->psTarget[0], psObj->player, UBYTE_MAX);
+	if (psStruct != nullptr &&
+      psStruct->getState() == STRUCTURE_STATE::BUILT &&
+      (structCBSensor(psStruct) ||
+       structVTOLCBSensor(psStruct)) && psStruct->psTarget[0] != nullptr) {
+		setSeenByInstantly(psStruct->psTarget[0], psObj->getPlayer(), UBYTE_MAX);
 	}
-	Droid* psDroid = castDroid(psObj);
-	if (psDroid != nullptr && psDroid->action == DACTION_OBSERVE && cbSensorDroid(psDroid))
-	{
+	auto psDroid = dynamic_cast<Droid*>(psObj);
+	if (psDroid != nullptr && psDroid->getAction() == ACTION::OBSERVE && psDroid->hasCbSensor()) {
 		// Anyone commenting this out will get a knee capping from John.
 		// You have been warned!!
-		setSeenByInstantly(psDroid->action_target[0], psObj->player, UBYTE_MAX);
+		setSeenByInstantly(psDroid->getTarget(0), psObj->getPlayer(), UBYTE_MAX);
 	}
 }
 
 // Calculate which objects we can see. Better to call after processVisibilitySelf, since that check is cheaper.
 static void processVisibilityVision(PersistentObject* psViewer)
 {
-	if (psViewer->type == OBJ_FEATURE)
-	{
+	if (dynamic_cast<Feature*>(psViewer)) {
 		return;
 	}
 
 	// get all the objects from the grid the droid is in
 	// Will give inconsistent results if hasSharedVision is not an equivalence relation.
 	static GridList gridList; // static to avoid allocations.
-	gridList = gridStartIterateUnseen(psViewer->pos.x, psViewer->pos.y, objSensorRange(psViewer), psViewer->player);
+	gridList = gridStartIterateUnseen(
+          psViewer->getPosition().x, psViewer->getPosition().y,
+          objSensorRange(psViewer), psViewer->getPlayer());
+
 	for (auto gi = gridList.begin(); gi != gridList.end(); ++gi)
 	{
 		PersistentObject* psObj = *gi;
 
-		int val = visibleObject(psViewer, psObj, false);
+		auto val = visibleObject(psViewer, psObj, false);
 
 		// If we've got ranged line of sight...
-		if (val > 0)
-		{
+		if (val > 0) {
 			// Tell system that this side can see this object
-			setSeenBy(psObj, psViewer->player, val);
+			setSeenBy(psObj, psViewer->getPlayer(), val);
 
 			// Check if scripting system wants to trigger an event for this
 			triggerEventSeen(psViewer, psObj);
@@ -716,35 +728,29 @@ static void processVisibilityLevel(PersistentObject* psObj, bool& addedMessage)
 		bool justBecameVisible = false;
 		int visLevel = psObj->seenThisTick[player];
 
-		if (player == psObj->getPlayer())
-		{
+		if (player == psObj->getPlayer()) {
 			// owner can always see it fully
 			psObj->visible[player] = UBYTE_MAX;
 			continue;
 		}
 
 		// Droids can vanish from view, other objects will stay
-		if (psObj->type != OBJ_DROID)
-		{
+		if (psObj->type != OBJ_DROID) {
 			visLevel = MAX(visLevel, psObj->visible[player]);
 		}
 
-		if (visLevel > psObj->visible[player])
-		{
+		if (visLevel > psObj->visible[player]) {
 			justBecameVisible = psObj->visible[player] <= 0;
 
 			psObj->visible[player] = MIN(psObj->visible[player] + visLevelInc, visLevel);
 		}
-		else if (visLevel < psObj->visible[player])
-		{
+		else if (visLevel < psObj->visible[player]) {
 			psObj->visible[player] = MAX(psObj->visible[player] - visLevelDec, visLevel);
 		}
 
-		if (justBecameVisible)
-		{
+		if (justBecameVisible) {
 			/* Make sure all tiles under a feature/structure become visible when you see it */
-			if (psObj->type == OBJ_STRUCTURE || psObj->type == OBJ_FEATURE)
-			{
+			if (psObj->type == OBJ_STRUCTURE || psObj->type == OBJ_FEATURE) {
 				setUnderTilesVis(psObj, player);
 			}
 
@@ -756,28 +762,24 @@ static void processVisibilityLevel(PersistentObject* psObj, bool& addedMessage)
 
 				/* If this is an oil resource we want to add a proximity message for
 				 * the selected Player - if there isn't an Resource Extractor on it. */
-				if (((Feature*)psObj)->psStats->subType == FEAT_OIL_RESOURCE && !TileHasStructure(
-					mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y))))
-				{
+				if (((Feature*)psObj)->psStats->subType == FEATURE_TYPE::OIL_RESOURCE &&
+            !TileHasStructure(
+					mapTile(map_coord(psObj->getPosition().x), map_coord(psObj->getPosition().y)))) {
 					type = ID_SOUND_RESOURCE_HERE;
 				}
-				else if (((Feature*)psObj)->psStats->subType == FEAT_GEN_ARTE)
-				{
+				else if (((Feature*)psObj)->psStats->subType == FEATURE_TYPE::GEN_ARTE) {
 					type = ID_SOUND_ARTEFACT_DISC;
 				}
 
-				if (type != NO_SOUND)
-				{
-					psMessage = addMessage(MSG_PROXIMITY, true, player);
-					if (psMessage)
-					{
+				if (type != NO_SOUND) {
+					psMessage = addMessage(MESSAGE_TYPE::MSG_PROXIMITY, true, player);
+					if (psMessage) {
 						psMessage->psObj = psObj;
 						debug(LOG_MSG, "Added message for oil well or artefact, pViewData=%p",
 						      static_cast<void *>(psMessage->pViewData));
 						addedMessage = true;
 					}
-					if (!bInTutorial && player == selectedPlayer)
-					{
+					if (!bInTutorial && player == selectedPlayer) {
 						// play message to indicate been seen
 						audio_QueueTrackPos(type, psObj->pos.x, psObj->pos.y, psObj->pos.z);
 					}

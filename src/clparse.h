@@ -26,6 +26,8 @@
 #ifndef __INCLUDED_SRC_CLPARSE_H__
 #define __INCLUDED_SRC_CLPARSE_H__
 
+#include <string>
+
 bool ParseCommandLine(int argc, const char* const * argv);
 bool ParseCommandLineEarly(int argc, const char* const * argv);
 
@@ -37,6 +39,7 @@ void setAutoratingUrl(std::string url);
 std::string getAutoratingUrl();
 bool streamer_spectator_mode();
 bool lobby_slashcommands_enabled();
+
 
 enum class WZ_Command_Interface
 {

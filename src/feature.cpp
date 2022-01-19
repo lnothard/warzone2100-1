@@ -23,11 +23,11 @@
  * Load feature stats
  */
 
-#include "lib/gamelib/gtime.h"
-#include "lib/sound/audio.h"
-#include "lib/sound/audio_id.h"
 #include "lib/ivis_opengl/imd.h"
 #include "lib/ivis_opengl/ivisdef.h"
+#include "lib/sound/audio.h"
+#include "lib/sound/audio_id.h"
+#include "wzmaplib/map.h"
 
 #include "combat.h"
 #include "display3d.h"
@@ -35,8 +35,13 @@
 #include "effects.h"
 #include "feature.h"
 #include "map.h"
-#include "qtscript.h"
+#include "message.h"
+#include "messagedef.h"
+#include "objmem.h"
+#include "random.h"
 #include "scores.h"
+
+void jsDebugMessageUpdate();
 
 /* The statistics for the features */
 FeatureStats* asFeatureStats;
@@ -186,7 +191,8 @@ int featureDamage(Feature* psFeature, unsigned damage, WEAPON_CLASS weaponClass,
 }
 
 /* Create a feature on the map */
-std::unique_ptr<Feature> buildFeature(FeatureStats const* stats, unsigned x, unsigned y, bool fromSave)
+std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
+                                               unsigned x, unsigned y, bool fromSave) const
 {
 	// try and create the Feature
 	auto psFeature = std::make_unique<Feature>(
@@ -242,14 +248,11 @@ std::unique_ptr<Feature> buildFeature(FeatureStats const* stats, unsigned x, uns
                                         psFeature->getRotation().roll});
 	}
 	psFeature->hitPoints = stats->body;
-	psFeature->periodicalDamageStart = 0;
+	psFeature->periodicalDamageStartTime = 0;
 	psFeature->periodicalDamage = 0;
 
 	// it has never been drawn
 	psFeature->display->frame_number = 0;
-
-	memset(psFeature->seenThisTick, 0, sizeof(psFeature->seenThisTick));
-	memset(psFeature->visible, 0, sizeof(psFeature->visible));
 
 	// set up the imd for the feature
 	psFeature->display->imd_shape = std::make_unique<iIMDShape>(*stats->psImd);
@@ -260,7 +263,7 @@ std::unique_ptr<Feature> buildFeature(FeatureStats const* stats, unsigned x, uns
 	{
 		for (int width = 0; width < b.size.x; ++width)
 		{
-			Tile* psTile = mapTile(b.map.x + width, b.map.y + breadth);
+			auto psTile = mapTile(b.map.x + width, b.map.y + breadth);
 
 			//check not outside of map - for load save game
 			ASSERT_OR_RETURN(nullptr, b.map.x + width < mapWidth, "x coord bigger than map width - %s, id = %d",
@@ -314,8 +317,9 @@ std::unique_ptr<Feature> buildFeature(FeatureStats const* stats, unsigned x, uns
 
 
 Feature::Feature(unsigned id, FeatureStats const* psStats)
-	: PersistentObject(id, PLAYER_FEATURE) // Set the default player out of range to avoid targeting confusions
-	  , psStats(std::make_shared<FeatureStats>(psStats))
+// Set the default player out of range to avoid targeting confusions
+	: PersistentObject(id, PLAYER_FEATURE)
+	  , psStats(std::make_shared<FeatureStats>(*psStats))
 {
 }
 
@@ -326,51 +330,49 @@ Feature::~Feature()
 	audio_RemoveObj(this);
 }
 
-void _syncDebugFeature(const char* function, Feature const* psFeature, char ch)
-{
-	int list[] =
-	{
-		ch,
-		(int)psFeature->getId(),
-    (int)psFeature->getPlayer(),
-		psFeature->getPosition().x,
-    psFeature->getPosition().y,
-    psFeature->getPosition().z,
-		(int)psFeature->getStats()->subType,
-		psFeature->getStats()->damageable,
-		(int)psFeature->body,
-	};
-	_syncDebugIntList(function, "%c feature%d = p%d;pos(%d,%d,%d),subtype%d,damageable%d,body%d", list,
-	                  ARRAY_SIZE(list));
-}
+//void _syncDebugFeature(const char* function, Feature const* psFeature, char ch)
+//{
+//	int list[] =
+//	{
+//		ch,
+//		(int)psFeature->getId(),
+//    (int)psFeature->getPlayer(),
+//		psFeature->getPosition().x,
+//    psFeature->getPosition().y,
+//    psFeature->getPosition().z,
+//		(int)psFeature->getStats()->subType,
+//		psFeature->getStats()->damageable,
+//		(int)psFeature->body,
+//	};
+//	_syncDebugIntList(function, "%c feature%d = p%d;pos(%d,%d,%d),subtype%d,damageable%d,body%d", list,
+//	                  ARRAY_SIZE(list));
+//}
 
 /* Update routine for features */
-void featureUpdate(Feature* psFeat)
+void Feature::update()
 {
-	syncDebugFeature(psFeat, '<');
+//	syncDebugFeature(this, '<');
 
 	/* Update the periodical damage data */
-	if (psFeat->periodicalDamageStart != 0 && psFeat->periodicalDamageStart != gameTime - deltaGameTime)
+	if (periodicalDamageStartTime != 0 &&
+      periodicalDamageStartTime != gameTime - deltaGameTime)
 	// -deltaGameTime, since projectiles are updated after features.
 	{
 		// The periodicalDamageStart has been set, but is not from the previous tick, so we must be out of the periodical damage.
-		psFeat->periodicalDamage = 0; // Reset periodical damage done this tick.
+		periodicalDamage = 0; // Reset periodical damage done this tick.
 		// Finished periodical damaging
-		psFeat->periodicalDamageStart = 0;
+		periodicalDamageStartTime = 0;
 	}
 
-	syncDebugFeature(psFeat, '>');
+//	syncDebugFeature(this, '>');
 }
 
 
 // free up a feature with no visual effects
 bool removeFeature(Feature* psDel)
 {
-	MESSAGE* psMessage;
-	Vector3i pos;
-
 	ASSERT_OR_RETURN(false, psDel != nullptr, "Invalid feature pointer");
-	ASSERT_OR_RETURN(false, !psDel->died, "Feature already dead");
+	ASSERT_OR_RETURN(false, !psDel->isDead(), "Feature already dead");
 
 	//remove from the map data
 	StructureBounds b = getStructureBounds(psDel);
@@ -378,12 +380,10 @@ bool removeFeature(Feature* psDel)
 	{
 		for (int width = 0; width < b.size.x; ++width)
 		{
-			if (tileOnMap(b.map.x + width, b.map.y + breadth))
-			{
-				Tile* psTile = mapTile(b.map.x + width, b.map.y + breadth);
+			if (tileOnMap(b.map.x + width, b.map.y + breadth)) {
+				auto psTile = mapTile(b.map.x + width, b.map.y + breadth);
 
-				if (psTile->psObject == psDel)
-				{
+				if (psTile->psObject == psDel) {
 					psTile->psObject = nullptr;
 					auxClearBlocking(b.map.x + width, b.map.y + breadth, FEATURE_BLOCKED | AIR_BLOCKED);
 				}
@@ -391,8 +391,9 @@ bool removeFeature(Feature* psDel)
 		}
 	}
 
-	if (psDel->getStats()->subType == FEATURE_TYPE::GEN_ARTE || psDel->getStats()->subType == FEATURE_TYPE::OIL_DRUM)
-	{
+  Vector3i pos;
+	if (psDel->getStats()->subType == FEATURE_TYPE::GEN_ARTE ||
+      psDel->getStats()->subType == FEATURE_TYPE::OIL_DRUM) {
 		pos.x = psDel->getPosition().x;
 		pos.z = psDel->getPosition().y;
 		pos.y = map_Height(pos.x, pos.z) + 30;
@@ -406,14 +407,17 @@ bool removeFeature(Feature* psDel)
 	bool removedAMessage = false;
 	if (psDel->getStats()->subType == FEATURE_TYPE::GEN_ARTE ||
       psDel->getStats()->subType == FEATURE_TYPE::OIL_RESOURCE) {
+
 		for (unsigned player = 0; player < MAX_PLAYERS; ++player)
 		{
-			psMessage = findMessage(psDel, MESSAGE_TYPE::MSG_PROXIMITY, player);
+			auto psMessage = findMessage(
+              psDel, MESSAGE_TYPE::MSG_PROXIMITY, player);
 			while (psMessage)
 			{
 				removeMessage(psMessage, player);
 				removedAMessage = true;
-				psMessage = findMessage(psDel, MESSAGE_TYPE::MSG_PROXIMITY, player);
+				psMessage = findMessage(
+                psDel, MESSAGE_TYPE::MSG_PROXIMITY, player);
 			}
 		}
 	}

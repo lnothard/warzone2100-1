@@ -25,7 +25,10 @@
 
 #include "cmddroid.h"
 #include "console.h"
+#include "droid.h"
+#include "group.h"
 #include "objmem.h"
+#include "order.h"
 
 /// This global instance is responsible for dealing with each
 /// player's target designator

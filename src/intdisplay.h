@@ -24,9 +24,9 @@
 #include "lib/widget/widget.h"
 #include "lib/widget/form.h"
 #include "lib/widget/bar.h"
-#include "intimage.h"
+
 #include "droid.h"
-#include "template.h"
+#include "feature.h"
 #include "research.h"
 
 /* Power levels are divided by this for power bar display. The extra factor has
@@ -88,7 +88,7 @@ struct ImdObject
 	static ImdObject Feature(BaseStats* p)
 	{
 		auto* fStat = (FeatureStats*)p;
-		return ImdObject(fStat->psImd, IMDTYPE_FEATURE);
+		return {&fStat->psImd, IMDTYPE_FEATURE};
 	}
 
 	[[nodiscard]] bool empty() const

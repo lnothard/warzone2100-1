@@ -5,8 +5,9 @@
 #include "lib/framework/vector.h"
 
 #include "basedef.h"
-#include "display.h"
-#include "visibility.h"
+
+bool godMode;
+void visRemoveVisibility(PersistentObject*);
 
 
 Spacetime::Spacetime(std::size_t time, Position position, Rotation rotation)
@@ -24,13 +25,6 @@ namespace Impl
   PersistentObject::~PersistentObject()
   {
     visRemoveVisibility(this);
-
-    #ifdef DEBUG
-      // hopefully this will trigger an infinite loop
-      // if someone uses the freed object
-      psNext = this;
-      psNextFunc = this;
-    #endif
   }
 
   Spacetime BaseObject::getSpacetime() const noexcept
@@ -97,6 +91,11 @@ namespace Impl
 	{
 		rotation = new_rotation;
 	}
+
+  bool PersistentObject::isDead() const
+  {
+    return timeOfDeath != 0;
+  }
 
   bool PersistentObject::isSelectable() const
   {

@@ -32,8 +32,8 @@ static constexpr auto OBJ_ID_INIT = 20000;
 /* The id number for the next object allocated
  * Each object will have a unique id number irrespective of type
  */
-uint32_t unsynchObjID;
-uint32_t synchObjID;
+unsigned unsynchObjID;
+unsigned synchObjID;
 
 /* Forward function declarations */
 #ifdef DEBUG

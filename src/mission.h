@@ -24,11 +24,10 @@
 #ifndef __INCLUDED_SRC_MISSION_H__
 #define __INCLUDED_SRC_MISSION_H__
 
-#include "map.h"
-#include "power.h"
+#include "droid.h"
 #include "levels.h"
+#include "map.h"
 #include "missiondef.h"
-#include "group.h"
 
 /**
  * The number of areas that can be defined to prevent buildings being placed -

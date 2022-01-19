@@ -23,7 +23,9 @@
 
 #include <vector>
 
-class WIDGET;
+#include "lib/ivis_opengl/textdraw.h"
+
+#include "hci.h"
 
 enum DATA_INDEX
 {
@@ -101,7 +103,6 @@ enum
 	STAT_ACE
 };
 
-#include "lib/ivis_opengl/textdraw.h"
 
 struct ScoreDataToScreenCache
 {

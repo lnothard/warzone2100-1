@@ -23,24 +23,35 @@
  * Combat mechanics routines
  */
 
-#include "lib/framework/fixedpoint.h"
+#include "lib/gamelib/gtime.h"
+#include "lib/netplay/netplay.h"
 
-#include "action.h"
-#include "difficulty.h"
-#include "qtscript.h"
+#include "ai.h"
+#include "combat.h"
+#include "droid.h"
+#include "move.h"
+#include "objmem.h"
 #include "projectile.h"
-#include "visibility.h"
+#include "random.h"
+#include "structure.h"
+
+
+static constexpr auto EMP_DISABLE_TIME = 10000;
+int mapHeight, mapWidth;
+bool bMultiPlayer, bMultiMessages;
+
+int arcOfFire(const PersistentObject*, const PersistentObject*, int, bool);
+bool lineOfFire(const PersistentObject*, const PersistentObject*, int, bool);
+int map_Height(Vector2i);
+int modifyForDifficultyLevel(int, bool);
+const char* objInfo(const PersistentObject*);
+unsigned objSensorRange(const PersistentObject*);
+
 
 /* Fire a weapon at something */
 bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
               PersistentObject* psTarget, int weapon_slot)
 {
-	unsigned firePause;
-	int longRange;
-	int shortRange;
-
-	CHECK_OBJECT(psAttacker);
-	CHECK_OBJECT(psTarget);
 	ASSERT(psWeap != nullptr, "Invalid weapon pointer");
 
   auto psDroid = dynamic_cast<Droid*>(psAttacker);
@@ -61,7 +72,7 @@ bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
 	auto fireTime = gameTime - deltaGameTime + 1; // Can fire earliest at the start of the tick.
 
 	// see if reloadable weapon.
-	if (psStats->upgraded[psAttacker->getPlayer()].reloadTime) {
+	if (psStats.upgraded[psAttacker->getPlayer()].reloadTime) {
 		auto reloadTime = psWeap->timeLastFired + weaponReloadTime(psStats, psAttacker->getPlayer());
 		if (psWeap->ammo == 0) // Out of ammo?
 		{
@@ -78,7 +89,7 @@ bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
 	}
 
 	/* See when the weapon last fired to control it's rate of fire */
-	firePause = weaponFirePause(psStats, psAttacker->getPlayer());
+	unsigned firePause = weaponFirePause(&psStats, psAttacker->getPlayer());
 	firePause = std::max(firePause, 1u); // Don't shoot infinitely many shots at once.
 	fireTime = std::max(fireTime, psWeap->timeLastFired + firePause);
 
@@ -91,20 +102,24 @@ bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
          "psAttacker->player = %" PRIu8 "",
          psAttacker->getPlayer());
 
-	if (psTarget->visible[psAttacker->getPlayer()] != UBYTE_MAX) {
+	if (psTarget->visibleToPlayer(psAttacker->getPlayer()) != UBYTE_MAX) {
 		// Can't see it - can't hit it
 		objTrace(psAttacker->getId(),
              "combFire(%u[%s]->%u): Object has no indirect sight of target",
              psAttacker->getId(),
-		         getStatsName(psStats),
+		         getStatsName(&psStats),
              psTarget->getId());
 		return false;
 	}
 
 	/* Check we can hit the target */
-	bool tall = (psAttacker->type == OBJ_DROID && ((Droid*)psAttacker)->isVtol())
-		|| (psAttacker->type == OBJ_STRUCTURE && ((Structure*)psAttacker)->getStats().height > 1);
-	if (proj_Direct(&psStats) && !lineOfFire(psAttacker, psTarget, weapon_slot, tall)) {
+  auto droid = dynamic_cast<Droid*>(psAttacker);
+  auto structure = dynamic_cast<Structure*>(psAttacker);
+	bool tall = droid && droid->isVtol() ||
+              structure && structure->getStats().height > 1;
+
+	if (proj_Direct(&psStats) && !
+      lineOfFire(psAttacker, psTarget, weapon_slot, tall)) {
 		// Can't see the target - can't hit it with direct fire
 		objTrace(psAttacker->getId(), "combFire(%u[%s]->%u): No direct line of sight to target",
 		         psAttacker->getId(), objInfo(psAttacker), psTarget->getId());
@@ -114,7 +129,7 @@ bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
 	Vector3i deltaPos = psTarget->getPosition() - psAttacker->getPosition();
 
 	// if the turret doesn't turn, check if the attacker is in alignment with the target
-	if (psAttacker->type == OBJ_DROID && !psStats.rotate) {
+	if (droid && !psStats.rotate) {
 		auto targetDir = iAtan2(deltaPos.xy());
 		auto dirDiff = abs(angleDelta(targetDir - psAttacker->getRotation().direction));
 		if (dirDiff > FIXED_TURRET_DIR) {
@@ -124,8 +139,8 @@ bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
 
 	/* Now see if the target is in range  - also check not too near */
 	auto dist = iHypot(deltaPos.xy());
-	longRange = proj_GetLongRange(&psStats, psAttacker->getPlayer());
-	shortRange = proj_GetShortRange(&psStats, psAttacker->getPlayer());
+	auto longRange = proj_GetLongRange(&psStats, psAttacker->getPlayer());
+	auto shortRange = proj_GetShortRange(&psStats, psAttacker->getPlayer());
 
 	int min_angle = 0;
 	// Calculate angle for indirect shots
@@ -173,24 +188,24 @@ bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
 	int resultHitChance = baseHitChance;
 
 	// add the attacker's experience
-	if (psAttacker->type == OBJ_DROID) {
-		auto level = getDroidEffectiveLevel((Droid*)psAttacker);
+	if (droid) {
+		auto level = getDroidEffectiveLevel(droid);
 
 		// increase total accuracy by EXP_ACCURACY_BONUS % for each experience level
 		resultHitChance += EXP_ACCURACY_BONUS * level * baseHitChance / 100;
 	}
 
 	// subtract the defender's experience
-	if (psTarget->type == OBJ_DROID) {
-		auto level = getDroidEffectiveLevel((Droid*)psTarget);
+	if (auto asdroid = dynamic_cast<Droid*>(psTarget)) {
+		auto level = getDroidEffectiveLevel(asdroid);
 
 		// decrease weapon accuracy by EXP_ACCURACY_BONUS % for each experience level
 		resultHitChance -= EXP_ACCURACY_BONUS * level * baseHitChance / 100;
 	}
 
-	if (psAttacker->type == OBJ_DROID &&
-      ((Droid*)psAttacker)->getMovementData().status != MOVE_STATUS::INACTIVE
-		&& !psStats.fireOnMove) {
+	if (droid &&
+      droid->getMovementData().status != MOVE_STATUS::INACTIVE &&
+      !psStats.fireOnMove) {
 		return false; // Can't fire while moving
 	}
 
@@ -211,7 +226,7 @@ bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
 	Vector3i predict = psTarget->getPosition();
 
 	// Target prediction
-	if (isDroid(psTarget) &&
+	if (dynamic_cast<Droid*>(psTarget) &&
       dynamic_cast<Droid*>(psTarget)->getMovementData().bumpTime == 0) {
 		auto psDroid = dynamic_cast<Droid*>(psTarget);
 
@@ -223,25 +238,25 @@ bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
 		else
 		{
 			int32_t vXY, vZ; // Unused, we just want the flight time.
-			flightTime = projCalcIndirectVelocities(dist, deltaPos.z, psStats.flightSpeed, &vXY, &vZ, min_angle);
+			flightTime = projCalcIndirectVelocities(
+              dist, deltaPos.z, psStats.flightSpeed,
+              &vXY, &vZ, min_angle);
 		}
 
-		if (psTarget->lastHitWeapon == WEAPON_SUBCLASS::EMP)
-		{
+		if (psTarget->lastHitWeapon == WEAPON_SUBCLASS::EMP) {
 			int empTime = EMP_DISABLE_TIME - (gameTime - psTarget->timeLastHit);
 			CLIP(empTime, 0, EMP_DISABLE_TIME);
-			if (empTime >= EMP_DISABLE_TIME * 9 / 10)
-			{
+			if (empTime >= EMP_DISABLE_TIME * 9 / 10) {
 				flightTime = 0; /* Just hit.  Assume they'll get hit again */
 			}
-			else
-			{
+			else {
 				flightTime = MAX(0, flightTime - empTime);
 			}
 		}
 
-		predict += Vector3i(iSinCosR(psDroid->getMovementData().moveDir,
-                                 psDroid->getMovementData().speed * flightTime / GAME_TICKS_PER_SEC), 0);
+		predict += Vector3i(iSinCosR(
+            psDroid->getMovementData().moveDir,
+            psDroid->getMovementData().speed * flightTime / GAME_TICKS_PER_SEC), 0);
 		if (!isFlying(psDroid)) {
 			predict.z = map_Height(predict.xy()); // Predict that the object will be on the ground.
 		}
@@ -314,63 +329,68 @@ void counterBatteryFire(PersistentObject* psAttacker, PersistentObject* psTarget
 	// Also ignore cases where there are already 1000 missiles heading towards the attacker.
 	if (psTarget == nullptr
 		|| (psAttacker != nullptr && psAttacker->getPlayer() == psTarget->getPlayer())
-		|| (psAttacker != nullptr && aiObjectIsProbablyDoomed(psAttacker, false)))
-	{
+		|| (psAttacker != nullptr && psAttacker->isProbablyDoomed(false))) {
 		return;
 	}
 
-	CHECK_OBJECT(psTarget);
-
 	for (auto psViewer : apsSensorList)
 	{
-		if (aiCheckAlliances(psTarget->getPlayer(), psViewer->getPlayer())) {
-			if ((psViewer->type == OBJ_STRUCTURE && !structCBSensor((Structure*)psViewer) && (((Structure*)psViewer)->
-					pStructureType->sensor_stats->type != SENSOR_TYPE::VTOL_CB)) ||
-					(psViewer->type == OBJ_DROID && !cbSensorDroid((Droid*)psViewer)))
-			{
-				continue;
-			}
-			const auto sensorRange = objSensorRange(psViewer);
+    if (!aiCheckAlliances(psTarget->getPlayer(), psViewer->getPlayer())) {
+      continue;
+    }
+    auto psStruct = dynamic_cast<Structure*>(psViewer);
+    auto psDroid = dynamic_cast<Droid*>(psViewer);
+    if ((psStruct && !structCBSensor(psStruct) &&
+         psStruct->getStats().sensor_stats->type != SENSOR_TYPE::VTOL_CB) ||
+        (psDroid && !psDroid->hasCbSensor())) {
+      continue;
+    }
+    const auto sensorRange = objSensorRange(psViewer);
 
-			// Check sensor distance from target
-			const auto xDiff = psViewer->getPosition().x -
-												 psTarget->getPosition().x;
-			const auto yDiff = psViewer->getPosition().y -
-												 psTarget->getPosition().y;
+    // Check sensor distance from target
+    const auto xDiff = psViewer->getPosition().x -
+                       psTarget->getPosition().x;
+    const auto yDiff = psViewer->getPosition().y -
+                       psTarget->getPosition().y;
 
-			if (xDiff * xDiff + yDiff * yDiff < sensorRange * sensorRange) {
-				// Inform viewer of target
-				if (psViewer->type == OBJ_DROID) {
-					orderDroidObj((Droid*)psViewer, DORDER_OBSERVE, psAttacker, ModeImmediate);
-				}
-				else if (psViewer->type == OBJ_STRUCTURE) {
-					setStructureTarget((Structure *)psViewer, psAttacker, 0, TARGET_ORIGIN::CB_SENSOR);
-				}
-			}
-		}
-	}
+    if (xDiff * xDiff + yDiff * yDiff >= sensorRange * sensorRange) {
+      continue;
+    }
+    // Inform viewer of target
+    if (psDroid) {
+      orderDroidObj(psDroid, ORDER_TYPE::OBSERVE,
+                    psAttacker, ModeImmediate);
+    }
+    else if (psStruct) {
+      setStructureTarget(psStruct, psAttacker, 0, TARGET_ORIGIN::CB_SENSOR);
+    }
+  }
 }
 
 int objArmour(const PersistentObject* psObj, WEAPON_CLASS weaponClass)
 {
-	int armour = 0;
-	if (psObj->type == OBJ_DROID)
-	{
-		armour = bodyArmour(asBodyStats + ((const Droid*)psObj)->asBits[COMP_BODY], psObj->getPlayer(), weaponClass);
+	auto armour = 0;
+	if (auto psDroid = dynamic_cast<const Droid*>(psObj)) {
+    auto body = psDroid->getComponent("body");
+    if (body) {
+      armour = bodyArmour(
+              dynamic_cast<const BodyStats*>(body),
+              psObj->getPlayer(), weaponClass);
+    }
 	}
-	else if (psObj->type == OBJ_STRUCTURE &&
-           weaponClass == WEAPON_CLASS::KINETIC && ((const Structure*)psObj)->getState() != STRUCTURE_STATE::BEING_BUILT)
-	{
-		armour = ((const Structure*)psObj)->getStats().upgraded_stats[psObj->getPlayer()].armour;
+	else if (auto psStruct = dynamic_cast<const Structure*>(psObj)) {
+    if (psStruct->getState() != STRUCTURE_STATE::BEING_BUILT) {
+      if (weaponClass == WEAPON_CLASS::KINETIC) {
+        armour = psStruct->getStats().upgraded_stats[psObj->getPlayer()].armour;
+      }
+      else if (weaponClass == WEAPON_CLASS::HEAT) {
+        armour = psStruct->getStats().upgraded_stats[psObj->getPlayer()].thermal;
+      }
+    }
 	}
-	else if (psObj->type == OBJ_STRUCTURE && weaponClass == WEAPON_CLASS::HEAT && ((const Structure*)psObj)->getState() !=
-                                                                     STRUCTURE_STATE::BEING_BUILT)
-	{
-		armour = ((const Structure*)psObj)->getStats().upgraded_stats[psObj->getPlayer()].thermal;
-	}
-	else if (psObj->type == OBJ_FEATURE && weaponClass == WEAPON_CLASS::KINETIC)
-	{
-		armour = ((const Feature*)psObj)->psStats->armourValue;
+	else if (auto psFeature = dynamic_cast<const Feature*>(psObj))
+    if (weaponClass == WEAPON_CLASS::KINETIC) {
+		  armour = psFeature->getStats()->armourValue;
 	}
 	return armour;
 }
@@ -386,50 +406,43 @@ int objDamage(PersistentObject* psObj, unsigned damage, unsigned originalhp,
               WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
               bool isDamagePerSecond, int minDamage)
 {
-	int level = 1;
-	int armour = objArmour(psObj, weaponClass);
-	const int lastHit = psObj->timeLastHit;
+	auto level = 1;
+	auto armour = objArmour(psObj, weaponClass);
+	const auto lastHit = psObj->timeLastHit;
 
 	// If the previous hit was by an EMP cannon and this one is not:
 	// don't reset the weapon class and hit time
 	// (Giel: I guess we need this to determine when the EMP-"shock" is over)
 	if (psObj->lastHitWeapon != WEAPON_SUBCLASS::EMP ||
-      weaponSubClass == WEAPON_SUBCLASS::EMP)
-	{
+      weaponSubClass == WEAPON_SUBCLASS::EMP) {
 		psObj->timeLastHit = gameTime;
 		psObj->lastHitWeapon = weaponSubClass;
 	}
 
 	// EMP cannons do no damage, if we are one return now
-	if (weaponSubClass == WEAPON_SUBCLASS::EMP)
-	{
+	if (weaponSubClass == WEAPON_SUBCLASS::EMP) {
 		return 0;
 	}
 
 	// apply game difficulty setting
-	damage = modifyForDifficultyLevel(damage, psObj->player != selectedPlayer);
+	damage = modifyForDifficultyLevel(
+          damage, psObj->getPlayer() != selectedPlayer);
 
-	if (psObj->type == OBJ_STRUCTURE || psObj->type == OBJ_DROID)
-	{
+	if (dynamic_cast<Structure*>(psObj) || dynamic_cast<Droid*>(psObj)) {
 		// Force sending messages, even if messages were turned off, since a non-synchronised script will execute here. (Aaargh!)
 		bool bMultiMessagesBackup = bMultiMessages;
 		bMultiMessages = bMultiPlayer;
-
 		triggerEventAttacked(psObj, g_pProjLastAttacker, lastHit);
-
 		bMultiMessages = bMultiMessagesBackup;
 	}
 
-	if (psObj->type == OBJ_DROID)
-	{
-		auto* psDroid = (Droid*)psObj;
-
+	if (auto psDroid = dynamic_cast<Droid*>(psObj)) {
 		// Retrieve highest, applicable, experience level
 		level = getDroidEffectiveLevel(psDroid);
 	}
 
 	// Reduce damage taken by EXP_REDUCE_DAMAGE % for each experience level
-	int actualDamage = (damage * (100 - EXP_REDUCE_DAMAGE * level)) / 100;
+	auto actualDamage = (damage * (100 - EXP_REDUCE_DAMAGE * level)) / 100;
 
 	// Apply at least the minimum damage amount
 	actualDamage = MAX(actualDamage - armour, actualDamage * minDamage / 100);
@@ -437,41 +450,39 @@ int objDamage(PersistentObject* psObj, unsigned damage, unsigned originalhp,
 	// And at least MIN_WEAPON_DAMAGE points
 	actualDamage = MAX(actualDamage, MIN_WEAPON_DAMAGE);
 
-	debug(LOG_ATTACK, "objDamage(%d): body: %d, armour: %d, basic damage: %d, actual damage: %d", psObj->id,
-	      psObj->body, armour, damage, actualDamage);
+	debug(LOG_ATTACK, "objDamage(%d): body: %d, armour: %d,"
+                    " basic damage: %d, actual damage: %d",
+                    psObj->getId(), psObj->getHp(), armour,
+                    damage, actualDamage);
 
-	if (isDamagePerSecond)
-	{
-		int deltaDamageRate = actualDamage - psObj->periodicalDamage;
-		if (deltaDamageRate <= 0)
-		{
+	if (isDamagePerSecond) {
+		auto deltaDamageRate = actualDamage - psObj->periodicalDamage;
+		if (deltaDamageRate <= 0) {
 			return 0; // Did this much damage already, this tick, so don't do more.
 		}
 		actualDamage = gameTimeAdjustedAverage(deltaDamageRate);
 		psObj->periodicalDamage += deltaDamageRate;
 	}
 
-	objTrace(psObj->id, "objDamage: Penetrated %d", actualDamage);
-	syncDebug("damage%u dam%u,o%u,wc%d.%d,ar%d,lev%d,aDam%d,isDps%d", psObj->id, damage, originalhp, weaponClass,
+	objTrace(psObj->getId(), "objDamage: Penetrated %d", actualDamage);
+	syncDebug("damage%u dam%u,o%u,wc%d.%d,ar%d,lev%d,aDam%d,isDps%d",
+            psObj->getId(), damage, originalhp, weaponClass,
 	          weaponSubClass, armour, level, actualDamage, isDamagePerSecond);
 
 	// for some odd reason, we have 0 hitpoints.
-	if (!originalhp)
-	{
+	if (originalhp == 0) {
 		ASSERT(originalhp, "original hitpoints are 0 ?");
 		return -65536; // it is dead
 	}
 
-	// If the shell did sufficient damage to destroy the object, deal with it and return
-	if (actualDamage >= psObj->getHp())
-	{
+	// If the shell did sufficient damage to destroy the
+  // object, deal with it and return
+	if (actualDamage >= psObj->getHp()) {
 		return -(int64_t)65536 * psObj->getHp() / originalhp;
 	}
 
 	// Subtract the dealt damage from the droid's remaining body points
-	psObj->body -= actualDamage;
-
-	syncDebugObject(psObj, 'D');
+	psObj->hitPoints -= actualDamage;
 
 	return (int64_t)65536 * actualDamage / originalhp;
 }
@@ -483,21 +494,20 @@ int objDamage(PersistentObject* psObj, unsigned damage, unsigned originalhp,
  * \param weaponSubClass the subclass of the weapon that deals the damage
  * \return guess at amount of damage
  */
-unsigned int objGuessFutureDamage(WeaponStats* psStats, unsigned unsigned player, PersistentObject* psTarget)
+unsigned objGuessFutureDamage(WeaponStats* psStats, unsigned player, PersistentObject* psTarget)
 {
-	unsigned int damage;
+	unsigned damage;
 	int actualDamage, armour, level = 1;
 
-	if (psTarget == nullptr)
-	{
+	if (psTarget == nullptr) {
 		return 0; // Hard to destroy the ground. The armour on the mud is very strong and blocks all damage.
 	}
 
-	damage = calcDamage(weaponDamage(psStats, player), psStats->weaponEffect, psTarget);
+	damage = calcDamage(weaponDamage(psStats, player),
+                      psStats->weaponEffect, psTarget);
 
 	// EMP cannons do no damage, if we are one return now
-	if (psStats->weaponSubClass == WEAPON_SUBCLASS::EMP)
-	{
+	if (psStats->weaponSubClass == WEAPON_SUBCLASS::EMP) {
 		return 0;
 	}
 
@@ -505,10 +515,7 @@ unsigned int objGuessFutureDamage(WeaponStats* psStats, unsigned unsigned player
 	damage = modifyForDifficultyLevel(damage, psTarget->getPlayer() != selectedPlayer);
 	armour = objArmour(psTarget, psStats->weaponClass);
 
-	if (psTarget->type == OBJ_DROID)
-	{
-		auto* psDroid = (Droid*)psTarget;
-
+	if (auto psDroid = dynamic_cast<Droid*>(psTarget)) {
 		// Retrieve highest, applicable, experience level
 		level = getDroidEffectiveLevel(psDroid);
 	}

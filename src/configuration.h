@@ -25,6 +25,7 @@
 #ifndef __INCLUDED_SRC_CONFIGURATION_H__
 #define __INCLUDED_SRC_CONFIGURATION_H__
 
+
 bool loadConfig();
 bool saveConfig();
 bool reloadMPConfig();

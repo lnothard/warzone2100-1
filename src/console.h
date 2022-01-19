@@ -25,7 +25,17 @@
 #ifndef __INCLUDED_SRC_CONSOLE_H__
 #define __INCLUDED_SRC_CONSOLE_H__
 
-#include "hci.h"
+#include "lib/gamelib/gtime.h"
+#include "lib/ivis_opengl/textdraw.h"
+
+int pie_GetVideoBufferHeight();
+int pie_GetVideoBufferWidth();
+
+static constexpr auto BASE_COORDS_Y	= 460;
+#define E_H (pie_GetVideoBufferHeight() - BASE_COORDS_Y)
+#define RET_X				6
+#define RET_Y				(324+E_H)
+
 
 static constexpr auto	DEFAULT_MESSAGE_DURATION = GAME_TICKS_PER_SEC * 5;
 static constexpr auto	DEFAULT_MESSAGE_DURATION_CAMPAIGN	= GAME_TICKS_PER_SEC * 12;

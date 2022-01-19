@@ -29,9 +29,6 @@
 #include "group.h"
 #include "multiplay.h"
 
-// Group system variables: grpGlobalManager enables to remove all the groups to shut down the system
-static std::map<int, Group*> grpGlobalManager;
-static bool grpInitialized = false;
 
 bool Group::isCommandGroup() const noexcept
 {
@@ -47,68 +44,14 @@ bool Group::hasElectronicWeapon() const
   });
 }
 
-std::vector<Droid*> Group::getMembers() const
-{
-  return members;
-}
-
 const Droid& Group::getCommander() const
 {
   return *psCommander;
 }
 
-// initialise the group system
-bool grpInitialise()
+std::unique_ptr<Group> Group::create(unsigned id)
 {
-	grpGlobalManager.clear();
-	grpInitialized = true;
-	return true;
-}
-
-// shutdown the group system
-void grpShutDown()
-{
-	/* Since we are not very diligent removing groups after we have
-	 * created them; we need this hack to remove them on level end. */
-	std::map<int, Group*>::iterator iter;
-
-	for (iter = grpGlobalManager.begin(); iter != grpGlobalManager.end(); iter++)
-	{
-		delete(iter->second);
-	}
-	grpGlobalManager.clear();
-	grpInitialized = false;
-}
-
-std::unique_ptr<Group> grpCreate(unsigned id)
-{
-	ASSERT(grpInitialized, "Group code not initialized yet");
-	auto psGroup = std::make_unique<Group>();
-	if (id == -1)  {
-		int i;
-		for (i = 0; grpGlobalManager.find(i) != grpGlobalManager.end(); i++)
-		{
-		} // surly hack
-		psGroup->id = i;
-	} else  {
-		ASSERT(grpGlobalManager.find(id) == grpGlobalManager.end(), "Group %d is already created!", id);
-		psGroup->id = id;
-	}
-	grpGlobalManager.emplace(psGroup->id, psGroup);
-	return psGroup;
-}
-
-std::unique_ptr<Group> grpFind(unsigned id)
-{
-	std::unique_ptr<Group> psGroup = nullptr;
-	auto it = grpGlobalManager.find(id);
-	if (it != grpGlobalManager.end())  {
-		psGroup = it->second;
-	}
-	if (!psGroup)  {
-		psGroup = grpCreate(id);
-	}
-	return psGroup;
+	return std::make_unique<Group>(id);
 }
 
 Group::Group(unsigned id)
@@ -128,50 +71,49 @@ Group::Group(unsigned id, GROUP_TYPE type, Droid& commander)
 
 void Group::add(Droid* psDroid)
 {
-	ASSERT(grpInitialized, "Group code not initialized yet");
+	if (psDroid == nullptr) {
+    return;
+  }
 
-	// if psDroid == NULL just increase the refcount don't add anything to the list
-	if (psDroid != nullptr) {
-		if (members && psDroid->getPlayer() != members.player) {
-			ASSERT(false, "grpJoin: Cannot have more than one players droids in a group");
-			return;
-		}
+  for (auto member : members)
+  {
+    if (psDroid->getPlayer() != member->getPlayer()) {
+      ASSERT(false, "grpJoin: Cannot have more than one players droids in a group");
+      return;
+    }
+  }
 
-		if (psDroid->group != nullptr) {
-			psDroid->group->remove(psDroid);
-		}
-		psDroid->group = this;
+  if (psDroid->group != nullptr) {
+    psDroid->group->remove(psDroid);
+  }
+  psDroid->group = this;
 
-		if (isTransporter(*psDroid)) {
-			ASSERT_OR_RETURN(, (type == NORMAL), "grpJoin: Cannot have two transporters in a group");
+  if (isTransporter(*psDroid)) {
+    ASSERT_OR_RETURN(, (type == NORMAL), "grpJoin: Cannot have two transporters in a group");
 
-			type = TRANSPORTER;
-      members.push_back(psDroid);
-		} else if (psDroid->getType() == DROID_TYPE::COMMAND &&
-             type != TRANSPORTER) {
-			ASSERT_OR_RETURN(, (type == NORMAL) && (psCommander == nullptr),
-			                   "grpJoin: Cannot have two command droids in a group");
-			type = COMMAND;
-			psCommander = psDroid;
-		}
-		else {
-			members.push_back(psDroid);
-		}
+    type = TRANSPORTER;
+    members.push_back(psDroid);
+  }
+  else if (psDroid->getType() == DROID_TYPE::COMMAND &&
+           type != TRANSPORTER) {
+    ASSERT_OR_RETURN(, (type == NORMAL) && (psCommander == nullptr),
+                     "grpJoin: Cannot have two command droids in a group");
+    type = COMMAND;
+    psCommander = psDroid;
+  }
+  else {
+    members.push_back(psDroid);
+  }
 
-		if (type == COMMAND) {
-			syncDebug("Droid %d joining command group %d", psDroid->getId(), psCommander != nullptr ? psCommander->getId() : 0);
-		}
-	}
+  if (type == COMMAND) {
+    syncDebug("Droid %d joining command group %d", psDroid->getId(), psCommander != nullptr ? psCommander->getId() : 0);
+  }
 }
 
 // remove a droid from a group
-void Group::remove(Droid* psDroid)
+void Group::remove(Impl::Droid* psDroid)
 {
-	Droid *psPrev, *psCurr;
-
-	ASSERT_OR_RETURN(, grpInitialized, "Group code not initialized yet");
-
-	if (psDroid != nullptr && psDroid->group != this) {
+	if (psDroid != nullptr && psDroid->group.get() != this) {
 		ASSERT(false, "grpLeave: droid group does not match");
 		return;
 	}
@@ -183,47 +125,22 @@ void Group::remove(Droid* psDroid)
               ? psCommander->getId() : 0);
 	}
 
-	// if psDroid == NULL just decrease the refcount don't remove anything from the list
-	if (psDroid != nullptr)
-	{
-		// update group list of droids and droids' psGrpNext
-		if (psDroid->getType() != DROID_TYPE::COMMAND ||
-        type != COMMAND) {
-			psPrev = nullptr;
-			for (psCurr = members; psCurr; psCurr = psCurr->psGrpNext)
-			{
-				if (psCurr == psDroid) {
-					break;
-				}
-				psPrev = psCurr;
-			}
-			ASSERT(psCurr != nullptr, "grpLeave: droid not found");
-		}
+  psDroid->group = nullptr;
 
-		psDroid->group = nullptr;
-
-		// update group's type
-		if (psDroid->getType() == DROID_TYPE::COMMAND &&
-        type == COMMAND) {
-			type = NORMAL;
-			psCommander = nullptr;
-		} else if (isTransporter(*psDroid) &&
-               type == TRANSPORTER) {
-			type = NORMAL;
-		}
-	}
-}
-
-std::size_t Group::getNumMembers() const
-{
-  return members.size();
+  // update group's type
+  if (psDroid->getType() == DROID_TYPE::COMMAND &&
+      type == COMMAND) {
+    type = NORMAL;
+    psCommander = nullptr;
+  } else if (isTransporter(*psDroid) &&
+             type == TRANSPORTER) {
+    type = NORMAL;
+  }
 }
 
 // Give a group of droids an order
 void Group::orderGroup(ORDER_TYPE order)
 {
-	ASSERT(grpInitialized, "Group code not initialized yet");
-
 	for (auto droid : members)
 	{
 		::orderDroid(droid, order, ModeQueue);
@@ -233,12 +150,13 @@ void Group::orderGroup(ORDER_TYPE order)
 // Give a group of droids an order (using a Location)
 void Group::orderGroup(ORDER_TYPE order, unsigned x, unsigned y)
 {
-	ASSERT(grpInitialized, "Group code not initialized yet");
 	ASSERT_OR_RETURN(, validOrderForLoc(order), "orderGroup: Bad order");
 
 	for (auto droid : members)
 	{
-		::orderDroidLoc(droid, order, x, y, bMultiMessages ? ModeQueue : ModeImmediate);
+		::orderDroidLoc(droid, order, x, y, bMultiMessages
+    ? ModeQueue
+    : ModeImmediate);
 	}
 }
 
@@ -248,16 +166,16 @@ void Group::orderGroup(ORDER_TYPE order, PersistentObject* psObj)
 
 	for (auto droid : members)
 	{
-		::orderDroidObj(droid, order, psObj, bMultiMessages ? ModeQueue : ModeImmediate);
+		::orderDroidObj(droid, order, psObj, bMultiMessages
+    ? ModeQueue
+    : ModeImmediate);
 	}
 }
 
 void Group::setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state)
 {
-	ASSERT(grpInitialized, "Group code not initialized yet");
-
-	for (auto& droid : members)
+	for (auto droid : members)
 	{
-		droid.secondarySetState(sec, state);
+		droid->secondarySetState(sec, state);
 	}
 }

@@ -25,26 +25,32 @@
 
 #include <utility>
 
-#include "lib/ivis_opengl/imd.h"
 #include "lib/framework/math_ext.h"
+#include "lib/ivis_opengl/imd.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
 
+#include "baseobject.h"
+#include "cmddroid.h"
+#include "combat.h"
 #include "console.h"
 #include "display3d.h"
 #include "effects.h"
 #include "game.h"
 #include "geometry.h"
 #include "intdisplay.h"
+#include "loop.h"
+#include "mapgrid.h"
+#include "miscimd.h"
 #include "mission.h"
+#include "multiplay.h"
+#include "objmem.h"
 #include "projectile.h"
 #include "qtscript.h"
 #include "scores.h"
 #include "structure.h"
-#include "objmem.h"
+#include "template.h"
 #include "visibility.h"
-#include "multiplay.h"
-#include "mapgrid.h"
 
 /* Value is stored for easy access to this structure stat */
 
@@ -681,9 +687,9 @@ namespace Impl
     return MIN(1, currentBuildPoints / (float)structureBuildPointsToCompletion(*this));
   }
   
-  const StructureStats& Structure::getStats() const
+  const StructureStats* Structure::getStats() const
   {
-    return *stats;
+    return stats.get();
   }
 
   STRUCTURE_STATE Structure::getState() const 
