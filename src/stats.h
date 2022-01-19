@@ -279,7 +279,7 @@ struct ComponentStats : public BaseStats
     } base, upgraded[MAX_PLAYERS];
 
     /// The IMD to draw for this component
-    std::unique_ptr<iIMDShape> pIMD;
+    std::shared_ptr<iIMDShape> pIMD;
 
     /// Power required to build the component
     unsigned buildPower = 0;

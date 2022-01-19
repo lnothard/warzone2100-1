@@ -354,8 +354,7 @@ namespace Impl
       [[nodiscard]] int getVerticalSpeed() const noexcept final;
       [[nodiscard]] unsigned getSecondaryOrder() const noexcept final;
       [[nodiscard]] const Vector2i& getDestination() const final;
-      [[nodiscard]] const PersistentObject& getTarget(int weapon_slot) const final;
-      [[nodiscard]] const std::optional<PropulsionStats>& getPropulsion() const final;
+      [[nodiscard]] const PersistentObject* getTarget(int weapon_slot) const final;
       [[nodiscard]] const Movement& getMovementData() const final;
       [[nodiscard]] unsigned getOriginalHp() const final;
       [[nodiscard]] const Group& getGroup() const final;
@@ -364,7 +363,7 @@ namespace Impl
       [[nodiscard]] const ComponentStats* getComponent(const std::string& compName) const final;
 
       bool droidSensorDroidWeapon(const ::PersistentObject* psObj) const final;
-      std::string getDroidLevelName() const final;
+      [[nodiscard]] std::string getDroidLevelName() const final;
       void moveUpdateDroid() final;
       void moveUpdatePersonModel(int speed, uint16_t direction) final;
       void moveCalcDroidSlide(int* pmx, int* pmy) final;
@@ -424,7 +423,8 @@ namespace Impl
 
       bool droidUpdateRestore() final;
 
-      std::unique_ptr<::Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission, Rotation rot) final;
+      std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos,
+                                              unsigned player, bool onMission, Rotation rot) final;
 
       void droidUpdate() final;
 
@@ -540,7 +540,7 @@ namespace Impl
 
       ACTION action = NONE;
       Vector2i actionPos;
-      std::array<PersistentObject*, MAX_WEAPONS> actionTarget;
+      std::array<::PersistentObject*, MAX_WEAPONS> actionTarget;
       std::size_t timeActionStarted;
       unsigned actionPointsDone;
 
@@ -607,7 +607,7 @@ unsigned calcTemplateBody(const DroidTemplate* psTemplate, UBYTE player);
 unsigned calcDroidBaseSpeed(const DroidTemplate* psTemplate, unsigned weight, UBYTE player);
 
 /* Calculate the speed of a droid over a terrain */
-unsigned calcDroidSpeed(unsigned baseSpeed, unsigned terrainType, unsigned propIndex, unsigned level);
+unsigned calcDroidSpeed(unsigned baseSpeed, unsigned terrainType, PropulsionStats const* propulsion, unsigned level);
 
 /* Calculate the points required to build the template */
 unsigned calcTemplateBuild(const DroidTemplate* psTemplate);
