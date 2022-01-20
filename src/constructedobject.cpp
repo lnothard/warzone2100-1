@@ -20,42 +20,74 @@ int establishTargetHeight(PersistentObject const* psTarget);
 static constexpr auto PROJ_MAX_PITCH = 45;
 
 
-namespace Impl
+struct ConstructedObject::Impl
 {
-	ConstructedObject::ConstructedObject(unsigned id, unsigned player)
-		: Impl::PersistentObject(id, player)
-	{
-	}
+    Impl() = default;
+    ~Impl() = default;
+
+    Impl(Impl const& rhs) = default;
+    Impl& operator=(Impl const& rhs) = default;
+
+    Impl(Impl&& rhs) noexcept = default;
+    Impl& operator=(Impl&& rhs) noexcept = default;
+
+    /// Current resistance points, 0 = cannot be attacked electrically
+    int resistance = 0;
+    unsigned lastEmissionTime = 0;
+    WEAPON_SUBCLASS lastHitWeapon;
+    std::vector<TILEPOS> watchedTiles;
+    std::vector<Weapon> weapons;
+};
+
+ConstructedObject::ConstructedObject(unsigned id, unsigned player)
+  : PersistentObject(id, player)
+{
+}
+
+ConstructedObject::ConstructedObject(ConstructedObject const& rhs)
+  : PersistentObject(rhs),
+    pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+ConstructedObject& ConstructedObject::operator=(ConstructedObject const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
 
 
-  int ConstructedObject::getResistance() const
-  {
-    return resistance;
+int ConstructedObject::getResistance() const
+{
+  return pimpl
+         ? pimpl->resistance
+         : -1;
+}
+
+
+const std::vector<Weapon>& ConstructedObject::getWeapons() const
+{
+  assert(pimpl);
+  return pimpl->weapons;
+}
+
+void ConstructedObject::alignTurret(int weapon_slot)
+{
+  if (numWeapons(*this) == 0)  {
+    return;
   }
+  auto& weapon = getWeapons()[weapon_slot];
+  const auto turret_rotation = gameTimeAdjustedIncrement(DEG(TURRET_ROTATION_RATE));
+  auto weapon_rotation = weapon.getRotation().direction;
+  auto weapon_pitch = weapon.getRotation().pitch;
+  const auto nearest_right_angle = (weapon_rotation + DEG(45)) / DEG(90) * DEG(90);
 
+  weapon_rotation += clip(angleDelta(nearest_right_angle - weapon_rotation), -turret_rotation / 2,
+                          turret_rotation / 2);
+  weapon_pitch += clip(angleDelta(0 - weapon_pitch), -turret_rotation / 2, turret_rotation / 2);
 
-	const std::vector<Weapon>& ConstructedObject::getWeapons() const
-	{
-		return weapons;
-	}
-
-	void ConstructedObject::alignTurret(int weapon_slot)
-	{
-		if (numWeapons(*this) == 0)  {
-      return;
-    }
-		auto& weapon = weapons[weapon_slot];
-		const auto turret_rotation = gameTimeAdjustedIncrement(DEG(TURRET_ROTATION_RATE));
-		auto weapon_rotation = weapon.getRotation().direction;
-		auto weapon_pitch = weapon.getRotation().pitch;
-		const auto nearest_right_angle = (weapon_rotation + DEG(45)) / DEG(90) * DEG(90);
-
-		weapon_rotation += clip(angleDelta(nearest_right_angle - weapon_rotation), -turret_rotation / 2,
-		                        turret_rotation / 2);
-		weapon_pitch += clip(angleDelta(0 - weapon_pitch), -turret_rotation / 2, turret_rotation / 2);
-
-    weapon.setRotation({weapon_rotation, weapon_pitch, weapon.getRotation().roll});
-	}
+  weapon.setRotation({weapon_rotation, weapon_pitch, weapon.getRotation().roll});
 }
 
 bool hasFullAmmo(const ConstructedObject& unit) noexcept
@@ -101,7 +133,7 @@ Vector3i calculateMuzzleBaseLocation(const ConstructedObject& unit, int weapon_s
 	}
 	else
 	{
-		muzzle = position + Vector3i{0, 0, unit.getDisplayData().imd_shape->max.y};
+		muzzle = position + Vector3i{0, 0, unit.getDisplayData()->imd_shape->max.y};
 	}
 	return muzzle;
 }
@@ -151,7 +183,7 @@ Vector3i calculateMuzzleTipLocation(const ConstructedObject& unit, int weapon_sl
 	}
 	else
 	{
-		muzzle = position + Vector3i{0, 0, 0 + unit.getDisplayData().imd_shape->max.y};
+		muzzle = position + Vector3i{0, 0, 0 + unit.getDisplayData()->imd_shape->max.y};
 	}
 	return muzzle;
 }

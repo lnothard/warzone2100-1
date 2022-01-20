@@ -22,38 +22,13 @@
  * @file droid.cpp
  */
 
-#include "lib/framework/math_ext.h"
 #include "lib/sound/audio.h"
-#include "lib/sound/audio_id.h"
 
-#include "action.h"
-#include "baseobject.h"
-#include "cmddroid.h"
-#include "combat.h"
-#include "component.h"
-#include "displaydef.h"
 #include "droid.h"
-#include "edit3d.h"
-#include "effects.h"
-#include "geometry.h"
-#include "levels.h"
-#include "lighting.h"
-#include "loop.h"
-#include "mapgrid.h"
-#include "mission.h"
+#include "group.h"
 #include "move.h"
-#include "multiplay.h"
 #include "qtscript.h"
-#include "objmem.h"
-#include "projectile.h"
-#include "random.h"
-#include "raycast.h"
-#include "scores.h"
-#include "selection.h"
-#include "transporter.h"
 #include "visibility.h"
-#include "warcam.h"
-#include "display3d.h"
 
 
 // the structure that was last hit
@@ -67,187 +42,409 @@ static void groupConsoleInformOfRemoval();
 static void droidUpdateDroidSelfRepair(Droid* psRepairDroid);
 static unsigned calcDroidBaseBody(Droid* psDroid);
 
-namespace Impl
+
+struct Droid::Impl
 {
-    Droid::Droid(unsigned id, unsigned player)
-            : ConstructedObject(id, player)
-            , type(ANY)
-            , group(nullptr)
-            , secondaryOrder(DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD)
-            , secondaryOrderPending(DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD)
-            , secondaryOrderPendingCount(0)
-            , action(ACTION::NONE)
-            , actionPos(0, 0)
-    {
-      order->type = ORDER_TYPE::NONE;
-      order->pos = Vector2i(0, 0);
-      order->pos2 = Vector2i(0, 0);
-      order->direction = 0;
-      order->target = nullptr;
-      order->structure_stats = nullptr;
-      movement->status = MOVE_STATUS::INACTIVE;
-      listPendingBegin = 0;
-      iAudioID = NO_SOUND;
-      associatedStructure = nullptr;
+    ~Impl() = default;
+    Impl(unsigned id, unsigned player);
 
-      for (unsigned vPlayer = 0; vPlayer < MAX_PLAYERS; ++vPlayer)
+    Impl(Impl const& rhs);
+    Impl& operator=(Impl const& rhs);
+
+    Impl(Impl&& rhs) noexcept = default;
+    Impl& operator=(Impl&& rhs) noexcept = default;
+
+
+    using enum DROID_TYPE;
+    using enum ACTION;
+    std::string name;
+    DROID_TYPE type;
+
+    unsigned weight = 0;
+
+    /// Base speed depends on propulsion type
+    unsigned baseSpeed = 0;
+
+    unsigned originalHp = 0;
+    unsigned experience = 0;
+    unsigned kills = 0;
+
+    /// Set when stuck. Used for, e.g., firing indiscriminately
+    /// at map features to clear the way
+    unsigned lastFrustratedTime;
+
+    std::shared_ptr<Group> group;
+
+    /// A structure that this droid might be associated with.
+    /// For VTOLs this is the rearming pad
+    ::Structure *associatedStructure = nullptr;
+
+    /// The range [0; listSize - 1] corresponds to synchronised orders, and the range
+    /// [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will
+    /// remain, once all orders are synchronised.
+    unsigned listPendingBegin;
+
+    /// The number of synchronised orders. Orders from `listSize` to
+    /// the real end of the list may not affect game state.
+    std::vector<Order> asOrderList;
+    /// Index of first order which will not be erased by
+    /// a pending order. After all messages are processed
+    /// the orders in the range [listPendingBegin; listPendingEnd - 1]
+    /// will remain.
+    std::unique_ptr<Order> order;
+    unsigned secondaryOrder;
+    /// What `secondary_order` will be after synchronisation.
+    unsigned secondaryOrderPending;
+    /// Number of pending `secondary_order` synchronisations.
+    int secondaryOrderPendingCount = 0;
+
+    ACTION action = NONE;
+    Vector2i actionPos {0, 0};
+    std::array<::PersistentObject*, MAX_WEAPONS> actionTarget;
+    std::size_t timeActionStarted;
+    unsigned actionPointsDone;
+
+    std::size_t timeLastHit;
+    unsigned expectedDamageDirect = 0;
+    unsigned expectedDamageIndirect = 0;
+    uint8_t illuminationLevel;
+    std::unique_ptr<Movement> movement;
+
+    /* Animation stuff */
+    std::size_t timeAnimationStarted;
+    ANIMATION_EVENTS animationEvent;
+
+    /// Bit set telling which tiles block this type of droid (TODO)
+    uint8_t blockedBits;
+
+    int iAudioID = NO_SOUND;
+
+    std::unordered_map<std::string, std::unique_ptr<ComponentStats>> components;
+};
+
+Droid::~Droid()
+{
+  audio_RemoveObj(this);
+
+  if (isTransporter(*this)) {
+    if (pimpl->group) {
+      // free all droids associated with this transporter
+      for (auto psCurr : pimpl->group->members)
       {
-        visibilityState[vPlayer] = hasSharedVision(vPlayer, player)
-                ? UINT8_MAX
-                : 0;
+        pimpl->group->remove(psCurr);
       }
-
-      periodicalDamageStartTime = 0;
-      periodicalDamage = 0;
-      illuminationLevel = UINT8_MAX;
-      resistance = ACTION_START_TIME; // init the resistance to indicate no EW performed on this droid
-      lastFrustratedTime = 0; // make sure we do not start the game frustrated
     }
+  }
+
+  fpathRemoveDroidData(static_cast<int>(getId()));
+
+  // leave the current group if any
+  if (pimpl->group) {
+    pimpl->group->remove(this);
+  }
+}
+
+Droid::Droid(unsigned id, unsigned player)
+  : ConstructedObject(id, player),
+    pimpl{std::make_unique<Impl>(id, player)}
+{
+}
+
+Droid::Droid(Droid const& rhs)
+  : ConstructedObject(rhs),
+    pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+Droid& Droid::operator=(Droid const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+Droid::Impl::Impl(unsigned id, unsigned player)
+  : type{ANY},
+    action{NONE},
+    secondaryOrder{DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD},
+    secondaryOrderPending{DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD}
+{
+  for (auto vPlayer = 0; vPlayer < MAX_PLAYERS; ++vPlayer)
+  {
+    visibilityState[vPlayer] = hasSharedVision(vPlayer, player)
+                               ? UINT8_MAX
+                               : 0;
+  }
+}
+
+Droid::Impl::Impl(Impl const& rhs)
+  : name{rhs.name},
+    type{rhs.type},
+    weight{rhs.weight},
+    baseSpeed{rhs.baseSpeed},
+    originalHp{rhs.originalHp},
+    experience{rhs.experience},
+    kills{rhs.kills},
+    lastFrustratedTime{rhs.lastFrustratedTime},
+    group{rhs.group},
+    associatedStructure{rhs.associatedStructure},
+    asOrderList{rhs.asOrderList},
+    order{rhs.order ? std::make_unique<Order>(*rhs.order) : nullptr},
+    secondaryOrder{rhs.secondaryOrder},
+    secondaryOrderPending(rhs.secondaryOrderPending),
+    secondaryOrderPendingCount(rhs.secondaryOrderPendingCount),
+    action{rhs.action},
+    actionPos{rhs.actionPos},
+    actionTarget{rhs.actionTarget},
+    timeActionStarted{rhs.timeActionStarted},
+    actionPointsDone{rhs.actionPointsDone},
+    timeLastHit{rhs.timeLastHit},
+    expectedDamageDirect{rhs.expectedDamageDirect},
+    expectedDamageIndirect{rhs.expectedDamageIndirect},
+    illuminationLevel{rhs.illuminationLevel},
+    movement{rhs.movement ? std::make_unique<Movement>(*rhs.movement) : nullptr},
+    timeAnimationStarted{rhs.timeAnimationStarted},
+    animationEvent{rhs.animationEvent},
+    blockedBits{rhs.blockedBits},
+    iAudioID{rhs.iAudioID},
+    components{rhs.components}
+{
+}
+
+Droid::Impl& Droid::Impl::operator=(Impl const& rhs)
+{
+  if (this == &rhs) return *this;
+
+  name = rhs.name;
+  type = rhs.type;
+  weight = rhs.weight;
+  baseSpeed = rhs.baseSpeed;
+  originalHp = rhs.originalHp;
+  experience = rhs.experience;
+  kills = rhs.kills;
+  lastFrustratedTime = rhs.lastFrustratedTime;
+  group = rhs.group;
+  associatedStructure = rhs.associatedStructure;
+  asOrderList = rhs.asOrderList;
+  order = rhs.order ? std::make_unique<Order>(*rhs.order) : nullptr;
+  secondaryOrder = rhs.secondaryOrder;
+  secondaryOrderPending = rhs.secondaryOrderPending;
+  secondaryOrderPendingCount = rhs.secondaryOrderPendingCount;
+  action = rhs.action;
+  actionPos = rhs.actionPos;
+  actionTarget = rhs.actionTarget;
+  timeActionStarted = rhs.timeActionStarted;
+  actionPointsDone = rhs.actionPointsDone;
+  timeLastHit = rhs.timeLastHit;
+  expectedDamageDirect = rhs.expectedDamageDirect;
+  expectedDamageIndirect = rhs.expectedDamageIndirect;
+  illuminationLevel = rhs.illuminationLevel;
+  movement = rhs.movement ? std::make_unique<Movement>(*rhs.movement) : nullptr;
+  timeAnimationStarted = rhs.timeAnimationStarted;
+  animationEvent = rhs.animationEvent;
+  blockedBits = rhs.blockedBits;
+  iAudioID = rhs.iAudioID;
+  components = rhs.components;
+
+  return *this;
+}
+
+//Droid::Droid(unsigned id, unsigned player)
+//            : ConstructedObject(id, player)
+//            , type(ANY)
+//            , group(nullptr)
+//            , secondaryOrder(DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD)
+//            , secondaryOrderPending(DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD)
+//            , secondaryOrderPendingCount(0)
+//            , action(ACTION::NONE)
+//            , actionPos(0, 0)
+//    {
+//      order->type = ORDER_TYPE::NONE;
+//      order->pos = Vector2i(0, 0);
+//      order->pos2 = Vector2i(0, 0);
+//      order->direction = 0;
+//      order->target = nullptr;
+//      order->structure_stats = nullptr;
+//      movement->status = MOVE_STATUS::INACTIVE;
+//      listPendingBegin = 0;
+//      iAudioID = NO_SOUND;
+//      associatedStructure = nullptr;
+//
+//
+//
+//      periodicalDamageStartTime = 0;
+//      periodicalDamage = 0;
+//      illuminationLevel = UINT8_MAX;
+//      resistance = ACTION_START_TIME; // init the resistance to indicate no EW performed on this droid
+//      lastFrustratedTime = 0; // make sure we do not start the game frustrated
+//    }
 
    /**
     * DROID::~DROID: release all resources associated with a droid --
     * should only be called by objmem - use vanishDroid preferably
     */
-    Droid::~Droid()
-    {
-      // Make sure to get rid of some final references in the sound code to this object first
-      // In SimpleObject::~SimpleObject() is too late for this, since some callbacks require us to still be a DROID.
-      audio_RemoveObj(this);
+//    Droid::~Droid()
+//    {
+//      // Make sure to get rid of some final references in the sound code to this object first
+//      // In SimpleObject::~SimpleObject() is too late for this, since some callbacks require us to still be a DROID.
+//      audio_RemoveObj(this);
+//
+//      if (isTransporter(*this)) {
+//        if (group) {
+//          // free all droids associated with this transporter
+//          for (auto psCurr : group->members)
+//          {
+//            group->remove(psCurr);
+//          }
+//        }
+//      }
+//
+//      fpathRemoveDroidData(static_cast<int>(getId()));
+//
+//      // leave the current group if any
+//      if (group) {
+//        group->remove(this);
+//      }
+//    }
 
-      if (isTransporter(*this)) {
-        if (group) {
-          // free all droids associated with this transporter
-          for (auto psCurr : group->members)
-          {
-            group->remove(psCurr);
-          }
-        }
-      }
+  const ComponentStats* Droid::getComponent(const std::string& compName) const
+  {
+    return pimpl
+           ? pimpl->components.at(pimpl->name).get()
+           : nullptr;
+  }
 
-      fpathRemoveDroidData(static_cast<int>(getId()));
+  ACTION Droid::getAction() const noexcept
+  {
+    return pimpl
+           ? pimpl->action
+           : ACTION::NONE;
+  }
 
-      // leave the current group if any
-      if (group) {
-        group->remove(this);
-      }
+  const std::string& Droid::getName() const
+  {
+    assert(pimpl);
+    return pimpl->name;
+  }
+
+  unsigned Droid::getWeight() const
+  {
+    return pimpl
+           ? pimpl->weight
+           : 0;
+  }
+
+  const Order* Droid::getOrder() const {
+    return pimpl
+           ? pimpl->order.get()
+           : nullptr;
+  }
+
+  const Movement* Droid::getMovementData() const
+  {
+    return pimpl
+           ? pimpl->movement.get()
+           : nullptr;
+  }
+
+  bool Droid::isProbablyDoomed(bool isDirectDamage) const {
+    if (!pimpl) return false;
+
+    auto is_doomed = [this](unsigned damage) {
+        const auto hit_points = getHp();
+        return damage > hit_points && damage - hit_points > hit_points / 5;
+    };
+
+    if (isDirectDamage) {
+      return is_doomed(pimpl->expectedDamageDirect);
     }
 
-    const ComponentStats* Droid::getComponent(const std::string& compName) const
-    {
-      return components.at(name).get();
+    return is_doomed(pimpl->expectedDamageIndirect);
+  }
+
+  void Droid::cancelBuild()
+  {
+    if (!pimpl) return;
+
+    using enum ORDER_TYPE;
+    if (pimpl->order->type == NONE || pimpl->order->type == PATROL ||
+        pimpl->order->type == HOLD || pimpl->order->type == SCOUT ||
+        pimpl->order->type == GUARD) {
+      pimpl->order->target = nullptr;
+      pimpl->action = ACTION::NONE;
     }
+    else {
+      pimpl->action = ACTION::NONE;
+      pimpl->order->type = NONE;
 
-    ACTION Droid::getAction() const noexcept {
-      return action;
-    }
-
-    const std::string &Droid::getName() const
-    {
-      return name;
-    }
-
-    unsigned Droid::getWeight() const
-    {
-      return weight;
-    }
-
-    const Order& Droid::getOrder() const {
-      return *order;
-    }
-
-    const Movement& Droid::getMovementData() const
-    {
-      return *movement;
-    }
-
-    bool Droid::isProbablyDoomed(bool isDirectDamage) const {
-      auto is_doomed = [this](unsigned damage) {
-          const auto hit_points = getHp();
-          return damage > hit_points && damage - hit_points > hit_points / 5;
-      };
-
-      if (isDirectDamage) {
-        return is_doomed(expectedDamageDirect);
-      }
-
-      return is_doomed(expectedDamageIndirect);
-    }
-
-    void Droid::cancelBuild()
-    {
-      using enum ORDER_TYPE;
-      if (order->type == NONE || order->type == PATROL || order->type == HOLD ||
-          order->type == SCOUT || order->type == GUARD) {
-        order->target = nullptr;
-        action = ACTION::NONE;
+      // stop moving
+      if (isFlying()) {
+        pimpl->movement->status = MOVE_STATUS::HOVER;
       }
       else {
-        action = ACTION::NONE;
-        order->type = NONE;
-
-        // stop moving
-        if (isFlying()) {
-          movement->status = MOVE_STATUS::HOVER;
-        }
-        else {
-          movement->status = MOVE_STATUS::INACTIVE;
-        }
-        triggerEventDroidIdle(this);
+        pimpl->movement->status = MOVE_STATUS::INACTIVE;
       }
+      triggerEventDroidIdle(this);
     }
+  }
 
   unsigned Droid::getLevel() const
   {
-   auto brain = dynamic_cast<CommanderStats*>(components.at("brain").get());
-   if (!brain) {
+    if (!pimpl) return 0;
+
+    auto brain = dynamic_cast<const CommanderStats*>(getComponent("brain"));
+    if (!brain) {
      return 0;
-   }
-   const auto& rankThresholds = brain->
-           upgraded[getPlayer()].rankThresholds;
-   for (int i = 1; i < rankThresholds.size(); ++i)
-   {
-     if (kills < rankThresholds.at(i)) {
-       return i - 1;
-     }
-   }
-   return rankThresholds.size() - 1;
+    }
+    const auto& rankThresholds = brain->
+            upgraded[getPlayer()].rankThresholds;
+
+    for (auto i = 1; i < rankThresholds.size(); ++i)
+    {
+      if (pimpl->kills < rankThresholds.at(i)) {
+        return i - 1;
+      }
+    }
+    return rankThresholds.size() - 1;
   }
 
   bool Droid::isStationary() const
   {
+     if (!pimpl) return true;
      using enum MOVE_STATUS;
-     return movement->status == INACTIVE ||
-            movement->status == HOVER ||
-            movement->status == SHUFFLE;
+     return pimpl->movement->status == INACTIVE ||
+            pimpl->movement->status == HOVER ||
+            pimpl->movement->status == SHUFFLE;
   }
 
   bool Droid::hasCommander() const {
-    if (type == COMMAND &&
-        group != nullptr &&
-        group->isCommandGroup()) {
-      return true;
-    }
-    return false;
+    if (!pimpl) return false;
+
+    return pimpl->type == DROID_TYPE::COMMAND &&
+           pimpl->group != nullptr &&
+           pimpl->group->isCommandGroup();
   }
 
   void Droid::upgradeHitPoints() {
+    if (!pimpl) return;
+
     // use big numbers to scare away rounding errors
     const auto factor = 10000;
-    auto prev = originalHp;
-    originalHp = calcDroidBaseBody(this);
-    auto increase = originalHp * factor / prev;
-    auto hp = MIN(originalHp, (getHp() * increase) / factor + 1);
+    auto prev = getOriginalHp();
+    pimpl->originalHp = calcDroidBaseBody(this);
+    auto increase = getOriginalHp() * factor / prev;
+    auto hp = MIN(getOriginalHp(), (getHp() * increase) / factor + 1);
     DroidTemplate sTemplate;
     templateSetParts(this, &sTemplate);
 
     // update engine too
-    baseSpeed = calcDroidBaseSpeed(&sTemplate, weight, getPlayer());
+    pimpl->baseSpeed = calcDroidBaseSpeed(&sTemplate, pimpl->weight, getPlayer());
 
     if (!isTransporter(*this)) {
       return;
     }
 
-    for (auto droid: group->members) {
+    for (auto droid: pimpl->group->members) {
       if (droid != this) {
         droid->upgradeHitPoints();
       }

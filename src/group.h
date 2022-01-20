@@ -71,7 +71,7 @@ public:
 
 	void setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state); // set the secondary state for a group of droids
 private:
-  friend class Impl::Droid;
+  friend class Droid;
   using enum GROUP_TYPE;
 	GROUP_TYPE type = NORMAL;
   unsigned id = 0;

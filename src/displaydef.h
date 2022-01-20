@@ -26,6 +26,8 @@
 #ifndef __INCLUDED_DISPLAYDEF_H__
 #define __INCLUDED_DISPLAYDEF_H__
 
+#include <memory>
+
 struct iIMDShape;
 
 /// world->screen check - alex

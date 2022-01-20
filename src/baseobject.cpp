@@ -31,6 +31,9 @@ bool StatIsStructure(const BaseStats*);
 bool StatIsFeature(const BaseStats*);
 
 
+
+
+
 static inline uint16_t interpolateAngle(uint16_t v1, uint16_t v2, unsigned t1, unsigned t2, unsigned t)
 {
 	const auto numer = t - t1, denom = t2 - t1;

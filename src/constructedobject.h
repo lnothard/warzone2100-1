@@ -8,6 +8,7 @@
 
 #include "basedef.h"
 
+
 enum class WEAPON_SUBCLASS;
 struct iIMDShape;
 struct Weapon;
@@ -20,56 +21,45 @@ static constexpr auto TURRET_ROTATION_RATE = 45;
 static constexpr auto MAX_WEAPONS = 3;
 
 /// Abstract base class with shared methods for both structures and droids
-class ConstructedObject : public virtual PersistentObject
+class ConstructedObject : public PersistentObject
 {
 public:
+  ConstructedObject(unsigned id, unsigned player);
 	~ConstructedObject() override = default;
 
-  [[nodiscard]] virtual const std::vector<Weapon>& getWeapons() const = 0;
-  [[nodiscard]] virtual const iIMDShape& getImdShape() const = 0;
-  [[nodiscard]] virtual const PersistentObject* getTarget(int weapon_slot) const = 0;
-  [[nodiscard]] virtual int getResistance() const = 0;
-  [[nodiscard]] virtual unsigned getOriginalHp() const = 0;
+  ConstructedObject(ConstructedObject const& rhs);
+  ConstructedObject& operator=(ConstructedObject const& rhs);
 
-  [[nodiscard]] virtual bool isAlive() const = 0;
-	[[nodiscard]] virtual bool isRadarDetector() const = 0;
-	virtual bool isValidTarget(const ConstructedObject* attacker, int weapon_slot) const = 0;
-	virtual uint8_t isTargetVisible(const PersistentObject* target, bool walls_block) const = 0;
-	[[nodiscard]] virtual unsigned calculateSensorRange() const = 0;
-  virtual void alignTurret(int weapon_slot) = 0;
-  virtual void updateExpectedDamage(unsigned damage, bool is_direct) noexcept = 0;
-  [[nodiscard]] virtual int calculateAttackPriority(const ConstructedObject* target, int weapon_slot) const = 0;
-  [[nodiscard]] virtual bool hasCbSensor() const = 0;
-  [[nodiscard]] virtual bool hasStandardSensor() const = 0;
-  [[nodiscard]] virtual bool hasVtolInterceptSensor() const = 0;
-  [[nodiscard]] virtual bool hasVtolCbSensor() const = 0;
+  ConstructedObject(ConstructedObject&& rhs) noexcept = default;
+  ConstructedObject& operator=(ConstructedObject&& rhs) = default;
+
+  virtual bool isProbablyDoomed(bool isDirect) const = 0;
+  [[nodiscard]] const std::vector<Weapon>& getWeapons() const;
+  [[nodiscard]] const iIMDShape& getImdShape() const;
+  [[nodiscard]] const PersistentObject* getTarget(int weapon_slot) const;
+  [[nodiscard]] int getResistance() const;
+  [[nodiscard]] unsigned getOriginalHp() const;
+
+  [[nodiscard]] bool isAlive() const;
+	[[nodiscard]] bool isRadarDetector() const;
+	bool isValidTarget(const ConstructedObject* attacker, int weapon_slot) const;
+	uint8_t isTargetVisible(const PersistentObject* target, bool walls_block) const;
+	[[nodiscard]] unsigned calculateSensorRange() const;
+  void alignTurret(int weapon_slot);
+  void updateExpectedDamage(unsigned damage, bool is_direct) noexcept;
+  [[nodiscard]] int calculateAttackPriority(const ConstructedObject* target, int weapon_slot) const;
+  [[nodiscard]] bool hasCbSensor() const;
+  [[nodiscard]] bool hasStandardSensor() const;
+  [[nodiscard]] bool hasVtolInterceptSensor() const;
+  [[nodiscard]] bool hasVtolCbSensor() const;
+protected:
+    struct Impl;
+    std::unique_ptr<Impl> pimpl;
 };
 
 Vector3i calculateMuzzleBaseLocation(const ConstructedObject& unit, int weapon_slot);
 
 Vector3i calculateMuzzleTipLocation(const ConstructedObject& unit, int weapon_slot);
-
-namespace Impl
-{
-	class ConstructedObject : public virtual ::ConstructedObject, public PersistentObject
-	{
-	public:
-		ConstructedObject(unsigned id, unsigned player);
-
-    /************************** Accessors *************************/
-		[[nodiscard]] const std::vector<Weapon>& getWeapons() const final;
-    [[nodiscard]] int getResistance() const final;
-
-		void alignTurret(int weapon_slot) final;
-  protected:
-    /// Current resistance points, 0 = cannot be attacked electrically
-    int resistance = 0;
-    unsigned lastEmissionTime;
-    WEAPON_SUBCLASS lastHitWeapon;
-    std::vector<TILEPOS> watchedTiles;
-		std::vector<Weapon> weapons;
-	};
-}
 
 void checkAngle(int64_t& angle_tan, int start_coord, int height,
                 int square_distance, int target_height, bool is_direct);
@@ -102,6 +92,6 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
 
 [[nodiscard]] unsigned getMaxWeaponRange(const ConstructedObject& unit);
 
-[[nodiscard]] unsigned numWeapons(const Impl::ConstructedObject& unit);
+[[nodiscard]] unsigned numWeapons(const ConstructedObject& unit);
 
 #endif // WARZONE2100_CONSTRUCTEDOBJECT_H

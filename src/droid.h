@@ -28,7 +28,10 @@
 
 #include <queue>
 
+#include "lib/gamelib/gtime.h"
 #include "lib/ivis_opengl/ivisdef.h"
+#include "lib/sound/audio_id.h"
+#include "wzmaplib/map.h"
 
 #include "constructedobject.h"
 #include "order.h"
@@ -245,323 +248,109 @@ struct DroidTemplate : public BaseStats
     bool isEnabled = false;
 };
 
-class Droid : public virtual ConstructedObject
+class Droid : public ConstructedObject
 {
 public:
-    ~Droid() override = default;
+    ~Droid() override;
+    Droid(unsigned id, unsigned player);
 
-    /************************** Accessors *************************/
-    [[nodiscard]] virtual ACTION getAction() const noexcept = 0;
-    [[nodiscard]] virtual const Order& getOrder() const = 0;
-    [[nodiscard]] virtual DROID_TYPE getType() const noexcept = 0;
-    [[nodiscard]] virtual unsigned getLevel() const = 0;
-    [[nodiscard]] virtual unsigned getCommanderLevel() const = 0;
-    [[nodiscard]] virtual int getVerticalSpeed() const noexcept = 0;
-    [[nodiscard]] virtual unsigned getSecondaryOrder() const noexcept = 0;
-    [[nodiscard]] virtual const Vector2i& getDestination() const = 0;
-    [[nodiscard]] virtual const std::optional<PropulsionStats>& getPropulsion() const = 0;
-    [[nodiscard]] virtual const Movement& getMovementData() const = 0;
-    [[nodiscard]] virtual const std::string& getName() const = 0;
-    [[nodiscard]] virtual unsigned getWeight() const = 0;
-    [[nodiscard]] virtual const Group& getGroup() const = 0;
-    [[nodiscard]] virtual const ComponentStats* getComponent(const std::string& compName) const = 0;
+    Droid(Droid const& rhs);
+    Droid& operator=(Droid const& rhs);
 
-    [[nodiscard]] virtual bool hasElectronicWeapon() const = 0;
-    [[nodiscard]] virtual bool isVtol() const = 0;
-    [[nodiscard]] virtual bool isFlying() const = 0;
-    [[nodiscard]] virtual bool isDamaged() const = 0;
-    [[nodiscard]] virtual bool hasCommander() const = 0;
-    virtual void setActionTarget(PersistentObject* psNewTarget, unsigned idx) = 0;
-    virtual void setTarget(PersistentObject* psNewTarget) = 0;
-    virtual void setBase(Structure* psNewBase) = 0;
-    virtual void cancelBuild() = 0;
-    virtual void resetAction() = 0;
-    virtual void gainExperience(unsigned exp) = 0;
-    [[nodiscard]] virtual int calculateHeight() const = 0;
-    [[nodiscard]] virtual bool isStationary() const = 0;
-    virtual void upgradeHitPoints() = 0;
-    virtual bool moveDroidToBase(unsigned x, unsigned y, bool bFormation, FPATH_MOVETYPE moveType) = 0;
-    virtual void moveDroidToDirect(unsigned x, unsigned y) = 0;
-    virtual void moveTurnDroid(unsigned x, unsigned y) = 0;
-    virtual void moveShuffleDroid(Vector2i s) = 0;
-    virtual bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode = ModeQueue) = 0;
-    virtual void actionDroidBase(Action* psAction) = 0;
-    virtual RtrBestResult decideWhereToRepairAndBalance() = 0;
-    virtual SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate) = 0;
-    virtual void orderDroidAdd(Order* order_) = 0;
-    virtual void orderDroidAddPending(Order* order_) = 0;
-    virtual void orderCheckList() = 0;
-    virtual void orderDroidBase(Order* psOrder) = 0;
-    virtual bool tryDoRepairlikeAction() = 0;
-    virtual void orderUpdateDroid() = 0;
-    virtual std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission, Rotation rot) = 0;
-    [[nodiscard]] virtual bool isRepairDroid() const = 0;
-    virtual void droidUpdate() = 0;
-    virtual DroidStartBuild droidStartBuild() = 0;
-    virtual void aiUpdateDroid() = 0;
-    virtual bool droidUpdateRestore() = 0;
-    virtual bool droidUpdateDroidRepair() = 0;
-    virtual bool droidUpdateBuild() = 0;
-    virtual void recycleDroid() = 0;
-    virtual void initDroidMovement() = 0;
-    virtual std::unique_ptr<Droid> giftSingleDroid(unsigned to, bool electronic) = 0;
-    virtual void droidSetBits(const DroidTemplate* pTemplate) = 0;
-    virtual void orderDroidListEraseRange(int indexBegin, int indexEnd) = 0;
-    virtual void orderClearTargetFromDroidList(PersistentObject* psTarget) = 0;
-    virtual void orderCheckGuardPosition(int range) = 0;
-    virtual bool orderDroidList() = 0;
-    virtual void moveStopDroid() = 0;
-    virtual void moveReallyStopDroid() = 0;
-    virtual void updateDroidOrientation() = 0;
-    virtual int moveDirectPathToWaypoint(unsigned positionIndex) = 0;
-    virtual bool moveBestTarget() = 0;
-    virtual bool moveNextTarget() = 0;
-    virtual bool moveBlocked() = 0;
-    virtual void moveCalcBlockingSlide(int* pmx, int* pmy, uint16_t tarDir, uint16_t* pSlideDir) = 0;
-    virtual void movePlayAudio(bool bStarted, bool bStoppedBefore, int iMoveSpeed) = 0;
-    virtual void movePlayDroidMoveAudio() = 0;
-    virtual void moveDescending() = 0;
-    virtual void moveAdjustVtolHeight(int32_t iMapHeight) = 0;
-    virtual Vector2i moveGetObstacleVector(Vector2i dest) = 0;
-    virtual int moveCalcDroidSpeed() = 0;
-    virtual void moveCombineNormalAndPerpSpeeds(int fNormalSpeed, int fPerpSpeed, uint16_t iDroidDir) = 0;
-    virtual void moveUpdateGroundModel(int speed, uint16_t direction) = 0;
-    virtual void moveCalcDroidSlide(int* pmx, int* pmy) = 0;
-    virtual void moveUpdatePersonModel(int speed, uint16_t direction) = 0;
-    virtual void moveUpdateVtolModel(int speed, uint16_t direction) = 0;
-    virtual void moveUpdateCyborgModel(int moveSpeed, uint16_t moveDir, MOVE_STATUS oldStatus) = 0;
-    virtual void moveUpdateDroid() = 0;
-    virtual bool droidUpdateDemolishing() = 0;
-    virtual std::string getDroidLevelName() const = 0;
-    virtual bool droidSensorDroidWeapon(const PersistentObject* psObj) const = 0;
+    Droid(Droid&& rhs) noexcept = default;
+    Droid& operator=(Droid&& rhs) noexcept = default;
+
+
+    [[nodiscard]] ACTION getAction() const noexcept;
+    [[nodiscard]] const Order* getOrder() const;
+    [[nodiscard]] DROID_TYPE getType() const noexcept;
+    [[nodiscard]] unsigned getLevel() const;
+    [[nodiscard]] unsigned getCommanderLevel() const;
+    [[nodiscard]] int getVerticalSpeed() const noexcept;
+    [[nodiscard]] unsigned getSecondaryOrder() const noexcept;
+    [[nodiscard]] Vector2i getDestination() const;
+    [[nodiscard]] const Movement* getMovementData() const;
+    [[nodiscard]] const std::string& getName() const;
+    [[nodiscard]] unsigned getWeight() const;
+    [[nodiscard]] const Group* getGroup() const;
+    [[nodiscard]] const ComponentStats* getComponent(const std::string& compName) const;
+
+    [[nodiscard]] bool hasElectronicWeapon() const;
+    [[nodiscard]] bool isVtol() const;
+    [[nodiscard]] bool isFlying() const;
+    [[nodiscard]] bool isDamaged() const;
+    [[nodiscard]] bool hasCommander() const;
+    void setActionTarget(PersistentObject* psNewTarget, unsigned idx);
+    void setTarget(PersistentObject* psNewTarget);
+    void setBase(Structure* psNewBase);
+    void cancelBuild();
+    void resetAction() noexcept;
+    void gainExperience(unsigned exp);
+    [[nodiscard]] int calculateHeight() const;
+    [[nodiscard]] bool isStationary() const;
+    void upgradeHitPoints();
+    bool moveDroidToBase(unsigned x, unsigned y, bool bFormation, FPATH_MOVETYPE moveType);
+    void moveDroidToDirect(unsigned x, unsigned y);
+    void moveTurnDroid(unsigned x, unsigned y);
+    void moveShuffleDroid(Vector2i s);
+    bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode = ModeQueue);
+    void actionDroidBase(Action* psAction);
+    RtrBestResult decideWhereToRepairAndBalance();
+    SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate);
+    void orderDroidAdd(Order* order_);
+    void orderDroidAddPending(Order* order_);
+    void orderCheckList();
+    void orderDroidBase(Order* psOrder);
+    bool tryDoRepairlikeAction();
+    void orderUpdateDroid();
+    std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission, Rotation rot);
+    [[nodiscard]] bool isRepairDroid() const;
+    void droidUpdate();
+    DroidStartBuild droidStartBuild();
+    void aiUpdateDroid();
+    bool droidUpdateRestore();
+    bool droidUpdateDroidRepair();
+    bool droidUpdateBuild();
+    void recycleDroid();
+    void initDroidMovement();
+    std::unique_ptr<Droid> giftSingleDroid(unsigned to, bool electronic);
+    void droidSetBits(const DroidTemplate* pTemplate);
+    void orderDroidListEraseRange(int indexBegin, int indexEnd);
+    void orderClearTargetFromDroidList(PersistentObject* psTarget);
+    void orderCheckGuardPosition(int range);
+    bool orderDroidList();
+    void moveStopDroid();
+    void moveReallyStopDroid();
+    void updateDroidOrientation();
+    int moveDirectPathToWaypoint(unsigned positionIndex);
+    bool moveBestTarget();
+    bool moveNextTarget();
+    bool moveBlocked();
+    void moveCalcBlockingSlide(int* pmx, int* pmy, uint16_t tarDir, uint16_t* pSlideDir);
+    void movePlayAudio(bool bStarted, bool bStoppedBefore, int iMoveSpeed);
+    void movePlayDroidMoveAudio();
+    void moveDescending();
+    void moveAdjustVtolHeight(int32_t iMapHeight);
+    Vector2i moveGetObstacleVector(Vector2i dest);
+    int moveCalcDroidSpeed();
+    void moveCombineNormalAndPerpSpeeds(int fNormalSpeed, int fPerpSpeed, uint16_t iDroidDir);
+    void moveUpdateGroundModel(int speed, uint16_t direction);
+    void moveCalcDroidSlide(int* pmx, int* pmy);
+    void moveUpdatePersonModel(int speed, uint16_t direction);
+    void moveUpdateVtolModel(int speed, uint16_t direction);
+    void moveUpdateCyborgModel(int moveSpeed, uint16_t moveDir, MOVE_STATUS oldStatus);
+    void moveUpdateDroid();
+    bool droidUpdateDemolishing();
+    [[nodiscard]] std::string getDroidLevelName() const;
+    bool droidSensorDroidWeapon(const PersistentObject* psObj) const;
+
+    [[nodiscard]] bool isProbablyDoomed(bool isDirect) const override;
+protected:
+    struct Impl;
+    std::unique_ptr<Impl> pimpl;
 };
 
-namespace Impl
-{
-  class Droid : public virtual ::Droid, public Impl::ConstructedObject
-  {
-  public:
-      ~Droid() override;
 
-      Droid(unsigned id, unsigned player);
-
-      /************************** Accessors *************************/
-      [[nodiscard]] ACTION getAction() const noexcept final;
-      [[nodiscard]] const Order& getOrder() const final;
-      [[nodiscard]] DROID_TYPE getType() const noexcept final;
-      [[nodiscard]] unsigned getLevel() const final;
-      [[nodiscard]] const iIMDShape& getImdShape() const final;
-      [[nodiscard]] int getVerticalSpeed() const noexcept final;
-      [[nodiscard]] unsigned getSecondaryOrder() const noexcept final;
-      [[nodiscard]] const Vector2i& getDestination() const final;
-      [[nodiscard]] const PersistentObject* getTarget(int weapon_slot) const final;
-      [[nodiscard]] const Movement& getMovementData() const final;
-      [[nodiscard]] unsigned getOriginalHp() const final;
-      [[nodiscard]] const Group& getGroup() const final;
-      [[nodiscard]] const std::string& getName() const final;
-      [[nodiscard]] unsigned getWeight() const final;
-      [[nodiscard]] const ComponentStats* getComponent(const std::string& compName) const final;
-
-      bool droidSensorDroidWeapon(const ::PersistentObject* psObj) const final;
-      [[nodiscard]] std::string getDroidLevelName() const final;
-      void moveUpdateDroid() final;
-      void moveUpdatePersonModel(int speed, uint16_t direction) final;
-      void moveCalcDroidSlide(int* pmx, int* pmy) final;
-      void moveUpdateGroundModel(int speed, uint16_t direction) final;
-      void moveCombineNormalAndPerpSpeeds(int fNormalSpeed, int fPerpSpeed, uint16_t iDroidDir) final;
-      int moveCalcDroidSpeed() final;
-      [[nodiscard]] unsigned getCommanderLevel() const final;
-      [[nodiscard]] bool isProbablyDoomed(bool isDirectDamage) const final;
-      [[nodiscard]] bool isVtol() const final;
-      [[nodiscard]] bool isFlying() const final;
-      [[nodiscard]] bool isRadarDetector() const final;
-      [[nodiscard]] bool isStationary() const final;
-      [[nodiscard]] bool isDamaged() const final;
-      [[nodiscard]] bool isAttacking() const noexcept;
-      [[nodiscard]] bool isRepairDroid() const noexcept final;
-      void moveStopDroid() final;
-      void updateDroidOrientation() final;
-      int objRadius() const final;
-
-      void moveUpdateCyborgModel(int moveSpeed, uint16_t moveDir, MOVE_STATUS oldStatus) final;
-      void moveUpdateVtolModel(int speed, uint16_t direction) final;
-      void moveDescending() final;
-      void movePlayDroidMoveAudio() final;
-      bool moveNextTarget() final;
-      void setActionTarget(::PersistentObject* psNewTarget, unsigned idx) final;
-      void setTarget(::PersistentObject* psNewTarget) final;
-      void setBase(::Structure* psNewBase) final;
-
-      void orderCheckGuardPosition(int range) final;
-      void movePlayAudio(bool bStarted, bool bStoppedBefore, int iMoveSpeed) final;
-
-      Vector2i moveGetObstacleVector(Vector2i dest) final;
-      void moveAdjustVtolHeight(int32_t iMapHeight) final;
-      void moveCalcBlockingSlide(int* pmx, int* pmy, uint16_t tarDir, uint16_t* pSlideDir) final;
-      bool moveBlocked() final;
-      bool moveBestTarget() final;
-      int moveDirectPathToWaypoint(unsigned positionIndex) final;
-      bool orderDroidList() final;
-
-      void orderClearTargetFromDroidList(::PersistentObject* psTarget) final;
-
-      void orderDroidListEraseRange(int indexBegin, int indexEnd) final;
-
-      void droidSetBits(const DroidTemplate* pTemplate) final;
-
-      std::unique_ptr<::Droid> giftSingleDroid(unsigned to, bool electronic) final;
-
-      void recycleDroid() final;
-
-      bool droidUpdateDroidRepair() final;
-
-      void aiUpdateDroid() final;
-
-      bool droidUpdateBuild() final;
-
-      DroidStartBuild droidStartBuild() final;
-
-      bool droidUpdateRestore() final;
-
-      std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos,
-                                              unsigned player, bool onMission, Rotation rot) final;
-
-      void droidUpdate() final;
-
-      void upgradeHitPoints();
-
-      bool tryDoRepairlikeAction() final;
-
-      void orderDroidBase(Order* psOrder) final;
-
-      void orderCheckList() final;
-
-      void orderUpdateDroid() final;
-
-      void orderDroidAdd(Order* order_) final;
-
-      void orderDroidAddPending(Order* order_) final;
-
-      bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode = ModeQueue) final;
-
-      void setUpBuildModule();
-
-      void actionDroidBase(Action* psAction) final;
-
-      int droidDamage(unsigned damage, WEAPON_CLASS weaponClass,
-                      WEAPON_SUBCLASS weaponSubClass, unsigned impactTime,
-                      bool isDamagePerSecond, int minDamage);
-
-      bool moveDroidToBase(unsigned x, unsigned y, bool bFormation, FPATH_MOVETYPE moveType) final;
-
-      void moveDroidToDirect(unsigned x, unsigned y) final;
-
-      void moveTurnDroid(unsigned x, unsigned y) final;
-
-      void moveShuffleDroid(Vector2i s) final;
-
-      /**
-       *
-       * @param attacker
-       * @param weapon_slot
-       * @return
-       */
-      [[nodiscard]] bool isValidTarget(const ::ConstructedObject *attacker,
-                                       int weapon_slot) const final;
-
-      [[nodiscard]] bool hasCommander() const final;
-      [[nodiscard]] bool hasStandardSensor() const final;
-      [[nodiscard]] bool hasCbSensor() const final;
-      [[nodiscard]] bool hasElectronicWeapon() const final;
-      void actionUpdateTransporter();
-      void actionUpdateDroid();
-      void gainExperience(unsigned exp) final;
-      void cancelBuild() final;
-      void resetAction() noexcept final;
-      void actionSanity();
-      void updateExpectedDamage(unsigned damage, bool is_direct) noexcept final;
-      [[nodiscard]] unsigned calculateSensorRange() const final;
-      [[nodiscard]] int calculateHeight() const final;
-      [[nodiscard]] int spaceOccupiedOnTransporter() const;
-      void incrementKills() noexcept;
-      void assignVtolToRearmPad(RearmPad *rearmPad);
-      [[nodiscard]] int calculateElectronicResistance() const;
-      [[nodiscard]] bool isSelectable() const final;
-      [[nodiscard]] unsigned getArmourPointsAgainstWeapon(WEAPON_CLASS weaponClass) const;
-      [[nodiscard]] int calculateAttackPriority(const ::ConstructedObject *target, int weapon_slot) const final;
-      RtrBestResult decideWhereToRepairAndBalance() final;
-      SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate) final;
-      void initDroidMovement() final;
-      void moveReallyStopDroid() final;
-      bool droidUpdateDemolishing() final;
-  private:
-      using enum DROID_TYPE;
-      using enum ACTION;
-      std::string name;
-      DROID_TYPE type;
-
-      unsigned weight = 0;
-
-      /// Base speed depends on propulsion type
-      unsigned baseSpeed = 0;
-
-      unsigned originalHp = 0;
-      unsigned experience = 0;
-      unsigned kills = 0;
-
-      /// Set when stuck. Used for, e.g., firing indiscriminately
-      /// at map features to clear the way
-      unsigned lastFrustratedTime;
-
-      std::shared_ptr<Group> group;
-
-      /// A structure that this droid might be associated with.
-      /// For VTOLs this is the rearming pad
-      ::Structure *associatedStructure = nullptr;
-
-      /// The range [0; listSize - 1] corresponds to synchronised orders, and the range
-      /// [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will
-      /// remain, once all orders are synchronised.
-      unsigned listPendingBegin;
-
-      /// The number of synchronised orders. Orders from `listSize` to
-      /// the real end of the list may not affect game state.
-      std::vector<Order> asOrderList;
-      /// Index of first order which will not be erased by
-      /// a pending order. After all messages are processed
-      /// the orders in the range [listPendingBegin; listPendingEnd - 1]
-      /// will remain.
-      std::unique_ptr<Order> order;
-      unsigned secondaryOrder;
-      /// What `secondary_order` will be after synchronisation.
-      unsigned secondaryOrderPending;
-      /// Number of pending `secondary_order` synchronisations.
-      int secondaryOrderPendingCount;
-
-      ACTION action = NONE;
-      Vector2i actionPos;
-      std::array<::PersistentObject*, MAX_WEAPONS> actionTarget;
-      std::size_t timeActionStarted;
-      unsigned actionPointsDone;
-
-      std::size_t timeLastHit;
-      unsigned expectedDamageDirect = 0;
-      unsigned expectedDamageIndirect = 0;
-      uint8_t illuminationLevel;
-      std::unique_ptr<Movement> movement;
-
-      /* Animation stuff */
-      std::size_t timeAnimationStarted;
-      ANIMATION_EVENTS animationEvent;
-
-      /// Bit set telling which tiles block this type of droid (TODO)
-      uint8_t blockedBits;
-
-      int iAudioID;
-
-      std::unordered_map<std::string, std::unique_ptr<ComponentStats>> components;
-  };
-}
 // the structure that was last hit
 extern Droid* psLastDroidHit;
 
