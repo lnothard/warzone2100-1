@@ -28,13 +28,17 @@
 
 #include "lib/framework/fixedpoint.h"
 
-#include "stats.h"
+struct WeaponStats;
+
+
+static constexpr auto DEFAULT_RECOIL_TIME	= GAME_TICKS_PER_SEC / 4;
 
 /// Maximum difference in direction for a fixed turret to fire
 static constexpr auto FIXED_TURRET_DIR = DEG(1);
 
 /// Percentage at which a unit is considered to be heavily damaged
 static constexpr auto HEAVY_DAMAGE_LEVEL = 25;
+
 
 /// Who specified the target?
 enum class TARGET_ORIGIN
@@ -50,11 +54,20 @@ enum class TARGET_ORIGIN
 	RADAR_DETECTOR,
 };
 
-class Weapon : public virtual BaseObject, public Impl::BaseObject
-{
+class Weapon : public PlayerOwnedObject {
 public:
-  /* Accessors */
+  ~Weapon() override = default;
+  Weapon(unsigned id, unsigned player);
+
+  Weapon(Weapon const& rhs);
+  Weapon& operator=(Weapon const& rhs);
+
+  Weapon(Weapon&& rhs) = default;
+  Weapon& operator=(Weapon&& rhs) = default;
+
   [[nodiscard]] const WeaponStats* getStats() const;
+  /// Returns how much the weapon assembly should currently
+  /// be rocked back due to firing.
   [[nodiscard]] unsigned getRecoil() const;
   [[nodiscard]] unsigned getMaxRange(unsigned player) const;
   [[nodiscard]] unsigned getMinRange(unsigned player) const;
@@ -63,35 +76,22 @@ public:
   [[nodiscard]] unsigned getShortRangeHitChance(unsigned player) const;
   [[nodiscard]] unsigned getNumAttackRuns(unsigned player) const;
   [[nodiscard]] unsigned getShotsFired() const noexcept;
-  [[nodiscard]] const iIMDShape& getImdShape() const;
-  [[nodiscard]] const iIMDShape& getMountGraphic() const;
+  [[nodiscard]] const iIMDShape* getImdShape() const;
+  [[nodiscard]] const iIMDShape* getMountGraphic() const;
   [[nodiscard]] WEAPON_SUBCLASS getSubclass() const;
-  [[nodiscard]] TARGET_ORIGIN getTargetOrigin() const;
+  [[nodiscard]] TARGET_ORIGIN getTargetOrigin() const noexcept;
   [[nodiscard]] Rotation getPreviousRotation() const;
-
-  void useAmmo();
   [[nodiscard]] bool hasAmmo() const;
   [[nodiscard]] bool hasFullAmmo() const noexcept;
   [[nodiscard]] bool isArtillery() const noexcept;
   [[nodiscard]] bool isVtolWeapon() const;
   [[nodiscard]] bool isEmptyVtolWeapon(unsigned player) const;
   [[nodiscard]] unsigned calculateRateOfFire(unsigned player) const;
+  void alignTurret();
+  void useAmmo();
 private:
-  using enum TARGET_ORIGIN;
-	unsigned ammo = 0;
-  std::shared_ptr<WeaponStats> stats;
-
-  /// The game time when this weapon last fired
-	std::size_t timeLastFired = 0;
-
-	unsigned shotsFired = 0;
-	Rotation previousRotation {0, 0, 0};
-	unsigned ammoUsed = 0;
-	TARGET_ORIGIN origin = UNKNOWN;
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
-
-/// Returns how much the weapon assembly should currently
-/// be rocked back due to firing.
-int getRecoil(Weapon const& weapon);
 
 #endif // __INCLUDED_WEAPONDEF_H__

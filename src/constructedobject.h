@@ -21,8 +21,7 @@ static constexpr auto TURRET_ROTATION_RATE = 45;
 static constexpr auto MAX_WEAPONS = 3;
 
 /// Abstract base class with shared methods for both structures and droids
-class ConstructedObject : public PersistentObject
-{
+class ConstructedObject : public PlayerOwnedObject {
 public:
   ConstructedObject(unsigned id, unsigned player);
 	~ConstructedObject() override = default;
@@ -33,26 +32,25 @@ public:
   ConstructedObject(ConstructedObject&& rhs) noexcept = default;
   ConstructedObject& operator=(ConstructedObject&& rhs) = default;
 
-  virtual bool isProbablyDoomed(bool isDirect) const = 0;
   [[nodiscard]] const std::vector<Weapon>& getWeapons() const;
   [[nodiscard]] const iIMDShape& getImdShape() const;
-  [[nodiscard]] const PersistentObject* getTarget(int weapon_slot) const;
+  [[nodiscard]] const PlayerOwnedObject * getTarget(int weapon_slot) const;
   [[nodiscard]] int getResistance() const;
-  [[nodiscard]] unsigned getOriginalHp() const;
 
   [[nodiscard]] bool isAlive() const;
 	[[nodiscard]] bool isRadarDetector() const;
 	bool isValidTarget(const ConstructedObject* attacker, int weapon_slot) const;
-	uint8_t isTargetVisible(const PersistentObject* target, bool walls_block) const;
+	uint8_t isTargetVisible(const PlayerOwnedObject * target, bool walls_block) const;
 	[[nodiscard]] unsigned calculateSensorRange() const;
-  void alignTurret(int weapon_slot);
   void updateExpectedDamage(unsigned damage, bool is_direct) noexcept;
-  [[nodiscard]] int calculateAttackPriority(const ConstructedObject* target, int weapon_slot) const;
-  [[nodiscard]] bool hasCbSensor() const;
-  [[nodiscard]] bool hasStandardSensor() const;
-  [[nodiscard]] bool hasVtolInterceptSensor() const;
-  [[nodiscard]] bool hasVtolCbSensor() const;
-protected:
+
+  [[nodiscard]] virtual unsigned getOriginalHp() const = 0;
+  [[nodiscard]] virtual int calculateAttackPriority(const ConstructedObject* target, int weapon_slot) const= 0;
+  [[nodiscard]] virtual bool hasCbSensor() const= 0;
+  [[nodiscard]] virtual bool hasStandardSensor() const= 0;
+  [[nodiscard]] virtual bool hasVtolInterceptSensor() const= 0;
+  [[nodiscard]] virtual bool hasVtolCbSensor() const= 0;
+private:
     struct Impl;
     std::unique_ptr<Impl> pimpl;
 };
@@ -77,7 +75,7 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
  *    `weapon_slot`
  */
 [[nodiscard]] bool targetInLineOfFire(const ConstructedObject& unit,
-                                      const ::ConstructedObject& target,
+                                      const ConstructedObject& target,
                                       int weapon_slot);
 
 /**
@@ -86,12 +84,12 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
  * @param is_direct `false` if this is an artillery weapon
  * @return
  */
-[[nodiscard]] int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject& target,
+[[nodiscard]] int calculateLineOfFire(const ConstructedObject& unit, const PlayerOwnedObject & target,
                                       int weapon_slot, bool walls_block = true, bool is_direct = true);
 
 
 [[nodiscard]] unsigned getMaxWeaponRange(const ConstructedObject& unit);
 
-[[nodiscard]] unsigned numWeapons(const ConstructedObject& unit);
+[[nodiscard]] size_t numWeapons(const ConstructedObject& unit);
 
 #endif // WARZONE2100_CONSTRUCTEDOBJECT_H

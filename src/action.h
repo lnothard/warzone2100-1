@@ -87,7 +87,7 @@ struct Action
     unsigned x, y;
     
     /// Multiple action target info
-    PersistentObject* psObj;
+    PlayerOwnedObject * psObj;
     std::unique_ptr<BaseStats> psStats;
 };
 
@@ -113,32 +113,32 @@ void actionDroid(Droid* psDroid, ACTION action);
 
 static void actionAddVtolAttackRun(Droid* psDroid);
 static void actionUpdateVtolAttack(Droid* psDroid);
-static void actionCalcPullBackPoint(PersistentObject* psObj, PersistentObject* psTarget, int* px, int* py);
+static void actionCalcPullBackPoint(PlayerOwnedObject * psObj, PlayerOwnedObject * psTarget, int* px, int* py);
 
 /** Give a droid an action with a location target. */
 void actionDroid(Droid* psDroid, ACTION action,
                  unsigned x, unsigned y);
 
 /** Give a droid an action with an object target. */
-void actionDroid(Droid* psDroid, ACTION action, PersistentObject* psObj);
+void actionDroid(Droid* psDroid, ACTION action, PlayerOwnedObject * psObj);
 
 /** Give a droid an action with an object target and a location. */
-void actionDroid(Droid* psDroid, ACTION action, PersistentObject* psObj,
+void actionDroid(Droid* psDroid, ACTION action, PlayerOwnedObject * psObj,
                  unsigned x, unsigned y);
 
 /** Rotate turret toward  target return True if locked on (Droid and Structure). */
-bool actionTargetTurret(PersistentObject* psAttacker, PersistentObject* psTarget,
+bool actionTargetTurret(PlayerOwnedObject * psAttacker, PlayerOwnedObject * psTarget,
                         Weapon* psWeapon);
 
 /** Realign turret. */
-void actionAlignTurret(PersistentObject* psObj, int weapon_slot);
+void actionAlignTurret(PlayerOwnedObject * psObj, int weapon_slot);
 
 /** Check if a target is within weapon range. */
-bool actionInRange(const Droid* psDroid, const PersistentObject* psObj,
+bool actionInRange(const Droid* psDroid, const PlayerOwnedObject * psObj,
                    int weapon_slot, bool useLongWithOptimum = true);
 
 /** Return whether a droid can see a target to fire on it. */
-bool actionVisibleTarget(Droid* psDroid, PersistentObject* psTarget,
+bool actionVisibleTarget(Droid* psDroid, PlayerOwnedObject * psTarget,
                          int weapon_slot);
 
 /** Check whether a droid is in the neighboring tile to a build position. */
@@ -154,7 +154,7 @@ void moveToRearm(Droid* psDroid);
 /** Choose a landing position for a VTOL when it goes to rearm. */
 bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p);
 
-static bool actionInsideMinRange(Droid const* psDroid, PersistentObject const* psObj, WeaponStats const* psStats);
+static bool actionInsideMinRange(Droid const* psDroid, PlayerOwnedObject const* psObj, WeaponStats const* psStats);
 
 static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir, BaseStats* psStats);
 

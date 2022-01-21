@@ -781,7 +781,7 @@ static void saveMissionData()
 void restoreMissionData()
 {
 	UDWORD inc;
-	PersistentObject* psObj;
+  PlayerOwnedObject * psObj;
 
 	debug(LOG_SAVE, "called");
 
@@ -804,7 +804,7 @@ void restoreMissionData()
 	{
 		apsDroidLists[inc] = mission.apsDroidLists[inc];
 		mission.apsDroidLists[inc] = nullptr;
-		for (psObj = (PersistentObject*)apsDroidLists[inc]; psObj; psObj = psObj->psNext)
+		for (psObj = (PlayerOwnedObject *)apsDroidLists[inc]; psObj; psObj = psObj->psNext)
 		{
 			psObj->died = false; //make sure the died flag is not set
 		}
@@ -1234,7 +1234,7 @@ static void clearCampaignUnits()
 	{
 		orderDroid(psDroid, ORDER_TYPE::STOP, ModeImmediate);
 		setDroidBase(psDroid, nullptr);
-		visRemoveVisibilityOffWorld((PersistentObject*)psDroid);
+		visRemoveVisibilityOffWorld((PlayerOwnedObject *)psDroid);
 		CHECK_DROID(psDroid);
 	}
 }
@@ -1256,7 +1256,7 @@ static void processMission()
 		//reset order - do this to all the droids that are returning from offWorld
 		orderDroid(psDroid, ORDER_TYPE::STOP, ModeImmediate);
 		// clean up visibility
-		visRemoveVisibility((PersistentObject*)psDroid);
+		visRemoveVisibility((PlayerOwnedObject *)psDroid);
 		//remove out of stored list and add to current Droid list
 		if (droidRemove(psDroid, apsDroidLists))
 		{

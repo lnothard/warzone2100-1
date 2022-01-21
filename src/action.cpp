@@ -158,7 +158,7 @@ std::string getDroidActionName(ACTION action)
 //}
 
 // check if a target is inside minimum weapon range
-static bool actionInsideMinRange(Droid const* psDroid, PersistentObject const* psObj, WeaponStats const* psStats)
+static bool actionInsideMinRange(Droid const* psDroid, PlayerOwnedObject const* psObj, WeaponStats const* psStats)
 {
 	if (!psStats) {
 		psStats = getWeaponStats(psDroid, 0);
@@ -233,7 +233,7 @@ static bool actionInsideMinRange(Droid const* psDroid, PersistentObject const* p
 //}
 
 /* returns true if on target */
-bool actionTargetTurret(PersistentObject* psAttacker, PersistentObject* psTarget, Weapon* psWeapon)
+bool actionTargetTurret(PlayerOwnedObject * psAttacker, PlayerOwnedObject * psTarget, Weapon* psWeapon)
 {
   int rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
   int pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
@@ -347,7 +347,7 @@ bool actionTargetTurret(PersistentObject* psAttacker, PersistentObject* psTarget
 }
 
 // return whether a droid can see a target to fire on it
-bool actionVisibleTarget(Droid* psDroid, PersistentObject* psTarget, int weapon_slot)
+bool actionVisibleTarget(Droid* psDroid, PlayerOwnedObject * psTarget, int weapon_slot)
 {
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
 	ASSERT_OR_RETURN(false, psDroid->getPlayer() < MAX_PLAYERS, "psDroid->player (%" PRIu8 ") must be < MAX_PLAYERS",
@@ -414,7 +414,7 @@ static void actionUpdateVtolAttack(Droid* psDroid)
 
 // calculate a position for units to pull back to if they
 // need to increase the range between them and a target
-static void actionCalcPullBackPoint(PersistentObject* psObj, PersistentObject* psTarget, int* px, int* py)
+static void actionCalcPullBackPoint(PlayerOwnedObject * psObj, PlayerOwnedObject * psTarget, int* px, int* py)
 {
 	// get the vector from the target to the object
 	auto xdiff = psObj->getPosition().x - psTarget->getPosition().x;
@@ -546,7 +546,7 @@ void actionDroid(Droid* psDroid, ACTION action, unsigned x, unsigned y)
 }
 
 /* Give a droid an action with an object target */
-void actionDroid(Droid* psDroid, ACTION action, PersistentObject* psObj)
+void actionDroid(Droid* psDroid, ACTION action, PlayerOwnedObject * psObj)
 {
 	Action sAction;
 
@@ -560,7 +560,7 @@ void actionDroid(Droid* psDroid, ACTION action, PersistentObject* psObj)
 
 /* Give a droid an action with an object target and a location */
 void actionDroid(Droid* psDroid, ACTION action,
-                 PersistentObject* psObj, UDWORD x, UDWORD y)
+                 PlayerOwnedObject * psObj, UDWORD x, UDWORD y)
 {
 	Action sAction;
 

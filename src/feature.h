@@ -67,33 +67,38 @@ struct FeatureStats : public BaseStats
     unsigned armourValue = 0; ///< Feature armour
 };
 
-class Feature : public virtual PersistentObject, public Impl::PersistentObject
+class Feature : public BaseObject
 {
 public:
-    Feature(unsigned id, FeatureStats const* psStats);
-    ~Feature() override;
+  ~Feature() override = default;
+  Feature(unsigned id, FeatureStats const* psStats);
 
-    [[nodiscard]] Vector2i size() const;
-    [[nodiscard]] FeatureStats const* getStats() const;
+  Feature(Feature const& rhs);
+  Feature& operator=(Feature const& rhs);
 
-    std::unique_ptr<Feature> buildFeature(FeatureStats const* stats,
-                                          unsigned x, unsigned y, bool fromSave) const;
+  Feature(Feature&& rhs) noexcept = default;
+  Feature& operator=(Feature&& rhs) noexcept = default;
 
-    [[nodiscard]] int objRadius() const final;
-    void update();
+  [[nodiscard]] Vector2i size() const;
+  [[nodiscard]] FeatureStats const* getStats() const;
+
+  void update();
+  std::unique_ptr<Feature> buildFeature(FeatureStats const* stats,
+                                        unsigned x, unsigned y, bool fromSave) const;
 private:
-    std::shared_ptr<FeatureStats> psStats;
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
 /* The statistics for the features */
-extern FeatureStats* asFeatureStats;
+extern std::unique_ptr<FeatureStats> asFeatureStats;
 extern unsigned numFeatureStats;
 
 //Value is stored for easy access to this feature in destroyDroid()/destroyStruct()
 extern FeatureStats* oilResFeature;
 
 /* Load the feature stats */
-bool loadFeatureStats(WzConfig& ini);
+void loadFeatureStats(WzConfig& ini);
 
 /* Release the feature stats memory */
 void featureStatsShutDown();
@@ -115,8 +120,6 @@ int getFeatureStatFromName(const WzString& name);
 
 int featureDamage(Feature* psFeature, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
                       unsigned impactTime, bool isDamagePerSecond, int minDamage);
-
-void featureInitVars();
 
 StructureBounds getStructureBounds(Feature const* object);
 StructureBounds getStructureBounds(FeatureStats const* stats, Vector2i pos);

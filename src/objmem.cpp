@@ -65,7 +65,7 @@ void objmemShutdown()
 #define BADREF(func, line) "Illegal reference to object %d", psVictim->id
 #endif
 
-static bool checkReferences(PersistentObject* psVictim)
+static bool checkReferences(PlayerOwnedObject * psVictim)
 {
 	for (int plr = 0; plr < MAX_PLAYERS; ++plr)
 	{
@@ -108,7 +108,7 @@ static bool checkReferences(PersistentObject* psVictim)
 
 /* Remove an object from the destroyed list, finally freeing its memory
  * Hopefully by this time, no pointers still refer to it! */
-static bool objmemDestroy(PersistentObject* psObj)
+static bool objmemDestroy(PlayerOwnedObject * psObj)
 {
 	switch (psObj->type)
 	{
@@ -139,7 +139,7 @@ static bool objmemDestroy(PersistentObject* psObj)
 /* General housekeeping for the object system */
 void objmemUpdate()
 {
-	PersistentObject *psCurr, *psNext, *psPrev;
+  PlayerOwnedObject *psCurr, *psNext, *psPrev;
 
 #ifdef DEBUG
 	// do a general validity check first
@@ -237,7 +237,7 @@ static inline void destroyObject(OBJECT* list[], OBJECT* object)
 	{
 		list[object->player] = list[object->player]->psNext;
 		object->psNext = psDestroyedObj;
-		psDestroyedObj = (PersistentObject*)object;
+		psDestroyedObj = (PlayerOwnedObject *)object;
 		object->died = gameTime;
 		scriptRemoveObject(object);
 		return;
@@ -376,7 +376,7 @@ void addDroid(Droid* psDroidToAdd, Droid* pList[MAX_PLAYERS])
 		psDroidToAdd->died = false;
 		if (psDroidToAdd->type == DROID_SENSOR)
 		{
-			addObjectToFuncList(apsSensorList, (PersistentObject*)psDroidToAdd, 0);
+			addObjectToFuncList(apsSensorList, (PlayerOwnedObject *)psDroidToAdd, 0);
 		}
 
 		// commanders have to get their group back if not already loaded
@@ -390,7 +390,7 @@ void addDroid(Droid* psDroidToAdd, Droid* pList[MAX_PLAYERS])
 	{
 		if (psDroidToAdd->type == DROID_SENSOR)
 		{
-			addObjectToFuncList(mission.apsSensorList, (PersistentObject*)psDroidToAdd, 0);
+			addObjectToFuncList(mission.apsSensorList, (PlayerOwnedObject *)psDroidToAdd, 0);
 		}
 	}
 }
@@ -413,7 +413,7 @@ void killDroid(Droid* psDel)
 	setDroidBase(psDel, nullptr);
 	if (psDel->type == DROID_SENSOR)
 	{
-		removeObjectFromFuncList(apsSensorList, (PersistentObject*)psDel, 0);
+		removeObjectFromFuncList(apsSensorList, (PlayerOwnedObject *)psDel, 0);
 	}
 
 	destroyObject(apsDroidLists, psDel);
@@ -438,7 +438,7 @@ void removeDroid(Droid* psDroidToRemove, std::array<std::vector<Droid>, MAX_PLAY
 	{
 		if (psDroidToRemove->type == DROID_SENSOR)
 		{
-			removeObjectFromFuncList(apsSensorList, (PersistentObject*)psDroidToRemove, 0);
+			removeObjectFromFuncList(apsSensorList, (PlayerOwnedObject *)psDroidToRemove, 0);
 		}
 		psDroidToRemove->died = NOT_CURRENT_LIST;
 	}
@@ -446,7 +446,7 @@ void removeDroid(Droid* psDroidToRemove, std::array<std::vector<Droid>, MAX_PLAY
 	{
 		if (psDroidToRemove->type == DROID_SENSOR)
 		{
-			removeObjectFromFuncList(mission.apsSensorList, (PersistentObject*)psDroidToRemove, 0);
+			removeObjectFromFuncList(mission.apsSensorList, (PlayerOwnedObject *)psDroidToRemove, 0);
 		}
 	}
 }
@@ -472,7 +472,7 @@ void addStructure(Structure* psStructToAdd)
 	if (psStructToAdd->pStructureType->sensor_stats
 		&& psStructToAdd->pStructureType->sensor_stats->location == LOC_TURRET)
 	{
-		addObjectToFuncList(apsSensorList, (PersistentObject*)psStructToAdd, 0);
+		addObjectToFuncList(apsSensorList, (PlayerOwnedObject *)psStructToAdd, 0);
 	}
 	else if (psStructToAdd->pStructureType->type == REF_RESOURCE_EXTRACTOR)
 	{
@@ -493,7 +493,7 @@ void killStruct(Structure* psBuilding)
 	if (psBuilding->pStructureType->sensor_stats
 		&& psBuilding->pStructureType->sensor_stats->location == LOC_TURRET)
 	{
-		removeObjectFromFuncList(apsSensorList, (PersistentObject*)psBuilding, 0);
+		removeObjectFromFuncList(apsSensorList, (PlayerOwnedObject *)psBuilding, 0);
 	}
 	else if (psBuilding->pStructureType->type == REF_RESOURCE_EXTRACTOR)
 	{
@@ -557,7 +557,7 @@ void removeStructureFromList(Structure* psStructToRemove, Structure* pList[MAX_P
 	if (psStructToRemove->pStructureType->sensor_stats
 		&& psStructToRemove->pStructureType->sensor_stats->location == LOC_TURRET)
 	{
-		removeObjectFromFuncList(apsSensorList, (PersistentObject*)psStructToRemove, 0);
+		removeObjectFromFuncList(apsSensorList, (PlayerOwnedObject *)psStructToRemove, 0);
 	}
 	else if (psStructToRemove->pStructureType->type == REF_RESOURCE_EXTRACTOR)
 	{
@@ -737,9 +737,9 @@ void checkFactoryFlags()
 /**************************  OBJECT ACCESS FUNCTIONALITY ********************************/
 
 // Find a base object from it's id
-PersistentObject* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
+PlayerOwnedObject * getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
 {
-	PersistentObject* psObj;
+  PlayerOwnedObject * psObj;
 	Droid* psTrans;
 
 	for (int i = 0; i < 3; ++i)
@@ -791,7 +791,7 @@ PersistentObject* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE t
 				{
 					if (psTrans->id == id)
 					{
-						return (PersistentObject*)psTrans;
+						return (PlayerOwnedObject *)psTrans;
 					}
 				}
 			}
@@ -804,11 +804,11 @@ PersistentObject* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE t
 }
 
 // Find a base object from it's id
-PersistentObject* getBaseObjFromId(UDWORD id)
+PlayerOwnedObject * getBaseObjFromId(UDWORD id)
 {
 	unsigned int i;
 	UDWORD player;
-	PersistentObject* psObj;
+  PlayerOwnedObject * psObj;
 	Droid* psTrans;
 
 	for (i = 0; i < 7; ++i)
@@ -818,15 +818,15 @@ PersistentObject* getBaseObjFromId(UDWORD id)
 			switch (i)
 			{
 			case 0:
-				psObj = (PersistentObject*)apsDroidLists[player];
+				psObj = (PlayerOwnedObject *)apsDroidLists[player];
 				break;
 			case 1:
-				psObj = (PersistentObject*)apsStructLists[player];
+				psObj = (PlayerOwnedObject *)apsStructLists[player];
 				break;
 			case 2:
 				if (player == 0)
 				{
-					psObj = (PersistentObject*)apsFeatureLists[0];
+					psObj = (PlayerOwnedObject *)apsFeatureLists[0];
 				}
 				else
 				{
@@ -834,15 +834,15 @@ PersistentObject* getBaseObjFromId(UDWORD id)
 				}
 				break;
 			case 3:
-				psObj = (PersistentObject*)mission.apsDroidLists[player];
+				psObj = (PlayerOwnedObject *)mission.apsDroidLists[player];
 				break;
 			case 4:
-				psObj = (PersistentObject*)mission.apsStructLists[player];
+				psObj = (PlayerOwnedObject *)mission.apsStructLists[player];
 				break;
 			case 5:
 				if (player == 0)
 				{
-					psObj = (PersistentObject*)mission.apsFeatureLists[0];
+					psObj = (PlayerOwnedObject *)mission.apsFeatureLists[0];
 				}
 				else
 				{
@@ -852,7 +852,7 @@ PersistentObject* getBaseObjFromId(UDWORD id)
 			case 6:
 				if (player == 0)
 				{
-					psObj = (PersistentObject*)apsLimboDroids[0];
+					psObj = (PlayerOwnedObject *)apsLimboDroids[0];
 				}
 				else
 				{
@@ -877,7 +877,7 @@ PersistentObject* getBaseObjFromId(UDWORD id)
 					{
 						if (psTrans->id == id)
 						{
-							return (PersistentObject*)psTrans;
+							return (PlayerOwnedObject *)psTrans;
 						}
 					}
 				}

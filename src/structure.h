@@ -281,7 +281,7 @@ namespace Impl
         [[nodiscard]] Vector2i getSize() const final;
         [[nodiscard]] int getFoundationDepth() const noexcept final;
         [[nodiscard]] const iIMDShape& getImdShape() const final;
-        [[nodiscard]] const ::PersistentObject* getTarget(int weapon_slot) const final;
+        [[nodiscard]] const ::PlayerOwnedObject * getTarget(int weapon_slot) const final;
         [[nodiscard]] STRUCTURE_STATE getState() const final;
         [[nodiscard]] const StructureStats* getStats() const final;
         [[nodiscard]] uint8_t getCapacity() const final;
@@ -339,7 +339,7 @@ namespace Impl
         /// each tick and the trucks calculating it
         int previousBuildRate;
 
-        std::array<::PersistentObject*, MAX_WEAPONS> target;
+        std::array<::PlayerOwnedObject *, MAX_WEAPONS> target;
 
         /// Expected damage to be caused by all currently incoming projectiles.
         /// This info is shared between all players, but shouldn't make a difference
@@ -660,7 +660,7 @@ if not a good combination!*/
 bool validTemplateForFactory(const DroidTemplate* psTemplate, Structure* psFactory, bool complain);
 
 /*calculates the damage caused to the resistance levels of structures*/
-bool electronicDamage(PersistentObject* psTarget, unsigned damage, UBYTE attackPlayer);
+bool electronicDamage(PlayerOwnedObject * psTarget, unsigned damage, UBYTE attackPlayer);
 
 /* EW works differently in multiplayer mode compared with single player.*/
 bool validStructResistance(const Structure* psStruct);
@@ -774,7 +774,7 @@ bool IsStatExpansionModule(const StructureStats* psStats);
 
 /// is this a blueprint and not a real structure?
 bool structureIsBlueprint(const Structure* psStructure);
-bool isBlueprint(const PersistentObject* psObject);
+bool isBlueprint(const PlayerOwnedObject * psObject);
 
 /*returns the power cost to build this structure, or to add its next module */
 unsigned structPowerToBuildOrAddNextModule(const Structure* psStruct);
@@ -795,12 +795,12 @@ bool canStructureHaveAModuleAdded(Structure* const structure);
 
 static inline unsigned structSensorRange(const Structure* psObj)
 {
-	return objSensorRange((const PersistentObject*)psObj);
+	return objSensorRange((const PlayerOwnedObject *)psObj);
 }
 
 static inline unsigned structJammerPower(const Structure* psObj)
 {
-	return objJammerPower((const PersistentObject*)psObj);
+	return objJammerPower((const PlayerOwnedObject *)psObj);
 }
 
 static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStructure, int weaponSlot, uint32_t time)
@@ -812,7 +812,7 @@ static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStruc
 
 #define setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin) _setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin, __LINE__, __FUNCTION__)
 
-static inline void _setStructureTarget(Structure* psBuilding, PersistentObject* psNewTarget, UWORD idx,
+static inline void _setStructureTarget(Structure* psBuilding, PlayerOwnedObject * psNewTarget, UWORD idx,
                                        TARGET_ORIGIN targetOrigin, int line, const char* func)
 {
 	ASSERT_OR_RETURN(, idx < MAX_WEAPONS, "Bad index");

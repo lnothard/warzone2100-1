@@ -29,24 +29,96 @@
 #include "group.h"
 #include "multiplay.h"
 
+struct Group::Impl
+{
+  Impl() = default;
+  Impl(unsigned id, GROUP_TYPE type);
+  Impl(unsigned id, GROUP_TYPE type, Droid& commander);
+  explicit Impl(unsigned id);
+
+  unsigned id = 0;
+  GROUP_TYPE type = GROUP_TYPE::NORMAL;
+
+  /// List of droids in the group
+  std::vector<Droid*> members;
+
+  /**
+   * Non-owning pointer to this group's commander.
+   * Set to `nullptr` if this is not a command group
+   */
+  Droid* psCommander = nullptr;
+};
+
+Group::Group()
+  : pimpl{std::make_unique<Impl>()}
+{
+}
+
+Group::Group(unsigned id)
+  : pimpl{std::make_unique<Impl>(id)}
+{
+}
+
+Group::Group(unsigned id, GROUP_TYPE type)
+  : pimpl{std::make_unique<Impl>(id, type)}
+{
+}
+
+Group::Group(unsigned id, GROUP_TYPE type, Droid& commander)
+  : pimpl{std::make_unique<Impl>(id, type, commander)}
+{
+}
+
+Group::Group(Group const& rhs)
+  : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+Group& Group::operator=(Group const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+Group::Impl::Impl(unsigned id)
+  : id{id}
+{
+}
+
+Group::Impl::Impl(unsigned id, GROUP_TYPE type)
+  : id{id}
+  , type{type}
+{
+}
+
+Group::Impl::Impl(unsigned id, GROUP_TYPE type, Droid& commander)
+  : id{id}
+  , type{type}
+  , psCommander{&commander}
+{
+}
 
 bool Group::isCommandGroup() const noexcept
 {
-  return type == COMMAND;
+  return pimpl && pimpl->type == GROUP_TYPE::COMMAND;
 }
 
 bool Group::hasElectronicWeapon() const
 {
-  return std::any_of(members.begin(), members.end(),
-                     [](const auto droid)
-  {
+  if (!pimpl) return false;
+  return std::any_of(pimpl->members.begin(),
+                     pimpl->members.end(),
+                     [](const auto droid) {
     return droid->hasElectronicWeapon();
   });
 }
 
-const Droid& Group::getCommander() const
+Droid const* Group::getCommander() const
 {
-  return *psCommander;
+  return pimpl
+         ? pimpl->psCommander
+         : nullptr;
 }
 
 std::unique_ptr<Group> Group::create(unsigned id)
@@ -54,36 +126,19 @@ std::unique_ptr<Group> Group::create(unsigned id)
 	return std::make_unique<Group>(id);
 }
 
-Group::Group(unsigned id)
-  :id{id}
-{
-}
-
-Group::Group(unsigned id, GROUP_TYPE type)
-  : id{id}, type{type}
-{
-}
-
-Group::Group(unsigned id, GROUP_TYPE type, Droid& commander)
-  : id{id}, type{type}, psCommander{&commander}
-{
-}
-
 void Group::add(Droid* psDroid)
 {
-	if (psDroid == nullptr) {
+  if (!pimpl || !psDroid) return;
+
+  if (std::any_of(pimpl->members.begin(), pimpl->members.end(),
+                  [psDroid](const auto member) {
+                    return psDroid->getPlayer() != member->getPlayer();
+                  })) {
+    ASSERT(false, "grpJoin: Cannot have more than one players droids in a group");
     return;
   }
 
-  for (auto member : members)
-  {
-    if (psDroid->getPlayer() != member->getPlayer()) {
-      ASSERT(false, "grpJoin: Cannot have more than one players droids in a group");
-      return;
-    }
-  }
-
-  if (psDroid->group != nullptr) {
+  if (psDroid->pimpl->group != nullptr) {
     psDroid->group->remove(psDroid);
   }
   psDroid->group = this;
@@ -160,7 +215,7 @@ void Group::orderGroup(ORDER_TYPE order, unsigned x, unsigned y)
 	}
 }
 
-void Group::orderGroup(ORDER_TYPE order, PersistentObject* psObj)
+void Group::orderGroup(ORDER_TYPE order, PlayerOwnedObject * psObj)
 {
 	ASSERT_OR_RETURN(, validOrderForObj(order), "orderGroup: Bad order");
 

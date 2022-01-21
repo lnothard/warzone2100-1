@@ -8,7 +8,7 @@
 #include "displaydef.h"
 
 bool godMode;
-void visRemoveVisibility(PersistentObject*);
+void visRemoveVisibility(PlayerOwnedObject *);
 
 
 Spacetime::Spacetime(unsigned time, Position position, Rotation rotation)
@@ -18,8 +18,8 @@ Spacetime::Spacetime(unsigned time, Position position, Rotation rotation)
 
 struct BaseObject::Impl
 {
-  Impl() = default;
   ~Impl() = default;
+  explicit Impl(unsigned id);
 
   Impl(Impl const& rhs);
   Impl& operator=(Impl const& rhs);
@@ -27,6 +27,7 @@ struct BaseObject::Impl
   Impl(Impl&& rhs) noexcept = default;
   Impl& operator=(Impl&& rhs) noexcept = default;
 
+  unsigned id;
   unsigned time = 0;
   Position position {0, 0, 0};
   Rotation rotation {0, 0, 0};
@@ -34,10 +35,33 @@ struct BaseObject::Impl
   std::unique_ptr<DisplayData> display;
 };
 
+BaseObject::BaseObject(unsigned id)
+  : pimpl{std::make_unique<Impl>(id)}
+{
+}
+
+BaseObject::BaseObject(BaseObject const& rhs)
+  : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+BaseObject& BaseObject::operator=(BaseObject const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+BaseObject::Impl::Impl(unsigned id)
+  : id{id}
+{
+}
+
 BaseObject::Impl::Impl(Impl const& rhs)
-  : display{rhs.display
-      ? std::make_unique<DisplayData>(*rhs.display)
-      : nullptr},
+  : id{rhs.id},
+    display{rhs.display
+            ? std::make_unique<DisplayData>(*rhs.display)
+            : nullptr},
     time{rhs.time},
     position{rhs.position},
     rotation{rhs.rotation},
@@ -56,16 +80,11 @@ BaseObject::Impl& BaseObject::Impl::operator=(Impl const& rhs)
   previousLocation = rhs.previousLocation;
 }
 
-BaseObject::BaseObject(BaseObject const& rhs)
-  : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+unsigned BaseObject::getId() const noexcept
 {
-}
-
-BaseObject& BaseObject::operator=(BaseObject const& rhs)
-{
-  if (this == &rhs) return *this;
-  *pimpl = *rhs.pimpl;
-  return *this;
+  return pimpl
+         ? pimpl->id
+         : 0;
 }
 
 Spacetime BaseObject::getSpacetime() const noexcept
@@ -134,98 +153,85 @@ void BaseObject::setHeight(int height) noexcept
   pimpl->position.z = height;
 }
 
-struct PersistentObject::Impl
+struct PlayerOwnedObject::Impl
 {
-    Impl(unsigned id, unsigned player);
-    ~Impl() = default;
+  Impl(unsigned id, unsigned player);
 
-    Impl(Impl const& rhs) = default;
-    Impl& operator=(Impl const& rhs) = default;
-
-    Impl(Impl&& rhs) noexcept = default;
-    Impl& operator=(Impl&& rhs) noexcept = default;
-
-    std::bitset<static_cast<size_t>(OBJECT_FLAG::COUNT)> flags;
-    unsigned id;
-    unsigned player;
-    unsigned bornTime;
-    unsigned timeOfDeath = 0;
-    unsigned periodicalDamage;
-    unsigned periodicalDamageStartTime;
-    unsigned hitPoints = 0;
-    bool isSelected = false;
-    /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip, 0 if not visible
-    std::array<uint8_t, MAX_PLAYERS> visibilityState;
-    std::array<uint8_t, MAX_PLAYERS> seenThisTick;
+  unsigned id;
+  unsigned player;
+  unsigned bornTime = 0;
+  unsigned timeOfDeath = 0;
+  unsigned periodicalDamage = 0;
+  unsigned periodicalDamageStartTime = 0;
+  unsigned hitPoints = 0;
+  bool isSelected = false;
+  /// UBYTE_MAX if visible, UBYTE_MAX/2 if radar blip, 0 if not visible
+  std::array<uint8_t, MAX_PLAYERS> visibilityState{};
+  std::array<uint8_t, MAX_PLAYERS> seenThisTick{};
+  std::bitset<static_cast<size_t>(OBJECT_FLAG::COUNT)> flags{};
 };
 
-PersistentObject::Impl::Impl(unsigned id, unsigned player)
+PlayerOwnedObject::Impl::Impl(unsigned id, unsigned player)
   : id{id}, player{player}
 {
+  visibilityState.fill(0);
+  seenThisTick.fill(0);
 }
 
-PersistentObject::~PersistentObject()
+PlayerOwnedObject::~PlayerOwnedObject()
 {
   visRemoveVisibility(this);
 }
 
-PersistentObject::PersistentObject(unsigned id, unsigned player)
-  : pimpl{std::make_unique<Impl>(id, player)}
+PlayerOwnedObject::PlayerOwnedObject(unsigned id, unsigned player)
+  : BaseObject(id),
+    pimpl{std::make_unique<Impl>(id, player)}
 {
 }
 
-PersistentObject::PersistentObject(PersistentObject const& rhs)
+PlayerOwnedObject::PlayerOwnedObject(PlayerOwnedObject const& rhs)
   : BaseObject(rhs),
     pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
 
-PersistentObject& PersistentObject::operator=(PersistentObject const& rhs)
+PlayerOwnedObject &PlayerOwnedObject::operator=(PlayerOwnedObject const& rhs)
 {
   if (this == &rhs) return *this;
   *pimpl = *rhs.pimpl;
   return *this;
 }
 
-unsigned PersistentObject::getPlayer() const noexcept
+unsigned PlayerOwnedObject::getPlayer() const noexcept
 {
   return pimpl
          ? pimpl->player
          : 0;
 }
 
-void PersistentObject::setPlayer(unsigned p) noexcept
+void PlayerOwnedObject::setPlayer(unsigned p) noexcept
 {
   if (!pimpl) return;
   pimpl->player = p;
 }
 
-unsigned PersistentObject::getId() const noexcept
-{
-  return pimpl
-         ? pimpl->id
-         : 0;
-}
-
-
-
-bool PersistentObject::isDead() const noexcept
+bool PlayerOwnedObject::isDead() const noexcept
 {
   return !pimpl || pimpl->timeOfDeath != 0;
 }
 
-bool PersistentObject::isSelectable() const
+bool PlayerOwnedObject::isSelectable() const
 {
   return pimpl &&
     pimpl->flags.test(static_cast<size_t>(OBJECT_FLAG::UNSELECTABLE));
 }
 
-uint8_t PersistentObject::visibleToSelectedPlayer() const
+uint8_t PlayerOwnedObject::visibleToSelectedPlayer() const
 {
   return visibleToPlayer(selectedPlayer);
 }
 
-uint8_t PersistentObject::visibleToPlayer(unsigned watcher) const
+uint8_t PlayerOwnedObject::visibleToPlayer(unsigned watcher) const
 {
   if (godMode) {
     return UBYTE_MAX;
@@ -236,14 +242,14 @@ uint8_t PersistentObject::visibleToPlayer(unsigned watcher) const
   return pimpl->visibilityState[watcher];
 }
 
-unsigned PersistentObject::getHp() const noexcept
+unsigned PlayerOwnedObject::getHp() const noexcept
 {
   return pimpl
          ? pimpl->hitPoints
          : 0;
 }
 
-void PersistentObject::setHp(unsigned hp) noexcept
+void PlayerOwnedObject::setHp(unsigned hp) noexcept
 {
   if (!pimpl) return;
   pimpl->hitPoints = hp;
@@ -253,9 +259,4 @@ int objectPositionSquareDiff(const Position& first, const Position& second)
 {
   Vector2i diff = (first - second).xy();
   return dot(diff, diff);
-}
-
-int objectPositionSquareDiff(const BaseObject& first, const BaseObject& second)
-{
-  return objectPositionSquareDiff(first.getPosition(), second.getPosition());
 }

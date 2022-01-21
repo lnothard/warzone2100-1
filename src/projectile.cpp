@@ -23,6 +23,7 @@
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
 
+#include "action.h"
 #include "ai.h"
 #include "display3d.h"
 #include "displaydef.h"
@@ -36,57 +37,28 @@
 #include "scores.h"
 #include "structure.h"
 #include "weapon.h"
+#include "map.h"
 
 bool bMultiPlayer;
 bool gamePaused();
-const char* objInfo(const PersistentObject*);
+const char* objInfo(const PlayerOwnedObject *);
 Droid* cmdDroidGetDesignator(unsigned);
 void tileSetFire(int, int, uint);
 void updateMultiStatsDamage(unsigned, unsigned, unsigned);
-void updateMultiStatsKills(PersistentObject*, unsigned);
+void updateMultiStatsKills(PlayerOwnedObject *, unsigned);
 int mapWidth, mapHeight;
 unsigned map_LineIntersect(Vector3i, Vector3i, unsigned);
 int map_Height(int, int);
 int map_Height(Vector2i);
 void shakeStart(unsigned);
 static const unsigned max_check_object_recursion = 4;
-void aiObjectAddExpectedDamage(PersistentObject*, int, bool);
-int areaOfFire(const PersistentObject*, const PersistentObject*, int, bool);
+void aiObjectAddExpectedDamage(PlayerOwnedObject *, int, bool);
+int areaOfFire(const PlayerOwnedObject *, const PlayerOwnedObject *, int, bool);
 void cmdDroidUpdateExperience(Droid*, unsigned);
-void counterBatteryFire(PersistentObject*, PersistentObject*);
-Spacetime interpolateObjectSpacetime(const PersistentObject*, unsigned);
-unsigned objGuessFutureDamage(WeaponStats*, unsigned, PersistentObject*);
+void counterBatteryFire(PlayerOwnedObject *, PlayerOwnedObject *);
+Spacetime interpolateObjectSpacetime(const PlayerOwnedObject *, unsigned);
+unsigned objGuessFutureDamage(WeaponStats const*, unsigned, PlayerOwnedObject const*);
 
-
-Projectile::Projectile(unsigned id, unsigned player)
-  : PersistentObject(id, player)
-{
-}
-
-PROJECTILE_STATE Projectile::getState() const noexcept
-{
-  return state;
-}
-
-ObjectShape::ObjectShape(int radius)
-  : size{radius, radius}
-{
-}
-
-ObjectShape::ObjectShape(Vector2i size)
-  : size{size}
-{
-}
-
-ObjectShape::ObjectShape(int length, int width)
-  : isRectangular{true}, size{length, width}
-{
-}
-
-int ObjectShape::radius() const
-{
-  return size.x;
-}
 
 // used to create a specific ID for projectile objects to facilitate tracking them.
 static const auto ProjectileTrackerID = 0xdead0000;
@@ -96,7 +68,7 @@ static auto projectileTrackerIDIncrement = 0;
 static std::vector<std::unique_ptr<Projectile>> psProjectileList;
 
 // the last unit that did damage - used by script functions
-PersistentObject* g_pProjLastAttacker;
+PlayerOwnedObject * g_pProjLastAttacker;
 
 static void proj_ImpactFunc(Projectile* psObj);
 static void proj_PostImpactFunc(Projectile* psObj);
@@ -104,67 +76,471 @@ static void proj_checkPeriodicalDamage(Projectile* psProj);
 
 static int objectDamage(Damage* psDamage);
 
-void Projectile::setTarget(::PersistentObject* psObj)
+
+struct Projectile::Impl
 {
-	bool bDirect = proj_Direct(weaponStats.get());
+  ~Impl() = default;
+  Impl() = default;
 
-	aiObjectAddExpectedDamage(target,
-                            -expectedDamageCaused,
-                            bDirect);
+  Impl(Impl const& rhs);
+  Impl& operator=(Impl const& rhs);
 
-	target = psObj;
-	aiObjectAddExpectedDamage(target,
-                            expectedDamageCaused,
-                            bDirect);
-	// let the new target know to say its prayers
+  Impl(Impl&& rhs) noexcept = default;
+  Impl& operator=(Impl&& rhs) noexcept = default;
+
+
+  PROJECTILE_STATE state = PROJECTILE_STATE::INACTIVE;
+  std::unique_ptr<Damage> damage;
+  /// Whether the selected player should see the projectile
+  bool isVisible = false;
+  /// Firing weapon stats
+  std::shared_ptr<WeaponStats> weaponStats;
+  /// What fired the projectile
+  PlayerOwnedObject* source = nullptr;
+  /// Target of this projectile (not a Unit because it can
+  /// be a feature I guess)
+  PlayerOwnedObject* target = nullptr;
+  /// Targets that have already been dealt damage to (don't
+  /// damage the same target twice)
+  std::vector<PlayerOwnedObject*> damaged;
+  /// Where projectile started
+  Vector3i origin{};
+  /// The target coordinates
+  Vector3i destination{};
+  /// Axis velocities
+  int vZ = 0;
+  int vXY = 0;
+  /// Expected damage that this projectile will cause to the target
+  int expectedDamageCaused = 0;
+  /// How much of target was visible on shooting (important for homing)
+  int partVisible = 0;
+};
+
+Projectile::Projectile(unsigned id, unsigned player)
+  : PlayerOwnedObject(id, player),
+    pimpl{std::make_unique<Impl>()}
+{
 }
 
-bool Projectile::gfxVisible() const
+Projectile::Projectile(Projectile const& rhs)
+  : PlayerOwnedObject(rhs),
+    pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
+}
+
+Projectile& Projectile::operator=(Projectile const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+Projectile::Impl::Impl(Impl const& rhs)
+  : damage{std::make_unique<Damage>(*rhs.damage)}
+  , state{rhs.state}
+  , isVisible{rhs.isVisible}
+  , weaponStats{rhs.weaponStats}
+  , source{rhs.source}
+  , target{rhs.target}
+  , damaged{rhs.damaged}
+  , origin{rhs.origin}
+  , destination{rhs.destination}
+  , vZ{rhs.vZ}
+  , vXY{rhs.vXY}
+  , expectedDamageCaused{rhs.expectedDamageCaused}
+  , partVisible{rhs.partVisible}
+{
+}
+
+Projectile::Impl& Projectile::Impl::operator=(Impl const& rhs)
+{
+  if (this == &rhs) return *this;
+
+  *damage = *rhs.damage;
+  state = rhs.state;
+  isVisible = rhs.isVisible;
+  weaponStats = rhs.weaponStats;
+  source = rhs.source;
+  target = rhs.target;
+  damaged = rhs.damaged;
+  origin = rhs.origin;
+  destination = rhs.destination;
+  vZ = rhs.vZ;
+  vXY = rhs.vXY;
+  expectedDamageCaused = rhs.expectedDamageCaused;
+  partVisible = rhs.partVisible;
+  return *this;
+}
+
+
+
+struct ObjectShape::Impl
+{
+  Impl() = default;
+  Impl(int width, int length);
+  explicit Impl(int radius);
+  explicit Impl(Vector2i size);
+
+  /// Equal to \c true if rectangular, \c false if circular
+  bool isRectangular = false;
+  /// \c x == y if circular
+  Vector2i size{};
+};
+
+ObjectShape::ObjectShape()
+  : pimpl{std::make_unique<Impl>()}
+{
+}
+
+ObjectShape::ObjectShape(int length, int width)
+  : pimpl{std::make_unique<Impl>(length, width)}
+{
+}
+
+ObjectShape::ObjectShape(int radius)
+  : pimpl{std::make_unique<Impl>(radius)}
+{
+}
+
+ObjectShape::ObjectShape(Vector2i size)
+  : pimpl{std::make_unique<Impl>(size)}
+{
+}
+
+ObjectShape::ObjectShape(ObjectShape const& rhs)
+  : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+ObjectShape& ObjectShape::operator=(ObjectShape const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+ObjectShape::Impl::Impl(int width, int length)
+  : size{width, length}
+  , isRectangular{true}
+{
+}
+
+ObjectShape::Impl::Impl(int radius)
+  : size{radius, radius}
+  , isRectangular{false}
+{
+}
+
+ObjectShape::Impl::Impl(Vector2i size)
+  : size{size}
+{
+}
+
+int ObjectShape::radius() const
+{
+  return pimpl ? pimpl->size.x : -1;
+}
+
+
+struct Damage::Impl
+{
+  Impl() = default;
+
+  PlayerOwnedObject* target = nullptr;
+  unsigned damage = 0;
+  unsigned impactTime = 0;
+  bool isDamagePerSecond = false;
+  int minDamage = 0;
+};
+
+Damage::Damage()
+  : pimpl{std::make_unique<Impl>()}
+{
+}
+
+Damage::Damage(Damage const& rhs)
+  : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+Damage& Damage::operator=(Damage const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+
+PROJECTILE_STATE Projectile::getState() const noexcept
+{
+  return pimpl ? pimpl->state : PROJECTILE_STATE::INACTIVE;
+}
+
+void Projectile::setTarget(PlayerOwnedObject* psObj)
+{
+  if (!pimpl) return;
+
+	bool bDirect = proj_Direct(pimpl->weaponStats.get());
+
+	aiObjectAddExpectedDamage(pimpl->target,
+                            -pimpl->expectedDamageCaused,
+                            bDirect);
+
+	pimpl->target = psObj;
+	aiObjectAddExpectedDamage(pimpl->target,
+                            pimpl->expectedDamageCaused,
+                            bDirect);
+}
+
+bool Projectile::isVisible() const
+{
+  if (!pimpl) return false;
+
 	// already know it is visible
-	if (isVisible) {
+	if (pimpl->isVisible) {
 		return true;
 	}
 
 	// you fired it
-	if (player == selectedPlayer) {
+	if (getPlayer() == selectedPlayer) {
 		return true;
 	}
 
 	// someone else's structure firing at something you can't see
-	if (source != nullptr && source->isAlive() &&
-      dynamic_cast<Structure*>(source) &&
-      source->getPlayer() != selectedPlayer &&
-      (target == nullptr || !target->isAlive() ||
-       !target->visibleToSelectedPlayer())) {
+	if (pimpl->source != nullptr && !pimpl->source->isDead() &&
+      dynamic_cast<Structure*>(pimpl->source) &&
+      pimpl->source->getPlayer() != selectedPlayer &&
+      (pimpl->target == nullptr || pimpl->target->isDead() ||
+       !pimpl->target->visibleToSelectedPlayer())) {
 		return false;
 	}
 
 	// something you cannot see firing at a structure that isn't yours
-	if (target != nullptr
-      && target->isAlive()
-      && dynamic_cast<Structure*>(target)
-      && target->getPlayer() != selectedPlayer
-      && (source == nullptr
-        || !source->visibleToSelectedPlayer())) {
+	if (pimpl->target != nullptr && pimpl->target->isDead() &&
+      dynamic_cast<Structure*>(pimpl->target) &&
+      pimpl->target->getPlayer() != selectedPlayer &&
+      (pimpl->source == nullptr || !pimpl->source->visibleToSelectedPlayer())) {
 		return false;
 	}
 
 	// you can see the source
-	if (source != nullptr
-      && source->isAlive()
-      && source->visibleToSelectedPlayer()) {
+	if (pimpl->source != nullptr && !pimpl->source->isDead() &&
+      pimpl->source->visibleToSelectedPlayer()) {
 		return true;
 	}
 
 	// you can see the destination
-	if (target != nullptr
-      && target->isAlive()
-      && target->visibleToSelectedPlayer()) {
+	if (pimpl->target != nullptr && !pimpl->target->isDead() &&
+      pimpl->target->visibleToSelectedPlayer()) {
 		return true;
 	}
 
 	return false;
+}
+
+void Projectile::updateExperience(unsigned experienceInc)
+{
+  if (!pimpl) return;
+
+  /* update droid kills */
+  if (auto psDroid = dynamic_cast<Droid*>(pimpl->source)) {
+    // if it is 'droid-on-droid' then modify the experience by the
+    // quality factor. only do this in MP so to not unbalance the campaign
+    if (pimpl->target && dynamic_cast<Droid*>(pimpl->target) && bMultiPlayer) {
+      // modify the experience gained by the 'quality factor' of the units
+      experienceInc = experienceInc *
+                      qualityFactor(psDroid,
+                                    dynamic_cast<Droid*>(pimpl->target)) / 65536;
+    }
+    ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536),
+                       "Experience increase out of range");
+    psDroid->gainExperience(experienceInc);
+    cmdDroidUpdateExperience(psDroid, experienceInc);
+
+    auto psSensor = orderStateObj(psDroid, ORDER_TYPE::FIRE_SUPPORT);
+    if (psSensor && dynamic_cast<Droid*>(psSensor)) {
+      dynamic_cast<Droid*>(psSensor)->gainExperience(experienceInc);
+    }
+  }
+  else if (dynamic_cast<Structure*>(pimpl->source)) {
+    ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536),
+                       "Experience increase out of range");
+    psDroid = getDesignatorAttackingObject(pimpl->source->getPlayer(), pimpl->target);
+
+    if (psDroid) {
+      psDroid->gainExperience(experienceInc);
+    }
+  }
+}
+
+bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, PlayerOwnedObject* psAttacker, unsigned plr,
+                                           Vector3i dest, PlayerOwnedObject* psTarget, bool bVisible,
+                                           int weapon_slot, int min_angle, unsigned fireTime) const
+{
+  if (!pimpl) return false;
+
+  auto psStats = psWeap->getStats();
+
+  ASSERT_OR_RETURN(false, psTarget == nullptr ||
+                          !psTarget->isDead(), "Aiming at dead target!");
+
+  auto psProj = std::make_unique<Projectile>(
+          ProjectileTrackerID + ++projectileTrackerIDIncrement, plr);
+
+  /* get muzzle offset */
+  if (psAttacker == nullptr) {
+    // if there isn't an attacker just start at the target position
+    // NB this is for the script function to fire the las sats
+    psProj->pimpl->origin = dest;
+  }
+  else if (dynamic_cast<Droid*>(psAttacker) && weapon_slot >= 0) {
+    calcDroidMuzzleLocation(dynamic_cast<Droid*>(psAttacker),
+                              &psProj->pimpl->origin, weapon_slot);
+
+    // update attack runs for VTOL droid's each time a shot is fired
+    updateVtolAttackRun(*dynamic_cast<Droid*>(psAttacker), weapon_slot);
+  }
+  else if (dynamic_cast<Structure*>(psAttacker) && weapon_slot >= 0) {
+    calcStructureMuzzleLocation(dynamic_cast<Structure*>(psAttacker),
+                                  &psProj->pimpl->origin, weapon_slot);
+  }
+  else { // incase anything wants a projectile
+    psProj->pimpl->origin = psAttacker->getPosition();
+  }
+
+  /* Initialise the structure */
+  psProj->pimpl->weaponStats = std::make_shared<WeaponStats>(*psStats);
+
+  psProj->setPosition(psProj->pimpl->origin);
+  psProj->pimpl->destination = dest;
+
+  psProj->pimpl->isVisible = false;
+
+  // Must set ->psDest and ->expectedDamageCaused before first call to setProjectileDestination().
+  psProj->pimpl->target = nullptr;
+  psProj->pimpl->expectedDamageCaused = objGuessFutureDamage(psStats, plr, psTarget);
+  psProj->setTarget(psTarget);
+  // Updates expected damage of psProj->psDest, using psProj->expectedDamageCaused.
+
+  /*
+	When we have been created by penetration (spawned from another projectile),
+	we shall live no longer than the original projectile may have lived
+	*/
+  if (psAttacker && dynamic_cast<Projectile*>(psAttacker)) {
+    auto psOldProjectile = dynamic_cast<Projectile*>(psAttacker);
+    psProj->pimpl->bornTime = psOldProjectile->pimpl->bornTime;
+    psProj->pimpl->origin = psOldProjectile->pimpl->origin;
+
+    // have partially ticked already
+    psProj->pimpl->previousLocation.time = psOldProjectile->getTime();
+    psProj->setTime(gameTime);
+
+    // times should not be equal, for interpolation
+    psProj->pimpl->previousLocation.time -= psProj->
+           pimpl->previousLocation.time == psProj->getTime();
+
+    psProj->setSource(psOldProjectile->pimpl->source);
+    psProj->pimpl->damaged = psOldProjectile->pimpl->damaged;
+
+    // TODO Should finish the tick, when penetrating.
+  }
+  else {
+    psProj->pimpl->bornTime = fireTime; // Born at the start of the tick.
+
+    psProj->pimpl->previousLocation.time = fireTime;
+    psProj->setTime(psProj->pimpl->previousLocation.time);
+
+    psProj->setSource(psAttacker);
+  }
+
+  if (psTarget) {
+    auto maxHeight = establishTargetHeight(psTarget);
+    auto minHeight = std::min(
+            std::max(maxHeight + 2 * LINE_OF_FIRE_MINIMUM - areaOfFire(
+                    psAttacker, psTarget, weapon_slot, true), 0), maxHeight);
+    scoreUpdateVar(WD_SHOTS_ON_TARGET);
+
+    psProj->pimpl->destination.z = psTarget->getPosition().z +
+                            minHeight + gameRand(std::max(maxHeight - minHeight, 1));
+    /* store visible part (LOCK ON this part for homing :) */
+    psProj->pimpl->partVisible = maxHeight - minHeight;
+  }
+  else {
+    psProj->pimpl->destination.z = dest.z + LINE_OF_FIRE_MINIMUM;
+    scoreUpdateVar(WD_SHOTS_OFF_TARGET);
+  }
+
+  Vector3i deltaPos = psProj->pimpl->destination - psProj->pimpl->origin;
+
+  /* roll never set */
+  auto roll = 0;
+  auto direction = iAtan2(deltaPos.xy());
+
+
+  // get target distance, horizontal distance only
+  auto dist = iHypot(deltaPos.xy());
+
+  int pitch;
+  if (proj_Direct(psStats)) {
+    pitch = iAtan2(deltaPos.z, dist);
+  }
+  else {
+    /* indirect */
+    projCalcIndirectVelocities(dist, deltaPos.z, psStats->flightSpeed,
+                               &psProj->pimpl->vXY, &psProj->pimpl->vZ, min_angle);
+    pitch = iAtan2(psProj->pimpl->vZ, psProj->pimpl->vXY);
+  }
+
+  psProj->setRotation({direction, pitch, roll});
+
+  psProj->pimpl->state = PROJECTILE_STATE::INFLIGHT;
+
+  // if droid or structure, set muzzle pitch
+  if (psAttacker != nullptr && weapon_slot >= 0) {
+    if (auto droid = dynamic_cast<Droid*>(psAttacker)) {
+      droid->getWeapons()[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
+    }
+    else if (auto structure = dynamic_cast<Structure*>(psAttacker)) {
+      structure->getWeapons()[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
+    }
+  }
+
+  /* put the projectile object in the global list */
+  psProjectileList.push_back(psProj);
+
+  // play firing audio
+  // -- only play if either object is visible, I know it's a bit of a hack,
+  // but it avoids the problem of having to calculate real visibility
+  // values for each projectile
+  if (bVisible || psProj->isVisible()) {
+    // note that the projectile is visible
+    psProj->pimpl->isVisible = true;
+
+    if (psStats->iAudioFireID != NO_SOUND) {
+      if (psProj->pimpl->source) {
+        /* firing sound emitted from source */
+        audio_PlayObjDynamicTrack(psProj->pimpl->source,
+                                  psStats->iAudioFireID, nullptr);
+        /* GJ HACK: move howitzer sound with shell */
+        if (psStats->weaponSubClass == WEAPON_SUBCLASS::HOWITZERS)
+        {
+          audio_PlayObjDynamicTrack(psProj.get(),
+                                    ID_SOUND_HOWITZ_FLIGHT, nullptr);
+        }
+      }
+        // don't play the sound for a LasSat in multiplayer
+      else if (!(bMultiPlayer && psStats->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT)) {
+        audio_PlayObjStaticTrack(psProj.get(), psStats.iAudioFireID);
+      }
+    }
+  }
+
+  if (psAttacker != nullptr && !proj_Direct(psStats)) {
+    // check for counter-battery sensor in range of target
+    counterBatteryFire(psAttacker, psTarget);
+  }
+
+  return true;
 }
 
 void proj_InitSystem()
@@ -209,51 +585,17 @@ int getExpGain(unsigned player)
 	return experienceGain[player];
 }
 
-Droid* getDesignatorAttackingObject(unsigned player, PersistentObject* target)
+Droid* getDesignatorAttackingObject(unsigned player, PlayerOwnedObject * target)
 {
 	const auto psCommander = cmdDroidGetDesignator(player);
 
 	return psCommander != nullptr && 
          psCommander->getAction() == ACTION::ATTACK &&
-         &psCommander->getTarget(0) == target
+         psCommander->getTarget(0) == target
 		       ? psCommander
 		       : nullptr;
 }
 
-void Projectile::updateExperience(unsigned experienceInc)
-{
-	::PersistentObject* psSensor;
-
-  /* update droid kills */
-  if (auto psDroid = dynamic_cast<Droid*>(this)) {
-		// if it is 'droid-on-droid' then modify the experience by the
-    // quality factor. only do this in MP so to not unbalance the campaign
-		if (target && dynamic_cast<Droid*>(target) && bMultiPlayer) {
-			// modify the experience gained by the 'quality factor' of the units
-			experienceInc = experienceInc *
-                      qualityFactor(psDroid,
-                            dynamic_cast<Droid*>(target)) / 65536;
-		}
-		ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536),
-                     "Experience increase out of range");
-		psDroid->gainExperience(experienceInc);
-		cmdDroidUpdateExperience(psDroid, experienceInc);
-
-		psSensor = orderStateObj(psDroid, ORDER_TYPE::FIRE_SUPPORT);
-		if (psSensor && dynamic_cast<Droid*>(psSensor)) {
-			dynamic_cast<Droid*>(psSensor)->gainExperience(experienceInc);
-		}
-	} else if (dynamic_cast<Structure*>(source))
-	{
-		ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536),
-                     "Experience increase out of range");
-		psDroid = getDesignatorAttackingObject(source->getPlayer(), target);
-
-		if (psDroid) {
-			psDroid->gainExperience(experienceInc);
-		}
-	}
-}
 
 //void Projectile::debug_(const char* function, char ch) const
 //{
@@ -335,182 +677,12 @@ int projCalcIndirectVelocities(int dx, int dz, int v,
 	return t;
 }
 
-bool proj_SendProjectile(Weapon* psWeap, PersistentObject* psAttacker, unsigned player,
-                         Vector3i target, PersistentObject* psTarget, bool bVisible,
+bool proj_SendProjectile(Weapon* psWeap, PlayerOwnedObject * psAttacker, unsigned player,
+                         Vector3i target, PlayerOwnedObject * psTarget, bool bVisible,
                          int weapon_slot)
 {
 	return proj_SendProjectileAngled(psWeap, psAttacker, player, target, psTarget,
                                    bVisible, weapon_slot, 0, gameTime - 1);
-}
-
-bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, ::PersistentObject* psAttacker, unsigned plr,
-                                           Vector3i dest, ::PersistentObject* psTarget, bool bVisible,
-                                           int weapon_slot, int min_angle, unsigned fireTime) const
-{
-	auto& psStats = psWeap->getStats();
-
-	ASSERT_OR_RETURN(false, psTarget == nullptr ||
-                          !psTarget->died, "Aiming at dead target!");
-
-	auto psProj = std::make_unique<Projectile>(
-          ProjectileTrackerID + ++projectileTrackerIDIncrement, plr);
-
-	/* get muzzle offset */
-	if (psAttacker == nullptr) {
-		// if there isn't an attacker just start at the target position
-		// NB this is for the script function to fire the las sats
-		psProj->origin = dest;
-	}
-	else if (dynamic_cast<Droid*>(psAttacker) && 
-           weapon_slot >= 0) {
-		::calcDroidMuzzleLocation(dynamic_cast<Droid*>(psAttacker),
-                              &psProj->origin, weapon_slot);
-		// update attack runs for VTOL droid's each time a shot is fired
-		::updateVtolAttackRun(*dynamic_cast<Droid*>(psAttacker), weapon_slot);
-	}
-	else if (dynamic_cast<Structure*>(psAttacker) && 
-           weapon_slot >= 0) {
-		::calcStructureMuzzleLocation(dynamic_cast<Structure*>(psAttacker),
-                                  &psProj->origin, weapon_slot);
-	}
-	else // incase anything wants a projectile 
-  {
-		psProj->origin = psAttacker->getPosition();
-	}
-
-	/* Initialise the structure */
-	psProj->weaponStats = std::make_shared<WeaponStats>(psStats);
-
-	psProj->setPosition(psProj->origin);
-	psProj->destination = dest;
-
-	psProj->isVisible = false;
-
-	// Must set ->psDest and ->expectedDamageCaused before first call to setProjectileDestination().
-	psProj->target = nullptr;
-	psProj->expectedDamageCaused = ::objGuessFutureDamage(psStats, plr, psTarget);
-	psProj->setTarget(psTarget);
-	// Updates expected damage of psProj->psDest, using psProj->expectedDamageCaused.
-
-	/*
-	When we have been created by penetration (spawned from another projectile),
-	we shall live no longer than the original projectile may have lived
-	*/
-	if (psAttacker && dynamic_cast<Projectile*>(psAttacker)) {
-		auto psOldProjectile = dynamic_cast<Projectile*>(psAttacker);
-		psProj->bornTime = psOldProjectile->bornTime;
-		psProj->origin = psOldProjectile->origin;
-
-    // have partially ticked already
-		psProj->previousLocation.time = psOldProjectile->getTime();
-		psProj->setTime(gameTime);
-
-    // times should not be equal, for interpolation
-    psProj->previousLocation.time -= psProj->
-              previousLocation.time == psProj->getTime();
-
-		psProj->setSource(psOldProjectile->source);
-		psProj->damaged = psOldProjectile->damaged;
-
-		// TODO Should finish the tick, when penetrating.
-	}
-	else {
-		psProj->bornTime = fireTime; // Born at the start of the tick.
-
-		psProj->previousLocation.time = fireTime;
-		psProj->setTime(psProj->previousLocation.time);
-
-		psProj->setSource(psAttacker);
-	}
-
-	if (psTarget) {
-		auto maxHeight = establishTargetHeight(psTarget);
-		auto minHeight = std::min(
-			std::max(maxHeight + 2 * LINE_OF_FIRE_MINIMUM - areaOfFire(
-              psAttacker, psTarget, weapon_slot, true), 0), maxHeight);
-		scoreUpdateVar(WD_SHOTS_ON_TARGET);
-
-		psProj->destination.z = psTarget->getPosition().z + 
-            minHeight + gameRand(std::max(maxHeight - minHeight, 1));
-		/* store visible part (LOCK ON this part for homing :) */
-		psProj->partVisible = maxHeight - minHeight;
-	}
-	else {
-		psProj->destination.z = dest.z + LINE_OF_FIRE_MINIMUM;
-		scoreUpdateVar(WD_SHOTS_OFF_TARGET);
-	}
-
-	Vector3i deltaPos = psProj->destination - psProj->origin;
-
-	/* roll never set */
-	auto roll = 0;
-	auto direction = iAtan2(deltaPos.xy());
-
-
-	// get target distance, horizontal distance only
-	auto dist = iHypot(deltaPos.xy());
-
-  int pitch;
-	if (proj_Direct(&psStats)) {
-		pitch = iAtan2(deltaPos.z, dist);
-	}
-	else {
-		/* indirect */
-		projCalcIndirectVelocities(dist, deltaPos.z, psStats.flightSpeed,
-                               &psProj->vXY, &psProj->vZ, min_angle);
-		pitch = iAtan2(psProj->vZ, psProj->vXY);
-	}
-  
-  psProj->setRotation({direction, pitch, roll});
-  
-	psProj->state = PROJECTILE_STATE::INFLIGHT;
-
-	// if droid or structure, set muzzle pitch
-	if (psAttacker != nullptr && weapon_slot >= 0) {
-		if (auto droid = dynamic_cast<Droid*>(psAttacker)) {
-			droid->getWeapons()[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
-		}
-		else if (auto structure = dynamic_cast<Structure*>(psAttacker)) {
-			structure->getWeapons()[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
-		}
-	}
-
-	/* put the projectile object in the global list */
-	psProjectileList.push_back(psProj);
-
-	// play firing audio
-	// -- only play if either object is visible, I know it's a bit of a hack,
-  // but it avoids the problem of having to calculate real visibility
-  // values for each projectile
-	if (bVisible || psProj->gfxVisible()) {
-		// note that the projectile is visible
-		psProj->isVisible = true;
-
-		if (psStats.iAudioFireID != NO_SOUND) {
-			if (psProj->source) {
-				/* firing sound emitted from source */
-				audio_PlayObjDynamicTrack(psProj->source,
-                                  psStats.iAudioFireID, nullptr);
-				/* GJ HACK: move howitzer sound with shell */
-				if (psStats.weaponSubClass == WEAPON_SUBCLASS::HOWITZERS)
-				{
-					audio_PlayObjDynamicTrack(psProj.get(),
-                                    ID_SOUND_HOWITZ_FLIGHT, nullptr);
-				}
-			}
-			// don't play the sound for a LasSat in multiplayer
-			else if (!(bMultiPlayer && psStats.weaponSubClass == WEAPON_SUBCLASS::LAS_SAT)) {
-				audio_PlayObjStaticTrack(psProj.get(), psStats.iAudioFireID);
-			}
-		}
-	}
-
-	if (psAttacker != nullptr && !proj_Direct(&psStats)) {
-		// check for counter-battery sensor in range of target
-		counterBatteryFire(psAttacker, psTarget);
-	}
-
-	return true;
 }
 
 
@@ -576,12 +748,12 @@ static Interval collisionXY(int x1, int y1, int x2, int y2, int radius)
 	return ret;
 }
 
-static int collisionXYZ(Vector3i v1, Vector3i v2, ObjectShape shape, int height)
+static int collisionXYZ(Vector3i v1, Vector3i v2, ObjectShape const& shape, int height)
 {
 	auto i = collisionZ(v1.z, v2.z, height);
   // don't bother checking x and y unless z passes
   if (!i.isEmpty()) {
-		if (shape.isRectangular) {
+		if (shape.pimpl->isRectangular) {
 			i = intervalIntersection(i, collisionZ(
               v1.x, v2.x, shape.size.x));
       // don't bother checking y unless x and z pass
@@ -605,24 +777,25 @@ static int collisionXYZ(Vector3i v1, Vector3i v2, ObjectShape shape, int height)
 
 void Projectile::proj_InFlightFunc()
 {
+  if (!pimpl) return;
+
 	/* we want a delay between Las-Sats firing and actually hitting in multiPlayer
 	magic number but that's how long the audio countdown message lasts! */
 	const auto LAS_SAT_DELAY = 4;
-	::PersistentObject* closestCollisionObject = nullptr;
+	PlayerOwnedObject*  closestCollisionObject = nullptr;
 	Spacetime closestCollisionSpacetime;
 
 	auto timeSoFar = gameTime - bornTime;
 
 	setTime(gameTime);
-	auto deltaProjectileTime = getTime() - previousLocation.time;
+	auto deltaProjectileTime = getTime() - getPreviousLocation().time;
 
-	auto& psStats = weaponStats;
+	auto psStats = pimpl->weaponStats;
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid weapon stats pointer");
 
 	/* we want a delay between Las-Sats firing and actually hitting in multiPlayer
 	magic number but that's how long the audio countdown message lasts! */
-	if (bMultiPlayer && 
-      psStats->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT &&
+	if (bMultiPlayer && psStats->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT &&
 		  timeSoFar < LAS_SAT_DELAY * GAME_TICKS_PER_SEC) {
 		return;
 	}
@@ -634,96 +807,100 @@ void Projectile::proj_InFlightFunc()
     using enum MOVEMENT_MODEL;
 	  case DIRECT: // Go in a straight line.
 	  	{
-	  		Vector3i delta = destination - origin;
+	  		Vector3i delta = pimpl->destination - pimpl->origin;
 	  		if (psStats->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT) {
 	  			// LAS_SAT doesn't have a z
 	  			delta.z = 0;
 	  		}
 	  		auto targetDistance = std::max(iHypot(delta.xy()), 1);
 	  		currentDistance = timeSoFar * psStats->flightSpeed / GAME_TICKS_PER_SEC;
-	  		setPosition(origin + delta * currentDistance / targetDistance);
+	  		setPosition(pimpl->origin + delta * currentDistance / targetDistance);
 	  		break;
 	  	}
 	  case INDIRECT: // ballistic trajectory
 	  	{
-	  		auto delta = destination - origin;
-	  		delta.z = (vZ - (timeSoFar * ACC_GRAVITY / (GAME_TICKS_PER_SEC * 2))) * timeSoFar /
+	  		auto delta = pimpl->destination - pimpl->origin;
+	  		delta.z = (pimpl->vZ - (timeSoFar * ACC_GRAVITY / (GAME_TICKS_PER_SEC * 2))) * timeSoFar /
 	  			GAME_TICKS_PER_SEC; // '2' because we reach our highest point in the mid of flight, when "vZ is 0".
 	  		auto targetDistance = std::max(iHypot(delta.xy()), 1);
-	  		currentDistance = timeSoFar * vXY / GAME_TICKS_PER_SEC;
-	  		setPosition(origin + delta * currentDistance / targetDistance);
+	  		currentDistance = timeSoFar * pimpl->vXY / GAME_TICKS_PER_SEC;
+	  		setPosition(pimpl->origin + delta * currentDistance / targetDistance);
 	  		setPosition({getPosition().x, getPosition().y,
-                     origin.z + delta.z}); // use raw z value
+                     pimpl->origin.z + delta.z}); // use raw z value
 
-	  		auto pitch = iAtan2(vZ - (timeSoFar * ACC_GRAVITY / GAME_TICKS_PER_SEC), vXY);
+	  		auto pitch = iAtan2(pimpl->vZ - (timeSoFar * ACC_GRAVITY / GAME_TICKS_PER_SEC), pimpl->vXY);
         setRotation({getRotation().direction, pitch, getRotation().roll});
 	  		break;
 	  	}
 	  case HOMING_DIRECT: // Fly towards target, even if target moves.
 	  case HOMING_INDIRECT: // Fly towards target, even if target moves. Avoid terrain.
 	  	{
-	  		if (target) {
+	  		if (pimpl->target) {
 	  			if (psStats->movementModel == HOMING_DIRECT) {
 	  				// If it's homing and has a target (not a miss)...
 	  				// Home at the centre of the part that was visible when firing.
-	  				destination = target->getPosition() + Vector3i(
-	  					0, 0, establishTargetHeight(target) - partVisible / 2);
+	  				pimpl->destination = pimpl->target->getPosition() + Vector3i(
+	  					0, 0, establishTargetHeight(pimpl->target) - pimpl->partVisible / 2);
 	  			}
 	  			else {
-	  				destination = target->getPosition() + Vector3i{
-                    0, 0, establishTargetHeight(target) / 2};
+	  				pimpl->destination = pimpl->target->getPosition() + Vector3i{
+                    0, 0, establishTargetHeight(pimpl->target) / 2};
 	  			}
-	  			auto targetDroid = dynamic_cast<Droid*>(target);
+	  			auto targetDroid = dynamic_cast<Droid*>(pimpl->target);
 	  			if (targetDroid != nullptr) {
 	  				// Do target prediction.
-	  				auto delta = destination - getPosition();
+	  				auto delta = pimpl->destination - getPosition();
 	  				auto flightTime = iHypot(delta.xy()) * GAME_TICKS_PER_SEC / psStats->flightSpeed;
-	  				destination += Vector3i(iSinCosR(targetDroid->getMovementData().moveDir,
-	  				                                 std::min<int>(targetDroid->getMovementData().speed,
-	  				                                               psStats->flightSpeed * 3 / 4) * flightTime /
-	  				                                 GAME_TICKS_PER_SEC), 0);
+	  			pimpl->destination += Vector3i(
+                  iSinCosR(targetDroid->getMovementData()->moveDir,
+                           std::min<int>(targetDroid->getMovementData()->speed,
+                                         psStats->flightSpeed * 3 / 4) * flightTime / GAME_TICKS_PER_SEC), 0);
 	  			}
-	  			destination.x = clip(
-                  destination.x, 0, world_coord(mapWidth) - 1);
-	  			destination.y = clip(
-                  destination.y, 0, world_coord(mapHeight) - 1);
+	  			pimpl->destination.x = clip(
+                  pimpl->destination.x, 0, world_coord(mapWidth) - 1);
+	  			pimpl->destination.y = clip(
+                  pimpl->destination.y, 0, world_coord(mapHeight) - 1);
 	  		}
 	  		if (psStats->movementModel == HOMING_INDIRECT) {
-	  			if (target == nullptr) {
-	  				destination.z = map_Height(getPosition().xy()) - 1;
+	  			if (pimpl->target == nullptr) {
+	  				pimpl->destination.z = map_Height(getPosition().xy()) - 1;
 	  				// target missing, so just home in on the ground under where the target was
 	  			}
-	  			int horizontalTargetDistance = iHypot((destination - getPosition()).xy());
+	  			int horizontalTargetDistance = iHypot((pimpl->destination - getPosition()).xy());
 	  			int terrainHeight = std::max(map_Height(getPosition().xy()),
 	  			                             map_Height(getPosition().xy() + iSinCosR(
-	  				                             iAtan2((destination - getPosition()).xy()),
+	  				                             iAtan2((pimpl->destination - getPosition()).xy()),
 	  				                             psStats->flightSpeed * 2 * deltaProjectileTime / GAME_TICKS_PER_SEC)));
 	  			int desiredMinHeight = terrainHeight +
 	  				std::min(horizontalTargetDistance / 4, HOMINGINDIRECT_HEIGHT_MIN);
-	  			int desiredMaxHeight = std::max(destination.z, terrainHeight + HOMINGINDIRECT_HEIGHT_MAX);
+	  			int desiredMaxHeight = std::max(pimpl->destination.z, terrainHeight + HOMINGINDIRECT_HEIGHT_MAX);
 	  			int heightError = getPosition().z - clip(getPosition().z, desiredMinHeight, desiredMaxHeight);
-	  			destination.z -= horizontalTargetDistance * heightError * 2 / HOMINGINDIRECT_HEIGHT_MIN;
+	  			pimpl->destination.z -= horizontalTargetDistance * heightError * 2 / HOMINGINDIRECT_HEIGHT_MIN;
 	  		}
-	  		Vector3i delta = destination - getPosition();
+	  		Vector3i delta = pimpl->destination - getPosition();
 	  		int targetDistance = std::max(iHypot(delta), 1);
-	  		if (target == nullptr && targetDistance < 10000 && 
+	  		if (pimpl->target == nullptr && targetDistance < 10000 &&
             psStats->movementModel == HOMING_DIRECT) {
-	  			destination = getPosition() + delta * 10; // Target missing, so just keep going in a straight line.
+	  			pimpl->destination = getPosition() + delta * 10; // Target missing, so just keep going in a straight line.
 	  		}
 	  		currentDistance = timeSoFar * psStats->flightSpeed / GAME_TICKS_PER_SEC;
-	  		Vector3i step = quantiseFraction(delta * int(psStats->flightSpeed), GAME_TICKS_PER_SEC * targetDistance,
-                                         getTime(), previousLocation.time);
-	  		if (psStats->movementModel == HOMING_INDIRECT && target != nullptr) {
-	  			for (int tries = 0; tries < 10 && map_LineIntersect(previousLocation.position, getPosition() + step,
-                                                              iHypot(step)) < targetDistance - 1u; ++tries)
+	  		Vector3i step = quantiseFraction(
+                delta * int(psStats->flightSpeed),
+                GAME_TICKS_PER_SEC * targetDistance,
+                getTime(), getPreviousLocation().time);
+
+	  		if (psStats->movementModel == HOMING_INDIRECT && pimpl->target != nullptr) {
+	  			for (int tries = 0; tries < 10 && map_LineIntersect(
+                  getPreviousLocation().position, getPosition() + step,
+                  iHypot(step)) < targetDistance - 1u; ++tries)
 	  			{
-	  				destination.z += iHypot((destination - getPosition()).xy());
+	  				pimpl->destination.z += iHypot((pimpl->destination - getPosition()).xy());
 	  				// Would collide with terrain this tick, change trajectory.
 	  				// Recalculate delta, targetDistance and step.
-	  				delta = destination - getPosition();
+	  				delta = pimpl->destination - getPosition();
 	  				targetDistance = std::max(iHypot(delta), 1);
 	  				step = quantiseFraction(delta * int(psStats->flightSpeed), GAME_TICKS_PER_SEC * targetDistance,
-                                    getTime(), previousLocation.time);
+                                    getTime(), getPreviousLocation().time);
 	  			}
 	  		}
 	  		setPosition(getPosition() + step);
@@ -741,14 +918,14 @@ void Projectile::proj_InFlightFunc()
 	/* Check nearby objects for possible collisions */
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(getPosition().x, getPosition().y, PROJ_NEIGHBOUR_RANGE);
-	for (::PersistentObject* psTempObj : gridList)
+	for (PlayerOwnedObject* psTempObj : gridList)
 	{
-		if (std::find(damaged.begin(), damaged.end(),
-                  psTempObj) != damaged.end()) {
+		if (std::find(pimpl->damaged.begin(), pimpl->damaged.end(),
+                  psTempObj) != pimpl->damaged.end()) {
 			// don't damage the same target twice
 			continue;
 		}
-		else if (psTempObj->died) {
+		else if (psTempObj->isDead()) {
 			// do not damage dead objects further
 			continue;
 		}
@@ -759,7 +936,7 @@ void Projectile::proj_InFlightFunc()
 		}
 		else if (aiCheckAlliances(
             psTempObj->getPlayer(), getPlayer()) &&
-            psTempObj != target) {
+            psTempObj != pimpl->target) {
 			// no friendly fire unless intentional
 			continue;
 		}
@@ -773,16 +950,18 @@ void Projectile::proj_InFlightFunc()
 		}
 
 		Vector3i psTempObjPrevPos = dynamic_cast<Droid*>(psTempObj)
-            ? dynamic_cast<Droid*>(psTempObj)->previousLocation.pos
+            ? dynamic_cast<Droid*>(psTempObj)->getPreviousLocation().position
             : psTempObj->getPosition();
 
 		const Vector3i diff = getPosition() - psTempObj->getPosition();
-		const Vector3i prevDiff = previousLocation.position - psTempObjPrevPos;
+		const Vector3i prevDiff = getPreviousLocation().position - psTempObjPrevPos;
 		const auto targetHeight = establishTargetHeight(psTempObj);
 		const auto targetShape = establishTargetShape(psTempObj);
-		const auto collision = collisionXYZ(prevDiff, diff, targetShape, targetHeight);
-		const auto collisionTime = previousLocation.time + (getTime() - previousLocation.time) *
-                                                       collision / 1024;
+		const auto collision = collisionXYZ(
+            prevDiff, diff, targetShape, targetHeight);
+
+		const auto collisionTime = getPreviousLocation().time
+                               + (getTime() - getPreviousLocation().time) * collision / 1024;
 
 		if (collision >= 0 &&
         collisionTime < closestCollisionSpacetime.time) {
@@ -794,10 +973,10 @@ void Projectile::proj_InFlightFunc()
 		}
 	}
 
-	unsigned terrainIntersectTime = map_LineIntersect(previousLocation.position, getPosition(),
-                                                    getTime() - previousLocation.time);
+	unsigned terrainIntersectTime = map_LineIntersect(getPreviousLocation().position, getPosition(),
+                                                    getTime() - getPreviousLocation().time);
 	if (terrainIntersectTime != UINT32_MAX) {
-		const uint collisionTime = previousLocation.time + terrainIntersectTime;
+		const uint collisionTime = getPreviousLocation().time + terrainIntersectTime;
 		if (collisionTime < closestCollisionSpacetime.time) {
 			// We hit the terrain!
 			closestCollisionSpacetime = interpolateObjectSpacetime(this, collisionTime);
@@ -810,7 +989,7 @@ void Projectile::proj_InFlightFunc()
 		setSpacetime(this, closestCollisionSpacetime);
 		setTime(std::max(getTime(), gameTime - deltaGameTime + 1));
 		// Make sure .died gets set in the interval [gameTime - deltaGameTime + 1; gameTime].
-		if (getTime() == previousLocation.time) {
+		if (getTime() == getPreviousLocation().time) {
 			--previousLocation.time;
 		}
 		setTarget(closestCollisionObject); // We hit something.
@@ -826,13 +1005,13 @@ void Projectile::proj_InFlightFunc()
 			asWeap.stats = psStats;
 
 			// Assume we damaged the chosen target
-			damaged.push_back(closestCollisionObject);
+			pimpl->damaged.push_back(closestCollisionObject);
 
 			proj_SendProjectile(&asWeap, this, getPlayer(),
-                          destination, nullptr, true, -1);
+                          pimpl->destination, nullptr, true, -1);
 		}
 
-		state = PROJECTILE_STATE::IMPACT;
+		pimpl->state = PROJECTILE_STATE::IMPACT;
 
 		return;
 	}
@@ -841,420 +1020,422 @@ void Projectile::proj_InFlightFunc()
         proj_GetLongRange(psStats.get(),
                           getPlayer()) * psStats->distanceExtensionFactor) {
 		// We've travelled our maximum range.
-		state = PROJECTILE_STATE::IMPACT;
+		pimpl->state = PROJECTILE_STATE::IMPACT;
 		setTarget(nullptr); /* miss registered if NULL target */
 		return;
 	}
 
-	/* Paint effects if visible */
-	if (gfxVisible()) {
-		uint effectTime;
-		for (effectTime = ((previousLocation.time + 31) & ~31);
-         effectTime < getTime(); effectTime += 32)
-		{
-			Spacetime st = interpolateObjectSpacetime(this, effectTime);
-			Vector3i posFlip = st.position.xzy();
-			switch (psStats->weaponSubClass) {
-			  case WEAPON_SUBCLASS::FLAME:
-			  	posFlip.z -= 8; // Why?
-			  	effectGiveAuxVar(PERCENT(currentDistance, proj_GetLongRange(
-                  psStats.get(), getPlayer())));
-          
-			  	addEffect(&posFlip, EFFECT_GROUP::EXPLOSION,
-                    EFFECT_TYPE::EXPLOSION_TYPE_FLAMETHROWER, 
+  if (!isVisible()) return;
+
+  /* Paint effects if visible */
+  for (auto effectTime = getPreviousLocation().time + 31 & ~31;
+       effectTime < getTime(); effectTime += 32)
+  {
+    auto st = interpolateObjectSpacetime(this, effectTime);
+    auto posFlip = st.position.xzy();
+    switch (psStats->weaponSubClass) {
+      case WEAPON_SUBCLASS::FLAME:
+        posFlip.z -= 8; // Why?
+        effectGiveAuxVar(PERCENT(currentDistance, proj_GetLongRange(
+                psStats.get(), getPlayer())));
+
+        addEffect(&posFlip, EFFECT_GROUP::EXPLOSION,
+                  EFFECT_TYPE::EXPLOSION_TYPE_FLAMETHROWER,
+                  false, nullptr, 0, effectTime);
+        break;
+      case WEAPON_SUBCLASS::COMMAND:
+      case WEAPON_SUBCLASS::ELECTRONIC:
+      case WEAPON_SUBCLASS::EMP:
+        posFlip.z -= 8; // Why?
+        effectGiveAuxVar(PERCENT(currentDistance, proj_GetLongRange(
+                psStats.get(), getPlayer())) / 2);
+
+        addEffect(&posFlip, EFFECT_GROUP::EXPLOSION,
+                  EFFECT_TYPE::EXPLOSION_TYPE_LASER,
+                  false, nullptr, 0, effectTime);
+        break;
+      case WEAPON_SUBCLASS::ROCKET:
+      case WEAPON_SUBCLASS::MISSILE:
+      case WEAPON_SUBCLASS::SLOW_ROCKET:
+      case WEAPON_SUBCLASS::SLOW_MISSILE:
+        posFlip.z += 8; // Why?
+        addEffect(&posFlip, EFFECT_GROUP::SMOKE,
+                  EFFECT_TYPE::SMOKE_TYPE_TRAIL,
+                  false, nullptr, 0, effectTime);
+        break;
+      default:
+        // Add smoke trail to indirect weapons, even if firing directly.
+        if (!proj_Direct(psStats.get())) {
+          posFlip.z += 4; // Why?
+          addEffect(&posFlip, EFFECT_GROUP::SMOKE,
+                    EFFECT_TYPE::SMOKE_TYPE_TRAIL,
                     false, nullptr, 0, effectTime);
-			  	break;
-			  case WEAPON_SUBCLASS::COMMAND:
-			  case WEAPON_SUBCLASS::ELECTRONIC:
-			  case WEAPON_SUBCLASS::EMP:
-			  	posFlip.z -= 8; // Why?
-			  	effectGiveAuxVar(PERCENT(currentDistance, proj_GetLongRange(
-                  psStats.get(), getPlayer())) / 2);
-          
-			  	addEffect(&posFlip, EFFECT_GROUP::EXPLOSION, 
-                    EFFECT_TYPE::EXPLOSION_TYPE_LASER, 
-                    false, nullptr, 0, effectTime);
-			  	break;
-			  case WEAPON_SUBCLASS::ROCKET:
-			  case WEAPON_SUBCLASS::MISSILE:
-			  case WEAPON_SUBCLASS::SLOW_ROCKET:
-			  case WEAPON_SUBCLASS::SLOW_MISSILE:
-			  	posFlip.z += 8; // Why?
-			  	addEffect(&posFlip, EFFECT_GROUP::SMOKE, 
-                    EFFECT_TYPE::SMOKE_TYPE_TRAIL, 
-                    false, nullptr, 0, effectTime);
-			  	break;
-			  default:
-			  	// Add smoke trail to indirect weapons, even if firing directly.
-			  	if (!proj_Direct(psStats.get())) {
-			  		posFlip.z += 4; // Why?
-			  		addEffect(&posFlip, EFFECT_GROUP::SMOKE,
-                      EFFECT_TYPE::SMOKE_TYPE_TRAIL, 
-                      false, nullptr, 0, effectTime);
-			  	}
-			  // Otherwise no effect.
-			  	break;
-			}
-		}
-	}
+        }
+        // Otherwise no effect.
+        break;
+    }
+  }
 }
 
 void Projectile::proj_ImpactFunc()
 {
-  Vector3i position;
-	std::unique_ptr<iIMDShape> imd;
-	PersistentObject* temp;
+  if (!pimpl) return;
 
-	auto psStats = weaponStats.get();
+  Vector3i position;
+	std::shared_ptr<iIMDShape> imd;
+  PlayerOwnedObject* temp;
+
+	auto psStats = pimpl->weaponStats;
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid weapon stats pointer");
 
 	// note the attacker if any
-	g_pProjLastAttacker = source;
+	g_pProjLastAttacker = pimpl->source;
 
-	/* play impact audio */
-	if (gfxVisible()) {
-		if (psStats->iAudioImpactID == NO_SOUND) {
-			/* play richochet if MG */
-			if (target != nullptr &&
-          psStats->weaponSubClass == WEAPON_SUBCLASS::MACHINE_GUN
-          && ONEINTHREE) {
-				auto iAudioImpactID = ID_SOUND_RICOCHET_1 + (rand() % 3);
-        
-				audio_PlayStaticTrack(target->getPosition().x,
-                              target->getPosition().y, 
+  if (!isVisible()) {}
+
+  /* play impact audio */
+  else {
+    if (psStats->iAudioImpactID == NO_SOUND) {
+      /* play richochet if MG */
+      if (pimpl->target != nullptr &&
+          psStats->weaponSubClass == WEAPON_SUBCLASS::MACHINE_GUN && ONEINTHREE) {
+        auto iAudioImpactID = ID_SOUND_RICOCHET_1 + (rand() % 3);
+
+        audio_PlayStaticTrack(pimpl->target->getPosition().x,
+                              pimpl->target->getPosition().y,
                               iAudioImpactID);
-			}
-		}
-		else {
-			audio_PlayStaticTrack(getPosition().x,
+      }
+    } else {
+      audio_PlayStaticTrack(getPosition().x,
                             getPosition().y,
                             psStats->iAudioImpactID);
-		}
+    }
 
-		/** Shouldn't need to do this check but the stats aren't all
-		 * at a value yet...
-		 */ // FIXME
-		if (psStats->upgraded[player].periodicalDamageRadius != 0 &&
-        psStats->upgraded[player].periodicalDamageTime != 0) {
-			position.x = getPosition().x;
-			position.z = getPosition().y; // z = y [sic] intentional
-			position.y = map_Height(position.x, position.z);
-			effectGiveAuxVar(psStats->upgraded[player].periodicalDamageRadius);
-			effectGiveAuxVarSec(psStats->upgraded[player].periodicalDamageTime);
-      
-			addEffect(&position, EFFECT_GROUP::FIRE, 
+    // Shouldn't need to do this check but the stats aren't all at a value yet... FIXME
+    if (psStats->upgraded[getPlayer()].periodicalDamageRadius != 0 &&
+        psStats->upgraded[getPlayer()].periodicalDamageTime != 0) {
+      position.x = getPosition().x;
+      position.z = getPosition().y;// z = y [sic] intentional
+      position.y = map_Height(position.x, position.z);
+      effectGiveAuxVar(psStats->upgraded[getPlayer()].periodicalDamageRadius);
+      effectGiveAuxVarSec(psStats->upgraded[getPlayer()].periodicalDamageTime);
+
+      addEffect(&position, EFFECT_GROUP::FIRE,
                 EFFECT_TYPE::FIRE_TYPE_LOCALISED,
-                false, nullptr, 0, time);
-		}
+                false, nullptr, 0, getTime());
+    }
 
-		// may want to add both a fire effect and the las sat effect
-		if (psStats->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT) { 
-			position.x = getPosition().x;
-			position.z = getPosition().y; // z = y [sic] intentional
-			position.y = map_Height(position.x, position.z);
-			addEffect(&position, EFFECT_GROUP::SAT_LASER,
+    // may want to add both a fire effect and the las sat effect
+    if (psStats->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT) {
+      position.x = getPosition().x;
+      position.z = getPosition().y;// z = y [sic] intentional
+      position.y = map_Height(position.x, position.z);
+      addEffect(&position, EFFECT_GROUP::SAT_LASER,
                 EFFECT_TYPE::SAT_LASER_STANDARD,
-                false, nullptr, 0, time);
+                false, nullptr, 0, getTime());
 
-			if (clipXY(getPosition().x, getPosition().y)) {
+      if (clipXY(getPosition().x, getPosition().y)) {
         // takes out lots of stuff so shake length is greater
-				shakeStart(1800);
-			}
-		}
-	}
+        shakeStart(1800);
+      }
+    }
+  }
 
-	if (psStats->upgraded[player].periodicalDamageRadius &&
-      psStats->upgraded[player].periodicalDamageTime) {
-		tileSetFire(getPosition().x, getPosition().y, 
-                psStats->upgraded[player].periodicalDamageTime);
-	}
+  if (psStats->upgraded[getPlayer()].periodicalDamageRadius &&
+      psStats->upgraded[getPlayer()].periodicalDamageTime) {
+    tileSetFire(getPosition().x, getPosition().y,
+                psStats->upgraded[getPlayer()].periodicalDamageTime);
+  }
 
-	// set the effects position and radius
-	position.x = getPosition().x;
-	position.z = getPosition().y; // z = y [sic] intentional
-	position.y = getPosition().z; // y = z [sic] intentional
-	auto x = psStats->upgraded[player].radius;
-	auto y = 0;
-	auto z = psStats->upgraded[player].radius;
+  // set the effects position and radius
+  position.x = getPosition().x;
+  position.z = getPosition().y; // z = y [sic] intentional
+  position.y = getPosition().z; // y = z [sic] intentional
+  auto x = psStats->upgraded[getPlayer()].radius;
+  auto y = 0;
+  auto z = psStats->upgraded[getPlayer()].radius;
   auto scatter = Vector3i{x, y, z};
 
-	// If the projectile missed its target (or the target died)
-	if (target == nullptr) {
-		if (gfxVisible()) {
-			// Get if we are facing or not
-			EFFECT_TYPE facing = (psStats->facePlayer
-              ? EFFECT_TYPE::EXPLOSION_TYPE_SPECIFIED
-              : EFFECT_TYPE::EXPLOSION_TYPE_NOT_FACING);
+  // If the projectile missed its target (or the target died)
+  if (pimpl->target == nullptr) {
+    if (isVisible()) {
+      // Get if we are facing or not
+      EFFECT_TYPE facing = (psStats->facePlayer
+                            ? EFFECT_TYPE::EXPLOSION_TYPE_SPECIFIED
+                            : EFFECT_TYPE::EXPLOSION_TYPE_NOT_FACING);
 
-			// the graphic to show depends on if we hit water or not
-			if (terrainType(mapTile(
+      // the graphic to show depends on if we hit water or not
+      if (terrainType(mapTile(
               map_coord(getPosition().x),
               map_coord(getPosition().y))) == TER_WATER) {
-				imd = psStats->pWaterHitGraphic;
-			}
-			// we did not hit water, the regular miss graphic will do the trick
-			else {
-				imd = std::make_unique<iIMDShape>(*psStats->pTargetMissGraphic);
-			}
+        imd = psStats->pWaterHitGraphic;
+      }
+        // we did not hit water, the regular miss graphic will do the trick
+      else {
+        imd = psStats->pTargetMissGraphic;
+      }
 
-			addMultiEffect(&position, &scatter,
+      addMultiEffect(&position, &scatter,
                      EFFECT_GROUP::EXPLOSION,
                      facing, true, imd.get(),
                      psStats->numExplosions, psStats->lightWorld,
-                     psStats->effectSize, time);
+                     psStats->effectSize, getTime());
 
-			// If the target was a VTOL hit in the air add smoke
-			if ((psStats->surfaceToAir & SHOOT_IN_AIR) && 
+      // If the target was a VTOL hit in the air add smoke
+      if ((psStats->surfaceToAir & SHOOT_IN_AIR) &&
           !(psStats->surfaceToAir & SHOOT_ON_GROUND)) {
-				addMultiEffect(&position, &scatter, EFFECT_GROUP::SMOKE,
+        addMultiEffect(&position, &scatter, EFFECT_GROUP::SMOKE,
                        EFFECT_TYPE::SMOKE_TYPE_DRIFTING, false,
-                       nullptr, 3, 0, 0, time);
-			}
-		}
-	}
-	// The projectile hit its intended target
-	else {
-		if (dynamic_cast<Feature*>(target) &&
-        dynamic_cast<Feature*>(target)->getStats()->damageable == 0) {
-			debug(LOG_NEVER, "proj_ImpactFunc: trying to damage "
+                       nullptr, 3, 0, 0, getTime());
+      }
+    }
+  }
+    // The projectile hit its intended target
+  else {
+    if (dynamic_cast<Feature*>(pimpl->target) &&
+        dynamic_cast<Feature*>(pimpl->target)->getStats()->damageable == 0) {
+      debug(LOG_NEVER, "proj_ImpactFunc: trying to damage "
                        "non-damageable target, projectile removed");
-			state = PROJECTILE_STATE::INACTIVE;
-			return;
-		}
+      pimpl->state = PROJECTILE_STATE::INACTIVE;
+      return;
+    }
 
-		if (gfxVisible()) {
-			// Get if we are facing or not
-			EFFECT_TYPE facing = (psStats->facePlayer
-              ? EFFECT_TYPE::EXPLOSION_TYPE_SPECIFIED 
-              : EFFECT_TYPE::EXPLOSION_TYPE_NOT_FACING);
+    if (isVisible()) {
+      // Get if we are facing or not
+      EFFECT_TYPE facing = (psStats->facePlayer
+                            ? EFFECT_TYPE::EXPLOSION_TYPE_SPECIFIED
+                            : EFFECT_TYPE::EXPLOSION_TYPE_NOT_FACING);
 
-			// if we hit a VTOL with an AA gun use the miss graphic and add some smoke
-			if ((psStats->surfaceToAir & SHOOT_IN_AIR) && 
-          !(psStats->surfaceToAir & SHOOT_ON_GROUND) && 
+      // if we hit a VTOL with an AA gun use the miss graphic and add some smoke
+      if ((psStats->surfaceToAir & SHOOT_IN_AIR) &&
+          !(psStats->surfaceToAir & SHOOT_ON_GROUND) &&
           psStats->weaponSubClass == WEAPON_SUBCLASS::AA_GUN) {
-				imd = std::make_unique<iIMDShape>(*psStats->pTargetMissGraphic);
-        
-				addMultiEffect(&position, &scatter,
+        imd = psStats->pTargetMissGraphic;
+
+        addMultiEffect(&position, &scatter,
                        EFFECT_GROUP::SMOKE,
                        EFFECT_TYPE::SMOKE_TYPE_DRIFTING,
                        false, nullptr, 3,
-                       0, 0, time);
-			}
-			// otherwise, we just hit it plain and simple
-			else {
-				imd = std::make_unique<iIMDShape>(*psStats->pTargetHitGraphic);
-			}
+                       0, 0, getTime());
+      }
+        // otherwise, we just hit it plain and simple
+      else {
+        imd = psStats->pTargetHitGraphic;
+      }
 
-			addMultiEffect(&position, &scatter, EFFECT_GROUP::EXPLOSION,
+      addMultiEffect(&position, &scatter, EFFECT_GROUP::EXPLOSION,
                      facing, true, imd.get(), psStats->numExplosions,
-			               psStats->lightWorld, psStats->effectSize, time);
-		}
+                     psStats->lightWorld, psStats->effectSize, getTime());
+    }
 
-		// check for electronic warfare damage where we know the subclass and source
-		if (proj_Direct(psStats) &&
-        psStats->weaponSubClass == WEAPON_SUBCLASS::ELECTRONIC && source) {
-			// if we did enough `damage' to capture the target
-			if (electronicDamage(target,
-			                     calcDamage(
-                                   weaponDamage(psStats, player),
-                                   psStats->weaponEffect, target),
-                           player)) {
-				if (auto psDroid = dynamic_cast<Droid*>(source)) {
+    // check for electronic warfare damage where we know the subclass and source
+    if (proj_Direct(psStats.get()) &&
+        psStats->weaponSubClass == WEAPON_SUBCLASS::ELECTRONIC && pimpl->source) {
+      // if we did enough `damage' to capture the target
+      if (electronicDamage(pimpl->target,
+                           calcDamage(weaponDamage(
+                                              psStats.get(), getPlayer()),
+                                      psStats->weaponEffect, pimpl->target),
+                           getPlayer())) {
+
+        if (auto psDroid = dynamic_cast<Droid*>(pimpl->source)) {
           psDroid->order.type = ORDER_TYPE::NONE;
           actionDroid(psDroid, ACTION::NONE);
         }
-        else if (auto psStruct = dynamic_cast<Structure*>(source)) {
+        else if (auto psStruct = dynamic_cast<Structure*>(pimpl->source)) {
           psStruct->psTarget[0] = nullptr;
         }
-			}
-		}
-		// else it is just a regular weapon (direct or indirect)
-		else {
-			// Calculate the damage the weapon does to its target
-			auto damage = calcDamage(
-              weaponDamage(psStats,
-                                      player),
-                                      psStats->weaponEffect,
-                                      target);
+      }
+    }
+      // else it is just a regular weapon (direct or indirect)
+    else {
+      // Calculate the damage the weapon does to its target
+      auto damage = calcDamage(weaponDamage(
+                                        psStats.get(), getPlayer()),
+                               psStats->weaponEffect, pimpl->target);
 
-			// if we are in a multiplayer game and the attacker is our responsibility
-			if (bMultiPlayer && source) {
-				updateMultiStatsDamage(source->getPlayer(), 
-                               target->getPlayer(), 
+      // if we are in a multiplayer game and the attacker is our responsibility
+      if (bMultiPlayer && pimpl->source) {
+        updateMultiStatsDamage(pimpl->source->getPlayer(),
+                               pimpl->target->getPlayer(),
                                damage);
-			}
+      }
 
-			debug(LOG_NEVER, "Damage to object %d, player %d\n",
-            target->getId(), target->getPlayer());
+      debug(LOG_NEVER, "Damage to object %d, player %d\n",
+            pimpl->target->getId(), pimpl->target->getPlayer());
 
-			struct Damage sDamage = {
-				psObj,
-				target,
-				damage,
-				psStats->weaponClass,
-				psStats->weaponSubClass,
-				time,
-				false,
-				(int)psStats->upgraded[player].minimumDamage
-			};
+      struct Damage sDamage = {
+              pimpl->target,
+              damage,
+              getTime(),
+              false,
+              (int)psStats->upgraded[getPlayer()].minimumDamage
+      };
 
-			// Damage the object
-			auto relativeDamage = objectDamage(&sDamage);
+      // Damage the object
+      auto relativeDamage = objectDamage(&sDamage);
 
       // so long as the target wasn't killed
-			if (relativeDamage >= 0) {
-				damaged.push_back(target);
-			}
-		}
-	}
+      if (relativeDamage >= 0) {
+        pimpl->damaged.push_back(pimpl->target);
+      }
+    }
+  }
 
-	temp = target;
-	setTarget(nullptr);
-	// The damage has been done, no more damage expected from 
+  temp = pimpl->target;
+  setTarget(nullptr);
+  // The damage has been done, no more damage expected from
   // this projectile. (Ignore periodical damaging.)
-	expectedDamageCaused = 0;
-	setTarget(temp);
+  pimpl->expectedDamageCaused = 0;
+  setTarget(temp);
 
-	// If the projectile does no splash damage and does not set fire to things
-	if (psStats->upgraded[player].radius == 0 &&
-      psStats->upgraded[player].periodicalDamageTime == 0) {
-		state = PROJECTILE_STATE::INACTIVE;
-		return;
-	}
+  // If the projectile does no splash damage and does not set fire to things
+  if (psStats->upgraded[getPlayer()].radius == 0 &&
+      psStats->upgraded[getPlayer()].periodicalDamageTime == 0) {
+    pimpl->state = PROJECTILE_STATE::INACTIVE;
+    return;
+  }
 
-	if (psStats->upgraded[player].radius != 0) {
-		/* An area effect bullet */
-		state = PROJECTILE_STATE::POST_IMPACT;
+  if (psStats->upgraded[getPlayer()].radius != 0) {
+    /* An area effect bullet */
+    pimpl->state = PROJECTILE_STATE::POST_IMPACT;
 
-		/* Note when it exploded for the explosion effect */
-		bornTime = gameTime;
+    /* Note when it exploded for the explosion effect */
+    bornTime = gameTime;
 
-		// If projectile impacts a droid start the splash damage from the center of it, else use whatever location the projectile impacts at as the splash center.
-		auto destDroid = dynamic_cast<Droid*>(target);
-		Vector3i targetPos = (destDroid != nullptr) ? destDroid->getPosition() : getPosition();
+    // If projectile impacts a droid start the splash damage from the center of it, else use whatever location the projectile impacts at as the splash center.
+    auto destDroid = dynamic_cast<Droid*>(pimpl->target);
+    Vector3i targetPos = (destDroid != nullptr) ? destDroid->getPosition() : getPosition();
 
-		static GridList gridList; // static to avoid allocations.
-		gridList = gridStartIterate(targetPos.x, targetPos.y, psStats->upgraded[player].radius);
+    static GridList gridList; // static to avoid allocations.
+    gridList = gridStartIterate(targetPos.x, targetPos.y, psStats->upgraded[getPlayer()].radius);
 
-		for (auto psCurr : gridList)
-		{
-			if (psCurr->died) {
-				continue; // Do not damage dead objects further.
-			}
+    for (auto psCurr : gridList)
+    {
+      if (psCurr->isDead()) {
+        continue; // Do not damage dead objects further.
+      }
 
-			if (psCurr == target) {
-				continue; // Don't hit main target twice.
-			}
+      if (psCurr == pimpl->target) {
+        continue; // Don't hit main target twice.
+      }
 
-			if (source && source->getPlayer() == psCurr->getPlayer() && 
+      if (pimpl->source && pimpl->source->getPlayer() == psCurr->getPlayer() &&
           psStats->flags.test(
-		     static_cast<size_t>(WEAPON_FLAGS::NO_FRIENDLY_FIRE))) {
-				continue; // this weapon does not do friendly damage
-			}
+                  static_cast<size_t>(WEAPON_FLAGS::NO_FRIENDLY_FIRE))) {
+        continue; // this weapon does not do friendly damage
+      }
 
-			bool bTargetInAir = false;
-			bool useSphere = false;
-			bool damageable = true;
-			switch (psCurr->type) {
-			case OBJ_DROID:
-				bTargetInAir = asPropulsionTypes[asPropulsionStats[((Droid*)psCurr)->asBits[COMP_PROPULSION]].
-					propulsionType].travel == TRAVEL_MEDIUM::AIR && ((Droid*)psCurr)->movement.status != MOVE_STATUS::INACTIVE;
-				useSphere = true;
-				break;
-			case OBJ_STRUCTURE:
-				break;
-			case OBJ_FEATURE:
-				damageable = ((Feature*)psCurr)->psStats->damageable;
-				break;
-			default: ASSERT(false, "Bad type.");
-				continue;
-			}
+      bool bTargetInAir = false;
+      bool useSphere = false;
+      bool damageable = true;
 
-			if (!damageable)
-			{
-				continue; // Ignore features that are not damageable.
-			}
-			unsigned targetInFlag = bTargetInAir ? SHOOT_IN_AIR : SHOOT_ON_GROUND;
-			if ((psStats->surfaceToAir & targetInFlag) == 0)
-			{
-				continue; // Target in air, and can't shoot at air, or target on ground, and can't shoot at ground.
-			}
-			if (useSphere && !Vector3i_InSphere(psCurr->getPosition(), targetPos, psStats->upgraded[player].radius))
-			{
-				continue; // Target out of range.
-			}
-			// The psCurr will get damaged, at this point.
-			unsigned damage = calcDamage(weaponRadDamage(psStats, player), psStats->weaponEffect, psCurr);
-			debug(LOG_ATTACK, "Damage to object %d, player %d : %u", psCurr->getId(), psCurr->getPlayer(), damage);
-			if (bMultiPlayer && source != nullptr && psCurr->type != OBJ_FEATURE)
-			{
-				updateMultiStatsDamage(source->getPlayer(), psCurr->getPlayer(), damage);
-			}
+      if (auto psDroid = dynamic_cast<Droid*>(psCurr)) {
+        auto propulsion = dynamic_cast<PropulsionStats const *>(
+                psDroid->getComponent("propulsion"));
 
-			struct Damage sDamage = {
-				psObj,
-				psCurr,
-				damage,
-				psStats->weaponClass,
-				psStats->weaponSubClass,
-				time,
-				false,
-				(int)psStats->upgraded[player].minimumDamage
-			};
+        if (!propulsion) continue;
 
-			objectDamage(&sDamage);
-		}
-	}
+        bTargetInAir = asPropulsionTypes[static_cast<int>(
+                propulsion->propulsionType)] .travel == TRAVEL_MEDIUM::AIR &&
+                psDroid->getMovementData()->status != MOVE_STATUS::INACTIVE;
+        useSphere = true;
+      }
+      else if (auto psFeature = dynamic_cast<Feature*>(psCurr)) {
+        damageable = ((Feature *) psCurr)->getStats()->damageable;
+      }
+      else {
+        continue;
+      }
 
-	if (psStats->upgraded[player].periodicalDamageTime != 0) {
-		/* Periodical damage round */
-		/* Periodical damage gets done in the bullet update routine */
-		/* Just note when started damaging          */
-		state = PROJECTILE_STATE::POST_IMPACT;
-		bornTime = gameTime;
-	}
-	/* Something was blown up */
+      if (!damageable) {
+        continue; // Ignore features that are not damageable.
+      }
+      auto targetInFlag = bTargetInAir ? SHOOT_IN_AIR : SHOOT_ON_GROUND;
+      if ((psStats->surfaceToAir & targetInFlag) == 0) {
+        continue; // Target in air, and can't shoot at air, or target on ground, and can't shoot at ground.
+      }
+      if (useSphere && !Vector3i_InSphere(
+              psCurr->getPosition(), targetPos,
+              psStats->upgraded[getPlayer()].radius)) {
+        continue; // Target out of range.
+      }
+      // The psCurr will get damaged, at this point.
+      auto damage = calcDamage(weaponRadDamage(
+                                       psStats.get(), getPlayer()),
+                               psStats->weaponEffect, psCurr);
+
+      debug(LOG_ATTACK, "Damage to object %d, player %d : %u", psCurr->getId(), psCurr->getPlayer(), damage);
+      if (bMultiPlayer && pimpl->source != nullptr && psCurr->type != OBJ_FEATURE) {
+        updateMultiStatsDamage(pimpl->source->getPlayer(), psCurr->getPlayer(), damage);
+      }
+
+      struct Damage sDamage = {
+              psObj,
+              psCurr,
+              damage,
+              psStats->weaponClass,
+              psStats->weaponSubClass,
+              time,
+              false,
+              (int)psStats->upgraded[getPlayer()].minimumDamage
+      };
+
+      objectDamage(&sDamage);
+    }
+  }
+
+  if (psStats->upgraded[getPlayer()].periodicalDamageTime != 0) {
+    /* Periodical damage round */
+    /* Periodical damage gets done in the bullet update routine */
+    /* Just note when started damaging          */
+    pimpl->state = PROJECTILE_STATE::POST_IMPACT;
+    bornTime = gameTime;
+  }
+  /* Something was blown up */
 }
-
 
 void Projectile::proj_PostImpactFunc()
 {
-	WeaponStats* psStats = weaponStats.get();
+  if (!pimpl) return;
+	auto psStats = pimpl->weaponStats;
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid weapon stats pointer");
 
 	auto age = gameTime - bornTime;
 
 	/* Time to finish postimpact effect? */
 	if (age > psStats->radiusLife &&
-      age > psStats->upgraded[player].periodicalDamageTime) {
-		state = PROJECTILE_STATE::INACTIVE;
+      age > psStats->upgraded[getPlayer()].periodicalDamageTime) {
+		pimpl->state = PROJECTILE_STATE::INACTIVE;
 		return;
 	}
 
 	/* Periodical damage effect */
-	if (psStats->upgraded[player].periodicalDamageTime > 0) {
+	if (psStats->upgraded[getPlayer()].periodicalDamageTime > 0) {
 		/* See if anything is in the fire and damage it periodically */
-		proj_checkPeriodicalDamage(psObj);
+		proj_checkPeriodicalDamage();
 	}
 }
 
 void Projectile::update()
 {
+  if (!pimpl) return;
   previousLocation = Spacetime();
 
 	// see if any of the stored objects have died
 	// since the projectile was created
-	if (source && source->died) {
+	if (pimpl->source && pimpl->source->isDead()) {
 		setProjectileSource(this, nullptr);
 	}
-	if (target && target->died) {
+	if (pimpl->target && pimpl->target->isDead()) {
 		setTarget(nullptr);
 	}
 
 	// remove dead objects from psDamaged.
-	damaged.erase(std::remove_if(damaged.begin(), damaged.end(),
-                               [](const PersistentObject* psObj)
-                                 { return ::isDead(psObj); }), damaged.end());
+	pimpl->damaged.erase(std::remove_if(pimpl->damaged.begin(), pimpl->damaged.end(),
+                                      [](const PlayerOwnedObject* psObj) {
+                                        return psObj->isDead();
+                                      }), pimpl->damaged.end());
 
 	// This extra check fixes a crash in cam2, mission1
 	if (!worldOnMap(getPosition().x, getPosition().y)) {
@@ -1262,23 +1443,21 @@ void Projectile::update()
 		return;
 	}
 
-	switch (state) {
+	switch (pimpl->state) {
+    using enum PROJECTILE_STATE;
   	case INFLIGHT:
   		proj_InFlightFunc();
-  		if (state != IMPACT) {
+  		if (pimpl->state != IMPACT) {
   			break;
   		}
-  	// fallthrough
   	case IMPACT:
   		proj_ImpactFunc();
-  		if (state != POST_IMPACT) {
+  		if (pimpl->state != POST_IMPACT) {
   			break;
   		}
-  	// fallthrough
   	case POST_IMPACT:
   		proj_PostImpactFunc();
   		break;
-  
   	case INACTIVE:
   		died = getTime();
   		break;
@@ -1301,59 +1480,59 @@ void proj_UpdateAll()
 
 void Projectile::proj_checkPeriodicalDamage()
 {
-	// note the attacker if any
-	g_pProjLastAttacker = source;
+  if (!pimpl) return;
 
-	auto& psStats = weaponStats;
+	// note the attacker if any
+	g_pProjLastAttacker = pimpl->source;
+
+	auto psStats = pimpl->weaponStats;
 
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(getPosition().x, 
                               getPosition().y,
-                              psStats->upgraded[player].periodicalDamageRadius);
+                              psStats->upgraded[getPlayer()].periodicalDamageRadius);
   
 	for (auto psCurr : gridList)
 	{
-    if (psCurr->died) {
+    if (psCurr->isDead()) {
 			continue; // Do not damage dead objects further.
 		}
 
-		if (aiCheckAlliances(player, psCurr->getPlayer())) {
+		if (aiCheckAlliances(getPlayer(), psCurr->getPlayer())) {
 			continue; // Don't damage your own droids, nor ally droids - unrealistic, but better.
 		}
 
 		if (dynamic_cast<Droid*>(psCurr) &&
         dynamic_cast<Droid*>(psCurr)->isVtol() &&
         dynamic_cast<Droid*>(psCurr)->getMovementData()
-          .status != MOVE_STATUS::INACTIVE) {
+          ->status != MOVE_STATUS::INACTIVE) {
 			continue; // Can't set flying vtols on fire.
 		}
 
-		if (psCurr->type == OBJ_FEATURE && 
-        !((Feature*)psCurr)->psStats->damageable) {
+		if (dynamic_cast<Feature*>(psCurr) &&
+        !dynamic_cast<Feature*>(psCurr)->getStats()->damageable) {
 			continue; // Can't destroy oil wells.
 		}
 
-		if (psCurr->periodicalDamageStart != gameTime) {
-			psCurr->periodicalDamageStart = gameTime;
+		if (psCurr->periodicalDamageStartTime != gameTime) {
+			psCurr->periodicalDamageStartTime = gameTime;
 			psCurr->periodicalDamage = 0; // Reset periodical damage done this tick.
 		}
-		unsigned damageRate = calcDamage(weaponPeriodicalDamage(psStats, player),
-		                                 psStats->periodicalDamageWeaponEffect, psCurr);
-		debug(LOG_NEVER, "Periodical damage of %d per second to object %d, player %d\n", damageRate, psCurr->getId(),
-		      psCurr->getPlayer());
+		unsigned damageRate = calcDamage(
+            weaponPeriodicalDamage(psStats.get(), getPlayer()),
+            psStats->periodicalDamageWeaponEffect, psCurr);
 
-		struct Damage sDamage = {
-			psProj,
-			psCurr,
-			damageRate,
-			psStats->periodicalDamageWeaponClass,
-			psStats->periodicalDamageWeaponSubClass,
-			gameTime - deltaGameTime / 2 + 1,
-			true,
-			(int)psStats->upgraded[player].minimumDamage
-		};
+		debug(LOG_NEVER, "Periodical damage of %d per second to object %d, player %d\n",
+          damageRate, psCurr->getId(), psCurr->getPlayer());
 
-		objectDamage(&sDamage);
+		auto sDamage = std::make_unique<Damage>();
+		sDamage->pimpl->target = psCurr;
+		sDamage->pimpl->damage = damageRate,
+		sDamage->pimpl->impactTime = gameTime - deltaGameTime / 2 + 1,
+		sDamage->pimpl->isDamagePerSecond = true;
+		sDamage->pimpl->minDamage = psStats->upgraded[getPlayer()].minimumDamage;
+
+		objectDamage(sDamage.get());
 	}
 }
 
@@ -1373,7 +1552,7 @@ bool proj_Direct(const WeaponStats* psStats)
 }
 
 #define ASSERT_PLAYER_OR_RETURN(retVal, player) \
-	ASSERT_OR_RETURN(retVal, player >= 0 && player < MAX_PLAYERS, \
+	ASSERT_OR_RETURN(retVal, (player) >= 0 && (player) < MAX_PLAYERS, \
                    "Invalid player: %" PRIu32 "", player);
 
 // return the maximum range for a weapon
@@ -1397,10 +1576,9 @@ unsigned proj_GetShortRange(const WeaponStats* psStats, unsigned player)
 	return psStats->upgraded[player].shortRange;
 }
 
-ObjectShape establishTargetShape(PersistentObject* psTarget)
+ObjectShape establishTargetShape(PlayerOwnedObject* psTarget)
 {
-	switch (psTarget->type) {
-	case OBJ_DROID: // Circular.
+	if (auto psDroid = dynamic_cast<Droid*>(psTarget)) // circular
 		switch (dynamic_cast<Droid*>(psTarget)->getType()) {
       using enum DROID_TYPE;
 		  case WEAPON:
@@ -1440,7 +1618,7 @@ ObjectShape establishTargetShape(PersistentObject* psTarget)
 
 /*the damage depends on the weapon effect and the target propulsion type or
 structure strength*/
-unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, PersistentObject* psTarget)
+unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, PlayerOwnedObject const* psTarget)
 {
 	if (baseDamage == 0) {
 		return 0;
@@ -1448,12 +1626,12 @@ unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, PersistentO
 
 	auto damage = baseDamage * 100;
 
-	if (dynamic_cast<Structure*>(psTarget))
+	if (dynamic_cast<Structure const*>(psTarget))
 	{
 		damage += baseDamage * (asStructStrengthModifier[weaponEffect][((Structure*)psTarget)->pStructureType->strength]
 			- 100);
 	}
-	else if (dynamic_cast<Droid*>(psTarget))
+	else if (dynamic_cast<Droid const*>(psTarget))
 	{
 		const int propulsion = (asPropulsionStats + ((Droid*)psTarget)->asBits[COMP_PROPULSION])->propulsionType;
 		const int body = (asBodyStats + ((Droid*)psTarget)->asBits[COMP_BODY])->size;
@@ -1566,7 +1744,7 @@ int Damage::objectDamage()
 }
 
 /// @return true if `psObj` has just been hit by an electronic warfare weapon
-static bool justBeenHitByEW(PersistentObject* psObj)
+static bool justBeenHitByEW(PlayerOwnedObject * psObj)
 {
 	if (gamePaused()) {
 		return false;
@@ -1596,7 +1774,7 @@ static bool justBeenHitByEW(PersistentObject* psObj)
 	return false;
 }
 
-glm::mat4 objectShimmy(PersistentObject* psObj)
+glm::mat4 objectShimmy(PlayerOwnedObject * psObj)
 {
 	if (justBeenHitByEW(psObj)) {
 		const glm::mat4 rotations =
@@ -1616,7 +1794,7 @@ glm::mat4 objectShimmy(PersistentObject* psObj)
 
 static constexpr auto BULLET_FLIGHT_HEIGHT = 16;
 
-int establishTargetHeight(PersistentObject const* psTarget)
+int establishTargetHeight(PlayerOwnedObject const* psTarget)
 {
 	if (!psTarget) {
 		return 0;
@@ -1722,7 +1900,7 @@ int establishTargetHeight(PersistentObject const* psTarget)
 //                static_cast<unsigned>(state));
 //}
 
-void Projectile::setSource(::PersistentObject *psObj)
+void Projectile::setSource(::PlayerOwnedObject *psObj)
 {
 	// use the source of the source of psProj if psAttacker is a projectile
 	source = nullptr;

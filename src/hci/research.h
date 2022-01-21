@@ -32,7 +32,7 @@ public:
 		return facilities[index];
 	}
 
-	bool findObject(std::function<bool (PersistentObject*)> iteration) const override
+	bool findObject(std::function<bool (PlayerOwnedObject *)> iteration) const override
 	{
 		return BaseObjectsController::findObject(facilities, iteration);
 	}
@@ -52,7 +52,7 @@ public:
 		return highlightedFacility;
 	}
 
-	void setHighlightedObject(PersistentObject* object) override;
+	void setHighlightedObject(PlayerOwnedObject * object) override;
 
 private:
 	void updateFacilitiesList();

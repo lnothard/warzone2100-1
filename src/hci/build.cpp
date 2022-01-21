@@ -148,7 +148,7 @@ void BuildController::toggleBuilderSelection(Droid* droid)
 	triggerEventSelected();
 }
 
-void BuildController::setHighlightedObject(PersistentObject* object)
+void BuildController::setHighlightedObject(PlayerOwnedObject * object)
 {
 	if (object == nullptr)
 	{

@@ -65,7 +65,7 @@ static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, std::size_t 
                                   st1.time, st2.time, t)};
 }
 
-Spacetime interpolateObjectSpacetime(const PersistentObject* obj, unsigned t)
+Spacetime interpolateObjectSpacetime(const PlayerOwnedObject * obj, unsigned t)
 {
 	if (auto psDroid = dynamic_cast<const Droid*>(obj)) {
     return interpolateSpacetime(psDroid->getPreviousLocation(),
@@ -141,7 +141,7 @@ Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 	return {1, 1};
 }
 
-StructureBounds getStructureBounds(PersistentObject const* object)
+StructureBounds getStructureBounds(PlayerOwnedObject const* object)
 {
 	auto const psStructure = dynamic_cast<const Structure*>(object);
 	auto const psFeature = dynamic_cast<const Feature*>(object);

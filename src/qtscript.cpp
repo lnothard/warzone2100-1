@@ -89,11 +89,11 @@ int scripting_engine::GROUPMAP::newGroupID()
 	return newId;
 }
 
-void scripting_engine::GROUPMAP::insertObjectIntoGroup(const PersistentObject* psObj,
+void scripting_engine::GROUPMAP::insertObjectIntoGroup(const PlayerOwnedObject * psObj,
                                                        scripting_engine::GROUPMAP::groupID groupId)
 {
 	std::pair<ObjectToGroupMap::iterator, bool> result = m_map.insert(
-		std::pair<const PersistentObject*, scripting_engine::GROUPMAP::groupID>(psObj, groupId));
+		std::pair<const PlayerOwnedObject *, scripting_engine::GROUPMAP::groupID>(psObj, groupId));
 	if (result.second)
 	{
 		auto groupSetResult = m_groups[groupId].insert(psObj);
@@ -112,7 +112,7 @@ size_t scripting_engine::GROUPMAP::groupSize(GROUPMAP::groupID groupId) const
 }
 
 optional<scripting_engine::GROUPMAP::groupID> scripting_engine::GROUPMAP::removeObjectFromGroup(
-	const PersistentObject* psObj)
+	const PlayerOwnedObject * psObj)
 {
 	auto it = m_map.find(psObj);
 	if (it != m_map.end())
@@ -127,9 +127,9 @@ optional<scripting_engine::GROUPMAP::groupID> scripting_engine::GROUPMAP::remove
 	return {};
 }
 
-std::vector<const PersistentObject*> scripting_engine::GROUPMAP::getGroupObjects(groupID groupId) const
+std::vector<const PlayerOwnedObject *> scripting_engine::GROUPMAP::getGroupObjects(groupID groupId) const
 {
-	std::vector<const PersistentObject*> result;
+	std::vector<const PlayerOwnedObject *> result;
 	auto it = m_groups.find(groupId);
 	if (it != m_groups.end())
 	{
@@ -209,7 +209,7 @@ uniqueTimerID scripting_engine::getNextAvailableTimerID()
 
 uniqueTimerID scripting_engine::setTimer(wzapi::scripting_instance* caller, const TimerFunc& timerFunc, unsigned player,
                                          int milliseconds, const std::string& timerName /*= ""*/,
-                                         const PersistentObject* obj /*= nullptr*/, timerType type /*= TIMER_REPEAT*/,
+                                         const PlayerOwnedObject * obj /*= nullptr*/, timerType type /*= TIMER_REPEAT*/,
                                          std::unique_ptr<timerAdditionalData> additionalParam /*= nullptr*/)
 {
 	uniqueTimerID newTimerID = getNextAvailableTimerID();
@@ -362,7 +362,7 @@ bool scripting_engine::removeTimer(uniqueTimerID timerID)
 	return false;
 }
 
-void scriptRemoveObject(const PersistentObject* psObj)
+void scriptRemoveObject(const PlayerOwnedObject * psObj)
 {
 	// Weed out timers with dead objects
 	scripting_engine::instance().removeTimersIf([psObj](const scripting_engine::timerNode& node)
@@ -1051,7 +1051,7 @@ void jsShowDebug()
 //__ ## eventMenuManufacture()
 //__An event that is run when current user opens the manufacture menu.
 //__
-bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, PersistentObject* psObj)
+bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, PlayerOwnedObject * psObj)
 {
 	// HACK: TRIGGER_VIDEO_QUIT is called before scripts for initial campaign video
 	ASSERT(scriptsReady || trigger == TRIGGER_VIDEO_QUIT, "Scripts not initialized yet");
@@ -1317,7 +1317,7 @@ bool triggerEventStructureUpgradeStarted(Structure* psStruct)
 //__ An event that is run when an object belonging to the script's controlling player is
 //__ attacked. The attacker parameter may be either a structure or a droid.
 //__
-bool triggerEventAttacked(PersistentObject* psVictim, PersistentObject* psAttacker, int lastHit)
+bool triggerEventAttacked(PlayerOwnedObject * psVictim, PlayerOwnedObject * psAttacker, int lastHit)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psAttacker) {
@@ -1373,7 +1373,7 @@ bool triggerEventResearched(ResearchStats* psResearch, Structure* psStruct, unsi
 //__ An event that is run whenever an object is destroyed. Careful passing
 //__ the parameter object around, since it is about to vanish!
 //__
-bool triggerEventDestroyed(PersistentObject* psVictim)
+bool triggerEventDestroyed(PlayerOwnedObject * psVictim)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psVictim) { return true; }
@@ -1415,12 +1415,12 @@ bool triggerEventPickup(Feature* psFeat, Droid* psDroid)
 //__ First parameter is **game object** doing the seeing, the next the id of the group
 //__ being seen.
 //__
-bool triggerEventSeen(PersistentObject* psViewer, PersistentObject* psSeen)
+bool triggerEventSeen(PlayerOwnedObject * psViewer, PlayerOwnedObject * psSeen)
 {
 	return scripting_engine::instance().triggerEventSeen(psViewer, psSeen);
 }
 
-bool scripting_engine::triggerEventSeen(PersistentObject* psViewer, PersistentObject* psSeen)
+bool scripting_engine::triggerEventSeen(PlayerOwnedObject * psViewer, PlayerOwnedObject * psSeen)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psSeen || !psViewer) { return true; }
@@ -1447,7 +1447,7 @@ bool scripting_engine::triggerEventSeen(PersistentObject* psViewer, PersistentOb
 //__ object has been transferred, so the target player is in object.player.
 //__ The event is called for both players.
 //__
-bool triggerEventObjectTransfer(PersistentObject* psObj, unsigned from)
+bool triggerEventObjectTransfer(PlayerOwnedObject * psObj, unsigned from)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psObj) { return true; }
@@ -1552,7 +1552,7 @@ bool triggerEventSelected()
 //__ is the about to be killed object, the group's id, and the new group size.
 //__
 // Since groups are entities local to one context, we do not iterate over them here.
-bool triggerEventGroupLoss(const PersistentObject* psObj, int group, int size, wzapi::scripting_instance* instance)
+bool triggerEventGroupLoss(const PlayerOwnedObject * psObj, int group, int size, wzapi::scripting_instance* instance)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	return instance->handle_eventGroupLoss(psObj, group, size);
@@ -1649,7 +1649,7 @@ bool triggerEventAllianceBroken(uint8_t from, uint8_t to)
 //__ to prevent desync from happening. Sync requests must be carefully validated to prevent
 //__ cheating!
 //__
-bool triggerEventSyncRequest(int from, int req_id, int x, int y, PersistentObject* psObj, PersistentObject* psObj2)
+bool triggerEventSyncRequest(int from, int req_id, int x, int y, PlayerOwnedObject * psObj, PlayerOwnedObject * psObj2)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
@@ -1858,8 +1858,8 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 
 // The bool return value is true when an object callback needs to be called.
 // The int return value holds group id when a group callback needs to be called, 0 otherwise.
-std::pair<bool, int> scripting_engine::seenLabelCheck(wzapi::scripting_instance* instance, const PersistentObject* seen,
-                                                      const PersistentObject* viewer)
+std::pair<bool, int> scripting_engine::seenLabelCheck(wzapi::scripting_instance* instance, const PlayerOwnedObject * seen,
+                                                      const PlayerOwnedObject * viewer)
 {
 	GROUPMAP* psMap = getGroupMap(instance);
 	ASSERT_OR_RETURN(std::make_pair(false, 0), psMap != nullptr, "Non-existent groupmap for engine");
@@ -1930,7 +1930,7 @@ scripting_engine::GROUPMAP* scripting_engine::getGroupMap(wzapi::scripting_insta
 	return psMap;
 }
 
-void scripting_engine::removeFromGroup(wzapi::scripting_instance* instance, GROUPMAP* psMap, const PersistentObject* psObj)
+void scripting_engine::removeFromGroup(wzapi::scripting_instance* instance, GROUPMAP* psMap, const PlayerOwnedObject * psObj)
 {
 	auto result = psMap->removeObjectFromGroup(psObj);
 	if (result.has_value()) {
@@ -1941,7 +1941,7 @@ void scripting_engine::removeFromGroup(wzapi::scripting_instance* instance, GROU
 	}
 }
 
-void scripting_engine::groupRemoveObject(const PersistentObject* psObj)
+void scripting_engine::groupRemoveObject(const PlayerOwnedObject * psObj)
 {
 	for (auto & group : groups)
 	{
@@ -1949,7 +1949,7 @@ void scripting_engine::groupRemoveObject(const PersistentObject* psObj)
 	}
 }
 
-bool scripting_engine::groupAddObject(const PersistentObject* psObj, int groupId, wzapi::scripting_instance* instance)
+bool scripting_engine::groupAddObject(const PlayerOwnedObject * psObj, int groupId, wzapi::scripting_instance* instance)
 {
 	ASSERT_OR_RETURN(false, psObj && instance, "Bad parameter");
 	auto psMap = getGroupMap(instance);
@@ -1974,7 +1974,7 @@ bool scripting_engine::saveGroups(nlohmann::json& result, wzapi::scripting_insta
 	result["lastNewGroupId"] = psMap->getLastNewGroupId();
 	for (auto i : psMap->map())
 	{
-		const PersistentObject* psObj = i.first;
+		const PlayerOwnedObject * psObj = i.first;
 		ASSERT(!isDead(psObj), "Wanted to save dead %s to savegame!", objInfo(psObj));
 		std::vector<WzString> value = json_getValue(result, WzString::number(psObj->getId())).toWzStringList();
 		value.push_back(WzString::number(i.second));
@@ -2067,7 +2067,7 @@ bool scripting_engine::loadLabels(const char* filename)
 			for (WzString const& j : memberList)
 			{
 				int id = j.toInt();
-				PersistentObject* psObj = IdToPointer(id, p.player);
+        PlayerOwnedObject * psObj = IdToPointer(id, p.player);
 				ASSERT(psObj, "Unit %d belonging to player %d not found from label %s",
 				       id, p.player, i.toUtf8().c_str());
 				p.idlist.push_back(id);
@@ -2307,7 +2307,7 @@ int generic_script_object::getGroupId() const // if type == SCRIPT_GROUP, return
 	return id;
 }
 
-generic_script_object generic_script_object::fromObject(const PersistentObject* psObj)
+generic_script_object generic_script_object::fromObject(const PlayerOwnedObject * psObj)
 {
 	generic_script_object result;
 	if (psObj == nullptr)
@@ -2320,7 +2320,7 @@ generic_script_object generic_script_object::fromObject(const PersistentObject* 
 	return result;
 }
 
-PersistentObject* generic_script_object::getObject() const
+PlayerOwnedObject * generic_script_object::getObject() const
 // if type == OBJ_DROID, OBJ_FEATURE, OBJ_STRUCTURE, returns the game object
 {
 	ASSERT(isObject(), "generic_script_object is not an object; type: %d", type);
@@ -2364,7 +2364,7 @@ wzapi::no_return_value scripting_engine::addLabel(
 
 	if (value.type == OBJ_DROID || value.type == OBJ_STRUCTURE || value.type == OBJ_FEATURE)
 	{
-		PersistentObject* psObj = IdToObject((OBJECT_TYPE)value.type, value.id, value.player);
+    PlayerOwnedObject * psObj = IdToObject((OBJECT_TYPE)value.type, value.id, value.player);
 		SCRIPT_ASSERT({}, context, psObj, "Object id %d not found belonging to player %d", value.id, value.player);
 	}
 
@@ -2399,7 +2399,7 @@ int scripting_engine::removeLabel(WZAPI_PARAMS(const std::string& label))
 //-- label found will be returned. If the object has no labels, undefined is returned.
 //-- This is a relatively slow operation of O(n) algorithmic complexity. (3.2+ only)
 //--
-optional<std::string> scripting_engine::getLabel(WZAPI_PARAMS(const PersistentObject *psObj))
+optional<std::string> scripting_engine::getLabel(WZAPI_PARAMS(const PlayerOwnedObject *psObj))
 {
 	ASSERT_OR_RETURN(nullopt, psObj, "No valid object provided");
 	wzapi::game_object_identifier tmp;
@@ -2488,7 +2488,7 @@ generic_script_object scripting_engine::getObject(WZAPI_PARAMS(const wzapi::obje
 generic_script_object scripting_engine::getObjectFromLabel(WZAPI_PARAMS(const std::string& label))
 {
 	// get by label case
-	PersistentObject* psObj = nullptr;
+  PlayerOwnedObject * psObj = nullptr;
 	if (labels.count(label) > 0)
 	{
 		const LABEL& p = labels[label];
@@ -2533,7 +2533,7 @@ generic_script_object scripting_engine::getObjectFromLabel(WZAPI_PARAMS(const st
 //-- positions or a label to an AREA. Calling this function is much faster than iterating over all
 //-- game objects using other enum functions. (3.2+ only)
 //--
-std::vector<const PersistentObject*> scripting_engine::enumAreaByLabel(
+std::vector<const PlayerOwnedObject *> scripting_engine::enumAreaByLabel(
 	WZAPI_PARAMS(const std::string& label, optional<int> _playerFilter, optional<bool> _seen))
 {
 	SCRIPT_ASSERT({}, context, instance().labels.count(label) > 0, "Label %s not found", label.c_str());
@@ -2546,10 +2546,10 @@ std::vector<const PersistentObject*> scripting_engine::enumAreaByLabel(
 	return _enumAreaWorldCoords(context, x1, y1, x2, y2, _playerFilter, _seen);
 }
 
-typedef std::vector<PersistentObject*> GridList;
+typedef std::vector<PlayerOwnedObject *> GridList;
 #include "mapgrid.h"
 
-std::vector<const PersistentObject*> scripting_engine::enumArea(
+std::vector<const PlayerOwnedObject *> scripting_engine::enumArea(
 	WZAPI_PARAMS(scr_area area, optional<int> _playerFilter, optional<bool> _seen))
 {
 	int x1 = world_coord(area.x1);
@@ -2559,7 +2559,7 @@ std::vector<const PersistentObject*> scripting_engine::enumArea(
 	return _enumAreaWorldCoords(context, x1, y1, x2, y2, _playerFilter, _seen);
 }
 
-std::vector<const PersistentObject*> scripting_engine::_enumAreaWorldCoords(
+std::vector<const PlayerOwnedObject *> scripting_engine::_enumAreaWorldCoords(
 	WZAPI_PARAMS(int x1, int y1, int x2, int y2, optional<int> _playerFilter, optional<bool> _seen))
 {
 	unsigned player = context.player();
@@ -2568,7 +2568,7 @@ std::vector<const PersistentObject*> scripting_engine::_enumAreaWorldCoords(
 
 	static GridList gridList; // static to avoid allocations. // not thread-safe
 	gridList = gridStartIterateArea(x1, y1, x2, y2);
-	std::vector<const PersistentObject*> list;
+	std::vector<const PlayerOwnedObject *> list;
 	for (auto psObj : gridList)
 	{
 			if ((psObj->visible[player] || !seen) && !psObj->died)
@@ -2584,7 +2584,7 @@ std::vector<const PersistentObject*> scripting_engine::_enumAreaWorldCoords(
 	return list;
 }
 
-std::vector<const PersistentObject*> scripting_engine::enumAreaJS(WZAPI_PARAMS(
+std::vector<const PlayerOwnedObject *> scripting_engine::enumAreaJS(WZAPI_PARAMS(
 	scripting_engine::area_by_values_or_area_label_lookup area_lookup, optional<int> playerFilter, optional<bool> seen))
 {
 	if (area_lookup.isLabel())
@@ -2605,9 +2605,9 @@ std::vector<const PersistentObject*> scripting_engine::enumAreaJS(WZAPI_PARAMS(
 //--
 //-- Return an array containing all the members of a given group.
 //--
-std::vector<const PersistentObject*> scripting_engine::enumGroup(WZAPI_PARAMS(int groupId))
+std::vector<const PlayerOwnedObject *> scripting_engine::enumGroup(WZAPI_PARAMS(int groupId))
 {
-	std::vector<const PersistentObject*> matches;
+	std::vector<const PlayerOwnedObject *> matches;
 	GROUPMAP* psMap = instance().getGroupMap(context.currentInstance());
 
 	if (psMap != nullptr)
@@ -2667,7 +2667,7 @@ wzapi::no_return_value scripting_engine::groupAddDroid(WZAPI_PARAMS(int groupId,
 //--
 //-- Add given game object to the given group.
 //--
-wzapi::no_return_value scripting_engine::groupAdd(WZAPI_PARAMS(int groupId, const PersistentObject *psObj))
+wzapi::no_return_value scripting_engine::groupAdd(WZAPI_PARAMS(int groupId, const PlayerOwnedObject *psObj))
 {
 	SCRIPT_ASSERT({}, context, psObj, "No valid object provided");
 	scripting_engine::instance().groupAddObject(psObj, groupId, context.currentInstance());

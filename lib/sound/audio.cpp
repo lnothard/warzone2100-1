@@ -830,7 +830,7 @@ bool audio_PlayObjStaticTrackCallback(SIMPLE_OBJECT *psObj, int iTrack, AUDIO_CA
 // =======================================================================================================================
 // =======================================================================================================================
 //
-bool audio_PlayObjDynamicTrack(PersistentObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
+bool audio_PlayObjDynamicTrack(PlayerOwnedObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
 {
 	int	iX, iY, iZ;
 
@@ -1111,7 +1111,7 @@ SDWORD audio_GetTrackID(const char *fileName)
  *  \param psObj pointer to the object for which we must destroy all of its
  *               outstanding audio samples.
  */
-void audio_RemoveObj(PersistentObject const* psObj)
+void audio_RemoveObj(PlayerOwnedObject const* psObj)
 {
 	unsigned int count = 0;
 

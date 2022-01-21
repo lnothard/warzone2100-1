@@ -65,6 +65,7 @@ static std::array<int, MAX_PLAYERS> experienceGain;
 /// The range for neighbouring objects
 static constexpr auto PROJ_NEIGHBOUR_RANGE = TILE_UNITS * 4;
 
+
 /// Represents the current stage of a projectile's trajectory
 enum class PROJECTILE_STATE
 {
@@ -74,72 +75,58 @@ enum class PROJECTILE_STATE
   INACTIVE
 };
 
-class Projectile : public virtual PersistentObject, public Impl::PersistentObject
+class Projectile : public PlayerOwnedObject
 {
 public:
-  friend class Damage;
-
+  ~Projectile() override = default;
   Projectile(unsigned id, unsigned  player);
 
-//  void debug_(const char* function, char ch) const;
-//  void checkProjectile(const char* location_description,
-//                       const char* function, int recurse) const;
+  Projectile(Projectile const& rhs);
+  Projectile& operator=(Projectile const& rhs);
+
+  Projectile(Projectile&& rhs) noexcept = default;
+  Projectile& operator=(Projectile&& rhs) noexcept = default;
+
 
   [[nodiscard]] PROJECTILE_STATE getState() const noexcept;
-
+  [[nodiscard]] bool isVisible() const;
   void update();
-
-  void setTarget(::PersistentObject* psObj);
-  void setSource(::PersistentObject* psObj);
-
+  void setTarget(PlayerOwnedObject* psObj);
+  void setSource(PlayerOwnedObject* psObj);
   void proj_InFlightFunc();
   void proj_ImpactFunc();
   void proj_PostImpactFunc();
   void proj_checkPeriodicalDamage();
-
-  bool proj_SendProjectileAngled(Weapon* psWeap, ::PersistentObject* psAttacker, unsigned plr,
-                                 Vector3i dest, ::PersistentObject* psTarget, bool bVisible,
+  bool proj_SendProjectileAngled(Weapon* psWeap, PlayerOwnedObject* psAttacker, unsigned plr,
+                                 Vector3i dest, PlayerOwnedObject* psTarget, bool bVisible,
                                  int weapon_slot, int min_angle, unsigned fireTime) const;
-
   /// Update the source experience after a target is damaged/destroyed
   void updateExperience(unsigned experienceInc);
-  
-  [[nodiscard]] bool gfxVisible() const;
 private:
-  using enum PROJECTILE_STATE;
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
+};
 
-  PROJECTILE_STATE state;
+class ObjectShape
+{
+public:
+  ~ObjectShape() = default;
 
-  /// Whether the selected player should see the projectile
-  bool isVisible;
+  ObjectShape();
+  ObjectShape(int width, int breadth);
+  explicit ObjectShape(int radius);
+  explicit ObjectShape(Vector2i size);
 
-  /// Firing weapon stats
-  std::shared_ptr<WeaponStats> weaponStats;
+  ObjectShape(ObjectShape const& rhs);
+  ObjectShape& operator=(ObjectShape const& rhs);
 
-  /// What fired the projectile
-  ::PersistentObject* source;
+  ObjectShape(ObjectShape&& rhs) noexcept = default;
+  ObjectShape& operator=(ObjectShape&& rhs) noexcept = default;
 
-  /// Target of this projectile (not a Unit because it can
-  /// be a feature I guess)
-  ::PersistentObject* target;
-
-  /// Targets that have already been dealt damage to (don't damage the same target twice)
-  std::vector<::PersistentObject*> damaged;
-
-  /// Where projectile started
-  Vector3i origin {0, 0, 0};
-
-  /// The target coordinates
-  Vector3i destination {0, 0, 0};
-
-  /// Axis velocities
-  int vXY, vZ;
-
-  /// Expected damage that this projectile will cause to the target
-  int expectedDamageCaused;
-
-  /// How much of target was visible on shooting (important for homing)
-  int partVisible;
+  [[nodiscard]] int radius() const;
+private:
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
 struct Interval
@@ -153,22 +140,26 @@ struct Interval
 class Damage
 {
 public:
-    [[nodiscard]] bool isFriendlyFire() const;
-    [[nodiscard]] bool shouldIncreaseExperience() const;
-    [[nodiscard]] int objectDamage();
-    void updateKills();
+   ~Damage() = default;
+   Damage();
+
+   Damage(Damage const& rhs);
+   Damage& operator=(Damage const& rhs);
+
+   Damage(Damage&& rhs) noexcept = default;
+   Damage& operator=(Damage&& rhs) noexcept = default;
+
+  [[nodiscard]] bool isFriendlyFire() const;
+  [[nodiscard]] bool shouldIncreaseExperience() const;
+  [[nodiscard]] int objectDamage();
+  void updateKills();
 private:
-    Projectile* projectile = nullptr;
-    PersistentObject* target = nullptr;
-    unsigned damage;
-    WEAPON_CLASS weaponClass;
-    WEAPON_SUBCLASS weaponSubClass;
-    std::size_t impactTime;
-    bool isDamagePerSecond;
-    int minDamage;
+  friend class Projectile;
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
-extern PersistentObject* g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
+extern PlayerOwnedObject * g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
 
 void proj_InitSystem(); ///< Initialize projectiles subsystem.
 void proj_UpdateAll(); ///< Frame update for projectiles.
@@ -187,13 +178,13 @@ int projCalcIndirectVelocities(int32_t dx, int32_t dz, int32_t v, int32_t* vx, i
                                    int min_angle);
 
 /** Send a single projectile against the given target. */
-bool proj_SendProjectile(Weapon* psWeap, PersistentObject* psAttacker, unsigned player, Vector3i target, PersistentObject* psTarget,
+bool proj_SendProjectile(Weapon* psWeap, PlayerOwnedObject * psAttacker, unsigned player, Vector3i target, PlayerOwnedObject * psTarget,
                          bool bVisible, int weapon_slot);
 
 /** Send a single projectile against the given target
  * with a minimum shot angle. */
-bool proj_SendProjectileAngled(Weapon* psWeap, PersistentObject* psAttacker, unsigned player, Vector3i target,
-                               PersistentObject* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
+bool proj_SendProjectileAngled(Weapon* psWeap, PlayerOwnedObject * psAttacker, unsigned player, Vector3i target,
+                               PlayerOwnedObject * psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
 
 /** Return whether a weapon is direct or indirect. */
 bool proj_Direct(const WeaponStats* psStats);
@@ -207,14 +198,12 @@ unsigned proj_GetMinRange(const WeaponStats* psStats, unsigned player);
 /** Return the short range for a weapon. */
 unsigned proj_GetShortRange(const WeaponStats* psStats, unsigned player);
 
-unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, PersistentObject* psTarget);
+unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, PlayerOwnedObject const* psTarget);
 bool gfxVisible(Projectile* psObj);
 
-/***************************************************************************/
+glm::mat4 objectShimmy(PlayerOwnedObject * psObj);
 
-glm::mat4 objectShimmy(PersistentObject* psObj);
-
-int establishTargetHeight(PersistentObject const* psTarget);
+int establishTargetHeight(PlayerOwnedObject const* psTarget);
 
 void checkProjectile(const Projectile* psProjectile, std::string location_description,
                      std::string function, int recurse);
@@ -225,22 +214,6 @@ void checkProjectile(const Projectile* psProjectile, std::string location_descri
 
 static void setProjectileSource(Projectile *psProj, ConstructedObject *psObj);
 
-struct ObjectShape
-{
-	ObjectShape() = default;
-	explicit ObjectShape(int radius);
-  explicit ObjectShape(Vector2i size);
-	ObjectShape(int width, int breadth);
-
-	[[nodiscard]] int radius() const;
-
-  /// True if rectangular, false if circular
-	bool isRectangular = false;
-
-  /// x == y if circular
-	Vector2i size {0, 0};
-};
-
-ObjectShape establishTargetShape(PersistentObject* psTarget);
+ObjectShape establishTargetShape(PlayerOwnedObject* psTarget);
 
 #endif // __INCLUDED_SRC_PROJECTILE_H__

@@ -74,24 +74,24 @@ void aiUpdateDroid(Droid* psDroid);
 
 /// Find the nearest best target for a droid
 /// returns integer representing quality of choice, -1 if failed
-int aiBestNearestTarget(Droid* psDroid, PersistentObject** ppsObj, int weapon_slot, int extraRange = 0);
+int aiBestNearestTarget(Droid* psDroid, PlayerOwnedObject ** ppsObj, int weapon_slot, int extraRange = 0);
 
 /// Update the expected damage to the object.
-void aiObjectAddExpectedDamage(PersistentObject* psObject, SDWORD damage, bool isDirect);
+void aiObjectAddExpectedDamage(PlayerOwnedObject * psObject, SDWORD damage, bool isDirect);
 
 /* See if there is a target in range added int weapon_slot*/
-bool aiChooseTarget(PersistentObject* psObj, PersistentObject** ppsTarget, int weapon_slot,
+bool aiChooseTarget(PlayerOwnedObject * psObj, PlayerOwnedObject ** ppsTarget, int weapon_slot,
                     bool bUpdateTarget, TARGET_ORIGIN* targetOrigin);
 
 /** See if there is a target in range for Sensor objects. */
-bool aiChooseSensorTarget(PersistentObject* psObj, PersistentObject** ppsTarget);
+bool aiChooseSensorTarget(PlayerOwnedObject * psObj, PlayerOwnedObject ** ppsTarget);
 
 /*set of rules which determine whether the weapon associated with the object
 can fire on the propulsion type of the target*/
-bool validTarget(PersistentObject* psObject, PersistentObject* psTarget, int weapon_slot);
+bool validTarget(PlayerOwnedObject * psObject, PlayerOwnedObject * psTarget, int weapon_slot);
 
 // Check if any of the weapons can target the target
-bool checkAnyWeaponsTarget(PersistentObject* psObject, PersistentObject* psTarget);
+bool checkAnyWeaponsTarget(PlayerOwnedObject * psObject, PlayerOwnedObject * psTarget);
 
 // Check properties of the AllianceType enum.
 static inline bool alliancesFixed(ALLIANCE_TYPE t)
@@ -130,6 +130,6 @@ static inline bool alliancesCanGiveAnything(ALLIANCE_TYPE t)
 	return t != FFA;
 }
 
-static bool updateAttackTarget(PersistentObject* psAttacker, int weapon_slot);
+static bool updateAttackTarget(PlayerOwnedObject * psAttacker, int weapon_slot);
 
 #endif // __INCLUDED_SRC_AI_H__

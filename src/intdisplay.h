@@ -55,7 +55,7 @@ struct ImdObject
 	{
 	}
 
-	static ImdObject Droid(PersistentObject* p)
+	static ImdObject Droid(PlayerOwnedObject * p)
 	{
 		return {p, IMDTYPE_DROID};
 	}
@@ -70,7 +70,7 @@ struct ImdObject
 		return {p, IMDTYPE_COMPONENT};
 	}
 
-	static ImdObject Structure(PersistentObject* p)
+	static ImdObject Structure(PlayerOwnedObject * p)
 	{
 		return {p, IMDTYPE_STRUCTURE};
 	}
@@ -163,7 +163,7 @@ public:
 
 	void display(int xOffset, int yOffset) override;
 
-	void setObject(PersistentObject* object)
+	void setObject(PlayerOwnedObject * object)
 	{
 		psObj = object;
 	}
@@ -176,7 +176,7 @@ public:
 	}
 
 protected:
-	PersistentObject* psObj;
+  PlayerOwnedObject * psObj;
 };
 
 class IntStatusButton : public IntObjectButton
@@ -184,13 +184,13 @@ class IntStatusButton : public IntObjectButton
 public:
 	IntStatusButton();
 
-	void setObject(PersistentObject* object)
+	void setObject(PlayerOwnedObject * object)
 	{
 		psObj = object;
 		theStats = nullptr;
 	}
 
-	void setObjectAndStats(PersistentObject* object, BaseStats* stats)
+	void setObjectAndStats(PlayerOwnedObject * object, BaseStats* stats)
 	{
 		psObj = object;
 		theStats = stats;

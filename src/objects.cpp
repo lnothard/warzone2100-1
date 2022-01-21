@@ -57,14 +57,14 @@ bool objShutdown()
 
 /*goes thru' the list passed in reversing the order so the first entry becomes
 the last and the last entry becomes the first!*/
-void reverseObjectList(PersistentObject** ppsList)
+void reverseObjectList(PlayerOwnedObject ** ppsList)
 {
-	PersistentObject* psPrev = nullptr;
-	PersistentObject* psCurrent = *ppsList;
+  PlayerOwnedObject * psPrev = nullptr;
+  PlayerOwnedObject * psCurrent = *ppsList;
 
 	while (psCurrent != nullptr)
 	{
-		PersistentObject* psNext = psCurrent->psNext;
+    PlayerOwnedObject * psNext = psCurrent->psNext;
 		psCurrent->psNext = psPrev;
 		psPrev = psCurrent;
 		psCurrent = psNext;
@@ -73,7 +73,7 @@ void reverseObjectList(PersistentObject** ppsList)
 	*ppsList = psPrev;
 }
 
-const char* objInfo(const PersistentObject* psObj)
+const char* objInfo(const PlayerOwnedObject * psObj)
 {
 	static char info[PATH_MAX];
 

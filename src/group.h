@@ -41,10 +41,15 @@ enum class GROUP_TYPE
 class Group
 {
 public:
-	Group() = default;
+  ~Group() = default;
+
+	Group();
   explicit Group(unsigned id);
   Group(unsigned id, GROUP_TYPE type);
   Group(unsigned id, GROUP_TYPE type, Droid& commander);
+
+  Group(Group const& rhs);
+  Group& operator=(Group const& rhs);
 
   /**
    * Add a droid to the group. Remove it from its existing
@@ -55,35 +60,21 @@ public:
   [[nodiscard]] static std::unique_ptr<Group> create(unsigned id);
 
   /// Remove a droid from the group.
-	void remove(Impl::Droid* psDroid);
-
+	void remove(Droid* psDroid);
   [[nodiscard]] bool isCommandGroup() const noexcept;
-
   [[nodiscard]] bool hasElectronicWeapon() const;
-
-  [[nodiscard]] const Droid& getCommander() const;
-
+  [[nodiscard]] Droid const* getCommander() const;
 	void orderGroup(ORDER_TYPE order); // give an order all the droids of the group
 	void orderGroup(ORDER_TYPE order, unsigned x, unsigned y);
 
 	/// Give an order all the droids of the group (using location)
-	void orderGroup(ORDER_TYPE order, PersistentObject* psObj); // give an order all the droids of the group (using object)
+	void orderGroup(ORDER_TYPE order, PlayerOwnedObject * psObj);
 
-	void setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state); // set the secondary state for a group of droids
+  // set the secondary state for a group of droids
+	void setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state);
 private:
-  friend class Droid;
-  using enum GROUP_TYPE;
-	GROUP_TYPE type = NORMAL;
-  unsigned id = 0;
-
-  /// List of droids in the group
-	std::vector<Impl::Droid*> members;
-
-  /**
-   * Non-owning pointer to this group's commander.
-   * Set to `nullptr` if this is not a command group
-   */
-	Droid* psCommander = nullptr;
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
 /**

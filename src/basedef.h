@@ -61,58 +61,57 @@ struct Spacetime
 class BaseObject
 {
 public:
-    BaseObject() = default;
-    virtual ~BaseObject() = default;
+  virtual ~BaseObject() = default;
+  explicit BaseObject(unsigned id);
 
-    BaseObject(BaseObject const& rhs);
-    BaseObject& operator=(BaseObject const& rhs);
+  BaseObject(BaseObject const& rhs);
+  BaseObject& operator=(BaseObject const& rhs);
 
-    BaseObject(BaseObject&& rhs) noexcept = default;
-    BaseObject& operator=(BaseObject&& rhs) = default;
+  BaseObject(BaseObject&& rhs) noexcept = default;
+  BaseObject& operator=(BaseObject&& rhs) noexcept = default;
 
-    [[nodiscard]] Spacetime getSpacetime() const noexcept;
-    [[nodiscard]] Position getPosition() const noexcept;
-    [[nodiscard]] Rotation getRotation() const noexcept;
-    [[nodiscard]] unsigned getTime() const noexcept;
-    [[nodiscard]] const DisplayData* getDisplayData() const noexcept;
-    [[nodiscard]] Spacetime getPreviousLocation() const noexcept;
-    void setTime(unsigned t) noexcept;
-    void setRotation(Rotation newRotation) noexcept;
-    void setPosition(Position pos) noexcept;
-    void setHeight(int height) noexcept;
-protected:
-    struct Impl;
-    std::unique_ptr<Impl> pimpl;
+  [[nodiscard]] unsigned getId() const noexcept;
+  [[nodiscard]] Spacetime getSpacetime() const noexcept;
+  [[nodiscard]] Position getPosition() const noexcept;
+  [[nodiscard]] Rotation getRotation() const noexcept;
+  [[nodiscard]] unsigned getTime() const noexcept;
+  [[nodiscard]] const DisplayData* getDisplayData() const noexcept;
+  [[nodiscard]] Spacetime getPreviousLocation() const noexcept;
+  void setTime(unsigned t) noexcept;
+  void setRotation(Rotation newRotation) noexcept;
+  void setPosition(Position pos) noexcept;
+  void setHeight(int height) noexcept;
+private:
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
-class PersistentObject : public BaseObject
+class PlayerOwnedObject : public BaseObject
 {
 public:
-    PersistentObject(unsigned id, unsigned player);
-    ~PersistentObject() override;
+  PlayerOwnedObject(unsigned id, unsigned player);
+  ~PlayerOwnedObject() override;
 
-    PersistentObject(PersistentObject const& rhs);
-    PersistentObject& operator=(PersistentObject const& rhs);
+  PlayerOwnedObject(PlayerOwnedObject const& rhs);
+  PlayerOwnedObject & operator=(PlayerOwnedObject const& rhs);
 
-    PersistentObject(PersistentObject&& rhs) noexcept = default;
-    PersistentObject& operator=(PersistentObject&& rhs) = default;
+  PlayerOwnedObject(PlayerOwnedObject&& rhs) noexcept = default;
+  PlayerOwnedObject & operator=(PlayerOwnedObject&& rhs) noexcept = default;
 
+  [[nodiscard]] unsigned getPlayer() const noexcept;
+  [[nodiscard]] unsigned getHp() const noexcept;
+  [[nodiscard]] bool isDead() const noexcept;
+  [[nodiscard]] bool isSelectable() const;
+  [[nodiscard]] uint8_t visibleToPlayer(unsigned watcher) const;
+  [[nodiscard]] uint8_t visibleToSelectedPlayer() const;
+  void setHp(unsigned hp) noexcept;
+  void setPlayer(unsigned p) noexcept;
 
-    [[nodiscard]] unsigned getPlayer() const noexcept;
-    [[nodiscard]] unsigned getId() const noexcept;
-    [[nodiscard]] unsigned getHp() const noexcept;
-    void setHp(unsigned hp) noexcept;
-    void setPlayer(unsigned p) noexcept;
-    [[nodiscard]] bool isDead() const noexcept;
-    [[nodiscard]] bool isSelectable() const;
-    [[nodiscard]] uint8_t visibleToPlayer(unsigned watcher) const;
-    [[nodiscard]] uint8_t visibleToSelectedPlayer() const;
-
-    [[nodiscard]] virtual bool isProbablyDoomed(bool isDirectDamage) const = 0;
-    [[nodiscard]] virtual int objRadius() const = 0;
-protected:
-    struct Impl;
-    std::unique_ptr<Impl> pimpl;
+  [[nodiscard]] virtual bool isProbablyDoomed(bool isDirectDamage) const = 0;
+  [[nodiscard]] virtual int objRadius() const = 0;
+private:
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
 

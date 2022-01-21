@@ -2420,7 +2420,7 @@ static void sanityUpdate()
 	}
 }
 
-static void getIniBaseObject(WzConfig& ini, WzString const& key, PersistentObject*& object)
+static void getIniBaseObject(WzConfig& ini, WzString const& key, PlayerOwnedObject *& object)
 {
 	object = nullptr;
 	if (ini.contains(key + "/id"))
@@ -2456,7 +2456,7 @@ static void getIniDroidOrder(WzConfig& ini, WzString const& key, Order& order)
 	getIniStructureStats(ini, key + "/stats", order.structure_stats);
 }
 
-static void setIniBaseObject(nlohmann::json& json, WzString const& key, PersistentObject const* object)
+static void setIniBaseObject(nlohmann::json& json, WzString const& key, PlayerOwnedObject const* object)
 {
 	if (object != nullptr && object->died <= 1)
 	{
@@ -2792,7 +2792,7 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 				{
 					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psStr->player, selectedPlayer))
 					{
-						visTilesUpdate((PersistentObject*)psStr);
+						visTilesUpdate((PlayerOwnedObject *)psStr);
 					}
 				}
 
@@ -2801,7 +2801,7 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 				{
 					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psDroid->player, selectedPlayer))
 					{
-						visTilesUpdate((PersistentObject*)psDroid);
+						visTilesUpdate((PlayerOwnedObject *)psDroid);
 					}
 				}
 			}
@@ -5339,7 +5339,7 @@ static bool loadSaveDroidPointers(const WzString& pFileName, Droid** ppsCurrentD
 			int tplayer = ini.value("baseStruct/player", -1).toInt();
 			OBJECT_TYPE ttype = (OBJECT_TYPE)ini.value("baseStruct/type", 0).toInt();
 			ASSERT(tid >= 0 && tplayer >= 0, "Bad ID");
-			PersistentObject* psObj = getBaseObjFromData(tid, tplayer, ttype);
+      PlayerOwnedObject * psObj = getBaseObjFromData(tid, tplayer, ttype);
 			ASSERT(psObj, "Failed to find droid base structure");
 			ASSERT(!psObj || psObj->type == OBJ_STRUCTURE, "Droid base structure not a structure");
 			setSaveDroidBase(psDroid, (Structure*)psObj);
@@ -5375,7 +5375,7 @@ static int healthValue(WzConfig& ini, int defaultValue)
 	}
 }
 
-static void loadSaveObject(WzConfig& ini, PersistentObject* psObj)
+static void loadSaveObject(WzConfig& ini, PlayerOwnedObject * psObj)
 {
 	psObj->died = ini.value("died", 0).toInt();
 	memset(psObj->visible, 0, sizeof(psObj->visible));
@@ -5393,7 +5393,7 @@ static void loadSaveObject(WzConfig& ini, PersistentObject* psObj)
 	psObj->born = ini.value("born", 2).toInt();
 }
 
-static void writeSaveObject(WzConfig& ini, PersistentObject* psObj)
+static void writeSaveObject(WzConfig& ini, PlayerOwnedObject * psObj)
 {
 	ini.setValue("id", psObj->id);
 	setPlayer(ini, psObj->player);
@@ -5443,7 +5443,7 @@ static void writeSaveObject(WzConfig& ini, PersistentObject* psObj)
 	}
 }
 
-static void writeSaveObjectJSON(nlohmann::json& jsonObj, PersistentObject* psObj)
+static void writeSaveObjectJSON(nlohmann::json& jsonObj, PlayerOwnedObject * psObj)
 {
 	jsonObj["id"] = psObj->id;
 	setPlayerJSON(jsonObj, psObj->player);
@@ -7676,7 +7676,7 @@ static bool writeMessageFile(const char* pFileName)
 				else
 				{
 					// message has object so store Object Id
-					const PersistentObject* psObj = psMessage->psObj;
+					const PlayerOwnedObject * psObj = psMessage->psObj;
 					if (psObj)
 					{
 						ini.setValue("obj/id", psObj->id);

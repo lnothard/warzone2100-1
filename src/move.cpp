@@ -367,7 +367,7 @@ static void moveCheckFinalWaypoint(Droid* psDroid, SDWORD* pSpeed)
 static void moveUpdateDroidPos(Droid* psDroid, int32_t dx, int32_t dy)
 {
 	if (psDroid->getMovementData().status == MOVE_STATUS::PAUSE ||
-      isDead((PersistentObject*)psDroid)) {
+      isDead((PlayerOwnedObject *)psDroid)) {
 		// don't actually move if the move is paused
 		return;
 	}

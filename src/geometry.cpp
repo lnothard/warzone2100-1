@@ -146,7 +146,7 @@ Vector2i positionInQuad(Vector2i const& pt, QUAD const& quad)
 }
 
 //-----------------------------------------------------------------------------------
-bool objectOnScreen(PersistentObject* object, SDWORD tolerance)
+bool objectOnScreen(PlayerOwnedObject * object, SDWORD tolerance)
 {
 	if (DrawnInLastFrame(object->getDisplayData().frame_number))
 	{

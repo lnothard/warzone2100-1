@@ -164,7 +164,7 @@ void ManufactureController::clearData()
 	stats.clear();
 }
 
-void ManufactureController::setHighlightedObject(PersistentObject* object)
+void ManufactureController::setHighlightedObject(PlayerOwnedObject * object)
 {
 	if (object == nullptr)
 	{

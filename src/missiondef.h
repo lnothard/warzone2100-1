@@ -70,7 +70,7 @@ struct MISSION
   Structure* apsExtractorLists[MAX_PLAYERS];
 	std::array< std::vector<Droid>, MAX_PLAYERS> apsDroidLists;
 	std::array< std::vector<Feature*>, MAX_PLAYERS> apsFeatureLists;
-	PersistentObject* apsSensorList[1];
+  PlayerOwnedObject * apsSensorList[1];
 	Feature* apsOilList[1];
 	FlagPosition* apsFlagPosLists[MAX_PLAYERS];
 	int asCurrentPower[MAX_PLAYERS];

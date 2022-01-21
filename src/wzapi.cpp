@@ -101,7 +101,7 @@
 #define ENEMIES -3
 
 
-PersistentObject* IdToObject(unsigned id, unsigned player)
+PlayerOwnedObject * IdToObject(unsigned id, unsigned player)
 {
 	switch (type) {
 	case OBJ_DROID: return IdToDroid(id, player);
@@ -547,12 +547,12 @@ bool wzapi::removeSpotter(WZAPI_PARAMS(uint32_t spotterId))
 //-- Must be caught in an eventSyncRequest() function. All sync requests must be validated when received, and always
 //-- take care only to define sync requests that can be validated against cheating. (3.2+ only)
 //--
-bool wzapi::syncRequest(WZAPI_PARAMS(int32_t req_id, int32_t _x, int32_t _y, optional<const PersistentObject *> _psObj,
-                                     optional<const PersistentObject *> _psObj2))
+bool wzapi::syncRequest(WZAPI_PARAMS(int32_t req_id, int32_t _x, int32_t _y, optional<const PlayerOwnedObject *> _psObj,
+                                     optional<const PlayerOwnedObject *> _psObj2))
 {
 	int32_t x = world_coord(_x);
 	int32_t y = world_coord(_y);
-	const PersistentObject *psObj = nullptr, *psObj2 = nullptr;
+	const PlayerOwnedObject *psObj = nullptr, *psObj2 = nullptr;
 	if (_psObj.has_value())
 	{
 		psObj = _psObj.value();
@@ -592,7 +592,7 @@ bool wzapi::changePlayerColour(WZAPI_PARAMS(unsigned player, int colour))
 //-- Change the health of the given game object, in percentage. Does not take care of network sync, so for multiplayer games,
 //-- needs wrapping in a syncRequest. (3.2.3+ only.)
 //--
-bool wzapi::setHealth(WZAPI_PARAMS(PersistentObject* psObject, int health)) MULTIPLAY_SYNCREQUEST_REQUIRED
+bool wzapi::setHealth(WZAPI_PARAMS(PlayerOwnedObject * psObject, int health)) MULTIPLAY_SYNCREQUEST_REQUIRED
 {
 	SCRIPT_ASSERT(false, context, psObject, "No valid object provided");
 	SCRIPT_ASSERT(false, context, health >= 1, "Bad health value %d", health);
@@ -791,7 +791,7 @@ wzapi::no_return_value wzapi::hackRemoveMessage(WZAPI_PARAMS(std::string message
 //-- Function to find and return a game object of ```DROID```, ```FEATURE``` or ```STRUCTURE``` types, if it exists.
 //-- Otherwise, it will return null. This function is DEPRECATED by getObject(). (3.2+ only)
 //--
-wzapi::returned_nullable_ptr<const PersistentObject> wzapi::hackGetObj(WZAPI_PARAMS(int _objectType, unsigned player, int id))
+wzapi::returned_nullable_ptr<const PlayerOwnedObject> wzapi::hackGetObj(WZAPI_PARAMS(int _objectType, unsigned player, int id))
 WZAPI_DEPRECATED
 {
 	OBJECT_TYPE objectType = (OBJECT_TYPE)_objectType;
@@ -1170,7 +1170,7 @@ std::vector<scr_position> wzapi::enumBlips(WZAPI_PARAMS(unsigned player))
 {
 	SCRIPT_ASSERT_PLAYER({}, context, player);
 	std::vector<scr_position> matches;
-	for (PersistentObject* psSensor = apsSensorList[0]; psSensor; psSensor = psSensor->psNextFunc)
+	for (PlayerOwnedObject * psSensor = apsSensorList[0]; psSensor; psSensor = psSensor->psNextFunc)
 	{
 		if (psSensor->visible[player] > 0 && psSensor->visible[player] < UBYTE_MAX)
 		{
@@ -1184,9 +1184,9 @@ std::vector<scr_position> wzapi::enumBlips(WZAPI_PARAMS(unsigned player))
 //--
 //-- Return an array containing all game objects currently selected by the host player. (3.2+ only)
 //--
-std::vector<const PersistentObject*> wzapi::enumSelected(WZAPI_NO_PARAMS_NO_CONTEXT)
+std::vector<const PlayerOwnedObject *> wzapi::enumSelected(WZAPI_NO_PARAMS_NO_CONTEXT)
 {
-	std::vector<const PersistentObject*> matches;
+	std::vector<const PlayerOwnedObject *> matches;
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
 		return matches;
@@ -1261,7 +1261,7 @@ wzapi::researchResults wzapi::enumResearch(WZAPI_NO_PARAMS)
 //-- returned; by default only visible objects are returned. Calling this function is much faster than
 //-- iterating over all game objects using other enum functions. (3.2+ only)
 //--
-std::vector<const PersistentObject*> wzapi::enumRange(
+std::vector<const PlayerOwnedObject *> wzapi::enumRange(
 	WZAPI_PARAMS(int _x, int _y, int _range, optional<int> _playerFilter, optional<bool> _seen))
 {
 	unsigned player = context.player();
@@ -1277,10 +1277,10 @@ std::vector<const PersistentObject*> wzapi::enumRange(
 
 	static GridList gridList; // static to avoid allocations. // WARNING: THREAD-SAFETY
 	gridList = gridStartIterate(x, y, range);
-	std::vector<const PersistentObject*> list;
+	std::vector<const PlayerOwnedObject *> list;
 	for (GridIterator gi = gridList.begin(); gi != gridList.end(); ++gi)
 	{
-		const PersistentObject* psObj = *gi;
+		const PlayerOwnedObject * psObj = *gi;
 		if ((psObj->visible[player] || !seen) && !psObj->died)
 		{
 			if ((playerFilter >= 0 && psObj->player == playerFilter) || playerFilter == ALL_PLAYERS
@@ -1732,7 +1732,7 @@ bool wzapi::tileIsBurning(WZAPI_PARAMS(int x, int y))
 //--
 //-- Give a droid an order to do something to something.
 //--
-bool wzapi::orderDroidObj(WZAPI_PARAMS(Droid *psDroid, int _order, PersistentObject *psObj))
+bool wzapi::orderDroidObj(WZAPI_PARAMS(Droid *psDroid, int _order, PlayerOwnedObject *psObj))
 {
 	SCRIPT_ASSERT(false, context, psDroid, "No valid droid provided");
 	DROID_ORDER order = (DROID_ORDER)_order;
@@ -2087,12 +2087,12 @@ bool wzapi::safeDest(WZAPI_PARAMS(unsigned player, int x, int y))
 //-- Activate a special ability on a structure. Currently only works on the lassat.
 //-- The lassat needs a target.
 //--
-bool wzapi::activateStructure(WZAPI_PARAMS(Structure *psStruct, optional<PersistentObject *> _psTarget))
+bool wzapi::activateStructure(WZAPI_PARAMS(Structure *psStruct, optional<PlayerOwnedObject *> _psTarget))
 {
 	SCRIPT_ASSERT(false, context, psStruct, "No valid structure provided");
 	unsigned player = psStruct->player;
 	// ... and then do nothing with psStruct yet
-	PersistentObject* psTarget = _psTarget.value_or(nullptr);
+  PlayerOwnedObject * psTarget = _psTarget.value_or(nullptr);
 	SCRIPT_ASSERT(false, context, psTarget, "No valid target provided");
 	orderStructureObj(player, psTarget);
 	return true;
@@ -2985,7 +2985,7 @@ bool wzapi::removeStruct(WZAPI_PARAMS(Structure *psStruct)) WZAPI_DEPRECATED
 //-- Remove the given game object with special effects. Returns a boolean that is true on success.
 //-- A second, optional boolean parameter specifies whether special effects are to be applied. (3.2+ only)
 //--
-bool wzapi::removeObject(WZAPI_PARAMS(PersistentObject *psObj, optional<bool> _sfx))
+bool wzapi::removeObject(WZAPI_PARAMS(PlayerOwnedObject *psObj, optional<bool> _sfx))
 {
 	SCRIPT_ASSERT(false, context, psObj, "No valid object provided");
 	bool sfx = _sfx.value_or(false);
@@ -3218,7 +3218,7 @@ wzapi::no_return_value wzapi::setDroidExperience(WZAPI_PARAMS(Droid *psDroid, do
 //-- donation was successful. May return false if this donation would push the receiving player
 //-- over unit limits. (3.2+ only)
 //--
-bool wzapi::donateObject(WZAPI_PARAMS(PersistentObject *psObject, unsigned player))
+bool wzapi::donateObject(WZAPI_PARAMS(PlayerOwnedObject *psObject, unsigned player))
 {
 	SCRIPT_ASSERT(false, context, psObject, "No valid object provided");
 	SCRIPT_ASSERT_PLAYER(false, context, player);
@@ -3336,7 +3336,7 @@ wzapi::no_return_value wzapi::setTransporterExit(WZAPI_PARAMS(int x, int y, unsi
 //-- needs wrapping in a syncRequest. (3.3+ only.)
 //-- Recognized object flags: ```OBJECT_FLAG_UNSELECTABLE``` - makes object unavailable for selection from player UI.
 //--
-wzapi::no_return_value wzapi::setObjectFlag(WZAPI_PARAMS(PersistentObject *psObj, int _flag, bool flagValue))
+wzapi::no_return_value wzapi::setObjectFlag(WZAPI_PARAMS(PlayerOwnedObject *psObj, int _flag, bool flagValue))
 MULTIPLAY_SYNCREQUEST_REQUIRED
 {
 	SCRIPT_ASSERT({}, context, psObj, "No valid object provided");
@@ -3378,7 +3378,7 @@ wzapi::no_return_value wzapi::fireWeaponAtLoc(WZAPI_PARAMS(std::string weaponNam
 //--
 //-- Fires a weapon at a game object (3.3+ only). The player is who owns the projectile.
 //--
-wzapi::no_return_value wzapi::fireWeaponAtObj(WZAPI_PARAMS(const std::string& weaponName, PersistentObject *psObj,
+wzapi::no_return_value wzapi::fireWeaponAtObj(WZAPI_PARAMS(const std::string& weaponName, PlayerOwnedObject *psObj,
                                                            optional<int> _player))
 {
 	int weaponIndex = getCompFromName(COMP_WEAPON, WzString::fromUtf8(weaponName));

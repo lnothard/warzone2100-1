@@ -92,7 +92,7 @@ struct Tile
 	uint16_t texture; // Which graphics texture is on this tile
 	int height; ///< The height at the top left of the tile
 	float level; ///< The visibility level of the top left of the tile, for this client.
-	PersistentObject* psObject; // Any object sitting on the location (e.g. building)
+  PlayerOwnedObject * psObject; // Any object sitting on the location (e.g. building)
 	PIELIGHT colour;
 	uint16_t limitedContinent; ///< For land or sea limited propulsion types
 	uint16_t hoverContinent; ///< For hover type propulsions
@@ -537,7 +537,7 @@ static inline int map_Height(Vector2i const& v)
 }
 
 /* returns true if object is above ground */
-bool mapObjIsAboveGround(const PersistentObject* psObj);
+bool mapObjIsAboveGround(const PlayerOwnedObject * psObj);
 
 /* returns the max and min height of a tile by looking at the four corners
    in tile coords */

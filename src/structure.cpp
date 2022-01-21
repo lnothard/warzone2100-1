@@ -964,8 +964,8 @@ namespace Impl
   {
     STRUCTURE_TYPE structureMode;
     ::Droid* psDroid;
-    ::PersistentObject* psChosenObjs[MAX_WEAPONS] = {nullptr};
-    ::PersistentObject* psChosenObj = nullptr;
+    ::PlayerOwnedObject * psChosenObjs[MAX_WEAPONS] = {nullptr};
+    ::PlayerOwnedObject * psChosenObj = nullptr;
     Factory* psFactory;
     RepairFacility* psRepairFac = nullptr;
     Vector3i iVecEffect;
@@ -4398,7 +4398,7 @@ static STRUCTURE_PACKABILITY baseStructureTypePackability(STRUCTURE_TYPE type)
 	}
 }
 
-static STRUCTURE_PACKABILITY baseObjectPackability(PersistentObject* psObject)
+static STRUCTURE_PACKABILITY baseObjectPackability(PlayerOwnedObject * psObject)
 {
 	if (psObject == nullptr) {
 		return PACKABILITY_EMPTY;
@@ -5682,7 +5682,7 @@ bool validTemplateForFactory(const DroidTemplate* psTemplate, Structure* psFacto
 
 /*calculates the damage caused to the resistance levels of structures - returns
 true when captured*/
-bool electronicDamage(PersistentObject* psTarget, unsigned damage, uint8_t attackPlayer)
+bool electronicDamage(PlayerOwnedObject * psTarget, unsigned damage, uint8_t attackPlayer)
 {
 	bool bCompleted = true;
 	Vector3i pos;

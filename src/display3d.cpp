@@ -111,7 +111,7 @@ static void processDestinationTarget();
 static bool eitherSelected(Droid* psDroid);
 static void structureEffects();
 static void showDroidSensorRanges();
-static void showSensorRange2(PersistentObject* psObj);
+static void showSensorRange2(PlayerOwnedObject * psObj);
 static void drawRangeAtPos(SDWORD centerX, SDWORD centerY, SDWORD radius);
 static void addConstructionLine(Droid* psDroid, Structure* psStructure, const glm::mat4& viewMatrix);
 static void doConstructionLines(const glm::mat4& viewMatrix);
@@ -280,7 +280,7 @@ static UDWORD lastTargetAssignation = 0;
 static UDWORD lastDestAssignation = 0;
 static bool bSensorTargetting = false;
 static bool bDestTargetting = false;
-static PersistentObject* psSensorObj = nullptr;
+static PlayerOwnedObject * psSensorObj = nullptr;
 static UDWORD destTargetX, destTargetY;
 static UDWORD destTileX = 0, destTileY = 0;
 
@@ -397,7 +397,7 @@ float interpolateAngleDegrees(int a, int b, float t)
 	return a + d * t;
 }
 
-bool drawShape(PersistentObject* psObj, iIMDShape* strImd, int colour, PIELIGHT buildingBrightness, int pieFlag,
+bool drawShape(PlayerOwnedObject * psObj, iIMDShape* strImd, int colour, PIELIGHT buildingBrightness, int pieFlag,
                int pieFlagData, const glm::mat4& viewMatrix)
 {
 	glm::mat4 modelMatrix(1.f);
@@ -568,7 +568,7 @@ static PIELIGHT structureBrightness(Structure* psStructure)
 		}
 		if (!getRevealStatus()) {
 			buildingBrightness = pal_SetBrightness(
-				avGetObjLightLevel((PersistentObject*)psStructure, buildingBrightness.byte.r));
+				avGetObjLightLevel((PlayerOwnedObject *)psStructure, buildingBrightness.byte.r));
 		}
 		if (!hasSensorOnTile(mapTile(
             map_coord(psStructure->getPosition().x), 
@@ -1667,7 +1667,7 @@ static void displayStaticObjects(const glm::mat4& viewMatrix)
 	/* Go through all the players */
 	for (unsigned aPlayer = 0; aPlayer <= MAX_PLAYERS; ++aPlayer)
 	{
-		PersistentObject* list = aPlayer < MAX_PLAYERS
+    PlayerOwnedObject * list = aPlayer < MAX_PLAYERS
             ? apsStructLists[aPlayer]
             : psDestroyedObj;
 
@@ -1930,7 +1930,7 @@ static void displayFeatures(const glm::mat4& viewMatrix)
 	// player can only be 0 for the features.
 	for (unsigned player = 0; player <= 1; ++player)
 	{
-		PersistentObject* list = player < 1 ? apsFeatureLists[player] : psDestroyedObj;
+    PlayerOwnedObject * list = player < 1 ? apsFeatureLists[player] : psDestroyedObj;
 
 		/* Go through all the features */
 		for (; list != nullptr; list = list->psNext)
@@ -1985,7 +1985,7 @@ static void displayDynamicObjects(const glm::mat4& viewMatrix)
 	/* Need to go through all the droid lists */
 	for (unsigned player = 0; player <= MAX_PLAYERS; ++player)
 	{
-		PersistentObject* list = player < MAX_PLAYERS ? apsDroidLists[player] : psDestroyedObj;
+    PlayerOwnedObject * list = player < MAX_PLAYERS ? apsDroidLists[player] : psDestroyedObj;
 
 		for (; list != nullptr; list = list->psNext)
 		{
@@ -2086,12 +2086,12 @@ void renderFeature(Feature* psFeature, const glm::mat4& viewMatrix)
 
 	if (psFeature->getStats()->subType == FEATURE_TYPE::SKYSCRAPER)
 	{
-		modelMatrix *= objectShimmy((PersistentObject*)psFeature);
+		modelMatrix *= objectShimmy((PlayerOwnedObject *)psFeature);
 	}
 
 	if (!getRevealStatus())
 	{
-		brightness = pal_SetBrightness(avGetObjLightLevel((PersistentObject*)psFeature, brightness.byte.r));
+		brightness = pal_SetBrightness(avGetObjLightLevel((PlayerOwnedObject *)psFeature, brightness.byte.r));
 	}
 	if (!hasSensorOnTile(mapTile(map_coord(psFeature->getPosition().x), map_coord(psFeature->getPosition().y)), selectedPlayer))
 	{
@@ -2529,7 +2529,7 @@ void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix)
 
 	if (bHitByElectronic)
 	{
-		modelMatrix *= objectShimmy((PersistentObject*)psStructure);
+		modelMatrix *= objectShimmy((PlayerOwnedObject *)psStructure);
 	}
 
 	const glm::mat4 viewModelMatrix = viewMatrix * modelMatrix;
@@ -2739,7 +2739,7 @@ static void drawDragBox()
 
 
 /// Display reload bars for structures and droids
-static void drawWeaponReloadBar(PersistentObject* psObj, Weapon* psWeap, int weapon_slot)
+static void drawWeaponReloadBar(PlayerOwnedObject * psObj, Weapon* psWeap, int weapon_slot)
 {
 	int scrX, scrY, scrR, scale;
 	float mulH; // display unit resistance instead of reload!
@@ -2929,7 +2929,7 @@ static void drawStructureSelections()
 	Structure* psStruct;
 	SDWORD scrX, scrY;
 	UDWORD i;
-	PersistentObject* psClickedOn;
+  PlayerOwnedObject * psClickedOn;
 	bool bMouseOverStructure = false;
 	bool bMouseOverOwnStructure = false;
 
@@ -2961,7 +2961,7 @@ static void drawStructureSelections()
 
 				for (i = 0; i < psStruct->numWeaps; i++)
 				{
-					drawWeaponReloadBar((PersistentObject*)psStruct, &psStruct->asWeaps[i], i);
+					drawWeaponReloadBar((PlayerOwnedObject *)psStruct, &psStruct->asWeaps[i], i);
 					drawStructureTargetOriginIcon(psStruct, i);
 				}
 			}
@@ -3045,7 +3045,7 @@ bool eitherSelected(Droid* psDroid)
 		}
 	}
 
-	PersistentObject* psObj = orderStateObj(psDroid, ORDER_TYPE::FIRE_SUPPORT);
+  PlayerOwnedObject * psObj = orderStateObj(psDroid, ORDER_TYPE::FIRE_SUPPORT);
 	if (psObj && psObj->selected)
 	{
 		retVal = true;
@@ -3157,7 +3157,7 @@ static void drawDroidSelections()
 {
 	PIELIGHT powerCol = WZCOL_BLACK, powerColShadow = WZCOL_BLACK;
 	PIELIGHT boxCol;
-	PersistentObject* psClickedOn;
+  PlayerOwnedObject * psClickedOn;
 	bool bMouseOverDroid = false;
 	bool bMouseOverOwnDroid = false;
 	unsigned index;
@@ -3629,7 +3629,7 @@ ENERGY_BAR toggleEnergyBars()
 }
 
 /// Set everything up for when the player assigns the sensor target
-void assignSensorTarget(PersistentObject* psObj)
+void assignSensorTarget(PlayerOwnedObject * psObj)
 {
 	bSensorTargetting = true;
 	lastTargetAssignation = realTime;
@@ -3820,7 +3820,7 @@ static void structureEffectsPlayer(UDWORD player)
 			&& psStructure->visibleToSelectedPlayer())
 		{
 			RearmPad* psReArmPad = &psStructure->pFunctionality->rearmPad;
-			PersistentObject* psChosenObj = psReArmPad->psObj;
+      PlayerOwnedObject * psChosenObj = psReArmPad->psObj;
 			if (psChosenObj != nullptr && (((Droid*)psChosenObj)->visibleForLocalDisplay()))
 			{
 				unsigned bFXSize = 0;
@@ -3874,14 +3874,14 @@ static void showDroidSensorRanges()
 		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 		{
 			if (psDroid->selected) {
-				showSensorRange2((PersistentObject*)psDroid);
+				showSensorRange2((PlayerOwnedObject *)psDroid);
 			}
 		}
 
 		for (psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
 		{
 			if (psStruct->selected) {
-				showSensorRange2((PersistentObject*)psStruct);
+				showSensorRange2((PlayerOwnedObject *)psStruct);
 			}
 		}
 	} //end if we want to display...
@@ -3909,7 +3909,7 @@ static void showEffectCircle(Position centre, int radius, unsigned auxVar,
 
 // Shows the weapon (long) range of the object in question.
 // Note, it only does it for the first weapon slot!
-static void showWeaponRange(PersistentObject* psObj)
+static void showWeaponRange(PlayerOwnedObject * psObj)
 {
 	WeaponStats* psStats;
 
@@ -3937,7 +3937,7 @@ static void showWeaponRange(PersistentObject* psObj)
 	}
 }
 
-static void showSensorRange2(PersistentObject* psObj)
+static void showSensorRange2(PlayerOwnedObject * psObj)
 {
 	showEffectCircle(psObj->getPosition(), objSensorRange(psObj), 80,
                    EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_LASER);

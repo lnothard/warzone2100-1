@@ -40,17 +40,17 @@ static constexpr auto EMP_DISABLE_TIME = 10000;
 int mapHeight, mapWidth;
 bool bMultiPlayer, bMultiMessages;
 
-int arcOfFire(const PersistentObject*, const PersistentObject*, int, bool);
-bool lineOfFire(const PersistentObject*, const PersistentObject*, int, bool);
+int arcOfFire(const PlayerOwnedObject *, const PlayerOwnedObject *, int, bool);
+bool lineOfFire(const PlayerOwnedObject *, const PlayerOwnedObject *, int, bool);
 int map_Height(Vector2i);
 int modifyForDifficultyLevel(int, bool);
-const char* objInfo(const PersistentObject*);
-unsigned objSensorRange(const PersistentObject*);
+const char* objInfo(const PlayerOwnedObject *);
+unsigned objSensorRange(const PlayerOwnedObject *);
 
 
 /* Fire a weapon at something */
-bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
-              PersistentObject* psTarget, int weapon_slot)
+bool combFire(Weapon* psWeap, PlayerOwnedObject * psAttacker,
+              PlayerOwnedObject * psTarget, int weapon_slot)
 {
 	ASSERT(psWeap != nullptr, "Invalid weapon pointer");
 
@@ -321,7 +321,7 @@ bool combFire(Weapon* psWeap, PersistentObject* psAttacker,
 
 /*checks through the target players list of structures and droids to see
 if any support a counter battery sensor*/
-void counterBatteryFire(PersistentObject* psAttacker, PersistentObject* psTarget)
+void counterBatteryFire(PlayerOwnedObject * psAttacker, PlayerOwnedObject * psTarget)
 {
 	/*if a null target is passed in ignore - this will be the case when a 'miss'
 	projectile is sent - we may have to cater for these at some point*/
@@ -367,7 +367,7 @@ void counterBatteryFire(PersistentObject* psAttacker, PersistentObject* psTarget
   }
 }
 
-int objArmour(const PersistentObject* psObj, WEAPON_CLASS weaponClass)
+int objArmour(const PlayerOwnedObject * psObj, WEAPON_CLASS weaponClass)
 {
 	auto armour = 0;
 	if (auto psDroid = dynamic_cast<const Droid*>(psObj)) {
@@ -402,7 +402,7 @@ int objArmour(const PersistentObject* psObj, WEAPON_CLASS weaponClass)
  * \param weaponSubClass the subclass of the weapon that deals the damage
  * \return < 0 when the dealt damage destroys the object, > 0 when the object survives
  */
-int objDamage(PersistentObject* psObj, unsigned damage, unsigned originalhp,
+int objDamage(PlayerOwnedObject * psObj, unsigned damage, unsigned originalhp,
               WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
               bool isDamagePerSecond, int minDamage)
 {
@@ -494,7 +494,7 @@ int objDamage(PersistentObject* psObj, unsigned damage, unsigned originalhp,
  * \param weaponSubClass the subclass of the weapon that deals the damage
  * \return guess at amount of damage
  */
-unsigned objGuessFutureDamage(WeaponStats* psStats, unsigned player, PersistentObject* psTarget)
+unsigned objGuessFutureDamage(WeaponStats const* psStats, unsigned player, PlayerOwnedObject const* psTarget)
 {
 	unsigned damage;
 	int actualDamage, armour, level = 1;
@@ -515,7 +515,7 @@ unsigned objGuessFutureDamage(WeaponStats* psStats, unsigned player, PersistentO
 	damage = modifyForDifficultyLevel(damage, psTarget->getPlayer() != selectedPlayer);
 	armour = objArmour(psTarget, psStats->weaponClass);
 
-	if (auto psDroid = dynamic_cast<Droid*>(psTarget)) {
+	if (auto psDroid = dynamic_cast<Droid const*>(psTarget)) {
 		// Retrieve highest, applicable, experience level
 		level = getDroidEffectiveLevel(psDroid);
 	}

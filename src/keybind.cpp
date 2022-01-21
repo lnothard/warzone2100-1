@@ -2266,7 +2266,7 @@ void kf_RightOrderMenu()
 	if (bFound)
 	{
 		intResetScreen(true);
-		intObjectSelected((PersistentObject*)psGotOne);
+		intObjectSelected((PlayerOwnedObject *)psGotOne);
 	}
 }
 

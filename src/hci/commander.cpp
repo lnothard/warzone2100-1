@@ -63,7 +63,7 @@ void CommanderController::clearData()
 	setHighlightedObject(nullptr);
 }
 
-void CommanderController::setHighlightedObject(PersistentObject* object)
+void CommanderController::setHighlightedObject(PlayerOwnedObject * object)
 {
 	if (object == nullptr)
 	{

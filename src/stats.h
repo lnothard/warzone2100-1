@@ -28,7 +28,7 @@
 
 #include "lib/framework/wzconfig.h"
 
-class PersistentObject;
+class PlayerOwnedObject;
 enum class DROID_TYPE;
 
 static constexpr auto SHOOT_ON_GROUND = 0x01;
@@ -315,7 +315,7 @@ struct PropulsionStats : public ComponentStats
 
 struct SensorStats : public ComponentStats
 {
-    std::unique_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
+    std::shared_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
     LOC location; ///< specifies whether the Sensor is default or for the Turret
     SENSOR_TYPE type = SENSOR_TYPE::STANDARD; ///< used for combat
 
@@ -327,7 +327,7 @@ struct SensorStats : public ComponentStats
 
 struct EcmStats : public ComponentStats
 {
-    std::unique_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
+    std::shared_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
     LOC location; ///< Specifies whether the ECM is default or for the Turret
 
     struct : Upgradeable
@@ -338,7 +338,7 @@ struct EcmStats : public ComponentStats
 
 struct RepairStats : public ComponentStats
 {
-    std::unique_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
+    std::shared_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
     LOC location; ///< Specifies whether the Repair is default or for the Turret
     unsigned time = 0; ///< Time delay for repair cycle
 
@@ -403,13 +403,13 @@ struct WeaponStats : public ComponentStats
     unsigned numExplosions = 0; ///< The number of explosions per shot
 
     /* Graphics used for the weapon */
-    std::unique_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
-    std::unique_ptr<iIMDShape> pMuzzleGraphic; ///< The muzzle flash
-    std::unique_ptr<iIMDShape> pInFlightGraphic; ///< The ammo in flight
-    std::unique_ptr<iIMDShape> pTargetHitGraphic; ///< The ammo hitting a target
-    std::unique_ptr<iIMDShape> pTargetMissGraphic; ///< The ammo missing a target
-    std::unique_ptr<iIMDShape> pWaterHitGraphic; ///< The ammo hitting water
-    std::unique_ptr<iIMDShape> pTrailGraphic; ///< The trail used for in flight
+    std::shared_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
+    std::shared_ptr<iIMDShape> pMuzzleGraphic; ///< The muzzle flash
+    std::shared_ptr<iIMDShape> pInFlightGraphic; ///< The ammo in flight
+    std::shared_ptr<iIMDShape> pTargetHitGraphic; ///< The ammo hitting a target
+    std::shared_ptr<iIMDShape> pTargetMissGraphic; ///< The ammo missing a target
+    std::shared_ptr<iIMDShape> pWaterHitGraphic; ///< The ammo hitting water
+    std::shared_ptr<iIMDShape> pTrailGraphic; ///< The trail used for in flight
 
     int iAudioFireID = 0;
     int iAudioImpactID = 0;
@@ -418,7 +418,7 @@ struct WeaponStats : public ComponentStats
 struct ConstructStats : public ComponentStats
 { 
     /// The turret mount to use
-    std::unique_ptr<iIMDShape> pMountGraphic;
+    std::shared_ptr<iIMDShape> pMountGraphic;
 
     struct : Upgradeable
     {
@@ -688,7 +688,7 @@ WZ_DECL_PURE int constructorPoints(const ConstructStats* psStats, unsigned playe
 WZ_DECL_PURE int bodyPower(const BodyStats* psStats, unsigned player);
 WZ_DECL_PURE int bodyArmour(const BodyStats* psStats, unsigned player, WEAPON_CLASS weaponClass);
 
-WZ_DECL_PURE bool objHasWeapon(const PersistentObject* psObj);
+WZ_DECL_PURE bool objHasWeapon(const PlayerOwnedObject * psObj);
 
 void statsInitVars();
 
@@ -701,9 +701,9 @@ bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS* weaponClass);
 /* Wrappers */
 
 /** If object is an active radar (has sensor turret), then return a pointer to its sensor stats. If not, return NULL. */
-WZ_DECL_PURE SensorStats* objActiveRadar(const PersistentObject* psObj);
+WZ_DECL_PURE SensorStats* objActiveRadar(const PlayerOwnedObject * psObj);
 
 /** Returns whether object has a radar detector sensor. */
-WZ_DECL_PURE bool objRadarDetector(const PersistentObject* psObj);
+WZ_DECL_PURE bool objRadarDetector(const PlayerOwnedObject * psObj);
 
 #endif // __INCLUDED_SRC_STATS_H__

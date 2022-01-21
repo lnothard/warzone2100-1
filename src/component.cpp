@@ -51,7 +51,7 @@ enum class FACTION;
 int bobTransporterHeight();
 const FACTION* getPlayerFaction(uint8_t);
 iIMDShape* getFactionIMD(const FACTION*, iIMDShape*);
-Spacetime interpolateObjectSpacetime(const PersistentObject*, unsigned);
+Spacetime interpolateObjectSpacetime(const PlayerOwnedObject *, unsigned);
 bool missionIsOffworld();
 bool gamePaused();
 COMPONENT_TYPE StatIsComponent(BaseStats*);
@@ -889,7 +889,7 @@ void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix)
 
 	if (psDroid->timeLastHit - graphicsTime < ELEC_DAMAGE_DURATION &&
       psDroid->lastHitWeapon == WEAPON_SUBCLASS::ELECTRONIC) {
-		modelMatrix *= objectShimmy((PersistentObject*)psDroid);
+		modelMatrix *= objectShimmy((PlayerOwnedObject *)psDroid);
 	}
 
 	// now check if the projected circle is within the screen boundaries

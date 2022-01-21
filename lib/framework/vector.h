@@ -26,7 +26,7 @@
 #define GLM_FORCE_SWIZZLE
 #define GLM_FORCE_SILENT_WARNINGS
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "wzglobal.h"
 #include "frame.h"

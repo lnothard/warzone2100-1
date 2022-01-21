@@ -16,36 +16,28 @@
 #include "objmem.h"
 #include "weapon.h"
 
-int establishTargetHeight(PersistentObject const* psTarget);
+int establishTargetHeight(PlayerOwnedObject const* psTarget);
 static constexpr auto PROJ_MAX_PITCH = 45;
 
 
 struct ConstructedObject::Impl
 {
-    Impl() = default;
-    ~Impl() = default;
-
-    Impl(Impl const& rhs) = default;
-    Impl& operator=(Impl const& rhs) = default;
-
-    Impl(Impl&& rhs) noexcept = default;
-    Impl& operator=(Impl&& rhs) noexcept = default;
-
     /// Current resistance points, 0 = cannot be attacked electrically
     int resistance = 0;
     unsigned lastEmissionTime = 0;
-    WEAPON_SUBCLASS lastHitWeapon;
-    std::vector<TILEPOS> watchedTiles;
-    std::vector<Weapon> weapons;
+    WEAPON_SUBCLASS lastHitWeapon = WEAPON_SUBCLASS::COUNT;
+    std::vector<TILEPOS> watchedTiles{};
+    std::vector<Weapon> weapons{};
 };
 
 ConstructedObject::ConstructedObject(unsigned id, unsigned player)
-  : PersistentObject(id, player)
+  : PlayerOwnedObject(id, player),
+    pimpl{std::make_unique<Impl>()}
 {
 }
 
 ConstructedObject::ConstructedObject(ConstructedObject const& rhs)
-  : PersistentObject(rhs),
+  : PlayerOwnedObject(rhs),
     pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
@@ -65,30 +57,12 @@ int ConstructedObject::getResistance() const
          : -1;
 }
 
-
 const std::vector<Weapon>& ConstructedObject::getWeapons() const
 {
   assert(pimpl);
   return pimpl->weapons;
 }
 
-void ConstructedObject::alignTurret(int weapon_slot)
-{
-  if (numWeapons(*this) == 0)  {
-    return;
-  }
-  auto& weapon = getWeapons()[weapon_slot];
-  const auto turret_rotation = gameTimeAdjustedIncrement(DEG(TURRET_ROTATION_RATE));
-  auto weapon_rotation = weapon.getRotation().direction;
-  auto weapon_pitch = weapon.getRotation().pitch;
-  const auto nearest_right_angle = (weapon_rotation + DEG(45)) / DEG(90) * DEG(90);
-
-  weapon_rotation += clip(angleDelta(nearest_right_angle - weapon_rotation), -turret_rotation / 2,
-                          turret_rotation / 2);
-  weapon_pitch += clip(angleDelta(0 - weapon_pitch), -turret_rotation / 2, turret_rotation / 2);
-
-  weapon.setRotation({weapon_rotation, weapon_pitch, weapon.getRotation().roll});
-}
 
 bool hasFullAmmo(const ConstructedObject& unit) noexcept
 {
@@ -116,23 +90,22 @@ Vector3i calculateMuzzleBaseLocation(const ConstructedObject& unit, int weapon_s
 	const auto position = unit.getPosition();
 	auto muzzle = Vector3i{0, 0, 0};
 
-	if (imd_shape.nconnectors)
-	{
+	if (imd_shape.nconnectors) {
 		Affine3F af;
 		auto rotation = unit.getRotation();
 		af.Trans(position.x, -position.z, position.y);
 		af.RotY(rotation.direction);
 		af.RotX(rotation.pitch);
 		af.RotZ(-rotation.roll);
-		af.Trans(imd_shape.connectors[weapon_slot].x, -imd_shape.connectors[weapon_slot].z,
+		af.Trans(imd_shape.connectors[weapon_slot].x,
+             -imd_shape.connectors[weapon_slot].z,
 		         -imd_shape.connectors[weapon_slot].y);
 
-		const auto barrel = Vector3i{0, 0, 0};
+		const auto barrel = Vector3i{};
 		muzzle = (af * barrel).xzy();
 		muzzle.z = -muzzle.z;
 	}
-	else
-	{
+	else {
 		muzzle = position + Vector3i{0, 0, unit.getDisplayData()->imd_shape->max.y};
 	}
 	return muzzle;
@@ -146,8 +119,7 @@ Vector3i calculateMuzzleTipLocation(const ConstructedObject& unit, int weapon_sl
 	const auto& rotation = unit.getRotation();
 	auto muzzle = Vector3i{0, 0, 0};
 
-	if (imd_shape.nconnectors)
-	{
+	if (imd_shape.nconnectors) {
 		auto barrel = Vector3i{0, 0, 0};
 		const auto weapon_imd = weapon.getImdShape();
 		const auto mount_imd = weapon.getMountGraphic();
@@ -162,28 +134,29 @@ Vector3i calculateMuzzleTipLocation(const ConstructedObject& unit, int weapon_sl
 
 		af.RotY(weapon.getRotation().direction);
 
-		if (mount_imd.nconnectors)
-		{
-			af.Trans(mount_imd.connectors->x, -mount_imd.connectors->z, -mount_imd.connectors->y);
+		if (mount_imd->nconnectors) {
+			af.Trans(mount_imd->connectors->x,
+               -mount_imd->connectors->z,
+               -mount_imd->connectors->y);
 		}
 		af.RotX(weapon.getRotation().pitch);
 
-		if (weapon_imd.nconnectors)
-		{
+		if (weapon_imd->nconnectors) {
 			auto connector_num = unsigned{0};
-			if (weapon.getShotsFired() && weapon_imd.nconnectors > 1)
-			{
-				connector_num = (weapon.getShotsFired() - 1) % weapon_imd.nconnectors;
+			if (weapon.getShotsFired() && weapon_imd->nconnectors > 1) {
+				connector_num = (weapon.getShotsFired() - 1) % weapon_imd->nconnectors;
 			}
-			const auto connector = weapon_imd.connectors[connector_num];
-			barrel = Vector3i{connector.x, -connector.z, -connector.y};
+			const auto connector = weapon_imd->connectors[connector_num];
+			barrel = Vector3i{connector.x,
+                        -connector.z,
+                        -connector.y};
 		}
 		muzzle = (af * barrel).xzy();
 		muzzle.z = -muzzle.z;
 	}
-	else
-	{
-		muzzle = position + Vector3i{0, 0, 0 + unit.getDisplayData()->imd_shape->max.y};
+	else {
+		muzzle = position + Vector3i{
+            0, 0, 0 + unit.getDisplayData()->imd_shape->max.y};
 	}
 	return muzzle;
 }
@@ -193,23 +166,22 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
 {
 	auto current_angle = int64_t{0};
 
-	if (is_direct)
-	{
+	if (is_direct) {
 		current_angle = (65536 * height) / iSqrt(start_coord);
 	}
-	else
-	{
+	else {
 		const auto distance = iSqrt(square_distance);
 		const auto position = iSqrt(start_coord);
 		current_angle = (position * target_height) / distance;
 
-		if (current_angle < height && position > TILE_UNITS / 2 && position < distance - TILE_UNITS / 2)
-		{
+		if (current_angle < height &&
+        position > TILE_UNITS / 2 &&
+        position < distance - TILE_UNITS / 2) {
+
 			current_angle = (65536 * square_distance * height - start_coord * target_height)
 				/ (square_distance * position - distance * start_coord);
 		}
-		else
-		{
+		else {
 			current_angle = 0;
 		}
 	}
@@ -220,42 +192,38 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
  * Check fire line from psViewer to psTarget
  * psTarget can be any type of SimpleObject (e.g. a tree).
  */
-int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject& target,
+int calculateLineOfFire(const ConstructedObject& unit, const ::PlayerOwnedObject & target,
                         int weapon_slot, bool walls_block, bool is_direct)
 {
-	Vector3i pos(0, 0, 0), dest(0, 0, 0);
-	Vector2i start(0, 0), diff(0, 0), current(0, 0),
-          halfway(0, 0), next(0, 0), part(0, 0);
-	Vector3i muzzle(0, 0, 0);
-	int distSq, partSq, oldPartSq;
-	int64_t angletan;
+	auto muzzle = calculateMuzzleBaseLocation(unit, weapon_slot);
 
-	muzzle = calculateMuzzleBaseLocation(unit, weapon_slot);
+	auto pos = muzzle;
+  auto dest = target.getPosition();
+	auto diff = (dest - pos).xy();
 
-	pos = muzzle;
-	dest = target.getPosition();
-	diff = (dest - pos).xy();
-
-	distSq = dot(diff, diff);
+	auto distSq = dot(diff, diff);
 	if (distSq == 0) {
 		// Should never be on top of each other, but ...
 		return 1000;
 	}
 
-	current = pos.xy();
-	start = current;
-	angletan = -1000 * 65536;
-	partSq = 0;
-	// run a manual trace along the line of fire until target is reached
-	while (partSq < distSq)
-	{
-		bool hasSplitIntersection;
+	auto current = pos.xy();
+	auto start = current;
+	auto angletan = static_cast<int64_t>(-1000) * 65536;
+	auto partSq = 0;
 
-		oldPartSq = partSq;
+	// run a manual trace along the line of fire until target is reached
+
+  auto oldPartSq = partSq;
+  Vector2i next{}; Vector2i halfway{}; Vector2i part{};
+  bool hasSplitIntersection;
+	while (partSq < distSq) {
+    oldPartSq = partSq;
 
 		if (partSq > 0) {
-      checkAngle(angletan, partSq, map_Height(current) - pos.z,
-                 distSq, dest.z - pos.z, is_direct);
+      checkAngle(angletan, partSq,
+                 map_Height(current) - pos.z, distSq,
+                 dest.z - pos.z, is_direct);
 		}
 
 		// intersect current tile with line of fire
@@ -273,16 +241,16 @@ int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject&
 			}
 
 			if (partSq > 0) {
-        checkAngle(angletan, partSq, map_Height(halfway) - pos.z,
-                   distSq, dest.z - pos.z, is_direct);
+        checkAngle(angletan, partSq,
+                   map_Height(halfway) - pos.z, distSq,
+                   dest.z - pos.z, is_direct);
 			}
 		}
 
 		// check for walls and other structures
 		if (walls_block && oldPartSq > 0) {
-			const Tile* psTile;
 			halfway = current + (next - current) / 2;
-			psTile = mapTile(map_coord(halfway.x), map_coord(halfway.y));
+			auto psTile = mapTile(map_coord(halfway.x), map_coord(halfway.y));
 			if (TileHasStructure(psTile) &&
           psTile->psObject != &target) {
 				// check whether target was reached before tile's "half way" line
@@ -307,8 +275,9 @@ int calculateLineOfFire(const ConstructedObject& unit, const ::PersistentObject&
 		part = current - start;
 		partSq = dot(part, part);
 		ASSERT(partSq > oldPartSq, "areaOfFire(): no progress in tile-walk! From: %i,%i to %i,%i stuck in %i,%i",
-		       map_coord(pos.x), map_coord(pos.y), map_coord(dest.x), map_coord(dest.y), map_coord(current.x),
-		       map_coord(current.y));
+		       map_coord(pos.x), map_coord(pos.y),
+           map_coord(dest.x), map_coord(dest.y),
+           map_coord(current.x), map_coord(current.y));
 	}
 	if (is_direct) {
 		return establishTargetHeight(&target) -
@@ -336,13 +305,17 @@ bool hasElectronicWeapon(const ConstructedObject& unit) noexcept
 	});
 }
 
-bool targetInLineOfFire(const ConstructedObject& unit, const ::ConstructedObject& target, int weapon_slot)
+bool targetInLineOfFire(const ConstructedObject& unit, const ConstructedObject& target, int weapon_slot)
 {
-	const auto distance = iHypot((target.getPosition() - unit.getPosition()).xy());
-	auto range = unit.getWeapons()[weapon_slot].getMaxRange(unit.getPlayer());
+	const auto distance = iHypot(
+          (target.getPosition() - unit.getPosition()).xy());
+
+	auto range = unit.getWeapons()[weapon_slot].
+          getMaxRange(unit.getPlayer());
+
 	if (!hasArtillery(unit)) {
-		return range >= distance && LINE_OF_FIRE_MINIMUM <=
-                                        calculateLineOfFire(unit, target, weapon_slot);
+		return range >= distance &&
+           LINE_OF_FIRE_MINIMUM <= calculateLineOfFire(unit, target, weapon_slot);
 	}
 	auto min_angle = calculateLineOfFire(unit, target, weapon_slot);
 	if (min_angle > DEG(PROJ_MAX_PITCH)) {
@@ -354,7 +327,7 @@ bool targetInLineOfFire(const ConstructedObject& unit, const ::ConstructedObject
 }
 
 ConstructedObject* find_target(ConstructedObject& unit, TARGET_ORIGIN attacker_type,
-                               int weapon_slot, Weapon weapon)
+                               int weapon_slot, Weapon& weapon)
 {
   ConstructedObject* target = nullptr;
   bool is_cb_sensor = false;
@@ -393,17 +366,19 @@ ConstructedObject* find_target(ConstructedObject& unit, TARGET_ORIGIN attacker_t
 
     if (!target ||
         !target->isAlive() ||
-        target->isProbablyDoomed() ||
-        !target->isValidTarget() ||
+        target->isProbablyDoomed(false) ||
+        !unit.isValidTarget(target, 0) ||
         aiCheckAlliances(target->getPlayer(),
                         unit.getPlayer())) {
       continue;
     }
 
-    auto square_dist = objectPositionSquareDiff(target->getPosition(),
-                                                unit.getPosition());
+    auto square_dist = objectPositionSquareDiff(
+            target->getPosition(), unit.getPosition());
+
     if (targetInLineOfFire(unit, *target, weapon_slot) &&
-        target->isTargetVisible()) {
+        unit.isTargetVisible(target, false)) {
+
       target_dist = square_dist;
       if (is_cb_sensor) {
         // got CB target, drop everything and shoot!
@@ -414,9 +389,9 @@ ConstructedObject* find_target(ConstructedObject& unit, TARGET_ORIGIN attacker_t
   return target;
 }
 
-unsigned numWeapons(const ConstructedObject& unit)
+size_t numWeapons(const ConstructedObject& unit)
 {
-	return static_cast<unsigned>(unit.getWeapons().size());
+	return unit.getWeapons().size();
 }
 
 unsigned getMaxWeaponRange(const ConstructedObject& unit)

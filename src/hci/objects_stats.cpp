@@ -19,7 +19,7 @@ void BaseObjectsController::clearStructureSelection()
 	}
 }
 
-void BaseObjectsController::selectObject(PersistentObject* object)
+void BaseObjectsController::selectObject(PlayerOwnedObject * object)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(, object);
 	object->selected = true;
@@ -34,7 +34,7 @@ void BaseObjectsController::prepareToClose()
 	clearData();
 }
 
-void BaseObjectsController::jumpToObject(PersistentObject* object)
+void BaseObjectsController::jumpToObject(PlayerOwnedObject * object)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(, object);
 	setPlayerPos(object->pos.x, object->pos.y);
@@ -49,7 +49,7 @@ void BaseObjectsController::updateHighlighted()
 		return;
 	}
 
-	auto findAnySelectedObject = [&](PersistentObject* object)
+	auto findAnySelectedObject = [&](PlayerOwnedObject * object)
 	{
 		if (object->died == 0 && object->selected)
 		{
@@ -67,7 +67,7 @@ void BaseObjectsController::updateHighlighted()
 
 	if (auto highlighted = getHighlightedObject())
 	{
-		auto findHighlightedObject = [&](PersistentObject* object)
+		auto findHighlightedObject = [&](PlayerOwnedObject * object)
 		{
 			if (object->died == 0 && object == highlighted)
 			{

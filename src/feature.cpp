@@ -44,11 +44,39 @@
 void jsDebugMessageUpdate();
 
 /* The statistics for the features */
-FeatureStats* asFeatureStats;
-unsigned numFeatureStats;
+unsigned numFeatureStats = 0;
 
 //Value is stored for easy access to this feature in destroyDroid()/destroyStruct()
 FeatureStats* oilResFeature = nullptr;
+
+
+struct Feature::Impl
+{
+  ~Impl() = default;
+  Impl() = default;
+
+  Impl(Impl const& rhs) = default;
+  Impl& operator=(Impl const& rhs) = default;
+
+  Impl(Impl&& rhs) noexcept = default;
+  Impl& operator=(Impl&& rhs) noexcept = default;
+
+
+  std::shared_ptr<FeatureStats> psStats;
+};
+
+Feature::Feature(Feature const& rhs)
+  : BaseObject(rhs),
+    pimpl{std::make_unique<Impl>()}
+{
+}
+
+Feature& Feature::operator=(Feature const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
 
 FeatureStats::FeatureStats(int idx)
   : BaseStats(idx)
@@ -62,29 +90,26 @@ Vector2i FeatureStats::size() const
 
 int Feature::objRadius() const
 {
-  return display->imd_shape->radius / 2;
+  return pimpl
+         ? pimpl->display->imd_shape->radius / 2
+         : -1;
 }
 
 Vector2i Feature::size() const
 {
-  return psStats->size();
-}
-
-void featureInitVars()
-{
-	asFeatureStats = nullptr;
-	numFeatureStats = 0;
-	oilResFeature = nullptr;
+  return pimpl
+         ? pimpl->psStats->size()
+         : Vector2i();
 }
 
 /* Load the feature stats */
-bool loadFeatureStats(WzConfig& ini)
+void loadFeatureStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	asFeatureStats = new FeatureStats[list.size()];
+	asFeatureStats = std::make_unique<FeatureStats>(list.size());
 	numFeatureStats = list.size();
-	for (int i = 0; i < list.size(); ++i)
+	for (auto i = 0; i < list.size(); ++i)
 	{
 		ini.beginGroup(list[i]);
 		asFeatureStats[i] = FeatureStats(STAT_FEATURE + i);
@@ -92,46 +117,38 @@ bool loadFeatureStats(WzConfig& ini)
 		p->name = ini.string(WzString::fromUtf8("name"));
 		p->id = list[i];
 		WzString subType = ini.value("type").toWzString();
-		if (subType == "TANK WRECK")
-		{
+
+		if (subType == "TANK WRECK") {
 			p->subType = FEATURE_TYPE::TANK;
 		}
-		else if (subType == "GENERIC ARTEFACT")
-		{
+		else if (subType == "GENERIC ARTEFACT") {
 			p->subType = FEATURE_TYPE::GEN_ARTE;
 		}
-		else if (subType == "OIL RESOURCE")
-		{
+		else if (subType == "OIL RESOURCE") {
 			p->subType = FEATURE_TYPE::OIL_RESOURCE;
 		}
-		else if (subType == "BOULDER")
-		{
+		else if (subType == "BOULDER") {
 			p->subType = FEATURE_TYPE::BOULDER;
 		}
-		else if (subType == "VEHICLE")
-		{
+		else if (subType == "VEHICLE") {
 			p->subType = FEATURE_TYPE::VEHICLE;
 		}
-		else if (subType == "BUILDING")
-		{
+		else if (subType == "BUILDING") {
 			p->subType = FEATURE_TYPE::BUILDING;
 		}
-		else if (subType == "OIL DRUM")
-		{
+		else if (subType == "OIL DRUM") {
 			p->subType = FEATURE_TYPE::OIL_DRUM;
 		}
-		else if (subType == "TREE")
-		{
+		else if (subType == "TREE") {
 			p->subType = FEATURE_TYPE::TREE;
 		}
-		else if (subType == "SKYSCRAPER")
-		{
+		else if (subType == "SKYSCRAPER") {
 			p->subType = FEATURE_TYPE::SKYSCRAPER;
 		}
-		else
-		{
+		else {
 			ASSERT(false, "Unknown feature type: %s", subType.toUtf8().c_str());
 		}
+
 		p->psImd = std::make_unique<iIMDShape>(*modelGet(ini.value("model").toWzString()));
 		p->baseWidth = ini.value("width", 1).toInt();
 		p->baseBreadth = ini.value("breadth", 1).toInt();
@@ -148,7 +165,6 @@ bool loadFeatureStats(WzConfig& ini)
 		}
 		ini.endGroup();
 	}
-	return true;
 }
 
 /* Release the feature stats memory */
@@ -287,7 +303,7 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 					removeFeature(psBlock);
 				}
 
-				psTile->psObject = dynamic_cast<PersistentObject*>(psFeature.get());
+				psTile->psObject = dynamic_cast<PlayerOwnedObject *>(psFeature.get());
 
 				// if it's a tall feature then flag it in the map.
 				if (psFeature->getDisplayData().imd_shape->max.y > TALLOBJECT_YMAX)
@@ -318,7 +334,7 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 
 Feature::Feature(unsigned id, FeatureStats const* psStats)
 // Set the default player out of range to avoid targeting confusions
-	: PersistentObject(id, PLAYER_FEATURE)
+	: PlayerOwnedObject(id, PLAYER_FEATURE)
 	  , psStats(std::make_shared<FeatureStats>(*psStats))
 {
 }

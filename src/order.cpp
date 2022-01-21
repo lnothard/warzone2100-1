@@ -37,16 +37,16 @@
 #include "order.h"
 #include "projectile.h"
 
-typedef std::vector<PersistentObject*> GridList;
+typedef std::vector<PlayerOwnedObject *> GridList;
 GridList const& gridStartIterate(int, int, unsigned);
 bool checkTransporterSpace(Droid*, Droid*, bool);
 bool ctrlShiftDown();
 bool missionLimboExpand();
 bool specialOrderKeyDown();
 bool fpathBlockingTile(int x, int y, PROPULSION_TYPE propulsion);
-void assignSensorTarget(PersistentObject*);
+void assignSensorTarget(PlayerOwnedObject *);
 void setSensorAssigned();
-int visibleObject(PersistentObject*, PersistentObject*, bool);
+int visibleObject(PlayerOwnedObject *, PlayerOwnedObject *, bool);
 
 static void orderClearDroidList(Droid* psDroid);
 
@@ -83,7 +83,7 @@ Order::Order(ORDER_TYPE type, StructureStats& stats, Vector2i pos, unsigned dire
 {
 }
 
-RtrBestResult::RtrBestResult(RTR_DATA_TYPE type, PersistentObject* obj)
+RtrBestResult::RtrBestResult(RTR_DATA_TYPE type, PlayerOwnedObject * obj)
   : type{type}, target{obj}
 {
 }
@@ -104,19 +104,19 @@ Order::Order(ORDER_TYPE type, StructureStats& stats, Vector2i pos, Vector2i pos2
 {
 }
 
-Order::Order(ORDER_TYPE type, PersistentObject& target)
+Order::Order(ORDER_TYPE type, PlayerOwnedObject & target)
   : type{type}, pos{0, 0}, pos2{0, 0}, direction{0}, index{0},
     rtrType{NO_RESULT}, target{&target}, structure_stats{nullptr}
 {
 }
 
-Order::Order(ORDER_TYPE type, PersistentObject& target, RTR_DATA_TYPE rtrType)
+Order::Order(ORDER_TYPE type, PlayerOwnedObject & target, RTR_DATA_TYPE rtrType)
   : type{type}, pos{0, 0}, pos2{0, 0}, direction{0}, index{0},
     rtrType{rtrType}, target{&target}, structure_stats{nullptr}
 {
 }
 
-Order::Order(ORDER_TYPE type, PersistentObject& target, unsigned index)
+Order::Order(ORDER_TYPE type, PlayerOwnedObject & target, unsigned index)
   : type{type}, pos{0, 0}, pos2{0, 0}, direction{0}, index{index},
     rtrType{NO_RESULT}, target{&target}, structure_stats{nullptr}
 {
@@ -150,7 +150,7 @@ Droid* checkForRepairRange(Droid* psDroid)
 	auto bestDistanceSq = radius * radius;
 	Droid* best = nullptr;
 
-	for (PersistentObject* object : gridStartIterate(psDroid->getPosition().x,
+	for (PlayerOwnedObject * object : gridStartIterate(psDroid->getPosition().x,
                                                    psDroid->getPosition().y,
                                                    radius))
 	{
@@ -202,7 +202,7 @@ static std::pair<Structure*, ACTION> checkForDamagedStruct(Droid* psDroid)
 	auto bestDistanceSq = radius * radius;
 	std::pair<Structure*, ACTION> best = {nullptr, ACTION::NONE};
 
-	for (PersistentObject* object : gridStartIterate(psDroid->getPosition().x,
+	for (PlayerOwnedObject * object : gridStartIterate(psDroid->getPosition().x,
                                                    psDroid->getPosition().y,
                                                    radius))
 	{
@@ -337,7 +337,7 @@ static constexpr auto AUDIO_DELAY_FIRESUPPORT	=	3 * GAME_TICKS_PER_SEC;
  * support a specific unit. Uses audio_QueueTrackMinDelay() to play the sound.
  * @todo this function is about playing audio. I'm not sure this should be in here.
  */
-static void orderPlayFireSupportAudio(PersistentObject* psObj)
+static void orderPlayFireSupportAudio(PlayerOwnedObject * psObj)
 {
 	auto iAudioID = NO_SOUND;
 	ASSERT_OR_RETURN(, psObj != nullptr, "Invalid pointer");
@@ -488,7 +488,7 @@ bool validOrderForObj(ORDER_TYPE order)
  * is alloc, the old order list is erased, and the order is sent 
  * using orderDroidBase().
  */
-void orderDroidObj(Droid* psDroid, ORDER_TYPE order, PersistentObject* psObj, QUEUE_MODE mode)
+void orderDroidObj(Droid* psDroid, ORDER_TYPE order, PlayerOwnedObject * psObj, QUEUE_MODE mode)
 {
 	ASSERT(psDroid != nullptr, "Invalid unit pointer");
 	ASSERT(validOrderForObj(order), "Invalid order for object");
@@ -510,7 +510,7 @@ void orderDroidObj(Droid* psDroid, ORDER_TYPE order, PersistentObject* psObj, QU
  * @todo the first switch can be removed and substituted by orderState() function.
  * @todo the use of this function is somewhat superfluous on some cases. Investigate.
  */
-PersistentObject* orderStateObj(Droid* psDroid, ORDER_TYPE order)
+PlayerOwnedObject * orderStateObj(Droid* psDroid, ORDER_TYPE order)
 {
 	bool match = false;
 
@@ -908,7 +908,7 @@ static int highestQueuedModule(Droid const* droid, Structure const* structure)
  * This function returns an order according to the droid,
  * object (target) and altOrder.
  */
-Order chooseOrderObj(Droid* psDroid, PersistentObject* psObj, bool altOrder)
+Order chooseOrderObj(Droid* psDroid, PlayerOwnedObject * psObj, bool altOrder)
 {
   using enum ORDER_TYPE;
 	Order order {NONE};
@@ -1119,7 +1119,7 @@ Order chooseOrderObj(Droid* psDroid, PersistentObject* psObj, bool altOrder)
  * @todo this function runs through all the player's droids, but only uses the selected ones. Consider an efficiency improvement in here.
  * @todo current scope of this function is quite small. Consider refactoring it.
  */
-static void orderPlayOrderObjAudio(unsigned player, PersistentObject* psObj)
+static void orderPlayOrderObjAudio(unsigned player, PlayerOwnedObject * psObj)
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 
@@ -1147,7 +1147,7 @@ static void orderPlayOrderObjAudio(unsigned player, PersistentObject* psObj)
  * If add is true, the orders are queued.
  * @todo this function runs through all the player's droids, but only uses the selected ones. Consider an efficiency improvement in here.
  */
-void orderSelectedObjAdd(unsigned player, PersistentObject* psObj, bool add)
+void orderSelectedObjAdd(unsigned player, PlayerOwnedObject * psObj, bool add)
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 
@@ -1187,7 +1187,7 @@ void orderSelectedObjAdd(unsigned player, PersistentObject* psObj, bool add)
 }
 
 /** This function just calls orderSelectedObjAdd with add = false.*/
-void orderSelectedObj(unsigned player, PersistentObject* psObj)
+void orderSelectedObj(unsigned player, PlayerOwnedObject * psObj)
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 	orderSelectedObjAdd(player, psObj, false);
@@ -1602,7 +1602,7 @@ void secondarySetAverageGroupState(unsigned player, const Group& group)
 /**
  * lasSat structure can select a target
  */
-void orderStructureObj(unsigned player, PersistentObject* psObj)
+void orderStructureObj(unsigned player, PlayerOwnedObject * psObj)
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 

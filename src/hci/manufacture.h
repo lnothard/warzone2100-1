@@ -44,7 +44,7 @@ public:
 		return factories[index];
 	}
 
-	bool findObject(std::function<bool (PersistentObject*)> iteration) const override
+	bool findObject(std::function<bool (PlayerOwnedObject *)> iteration) const override
 	{
 		return BaseObjectsController::findObject(factories, iteration);
 	}
@@ -65,7 +65,7 @@ public:
 		return highlightedFactory;
 	}
 
-	void setHighlightedObject(PersistentObject* object) override;
+	void setHighlightedObject(PlayerOwnedObject * object) override;
 
 private:
 	void updateFactoriesList();

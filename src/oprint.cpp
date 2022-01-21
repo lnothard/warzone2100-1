@@ -33,7 +33,7 @@
 /** print out information about a base object
  *  \param psObj the object to print the info for
  */
-static void printBaseObjInfo(const PersistentObject* psObj)
+static void printBaseObjInfo(const PlayerOwnedObject * psObj)
 {
 	const char* pType;
 	switch (psObj->type) {
@@ -202,7 +202,7 @@ void printDroidInfo(const Droid* psDroid)
 	ConstructStats* psConstStats;
 	RepairStats* psRepairStats;
 
-	printBaseObjInfo((const PersistentObject*)psDroid);
+	printBaseObjInfo((const PlayerOwnedObject *)psDroid);
 
 	CONPRINTF("   wt %d bSpeed %d sRng %d ECM %d bdy %d\n",
 						psDroid->weight, psDroid->base_speed, droidSensorRange(psDroid), objJammerPower(psDroid), psDroid->getHp());

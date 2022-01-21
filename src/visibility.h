@@ -79,7 +79,7 @@ struct VisibleObjectHelp_t
 bool visInitialise();
 
 /* Check which tiles can be seen by an object */
-void visTilesUpdate(PersistentObject* psObj);
+void visTilesUpdate(PlayerOwnedObject * psObj);
 
 void revealAll(uint8_t player);
 
@@ -89,19 +89,19 @@ void revealAll(uint8_t player);
  * currently droids and structures. psTarget can be any
  * type of SimpleObject (e.g. a tree).
  */
-int visibleObject(const PersistentObject* psViewer, const PersistentObject* psTarget, bool wallsBlock);
+int visibleObject(const PlayerOwnedObject * psViewer, const PlayerOwnedObject * psTarget, bool wallsBlock);
 
 /** Can shooter hit target with direct fire weapon? */
-bool lineOfFire(const PersistentObject* psViewer, const PersistentObject* psTarget, int weapon_slot, bool wallsBlock);
+bool lineOfFire(const PlayerOwnedObject * psViewer, const PlayerOwnedObject * psTarget, int weapon_slot, bool wallsBlock);
 
 /** How much of target can the player hit with direct fire weapon? */
-int areaOfFire(const PersistentObject* psViewer, const PersistentObject* psTarget, int weapon_slot, bool wallsBlock);
+int areaOfFire(const PlayerOwnedObject * psViewer, const PlayerOwnedObject * psTarget, int weapon_slot, bool wallsBlock);
 
 /** How much of target can the player hit with direct fire weapon? */
-int arcOfFire(const PersistentObject* psViewer, const PersistentObject* psTarget, int weapon_slot, bool wallsBlock);
+int arcOfFire(const PlayerOwnedObject * psViewer, const PlayerOwnedObject * psTarget, int weapon_slot, bool wallsBlock);
 
 // Find the wall that is blocking LOS to a target (if any)
-Structure* visGetBlockingWall(const PersistentObject* psViewer, const PersistentObject* psTarget);
+Structure* visGetBlockingWall(const PlayerOwnedObject * psViewer, const PlayerOwnedObject * psTarget);
 
 bool hasSharedVision(unsigned viewer, unsigned ally);
 
@@ -110,19 +110,19 @@ void processVisibility(); ///< Calls processVisibilitySelf and processVisibility
 // update the visibility reduction
 void visUpdateLevel();
 
-void setUnderTilesVis(PersistentObject* psObj, unsigned player);
+void setUnderTilesVis(PlayerOwnedObject * psObj, unsigned player);
 
-void visRemoveVisibilityOffWorld(PersistentObject* psObj);
-void visRemoveVisibility(PersistentObject* psObj);
+void visRemoveVisibilityOffWorld(PlayerOwnedObject * psObj);
+void visRemoveVisibility(PlayerOwnedObject * psObj);
 
 // fast test for whether obj2 is in range of obj1
-static bool visObjInRange(PersistentObject* psObj1, PersistentObject* psObj2, int range);
+static bool visObjInRange(PlayerOwnedObject * psObj1, PlayerOwnedObject * psObj2, int range);
 
 // If we have ECM, use this for range instead. Otherwise, the sensor's range will be used for
 // jamming range, which we do not want. Rather limit ECM unit sensor range to jammer range.
-static unsigned objSensorRange(const PersistentObject* psObj);
+static unsigned objSensorRange(const PlayerOwnedObject * psObj);
 
-static unsigned objJammerPower(const PersistentObject* psObj);
+static unsigned objJammerPower(const PlayerOwnedObject * psObj);
 
 void removeSpotters();
 

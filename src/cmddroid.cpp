@@ -77,7 +77,7 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
                       (SECONDARY_STATE)(psCommander->getSecondaryOrder() & DSS_HALT_MASK),
 		                  ModeImmediate);
 
-		orderDroidObj(psDroid, ORDER_TYPE::GUARD, (PersistentObject*)psCommander, ModeImmediate);
+		orderDroidObj(psDroid, ORDER_TYPE::GUARD, (PlayerOwnedObject *)psCommander, ModeImmediate);
 	}
 	else if (psCommander->getPlayer() == selectedPlayer)
 	{

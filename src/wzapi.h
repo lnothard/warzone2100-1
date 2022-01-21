@@ -74,12 +74,12 @@ public:
 	virtual ~timerAdditionalData() = default;
 
 public:
-	virtual void onTimerDelete(uniqueTimerID, PersistentObject*)
+	virtual void onTimerDelete(uniqueTimerID, PlayerOwnedObject *)
 	{
 	};
 };
 
-typedef std::function<void (uniqueTimerID, PersistentObject*, timerAdditionalData*)> TimerFunc;
+typedef std::function<void (uniqueTimerID, PlayerOwnedObject *, timerAdditionalData*)> TimerFunc;
 
 // NOTES:
 // - All position value types (scr_position, scr_area, etc) passed to/from scripts expect map coordinates
@@ -114,7 +114,7 @@ struct scr_position
 };
 
 // Utility conversion functions
-PersistentObject* IdToObject(unsigned id, unsigned player);
+PlayerOwnedObject * IdToObject(unsigned id, unsigned player);
 
 // MARK: - wzapi
 
@@ -222,32 +222,32 @@ namespace wzapi
 		//__ An event that is run when the mission transporter has been ordered to fly off.
 		//__
 		virtual bool handle_eventLaunchTransporter() SCRIPTING_EVENT_NON_REQUIRED // DEPRECATED!
-		virtual bool handle_eventTransporterLaunch(const PersistentObject* psTransport) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventTransporterLaunch(const PlayerOwnedObject * psTransport) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventTransporterArrived(transport)
 		//__
 		//__ An event that is run when the mission transporter has arrived at the map edge with reinforcements.
 		//__
 		virtual bool handle_eventReinforcementsArrived() SCRIPTING_EVENT_NON_REQUIRED // DEPRECATED!
-		virtual bool handle_eventTransporterArrived(const PersistentObject* psTransport) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventTransporterArrived(const PlayerOwnedObject * psTransport) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventTransporterExit(transport)
 		//__
 		//__ An event that is run when the mission transporter has left the map.
 		//__
-		virtual bool handle_eventTransporterExit(const PersistentObject* psObj) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventTransporterExit(const PlayerOwnedObject * psObj) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventTransporterDone(transport)
 		//__
 		//__ An event that is run when the mission transporter has no more reinforcements to deliver.
 		//__
-		virtual bool handle_eventTransporterDone(const PersistentObject* psTransport) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventTransporterDone(const PlayerOwnedObject * psTransport) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventTransporterLanded(transport)
 		//__
 		//__ An event that is run when the mission transporter has landed with reinforcements.
 		//__
-		virtual bool handle_eventTransporterLanded(const PersistentObject* psTransport) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventTransporterLanded(const PlayerOwnedObject * psTransport) SCRIPTING_EVENT_NON_REQUIRED
 
 	public:
 		// MARK: UI-related events (intended for the tutorial)
@@ -256,13 +256,13 @@ namespace wzapi
 		//__
 		//__ An event that is run when the current player starts to move a delivery point.
 		//__
-		virtual bool handle_eventDeliveryPointMoving(const PersistentObject* psStruct) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventDeliveryPointMoving(const PlayerOwnedObject * psStruct) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventDeliveryPointMoved()
 		//__
 		//__ An event that is run after the current player has moved a delivery point.
 		//__
-		virtual bool handle_eventDeliveryPointMoved(const PersistentObject* psStruct) SCRIPTING_EVENT_NON_REQUIRED
+		virtual bool handle_eventDeliveryPointMoved(const PlayerOwnedObject * psStruct) SCRIPTING_EVENT_NON_REQUIRED
 
 		//__ ## eventDesignBody()
 		//__
@@ -342,7 +342,7 @@ namespace wzapi
 		//__ deselected object. If all selected game objects are deselected, ```objects``` will
 		//__ be empty.
 		//__
-		virtual bool handle_eventSelectionChanged(const std::vector<const PersistentObject*>& objects)
+		virtual bool handle_eventSelectionChanged(const std::vector<const PlayerOwnedObject *>& objects)
 		SCRIPTING_EVENT_NON_REQUIRED
 
 	public:
@@ -352,7 +352,7 @@ namespace wzapi
 		//__
 		//__ An event that is run when an object (ex. droid, structure) is recycled.
 		//__
-		virtual bool handle_eventObjectRecycled(const PersistentObject* psObj) = 0;
+		virtual bool handle_eventObjectRecycled(const PlayerOwnedObject * psObj) = 0;
 
 		//__ ## eventPlayerLeft(player)
 		//__
@@ -415,7 +415,7 @@ namespace wzapi
 		//__ An event that is run when an object belonging to the script's controlling player is
 		//__ attacked. The attacker parameter may be either a structure or a droid.
 		//__
-		virtual bool handle_eventAttacked(const PersistentObject* psVictim, const PersistentObject* psAttacker) = 0;
+		virtual bool handle_eventAttacked(const PlayerOwnedObject * psVictim, const PlayerOwnedObject * psAttacker) = 0;
 
 		//__ ## eventResearched(research, structure, player)
 		//__
@@ -432,7 +432,7 @@ namespace wzapi
 		//__ An event that is run whenever an object is destroyed. Careful passing
 		//__ the parameter object around, since it is about to vanish!
 		//__
-		virtual bool handle_eventDestroyed(const PersistentObject* psVictim) = 0;
+		virtual bool handle_eventDestroyed(const PlayerOwnedObject * psVictim) = 0;
 
 		//__ ## eventPickup(feature, droid)
 		//__
@@ -449,7 +449,7 @@ namespace wzapi
 		//__ An event that is run sometimes when an objectm  goes from not seen to seen.
 		//__ First parameter is **game object** doing the seeing, the next the game
 		//__ object being seen.
-		virtual bool handle_eventObjectSeen(const PersistentObject* psViewer, const PersistentObject* psSeen) = 0;
+		virtual bool handle_eventObjectSeen(const PlayerOwnedObject * psViewer, const PlayerOwnedObject * psSeen) = 0;
 
 		//__
 		//__ ## eventGroupSeen(viewer, group)
@@ -459,7 +459,7 @@ namespace wzapi
 		//__ First parameter is **game object** doing the seeing, the next the id of the group
 		//__ being seen.
 		//__
-		virtual bool handle_eventGroupSeen(const PersistentObject* psViewer, int groupId) = 0;
+		virtual bool handle_eventGroupSeen(const PlayerOwnedObject * psViewer, int groupId) = 0;
 
 		//__ ## eventObjectTransfer(object, from)
 		//__
@@ -468,7 +468,7 @@ namespace wzapi
 		//__ object has been transferred, so the target player is in object.player.
 		//__ The event is called for both players.
 		//__
-		virtual bool handle_eventObjectTransfer(const PersistentObject* psObj, unsigned from) = 0;
+		virtual bool handle_eventObjectTransfer(const PlayerOwnedObject * psObj, unsigned from) = 0;
 
 		//__ ## eventChat(from, to, message)
 		//__
@@ -499,7 +499,7 @@ namespace wzapi
 		//__ is the about to be killed object, the group's id, and the new group size.
 		//__
 		//		// Since groups are entities local to one context, we do not iterate over them here.
-		virtual bool handle_eventGroupLoss(const PersistentObject* psObj, int group, int size) = 0;
+		virtual bool handle_eventGroupLoss(const PlayerOwnedObject * psObj, int group, int size) = 0;
 
 		//__ ## eventArea<label>(droid)
 		//__
@@ -543,8 +543,8 @@ namespace wzapi
 		//__ to prevent desync from happening. Sync requests must be carefully validated to prevent
 		//__ cheating!
 		//__
-		virtual bool handle_eventSyncRequest(unsigned from, int req_id, int x, int y, const PersistentObject* psObj,
-		                                     const PersistentObject* psObj2) = 0;
+		virtual bool handle_eventSyncRequest(unsigned from, int req_id, int x, int y, const PlayerOwnedObject * psObj,
+		                                     const PlayerOwnedObject * psObj2) = 0;
 
 		//__ ## eventKeyPressed(meta, key)
 		//__
@@ -722,7 +722,7 @@ namespace wzapi
 	{
 		game_object_identifier() = default;
 
-		explicit game_object_identifier(const PersistentObject* psObj)
+		explicit game_object_identifier(const PlayerOwnedObject * psObj)
 			  : id(psObj->getId()), player(psObj->getPlayer())
 		{
 		}
@@ -1046,11 +1046,11 @@ namespace wzapi
 	bool cameraTrack(WZAPI_PARAMS(optional<Droid *> _droid));
 	unsigned addSpotter(WZAPI_PARAMS(int x, int y, unsigned player, int range, bool radar, unsigned expiry));
 	bool removeSpotter(WZAPI_PARAMS(unsigned spotterId));
-	bool syncRequest(WZAPI_PARAMS(int req_id, int x, int y, optional<const PersistentObject *> _psObj,
-	                              optional<const PersistentObject *> _psObj2));
+	bool syncRequest(WZAPI_PARAMS(int req_id, int x, int y, optional<const PlayerOwnedObject *> _psObj,
+	                              optional<const PlayerOwnedObject *> _psObj2));
 	bool replaceTexture(WZAPI_PARAMS(std::string oldFilename, std::string newFilename));
 	bool changePlayerColour(WZAPI_PARAMS(unsigned player, int colour));
-	bool setHealth(WZAPI_PARAMS(PersistentObject* psObject, int health));
+	bool setHealth(WZAPI_PARAMS(PlayerOwnedObject * psObject, int health));
 	MULTIPLAY_SYNCREQUEST_REQUIRED
 	bool useSafetyTransport(WZAPI_PARAMS(bool flag));
 	bool restoreLimboMissionData(WZAPI_NO_PARAMS);
@@ -1066,7 +1066,7 @@ namespace wzapi
 	no_return_value hackNetOn(WZAPI_NO_PARAMS);
 	no_return_value hackAddMessage(WZAPI_PARAMS(std::string message, int messageType, unsigned player, bool immediate));
 	no_return_value hackRemoveMessage(WZAPI_PARAMS(std::string message, int messageType, unsigned player));
-	returned_nullable_ptr<const PersistentObject> hackGetObj(WZAPI_PARAMS(int _objectType, unsigned player, unsigned id))
+	returned_nullable_ptr<const PlayerOwnedObject> hackGetObj(WZAPI_PARAMS(int _objectType, unsigned player, unsigned id))
 	WZAPI_DEPRECATED;
 	no_return_value hackAssert(WZAPI_PARAMS(bool condition, va_list_treat_as_strings message));
 	bool receiveAllEvents(WZAPI_PARAMS(optional<bool> enabled));
@@ -1091,11 +1091,11 @@ namespace wzapi
                                                    optional<unsigned> _playerFilter));
 	std::vector<const Feature*> enumFeature(WZAPI_PARAMS(unsigned playerFilter, optional<std::string> _featureName));
 	std::vector<scr_position> enumBlips(WZAPI_PARAMS(unsigned player));
-	std::vector<const PersistentObject*> enumSelected(WZAPI_NO_PARAMS_NO_CONTEXT);
+	std::vector<const PlayerOwnedObject *> enumSelected(WZAPI_NO_PARAMS_NO_CONTEXT);
 	GATEWAY_LIST enumGateways(WZAPI_NO_PARAMS);
 	researchResult getResearch(WZAPI_PARAMS(std::string researchName, optional<unsigned> _player));
 	researchResults enumResearch(WZAPI_NO_PARAMS);
-	std::vector<const PersistentObject*> enumRange(WZAPI_PARAMS(int x, int y, int range, optional<unsigned> _playerFilter,
+	std::vector<const PlayerOwnedObject *> enumRange(WZAPI_PARAMS(int x, int y, int range, optional<unsigned> _playerFilter,
                                                               optional<bool> _seen));
 	bool pursueResearch(WZAPI_PARAMS(const Structure *psStruct, string_or_string_list research));
 	researchResults findResearch(WZAPI_PARAMS(std::string researchName, optional<unsigned> _player));
@@ -1110,7 +1110,7 @@ namespace wzapi
 	bool propulsionCanReach(WZAPI_PARAMS(std::string propulsionName, int x1, int y1, int x2, int y2));
 	int terrainType(WZAPI_PARAMS(int x, int y));
 	bool tileIsBurning(WZAPI_PARAMS(int x, int y));
-	bool orderDroidObj(WZAPI_PARAMS(Droid *psDroid, int _order, PersistentObject *psObj));
+	bool orderDroidObj(WZAPI_PARAMS(Droid *psDroid, int _order, PlayerOwnedObject *psObj));
 	bool buildDroid(WZAPI_PARAMS(Structure *psFactory, std::string templateName, string_or_string_list body,
                                string_or_string_list propulsion, reservedParam reserved1, reservedParam reserved2,
                                va_list<string_or_string_list> turrets));
@@ -1131,7 +1131,7 @@ namespace wzapi
 	bool componentAvailable(WZAPI_PARAMS(std::string componentType, optional<std::string> _componentName));
 	bool isVTOL(WZAPI_PARAMS(const Droid *psDroid));
 	bool safeDest(WZAPI_PARAMS(unsigned player, int x, int y));
-	bool activateStructure(WZAPI_PARAMS(Structure *psStruct, optional<PersistentObject *> _psTarget));
+	bool activateStructure(WZAPI_PARAMS(Structure *psStruct, optional<PlayerOwnedObject *> _psTarget));
 	bool chat(WZAPI_PARAMS(unsigned playerFilter, std::string message));
 	bool addBeacon(WZAPI_PARAMS(int x, int y, unsigned playerFilter, optional<std::string> _message));
 	bool removeBeacon(WZAPI_PARAMS(unsigned playerFilter));
@@ -1185,7 +1185,7 @@ namespace wzapi
 	no_return_value makeComponentAvailable(WZAPI_PARAMS(std::string componentName, unsigned player));
 	bool allianceExistsBetween(WZAPI_PARAMS(unsigned player1, unsigned player2));
 	bool removeStruct(WZAPI_PARAMS(Structure *psStruct)) WZAPI_DEPRECATED;
-	bool removeObject(WZAPI_PARAMS(PersistentObject *psObj, optional<bool> _sfx));
+	bool removeObject(WZAPI_PARAMS(PlayerOwnedObject *psObj, optional<bool> _sfx));
 	no_return_value setScrollLimits(WZAPI_PARAMS(int x1, int y1, int x2, int y2));
 	scr_area getScrollLimits(WZAPI_NO_PARAMS);
 	returned_nullable_ptr<const Structure> addStructure(
@@ -1195,15 +1195,15 @@ namespace wzapi
 	int countDroid(WZAPI_PARAMS(optional<int> _droidType, optional<unsigned> _playerFilter));
 	no_return_value loadLevel(WZAPI_PARAMS(std::string levelName));
 	no_return_value setDroidExperience(WZAPI_PARAMS(Droid *psDroid, double experience));
-	bool donateObject(WZAPI_PARAMS(PersistentObject *psObject, unsigned player));
+	bool donateObject(WZAPI_PARAMS(PlayerOwnedObject *psObject, unsigned player));
 	bool donatePower(WZAPI_PARAMS(int amount, unsigned player));
 	no_return_value setNoGoArea(WZAPI_PARAMS(int x1, int y1, int x2, int y2, unsigned playerFilter));
 	no_return_value startTransporterEntry(WZAPI_PARAMS(int x, int y, unsigned player));
 	no_return_value setTransporterExit(WZAPI_PARAMS(int x, int y, unsigned player));
-	no_return_value setObjectFlag(WZAPI_PARAMS(PersistentObject *psObj, int _flag, bool flagValue))
+	no_return_value setObjectFlag(WZAPI_PARAMS(PlayerOwnedObject *psObj, int _flag, bool flagValue))
 	MULTIPLAY_SYNCREQUEST_REQUIRED;
 	no_return_value fireWeaponAtLoc(WZAPI_PARAMS(std::string weaponName, int x, int y, optional<unsigned> _player));
-	no_return_value fireWeaponAtObj(WZAPI_PARAMS(std::string weaponName, PersistentObject *psObj, optional<unsigned> _player));
+	no_return_value fireWeaponAtObj(WZAPI_PARAMS(std::string weaponName, PlayerOwnedObject *psObj, optional<unsigned> _player));
 	bool setUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string& name, int type, unsigned index,
 	                                       const nlohmann::json& newValue));
 	nlohmann::json getUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string& name, int type, unsigned index));

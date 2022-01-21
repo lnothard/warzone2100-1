@@ -16,21 +16,21 @@ class BaseObjectsController
 public:
 	virtual ~BaseObjectsController() = default;
 	virtual size_t objectsSize() const = 0;
-	virtual PersistentObject* getObjectAt(size_t index) const = 0;
+	virtual PlayerOwnedObject * getObjectAt(size_t index) const = 0;
 	virtual BaseStats* getObjectStatsAt(size_t index) const = 0;
-	virtual bool findObject(std::function<bool (PersistentObject*)> iteration) const = 0;
+	virtual bool findObject(std::function<bool (PlayerOwnedObject *)> iteration) const = 0;
 	virtual void refresh() = 0;
 	virtual bool showInterface() = 0;
 	virtual void prepareToClose();
 	virtual void clearData() = 0;
-	void jumpToObject(PersistentObject* object);
+	void jumpToObject(PlayerOwnedObject * object);
 	void updateHighlighted();
 	void clearSelection();
 	void clearStructureSelection();
-	void selectObject(PersistentObject* object);
+	void selectObject(PlayerOwnedObject * object);
 
-	virtual PersistentObject* getHighlightedObject() const = 0;
-	virtual void setHighlightedObject(PersistentObject* object) = 0;
+	virtual PlayerOwnedObject * getHighlightedObject() const = 0;
+	virtual void setHighlightedObject(PlayerOwnedObject * object) = 0;
 
 	void closeInterface()
 	{
@@ -200,7 +200,7 @@ protected:
 
 	std::shared_ptr<IntListTabWidget> objectsList;
 	size_t buttonsCount = 0;
-	PersistentObject* previousHighlighted = nullptr;
+  PlayerOwnedObject * previousHighlighted = nullptr;
 };
 
 class StatsForm : public IntFormAnimated

@@ -22,7 +22,7 @@ public:
 		return commanders[index];
 	}
 
-	bool findObject(std::function<bool (PersistentObject*)> iteration) const override
+	bool findObject(std::function<bool (PlayerOwnedObject *)> iteration) const override
 	{
 		return BaseObjectsController::findObject(commanders, iteration);
 	}
@@ -38,7 +38,7 @@ public:
 		return highlightedCommander;
 	}
 
-	void setHighlightedObject(PersistentObject* object) override;
+	void setHighlightedObject(PlayerOwnedObject * object) override;
 
 private:
 	void updateCommandersList();

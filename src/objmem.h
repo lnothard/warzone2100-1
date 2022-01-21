@@ -46,7 +46,7 @@ extern std::vector<ConstructedObject*> apsSensorList;
 extern std::vector<Feature*> apsOilList;
 
 /* The list of destroyed objects */
-extern std::vector<PersistentObject*> psDestroyedObj;
+extern std::vector<PlayerOwnedObject *> psDestroyedObj;
 
 /* Initialise the object heaps */
 bool objmemInitialise();
@@ -112,8 +112,8 @@ void removeFlagPosition(FlagPosition* psDel);
 void freeAllFlagPositions();
 
 // Find a base object from it's id
-PersistentObject* getBaseObjFromData(unsigned id, unsigned player);
-PersistentObject* getBaseObjFromId(unsigned id);
+PlayerOwnedObject * getBaseObjFromData(unsigned id, unsigned player);
+PlayerOwnedObject * getBaseObjFromId(unsigned id);
 
 unsigned getRepairIdFromFlag(FlagPosition* psFlag);
 
