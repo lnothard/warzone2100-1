@@ -123,8 +123,11 @@ static WzString favoriteStructs;
 
 struct Structure::Impl
 {
-  Impl() = default;
+  Impl(unsigned player);
 
+  unsigned player;
+  unsigned hitPoints = 0;
+  unsigned originalHp = 0;
   std::shared_ptr<StructureStats> stats;
   /// Whether the structure is being built, doing nothing or performing a function
   STRUCTURE_STATE state = STRUCTURE_STATE::BLUEPRINT_PLANNED;
@@ -139,7 +142,7 @@ struct Structure::Impl
   /// Needed if wanting the buildRate between buildRate being reset to 0
   /// each tick and the trucks calculating it
   int previousBuildRate = 0;
-  std::array<PlayerOwnedObject*, MAX_WEAPONS> target{};
+  std::array<BaseObject*, MAX_WEAPONS> target{};
   /// Expected damage to be caused by all currently incoming projectiles.
   /// This info is shared between all players, but shouldn't make a difference
   /// unless 3 mutual enemies happen to be fighting each other at the same time.
@@ -210,6 +213,41 @@ struct Factory::Impl
   unsigned secondaryOrder = 0; ///< Secondary order state for all units coming out of the factory.
 };
 
+struct PowerGenerator::Impl
+{
+  Impl() = default;
+
+  /// Pointers to associated oil derricks
+  std::array<ResourceExtractor*, NUM_POWER_MODULES> resource_extractors;
+};
+
+struct RepairFacility::Impl
+{
+  ~Impl() = default;
+  Impl() = default;
+
+  Impl(Impl const& rhs);
+  Impl& operator=(Impl const& rhs);
+
+  Impl(Impl&& rhs) noexcept = default;
+  Impl& operator=(Impl&& rhs) noexcept = default;
+
+  ConstructedObject* psObj = nullptr; /* Object being repaired */
+  std::unique_ptr<FlagPosition> psDeliveryPoint; /* Place for the repaired droids to assemble at */
+  // The group the droids to be repaired by this facility belong to
+  std::shared_ptr<Group> psGroup;
+  int droidQueue = 0; /// Last count of droid queue for this facility
+};
+
+struct RearmPad::Impl
+{
+  Impl() = default;
+
+  unsigned timeStarted = 0; /* Time reArm started on current object */
+  Droid* psObj = nullptr; /* Object being rearmed */
+  unsigned timeLastUpdated = 0; /* Time rearm was last updated */
+};
+
 struct ResourceExtractor::Impl
 {
   Impl() = default;
@@ -218,13 +256,13 @@ struct ResourceExtractor::Impl
 };
 
 Structure::Structure(unsigned id, unsigned player)
-  : ConstructedObject(id, player)
-  , pimpl{std::make_unique<Impl>()}
+  : BaseObject(id)
+  , pimpl{std::make_unique<Impl>(player)}
 {
 }
 
 Structure::Structure(Structure const& rhs)
-  : ConstructedObject(rhs)
+  : BaseObject(rhs)
   , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
@@ -366,12 +404,87 @@ ResourceExtractor& ResourceExtractor::operator=(ResourceExtractor const& rhs)
   return *this;
 }
 
+PowerGenerator::PowerGenerator(unsigned id, unsigned player)
+  : Structure(id, player)
+  , pimpl{std::make_unique<Impl>()}
+{
+}
+
+PowerGenerator::PowerGenerator(PowerGenerator const& rhs)
+        : Structure(rhs)
+        , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+PowerGenerator& PowerGenerator::operator=(PowerGenerator const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+RepairFacility::RepairFacility(unsigned id, unsigned player)
+  : Structure(id, player)
+  , pimpl{std::make_unique<Impl>()}
+{
+}
+
+RepairFacility::RepairFacility(RepairFacility const& rhs)
+        : Structure(rhs)
+        , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+RepairFacility& RepairFacility::operator=(RepairFacility const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+RepairFacility::Impl::Impl(Impl const& rhs)
+  : psDeliveryPoint{std::make_unique<FlagPosition>(*rhs.psDeliveryPoint)}
+  , psObj{rhs.psObj}
+  , psGroup{rhs.psGroup}
+  , droidQueue{rhs.droidQueue}
+{
+}
+
+RepairFacility::Impl& RepairFacility::Impl::operator=(Impl const& rhs)
+{
+  if (this == &rhs) return *this;
+  psDeliveryPoint = std::make_unique<FlagPosition>(*rhs.psDeliveryPoint);
+  psObj = rhs.psObj;
+  psGroup = rhs.psGroup;
+  droidQueue = rhs.droidQueue;
+  return *this;
+}
+
+RearmPad::RearmPad(unsigned id, unsigned player)
+  : Structure(id, player)
+  , pimpl{std::make_unique<Impl>()}
+{
+}
+
+RearmPad::RearmPad(RearmPad const& rhs)
+        : Structure(rhs)
+        , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+RearmPad& RearmPad::operator=(RearmPad const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
 StructureBounds::StructureBounds()
   : map(0, 0), size(0, 0)
 {
 }
 
-StructureBounds::StructureBounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords)
+StructureBounds::StructureBounds(Vector2i top_left_coords, Vector2i size_in_coords)
  : map{top_left_coords}, size{size_in_coords}
 {
 }
@@ -471,17 +584,10 @@ void auxStructureClosedGate(const Structure& structure)
   }
 }
 
-//bool IsStatExpansionModule(const STRUCTURE_STATS* psStats)
-//{
-//	// If the stat is any of the 4 expansion types ... then return true
-//	return psStats->type == REF_POWER_MODULE ||
-//		psStats->type == REF_FACTORY_MODULE ||
-//		psStats->type == REF_RESEARCH_MODULE;
-//}
-
 Structure::~Structure()
 {
-  // Make sure to get rid of some final references in the sound code to this object first
+  // Make sure to get rid of some final references in the sound
+  // code to this object first
   audio_RemoveObj(this);
 }
 
@@ -590,8 +696,9 @@ void Structure::structureBuild(Droid* psDroid, int buildPoints, int buildRate_)
       for (auto& psCurr : apsDroidLists[player])
       {
         // An enemy droid is blocking it
-        if (dynamic_cast<Structure*>(orderStateObj(&psCurr, ORDER_TYPE::BUILD)) == this
-            && !aiCheckAlliances(player, psCurr.getPlayer())) {
+        if (dynamic_cast<Structure*>(orderStateObj(
+                &psCurr, ORDER_TYPE::BUILD)) == this &&
+            !aiCheckAlliances(player, psCurr.getPlayer())) {
           return;
         }
       }
@@ -771,7 +878,7 @@ Structure* Structure::giftSingleStructure(unsigned attackPlayer, bool electronic
           }
         }
         // check through order list
-        ::orderClearTargetFromDroidList(&psCurr, this);
+        orderClearTargetFromDroidList(&psCurr, this);
       }
 
       // check through the 'attackPlayer' players list of structures
@@ -841,11 +948,11 @@ Structure* Structure::giftSingleStructure(unsigned attackPlayer, bool electronic
       }
     }
     if (buildPoints) {
-      psNewStruct->state = BEING_BUILT;
-      psNewStruct->currentBuildPoints = buildPoints;
+      psNewStruct->pimpl->state = STRUCTURE_STATE::BEING_BUILT;
+      psNewStruct->pimpl->currentBuildPoints = buildPoints;
     }
     else {
-      psNewStruct->state = BUILT;
+      psNewStruct->pimpl->state = STRUCTURE_STATE::BUILT;
       buildingComplete(psNewStruct);
       triggerEventStructBuilt(psNewStruct, nullptr);
       checkPlayerBuiltHQ(psNewStruct);
@@ -907,14 +1014,14 @@ void Structure::structureUpdate(bool bMission)
 
   syncDebugStructure(this, '<');
 
-  if (flags.test(static_cast<std::size_t>(OBJECT_FLAG::DIRTY)) && !bMission) {
+  if (flags.test(static_cast<size_t>(OBJECT_FLAG::DIRTY)) && !bMission) {
     visTilesUpdate(this);
-    flags.set(static_cast<std::size_t>(OBJECT_FLAG::DIRTY), false);
+    flags.set(static_cast<size_t>(OBJECT_FLAG::DIRTY), false);
   }
 
-  if (stats->type == GATE) {
-    if (animationState == OPEN &&
-        lastStateTime + SAS_STAY_OPEN_TIME < gameTime) {
+  if (pimpl->stats->type == GATE) {
+    if (pimpl->animationState == OPEN &&
+        pimpl->lastStateTime + SAS_STAY_OPEN_TIME < gameTime) {
       bool found = false;
 
       static GridList gridList; // static to avoid allocations.
@@ -926,25 +1033,24 @@ void Structure::structureUpdate(bool bMission)
 
       if (!found) // no droids on our tile, safe to close
       {
-        animationState = CLOSING;
+        pimpl->animationState = CLOSING;
         auxStructureClosedGate(*this); // closed
-        lastStateTime = gameTime; // reset timer
+        pimpl->lastStateTime = gameTime; // reset timer
       }
     }
-    else if (animationState == OPENING &&
-             lastStateTime + SAS_OPEN_SPEED < gameTime) {
-      animationState = OPEN;
+    else if (pimpl->animationState == OPENING &&
+             pimpl->lastStateTime + SAS_OPEN_SPEED < gameTime) {
+      pimpl->animationState = OPEN;
       auxStructureOpenGate(*this); // opened
-      lastStateTime = gameTime; // reset timer
+      pimpl->lastStateTime = gameTime; // reset timer
     }
-    else if (animationState == CLOSING &&
-             lastStateTime + SAS_OPEN_SPEED < gameTime) {
-      animationState = NORMAL;
-      lastStateTime = gameTime; // reset timer
+    else if (pimpl->animationState == CLOSING &&
+             pimpl->lastStateTime + SAS_OPEN_SPEED < gameTime) {
+      pimpl->animationState = NORMAL;
+      pimpl->lastStateTime = gameTime; // reset timer
     }
   }
-  else if (stats->type == RESOURCE_EXTRACTOR)
-  {
+  else if (stats->type == RESOURCE_EXTRACTOR) {
     if (!psBuilding->pFunctionality->resourceExtractor.power_generator
         && animationEvent == ANIM_EVENT_ACTIVE) // no power generator connected
     {
@@ -956,7 +1062,7 @@ void Structure::structureUpdate(bool bMission)
     {
       animationEvent = ANIM_EVENT_ACTIVE;
 
-      auto strFirstImd = display->imd_shape->objanimpie[static_cast<int>(animationState)];
+      auto strFirstImd = getDisplayData()->imd_shape->objanimpie[static_cast<int>(pimpl->animationState)];
       if (strFirstImd != nullptr && strFirstImd->next != nullptr) {
         auto strImd = strFirstImd->next; // first imd isn't animated
         timeAnimationStarted = gameTime + (rand() % (strImd->objanimframes * strImd->objanimtime));
@@ -968,7 +1074,7 @@ void Structure::structureUpdate(bool bMission)
       }
     }
 
-    if (player == selectedPlayer) {
+    if (getPlayer() == selectedPlayer) {
       if (visibleToSelectedPlayer()
           // check for display(audio)-only - does not impact simulation / game state
           && psBuilding->pFunctionality->resourceExtractor.power_generator
@@ -991,34 +1097,34 @@ void Structure::structureUpdate(bool bMission)
   }
 
   //update the manufacture/research of the building once complete
-  if (state == BUILT) {
+  if (pimpl->state == STRUCTURE_STATE::BUILT) {
     aiUpdateStructure(bMission);
   }
 
-  if (state != BUILT) {
+  if (pimpl->state != STRUCTURE_STATE::BUILT) {
     if (selected) {
       selected = false;
     }
   }
 
   if (!bMission) {
-    if (state == BEING_BUILT &&
-        buildRate == 0 &&
+    if (pimpl->state == STRUCTURE_STATE::BEING_BUILT &&
+        pimpl->buildRate == 0 &&
         !structureHasModules(this)) {
-      if (stats->power_cost == 0) {
+      if (pimpl->stats->power_cost == 0) {
         // Building is free, and not currently being built, so deconstruct slowly over 1 minute.
-        currentBuildPoints -= std::min<int>(currentBuildPoints,
+        pimpl->currentBuildPoints -= std::min<int>(pimpl->currentBuildPoints,
                                                      gameTimeAdjustedAverage(
                                                              structureBuildPointsToCompletion(*this), 60));
       }
 
-      if (currentBuildPoints == 0) {
+      if (pimpl->currentBuildPoints == 0) {
         removeStruct(this, true);
         // If giving up on building something, remove the structure (and remove it from the power queue).
       }
     }
-    previousBuildRate = buildRate;
-    buildRate = 0; // Reset to 0, each truck building us will add to our buildRate.
+    pimpl->previousBuildRate = pimpl->buildRate;
+   pimpl-> buildRate = 0; // Reset to 0, each truck building us will add to our buildRate.
   }
 
   /* Only add smoke if they're visible and they can 'burn' */
@@ -1028,7 +1134,7 @@ void Structure::structureUpdate(bool bMission)
     // Is there any damage?
     if (damage > 0.) {
       emissionInterval = static_cast<unsigned>(CalcStructureSmokeInterval(damage / 65536.f));
-      auto effectTime = std::max(gameTime - deltaGameTime + 1, lastEmissionTime + emissionInterval);
+      auto effectTime = std::max(gameTime - deltaGameTime + 1, pimpl->lastEmissionTime + emissionInterval);
       if (gameTime >= effectTime) {
         const auto size = getSize();
         widthScatter = size.x * TILE_UNITS / 2 / 3;
@@ -1036,7 +1142,7 @@ void Structure::structureUpdate(bool bMission)
         dv.x = getPosition().x + widthScatter - rand() % (2 * widthScatter);
         dv.z = getPosition().y + breadthScatter - rand() % (2 * breadthScatter);
         dv.y = getPosition().z;
-        dv.y += (display->imd_shape->max.y * 3) / 4;
+        dv.y += (getDisplayData()->imd_shape->max.y * 3) / 4;
         addEffect(&dv, EFFECT_GROUP::SMOKE, EFFECT_TYPE::SMOKE_TYPE_DRIFTING_HIGH,
                   false, nullptr, 0, effectTime);
         lastEmissionTime = effectTime;
@@ -1055,14 +1161,14 @@ void Structure::structureUpdate(bool bMission)
   }
 
   //check the resistance level of the structure
-  iPointsRequired = structureResistance(stats.get(), player);
+  iPointsRequired = structureResistance(pimpl->stats.get(), getPlayer());
   if (resistance < (SWORD)iPointsRequired) {
     //start the resistance increase
-    if (lastResistance == ACTION_START_TIME) {
-      lastResistance = gameTime;
+    if (pimpl->lastResistance == ACTION_START_TIME) {
+      pimpl->lastResistance = gameTime;
     }
     //increase over time if low
-    if ((gameTime - lastResistance) > RESISTANCE_INTERVAL) {
+    if ((gameTime - pimpl->lastResistance) > RESISTANCE_INTERVAL) {
       resistance++;
 
       //in multiplayer, certain structures do not function whilst low resistance
@@ -1070,10 +1176,10 @@ void Structure::structureUpdate(bool bMission)
         resetResistanceLag(this);
       }
 
-      lastResistance = gameTime;
+      pimpl->lastResistance = gameTime;
       //once the resistance is back up reset the last time increased
       if (resistance >= (SWORD)iPointsRequired) {
-        lastResistance = ACTION_START_TIME;
+        pimpl->lastResistance = ACTION_START_TIME;
       }
     }
   }
@@ -1081,15 +1187,18 @@ void Structure::structureUpdate(bool bMission)
     //if selfrepair has been researched then check the health level of the
     //structure once resistance is fully up
     iPointsRequired = structureBody(this);
-    if (selfRepairEnabled(player) && hitPoints < iPointsRequired && state != BEING_BUILT) {
+    if (selfRepairEnabled(getPlayer()) && getHp() < iPointsRequired &&
+        pimpl->state != STRUCTURE_STATE::BEING_BUILT) {
       //start the self repair off
-      if (lastResistance == ACTION_START_TIME) {
-        lastResistance = gameTime;
+      if (pimpl->lastResistance == ACTION_START_TIME) {
+        pimpl->lastResistance = gameTime;
       }
 
       /*since self repair, then add half repair points depending on the time delay for the stat*/
       iPointsToAdd = (repairPoints(asRepairStats + aDefaultRepair[
-              player], player) / 4) * ((gameTime - lastResistance) / (asRepairStats + aDefaultRepair[getPlayer()])->time);
+              getPlayer()], getPlayer()) / 4)
+                     * ((gameTime - pimpl->lastResistance)
+                        / (asRepairStats + aDefaultRepair[getPlayer()])->time);
 
       //add the blue flashing effect for multiPlayer
       if (bMultiPlayer && ONEINTEN && !bMission) {

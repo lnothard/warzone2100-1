@@ -46,81 +46,81 @@ static unsigned calcDroidBaseBody(Droid* psDroid);
 
 struct Droid::Impl
 {
-    ~Impl() = default;
-    Impl(unsigned id, unsigned player);
+  ~Impl() = default;
+  Impl(unsigned player);
 
-    Impl(Impl const& rhs);
-    Impl& operator=(Impl const& rhs);
+  Impl(Impl const& rhs);
+  Impl& operator=(Impl const& rhs);
 
-    Impl(Impl&& rhs) noexcept = default;
-    Impl& operator=(Impl&& rhs) noexcept = default;
+  Impl(Impl&& rhs) noexcept = default;
+  Impl& operator=(Impl&& rhs) noexcept = default;
 
 
-    using enum DROID_TYPE;
-    using enum ACTION;
-    std::string name;
-    DROID_TYPE type = DROID_TYPE::ANY;
+  std::string name;
+  unsigned player;
+  DROID_TYPE type = DROID_TYPE::ANY;
+  unsigned hitPoints = 0;
+  unsigned originalHp = 0;
 
-    unsigned weight = 0;
+  unsigned weight = 0;
 
-    /// Base speed depends on propulsion type
-    unsigned baseSpeed = 0;
+  /// Base speed depends on propulsion type
+  unsigned baseSpeed = 0;
 
-    unsigned originalHp = 0;
-    unsigned experience = 0;
-    unsigned kills = 0;
+  unsigned experience = 0;
+  unsigned kills = 0;
 
-    /// Set when stuck. Used for, e.g., firing indiscriminately
-    /// at map features to clear the way
-    unsigned lastFrustratedTime = 0;
+  /// Set when stuck. Used for, e.g., firing indiscriminately
+  /// at map features to clear the way
+  unsigned lastFrustratedTime = 0;
 
-    Group* group = nullptr;
+  Group* group = nullptr;
 
-    /// A structure that this droid might be associated with.
-    /// For VTOLs this is the rearming pad
-    Structure* associatedStructure = nullptr;
+  /// A structure that this droid might be associated with.
+  /// For VTOLs this is the rearming pad
+  Structure* associatedStructure = nullptr;
 
-//    /// The range [0; listSize - 1] corresponds to synchronised orders, and the range
-//    /// [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will
-//    /// remain, once all orders are synchronised.
-//    unsigned listPendingBegin;
+/   /// The range [0; listSize - 1] corresponds to synchronised orders, and the range
+/   /// [listPendingBegin; listPendingEnd - 1] corresponds to the orders that will
+/   /// remain, once all orders are synchronised.
+/   unsigned listPendingBegin;
 
-    /// The number of synchronised orders. Orders from `listSize` to
-    /// the real end of the list may not affect game state.
-    std::vector<Order> asOrderList;
-    /// Index of first order which will not be erased by
-    /// a pending order. After all messages are processed
-    /// the orders in the range [listPendingBegin; listPendingEnd - 1]
-    /// will remain.
-    std::unique_ptr<Order> order;
-    unsigned secondaryOrder = 0;
-    /// What `secondary_order` will be after synchronisation.
-    unsigned secondaryOrderPending = 0;
-    /// Number of pending `secondary_order` synchronisations.
-    int secondaryOrderPendingCount = 0;
+  /// The number of synchronised orders. Orders from `listSize` to
+  /// the real end of the list may not affect game state.
+  std::vector<Order> asOrderList;
+  /// Index of first order which will not be erased by
+  /// a pending order. After all messages are processed
+  /// the orders in the range [listPendingBegin; listPendingEnd - 1]
+  /// will remain.
+  std::unique_ptr<Order> order;
+  unsigned secondaryOrder = 0;
+  /// What `secondary_order` will be after synchronisation.
+  unsigned secondaryOrderPending = 0;
+  /// Number of pending `secondary_order` synchronisations.
+  int secondaryOrderPendingCount = 0;
 
-    ACTION action = NONE;
-    Vector2i actionPos {0, 0};
-    std::array<PlayerOwnedObject*, MAX_WEAPONS> actionTarget;
-    unsigned timeActionStarted = 0;
-    unsigned actionPointsDone = 0;
+  ACTION action = ACTION::NONE;
+  Vector2i actionPos {0, 0};
+  std::array<PlayerOwnedObject*, MAX_WEAPONS> actionTarget;
+  unsigned timeActionStarted = 0;
+  unsigned actionPointsDone = 0;
 
-    unsigned timeLastHit = 0;
-    unsigned expectedDamageDirect = 0;
-    unsigned expectedDamageIndirect = 0;
-    uint8_t illuminationLevel = 0;
-    std::unique_ptr<Movement> movement;
+  unsigned timeLastHit = 0;
+  unsigned expectedDamageDirect = 0;
+  unsigned expectedDamageIndirect = 0;
+  uint8_t illuminationLevel = 0;
+  std::unique_ptr<Movement> movement;
 
-    /* Animation stuff */
-    unsigned timeAnimationStarted;
-    ANIMATION_EVENTS animationEvent;
+  /* Animation stuff */
+  unsigned timeAnimationStarted;
+  ANIMATION_EVENTS animationEvent;
 
-    /// Bit set telling which tiles block this type of droid (TODO)
-    uint8_t blockedBits = 0;
+  /// Bit set telling which tiles block this type of droid (TODO)
+  uint8_t blockedBits = 0;
 
-    int iAudioID = NO_SOUND;
+  int iAudioID = NO_SOUND;
 
-    std::unordered_map<std::string, std::unique_ptr<ComponentStats>> components;
+  std::unordered_map<std::string, std::unique_ptr<ComponentStats>> components;
 };
 
 Droid::~Droid()
@@ -146,13 +146,13 @@ Droid::~Droid()
 }
 
 Droid::Droid(unsigned id, unsigned player)
-  : ConstructedObject(id, player),
-    pimpl{std::make_unique<Impl>(id, player)}
+  : BaseObject(id)
+  , pimpl{std::make_unique<Impl>(player)}
 {
 }
 
 Droid::Droid(Droid const& rhs)
-  : ConstructedObject(rhs),
+  : BaseObject(rhs),
     pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
@@ -164,9 +164,10 @@ Droid& Droid::operator=(Droid const& rhs)
   return *this;
 }
 
-Droid::Impl::Impl(unsigned id, unsigned player)
-  : type{ANY},
-    action{NONE},
+Droid::Impl::Impl(unsigned player)
+  : type{DROID_TYPE::ANY},
+    player{player},
+    action{ACTION::NONE},
     secondaryOrder{DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD},
     secondaryOrderPending{DSS_ARANGE_LONG | DSS_REPLEV_NEVER | DSS_ALEV_ALWAYS | DSS_HALT_GUARD}
 {
@@ -596,7 +597,7 @@ void Droid::incrementKills() noexcept
  * This function clears all the orders from droid's order list
  * that don't have target as psTarget.
  */
-void Droid::orderClearTargetFromDroidList(PlayerOwnedObject* psTarget)
+void Droid::orderClearTargetFromDroidList(BaseObject* psTarget)
 {
   if (!pimpl) return;
   for (auto i = 0; i < pimpl->asOrderList.size(); ++i)
@@ -612,53 +613,53 @@ void Droid::orderClearTargetFromDroidList(PlayerOwnedObject* psTarget)
   }
 }
 
-  /**
-   * This function checks if the droid is off range. If yes, it uses
-   * actionDroid() to make the droid to move to its target if its
-   * target is on range, or to move to its order position if not.
-   * @todo droid doesn't shoot while returning to the guard position.
-   */
-  void Droid::orderCheckGuardPosition(int range)
-  {
-    if (order->target)  {
-      unsigned x, y;
-  
-      // repair droids always follow behind - we don't want them 
-      // jumping into the line of fire
-      if ((!(type == DROID_TYPE::REPAIRER ||
-             type == DROID_TYPE::CYBORG_REPAIR)) &&
-          dynamic_cast<Droid*>(order->target) &&
-          orderStateLoc(dynamic_cast<Droid*>(order->target),
-                        ORDER_TYPE::MOVE, &x, &y))  {
-        // got a moving droid - check against where the unit is going
-        order->pos = {x, y};
-      } 
-      else  {
-        order->pos = order->target->getPosition().xy();
-      }
+/**
+ * This function checks if the droid is off range. If yes, it uses
+ * actionDroid() to make the droid to move to its target if its
+ * target is on range, or to move to its order position if not.
+ * @todo droid doesn't shoot while returning to the guard position.
+ */
+void Droid::orderCheckGuardPosition(int range)
+{
+  if (pimpl->order->target)  {
+    unsigned x, y;
+
+    // repair droids always follow behind - we don't want them
+    // jumping into the line of fire
+    if ((!(type == DROID_TYPE::REPAIRER ||
+           type == DROID_TYPE::CYBORG_REPAIR)) &&
+        dynamic_cast<Droid*>(order->target) &&
+        orderStateLoc(dynamic_cast<Droid*>(order->target),
+                      ORDER_TYPE::MOVE, &x, &y))  {
+      // got a moving droid - check against where the unit is going
+      order->pos = {x, y};
     }
-  
-    auto xdiff = getPosition().x - order->pos.x;
-    auto ydiff = getPosition().y - order->pos.y;
-  
-    if (xdiff * xdiff + ydiff * ydiff > range * range)  {
-      if (movement->status != MOVE_STATUS::INACTIVE &&
-          (action == ACTION::MOVE ||
-           action == ACTION::MOVE_FIRE)) {
-  
-        xdiff = movement->destination.x - order->pos.x;
-        ydiff = movement->destination.y - order->pos.y;
-  
-        if (xdiff * xdiff + ydiff * ydiff > range * range)  {
-          ::actionDroid(this, ACTION::MOVE,
-                        order->pos.x, order->pos.y);
-        }
-      } else  {
+    else  {
+      order->pos = order->target->getPosition().xy();
+    }
+  }
+
+  auto xdiff = getPosition().x - order->pos.x;
+  auto ydiff = getPosition().y - order->pos.y;
+
+  if (xdiff * xdiff + ydiff * ydiff > range * range)  {
+    if (movement->status != MOVE_STATUS::INACTIVE &&
+        (action == ACTION::MOVE ||
+         action == ACTION::MOVE_FIRE)) {
+
+      xdiff = movement->destination.x - order->pos.x;
+      ydiff = movement->destination.y - order->pos.y;
+
+      if (xdiff * xdiff + ydiff * ydiff > range * range)  {
         ::actionDroid(this, ACTION::MOVE,
                       order->pos.x, order->pos.y);
       }
+    } else  {
+      ::actionDroid(this, ACTION::MOVE,
+                    order->pos.x, order->pos.y);
     }
   }
+}
     
  /** 
   * This function goes to the droid's order list and erases its 

@@ -173,7 +173,7 @@ struct FlagPosition : public ObjectPosition
 struct StructureBounds
 {
   StructureBounds();
-  StructureBounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords);
+  StructureBounds(Vector2i top_left_coords, Vector2i size_in_coords);
 
   [[nodiscard]] bool isValid() const;
 
@@ -236,7 +236,9 @@ struct WALL
     unsigned type;
 };
 
-class Structure : public ConstructedObject
+class Structure : public BaseObject
+                , public virtual Damageable
+                , public virtual PlayerOwned
 {
 public:
   ~Structure() override;
@@ -249,8 +251,11 @@ public:
   Structure(Structure&& rhs) noexcept = default;
   Structure& operator=(Structure&& rhs) noexcept = default;
 
+  void setPlayer() override;
+  [[nodiscard]] unsigned getPlayer() const override;
+  [[nodiscard]] unsigned getHp() const override;
+  [[nodiscard]] unsigned getOriginalHp() const override;
   [[nodiscard]] STRUCTURE_ANIMATION_STATE getAnimationState() const;
-  [[nodiscard]] unsigned getOriginalHp() const final;
   [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
   [[nodiscard]] Vector2i getSize() const;
   [[nodiscard]] int getFoundationDepth() const noexcept;
@@ -259,17 +264,17 @@ public:
   [[nodiscard]] STRUCTURE_STATE getState() const;
   [[nodiscard]] StructureStats const* getStats() const;
   [[nodiscard]] uint8_t getCapacity() const;
-  [[nodiscard]] int objRadius() const final;
+  [[nodiscard]] int objRadius() const;
   [[nodiscard]] bool isBlueprint() const noexcept;
   [[nodiscard]] bool isWall() const noexcept;
   [[nodiscard]] bool isRadarDetector() const;
-  [[nodiscard]] bool isProbablyDoomed(bool isDirect) const final;
+  [[nodiscard]] bool isProbablyDoomed(bool isDirect) const;
   [[nodiscard]] bool hasModules() const noexcept;
   [[nodiscard]] bool hasSensor() const;
-  [[nodiscard]] bool hasStandardSensor() const final;
-  [[nodiscard]] bool hasCbSensor() const final;
-  [[nodiscard]] bool hasVtolInterceptSensor() const final;
-  [[nodiscard]] bool hasVtolCbSensor() const final;
+  [[nodiscard]] bool hasStandardSensor() const;
+  [[nodiscard]] bool hasCbSensor() const;
+  [[nodiscard]] bool hasVtolInterceptSensor() const;
+  [[nodiscard]] bool hasVtolCbSensor() const;
   [[nodiscard]] bool smokeWhenDamaged() const noexcept;
   void updateExpectedDamage(unsigned damage, bool is_direct) noexcept;
   [[nodiscard]] unsigned calculateSensorRange() const;
@@ -278,7 +283,7 @@ public:
   void printInfo() const;
   [[nodiscard]] unsigned buildPointsToCompletion() const;
   [[nodiscard]] unsigned calculateRefundedPower() const;
-  [[nodiscard]] int calculateAttackPriority(ConstructedObject const* target, int weapon_slot) const final;
+  [[nodiscard]] int calculateAttackPriority(BaseObject const* target, int weapon_slot) const;
   Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare);
   [[nodiscard]] float structureCompletionProgress() const;
   void aiUpdateStructure(bool isMission);
@@ -399,30 +404,53 @@ private:
 class PowerGenerator : public Structure
 {
 public:
-    void releasePowerGen();
+  ~PowerGenerator() override = default;
+  PowerGenerator(unsigned id, unsigned player);
+
+  PowerGenerator(PowerGenerator const& rhs);
+  PowerGenerator& operator=(PowerGenerator const& rhs);
+
+  PowerGenerator(PowerGenerator&& rhs) noexcept = default;
+  PowerGenerator& operator=(PowerGenerator&& rhs) noexcept = default;
+
+  void releasePowerGen();
 private:
-    /// Pointers to associated oil derricks
-    std::array<ResourceExtractor*, NUM_POWER_MODULES> resource_extractors;
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
 class RepairFacility : public Structure
 {
+public:
+  ~RepairFacility() override = default;
+  RepairFacility(unsigned id, unsigned player);
+
+  RepairFacility(RepairFacility const& rhs);
+  RepairFacility& operator=(RepairFacility const& rhs);
+
+  RepairFacility(RepairFacility&& rhs) noexcept = default;
+  RepairFacility& operator=(RepairFacility&& rhs) noexcept = default;
 private:
-    ConstructedObject* psObj; /* Object being repaired */
-    std::unique_ptr<FlagPosition> psDeliveryPoint; /* Place for the repaired droids to assemble at */
-    // The group the droids to be repaired by this facility belong to
-    std::shared_ptr<Group> psGroup;
-    int droidQueue; /// Last count of droid queue for this facility
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
 class RearmPad : public Structure
 {
 public:
-    [[nodiscard]] bool isClear() const;
+  ~RearmPad() override = default;
+  RearmPad(unsigned id, unsigned player);
+
+  RearmPad(RearmPad const& rhs);
+  RearmPad& operator=(RearmPad const& rhs);
+
+  RearmPad(RearmPad&& rhs) noexcept = default;
+  RearmPad& operator=(RearmPad&& rhs) noexcept = default;
+
+  [[nodiscard]] bool isClear() const;
 private:
-    std::size_t timeStarted; /* Time reArm started on current object */
-    Droid* psObj; /* Object being rearmed */
-    std::size_t timeLastUpdated; /* Time rearm was last updated */
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
 //this is used for module graphics - factory and vtol factory
@@ -747,12 +775,12 @@ bool canStructureHaveAModuleAdded(Structure* const structure);
 
 static inline unsigned structSensorRange(const Structure* psObj)
 {
-	return objSensorRange((const PlayerOwnedObject *)psObj);
+	return objSensorRange((const BaseObject *)psObj);
 }
 
 static inline unsigned structJammerPower(const Structure* psObj)
 {
-	return objJammerPower((const PlayerOwnedObject *)psObj);
+	return objJammerPower((const BaseObject *)psObj);
 }
 
 static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStructure, int weaponSlot, uint32_t time)
@@ -764,7 +792,7 @@ static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStruc
 
 #define setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin) _setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin, __LINE__, __FUNCTION__)
 
-static inline void _setStructureTarget(Structure* psBuilding, PlayerOwnedObject * psNewTarget, UWORD idx,
+static inline void _setStructureTarget(Structure* psBuilding, BaseObject * psNewTarget, UWORD idx,
                                        TARGET_ORIGIN targetOrigin, int line, const char* func)
 {
 	ASSERT_OR_RETURN(, idx < MAX_WEAPONS, "Bad index");

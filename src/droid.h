@@ -159,95 +159,97 @@ enum DroidStartBuild
 
 enum class PICK_TILE
 {
-    NO_FREE_TILE,
-    FREE_TILE
+  NO_FREE_TILE,
+  FREE_TILE
 };
 
 enum class DROID_TYPE
 {
-    WEAPON,
-    SENSOR,
-    ECM,
-    CONSTRUCT,
-    PERSON,
-    CYBORG,
-    TRANSPORTER,
-    COMMAND,
-    REPAIRER,
-    DEFAULT,
-    CYBORG_CONSTRUCT,
-    CYBORG_REPAIR,
-    CYBORG_SUPER,
-    SUPER_TRANSPORTER,
-    ANY
+  WEAPON,
+  SENSOR,
+  ECM,
+  CONSTRUCT,
+  PERSON,
+  CYBORG,
+  TRANSPORTER,
+  COMMAND,
+  REPAIRER,
+  DEFAULT,
+  CYBORG_CONSTRUCT,
+  CYBORG_REPAIR,
+  CYBORG_SUPER,
+  SUPER_TRANSPORTER,
+  ANY
 };
 
 enum class ACTION
 {
-    NONE,
-    MOVE,
-    BUILD,
-    DEMOLISH,
-    REPAIR,
-    ATTACK,
-    OBSERVE,
-    FIRE_SUPPORT,
-    SULK,
-    TRANSPORT_OUT,
-    TRANSPORT_WAIT_TO_FLY_IN,
-    TRANSPORT_IN,
-    DROID_REPAIR,
-    RESTORE,
-    MOVE_FIRE,
-    MOVE_TO_BUILD,
-    MOVE_TO_DEMOLISH,
-    MOVE_TO_REPAIR,
-    BUILD_WANDER,
-    MOVE_TO_ATTACK,
-    ROTATE_TO_ATTACK,
-    MOVE_TO_OBSERVE,
-    WAIT_FOR_REPAIR,
-    MOVE_TO_REPAIR_POINT,
-    WAIT_DURING_REPAIR,
-    MOVE_TO_DROID_REPAIR,
-    MOVE_TO_RESTORE,
-    MOVE_TO_REARM,
-    WAIT_FOR_REARM,
-    MOVE_TO_REARM_POINT,
-    WAIT_DURING_REARM,
-    VTOL_ATTACK,
-    CLEAR_REARM_PAD,
-    RETURN_TO_POS,
-    FIRE_SUPPORT_RETREAT,
-    CIRCLE,
-    COUNT // MUST BE LAST
+  NONE,
+  MOVE,
+  BUILD,
+  DEMOLISH,
+  REPAIR,
+  ATTACK,
+  OBSERVE,
+  FIRE_SUPPORT,
+  SULK,
+  TRANSPORT_OUT,
+  TRANSPORT_WAIT_TO_FLY_IN,
+  TRANSPORT_IN,
+  DROID_REPAIR,
+  RESTORE,
+  MOVE_FIRE,
+  MOVE_TO_BUILD,
+  MOVE_TO_DEMOLISH,
+  MOVE_TO_REPAIR,
+  BUILD_WANDER,
+  MOVE_TO_ATTACK,
+  ROTATE_TO_ATTACK,
+  MOVE_TO_OBSERVE,
+  WAIT_FOR_REPAIR,
+  MOVE_TO_REPAIR_POINT,
+  WAIT_DURING_REPAIR,
+  MOVE_TO_DROID_REPAIR,
+  MOVE_TO_RESTORE,
+  MOVE_TO_REARM,
+  WAIT_FOR_REARM,
+  MOVE_TO_REARM_POINT,
+  WAIT_DURING_REARM,
+  VTOL_ATTACK,
+  CLEAR_REARM_PAD,
+  RETURN_TO_POS,
+  FIRE_SUPPORT_RETREAT,
+  CIRCLE,
+  COUNT // MUST BE LAST
 };
 
 struct InitialOrders
 {
-    unsigned secondaryOrder;
-    int moveToX;
-    int moveToY;
-    unsigned factoryId;
+  unsigned secondaryOrder;
+  int moveToX;
+  int moveToY;
+  unsigned factoryId;
 };
 
 struct DroidTemplate : public BaseStats
 {
-    DroidTemplate() = default;
+  DroidTemplate() = default;
 
-    using enum DROID_TYPE;
-    unsigned id = 0;
-    unsigned weaponCount = 0;
-    DROID_TYPE type = ANY;
+  using enum DROID_TYPE;
+  unsigned id = 0;
+  unsigned weaponCount = 0;
+  DROID_TYPE type = ANY;
 
-    /// Not player designed, not saved, never delete or change
-    bool isPrefab = false;
+  /// Not player designed, not saved, never delete or change
+  bool isPrefab = false;
 
-    bool isStored = false;
-    bool isEnabled = false;
+  bool isStored = false;
+  bool isEnabled = false;
 };
 
-class Droid : public ConstructedObject
+class Droid : public BaseObject
+            , public virtual Damageable
+            , public virtual PlayerOwned
 {
 public:
   ~Droid() override;
@@ -259,6 +261,10 @@ public:
   Droid(Droid&& rhs) noexcept = default;
   Droid& operator=(Droid&& rhs) noexcept = default;
 
+  void setPlayer() override;
+  [[nodiscard]] unsigned getPlayer() const override;
+  [[nodiscard]] unsigned getHp() const override;
+  [[nodiscard]] unsigned getOriginalHp() const override;
   [[nodiscard]] ACTION getAction() const noexcept;
   [[nodiscard]] Order const* getOrder() const;
   [[nodiscard]] DROID_TYPE getType() const noexcept;
@@ -281,7 +287,7 @@ public:
   [[nodiscard]] bool isStationary() const;
   [[nodiscard]] bool isRepairDroid() const;
   [[nodiscard]] std::string getDroidLevelName() const;
-  [[nodiscard]] bool isProbablyDoomed(bool isDirect) const override;
+  [[nodiscard]] bool isProbablyDoomed(bool isDirect) const;
   [[nodiscard]] unsigned calculateSensorRange() const;
   [[nodiscard]] int spaceOccupiedOnTransporter() const;
   void setActionTarget(PlayerOwnedObject* psNewTarget, unsigned idx);
@@ -319,7 +325,7 @@ public:
   std::unique_ptr<Droid> giftSingleDroid(unsigned to, bool electronic);
   void droidSetBits(DroidTemplate const* pTemplate);
   void orderDroidListEraseRange(int indexBegin, int indexEnd);
-  void orderClearTargetFromDroidList(PlayerOwnedObject* psTarget);
+  void orderClearTargetFromDroidList(BaseObject* psTarget);
   void orderCheckGuardPosition(int range);
   bool orderDroidList();
   void moveStopDroid();
@@ -345,7 +351,7 @@ public:
   void moveUpdateDroid();
   void updateExpectedDamage(unsigned damage, bool isDirect) noexcept;
   bool droidUpdateDemolishing();
-  bool droidSensorDroidWeapon(const PlayerOwnedObject* psObj) const;
+  bool droidSensorDroidWeapon(const BaseObject* psObj) const;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;

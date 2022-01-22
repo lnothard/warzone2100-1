@@ -32,6 +32,14 @@
 struct DisplayData;
 
 
+static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
+static constexpr auto TURRET_ROTATION_RATE = 45;
+static constexpr auto PROJ_MAX_PITCH = 45;
+
+/// The maximum number of weapons attached to a single unit
+static constexpr auto MAX_WEAPONS = 3;
+
+
 enum class OBJECT_FLAG
 {
   JAMMED_TILES,
@@ -39,6 +47,20 @@ enum class OBJECT_FLAG
   DIRTY,
   UNSELECTABLE,
   COUNT // MUST BE LAST
+};
+
+class Damageable
+{
+public:
+  [[nodiscard]] virtual unsigned getHp() const = 0;
+  [[nodiscard]] virtual unsigned getOriginalHp() const = 0;
+};
+
+class PlayerOwned
+{
+public:
+  [[nodiscard]] virtual unsigned getPlayer() const = 0;
+  virtual void setPlayer() = 0;
 };
 
 struct TILEPOS
@@ -49,12 +71,12 @@ struct TILEPOS
 /// 4D spacetime coordinate and orientation
 struct Spacetime
 {
-    Spacetime() = default;
-    Spacetime(unsigned time, Position position, Rotation rotation);
+  Spacetime() = default;
+  Spacetime(unsigned time, Position position, Rotation rotation);
 
-    unsigned time = 0;
-    Position position {0, 0, 0};
-    Rotation rotation {0, 0,0};
+  unsigned time = 0;
+  Position position {0, 0, 0};
+  Rotation rotation {0, 0,0};
 };
 
 /// The base type specification inherited by all game entities
@@ -86,36 +108,44 @@ private:
   std::unique_ptr<Impl> pimpl;
 };
 
-class PlayerOwnedObject : public BaseObject
-{
-public:
-  PlayerOwnedObject(unsigned id, unsigned player);
-  ~PlayerOwnedObject() override;
-
-  PlayerOwnedObject(PlayerOwnedObject const& rhs);
-  PlayerOwnedObject & operator=(PlayerOwnedObject const& rhs);
-
-  PlayerOwnedObject(PlayerOwnedObject&& rhs) noexcept = default;
-  PlayerOwnedObject & operator=(PlayerOwnedObject&& rhs) noexcept = default;
-
-  [[nodiscard]] unsigned getPlayer() const noexcept;
-  [[nodiscard]] unsigned getHp() const noexcept;
-  [[nodiscard]] bool isDead() const noexcept;
-  [[nodiscard]] bool isSelectable() const;
-  [[nodiscard]] uint8_t visibleToPlayer(unsigned watcher) const;
-  [[nodiscard]] uint8_t visibleToSelectedPlayer() const;
-  void setHp(unsigned hp) noexcept;
-  void setPlayer(unsigned p) noexcept;
-
-  [[nodiscard]] virtual bool isProbablyDoomed(bool isDirectDamage) const = 0;
-  [[nodiscard]] virtual int objRadius() const = 0;
-private:
-  struct Impl;
-  std::unique_ptr<Impl> pimpl;
-};
-
-
 int objectPositionSquareDiff(const Position& first, const Position& second);
 int objectPositionSquareDiff(const BaseObject* first, const BaseObject* second);
+
+Vector3i calculateMuzzleBaseLocation(const BaseObject& unit, int weapon_slot);
+
+Vector3i calculateMuzzleTipLocation(const BaseObject& unit, int weapon_slot);
+
+void checkAngle(int64_t& angle_tan, int start_coord, int height,
+                int square_distance, int target_height, bool is_direct);
+
+[[nodiscard]] bool hasFullAmmo(const BaseObject& unit) noexcept;
+
+/// @return `true` if `unit` has an indirect weapon attached
+[[nodiscard]] bool hasArtillery(const BaseObject& unit) noexcept;
+
+/// @return `true` if `unit` has an electronic weapon attached
+[[nodiscard]] bool hasElectronicWeapon(const BaseObject& unit) noexcept;
+
+/**
+ * @return `true` if `unit` may fire upon `target` with the weapon in
+ *    `weapon_slot`
+ */
+[[nodiscard]] bool targetInLineOfFire(const BaseObject& unit,
+                                      const BaseObject& target,
+                                      int weapon_slot);
+
+/**
+ *
+ * @param walls_block `true` if
+ * @param is_direct `false` if this is an artillery weapon
+ * @return
+ */
+[[nodiscard]] int calculateLineOfFire(const BaseObject& unit, const BaseObject& target,
+                                      int weapon_slot, bool walls_block = true, bool is_direct = true);
+
+
+[[nodiscard]] unsigned getMaxWeaponRange(const BaseObject& unit);
+
+[[nodiscard]] size_t numWeapons(const BaseObject& unit);
 
 #endif // __INCLUDED_BASEDEF_H__

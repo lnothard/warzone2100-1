@@ -1111,7 +1111,7 @@ SDWORD audio_GetTrackID(const char *fileName)
  *  \param psObj pointer to the object for which we must destroy all of its
  *               outstanding audio samples.
  */
-void audio_RemoveObj(PlayerOwnedObject const* psObj)
+void audio_RemoveObj(BaseObject const* psObj)
 {
 	unsigned int count = 0;
 

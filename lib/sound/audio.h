@@ -23,7 +23,7 @@
 
 enum class HRTFMode;
 struct AUDIO_STREAM;
-struct PlayerOwnedObject;
+struct BaseObject;
 typedef bool (* AUDIO_CALLBACK)(void *psObj);
 
 bool audio_Init(AUDIO_CALLBACK pStopTrackCallback, HRTFMode hrtf, bool really_init);
@@ -35,10 +35,10 @@ bool audio_LoadTrackFromFile(char szFileName[]);
 unsigned int audio_SetTrackVals(const char *fileName, bool loop, unsigned int volume, unsigned int audibleRadius);
 void audio_PlayBuildFailedOnce();
 bool audio_PlayStaticTrack(int iX, int iY, int iTrack);
-bool audio_PlayObjStaticTrack(PlayerOwnedObject *psObj, int iTrack);
-bool audio_PlayObjStaticTrackCallback(PlayerOwnedObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback);
-bool audio_PlayObjDynamicTrack(PlayerOwnedObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback);
-void audio_StopObjTrack(PlayerOwnedObject *psObj, int iTrack);
+bool audio_PlayObjStaticTrack(BaseObject *psObj, int iTrack);
+bool audio_PlayObjStaticTrackCallback(BaseObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback);
+bool audio_PlayObjDynamicTrack(BaseObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback);
+void audio_StopObjTrack(BaseObject *psObj, int iTrack);
 void audio_PlayTrack(int iTrack);
 void audio_PlayCallbackTrack(int iTrack, AUDIO_CALLBACK pUserCallback);
 AUDIO_STREAM *audio_PlayStream(const char *fileName, float volume, void (*onFinished)(const void *), const void *user_data);
@@ -55,7 +55,7 @@ void audio_ResumeAll();
 void audio_StopAll();
 
 int audio_GetTrackID(const char *fileName);
-void audio_RemoveObj(PlayerOwnedObject const *psObj);
+void audio_RemoveObj(BaseObject const *psObj);
 unsigned int audio_GetSampleQueueCount();
 unsigned int audio_GetSampleListCount();
 unsigned int sound_GetActiveSamplesCount();
