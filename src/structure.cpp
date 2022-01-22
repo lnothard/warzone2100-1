@@ -155,6 +155,68 @@ struct Structure::Impl
   std::shared_ptr<iIMDShape> prebuiltImd;
 };
 
+struct ResearchFacility::Impl
+{
+  ~Impl() = default;
+  Impl() = default;
+
+  Impl(Impl const& rhs);
+  Impl& operator=(Impl const& rhs);
+
+  Impl(Impl&& rhs) noexcept = default;
+  Impl& operator=(Impl&& rhs) = default;
+
+  std::unique_ptr<ResearchItem> psSubject; // The subject the structure is working on.
+  std::unique_ptr<ResearchItem> psSubjectPending;
+  std::unique_ptr<ResearchItem> psBestTopic; // The topic with the most research points that was last performed
+  // The subject the structure is going to work on when the GAME_RESEARCHSTATUS message is received.
+  PENDING_STATUS statusPending = PENDING_STATUS::NOTHING_PENDING; ///< Pending = not yet synchronised.
+  unsigned pendingCount = 0; ///< Number of messages sent but not yet processed.
+  unsigned timeStartHold = 0; /* The time the research facility was put on hold*/
+};
+
+struct ProductionRun::Impl
+{
+  Impl() = default;
+
+  std::shared_ptr<DroidTemplate> target = nullptr;
+  unsigned quantityToBuild = 0;
+  unsigned quantityBuilt = 0;
+};
+
+struct Factory::Impl
+{
+  ~Impl() = default;
+  Impl() = default;
+
+  Impl(Impl const& rhs);
+  Impl& operator=(Impl const& rhs);
+
+  Impl(Impl&& rhs) noexcept = default;
+  Impl& operator=(Impl&& rhs) noexcept = default;
+
+  uint8_t productionLoops = 0; ///< Number of loops to perform. Not synchronised, and only meaningful for selectedPlayer.
+  uint8_t loopsPerformed = 0; /* how many times the loop has been performed*/
+  std::shared_ptr<DroidTemplate> psSubject; ///< The subject the structure is working on.
+  std::shared_ptr<DroidTemplate> psSubjectPending;
+  ///< The subject the structure is going to working on. (Pending = not yet synchronised.)
+  PENDING_STATUS statusPending = PENDING_STATUS::NOTHING_PENDING; ///< Pending = not yet synchronised.
+  unsigned pendingCount = 0; ///< Number of messages sent but not yet processed.
+  unsigned timeStarted = 0; /* The time the building started on the subject*/
+  unsigned timeStartHold = 0; /* The time the factory was put on hold*/
+  int buildPointsRemaining = 0; ///< Build points required to finish building the droid.
+  std::unique_ptr<FlagPosition> psAssemblyPoint; /* Place for the new droids to assemble at */
+  Droid* psCommander = nullptr; // command droid to produce droids for (if any)
+  unsigned secondaryOrder = 0; ///< Secondary order state for all units coming out of the factory.
+};
+
+struct ResourceExtractor::Impl
+{
+  Impl() = default;
+
+  PowerGenerator* power_generator;
+};
+
 Structure::Structure(unsigned id, unsigned player)
   : ConstructedObject(id, player)
   , pimpl{std::make_unique<Impl>()}
@@ -168,6 +230,136 @@ Structure::Structure(Structure const& rhs)
 }
 
 Structure& Structure::operator=(Structure const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+ResearchFacility::ResearchFacility(unsigned id, unsigned player)
+  : Structure(id, player)
+  , pimpl{std::make_unique<Impl>()}
+{
+}
+
+ResearchFacility::ResearchFacility(ResearchFacility const& rhs)
+  : Structure(rhs)
+  , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+ResearchFacility& ResearchFacility::operator=(ResearchFacility const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+ResearchFacility::Impl::Impl(Impl const& rhs)
+  : psSubject{std::make_unique<ResearchItem>(*rhs.psSubject)}
+  , psSubjectPending{std::make_unique<ResearchItem>(*rhs.psSubjectPending)}
+  , psBestTopic{std::make_unique<ResearchItem>(*rhs.psBestTopic)}
+  , statusPending{rhs.statusPending}
+  , pendingCount{rhs.pendingCount}
+  , timeStartHold{rhs.timeStartHold}
+{
+}
+
+ResearchFacility::Impl& ResearchFacility::Impl::operator=(Impl const& rhs)
+{
+  if (this == &rhs) return *this;
+  psSubject = std::make_unique<ResearchItem>(*rhs.psSubject);
+  psSubjectPending = std::make_unique<ResearchItem>(*rhs.psSubjectPending);
+  psBestTopic = std::make_unique<ResearchItem>(*rhs.psBestTopic);
+  statusPending = rhs.statusPending;
+  pendingCount = rhs.pendingCount;
+  timeStartHold = rhs.timeStartHold;
+  return *this;
+}
+
+ProductionRun::ProductionRun()
+  : pimpl{std::make_unique<Impl>()}
+{
+}
+
+ProductionRun::ProductionRun(ProductionRun const& rhs)
+  : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+ProductionRun& ProductionRun::operator=(ProductionRun const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+Factory::Factory(unsigned id, unsigned player)
+  : Structure(id, player)
+  , pimpl{std::make_unique<Impl>()}
+{
+}
+
+Factory::Factory(Factory const& rhs)
+  : Structure(rhs)
+  , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+Factory& Factory::operator=(Factory const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+Factory::Impl::Impl(Impl const& rhs)
+  : psAssemblyPoint{std::make_unique<FlagPosition>(*rhs.psAssemblyPoint)}
+  , psSubject{rhs.psSubject}
+  , psSubjectPending{rhs.psSubjectPending}
+  , productionLoops{rhs.productionLoops}
+  , loopsPerformed{rhs.loopsPerformed}
+  , statusPending{rhs.statusPending}
+  , pendingCount{rhs.pendingCount}
+  , timeStarted{rhs.timeStarted}
+  , buildPointsRemaining{rhs.buildPointsRemaining}
+  , timeStartHold{rhs.timeStartHold}
+  , psCommander{rhs.psCommander}
+  , secondaryOrder{rhs.secondaryOrder}
+{
+}
+
+Factory::Impl& Factory::Impl::operator=(Impl const& rhs)
+{
+  if (this == &rhs) return *this;
+  psAssemblyPoint = std::make_unique<FlagPosition>(*rhs.psAssemblyPoint);
+  psSubject = rhs.psSubject;
+  psSubjectPending = rhs.psSubjectPending;
+  productionLoops = rhs.productionLoops;
+  loopsPerformed = rhs.loopsPerformed;
+  statusPending = rhs.statusPending;
+  pendingCount = rhs.pendingCount;
+  timeStarted = rhs.timeStarted;
+  buildPointsRemaining = rhs.buildPointsRemaining;
+  timeStartHold = rhs.timeStartHold;
+  psCommander = rhs.psCommander;
+  secondaryOrder = rhs.secondaryOrder;
+  return *this;
+}
+
+ResourceExtractor::ResourceExtractor(unsigned id, unsigned player)
+  : Structure(id, player)
+  , pimpl{std::make_unique<Impl>()}
+{
+}
+
+ResourceExtractor::ResourceExtractor(ResourceExtractor const& rhs)
+  : Structure(rhs)
+  , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+ResourceExtractor& ResourceExtractor::operator=(ResourceExtractor const& rhs)
 {
   if (this == &rhs) return *this;
   *pimpl = *rhs.pimpl;

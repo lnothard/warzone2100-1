@@ -240,6 +240,7 @@ class Structure : public ConstructedObject
 {
 public:
   ~Structure() override;
+
   Structure(unsigned id, unsigned player);
 
   Structure(Structure const& rhs);
@@ -296,73 +297,82 @@ StructureBounds getBounds(const Structure& structure) noexcept;
 
 struct ResearchItem
 {
-    uint8_t tech_code;
-    unsigned research_point_cost;
-    unsigned power_cost;
+  uint8_t tech_code;
+  unsigned research_point_cost;
+  unsigned power_cost;
 };
 
 class ResearchFacility : public Structure
 {
 public:
-    [[nodiscard]] const ResearchItem* getSubject() const;
+  ~ResearchFacility() override = default;
+  ResearchFacility(unsigned id, unsigned player);
+
+  ResearchFacility(ResearchFacility const& rhs);
+  ResearchFacility& operator=(ResearchFacility const& rhs);
+
+  ResearchFacility(ResearchFacility&& rhs) noexcept = default;
+  ResearchFacility& operator=(ResearchFacility&& rhs) noexcept = default;
+
+  [[nodiscard]] const ResearchItem* getSubject() const;
 private:
-    std::unique_ptr<ResearchItem> psSubject; // The subject the structure is working on.
-    std::unique_ptr<ResearchItem> psSubjectPending;
-    // The subject the structure is going to work on when the GAME_RESEARCHSTATUS message is received.
-    PENDING_STATUS statusPending; ///< Pending = not yet synchronised.
-    unsigned pendingCount; ///< Number of messages sent but not yet processed.
-    std::unique_ptr<ResearchItem> psBestTopic; // The topic with the most research points that was last performed
-    std::size_t timeStartHold; /* The time the research facility was put on hold*/
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
-struct ProductionRun
+class ProductionRun
 {
-    ProductionRun() = default;
-    bool operator ==(const DroidTemplate& rhs) const;
+public:
+  ProductionRun();
 
-    void restart();
-    [[nodiscard]] bool is_valid() const;
-    [[nodiscard]] bool is_complete() const;
-    [[nodiscard]] int tasks_remaining() const;
+  ProductionRun(ProductionRun const& rhs);
+  ProductionRun& operator=(ProductionRun const& rhs);
 
-    std::shared_ptr<DroidTemplate> target = nullptr;
-    int quantity_to_build = 0;
-    int quantity_built = 0;
+  ProductionRun(ProductionRun&& rhs) noexcept = default;
+  ProductionRun& operator=(ProductionRun&& rhs) noexcept = default;
+
+  bool operator ==(const DroidTemplate& rhs) const;
+
+  void restart();
+  [[nodiscard]] bool isValid() const;
+  [[nodiscard]] bool isComplete() const;
+  [[nodiscard]] int tasksRemaining() const;
+private:
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
 class Factory : public Structure
 {
 public:
-    bool structSetManufacture(DroidTemplate* psTempl, QUEUE_MODE mode);
-    void refundBuildPower();
-    void releaseProduction(QUEUE_MODE mode);
-    void holdProduction(QUEUE_MODE mode);
-    void assignFactoryCommandDroid(Droid* commander);
-    bool setFactoryState(SECONDARY_ORDER sec, SECONDARY_STATE state);
-    bool getFactoryState(SECONDARY_ORDER sec, SECONDARY_STATE* pState);
-    bool structPlaceDroid(DroidTemplate* psTempl, Droid** ppsDroid);
-    [[nodiscard]] bool IsFactoryCommanderGroupFull();
-    bool checkHaltOnMaxUnitsReached(bool isMission);
-    ProductionRun getProduction(DroidTemplate *psTemplate);
-    void factoryLoopAdjust(bool add);
-    [[nodiscard]] const DroidTemplate* getSubject() const;
-    [[nodiscard]] FlagPosition* FindFactoryDelivery() const;
-    void cancelProduction(QUEUE_MODE mode, bool mayClearProductionRun);
-    DroidTemplate* factoryProdUpdate(DroidTemplate* psTemplate);
+  ~Factory() override = default;
+  Factory(unsigned id, unsigned player);
+
+  Factory(Factory const& rhs);
+  Factory& operator=(Factory const& rhs);
+
+  Factory(Factory&& rhs) noexcept = default;
+  Factory& operator=(Factory&& rhs) noexcept = default;
+
+  bool structSetManufacture(DroidTemplate* psTempl, QUEUE_MODE mode);
+  void refundBuildPower();
+  void releaseProduction(QUEUE_MODE mode);
+  void holdProduction(QUEUE_MODE mode);
+  void assignFactoryCommandDroid(Droid* commander);
+  bool setFactoryState(SECONDARY_ORDER sec, SECONDARY_STATE state);
+  bool getFactoryState(SECONDARY_ORDER sec, SECONDARY_STATE* pState);
+  bool structPlaceDroid(DroidTemplate* psTempl, Droid** ppsDroid);
+  [[nodiscard]] bool IsFactoryCommanderGroupFull();
+  bool checkHaltOnMaxUnitsReached(bool isMission);
+  ProductionRun getProduction(DroidTemplate *psTemplate);
+  void factoryLoopAdjust(bool add);
+  [[nodiscard]] const DroidTemplate* getSubject() const;
+  [[nodiscard]] FlagPosition* FindFactoryDelivery() const;
+  void cancelProduction(QUEUE_MODE mode, bool mayClearProductionRun);
+  DroidTemplate* factoryProdUpdate(DroidTemplate* psTemplate);
 private:
-    uint8_t productionLoops; ///< Number of loops to perform. Not synchronised, and only meaningful for selectedPlayer.
-    uint8_t loopsPerformed; /* how many times the loop has been performed*/
-    std::shared_ptr<DroidTemplate> psSubject; ///< The subject the structure is working on.
-    std::shared_ptr<DroidTemplate> psSubjectPending;
-    ///< The subject the structure is going to working on. (Pending = not yet synchronised.)
-    PENDING_STATUS statusPending; ///< Pending = not yet synchronised.
-    unsigned pendingCount; ///< Number of messages sent but not yet processed.
-    size_t timeStarted; /* The time the building started on the subject*/
-    int buildPointsRemaining; ///< Build points required to finish building the droid.
-    size_t timeStartHold; /* The time the factory was put on hold*/
-    std::unique_ptr<FlagPosition> psAssemblyPoint; /* Place for the new droids to assemble at */
-    Droid* psCommander; // command droid to produce droids for (if any)
-    unsigned secondaryOrder; ///< Secondary order state for all units coming out of the factory.
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
 class PowerGenerator;
@@ -370,10 +380,20 @@ class PowerGenerator;
 class ResourceExtractor : public Structure
 {
 public:
-    void releaseResExtractor();
-    void checkForPowerGen();
+  ~ResourceExtractor() override = default;
+  ResourceExtractor(unsigned id, unsigned player);
+
+  ResourceExtractor(ResourceExtractor const& rhs);
+  ResourceExtractor& operator=(ResourceExtractor const& rhs);
+
+  ResourceExtractor(ResourceExtractor&& rhs) noexcept = default;
+  ResourceExtractor& operator=(ResourceExtractor&& rhs) noexcept = default;
+
+  void releaseResExtractor();
+  void checkForPowerGen();
 private:
-    PowerGenerator* power_generator;
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
 class PowerGenerator : public Structure

@@ -22,12 +22,12 @@ static constexpr auto PROJ_MAX_PITCH = 45;
 
 struct ConstructedObject::Impl
 {
-    /// Current resistance points, 0 = cannot be attacked electrically
-    int resistance = 0;
-    unsigned lastEmissionTime = 0;
-    WEAPON_SUBCLASS lastHitWeapon = WEAPON_SUBCLASS::COUNT;
-    std::vector<TILEPOS> watchedTiles{};
-    std::vector<Weapon> weapons{};
+  /// Current resistance points, 0 = cannot be attacked electrically
+  int resistance = 0;
+  unsigned lastEmissionTime = 0;
+  WEAPON_SUBCLASS lastHitWeapon = WEAPON_SUBCLASS::COUNT;
+  std::vector<TILEPOS> watchedTiles{};
+  std::vector<Weapon> weapons{};
 };
 
 ConstructedObject::ConstructedObject(unsigned id, unsigned player)

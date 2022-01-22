@@ -23,8 +23,9 @@ static constexpr auto MAX_WEAPONS = 3;
 /// Abstract base class with shared methods for both structures and droids
 class ConstructedObject : public PlayerOwnedObject {
 public:
-  ConstructedObject(unsigned id, unsigned player);
 	~ConstructedObject() override = default;
+
+  ConstructedObject(unsigned id, unsigned player);
 
   ConstructedObject(ConstructedObject const& rhs);
   ConstructedObject& operator=(ConstructedObject const& rhs);
