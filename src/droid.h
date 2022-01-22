@@ -303,6 +303,7 @@ public:
   void orderDroidAddPending(Order* order_);
   void orderCheckList();
   void orderDroidBase(Order* psOrder);
+  void incrementKills() noexcept;
   bool tryDoRepairlikeAction();
   void orderUpdateDroid();
   std::unique_ptr<Droid> reallyBuildDroid(DroidTemplate const* pTemplate, Position pos,

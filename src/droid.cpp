@@ -571,40 +571,46 @@ bool Droid::isFlying() const
   return false;
 }
 
-  unsigned Droid::getSecondaryOrder() const noexcept {
-    return secondaryOrder;
-  }
-  
-  const Group& Droid::getGroup() const {
-      return *group;
-  }
+unsigned Droid::getSecondaryOrder() const noexcept
+{
+  return pimpl ? pimpl->secondaryOrder : 0;
+}
 
-  const Vector2i& Droid::getDestination() const {
-    return movement->destination;
-  }
+Group const* Droid::getGroup() const
+{
+  return pimpl ? pimpl->group : nullptr;
+}
 
-  void Droid::incrementKills() noexcept {
-    ++kills;
-  }
+Vector2i Droid::getDestination() const
+{
+  return pimpl ? pimpl->movement->destination : Vector2i();
+}
+
+void Droid::incrementKills() noexcept
+{
+  if (!pimpl) return;
+  ++pimpl->kills;
+}
   
-  /**
-   * This function clears all the orders from droid's order list 
-   * that don't have target as psTarget.
-   */
-  void Droid::orderClearTargetFromDroidList(::PlayerOwnedObject * psTarget)
+/**
+ * This function clears all the orders from droid's order list
+ * that don't have target as psTarget.
+ */
+void Droid::orderClearTargetFromDroidList(PlayerOwnedObject* psTarget)
+{
+  if (!pimpl) return;
+  for (auto i = 0; i < pimpl->asOrderList.size(); ++i)
   {
-    for (auto i = 0; i < asOrderList.size(); ++i)
-    {
-      if (asOrderList[i].target == psTarget) {
-        if ((int)i < asOrderList.size()) {
-          syncDebug("droid%d list erase%d", getId(), psTarget->getId());
-        }
-        orderDroidListEraseRange(i, i + 1);
-        // if this underflows, the ++i will overflow it back
-        --i; 
-      }
+    if (pimpl->asOrderList[i].target != psTarget) continue;
+
+    if ((int)i < pimpl->asOrderList.size()) {
+      syncDebug("droid%d list erase%d", getId(), psTarget->getId());
     }
+    orderDroidListEraseRange(i, i + 1);
+      // if this underflows, the ++i will overflow it back
+    --i;
   }
+}
 
   /**
    * This function checks if the droid is off range. If yes, it uses

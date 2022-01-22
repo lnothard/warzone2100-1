@@ -97,30 +97,30 @@ enum class PENDING_STATUS
 
 enum class STRUCTURE_TYPE
 {
-    HQ,
-    FACTORY,
-    FACTORY_MODULE,
-    POWER_GEN,
-    POWER_MODULE,
-    RESOURCE_EXTRACTOR,
-    DEFENSE,
-    WALL,
-    WALL_CORNER,
-    GENERIC,
-    RESEARCH,
-    RESEARCH_MODULE,
-    REPAIR_FACILITY,
-    COMMAND_CONTROL,
-    BRIDGE,
-    DEMOLISH,
-    CYBORG_FACTORY,
-    VTOL_FACTORY,
-    LAB,
-    REARM_PAD,
-    MISSILE_SILO,
-    SAT_UPLINK,
-    GATE,
-    LASSAT
+  HQ,
+  FACTORY,
+  FACTORY_MODULE,
+  POWER_GEN,
+  POWER_MODULE,
+  RESOURCE_EXTRACTOR,
+  DEFENSE,
+  WALL,
+  WALL_CORNER,
+  GENERIC,
+  RESEARCH,
+  RESEARCH_MODULE,
+  REPAIR_FACILITY,
+  COMMAND_CONTROL,
+  BRIDGE,
+  DEMOLISH,
+  CYBORG_FACTORY,
+  VTOL_FACTORY,
+  LAB,
+  REARM_PAD,
+  MISSILE_SILO,
+  SAT_UPLINK,
+  GATE,
+  LASSAT
 };
 
 enum class STRUCTURE_STATE
@@ -135,97 +135,97 @@ enum class STRUCTURE_STATE
 
 enum class STRUCTURE_STRENGTH
 {
-    SOFT,
-    MEDIUM,
-    HARD,
-    BUNKER,
-    COUNT // MUST BE LAST
+  SOFT,
+  MEDIUM,
+  HARD,
+  BUNKER,
+  COUNT // MUST BE LAST
 };
 
 typedef UWORD STRUCTSTRENGTH_MODIFIER;
 
 enum class STRUCTURE_ANIMATION_STATE
 {
-    NORMAL,
-    OPEN,
-    OPENING,
-    CLOSING
+  NORMAL,
+  OPEN,
+  OPENING,
+  CLOSING
 };
 
 enum FLAG_TYPE
 {
-    FACTORY_FLAG,
-    CYBORG_FLAG,
-    VTOL_FLAG,
-    REPAIR_FLAG,
-    //separate the numfactory from numflag
-    NUM_FLAG_TYPES,
-    NUM_FACTORY_TYPES = REPAIR_FLAG
+  FACTORY_FLAG,
+  CYBORG_FLAG,
+  VTOL_FLAG,
+  REPAIR_FLAG,
+  //separate the numfactory from numflag
+  NUM_FLAG_TYPES,
+  NUM_FACTORY_TYPES = REPAIR_FLAG
 };
 
 struct FlagPosition : public ObjectPosition
 {
-    Vector3i coords {0, 0, 0};
-    uint8_t factoryInc = 0;
-    uint8_t factoryType = 0;
+  Vector3i coords {0, 0, 0};
+  uint8_t factoryInc = 0;
+  uint8_t factoryType = 0;
 };
 
 struct StructureBounds
 {
-    StructureBounds();
-    StructureBounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords);
+  StructureBounds();
+  StructureBounds(const Vector2i& top_left_coords, const Vector2i& size_in_coords);
 
-    [[nodiscard]] bool isValid() const;
+  [[nodiscard]] bool isValid() const;
 
-    Vector2i map {0, 0};
-    Vector2i size {0, 0};
+  Vector2i map {0, 0};
+  Vector2i size {0, 0};
 };
 
 struct StructureStats : public BaseStats
 {
-    [[nodiscard]] Vector2i size(unsigned direction) const;
-    [[nodiscard]] bool is_expansion_module() const noexcept;
+  [[nodiscard]] Vector2i size(unsigned direction) const;
+  [[nodiscard]] bool is_expansion_module() const noexcept;
 
-    using enum STRUCTURE_TYPE;
-    STRUCTURE_TYPE type; /* the type of structure */
-    STRUCTURE_STRENGTH strength; /* strength against the weapon effects */
-    unsigned base_width; /*The width of the base in tiles*/
-    unsigned base_breadth; /*The breadth of the base in tiles*/
-    unsigned build_point_cost; /*The number of build points required to build the structure*/
-    unsigned height; /*The height above/below the terrain - negative values denote below the terrain*/
-    unsigned power_cost; /*How much power the structure requires to build*/
-    std::vector< std::unique_ptr<iIMDShape> > IMDs; // The IMDs to draw for this structure, for each possible number of modules.
-    std::shared_ptr<iIMDShape> base_imd; /*The base IMD to draw for this structure */
-    std::shared_ptr<EcmStats> ecm_stats; /*Which ECM is standard for the structure -if any*/
-    std::shared_ptr<SensorStats> sensor_stats;/*Which Sensor is standard for the structure -if any*/
-    unsigned weapon_slots; /*Number of weapons that can be attached to the building*/
-    unsigned numWeaps; /*Number of weapons for default */
-    std::array<WeaponStats*, MAX_WEAPONS> psWeapStat;
-    unsigned long flags;
-    bool combines_with_wall; //If the structure will trigger nearby walls to try combining with it
+  using enum STRUCTURE_TYPE;
+  STRUCTURE_TYPE type; /* the type of structure */
+  STRUCTURE_STRENGTH strength; /* strength against the weapon effects */
+  unsigned base_width; /*The width of the base in tiles*/
+  unsigned base_breadth; /*The breadth of the base in tiles*/
+  unsigned build_point_cost; /*The number of build points required to build the structure*/
+  unsigned height; /*The height above/below the terrain - negative values denote below the terrain*/
+  unsigned power_cost; /*How much power the structure requires to build*/
+  std::vector< std::unique_ptr<iIMDShape> > IMDs; // The IMDs to draw for this structure, for each possible number of modules.
+  std::shared_ptr<iIMDShape> base_imd; /*The base IMD to draw for this structure */
+  std::shared_ptr<EcmStats> ecm_stats; /*Which ECM is standard for the structure -if any*/
+  std::shared_ptr<SensorStats> sensor_stats;/*Which Sensor is standard for the structure -if any*/
+  unsigned weapon_slots; /*Number of weapons that can be attached to the building*/
+  unsigned numWeaps; /*Number of weapons for default */
+  std::array<WeaponStats*, MAX_WEAPONS> psWeapStat;
+  unsigned long flags;
+  bool combines_with_wall; //If the structure will trigger nearby walls to try combining with it
 
-    unsigned minLimit; ///< lowest value user can set limit to (currently unused)
-    unsigned maxLimit; ///< highest value user can set limit to, LOTS_OF = no limit
-    unsigned curCount[MAX_PLAYERS]; ///< current number of instances of this type
+  unsigned minLimit; ///< lowest value user can set limit to (currently unused)
+  unsigned maxLimit; ///< highest value user can set limit to, LOTS_OF = no limit
+  unsigned curCount[MAX_PLAYERS]; ///< current number of instances of this type
 
-    struct
-    {
-        unsigned research;
-        unsigned moduleResearch;
-        unsigned repair;
-        unsigned power;
-        unsigned modulePower;
-        unsigned production;
-        unsigned moduleProduction;
-        unsigned rearm;
-        unsigned armour;
-        unsigned thermal;
-        unsigned hitPoints;
-        unsigned resistance; // resist enemy takeover; 0 = immune
-        unsigned limit; // current max limit for this type, LOTS_OF = no limit
-    } upgraded_stats[MAX_PLAYERS], base;
+  struct
+  {
+      unsigned research;
+      unsigned moduleResearch;
+      unsigned repair;
+      unsigned power;
+      unsigned modulePower;
+      unsigned production;
+      unsigned moduleProduction;
+      unsigned rearm;
+      unsigned armour;
+      unsigned thermal;
+      unsigned hitPoints;
+      unsigned resistance; // resist enemy takeover; 0 = immune
+      unsigned limit; // current max limit for this type, LOTS_OF = no limit
+  } upgraded_stats[MAX_PLAYERS], base;
 
-    bool is_favourite = false; ///< on Favorites list
+  bool is_favourite = false; ///< on Favorites list
 };
 
 
@@ -236,131 +236,63 @@ struct WALL
     unsigned type;
 };
 
-class Structure : public virtual ConstructedObject
+class Structure : public ConstructedObject
 {
 public:
-    ~Structure() override = default;
+  ~Structure() override;
+  Structure(unsigned id, unsigned player);
 
-    /************************** Accessors *************************/
-    [[nodiscard]] virtual int getFoundationDepth() const = 0;
-    [[nodiscard]] virtual Vector2i getSize() const = 0;
-    [[nodiscard]] virtual STRUCTURE_STATE getState() const = 0;
-    [[nodiscard]] virtual const StructureStats* getStats() const = 0;
-    [[nodiscard]] virtual STRUCTURE_ANIMATION_STATE getAnimationState() const = 0;
-    [[nodiscard]] virtual unsigned getArmourValue(WEAPON_CLASS weaponClass) const = 0;
-    [[nodiscard]] virtual uint8_t getCapacity() const = 0;
+  Structure(Structure const& rhs);
+  Structure& operator=(Structure const& rhs);
 
-    [[nodiscard]] virtual bool isWall() const = 0;
-    virtual void printInfo() const = 0;
-    [[nodiscard]] virtual bool hasSensor() const = 0;
-    virtual Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare) = 0;
-    [[nodiscard]] virtual float structureCompletionProgress() const = 0;
-     virtual void aiUpdateStructure(bool isMission) = 0;
-     virtual void structureUpdate(bool bMission) = 0;
-     virtual void setFoundationDepth(int depth) = 0;
-     virtual int requestOpenGate() = 0;
-     virtual void structureBuild(::Droid* psDroid, int builtPoints, int buildRate_) = 0;
+  Structure(Structure&& rhs) noexcept = default;
+  Structure& operator=(Structure&& rhs) noexcept = default;
 
-    [[nodiscard]] virtual std::unique_ptr<Structure> buildStructureDir(
-            StructureStats* pStructureType, unsigned x, unsigned y,
-            uint16_t direction, unsigned player, bool FromSave) = 0;
+  [[nodiscard]] STRUCTURE_ANIMATION_STATE getAnimationState() const;
+  [[nodiscard]] unsigned getOriginalHp() const final;
+  [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
+  [[nodiscard]] Vector2i getSize() const;
+  [[nodiscard]] int getFoundationDepth() const noexcept;
+  [[nodiscard]] iIMDShape const* getImdShape() const;
+  [[nodiscard]] PlayerOwnedObject const* getTarget(int weapon_slot) const;
+  [[nodiscard]] STRUCTURE_STATE getState() const;
+  [[nodiscard]] StructureStats const* getStats() const;
+  [[nodiscard]] uint8_t getCapacity() const;
+  [[nodiscard]] int objRadius() const final;
+  [[nodiscard]] bool isBlueprint() const noexcept;
+  [[nodiscard]] bool isWall() const noexcept;
+  [[nodiscard]] bool isRadarDetector() const;
+  [[nodiscard]] bool isProbablyDoomed(bool isDirect) const final;
+  [[nodiscard]] bool hasModules() const noexcept;
+  [[nodiscard]] bool hasSensor() const;
+  [[nodiscard]] bool hasStandardSensor() const final;
+  [[nodiscard]] bool hasCbSensor() const final;
+  [[nodiscard]] bool hasVtolInterceptSensor() const final;
+  [[nodiscard]] bool hasVtolCbSensor() const final;
+  [[nodiscard]] bool smokeWhenDamaged() const noexcept;
+  void updateExpectedDamage(unsigned damage, bool is_direct) noexcept;
+  [[nodiscard]] unsigned calculateSensorRange() const;
+  [[nodiscard]] int calculateGateHeight(unsigned time, int minimum) const;
+  void setFoundationDepth(int depth) noexcept;
+  void printInfo() const;
+  [[nodiscard]] unsigned buildPointsToCompletion() const;
+  [[nodiscard]] unsigned calculateRefundedPower() const;
+  [[nodiscard]] int calculateAttackPriority(ConstructedObject const* target, int weapon_slot) const final;
+  Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare);
+  [[nodiscard]] float structureCompletionProgress() const;
+  void aiUpdateStructure(bool isMission);
+  void structureUpdate(bool bMission);
+  int requestOpenGate();
+  void structureBuild(Droid* psDroid, int builtPoints, int buildRate_);
+  [[nodiscard]] std::unique_ptr<Structure> buildStructureDir(
+        StructureStats* pStructureType, unsigned x, unsigned y,
+        uint16_t direction, unsigned player, bool FromSave);
+private:
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
 };
 
-namespace Impl
-{
-    class Structure : public virtual ::Structure, public ConstructedObject
-    {
-    public:
-        ~Structure() override;
-        Structure(unsigned id, unsigned player);
-
-        /************************** Accessors *************************/
-        [[nodiscard]] STRUCTURE_ANIMATION_STATE getAnimationState() const final;
-        [[nodiscard]] unsigned getOriginalHp() const final;
-        [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const final;
-        [[nodiscard]] Vector2i getSize() const final;
-        [[nodiscard]] int getFoundationDepth() const noexcept final;
-        [[nodiscard]] const iIMDShape& getImdShape() const final;
-        [[nodiscard]] const ::PlayerOwnedObject * getTarget(int weapon_slot) const final;
-        [[nodiscard]] STRUCTURE_STATE getState() const final;
-        [[nodiscard]] const StructureStats* getStats() const final;
-        [[nodiscard]] uint8_t getCapacity() const final;
-
-        int objRadius() const final;
-        [[nodiscard]] bool isBlueprint() const noexcept;
-        [[nodiscard]] bool isWall() const noexcept final;
-        [[nodiscard]] bool isRadarDetector() const final;
-        [[nodiscard]] bool isProbablyDoomed(bool isDirect) const final;
-        [[nodiscard]] bool hasModules() const noexcept;
-        [[nodiscard]] bool hasSensor() const final;
-        [[nodiscard]] bool hasStandardSensor() const final;
-        [[nodiscard]] bool hasCbSensor() const final;
-        [[nodiscard]] bool hasVtolInterceptSensor() const final;
-        [[nodiscard]] bool hasVtolCbSensor() const final;
-        [[nodiscard]] bool smokeWhenDamaged() const noexcept;
-        void updateExpectedDamage(unsigned damage, bool is_direct) noexcept override;
-        [[nodiscard]] unsigned calculateSensorRange() const final;
-        [[nodiscard]] int calculateGateHeight(std::size_t time, int minimum) const;
-        void setFoundationDepth(int depth) noexcept final;
-        void printInfo() const override;
-        [[nodiscard]] unsigned buildPointsToCompletion() const;
-        [[nodiscard]] unsigned calculateRefundedPower() const;
-        [[nodiscard]] int calculateAttackPriority(const ::ConstructedObject* target, int weapon_slot) const final;
-        ::Structure* giftSingleStructure(unsigned attackPlayer, bool electronic_warfare) final;
-        [[nodiscard]] float structureCompletionProgress() const final;
-        void aiUpdateStructure(bool isMission) final;
-        void structureUpdate(bool bMission) final;
-        int requestOpenGate() final;
-        void structureBuild(::Droid* psDroid, int builtPoints, int buildRate_) final;
-
-        [[nodiscard]] std::unique_ptr<::Structure> buildStructureDir(
-                StructureStats* pStructureType, unsigned x, unsigned y,
-                uint16_t direction, unsigned player, bool FromSave) final;
-    protected:
-        using enum STRUCTURE_ANIMATION_STATE;
-        using enum STRUCTURE_STATE;
-        std::shared_ptr<StructureStats> stats;
-
-        /// Whether the structure is being built, doing nothing or performing a function
-        STRUCTURE_STATE state;
-
-        /// The build points currently assigned to this structure
-        unsigned currentBuildPoints;
-
-        /// Time the resistance was last increased
-        std::size_t lastResistance;
-
-        /// Rate that this structure is being built, calculated each tick. Only
-        /// meaningful if status == BEING_BUILT. If construction hasn't started
-        /// and build rate is 0, remove the structure
-        int buildRate;
-
-        /// Needed if wanting the buildRate between buildRate being reset to 0
-        /// each tick and the trucks calculating it
-        int previousBuildRate;
-
-        std::array<::PlayerOwnedObject *, MAX_WEAPONS> target;
-
-        /// Expected damage to be caused by all currently incoming projectiles.
-        /// This info is shared between all players, but shouldn't make a difference
-        /// unless 3 mutual enemies happen to be fighting each other at the same time.
-        unsigned expectedDamage;
-
-        /// Time of structure's previous tick
-        std::size_t prevTime;
-        int foundationDepth;
-
-        /// Lame name: current number of module upgrades
-        /// (*not* maximum number of upgrades)
-        uint8_t capacity;
-
-        STRUCTURE_ANIMATION_STATE animationState = NORMAL;
-        std::size_t lastStateTime;
-        std::unique_ptr<iIMDShape> prebuiltImd;
-    };
-
-    StructureBounds getBounds(const Structure& structure) noexcept;
-}
+StructureBounds getBounds(const Structure& structure) noexcept;
 
 struct ResearchItem
 {
@@ -369,7 +301,7 @@ struct ResearchItem
     unsigned power_cost;
 };
 
-class ResearchFacility : public virtual Structure, public Impl::Structure
+class ResearchFacility : public Structure
 {
 public:
     [[nodiscard]] const ResearchItem* getSubject() const;
@@ -398,7 +330,7 @@ struct ProductionRun
     int quantity_built = 0;
 };
 
-class Factory : public virtual Structure, public Impl::Structure
+class Factory : public Structure
 {
 public:
     bool structSetManufacture(DroidTemplate* psTempl, QUEUE_MODE mode);
@@ -425,9 +357,9 @@ private:
     ///< The subject the structure is going to working on. (Pending = not yet synchronised.)
     PENDING_STATUS statusPending; ///< Pending = not yet synchronised.
     unsigned pendingCount; ///< Number of messages sent but not yet processed.
-    std::size_t timeStarted; /* The time the building started on the subject*/
+    size_t timeStarted; /* The time the building started on the subject*/
     int buildPointsRemaining; ///< Build points required to finish building the droid.
-    std::size_t timeStartHold; /* The time the factory was put on hold*/
+    size_t timeStartHold; /* The time the factory was put on hold*/
     std::unique_ptr<FlagPosition> psAssemblyPoint; /* Place for the new droids to assemble at */
     Droid* psCommander; // command droid to produce droids for (if any)
     unsigned secondaryOrder; ///< Secondary order state for all units coming out of the factory.
@@ -435,7 +367,7 @@ private:
 
 class PowerGenerator;
 
-class ResourceExtractor : public virtual Structure, public Impl::Structure
+class ResourceExtractor : public Structure
 {
 public:
     void releaseResExtractor();
@@ -444,7 +376,7 @@ private:
     PowerGenerator* power_generator;
 };
 
-class PowerGenerator : public virtual Structure, public Impl::Structure
+class PowerGenerator : public Structure
 {
 public:
     void releasePowerGen();
@@ -453,7 +385,7 @@ private:
     std::array<ResourceExtractor*, NUM_POWER_MODULES> resource_extractors;
 };
 
-class RepairFacility : public virtual Structure, public Impl::Structure
+class RepairFacility : public Structure
 {
 private:
     ConstructedObject* psObj; /* Object being repaired */
@@ -463,7 +395,7 @@ private:
     int droidQueue; /// Last count of droid queue for this facility
 };
 
-class RearmPad : public virtual Structure, public Impl::Structure
+class RearmPad : public Structure
 {
 public:
     [[nodiscard]] bool isClear() const;
