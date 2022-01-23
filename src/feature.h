@@ -68,6 +68,7 @@ struct FeatureStats : public BaseStats
 };
 
 class Feature : public BaseObject
+              , public Damageable
 {
 public:
   ~Feature() override = default;

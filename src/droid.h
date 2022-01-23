@@ -248,9 +248,9 @@ struct DroidTemplate : public BaseStats
   bool isEnabled = false;
 };
 
-class Droid : public Damageable
-            , public virtual PlayerOwned
-            , public virtual Selectable
+class Droid : public BaseObject
+            , public Damageable
+            , public PlayerOwned
 {
 public:
   ~Droid() override;
@@ -262,8 +262,6 @@ public:
   Droid(Droid&& rhs) noexcept = default;
   Droid& operator=(Droid&& rhs) noexcept = default;
 
-  void setPlayer() override;
-  [[nodiscard]] unsigned getPlayer() const override;
   [[nodiscard]] ACTION getAction() const noexcept;
   [[nodiscard]] Order const* getOrder() const;
   [[nodiscard]] DROID_TYPE getType() const noexcept;
@@ -272,7 +270,7 @@ public:
   [[nodiscard]] int getVerticalSpeed() const noexcept;
   [[nodiscard]] unsigned getSecondaryOrder() const noexcept;
   [[nodiscard]] Vector2i getDestination() const;
-  [[nodiscard]] const Movement* getMovementData() const;
+  [[nodiscard]] Movement const* getMovementData() const;
   [[nodiscard]] std::string getName() const;
   [[nodiscard]] unsigned getWeight() const;
   [[nodiscard]] Group const* getGroup() const;

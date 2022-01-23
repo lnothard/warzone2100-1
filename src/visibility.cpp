@@ -41,14 +41,14 @@
 /* forward decl */
 bool bInTutorial;
 void jsDebugMessageUpdate();
-struct PlayerOwnedObject;
-typedef std::vector<PlayerOwnedObject *> GridList;
+struct BaseObject;
+typedef std::vector<BaseObject *> GridList;
 typedef GridList::const_iterator GridIterator;
 GridList const& gridStartIterateUnseen(int x, int y, int radius, unsigned player);
-int establishTargetHeight(PlayerOwnedObject const* psTarget);
+int establishTargetHeight(BaseObject const* psTarget);
 unsigned generateSynchronisedObjectId();
 Vector2i world_coord(Vector2i);
-bool triggerEventSeen(PlayerOwnedObject *, PlayerOwnedObject *);
+bool triggerEventSeen(BaseObject *, BaseObject *);
 
 
 /// Integer amount to change visibility this turn
@@ -447,7 +447,7 @@ void revealAll(UBYTE player)
  * psTarget can be any type of SimpleObject (e.g. a tree).
  * struckBlock controls whether structures block LOS
  */
-int visibleObject(const PlayerOwnedObject * psViewer, const PlayerOwnedObject * psTarget, bool wallsBlock)
+int visibleObject(const BaseObject* psViewer, const BaseObject* psTarget, bool wallsBlock)
 {
 	ASSERT_OR_RETURN(0, psViewer != nullptr, "Invalid viewer pointer!");
 	ASSERT_OR_RETURN(0, psTarget != nullptr, "Invalid viewed pointer!");

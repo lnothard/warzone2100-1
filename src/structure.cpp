@@ -123,11 +123,8 @@ static WzString favoriteStructs;
 
 struct Structure::Impl
 {
-  Impl(unsigned player);
+  Impl() = default;
 
-  unsigned player;
-  unsigned hitPoints = 0;
-  unsigned originalHp = 0;
   std::shared_ptr<StructureStats> stats;
   /// Whether the structure is being built, doing nothing or performing a function
   STRUCTURE_STATE state = STRUCTURE_STATE::BLUEPRINT_PLANNED;
@@ -256,13 +253,13 @@ struct ResourceExtractor::Impl
 };
 
 Structure::Structure(unsigned id, unsigned player)
-  : BaseObject(id)
-  , pimpl{std::make_unique<Impl>(player)}
+  : BaseObject(id), Damageable(), PlayerOwned(player)
+  , pimpl{std::make_unique<Impl>()}
 {
 }
 
 Structure::Structure(Structure const& rhs)
-  : BaseObject(rhs)
+  : BaseObject(rhs), Damageable(rhs), PlayerOwned(rhs)
   , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
@@ -411,8 +408,8 @@ PowerGenerator::PowerGenerator(unsigned id, unsigned player)
 }
 
 PowerGenerator::PowerGenerator(PowerGenerator const& rhs)
-        : Structure(rhs)
-        , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+  : Structure(rhs)
+  , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
 
@@ -430,8 +427,8 @@ RepairFacility::RepairFacility(unsigned id, unsigned player)
 }
 
 RepairFacility::RepairFacility(RepairFacility const& rhs)
-        : Structure(rhs)
-        , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+  : Structure(rhs)
+  , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
 
@@ -467,8 +464,8 @@ RearmPad::RearmPad(unsigned id, unsigned player)
 }
 
 RearmPad::RearmPad(RearmPad const& rhs)
-        : Structure(rhs)
-        , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+  : Structure(rhs)
+  , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
 
@@ -485,7 +482,7 @@ StructureBounds::StructureBounds()
 }
 
 StructureBounds::StructureBounds(Vector2i top_left_coords, Vector2i size_in_coords)
- : map{top_left_coords}, size{size_in_coords}
+  : map{top_left_coords}, size{size_in_coords}
 {
 }
 

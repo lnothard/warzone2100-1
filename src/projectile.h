@@ -38,7 +38,6 @@ struct Weapon;
 struct WeaponStats;
 
 
-static constexpr auto PROJ_MAX_PITCH = 45;
 static constexpr auto PROJ_ULTIMATE_PITCH = 80;
 
 /// How long an object burns for after leaving a fire
@@ -75,7 +74,8 @@ enum class PROJECTILE_STATE
   INACTIVE
 };
 
-class Projectile : public PlayerOwnedObject
+class Projectile : public BaseObject
+                 , public PlayerOwned
 {
 public:
   ~Projectile() override = default;
@@ -91,14 +91,14 @@ public:
   [[nodiscard]] PROJECTILE_STATE getState() const noexcept;
   [[nodiscard]] bool isVisible() const;
   void update();
-  void setTarget(PlayerOwnedObject* psObj);
-  void setSource(PlayerOwnedObject* psObj);
+  void setTarget(BaseObject* psObj);
+  void setSource(BaseObject* psObj);
   void proj_InFlightFunc();
   void proj_ImpactFunc();
   void proj_PostImpactFunc();
   void proj_checkPeriodicalDamage();
-  bool proj_SendProjectileAngled(Weapon* psWeap, PlayerOwnedObject* psAttacker, unsigned plr,
-                                 Vector3i dest, PlayerOwnedObject* psTarget, bool bVisible,
+  bool proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacker, unsigned plr,
+                                 Vector3i dest, BaseObject* psTarget, bool bVisible,
                                  int weapon_slot, int min_angle, unsigned fireTime) const;
   /// Update the source experience after a target is damaged/destroyed
   void updateExperience(unsigned experienceInc);

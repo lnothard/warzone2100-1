@@ -28,6 +28,9 @@
 
 #include "lib/framework/fixedpoint.h"
 
+#include "basedef.h"
+
+struct iIMDShape;
 struct WeaponStats;
 
 
@@ -54,7 +57,9 @@ enum class TARGET_ORIGIN
 	RADAR_DETECTOR,
 };
 
-class Weapon : public PlayerOwnedObject {
+class Weapon : public BaseObject
+             , public PlayerOwned
+{
 public:
   ~Weapon() override = default;
   Weapon(unsigned id, unsigned player);

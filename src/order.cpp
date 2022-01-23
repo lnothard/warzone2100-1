@@ -510,7 +510,7 @@ void orderDroidObj(Droid* psDroid, ORDER_TYPE order, PlayerOwnedObject * psObj, 
  * @todo the first switch can be removed and substituted by orderState() function.
  * @todo the use of this function is somewhat superfluous on some cases. Investigate.
  */
-PlayerOwnedObject * orderStateObj(Droid* psDroid, ORDER_TYPE order)
+BaseObject* orderStateObj(Droid* psDroid, ORDER_TYPE order)
 {
 	bool match = false;
 
@@ -519,9 +519,9 @@ PlayerOwnedObject * orderStateObj(Droid* psDroid, ORDER_TYPE order)
 	case BUILD:
 	case LINE_BUILD:
 	case HELP_BUILD:
-		if (psDroid->getOrder().type == BUILD ||
-			  psDroid->getOrder().type == HELP_BUILD ||
-			  psDroid->getOrder().type == LINE_BUILD) {
+		if (psDroid->getOrder()->type == BUILD ||
+			  psDroid->getOrder()->type == HELP_BUILD ||
+			  psDroid->getOrder()->type == LINE_BUILD) {
 			match = true;
 		}
 		break;
@@ -532,13 +532,13 @@ PlayerOwnedObject * orderStateObj(Droid* psDroid, ORDER_TYPE order)
 	case DROID_REPAIR:
 	case REARM:
 	case GUARD:
-		if (psDroid->getOrder().type == order) {
+		if (psDroid->getOrder()->type == order) {
 			match = true;
 		}
 		break;
 	case RETURN_TO_REPAIR:
-		if (psDroid->getOrder().type == RETURN_TO_REPAIR ||
-		   	psDroid->getOrder().type == RTR_SPECIFIED) {
+		if (psDroid->getOrder()->type == RETURN_TO_REPAIR ||
+		   	psDroid->getOrder()->type == RTR_SPECIFIED) {
 			match = true;
 		}
 	default:
@@ -550,7 +550,7 @@ PlayerOwnedObject * orderStateObj(Droid* psDroid, ORDER_TYPE order)
 	}
 
 	// check the order is one with an object
-	switch (psDroid->getOrder().type) {
+	switch (psDroid->getOrder()->type) {
 	default:
 		// not an object order -- return false
 		return nullptr;
@@ -559,14 +559,14 @@ PlayerOwnedObject * orderStateObj(Droid* psDroid, ORDER_TYPE order)
 	case LINE_BUILD:
 		if (psDroid->getAction() == ACTION::BUILD ||
 			  psDroid->getAction() == ACTION::BUILD_WANDER) {
-			return psDroid->getOrder().target;
+			return psDroid->getOrder()->target;
 		}
 		break;
 	case HELP_BUILD:
 		if (psDroid->getAction() == ACTION::BUILD ||
 			psDroid->getAction() == ACTION::BUILD_WANDER ||
 			psDroid->getAction() == ACTION::MOVE_TO_BUILD) {
-			return psDroid->getOrder().target;
+			return psDroid->getOrder()->target;
 		}
 		break;
 	case ATTACK:
@@ -578,7 +578,7 @@ PlayerOwnedObject * orderStateObj(Droid* psDroid, ORDER_TYPE order)
 	case DROID_REPAIR:
 	case REARM:
 	case GUARD:
-		return psDroid->getOrder().target;
+		return psDroid->getOrder()->target;
 		break;
 	}
 	return nullptr;

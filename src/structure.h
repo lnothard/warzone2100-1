@@ -237,8 +237,8 @@ struct WALL
 };
 
 class Structure : public BaseObject
-                , public virtual Damageable
-                , public virtual PlayerOwned
+                , public Damageable
+                , public PlayerOwned
 {
 public:
   ~Structure() override;
@@ -251,10 +251,6 @@ public:
   Structure(Structure&& rhs) noexcept = default;
   Structure& operator=(Structure&& rhs) noexcept = default;
 
-  void setPlayer() override;
-  [[nodiscard]] unsigned getPlayer() const override;
-  [[nodiscard]] unsigned getHp() const override;
-  [[nodiscard]] unsigned getOriginalHp() const override;
   [[nodiscard]] STRUCTURE_ANIMATION_STATE getAnimationState() const;
   [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
   [[nodiscard]] Vector2i getSize() const;

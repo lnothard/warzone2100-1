@@ -6,6 +6,7 @@
 
 #include "basedef.h"
 #include "displaydef.h"
+#include "weapon.h"
 
 bool godMode;
 void visRemoveVisibility(BaseObject*);
@@ -39,9 +40,19 @@ struct Damageable::Impl
 {
   Impl() = default;
 
+  bool isSelected = false;
   unsigned hitPoints = 0;
   unsigned originalHp = 0;
-  unsigned died = 0;
+  unsigned timeOfDeath = 0;
+  unsigned resistanceToElectric = 0;
+};
+
+struct PlayerOwned::Impl
+{
+  explicit Impl(unsigned player);
+
+  unsigned player = 0;
+  std::array<Weapon, MAX_WEAPONS> weapons;
 };
 
 BaseObject::BaseObject(unsigned id)
@@ -89,15 +100,13 @@ BaseObject::Impl& BaseObject::Impl::operator=(Impl const& rhs)
   previousLocation = rhs.previousLocation;
 }
 
-Damageable::Damageable(unsigned id)
-  : BaseObject(id)
-  , pimpl{std::make_unique<Impl>()}
+Damageable::Damageable()
+  : pimpl{std::make_unique<Impl>()}
 {
 }
 
 Damageable::Damageable(Damageable const& rhs)
-  : BaseObject(rhs)
-  , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+  : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
 
@@ -108,11 +117,31 @@ Damageable& Damageable::operator=(Damageable const& rhs)
   return *this;
 }
 
+PlayerOwned::PlayerOwned(unsigned player)
+  : pimpl{std::make_unique<Impl>(player)}
+{
+}
+
+PlayerOwned::PlayerOwned(PlayerOwned const& rhs)
+  : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+PlayerOwned& PlayerOwned::operator=(PlayerOwned const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
+}
+
+PlayerOwned::Impl::Impl(unsigned player)
+  : player{player}
+{
+}
+
 unsigned BaseObject::getId() const noexcept
 {
-  return pimpl
-         ? pimpl->id
-         : 0;
+  return pimpl ? pimpl->id : 0;
 }
 
 Spacetime BaseObject::getSpacetime() const noexcept
@@ -124,37 +153,27 @@ Spacetime BaseObject::getSpacetime() const noexcept
 
 Position BaseObject::getPosition() const noexcept
 {
-  return pimpl
-         ? pimpl->position
-         : Position();
+  return pimpl ? pimpl->position : Position();
 }
 
 Rotation BaseObject::getRotation() const noexcept
 {
-  return pimpl
-         ? pimpl->rotation
-         : Rotation();
+  return pimpl ? pimpl->rotation : Rotation();
 }
 
 unsigned BaseObject::getTime() const noexcept
 {
-  return pimpl
-         ? pimpl->time
-         : 0;
+  return pimpl ? pimpl->time : 0;
 }
 
 Spacetime BaseObject::getPreviousLocation() const noexcept
 {
-  return pimpl
-         ? pimpl->previousLocation
-         : Spacetime();
+  return pimpl ? pimpl->previousLocation : Spacetime();
 }
 
 const DisplayData* BaseObject::getDisplayData() const noexcept
 {
-  return pimpl
-         ? pimpl->display.get()
-         : nullptr;
+  return pimpl ? pimpl->display.get() : nullptr;
 }
 
 void BaseObject::setTime(unsigned t) noexcept
@@ -181,6 +200,23 @@ void BaseObject::setHeight(int height) noexcept
   pimpl->position.z = height;
 }
 
+void Damageable::setHp(unsigned hp)
+{
+  if (!pimpl) return;
+  pimpl->hitPoints = hp;
+}
+
+void Damageable::setOriginalHp(unsigned hp)
+{
+  if (!pimpl) return;
+  pimpl->originalHp = hp;
+}
+
+bool Damageable::isSelected() const
+{
+  return pimpl && pimpl->isSelected;
+}
+
 unsigned Damageable::getHp() const
 {
   return pimpl ? pimpl->hitPoints : 0;
@@ -193,7 +229,18 @@ unsigned Damageable::getOriginalHp() const
 
 bool Damageable::isDead() const
 {
-  return !pimpl || pimpl->died != 0;
+  return !pimpl || pimpl->timeOfDeath != 0;
+}
+
+void PlayerOwned::setPlayer(unsigned plr)
+{
+  if (!pimpl) return;
+  pimpl->player = plr;
+}
+
+unsigned PlayerOwned::getPlayer() const
+{
+  return pimpl ? pimpl->player : 0;
 }
 
 int objectPositionSquareDiff(const Position& first, const Position& second)

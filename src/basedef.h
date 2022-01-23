@@ -49,19 +49,6 @@ enum class OBJECT_FLAG
   COUNT // MUST BE LAST
 };
 
-class PlayerOwned
-{
-public:
-  [[nodiscard]] virtual unsigned getPlayer() const = 0;
-  virtual void setPlayer() = 0;
-};
-
-class Selectable
-{
-public:
-  [[nodiscard]] virtual bool isSelected() const = 0;
-};
-
 struct TILEPOS
 {
   uint8_t x, y, type;
@@ -107,11 +94,11 @@ private:
   std::unique_ptr<Impl> pimpl;
 };
 
-class Damageable : public BaseObject
+class Damageable
 {
 public:
-  ~Damageable() override = default;
-  explicit Damageable(unsigned id);
+  ~Damageable() = default;
+  Damageable();
 
   Damageable(Damageable const& rhs);
   Damageable& operator=(Damageable const& rhs);
@@ -119,9 +106,34 @@ public:
   Damageable(Damageable&& rhs) noexcept = default;
   Damageable& operator=(Damageable&& rhs) noexcept = default;
 
+  void setHp(unsigned hp);
+  void setOriginalHp(unsigned hp);
+  void setSelected(bool sel);
+  void setResistance(unsigned res);
+  [[nodiscard]] bool isSelected() const;
   [[nodiscard]] unsigned getHp() const;
   [[nodiscard]] unsigned getOriginalHp() const;
+  [[nodiscard]] unsigned getResistance() const;
   [[nodiscard]] bool isDead() const;
+private:
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
+};
+
+class PlayerOwned
+{
+public:
+  ~PlayerOwned() = default;
+  PlayerOwned(unsigned player);
+
+  PlayerOwned(PlayerOwned const& rhs);
+  PlayerOwned& operator=(PlayerOwned const& rhs);
+
+  PlayerOwned(PlayerOwned&& rhs) noexcept = default;
+  PlayerOwned& operator=(PlayerOwned&& rhs) noexcept = default;
+
+  void setPlayer(unsigned plr);
+  [[nodiscard]] unsigned getPlayer() const;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
