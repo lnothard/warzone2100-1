@@ -36,7 +36,6 @@
 #include "lib/ivis_opengl/ivisdef.h"
 
 #include "basedef.h"
-#include "constructedobject.h"
 #include "droid.h"
 #include "group.h"
 #include "order.h"
@@ -256,7 +255,7 @@ public:
   [[nodiscard]] Vector2i getSize() const;
   [[nodiscard]] int getFoundationDepth() const noexcept;
   [[nodiscard]] iIMDShape const* getImdShape() const;
-  [[nodiscard]] PlayerOwnedObject const* getTarget(int weapon_slot) const;
+  [[nodiscard]] BaseObject const* getTarget(int weapon_slot) const;
   [[nodiscard]] STRUCTURE_STATE getState() const;
   [[nodiscard]] StructureStats const* getStats() const;
   [[nodiscard]] uint8_t getCapacity() const;
@@ -636,7 +635,7 @@ if not a good combination!*/
 bool validTemplateForFactory(const DroidTemplate* psTemplate, Structure* psFactory, bool complain);
 
 /*calculates the damage caused to the resistance levels of structures*/
-bool electronicDamage(PlayerOwnedObject * psTarget, unsigned damage, UBYTE attackPlayer);
+bool electronicDamage(BaseObject * psTarget, unsigned damage, UBYTE attackPlayer);
 
 /* EW works differently in multiplayer mode compared with single player.*/
 bool validStructResistance(const Structure* psStruct);
@@ -750,7 +749,7 @@ bool IsStatExpansionModule(const StructureStats* psStats);
 
 /// is this a blueprint and not a real structure?
 bool structureIsBlueprint(const Structure* psStructure);
-bool isBlueprint(const PlayerOwnedObject * psObject);
+bool isBlueprint(const BaseObject * psObject);
 
 /*returns the power cost to build this structure, or to add its next module */
 unsigned structPowerToBuildOrAddNextModule(const Structure* psStruct);

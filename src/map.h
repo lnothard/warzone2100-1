@@ -32,6 +32,7 @@
 #include "wzmaplib/map_io.h"
 
 #include "ai.h"
+#include "feature.h"
 #include "objects.h"
 #include "structure.h"
 
@@ -92,7 +93,7 @@ struct Tile
 	uint16_t texture; // Which graphics texture is on this tile
 	int height; ///< The height at the top left of the tile
 	float level; ///< The visibility level of the top left of the tile, for this client.
-  PlayerOwnedObject * psObject; // Any object sitting on the location (e.g. building)
+  BaseObject * psObject; // Any object sitting on the location (e.g. building)
 	PIELIGHT colour;
 	uint16_t limitedContinent; ///< For land or sea limited propulsion types
 	uint16_t hoverContinent; ///< For hover type propulsions
@@ -261,9 +262,9 @@ static bool TileHasWall(const Tile* tile)
 {
   using enum STRUCTURE_TYPE;
 	return TileHasStructure(tile) &&
-          (dynamic_cast<Structure*>(tile->psObject)->getStats().type == WALL ||
-           dynamic_cast<Structure*>(tile->psObject)->getStats().type == GATE ||
-           dynamic_cast<Structure*>(tile->psObject)->getStats().type == WALL_CORNER);
+          (dynamic_cast<Structure*>(tile->psObject)->getStats()->type == WALL ||
+           dynamic_cast<Structure*>(tile->psObject)->getStats()->type == GATE ||
+           dynamic_cast<Structure*>(tile->psObject)->getStats()->type == WALL_CORNER);
 }
 
 /** Check if tile is burning. */
@@ -301,7 +302,7 @@ static bool tileIsClearlyVisible(const Tile* psTile)
 static bool TileHasSmallStructure(const Tile* tile)
 {
 	return TileHasStructure(tile) &&
-         dynamic_cast<Structure*>(tile->psObject)->getStats().height == 1;
+         dynamic_cast<Structure*>(tile->psObject)->getStats()->height == 1;
 }
 
 #define SET_TILE_DECAL(x)	((x)->tileInfoBits |= BITS_DECAL)
@@ -537,7 +538,7 @@ static inline int map_Height(Vector2i const& v)
 }
 
 /* returns true if object is above ground */
-bool mapObjIsAboveGround(const PlayerOwnedObject * psObj);
+bool mapObjIsAboveGround(const BaseObject * psObj);
 
 /* returns the max and min height of a tile by looking at the four corners
    in tile coords */

@@ -74,24 +74,24 @@ void aiUpdateDroid(Droid* psDroid);
 
 /// Find the nearest best target for a droid
 /// returns integer representing quality of choice, -1 if failed
-int aiBestNearestTarget(Droid* psDroid, PlayerOwnedObject ** ppsObj, int weapon_slot, int extraRange = 0);
+int aiBestNearestTarget(Droid* psDroid, BaseObject ** ppsObj, int weapon_slot, int extraRange = 0);
 
 /// Update the expected damage to the object.
-void aiObjectAddExpectedDamage(PlayerOwnedObject * psObject, SDWORD damage, bool isDirect);
+void aiObjectAddExpectedDamage(BaseObject * psObject, SDWORD damage, bool isDirect);
 
 /* See if there is a target in range added int weapon_slot*/
-bool aiChooseTarget(PlayerOwnedObject * psObj, PlayerOwnedObject ** ppsTarget, int weapon_slot,
+bool aiChooseTarget(BaseObject * psObj, BaseObject ** ppsTarget, int weapon_slot,
                     bool bUpdateTarget, TARGET_ORIGIN* targetOrigin);
 
 /** See if there is a target in range for Sensor objects. */
-bool aiChooseSensorTarget(PlayerOwnedObject * psObj, PlayerOwnedObject ** ppsTarget);
+bool aiChooseSensorTarget(BaseObject * psObj, BaseObject ** ppsTarget);
 
 /*set of rules which determine whether the weapon associated with the object
 can fire on the propulsion type of the target*/
-bool validTarget(PlayerOwnedObject * psObject, PlayerOwnedObject * psTarget, int weapon_slot);
+bool validTarget(BaseObject * psObject, BaseObject * psTarget, int weapon_slot);
 
 // Check if any of the weapons can target the target
-bool checkAnyWeaponsTarget(PlayerOwnedObject * psObject, PlayerOwnedObject * psTarget);
+bool checkAnyWeaponsTarget(BaseObject * psObject, BaseObject * psTarget);
 
 // Check properties of the AllianceType enum.
 static inline bool alliancesFixed(ALLIANCE_TYPE t)
@@ -130,6 +130,6 @@ static inline bool alliancesCanGiveAnything(ALLIANCE_TYPE t)
 	return t != FFA;
 }
 
-static bool updateAttackTarget(PlayerOwnedObject * psAttacker, int weapon_slot);
+static bool updateAttackTarget(BaseObject * psAttacker, int weapon_slot);
 
 #endif // __INCLUDED_SRC_AI_H__

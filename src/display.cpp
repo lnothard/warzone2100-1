@@ -47,6 +47,7 @@
 #include "warzoneconfig.h"
 #include "animation.h"
 #include "mapgrid.h"
+#include "objmem.h"
 
 InputManager gInputManager;
 KeyFunctionConfiguration gKeyFuncConfig;

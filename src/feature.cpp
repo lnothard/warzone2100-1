@@ -91,7 +91,7 @@ Vector2i FeatureStats::size() const
 int Feature::objRadius() const
 {
   return pimpl
-         ? pimpl->display->imd_shape->radius / 2
+         ? getDisplayData()->imd_shape->radius / 2
          : -1;
 }
 

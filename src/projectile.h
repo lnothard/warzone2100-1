@@ -159,7 +159,7 @@ private:
   std::unique_ptr<Impl> pimpl;
 };
 
-extern PlayerOwnedObject * g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
+extern BaseObject* g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
 
 void proj_InitSystem(); ///< Initialize projectiles subsystem.
 void proj_UpdateAll(); ///< Frame update for projectiles.
@@ -178,13 +178,13 @@ int projCalcIndirectVelocities(int32_t dx, int32_t dz, int32_t v, int32_t* vx, i
                                    int min_angle);
 
 /** Send a single projectile against the given target. */
-bool proj_SendProjectile(Weapon* psWeap, PlayerOwnedObject * psAttacker, unsigned player, Vector3i target, PlayerOwnedObject * psTarget,
+bool proj_SendProjectile(Weapon* psWeap, BaseObject * psAttacker, unsigned player, Vector3i target, BaseObject * psTarget,
                          bool bVisible, int weapon_slot);
 
 /** Send a single projectile against the given target
  * with a minimum shot angle. */
-bool proj_SendProjectileAngled(Weapon* psWeap, PlayerOwnedObject * psAttacker, unsigned player, Vector3i target,
-                               PlayerOwnedObject * psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
+bool proj_SendProjectileAngled(Weapon* psWeap, BaseObject * psAttacker, unsigned player, Vector3i target,
+                               BaseObject * psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
 
 /** Return whether a weapon is direct or indirect. */
 bool proj_Direct(const WeaponStats* psStats);
@@ -198,12 +198,12 @@ unsigned proj_GetMinRange(const WeaponStats* psStats, unsigned player);
 /** Return the short range for a weapon. */
 unsigned proj_GetShortRange(const WeaponStats* psStats, unsigned player);
 
-unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, PlayerOwnedObject const* psTarget);
+unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, BaseObject const* psTarget);
 bool gfxVisible(Projectile* psObj);
 
-glm::mat4 objectShimmy(PlayerOwnedObject * psObj);
+glm::mat4 objectShimmy(BaseObject * psObj);
 
-int establishTargetHeight(PlayerOwnedObject const* psTarget);
+int establishTargetHeight(BaseObject const* psTarget);
 
 void checkProjectile(const Projectile* psProjectile, std::string location_description,
                      std::string function, int recurse);
@@ -214,6 +214,6 @@ void checkProjectile(const Projectile* psProjectile, std::string location_descri
 
 static void setProjectileSource(Projectile *psProj, ConstructedObject *psObj);
 
-ObjectShape establishTargetShape(PlayerOwnedObject* psTarget);
+ObjectShape establishTargetShape(BaseObject* psTarget);
 
 #endif // __INCLUDED_SRC_PROJECTILE_H__

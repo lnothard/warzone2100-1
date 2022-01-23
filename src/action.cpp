@@ -31,6 +31,7 @@
 #include "droid.h"
 #include "map.h"
 #include "mapgrid.h"
+#include "move.h"
 #include "projectile.h"
 #include "visibility.h"
 
@@ -158,7 +159,7 @@ std::string getDroidActionName(ACTION action)
 //}
 
 // check if a target is inside minimum weapon range
-static bool actionInsideMinRange(Droid const* psDroid, PlayerOwnedObject const* psObj, WeaponStats const* psStats)
+static bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, WeaponStats const* psStats)
 {
 	if (!psStats) {
 		psStats = getWeaponStats(psDroid, 0);
@@ -233,12 +234,12 @@ static bool actionInsideMinRange(Droid const* psDroid, PlayerOwnedObject const* 
 //}
 
 /* returns true if on target */
-bool actionTargetTurret(PlayerOwnedObject * psAttacker, PlayerOwnedObject * psTarget, Weapon* psWeapon)
+bool actionTargetTurret(BaseObject * psAttacker, BaseObject * psTarget, Weapon* psWeapon)
 {
   int rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
   int pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
 
-	auto& psWeapStats = psWeapon->getStats();
+	auto psWeapStats = psWeapon->getStats();
 	unsigned tRotation, tPitch;
 	unsigned targetRotation;
 	int rotationTolerance = 0;
@@ -252,8 +253,8 @@ bool actionTargetTurret(PlayerOwnedObject * psAttacker, PlayerOwnedObject * psTa
 	bool bRepair = as_droid && as_droid->getType() == DROID_TYPE::REPAIRER;
 
 	// extra heavy weapons on some structures need to rotate and pitch more slowly
-	if (psWeapStats.weight > HEAVY_WEAPON_WEIGHT && !bRepair) {
-		unsigned excess = DEG(100) * (psWeapStats.weight - HEAVY_WEAPON_WEIGHT) / psWeapStats.weight;
+	if (psWeapStats->weight > HEAVY_WEAPON_WEIGHT && !bRepair) {
+		unsigned excess = DEG(100) * (psWeapStats->weight - HEAVY_WEAPON_WEIGHT) / psWeapStats->weight;
 		rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2 - excess;
 		pitchRate = rotRate / 2;
 	}
@@ -270,8 +271,8 @@ bool actionTargetTurret(PlayerOwnedObject * psAttacker, PlayerOwnedObject * psTa
 	if (auto as_struct = dynamic_cast<Structure*>(psAttacker)) {
 		int weapon_slot = psWeapon - as_struct->asWeaps; // Should probably be passed weapon_slot instead of psWeapon.
 		calcStructureMuzzleLocation(as_struct, &attackerMuzzlePos, weapon_slot);
-		pitchLowerLimit = DEG(psWeapStats.minElevation);
-		pitchUpperLimit = DEG(psWeapStats.maxElevation);
+		pitchLowerLimit = DEG(psWeapStats->minElevation);
+		pitchUpperLimit = DEG(psWeapStats->maxElevation);
 	}
 	else if (auto psDroid = dynamic_cast<Droid*>(psAttacker))
 	{
@@ -283,8 +284,8 @@ bool actionTargetTurret(PlayerOwnedObject * psAttacker, PlayerOwnedObject * psTa
        psDroid->getType() == DROID_TYPE::COMMAND ||
        psDroid->getType() == DROID_TYPE::CYBORG ||
        psDroid->getType() == DROID_TYPE::CYBORG_SUPER) {
-			pitchLowerLimit = DEG(psWeapStats.minElevation);
-			pitchUpperLimit = DEG(psWeapStats.maxElevation);
+			pitchLowerLimit = DEG(psWeapStats->minElevation);
+			pitchUpperLimit = DEG(psWeapStats->maxElevation);
 		}
 		else if (psDroid->getType() == DROID_TYPE::REPAIRER)
 		{
@@ -311,8 +312,8 @@ bool actionTargetTurret(PlayerOwnedObject * psAttacker, PlayerOwnedObject * psTa
 	{
 		// limit the rotation for vtols
 		int32_t limit = VTOL_TURRET_LIMIT;
-		if (psWeapStats.weaponSubClass == WEAPON_SUBCLASS::BOMB ||
-        psWeapStats.weaponSubClass == WEAPON_SUBCLASS::EMP)
+		if (psWeapStats->weaponSubClass == WEAPON_SUBCLASS::BOMB ||
+        psWeapStats->weaponSubClass == WEAPON_SUBCLASS::EMP)
 		{
 			limit = 0; // Don't turn bombs.
 			rotationTolerance = VTOL_TURRET_LIMIT_BOMB;
@@ -347,7 +348,7 @@ bool actionTargetTurret(PlayerOwnedObject * psAttacker, PlayerOwnedObject * psTa
 }
 
 // return whether a droid can see a target to fire on it
-bool actionVisibleTarget(Droid* psDroid, PlayerOwnedObject * psTarget, int weapon_slot)
+bool actionVisibleTarget(Droid* psDroid, BaseObject * psTarget, int weapon_slot)
 {
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
 	ASSERT_OR_RETURN(false, psDroid->getPlayer() < MAX_PLAYERS, "psDroid->player (%" PRIu8 ") must be < MAX_PLAYERS",
@@ -368,8 +369,8 @@ static void actionAddVtolAttackRun(Droid* psDroid)
 {
   auto& psTarget = psDroid->getTarget(0);
 
-	if (psDroid->getOrder().target != nullptr) {
-		psTarget = psDroid->getOrder().target;
+	if (psDroid->getOrder()->target != nullptr) {
+		psTarget = psDroid->getOrder()->target;
 	}
 	else {
 		return;
@@ -395,7 +396,7 @@ static void actionAddVtolAttackRun(Droid* psDroid)
 static void actionUpdateVtolAttack(Droid* psDroid)
 {
 	/* don't do attack runs whilst returning to base */
-	if (psDroid->getOrder().type == ORDER_TYPE::RETURN_TO_BASE) {
+	if (psDroid->getOrder()->type == ORDER_TYPE::RETURN_TO_BASE) {
 		return;
 	}
 
@@ -406,7 +407,7 @@ static void actionUpdateVtolAttack(Droid* psDroid)
 	}
 
 	/* circle around target if hovering and not cyborg */
-	if (psDroid->getMovementData().status == MOVE_STATUS::HOVER &&
+	if (psDroid->getMovementData()->status == MOVE_STATUS::HOVER &&
       !isCyborg(psDroid)) {
 		actionAddVtolAttackRun(psDroid);
 	}
@@ -414,7 +415,7 @@ static void actionUpdateVtolAttack(Droid* psDroid)
 
 // calculate a position for units to pull back to if they
 // need to increase the range between them and a target
-static void actionCalcPullBackPoint(PlayerOwnedObject * psObj, PlayerOwnedObject * psTarget, int* px, int* py)
+static void actionCalcPullBackPoint(BaseObject * psObj, BaseObject * psTarget, int* px, int* py)
 {
 	// get the vector from the target to the object
 	auto xdiff = psObj->getPosition().x - psTarget->getPosition().x;
@@ -546,7 +547,7 @@ void actionDroid(Droid* psDroid, ACTION action, unsigned x, unsigned y)
 }
 
 /* Give a droid an action with an object target */
-void actionDroid(Droid* psDroid, ACTION action, PlayerOwnedObject * psObj)
+void actionDroid(Droid* psDroid, ACTION action, BaseObject * psObj)
 {
 	Action sAction;
 
@@ -560,7 +561,7 @@ void actionDroid(Droid* psDroid, ACTION action, PlayerOwnedObject * psObj)
 
 /* Give a droid an action with an object target and a location */
 void actionDroid(Droid* psDroid, ACTION action,
-                 PlayerOwnedObject * psObj, UDWORD x, UDWORD y)
+                 BaseObject * psObj, UDWORD x, UDWORD y)
 {
 	Action sAction;
 

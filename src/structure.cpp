@@ -848,13 +848,13 @@ Structure* Structure::giftSingleStructure(unsigned attackPlayer, bool electronic
       // remove structure from one list
       removeStructureFromList(this, apsStructLists);
 
-      isSelected = false;
+      setSelected(false);
 
       // change player id
       setPlayer(attackPlayer);
 
       //restore the resistance value
-      resistance = (uint16_t)structureResistance(pimpl->stats.get(), getPlayer());
+      setResistance((uint16_t)structureResistance(pimpl->stats.get(), getPlayer()));
 
       // add to other list.
       addStructure(this);
@@ -1047,7 +1047,7 @@ void Structure::structureUpdate(bool bMission)
       pimpl->lastStateTime = gameTime; // reset timer
     }
   }
-  else if (stats->type == RESOURCE_EXTRACTOR) {
+  else if (pimpl->stats->type == RESOURCE_EXTRACTOR) {
     if (!psBuilding->pFunctionality->resourceExtractor.power_generator
         && animationEvent == ANIM_EVENT_ACTIVE) // no power generator connected
     {
@@ -1099,8 +1099,8 @@ void Structure::structureUpdate(bool bMission)
   }
 
   if (pimpl->state != STRUCTURE_STATE::BUILT) {
-    if (selected) {
-      selected = false;
+    if (isSelected()) {
+      setSelected(false);
     }
   }
 
@@ -1159,14 +1159,14 @@ void Structure::structureUpdate(bool bMission)
 
   //check the resistance level of the structure
   iPointsRequired = structureResistance(pimpl->stats.get(), getPlayer());
-  if (resistance < (SWORD)iPointsRequired) {
+  if (getResistance() < (SWORD)iPointsRequired) {
     //start the resistance increase
     if (pimpl->lastResistance == ACTION_START_TIME) {
       pimpl->lastResistance = gameTime;
     }
     //increase over time if low
     if ((gameTime - pimpl->lastResistance) > RESISTANCE_INTERVAL) {
-      resistance++;
+      setResistance(getResistance() + 1);
 
       //in multiplayer, certain structures do not function whilst low resistance
       if (bMultiPlayer) {
@@ -1175,7 +1175,7 @@ void Structure::structureUpdate(bool bMission)
 
       pimpl->lastResistance = gameTime;
       //once the resistance is back up reset the last time increased
-      if (resistance >= (SWORD)iPointsRequired) {
+      if (getResistance() >= (SWORD)iPointsRequired) {
         pimpl->lastResistance = ACTION_START_TIME;
       }
     }
@@ -1204,8 +1204,8 @@ void Structure::structureUpdate(bool bMission)
         int realY;
         unsigned pointIndex;
 
-        pointIndex = rand() % (display->imd_shape->points.size() - 1);
-        point = &(display->imd_shape->points.at(pointIndex));
+        pointIndex = rand() % (getDisplayData()->imd_shape->points.size() - 1);
+        point = &(getDisplayData()->imd_shape->points.at(pointIndex));
         position.x = static_cast<int>(getPosition().x + point->x);
         realY = static_cast<int>(structHeightScale(this) * point->y);
         position.y = getPosition().z + realY;
@@ -1220,9 +1220,9 @@ void Structure::structureUpdate(bool bMission)
       }
 
       if (iPointsToAdd) {
-        setHp((hitPoints + iPointsToAdd));
+        setHp((getHp() + iPointsToAdd));
         lastResistance = gameTime;
-        if (hitPoints > iPointsRequired) {
+        if (getHp() > iPointsRequired) {
           setHp(iPointsRequired);
           lastResistance = ACTION_START_TIME;
         }
@@ -1239,13 +1239,6 @@ bool Structure::isWall() const noexcept
                   pimpl->stats->type == STRUCTURE_TYPE::WALL_CORNER;
 }
 
-unsigned Structure::getOriginalHp() const
-{
-  return pimpl
-         ? pimpl->stats->upgraded_stats[getPlayer()].hitPoints - getHp()
-         : 0;
-}
-
 STRUCTURE_ANIMATION_STATE Structure::getAnimationState() const
 {
   return pimpl ? pimpl->animationState : STRUCTURE_ANIMATION_STATE::NORMAL;
@@ -1253,10 +1246,11 @@ STRUCTURE_ANIMATION_STATE Structure::getAnimationState() const
     
 void Structure::aiUpdateStructure(bool isMission)
 {
+  if (!pimpl) return;
   STRUCTURE_TYPE structureMode;
   Droid* psDroid;
-  PlayerOwnedObject * psChosenObjs[MAX_WEAPONS] = {nullptr};
-  PlayerOwnedObject * psChosenObj = nullptr;
+  BaseObject* psChosenObjs[MAX_WEAPONS] = {nullptr};
+  BaseObject* psChosenObj = nullptr;
   Factory* psFactory;
   RepairFacility* psRepairFac = nullptr;
   Vector3i iVecEffect;
@@ -1268,14 +1262,14 @@ void Structure::aiUpdateStructure(bool isMission)
 
   CHECK_STRUCTURE(this);
 
-  if (time == gameTime) {
+  if (getTime() == gameTime) {
     // This isn't supposed to happen, and really shouldn't be possible - if this happens, maybe a structure is being updated twice?
     int count1 = 0, count2 = 0;
-    for (auto& s : apsStructLists[player])
+    for (auto& s : apsStructLists[getPlayer()])
     {
       count1 += s == this;
     }
-    for (auto s : mission.apsStructLists[player])
+    for (auto s : mission.apsStructLists[getPlayer()])
     {
       count2 += s == this;
     }
@@ -1292,7 +1286,7 @@ void Structure::aiUpdateStructure(bool isMission)
 
   if (isMission) {
     using enum STRUCTURE_TYPE;
-    switch (stats->type) {
+    switch (pimpl->stats->type) {
       case RESEARCH:
       case FACTORY:
       case CYBORG_FACTORY:
@@ -1306,7 +1300,7 @@ void Structure::aiUpdateStructure(bool isMission)
   // Will go out into a building EVENT stats/text file
   /* Spin round yer sensors! */
   if (numWeapons(*this) == 0) {
-    if (stats->type != STRUCTURE_TYPE::REPAIR_FACILITY) {
+    if (pimpl->stats->type != STRUCTURE_TYPE::REPAIR_FACILITY) {
       // - radar should rotate every three seconds ... 'cause we timed it at Heathrow !
       // gameTime is in milliseconds - one rotation every 3 seconds = 1 rotation event 3000 millisecs
       auto direction = (uint16_t)((uint64_t)gameTime * 65536 / 3000) +
@@ -1318,9 +1312,9 @@ void Structure::aiUpdateStructure(bool isMission)
   }
 
   /* Check lassat */
-  if (isLasSat(stats.get()) &&
+  if (isLasSat(pimpl->stats.get()) &&
       gameTime - weapons[0].timeLastFired > weaponFirePause(
-              weapons[0].getStats(), player) &&
+              weapons[0].getStats(), getPlayer()) &&
       weapons[0].ammo > 0) {
 
     triggerEventStructureReady(this);
@@ -1414,7 +1408,7 @@ void Structure::aiUpdateStructure(bool isMission)
   */
   BaseStats* pSubject = nullptr;
   using enum STRUCTURE_TYPE;
-  switch (stats->type) {
+  switch (pimpl->stats->type) {
     case RESEARCH:
     {
       pSubject = dynamic_cast<ResearchFacility*>(this)->psSubject;
@@ -1457,8 +1451,8 @@ void Structure::aiUpdateStructure(bool isMission)
           && (!orderState(psDroid, ORDER_TYPE::RETURN_TO_REPAIR)
               || psDroid->getOrder().target != this)) {
         psDroid = dynamic_cast<::Droid*>(psChosenObj);
-        xdiff = (int)psDroid->getPosition().x - (int)position.x;
-        ydiff = (int)psDroid->getPosition().y - (int)position.y;
+        xdiff = (int)psDroid->getPosition().x - (int)getPosition().x;
+        ydiff = (int)psDroid->getPosition().y - (int)getPosition().y;
         // unless it has orders to repair here, forget about it when it gets out of range
         if (xdiff * xdiff + ydiff * ydiff > (TILE_UNITS * 5 / 2) * (TILE_UNITS * 5 / 2)) {
           psChosenObj = nullptr;
@@ -1485,7 +1479,7 @@ void Structure::aiUpdateStructure(bool isMission)
           mindist = (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2;
         }
         psRepairFac->droidQueue = 0;
-        for (auto& psDroid : apsDroidLists[player])
+        for (auto& psDroid : apsDroidLists[getPlayer()])
         {
           auto const* psTarget = orderStateObj(&psDroid, ORDER_TYPE::RETURN_TO_REPAIR);
 
@@ -1526,8 +1520,8 @@ void Structure::aiUpdateStructure(bool isMission)
               }
               continue;
             }
-            xdiff = (int)psDroid.getPosition().x - (int)position.x;
-            ydiff = (int)psDroid.getPosition().y - (int)position.y;
+            xdiff = (int)psDroid.getPosition().x - (int)getPosition().x;
+            ydiff = (int)psDroid.getPosition().y - (int)getPosition().y;
             currdist = xdiff * xdiff + ydiff * ydiff;
             if (currdist < mindist && currdist < (TILE_UNITS * 8) * (TILE_UNITS * 8)) {
               mindist = currdist;
@@ -1550,8 +1544,8 @@ void Structure::aiUpdateStructure(bool isMission)
               distLimit = world_coord(stealFrom->droidQueue) * world_coord(stealFrom->droidQueue) * 10;
             }
 
-            xdiff = (int)psDroid.getPosition().x - (int)position.x;
-            ydiff = (int)psDroid.getPosition().y - (int)position.y;
+            xdiff = (int)psDroid.getPosition().x - (int)getPosition().x;
+            ydiff = (int)psDroid.getPosition().y - (int)getPosition().y;
             currdist = xdiff * xdiff + ydiff * ydiff + (TILE_UNITS * 8) * (TILE_UNITS * 8);
             // lower priority
             if (currdist < mindist && currdist - (TILE_UNITS * 8) * (TILE_UNITS * 8) < distLimit) {
@@ -1566,8 +1560,8 @@ void Structure::aiUpdateStructure(bool isMission)
             // Lowest priority:
             // Just repair whatever is nearby and needs repairing.
           else if (mindist > (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2 && psDroid.getHp() < psDroid.getOriginalHp()) {
-            xdiff = (int)psDroid.getPosition().x - (int)position.x;
-            ydiff = (int)psDroid.getPosition().y - (int)position.y;
+            xdiff = (int)psDroid.getPosition().x - (int)getPosition().x;
+            ydiff = (int)psDroid.getPosition().y - (int)getPosition().y;
             currdist = xdiff * xdiff + ydiff * ydiff + (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2;
             // even lower priority
             if (currdist < mindist && currdist < (TILE_UNITS * 5 / 2) * (TILE_UNITS * 5 / 2) + (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2)
@@ -1587,8 +1581,8 @@ void Structure::aiUpdateStructure(bool isMission)
               for (auto& psDroid : apsDroidLists[i])
               {
                 if (psDroid.getHp() < psDroid.getOriginalHp()) {
-                  xdiff = (int)psDroid.getPosition().x - (int)position.x;
-                  ydiff = (int)psDroid.getPosition().y - (int)position.y;
+                  xdiff = (int)psDroid.getPosition().x - (int)getPosition().x;
+                  ydiff = (int)psDroid.getPosition().y - (int)getPosition().y;
                   currdist = xdiff * xdiff + ydiff * ydiff;
                   if (currdist < mindist) {
                     mindist = currdist;
@@ -1601,8 +1595,8 @@ void Structure::aiUpdateStructure(bool isMission)
         }
         psDroid = dynamic_cast<::Droid*>(psChosenObj);
         if (psDroid) {
-          if (psDroid->getOrder().type == ORDER_TYPE::RETURN_TO_REPAIR ||
-              psDroid->getOrder().type == ORDER_TYPE::RTR_SPECIFIED) {
+          if (psDroid->getOrder()->type == ORDER_TYPE::RETURN_TO_REPAIR ||
+              psDroid->getOrder()->type == ORDER_TYPE::RTR_SPECIFIED) {
             // Hey, droid, it's your turn! Stop what you're doing and get ready to get repaired!
             psDroid->action = ACTION::WAIT_FOR_REPAIR;
             psDroid->order.target = this;
@@ -1618,8 +1612,8 @@ void Structure::aiUpdateStructure(bool isMission)
         psChosenObj = psDroid;
 
         /* move droid to repair point at rear of facility */
-        xdiff = (int)psDroid->getPosition().x - (int)position.x;
-        ydiff = (int)psDroid->getPosition().y - (int)position.y;
+        xdiff = (int)psDroid->getPosition().x - (int)getPosition().x;
+        ydiff = (int)psDroid->getPosition().y - (int)getPosition().y;
         if (psDroid->getAction() == ACTION::WAIT_FOR_REPAIR ||
             (psDroid->getAction() == ACTION::WAIT_DURING_REPAIR
              && xdiff * xdiff + ydiff * ydiff > (TILE_UNITS * 5 / 2) * (TILE_UNITS * 5 / 2))) {
@@ -1693,7 +1687,7 @@ void Structure::aiUpdateStructure(bool isMission)
             psDroid->getAction() == ACTION::WAIT_FOR_REARM) {
           objTrace(psDroid->getId(), "supposed to go to rearm but not on our way -- fixing");
           // this should never happen...
-          ::actionDroid(psDroid, ACTION::MOVE_TO_REARM_POINT, this);
+          actionDroid(psDroid, ACTION::MOVE_TO_REARM_POINT, this);
         }
       }
 
@@ -1801,24 +1795,18 @@ void Structure::aiUpdateStructure(bool isMission)
         if (game.type == LEVEL_TYPE::SKIRMISH && alliancesSharedResearch(game.alliance)) {
           for (uint8_t i = 0; i < MAX_PLAYERS; i++)
           {
-            if (alliances[i][player] == ALLIANCE_FORMED)
-            {
-              if (!IsResearchCompleted(&asPlayerResList[i][researchIndex]))
-              {
-                // Share the research for that player.
-                auto& allyProgress = asPlayerResList[i][researchIndex].currentPoints;
-                allyProgress = std::max(allyProgress, shareProgress);
-                if (shareIsFinished)
-                {
-                  researchResult(researchIndex, i, false, nullptr, true);
-                }
-              }
+            if (alliances[i][getPlayer()] != ALLIANCE_FORMED) continue;
+            if (IsResearchCompleted(&asPlayerResList[i][researchIndex])) continue;
+            // Share the research for that player.
+            auto& allyProgress = asPlayerResList[i][researchIndex].currentPoints;
+            allyProgress = std::max(allyProgress, shareProgress);
+            if (shareIsFinished) {
+              researchResult(researchIndex, i, false, nullptr, true);
             }
           }
         }
       }
-      else
-      {
+      else {
         //cancel this Structure's research since now complete
         psResFacility->psSubject = nullptr;
         intResearchFinished(this);
@@ -1836,8 +1824,8 @@ void Structure::aiUpdateStructure(bool isMission)
       }
 
       //electronic warfare affects the functionality of some structures in multiPlayer
-      if (bMultiPlayer && resistance < (int)structureResistance(
-              stats.get(), player)) {
+      if (bMultiPlayer && getResistance() < (int)structureResistance(
+              pimpl->stats.get(), getPlayer())) {
         return;
       }
 
@@ -1928,8 +1916,8 @@ void Structure::aiUpdateStructure(bool isMission)
           }
 
           //don't do anything if the resistance is low in multiplayer
-          if (bMultiPlayer && resistance < (int)structureResistance(
-                  stats.get(), getPlayer())) {
+          if (bMultiPlayer && getResistance() < (int)structureResistance(
+                  pimpl->stats.get(), getPlayer())) {
             objTrace(getId(), "Resistance too low for repair");
             return;
           }
@@ -4688,7 +4676,7 @@ static STRUCTURE_PACKABILITY baseStructureTypePackability(STRUCTURE_TYPE type)
 	}
 }
 
-static STRUCTURE_PACKABILITY baseObjectPackability(PlayerOwnedObject * psObject)
+static STRUCTURE_PACKABILITY baseObjectPackability(BaseObject * psObject)
 {
 	if (psObject == nullptr) {
 		return PACKABILITY_EMPTY;
@@ -5972,7 +5960,7 @@ bool validTemplateForFactory(const DroidTemplate* psTemplate, Structure* psFacto
 
 /*calculates the damage caused to the resistance levels of structures - returns
 true when captured*/
-bool electronicDamage(PlayerOwnedObject * psTarget, unsigned damage, uint8_t attackPlayer)
+bool electronicDamage(BaseObject * psTarget, unsigned damage, uint8_t attackPlayer)
 {
 	bool bCompleted = true;
 	Vector3i pos;
@@ -6446,6 +6434,7 @@ void Factory::holdProduction(QUEUE_MODE mode)
 /*release a factory's production run from hold*/
 void Factory::releaseProduction(QUEUE_MODE mode)
 {
+  if (!pimpl) return;
 	if (mode == ModeQueue) {
 		sendStructureInfo(this,
                       STRUCTUREINFO_RELEASEPRODUCTION, nullptr);
@@ -6453,12 +6442,12 @@ void Factory::releaseProduction(QUEUE_MODE mode)
 		return;
 	}
 
-	if (psSubject && timeStartHold) {
+	if (pimpl->psSubject && pimpl->timeStartHold) {
 		//adjust the start time for the current subject
-		if (timeStarted != ACTION_START_TIME) {
-			timeStarted += (gameTime - timeStartHold);
+		if (pimpl->timeStarted != ACTION_START_TIME) {
+			pimpl->timeStarted += (gameTime - pimpl->timeStartHold);
 		}
-		timeStartHold = 0;
+		pimpl->timeStartHold = 0;
 	}
 }
 
@@ -6479,15 +6468,14 @@ void doNextProduction(Structure* psStructure, DroidTemplate* current, QUEUE_MODE
 one to build - if any*/
 DroidTemplate* Factory::factoryProdUpdate(DroidTemplate* psTemplate)
 {
-	CHECK_STRUCTURE(this);
-	if (getPlayer() != productionPlayer) {
+	if (!pimpl || getPlayer() != productionPlayer) {
 		return nullptr; // Production lists not currently synchronised.
 	}
 
-	if (psAssemblyPoint->factoryInc >= asProductionRun[psAssemblyPoint->factoryType].size()) {
+	if (pimpl->psAssemblyPoint->factoryInc >= asProductionRun[pimpl->psAssemblyPoint->factoryType].size()) {
 		return nullptr; // Don't even have a production list.
 	}
-	auto productionRun = asProductionRun[psAssemblyPoint->factoryType][psAssemblyPoint->factoryInc];
+	auto productionRun = asProductionRun[pimpl->psAssemblyPoint->factoryType][pimpl->psAssemblyPoint->factoryInc];
 
 	if (psTemplate != nullptr) {
 		// find the entry in the array for this template
@@ -6497,7 +6485,7 @@ DroidTemplate* Factory::factoryProdUpdate(DroidTemplate* psTemplate)
 			if (!entry->isComplete()) {
 				return psTemplate; // Build another of the same type.
 			}
-			if (productionLoops == 0) {
+			if (pimpl->productionLoops == 0) {
 				productionRun.erase(entry);
 			}
 		}
@@ -6513,16 +6501,16 @@ DroidTemplate* Factory::factoryProdUpdate(DroidTemplate* psTemplate)
 	// Check that we aren't looping doing nothing.
 	if (productionRun.empty())
 	{
-		if (productionLoops != INFINITE_PRODUCTION) {
-			productionLoops = 0; // Reset number of loops, unless set to infinite.
+		if (pimpl->productionLoops != INFINITE_PRODUCTION) {
+			pimpl->productionLoops = 0; // Reset number of loops, unless set to infinite.
 		}
 	}
-	else if (productionLoops != 0)
+	else if (pimpl->productionLoops != 0)
 	//If you've got here there's nothing left to build unless factory is on loop production
 	{
 		//reduce the loop count if not infinite
-		if (productionLoops != INFINITE_PRODUCTION) {
-			productionLoops--;
+		if (pimpl->productionLoops != INFINITE_PRODUCTION) {
+			pimpl->productionLoops--;
 		}
 
 		//need to reset the quantity built for each entry in the production list
@@ -6539,21 +6527,21 @@ DroidTemplate* Factory::factoryProdUpdate(DroidTemplate* psTemplate)
 //adjust the production run for this template type
 void Factory::factoryProdAdjust(DroidTemplate* psTemplate, bool add)
 {
-	CHECK_STRUCTURE(this);
+  if (!pimpl) return;
 	ASSERT_OR_RETURN(, getPlayer() == productionPlayer, "called for incorrect player");
 	ASSERT_OR_RETURN(, psTemplate != nullptr, "NULL template");
 
-	if (psAssemblyPoint->factoryInc >= asProductionRun[psAssemblyPoint->factoryType].size()) {
-		asProductionRun[psAssemblyPoint->factoryType].resize(psAssemblyPoint->factoryInc + 1);
+	if (pimpl->psAssemblyPoint->factoryInc >= asProductionRun[pimpl->psAssemblyPoint->factoryType].size()) {
+		asProductionRun[pimpl->psAssemblyPoint->factoryType].resize(pimpl->psAssemblyPoint->factoryInc + 1);
 		// Don't have a production list, create it.
 	}
-	ProductionRun& productionRun = asProductionRun[psAssemblyPoint->factoryType][psAssemblyPoint->factoryInc];
+	ProductionRun& productionRun = asProductionRun[pimpl->psAssemblyPoint->factoryType][pimpl->psAssemblyPoint->factoryInc];
 
 	//see if the template is already in the list
 	auto entry = std::find(productionRun.begin(), productionRun.end(), psTemplate);
 
 	if (entry != productionRun.end()) {
-		if (productionLoops == 0) {
+		if (pimpl->productionLoops == 0) {
 			entry->removeComplete();
 			// We are not looping, so remove the built droids from the list, so that quantity corresponds to the displayed number.
 		}
@@ -6579,8 +6567,8 @@ void Factory::factoryProdAdjust(DroidTemplate* psTemplate, bool add)
 	//if nothing is allocated then the current factory may have been cancelled
 	if (productionRun.empty()) {
 		//must have cancelled everything - so tell the struct
-		if (productionLoops != INFINITE_PRODUCTION) {
-			productionLoops = 0; // Reset number of loops, unless set to infinite.
+		if (pimpl->productionLoops != INFINITE_PRODUCTION) {
+			pimpl->productionLoops = 0; // Reset number of loops, unless set to infinite.
 		}
 	}
 
@@ -6601,18 +6589,17 @@ void Factory::factoryProdAdjust(DroidTemplate* psTemplate, bool add)
  */
 ProductionRun Factory::getProduction(DroidTemplate* psTemplate)
 {
-	if (getPlayer() != productionPlayer || 
-      psTemplate == nullptr || 
-      !StructIsFactory(this)) {
+	if (!pimpl || getPlayer() != productionPlayer ||
+      psTemplate == nullptr || !StructIsFactory(this)) {
 		return {}; // not producing any NULL pointers.
 	}
 
-	if (!psAssemblyPoint || psAssemblyPoint->factoryInc >= 
-        asProductionRun[psAssemblyPoint->factoryType].size()) {
+	if (!pimpl->psAssemblyPoint || pimpl->psAssemblyPoint->factoryInc >=
+        asProductionRun[pimpl->psAssemblyPoint->factoryType].size()) {
 		return {}; // don't have a production list.
 	}
-	auto& productionRun = asProductionRun[psAssemblyPoint->factoryType]
-          [psAssemblyPoint->factoryInc];
+	auto& productionRun = asProductionRun[pimpl->psAssemblyPoint->factoryType]
+          [pimpl->psAssemblyPoint->factoryInc];
 
 	// see if the template is in the list
 	auto entry = std::find(productionRun.begin(), productionRun.end(), psTemplate);

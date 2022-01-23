@@ -27,6 +27,9 @@
 #define __INCLUDED_SRC_FPATH_H__
 
 #include "astar.h"
+#include "droid.h"
+#include "move.h"
+#include "structure.h"
 
 
 enum class FPATH_MOVETYPE
