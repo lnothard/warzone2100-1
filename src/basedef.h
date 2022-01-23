@@ -49,18 +49,17 @@ enum class OBJECT_FLAG
   COUNT // MUST BE LAST
 };
 
-class Damageable
-{
-public:
-  [[nodiscard]] virtual unsigned getHp() const = 0;
-  [[nodiscard]] virtual unsigned getOriginalHp() const = 0;
-};
-
 class PlayerOwned
 {
 public:
   [[nodiscard]] virtual unsigned getPlayer() const = 0;
   virtual void setPlayer() = 0;
+};
+
+class Selectable
+{
+public:
+  [[nodiscard]] virtual bool isSelected() const = 0;
 };
 
 struct TILEPOS
@@ -103,6 +102,26 @@ public:
   void setRotation(Rotation newRotation) noexcept;
   void setPosition(Position pos) noexcept;
   void setHeight(int height) noexcept;
+private:
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
+};
+
+class Damageable : public BaseObject
+{
+public:
+  ~Damageable() override = default;
+  explicit Damageable(unsigned id);
+
+  Damageable(Damageable const& rhs);
+  Damageable& operator=(Damageable const& rhs);
+
+  Damageable(Damageable&& rhs) noexcept = default;
+  Damageable& operator=(Damageable&& rhs) noexcept = default;
+
+  [[nodiscard]] unsigned getHp() const;
+  [[nodiscard]] unsigned getOriginalHp() const;
+  [[nodiscard]] bool isDead() const;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;

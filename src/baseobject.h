@@ -43,9 +43,9 @@ Rotation interpolateRot(Rotation v1, Rotation v2, unsigned t1,
                         unsigned t2, unsigned t);
 
 /// Get interpolated object getSpacetime at time t.
-Spacetime interpolateObjectSpacetime(const PlayerOwnedObject * obj, unsigned t);
+Spacetime interpolateObjectSpacetime(const BaseObject * obj, unsigned t);
 
-void checkObject(const PlayerOwnedObject * psObject,
+void checkObject(const BaseObject * psObject,
                  std::string location_description,
                  std::string function, int recurse);
 
@@ -53,10 +53,10 @@ void checkObject(const PlayerOwnedObject * psObject,
 #define CHECK_OBJECT(object) checkObject((object), AT_MACRO, __FUNCTION__, max_check_object_recursion)
 
 #define syncDebugObject(psObject, ch) _syncDebugObject(__FUNCTION__, psObject, ch)
-void _syncDebugObject(std::string function, PlayerOwnedObject const* psObject, char ch);
+void _syncDebugObject(std::string function, BaseObject const* psObject, char ch);
 
 Vector2i getStatsSize(BaseStats const* pType, uint16_t direction);
-StructureBounds getStructureBounds(PlayerOwnedObject const* object);
+StructureBounds getStructureBounds(BaseObject const* object);
 StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos,
                                    uint16_t direction);
 

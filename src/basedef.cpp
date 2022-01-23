@@ -35,6 +35,15 @@ struct BaseObject::Impl
   std::unique_ptr<DisplayData> display;
 };
 
+struct Damageable::Impl
+{
+  Impl() = default;
+
+  unsigned hitPoints = 0;
+  unsigned originalHp = 0;
+  unsigned died = 0;
+};
+
 BaseObject::BaseObject(unsigned id)
   : pimpl{std::make_unique<Impl>(id)}
 {
@@ -78,6 +87,25 @@ BaseObject::Impl& BaseObject::Impl::operator=(Impl const& rhs)
   position = rhs.position;
   rotation = rhs.rotation;
   previousLocation = rhs.previousLocation;
+}
+
+Damageable::Damageable(unsigned id)
+  : BaseObject(id)
+  , pimpl{std::make_unique<Impl>()}
+{
+}
+
+Damageable::Damageable(Damageable const& rhs)
+  : BaseObject(rhs)
+  , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+Damageable& Damageable::operator=(Damageable const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
 }
 
 unsigned BaseObject::getId() const noexcept
@@ -151,6 +179,21 @@ void BaseObject::setHeight(int height) noexcept
 {
   if (!pimpl) return;
   pimpl->position.z = height;
+}
+
+unsigned Damageable::getHp() const
+{
+  return pimpl ? pimpl->hitPoints : 0;
+}
+
+unsigned Damageable::getOriginalHp() const
+{
+  return pimpl ? pimpl->originalHp : 0;
+}
+
+bool Damageable::isDead() const
+{
+  return !pimpl || pimpl->died != 0;
 }
 
 int objectPositionSquareDiff(const Position& first, const Position& second)

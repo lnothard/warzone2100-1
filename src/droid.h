@@ -33,9 +33,10 @@
 #include "lib/sound/audio_id.h"
 #include "wzmaplib/map.h"
 
-#include "constructedobject.h"
+#include "basedef.h"
 #include "order.h"
 #include "stats.h"
+#include "weapon.h"
 
 /* forward declarations */
 struct Action;
@@ -247,9 +248,9 @@ struct DroidTemplate : public BaseStats
   bool isEnabled = false;
 };
 
-class Droid : public BaseObject
-            , public virtual Damageable
+class Droid : public Damageable
             , public virtual PlayerOwned
+            , public virtual Selectable
 {
 public:
   ~Droid() override;
@@ -263,8 +264,6 @@ public:
 
   void setPlayer() override;
   [[nodiscard]] unsigned getPlayer() const override;
-  [[nodiscard]] unsigned getHp() const override;
-  [[nodiscard]] unsigned getOriginalHp() const override;
   [[nodiscard]] ACTION getAction() const noexcept;
   [[nodiscard]] Order const* getOrder() const;
   [[nodiscard]] DROID_TYPE getType() const noexcept;
@@ -311,14 +310,17 @@ public:
   void orderDroidBase(Order* psOrder);
   void incrementKills() noexcept;
   bool tryDoRepairlikeAction();
+  void assignVtolToRearmPad(RearmPad* rearmPad);
   void orderUpdateDroid();
   std::unique_ptr<Droid> reallyBuildDroid(DroidTemplate const* pTemplate, Position pos,
                                           unsigned player, bool onMission, Rotation rot);
   void droidUpdate();
+  unsigned getArmourPointsAgainstWeapon(WEAPON_CLASS weaponClass) const;
   DroidStartBuild droidStartBuild();
   void aiUpdateDroid();
   bool droidUpdateRestore();
   bool droidUpdateDroidRepair();
+  [[nodiscard]] bool isAttacking() const noexcept;
   bool droidUpdateBuild();
   void recycleDroid();
   void initDroidMovement();

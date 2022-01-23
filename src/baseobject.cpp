@@ -55,7 +55,7 @@ Rotation interpolateRot(Rotation v1, Rotation v2, unsigned t1, unsigned t2, unsi
 	};
 }
 
-static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, std::size_t t)
+static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, unsigned t)
 {
 	// Cyp says this should never happen, #3037 and #3238 say it does though.
 	ASSERT_OR_RETURN(st1, st1.time != st2.time, "Spacetime overlap!");
@@ -65,7 +65,7 @@ static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, std::size_t 
                                   st1.time, st2.time, t)};
 }
 
-Spacetime interpolateObjectSpacetime(const PlayerOwnedObject * obj, unsigned t)
+Spacetime interpolateObjectSpacetime(const BaseObject* obj, unsigned t)
 {
 	if (auto psDroid = dynamic_cast<const Droid*>(obj)) {
     return interpolateSpacetime(psDroid->getPreviousLocation(),
@@ -141,7 +141,7 @@ Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 	return {1, 1};
 }
 
-StructureBounds getStructureBounds(PlayerOwnedObject const* object)
+StructureBounds getStructureBounds(BaseObject const* object)
 {
 	auto const psStructure = dynamic_cast<const Structure*>(object);
 	auto const psFeature = dynamic_cast<const Feature*>(object);
