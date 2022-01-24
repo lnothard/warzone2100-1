@@ -91,7 +91,7 @@ can fire on the propulsion type of the target*/
 bool validTarget(BaseObject * psObject, BaseObject * psTarget, int weapon_slot);
 
 // Check if any of the weapons can target the target
-bool checkAnyWeaponsTarget(BaseObject * psObject, BaseObject * psTarget);
+bool checkAnyWeaponsTarget(BaseObject const* psObject, BaseObject const* psTarget);
 
 // Check properties of the AllianceType enum.
 static inline bool alliancesFixed(ALLIANCE_TYPE t)

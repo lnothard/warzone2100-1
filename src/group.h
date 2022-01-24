@@ -64,15 +64,17 @@ public:
   [[nodiscard]] bool isCommandGroup() const noexcept;
   [[nodiscard]] bool hasElectronicWeapon() const;
   [[nodiscard]] Droid const* getCommander() const;
+  [[nodiscard]] std::vector<Droid*> const& getMembers() const;
 	void orderGroup(ORDER_TYPE order); // give an order all the droids of the group
 	void orderGroup(ORDER_TYPE order, unsigned x, unsigned y);
 
 	/// Give an order all the droids of the group (using location)
-	void orderGroup(ORDER_TYPE order, PlayerOwnedObject * psObj);
+	void orderGroup(ORDER_TYPE order, BaseObject* psObj);
 
   // set the secondary state for a group of droids
 	void setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state);
 private:
+  friend class Droid;
   struct Impl;
   std::unique_ptr<Impl> pimpl;
 };
@@ -81,6 +83,6 @@ private:
  * Create a new group, use -1 to generate a new ID. Never
  * use id != -1 unless loading from a save game.
  */
-std::unique_ptr<Group> grpCreate(unsigned id = -1);
+std::unique_ptr<Group> grpCreate(unsigned id);
 
 #endif // __INCLUDED_SRC_GROUP_H__

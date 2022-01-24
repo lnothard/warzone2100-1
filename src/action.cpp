@@ -166,7 +166,7 @@ static bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, 
 	}
 
 	/* if I am a multi-turret droid */
-	if (psDroid->asWeaps[0].nStat == 0) {
+	if (psDroid->getWeapons()[0].nStat == 0) {
 		return false;
 	}
 

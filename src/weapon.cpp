@@ -3,9 +3,7 @@
 //
 
 #include "lib/framework/math_ext.h"
-#include "lib/gamelib/gtime.h"
 
-#include "constructedobject.h"
 #include "stats.h"
 #include "weapon.h"
 
@@ -32,14 +30,14 @@ struct Weapon::Impl
 };
 
 Weapon::Weapon(unsigned id, unsigned player)
-  : PlayerOwnedObject(id, player),
-    pimpl{std::make_unique<Impl>()}
+  : BaseObject(id), PlayerOwned(player)
+  , pimpl{std::make_unique<Impl>()}
 {
 }
 
 Weapon::Weapon(Weapon const& rhs)
-  : PlayerOwnedObject(rhs),
-    pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+  : BaseObject(rhs), PlayerOwned(rhs)
+  , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
 
@@ -84,16 +82,12 @@ bool Weapon::isEmptyVtolWeapon(unsigned player) const
 
 const WeaponStats* Weapon::getStats() const
 {
-  return pimpl
-         ? pimpl->stats.get()
-         : nullptr;
+  return pimpl ? pimpl->stats.get() : nullptr;
 }
 
 TARGET_ORIGIN Weapon::getTargetOrigin() const noexcept
 {
-  return pimpl
-         ? pimpl->origin
-         : TARGET_ORIGIN::UNKNOWN;
+  return pimpl ? pimpl->origin : TARGET_ORIGIN::UNKNOWN;
 }
 
 unsigned Weapon::getRecoil() const
@@ -114,37 +108,27 @@ unsigned Weapon::getRecoil() const
 
 unsigned Weapon::getMaxRange(unsigned player) const
 {
-  return pimpl
-         ? pimpl->stats->upgraded[player].maxRange
-         : 0;
+  return pimpl ? pimpl->stats->upgraded[player].maxRange : 0;
 }
 
 unsigned Weapon::getMinRange(unsigned player) const
 {
-  return pimpl
-         ? pimpl->stats->upgraded[player].minRange
-         : 0;
+  return pimpl ? pimpl->stats->upgraded[player].minRange : 0;
 }
 
 unsigned Weapon::getShortRange(unsigned player) const
 {
-  return pimpl
-         ? pimpl->stats->upgraded[player].shortRange
-         : 0;
+  return pimpl ? pimpl->stats->upgraded[player].shortRange : 0;
 }
 
 unsigned Weapon::getHitChance(unsigned player) const
 {
-  return pimpl
-         ? pimpl->stats->upgraded[player].hitChance
-         : 0;
+  return pimpl ? pimpl->stats->upgraded[player].hitChance : 0;
 }
 
 unsigned Weapon::getShortRangeHitChance(unsigned player) const
 {
-  return pimpl
-         ? pimpl->stats->upgraded[player].shortHitChance
-         : 0;
+  return pimpl ? pimpl->stats->upgraded[player].shortHitChance : 0;
 }
 
 WEAPON_SUBCLASS Weapon::getSubclass() const
@@ -169,23 +153,17 @@ unsigned Weapon::getNumAttackRuns(unsigned player) const
 
 unsigned Weapon::getShotsFired() const noexcept
 {
-  return pimpl
-         ? pimpl->shotsFired
-         : 0;
+  return pimpl ? pimpl->shotsFired : 0;
 }
 
 const iIMDShape* Weapon::getImdShape() const
 {
-  return pimpl
-         ? pimpl->stats->pIMD.get()
-         : nullptr;
+  return pimpl ? pimpl->stats->pIMD.get() : nullptr;
 }
 
 const iIMDShape* Weapon::getMountGraphic() const
 {
-  return pimpl
-         ? pimpl->stats->pMountGraphic.get()
-         : nullptr;
+  return pimpl ? pimpl->stats->pMountGraphic.get() : nullptr;
 }
 
 unsigned Weapon::calculateRateOfFire(unsigned player) const
@@ -198,9 +176,7 @@ unsigned Weapon::calculateRateOfFire(unsigned player) const
 }
 
 Rotation Weapon::getPreviousRotation() const {
-  return pimpl
-         ? pimpl->previousRotation
-         : Rotation();
+  return pimpl ? pimpl->previousRotation : Rotation();
 }
 
 void Weapon::useAmmo() {

@@ -95,9 +95,9 @@ static bool checkReferences(PlayerOwnedObject * psVictim)
 
 			for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 			{
-				if (psDroid->actionTarget[i] == psVictim)
+				if (psDroid->actionTargets[i] == psVictim)
 				{
-					ASSERT_OR_RETURN(false, psDroid->actionTarget[i] != psVictim,
+					ASSERT_OR_RETURN(false, psDroid->actionTargets[i] != psVictim,
 					                 BADREF(psDroid->actionTargetFunc[i], psDroid->actionTargetLine[i]));
 				}
 			}

@@ -273,6 +273,7 @@ public:
   [[nodiscard]] Movement const* getMovementData() const;
   [[nodiscard]] std::string getName() const;
   [[nodiscard]] unsigned getWeight() const;
+  [[nodiscard]] BaseObject const* getActionTarget(int idx) const;
   [[nodiscard]] Group const* getGroup() const;
   [[nodiscard]] ComponentStats const* getComponent(std::string const& compName) const;
   [[nodiscard]] bool hasElectronicWeapon() const;
@@ -282,13 +283,24 @@ public:
   [[nodiscard]] bool hasCommander() const;
   [[nodiscard]] int calculateHeight() const;
   [[nodiscard]] bool isStationary() const;
-  [[nodiscard]] bool isRepairDroid() const;
+  [[nodiscard]] bool isRepairDroid() const noexcept;
   [[nodiscard]] std::string getDroidLevelName() const;
-  [[nodiscard]] bool isProbablyDoomed(bool isDirect) const;
   [[nodiscard]] unsigned calculateSensorRange() const;
   [[nodiscard]] int spaceOccupiedOnTransporter() const;
-  void setActionTarget(PlayerOwnedObject* psNewTarget, unsigned idx);
-  void setTarget(PlayerOwnedObject* psNewTarget);
+  [[nodiscard]] bool isAttacking() const noexcept;
+  [[nodiscard]] int calculateElectronicResistance() const;
+  [[nodiscard]] bool isRadarDetector() const;
+  [[nodiscard]] bool hasStandardSensor() const;
+  [[nodiscard]] bool hasCbSensor() const;
+  [[nodiscard]] int droidDamage(unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
+                                unsigned impactTime, bool isDPS, int minDamage);
+  void setUpBuildModule();
+  void actionUpdateDroid();
+  void initVisibility();
+  void actionSanity();
+  void actionUpdateTransporter();
+  void setActionTarget(BaseObject* psNewTarget, unsigned idx);
+  void setTarget(BaseObject* psNewTarget);
   void setBase(Structure* psNewBase);
   void cancelBuild();
   void resetAction() noexcept;
@@ -318,7 +330,6 @@ public:
   void aiUpdateDroid();
   bool droidUpdateRestore();
   bool droidUpdateDroidRepair();
-  [[nodiscard]] bool isAttacking() const noexcept;
   bool droidUpdateBuild();
   void recycleDroid();
   void initDroidMovement();
@@ -353,6 +364,7 @@ public:
   bool droidUpdateDemolishing();
   bool droidSensorDroidWeapon(const BaseObject* psObj) const;
 private:
+  friend class Group;
   struct Impl;
   std::unique_ptr<Impl> pimpl;
 };
@@ -413,10 +425,6 @@ unsigned calcTemplatePower(const DroidTemplate* psTemplate);
 
 // return whether a droid is IDF
 bool isIdf(Droid* psDroid);
-
-/* Do damage to a droid */
-int32_t droidDamage(Droid* psDroid, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
-                    unsigned impactTime, bool isDamagePerSecond, int minDamage);
 
 /* The main update routine for all droids */
 void droidUpdate(Droid* psDroid);

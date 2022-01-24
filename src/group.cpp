@@ -116,9 +116,13 @@ bool Group::hasElectronicWeapon() const
 
 Droid const* Group::getCommander() const
 {
-  return pimpl
-         ? pimpl->psCommander
-         : nullptr;
+  return pimpl ? pimpl->psCommander : nullptr;
+}
+
+std::vector<Droid*> const& Group::getMembers() const
+{
+  assert(pimpl); // FIXME
+  return pimpl->members;
 }
 
 std::unique_ptr<Group> Group::create(unsigned id)
@@ -144,84 +148,89 @@ void Group::add(Droid* psDroid)
   psDroid->group = this;
 
   if (isTransporter(*psDroid)) {
-    ASSERT_OR_RETURN(, (type == NORMAL), "grpJoin: Cannot have two transporters in a group");
+    ASSERT_OR_RETURN(, (pimpl->type == GROUP_TYPE::NORMAL), "grpJoin: Cannot have two transporters in a group");
 
-    type = TRANSPORTER;
-    members.push_back(psDroid);
+    pimpl->type = GROUP_TYPE::TRANSPORTER;
+    pimpl->members.push_back(psDroid);
   }
   else if (psDroid->getType() == DROID_TYPE::COMMAND &&
-           type != TRANSPORTER) {
-    ASSERT_OR_RETURN(, (type == NORMAL) && (psCommander == nullptr),
+           pimpl->type != GROUP_TYPE::TRANSPORTER) {
+    ASSERT_OR_RETURN(, (pimpl->type == GROUP_TYPE::NORMAL) && (pimpl->psCommander == nullptr),
                      "grpJoin: Cannot have two command droids in a group");
-    type = COMMAND;
-    psCommander = psDroid;
+    pimpl->type = GROUP_TYPE::COMMAND;
+    pimpl->psCommander = psDroid;
   }
   else {
-    members.push_back(psDroid);
+    pimpl->members.push_back(psDroid);
   }
 
-  if (type == COMMAND) {
-    syncDebug("Droid %d joining command group %d", psDroid->getId(), psCommander != nullptr ? psCommander->getId() : 0);
+  if (pimpl->type == GROUP_TYPE::COMMAND) {
+    syncDebug("Droid %d joining command group %d", psDroid->getId(),
+              pimpl->psCommander != nullptr ? pimpl->psCommander->getId() : 0);
   }
 }
 
 // remove a droid from a group
-void Group::remove(Impl::Droid* psDroid)
+void Group::remove(Droid* psDroid)
 {
-	if (psDroid != nullptr && psDroid->group.get() != this) {
+  if (!pimpl) return;
+	if (psDroid != nullptr && psDroid->group != this) {
 		ASSERT(false, "grpLeave: droid group does not match");
 		return;
 	}
 
 	// SyncDebug
-	if (psDroid != nullptr && type == COMMAND) {
+	if (psDroid != nullptr && pimpl->type == GROUP_TYPE::COMMAND) {
 		syncDebug("Droid %d leaving command group %d",
-              psDroid->getId(), psCommander != nullptr
-              ? psCommander->getId() : 0);
+              psDroid->getId(), pimpl->psCommander != nullptr
+              ? pimpl->psCommander->getId() : 0);
 	}
 
   psDroid->group = nullptr;
 
   // update group's type
   if (psDroid->getType() == DROID_TYPE::COMMAND &&
-      type == COMMAND) {
-    type = NORMAL;
-    psCommander = nullptr;
+      pimpl->type == GROUP_TYPE::COMMAND) {
+    pimpl->type = GROUP_TYPE::NORMAL;
+    pimpl->psCommander = nullptr;
   } else if (isTransporter(*psDroid) &&
-             type == TRANSPORTER) {
-    type = NORMAL;
+             pimpl->type == GROUP_TYPE::TRANSPORTER) {
+    pimpl->type = GROUP_TYPE::NORMAL;
   }
 }
 
 // Give a group of droids an order
 void Group::orderGroup(ORDER_TYPE order)
 {
-	for (auto droid : members)
+  if (!pimpl) return;
+	for (auto droid : pimpl->members)
 	{
-		::orderDroid(droid, order, ModeQueue);
+		orderDroid(droid, order, ModeQueue);
 	}
 }
 
 // Give a group of droids an order (using a Location)
 void Group::orderGroup(ORDER_TYPE order, unsigned x, unsigned y)
 {
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Group object in undefined state");
 	ASSERT_OR_RETURN(, validOrderForLoc(order), "orderGroup: Bad order");
 
-	for (auto droid : members)
+	for (auto droid : pimpl->members)
 	{
-		::orderDroidLoc(droid, order, x, y, bMultiMessages
+		orderDroidLoc(droid, order, x, y, bMultiMessages
     ? ModeQueue
     : ModeImmediate);
 	}
 }
 
-void Group::orderGroup(ORDER_TYPE order, PlayerOwnedObject * psObj)
+void Group::orderGroup(ORDER_TYPE order, BaseObject* target)
 {
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Group object in undefined state");
 	ASSERT_OR_RETURN(, validOrderForObj(order), "orderGroup: Bad order");
 
-	for (auto droid : members)
+	for (auto droid : pimpl->members)
 	{
-		::orderDroidObj(droid, order, psObj, bMultiMessages
+		orderDroidObj(droid, order, target, bMultiMessages
     ? ModeQueue
     : ModeImmediate);
 	}
@@ -229,7 +238,8 @@ void Group::orderGroup(ORDER_TYPE order, PlayerOwnedObject * psObj)
 
 void Group::setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state)
 {
-	for (auto droid : members)
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Group object in undefined state");
+	for (auto droid : pimpl->members)
 	{
 		droid->secondarySetState(sec, state);
 	}

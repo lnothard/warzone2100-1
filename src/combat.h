@@ -28,25 +28,25 @@
 
 enum class WEAPON_CLASS;
 enum class WEAPON_SUBCLASS;
-struct PlayerOwnedObject;
+struct BaseObject;
 struct Weapon;
 struct WeaponStats;
 
 
 /* Fire a weapon at something added int weapon_slot*/
-bool combFire(Weapon* psWeap, PlayerOwnedObject* psAttacker,
-              PlayerOwnedObject* psTarget, int weapon_slot);
+bool combFire(Weapon* psWeap, BaseObject* psAttacker,
+              BaseObject* psTarget, int weapon_slot);
 
 /*checks through the target players list of structures and droids to see
 if any support a counter battery sensor*/
-void counterBatteryFire(PlayerOwnedObject* psAttacker, PlayerOwnedObject* psTarget);
+void counterBatteryFire(BaseObject* psAttacker, BaseObject* psTarget);
 
-int objDamage(PlayerOwnedObject* psObj, unsigned damage, unsigned originalhp,
+int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp,
               WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
               bool isDamagePerSecond, int minDamage);
 
-unsigned objGuessFutureDamage(WeaponStats const* psStats, unsigned player, PlayerOwnedObject const* psTarget);
+unsigned objGuessFutureDamage(WeaponStats const* psStats, unsigned player, BaseObject const* psTarget);
 
-int objArmour(const PlayerOwnedObject* psObj, WEAPON_CLASS weaponClass);
+int objArmour(const BaseObject* psObj, WEAPON_CLASS weaponClass);
 
 #endif // __INCLUDED_SRC_COMBAT_H__

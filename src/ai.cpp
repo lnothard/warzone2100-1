@@ -982,9 +982,9 @@ static bool updateAttackTarget(BaseObject * psAttacker, int weapon_slot)
 }
 
 /// Check if any of our weapons can hit the target
-bool checkAnyWeaponsTarget(BaseObject * psObject, BaseObject * psTarget)
+bool checkAnyWeaponsTarget(BaseObject const* psObject, BaseObject const* psTarget)
 {
-	auto psDroid = dynamic_cast<Droid*>(psObject);
+	auto psDroid = dynamic_cast<Droid const*>(psObject);
 	for (int i = 0; i < numWeapons(*psDroid); i++)
 	{
 		if (validTarget(psObject, psTarget, i)) {
@@ -998,7 +998,7 @@ bool checkAnyWeaponsTarget(BaseObject * psObject, BaseObject * psTarget)
  * Set of rules which determine whether the weapon associated with
  * the object can fire on the propulsion type of the target
  */
-bool validTarget(BaseObject * psObject, BaseObject * psTarget, int weapon_slot)
+bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int weapon_slot)
 {
 	bool bTargetInAir = false, bValidTarget = false;
 	uint8_t surfaceToAir = 0;
@@ -1008,9 +1008,10 @@ bool validTarget(BaseObject * psObject, BaseObject * psTarget, int weapon_slot)
 	}
 
 	// need to check the propulsion type of target
-	if (auto psDroid = dynamic_cast<Droid*>(psTarget)) {
-    if (asPropulsionTypes[(psDroid)->getPropulsion()->
-          propulsionType].travel == TRAVEL_MEDIUM::AIR) {
+	if (auto psDroid = dynamic_cast<Droid const*>(psTarget)) {
+    auto propulsion = dynamic_cast<PropulsionStats const*>(psDroid->getComponent("propulsion"));
+    if (propulsion != nullptr &&
+        asPropulsionTypes[static_cast<size_t>(propulsion->propulsionType)].travel == TRAVEL_MEDIUM::AIR) {
       if (psDroid->getMovementData()->status != MOVE_STATUS::INACTIVE) {
         bTargetInAir = true;
       }
@@ -1022,13 +1023,13 @@ bool validTarget(BaseObject * psObject, BaseObject * psTarget, int weapon_slot)
       bTargetInAir = false;
     }
   }
-	else if (dynamic_cast<Structure*>(psTarget)) {
+	else if (dynamic_cast<Structure const*>(psTarget)) {
 		// let's hope so!
 		bTargetInAir = false;
 	}
 
 	// need what can shoot at
-	if (auto psDroid= dynamic_cast<Droid*>(psObject)) {
+	if (auto psDroid= dynamic_cast<Droid const*>(psObject)) {
     if (psDroid->getType() == DROID_TYPE::SENSOR) {
       return !bTargetInAir; // Sensor droids should not target anything in the air.
     }
@@ -1045,7 +1046,7 @@ bool validTarget(BaseObject * psObject, BaseObject * psTarget, int weapon_slot)
       return false;
     }
   }
-	else if (auto psStruct = dynamic_cast<Structure*>(psObject)) {
+	else if (auto psStruct = dynamic_cast<Structure const*>(psObject)) {
     // can't attack without a weapon
     if (numWeapons(*psStruct) != 0) {
       surfaceToAir = psStruct->getWeapons()[weapon_slot].getStats().surfaceToAir;

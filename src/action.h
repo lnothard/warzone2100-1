@@ -87,7 +87,7 @@ struct Action
     unsigned x, y;
     
     /// Multiple action target info
-    BaseObject * psObj;
+    BaseObject* psObj;
     std::unique_ptr<BaseStats> psStats;
 };
 

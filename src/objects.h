@@ -35,17 +35,17 @@ bool objInitialise();
 bool objShutdown();
 
 /// Goes through the list passed in reversing the order so the first entry becomes the last and the last entry becomes the first!
-void reverseObjectList(PlayerOwnedObject ** ppsList);
+void reverseObjectList(BaseObject ** ppsList);
 
 template <typename OBJECT>
 void reverseObjectList(OBJECT** ppsList)
 {
-  PlayerOwnedObject * baseList = *ppsList;
+  BaseObject * baseList = *ppsList;
 	reverseObjectList(&baseList);
 	*ppsList = static_cast<OBJECT*>(baseList);
 }
 
 /** Output an informative string about this object. For debugging. */
-const char* objInfo(const PlayerOwnedObject * psObj);
+const char* objInfo(const BaseObject * psObj);
 
 #endif // __INCLUDED_SRC_OBJECTS_H__

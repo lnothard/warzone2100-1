@@ -29,6 +29,8 @@
 #include <array>
 #include <bitset>
 
+#include "weapon.h"
+
 struct DisplayData;
 
 
@@ -85,10 +87,17 @@ public:
   [[nodiscard]] unsigned getTime() const noexcept;
   [[nodiscard]] const DisplayData* getDisplayData() const noexcept;
   [[nodiscard]] Spacetime getPreviousLocation() const noexcept;
+  [[nodiscard]] bool isVisibleToPlayer(unsigned player) const;
+  [[nodiscard]] bool isVisibleToSelectedPlayer() const;
+  [[nodiscard]] bool testFlag(size_t pos) const;
+  void setVisibleToPlayer(unsigned player, uint8_t vis);
+  void setHidden();
+  void setFlag(size_t pos, bool val);
   void setTime(unsigned t) noexcept;
-  void setRotation(Rotation newRotation) noexcept;
+  void setRotation(Rotation rot) noexcept;
   void setPosition(Position pos) noexcept;
   void setHeight(int height) noexcept;
+  void setPreviousLocation(Spacetime prevLoc);
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
@@ -110,11 +119,22 @@ public:
   void setOriginalHp(unsigned hp);
   void setSelected(bool sel);
   void setResistance(unsigned res);
+  void setExpectedDamageDirect(unsigned damage);
+  void setExpectedDamageIndirect(unsigned damage);
+  void setLastHitWeapon(WEAPON_SUBCLASS weap);
+  void setPeriodicalDamage(unsigned damage);
+  void setPeriodicalDamageStartTime(unsigned time);
   [[nodiscard]] bool isSelected() const;
   [[nodiscard]] unsigned getHp() const;
   [[nodiscard]] unsigned getOriginalHp() const;
   [[nodiscard]] unsigned getResistance() const;
+  [[nodiscard]] unsigned getExpectedDamageDirect() const;
+  [[nodiscard]] unsigned getExpectedDamageIndirect() const;
+  [[nodiscard]] WEAPON_SUBCLASS getLastHitWeapon() const;
+  [[nodiscard]] unsigned getPeriodicalDamage() const;
+  [[nodiscard]] unsigned getPeriodicalDamageStartTime() const;
   [[nodiscard]] bool isDead() const;
+  [[nodiscard]] bool isProbablyDoomed(bool isDirectDamage) const;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
@@ -134,6 +154,7 @@ public:
 
   void setPlayer(unsigned plr);
   [[nodiscard]] unsigned getPlayer() const;
+  [[nodiscard]] virtual std::array<> const& getWeapons() const = 0;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
