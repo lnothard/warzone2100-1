@@ -27,6 +27,7 @@
 
 #include <vector>
 
+#include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
 #include "wzmaplib/map.h"
 
@@ -35,6 +36,7 @@
 #include "multiplay.h"
 #include "objmem.h"
 #include "projectile.h"
+#include "raycast.h"
 #include "visibility.h"
 #include "wavecast.h"
 
@@ -115,8 +117,7 @@ void visUpdateLevel()
 	visLevelDec = gameTimeAdjustedAverage(VIS_LEVEL_DEC);
 }
 
-unsigned addSpotter(int x, int y, unsigned player, int radius,
-                    SENSOR_CLASS type, unsigned expiry)
+unsigned addSpotter(int x, int y, unsigned player, int radius, SENSOR_CLASS type, unsigned expiry)
 {
 	ASSERT_OR_RETURN(0, player >= 0 && player < MAX_PLAYERS, "invalid player: %d", player);
 	auto psSpot = std::make_unique<Spotter>(x, y, player, radius, type, expiry);
@@ -203,14 +204,14 @@ static void visMarkTile(BaseObject const* psObj, int mapX, int mapY,
 
   TILEPOS tilePos = {uint8_t(mapX), uint8_t(mapY), uint8_t(inRange)};
   visionType[rayPlayer]++;// we observe this tile
-  if (psObj->flags.test(OBJECT_FLAG::JAMMED_TILES))  {
+  if (psObj->testFlag(static_cast<size_t>(OBJECT_FLAG::JAMMED_TILES))) {
     // we are a jammer object
     psTile->jammers[rayPlayer]++;
     // mark it as being jammed
     psTile->jammerBits |= (1 << rayPlayer);
   }
   updateTileVis(psTile);
-    // record having seen it
+  // record having seen it
   watchedTiles.push_back(tilePos);
 }
 
@@ -224,7 +225,7 @@ static void doWaveTerrain(BaseObject * psObj)
 	const auto radius = objSensorRange(psObj);
 	const auto rayPlayer = psObj->playerManager->getPlayer();
 	std::size_t size;
-	const WavecastTile* tiles = getWavecastTable(radius, &size);
+	const auto tiles = getWavecastTable(radius, &size);
 
 	int heights[2][MAX_WAVECAST_LIST_SIZE];
 	size_t angles[2][MAX_WAVECAST_LIST_SIZE + 1];
@@ -382,49 +383,42 @@ void visRemoveVisibilityOffWorld(BaseObject * psObj)
 }
 
 /* Check which tiles can be seen by an object */
-void visTilesUpdate(BaseObject * psObj)
+void visTilesUpdate(BaseObject* psObj)
 {
-	ASSERT(psObj->type != OBJ_FEATURE, "visTilesUpdate: visibility updates are not for features!");
+	ASSERT(!dynamic_cast<Feature*>(psObj), "visTilesUpdate: visibility updates are not for features!");
 
 	// Remove previous map visibility provided by object
 	visRemoveVisibility(psObj);
 
-	if (psObj->type == OBJ_STRUCTURE) {
-		auto psStruct = (Structure*)psObj;
+  if (auto psStruct = dynamic_cast<Structure*>(psObj)) {
 		if (psStruct->getState() != STRUCTURE_STATE::BUILT ||
-		  	psStruct->pStructureType->type == REF_WALL || psStruct->pStructureType->type == REF_WALLCORNER || psStruct->
-		  	pStructureType->type == REF_GATE) {
+		  	psStruct->getStats()->type == STRUCTURE_TYPE::WALL ||
+        psStruct->getStats()->type == STRUCTURE_TYPE::WALL_CORNER ||
+        psStruct->getStats()->type == STRUCTURE_TYPE::GATE) {
 			// unbuilt structures and walls do not confer visibility.
 			return;
 		}
 	}
-
 	// Do the whole circle in ∞ steps. No more pretty moiré patterns.
-	psObj->flags.set(OBJECT_FLAG::JAMMED_TILES, objJammerPower(psObj) > 0);
+	psObj->setFlag(static_cast<size_t>(OBJECT_FLAG::JAMMED_TILES), objJammerPower(psObj) > 0);
 	doWaveTerrain(psObj);
 }
 
 /*reveals all the terrain in the map*/
-void revealAll(UBYTE player)
+void revealAll(unsigned player)
 {
-	int i, j;
-	Tile* psTile;
-
-	if (player >= MAX_PLAYERS)
-	{
-		return;
-	}
+	if (player >= MAX_PLAYERS) return;
 
 	//reveal all tiles
-	for (i = 0; i < mapWidth; i++)
+	for (auto i = 0; i < mapWidth; i++)
 	{
-		for (j = 0; j < mapHeight; j++)
+		for (auto j = 0; j < mapHeight; j++)
 		{
-			psTile = mapTile(i, j);
+			auto psTile = mapTile(i, j);
 			psTile->tileExploredBits |= alliancebits[player];
 		}
 	}
-	//the objects gets revealed in processVisibility()
+	// the objects are revealed in processVisibility()
 }
 
 /* Check whether psViewer can see psTarget.
@@ -433,12 +427,12 @@ void revealAll(UBYTE player)
  * psTarget can be any type of SimpleObject (e.g. a tree).
  * struckBlock controls whether structures block LOS
  */
-int visibleObject(const BaseObject* psViewer, const BaseObject* psTarget, bool wallsBlock)
+int visibleObject(BaseObject const* psViewer, BaseObject const* psTarget, bool wallsBlock)
 {
 	ASSERT_OR_RETURN(0, psViewer != nullptr, "Invalid viewer pointer!");
 	ASSERT_OR_RETURN(0, psTarget != nullptr, "Invalid viewed pointer!");
 
-	int range = objSensorRange(psViewer);
+	auto range = objSensorRange(psViewer);
 
 	if (!worldOnMap(psViewer->getPosition().x, psViewer->getPosition().y) ||
       !worldOnMap(psTarget->getPosition().x, psTarget->getPosition().y)) {
@@ -448,67 +442,59 @@ int visibleObject(const BaseObject* psViewer, const BaseObject* psTarget, bool w
 	}
 
 	/* Get the sensor range */
-	switch (psViewer->type)
-	{
-	case OBJ_DROID:
-		{
-			const Droid* psDroid = (const Droid*)psViewer;
+	if (auto psDroid = dynamic_cast<Droid const*>(psViewer)) {
+    if (psDroid->getOrder()->target == psTarget && psDroid->hasCbSensor()) {
+      // if it is targetted by a counter battery sensor, it is seen
+      return UBYTE_MAX;
+    }
+	}
+  else if (auto psStruct = dynamic_cast<Structure const*>(psViewer)) {
+    // a structure that is being built cannot see anything
+    if (psStruct->getState() != STRUCTURE_STATE::BUILT) {
+      return 0;
+    }
 
-			if (psDroid->order.psObj == psTarget && cbSensorDroid(psDroid))
-			{
-				// if it is targetted by a counter battery sensor, it is seen
-				return UBYTE_MAX;
-			}
-			break;
-		}
-	case OBJ_STRUCTURE:
-		{
-			const Structure* psStruct = (const Structure*)psViewer;
+    if (psStruct->getStats()->type == STRUCTURE_TYPE::WALL ||
+        psStruct->getStats()->type == STRUCTURE_TYPE::GATE ||
+        psStruct->getStats()->type == STRUCTURE_TYPE::WALL_CORNER) {
+      return 0;
+    }
 
-			// a structure that is being built cannot see anything
-			if (psStruct->getState() != STRUCTURE_STATE::BUILT) {
-				return 0;
-			}
+    if (dynamic_cast<Droid const*>(psTarget) &&
+        dynamic_cast<Droid const*>(psTarget)->isVtol() &&
+        asWeaponStats[psStruct->asWeaps[0].nStat].surfaceToAir == SHOOT_IN_AIR) {
+      range = 3 * range / 2; // increase vision range of AA vs VTOL
+    }
 
-			if (psStruct->pStructureType->type == REF_WALL
-				|| psStruct->pStructureType->type == REF_GATE
-				|| psStruct->pStructureType->type == REF_WALLCORNER) {
-				return 0;
-			}
-
-			if (psTarget->type == OBJ_DROID && isVtolDroid((const Droid*)psTarget)
-				&& asWeaponStats[psStruct->asWeaps[0].nStat].surfaceToAir == SHOOT_IN_AIR) {
-				range = 3 * range / 2; // increase vision range of AA vs VTOL
-			}
-
-			if (psStruct->psTarget[0] == psTarget && (structCBSensor(psStruct) || structVTOLCBSensor(psStruct))) {
-				// if a unit is targetted by a counter battery sensor
-				// it is automatically seen
-				return UBYTE_MAX;
-			}
-			break;
-		}
-	default:
+    if (psStruct->psTarget[0] == psTarget &&
+        (structCBSensor(psStruct) || structVTOLCBSensor(psStruct))) {
+      // if a unit is targetted by a counter battery sensor
+      // it is automatically seen
+      return UBYTE_MAX;
+    }
+	}
+	else {
 		ASSERT(false, "Visibility checking is only implemented for units and structures");
 		return 0;
-		break;
 	}
 
 	/* First see if the target is in sensor range */
-	const int dist = iHypot((psTarget->pos - psViewer->pos).xy());
-	if (dist == 0)
-	{
+	auto const dist = iHypot((psTarget->getPosition() - psViewer->getPosition()).xy());
+	if (dist == 0) {
 		return UBYTE_MAX; // Should never be on top of each other, but ...
 	}
 
-	const Tile* psTile = mapTile(map_coord(psTarget->pos.x), map_coord(psTarget->pos.y));
-	const bool jammed = psTile->jammerBits & ~alliancebits[psViewer->player];
+	const auto psTile = mapTile(map_coord(
+                                      psTarget->getPosition().x),
+                              map_coord(psTarget->getPosition().y));
+
+	const bool jammed = psTile->jammerBits & ~alliancebits[psViewer->playerManager->getPlayer()];
 
 	// Special rule for VTOLs, as they are not affected by ECM
-	if (((psTarget->type == OBJ_DROID && isVtolDroid((const Droid*)psTarget))
-			|| (psViewer->type == OBJ_DROID && isVtolDroid((const Droid*)psViewer)))
-		&& dist < range)
-	{
+  auto psTargetDroid = dynamic_cast<Droid const*>(psTarget);
+  auto psViewerDroid = dynamic_cast<Droid const*>(psViewer);
+	if (psTargetDroid && psTargetDroid->isVtol() ||
+      (psViewerDroid && psViewerDroid->isVtol() && dist < range)) {
 		return UBYTE_MAX;
 	}
 
@@ -516,8 +502,9 @@ int visibleObject(const BaseObject* psViewer, const BaseObject* psTarget, bool w
 	VisibleObjectHelp_t help = {
 		true,
 		wallsBlock,
-		psViewer->pos.z + map_Height(psViewer->pos.x, psViewer->pos.y),
-		map_coord(psTarget->pos.xy()),
+		psViewer->getPosition().z + map_Height(
+            psViewer->getPosition().x, psViewer->getPosition().y),
+		map_coord(psTarget->getPosition().xy()),
 		0,
 		0,
     -UBYTE_MAX * GRADIENT_MULTIPLIER * ELEVATION_SCALE,
@@ -526,33 +513,29 @@ int visibleObject(const BaseObject* psViewer, const BaseObject* psTarget, bool w
 	};
 
 	// Cast a ray from the viewer to the target
-	rayCast(psViewer->pos.xy(), psTarget->pos.xy(), rayLOSCallback, &help);
+	rayCast(psViewer->getPosition().xy(), psTarget->getPosition().xy(), rayLOSCallback, &help);
 
-	if (gWall != nullptr && gNumWalls != nullptr) // Out globals are set
-	{
+	if (gWall != nullptr && gNumWalls != nullptr) { // Out globals are set
 		*gWall = help.wall;
 		*gNumWalls = help.numWalls;
 	}
 
-	bool tileWatched = psTile->watchers[psViewer->player] > 0;
-	bool tileWatchedSensor = psTile->sensors[psViewer->player] > 0;
+	bool tileWatched = psTile->watchers[psViewer->playerManager->getPlayer()] > 0;
+	bool tileWatchedSensor = psTile->sensors[psViewer->playerManager->getPlayer()] > 0;
 
 	// Show objects hidden by ECM jamming with radar blips
-	if (jammed)
-	{
-		if (!tileWatched && tileWatchedSensor)
-		{
+	if (jammed) {
+		if (!tileWatched && tileWatchedSensor) {
 			return UBYTE_MAX / 2;
 		}
 	}
 	// Show objects that are seen directly
-	if (tileWatched || (!jammed && tileWatchedSensor))
-	{
+	if (tileWatched || (!jammed && tileWatchedSensor)) {
 		return UBYTE_MAX;
 	}
 	// Show detected sensors as radar blips
-	if (objRadarDetector(psViewer) && objActiveRadar(psTarget) && dist < range * 10)
-	{
+	if (objRadarDetector(psViewer) &&
+      objActiveRadar(psTarget) && dist < range * 10) {
 		return UBYTE_MAX / 2;
 	}
 	// else not seen
@@ -560,7 +543,7 @@ int visibleObject(const BaseObject* psViewer, const BaseObject* psTarget, bool w
 }
 
 // Find the wall that is blocking LOS to a target (if any)
-Structure* visGetBlockingWall(const BaseObject * psViewer, const BaseObject * psTarget)
+Structure* visGetBlockingWall(BaseObject const* psViewer, BaseObject const* psTarget)
 {
 	int numWalls = 0;
 	Vector2i wall;
@@ -574,45 +557,38 @@ Structure* visGetBlockingWall(const BaseObject * psViewer, const BaseObject * ps
 	gNumWalls = nullptr;
 	gWall = nullptr;
 
-	// see if there was a wall in the way
-	if (numWalls > 0)
-	{
-		Vector2i tile = map_coord(wall);
-		unsigned unsigned player;
+  if (numWalls <= 0) return nullptr;
 
-		for (player = 0; player < MAX_PLAYERS; player++)
-		{
-			Structure* psWall;
-
-			for (psWall = apsStructLists[player]; psWall; psWall = psWall->psNext)
-			{
-				if (map_coord(psWall->pos) == tile)
-				{
-					return psWall;
-				}
-			}
-		}
-	}
-	return nullptr;
+  auto tile = map_coord(wall);
+  for (auto player = 0; player < MAX_PLAYERS; player++)
+  {
+    for (auto& psWall : apsStructLists[player])
+    {
+      if (map_coord(psWall->getPosition()) == tile)
+        return psWall.get();
+    }
+  }
+  return nullptr;
 }
 
 bool hasSharedVision(unsigned viewer, unsigned ally)
 {
-	if (viewer >= MAX_PLAYERS) { return false; }
+  ASSERT_OR_RETURN(false, viewer < MAX_PLAYERS, "");
 	ASSERT_OR_RETURN(false, ally < MAX_PLAYERS, "Bad ally %u (viewer: %u)", ally, viewer);
 
-	return viewer == ally || (bMultiPlayer && alliancesSharedVision(game.alliance) && aiCheckAlliances(viewer, ally));
+	return viewer == ally || (bMultiPlayer &&
+          alliancesSharedVision(game.alliance) &&
+          aiCheckAlliances(viewer, ally));
 }
 
-static void setSeenBy(BaseObject * psObj, unsigned viewer, int val /*= UBYTE_MAX*/)
+static void setSeenBy(BaseObject* psObj, unsigned viewer, int val)
 {
-	if (viewer >= MAX_PLAYERS) { return; }
+  ASSERT_OR_RETURN(, viewer < MAX_PLAYERS, "");
 
 	//forward out vision to our allies
-	for (int ally = 0; ally < MAX_PLAYERS; ++ally)
+	for (auto ally = 0; ally < MAX_PLAYERS; ++ally)
 	{
-		if (hasSharedVision(viewer, ally))
-		{
+		if (hasSharedVision(viewer, ally)) {
 			psObj->seenThisTick[ally] = MAX(psObj->seenThisTick[ally], val);
 		}
 	}
@@ -620,83 +596,78 @@ static void setSeenBy(BaseObject * psObj, unsigned viewer, int val /*= UBYTE_MAX
 
 static void setSeenByInstantly(BaseObject * psObj, unsigned viewer, int val /*= UBYTE_MAX*/)
 {
-	if (viewer >= MAX_PLAYERS) { return; }
+  ASSERT_OR_RETURN(, viewer < MAX_PLAYERS, "");
 
 	//forward out vision to our allies
-	for (int ally = 0; ally < MAX_PLAYERS; ++ally)
+	for (auto ally = 0; ally < MAX_PLAYERS; ++ally)
 	{
-		if (hasSharedVision(viewer, ally))
-		{
+		if (hasSharedVision(viewer, ally)) {
 			psObj->seenThisTick[ally] = MAX(psObj->seenThisTick[ally], val);
-			psObj->visible[ally] = MAX(psObj->visible[ally], val);
+			psObj->setVisibleToPlayer(ally, MAX(psObj->isVisibleToPlayer(ally), val));
 		}
 	}
 }
 
 // Calculate which objects we should know about based on alliances and satellite view.
-static void processVisibilitySelf(BaseObject * psObj)
+static void processVisibilitySelf(BaseObject* psObj)
 {
-	if (!dynamic_cast<Feature*>(psObj) &&
-      objSensorRange(psObj) > 0) {
+	if (!dynamic_cast<Feature*>(psObj) && objSensorRange(psObj) > 0) {
 		// one can trivially see oneself
-		setSeenBy(psObj, psObj->getPlayer(), UBYTE_MAX);
+		setSeenBy(psObj, psObj->playerManager->getPlayer(), UBYTE_MAX);
 	}
 
 	// if a player has a SAT_UPLINK structure, or has godMode enabled,
 	// they can see everything!
-	for (unsigned viewer = 0; viewer < MAX_PLAYERS; viewer++)
+	for (auto viewer = 0; viewer < MAX_PLAYERS; viewer++)
 	{
-		if (getSatUplinkExists(viewer) ||
-        viewer == selectedPlayer && godMode) {
+		if (getSatUplinkExists(viewer) || viewer == selectedPlayer && godMode) {
 			setSeenBy(psObj, viewer, UBYTE_MAX);
 		}
 	}
 
-	psObj->flags.set(OBJECT_FLAG_TARGETED, false); // Remove any targetting locks from last update.
+  // remove any targeting locks from last update
+	psObj->setFlag(static_cast<size_t>(OBJECT_FLAG::TARGETED), false);
 
-	// If we're a CB sensor, make our target visible instantly. Although this is actually checking visibility of our target, we do it here anyway.
+	// if we're a CB sensor, make our target visible instantly. Although this is
+  // actually checking visibility of our target, we do it here anyway
 	auto psStruct = dynamic_cast<Structure*>(psObj);
-	// you can always see anything that a CB sensor is targetting
-	// Anyone commenting this out again will get a knee capping from John.
-	// You have been warned!!
+	// you can always see anything that a CB sensor is targeting
 	if (psStruct != nullptr &&
       psStruct->getState() == STRUCTURE_STATE::BUILT &&
-      (structCBSensor(psStruct) ||
-       structVTOLCBSensor(psStruct)) && psStruct->psTarget[0] != nullptr) {
-		setSeenByInstantly(psStruct->psTarget[0], psObj->getPlayer(), UBYTE_MAX);
+      (structCBSensor(psStruct) || structVTOLCBSensor(psStruct)) &&
+      psStruct->psTarget[0] != nullptr) {
+		setSeenByInstantly(psStruct->psTarget[0],
+                       psObj->playerManager->getPlayer(), UBYTE_MAX);
 	}
 	auto psDroid = dynamic_cast<Droid*>(psObj);
 	if (psDroid != nullptr && psDroid->getAction() == ACTION::OBSERVE && psDroid->hasCbSensor()) {
 		// Anyone commenting this out will get a knee capping from John.
 		// You have been warned!!
-		setSeenByInstantly(psDroid->getTarget(0), psObj->getPlayer(), UBYTE_MAX);
+		setSeenByInstantly(psDroid->getTarget(0),
+                       psObj->playerManager->getPlayer(), UBYTE_MAX);
 	}
 }
 
 // Calculate which objects we can see. Better to call after processVisibilitySelf, since that check is cheaper.
-static void processVisibilityVision(BaseObject * psViewer)
+static void processVisibilityVision(BaseObject* psViewer)
 {
-	if (dynamic_cast<Feature*>(psViewer)) {
-		return;
-	}
+	if (dynamic_cast<Feature*>(psViewer)) return;
 
 	// get all the objects from the grid the droid is in
 	// Will give inconsistent results if hasSharedVision is not an equivalence relation.
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterateUnseen(
           psViewer->getPosition().x, psViewer->getPosition().y,
-          objSensorRange(psViewer), psViewer->getPlayer());
+          objSensorRange(psViewer), psViewer->playerManager->getPlayer());
 
-	for (auto gi = gridList.begin(); gi != gridList.end(); ++gi)
+	for (auto psObj : gridList)
 	{
-    BaseObject * psObj = *gi;
-
-		auto val = visibleObject(psViewer, psObj, false);
+  	auto val = visibleObject(psViewer, psObj, false);
 
 		// If we've got ranged line of sight...
 		if (val > 0) {
 			// Tell system that this side can see this object
-			setSeenBy(psObj, psViewer->getPlayer(), val);
+			setSeenBy(psObj, psViewer->playerManager->getPlayer(), val);
 
 			// Check if scripting system wants to trigger an event for this
 			triggerEventSeen(psViewer, psObj);
@@ -706,73 +677,71 @@ static void processVisibilityVision(BaseObject * psViewer)
 
 /* Find out what can see this object */
 // Fade in/out of view. Must be called after calculation of which objects are seen.
-static void processVisibilityLevel(BaseObject * psObj, bool& addedMessage)
+static void processVisibilityLevel(BaseObject* psObj, bool& addedMessage)
 {
 	// update the visibility levels
-	for (unsigned player = 0; player < MAX_PLAYERS; player++)
+	for (auto player = 0; player < MAX_PLAYERS; player++)
 	{
 		bool justBecameVisible = false;
-		int visLevel = psObj->seenThisTick[player];
+		auto visLevel = psObj->seenThisTick[player];
 
-		if (player == psObj->getPlayer()) {
+		if (player == psObj->playerManager->getPlayer()) {
 			// owner can always see it fully
-			psObj->visible[player] = UBYTE_MAX;
+			psObj->setVisibleToPlayer(player, UBYTE_MAX);
 			continue;
 		}
 
 		// Droids can vanish from view, other objects will stay
-		if (psObj->type != OBJ_DROID) {
-			visLevel = MAX(visLevel, psObj->visible[player]);
+		if (!dynamic_cast<Droid*>(psObj)) {
+			visLevel = MAX(visLevel, psObj->isVisibleToPlayer(player));
 		}
 
-		if (visLevel > psObj->visible[player]) {
-			justBecameVisible = psObj->visible[player] <= 0;
-
-			psObj->visible[player] = MIN(psObj->visible[player] + visLevelInc, visLevel);
+		if (visLevel > psObj->isVisibleToPlayer(player)) {
+			justBecameVisible = psObj->isVisibleToPlayer(player) <= 0;
+			psObj->setVisibleToPlayer(player, MIN(psObj->isVisibleToPlayer(player) + visLevelInc, visLevel));
 		}
 		else if (visLevel < psObj->visible[player]) {
 			psObj->visible[player] = MAX(psObj->visible[player] - visLevelDec, visLevel);
 		}
 
-		if (justBecameVisible) {
-			/* Make sure all tiles under a feature/structure become visible when you see it */
-			if (psObj->type == OBJ_STRUCTURE || psObj->type == OBJ_FEATURE) {
-				setUnderTilesVis(psObj, player);
-			}
+    if (!justBecameVisible) continue;
 
-			// if a feature has just become visible set the message blips
-			if (psObj->type == OBJ_FEATURE)
-			{
-				MESSAGE* psMessage;
-				INGAME_AUDIO type = NO_SOUND;
+    /* Make sure all tiles under a feature/structure become visible when you see it */
+    if (psObj->type == OBJ_STRUCTURE || psObj->type == OBJ_FEATURE) {
+      setUnderTilesVis(psObj, player);
+    }
 
-				/* If this is an oil resource we want to add a proximity message for
-				 * the selected Player - if there isn't an Resource Extractor on it. */
-				if (((Feature*)psObj)->psStats->subType == FEATURE_TYPE::OIL_RESOURCE &&
-            !TileHasStructure(
-					mapTile(map_coord(psObj->getPosition().x), map_coord(psObj->getPosition().y)))) {
-					type = ID_SOUND_RESOURCE_HERE;
-				}
-				else if (((Feature*)psObj)->psStats->subType == FEATURE_TYPE::GEN_ARTE) {
-					type = ID_SOUND_ARTEFACT_DISC;
-				}
+    // if a feature has just become visible set the message blips
+      if (auto psFeat = dynamic_cast<Feature*>(psObj)) {
+        INGAME_AUDIO type = NO_SOUND;
 
-				if (type != NO_SOUND) {
-					psMessage = addMessage(MESSAGE_TYPE::MSG_PROXIMITY, true, player);
-					if (psMessage) {
-						psMessage->psObj = psObj;
-						debug(LOG_MSG, "Added message for oil well or artefact, pViewData=%p",
-						      static_cast<void *>(psMessage->pViewData));
-						addedMessage = true;
-					}
-					if (!bInTutorial && player == selectedPlayer) {
-						// play message to indicate been seen
-						audio_QueueTrackPos(type, psObj->pos.x, psObj->pos.y, psObj->pos.z);
-					}
-				}
-			}
-		}
-	}
+        /* If this is an oil resource we want to add a proximity message for
+         * the selected Player - if there isn't an Resource Extractor on it. */
+        if (psFeat->getStats()->subType == FEATURE_TYPE::OIL_RESOURCE &&
+                !TileHasStructure(
+                        mapTile(map_coord(psObj->getPosition().x),
+                                map_coord(psObj->getPosition().y)))) {
+          type = ID_SOUND_RESOURCE_HERE;
+        }
+        else if (psFeat->getStats()->subType == FEATURE_TYPE::GEN_ARTE) {
+          type = ID_SOUND_ARTEFACT_DISC;
+        }
+
+        if (type != NO_SOUND) {
+          auto psMessage = addMessage(MESSAGE_TYPE::MSG_PROXIMITY, true, player);
+          if (psMessage) {
+            psMessage->psObj = psObj;
+            debug(LOG_MSG, "Added message for oil well or artefact, pViewData=%p",
+                  static_cast<void *>(psMessage->pViewData));
+            addedMessage = true;
+          }
+          if (!bInTutorial && player == selectedPlayer) {
+            // play message to indicate been seen
+            audio_QueueTrackPos(type, psObj->getPosition().x, psObj->getPosition().y, psObj->getPosition().z);
+          }
+        }
+      }
+  }
 }
 
 void processVisibility()
@@ -790,35 +759,33 @@ void processVisibility()
 			}
 		}
 	}
-	for (unsigned player = 0; player < MAX_PLAYERS; ++player)
+	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
-    BaseObject * lists[] = {apsDroidLists[player], apsStructLists[player]};
+    BaseObject* lists[] = {apsDroidLists[player], apsStructLists[player]};
 		unsigned list;
 		for (list = 0; list < sizeof(lists) / sizeof(*lists); ++list)
 		{
-			for (BaseObject * psObj = lists[list]; psObj != nullptr; psObj = psObj->psNext)
+			for (BaseObject* psObj = lists[list]; psObj != nullptr; psObj = psObj->psNext)
 			{
 				processVisibilityVision(psObj);
 			}
 		}
 	}
-	for (BaseObject * psObj = apsSensorList[0]; psObj != nullptr; psObj = psObj->psNextFunc)
+	for (BaseObject* psObj = apsSensorList[0]; psObj != nullptr; psObj = psObj->psNextFunc)
 	{
-		if (objRadarDetector(psObj))
-		{
-			for (BaseObject * psTarget = apsSensorList[0]; psTarget != nullptr; psTarget = psTarget->psNextFunc)
-			{
-				if (psObj != psTarget && psTarget->visible[psObj->player] < UBYTE_MAX / 2
-					&& objActiveRadar(psTarget)
-					&& iHypot((psTarget->pos - psObj->pos).xy()) < objSensorRange(psObj) * 10)
-				{
-					psTarget->visible[psObj->player] = UBYTE_MAX / 2;
-				}
-			}
-		}
-	}
+    if (!objRadarDetector(psObj)) continue;
+    for (BaseObject* psTarget = apsSensorList[0]; psTarget != nullptr; psTarget = psTarget->psNextFunc)
+    {
+      if (psObj != psTarget &&
+          psTarget->isVisibleToPlayer(psObj->playerManager->getPlayer()) < UBYTE_MAX / 2 &&
+          objActiveRadar(psTarget) &&
+          iHypot((psTarget->getPosition() - psObj->getPosition()).xy()) < objSensorRange(psObj) * 10) {
+        psTarget->setVisibleToPlayer(psObj->playerManager->getPlayer(), UBYTE_MAX / 2);
+      }
+    }
+  }
 	bool addedMessage = false;
-	for (unsigned player = 0; player < MAX_PLAYERS; ++player)
+	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
     BaseObject * lists[] = {apsDroidLists[player], apsStructLists[player], apsFeatureLists[player]};
 		unsigned list;
@@ -830,52 +797,36 @@ void processVisibility()
 			}
 		}
 	}
-	if (addedMessage)
-	{
+	if (addedMessage) {
 		jsDebugMessageUpdate();
 	}
 }
 
-void setUnderTilesVis(BaseObject * psObj, UDWORD player)
+void setUnderTilesVis(BaseObject* psObj, UDWORD player)
 {
-	UDWORD i, j;
-	UDWORD mapX, mapY, width, breadth;
-	Feature* psFeature;
-	Structure* psStructure;
-	FeatureStats const* psStats;
-	Tile* psTile;
+  ASSERT_OR_RETURN(, player < MAX_PLAYERS, "");
 
-	if (player >= MAX_PLAYERS)
-	{
-		return;
-	}
-
-	if (psObj->type == OBJ_FEATURE)
-	{
-		psFeature = (Feature*)psObj;
-		psStats = psFeature->psStats;
+  unsigned mapX, mapY, width, breadth;
+	if (auto psFeature = dynamic_cast<Feature*>(psObj)) {
+		auto psStats = psFeature->getStats();
 		width = psStats->baseWidth;
 		breadth = psStats->baseBreadth;
-		mapX = map_coord(psFeature->pos.x - width * TILE_UNITS / 2);
-		mapY = map_coord(psFeature->pos.y - breadth * TILE_UNITS / 2);
+		mapX = map_coord(psFeature->getPosition().x - width * TILE_UNITS / 2);
+		mapY = map_coord(psFeature->getPosition().y - breadth * TILE_UNITS / 2);
 	}
-	else
-	{
-		/* Must be a structure */
-		psStructure = (Structure*)psObj;
-		width = psStructure->pStructureType->base_width;
-		breadth = psStructure->pStructureType->base_breadth;
-		mapX = map_coord(psStructure->pos.x - width * TILE_UNITS / 2);
-		mapY = map_coord(psStructure->pos.y - breadth * TILE_UNITS / 2);
+	else if (auto psStructure = dynamic_cast<Structure*>(psObj)) {
+		width = psStructure->getStats()->base_width;
+		breadth = psStructure->getStats()->base_breadth;
+		mapX = map_coord(psStructure->getPosition().x - width * TILE_UNITS / 2);
+		mapY = map_coord(psStructure->getPosition().y - breadth * TILE_UNITS / 2);
 	}
 
-	for (i = 0; i < width + 1; i++) // + 1 because visibility is for top left of tile.
+	for (auto i = 0; i < width + 1; i++) // + 1 because visibility is for top left of tile.
 	{
-		for (j = 0; j < breadth + 1; j++) // + 1 because visibility is for top left of tile.
+		for (auto j = 0; j < breadth + 1; j++) // + 1 because visibility is for top left of tile.
 		{
-			psTile = mapTile(mapX + i, mapY + j);
-			if (psTile)
-			{
+			auto psTile = mapTile(mapX + i, mapY + j);
+			if (psTile) {
 				psTile->tileExploredBits |= alliancebits[player];
 			}
 		}
@@ -890,7 +841,7 @@ static int checkFireLine(const BaseObject * psViewer, const BaseObject * psTarge
  * Check whether psViewer can fire directly at psTarget.
  * psTarget can be any type of SimpleObject (e.g. a tree).
  */
-bool lineOfFire(const BaseObject * psViewer, const BaseObject * psTarget, int weapon_slot, bool wallsBlock)
+bool lineOfFire(BaseObject const* psViewer, BaseObject const* psTarget, int weapon_slot, bool wallsBlock)
 {
 	WeaponStats* psStats = nullptr;
 
@@ -898,35 +849,29 @@ bool lineOfFire(const BaseObject * psViewer, const BaseObject * psTarget, int we
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Invalid target pointer!");
 	ASSERT_OR_RETURN(false, psViewer->type == OBJ_DROID || psViewer->type == OBJ_STRUCTURE, "Bad viewer type");
 
-	if (psViewer->type == OBJ_DROID)
-	{
+	if (psViewer->type == OBJ_DROID) {
 		psStats = asWeaponStats + ((const Droid*)psViewer)->asWeaps[weapon_slot].nStat;
 	}
-	else if (psViewer->type == OBJ_STRUCTURE)
-	{
+	else if (psViewer->type == OBJ_STRUCTURE) {
 		psStats = asWeaponStats + ((const Structure*)psViewer)->asWeaps[weapon_slot].nStat;
 	}
 	// 2d distance
-	int distance = iHypot((psTarget->getPosition() - psViewer->getPosition()).xy());
-	int range = proj_GetLongRange(psStats, psViewer->getPlayer());
-	if (proj_Direct(psStats))
-	{
+	auto distance = iHypot((psTarget->getPosition() - psViewer->getPosition()).xy());
+	auto range = proj_GetLongRange(psStats, psViewer->playerManager->getPlayer());
+	if (proj_Direct(psStats)) {
 		/** direct shots could collide with ground **/
 		return range >= distance && LINE_OF_FIRE_MINIMUM <= checkFireLine(
 			psViewer, psTarget, weapon_slot, wallsBlock, true);
 	}
-	else
-	{
+	else {
 		/**
 		 * indirect shots always have a line of fire, IF the forced
 		 * minimum angle doesn't move it out of range
 		 **/
-		int min_angle = checkFireLine(psViewer, psTarget, weapon_slot, wallsBlock, false);
+		auto min_angle = checkFireLine(psViewer, psTarget, weapon_slot, wallsBlock, false);
 		// NOTE This code seems similar to the code in combFire in combat.cpp.
-		if (min_angle > DEG(PROJ_MAX_PITCH))
-		{
-			if (iSin(2 * min_angle) < iSin(2 * DEG(PROJ_MAX_PITCH)))
-			{
+		if (min_angle > DEG(PROJ_MAX_PITCH)) {
+			if (iSin(2 * min_angle) < iSin(2 * DEG(PROJ_MAX_PITCH))) {
 				range = (range * iSin(2 * min_angle)) / iSin(2 * DEG(PROJ_MAX_PITCH));
 			}
 		}
@@ -934,14 +879,10 @@ bool lineOfFire(const BaseObject * psViewer, const BaseObject * psTarget, int we
 	}
 }
 
-/* Check how much of psTarget is hitable from psViewer's gun position */
-int areaOfFire(const BaseObject * psViewer, const BaseObject * psTarget, int weapon_slot, bool wallsBlock)
+/* Check how much of psTarget is hittable from psViewer's gun position */
+int areaOfFire(BaseObject const* psViewer, BaseObject const* psTarget, int weapon_slot, bool wallsBlock)
 {
-	if (psViewer == nullptr)
-	{
-		return 0; // Lassat special case, avoid assertion.
-	}
-
+	if (psViewer == nullptr) return 0; // Lassat special case, avoid assertion.
 	return checkFireLine(psViewer, psTarget, weapon_slot, wallsBlock, true);
 }
 
@@ -952,21 +893,17 @@ int arcOfFire(const BaseObject * psViewer, const BaseObject * psTarget, int weap
 }
 
 /* helper function for checkFireLine */
-static inline void angle_check(int64_t* angletan, int positionSq, int height, int distanceSq, int targetHeight,
-                               bool direct)
+static void angle_check(int64_t* angletan, int positionSq, int height, int distanceSq, int targetHeight, bool direct)
 {
 	int64_t current;
-	if (direct)
-	{
+	if (direct) {
 		current = (65536 * height) / iSqrt(positionSq);
 	}
-	else
-	{
-		int dist = iSqrt(distanceSq);
-		int pos = iSqrt(positionSq);
+	else {
+		auto dist = iSqrt(distanceSq);
+		auto pos = iSqrt(positionSq);
 		current = (pos * targetHeight) / dist;
-		if (current < height && pos > TILE_UNITS / 2 && pos < dist - TILE_UNITS / 2)
-		{
+		if (current < height && pos > TILE_UNITS / 2 && pos < dist - TILE_UNITS / 2) {
 			// solve the following trajectory parabolic equation
 			// ( targetHeight ) = a * distance^2 + factor * distance
 			// ( height ) = a * position^2 + factor * position
@@ -977,8 +914,7 @@ static inline void angle_check(int64_t* angletan, int positionSq, int height, in
 					targetHeight))
 				/ ((int64_t)distanceSq * (int64_t)pos - (int64_t)dist * (int64_t)positionSq);
 		}
-		else
-		{
+		else {
 			current = 0;
 		}
 	}
@@ -989,33 +925,26 @@ static inline void angle_check(int64_t* angletan, int positionSq, int height, in
  * Check fire line from psViewer to psTarget
  * psTarget can be any type of SimpleObject (e.g. a tree).
  */
-static int checkFireLine(const BaseObject * psViewer, const BaseObject * psTarget, int weapon_slot, bool wallsBlock,
-                         bool direct)
+static int checkFireLine(BaseObject const* psViewer, BaseObject const* psTarget, int weapon_slot, bool wallsBlock, bool direct)
 {
+  ASSERT_OR_RETURN(-1, psViewer != nullptr, "Invalid shooter pointer!");
+  ASSERT_OR_RETURN(-1, psTarget != nullptr, "Invalid target pointer!");
+
 	Vector3i pos(0, 0, 0), dest(0, 0, 0);
 	Vector2i start(0, 0), diff(0, 0), current(0, 0), halfway(0, 0), next(0, 0), part(0, 0);
 	Vector3i muzzle(0, 0, 0);
 	int distSq, partSq, oldPartSq;
 	int64_t angletan;
 
-	ASSERT(psViewer != nullptr, "Invalid shooter pointer!");
-	ASSERT(psTarget != nullptr, "Invalid target pointer!");
-	if (!psViewer || !psTarget)
-	{
-		return -1;
-	}
 
 	/* CorvusCorax: get muzzle offset (code from projectile.c)*/
-	if (psViewer->type == OBJ_DROID && weapon_slot >= 0)
-	{
+	if (psViewer->type == OBJ_DROID && weapon_slot >= 0) {
 		calcDroidMuzzleBaseLocation((const Droid*)psViewer, &muzzle, weapon_slot);
 	}
-	else if (psViewer->type == OBJ_STRUCTURE && weapon_slot >= 0)
-	{
+	else if (psViewer->type == OBJ_STRUCTURE && weapon_slot >= 0) {
 		calcStructureMuzzleBaseLocation((const Structure*)psViewer, &muzzle, weapon_slot);
 	}
-	else // incase anything wants a projectile
-	{
+	else { // incase anything wants a projectile
 		muzzle = psViewer->getPosition();
 	}
 
@@ -1128,21 +1057,20 @@ static unsigned objSensorRange(const BaseObject * psObj)
 {
   if (auto psDroid = dynamic_cast<const Droid*>(psObj)) {
     const auto ecmrange = asECMStats[psDroid->
-            asBits[COMP_ECM]].upgrade[psObj->getPlayer()].range;
+            asBits[COMP_ECM]].upgrade[psObj->playerManager->getPlayer()].range;
     if (ecmrange > 0) {
       return ecmrange;
     }
     return asSensorStats[psDroid->
-            asBits[COMP_SENSOR]].upgrade[psObj->getPlayer()].range;
+            asBits[COMP_SENSOR]].upgrade[psObj->playerManager->getPlayer()].range;
   }
   else if (auto psStruct = dynamic_cast<const Structure*>(psObj)) {
-    const auto ecmrange = psStruct->
-            getStats().ecm_stats->upgraded[psObj->getPlayer()].range;
+    const auto ecmrange = psStruct->getStats()->ecm_stats->upgraded[psObj->playerManager->getPlayer()].range;
     if (ecmrange) {
       return ecmrange;
     }
-    return psStruct->getStats().sensor_stats->
-            upgraded[psObj->getPlayer()].range;
+    return psStruct->getStats()->sensor_stats->
+            upgraded[psObj->playerManager->getPlayer()].range;
   }
   return 0;
 }
@@ -1151,10 +1079,11 @@ static unsigned objJammerPower(const BaseObject * psObj)
 {
   if (auto psDroid = dynamic_cast<const Droid*>(psObj))  {
     return asECMStats[psDroid->
-            asBits[COMP_ECM]].upgraded[psObj->getPlayer()].range;
-  } else if (auto psStruct = dynamic_cast<const Structure*>(psObj))  {
-    return psStruct->getStats().ecm_stats->
-            upgraded[psObj->getPlayer()].range;
+            asBits[COMP_ECM]].upgraded[psObj->playerManager->getPlayer()].range;
+  }
+  else if (auto psStruct = dynamic_cast<const Structure*>(psObj))  {
+    return psStruct->getStats()->ecm_stats->
+            upgraded[psObj->playerManager->getPlayer()].range;
   }
   return 0;
 }

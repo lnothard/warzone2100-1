@@ -76,9 +76,9 @@ struct VisibleObjectHelp_t
 bool visInitialise();
 
 /* Check which tiles can be seen by an object */
-void visTilesUpdate(BaseObject * psObj);
+void visTilesUpdate(BaseObject* psObj);
 
-void revealAll(uint8_t player);
+void revealAll(unsigned player);
 
 /**
  * Check whether psViewer can see psTarget.
