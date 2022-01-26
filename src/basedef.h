@@ -117,6 +117,7 @@ public:
 
   void setPlayer(unsigned plr);
   [[nodiscard]] unsigned getPlayer() const;
+  [[nodiscard]] bool isSelectedPlayer() const;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;

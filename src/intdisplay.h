@@ -28,6 +28,7 @@
 #include "droid.h"
 #include "feature.h"
 #include "research.h"
+#include "structure.h"
 
 /* Power levels are divided by this for power bar display. The extra factor has
 been included so that the levels appear the same for the power bar as for the
@@ -55,7 +56,7 @@ struct ImdObject
 	{
 	}
 
-	static ImdObject Droid(PlayerOwnedObject * p)
+	static ImdObject Droid(BaseObject * p)
 	{
 		return {p, IMDTYPE_DROID};
 	}
@@ -70,7 +71,7 @@ struct ImdObject
 		return {p, IMDTYPE_COMPONENT};
 	}
 
-	static ImdObject Structure(PlayerOwnedObject * p)
+	static ImdObject Structure(BaseObject * p)
 	{
 		return {p, IMDTYPE_STRUCTURE};
 	}
@@ -163,20 +164,17 @@ public:
 
 	void display(int xOffset, int yOffset) override;
 
-	void setObject(PlayerOwnedObject * object)
-	{
+	virtual void setObject(BaseObject* object) {
 		psObj = object;
 	}
 
-	bool clearData()
-	{
+	bool clearData() {
 		bool ret = psObj != nullptr;
 		psObj = nullptr;
 		return ret;
 	}
-
 protected:
-  PlayerOwnedObject * psObj;
+  BaseObject* psObj;
 };
 
 class IntStatusButton : public IntObjectButton
@@ -184,20 +182,19 @@ class IntStatusButton : public IntObjectButton
 public:
 	IntStatusButton();
 
-	void setObject(PlayerOwnedObject * object)
+	void setObject(BaseObject* object) override
 	{
 		psObj = object;
 		theStats = nullptr;
 	}
 
-	void setObjectAndStats(PlayerOwnedObject * object, BaseStats* stats)
+	void setObjectAndStats(BaseObject* object, BaseStats* stats)
 	{
 		psObj = object;
 		theStats = stats;
 	}
 
 	void display(int xOffset, int yOffset) override;
-
 protected:
 	BaseStats* theStats;
 };
@@ -219,7 +216,6 @@ public:
 		setStats(stats);
 		setTip(getStatsName(stats));
 	}
-
 protected:
 	BaseStats* Stat;
 };

@@ -44,35 +44,32 @@ enum class SENSOR_CLASS
 
 struct Spotter
 {
-    ~Spotter();
-    Spotter(int x, int y, unsigned plr, int radius,
-            SENSOR_CLASS type, std::size_t expiry = 0);
+  ~Spotter();
+  Spotter(int x, int y, unsigned plr, int radius,
+          SENSOR_CLASS type, unsigned expiry = 0);
 
-    Position pos;
-    unsigned player;
-    int sensorRadius;
-    SENSOR_CLASS sensorType;
-
-    /// When to self-destruct, zero if never
-    std::size_t expiryTime;
-
-    int numWatchedTiles = 0;
-    std::vector<TILEPOS> watchedTiles;
-    unsigned id;
+  unsigned player;
+  unsigned id;
+  unsigned expiryTime;
+  int numWatchedTiles = 0;
+  int sensorRadius;
+  Position pos;
+  SENSOR_CLASS sensorType;
+  std::vector<TILEPOS> watchedTiles;
 };
 
 static std::vector<std::unique_ptr<Spotter>> apsInvisibleViewers;
 
 struct VisibleObjectHelp_t
 {
-    bool rayStart; // Whether this is the first point on the ray
-    bool wallsBlock; // Whether walls block line of sight
-    int startHeight; // The height at the view point
-    Vector2i final; // The final tile of the ray cast
-    int lastHeight, lastDist; // The last height and distance
-    int currGrad; // The current obscuring gradient
-    int numWalls; // Whether the LOS has hit a wall
-    Vector2i wall; // The position of a wall if it is on the LOS
+  bool rayStart; // Whether this is the first point on the ray
+  bool wallsBlock; // Whether walls block line of sight
+  int startHeight; // The height at the view point
+  Vector2i final; // The final tile of the ray cast
+  int lastHeight, lastDist; // The last height and distance
+  int currGrad; // The current obscuring gradient
+  int numWalls; // Whether the LOS has hit a wall
+  Vector2i wall; // The position of a wall if it is on the LOS
 };
 
 // initialise the visibility stuff

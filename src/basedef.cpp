@@ -417,6 +417,11 @@ unsigned PlayerManager::getPlayer() const
   return pimpl ? pimpl->player : 0;
 }
 
+bool PlayerManager::isSelectedPlayer() const
+{
+  return getPlayer() == selectedPlayer;
+}
+
 int objectPositionSquareDiff(const Position& first, const Position& second)
 {
   Vector2i diff = (first - second).xy();

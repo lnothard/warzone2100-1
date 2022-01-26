@@ -61,9 +61,14 @@ struct Feature::Impl
   Impl(Impl&& rhs) noexcept = default;
   Impl& operator=(Impl&& rhs) noexcept = default;
 
-
   std::shared_ptr<FeatureStats> psStats;
 };
+
+Feature::Feature(unsigned id, FeatureStats const* psStats)
+  : BaseObject(id, std::make_unique<DamageManager>())
+  , psStats{std::make_shared<FeatureStats>(*psStats)}
+{
+}
 
 Feature::Feature(Feature const& rhs)
   : BaseObject(rhs),
@@ -75,6 +80,7 @@ Feature& Feature::operator=(Feature const& rhs)
 {
   if (this == &rhs) return *this;
   *pimpl = *rhs.pimpl;
+  *damageManager = *rhs.damageManager;
   return *this;
 }
 
@@ -96,6 +102,11 @@ int Feature::objRadius() const
 Vector2i Feature::size() const
 {
   return pimpl ? pimpl->psStats->size() : Vector2i();
+}
+
+FeatureStats const* Feature::getStats() const
+{
+  return pimpl ? pimpl->psStats.get() : nullptr;
 }
 
 /* Load the feature stats */
@@ -184,7 +195,7 @@ int featureDamage(Feature* psFeature, unsigned damage, WEAPON_CLASS weaponClass,
 	ASSERT_OR_RETURN(0, psFeature != nullptr, "Invalid feature pointer");
 
 	debug(LOG_ATTACK, "feature (id %d): body %d armour %d damage: %d",
-	      psFeature->getId(), psFeature->getHp(), psFeature->getStats()->armourValue, damage);
+	      psFeature->getId(), psFeature->damageManager->getHp(), psFeature->getStats()->armourValue, damage);
 
 	auto relativeDamage = objDamage(psFeature, damage,
                              psFeature->getStats()->body,
@@ -223,16 +234,12 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 		x = (x & ~TILE_MASK) + stats->baseWidth % 2 * TILE_UNITS / 2;
 		y = (y & ~TILE_MASK) + stats->baseBreadth % 2 * TILE_UNITS / 2;
 	}
-  else {
-		if ((x & TILE_MASK) != stats->baseWidth % 2 * TILE_UNITS / 2 ||
-        (y & TILE_MASK) != stats->baseBreadth % 2 * TILE_UNITS / 2) {
-			debug(LOG_WARNING, "Feature not aligned. position (%d,%d), size (%d,%d)", x, y, stats->baseWidth,
-            stats->baseBreadth);
-		}
+  else if ((x & TILE_MASK) != stats->baseWidth % 2 * TILE_UNITS / 2 ||
+           (y & TILE_MASK) != stats->baseBreadth % 2 * TILE_UNITS / 2) {
+			debug(LOG_WARNING, "Feature not aligned. position (%d,%d), size (%d,%d)", x, y, stats->baseWidth, stats->baseBreadth);
 	}
 
 	psFeature->setPosition({x, y, psFeature->getPosition().z});
-
 	auto b = getStructureBounds(psFeature.get());
 
 	// get the terrain average height
@@ -249,7 +256,6 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 	}
 	//return the average of max/min height
 	auto height = (foundationMin + foundationMax) / 2;
-
 	if (stats->subType == FEATURE_TYPE::TREE) {
 		psFeature->setRotation({gameRand(DEG_360),
                                         psFeature->getRotation().pitch,
@@ -283,10 +289,8 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 			ASSERT_OR_RETURN(nullptr, b.map.y + breadth < mapHeight, "y coord bigger than map height - %s, id = %d",
 			                 getStatsName(psFeature->getStats()), psFeature->getId());
 
-			if (width != stats->baseWidth && breadth != stats->baseBreadth)
-			{
-				if (TileHasFeature(psTile))
-				{
+			if (width != stats->baseWidth && breadth != stats->baseBreadth) {
+				if (TileHasFeature(psTile)) {
 					auto psBlock = dynamic_cast<Feature*>(psTile->psObject);
 
 					debug(LOG_ERROR,
@@ -302,19 +306,16 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 				psTile->psObject = psFeature.get();
 
 				// if it's a tall feature then flag it in the map.
-				if (psFeature->getDisplayData()->imd_shape->max.y > TALLOBJECT_YMAX)
-				{
+				if (psFeature->getDisplayData()->imd_shape->max.y > TALLOBJECT_YMAX) {
 					auxSetBlocking(b.map.x + width, b.map.y + breadth, AIR_BLOCKED);
 				}
 
-				if (stats->subType != FEATURE_TYPE::GEN_ARTE && stats->subType != FEATURE_TYPE::OIL_DRUM)
-				{
+				if (stats->subType != FEATURE_TYPE::GEN_ARTE && stats->subType != FEATURE_TYPE::OIL_DRUM) {
 					auxSetBlocking(b.map.x + width, b.map.y + breadth, FEATURE_BLOCKED);
 				}
 			}
 
-			if ((!stats->tileDraw) && !fromSave)
-			{
+			if ((!stats->tileDraw) && !fromSave) {
 				psTile->height = height;
 			}
 		}
@@ -327,14 +328,6 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 	return psFeature;
 }
 
-
-Feature::Feature(unsigned id, FeatureStats const* psStats)
-// Set the default player out of range to avoid targeting confusions
-	: PlayerOwnedObject(id, PLAYER_FEATURE)
-	  , psStats(std::make_shared<FeatureStats>(*psStats))
-{
-}
-
 /* Release the resources associated with a feature */
 Feature::~Feature()
 {
@@ -342,55 +335,33 @@ Feature::~Feature()
 	audio_RemoveObj(this);
 }
 
-//void _syncDebugFeature(const char* function, Feature const* psFeature, char ch)
-//{
-//	int list[] =
-//	{
-//		ch,
-//		(int)psFeature->getId(),
-//    (int)psFeature->getPlayer(),
-//		psFeature->getPosition().x,
-//    psFeature->getPosition().y,
-//    psFeature->getPosition().z,
-//		(int)psFeature->getStats()->subType,
-//		psFeature->getStats()->damageable,
-//		(int)psFeature->body,
-//	};
-//	_syncDebugIntList(function, "%c feature%d = p%d;pos(%d,%d,%d),subtype%d,damageable%d,body%d", list,
-//	                  ARRAY_SIZE(list));
-//}
-
 /* Update routine for features */
 void Feature::update()
 {
-//	syncDebugFeature(this, '<');
-
-	/* Update the periodical damage data */
-	if (periodicalDamageStartTime != 0 &&
-      periodicalDamageStartTime != gameTime - deltaGameTime)
-	// -deltaGameTime, since projectiles are updated after features.
-	{
-		// The periodicalDamageStart has been set, but is not from the previous tick, so we must be out of the periodical damage.
-		periodicalDamage = 0; // Reset periodical damage done this tick.
-		// Finished periodical damaging
-		periodicalDamageStartTime = 0;
-	}
-
-//	syncDebugFeature(this, '>');
+  /* Update the periodical damage data */
+  if (damageManager->getPeriodicalDamageStartTime() == 0 ||
+      damageManager->getPeriodicalDamageStartTime() == gameTime - deltaGameTime) {
+    return;
+  }
+  // -deltaGameTime, since projectiles are updated after features.
+  // The periodicalDamageStart has been set, but is not from the previous
+  // tick, so we must be out of the periodical damage.
+  damageManager->setPeriodicalDamage(0); // Reset periodical damage done this tick.
+  // Finished periodical damaging
+  damageManager->setPeriodicalDamageStartTime(0);
 }
-
 
 // free up a feature with no visual effects
 bool removeFeature(Feature* psDel)
 {
 	ASSERT_OR_RETURN(false, psDel != nullptr, "Invalid feature pointer");
-	ASSERT_OR_RETURN(false, !psDel->isDead(), "Feature already dead");
+	ASSERT_OR_RETURN(false, !psDel->damageManager->isDead(), "Feature already dead");
 
 	//remove from the map data
-	StructureBounds b = getStructureBounds(psDel);
-	for (int breadth = 0; breadth < b.size.y; ++breadth)
+	auto b = getStructureBounds(psDel);
+	for (auto breadth = 0; breadth < b.size.y; ++breadth)
 	{
-		for (int width = 0; width < b.size.x; ++width)
+		for (auto width = 0; width < b.size.x; ++width)
 		{
 			if (tileOnMap(b.map.x + width, b.map.y + breadth)) {
 				auto psTile = mapTile(b.map.x + width, b.map.y + breadth);
@@ -403,13 +374,15 @@ bool removeFeature(Feature* psDel)
 		}
 	}
 
-  Vector3i pos;
 	if (psDel->getStats()->subType == FEATURE_TYPE::GEN_ARTE ||
       psDel->getStats()->subType == FEATURE_TYPE::OIL_DRUM) {
-		pos.x = psDel->getPosition().x;
-		pos.z = psDel->getPosition().y;
-		pos.y = map_Height(pos.x, pos.z) + 30;
-		addEffect(&pos, EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_DISCOVERY, false, nullptr, 0, gameTime - deltaGameTime + 1);
+    Position pos{psDel->getPosition().x,
+                 map_Height(psDel->getPosition().x, psDel->getPosition().y),
+                 psDel->getPosition().y};
+		addEffect(&pos, EFFECT_GROUP::EXPLOSION,
+              EFFECT_TYPE::EXPLOSION_TYPE_DISCOVERY,
+              false, nullptr, 0, gameTime - deltaGameTime + 1);
+
 		if (psDel->getStats()->subType == FEATURE_TYPE::GEN_ARTE) {
 			scoreUpdateVar(WD_ARTEFACTS_FOUND);
 			intRefreshScreen();
@@ -509,51 +482,44 @@ bool destroyFeature(Feature* psDel, unsigned impactTime)
 		}
 	}
 
-	if (psDel->getStats()->subType == FEATURE_TYPE::SKYSCRAPER)
-	{
+	if (psDel->getStats()->subType == FEATURE_TYPE::SKYSCRAPER) {
 		// ----- Flip all the tiles under the skyscraper to a rubble tile
 		// smoke effect should disguise this happening
 		StructureBounds b = getStructureBounds(psDel);
-		for (int breadth = 0; breadth < b.size.y; ++breadth)
+		for (auto breadth = 0; breadth < b.size.y; ++breadth)
 		{
-			for (int width = 0; width < b.size.x; ++width)
+			for (auto width = 0; width < b.size.x; ++width)
 			{
-				Tile* psTile = mapTile(b.map.x + width, b.map.y + breadth);
+				auto psTile = mapTile(b.map.x + width, b.map.y + breadth);
 				// stops water texture changing for underwater features
-				if (terrainType(psTile) != TER_WATER)
-				{
-					if (terrainType(psTile) != TER_CLIFFFACE)
-					{
-						/* Clear feature bits */
-						psTile->texture = TileNumber_texture(psTile->texture) | RUBBLE_TILE;
-						auxClearBlocking(b.map.x + width, b.map.y + breadth, AUXBITS_ALL);
-					}
-					else
-					{
-						/* This remains a blocking tile */
-						psTile->psObject = nullptr;
-						auxClearBlocking(b.map.x + width, b.map.y + breadth, AIR_BLOCKED);
-						// Shouldn't remain blocking for air units, however.
-						psTile->texture = TileNumber_texture(psTile->texture) | BLOCKING_RUBBLE_TILE;
-					}
-				}
-			}
+        if (terrainType(psTile) == TER_WATER) continue;
+        if (terrainType(psTile) != TER_CLIFFFACE) {
+          /* Clear feature bits */
+          psTile->texture = TileNumber_texture(psTile->texture) | RUBBLE_TILE;
+          auxClearBlocking(b.map.x + width, b.map.y + breadth, AUXBITS_ALL);
+        }
+        else {
+          /* This remains a blocking tile */
+          psTile->psObject = nullptr;
+          auxClearBlocking(b.map.x + width, b.map.y + breadth, AIR_BLOCKED);
+          // Shouldn't remain blocking for air units, however.
+          psTile->texture = TileNumber_texture(psTile->texture) | BLOCKING_RUBBLE_TILE;
+        }
+      }
 		}
 	}
 
 	removeFeature(psDel);
-	psDel->died = impactTime;
+	psDel->damageManager->setTimeOfDeath(impactTime);
 	return true;
 }
 
 
 int getFeatureStatFromName(const WzString& name)
 {
-	FeatureStats* psStat;
-
-	for (unsigned inc = 0; inc < numFeatureStats; inc++)
+	for (auto inc = 0; inc < numFeatureStats; inc++)
 	{
-		psStat = &asFeatureStats[inc];
+		auto psStat = &asFeatureStats[inc];
 		if (psStat->id.compare(name) == 0) {
 			return inc;
 		}
@@ -571,9 +537,4 @@ StructureBounds getStructureBounds(FeatureStats const* stats, Vector2i pos)
 	const Vector2i size = stats->size();
 	const Vector2i map = map_coord(pos) - size / 2;
 	return {map, size};
-}
-
-const FeatureStats* Feature::getStats() const
-{
-  return psStats.get();
 }

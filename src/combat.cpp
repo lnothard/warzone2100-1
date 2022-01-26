@@ -410,10 +410,10 @@ int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp,
 	// If the previous hit was by an EMP cannon and this one is not:
 	// don't reset the weapon class and hit time
 	// (Giel: I guess we need this to determine when the EMP-"shock" is over)
-	if (psObj->lastHitWeapon != WEAPON_SUBCLASS::EMP ||
+	if (psObj->damageManager->getLastHitWeapon() != WEAPON_SUBCLASS::EMP ||
       weaponSubClass == WEAPON_SUBCLASS::EMP) {
 		psObj->timeLastHit = gameTime;
-		psObj->lastHitWeapon = weaponSubClass;
+		psObj->damageManager->setLastHitWeapon(weaponSubClass);
 	}
 
 	// EMP cannons do no damage, if we are one return now
@@ -422,8 +422,7 @@ int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp,
 	}
 
 	// apply game difficulty setting
-	damage = modifyForDifficultyLevel(
-          damage, psObj->getPlayer() != selectedPlayer);
+	damage = modifyForDifficultyLevel(damage, !psObj->playerManager->isSelectedPlayer());
 
 	if (dynamic_cast<Structure*>(psObj) || dynamic_cast<Droid*>(psObj)) {
 		// Force sending messages, even if messages were turned off, since a non-synchronised script will execute here. (Aaargh!)
@@ -449,16 +448,16 @@ int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp,
 
 	debug(LOG_ATTACK, "objDamage(%d): body: %d, armour: %d,"
                     " basic damage: %d, actual damage: %d",
-                    psObj->getId(), psObj->getHp(), armour,
+                    psObj->getId(), psObj->damageManager->getHp(), armour,
                     damage, actualDamage);
 
 	if (isDamagePerSecond) {
-		auto deltaDamageRate = actualDamage - psObj->periodicalDamage;
+		auto deltaDamageRate = actualDamage - psObj->damageManager->getPeriodicalDamage();
 		if (deltaDamageRate <= 0) {
 			return 0; // Did this much damage already, this tick, so don't do more.
 		}
 		actualDamage = gameTimeAdjustedAverage(deltaDamageRate);
-		psObj->periodicalDamage += deltaDamageRate;
+		psObj->damageManager->setPeriodicalDamage(psObj->damageManager->getPeriodicalDamage() + deltaDamageRate);
 	}
 
 	objTrace(psObj->getId(), "objDamage: Penetrated %d", actualDamage);
@@ -474,12 +473,12 @@ int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp,
 
 	// If the shell did sufficient damage to destroy the
   // object, deal with it and return
-	if (actualDamage >= psObj->getHp()) {
-		return -(int64_t)65536 * psObj->getHp() / originalhp;
+	if (actualDamage >= psObj->damageManager->getHp()) {
+		return -(int64_t)65536 * psObj->damageManager->getHp() / originalhp;
 	}
 
 	// Subtract the dealt damage from the droid's remaining body points
-	psObj->hitPoints -= actualDamage;
+	psObj->damageManager->setHp(psObj->damageManager->getHp() - actualDamage);
 
 	return (int64_t)65536 * actualDamage / originalhp;
 }
@@ -493,14 +492,13 @@ int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp,
  */
 unsigned objGuessFutureDamage(WeaponStats const* psStats, unsigned player, BaseObject const* psTarget)
 {
-	unsigned damage;
-	int actualDamage, armour, level = 1;
+	int level = 1;
 
 	if (psTarget == nullptr) {
 		return 0; // Hard to destroy the ground. The armour on the mud is very strong and blocks all damage.
 	}
 
-	damage = calcDamage(weaponDamage(psStats, player),
+	auto damage = calcDamage(weaponDamage(psStats, player),
                       psStats->weaponEffect, psTarget);
 
 	// EMP cannons do no damage, if we are one return now
@@ -509,8 +507,8 @@ unsigned objGuessFutureDamage(WeaponStats const* psStats, unsigned player, BaseO
 	}
 
 	// apply game difficulty setting
-	damage = modifyForDifficultyLevel(damage, psTarget->getPlayer() != selectedPlayer);
-	armour = objArmour(psTarget, psStats->weaponClass);
+	damage = modifyForDifficultyLevel(damage, psTarget->playerManager->getPlayer() != selectedPlayer);
+	auto armour = objArmour(psTarget, psStats->weaponClass);
 
 	if (auto psDroid = dynamic_cast<Droid const*>(psTarget)) {
 		// Retrieve highest, applicable, experience level
@@ -519,7 +517,7 @@ unsigned objGuessFutureDamage(WeaponStats const* psStats, unsigned player, BaseO
 	//debug(LOG_ATTACK, "objGuessFutureDamage(%d): body %d armour %d damage: %d", psObj->id, psObj->body, armour, damage);
 
 	// Reduce damage taken by EXP_REDUCE_DAMAGE % for each experience level
-	actualDamage = (damage * (100 - EXP_REDUCE_DAMAGE * level)) / 100;
+	auto actualDamage = (damage * (100 - EXP_REDUCE_DAMAGE * level)) / 100;
 
 	// You always do at least a third of the experience modified damage
 	actualDamage = MAX(actualDamage - armour, actualDamage * psStats->upgraded[player].minimumDamage / 100);

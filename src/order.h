@@ -34,6 +34,7 @@ struct Group;
 struct Structure;
 struct StructureStats;
 
+
 static bool bOrderEffectDisplayed = false;
 
 enum class ORDER_TYPE
@@ -140,23 +141,22 @@ enum SECONDARY_STATE
 };
 
 /* Masks for the secondary order state */
-
-#define DSS_ARANGE_MASK             0x000003
-#define DSS_REPLEV_MASK             0x00000c
-#define DSS_ALEV_MASK               0x000030
-#define DSS_HALT_MASK               0x0000c0
-#define DSS_RECYCLE_MASK            0x000100
-#define DSS_ASSPROD_MASK            0x1f07fe00
-#define DSS_ASSPROD_FACT_MASK       0x003e00
-#define DSS_ASSPROD_CYB_MASK        0x07c000
-#define DSS_ASSPROD_VTOL_MASK       0x1f000000
-#define DSS_ASSPROD_SHIFT           9
-#define DSS_ASSPROD_CYBORG_SHIFT    (DSS_ASSPROD_SHIFT + 5)
-#define DSS_ASSPROD_VTOL_SHIFT      24
-#define DSS_RTL_MASK                0x380000
-#define DSS_PATROL_MASK             0x400000
-#define DSS_FIREDES_MASK            0x800000
-#define DSS_CIRCLE_MASK             0x400100
+static constexpr auto DSS_ARANGE_MASK             = 0x000003;
+static constexpr auto DSS_REPLEV_MASK             = 0x00000c;
+static constexpr auto DSS_ALEV_MASK               = 0x000030;
+static constexpr auto DSS_HALT_MASK               = 0x0000c0;
+static constexpr auto DSS_RECYCLE_MASK            = 0x000100;
+static constexpr auto DSS_ASSPROD_MASK            = 0x1f07fe00;
+static constexpr auto DSS_ASSPROD_FACT_MASK       = 0x003e00;
+static constexpr auto DSS_ASSPROD_CYB_MASK        = 0x07c000;
+static constexpr auto DSS_ASSPROD_VTOL_MASK       = 0x1f000000;
+static constexpr auto DSS_ASSPROD_SHIFT           = 9;
+static constexpr auto DSS_ASSPROD_CYBORG_SHIFT    = (DSS_ASSPROD_SHIFT + 5);
+static constexpr auto DSS_ASSPROD_VTOL_SHIFT      = 24;
+static constexpr auto DSS_RTL_MASK                = 0x380000;
+static constexpr auto DSS_PATROL_MASK             = 0x400000;
+static constexpr auto DSS_FIREDES_MASK            = 0x800000;
+static constexpr auto DSS_CIRCLE_MASK             = 0x400100;
 
 enum class RTR_DATA_TYPE
 {
@@ -206,7 +206,6 @@ struct Order
 
 struct RtrBestResult
 {
-
     RtrBestResult();
     RtrBestResult(RTR_DATA_TYPE type, BaseObject* obj);
     explicit RtrBestResult(Order& order);
@@ -238,10 +237,10 @@ bool validOrderForLoc(ORDER_TYPE order);
 bool validOrderForObj(ORDER_TYPE order);
 
 /** \brief Sends an order with a location to a droid. */
-void orderDroidLoc(Droid* psDroid, ORDER_TYPE order, UDWORD x, UDWORD y, QUEUE_MODE mode);
+void orderDroidLoc(Droid* psDroid, ORDER_TYPE order, unsigned x, unsigned y, QUEUE_MODE mode);
 
 /** \brief Gets the state of a droid order with a location. */
-bool orderStateLoc(Droid* psDroid, ORDER_TYPE order, UDWORD* pX, UDWORD* pY);
+bool orderStateLoc(Droid* psDroid, ORDER_TYPE order, unsigned* pX, unsigned* pY);
 
 /** \brief Sends an order with an object target to a droid. */
 void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject* psObj, QUEUE_MODE mode);
@@ -250,26 +249,26 @@ void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject* psObj, QUEUE_MO
 BaseObject* orderStateObj(Droid* psDroid, ORDER_TYPE order);
 
 /** \brief Sends an order with a location and a stat to a droid. */
-void orderDroidStatsLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, UDWORD x, UDWORD y,
+void orderDroidStatsLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, unsigned x, unsigned y,
                            uint16_t direction, QUEUE_MODE mode);
 
 /** \brief Gets the state of a droid order with a location and a stat. */
 bool orderStateStatsLoc(Droid* psDroid, ORDER_TYPE order, StructureStats** ppsStats);
 
 /** \brief Sends an order with a location and a stat to a droid. */
-void orderDroidStatsTwoLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, UDWORD x1, UDWORD y1,
-                              UDWORD x2, UDWORD y2, uint16_t direction, QUEUE_MODE mode);
+void orderDroidStatsTwoLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, unsigned x1, unsigned y1,
+                              unsigned x2, unsigned y2, uint16_t direction, QUEUE_MODE mode);
 
 /** \brief Sends an order with two locations and a stat to a droid. */
-void orderDroidStatsTwoLocDirAdd(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, UDWORD x1, UDWORD y1,
-                                 UDWORD x2, UDWORD y2, uint16_t direction);
+void orderDroidStatsTwoLocDirAdd(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, unsigned x1, unsigned y1,
+                                 unsigned x2, unsigned y2, uint16_t direction);
 
 /** \brief Sends an order with a location target to all selected droids. add = true queues the order. */
 void orderSelectedLoc(uint32_t player, uint32_t x, uint32_t y, bool add);
 
 /** \brief Sends an order with an object target to all selected droids. add = true queues the order. */
-void orderSelectedObj(UDWORD player, BaseObject* psObj);
-void orderSelectedObjAdd(UDWORD player, BaseObject* psObj, bool add);
+void orderSelectedObj(unsigned player, BaseObject* psObj);
+void orderSelectedObjAdd(unsigned player, BaseObject* psObj, bool add);
 
 /** \brief Adds an order to a droids order list. */
 void orderDroidAdd(Droid* psDroid, Order* psOrder);
@@ -281,16 +280,16 @@ void orderDroidAddPending(Droid* psDroid, Order* psOrder);
 bool orderDroidList(Droid* psDroid);
 
 /** \brief Sends an order with a location and a stat to all selected droids. add = true queues the order. */
-void orderSelectedStatsLocDir(UDWORD player, ORDER_TYPE order, StructureStats* psStats, UDWORD x, UDWORD y,
+void orderSelectedStatsLocDir(unsigned player, ORDER_TYPE order, StructureStats* psStats, unsigned x, unsigned y,
                               uint16_t direction, bool add);
 
 /** \brief Sends an order with a location and a stat to all selected droids. add = true queues the order. */
-void orderDroidStatsLocDirAdd(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, UDWORD x, UDWORD y,
+void orderDroidStatsLocDirAdd(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, unsigned x, unsigned y,
                               uint16_t direction, bool add = true);
 
 /** \brief Sends an order with two a locations and a stat to all selected droids. add = true queues the order. */
-void orderSelectedStatsTwoLocDir(UDWORD player, ORDER_TYPE order, StructureStats* psStats, UDWORD x1, UDWORD y1,
-                                 UDWORD x2, UDWORD y2, uint16_t direction, bool add);
+void orderSelectedStatsTwoLocDir(unsigned player, ORDER_TYPE order, StructureStats* psStats, unsigned x1, unsigned y1,
+                                 unsigned x2, unsigned y2, uint16_t direction, bool add);
 
 /** \brief Sees if a droid supports a given secondary order. */
 bool secondarySupported(Droid* psDroid, SECONDARY_ORDER sec);
@@ -305,7 +304,7 @@ bool secondarySetState(Droid* psDroid, SECONDARY_ORDER sec, SECONDARY_STATE Stat
 void secondaryCheckDamageLevel(Droid* psDroid);
 
 /** \brief Makes all the members of a numeric group to have the same secondary states. */
-void secondarySetAverageGroupState(UDWORD player, UDWORD group);
+void secondarySetAverageGroupState(unsigned player, unsigned group);
 
 /** \brief Gets the name of an order. */
 std::string getDroidOrderName(ORDER_TYPE order);
@@ -321,7 +320,7 @@ bool setFactoryState(Structure* psStruct, SECONDARY_ORDER sec, SECONDARY_STATE S
 bool getFactoryState(Structure* psStruct, SECONDARY_ORDER sec, SECONDARY_STATE* pState);
 
 /** \brief lasSat structure can select a target. */
-void orderStructureObj(UDWORD player, BaseObject* psObj);
+void orderStructureObj(unsigned player, BaseObject* psObj);
 
 /** \brief Pops orders (including pending orders) from the order list. */
 void orderDroidListEraseRange(Droid* psDroid, unsigned indexBegin, unsigned indexEnd);
@@ -330,7 +329,7 @@ void orderDroidListEraseRange(Droid* psDroid, unsigned indexBegin, unsigned inde
 void orderClearTargetFromDroidList(Droid* psDroid, BaseObject* psTarget);
 
 /** \brief Chooses an order from a location. */
-ORDER_TYPE chooseOrderLoc(Droid* psDroid, UDWORD x, UDWORD y, bool altOrder);
+ORDER_TYPE chooseOrderLoc(Droid* psDroid, unsigned x, unsigned y, bool altOrder);
 
 /** \brief Chooses an order from an object. */
 Order chooseOrderObj(Droid* psDroid, BaseObject* psObj, bool altOrder);

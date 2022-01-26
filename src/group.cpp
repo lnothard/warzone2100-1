@@ -44,7 +44,7 @@ struct Group::Impl
 
   /**
    * Non-owning pointer to this group's commander.
-   * Set to `nullptr` if this is not a command group
+   * Set to \c nullptr if this is not a command group
    */
   Droid* psCommander = nullptr;
 };
@@ -135,9 +135,9 @@ void Group::add(Droid* psDroid)
   if (!pimpl || !psDroid) return;
 
   if (std::any_of(pimpl->members.begin(), pimpl->members.end(),
-                  [psDroid](const auto member) {
-                    return psDroid->getPlayer() != member->getPlayer();
-                  })) {
+                  [&psDroid](const auto member) {
+    return psDroid->playerManager->getPlayer() != member->playerManager->getPlayer();
+  })) {
     ASSERT(false, "grpJoin: Cannot have more than one players droids in a group");
     return;
   }

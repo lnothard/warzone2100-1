@@ -48,13 +48,18 @@ void assignSensorTarget(BaseObject *);
 void setSensorAssigned();
 int visibleObject(BaseObject *, BaseObject *, bool);
 
+
+/**
+ * The minimum delay to be used on orderPlayFireSupportAudio()
+ * for fire support sound.
+ */
+static constexpr auto AUDIO_DELAY_FIRESUPPORT	=	3 * GAME_TICKS_PER_SEC;
+
 static void orderClearDroidList(Droid* psDroid);
 
 /** Whether an order effect has been displayed
  * @todo better documentation required.
  */
-
-//////////////////////////////////////////////////////////////////
 
 #define ASSERT_PLAYER_OR_RETURN(retVal, player) \
 	ASSERT_OR_RETURN(retVal, player < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
@@ -130,10 +135,9 @@ static RtrBestResult decideWhereToRepairAndBalance(Droid* psDroid);
  */
 Droid* checkForRepairRange(Droid* psDroid)
 {
-	const Droid* psFailedTarget;
+	Droid const* psFailedTarget;
 	if (psDroid->getAction() == ACTION::SULK) {
-		psFailedTarget = &dynamic_cast<const Droid&>(
-            psDroid->getTarget(0));
+		psFailedTarget = dynamic_cast<const Droid*>(psDroid->getActionTarget(0));
 	}
 
 	ASSERT(psDroid->getType() == DROID_TYPE::REPAIRER ||
@@ -165,13 +169,12 @@ Droid* checkForRepairRange(Droid* psDroid)
 		if (!droid && // must be a droid
 			  droid != psFailedTarget && // must not have just failed to reach it
 		  	distanceSq <= bestDistanceSq && // must be as close as possible
-		  	aiCheckAlliances(psDroid->getPlayer(),
-                         droid->getPlayer()) && // must be a friendly droid
+		  	aiCheckAlliances(psDroid->playerManager->getPlayer(),
+                         droid->playerManager->getPlayer()) && // must be a friendly droid
 		  	droidIsDamaged(droid) && // must need repairing
 		  	visibleObject(psDroid,
                       droid,
-                      false)) // must be able to sense it
-		{
+                      false)) { // must be able to sense it
 			bestDistanceSq = distanceSq;
 			best = droid;
 		}
@@ -187,10 +190,9 @@ Droid* checkForRepairRange(Droid* psDroid)
  */
 static std::pair<Structure*, ACTION> checkForDamagedStruct(Droid* psDroid)
 {
-	const Structure* psFailedTarget = nullptr;
+	Structure const* psFailedTarget = nullptr;
 	if (psDroid->getAction() == ACTION::SULK) {
-		psFailedTarget = &dynamic_cast<const Structure&>(
-            psDroid->getTarget(0));
+		psFailedTarget = dynamic_cast<Structure const*>(psDroid->getActionTarget(0));
 	}
 
 	const auto radius = ((psDroid->getOrder()->type == ORDER_TYPE::HOLD) ||
@@ -202,9 +204,7 @@ static std::pair<Structure*, ACTION> checkForDamagedStruct(Droid* psDroid)
 	auto bestDistanceSq = radius * radius;
 	std::pair<Structure*, ACTION> best = {nullptr, ACTION::NONE};
 
-	for (BaseObject * object : gridStartIterate(psDroid->getPosition().x,
-                                                   psDroid->getPosition().y,
-                                                   radius))
+	for (auto object : gridStartIterate(psDroid->getPosition().x, psDroid->getPosition().y, radius))
 	{
 		auto distanceSq = droidSqDist(psDroid, object);
 		// droidSqDist returns -1 if unreachable, (unsigned)-1 is a big number
@@ -215,10 +215,9 @@ static std::pair<Structure*, ACTION> checkForDamagedStruct(Droid* psDroid)
 			  distanceSq > bestDistanceSq || // must be as close as possible
 			  !visibleObject(psDroid,
                        structure, false) || // must be able to sense it
-			  !aiCheckAlliances(psDroid->getPlayer(),
-                          structure->getPlayer()) || // must be a friendly structure
-			  checkDroidsDemolishing(structure)) // must not be trying to get rid of it
-		{
+			  !aiCheckAlliances(psDroid->playerManager->getPlayer(),
+                          structure->playerManager->getPlayer()) || // must be a friendly structure
+			  checkDroidsDemolishing(structure)) { // must not be trying to get rid of it
 			continue;
 		}
 
@@ -239,22 +238,22 @@ static std::pair<Structure*, ACTION> checkForDamagedStruct(Droid* psDroid)
 
 static bool isRepairLikeAction(ACTION action)
 {
-  using enum ACTION;
 	switch (action) {
-	case BUILD:
-	case BUILD_WANDER:
-	case DEMOLISH:
-	case DROID_REPAIR:
-	case MOVE_TO_BUILD:
-	case MOVE_TO_DEMOLISH:
-	case MOVE_TO_DROID_REPAIR:
-	case MOVE_TO_REPAIR:
-	case MOVE_TO_RESTORE:
-	case REPAIR:
-	case RESTORE:
-		return true;
-	default:
-		return false;
+    using enum ACTION;
+	  case BUILD:
+	  case BUILD_WANDER:
+	  case DEMOLISH:
+	  case DROID_REPAIR:
+	  case MOVE_TO_BUILD:
+	  case MOVE_TO_DEMOLISH:
+	  case MOVE_TO_DROID_REPAIR:
+	  case MOVE_TO_REPAIR:
+	  case MOVE_TO_RESTORE:
+	  case REPAIR:
+	  case RESTORE:
+	  	return true;
+	  default:
+	  	return false;
 	}
 }
 
@@ -274,13 +273,13 @@ static void orderCmdGroupBase(Group* psGroup, Order* psData)
 		auto mindist = SDWORD_MAX;
 		for (auto psCurr : psGroup->getMembers())
 		{
-			if (psCurr->getOrder().type == ORDER_TYPE::RETURN_TO_REPAIR ||
-          psCurr->getOrder().type == ORDER_TYPE::RETURN_TO_BASE   ||
-          psCurr->getOrder().type ==	ORDER_TYPE::RTR_SPECIFIED) {
+			if (psCurr->getOrder()->type == ORDER_TYPE::RETURN_TO_REPAIR ||
+          psCurr->getOrder()->type == ORDER_TYPE::RETURN_TO_BASE   ||
+          psCurr->getOrder()->type ==	ORDER_TYPE::RTR_SPECIFIED) {
 				// don't touch units returning for repairs
 				continue;
 			}
-			const auto currdist = objectPositionSquareDiff(psCurr->getPosition(), psData->target->getPosition());
+			auto const currdist = objectPositionSquareDiff(psCurr->getPosition(), psData->target->getPosition());
 			if (currdist < mindist) {
 				psChosen = psCurr;
 				mindist = currdist;
@@ -297,53 +296,47 @@ static void orderCmdGroupBase(Group* psGroup, Order* psData)
 		for (auto psCurr : psGroup->getMembers())
 		{
 			syncDebug("command %d", psCurr->getId());
-			if (!orderState(psCurr, ORDER_TYPE::RETURN_TO_REPAIR)) {
-        // if you change this, you'll need to change sendCmdGroup()
-				if (!isAttackOrder) {
-					psCurr->orderDroidBase(psData);
-					continue;
-				}
-				if (psCurr->getType() == DROID_TYPE::SENSOR &&
-            psData->target) {
-					// sensors must observe, not attack
-					auto observeOrder = Order(ORDER_TYPE::OBSERVE, *psData->target);
-					psCurr->orderDroidBase(&observeOrder);
-				}
-				else {
-					// for non-sensors, check that the designated target is actually valid
-					// there is no point in ordering AA gun to attack ground units
-					for (int i = 0; i < MAX_WEAPONS; i++)
-					{
-						if (validTarget(psCurr, psData->target, i)) {
-							psCurr->orderDroidBase(psData);
-							break;
-						}
-					}
-				}
-			}
-		}
+      if (orderState(psCurr, ORDER_TYPE::RETURN_TO_REPAIR)) {
+        continue;
+      }
+      // if you change this, you'll need to change sendCmdGroup()
+      if (!isAttackOrder) {
+        psCurr->orderDroidBase(psData);
+        continue;
+      }
+      if (psCurr->getType() == DROID_TYPE::SENSOR && psData->target) {
+        // sensors must observe, not attack
+        auto observeOrder = Order(ORDER_TYPE::OBSERVE, *psData->target);
+        psCurr->orderDroidBase(&observeOrder);
+      }
+      else {
+        // for non-sensors, check that the designated target is actually valid
+        // there is no point in ordering AA gun to attack ground units
+        for (auto i = 0; i < MAX_WEAPONS; i++)
+        {
+          if (validTarget(psCurr, psData->target, i)) {
+            psCurr->orderDroidBase(psData);
+            break;
+          }
+        }
+      }
+    }
 	}
 }
 
-/**
- * The minimum delay to be used on orderPlayFireSupportAudio()
- * for fire support sound.
- */
-
-static constexpr auto AUDIO_DELAY_FIRESUPPORT	=	3 * GAME_TICKS_PER_SEC;
 
 /**
  * This function chooses the sound to play after the object is assigned to fire
  * support a specific unit. Uses audio_QueueTrackMinDelay() to play the sound.
  * @todo this function is about playing audio. I'm not sure this should be in here.
  */
-static void orderPlayFireSupportAudio(BaseObject * psObj)
+static void orderPlayFireSupportAudio(BaseObject const* psObj)
 {
 	auto iAudioID = NO_SOUND;
 	ASSERT_OR_RETURN(, psObj != nullptr, "Invalid pointer");
 
 	// play appropriate speech
-  if (auto psDroid = dynamic_cast<Droid*>(psObj)) {
+  if (auto psDroid = dynamic_cast<Droid const*>(psObj)) {
     if (psDroid->getType() == DROID_TYPE::COMMAND) {
       iAudioID = ID_SOUND_ASSIGNED_TO_COMMANDER;
     }
@@ -351,7 +344,7 @@ static void orderPlayFireSupportAudio(BaseObject * psObj)
       iAudioID = ID_SOUND_ASSIGNED_TO_SENSOR;
     }
   }
-  else if (auto psStruct = dynamic_cast<Structure*>(psObj)) {
+  else if (auto psStruct = dynamic_cast<Structure const*>(psObj)) {
     //check for non-CB first
 		if (structStandardSensor(psStruct) ||
         structVTOLSensor(psStruct)) {
@@ -398,7 +391,7 @@ void orderDroid(Droid* psDroid, ORDER_TYPE order, QUEUE_MODE mode)
  * This function compares the current droid's order to the order.
  * Returns true if they are the same, false otherwise
  */
-bool orderState(Droid* psDroid, ORDER_TYPE order)
+bool orderState(Droid const* psDroid, ORDER_TYPE order)
 {
 	if (order == ORDER_TYPE::RETURN_TO_REPAIR) {
 		return psDroid->getOrder()->type == ORDER_TYPE::RETURN_TO_REPAIR ||
@@ -414,10 +407,10 @@ bool orderState(Droid* psDroid, ORDER_TYPE order)
 bool validOrderForLoc(ORDER_TYPE order)
 {
   using enum ORDER_TYPE;
-	return (order == NONE || order == MOVE || order == GUARD ||
-		      order == SCOUT || order == PATROL || order == TRANSPORT_OUT ||
-          order == TRANSPORT_IN || order == TRANSPORT_RETURN ||
-          order == DISEMBARK || order == CIRCLE);
+  return order == NONE || order == MOVE || order == GUARD ||
+         order == SCOUT || order == PATROL || order == TRANSPORT_OUT ||
+         order == TRANSPORT_IN || order == TRANSPORT_RETURN ||
+         order == DISEMBARK || order == CIRCLE;
 }
 
 /**
@@ -431,12 +424,11 @@ void orderDroidLoc(Droid* psDroid, ORDER_TYPE order, unsigned x, unsigned y, QUE
 	ASSERT_OR_RETURN(, psDroid != nullptr, "Invalid unit pointer");
 	ASSERT_OR_RETURN(, validOrderForLoc(order), "Invalid order for location");
 
-	Order sOrder(order, Vector2i(x, y));
+	auto sOrder = Order{order, Vector2i(x, y)};
 	if (mode == ModeQueue) {
 		sendDroidInfo(psDroid, sOrder, false);
 		return; // Wait to receive our order before changing the droid.
 	}
-
 	orderClearDroidList(psDroid);
 	orderDroidBase(psDroid, &sOrder);
 }
@@ -446,11 +438,9 @@ void orderDroidLoc(Droid* psDroid, ORDER_TYPE order, unsigned x, unsigned y, QUE
  * if the order is the same as the droid. Returns true if it
  * was attributed and false if not.
  */
-bool orderStateLoc(Droid* psDroid, ORDER_TYPE order, unsigned* pX, unsigned* pY)
+bool orderStateLoc(Droid const* psDroid, ORDER_TYPE order, unsigned* pX, unsigned* pY)
 {
-	if (order != psDroid->getOrder()->type) {
-		return false;
-	}
+	if (order != psDroid->getOrder()->type) return false;
 
 	// check the order is one with a location
 	switch (psDroid->getOrder()->type) {
@@ -472,13 +462,13 @@ bool orderStateLoc(Droid* psDroid, ORDER_TYPE order, unsigned* pX, unsigned* pY)
 bool validOrderForObj(ORDER_TYPE order)
 {
   using enum ORDER_TYPE;
-  return (order == NONE || order == HELP_BUILD || order == DEMOLISH ||
-          order == REPAIR || order == ATTACK || order == FIRE_SUPPORT ||
-          order == COMMANDER_SUPPORT || order == OBSERVE ||
-          order == ATTACK_TARGET || order == RETURN_TO_REPAIR ||
-          order == RTR_SPECIFIED || order == EMBARK || order == GUARD ||
-          order == DROID_REPAIR || order == RESTORE ||
-          order == BUILD_MODULE || order == REARM || order == RECOVER);
+  return order == NONE || order == HELP_BUILD || order == DEMOLISH ||
+         order == REPAIR || order == ATTACK || order == FIRE_SUPPORT ||
+         order == COMMANDER_SUPPORT || order == OBSERVE ||
+         order == ATTACK_TARGET || order == RETURN_TO_REPAIR ||
+         order == RTR_SPECIFIED || order == EMBARK || order == GUARD ||
+         order == DROID_REPAIR || order == RESTORE ||
+         order == BUILD_MODULE || order == REARM || order == RECOVER;
 }
 
 /** 
@@ -488,19 +478,18 @@ bool validOrderForObj(ORDER_TYPE order)
  * is alloc, the old order list is erased, and the order is sent 
  * using orderDroidBase().
  */
-void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject * psObj, QUEUE_MODE mode)
+void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject* psObj, QUEUE_MODE mode)
 {
 	ASSERT(psDroid != nullptr, "Invalid unit pointer");
 	ASSERT(validOrderForObj(order), "Invalid order for object");
 	ASSERT_OR_RETURN(, !isBlueprint(psObj), "Target %s is a blueprint", objInfo(psObj));
-	ASSERT_OR_RETURN(, !psObj->died, "Target dead");
+	ASSERT_OR_RETURN(, !psObj->damageManager->isDead(), "Target dead");
 
-	Order sOrder(order, *psObj);
+	auto sOrder = Order{order, *psObj};
 	if (mode == ModeQueue)  {
 		sendDroidInfo(psDroid, sOrder, false);
 		return; // Wait for the order to be received before changing the droid.
 	}
-
 	orderClearDroidList(psDroid);
 	orderDroidBase(psDroid, &sOrder);
 }
@@ -513,73 +502,74 @@ void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject * psObj, QUEUE_M
 BaseObject* orderStateObj(Droid* psDroid, ORDER_TYPE order)
 {
 	bool match = false;
-
   using enum ORDER_TYPE;
 	switch (order) {
-	case BUILD:
-	case LINE_BUILD:
-	case HELP_BUILD:
-		if (psDroid->getOrder()->type == BUILD ||
-			  psDroid->getOrder()->type == HELP_BUILD ||
-			  psDroid->getOrder()->type == LINE_BUILD) {
-			match = true;
-		}
-		break;
-	case ATTACK:
-	case FIRE_SUPPORT:
-	case OBSERVE:
-	case DEMOLISH:
-	case DROID_REPAIR:
-	case REARM:
-	case GUARD:
-		if (psDroid->getOrder()->type == order) {
-			match = true;
-		}
-		break;
-	case RETURN_TO_REPAIR:
-		if (psDroid->getOrder()->type == RETURN_TO_REPAIR ||
-		   	psDroid->getOrder()->type == RTR_SPECIFIED) {
-			match = true;
-		}
-	default:
-		break;
-	}
+	  case BUILD:
+	  case LINE_BUILD:
+	  case HELP_BUILD:
+	  	if (psDroid->getOrder()->type == BUILD ||
+	  		  psDroid->getOrder()->type == HELP_BUILD ||
+	  		  psDroid->getOrder()->type == LINE_BUILD) {
+	  		match = true;
+	  	}
+	  	break;
 
-	if (!match) {
-		return nullptr;
+	  case ATTACK:
+	  case FIRE_SUPPORT:
+	  case OBSERVE:
+	  case DEMOLISH:
+	  case DROID_REPAIR:
+	  case REARM:
+	  case GUARD:
+	  	if (psDroid->getOrder()->type == order) {
+	  		match = true;
+	  	}
+	  	break;
+
+	  case RETURN_TO_REPAIR:
+	  	if (psDroid->getOrder()->type == RETURN_TO_REPAIR ||
+	  	   	psDroid->getOrder()->type == RTR_SPECIFIED) {
+	  		match = true;
+	  	}
+	  default:
+	  	break;
 	}
+	if (!match) return nullptr;
 
 	// check the order is one with an object
 	switch (psDroid->getOrder()->type) {
-	default:
-		// not an object order -- return false
-		return nullptr;
-		break;
-	case BUILD:
-	case LINE_BUILD:
-		if (psDroid->getAction() == ACTION::BUILD ||
-			  psDroid->getAction() == ACTION::BUILD_WANDER) {
-			return psDroid->getOrder()->target;
-		}
-		break;
-	case HELP_BUILD:
-		if (psDroid->getAction() == ACTION::BUILD ||
-			psDroid->getAction() == ACTION::BUILD_WANDER ||
-			psDroid->getAction() == ACTION::MOVE_TO_BUILD) {
-			return psDroid->getOrder()->target;
-		}
-		break;
-	case ATTACK:
-	case FIRE_SUPPORT:
-	case OBSERVE:
-	case DEMOLISH:
-	case RETURN_TO_REPAIR:
-	case RTR_SPECIFIED:
-	case DROID_REPAIR:
-	case REARM:
-	case GUARD:
-		return psDroid->getOrder()->target;
-		break;
+	  case BUILD:
+	  case LINE_BUILD:
+	  	if (psDroid->getAction() == ACTION::BUILD ||
+	  		  psDroid->getAction() == ACTION::BUILD_WANDER) {
+	  		return psDroid->getOrder()->target;
+	  	}
+	  	break;
+
+	  case HELP_BUILD:
+	  	if (psDroid->getAction() == ACTION::BUILD ||
+	  		psDroid->getAction() == ACTION::BUILD_WANDER ||
+	  		psDroid->getAction() == ACTION::MOVE_TO_BUILD) {
+	  		return psDroid->getOrder()->target;
+	  	}
+	  	break;
+
+	  case ATTACK:
+	  case FIRE_SUPPORT:
+	  case OBSERVE:
+	  case DEMOLISH:
+	  case RETURN_TO_REPAIR:
+	  case RTR_SPECIFIED:
+	  case DROID_REPAIR:
+	  case REARM:
+	  case GUARD:
+	  	return psDroid->getOrder()->target;
+	  	break;
+
+    default:
+      // not an object order -- return false
+      return nullptr;
+      break;
 	}
 	return nullptr;
 }
@@ -598,7 +588,7 @@ void orderDroidStatsLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psS
 	ASSERT(order == ORDER_TYPE::BUILD, "Invalid order for location");
 
 	Order sOrder(order, *psStats, Vector2i(x, y), direction);
-	if (mode == ModeQueue && bMult) {
+	if (mode == ModeQueue && bMultiPlayer) {
 		sendDroidInfo(psDroid, sOrder, false);
 		return; // Wait for our order before changing the droid.
 	}
@@ -668,35 +658,33 @@ void orderDroidStatsTwoLocDirAdd(Droid* psDroid, ORDER_TYPE order, StructureStat
 bool orderStateStatsLoc(Droid* psDroid, ORDER_TYPE order, StructureStats** ppsStats)
 {
 	bool match = false;
-
   using enum ORDER_TYPE;
 	switch (order) {
-	case BUILD:
-	case LINE_BUILD:
-		if (psDroid->getOrder()->type == BUILD ||
-			psDroid->getOrder()->type == LINE_BUILD) {
-			match = true;
-		}
-		break;
-	default:
-		break;
+	  case BUILD:
+	  case LINE_BUILD:
+	  	if (psDroid->getOrder()->type == BUILD ||
+	  		psDroid->getOrder()->type == LINE_BUILD) {
+	  		match = true;
+	  	}
+	  	break;
+	  default:
+	  	break;
 	}
-
 	if (!match) {
 		return false;
 	}
 
 	// check the order is one with stats and a location
 	switch (psDroid->getOrder()->type) {
-	case BUILD:
-	case LINE_BUILD:
-		if (psDroid->getAction() == ACTION::MOVE_TO_BUILD) {
-			*ppsStats = psDroid->getOrder()->structure_stats.get();
-			return true;
-		}
-		break;
-  default:
-    return false;
+	  case BUILD:
+	  case LINE_BUILD:
+	  	if (psDroid->getAction() == ACTION::MOVE_TO_BUILD) {
+	  		*ppsStats = psDroid->getOrder()->structure_stats.get();
+	  		return true;
+	  	}
+	  	break;
+    default:
+      return false;
 	}
 	return false;
 }
@@ -732,20 +720,20 @@ static bool orderDroidObjAdd(Droid* psDroid, Order const& order, bool add)
          "Target %s for queue is a blueprint",
          objInfo(order.target));
 
-  using enum ORDER_TYPE;
 	// check can queue the order
 	switch (order.type) {
-	case ATTACK:
-	case REPAIR:
-	case OBSERVE:
-	case DROID_REPAIR:
-	case FIRE_SUPPORT:
-	case DEMOLISH:
-	case HELP_BUILD:
-	case BUILD_MODULE:
-		break;
-	default:
-		return false;
+    using enum ORDER_TYPE;
+	  case ATTACK:
+	  case REPAIR:
+	  case OBSERVE:
+	  case DROID_REPAIR:
+	  case FIRE_SUPPORT:
+	  case DEMOLISH:
+	  case HELP_BUILD:
+	  case BUILD_MODULE:
+	  	break;
+	  default:
+	  	return false;
 	}
 	sendDroidInfo(psDroid, order, add);
 	return true;

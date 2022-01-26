@@ -60,7 +60,7 @@ enum class TARGET_ORIGIN
 };
 
 class Weapon : public BaseObject
-             , public PlayerManager {
+{
 public:
   ~Weapon() override = default;
   Weapon(unsigned id, unsigned player);
@@ -71,9 +71,8 @@ public:
   Weapon(Weapon&& rhs) = default;
   Weapon& operator=(Weapon&& rhs) = default;
 
-  [[nodiscard]] const WeaponStats* getStats() const;
-  /// Returns how much the weapon assembly should currently
-  /// be rocked back due to firing.
+
+  [[nodiscard]] WeaponStats const* getStats() const;
   [[nodiscard]] unsigned getRecoil() const;
   [[nodiscard]] unsigned getMaxRange(unsigned player) const;
   [[nodiscard]] unsigned getMinRange(unsigned player) const;
@@ -82,8 +81,8 @@ public:
   [[nodiscard]] unsigned getShortRangeHitChance(unsigned player) const;
   [[nodiscard]] unsigned getNumAttackRuns(unsigned player) const;
   [[nodiscard]] unsigned getShotsFired() const noexcept;
-  [[nodiscard]] const iIMDShape* getImdShape() const;
-  [[nodiscard]] const iIMDShape* getMountGraphic() const;
+  [[nodiscard]] iIMDShape const* getImdShape() const;
+  [[nodiscard]] iIMDShape const* getMountGraphic() const;
   [[nodiscard]] WEAPON_SUBCLASS getSubclass() const;
   [[nodiscard]] TARGET_ORIGIN getTargetOrigin() const noexcept;
   [[nodiscard]] Rotation getPreviousRotation() const;

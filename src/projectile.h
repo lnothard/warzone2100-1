@@ -75,7 +75,7 @@ enum class PROJECTILE_STATE
 };
 
 class Projectile : public BaseObject
-                 , public DamageManager, public PlayerManager {
+{
 public:
   ~Projectile() override = default;
   Projectile(unsigned id, unsigned  player);
@@ -127,6 +127,7 @@ public:
   ObjectShape(ObjectShape&& rhs) noexcept = default;
   ObjectShape& operator=(ObjectShape&& rhs) noexcept = default;
 
+
   [[nodiscard]] bool isRectangular() const;
   [[nodiscard]] int radius() const;
   [[nodiscard]] Vector2i getSize() const;
@@ -167,17 +168,17 @@ void setExpGain(unsigned player, int gain);
 int getExpGain(unsigned player);
 
 /// Calculate the initial velocities of an indirect projectile. Returns the flight time.
-int projCalcIndirectVelocities(int32_t dx, int32_t dz, int32_t v, int32_t* vx, int32_t* vz,
+int projCalcIndirectVelocities(int dx, int dz, int v, int* vx, int* vz,
                                    int min_angle);
 
 /** Send a single projectile against the given target. */
-bool proj_SendProjectile(Weapon* psWeap, BaseObject * psAttacker, unsigned player, Vector3i target, BaseObject * psTarget,
-                         bool bVisible, int weapon_slot);
+bool proj_SendProjectile(Weapon* psWeap, BaseObject* psAttacker, unsigned player,
+                         Vector3i target, BaseObject* psTarget, bool bVisible, int weapon_slot);
 
 /** Send a single projectile against the given target
  * with a minimum shot angle. */
-bool proj_SendProjectileAngled(Weapon* psWeap, BaseObject * psAttacker, unsigned player, Vector3i target,
-                               BaseObject * psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
+bool proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacker, unsigned player, Vector3i target,
+                               BaseObject* psTarget, bool bVisible, int weapon_slot, int min_angle, unsigned fireTime);
 
 /** Return whether a weapon is direct or indirect. */
 bool proj_Direct(const WeaponStats* psStats);
@@ -209,5 +210,6 @@ static void setProjectileSource(Projectile *psProj, ConstructedObject *psObj);
 
 ObjectShape establishTargetShape(BaseObject* psTarget);
 static unsigned qualityFactor(Droid* psAttacker, Droid* psVictim);
+Droid* getDesignatorAttackingObject(unsigned player, BaseObject* target);
 
 #endif // __INCLUDED_SRC_PROJECTILE_H__

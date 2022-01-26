@@ -7,6 +7,7 @@
 #include "stats.h"
 #include "weapon.h"
 
+
 struct Weapon::Impl
 {
   ~Impl() = default;
@@ -18,11 +19,9 @@ struct Weapon::Impl
   Impl(Impl&& rhs) = default;
   Impl& operator=(Impl&& rhs) = default;
 
-
-  using enum TARGET_ORIGIN;
   std::shared_ptr<WeaponStats> stats;
   Rotation previousRotation {0, 0, 0};
-  TARGET_ORIGIN origin = UNKNOWN;
+  TARGET_ORIGIN origin = TARGET_ORIGIN::UNKNOWN;
   unsigned timeLastFired = 0;
   unsigned ammo = 0;
   unsigned ammoUsed = 0;
@@ -30,13 +29,13 @@ struct Weapon::Impl
 };
 
 Weapon::Weapon(unsigned id, unsigned player)
-  : BaseObject(id), PlayerManager(player)
+  : BaseObject(id, std::make_unique<PlayerManager>(player))
   , pimpl{std::make_unique<Impl>()}
 {
 }
 
 Weapon::Weapon(Weapon const& rhs)
-  : BaseObject(rhs), PlayerManager(rhs)
+  : BaseObject(rhs)
   , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
@@ -92,18 +91,18 @@ TARGET_ORIGIN Weapon::getTargetOrigin() const noexcept
 
 unsigned Weapon::getRecoil() const
 {
-  if (!pimpl) return 0;
+  ASSERT_OR_RETURN(0, pimpl != nullptr, "Weapon object is undefined");
 
-  if (graphicsTime >= pimpl->timeLastFired &&
-      graphicsTime < pimpl->timeLastFired + DEFAULT_RECOIL_TIME) {
-
-    const auto recoil_time = static_cast<int>(graphicsTime - pimpl->timeLastFired);
-    const auto recoil_amount = DEFAULT_RECOIL_TIME / 2 - abs(
-            recoil_time - static_cast<int>(DEFAULT_RECOIL_TIME) / 2);
-    const auto max_recoil = pimpl->stats->recoilValue;
-    return max_recoil * recoil_amount / (DEFAULT_RECOIL_TIME / 2 * 10);
+  if (graphicsTime < pimpl->timeLastFired ||
+      graphicsTime >= pimpl->timeLastFired + DEFAULT_RECOIL_TIME) {
+    return 0;
   }
-  return 0;
+  const auto recoil_time = static_cast<int>(graphicsTime - pimpl->timeLastFired);
+  const auto recoil_amount = DEFAULT_RECOIL_TIME / 2 - abs(
+          recoil_time - static_cast<int>(DEFAULT_RECOIL_TIME) / 2);
+
+  const auto max_recoil = pimpl->stats->recoilValue;
+  return max_recoil * recoil_amount / (DEFAULT_RECOIL_TIME / 2 * 10);
 }
 
 unsigned Weapon::getMaxRange(unsigned player) const
@@ -133,21 +132,17 @@ unsigned Weapon::getShortRangeHitChance(unsigned player) const
 
 WEAPON_SUBCLASS Weapon::getSubclass() const
 {
-  return pimpl
-         ? pimpl->stats->weaponSubClass
-         : WEAPON_SUBCLASS::COUNT;
+  return pimpl ? pimpl->stats->weaponSubClass : WEAPON_SUBCLASS::COUNT;
 }
 
 unsigned Weapon::getNumAttackRuns(unsigned player) const
 {
-  if (!pimpl) return 0;
+  ASSERT_OR_RETURN(0, pimpl != nullptr, "Weapon object is undefined");
 
   const auto u_stats = pimpl->stats->upgraded[player];
-
   if (u_stats.reloadTime > 0) {
     return u_stats.numRounds * pimpl->stats->vtolAttackRuns;
   }
-
   return pimpl->stats->vtolAttackRuns;
 }
 
@@ -168,11 +163,9 @@ const iIMDShape* Weapon::getMountGraphic() const
 
 unsigned Weapon::calculateRateOfFire(unsigned player) const
 {
-  if (!pimpl) return 0;
+  ASSERT_OR_RETURN(0, pimpl != nullptr, "Weapon object is undefined");
   const auto& w_stats = pimpl->stats->upgraded[player];
-
-  return w_stats.numRounds
-         * 60 * GAME_TICKS_PER_SEC / w_stats.reloadTime;
+  return w_stats.numRounds * 60 * GAME_TICKS_PER_SEC / w_stats.reloadTime;
 }
 
 Rotation Weapon::getPreviousRotation() const {
@@ -180,19 +173,18 @@ Rotation Weapon::getPreviousRotation() const {
 }
 
 void Weapon::useAmmo() {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Weapon object is undefined");
   ++pimpl->ammoUsed;
 }
 
 void Weapon::alignTurret()
 {
-  const auto turret_rotation = gameTimeAdjustedIncrement(
+  auto const turret_rotation = gameTimeAdjustedIncrement(
           DEG(TURRET_ROTATION_RATE));
 
   auto weapon_rotation = getRotation().direction;
   auto weapon_pitch = getRotation().pitch;
-
-  const auto nearest_right_angle = (weapon_rotation +
+  auto const nearest_right_angle = (weapon_rotation +
           DEG(45)) / DEG(90) * DEG(90);
 
   weapon_rotation += clip(angleDelta(nearest_right_angle - weapon_rotation),
@@ -202,6 +194,6 @@ void Weapon::alignTurret()
                        -turret_rotation / 2, turret_rotation / 2);
 
   setRotation({weapon_rotation,
-                           weapon_pitch,
-                           getRotation().roll});
+                    weapon_pitch,
+                    getRotation().roll});
 }

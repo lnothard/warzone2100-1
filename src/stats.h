@@ -501,31 +501,11 @@ struct Propulsion
 
 typedef uint16_t WEAPON_MODIFIER;
 
-/* The stores for the different stats */
-extern BodyStats* asBodyStats;
-extern CommanderStats* asBrainStats;
-extern PropulsionStats* asPropulsionStats;
-extern SensorStats* asSensorStats;
-extern EcmStats* asECMStats;
-extern RepairStats* asRepairStats;
-extern WeaponStats* asWeaponStats;
-extern ConstructStats* asConstructStats;
 extern std::vector<Propulsion> asPropulsionTypes;
 
 //used to hold the modifiers cross refd by weapon effect and propulsion type
 extern WEAPON_MODIFIER asWeaponModifier[(size_t)WEAPON_EFFECT::COUNT][(size_t)PROPULSION_TYPE::COUNT];
 extern WEAPON_MODIFIER asWeaponModifierBody[(size_t)WEAPON_EFFECT::COUNT][(size_t)BODY_SIZE::COUNT];
-
-/* The number of different stats stored */
-extern unsigned numBodyStats;
-extern unsigned numBrainStats;
-extern unsigned numPropulsionStats;
-extern unsigned numSensorStats;
-extern unsigned numECMStats;
-extern unsigned numRepairStats;
-extern unsigned numWeaponStats;
-extern unsigned numConstructStats;
-extern unsigned numTerrainTypes;
 
 //stores for each players component states - see below
 extern uint8_t* apCompLists[MAX_PLAYERS][(size_t)COMPONENT_TYPE::COUNT];
@@ -701,7 +681,7 @@ bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS* weaponClass);
 /* Wrappers */
 
 /** If object is an active radar (has sensor turret), then return a pointer to its sensor stats. If not, return NULL. */
-WZ_DECL_PURE SensorStats* objActiveRadar(const BaseObject * psObj);
+WZ_DECL_PURE SensorStats const* objActiveRadar(BaseObject const* psObj);
 
 /** Returns whether object has a radar detector sensor. */
 WZ_DECL_PURE bool objRadarDetector(const BaseObject * psObj);

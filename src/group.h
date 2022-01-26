@@ -42,7 +42,6 @@ class Group
 {
 public:
   ~Group() = default;
-
 	Group();
   explicit Group(unsigned id);
   Group(unsigned id, GROUP_TYPE type);
@@ -50,6 +49,9 @@ public:
 
   Group(Group const& rhs);
   Group& operator=(Group const& rhs);
+
+  Group(Group&& rhs) noexcept = default;
+  Group& operator=(Group&& rhs) noexcept = default;
 
   /**
    * Add a droid to the group. Remove it from its existing
@@ -74,15 +76,8 @@ public:
   // set the secondary state for a group of droids
 	void setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state);
 private:
-  friend class Droid;
   struct Impl;
   std::unique_ptr<Impl> pimpl;
 };
-
-/**
- * Create a new group, use -1 to generate a new ID. Never
- * use id != -1 unless loading from a save game.
- */
-std::unique_ptr<Group> grpCreate(unsigned id);
 
 #endif // __INCLUDED_SRC_GROUP_H__

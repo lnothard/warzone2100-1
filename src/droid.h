@@ -365,6 +365,7 @@ private:
   friend class Group;
   struct Impl;
   std::unique_ptr<Impl> pimpl;
+  Droid *psGrpNext;
 };
 
 

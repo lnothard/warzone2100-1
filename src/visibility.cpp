@@ -30,13 +30,13 @@
 #include "lib/sound/audio_id.h"
 #include "wzmaplib/map.h"
 
+#include "displaydef.h"
 #include "map.h"
 #include "multiplay.h"
 #include "objmem.h"
 #include "projectile.h"
 #include "visibility.h"
 #include "wavecast.h"
-
 
 /* forward decl */
 bool bInTutorial;
@@ -45,8 +45,6 @@ struct BaseObject;
 typedef std::vector<BaseObject *> GridList;
 typedef GridList::const_iterator GridIterator;
 GridList const& gridStartIterateUnseen(int x, int y, int radius, unsigned player);
-int establishTargetHeight(BaseObject const* psTarget);
-unsigned generateSynchronisedObjectId();
 Vector2i world_coord(Vector2i);
 bool triggerEventSeen(BaseObject *, BaseObject *);
 
@@ -55,7 +53,7 @@ bool triggerEventSeen(BaseObject *, BaseObject *);
 static int visLevelInc, visLevelDec;
 
 Spotter::Spotter(int x, int y, unsigned plr, int radius,
-                 SENSOR_CLASS type, std::size_t expiry)
+                 SENSOR_CLASS type, unsigned expiry)
   : pos{x, y, 0}, player{plr}, sensorRadius{radius},
     sensorType{type}, expiryTime{expiry}
 {
@@ -64,11 +62,11 @@ Spotter::Spotter(int x, int y, unsigned plr, int radius,
 
 static void updateTileVis(Tile* psTile)
 {
-  for (int i = 0; i < MAX_PLAYERS; i++)
+  for (auto i = 0; i < MAX_PLAYERS; ++i)
   {
     // The definition of whether a player can see something on a given tile or not
     if (psTile->watchers[i] > 0 || (psTile->sensors[i] > 0 &&
-                                    !(psTile->jammerBits & ~alliancebits[i]))) {
+        !(psTile->jammerBits & ~alliancebits[i]))) {
       psTile->sensorBits |= (1 << i); // mark it as being seen
     }
     else {
@@ -90,7 +88,7 @@ Spotter::~Spotter()
            "Not watching watched tile (%d, %d)",
            (int)tilePos.x, (int)tilePos.y);
 
-    visionType[player]--;
+    --visionType[player];
     updateTileVis(psTile);
   }
 }
@@ -151,8 +149,7 @@ unsigned addSpotter(int x, int y, unsigned player, int radius,
 void removeSpotter(unsigned id)
 {
   std::erase_if(apsInvisibleViewers,
-                [&id](const auto& spot)
-  {
+                [&id](auto const& spot) {
     return spot.id == id;
   });
 }
@@ -178,6 +175,7 @@ static void updateSpotters()
                                       world_coord(psSpot->pos.y),
                                       psSpot->sensorRadius,
 		                                  psSpot->player);
+
 		for (auto psObj : gridList)
 		{
 			// tell system that this side can see this object
@@ -191,30 +189,29 @@ static void updateSpotters()
  * once. Note that there is both a limit to how many objects can watch any given
  * tile. Strange but non-fatal things will happen if these limits are exceeded
  */
-static void visMarkTile(const BaseObject * psObj, int mapX, int mapY,
+static void visMarkTile(BaseObject const* psObj, int mapX, int mapY,
                         Tile* psTile, std::vector<TILEPOS>& watchedTiles)
 {
-	const auto rayPlayer = psObj->getPlayer();
+	const auto rayPlayer = psObj->playerManager->getPlayer();
 	const auto xdiff = map_coord(psObj->getPosition().x) - mapX;
 	const auto ydiff = map_coord(psObj->getPosition().y) - mapY;
 	const auto distSq = xdiff * xdiff + ydiff * ydiff;
 	const bool inRange = (distSq < 16);
 	auto visionType = inRange ? psTile->watchers : psTile->sensors;
 
-	if (visionType[rayPlayer] < UINT8_MAX) {
-		TILEPOS tilePos = {uint8_t(mapX), uint8_t(mapY), uint8_t(inRange)};
+  if (visionType[rayPlayer] >= UINT8_MAX) return;
 
-		visionType[rayPlayer]++; // we observe this tile
-		if (psObj->flags.test(OBJECT_FLAG::JAMMED_TILES))  {
-      // we are a jammer object
-			psTile->jammers[rayPlayer]++;
-      // mark it as being jammed
-			psTile->jammerBits |= (1 << rayPlayer);
-		}
-		updateTileVis(psTile);
+  TILEPOS tilePos = {uint8_t(mapX), uint8_t(mapY), uint8_t(inRange)};
+  visionType[rayPlayer]++;// we observe this tile
+  if (psObj->flags.test(OBJECT_FLAG::JAMMED_TILES))  {
+    // we are a jammer object
+    psTile->jammers[rayPlayer]++;
+    // mark it as being jammed
+    psTile->jammerBits |= (1 << rayPlayer);
+  }
+  updateTileVis(psTile);
     // record having seen it
-		watchedTiles.push_back(tilePos);
-	}
+  watchedTiles.push_back(tilePos);
 }
 
 /* The terrain revealing ray callback */
@@ -225,7 +222,7 @@ static void doWaveTerrain(BaseObject * psObj)
 	const auto sz = psObj->getPosition().z +
           MAX(MIN_VIS_HEIGHT, psObj->getDisplayData()->imd_shape->max.y);
 	const auto radius = objSensorRange(psObj);
-	const auto rayPlayer = psObj->getPlayer();
+	const auto rayPlayer = psObj->playerManager->getPlayer();
 	std::size_t size;
 	const WavecastTile* tiles = getWavecastTable(radius, &size);
 
@@ -251,14 +248,13 @@ static void doWaveTerrain(BaseObject * psObj)
 			continue;
 		}
 
-		Tile* psTile = mapTile(mapX, mapY);
-		int tileHeight = std::max(psTile->height, psTile->waterLevel);
+		auto psTile = mapTile(mapX, mapY);
+		auto tileHeight = std::max(psTile->height, psTile->waterLevel);
 		// If we can see the water surface, then let us see water-covered tiles too.
-		int perspectiveHeight = (tileHeight - sz) * tiles[i].invRadius;
-		int perspectiveHeightLeeway = (tileHeight - sz + MIN_VIS_HEIGHT) * tiles[i].invRadius;
+		auto perspectiveHeight = (tileHeight - sz) * tiles[i].invRadius;
+		auto perspectiveHeightLeeway = (tileHeight - sz + MIN_VIS_HEIGHT) * tiles[i].invRadius;
 
-		if (tiles[i].angBegin < lastAngle)
-		{
+		if (tiles[i].angBegin < lastAngle) {
 			// Gone around the circle. (Or just started scan.)
 			angles[!readList][writeListPos] = lastAngle;
 
@@ -280,12 +276,11 @@ static void doWaveTerrain(BaseObject * psObj)
 		bool seen = false;
 		while (angles[readList][readListPos] < tiles[i].angEnd && readListPos < readListSize)
 		{
-			int oldHeight = heights[readList][readListPos];
-			int newHeight = MAX(oldHeight, perspectiveHeight);
+			auto oldHeight = heights[readList][readListPos];
+			auto newHeight = MAX(oldHeight, perspectiveHeight);
 			seen = seen || perspectiveHeightLeeway >= oldHeight;
 			// consider point slightly above ground in case there is something on the tile
-			if (newHeight != lastHeight)
-			{
+			if (newHeight != lastHeight) {
 				heights[!readList][writeListPos] = newHeight;
 				angles[!readList][writeListPos] = MAX(angles[readList][readListPos], tiles[i].angBegin);
 				lastHeight = newHeight;
@@ -297,8 +292,7 @@ static void doWaveTerrain(BaseObject * psObj)
 		}
 		--readListPos;
 
-		if (seen)
-		{
+		if (seen) {
 			// Can see this tile.
 			psTile->tileExploredBits |= alliancebits[rayPlayer]; // Share exploration with allies too
 			visMarkTile(psObj, mapX, mapY, psTile, psObj->watchedTiles); // Mark this tile as seen by our sensor
@@ -307,10 +301,9 @@ static void doWaveTerrain(BaseObject * psObj)
 }
 
 /* The los ray callback */
-static bool rayLOSCallback(Vector2i pos, int32_t dist, void* data)
+static bool rayLOSCallback(Vector2i pos, int dist, void* data)
 {
 	auto help = (VisibleObjectHelp_t*)data;
-
 	ASSERT(pos.x >= 0 && pos.x < world_coord(mapWidth) &&
          pos.y >= 0 && pos.y < world_coord(mapHeight),
 	       "rayLOSCallback: coords off map");
@@ -326,36 +319,34 @@ static bool rayLOSCallback(Vector2i pos, int32_t dist, void* data)
 			help->currGrad = newGrad;
 		}
 	}
-
 	help->lastDist = dist;
 	help->lastHeight = map_Height(pos.x, pos.y);
 
-	if (help->wallsBlock) {
-		// Store the height at this tile for next time round
-		Vector2i tile = map_coord(pos.xy());
+  if (!help->wallsBlock) return true;
 
-		if (tile != help->final) {
-			auto psTile = mapTile(tile);
-			if (TileHasWall(psTile) && !TileHasSmallStructure(psTile)) {
-				auto psStruct = dynamic_cast<Structure*>(psTile->psObject);
-				if (psStruct->getStats().type != STRUCTURE_TYPE::GATE ||
-            psStruct->animationState != STRUCTURE_ANIMATION_STATE::OPEN) {
-					help->lastHeight = 2 * TILE_MAX_HEIGHT;
-					help->wall = pos.xy();
-					help->numWalls++;
-				}
-			}
-		}
-	}
-	return true;
+  // Store the height at this tile for next time round
+  Vector2i tile = map_coord(pos.xy());
+  if (!(tile != help->final)) return true;
+
+  auto psTile = mapTile(tile);
+  if (!TileHasWall(psTile) || TileHasSmallStructure(psTile)) return true;
+
+  auto psStruct = dynamic_cast<Structure*>(psTile->psObject);
+  if (psStruct->getStats()->type != STRUCTURE_TYPE::GATE ||
+      psStruct->getAnimationState() != STRUCTURE_ANIMATION_STATE::OPEN) {
+
+    help->lastHeight = 2 * TILE_MAX_HEIGHT;
+    help->wall = pos.xy();
+    help->numWalls++;
+  }
+  return true;
 }
 
 
 /* Remove tile visibility from object */
 void visRemoveVisibility(BaseObject * psObj)
 {
-	if (mapWidth && mapHeight)
-	{
+	if (mapWidth && mapHeight) {
 		for (TILEPOS pos : psObj->watchedTiles)
 		{
 			// FIXME: the mapTile might have been swapped out, see swapMissionPointers()
@@ -363,29 +354,26 @@ void visRemoveVisibility(BaseObject * psObj)
 
 			ASSERT(pos.type < 2, "Invalid visibility type %d", (int)pos.type);
 			uint8_t* visionType = (pos.type == 0) ? psTile->sensors : psTile->watchers;
-			if (visionType[psObj->getPlayer()] == 0 && game.type == LEVEL_TYPE::CAMPAIGN) // hack
-			{
+			if (visionType[psObj->playerManager->getPlayer()] == 0 && game.type == LEVEL_TYPE::CAMPAIGN) { // hack
 				continue;
 			}
-			ASSERT(visionType[psObj->getPlayer()] > 0, "No %s on watched tile (%d, %d)", pos.type ? "radar" : "vision",
+			ASSERT(visionType[psObj->playerManager->getPlayer()] > 0, "No %s on watched tile (%d, %d)", pos.type ? "radar" : "vision",
 			       (int)pos.x, (int)pos.y);
-			visionType[psObj->getPlayer()]--;
-			if (psObj->flags.test(OBJECT_FLAG::JAMMED_TILES))
+			visionType[psObj->playerManager->getPlayer()]--;
+			if (psObj->testFlag(static_cast<size_t>(OBJECT_FLAG::JAMMED_TILES))) {
 			// we are a jammer object — we cannot check objJammerPower(psObj) > 0 directly here, we may be in the SimpleObject destructor).
-			{
 				// No jammers in campaign, no need for special hack
-				ASSERT(psTile->jammers[psObj->getPlayer()] > 0, "Not jamming watched tile (%d, %d)", (int)pos.x, (int)pos.y);
-				psTile->jammers[psObj->getPlayer()]--;
-				if (psTile->jammers[psObj->getPlayer()] == 0)
-				{
-					psTile->jammerBits &= ~(1 << psObj->getPlayer());
+				ASSERT(psTile->jammers[psObj->playerManager->getPlayer()] > 0, "Not jamming watched tile (%d, %d)", (int)pos.x, (int)pos.y);
+				psTile->jammers[psObj->playerManager->getPlayer()]--;
+				if (psTile->jammers[psObj->playerManager->getPlayer()] == 0) {
+					psTile->jammerBits &= ~(1 << psObj->playerManager->getPlayer());
 				}
 			}
 			updateTileVis(psTile);
 		}
 	}
 	psObj->watchedTiles.clear();
-	psObj->flags.set(OBJECT_FLAG::JAMMED_TILES, false);
+	psObj->setFlag(static_cast<size_t>(OBJECT_FLAG::JAMMED_TILES), false);
 }
 
 void visRemoveVisibilityOffWorld(BaseObject * psObj)
@@ -401,13 +389,11 @@ void visTilesUpdate(BaseObject * psObj)
 	// Remove previous map visibility provided by object
 	visRemoveVisibility(psObj);
 
-	if (psObj->type == OBJ_STRUCTURE)
-	{
-		Structure* psStruct = (Structure*)psObj;
+	if (psObj->type == OBJ_STRUCTURE) {
+		auto psStruct = (Structure*)psObj;
 		if (psStruct->getState() != STRUCTURE_STATE::BUILT ||
-			psStruct->pStructureType->type == REF_WALL || psStruct->pStructureType->type == REF_WALLCORNER || psStruct->
-			pStructureType->type == REF_GATE)
-		{
+		  	psStruct->pStructureType->type == REF_WALL || psStruct->pStructureType->type == REF_WALLCORNER || psStruct->
+		  	pStructureType->type == REF_GATE) {
 			// unbuilt structures and walls do not confer visibility.
 			return;
 		}

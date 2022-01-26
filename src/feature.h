@@ -68,9 +68,9 @@ struct FeatureStats : public BaseStats
 };
 
 class Feature : public BaseObject
-              , public DamageManager {
+{
 public:
-  ~Feature() override = default;
+  ~Feature() override;
   Feature(unsigned id, FeatureStats const* psStats);
 
   Feature(Feature const& rhs);
@@ -80,6 +80,7 @@ public:
   Feature& operator=(Feature&& rhs) noexcept = default;
 
   [[nodiscard]] Vector2i size() const;
+  [[nodiscard]] int objRadius() const;
   [[nodiscard]] FeatureStats const* getStats() const;
 
   void update();

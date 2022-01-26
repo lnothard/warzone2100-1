@@ -39,10 +39,10 @@ extern std::array<std::vector<Droid>,MAX_PLAYERS> apsDroidLists;
 extern std::array<std::vector<
         std::unique_ptr<Structure> >, MAX_PLAYERS> apsStructLists;
 
-extern std::vector<FlagPosition*> apsFlagPosLists;
+extern std::array<std::vector<FlagPosition*>, MAX_PLAYERS> apsFlagPosLists;
 extern std::array<std::vector<ResourceExtractor*>, MAX_PLAYERS> apsExtractorLists;
 extern std::vector<BaseObject*> apsSensorList;
-extern std::vector<Feature*> apsOilList;
+extern std::array<std::vector<Feature*>, MAX_PLAYERS> apsFeatureLists;
 
 /* The list of destroyed objects */
 extern std::vector<BaseObject*> psDestroyedObj;

@@ -73,9 +73,6 @@ static std::unordered_map<WzString, ComponentStats*> lookupCompStatPtr;
 static bool getMovementModel(const WzString& movementModel, MOVEMENT_MODEL* model);
 static bool statsGetAudioIDFromString(const WzString& szStatName, const WzString& szWavName, int* piWavID);
 
-/***********************************************************************************
-*	Dealloc the extra storage tables
-***********************************************************************************/
 //Deallocate the storage assigned for the Propulsion Types table
 static void deallocPropulsionTypes()
 {
@@ -89,129 +86,38 @@ static void deallocTerrainTable()
 	asTerrainTable = nullptr;
 }
 
-/* Macro to allocate memory for a set of stats */
-#define ALLOC_STATS(numEntries, list, listSize, type) \
-	ASSERT((numEntries) < ~STAT_MASK + 1, "Number of stats entries too large for " #type);\
-	if ((list))	delete [] (list);	\
-	(list) = new type[numEntries]; \
-	(listSize) = (numEntries); \
-	return true
-
-/*Macro to Deallocate stats*/
-#define STATS_DEALLOC(list, listSize) \
-	delete [] (list); \
-	listSize = 0; \
-	(list) = NULL
-
-void statsInitVars()
-{
-	/* The number of different stats stored */
-	numBodyStats = 0;
-	numBrainStats = 0;
-	numPropulsionStats = 0;
-	numSensorStats = 0;
-	numECMStats = 0;
-	numRepairStats = 0;
-	numWeaponStats = 0;
-	numConstructStats = 0;
-}
-
 /*Deallocate all the stats assigned from input data*/
 bool statsShutDown()
 {
 	lookupStatPtr.clear();
 	lookupCompStatPtr.clear();
-
-	STATS_DEALLOC(asWeaponStats, numWeaponStats);
-	STATS_DEALLOC(asBrainStats, numBrainStats);
-	STATS_DEALLOC(asPropulsionStats, numPropulsionStats);
-	STATS_DEALLOC(asRepairStats, numRepairStats);
-	STATS_DEALLOC(asConstructStats, numConstructStats);
-	STATS_DEALLOC(asECMStats, numECMStats);
-	STATS_DEALLOC(asSensorStats, numSensorStats);
-	STATS_DEALLOC(asBodyStats, numBodyStats);
 	deallocPropulsionTypes();
 	deallocTerrainTable();
-
 	return true;
 }
 
-
-/* Allocate Weapon stats */
-bool statsAllocWeapons(unsigned numStats)
-{
-	ALLOC_STATS(numStats, asWeaponStats, numWeaponStats, WeaponStats);
-}
-
-/* Allocate Body Stats */
-bool statsAllocBody(unsigned numStats)
-{
-	ALLOC_STATS(numStats, asBodyStats, numBodyStats, BodyStats);
-}
-
-/* Allocate Brain Stats */
-bool statsAllocBrain(unsigned numStats)
-{
-	ALLOC_STATS(numStats, asBrainStats, numBrainStats, CommanderStats);
-}
-
-/* Allocate Propulsion Stats */
-bool statsAllocPropulsion(unsigned numStats)
-{
-	ALLOC_STATS(numStats, asPropulsionStats, numPropulsionStats, PropulsionStats);
-}
-
-/* Allocate Sensor Stats */
-bool statsAllocSensor(unsigned numStats)
-{
-	ALLOC_STATS(numStats, asSensorStats, numSensorStats, SensorStats);
-}
-
-/* Allocate Ecm Stats */
-bool statsAllocECM(unsigned numStats)
-{
-	ALLOC_STATS(numStats, asECMStats, numECMStats, EcmStats);
-}
-
-/* Allocate Repair Stats */
-bool statsAllocRepair(unsigned numStats)
-{
-	ALLOC_STATS(numStats, asRepairStats, numRepairStats, RepairStats);
-}
-
-/* Allocate Construct Stats */
-bool statsAllocConstruct(unsigned numStats)
-{
-	ALLOC_STATS(numStats, asConstructStats, numConstructStats, ConstructStats);
-}
-
-/*******************************************************************************
-*		Load stats functions
-*******************************************************************************/
-
-static iIMDShape* statsGetIMD(WzConfig& json, BaseStats* psStats, const WzString& key,
-                              const WzString& key2 = WzString())
+static iIMDShape* statsGetIMD(WzConfig& json, BaseStats* psStats, WzString const& key,
+                              WzString const& key2 = WzString())
 {
 	iIMDShape* retval = nullptr;
-	if (json.contains(key))
-	{
-		auto value = json.json(key);
-		if (value.is_object())
-		{
-			ASSERT(!key2.isEmpty(), "Cannot look up a JSON object with an empty key!");
-			auto obj = value;
-			if (obj.find(key2.toUtf8()) == obj.end())
-			{
-				return nullptr;
-			}
-			value = obj[key2.toUtf8()];
-		}
-		WzString filename = json_variant(value).toWzString();
-		retval = modelGet(filename);
-		ASSERT(retval != nullptr, "Cannot find the PIE model %s for stat %s in %s",
-		       filename.toUtf8().c_str(), getStatsName(psStats), json.fileName().toUtf8().c_str());
-	}
-	return retval;
+  if (!json.contains(key)) return retval;
+
+  auto value = json.json(key);
+  if (value.is_object()) {
+    ASSERT(!key2.isEmpty(), "Cannot look up a JSON object with an empty key!");
+    auto obj = value;
+    if (obj.find(key2.toUtf8()) == obj.end()) {
+      return nullptr;
+    }
+    value = obj[key2.toUtf8()];
+  }
+
+  auto filename = json_variant(value).toWzString();
+  retval = modelGet(filename);
+  ASSERT(retval != nullptr, "Cannot find the PIE model %s for stat %s in %s",
+         filename.toUtf8().c_str(), getStatsName(psStats), json.fileName().toUtf8().c_str());
+
+  return retval;
 }
 
 static void loadStats(WzConfig& json, BaseStats* psStats, size_t index)
@@ -998,14 +904,14 @@ bool loadConstructStats(WzConfig& ini)
 /*Load the Propulsion Types from the file exported from Access*/
 bool loadPropulsionTypes(WzConfig& ini)
 {
-	const unsigned int NumTypes = PROPULSION_TYPE_NUM;
+	auto const NumTypes = static_cast<int>(PROPULSION_TYPE::COUNT);
 
 	//allocate storage for the stats
 	asPropulsionTypes.resize(NumTypes);
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
 
-	for (int i = 0; i < NumTypes; ++i)
+	for (auto i = 0; i < NumTypes; ++i)
 	{
 		PROPULSION_TYPE type;
 
@@ -1013,8 +919,7 @@ bool loadPropulsionTypes(WzConfig& ini)
 		unsigned multiplier = ini.value("multiplier").toUInt();
 
 		//set the pointer for this record based on the name
-		if (!getPropulsionType(list[i].toUtf8().c_str(), &type))
-		{
+		if (!getPropulsionType(list[i].toUtf8().c_str(), &type)) {
 			debug(LOG_FATAL, "Invalid Propulsion type - %s", list[i].toUtf8().c_str());
 			return false;
 		}
@@ -1022,8 +927,7 @@ bool loadPropulsionTypes(WzConfig& ini)
 		Propulsion* pPropType = &asPropulsionTypes[type];
 
 		WzString flightName = ini.value("flightName").toWzString();
-		if (flightName.compare("GROUND") == 0)
-		{
+		if (flightName.compare("GROUND") == 0) {
 			pPropType->travel = TRAVEL_MEDIUM::GROUND;
 		}
 		else if (flightName.compare("AIR") == 0)
@@ -1520,18 +1424,15 @@ std::string getWeaponEffect(WEAPON_EFFECT effect)
 	return "Bad weapon effect";
 }
 
-bool getWeaponClass(const WzString& weaponClassStr, WEAPON_CLASS* weaponClass)
+bool getWeaponClass(WzString const& weaponClassStr, WEAPON_CLASS* weaponClass)
 {
-	if (weaponClassStr.compare("KINETIC") == 0)
-	{
+	if (weaponClassStr.compare("KINETIC") == 0) {
 		*weaponClass = WEAPON_CLASS::KINETIC;
 	}
-	else if (weaponClassStr.compare("HEAT") == 0)
-	{
+	else if (weaponClassStr.compare("HEAT") == 0) {
 		*weaponClass = WEAPON_CLASS::HEAT;
 	}
-	else
-	{
+	else {
 		ASSERT(false, "Bad weapon class %s", weaponClassStr.toUtf8().c_str());
 		return false;
 	};

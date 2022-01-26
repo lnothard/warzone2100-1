@@ -86,6 +86,15 @@ static constexpr auto MAX_FACTORY	=	5;
 /// Used to flag when the Factory is ready to start building
 static constexpr auto ACTION_START_TIME = 0;
 
+enum WallOrientation
+{
+  WallConnectNone = 0,
+  WallConnectLeft = 1,
+  WallConnectRight = 2,
+  WallConnectUp = 4,
+  WallConnectDown = 8,
+};
+
 enum class PENDING_STATUS
 {
 	NOTHING_PENDING,
@@ -236,7 +245,7 @@ struct WALL
 };
 
 class Structure : public BaseObject
-                , public DamageManager, public PlayerManager {
+{
 public:
   ~Structure() override;
 
@@ -449,9 +458,7 @@ private:
 //this is used for module graphics - factory and vtol factory
 static const int NUM_FACMOD_TYPES = 2;
 
-
-
-extern std::array< std::vector<ProductionRun>, NUM_FACTORY_TYPES> asProductionRun;
+extern std::vector<ProductionRun> asProductionRun[NUM_FACTORY_TYPES];
 
 struct UPGRADE_MOD
 {
@@ -473,10 +480,6 @@ extern Structure* psLastStructHit;
 
 //stores which player the production list has been set up for
 extern unsigned productionPlayer;
-
-//holder for all StructureStats
-extern StructureStats* asStructureStats;
-extern unsigned numStructureStats;
 
 //used to hold the modifiers cross refd by weapon effect and structureStrength
 extern STRUCTSTRENGTH_MODIFIER asStructStrengthModifier[WE_NUMEFFECTS][NUM_STRUCT_STRENGTH];
@@ -576,7 +579,7 @@ void setFactorySecondaryState(Droid* psDroid, Structure* psStructure);
 static float CalcStructureSmokeInterval(float damage);
 
 /* is this a lassat structure? */
-static inline bool isLasSat(StructureStats* pStructureType)
+static inline bool isLasSat(StructureStats const* pStructureType)
 {
 	ASSERT_OR_RETURN(false, pStructureType != nullptr, "LasSat is invalid?");
 
@@ -789,7 +792,8 @@ static inline void _setStructureTarget(Structure* psBuilding, BaseObject * psNew
                                        TARGET_ORIGIN targetOrigin, int line, const char* func)
 {
 	ASSERT_OR_RETURN(, idx < MAX_WEAPONS, "Bad index");
-	ASSERT_OR_RETURN(, psNewTarget == nullptr || !psNewTarget->died, "setStructureTarget set dead target");
+	ASSERT_OR_RETURN(, psNewTarget == nullptr || !psNewTarget->damageManager->isDead(),
+                   "setStructureTarget set dead target");
 	psBuilding->psTarget[idx] = psNewTarget;
 	psBuilding->asWeaps[idx].origin = targetOrigin;
 #ifdef DEBUG
@@ -910,6 +914,12 @@ struct LineBuild
 	Vector2i step = {0, 0};
 	int count = 0;
 };
+
+static bool isWallCombiningStructureType(StructureStats const* pStructureType);
+static WallOrientation structChooseWallType(unsigned player, Vector2i map);
+static uint16_t wallDir(WallOrientation orient);
+static uint16_t wallType(WallOrientation orient);
+static WallOrientation structChooseWallTypeBlueprint(Vector2i map);
 
 LineBuild calcLineBuild(Vector2i size, STRUCTURE_TYPE type, Vector2i pos, Vector2i pos2);
 LineBuild calcLineBuild(StructureStats const* stats, uint16_t direction, Vector2i pos, Vector2i pos2);
