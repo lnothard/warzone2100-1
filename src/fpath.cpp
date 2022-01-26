@@ -419,7 +419,7 @@ FPATH_RESULT fpathDroidRoute(Droid* psDroid, int tX, int tY, FPATH_MOVETYPE move
 	auto& psPropStats = psDroid->getPropulsion();
 
 	// override for AI to blast our way through stuff
-	if (!isHumanPlayer(psDroid->getPlayer()) && 
+	if (!isHumanPlayer(psDroid->playerManager->getPlayer()) &&
       moveType == FMT_MOVE) {
 		moveType = numWeapons(*psDroid) == 0 
             ? FMT_MOVE 
@@ -430,18 +430,17 @@ FPATH_RESULT fpathDroidRoute(Droid* psDroid, int tX, int tY, FPATH_MOVETYPE move
   // blocking tiles and find an alternative if they are
 	auto startPos = psDroid->getPosition();
 	auto endPos = Position(tX, tY, 0);
-  auto dstStructure = getStructureBounds(
-          worldTile(endPos.xy())->psObject);
+  auto dstStructure = getStructureBounds(worldTile(endPos.xy())->psObject);
 
 	startPos = findNonblockingPosition(
           startPos, psDroid->getPropulsion()->propulsionType,
-          psDroid->getPlayer(), moveType);
+          psDroid->playerManager->getPlayer(), moveType);
   
 	if (!dstStructure.isValid()) {
     // if there's a structure over the destination, ignore it, otherwise
     // pathfind from somewhere around the obstruction.
 		endPos = findNonblockingPosition(endPos, psDroid->getPropulsion()->propulsionType,
-                                     psDroid->getPlayer(), moveType);
+                                     psDroid->playerManager->getPlayer(), moveType);
 	}
 	objTrace(psDroid->getId(),
            "Want to go to (%d, %d) -> (%d, %d), going (%d, %d) -> (%d, %d)",
@@ -451,16 +450,16 @@ FPATH_RESULT fpathDroidRoute(Droid* psDroid, int tX, int tY, FPATH_MOVETYPE move
            map_coord(startPos.x), map_coord(startPos.y),
 	         map_coord(endPos.x), map_coord(endPos.y));
   
-	switch (psDroid->getOrder().type) {
+	switch (psDroid->getOrder()->type) {
     using enum ORDER_TYPE;
   	case BUILD:
 
     // build a number of structures in a row (walls + bridges)
   	case LINE_BUILD:
   		dstStructure = getStructureBounds(
-              psDroid->getOrder().structure_stats.get(),
-              psDroid->getOrder().pos,
-              psDroid->getOrder().direction);
+              psDroid->getOrder()->structure_stats.get(),
+              psDroid->getOrder()->pos,
+              psDroid->getOrder()->direction);
   	// just need to get close enough to build (can be diagonally),
     // do not need to reach the destination tile
 
@@ -476,14 +475,14 @@ FPATH_RESULT fpathDroidRoute(Droid* psDroid, int tX, int tY, FPATH_MOVETYPE move
   		acceptNearest = true;
   		break;
 	}
-	return fpathRoute(&psDroid->getMovementData(), psDroid->getId(), startPos.x,
+	return fpathRoute(psDroid->getMovementData(), psDroid->getId(), startPos.x,
                     startPos.y, endPos.x, endPos.y, psPropStats->propulsionType,
-                    psDroid->getType(), moveType, psDroid->getPlayer(),
+                    psDroid->getType(), moveType, psDroid->playerManager->getPlayer(),
                     acceptNearest, dstStructure);
 }
 
 // Run only from path thread
-PathResult fpathExecute(const PathJob& job)
+PathResult fpathExecute(PathJob& job)
 {
   using enum ASTAR_RESULT;
 	PathResult result;
@@ -491,7 +490,7 @@ PathResult fpathExecute(const PathJob& job)
 	result.retval = FPATH_RESULT::FAILED;
 	result.originalDest = Vector2i{job.destination.x, job.destination.y};
 
-	ASTAR_RESULT retval = fpathAStarRoute(&result.sMove, &job);
+	ASTAR_RESULT retval = fpathAStarRoute(result.sMove, job);
 
 	ASSERT(retval != OK ||
          result.sMove.path.size() > 0, 

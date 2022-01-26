@@ -28,11 +28,10 @@
 #include "lib/sound/audio_id.h"
 
 #include "stats.h"
-#include "map.h"
 #include "main.h"
+#include "map.h"
 
 static constexpr auto WEAPON_TIME = 100;
-
 static constexpr auto DEFAULT_DROID_RESISTANCE = 150;
 
 BaseStats::BaseStats(unsigned ref)
@@ -45,15 +44,6 @@ bool BaseStats::hasType(StatType type) const
   return (ref & STAT_MASK) == type;
 }
 
-/* The stores for the different stats */
-BodyStats* asBodyStats;
-CommanderStats* asBrainStats;
-PropulsionStats* asPropulsionStats;
-SensorStats* asSensorStats;
-EcmStats* asECMStats;
-RepairStats* asRepairStats;
-WeaponStats* asWeaponStats;
-ConstructStats* asConstructStats;
 std::vector<Propulsion> asPropulsionTypes;
 static int* asTerrainTable;
 
@@ -385,15 +375,15 @@ bool loadWeaponStats(WzConfig& ini)
 		psStats->ref = STAT_WEAPON + i;
 
 		//get the IMD for the component
-		psStats->pIMD = statsGetIMD(ini, psStats, "model");
+		psStats->pIMD = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "model"));
 		psStats->pMountGraphic = statsGetIMD(ini, psStats, "mountModel");
 		if (GetGameMode() == GS_NORMAL) {
-			psStats->pMuzzleGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "muzzleGfx"));
-			psStats->pInFlightGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "flightGfx"));
-			psStats->pTargetHitGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "hitGfx"));
-			psStats->pTargetMissGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "missGfx"));
-			psStats->pWaterHitGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "waterGfx"));
-			psStats->pTrailGraphic = std::make_unique<iIMDShape>(statsGetIMD(ini, psStats, "trailGfx"));
+			psStats->pMuzzleGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "muzzleGfx"));
+			psStats->pInFlightGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "flightGfx"));
+			psStats->pTargetHitGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "hitGfx"));
+			psStats->pTargetMissGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "missGfx"));
+			psStats->pWaterHitGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "waterGfx"));
+			psStats->pTrailGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "trailGfx"));
 		}
 		psStats->fireOnMove = ini.value("fireOnMove", true).toBool();
 
@@ -446,8 +436,7 @@ bool loadWeaponStats(WzConfig& ini)
 
 		//set periodical damage weapon subclass
 		WzString periodicalDamageWeaponSubClass = ini.value("periodicalDamageWeaponSubClass", "").toWzString();
-		if (periodicalDamageWeaponSubClass.compare("") == 0)
-		{
+		if (periodicalDamageWeaponSubClass.compare("") == 0) {
 			//was not setted in ini - use default value
 			psStats->periodicalDamageWeaponSubClass = psStats->weaponSubClass;
 		}
@@ -475,8 +464,8 @@ bool loadWeaponStats(WzConfig& ini)
 		}
 
 		//set the movement model
-		if (!getMovementModel(ini.value("movement").toWzString(), &psStats->movementModel))
-		{
+		if (!getMovementModel(ini.value("movement").toWzString(),
+                          &psStats->movementModel)) {
 			return false;
 		}
 
@@ -565,9 +554,9 @@ bool loadBodyStats(WzConfig& ini)
 		psStats->base.armour = ini.value("armourKinetic").toInt();
 		psStats->base.power = ini.value("powerOutput").toInt();
 		psStats->base.resistance = ini.value("resistance", DEFAULT_DROID_RESISTANCE).toInt();
-		for (int j = 0; j < MAX_PLAYERS; j++)
+		for (auto& j : psStats->upgraded)
 		{
-			psStats->upgraded[j] = psStats->base;
+			j = psStats->base;
 		}
 		psStats->ref = STAT_BODY + i;
 		if (!getBodySize(ini.value("size").toWzString(), &psStats->size))
@@ -575,7 +564,7 @@ bool loadBodyStats(WzConfig& ini)
 			ASSERT(false, "Unknown body size for %s", getStatsName(psStats));
 			return false;
 		}
-		psStats->pIMD = statsGetIMD(ini, psStats, "model");
+		psStats->pIMD = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "model"));
 
 		ini.endGroup();
 	}
@@ -584,12 +573,12 @@ bool loadBodyStats(WzConfig& ini)
 	// separate function
 
 	// allocate space
-	for (int numStats = 0; numStats < numBodyStats; ++numStats)
+	for (auto numStats = 0; numStats < numBodyStats; ++numStats)
 	{
-		BodyStats* psBodyStat = &asBodyStats[numStats];
-		psBodyStat->ppIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT, nullptr);
-		psBodyStat->ppMoveIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT, nullptr);
-		psBodyStat->ppStillIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT, nullptr);
+		auto psBodyStat = &asBodyStats[numStats];
+		psBodyStat->ppIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT);
+		psBodyStat->ppMoveIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT);
+		psBodyStat->ppStillIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT);
 	}
 	for (auto& i : list)
 	{
@@ -636,9 +625,9 @@ bool loadBodyStats(WzConfig& ini)
 			}
 			//allocate the left and right propulsion IMDs + movement and standing still animations
 			psBodyStat->ppIMDList[numStats * (int)PROP_SIDE::COUNT + (int)PROP_SIDE::LEFT] = statsGetIMD(
-				ini, psBodyStat, keys[j], WzString::fromUtf8("left"));
+				ini, psBodyStat, key, WzString::fromUtf8("left"));
 			psBodyStat->ppIMDList[numStats * (int)PROP_SIDE::COUNT + (int)PROP_SIDE::RIGHT] = statsGetIMD(
-				ini, psBodyStat, keys[j], WzString::fromUtf8("right"));
+				ini, psBodyStat, key, WzString::fromUtf8("right"));
 			psBodyStat->ppMoveIMDList[numStats] = statsGetIMD(ini, psBodyStat, key, WzString::fromUtf8("moving"));
 			psBodyStat->ppStillIMDList[numStats] = statsGetIMD(ini, psBodyStat, key, WzString::fromUtf8("still"));
 		}
@@ -1643,24 +1632,21 @@ int bodyPower(const BodyStats* psStats, unsigned player)
 //}
 
 //calculates the weapons ROF based on the fire pause and the salvos
-int weaponROF(const WeaponStats* psStat, unsigned player)
+int weaponROF(WeaponStats const* psStat, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	int rof = 0;
 	// if there are salvos
-	if (player >= 0
-		&& psStat->upgraded[player].numRounds
-		&& psStat->upgraded[player].reloadTime != 0)
-	{
+	if (player >= 0 &&
+      psStat->upgraded[player].numRounds &&
+      psStat->upgraded[player].reloadTime != 0) {
 		// Rounds per salvo multiplied with the number of salvos per minute
 		rof = psStat->upgraded[player].numRounds * 60 * GAME_TICKS_PER_SEC / weaponReloadTime(psStat, player);
 	}
 
-	if (rof == 0)
-	{
+	if (rof == 0) {
 		rof = weaponFirePause(psStat, player);
-		if (rof != 0)
-		{
+		if (rof != 0) {
 			rof = (UWORD)(60 * GAME_TICKS_PER_SEC / rof);
 		}
 		//else leave it at 0
@@ -1669,54 +1655,51 @@ int weaponROF(const WeaponStats* psStat, unsigned player)
 }
 
 /* Check if an object has a weapon */
-bool objHasWeapon(const PlayerOwnedObject * psObj)
+bool objHasWeapon(BaseObject const* psObj)
 {
 	//check if valid type
-	if (psObj->type == OBJ_DROID) {
-		if (((const Droid*)psObj)->numWeaps > 0) {
+	if (auto droid = dynamic_cast<Droid const*>(psObj)) {
+		if (numWeapons(*droid) > 0) {
 			return true;
 		}
 	}
-	else if (psObj->type == OBJ_STRUCTURE) {
-		if (((const Structure*)psObj)->numWeaps > 0) {
+	else if (auto structure = dynamic_cast<Structure const*>(psObj)) {
+		if (numWeapons(*structure) > 0) {
 			return true;
 		}
 	}
 	return false;
 }
 
-SensorStats* objActiveRadar(const PlayerOwnedObject * psObj)
+SensorStats const* objActiveRadar(BaseObject const* psObj)
 {
-	SensorStats* psStats = nullptr;
-
-	if (auto psDroid = dynamic_cast<const Droid*>(psObj)) {
-
+	SensorStats const* psStats = nullptr;
+	if (auto psDroid = dynamic_cast<Droid const*>(psObj)) {
     if (psDroid->getType() != DROID_TYPE::SENSOR &&
         psDroid->getType() != DROID_TYPE::COMMAND) {
       return nullptr;
     }
-    psStats = psDroid->getSensor();
+    psStats = dynamic_cast<SensorStats const*>(psDroid->getComponent("sensor"));
   }
 	else if (auto psStruct = dynamic_cast<const Structure*>(psObj)) {
-    psStats = psStruct->getStats().sensor_stats;
+    psStats = psStruct->getStats()->sensor_stats.get();
     if (!psStats || psStats->location != LOC::TURRET ||
         psStruct->getState() != STRUCTURE_STATE::BUILT) {
       return nullptr;
     }
   }
-
 	return psStats;
 }
 
-bool objRadarDetector(const PlayerOwnedObject *psObj)
+bool objRadarDetector(BaseObject const* psObj)
 {
-	if (const auto& psStruct = dynamic_cast<const Structure*>(psObj)) {
+	if (auto const& psStruct = dynamic_cast<Structure const*>(psObj)) {
 		return psStruct->getState() == STRUCTURE_STATE::BUILT &&
-            psStruct->getStats().sensor_stats &&
-            psStruct->getStats().sensor_stats->type == SENSOR_TYPE::RADAR_DETECTOR;
+            psStruct->getStats()->sensor_stats &&
+            psStruct->getStats()->sensor_stats->type == SENSOR_TYPE::RADAR_DETECTOR;
 	}
-	else if (const auto& psDroid = dynamic_cast<const Droid*>(psObj)) {
-		auto psSensor = getSensorStats(psDroid);
+	else if (auto const& psDroid = dynamic_cast<Droid const*>(psObj)) {
+		auto psSensor = dynamic_cast<SensorStats const*>(psDroid->getComponent("sensor"));
 		return psSensor && psSensor->type == SENSOR_TYPE::RADAR_DETECTOR;
 	}
 	return false;

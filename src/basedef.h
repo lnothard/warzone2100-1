@@ -67,53 +67,16 @@ struct Spacetime
   Rotation rotation {0, 0,0};
 };
 
-/// The base type specification inherited by all game entities
-class BaseObject
-{
+class DamageManager {
 public:
-  virtual ~BaseObject() = default;
-  explicit BaseObject(unsigned id);
+  ~DamageManager() = default;
+  DamageManager();
 
-  BaseObject(BaseObject const& rhs);
-  BaseObject& operator=(BaseObject const& rhs);
+  DamageManager(DamageManager const& rhs);
+  DamageManager & operator=(DamageManager const& rhs);
 
-  BaseObject(BaseObject&& rhs) noexcept = default;
-  BaseObject& operator=(BaseObject&& rhs) noexcept = default;
-
-  [[nodiscard]] unsigned getId() const noexcept;
-  [[nodiscard]] Spacetime getSpacetime() const noexcept;
-  [[nodiscard]] Position getPosition() const noexcept;
-  [[nodiscard]] Rotation getRotation() const noexcept;
-  [[nodiscard]] unsigned getTime() const noexcept;
-  [[nodiscard]] const DisplayData* getDisplayData() const noexcept;
-  [[nodiscard]] Spacetime getPreviousLocation() const noexcept;
-  [[nodiscard]] bool isVisibleToPlayer(unsigned player) const;
-  [[nodiscard]] bool isVisibleToSelectedPlayer() const;
-  [[nodiscard]] bool testFlag(size_t pos) const;
-  void setVisibleToPlayer(unsigned player, uint8_t vis);
-  void setHidden();
-  void setFlag(size_t pos, bool val);
-  void setTime(unsigned t) noexcept;
-  void setRotation(Rotation rot) noexcept;
-  void setPosition(Position pos) noexcept;
-  void setHeight(int height) noexcept;
-  void setPreviousLocation(Spacetime prevLoc);
-private:
-  struct Impl;
-  std::unique_ptr<Impl> pimpl;
-};
-
-class Damageable
-{
-public:
-  ~Damageable() = default;
-  Damageable();
-
-  Damageable(Damageable const& rhs);
-  Damageable& operator=(Damageable const& rhs);
-
-  Damageable(Damageable&& rhs) noexcept = default;
-  Damageable& operator=(Damageable&& rhs) noexcept = default;
+  DamageManager(DamageManager && rhs) noexcept = default;
+  DamageManager & operator=(DamageManager && rhs) noexcept = default;
 
   void setHp(unsigned hp);
   void setOriginalHp(unsigned hp);
@@ -124,6 +87,7 @@ public:
   void setLastHitWeapon(WEAPON_SUBCLASS weap);
   void setPeriodicalDamage(unsigned damage);
   void setPeriodicalDamageStartTime(unsigned time);
+  void setTimeOfDeath(unsigned t);
   [[nodiscard]] bool isSelected() const;
   [[nodiscard]] unsigned getHp() const;
   [[nodiscard]] unsigned getOriginalHp() const;
@@ -140,25 +104,68 @@ private:
   std::unique_ptr<Impl> pimpl;
 };
 
-class PlayerOwned
-{
+class PlayerManager {
 public:
-  ~PlayerOwned() = default;
-  PlayerOwned(unsigned player);
+  ~PlayerManager() = default;
+  PlayerManager(unsigned player);
 
-  PlayerOwned(PlayerOwned const& rhs);
-  PlayerOwned& operator=(PlayerOwned const& rhs);
+  PlayerManager(PlayerManager const& rhs);
+  PlayerManager & operator=(PlayerManager const& rhs);
 
-  PlayerOwned(PlayerOwned&& rhs) noexcept = default;
-  PlayerOwned& operator=(PlayerOwned&& rhs) noexcept = default;
+  PlayerManager(PlayerManager && rhs) noexcept = default;
+  PlayerManager & operator=(PlayerManager && rhs) noexcept = default;
 
   void setPlayer(unsigned plr);
   [[nodiscard]] unsigned getPlayer() const;
-  [[nodiscard]] virtual std::array<> const& getWeapons() const = 0;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
 };
+
+/// The base type specification inherited by all game entities
+class BaseObject
+{
+public:
+  virtual ~BaseObject() = default;
+  explicit BaseObject(unsigned id);
+  BaseObject(unsigned id, std::unique_ptr<PlayerManager> playerManager);
+  BaseObject(unsigned id, std::unique_ptr<DamageManager> damageManager);
+  BaseObject(unsigned id,
+             std::unique_ptr<PlayerManager> playerManager,
+             std::unique_ptr<DamageManager> damageManager);
+
+  BaseObject(BaseObject const& rhs);
+  BaseObject& operator=(BaseObject const& rhs);
+
+  BaseObject(BaseObject&& rhs) noexcept = default;
+  BaseObject& operator=(BaseObject&& rhs) noexcept = default;
+
+  [[nodiscard]] unsigned getId() const noexcept;
+  [[nodiscard]] Spacetime getSpacetime() const noexcept;
+  [[nodiscard]] Position getPosition() const noexcept;
+  [[nodiscard]] Rotation getRotation() const noexcept;
+  [[nodiscard]] unsigned getTime() const noexcept;
+  [[nodiscard]] const DisplayData* getDisplayData() const noexcept;
+  [[nodiscard]] Spacetime getPreviousLocation() const noexcept;
+  [[nodiscard]] uint8_t isVisibleToPlayer(unsigned player) const;
+  [[nodiscard]] uint8_t isVisibleToSelectedPlayer() const;
+  [[nodiscard]] bool testFlag(size_t pos) const;
+  void setVisibleToPlayer(unsigned player, uint8_t vis);
+  void setHidden();
+  void setFlag(size_t pos, bool val);
+  void setTime(unsigned t) noexcept;
+  void setRotation(Rotation rot) noexcept;
+  void setPosition(Position pos) noexcept;
+  void setHeight(int height) noexcept;
+  void setPreviousLocation(Spacetime prevLoc);
+public:
+  std::unique_ptr<DamageManager> damageManager;
+  std::unique_ptr<PlayerManager> playerManager;
+private:
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
+};
+
 
 int objectPositionSquareDiff(const Position& first, const Position& second);
 int objectPositionSquareDiff(const BaseObject* first, const BaseObject* second);

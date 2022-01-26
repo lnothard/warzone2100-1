@@ -45,7 +45,7 @@ struct BaseObject::Impl
   std::bitset<static_cast<size_t>(OBJECT_FLAG::COUNT)> flags;
 };
 
-struct Damageable::Impl
+struct DamageManager::Impl
 {
   Impl() = default;
 
@@ -61,7 +61,7 @@ struct Damageable::Impl
   unsigned periodicalDamageStartTime = 0;
 };
 
-struct PlayerOwned::Impl
+struct PlayerManager::Impl
 {
   explicit Impl(unsigned player);
 
@@ -71,11 +71,33 @@ struct PlayerOwned::Impl
 BaseObject::BaseObject(unsigned id)
   : pimpl{std::make_unique<Impl>(id)}
 {
+}
 
+BaseObject::BaseObject(unsigned id, std::unique_ptr<PlayerManager> playerManager)
+  : pimpl{std::make_unique<Impl>(id)}
+  , playerManager{std::move(playerManager)}
+{
+}
+
+BaseObject::BaseObject(unsigned id, std::unique_ptr<DamageManager> damageManager)
+        : pimpl{std::make_unique<Impl>(id)}
+        , damageManager{std::move(damageManager)}
+{
+}
+
+BaseObject::BaseObject(unsigned id,
+                       std::unique_ptr<PlayerManager> playerManager,
+                       std::unique_ptr<DamageManager> damageManager)
+  : pimpl{std::make_unique<Impl>(id)}
+  , playerManager{std::move(playerManager)}
+  , damageManager{std::move(damageManager)}
+{
 }
 
 BaseObject::BaseObject(BaseObject const& rhs)
   : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+  , playerManager{std::make_unique<PlayerManager>(*rhs.playerManager)}
+  , damageManager{std::make_unique<DamageManager>(*rhs.damageManager)}
 {
 }
 
@@ -83,6 +105,8 @@ BaseObject& BaseObject::operator=(BaseObject const& rhs)
 {
   if (this == &rhs) return *this;
   *pimpl = *rhs.pimpl;
+  *playerManager = *rhs.playerManager;
+  *damageManager = *rhs.damageManager;
   return *this;
 }
 
@@ -118,41 +142,41 @@ BaseObject::Impl& BaseObject::Impl::operator=(Impl const& rhs)
   visibleToPlayer = rhs.visibleToPlayer;
 }
 
-Damageable::Damageable()
+DamageManager::DamageManager()
   : pimpl{std::make_unique<Impl>()}
 {
 }
 
-Damageable::Damageable(Damageable const& rhs)
+DamageManager::DamageManager(DamageManager const& rhs)
   : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
 
-Damageable& Damageable::operator=(Damageable const& rhs)
+DamageManager &DamageManager::operator=(DamageManager const& rhs)
 {
   if (this == &rhs) return *this;
   *pimpl = *rhs.pimpl;
   return *this;
 }
 
-PlayerOwned::PlayerOwned(unsigned player)
+PlayerManager::PlayerManager(unsigned player)
   : pimpl{std::make_unique<Impl>(player)}
 {
 }
 
-PlayerOwned::PlayerOwned(PlayerOwned const& rhs)
+PlayerManager::PlayerManager(PlayerManager const& rhs)
   : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
 
-PlayerOwned& PlayerOwned::operator=(PlayerOwned const& rhs)
+PlayerManager &PlayerManager::operator=(PlayerManager const& rhs)
 {
   if (this == &rhs) return *this;
   *pimpl = *rhs.pimpl;
   return *this;
 }
 
-PlayerOwned::Impl::Impl(unsigned player)
+PlayerManager::Impl::Impl(unsigned player)
   : player{player}
 {
 }
@@ -194,12 +218,12 @@ const DisplayData* BaseObject::getDisplayData() const noexcept
   return pimpl ? pimpl->display.get() : nullptr;
 }
 
-bool BaseObject::isVisibleToPlayer(unsigned player) const
+uint8_t BaseObject::isVisibleToPlayer(unsigned player) const
 {
-  return pimpl && pimpl->visibleToPlayer[player];
+  return pimpl->visibleToPlayer[player];
 }
 
-bool BaseObject::isVisibleToSelectedPlayer() const
+uint8_t BaseObject::isVisibleToSelectedPlayer() const
 {
   return pimpl && pimpl->visibleToPlayer[selectedPlayer];
 }
@@ -245,117 +269,129 @@ void BaseObject::setHidden()
   pimpl->visibleToPlayer.fill(0);
 }
 
+void BaseObject::setVisibleToPlayer(unsigned player, uint8_t vis)
+{
+  if (!pimpl) return;
+  pimpl->visibleToPlayer[player] = vis;
+}
+
 void BaseObject::setPreviousLocation(Spacetime prevLoc)
 {
   if (!pimpl) return;
   pimpl->previousLocation = prevLoc;
 }
 
-void Damageable::setHp(unsigned hp)
+void DamageManager::setTimeOfDeath(unsigned t)
+{
+  if (!pimpl) return;
+  pimpl->timeOfDeath = t;
+}
+
+void DamageManager::setHp(unsigned hp)
 {
   if (!pimpl) return;
   pimpl->hitPoints = hp;
 }
 
-void Damageable::setOriginalHp(unsigned hp)
+void DamageManager::setOriginalHp(unsigned hp)
 {
   if (!pimpl) return;
   pimpl->originalHp = hp;
 }
 
-void Damageable::setSelected(bool sel)
+void DamageManager::setSelected(bool sel)
 {
   if (!pimpl) return;
   pimpl->isSelected = sel;
 }
 
-void Damageable::setResistance(unsigned res)
+void DamageManager::setResistance(unsigned res)
 {
   if (!pimpl) return;
   pimpl->resistanceToElectric = res;
 }
 
-void Damageable::setExpectedDamageDirect(unsigned damage)
+void DamageManager::setExpectedDamageDirect(unsigned damage)
 {
   if (!pimpl) return;
   pimpl->expectedDamageDirect = damage;
 }
 
-void Damageable::setExpectedDamageIndirect(unsigned damage)
+void DamageManager::setExpectedDamageIndirect(unsigned damage)
 {
   if (!pimpl) return;
   pimpl->expectedDamageIndirect = damage;
 }
 
-void Damageable::setLastHitWeapon(WEAPON_SUBCLASS weap)
+void DamageManager::setLastHitWeapon(WEAPON_SUBCLASS weap)
 {
   if (!pimpl) return;
   pimpl->lastHitWeapon = weap;
 }
 
-void Damageable::setPeriodicalDamage(unsigned damage)
+void DamageManager::setPeriodicalDamage(unsigned damage)
 {
   if (!pimpl) return;
   pimpl->periodicalDamage = damage;
 }
 
-void Damageable::setPeriodicalDamageStartTime(unsigned time)
+void DamageManager::setPeriodicalDamageStartTime(unsigned time)
 {
   if (!pimpl) return;
   pimpl->periodicalDamageStartTime = time;
 }
 
-bool Damageable::isSelected() const
+bool DamageManager::isSelected() const
 {
   return pimpl && pimpl->isSelected;
 }
 
-unsigned Damageable::getHp() const
+unsigned DamageManager::getHp() const
 {
   return pimpl ? pimpl->hitPoints : 0;
 }
 
-unsigned Damageable::getOriginalHp() const
+unsigned DamageManager::getOriginalHp() const
 {
   return pimpl ? pimpl->originalHp : 0;
 }
 
-unsigned Damageable::getResistance() const
+unsigned DamageManager::getResistance() const
 {
   return pimpl ? pimpl->resistanceToElectric : 0;
 }
 
-unsigned Damageable::getExpectedDamageDirect() const
+unsigned DamageManager::getExpectedDamageDirect() const
 {
   return pimpl ? pimpl->expectedDamageDirect : 0;
 }
 
-unsigned Damageable::getExpectedDamageIndirect() const
+unsigned DamageManager::getExpectedDamageIndirect() const
 {
   return pimpl ? pimpl->expectedDamageIndirect : 0;
 }
 
-WEAPON_SUBCLASS Damageable::getLastHitWeapon() const
+WEAPON_SUBCLASS DamageManager::getLastHitWeapon() const
 {
   return pimpl ? pimpl->lastHitWeapon : WEAPON_SUBCLASS::COUNT;
 }
 
-unsigned Damageable::getPeriodicalDamage() const
+unsigned DamageManager::getPeriodicalDamage() const
 {
   return pimpl ? pimpl->periodicalDamage : 0;
 }
 
-unsigned Damageable::getPeriodicalDamageStartTime() const
+unsigned DamageManager::getPeriodicalDamageStartTime() const
 {
   return pimpl ? pimpl->periodicalDamageStartTime : 0;
 }
 
-bool Damageable::isDead() const
+bool DamageManager::isDead() const
 {
   return !pimpl || pimpl->timeOfDeath != 0;
 }
 
-bool Damageable::isProbablyDoomed(bool isDirectDamage) const
+bool DamageManager::isProbablyDoomed(bool isDirectDamage) const
 {
   if (!pimpl) return false;
 
@@ -370,13 +406,13 @@ bool Damageable::isProbablyDoomed(bool isDirectDamage) const
   return is_doomed(pimpl->expectedDamageIndirect);
 }
 
-void PlayerOwned::setPlayer(unsigned plr)
+void PlayerManager::setPlayer(unsigned plr)
 {
   if (!pimpl) return;
   pimpl->player = plr;
 }
 
-unsigned PlayerOwned::getPlayer() const
+unsigned PlayerManager::getPlayer() const
 {
   return pimpl ? pimpl->player : 0;
 }
@@ -387,7 +423,7 @@ int objectPositionSquareDiff(const Position& first, const Position& second)
   return dot(diff, diff);
 }
 
-bool hasFullAmmo(PlayerOwned const& unit) noexcept
+bool hasFullAmmo(PlayerManager const& unit) noexcept
 {
   auto weapons = unit.getWeapons();
   return std::all_of(weapons.begin(), weapons.end(),
@@ -396,7 +432,7 @@ bool hasFullAmmo(PlayerOwned const& unit) noexcept
                      });
 }
 
-bool hasArtillery(PlayerOwned const& unit) noexcept
+bool hasArtillery(PlayerManager const& unit) noexcept
 {
   auto weapons = unit.getWeapons();
   return std::any_of(weapons.begin(), weapons.end(),
@@ -435,7 +471,7 @@ Vector3i calculateMuzzleBaseLocation(BaseObject const& unit, int weapon_slot)
 Vector3i calculateMuzzleTipLocation(BaseObject const& unit, int weapon_slot)
 {
   const auto& imd_shape = unit.getImdShape();
-  const auto& weapon = dynamic_cast<PlayerOwned const&>(unit).getWeapons()[weapon_slot];
+  const auto& weapon = dynamic_cast<PlayerManager const&>(unit).getWeapons()[weapon_slot];
   const auto& position = unit.getPosition();
   const auto& rotation = unit.getRotation();
   auto muzzle = Vector3i{0, 0, 0};
@@ -612,7 +648,7 @@ int calculateLineOfFire(const BaseObject& unit, const BaseObject & target,
   }
 }
 
-bool hasElectronicWeapon(PlayerOwned const& unit) noexcept
+bool hasElectronicWeapon(PlayerManager const& unit) noexcept
 {
   auto& weapons = unit.getWeapons();
   if (weapons.empty()) {
@@ -630,9 +666,9 @@ bool targetInLineOfFire(BaseObject const& unit, BaseObject const& target, int we
   const auto distance = iHypot(
           (target.getPosition() - unit.getPosition()).xy());
 
-  auto range = dynamic_cast<PlayerOwned const&>(
+  auto range = dynamic_cast<PlayerManager const&>(
           unit).getWeapons()[weapon_slot].getMaxRange(
-          dynamic_cast<PlayerOwned const&>(unit).getPlayer());
+          dynamic_cast<PlayerManager const&>(unit).getPlayer());
 
   if (!hasArtillery(unit)) {
     return range >= distance &&
@@ -654,15 +690,15 @@ BaseObject* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
   bool is_cb_sensor = false;
   bool found_cb = false;
   auto target_dist = weapon.getMaxRange(
-          dynamic_cast<PlayerOwned const&>(unit).getPlayer());
+          dynamic_cast<PlayerManager const&>(unit).getPlayer());
 
   auto min_dist = weapon.getMinRange(
-          dynamic_cast<PlayerOwned const&>(unit).getPlayer());
+          dynamic_cast<PlayerManager const&>(unit).getPlayer());
 
   for (const auto sensor : apsSensorList)
   {
     if (!aiCheckAlliances(sensor->getPlayer(), dynamic_cast<
-            PlayerOwned const&>(unit).getPlayer()))
+                                                       PlayerManager const&>(unit).getPlayer()))
       continue;
 
     // Artillery should not fire at objects observed
@@ -690,11 +726,11 @@ BaseObject* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
     is_cb_sensor = sensor->hasCbSensor();
 
     if (!target ||
-        dynamic_cast<Damageable*>(target)->isDead() ||
-        dynamic_cast<Damageable*>(target)->isProbablyDoomed(false) ||
+        dynamic_cast<DamageManager *>(target)->isDead() ||
+        dynamic_cast<DamageManager *>(target)->isProbablyDoomed(false) ||
         !unit.isValidTarget(target, 0) ||
-        aiCheckAlliances(dynamic_cast<PlayerOwned*>(target)->getPlayer(),
-                         dynamic_cast<PlayerOwned const&>(unit).getPlayer())) {
+        aiCheckAlliances(dynamic_cast<PlayerManager *>(target)->getPlayer(),
+                         dynamic_cast<PlayerManager const&>(unit).getPlayer())) {
       continue;
     }
 
@@ -714,12 +750,12 @@ BaseObject* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
   return target;
 }
 
-size_t numWeapons(PlayerOwned const& unit)
+size_t numWeapons(PlayerManager const& unit)
 {
   return unit.getWeapons().size();
 }
 
-unsigned getMaxWeaponRange(PlayerOwned const& unit)
+unsigned getMaxWeaponRange(PlayerManager const& unit)
 {
   auto max = unsigned{0};
   for (const auto& weapon : unit.getWeapons())

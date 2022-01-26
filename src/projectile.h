@@ -75,8 +75,7 @@ enum class PROJECTILE_STATE
 };
 
 class Projectile : public BaseObject
-                 , public PlayerOwned
-{
+                 , public DamageManager, public PlayerManager {
 public:
   ~Projectile() override = default;
   Projectile(unsigned id, unsigned  player);
@@ -90,7 +89,12 @@ public:
 
   [[nodiscard]] PROJECTILE_STATE getState() const noexcept;
   [[nodiscard]] bool isVisible() const;
+  [[nodiscard]] bool isFriendlyFire() const;
+  [[nodiscard]] bool shouldIncreaseExperience() const;
+  int objectDamage();
+  int objectDamageDispatch();
   void update();
+  void updateKills();
   void setTarget(BaseObject* psObj);
   void setSource(BaseObject* psObj);
   void proj_InFlightFunc();
@@ -123,7 +127,9 @@ public:
   ObjectShape(ObjectShape&& rhs) noexcept = default;
   ObjectShape& operator=(ObjectShape&& rhs) noexcept = default;
 
+  [[nodiscard]] bool isRectangular() const;
   [[nodiscard]] int radius() const;
+  [[nodiscard]] Vector2i getSize() const;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
@@ -137,26 +143,13 @@ struct Interval
     int begin, end;
 };
 
-class Damage
+struct Damage
 {
-public:
-   ~Damage() = default;
-   Damage();
-
-   Damage(Damage const& rhs);
-   Damage& operator=(Damage const& rhs);
-
-   Damage(Damage&& rhs) noexcept = default;
-   Damage& operator=(Damage&& rhs) noexcept = default;
-
-  [[nodiscard]] bool isFriendlyFire() const;
-  [[nodiscard]] bool shouldIncreaseExperience() const;
-  [[nodiscard]] int objectDamage();
-  void updateKills();
-private:
-  friend class Projectile;
-  struct Impl;
-  std::unique_ptr<Impl> pimpl;
+  BaseObject* target = nullptr;
+  unsigned damage = 0;
+  unsigned impactTime = 0;
+  bool isDamagePerSecond = false;
+  int minDamage = 0;
 };
 
 extern BaseObject* g_pProjLastAttacker; ///< The last unit that did damage - used by script functions
@@ -215,5 +208,6 @@ void checkProjectile(const Projectile* psProjectile, std::string location_descri
 static void setProjectileSource(Projectile *psProj, ConstructedObject *psObj);
 
 ObjectShape establishTargetShape(BaseObject* psTarget);
+static unsigned qualityFactor(Droid* psAttacker, Droid* psVictim);
 
 #endif // __INCLUDED_SRC_PROJECTILE_H__

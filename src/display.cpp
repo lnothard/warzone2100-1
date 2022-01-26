@@ -48,6 +48,7 @@
 #include "animation.h"
 #include "mapgrid.h"
 #include "objmem.h"
+#include "multiplay.h"
 
 InputManager gInputManager;
 KeyFunctionConfiguration gKeyFuncConfig;
@@ -141,7 +142,7 @@ static bool bSensorAssigned;
 //used to determine if the player has selected a Las Sat structure
 static bool bLasSatStruct;
 // Local prototypes
-static MOUSE_TARGET itemUnderMouse(PlayerOwnedObject ** ppObjUnderCursor);
+static MOUSE_TARGET itemUnderMouse(BaseObject ** ppObjUnderCursor);
 // If shaking is allowed
 static bool bShakingPermitted = true;
 
@@ -153,7 +154,9 @@ void animateToViewDistance(float target, float speed)
 	viewDistanceAnimation
 		.setInitialData(getViewDistance())
 		.setFinalData(target)
-		.setEasing(viewDistanceAnimation.is_active() ? EASE_OUT : EASE_IN_OUT)
+		.setEasing(viewDistanceAnimation.is_active() 
+                             ? EASING_FUNCTION::EASE_OUT 
+                             : EASING_FUNCTION::EASE_IN_OUT)
 		.setDuration(speed <= 0
 			             ? 0
 			             : static_cast<uint32_t>(glm::log(std::abs(target - getViewDistance())) * 100 *
@@ -391,14 +394,14 @@ static bool localPlayerHasSelection()
 
 	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		if (psDroid.selected) {
+		if (psDroid.isSelected()) {
 			return true;
 		}
 	}
 
 	for (auto& psStruct : apsStructLists[selectedPlayer])
 	{
-		if (psStruct->selected) {
+		if (psStruct->isSelected()) {
 			return true;
 		}
 	}
@@ -529,14 +532,14 @@ static void handleAreaDemolition()
 
 	debug(LOG_INFO, "demolish everything in the area (%i %i) -> (%i %i)", worldCoord1.x, worldCoord1.y, worldCoord2.x,
 	      worldCoord2.y);
-	std::vector<PlayerOwnedObject *> gridList = gridStartIterateArea(worldCoord1.x, worldCoord1.y, worldCoord2.x,
+	std::vector<BaseObject *> gridList = gridStartIterateArea(worldCoord1.x, worldCoord1.y, worldCoord2.x,
                                                                  worldCoord2.y);
 	for (auto psObj : gridList)
 	{
-			if (psObj->type == OBJ_STRUCTURE && psObj->getPlayer() == selectedPlayer)
+		if (psObj->type == OBJ_STRUCTURE && psObj->getPlayer() == selectedPlayer)
 		{
 			// add demolish order to queue for every selected unit
-			::orderSelectedObjAdd(selectedPlayer, (PlayerOwnedObject *)psObj, true);
+			orderSelectedObjAdd(selectedPlayer, (BaseObject *)psObj, true);
 		}
 	}
 }
@@ -741,7 +744,7 @@ void processMouseClickInput()
 		wzSetCursor(CURSOR_NOTPOSSIBLE);
 	}
 	else if (selection != SC_INVALID) {
-    PlayerOwnedObject * ObjUnderMouse;
+    BaseObject * ObjUnderMouse;
 		bool ObjAllied;
 
 		item = itemUnderMouse(&ObjUnderMouse);
@@ -915,7 +918,7 @@ void processMouseClickInput()
 		}
 	}
 	else {
-    PlayerOwnedObject * ObjUnderMouse;
+    BaseObject * ObjUnderMouse;
 		item = itemUnderMouse(&ObjUnderMouse);
 
 		//exceptions, exceptions...AB 10/06/99
@@ -1268,9 +1271,9 @@ bool DrawnInLastFrame(int32_t frame)
 	on MOUSE_LMB. We aren't concerned here with setting selection flags - just what it
 	actually was
 */
-PlayerOwnedObject * mouseTarget()
+BaseObject * mouseTarget()
 {
-  PlayerOwnedObject * psReturn = nullptr;
+  BaseObject * psReturn = nullptr;
 	int dispX, dispY, dispR;
 
 	if (mouseTileX < 0 || mouseTileY < 0 || mouseTileX > mapWidth - 1 || mouseTileY > mapHeight - 1)
@@ -1294,7 +1297,7 @@ PlayerOwnedObject * mouseTarget()
 				if (mouseInBox(dispX - dispR, dispY - dispR, dispX + dispR, dispY + dispR))
 				{
 					/* We HAVE clicked on droid! */
-					psReturn = (PlayerOwnedObject *)psDroid;
+					psReturn = (BaseObject *)psDroid;
 					/* There's no point in checking other object types */
 					return psReturn;
 				}
@@ -1478,7 +1481,7 @@ void renderDeliveryRepos(const glm::mat4& viewMatrix)
 // check whether a clicked on droid is in a command group or assigned to a sensor
 static bool droidHasLeader(Droid* psDroid)
 {
-  PlayerOwnedObject * psLeader;
+  BaseObject * psLeader;
 
 	if (psDroid->getType() == DROID_TYPE::COMMAND ||
 			psDroid->getType() == DROID_TYPE::SENSOR)
@@ -1488,7 +1491,7 @@ static bool droidHasLeader(Droid* psDroid)
 
 	if (hasCommander(psDroid))
 	{
-		psLeader = (PlayerOwnedObject *)psDroid->group->psCommander;
+		psLeader = (BaseObject *)psDroid->group->psCommander;
 	}
 	else
 	{
@@ -1613,12 +1616,12 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
               UNDEG(psDroid->getRotation().pitch));
 			FeedbackOrderGiven();
 		}
-		orderSelectedObjAdd(selectedPlayer, (PlayerOwnedObject *)psDroid, ctrlShiftDown());
+		orderSelectedObjAdd(selectedPlayer, (BaseObject *)psDroid, ctrlShiftDown());
 
 		//lasSat structure can select a target - in multiPlayer only
 		if (bMultiPlayer && bLasSatStruct)
 		{
-			orderStructureObj(selectedPlayer, (PlayerOwnedObject *)psDroid);
+			orderStructureObj(selectedPlayer, (BaseObject *)psDroid);
 		}
 
 		FeedbackOrderGiven();
@@ -1636,7 +1639,7 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 	else if (specialOrderKeyDown() && ownDroid)
 	{
 		// try to attack your own unit
-		orderSelectedObjAdd(selectedPlayer, (PlayerOwnedObject *)psDroid, ctrlShiftDown());
+		orderSelectedObjAdd(selectedPlayer, (BaseObject *)psDroid, ctrlShiftDown());
 		FeedbackOrderGiven();
 	}
 	else if (isTransporter(*psDroid))
@@ -1666,7 +1669,7 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 			{
 				// TODO add special processing for cyborgDroids
 			}
-			orderSelectedObj(selectedPlayer, (PlayerOwnedObject *)psDroid);
+			orderSelectedObj(selectedPlayer, (BaseObject *)psDroid);
 			FeedbackOrderGiven();
 		}
 	}
@@ -1677,10 +1680,10 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 					 !ctrlShiftDown() && ownDroid)
 	{
 		turnOffMultiMsg(true);
-		orderSelectedObj(selectedPlayer, (PlayerOwnedObject *)psDroid);
+		orderSelectedObj(selectedPlayer, (BaseObject *)psDroid);
 		FeedbackOrderGiven();
 		clearSelection();
-		assignSensorTarget((PlayerOwnedObject *)psDroid);
+		assignSensorTarget((BaseObject *)psDroid);
 		dealWithDroidSelect(psDroid, false);
 		turnOffMultiMsg(false);
 	}
@@ -1696,15 +1699,15 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 					(psCurr.asWeaps[0].nStat > 0) &&
 					((!proj_Direct(asWeaponStats + psCurr.asWeaps[0].nStat)) ||
 					psCurr.isVtol()) &&
-					droidSensorDroidWeapon((PlayerOwnedObject *)psDroid, &psCurr)) {
+					droidSensorDroidWeapon((BaseObject *)psDroid, &psCurr)) {
 				bSensorAssigned = true;
-				::orderDroidObj(&psCurr, ORDER_TYPE::FIRE_SUPPORT, (PlayerOwnedObject *)psDroid, ModeQueue);
+				::orderDroidObj(&psCurr, ORDER_TYPE::FIRE_SUPPORT, (BaseObject *)psDroid, ModeQueue);
 				FeedbackOrderGiven();
 			}
 		}
 		if (bSensorAssigned) {
 			clearSelection();
-			assignSensorTarget((PlayerOwnedObject *)psDroid);
+			assignSensorTarget((BaseObject *)psDroid);
 		}
 	}
 	// Hack to detect if anything was done with sensor
@@ -1721,14 +1724,14 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 						psDroid->getType() == DROID_TYPE::COMMAND)
 		&& selection == SC_DROID_DIRECT)
 	{
-		orderSelectedObj(selectedPlayer, (PlayerOwnedObject *)psDroid);
+		orderSelectedObj(selectedPlayer, (BaseObject *)psDroid);
 		FeedbackOrderGiven();
 	}
 	// Clicked on a damaged unit? Will repair it.
 	else if (droidIsDamaged(psDroid) && repairDroidSelected(selectedPlayer))
 	{
 		assignDestTarget();
-		orderSelectedObjAdd(selectedPlayer, (PlayerOwnedObject *)psDroid, ctrlShiftDown());
+		orderSelectedObjAdd(selectedPlayer, (BaseObject *)psDroid, ctrlShiftDown());
 		FeedbackOrderGiven();
 	}
 	else if (bRightClickOrders && ownDroid)
@@ -1738,7 +1741,7 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 			clearSelection();
 			SelectDroid(psDroid);
 		}
-		intObjectSelected((PlayerOwnedObject *)psDroid);
+		intObjectSelected((BaseObject *)psDroid);
 	}
 	// Just plain clicked on?
 	else if (ownDroid)
@@ -1876,11 +1879,11 @@ static void dealWithLMBFeature(Feature* psFeature)
 	//go on to check for
 	if (psFeature->getStats()->damageable)
 	{
-		orderSelectedObjAdd(selectedPlayer, (PlayerOwnedObject *)psFeature, ctrlShiftDown());
+		orderSelectedObjAdd(selectedPlayer, (BaseObject *)psFeature, ctrlShiftDown());
 		//lasSat structure can select a target - in multiPlayer only
 		if (bMultiPlayer && bLasSatStruct)
 		{
-			orderStructureObj(selectedPlayer, (PlayerOwnedObject *)psFeature);
+			orderStructureObj(selectedPlayer, (BaseObject *)psFeature);
 		}
 		FeedbackOrderGiven();
 	}
@@ -1954,7 +1957,7 @@ debugOuput:
 	}
 }
 
-static void dealWithLMBObject(PlayerOwnedObject * psClickedOn)
+static void dealWithLMBObject(BaseObject * psClickedOn)
 {
 	SELECTION_TYPE selection = establishSelection(selectedPlayer);
 	OBJECT_TYPE type = psClickedOn->type;
@@ -1982,7 +1985,7 @@ static void dealWithLMBObject(PlayerOwnedObject * psClickedOn)
 
 void dealWithLMB()
 {
-  PlayerOwnedObject * psClickedOn;
+  BaseObject * psClickedOn;
 	Structure* psStructure;
 
 	/* Don't process if in game options are on screen */
@@ -2062,7 +2065,7 @@ bool getRotActive()
 // process LMB double clicks
 static void dealWithLMBDClick()
 {
-  PlayerOwnedObject * psClickedOn;
+  BaseObject * psClickedOn;
 	Droid* psDroid;
 	Structure* psStructure;
 
@@ -2140,7 +2143,7 @@ static FlagPosition* findMouseDeliveryPoint()
 
 static void dealWithRMB()
 {
-  PlayerOwnedObject * psClickedOn;
+  BaseObject * psClickedOn;
 	Droid* psDroid;
 	Structure* psStructure;
 
@@ -2180,7 +2183,7 @@ static void dealWithRMB()
 							clearSelection();
 							SelectDroid(psDroid);
 						}
-						intObjectSelected((PlayerOwnedObject *)psDroid);
+						intObjectSelected((BaseObject *)psDroid);
 					}
 				}
 				// Transporter
@@ -2254,7 +2257,7 @@ static void dealWithRMB()
 							jsDebugSelected(psStructure);
 
 							// Open structure menu
-							intObjectSelected((PlayerOwnedObject *)psStructure);
+							intObjectSelected((BaseObject *)psStructure);
 							FeedbackOrderGiven();
 
 							bLasSatStruct = lasSatStructSelected(psStructure);
@@ -2268,7 +2271,7 @@ static void dealWithRMB()
 					}
 					else
 					{
-						intObjectSelected((PlayerOwnedObject *)psStructure);
+						intObjectSelected((BaseObject *)psStructure);
 					}
 				}
 			}
@@ -2309,11 +2312,11 @@ static void dealWithRMB()
 return code, but also a pointer to the SimpleObject) ... well if your going to be "object orientated" you might as well do it right
 - it sets it to null if we don't find anything
 */
-static MOUSE_TARGET itemUnderMouse(PlayerOwnedObject * * ppObjectUnderMouse)
+static MOUSE_TARGET itemUnderMouse(BaseObject * * ppObjectUnderMouse)
 {
 	unsigned i;
 	MOUSE_TARGET retVal;
-  PlayerOwnedObject * psNotDroid;
+  BaseObject * psNotDroid;
 	Droid* psDroid;
 	unsigned dispX, dispY, dispR;
 	Structure* psStructure;
@@ -2347,7 +2350,7 @@ static MOUSE_TARGET itemUnderMouse(PlayerOwnedObject * * ppObjectUnderMouse)
 					/* We HAVE clicked on droid! */
 					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psDroid->getPlayer(), selectedPlayer))
 					{
-						*ppObjectUnderMouse = (PlayerOwnedObject *)psDroid;
+						*ppObjectUnderMouse = (BaseObject *)psDroid;
 						// need to check for command droids here as well
 						if (psDroid->getType() == DROID_TYPE::SENSOR)
 						{
@@ -2403,7 +2406,7 @@ static MOUSE_TARGET itemUnderMouse(PlayerOwnedObject * * ppObjectUnderMouse)
 					}
 					else
 					{
-						*ppObjectUnderMouse = (PlayerOwnedObject *)psDroid;
+						*ppObjectUnderMouse = (BaseObject *)psDroid;
 						retVal = MT_ENEMYDROID;
 					}
 					/* There's no point in checking other object types */
@@ -2423,7 +2426,7 @@ static MOUSE_TARGET itemUnderMouse(PlayerOwnedObject * * ppObjectUnderMouse)
 
 	if (psNotDroid != nullptr)
 	{
-		*ppObjectUnderMouse = (PlayerOwnedObject *)psNotDroid;
+		*ppObjectUnderMouse = (BaseObject *)psNotDroid;
 
 		if (psNotDroid->type == OBJ_FEATURE)
 		{

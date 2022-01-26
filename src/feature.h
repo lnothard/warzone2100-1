@@ -68,8 +68,7 @@ struct FeatureStats : public BaseStats
 };
 
 class Feature : public BaseObject
-              , public Damageable
-{
+              , public DamageManager {
 public:
   ~Feature() override = default;
   Feature(unsigned id, FeatureStats const* psStats);

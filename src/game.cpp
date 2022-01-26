@@ -94,6 +94,7 @@
 #include "multigifts.h"
 #include "wzscriptdebug.h"
 #include "build_tools/autorevision.h"
+#include "objmem.h"
 
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wcast-align"	// TODO: FIXME!
@@ -2456,13 +2457,13 @@ static void getIniDroidOrder(WzConfig& ini, WzString const& key, Order& order)
 	getIniStructureStats(ini, key + "/stats", order.structure_stats);
 }
 
-static void setIniBaseObject(nlohmann::json& json, WzString const& key, PlayerOwnedObject const* object)
+static void setIniBaseObject(nlohmann::json& json, WzString const& key, BaseObject const* object)
 {
 	if (object != nullptr && object->died <= 1)
 	{
 		const auto& keyStr = key.toStdString();
-		json[keyStr + "/id"] = object->id;
-		json[keyStr + "/player"] = object->player;
+		json[keyStr + "/id"] = object->getId();
+		json[keyStr + "/player"] = object->playerManager->getPlayer();
 		json[keyStr + "/type"] = object->type;
 #ifdef DEBUG
 		//ini.setValue(key + "/debugfunc", WzString::fromUtf8(psCurr->targetFunc));
@@ -5778,7 +5779,7 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 		droidObj["kills"] = psCurr->kills;
 	}
 
-	setIniDroidOrder(droidObj, "order", psCurr->order);
+	setIniDroidOrder(droidObj, "order", *psCurr->getOrder());
 	droidObj["orderList/size"] = psCurr->listSize;
 	for (int i = 0; i < psCurr->listSize; ++i)
 	{
@@ -5788,9 +5789,9 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 	{
 		droidObj["timeLastHit"] = psCurr->timeLastHit;
 	}
-	droidObj["secondaryOrder"] = psCurr->secondary_order;
-	droidObj["action"] = psCurr->action;
-	droidObj["actionString"] = getDroidActionName(psCurr->action); // future-proofing
+	droidObj["secondaryOrder"] = psCurr->getSecondaryOrder();
+	droidObj["action"] = psCurr->getAction();
+	droidObj["actionString"] = getDroidActionName(psCurr->getAction()); // future-proofing
 	droidObj["action/pos"] = psCurr->actionPos;
 	droidObj["actionStarted"] = psCurr->time_action_started;
 	droidObj["actionPoints"] = psCurr->action_points_done;
@@ -5810,11 +5811,11 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 	{
 		droidObj["commander"] = psCurr->group->psCommander->id;
 	}
-	if (psCurr->resistance_to_electric > 0)
+	if (psCurr->damageManager->getResistance() > 0)
 	{
-		droidObj["resistance"] = psCurr->resistance_to_electric;
+		droidObj["resistance"] = psCurr->damageManager->getResistance();
 	}
-	droidObj["droidType"] = psCurr->type;
+	droidObj["droidType"] = psCurr->getType();
 	droidObj["weapons"] = psCurr->numWeaps;
 	nlohmann::json partsObj = nlohmann::json::object();
 	partsObj["body"] = (asBodyStats + psCurr->asBits[COMP_BODY])->id;
@@ -5870,7 +5871,7 @@ static bool writeDroidFile(const char* pFileName, Droid** ppsCurrentDroidLists)
 				leftPadToMinimumLength(WzUniCodepoint::fromASCII('0'), 10));
 			// Zero padded so that alphabetical sort works.
 			mRoot[droidKey.toStdString()] = writeDroid(psCurr, onMission, counter);
-			if (isTransporter(psCurr)) // if transporter save any droids in the grp
+			if (isTransporter(*psCurr)) // if transporter save any droids in the grp
 			{
 				for (Droid* psTrans = psCurr->group->members; psTrans != nullptr; psTrans = psTrans->psGrpNext)
 				{

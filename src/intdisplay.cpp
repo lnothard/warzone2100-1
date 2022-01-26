@@ -56,6 +56,7 @@
 #include "radar.h"
 
 #include "display3d.h"
+#include "displaydef.h"
 #include "structure.h"
 #include "research.h"
 #include "hci.h"
@@ -1421,7 +1422,7 @@ BaseStats* DroidGetBuildStats(Droid* Droid)
 {
 	StructureStats* Stats;
 
-	if (orderStateStatsLoc(Droid, DORDER_BUILD, &Stats)) // Moving to build location?
+	if (orderStateStatsLoc(Droid, ORDER_TYPE::BUILD, &Stats)) // Moving to build location?
 	{
 		return Stats;
 	}
@@ -1431,7 +1432,7 @@ BaseStats* DroidGetBuildStats(Droid* Droid)
 
 iIMDShape* DroidGetIMD(Droid* Droid)
 {
-	return Droid->sDisplay.imd;
+	return Droid->getDisplayData()->imd_shape.get();
 }
 
 template <typename Functionality>
@@ -1448,8 +1449,7 @@ static inline bool _structureIsManufacturingPending(Functionality const& functio
 bool StructureIsManufacturingPending(Structure* structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, structure);
-	switch (structure->pStructureType->type)
-	{
+	switch (structure->getStats()->type) {
 	case REF_FACTORY:
 	case REF_CYBORG_FACTORY:
 	case REF_VTOL_FACTORY:
@@ -1468,7 +1468,8 @@ Factory* StructureGetFactory(Structure* Structure)
 bool structureIsResearchingPending(Structure* structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, structure);
-	return structure->pStructureType->type == REF_RESEARCH && _structureIsManufacturingPending(
+	return structure->getStats()->type == STRUCTURE_TYPE::RESEARCH &&
+         _structureIsManufacturingPending(
 		structure->pFunctionality->researchFacility);
 }
 
@@ -1485,8 +1486,7 @@ static inline bool structureIsOnHoldPending(Functionality const& functionality)
 bool StructureIsOnHoldPending(Structure* structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, structure);
-	switch (structure->pStructureType->type)
-	{
+	switch (structure->getStats()->type) {
 	case REF_FACTORY:
 	case REF_CYBORG_FACTORY:
 	case REF_VTOL_FACTORY:

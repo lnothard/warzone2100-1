@@ -28,7 +28,6 @@
 
 #include "lib/framework/frame.h"
 
-#include "constructedobject.h"
 #include "droid.h"
 #include "feature.h"
 #include "structure.h"
@@ -41,12 +40,12 @@ extern std::array<std::vector<
         std::unique_ptr<Structure> >, MAX_PLAYERS> apsStructLists;
 
 extern std::vector<FlagPosition*> apsFlagPosLists;
-extern std::array<ResourceExtractor*, MAX_PLAYERS> apsExtractorLists;
-extern std::vector<ConstructedObject*> apsSensorList;
+extern std::array<std::vector<ResourceExtractor*>, MAX_PLAYERS> apsExtractorLists;
+extern std::vector<BaseObject*> apsSensorList;
 extern std::vector<Feature*> apsOilList;
 
 /* The list of destroyed objects */
-extern std::vector<PlayerOwnedObject *> psDestroyedObj;
+extern std::vector<BaseObject*> psDestroyedObj;
 
 /* Initialise the object heaps */
 bool objmemInitialise();

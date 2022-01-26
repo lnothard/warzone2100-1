@@ -249,8 +249,6 @@ struct DroidTemplate : public BaseStats
 };
 
 class Droid : public BaseObject
-            , public Damageable
-            , public PlayerOwned
 {
 public:
   ~Droid() override;
@@ -362,7 +360,7 @@ public:
   void moveUpdateDroid();
   void updateExpectedDamage(unsigned damage, bool isDirect) noexcept;
   bool droidUpdateDemolishing();
-  bool droidSensorDroidWeapon(const BaseObject* psObj) const;
+  bool droidSensorDroidWeapon(BaseObject const* psObj) const;
 private:
   friend class Group;
   struct Impl;

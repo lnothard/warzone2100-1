@@ -189,7 +189,7 @@ void resetInput();
 bool CheckInScrollLimits(SDWORD* xPos, SDWORD* zPos);
 bool CheckScrollLimits();
 
-PlayerOwnedObject * mouseTarget();
+BaseObject * mouseTarget();
 
 void cancelDeliveryRepos();
 void startDeliveryPosition(FlagPosition* psFlag);

@@ -31,6 +31,7 @@
 #include "lib/ivis_opengl/piematrix.h"
 
 #include "display.h"
+#include "displaydef.h"
 #include "geometry.h"
 #include "objectdef.h"
 
@@ -146,17 +147,15 @@ Vector2i positionInQuad(Vector2i const& pt, QUAD const& quad)
 }
 
 //-----------------------------------------------------------------------------------
-bool objectOnScreen(PlayerOwnedObject * object, SDWORD tolerance)
+bool objectOnScreen(BaseObject* object, int tolerance)
 {
-	if (DrawnInLastFrame(object->getDisplayData().frame_number))
-	{
-		const int dX = object->getDisplayData().screen_x;
-		const int dY = object->getDisplayData().screen_y;
+	if (DrawnInLastFrame(object->getDisplayData()->frame_number)) {
+		const auto dX = object->getDisplayData()->screen_x;
+		const auto dY = object->getDisplayData()->screen_y;
 		/* Is it on screen */
 		if (dX > (0 - tolerance) && dY > (0 - tolerance)
 			&& dX < (SDWORD)(pie_GetVideoBufferWidth() + tolerance)
-			&& dY < (SDWORD)(pie_GetVideoBufferHeight() + tolerance))
-		{
+			&& dY < (SDWORD)(pie_GetVideoBufferHeight() + tolerance)) {
 			return true;
 		}
 	}

@@ -18,7 +18,6 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include <glm/gtx/transform.hpp>
 #include "lib/framework/math_ext.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
@@ -48,8 +47,6 @@ void updateMultiStatsDamage(unsigned, unsigned, unsigned);
 void updateMultiStatsKills(BaseObject *, unsigned);
 int mapWidth, mapHeight;
 unsigned map_LineIntersect(Vector3i, Vector3i, unsigned);
-int map_Height(int, int);
-int map_Height(Vector2i);
 void shakeStart(unsigned);
 static const unsigned max_check_object_recursion = 4;
 void aiObjectAddExpectedDamage(BaseObject *, int, bool);
@@ -116,14 +113,27 @@ struct Projectile::Impl
   int partVisible = 0;
 };
 
+struct ObjectShape::Impl
+{
+  Impl() = default;
+  Impl(int width, int length);
+  explicit Impl(int radius);
+  explicit Impl(Vector2i size);
+
+  /// Equal to \c true if rectangular, \c false if circular
+  bool isRectangular = false;
+  /// \c x == y if circular
+  Vector2i size{};
+};
+
 Projectile::Projectile(unsigned id, unsigned player)
-  : BaseObject(id), PlayerOwned(player)
+  : BaseObject(id), DamageManager(), PlayerManager(player)
   , pimpl{std::make_unique<Impl>()}
 {
 }
 
 Projectile::Projectile(Projectile const& rhs)
-  : BaseObject(rhs), PlayerOwned(rhs)
+  : BaseObject(rhs), DamageManager(rhs), PlayerManager(rhs)
   , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
@@ -171,21 +181,6 @@ Projectile::Impl& Projectile::Impl::operator=(Impl const& rhs)
   partVisible = rhs.partVisible;
   return *this;
 }
-
-
-
-struct ObjectShape::Impl
-{
-  Impl() = default;
-  Impl(int width, int length);
-  explicit Impl(int radius);
-  explicit Impl(Vector2i size);
-
-  /// Equal to \c true if rectangular, \c false if circular
-  bool isRectangular = false;
-  /// \c x == y if circular
-  Vector2i size{};
-};
 
 ObjectShape::ObjectShape()
   : pimpl{std::make_unique<Impl>()}
@@ -236,40 +231,20 @@ ObjectShape::Impl::Impl(Vector2i size)
 {
 }
 
+bool ObjectShape::isRectangular() const
+{
+  return pimpl && pimpl->isRectangular;
+}
+
+Vector2i ObjectShape::getSize() const
+{
+  return pimpl ? pimpl->size : Vector2i();
+}
+
 int ObjectShape::radius() const
 {
   return pimpl ? pimpl->size.x : -1;
 }
-
-
-struct Damage::Impl
-{
-  Impl() = default;
-
-  BaseObject* target = nullptr;
-  unsigned damage = 0;
-  unsigned impactTime = 0;
-  bool isDamagePerSecond = false;
-  int minDamage = 0;
-};
-
-Damage::Damage()
-  : pimpl{std::make_unique<Impl>()}
-{
-}
-
-Damage::Damage(Damage const& rhs)
-  : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
-{
-}
-
-Damage& Damage::operator=(Damage const& rhs)
-{
-  if (this == &rhs) return *this;
-  *pimpl = *rhs.pimpl;
-  return *this;
-}
-
 
 PROJECTILE_STATE Projectile::getState() const noexcept
 {
@@ -307,31 +282,31 @@ bool Projectile::isVisible() const
 	}
 
 	// someone else's structure firing at something you can't see
-	if (pimpl->source != nullptr && !dynamic_cast<Damageable*>(pimpl->source)->isDead() &&
+	if (pimpl->source != nullptr && !dynamic_cast<DamageManager *>(pimpl->source)->isDead() &&
       dynamic_cast<Structure*>(pimpl->source) &&
-      dynamic_cast<PlayerOwned*>(pimpl->source)->getPlayer() != selectedPlayer &&
-      (pimpl->target == nullptr || dynamic_cast<Damageable*>(pimpl->target)->isDead() ||
-       !pimpl->target->visibleToSelectedPlayer())) {
+      dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer() != selectedPlayer &&
+      (pimpl->target == nullptr || dynamic_cast<DamageManager *>(pimpl->target)->isDead() ||
+       !pimpl->target->isVisibleToSelectedPlayer())) {
 		return false;
 	}
 
 	// something you cannot see firing at a structure that isn't yours
-	if (pimpl->target != nullptr && dynamic_cast<Damageable*>(pimpl->target)->isDead() &&
+	if (pimpl->target != nullptr && dynamic_cast<DamageManager *>(pimpl->target)->isDead() &&
       dynamic_cast<Structure*>(pimpl->target) &&
-      dynamic_cast<PlayerOwned*>(pimpl->target)->getPlayer() != selectedPlayer &&
-      (pimpl->source == nullptr || !pimpl->source->visibleToSelectedPlayer())) {
+      dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer() != selectedPlayer &&
+      (pimpl->source == nullptr || !pimpl->source->isVisibleToSelectedPlayer())) {
 		return false;
 	}
 
 	// you can see the source
-	if (pimpl->source != nullptr && !dynamic_cast<Damageable*>(pimpl->source)->isDead() &&
-      pimpl->source->visibleToSelectedPlayer()) {
+	if (pimpl->source != nullptr && !dynamic_cast<DamageManager *>(pimpl->source)->isDead() &&
+      pimpl->source->isVisibleToSelectedPlayer()) {
 		return true;
 	}
 
 	// you can see the destination
-	if (pimpl->target != nullptr && !dynamic_cast<Damageable*>(pimpl->target)->isDead() &&
-      pimpl->target->visibleToSelectedPlayer()) {
+	if (pimpl->target != nullptr && !dynamic_cast<DamageManager *>(pimpl->target)->isDead() &&
+      pimpl->target->isVisibleToSelectedPlayer()) {
 		return true;
 	}
 
@@ -349,8 +324,7 @@ void Projectile::updateExperience(unsigned experienceInc)
     if (pimpl->target && dynamic_cast<Droid*>(pimpl->target) && bMultiPlayer) {
       // modify the experience gained by the 'quality factor' of the units
       experienceInc = experienceInc *
-                      qualityFactor(psDroid,
-                                    dynamic_cast<Droid*>(pimpl->target)) / 65536;
+                      qualityFactor(psDroid, dynamic_cast<Droid*>(pimpl->target)) / 65536;
     }
     ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536),
                        "Experience increase out of range");
@@ -365,7 +339,7 @@ void Projectile::updateExperience(unsigned experienceInc)
   else if (dynamic_cast<Structure*>(pimpl->source)) {
     ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536),
                        "Experience increase out of range");
-    psDroid = getDesignatorAttackingObject(dynamic_cast<PlayerOwned*>(pimpl->source)->getPlayer(), pimpl->target);
+    psDroid = getDesignatorAttackingObject(dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer(), pimpl->target);
 
     if (psDroid) {
       psDroid->gainExperience(experienceInc);
@@ -447,8 +421,8 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacke
   else {
     psProj->pimpl->bornTime = fireTime; // Born at the start of the tick.
 
-    psProj->pimpl->previousLocation.time = fireTime;
-    psProj->setTime(psProj->pimpl->previousLocation.time);
+    psProj->setPreviousLocation({fireTime, getPreviousLocation().position, getPreviousLocation().rotation});
+    psProj->setTime(fireTime);
 
     psProj->setSource(psAttacker);
   }
@@ -585,13 +559,13 @@ int getExpGain(unsigned player)
 	return experienceGain[player];
 }
 
-Droid* getDesignatorAttackingObject(unsigned player, BaseObject * target)
+Droid* getDesignatorAttackingObject(unsigned player, BaseObject* target)
 {
 	const auto psCommander = cmdDroidGetDesignator(player);
 
 	return psCommander != nullptr && 
          psCommander->getAction() == ACTION::ATTACK &&
-         psCommander->getTarget(0) == target
+         psCommander->getActionTarget(0) == target
 		       ? psCommander
 		       : nullptr;
 }
@@ -731,27 +705,26 @@ static int collisionXYZ(Vector3i v1, Vector3i v2, ObjectShape const& shape, int 
 {
 	auto i = collisionZ(v1.z, v2.z, height);
   // don't bother checking x and y unless z passes
-  if (!i.isEmpty()) {
-		if (shape.pimpl->isRectangular) {
-			i = intervalIntersection(i, collisionZ(
-              v1.x, v2.x, shape.size.x));
-      // don't bother checking y unless x and z pass
-      if (!i.isEmpty()) {
-				i = intervalIntersection(i, collisionZ(
-                v1.y, v2.y, shape.size.y));
-			}
-		}
-    // else is circular
-		else {
-			i = intervalIntersection(i, collisionXY(
-              v1.x, v1.y, v2.x, v2.y, shape.radius()));
-		}
+  if (i.isEmpty()) return -1;
+  if (shape.isRectangular()) {
+    i = intervalIntersection(i, collisionZ(
+            v1.x, v2.x, shape.getSize().x));
+    // don't bother checking y unless x and z pass
+    if (!i.isEmpty()) {
+      i = intervalIntersection(i, collisionZ(
+              v1.y, v2.y, shape.getSize().y));
+    }
+  }
+  // else is circular
+  else {
+    i = intervalIntersection(i, collisionXY(
+            v1.x, v1.y, v2.x, v2.y, shape.radius()));
+  }
 
-		if (!i.isEmpty()) {
-			return MAX(0, i.begin);
-		}
-	}
-	return -1;
+  if (!i.isEmpty()) {
+    return MAX(0, i.begin);
+  }
+  return -1;
 }
 
 void Projectile::proj_InFlightFunc()
@@ -904,7 +877,7 @@ void Projectile::proj_InFlightFunc()
 			// don't damage the same target twice
 			continue;
 		}
-		else if (psTempObj->isDead()) {
+		else if (dynamic_cast<DamageManager *>(psTempObj)->isDead()) {
 			// do not damage dead objects further
 			continue;
 		}
@@ -914,7 +887,7 @@ void Projectile::proj_InFlightFunc()
 			continue;
 		}
 		else if (aiCheckAlliances(
-            psTempObj->getPlayer(), getPlayer()) &&
+            dynamic_cast<PlayerManager *>(psTempObj)->getPlayer(), getPlayer()) &&
             psTempObj != pimpl->target) {
 			// no friendly fire unless intentional
 			continue;
@@ -952,7 +925,7 @@ void Projectile::proj_InFlightFunc()
 		}
 	}
 
-	unsigned terrainIntersectTime = map_LineIntersect(getPreviousLocation().position, getPosition(),
+	auto terrainIntersectTime = map_LineIntersect(getPreviousLocation().position, getPosition(),
                                                     getTime() - getPreviousLocation().time);
 	if (terrainIntersectTime != UINT32_MAX) {
 		const uint collisionTime = getPreviousLocation().time + terrainIntersectTime;
@@ -1235,13 +1208,13 @@ void Projectile::proj_ImpactFunc()
 
       // if we are in a multiplayer game and the attacker is our responsibility
       if (bMultiPlayer && pimpl->source) {
-        updateMultiStatsDamage(pimpl->source->getPlayer(),
-                               pimpl->target->getPlayer(),
+        updateMultiStatsDamage(dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer(),
+                               dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer(),
                                damage);
       }
 
       debug(LOG_NEVER, "Damage to object %d, player %d\n",
-            pimpl->target->getId(), pimpl->target->getPlayer());
+            pimpl->target->getId(), dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer());
 
       struct Damage sDamage = {
               pimpl->target,
@@ -1250,9 +1223,10 @@ void Projectile::proj_ImpactFunc()
               false,
               (int)psStats->upgraded[getPlayer()].minimumDamage
       };
+      pimpl->damage = std::make_unique<Damage>(sDamage);
 
       // Damage the object
-      auto relativeDamage = objectDamage(&sDamage);
+      auto relativeDamage = objectDamage();
 
       // so long as the target wasn't killed
       if (relativeDamage >= 0) {
@@ -1291,7 +1265,7 @@ void Projectile::proj_ImpactFunc()
 
     for (auto psCurr : gridList)
     {
-      if (psCurr->isDead()) {
+      if (dynamic_cast<DamageManager *>(psCurr)->isDead()) {
         continue; // Do not damage dead objects further.
       }
 
@@ -1299,9 +1273,9 @@ void Projectile::proj_ImpactFunc()
         continue; // Don't hit main target twice.
       }
 
-      if (pimpl->source && pimpl->source->getPlayer() == psCurr->getPlayer() &&
-          psStats->flags.test(
-                  static_cast<size_t>(WEAPON_FLAGS::NO_FRIENDLY_FIRE))) {
+      if (pimpl->source && dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer() ==
+                                   dynamic_cast<PlayerManager *>(psCurr)->getPlayer() &&
+          psStats->flags.test(static_cast<size_t>(WEAPON_FLAGS::NO_FRIENDLY_FIRE))) {
         continue; // this weapon does not do friendly damage
       }
 
@@ -1398,27 +1372,27 @@ void Projectile::proj_PostImpactFunc()
 
 void Projectile::update()
 {
-  if (!pimpl) return;
-  previousLocation = Spacetime();
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Projectile object is undefined");
+  setPreviousLocation(Spacetime());
 
 	// see if any of the stored objects have died
 	// since the projectile was created
-	if (pimpl->source && pimpl->source->isDead()) {
+	if (pimpl->source && dynamic_cast<DamageManager *>(pimpl->source)->isDead()) {
 		setProjectileSource(this, nullptr);
 	}
-	if (pimpl->target && pimpl->target->isDead()) {
+	if (pimpl->target && dynamic_cast<DamageManager *>(pimpl->target)->isDead()) {
 		setTarget(nullptr);
 	}
 
 	// remove dead objects from psDamaged.
 	pimpl->damaged.erase(std::remove_if(pimpl->damaged.begin(), pimpl->damaged.end(),
-                                      [](const BaseObject* psObj) {
-                                        return psObj->isDead();
+                                      [](BaseObject const* psObj) {
+                                        return dynamic_cast<DamageManager const*>(psObj)->isDead();
                                       }), pimpl->damaged.end());
 
 	// This extra check fixes a crash in cam2, mission1
 	if (!worldOnMap(getPosition().x, getPosition().y)) {
-		died = true;
+    setTimeOfDeath(1);
 		return;
 	}
 
@@ -1438,7 +1412,7 @@ void Projectile::update()
   		proj_PostImpactFunc();
   		break;
   	case INACTIVE:
-  		died = getTime();
+      setTimeOfDeath(getTime());
   		break;
 	}
 }
@@ -1459,8 +1433,7 @@ void proj_UpdateAll()
 
 void Projectile::proj_checkPeriodicalDamage()
 {
-  if (!pimpl) return;
-
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Projectile object is undefined");
 	// note the attacker if any
 	g_pProjLastAttacker = pimpl->source;
 
@@ -1473,11 +1446,11 @@ void Projectile::proj_checkPeriodicalDamage()
   
 	for (auto psCurr : gridList)
 	{
-    if (psCurr->isDead()) {
+    if (dynamic_cast<DamageManager *>(psCurr)->isDead()) {
 			continue; // Do not damage dead objects further.
 		}
 
-		if (aiCheckAlliances(getPlayer(), psCurr->getPlayer())) {
+		if (aiCheckAlliances(getPlayer(), dynamic_cast<PlayerManager *>(psCurr)->getPlayer())) {
 			continue; // Don't damage your own droids, nor ally droids - unrealistic, but better.
 		}
 
@@ -1493,30 +1466,31 @@ void Projectile::proj_checkPeriodicalDamage()
 			continue; // Can't destroy oil wells.
 		}
 
-		if (psCurr->periodicalDamageStartTime != gameTime) {
-			psCurr->periodicalDamageStartTime = gameTime;
-			psCurr->periodicalDamage = 0; // Reset periodical damage done this tick.
+    auto asDamageableObj = dynamic_cast<DamageManager *>(psCurr);
+		if (asDamageableObj) {
+			asDamageableObj->setPeriodicalDamageStartTime(gameTime);
+			asDamageableObj->setPeriodicalDamage(0); // Reset periodical damage done this tick.
 		}
 		unsigned damageRate = calcDamage(
             weaponPeriodicalDamage(psStats.get(), getPlayer()),
             psStats->periodicalDamageWeaponEffect, psCurr);
 
 		debug(LOG_NEVER, "Periodical damage of %d per second to object %d, player %d\n",
-          damageRate, psCurr->getId(), psCurr->getPlayer());
+          damageRate, psCurr->getId(), dynamic_cast<PlayerManager *>(psCurr)->getPlayer());
 
 		auto sDamage = std::make_unique<Damage>();
-		sDamage->pimpl->target = psCurr;
-		sDamage->pimpl->damage = damageRate,
-		sDamage->pimpl->impactTime = gameTime - deltaGameTime / 2 + 1,
-		sDamage->pimpl->isDamagePerSecond = true;
-		sDamage->pimpl->minDamage = psStats->upgraded[getPlayer()].minimumDamage;
+		pimpl->damage->target = psCurr;
+		pimpl->damage->damage = damageRate,
+		pimpl->damage->impactTime = gameTime - deltaGameTime / 2 + 1,
+		pimpl->damage->isDamagePerSecond = true;
+		pimpl->damage->minDamage = psStats->upgraded[getPlayer()].minimumDamage;
 
-		objectDamage(sDamage.get());
+		objectDamage();
 	}
 }
 
 // return whether a weapon is direct or indirect
-bool proj_Direct(const WeaponStats* psStats)
+bool proj_Direct(WeaponStats const* psStats)
 {
 	ASSERT_OR_RETURN(false, psStats, "Called with NULL weapon");
 
@@ -1535,21 +1509,21 @@ bool proj_Direct(const WeaponStats* psStats)
                    "Invalid player: %" PRIu32 "", player);
 
 // return the maximum range for a weapon
-unsigned proj_GetLongRange(const WeaponStats* psStats, unsigned player)
+unsigned proj_GetLongRange(WeaponStats const* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].maxRange;
 }
 
 // return the minimum range for a weapon
-unsigned proj_GetMinRange(const WeaponStats* psStats, unsigned player)
+unsigned proj_GetMinRange(WeaponStats const* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].minRange;
 }
 
 // return the short range for a weapon
-unsigned proj_GetShortRange(const WeaponStats* psStats, unsigned player)
+unsigned proj_GetShortRange(WeaponStats const* psStats, unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	return psStats->upgraded[player].shortRange;
@@ -1557,65 +1531,62 @@ unsigned proj_GetShortRange(const WeaponStats* psStats, unsigned player)
 
 ObjectShape establishTargetShape(BaseObject* psTarget)
 {
-	if (auto psDroid = dynamic_cast<Droid*>(psTarget)) // circular
-		switch (dynamic_cast<Droid*>(psTarget)->getType()) {
+	if (auto psDroid = dynamic_cast<Droid*>(psTarget)) { // circular
+    switch (dynamic_cast<Droid *>(psTarget)->getType()) {
       using enum DROID_TYPE;
-		  case WEAPON:
-		  case SENSOR:
-		  case ECM:
-		  case CONSTRUCT:
-		  case COMMAND:
-		  case REPAIRER:
-		  case PERSON:
-		  case CYBORG:
-		  case CYBORG_CONSTRUCT:
-		  case CYBORG_REPAIR:
-		  case CYBORG_SUPER:
-		  	//Watermelon:'hitbox' size is now based on imd size
-		  	return abs(psTarget->getDisplayData().imd_shape->radius) * 2;
-		  case DEFAULT:
-		  case TRANSPORTER:
-		  case SUPER_TRANSPORTER:
-		  default:
-		  	return TILE_UNITS / 4; // how will we arrive at this?
-		}
-		break;
-	case OBJ_STRUCTURE: // Rectangular.
-		return castStructure(psTarget)->size() * TILE_UNITS / 2;
-	case OBJ_FEATURE: // Rectangular.
-		return Vector2i(castFeature(psTarget)->psStats->base_width, castFeature(psTarget)->psStats->base_breadth) *
-           TILE_UNITS / 2;
-	case OBJ_PROJECTILE: // Circular, but can't happen since a PROJECTILE isn't a SimpleObject.
+      case WEAPON:
+      case SENSOR:
+      case ECM:
+      case CONSTRUCT:
+      case COMMAND:
+      case REPAIRER:
+      case PERSON:
+      case CYBORG:
+      case CYBORG_CONSTRUCT:
+      case CYBORG_REPAIR:
+      case CYBORG_SUPER:
+        //Watermelon:'hitbox' size is now based on imd size
+        return ObjectShape(abs(psTarget->getDisplayData()->imd_shape->radius) * 2);
+      case DEFAULT:
+      case TRANSPORTER:
+      case SUPER_TRANSPORTER:
+      default:
+        return ObjectShape(TILE_UNITS / 4);// how will we arrive at this?
+    }
+  }
+	if (auto structure = dynamic_cast<Structure*>(psTarget)) { // Rectangular.
+    return ObjectShape(structure->getSize() * TILE_UNITS / 2);
+  }
+	if (auto feature = dynamic_cast<Feature*>(psTarget)) { // Rectangular.
+    return ObjectShape(Vector2i(feature->getStats()->baseWidth,
+                                feature->getStats()->baseBreadth) *
+                       TILE_UNITS / 2);
+  }
+	if (dynamic_cast<Projectile*>(psTarget)) { // Circular, but can't happen since a PROJECTILE isn't a SimpleObject.
 		//Watermelon 1/2 radius of a droid?
-		return TILE_UNITS / 8;
-	default:
-		break;
+		return ObjectShape(TILE_UNITS / 8);
 	}
 
-	return 0; // Huh?
+	return ObjectShape(0); // Huh?
 }
 
 /*the damage depends on the weapon effect and the target propulsion type or
 structure strength*/
 unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, BaseObject const* psTarget)
 {
-	if (baseDamage == 0) {
-		return 0;
-	}
+	if (baseDamage == 0) return 0;
 
 	auto damage = baseDamage * 100;
-
-	if (dynamic_cast<Structure const*>(psTarget))
-	{
-		damage += baseDamage * (asStructStrengthModifier[weaponEffect][((Structure*)psTarget)->pStructureType->strength]
+	if (auto structure = dynamic_cast<Structure const*>(psTarget)) {
+		damage += baseDamage * (asStructStrengthModifier[weaponEffect][structure->getStats()->strength]
 			- 100);
 	}
-	else if (dynamic_cast<Droid const*>(psTarget))
-	{
-		const int propulsion = (asPropulsionStats + ((Droid*)psTarget)->asBits[COMP_PROPULSION])->propulsionType;
-		const int body = (asBodyStats + ((Droid*)psTarget)->asBits[COMP_BODY])->size;
-		damage += baseDamage * (asWeaponModifier[weaponEffect][propulsion] - 100);
-		damage += baseDamage * (asWeaponModifierBody[weaponEffect][body] - 100);
+	else if (auto droid = dynamic_cast<Droid const*>(psTarget)) {
+		const auto propulsion = dynamic_cast<PropulsionStats const*>(
+            droid->getComponent("propulsion"))->propulsionType;
+		const auto body = dynamic_cast<BodyStats const*>(droid->getComponent("body"))->size;
+		damage += baseDamage * (asWeaponModifier[static_cast<int>(weaponEffect)][static_cast<int>(propulsion)] - 100);
+		damage += baseDamage * (asWeaponModifierBody[static_cast<int>(weaponEffect)][static_cast<int>(body)] - 100);
 	}
 
 	//Always do at least one damage.
@@ -1637,112 +1608,102 @@ unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, BaseObject 
  *    multiplied by -1, resulting in a negative number. Killed features do not
  *    result in negative numbers.
  */
-static int objectDamageDispatch(Damage* psDamage)
+int Projectile::objectDamageDispatch()
 {
-	switch (psDamage->target->type)
-	{
-	case OBJ_DROID:
-		return droidDamage((Droid*)psDamage->target, psDamage->damage, psDamage->weaponClass, psDamage->weaponSubClass,
-                       psDamage->impactTime, psDamage->isDamagePerSecond, psDamage->minDamage);
-		break;
-
-	case OBJ_STRUCTURE:
-		return structureDamage((Structure*)psDamage->target, psDamage->damage, psDamage->weaponClass,
-                           psDamage->weaponSubClass, psDamage->impactTime, psDamage->isDamagePerSecond,
-                           psDamage->minDamage);
-		break;
-
-	case OBJ_FEATURE:
-		return featureDamage((Feature*)psDamage->target, psDamage->damage, psDamage->weaponClass,
-                         psDamage->weaponSubClass, psDamage->impactTime, psDamage->isDamagePerSecond,
-                         psDamage->minDamage);
-		break;
-
-	case OBJ_PROJECTILE:
-		ASSERT(!"invalid object type: bullet", "invalid object type: OBJ_PROJECTILE (id=%d)", psDamage->target->getId());
-		break;
-
-	default:
-		ASSERT(!"unknown object type", "unknown object type %d, id=%d", psDamage->target->type, psDamage->target->getId());
-	}
+  ASSERT_OR_RETURN(-1, pimpl != nullptr, "Projectile object is undefined");
+	if (auto droid = dynamic_cast<Droid*>(pimpl->damage->target)) {
+    return droid->droidDamage(pimpl->damage->damage, pimpl->weaponStats->weaponClass,
+                              pimpl->weaponStats->weaponSubClass, pimpl->damage->impactTime,
+                              pimpl->damage->isDamagePerSecond, pimpl->damage->minDamage);
+  }
+  if (auto structure = dynamic_cast<Structure*>(pimpl->damage->target)) {
+    return structureDamage(structure, pimpl->damage->damage, pimpl->weaponStats->weaponClass,
+                           pimpl->weaponStats->weaponSubClass, pimpl->damage->impactTime,
+                           pimpl->damage->isDamagePerSecond, pimpl->damage->minDamage);
+  }
+  if (auto feature = dynamic_cast<Feature*>(pimpl->damage->target)) {
+    return featureDamage(feature, pimpl->damage->damage, pimpl->weaponStats->weaponClass,
+                         pimpl->weaponStats->weaponSubClass, pimpl->damage->impactTime,
+                         pimpl->damage->isDamagePerSecond, pimpl->damage->minDamage);
+  }
+	ASSERT(!"unknown object type", "unknown object, id=%d", pimpl->damage->target->getId());
 	return 0;
 }
 
-bool Damage::isFriendlyFire() const
+bool Projectile::isFriendlyFire() const
 {
-	return projectile->target &&
-         projectile->source->getPlayer() == projectile->target->getPlayer();
+	return pimpl && pimpl->target &&
+         dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer()
+         == dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer();
 }
 
-bool Damage::shouldIncreaseExperience() const
+bool Projectile::shouldIncreaseExperience() const
 {
-	return projectile->source && 
-         !dynamic_cast<Feature*>(projectile->target) && 
+	return pimpl && pimpl->source &&
+         !dynamic_cast<Feature*>(pimpl->target) &&
          !isFriendlyFire();
 }
 
-void Damage::updateKills()
+void Projectile::updateKills()
 {
 	if (bMultiPlayer) {
-		updateMultiStatsKills(
-            target, projectile->source->getPlayer());
+		updateMultiStatsKills(pimpl->damage->target,
+                          dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer());
 	}
 
-	if (auto psDroid = dynamic_cast<Droid*>(projectile->source)) {
-		psDroid->kills++;
+	if (auto psDroid = dynamic_cast<Droid*>(pimpl->source)) {
+		psDroid->incrementKills();
 
 		if (psDroid->hasCommander()) {
-			auto& psCommander = psDroid->getGroup().getCommander();
-			psCommander.kills++;
+			auto psCommander = psDroid->getGroup()->getCommander();
+			psCommander->kills++;
 		}
 	}
-	else if (dynamic_cast<Structure*>(projectile->source)) {
+	else if (dynamic_cast<Structure*>(pimpl->source)) {
 		auto psCommander = getDesignatorAttackingObject(
-            projectile->source->getPlayer(),
-            projectile->target);
+            dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer(),
+            pimpl->target);
 
 		if (psCommander != nullptr) {
-			psCommander->kills++;
+			psCommander->incrementKills();
 		}
 	}
 }
 
-int Damage::objectDamage()
+int Projectile::objectDamage()
 {
-	auto relativeDamage = objectDamageDispatch(this);
-	if (shouldIncreaseExperience()) {
-		projectile->updateExperience(
-            abs(relativeDamage) * getExpGain(
-                    projectile->source->getPlayer()) / 100);
+  ASSERT_OR_RETURN(-1, pimpl != nullptr, "Projectile object is undefined");
+	auto relativeDamage = objectDamageDispatch();
+  if (!shouldIncreaseExperience()) return relativeDamage;
 
-		if (relativeDamage < 0) {
-			updateKills();
-		}
-	}
-	return relativeDamage;
+  updateExperience(
+          abs(relativeDamage) * getExpGain(
+                  dynamic_cast<PlayerManager *>(
+                          pimpl->source)->getPlayer()) / 100);
+
+  if (relativeDamage < 0) updateKills();
+  return relativeDamage;
 }
 
 /// @return true if `psObj` has just been hit by an electronic warfare weapon
 static bool justBeenHitByEW(BaseObject * psObj)
 {
-	if (gamePaused()) {
-		return false;
-	}
+	if (gamePaused()) return false;
 
 	if (auto psDroid = dynamic_cast<Droid*>(psObj)) {
     if ((gameTime - psDroid->timeLastHit) < ELEC_DAMAGE_DURATION
-        && psDroid->lastHitWeapon == WEAPON_SUBCLASS::ELECTRONIC) {
+        && psDroid->getLastHitWeapon() == WEAPON_SUBCLASS::ELECTRONIC) {
       return true;
     }
   } 
-  else if (auto psFeature = dynamic_cast<Feature*>(psObj)) {
+  if (auto psFeature = dynamic_cast<Feature*>(psObj)) {
     if ((gameTime - psFeature->timeLastHit) < ELEC_DAMAGE_DURATION) {
       return true;
     }
   }
-  else if (auto psStructure = dynamic_cast<Structure*>(psObj)) {
+  if (auto psStructure = dynamic_cast<Structure*>(psObj)) {
     if ((gameTime - psStructure->timeLastHit) < ELEC_DAMAGE_DURATION
-        && psStructure->lastHitWeapon == WEAPON_SUBCLASS::ELECTRONIC) {
+        && psStructure->getLastHitWeapon() == WEAPON_SUBCLASS::ELECTRONIC) {
       return true;
     }
   }
@@ -1775,9 +1736,7 @@ static constexpr auto BULLET_FLIGHT_HEIGHT = 16;
 
 int establishTargetHeight(BaseObject const* psTarget)
 {
-	if (!psTarget) {
-		return 0;
-	}
+	if (!psTarget) return 0;
 
   if (auto psDroid = dynamic_cast<const Droid*>(psTarget)) {
     auto height = asBodyStats[psDroid->asBits[COMP_BODY]].pIMD->max.y - asBodyStats[psDroid->asBits[
@@ -1837,16 +1796,16 @@ int establishTargetHeight(BaseObject const* psTarget)
     return height + utilityHeight;
   }
   else if (auto psStruct = dynamic_cast<const Structure*>(psTarget)) {
-      auto& psStructureStats = psStruct->getStats();
-      auto height = psStructureStats.IMDs[0]->max.y + psStructureStats.IMDs[0]->min.y;
+      auto psStructureStats = psStruct->getStats();
+      auto height = psStructureStats->IMDs[0]->max.y + psStructureStats.IMDs[0]->min.y;
       height -= gateCurrentOpenHeight(psStruct, gameTime, 2);
       // treat gate as at least 2 units tall, even if open, so that it's possible to hit
       return height;
   }
   else if (dynamic_cast<const Feature*>(psTarget)) {
   // Just use imd ymax+ymin
-  return psTarget->getDisplayData().imd_shape->max.y +
-    psTarget->getDisplayData().imd_shape->min.y;
+  return psTarget->getDisplayData()->imd_shape->max.y +
+    psTarget->getDisplayData()->imd_shape->min.y;
   }
   else if (dynamic_cast<const Projectile*>(psTarget)) {
   return BULLET_FLIGHT_HEIGHT;
@@ -1856,42 +1815,19 @@ int establishTargetHeight(BaseObject const* psTarget)
   }
 }
 
-//void Projectile::checkProjectile(const char* location_description,
-//                                 const char* function, int recurse) const
-//{
-//	if (recurse < 0) {
-//		return;
-//	}
-//
-//	ASSERT_HELPER(weaponStats != nullptr, location_description,
-//                function, "CHECK_PROJECTILE");
-//
-//	ASSERT_HELPER(player < MAX_PLAYERS, location_description, function,
-//	              "CHECK_PROJECTILE: Out of bound owning player number (%u)",
-//                (unsigned int)player);
-//
-//  ASSERT_HELPER(state == PROJECTILE_STATE::INFLIGHT ||
-//                state == PROJECTILE_STATE::IMPACT ||
-//                state == PROJECTILE_STATE::POST_IMPACT ||
-//                state == PROJECTILE_STATE::INACTIVE,
-//                location_description, function,
-//	              "CHECK_PROJECTILE: invalid projectile state: %u",
-//                static_cast<unsigned>(state));
-//}
-
-void Projectile::setSource(::BaseObject *psObj)
+void Projectile::setSource(BaseObject *psObj)
 {
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Projectile object is undefined");
 	// use the source of the source of psProj if psAttacker is a projectile
-	source = nullptr;
-	if (psObj == nullptr) {
-    return;
-  }
+	pimpl->source = nullptr;
+	if (psObj == nullptr) return;
 	else if (auto psPrevProj = dynamic_cast<Projectile*>(psObj)) {
-		if (psPrevProj->source && !psPrevProj->source->died) {
-			source = psPrevProj->source;
+		if (psPrevProj->pimpl->source &&
+        !dynamic_cast<DamageManager *>(psPrevProj->pimpl->source)->isDead()) {
+			pimpl->source = psPrevProj->pimpl->source;
 		}
 	}
 	else {
-		source = psObj;
+		pimpl->source = psObj;
 	}
 }

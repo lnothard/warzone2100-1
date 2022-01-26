@@ -90,16 +90,12 @@ Vector2i FeatureStats::size() const
 
 int Feature::objRadius() const
 {
-  return pimpl
-         ? getDisplayData()->imd_shape->radius / 2
-         : -1;
+  return pimpl ? getDisplayData()->imd_shape->radius / 2 : -1;
 }
 
 Vector2i Feature::size() const
 {
-  return pimpl
-         ? pimpl->psStats->size()
-         : Vector2i();
+  return pimpl ? pimpl->psStats->size() : Vector2i();
 }
 
 /* Load the feature stats */
@@ -226,10 +222,10 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 	if (!fromSave) {
 		x = (x & ~TILE_MASK) + stats->baseWidth % 2 * TILE_UNITS / 2;
 		y = (y & ~TILE_MASK) + stats->baseBreadth % 2 * TILE_UNITS / 2;
-	} else {
+	}
+  else {
 		if ((x & TILE_MASK) != stats->baseWidth % 2 * TILE_UNITS / 2 ||
-        (y & TILE_MASK) != stats->baseBreadth % 2 * TILE_UNITS / 2)
-		{
+        (y & TILE_MASK) != stats->baseBreadth % 2 * TILE_UNITS / 2) {
 			debug(LOG_WARNING, "Feature not aligned. position (%d,%d), size (%d,%d)", x, y, stats->baseWidth,
             stats->baseBreadth);
 		}
@@ -242,9 +238,9 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 	// get the terrain average height
 	auto foundationMin = INT32_MAX;
 	auto foundationMax = INT32_MIN;
-	for (int breadth = 0; breadth <= b.size.y; ++breadth)
+	for (auto breadth = 0; breadth <= b.size.y; ++breadth)
 	{
-		for (int width = 0; width <= b.size.x; ++width)
+		for (auto width = 0; width <= b.size.x; ++width)
 		{
 			auto h = map_TileHeight(b.map.x + width, b.map.y + breadth);
 			foundationMin = std::min(foundationMin, h);
@@ -263,9 +259,9 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 		psFeature->setRotation({0, psFeature->getRotation().pitch,
                                         psFeature->getRotation().roll});
 	}
-	psFeature->hitPoints = stats->body;
-	psFeature->periodicalDamageStartTime = 0;
-	psFeature->periodicalDamage = 0;
+	psFeature->damageManager->setHp(stats->body);
+	psFeature->damageManager->setPeriodicalDamageStartTime(0);
+	psFeature->damageManager->setPeriodicalDamage(0);
 
 	// it has never been drawn
 	psFeature->display->frame_number = 0;
@@ -303,10 +299,10 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 					removeFeature(psBlock);
 				}
 
-				psTile->psObject = dynamic_cast<PlayerOwnedObject *>(psFeature.get());
+				psTile->psObject = psFeature.get();
 
 				// if it's a tall feature then flag it in the map.
-				if (psFeature->getDisplayData().imd_shape->max.y > TALLOBJECT_YMAX)
+				if (psFeature->getDisplayData()->imd_shape->max.y > TALLOBJECT_YMAX)
 				{
 					auxSetBlocking(b.map.x + width, b.map.y + breadth, AIR_BLOCKED);
 				}
@@ -460,7 +456,7 @@ bool destroyFeature(Feature* psDel, unsigned impactTime)
 	       gameTime - deltaGameTime, impactTime, gameTime);
 
 	/* Only add if visible and damageable*/
-	if (psDel->visibleToSelectedPlayer() && psDel->getStats()->damageable)
+	if (psDel->isVisibleToSelectedPlayer() && psDel->getStats()->damageable)
 	{
 		/* Set off a destruction effect */
 		/* First Explosions */

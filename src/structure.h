@@ -236,9 +236,7 @@ struct WALL
 };
 
 class Structure : public BaseObject
-                , public Damageable
-                , public PlayerOwned
-{
+                , public DamageManager, public PlayerManager {
 public:
   ~Structure() override;
 

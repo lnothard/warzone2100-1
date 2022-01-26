@@ -88,7 +88,7 @@ bool aiChooseSensorTarget(BaseObject * psObj, BaseObject ** ppsTarget);
 
 /*set of rules which determine whether the weapon associated with the object
 can fire on the propulsion type of the target*/
-bool validTarget(BaseObject * psObject, BaseObject * psTarget, int weapon_slot);
+bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int weapon_slot);
 
 // Check if any of the weapons can target the target
 bool checkAnyWeaponsTarget(BaseObject const* psObject, BaseObject const* psTarget);

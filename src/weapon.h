@@ -60,8 +60,7 @@ enum class TARGET_ORIGIN
 };
 
 class Weapon : public BaseObject
-             , public PlayerOwned
-{
+             , public PlayerManager {
 public:
   ~Weapon() override = default;
   Weapon(unsigned id, unsigned player);

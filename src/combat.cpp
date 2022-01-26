@@ -54,6 +54,7 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 {
 	ASSERT(psWeap != nullptr, "Invalid weapon pointer");
 
+  auto player = dynamic_cast<PlayerManager *>(psAttacker)->getPlayer();
   auto psDroid = dynamic_cast<Droid*>(psAttacker);
 	/* Don't shoot if the weapon_slot of a vtol is empty */
 	if (psDroid && psDroid->isVtol()
@@ -62,8 +63,7 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 		return false;
 	}
 
-	auto& psStats = psWeap->getStats();
-
+	auto psStats = psWeap->getStats();
 	// check valid weapon/prop combination
 	if (!validTarget(psAttacker, psTarget, weapon_slot)) {
 		return false;
@@ -72,10 +72,9 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 	auto fireTime = gameTime - deltaGameTime + 1; // Can fire earliest at the start of the tick.
 
 	// see if reloadable weapon.
-	if (psStats.upgraded[psAttacker->getPlayer()].reloadTime) {
-		auto reloadTime = psWeap->timeLastFired + weaponReloadTime(psStats, psAttacker->getPlayer());
-		if (psWeap->ammo == 0) // Out of ammo?
-		{
+	if (psStats->upgraded[player].reloadTime) {
+		auto reloadTime = psWeap->timeLastFired + weaponReloadTime(psStats, player);
+		if (psWeap->ammo == 0) {// Out of ammo?
 			fireTime = std::max(fireTime, reloadTime); // Have to wait for weapon to reload before firing.
 			if (gameTime < fireTime) {
 				return false;
@@ -84,12 +83,12 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 
 		if (reloadTime <= fireTime) {
 			//reset the ammo level
-			psWeap->ammo = psStats.upgraded[psAttacker->getPlayer()].numRounds;
+			psWeap->ammo = psStats->upgraded[player].numRounds;
 		}
 	}
 
 	/* See when the weapon last fired to control it's rate of fire */
-	unsigned firePause = weaponFirePause(&psStats, psAttacker->getPlayer());
+	auto firePause = weaponFirePause(psStats, player);
 	firePause = std::max(firePause, 1u); // Don't shoot infinitely many shots at once.
 	fireTime = std::max(fireTime, psWeap->timeLastFired + firePause);
 
@@ -98,16 +97,16 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 		return false;
 	}
 
-	ASSERT(psAttacker->getPlayer() < MAX_PLAYERS,
+	ASSERT(player < MAX_PLAYERS,
          "psAttacker->player = %" PRIu8 "",
-         psAttacker->getPlayer());
+         player);
 
-	if (psTarget->visibleToPlayer(psAttacker->getPlayer()) != UBYTE_MAX) {
+	if (psTarget->isVisibleToPlayer(player) != UBYTE_MAX) {
 		// Can't see it - can't hit it
 		objTrace(psAttacker->getId(),
              "combFire(%u[%s]->%u): Object has no indirect sight of target",
              psAttacker->getId(),
-		         getStatsName(&psStats),
+		         getStatsName(psStats),
              psTarget->getId());
 		return false;
 	}
@@ -116,9 +115,9 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
   auto droid = dynamic_cast<Droid*>(psAttacker);
   auto structure = dynamic_cast<Structure*>(psAttacker);
 	bool tall = droid && droid->isVtol() ||
-              structure && structure->getStats().height > 1;
+              structure && structure->getStats()->height > 1;
 
-	if (proj_Direct(&psStats) && !
+	if (proj_Direct(psStats) && !
       lineOfFire(psAttacker, psTarget, weapon_slot, tall)) {
 		// Can't see the target - can't hit it with direct fire
 		objTrace(psAttacker->getId(), "combFire(%u[%s]->%u): No direct line of sight to target",
@@ -129,7 +128,7 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 	Vector3i deltaPos = psTarget->getPosition() - psAttacker->getPosition();
 
 	// if the turret doesn't turn, check if the attacker is in alignment with the target
-	if (droid && !psStats.rotate) {
+	if (droid && !psStats->rotate) {
 		auto targetDir = iAtan2(deltaPos.xy());
 		auto dirDiff = abs(angleDelta(targetDir - psAttacker->getRotation().direction));
 		if (dirDiff > FIXED_TURRET_DIR) {
@@ -139,12 +138,12 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 
 	/* Now see if the target is in range  - also check not too near */
 	auto dist = iHypot(deltaPos.xy());
-	auto longRange = proj_GetLongRange(&psStats, psAttacker->getPlayer());
-	auto shortRange = proj_GetShortRange(&psStats, psAttacker->getPlayer());
+	auto longRange = proj_GetLongRange(psStats, player);
+	auto shortRange = proj_GetShortRange(psStats, player);
 
 	int min_angle = 0;
 	// Calculate angle for indirect shots
-	if (!proj_Direct(&psStats) && dist > 0) {
+	if (!proj_Direct(psStats) && dist > 0) {
 		min_angle = arcOfFire(psAttacker, psTarget, weapon_slot, true);
 
 		// prevent extremely steep shots
@@ -162,19 +161,19 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 	}
 
 	int baseHitChance = 0;
-	const auto min_range = proj_GetMinRange(&psStats, psAttacker->getPlayer());
+	const auto min_range = proj_GetMinRange(psStats, player);
 	if (dist <= shortRange && dist >= min_range) {
 		// get weapon chance to hit in the short range
-		baseHitChance = weaponShortHit(&psStats, psAttacker->getPlayer());
+		baseHitChance = weaponShortHit(psStats, player);
 	}
 	else if (dist <= longRange && dist >= min_range) {
 		// get weapon chance to hit in the long range
-		baseHitChance = weaponLongHit(&psStats, psAttacker->getPlayer());
+		baseHitChance = weaponLongHit(psStats, player);
 	}
 	else {
 		/* Out of range */
 		objTrace(psAttacker->getId(), "combFire(%u[%s]->%u): Out of range",
-             psAttacker->getId(), getStatsName(&psStats), psTarget->getId());
+             psAttacker->getId(), getStatsName(psStats), psTarget->getId());
 		return false;
 	}
 
@@ -204,8 +203,8 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 	}
 
 	if (droid &&
-      droid->getMovementData().status != MOVE_STATUS::INACTIVE &&
-      !psStats.fireOnMove) {
+      droid->getMovementData()->status != MOVE_STATUS::INACTIVE &&
+      !psStats->fireOnMove) {
 		return false; // Can't fire while moving
 	}
 
@@ -215,7 +214,7 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 	psWeap->timeLastFired = fireTime;
 
 	/* reduce ammo if salvo */
-	if (psStats.upgraded[psAttacker->getPlayer()].reloadTime) {
+	if (psStats->upgraded[player].reloadTime) {
 		psWeap->ammo--;
 	}
 
@@ -227,19 +226,17 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 
 	// Target prediction
 	if (dynamic_cast<Droid*>(psTarget) &&
-      dynamic_cast<Droid*>(psTarget)->getMovementData().bumpTime == 0) {
+      dynamic_cast<Droid*>(psTarget)->getMovementData()->bumpTime == 0) {
 		auto psDroid = dynamic_cast<Droid*>(psTarget);
 
 		int32_t flightTime;
-		if (proj_Direct(&psStats) ||
-        dist <= proj_GetMinRange(&psStats, psAttacker->getPlayer())) {
-			flightTime = dist * GAME_TICKS_PER_SEC / psStats.flightSpeed;
+		if (proj_Direct(psStats) || dist <= proj_GetMinRange(psStats, player)) {
+			flightTime = dist * GAME_TICKS_PER_SEC / psStats->flightSpeed;
 		}
-		else
-		{
+		else {
 			int32_t vXY, vZ; // Unused, we just want the flight time.
 			flightTime = projCalcIndirectVelocities(
-              dist, deltaPos.z, psStats.flightSpeed,
+              dist, deltaPos.z, psStats->flightSpeed,
               &vXY, &vZ, min_angle);
 		}
 
@@ -270,24 +267,21 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 	bool isHit = gameRand(100) <= resultHitChance;
 	if (isHit) {
 		/* Kerrrbaaang !!!!! a hit */
-		objTrace(psAttacker->getId(), "combFire: [%s]->%u: resultHitChance=%d, visibility=%d", getStatsName(&psStats),
-		         psTarget->getId(), resultHitChance, (int)psTarget->visible[psAttacker->getPlayer()]);
+		objTrace(psAttacker->getId(), "combFire: [%s]->%u: resultHitChance=%d, visibility=%d", getStatsName(psStats),
+		         psTarget->getId(), resultHitChance, (int)psTarget->isVisibleToPlayer(player));
 		syncDebug("hit=(%d,%d,%d)", predict.x, predict.y, predict.z);
 	}
-	else /* Deal with a missed shot */
-	{
+	else { /* Deal with a missed shot */
 		// Get the shape of the target to avoid "missing" inside of it
-		const ObjectShape targetShape = establishTargetShape(psTarget);
+		const auto targetShape = establishTargetShape(psTarget);
 
 		// Worst possible shot based on distance and weapon accuracy
-		Vector3i deltaPosPredict = psAttacker->getPosition() - predict;
+		auto deltaPosPredict = psAttacker->getPosition() - predict;
 		int worstShot;
-		if (resultHitChance > 0)
-		{
+		if (resultHitChance > 0) {
 			worstShot = (iHypot(deltaPosPredict.xy()) * 100 / resultHitChance) / 5;
 		}
-		else
-		{
+		else {
 			worstShot = iHypot(deltaPosPredict.xy()) * 2;
 		}
 
@@ -300,7 +294,8 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 
 		// Determine the angle of the miss in the 270 degrees in "front" of the target.
 		// The 90 degrees behind would most probably cause an unwanted hit when the projectile will be drawn through the hitbox.
-		auto miss = Vector3i(iSinCosR(gameRand(DEG(270)) - DEG(135) + iAtan2(deltaPosPredict.xy()), missDist), 0);
+		auto miss = Vector3i(iSinCosR(gameRand(
+            DEG(270)) - DEG(135) + iAtan2(deltaPosPredict.xy()), missDist), 0);
 		predict += miss;
 
 		psTarget = nullptr; // Missed the target, so don't expect to hit it.
@@ -313,7 +308,7 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 	CLIP(predict.x, 0, world_coord(mapWidth - 1));
 	CLIP(predict.y, 0, world_coord(mapHeight - 1));
 
-	::proj_SendProjectileAngled(psWeap, psAttacker, psAttacker->getPlayer(),
+	proj_SendProjectileAngled(psWeap, psAttacker, player,
                             predict, psTarget, bVisibleAnyway, weapon_slot,
 	                          min_angle, fireTime);
 	return true;
@@ -321,15 +316,16 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 
 /*checks through the target players list of structures and droids to see
 if any support a counter battery sensor*/
-void counterBatteryFire(BaseObject * psAttacker, BaseObject * psTarget)
+void counterBatteryFire(BaseObject* psAttacker, BaseObject* psTarget)
 {
 	/*if a null target is passed in ignore - this will be the case when a 'miss'
 	projectile is sent - we may have to cater for these at some point*/
 	// also ignore cases where you attack your own player
 	// Also ignore cases where there are already 1000 missiles heading towards the attacker.
-	if (psTarget == nullptr
-		|| (psAttacker != nullptr && psAttacker->getPlayer() == psTarget->getPlayer())
-		|| (psAttacker != nullptr && psAttacker->isProbablyDoomed(false))) {
+	if (psTarget == nullptr ||
+      (psAttacker != nullptr &&
+       dynamic_cast<PlayerManager *>(psAttacker)->getPlayer() == dynamic_cast<PlayerManager *>(psTarget)->getPlayer()) ||
+      (psAttacker != nullptr && dynamic_cast<DamageManager *>(psAttacker)->isProbablyDoomed(false))) {
 		return;
 	}
 
@@ -341,7 +337,7 @@ void counterBatteryFire(BaseObject * psAttacker, BaseObject * psTarget)
     auto psStruct = dynamic_cast<Structure*>(psViewer);
     auto psDroid = dynamic_cast<Droid*>(psViewer);
     if ((psStruct && !structCBSensor(psStruct) &&
-         psStruct->getStats().sensor_stats->type != SENSOR_TYPE::VTOL_CB) ||
+         psStruct->getStats()->sensor_stats->type != SENSOR_TYPE::VTOL_CB) ||
         (psDroid && !psDroid->hasCbSensor())) {
       continue;
     }
@@ -367,24 +363,25 @@ void counterBatteryFire(BaseObject * psAttacker, BaseObject * psTarget)
   }
 }
 
-int objArmour(const BaseObject * psObj, WEAPON_CLASS weaponClass)
+int objArmour(BaseObject const* psObj, WEAPON_CLASS weaponClass)
 {
 	auto armour = 0;
+  auto player = dynamic_cast<PlayerManager const*>(psObj)->getPlayer();
 	if (auto psDroid = dynamic_cast<const Droid*>(psObj)) {
     auto body = psDroid->getComponent("body");
     if (body) {
       armour = bodyArmour(
               dynamic_cast<const BodyStats*>(body),
-              psObj->getPlayer(), weaponClass);
+              player, weaponClass);
     }
 	}
 	else if (auto psStruct = dynamic_cast<const Structure*>(psObj)) {
     if (psStruct->getState() != STRUCTURE_STATE::BEING_BUILT) {
       if (weaponClass == WEAPON_CLASS::KINETIC) {
-        armour = psStruct->getStats().upgraded_stats[psObj->getPlayer()].armour;
+        armour = psStruct->getStats()->upgraded_stats[player].armour;
       }
       else if (weaponClass == WEAPON_CLASS::HEAT) {
-        armour = psStruct->getStats().upgraded_stats[psObj->getPlayer()].thermal;
+        armour = psStruct->getStats()->upgraded_stats[player].thermal;
       }
     }
 	}

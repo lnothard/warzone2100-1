@@ -78,6 +78,7 @@
 #include "hci/manufacture.h"
 #include "hci/commander.h"
 #include "notifications.h"
+#include "objmem.h"
 
 // Empty edit window
 static bool secondaryWindowUp = false;
@@ -1254,15 +1255,13 @@ void intResetScreen(bool NoAnim, bool skipMissionResultScreen /*= false*/)
 
 void intOpenDebugMenu(OBJECT_TYPE id)
 {
-	if (gamePaused())
-	{
+	if (gamePaused()) {
 		// All menu tabs will not work if they are opened, and the forms will fail to cleanup properly, if the game is paused.
 		return;
 	}
 
 	intResetScreen(true);
-	switch (id)
-	{
+	switch (id) {
 	case OBJ_DROID:
 		apsTemplateList.clear();
 		for (auto& localTemplate : localTemplates)
@@ -1690,12 +1689,12 @@ INT_RETVAL intRunWidgets()
 						&& intNumSelectedDroids(DROID_CYBORG_CONSTRUCT) == 0
 						&& psSelectedBuilder != nullptr)
 					{
-						orderDroidStatsLocDir(psSelectedBuilder, DORDER_BUILD, (StructureStats*)psPositionStats, pos.x,
+						orderDroidStatsLocDir(psSelectedBuilder, ORDER_TYPE::BUILD, (StructureStats*)psPositionStats, pos.x,
                                   pos.y, getBuildingDirection(), ModeQueue);
 					}
 					else
 					{
-						orderSelectedStatsLocDir(selectedPlayer, DORDER_BUILD, (StructureStats*)psPositionStats, pos.x,
+						orderSelectedStatsLocDir(selectedPlayer, ORDER_TYPE::BUILD, (StructureStats*)psPositionStats, pos.x,
                                      pos.y, getBuildingDirection(), ctrlShiftDown());
 					}
 				}
@@ -1717,11 +1716,9 @@ INT_RETVAL intRunWidgets()
 			FlagPosition flag;
 			Vector2i pos = {INT32_MAX, INT32_MAX}, pos2 = {INT32_MAX, INT32_MAX};
 			Vector2i size = {1, 1};
-			STRUCTURE_TYPE type = REF_WALL;
-			if (sBuildDetails.psStats && (found3DBuildLocTwo(pos, pos2) || found3DBuilding(pos)))
-			{
-				if (auto stats = castStructureStats(sBuildDetails.psStats))
-				{
+			STRUCTURE_TYPE type = STRUCTURE_TYPE::WALL;
+			if (sBuildDetails.psStats && (found3DBuildLocTwo(pos, pos2) || found3DBuilding(pos))) {
+				if (auto stats = dynamic_cast<StructureStats*>(sBuildDetails.psStats)) {
 					size = stats->size(playerPos.r.y);
 					type = stats->type;
 				}
@@ -1800,7 +1797,7 @@ INT_RETVAL intRunWidgets()
 					else if (psPositionStats->hasType(STAT_TEMPLATE))
 					{
 						std::string msg;
-						Droid* psDroid = buildDroid((DroidTemplate*)psPositionStats, pos.x, pos.y, selectedPlayer,
+						auto psDroid = buildDroid((DroidTemplate*)psPositionStats, pos.x, pos.y, selectedPlayer,
                                         false, nullptr);
 						cancelDeliveryRepos();
 						if (psDroid)
@@ -1896,7 +1893,7 @@ void intSetMapPos(UDWORD x, UDWORD y)
 //
 // There should be two version of this function, one for left clicking and one got right.
 //
-void intObjectSelected(PlayerOwnedObject * psObj)
+void intObjectSelected(BaseObject* psObj)
 {
 	if (psObj)
 	{
@@ -2360,14 +2357,14 @@ static bool intAddDebugStatsForm(BaseStats** _ppsStatsList, UDWORD numStats)
 }
 
 /* Return the stats for a research facility */
-static BaseStats* getResearchStats(PlayerOwnedObject * psObj)
+static BaseStats* getResearchStats(BaseObject* psObj)
 {
 	ASSERT_OR_RETURN(nullptr, psObj != nullptr && psObj->type == OBJ_STRUCTURE, "Invalid Structure pointer");
 	auto* psBuilding = (Structure*)psObj;
 	ResearchFacility* psResearchFacility = &psBuilding->pFunctionality->researchFacility;
 
 	if (psResearchFacility->psSubjectPending != nullptr && !IsResearchCompleted(
-		&asPlayerResList[psObj->player][psResearchFacility->psSubjectPending->index]))
+		&asPlayerResList[psObj->playerManager->getPlayer()][psResearchFacility->psSubjectPending->index]))
 	{
 		return psResearchFacility->psSubjectPending;
 	}
@@ -2379,8 +2376,7 @@ bool setController(const std::shared_ptr<BaseObjectsController>& controller, INT
 {
 	intResetScreen(true);
 
-	if (!controller->showInterface())
-	{
+	if (!controller->showInterface()) {
 		debug(LOG_ERROR, "Failed to show interface");
 		intResetScreen(true);
 		return false;

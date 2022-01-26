@@ -54,12 +54,12 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 	ASSERT_OR_RETURN(false, psDroid != nullptr, "psDroid is null?");
 
 	if (psCommander->group == nullptr) {
-		psGroup = grpCreate();
+		psGroup = grpCreate(-1);
 		psGroup->add(psCommander);
 		psDroid->group = UBYTE_MAX;
 	}
 
-	if (psCommander->group->getNumMembers() < cmdDroidMaxGroup(psCommander)) {
+	if (psCommander->getGroup()->getMembers().size() < cmdDroidMaxGroup(psCommander)) {
 		addedToGroup = true;
 
 		psCommander->group->add(psDroid);
@@ -77,13 +77,11 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
                       (SECONDARY_STATE)(psCommander->getSecondaryOrder() & DSS_HALT_MASK),
 		                  ModeImmediate);
 
-		orderDroidObj(psDroid, ORDER_TYPE::GUARD, (PlayerOwnedObject *)psCommander, ModeImmediate);
+		orderDroidObj(psDroid, ORDER_TYPE::GUARD, psCommander, ModeImmediate);
 	}
-	else if (psCommander->getPlayer() == selectedPlayer)
-	{
+	else if (psCommander->playerManager->getPlayer() == selectedPlayer) {
 		//Do not potentially spam the console with this message
-		if (lastMaxCmdLimitMsgTime + MAX_COMMAND_LIMIT_MESSAGE_PAUSE < gameTime)
-		{
+		if (lastMaxCmdLimitMsgTime + MAX_COMMAND_LIMIT_MESSAGE_PAUSE < gameTime) {
 			addConsoleMessage(
 				_("Commander needs a higher level to command more units"),
         CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
@@ -106,7 +104,7 @@ void cmdDroidSetDesignator(Droid* psDroid)
 		return;
 	}
 
-	apsCmdDesignator[psDroid->getPlayer()] = psDroid;
+	apsCmdDesignator[psDroid->playerManager->getPlayer()] = psDroid;
 }
 
 void cmdDroidClearDesignator(unsigned player)
@@ -114,25 +112,24 @@ void cmdDroidClearDesignator(unsigned player)
 	apsCmdDesignator[player] = nullptr;
 }
 
-long get_commander_index(const Droid& commander)
+long get_commander_index(Droid const& commander)
 {
   assert(commander.getType() == DROID_TYPE::COMMAND);
 
-  const auto& droids = apsDroidLists[commander.getPlayer()];
+  auto const& droids = apsDroidLists[commander.playerManager->getPlayer()];
   return std::find_if(droids.begin(), droids.end(),
-                      [&commander](const auto& droid)
-  {
+                      [&commander](auto const& droid) {
       return droid.getType() == DROID_TYPE::COMMAND &&
              &droid == &commander;
   }) - droids.begin();
 }
 
 /** This function returns the maximum group size of the command droid.*/
-unsigned cmdDroidMaxGroup(const Droid *psCommander)
+unsigned cmdDroidMaxGroup(Droid const* psCommander)
 {
-	const auto psStats = getBrainStats(psCommander);
-	return getDroidLevel(psCommander) * psStats->upgrade[psCommander->getPlayer()].maxDroidsMult
-         + psStats->upgrade[psCommander->getPlayer()].maxDroids;
+	const auto psStats = dynamic_cast<CommanderStats const*>(psCommander->getComponent("brain"));
+	return getDroidLevel(psCommander) * psStats->upgraded[psCommander->playerManager->getPlayer()].maxDroidsMult
+         + psStats->upgraded[psCommander->playerManager->getPlayer()].maxDroids;
 }
 
 /** This function adds experience to the command droid of the psShooter's command group.*/
@@ -141,7 +138,7 @@ void cmdDroidUpdateExperience(Droid *psShooter, unsigned experienceInc)
 	ASSERT_OR_RETURN(, psShooter != nullptr, "invalid Unit pointer");
 
 	if (hasCommander(psShooter)) {
-		auto& psCommander = psShooter->getGroup().getCommander();
-		psCommander.experience += MIN(experienceInc, UINT32_MAX - psCommander.experience);
+		auto psCommander = psShooter->getGroup()->getCommander();
+		psCommander->experience += MIN(experienceInc, UINT32_MAX - psCommander->experience);
 	}
 }
