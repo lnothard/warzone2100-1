@@ -683,8 +683,7 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
   const auto dstIgnore = NonBlockingArea{pathJob.dstStructure};
 
   auto it = std::find_if(path_contexts.begin(), path_contexts.end(),
-                         [&origin_tile, &end, &must_reverse](const auto& context)
-  {
+                         [&origin_tile, &end, &must_reverse](auto& context) {
       if (context.map[origin_tile.x + origin_tile.y * mapWidth].iteration ==
           context.map[origin_tile.x + origin_tile.y * mapWidth].visited)  {
         // already know the path
@@ -721,14 +720,14 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
      * nearest reachable tile to dest is.
      */
     auto new_context = PathContext();
-    new_context.init(--it, pathJob.blockingMap, origin_tile, origin_tile,
-                     destination_tile, pathJob.dstStructure);
-    end = find_nearest_explored_tile(it, destination_tile);
+    new_context.init(*pathJob.blockingMap, origin_tile, origin_tile,
+                     destination_tile);
+    end = find_nearest_explored_tile(*it, destination_tile);
     it->nearest_reachable_tile = end;
   }
 
   // return the nearest route if no optimal one was found
-  if (it != destination_tile)  {
+  if (it->start_coord != destination_tile)  {
     result = ASTAR_RESULT::PARTIAL;
   }
   static std::vector<Vector2i> route;
@@ -789,13 +788,13 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
 		// if blocked, searching from `destination_tile` to
     // `origin_tile` wouldn't find the origin tile.
     if (!it->is_blocked(origin_tile.x, origin_tile.y))  {
-
 			// next time, search starting from the nearest reachable
       // tile to the destination.
-			it->init(pathJob.blockingMap, destination_tile,
+			it->init(*pathJob.blockingMap, destination_tile,
                it->nearest_reachable_tile, origin_tile, dstIgnore);
     }
-  } else  {
+  }
+  else {
     std::copy(route.begin(), route.end(), movement.path.data());
   }
 
@@ -1005,23 +1004,22 @@ void fpathSetBlockingMap(PathJob& path_job)
 		std::vector<bool>& map = blocking.map;
 		map.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
 		unsigned checksum_map = 0, checksum_threat_map = 0, factor = 0;
-		for (int y = 0; y < mapHeight; ++y)
+		for (auto y = 0; y < mapHeight; ++y)
     {
-      for (int x = 0; x < mapWidth; ++x)
+      for (auto x = 0; x < mapWidth; ++x)
       {
         map[x + y * mapWidth] = fpathBaseBlockingTile(x, y, type.propulsion,
                                                       type.owner, type.moveType);
         checksum_map ^= map[x + y * mapWidth] * (factor = 3 * factor + 1);
       }
     }
-		if (!isHumanPlayer(type.owner) &&
-        type.moveType == FPATH_MOVETYPE::FMT_MOVE)  {
+		if (!isHumanPlayer(type.owner) && type.moveType == FPATH_MOVETYPE::FMT_MOVE) {
 			auto threat = blocking.threat_map;
 			threat.resize(static_cast<size_t>(mapWidth) *
                     static_cast<size_t>(mapHeight));
-			for (int y = 0; y < mapHeight; ++y)
+			for (auto y = 0; y < mapHeight; ++y)
       {
-				for (int x = 0; x < mapWidth; ++x)
+				for (auto x = 0; x < mapWidth; ++x)
 				{
 					threat[x + y * mapWidth] = auxTile(x, y, type.owner) & AUXBITS_THREAT;
           checksum_threat_map ^= threat[x + y * mapWidth] * (factor = 3 * factor + 1);
@@ -1033,7 +1031,8 @@ void fpathSetBlockingMap(PathJob& path_job)
               checksum_map, checksum_threat_map);
 
     path_job.blockingMap = std::make_shared<PathBlockingMap>(blocking_maps.back());
-	} else  {
+	}
+  else {
 		syncDebug("blockingMap(%d,%d,%d,%d) = cached", gameTime,
               path_job.propulsion, path_job.owner, path_job.moveType);
     path_job.blockingMap = std::make_shared<PathBlockingMap>(*it);

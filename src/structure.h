@@ -41,6 +41,7 @@
 #include "order.h"
 #include "positiondef.h"
 #include "stats.h"
+#include "visibility.h"
 #include "weapon.h"
 
 static constexpr auto NUM_FACTORY_MODULES = 2;
@@ -86,6 +87,7 @@ static constexpr auto MAX_FACTORY	=	5;
 /// Used to flag when the Factory is ready to start building
 static constexpr auto ACTION_START_TIME = 0;
 
+
 enum WallOrientation
 {
   WallConnectNone = 0,
@@ -128,7 +130,8 @@ enum class STRUCTURE_TYPE
   MISSILE_SILO,
   SAT_UPLINK,
   GATE,
-  LASSAT
+  LASSAT,
+  COUNT
 };
 
 enum class STRUCTURE_STATE
@@ -258,6 +261,7 @@ public:
   Structure& operator=(Structure&& rhs) noexcept = default;
 
   [[nodiscard]] STRUCTURE_ANIMATION_STATE getAnimationState() const;
+  [[nodiscard]] ANIMATION_EVENTS getAnimationEvent() const;
   [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
   [[nodiscard]] Vector2i getSize() const;
   [[nodiscard]] int getFoundationDepth() const noexcept;
@@ -480,9 +484,6 @@ extern Structure* psLastStructHit;
 
 //stores which player the production list has been set up for
 extern unsigned productionPlayer;
-
-//used to hold the modifiers cross refd by weapon effect and structureStrength
-extern STRUCTSTRENGTH_MODIFIER asStructStrengthModifier[WE_NUMEFFECTS][NUM_STRUCT_STRENGTH];
 
 void handleAbandonedStructures();
 
@@ -767,23 +768,23 @@ void cbNewDroid(Structure* psFactory, Droid* psDroid);
 StructureBounds getStructureBounds(const Structure* object);
 StructureBounds getStructureBounds(const StructureStats* stats, Vector2i pos, uint16_t direction);
 
-bool canStructureHaveAModuleAdded(Structure* const structure);
+bool canStructureHaveAModuleAdded(Structure const* structure);
 
 static inline unsigned structSensorRange(const Structure* psObj)
 {
-	return objSensorRange((const BaseObject *)psObj);
+	return objSensorRange(psObj);
 }
 
 static inline unsigned structJammerPower(const Structure* psObj)
 {
-	return objJammerPower((const BaseObject *)psObj);
+	return objJammerPower(psObj);
 }
 
 static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStructure, int weaponSlot, uint32_t time)
 {
 	return interpolateRot(psStructure->asWeaps[weaponSlot].previousRotation,
                         psStructure->asWeaps[weaponSlot].rotation,
-                        psStructure->prevTime, psStructure->time, time);
+                        psStructure->prevTime, psStructure->getTime(), time);
 }
 
 #define setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin) _setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin, __LINE__, __FUNCTION__)
@@ -876,30 +877,30 @@ void _syncDebugStructure(const char* function, Structure const* psStruct, char c
 
 static inline int getBuildingResearchPoints(Structure* psStruct)
 {
-	auto& upgrade = psStruct->getStats().upgraded_stats[psStruct->getPlayer()];
-	return upgrade.research + upgrade.moduleResearch * psStruct->capacity;
+	auto& upgrade = psStruct->getStats()->upgraded_stats[psStruct->playerManager->getPlayer()];
+	return upgrade.research + upgrade.moduleResearch * psStruct->getCapacity();
 }
 
 static inline int getBuildingProductionPoints(Structure* psStruct)
 {
-	auto& upgrade = psStruct->getStats().upgraded_stats[psStruct->getPlayer()];
-	return upgrade.production + upgrade.moduleProduction * psStruct->capacity;
+	auto& upgrade = psStruct->getStats()->upgraded_stats[psStruct->playerManager->getPlayer()];
+	return upgrade.production + upgrade.moduleProduction * psStruct->getCapacity();
 }
 
 static inline int getBuildingPowerPoints(Structure* psStruct)
 {
-	auto& upgrade = psStruct->getStats().upgraded_stats[psStruct->getPlayer()];
-	return upgrade.power + upgrade.modulePower * psStruct->capacity;
+	auto& upgrade = psStruct->getStats()->upgraded_stats[psStruct->playerManager->getPlayer()];
+	return upgrade.power + upgrade.modulePower * psStruct->getCapacity();
 }
 
 static inline unsigned getBuildingRepairPoints(Structure* psStruct)
 {
-	return psStruct->getStats().upgraded_stats[psStruct->getPlayer()].repair;
+	return psStruct->getStats()->upgraded_stats[psStruct->playerManager->getPlayer()].repair;
 }
 
 static inline unsigned getBuildingRearmPoints(Structure* psStruct)
 {
-	return psStruct->getStats().upgraded_stats[psStruct->getPlayer()].rearm;
+	return psStruct->getStats()->upgraded_stats[psStruct->playerManager->getPlayer()].rearm;
 }
 
 WzString getFavoriteStructs();

@@ -23,8 +23,6 @@
  * This is where we do texture atlas generation.
  */
 
-#include "lib/framework/frame.h"
-
 #include <cstring>
 #include <physfs.h>
 
@@ -32,15 +30,12 @@
 #include "lib/framework/string_ext.h"
 
 #include "lib/ivis_opengl/pietypes.h"
-#include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/tex.h"
-#include "lib/ivis_opengl/piepalette.h"
-#include "lib/ivis_opengl/screen.h"
 
-#include "display3ddef.h"
 #include "texture.h"
 #include "radar.h"
 #include "map.h"
+#include "display3d.h"
 
 
 #define MIPMAP_LEVELS		4

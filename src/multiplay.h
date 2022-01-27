@@ -29,7 +29,6 @@
 #include "lib/framework/vector.h"
 #include "lib/framework/crc.h"
 #include "lib/netplay/nettypes.h"
-#include "orderdef.h"
 #include "stringdef.h"
 #include "messagedef.h"
 #include "levels.h"
@@ -46,7 +45,7 @@ using nonstd::nullopt;
 #include <3rdparty/json/json_fwd.hpp>
 
 class Group;
-struct PlayerOwnedObject;
+struct BaseObject;
 struct Droid;
 struct DroidTemplate;
 struct Feature;
@@ -67,7 +66,7 @@ struct MULTIPLAYERGAME
 	std::vector<Sha256> modHashes; // Hash of mods.
 	uint32_t power; // power level for arena game
 	uint8_t base; // clean/base/base&defence
-	uint8_t alliance; // no/yes/locked
+	ALLIANCE_TYPE alliance; // no/yes/locked
 	bool mapHasScavengers;
 	bool isMapMod; // if a map has mods
 	bool isRandom; // If a map is non-static.
@@ -131,13 +130,11 @@ struct NetworkTextMessage
 	/**
 	 * Sender can be a player index, SYSTEM_MESSAGE or NOTIFY_MESSAGE.
 	 **/
-	int32_t sender;
+	int sender;
 	char text[MAX_CONSOLE_STRING_LENGTH];
 	bool teamSpecific = false;
 
-	NetworkTextMessage()
-	{
-	}
+	NetworkTextMessage() = default;
 
 	NetworkTextMessage(int32_t messageSender, char const* messageText);
 	void enqueue(NETQUEUE queue);
@@ -205,7 +202,7 @@ extern UBYTE bDisplayMultiJoiningStatus; // draw load progress?
 #define MAX_KICK_REASON			80			// max array size for the reason your kicking someone
 // functions
 
-WZ_DECL_WARN_UNUSED_RESULT PlayerOwnedObject * IdToPointer(UDWORD id, UDWORD player);
+WZ_DECL_WARN_UNUSED_RESULT BaseObject * IdToPointer(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT Structure* IdToStruct(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT Droid* IdToDroid(UDWORD id, UDWORD player);
 WZ_DECL_WARN_UNUSED_RESULT Droid* IdToMissionDroid(UDWORD id, UDWORD player);
@@ -255,7 +252,7 @@ bool multiplayerWinSequence(bool firstCall);
 // Buildings . multistruct
 bool SendDestroyStructure(Structure* s);
 bool SendBuildFinished(Structure* psStruct);
-bool sendLasSat(UBYTE player, Structure* psStruct, PlayerOwnedObject * psObj);
+bool sendLasSat(UBYTE player, Structure* psStruct, BaseObject * psObj);
 void sendStructureInfo(Structure* psStruct, STRUCTURE_INFO structureInfo, DroidTemplate* psTempl);
 
 // droids . multibot
@@ -277,16 +274,13 @@ bool hostCampaign(const char* SessionName, char* hostPlayerName, bool spectatorH
 struct JoinConnectionDescription
 {
 public:
-	JoinConnectionDescription()
+	JoinConnectionDescription() = default;
+
+	JoinConnectionDescription(std::string host, uint32_t port)
+		: host(std::move(host))
+		, port(port)
 	{
 	}
-
-	JoinConnectionDescription(const std::string& host, uint32_t port)
-		: host(host)
-		  , port(port)
-	{
-	}
-
 public:
 	std::string host;
 	uint32_t port = 0;
@@ -315,7 +309,7 @@ void multiSyncResetAllChallenges();
 void multiSyncResetPlayerChallenge(uint32_t playerIdx);
 void multiSyncPlayerSwap(uint32_t playerIndexA, uint32_t playerIndexB);
 bool sendPing(); // allow game to request pings.
-void HandleBadParam(const char* msg, const int from, const int actual);
+void HandleBadParam(const char* msg, int from, int actual);
 // multijoin
 bool sendResearchStatus(const Structure* psBuilding, UDWORD index, UBYTE player, bool bStart);
 
@@ -326,7 +320,7 @@ void resetReadyStatus(bool bSendOptions, bool ignoreReadyReset = false);
 
 Structure* findResearchingFacilityByResearchIndex(unsigned player, unsigned index);
 
-void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const PlayerOwnedObject * psObj, const PlayerOwnedObject * psObj2);
+void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, BaseObject const* psObj, BaseObject const* psObj2);
 
 
 bool sendBeaconToPlayer(SDWORD locX, SDWORD locY, SDWORD forPlayer, SDWORD sender, const char* beaconMsg);
@@ -337,12 +331,12 @@ bool makePlayerSpectator(uint32_t player_id, bool removeAllStructs = false, bool
 
 class WZGameReplayOptionsHandler : public ReplayOptionsHandler
 {
-	virtual bool saveOptions(nlohmann::json& object) const override;
-	virtual bool saveMap(EmbeddedMapData& mapData) const override;
-	virtual bool restoreOptions(const nlohmann::json& object, EmbeddedMapData&& embeddedMapData,
+	bool saveOptions(nlohmann::json& object) const override;
+	bool saveMap(EmbeddedMapData& mapData) const override;
+	bool restoreOptions(const nlohmann::json& object, EmbeddedMapData&& embeddedMapData,
 	                            uint32_t replay_netcodeMajor, uint32_t replay_netcodeMinor) override;
-	virtual size_t desiredBufferSize() const override;
-	virtual size_t maximumEmbeddedMapBufferSize() const override;
+	[[nodiscard]] size_t desiredBufferSize() const override;
+	[[nodiscard]] size_t maximumEmbeddedMapBufferSize() const override;
 };
 
 #endif // __INCLUDED_SRC_MULTIPLAY_H__

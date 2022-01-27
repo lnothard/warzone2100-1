@@ -1457,7 +1457,7 @@ void Projectile::proj_checkPeriodicalDamage()
             psStats->periodicalDamageWeaponEffect, psCurr);
 
 		debug(LOG_NEVER, "Periodical damage of %d per second to object %d, player %d\n",
-          damageRate, psCurr->getId(), dynamic_cast<PlayerManager *>(psCurr)->getPlayer());
+          damageRate, psCurr->getId(), psCurr->playerManager->getPlayer());
 
 		auto sDamage = std::make_unique<Damage>();
 		pimpl->damage->target = psCurr;

@@ -21,6 +21,8 @@
 #ifndef __INCLUDED_SRC_BUCKET3D_H__
 #define __INCLUDED_SRC_BUCKET3D_H__
 
+#include <glm/fwd.hpp>
+
 
 enum class RENDER_TYPE
 {

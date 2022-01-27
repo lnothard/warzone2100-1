@@ -39,6 +39,7 @@
 #include "raycast.h"
 #include "visibility.h"
 #include "wavecast.h"
+#include "message.h"
 
 /* forward decl */
 bool bInTutorial;
@@ -99,7 +100,8 @@ static int* gNumWalls = nullptr;
 static Vector2i* gWall = nullptr;
 
 // forward declarations
-static void setSeenBy(BaseObject * psObj, unsigned viewer, int val);
+static void setSeenBy(BaseObject* psObj, unsigned viewer, int val);
+static int checkFireLine(BaseObject const* psViewer, BaseObject const* psTarget, int weapon_slot, bool wallsBlock, bool direct);
 
 // initialise the visibility stuff
 bool visInitialise()
@@ -149,8 +151,7 @@ unsigned addSpotter(int x, int y, unsigned player, int radius, SENSOR_CLASS type
 
 void removeSpotter(unsigned id)
 {
-  std::erase_if(apsInvisibleViewers,
-                [&id](auto const& spot) {
+  std::erase_if(apsInvisibleViewers, [&id](auto const& spot) {
     return spot.id == id;
   });
 }
@@ -202,7 +203,7 @@ static void visMarkTile(BaseObject const* psObj, int mapX, int mapY,
 
   if (visionType[rayPlayer] >= UINT8_MAX) return;
 
-  TILEPOS tilePos = {uint8_t(mapX), uint8_t(mapY), uint8_t(inRange)};
+  auto tilePos = TILEPOS{uint8_t(mapX), uint8_t(mapY), uint8_t(inRange)};
   visionType[rayPlayer]++;// we observe this tile
   if (psObj->testFlag(static_cast<size_t>(OBJECT_FLAG::JAMMED_TILES))) {
     // we are a jammer object
@@ -216,7 +217,7 @@ static void visMarkTile(BaseObject const* psObj, int mapX, int mapY,
 }
 
 /* The terrain revealing ray callback */
-static void doWaveTerrain(BaseObject * psObj)
+static void doWaveTerrain(BaseObject* psObj)
 {
 	const auto sx = psObj->getPosition().x;
 	const auto sy = psObj->getPosition().y;
@@ -643,7 +644,7 @@ static void processVisibilitySelf(BaseObject* psObj)
 	if (psDroid != nullptr && psDroid->getAction() == ACTION::OBSERVE && psDroid->hasCbSensor()) {
 		// Anyone commenting this out will get a knee capping from John.
 		// You have been warned!!
-		setSeenByInstantly(psDroid->getTarget(0),
+		setSeenByInstantly(psDroid->getActionTarget(0),
                        psObj->playerManager->getPlayer(), UBYTE_MAX);
 	}
 }
@@ -700,8 +701,8 @@ static void processVisibilityLevel(BaseObject* psObj, bool& addedMessage)
 			justBecameVisible = psObj->isVisibleToPlayer(player) <= 0;
 			psObj->setVisibleToPlayer(player, MIN(psObj->isVisibleToPlayer(player) + visLevelInc, visLevel));
 		}
-		else if (visLevel < psObj->visible[player]) {
-			psObj->visible[player] = MAX(psObj->visible[player] - visLevelDec, visLevel);
+		else if (visLevel < psObj->isVisibleToPlayer(player)) {
+			psObj->setVisibleToPlayer(player, MAX(psObj->isVisibleToPlayer(player) - visLevelDec, visLevel));
 		}
 
     if (!justBecameVisible) continue;
@@ -747,34 +748,28 @@ static void processVisibilityLevel(BaseObject* psObj, bool& addedMessage)
 void processVisibility()
 {
 	updateSpotters();
-	for (unsigned player = 0; player < MAX_PLAYERS; ++player)
-	{
-    BaseObject * lists[] = {apsDroidLists[player], apsStructLists[player], apsFeatureLists[player]};
-		unsigned list;
-		for (list = 0; list < sizeof(lists) / sizeof(*lists); ++list)
-		{
-			for (BaseObject * psObj = lists[list]; psObj != nullptr; psObj = psObj->psNext)
-			{
-				processVisibilitySelf(psObj);
-			}
-		}
-	}
 	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
-    BaseObject* lists[] = {apsDroidLists[player], apsStructLists[player]};
-		unsigned list;
-		for (list = 0; list < sizeof(lists) / sizeof(*lists); ++list)
-		{
-			for (BaseObject* psObj = lists[list]; psObj != nullptr; psObj = psObj->psNext)
-			{
-				processVisibilityVision(psObj);
-			}
-		}
+    for (auto& droid : apsDroidLists[player])
+    {
+      processVisibilitySelf(&droid);
+      processVisibilityVision(&droid);
+    }
+    for (auto& structure : apsStructLists[player])
+    {
+      processVisibilitySelf(structure.get());
+      processVisibilityVision(structure.get());
+    }
+    for (auto feature : apsFeatureLists[player])
+    {
+      processVisibilitySelf(feature);
+    }
 	}
-	for (BaseObject* psObj = apsSensorList[0]; psObj != nullptr; psObj = psObj->psNextFunc)
+
+	for (auto psObj : apsSensorList)
 	{
     if (!objRadarDetector(psObj)) continue;
-    for (BaseObject* psTarget = apsSensorList[0]; psTarget != nullptr; psTarget = psTarget->psNextFunc)
+    for (auto psTarget : apsSensorList)
     {
       if (psObj != psTarget &&
           psTarget->isVisibleToPlayer(psObj->playerManager->getPlayer()) < UBYTE_MAX / 2 &&
@@ -802,7 +797,7 @@ void processVisibility()
 	}
 }
 
-void setUnderTilesVis(BaseObject* psObj, UDWORD player)
+void setUnderTilesVis(BaseObject* psObj, unsigned player)
 {
   ASSERT_OR_RETURN(, player < MAX_PLAYERS, "");
 
@@ -832,10 +827,6 @@ void setUnderTilesVis(BaseObject* psObj, UDWORD player)
 		}
 	}
 }
-
-//forward declaration
-static int checkFireLine(const BaseObject * psViewer, const BaseObject * psTarget, int weapon_slot, bool wallsBlock,
-                         bool direct);
 
 /**
  * Check whether psViewer can fire directly at psTarget.
@@ -970,8 +961,7 @@ static int checkFireLine(BaseObject const* psViewer, BaseObject const* psTarget,
 
 		oldPartSq = partSq;
 
-		if (partSq > 0)
-		{
+		if (partSq > 0) {
 			angle_check(&angletan, partSq, map_Height(current) - pos.z, distSq, dest.z - pos.z, direct);
 		}
 
@@ -979,44 +969,36 @@ static int checkFireLine(BaseObject const* psViewer, BaseObject const* psTarget,
 		next = diff;
 		hasSplitIntersection = map_Intersect(&current.x, &current.y, &next.x, &next.y, &halfway.x, &halfway.y);
 
-		if (hasSplitIntersection)
-		{
+		if (hasSplitIntersection) {
 			// check whether target was reached before tile split line:
 			part = halfway - start;
 			partSq = dot(part, part);
 
-			if (partSq >= distSq)
-			{
+			if (partSq >= distSq) {
 				break;
 			}
 
-			if (partSq > 0)
-			{
+			if (partSq > 0) {
 				angle_check(&angletan, partSq, map_Height(halfway) - pos.z, distSq, dest.z - pos.z, direct);
 			}
 		}
 
 		// check for walls and other structures
 		// TODO: if there is a structure on the same tile as the shooter (and the shooter is not that structure) check if LOF is blocked by it.
-		if (wallsBlock && oldPartSq > 0)
-		{
-			const Tile* psTile;
+		if (wallsBlock && oldPartSq > 0) {
 			halfway = current + (next - current) / 2;
-			psTile = mapTile(map_coord(halfway.x), map_coord(halfway.y));
-			if (TileHasStructure(psTile) && psTile->psObject != psTarget)
-			{
+			auto const psTile = mapTile(map_coord(halfway.x), map_coord(halfway.y));
+			if (TileHasStructure(psTile) && psTile->psObject != psTarget) {
 				// check whether target was reached before tile's "half way" line
 				part = halfway - start;
 				partSq = dot(part, part);
 
-				if (partSq >= distSq)
-				{
+				if (partSq >= distSq) {
 					break;
 				}
 
 				// allowed to shoot over enemy structures if they are NOT the target
-				if (partSq > 0)
-				{
+				if (partSq > 0) {
 					angle_check(&angletan, oldPartSq,
 					            psTile->psObject->getPosition().z + establishTargetHeight(psTile->psObject) - pos.z,
 					            distSq, dest.z - pos.z, direct);
@@ -1032,19 +1014,17 @@ static int checkFireLine(BaseObject const* psViewer, BaseObject const* psTarget,
 		       map_coord(pos.x), map_coord(pos.y), map_coord(dest.x), map_coord(dest.y), map_coord(current.x),
 		       map_coord(current.y));
 	}
-	if (direct)
-	{
+	if (direct) {
 		return establishTargetHeight(psTarget) - (pos.z + (angletan * iSqrt(distSq)) / 65536 - dest.z);
 	}
-	else
-	{
+	else {
 		angletan = iAtan2(angletan, 65536);
 		angletan = angleDelta(angletan);
 		return DEG(1) + angletan;
 	}
 }
 
-static bool visObjInRange(BaseObject * psObj1, BaseObject * psObj2, int range)
+static bool visObjInRange(BaseObject const* psObj1, BaseObject const* psObj2, int range)
 {
   auto xdiff = psObj1->getPosition().x - psObj2->getPosition().x;
   auto ydiff = psObj1->getPosition().y - psObj2->getPosition().y;
@@ -1053,7 +1033,7 @@ static bool visObjInRange(BaseObject * psObj1, BaseObject * psObj2, int range)
          xdiff * xdiff + ydiff * ydiff <= range;
 }
 
-static unsigned objSensorRange(const BaseObject * psObj)
+static unsigned objSensorRange(BaseObject const* psObj)
 {
   if (auto psDroid = dynamic_cast<const Droid*>(psObj)) {
     const auto ecmrange = asECMStats[psDroid->
@@ -1075,7 +1055,7 @@ static unsigned objSensorRange(const BaseObject * psObj)
   return 0;
 }
 
-static unsigned objJammerPower(const BaseObject * psObj)
+static unsigned objJammerPower(BaseObject const* psObj)
 {
   if (auto psDroid = dynamic_cast<const Droid*>(psObj))  {
     return asECMStats[psDroid->

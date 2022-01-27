@@ -52,27 +52,20 @@ FeatureStats* oilResFeature = nullptr;
 
 struct Feature::Impl
 {
-  ~Impl() = default;
-  Impl() = default;
-
-  Impl(Impl const& rhs) = default;
-  Impl& operator=(Impl const& rhs) = default;
-
-  Impl(Impl&& rhs) noexcept = default;
-  Impl& operator=(Impl&& rhs) noexcept = default;
+  explicit Impl(FeatureStats* psStats);
 
   std::shared_ptr<FeatureStats> psStats;
 };
 
-Feature::Feature(unsigned id, FeatureStats const* psStats)
+Feature::Feature(unsigned id, FeatureStats* psStats)
   : BaseObject(id, std::make_unique<DamageManager>())
-  , psStats{std::make_shared<FeatureStats>(*psStats)}
+  , pimpl{std::make_unique<Impl>(psStats)}
 {
 }
 
 Feature::Feature(Feature const& rhs)
-  : BaseObject(rhs),
-    pimpl{std::make_unique<Impl>()}
+  : BaseObject(rhs)
+  , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
 
@@ -82,6 +75,11 @@ Feature& Feature::operator=(Feature const& rhs)
   *pimpl = *rhs.pimpl;
   *damageManager = *rhs.damageManager;
   return *this;
+}
+
+Feature::Impl::Impl(FeatureStats* psStats)
+  : psStats{std::make_shared<FeatureStats>(*psStats)}
+{
 }
 
 FeatureStats::FeatureStats(int idx)
@@ -214,12 +212,11 @@ int featureDamage(Feature* psFeature, unsigned damage, WEAPON_CLASS weaponClass,
 }
 
 /* Create a feature on the map */
-std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
-                                               unsigned x, unsigned y, bool fromSave) const
+std::unique_ptr<Feature> Feature::buildFeature(FeatureStats* stats,
+                                               unsigned x, unsigned y, bool fromSave)
 {
 	// try and create the Feature
-	auto psFeature = std::make_unique<Feature>(
-          generateSynchronisedObjectId(), stats);
+	auto psFeature = std::make_unique<Feature>(generateSynchronisedObjectId(), stats);
 
 	if (psFeature == nullptr) {
 		debug(LOG_WARNING, "Feature couldn't be built.");
@@ -275,7 +272,7 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats const* stats,
 	// set up the imd for the feature
 	psFeature->display->imd_shape = std::make_unique<iIMDShape>(*stats->psImd);
 
-	ASSERT_OR_RETURN(nullptr, psFeature->getDisplayData().imd_shape.get(), "No IMD for feature"); // make sure we have an imd.
+	ASSERT_OR_RETURN(nullptr, psFeature->getDisplayData()->imd_shape.get(), "No IMD for feature"); // make sure we have an imd.
 
 	for (int breadth = 0; breadth < b.size.y; ++breadth)
 	{
@@ -459,8 +456,8 @@ bool destroyFeature(Feature* psDel, unsigned impactTime)
 			pos.z = psDel->getPosition().y;
 			pos.y = psDel->getPosition().z;
 			addEffect(&pos, EFFECT_GROUP::DESTRUCTION, EFFECT_TYPE::DESTRUCTION_TYPE_SKYSCRAPER,
-                true, psDel->getDisplayData().imd_shape.get(), 0, impactTime);
-			initPerimeterSmoke(psDel->getDisplayData().imd_shape.get(), pos);
+                true, psDel->getDisplayData()->imd_shape.get(), 0, impactTime);
+			initPerimeterSmoke(psDel->getDisplayData()->imd_shape.get(), pos);
 
 			shakeStart(250); // small shake
 		}

@@ -80,17 +80,17 @@ static void moveUpdatePersonModel(Droid* psDroid, int speed, uint16_t direction)
 
 std::string moveDescription(MOVE_STATUS status)
 {
-  using enum MOVE_STATUS;
 	switch (status) {
-	case INACTIVE: return "Inactive";
-	case NAVIGATE: return "Navigate";
-	case TURN: return "Turn";
-	case PAUSE: return "Pause";
-	case POINT_TO_POINT: return "P2P";
-	case TURN_TO_TARGET: return "Turn2target";
-	case HOVER: return "Hover";
-	case WAIT_FOR_ROUTE: return "Waitroute";
-	case SHUFFLE: return "Shuffle";
+    using enum MOVE_STATUS;
+	  case INACTIVE: return "Inactive";
+	  case NAVIGATE: return "Navigate";
+	  case TURN: return "Turn";
+	  case PAUSE: return "Pause";
+	  case POINT_TO_POINT: return "P2P";
+	  case TURN_TO_TARGET: return "Turn2target";
+	  case HOVER: return "Hover";
+	  case WAIT_FOR_ROUTE: return "Waitroute";
+	  case SHUFFLE: return "Shuffle";
 	}
 	return "Error"; // satisfy compiler
 }
@@ -152,8 +152,8 @@ static void moveCheckSquished(Droid* psDroid, int emx, int emy)
 		auto distSq = xdiff * xdiff + ydiff * ydiff;
 
 		if (((2 * radSq) / 3) > distSq) {
-			if (psDroid->getPlayer() != psObj->getPlayer() &&
-          !aiCheckAlliances(psDroid->getPlayer(), psObj->getPlayer())) {
+			if (psDroid->playerManager->getPlayer() != psObj->playerManager->getPlayer() &&
+          !aiCheckAlliances(psDroid->playerManager->getPlayer(), psObj->playerManager->getPlayer())) {
 				// run over a bloke - kill him
 				destroyDroid(dynamic_cast<Droid*>(psObj), gameTime);
 				scoreUpdateVar(WD_BARBARIANS_MOWED_DOWN);
@@ -165,8 +165,8 @@ static void moveCheckSquished(Droid* psDroid, int emx, int emy)
 // Calculate the actual movement to slide around
 static void moveCalcSlideVector(Droid* psDroid, int objX, int objY, int* pMx, int* pMy)
 {
-	const int mx = *pMx;
-	const int my = *pMy;
+	const auto mx = *pMx;
+	const auto my = *pMy;
 	// Calculate the vector to the obstruction
 	const auto obstX = psDroid->getPosition().x - objX;
 	const auto obstY = psDroid->getPosition().y - objY;
@@ -198,13 +198,13 @@ static void moveCalcSlideVector(Droid* psDroid, int objX, int objY, int* pMx, in
 static void moveOpenGates(Droid* psDroid, Vector2i tile)
 {
 	// is the new tile a gate?
-	if (!worldOnMap(tile.x, tile.y)) {
-		return;
-	}
+	if (!worldOnMap(tile.x, tile.y)) return;
+
 	auto psTile = mapTile(tile);
 	if (!isFlying(psDroid) && psTile && psTile->psObject &&
       dynamic_cast<Structure*>(psTile->psObject) &&
-      aiCheckAlliances( psTile->psObject->getPlayer(), psDroid->getPlayer())) {
+      aiCheckAlliances(psTile->psObject->playerManager->getPlayer(),
+                       psDroid->playerManager->getPlayer())) {
 		requestOpenGate(dynamic_cast<Structure*>(psTile->psObject));
 		// If it's a friendly gate, open it. (It would be impolite to open an enemy gate.)
 	}
@@ -213,8 +213,9 @@ static void moveOpenGates(Droid* psDroid, Vector2i tile)
 static void moveOpenGates(Droid* psDroid)
 {
 	Vector2i pos = psDroid->getPosition().xy() + iSinCosR(
-          psDroid->getMovementData().moveDir,
-          psDroid->getMovementData().speed * SAS_OPEN_SPEED / GAME_TICKS_PER_SEC);
+          psDroid->getMovementData()->moveDir,
+          psDroid->getMovementData()->speed * SAS_OPEN_SPEED / GAME_TICKS_PER_SEC);
+
 	moveOpenGates(psDroid, map_coord(pos));
 }
 
@@ -226,7 +227,7 @@ static void moveOpenGates(Droid* psDroid)
 static uint16_t moveGetDirection(Droid* psDroid)
 {
 	Vector2i src = psDroid->getPosition().xy(); // Do not want precise precision here, would overflow.
-	Vector2i target = psDroid->getMovementData().target;
+	Vector2i target = psDroid->getMovementData()->target;
 	Vector2i dest = target - src;
 
 	// Transporters don't need to avoid obstacles, but everyone else should
@@ -242,14 +243,13 @@ static uint16_t moveGetDirection(Droid* psDroid)
 static bool moveReachedWayPoint(Droid* psDroid)
 {
 	// Calculate the vector to the droid
-	const Vector2i droid = Vector2i(psDroid->getPosition().xy()) - psDroid->getMovementData().target;
-	const bool last = psDroid->getMovementData().pathIndex == (int)psDroid->getMovementData().path.size();
-	int sqprecision = last ? ((TILE_UNITS / 4) * (TILE_UNITS / 4)) : ((TILE_UNITS / 2) * (TILE_UNITS / 2));
+	const Vector2i droid = Vector2i(psDroid->getPosition().xy()) - psDroid->getMovementData()->target;
+	const bool last = psDroid->getMovementData()->pathIndex == (int)psDroid->getMovementData()->path.size();
+	auto sqprecision = last ? ((TILE_UNITS / 4) * (TILE_UNITS / 4)) : ((TILE_UNITS / 2) * (TILE_UNITS / 2));
 
-	if (last && psDroid->getMovementData().bumpTime != 0)
-	{
+	if (last && psDroid->getMovementData()->bumpTime != 0) {
 		// Make waypoint tolerance 1 tile after 0 seconds, 2 tiles after 3 seconds, X tiles after (X + 1)² seconds.
-		sqprecision = (gameTime - psDroid->getMovementData().bumpTime + GAME_TICKS_PER_SEC) * (TILE_UNITS * TILE_UNITS /
+		sqprecision = (gameTime - psDroid->getMovementData()->bumpTime + GAME_TICKS_PER_SEC) * (TILE_UNITS * TILE_UNITS /
                                                                                   GAME_TICKS_PER_SEC);
 	}
 
@@ -260,10 +260,10 @@ static bool moveReachedWayPoint(Droid* psDroid)
 /** Determine whether a droid has stopped moving.
  *  @return true if the droid doesn't move, false if it's moving.
  */
-static bool moveDroidStopped(Droid* psDroid, int speed)
+static bool moveDroidStopped(Droid const* psDroid, int speed)
 {
-	if (psDroid->getMovementData().status == MOVE_STATUS::INACTIVE &&
-      speed == 0 && psDroid->getMovementData().speed == 0) {
+	if (psDroid->getMovementData()->status == MOVE_STATUS::INACTIVE &&
+      speed == 0 && psDroid->getMovementData()->speed == 0) {
 		return true;
 	}
 	else {
@@ -278,7 +278,7 @@ static void moveUpdateDroidDirection(Droid* psDroid, SDWORD* pSpeed, uint16_t di
 	*pDroidDir = psDroid->getRotation().direction;
 
 	// don't move if in MOVEPAUSE state
-	if (psDroid->getMovementData().status == MOVE_STATUS::PAUSE) {
+	if (psDroid->getMovementData()->status == MOVE_STATUS::PAUSE) {
 		return;
 	}
 
@@ -302,20 +302,19 @@ static void moveUpdateDroidDirection(Droid* psDroid, SDWORD* pSpeed, uint16_t di
 // Calculate current speed perpendicular to droids direction
 static int moveCalcPerpSpeed(Droid* psDroid, uint16_t iDroidDir, int iSkidDecel)
 {
-	auto adiff = angleDelta(iDroidDir - psDroid->getMovementData().moveDir);
-	auto perpSpeed = iSinR(abs(adiff), psDroid->getMovementData().speed);
+	auto adiff = angleDelta(iDroidDir - psDroid->getMovementData()->moveDir);
+	auto perpSpeed = iSinR(abs(adiff), psDroid->getMovementData()->speed);
 
 	// decelerate the perpendicular speed
 	perpSpeed = MAX(0, perpSpeed - gameTimeAdjustedAverage(iSkidDecel));
-
 	return perpSpeed;
 }
 
 // Calculate the current speed in the droids normal direction
 static int moveCalcNormalSpeed(Droid* psDroid, int fSpeed, uint16_t iDroidDir, int iAccel, int iDecel)
 {
-	auto adiff = (uint16_t)(iDroidDir - psDroid->getMovementData().moveDir); // Cast wrapping intended.
-	auto normalSpeed = iCosR(adiff, psDroid->getMovementData().speed);
+	auto adiff = (uint16_t)(iDroidDir - psDroid->getMovementData()->moveDir); // Cast wrapping intended.
+	auto normalSpeed = iCosR(adiff, psDroid->getMovementData()->speed);
 
 	if (normalSpeed < fSpeed) {
 		// accelerate
@@ -334,16 +333,15 @@ static int moveCalcNormalSpeed(Droid* psDroid, int fSpeed, uint16_t iDroidDir, i
 	return normalSpeed;
 }
 
-static void moveGetDroidPosDiffs(Droid* psDroid, int32_t* pDX, int32_t* pDY)
+static void moveGetDroidPosDiffs(Droid* psDroid, int* pDX, int* pDY)
 {
-	auto move = psDroid->getMovementData().speed * EXTRA_PRECISION; // high precision
-
-	*pDX = iSinR(psDroid->getMovementData().moveDir, move);
-	*pDY = iCosR(psDroid->getMovementData().moveDir, move);
+	auto move = psDroid->getMovementData()->speed * EXTRA_PRECISION; // high precision
+	*pDX = iSinR(psDroid->getMovementData()->moveDir, move);
+	*pDY = iCosR(psDroid->getMovementData()->moveDir, move);
 }
 
 // see if the droid is close to the final way point
-static void moveCheckFinalWaypoint(Droid* psDroid, SDWORD* pSpeed)
+static void moveCheckFinalWaypoint(Droid* psDroid, int* pSpeed)
 {
 	auto minEndSpeed = (*pSpeed + 2) / 3;
 	minEndSpeed = std::min(minEndSpeed, MIN_END_SPEED);
@@ -353,9 +351,9 @@ static void moveCheckFinalWaypoint(Droid* psDroid, SDWORD* pSpeed)
 		return;
 	}
 
-	if (psDroid->getMovementData().status != MOVE_STATUS::SHUFFLE &&
-      psDroid->getMovementData().pathIndex == (int)psDroid->getMovementData().path.size()) {
-		auto diff = psDroid->getPosition().xy() - psDroid->getMovementData().target;
+	if (psDroid->getMovementData()->status != MOVE_STATUS::SHUFFLE &&
+      psDroid->getMovementData()->pathIndex == (int)psDroid->getMovementData()->path.size()) {
+		auto diff = psDroid->getPosition().xy() - psDroid->getMovementData()->target;
 		auto distSq = dot(diff, diff);
 
 		if (distSq < END_SPEED_RANGE * END_SPEED_RANGE) {
@@ -364,19 +362,20 @@ static void moveCheckFinalWaypoint(Droid* psDroid, SDWORD* pSpeed)
 	}
 }
 
-static void moveUpdateDroidPos(Droid* psDroid, int32_t dx, int32_t dy)
+static void moveUpdateDroidPos(Droid* psDroid, int dx, int dy)
 {
-	if (psDroid->getMovementData().status == MOVE_STATUS::PAUSE ||
-      isDead((PlayerOwnedObject *)psDroid)) {
+	if (psDroid->getMovementData()->status == MOVE_STATUS::PAUSE ||
+      psDroid->damageManager->isDead()) {
 		// don't actually move if the move is paused
 		return;
 	}
 
-	psDroid->position.x += gameTimeAdjustedAverage(dx, EXTRA_PRECISION);
-	psDroid->position.y += gameTimeAdjustedAverage(dy, EXTRA_PRECISION);
+	auto x = psDroid->getPosition().x + gameTimeAdjustedAverage(dx, EXTRA_PRECISION);
+	auto y = psDroid->getPosition().y + gameTimeAdjustedAverage(dy, EXTRA_PRECISION);
+  psDroid->setPosition({x, y, psDroid->getPosition().z});
 
 	/* impact if about to go off map else update coordinates */
-	if (worldOnMap(psDroid->getPosition().x, psDroid->getPosition().y) == false) {
+	if (!worldOnMap(psDroid->getPosition().x, psDroid->getPosition().y)) {
 		/* transporter going off-world will trigger next map, and is ok */
 		ASSERT(isTransporter(*psDroid), "droid trying to move off the map!");
 
@@ -387,44 +386,32 @@ static void moveUpdateDroidPos(Droid* psDroid, int32_t dx, int32_t dy)
 		}
 	}
 
-	// lovely hack to keep transporters just on the map
-	// two weeks to go and the hacks just get better !!!
-	if (isTransporter(*psDroid)) {
-		if (psDroid->getPosition().x == 0) {
-			psDroid->position.x = 1;
-		}
-		if (psDroid->getPosition().y == 0) {
-			psDroid->position.y = 1;
-		}
-	}
+  if (!isTransporter(*psDroid)) return;
+  if (psDroid->getPosition().x == 0) {
+    psDroid->position.x = 1;
+  }
+  if (psDroid->getPosition().y == 0) {
+    psDroid->position.y = 1;
+  }
 }
 
-bool moveCheckDroidMovingAndVisible(void* psObj)
+bool moveCheckDroidMovingAndVisible(Droid* psDroid)
 {
-	auto psDroid = static_cast<Droid*>(psObj);
-
-	if (psDroid == nullptr) {
-		return false;
-	}
+  ASSERT_OR_RETURN(false, psDroid != nullptr, "Droid pointer is null");
 
 	/* check for dead, not moving or invisible to player */
-	if (psDroid->died || moveDroidStopped(psDroid, 0) ||
-		(isTransporter(*psDroid) && psDroid->getOrder().type == ORDER_TYPE::NONE) ||
-		!(psDroid->visibleToSelectedPlayer())) {
+	if (psDroid->damageManager->isDead() || moveDroidStopped(psDroid, 0) ||
+      isTransporter(*psDroid) && psDroid->getOrder()->type == ORDER_TYPE::NONE ||
+      !psDroid->isVisibleToSelectedPlayer()) {
 		psDroid->iAudioID = NO_SOUND;
 		return false;
 	}
-
 	return true;
 }
 
-static bool moveDroidStartCallback(void* psObj)
+static bool moveDroidStartCallback(Droid* psDroid)
 {
-	auto* psDroid = (Droid*)psObj;
-
-	if (psDroid == nullptr) {
-		return false;
-	}
+  ASSERT_OR_RETURN(false, psDroid != nullptr, "Droid pointer is null");
 	movePlayDroidMoveAudio(psDroid);
 	return true;
 }
@@ -432,7 +419,6 @@ static bool moveDroidStartCallback(void* psObj)
 static bool pickupOilDrum(int toPlayer, int fromPlayer)
 {
 	auto power = OILDRUM_POWER;
-
 	if (!bMultiPlayer && !bInTutorial) {
 		// Let Beta and Gamma campaign oil drums give a little more power
 		if (getCampaignNumber() == 2) {
@@ -442,13 +428,11 @@ static bool pickupOilDrum(int toPlayer, int fromPlayer)
 			power = OILDRUM_POWER * 2;
 		}
 	}
-
 	addPower(toPlayer, power); // give power
 
 	if (toPlayer == selectedPlayer) {
 		CONPRINTF(_("You found %u power in an oil drum."), power);
 	}
-
 	return true;
 }
 
@@ -459,10 +443,9 @@ static bool pickupOilDrum(int toPlayer, int fromPlayer)
 static void checkLocalFeatures(Droid* psDroid)
 {
 	// NOTE: Why not do this for AI units also?
-	if ((!isHumanPlayer(psDroid->getPlayer()) &&
-       psDroid->getOrder().type != ORDER_TYPE::RECOVER) ||
-       psDroid->isVtol() ||
-		isTransporter(*psDroid)) { // VTOLs or transporters can't pick up features
+	if ((!isHumanPlayer(psDroid->playerManager->getPlayer()) &&
+       psDroid->getOrder()->type != ORDER_TYPE::RECOVER) ||
+       psDroid->isVtol() || isTransporter(*psDroid)) { // VTOLs or transporters can't pick up features
 		return;
 	}
 
@@ -471,31 +454,29 @@ static void checkLocalFeatures(Droid* psDroid)
 	gridList = gridStartIterate(psDroid->getPosition().x, psDroid->getPosition().y, DROIDDIST);
 	for (auto psObj : gridList)
 	{
-			bool pickedUp = false;
+		bool pickedUp = false;
 
-		if (dynamic_cast<Feature*>(psObj) && !psObj->died)
-		{
-			switch (dynamic_cast<Feature*>(psObj)->getStats()->subType)
-			{
+		if (dynamic_cast<Feature*>(psObj) && !psObj->damageManager->isDead()) {
+			switch (dynamic_cast<Feature*>(psObj)->getStats()->subType) {
         using enum FEATURE_TYPE;
-			case OIL_DRUM:
-				pickedUp = pickupOilDrum(psDroid->getPlayer(), psObj->getPlayer());
-				triggerEventPickup(dynamic_cast<Feature*>(psObj), psDroid);
-				break;
-			case GEN_ARTE:
-				pickedUp = pickupArtefact(psDroid->getPlayer(), psObj->getPlayer());
-				triggerEventPickup(dynamic_cast<Feature*>(psObj), psDroid);
-				break;
-			default:
-				break;
+			  case OIL_DRUM:
+			  	pickedUp = pickupOilDrum(psDroid->playerManager->getPlayer(),
+                                   psObj->playerManager->getPlayer());
+
+			  	triggerEventPickup(dynamic_cast<Feature*>(psObj), psDroid);
+			  	break;
+			  case GEN_ARTE:
+			  	pickedUp = pickupArtefact(psDroid->playerManager->getPlayer(),
+                                    psObj->playerManager->getPlayer());
+
+			  	triggerEventPickup(dynamic_cast<Feature*>(psObj), psDroid);
+			  	break;
+			  default:
+			  	break;
 			}
 		}
 
-		if (!pickedUp)
-		{
-			// Object is not a living oil drum or artefact.
-			continue;
-		}
+		if (!pickedUp) continue; // Object is not a living oil drum or artefact
 
 		turnOffMultiMsg(true);
 		removeFeature(dynamic_cast<Feature*>(psObj)); // remove artifact+.

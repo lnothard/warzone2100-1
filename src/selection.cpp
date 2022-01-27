@@ -47,6 +47,7 @@
 #include "warcam.h"
 #include "display.h"
 #include "qtscript.h"
+#include "objmem.h"
 
 // stores combinations of unit components
 static std::vector<std::vector<unsigned>> combinations;
@@ -151,34 +152,31 @@ static bool selCombatLandMildlyOrNotDamaged(Droid* psDroid)
 
 // ---------------------------------------------------------------------
 // Deselects all units for the player
-unsigned int selDroidDeselect(unsigned unsigned player)
+unsigned selDroidDeselect(unsigned player)
 {
-	unsigned int count = 0;
+	unsigned count = 0;
 	if (player >= MAX_PLAYERS) { return 0; }
 
-	for (Droid* psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[player])
 	{
-		if (psDroid->selected)
-		{
+		if (psDroid.damageManager->isSelected()) {
 			count++;
-			DeSelectDroid(psDroid);
+			DeSelectDroid(&psDroid);
 		}
 	}
-
 	return count;
 }
 
 // ---------------------------------------------------------------------
 // Lets you know how many are selected for a given player
-unsigned int selNumSelected(unsigned unsigned player)
+unsigned selNumSelected(unsigned player)
 {
-	unsigned int count = 0;
+	unsigned count = 0;
 	if (player >= MAX_PLAYERS) { return 0; }
 
-	for (Droid* psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[player])
 	{
-		if (psDroid->selected)
-		{
+		if (psDroid.damageManager->isSelected()) {
 			count++;
 		}
 	}
@@ -465,13 +463,14 @@ void selNextUnassignedUnit()
 		{
 			// camToggleStatus();
 			/* Centre display on him if warcam isn't active */
-			setViewPos(map_coord(psResult->pos.x), map_coord(psResult->pos.y), true);
+			setViewPos(map_coord(psResult->getPosition().x), map_coord(psResult->getPosition().y), true);
 		}
 		psOldNS = psResult;
 	}
 	else
 	{
-		addConsoleMessage(_("Unable to locate any repair units!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Unable to locate any repair units!"),
+                      CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 	}
 }
 
@@ -484,18 +483,16 @@ void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "invalid selectedPlayer: %" PRIu32 "", selectedPlayer);
 
 	/* Firstly, start coughing if the type is invalid */
-	ASSERT(structType <= NUM_DIFF_BUILDINGS, "Invalid structure type %u", structType);
+	ASSERT(structType <= STRUCTURE_TYPE::COUNT, "Invalid structure type %u", structType);
 
-	for (Structure* psCurr = apsStructLists[selectedPlayer]; psCurr && !psResult; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsStructLists[selectedPlayer])
 	{
-		if (psCurr->pStructureType->type == structType && psCurr->status == SS_BUILT)
-		{
-			if (!psFirst)
-			{
+		if (psCurr->getStats()->type == structType &&
+        psCurr->getState() == STRUCTURE_STATE::BUILT) {
+			if (!psFirst) {
 				psFirst = psCurr;
 			}
-			if (psCurr->selected)
-			{
+			if (psCurr->damageManager->isSelected()) {
 				bLaterInList = true;
 				psOldStruct = psCurr;
 			}
@@ -511,7 +508,7 @@ void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 		psResult = psFirst;
 	}
 
-	if (psResult && !psResult->died)
+	if (psResult && !psResult->damageManager->isDead())
 	{
 		if (getWarCamStatus())
 		{
@@ -519,13 +516,14 @@ void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 		}
 		if (jump)
 		{
-			setViewPos(map_coord(psResult->pos.x), map_coord(psResult->pos.y), false);
+			setViewPos(map_coord(psResult->getPosition().x),
+                 map_coord(psResult->getPosition().y), false);
 		}
 		if (psOldStruct)
 		{
-			psOldStruct->selected = false;
+			psOldStruct->damageManager->setSelected(false);
 		}
-		psResult->selected = true;
+		psResult->damageManager->setSelected(true);
 		triggerEventSelected();
 		jsDebugSelected(psResult);
 	}
@@ -540,16 +538,14 @@ void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 // see if a commander is the n'th command droid
 static bool droidIsCommanderNum(Droid* psDroid, SDWORD n)
 {
-	if (psDroid->type != DROID_TYPE::COMMAND)
-	{
+	if (psDroid->getType() != DROID_TYPE::COMMAND) {
 		return false;
 	}
 
 	int numLess = 0;
-	for (Droid* psCurr = apsDroidLists[psDroid->getPlayer()]; psCurr; psCurr = psCurr->psNext)
+	for (const auto& psCurr : apsDroidLists[psDroid->playerManager->getPlayer()])
 	{
-		if ((psCurr->getType() == DROID_TYPE::COMMAND) && (psCurr->getId() < psDroid->getId()))
-		{
+		if ((psCurr.getType() == DROID_TYPE::COMMAND) && (psCurr.getId() < psDroid->getId())) {
 			numLess++;
 		}
 	}
@@ -564,10 +560,8 @@ void selCommander(int n)
 
 	for (auto& psCurr : apsDroidLists[selectedPlayer])
 	{
-		if (droidIsCommanderNum(&psCurr, n))
-		{
-			if (!psCurr.selected && !psCurr.flags.test(OBJECT_FLAG_UNSELECTABLE))
-			{
+		if (droidIsCommanderNum(&psCurr, n)) {
+			if (!psCurr.damageManager->isSelected() && !psCurr.testFlag(static_cast<size_t>(OBJECT_FLAG::UNSELECTABLE))) {
 				clearSelection();
 				psCurr.selected = true;
 			}
@@ -585,10 +579,9 @@ void selCommander(int n)
 					processWarCam(); // odd, but necessary
 					camToggleStatus(); // messy - FIXME
 				}
-				else
-				{
+				else {
 					/* Centre display on him if warcam isn't active */
-					setViewPos(map_coord(psCurr->pos.x), map_coord(psCurr->pos.y), true);
+					setViewPos(map_coord(psCurr.getPosition().x), map_coord(psCurr.getPosition().y), true);
 				}
 			}
 			return;
@@ -601,7 +594,7 @@ void selCommander(int n)
    Selects the units of a given player according to given criteria.
    It is also possible to request whether the units be onscreen or not.
    */
-unsigned int selDroidSelection(unsigned unsigned player, SELECTION_CLASS droidClass, SELECTIONTYPE droidType, bool bOnScreen)
+unsigned selDroidSelection(unsigned player, SELECTION_CLASS droidClass, SELECTIONTYPE droidType, bool bOnScreen)
 {
 	if (player >= MAX_PLAYERS) { return 0; }
 

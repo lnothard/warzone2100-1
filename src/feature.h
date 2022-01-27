@@ -71,7 +71,7 @@ class Feature : public BaseObject
 {
 public:
   ~Feature() override;
-  Feature(unsigned id, FeatureStats const* psStats);
+  Feature(unsigned id, FeatureStats* psStats);
 
   Feature(Feature const& rhs);
   Feature& operator=(Feature const& rhs);
@@ -84,8 +84,7 @@ public:
   [[nodiscard]] FeatureStats const* getStats() const;
 
   void update();
-  std::unique_ptr<Feature> buildFeature(FeatureStats const* stats,
-                                        unsigned x, unsigned y, bool fromSave) const;
+  static std::unique_ptr<Feature> buildFeature(FeatureStats* stats, unsigned x, unsigned y, bool fromSave);
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
@@ -103,9 +102,6 @@ void loadFeatureStats(WzConfig& ini);
 
 /* Release the feature stats memory */
 void featureStatsShutDown();
-
-/* Create a feature on the map */
-Feature* buildFeature(FeatureStats* psStats, unsigned x, unsigned y, bool FromSave);
 
 /* Update routine for features */
 void featureUpdate(Feature* psFeat);

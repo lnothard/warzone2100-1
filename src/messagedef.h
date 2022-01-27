@@ -135,11 +135,11 @@ enum MSG_DATA_TYPE
 struct MESSAGE
 {
 	MESSAGE_TYPE type; // The type of message
-	UDWORD id; // ID number of the message
+	unsigned id; // ID number of the message
 	VIEWDATA* pViewData = nullptr; // Pointer to view data - if any - should be some!
-  PlayerOwnedObject * psObj = nullptr;
+  BaseObject* psObj = nullptr;
 	bool read = false; // flag to indicate whether message has been read
-	UDWORD player; // which player this message belongs to
+	unsigned player; // which player this message belongs to
 	MSG_DATA_TYPE dataType;
 
 	MESSAGE* psNext = nullptr; // pointer to the next in the list

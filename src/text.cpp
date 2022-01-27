@@ -24,7 +24,6 @@
  * String management functions.
  */
 
-#include "lib/framework/frame.h"
 #include "lib/framework/strres.h"
 #include "text.h"
 

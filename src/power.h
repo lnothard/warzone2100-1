@@ -27,10 +27,34 @@
 #include <cstdint>
 #include <string>
 
+class Structure;
+
+
+struct PowerRequest
+{
+  PowerRequest(unsigned id, int64_t amount);
+
+  int64_t amount; ///< Amount of power being requested.
+  unsigned id; ///< Structure which is requesting power.
+};
+
+struct PlayerPower
+{
+  // All fields are 32.32 fixed point.
+  int64_t currentPower; ///< The current amount of power available to the player.
+  std::vector<PowerRequest> powerQueue; ///< Requested power.
+  int powerModifier; ///< Percentage modifier on power from each derrick.
+  int64_t maxStorage; ///< Maximum storage of power, in total.
+  int64_t extractedPower; ///< Total amount of extracted power in this game.
+  int64_t wastedPower; ///< Total amount of wasted power in this game.
+  int64_t powerGeneratedLastUpdate;
+  ///< The power generated the last time updatePlayerPower was called for this player
+};
+
+static std::array<PlayerPower, MAX_PLAYERS> asPower;
+
 /** Free power on collection of oildrum. */
 static constexpr auto OILDRUM_POWER	= 100;
-
-class Structure;
 
 /** Allocate the space for the playerPower. */
 bool allocPlayerPower();
@@ -43,12 +67,12 @@ void delPowerRequest(Structure* psStruct);
 
 /// Checks how much power must be accumulated, before the power request from this Structure can be satisfied.
 /// Returns -1 if there is no power request or if there is enough power already.
-int checkPowerRequest(Structure* psStruct);
+int64_t checkPowerRequest(Structure* psStruct);
 
-bool requestPowerFor(Structure* psStruct, int32_t amount);
-bool requestPrecisePowerFor(Structure* psStruct, int64_t amount);
+static void updateCurrentPower(Structure* psStruct, unsigned player, int ticks);
+bool requestPower(Structure* psStruct, int64_t amount);
 
-void addPower(unsigned player, int32_t quantity);
+void addPower(unsigned player, int64_t quantity);
 
 void usePower(unsigned player, uint32_t quantity);
 
@@ -63,10 +87,9 @@ void setPowerModifier(unsigned player, int modifier);
 void setPowerMaxStorage(unsigned player, int max);
 
 /** Get the amount of power current held by the given player. */
-int32_t getPower(unsigned player);
-int64_t getPrecisePower(unsigned player);
-int32_t getPowerMinusQueued(unsigned player);
-int getQueuedPower(unsigned player);
+int64_t getPower(unsigned player);
+int64_t getPowerMinusQueued(unsigned player);
+int64_t getQueuedPower(unsigned player);
 
 /// Get amount of power extracted during the whole game
 int64_t getExtractedPower(unsigned player);

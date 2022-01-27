@@ -24,7 +24,7 @@
 struct WzString;
 
 
-#define CHALLENGE_SCORES "scores.json"
+static constexpr auto CHALLENGE_SCORES = "scores.json";
 
 bool addChallenges();
 bool closeChallenges();
@@ -36,7 +36,7 @@ extern bool challengesUp;
 extern bool challengeActive;
 extern WzString challengeFileName;
 
-std::string currentChallengeName();
+std::string_view currentChallengeName();
 
 void challengesScreenSizeDidChange(unsigned oldWidth, unsigned oldHeight,
                                    unsigned newWidth, unsigned newHeight);

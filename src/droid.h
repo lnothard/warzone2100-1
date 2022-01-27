@@ -274,6 +274,7 @@ public:
   [[nodiscard]] BaseObject const* getActionTarget(int idx) const;
   [[nodiscard]] Group const* getGroup() const;
   [[nodiscard]] ComponentStats const* getComponent(std::string const& compName) const;
+  [[nodiscard]] unsigned getTimeActionStarted() const;
   [[nodiscard]] bool hasElectronicWeapon() const;
   [[nodiscard]] bool isVtol() const;
   [[nodiscard]] bool isFlying() const;
@@ -297,6 +298,8 @@ public:
   void initVisibility();
   void actionSanity();
   void actionUpdateTransporter();
+  void setOrder(std::unique_ptr<Order> order);
+  void setAction(ACTION action);
   void setActionTarget(BaseObject* psNewTarget, unsigned idx);
   void setTarget(BaseObject* psNewTarget);
   void setBase(Structure* psNewBase);
@@ -323,7 +326,7 @@ public:
   std::unique_ptr<Droid> reallyBuildDroid(DroidTemplate const* pTemplate, Position pos,
                                           unsigned player, bool onMission, Rotation rot);
   void droidUpdate();
-  unsigned getArmourPointsAgainstWeapon(WEAPON_CLASS weaponClass) const;
+  [[nodiscard]] unsigned getArmourPointsAgainstWeapon(WEAPON_CLASS weaponClass) const;
   DroidStartBuild droidStartBuild();
   void aiUpdateDroid();
   bool droidUpdateRestore();
@@ -365,7 +368,6 @@ private:
   friend class Group;
   struct Impl;
   std::unique_ptr<Impl> pimpl;
-  Droid *psGrpNext;
 };
 
 
@@ -402,7 +404,7 @@ static void addConstructorEffect(Structure* psStruct);
 unsigned calcDroidWeight(const DroidTemplate* psTemplate);
 
 /* Calculate the power points required to build/maintain a droid */
-unsigned calcDroidPower(const Droid* psDroid);
+int calcDroidPower(const Droid* psDroid);
 
 // Calculate the number of points required to build a droid
 unsigned calcDroidPoints(Droid* psDroid);
@@ -420,7 +422,7 @@ unsigned calcDroidSpeed(unsigned baseSpeed, unsigned terrainType, PropulsionStat
 unsigned calcTemplateBuild(const DroidTemplate* psTemplate);
 
 /* Calculate the power points required to build/maintain the droid */
-unsigned calcTemplatePower(const DroidTemplate* psTemplate);
+int calcTemplatePower(const DroidTemplate* psTemplate);
 
 // return whether a droid is IDF
 bool isIdf(Droid* psDroid);
@@ -533,34 +535,34 @@ bool droidIsDamaged(const Droid* psDroid);
 char const* getDroidResourceName(char const* pName);
 
 /// Checks to see if an electronic warfare weapon is attached to the droid
-bool electronicDroid(const Droid* psDroid);
+bool electronicDroid(Droid const* psDroid);
 
 /// checks to see if the droid is currently being repaired by another
-bool droidUnderRepair(const Droid* psDroid);
+bool droidUnderRepair(Droid const* psDroid);
 
 /// Count how many Command Droids exist in the world at any one moment
 UBYTE checkCommandExist(UBYTE player);
 
 /// For a given repair droid, check if there are any damaged droids within a defined range
-PlayerOwnedObject * checkForRepairRange(Droid* psDroid, Droid* psTarget);
+BaseObject* checkForRepairRange(Droid* psDroid, Droid* psTarget);
 
 /// @return `true` if the droid is a transporter
-[[nodiscard]] bool isTransporter(const Droid& psDroid);
+[[nodiscard]] bool isTransporter(Droid const& psDroid);
 
 /// Returns true if the droid has VTOL propulsion and is moving.
-bool isFlying(const Droid* psDroid);
+bool isFlying(Droid const* psDroid);
 
 /// @return true if a VTOL weapon droid which has completed all runs
-bool vtolEmpty(const Droid& psDroid);
+bool vtolEmpty(Droid const& psDroid);
 
 /// @return true if a VTOL weapon droid which still has full ammo
-bool vtolFull(const Droid& psDroid);
+bool vtolFull(Droid const& psDroid);
 
 /**
  * Checks a vtol for being fully armed and fully repaired
  * to see if ready to leave the rearm pad
  */
-bool vtolHappy(const Droid& droid);
+bool vtolHappy(Droid const& droid);
 
 /**
  * Checks if the droid is a VTOL droid and updates the
@@ -569,31 +571,31 @@ bool vtolHappy(const Droid& droid);
 void updateVtolAttackRun(Droid& droid, int weapon_slot);
 
 /*returns a count of the base number of attack runs for the weapon attached to the droid*/
-unsigned getNumAttackRuns(const Droid* psDroid, int weapon_slot);
+unsigned getNumAttackRuns(Droid const* psDroid, int weapon_slot);
 
 //assign rearmPad to the VTOL
 void assignVTOLPad(Droid* psNewDroid, Structure* psReArmPad);
 
 /// @return true if a vtol is waiting to be rearmed by a particular rearm pad
-bool vtolReadyToRearm(Droid& droid, const RearmPad& rearmPad);
+bool vtolReadyToRearm(Droid& droid, RearmPad const& rearmPad);
 
 /// @return true if a vtol droid is currently returning to be rearmed
-[[nodiscard]] bool vtolRearming(const Droid& droid);
+[[nodiscard]] bool vtolRearming(Droid const& droid);
 
 // true if a droid is currently attacking
-bool droidAttacking(const Droid* psDroid);
+bool droidAttacking(Droid const* psDroid);
 // see if there are any other vtols attacking the same target
 // but still rearming
-bool allVtolsRearmed(const Droid* psDroid);
+bool allVtolsRearmed(Droid const* psDroid);
 
 /// Compares the droid sensor type with the droid weapon type to see if the FIRE_SUPPORT order can be assigned
-bool droidSensorDroidWeapon(const PlayerOwnedObject * psObj, const Droid* psDroid);
+bool droidSensorDroidWeapon(BaseObject const* psObj, Droid const* psDroid);
 
 // give a droid from one player to another - used in Electronic Warfare and multiplayer
 Droid* giftSingleDroid(Droid* psD, unsigned to, bool electronic = false);
 
 /// Calculates the electronic resistance of a droid based on its experience level
-SWORD droidResistance(const Droid* psDroid);
+SWORD droidResistance(Droid const* psDroid);
 
 /// This is called to check the weapon is allowed
 bool checkValidWeaponForProp(DroidTemplate* psTemplate);
@@ -611,13 +613,16 @@ void SelectDroid(Droid* psDroid);
 void DeSelectDroid(Droid* psDroid);
 
 /* audio finished callback */
-bool droidAudioTrackStopped(void* psObj);
+bool droidAudioTrackStopped(Droid* psDroid);
+
+void set_blocking_flags(const Droid& droid);
+void clear_blocking_flags(const Droid& droid);
 
 /*returns true if droid type is one of the Cyborg types*/
 bool isCyborg(const Droid* psDroid);
 
 bool isConstructionDroid(Droid const* psDroid);
-bool isConstructionDroid(PlayerOwnedObject const* psObject);
+bool isConstructionDroid(BaseObject const* psObject);
 
 /** Check if droid is in a legal world position and is not on its way to drive off the map. */
 bool droidOnMap(const Droid* psDroid);
@@ -625,22 +630,22 @@ bool droidOnMap(const Droid* psDroid);
 void droidSetPosition(Droid* psDroid, int x, int y);
 
 /// Return a percentage of how fully armed the object is, or -1 if N/A.
-int droidReloadBar(const PlayerOwnedObject * psObj, const Weapon* psWeap, int weapon_slot);
+int droidReloadBar(BaseObject const* psObj, Weapon const* psWeap, int weapon_slot);
 
 /** If droid can get to given object using its current propulsion, return the square distance. Otherwise return -1. */
-int droidSqDist(Droid* psDroid, PlayerOwnedObject * psObj);
+int droidSqDist(Droid* psDroid, BaseObject* psObj);
 
 // Minimum damage a weapon will deal to its target
 static constexpr auto MIN_WEAPON_DAMAGE	 = 1;
 
-void templateSetParts(const Droid* psDroid, DroidTemplate* psTemplate);
+void templateSetParts(Droid const* psDroid, DroidTemplate* psTemplate);
 
 #define syncDebugDroid(psDroid, ch) _syncDebugDroid(__FUNCTION__, psDroid, ch)
 void _syncDebugDroid(const char* function, Droid const* psDroid, char ch);
 
-static unsigned droidSensorRange(const Droid* psDroid);
+static unsigned droidSensorRange(Droid const* psDroid);
 
 static bool droidUpdateDroidRepairBase(Droid* psRepairDroid, Droid* psDroidToRepair);
-static Rotation getInterpolatedWeaponRotation(const Droid* psDroid, int weaponSlot, unsigned time);
+static Rotation getInterpolatedWeaponRotation(Droid const* psDroid, int weaponSlot, unsigned time);
 
 #endif // __INCLUDED_SRC_DROID_H__

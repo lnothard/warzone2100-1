@@ -48,6 +48,7 @@
 #include "intdisplay.h"
 #include "texture.h"
 #include "warzoneconfig.h"
+#include "objmem.h"
 #ifndef GLM_ENABLE_EXPERIMENTAL
 #define GLM_ENABLE_EXPERIMENTAL
 #endif
@@ -533,10 +534,10 @@ static void DrawRadarObjects()
 			{
 				continue;
 			}
-			if (psDroid->visibleToSelectedPlayer()
+			if (psDroid->isVisibleToSelectedPlayer()
 				|| (bMultiPlayer && alliancesSharedVision(game.alliance)
-					&& selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psDroid->getPlayer())))
-			{
+					&& selectedPlayer < MAX_PLAYERS &&
+              aiCheckAlliances(selectedPlayer, psDroid->playerManager->getPlayer()))) {
 				int x = psDroid->getPosition().x / TILE_UNITS;
 				int y = psDroid->getPosition().y / TILE_UNITS;
 				size_t pos = (x - scrollMinX) + (y - scrollMinY) * radarTexWidth;

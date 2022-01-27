@@ -17,6 +17,7 @@
 	along with Warzone 2100; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
+
 /*
  * Message.c
  *
@@ -34,6 +35,7 @@
 #include "lib/ivis_opengl/imd.h"
 
 #include "console.h"
+#include "feature.h"
 #include "hci.h"
 #include "stats.h"
 #include "text.h"
@@ -390,8 +392,7 @@ void removeMessage(MESSAGE* psDel, UDWORD player)
 	ASSERT_OR_RETURN(, psDel != nullptr, "Bad message");
 	debug(LOG_MSG, "removing message for player %d", player);
 
-	if (psDel->type == MESSAGE_TYPE::MSG_PROXIMITY)
-	{
+	if (psDel->type == MESSAGE_TYPE::MSG_PROXIMITY) {
 		removeProxDisp(psDel, player);
 	}
 	removeMessageFromList(apsMessages, psDel, player);
@@ -408,13 +409,10 @@ void freeMessages()
 /* removes all the proximity displays */
 void releaseAllProxDisp()
 {
-	UDWORD player;
-	PROXIMITY_DISPLAY *psCurr, *psNext;
 	bool removedAMessage = false;
-
-	for (player = 0; player < MAX_PLAYERS; player++)
+	for (auto player = 0; player < MAX_PLAYERS; player++)
 	{
-		for (psCurr = apsProxDisp[player]; psCurr != nullptr; psCurr = psNext)
+		for (auto psCurr = apsProxDisp[player]; psCurr != nullptr; psCurr = psNext)
 		{
 			psNext = psCurr->psNext;
 			//remove message associated with this display
@@ -783,44 +781,35 @@ bool messageShutdown()
 }
 
 //check for any messages using this viewdata and remove them
-static void checkMessages(VIEWDATA* psViewData)
+static void checkMessages(VIEWDATA const* psViewData)
 {
-	MESSAGE *psCurr, *psNext;
-
 	bool removedAMessage = false;
-	for (unsigned i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (psCurr = apsMessages[i]; psCurr != nullptr; psCurr = psNext)
+		for (auto psCurr : apsMessages[i])
 		{
-			psNext = psCurr->psNext;
-			if (psCurr->pViewData == psViewData)
-			{
-				removeMessage(psCurr, i);
+			if (psCurr.pViewData == psViewData) {
+				removeMessage(&psCurr, i);
 				removedAMessage = true;
 			}
 		}
 	}
-
-	if (removedAMessage)
-	{
+	if (removedAMessage) {
 		jsDebugMessageUpdate();
 	}
 }
 
 void releaseAllFlicMessages(MESSAGE* list[])
 {
-	MESSAGE *psCurr, *psNext;
-
 	// Iterate through all players' message lists
-	for (unsigned int i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
 		// Iterate through all messages in list
-		for (psCurr = list[i]; psCurr != nullptr; psCurr = psNext)
+		for (auto psCurr = list[i]; psCurr != nullptr; psCurr = psNext)
 		{
 			psNext = psCurr->psNext;
 			if (psCurr->type == MESSAGE_TYPE::MSG_MISSION ||
-          psCurr->type == MESSAGE_TYPE::MSG_CAMPAIGN)
-			{
+          psCurr->type == MESSAGE_TYPE::MSG_CAMPAIGN) {
 				removeMessage(psCurr, i);
 			}
 		}
@@ -831,22 +820,20 @@ void releaseAllFlicMessages(MESSAGE* list[])
 void viewDataShutDown(const char* fileName)
 {
 	debug(LOG_MSG, "calling shutdown for %s", fileName);
-	auto iter = apsViewData.begin();
-	while (iter != apsViewData.end())
+	for (auto iter = apsViewData.begin(); iter != apsViewData.end();)
 	{
-		VIEWDATA* psViewData = iter->second;
+		auto psViewData = iter->second;
 
-		if (psViewData->fileName.compare(fileName) != 0)
-		{
+		if (psViewData->fileName.compare(fileName) != 0) {
 			++iter;
 			continue; // do not delete this now
 		}
-		if (!releaseObjectives && (psViewData->type == VIEW_TYPE::VIEW_RPL || psViewData->type == VIEW_TYPE::VIEW_RPLX))
-		{
+		if (!releaseObjectives &&
+        (psViewData->type == VIEW_TYPE::VIEW_RPL ||
+         psViewData->type == VIEW_TYPE::VIEW_RPLX)) {
 			++iter;
 			continue;
 		}
-
 		// check for any messages using this viewdata
 		checkMessages(psViewData);
 		delete psViewData->pData;
@@ -857,77 +844,70 @@ void viewDataShutDown(const char* fileName)
 
 /* Looks through the players list of messages to find one with the same viewData
 pointer and which is the same type of message - used in scriptFuncs */
-MESSAGE* findMessage(const VIEWDATA* pViewData, MESSAGE_TYPE type, UDWORD player)
+MESSAGE* findMessage(VIEWDATA const* pViewData, MESSAGE_TYPE type, unsigned player)
 {
 	ASSERT_OR_RETURN(nullptr, player < MAX_PLAYERS, "Bad player");
 	ASSERT_OR_RETURN(nullptr, type < MESSAGE_TYPE::MSG_TYPES, "Bad message type");
 
-	for (MESSAGE* psCurr = apsMessages[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsMessages[player])
 	{
-		if (psCurr->type == type && psCurr->pViewData == pViewData)
-		{
-			return psCurr;
+		if (psCurr.type == type && psCurr.pViewData == pViewData) {
+			return &psCurr;
 		}
 	}
-
 	//not found the message so return NULL
 	return nullptr;
 }
 
-MESSAGE* findMessage(const PlayerOwnedObject * psObj, MESSAGE_TYPE type, UDWORD player)
+MESSAGE* findMessage(BaseObject const* psObj, MESSAGE_TYPE type, unsigned player)
 {
 	ASSERT_OR_RETURN(nullptr, player < MAX_PLAYERS, "Bad player");
 	ASSERT_OR_RETURN(nullptr, type < MESSAGE_TYPE::MSG_TYPES, "Bad message type");
 
-	for (MESSAGE* psCurr = apsMessages[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsMessages[player])
 	{
-		if (psCurr->type == type && psCurr->psObj == psObj)
-		{
-			return psCurr;
+		if (psCurr.type == type && psCurr.psObj == psObj) {
+			return &psCurr;
 		}
 	}
-
 	return nullptr;
 }
 
 /* 'displays' a proximity display*/
 void displayProximityMessage(PROXIMITY_DISPLAY* psProxDisp)
 {
-	if (psProxDisp->type == POSITION_TYPE::POS_PROXDATA)
-	{
+	if (psProxDisp->type == POSITION_TYPE::POS_PROXDATA) {
 		const VIEWDATA* psViewData = psProxDisp->psMessage->pViewData;
 		const VIEW_PROXIMITY* psViewProx = (VIEW_PROXIMITY*)psViewData->pData;
 
 		//display text - if any
-		if (!psViewData->textMsg.empty() && psViewData->type != VIEW_TYPE::VIEW_BEACON)
-		{
-			addConsoleMessage(psViewData->textMsg[0].toUtf8().c_str(), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
+		if (!psViewData->textMsg.empty() && psViewData->type != VIEW_TYPE::VIEW_BEACON) {
+			addConsoleMessage(psViewData->textMsg[0].toUtf8().c_str(),
+                        CONSOLE_TEXT_JUSTIFICATION::DEFAULT,
+                        SYSTEM_MESSAGE);
 		}
 
 		//play message - if any
-		if (psViewProx->audioID != NO_AUDIO_MSG)
-		{
+		if (psViewProx->audioID != NO_AUDIO_MSG) {
 			audio_QueueTrackPos(psViewProx->audioID, psViewProx->x, psViewProx->y, psViewProx->z);
 		}
 	}
-	else if (psProxDisp->type == POSITION_TYPE::POS_PROXOBJ)
-	{
+	else if (psProxDisp->type == POSITION_TYPE::POS_PROXOBJ) {
 		ASSERT_OR_RETURN(, psProxDisp->psMessage->psObj, "Invalid proxobj - null object");
-		ASSERT_OR_RETURN(, psProxDisp->psMessage->psObj->type == OBJ_FEATURE, "Invalid proxobj - must be feature");
+		ASSERT_OR_RETURN(, dynamic_cast<Feature*>(psProxDisp->psMessage->psObj), "Invalid proxobj - must be feature");
 		const auto psFeature = (Feature*)psProxDisp->psMessage->psObj;
 
-		if (psFeature->getStats()->subType == FEATURE_TYPE::OIL_RESOURCE)
-		{
+		if (psFeature->getStats()->subType == FEATURE_TYPE::OIL_RESOURCE) {
 			//play default audio message for oil resource
-			audio_QueueTrackPos(ID_SOUND_RESOURCE_HERE, psFeature->pos.x, psFeature->pos.y, psFeature->pos.z);
+			audio_QueueTrackPos(ID_SOUND_RESOURCE_HERE, psFeature->getPosition().x,
+                          psFeature->getPosition().y, psFeature->getPosition().z);
 		}
-		else if (psFeature->getStats()->subType == FEATURE_TYPE::GEN_ARTE)
-		{
+		else if (psFeature->getStats()->subType == FEATURE_TYPE::GEN_ARTE) {
 			//play default audio message for artefact
-			audio_QueueTrackPos(ID_SOUND_ARTIFACT, psFeature->pos.x, psFeature->pos.y, psFeature->pos.z);
+			audio_QueueTrackPos(ID_SOUND_ARTIFACT, psFeature->getPosition().x,
+                          psFeature->getPosition().y, psFeature->getPosition().z);
 		}
 	}
-
 	//set the read flag
 	psProxDisp->psMessage->read = true;
 }

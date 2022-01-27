@@ -108,56 +108,50 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  		}
 	  	}
 	  	break;
-	  case RENDER_PROJECTILE:
-	  	if (((Projectile*)pObject)->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
-          ((Projectile*)pObject)->weaponStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND ||
-          ((Projectile*)pObject)->weaponStats->weaponSubClass == WEAPON_SUBCLASS::EMP)
-	  	{
-	  		/* We don't do projectiles from these guys, cos there's an effect instead */
-	  		z = -1;
-	  	}
-	  	else
-	  	{
-	  		//the weapon stats holds the reference to which graphic to use
-	  		pImd = ((Projectile*)pObject)->weaponStats->pInFlightGraphic;
+	  case RENDER_PROJECTILE: {
+      auto psProj = static_cast<Projectile *>(pObject);
+      if (psProj && (psProj->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
+                     psProj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND ||
+                     psProj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::EMP)) {
+        /* We don't do projectiles from these guys, cos there's an effect instead */
+        z = -1;
+      } else {
+        //the weapon stats holds the reference to which graphic to use
+        pImd = ((Projectile *) pObject)->weaponStats->pInFlightGraphic;
 
-	  		psSimpObj = (PlayerOwnedObject *)pObject;
-	  		position.x = psSimpObj->getPosition().x - playerPos.p.x;
-	  		position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
+        psSimpObj = (PlayerOwnedObject *) pObject;
+        position.x = psSimpObj->getPosition().x - playerPos.p.x;
+        position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
-	  		position.y = psSimpObj->getPosition().z;
+        position.y = psSimpObj->getPosition().z;
 
-	  		z = pie_RotateProject(&position, viewMatrix, &pixel);
+        z = pie_RotateProject(&position, viewMatrix, &pixel);
 
-	  		if (z > 0)
-	  		{
-	  			//particle use the image radius
-	  			radius = pImd->radius;
-	  			radius *= SCALE_DEPTH;
-	  			radius /= z;
-	  			if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-	  				|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
-	  			{
-	  				z = -1;
-	  			}
-	  		}
-	  	}
-	  	break;
+        if (z > 0) {
+          //particle use the image radius
+          radius = pImd->radius;
+          radius *= SCALE_DEPTH;
+          radius /= z;
+          if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT) || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM)) {
+            z = -1;
+          }
+        }
+      }
+      break;
+    }
 	  case RENDER_STRUCTURE: //not depth sorted
 	  	psSimpObj = (PlayerOwnedObject *)pObject;
 	  	position.x = psSimpObj->getPosition().x - playerPos.p.x;
 	  	position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
 	  	if ((objectType == RENDER_STRUCTURE) &&
-	  		((((Structure*)pObject)->getStats().type == STRUCTURE_TYPE::DEFENSE) ||
-         (((Structure*)pObject)->getStats().type == STRUCTURE_TYPE::WALL) ||
-         (((Structure*)pObject)->getStats().type == STRUCTURE_TYPE::WALL_CORNER)))
-	  	{
+	  		((((Structure*)pObject)->getStats()->type == STRUCTURE_TYPE::DEFENSE) ||
+         (((Structure*)pObject)->getStats()->type == STRUCTURE_TYPE::WALL) ||
+         (((Structure*)pObject)->getStats()->type == STRUCTURE_TYPE::WALL_CORNER))) {
 	  		position.y = psSimpObj->getPosition().z + 64;
 	  		radius = ((Structure*)pObject)->getDisplayData().imd_shape->radius; //walls guntowers and tank traps clip tightly
 	  	}
-	  	else
-	  	{
+	  	else {
 	  		position.y = psSimpObj->getPosition().z;
 	  		radius = (((Structure*)pObject)->getDisplayData().imd_shape->radius);
 	  	}
@@ -188,7 +182,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  	if (z > 0)
 	  	{
 	  		//particle use the image radius
-	  		radius = ((Feature*)pObject)->sDisplay.imd->radius;
+	  		radius = ((Feature*)pObject)->getDisplayData()->imd_shape->radius;
 	  		radius *= SCALE_DEPTH;
 	  		radius /= z;
 	  		if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
@@ -228,14 +222,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  	{
 	  		const PROXIMITY_DISPLAY* ptr = (PROXIMITY_DISPLAY*)pObject;
 	  		position.x = ((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->x - playerPos.p.x;
-#i  f defined( _MSC_VER )
-#p  ragma warning( push )
-#p  ragma warning( disable : 4146 ) // warning C4146: unary minus operator applied to unsigned type, result still unsigned
-#e  ndif
 	  		position.z = -(((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->y - playerPos.p.z);
-#i  f defined( _MSC_VER )
-#p  ragma warning( pop )
-#e  ndif
 	  		position.y = ((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->z;
 	  	}
 	  	else if (((PROXIMITY_DISPLAY*)pObject)->type == POS_PROXOBJ)
@@ -344,14 +331,14 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 	case RENDER_EFFECT:
 		switch (((EFFECT*)pObject)->group)
 		{
-		case EFFECT_EXPLOSION:
-		case EFFECT_CONSTRUCTION:
-		case EFFECT_SMOKE:
-		case EFFECT_FIREWORK:
+		case EXPLOSION:
+		case CONSTRUCTION:
+		case SMOKE:
+		case FIREWORK:
 			// Use calculated Z
 			break;
 
-		case EFFECT_WAYPOINT:
+		case WAYPOINT:
 			pie = ((EFFECT*)pObject)->imd;
 			z = INT32_MAX - pie->texpage;
 			break;

@@ -36,14 +36,14 @@
 
 #include "clparse.h"
 #include "frontend.h"
-#include "keyedit.h"
 #include "mission.h"
 #include "multiint.h"
-#include "multilimit.h"
 #include "multistat.h"
 #include "warzoneconfig.h"
 #include "wrappers.h"
 #include "titleui/titleui.h"
+#include "multiplay.h"
+#include "lib/framework/input.h"
 
 struct STAR
 {
@@ -356,19 +356,18 @@ bool displayGameOver(bool bDidit, bool showBackDrop)
 	{
 		updateMultiStatsGames(); // update games played.
 
-		PLAYERSTATS st = getMultiStats(selectedPlayer);
+		auto st = getMultiStats(selectedPlayer);
 		saveMultiStats(getPlayerName(selectedPlayer), getPlayerName(selectedPlayer), &st);
 	}
 
 	//clear out any mission widgets - timers etc that may be on the screen
 	clearMissionWidgets();
 
-	if (bMultiPlayer && NetPlay.players[selectedPlayer].isSpectator)
-	{
+	if (bMultiPlayer && NetPlay.players[selectedPlayer].isSpectator) {
 		// Special message for spectators to inform them that the game is fully over
-		addConsoleMessage(_("GAME OVER"), CENTRE_JUSTIFY, SYSTEM_MESSAGE, false, MAX_CONSOLE_MESSAGE_DURATION);
+		addConsoleMessage(_("GAME OVER"), CONSOLE_TEXT_JUSTIFICATION::CENTRE, SYSTEM_MESSAGE, false, MAX_CONSOLE_MESSAGE_DURATION);
 		addConsoleMessage(
-			_("The battle is over - you can leave the room."), CENTRE_JUSTIFY, SYSTEM_MESSAGE, false,
+			_("The battle is over - you can leave the room."), CONSOLE_TEXT_JUSTIFICATION::CENTRE, SYSTEM_MESSAGE, false,
 			MAX_CONSOLE_MESSAGE_DURATION);
 		// TODO: Display this in a form with a "Quit to Main Menu" button?, or adapt intAddMissionResult to have a separate display for spectators?
 	}

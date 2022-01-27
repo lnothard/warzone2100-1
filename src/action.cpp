@@ -29,12 +29,12 @@
 
 #include "action.h"
 #include "droid.h"
+#include "geometry.h"
 #include "map.h"
 #include "mapgrid.h"
 #include "move.h"
 #include "projectile.h"
 #include "visibility.h"
-#include "geometry.h"
 
 /**
  * @typedef tileMatchFunction
