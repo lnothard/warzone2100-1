@@ -69,6 +69,8 @@
 #include "keybind.h"
 #include "loop.h"
 #include "frontend.h"
+#include "intfac.h"
+#include "intimage.h"
 
 // ////////////////////////////////////////////////////////////////////////////
 // defines
@@ -146,7 +148,7 @@ static bool giftsUp[MAX_PLAYERS] = {true}; //gift buttons for player are up.
 static PIELIGHT GetPlayerTextColor(int mode, UDWORD player)
 {
 	// override color if they are dead...
-	if (player >= MAX_PLAYERS || (!apsDroidLists[player] && !apsStructLists[player]))
+	if (player >= MAX_PLAYERS || apsDroidLists[player].empty() && apsStructLists[player].empty())
 	{
 		return WZCOL_GREY; // dead text color
 	}
@@ -715,7 +717,7 @@ public:
 	{
 		// a droid of theirs.
 		Droid* displayDroid = (player < MAX_PLAYERS) ? apsDroidLists[player] : nullptr;
-		while (displayDroid != nullptr && !displayDroid->visibleForLocalDisplay())
+		while (displayDroid != nullptr && !displayDroid->isVisibleToSelectedPlayer())
 		{
 			displayDroid = displayDroid->psNext;
 		}
@@ -727,18 +729,18 @@ public:
 			pie_SetGeometricOffset(centerX, y0 + height() * 3 / 4);
 			Vector3i rotation(-15, 45, 0);
 			Position position(0, 0, BUTTON_DEPTH); // Scale them.
-			if (displayDroid->type == DROID_SUPERTRANSPORTER)
+			if (displayDroid->getType() == DROID_TYPE::SUPER_TRANSPORTER)
 			{
 				position.z = 7850;
 			}
-			else if (displayDroid->type == DROID_TRANSPORTER)
+			else if (displayDroid->getType() == DROID_TYPE::TRANSPORTER)
 			{
 				position.z = 4100;
 			}
 
 			displayComponentButtonObject(displayDroid, &rotation, &position, 100);
 		}
-		else if ((player < MAX_PLAYERS) && apsDroidLists[player])
+		else if ((player < MAX_PLAYERS) && !apsDroidLists[player].empty())
 		{
 			// Show that they have droids, but not which droids, since we can't see them.
 			iV_DrawImageTc(
@@ -824,7 +826,7 @@ private:
 		return label;
 	}
 
-	std::shared_ptr<WIDGET> wrapGift(std::shared_ptr<WIDGET> gift)
+	std::shared_ptr<WIDGET> wrapGift(const std::shared_ptr<WIDGET>& gift)
 	{
 		auto alignment = Alignment(Alignment::Vertical::Center, Alignment::Horizontal::Center);
 		return alignment.wrap(Margin(0, 1, 0, 0).wrap(std::move(gift)));
@@ -1022,7 +1024,7 @@ private:
 				{
 					// NOTE, This tallys up *all* the structures you have. Test out via 'start with no base'.
 					int num = 0;
-					for (Structure* temp = apsStructLists[playerWidget.player]; temp != nullptr; temp = temp->psNext)
+					for (auto& temp : apsStructLists[playerWidget.player])
 					{
 						++num;
 					}

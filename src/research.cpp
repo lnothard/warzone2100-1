@@ -32,6 +32,9 @@
 #include "mission.h"
 #include "intimage.h"
 #include "qtscript.h"
+#include "multiplay.h"
+#include "lib/ivis_opengl/imd.h"
+#include "objmem.h"
 
 // The stores for the research stats
 std::vector<ResearchStats> asResearch;
@@ -247,17 +250,15 @@ static const char* bodyClassToStr(BODY_CLASS bodyClass)
 {
 	const char* bodyClassStr = nullptr;
 	switch (bodyClass) {
-	case BODY_CLASS::Tank:
+	case BODY_CLASS::TANK:
 		bodyClassStr = "Droids";
 		break;
-	case BODY_CLASS::Cyborg:
+	case BODY_CLASS::CYBORG:
 		bodyClassStr = "Cyborgs";
 		break;
 	}
 	return bodyClassStr;
 }
-
-
 
 unsigned PlayerUpgradeCounts::getNumBodyClassArmourUpgrades(BODY_CLASS bodyClass)
 {
@@ -1168,7 +1169,7 @@ void ResearchRelease()
 /*puts research facility on hold*/
 void holdResearch(Structure* psBuilding, QUEUE_MODE mode)
 {
-	ASSERT_OR_RETURN(, psBuilding->pStructureType->type == REF_RESEARCH, "structure not a research facility");
+	ASSERT_OR_RETURN(, psBuilding->getStats()->type == STRUCTURE_TYPE::RESEARCH, "structure not a research facility");
 
 	ResearchFacility* psResFac = &psBuilding->pFunctionality->researchFacility;
 
@@ -1184,7 +1185,7 @@ void holdResearch(Structure* psBuilding, QUEUE_MODE mode)
 		//set the time the research facility was put on hold
 		psResFac->timeStartHold = gameTime;
 		//play audio to indicate on hold
-		if (psBuilding->player == selectedPlayer)
+		if (psBuilding->playerManager->isSelectedPlayer())
 		{
 			audio_PlayTrack(ID_SOUND_WINDOWCLOSE);
 		}
@@ -1196,7 +1197,7 @@ void holdResearch(Structure* psBuilding, QUEUE_MODE mode)
 /*release a research facility from hold*/
 void releaseResearch(Structure* psBuilding, QUEUE_MODE mode)
 {
-	ASSERT_OR_RETURN(, psBuilding->pStructureType->type == REF_RESEARCH, "structure not a research facility");
+	ASSERT_OR_RETURN(, psBuilding->getStats()->type == STRUCTURE_TYPE::RESEARCH, "structure not a research facility");
 
 	ResearchFacility* psResFac = &psBuilding->pFunctionality->researchFacility;
 
@@ -1214,26 +1215,18 @@ void releaseResearch(Structure* psBuilding, QUEUE_MODE mode)
 	}
 }
 
-
 /*
-
 	Cancel All Research for player 0
-
 */
 void CancelAllResearch(UDWORD pl)
 {
-	Structure* psCurr;
 	if (pl >= MAX_PLAYERS) { return; }
 
-	for (psCurr = apsStructLists[pl]; psCurr != nullptr; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsStructLists[pl])
 	{
-		if (psCurr->pStructureType->type == REF_RESEARCH)
-		{
-			if (
-				(((ResearchFacility*)psCurr->pFunctionality) != nullptr)
-				&& (((ResearchFacility*)psCurr->pFunctionality)->psSubject != nullptr)
-			)
-			{
+		if (psCurr->getStats()->type == STRUCTURE_TYPE::RESEARCH) {
+			if (((ResearchFacility *) psCurr->pFunctionality != nullptr) &&
+          ((ResearchFacility *) psCurr->pFunctionality)->psSubject != nullptr) {
 				debug(LOG_NEVER, "canceling research for %p\n", static_cast<void *>(psCurr));
 				cancelResearch(psCurr, ModeQueue);
 			}
@@ -1247,7 +1240,7 @@ void cancelResearch(Structure* psBuilding, QUEUE_MODE mode)
 	UDWORD topicInc;
 	PlayerResearch* pPlayerRes;
 
-	ASSERT_OR_RETURN(, psBuilding->pStructureType && psBuilding->pStructureType->type == REF_RESEARCH,
+	ASSERT_OR_RETURN(, psBuilding->getStats() && psBuilding->getStats()->type == STRUCTURE_TYPE::RESEARCH,
 	                   "Structure not a research facility");
 
 	ResearchFacility* psResFac = &psBuilding->pFunctionality->researchFacility;
@@ -1259,13 +1252,13 @@ void cancelResearch(Structure* psBuilding, QUEUE_MODE mode)
 	topicInc = ((ResearchStats*)psResFac->psSubject)->index;
 	ASSERT_OR_RETURN(, topicInc <= asResearch.size(), "Invalid research topic %u (max %d)", topicInc,
 	                   (int)asResearch.size());
-	pPlayerRes = &asPlayerResList[psBuilding->player][topicInc];
-	if (psBuilding->pStructureType->type == REF_RESEARCH)
+	pPlayerRes = &asPlayerResList[psBuilding->playerManager->getPlayer()][topicInc];
+	if (psBuilding->getStats()->type == STRUCTURE_TYPE::RESEARCH)
 	{
 		if (mode == ModeQueue)
 		{
 			// Tell others that we want to stop researching something.
-			sendResearchStatus(psBuilding, topicInc, psBuilding->player, false);
+			sendResearchStatus(psBuilding, topicInc, psBuilding->playerManager->getPlayer(), false);
 			// Immediately tell the UI that we can research this now. (But don't change the game state.)
 			MakeResearchCancelledPending(pPlayerRes);
 			setStatusPendingCancel(*psResFac);
@@ -1518,21 +1511,21 @@ static void replaceComponent(ComponentStats* pNewComponent, ComponentStats* pOld
 	//check thru the templates
 	enumerateTemplates(player, [oldType, oldCompInc, newCompInc](DroidTemplate* psTemplates)
 	{
-		switch (oldType)
-		{
-		case COMP_BODY:
-		case COMP_BRAIN:
-		case COMP_PROPULSION:
-		case COMP_REPAIRUNIT:
-		case COMP_ECM:
-		case COMP_SENSOR:
-		case COMP_CONSTRUCT:
+		switch (oldType) {
+        using enum COMPONENT_TYPE;
+		case BODY:
+		case BRAIN:
+		case PROPULSION:
+		case REPAIR_UNIT:
+		case ECM:
+		case SENSOR:
+		case CONSTRUCT:
 			if (psTemplates->asParts[oldType] == (SDWORD)oldCompInc)
 			{
 				psTemplates->asParts[oldType] = newCompInc;
 			}
 			break;
-		case COMP_WEAPON:
+		case WEAPON:
 			for (int inc = 0; inc < psTemplates->weaponCount; inc++)
 			{
 				if (psTemplates->asWeaps[inc] == oldCompInc)
@@ -1599,30 +1592,27 @@ bool enableResearch(ResearchStats* psResearch, UDWORD player)
 'give' the results to the reward player*/
 void researchReward(UBYTE losingPlayer, UBYTE rewardPlayer)
 {
-	UDWORD topicIndex = 0, researchPoints = 0, rewardID = 0;
-
+  auto researchPoints = 0, rewardID = 0;
 	//look through the losing players structures to find a research facility
-	for (Structure* psStruct = apsStructLists[losingPlayer]; psStruct != nullptr; psStruct = psStruct->psNext)
+	for (auto& psStruct : apsStructLists[losingPlayer])
 	{
-		if (psStruct->pStructureType->type == REF_RESEARCH)
-		{
-			auto* psFacility = (ResearchFacility*)psStruct->pFunctionality;
-			if (psFacility->psBestTopic)
-			{
-				topicIndex = ((ResearchStats*)psFacility->psBestTopic)->ref - STAT_RESEARCH;
-				if (topicIndex)
-				{
-					//if it cost more - it is better (or should be)
-					if (researchPoints < asResearch[topicIndex].researchPointsRequired)
-					{
-						//store the 'best' topic
-						researchPoints = asResearch[topicIndex].researchPointsRequired;
-						rewardID = topicIndex;
-					}
-				}
-			}
-		}
-	}
+    if (!(psStruct->getStats()->type == STRUCTURE_TYPE::RESEARCH)) {
+      continue;
+    }
+    auto* psFacility = (ResearchFacility*)psStruct->pFunctionality;
+    if (!psFacility->psBestTopic) {
+      continue;
+    }
+    auto topicIndex = ((ResearchStats*)psFacility->psBestTopic)->ref - STAT_RESEARCH;
+    if (!topicIndex) continue;
+    
+    //if it cost more - it is better (or should be)
+    if (researchPoints < asResearch[topicIndex].researchPointsRequired) {
+      //store the 'best' topic
+      researchPoints = asResearch[topicIndex].researchPointsRequired;
+      rewardID = topicIndex;
+    }
+  }
 
 	//if a topic was found give the reward player the results of that research
 	if (rewardID)
@@ -1670,7 +1660,7 @@ void replaceDroidComponent(Droid* pList, UDWORD oldType, UDWORD oldCompInc,
 	{
 		switchComponent(psDroid, oldType, oldCompInc, newCompInc);
 		// Need to replace the units inside the transporter
-		if (isTransporter(psDroid))
+		if (isTransporter(*psDroid))
 		{
 			replaceTransDroidComponents(psDroid, oldType, oldCompInc, newCompInc);
 		}
@@ -1683,7 +1673,7 @@ void replaceTransDroidComponents(Droid* psTransporter, UDWORD oldType,
 {
 	Droid* psCurr;
 
-	ASSERT(isTransporter(psTransporter), "invalid unit type");
+	ASSERT(isTransporter(*psTransporter), "invalid unit type");
 
 	for (psCurr = psTransporter->group->members; psCurr != nullptr; psCurr =
 	     psCurr->psGrpNext)
@@ -1698,22 +1688,21 @@ void replaceTransDroidComponents(Droid* psTransporter, UDWORD oldType,
 void replaceStructureComponent(Structure* pList, UDWORD oldType, UDWORD oldCompInc,
                                UDWORD newCompInc, UBYTE player)
 {
+  using enum COMPONENT_TYPE;
 	Structure* psStructure;
 	int inc;
 
 	// If the type is not one we are interested in, then don't bother checking
-	if (!(oldType == COMP_ECM || oldType == COMP_SENSOR || oldType == COMP_WEAPON))
-	{
+	if (!(oldType == ECM || oldType == SENSOR || oldType == WEAPON)) {
 		return;
 	}
 
 	//check thru the structures
 	for (psStructure = pList; psStructure != nullptr; psStructure = psStructure->psNext)
 	{
-		switch (oldType)
-		{
-		case COMP_WEAPON:
-			for (inc = 0; inc < psStructure->numWeaps; inc++)
+		switch (oldType) {
+		case WEAPON:
+			for (inc = 0; inc < numWeapons(*psStructure); inc++)
 			{
 				if (psStructure->asWeaps[inc].nStat > 0)
 				{
@@ -1732,26 +1721,26 @@ void replaceStructureComponent(Structure* pList, UDWORD oldType, UDWORD oldCompI
 }
 
 /*swaps the old component for the new one for a specific droid*/
-static void switchComponent(Droid* psDroid, UDWORD oldType, UDWORD oldCompInc,
+static void switchComponent(Droid* psDroid, COMPONENT_TYPE oldType, UDWORD oldCompInc,
                             UDWORD newCompInc)
 {
 	ASSERT_OR_RETURN(, psDroid != nullptr, "Invalid droid pointer");
 
-	switch (oldType)
-	{
-	case COMP_BODY:
-	case COMP_BRAIN:
-	case COMP_PROPULSION:
-	case COMP_REPAIRUNIT:
-	case COMP_ECM:
-	case COMP_SENSOR:
-	case COMP_CONSTRUCT:
+	switch (oldType) {
+      using enum COMPONENT_TYPE;
+	case BODY:
+	case BRAIN:
+	case PROPULSION:
+	case REPAIR_UNIT:
+	case ECM:
+	case SENSOR:
+	case CONSTRUCT:
 		if (psDroid->asBits[oldType] == oldCompInc)
 		{
 			psDroid->asBits[oldType] = (UBYTE)newCompInc;
 		}
 		break;
-	case COMP_WEAPON:
+	case WEAPON:
 		// Can only be one weapon now
 		if (psDroid->asWeaps[0].nStat > 0)
 		{
@@ -1815,11 +1804,10 @@ std::vector<AllyResearch> const& listAllyResearch(unsigned ref)
 			}
 
 			// Check each research facility to see if they are doing this topic. (As opposed to having started the topic, but stopped researching it.)
-			for (Structure* psStruct = apsStructLists[player]; psStruct != nullptr; psStruct = psStruct->psNext)
+			for (auto& psStruct : apsStructLists[player])
 			{
 				auto* res = (ResearchFacility*)psStruct->pFunctionality;
-				if (psStruct->pStructureType->type != REF_RESEARCH || res->psSubject == nullptr)
-				{
+				if (psStruct->getStats()->type != STRUCTURE_TYPE::RESEARCH || res->psSubject == nullptr) {
 					continue; // Not a researching research facility.
 				}
 
@@ -1830,14 +1818,14 @@ std::vector<AllyResearch> const& listAllyResearch(unsigned ref)
 				AllyResearch r;
 				r.player = player;
 				r.completion = playerRes.currentPoints;
-				r.powerNeeded = checkPowerRequest(psStruct);
+				r.powerNeeded = checkPowerRequest(psStruct.get());
 				r.timeToResearch = -1;
 				if (r.powerNeeded == -1)
 				{
 					r.timeToResearch = (subject.researchPointsRequired - playerRes.currentPoints) / std::max(
-						getBuildingResearchPoints(psStruct), 1);
+						getBuildingResearchPoints(psStruct.get()), 1);
 				}
-				r.active = psStruct->status == SS_BUILT;
+				r.active = psStruct->getState() == STRUCTURE_STATE::BUILT;
 				researches[cRef].push_back(r);
 			}
 		}

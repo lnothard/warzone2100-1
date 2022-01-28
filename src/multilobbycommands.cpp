@@ -22,6 +22,7 @@
 
 #include "multiint.h"
 #include "multilobbycommands.h"
+#include "multiplay.h"
 #include "multistat.h"
 
 #define PREFIXED_LOBBY_COMMAND(x) LOBBY_COMMAND_PREFIX x
@@ -299,8 +300,8 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 	else if (strncmp(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "kick", 4) == 0)
 	{
 		ADMIN_REQUIRED_FOR_COMMAND("kick");
-		unsigned unsigned playerPos = MAX_PLAYERS + 1;
-		unsigned unsigned playerIdx = MAX_CONNECTED_PLAYERS + 1;
+		unsigned playerPos = MAX_PLAYERS + 1;
+		unsigned playerIdx = MAX_CONNECTED_PLAYERS + 1;
 		int r = sscanf(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "kick %u", &playerPos);
 		if (r == 1)
 		{
@@ -463,9 +464,9 @@ bool processChatLobbySlashCommands(const NetworkTextMessage& message, HostLobbyO
 	else if (strncmp(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "makespec", 8) == 0)
 	{
 		ADMIN_REQUIRED_FOR_COMMAND("makespec");
-		unsigned unsigned playerPos = MAX_PLAYERS + 1;
+		unsigned playerPos = MAX_PLAYERS + 1;
 		int r = sscanf(&message.text[LOBBY_COMMAND_PREFIX_LENGTH], "makespec %u", &playerPos);
-		unsigned unsigned playerIdx = posToNetPlayer(playerPos);
+		unsigned playerIdx = posToNetPlayer(playerPos);
 		if (r != 1 || playerPos >= MAX_PLAYERS)
 		{
 			sendRoomNotifyMessage("Usage: " LOBBY_COMMAND_PREFIX "makespec <slot>");

@@ -29,7 +29,7 @@
 #include "lib/framework/wzconfig.h"
 #include "lib/framework/wzpaths.h"
 
-#include <time.h>
+#include <ctime>
 
 #include "lib/framework/frameresource.h"
 #include "lib/framework/file.h"
@@ -56,6 +56,7 @@
 #include "lib/widget/editbox.h"
 #include "lib/widget/button.h"
 #include "lib/widget/scrollablelist.h"
+#include "lib/widget/listwidget.h"
 #include "lib/widget/widget.h"
 #include "lib/widget/widgint.h"
 #include "lib/widget/label.h"
@@ -82,7 +83,6 @@
 #include "map.h"
 #include "console.h"			// chat box stuff
 #include "frend.h"
-#include "advvis.h"
 #include "frontend.h"
 #include "data.h"
 #include "game.h"
@@ -117,6 +117,8 @@
 #include "activity.h"
 #include <algorithm>
 #include "3rdparty/gsl_finally.h"
+#include "intfac.h"
+#include "intimage.h"
 
 #define MAP_PREVIEW_DISPLAY_TIME 2500	// number of milliseconds to show map in preview
 #define VOTE_TAG                 "voting"
@@ -130,7 +132,7 @@
 // ////////////////////////////////////////////////////////////////////////////
 // vars
 extern char MultiCustomMapsPath[PATH_MAX];
-extern char MultiPlayersPath[PATH_MAX];
+
 extern bool bSendingMap; // used to indicate we are sending a map
 
 enum RoomMessageType
@@ -149,26 +151,26 @@ struct RoomMessage
 
 	static RoomMessage player(uint32_t messageSender, std::string messageText)
 	{
-		auto message = RoomMessage(RoomMessagePlayer, messageText);
+		auto message = RoomMessage(RoomMessagePlayer, std::move(messageText));
 		message.sender = NetPlay.playerReferences[messageSender];
 		return message;
 	}
 
 	static RoomMessage system(std::string messageText)
 	{
-		return RoomMessage(RoomMessageSystem, messageText);
+		return {RoomMessageSystem, messageText};
 	}
 
 	static RoomMessage notify(std::string messageText)
 	{
-		return RoomMessage(RoomMessageNotify, messageText);
+		return {RoomMessageNotify, messageText};
 	}
 
 private:
 	RoomMessage(RoomMessageType messageType, std::string messageText)
 	{
 		type = messageType;
-		text = messageText;
+		text = std::move(messageText);
 	}
 };
 
@@ -260,11 +262,11 @@ static bool SendColourRequest(UBYTE player, UBYTE col);
 static bool SendFactionRequest(UBYTE player, UBYTE faction);
 static bool SendPositionRequest(UBYTE player, UBYTE chosenPlayer);
 static bool SendPlayerSlotTypeRequest(uint32_t player, bool isSpectator);
-bool changeReadyStatus(UBYTE player, bool bReady);
+
 static void stopJoining(std::shared_ptr<WzTitleUI> parent);
 static int difficultyIcon(int difficulty);
 
-void sendRoomSystemMessageToSingleReceiver(char const* text, uint32_t receiver);
+
 static void sendRoomChatMessage(char const* text);
 
 static int factionIcon(FactionID faction);
@@ -348,7 +350,7 @@ public:
 		return widget;
 	}
 
-	virtual ~ChatBoxWidget();
+	~ChatBoxWidget() override;
 	void addMessage(RoomMessage const& message);
 	void initializeMessages(bool preserveOldChat);
 
@@ -552,18 +554,18 @@ static TILE_SET guessMapTilesetType(LEVEL_DATASET* psLevel)
 	switch (c)
 	{
 	case 1:
-		return TILESET_ARIZONA;
+		return TILE_SET::ARIZONA;
 		break;
 	case 2:
-		return TILESET_URBAN;
+		return TILE_SET::URBAN;
 		break;
 	case 3:
-		return TILESET_ROCKIES;
+		return TILE_SET::ROCKIES;
 		break;
 	}
 
 	debug(LOG_MAP, "Could not guess map tileset, using ARIZONA.");
-	return TILESET_ARIZONA;
+	return TILE_SET::ARIZONA;
 }
 
 static void loadEmptyMapPreview()
@@ -727,13 +729,13 @@ void loadMapPreview(bool hideInterface)
 		new WzLobbyPreviewPlayerColorProvider());
 	switch (guessMapTilesetType(psLevel))
 	{
-	case TILESET_ARIZONA:
+	case TILE_SET::ARIZONA:
 		previewColorScheme.tilesetColors = WzMap::TilesetColorScheme::TilesetArizona();
 		break;
-	case TILESET_URBAN:
+	case TILE_SET::URBAN:
 		previewColorScheme.tilesetColors = WzMap::TilesetColorScheme::TilesetUrban();
 		break;
-	case TILESET_ROCKIES:
+	case TILE_SET::ROCKIES:
 		previewColorScheme.tilesetColors = WzMap::TilesetColorScheme::TilesetRockies();
 		break;
 	default:
@@ -1549,7 +1551,7 @@ static void addGameOptions()
 	optionsList->attach(allianceChoice);
 	allianceChoice->id = MULTIOP_ALLIANCES;
 	allianceChoice->setLabel(_("Alliances"));
-	addMultiButton(allianceChoice, NO_ALLIANCES, Image(FrontImages, IMAGE_NOALLI), Image(FrontImages, IMAGE_NOALLI_HI),
+	addMultiButton(allianceChoice, ALLIANCE_TYPE::FFA, Image(FrontImages, IMAGE_NOALLI), Image(FrontImages, IMAGE_NOALLI_HI),
 	               _("No Alliances"));
 	addMultiButton(allianceChoice, ALLIANCES, Image(FrontImages, IMAGE_ALLI), Image(FrontImages, IMAGE_ALLI_HI),
 	               _("Allow Alliances"));
@@ -2240,6 +2242,7 @@ public:
 };
 
 #include <set>
+#include <utility>
 
 static std::set<uint32_t> validPlayerIdxTargetsForPlayerPositionMove(uint32_t player)
 {

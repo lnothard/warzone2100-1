@@ -24,30 +24,20 @@
  * Alex W. McLean
 */
 
-#include <cstring>
 
 // --------------------------------------------------------------------
 #include "lib/framework/wzapp.h"
 #include "lib/framework/wzconfig.h"
 #include "lib/framework/math_ext.h"
-#include "lib/framework/strres.h"
 #include "lib/gamelib/gtime.h"
 #include "console.h"
 #include "scores.h"
 #include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/ivis_opengl/pietypes.h"
 #include "lib/ivis_opengl/piefunc.h"
-#include "lib/ivis_opengl/piemode.h"
 #include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/piepalette.h"
-#include "objects.h"
-#include "basedef.h"
-#include "hci.h"
-#include "miscimd.h"
-#include "lib/ivis_opengl/piematrix.h"
-#include "display3d.h"
 #include "mission.h"
-#include "game.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
 #include "intimage.h"
@@ -55,6 +45,7 @@
 #include "activity.h"
 #include "multistat.h"
 #include "clparse.h"
+#include "objmem.h"
 
 #include <algorithm>
 
@@ -185,7 +176,6 @@ static UDWORD dispST;
 static bool bDispStarted = false;
 static char text[255];
 static char text2[255];
-extern bool Cheated;
 
 // --------------------------------------------------------------------
 /* Initialise the mission data info - done before each mission */
@@ -577,7 +567,7 @@ void stdOutGameSummary(UDWORD realTimeThrottleSeconds, bool flush_output /* = tr
 	}
 	fprintf(stdout, "Game State [gameTime: %" PRIu32 "]\n", gameTime);
 	fprintf(stdout, "--------------------------------------------------------------------------------------\n");
-	if (ActivityManager::instance().getCurrentGameMode() != ActivitySink::GameMode::CAMPAIGN)
+	if (ActivityManager::instance().getCurrentGameMode() != GAME_MODE::CAMPAIGN)
 	{
 		fprintf(stdout, " # | Player Name | Extrct Pwr | Units Killed | Structs (F/R) | Units Alive |  Power  |\n");
 		fprintf(stdout, "-- | ----------- | ---------- | ------------ | ------------- | ----------- | ------- |\n");
@@ -597,22 +587,22 @@ void stdOutGameSummary(UDWORD realTimeThrottleSeconds, bool flush_output /* = tr
 			uint32_t numFactories = 0;
 			uint32_t numResearch = 0;
 			uint32_t numFactoriesThatCanProduceConstructionUnits = 0;
-			for (Structure* psStruct = apsStructLists[n]; psStruct; psStruct = psStruct->psNext, numStructs++)
+			for (auto& psStruct : apsStructLists[n])
 			{
-				if (psStruct->getState() != STRUCTURE_STATE::BUILT || psStruct->died != 0)
+				if (psStruct->getState() != STRUCTURE_STATE::BUILT || psStruct->damageManager->isDead() != 0)
 				{
 					continue; // ignore structures that aren't completely built, or are "dead"
 				}
-				if (StructIsFactory(psStruct))
+				if (StructIsFactory(psStruct.get()))
 				{
 					numFactories++;
-					if (psStruct->getStats().type == STRUCTURE_TYPE::FACTORY ||
-						psStruct->getStats().type == STRUCTURE_TYPE::CYBORG_FACTORY)
+					if (psStruct->getStats()->type == STRUCTURE_TYPE::FACTORY ||
+						psStruct->getStats()->type == STRUCTURE_TYPE::CYBORG_FACTORY)
 					{
 						numFactoriesThatCanProduceConstructionUnits++;
 					}
 				}
-				else if (psStruct->getStats().type == STRUCTURE_TYPE::RESEARCH)
+				else if (psStruct->getStats()->type == STRUCTURE_TYPE::RESEARCH)
 				{
 					numResearch++;
 				}

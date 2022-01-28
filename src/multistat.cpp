@@ -39,6 +39,7 @@
 #include "multistat.h"
 #include "urlrequest.h"
 #include "stdinreader.h"
+#include "scores.h"
 
 #include <memory>
 #include <utility>
@@ -440,7 +441,7 @@ void updateMultiStatsLoses()
 	++playerStats[selectedPlayer].losses;
 }
 
-static inline unsigned calcObjectCost(const PlayerOwnedObject * psObj)
+static inline unsigned calcObjectCost(const BaseObject * psObj)
 {
 	switch (psObj->type)
 	{
@@ -449,8 +450,8 @@ static inline unsigned calcObjectCost(const PlayerOwnedObject * psObj)
 	case OBJ_STRUCTURE:
 		{
 			auto psStruct = static_cast<const Structure*>(psObj);
-			ASSERT_OR_RETURN(0, psStruct->pStructureType != nullptr, "pStructureType is null?");
-			return psStruct->pStructureType->power_cost;
+			ASSERT_OR_RETURN(0, psStruct->getStats() != nullptr, "pStructureType is null?");
+			return psStruct->getStats()->power_cost;
 		}
 	case OBJ_FEATURE:
 		return 0;
@@ -462,19 +463,19 @@ static inline unsigned calcObjectCost(const PlayerOwnedObject * psObj)
 }
 
 // update kills
-void updateMultiStatsKills(PlayerOwnedObject * psKilled, unsigned player)
+void updateMultiStatsKills(BaseObject * psKilled, unsigned player)
 {
   if (player >= MAX_PLAYERS){
     return;
   }
   if (NetPlay.bComms) {
     // killing scavengers does not count in MP games
-    if (psKilled != nullptr && psKilled->getPlayer() != scavengerSlot()) {
+    if (psKilled != nullptr && psKilled->playerManager->getPlayer() != scavengerSlot()) {
       // FIXME: Why in the world are we using two different structs for stats when we can use only one?
       ++playerStats[player].totalKills;
       ++playerStats[player].recentKills;
-      if (psKilled->getPlayer() < MAX_PLAYERS) {
-        playerStats[psKilled->getPlayer()].recentPowerLost += static_cast<uint64_t>(calcObjectCost(psKilled));
+      if (psKilled->playerManager->getPlayer() < MAX_PLAYERS) {
+        playerStats[psKilled->playerManager->getPlayer()].recentPowerLost += static_cast<uint64_t>(calcObjectCost(psKilled));
       }
     }
   }

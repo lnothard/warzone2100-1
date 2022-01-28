@@ -235,7 +235,7 @@ void clearPlayer(UDWORD player, bool quietly)
 		psNext = psStruct->psNext;
 
 		// FIXME: look why destroyStruct() doesn't put back the feature like removeStruct() does
-		if (quietly || psStruct->pStructureType->type == REF_RESOURCE_EXTRACTOR) // don't show effects
+		if (quietly || psStruct->getStats()->type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR) // don't show effects
 		{
 			removeStruct(psStruct, true);
 		}
@@ -253,11 +253,7 @@ void clearPlayer(UDWORD player, bool quietly)
 static void resetMultiVisibility(UDWORD player)
 {
 	UDWORD owned;
-	Droid* pDroid;
-	Structure* pStruct;
-
-	if (player >= MAX_PLAYERS)
-	{
+	if (player >= MAX_PLAYERS) {
 		return;
 	}
 
@@ -266,15 +262,15 @@ static void resetMultiVisibility(UDWORD player)
 		if (owned != player) // done reset own stuff..
 		{
 			//droids
-			for (pDroid = apsDroidLists[owned]; pDroid; pDroid = pDroid->psNext)
+			for (auto& pDroid : apsDroidLists[owned])
 			{
-				pDroid->visible[player] = false;
+				pDroid.setVisibleToPlayer(player, false);
 			}
 
 			//structures
-			for (pStruct = apsStructLists[owned]; pStruct; pStruct = pStruct->psNext)
+			for (auto& pStruct : apsStructLists[owned])
 			{
-				pStruct->visible[player] = false;
+				pStruct->setVisibleToPlayer(player, false);
 			}
 		}
 	}
@@ -297,7 +293,7 @@ static void addConsolePlayerLeftMessage(unsigned playerIndex)
 	{
 		char buf[256];
 		ssprintf(buf, _("%s has Left the Game"), getPlayerName(playerIndex));
-		addConsoleMessage(buf, DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(buf, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 	}
 }
 
@@ -364,7 +360,7 @@ bool MultiPlayerLeave(UDWORD playerIndex)
 		char buf[256];
 
 		ssprintf(buf, _("File transfer has been aborted for %d."), playerIndex);
-		addConsoleMessage(buf, DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(buf, CONSOLE_TEXT_JUSTIFICATION::CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 		debug(LOG_INFO, "=== File has been aborted for %d ===", playerIndex);
 		NetPlay.players[playerIndex].wzFiles->clear();
 	}
@@ -501,7 +497,7 @@ bool recvDataCheck(NETQUEUE queue)
 			snprintf(msg, sizeof(msg), _("%s (%u) has an incompatible mod, and has been kicked."),
 			         getPlayerName(player), player);
 			sendInGameSystemMessage(msg);
-			addConsoleMessage(msg, LEFT_JUSTIFY, NOTIFY_MESSAGE);
+			addConsoleMessage(msg, LEFT, NOTIFY_MESSAGE);
 
 			kickPlayer(player, _("Your data doesn't match the host's!"), ERROR_WRONGDATA);
 			debug(LOG_ERROR, "%s (%u) has an incompatible mod. ([%d] got %x, expected %x)", getPlayerName(player),
@@ -541,7 +537,7 @@ void setupNewPlayer(UDWORD player)
 	{
 		char buf[255];
 		ssprintf(buf, _("%s is joining the game"), getPlayerName(player));
-		addConsoleMessage(buf, DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(buf, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 	}
 }
 
@@ -552,22 +548,22 @@ void ShowMOTD()
 {
 	char buf[250] = {'\0'};
 	// when HOST joins the game, show server MOTD message first
-	addConsoleMessage(_("Server message:"), DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
+	addConsoleMessage(_("Server message:"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, NOTIFY_MESSAGE);
 	if (NetPlay.MOTD)
 	{
-		addConsoleMessage(NetPlay.MOTD, DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
+		addConsoleMessage(NetPlay.MOTD, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, NOTIFY_MESSAGE);
 	}
 	else
 	{
 		ssprintf(buf, "%s", "Null message");
-		addConsoleMessage(buf, DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
+		addConsoleMessage(buf, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, NOTIFY_MESSAGE);
 	}
 	if (NetPlay.HaveUpgrade)
 	{
 		audio_PlayBuildFailedOnce();
 		ssprintf(buf, "%s", _(
 			         "There is an update to the game, please visit https://wz2100.net to download new version."));
-		addConsoleMessage(buf, DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
+		addConsoleMessage(buf, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, NOTIFY_MESSAGE);
 	}
 	else
 	{

@@ -82,6 +82,7 @@
 #include "warzoneconfig.h"
 #include "stdinreader.h"
 #include "spectatorwidgets.h"
+#include "objmem.h"
 
 // globals.
 bool bMultiPlayer = false; // true when more than 1 player.
@@ -411,13 +412,13 @@ Droid* IdToMissionDroid(UDWORD id, UDWORD player)
 {
 	if (player == ANYPLAYER)
 	{
-		for (const auto& d : mission.apsDroidLists)
+		for (auto& d : mission.apsDroidLists)
 		{
-			for (auto droid : d)
+			for (auto& droid : d)
 			{
-				if (droid->getId() == id)
+				if (droid.getId() == id)
 				{
-					return droid;
+					return &droid;
 				}
 			}
 		}
@@ -426,7 +427,7 @@ Droid* IdToMissionDroid(UDWORD id, UDWORD player)
 	{
 		for (auto d : mission.apsDroidLists[player])
 		{
-			if (d->getId() == id)
+			if (d.getId() == id)
 			{
 				return d;
 			}
@@ -494,7 +495,7 @@ DroidTemplate* IdToTemplate(unsigned tempId, unsigned player)
 
 /////////////////////////////////////////////////////////////////////////////////
 //  Returns a pointer to base object, given an id and optionally a player.
-PlayerOwnedObject * IdToPointer(unsigned id, unsigned player)
+BaseObject * IdToPointer(unsigned id, unsigned player)
 {
 	Droid* pD;
 	Structure* pS;
@@ -503,19 +504,19 @@ PlayerOwnedObject * IdToPointer(unsigned id, unsigned player)
 
 	pD = IdToDroid(id, player);
 	if (pD) {
-		return (PlayerOwnedObject *)pD;
+		return (BaseObject *)pD;
 	}
 
 	// structures
 	pS = IdToStruct(id, player);
 	if (pS) {
-		return (PlayerOwnedObject *)pS;
+		return (BaseObject *)pS;
 	}
 
 	// features
 	pF = IdToFeature(id, player);
 	if (pF) {
-		return (PlayerOwnedObject *)pF;
+		return (BaseObject *)pF;
 	}
 
 	return nullptr;
@@ -625,7 +626,7 @@ Vector3i cameraToHome(unsigned player, bool scroll)
 	Structure* psBuilding = nullptr;
 
 	if (player < MAX_PLAYERS) {
-		for (psBuilding = apsStructLists[player]; psBuilding && (psBuilding->pStructureType->type != STRUCTURE_TYPE::HQ); psBuilding
+		for (psBuilding = apsStructLists[player]; psBuilding && (psBuilding->getStats()->type != STRUCTURE_TYPE::HQ); psBuilding
 		     = psBuilding->psNext)
 		{
 		}
@@ -638,13 +639,13 @@ Vector3i cameraToHome(unsigned player, bool scroll)
 	}
 	else if ((player < MAX_PLAYERS) && apsDroidLists[player]) // or first droid
 	{
-		x = map_coord(apsDroidLists[player]->pos.x);
-		y = map_coord(apsDroidLists[player]->pos.y);
+		x = map_coord(apsDroidLists[player].pos.x);
+		y = map_coord(apsDroidLists[player].pos.y);
 	}
 	else if ((player < MAX_PLAYERS) && apsStructLists[player]) // center on first struct
 	{
-		x = map_coord(apsStructLists[player]->pos.x);
-		y = map_coord(apsStructLists[player]->pos.y);
+		x = map_coord(apsStructLists[player].pos.x);
+		y = map_coord(apsStructLists[player].pos.y);
 	}
 	else //or map center.
 	{
@@ -672,7 +673,7 @@ Vector3i cameraToHome(unsigned player, bool scroll)
 static void recvSyncRequest(NETQUEUE queue)
 {
 	int32_t req_id, x, y, obj_id, obj_id2, player_id, player_id2;
-  PlayerOwnedObject *psObj = nullptr, *psObj2 = nullptr;
+  BaseObject *psObj = nullptr, *psObj2 = nullptr;
 
 	NETbeginDecode(queue, GAME_SYNC_REQUEST);
 	NETint32_t(&req_id);
@@ -696,12 +697,12 @@ static void recvSyncRequest(NETQUEUE queue)
 	triggerEventSyncRequest(queue.index, req_id, x, y, psObj, psObj2);
 }
 
-static void sendObj(const PlayerOwnedObject * psObj)
+static void sendObj(const BaseObject * psObj)
 {
 	if (psObj)
 	{
 		int32_t obj_id = psObj->getId();
-		int32_t player = psObj->getPlayer();
+		int32_t player = psObj->playerManager->getPlayer();
 		NETint32_t(&obj_id);
 		NETint32_t(&player);
 	}
@@ -713,7 +714,7 @@ static void sendObj(const PlayerOwnedObject * psObj)
 	}
 }
 
-void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const PlayerOwnedObject * psObj, const PlayerOwnedObject * psObj2)
+void sendSyncRequest(int32_t req_id, int32_t x, int32_t y, const BaseObject * psObj, const BaseObject * psObj2)
 {
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_SYNC_REQUEST);
 	NETint32_t(&req_id);
@@ -1463,7 +1464,7 @@ bool sendResearchStatus(const Structure* psBuilding, uint32_t index, uint8_t pla
 	// If we know the building researching it then send its ID
 	if (psBuilding)
 	{
-		uint32_t buildingID = psBuilding->id;
+		uint32_t buildingID = psBuilding->getId();
 		NETuint32_t(&buildingID);
 	}
 	else
@@ -1487,7 +1488,7 @@ Structure* findResearchingFacilityByResearchIndex(unsigned player, unsigned inde
 	// Go through the structs to find the one doing this topic
 	for (auto& psBuilding : apsStructLists[player])
 	{
-		if (psBuilding->getStats().type == STRUCTURE_TYPE::RESEARCH
+		if (psBuilding->getStats()->type == STRUCTURE_TYPE::RESEARCH
 			&& (dynamic_cast<ResearchFacility*>(psBuilding.get()))->psSubject
 			&& (dynamic_cast<ResearchFacility*>(psBuilding.get()))->psSubject->ref - STAT_RESEARCH == index)
 		{
@@ -1546,9 +1547,9 @@ bool recvResearchStatus(NETQUEUE queue)
 
 		// Set that facility to research
 		if (psBuilding) {
-			if (psBuilding->getStats().type != STRUCTURE_TYPE::RESEARCH) {
+			if (psBuilding->getStats()->type != STRUCTURE_TYPE::RESEARCH) {
 				debug(LOG_INFO, "Structure is not a research facility: \"%s\".",
-				      psBuilding->getStats().id.toUtf8().c_str());
+				      psBuilding->getStats()->id.toUtf8().c_str());
 				return false;
 			}
 
@@ -1607,9 +1608,9 @@ bool recvResearchStatus(NETQUEUE queue)
 
 		// Stop the facility doing any research
 		if (psBuilding) {
-			if (psBuilding->getStats().type != STRUCTURE_TYPE::RESEARCH) {
+			if (psBuilding->getStats()->type != STRUCTURE_TYPE::RESEARCH) {
 				debug(LOG_INFO, "Structure is not a research facility: \"%s\".",
-				      psBuilding->getStats().id.toUtf8().c_str());
+				      psBuilding->getStats()->id.toUtf8().c_str());
 				return false;
 			}
 
@@ -1858,7 +1859,7 @@ bool recvDestroyFeature(NETQUEUE queue)
 		return false;
 	}
 
-	debug(LOG_FEATURE, "p%d feature id %d destroyed (%s)", pF->getPlayer(),
+	debug(LOG_FEATURE, "p%d feature id %d destroyed (%s)", pF->playerManager->getPlayer(),
         pF->getId(), getStatsName(pF->getStats()));
 	// Remove the feature locally
 	turnOffMultiMsg(true);
@@ -1882,7 +1883,7 @@ bool recvMapFileRequested(NETQUEUE queue)
 	Sha256 hash;
 	hash.setZero();
 	NETbeginDecode(queue, NET_FILE_REQUESTED);
-	NETbin(hash.bytes, hash.Bytes);
+	NETbin(hash.bytes, Sha256::Bytes);
 	NETend();
 
 	auto files = NetPlay.players[player].wzFiles;
@@ -2316,7 +2317,7 @@ bool makePlayerSpectator(uint32_t playerIndex, bool removeAllStructs, bool quiet
 		std::vector<Structure*> hqStructs;
 		for (auto& psStruct : apsStructLists[playerIndex])
 		{
-			if (STRUCTURE_TYPE::HQ == psStruct->getStats().type) {
+			if (STRUCTURE_TYPE::HQ == psStruct->getStats()->type) {
 				hqStructs.push_back(psStruct.get());
 			}
 		}
@@ -2352,13 +2353,13 @@ bool makePlayerSpectator(uint32_t playerIndex, bool removeAllStructs, bool quiet
 		for (auto& psStruct : psStructs) // delete structs
 		{
 			if (removeAllStructs
-				|| psStruct->getStats().type == STRUCTURE_TYPE::POWER_GEN
-				|| psStruct->getStats().type == STRUCTURE_TYPE::RESEARCH
-				|| psStruct->getStats().type == STRUCTURE_TYPE::COMMAND_CONTROL
+				|| psStruct->getStats()->type == STRUCTURE_TYPE::POWER_GEN
+				|| psStruct->getStats()->type == STRUCTURE_TYPE::RESEARCH
+				|| psStruct->getStats()->type == STRUCTURE_TYPE::COMMAND_CONTROL
 				|| StructIsFactory(psStruct.get()))
 			{
 				// FIXME: look why destroyStruct() doesn't put back the feature like removeStruct() does
-				if (quietly || psStruct->getStats().type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR) // don't show effects
+				if (quietly || psStruct->getStats()->type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR) // don't show effects
 				{
 					removeStruct(psStruct.get(), true);
 				}

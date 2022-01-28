@@ -27,7 +27,6 @@
 #include "lib/framework/frame.h"
 
 #include <cstring>
-#include <physfs.h>
 
 #include "lib/framework/file.h"
 #include "lib/framework/stdio_ext.h"
@@ -43,9 +42,9 @@
 #include "warzoneconfig.h"
 #include "hci.h"//for font
 #include "loop.h"
-#include "design.h"
 #include "wrappers.h"
 #include "init.h" // For fileLoadBuffer
+#include "lib/ivis_opengl/textdraw.h"
 
 /***************************************************************************/
 /*
