@@ -10,15 +10,6 @@
 
 struct Weapon::Impl
 {
-  ~Impl() = default;
-  Impl() = default;
-
-  Impl(Impl const& rhs) = default;
-  Impl& operator=(Impl const& rhs) = default;
-
-  Impl(Impl&& rhs) = default;
-  Impl& operator=(Impl&& rhs) = default;
-
   std::shared_ptr<WeaponStats> stats;
   Rotation previousRotation {0, 0, 0};
   TARGET_ORIGIN origin = TARGET_ORIGIN::UNKNOWN;

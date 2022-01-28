@@ -21,13 +21,13 @@
 #ifndef __INCLUDED_SRC_SELECTION_H__
 #define __INCLUDED_SRC_SELECTION_H__
 
-enum SELECTION_CLASS
+enum class SELECTION_CLASS
 {
 	DS_ALL_UNITS,
 	DS_BY_TYPE
 };
 
-enum SELECTIONTYPE
+enum class SELECTIONTYPE
 {
 	DST_UNUSED,
 	DST_VTOL,
@@ -51,10 +51,10 @@ enum SELECTIONTYPE
 	DST_ALL_LAND_MILDLY_OR_NOT_DAMAGED,
 };
 
-unsigned int selDroidSelection(unsigned unsigned player, SELECTION_CLASS droidClass, SELECTIONTYPE droidType,
+unsigned int selDroidSelection(unsigned player, SELECTION_CLASS droidClass, SELECTIONTYPE droidType,
                                bool bOnScreen);
-unsigned int selDroidDeselect(unsigned unsigned player);
-unsigned int selNumSelected(unsigned unsigned player);
+unsigned int selDroidDeselect(unsigned player);
+unsigned int selNumSelected(unsigned player);
 void selNextUnassignedUnit();
 void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump);
 void selNextSpecifiedUnit(DROID_TYPE unitType);

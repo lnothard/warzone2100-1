@@ -67,12 +67,11 @@ static unsigned selSelectUnitsIf(unsigned player, T condition, bool onlyOnScreen
 		bool shouldSelect = (!onlyOnScreen || objectOnScreen(&psDroid, 0)) &&
 			condition(&psDroid);
 		count += shouldSelect;
-		if (shouldSelect && !psDroid.selected && !psDroid.flags.test(OBJECT_FLAG::UNSELECTABLE))
-		{
+		if (shouldSelect && !psDroid.damageManager->isSelected() &&
+        !psDroid.testFlag(static_cast<size_t>(OBJECT_FLAG::UNSELECTABLE))) {
 			SelectDroid(&psDroid);
 		}
-		else if (!shouldSelect && psDroid.selected)
-		{
+		else if (!shouldSelect && psDroid.damageManager->isSelected()) {
 			DeSelectDroid(&psDroid);
 		}
 	}
@@ -87,9 +86,9 @@ static unsigned selSelectUnitsIf(unsigned player, T condition, U value, bool onl
 	                        onlyOnScreen);
 }
 
-static bool selTransporter(Droid* droid)
+static bool selTransporter(Droid const* droid)
 {
-	return isTransporter(droid);
+	return isTransporter(*droid);
 }
 
 static bool selTrue(Droid* droid)
@@ -104,16 +103,16 @@ static bool selProp(Droid* droid, PROPULSION_TYPE prop)
 
 static bool selPropArmed(Droid* droid, PROPULSION_TYPE prop)
 {
-	return asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType == prop && vtolFull(droid) && !
-		selTransporter(droid);
+	return asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType == prop && 
+         vtolFull(*droid) && !selTransporter(droid);
 }
 
-static bool selType(Droid* droid, DROID_TYPE type)
+static bool selType(Droid const* droid, DROID_TYPE type)
 {
-	return droid->type == type;
+	return droid->getType() == type;
 }
 
-static bool selCombat(Droid* droid)
+static bool selCombat(Droid const* droid)
 {
 	return droid->asWeaps[0].nStat > 0 && !selTransporter(droid);
 }
@@ -134,9 +133,11 @@ static bool selCombatCyborg(Droid* droid)
 	return droid->asWeaps[0].nStat > 0 && type == PROPULSION_TYPE::LEGGED;
 }
 
-static bool selDamaged(Droid* droid)
+static bool selDamaged(Droid const* droid)
 {
-	return PERCENT(droid->getHp(), droid->getOriginalHp()) < REPAIRLEV_LOW && !selTransporter(droid);
+	return PERCENT(droid->damageManager->getHp(), 
+                 droid->damageManager->getOriginalHp()) < REPAIRLEV_LOW && 
+         !selTransporter(droid);
 }
 
 static bool selNoGroup(Droid* psDroid)
@@ -155,7 +156,7 @@ static bool selCombatLandMildlyOrNotDamaged(Droid* psDroid)
 unsigned selDroidDeselect(unsigned player)
 {
 	unsigned count = 0;
-	if (player >= MAX_PLAYERS) { return 0; }
+	if (player >= MAX_PLAYERS) return 0; 
 
 	for (auto& psDroid : apsDroidLists[player])
 	{
@@ -254,18 +255,15 @@ static unsigned int selSelectAllSame(unsigned unsigned player, bool bOnScreen)
 	if (player >= MAX_PLAYERS) { return 0; }
 
 	// find out which units will need to be compared to which component combinations
-	for (Droid* psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[player])
 	{
-		if (bOnScreen && !objectOnScreen(psDroid, 0))
-		{
+		if (bOnScreen && !objectOnScreen(&psDroid, 0)) {
 			excluded.push_back(i);
 		}
-		else if (psDroid->selected)
-		{
+		else if (psDroid.damageManager->isSelected()) {
 			excluded.push_back(i);
 			selected++;
-
-			componentsInCombinations(psDroid, true);
+			componentsInCombinations(&psDroid, true);
 		}
 		i++;
 	}
@@ -275,18 +273,15 @@ static unsigned int selSelectAllSame(unsigned unsigned player, bool bOnScreen)
 	{
 		// reset unit counter
 		i = 0;
-		for (Droid* psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[player])
 		{
-			if (excluded.empty() || *excluded.begin() != i)
-			{
-				if (componentsInCombinations(psDroid, false))
-				{
-					SelectDroid(psDroid);
+			if (excluded.empty() || *excluded.begin() != i) {
+				if (componentsInCombinations(&psDroid, false)) {
+					SelectDroid(&psDroid);
 					selected++;
 				}
 			}
-			else
-			{
+			else {
 				excluded.erase(excluded.begin());
 			}
 			i++;
@@ -305,28 +300,28 @@ void selNextSpecifiedUnit(DROID_TYPE unitType)
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "invalid selectedPlayer: %" PRIu32 "", selectedPlayer);
 
-	for (Droid* psCurr = apsDroidLists[selectedPlayer]; psCurr && !psResult; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsDroidLists[selectedPlayer])
 	{
     using enum DROID_TYPE;
 		//exceptions - as always...
 		bool bMatch = false;
 		if (unitType == CONSTRUCT)
 		{
-			if (psCurr->getType() == CONSTRUCT ||
-					psCurr->getType() == CYBORG_CONSTRUCT)
+			if (psCurr.getType() == CONSTRUCT ||
+					psCurr.getType() == CYBORG_CONSTRUCT)
 			{
 				bMatch = true;
 			}
 		}
 		else if (unitType == REPAIRER)
 		{
-			if (psCurr->getType() == REPAIRER ||
-					psCurr->getType() == CYBORG_REPAIR)
+			if (psCurr.getType() == REPAIRER ||
+					psCurr.getType() == CYBORG_REPAIR)
 			{
 				bMatch = true;
 			}
 		}
-		else if (psCurr->getType() == unitType)
+		else if (psCurr.getType() == unitType)
 		{
 			bMatch = true;
 		}
@@ -335,10 +330,10 @@ void selNextSpecifiedUnit(DROID_TYPE unitType)
 			/* Always store away the first one we find */
 			if (!psFirst)
 			{
-				psFirst = psCurr;
+				psFirst = &psCurr;
 			}
 
-			if (psCurr == psOldRD)
+			if (&psCurr == psOldRD)
 			{
 				bLaterInList = true;
 			}
@@ -346,13 +341,13 @@ void selNextSpecifiedUnit(DROID_TYPE unitType)
 			/* Nothing previously found... */
 			if (!psOldRD)
 			{
-				psResult = psCurr;
+				psResult = &psCurr;
 			}
 
 			/* Only select is this isn't the old one and it's further on in list */
-			else if (psCurr != psOldRD && bLaterInList)
+			else if (&psCurr != psOldRD && bLaterInList)
 			{
-				psResult = psCurr;
+				psResult = &psCurr;
 			}
 		}
 	}
@@ -363,8 +358,7 @@ void selNextSpecifiedUnit(DROID_TYPE unitType)
 		psResult = psFirst;
 	}
 
-	if (psResult && !psResult->died)
-	{
+	if (psResult && !psResult->damageManager->isDead()) {
 		selDroidDeselect(selectedPlayer);
 		SelectDroid(psResult);
 		if (getWarCamStatus())
@@ -412,18 +406,18 @@ void selNextUnassignedUnit()
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "invalid selectedPlayer: %" PRIu32 "", selectedPlayer);
 
-	for (Droid* psCurr = apsDroidLists[selectedPlayer]; psCurr && !psResult; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsDroidLists[selectedPlayer])
 	{
 		/* Only look at unselected ones */
-		if (psCurr->group == UBYTE_MAX)
+		if (psCurr.group == UBYTE_MAX)
 		{
 			/* Keep a record of first one */
 			if (!psFirst)
 			{
-				psFirst = psCurr;
+				psFirst = &psCurr;
 			}
 
-			if (psCurr == psOldNS)
+			if (&psCurr == psOldNS)
 			{
 				bLaterInList = true;
 			}
@@ -431,13 +425,13 @@ void selNextUnassignedUnit()
 			/* First one...? */
 			if (!psOldNS)
 			{
-				psResult = psCurr;
+				psResult = &psCurr;
 			}
 
 			/* Dont choose same one again */
-			else if (psCurr != psOldNS && bLaterInList)
+			else if (&psCurr != psOldNS && bLaterInList)
 			{
-				psResult = psCurr;
+				psResult = &psCurr;
 			}
 		}
 	}
@@ -448,7 +442,7 @@ void selNextUnassignedUnit()
 		psResult = psFirst;
 	}
 
-	if (psResult && !psResult->died)
+	if (psResult && !psResult->damageManager->isDead())
 	{
 		selDroidDeselect(selectedPlayer);
 		SelectDroid(psResult);
@@ -490,15 +484,15 @@ void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 		if (psCurr->getStats()->type == structType &&
         psCurr->getState() == STRUCTURE_STATE::BUILT) {
 			if (!psFirst) {
-				psFirst = psCurr;
+				psFirst = psCurr.get();
 			}
 			if (psCurr->damageManager->isSelected()) {
 				bLaterInList = true;
-				psOldStruct = psCurr;
+				psOldStruct = psCurr.get();
 			}
 			else if (bLaterInList)
 			{
-				psResult = psCurr;
+				psResult = psCurr.get();
 			}
 		}
 	}
@@ -530,7 +524,7 @@ void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 	else
 	{
 		// Can't find required building
-		addConsoleMessage(_("Cannot find required building!"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Cannot find required building!"), CONSOLE_TEXT_JUSTIFICATION::LEFT, SYSTEM_MESSAGE);
 	}
 }
 
@@ -563,12 +557,12 @@ void selCommander(int n)
 		if (droidIsCommanderNum(&psCurr, n)) {
 			if (!psCurr.damageManager->isSelected() && !psCurr.testFlag(static_cast<size_t>(OBJECT_FLAG::UNSELECTABLE))) {
 				clearSelection();
-				psCurr.selected = true;
+				psCurr.damageManager->setSelected(true);
 			}
-			else if (!psCurr.flags.test(OBJECT_FLAG_UNSELECTABLE))
+			else if (!psCurr.testFlag(static_cast<size_t>(OBJECT_FLAG::UNSELECTABLE)))
 			{
 				clearSelection();
-				psCurr.selected = true;
+				psCurr.damageManager->setSelected(true);
 
 				// this horrible bit of code is taken from activateGroupAndMove
 				// and sets the camera position to that of the commander
@@ -589,7 +583,6 @@ void selCommander(int n)
 	}
 }
 
-// ---------------------------------------------------------------------
 /*
    Selects the units of a given player according to given criteria.
    It is also possible to request whether the units be onscreen or not.
@@ -604,67 +597,67 @@ unsigned selDroidSelection(unsigned player, SELECTION_CLASS droidClass, SELECTIO
 	/* Establish the class of selection */
 	switch (droidClass) {
     using enum DROID_TYPE;
-	case DS_ALL_UNITS:
+	case SELECTION_CLASS::DS_ALL_UNITS:
 		retVal = selSelectUnitsIf(player, selTrue, bOnScreen);
 		break;
-	case DS_BY_TYPE:
+  case SELECTION_CLASS::DS_BY_TYPE:
 		switch (droidType)
 		{
-		case DST_VTOL:
+		case SELECTIONTYPE::DST_VTOL:
 			retVal = selSelectUnitsIf(player, selProp, PROPULSION_TYPE::LIFT, bOnScreen);
 			break;
-		case DST_VTOL_ARMED:
+		case SELECTIONTYPE::DST_VTOL_ARMED:
 			retVal = selSelectUnitsIf(player, selPropArmed, PROPULSION_TYPE::LIFT, bOnScreen);
 			break;
-		case DST_HOVER:
+		case SELECTIONTYPE::DST_HOVER:
 			retVal = selSelectUnitsIf(player, selProp, PROPULSION_TYPE::HOVER, bOnScreen);
 			break;
-		case DST_WHEELED:
+		case SELECTIONTYPE::DST_WHEELED:
 			retVal = selSelectUnitsIf(player, selProp, PROPULSION_TYPE::WHEELED, bOnScreen);
 			break;
-		case DST_TRACKED:
+		case SELECTIONTYPE::DST_TRACKED:
 			retVal = selSelectUnitsIf(player, selProp, PROPULSION_TYPE::TRACKED, bOnScreen);
 			break;
-		case DST_HALF_TRACKED:
+		case SELECTIONTYPE::DST_HALF_TRACKED:
 			retVal = selSelectUnitsIf(player, selProp, PROPULSION_TYPE::HALF_TRACKED, bOnScreen);
 			break;
-		case DST_CYBORG:
+		case SELECTIONTYPE::DST_CYBORG:
 			retVal = selSelectUnitsIf(player, selProp, PROPULSION_TYPE::LEGGED, bOnScreen);
 			break;
-		case DST_ENGINEER:
+		case SELECTIONTYPE::DST_ENGINEER:
 			retVal = selSelectUnitsIf(player, selType, CYBORG_CONSTRUCT, bOnScreen);
 			break;
-		case DST_MECHANIC:
+		case SELECTIONTYPE::DST_MECHANIC:
 			retVal = selSelectUnitsIf(player, selType, CYBORG_REPAIR, bOnScreen);
 			break;
-		case DST_TRANSPORTER:
+		case SELECTIONTYPE::DST_TRANSPORTER:
 			retVal = selSelectUnitsIf(player, selTransporter, bOnScreen);
 			break;
-		case DST_REPAIR_TANK:
+		case SELECTIONTYPE::DST_REPAIR_TANK:
 			retVal = selSelectUnitsIf(player, selType, REPAIRER, bOnScreen);
 			break;
-		case DST_SENSOR:
+		case SELECTIONTYPE::DST_SENSOR:
 			retVal = selSelectUnitsIf(player, selType, SENSOR, bOnScreen);
 			break;
-		case DST_TRUCK:
+		case SELECTIONTYPE::DST_TRUCK:
 			retVal = selSelectUnitsIf(player, selType, CONSTRUCT, bOnScreen);
 			break;
-		case DST_ALL_COMBAT:
+		case SELECTIONTYPE::DST_ALL_COMBAT:
 			retVal = selSelectUnitsIf(player, selCombat, bOnScreen);
 			break;
-		case DST_ALL_COMBAT_LAND:
+		case SELECTIONTYPE::DST_ALL_COMBAT_LAND:
 			retVal = selSelectUnitsIf(player, selCombatLand, bOnScreen);
 			break;
-		case DST_ALL_COMBAT_CYBORG:
+		case SELECTIONTYPE::DST_ALL_COMBAT_CYBORG:
 			retVal = selSelectUnitsIf(player, selCombatCyborg, bOnScreen);
 			break;
-		case DST_ALL_DAMAGED:
+		case SELECTIONTYPE::DST_ALL_DAMAGED:
 			retVal = selSelectUnitsIf(player, selDamaged, bOnScreen);
 			break;
-		case DST_ALL_SAME:
+		case SELECTIONTYPE::DST_ALL_SAME:
 			retVal = selSelectAllSame(player, bOnScreen);
 			break;
-		case DST_ALL_LAND_MILDLY_OR_NOT_DAMAGED:
+		case SELECTIONTYPE::DST_ALL_LAND_MILDLY_OR_NOT_DAMAGED:
 			retVal = selSelectUnitsIf(player, selCombatLandMildlyOrNotDamaged, bOnScreen);
 			break;
 		default:

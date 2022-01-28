@@ -167,7 +167,7 @@ static bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, 
 	}
 
 	/* if I am a multi-turret droid */
-	if (psDroid->getWeapons()[0].nStat == 0) {
+	if (numWeapons(*psDroid) > 1) {
 		return false;
 	}
 
@@ -235,7 +235,7 @@ static bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, 
 //}
 
 /* returns true if on target */
-bool actionTargetTurret(BaseObject * psAttacker, BaseObject * psTarget, Weapon* psWeapon)
+bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* psWeapon)
 {
   int rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
   int pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;

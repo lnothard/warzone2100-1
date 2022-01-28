@@ -27,9 +27,8 @@
 #include "frame.h"
 #include "wztime.h"
 
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
+#include <cstring>
+#include <ctime>
 #include "string_ext.h"
 #include "wzapp.h"
 #include <map>
@@ -51,7 +50,7 @@
 # ifndef _POSIX_SOURCE
 #  define _POSIX_SOURCE
 # endif
-# include <stdio.h>
+# include <cstdio>
 #endif
 
 #define MAX_LEN_LOG_LINE 512
@@ -206,7 +205,7 @@ void debug_callback_file(void **data, const char *outputBuffer)
 	}
 }
 
-static WzString replaceUsernameInPath(WzString path)
+static WzString replaceUsernameInPath(const WzString& path)
 {
 	// Some common forms:
 	// C:\Users\<USERNAME>\... (Windows Vista+)
@@ -236,7 +235,7 @@ char WZ_DBGFile[PATH_MAX] = {0};	//Used to save path of the created log file
 WzString WZDebugfilename;
 bool debug_callback_file_init(void **data)
 {
-	WzString * pFileName = (WzString *)*data;
+	auto * pFileName = (WzString *)*data;
 	ASSERT(pFileName, "Debug filename required");
 	WZDebugfilename = *pFileName;
 

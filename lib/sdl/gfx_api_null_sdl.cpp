@@ -26,10 +26,7 @@
 
 const auto minFrameDuration = std::chrono::nanoseconds(1000000000) / NULLBACKEND_VSYNC_MAX_FPS;
 
-sdl_Null_Impl::sdl_Null_Impl()
-{
-	// no-op
-}
+sdl_Null_Impl::sdl_Null_Impl() = default;
 
 void sdl_Null_Impl::swapWindow()
 {

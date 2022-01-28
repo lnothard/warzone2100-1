@@ -275,6 +275,8 @@ public:
   [[nodiscard]] Group const* getGroup() const;
   [[nodiscard]] ComponentStats const* getComponent(std::string const& compName) const;
   [[nodiscard]] unsigned getTimeActionStarted() const;
+  [[nodiscard]] Weapon const* getWeapon(int slot) const;
+  [[nodiscard]] std::array<Weapon, MAX_WEAPONS> const* getWeapons() const;
   [[nodiscard]] bool hasElectronicWeapon() const;
   [[nodiscard]] bool isVtol() const;
   [[nodiscard]] bool isFlying() const;

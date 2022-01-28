@@ -23,16 +23,13 @@ using json = nlohmann::json;
 #include "version.h"
 #include "updatemanager.h"
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
 #include <functional>
 
-#include "lib/framework/wzglobal.h" // required for config.h
+ // required for config.h
 #include "lib/framework/frame.h"
-#include "lib/framework/file.h"
 #include "lib/framework/physfs_ext.h"
 #include "lib/framework/wzapp.h"
-#include "lib/framework/wzstring.h"
 #include "urlhelpers.h"
 #include "urlrequest.h"
 #include "notifications.h"
@@ -40,7 +37,6 @@ using json = nlohmann::json;
 #include "3rdparty/propertymatcher.h"
 #include "wzpropertyproviders.h"
 
-#include <sodium.h>
 #include <re2/re2.h>
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) && !defined(__clang__) && ((4 < __GNUC__) || ((4 == __GNUC__) && (7 <= __GNUC_MINOR__)))

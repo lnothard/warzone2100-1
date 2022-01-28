@@ -26,8 +26,9 @@
 
 // See: https://gcc.gnu.org/onlinedocs/libstdc++/manual/ext_demangling.html
 
-#include <memory>
 #include <cxxabi.h>
+#include <memory>
+#include <string>
 
 inline std::string cxxDemangle(const char* typeName)
 {

@@ -591,7 +591,7 @@ namespace wzapi
 	class scripting_instance : public scripting_event_handling_interface
 	{
 	public:
-		scripting_instance(unsigned player, const std::string& scriptName, const std::string& scriptPath);
+		scripting_instance(unsigned player, std::string scriptName, std::string scriptPath);
 		~scripting_instance() override;
 
 	public:
@@ -1027,7 +1027,7 @@ namespace wzapi
 #define WZAPI_DEPRECATED
 #define WZAPI_AI_UNSAFE
 
-	std::string translate(WZAPI_PARAMS(std::string str));
+	std::string translate(WZAPI_PARAMS(std::string const& str));
 	int syncRandom(WZAPI_PARAMS(unsigned limit));
 	bool setAlliance(WZAPI_PARAMS(unsigned player1, unsigned player2, bool areAllies));
 	no_return_value sendAllianceRequest(WZAPI_PARAMS(unsigned player2));
@@ -1100,7 +1100,7 @@ namespace wzapi
 	bool pursueResearch(WZAPI_PARAMS(const Structure *psStruct, string_or_string_list research));
 	researchResults findResearch(WZAPI_PARAMS(std::string researchName, optional<unsigned> _player));
 	int distBetweenTwoPoints(WZAPI_PARAMS(int x1, int y1, int x2, int y2));
-	bool orderDroidLoc(WZAPI_PARAMS(Droid *psDroid, int order_, int x, int y));
+	bool orderDroidLoc(WZAPI_PARAMS(Droid *psDroid, ORDER_TYPE order_, int x, int y));
 	unsigned playerPower(WZAPI_PARAMS(unsigned player));
 	int queuedPower(WZAPI_PARAMS(unsigned player));
 	bool isStructureAvailable(WZAPI_PARAMS(std::string structureName, optional<unsigned> _player));
@@ -1110,11 +1110,11 @@ namespace wzapi
 	bool propulsionCanReach(WZAPI_PARAMS(std::string propulsionName, int x1, int y1, int x2, int y2));
 	int terrainType(WZAPI_PARAMS(int x, int y));
 	bool tileIsBurning(WZAPI_PARAMS(int x, int y));
-	bool orderDroidObj(WZAPI_PARAMS(Droid *psDroid, int _order, BaseObject *psObj));
+	bool orderDroidObj(WZAPI_PARAMS(Droid *psDroid, ORDER_TYPE _order, BaseObject *psObj));
 	bool buildDroid(WZAPI_PARAMS(Structure *psFactory, std::string templateName, string_or_string_list body,
                                string_or_string_list propulsion, reservedParam reserved1, reservedParam reserved2,
                                va_list<string_or_string_list> turrets));
-	returned_nullable_ptr<const Droid> addDroid(WZAPI_PARAMS(unsigned player, int x, int y, std::string templateName,
+	Droid const* addDroid(WZAPI_PARAMS(unsigned player, int x, int y, std::string const& templateName,
                                                            string_or_string_list body,
                                                            string_or_string_list propulsion, reservedParam reserved1,
                                                            reservedParam reserved2,
@@ -1128,11 +1128,11 @@ namespace wzapi
 	bool addDroidToTransporter(WZAPI_PARAMS(game_object_identifier transporter, game_object_identifier droid));
 	returned_nullable_ptr<const Feature> addFeature(WZAPI_PARAMS(std::string featureName, int x, int y))
 	MUTLIPLAY_UNSAFE;
-	bool componentAvailable(WZAPI_PARAMS(std::string componentType, optional<std::string> _componentName));
+	bool componentAvailable(WZAPI_PARAMS(std::string const& componentType, optional<std::string> _componentName));
 	bool isVTOL(WZAPI_PARAMS(const Droid *psDroid));
 	bool safeDest(WZAPI_PARAMS(unsigned player, int x, int y));
 	bool activateStructure(WZAPI_PARAMS(Structure *psStruct, optional<BaseObject *> _psTarget));
-	bool chat(WZAPI_PARAMS(unsigned playerFilter, std::string message));
+	bool chat(WZAPI_PARAMS(unsigned playerFilter, std::string const& message));
 	bool addBeacon(WZAPI_PARAMS(int x, int y, unsigned playerFilter, optional<std::string> _message));
 	bool removeBeacon(WZAPI_PARAMS(unsigned playerFilter));
 	std::unique_ptr<const Droid> getDroidProduction(WZAPI_PARAMS(const Structure *_psFactory));
@@ -1145,7 +1145,7 @@ namespace wzapi
 	std::vector<const Droid*> enumCargo(WZAPI_PARAMS(const Droid *psDroid));
 	bool isSpectator(WZAPI_PARAMS(unsigned player));
 
-	nlohmann::json getWeaponInfo(WZAPI_PARAMS(std::string weaponName)) WZAPI_DEPRECATED;
+	nlohmann::json getWeaponInfo(WZAPI_PARAMS(std::string const& weaponName)) WZAPI_DEPRECATED;
 
 	// MARK: - Functions that operate on the current player only
 	bool centreView(WZAPI_PARAMS(int x, int y));
@@ -1153,15 +1153,15 @@ namespace wzapi
 	bool gameOverMessage(WZAPI_PARAMS(bool gameWon, optional<bool> _showBackDrop, optional<bool> _showOutro));
 
 	// MARK: - Global state manipulation -- not for use with skirmish AI (unless you want it to cheat, obviously)
-	bool setStructureLimits(WZAPI_PARAMS(std::string structureName, int limit, optional<unsigned> _player));
+	bool setStructureLimits(WZAPI_PARAMS(std::string const& structureName, int limit, optional<unsigned> _player));
 	bool applyLimitSet(WZAPI_NO_PARAMS);
 	no_return_value setMissionTime(WZAPI_PARAMS(int _time));
 	int getMissionTime(WZAPI_NO_PARAMS);
 	no_return_value setReinforcementTime(WZAPI_PARAMS(int _time));
-	no_return_value completeResearch(WZAPI_PARAMS(std::string researchName, optional<unsigned> _player,
+	no_return_value completeResearch(WZAPI_PARAMS(std::string const& researchName, optional<unsigned> _player,
 	                                              optional<bool> _forceResearch));
 	no_return_value completeAllResearch(WZAPI_PARAMS(optional<int> _player));
-	bool enableResearch(WZAPI_PARAMS(std::string researchName, optional<unsigned> _player));
+	bool enableResearch(WZAPI_PARAMS(std::string const& researchName, optional<unsigned> _player));
 	no_return_value setPower(WZAPI_PARAMS(int power, optional<unsigned> _player));
 	WZAPI_AI_UNSAFE
 	no_return_value setPowerModifier(WZAPI_PARAMS(int powerModifier, optional<unsigned> _player));
@@ -1171,29 +1171,29 @@ namespace wzapi
 	no_return_value extraPowerTime(WZAPI_PARAMS(int time, optional<unsigned> _player));
 	no_return_value setTutorialMode(WZAPI_PARAMS(bool enableTutorialMode));
 	no_return_value setDesign(WZAPI_PARAMS(bool allowDesignValue));
-	bool enableTemplate(WZAPI_PARAMS(std::string _templateName));
-	bool removeTemplate(WZAPI_PARAMS(std::string _templateName));
+	bool enableTemplate(WZAPI_PARAMS(std::string const& _templateName));
+	bool removeTemplate(WZAPI_PARAMS(std::string const& _templateName));
 	no_return_value setMiniMap(WZAPI_PARAMS(bool visible));
-	no_return_value setReticuleButton(WZAPI_PARAMS(int buttonId, std::string tooltip, std::string filename,
-	                                               std::string filenameDown, optional<std::string> callbackFuncName));
+	no_return_value setReticuleButton(WZAPI_PARAMS(int buttonId, std::string const& tooltip, std::string const& filename,
+	                                               std::string const& filenameDown, optional<std::string> callbackFuncName));
 	no_return_value setReticuleFlash(WZAPI_PARAMS(int buttonId, bool flash));
 	no_return_value showReticuleWidget(WZAPI_PARAMS(int buttonId));
 	no_return_value showInterface(WZAPI_NO_PARAMS);
 	no_return_value hideInterface(WZAPI_NO_PARAMS);
-	no_return_value enableStructure(WZAPI_PARAMS(std::string structureName, optional<unsigned> _player));
-	no_return_value enableComponent(WZAPI_PARAMS(std::string componentName, unsigned player));
-	no_return_value makeComponentAvailable(WZAPI_PARAMS(std::string componentName, unsigned player));
+	no_return_value enableStructure(WZAPI_PARAMS(std::string const& structureName, optional<unsigned> _player));
+	no_return_value enableComponent(WZAPI_PARAMS(std::string const& componentName, unsigned player));
+	no_return_value makeComponentAvailable(WZAPI_PARAMS(std::string const& componentName, unsigned player));
 	bool allianceExistsBetween(WZAPI_PARAMS(unsigned player1, unsigned player2));
 	bool removeStruct(WZAPI_PARAMS(Structure *psStruct)) WZAPI_DEPRECATED;
 	bool removeObject(WZAPI_PARAMS(BaseObject *psObj, optional<bool> _sfx));
 	no_return_value setScrollLimits(WZAPI_PARAMS(int x1, int y1, int x2, int y2));
 	scr_area getScrollLimits(WZAPI_NO_PARAMS);
 	returned_nullable_ptr<const Structure> addStructure(
-		WZAPI_PARAMS(std::string structureName, unsigned player, int x, int y));
-	unsigned int getStructureLimit(WZAPI_PARAMS(std::string structureName, optional<unsigned> _player));
-	int countStruct(WZAPI_PARAMS(std::string structureName, optional<unsigned> _playerFilter));
-	int countDroid(WZAPI_PARAMS(optional<int> _droidType, optional<unsigned> _playerFilter));
-	no_return_value loadLevel(WZAPI_PARAMS(std::string levelName));
+		WZAPI_PARAMS(std::string const& structureName, unsigned player, int x, int y));
+	unsigned int getStructureLimit(WZAPI_PARAMS(std::string const& structureName, optional<unsigned> _player));
+	int countStruct(WZAPI_PARAMS(std::string const& structureName, optional<unsigned> _playerFilter));
+	int countDroid(WZAPI_PARAMS(optional<DROID_TYPE> _droidType, optional<unsigned> _playerFilter));
+	no_return_value loadLevel(WZAPI_PARAMS(std::string const& levelName));
 	no_return_value setDroidExperience(WZAPI_PARAMS(Droid *psDroid, double experience));
 	bool donateObject(WZAPI_PARAMS(BaseObject *psObject, unsigned player));
 	bool donatePower(WZAPI_PARAMS(int amount, unsigned player));
@@ -1202,8 +1202,8 @@ namespace wzapi
 	no_return_value setTransporterExit(WZAPI_PARAMS(int x, int y, unsigned player));
 	no_return_value setObjectFlag(WZAPI_PARAMS(BaseObject *psObj, int _flag, bool flagValue))
 	MULTIPLAY_SYNCREQUEST_REQUIRED;
-	no_return_value fireWeaponAtLoc(WZAPI_PARAMS(std::string weaponName, int x, int y, optional<unsigned> _player));
-	no_return_value fireWeaponAtObj(WZAPI_PARAMS(std::string weaponName, BaseObject *psObj, optional<unsigned> _player));
+	no_return_value fireWeaponAtLoc(WZAPI_PARAMS(std::string const& weaponName, int x, int y, optional<unsigned> _player));
+	no_return_value fireWeaponAtObj(WZAPI_PARAMS(std::string const& weaponName, BaseObject *psObj, optional<unsigned> _player));
 	bool setUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string& name, int type, unsigned index,
 	                                       const nlohmann::json& newValue));
 	nlohmann::json getUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string& name, int type, unsigned index));

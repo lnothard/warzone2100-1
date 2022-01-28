@@ -36,8 +36,8 @@ public:
 public:
 	SDL_gfx_api_Impl_Factory(SDL_Window* window, Configuration config);
 
-	virtual std::unique_ptr<gfx_api::backend_Null_Impl> createNullBackendImpl() const override;
-	virtual std::unique_ptr<gfx_api::backend_OpenGL_Impl> createOpenGLBackendImpl() const override;
+	[[nodiscard]] std::unique_ptr<gfx_api::backend_Null_Impl> createNullBackendImpl() const override;
+	[[nodiscard]] std::unique_ptr<gfx_api::backend_OpenGL_Impl> createOpenGLBackendImpl() const override;
 #if defined(WZ_VULKAN_ENABLED)
 	virtual std::unique_ptr<gfx_api::backend_Vulkan_Impl> createVulkanBackendImpl() const override;
 #endif

@@ -306,14 +306,24 @@ BaseObject const* Droid::getActionTarget(int idx) const
   return pimpl ? pimpl->actionTargets[idx] : nullptr;
 }
 
-const Order* Droid::getOrder() const
+Order const* Droid::getOrder() const
 {
   return pimpl ? pimpl->order.get() : nullptr;
 }
 
-const Movement* Droid::getMovementData() const
+Movement const* Droid::getMovementData() const
 {
   return pimpl ? pimpl->movement.get() : nullptr;
+}
+
+Weapon const* Droid::getWeapon(int slot) const
+{
+  return pimpl ? pimpl->weapons[slot] : nullptr;
+}
+
+std::array<Weapon, MAX_WEAPONS> const* Droid::getWeapons() const
+{
+  return pimpl ? pimpl->weapons : nullptr;
 }
 
 void Droid::cancelBuild()

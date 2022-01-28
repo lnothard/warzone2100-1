@@ -31,10 +31,10 @@ class sdl_Null_Impl final : public gfx_api::backend_Null_Impl
 public:
 	sdl_Null_Impl();
 
-	virtual void swapWindow() override;
+	void swapWindow() override;
 
-	virtual bool setSwapInterval(gfx_api::context::swap_interval_mode mode) override;
-	virtual gfx_api::context::swap_interval_mode getSwapInterval() const override;
+	bool setSwapInterval(gfx_api::context::swap_interval_mode mode) override;
+	[[nodiscard]] gfx_api::context::swap_interval_mode getSwapInterval() const override;
 
 private:
 	gfx_api::context::swap_interval_mode swapMode = gfx_api::context::swap_interval_mode::vsync;

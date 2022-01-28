@@ -374,7 +374,7 @@ Droid* camFindDroidTarget()
 		return nullptr;
 	}
 
-	for (auto psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
 		if (psDroid.damageManager->isSelected()) {
 			/* Return the first one found */

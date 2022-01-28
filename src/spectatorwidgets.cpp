@@ -471,12 +471,12 @@ public:
 
 	uint32_t getMaxGradeOfAllPlayers(WEAPON_SUBCLASS subClass) const
 	{
-		return weapSubclassInfo[subClass].maxNumWeaponGrade;
+		return weapSubclassInfo[static_cast<size_t>(subClass)].maxNumWeaponGrade;
 	}
 
 	const std::unordered_set<uint32_t>& getPlayersWithMaxGrade(WEAPON_SUBCLASS subClass) const
 	{
-		return weapSubclassInfo[subClass].playersWithMaxGrade;
+		return weapSubclassInfo[static_cast<size_t>(subClass)].playersWithMaxGrade;
 	}
 
 	static int getColumnLeftPositionFromIndex(size_t colIndex)
