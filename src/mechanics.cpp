@@ -36,26 +36,20 @@
 /* Shutdown the mechanics system */
 bool mechanicsShutdown()
 {
-  PlayerOwnedObject *psObj, *psNext;
-
-	for (psObj = psDestroyedObj; psObj != nullptr; psObj = psNext)
+	for (auto psObj : psDestroyedObj)
 	{
-		psNext = psObj->psNext;
 		delete psObj;
 	}
-	psDestroyedObj = nullptr;
-
+	psDestroyedObj.clear();
 	return true;
 }
 
 
 // Allocate the list for a component
-bool allocComponentList(COMPONENT_TYPE type, SDWORD number)
+bool allocComponentList(COMPONENT_TYPE type, int number)
 {
-	SDWORD inc, comp;
-
 	//allocate the space for the Players' component lists
-	for (inc = 0; inc < MAX_PLAYERS; inc++)
+	for (auto inc = 0; inc < MAX_PLAYERS; inc++)
 	{
 		if (apCompLists[inc][type])
 		{
@@ -65,7 +59,7 @@ bool allocComponentList(COMPONENT_TYPE type, SDWORD number)
 		apCompLists[inc][type] = (UBYTE*)malloc(sizeof(UBYTE) * number);
 
 		//initialise the players' lists
-		for (comp = 0; comp < number; comp++)
+		for (auto comp = 0; comp < number; comp++)
 		{
 			apCompLists[inc][type][comp] = UNAVAILABLE;
 		}

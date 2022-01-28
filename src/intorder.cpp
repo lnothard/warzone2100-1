@@ -26,6 +26,9 @@
 #include "intorder.h"
 #include "objects.h"
 #include "order.h"
+#include "intfac.h"
+#include "objmem.h"
+#include "intimage.h"
 
 #include <set>
 #include <algorithm>
@@ -406,15 +409,13 @@ bool OrderUp = false;
 //
 static bool BuildSelectedDroidList()
 {
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return false;
 	}
 
 	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		if (psDroid.selected)
-		{
+		if (psDroid.damageManager->isSelected()) {
 			SelectedDroids.push_back(&psDroid);
 		}
 	}
@@ -516,7 +517,7 @@ static UDWORD GetImageHeight(IMAGEFILE* ImageFile, UDWORD ImageID)
 // Returns true if the form was displayed ok.
 //
 //changed to a SimpleObject to accommodate the factories - AB 21/04/99
-bool intAddOrder(PlayerOwnedObject * psObj)
+bool intAddOrder(BaseObject* psObj)
 {
 	bool Animate = true;
 	SECONDARY_STATE State;
@@ -554,7 +555,7 @@ bool intAddOrder(PlayerOwnedObject * psObj)
 			psStructure = (Structure*)psObj;
 			psSelectedFactory = psStructure;
 			ASSERT_OR_RETURN(false, StructIsFactory(psSelectedFactory), "Trying to select a %s as a factory!",
-			                 objInfo((PlayerOwnedObject *)psSelectedFactory));
+			                 objInfo(psSelectedFactory));
 		}
 		else
 		{
@@ -854,10 +855,9 @@ bool intAddOrder(PlayerOwnedObject * psObj)
 void intRunOrder()
 {
 	// Check to see if there all dead or unselected.
-	for (auto& SelectedDroid : SelectedDroids)
+	for (auto SelectedDroid : SelectedDroids)
 	{
-		if (SelectedDroid->died)
-		{
+		if (SelectedDroid->damageManager->isDead()) {
 			SelectedDroid = nullptr;
 		}
 	}
@@ -865,18 +865,15 @@ void intRunOrder()
 	SelectedDroids.erase(std::remove(SelectedDroids.begin(), SelectedDroids.end(), (Droid*)nullptr),
 	                     SelectedDroids.end());
 
-	if (psSelectedFactory != nullptr && psSelectedFactory->died)
-	{
+	if (psSelectedFactory != nullptr && psSelectedFactory->damageManager->isDead()) {
 		psSelectedFactory = nullptr;
 	}
 
 	// If all dead then remove the screen.
 	// If droids no longer selected then remove screen.
-	if (SelectedDroids.empty())
-	{
+	if (SelectedDroids.empty()) {
 		// might have a factory selected
-		if (psSelectedFactory == nullptr)
-		{
+		if (psSelectedFactory == nullptr) {
 			intRemoveOrder();
 			return;
 		}

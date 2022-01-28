@@ -52,6 +52,9 @@
 #include "notifications.h"
 #include "scores.h"
 #include "clparse.h"
+#include "objmem.h"
+#include "fpath.h"
+#include "random.h"
 
 #ifdef DEBUG
 #include "objmem.h"
@@ -379,7 +382,7 @@ void countUpdate(bool synch)
 		for (auto& psCurr : mission.apsDroidLists[i])
 		{
 			numMissionDroids[i]++;
-			switch (psCurr->getType()) {
+			switch (psCurr.getType()) {
         using enum DROID_TYPE;
 			  case COMMAND:
 			  	numCommandDroids[i] += 1;
@@ -416,7 +419,7 @@ void countUpdate(bool synch)
 		setLasSatExists(false, i);
 		for (auto& psCBuilding : apsStructLists[i])
 		{
-			if (psCBuilding->getStats().type == STRUCTURE_TYPE::SAT_UPLINK &&
+			if (psCBuilding->getStats()->type == STRUCTURE_TYPE::SAT_UPLINK &&
           psCBuilding->getState() == STRUCTURE_STATE::BUILT) {
 				setSatUplinkExists(true, i);
 			}
@@ -427,7 +430,7 @@ void countUpdate(bool synch)
 		}
 		for (auto& psCBuilding : mission.apsStructLists[i])
 		{
-			if (psCBuilding->getStats().type == STRUCTURE_TYPE::SAT_UPLINK &&
+			if (psCBuilding->getStats()->type == STRUCTURE_TYPE::SAT_UPLINK &&
           psCBuilding->getState() == STRUCTURE_STATE::BUILT) {
 				setSatUplinkExists(true, i);
 			}
@@ -511,7 +514,7 @@ static void gameStateUpdate()
 
 		for (auto& psCurr : mission.apsDroidLists[i])
 		{
-			missionDroidUpdate(psCurr);
+			missionDroidUpdate(&psCurr);
 		}
 
 		// FIXME: These for-loops are code duplication
@@ -531,7 +534,7 @@ static void gameStateUpdate()
 
 	for (auto& psCFeat : apsFeatureLists)
 	{
-		featureUpdate(&psCFeat);
+		featureUpdate(psCFeat);
 	}
 
 	// Free dead droid memory.
@@ -831,7 +834,7 @@ unsigned getNumConstructorDroids(unsigned player)
 // increase the droid counts - used by update factory to keep the counts in sync
 void adjustDroidCount(Droid* droid, int delta)
 {
-	auto player = droid->getPlayer();
+	auto player = droid->playerManager->getPlayer();
 	syncDebug("numDroids[%d]:%d=%d→%d", player, droid->getType(),
             numDroids[player], numDroids[player] + delta);
 	numDroids[player] += delta;

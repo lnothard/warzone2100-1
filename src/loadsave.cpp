@@ -26,7 +26,6 @@
  */
 
 #include <physfs.h>
-#include "lib/framework/file.h"
 #include "lib/framework/physfs_ext.h"
 #include <ctime>
 
@@ -44,7 +43,6 @@
 #include "loadsave.h"
 #include "multiplay.h"
 #include "game.h"
-#include "lib/sound/audio_id.h"
 #include "lib/sound/audio.h"
 #include "frontend.h"
 #include "display.h"
@@ -58,8 +56,8 @@
 #include "qtscript.h"
 #include "clparse.h"
 #include "ingameop.h"
-#include "game.h"
 #include "version.h"
+#include "intimage.h"
 #define totalslots 36			// saves slots
 #define slotsInColumn 12		// # of slots in a column
 #define totalslotspace 64		// guessing 64 max chars for filename.

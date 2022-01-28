@@ -33,6 +33,7 @@
 #include "edit3d.h"
 #include "hci.h"
 #include "map.h"
+#include "baseobject.h"
 
 /**
  * Definition of a tile to highlight - presently more than is required

@@ -56,6 +56,7 @@
 #include "hci.h"
 #include "ingameop.h"
 #include "intdisplay.h"
+#include "intimage.h"
 #include "intelmap.h"
 #include "intorder.h"
 #include "loadsave.h"
@@ -265,7 +266,7 @@ static void intStopStructPosition();
 static Structure* CurrentStruct = nullptr;
 static SWORD CurrentStructType = 0;
 static Droid* CurrentDroid = nullptr;
-static DROID_TYPE CurrentDroidType = DROID_ANY;
+static DROID_TYPE CurrentDroidType = DROID_TYPE::ANY;
 
 /******************Power Bar Stuff!**************/
 
@@ -958,7 +959,7 @@ bool intInitialise()
 	{
 		for (int comp = 0; comp < numStructureStats; comp++)
 		{
-			if (asStructureStats[comp].type == REF_DEMOLISH)
+			if (asStructureStats[comp].type == STRUCTURE_TYPE::DEMOLISH)
 			{
 				for (auto& apStructTypeList : apStructTypeLists)
 				{
@@ -1047,16 +1048,12 @@ bool intIsRefreshing()
 // see if a delivery point is selected
 static FlagPosition* intFindSelectedDelivPoint()
 {
-	FlagPosition* psFlagPos;
-
 	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS, "Not supported selectedPlayer: %" PRIu32 "",
 	                 selectedPlayer);
 
-	for (psFlagPos = apsFlagPosLists[selectedPlayer]; psFlagPos;
-	     psFlagPos = psFlagPos->psNext)
+	for (auto psFlagPos : apsFlagPosLists[selectedPlayer])
 	{
-		if (psFlagPos->selected && (psFlagPos->type == POS_DELIVERY))
-		{
+		if (psFlagPos->selected && (psFlagPos->type == POSITION_TYPE::POS_DELIVERY)) {
 			return psFlagPos;
 		}
 	}
@@ -1671,13 +1668,12 @@ INT_RETVAL intRunWidgets()
 			{
 				//check droid hasn't died
 				if ((psSelectedBuilder == nullptr) ||
-					!psSelectedBuilder->died)
-				{
+					!psSelectedBuilder->damageManager->isDead()) {
 					// Send the droid off to build the structure assuming the droid
 					// can get to the location chosen
 
 					// Don't allow derrick to be built on burning ground.
-					if (((StructureStats*)psPositionStats)->type == REF_RESOURCE_EXTRACTOR)
+					if (((StructureStats*)psPositionStats)->type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR)
 					{
 						if (fireOnLocation(pos.x, pos.y))
 						{
@@ -1685,8 +1681,8 @@ INT_RETVAL intRunWidgets()
 						}
 					}
 					// Set the droid order
-					if (intNumSelectedDroids(DROID_CONSTRUCT) == 0
-						&& intNumSelectedDroids(DROID_CYBORG_CONSTRUCT) == 0
+					if (intNumSelectedDroids(DROID_TYPE::CONSTRUCT) == 0
+						&& intNumSelectedDroids(DROID_TYPE::CYBORG_CONSTRUCT) == 0
 						&& psSelectedBuilder != nullptr)
 					{
 						orderDroidStatsLocDir(psSelectedBuilder, ORDER_TYPE::BUILD, (StructureStats*)psPositionStats, pos.x,
@@ -1776,7 +1772,7 @@ INT_RETVAL intRunWidgets()
 							// structure.
 							std::string msg = astringf(
 								_("Player %u is cheating (debug menu) him/herself a new structure: %s."),
-								selectedPlayer, getStatsName(psStructure->pStructureType));
+								selectedPlayer, getStatsName(psStructure->getStats()));
 							sendInGameSystemMessage(msg.c_str());
 							Cheated = true;
 						}
@@ -1808,7 +1804,7 @@ INT_RETVAL intRunWidgets()
 							// the fact that we're cheating ourselves a new droid.
 							msg = astringf(
 								_("Player %u is cheating (debug menu) him/herself a new droid: %s."), selectedPlayer,
-								psDroid->name);
+								psDroid->getName().c_str());
 
 							triggerEventDroidBuilt(psDroid, nullptr);
 						}
@@ -1920,7 +1916,7 @@ void intObjectSelected(BaseObject* psObj)
 			{
 				auto structure = castStructure(psObj);
 
-				if (structure->state == SS_BUILT)
+				if (structure->state == STRUCTURE_STATE::BUILT)
 				{
 					if (StructIsFactory(structure))
 					{
@@ -2687,7 +2683,7 @@ static SDWORD intNumSelectedDroids(UDWORD droidType)
 	num = 0;
 	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
 	{
-		if (psDroid->selected && psDroid->type == droidType)
+		if (psDroid->damageManager->isSelected() && psDroid->getType() == droidType)
 		{
 			num += 1;
 		}
@@ -2708,8 +2704,8 @@ int intGetResearchState()
 	bool resFree = false;
 	for (Structure* psStruct = interfaceStructList(); psStruct != nullptr; psStruct = psStruct->psNext)
 	{
-		if (psStruct->pStructureType->type == REF_RESEARCH &&
-			psStruct->status == SS_BUILT &&
+		if (psStruct->getStats()->type == STRUCTURE_TYPE::RESEARCH &&
+			psStruct->getState() == STRUCTURE_STATE::BUILT &&
 			getResearchStats(psStruct) == nullptr)
 		{
 			resFree = true;
@@ -2791,12 +2787,12 @@ static Structure* intGotoNextStructureType(UDWORD structType)
 
 	for (; psStruct != nullptr; psStruct = psStruct->psNext)
 	{
-		if ((psStruct->pStructureType->type == structType || structType == REF_ANY) && psStruct->status == SS_BUILT)
-		{
+		if ((psStruct->getStats()->type == structType ||
+         structType == STRUCTURE_TYPE::ANY) && psStruct->getState() == STRUCTURE_STATE::BUILT) {
 			if (psStruct != CurrentStruct)
 			{
 				clearSelection();
-				psStruct->selected = true;
+				psStruct->damageManager->setSelected(true);
 				CurrentStruct = psStruct;
 				Found = true;
 				break;
@@ -2805,17 +2801,15 @@ static Structure* intGotoNextStructureType(UDWORD structType)
 	}
 
 	// Start back at the beginning?
-	if ((!Found) && (CurrentStruct != nullptr))
-	{
+	if ((!Found) && (CurrentStruct != nullptr)) {
 		for (psStruct = interfaceStructList(); psStruct != CurrentStruct && psStruct != nullptr; psStruct = psStruct->
 		     psNext)
 		{
-			if ((psStruct->pStructureType->type == structType || structType == REF_ANY) && psStruct->status == SS_BUILT)
-			{
-				if (psStruct != CurrentStruct)
-				{
+			if ((psStruct->getStats()->type == structType ||
+           structType == ANY) && psStruct->getState() == STRUCTURE_STATE::BUILT) {
+				if (psStruct != CurrentStruct) {
 					clearSelection();
-					psStruct->selected = true;
+					psStruct->damageManager->setSelected(true);
 					jsDebugSelected(psStruct);
 					CurrentStruct = psStruct;
 					break;
@@ -2836,15 +2830,15 @@ Structure* intFindAStructure()
 	Structure* Struct;
 
 	// First try and find a factory.
-	Struct = intGotoNextStructureType(REF_FACTORY);
+	Struct = intGotoNextStructureType(STRUCTURE_TYPE::FACTORY);
 	if (Struct == nullptr)
 	{
 		// If that fails then look for a command center.
-		Struct = intGotoNextStructureType(REF_HQ);
+		Struct = intGotoNextStructureType(STRUCTURE_TYPE::HQ);
 		if (Struct == nullptr)
 		{
 			// If that fails then look for a any structure.
-			Struct = intGotoNextStructureType(REF_ANY);
+			Struct = intGotoNextStructureType(STRUCTURE_TYPE::ANY);
 		}
 	}
 
@@ -2869,8 +2863,7 @@ Droid* intGotoNextDroidType(Droid* CurrDroid, DROID_TYPE droidType, bool AllowGr
 		CurrentDroid = CurrDroid;
 	}
 
-	if (droidType != CurrentDroidType && droidType != DROID_ANY)
-	{
+	if (droidType != CurrentDroidType && droidType != DROID_TYPE::ANY) {
 		CurrentDroid = nullptr;
 		CurrentDroidType = droidType;
 	}
@@ -2886,8 +2879,8 @@ Droid* intGotoNextDroidType(Droid* CurrDroid, DROID_TYPE droidType, bool AllowGr
 
 	for (; psDroid != nullptr; psDroid = psDroid->psNext)
 	{
-		if ((psDroid->type == droidType
-				|| (droidType == DROID_ANY && !isTransporter(psDroid)))
+		if ((psDroid->getType() == droidType
+				|| (droidType == DROID_TYPE::ANY && !isTransporter(*psDroid)))
 			&& (psDroid->group == UBYTE_MAX || AllowGroup))
 		{
 			if (psDroid != CurrentDroid)
@@ -2907,8 +2900,8 @@ Droid* intGotoNextDroidType(Droid* CurrDroid, DROID_TYPE droidType, bool AllowGr
 		for (psDroid = apsDroidLists[selectedPlayer]; (psDroid != CurrentDroid) && (psDroid != nullptr); psDroid =
 		     psDroid->psNext)
 		{
-			if ((psDroid->type == droidType ||
-           ((droidType == DROID_ANY) && !isTransporter(psDroid))) &&
+			if ((psDroid->getType() == droidType ||
+           ((droidType == DROID_TYPE::ANY) && !isTransporter(*psDroid))) &&
 				((psDroid->group == UBYTE_MAX) || AllowGroup))
 			{
 				if (psDroid != CurrentDroid)
@@ -2928,7 +2921,7 @@ Droid* intGotoNextDroidType(Droid* CurrDroid, DROID_TYPE droidType, bool AllowGr
 		// Center it on screen.
 		if (CurrentDroid)
 		{
-			intSetMapPos(CurrentDroid->pos.x, CurrentDroid->pos.y);
+			intSetMapPos(CurrentDroid->getPosition().x, CurrentDroid->getPosition().y);
 		}
 		return CurrentDroid;
 	}
@@ -2947,8 +2940,8 @@ bool CoordInBuild(int x, int y)
 	pos.x = x - RET_X;
 	pos.y = y - RET_Y + buildmenu_height; // guesstimation
 
-	if ((pos.x < 0 || pos.y < 0 || pos.x >= RET_FORMWIDTH || pos.y >= buildmenu_height) || !isSecondaryWindowUp())
-	{
+	if ((pos.x < 0 || pos.y < 0 || pos.x >= RET_FORMWIDTH ||
+       pos.y >= buildmenu_height) || !isSecondaryWindowUp()) {
 		return false;
 	}
 

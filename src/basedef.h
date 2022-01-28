@@ -107,7 +107,7 @@ private:
 class PlayerManager {
 public:
   ~PlayerManager() = default;
-  PlayerManager(unsigned player);
+  explicit PlayerManager(unsigned player);
 
   PlayerManager(PlayerManager const& rhs);
   PlayerManager & operator=(PlayerManager const& rhs);

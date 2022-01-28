@@ -36,11 +36,11 @@ class Weapon;
 static constexpr auto BLIP_ANIM_DURATION			= 200;
 static constexpr auto OBJECT_RADIUS				= 128;
 static constexpr auto COMPONENT_RADIUS			= 64;
-static constexpr auto DESIGN_Droid_SCALE			= 200;
+static constexpr auto DESIGN_DROID_SCALE			= 200;
 static constexpr auto DESIGN_COMPONENT_SCALE			= 150;
 static constexpr auto RESEARCH_COMPONENT_SCALE		= 300;
 static constexpr auto COMP_BUT_SCALE				= 100;
-static constexpr auto Droid_BUT_SCALE				= 72;
+static constexpr auto DROID_BUT_SCALE				= 72;
 static constexpr auto SMALL_STRUCT_SCALE			= 55;
 static constexpr auto MED_STRUCT_SCALE			= 25;  //< Reduced from 30 to fit command entre in window
 static constexpr auto LARGE_STRUCT_SCALE			= 25;

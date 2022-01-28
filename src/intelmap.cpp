@@ -70,6 +70,8 @@
 
 #include "multimenu.h"
 #include "qtscript.h"
+#include "intfac.h"
+#include "intimage.h"
 
 /* Intelligence Map screen IDs */
 #define IDINTMAP_MSGFORM		6001	//The intelligence map tabbed form
@@ -126,7 +128,7 @@
 #define TEXT_END_FRAME			9999
 
 /* the widget screen */
-extern std::shared_ptr<W_SCREEN> psWScreen;
+
 
 static unsigned messageID;
 static bool immediateMessage = false;

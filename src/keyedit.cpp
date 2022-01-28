@@ -25,23 +25,16 @@
 
 // ////////////////////////////////////////////////////////////////////////////
 // includes
-#include <cstring>
-#include <physfs.h>
 #include <unordered_map>
 #include <optional-lite/optional.hpp>
 #include <utility>
-#include <utility>
-#include <utility>
-
 #include "lib/framework/frame.h"
-#include "lib/framework/frameresource.h"
 #include "lib/ivis_opengl/bitimage.h"
 #include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/sound/audio.h"
-#include "lib/sound/audio_id.h"
 #include "lib/widget/button.h"
-#include "lib/widget/label.h"
 #include "lib/widget/scrollablelist.h"
+#include "lib/widget/label.h"
 
 #include "input/mapping.h"
 #include "input/manager.h"

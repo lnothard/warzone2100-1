@@ -29,7 +29,7 @@
 #include "map.h"
 
 bool isHumanPlayer(unsigned);
-bool worldOnMap(int, int);
+
 
 
 // If the path finding system is shutdown or not
@@ -285,7 +285,7 @@ static void fpathSetMove(Movement* psMoveCntl, int targetX, int targetY)
 
 void fpathSetDirectRoute(Droid* psDroid, int targetX, int targetY)
 {
-	fpathSetMove(&psDroid->sMove, targetX, targetY);
+	fpathSetMove(psDroid->getMovementData(), targetX, targetY);
 }
 
 void fpathRemoveDroidData(int id)

@@ -151,7 +151,7 @@ iIMDShape* getFactionIMD(const FACTION* faction, iIMDShape* imd)
 
 const FACTION* getPlayerFaction(uint8_t player)
 {
-	return &factions[NetPlay.players[player].faction];
+	return &factions[static_cast<int>(NetPlay.players[player].faction)];
 }
 
 const FACTION* getFactionByID(FactionID faction)

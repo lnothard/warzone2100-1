@@ -21,11 +21,8 @@
 #include <cassert>
 #include <cstring>
 #include "lib/framework/frame.h"
-#include "lib/framework/frameresource.h"
 #include "lib/ivis_opengl/imd.h"
-#include "effects.h"
 #include "structure.h"
-#include "messagedef.h"
 #include "miscimd.h"
 
 /* Our great big array of imds */

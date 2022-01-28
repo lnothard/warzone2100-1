@@ -50,6 +50,7 @@
 #include "qtscript.h"		// for bInTutorial
 #include "radar.h"
 #include "seqdisp.h"
+#include "lib/sound/track.h"
 
 bool hostQuitConfirmation = true;
 

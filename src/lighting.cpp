@@ -41,6 +41,7 @@
 #include "display3d.h"
 #include "terrain.h"
 #include "warzoneconfig.h"
+#include "objmem.h"
 
 // These magic values determine the fog
 #define FOG_BEGIN 4000
@@ -369,19 +370,17 @@ void calcDroidIllumination(Droid* psDroid)
 
 void doBuildingLights()
 {
-	Structure* psStructure;
-	UDWORD i;
 	LIGHT light;
 
-	for (i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (psStructure = apsStructLists[i]; psStructure; psStructure = psStructure->psNext)
+		for (auto& psStructure : apsStructLists[i])
 		{
-			light.range = psStructure->getStats().base_width * TILE_UNITS;
+			light.range = psStructure->getStats()->base_width * TILE_UNITS;
 			light.position.x = psStructure->getPosition().x;
 			light.position.z = psStructure->getPosition().y;
 			light.position.y = map_Height(light.position.x, light.position.z);
-			light.range = psStructure->getStats().base_width * TILE_UNITS;
+			light.range = psStructure->getStats()->base_width * TILE_UNITS;
 			light.colour = pal_Colour(255, 255, 255);
 			processLight(&light);
 		}

@@ -81,6 +81,7 @@
 #include "map.h" //for builtInMap
 #include "notifications.h"
 #include "activity.h"
+#include "intimage.h"
 
 // ////////////////////////////////////////////////////////////////////////////
 // Global variables

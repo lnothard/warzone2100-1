@@ -50,8 +50,6 @@ static UDWORD msgID = 0;
 
 static int currentNumProxDisplays = 0;
 
-MESSAGE* apsMessages[MAX_PLAYERS];
-
 /* The list of proximity displays allocated */
 PROXIMITY_DISPLAY* apsProxDisp[MAX_PLAYERS];
 

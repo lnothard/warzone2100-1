@@ -73,6 +73,7 @@
 
 #include "multiplay.h"
 #include "qtscript.h"
+#include "objmem.h"
 
 // Is a button widget highlighted, either because the cursor is over it or it is flashing.
 //
@@ -401,7 +402,7 @@ void IntStatusButton::display(int xOffset, int yOffset)
 
 	initDisplay();
 
-	if (psObj && isDead(psObj))
+	if (psObj && psObj->damageManager->isDead())
 	{
 		// this may catch this horrible crash bug we've been having,
 		// who knows?.... Shipping tomorrow, la de da :-)
@@ -430,13 +431,13 @@ void IntStatusButton::display(int xOffset, int yOffset)
 				ASSERT(Stats != nullptr, "NULL Stats pointer.");
 				object = ImdObject::StructureStat(Stats);
 			}
-			else if (orderState(Droid, DORDER_DEMOLISH))
+			else if (orderState(Droid, ORDER_TYPE::DEMOLISH))
 			{
 				Stats = structGetDemolishStat();
 				ASSERT(Stats != nullptr, "NULL Stats pointer.");
 				object = ImdObject::StructureStat(Stats);
 			}
-			else if (Droid->type == DROID_COMMAND)
+			else if (Droid->getType() == DROID_TYPE::COMMAND)
 			{
 				Structure = droidGetCommandFactory(Droid);
 				if (Structure)
@@ -448,11 +449,11 @@ void IntStatusButton::display(int xOffset, int yOffset)
 
 		case OBJ_STRUCTURE: // If it's a structure...
 			Structure = (Structure*)psObj;
-			switch (Structure->pStructureType->type)
-			{
-			case REF_FACTORY:
-			case REF_CYBORG_FACTORY:
-			case REF_VTOL_FACTORY:
+			switch (Structure->getStats()->type) {
+          using enum STRUCTURE_TYPE;
+			case FACTORY:
+			case CYBORG_FACTORY:
+			case VTOL_FACTORY:
 				if (StructureIsManufacturingPending(Structure))
 				{
 					object = ImdObject::DroidTemplate(FactoryGetTemplate(StructureGetFactory(Structure)));
@@ -461,7 +462,7 @@ void IntStatusButton::display(int xOffset, int yOffset)
 
 				break;
 
-			case REF_RESEARCH:
+			case RESEARCH:
 				if (structureIsResearchingPending(Structure))
 				{
 					iIMDShape* shape;
@@ -546,7 +547,7 @@ void IntObjectButton::display(int xOffset, int yOffset)
 
 	ImdObject object;
 
-	if (psObj && isDead(psObj))
+	if (psObj && psObj->damageManager->isDead())
 	{
 		// this may catch this horrible crash bug we've been having,
 		// who knows?.... Shipping tomorrow, la de da :-)
@@ -608,7 +609,7 @@ void IntStatsButton::display(int xOffset, int yOffset)
 		else
 		{
 			compID = StatIsComponent(Stat); // This fails for viper body.
-			if (compID != COMP_NUMCOMPONENTS)
+			if (compID != COMPONENT_TYPE::COUNT)
 			{
 				object = ImdObject::Component(Stat);
 			}
@@ -1044,7 +1045,7 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		{
 			if (isTransporter((Droid*)Object))
 			{
-				if (((Droid*)Object)->type == DROID_TRANSPORTER)
+				if (((Droid*)Object)->getType() == DROID_TYPE::TRANSPORTER)
 				{
 					model.scale = DROID_BUT_SCALE / 2;
 				}
@@ -1058,7 +1059,7 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 		{
 			if (isTransporter((DroidTemplate*)Object))
 			{
-				if (((DroidTemplate*)Object)->type == DROID_TRANSPORTER)
+				if (((DroidTemplate*)Object)->type == DROID_TYPE::TRANSPORTER)
 				{
 					model.scale = DROID_BUT_SCALE / 2;
 				}
@@ -1307,19 +1308,19 @@ bool DroidIsBuilding(Droid* Droid)
 	StructureStats* Stats;
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, Droid);
 
-	if (!(droidType(Droid) == DROID_CONSTRUCT ||
-		droidType(Droid) == DROID_CYBORG_CONSTRUCT))
+	if (!(droidType(Droid) == DROID_TYPE::CONSTRUCT ||
+		droidType(Droid) == DROID_TYPE::CYBORG_CONSTRUCT))
 	{
 		return false;
 	}
 
-	if (orderStateStatsLoc(Droid, DORDER_BUILD, &Stats))
+	if (orderStateStatsLoc(Droid, ORDER_TYPE::BUILD, &Stats))
 	{
 		// Moving to build location?
 		return false;
 	}
-	else if (orderStateObj(Droid, DORDER_BUILD)
-		|| orderStateObj(Droid, DORDER_HELPBUILD)) // Is building or helping?
+	else if (orderStateObj(Droid, ORDER_TYPE::BUILD)
+		|| orderStateObj(Droid, ORDER_TYPE::HELP_BUILD)) // Is building or helping?
 	{
 		return true;
 	}
@@ -1341,7 +1342,7 @@ bool DroidGoingToBuild(Droid* Droid)
 		return false;
 	}
 
-	if (orderStateStatsLoc(Droid, DORDER_BUILD, &Stats)) // Moving to build location?
+	if (orderStateStatsLoc(Droid, ORDER_TYPE::BUILD, &Stats)) // Moving to build location?
 	{
 		return true;
 	}
@@ -1354,11 +1355,11 @@ bool DroidGoingToBuild(Droid* Droid)
 //
 Structure* DroidGetBuildStructure(Droid* Droid)
 {
-  PlayerOwnedObject * Structure = nullptr;
+   BaseObject* Structure = nullptr;
 
-	if (orderStateObj(Droid, DORDER_BUILD))
+	if (orderStateObj(Droid, ORDER_TYPE::BUILD))
 	{
-		Structure = orderStateObj(Droid, DORDER_HELPBUILD);
+		Structure = orderStateObj(Droid, ORDER_TYPE::HELP_BUILD);
 	}
 
 	return (Structure*)Structure;
@@ -1367,52 +1368,45 @@ Structure* DroidGetBuildStructure(Droid* Droid)
 // Get the first factory assigned to a command droid
 Structure* droidGetCommandFactory(Droid* psDroid)
 {
-	SDWORD inc;
-	Structure* psCurr;
-
-	for (inc = 0; inc < MAX_FACTORY; inc++)
+	for (auto inc = 0; inc < MAX_FACTORY; inc++)
 	{
-		if (psDroid->secondary_order & (1 << (inc + DSS_ASSPROD_SHIFT)))
-		{
+		if (psDroid->getSecondaryOrder() & (1 << (inc + DSS_ASSPROD_SHIFT))) {
 			// found an assigned factory - look for it in the lists
-			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+			for (auto& psCurr : apsStructLists[psDroid->playerManager->getPlayer()])
 			{
-				if ((psCurr->pStructureType->type == REF_FACTORY) &&
+				if ((psCurr->getStats()->type == STRUCTURE_TYPE::FACTORY) &&
 					(((Factory*)psCurr->pFunctionality)->
-					 psAssemblyPoint->factoryInc == inc))
-				{
-					return psCurr;
+					 psAssemblyPoint->factoryInc == inc)) {
+					return psCurr.get();
 				}
 			}
 		}
-		if (psDroid->secondary_order & (1 << (inc + DSS_ASSPROD_CYBORG_SHIFT)))
-		{
+		if (psDroid->getSecondaryOrder() & (1 << (inc + DSS_ASSPROD_CYBORG_SHIFT))) {
 			// found an assigned factory - look for it in the lists
-			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+			for (auto& psCurr : apsStructLists[psDroid->playerManager->getPlayer()])
 			{
-				if ((psCurr->pStructureType->type == REF_CYBORG_FACTORY) &&
+				if ((psCurr->getStats()->type == STRUCTURE_TYPE::CYBORG_FACTORY) &&
 					(((Factory*)psCurr->pFunctionality)->
 					 psAssemblyPoint->factoryInc == inc))
 				{
-					return psCurr;
+					return psCurr.get();
 				}
 			}
 		}
-		if (psDroid->secondary_order & (1 << (inc + DSS_ASSPROD_VTOL_SHIFT)))
+		if (psDroid->getSecondaryOrder() & (1 << (inc + DSS_ASSPROD_VTOL_SHIFT)))
 		{
 			// found an assigned factory - look for it in the lists
-			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+			for (auto& psCurr : apsStructLists[psDroid->playerManager->getPlayer()])
 			{
-				if ((psCurr->pStructureType->type == REF_VTOL_FACTORY) &&
+				if ((psCurr->getStats()->type == STRUCTURE_TYPE::VTOL_FACTORY) &&
 					(((Factory*)psCurr->pFunctionality)->
 					 psAssemblyPoint->factoryInc == inc))
 				{
-					return psCurr;
+					return psCurr.get();
 				}
 			}
 		}
 	}
-
 	return nullptr;
 }
 
@@ -1438,10 +1432,9 @@ iIMDShape* DroidGetIMD(Droid* Droid)
 template <typename Functionality>
 static inline bool _structureIsManufacturingPending(Functionality const& functionality)
 {
-	if (functionality.statusPending != FACTORY_NOTHING_PENDING)
-	{
-		return functionality.statusPending == FACTORY_START_PENDING || functionality.statusPending ==
-			FACTORY_HOLD_PENDING;
+	if (functionality.statusPending != PENDING_STATUS::NOTHING_PENDING) {
+		return functionality.statusPending == PENDING_STATUS::START_PENDING || functionality.statusPending ==
+			PENDING_STATUS::HOLD_PENDING;
 	}
 	return functionality.psSubject != nullptr;
 }
@@ -1450,9 +1443,10 @@ bool StructureIsManufacturingPending(Structure* structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, structure);
 	switch (structure->getStats()->type) {
-	case REF_FACTORY:
-	case REF_CYBORG_FACTORY:
-	case REF_VTOL_FACTORY:
+      using enum STRUCTURE_TYPE;
+	case FACTORY:
+	case CYBORG_FACTORY:
+	case VTOL_FACTORY:
 		return _structureIsManufacturingPending(structure->pFunctionality->factory);
 	default:
 		return false;
@@ -1476,9 +1470,9 @@ bool structureIsResearchingPending(Structure* structure)
 template <typename Functionality>
 static inline bool structureIsOnHoldPending(Functionality const& functionality)
 {
-	if (functionality.statusPending != FACTORY_NOTHING_PENDING)
+	if (functionality.statusPending != PENDING_STATUS::NOTHING_PENDING)
 	{
-		return functionality.statusPending == FACTORY_HOLD_PENDING;
+		return functionality.statusPending == PENDING_STATUS::HOLD_PENDING;
 	}
 	return functionality.timeStartHold != 0;
 }
@@ -1487,11 +1481,12 @@ bool StructureIsOnHoldPending(Structure* structure)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, structure);
 	switch (structure->getStats()->type) {
-	case REF_FACTORY:
-	case REF_CYBORG_FACTORY:
-	case REF_VTOL_FACTORY:
+      using enum STRUCTURE_TYPE;
+	case FACTORY:
+	case CYBORG_FACTORY:
+	case VTOL_FACTORY:
 		return structureIsOnHoldPending(structure->pFunctionality->factory);
-	case REF_RESEARCH:
+	case RESEARCH:
 		return structureIsOnHoldPending(structure->pFunctionality->researchFacility);
 	default:
 		ASSERT(false, "Huh?");
@@ -1541,17 +1536,17 @@ bool StatIsTemplate(BaseStats* Stat)
 
 COMPONENT_TYPE StatIsComponent(BaseStats* Stat)
 {
-	switch (StatType(Stat->ref & STAT_MASK))
-	{
-	case STAT_BODY: return COMP_BODY;
-	case STAT_BRAIN: return COMP_BRAIN;
-	case STAT_PROPULSION: return COMP_PROPULSION;
-	case STAT_WEAPON: return COMP_WEAPON;
-	case STAT_SENSOR: return COMP_SENSOR;
-	case STAT_ECM: return COMP_ECM;
-	case STAT_CONSTRUCT: return COMP_CONSTRUCT;
-	case STAT_REPAIR: return COMP_REPAIRUNIT;
-	default: return COMP_NUMCOMPONENTS;
+	switch (StatType(Stat->ref & STAT_MASK)) {
+      using enum COMPONENT_TYPE;
+	case STAT_BODY: return BODY;
+	case STAT_BRAIN: return BRAIN;
+	case STAT_PROPULSION: return PROPULSION;
+	case STAT_WEAPON: return WEAPON;
+	case STAT_SENSOR: return SENSOR;
+	case STAT_ECM: return ECM;
+	case STAT_CONSTRUCT: return CONSTRUCT;
+	case STAT_REPAIR: return REPAIR_UNIT;
+	default: return COUNT;
 	}
 }
 
@@ -1725,7 +1720,7 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 
 				ASSERT_OR_RETURN(, pViewData != nullptr, "Message without data!");
 
-				if (pViewData->type == VIEW_BEACON)
+				if (pViewData->type == VIEW_TYPE::VIEW_BEACON)
 				{
 					ASSERT_OR_RETURN(, pViewData->pData != nullptr, "Help message without data!");
 					if (pViewData->pData != nullptr && (((VIEW_PROXIMITY*)pViewData->pData)->timeAdded + 60000) <=
@@ -1758,7 +1753,7 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 			continue;
 		}
 
-		if (psProxDisp->type == POS_PROXDATA)
+		if (psProxDisp->type == POSITION_TYPE::POS_PROXDATA)
 		{
 			PROX_TYPE proxType = ((VIEW_PROXIMITY*)psProxDisp->psMessage->pViewData->pData)->proxType;
 			images = imagesProxTypes[proxType];
@@ -1767,12 +1762,11 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 		{
 			const Feature* psFeature = castFeature(psProxDisp->psMessage->psObj);
 
-			ASSERT_OR_RETURN(, psFeature && psFeature->psStats, "Bad feature message");
-			if (psFeature && psFeature->psStats && psFeature->psStats->subType == FEAT_OIL_RESOURCE)
+			ASSERT_OR_RETURN(, psFeature && psFeature->getStats(), "Bad feature message");
+			if (psFeature && psFeature->getStats() && psFeature->getStats()->subType == FEATURE_TYPE::OIL_RESOURCE)
 			{
 				images = imagesResource;
-				if (fireOnLocation(psFeature->pos.x, psFeature->pos.y))
-				{
+				if (fireOnLocation(psFeature->getPosition().x, psFeature->getPosition().y)) {
 					images = imagesBurningResource;
 					animationLength = ARRAY_SIZE(imagesBurningResource) - 1; // Longer animation for burning oil wells.
 				}
@@ -1809,8 +1803,8 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 		}
 		else if (psProxDisp->type == POS_PROXOBJ)
 		{
-			x = static_cast<int>((psProxDisp->psMessage->psObj->pos.x / TILE_UNITS - scrollMinX) * pixSizeH);
-			y = static_cast<int>((psProxDisp->psMessage->psObj->pos.y / TILE_UNITS - scrollMinY) * pixSizeV);
+			x = static_cast<int>((psProxDisp->psMessage->psObj->getPosition().x / TILE_UNITS - scrollMinX) * pixSizeH);
+			y = static_cast<int>((psProxDisp->psMessage->psObj->getPosition().y / TILE_UNITS - scrollMinY) * pixSizeV);
 		}
 		else
 		{

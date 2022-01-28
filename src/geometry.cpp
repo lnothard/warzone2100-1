@@ -26,7 +26,6 @@
  */
 
 #include "lib/framework/frame.h"
-#include "lib/ivis_opengl/ivisdef.h"
 #include "lib/ivis_opengl/pieclip.h"
 #include "lib/ivis_opengl/piematrix.h"
 
