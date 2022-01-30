@@ -51,18 +51,20 @@
 #include "research.h"
 #include "qtscript.h"
 #include "combat.h"
+#include "src/input/debugmappings.h"
+#include "display.h"
 
 // INFORM others that a building has been completed.
-bool SendBuildFinished(Structure* psStruct)
+bool SendBuildFinished(Structure const* psStruct)
 {
-	auto player = psStruct->getPlayer();
+	auto player = psStruct->playerManager->getPlayer();
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "invalid player %u", player);
 
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_ADD_STRUCTURE);
 	NETuint32_t(psStruct->getId()); // ID of building
 
 	// Along with enough info to build it (if needed)
-	NETuint32_t(&psStruct->pStructureType->ref);
+	NETuint32_t(&psStruct->getStats()->ref);
 	NETPosition(&psStruct->getPosition());
 	NETuint8_t(&player);
 	return NETend();
@@ -119,13 +121,13 @@ bool recvBuildFinished(NETQUEUE queue)
 	{
 		// Get the current structure
 		psStruct = getTileStructure(map_coord(pos.x), map_coord(pos.y));
-		if (asStructureStats[typeindex].type == psStruct->pStructureType->type)
+		if (asStructureStats[typeindex].type == psStruct->getStats()->type)
 		{
 			// Correct type, correct location, just rename the id's to sync it.. (urgh)
 			psStruct->id = structId;
 			psStruct->status = SS_BUILT;
 			buildingComplete(psStruct);
-			debug(LOG_SYNC, "Created modified building %u for player %u", psStruct->id, player);
+			debug(LOG_SYNC, "Created modified building %u for player %u", psStruct->getId(), player);
 #if defined (DEBUG)
 			NETlogEntry("structure id modified", SYNC_FLAG, player);
 #endif
@@ -164,7 +166,7 @@ bool SendDestroyStructure(Structure* s)
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_REMOVE_STRUCTURE);
 
 	// Struct to destroy
-	NETuint32_t(&s->id);
+	NETuint32_t(&s->getId());
 
 	return NETend();
 }
@@ -205,7 +207,7 @@ bool recvDestroyStructure(NETQUEUE queue)
 // ////////////////////////////////////////////////////////////////////////////
 //lassat is firing
 
-bool sendLasSat(UBYTE player, Structure* psStruct, PlayerOwnedObject * psObj)
+bool sendLasSat(UBYTE player, Structure* psStruct, BaseObject * psObj)
 {
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_LASSAT);
 
@@ -220,7 +222,7 @@ bool sendLasSat(UBYTE player, Structure* psStruct, PlayerOwnedObject * psObj)
 // recv lassat info on the receiving end.
 bool recvLasSat(NETQUEUE queue)
 {
-  PlayerOwnedObject * psObj;
+  BaseObject * psObj;
 	UBYTE player, targetplayer;
 	Structure* psStruct;
 	uint32_t id, targetid;
@@ -234,17 +236,16 @@ bool recvLasSat(NETQUEUE queue)
 
 	psStruct = IdToStruct(id, player);
 	psObj = IdToPointer(targetid, targetplayer);
-	if (psStruct && !canGiveOrdersFor(queue.index, psStruct->player))
-	{
+	if (psStruct && !canGiveOrdersFor(queue.index, psStruct->playerManager->getPlayer())) {
 		syncDebug("Wrong player.");
 		return false;
 	}
 
-	if (psStruct && psObj && psStruct->pStructureType->psWeapStat[0]->weaponSubClass == WSC_LAS_SAT)
+	if (psStruct && psObj && psStruct->getStats()->psWeapStat[0]->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT)
 	{
 		// Lassats have just one weapon
 		unsigned firePause = weaponFirePause(&asWeaponStats[psStruct->asWeaps[0].nStat], player);
-		unsigned damLevel = PERCENT(psStruct->body, structureBody(psStruct));
+		unsigned damLevel = PERCENT(psStruct->damageManager->getHp(), structureBody(psStruct));
 
 		if (damLevel < HEAVY_DAMAGE_LEVEL)
 		{
@@ -258,12 +259,12 @@ bool recvLasSat(NETQUEUE queue)
 		}
 
 		// Give enemy no quarter, unleash the lasat
-		proj_SendProjectile(&psStruct->asWeaps[0], nullptr, player, psObj->pos, psObj, true, 0);
+		proj_SendProjectile(&psStruct->asWeaps[0], nullptr, player, psObj->getPosition(), psObj, true, 0);
 		psStruct->asWeaps[0].timeLastFired = gameTime;
 		psStruct->asWeaps[0].ammo = 1; // abducting this field for keeping track of triggers
 
 		// Play 5 second countdown message
-		audio_QueueTrackPos(ID_SOUND_LAS_SAT_COUNTDOWN, psObj->pos.x, psObj->pos.y, psObj->pos.z);
+		audio_QueueTrackPos(ID_SOUND_LAS_SAT_COUNTDOWN, psObj->getPosition().x, psObj->getPosition().y, psObj->getPosition().z);
 	}
 
 	return true;
@@ -271,8 +272,8 @@ bool recvLasSat(NETQUEUE queue)
 
 void sendStructureInfo(Structure* psStruct, STRUCTURE_INFO structureInfo_, DroidTemplate* pT)
 {
-	uint8_t player = psStruct->player;
-	uint32_t structId = psStruct->id;
+	uint8_t player = psStruct->playerManager->getPlayer();
+	uint32_t structId = psStruct->getId();
 	uint8_t structureInfo = structureInfo_;
 
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_STRUCTUREINFO);

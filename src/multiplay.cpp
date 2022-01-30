@@ -408,28 +408,24 @@ Droid* IdToDroid(unsigned id, unsigned player)
 }
 
 // find off-world droids
-Droid* IdToMissionDroid(UDWORD id, UDWORD player)
+Droid* IdToMissionDroid(unsigned id, unsigned player)
 {
-	if (player == ANYPLAYER)
-	{
+	if (player == ANYPLAYER) {
 		for (auto& d : mission.apsDroidLists)
 		{
 			for (auto& droid : d)
 			{
-				if (droid.getId() == id)
-				{
+				if (droid.getId() == id) {
 					return &droid;
 				}
 			}
 		}
 	}
-	else if (player < MAX_PLAYERS)
-	{
-		for (auto d : mission.apsDroidLists[player])
+	else if (player < MAX_PLAYERS) {
+		for (auto& d : mission.apsDroidLists[player])
 		{
-			if (d.getId() == id)
-			{
-				return d;
+			if (d.getId() == id) {
+				return &d;
 			}
 		}
 	}
@@ -482,7 +478,7 @@ DroidTemplate* IdToTemplate(unsigned tempId, unsigned player)
 	}
 
 	// It could be a AI template...or that of another player
-	for (int i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
 		auto psTempl = findPlayerTemplateById(i, tempId);
 		if (psTempl) {
@@ -495,30 +491,24 @@ DroidTemplate* IdToTemplate(unsigned tempId, unsigned player)
 
 /////////////////////////////////////////////////////////////////////////////////
 //  Returns a pointer to base object, given an id and optionally a player.
-BaseObject * IdToPointer(unsigned id, unsigned player)
+BaseObject* IdToPointer(unsigned id, unsigned player)
 {
-	Droid* pD;
-	Structure* pS;
-	Feature* pF;
-	// droids.
-
-	pD = IdToDroid(id, player);
+	auto pD = IdToDroid(id, player);
 	if (pD) {
 		return (BaseObject *)pD;
 	}
 
 	// structures
-	pS = IdToStruct(id, player);
+	auto pS = IdToStruct(id, player);
 	if (pS) {
 		return (BaseObject *)pS;
 	}
 
 	// features
-	pF = IdToFeature(id, player);
+	auto pF = IdToFeature(id, player);
 	if (pF) {
 		return (BaseObject *)pF;
 	}
-
 	return nullptr;
 }
 
@@ -637,15 +627,15 @@ Vector3i cameraToHome(unsigned player, bool scroll)
 		x = map_coord(psBuilding->getPosition().x);
 		y = map_coord(psBuilding->getPosition().y);
 	}
-	else if ((player < MAX_PLAYERS) && apsDroidLists[player]) // or first droid
+	else if ((player < MAX_PLAYERS) && !apsDroidLists[player].empty()) // or first droid
 	{
-		x = map_coord(apsDroidLists[player].pos.x);
-		y = map_coord(apsDroidLists[player].pos.y);
+		x = map_coord(apsDroidLists[player].front().getPosition().x);
+		y = map_coord(apsDroidLists[player].front().getPosition().y);
 	}
-	else if ((player < MAX_PLAYERS) && apsStructLists[player]) // center on first struct
+	else if ((player < MAX_PLAYERS) && !apsStructLists[player].empty()) // center on first struct
 	{
-		x = map_coord(apsStructLists[player].pos.x);
-		y = map_coord(apsStructLists[player].pos.y);
+		x = map_coord(apsStructLists[player].front()->getPosition().x);
+		y = map_coord(apsStructLists[player].front()->getPosition().y);
 	}
 	else //or map center.
 	{

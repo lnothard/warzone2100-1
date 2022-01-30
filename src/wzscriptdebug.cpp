@@ -176,28 +176,28 @@ static RowDataModel fillMessageModel()
 	const std::vector<WzString> obj_type = {"DROID", "STRUCTURE", "FEATURE", "PROJECTILE", "TARGET"};
 
 	RowDataModel result(6);
-	for (auto psCurr : apsMessages)
+	for (auto list : apsMessages)
 	{
-		for (; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (auto& psCurr : list)
 		{
-			ASSERT(psCurr->type < msg_type.size(), "Bad message type");
-			ASSERT(psCurr->dataType < msg_data_type.size(), "Bad viewdata type");
+			ASSERT(psCurr.type < msg_type.size(), "Bad message type");
+			ASSERT(psCurr.dataType < msg_data_type.size(), "Bad viewdata type");
 			std::vector<WzString> columnTexts;
-			columnTexts.push_back(WzString::number(psCurr->id));
-			columnTexts.push_back(msg_type.at(psCurr->type));
-			columnTexts.push_back(msg_data_type.at(psCurr->dataType));
-			columnTexts.push_back(WzString::number(psCurr->player));
-			ASSERT(!psCurr->pViewData || !psCurr->psObj, "Both viewdata and object in message should be impossible!");
-			if (psCurr->pViewData)
+			columnTexts.push_back(WzString::number(psCurr.id));
+			columnTexts.push_back(msg_type.at(psCurr.type));
+			columnTexts.push_back(msg_data_type.at(psCurr.dataType));
+			columnTexts.push_back(WzString::number(psCurr.player));
+			ASSERT(!psCurr.pViewData || !psCurr.psObj, "Both viewdata and object in message should be impossible!");
+			if (psCurr.pViewData)
 			{
-				ASSERT(psCurr->pViewData->type < view_type.size(), "Bad viewdata type");
-				columnTexts.push_back(psCurr->pViewData->name);
-				columnTexts.push_back(view_type.at(psCurr->pViewData->type));
+				ASSERT(psCurr.pViewData->type < view_type.size(), "Bad viewdata type");
+				columnTexts.push_back(psCurr.pViewData->name);
+				columnTexts.push_back(view_type.at(psCurr.pViewData->type));
 			}
-			else if (psCurr->psObj)
+			else if (psCurr.psObj)
 			{
-				columnTexts.emplace_back((objInfo(psCurr->psObj)));
-				columnTexts.push_back(obj_type.at(psCurr->psObj->type));
+				columnTexts.emplace_back((objInfo(psCurr.psObj)));
+				columnTexts.push_back(obj_type.at(psCurr.psObj->type));
 			}
 			else
 			{
@@ -2275,7 +2275,7 @@ void WZScriptDebugger::updateLabelModel()
 	}
 }
 
-void WZScriptDebugger::selected(const PlayerOwnedObject * psObj)
+void WZScriptDebugger::selected(BaseObject const* psObj)
 {
 	selectedObjectDetails = nlohmann::ordered_json::object();
 	selectedObjectId = nullopt;

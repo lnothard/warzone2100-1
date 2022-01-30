@@ -23,8 +23,8 @@
  * Definitions for the weapons
  */
 
-#ifndef __INCLUDED_WEAPONDEF_H__
-#define __INCLUDED_WEAPONDEF_H__
+#ifndef __INCLUDED_WEAPON_H__
+#define __INCLUDED_WEAPON_H__
 
 #include "lib/framework/fixedpoint.h"
 #include "lib/gamelib/gtime.h"
@@ -66,8 +66,8 @@ public:
   Weapon(Weapon const& rhs);
   Weapon& operator=(Weapon const& rhs);
 
-  Weapon(Weapon&& rhs) = default;
-  Weapon& operator=(Weapon&& rhs) = default;
+  Weapon(Weapon&& rhs) noexcept = default;
+  Weapon& operator=(Weapon&& rhs) noexcept = default;
 
 
   [[nodiscard]] WeaponStats const* getStats() const;

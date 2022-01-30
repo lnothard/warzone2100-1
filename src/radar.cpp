@@ -500,8 +500,6 @@ static void DrawRadarObjects()
 	/* Show droids on map - go through all players */
 	for (clan = 0; clan < MAX_PLAYERS; clan++)
 	{
-		Droid* psDroid;
-
 		//see if have to draw enemy/ally color
 		if (bEnemyAllyRadarColor)
 		{
@@ -527,33 +525,32 @@ static void DrawRadarObjects()
 		flashCol = flashColours[getPlayerColour(clan)];
 
 		/* Go through all droids */
-		for (psDroid = apsDroidLists[clan]; psDroid != nullptr; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[clan])
 		{
-			if (psDroid->getPosition().x < world_coord(scrollMinX) || psDroid->getPosition().y < world_coord(scrollMinY)
-				|| psDroid->getPosition().x >= world_coord(scrollMaxX) || psDroid->getPosition().y >= world_coord(scrollMaxY))
-			{
+			if (psDroid.getPosition().x < world_coord(scrollMinX) || psDroid.getPosition().y < world_coord(scrollMinY)
+				|| psDroid.getPosition().x >= world_coord(scrollMaxX) || psDroid.getPosition().y >= world_coord(scrollMaxY)) {
 				continue;
 			}
-			if (psDroid->isVisibleToSelectedPlayer()
+			if (psDroid.isVisibleToSelectedPlayer()
 				|| (bMultiPlayer && alliancesSharedVision(game.alliance)
 					&& selectedPlayer < MAX_PLAYERS &&
-              aiCheckAlliances(selectedPlayer, psDroid->playerManager->getPlayer()))) {
-				int x = psDroid->getPosition().x / TILE_UNITS;
-				int y = psDroid->getPosition().y / TILE_UNITS;
+              aiCheckAlliances(selectedPlayer, psDroid.playerManager->getPlayer()))) {
+				int x = psDroid.getPosition().x / TILE_UNITS;
+				int y = psDroid.getPosition().y / TILE_UNITS;
 				size_t pos = (x - scrollMinX) + (y - scrollMinY) * radarTexWidth;
 
 				ASSERT(pos * sizeof(*radarOverlayBuffer) < radarBufferSize, "Buffer overrun");
-				if (clan == selectedPlayer && gameTime > HIT_NOTIFICATION && gameTime - psDroid->timeLastHit <
+				if (clan == selectedPlayer && gameTime > HIT_NOTIFICATION && gameTime - psDroid.timeLastHit <
 					HIT_NOTIFICATION)
 				{
-					if (psDroid->selected && !blinkState)
+					if (psDroid.damageManager->isSelected() && !blinkState)
 						radarOverlayBuffer[pos] = applyAlpha(flashCol, OVERLAY_OPACITY).rgba;
 					else
 						radarOverlayBuffer[pos] = flashCol.rgba;
 				}
 				else
 				{
-					if (psDroid->selected && !blinkState)
+					if (psDroid.damageManager->isSelected() && !blinkState)
 						radarOverlayBuffer[pos] = applyAlpha(playerCol, OVERLAY_OPACITY).rgba;
 					else
 						radarOverlayBuffer[pos] = playerCol.rgba;
@@ -563,12 +560,11 @@ static void DrawRadarObjects()
 	}
 
 	/* Do the same for structures */
-	for (SDWORD x = scrollMinX; x < scrollMaxX; x++)
+	for (auto x = scrollMinX; x < scrollMaxX; x++)
 	{
-		for (SDWORD y = scrollMinY; y < scrollMaxY; y++)
+		for (auto y = scrollMinY; y < scrollMaxY; y++)
 		{
-			Tile* psTile = mapTile(x, y);
-			Structure* psStruct;
+			auto psTile = mapTile(x, y);
 			size_t pos = (x - scrollMinX) + (y - scrollMinY) * radarTexWidth;
 
 			ASSERT(pos * sizeof(*radarOverlayBuffer) < radarBufferSize, "Buffer overrun");
@@ -576,8 +572,8 @@ static void DrawRadarObjects()
 			{
 				continue;
 			}
-			psStruct = (Structure*)psTile->psObject;
-			clan = psStruct->player;
+			auto psStruct = (Structure*)psTile->psObject;
+			clan = psStruct->playerManager->getPlayer();
 
 			//see if have to draw enemy/ally color
 			if (bEnemyAllyRadarColor)
@@ -600,21 +596,21 @@ static void DrawRadarObjects()
 			}
 			flashCol = flashColours[getPlayerColour(clan)];
 
-			if (psStruct->visibleForLocalDisplay()
+			if (psStruct->isVisibleToSelectedPlayer()
 				|| (bMultiPlayer && alliancesSharedVision(game.alliance)
-					&& selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psStruct->player)))
+					&& selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psStruct->playerManager->getPlayer())))
 			{
 				if (clan == selectedPlayer && gameTime > HIT_NOTIFICATION && gameTime - psStruct->timeLastHit <
 					HIT_NOTIFICATION)
 				{
-					if (psStruct->player == selectedPlayer && psStruct->selected && !blinkState)
+					if (psStruct->playerManager->isSelectedPlayer() && psStruct->damageManager->isSelected() && !blinkState)
 						radarOverlayBuffer[pos] = applyAlpha(flashCol, OVERLAY_OPACITY).rgba;
 					else
 						radarOverlayBuffer[pos] = flashCol.rgba;
 				}
 				else
 				{
-					if (psStruct->player == selectedPlayer && psStruct->selected && !blinkState)
+					if (psStruct->playerManager->isSelectedPlayer() && psStruct->damageManager->isSelected() && !blinkState)
 						radarOverlayBuffer[pos] = applyAlpha(playerCol, OVERLAY_OPACITY).rgba;
 					else
 						radarOverlayBuffer[pos] = playerCol.rgba;

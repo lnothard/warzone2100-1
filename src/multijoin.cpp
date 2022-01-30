@@ -360,7 +360,7 @@ bool MultiPlayerLeave(UDWORD playerIndex)
 		char buf[256];
 
 		ssprintf(buf, _("File transfer has been aborted for %d."), playerIndex);
-		addConsoleMessage(buf, CONSOLE_TEXT_JUSTIFICATION::CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
+		addConsoleMessage(buf, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 		debug(LOG_INFO, "=== File has been aborted for %d ===", playerIndex);
 		NetPlay.players[playerIndex].wzFiles->clear();
 	}
@@ -497,7 +497,7 @@ bool recvDataCheck(NETQUEUE queue)
 			snprintf(msg, sizeof(msg), _("%s (%u) has an incompatible mod, and has been kicked."),
 			         getPlayerName(player), player);
 			sendInGameSystemMessage(msg);
-			addConsoleMessage(msg, LEFT, NOTIFY_MESSAGE);
+			addConsoleMessage(msg, CONSOLE_TEXT_JUSTIFICATION::LEFT, NOTIFY_MESSAGE);
 
 			kickPlayer(player, _("Your data doesn't match the host's!"), ERROR_WRONGDATA);
 			debug(LOG_ERROR, "%s (%u) has an incompatible mod. ([%d] got %x, expected %x)", getPlayerName(player),

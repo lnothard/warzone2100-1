@@ -39,6 +39,7 @@
 #include "nethelpers.h"
 #include "radar.h"
 #include "warzoneconfig.h"
+#include "lib/ivis_opengl/pieclip.h"
 
 char sPlayer[128];
 bool autosaveEnabled;

@@ -22,16 +22,7 @@
 #include "wzcrashhandlingproviders.h"
 
 #include "lib/framework/wzglobal.h" // required for config.h
-#include "lib/framework/frame.h"
-#include "lib/framework/wzapp.h"
-#include "lib/framework/wzstring.h"
-#include "lib/framework/physfs_ext.h"
 #include "lib/framework/string_ext.h"
-
-#include "version.h"
-#include "urlhelpers.h"
-#include "activity.h"
-#include "modding.h"
 
 /* Crash-handling providers */
 

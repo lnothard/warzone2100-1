@@ -28,7 +28,6 @@
 #include "lib/framework/wzstring.h"
 
 #include "version.h"
-#include "build_tools/autorevision.h"
 #include "urlhelpers.h"
 #include "activity.h"
 
@@ -165,8 +164,7 @@ static std::string Get_WinPackageFullName()
 static std::string GetCurrentBuildPropertyValue(const BuildProperty& property)
 {
 	using BP = BuildProperty;
-	switch (property)
-	{
+	switch (property) {
 	case BP::GIT_BRANCH:
 		return VCS_BRANCH;
 	case BP::GIT_TAG:

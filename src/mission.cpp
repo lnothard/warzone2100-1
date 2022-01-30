@@ -1502,14 +1502,14 @@ void missionDroidUpdate(Droid* psDroid)
 	/*This is required for Transporters that are moved offWorld so the
 	saveGame doesn't try to set their position in the map - especially important
 	for endCam2 where there isn't a valid map!*/
-	if (isTransporter(psDroid))
+	if (isTransporter(*psDroid))
 	{
 		psDroid->pos.x = INVALID_XY;
 		psDroid->pos.y = INVALID_XY;
 	}
 
 	//ignore all droids except Transporters
-	if (!isTransporter(psDroid)
+	if (!isTransporter(*psDroid)
 		|| !(orderState(psDroid, ORDER_TYPE::TRANSPORT_OUT) ||
 			orderState(psDroid, ORDER_TYPE::TRANSPORT_IN) ||
 			orderState(psDroid, ORDER_TYPE::TRANSPORT_RETURN)))
@@ -1589,7 +1589,7 @@ static void missionResetDroids()
 					y = map_coord(psStruct->getPosition().y);
 				}
 				pickRes = pickHalfATile(&x, &y, LOOK_FOR_EMPTY_TILE);
-				if (pickRes == NO_FREE_TILE)
+				if (pickRes == PICK_TILE::NO_FREE_TILE)
 				{
 					ASSERT(false, "missionResetUnits: Unable to find a free location");
 					psStruct = nullptr;
@@ -1613,7 +1613,7 @@ static void missionResetDroids()
 						UDWORD y = map_coord(psStruct->getPosition().y);
 						PICK_TILE pickRes = pickHalfATile(&x, &y, LOOK_FOR_EMPTY_TILE);
 
-						if (pickRes == NO_FREE_TILE)
+						if (pickRes == PICK_TILE::NO_FREE_TILE)
 						{
 							ASSERT(false, "missionResetUnits: Unable to find a free location");
 							psStruct = nullptr;
@@ -2394,7 +2394,7 @@ void intRunMissionResult()
 					saveGame(sRequestResult, GTYPE_SAVE_START);
 					sstrcpy(msg, _("GAME SAVED :"));
 					sstrcat(msg, sRequestResult);
-					addConsoleMessage(msg, LEFT_JUSTIFY, NOTIFY_MESSAGE);
+					addConsoleMessage(msg, CONSOLE_TEXT_JUSTIFICATION::LEFT, NOTIFY_MESSAGE);
 				}
 			}
 		}
@@ -3166,7 +3166,7 @@ void emptyTransporters(bool bOffWorld)
 					for (auto& psDroid : psTransporter.group->members)
 					{
 						//take it out of the Transporter group
-						psTransporter->group->remove(psDroid);
+						psTransporter.group->remove(psDroid);
 						//add it back into current droid lists
 						addDroid(psDroid, apsDroidLists);
 					}
