@@ -120,7 +120,7 @@ static bool aiStructHasRange(Structure const* psStruct, BaseObject const* psTarg
 		return false;
 	}
 
-	auto psWStats = psStruct->getWeapons()[weapon_slot].getStats();
+	auto psWStats = psStruct->getWeapon(weapon_slot)->getStats();
 	auto longRange = proj_GetLongRange(psWStats, psStruct->playerManager->getPlayer());
 	return objectPositionSquareDiff(
           psStruct->getPosition(),
@@ -168,7 +168,7 @@ bool aiInitialise()
 }
 
 /** Search the global list of sensors for a possible target for psObj. */
-static BaseObject const* aiSearchSensorTargets(BaseObject* psObj, int weapon_slot,
+static BaseObject const* aiSearchSensorTargets(BaseObject const* psObj, int weapon_slot,
 																							 WeaponStats const* psWStats, TARGET_ORIGIN* targetOrigin)
 {
   auto longRange = proj_GetLongRange(

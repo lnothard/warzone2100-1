@@ -263,6 +263,7 @@ public:
 
   [[nodiscard]] int objRadius() const override;
 
+  [[nodiscard]] ANIMATION_EVENTS getAnimationEvent() const;
   [[nodiscard]] ACTION getAction() const noexcept;
   [[nodiscard]] Order const* getOrder() const;
   [[nodiscard]] DROID_TYPE getType() const noexcept;
@@ -343,7 +344,7 @@ public:
   std::unique_ptr<Droid> giftSingleDroid(unsigned to, bool electronic);
   void droidSetBits(DroidTemplate const* pTemplate);
   void orderDroidListEraseRange(int indexBegin, int indexEnd);
-  void orderClearTargetFromDroidList(BaseObject* psTarget);
+  void orderClearTargetFromDroidList(BaseObject const* psTarget);
   void orderCheckGuardPosition(int range);
   bool orderDroidList();
   void moveStopDroid();

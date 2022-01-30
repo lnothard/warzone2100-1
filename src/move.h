@@ -168,21 +168,21 @@ void updateDroidOrientation(Droid* psDroid);
 bool moveCheckDroidMovingAndVisible(void* psObj);
 
 std::string moveDescription(MOVE_STATUS status);
-static void moveOpenGates(Droid* psDroid);
-static void moveOpenGates(Droid* psDroid, Vector2i tile);
+static void moveOpenGates(Droid const* psDroid);
+static void moveOpenGates(Droid const* psDroid, Vector2i tile);
 static void moveCalcSlideVector(Droid* psDroid, int objX, int objY, int* pMx, int* pMy);
 static bool moveDroidStopped(Droid* psDroid, SDWORD speed);
 static void movePlayDroidMoveAudio(Droid* psDroid);
-static void moveCheckFinalWaypoint(Droid* psDroid, SDWORD* pSpeed);
+static void moveCheckFinalWaypoint(Droid const* psDroid, SDWORD* pSpeed);
 static bool moveDroidStartCallback(void* psObj);
 static void moveUpdateDroidDirection(Droid* psDroid, SDWORD* pSpeed, uint16_t direction,
                                      uint16_t iSpinAngle, int iSpinSpeed, int iTurnSpeed, uint16_t* pDroidDir);
-static int moveCalcNormalSpeed(Droid* psDroid, int fSpeed, uint16_t iDroidDir, int iAccel, int iDecel);
+static int moveCalcNormalSpeed(Droid const* psDroid, int fSpeed, uint16_t iDroidDir, int iAccel, int iDecel);
 static int moveCalcPerpSpeed(Droid* psDroid, uint16_t iDroidDir, int iSkidDecel);
-static void moveGetDroidPosDiffs(Droid* psDroid, int32_t* pDX, int32_t* pDY);
-static void moveCheckSquished(Droid* psDroid, int emx, int emy);
+static void moveGetDroidPosDiffs(Droid const* psDroid, int32_t* pDX, int32_t* pDY);
+static void moveCheckSquished(Droid const* psDroid, int emx, int emy);
 static void moveUpdateDroidPos(Droid* psDroid, int32_t dx, int32_t dy);
-static bool moveReachedWayPoint(Droid* psDroid);
+static bool moveReachedWayPoint(Droid const* psDroid);
 static uint16_t moveGetDirection(Droid* psDroid);
 static void checkLocalFeatures(Droid* psDroid);
 static bool moveBlockingTileCallback(Vector2i pos, int32_t dist, void* data_);

@@ -23,6 +23,7 @@
  */
 
 #include "lib/framework/math_ext.h"
+#include "lib/framework/strres.h"
 #include "lib/sound/audio.h"
 
 #include "action.h"
@@ -55,7 +56,6 @@
 #include "transporter.h"
 #include "visibility.h"
 #include "warcam.h"
-#include "lib/framework/strres.h"
 
 
 // the structure that was last hit
@@ -276,11 +276,14 @@ void Droid::initVisibility()
   }
 }
 
-const ComponentStats* Droid::getComponent(const std::string& compName) const
+const ComponentStats* Droid::getComponent(std::string const& compName) const
 {
-  return pimpl
-         ? pimpl->components.at(pimpl->name).get()
-         : nullptr;
+  return pimpl ? pimpl->components.at(pimpl->name).get() : nullptr;
+}
+
+ANIMATION_EVENTS Droid::getAnimationEvent() const
+{
+  return pimpl ? pimpl->animationEvent : ANIMATION_EVENTS::ANIM_EVENT_NONE;
 }
 
 unsigned Droid::getTimeActionStarted() const
@@ -537,7 +540,7 @@ void Droid::incrementKills() noexcept
  * This function clears all the orders from droid's order list
  * that don't have target as psTarget.
  */
-void Droid::orderClearTargetFromDroidList(BaseObject* psTarget)
+void Droid::orderClearTargetFromDroidList(BaseObject const* psTarget)
 {
   ASSERT_OR_RETURN(, pimpl != nullptr, "Droid object is undefined");
   for (auto i = 0; i < pimpl->asOrderList.size(); ++i)
@@ -620,8 +623,8 @@ void Droid::orderDroidListEraseRange(int indexBegin, int indexEnd)
                      - MIN(indexEnd, pimpl->asOrderList.size())
                      - MIN(indexBegin, pimpl->asOrderList.size()));
 
-  listPendingBegin -= MIN(indexEnd, listPendingBegin)
-                     - MIN(indexBegin, listPendingBegin);
+//  listPendingBegin -= MIN(indexEnd, listPendingBegin)
+//                     - MIN(indexBegin, listPendingBegin);
 }
 
 /// This function goes to the droid's order list and sets a new order
@@ -1194,9 +1197,8 @@ void Droid::orderUpdateDroid()
       }
         // if you are in a command group, default to guarding the commander
       else if (hasCommander() && pimpl->order->type != HOLD
-               && pimpl->order->structure_stats.get() != structGetDemolishStat())
+               && pimpl->order->structure_stats.get() != structGetDemolishStat()) {
         // stop the constructor auto repairing when it is about to demolish
-      {
         orderDroidObj(this, GUARD, pimpl->group->getCommander(), ModeImmediate);
       }
       else if (isTransporter(*this) && !bMultiPlayer) {
@@ -1997,7 +1999,7 @@ void Droid::actionUpdateDroid()
           if (!droidRemove(this, mission.apsDroidLists)) {
             ASSERT_OR_RETURN(, false, "Unable to remove transporter from mission list");
           }
-          addDroid(this, apsDroidLists);
+          addDroid(this);
           //set the x/y up since they were set to INVALID_XY when moved offWorld
           missionGetTransporterExit(selectedPlayer, &droidX, &droidY);
           setPosition({droidX, droidY, getPosition().z});
@@ -6147,7 +6149,7 @@ void Droid::movePlayAudio(bool bStarted, bool bStoppedBefore, int iMoveSpeed)
       (isVisibleToSelectedPlayer())) {
     if (audio_PlayObjDynamicTrack(this, iAudioID,
                                   pAudioCallback)) {
-      iAudioID = iAudioID;
+      pimpl->iAudioID = iAudioID;
     }
   }
 }
@@ -6928,7 +6930,7 @@ std::unique_ptr<Droid> Droid::giftSingleDroid(unsigned to, bool electronic)
 
     ASSERT_OR_RETURN(nullptr, psNewDroid.get(), "Unable to build unit");
 
-    addDroid(psNewDroid, apsDroidLists);
+    addDroid(psNewDroid.get());
     adjustDroidCount(psNewDroid.get(), 1);
 
     psNewDroid->damageManager->setHp(clip(
@@ -6978,7 +6980,7 @@ std::unique_ptr<Droid> Droid::giftSingleDroid(unsigned to, bool electronic)
   if (droidRemove(this, apsDroidLists)) {
     playerManager->setPlayer(to);
 
-    addDroid(this, apsDroidLists);
+    addDroid(this);
     adjustDroidCount(this, 1);
 
 //      // the new player may have different default sensor/ecm/repair components
@@ -7272,7 +7274,7 @@ static void removeDroidFX(Droid* psDel, unsigned impactTime)
 		return;
 	}
 
-	if (psDel->animationEvent != ANIM_EVENT_DYING) {
+	if (psDel->getAnimationEvent() != ANIM_EVENT_DYING) {
 		compPersonToBits(psDel);
 	}
 
@@ -7550,7 +7552,7 @@ static unsigned calcSum(const uint8_t (&asParts)[DROID_MAXCOMP], int numWeaps,
 		func(asBrainStats[asParts[COMPONENT_TYPE::BRAIN]]) +
 		func(asSensorStats[asParts[COMPONENT_TYPE::SENSOR]]) +
 		func(asECMStats[asParts[COMPONENT_TYPE::ECM]]) +
-		func(asRepairStats[asParts[COMPONENT_TYPE::REPAIRUNIT]]) +
+		func(asRepairStats[asParts[COMPONENT_TYPE::REPAIR_UNIT]]) +
 		func(asConstructStats[asParts[COMPONENT_TYPE::CONSTRUCT]]) +
 		propulsionFunc(asBodyStats[asParts[COMPONENT_TYPE::BODY]], asPropulsionStats[asParts[COMPONENT_TYPE::PROPULSION]]);
 	for (int i = 0; i < numWeaps; ++i)
@@ -7745,25 +7747,23 @@ unsigned calcDroidSpeed(unsigned baseSpeed, unsigned terrainType,
 }
 
 template <typename T>
-static unsigned calcBuild(T* obj)
+static unsigned calcBuild(T const* obj)
 {
-	return calcSum(obj, [](ComponentStats const& stat)
-	               {
-		               return stat.buildPoints;
-	               }, [](BodyStats const& bodyStat, PropulsionStats const& propStat)
-	               {
-		               // Propulsion power points are a percentage of the body's build points.
-		               return bodyStat.buildPoints * (100 + propStat.buildPoints) / 100;
-	               });
+	return calcSum(obj, [](ComponentStats const& stat) {
+     return stat.buildPoints;
+  }, [](BodyStats const& bodyStat, PropulsionStats const& propStat) {
+    // Propulsion power points are a percentage of the body's build points.
+    return bodyStat.buildPoints * (100 + propStat.buildPoints) / 100;
+  });
 }
 
 /* Calculate the points required to build the template - used to calculate time*/
-unsigned calcTemplateBuild(const DroidTemplate* psTemplate)
+unsigned calcTemplateBuild(DroidTemplate const* psTemplate)
 {
 	return calcBuild(psTemplate);
 }
 
-unsigned calcDroidPoints(Droid* psDroid)
+unsigned calcDroidPoints(Droid const* psDroid)
 {
 	return calcBuild(psDroid);
 }
@@ -7795,7 +7795,7 @@ int calcDroidPower(Droid const* psDroid)
 
 
 std::unique_ptr<Droid> buildDroid(DroidTemplate* pTemplate, unsigned x, unsigned y, unsigned player, bool onMission,
-                                  const InitialOrders* initialOrders, Rotation rot)
+                                  InitialOrders const* initialOrders, Rotation rot)
 {
 	ASSERT_OR_RETURN(nullptr, player < MAX_PLAYERS, "invalid player?: %" PRIu32 "", player);
 	// ajl. droid will be created, so inform others
@@ -7810,7 +7810,7 @@ std::unique_ptr<Droid> buildDroid(DroidTemplate* pTemplate, unsigned x, unsigned
 }
 
 // Sets the parts array in a template given a droid.
-void templateSetParts(const Droid* psDroid, DroidTemplate* psTemplate)
+void templateSetParts(Droid const* psDroid, DroidTemplate* psTemplate)
 {
 	psTemplate->weaponCount = 0;
 	psTemplate->type = psDroid->getType();
@@ -8628,7 +8628,7 @@ bool vtolFull(Droid const& droid)
   });
 }
 
-bool vtolReadyToRearm(const Droid& droid, const RearmPad& rearmPad)
+bool vtolReadyToRearm(Droid const& droid, RearmPad const& rearmPad)
 {
   if (droid.isVtol() || droid.getAction() == ACTION::WAIT_FOR_REARM ||
       !vtolHappy(droid) || rearmPad.isClear() || !vtolRearming(droid)) {
@@ -8733,18 +8733,18 @@ bool allVtolsRearmed(Droid const& droid)
 //}
 
 /*returns a count of the base number of attack runs for the weapon attached to the droid*/
-unsigned getNumAttackRuns(const Droid* psDroid, int weapon_slot)
+unsigned getNumAttackRuns(Droid const* psDroid, int weapon_slot)
 {
 	ASSERT_OR_RETURN(0, psDroid->isVtol(), "not a VTOL Droid");
 	// if weapon is a salvo weapon, then number of shots that can be fired = vtolAttackRuns * numRounds
-	if (psDroid->getWeapons()[weapon_slot].getStats().upgraded[psDroid->playerManager->getPlayer()].reloadTime) {
-		return psDroid->getWeapons()[weapon_slot].getStats().upgraded[psDroid->playerManager->getPlayer()].numRounds
-			* psDroid->getWeapons()[weapon_slot].getStats().vtolAttackRuns;
+	if (psDroid->getWeapon(weapon_slot)->getStats()->upgraded[psDroid->playerManager->getPlayer()].reloadTime) {
+		return psDroid->getWeapon(weapon_slot)->getStats()->upgraded[psDroid->playerManager->getPlayer()].numRounds
+			* psDroid->getWeapon(weapon_slot)->getStats()->vtolAttackRuns;
 	}
-	return psDroid->getWeapons()[weapon_slot].getStats().vtolAttackRuns;
+	return psDroid->getWeapon(weapon_slot)->getStats()->vtolAttackRuns;
 }
 
-bool vtolHappy(const Droid& droid)
+bool vtolHappy(Droid const& droid)
 {
   assert(droid.isVtol());
   if (droid.isDamaged() || !hasFullAmmo(droid) ||
@@ -8888,7 +8888,7 @@ true if valid weapon*/
 /* this will be buggy if the droid being checked has both AA weapon and non-AA weapon
 Cannot think of a solution without adding additional return value atm.
 */
-bool checkValidWeaponForProp(DroidTemplate* psTemplate)
+bool checkValidWeaponForProp(DroidTemplate const* psTemplate)
 {
 	//check propulsion stat for vtol
 	auto psPropStats = asPropulsionStats + psTemplate->asParts[COMPONENT_TYPE::PROPULSION];

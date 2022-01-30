@@ -124,6 +124,7 @@
 # include <CoreServices/CoreServices.h>
 # include <unistd.h>
 # include "lib/framework/cocoa_wrapper.h"
+#include "scores.h"
 #endif // WZ_OS_MAC
 
 /* Always use fallbacks on Windows */

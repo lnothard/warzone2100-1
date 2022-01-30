@@ -124,7 +124,7 @@ static bool moveBlockingTileCallback(Vector2i pos, int32_t dist, void* data_)
 }
 
 // see if a Droid has run over a person
-static void moveCheckSquished(Droid* psDroid, int emx, int emy)
+static void moveCheckSquished(Droid const* psDroid, int emx, int emy)
 {
 	const auto droidR = psDroid->objRadius();
 	const auto mx = gameTimeAdjustedAverage(emx, EXTRA_PRECISION);
@@ -195,7 +195,7 @@ static void moveCalcSlideVector(Droid* psDroid, int objX, int objY, int* pMx, in
 	*pMy = (int)dirY * dotRes / dirMagSq;
 }
 
-static void moveOpenGates(Droid* psDroid, Vector2i tile)
+static void moveOpenGates(Droid const* psDroid, Vector2i tile)
 {
 	// is the new tile a gate?
 	if (!worldOnMap(tile.x, tile.y)) return;
@@ -210,7 +210,7 @@ static void moveOpenGates(Droid* psDroid, Vector2i tile)
 	}
 }
 
-static void moveOpenGates(Droid* psDroid)
+static void moveOpenGates(Droid const* psDroid)
 {
 	Vector2i pos = psDroid->getPosition().xy() + iSinCosR(
           psDroid->getMovementData()->moveDir,
@@ -240,7 +240,7 @@ static uint16_t moveGetDirection(Droid* psDroid)
 }
 
 // Check if a droid has got to a way point
-static bool moveReachedWayPoint(Droid* psDroid)
+static bool moveReachedWayPoint(Droid const* psDroid)
 {
 	// Calculate the vector to the droid
 	const Vector2i droid = Vector2i(psDroid->getPosition().xy()) - psDroid->getMovementData()->target;
@@ -311,7 +311,7 @@ static int moveCalcPerpSpeed(Droid* psDroid, uint16_t iDroidDir, int iSkidDecel)
 }
 
 // Calculate the current speed in the droids normal direction
-static int moveCalcNormalSpeed(Droid* psDroid, int fSpeed, uint16_t iDroidDir, int iAccel, int iDecel)
+static int moveCalcNormalSpeed(Droid const* psDroid, int fSpeed, uint16_t iDroidDir, int iAccel, int iDecel)
 {
 	auto adiff = (uint16_t)(iDroidDir - psDroid->getMovementData()->moveDir); // Cast wrapping intended.
 	auto normalSpeed = iCosR(adiff, psDroid->getMovementData()->speed);
@@ -333,7 +333,7 @@ static int moveCalcNormalSpeed(Droid* psDroid, int fSpeed, uint16_t iDroidDir, i
 	return normalSpeed;
 }
 
-static void moveGetDroidPosDiffs(Droid* psDroid, int* pDX, int* pDY)
+static void moveGetDroidPosDiffs(Droid const* psDroid, int* pDX, int* pDY)
 {
 	auto move = psDroid->getMovementData()->speed * EXTRA_PRECISION; // high precision
 	*pDX = iSinR(psDroid->getMovementData()->moveDir, move);
@@ -341,7 +341,7 @@ static void moveGetDroidPosDiffs(Droid* psDroid, int* pDX, int* pDY)
 }
 
 // see if the droid is close to the final way point
-static void moveCheckFinalWaypoint(Droid* psDroid, int* pSpeed)
+static void moveCheckFinalWaypoint(Droid const* psDroid, int* pSpeed)
 {
 	auto minEndSpeed = (*pSpeed + 2) / 3;
 	minEndSpeed = std::min(minEndSpeed, MIN_END_SPEED);
@@ -388,10 +388,10 @@ static void moveUpdateDroidPos(Droid* psDroid, int dx, int dy)
 
   if (!isTransporter(*psDroid)) return;
   if (psDroid->getPosition().x == 0) {
-    psDroid->position.x = 1;
+    psDroid->setPosition({1, psDroid->getPosition().y, psDroid->getPosition().z});
   }
   if (psDroid->getPosition().y == 0) {
-    psDroid->position.y = 1;
+    psDroid->setPosition({psDroid->getPosition().x, 1, psDroid->getPosition().z});
   }
 }
 

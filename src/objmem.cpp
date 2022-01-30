@@ -347,62 +347,39 @@ static inline void releaseAllObjectsInList(OBJECT* list[])
 	}
 }
 
-/***************************************************************************************
- *
- * The actual object memory management functions for the different object types
- */
-
-/***************************  DROID  *********************************/
-
 /* add the droid to the Droid Lists */
-void addDroid(Droid* psDroidToAdd, Droid* pList[MAX_PLAYERS])
+void addDroid(Droid* psDroidToAdd)
 {
-	Group* psGroup;
+  apsDroidLists[psDroidToAdd->playerManager->getPlayer()].push_back(*psDroidToAdd);
 
-	addObjectToList(pList, psDroidToAdd, psDroidToAdd->playerManager->getPlayer());
+  psDroidToAdd->damageManager->setTimeOfDeath(0);
+  if (psDroidToAdd->getType() == DROID_TYPE::SENSOR) {
+    apsSensorList.push_back(psDroidToAdd);
+  }
 
-	/* Whenever a droid gets added to a list other than the current list
-	 * its died flag is set to NOT_CURRENT_LIST so that anything targetting
-	 * it will cancel itself - HACK?! */
-	if (pList[psDroidToAdd->playerManager->getPlayer()] == apsDroidLists[psDroidToAdd->playerManager->getPlayer()]) {
-		psDroidToAdd->damageManager->setTimeOfDeath(0);
-		if (psDroidToAdd->getType() == DROID_TYPE::SENSOR) {
-			addObjectToFuncList(apsSensorList, psDroidToAdd, 0);
-		}
-
-		// commanders have to get their group back if not already loaded
-		if (psDroidToAdd->getType() == DROID_TYPE::COMMAND && !psDroidToAdd->group) {
-			psGroup = grpCreate();
-			psGroup->add(psDroidToAdd);
-		}
-	}
-	else if (pList[psDroidToAdd->playerManager->getPlayer()] == mission.apsDroidLists[psDroidToAdd->playerManager->getPlayer()]) {
-		if (psDroidToAdd->getType() == DROID_TYPE::SENSOR) {
-			addObjectToFuncList(mission.apsSensorList, psDroidToAdd, 0);
-		}
-	}
+  // commanders have to get their group back if not already loaded
+  if (psDroidToAdd->getType() == DROID_TYPE::COMMAND && !psDroidToAdd->getGroup()) {
+    auto psGroup = Group::create(-1);
+    psGroup->add(psDroidToAdd);
+  }
 }
 
 /* Destroy a droid */
 void killDroid(Droid* psDel)
 {
-	int i;
-
-	ASSERT(psDel->type == OBJ_DROID,
-	       "killUnit: pointer is not a unit");
 	ASSERT(psDel->playerManager->getPlayer() < MAX_PLAYERS,
 	       "killUnit: invalid player for unit");
 
 	setDroidTarget(psDel, nullptr);
-	for (i = 0; i < MAX_WEAPONS; i++)
+	for (auto i = 0; i < MAX_WEAPONS; i++)
 	{
 		setDroidActionTarget(psDel, nullptr, i);
 	}
-	setDroidBase(psDel, nullptr); if (psDel->getType() == DROID_TYPE::SENSOR)
-	{
+	setDroidBase(psDel, nullptr);
+
+  if (psDel->getType() == DROID_TYPE::SENSOR) {
 		removeObjectFromFuncList(apsSensorList, psDel, 0);
 	}
-
 	destroyObject(apsDroidLists, psDel);
 }
 

@@ -63,7 +63,7 @@ unsigned generateNewObjectId();
 unsigned generateSynchronisedObjectId();
 
 /* add the droid to the Droid Lists */
-void addDroid(Droid* psDroidToAdd, Droid* pList[MAX_PLAYERS]);
+void addDroid(Droid* psDroidToAdd);
 
 /*destroy a droid */
 void killDroid(Droid* psDel);

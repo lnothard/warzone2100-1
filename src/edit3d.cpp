@@ -58,15 +58,13 @@ void Edit3DInitVars()
 /* Raises a tile by a #defined height */
 void raiseTile(int tile3dX, int tile3dY)
 {
-	int i, j;
-
 	if (tile3dX < 0 || tile3dX > mapWidth - 1 ||
       tile3dY < 0 || tile3dY > mapHeight - 1) {
 		return;
 	}
-	for (i = tile3dX; i <= MIN(mapWidth - 1, tile3dX + brushSize); i++)
+	for (auto i = tile3dX; i <= MIN(mapWidth - 1, tile3dX + brushSize); i++)
 	{
-		for (j = tile3dY; j <= MIN(mapHeight - 1, tile3dY + brushSize); j++)
+		for (auto j = tile3dY; j <= MIN(mapHeight - 1, tile3dY + brushSize); j++)
 		{
 			adjustTileHeight(mapTile(i, j), TILE_RAISE);
 			markTileDirty(i, j);

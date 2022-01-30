@@ -512,7 +512,7 @@ bool destroyFeature(Feature* psDel, unsigned impactTime)
 }
 
 
-int getFeatureStatFromName(const WzString& name)
+int getFeatureStatFromName(WzString const& name)
 {
 	for (auto inc = 0; inc < numFeatureStats; inc++)
 	{

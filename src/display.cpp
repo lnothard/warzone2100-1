@@ -759,9 +759,9 @@ void processMouseClickInput()
 		if (item != MT_NOTARGET) {
 			// exceptions to the lookup table.
 			if (ctrlShiftDown() &&
-				(ObjUnderMouse != nullptr) &&
-				(ObjUnderMouse->playerManager->getPlayer() == selectedPlayer) &&
-				(ObjUnderMouse->type == OBJ_DROID)) {
+          ObjUnderMouse != nullptr &&
+          ObjUnderMouse->playerManager->getPlayer() == selectedPlayer &&
+          dynamic_cast<Droid*>(ObjUnderMouse)) {
 				item = MT_OWNDROID;
 			}
 			else if (specialOrderKeyDown() &&
