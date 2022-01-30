@@ -495,7 +495,7 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacke
       }
         // don't play the sound for a LasSat in multiplayer
       else if (!(bMultiPlayer && psStats->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT)) {
-        audio_PlayObjStaticTrack(psProj.get(), psStats.iAudioFireID);
+        audio_PlayObjStaticTrack(psProj.get(), psStats->iAudioFireID);
       }
     }
   }
@@ -1637,7 +1637,7 @@ void Projectile::updateKills()
 
 		if (psDroid->hasCommander()) {
 			auto psCommander = psDroid->getGroup()->getCommander();
-			psCommander->kills++;
+			psCommander->incrementKills();
 		}
 	}
 	else if (dynamic_cast<Structure*>(pimpl->source)) {
@@ -1717,9 +1717,11 @@ int establishTargetHeight(BaseObject const* psTarget)
 {
 	if (!psTarget) return 0;
 
-  if (auto psDroid = dynamic_cast<const Droid*>(psTarget)) {
-    auto height = asBodyStats[psDroid->asBits[COMP_BODY]].pIMD->max.y - asBodyStats[psDroid->asBits[
-      COMP_BODY]].pIMD->min.y;
+  if (auto psDroid = dynamic_cast<Droid const*>(psTarget)) {
+    auto body = dynamic_cast<BodyStats const*>(psDroid->getComponent("body"));
+    if (!body) return -1;
+
+    auto height = body->pIMD->max.y - body->pIMD->min.y;
     auto utilityHeight = 0, yMax = 0, yMin = 0;
     // Temporaries for addition of utility's height to total height
 
@@ -1733,28 +1735,36 @@ int establishTargetHeight(BaseObject const* psTarget)
       case WEAPON:
         if (numWeapons(*psDroid) > 0) {
           // Don't do this for Barbarian Propulsions as they don't possess a turret (and thus have pIMD == NULL)
-          if (!psDroid->getWeapons()[0].getStats().pIMD) {
+          if (!psDroid->getWeapon(0)->getStats()->pIMD) {
             return height;
           }
-          yMax = psDroid->getWeapons()[0].getStats().pIMD->max.y;
-          yMin = psDroid->getWeapons()[0].getStats().pIMD->min.y;
+          yMax = psDroid->getWeapon(0)->getStats()->pIMD->max.y;
+          yMin = psDroid->getWeapon(0)->getStats()->pIMD->min.y;
         }
         break;
       case SENSOR:
-        yMax = (asSensorStats[psDroid->asBits[COMP_SENSOR]]).pIMD->max.y;
-        yMin = (asSensorStats[psDroid->asBits[COMP_SENSOR]]).pIMD->min.y;
+        if (auto sensor = dynamic_cast<SensorStats const*>(psDroid->getComponent("sensor"))) {
+          yMax = sensor->pIMD->max.y;
+          yMin = sensor->pIMD->min.y;
+        }
         break;
       case ECM:
-        yMax = (asECMStats[psDroid->asBits[COMP_ECM]]).pIMD->max.y;
-        yMin = (asECMStats[psDroid->asBits[COMP_ECM]]).pIMD->min.y;
+        if (auto ecm = dynamic_cast<EcmStats const*>(psDroid->getComponent("ecm"))) {
+          yMax = ecm->pIMD->max.y;
+          yMin = ecm->pIMD->min.y;
+        }
         break;
       case CONSTRUCT:
-        yMax = (asConstructStats[psDroid->asBits[COMP_CONSTRUCT]]).pIMD->max.y;
-        yMin = (asConstructStats[psDroid->asBits[COMP_CONSTRUCT]]).pIMD->min.y;
+        if (auto construct = dynamic_cast<ConstructStats const*>(psDroid->getComponent("construct"))) {
+          yMax = construct->pIMD->max.y;
+          yMin = construct->pIMD->min.y;
+        }
         break;
       case REPAIRER:
-        yMax = (asRepairStats[psDroid->asBits[COMP_REPAIRUNIT]]).pIMD->max.y;
-        yMin = (asRepairStats[psDroid->asBits[COMP_REPAIRUNIT]]).pIMD->min.y;
+        if (auto repair = dynamic_cast<RepairStats const*>(psDroid->getComponent("repair"))) {
+          yMax = repair->pIMD->max.y;
+          yMin = repair->pIMD->min.y;
+        }
         break;
       case PERSON:
       //TODO:add person 'state' checks here(stand, knee, crouch, prone etc)
@@ -1776,7 +1786,7 @@ int establishTargetHeight(BaseObject const* psTarget)
   }
   else if (auto psStruct = dynamic_cast<const Structure*>(psTarget)) {
       auto psStructureStats = psStruct->getStats();
-      auto height = psStructureStats->IMDs[0]->max.y + psStructureStats.IMDs[0]->min.y;
+      auto height = psStructureStats->IMDs[0]->max.y + psStructureStats->IMDs[0]->min.y;
       height -= gateCurrentOpenHeight(psStruct, gameTime, 2);
       // treat gate as at least 2 units tall, even if open, so that it's possible to hit
       return height;

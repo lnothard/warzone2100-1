@@ -56,6 +56,7 @@
 #include "version.h"
 #include "warzoneconfig.h"
 #include "wzscriptdebug.h"
+#include "map.h"
 
 static constexpr auto ATTACK_THROTTLE = 1000;
 
@@ -151,7 +152,7 @@ scripting_engine::timerNode::~timerNode()
 {
 	if (additionalTimerFuncParam)
 	{
-		additionalTimerFuncParam->onTimerDelete(timerID, IdToObject(baseobjtype, baseobj, player));
+		additionalTimerFuncParam->onTimerDelete(timerID, IdToObject(baseobj, player));
 	}
 }
 
@@ -367,7 +368,7 @@ void scriptRemoveObject(const BaseObject * psObj)
 	// Weed out timers with dead objects
 	scripting_engine::instance().removeTimersIf([psObj](const scripting_engine::timerNode& node)
 	{
-		return (node.baseobj == psObj->id);
+		return (node.baseobj == psObj->getId());
 	});
 	scripting_engine::instance().groupRemoveObject(psObj);
 }
@@ -496,7 +497,7 @@ bool scripting_engine::updateScripts()
 		{
 			continue; // skip
 		}
-		node->function(node->timerID, IdToObject(node->baseobjtype, node->baseobj, node->player),
+		node->function(node->timerID, IdToObject(node->baseobj, node->player),
 		               node->additionalTimerFuncParam.get());
 	}
 
@@ -1057,12 +1058,10 @@ bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, BaseObject* psObj)
 	ASSERT(scriptsReady || trigger == TRIGGER_VIDEO_QUIT, "Scripts not initialized yet");
 	for (auto* instance : scripts)
 	{
-		if (psObj)
-		{
+		if (psObj) {
 			unsigned player = instance->player();
 			bool receiveAll = instance->isReceivingAllEvents();
-			if (player != psObj->getPlayer() && !receiveAll)
-			{
+			if (player != psObj->playerManager->getPlayer() && !receiveAll) {
 				continue;
 			}
 		}
@@ -1198,14 +1197,13 @@ bool triggerEventCheatMode(bool entered)
 //__
 //__ A droid should be given new orders.
 //__
-bool triggerEventDroidIdle(Droid* psDroid)
+bool triggerEventDroidIdle(Droid const* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
 	{
 		unsigned player = instance->player();
-		if (player == psDroid->getPlayer())
-		{
+		if (player == psDroid->playerManager->getPlayer()) {
 			instance->handle_eventDroidIdle(psDroid);
 		}
 	}
@@ -1218,7 +1216,7 @@ bool triggerEventDroidIdle(Droid* psDroid)
 //__ if the droid was produced in a factory. It is not triggered for droid theft or
 //__ gift (check ```eventObjectTransfer``` for that).
 //__
-bool triggerEventDroidBuilt(Droid* psDroid, Structure* psFactory)
+bool triggerEventDroidBuilt(Droid const* psDroid, Structure const* psFactory)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	optional<const Structure*> opt_factory = (psFactory) ? optional<const Structure*>(psFactory) : nullopt;
@@ -1226,7 +1224,7 @@ bool triggerEventDroidBuilt(Droid* psDroid, Structure* psFactory)
 	{
 		auto player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psDroid->getPlayer() || receiveAll) {
+		if (player == psDroid->playerManager->getPlayer() || receiveAll) {
 			instance->handle_eventDroidBuilt(psDroid, opt_factory);
 		}
 	}
@@ -1239,7 +1237,7 @@ bool triggerEventDroidBuilt(Droid* psDroid, Structure* psFactory)
 //__ if the structure was built by a droid. It is not triggered for building theft
 //__ (check ```eventObjectTransfer``` for that).
 //__
-bool triggerEventStructBuilt(Structure* psStruct, Droid* psDroid)
+bool triggerEventStructBuilt(Structure const* psStruct, Droid const* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	optional<const Droid*> opt_droid = (psDroid) ? optional<const Droid*>(psDroid) : nullopt;
@@ -1247,7 +1245,7 @@ bool triggerEventStructBuilt(Structure* psStruct, Droid* psDroid)
 	{
 		auto player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psStruct->getPlayer() || receiveAll) {
+		if (player == psStruct->playerManager->getPlayer() || receiveAll) {
 			instance->handle_eventStructureBuilt(psStruct, opt_droid);
 		}
 	}
@@ -1259,7 +1257,7 @@ bool triggerEventStructBuilt(Structure* psStruct, Droid* psDroid)
 //__ An event that is run every time a structure begins to be demolished. This does
 //__ not trigger again if the structure is partially demolished.
 //__
-bool triggerEventStructDemolish(Structure* psStruct, Droid* psDroid)
+bool triggerEventStructDemolish(Structure const* psStruct, Droid const* psDroid)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	optional<const Droid*> opt_droid = (psDroid) ? optional<const Droid*>(psDroid) : nullopt;
@@ -1267,7 +1265,7 @@ bool triggerEventStructDemolish(Structure* psStruct, Droid* psDroid)
 	{
 		unsigned player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psStruct->getPlayer() || receiveAll) {
+		if (player == psStruct->playerManager->getPlayer() || receiveAll) {
 			instance->handle_eventStructureDemolish(psStruct, opt_droid);
 		}
 	}
@@ -1280,14 +1278,14 @@ bool triggerEventStructDemolish(Structure* psStruct, Droid* psDroid)
 //__ special ability. It will only fire once, so if the time is not right,
 //__ register your own timer to keep checking.
 //__
-bool triggerEventStructureReady(Structure* psStruct)
+bool triggerEventStructureReady(Structure const* psStruct)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
 	{
 		auto player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psStruct->getPlayer() || receiveAll) {
+		if (player == psStruct->playerManager->getPlayer() || receiveAll) {
 			instance->handle_eventStructureReady(psStruct);
 		}
 	}
@@ -1298,14 +1296,14 @@ bool triggerEventStructureReady(Structure* psStruct)
 //__
 //__ An event that is run every time a structure starts to be upgraded.
 //__
-bool triggerEventStructureUpgradeStarted(Structure* psStruct)
+bool triggerEventStructureUpgradeStarted(Structure const* psStruct)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	for (auto* instance : scripts)
 	{
 		auto player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psStruct->getPlayer() || receiveAll) {
+		if (player == psStruct->playerManager->getPlayer() || receiveAll) {
 			instance->handle_eventStructureUpgradeStarted(psStruct);
 		}
 	}
@@ -1317,7 +1315,7 @@ bool triggerEventStructureUpgradeStarted(Structure* psStruct)
 //__ An event that is run when an object belonging to the script's controlling player is
 //__ attacked. The attacker parameter may be either a structure or a droid.
 //__
-bool triggerEventAttacked(BaseObject * psVictim, BaseObject * psAttacker, int lastHit)
+bool triggerEventAttacked(BaseObject const* psVictim, BaseObject const* psAttacker, int lastHit)
 {
 	ASSERT(scriptsReady, "Scripts not initialized yet");
 	if (!psAttacker) {
@@ -1333,7 +1331,7 @@ bool triggerEventAttacked(BaseObject * psVictim, BaseObject * psAttacker, int la
 	{
 		auto player = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (player == psVictim->getPlayer() || receiveAll) {
+		if (player == psVictim->playerManager->getPlayer() || receiveAll) {
 			instance->handle_eventAttacked(psVictim, psAttacker);
 		}
 	}
@@ -1347,12 +1345,11 @@ bool triggerEventAttacked(BaseObject * psVictim, BaseObject * psAttacker, int la
 //__ current player. If an ally does the research, the structure parameter will
 //__ be set to null. The player parameter gives the player it is called for.
 //__
-bool triggerEventResearched(ResearchStats* psResearch, Structure* psStruct, unsigned player)
+bool triggerEventResearched(ResearchStats* psResearch, Structure const* psStruct, unsigned player)
 {
 	//HACK: This event can be triggered when loading savegames, before the script engines are initialized.
 	// if this is the case, we need to store these events and replay them later
-	if (!scriptsReady)
-	{
+	if (!scriptsReady) {
 		eventQueue.emplace(psResearch, psStruct, player);
 		return true;
 	}
@@ -1360,8 +1357,7 @@ bool triggerEventResearched(ResearchStats* psResearch, Structure* psStruct, unsi
 	{
 		int me = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (me == player || receiveAll)
-		{
+		if (me == player || receiveAll) {
 			instance->handle_eventResearched(wzapi::researchResult(psResearch, player), psStruct, player);
 		}
 	}
@@ -1455,7 +1451,7 @@ bool triggerEventObjectTransfer(BaseObject * psObj, unsigned from)
 	{
 		int me = instance->player();
 		bool receiveAll = instance->isReceivingAllEvents();
-		if (me == psObj->getPlayer() || me == from || receiveAll) {
+		if (me == psObj->playerManager->getPlayer() || me == from || receiveAll) {
 			instance->handle_eventObjectTransfer(psObj, from);
 		}
 	}
@@ -1825,12 +1821,12 @@ void scripting_engine::showLabel(const std::string& key, bool clear_old, bool ju
 		}
 	}
 	else if (l.type == OBJ_DROID || l.type == OBJ_FEATURE || l.type == OBJ_STRUCTURE) {
-		auto psObj = IdToObject((OBJECT_TYPE)l.type, l.id, l.player);
+		auto psObj = IdToObject(l.id, l.player);
 		if (psObj) 	{
 			if (jump_to) {
-				setViewPos(map_coord(psObj->pos.x), map_coord(psObj->pos.y), false); // move camera position
+				setViewPos(map_coord(psObj->getPosition().x), map_coord(psObj->getPosition().y), false); // move camera position
 			}
-			auto psTile = mapTile(map_coord(psObj->pos.x), map_coord(psObj->pos.y));
+			auto psTile = mapTile(map_coord(psObj->getPosition().x), map_coord(psObj->getPosition().y));
 			psTile->tileInfoBits |= BITS_MARKED;
 		}
 	}
@@ -1869,7 +1865,7 @@ std::pair<bool, int> scripting_engine::seenLabelCheck(wzapi::scripting_instance*
 	for (auto& it : labels)
 	{
 		LABEL& l = it.second;
-		if (l.triggered != 0 || !(l.subscriber == ALL_PLAYERS || l.subscriber == viewer->getPlayer()))
+		if (l.triggered != 0 || !(l.subscriber == ALL_PLAYERS || l.subscriber == viewer->playerManager->getPlayer()))
 		{
 			continue;
 		}
@@ -1902,7 +1898,7 @@ bool scripting_engine::areaLabelCheck(Droid* psDroid)
 	for (auto & label : labels)
 	{
 		LABEL& l = label.second;
-		if (l.triggered == 0 && (l.subscriber == ALL_PLAYERS || l.subscriber == psDroid->getPlayer())
+		if (l.triggered == 0 && (l.subscriber == ALL_PLAYERS || l.subscriber == psDroid->playerManager->getPlayer())
 			&& ((l.type == SCRIPT_AREA && l.p1.x < x && l.p1.y < y && l.p2.x > x && l.p2.y > y)
 				|| (l.type == SCRIPT_RADIUS && iHypot(l.p1 - psDroid->getPosition().xy()) < l.p2.x)))
 		{
@@ -1975,7 +1971,7 @@ bool scripting_engine::saveGroups(nlohmann::json& result, wzapi::scripting_insta
 	for (auto i : psMap->map())
 	{
 		const BaseObject * psObj = i.first;
-		ASSERT(!isDead(psObj), "Wanted to save dead %s to savegame!", objInfo(psObj));
+		ASSERT(!psObj->damageManager->isDead(), "Wanted to save dead %s to savegame!", objInfo(psObj));
 		std::vector<WzString> value = json_getValue(result, WzString::number(psObj->getId())).toWzStringList();
 		value.push_back(WzString::number(i.second));
 		result[WzString::number(psObj->getId()).toUtf8()] = value;
@@ -2316,7 +2312,7 @@ generic_script_object generic_script_object::fromObject(const BaseObject * psObj
 	}
 	result.type = psObj->type;
 	result.id = psObj->getId();
-	result.player = psObj->getPlayer();
+	result.player = psObj->playerManager->getPlayer();
 	return result;
 }
 
@@ -2324,7 +2320,7 @@ BaseObject * generic_script_object::getObject() const
 // if type == OBJ_DROID, OBJ_FEATURE, OBJ_STRUCTURE, returns the game object
 {
 	ASSERT(isObject(), "generic_script_object is not an object; type: %d", type);
-	return IdToObject((OBJECT_TYPE)type, id, player);
+	return IdToObject(id, player);
 }
 
 LABEL generic_script_object::toNewLabel() const
@@ -2364,7 +2360,7 @@ wzapi::no_return_value scripting_engine::addLabel(
 
 	if (value.type == OBJ_DROID || value.type == OBJ_STRUCTURE || value.type == OBJ_FEATURE)
 	{
-    BaseObject * psObj = IdToObject((OBJECT_TYPE)value.type, value.id, value.player);
+    BaseObject * psObj = IdToObject(value.id, value.player);
 		SCRIPT_ASSERT({}, context, psObj, "Object id %d not found belonging to player %d", value.id, value.player);
 	}
 
@@ -2404,7 +2400,7 @@ optional<std::string> scripting_engine::getLabel(WZAPI_PARAMS(const BaseObject *
 	ASSERT_OR_RETURN(nullopt, psObj, "No valid object provided");
 	wzapi::game_object_identifier tmp;
 	tmp.id = psObj->getId();
-	tmp.player = psObj->getPlayer();
+	tmp.player = psObj->playerManager->getPlayer();
 	tmp.type = psObj->type;
 	return _findMatchingLabel(tmp);
 }
@@ -2476,7 +2472,7 @@ generic_script_object scripting_engine::getObject(WZAPI_PARAMS(const wzapi::obje
 		unsigned player = std::get<1>(type_player_id);
 		int id = std::get<2>(type_player_id);
 		SCRIPT_ASSERT_PLAYER({}, context, player);
-		return generic_script_object::fromObject(IdToObject(type, id, player));
+		return generic_script_object::fromObject(IdToObject(id, player));
 	}
 	else if (request.requestType == wzapi::object_request::RequestType::LABEL_REQUEST)
 	{
@@ -2510,7 +2506,7 @@ generic_script_object scripting_engine::getObjectFromLabel(WZAPI_PARAMS(const st
 		case OBJ_DROID:
 		case OBJ_FEATURE:
 		case OBJ_STRUCTURE:
-			psObj = IdToObject((OBJECT_TYPE)p.type, p.id, p.player);
+			psObj = IdToObject(p.id, p.player);
 			if (!psObj)
 			{
 				return generic_script_object::Null();
@@ -2548,6 +2544,7 @@ std::vector<const BaseObject *> scripting_engine::enumAreaByLabel(
 
 typedef std::vector<BaseObject *> GridList;
 #include "mapgrid.h"
+#include "objmem.h"
 
 std::vector<const BaseObject *> scripting_engine::enumArea(
 	WZAPI_PARAMS(scr_area area, optional<int> _playerFilter, optional<bool> _seen))
@@ -2571,11 +2568,10 @@ std::vector<const BaseObject *> scripting_engine::_enumAreaWorldCoords(
 	std::vector<const BaseObject *> list;
 	for (auto psObj : gridList)
 	{
-			if ((psObj->visible[player] || !seen) && !psObj->died)
-		{
-			if ((playerFilter >= 0 && psObj->getPlayer() == playerFilter) || playerFilter == ALL_PLAYERS
-				|| (playerFilter == ALLIES && psObj->type != OBJ_FEATURE && aiCheckAlliances(psObj->getPlayer(), player))
-				|| (playerFilter == ENEMIES && psObj->type != OBJ_FEATURE && !aiCheckAlliances(psObj->getPlayer(), player)))
+		if ((psObj->isVisibleToPlayer(player) || !seen) && !psObj->damageManager->isDead()) {
+			if ((playerFilter >= 0 && psObj->playerManager->getPlayer() == playerFilter) || playerFilter == ALL_PLAYERS
+				|| (playerFilter == ALLIES && psObj->type != OBJ_FEATURE && aiCheckAlliances(psObj->playerManager->getPlayer(), player))
+				|| (playerFilter == ENEMIES && psObj->type != OBJ_FEATURE && !aiCheckAlliances(psObj->playerManager->getPlayer(), player)))
 			{
 				list.push_back(psObj);
 			}
@@ -2645,7 +2641,8 @@ wzapi::no_return_value scripting_engine::groupAddArea(WZAPI_PARAMS(int groupId, 
 
 	for (auto& psDroid : apsDroidLists[player])
 	{
-		if (psDroid.getPosition().x >= x1 && psDroid.getPosition().x <= x2 && psDroid.getPosition().y >= y1 && psDroid.getPosition().y <= y2) {
+		if (psDroid.getPosition().x >= x1 && psDroid.getPosition().x <= x2 &&
+        psDroid.getPosition().y >= y1 && psDroid.getPosition().y <= y2) {
 			scripting_engine::instance().groupAddObject(&psDroid, groupId, context.currentInstance());
 		}
 	}
@@ -2656,7 +2653,7 @@ wzapi::no_return_value scripting_engine::groupAddArea(WZAPI_PARAMS(int groupId, 
 //--
 //-- Add given droid to given group. Deprecated since 3.2 - use groupAdd() instead.
 //--
-wzapi::no_return_value scripting_engine::groupAddDroid(WZAPI_PARAMS(int groupId, const Droid *psDroid))
+wzapi::no_return_value scripting_engine::groupAddDroid(WZAPI_PARAMS(int groupId, Droid const* psDroid))
 {
 	SCRIPT_ASSERT({}, context, psDroid, "No valid droid provided");
 	scripting_engine::instance().groupAddObject(psDroid, groupId, context.currentInstance());

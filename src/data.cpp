@@ -37,6 +37,7 @@
 #include "template.h"
 #include "text.h"
 #include "texture.h"
+#include "lib/sound/track.h"
 
 bool bMultiPlayer;
 

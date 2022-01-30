@@ -34,7 +34,7 @@
 #include "wzmaplib/map.h"
 
 
-#define	VTOL_VERTICAL_SPEED		(((baseSpeed / 4) > 60) ? ((SDWORD)baseSpeed / 4) : 60)
+#define	VTOL_VERTICAL_SPEED		(((pimpl->baseSpeed / 4) > 60) ? ((SDWORD)pimpl->baseSpeed / 4) : 60)
 
 /* max and min vtol heights above terrain */
 static constexpr auto VTOL_HEIGHT_MIN	= 250;

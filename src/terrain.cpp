@@ -605,7 +605,7 @@ void markTileDirty(int i, int j)
 
 void loadTerrainTextures()
 {
-	ASSERT_OR_RETURN(, psGroundTypes.get(), "Ground type was not set, no textures will be seen.");
+	ASSERT_OR_RETURN(, !psGroundTypes.empty(), "Ground type was not set, no textures will be seen.");
 
 	int32_t maxGfxTextureSize = gfx_api::context::get().get_context_value(
 		gfx_api::context::context_value::MAX_TEXTURE_SIZE);
@@ -617,7 +617,7 @@ void loadTerrainTextures()
 		// pre-load the texture
 		optional<size_t> texPage = iV_GetTexture(psGroundTypes[layer].textureName, true, maxTerrainTextureSize,
 		                                         maxTerrainTextureSize);
-		ASSERT(texPage.has_value(), "Failed to pre-load terrain texture: %s", psGroundTypes[layer].textureName);
+		ASSERT(texPage.has_value(), "Failed to pre-load terrain texture: %s", psGroundTypes[layer].textureName.c_str());
 	}
 }
 
@@ -1229,7 +1229,7 @@ static void drawTerrainLayers(const glm::mat4& ModelViewProjection, const glm::v
 		optional<size_t> texPage = iV_GetTexture(psGroundTypes[layer].textureName, true, maxTerrainTextureSize,
 		                                         maxTerrainTextureSize);
 		ASSERT_OR_RETURN(, texPage.has_value(), "Failed to retrieve terrain texture: %s",
-		                   psGroundTypes[layer].textureName);
+		                   psGroundTypes[layer].textureName.c_str());
 		gfx_api::TerrainLayer::get().bind_textures(&pie_Texture(texPage.value()), lightmap_texture);
 
 		// load the color buffer

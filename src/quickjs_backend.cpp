@@ -52,6 +52,7 @@
 #include "research.h"
 #include "multilimit.h"
 #include "multigifts.h"
+#include "multiplay.h"
 #include "multimenu.h"
 #include "template.h"
 #include "lighting.h"
@@ -68,11 +69,9 @@
 #include "component.h"
 #include "seqdisp.h"
 #include "ai.h"
-#include "advvis.h"
 #include "loadsave.h"
 #include "wzapi.h"
 #include "qtscript.h"
-#include "featuredef.h"
 #include "data.h"
 
 
@@ -719,9 +718,9 @@ int JS_DeletePropertyStr(JSContext* ctx, JSValueConst this_obj,
 // Forward-declare
 JSValue convDroid(const Droid* psDroid, JSContext* ctx);
 JSValue convStructure(const Structure* psStruct, JSContext* ctx);
-JSValue convObj(const PlayerOwnedObject * psObj, JSContext* ctx);
+JSValue convObj(const BaseObject * psObj, JSContext* ctx);
 JSValue convFeature(const Feature* psFeature, JSContext* ctx);
-JSValue convMax(const PlayerOwnedObject * psObj, JSContext* ctx);
+JSValue convMax(const BaseObject * psObj, JSContext* ctx);
 JSValue convTemplate(const DroidTemplate* psTemplate, JSContext* ctx);
 JSValue convResearch(const ResearchStats* psResearch, JSContext* ctx, unsigned player);
 
@@ -810,15 +809,16 @@ JSValue convStructure(const Structure* psStruct, JSContext* ctx)
 	bool ga = false;
 	bool indirect = false;
 	int range = -1;
-	for (int i = 0; i < psStruct->numWeaps; i++)
+	for (int i = 0; i < numWeapons(*psStruct); i++)
 	{
 		if (psStruct->asWeaps[i].nStat)
 		{
 			WeaponStats* psWeap = &asWeaponStats[psStruct->asWeaps[i].nStat];
 			aa = aa || psWeap->surfaceToAir & SHOOT_IN_AIR;
 			ga = ga || psWeap->surfaceToAir & SHOOT_ON_GROUND;
-			indirect = indirect || psWeap->movementModel == MM_INDIRECT || psWeap->movementModel == MM_HOMINGINDIRECT;
-			range = MAX(proj_GetLongRange(psWeap, psStruct->player), range);
+			indirect = indirect || psWeap->movementModel == MOVEMENT_MODEL::INDIRECT ||
+                 psWeap->movementModel == MOVEMENT_MODEL::HOMING_INDIRECT;
+			range = MAX(proj_GetLongRange(psWeap, psStruct->playerManager->getPlayer()), range);
 		}
 	}
 	JSValue value = convObj(psStruct, ctx);
@@ -831,35 +831,37 @@ JSValue convStructure(const Structure* psStruct, JSContext* ctx)
 	QuickJS_DefinePropertyValue(ctx, value, "isRadarDetector", JS_NewBool(ctx, objRadarDetector(psStruct)),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "range", JS_NewInt32(ctx, range), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "status", JS_NewInt32(ctx, (int)psStruct->status), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "status", JS_NewInt32(ctx, (int)psStruct->getState()), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "health",
-	                            JS_NewInt32(ctx, 100 * psStruct->body / MAX(1, structureBody(psStruct))),
+	                            JS_NewInt32(ctx, 100 * psStruct->damageManager->getHp() / MAX(1, structureBody(psStruct))),
 	                            JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "cost", JS_NewInt32(ctx, psStruct->pStructureType->power_cost),
+	QuickJS_DefinePropertyValue(ctx, value, "cost", JS_NewInt32(ctx, psStruct->getStats()->power_cost),
 	                            JS_PROP_ENUMERABLE);
 	int stattype = 0;
-	switch (psStruct->pStructureType->type) // don't bleed our source insanities into the scripting world
+	switch (psStruct->getStats()->type) // don't bleed our source insanities into the scripting world
 	{
-	case REF_WALL:
-	case REF_WALLCORNER:
-	case REF_GATE:
-		stattype = (int)REF_WALL;
-		break;
-	case REF_GENERIC:
-	case REF_DEFENSE:
-		stattype = (int)REF_DEFENSE;
-		break;
-	default:
-		stattype = (int)psStruct->pStructureType->type;
-		break;
+    case STRUCTURE_TYPE::WALL:
+    case STRUCTURE_TYPE::WALL_CORNER:
+  	case STRUCTURE_TYPE::GATE:
+  		stattype = (int)STRUCTURE_TYPE::WALL;
+  		break;
+  	case STRUCTURE_TYPE::GENERIC:
+  	case STRUCTURE_TYPE::DEFENSE:
+  		stattype = (int)STRUCTURE_TYPE::DEFENSE;
+  		break;
+  	default:
+  		stattype = (int)psStruct->getStats()->type;
+  		break;
 	}
 	QuickJS_DefinePropertyValue(ctx, value, "stattype", JS_NewInt32(ctx, stattype), JS_PROP_ENUMERABLE);
-	if (psStruct->pStructureType->type == REF_FACTORY || psStruct->pStructureType->type == REF_CYBORG_FACTORY
-		|| psStruct->pStructureType->type == REF_VTOL_FACTORY
-		|| psStruct->pStructureType->type == REF_RESEARCH
-		|| psStruct->pStructureType->type == REF_POWER_GEN)
-	{
-		QuickJS_DefinePropertyValue(ctx, value, "modules", JS_NewUint32(ctx, psStruct->capacity), JS_PROP_ENUMERABLE);
+	if (psStruct->getStats()->type == STRUCTURE_TYPE::FACTORY ||
+      psStruct->getStats()->type == STRUCTURE_TYPE::CYBORG_FACTORY ||
+      psStruct->getStats()->type == STRUCTURE_TYPE::VTOL_FACTORY ||
+      psStruct->getStats()->type == STRUCTURE_TYPE::RESEARCH ||
+      psStruct->getStats()->type == STRUCTURE_TYPE::POWER_GEN) {
+		QuickJS_DefinePropertyValue(ctx, value, "modules",
+                                JS_NewUint32(ctx, psStruct->getCapacity()),
+                                JS_PROP_ENUMERABLE);
 	}
 	else
 	{
@@ -896,7 +898,8 @@ JSValue convFeature(const Feature* psFeature, JSContext* ctx)
 {
 	JSValue value = convObj(psFeature, ctx);
 	const FeatureStats* psStats = psFeature->getStats();
-	QuickJS_DefinePropertyValue(ctx, value, "health", JS_NewUint32(ctx, 100 * psStats->body / MAX(1, psFeature->body)),
+	QuickJS_DefinePropertyValue(ctx, value, "health",
+                              JS_NewUint32(ctx, 100 * psStats->body / MAX(1, psFeature->damageManager->getHp())),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "damageable", JS_NewBool(ctx, psStats->damageable), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "stattype", JS_NewInt32(ctx, psStats->subType), JS_PROP_ENUMERABLE);
@@ -980,13 +983,15 @@ JSValue convDroid(const Droid* psDroid, JSContext* ctx)
 			WeaponStats* psWeap = &asWeaponStats[psDroid->asWeaps[i].nStat];
 			aa = aa || psWeap->surfaceToAir & SHOOT_IN_AIR;
 			ga = ga || psWeap->surfaceToAir & SHOOT_ON_GROUND;
-			indirect = indirect || psWeap->movementModel == MM_INDIRECT || psWeap->movementModel == MM_HOMINGINDIRECT;
-			range = MAX(proj_GetLongRange(psWeap, psDroid->player), range);
+			indirect = indirect || psWeap->movementModel == MOVEMENT_MODEL::HOMING_DIRECT ||
+                 psWeap->movementModel == MOVEMENT_MODEL::HOMING_INDIRECT;
+			range = MAX(proj_GetLongRange(psWeap, psDroid->playerManager->getPlayer()), range);
 		}
 	}
-	DROID_TYPE type = psDroid->type;
+	DROID_TYPE type = psDroid->getType();
 	JSValue value = convObj(psDroid, ctx);
-	QuickJS_DefinePropertyValue(ctx, value, "action", JS_NewInt32(ctx, (int)psDroid->action), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "action",
+                              JS_NewInt32(ctx, (int)psDroid->getAction()), JS_PROP_ENUMERABLE);
 	if (range >= 0)
 	{
 		QuickJS_DefinePropertyValue(ctx, value, "range", JS_NewInt32(ctx, range), JS_PROP_ENUMERABLE);
@@ -995,22 +1000,22 @@ JSValue convDroid(const Droid* psDroid, JSContext* ctx)
 	{
 		QuickJS_DefinePropertyValue(ctx, value, "range", JS_NULL, JS_PROP_ENUMERABLE);
 	}
-	QuickJS_DefinePropertyValue(ctx, value, "order", JS_NewInt32(ctx, (int)psDroid->order.type), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "order", JS_NewInt32(ctx, (int)psDroid->getOrder()->type), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "cost", JS_NewUint32(ctx, calcDroidPower(psDroid)), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "hasIndirect", JS_NewBool(ctx, indirect), JS_PROP_ENUMERABLE);
-	switch (psDroid->type) // hide some engine craziness
+	switch (psDroid->getType()) // hide some engine craziness
 	{
-	case DROID_CYBORG_CONSTRUCT:
-		type = DROID_CONSTRUCT;
+    case DROID_TYPE::CYBORG_CONSTRUCT:
+		type = DROID_TYPE::CONSTRUCT;
 		break;
-	case DROID_CYBORG_SUPER:
-		type = DROID_CYBORG;
+    case DROID_TYPE::CYBORG_SUPER:
+		type = DROID_TYPE::CYBORG;
 		break;
-	case DROID_DEFAULT:
-		type = DROID_WEAPON;
+    case DROID_TYPE::DEFAULT:
+		type = DROID_TYPE::WEAPON;
 		break;
-	case DROID_CYBORG_REPAIR:
-		type = DROID_REPAIR;
+	case DROID_TYPE::CYBORG_REPAIR:
+		type = DROID_TYPE::REPAIRER;
 		break;
 	default:
 		break;
@@ -1034,12 +1039,13 @@ JSValue convDroid(const Droid* psDroid, JSContext* ctx)
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "canHitAir", JS_NewBool(ctx, aa), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "canHitGround", JS_NewBool(ctx, ga), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "isVTOL", JS_NewBool(ctx, isVtolDroid(psDroid)), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "isVTOL", JS_NewBool(ctx, psDroid->isVtol()), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "droidType", JS_NewInt32(ctx, (int)type), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "experience", JS_NewFloat64(ctx, (double)psDroid->experience / 65536.0),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "health",
-	                            JS_NewFloat64(ctx, 100.0 / (double)psDroid->original_hp * (double)psDroid->body),
+	                            JS_NewFloat64(ctx, 100.0 / (double)psDroid->damageManager->getOriginalHp() *
+                                                         (double)psDroid->damageManager->getHp()),
 	                            JS_PROP_ENUMERABLE);
 
 	QuickJS_DefinePropertyValue(ctx, value, "body",
@@ -1094,22 +1100,37 @@ JSValue convDroid(const Droid* psDroid, JSContext* ctx)
 //;; * ```thermal``` Amount of thermal protection that protect against heat based weapons.
 //;; * ```born``` The game time at which this object was produced or came into the world. (3.2+ only)
 //;;
-JSValue convObj(const PlayerOwnedObject * psObj, JSContext* ctx)
+JSValue convObj(BaseObject const* psObj, JSContext* ctx)
 {
 	JSValue value = JS_NewObject(ctx);
 	ASSERT_OR_RETURN(value, psObj, "No object for conversion");
-	QuickJS_DefinePropertyValue(ctx, value, "id", JS_NewUint32(ctx, psObj->id), 0);
-	QuickJS_DefinePropertyValue(ctx, value, "x", JS_NewInt32(ctx, map_coord(psObj->pos.x)), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "y", JS_NewInt32(ctx, map_coord(psObj->pos.y)), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "z", JS_NewInt32(ctx, map_coord(psObj->pos.z)), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "player", JS_NewUint32(ctx, psObj->player), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "armour", JS_NewInt32(ctx, objArmour(psObj, WC_KINETIC)),
+	QuickJS_DefinePropertyValue(ctx, value, "id",
+                              JS_NewUint32(ctx, psObj->getId()), 0);
+	QuickJS_DefinePropertyValue(ctx, value, "x",
+                              JS_NewInt32(ctx, map_coord(psObj->getPosition().x)),
+                              JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "y",
+                              JS_NewInt32(ctx, map_coord(psObj->getPosition().y)),
+                              JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "z",
+                              JS_NewInt32(ctx, map_coord(psObj->getPosition().z)),
+                              JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "player",
+                              JS_NewUint32(ctx, psObj->playerManager->getPlayer()),
+                              JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "armour",
+                              JS_NewInt32(ctx, objArmour(psObj, WEAPON_CLASS::KINETIC)),
 	                            JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "thermal", JS_NewInt32(ctx, objArmour(psObj, WC_HEAT)), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "type", JS_NewInt32(ctx, psObj->type), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "selected", JS_NewUint32(ctx, psObj->selected), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "name", JS_NewString(ctx, objInfo(psObj)), JS_PROP_ENUMERABLE);
-	QuickJS_DefinePropertyValue(ctx, value, "born", JS_NewUint32(ctx, psObj->born), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "thermal",
+                              JS_NewInt32(ctx, objArmour(psObj, WEAPON_CLASS::HEAT)), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "type",
+                              JS_NewInt32(ctx, psObj->type), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "selected",
+                              JS_NewUint32(ctx, psObj->damageManager->isSelected()), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "name",
+                              JS_NewString(ctx, objInfo(psObj)), JS_PROP_ENUMERABLE);
+	QuickJS_DefinePropertyValue(ctx, value, "born",
+                              JS_NewUint32(ctx, psObj->born), JS_PROP_ENUMERABLE);
 	scripting_engine::GROUPMAP* psMap = scripting_engine::instance().getGroupMap(engineToInstanceMap.at(ctx));
 	if (psMap != nullptr && psMap->map().count(psObj) > 0) // FIXME:
 	{
@@ -1189,7 +1210,7 @@ JSValue convTemplate(const DroidTemplate* psTempl, JSContext* ctx)
 	return value;
 }
 
-JSValue convMax(const PlayerOwnedObject * psObj, JSContext* ctx)
+JSValue convMax(const BaseObject * psObj, JSContext* ctx)
 {
 	if (!psObj)
 	{

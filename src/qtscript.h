@@ -126,7 +126,7 @@ void jsAutogameSpecific(const WzString& name, unsigned player);
 bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, BaseObject * psObj = nullptr);
 
 // For each trigger with function parameters, a function to trigger it here
-bool triggerEventDroidBuilt(Droid* psDroid, Structure* psFactory);
+bool triggerEventDroidBuilt(Droid const* psDroid, Structure const* psFactory);
 bool triggerEventAttacked(BaseObject * psVictim, BaseObject * psAttacker, int lastHit);
 bool triggerEventResearched(ResearchStats* psResearch, Structure* psStruct, unsigned player);
 bool triggerEventStructBuilt(Structure* psStruct, Droid* psDroid);

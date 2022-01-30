@@ -27,6 +27,7 @@
 
 #include "chat.h"
 #include "multiplay.h"
+#include "qtscript.h"
 
 ChatMessage::ChatMessage(unsigned sender, std::string text)
   : sender{sender}, text{std::move(text)}
@@ -102,10 +103,10 @@ std::string ChatMessage::formatReceivers() const
 	return ss.str();
 }
 
-void ChatMessage::sendToHumanPlayers()
+void ChatMessage::sendToHumanPlayers() const
 {
 	char formatted[MAX_CONSOLE_STRING_LENGTH];
-	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), formatReceivers().c_str(), text);
+	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), formatReceivers().c_str(), text.c_str());
 
 	auto message = NetworkTextMessage(sender, formatted);
 	message.teamSpecific = allies_only && intended_recipients.empty();
@@ -120,7 +121,7 @@ void ChatMessage::sendToHumanPlayers()
 		return;
 	}
 
-	for (auto& receiver : get_recipients())
+	for (auto& receiver : *get_recipients())
 	{
 		if (isHumanPlayer(receiver)) {
 			message.enqueue(NETnetQueue(receiver));
@@ -156,13 +157,13 @@ void ChatMessage::sendToAiPlayer(unsigned receiver)
 
 void ChatMessage::sendToAiPlayers()
 {
-	for (auto receiver : get_recipients())
+	for (auto receiver : *get_recipients())
 	{
     if (isHumanPlayer(receiver)) {
       continue;
     }
     if (myResponsibility(receiver)) {
-      triggerEventChat(sender, receiver, text);
+      triggerEventChat(sender, receiver, text.c_str());
     }
     else {
       sendToAiPlayer(receiver);
@@ -178,7 +179,7 @@ void ChatMessage::sendToSpectators()
 	}
 
 	char formatted[MAX_CONSOLE_STRING_LENGTH];
-	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), _("Spectators"), text);
+	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), _("Spectators"), text.c_str());
 
 	if ((sender == selectedPlayer || should_receive(selectedPlayer)) && NetPlay.players[selectedPlayer].isSpectator)
 	{
@@ -186,7 +187,7 @@ void ChatMessage::sendToSpectators()
 		printInGameTextMessage(message);
 	}
 
-	for (auto receiver : get_recipients())
+	for (auto receiver : *get_recipients())
 	{
 		if (isHumanPlayer(receiver) && NetPlay.players[receiver].isSpectator && receiver != selectedPlayer)
 		{
@@ -234,6 +235,6 @@ void ChatMessage::send()
 			return;
 		}
 		sendToAiPlayers();
-		triggerEventChat(sender, sender, text);
+		triggerEventChat(sender, sender, text.c_str());
 	}
 }

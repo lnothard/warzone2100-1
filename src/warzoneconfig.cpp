@@ -25,8 +25,6 @@
 
 #include "lib/framework/frame.h"
 #include "warzoneconfig.h"
-#include "lib/ivis_opengl/piestate.h"
-#include "lib/ivis_opengl/piepalette.h"
 #include "lib/sound/sounddefs.h"
 #include "component.h"
 #include "display.h"

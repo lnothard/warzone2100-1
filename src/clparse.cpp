@@ -36,6 +36,7 @@
 #include "multiplay.h"
 #include "warzoneconfig.h"
 #include "wrappers.h"
+#include "lib/ivis_opengl/pieclip.h"
 
 char saveGameName[256];
 bool CauseCrash;

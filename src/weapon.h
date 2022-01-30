@@ -28,12 +28,10 @@
 
 #include "lib/framework/fixedpoint.h"
 #include "lib/gamelib/gtime.h"
+#include "lib/ivis_opengl/ivisdef.h"
 
 #include "basedef.h"
-
-struct iIMDShape;
-struct WeaponStats;
-enum class WEAPON_SUBCLASS;
+#include "stats.h"
 
 
 static constexpr auto DEFAULT_RECOIL_TIME	= GAME_TICKS_PER_SEC / 4;

@@ -57,7 +57,7 @@ static constexpr auto REPAIR_PITCH_UPPER = -15;
 static constexpr auto PULL_BACK_DIST	= 10;
 
 /// Radius for search when looking for VTOL landing position
-static constexpr int vtolLandingRadius = 23;
+static constexpr int VTOL_LANDING_RADIUS = 23;
 
 /// How many frames to skip before looking for a better target
 static constexpr auto TARGET_UPD_SKIP_FRAMES = 1000;

@@ -49,7 +49,7 @@ struct ChatMessage
 	[[nodiscard]] std::string formatReceivers() const;
 
 
-	void sendToHumanPlayers();
+	void sendToHumanPlayers() const;
 	void sendToAiPlayers();
 	void sendToAiPlayer(unsigned receiver);
 	void sendToSpectators();

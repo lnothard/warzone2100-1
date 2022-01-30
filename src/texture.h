@@ -21,8 +21,6 @@
 #ifndef __INCLUDED_SRC_TEXTURE_H__
 #define __INCLUDED_SRC_TEXTURE_H__
 
-#include "display3ddef.h"
-
 bool texLoad(const char* fileName);
 
 struct TILE_TEX_INFO

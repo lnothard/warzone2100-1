@@ -260,6 +260,9 @@ public:
   Droid(Droid&& rhs) noexcept = default;
   Droid& operator=(Droid&& rhs) noexcept = default;
 
+
+  [[nodiscard]] int objRadius() const override;
+
   [[nodiscard]] ACTION getAction() const noexcept;
   [[nodiscard]] Order const* getOrder() const;
   [[nodiscard]] DROID_TYPE getType() const noexcept;
@@ -276,13 +279,14 @@ public:
   [[nodiscard]] ComponentStats const* getComponent(std::string const& compName) const;
   [[nodiscard]] unsigned getTimeActionStarted() const;
   [[nodiscard]] Weapon const* getWeapon(int slot) const;
-  [[nodiscard]] std::array<Weapon, MAX_WEAPONS> const* getWeapons() const;
+  [[nodiscard]] std::array<Weapon, MAX_WEAPONS> *const getWeapons() const;
+  [[nodiscard]] unsigned getExperience() const;
+  [[nodiscard]] unsigned getKills() const;
   [[nodiscard]] bool hasElectronicWeapon() const;
   [[nodiscard]] bool isVtol() const;
   [[nodiscard]] bool isFlying() const;
   [[nodiscard]] bool isDamaged() const;
   [[nodiscard]] bool hasCommander() const;
-  [[nodiscard]] int calculateHeight() const;
   [[nodiscard]] bool isStationary() const;
   [[nodiscard]] bool isRepairDroid() const noexcept;
   [[nodiscard]] std::string getDroidLevelName() const;
@@ -649,5 +653,6 @@ static unsigned droidSensorRange(Droid const* psDroid);
 
 static bool droidUpdateDroidRepairBase(Droid* psRepairDroid, Droid* psDroidToRepair);
 static Rotation getInterpolatedWeaponRotation(Droid const* psDroid, int weaponSlot, unsigned time);
+Vector2i spiral_search(Vector2i start_pos, int max_radius);
 
 #endif // __INCLUDED_SRC_DROID_H__

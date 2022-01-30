@@ -316,17 +316,16 @@ bool addChallenges()
 			char psTimeText[sizeof("HH:MM:SS")] = {0};
 			struct tm tmp = getUtcTime(static_cast<time_t>(seconds));
 			strftime(psTimeText, sizeof(psTimeText), "%H:%M:%S", &tmp);
-			highscore = WzString::fromUtf8(psTimeText) + " by " + name + " (" + WzString(
-				victory ? "Victory" : "Survived") + ")";
+			highscore = WzString::fromUtf8(psTimeText) + " by " + name + " (" + WzString(victory ? "Victory" : "Survived") + ")";
 		}
 		scores.endGroup();
 		ssprintf(sPath, "%s/%s", sSearchPath, i);
 		WzConfig challenge(sPath, WzConfig::ReadOnlyAndRequired);
-		ASSERT(challenge.contains("challenge"), "Invalid challenge file %s - no challenge section!", sPath);
+		ASSERT(challenge.contains("challenge"), "Invalid challenge file %s - no challenge section!", sPath.c_str());
 		challenge.beginGroup("challenge");
-		ASSERT(challenge.contains("name"), "Invalid challenge file %s - no name", sPath);
+		ASSERT(challenge.contains("name"), "Invalid challenge file %s - no name", sPath.c_str());
 		name = challenge.value("name", "BAD NAME").toWzString();
-		ASSERT(challenge.contains("map"), "Invalid challenge file %s - no map", sPath);
+		ASSERT(challenge.contains("map"), "Invalid challenge file %s - no map", sPath.c_str());
 		auto map = challenge.value("map", "BAD MAP").toWzString();
 		auto difficulty = challenge.value("difficulty", "BAD DIFFICULTY").toWzString();
 		auto description = map + ", " + difficulty + ", " + highscore + ".\n" + challenge.value("description", "").

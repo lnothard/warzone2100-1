@@ -240,7 +240,7 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
               &vXY, &vZ, min_angle);
 		}
 
-		if (psTarget->lastHitWeapon == WEAPON_SUBCLASS::EMP) {
+		if (psTarget->damageManager->getLastHitWeapon() == WEAPON_SUBCLASS::EMP) {
 			int empTime = EMP_DISABLE_TIME - (gameTime - psTarget->timeLastHit);
 			CLIP(empTime, 0, EMP_DISABLE_TIME);
 			if (empTime >= EMP_DISABLE_TIME * 9 / 10) {
@@ -252,8 +252,8 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 		}
 
 		predict += Vector3i(iSinCosR(
-            psDroid->getMovementData().moveDir,
-            psDroid->getMovementData().speed * flightTime / GAME_TICKS_PER_SEC), 0);
+            psDroid->getMovementData()->moveDir,
+            psDroid->getMovementData()->speed * flightTime / GAME_TICKS_PER_SEC), 0);
 		if (!isFlying(psDroid)) {
 			predict.z = map_Height(predict.xy()); // Predict that the object will be on the ground.
 		}
@@ -261,7 +261,7 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 
 	/* Fire off the bullet to the miss location. The miss is only visible if the player owns the target. (Why? - Per) */
 	// What bVisible really does is to make the projectile audible even if it misses you. Since the target is NULL, proj_SendProjectile can't check if it was fired at you.
-	bool bVisibleAnyway = psTarget->getPlayer() == selectedPlayer;
+	bool bVisibleAnyway = psTarget->playerManager->getPlayer() == selectedPlayer;
 
 	// see if we were lucky to hit the target
 	bool isHit = gameRand(100) <= resultHitChance;
@@ -331,7 +331,7 @@ void counterBatteryFire(BaseObject* psAttacker, BaseObject* psTarget)
 
 	for (auto psViewer : apsSensorList)
 	{
-    if (!aiCheckAlliances(psTarget->getPlayer(), psViewer->getPlayer())) {
+    if (!aiCheckAlliances(psTarget->playerManager->getPlayer(), psViewer->playerManager->getPlayer())) {
       continue;
     }
     auto psStruct = dynamic_cast<Structure*>(psViewer);

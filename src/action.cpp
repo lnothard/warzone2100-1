@@ -99,71 +99,57 @@ std::string getDroidActionName(ACTION action)
 }
 
 // check if a target is within weapon range
-//bool actionInRange(const DROID* psDroid, const SimpleObject* psObj, int weapon_slot, bool useLongWithOptimum)
-//{
-//	CHECK_DROID(psDroid);
-//
-//	if (psDroid->asWeaps[0].nStat == 0)
-//	{
-//		return false;
-//	}
-//
-//	const unsigned compIndex = psDroid->asWeaps[weapon_slot].nStat;
-//	ASSERT_OR_RETURN(false, compIndex < numWeaponStats, "Invalid range referenced for numWeaponStats, %d > %d",
-//	                 compIndex, numWeaponStats);
-//	const WEAPON_STATS* psStats = asWeaponStats + compIndex;
-//
-//	const int dx = (SDWORD)psDroid->pos.x - (SDWORD)psObj->pos.x;
-//	const int dy = (SDWORD)psDroid->pos.y - (SDWORD)psObj->pos.y;
-//
-//	const int radSq = dx * dx + dy * dy;
-//	const int longRange = proj_GetLongRange(psStats, psDroid->player);
-//	const int shortRange = proj_GetShortRange(psStats, psDroid->player);
-//
-//	int rangeSq = 0;
-//	switch (psDroid->secondaryOrder & DSS_ARANGE_MASK)
-//	{
-//	case DSS_ARANGE_OPTIMUM:
-//		if (!useLongWithOptimum && weaponShortHit(psStats, psDroid->player) > weaponLongHit(psStats, psDroid->player))
-//		{
-//			rangeSq = shortRange * shortRange;
-//		}
-//		else
-//		{
-//			rangeSq = longRange * longRange;
-//		}
-//		break;
-//	case DSS_ARANGE_SHORT:
-//		rangeSq = shortRange * shortRange;
-//		break;
-//	case DSS_ARANGE_LONG:
-//		rangeSq = longRange * longRange;
-//		break;
-//	default:
-//		ASSERT(!"unknown attackrange order", "unknown attack range order");
-//		rangeSq = longRange * longRange;
-//		break;
-//	}
-//
-//	/* check max range */
-//	if (radSq <= rangeSq)
-//	{
-//		/* check min range */
-//		const int minrange = proj_GetMinRange(psStats, psDroid->player);
-//		if (radSq >= minrange * minrange || !proj_Direct(psStats))
-//		{
-//			return true;
-//		}
-//	}
-//
-//	return false;
-//}
+bool actionInRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slot, bool useLongWithOptimum)
+{
+	auto psStats = psDroid->getWeapon(0)->getStats();
+
+	const auto dx = psDroid->getPosition().x - psObj->getPosition().x;
+	const auto dy = psDroid->getPosition().y - psObj->getPosition().y;
+
+	const auto radSq = dx * dx + dy * dy;
+	const auto longRange = proj_GetLongRange(psStats, psDroid->playerManager->getPlayer());
+	const auto shortRange = proj_GetShortRange(psStats, psDroid->playerManager->getPlayer());
+
+	auto rangeSq = 0;
+	switch (psDroid->getSecondaryOrder() & DSS_ARANGE_MASK) {
+	case DSS_ARANGE_OPTIMUM:
+		if (!useLongWithOptimum && weaponShortHit(
+            psStats, psDroid->playerManager->getPlayer())
+                               > weaponLongHit(psStats, psDroid->playerManager->getPlayer())) {
+			rangeSq = shortRange * shortRange;
+		}
+		else {
+			rangeSq = longRange * longRange;
+		}
+		break;
+	case DSS_ARANGE_SHORT:
+		rangeSq = shortRange * shortRange;
+		break;
+	case DSS_ARANGE_LONG:
+		rangeSq = longRange * longRange;
+		break;
+	default:
+		ASSERT(!"unknown attackrange order", "unknown attack range order");
+		rangeSq = longRange * longRange;
+		break;
+	}
+
+	/* check max range */
+	if (radSq <= rangeSq) {
+		/* check min range */
+		const auto minrange = proj_GetMinRange(psStats, psDroid->playerManager->getPlayer());
+		if (radSq >= minrange * minrange || !proj_Direct(psStats)) {
+			return true;
+		}
+	}
+	return false;
+}
 
 // check if a target is inside minimum weapon range
 static bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, WeaponStats const* psStats)
 {
 	if (!psStats) {
-		psStats = getWeaponStats(psDroid, 0);
+		psStats = psDroid->getWeapon(0)->getStats();
 	}
 
 	/* if I am a multi-turret droid */
@@ -184,66 +170,16 @@ static bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, 
 	return false;
 }
 
-
-//// Realign turret
-//void actionAlignTurret(SimpleObject *psObj, int weapon_slot)
-//{
-//	uint16_t        nearest = 0;
-//	uint16_t        tRot;
-//	uint16_t        tPitch;
-//
-//	//get the maximum rotation this frame
-//	const int rotation = gameTimeAdjustedIncrement(DEG(ACTION_TURRET_ROTATION_RATE));
-//
-//	switch (psObj->type)
-//	{
-//	case OBJ_DROID:
-//		tRot = ((DROID *)psObj)->asWeaps[weapon_slot].rot.direction;
-//		tPitch = ((DROID *)psObj)->asWeaps[weapon_slot].rot.pitch;
-//		break;
-//	case OBJ_STRUCTURE:
-//		tRot = ((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.direction;
-//		tPitch = ((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.pitch;
-//
-//		// now find the nearest 90 degree angle
-//		nearest = (uint16_t)((tRot + DEG(45)) / DEG(90) * DEG(90));  // Cast wrapping intended.
-//		break;
-//	default:
-//		ASSERT(!"invalid object type", "invalid object type");
-//		return;
-//	}
-//
-//	tRot += clip(angleDelta(nearest - tRot), -rotation, rotation);  // Addition wrapping intended.
-//
-//	// align the turret pitch
-//	tPitch += clip(angleDelta(0 - tPitch), -rotation / 2, rotation / 2); // Addition wrapping intended.
-//
-//	switch (psObj->type)
-//	{
-//	case OBJ_DROID:
-//		((DROID *)psObj)->asWeaps[weapon_slot].rot.direction = tRot;
-//		((DROID *)psObj)->asWeaps[weapon_slot].rot.pitch = tPitch;
-//		break;
-//	case OBJ_STRUCTURE:
-//		((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.direction = tRot;
-//		((STRUCTURE *)psObj)->asWeaps[weapon_slot].rot.pitch = tPitch;
-//		break;
-//	default:
-//		ASSERT(!"invalid object type", "invalid object type");
-//		return;
-//	}
-//}
-
 /* returns true if on target */
 bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* psWeapon)
 {
-  int rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
-  int pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
+  auto rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
+  auto pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
 
 	auto psWeapStats = psWeapon->getStats();
 	unsigned tRotation, tPitch;
 	unsigned targetRotation;
-	int rotationTolerance = 0;
+	auto rotationTolerance = 0;
 	int pitchLowerLimit, pitchUpperLimit;
 
 	if (!psTarget) {
@@ -255,7 +191,7 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* ps
 
 	// extra heavy weapons on some structures need to rotate and pitch more slowly
 	if (psWeapStats->weight > HEAVY_WEAPON_WEIGHT && !bRepair) {
-		unsigned excess = DEG(100) * (psWeapStats->weight - HEAVY_WEAPON_WEIGHT) / psWeapStats->weight;
+		auto excess = DEG(100) * (psWeapStats->weight - HEAVY_WEAPON_WEIGHT) / psWeapStats->weight;
 		rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2 - excess;
 		pitchRate = rotRate / 2;
 	}
@@ -275,8 +211,7 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* ps
 		pitchLowerLimit = DEG(psWeapStats->minElevation);
 		pitchUpperLimit = DEG(psWeapStats->maxElevation);
 	}
-	else if (auto psDroid = dynamic_cast<Droid*>(psAttacker))
-	{
+	else if (auto psDroid = dynamic_cast<Droid*>(psAttacker)) {
 		int weapon_slot = psWeapon - psDroid->asWeaps; // Should probably be passed weapon_slot instead of psWeapon.
 		calcDroidMuzzleLocation(psDroid, &attackerMuzzlePos, weapon_slot);
 
@@ -288,8 +223,7 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* ps
 			pitchLowerLimit = DEG(psWeapStats->minElevation);
 			pitchUpperLimit = DEG(psWeapStats->maxElevation);
 		}
-		else if (psDroid->getType() == DROID_TYPE::REPAIRER)
-		{
+		else if (psDroid->getType() == DROID_TYPE::REPAIRER) {
 			pitchLowerLimit = DEG(REPAIR_PITCH_LOWER);
 			pitchUpperLimit = DEG(REPAIR_PITCH_UPPER);
 		}
@@ -306,16 +240,14 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* ps
                                  psTarget->getPosition().x, psTarget->getPosition().y);
 
 	//restrict rotationerror to =/- 180 degrees
-	int rotationError = angleDelta(targetRotation - (tRotation + psAttacker->getRotation().direction));
+	auto rotationError = angleDelta(targetRotation - (tRotation + psAttacker->getRotation().direction));
 
 	tRotation += clip(rotationError, -rotRate, rotRate); // Addition wrapping intentional.
-	if (dynamic_cast<Droid*>(psAttacker) && dynamic_cast<Droid*>(psAttacker)->isVtol())
-	{
+	if (dynamic_cast<Droid*>(psAttacker) && dynamic_cast<Droid*>(psAttacker)->isVtol()) {
 		// limit the rotation for vtols
-		int32_t limit = VTOL_TURRET_LIMIT;
+		auto limit = VTOL_TURRET_LIMIT;
 		if (psWeapStats->weaponSubClass == WEAPON_SUBCLASS::BOMB ||
-        psWeapStats->weaponSubClass == WEAPON_SUBCLASS::EMP)
-		{
+        psWeapStats->weaponSubClass == WEAPON_SUBCLASS::EMP) {
 			limit = 0; // Don't turn bombs.
 			rotationTolerance = VTOL_TURRET_LIMIT_BOMB;
 		}
@@ -328,10 +260,10 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* ps
 	if (!bRepair && (unsigned)objectPositionSquareDiff(psAttacker->getPosition(),
                                                      psTarget->getPosition()) > minRange * minRange) {
 		/* get target distance */
-		Vector3i delta = psTarget->getPosition() - attackerMuzzlePos;
-		int32_t dxy = iHypot(delta.x, delta.y);
+		auto delta = psTarget->getPosition() - attackerMuzzlePos;
+		auto dxy = iHypot(delta.x, delta.y);
 
-		uint16_t targetPitch = iAtan2(delta.z, dxy);
+		auto targetPitch = iAtan2(delta.z, dxy);
 		targetPitch = (uint16_t)clip(angleDelta(targetPitch), pitchLowerLimit, pitchUpperLimit);
 		// Cast wrapping intended.
 		auto pitchError = angleDelta(targetPitch - tPitch);
@@ -340,7 +272,6 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* ps
 		tPitch += clip(pitchError, -pitchRate, pitchRate);
 		onTarget = onTarget && targetPitch == tPitch;
 	}
-
   psWeapon->setRotation({static_cast<int>(tRotation),
                         static_cast<int>(tPitch),
                         psWeapon->getRotation().roll});
@@ -349,7 +280,7 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* ps
 }
 
 // return whether a droid can see a target to fire on it
-bool actionVisibleTarget(Droid* psDroid, BaseObject * psTarget, int weapon_slot)
+bool actionVisibleTarget(Droid const* psDroid, BaseObject const* psTarget, int weapon_slot)
 {
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
 	ASSERT_OR_RETURN(false, psDroid->playerManager->getPlayer() < MAX_PLAYERS,
@@ -378,10 +309,8 @@ static void actionAddVtolAttackRun(Droid* psDroid)
 
 	/* get normal vector from droid to target */
 	auto delta = (psTarget->getPosition() - psDroid->getPosition()).xy();
-
 	/* get magnitude of normal vector (Pythagorean theorem) */
 	auto dist = std::max(iHypot(delta), 1);
-
 	/* add waypoint behind target attack length away*/
 	auto dest = psTarget->getPosition().xy() + delta * VTOL_ATTACK_LENGTH / dist;
 
@@ -502,19 +431,21 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
 		Vector2i bestDest(0, 0); // Dummy initialisation.
 		auto bestDist = UINT32_MAX;
 		for (auto y = -1; y <= b.size.y; ++y)
-			for (auto x = -1; x <= b.size.x; x += y >= 0 && y < b.size.y ? b.size.x + 1 : 1)
-			{
-				Vector2i dest = world_coord(b.map + Vector2i(x, y)) + Vector2i(TILE_UNITS, TILE_UNITS) / 2;
-				unsigned dist = iHypot(droid->getPosition().xy() - dest);
-				if (dist < bestDist &&
+    {
+      for (auto x = -1; x <= b.size.x; x += y >= 0 && y < b.size.y ? b.size.x + 1 : 1) {
+        Vector2i dest = world_coord(b.map + Vector2i(x, y)) + Vector2i(TILE_UNITS, TILE_UNITS) / 2;
+        unsigned dist = iHypot(droid->getPosition().xy() - dest);
+        if (dist < bestDist &&
             !fpathBlockingTile(map_coord(dest.x),
                                map_coord(dest.y),
-                               dynamic_cast<PropulsionStats const*>(
-                                       droid->getComponent("propulsion"))->propulsionType)) {
-					bestDest = dest;
-					bestDist = dist;
-				}
-			}
+                               dynamic_cast<PropulsionStats const *>(
+                                       droid->getComponent("propulsion"))
+                                       ->propulsionType)) {
+          bestDest = dest;
+          bestDist = dist;
+        }
+      }
+    }
 		if (bestDist != UINT32_MAX) {
 			// Push the droid out of the way.
 			auto newPos = droid->getPosition().xy() + iSinCosR(
@@ -615,26 +546,6 @@ void moveToRearm(Droid* psDroid)
 		orderDroid(psDroid, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
 	}
 }
-
-
-//// whether a tile is suitable for a vtol to land on
-//static bool vtolLandingTile(SDWORD x, SDWORD y)
-//{
-//	if (x < 0 || x >= (SDWORD)mapWidth || y < 0 || y >= (SDWORD)mapHeight)
-//	{
-//		return false;
-//	}
-//
-//	const MAPTILE* psTile = mapTile(x, y);
-//	if (psTile->tileInfoBits & BITS_FPATHBLOCK ||
-//		TileIsOccupied(psTile) ||
-//		terrainType(psTile) == TER_CLIFFFACE ||
-//		terrainType(psTile) == TER_WATER)
-//	{
-//		return false;
-//	}
-//	return true;
-//}
 
 ///**
 // * Performs a space-filling spiral-like search from startX,startY up to (and

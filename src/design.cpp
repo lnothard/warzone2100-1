@@ -35,6 +35,10 @@
 #include "loop.h"
 #include "projectile.h"
 #include "qtscript.h"
+#include "lib/widget/listwidget.h"
+#include "intimage.h"
+#include "template.h"
+#include "display3d.h"
 
 bool bMultiPlayer;
 void resetMissionWidgets();
@@ -506,7 +510,7 @@ static ComponentIterator constructorIterator()
 static ComponentIterator repairIterator()
 {
 	ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer: %" PRIu32 "", selectedPlayer);
-	return componentIterator(asRepairStats, sizeof(RepairStats), apCompLists[selectedPlayer][COMPONENT_TYPE::REPAIRUNIT],
+	return componentIterator(asRepairStats, sizeof(RepairStats), apCompLists[selectedPlayer][COMPONENT_TYPE::REPAIR_UNIT],
                            numRepairStats);
 }
 
@@ -1202,7 +1206,7 @@ static void intSetDesignMode(DES_COMPMODE newCompMode, bool forceRefresh)
 		                         sCurrDesign.asParts[COMPONENT_TYPE::SENSOR],
 		                         sCurrDesign.asParts[COMPONENT_TYPE::ECM],
 		                         sCurrDesign.asParts[COMPONENT_TYPE::CONSTRUCT],
-		                         sCurrDesign.asParts[COMPONENT_TYPE::REPAIRUNIT],
+		                         sCurrDesign.asParts[COMPONENT_TYPE::REPAIR_UNIT],
 		                         sCurrDesign.asParts[COMPONENT_TYPE::BRAIN]);
 		intAddSystemButtons(IDES_SYSTEM);
 		widgSetButtonState(psWScreen, IDDES_SYSTEMFORM, WBUT_LOCK);
@@ -2077,7 +2081,7 @@ static bool intAddComponentButtons(ListTabWidget* compList,
 			PropulsionStats* psPropStats = asPropulsionStats + sCurrDesign.asParts[COMPONENT_TYPE::PROPULSION];
 			ASSERT_OR_RETURN(false, psPropStats != nullptr, "invalid propulsion stats pointer");
 
-			bVTOL |= asPropulsionTypes[psPropStats->propulsionType].travel == AIR;
+			bVTOL |= asPropulsionTypes[psPropStats->propulsionType].travel == TRAVEL_MEDIUM::AIR;
 		}
 		if (sCurrDesign.asParts[COMPONENT_TYPE::BODY])
 		{
@@ -2265,7 +2269,7 @@ static void intSetSystemStats(ComponentStats* psStats)
 	case COMPONENT_TYPE::CONSTRUCT:
 		intSetConstructStats((ConstructStats*)psStats);
 		break;
-	case COMPONENT_TYPE::REPAIRUNIT:
+	case COMPONENT_TYPE::REPAIR_UNIT:
 		intSetRepairStats((RepairStats*)psStats);
 		break;
 	case COMPONENT_TYPE::BRAIN:
@@ -2296,7 +2300,7 @@ static void intSetSystemShadowStats(ComponentStats* psStats)
 			                           : nullptr);
 		break;
 	case IDES_REPAIR:
-		intSetRepairShadowStats(psStats && psStats->compType == COMPONENT_TYPE::REPAIRUNIT ? (RepairStats*)psStats : nullptr);
+		intSetRepairShadowStats(psStats && psStats->compType == COMPONENT_TYPE::REPAIR_UNIT ? (RepairStats*)psStats : nullptr);
 		break;
 	default:
 		return;
@@ -2500,9 +2504,9 @@ static void intSetBodyStats(BodyStats* psStats)
 
 	/* armour */
 	//do kinetic armour
-	widgSetBarSize(psWScreen, IDDES_BODYARMOUR_K, bodyArmour(psStats, selectedPlayer, WC_KINETIC));
+	widgSetBarSize(psWScreen, IDDES_BODYARMOUR_K, bodyArmour(psStats, selectedPlayer, WEAPON_CLASS::KINETIC));
 	//do heat armour
-	widgSetBarSize(psWScreen, IDDES_BODYARMOUR_H, bodyArmour(psStats, selectedPlayer, WC_HEAT));
+	widgSetBarSize(psWScreen, IDDES_BODYARMOUR_H, bodyArmour(psStats, selectedPlayer, WEAPON_CLASS::HEAT));
 	/* power */
 	widgSetBarSize(psWScreen, IDDES_BODYPOWER, bodyPower(psStats, selectedPlayer));
 	/* weight */
@@ -2524,9 +2528,9 @@ static void intSetBodyShadowStats(BodyStats* psStats)
 	if (psStats)
 	{
 		/* armour - kinetic*/
-		widgSetMinorBarSize(psWScreen, IDDES_BODYARMOUR_K, bodyArmour(psStats, selectedPlayer, WC_KINETIC));
+		widgSetMinorBarSize(psWScreen, IDDES_BODYARMOUR_K, bodyArmour(psStats, selectedPlayer, WEAPON_CLASS::KINETIC));
 		//armour - heat
-		widgSetMinorBarSize(psWScreen, IDDES_BODYARMOUR_H, bodyArmour(psStats, selectedPlayer, WC_HEAT));
+		widgSetMinorBarSize(psWScreen, IDDES_BODYARMOUR_H, bodyArmour(psStats, selectedPlayer, WEAPON_CLASS::HEAT));
 		/* power */
 		widgSetMinorBarSize(psWScreen, IDDES_BODYPOWER, bodyPower(psStats, selectedPlayer));
 		/* weight */
@@ -2772,7 +2776,7 @@ static void intSetPropulsionShadowStats(PropulsionStats* psStats)
 		// hovering over a valid propulsion and then to an invalid one to compare
 		// against (design is wheels, then hovered over half-tracks, then VTOL)
 		// causes the last shadow marker set to stay.
-		if (asPropulsionTypes[psStats->propulsionType].travel == GROUND && desPropMode == IDES_AIR)
+		if (asPropulsionTypes[psStats->propulsionType].travel == TRAVEL_MEDIUM::GROUND && desPropMode == IDES_AIR)
 		{
 			widgSetMinorBarSize(psWScreen, IDDES_PROPAIR, 0);
 		}
@@ -2945,10 +2949,10 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 		psTempl->asParts[COMPONENT_TYPE::ECM] = aDefaultECM[player];
 	}
 
-	if (psTempl->asParts[COMPONENT_TYPE::REPAIRUNIT] == 0)
+	if (psTempl->asParts[COMPONENT_TYPE::REPAIR_UNIT] == 0)
 	{
 		/* Set the default Repair */
-		psTempl->asParts[COMPONENT_TYPE::REPAIRUNIT] = aDefaultRepair[player];
+		psTempl->asParts[COMPONENT_TYPE::REPAIR_UNIT] = aDefaultRepair[player];
 	}
 
 	psTempl->ref = STAT_TEMPLATE;
@@ -3463,13 +3467,13 @@ void intProcessDesign(unsigned id)
 		// WPABUTTON
 		case IDDES_WPABUTTON:
 			// Add the correct component form
-			switch (droidTemplateType(&sCurrDesign))
-			{
-			case DROID_COMMAND:
-			case DROID_SENSOR:
-			case DROID_CONSTRUCT:
-			case DROID_ECM:
-			case DROID_REPAIR:
+			switch (droidTemplateType(&sCurrDesign)) {
+          using enum DROID_TYPE;
+			case COMMAND:
+			case SENSOR:
+			case CONSTRUCT:
+			case ECM:
+			case REPAIRER:
 				break;
 			default:
 				intSetDesignMode(IDES_TURRET_A);
@@ -3486,13 +3490,13 @@ void intProcessDesign(unsigned id)
 		// WPBBUTTON
 		case IDDES_WPBBUTTON:
 			// Add the correct component form
-			switch (droidTemplateType(&sCurrDesign))
-			{
-			case DROID_COMMAND:
-			case DROID_SENSOR:
-			case DROID_CONSTRUCT:
-			case DROID_ECM:
-			case DROID_REPAIR:
+			switch (droidTemplateType(&sCurrDesign)) {
+          using enum DROID_TYPE;
+			case COMMAND:
+			case SENSOR:
+			case CONSTRUCT:
+			case ECM:
+			case REPAIRER:
 				break;
 			default:
 				intSetDesignMode(IDES_TURRET_B);

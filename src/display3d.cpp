@@ -92,6 +92,7 @@
 #include "objmem.h"
 #include "intfac.h"
 #include "intimage.h"
+#include "baseobject.h"
 
 static void displayDelivPoints(const glm::mat4& viewMatrix);
 static void displayProximityMsgs(const glm::mat4& viewMatrix);
@@ -349,7 +350,7 @@ struct Blueprint
 
 	[[nodiscard]] Structure* buildBlueprint() const ///< Must delete after use.
 	{
-		return ::buildBlueprint(stats, pos, dir, index, state, player);
+		return ::buildBlueprint(&stats, pos, dir, index, state, player);
 	}
 
 	void renderBlueprint(const glm::mat4& viewMatrix) const
@@ -1511,7 +1512,7 @@ static void display3DProjectiles(const glm::mat4& viewMatrix)
 	while (psObj != nullptr)
 	{
 		// If source or destination is visible, and projectile has been spawned and has not impacted.
-		if (graphicsTime >= psObj->previousLocation.time &&
+		if (graphicsTime >= psObj->getPreviousLocation().time &&
         graphicsTime <= psObj->getTime() && gfxVisible(psObj)) {
 			/* Draw a bullet at psObj->pos.x for X coord
 			   psObj->pos.y for Z coord
@@ -1525,7 +1526,7 @@ static void display3DProjectiles(const glm::mat4& viewMatrix)
           psObj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::SLOW_ROCKET ||
           psObj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::ENERGY ||
           psObj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::EMP) {
-				bucketAddTypeToList(RENDER_PROJECTILE, psObj, viewMatrix);
+				bucketAddTypeToList(RENDER_TYPE::RENDER_PROJECTILE, psObj, viewMatrix);
 			}
 			else {
 				::renderProjectile(psObj, viewMatrix);
@@ -2452,16 +2453,16 @@ void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix)
 	                             -(psStructure->getPosition().y - playerPos.p.z));
 	bool bHitByElectronic = false;
 	bool defensive = false;
-	iIMDShape* strImd = psStructure->getDisplayData()->imd_shape;
+	iIMDShape* strImd = psStructure->getDisplayData()->imd_shape.get();
 	Tile* psTile = worldTile(psStructure->getPosition().x, psStructure->getPosition().y);
 	const FACTION* faction = getPlayerFaction(psStructure->playerManager->getPlayer());
 
 	glm::mat4 modelMatrix = glm::translate(glm::vec3(dv)) * glm::rotate(UNDEG(-psStructure->getRotation().direction),
 	                                                                    glm::vec3(0.f, 1.f, 0.f));
 
-	if (psStructure->getStats().type == STRUCTURE_TYPE::WALL || psStructure->getStats().type == STRUCTURE_TYPE::WALL_CORNER
-		|| psStructure->getStats().type == STRUCTURE_TYPE::GATE)
-	{
+	if (psStructure->getStats()->type == STRUCTURE_TYPE::WALL ||
+      psStructure->getStats()->type == STRUCTURE_TYPE::WALL_CORNER ||
+      psStructure->getStats()->type == STRUCTURE_TYPE::GATE) {
 		renderWallSection(psStructure, viewMatrix);
 		return;
 	}
@@ -2674,9 +2675,11 @@ static bool renderWallSection(Structure* psStructure, const glm::mat4& viewMatri
 
 	/* Actually render it */
 	if (psStructure->getState() == STRUCTURE_STATE::BEING_BUILT) {
-		pie_Draw3DShape(getFactionIMD(faction, psStructure->getDisplayData()->imd_shape), 0, getPlayerColour(psStructure->playerManager->getPlayer()),
+		pie_Draw3DShape(getFactionIMD(faction, psStructure->getDisplayData()->imd_shape.get()),
+                    0, getPlayerColour(psStructure->playerManager->getPlayer()),
 		                brightness, pie_HEIGHT_SCALED | pie_SHADOW | ecmFlag,
-		                static_cast<int>(structHeightScale(psStructure) * pie_RAISE_SCALE), viewMatrix * modelMatrix);
+		                static_cast<int>(structHeightScale(psStructure) * pie_RAISE_SCALE),
+                    viewMatrix * modelMatrix);
 	}
 	else
 	{
@@ -3191,7 +3194,7 @@ static void drawDroidSelections()
         droidUnderRepair(&psDroid) ||
 			barMode == BAR_DROIDS || barMode == BAR_DROIDS_AND_STRUCTURES
 		) {
-			drawDroidSelection(psDroid, psDroid.damageManager->isSelected());
+			drawDroidSelection(&psDroid, psDroid.damageManager->isSelected());
 		}
 	}
 
@@ -3282,7 +3285,7 @@ static void drawDroidSelections()
 		{
 			if (showORDERS)
 			{
-				drawDroidOrder(psDroid);
+				drawDroidOrder(&psDroid);
 			}
 			if (!psDroid.damageManager->isDead() && psDroid.getDisplayData()->frame_number == currentGameFrame) {
 				/* If it's selected */
@@ -3295,7 +3298,7 @@ static void drawDroidSelections()
 		}
 	}
 
-	for (const Feature* psFeature = apsFeatureLists[0]; psFeature; psFeature = psFeature->psNext)
+	for (const auto psFeature : apsFeatureLists[0])
 	{
 		if (!psFeature->damageManager->isDead() && psFeature->getDisplayData()->frame_number == currentGameFrame) {
 			if (psFeature->testFlag((size_t)OBJECT_FLAG::TARGETED)) {

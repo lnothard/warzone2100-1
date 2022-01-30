@@ -270,11 +270,12 @@ public:
   [[nodiscard]] STRUCTURE_STATE getState() const;
   [[nodiscard]] StructureStats const* getStats() const;
   [[nodiscard]] uint8_t getCapacity() const;
-  [[nodiscard]] int objRadius() const;
+  [[nodiscard]] Weapon const* getWeapon(int slot) const;
+  [[nodiscard]] std::array<Weapon, MAX_WEAPONS> *const getWeapons() const;
+  [[nodiscard]] int objRadius() const override;
   [[nodiscard]] bool isBlueprint() const noexcept;
   [[nodiscard]] bool isWall() const noexcept;
   [[nodiscard]] bool isRadarDetector() const;
-  [[nodiscard]] bool isProbablyDoomed(bool isDirect) const;
   [[nodiscard]] bool hasModules() const noexcept;
   [[nodiscard]] bool hasSensor() const;
   [[nodiscard]] bool hasStandardSensor() const;
@@ -780,10 +781,10 @@ static inline unsigned structJammerPower(const Structure* psObj)
 	return objJammerPower(psObj);
 }
 
-static inline Rotation structureGetInterpolatedWeaponRotation(Structure* psStructure, int weaponSlot, uint32_t time)
+static inline Rotation structureGetInterpolatedWeaponRotation(Structure const* psStructure, int weaponSlot, uint32_t time)
 {
-	return interpolateRot(psStructure->asWeaps[weaponSlot].previousRotation,
-                        psStructure->asWeaps[weaponSlot].rotation,
+	return interpolateRot(psStructure->getWeapon(weaponSlot)->getPreviousRotation(),
+                        psStructure->getWeapon(weaponSlot)->rotation,
                         psStructure->prevTime, psStructure->getTime(), time);
 }
 

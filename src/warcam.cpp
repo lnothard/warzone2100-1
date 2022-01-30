@@ -669,7 +669,7 @@ static void updateCameraRotationAcceleration(UBYTE update)
 		{
 			unsigned group = trackingCamera.target->damageManager->isSelected()
                                ? GROUP_SELECTED
-                               : trackingCamera.target->group;
+                               : trackingCamera.target->getGroup();
 			yConcern = getAverageTrackAngle(group, false);
 		}
 		else
@@ -698,7 +698,7 @@ static void updateCameraRotationAcceleration(UBYTE update)
 			uint16_t pitch;
 			unsigned group = trackingCamera.target->damageManager->isSelected()
                                ? GROUP_SELECTED
-                               : trackingCamera.target->group;
+                               : trackingCamera.target->getGroup();
 			getTrackingConcerns(&xPos, &yPos, &zPos, GROUP_SELECTED, true);
 			// FIXME Should this be group instead of GROUP_SELECTED?
 			getBestPitchToEdgeOfGrid(xPos, zPos, DEG(180) - getAverageTrackAngle(group, true), &pitch);

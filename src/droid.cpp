@@ -50,10 +50,12 @@
 #include "random.h"
 #include "raycast.h"
 #include "scores.h"
+#include "selection.h"
+#include "text.h"
 #include "transporter.h"
 #include "visibility.h"
 #include "warcam.h"
-#include "selection.h"
+#include "lib/framework/strres.h"
 
 
 // the structure that was last hit
@@ -321,9 +323,19 @@ Weapon const* Droid::getWeapon(int slot) const
   return pimpl ? pimpl->weapons[slot] : nullptr;
 }
 
-std::array<Weapon, MAX_WEAPONS> const* Droid::getWeapons() const
+std::array<Weapon, MAX_WEAPONS> *const Droid::getWeapons() const
 {
   return pimpl ? pimpl->weapons : nullptr;
+}
+
+unsigned Droid::getExperience() const 
+{
+  return pimpl ? pimpl->experience : 0;
+}
+
+unsigned Droid::getKills() const
+{
+  return pimpl ? pimpl->kills : 0;
 }
 
 void Droid::cancelBuild()
@@ -462,47 +474,6 @@ unsigned Droid::calculateSensorRange() const
   if (ecm_range > 0) return ecm_range;
   return dynamic_cast<SensorStats const*>(
           getComponent("sensor"))->upgraded[playerManager->getPlayer()].range;
-}
-
-int Droid::calculateHeight() const
-{
-  ASSERT_OR_RETURN(-1, pimpl != nullptr, "Droid object is undefined");
-
-  auto body = dynamic_cast<BodyStats const*>( getComponent("body"));
-  if (!body) return -1;
-
-  auto const& imd = body->pIMD;
-  auto const height = imd->max.y - imd->min.y;
-  auto utility_height = 0, y_max = 0, y_min = 0;
-
-  if (isVtol()) {
-    return height + VTOL_HITBOX_MODIFIER;
-  }
-
-  auto const& weaponStats = pimpl->weapons[0].getStats();
-  auto sensor = dynamic_cast<SensorStats const*>(getComponent("sensor"));
-  auto ecm = dynamic_cast<EcmStats const*>(getComponent("ecm"));
-
-  switch (pimpl->type) {
-    using enum DROID_TYPE;
-    case WEAPON:
-      if (numWeapons(*this) == 0) {
-        break;
-      }
-      y_max = weaponStats->pIMD->max.y;
-      y_min = weaponStats->pIMD->min.y;
-      break;
-    case SENSOR:
-      y_max = sensor->pIMD->max.y;
-      y_min = sensor->pIMD->min.y;
-      break;
-    case ECM:
-      y_max = ecm->pIMD->max.y;
-      y_min = ecm->pIMD->min.y;
-      break;
-    case CONSTRUCT:
-      break;
-  }
 }
 
 DROID_TYPE Droid::getType() const noexcept
@@ -6754,8 +6725,7 @@ void Droid::orderDroidBase(Order* psOrder)
 
 bool Droid::isRepairDroid() const noexcept
 {
-  return getType() == DROID_TYPE::REPAIRER ||
-         getType() == DROID_TYPE::CYBORG_REPAIR;
+  return getType() == DROID_TYPE::REPAIRER || getType() == DROID_TYPE::CYBORG_REPAIR;
 }
 
 bool Droid::tryDoRepairlikeAction()
@@ -7014,18 +6984,18 @@ std::unique_ptr<Droid> Droid::giftSingleDroid(unsigned to, bool electronic)
 //      // the new player may have different default sensor/ecm/repair components
 //      if (auto sensor = dynamic_cast<const SensorStats*>(psNewDroid->getComponent("sensor")))
 //      if ((psNewDroid->getComponent("sensor")->location == LOC::DEFAULT) {
-//        if (psNewDroid->asBits[COMP_SENSOR] != aDefaultSensor[getPlayer()]) {
-//          psNewDroid->asBits[COMP_SENSOR] = aDefaultSensor[getPlayer()];
+//        if (psNewDroid->asBits[COMPONENT_TYPE::SENSOR] != aDefaultSensor[getPlayer()]) {
+//          psNewDroid->asBits[COMPONENT_TYPE::SENSOR] = aDefaultSensor[getPlayer()];
 //        }
 //      }
-//      if ((asECMStats + psNewDroid->asBits[COMP_ECM])->location == LOC::DEFAULT) {
-//        if (psNewDroid->asBits[COMP_ECM] != aDefaultECM[getPlayer()]){
-//          psNewDroid->asBits[COMP_ECM] = aDefaultECM[getPlayer()];
+//      if ((asECMStats + psNewDroid->asBits[COMPONENT_TYPE::ECM])->location == LOC::DEFAULT) {
+//        if (psNewDroid->asBits[COMPONENT_TYPE::ECM] != aDefaultECM[getPlayer()]){
+//          psNewDroid->asBits[COMPONENT_TYPE::ECM] = aDefaultECM[getPlayer()];
 //        }
 //      }
-//      if ((asRepairStats + psD->asBits[COMP_REPAIRUNIT])->location == LOC::DEFAULT) {
-//        if (psD->asBits[COMP_REPAIRUNIT] != aDefaultRepair[getPlayer()]) {
-//          psD->asBits[COMP_REPAIRUNIT] = aDefaultRepair[getPlayer()];
+//      if ((asRepairStats + psD->asBits[COMPONENT_TYPE::REPAIRUNIT])->location == LOC::DEFAULT) {
+//        if (psD->asBits[COMPONENT_TYPE::REPAIRUNIT] != aDefaultRepair[getPlayer()]) {
+//          psD->asBits[COMPONENT_TYPE::REPAIRUNIT] = aDefaultRepair[getPlayer()];
 //        }
 //      }
   }
@@ -7109,15 +7079,14 @@ void Droid::droidSetBits(const DroidTemplate* pTemplate)
     pimpl->weapons[inc].previousRotation = pimpl->weapons[inc].rotation;
     pimpl->weapons[inc].origin = TARGET_ORIGIN::UNKNOWN;
     if (inc < pTemplate->weaponCount) {
-      pimpl->weapons[inc].ammo = (asWeaponStats + pimpl->weapons[inc].stats)->upgraded_stats[playerManager->getPlayer()].
-              numRounds;
+      pimpl->weapons[inc].ammo = pimpl->weapons[inc].getStats()->upgraded_stats[playerManager->getPlayer()].numRounds;
     }
     pimpl->weapons[inc].ammoUsed = 0;
   }
   auto propulsion = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
   if (!propulsion) return;
   switch (propulsion->propulsionType) {
-    // getPropulsionStats(psDroid) only defined after psDroid->asBits[COMP_PROPULSION] is set.
+    // getPropulsionStats(psDroid) only defined after psDroid->asBits[COMPONENT_TYPE::PROPULSION] is set.
     case PROPULSION_TYPE::LIFT:
       pimpl->blockedBits = AIR_BLOCKED;
       break;
@@ -7161,7 +7130,7 @@ void Droid::setActionTarget(BaseObject* psNewTarget, unsigned idx)
          "setDroidActionTarget: Set dead target");
 }
 
-void Droid::setBase(::Structure* psNewBase)
+void Droid::setBase(Structure* psNewBase)
 {
   if (!pimpl) return;
   pimpl->associatedStructure = psNewBase;
@@ -7181,7 +7150,7 @@ bool droidInit()
 	return true;
 }
 
-int droidReloadBar(const BaseObject& psObj, const Weapon* psWeap, int weapon_slot)
+int droidReloadBar(BaseObject const& psObj, Weapon const* psWeap, int weapon_slot)
 {
 
 	if (numWeapons(psObj) == 0) {
@@ -7202,7 +7171,7 @@ int droidReloadBar(const BaseObject& psObj, const Weapon* psWeap, int weapon_slo
   if (psDroid && psDroid->isVtol()) {
   //deal with VTOLs
   firingStage = getNumAttackRuns(psDroid, weapon_slot)
-          - psDroid->getWeapons()[weapon_slot].ammoUsed;
+          - psDroid->getWeapon(weapon_slot)->ammoUsed;
 
   //compare with max value
   interval = getNumAttackRuns(psDroid, weapon_slot);
@@ -7415,8 +7384,7 @@ static bool droidCheckBuildStillInProgress(void* psObj)
 {
 	if (psObj == nullptr) return false;
 	auto psDroid = static_cast<Droid*>(psObj);
-	return !psDroid->damageManager->isDead() &&
-         psDroid->getAction() == ACTION::BUILD;
+	return !psDroid->damageManager->isDead() && psDroid->getAction() == ACTION::BUILD;
 }
 
 static bool droidBuildStartAudioCallback(void* psObj)
@@ -7455,7 +7423,6 @@ static void addConstructorEffect(Structure* psStruct)
 	}
 }
 
-
 bool droidUpdateRepair(Droid* psDroid)
 {
 	ASSERT_OR_RETURN(false, psDroid->getAction() == ACTION::REPAIR, "unit does not have repair order");
@@ -7483,7 +7450,7 @@ bool droidUpdateRepair(Droid* psDroid)
 }
 
 /*Updates a Repair Droid working on a damaged droid*/
-static bool droidUpdateDroidRepairBase(Droid* psRepairDroid, Droid* psDroidToRepair)
+static bool droidUpdateDroidRepairBase(Droid const* psRepairDroid, Droid* psDroidToRepair)
 {
   auto repairStats = dynamic_cast<const RepairStats*>(psRepairDroid->getComponent("repair"));
 	auto iRepairRateNumerator = repairPoints(repairStats, psRepairDroid->playerManager->getPlayer());
@@ -7523,10 +7490,8 @@ static void droidUpdateDroidSelfRepair(Droid* psRepairDroid)
 
 bool isIdf(Droid const& droid)
 {
-  using enum DROID_TYPE;
-  return (droid.getType() != WEAPON ||
-          !isCyborg(&droid)) &&
-          hasArtillery(droid);
+  return (droid.getType() != DROID_TYPE::WEAPON ||
+          !isCyborg(&droid)) && hasArtillery(droid);
 }
 
 /* Return the type of a droid from it's template */
@@ -7544,23 +7509,23 @@ DROID_TYPE droidTemplateType(DroidTemplate const* psTemplate)
       psTemplate->type == SUPER_TRANSPORTER) {
 		type = psTemplate->type;
 	}
-	else if (psTemplate->asParts[COMP_BRAIN] != 0)
+	else if (psTemplate->asParts[COMPONENT_TYPE::BRAIN] != 0)
 	{
 		type = COMMAND;
 	}
-	else if ((asSensorStats + psTemplate->asParts[COMP_SENSOR])->location == LOC::TURRET)
+	else if ((asSensorStats + psTemplate->asParts[COMPONENT_TYPE::SENSOR])->location == LOC::TURRET)
 	{
 		type = SENSOR;
 	}
-	else if ((asECMStats + psTemplate->asParts[COMP_ECM])->location == LOC::TURRET)
+	else if ((asECMStats + psTemplate->asParts[COMPONENT_TYPE::ECM])->location == LOC::TURRET)
 	{
 		type = ECM;
 	}
-	else if (psTemplate->asParts[COMP_CONSTRUCT] != 0)
+	else if (psTemplate->asParts[COMPONENT_TYPE::CONSTRUCT] != 0)
 	{
 		type = CONSTRUCT;
 	}
-	else if ((asRepairStats + psTemplate->asParts[COMP_REPAIRUNIT])->location == LOC::TURRET)
+	else if ((asRepairStats + psTemplate->asParts[COMPONENT_TYPE::REPAIR_UNIT])->location == LOC::TURRET)
 	{
 		type = REPAIRER;
 	}
@@ -7582,12 +7547,12 @@ static unsigned calcSum(const uint8_t (&asParts)[DROID_MAXCOMP], int numWeaps,
                         const unsigned (&asWeaps)[MAX_WEAPONS], F func, G propulsionFunc)
 {
 	auto sum =
-		func(asBrainStats[asParts[COMP_BRAIN]]) +
-		func(asSensorStats[asParts[COMP_SENSOR]]) +
-		func(asECMStats[asParts[COMP_ECM]]) +
-		func(asRepairStats[asParts[COMP_REPAIRUNIT]]) +
-		func(asConstructStats[asParts[COMP_CONSTRUCT]]) +
-		propulsionFunc(asBodyStats[asParts[COMP_BODY]], asPropulsionStats[asParts[COMP_PROPULSION]]);
+		func(asBrainStats[asParts[COMPONENT_TYPE::BRAIN]]) +
+		func(asSensorStats[asParts[COMPONENT_TYPE::SENSOR]]) +
+		func(asECMStats[asParts[COMPONENT_TYPE::ECM]]) +
+		func(asRepairStats[asParts[COMPONENT_TYPE::REPAIRUNIT]]) +
+		func(asConstructStats[asParts[COMPONENT_TYPE::CONSTRUCT]]) +
+		propulsionFunc(asBodyStats[asParts[COMPONENT_TYPE::BODY]], asPropulsionStats[asParts[COMPONENT_TYPE::PROPULSION]]);
 	for (int i = 0; i < numWeaps; ++i)
 	{
 		sum += func(asWeaponStats[asWeaps[i]]);
@@ -7608,13 +7573,13 @@ static unsigned calcUpgradeSum(const uint8_t (&asParts)[DROID_MAXCOMP], int numW
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	unsigned sum =
-          func(asBrainStats[asParts[COMP_BRAIN]].upgraded[player]) +
-          func(asSensorStats[asParts[COMP_SENSOR]].upgraded[player]) +
-          func(asECMStats[asParts[COMP_ECM]].upgraded[player]) +
-          func(asRepairStats[asParts[COMP_REPAIRUNIT]].upgraded[player]) +
-          func(asConstructStats[asParts[COMP_CONSTRUCT]].upgraded[player]) +
-          propulsionFunc(asBodyStats[asParts[COMP_BODY]].upgraded[player],
-		               asPropulsionStats[asParts[COMP_PROPULSION]].upgraded[player]);
+          func(asBrainStats[asParts[COMPONENT_TYPE::BRAIN]].upgraded[player]) +
+          func(asSensorStats[asParts[COMPONENT_TYPE::SENSOR]].upgraded[player]) +
+          func(asECMStats[asParts[COMPONENT_TYPE::ECM]].upgraded[player]) +
+          func(asRepairStats[asParts[COMPONENT_TYPE::REPAIR_UNIT]].upgraded[player]) +
+          func(asConstructStats[asParts[COMPONENT_TYPE::CONSTRUCT]].upgraded[player]) +
+          propulsionFunc(asBodyStats[asParts[COMPONENT_TYPE::BODY]].upgraded[player],
+		               asPropulsionStats[asParts[COMPONENT_TYPE::PROPULSION]].upgraded[player]);
 	for (int i = 0; i < numWeaps; ++i)
 	{
 		// asWeaps[i] > 0 check only needed for droids, not templates.
@@ -7675,7 +7640,7 @@ static unsigned calcUpgradeSum(const Droid* psDroid, unsigned player, F func, G 
 }
 
 /* Calculate the weight of a droid from it's template */
-unsigned calcDroidWeight(const DroidTemplate* psTemplate)
+unsigned calcDroidWeight(DroidTemplate const* psTemplate)
 {
 	return calcSum(psTemplate, [](ComponentStats const& stat)
 	               {
@@ -7688,7 +7653,7 @@ unsigned calcDroidWeight(const DroidTemplate* psTemplate)
 }
 
 template <typename T>
-static unsigned calcBody(T* obj, unsigned player)
+static unsigned calcBody(T const* obj, unsigned player)
 {
 	auto hitpoints = calcUpgradeSum(obj, player, [](ComponentStats::Upgradeable const& upgrade)
 	                               {
@@ -7715,7 +7680,7 @@ static unsigned calcBody(T* obj, unsigned player)
 }
 
 // Calculate the body points of a droid from its template
-unsigned calcTemplateBody(const DroidTemplate* psTemplate, unsigned player)
+unsigned calcTemplateBody(DroidTemplate const* psTemplate, unsigned player)
 {
 	if (psTemplate == nullptr) {
 		ASSERT(false, "null template");
@@ -7725,31 +7690,31 @@ unsigned calcTemplateBody(const DroidTemplate* psTemplate, unsigned player)
 }
 
 // Calculate the base body points of a droid with upgrades
-static unsigned calcDroidBaseBody(Droid* psDroid)
+static unsigned calcDroidBaseBody(Droid const* psDroid)
 {
-	return calcBody(psDroid, psDroid->getPlayer());
+	return calcBody(psDroid, psDroid->playerManager->getPlayer());
 }
 
 
 /* Calculate the base speed of a droid from it's template */
 unsigned calcDroidBaseSpeed(const DroidTemplate* psTemplate, unsigned weight, UBYTE player)
 {
-	auto speed = asPropulsionTypes[asPropulsionStats[psTemplate->asParts[COMP_PROPULSION]].propulsionType].
+	auto speed = asPropulsionTypes[asPropulsionStats[psTemplate->asParts[COMPONENT_TYPE::PROPULSION]].propulsionType].
 		powerRatioMult *
-		bodyPower(&asBodyStats[psTemplate->asParts[COMP_BODY]], player) / MAX(1, weight);
+		bodyPower(&asBodyStats[psTemplate->asParts[COMPONENT_TYPE::BODY]], player) / MAX(1, weight);
 
 	// reduce the speed of medium/heavy VTOLs
-	if (asPropulsionStats[psTemplate->asParts[COMP_PROPULSION]].propulsionType == PROPULSION_TYPE::LIFT) {
-		if (asBodyStats[psTemplate->asParts[COMP_BODY]].size == BODY_SIZE::HEAVY) {
+	if (asPropulsionStats[psTemplate->asParts[COMPONENT_TYPE::PROPULSION]].propulsionType == PROPULSION_TYPE::LIFT) {
+		if (asBodyStats[psTemplate->asParts[COMPONENT_TYPE::BODY]].size == BODY_SIZE::HEAVY) {
 			speed /= 4;
 		}
-		else if (asBodyStats[psTemplate->asParts[COMP_BODY]].size == BODY_SIZE::MEDIUM) {
+		else if (asBodyStats[psTemplate->asParts[COMPONENT_TYPE::BODY]].size == BODY_SIZE::MEDIUM) {
 			speed = speed * 3 / 4;
 		}
 	}
 
 	// applies the engine output bonus if output > weight
-	if (asBodyStats[psTemplate->asParts[COMP_BODY]].base.power > weight) {
+	if (asBodyStats[psTemplate->asParts[COMPONENT_TYPE::BODY]].base.power > weight) {
 		speed = speed * 3 / 2;
 	}
 	return speed;
@@ -7844,8 +7809,6 @@ std::unique_ptr<Droid> buildDroid(DroidTemplate* pTemplate, unsigned x, unsigned
 	}
 }
 
-
-
 // Sets the parts array in a template given a droid.
 void templateSetParts(const Droid* psDroid, DroidTemplate* psTemplate)
 {
@@ -7899,12 +7862,11 @@ void assignDroidsToGroup(unsigned playerNumber, unsigned groupNumber, bool clear
 	}
 }
 
-
 void removeDroidsFromGroup(unsigned playerNumber)
 {
-	unsigned removedCount = 0;
 	ASSERT_OR_RETURN(, playerNumber < MAX_PLAYERS, "Invalid player: %" PRIu32 "", playerNumber);
 
+  unsigned removedCount = 0;
 	for (auto& psDroid : apsDroidLists[playerNumber])
 	{
 		if (psDroid.damageManager->isSelected()) {
@@ -7912,19 +7874,17 @@ void removeDroidsFromGroup(unsigned playerNumber)
 			removedCount++;
 		}
 	}
-	if (removedCount)
-	{
+	if (removedCount) {
 		groupConsoleInformOfRemoval();
 	}
 }
 
 bool activateGroupAndMove(unsigned playerNumber, unsigned groupNumber)
 {
+  ASSERT_OR_RETURN(false, playerNumber < MAX_PLAYERS, "Invalid player: %" PRIu32 "", playerNumber);
+
 	Droid *psCentreDroid = nullptr;
 	bool selected = false;
-	FlagPosition* psFlagPos;
-
-	ASSERT_OR_RETURN(false, playerNumber < MAX_PLAYERS, "Invalid player: %" PRIu32 "", playerNumber);
 
 	if (groupNumber < UBYTE_MAX) {
 		for (auto& psDroid : apsDroidLists[playerNumber])
@@ -7945,7 +7905,7 @@ bool activateGroupAndMove(unsigned playerNumber, unsigned groupNumber)
 			//clear the Deliv Point if one
 			ASSERT(selectedPlayer < MAX_PLAYERS, "Unsupported selectedPlayer: %" PRIu32 "", selectedPlayer);
 			if (selectedPlayer < MAX_PLAYERS) {
-				for (psFlagPos = apsFlagPosLists[selectedPlayer]; psFlagPos; psFlagPos = psFlagPos->psNext) {
+				for (auto psFlagPos : apsFlagPosLists[selectedPlayer]) {
 					psFlagPos->selected = false;
 				}
 			}
@@ -7971,8 +7931,8 @@ bool activateGroupAndMove(unsigned playerNumber, unsigned groupNumber)
 	return selected;
 }
 
-bool activateNoGroup(unsigned playerNumber, const SELECTIONTYPE selectionType,
-                     const SELECTION_CLASS selectionClass, const bool bOnScreen)
+bool activateNoGroup(unsigned playerNumber, SELECTIONTYPE selectionType,
+                     SELECTION_CLASS selectionClass, bool bOnScreen)
 {
 	bool selected = false;
 	SELECTIONTYPE dselectionType = selectionType;
@@ -8003,10 +7963,9 @@ bool activateNoGroup(unsigned playerNumber, const SELECTIONTYPE selectionType,
 
 bool activateGroup(unsigned playerNumber, unsigned groupNumber)
 {
-	bool selected = false;
-
 	ASSERT_OR_RETURN(false, playerNumber < MAX_PLAYERS, "Invalid player: %" PRIu32 "", playerNumber);
 
+  bool selected = false;
 	if (groupNumber < UBYTE_MAX) {
 		for (auto& psDroid : apsDroidLists[playerNumber])
 		{
@@ -8233,7 +8192,7 @@ struct rankMap
 //	return vec.size() - 1;
 //}
 
-unsigned get_effective_level(const Droid& droid)
+unsigned get_effective_level(Droid const& droid)
 {
   const auto level = droid.getLevel();
   if (!droid.hasCommander()) {
@@ -8246,23 +8205,6 @@ unsigned get_effective_level(const Droid& droid)
   }
   return level;
 }
-//unsigned getDroidEffectiveLevel(const DROID *psDroid)
-//{
-//	unsigned level = getDroidLevel(psDroid);
-//	unsigned cmdLevel = 0;
-//
-//	// get commander level
-//	if (hasCommander(psDroid))
-//	{
-//		cmdLevel = cmdGetCommanderLevel(psDroid);
-//
-//		// Commanders boost units' effectiveness just by being assigned to it
-//		level++;
-//	}
-//
-//	return MAX(level, cmdLevel);
-//}
-
 
 unsigned count_droids_for_level(unsigned player, unsigned level)
 {
@@ -8272,6 +8214,7 @@ unsigned count_droids_for_level(unsigned player, unsigned level)
       return droid.getLevel() == level;
   });
 }
+
 //unsigned	getNumDroidsForLevel(uint32_t player, unsigned level)
 //{
 //	DROID	*psDroid;
@@ -8291,7 +8234,6 @@ unsigned count_droids_for_level(unsigned player, unsigned level)
 //	return count;
 //}
 
-//// ////////////////////////////////////////////////////////////////////////////
 //// returns true when no droid on x,y square.
 //bool noDroid(unsigned x, unsigned y)
 //{
@@ -8320,7 +8262,7 @@ static bool oneDroidMax(unsigned x, unsigned y)
   bool bFound = false;
 	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (auto& pD : apsDroidLists[i])
+		for (auto const& pD : apsDroidLists[i])
 		{
 			if (map_coord(pD.getPosition().x) == x &&
           map_coord(pD.getPosition().y) == y) {
@@ -8421,9 +8363,11 @@ static bool ThreatInRange(SDWORD player, SDWORD range, SDWORD rangeX, SDWORD ran
 					continue;
 				}
 
+        auto propulsion = dynamic_cast<PropulsionStats const*>(psDroid.getComponent("propulsion"));
 				//if VTOLs are excluded, skip them
-				if (!bVTOLs && ((asPropulsionStats[psDroid.asBits[COMP_PROPULSION]].propulsionType ==
-					PROPULSION_TYPE::LIFT) || isTransporter(psDroid))) {
+				if (!bVTOLs && propulsion &&
+            propulsion->propulsionType == PROPULSION_TYPE::LIFT ||
+            isTransporter(psDroid)) {
 					continue;
 				}
 
@@ -8443,7 +8387,6 @@ static bool ThreatInRange(SDWORD player, SDWORD range, SDWORD rangeX, SDWORD ran
 bool pickATileGenThreat(unsigned* x, unsigned* y, UBYTE numIterations, int threatRange,
                         unsigned player, bool (*function)(unsigned x, unsigned y))
 {
-	int i, j;
 	int startX, endX, startY, endY;
 	unsigned passes;
 	Vector3i origin(world_coord(*x), world_coord(*y), 0);
@@ -8466,9 +8409,9 @@ bool pickATileGenThreat(unsigned* x, unsigned* y, UBYTE numIterations, int threa
 	while (passes < numIterations)
 	{
 		/* Process whole box */
-		for (i = startX; i <= endX; i++)
+		for (auto i = startX; i <= endX; i++)
 		{
-			for (j = startY; j <= endY; j++)
+			for (auto j = startY; j <= endY; j++)
 			{
 				/* Test only perimeter as internal tested previous iteration */
 				if (i == startX || i == endX || j == startY || j == endY)
@@ -8588,7 +8531,7 @@ int nextModuleToBuild(Structure const* psStruct, int lastOrderedModule)
 	if (order) {
 		// Check availability of Module
 		if (!((i < numStructureStats) &&
-			(apStructTypeLists[psStruct->getPlayer()][i] == AVAILABLE))) {
+			(apStructTypeLists[psStruct->playerManager->getPlayer()][i] == AVAILABLE))) {
 			order = 0;
 		}
 	}
@@ -8602,29 +8545,25 @@ int nextModuleToBuild(Structure const* psStruct, int lastOrderedModule)
 //	return psDroid->body < psDroid->originalBody;
 //}
 
-
 char const* getDroidResourceName(char const* pName)
 {
-	/* See if the name has a string resource associated with it by trying
-	 * to get the string resource.
-	 */
+	// See if the name has a string resource associated with it by trying
+	// to get the string resource.
 	return strresGetString(psStringRes, pName);
 }
 
-bool being_repaired(const Droid& droid)
+bool being_repaired(Droid const& droid)
 {
-  using enum ACTION;
   if (!droid.isDamaged()) {
     return false;
   }
 
-  const auto& droids = apsDroidLists[droid.getPlayer()];
+  const auto& droids = apsDroidLists[droid.playerManager->getPlayer()];
   return std::any_of(droids.begin(), droids.end(),
-                     [&droid](const auto& other_droid)
-  {
+                     [&droid](const auto& other_droid) {
       return other_droid.isRepairDroid() &&
-             other_droid.getAction() == DROID_REPAIR &&
-              other_droid.getOrder()->target->getId() == droid.getId();
+             other_droid.getAction() == ACTION::DROID_REPAIR &&
+             other_droid.getOrder()->target->getId() == droid.getId();
   });
 }
 //bool droidUnderRepair(const DROID *psDroid)
@@ -8652,44 +8591,39 @@ unsigned count_player_command_droids(unsigned player)
 {
   const auto& droids = apsDroidLists[player];
   return std::count_if(droids.begin(), droids.end(),
-                       [](const auto& droid)
-  {
+                       [](const auto& droid) {
       return droid.getType() == DROID_TYPE::COMMAND;
   });
 }
 
-bool isTransporter(const Droid& droid)
+bool isTransporter(Droid const& droid)
 {
   using enum DROID_TYPE;
   return droid.getType() == TRANSPORTER ||
          droid.getType() == SUPER_TRANSPORTER;
 }
 
-bool vtolEmpty(const Droid& droid)
+bool vtolEmpty(Droid const& droid)
 {
-  assert(droid.isVtol());
+  ASSERT_OR_RETURN(false, droid.isVtol(), "Not a VTOL");
   if (droid.getType() != DROID_TYPE::WEAPON) {
     return false;
   }
-
-  return std::all_of(droid.getWeapons().begin(), droid.getWeapons().end(),
-                     [&droid](const auto& weapon)
-  {
+  return std::all_of(droid.getWeapons()->begin(), droid.getWeapons()->end(),
+                     [&droid](const auto& weapon) {
       return weapon.isVtolWeapon() &&
-              weapon.isEmptyVtolWeapon(droid.playerManager->getPlayer());
+             weapon.isEmptyVtolWeapon(droid.playerManager->getPlayer());
   });
 }
 
-bool vtolFull(const Droid& droid)
+bool vtolFull(Droid const& droid)
 {
-  assert(droid.isVtol());
+  ASSERT_OR_RETURN(false, droid.isVtol(), "Not a VTOL");
   if (droid.getType() != DROID_TYPE::WEAPON) {
     return false;
   }
-
-  return std::all_of(droid.getWeapons().begin(), droid.getWeapons().end(),
-                     [](const auto& weapon)
-  {
+  return std::all_of(droid.getWeapons()->begin(), droid.getWeapons()->end(),
+                     [](const auto& weapon) {
       return weapon.isVtolWeapon() && weapon.hasFullAmmo();
   });
 }
@@ -8702,6 +8636,7 @@ bool vtolReadyToRearm(const Droid& droid, const RearmPad& rearmPad)
   }
   return false;
 }
+
 //// true if a vtol is waiting to be rearmed by a particular rearm pad
 //bool vtolReadyToRearm(DROID *psDroid, STRUCTURE *psStruct)
 //{
@@ -8740,26 +8675,22 @@ bool vtolReadyToRearm(const Droid& droid, const RearmPad& rearmPad)
 //	return true;
 //}
 
-bool vtolRearming(const Droid& droid)
+bool vtolRearming(Droid const& droid)
 {
-  if (!droid.isVtol() ||
-      droid.getType() != DROID_TYPE::WEAPON) {
+  if (!droid.isVtol() || droid.getType() != DROID_TYPE::WEAPON) {
     return false;
   }
 
   auto action = droid.getAction();
   using enum ACTION;
-  if (action == MOVE_TO_REARM ||
-      action == WAIT_FOR_REARM ||
-      action == MOVE_TO_REARM_POINT ||
-      action == WAIT_DURING_REARM) {
+  if (action == MOVE_TO_REARM || action == WAIT_FOR_REARM ||
+      action == MOVE_TO_REARM_POINT || action == WAIT_DURING_REARM) {
     return true;
   }
   return false;
 }
 
-
-bool all_VTOLs_rearmed(const Droid& droid)
+bool allVtolsRearmed(Droid const& droid)
 {
   if (!droid.isVtol())  {
     return true;
@@ -8767,15 +8698,13 @@ bool all_VTOLs_rearmed(const Droid& droid)
 
   const auto& droids = apsDroidLists[droid.playerManager->getPlayer()];
   return std::none_of(droids.begin(), droids.end(),
-                      [&droid](const auto& other_droid)
-  {
+                      [&droid](const auto& other_droid) {
       return vtolRearming(other_droid) &&
-             other_droid.getOrder()->type ==
-               droid.getOrder()->type &&
-             other_droid.getOrder()->target ==
-              droid.getOrder()->target;
+             other_droid.getOrder()->type == droid.getOrder()->type &&
+             other_droid.getOrder()->target == droid.getOrder()->target;
   });
 }
+
 //// see if there are any other vtols attacking the same target
 //// but still rearming
 //bool allVtolsRearmed(const DROID *psDroid)
@@ -8866,13 +8795,12 @@ bool vtolHappy(const Droid& droid)
 
 void updateVtolAttackRun(Droid& droid, int weapon_slot)
 {
-  if (!droid.isVtol() ||
-      numWeapons(droid) == 0) {
+  if (!droid.isVtol() || numWeapons(droid) == 0) {
     return;
   }
 
-  auto& weapon = droid.getWeapons()[weapon_slot];
-  if (weapon.getStats().vtolAttackRuns == 0) {
+  auto weapon = droid.getWeapon(weapon_slot);
+  if (weapon->getStats()->vtolAttackRuns == 0) {
     return;
   }
   droid.useAmmo(weapon_slot);
@@ -8917,8 +8845,8 @@ void updateVtolAttackRun(Droid& droid, int weapon_slot)
 //	{
 //		return false;
 //	}
-//	if (asSensorStats[psDroid->asBits[COMP_SENSOR]].type == VTOL_CB_SENSOR
-//		|| asSensorStats[psDroid->asBits[COMP_SENSOR]].type == INDIRECT_CB_SENSOR)
+//	if (asSensorStats[psDroid->asBits[COMPONENT_TYPE::SENSOR]].type == VTOL_CB_SENSOR
+//		|| asSensorStats[psDroid->asBits[COMPONENT_TYPE::SENSOR]].type == INDIRECT_CB_SENSOR)
 //	{
 //		return true;
 //	}
@@ -8933,9 +8861,9 @@ void updateVtolAttackRun(Droid& droid, int weapon_slot)
 //	{
 //		return false;
 //	}
-//	if (asSensorStats[psDroid->asBits[COMP_SENSOR]].type == VTOL_INTERCEPT_SENSOR
-//		|| asSensorStats[psDroid->asBits[COMP_SENSOR]].type == STANDARD_SENSOR
-//		|| asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SUPER_SENSOR)
+//	if (asSensorStats[psDroid->asBits[COMPONENT_TYPE::SENSOR]].type == VTOL_INTERCEPT_SENSOR
+//		|| asSensorStats[psDroid->asBits[COMPONENT_TYPE::SENSOR]].type == STANDARD_SENSOR
+//		|| asSensorStats[psDroid->asBits[COMPONENT_TYPE::SENSOR]].type == SUPER_SENSOR)
 //	{
 //		return true;
 //	}
@@ -8943,14 +8871,11 @@ void updateVtolAttackRun(Droid& droid, int weapon_slot)
 //	return false;
 //}
 
-
-
-
 ///*calculates the electronic resistance of a droid based on its experience level*/
 //SWORD droidResistance(const DROID* psDroid)
 //{
 //	CHECK_DROID(psDroid);
-//	const BODY_STATS* psStats = asBodyStats + psDroid->asBits[COMP_BODY];
+//	const BODY_STATS* psStats = asBodyStats + psDroid->asBits[COMPONENT_TYPE::BODY];
 //	int resistance = psDroid->experience / (65536 / MAX(1, psStats->upgrade[psDroid->player].resistance));
 //	// ensure resistance is a base minimum
 //	resistance = MAX(resistance, psStats->upgrade[psDroid->player].resistance);
@@ -8965,10 +8890,8 @@ Cannot think of a solution without adding additional return value atm.
 */
 bool checkValidWeaponForProp(DroidTemplate* psTemplate)
 {
-	PropulsionStats* psPropStats;
-
 	//check propulsion stat for vtol
-	psPropStats = asPropulsionStats + psTemplate->asParts[COMP_PROPULSION];
+	auto psPropStats = asPropulsionStats + psTemplate->asParts[COMPONENT_TYPE::PROPULSION];
 
 	ASSERT_OR_RETURN(false, psPropStats != nullptr, "invalid propulsion stats pointer");
 
@@ -8992,7 +8915,7 @@ bool checkValidWeaponForProp(DroidTemplate* psTemplate)
 	}
 
 	//also checks that there is no other system component
-	if (psTemplate->asParts[COMP_BRAIN] != 0
+	if (psTemplate->asParts[COMPONENT_TYPE::BRAIN] != 0
 		&& asWeaponStats[psTemplate->asWeaps[0]].weaponSubClass != WEAPON_SUBCLASS::COMMAND) {
 		assert(false);
 		return false;
@@ -9000,28 +8923,26 @@ bool checkValidWeaponForProp(DroidTemplate* psTemplate)
 	return true;
 }
 
-//// Check if a droid can be selected.
-//bool isSelectable(DROID const* psDroid)
-//{
-//	if (psDroid->flags.test(OBJECT_FLAG_UNSELECTABLE))
-//	{
-//		return false;
-//	}
-//
-//	// we shouldn't ever control the transporter in SP games
-//	if (isTransporter(psDroid) && !bMultiPlayer)
-//	{
-//		return false;
-//	}
-//
-//	return true;
-//}
+// Check if a droid can be selected.
+bool isSelectable(Droid const* psDroid)
+{
+	if (psDroid->testFlag(static_cast<size_t>(OBJECT_FLAG::UNSELECTABLE))) {
+		return false;
+	}
+
+	// we shouldn't ever control the transporter in SP games
+	if (isTransporter(*psDroid) && !bMultiPlayer) {
+		return false;
+	}
+
+	return true;
+}
 
 // Select a droid and do any necessary housekeeping.
 //
 void SelectDroid(Droid* psDroid)
 {
-	if (!psDroid->isSelectable()) {
+	if (!isSelectable(psDroid)) {
 		return;
 	}
 	psDroid->damageManager->setSelected(true);
@@ -9096,10 +9017,10 @@ void droidSetPosition(Droid* psDroid, int x, int y)
   psDroid->setPosition({x, y, map_Height(psDroid->getPosition().x,
                                           psDroid->getPosition().y)});
 	initDroidMovement(psDroid);
-	visTilesUpdate((BaseObject *)psDroid);
+	visTilesUpdate(psDroid);
 }
 
-int droidSqDist(Droid* psDroid, BaseObject* psObj)
+int droidSqDist(Droid const* psDroid, BaseObject const* psObj)
 {
 	auto psPropStats = dynamic_cast<PropulsionStats const*>(psDroid->getComponent("propulsion"));
 
@@ -9144,10 +9065,9 @@ bool still_building(const Droid& droid)
          droid.getAction() == ACTION::BUILD;
 }
 
-bool can_assign_fire_support(const Droid& droid, const Structure& structure)
+bool can_assign_fire_support(Droid const& droid, Structure const& structure)
 {
-  if (numWeapons(droid) == 0 ||
-      !structure.hasSensor()) {
+  if (numWeapons(droid) == 0 || !structure.hasSensor()) {
     return false;
   }
 
@@ -9198,8 +9118,7 @@ Droid* find_nearest_droid(unsigned x, unsigned y, bool selected)
   auto& droids = apsDroidLists[selectedPlayer];
   Droid* nearest_droid = nullptr;
   auto shortest_distance = UINT32_MAX;
-  std::for_each(droids.begin(), droids.end(), [&](auto& droid)
-  {
+  std::for_each(droids.begin(), droids.end(), [&](auto& droid) {
       if (droid.isVtol()) {
         return;
       }
@@ -9243,26 +9162,21 @@ Vector2i spiral_search(Vector2i start_pos, int max_radius)
         const auto distance = dx * dx + dy * dy;
 
         // Ignore tiles outside the current circle
-        if (distance < min_distance || distance > max_distance)
-        {
+        if (distance < min_distance || distance > max_distance) {
           continue;
         }
 
         // call search function for each of the 4 quadrants of the circle
-        if (vtol_can_land_here(start_pos.x + dx, start_pos.y + dy))
-        {
+        if (vtol_can_land_here(start_pos.x + dx, start_pos.y + dy)) {
           return {start_pos.x + dx, start_pos.y + dy};
         }
-        if (vtol_can_land_here(start_pos.x - dx, start_pos.y - dy))
-        {
+        if (vtol_can_land_here(start_pos.x - dx, start_pos.y - dy)) {
           return {start_pos.x - dx, start_pos.y - dy};
         }
-        if (vtol_can_land_here(start_pos.x + dy, start_pos.y - dx))
-        {
+        if (vtol_can_land_here(start_pos.x + dy, start_pos.y - dx)) {
           return {start_pos.x + dy, start_pos.y - dx};
         }
-        if (vtol_can_land_here(start_pos.x - dy, start_pos.y + dx))
-        {
+        if (vtol_can_land_here(start_pos.x - dy, start_pos.y + dx)) {
           return {start_pos.x - dy, start_pos.y + dx};
         }
       }
@@ -9294,7 +9208,7 @@ void set_blocking_flags(const Droid& droid)
 
 void clear_blocking_flags(const Droid& droid)
 {
-  const auto &droids = apsDroidLists[droid.playerManager->getPlayer()];
+  auto const& droids = apsDroidLists[droid.playerManager->getPlayer()];
   std::for_each(droids.begin(), droids.end(),
                 [&droid](const auto &other_droid) {
       Vector2i tile{0, 0};
@@ -9323,19 +9237,10 @@ bool tile_occupied_by_droid(unsigned x, unsigned y)
   return false;
 }
 
-static void setSaveDroidTarget(Droid* psSaveDroid, BaseObject* psNewTarget)
+void Droid::setSaveDroidTarget(BaseObject* psNewTarget)
 {
-  psSaveDroid->order->target = psNewTarget;
-}
-
-static void setSaveDroidActionTarget(Droid* psSaveDroid, BaseObject* psNewTarget, UWORD idx)
-{
-  psSaveDroid->actionTarget[idx] = psNewTarget;
-}
-
-static void setSaveDroidBase(Droid* psSaveDroid, Structure* psNewBase)
-{
-  psSaveDroid->associatedStructure = psNewBase;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Droid object is undefined");
+  pimpl->order->target = psNewTarget;
 }
 
 static unsigned droidSensorRange(Droid const* psDroid)
@@ -9345,8 +9250,8 @@ static unsigned droidSensorRange(Droid const* psDroid)
 
 static Rotation getInterpolatedWeaponRotation(Droid const* psDroid, int weaponSlot, unsigned time)
 {
-  return interpolateRot(psDroid->getWeapons()[weaponSlot].getPreviousRotation(),
-                        psDroid->getWeapons()[weaponSlot].getRotation(),
+  return interpolateRot(psDroid->getWeapon(weaponSlot)->getPreviousRotation(),
+                        psDroid->getWeapon(weaponSlot)->getRotation(),
                         psDroid->getPreviousLocation().time,
                         psDroid->getTime(), time);
 }

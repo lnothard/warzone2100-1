@@ -228,7 +228,7 @@ void orderUpdateDroid(Droid* psDroid);
 void orderDroid(Droid* psDroid, ORDER_TYPE order, QUEUE_MODE mode);
 
 /** \brief Compares droid's order with order. */
-bool orderState(Droid* psDroid, ORDER_TYPE order);
+bool orderState(Droid const* psDroid, ORDER_TYPE order);
 
 /** \brief Checks if an order is valid for a location. */
 bool validOrderForLoc(ORDER_TYPE order);

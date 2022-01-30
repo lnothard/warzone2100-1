@@ -1030,7 +1030,6 @@ bool checkTransporterSpace(Droid const* psTransporter, Droid const* psAssigned, 
 /*sets which list of droids to use for the transporter interface*/
 std::vector<Droid>& transInterfaceDroidList()
 {
-	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "Cannot be called for selectedPlayer: %" PRIu32 "", selectedPlayer);
 	if (onMission) {
 		return mission.apsDroidLists[selectedPlayer];
 	}
@@ -1133,7 +1132,7 @@ bool updateTransporter(Droid* psTransporter)
 		}
 
 		// Got to destination
-		psTransporter->action = DACTION_NONE;
+		psTransporter->setAction(ACTION::NONE);
 
 		//reset the flag to trigger the audio message
 		bFirstTransporter = false;

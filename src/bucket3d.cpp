@@ -43,7 +43,7 @@
 struct BodyStats;
 struct Droid;
 struct iIMDShape;
-struct PlayerOwnedObject;
+struct BaseObject;
 void displayComponentObject(Droid*, const glm::mat4&);
 int pie_GetVideoBufferHeight();
 int pie_GetVideoBufferWidth();
@@ -80,8 +80,8 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	Vector3i position(0, 0, 0);
 	unsigned droidSize;
 	Droid* psDroid;
-	BodyStats* psBStats;
-  PlayerOwnedObject * psSimpObj;
+	BodyStats const* psBStats;
+  BaseObject* psSimpObj;
 	iIMDShape* pImd;
 	Spacetime spacetime;
 
@@ -119,7 +119,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
         //the weapon stats holds the reference to which graphic to use
         pImd = ((Projectile *) pObject)->weaponStats->pInFlightGraphic;
 
-        psSimpObj = (PlayerOwnedObject *) pObject;
+        psSimpObj = static_cast<BaseObject*>(pObject);
         position.x = psSimpObj->getPosition().x - playerPos.p.x;
         position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
@@ -140,7 +140,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
       break;
     }
 	  case RENDER_STRUCTURE: //not depth sorted
-	  	psSimpObj = (PlayerOwnedObject *)pObject;
+	  	psSimpObj = (BaseObject*)pObject;
 	  	position.x = psSimpObj->getPosition().x - playerPos.p.x;
 	  	position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
@@ -149,11 +149,11 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
          (((Structure*)pObject)->getStats()->type == STRUCTURE_TYPE::WALL) ||
          (((Structure*)pObject)->getStats()->type == STRUCTURE_TYPE::WALL_CORNER))) {
 	  		position.y = psSimpObj->getPosition().z + 64;
-	  		radius = ((Structure*)pObject)->getDisplayData().imd_shape->radius; //walls guntowers and tank traps clip tightly
+	  		radius = ((Structure*)pObject)->getDisplayData()->imd_shape->radius; //walls guntowers and tank traps clip tightly
 	  	}
 	  	else {
 	  		position.y = psSimpObj->getPosition().z;
-	  		radius = (((Structure*)pObject)->getDisplayData().imd_shape->radius);
+	  		radius = (((Structure*)pObject)->getDisplayData()->imd_shape->radius);
 	  	}
 
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel);
@@ -171,7 +171,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  	}
 	  	break;
 	  case RENDER_FEATURE: //not depth sorted
-	  	psSimpObj = (PlayerOwnedObject *)pObject;
+	  	psSimpObj = (BaseObject*)pObject;
 	  	position.x = psSimpObj->getPosition().x - playerPos.p.x;
 	  	position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
@@ -195,12 +195,12 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  case RENDER_DROID:
 	  	psDroid = (Droid*)pObject;
 
-	  	psSimpObj = (PlayerOwnedObject *)pObject;
+	  	psSimpObj = (BaseObject *)pObject;
 	  	position.x = psSimpObj->getPosition().x - playerPos.p.x;
 	  	position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 	  	position.y = psSimpObj->getPosition().z;
 
-	  	psBStats = asBodyStats + psDroid->asBits[COMP_BODY];
+	  	psBStats = dynamic_cast<BodyStats const*>(psDroid->getComponent("body"));
 	  	droidSize = psBStats->pIMD->radius;
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel) - (droidSize * 2);
 
@@ -218,14 +218,14 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  	}
 	  	break;
 	  case RENDER_PROXMSG:
-	  	if (((PROXIMITY_DISPLAY*)pObject)->type == POS_PROXDATA)
+	  	if (((PROXIMITY_DISPLAY*)pObject)->type == POSITION_TYPE::POS_PROXDATA)
 	  	{
 	  		const PROXIMITY_DISPLAY* ptr = (PROXIMITY_DISPLAY*)pObject;
 	  		position.x = ((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->x - playerPos.p.x;
 	  		position.z = -(((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->y - playerPos.p.z);
 	  		position.y = ((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->z;
 	  	}
-	  	else if (((PROXIMITY_DISPLAY*)pObject)->type == POS_PROXOBJ)
+	  	else if (((PROXIMITY_DISPLAY*)pObject)->type == POSITION_TYPE::POS_PROXOBJ)
 	  	{
 	  		const PROXIMITY_DISPLAY* ptr = (PROXIMITY_DISPLAY*)pObject;
 	  		position.x = ptr->psMessage->psObj->getPosition().x - playerPos.p.x;
@@ -259,7 +259,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  	if (z > 0)
 	  	{
 	  		//particle use the image radius
-	  		pImd = ((EFFECT*)pObject)->imd;
+	  		pImd = ((EFFECT*)pObject)->imd.get();
 	  		if (pImd != nullptr)
 	  		{
 	  			radius = pImd->radius;
@@ -316,10 +316,10 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 	if (z < 0)
 	{
 		/* Object will not be render - has been clipped! */
-		if (objectType == RENDER_DROID || objectType == RENDER_STRUCTURE)
+		if (objectType == RENDER_TYPE::RENDER_DROID || objectType == RENDER_TYPE::RENDER_STRUCTURE)
 		{
 			/* Won't draw selection boxes */
-			((PlayerOwnedObject *)pObject)->sDisplay.frame_number = 0;
+			((BaseObject *)pObject)->sDisplay.frame_number = 0;
 		}
 
 		return;
@@ -339,7 +339,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 			break;
 
 		case WAYPOINT:
-			pie = ((EFFECT*)pObject)->imd;
+			pie = ((EFFECT*)pObject)->imd.get();
 			z = INT32_MAX - pie->texpage;
 			break;
 
@@ -353,11 +353,11 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_STRUCTURE:
-		pie = ((Structure*)pObject)->sDisplay.imd;
+		pie = ((Structure*)pObject)->getDisplayData()->imd_shape.get();
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_FEATURE:
-		pie = ((Feature*)pObject)->sDisplay.imd;
+		pie = ((Feature*)pObject)->getDisplayData()->imd_shape.get();
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_DELIVPOINT:

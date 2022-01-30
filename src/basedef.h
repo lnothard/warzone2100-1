@@ -141,6 +141,8 @@ public:
   BaseObject(BaseObject&& rhs) noexcept = default;
   BaseObject& operator=(BaseObject&& rhs) noexcept = default;
 
+  [[nodiscard]] virtual int objRadius() const = 0;
+
   [[nodiscard]] unsigned getId() const noexcept;
   [[nodiscard]] Spacetime getSpacetime() const noexcept;
   [[nodiscard]] Position getPosition() const noexcept;

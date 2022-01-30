@@ -25,6 +25,7 @@
 #include "multiint.h"
 #include "multilobbycommands.h"
 #include "clparse.h"
+#include "multiplay.h"
 
 #include <string>
 #include <atomic>
@@ -35,7 +36,6 @@
 #endif
 
 #if defined(HAVE_POLL_H)
-# include <poll.h>
 #elif defined(HAVE_SYS_POLL_H)
 # include <sys/poll.h>
 #endif

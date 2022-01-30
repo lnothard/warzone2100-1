@@ -4,7 +4,6 @@
 
 #include "lib/framework/math_ext.h"
 
-#include "stats.h"
 #include "weapon.h"
 
 
