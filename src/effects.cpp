@@ -2150,16 +2150,15 @@ static void effectStructureUpdates()
 	lastUpdateStructures[curPartition] = graphicsTime;
 
 	/* Go thru' all players */
-	for (unsigned player = 0; player < MAX_PLAYERS; ++player)
+	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
-		for (Structure* psStructure = apsStructLists[player]; psStructure != nullptr; psStructure = psStructure->psNext)
+		for (auto& psStructure : apsStructLists[player])
 		{
 			// Find its group.
-			unsigned int partition = psStructure->getId() % EFFECT_STRUCTURE_DIVISION;
+			auto partition = psStructure->getId() % EFFECT_STRUCTURE_DIVISION;
 
 			/* Is it the right frame? */
-			if (partition != curPartition)
-			{
+			if (partition != curPartition) {
 				continue;
 			}
 
@@ -2187,7 +2186,7 @@ static void effectStructureUpdates()
 
 					addEffect(&eventPos, EFFECT_GROUP::SMOKE, EFFECT_TYPE::SMOKE_TYPE_STEAM, false, nullptr, 0);
 
-					audio_PlayObjStaticTrack(psStructure, ID_SOUND_STEAM);
+					audio_PlayObjStaticTrack(psStructure.get(), ID_SOUND_STEAM);
 				}
 				break;
 			case STRUCTURE_TYPE::POWER_GEN:
@@ -2200,7 +2199,7 @@ static void effectStructureUpdates()
 
 					addEffect(&eventPos, EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_TESLA, false, nullptr, 0);
 
-					audio_PlayObjStaticTrack(psStructure, ID_SOUND_POWER_SPARK);
+					audio_PlayObjStaticTrack(psStructure.get(), ID_SOUND_POWER_SPARK);
 					break;
 				}
 			default:

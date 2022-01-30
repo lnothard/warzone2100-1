@@ -39,48 +39,6 @@ uint16_t calcDirection(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
 	return iAtan2(x1 - x0, y1 - y0);
 }
 
-
-/*	A useful function and one that should have been written long ago, assuming of course
-	that is hasn't been!!!! Alex M, 24th Sept, 1998. Returns the nearest unit
-	to a given world coordinate - we can choose whether we require that the unit be
-	selected or not... Makes sending the most logical unit to do something very easy.
-
-  NB*****THIS WON'T PICK A VTOL DROID*****
-*/
-
-//DROID* getNearestDroid(UDWORD x, UDWORD y, bool bSelected)
-//{
-//	DROID* psBestUnit = nullptr;
-//	unsigned bestSoFar = UDWORD_MAX;
-//
-//	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS, "Not supported selectedPlayer: %" PRIu32 "",
-//	                 selectedPlayer);
-//
-//	/* Go thru' all the droids  - how often have we seen this - a MACRO maybe? */
-//	for (DROID* psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
-//	{
-//		if (!isVtolDroid(psDroid))
-//		{
-//			/* Clever (?) bit that reads whether we're interested in droids being selected or not */
-//			if (!bSelected || psDroid->selected)
-//			{
-//				uint32_t dist = iHypot(psDroid->pos.x - x, psDroid->pos.y - y);
-//				/* Is this the nearest one we got so far? */
-//				if (dist < bestSoFar)
-//				{
-//					/* Yes, then keep a record of the distance for comparison... */
-//					bestSoFar = dist;
-//					/* ..and store away the droid responsible */
-//					psBestUnit = psDroid;
-//				}
-//			}
-//		}
-//	}
-//	return psBestUnit;
-//}
-
-// -------------------------------------------------------------------------------------------
-
 /* Returns non-zero if a point is in a 4 sided polygon */
 /* See header file for definition of QUAD */
 bool inQuad(const Vector2i* pt, const QUAD* quad)
@@ -145,18 +103,18 @@ Vector2i positionInQuad(Vector2i const& pt, QUAD const& quad)
 	return {ret[0], ret[1]};
 }
 
-//-----------------------------------------------------------------------------------
-bool objectOnScreen(BaseObject* object, int tolerance)
+bool objectOnScreen(BaseObject const* object, int tolerance)
 {
-	if (DrawnInLastFrame(object->getDisplayData()->frame_number)) {
-		const auto dX = object->getDisplayData()->screen_x;
-		const auto dY = object->getDisplayData()->screen_y;
-		/* Is it on screen */
-		if (dX > (0 - tolerance) && dY > (0 - tolerance)
-			&& dX < (SDWORD)(pie_GetVideoBufferWidth() + tolerance)
-			&& dY < (SDWORD)(pie_GetVideoBufferHeight() + tolerance)) {
-			return true;
-		}
-	}
-	return false;
+  if (!DrawnInLastFrame(object->getDisplayData()->frame_number)) {
+    return false;
+  }
+  const auto dX = object->getDisplayData()->screen_x;
+  const auto dY = object->getDisplayData()->screen_y;
+  /* Is it on screen */
+  if (dX > 0 - tolerance && dY > 0 - tolerance &&
+      dX < pie_GetVideoBufferWidth() + tolerance &&
+      dY < pie_GetVideoBufferHeight() + tolerance) {
+    return true;
+  }
+  return false;
 }

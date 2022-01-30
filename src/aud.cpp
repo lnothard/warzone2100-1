@@ -29,10 +29,9 @@
 
 int mapHeight;
 int map_TileHeight(int, int);
-struct PlayerOwnedObject;
 
 
-bool audio_ObjectDead(const PlayerOwnedObject * psSimpleObj)
+bool audio_ObjectDead(BaseObject const* psSimpleObj)
 {
 	/* check is valid simple object pointer */
 	if (psSimpleObj == nullptr) {
@@ -41,12 +40,12 @@ bool audio_ObjectDead(const PlayerOwnedObject * psSimpleObj)
 	}
 
 	/* check projectiles */
-	if (auto psProj = dynamic_cast<const Projectile*>(psSimpleObj)) {
+	if (auto psProj = dynamic_cast<Projectile const*>(psSimpleObj)) {
 		return psProj->getState() == PROJECTILE_STATE::POST_IMPACT;
 	}
 	else {
 		/* check base object */
-		return !psSimpleObj->isAlive();
+		return psSimpleObj->damageManager->isDead();
 	}
 }
 
@@ -88,7 +87,7 @@ void audio_GetStaticPos(int iWorldX, int iWorldY, int* piX, int* piY, int* piZ)
 }
 
 // @FIXME we don't need to do this, since we are not using qsound.
-void audio_GetObjectPos(const PlayerOwnedObject * psBaseObj, int* piX, int* piY, int* piZ)
+void audio_GetObjectPos(BaseObject const* psBaseObj, int* piX, int* piY, int* piZ)
 {
 	/* check is valid pointer */
 	ASSERT_OR_RETURN(, psBaseObj != nullptr, "Game object pointer invalid");

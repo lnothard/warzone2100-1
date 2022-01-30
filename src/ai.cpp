@@ -121,7 +121,6 @@ static bool aiStructHasRange(Structure const* psStruct, BaseObject const* psTarg
 	}
 
 	auto psWStats = psStruct->getWeapons()[weapon_slot].getStats();
-
 	auto longRange = proj_GetLongRange(psWStats, psStruct->playerManager->getPlayer());
 	return objectPositionSquareDiff(
           psStruct->getPosition(),
@@ -635,9 +634,9 @@ int aiBestNearestTarget(Droid* psDroid, BaseObject** ppsObj, int weapon_slot, in
 					// structure with weapons - go for this
 					psTarget = targetInQuestion;
 				}
-				else if ((isHumanPlayer(psDroid->playerManager->getPlayer()) &&
-                  (psStruct->getStats()->type != STRUCTURE_TYPE::WALL &&
-                   psStruct->getStats()->type != STRUCTURE_TYPE::WALL_CORNER)) ||
+				else if (isHumanPlayer(psDroid->playerManager->getPlayer()) &&
+                 psStruct->getStats()->type != STRUCTURE_TYPE::WALL &&
+                 psStruct->getStats()->type != STRUCTURE_TYPE::WALL_CORNER ||
                  !isHumanPlayer(psDroid->playerManager->getPlayer())) {
 					psTarget = targetInQuestion;
 				}
@@ -675,8 +674,8 @@ int aiBestNearestTarget(Droid* psDroid, BaseObject** ppsObj, int weapon_slot, in
 
 		// See if target is blocked by a wall; only affects direct weapons
 		// Ignore friendly walls here
-		if (proj_Direct(psDroid->getWeapons()[weapon_slot].getStats()) && targetStructure &&
-        !aiCheckAlliances(psDroid->playerManager->getPlayer(), targetStructure->getPlayer())) {
+		if (proj_Direct(psDroid->getWeapon(weapon_slot)->getStats()) && targetStructure &&
+        !aiCheckAlliances(psDroid->playerManager->getPlayer(), targetStructure->playerManager->getPlayer())) {
 			//are we any good against walls?
 			if (asStructStrengthModifier[weaponEffect][targetStructure->getStats()->strength] >=
 				MIN_STRUCTURE_BLOCK_STRENGTH) {
@@ -965,7 +964,7 @@ static bool updateAttackTarget(BaseObject * psAttacker, int weapon_slot)
 			}
       // can't override current order
 			else {
-				setDroidActionTarget(psDroid, psBetterTarget, weapon_slot);
+				psDroid->setActionTarget(psBetterTarget, weapon_slot);
 			}
 		}
 		else if (auto psBuilding = dynamic_cast<Structure*>(psAttacker)) {

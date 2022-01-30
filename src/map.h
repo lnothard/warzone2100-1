@@ -229,36 +229,33 @@ static inline void auxMapRestore(unsigned player, int slot, int mask)
  * Check if tile contains a structure or feature. Function is thread-safe,
  * but do not rely on the result if you mean to alter the object pointer.
  */
-static bool TileIsOccupied(const Tile* tile)
+static bool TileIsOccupied(Tile const* tile)
 {
 	return tile->psObject != nullptr;
 }
 
-static bool TileIsKnownOccupied(const Tile* tile, unsigned player)
+static bool TileIsKnownOccupied(Tile const* tile, unsigned player)
 {
 	return TileIsOccupied(tile) &&
          (!dynamic_cast<Structure*>(tile->psObject) ||
-          dynamic_cast<Structure*>(tile->psObject)->visible[player] ||
-           aiCheckAlliances(
-                   player, dynamic_cast<Structure*>(tile->psObject)->getPlayer()));
+          dynamic_cast<Structure*>(tile->psObject)->isVisibleToPlayer(player) ||
+          aiCheckAlliances(player, dynamic_cast<Structure*>(tile->psObject)->playerManager->getPlayer()));
 }
 
 /** Check if tile contains a structure. Function is NOT thread-safe. */
-static bool TileHasStructure(const Tile* tile)
+static bool TileHasStructure(Tile const* tile)
 {
-	return TileIsOccupied(tile) &&
-         dynamic_cast<Structure*>(tile->psObject);
+	return TileIsOccupied(tile) && dynamic_cast<Structure*>(tile->psObject);
 }
 
 /** Check if tile contains a feature. Function is NOT thread-safe. */
-static bool TileHasFeature(const Tile* tile)
+static bool TileHasFeature(Tile const* tile)
 {
-	return TileIsOccupied(tile) &&
-         dynamic_cast<Feature*>(tile->psObject);
+	return TileIsOccupied(tile) && dynamic_cast<Feature*>(tile->psObject);
 }
 
 /** Check if tile contains a wall structure. Function is NOT thread-safe. */
-static bool TileHasWall(const Tile* tile)
+static bool TileHasWall(Tile const* tile)
 {
   using enum STRUCTURE_TYPE;
 	return TileHasStructure(tile) &&

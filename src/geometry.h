@@ -23,50 +23,47 @@
 
 #include "map.h"
 
+
 struct QUAD
 {
 	Vector2i coords[4] = {{0, 0}, {0, 0}, {0, 0}, {0, 0}};
 };
 
-uint16_t calcDirection(int32_t x0, int32_t y0, int32_t x1, int32_t y1);
-bool inQuad(const Vector2i* pt, const QUAD* quad);
+uint16_t calcDirection(int x0, int y0, int x1, int y1);
+bool inQuad(Vector2i const* pt, QUAD const* quad);
 Vector2i positionInQuad(Vector2i const& pt, QUAD const& quad);
-Droid* getNearestDroid(UDWORD x, UDWORD y, bool bSelected);
-bool objectOnScreen(BaseObject * object, SDWORD tolerance);
+Droid* getNearestDroid(unsigned x, unsigned y, bool bSelected);
+bool objectOnScreen(BaseObject const* object, int tolerance);
 
-static inline Structure* getTileStructure(UDWORD x, UDWORD y)
+
+static inline Structure* getTileStructure(int x, int y)
 {
-  BaseObject * psObj = mapTile(x, y)->psObject;
-	if (psObj && psObj->type == OBJ_STRUCTURE)
-	{
-		return (Structure*)psObj;
+  auto psObj = mapTile(x, y)->psObject;
+	if (psObj && dynamic_cast<Structure*>(psObj)) {
+		return dynamic_cast<Structure*>(psObj);
 	}
 	return nullptr;
 }
 
-static inline Feature* getTileFeature(UDWORD x, UDWORD y)
+static inline Feature* getTileFeature(int x, int y)
 {
-  BaseObject * psObj = mapTile(x, y)->psObject;
-	if (psObj && psObj->type == OBJ_FEATURE)
-	{
-		return (Feature*)psObj;
+  auto psObj = mapTile(x, y)->psObject;
+	if (psObj && dynamic_cast<Feature*>(psObj)) {
+		return dynamic_cast<Feature*>(psObj);
 	}
 	return nullptr;
 }
 
 /// WARNING: Returns NULL if tile not visible to selectedPlayer.
 /// Must *NOT* be used for anything game-state/simulation-calculation related
-static inline BaseObject * getTileOccupier(UDWORD x, UDWORD y)
+static inline BaseObject* getTileOccupier(int x, int y)
 {
-	Tile* psTile = mapTile(x, y);
-
-	if (TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile))
-	{
+	auto psTile = mapTile(x, y);
+	if (TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile)) {
 		return mapTile(x, y)->psObject;
 	}
-	else
-	{
-		return nullptr;
+	else {
+    return nullptr;
 	}
 }
 

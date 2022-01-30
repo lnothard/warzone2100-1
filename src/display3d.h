@@ -122,7 +122,7 @@ extern iView playerPos;
 extern bool selectAttempt;
 
 extern SDWORD scrollSpeed;
-void assignSensorTarget(PlayerOwnedObject * psObj);
+void assignSensorTarget(BaseObject* psObj);
 void assignDestTarget();
 UDWORD getWaterTileNum();
 void setUnderwaterTile(UDWORD num);
