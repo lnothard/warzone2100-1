@@ -105,7 +105,7 @@ bool recvBuildFinished(NETQUEUE queue)
 			psStruct->status = SS_BUILT;
 			buildingComplete(psStruct);
 		}
-		debug(LOG_SYNC, "Created normal building %u for player %u", psStruct->id, player);
+		debug(LOG_SYNC, "Created normal building %u for player %u", psStruct->getId(), player);
 		return true;
 	}
 
@@ -212,9 +212,9 @@ bool sendLasSat(UBYTE player, Structure* psStruct, BaseObject * psObj)
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_LASSAT);
 
 	NETuint8_t(&player);
-	NETuint32_t(&psStruct->id);
-	NETuint32_t(&psObj->id); // Target
-	NETuint8_t(&psObj->player); // Target player
+	NETuint32_t(&psStruct->getId());
+	NETuint32_t(&psObj->getId()); // Target
+	NETuint8_t(&psObj->playerManager->getPlayer()); // Target player
 
 	return NETend();
 }

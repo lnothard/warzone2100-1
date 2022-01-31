@@ -28,6 +28,7 @@
 #include "droid.h"
 #include "group.h"
 #include "multiplay.h"
+#include "objmem.h"
 
 struct Group::Impl
 {
@@ -37,6 +38,7 @@ struct Group::Impl
   explicit Impl(unsigned id);
 
   unsigned id = 0;
+  unsigned player = 0;
   GROUP_TYPE type = GROUP_TYPE::NORMAL;
 
   /// List of droids in the group
@@ -167,6 +169,15 @@ void Group::add(Droid* psDroid)
   if (pimpl->type == GROUP_TYPE::COMMAND) {
     syncDebug("Droid %d joining command group %d", psDroid->getId(),
               pimpl->psCommander != nullptr ? pimpl->psCommander->getId() : 0);
+  }
+}
+
+void Group::vanishAll()
+{
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Group object is undefined");
+  for (auto droid : pimpl->members)
+  {
+    vanishDroid(droid);
   }
 }
 

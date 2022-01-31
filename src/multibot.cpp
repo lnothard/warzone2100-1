@@ -163,7 +163,7 @@ struct QueuedDroidInfo
 	Vector2i pos2 = Vector2i(0, 0); // if (order == ORDER_TYPE::LINEBUILD)
 	bool add = false;
 	// subType == SecondaryOrder
-	SECONDARY_ORDER secOrder = DSO_UNUSED;
+	SECONDARY_ORDER secOrder = SECONDARY_ORDER::UNUSED;
 	SECONDARY_STATE secState = DSS_NONE;
 };
 
@@ -409,7 +409,7 @@ bool recvDroid(NETQUEUE queue)
 	// If we were able to build the droid set it up
 	if (psDroid) {
 		psDroid->id = id;
-		addDroid(psDroid, apsDroidLists);
+		addDroid(psDroid);
 
 		if (haveInitialOrders) {
 			psDroid->secondary_order = initialOrders.secondaryOrder;
@@ -523,8 +523,8 @@ Order infoToOrderData(QueuedDroidInfo const& info, StructureStats* psStats)
 	sOrder.pos2 = info.pos2;
 	sOrder.direction = info.direction;
 	sOrder.index = info.index;
-	sOrder.psObj = processDroidTarget(info.destType, info.destId);
-	sOrder.psStats = psStats;
+	sOrder.target = processDroidTarget(info.destType, info.destId);
+	sOrder.structure_stats = psStats;
 
 	return sOrder;
 }
@@ -601,7 +601,7 @@ bool recvDroidInfo(NETQUEUE queue)
 		switch (info.subType) {
 		case ObjOrder: syncDebug("Order=%s,%d(%d)", getDroidOrderName(info.order), info.destId, info.destType);
 			break;
-		case LocOrder: syncDebug("Order=%s,(%d,%d)", getDroidOrderName(info.order), info.pos.x, info.pos.y);
+		case LocOrder: syncDebug("Order=%s,(%d,%d)", getDroidOrderName(info.order).c_str(), info.pos.x, info.pos.y);
 			break;
 		case SecondaryOrder: syncDebug("SecondaryOrder=%d,%08X", (int)info.secOrder, (int)info.secState);
 			break;
@@ -644,7 +644,7 @@ bool recvDroidInfo(NETQUEUE queue)
 					psDroid->group->remove(psDroid);
 				}
 
-				if (sOrder.psObj != TargetMissing) { // Only do order if the target didn't die.
+				if (sOrder.target != TargetMissing) { // Only do order if the target didn't die.
 					if (!info.add) {
 						orderDroidListEraseRange(psDroid, 0, psDroid->listSize + 1);
 						// Clear all non-pending orders, plus the first pending order (which is probably the order we just received).

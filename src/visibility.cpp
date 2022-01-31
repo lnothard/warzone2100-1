@@ -463,11 +463,11 @@ int visibleObject(BaseObject const* psViewer, BaseObject const* psTarget, bool w
 
     if (dynamic_cast<Droid const*>(psTarget) &&
         dynamic_cast<Droid const*>(psTarget)->isVtol() &&
-        asWeaponStats[psStruct->asWeaps[0].nStat].surfaceToAir == SHOOT_IN_AIR) {
+        psStruct->getWeapon(0)->getStats()->surfaceToAir == SHOOT_IN_AIR) {
       range = 3 * range / 2; // increase vision range of AA vs VTOL
     }
 
-    if (psStruct->psTarget[0] == psTarget &&
+    if (psStruct->getTarget(0) == psTarget &&
         (structCBSensor(psStruct) || structVTOLCBSensor(psStruct))) {
       // if a unit is targetted by a counter battery sensor
       // it is automatically seen

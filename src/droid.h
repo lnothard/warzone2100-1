@@ -305,6 +305,7 @@ public:
   [[nodiscard]] bool hasCbSensor() const;
   [[nodiscard]] int droidDamage(unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
                                 unsigned impactTime, bool isDPS, int minDamage);
+  void orderDroidCmd(ORDER_TYPE order, QUEUE_MODE mode);
   void setAudioId(int audio);
   void setUpBuildModule();
   void actionUpdateDroid();

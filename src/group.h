@@ -58,6 +58,7 @@ public:
    * group if it exists
    */
 	void add(Droid* psDroid);
+  void vanishAll();
 
   [[nodiscard]] static std::unique_ptr<Group> create(unsigned id);
 

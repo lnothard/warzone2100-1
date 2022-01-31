@@ -1760,7 +1760,7 @@ void Droid::orderUpdateDroid()
               (!droidAttacking(this) ||
                psFireTarget != pimpl->actionTargets[0])) {
             //get the droid to attack
-            actionDroid(this, ACTION::ATTACK, psFireTarget);
+            dynamic_cast<Structure*>(pimpl->order->target)->actionDroidTarget(this, ACTION::ATTACK, 0);
           }
         }
         else if (isVtol() &&
@@ -1847,9 +1847,9 @@ void Droid::orderUpdateDroid()
 
       // get combat units in a command group to attack the commanders target
       if (hasCommander() && (numWeapons(*this) > 0)) {
-        if (pimpl->group->getCommander()->getAction() == ACTION::ATTACK &&
-            pimpl->group->getCommander()->getActionTarget(0) &&
-            !pimpl->group->getCommander()->getActionTarget(0)->damageManager->isDead()) {
+        if (pimpl->commander->getAction() == ACTION::ATTACK &&
+            pimpl->commander->getActionTarget(0) &&
+            !pimpl->commander->getActionTarget(0)->damageManager->isDead()) {
 
           psObj = pimpl->commander->getActionTarget(0);
 
@@ -1912,12 +1912,7 @@ void Droid::removeDroidBase()
   if (isTransporter(*this)) {
     if (pimpl->group) {
       //free all droids associated with this Transporter
-      for (auto psCurr : pimpl->group->members)
-      {
-        /* add droid to droid list then vanish it - hope this works! - GJ */
-        addDroid(psCurr, apsDroidLists);
-        vanishDroid(psCurr);
-      }
+      pimpl->group->vanishAll();
     }
   }
 
@@ -8608,6 +8603,12 @@ bool isTransporter(DroidTemplate const& templ)
   using enum DROID_TYPE;
   return templ.type == TRANSPORTER ||
          templ.type == SUPER_TRANSPORTER;
+}
+
+void Droid::orderDroidCmd(ORDER_TYPE order, QUEUE_MODE mode)
+{
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Droid object is undefined");
+  orderDroidObj(this, order, pimpl->commander, mode);
 }
 
 bool vtolEmpty(Droid const& droid)

@@ -5029,6 +5029,11 @@ bool removeStruct(Structure* psDel, bool bDestroy)
 	return resourceFound;
 }
 
+void Structure::actionDroidTarget(Droid* droid, ACTION action, int idx)
+{
+  ::actionDroid(droid, action, pimpl->targets[idx]);
+}
+
 /* Remove a structure */
 bool destroyStruct(Structure* psDel, unsigned impactTime)
 {

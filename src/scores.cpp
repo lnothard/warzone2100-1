@@ -35,7 +35,6 @@
 #include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/ivis_opengl/pietypes.h"
 #include "lib/ivis_opengl/piefunc.h"
-#include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/piepalette.h"
 #include "mission.h"
 #include "lib/sound/audio.h"

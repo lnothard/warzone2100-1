@@ -33,15 +33,9 @@
 
 #include "lib/framework/frame.h"
 #include "lib/framework/opengl.h"
-#include "lib/ivis_opengl/ivisdef.h"
-#include "lib/ivis_opengl/imd.h"
-#include "lib/ivis_opengl/piefunc.h"
 #include "lib/ivis_opengl/tex.h"
 #include "lib/ivis_opengl/pietypes.h"
-#include "lib/ivis_opengl/pieclip.h"
 #include "lib/ivis_opengl/piestate.h"
-#include "lib/ivis_opengl/screen.h"
-#include "lib/ivis_opengl/piematrix.h"
 #include <glm/mat4x4.hpp>
 #ifndef GLM_ENABLE_EXPERIMENTAL
 #define GLM_ENABLE_EXPERIMENTAL
@@ -52,7 +46,6 @@
 #include "map.h"
 #include "texture.h"
 #include "display3d.h"
-#include "hci.h"
 #include "loop.h"
 
 // TODO: Fix and remove after merging terrain rendering changes
@@ -615,7 +608,7 @@ void loadTerrainTextures()
 	for (int layer = 0; layer < numGroundTypes; layer++)
 	{
 		// pre-load the texture
-		optional<size_t> texPage = iV_GetTexture(psGroundTypes[layer].textureName, true, maxTerrainTextureSize,
+		optional<size_t> texPage = iV_GetTexture(psGroundTypes[layer].textureName.c_str(), true, maxTerrainTextureSize,
 		                                         maxTerrainTextureSize);
 		ASSERT(texPage.has_value(), "Failed to pre-load terrain texture: %s", psGroundTypes[layer].textureName.c_str());
 	}
@@ -1209,7 +1202,7 @@ static void drawTerrainLayers(const glm::mat4& ModelViewProjection, const glm::v
 	gfx_api::TerrainLayer::get().bind();
 	gfx_api::TerrainLayer::get().bind_vertex_buffers(geometryVBO, textureVBO);
 	gfx_api::context::get().bind_index_buffer(*textureIndexVBO, gfx_api::index_type::u32);
-	ASSERT_OR_RETURN(, psGroundTypes.get(), "Ground type was not set, no textures will be seen.");
+	ASSERT_OR_RETURN(, !psGroundTypes.empty(), "Ground type was not set, no textures will be seen.");
 
 	int32_t maxGfxTextureSize = gfx_api::context::get().get_context_value(
 		gfx_api::context::context_value::MAX_TEXTURE_SIZE);
@@ -1226,7 +1219,7 @@ static void drawTerrainLayers(const glm::mat4& ModelViewProjection, const glm::v
 		});
 
 		// load the texture
-		optional<size_t> texPage = iV_GetTexture(psGroundTypes[layer].textureName, true, maxTerrainTextureSize,
+		optional<size_t> texPage = iV_GetTexture(psGroundTypes[layer].textureName.c_str(), true, maxTerrainTextureSize,
 		                                         maxTerrainTextureSize);
 		ASSERT_OR_RETURN(, texPage.has_value(), "Failed to retrieve terrain texture: %s",
 		                   psGroundTypes[layer].textureName.c_str());

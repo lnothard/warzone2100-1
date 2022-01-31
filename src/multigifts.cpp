@@ -52,6 +52,8 @@
 #include "multimenu.h"			// for multimenu
 #include "multistat.h"
 #include "random.h"
+#include "src/input/debugmappings.h"
+#include "display.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // prototypes
@@ -284,7 +286,7 @@ static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 		syncDebugDroid(psDroid, '>');
 		if (to == selectedPlayer)
 		{
-			CONPRINTF(_("%s Gives you a %s"), getPlayerName(from), psDroid->name);
+			CONPRINTF(_("%s Gives you a %s"), getPlayerName(from), psDroid->getName().c_str());
 		}
 	}
 	else
@@ -319,7 +321,7 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 	     psD && getNumDroids(to) + totalToSend < getMaxDroids(to) && totalToSend != UINT8_MAX;
 	     psD = psD->psNext)
 	{
-		if (psD->selected)
+		if (psD->damageManager->isSelected())
 		{
 			++totalToSend;
 		}
@@ -334,17 +336,17 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 		if (isTransporter(*psD)
 			&& !transporterIsEmpty(psD))
 		{
-			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD->name);
+			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD->getName().c_str());
 			continue;
 		}
-		if (psD->selected)
+		if (psD->damageManager->isSelected())
 		{
 			NETbeginEncode(NETgameQueue(selectedPlayer), GAME_GIFT);
 			NETuint8_t(&giftType);
 			NETuint8_t(&from);
 			NETuint8_t(&to);
 			// Add the droid to the packet
-			NETuint32_t(&psD->id);
+			NETuint32_t(&psD->getId());
 			NETend();
 
 			// Decrement the number of droids left to send
@@ -549,20 +551,19 @@ void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allow
 	// Clear out any attacking orders
 	for (psDroid = apsDroidLists[p1]; psDroid; psDroid = psDroid->psNext) // from -> to
 	{
-		if (psDroid->getOrder().type == DORDER_ATTACK
-			&& psDroid->getOrder().target
-			&& psDroid->getOrder().target->player == p2)
+		if (psDroid->getOrder()->type == ORDER_TYPE::ATTACK
+			&& psDroid->getOrder()->target
+			&& psDroid->getOrder()->target->playerManager->getPlayer() == p2)
 		{
-			orderDroid(psDroid, DORDER_STOP, ModeImmediate);
+			orderDroid(psDroid, ORDER_TYPE::STOP, ModeImmediate);
 		}
 	}
-	for (psDroid = apsDroidLists[p2]; psDroid; psDroid = psDroid->psNext) // to -> from
+	for (auto& psDroid : apsDroidLists[p2]) // to -> from
 	{
-		if (psDroid->getOrder().type == DORDER_ATTACK
-			&& psDroid->getOrder().target
-			&& psDroid->getOrder().target->player == p1)
-		{
-			orderDroid(psDroid, DORDER_STOP, ModeImmediate);
+		if (psDroid.getOrder()->type == ORDER_TYPE::ATTACK
+			&& psDroid.getOrder()->target
+			&& psDroid.getOrder()->target->playerManager->getPlayer() == p1) {
+			orderDroid(&psDroid, ORDER_TYPE::STOP, ModeImmediate);
 		}
 	}
 }
@@ -651,8 +652,9 @@ bool recvAlliance(NETQUEUE queue, bool allowAudio)
 void technologyGiveAway(const Structure* pS)
 {
 	// If a fully built factory (or with modules under construction) which is our responsibility got destroyed
-	if (pS->pStructureType->type == REF_FACTORY && (pS->status == SS_BUILT || pS->currentBuildPts >= pS->body))
-	{
+	if (pS->getStats()->type == STRUCTURE_TYPE::FACTORY &&
+      (pS->getState() == STRUCTURE_STATE::BUILT ||
+       pS->currentBuildPts >= pS->damageManager->getHp())) {
 		syncDebug("Adding artefact.");
 	}
 	else
@@ -662,7 +664,7 @@ void technologyGiveAway(const Structure* pS)
 	}
 
 	int featureIndex;
-	for (featureIndex = 0; featureIndex < numFeatureStats && asFeatureStats[featureIndex].subType != FEAT_GEN_ARTE; ++
+	for (featureIndex = 0; featureIndex < numFeatureStats && asFeatureStats[featureIndex].subType != FEATURE_TYPE::GEN_ARTE; ++
 	     featureIndex)
 	{
 	}
@@ -672,7 +674,7 @@ void technologyGiveAway(const Structure* pS)
 		return;
 	}
 
-	uint32_t x = map_coord(pS->pos.x), y = map_coord(pS->pos.y);
+	uint32_t x = map_coord(pS->getPosition().x), y = map_coord(pS->getPosition().y);
 	if (!pickATileGen(&x, &y, LOOK_FOR_EMPTY_TILE, zonedPAT))
 	{
 		syncDebug("Did not find location for oil drum.");
@@ -680,10 +682,8 @@ void technologyGiveAway(const Structure* pS)
 		return;
 	}
 	Feature* pF = buildFeature(&asFeatureStats[featureIndex], world_coord(x), world_coord(y), false);
-	if (pF)
-	{
-		pF->player = pS->player;
-		syncDebugFeature(pF, '+');
+	if (pF) {
+		pF->playerManager->setPlayer(pS->playerManager->getPlayer());
 	}
 	else
 	{

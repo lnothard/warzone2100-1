@@ -640,13 +640,11 @@ static void updateCameraRotationAcceleration(UBYTE update)
 	SDWORD worldAngle;
 	float separation;
 	SDWORD xConcern, yConcern, zConcern;
-	bool bTooLow;
-	PropulsionStats* psPropStats;
 	bool bGotFlying = false;
 	SDWORD xPos = 0, yPos = 0, zPos = 0;
 
-	bTooLow = false;
-	psPropStats = asPropulsionStats + trackingCamera.target->asBits[COMP_PROPULSION];
+	auto bTooLow = false;
+	auto psPropStats = dynamic_cast<PropulsionStats const*>(trackingCamera.target->getComponent("propulsion"));
 	if (psPropStats->propulsionType == PROPULSION_TYPE::LIFT)
 	{
 		int droidHeight, difHeight, droidMapHeight;

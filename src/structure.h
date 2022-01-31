@@ -296,6 +296,7 @@ public:
   void aiUpdateStructure(bool isMission);
   void structureUpdate(bool bMission);
   int requestOpenGate();
+  void actionDroidTarget(Droid* droid, ACTION action, int idx);
   void structureBuild(Droid* psDroid, int builtPoints, int buildRate_);
   [[nodiscard]] std::unique_ptr<Structure> buildStructureDir(
         StructureStats* pStructureType, unsigned x, unsigned y,
