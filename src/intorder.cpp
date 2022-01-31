@@ -542,30 +542,25 @@ bool intAddOrder(BaseObject* psObj)
 		Animate = false;
 	}
 
-	if (psObj)
-	{
-		if (psObj->type == OBJ_DROID)
-		{
-			Droid = (Droid*)psObj;
+	if (psObj) {
+		if (dynamic_cast<struct Droid*>(psObj)) {
+			Droid = dynamic_cast<struct Droid*>(psObj);
 			psStructure = nullptr;
 		}
-		else if (psObj->type == OBJ_STRUCTURE)
-		{
+		else if (dynamic_cast<struct Structure*>(psObj)) {
 			Droid = nullptr;
-			psStructure = (Structure*)psObj;
+			psStructure = dynamic_cast<struct Structure*>(psObj);
 			psSelectedFactory = psStructure;
 			ASSERT_OR_RETURN(false, StructIsFactory(psSelectedFactory), "Trying to select a %s as a factory!",
 			                 objInfo(psSelectedFactory));
 		}
-		else
-		{
+		else {
 			ASSERT(false, "Invalid object type");
 			Droid = nullptr;
 			psStructure = nullptr;
 		}
 	}
-	else
-	{
+	else {
 		Droid = nullptr;
 		psStructure = nullptr;
 	}
@@ -1203,14 +1198,12 @@ void intRemoveOrderNoAnim()
 //new function added to bring up the RMB order form for Factories as well as droids
 void intAddFactoryOrder(Structure* psStructure)
 {
-	if (!OrderUp)
-	{
+	if (!OrderUp) {
 		intResetScreen(false);
-		intAddOrder((PlayerOwnedObject *)psStructure);
+		intAddOrder(psStructure);
 		intMode = INT_ORDER;
 	}
-	else
-	{
-		intAddOrder((PlayerOwnedObject *)psStructure);
+	else {
+		intAddOrder(psStructure);
 	}
 }

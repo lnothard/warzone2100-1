@@ -33,6 +33,7 @@
 #include "../musicmanager.h"
 #include "../warzoneconfig.h"
 #include "../activity.h"
+#include "src/display.h"
 
 WzOldTitleUI::WzOldTitleUI(tMode mode) : mode(mode)
 {

@@ -277,7 +277,7 @@ static void intRunPower();
 static void processProximityButtons(UDWORD id);
 
 // count the number of selected droids of a type
-static SDWORD intNumSelectedDroids(UDWORD droidType);
+static SDWORD intNumSelectedDroids(DROID_TYPE droidType);
 
 static void parseChatMessageModifiers(ChatMessage& message);
 
@@ -1314,7 +1314,6 @@ static void intProcessEditStats(UDWORD id)
 			debugMenuDroidDeliveryPoint.factoryInc = 0;
 			debugMenuDroidDeliveryPoint.player = selectedPlayer;
 			debugMenuDroidDeliveryPoint.selected = false;
-			debugMenuDroidDeliveryPoint.psNext = nullptr;
 			startDeliveryPosition(&debugMenuDroidDeliveryPoint);
 		}
 		else
@@ -1361,7 +1360,7 @@ INT_RETVAL intRunWidgets()
 
 				sstrcpy(msg, _("GAME SAVED: "));
 				sstrcat(msg, saveGameName);
-				addConsoleMessage(msg, LEFT_JUSTIFY, NOTIFY_MESSAGE);
+				addConsoleMessage(msg, CONSOLE_TEXT_JUSTIFICATION::LEFT, NOTIFY_MESSAGE);
 
 				if (widgGetFromID(psWScreen, IDMISSIONRES_SAVE))
 				{
@@ -1565,7 +1564,7 @@ INT_RETVAL intRunWidgets()
 		case CHAT_EDITBOX:
 			{
 				auto message = ChatMessage(selectedPlayer, widgGetString(psWScreen, CHAT_EDITBOX));
-				attemptCheatCode(message.text); // parse the message
+				attemptCheatCode(message.text.c_str()); // parse the message
 
 				if ((int)widgGetUserData2(psWScreen, CHAT_EDITBOX) == CHAT_TEAM)
 				{
@@ -1646,16 +1645,16 @@ INT_RETVAL intRunWidgets()
 				// can get to the location chosen
 
 				// Set the droid order
-				if (intNumSelectedDroids(DROID_CONSTRUCT) == 0
-					&& intNumSelectedDroids(DROID_CYBORG_CONSTRUCT) == 0
+				if (intNumSelectedDroids(DROID_TYPE::CONSTRUCT) == 0
+					&& intNumSelectedDroids(DROID_TYPE::CYBORG_CONSTRUCT) == 0
 					&& psSelectedBuilder != nullptr && isConstructionDroid(psSelectedBuilder))
 				{
-					orderDroidStatsTwoLocDir(psSelectedBuilder, DORDER_LINEBUILD, (StructureStats*)psPositionStats,
+					orderDroidStatsTwoLocDir(psSelectedBuilder, ORDER_TYPE::LINE_BUILD, (StructureStats*)psPositionStats,
 					                         pos.x, pos.y, pos2.x, pos2.y, getBuildingDirection(), ModeQueue);
 				}
 				else
 				{
-					orderSelectedStatsTwoLocDir(selectedPlayer, DORDER_LINEBUILD, (StructureStats*)psPositionStats,
+					orderSelectedStatsTwoLocDir(selectedPlayer, ORDER_TYPE::LINE_BUILD, (StructureStats*)psPositionStats,
 					                            pos.x, pos.y, pos2.x, pos2.y, getBuildingDirection(), ctrlShiftDown());
 				}
 				if (!quickQueueMode)
@@ -1673,23 +1672,19 @@ INT_RETVAL intRunWidgets()
 					// can get to the location chosen
 
 					// Don't allow derrick to be built on burning ground.
-					if (((StructureStats*)psPositionStats)->type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR)
-					{
-						if (fireOnLocation(pos.x, pos.y))
-						{
+					if (((StructureStats*)psPositionStats)->type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR) {
+						if (fireOnLocation(pos.x, pos.y)) {
 							AddDerrickBurningMessage();
 						}
 					}
 					// Set the droid order
 					if (intNumSelectedDroids(DROID_TYPE::CONSTRUCT) == 0
 						&& intNumSelectedDroids(DROID_TYPE::CYBORG_CONSTRUCT) == 0
-						&& psSelectedBuilder != nullptr)
-					{
+						&& psSelectedBuilder != nullptr) {
 						orderDroidStatsLocDir(psSelectedBuilder, ORDER_TYPE::BUILD, (StructureStats*)psPositionStats, pos.x,
                                   pos.y, getBuildingDirection(), ModeQueue);
 					}
-					else
-					{
+					else {
 						orderSelectedStatsLocDir(selectedPlayer, ORDER_TYPE::BUILD, (StructureStats*)psPositionStats, pos.x,
                                      pos.y, getBuildingDirection(), ctrlShiftDown());
 					}
@@ -1735,24 +1730,20 @@ INT_RETVAL intRunWidgets()
 				{
 					pos = lb[i];
 					/* See what type of thing is being put down */
-					auto psBuilding = castStructureStats(psPositionStats);
-					if (psBuilding && selectedPlayer < MAX_PLAYERS)
-					{
+					auto psBuilding = dynamic_cast<StructureStats*>(psPositionStats);
+					if (psBuilding && selectedPlayer < MAX_PLAYERS) {
 						Structure tmp(0, selectedPlayer);
 
-						if (psBuilding->type == REF_DEMOLISH)
-						{
-							Tile* psTile = mapTile(map_coord(pos.x), map_coord(pos.y));
-							Feature* psFeature = (Feature*)psTile->psObject;
-							auto* psStructure = (Structure*)psTile->psObject;
+						if (psBuilding->type == STRUCTURE_TYPE::DEMOLISH) {
+							auto psTile = mapTile(map_coord(pos.x), map_coord(pos.y));
+							auto psFeature = (Feature*)psTile->psObject;
+							auto psStructure = (Structure*)psTile->psObject;
 
-							if (psStructure && psTile->psObject->type == OBJ_STRUCTURE)
-							{
+							if (psStructure && dynamic_cast<Structure*>(psTile->psObject)) {
 								//removeStruct(psStructure, true);
 								SendDestroyStructure(psStructure);
 							}
-							else if (psFeature && psTile->psObject->type == OBJ_FEATURE)
-							{
+							else if (psFeature && dynamic_cast<Feature*>(psTile->psObject)) {
 								removeFeature(psFeature);
 							}
 						}
@@ -1761,7 +1752,7 @@ INT_RETVAL intRunWidgets()
 							Structure* psStructure = &tmp;
 							tmp.id = generateNewObjectId();
 							tmp.pStructureType = (StructureStats*)psPositionStats;
-							tmp.pos = {pos.x, pos.y, map_Height(pos.x, pos.y) + world_coord(1) / 10};
+							tmp.setPosition({pos.x, pos.y, map_Height(pos.x, pos.y) + world_coord(1) / 10});
 
 							// In multiplayer games be sure to send a message to the
 							// other players, telling them a new structure has been
@@ -1796,9 +1787,8 @@ INT_RETVAL intRunWidgets()
 						auto psDroid = buildDroid((DroidTemplate*)psPositionStats, pos.x, pos.y, selectedPlayer,
                                         false, nullptr);
 						cancelDeliveryRepos();
-						if (psDroid)
-						{
-							addDroid(psDroid, apsDroidLists);
+						if (psDroid) {
+							addDroid(psDroid.get());
 
 							// Send a text message to all players, notifying them of
 							// the fact that we're cheating ourselves a new droid.
@@ -1806,7 +1796,7 @@ INT_RETVAL intRunWidgets()
 								_("Player %u is cheating (debug menu) him/herself a new droid: %s."), selectedPlayer,
 								psDroid->getName().c_str());
 
-							triggerEventDroidBuilt(psDroid, nullptr);
+							triggerEventDroidBuilt(psDroid.get(), nullptr);
 						}
 						else
 						{
@@ -1891,57 +1881,39 @@ void intSetMapPos(UDWORD x, UDWORD y)
 //
 void intObjectSelected(BaseObject* psObj)
 {
-	if (psObj)
-	{
-		setWidgetsStatus(true);
-		switch (psObj->type)
-		{
-		case OBJ_DROID:
-			if (!OrderUp)
-			{
-				intResetScreen(false);
-				// changed to a SimpleObject to accommodate the factories - AB 21/04/99
-				intAddOrder(psObj);
-				intMode = INT_ORDER;
-			}
-			else
-			{
-				// changed to a SimpleObject to accommodate the factories - AB 21/04/99
-				intAddOrder(psObj);
-			}
-			break;
+  if (!psObj) {
+    intResetScreen(false);
+    return;
+  }
 
-		case OBJ_STRUCTURE:
-			if (objMode != IOBJ_DEMOLISHSEL)
-			{
-				auto structure = castStructure(psObj);
+  setWidgetsStatus(true);
+  if (dynamic_cast<Droid*>(psObj)) {
+    if (!OrderUp) {
+      intResetScreen(false);
+      // changed to a SimpleObject to accommodate the factories - AB 21/04/99
+      intAddOrder(psObj);
+      intMode = INT_ORDER;
+    }
+    else {
+      // changed to a SimpleObject to accommodate the factories - AB 21/04/99
+      intAddOrder(psObj);
+    }
+  }
+  else if (dynamic_cast<Structure*>(psObj)) {
+    if (objMode != IOBJ_DEMOLISHSEL) {
+      auto structure = dynamic_cast<Structure *>(psObj);
 
-				if (structure->state == STRUCTURE_STATE::BUILT)
-				{
-					if (StructIsFactory(structure))
-					{
-						intAddManufacture();
-						break;
-					}
-					else if (structure->stats->type == REF_RESEARCH)
-					{
-						intAddResearch();
-						break;
-					}
-				}
-			}
-			intResetScreen(false);
-			break;
-		default:
-			break;
-		}
-	}
-	else
-	{
-		intResetScreen(false);
-	}
+      if (structure->getState() == STRUCTURE_STATE::BUILT) {
+        if (StructIsFactory(structure)) {
+          intAddManufacture();
+        } else if (structure->getStats()->type == STRUCTURE_TYPE::RESEARCH) {
+          intAddResearch();
+        }
+      }
+    }
+    intResetScreen(false);
+  }
 }
-
 
 /**
  * Start location selection, where the builder will build the structure
@@ -2353,10 +2325,10 @@ static bool intAddDebugStatsForm(BaseStats** _ppsStatsList, UDWORD numStats)
 }
 
 /* Return the stats for a research facility */
-static BaseStats* getResearchStats(BaseObject* psObj)
+static BaseStats* getResearchStats(BaseObject const* psObj)
 {
-	ASSERT_OR_RETURN(nullptr, psObj != nullptr && psObj->type == OBJ_STRUCTURE, "Invalid Structure pointer");
-	auto* psBuilding = (Structure*)psObj;
+	ASSERT_OR_RETURN(nullptr, psObj != nullptr && dynamic_cast<Structure const*>(psObj), "Invalid Structure pointer");
+	auto* psBuilding = dynamic_cast<Structure const*>(psObj);
 	ResearchFacility* psResearchFacility = &psBuilding->pFunctionality->researchFacility;
 
 	if (psResearchFacility->psSubjectPending != nullptr && !IsResearchCompleted(
@@ -2670,21 +2642,16 @@ void setKeyButtonMapping(UDWORD val)
 }
 
 // count the number of selected droids of a type
-static SDWORD intNumSelectedDroids(UDWORD droidType)
+static int intNumSelectedDroids(DROID_TYPE droidType)
 {
-	Droid* psDroid;
-	SDWORD num;
-
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return 0;
 	}
 
-	num = 0;
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	auto num = 0;
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		if (psDroid->damageManager->isSelected() && psDroid->getType() == droidType)
-		{
+		if (psDroid.damageManager->isSelected() && psDroid.getType() == droidType) {
 			num += 1;
 		}
 	}
@@ -2696,8 +2663,7 @@ static SDWORD intNumSelectedDroids(UDWORD droidType)
 only if research facility is free*/
 int intGetResearchState()
 {
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return 0;
 	}
 
@@ -2765,7 +2731,7 @@ bool intCheckReticuleButEnabled(UDWORD id)
 
 // Look through the players structures and find the next one of type structType.
 //
-static Structure* intGotoNextStructureType(UDWORD structType)
+static Structure* intGotoNextStructureType(STRUCTURE_TYPE structType)
 {
 	Structure* psStruct;
 	bool Found = false;
@@ -2788,7 +2754,7 @@ static Structure* intGotoNextStructureType(UDWORD structType)
 	for (; psStruct != nullptr; psStruct = psStruct->psNext)
 	{
 		if ((psStruct->getStats()->type == structType ||
-         structType == STRUCTURE_TYPE::ANY) && psStruct->getState() == STRUCTURE_STATE::BUILT) {
+         structType == STRUCTURE_TYPE::COUNT) && psStruct->getState() == STRUCTURE_STATE::BUILT) {
 			if (psStruct != CurrentStruct)
 			{
 				clearSelection();
@@ -2853,13 +2819,11 @@ Droid* intGotoNextDroidType(Droid* CurrDroid, DROID_TYPE droidType, bool AllowGr
 	Droid* psDroid;
 	bool Found = false;
 
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return nullptr;
 	}
 
-	if (CurrDroid != nullptr)
-	{
+	if (CurrDroid != nullptr) {
 		CurrentDroid = CurrDroid;
 	}
 
@@ -2895,32 +2859,26 @@ Droid* intGotoNextDroidType(Droid* CurrDroid, DROID_TYPE droidType, bool AllowGr
 	}
 
 	// Start back at the beginning?
-	if ((!Found) && (CurrentDroid != nullptr))
-	{
-		for (psDroid = apsDroidLists[selectedPlayer]; (psDroid != CurrentDroid) && (psDroid != nullptr); psDroid =
-		     psDroid->psNext)
+	if ((!Found) && (CurrentDroid != nullptr)) {
+		for (auto& psDroid : apsDroidLists[selectedPlayer])
 		{
-			if ((psDroid->getType() == droidType ||
-           ((droidType == DROID_TYPE::ANY) && !isTransporter(*psDroid))) &&
-				((psDroid->group == UBYTE_MAX) || AllowGroup))
-			{
-				if (psDroid != CurrentDroid)
-				{
-					clearSelection();
-					SelectDroid(psDroid);
-					CurrentDroid = psDroid;
-					Found = true;
-					break;
-				}
+      if (&psDroid == CurrentDroid) continue;
+
+			if ((psDroid.getType() == droidType ||
+           ((droidType == DROID_TYPE::ANY) && !isTransporter(psDroid))) &&
+				((psDroid.group == UBYTE_MAX) || AllowGroup)) {
+        clearSelection();
+        SelectDroid(&psDroid);
+        CurrentDroid = &psDroid;
+        Found = true;
+        break;
 			}
 		}
 	}
 
-	if (Found)
-	{
+	if (Found) {
 		// Center it on screen.
-		if (CurrentDroid)
-		{
+		if (CurrentDroid) {
 			intSetMapPos(CurrentDroid->getPosition().x, CurrentDroid->getPosition().y);
 		}
 		return CurrentDroid;

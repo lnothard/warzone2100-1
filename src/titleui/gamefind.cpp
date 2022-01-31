@@ -27,8 +27,6 @@
 #include "titleui.h"
 #include "lib/ivis_opengl/bitimage.h"
 #include "lib/ivis_opengl/pieblitfunc.h"
-#include "lib/ivis_opengl/piemode.h"
-#include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/screen.h"
 #include "lib/netplay/netplay.h"
 #include "lib/widget/scrollablelist.h"
@@ -38,8 +36,6 @@
 #include "../mission.h"
 #include "../console.h"
 #include "../multiint.h"
-#include "../multilimit.h"
-#include "../multistat.h"
 #include "../warzoneconfig.h"
 #include "../frend.h"
 #include "../loadsave.h"			// for blueboxes.
@@ -171,7 +167,7 @@ TITLECODE WzGameFindTitleUI::run()
 		if (!queuedRefreshOfGamesList)
 		{
 			clearActiveConsole();
-			addConsoleMessage(_("Refreshing..."), DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
+			addConsoleMessage(_("Refreshing..."), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, NOTIFY_MESSAGE);
 			queuedRefreshOfGamesList = true;
 		}
 	}
@@ -234,7 +230,7 @@ void WzGameFindTitleUI::addConsoleBox()
 	setConsolePermanence(true, true);
 	setConsoleLineInfo(3); // use x lines on chat window
 
-	addConsoleMessage(_("Connecting to the lobby server..."), DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
+	addConsoleMessage(_("Connecting to the lobby server..."), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, NOTIFY_MESSAGE);
 	displayConsoleMessages();
 }
 
@@ -349,7 +345,7 @@ public:
 
 		if (getLobbyError() != ERROR_NOERROR && bMultiPlayer && !NetPlay.bComms)
 		{
-			addConsoleMessage(_("Can't connect to lobby server!"), DEFAULT_JUSTIFY, NOTIFY_MESSAGE);
+			addConsoleMessage(_("Can't connect to lobby server!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, NOTIFY_MESSAGE);
 			return;
 		}
 
@@ -786,7 +782,7 @@ void WzGameFindTitleUI::addGames()
 	if (NetPlay.MOTD && strlen(NetPlay.MOTD))
 	{
 		permitNewConsoleMessages(true);
-		addConsoleMessage(NetPlay.MOTD, DEFAULT_JUSTIFY, SYSTEM_MESSAGE, false, MAX_CONSOLE_MESSAGE_DURATION);
+		addConsoleMessage(NetPlay.MOTD, CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE, false, MAX_CONSOLE_MESSAGE_DURATION);
 	}
 	setConsolePermanence(false, false);
 	updateConsoleMessages();

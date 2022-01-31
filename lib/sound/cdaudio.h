@@ -89,6 +89,6 @@ void cdAudio_Pause();
 void cdAudio_Resume();
 
 std::shared_ptr<const WZ_TRACK> cdAudio_GetCurrentTrack();
-void cdAudio_RegisterForEvents(std::shared_ptr<CDAudioEventSink> musicEventSink);
+void cdAudio_RegisterForEvents(const std::shared_ptr<CDAudioEventSink>& musicEventSink);
 
 #endif // __INCLUDED_LIB_SOUND_CDAUDIO_H__

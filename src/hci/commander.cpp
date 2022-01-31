@@ -19,11 +19,11 @@ void CommanderController::updateCommandersList()
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "selectedPlayer = %" PRIu32 "", selectedPlayer);
 
-	for (Droid* droid = apsDroidLists[selectedPlayer]; droid; droid = droid->psNext)
+	for (auto& droid : apsDroidLists[selectedPlayer])
 	{
-		if (droid->type == DROID_COMMAND && droid->died == 0)
+		if (droid.getType() == DROID_TYPE::COMMAND && droid.damageManager->getTimeOfDeath() == 0)
 		{
-			commanders.push_back(droid);
+			commanders.push_back(&droid);
 		}
 	}
 
@@ -33,7 +33,7 @@ void CommanderController::updateCommandersList()
 StructureStats* CommanderController::getObjectStatsAt(size_t objectIndex) const
 {
 	auto assignedFactory = getAssignedFactoryAt(objectIndex);
-	return assignedFactory == nullptr ? nullptr : assignedFactory->pStructureType;
+	return assignedFactory == nullptr ? nullptr : assignedFactory->getStats();
 }
 
 Structure* CommanderController::getAssignedFactoryAt(size_t objectIndex) const
@@ -63,7 +63,7 @@ void CommanderController::clearData()
 	setHighlightedObject(nullptr);
 }
 
-void CommanderController::setHighlightedObject(PlayerOwnedObject * object)
+void CommanderController::setHighlightedObject(BaseObject* object)
 {
 	if (object == nullptr)
 	{
@@ -71,9 +71,9 @@ void CommanderController::setHighlightedObject(PlayerOwnedObject * object)
 		return;
 	}
 
-	auto commander = castDroid(object);
+	auto commander = dynamic_cast<Droid*>(object);
 	ASSERT_NOT_NULLPTR_OR_RETURN(, commander);
-	ASSERT_OR_RETURN(, commander->type == DROID_COMMAND, "Droid is not a commander");
+	ASSERT_OR_RETURN(, commander->getType() == DROID_TYPE::COMMAND, "Droid is not a commander");
 	highlightedCommander = commander;
 }
 
@@ -122,8 +122,7 @@ protected:
 		updateLayout();
 		auto droid = controller->getObjectAt(objectIndex);
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
-		if (isDead(droid))
-		{
+		if (droid->damageManager->isDead()) {
 			ASSERT_FAILURE(!isDead(droid), "!isDead(droid)", AT_MACRO, __FUNCTION__, "Droid is dead");
 			// ensure the backing information is refreshed before the next draw
 			intRefreshScreen();
@@ -142,15 +141,18 @@ protected:
 		updateExperienceStarsLabel(droid);
 	}
 
-	void updateGroupSizeLabel(Droid* droid)
+	void updateGroupSizeLabel(Droid const* droid)
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
-		auto text = astringf("%u/%u", droid->group ? droid->group->getNumMembers() : 0, cmdDroidMaxGroup(droid));
+		auto text = astringf("%u/%u", droid->getGroup()
+                                          ? droid->getGroup()->getMembers().size()
+                                          : 0, cmdDroidMaxGroup(droid));
+
 		groupSizeLabel->setString(WzString::fromUtf8(text));
 		groupSizeLabel->show();
 	}
 
-	void updateExperienceStarsLabel(Droid* droid)
+	void updateExperienceStarsLabel(Droid const* droid)
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		int numStars = std::max((int)getDroidLevel(droid) - 1, 0);
@@ -182,8 +184,7 @@ private:
 	typedef StatsButton BaseWidget;
 
 protected:
-	CommanderStatsButton()
-	= default;
+	CommanderStatsButton() = default;
 
 public:
 	static std::shared_ptr<CommanderStatsButton> make(const std::shared_ptr<CommanderController>& controller,
@@ -245,8 +246,7 @@ private:
 		auto index = 0;
 		for (auto i = 0; i < maxAssignedFactories; ++i)
 		{
-			if (droid->secondary_order & (1 << (i + factoryTypeShift)))
-			{
+			if (droid->getSecondaryOrder() & (1 << (i + factoryTypeShift))) {
 				text[index++] = '1' + i;
 			}
 		}
@@ -289,7 +289,7 @@ private:
 		auto highlighted = controller->getHighlightedObject();
 
 		// prevent highlighting a commander when another commander is already selected
-		if (droid == highlighted || (highlighted && !highlighted->selected))
+		if (droid == highlighted || (highlighted && !highlighted->damageManager->isSelected()))
 		{
 			controller->setHighlightedObject(droid);
 			controller->displayOrderForm();

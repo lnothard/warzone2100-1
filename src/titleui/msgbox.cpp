@@ -32,10 +32,10 @@
 #include "titleui.h"
 #include "lib/ivis_opengl/screen.h"
 #include "lib/netplay/netplay.h"
-#include "../multiplay.h"
 #include "../multiint.h"
 #include "../warzoneconfig.h"
 #include "../frend.h"
+#include "src/hci.h"
 
 WzMsgBoxTitleUI::WzMsgBoxTitleUI(WzString text, std::shared_ptr<WzTitleUI> next) : text(std::move(text)), next(std::move(next))
 {

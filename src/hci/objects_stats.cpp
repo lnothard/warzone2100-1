@@ -15,14 +15,14 @@ void BaseObjectsController::clearStructureSelection()
 {
 	for (auto structure = interfaceStructList(); structure != nullptr; structure = structure->psNext)
 	{
-		structure->selected = false;
+		structure->damageManager->setSelected(false);
 	}
 }
 
-void BaseObjectsController::selectObject(PlayerOwnedObject * object)
+void BaseObjectsController::selectObject(BaseObject * object)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(, object);
-	object->selected = true;
+	object->damageManager->setSelected(true);
 	triggerEventSelected();
 	jsDebugSelected(object);
 	setHighlightedObject(object);

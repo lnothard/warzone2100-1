@@ -21,7 +21,6 @@
 #include "lib/framework/frameresource.h"
 #include "lib/framework/math_ext.h"
 #include "lib/gamelib/gtime.h"
-#include "lib/ivis_opengl/pietypes.h"
 #include "lib/framework/physfs_ext.h"
 
 #include "tracklib.h"
@@ -29,7 +28,6 @@
 #include "audio.h"
 #include "audio_id.h"
 #include "openal_error.h"
-#include "mixer.h"
 #include "src/basedef.h"
 // defines
 #define NO_SAMPLE				- 2
@@ -88,7 +86,7 @@ unsigned int audio_GetSampleListCount()
 // =======================================================================================================================
 // =======================================================================================================================
 //
-bool audio_Disabled(void)
+bool audio_Disabled()
 {
 	return !g_bAudioEnabled;
 }
@@ -120,7 +118,7 @@ bool audio_Init(AUDIO_CALLBACK pStopTrackCallback, HRTFMode hrtf, bool really_en
 // =======================================================================================================================
 // =======================================================================================================================
 //
-bool audio_Shutdown(void)
+bool audio_Shutdown()
 {
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	AUDIO_SAMPLE	*psSample = nullptr, *psSampleTemp = nullptr;
@@ -381,7 +379,6 @@ void audio_QueueTrack(SDWORD iTrack)
 	}
 
 	audio_QueueSample(iTrack);
-	return;
 }
 
 //*
@@ -497,7 +494,7 @@ void audio_QueueTrackPos(SDWORD iTrack, SDWORD iX, SDWORD iY, SDWORD iZ)
 // =======================================================================================================================
 // =======================================================================================================================
 //
-static void audio_UpdateQueue(void)
+static void audio_UpdateQueue()
 {
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	AUDIO_SAMPLE	*psSample;
@@ -606,7 +603,6 @@ void audio_Update()
 	}
 
 	sound_Update();
-	return;
 }
 
 
@@ -811,7 +807,7 @@ bool audio_PlayObjStaticTrack(BaseObject *psObj, int iTrack)
 // =======================================================================================================================
 // =======================================================================================================================
 //
-bool audio_PlayObjStaticTrackCallback(SIMPLE_OBJECT *psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
+bool audio_PlayObjStaticTrackCallback(BaseObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
 {
 	//~~~~~~~~~~~~~~~
 	SDWORD	iX, iY, iZ;
@@ -991,7 +987,7 @@ void audio_PlayTrack(int iTrack)
 // =======================================================================================================================
 // =======================================================================================================================
 //
-void audio_PauseAll(void)
+void audio_PauseAll()
 {
 	// return if audio not enabled
 	if (g_bAudioEnabled == false)
@@ -1007,7 +1003,7 @@ void audio_PauseAll(void)
 // =======================================================================================================================
 // =======================================================================================================================
 //
-void audio_ResumeAll(void)
+void audio_ResumeAll()
 {
 	// return if audio not enabled
 	if (g_bAudioEnabled == false)
@@ -1023,7 +1019,7 @@ void audio_ResumeAll(void)
 // =======================================================================================================================
 // =======================================================================================================================
 //
-void audio_StopAll(void)
+void audio_StopAll()
 {
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	AUDIO_SAMPLE *psSample;

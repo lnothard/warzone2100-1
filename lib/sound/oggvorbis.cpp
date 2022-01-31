@@ -197,7 +197,7 @@ struct OggVorbisDecoderState *sound_CreateOggVorbisDecoder(PHYSFS_file *PHYSFS_f
 {
 	int error;
 
-	struct OggVorbisDecoderState *decoder = (struct OggVorbisDecoderState *)malloc(sizeof(struct OggVorbisDecoderState));
+	auto decoder = (struct OggVorbisDecoderState *)malloc(sizeof(struct OggVorbisDecoderState));
 	if (decoder == nullptr)
 	{
 		debug(LOG_FATAL, "Out of memory");

@@ -3,6 +3,7 @@
 
 #include "../hci.h"
 #include "../intdisplay.h"
+#include "src/intimage.h"
 
 #define STAT_GAP	   2
 #define STAT_BUTWIDTH  60
@@ -23,14 +24,14 @@ public:
 	virtual bool showInterface() = 0;
 	virtual void prepareToClose();
 	virtual void clearData() = 0;
-	void jumpToObject(PlayerOwnedObject * object);
+	void jumpToObject(BaseObject * object);
 	void updateHighlighted();
 	void clearSelection();
 	void clearStructureSelection();
-	void selectObject(PlayerOwnedObject * object);
+	void selectObject(BaseObject* object);
 
-	virtual PlayerOwnedObject * getHighlightedObject() const = 0;
-	virtual void setHighlightedObject(PlayerOwnedObject * object) = 0;
+	virtual BaseObject * getHighlightedObject() const = 0;
+	virtual void setHighlightedObject(BaseObject * object) = 0;
 
 	void closeInterface()
 	{

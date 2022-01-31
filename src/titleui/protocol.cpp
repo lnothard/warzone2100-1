@@ -34,6 +34,7 @@
 #include "../warzoneconfig.h"
 #include "../frend.h"
 #include "lib/widget/checkbox.h"
+#include "src/hci.h"
 
 WzProtocolTitleUI::WzProtocolTitleUI()
 = default;

@@ -21,7 +21,7 @@
 #include "lib/framework/frame.h"
 #include "lib/framework/math_ext.h"
 
-#include <string.h>
+#include <cstring>
 #include <physfs.h>
 #include "lib/framework/physfs_ext.h"
 
@@ -73,7 +73,7 @@ std::string to_string(MusicGameMode mode)
 
 // MARK: - CDAudioEventSink
 
-CDAudioEventSink::~CDAudioEventSink() { }
+CDAudioEventSink::~CDAudioEventSink() = default;
 void CDAudioEventSink::startedPlayingTrack(const std::shared_ptr<const WZ_TRACK>& track) { }
 void CDAudioEventSink::trackEnded(const std::shared_ptr<const WZ_TRACK>& track) { }
 void CDAudioEventSink::musicStopped() { }
@@ -129,7 +129,7 @@ bool cdAudio_Open(const char *user_musicdir)
 	return true;
 }
 
-void cdAudio_Close(void)
+void cdAudio_Close()
 {
 	debug(LOG_SOUND, "called");
 	cdAudio_Stop();
@@ -183,7 +183,7 @@ static float cdAudio_CalculateTrackVolume(const std::shared_ptr<const WZ_TRACK>&
 	return track_volume;
 }
 
-static bool cdAudio_OpenTrack(std::shared_ptr<const WZ_TRACK> track)
+static bool cdAudio_OpenTrack(const std::shared_ptr<const WZ_TRACK>& track)
 {
 	if (!music_initialized)
 	{
@@ -399,7 +399,7 @@ std::shared_ptr<const WZ_TRACK> cdAudio_GetCurrentTrack()
 	return currentTrack;
 }
 
-void cdAudio_RegisterForEvents(std::shared_ptr<CDAudioEventSink> musicEventSink)
+void cdAudio_RegisterForEvents(const std::shared_ptr<CDAudioEventSink>& musicEventSink)
 {
 	if (!musicEventSink) { return; }
 	if (musicEventSink->unregisterEventSink()) { return; }

@@ -27,6 +27,7 @@
 #include "lib/framework/input.h"
 
 #include "../keybind.h"
+#include "../structure.h"
 
 // Definitions/Configuration for all mappable Key Functions
 //
@@ -369,16 +370,16 @@ static void initializeKeyFunctions(std::vector<KeyFunctionInfo>& entries)
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_KP_STAR}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_JumpToUnits(DROID_REPAIR), "JumpToRepairUnits", N_("View next Repair Unit"),
+	                                     kf_JumpToUnits(DROID_TYPE::REPAIRER), "JumpToRepairUnits", N_("View next Repair Unit"),
 	                                     {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_JumpToUnits(DROID_CONSTRUCT), "JumpToConstructorUnits",
+	                                     kf_JumpToUnits(DROID_TYPE::CONSTRUCT), "JumpToConstructorUnits",
 	                                     N_("View next Truck"), {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_JumpToUnits(DROID_SENSOR), "JumpToSensorUnits", N_("View next Sensor Unit"),
+	                                     kf_JumpToUnits(DROID_TYPE::SENSOR), "JumpToSensorUnits", N_("View next Sensor Unit"),
 	                                     {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_JumpToUnits(DROID_COMMAND), "JumpToCommandUnits", N_("View next Commander"),
+	                                     kf_JumpToUnits(DROID_TYPE::COMMAND), "JumpToCommandUnits", N_("View next Commander"),
 	                                     {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_ToggleOverlays,
 	                                     "ToggleOverlays", N_("Toggle Overlays"), {
@@ -402,55 +403,55 @@ static void initializeKeyFunctions(std::vector<KeyFunctionInfo>& entries)
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_B}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_ATTACK_LEVEL, DSS_ALEV_NEVER), "SetDroidAttackCease",
+	                                     kf_SetDroid(SECONDARY_ORDER::ATTACK_LEVEL, DSS_ALEV_NEVER), "SetDroidAttackCease",
 	                                     N_("Hold Fire"), {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_C}}}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_JumpToUnassignedUnits,
 	                                     "JumpToUnassignedUnits", N_("View Unassigned Units"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_D}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_ATTACK_LEVEL, DSS_ALEV_ATTACKED), "SetDroidAttackReturn",
+	                                     kf_SetDroid(SECONDARY_ORDER::ATTACK_LEVEL, DSS_ALEV_ATTACKED), "SetDroidAttackReturn",
 	                                     N_("Return Fire"), {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_E}}}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_ATTACK_LEVEL, DSS_ALEV_ALWAYS), "SetDroidAttackAtWill",
+	                                     kf_SetDroid(SECONDARY_ORDER::ATTACK_LEVEL, DSS_ALEV_ALWAYS), "SetDroidAttackAtWill",
 	                                     N_("Fire at Will"), {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_F}}}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_HALTTYPE, DSS_HALT_GUARD), "SetDroidMoveGuard",
+	                                     kf_SetDroid(SECONDARY_ORDER::HALT_TYPE, DSS_HALT_GUARD), "SetDroidMoveGuard",
 	                                     N_("Guard Position"), {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_G}}}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_RETURN_TO_LOC, DSS_RTL_BASE), "SetDroidReturnToBase",
+	                                     kf_SetDroid(SECONDARY_ORDER::RETURN_TO_LOCATION, DSS_RTL_BASE), "SetDroidReturnToBase",
 	                                     N_("Return to HQ"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LSHIFT, KEY_CODE::KEY_H}}
 	                                     }));
-	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_OrderDroid(DORDER_HOLD),
+	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_OrderDroid(ORDER_TYPE::HOLD),
 	                                     "SetDroidOrderHold", N_("Hold Position"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_H}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_ATTACK_RANGE, DSS_ARANGE_OPTIMUM), "SetDroidRangeOptimum",
+	                                     kf_SetDroid(SECONDARY_ORDER::ATTACK_RANGE, DSS_ARANGE_OPTIMUM), "SetDroidRangeOptimum",
 	                                     N_("Optimum Range"), {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_I}}}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_ATTACK_RANGE, DSS_ARANGE_SHORT), "SetDroidRangeShort",
+	                                     kf_SetDroid(SECONDARY_ORDER::ATTACK_RANGE, DSS_ARANGE_SHORT), "SetDroidRangeShort",
 	                                     N_("Short Range"), {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_O}}}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_HALTTYPE, DSS_HALT_PURSUE), "SetDroidMovePursue", N_("Pursue"),
+	                                     kf_SetDroid(SECONDARY_ORDER::HALT_TYPE, DSS_HALT_PURSUE), "SetDroidMovePursue", N_("Pursue"),
 	                                     {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_P}}}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_PATROL, DSS_PATROL_SET), "SetDroidMovePatrol", N_("Patrol"), {
+	                                     kf_SetDroid(SECONDARY_ORDER::PATROL, DSS_PATROL_SET), "SetDroidMovePatrol", N_("Patrol"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_Q}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_RETURN_TO_LOC, DSS_RTL_REPAIR), "SetDroidGoForRepair",
+	                                     kf_SetDroid(SECONDARY_ORDER::RETURN_TO_LOCATION, DSS_RTL_REPAIR), "SetDroidGoForRepair",
 	                                     N_("Return For Repair"), {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_R}}}));
-	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_OrderDroid(DORDER_STOP),
+	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_OrderDroid(ORDER_TYPE::STOP),
 	                                     "SetDroidOrderStop", N_("Stop Droid"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_S}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_RETURN_TO_LOC, DSS_RTL_TRANSPORT), "SetDroidGoToTransport",
+	                                     kf_SetDroid(SECONDARY_ORDER::RETURN_TO_LOCATION, DSS_RTL_TRANSPORT), "SetDroidGoToTransport",
 	                                     N_("Go to Transport"), {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_T}}}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_ATTACK_RANGE, DSS_ARANGE_LONG), "SetDroidRangeLong",
+	                                     kf_SetDroid(SECONDARY_ORDER::ATTACK_RANGE, DSS_ARANGE_LONG), "SetDroidRangeLong",
 	                                     N_("Long Range"), {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_U}}}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SendGlobalMessage,
 	                                     "SendGlobalMessage", N_("Send Global Text Message"), {
@@ -486,92 +487,92 @@ static void initializeKeyFunctions(std::vector<KeyFunctionInfo>& entries)
 	                                     }));
 	// Some extra non QWERTY mappings but functioning in same way
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_REPAIR_LEVEL, DSS_REPLEV_LOW), "SetDroidRetreatMedium",
+	                                     kf_SetDroid(SECONDARY_ORDER::REPAIR_LEVEL, DSS_REPLEV_LOW), "SetDroidRetreatMedium",
 	                                     N_("Retreat at Medium Damage"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_COMMA}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_REPAIR_LEVEL, DSS_REPLEV_HIGH), "SetDroidRetreatHeavy",
+	                                     kf_SetDroid(SECONDARY_ORDER::REPAIR_LEVEL, DSS_REPLEV_HIGH), "SetDroidRetreatHeavy",
 	                                     N_("Retreat at Heavy Damage"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_FULLSTOP}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_REPAIR_LEVEL, DSS_REPLEV_NEVER), "SetDroidRetreatNever",
+	                                     kf_SetDroid(SECONDARY_ORDER::REPAIR_LEVEL, DSS_REPLEV_NEVER), "SetDroidRetreatNever",
 	                                     N_("Do or Die!"), {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_FORWARDSLASH}}}));
 	// In game mappings - COMBO (CTRL + LETTER) presses
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_ALL_COMBAT), "SelectAllCombatUnits",
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_ALL_COMBAT), "SelectAllCombatUnits",
 	                                     N_("Select all Combat Units"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_A}}
 	                                     }));
-	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SelectUnits(DST_CYBORG),
+	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SelectUnits(SELECTIONTYPE::DST_CYBORG),
 	                                     "SelectAllCyborgs", N_("Select all Cyborgs"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_C}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_ALL_DAMAGED), "SelectAllDamaged",
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_ALL_DAMAGED), "SelectAllDamaged",
 	                                     N_("Select all Heavily Damaged Units"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_D}}
 	                                     }));
 	/* xgettext:no-c-format */
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_ALL_LAND_MILDLY_OR_NOT_DAMAGED),
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_ALL_LAND_MILDLY_OR_NOT_DAMAGED),
 	                                     "SelectAllLandMildNoDamage",
 	                                     N_("Select all Combat Land units with health >50% and no Groups."), {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_HALF_TRACKED), "SelectAllHalfTracked",
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_HALF_TRACKED), "SelectAllHalfTracked",
 	                                     N_("Select all Half-tracks"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_F}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNoGroupUnits(DST_HALF_TRACKED), "SelectAllHalfTrackedNG",
+	                                     kf_SelectNoGroupUnits(SELECTIONTYPE::DST_HALF_TRACKED), "SelectAllHalfTrackedNG",
 	                                     N_("Select all Half-tracks without group"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LALT, KEY_CODE::KEY_F}}
 	                                     }));
-	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SelectUnits(DST_HOVER),
+	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SelectUnits(SELECTIONTYPE::DST_HOVER),
 	                                     "SelectAllHovers", N_("Select all Hovers"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_H}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SetDroid(DSO_RECYCLE, DSS_RECYCLE_SET), "SetDroidRecycle",
+	                                     kf_SetDroid(SECONDARY_ORDER::RECYCLE, DSS_RECYCLE_SET), "SetDroidRecycle",
 	                                     N_("Return for Recycling"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_R}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_UNUSED, DS_ALL_UNITS, true), "SelectAllOnScreenUnits",
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_UNUSED, SELECTION_CLASS::DS_ALL_UNITS, true), "SelectAllOnScreenUnits",
 	                                     N_("Select all Units on Screen"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_S}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_TRACKED), "SelectAllTracked", N_("Select all Tracks"), {
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_TRACKED), "SelectAllTracked", N_("Select all Tracks"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_T}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNoGroupUnits(DST_TRACKED), "SelectAllTrackedNG",
+	                                     kf_SelectNoGroupUnits(SELECTIONTYPE::DST_TRACKED), "SelectAllTrackedNG",
 	                                     N_("Select all Tracks without group"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LALT, KEY_CODE::KEY_D}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_UNUSED, DS_ALL_UNITS), "SelectAllUnits",
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_UNUSED, SELECTION_CLASS::DS_ALL_UNITS), "SelectAllUnits",
 	                                     N_("Select EVERY unit"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_U}}
 	                                     }));
-	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SelectUnits(DST_VTOL),
+	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SelectUnits(SELECTIONTYPE::DST_VTOL),
 	                                     "SelectAllVTOLs", N_("Select all VTOLs"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_V}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_VTOL_ARMED), "SelectAllArmedVTOLs",
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_VTOL_ARMED), "SelectAllArmedVTOLs",
 	                                     N_("Select all fully-armed VTOLs"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LSHIFT, KEY_CODE::KEY_V}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNoGroupUnits(DST_VTOL_ARMED), "SelectAllArmedVTOLsNG",
+	                                     kf_SelectNoGroupUnits(SELECTIONTYPE::DST_VTOL_ARMED), "SelectAllArmedVTOLsNG",
 	                                     N_("Select all fully-armed VTOLs without group"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LALT, KEY_CODE::KEY_V}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_WHEELED), "SelectAllWheeled", N_("Select all Wheels"), {
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_WHEELED), "SelectAllWheeled", N_("Select all Wheels"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_W}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::DEBUG_MISC, KeyMappingType::HIDDEN, kf_FrameRate, "FrameRate",
@@ -579,63 +580,63 @@ static void initializeKeyFunctions(std::vector<KeyFunctionInfo>& entries)
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_Y}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_ALL_SAME), "SelectAllSameType",
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_ALL_SAME), "SelectAllSameType",
 	                                     N_("Select all units with the same components"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LCTRL, KEY_CODE::KEY_Z}}
 	                                     }));
 	// In game mappings - COMBO (SHIFT + LETTER) presses
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_ALL_COMBAT_CYBORG), "SelectAllCombatCyborgs",
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_ALL_COMBAT_CYBORG), "SelectAllCombatCyborgs",
 	                                     N_("Select all Combat Cyborgs"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LSHIFT, KEY_CODE::KEY_C}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNoGroupUnits(DST_ALL_COMBAT_CYBORG), "SelectAllCombatCyborgsNG",
+	                                     kf_SelectNoGroupUnits(SELECTIONTYPE::DST_ALL_COMBAT_CYBORG), "SelectAllCombatCyborgsNG",
 	                                     N_("Select all Combat Cyborgs without group"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LALT, KEY_CODE::KEY_C}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_ENGINEER), "SelectAllEngineers", N_("Select all Engineers"),
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_ENGINEER), "SelectAllEngineers", N_("Select all Engineers"),
 	                                     {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LSHIFT, KEY_CODE::KEY_E}}}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_ALL_COMBAT_LAND), "SelectAllLandCombatUnits",
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_ALL_COMBAT_LAND), "SelectAllLandCombatUnits",
 	                                     N_("Select all Land Combat Units"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LSHIFT, KEY_CODE::KEY_G}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNoGroupUnits(DST_ALL_COMBAT_LAND), "SelectAllLandCombatUnitsNG",
+	                                     kf_SelectNoGroupUnits(SELECTIONTYPE::DST_ALL_COMBAT_LAND), "SelectAllLandCombatUnitsNG",
 	                                     N_("Select all Land Combat Units without group"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LALT, KEY_CODE::KEY_G}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_MECHANIC), "SelectAllMechanics", N_("Select all Mechanics"),
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_MECHANIC), "SelectAllMechanics", N_("Select all Mechanics"),
 	                                     {{KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LSHIFT, KEY_CODE::KEY_M}}}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_TRANSPORTER), "SelectAllTransporters",
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_TRANSPORTER), "SelectAllTransporters",
 	                                     N_("Select all Transporters"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LSHIFT, KEY_CODE::KEY_P}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectUnits(DST_REPAIR_TANK), "SelectAllRepairTanks",
+	                                     kf_SelectUnits(SELECTIONTYPE::DST_REPAIR_TANK), "SelectAllRepairTanks",
 	                                     N_("Select all Repair Tanks"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LSHIFT, KEY_CODE::KEY_R}}
 	                                     }));
-	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SelectUnits(DST_SENSOR),
+	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SelectUnits(SELECTIONTYPE::DST_SENSOR),
 	                                     "SelectAllSensorUnits", N_("Select all Sensor Units"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LSHIFT, KEY_CODE::KEY_S}}
 	                                     }));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNoGroupUnits(DST_SENSOR), "SelectAllSensorUnitsNG",
+	                                     kf_SelectNoGroupUnits(SELECTIONTYPE::DST_SENSOR), "SelectAllSensorUnitsNG",
 	                                     N_("Select all Sensor Units without group"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LALT, KEY_CODE::KEY_J}}
 	                                     }));
-	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SelectUnits(DST_TRUCK),
+	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SelectUnits(SELECTIONTYPE::DST_TRUCK),
 	                                     "SelectAllTrucks", N_("Select all Trucks"), {
 		                                     {KeyMappingSlot::PRIMARY, {KEY_CODE::KEY_LSHIFT, KEY_CODE::KEY_T}}
 	                                     }));
 	// SELECT PLAYERS - DEBUG ONLY
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNextFactory(REF_FACTORY), "SelectNextFactory",
+	                                     kf_SelectNextFactory(STRUCTURE_TYPE::FACTORY), "SelectNextFactory",
 	                                     N_("Select next Factory"), {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE, kf_SelectNextResearch(),
 	                                     "SelectNextResearch", N_("Select next Research Facility"), {}));
@@ -643,13 +644,13 @@ static void initializeKeyFunctions(std::vector<KeyFunctionInfo>& entries)
 	                                     kf_SelectNextPowerStation(), "SelectNextPowerStation",
 	                                     N_("Select next Power Generator"), {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNextFactory(REF_CYBORG_FACTORY), "SelectNextCyborgFactory",
+	                                     kf_SelectNextFactory(STRUCTURE_TYPE::CYBORG_FACTORY), "SelectNextCyborgFactory",
 	                                     N_("Select next Cyborg Factory"), {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNextFactory(REF_VTOL_FACTORY), "SelectNextVtolFactory",
+	                                     kf_SelectNextFactory(STRUCTURE_TYPE::VTOL_FACTORY), "SelectNextVtolFactory",
 	                                     N_("Select next VTOL Factory"), {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNextFactory(REF_FACTORY, true), "JumpNextFactory",
+	                                     kf_SelectNextFactory(STRUCTURE_TYPE::FACTORY, true), "JumpNextFactory",
 	                                     N_("Jump to next Factory"), {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
 	                                     kf_SelectNextResearch(true), "JumpNextResearch",
@@ -658,10 +659,10 @@ static void initializeKeyFunctions(std::vector<KeyFunctionInfo>& entries)
 	                                     kf_SelectNextPowerStation(true), "JumpNextPowerStation",
 	                                     N_("Jump to next Power Generator"), {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNextFactory(REF_CYBORG_FACTORY, true), "JumpNextCyborgFactory",
+	                                     kf_SelectNextFactory(STRUCTURE_TYPE::CYBORG_FACTORY, true), "JumpNextCyborgFactory",
 	                                     N_("Jump to next Cyborg Factory"), {}));
 	entries.emplace_back(KeyFunctionInfo(InputContext::GAMEPLAY, KeyMappingType::ASSIGNABLE,
-	                                     kf_SelectNextFactory(REF_VTOL_FACTORY, true), "JumpNextVtolFactory",
+	                                     kf_SelectNextFactory(STRUCTURE_TYPE::VTOL_FACTORY, true), "JumpNextVtolFactory",
 	                                     N_("Jump to next VTOL Factory"), {}));
 	// Debug options
 	entries.emplace_back(KeyFunctionInfo(InputContext::BACKGROUND, KeyMappingType::HIDDEN, kf_ToggleDebugMappings,
