@@ -538,10 +538,10 @@ static void handleAreaDemolition()
                                                                  worldCoord2.y);
 	for (auto psObj : gridList)
 	{
-		if (psObj->type == OBJ_STRUCTURE && psObj->playerManager->isSelectedPlayer())
-		{
+		if (dynamic_cast<Structure*>(psObj) &&
+        psObj->playerManager->isSelectedPlayer()) {
 			// add demolish order to queue for every selected unit
-			orderSelectedObjAdd(selectedPlayer, (BaseObject *)psObj, true);
+			orderSelectedObjAdd(selectedPlayer, psObj, true);
 		}
 	}
 }
@@ -792,11 +792,12 @@ void processMouseClickInput()
 					}
 				}
 			}
-			else if (selection == SC_DROID_DEMOLISH)
-			{
+			else if (selection == SC_DROID_DEMOLISH) {
 				// Can't demolish allied objects, or something that isn't built yet
-				if (ObjAllied || (ObjUnderMouse && (ObjUnderMouse->type != OBJ_STRUCTURE || (((Structure*)ObjUnderMouse)
-					->getState() == STRUCTURE_STATE::BLUEPRINT_PLANNED)))) {
+				if (ObjAllied || (ObjUnderMouse &&
+             !dynamic_cast<Structure*>(ObjUnderMouse) ||
+                (dynamic_cast<Structure*>(ObjUnderMouse)->getState() == STRUCTURE_STATE::BLUEPRINT_PLANNED))) {
+
 					item = MT_BLOCKING;
 				}
 			}
@@ -873,9 +874,9 @@ void processMouseClickInput()
 				item = MT_BLOCKING;
 			}
 			// special droid at full health
-			if (arnMPointers[item][selection] == CURSOR_FIX && ObjUnderMouse && ObjUnderMouse->type == OBJ_DROID &&
-				!droidIsDamaged((Droid*)ObjUnderMouse))
-			{
+			if (arnMPointers[item][selection] == CURSOR_FIX &&
+          ObjUnderMouse && dynamic_cast<Droid*>(ObjUnderMouse) &&
+          !droidIsDamaged((Droid*)ObjUnderMouse)) {
 				item = MT_OWNDROID;
 			}
 			if ((arnMPointers[item][selection] == CURSOR_SELECT ||
@@ -1692,8 +1693,7 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 			//must be indirect weapon droid or VTOL weapon droid
 			if (psCurr.getType() == DROID_TYPE::WEAPON &&
           psCurr.damageManager->isSelected() &&
-          psCurr.asWeaps[0].nStat > 0 &&
-					(!proj_Direct(asWeaponStats + psCurr.asWeaps[0].nStat) ||
+					(!proj_Direct(psCurr.getWeapon(0)->getStats()) ||
            psCurr.isVtol()) &&
 					droidSensorDroidWeapon((BaseObject *)psDroid, &psCurr)) {
 				bSensorAssigned = true;
@@ -1744,7 +1744,7 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 		console(_("%s - Allied - Hitpoints %d/%d - Experience %d, %s"),
             droidGetName(psDroid), psDroid->damageManager->getHp(),
 		        psDroid->damageManager->getOriginalHp(),
-		        psDroid->getExperience() / 65536, getDroidLevelName(psDroid));
+		        psDroid->getExperience() / 65536, getDroidLevelName(psDroid).c_str());
 		FeedbackOrderGiven();
 	}
 }
@@ -2385,23 +2385,20 @@ static MOUSE_TARGET itemUnderMouse(BaseObject * * ppObjectUnderMouse)
 		psNotDroid = getTileBlueprintStructure(mouseTileX, mouseTileY);
 	}
 
-	if (psNotDroid != nullptr)
-	{
+	if (psNotDroid != nullptr) {
 		*ppObjectUnderMouse = (BaseObject *)psNotDroid;
 
-		if (psNotDroid->type == OBJ_FEATURE)
-		{
-			if ((((Feature*)psNotDroid)->getStats()->subType == FEATURE_TYPE::GEN_ARTE)
-				|| (((Feature*)psNotDroid)->getStats()->subType == FEATURE_TYPE::OIL_DRUM))
-			{
+		if (auto psFeat = dynamic_cast<Feature*>(psNotDroid)) {
+			if (psFeat->getStats()->subType == FEATURE_TYPE::GEN_ARTE ||
+          psFeat->getStats()->subType == FEATURE_TYPE::OIL_DRUM) {
 				retVal = MT_ARTIFACT;
 			}
-			else if (((Feature*)psNotDroid)->getStats()->damageable)
+			else if (psFeat->getStats()->damageable)
 			//make damageable features return 'target' mouse pointer
 			{
 				retVal = MT_DAMFEATURE;
 			}
-			else if (((Feature*)psNotDroid)->getStats()->subType == FEATURE_TYPE::OIL_RESOURCE)
+			else if (psFeat->getStats()->subType == FEATURE_TYPE::OIL_RESOURCE)
 			{
 				retVal = MT_RESOURCE;
 			}
@@ -2410,38 +2407,27 @@ static MOUSE_TARGET itemUnderMouse(BaseObject * * ppObjectUnderMouse)
 				retVal = MT_BLOCKING;
 			}
 		}
-		else if (psNotDroid->type == OBJ_STRUCTURE)
-		{
-			psStructure = (Structure*)psNotDroid;
-
-			if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psNotDroid->playerManager->getPlayer(), selectedPlayer))
-			{
-				if (psStructure->getState() == STRUCTURE_STATE::BEING_BUILT || isBlueprint(psStructure))
-				{
+		else if (auto psStructure = dynamic_cast<Structure*>(psNotDroid)) {
+			if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psNotDroid->playerManager->getPlayer(), selectedPlayer)) {
+				if (psStructure->getState() == STRUCTURE_STATE::BEING_BUILT || isBlueprint(psStructure)) {
 					retVal = MT_OWNSTRINCOMP;
 				}
 				// repair center.
-				else if (psStructure->getStats()->type == STRUCTURE_TYPE::REPAIR_FACILITY)
-				{
-					if (buildingDamaged(psStructure))
-					{
+				else if (psStructure->getStats()->type == STRUCTURE_TYPE::REPAIR_FACILITY) {
+					if (buildingDamaged(psStructure)) {
 						retVal = MT_REPAIRDAM;
 					}
-					else
-					{
+					else {
 						retVal = MT_REPAIR;
 					}
 				}
 				//sensor tower
 				else if ((psStructure->getStats()->sensor_stats) &&
-                 (psStructure->getStats()->sensor_stats->location == LOC::TURRET))
-				{
-					if (buildingDamaged(psStructure))
-					{
+                 (psStructure->getStats()->sensor_stats->location == LOC::TURRET)) {
+					if (buildingDamaged(psStructure)) {
 						retVal = MT_SENSORSTRUCTDAM;
 					}
-					else
-					{
+					else {
 						retVal = MT_SENSORSTRUCT;
 					}
 				}
@@ -2523,10 +2509,10 @@ static SELECTION_TYPE establishSelection(unsigned _selectedPlayer)
 		// This works, uses the DroidSelectionWeights[] table to priorities the different
 		// droid types and find the dominant selection.
 		if (psDroid.damageManager->isSelected()) {
-			ASSERT_OR_RETURN(SC_INVALID, psDroid.getType() < NUM_DROID_WEIGHTS, "droidType exceeds NUM_DROID_WEIGHTS");
-			if (DroidSelectionWeights[psDroid.getType()] < CurrWeight)
+			ASSERT_OR_RETURN(SC_INVALID, (int)psDroid.getType() < NUM_DROID_WEIGHTS, "droidType exceeds NUM_DROID_WEIGHTS");
+			if (DroidSelectionWeights[(int)psDroid.getType()] < CurrWeight)
 			{
-				CurrWeight = DroidSelectionWeights[psDroid.getType()];
+				CurrWeight = DroidSelectionWeights[(int)psDroid.getType()];
 				psDominant = &psDroid;
 			}
 		}
@@ -2538,12 +2524,10 @@ static SELECTION_TYPE establishSelection(unsigned _selectedPlayer)
 		switch (psDominant->getType()) {
       using enum DROID_TYPE;
 		case WEAPON:
-			if (proj_Direct(asWeaponStats + psDominant->asWeaps[0].nStat))
-			{
+			if (proj_Direct(psDominant->getWeapon(0)->getStats())) {
 				selectionClass = SC_DROID_DIRECT;
 			}
-			else
-			{
+			else {
 				selectionClass = SC_DROID_INDIRECT;
 			}
 			break;

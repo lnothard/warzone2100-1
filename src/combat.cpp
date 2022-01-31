@@ -57,8 +57,8 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
   auto player = dynamic_cast<PlayerManager *>(psAttacker)->getPlayer();
   auto psDroid = dynamic_cast<Droid*>(psAttacker);
 	/* Don't shoot if the weapon_slot of a vtol is empty */
-	if (psDroid && psDroid->isVtol()
-		&& psWeap->ammoUsed >= getNumAttackRuns(psDroid, weapon_slot)) {
+	if (psDroid && psDroid->isVtol() &&
+      psWeap->getAmmoUsed() >= getNumAttackRuns(psDroid, weapon_slot)) {
 		objTrace(psAttacker->getId(), "VTOL slot %d is empty", weapon_slot);
 		return false;
 	}
@@ -74,7 +74,7 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 	// see if reloadable weapon.
 	if (psStats->upgraded[player].reloadTime) {
 		auto reloadTime = psWeap->timeLastFired + weaponReloadTime(psStats, player);
-		if (psWeap->ammo == 0) {// Out of ammo?
+		if (!psWeap->hasAmmo()) { // Out of ammo?
 			fireTime = std::max(fireTime, reloadTime); // Have to wait for weapon to reload before firing.
 			if (gameTime < fireTime) {
 				return false;

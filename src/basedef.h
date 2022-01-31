@@ -97,6 +97,7 @@ public:
   [[nodiscard]] WEAPON_SUBCLASS getLastHitWeapon() const;
   [[nodiscard]] unsigned getPeriodicalDamage() const;
   [[nodiscard]] unsigned getPeriodicalDamageStartTime() const;
+  [[nodiscard]] unsigned getTimeOfDeath() const;
   [[nodiscard]] bool isDead() const;
   [[nodiscard]] bool isProbablyDoomed(bool isDirectDamage) const;
 private:
@@ -161,6 +162,7 @@ public:
   void setPosition(Position pos) noexcept;
   void setHeight(int height) noexcept;
   void setPreviousLocation(Spacetime prevLoc);
+  void setImdShape(iIMDShape* imd);
 public:
   std::unique_ptr<DamageManager> damageManager;
   std::unique_ptr<PlayerManager> playerManager;

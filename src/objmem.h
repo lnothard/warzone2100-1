@@ -72,7 +72,7 @@ void killDroid(Droid* psDel);
 void freeAllDroids();
 
 /*Remove a single Droid from its list*/
-void removeDroid(Droid* psDroidToRemove, Droid* pList[MAX_PLAYERS]);
+void removeDroid(Droid* psDroidToRemove);
 
 /*Removes all droids that may be stored in the mission lists*/
 void freeAllMissionDroids();
@@ -111,8 +111,8 @@ void removeFlagPosition(FlagPosition* psDel);
 void freeAllFlagPositions();
 
 // Find a base object from it's id
-PlayerOwnedObject * getBaseObjFromData(unsigned id, unsigned player);
-PlayerOwnedObject * getBaseObjFromId(unsigned id);
+BaseObject* getBaseObjFromData(unsigned id, unsigned player);
+BaseObject* getBaseObjFromId(unsigned id);
 
 unsigned getRepairIdFromFlag(FlagPosition* psFlag);
 

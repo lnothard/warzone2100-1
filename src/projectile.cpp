@@ -45,7 +45,6 @@ void updateMultiStatsDamage(unsigned, unsigned, unsigned);
 void updateMultiStatsKills(BaseObject*, unsigned);
 int mapWidth, mapHeight;
 static const unsigned max_check_object_recursion = 4;
-int areaOfFire(const BaseObject *, const BaseObject*, int, bool);
 void cmdDroidUpdateExperience(Droid*, unsigned);
 void counterBatteryFire(BaseObject*, BaseObject*);
 Spacetime interpolateObjectSpacetime(const BaseObject *, unsigned);
@@ -463,10 +462,10 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacke
   // if droid or structure, set muzzle pitch
   if (psAttacker != nullptr && weapon_slot >= 0) {
     if (auto droid = dynamic_cast<Droid*>(psAttacker)) {
-      droid->getWeapons()[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
+      droid->weapons[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
     }
     else if (auto structure = dynamic_cast<Structure*>(psAttacker)) {
-      structure->getWeapons()[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
+      structure->weapons[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
     }
   }
 
@@ -1303,7 +1302,7 @@ void Projectile::proj_ImpactFunc()
                                psStats->weaponEffect, psCurr);
 
       debug(LOG_ATTACK, "Damage to object %d, player %d : %u", psCurr->getId(), psCurr->playerManager->getPlayer(), damage);
-      if (bMultiPlayer && pimpl->source != nullptr && psCurr->type != OBJ_FEATURE) {
+      if (bMultiPlayer && pimpl->source != nullptr && !dynamic_cast<Feature*>(psCurr)) {
         updateMultiStatsDamage(pimpl->source->playerManager->getPlayer(), psCurr->playerManager->getPlayer(), damage);
       }
 

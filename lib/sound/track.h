@@ -24,6 +24,7 @@
 #include "lib/framework/frame.h"
 #include <physfs.h>
 #include "sounddefs.h"
+#include "track.h"
 
 #include <AL/al.h>
 #include <functional>
@@ -59,7 +60,7 @@ struct AUDIO_SAMPLE
 	float                   fVol;           // computed volume of sample
 	bool                    bFinishedPlaying;
 	AUDIO_CALLBACK          pCallback;
-	SIMPLE_OBJECT          *psObj;
+	BaseObject          *psObj;
 	AUDIO_SAMPLE           *psPrev;
 	AUDIO_SAMPLE           *psNext;
 };

@@ -1996,7 +1996,8 @@ static void displayDynamicObjects(const glm::mat4& viewMatrix)
 		for (; list != nullptr; list = list->psNext)
 		{
 			auto psDroid = dynamic_cast<Droid*>(list);
-			if (!psDroid || (list->died != 0 && list->died < graphicsTime)
+			if (!psDroid || (list->damageManager->getTimeOfDeath() != 0 &&
+                       list->damageManager->getTimeOfDeath() < graphicsTime)
 				|| !quickClipXYToMaximumTilesFromCurrentPosition(
                 list->getPosition().x,
                 list->getPosition().y)) {
@@ -2481,7 +2482,7 @@ void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix)
 	{
 		return;
 	}
-	else if (psStructure->getStats().type == STRUCTURE_TYPE::DEFENSE)
+	else if (psStructure->getStats()->type == STRUCTURE_TYPE::DEFENSE)
 	{
 		defensive = true;
 	}
@@ -2500,7 +2501,7 @@ void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix)
 
 	if (!defensive
 		&& psStructure->timeLastHit - graphicsTime < ELEC_DAMAGE_DURATION
-		&& psStructure->lastHitWeapon == WEAPON_SUBCLASS::ELECTRONIC)
+		&& psStructure->damageManager->getLastHitWeapon() == WEAPON_SUBCLASS::ELECTRONIC)
 	{
 		bHitByElectronic = true;
 	}
@@ -2588,7 +2589,7 @@ void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix)
 		}
 		strImd = strImd->next;
 	}
-	setScreenDisp(&psStructure->getDisplayData(), viewModelMatrix);
+	setScreenDisp(psStructure->getDisplayData(), viewModelMatrix);
 }
 
 /// draw the delivery points
@@ -2831,7 +2832,7 @@ static void drawStructureTargetOriginIcon(Structure* psStruct, int weapon_slot)
 	scrR = scale * 20;
 
 	/* Render target origin graphics */
-	switch (psStruct->getWeapons()[weapon_slot].getTargetOrigin()) {
+	switch (psStruct->getWeapon(weapon_slot)->getTargetOrigin()) {
     using enum TARGET_ORIGIN;
 	  case VISUAL:
 	  	iV_DrawImage(IntImages, IMAGE_ORIGIN_VISUAL, scrX + scrR + 5, scrY - 1);
@@ -3658,71 +3659,71 @@ void assignDestTarget()
 /// Draw a graphical effect after selecting a sensor target
 static void processSensorTarget()
 {
-	if (bSensorTargetting)
-	{
-		if ((realTime - lastTargetAssignation) < TARGET_TO_SENSOR_TIME)
-		{
-			if (!psSensorObj->died && psSensorObj->sDisplay.frame_number == currentGameFrame)
-			{
-				const int x = /*mouseX();*/(SWORD)psSensorObj->sDisplay.screen_x;
-				const int y = (SWORD)psSensorObj->sDisplay.screen_y;
-				int index = IMAGE_BLUE1;
-				if (!gamePaused())
-				{
-					index = IMAGE_BLUE1 + getModularScaledGraphicsTime(1020, 5);
-				}
-				iV_DrawImage(IntImages, index, x, y);
-				const int offset = 12 + ((TARGET_TO_SENSOR_TIME) - (realTime - lastTargetAssignation)) / 2;
-				const int x0 = x - offset;
-				const int y0 = y - offset;
-				const int x1 = x + offset;
-				const int y1 = y + offset;
-				const std::vector<glm::ivec4> lines = {
-					glm::ivec4(x0, y0, x0 + 8, y0), glm::ivec4(x0, y0, x0, y0 + 8),
-					glm::ivec4(x1, y0, x1 - 8, y0), glm::ivec4(x1, y0, x1, y0 + 8),
-					glm::ivec4(x1, y1, x1 - 8, y1), glm::ivec4(x1, y1, x1, y1 - 8),
-					glm::ivec4(x0, y1, x0 + 8, y1), glm::ivec4(x0, y1, x0, y1 - 8),
-					glm::ivec4(x0, y0, x0 + 8, y0), glm::ivec4(x0, y0, x0, y0 + 8)
-				};
-				iV_Lines(lines, WZCOL_WHITE);
-			}
-			else
-			{
-				bSensorTargetting = false;
-			}
-		}
-		else
-		{
-			bSensorTargetting = false;
-		}
-	}
+  if (!bSensorTargetting)
+    return;
+
+  if ((realTime - lastTargetAssignation) < TARGET_TO_SENSOR_TIME)
+  {
+    if (!psSensorObj->damageManager->isDead() && psSensorObj->getDisplayData()->frame_number == currentGameFrame)
+    {
+      const int x = /*mouseX();*/(SWORD)psSensorObj->getDisplayData()->screen_x;
+      const int y = (SWORD)psSensorObj->getDisplayData()->screen_y;
+      int index = IMAGE_BLUE1;
+      if (!gamePaused())
+      {
+        index = IMAGE_BLUE1 + getModularScaledGraphicsTime(1020, 5);
+      }
+      iV_DrawImage(IntImages, index, x, y);
+      const int offset = 12 + ((TARGET_TO_SENSOR_TIME) - (realTime - lastTargetAssignation)) / 2;
+      const int x0 = x - offset;
+      const int y0 = y - offset;
+      const int x1 = x + offset;
+      const int y1 = y + offset;
+      const std::vector<glm::ivec4> lines = {
+        glm::ivec4(x0, y0, x0 + 8, y0), glm::ivec4(x0, y0, x0, y0 + 8),
+        glm::ivec4(x1, y0, x1 - 8, y0), glm::ivec4(x1, y0, x1, y0 + 8),
+        glm::ivec4(x1, y1, x1 - 8, y1), glm::ivec4(x1, y1, x1, y1 - 8),
+        glm::ivec4(x0, y1, x0 + 8, y1), glm::ivec4(x0, y1, x0, y1 - 8),
+        glm::ivec4(x0, y0, x0 + 8, y0), glm::ivec4(x0, y0, x0, y0 + 8)
+      };
+      iV_Lines(lines, WZCOL_WHITE);
+    }
+    else
+    {
+      bSensorTargetting = false;
+    }
+  }
+  else
+  {
+    bSensorTargetting = false;
+  }
 }
 
 /// Draw a graphical effect after selecting a destination
 static void processDestinationTarget()
 {
-	if (bDestTargetting)
-	{
-		if ((realTime - lastDestAssignation) < DEST_TARGET_TIME)
-		{
-			const int x = destTargetX;
-			const int y = destTargetY;
-			const int offset = ((DEST_TARGET_TIME) - (realTime - lastDestAssignation)) / 2;
-			const int x0 = x - offset;
-			const int y0 = y - offset;
-			const int x1 = x + offset;
-			const int y1 = y + offset;
+  if (!bDestTargetting)
+    return;
 
-			pie_BoxFill(x0, y0, x0 + 2, y0 + 2, WZCOL_WHITE);
-			pie_BoxFill(x1 - 2, y0 - 2, x1, y0, WZCOL_WHITE);
-			pie_BoxFill(x1 - 2, y1 - 2, x1, y1, WZCOL_WHITE);
-			pie_BoxFill(x0, y1, x0 + 2, y1 + 2, WZCOL_WHITE);
-		}
-		else
-		{
-			bDestTargetting = false;
-		}
-	}
+  if ((realTime - lastDestAssignation) < DEST_TARGET_TIME)
+  {
+    const int x = destTargetX;
+    const int y = destTargetY;
+    const int offset = ((DEST_TARGET_TIME) - (realTime - lastDestAssignation)) / 2;
+    const int x0 = x - offset;
+    const int y0 = y - offset;
+    const int x1 = x + offset;
+    const int y1 = y + offset;
+
+    pie_BoxFill(x0, y0, x0 + 2, y0 + 2, WZCOL_WHITE);
+    pie_BoxFill(x1 - 2, y0 - 2, x1, y0, WZCOL_WHITE);
+    pie_BoxFill(x1 - 2, y1 - 2, x1, y1, WZCOL_WHITE);
+    pie_BoxFill(x0, y1, x0 + 2, y1 + 2, WZCOL_WHITE);
+  }
+  else
+  {
+    bDestTargetting = false;
+  }
 }
 
 /// Set what tile is being used to draw the bottom of a body of water
@@ -3772,7 +3773,7 @@ static void structureEffectsPlayer(UDWORD player)
 		{
 			continue;
 		}
-		if (psStructure->getStats().type == STRUCTURE_TYPE::POWER_GEN && psStructure->visibleToSelectedPlayer())
+		if (psStructure->getStats()->type == STRUCTURE_TYPE::POWER_GEN && psStructure->isVisibleToSelectedPlayer())
 		{
 			PowerGenerator* psPowerGen = &psStructure->pFunctionality->powerGenerator;
 			unsigned numConnected = 0;
@@ -3869,27 +3870,24 @@ static void structureEffects()
 /// Show the sensor ranges of selected droids and buildings
 static void showDroidSensorRanges()
 {
-	Droid* psDroid;
-	Structure* psStruct;
-
-	if (selectedPlayer >= MAX_PLAYERS) { 
+	if (selectedPlayer >= MAX_PLAYERS) {
     return; /* no-op */
   }
 
 	if (rangeOnScreen)
 	// note, we still have to decide what to do with multiple units selected, since it will draw it for all of them! -Q 5-10-05
 	{
-		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[selectedPlayer])
 		{
-			if (psDroid->damageManager->isSelected()) {
-				showSensorRange2((BaseObject *)psDroid);
+			if (psDroid.damageManager->isSelected()) {
+				showSensorRange2(&psDroid);
 			}
 		}
 
-		for (psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
+		for (auto& psStruct : apsStructLists[selectedPlayer])
 		{
 			if (psStruct->damageManager->isSelected()) {
-				showSensorRange2((BaseObject *)psStruct);
+				showSensorRange2(psStruct.get());
 			}
 		}
 	} //end if we want to display...
@@ -3917,18 +3915,15 @@ static void showEffectCircle(Position centre, int radius, unsigned auxVar,
 
 // Shows the weapon (long) range of the object in question.
 // Note, it only does it for the first weapon slot!
-static void showWeaponRange(BaseObject * psObj)
+static void showWeaponRange(BaseObject const* psObj)
 {
-	WeaponStats* psStats;
+	WeaponStats const* psStats;
 
-	if (auto psDroid = dynamic_cast<Droid*>(psObj)) {
-		const auto compIndex = psDroid->asWeaps[0].nStat; // weapon_slot
-		ASSERT_OR_RETURN(, compIndex < numWeaponStats, "Invalid range referenced for numWeaponStats, %d > %d",
-		                   compIndex, numWeaponStats);
-		psStats = asWeaponStats + compIndex;
+	if (auto psDroid = dynamic_cast<Droid const*>(psObj)) {
+		psStats = psDroid->getWeapon(0)->getStats();
 	}
 	else {
-		auto psStruct = dynamic_cast<Structure*>(psObj);
+		auto psStruct = dynamic_cast<Structure const*>(psObj);
 		if (numWeapons(*psStruct) == 0) {
 			return;
 		}
@@ -3971,8 +3966,7 @@ void showRangeAtPos(int centerX, int centerY, int radius)
 
 	bRangeDisplay = true;
 
-	if (radius <= 0)
-	{
+	if (radius <= 0) {
 		bRangeDisplay = false;
 	}
 }
@@ -4108,7 +4102,7 @@ static void addConstructionLine(Droid* psDroid, Structure* psStructure, const gl
                       psDroid->getPosition().z + 24,
                       -psDroid->getPosition().y) + deltaPlayer;
 
-	auto constructPoints = constructorPoints(asConstructStats + psDroid->asBits[COMP_CONSTRUCT],
+	auto constructPoints = constructorPoints(dynamic_cast<ConstructStats const*>(psDroid->getComponent("construct")),
                                            psDroid->playerManager->getPlayer());
   
 	auto amount = 800 * constructPoints * (graphicsTime - psDroid->time_action_started) / GAME_TICKS_PER_SEC;

@@ -366,6 +366,10 @@ public:
   Factory(Factory&& rhs) noexcept = default;
   Factory& operator=(Factory&& rhs) noexcept = default;
 
+  [[nodiscard]] DroidTemplate const* getSubject() const;
+  [[nodiscard]] FlagPosition const* getAssemblyPoint() const;
+  [[nodiscard]] Droid const* getCommander() const;
+  void aiUpdate();
   bool structSetManufacture(DroidTemplate* psTempl, QUEUE_MODE mode);
   void refundBuildPower();
   void releaseProduction(QUEUE_MODE mode);
@@ -378,7 +382,6 @@ public:
   bool checkHaltOnMaxUnitsReached(bool isMission);
   ProductionRun getProduction(DroidTemplate *psTemplate);
   void factoryLoopAdjust(bool add);
-  [[nodiscard]] const DroidTemplate* getSubject() const;
   [[nodiscard]] FlagPosition* FindFactoryDelivery() const;
   void cancelProduction(QUEUE_MODE mode, bool mayClearProductionRun);
   DroidTemplate* factoryProdUpdate(DroidTemplate* psTemplate);
@@ -513,7 +516,7 @@ int structureDamage(Structure* psStructure, unsigned damage, WEAPON_CLASS weapon
                         WEAPON_SUBCLASS weaponSubClass, unsigned impactTime, bool isDamagePerSecond, int minDamage);
 void structureBuild(Structure* psStructure, Droid* psDroid, int buildPoints, int buildRate = 1);
 void structureDemolish(Structure* psStructure, Droid* psDroid, int buildPoints);
-void structureRepair(Structure* psStruct, Droid* psDroid, int buildRate);
+void structureRepair(Structure* psStruct, int buildRate);
 /* Set the type of droid for a factory to build */
 bool structSetManufacture(Structure* psStruct, DroidTemplate* psTempl, QUEUE_MODE mode);
 unsigned structureBuildPointsToCompletion(const Structure& structure);
@@ -784,7 +787,7 @@ static inline unsigned structJammerPower(const Structure* psObj)
 static inline Rotation structureGetInterpolatedWeaponRotation(Structure const* psStructure, int weaponSlot, uint32_t time)
 {
 	return interpolateRot(psStructure->getWeapon(weaponSlot)->getPreviousRotation(),
-                        psStructure->getWeapon(weaponSlot)->rotation,
+                        psStructure->getWeapon(weaponSlot)->getRotation(),
                         psStructure->prevTime, psStructure->getTime(), time);
 }
 

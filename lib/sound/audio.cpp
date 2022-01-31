@@ -689,7 +689,7 @@ static bool audio_CheckSame3DTracksPlaying(SDWORD iTrack, SDWORD iX, SDWORD iY, 
 // =======================================================================================================================
 // =======================================================================================================================
 //
-static bool audio_Play3DTrack(SDWORD iX, SDWORD iY, SDWORD iZ, int iTrack, SIMPLE_OBJECT *psObj, AUDIO_CALLBACK pUserCallback)
+static bool audio_Play3DTrack(SDWORD iX, SDWORD iY, SDWORD iZ, int iTrack, BaseObject *psObj, AUDIO_CALLBACK pUserCallback)
 {
 	AUDIO_SAMPLE	*psSample;
 	// coordinates
@@ -791,7 +791,7 @@ bool audio_PlayStaticTrack(SDWORD iMapX, SDWORD iMapY, int iTrack)
 // =======================================================================================================================
 // =======================================================================================================================
 //
-bool audio_PlayObjStaticTrack(SIMPLE_OBJECT *psObj, int iTrack)
+bool audio_PlayObjStaticTrack(BaseObject *psObj, int iTrack)
 {
 	//~~~~~~~~~~~~~~~
 	SDWORD	iX, iY, iZ;
@@ -830,7 +830,7 @@ bool audio_PlayObjStaticTrackCallback(SIMPLE_OBJECT *psObj, int iTrack, AUDIO_CA
 // =======================================================================================================================
 // =======================================================================================================================
 //
-bool audio_PlayObjDynamicTrack(PlayerOwnedObject *psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
+bool audio_PlayObjDynamicTrack(BaseObject* psObj, int iTrack, AUDIO_CALLBACK pUserCallback)
 {
 	int	iX, iY, iZ;
 

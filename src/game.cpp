@@ -94,6 +94,7 @@
 #include "multigifts.h"
 #include "wzscriptdebug.h"
 #include "objmem.h"
+#include "random.h"
 
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wcast-align"	// TODO: FIXME!
@@ -2410,12 +2411,12 @@ bool loadMissionExtras(const char* pGameToLoad, LEVEL_TYPE levelType)
 
 static void sanityUpdate()
 {
-	for (unsigned player = 0; player < game.maxPlayers; player++)
+	for (auto player = 0; player < game.maxPlayers; player++)
 	{
-		for (Droid* psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[player])
 		{
-			orderCheckList(psDroid);
-			actionSanity(psDroid);
+			orderCheckList(&psDroid);
+			actionSanity(&psDroid);
 		}
 	}
 }
@@ -2458,7 +2459,7 @@ static void getIniDroidOrder(WzConfig& ini, WzString const& key, Order& order)
 
 static void setIniBaseObject(nlohmann::json& json, WzString const& key, BaseObject const* object)
 {
-	if (object != nullptr && object->died <= 1)
+	if (object != nullptr && object->damageManager->getTimeOfDeath() <= 1)
 	{
 		const auto& keyStr = key.toStdString();
 		json[keyStr + "/id"] = object->getId();
@@ -2649,7 +2650,7 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 				aDefaultRepair[player] = saveGameData.aDefaultRepair[player];
 				//check for self repair having been set
 				if (aDefaultRepair[player] != 0
-					&& asRepairStats[aDefaultRepair[player]].location == LOC_DEFAULT)
+					&& asRepairStats[aDefaultRepair[player]].location == LOC::DEFAULT)
 				{
 					enableSelfRepair((UBYTE)player);
 				}
@@ -5165,7 +5166,7 @@ static bool loadWzMapDroidInit(WzMap::Map& wzMap)
 			// set map start position, FIXME - save properly elsewhere!
 		}
 
-		addDroid(psDroid, apsDroidLists);
+		addDroid(psDroid);
 	}
 	if (NumberOfSkippedDroids)
 	{

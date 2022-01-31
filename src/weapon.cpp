@@ -69,6 +69,16 @@ bool Weapon::isEmptyVtolWeapon(unsigned player) const
   return pimpl && pimpl->ammoUsed >= getNumAttackRuns(player);
 }
 
+unsigned Weapon::getAmmoUsed() const
+{
+  return pimpl ? pimpl->ammoUsed : 0;
+}
+
+unsigned Weapon::getTimeLastFired() const
+{
+  return pimpl ? pimpl->timeLastFired : 0;
+}
+
 const WeaponStats* Weapon::getStats() const
 {
   return pimpl ? pimpl->stats.get() : nullptr;

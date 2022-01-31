@@ -229,7 +229,7 @@ struct RepairFacility::Impl
   Impl(Impl&& rhs) noexcept = default;
   Impl& operator=(Impl&& rhs) noexcept = default;
 
-  ConstructedObject* psObj = nullptr; /* Object being repaired */
+  Droid* psObj = nullptr; /* Object being repaired */
   std::unique_ptr<FlagPosition> psDeliveryPoint; /* Place for the repaired droids to assemble at */
   // The group the droids to be repaired by this facility belong to
   std::shared_ptr<Group> psGroup;
@@ -618,7 +618,7 @@ Weapon const* Structure::getWeapon(int slot) const
   return pimpl ? pimpl->weapons[slot] : nullptr;
 }
 
-std::array<Weapon, MAX_WEAPONS> const& Structure::getWeapons() const
+std::array<Weapon, MAX_WEAPONS> *const Structure::getWeapons() const
 {
   return pimpl->weapons;
 }
@@ -2102,7 +2102,7 @@ void Structure::buildingComplete()
     auto imdIndex = std::min<int>(getCapacity() * 2, IMDs.size() - 1);
     // *2 because even-numbered IMDs are structures, odd-numbered IMDs are just the modules.
     pimpl->prebuiltImd = nullptr;
-    display->imd_shape = IMDs[imdIndex];
+    setImdShape(IMDs[imdIndex].get());
   }
 
   switch (pimpl->stats->type) {
@@ -2598,7 +2598,7 @@ std::unique_ptr<Structure> Structure::buildBlueprint(StructureStats const* psSta
   if (selectedPlayer < MAX_PLAYERS) {
     blueprint->setVisibleToPlayer(selectedPlayer, UBYTE_MAX);
   }
-  blueprint->display->imd_shape = (*pIMD)[std::min<int>(moduleNumber, pIMD.size() - 1)];
+  blueprint->setImdShape((pIMD)[std::min<int>(moduleNumber, pIMD.size() - 1)].get());
   blueprint->setPosition(pos);
   blueprint->setRotation(rot);
   blueprint->damageManager->setSelected(false);
@@ -2664,6 +2664,11 @@ int Structure::requestOpenGate()
       return 0; // Busy
   }
   return pimpl->lastStateTime + SAS_OPEN_SPEED - gameTime;
+}
+
+FlagPosition const* Factory::getAssemblyPoint() const
+{
+  return pimpl ? pimpl->psAssemblyPoint.get() : nullptr;
 }
 
 // Set the command droid that factory production should go to
@@ -3329,7 +3334,7 @@ void structureDemolish(Structure* psStruct, Droid* psDroid, int buildPoints)
 	structureBuild(psStruct, psDroid, -buildPoints);
 }
 
-void structureRepair(Structure* psStruct, Droid* psDroid, int buildRate)
+void structureRepair(Structure* psStruct, int buildRate)
 {
 	auto repairAmount = gameTimeAdjustedAverage(
           buildRate * structureBody(psStruct),
@@ -5561,31 +5566,32 @@ void ResourceExtractor::checkForPowerGen()
 	int bestSlot = 0;
 	for (auto& psCurr : apsStructLists[playerManager->getPlayer()])
 	{
-		if (psCurr->getStats()->type == STRUCTURE_TYPE::POWER_GEN &&
-        psCurr->getState() == STRUCTURE_STATE::BUILT) {
+    if (psCurr->getStats()->type != STRUCTURE_TYPE::POWER_GEN ||
+        psCurr->getState() != STRUCTURE_STATE::BUILT) {
+      continue;
+    }
 
-			if (bestPowerGen != nullptr &&
-          bestPowerGen->getCapacity() >= psCurr->getCapacity()) {
-				continue; // power generator not better.
-			}
+    if (bestPowerGen != nullptr &&
+        bestPowerGen->getCapacity() >= psCurr->getCapacity()) {
+      continue; // power generator not better.
+    }
 
-			auto psPG = dynamic_cast<PowerGenerator*>(psCurr.get());
-			for (auto i = 0; i < NUM_POWER_MODULES; ++i)
-			{
-				if (psPG->resource_extractors[i] == nullptr) {
-					bestPowerGen = psCurr.get();
-					bestSlot = i;
-					break;
-				}
-			}
-		}
-	}
+    auto psPg = dynamic_cast<PowerGenerator*>(psCurr.get());
+      for (auto i = 0; i < NUM_POWER_MODULES; ++i)
+      {
+        if (psPg->resource_extractors[i] == nullptr) {
+          bestPowerGen = psCurr.get();
+          bestSlot = i;
+          break;
+        }
+      }
+  }
 
 	if (bestPowerGen != nullptr) {
 		// attach the derrick to the power generator.
 		auto psPG = dynamic_cast<PowerGenerator*>(bestPowerGen);
 		psPG->resource_extractors[bestSlot] = this;
-		power_generator = bestPowerGen;
+		pimpl->power_generator = bestPowerGen;
 	}
 }
 
@@ -7062,7 +7068,273 @@ LineBuild calcLineBuild(Vector2i size, STRUCTURE_TYPE type, Vector2i worldPos, V
 	return lb;
 }
 
+void Factory::aiUpdate()
+{
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Factory object is undefined");
+  //check here to see if the factory's commander has died
+  if (pimpl->psCommander && pimpl->psCommander->damageManager->isDead()) {
+    //remove the commander from the factory
+    syncDebugDroid(pimpl->psCommander, '-');
+    assignFactoryCommandDroid(nullptr);
+  }
+}
+
+void RepairFacility::aiUpdate()
+{
+  int xdiff, ydiff, currdist;
+
+  // If the droid we're repairing just died, find a new one
+  if (pimpl->psObj && pimpl->psObj->damageManager->isDead()) {
+    pimpl->psObj = nullptr;
+  }
+
+  // skip droids that are trying to get to other repair factories
+  if (pimpl->psObj != nullptr &&
+      (!orderState(pimpl->psObj, ORDER_TYPE::RETURN_TO_REPAIR) ||
+       pimpl->psObj->getOrder()->target != this)) {
+    xdiff = pimpl->psObj->getPosition().x - getPosition().x;
+    ydiff = pimpl->psObj->getPosition().y - getPosition().y;
+    // unless it has orders to repair here, forget about it when it gets out of range
+    if (xdiff * xdiff + ydiff * ydiff > (TILE_UNITS * 5 / 2) * (TILE_UNITS * 5 / 2)) {
+      pimpl->psObj = nullptr;
+    }
+  }
+
+  // select next droid if none being repaired,
+  // or look for a better droid if not repairing one with repair orders
+  if (pimpl->psObj == nullptr ||
+      (pimpl->psObj->getOrder()->type != ORDER_TYPE::RETURN_TO_REPAIR &&
+       pimpl->psObj->getOrder()->type != ORDER_TYPE::RTR_SPECIFIED)) {
+    //FIX ME: (doesn't look like we need this?)
+    ASSERT(pimpl->group != nullptr, "invalid repair facility group pointer");
+
+    // Tries to find most important droid to repair
+    // Lower dist = more important
+    // mindist contains lowest dist found so far
+    auto mindist = (TILE_UNITS * 8) * (TILE_UNITS * 8) * 3;
+    if (pimpl->psObj) {
+      // We already have a valid droid to repair, no need to look at
+      // droids without a repair order.
+      mindist = (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2;
+    }
+    pimpl->droidQueue = 0;
+
+    for (auto& psDroid : apsDroidLists[playerManager->getPlayer()])
+    {
+      auto const* psTarget = orderStateObj(&psDroid, ORDER_TYPE::RETURN_TO_REPAIR);
+
+      // Highest priority:
+      // Take any droid with orders to Return to Repair (DORDER_RTR),
+      // or that have been ordered to this repair facility (DORDER_RTR_SPECIFIED),
+      // or any "lost" unit with one of those two orders.
+      if (((psDroid.getOrder()->type == ORDER_TYPE::RETURN_TO_REPAIR ||
+            (psDroid.getOrder()->type == ORDER_TYPE::RTR_SPECIFIED &&
+             (!psTarget || psTarget == this))) &&
+           psDroid.getAction() != ACTION::WAIT_FOR_REPAIR &&
+           psDroid.getAction() != ACTION::MOVE_TO_REPAIR_POINT &&
+           psDroid.getAction() != ACTION::WAIT_DURING_REPAIR) || (psTarget && psTarget == this)) {
+
+        if (psDroid.damageManager->getHp() >= psDroid.damageManager->getOriginalHp()) {
+          objTrace(getId(), "Repair not needed of droid %d", (int)psDroid.getId());
+
+          /* set droid points to max */
+          psDroid.damageManager->setHp(psDroid.damageManager->getOriginalHp());
+
+          // if completely repaired reset order
+          psDroid.secondarySetState(SECONDARY_ORDER::RETURN_TO_LOCATION, DSS_NONE);
+
+          if (psDroid.hasCommander()) {
+            // return a droid to it's command group
+            auto psCommander = psDroid.getGroup()->getCommander();
+
+            orderDroidObj(&psDroid, ORDER_TYPE::GUARD, psCommander, ModeImmediate);
+          }
+          else if (pimpl->psDeliveryPoint != nullptr) {
+            // move the droid out the way
+            objTrace(psDroid.getId(), "Repair not needed - move to delivery point");
+
+            orderDroidLoc(&psDroid, ORDER_TYPE::MOVE,
+                          pimpl->psDeliveryPoint->coords.x,
+                          pimpl->psDeliveryPoint->coords.y, ModeQueue);
+          }
+          continue;
+        }
+        xdiff = psDroid.getPosition().x - getPosition().x;
+        ydiff = psDroid.getPosition().y - getPosition().y;
+        currdist = xdiff * xdiff + ydiff * ydiff;
+        if (currdist < mindist && currdist < (TILE_UNITS * 8) * (TILE_UNITS * 8)) {
+          mindist = currdist;
+          pimpl->psObj = &psDroid;
+        }
+        if (psTarget && psTarget == this) {
+          pimpl->droidQueue++;
+        }
+      }
+        // Second highest priority:
+        // Help out another nearby repair facility
+      else if (psTarget && mindist > (TILE_UNITS * 8) * (TILE_UNITS * 8) &&
+               psTarget != this && psDroid.getAction() == ACTION::WAIT_FOR_REPAIR) {
+        auto distLimit = mindist;
+
+        if (dynamic_cast<Structure const*>(psTarget) &&
+            ((Structure*)psTarget)->getStats()->type == STRUCTURE_TYPE::REPAIR_FACILITY) { // Is a repair facility (not the HQ).
+          auto* stealFrom = dynamic_cast<RepairFacility const*>(psTarget);
+          // make a wild guess about what is a good distance
+          distLimit = world_coord(stealFrom->pimpl->droidQueue) * world_coord(stealFrom->pimpl->droidQueue) * 10;
+        }
+
+        xdiff = psDroid.getPosition().x - getPosition().x;
+        ydiff = psDroid.getPosition().y - getPosition().y;
+        currdist = xdiff * xdiff + ydiff * ydiff + (TILE_UNITS * 8) * (TILE_UNITS * 8);
+        // lower priority
+        if (currdist < mindist && currdist - (TILE_UNITS * 8) * (TILE_UNITS * 8) < distLimit) {
+          mindist = currdist;
+          pimpl->psObj = &psDroid;
+          pimpl->droidQueue++; // shared queue
+          objTrace(pimpl->psObj->getId(),
+                   "Stolen by another repair facility, currdist=%d, mindist=%d, distLimit=%d",
+                   (int)currdist, (int)mindist, distLimit);
+        }
+      }
+        // Lowest priority:
+        // Just repair whatever is nearby and needs repairing.
+      else if (mindist > (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2 &&
+               psDroid.damageManager->getHp() < psDroid.damageManager->getOriginalHp()) {
+        xdiff = (int)psDroid.getPosition().x - (int)getPosition().x;
+        ydiff = (int)psDroid.getPosition().y - (int)getPosition().y;
+        currdist = xdiff * xdiff + ydiff * ydiff + (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2;
+        // even lower priority
+        if (currdist < mindist && currdist < (TILE_UNITS * 5 / 2) * (TILE_UNITS * 5 / 2) + (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2) {
+          mindist = currdist;
+          pimpl->psObj = &psDroid;
+        }
+      }
+    }
+    if (!pimpl->psObj) { // Nothing to repair? Repair allied units!
+      mindist = (TILE_UNITS * 5 / 2) * (TILE_UNITS * 5 / 2);
+
+      for (auto i = 0; i < MAX_PLAYERS; i++)
+      {
+        if (!aiCheckAlliances(i, playerManager->getPlayer()) || i == playerManager->getPlayer()) {
+          continue;
+        }
+        for (auto&psDroid1: apsDroidLists[i])
+        {
+          if (psDroid1.damageManager->getHp() >= psDroid1.damageManager->getOriginalHp()) {
+            continue;
+          }
+          xdiff =  psDroid1.getPosition().x - getPosition().x;
+          ydiff =  psDroid1.getPosition().y - getPosition().y;
+          currdist = xdiff * xdiff + ydiff * ydiff;
+          if (currdist < mindist) {
+            mindist = currdist;
+            pimpl->psObj = &psDroid1;
+          }
+        }
+      }
+    }
+    if (pimpl->psObj) {
+      if (pimpl->psObj->getOrder()->type == ORDER_TYPE::RETURN_TO_REPAIR ||
+          pimpl->psObj->getOrder()->type == ORDER_TYPE::RTR_SPECIFIED) {
+        // Hey, droid, it's your turn! Stop what you're doing and get ready to get repaired!
+        pimpl->psObj->setAction(ACTION::WAIT_FOR_REPAIR);
+        pimpl->psObj->order.target = this;
+      }
+      objTrace(getId(), "Chose to repair droid %d", pimpl->psObj->getId());
+      objTrace(pimpl->psObj->getId(), "Chosen to be repaired by repair structure %d", getId());
+    }
+  }
+
+  // send the droid to be repaired
+  if (pimpl->psObj) {
+    /* move droid to repair point at rear of facility */
+    xdiff = pimpl->psObj->getPosition().x - getPosition().x;
+    ydiff = pimpl->psObj->getPosition().y - getPosition().y;
+    if (pimpl->psObj->getAction() == ACTION::WAIT_FOR_REPAIR ||
+        (pimpl->psObj->getAction() == ACTION::WAIT_DURING_REPAIR &&
+         xdiff * xdiff + ydiff * ydiff > (TILE_UNITS * 5 / 2) * (TILE_UNITS * 5 / 2))) {
+      objTrace(getId(), "Requesting droid %d to come to us", pimpl->psObj->getId());
+      actionDroid(pimpl->psObj, ACTION::MOVE_TO_REPAIR_POINT, this, getPosition().x, getPosition().y);
+    }
+  }
+
+  // update repair arm position
+  if (pimpl->psObj) {
+    actionTargetTurret(this, pimpl->psObj, getWeapon(0));
+  }
+  else if ((pimpl->weapons[0].getRotation().direction % DEG(90)) != 0 ||
+           pimpl->weapons[0].getRotation().pitch != 0) {
+    // realign the turret
+    actionAlignTurret(this, 0);
+  }
+}
+
+RearmPad::aiUpdate()
+{
+  /* select next droid if none being rearmed*/
+  if (pimpl->psObj == nullptr) {
+    objTrace(getId(), "Rearm pad idle - look for victim");
+    for (auto& psDroid : apsDroidLists[playerManager->getPlayer()])
+    {
+      // move next droid waiting on ground to rearm pad
+      if (vtolReadyToRearm(psDroid, *this) &&
+          (pimpl->psObj == nullptr ||
+           dynamic_cast<Droid *>(pimpl->psObj)->getTimeActionStarted() > psDroid.getTimeActionStarted())) {
+        objTrace(psDroid.getId(), "rearm pad candidate");
+        objTrace(getId(), "we found %s to rearm", objInfo(&psDroid));
+        pimpl->psObj = &psDroid;
+      }
+    }
+    // None available? Try allies.
+    for (auto i = 0; i < MAX_PLAYERS && !pimpl->psObj; ++i)
+    {
+      if (!aiCheckAlliances(i, playerManager->getPlayer()) || i == playerManager->getPlayer()) {
+        continue;
+      }
+      for (auto& psDroid1: apsDroidLists[i]) {
+        // move next droid waiting on ground to rearm pad
+        if (vtolReadyToRearm(psDroid1, *this)) {
+          pimpl->psObj = &psDroid1;
+          objTrace(psDroid1.getId(), "allied rearm pad candidate");
+          objTrace(getId(), "we found allied %s to rearm", objInfo(&psDroid1));
+          break;
+        }
+      }
+    }
+    if (pimpl->psObj != nullptr) {
+      actionDroid(pimpl->psObj, ACTION::MOVE_TO_REARM_POINT, this);
+    }
+  }
+  else {
+    if ((pimpl->psObj->getMovementData()->status == MOVE_STATUS::INACTIVE ||
+         pimpl->psObj->getMovementData()->status == MOVE_STATUS::HOVER) &&
+        pimpl->psObj->getAction() == ACTION::WAIT_FOR_REARM) {
+      objTrace(pimpl->psObj->getId(), "supposed to go to rearm but not on our way -- fixing");
+      // this should never happen...
+      actionDroid(pimpl->psObj, ACTION::MOVE_TO_REARM_POINT, this);
+    }
+  }
+
+// if found a droid to rearm assign it to the rearm pad
+  if (pimpl->psObj != nullptr) {
+    if (pimpl->psObj->getAction() == ACTION::MOVE_TO_REARM_POINT) {
+      /* reset rearm started */
+      pimpl->timeStarted = ACTION_START_TIME;
+      pimpl->timeLastUpdated = 0;
+    }
+    auxStructureBlocking(*this);
+  }
+  else {
+    auxStructureNonblocking(*this);
+  }
+}
+
+Droid const* Factory::getCommander() const
+{
+  return pimpl ? pimpl->psCommander : nullptr;
+}
+
 LineBuild calcLineBuild(StructureStats const* stats, uint16_t direction, Vector2i pos, Vector2i pos2)
 {
-	return calcLineBuild(stats->size(direction), stats->type, pos, pos2);
+  return calcLineBuild(stats->size(direction), stats->type, pos, pos2);
 }

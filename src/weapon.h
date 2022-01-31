@@ -84,6 +84,8 @@ public:
   [[nodiscard]] WEAPON_SUBCLASS getSubclass() const;
   [[nodiscard]] TARGET_ORIGIN getTargetOrigin() const noexcept;
   [[nodiscard]] Rotation getPreviousRotation() const;
+  [[nodiscard]] unsigned getAmmoUsed() const;
+  [[nodiscard]] unsigned getTimeLastFired() const;
   [[nodiscard]] bool hasAmmo() const;
   [[nodiscard]] bool hasFullAmmo() const noexcept;
   [[nodiscard]] bool isArtillery() const noexcept;

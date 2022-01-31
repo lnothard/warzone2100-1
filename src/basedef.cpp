@@ -233,6 +233,11 @@ bool BaseObject::testFlag(size_t pos) const
   return pimpl && pimpl->flags.test(pos);
 }
 
+void BaseObject::setImdShape(iIMDShape* imd)
+{
+  pimpl->display->imd_shape = std::make_unique<iIMDShape>(*imd);
+}
+
 void BaseObject::setFlag(size_t pos, bool val)
 {
   if (!pimpl) return;
@@ -297,6 +302,11 @@ void DamageManager::setOriginalHp(unsigned hp)
 {
   if (!pimpl) return;
   pimpl->originalHp = hp;
+}
+
+unsigned DamageManager::getTimeOfDeath() const
+{
+  return pimpl ? pimpl->timeOfDeath : 1000;
 }
 
 void DamageManager::setSelected(bool sel)

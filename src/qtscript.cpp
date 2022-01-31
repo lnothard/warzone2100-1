@@ -363,11 +363,11 @@ bool scripting_engine::removeTimer(uniqueTimerID timerID)
 	return false;
 }
 
-void scriptRemoveObject(const BaseObject * psObj)
+void scriptRemoveObject(BaseObject const* psObj)
 {
 	// Weed out timers with dead objects
-	scripting_engine::instance().removeTimersIf([psObj](const scripting_engine::timerNode& node)
-	{
+	scripting_engine::instance().removeTimersIf(
+          [psObj](const scripting_engine::timerNode& node) {
 		return (node.baseobj == psObj->getId());
 	});
 	scripting_engine::instance().groupRemoveObject(psObj);

@@ -236,9 +236,12 @@ struct DroidTemplate : public BaseStats
 {
   DroidTemplate() = default;
 
+  ComponentStats const* getComponent(std::string const& compName) const;
+
   using enum DROID_TYPE;
   unsigned id = 0;
-  unsigned weaponCount = 0;
+  std::unordered_map<std::string, std::unique_ptr<ComponentStats>> components;
+  std::array<Weapon, MAX_WEAPONS> weapons;
   DROID_TYPE type = ANY;
 
   /// Not player designed, not saved, never delete or change
@@ -277,12 +280,14 @@ public:
   [[nodiscard]] unsigned getWeight() const;
   [[nodiscard]] BaseObject const* getActionTarget(int idx) const;
   [[nodiscard]] Group const* getGroup() const;
+  [[nodiscard]] Structure const* getBase() const;
   [[nodiscard]] ComponentStats const* getComponent(std::string const& compName) const;
   [[nodiscard]] unsigned getTimeActionStarted() const;
   [[nodiscard]] Weapon const* getWeapon(int slot) const;
   [[nodiscard]] std::array<Weapon, MAX_WEAPONS> *const getWeapons() const;
   [[nodiscard]] unsigned getExperience() const;
   [[nodiscard]] unsigned getKills() const;
+  [[nodiscard]] int getAudioId() const;
   [[nodiscard]] bool hasElectronicWeapon() const;
   [[nodiscard]] bool isVtol() const;
   [[nodiscard]] bool isFlying() const;
@@ -300,6 +305,7 @@ public:
   [[nodiscard]] bool hasCbSensor() const;
   [[nodiscard]] int droidDamage(unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
                                 unsigned impactTime, bool isDPS, int minDamage);
+  void setAudioId(int audio);
   void setUpBuildModule();
   void actionUpdateDroid();
   void initVisibility();
@@ -345,6 +351,7 @@ public:
   void droidSetBits(DroidTemplate const* pTemplate);
   void orderDroidListEraseRange(int indexBegin, int indexEnd);
   void orderClearTargetFromDroidList(BaseObject const* psTarget);
+  void removeDroidBase();
   void orderCheckGuardPosition(int range);
   bool orderDroidList();
   void moveStopDroid();
@@ -472,7 +479,7 @@ void vanishDroid(Droid* psDel);
 
 /* Remove a droid from the apsDroidLists so doesn't update or get drawn etc*/
 //returns true if successfully removed from the list
-bool droidRemove(Droid* psDroid, const std::vector<Droid>& pList);
+bool droidRemove(Droid* psDroid);
 
 //free the storage for the droid templates
 bool droidTemplateShutDown();

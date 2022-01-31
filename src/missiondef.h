@@ -66,13 +66,13 @@ struct MISSION
 	int scrollMinY;
 	int scrollMaxX;
 	int scrollMaxY;
-	std::array<std::vector<std::unique_ptr<Structure>>, MAX_PLAYERS> apsStructLists;
-  Structure* apsExtractorLists[MAX_PLAYERS];
+	std::array< std::vector<std::unique_ptr<Structure> >, MAX_PLAYERS> apsStructLists;
+  std::array< std::vector<Structure*>, MAX_PLAYERS> apsExtractorLists;
 	std::array< std::vector<Droid>, MAX_PLAYERS> apsDroidLists;
 	std::array< std::vector<Feature*>, MAX_PLAYERS> apsFeatureLists;
-  BaseObject* apsSensorList[1];
-	Feature* apsOilList[1];
-	FlagPosition* apsFlagPosLists[MAX_PLAYERS];
+  std::vector<BaseObject*> apsSensorList;
+	std::vector<Feature*> apsOilList;
+  std::array< std::vector<FlagPosition*>, MAX_PLAYERS> apsFlagPosLists;
 	int asCurrentPower[MAX_PLAYERS];
 
 	unsigned startTime; //time the mission started
