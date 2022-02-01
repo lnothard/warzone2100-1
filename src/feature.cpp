@@ -58,7 +58,7 @@ struct Feature::Impl
 };
 
 Feature::Feature(unsigned id, FeatureStats* psStats)
-  : BaseObject(id, std::make_unique<DamageManager>())
+  : BaseObject(id, std::make_unique<Health>())
   , pimpl{std::make_unique<Impl>(psStats)}
 {
 }

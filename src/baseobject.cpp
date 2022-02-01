@@ -24,6 +24,7 @@
 #include "baseobject.h"
 #include "droid.h"
 #include "feature.h"
+#include "projectile.h"
 #include "structure.h"
 
 Vector2i map_coord(Vector2i);
@@ -31,8 +32,13 @@ bool StatIsStructure(const BaseStats*);
 bool StatIsFeature(const BaseStats*);
 
 
-
-
+[[nodiscard]] OBJECT_TYPE getObjectType(BaseObject const* obj)
+{
+  if (dynamic_cast<Droid const*>(obj)) return OBJECT_TYPE::DROID;
+  if (dynamic_cast<Structure const*>(obj)) return OBJECT_TYPE::STRUCTURE;
+  if (dynamic_cast<Feature const*>(obj)) return OBJECT_TYPE::FEATURE;
+  if (dynamic_cast<Projectile const*>(obj)) return OBJECT_TYPE::PROJECTILE;
+}
 
 static inline uint16_t interpolateAngle(uint16_t v1, uint16_t v2, unsigned t1, unsigned t2, unsigned t)
 {

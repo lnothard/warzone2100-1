@@ -54,7 +54,7 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 {
 	ASSERT(psWeap != nullptr, "Invalid weapon pointer");
 
-  auto player = dynamic_cast<PlayerManager *>(psAttacker)->getPlayer();
+  auto player = dynamic_cast<Player *>(psAttacker)->getPlayer();
   auto psDroid = dynamic_cast<Droid*>(psAttacker);
 	/* Don't shoot if the weapon_slot of a vtol is empty */
 	if (psDroid && psDroid->isVtol() &&
@@ -324,8 +324,8 @@ void counterBatteryFire(BaseObject* psAttacker, BaseObject* psTarget)
 	// Also ignore cases where there are already 1000 missiles heading towards the attacker.
 	if (psTarget == nullptr ||
       (psAttacker != nullptr &&
-       dynamic_cast<PlayerManager *>(psAttacker)->getPlayer() == dynamic_cast<PlayerManager *>(psTarget)->getPlayer()) ||
-      (psAttacker != nullptr && dynamic_cast<DamageManager *>(psAttacker)->isProbablyDoomed(false))) {
+       dynamic_cast<Player *>(psAttacker)->getPlayer() == dynamic_cast<Player *>(psTarget)->getPlayer()) ||
+      (psAttacker != nullptr && dynamic_cast<Health *>(psAttacker)->isProbablyDoomed(false))) {
 		return;
 	}
 
@@ -366,7 +366,7 @@ void counterBatteryFire(BaseObject* psAttacker, BaseObject* psTarget)
 int objArmour(BaseObject const* psObj, WEAPON_CLASS weaponClass)
 {
 	auto armour = 0;
-  auto player = dynamic_cast<PlayerManager const*>(psObj)->getPlayer();
+  auto player = dynamic_cast<Player const*>(psObj)->getPlayer();
 	if (auto psDroid = dynamic_cast<const Droid*>(psObj)) {
     auto body = psDroid->getComponent("body");
     if (body) {

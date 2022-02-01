@@ -281,7 +281,7 @@ public:
   [[nodiscard]] BaseObject const* getActionTarget(int idx) const;
   [[nodiscard]] Group const* getGroup() const;
   [[nodiscard]] Structure const* getBase() const;
-  [[nodiscard]] ComponentStats const* getComponent(std::string const& compName) const;
+  [[nodiscard]] ComponentStats const* getComponent(COMPONENT_TYPE compName) const;
   [[nodiscard]] unsigned getTimeActionStarted() const;
   [[nodiscard]] Weapon const* getWeapon(int slot) const;
   [[nodiscard]] std::array<Weapon, MAX_WEAPONS> *const getWeapons() const;

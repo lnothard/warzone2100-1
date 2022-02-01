@@ -121,8 +121,8 @@ struct ObjectShape::Impl
 };
 
 Projectile::Projectile(unsigned id, unsigned player)
-  : BaseObject(id, std::make_unique<PlayerManager>(player),
-               std::make_unique<DamageManager>())
+  : BaseObject(id, std::make_unique<Player>(player),
+               std::make_unique<Health>())
   , pimpl{std::make_unique<Impl>()}
 {
 }
@@ -1191,13 +1191,13 @@ void Projectile::proj_ImpactFunc()
 
       // if we are in a multiplayer game and the attacker is our responsibility
       if (bMultiPlayer && pimpl->source) {
-        updateMultiStatsDamage(dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer(),
-                               dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer(),
+        updateMultiStatsDamage(dynamic_cast<Player *>(pimpl->source)->getPlayer(),
+                               dynamic_cast<Player *>(pimpl->target)->getPlayer(),
                                damage);
       }
 
       debug(LOG_NEVER, "Damage to object %d, player %d\n",
-            pimpl->target->getId(), dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer());
+            pimpl->target->getId(), dynamic_cast<Player *>(pimpl->target)->getPlayer());
 
       struct Damage sDamage = {
               pimpl->target,
@@ -1257,7 +1257,7 @@ void Projectile::proj_ImpactFunc()
       }
 
       if (pimpl->source && pimpl->source->playerManager->getPlayer() ==
-                                   dynamic_cast<PlayerManager *>(psCurr)->getPlayer() &&
+                                   dynamic_cast<Player *>(psCurr)->getPlayer() &&
           psStats->flags.test(static_cast<size_t>(WEAPON_FLAGS::NO_FRIENDLY_FIRE))) {
         continue; // this weapon does not do friendly damage
       }
@@ -1358,17 +1358,17 @@ void Projectile::update()
 
 	// see if any of the stored objects have died
 	// since the projectile was created
-	if (pimpl->source && dynamic_cast<DamageManager *>(pimpl->source)->isDead()) {
+	if (pimpl->source && dynamic_cast<Health *>(pimpl->source)->isDead()) {
 		setProjectileSource(this, nullptr);
 	}
-	if (pimpl->target && dynamic_cast<DamageManager *>(pimpl->target)->isDead()) {
+	if (pimpl->target && dynamic_cast<Health *>(pimpl->target)->isDead()) {
 		setTarget(nullptr);
 	}
 
 	// remove dead objects from psDamaged.
 	pimpl->damaged.erase(std::remove_if(pimpl->damaged.begin(), pimpl->damaged.end(),
                                       [](BaseObject const* psObj) {
-      return dynamic_cast<DamageManager const*>(psObj)->isDead();
+      return dynamic_cast<Health const*>(psObj)->isDead();
     }), pimpl->damaged.end());
 
 	// This extra check fixes a crash in cam2, mission1
@@ -1446,7 +1446,7 @@ void Projectile::proj_checkPeriodicalDamage()
 			continue; // Can't destroy oil wells.
 		}
 
-    auto asDamageableObj = dynamic_cast<DamageManager *>(psCurr);
+    auto asDamageableObj = dynamic_cast<Health *>(psCurr);
 		if (asDamageableObj) {
 			asDamageableObj->setPeriodicalDamageStartTime(gameTime);
 			asDamageableObj->setPeriodicalDamage(0); // Reset periodical damage done this tick.
@@ -1613,8 +1613,8 @@ int Projectile::objectDamageDispatch()
 bool Projectile::isFriendlyFire() const
 {
 	return pimpl && pimpl->target &&
-         dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer()
-         == dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer();
+         dynamic_cast<Player *>(pimpl->source)->getPlayer()
+         == dynamic_cast<Player *>(pimpl->target)->getPlayer();
 }
 
 bool Projectile::shouldIncreaseExperience() const
@@ -1628,7 +1628,7 @@ void Projectile::updateKills()
 {
 	if (bMultiPlayer) {
 		updateMultiStatsKills(pimpl->damage->target,
-                          dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer());
+                          dynamic_cast<Player *>(pimpl->source)->getPlayer());
 	}
 
 	if (auto psDroid = dynamic_cast<Droid*>(pimpl->source)) {
@@ -1641,7 +1641,7 @@ void Projectile::updateKills()
 	}
 	else if (dynamic_cast<Structure*>(pimpl->source)) {
 		auto psCommander = getDesignatorAttackingObject(
-            dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer(),
+            dynamic_cast<Player *>(pimpl->source)->getPlayer(),
             pimpl->target);
 
 		if (psCommander != nullptr) {
@@ -1811,7 +1811,7 @@ void Projectile::setSource(BaseObject* psObj)
 	if (psObj == nullptr) return;
 	else if (auto psPrevProj = dynamic_cast<Projectile*>(psObj)) {
 		if (psPrevProj->pimpl->source &&
-        !dynamic_cast<DamageManager *>(psPrevProj->pimpl->source)->isDead()) {
+        !dynamic_cast<Health *>(psPrevProj->pimpl->source)->isDead()) {
 			pimpl->source = psPrevProj->pimpl->source;
 		}
 	}

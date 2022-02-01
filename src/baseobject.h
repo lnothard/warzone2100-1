@@ -60,4 +60,6 @@ StructureBounds getStructureBounds(BaseObject const* object);
 StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos,
                                    uint16_t direction);
 
+[[nodiscard]] OBJECT_TYPE getObjectType(BaseObject const* obj);
+
 #endif // __INCLUDED_BASEOBJECT_H__

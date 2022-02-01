@@ -19,7 +19,7 @@ struct Weapon::Impl
 };
 
 Weapon::Weapon(unsigned id, unsigned player)
-  : BaseObject(id, std::make_unique<PlayerManager>(player))
+  : BaseObject(id, std::make_unique<Player>(player))
   , pimpl{std::make_unique<Impl>()}
 {
 }

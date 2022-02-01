@@ -66,6 +66,7 @@
 #include "display3d.h"
 #include "map.h"
 #include "effects.h"
+#include "baseobject.h"
 #include "init.h"
 #include "mission.h"
 #include "scores.h"
@@ -2585,16 +2586,16 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 		//initialise the lists
 		for (player = 0; player < MAX_PLAYERS; player++)
 		{
-			apsDroidLists[player] = nullptr;
-			apsStructLists[player] = nullptr;
-			apsFeatureLists[player] = nullptr;
-			apsFlagPosLists[player] = nullptr;
+			apsDroidLists[player].clear();
+			apsStructLists[player].clear();
+			apsFeatureLists[player].clear();
+			apsFlagPosLists[player].clear();
 			//clear all the messages?
-			apsProxDisp[player] = nullptr;
-			apsSensorList[0] = nullptr;
-			apsExtractorLists[player] = nullptr;
+			apsProxDisp[player].clear();
+			apsExtractorLists[player].clear();
 		}
 		apsOilList[0] = nullptr;
+    apsSensorList.clear();
 		initFactoryNumFlag();
 	}
 
@@ -2603,12 +2604,12 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 		//initialise the lists
 		for (player = 0; player < MAX_PLAYERS; player++)
 		{
-			apsLimboDroids[player] = nullptr;
-			mission.apsDroidLists[player] = nullptr;
-			mission.apsStructLists[player] = nullptr;
-			mission.apsFeatureLists[player] = nullptr;
-			mission.apsFlagPosLists[player] = nullptr;
-			mission.apsExtractorLists[player] = nullptr;
+			apsLimboDroids[player].clear();
+			mission.apsDroidLists[player].clear();
+			mission.apsStructLists[player].clear();
+			mission.apsFeatureLists[player].clear();
+			mission.apsFlagPosLists[player].clear();
+			mission.apsExtractorLists[player].clear();
 		}
 		mission.apsOilList[0] = nullptr;
 		mission.apsSensorList[0] = nullptr;
@@ -4672,7 +4673,7 @@ static bool loadMainFile(const std::string& fileName)
 			save.nextArrayItem();
 			continue;
 		}
-		unsigned int FactionValue = save.value("faction", static_cast<uint8_t>(FACTION_NORMAL)).toUInt();
+		unsigned int FactionValue = save.value("faction", static_cast<uint8_t>(FactionID::NORMAL)).toUInt();
 		NetPlay.players[index].faction = static_cast<FactionID>(FactionValue);
 		save.nextArrayItem();
 	}
@@ -5289,14 +5290,14 @@ static bool loadSaveDroidPointers(const WzString& pFileName, Droid** ppsCurrentD
 			continue; // another hack for campaign missions, cannot have targets
 		}
 
-		for (psDroid = ppsCurrentDroidLists[player]; psDroid && psDroid->id != id; psDroid = psDroid->psNext)
+		for (psDroid = ppsCurrentDroidLists[player]; psDroid && psDroid->getId() != id; psDroid = psDroid->psNext)
 		{
-			if (isTransporter(psDroid) && psDroid->group != nullptr) // Check for droids in the transporter.
+			if (isTransporter(*psDroid) && psDroid->group != nullptr) // Check for droids in the transporter.
 			{
 				for (Droid* psTrDroid = psDroid->group->members; psTrDroid != nullptr; psTrDroid = psTrDroid->
 				     psGrpNext)
 				{
-					if (psTrDroid->id == id)
+					if (psTrDroid->getId() == id)
 					{
 						psDroid = psTrDroid;
 						goto foundDroid;
@@ -5339,7 +5340,7 @@ static bool loadSaveDroidPointers(const WzString& pFileName, Droid** ppsCurrentD
 			ASSERT(tid >= 0 && tplayer >= 0, "Bad ID");
       BaseObject * psObj = getBaseObjFromData(tid, tplayer, ttype);
 			ASSERT(psObj, "Failed to find droid base structure");
-			ASSERT(!psObj || psObj->type == OBJ_STRUCTURE, "Droid base structure not a structure");
+			ASSERT(!psObj || getObjectType(psObj) == OBJECT_TYPE::STRUCTURE, "Droid base structure not a structure");
 			setSaveDroidBase(psDroid, (Structure*)psObj);
 		}
 		if (ini.contains("commander"))
@@ -5470,28 +5471,27 @@ static void writeSaveObjectJSON(nlohmann::json& jsonObj, BaseObject * psObj)
 		jsonObj["periodicalDamage"] = psObj->periodicalDamage;
 	}
 	jsonObj["born"] = psObj->born;
-	if (psObj->died > 0)
+	if (psObj->damageManager->getTimeOfDeath() > 0)
 	{
 		jsonObj["died"] = psObj->died;
 	}
-	if (psObj->timeLastHit != UDWORD_MAX)
+	if (psObj->damageManager->getTimeLastHit() != UDWORD_MAX)
 	{
-		jsonObj["timeLastHit"] = psObj->timeLastHit;
+		jsonObj["timeLastHit"] = psObj->damageManager->getTimeLastHit();
 	}
-	if (psObj->selected)
+	if (psObj->damageManager->isSelected())
 	{
-		jsonObj["selected"] = psObj->selected;
+		jsonObj["selected"] = psObj->damageManager->isSelected();
 	}
 	for (int i = 0; i < game.maxPlayers; i++)
 	{
-		if (psObj->visible[i])
-		{
+		if (psObj->isVisibleToPlayer(i)) {
 			jsonObj["visible/" + WzString::number(i).toStdString()] = psObj->visible[i];
 		}
 	}
 }
 
-static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
+bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 {
 	if (!PHYSFS_exists(pFileName))
 	{
@@ -5509,13 +5509,12 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 		ini.beginGroup(list[i]);
 		DROID_TYPE droidType = (DROID_TYPE)ini.value("droidType").toInt();
 		int priority = 0;
-		switch (droidType)
-		{
-		case DROID_TRANSPORTER:
+		switch (droidType) {
+      case DROID_TYPE::TRANSPORTER:
 			++priority; // fallthrough
-		case DROID_SUPERTRANSPORTER:
+      case DROID_TYPE::SUPER_TRANSPORTER:
 			++priority; // fallthrough
-		case DROID_COMMAND:
+      case DROID_TYPE::COMMAND:
 			//Don't care about sorting commanders in the mission list for safety missions. They
 			//don't have a group to command and it messes up the order of the list sorting them
 			//which causes problems getting the first transporter group for Gamma-1.
@@ -5567,9 +5566,8 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 			// Create fake template
 			templ.name = ini.string("name", "UNKNOWN");
 			templ.type = (DROID_TYPE)ini.value("droidType").toInt();
-			templ.weaponCount = ini.value("weapons", 0).toInt();
 			ini.beginGroup("parts"); // the following is copy-pasted from loadSaveTemplate() -- fixme somehow
-			templ.asParts[COMP_BODY] = getCompFromName(COMP_BODY, ini.value("body", "ZNULLBODY").toWzString());
+			templ.components[COMP_BODY] = getCompFromName(COMP_BODY, ini.value("body", "ZNULLBODY").toWzString());
 			templ.asParts[COMP_BRAIN] = getCompFromName(COMP_BRAIN, ini.value("brain", "ZNULLBRAIN").toWzString());
 			templ.asParts[COMP_PROPULSION] = getCompFromName(COMP_PROPULSION,
 			                                                 ini.value("propulsion", "ZNULLPROP").toWzString());
@@ -5648,16 +5646,13 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 		{
 			Group* psGroup = grpFind(aigroup);
 			psGroup->add(psDroid);
-			if (psGroup->type == GT_TRANSPORTER)
-			{
-				psDroid->selected = false; // Droid should be visible in the transporter interface.
+			if (psGroup->type == GROUP_TYPE::TRANSPORTER) {
+				psDroid->damageManager->setSelected(false); // Droid should be visible in the transporter interface.
 				visRemoveVisibility(psDroid); // should not have visibility data when in a transporter
 			}
 		}
-		else
-		{
-			if (isTransporter(psDroid) || psDroid->type == DROID_COMMAND)
-			{
+		else {
+			if (isTransporter(*psDroid) || psDroid->getType() == DROID_TYPE::COMMAND) {
 				Group* psGroup = grpCreate();
 				psGroup->add(psDroid);
 			}
@@ -5694,14 +5689,14 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 		psDroid->movement.bumpPos = Vector3i(tmp.x, tmp.y, 0);
 
 		// Recreate path-finding jobs
-		if (psDroid->movement.status == MOVEWAITROUTE)
+		if (psDroid->movement.status == MOVE_STATUS::WAIT_FOR_ROUTE)
 		{
-			psDroid->movement.status = MOVEINACTIVE;
-			fpathDroidRoute(psDroid, psDroid->movement.destination.x, psDroid->movement.destination.y, FMT_MOVE);
-			psDroid->movement.status = MOVEWAITROUTE;
+			psDroid->movement.status = MOVE_STATUS::INACTIVE;
+			fpathDroidRoute(psDroid, psDroid->getMovementData()->destination.x, psDroid->getMovementData()->destination.y, FMT_MOVE);
+			psDroid->movement.status = MOVE_STATUS::WAIT_FOR_ROUTE;
 
 			// Droid might be on a mission, so finish pathfinding now, in case pointers swap and map size changes.
-			FPATH_RESULT dr = fpathDroidRoute(psDroid, psDroid->movement.destination.x, psDroid->movement.destination.y,
+			FPATH_RESULT dr = fpathDroidRoute(psDroid, psDroid->getMovementData()->destination.x, psDroid->getMovementData()->destination.y,
                                         FMT_MOVE);
 			if (dr == FPATH_RESULT::OK)
 			{
@@ -5724,9 +5719,10 @@ static bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
 			// set map start position, FIXME - save properly elsewhere!
 		}
 
-		if (psDroid->group == nullptr || psDroid->group->type != GT_TRANSPORTER || isTransporter(psDroid))
+		if (psDroid->getGroup() == nullptr ||
+        psDroid->getGroup()->type != GROUP_TYPE::TRANSPORTER ||
+        isTransporter(*psDroid)) {
 		// do not add to list if on a transport, then the group list is used instead
-		{
 			addDroid(psDroid, ppsCurrentDroidLists);
 		}
 
@@ -5767,13 +5763,13 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 	{
 		droidObj["lastFrustratedTime"] = psCurr->lastFrustratedTime;
 	}
-	if (psCurr->experience > 0)
+	if (psCurr->getExperience() > 0)
 	{
-		droidObj["experience"] = psCurr->experience;
+		droidObj["experience"] = psCurr->getExperience();
 	}
-	if (psCurr->kills > 0)
+	if (psCurr->getKills() > 0)
 	{
-		droidObj["kills"] = psCurr->kills;
+		droidObj["kills"] = psCurr->getKills();
 	}
 
 	setIniDroidOrder(droidObj, "order", *psCurr->getOrder());
@@ -5792,11 +5788,10 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 	droidObj["action/pos"] = psCurr->actionPos;
 	droidObj["actionStarted"] = psCurr->time_action_started;
 	droidObj["actionPoints"] = psCurr->action_points_done;
-	if (psCurr->associated_structure != nullptr)
-	{
-		droidObj["baseStruct/id"] = psCurr->associated_structure->id;
-		droidObj["baseStruct/player"] = psCurr->associated_structure->player; // always ours, but for completeness
-		droidObj["baseStruct/type"] = psCurr->associated_structure->type; // always a building, but for completeness
+	if (psCurr->getBase() != nullptr) {
+		droidObj["baseStruct/id"] = psCurr->getBase()->getId();
+		droidObj["baseStruct/player"] = psCurr->getBase()->playerManager->getPlayer(); // always ours, but for completeness
+		droidObj["baseStruct/type"] = getObjectType(psCurr->getBase()); // always a building, but for completeness
 	}
 	if (psCurr->group)
 	{
@@ -5826,23 +5821,24 @@ static nlohmann::json writeDroid(Droid* psCurr, bool onMission, int& counter)
 	{
 		partsObj["weapon/" + WzString::number(j + 1).toStdString()] = (asWeaponStats + psCurr->asWeaps[j].nStat)->id;
 	}
+  auto movement = psCurr->getMovementData();
 	droidObj["parts"] = partsObj;
-	droidObj["moveStatus"] = psCurr->movement.status;
-	droidObj["pathIndex"] = psCurr->movement.pathIndex;
-	droidObj["pathLength"] = psCurr->movement.path.size();
-	for (unsigned i = 0; i < psCurr->movement.path.size(); i++)
+	droidObj["moveStatus"] = movement->status;
+	droidObj["pathIndex"] = movement->pathIndex;
+	droidObj["pathLength"] = movement->path.size();
+	for (unsigned i = 0; i < movement->path.size(); i++)
 	{
-		droidObj["pathNode/" + WzString::number(i).toStdString()] = psCurr->movement.path[i];
+		droidObj["pathNode/" + WzString::number(i).toStdString()] = movement->path[i];
 	}
-	droidObj["moveDestination"] = psCurr->movement.destination;
-	droidObj["moveSource"] = psCurr->movement.origin;
-	droidObj["moveTarget"] = psCurr->movement.target;
-	droidObj["moveSpeed"] = psCurr->movement.speed;
-	droidObj["moveDirection"] = psCurr->movement.moveDir;
-	droidObj["bumpDir"] = psCurr->movement.bumpDir;
-	droidObj["vertSpeed"] = psCurr->movement.vertical_speed;
-	droidObj["bumpTime"] = psCurr->movement.bumpTime;
-	droidObj["shuffleStart"] = psCurr->movement.shuffleStart;
+	droidObj["moveDestination"] = movement->destination;
+	droidObj["moveSource"] = movement->src;
+	droidObj["moveTarget"] = movement->target;
+	droidObj["moveSpeed"] = movement->speed;
+	droidObj["moveDirection"] = movement->moveDir;
+	droidObj["bumpDir"] = movement->bumpDir;
+	droidObj["vertSpeed"] = movement->vertical_speed;
+	droidObj["bumpTime"] = movement->bumpTime;
+	droidObj["shuffleStart"] = movement->shuffleStart;
 	for (int i = 0; i < MAX_WEAPONS; ++i)
 	{
 		droidObj["attackRun/" + WzString::number(i).toStdString()] = psCurr->asWeaps[i].ammoUsed;
@@ -6489,11 +6485,11 @@ bool writeStructFile(const char* pFileName)
 			{
 				ini.setValue("resistance", psCurr->resistance);
 			}
-			if (psCurr->status != SS_BUILT)
+			if (psCurr->getState() != STRUCTURE_STATE::BUILT)
 			{
-				ini.setValue("status", psCurr->status);
+				ini.setValue("status", psCurr->getState());
 			}
-			ini.setValue("weapons", psCurr->numWeaps);
+			ini.setValue("weapons", numWeapons(*psCurr));
 			for (unsigned j = 0; j < psCurr->numWeaps; j++)
 			{
 				ini.setValue("parts/weapon/" + WzString::number(j + 1), (asWeaponStats + psCurr->asWeaps[j].nStat)->id);

@@ -145,7 +145,7 @@ struct Droid::Impl
 
   int iAudioID = NO_SOUND;
 
-  std::unordered_map<std::string, std::unique_ptr<ComponentStats>> components;
+  std::unordered_map<COMPONENT_TYPE, std::unique_ptr<ComponentStats>> components;
 };
 
 Droid::~Droid()
@@ -172,8 +172,8 @@ Droid::~Droid()
 
 Droid::Droid(unsigned id, unsigned player)
   : BaseObject(id,
-               std::make_unique<PlayerManager>(player),
-               std::make_unique<DamageManager>())
+               std::make_unique<Player>(player),
+               std::make_unique<Health>())
   , pimpl{std::make_unique<Impl>()}
 {
   initVisibility();
@@ -282,7 +282,7 @@ ComponentStats const* DroidTemplate::getComponent(std::string const& compName) c
   return components.at(compName).get();
 }
 
-const ComponentStats* Droid::getComponent(std::string const& compName) const
+const ComponentStats* Droid::getComponent(COMPONENT_TYPE compName) const
 {
   return pimpl ? pimpl->components.at(compName).get() : nullptr;
 }
@@ -388,7 +388,7 @@ unsigned Droid::getLevel() const
   ASSERT_OR_RETURN(0, pimpl != nullptr, "Droid object is undefined");
 
   auto brain = dynamic_cast<CommanderStats const*>(
-          getComponent("brain"));
+          getComponent(COMPONENT_TYPE::BRAIN));
 
   if (!brain) return 0;
   const auto& rankThresholds = brain->
@@ -467,7 +467,7 @@ void Droid::gainExperience(unsigned exp)
 bool Droid::isVtol() const
 {
   auto propulsion = dynamic_cast<PropulsionStats const*>(
-          getComponent("propulsion"));
+          getComponent(COMPONENT_TYPE::PROPULSION));
 
   return propulsion && !isTransporter(*this) &&
          propulsion->propulsionType == PROPULSION_TYPE::LIFT;
@@ -488,11 +488,11 @@ unsigned Droid::calculateSensorRange() const
 {
   ASSERT_OR_RETURN(0, pimpl != nullptr, "Droid object is undefined");
   auto const ecm_range = dynamic_cast<EcmStats const*>(
-          getComponent("ecm"))->upgraded[playerManager->getPlayer()].range;
+          getComponent(COMPONENT_TYPE::ECM))->upgraded[playerManager->getPlayer()].range;
 
   if (ecm_range > 0) return ecm_range;
   return dynamic_cast<SensorStats const*>(
-          getComponent("sensor"))->upgraded[playerManager->getPlayer()].range;
+          getComponent(COMPONENT_TYPE::SENSOR))->upgraded[playerManager->getPlayer()].range;
 }
 
 DROID_TYPE Droid::getType() const noexcept
@@ -508,7 +508,7 @@ bool Droid::hasElectronicWeapon() const
 
 int Droid::spaceOccupiedOnTransporter() const
 {
-  if (auto body = dynamic_cast<BodyStats const*>(getComponent("body"))) {
+  if (auto body = dynamic_cast<BodyStats const*>(getComponent(COMPONENT_TYPE::BODY))) {
     return bMultiPlayer ? static_cast<int>(body->size) + 1 : 1;
   }
   return -1;
@@ -523,7 +523,7 @@ bool Droid::isFlying() const
 {
   ASSERT_OR_RETURN(false, pimpl != nullptr, "Droid object is undefined");
   if (auto propulsion = dynamic_cast<PropulsionStats const*>(
-          getComponent("propulsion"))) {
+          getComponent(COMPONENT_TYPE::PROPULSION))) {
 
     return (pimpl->movement->status != MOVE_STATUS::INACTIVE || isTransporter(*this)) &&
            propulsion->propulsionType == PROPULSION_TYPE::LIFT;
@@ -700,7 +700,7 @@ bool Droid::orderDroidList()
 unsigned Droid::getArmourPointsAgainstWeapon(WEAPON_CLASS weaponClass) const
 {
   ASSERT_OR_RETURN(0, pimpl != nullptr, "Droid object is undefined");
-  auto body = dynamic_cast<BodyStats const*>(getComponent("body"));
+  auto body = dynamic_cast<BodyStats const*>(getComponent(COMPONENT_TYPE::BODY));
   if (!body) return 0;
   switch (weaponClass) {
     case WEAPON_CLASS::KINETIC:
@@ -740,7 +740,7 @@ bool Droid::isAttacking() const noexcept
 int Droid::calculateElectronicResistance() const
 {
   if (!pimpl) return -1;
-  auto body = dynamic_cast<BodyStats const*>(getComponent("body"));
+  auto body = dynamic_cast<BodyStats const*>(getComponent(COMPONENT_TYPE::BODY));
   auto resistance = pimpl->experience /
                     (65536 / MAX(1, body->upgraded[playerManager->getPlayer()].resistance));
   resistance = MAX(resistance, body->upgraded[playerManager->getPlayer()].resistance);
@@ -749,7 +749,7 @@ int Droid::calculateElectronicResistance() const
 
 bool Droid::isRadarDetector() const
 {
-  auto sensor = dynamic_cast<SensorStats const*>(getComponent("sensor"));
+  auto sensor = dynamic_cast<SensorStats const*>(getComponent(COMPONENT_TYPE::SENSOR));
   if (!sensor) return false;
   return sensor->type == SENSOR_TYPE::RADAR_DETECTOR;
 }
@@ -758,7 +758,7 @@ bool Droid::hasStandardSensor() const
 {
   if (!pimpl) return false;
 
-  if (auto sensor = dynamic_cast<SensorStats const*>(getComponent("sensor"))) {
+  if (auto sensor = dynamic_cast<SensorStats const*>(getComponent(COMPONENT_TYPE::SENSOR))) {
     if (pimpl->type != DROID_TYPE::SENSOR) return false;
     if (sensor->type == SENSOR_TYPE::VTOL_INTERCEPT ||
         sensor->type == SENSOR_TYPE::STANDARD ||
@@ -772,7 +772,7 @@ bool Droid::hasStandardSensor() const
 bool Droid::hasCbSensor() const
 {
   if (!pimpl) return false;
-  if (auto sensor = dynamic_cast<SensorStats const*>(getComponent("sensor"))) {
+  if (auto sensor = dynamic_cast<SensorStats const*>(getComponent(COMPONENT_TYPE::SENSOR))) {
     if (pimpl->type != DROID_TYPE::SENSOR) return false;
     if (sensor->type == SENSOR_TYPE::VTOL_CB ||
         sensor->type == SENSOR_TYPE::INDIRECT_CB) {
@@ -1516,7 +1516,7 @@ void Droid::orderUpdateDroid()
     case ATTACK:
     case ATTACK_TARGET:
       if (pimpl->order->target == nullptr ||
-          dynamic_cast<DamageManager *>(pimpl->order->target)->isDead()) {
+          dynamic_cast<Health *>(pimpl->order->target)->isDead()) {
         // if vtol then return to rearm pad as long as there are no other
         // orders queued up
         if (isVtol()) {
@@ -1881,7 +1881,7 @@ void Droid::orderUpdateDroid()
   // catch any vtol that is rearming but has finished his order
   if (pimpl->order->type == NONE && vtolRearming(*this) &&
       (pimpl->actionTargets[0] == nullptr ||
-       !dynamic_cast<DamageManager *>(pimpl->actionTargets[0])->isDead())) {
+       !pimpl->actionTargets[0]->damageManager->isDead())) {
 
     pimpl->order = std::make_unique<Order>(REARM, *pimpl->actionTargets[0]);
   }
@@ -1973,7 +1973,7 @@ void Droid::actionUpdateDroid()
   Structure* blockingWall = nullptr;
   bool wallBlocked = false;
 
-  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   bool secHoldActive = secondaryGetState(SECONDARY_ORDER::HALT_TYPE) == DSS_HALT_HOLD;
 
   actionSanity();
@@ -3525,7 +3525,7 @@ void Droid::aiUpdateDroid()
   if ((orderState(this, ORDER_TYPE::OBSERVE) ||
        orderState(this, ORDER_TYPE::ATTACK_TARGET)) &&
       pimpl->order->target &&
-      dynamic_cast<DamageManager *>(pimpl->order->target)->isDead()) {
+      dynamic_cast<Health *>(pimpl->order->target)->isDead()) {
     lookForTarget = true;
     updateTarget = false;
   }
@@ -3651,7 +3651,7 @@ bool Droid::droidUpdateRestore()
 
 bool Droid::droidUpdateDroidRepair()
 {
-  auto repair = dynamic_cast<RepairStats const*>(getComponent("repair"));
+  auto repair = dynamic_cast<RepairStats const*>(getComponent(COMPONENT_TYPE::REPAIR_UNIT));
   ASSERT_OR_RETURN(false, pimpl != nullptr, "Droid object is undefined");
   ASSERT_OR_RETURN(false, pimpl->action == ACTION::DROID_REPAIR, "Unit does not have unit repair order");
   ASSERT_OR_RETURN(false, repair, "Unit does not have a repair turret");
@@ -3694,7 +3694,7 @@ bool Droid::droidUpdateBuild()
     pimpl->action = ACTION::NONE;
     return false;
   }
-  auto construct = dynamic_cast<ConstructStats const*>(getComponent("construct"));
+  auto construct = dynamic_cast<ConstructStats const*>(getComponent(COMPONENT_TYPE::CONSTRUCT));
   ASSERT_OR_RETURN(false, psStruct, "target is not a structure");
   ASSERT_OR_RETURN(false, construct, "Invalid construct pointer for unit");
 
@@ -3910,7 +3910,7 @@ void Droid::droidUpdate()
   }
 
   // See if we can and need to self repair.
-  auto repair = dynamic_cast<RepairStats const*>(getComponent("repair"));
+  auto repair = dynamic_cast<RepairStats const*>(getComponent(COMPONENT_TYPE::REPAIR_UNIT));
   if (!isVtol() && damageManager->getHp() < damageManager->getOriginalHp() &&
       repair != nullptr && selfRepairEnabled(playerManager->getPlayer())) {
     droidUpdateDroidSelfRepair(this);
@@ -4149,7 +4149,7 @@ void Droid::moveShuffleDroid(Vector2i s)
   auto rvy = -svx;
 
   // check for blocking tiles
-  if (auto propulsion = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"))) {
+  if (auto propulsion = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION))) {
     if (fpathBlockingTile(map_coord((int) getPosition().x + lvx),
                           map_coord((int) getPosition().y + lvy),
                           propulsion->propulsionType)) {
@@ -4245,7 +4245,7 @@ bool Droid::droidSensorDroidWeapon(const BaseObject* psObj) const
         psDroid->getType() != DROID_TYPE::COMMAND) {
       return false;
     }
-    psStats = dynamic_cast<SensorStats const*>(getComponent("sensor"));
+    psStats = dynamic_cast<SensorStats const*>(getComponent(COMPONENT_TYPE::SENSOR));
   }
   else {
     auto psStruct = dynamic_cast<const Structure*>(psObj);
@@ -4915,7 +4915,7 @@ void Droid::orderCheckList()
   for (auto i = 0; i < pimpl->asOrderList.size(); ++i)
   {
     auto psTarget = pimpl->asOrderList[i].target;
-    if (psTarget == nullptr || !dynamic_cast<DamageManager *>(psTarget)->isDead()) {
+    if (psTarget == nullptr || !dynamic_cast<Health *>(psTarget)->isDead()) {
       continue;
     }
     if ((int)i < pimpl->asOrderList.size()) {
@@ -4930,7 +4930,7 @@ void Droid::moveStopDroid()
 {
   if (!pimpl) return;
   using enum MOVE_STATUS;
-  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   ASSERT_OR_RETURN(, psPropStats != nullptr, "invalid propulsion stats pointer");
 
   if (psPropStats->propulsionType == PROPULSION_TYPE::LIFT) {
@@ -5075,7 +5075,7 @@ bool Droid::moveBlocked()
 
 std::string Droid::getDroidLevelName() const
 {
-  auto psStats = dynamic_cast<CommanderStats const*>(getComponent("brain"));
+  auto psStats = dynamic_cast<CommanderStats const*>(getComponent(COMPONENT_TYPE::BRAIN));
   if (!psStats) return "";
   return PE_("rank", psStats->rankNames[getDroidLevel(this)].c_str());
 }
@@ -5085,7 +5085,7 @@ std::string Droid::getDroidLevelName() const
 void Droid::moveCalcBlockingSlide(int* pmx, int* pmy, uint16_t tarDir, uint16_t* pSlideDir)
 {
   if (!pimpl) return;
-  auto propulsion = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto propulsion = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   if (!propulsion) return;
   auto propulsionType = propulsion->propulsionType;
   int horizX, horizY, vertX, vertY;
@@ -5320,7 +5320,7 @@ int Droid::objRadius() const
   if (getType() == DROID_TYPE::PERSON) return mvPersRad;
   else if (isCyborg(this)) return mvCybRad;
 
-  const auto bodyStats = dynamic_cast<BodyStats const*>(getComponent("body"));
+  const auto bodyStats = dynamic_cast<BodyStats const*>(getComponent(COMPONENT_TYPE::BODY));
   switch (bodyStats->size) {
     using enum BODY_SIZE;
     case LIGHT:
@@ -5342,7 +5342,7 @@ void Droid::movePlayDroidMoveAudio()
 
   if (!isVisibleToSelectedPlayer()) return;
 
-  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   ASSERT_OR_RETURN(, psPropStats != nullptr, "Invalid propulsion stats pointer");
   auto psPropType = psPropStats->propulsionType;
 
@@ -5382,7 +5382,7 @@ void Droid::moveUpdateGroundModel(int speed, uint16_t direction)
     return;
   }
 
-  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   if (!psPropStats) return;
 
   auto spinSpeed = pimpl->baseSpeed * psPropStats->spinSpeed;
@@ -5449,7 +5449,7 @@ bool Droid::droidUpdateDemolishing()
   auto psStruct = dynamic_cast<Structure*>(getOrder()->target);
   ASSERT_OR_RETURN(false, psStruct, "target is not a structure");
 
-  if (auto construct = dynamic_cast<ConstructStats const*>(getComponent("construct"))) {
+  if (auto construct = dynamic_cast<ConstructStats const*>(getComponent(COMPONENT_TYPE::PROPULSION))) {
     auto constructRate = 5 * constructorPoints(construct, playerManager->getPlayer());
     auto pointsToAdd = gameTimeAdjustedAverage(constructRate);
 
@@ -5470,7 +5470,7 @@ int Droid::moveCalcDroidSpeed()
   unsigned speed, pitch;
 
   // NOTE: This screws up since the transporter is offscreen still (on a mission!), and we are trying to find terrainType of a tile (that is offscreen!)
-  auto propulsion = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto propulsion = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   if (propulsion && pimpl->type == DROID_TYPE::SUPER_TRANSPORTER && missionIsOffworld()) {
     speed = propulsion->maxSpeed;
   }
@@ -5517,7 +5517,7 @@ Vector2i Droid::moveGetObstacleVector(Vector2i dest)
 {
   int numObst = 0, distTot = 0;
   Vector2i dir(0, 0);
-  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   ASSERT_OR_RETURN(dir, psPropStats, "invalid propulsion stats pointer");
 
   int ourMaxSpeed = psPropStats->maxSpeed;
@@ -5548,7 +5548,7 @@ Vector2i Droid::moveGetObstacleVector(Vector2i dest)
       continue;
     }
 
-    auto temp = psObstacle->getComponent("propulsion");
+    auto temp = psObstacle->getComponent(COMPONENT_TYPE::PROPULSION);
     auto obstaclePropStats = dynamic_cast<PropulsionStats const*>(temp);
     auto obstacleMaxSpeed = obstaclePropStats->maxSpeed;
     auto obstacleRadius = psObstacle->objRadius();
@@ -5649,7 +5649,7 @@ void Droid::moveUpdatePersonModel(int speed, uint16_t direction)
     return;
   }
 
-  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   if (!psPropStats) return;
 
   auto spinSpeed = pimpl->baseSpeed * psPropStats->spinSpeed;
@@ -5698,7 +5698,7 @@ void Droid::moveUpdateVtolModel(int speed, uint16_t direction)
     return;
   }
 
-  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   if (!psPropStats) return;
 
   auto spinSpeed = DEG(psPropStats->spinSpeed);
@@ -5756,7 +5756,7 @@ void Droid::moveUpdateDroid()
   Vector3i pos(0, 0, 0);
   bool bStarted = false, bStopped;
 
-  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   ASSERT_OR_RETURN(, psPropStats != nullptr, "Invalid propulsion stats pointer");
 
   // If the droid has been attacked by an EMP weapon, it is temporarily disabled
@@ -6100,7 +6100,7 @@ void Droid::moveCalcDroidSlide(int* pmx, int* pmy)
       auto psShuffleDroid = dynamic_cast<Droid*>(psObst);
       if (psObst && psShuffleDroid) {
 
-        if (aiCheckAlliances(dynamic_cast<PlayerManager *>(psObst)->getPlayer(), playerManager->getPlayer())
+        if (aiCheckAlliances(dynamic_cast<Player *>(psObst)->getPlayer(), playerManager->getPlayer())
             && psShuffleDroid->getAction() != ACTION::WAIT_DURING_REARM
             && psShuffleDroid->getMovementData()->status == MOVE_STATUS::INACTIVE) {
           psShuffleDroid->moveShuffleDroid(getMovementData()->target - getPosition().xy());
@@ -6179,7 +6179,7 @@ void Droid::movePlayAudio(bool bStarted, bool bStoppedBefore, int iMoveSpeed)
   AUDIO_CALLBACK pAudioCallback = nullptr;
 
   /* get prop stats */
-  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   ASSERT_OR_RETURN(, psPropStats != nullptr, "Invalid propulsion stats pointer");
   auto propType = psPropStats->propulsionType;
 
@@ -6238,7 +6238,7 @@ int Droid::moveDirectPathToWaypoint(unsigned positionIndex)
   Vector2i delta = dst - src;
   int32_t dist = iHypot(delta);
   BLOCKING_CALLBACK_DATA data;
-  data.propulsionType = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"))->propulsionType;
+  data.propulsionType = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION))->propulsionType;
   data.blocking = false;
   data.src = src;
   data.dst = dst;
@@ -6304,7 +6304,7 @@ void Droid::orderDroidBase(Order* psOrder)
   if (!pimpl) return;
   unsigned iFactoryDistSq;
   Structure* psFactory;
-  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto psPropStats = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   const Vector3i rPos(psOrder->pos, 0);
   syncDebugDroid(this, '-');
   syncDebug("%d ordered %s", getId(),
@@ -6448,7 +6448,7 @@ void Droid::orderDroidBase(Order* psOrder)
         // attacking something while guarding, don't change the order
         actionDroid(this, ACTION::ATTACK, psOrder->target);
       }
-      else if (psOrder->target && !dynamic_cast<DamageManager *>(psOrder->target)->isDead()) {
+      else if (psOrder->target && !dynamic_cast<Health *>(psOrder->target)->isDead()) {
         //cannot attack a Transporter with EW in multiPlayer
         // FIXME: Why not ?
         if (game.type == LEVEL_TYPE::SKIRMISH &&
@@ -6638,7 +6638,7 @@ void Droid::orderDroidBase(Order* psOrder)
       // if already has a target repair, don't override it: it might be different
       // and we don't want come back and forth between 2 repair points
       if (pimpl->order->type == RETURN_TO_REPAIR && psOrder->target &&
-          !dynamic_cast<DamageManager *>(psOrder->target)->isDead()) {
+          !dynamic_cast<Health *>(psOrder->target)->isDead()) {
         objTrace(getId(), "DONE FOR NOW");
         break;
       }
@@ -6910,7 +6910,7 @@ std::unique_ptr<Droid> Droid::reallyBuildDroid(const DroidTemplate* pTemplate,
   psDroid->damageManager->setOriginalHp(psDroid->damageManager->getHp());
 
   /* Set droid's initial illumination */
-  psDroid->setImdShape(dynamic_cast<BodyStats const*>(getComponent("body"))->pIMD.get());
+  psDroid->setImdShape(dynamic_cast<BodyStats const*>(getComponent(COMPONENT_TYPE::BODY))->pIMD.get());
 
   //don't worry if not on homebase cos not being drawn yet
   if (!onMission) {
@@ -7165,7 +7165,7 @@ void Droid::droidSetBits(const DroidTemplate* pTemplate)
     }
     pimpl->weapons[inc].ammoUsed = 0;
   }
-  auto propulsion = dynamic_cast<PropulsionStats const*>(getComponent("propulsion"));
+  auto propulsion = dynamic_cast<PropulsionStats const*>(getComponent(COMPONENT_TYPE::PROPULSION));
   if (!propulsion) return;
   switch (propulsion->propulsionType) {
     // getPropulsionStats(psDroid) only defined after psDroid->asBits[COMPONENT_TYPE::PROPULSION] is set.
@@ -7188,7 +7188,7 @@ void Droid::setTarget(BaseObject* psNewTarget)
 {
   if (!pimpl) return;
   pimpl->order->target = psNewTarget;
-  ASSERT(psNewTarget == nullptr || !dynamic_cast<DamageManager *>(psNewTarget)->isDead(),
+  ASSERT(psNewTarget == nullptr || !dynamic_cast<Health *>(psNewTarget)->isDead(),
          "setDroidTarget: Set dead target");
 }
 
@@ -7208,7 +7208,7 @@ void Droid::setActionTarget(BaseObject* psNewTarget, unsigned idx)
 {
   if (!pimpl) return;
   pimpl->actionTargets[idx] = psNewTarget;
-  ASSERT(psNewTarget == nullptr || !dynamic_cast<DamageManager *>(psNewTarget)->isDead(),
+  ASSERT(psNewTarget == nullptr || !dynamic_cast<Health *>(psNewTarget)->isDead(),
          "setDroidActionTarget: Set dead target");
 }
 
@@ -7241,7 +7241,7 @@ int droidReloadBar(BaseObject const& psObj, Weapon const* psWeap, int weapon_slo
 	auto psStats = psWeap->getStats();
 
 	/* Justifiable on. when greater than a one second reload or intra salvo time  */
-  auto player = dynamic_cast<PlayerManager const&>(psObj).getPlayer();
+  auto player = dynamic_cast<Player const&>(psObj).getPlayer();
 	auto bSalvo = (psStats->upgraded[player].numRounds > 1);
   auto psDroid = dynamic_cast<const Droid*>(&psObj);
   if (!(bSalvo && psStats->upgraded[player].reloadTime > GAME_TICKS_PER_SEC) &&
@@ -7441,7 +7441,7 @@ bool droidUpdateRepair(Droid* psDroid)
 	ASSERT_OR_RETURN(false, psDroid->getAction() == ACTION::REPAIR, "unit does not have repair order");
   
 	auto psStruct = dynamic_cast<Structure const*>(psDroid->getActionTarget(0));
-  auto construct = dynamic_cast<ConstructStats const*>(psDroid->getComponent("construct"));
+  auto construct = dynamic_cast<ConstructStats const*>(psDroid->getComponent(COMPONENT_TYPE::CONSTRUCT));
 
   auto iRepairRate = -1;
   if (construct) {
@@ -7465,7 +7465,7 @@ bool droidUpdateRepair(Droid* psDroid)
 /*Updates a Repair Droid working on a damaged droid*/
 static bool droidUpdateDroidRepairBase(Droid const* psRepairDroid, Droid* psDroidToRepair)
 {
-  auto repairStats = dynamic_cast<const RepairStats*>(psRepairDroid->getComponent("repair"));
+  auto repairStats = dynamic_cast<const RepairStats*>(psRepairDroid->getComponent(COMPONENT_TYPE::REPAIR_UNIT));
 	auto iRepairRateNumerator = repairPoints(repairStats, psRepairDroid->playerManager->getPlayer());
 	auto iRepairRateDenominator = 1;
 
@@ -8358,7 +8358,7 @@ static bool ThreatInRange(SDWORD player, SDWORD range, SDWORD rangeX, SDWORD ran
 					continue;
 				}
 
-        auto propulsion = dynamic_cast<PropulsionStats const*>(psDroid.getComponent("propulsion"));
+        auto propulsion = dynamic_cast<PropulsionStats const*>(psDroid.getComponent(COMPONENT_TYPE::PROPULSION));
 				//if VTOLs are excluded, skip them
 				if (!bVTOLs && propulsion &&
             propulsion->propulsionType == PROPULSION_TYPE::LIFT ||
@@ -9030,7 +9030,7 @@ void droidSetPosition(Droid* psDroid, int x, int y)
 
 int droidSqDist(Droid const* psDroid, BaseObject const* psObj)
 {
-	auto psPropStats = dynamic_cast<PropulsionStats const*>(psDroid->getComponent("propulsion"));
+	auto psPropStats = dynamic_cast<PropulsionStats const*>(psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
 
 	if (psPropStats && !fpathCheck(psDroid->getPosition(),
                                  psObj->getPosition(),

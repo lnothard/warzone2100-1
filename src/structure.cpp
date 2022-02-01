@@ -253,8 +253,8 @@ struct ResourceExtractor::Impl
 };
 
 Structure::Structure(unsigned id, unsigned player)
-  : BaseObject(id, std::make_unique<PlayerManager>(player),
-               std::make_unique<DamageManager>())
+  : BaseObject(id, std::make_unique<Player>(player),
+               std::make_unique<Health>())
   , pimpl{std::make_unique<Impl>()}
 {
 }

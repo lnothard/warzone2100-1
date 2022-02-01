@@ -40,6 +40,7 @@
 #include "visibility.h"
 #include "wavecast.h"
 #include "message.h"
+#include "baseobject.h"
 
 /* forward decl */
 bool bInTutorial;
@@ -708,7 +709,8 @@ static void processVisibilityLevel(BaseObject* psObj, bool& addedMessage)
     if (!justBecameVisible) continue;
 
     /* Make sure all tiles under a feature/structure become visible when you see it */
-    if (psObj->type == OBJ_STRUCTURE || psObj->type == OBJ_FEATURE) {
+    if (getObjectType(psObj) == OBJECT_TYPE::STRUCTURE ||
+        getObjectType(psObj) == OBJECT_TYPE::FEATURE) {
       setUnderTilesVis(psObj, player);
     }
 
@@ -782,15 +784,14 @@ void processVisibility()
 	bool addedMessage = false;
 	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
-    BaseObject * lists[] = {apsDroidLists[player], apsStructLists[player], apsFeatureLists[player]};
-		unsigned list;
-		for (list = 0; list < sizeof(lists) / sizeof(*lists); ++list)
-		{
-			for (BaseObject * psObj = lists[list]; psObj != nullptr; psObj = psObj->psNext)
-			{
-				processVisibilityLevel(psObj, addedMessage);
-			}
-		}
+    for (auto& psDroid : apsDroidLists[player])
+      processVisibilityLevel(&psDroid, addedMessage);
+
+    for (auto& psStruct : apsStructLists[player])
+      processVisibilityLevel(psStruct.get(), addedMessage);
+
+    for (auto psFeature : apsFeatureLists[player])
+      processVisibilityLevel(psFeature, addedMessage);
 	}
 	if (addedMessage) {
 		jsDebugMessageUpdate();
@@ -834,17 +835,19 @@ void setUnderTilesVis(BaseObject* psObj, unsigned player)
  */
 bool lineOfFire(BaseObject const* psViewer, BaseObject const* psTarget, int weapon_slot, bool wallsBlock)
 {
-	WeaponStats* psStats = nullptr;
+	WeaponStats const* psStats = nullptr;
 
 	ASSERT_OR_RETURN(false, psViewer != nullptr, "Invalid shooter pointer!");
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Invalid target pointer!");
-	ASSERT_OR_RETURN(false, psViewer->type == OBJ_DROID || psViewer->type == OBJ_STRUCTURE, "Bad viewer type");
+	ASSERT_OR_RETURN(false, getObjectType(psViewer) == OBJECT_TYPE::DROID ||
+                          getObjectType(psViewer) == OBJECT_TYPE::STRUCTURE,
+                   "Bad viewer type");
 
-	if (psViewer->type == OBJ_DROID) {
-		psStats = asWeaponStats + ((const Droid*)psViewer)->asWeaps[weapon_slot].nStat;
+	if (auto psDroid = dynamic_cast<Droid const*>(psViewer)) {
+		psStats = psDroid->getWeapon(weapon_slot)->getStats();
 	}
-	else if (psViewer->type == OBJ_STRUCTURE) {
-		psStats = asWeaponStats + ((const Structure*)psViewer)->asWeaps[weapon_slot].nStat;
+	else if (auto psStruct = dynamic_cast<Structure const*>(psViewer)) {
+		psStats = psStruct->getWeapon(weapon_slot)->getStats();
 	}
 	// 2d distance
 	auto distance = iHypot((psTarget->getPosition() - psViewer->getPosition()).xy());
@@ -929,10 +932,10 @@ static int checkFireLine(BaseObject const* psViewer, BaseObject const* psTarget,
 
 
 	/* CorvusCorax: get muzzle offset (code from projectile.c)*/
-	if (psViewer->type == OBJ_DROID && weapon_slot >= 0) {
-		calcDroidMuzzleBaseLocation((const Droid*)psViewer, &muzzle, weapon_slot);
+	if (getObjectType(psViewer) == OBJECT_TYPE::DROID && weapon_slot >= 0) {
+		calcDroidMuzzleBaseLocation(dynamic_cast<Droid const*>(psViewer), &muzzle, weapon_slot);
 	}
-	else if (psViewer->type == OBJ_STRUCTURE && weapon_slot >= 0) {
+	else if (getObjectType(psViewer) == OBJECT_TYPE::STRUCTURE && weapon_slot >= 0) {
 		calcStructureMuzzleBaseLocation((const Structure*)psViewer, &muzzle, weapon_slot);
 	}
 	else { // incase anything wants a projectile
@@ -1036,13 +1039,13 @@ static bool visObjInRange(BaseObject const* psObj1, BaseObject const* psObj2, in
 static unsigned objSensorRange(BaseObject const* psObj)
 {
   if (auto psDroid = dynamic_cast<const Droid*>(psObj)) {
-    const auto ecmrange = asECMStats[psDroid->
-            asBits[COMP_ECM]].upgrade[psObj->playerManager->getPlayer()].range;
+    auto ecm = dynamic_cast<EcmStats const*>(psDroid->getComponent(COMPONENT_TYPE::ECM));
+    const auto ecmrange = ecm->upgraded[psObj->playerManager->getPlayer()].range;
     if (ecmrange > 0) {
       return ecmrange;
     }
-    return asSensorStats[psDroid->
-            asBits[COMP_SENSOR]].upgrade[psObj->playerManager->getPlayer()].range;
+    auto sensor = dynamic_cast<SensorStats const*>(psDroid->getComponent(COMPONENT_TYPE::SENSOR));
+    return sensor->upgraded[psObj->playerManager->getPlayer()].range;
   }
   else if (auto psStruct = dynamic_cast<const Structure*>(psObj)) {
     const auto ecmrange = psStruct->getStats()->ecm_stats->upgraded[psObj->playerManager->getPlayer()].range;
@@ -1058,8 +1061,8 @@ static unsigned objSensorRange(BaseObject const* psObj)
 static unsigned objJammerPower(BaseObject const* psObj)
 {
   if (auto psDroid = dynamic_cast<const Droid*>(psObj))  {
-    return asECMStats[psDroid->
-            asBits[COMP_ECM]].upgraded[psObj->playerManager->getPlayer()].range;
+    auto ecm = dynamic_cast<EcmStats const*>(psDroid->getComponent(COMPONENT_TYPE::ECM));
+    return ecm->upgraded[psObj->playerManager->getPlayer()].range;
   }
   else if (auto psStruct = dynamic_cast<const Structure*>(psObj))  {
     return psStruct->getStats()->ecm_stats->

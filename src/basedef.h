@@ -24,14 +24,15 @@
  */
 
 #ifndef __INCLUDED_BASEDEF_H__
-#define __INCLUDED_BASEDEF_H__
 
 #include <array>
 #include <bitset>
 
+#include "player.h"
 #include "weapon.h"
 
 struct DisplayData;
+enum class WEAPON_SUBCLASS;
 
 
 static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
@@ -41,6 +42,14 @@ static constexpr auto PROJ_MAX_PITCH = 45;
 /// The maximum number of weapons attached to a single unit
 static constexpr auto MAX_WEAPONS = 3;
 
+
+enum class OBJECT_TYPE
+{
+  DROID,
+  STRUCTURE,
+  FEATURE,
+  PROJECTILE
+};
 
 enum class OBJECT_FLAG
 {
@@ -67,16 +76,16 @@ struct Spacetime
   Rotation rotation {0, 0,0};
 };
 
-class DamageManager {
+class Health {
 public:
-  ~DamageManager() = default;
-  DamageManager();
+  ~Health() = default;
+  Health();
 
-  DamageManager(DamageManager const& rhs);
-  DamageManager & operator=(DamageManager const& rhs);
+  Health(Health const& rhs);
+  Health & operator=(Health const& rhs);
 
-  DamageManager(DamageManager && rhs) noexcept = default;
-  DamageManager & operator=(DamageManager && rhs) noexcept = default;
+  Health(Health && rhs) noexcept = default;
+  Health & operator=(Health && rhs) noexcept = default;
 
   void setHp(unsigned hp);
   void setOriginalHp(unsigned hp);
@@ -106,36 +115,17 @@ private:
   std::unique_ptr<Impl> pimpl;
 };
 
-class PlayerManager {
-public:
-  ~PlayerManager() = default;
-  explicit PlayerManager(unsigned player);
-
-  PlayerManager(PlayerManager const& rhs);
-  PlayerManager & operator=(PlayerManager const& rhs);
-
-  PlayerManager(PlayerManager && rhs) noexcept = default;
-  PlayerManager & operator=(PlayerManager && rhs) noexcept = default;
-
-  void setPlayer(unsigned plr);
-  [[nodiscard]] unsigned getPlayer() const;
-  [[nodiscard]] bool isSelectedPlayer() const;
-private:
-  struct Impl;
-  std::unique_ptr<Impl> pimpl;
-};
-
 /// The base type specification inherited by all game entities
 class BaseObject
 {
 public:
   virtual ~BaseObject() = default;
   explicit BaseObject(unsigned id);
-  BaseObject(unsigned id, std::unique_ptr<PlayerManager> playerManager);
-  BaseObject(unsigned id, std::unique_ptr<DamageManager> damageManager);
+  BaseObject(unsigned id, std::unique_ptr<Player> playerManager);
+  BaseObject(unsigned id, std::unique_ptr<Health> damageManager);
   BaseObject(unsigned id,
-             std::unique_ptr<PlayerManager> playerManager,
-             std::unique_ptr<DamageManager> damageManager);
+             std::unique_ptr<Player> playerManager,
+             std::unique_ptr<Health> damageManager);
 
   BaseObject(BaseObject const& rhs);
   BaseObject& operator=(BaseObject const& rhs);
@@ -165,8 +155,8 @@ public:
   void setPreviousLocation(Spacetime prevLoc);
   void setImdShape(iIMDShape* imd);
 public:
-  std::unique_ptr<DamageManager> damageManager;
-  std::unique_ptr<PlayerManager> playerManager;
+  std::unique_ptr<Health> damageManager;
+  std::unique_ptr<Player> playerManager;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
@@ -183,10 +173,12 @@ Vector3i calculateMuzzleTipLocation(const BaseObject& unit, int weapon_slot);
 void checkAngle(int64_t& angle_tan, int start_coord, int height,
                 int square_distance, int target_height, bool is_direct);
 
-[[nodiscard]] bool hasFullAmmo(const BaseObject& unit) noexcept;
+[[nodiscard]] bool hasFullAmmo(const Droid& droid) noexcept;
+[[nodiscard]] bool hasFullAmmo(const Structure& structure) noexcept;
 
 /// @return `true` if `unit` has an indirect weapon attached
-[[nodiscard]] bool hasArtillery(const BaseObject& unit) noexcept;
+[[nodiscard]] bool hasArtillery(const Droid& droid) noexcept;
+[[nodiscard]] bool hasArtillery(const Structure& structure) noexcept;
 
 /// @return `true` if `unit` has an electronic weapon attached
 [[nodiscard]] bool hasElectronicWeapon(const BaseObject& unit) noexcept;
@@ -211,6 +203,8 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
 
 [[nodiscard]] unsigned getMaxWeaponRange(const BaseObject& unit);
 
-[[nodiscard]] size_t numWeapons(const BaseObject& unit);
+[[nodiscard]] size_t numWeapons(const Droid& droid);
+[[nodiscard]] size_t numWeapons(const Structure& structure);
+
 
 #endif // __INCLUDED_BASEDEF_H__

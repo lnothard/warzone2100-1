@@ -40,7 +40,7 @@ extern std::array<std::vector<MESSAGE>, MAX_PLAYERS> apsMessages;
 extern iIMDShape* pProximityMsgIMD;
 
 /** The list of proximity displays allocated. */
-extern PROXIMITY_DISPLAY* apsProxDisp[MAX_PLAYERS];
+extern std::array<std::vector<PROXIMITY_DISPLAY*>, MAX_PLAYERS> apsProxDisp;
 
 extern bool releaseObjectives;
 
