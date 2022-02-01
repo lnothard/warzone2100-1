@@ -1935,7 +1935,7 @@ void Droid::removeDroidBase()
   }
 
   // Check to see if constructor droid currently trying to find a location to build
-  if (playerManager->getPlayer() == selectedPlayer &&
+  if (playerManager->isSelectedPlayer() &&
       damageManager->isSelected() && isConstructionDroid(this)) {
     // If currently trying to build, kill off the placement
     if (tryingToGetLocation()) {
@@ -7598,7 +7598,7 @@ static unsigned calcUpgradeSum(const std::unordered_map<std::string, std::unique
 
 struct FilterDroidWeaps
 {
-	FilterDroidWeaps(unsigned numWeaps, std::array<Weapon, MAX_WEAPONS> *const weapons)
+	FilterDroidWeaps(size_t numWeaps, std::array<Weapon, MAX_WEAPONS> *const weapons)
 	{
 		std::transform(asWeaps, asWeaps + numWeaps, this->asWeaps, [](auto const& weap)
 		{
@@ -7623,7 +7623,7 @@ static unsigned calcSum(const DroidTemplate* psTemplate, F func, G propulsionFun
 template <typename F, typename G>
 static unsigned calcSum(Droid const* psDroid, F func, G propulsionFunc)
 {
-	FilterDroidWeaps f = {numWeapons(*psDroid), psDroid->weapons};
+	FilterDroidWeaps f = {numWeapons(*psDroid), psDroid->getWeapons()};
 	return calcSum(psDroid->asBits, f.numWeaps, f.asWeaps,
                  func, propulsionFunc);
 }
@@ -7637,7 +7637,7 @@ static unsigned calcUpgradeSum(const DroidTemplate* psTemplate, unsigned player,
 }
 
 template <typename F, typename G>
-static unsigned calcUpgradeSum(const Droid* psDroid, unsigned player, F func, G propulsionFunc)
+static unsigned calcUpgradeSum(Droid const* psDroid, unsigned player, F func, G propulsionFunc)
 {
 	FilterDroidWeaps f {numWeapons(*psDroid), psDroid->getWeapons()};
 	return calcUpgradeSum(psDroid->asBits, f.numWeaps, f.asWeaps, player, func, propulsionFunc);
@@ -7659,16 +7659,16 @@ unsigned calcDroidWeight(DroidTemplate const* psTemplate)
 template <typename T>
 static unsigned calcBody(T const* obj, unsigned player)
 {
-	auto hitpoints = calcUpgradeSum(obj, player, [](ComponentStats::Upgradeable const& upgrade)
-	                               {
-		                               return upgrade.hitPoints;
-	                               }, [](BodyStats::Upgradeable const& bodyUpgrade,
-                                       PropulsionStats::Upgradeable const& propUpgrade)
-	                               {
+	auto hitpoints = calcUpgradeSum(obj, player,
+                                  [](ComponentStats::Upgradeable const& upgrade) {
+                                    return upgrade.hitPoints;
+	                                }
+                                  , [](BodyStats::Upgradeable const& bodyUpgrade,
+                                       PropulsionStats::Upgradeable const& propUpgrade) {
 		                               // propulsion hitpoints can be a percentage of the body's hitpoints
-		                               return bodyUpgrade.hitPoints * (100 + propUpgrade.hitpointPctOfBody) / 100 +
-                                          propUpgrade.hitPoints;
-	                               });
+		                                return bodyUpgrade.hitPoints * (100 + propUpgrade.hitpointPctOfBody) / 100 +
+                                           propUpgrade.hitPoints;
+	                                });
 
 	auto hitpointPct = calcUpgradeSum(obj, player, [](ComponentStats::Upgradeable const& upgrade)
 	                                 {
@@ -7704,6 +7704,7 @@ static unsigned calcDroidBaseBody(Droid const* psDroid)
 unsigned calcDroidBaseSpeed(DroidTemplate const* psTemplate, unsigned weight, unsigned player)
 {
   auto propulsion = dynamic_cast<PropulsionStats const*>(psTemplate->getComponent("propulsion"));
+
 	auto speed = asPropulsionTypes[(int)propulsion->propulsionType].powerRatioMult *
           bodyPower(dynamic_cast<BodyStats const*>(
                             psTemplate->getComponent("body")), player) / MAX(1, weight);
@@ -7728,8 +7729,7 @@ unsigned calcDroidBaseSpeed(DroidTemplate const* psTemplate, unsigned weight, un
 
 
 /* Calculate the speed of a droid over a terrain */
-unsigned calcDroidSpeed(unsigned baseSpeed, unsigned terrainType,
-                        PropulsionStats const* propulsion, unsigned level)
+unsigned calcDroidSpeed(unsigned baseSpeed, unsigned terrainType, PropulsionStats const* propulsion, unsigned level)
 {
   if (propulsion == nullptr) {
     return 0;

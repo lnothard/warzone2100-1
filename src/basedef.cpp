@@ -59,6 +59,7 @@ struct DamageManager::Impl
   unsigned expectedDamageIndirect = 0;
   unsigned periodicalDamage = 0;
   unsigned periodicalDamageStartTime = 0;
+  unsigned timeLastHit = 0;
 };
 
 struct PlayerManager::Impl
@@ -302,6 +303,11 @@ void DamageManager::setOriginalHp(unsigned hp)
 {
   if (!pimpl) return;
   pimpl->originalHp = hp;
+}
+
+unsigned DamageManager::getTimeLastHit() const
+{
+  return pimpl ? pimpl->timeLastHit : 0;
 }
 
 unsigned DamageManager::getTimeOfDeath() const

@@ -563,6 +563,7 @@ BaseObject* checkForRepairRange(Droid* psDroid, Droid* psTarget);
 
 /// @return `true` if the droid is a transporter
 [[nodiscard]] bool isTransporter(Droid const& psDroid);
+[[nodiscard]] bool isTransporter(DroidTemplate const& templ);
 
 /// Returns true if the droid has VTOL propulsion and is moving.
 bool isFlying(Droid const* psDroid);

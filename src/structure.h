@@ -260,6 +260,8 @@ public:
   Structure(Structure&& rhs) noexcept = default;
   Structure& operator=(Structure&& rhs) noexcept = default;
 
+  [[nodiscard]] virtual bool isIdle() const = 0;
+
   [[nodiscard]] STRUCTURE_ANIMATION_STATE getAnimationState() const;
   [[nodiscard]] ANIMATION_EVENTS getAnimationEvent() const;
   [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
@@ -328,6 +330,7 @@ public:
   ResearchFacility& operator=(ResearchFacility&& rhs) noexcept = default;
 
   [[nodiscard]] const ResearchItem* getSubject() const;
+  [[nodiscard]] bool isIdle() const override;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
@@ -367,6 +370,7 @@ public:
   Factory(Factory&& rhs) noexcept = default;
   Factory& operator=(Factory&& rhs) noexcept = default;
 
+  [[nodiscard]] bool isIdle() const override;
   [[nodiscard]] DroidTemplate const* getSubject() const;
   [[nodiscard]] FlagPosition const* getAssemblyPoint() const;
   [[nodiscard]] Droid const* getCommander() const;
@@ -405,7 +409,10 @@ public:
   ResourceExtractor(ResourceExtractor&& rhs) noexcept = default;
   ResourceExtractor& operator=(ResourceExtractor&& rhs) noexcept = default;
 
+  [[nodiscard]] PowerGenerator const* getPowerGen() const;
+  void setPowerGen(PowerGenerator* gen);
   void releaseResExtractor();
+  void informPowerGen();
   void checkForPowerGen();
 private:
   struct Impl;
@@ -424,6 +431,8 @@ public:
   PowerGenerator(PowerGenerator&& rhs) noexcept = default;
   PowerGenerator& operator=(PowerGenerator&& rhs) noexcept = default;
 
+  [[nodiscard]] ResourceExtractor const* getExtractor(int idx) const;
+  void setExtractor(int idx, ResourceExtractor* extractor);
   void releasePowerGen();
 private:
   struct Impl;
@@ -441,6 +450,9 @@ public:
 
   RepairFacility(RepairFacility&& rhs) noexcept = default;
   RepairFacility& operator=(RepairFacility&& rhs) noexcept = default;
+
+  [[nodiscard]] FlagPosition const* getDeliveryPoint() const;
+  void aiUpdate();
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
@@ -459,6 +471,7 @@ public:
   RearmPad& operator=(RearmPad&& rhs) noexcept = default;
 
   [[nodiscard]] bool isClear() const;
+  void aiUpdate();
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;

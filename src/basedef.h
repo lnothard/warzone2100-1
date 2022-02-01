@@ -95,6 +95,7 @@ public:
   [[nodiscard]] unsigned getExpectedDamageDirect() const;
   [[nodiscard]] unsigned getExpectedDamageIndirect() const;
   [[nodiscard]] WEAPON_SUBCLASS getLastHitWeapon() const;
+  [[nodiscard]] unsigned getTimeLastHit() const;
   [[nodiscard]] unsigned getPeriodicalDamage() const;
   [[nodiscard]] unsigned getPeriodicalDamageStartTime() const;
   [[nodiscard]] unsigned getTimeOfDeath() const;
