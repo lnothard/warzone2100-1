@@ -37,6 +37,7 @@ struct BaseObject::Impl
 
   unsigned id;
   unsigned time = 0;
+  unsigned bornTime = 0;
   Position position {0, 0, 0};
   Rotation rotation {0, 0, 0};
   Spacetime previousLocation;
@@ -67,7 +68,7 @@ BaseObject::BaseObject(unsigned id)
 {
 }
 
-BaseObject::BaseObject(unsigned id, std::unique_ptr<Player> playerManager)
+BaseObject::BaseObject(unsigned id, std::unique_ptr<PlayerManager> playerManager)
   : pimpl{std::make_unique<Impl>(id)}
   , playerManager{std::move(playerManager)}
 {
@@ -80,7 +81,7 @@ BaseObject::BaseObject(unsigned id, std::unique_ptr<Health> damageManager)
 }
 
 BaseObject::BaseObject(unsigned id,
-                       std::unique_ptr<Player> playerManager,
+                       std::unique_ptr<PlayerManager> playerManager,
                        std::unique_ptr<Health> damageManager)
   : pimpl{std::make_unique<Impl>(id)}
   , playerManager{std::move(playerManager)}
@@ -90,7 +91,7 @@ BaseObject::BaseObject(unsigned id,
 
 BaseObject::BaseObject(BaseObject const& rhs)
   : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
-  , playerManager{std::make_unique<Player>(*rhs.playerManager)}
+  , playerManager{std::make_unique<PlayerManager>(*rhs.playerManager)}
   , damageManager{std::make_unique<Health>(*rhs.damageManager)}
 {
 }
@@ -158,6 +159,11 @@ unsigned BaseObject::getId() const noexcept
   return pimpl ? pimpl->id : 0;
 }
 
+unsigned BaseObject::getBornTime() const noexcept
+{
+  return pimpl ? pimpl->bornTime : 0;
+}
+
 Spacetime BaseObject::getSpacetime() const noexcept
 {
   return pimpl
@@ -203,6 +209,18 @@ uint8_t BaseObject::isVisibleToSelectedPlayer() const
 bool BaseObject::testFlag(size_t pos) const
 {
   return pimpl && pimpl->flags.test(pos);
+}
+
+void BaseObject::setId(unsigned id) noexcept
+{
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Undefined object");
+  pimpl->id = id;
+}
+
+void BaseObject::setBornTime(unsigned t) noexcept
+{
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Undefined object");
+  pimpl->bornTime = t;
 }
 
 void BaseObject::setImdShape(iIMDShape* imd)
@@ -437,20 +455,20 @@ bool hasArtillery(Structure const& structure) noexcept
 
 Vector3i calculateMuzzleBaseLocation(BaseObject const& unit, int weapon_slot)
 {
-  auto& imd_shape = unit.getImdShape();
+  auto imd_shape = unit.getImdShape();
   const auto position = unit.getPosition();
   auto muzzle = Vector3i{0, 0, 0};
 
-  if (imd_shape.nconnectors) {
+  if (imd_shape->nconnectors) {
     Affine3F af;
     auto rotation = unit.getRotation();
     af.Trans(position.x, -position.z, position.y);
     af.RotY(rotation.direction);
     af.RotX(rotation.pitch);
     af.RotZ(-rotation.roll);
-    af.Trans(imd_shape.connectors[weapon_slot].x,
-             -imd_shape.connectors[weapon_slot].z,
-             -imd_shape.connectors[weapon_slot].y);
+    af.Trans(imd_shape->connectors[weapon_slot].x,
+             -imd_shape->connectors[weapon_slot].z,
+             -imd_shape->connectors[weapon_slot].y);
 
     const auto barrel = Vector3i{};
     muzzle = (af * barrel).xzy();
@@ -464,38 +482,38 @@ Vector3i calculateMuzzleBaseLocation(BaseObject const& unit, int weapon_slot)
 
 Vector3i calculateMuzzleTipLocation(BaseObject const& unit, int weapon_slot)
 {
-  const auto& imd_shape = unit.getImdShape();
-  const auto& weapon = dynamic_cast<Player const&>(unit).getWeapons()[weapon_slot];
+  const auto imd_shape = unit.getImdShape();
+  const auto weapon = unit.getWeapon(weapon_slot);
   const auto& position = unit.getPosition();
   const auto& rotation = unit.getRotation();
   auto muzzle = Vector3i{0, 0, 0};
 
-  if (imd_shape.nconnectors) {
+  if (imd_shape->nconnectors) {
     auto barrel = Vector3i{0, 0, 0};
-    const auto weapon_imd = weapon.getImdShape();
-    const auto mount_imd = weapon.getMountGraphic();
+    const auto weapon_imd = weapon->getImdShape();
+    const auto mount_imd = weapon->getMountGraphic();
 
     Affine3F af;
     af.Trans(position.x, -position.z, position.y);
     af.RotY(rotation.direction);
     af.RotX(rotation.pitch);
     af.RotZ(-rotation.roll);
-    af.Trans(imd_shape.connectors[weapon_slot].x, -imd_shape.connectors[weapon_slot].z,
-             -imd_shape.connectors[weapon_slot].y);
+    af.Trans(imd_shape->connectors[weapon_slot].x, -imd_shape->connectors[weapon_slot].z,
+             -imd_shape->connectors[weapon_slot].y);
 
-    af.RotY(weapon.getRotation().direction);
+    af.RotY(weapon->getRotation().direction);
 
     if (mount_imd->nconnectors) {
       af.Trans(mount_imd->connectors->x,
                -mount_imd->connectors->z,
                -mount_imd->connectors->y);
     }
-    af.RotX(weapon.getRotation().pitch);
+    af.RotX(weapon->getRotation().pitch);
 
     if (weapon_imd->nconnectors) {
       auto connector_num = unsigned{0};
-      if (weapon.getShotsFired() && weapon_imd->nconnectors > 1) {
-        connector_num = (weapon.getShotsFired() - 1) % weapon_imd->nconnectors;
+      if (weapon->getShotsFired() && weapon_imd->nconnectors > 1) {
+        connector_num = (weapon->getShotsFired() - 1) % weapon_imd->nconnectors;
       }
       const auto connector = weapon_imd->connectors[connector_num];
       barrel = Vector3i{connector.x,
@@ -642,29 +660,30 @@ int calculateLineOfFire(const BaseObject& unit, const BaseObject & target,
   }
 }
 
-bool hasElectronicWeapon(Player const& unit) noexcept
+void BaseObject::setPreviousTime(unsigned t)
 {
-  auto& weapons = unit.getWeapons();
-  if (weapons.empty()) {
-    return false;
-  }
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Undefined");
+  pimpl->previousLocation.time = t;
+}
 
-  return std::any_of(weapons.begin(), weapons.end(),
+bool hasElectronicWeapon(BaseObject const& unit) noexcept
+{
+  auto weapons = unit.getWeapons();
+  if (weapons->empty()) return false;
+
+  return std::any_of(weapons->begin(), weapons->end(),
                      [](const auto& weapon) {
-                       return weapon.getSubclass() == WEAPON_SUBCLASS::ELECTRONIC;
-                     });
+    return weapon.getSubclass() == WEAPON_SUBCLASS::ELECTRONIC;
+  });
 }
 
 bool targetInLineOfFire(BaseObject const& unit, BaseObject const& target, int weapon_slot)
 {
-  const auto distance = iHypot(
-          (target.getPosition() - unit.getPosition()).xy());
+  const auto distance = iHypot((target.getPosition() - unit.getPosition()).xy());
 
-  auto range = dynamic_cast<Player const&>(
-          unit).getWeapons()[weapon_slot].getMaxRange(
-          dynamic_cast<Player const&>(unit).getPlayer());
+  auto range = unit.getWeapon(weapon_slot)->getMaxRange(unit.playerManager->getPlayer());
 
-  if (!hasArtillery(unit)) {
+  if (!unit.hasArtillery()) {
     return range >= distance &&
            LINE_OF_FIRE_MINIMUM <= calculateLineOfFire(unit, target, weapon_slot);
   }
@@ -684,15 +703,14 @@ BaseObject* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
   bool is_cb_sensor = false;
   bool found_cb = false;
   auto target_dist = weapon.getMaxRange(
-          dynamic_cast<Player const&>(unit).getPlayer());
+          dynamic_cast<PlayerManager const&>(unit).getPlayer());
 
   auto min_dist = weapon.getMinRange(
-          dynamic_cast<Player const&>(unit).getPlayer());
+          dynamic_cast<PlayerManager const&>(unit).getPlayer());
 
   for (const auto sensor : apsSensorList)
   {
-    if (!aiCheckAlliances(sensor->getPlayer(), dynamic_cast<
-                                                       Player const&>(unit).getPlayer()))
+    if (!aiCheckAlliances(sensor->playerManager->getPlayer(), unit.playerManager->getPlayer()))
       continue;
 
     // Artillery should not fire at objects observed
@@ -723,8 +741,8 @@ BaseObject* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
         dynamic_cast<Health *>(target)->isDead() ||
         dynamic_cast<Health *>(target)->isProbablyDoomed(false) ||
         !unit.isValidTarget(target, 0) ||
-        aiCheckAlliances(dynamic_cast<Player *>(target)->getPlayer(),
-                         dynamic_cast<Player const&>(unit).getPlayer())) {
+        aiCheckAlliances(dynamic_cast<PlayerManager *>(target)->getPlayer(),
+                         dynamic_cast<PlayerManager const&>(unit).getPlayer())) {
       continue;
     }
 

@@ -310,7 +310,9 @@ public:
   void setUpBuildModule();
   void actionUpdateDroid();
   void initVisibility();
+  bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists);
   void actionSanity();
+  void fpathSetDirectRoute(int targetX, int targetY);
   void actionUpdateTransporter();
   void setOrder(std::unique_ptr<Order> order);
   void setAction(ACTION action);

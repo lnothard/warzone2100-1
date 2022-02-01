@@ -9,45 +9,50 @@
 
 struct Player::Impl
 {
-  explicit Impl(unsigned player);
-
-  unsigned player = 0;
+  unsigned id;
 };
 
-Player::Player(unsigned player)
+struct PlayerManager::Impl
+{
+  explicit Impl(unsigned player);
+
+  unsigned player;
+};
+
+PlayerManager::PlayerManager(unsigned player)
         : pimpl{std::make_unique<Impl>(player)}
 {
 }
 
-Player::Player(Player const& rhs)
+PlayerManager::PlayerManager(PlayerManager const& rhs)
         : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
 {
 }
 
-Player &Player::operator=(Player const& rhs)
+PlayerManager &PlayerManager::operator=(PlayerManager const& rhs)
 {
   if (this == &rhs) return *this;
   *pimpl = *rhs.pimpl;
   return *this;
 }
 
-Player::Impl::Impl(unsigned player)
+PlayerManager::Impl::Impl(unsigned player)
         : player{player}
 {
 }
 
-void Player::setPlayer(unsigned plr)
+void PlayerManager::setPlayer(unsigned plr)
 {
   if (!pimpl) return;
   pimpl->player = plr;
 }
 
-unsigned Player::getPlayer() const
+unsigned PlayerManager::getPlayer() const
 {
   return pimpl ? pimpl->player : 0;
 }
 
-bool Player::isSelectedPlayer() const
+bool PlayerManager::isSelectedPlayer() const
 {
   return getPlayer() == selectedPlayer;
 }

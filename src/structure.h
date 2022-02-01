@@ -298,6 +298,8 @@ public:
   void aiUpdateStructure(bool isMission);
   void structureUpdate(bool bMission);
   int requestOpenGate();
+  bool loadSaveStructure(char* pFileData, UDWORD filesize);
+  bool loadSaveStructure2(const char* pFileName, Structure** ppList);
   void actionDroidTarget(Droid* droid, ACTION action, int idx);
   void structureBuild(Droid* psDroid, int builtPoints, int buildRate_);
   [[nodiscard]] std::unique_ptr<Structure> buildStructureDir(

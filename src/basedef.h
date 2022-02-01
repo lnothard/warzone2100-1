@@ -32,6 +32,7 @@
 #include "weapon.h"
 
 struct DisplayData;
+struct Weapon;
 enum class WEAPON_SUBCLASS;
 
 
@@ -121,10 +122,10 @@ class BaseObject
 public:
   virtual ~BaseObject() = default;
   explicit BaseObject(unsigned id);
-  BaseObject(unsigned id, std::unique_ptr<Player> playerManager);
+  BaseObject(unsigned id, std::unique_ptr<PlayerManager> playerManager);
   BaseObject(unsigned id, std::unique_ptr<Health> damageManager);
   BaseObject(unsigned id,
-             std::unique_ptr<Player> playerManager,
+             std::unique_ptr<PlayerManager> playerManager,
              std::unique_ptr<Health> damageManager);
 
   BaseObject(BaseObject const& rhs);
@@ -133,9 +134,14 @@ public:
   BaseObject(BaseObject&& rhs) noexcept = default;
   BaseObject& operator=(BaseObject&& rhs) noexcept = default;
 
-  [[nodiscard]] virtual int objRadius() const = 0;
+  [[nodiscard]] virtual int objRadius() const;
+  [[nodiscard]] virtual Weapon const* getWeapon(int slot) const;
+  [[nodiscard]] virtual std::vector<Weapon> const* getWeapons() const;
+  [[nodiscard]] virtual iIMDShape const* getImdShape() const;
+  [[nodiscard]] virtual bool hasArtillery() const;
 
   [[nodiscard]] unsigned getId() const noexcept;
+  [[nodiscard]] unsigned getBornTime() const noexcept;
   [[nodiscard]] Spacetime getSpacetime() const noexcept;
   [[nodiscard]] Position getPosition() const noexcept;
   [[nodiscard]] Rotation getRotation() const noexcept;
@@ -146,17 +152,20 @@ public:
   [[nodiscard]] uint8_t isVisibleToSelectedPlayer() const;
   [[nodiscard]] bool testFlag(size_t pos) const;
   void setVisibleToPlayer(unsigned player, uint8_t vis);
+  void setId(unsigned id) noexcept;
+  void setBornTime(unsigned t) noexcept;
   void setHidden();
   void setFlag(size_t pos, bool val);
   void setTime(unsigned t) noexcept;
   void setRotation(Rotation rot) noexcept;
   void setPosition(Position pos) noexcept;
   void setHeight(int height) noexcept;
+  void setPreviousTime(unsigned t);
   void setPreviousLocation(Spacetime prevLoc);
   void setImdShape(iIMDShape* imd);
 public:
   std::unique_ptr<Health> damageManager;
-  std::unique_ptr<Player> playerManager;
+  std::unique_ptr<PlayerManager> playerManager;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;

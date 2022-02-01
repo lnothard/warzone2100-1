@@ -172,7 +172,7 @@ Droid::~Droid()
 
 Droid::Droid(unsigned id, unsigned player)
   : BaseObject(id,
-               std::make_unique<Player>(player),
+               std::make_unique<PlayerManager>(player),
                std::make_unique<Health>())
   , pimpl{std::make_unique<Impl>()}
 {
@@ -6100,7 +6100,7 @@ void Droid::moveCalcDroidSlide(int* pmx, int* pmy)
       auto psShuffleDroid = dynamic_cast<Droid*>(psObst);
       if (psObst && psShuffleDroid) {
 
-        if (aiCheckAlliances(dynamic_cast<Player *>(psObst)->getPlayer(), playerManager->getPlayer())
+        if (aiCheckAlliances(dynamic_cast<PlayerManager *>(psObst)->getPlayer(), playerManager->getPlayer())
             && psShuffleDroid->getAction() != ACTION::WAIT_DURING_REARM
             && psShuffleDroid->getMovementData()->status == MOVE_STATUS::INACTIVE) {
           psShuffleDroid->moveShuffleDroid(getMovementData()->target - getPosition().xy());
@@ -7241,7 +7241,7 @@ int droidReloadBar(BaseObject const& psObj, Weapon const* psWeap, int weapon_slo
 	auto psStats = psWeap->getStats();
 
 	/* Justifiable on. when greater than a one second reload or intra salvo time  */
-  auto player = dynamic_cast<Player const&>(psObj).getPlayer();
+  auto player = dynamic_cast<PlayerManager const&>(psObj).getPlayer();
 	auto bSalvo = (psStats->upgraded[player].numRounds > 1);
   auto psDroid = dynamic_cast<const Droid*>(&psObj);
   if (!(bSalvo && psStats->upgraded[player].reloadTime > GAME_TICKS_PER_SEC) &&
@@ -9262,4 +9262,248 @@ static Rotation getInterpolatedWeaponRotation(Droid const* psDroid, int weaponSl
                         psDroid->getWeapon(weaponSlot)->getRotation(),
                         psDroid->getPreviousLocation().time,
                         psDroid->getTime(), time);
+}
+
+bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
+{
+  if (!PHYSFS_exists(pFileName)) {
+    debug(LOG_SAVE, "No %s found -- use fallback method", pFileName);
+    return false; // try to use fallback method
+  }
+  WzString fName = WzString::fromUtf8(pFileName);
+  WzConfig ini(fName, WzConfig::ReadOnly);
+  std::vector<WzString> list = ini.childGroups();
+  // Sort list so transports are loaded first, since they must be loaded before the droids they contain.
+  std::vector<std::pair<int, WzString>> sortedList;
+  bool missionList = fName.compare("mdroid");
+  for (size_t i = 0; i < list.size(); ++i)
+  {
+    ini.beginGroup(list[i]);
+    DROID_TYPE droidType = (DROID_TYPE)ini.value("droidType").toInt();
+    int priority = 0;
+    switch (droidType) {
+      case DROID_TYPE::TRANSPORTER:
+        ++priority; // fallthrough
+      case DROID_TYPE::SUPER_TRANSPORTER:
+        ++priority; // fallthrough
+      case DROID_TYPE::COMMAND:
+        //Don't care about sorting commanders in the mission list for safety missions. They
+        //don't have a group to command and it messes up the order of the list sorting them
+        //which causes problems getting the first transporter group for Gamma-1.
+        if (!missionList || (missionList && !getDroidsToSafetyFlag()))
+        {
+          ++priority;
+        }
+      default:
+        break;
+    }
+    sortedList.push_back(std::make_pair(-priority, list[i]));
+    ini.endGroup();
+  }
+  std::sort(sortedList.begin(), sortedList.end());
+
+  for (unsigned i = 0; i < sortedList.size(); ++i)
+  {
+    ini.beginGroup(sortedList[i].second);
+    Droid* psDroid;
+    unsigned player = getPlayer(ini);
+    int id = ini.value("id", -1).toInt();
+    Position pos = ini.vector3i("position");
+    Rotation rot = ini.vector3i("rotation");
+    bool onMission = ini.value("onMission", false).toBool();
+    DroidTemplate templ;
+    const DroidTemplate* psTemplate = nullptr;
+
+    if (skipForDifficulty(ini, player))
+    {
+      ini.endGroup();
+      continue;
+    }
+
+    if (ini.contains("template"))
+    {
+      // Use real template (for maps)
+      WzString templName(ini.value("template").toWzString());
+      psTemplate = getTemplateFromTranslatedNameNoPlayer(templName.toUtf8().c_str());
+      if (psTemplate == nullptr)
+      {
+        debug(LOG_ERROR, "Unable to find template for %s for player %d -- unit skipped",
+              templName.toUtf8().c_str(), player);
+        ini.endGroup();
+        continue;
+      }
+    }
+    else
+    {
+      // Create fake template
+      templ.name = ini.string("name", "UNKNOWN");
+      templ.type = (DROID_TYPE)ini.value("droidType").toInt();
+      ini.beginGroup("parts"); // the following is copy-pasted from loadSaveTemplate() -- fixme somehow
+      templ.components[COMP_BODY] = getCompFromName(COMP_BODY, ini.value("body", "ZNULLBODY").toWzString());
+      templ.asParts[COMP_BRAIN] = getCompFromName(COMP_BRAIN, ini.value("brain", "ZNULLBRAIN").toWzString());
+      templ.asParts[COMP_PROPULSION] = getCompFromName(COMP_PROPULSION,
+                                                       ini.value("propulsion", "ZNULLPROP").toWzString());
+      templ.asParts[COMP_REPAIRUNIT] = getCompFromName(COMP_REPAIRUNIT,
+                                                       ini.value("repair", "ZNULLREPAIR").toWzString());
+      templ.asParts[COMP_ECM] = getCompFromName(COMP_ECM, ini.value("ecm", "ZNULLECM").toWzString());
+      templ.asParts[COMP_SENSOR] = getCompFromName(COMP_SENSOR, ini.value("sensor", "ZNULLSENSOR").toWzString());
+      templ.asParts[COMP_CONSTRUCT] = getCompFromName(COMP_CONSTRUCT,
+                                                      ini.value("construct", "ZNULLCONSTRUCT").toWzString());
+      templ.asWeaps[0] = getCompFromName(COMP_WEAPON, ini.value("weapon/1", "ZNULLWEAPON").toWzString());
+      templ.asWeaps[1] = getCompFromName(COMP_WEAPON, ini.value("weapon/2", "ZNULLWEAPON").toWzString());
+      templ.asWeaps[2] = getCompFromName(COMP_WEAPON, ini.value("weapon/3", "ZNULLWEAPON").toWzString());
+      ini.endGroup();
+      psTemplate = &templ;
+    }
+
+    // If droid is on a mission, calling with the saved position might cause an assertion. Or something like that.
+    if (!onMission)
+    {
+      pos.x = clip(pos.x, world_coord(1), world_coord(mapWidth - 1));
+      pos.y = clip(pos.y, world_coord(1), world_coord(mapHeight - 1));
+    }
+
+    /* Create the Droid */
+    turnOffMultiMsg(true);
+    psDroid = reallyBuildDroid(psTemplate, pos, player, onMission, rot);
+    ASSERT_OR_RETURN(false, psDroid != nullptr, "Failed to build unit %s", sortedList[i].second.toUtf8().c_str());
+    turnOffMultiMsg(false);
+
+    // Copy the values across
+    if (id > 0) {
+      psDroid->setId(id);
+      // force correct ID, unless ID is set to eg -1, in which case we should keep new ID (useful for starting units in campaign)
+    }
+    ASSERT(id != 0, "Droid ID should never be zero here");
+    // conditional check so that existing saved games don't break
+    if (ini.contains("originalBody"))
+    {
+      // we need to set "originalBody" before setting "body", otherwise CHECK_DROID throws assertion errors
+      // we cannot use droidUpgradeBody here to calculate "originalBody", because upgrades aren't loaded yet
+      // so it's much simplier just store/retrieve originalBody value
+      psDroid->damageManager->setOriginalHp(ini.value("originalBody").toInt());
+    }
+    psDroid->damageManager->setHp(healthValue(ini, psDroid->damageManager->getOriginalHp()));
+    ASSERT(psDroid->damageManager->getHp() != 0, "%s : %d has zero hp!", pFileName, i);
+    psDroid->pimpl->experience = ini.value("experience", 0).toInt();
+    psDroid->pimpl->kills = ini.value("kills", 0).toInt();
+    psDroid->pimpl->secondaryOrder = ini.value("secondaryOrder", psDroid->pimpl->secondaryOrder).toInt();
+    psDroid->pimpl->secondaryOrderPending = psDroid->pimpl->secondaryOrder;
+    psDroid->pimpl->action = (ACTION)ini.value("action", (int)ACTION::NONE).toInt();
+    psDroid->pimpl->actionPos = ini.vector2i("action/pos");
+    psDroid->pimpl->timeActionStarted = ini.value("actionStarted", 0).toInt();
+    psDroid->pimpl->actionPointsDone = ini.value("actionPoints", 0).toInt();
+    psDroid->damageManager->setResistance(ini.value("resistance", 0).toInt()); // zero resistance == no electronic damage
+    psDroid->pimpl->lastFrustratedTime = ini.value("lastFrustratedTime", 0).toInt();
+
+    // common SimpleObject info
+    loadSaveObject(ini, psDroid);
+
+    // copy the droid's weapon stats
+    for (int j = 0; j < psDroid->numWeaps; j++)
+    {
+      if (psDroid->asWeaps[j].nStat > 0)
+      {
+        psDroid->asWeaps[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
+        psDroid->asWeaps[j].timeLastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
+        psDroid->asWeaps[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
+        psDroid->asWeaps[j].rotation = ini.vector3i("rotation/" + WzString::number(j));
+      }
+    }
+
+    psDroid->group = ini.value("group", UBYTE_MAX).toInt();
+    int aigroup = ini.value("aigroup", -1).toInt();
+    if (aigroup >= 0)
+    {
+      Group* psGroup = grpFind(aigroup);
+      psGroup->add(psDroid);
+      if (psGroup->getType() == GROUP_TYPE::TRANSPORTER) {
+        psDroid->damageManager->setSelected(false); // Droid should be visible in the transporter interface.
+        visRemoveVisibility(psDroid); // should not have visibility data when in a transporter
+      }
+    }
+    else {
+      if (isTransporter(*psDroid) || psDroid->getType() == DROID_TYPE::COMMAND) {
+        Group* psGroup = grpCreate();
+        psGroup->add(psDroid);
+      }
+      else
+      {
+        psDroid->pimpl->group = nullptr;
+      }
+    }
+
+    psDroid->pimpl->movement->status = (MOVE_STATUS)ini.value("moveStatus", 0).toInt();
+    psDroid->pimpl->movement->pathIndex = ini.value("pathIndex", 0).toInt();
+    const int numPoints = ini.value("pathLength", 0).toInt();
+    psDroid->pimpl->movement->path.resize(numPoints);
+    for (int j = 0; j < numPoints; j++)
+    {
+      psDroid->pimpl->movement->path[j] = ini.vector2i("pathNode/" + WzString::number(j));
+    }
+    psDroid->pimpl->movement->destination = ini.vector2i("moveDestination");
+    psDroid->pimpl->movement->src = ini.vector2i("moveSource");
+    psDroid->pimpl->movement->target = ini.vector2i("moveTarget");
+    psDroid->pimpl->movement->speed = ini.value("moveSpeed").toInt();
+    psDroid->pimpl->movement->moveDir = ini.value("moveDirection").toInt();
+    psDroid->pimpl->movement->bumpDir = ini.value("bumpDir").toInt();
+    psDroid->pimpl->movement->vertical_speed = ini.value("vertSpeed").toInt();
+    psDroid->pimpl->movement->bumpTime = ini.value("bumpTime").toInt();
+    psDroid->pimpl->movement->shuffleStart = ini.value("shuffleStart").toInt();
+    for (int j = 0; j < MAX_WEAPONS; ++j)
+    {
+      psDroid->pimpl->weapons[j].ammoUsed = ini.value("attackRun/" + WzString::number(j)).toInt();
+    }
+    psDroid->pimpl->movement->lastBump = ini.value("lastBump").toInt();
+    psDroid->pimpl->movement->pauseTime = ini.value("pauseTime").toInt();
+    Vector2i tmp = ini.vector2i("bumpPosition");
+    psDroid->pimpl->movement->bumpPos = Vector3i(tmp.x, tmp.y, 0);
+
+    // Recreate path-finding jobs
+    if (psDroid->pimpl->movement->status == MOVE_STATUS::WAIT_FOR_ROUTE)
+    {
+      psDroid->pimpl->movement->status = MOVE_STATUS::INACTIVE;
+      fpathDroidRoute(psDroid, psDroid->getMovementData()->destination.x, psDroid->getMovementData()->destination.y, FPATH_MOVETYPE::FMT_MOVE);
+      psDroid->pimpl->movement->status = MOVE_STATUS::WAIT_FOR_ROUTE;
+
+      // Droid might be on a mission, so finish pathfinding now, in case pointers swap and map size changes.
+      FPATH_RESULT dr = fpathDroidRoute(psDroid, psDroid->getMovementData()->destination.x, psDroid->getMovementData()->destination.y,
+                                        FPATH_MOVETYPE::FMT_MOVE);
+      if (dr == FPATH_RESULT::OK)
+      {
+        psDroid->pimpl->movement->status = MOVE_STATUS::NAVIGATE;
+        psDroid->pimpl->movement->pathIndex = 0;
+      }
+      else // if (retVal == FPR_FAILED)
+      {
+        psDroid->pimpl->movement->status = MOVE_STATUS::INACTIVE;
+        actionDroid(psDroid, ACTION::SULK);
+      }
+      ASSERT(dr != FPATH_RESULT::WAIT, " ");
+    }
+
+    // HACK!!
+    Vector2i startpos = getPlayerStartPosition(player);
+    if (psDroid->getType() == DROID_TYPE::CONSTRUCT && startpos.x == 0 && startpos.y == 0)
+    {
+      scriptSetStartPos(psDroid->playerManager->getPlayer(), psDroid->getPosition().x, psDroid->getPosition().y);
+      // set map start position, FIXME - save properly elsewhere!
+    }
+
+    if (psDroid->getGroup() == nullptr ||
+        psDroid->getGroup()->getType() != GROUP_TYPE::TRANSPORTER ||
+        isTransporter(*psDroid)) {
+      // do not add to list if on a transport, then the group list is used instead
+      addDroid(psDroid, ppsCurrentDroidLists);
+    }
+
+    ini.endGroup();
+  }
+  return true;
+}
+
+void Droid::fpathSetDirectRoute(int targetX, int targetY)
+{
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Undefined");
+  fpathSetMove(pimpl->movement.get(), targetX, targetY);
 }

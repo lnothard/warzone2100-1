@@ -64,6 +64,7 @@ public:
 
   /// Remove a droid from the group.
 	void remove(Droid* psDroid);
+  [[nodiscard]] GROUP_TYPE getType() const;
   [[nodiscard]] bool isCommandGroup() const noexcept;
   [[nodiscard]] bool hasElectronicWeapon() const;
   [[nodiscard]] Droid const* getCommander() const;

@@ -24,7 +24,6 @@
  */
 
 #ifndef __INCLUDED_SRC_GAME_H__
-#define __INCLUDED_SRC_GAME_H__
 
 #include <sstream>
 
@@ -33,6 +32,9 @@
 #include <optional-lite/optional.hpp>
 
 #include "levels.h"
+
+enum class TILE_SET;
+
 
 //the version number used in save games
 //#define VERSION_1             1	        // demo save games
@@ -120,7 +122,7 @@ bool loadScriptState(char* pFileName);
 /// Load the terrain types
 bool loadTerrainTypeMap(const char* pFilePath);
 
-bool loadTerrainTypeMapOverride(unsigned int tileSet);
+bool loadTerrainTypeMapOverride(TILE_SET tileSet);
 
 bool saveGame(const char* aFileName, GAME_TYPE saveType);
 

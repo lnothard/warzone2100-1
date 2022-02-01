@@ -439,8 +439,7 @@ static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16
             !fpathBlockingTile(map_coord(dest.x),
                                map_coord(dest.y),
                                dynamic_cast<PropulsionStats const *>(
-                                       droid->getComponent("propulsion"))
-                                       ->propulsionType)) {
+                                       droid->getComponent(COMPONENT_TYPE::PROPULSION))->propulsionType)) {
           bestDest = dest;
           bestDist = dist;
         }
@@ -463,7 +462,6 @@ void actionDroid(Droid* psDroid, ACTION action)
 {
 	Action sAction;
 
-	memset(&sAction, 0, sizeof(Action));
 	sAction.action = action;
 	psDroid->actionDroidBase(&sAction);
 }
@@ -473,7 +471,6 @@ void actionDroid(Droid* psDroid, ACTION action, unsigned x, unsigned y)
 {
 	Action sAction;
 
-	memset(&sAction, 0, sizeof(Action));
 	sAction.action = action;
 	sAction.x = x;
 	sAction.y = y;
@@ -485,7 +482,6 @@ void actionDroid(Droid* psDroid, ACTION action, BaseObject * psObj)
 {
 	Action sAction;
 
-	memset(&sAction, 0, sizeof(Action));
 	sAction.action = action;
 	sAction.psObj = psObj;
 	sAction.x = psObj->getPosition().x;
@@ -499,7 +495,6 @@ void actionDroid(Droid* psDroid, ACTION action,
 {
 	Action sAction;
 
-	memset(&sAction, 0, sizeof(Action));
 	sAction.action = action;
 	sAction.psObj = psObj;
 	sAction.x = x;
@@ -526,7 +521,7 @@ void moveToRearm(Droid* psDroid)
 	auto psStruct = findNearestReArmPad(psDroid, psDroid->associatedStructure, false);
 	if (psStruct) {
 		// note a base rearm pad if the vtol doesn't have one
-		if (psDroid->associatedStructure == nullptr) {
+		if (psDroid->getBase() == nullptr) {
 			setDroidBase(psDroid, psStruct);
 		}
 

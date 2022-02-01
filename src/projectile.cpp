@@ -121,7 +121,7 @@ struct ObjectShape::Impl
 };
 
 Projectile::Projectile(unsigned id, unsigned player)
-  : BaseObject(id, std::make_unique<Player>(player),
+  : BaseObject(id, std::make_unique<PlayerManager>(player),
                std::make_unique<Health>())
   , pimpl{std::make_unique<Impl>()}
 {
@@ -306,6 +306,11 @@ bool Projectile::isVisible() const
 	return false;
 }
 
+WeaponStats const* Projectile::getWeaponStats() const
+{
+  return pimpl ? pimpl->weaponStats.get() : nullptr;
+}
+
 void Projectile::updateExperience(unsigned experienceInc)
 {
   ASSERT_OR_RETURN(, pimpl != nullptr, "Projectile object is undefined");
@@ -392,16 +397,15 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacke
 	*/
   if (psAttacker && dynamic_cast<Projectile*>(psAttacker)) {
     auto psOldProjectile = dynamic_cast<Projectile*>(psAttacker);
-    psProj->pimpl->bornTime = psOldProjectile->pimpl->bornTime;
+    psProj->setBornTime(psOldProjectile->getBornTime());
     psProj->pimpl->origin = psOldProjectile->pimpl->origin;
 
     // have partially ticked already
-    psProj->pimpl->previousLocation.time = psOldProjectile->getTime();
+    psProj->setPreviousTime(psOldProjectile->getTime());
     psProj->setTime(gameTime);
 
     // times should not be equal, for interpolation
-    psProj->pimpl->previousLocation.time -= psProj->
-           pimpl->previousLocation.time == psProj->getTime();
+    psProj->setPreviousTime(getPreviousLocation().time - psProj->getPreviousLocation().time == psProj->getTime());
 
     psProj->setSource(psOldProjectile->pimpl->source);
     psProj->pimpl->damaged = psOldProjectile->pimpl->damaged;
@@ -409,7 +413,7 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacke
     // TODO Should finish the tick, when penetrating.
   }
   else {
-    psProj->pimpl->bornTime = fireTime; // Born at the start of the tick.
+    psProj->setBornTime(fireTime); // Born at the start of the tick.
 
     psProj->setSource(psAttacker);
     psProj->setTime(fireTime);
@@ -723,7 +727,7 @@ void Projectile::proj_InFlightFunc()
 	BaseObject* closestCollisionObject = nullptr;
 	Spacetime closestCollisionSpacetime;
 
-	auto timeSoFar = gameTime - bornTime;
+	auto timeSoFar = gameTime - getBornTime();
 
 	setTime(gameTime);
 	auto deltaProjectileTime = getTime() - getPreviousLocation().time;
@@ -930,7 +934,7 @@ void Projectile::proj_InFlightFunc()
 		setTime(std::max(getTime(), gameTime - deltaGameTime + 1));
 		// Make sure .died gets set in the interval [gameTime - deltaGameTime + 1; gameTime].
 		if (getTime() == getPreviousLocation().time) {
-			--previousLocation.time;
+			setPreviousTime(getPreviousLocation().time - 1);
 		}
 		setTarget(closestCollisionObject); // We hit something.
 
@@ -1191,13 +1195,13 @@ void Projectile::proj_ImpactFunc()
 
       // if we are in a multiplayer game and the attacker is our responsibility
       if (bMultiPlayer && pimpl->source) {
-        updateMultiStatsDamage(dynamic_cast<Player *>(pimpl->source)->getPlayer(),
-                               dynamic_cast<Player *>(pimpl->target)->getPlayer(),
+        updateMultiStatsDamage(dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer(),
+                               dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer(),
                                damage);
       }
 
       debug(LOG_NEVER, "Damage to object %d, player %d\n",
-            pimpl->target->getId(), dynamic_cast<Player *>(pimpl->target)->getPlayer());
+            pimpl->target->getId(), dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer());
 
       struct Damage sDamage = {
               pimpl->target,
@@ -1237,7 +1241,7 @@ void Projectile::proj_ImpactFunc()
     pimpl->state = PROJECTILE_STATE::POST_IMPACT;
 
     /* Note when it exploded for the explosion effect */
-    bornTime = gameTime;
+    setBornTime(gameTime);
 
     // If projectile impacts a droid start the splash damage from the center of it, else use whatever location the projectile impacts at as the splash center.
     auto destDroid = dynamic_cast<Droid*>(pimpl->target);
@@ -1257,7 +1261,7 @@ void Projectile::proj_ImpactFunc()
       }
 
       if (pimpl->source && pimpl->source->playerManager->getPlayer() ==
-                                   dynamic_cast<Player *>(psCurr)->getPlayer() &&
+                                   dynamic_cast<PlayerManager *>(psCurr)->getPlayer() &&
           psStats->flags.test(static_cast<size_t>(WEAPON_FLAGS::NO_FRIENDLY_FIRE))) {
         continue; // this weapon does not do friendly damage
       }
@@ -1268,7 +1272,7 @@ void Projectile::proj_ImpactFunc()
 
       if (auto psDroid = dynamic_cast<Droid*>(psCurr)) {
         auto propulsion = dynamic_cast<PropulsionStats const *>(
-                psDroid->getComponent("propulsion"));
+                psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
 
         if (!propulsion) continue;
 
@@ -1324,7 +1328,7 @@ void Projectile::proj_ImpactFunc()
     /* Periodical damage gets done in the bullet update routine */
     /* Just note when started damaging          */
     pimpl->state = PROJECTILE_STATE::POST_IMPACT;
-    bornTime = gameTime;
+    setBornTime(gameTime);
   }
   /* Something was blown up */
 }
@@ -1335,7 +1339,7 @@ void Projectile::proj_PostImpactFunc()
 	auto psStats = pimpl->weaponStats;
 	ASSERT_OR_RETURN(, psStats != nullptr, "Invalid weapon stats pointer");
 
-	auto age = gameTime - bornTime;
+	auto age = gameTime - getBornTime();
 
 	/* Time to finish postimpact effect? */
 	if (age > psStats->radiusLife &&
@@ -1563,8 +1567,8 @@ unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, BaseObject 
 	}
 	else if (auto droid = dynamic_cast<Droid const*>(psTarget)) {
 		const auto propulsion = dynamic_cast<PropulsionStats const*>(
-            droid->getComponent("propulsion"))->propulsionType;
-		const auto body = dynamic_cast<BodyStats const*>(droid->getComponent("body"))->size;
+            droid->getComponent(COMPONENT_TYPE::PROPULSION))->propulsionType;
+		const auto body = dynamic_cast<BodyStats const*>(droid->getComponent(COMPONENT_TYPE::BODY))->size;
 		damage += baseDamage * (asWeaponModifier[static_cast<int>(weaponEffect)][static_cast<int>(propulsion)] - 100);
 		damage += baseDamage * (asWeaponModifierBody[static_cast<int>(weaponEffect)][static_cast<int>(body)] - 100);
 	}
@@ -1613,8 +1617,8 @@ int Projectile::objectDamageDispatch()
 bool Projectile::isFriendlyFire() const
 {
 	return pimpl && pimpl->target &&
-         dynamic_cast<Player *>(pimpl->source)->getPlayer()
-         == dynamic_cast<Player *>(pimpl->target)->getPlayer();
+         dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer()
+         == dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer();
 }
 
 bool Projectile::shouldIncreaseExperience() const
@@ -1628,7 +1632,7 @@ void Projectile::updateKills()
 {
 	if (bMultiPlayer) {
 		updateMultiStatsKills(pimpl->damage->target,
-                          dynamic_cast<Player *>(pimpl->source)->getPlayer());
+                          dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer());
 	}
 
 	if (auto psDroid = dynamic_cast<Droid*>(pimpl->source)) {
@@ -1641,7 +1645,7 @@ void Projectile::updateKills()
 	}
 	else if (dynamic_cast<Structure*>(pimpl->source)) {
 		auto psCommander = getDesignatorAttackingObject(
-            dynamic_cast<Player *>(pimpl->source)->getPlayer(),
+            dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer(),
             pimpl->target);
 
 		if (psCommander != nullptr) {
@@ -1669,18 +1673,18 @@ static bool justBeenHitByEW(BaseObject const* psObj)
 	if (gamePaused()) return false;
 
 	if (auto psDroid = dynamic_cast<Droid const*>(psObj)) {
-    if ((gameTime - psDroid->timeLastHit) < ELEC_DAMAGE_DURATION &&
+    if ((gameTime - psDroid->damageManager->getTimeLastHit()) < ELEC_DAMAGE_DURATION &&
         psDroid->damageManager->getLastHitWeapon() == WEAPON_SUBCLASS::ELECTRONIC) {
       return true;
     }
   } 
   if (auto psFeature = dynamic_cast<Feature const*>(psObj)) {
-    if ((gameTime - psFeature->timeLastHit) < ELEC_DAMAGE_DURATION) {
+    if ((gameTime - psFeature->damageManager->getTimeLastHit()) < ELEC_DAMAGE_DURATION) {
       return true;
     }
   }
   if (auto psStructure = dynamic_cast<Structure const*>(psObj)) {
-    if ((gameTime - psStructure->timeLastHit) < ELEC_DAMAGE_DURATION &&
+    if ((gameTime - psStructure->damageManager->getTimeLastHit()) < ELEC_DAMAGE_DURATION &&
         psStructure->damageManager->getLastHitWeapon() == WEAPON_SUBCLASS::ELECTRONIC) {
       return true;
     }
@@ -1717,7 +1721,7 @@ int establishTargetHeight(BaseObject const* psTarget)
 	if (!psTarget) return 0;
 
   if (auto psDroid = dynamic_cast<Droid const*>(psTarget)) {
-    auto body = dynamic_cast<BodyStats const*>(psDroid->getComponent("body"));
+    auto body = dynamic_cast<BodyStats const*>(psDroid->getComponent(COMPONENT_TYPE::BODY));
     if (!body) return -1;
 
     auto height = body->pIMD->max.y - body->pIMD->min.y;
@@ -1742,25 +1746,25 @@ int establishTargetHeight(BaseObject const* psTarget)
         }
         break;
       case SENSOR:
-        if (auto sensor = dynamic_cast<SensorStats const*>(psDroid->getComponent("sensor"))) {
+        if (auto sensor = dynamic_cast<SensorStats const*>(psDroid->getComponent(COMPONENT_TYPE::SENSOR))) {
           yMax = sensor->pIMD->max.y;
           yMin = sensor->pIMD->min.y;
         }
         break;
       case ECM:
-        if (auto ecm = dynamic_cast<EcmStats const*>(psDroid->getComponent("ecm"))) {
+        if (auto ecm = dynamic_cast<EcmStats const*>(psDroid->getComponent(COMPONENT_TYPE::ECM))) {
           yMax = ecm->pIMD->max.y;
           yMin = ecm->pIMD->min.y;
         }
         break;
       case CONSTRUCT:
-        if (auto construct = dynamic_cast<ConstructStats const*>(psDroid->getComponent("construct"))) {
+        if (auto construct = dynamic_cast<ConstructStats const*>(psDroid->getComponent(COMPONENT_TYPE::CONSTRUCT))) {
           yMax = construct->pIMD->max.y;
           yMin = construct->pIMD->min.y;
         }
         break;
       case REPAIRER:
-        if (auto repair = dynamic_cast<RepairStats const*>(psDroid->getComponent("repair"))) {
+        if (auto repair = dynamic_cast<RepairStats const*>(psDroid->getComponent(COMPONENT_TYPE::REPAIR_UNIT))) {
           yMax = repair->pIMD->max.y;
           yMin = repair->pIMD->min.y;
         }

@@ -42,7 +42,6 @@
 
 struct IMAGEFILE;
 IMAGEFILE* IntImages;
-bool CancelPressed();
 tm getUtcTime(std::time_t const&);
 void inputLoseFocus();
 unsigned short iV_GetImageHeight(const IMAGEFILE*, unsigned short);
@@ -294,7 +293,7 @@ bool addChallenges()
 	debug(LOG_SAVE, "Searching \"%s\" for challenges", sPath.c_str());
 
 	// add challenges to buttons
-	WZ_PHYSFS_enumerateFiles(sSearchPath, [&](const char* i) -> bool
+	WZ_PHYSFS_enumerateFiles(sSearchPath.c_str(), [&](const char* i) -> bool
 	{
 		// See if this filename contains the extension we're looking for
 		if (!strstr(i, ".json")) {

@@ -24,6 +24,7 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 
 #include "activity.h"
+#include "ai.h"
 #include "modding.h"
 #include "multiint.h"
 #include "scores.h"
@@ -809,7 +810,7 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 
 	MultiplayerGameInfo::AllianceOption; alliancesOpt =
 		MultiplayerGameInfo::AllianceOption::NO_ALLIANCES;
-	if (multiGame.alliance == ::ALLIANCE_TYPE::ALLIANCES)
+	if (multiGame.alliance == ALLIANCE_TYPE::ALLIANCES)
 	{
 		alliancesOpt = MultiplayerGameInfo::AllianceOption::ALLIANCES;
 	}

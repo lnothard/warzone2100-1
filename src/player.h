@@ -7,16 +7,27 @@
 
 #include <memory>
 
-class Player {
+
+class Player
+{
 public:
-  ~Player() = default;
-  explicit Player(unsigned player);
+  explicit Player(unsigned id);
+private:
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
+};
 
-  Player(Player const& rhs);
-  Player & operator=(Player const& rhs);
+class PlayerManager
+{
+public:
+  ~PlayerManager() = default;
+  explicit PlayerManager(unsigned player);
 
-  Player(Player && rhs) noexcept = default;
-  Player & operator=(Player && rhs) noexcept = default;
+  PlayerManager(PlayerManager const& rhs);
+  PlayerManager & operator=(PlayerManager const& rhs);
+
+  PlayerManager(PlayerManager && rhs) noexcept = default;
+  PlayerManager & operator=(PlayerManager && rhs) noexcept = default;
 
   void setPlayer(unsigned plr);
   [[nodiscard]] unsigned getPlayer() const;

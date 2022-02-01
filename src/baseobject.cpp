@@ -139,7 +139,7 @@ Spacetime interpolateObjectSpacetime(const BaseObject* obj, unsigned t)
 Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 {
 	if (StatIsStructure(pType)) {
-		return static_cast<StructureStats const*>(pType)->size(direction);
+		return dynamic_cast<StructureStats const*>(pType)->size(direction);
 	}
 	else if (StatIsFeature(pType)) {
 		return dynamic_cast<FeatureStats const*>(pType)->size();
@@ -165,7 +165,7 @@ StructureBounds getStructureBounds(BaseObject const* object)
 StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos, uint16_t direction)
 {
 	if (StatIsStructure(stats)) {
-		return getStructureBounds(static_cast<StructureStats const*>(stats), pos, direction);
+		return getStructureBounds(dynamic_cast<StructureStats const*>(stats), pos, direction);
 	}
 	else if (StatIsFeature(stats)) {
 		return getStructureBounds(dynamic_cast<FeatureStats const*>(stats), pos);

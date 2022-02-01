@@ -36,12 +36,8 @@ typedef std::vector<BaseObject *> GridList;
 Droid* cmdDroidGetDesignator(unsigned);
 const char* getPlayerName(unsigned);
 const GridList& gridStartIterate(int, int, unsigned);
-bool lineOfFire(const BaseObject *, const BaseObject *, int, bool);
 const char* objInfo(const BaseObject *);
-unsigned objSensorRange(BaseObject const*);
 int scavengerPlayer();
-Structure* visGetBlockingWall(const BaseObject *, const BaseObject *);
-int visibleObject(const BaseObject *, const BaseObject *, bool);
 
 
 /* Weights used for target selection code,
@@ -206,14 +202,14 @@ static BaseObject const* aiSearchSensorTargets(BaseObject const* psObj, int weap
 				continue;
 			}
 			// Artillery should not fire at objects observed by VTOL CB/Strike sensors.
-			if (asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SENSOR_TYPE::VTOL_CB ||
-				asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SENSOR_TYPE::VTOL_INTERCEPT ||
-				objRadarDetector((BaseObject *)psDroid))
-			{
+      auto sensor = dynamic_cast<SensorStats const*>(psDroid->getComponent(COMPONENT_TYPE::SENSOR));
+			if (sensor->type == SENSOR_TYPE::VTOL_CB ||
+          sensor->type == SENSOR_TYPE::VTOL_INTERCEPT ||
+			   	objRadarDetector((BaseObject *)psDroid)) {
 				continue;
 			}
 			psTemp = psDroid->getActionTarget(0);
-			isCB = asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SENSOR_TYPE::INDIRECT_CB;
+			isCB = sensor->type == SENSOR_TYPE::INDIRECT_CB;
 			//isRD = objRadarDetector((SimpleObject *)psDroid);
 		}
 		else if (auto psCStruct = dynamic_cast<Structure*>(psSensor))
@@ -417,7 +413,7 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
 		/* If attacking with EMP try to avoid targets that were already "EMPed" */
 		if (bEmpWeap &&
         targetDroid->damageManager->getLastHitWeapon() == WEAPON_SUBCLASS::EMP &&
-			((gameTime - targetDroid->timeLastHit) < EMP_DISABLE_TIME)) { //target still disabled
+        gameTime - targetDroid->damageManager->getTimeLastHit() < EMP_DISABLE_TIME) { //target still disabled
 			attackWeight /= EMP_DISABLED_PENALTY_F;
 		}
 	}
@@ -800,10 +796,10 @@ bool aiChooseTarget(BaseObject* psObj, BaseObject** ppsTarget, int weapon_slot,
 			debug(LOG_NEVER, "Commander %d is good enough for fire designation", psCommander->getId());
 
 			if (psCommander->getAction() == ACTION::ATTACK
-				&& psCommander->action_target[0] != nullptr
-				&& !psCommander->action_target[0]->died) {
+				  && psCommander->getActionTarget(0) != nullptr
+				  && !psCommander->getActionTarget(0)->damageManager->isDead()) {
 				// the commander has a target to fire on
-				if (aiStructHasRange(structure, psCommander->action_target[0], weapon_slot)) {
+				if (aiStructHasRange(structure, psCommander->getActionTarget(0), weapon_slot)) {
 					// target in range - fire on it
 					tmpOrigin = TARGET_ORIGIN::COMMANDER;
 					psTarget = psCommander->action_target[0];
@@ -1003,7 +999,7 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
 
 	// need to check the propulsion type of target
 	if (auto psDroid = dynamic_cast<Droid const*>(psTarget)) {
-    auto propulsion = dynamic_cast<PropulsionStats const*>(psDroid->getComponent("propulsion"));
+    auto propulsion = dynamic_cast<PropulsionStats const*>(psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
     if (propulsion != nullptr &&
         asPropulsionTypes[static_cast<size_t>(propulsion->propulsionType)].travel == TRAVEL_MEDIUM::AIR) {
       if (psDroid->getMovementData()->status != MOVE_STATUS::INACTIVE) {

@@ -276,16 +276,11 @@ static Position findNonblockingPosition(Position pos, PROPULSION_TYPE propulsion
 	                std::min(std::max(pos.y, minCoord.y), maxCoord.y), pos.z};
 }
 
-static void fpathSetMove(Movement* psMoveCntl, int targetX, int targetY)
+void fpathSetMove(Movement* psMoveCntl, int targetX, int targetY)
 {
 	psMoveCntl->path.resize(1);
 	psMoveCntl->destination = Vector2i{targetX, targetY};
 	psMoveCntl->path[0] = Vector2i{targetX, targetY};
-}
-
-void fpathSetDirectRoute(Droid* psDroid, int targetX, int targetY)
-{
-	fpathSetMove(psDroid->getMovementData(), targetX, targetY);
 }
 
 void fpathRemoveDroidData(int id)
@@ -416,7 +411,7 @@ FPATH_RESULT fpathDroidRoute(Droid* psDroid, int tX, int tY, FPATH_MOVETYPE move
 {
   using enum FPATH_MOVETYPE;
 	bool acceptNearest;
-	auto& psPropStats = psDroid->getPropulsion();
+	auto psPropStats = dynamic_cast<PropulsionStats const*>(psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
 
 	// override for AI to blast our way through stuff
 	if (!isHumanPlayer(psDroid->playerManager->getPlayer()) &&
@@ -432,15 +427,13 @@ FPATH_RESULT fpathDroidRoute(Droid* psDroid, int tX, int tY, FPATH_MOVETYPE move
 	auto endPos = Position(tX, tY, 0);
   auto dstStructure = getStructureBounds(worldTile(endPos.xy())->psObject);
 
-	startPos = findNonblockingPosition(
-          startPos, psDroid->getPropulsion()->propulsionType,
-          psDroid->playerManager->getPlayer(), moveType);
+  auto propulsionType = psPropStats->propulsionType;
+	startPos = findNonblockingPosition(startPos, propulsionType, psDroid->playerManager->getPlayer(), moveType);
   
 	if (!dstStructure.isValid()) {
     // if there's a structure over the destination, ignore it, otherwise
     // pathfind from somewhere around the obstruction.
-		endPos = findNonblockingPosition(endPos, psDroid->getPropulsion()->propulsionType,
-                                     psDroid->playerManager->getPlayer(), moveType);
+		endPos = findNonblockingPosition(endPos, propulsionType, psDroid->playerManager->getPlayer(), moveType);
 	}
 	objTrace(psDroid->getId(),
            "Want to go to (%d, %d) -> (%d, %d), going (%d, %d) -> (%d, %d)",

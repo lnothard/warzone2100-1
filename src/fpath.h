@@ -135,6 +135,7 @@ bool fpathCheck(Position orig, Position dest, PROPULSION_TYPE propulsion);
 
 /** Unit testing. */
 void fpathTest(int x, int y, int x2, int y2);
+void fpathSetMove(Movement* psMoveCntl, int targetX, int targetY);
 
 /** @} */
 

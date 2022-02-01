@@ -253,7 +253,7 @@ struct ResourceExtractor::Impl
 };
 
 Structure::Structure(unsigned id, unsigned player)
-  : BaseObject(id, std::make_unique<Player>(player),
+  : BaseObject(id, std::make_unique<PlayerManager>(player),
                std::make_unique<Health>())
   , pimpl{std::make_unique<Impl>()}
 {
@@ -6975,4 +6975,420 @@ Droid const* Factory::getCommander() const
 LineBuild calcLineBuild(StructureStats const* stats, uint16_t direction, Vector2i pos, Vector2i pos2)
 {
   return calcLineBuild(stats->size(direction), stats->type, pos, pos2);
+}
+
+/* code for versions after version 20 of a save structure */
+bool Structure::loadSaveStructure2(const char* pFileName, Structure** ppList)
+{
+  if (!PHYSFS_exists(pFileName)) {
+    debug(LOG_SAVE, "No %s found -- use fallback method", pFileName);
+    return false; // try to use fallback method
+  }
+  WzConfig ini(WzString::fromUtf8(pFileName), WzConfig::ReadOnly);
+
+  freeAllFlagPositions(); //clear any flags put in during level loads
+
+  std::vector<WzString> list = ini.childGroups();
+  for (size_t i = 0; i < list.size(); ++i)
+  {
+    Factory* psFactory;
+    ResearchFacility* psResearch;
+    RepairFacility* psRepair;
+    RearmPad* psReArmPad;
+    StructureStats* psModule;
+    int capacity, researchId;
+    Structure* psStructure;
+
+    ini.beginGroup(list[i]);
+    unsigned player = getPlayer(ini);
+    int id = ini.value("id", -1).toInt();
+    Position pos = ini.vector3i("position");
+    Rotation rot = ini.vector3i("rotation");
+    WzString name = ini.string("name");
+
+    //get the stats for this structure
+    auto psStats = std::find_if(asStructureStats, asStructureStats + numStructureStats,
+                                [&](StructureStats& stat) { return stat.id == name; });
+    //if haven't found the structure - ignore this record!
+    ASSERT(psStats != asStructureStats + numStructureStats, "This structure no longer exists - %s",
+           name.toUtf8().c_str());
+    if (psStats == asStructureStats + numStructureStats)
+    {
+      ini.endGroup();
+      continue; // ignore this
+    }
+    /*create the Structure */
+    //for modules - need to check the base structure exists
+    if (IsStatExpansionModule(psStats))
+    {
+      Structure* psTileStructure = getTileStructure(map_coord(pos.x), map_coord(pos.y));
+      if (psTileStructure == nullptr)
+      {
+        debug(LOG_ERROR, "No owning structure for module - %s for player - %d", name.toUtf8().c_str(), player);
+        ini.endGroup();
+        continue; // ignore this module
+      }
+    }
+    //check not trying to build too near the edge
+    if (map_coord(pos.x) < TOO_NEAR_EDGE || map_coord(pos.x) > mapWidth - TOO_NEAR_EDGE
+        || map_coord(pos.y) < TOO_NEAR_EDGE || map_coord(pos.y) > mapHeight - TOO_NEAR_EDGE)
+    {
+      debug(LOG_ERROR, "Structure %s (%s), coord too near the edge of the map", name.toUtf8().c_str(),
+            list[i].toUtf8().c_str());
+      ini.endGroup();
+      continue; // skip it
+    }
+    psStructure = buildStructureDir(psStats, pos.x, pos.y, rot.direction, player, true);
+    ASSERT(psStructure, "Unable to create structure");
+    if (!psStructure) {
+      ini.endGroup();
+      continue;
+    }
+    if (id > 0) {
+      psStructure->setId(id); // force correct ID
+    }
+
+    // common SimpleObject info
+    loadSaveObject(ini, psStructure);
+
+    if (psStructure->getStats()->type == STRUCTURE_TYPE::HQ)
+    {
+      scriptSetStartPos(player, psStructure->getPosition().x, psStructure->getPosition().y);
+    }
+    psStructure->damageManager->setResistance(ini.value("resistance", psStructure->damageManager->getResistance()).toInt());
+    capacity = ini.value("modules", 0).toInt();
+    psStructure->pimpl->capacity = 0; // increased when modules are built
+    switch (psStructure->getStats()->type)
+    {
+      case STRUCTURE_TYPE::FACTORY:
+      case STRUCTURE_TYPE::VTOL_FACTORY:
+      case STRUCTURE_TYPE::CYBORG_FACTORY:
+        //if factory save the current build info
+        psFactory = ((Factory*)psStructure->pFunctionality);
+        psFactory->productionLoops = ini.value("Factory/productionLoops", psFactory->productionLoops).toUInt();
+        psFactory->timeStarted = ini.value("Factory/timeStarted", psFactory->timeStarted).toInt();
+        psFactory->buildPointsRemaining = ini.value("Factory/buildPointsRemaining", psFactory->buildPointsRemaining)
+                .toInt();
+        psFactory->timeStartHold = ini.value("Factory/timeStartHold", psFactory->timeStartHold).toInt();
+        psFactory->loopsPerformed = ini.value("Factory/loopsPerformed", psFactory->loopsPerformed).toInt();
+        // statusPending and pendingCount belong to the GUI, not the game state.
+        psFactory->secondaryOrder = ini.value("Factory/secondaryOrder", psFactory->secondaryOrder).toInt();
+        //adjust the module structures IMD
+        if (capacity)
+        {
+          psModule = getModuleStat(psStructure);
+          //build the appropriate number of modules
+          for (int moduleIdx = 0; moduleIdx < capacity; moduleIdx++)
+          {
+            buildStructure(psModule, psStructure->pos.x, psStructure->pos.y, psStructure->player, true);
+          }
+        }
+        if (ini.contains("Factory/template"))
+        {
+          int templId(ini.value("Factory/template").toInt());
+          psFactory->psSubject = getTemplateFromMultiPlayerID(templId);
+        }
+        if (ini.contains("Factory/assemblyPoint/pos"))
+        {
+          Position point = ini.vector3i("Factory/assemblyPoint/pos");
+          setAssemblyPoint(psFactory->psAssemblyPoint, point.x, point.y, player, true);
+          psFactory->psAssemblyPoint->selected = ini.value("Factory/assemblyPoint/selected", false).toBool();
+        }
+        if (ini.contains("Factory/assemblyPoint/number"))
+        {
+          psFactory->psAssemblyPoint->factoryInc = ini.value("Factory/assemblyPoint/number", 42).toInt();
+        }
+        if (player == productionPlayer)
+        {
+          for (int runNum = 0; runNum < ini.value("Factory/productionRuns", 0).toInt(); runNum++)
+          {
+            ProductionRunEntry currentProd;
+            currentProd.quantity = ini.value("Factory/Run/" + WzString::number(runNum) + "/quantity").toInt();
+            currentProd.built = ini.value("Factory/Run/" + WzString::number(runNum) + "/built").toInt();
+            if (ini.contains("Factory/Run/" + WzString::number(runNum) + "/template"))
+            {
+              int tid = ini.value("Factory/Run/" + WzString::number(runNum) + "/template").toInt();
+              DroidTemplate* psTempl = getTemplateFromMultiPlayerID(tid);
+              currentProd.psTemplate = psTempl;
+              ASSERT(psTempl, "No template found for template ID %d for %s (%d)", tid, objInfo(psStructure),
+                     id);
+            }
+            if (psFactory->psAssemblyPoint->factoryInc >= asProductionRun[psFactory->psAssemblyPoint->
+                    factoryType].size())
+            {
+              asProductionRun[psFactory->psAssemblyPoint->factoryType].resize(
+                      psFactory->psAssemblyPoint->factoryInc + 1);
+            }
+            asProductionRun[psFactory->psAssemblyPoint->factoryType][psFactory->psAssemblyPoint->factoryInc].
+                    push_back(currentProd);
+          }
+        }
+        break;
+      case STRUCTURE_TYPE::RESEARCH:
+        psResearch = ((ResearchFacility*)psStructure->pFunctionality);
+        //adjust the module structures IMD
+        if (capacity)
+        {
+          psModule = getModuleStat(psStructure);
+          buildStructure(psModule, psStructure->getPosition().x, psStructure->getPosition().y,
+                         psStructure->playerManager->getPlayer(), true);
+        }
+        //clear subject
+        psResearch->psSubject = nullptr;
+        psResearch->timeStartHold = 0;
+        //set the subject
+        if (ini.contains("Research/target"))
+        {
+          researchId = getResearchIdFromName(ini.value("Research/target").toWzString());
+          if (researchId != NULL_ID)
+          {
+            psResearch->psSubject = &asResearch[researchId];
+            psResearch->timeStartHold = ini.value("Research/timeStartHold").toInt();
+          }
+          else
+          {
+            debug(LOG_ERROR, "Failed to look up research target %s",
+                  ini.value("Research/target").toWzString().toUtf8().c_str());
+          }
+        }
+        break;
+      case STRUCTURE_TYPE::POWER_GEN:
+        // adjust the module structures IMD
+        if (capacity)
+        {
+          psModule = getModuleStat(psStructure);
+          buildStructure(psModule, psStructure->pos.x, psStructure->pos.y, psStructure->player, true);
+        }
+        break;
+      case STRUCTURE_TYPE::RESOURCE_EXTRACTOR:
+        break;
+      case STRUCTURE_TYPE::REPAIR_FACILITY:
+        psRepair = ((RepairFacility*)psStructure->pFunctionality);
+        if (ini.contains("Repair/deliveryPoint/pos"))
+        {
+          Position point = ini.vector3i("Repair/deliveryPoint/pos");
+          setAssemblyPoint(psRepair->psDeliveryPoint, point.x, point.y, player, true);
+          psRepair->psDeliveryPoint->selected = ini.value("Repair/deliveryPoint/selected", false).toBool();
+        }
+        break;
+      case STRUCTURE_TYPE::REARM_PAD:
+        psReArmPad = ((RearmPad*)psStructure->pFunctionality);
+        psReArmPad->timeStarted = ini.value("Rearm/timeStarted", psReArmPad->timeStarted).toInt();
+        psReArmPad->timeLastUpdated = ini.value("Rearm/timeLastUpdated", psReArmPad->timeLastUpdated).toInt();
+        break;
+      case STRUCTURE_TYPE::WALL:
+      case STRUCTURE_TYPE::GATE:
+        psStructure->pFunctionality->wall.type = ini.value("Wall/type").toInt();
+        psStructure->setImdShape(psStructure->getStats()->IMDs[std::min<unsigned>(
+                psStructure->pFunctionality->wall.type, psStructure->getStats()->IMDs.size() - 1)].get());
+        break;
+      default:
+        break;
+    }
+    psStructure->damageManager->setHp(healthValue(ini, structureBody(psStructure)));
+    psStructure->pimpl->currentBuildPoints = ini.value("currentBuildPts", structureBuildPointsToCompletion(*psStructure)).toInt();
+    if (psStructure->getState() == STRUCTURE_STATE::BUILT) {
+      switch (psStructure->getStats()->type)
+      {
+        case STRUCTURE_TYPE::POWER_GEN:
+          checkForResExtractors(psStructure);
+          if (psStructure->playerManager->isSelectedPlayer()) {
+            audio_PlayObjStaticTrack(psStructure, ID_SOUND_POWER_HUM);
+          }
+          break;
+        case STRUCTURE_TYPE::RESOURCE_EXTRACTOR:
+          checkForPowerGen(psStructure);
+          break;
+        default:
+          //do nothing for factories etc
+          break;
+      }
+    }
+    // weapons
+    for (int j = 0; j < psStructure->getStats()->numWeaps; j++)
+    {
+      if (psStructure->asWeaps[j].nStat > 0)
+      {
+        psStructure->asWeaps[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
+        psStructure->asWeaps[j].timeLastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
+        psStructure->asWeaps[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
+        psStructure->asWeaps[j].rotation = ini.vector3i("rotation/" + WzString::number(j));
+      }
+    }
+    psStructure->pimpl->state = STRUCTURE_STATE(ini.value("status", (int)STRUCTURE_STATE::BUILT).toInt());
+    if (psStructure->pimpl->state == STRUCTURE_STATE::BUILT) {
+      buildingComplete(psStructure);
+    }
+    ini.endGroup();
+  }
+  resetFactoryNumFlag(); //reset flags into the masks
+
+  return true;
+}
+
+bool Structure::loadSaveStructure(char* pFileData, UDWORD filesize)
+{
+  STRUCT_SAVEHEADER* psHeader;
+  SAVE_STRUCTURE_V2 *psSaveStructure, sSaveStructure;
+  Structure* psStructure;
+  StructureStats* psStats = nullptr;
+  UDWORD count, statInc;
+  int32_t found;
+  UDWORD NumberOfSkippedStructures = 0;
+  UDWORD periodicalDamageTime;
+
+  /* Check the file type */
+  psHeader = (STRUCT_SAVEHEADER*)pFileData;
+  if (psHeader->aFileType[0] != 's' || psHeader->aFileType[1] != 't' ||
+      psHeader->aFileType[2] != 'r' || psHeader->aFileType[3] != 'u')
+  {
+    debug(LOG_ERROR, "loadSaveStructure: Incorrect file type");
+
+    return false;
+  }
+
+  /* STRUCT_SAVEHEADER */
+  endian_udword(&psHeader->version);
+  endian_udword(&psHeader->quantity);
+
+  //increment to the start of the data
+  pFileData += STRUCT_HEADER_SIZE;
+
+  debug(LOG_SAVE, "file version is %u ", psHeader->version);
+
+  /* Check the file version */
+  if (psHeader->version < VERSION_7 || psHeader->version > VERSION_8)
+  {
+    debug(LOG_ERROR, "StructLoad: unsupported save format version %d", psHeader->version);
+
+    return false;
+  }
+
+  psSaveStructure = &sSaveStructure;
+
+  if ((sizeof(SAVE_STRUCTURE_V2) * psHeader->quantity + STRUCT_HEADER_SIZE) > filesize)
+  {
+    debug(LOG_ERROR, "structureLoad: unexpected end of file");
+    return false;
+  }
+
+  /* Load in the structure data */
+  for (count = 0; count < psHeader->quantity; count ++, pFileData += sizeof(SAVE_STRUCTURE_V2))
+  {
+    memcpy(psSaveStructure, pFileData, sizeof(SAVE_STRUCTURE_V2));
+
+    /* STRUCTURE_SAVE_V2 includes OBJECT_SAVE_V19 */
+    endian_sdword(&psSaveStructure->currentBuildPts);
+    endian_udword(&psSaveStructure->body);
+    endian_udword(&psSaveStructure->armour);
+    endian_udword(&psSaveStructure->resistance);
+    endian_udword(&psSaveStructure->dummy1);
+    endian_udword(&psSaveStructure->subjectInc);
+    endian_udword(&psSaveStructure->timeStarted);
+    endian_udword(&psSaveStructure->output);
+    endian_udword(&psSaveStructure->capacity);
+    endian_udword(&psSaveStructure->quantity);
+    /* OBJECT_SAVE_V19 */
+    endian_udword(&psSaveStructure->id);
+    endian_udword(&psSaveStructure->x);
+    endian_udword(&psSaveStructure->y);
+    endian_udword(&psSaveStructure->z);
+    endian_udword(&psSaveStructure->direction);
+    endian_udword(&psSaveStructure->player);
+    endian_udword(&psSaveStructure->periodicalDamageStart);
+    endian_udword(&psSaveStructure->periodicalDamage);
+
+    psSaveStructure->player = RemapPlayerNumber(psSaveStructure->player);
+
+    if (psSaveStructure->player >= MAX_PLAYERS)
+    {
+      psSaveStructure->player = MAX_PLAYERS - 1;
+      NumberOfSkippedStructures++;
+    }
+    //get the stats for this structure
+    found = false;
+
+    for (statInc = 0; statInc < numStructureStats; statInc++)
+    {
+      psStats = asStructureStats + statInc;
+      //loop until find the same name
+
+      if (psStats->id.compare(psSaveStructure->name) == 0)
+      {
+        found = true;
+        break;
+      }
+    }
+    //if haven't found the structure - ignore this record!
+    if (!found)
+    {
+      debug(LOG_ERROR, "This structure no longer exists - %s",
+            getSaveStructNameV19((SAVE_STRUCTURE_V17 *)psSaveStructure));
+      //ignore this
+      continue;
+    }
+
+    //for modules - need to check the base structure exists
+    if (IsStatExpansionModule(psStats))
+    {
+      psStructure = getTileStructure(map_coord(psSaveStructure->x), map_coord(psSaveStructure->y));
+      if (psStructure == nullptr)
+      {
+        debug(LOG_ERROR, "No owning structure for module - %s for player - %d",
+              getSaveStructNameV19((SAVE_STRUCTURE_V17 *)psSaveStructure), psSaveStructure->player);
+        //ignore this module
+        continue;
+      }
+    }
+
+    //check not trying to build too near the edge
+    if (map_coord(psSaveStructure->x) < TOO_NEAR_EDGE || map_coord(psSaveStructure->x) > mapWidth - TOO_NEAR_EDGE)
+    {
+      debug(LOG_ERROR, "Structure %s, x coord too near the edge of the map. id - %d",
+            getSaveStructNameV19((SAVE_STRUCTURE_V17 *)psSaveStructure), psSaveStructure->id);
+      //ignore this
+      continue;
+    }
+    if (map_coord(psSaveStructure->y) < TOO_NEAR_EDGE || map_coord(psSaveStructure->y) > mapHeight - TOO_NEAR_EDGE)
+    {
+      debug(LOG_ERROR, "Structure %s, y coord too near the edge of the map. id - %d",
+            getSaveStructNameV19((SAVE_STRUCTURE_V17 *)psSaveStructure), psSaveStructure->id);
+      //ignore this
+      continue;
+    }
+
+    psStructure = buildStructureDir(psStats, psSaveStructure->x, psSaveStructure->y,
+                                    DEG(psSaveStructure->direction), psSaveStructure->player, true);
+    ASSERT(psStructure, "Unable to create structure");
+    if (!psStructure)
+    {
+      continue;
+    }
+    // The original code here didn't work and so the scriptwriters worked round it by using the module ID - so making it work now will screw up
+    // the scripts -so in ALL CASES overwrite the ID!
+    psStructure->setId(psSaveStructure->getId() > 0 ? psSaveStructure->getId() : 0xFEDBCA98); // hack to remove struct id zero
+    psStructure->damageManager->setPeriodicalDamage(psSaveStructure->periodicalDamage);
+    psStructure->damageManager->setPeriodicalDamageStartTime(psSaveStructure->periodicalDamageStart);
+    psStructure->pimpl->state = psSaveStructure->status;
+    if (psStructure->getState() == STRUCTURE_STATE::BUILT) {
+      buildingComplete(psStructure);
+    }
+    if (psStructure->getStats()->type == STRUCTURE_TYPE::HQ)
+    {
+      scriptSetStartPos(psSaveStructure->player, psStructure->getPosition().x, psStructure->getPosition().y);
+    }
+    else if (psStructure->getStats()->type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR)
+    {
+      scriptSetDerrickPos(psStructure->getPosition().x, psStructure->getPosition().y);
+    }
+  }
+
+  if (NumberOfSkippedStructures > 0)
+  {
+    debug(LOG_ERROR, "structureLoad: invalid player number in %d structures ... assigned to the last player!\n\n",
+          NumberOfSkippedStructures);
+    return false;
+  }
+
+  return true;
 }

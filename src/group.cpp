@@ -127,6 +127,11 @@ std::vector<Droid*> const& Group::getMembers() const
   return pimpl->members;
 }
 
+GROUP_TYPE Group::getType() const
+{
+  return pimpl->type;
+}
+
 std::unique_ptr<Group> Group::create(unsigned id)
 {
 	return std::make_unique<Group>(id);

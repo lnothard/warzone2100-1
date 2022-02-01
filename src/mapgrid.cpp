@@ -30,6 +30,8 @@
 
 #include "mapgrid.h"
 #include "pointtree.h"
+#include "objmem.h"
+#include "baseobject.h"
 
 
 static PointTree* gridPointTree = nullptr; // A quad-tree-like object.
@@ -53,20 +55,19 @@ void gridReset()
 	gridPointTree->clear();
 
 	// Put all existing objects into the point tree.
-	for (unsigned player = 0; player < MAX_PLAYERS; player++)
+	for (auto player = 0; player < MAX_PLAYERS; player++)
 	{
-    PlayerOwnedObject * start[3] = {
-            (PlayerOwnedObject *)apsDroidLists[player], (PlayerOwnedObject *)apsStructLists[player],
-            (PlayerOwnedObject *)apsFeatureLists[player]
+    BaseObject * start[3] = {
+            (BaseObject *)apsDroidLists[player], (BaseObject *)apsStructLists[player],
+            (BaseObject *)apsFeatureLists[player]
 		};
 		for (auto psObj : start)
 		{
 			for (; psObj != nullptr; psObj = psObj->psNext)
 			{
-				if (!psObj->died)
-				{
+				if (!psObj->damageManager->isDead()) {
 					gridPointTree->insert(psObj, psObj->getPosition().x, psObj->getPosition().y);
-					for (unsigned char& viewer : psObj->seenThisTick)
+					for (auto& viewer : psObj->seenThisTick)
 					{
 						viewer = 0;
 					}
@@ -77,7 +78,7 @@ void gridReset()
 
 	gridPointTree->sort();
 
-	for (unsigned player = 0; player < MAX_PLAYERS; ++player)
+	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
 		gridFiltersUnseen[player].reset(*gridPointTree);
 		gridFiltersDroidsByPlayer[player].reset(*gridPointTree);
@@ -118,7 +119,7 @@ static GridList const& gridStartIterateFiltered(int32_t x, int32_t y, uint32_t r
 	PointTree::ResultVector::iterator w = gridPointTree->lastQueryResults.begin(), i;
 	for (i = w; i != gridPointTree->lastQueryResults.end(); ++i)
 	{
-		auto* obj = static_cast<PlayerOwnedObject *>(*i);
+		auto* obj = static_cast<BaseObject *>(*i);
 		if (!condition.test(obj)) // Check if we should skip this object.
 		{
 			filter->erase(gridPointTree->lastFilteredQueryIndices[i - gridPointTree->lastQueryResults.begin()]);
@@ -140,7 +141,7 @@ static GridList const& gridStartIterateFiltered(int32_t x, int32_t y, uint32_t r
 	gridList.resize(gridPointTree->lastQueryResults.size());
 	for (unsigned n = 0; n < gridList.size(); ++n)
 	{
-		gridList[n] = (PlayerOwnedObject *)gridPointTree->lastQueryResults[n];
+		gridList[n] = (BaseObject *)gridPointTree->lastQueryResults[n];
 	}
 	return gridList;
 }
@@ -155,14 +156,14 @@ static GridList const& gridStartIterateFilteredArea(int32_t x, int32_t y, int32_
 	gridList.resize(gridPointTree->lastQueryResults.size());
 	for (unsigned n = 0; n < gridList.size(); ++n)
 	{
-		gridList[n] = (PlayerOwnedObject *)gridPointTree->lastQueryResults[n];
+		gridList[n] = (BaseObject *)gridPointTree->lastQueryResults[n];
 	}
 	return gridList;
 }
 
 struct ConditionTrue
 {
-	static bool test(PlayerOwnedObject *)
+	static bool test(BaseObject *)
 	{
 		return true;
 	}
@@ -180,13 +181,15 @@ GridList const& gridStartIterateArea(int32_t x, int32_t y, uint32_t x2, uint32_t
 
 struct ConditionDroidsByPlayer
 {
-	explicit ConditionDroidsByPlayer(int32_t player_) : player(player_)
+	explicit ConditionDroidsByPlayer(unsigned player)
+      : player(player)
 	{
 	}
 
-	bool test(PlayerOwnedObject * obj) const
+	bool test(BaseObject const* obj) const
 	{
-		return obj->type == OBJ_DROID && obj->getPlayer() == player;
+		return getObjectType(obj) == OBJECT_TYPE::DROID &&
+           obj->playerManager->getPlayer() == player;
 	}
 
 	unsigned player;
@@ -203,7 +206,7 @@ struct ConditionUnseen
 	{
 	}
 
-	bool test(PlayerOwnedObject * obj) const
+	bool test(BaseObject * obj) const
 	{
 		return obj->seenThisTick[player] < UINT8_MAX;
 	}
@@ -216,10 +219,10 @@ GridList const& gridStartIterateUnseen(int32_t x, int32_t y, uint32_t radius, un
 	return gridStartIterateFiltered(x, y, radius, &gridFiltersUnseen[player], ConditionUnseen(player));
 }
 
-PlayerOwnedObject ** gridIterateDup()
+BaseObject ** gridIterateDup()
 {
 	size_t bytes = gridPointTree->lastQueryResults.size() * sizeof(void*);
-	auto ret = (PlayerOwnedObject **)malloc(bytes);
+	auto ret = (BaseObject **)malloc(bytes);
 	memcpy(ret, &gridPointTree->lastQueryResults[0], bytes);
 	return ret;
 }

@@ -91,7 +91,7 @@ private:
 };
 
 /* The statistics for the features */
-extern std::unique_ptr<FeatureStats> asFeatureStats;
+extern std::vector<FeatureStats> asFeatureStats;
 extern unsigned numFeatureStats;
 
 //Value is stored for easy access to this feature in destroyDroid()/destroyStruct()

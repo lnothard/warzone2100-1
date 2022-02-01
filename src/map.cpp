@@ -31,6 +31,10 @@
 #include "map.h"
 #include "multiplay.h"
 #include "qtscript.h"
+#include "fpath.h"
+#include "objmem.h"
+#include "random.h"
+#include "terrain.h"
 
 static constexpr auto GAME_TICKS_FOR_DANGER = GAME_TICKS_PER_SEC * 2;
 
@@ -1087,7 +1091,7 @@ bool mapShutdown()
 	floodbucket = nullptr;
 	psGroundTypes = nullptr;
 	mapDecals = nullptr;
-	psMapTiles = nullptr;
+	psMapTiles.clear();
 	mapWidth = mapHeight = 0;
 	numTile_names = 0;
 	Tile_names = nullptr;
@@ -1506,7 +1510,7 @@ extern int map_Height(int x, int y)
 }
 
 /* returns true if object is above ground */
-bool mapObjIsAboveGround(const PlayerOwnedObject * psObj)
+bool mapObjIsAboveGround(BaseObject const* psObj)
 {
 	// min is used to make sure we don't go over array bounds!
 	// TODO Using the corner of the map instead doesn't make sense. Fix this...
@@ -1907,22 +1911,22 @@ static int dangerThreadFunc()
 	return 0;
 }
 
-static void threatUpdateTarget(unsigned player, PlayerOwnedObject * psObj, bool ground, bool air)
+static void threatUpdateTarget(unsigned player, BaseObject* psObj, bool ground, bool air)
 {
-	if (psObj->visible[player] || psObj->born == 2)
-	{
-		for (auto pos : psObj->watchedTiles)
-		{
-			if (ground) {
-        // set ground threat for this tile
-				auxSet(pos.x, pos.y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_THREAT);
-			}
-			if (air) {
-        // set air threat for this tile
-				auxSet(pos.x, pos.y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_AATHREAT);
-			}
-		}
-	}
+  if (!psObj->isVisibleToPlayer(player) && psObj->getBornTime() != 2)
+    return;
+
+  for (auto pos : psObj->watchedTiles)
+  {
+    if (ground) {
+    // set ground threat for this tile
+      auxSet(pos.x, pos.y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_THREAT);
+    }
+    if (air) {
+    // set air threat for this tile
+      auxSet(pos.x, pos.y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_AATHREAT);
+    }
+  }
 }
 
 static void threatUpdate(unsigned player)
@@ -1957,7 +1961,7 @@ static void threatUpdate(unsigned player)
 			}
 			for (auto weapon = 0; weapon < numWeapons(psDroid); weapon++)
 			{
-				mode |= psDroid.getWeapons()[weapon].getStats().surfaceToAir;
+				mode |= psDroid.getWeapon(weapon)->getStats()->surfaceToAir;
 			}
 			if (psDroid.getType() == SENSOR) {
         // special treatment for sensor turrets, no multi weapon support
@@ -1974,10 +1978,10 @@ static void threatUpdate(unsigned player)
 
 			for (auto weapon = 0; weapon < numWeapons(*psStruct); weapon++)
 			{
-				mode |= psStruct->getWeapons()[weapon].getStats().surfaceToAir;
+				mode |= psStruct->getWeapon(weapon)->getStats()->surfaceToAir;
 			}
-			if (psStruct->getStats().sensor_stats &&
-          psStruct->getStats().sensor_stats->location == LOC::TURRET) {
+			if (psStruct->getStats()->sensor_stats &&
+          psStruct->getStats()->sensor_stats->location == LOC::TURRET) {
         // special treatment for sensor turrets
 				mode |= SHOOT_ON_GROUND; // assume it only shoots at ground targets for now
 			}

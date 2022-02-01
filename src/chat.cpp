@@ -28,6 +28,7 @@
 #include "chat.h"
 #include "multiplay.h"
 #include "qtscript.h"
+#include "ai.h"
 
 ChatMessage::ChatMessage(unsigned sender, std::string text)
   : sender{sender}, text{std::move(text)}
@@ -48,13 +49,12 @@ bool ChatMessage::should_receive(unsigned player) const
          // if `allies_only` is set to `true`, and there is an alliance between `player`
          // and `sender_id`, return `true`
          intended_recipients.find(player) != intended_recipients.end() ||
-         (allies_only && sender < MAX_PLAYERS && player < MAX_PLAYERS &&
-          alliance_formed(sender, player));
+         (allies_only && sender < MAX_PLAYERS && player < MAX_PLAYERS && aiCheckAlliances(sender, player));
 }
 
 std::unique_ptr< std::vector<unsigned> > ChatMessage::get_recipients() const
 {
-	auto recipients = std::make_unique< std::vector<unsigned> >();
+	auto recipients = std::make_unique<std::vector<unsigned>>();
 
 	for (auto player = 0; player < MAX_CONNECTED_PLAYERS; player++)
 	{
@@ -151,7 +151,7 @@ void ChatMessage::sendToAiPlayer(unsigned receiver)
 	NETbeginEncode(NETnetQueue(responsiblePlayer), NET_AITEXTMSG);
 	NETuint32_t(&sender);
 	NETuint32_t(&receiver);
-	NETstring(text, MAX_CONSOLE_STRING_LENGTH);
+	NETstring(text.c_str(), MAX_CONSOLE_STRING_LENGTH);
 	NETend();
 }
 

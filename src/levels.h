@@ -24,10 +24,12 @@
  */
 
 #ifndef __INCLUDED_SRC_LEVELS_H__
-#define __INCLUDED_SRC_LEVELS_H__
 
 #include "game.h"
 #include "init.h"
+
+enum class GAME_TYPE;
+
 
 /// Maximum number of data files
 static constexpr auto LEVEL_MAXFILES = 9;

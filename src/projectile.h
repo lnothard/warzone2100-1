@@ -87,6 +87,7 @@ public:
   Projectile& operator=(Projectile&& rhs) noexcept = default;
 
 
+  [[nodiscard]] WeaponStats const* getWeaponStats() const;
   [[nodiscard]] PROJECTILE_STATE getState() const noexcept;
   [[nodiscard]] bool isVisible() const;
   [[nodiscard]] bool isFriendlyFire() const;

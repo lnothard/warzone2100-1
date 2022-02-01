@@ -109,15 +109,16 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  	}
 	  	break;
 	  case RENDER_PROJECTILE: {
-      auto psProj = static_cast<Projectile *>(pObject);
-      if (psProj && (psProj->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
-                     psProj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND ||
-                     psProj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::EMP)) {
+      auto psProj = static_cast<Projectile*>(pObject);
+      if (psProj && (psProj->getWeaponStats()->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
+                     psProj->getWeaponStats()->weaponSubClass == WEAPON_SUBCLASS::COMMAND ||
+                     psProj->getWeaponStats()->weaponSubClass == WEAPON_SUBCLASS::EMP)) {
         /* We don't do projectiles from these guys, cos there's an effect instead */
         z = -1;
-      } else {
+      }
+      else {
         //the weapon stats holds the reference to which graphic to use
-        pImd = ((Projectile *) pObject)->weaponStats->pInFlightGraphic;
+        pImd = psProj->getWeaponStats()->pInFlightGraphic.get();
 
         psSimpObj = static_cast<BaseObject*>(pObject);
         position.x = psSimpObj->getPosition().x - playerPos.p.x;
@@ -200,7 +201,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 	  	position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 	  	position.y = psSimpObj->getPosition().z;
 
-	  	psBStats = dynamic_cast<BodyStats const*>(psDroid->getComponent("body"));
+	  	psBStats = dynamic_cast<BodyStats const*>(psDroid->getComponent(COMPONENT_TYPE::BODY));
 	  	droidSize = psBStats->pIMD->radius;
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel) - (droidSize * 2);
 

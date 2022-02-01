@@ -146,7 +146,7 @@ bool _attemptCheatCode(const std::string& cheat_name)
 			curCheat->function(); // run it
 
 			// Copy this info to be used by the crash handler for the dump file
-			ssprintf(buf, "User has used cheat code: %s", curCheat->pName);
+			ssprintf(buf, "User has used cheat code: %s", curCheat->pName.c_str());
 			addDumpInfo(buf);
 
 			/* And get out of here */
@@ -231,18 +231,18 @@ void recvProcessDebugMappings(NETQUEUE queue)
 			getWantedDebugMappingStatuses(dbgInputManager, false).c_str()
 		);
 	}
-	addConsoleMessage(cmsg.c_str(), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+	addConsoleMessage(cmsg.c_str(), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 
 	if (!oldDebugMode && newDebugMode)
 	{
-		addConsoleMessage(_("Debug mode now enabled!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Debug mode now enabled!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 		Cheated = true;
 		gInputManager.contexts().set(InputContext::DEBUG_MISC, InputContext::State::ACTIVE);
 		triggerEventCheatMode(true);
 	}
 	else if (oldDebugMode && !newDebugMode)
 	{
-		addConsoleMessage(_("Debug mode now disabled!"), DEFAULT_JUSTIFY, SYSTEM_MESSAGE);
+		addConsoleMessage(_("Debug mode now disabled!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 		if (!NETisReplay())
 		{
 			gInputManager.contexts().set(InputContext::DEBUG_MISC, InputContext::State::INACTIVE);

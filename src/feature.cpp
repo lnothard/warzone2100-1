@@ -112,7 +112,6 @@ void loadFeatureStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	asFeatureStats = std::make_unique<FeatureStats>(list.size());
 	numFeatureStats = list.size();
 	for (auto i = 0; i < list.size(); ++i)
 	{
@@ -175,8 +174,7 @@ void loadFeatureStats(WzConfig& ini)
 /* Release the feature stats memory */
 void featureStatsShutDown()
 {
-	delete[] asFeatureStats;
-	asFeatureStats = nullptr;
+  asFeatureStats.clear();
 	numFeatureStats = 0;
 }
 
@@ -270,7 +268,7 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats* stats,
 	psFeature->display->frame_number = 0;
 
 	// set up the imd for the feature
-	psFeature->display->imd_shape = std::make_unique<iIMDShape>(*stats->psImd);
+	psFeature->setImdShape(stats->psImd.get());
 
 	ASSERT_OR_RETURN(nullptr, psFeature->getDisplayData()->imd_shape.get(), "No IMD for feature"); // make sure we have an imd.
 

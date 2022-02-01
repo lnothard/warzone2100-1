@@ -24,38 +24,26 @@
  */
 
 #include "lib/framework/frame.h"
-
-#include "lib/framework/trig.h"
 #include "lib/framework/math_ext.h"
+#include "lib/framework/trig.h"
 #include "lib/gamelib/gtime.h"
-#include "lib/netplay/netplay.h"
-#include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
-#include "lib/ivis_opengl/ivisdef.h"
-#include "console.h"
 
-#include "move.h"
-
-#include "objects.h"
-#include "visibility.h"
-#include "map.h"
-#include "fpath.h"
-#include "loop.h"
-#include "geometry.h"
 #include "action.h"
-#include "order.h"
 #include "astar.h"
-#include "mapgrid.h"
-#include "display.h"
-#include "effects.h"
+#include "console.h"
 #include "feature.h"
-#include "power.h"
-#include "scores.h"
+#include "fpath.h"
+#include "map.h"
+#include "mapgrid.h"
+#include "mission.h"
+#include "move.h"
 #include "multiplay.h"
 #include "multigifts.h"
-#include "random.h"
-#include "mission.h"
+#include "order.h"
+#include "power.h"
 #include "qtscript.h"
+#include "scores.h"
 
 
 Movement::Movement(Vector2i src, Vector2i destination)
@@ -403,7 +391,7 @@ bool moveCheckDroidMovingAndVisible(Droid* psDroid)
 	if (psDroid->damageManager->isDead() || moveDroidStopped(psDroid, 0) ||
       isTransporter(*psDroid) && psDroid->getOrder()->type == ORDER_TYPE::NONE ||
       !psDroid->isVisibleToSelectedPlayer()) {
-		psDroid->iAudioID = NO_SOUND;
+		psDroid->setAudioId(NO_SOUND);
 		return false;
 	}
 	return true;
