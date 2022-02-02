@@ -16,14 +16,14 @@ class Player
 public:
   explicit Player(unsigned id);
 
-  void addDroid(unsigned id, unsigned player);
+  void addDroid(unsigned droidId);
   void addDroid(Droid& droid);
-  [[nodiscard]] Droid* findDroidById(unsigned id) const;
+  [[nodiscard]] Droid* findDroidById(unsigned droidId) const;
 
-  void addStructure(unsigned id, unsigned player);
+  void addStructure(unsigned structId);
   void addStructure(Structure& structure);
   void killStructure(Structure& structure);
-  [[nodiscard]] Structure* findStructureById(unsigned id) const;
+  [[nodiscard]] Structure* findStructureById(unsigned structId) const;
 
   void setPlayer(unsigned playerId);
   [[nodiscard]] unsigned getPlayer() const;

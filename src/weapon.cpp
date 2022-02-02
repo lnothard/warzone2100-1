@@ -18,8 +18,8 @@ struct Weapon::Impl
   unsigned shotsFired = 0;
 };
 
-Weapon::Weapon(unsigned id, unsigned player)
-  : BaseObject(id, std::make_unique<PlayerManager>(player))
+Weapon::Weapon(unsigned id, Player* player)
+  : BaseObject(id, player)
   , pimpl{std::make_unique<Impl>()}
 {
 }
@@ -45,6 +45,11 @@ bool Weapon::hasAmmo() const
 bool Weapon::hasFullAmmo() const noexcept
 {
   return !pimpl || pimpl->ammoUsed == 0;
+}
+
+unsigned Weapon::getAmmoRemaining() const
+{
+  return pimpl ? pimpl->ammo : 0;
 }
 
 bool Weapon::isArtillery() const noexcept
@@ -170,6 +175,12 @@ unsigned Weapon::calculateRateOfFire(unsigned player) const
 
 Rotation Weapon::getPreviousRotation() const {
   return pimpl ? pimpl->previousRotation : Rotation();
+}
+
+void Weapon::setPreviousRotation(Rotation prev)
+{
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Weapon object is undefined");
+  pimpl->previousRotation = prev;
 }
 
 void Weapon::useAmmo() {

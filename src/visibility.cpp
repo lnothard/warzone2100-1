@@ -564,10 +564,10 @@ Structure* visGetBlockingWall(BaseObject const* psViewer, BaseObject const* psTa
   auto tile = map_coord(wall);
   for (auto player = 0; player < MAX_PLAYERS; player++)
   {
-    for (auto& psWall : apsStructLists[player])
+    for (auto& psWall : playerList[player].structures)
     {
-      if (map_coord(psWall->getPosition()) == tile)
-        return psWall.get();
+      if (map_coord(psWall.getPosition()) == tile)
+        return &psWall;
     }
   }
   return nullptr;
@@ -752,15 +752,15 @@ void processVisibility()
 	updateSpotters();
 	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
-    for (auto& droid : apsDroidLists[player])
+    for (auto& droid : playerList[player].droids)
     {
       processVisibilitySelf(&droid);
       processVisibilityVision(&droid);
     }
-    for (auto& structure : apsStructLists[player])
+    for (auto& structure : playerList[player].droids)
     {
-      processVisibilitySelf(structure.get());
-      processVisibilityVision(structure.get());
+      processVisibilitySelf(&structure);
+      processVisibilityVision(&structure);
     }
     for (auto feature : apsFeatureLists[player])
     {
@@ -784,11 +784,11 @@ void processVisibility()
 	bool addedMessage = false;
 	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
-    for (auto& psDroid : apsDroidLists[player])
+    for (auto& psDroid : playerList[player].droids)
       processVisibilityLevel(&psDroid, addedMessage);
 
-    for (auto& psStruct : apsStructLists[player])
-      processVisibilityLevel(psStruct.get(), addedMessage);
+    for (auto& psStruct : playerList[player].structures)
+      processVisibilityLevel(&psStruct, addedMessage);
 
     for (auto psFeature : apsFeatureLists[player])
       processVisibilityLevel(psFeature, addedMessage);

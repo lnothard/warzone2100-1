@@ -236,7 +236,7 @@ struct DroidTemplate : public BaseStats
 {
   DroidTemplate() = default;
 
-  ComponentStats const* getComponent(std::string const& compName) const;
+  [[nodiscard]] ComponentStats const* getComponent(COMPONENT_TYPE compName) const;
 
   using enum DROID_TYPE;
   unsigned id = 0;
@@ -255,7 +255,7 @@ class Droid : public BaseObject
 {
 public:
   ~Droid() override;
-  Droid(unsigned id, unsigned player);
+  Droid(unsigned id, Player* player);
 
   Droid(Droid const& rhs);
   Droid& operator=(Droid const& rhs);

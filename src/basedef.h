@@ -121,6 +121,7 @@ class BaseObject
 {
 public:
   virtual ~BaseObject() = default;
+  BaseObject() = default;
   explicit BaseObject(unsigned id);
   BaseObject(unsigned id, Player* playerManager);
   BaseObject(unsigned id, std::unique_ptr<Health> damageManager);

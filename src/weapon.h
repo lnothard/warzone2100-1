@@ -61,7 +61,8 @@ class Weapon : public BaseObject
 {
 public:
   ~Weapon() override = default;
-  Weapon(unsigned id, unsigned player);
+  Weapon() = default;
+  Weapon(unsigned id, Player* player);
 
   Weapon(Weapon const& rhs);
   Weapon& operator=(Weapon const& rhs);
@@ -92,6 +93,8 @@ public:
   [[nodiscard]] bool isVtolWeapon() const;
   [[nodiscard]] bool isEmptyVtolWeapon(unsigned player) const;
   [[nodiscard]] unsigned calculateRateOfFire(unsigned player) const;
+  [[nodiscard]] unsigned getAmmoRemaining() const;
+  void setPreviousRotation(Rotation prev);
   void alignTurret();
   void useAmmo();
 private:

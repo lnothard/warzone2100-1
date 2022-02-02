@@ -252,7 +252,7 @@ class Structure : public BaseObject
 public:
   ~Structure() override;
 
-  Structure(unsigned id, unsigned player);
+  Structure(unsigned id, Player* player);
 
   Structure(Structure const& rhs);
   Structure& operator=(Structure const& rhs);
@@ -272,8 +272,8 @@ public:
   [[nodiscard]] STRUCTURE_STATE getState() const;
   [[nodiscard]] StructureStats const* getStats() const;
   [[nodiscard]] uint8_t getCapacity() const;
-  [[nodiscard]] Weapon const* getWeapon(int slot) const;
-  [[nodiscard]] std::array<Weapon, MAX_WEAPONS> *const getWeapons() const;
+  [[nodiscard]] Weapon const* getWeapon(int slot) const override;
+  [[nodiscard]] std::array<Weapon, MAX_WEAPONS> const* getWeapons() const override;
   [[nodiscard]] int objRadius() const override;
   [[nodiscard]] bool isBlueprint() const noexcept;
   [[nodiscard]] bool isWall() const noexcept;
@@ -310,7 +310,7 @@ private:
   std::unique_ptr<Impl> pimpl;
 };
 
-StructureBounds getBounds(const Structure& structure) noexcept;
+StructureBounds getBounds(Structure const& structure) noexcept;
 
 struct ResearchItem
 {
@@ -323,7 +323,7 @@ class ResearchFacility : public Structure
 {
 public:
   ~ResearchFacility() override = default;
-  ResearchFacility(unsigned id, unsigned player);
+  ResearchFacility(unsigned id, Player* player);
 
   ResearchFacility(ResearchFacility const& rhs);
   ResearchFacility& operator=(ResearchFacility const& rhs);
@@ -349,7 +349,7 @@ public:
   ProductionRun(ProductionRun&& rhs) noexcept = default;
   ProductionRun& operator=(ProductionRun&& rhs) noexcept = default;
 
-  bool operator ==(const DroidTemplate& rhs) const;
+  bool operator ==(DroidTemplate const& rhs) const;
 
   void restart();
   [[nodiscard]] bool isValid() const;
@@ -364,7 +364,7 @@ class Factory : public Structure
 {
 public:
   ~Factory() override = default;
-  Factory(unsigned id, unsigned player);
+  Factory(unsigned id, Player* player);
 
   Factory(Factory const& rhs);
   Factory& operator=(Factory const& rhs);
@@ -403,7 +403,7 @@ class ResourceExtractor : public Structure
 {
 public:
   ~ResourceExtractor() override = default;
-  ResourceExtractor(unsigned id, unsigned player);
+  ResourceExtractor(unsigned id, Player* player);
 
   ResourceExtractor(ResourceExtractor const& rhs);
   ResourceExtractor& operator=(ResourceExtractor const& rhs);
@@ -425,7 +425,7 @@ class PowerGenerator : public Structure
 {
 public:
   ~PowerGenerator() override = default;
-  PowerGenerator(unsigned id, unsigned player);
+  PowerGenerator(unsigned id, Player* player);
 
   PowerGenerator(PowerGenerator const& rhs);
   PowerGenerator& operator=(PowerGenerator const& rhs);
@@ -445,7 +445,7 @@ class RepairFacility : public Structure
 {
 public:
   ~RepairFacility() override = default;
-  RepairFacility(unsigned id, unsigned player);
+  RepairFacility(unsigned id, Player* player);
 
   RepairFacility(RepairFacility const& rhs);
   RepairFacility& operator=(RepairFacility const& rhs);
@@ -464,7 +464,7 @@ class RearmPad : public Structure
 {
 public:
   ~RearmPad() override = default;
-  RearmPad(unsigned id, unsigned player);
+  RearmPad(unsigned id, Player* player);
 
   RearmPad(RearmPad const& rhs);
   RearmPad& operator=(RearmPad const& rhs);
@@ -804,7 +804,7 @@ static inline Rotation structureGetInterpolatedWeaponRotation(Structure const* p
 {
 	return interpolateRot(psStructure->getWeapon(weaponSlot)->getPreviousRotation(),
                         psStructure->getWeapon(weaponSlot)->getRotation(),
-                        psStructure->prevTime, psStructure->getTime(), time);
+                        psStructure->getPreviousLocation().time, psStructure->getTime(), time);
 }
 
 #define setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin) _setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin, __LINE__, __FUNCTION__)

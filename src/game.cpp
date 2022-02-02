@@ -2388,7 +2388,7 @@ static void sanityUpdate()
 {
 	for (auto player = 0; player < game.maxPlayers; player++)
 	{
-		for (auto& psDroid : apsDroidLists[player])
+		for (auto& psDroid : playerList[player].droids)
 		{
 			orderCheckList(&psDroid);
 			actionSanity(&psDroid);
@@ -2556,36 +2556,11 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 	if (!keepObjects)
 	{
 		//initialise the lists
-		for (player = 0; player < MAX_PLAYERS; player++)
-		{
-			apsDroidLists[player].clear();
-			apsStructLists[player].clear();
-			apsFeatureLists[player].clear();
-			apsFlagPosLists[player].clear();
-			//clear all the messages?
-			apsProxDisp[player].clear();
-			apsExtractorLists[player].clear();
-		}
-		apsOilList[0] = nullptr;
-    apsSensorList.clear();
 		initFactoryNumFlag();
 	}
 
 	if (UserSaveGame) //always !keepObjects
 	{
-		//initialise the lists
-		for (player = 0; player < MAX_PLAYERS; player++)
-		{
-			apsLimboDroids[player].clear();
-			mission.apsDroidLists[player].clear();
-			mission.apsStructLists[player].clear();
-			mission.apsFeatureLists[player].clear();
-			mission.apsFlagPosLists[player].clear();
-			mission.apsExtractorLists[player].clear();
-		}
-		mission.apsOilList[0] = nullptr;
-		mission.apsSensorList[0] = nullptr;
-
 		// Stuff added after level load to avoid being reset or initialised during load
 		// always !keepObjects
 
@@ -2760,15 +2735,15 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 		for (auto pl = 0; pl < MAX_PLAYERS; pl++)
 		{
 			if (pl != selectedPlayer) {
-				for (auto& psStr : apsStructLists[pl])
+				for (auto& psStr : playerList[pl].structures)
 				{
-					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psStr->playerManager->getPlayer(), selectedPlayer))
+					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psStr.playerManager->getPlayer(), selectedPlayer))
 					{
 						visTilesUpdate(psStr.get());
 					}
 				}
 
-				for (auto& psDroid : apsDroidLists[pl])
+				for (auto& psDroid : playerList[pl].droids)
 				{
 					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psDroid.playerManager->getPlayer(), selectedPlayer))
 					{
@@ -2900,7 +2875,7 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 		 */
 		for (player = 0; player < MAX_PLAYERS; ++player)
 		{
-			for (auto& psCurr : apsDroidLists[player])
+			for (auto& psCurr : playerList[player].droids)
 			{
 				if (psCurr.getType() != DROID_TYPE::PERSON
 					// && psCurr->droidType != DROID_CYBORG

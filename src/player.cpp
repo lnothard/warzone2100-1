@@ -14,9 +14,9 @@ Player::Player(unsigned id)
 {
 }
 
-void Player::addDroid(unsigned droidId, unsigned player)
+void Player::addDroid(unsigned droidId)
 {
-  droids.emplace_back(droidId, player);
+  droids.emplace_back(droidId, this);
 }
 
 void Player::addDroid(Droid& droid)
@@ -32,9 +32,9 @@ Droid* Player::findDroidById(unsigned droidId) const
   return findById(droidId, droids);
 }
 
-void Player::addStructure(unsigned structId, unsigned player)
+void Player::addStructure(unsigned structId)
 {
-  structures.emplace_back(structId, player);
+  structures.emplace_back(structId, this);
 }
 
 void Player::addStructure(Structure& structure)

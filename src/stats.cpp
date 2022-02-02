@@ -282,7 +282,7 @@ bool loadWeaponStats(WzConfig& ini)
 
 		//get the IMD for the component
 		psStats->pIMD = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "model"));
-		psStats->pMountGraphic = statsGetIMD(ini, psStats, "mountModel");
+		psStats->pMountGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "mountModel"));
 		if (GetGameMode() == GS_NORMAL) {
 			psStats->pMuzzleGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "muzzleGfx"));
 			psStats->pInFlightGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "flightGfx"));
@@ -1580,7 +1580,7 @@ SensorStats const* objActiveRadar(BaseObject const* psObj)
         psDroid->getType() != DROID_TYPE::COMMAND) {
       return nullptr;
     }
-    psStats = dynamic_cast<SensorStats const*>(psDroid->getComponent("sensor"));
+    psStats = dynamic_cast<SensorStats const*>(psDroid->getComponent(COMPONENT_TYPE::SENSOR));
   }
 	else if (auto psStruct = dynamic_cast<const Structure*>(psObj)) {
     psStats = psStruct->getStats()->sensor_stats.get();
@@ -1600,7 +1600,7 @@ bool objRadarDetector(BaseObject const* psObj)
             psStruct->getStats()->sensor_stats->type == SENSOR_TYPE::RADAR_DETECTOR;
 	}
 	else if (auto const& psDroid = dynamic_cast<Droid const*>(psObj)) {
-		auto psSensor = dynamic_cast<SensorStats const*>(psDroid->getComponent("sensor"));
+		auto psSensor = dynamic_cast<SensorStats const*>(psDroid->getComponent(COMPONENT_TYPE::SENSOR));
 		return psSensor && psSensor->type == SENSOR_TYPE::RADAR_DETECTOR;
 	}
 	return false;

@@ -525,7 +525,7 @@ static void DrawRadarObjects()
 		flashCol = flashColours[getPlayerColour(clan)];
 
 		/* Go through all droids */
-		for (auto& psDroid : apsDroidLists[clan])
+		for (auto& psDroid : playerList[clan].droids)
 		{
 			if (psDroid.getPosition().x < world_coord(scrollMinX) || psDroid.getPosition().y < world_coord(scrollMinY)
 				|| psDroid.getPosition().x >= world_coord(scrollMaxX) || psDroid.getPosition().y >= world_coord(scrollMaxY)) {
@@ -600,9 +600,8 @@ static void DrawRadarObjects()
 				|| (bMultiPlayer && alliancesSharedVision(game.alliance)
 					&& selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psStruct->playerManager->getPlayer())))
 			{
-				if (clan == selectedPlayer && gameTime > HIT_NOTIFICATION && gameTime - psStruct->timeLastHit <
-					HIT_NOTIFICATION)
-				{
+				if (clan == selectedPlayer && gameTime > HIT_NOTIFICATION &&
+            gameTime - psStruct->damageManager->getTimeLastHit() < HIT_NOTIFICATION) {
 					if (psStruct->playerManager->isSelectedPlayer() && psStruct->damageManager->isSelected() && !blinkState)
 						radarOverlayBuffer[pos] = applyAlpha(flashCol, OVERLAY_OPACITY).rgba;
 					else

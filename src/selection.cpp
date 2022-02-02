@@ -62,7 +62,7 @@ static unsigned selSelectUnitsIf(unsigned player, T condition, bool onlyOnScreen
 	selDroidDeselect(player);
 
 	// Go through all.
-	for (auto& psDroid : apsDroidLists[player])
+	for (auto& psDroid : playerList[player].droids)
 	{
 		bool shouldSelect = (!onlyOnScreen || objectOnScreen(&psDroid, 0)) &&
 			condition(&psDroid);
@@ -98,12 +98,14 @@ static bool selTrue(Droid* droid)
 
 static bool selProp(Droid* droid, PROPULSION_TYPE prop)
 {
-	return asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType == prop && !selTransporter(droid);
+  auto propulsion = dynamic_cast<PropulsionStats const*>(droid->getComponent(COMPONENT_TYPE::PROPULSION));
+	return propulsion->propulsionType == prop && !selTransporter(droid);
 }
 
 static bool selPropArmed(Droid* droid, PROPULSION_TYPE prop)
 {
-	return asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType == prop && 
+  auto propulsion = dynamic_cast<PropulsionStats const*>(droid->getComponent(COMPONENT_TYPE::PROPULSION));
+	return propulsion->propulsionType == prop &&
          vtolFull(*droid) && !selTransporter(droid);
 }
 
@@ -119,7 +121,8 @@ static bool selCombat(Droid const* droid)
 
 static bool selCombatLand(Droid* droid)
 {
-	PROPULSION_TYPE type = asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType;
+  auto propulsion = dynamic_cast<PropulsionStats const*>(droid->getComponent(COMPONENT_TYPE::PROPULSION));
+  auto type = propulsion->propulsionType;
 	return droid->asWeaps[0].nStat > 0 && (type == PROPULSION_TYPE::WHEELED ||
 		type == PROPULSION_TYPE::HALF_TRACKED ||
 		type == PROPULSION_TYPE::TRACKED ||
@@ -129,8 +132,8 @@ static bool selCombatLand(Droid* droid)
 
 static bool selCombatCyborg(Droid* droid)
 {
-	PROPULSION_TYPE type = asPropulsionStats[droid->asBits[COMP_PROPULSION]].propulsionType;
-	return droid->asWeaps[0].nStat > 0 && type == PROPULSION_TYPE::LEGGED;
+  auto propulsion = dynamic_cast<PropulsionStats const*>(droid->getComponent(COMPONENT_TYPE::PROPULSION));
+	return droid->asWeaps[0].nStat > 0 && propulsion->propulsionType == PROPULSION_TYPE::LEGGED;
 }
 
 static bool selDamaged(Droid const* droid)
@@ -147,18 +150,17 @@ static bool selNoGroup(Droid* psDroid)
 
 static bool selCombatLandMildlyOrNotDamaged(Droid* psDroid)
 {
-	return PERCENT(psDroid->getHp(), psDroid->getOriginalHp()) > REPAIRLEV_LOW && selCombatLand(psDroid) && !
-		selNoGroup(psDroid);
+	return PERCENT(psDroid->damageManager->getHp(), psDroid->damageManager->getOriginalHp())
+         > REPAIRLEV_LOW && selCombatLand(psDroid) && !selNoGroup(psDroid);
 }
 
-// ---------------------------------------------------------------------
 // Deselects all units for the player
 unsigned selDroidDeselect(unsigned player)
 {
 	unsigned count = 0;
 	if (player >= MAX_PLAYERS) return 0; 
 
-	for (auto& psDroid : apsDroidLists[player])
+	for (auto& psDroid : playerList[player].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			count++;
@@ -175,7 +177,7 @@ unsigned selNumSelected(unsigned player)
 	unsigned count = 0;
 	if (player >= MAX_PLAYERS) { return 0; }
 
-	for (auto& psDroid : apsDroidLists[player])
+	for (auto& psDroid : playerList[player].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			count++;
@@ -255,7 +257,7 @@ static unsigned int selSelectAllSame(unsigned unsigned player, bool bOnScreen)
 	if (player >= MAX_PLAYERS) { return 0; }
 
 	// find out which units will need to be compared to which component combinations
-	for (auto& psDroid : apsDroidLists[player])
+	for (auto& psDroid : playerList[player].droids)
 	{
 		if (bOnScreen && !objectOnScreen(&psDroid, 0)) {
 			excluded.push_back(i);
@@ -273,7 +275,7 @@ static unsigned int selSelectAllSame(unsigned unsigned player, bool bOnScreen)
 	{
 		// reset unit counter
 		i = 0;
-		for (auto& psDroid : apsDroidLists[player])
+		for (auto& psDroid : playerList[player].droids)
 		{
 			if (excluded.empty() || *excluded.begin() != i) {
 				if (componentsInCombinations(&psDroid, false)) {
@@ -300,7 +302,7 @@ void selNextSpecifiedUnit(DROID_TYPE unitType)
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "invalid selectedPlayer: %" PRIu32 "", selectedPlayer);
 
-	for (auto& psCurr : apsDroidLists[selectedPlayer])
+	for (auto& psCurr : playerList[selectedPlayer].droids)
 	{
     using enum DROID_TYPE;
 		//exceptions - as always...
