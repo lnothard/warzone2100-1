@@ -34,11 +34,6 @@
 
 
 /* The lists of objects allocated */
-extern std::array<std::vector<Droid>,MAX_PLAYERS> apsDroidLists;
-
-extern std::array<std::vector<
-        std::unique_ptr<Structure> >, MAX_PLAYERS> apsStructLists;
-
 extern std::array<std::vector<FlagPosition*>, MAX_PLAYERS> apsFlagPosLists;
 extern std::array<std::vector<ResourceExtractor*>, MAX_PLAYERS> apsExtractorLists;
 extern std::vector<BaseObject*> apsSensorList;
@@ -111,7 +106,7 @@ void removeFlagPosition(FlagPosition* psDel);
 void freeAllFlagPositions();
 
 // Find a base object from it's id
-BaseObject* getBaseObjFromData(unsigned id, unsigned player);
+BaseObject* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type);
 BaseObject* getBaseObjFromId(unsigned id);
 
 unsigned getRepairIdFromFlag(FlagPosition* psFlag);

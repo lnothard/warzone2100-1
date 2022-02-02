@@ -116,15 +116,15 @@ bool Group::hasElectronicWeapon() const
   });
 }
 
-Droid const* Group::getCommander() const
-{
-  return pimpl ? pimpl->psCommander : nullptr;
-}
-
 std::vector<Droid*> const& Group::getMembers() const
 {
   assert(pimpl); // FIXME
   return pimpl->members;
+}
+
+unsigned Group::getId() const
+{
+  return pimpl ? pimpl->id : 0;
 }
 
 GROUP_TYPE Group::getType() const

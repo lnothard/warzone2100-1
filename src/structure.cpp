@@ -25,6 +25,7 @@
 
 #include <utility>
 
+#include "lib/framework/endian_hack.h"
 #include "lib/framework/math_ext.h"
 #include "lib/ivis_opengl/imd.h"
 #include "lib/sound/audio.h"
@@ -5105,7 +5106,7 @@ void printStructureInfo(Structure* psStructure)
 			auto assigned_droids = countAssignedDroids(*psStructure);
 			console(ngettext("%s - %u Unit assigned - Damage %d/%d", "%s - %u Units assigned - Hitpoints %d/%d",
 			                 assigned_droids),
-			        getStatsName&psStructure->getStats()), assigned_droids, psStructure->damageManager->getHp(),
+			        getStatsName(psStructure->getStats()), assigned_droids, psStructure->damageManager->getHp(),
 			        structureBody(psStructure));
 		}
 		else {
@@ -5116,8 +5117,7 @@ void printStructureInfo(Structure* psStructure)
 		if (dbgInputManager.debugMappingsAllowed()) {
 			console(_("ID %d - armour %d|%d - sensor range %d - ECM %d - born %u - depth %.02f"),
 			        psStructure->getId(), objArmour(psStructure, WEAPON_CLASS::KINETIC), objArmour(psStructure, WEAPON_CLASS::HEAT),
-			        structSensorRange(psStructure), structJammerPower(psStructure), psStructure->bornTime,
-			        psStructure->getFoundationDepth());
+			        structSensorRange(psStructure), structJammerPower(psStructure), psStructure->getBornTime(), psStructure->getFoundationDepth());
 		}
 		break;
 	case REPAIR_FACILITY:

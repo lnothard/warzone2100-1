@@ -157,23 +157,12 @@ static UDWORD RemapPlayerNumber(UDWORD OldNumber);
 bool writeGameInfo(const char* pFileName);
 static nonstd::optional<nlohmann::json> readGamJson(const char*);
 
-/** struct used to store the data for retreating. */
-struct RUN_DATA
-{
-	Vector2i sPos = Vector2i(0, 0); ///< position to where units should flee to.
-	uint8_t forceLevel = 0; ///< number of units below which others might flee.
-	uint8_t healthLevel = 0; ///< health percentage value below which it might flee. This value is used for groups only.
-	uint8_t leadership = 0; ///< basic value that will be used on calculations of the flee probability.
-};
+
 
 // return positions for vtols, at one time.
 Vector2i asVTOLReturnPos[MAX_PLAYERS];
 
-struct GAME_SAVEHEADER
-{
-	char aFileType[4];
-	uint32_t version;
-};
+
 
 static bool serializeSaveGameHeader(PHYSFS_file* fileHandle, const GAME_SAVEHEADER* serializeHeader)
 {
@@ -236,21 +225,6 @@ static bool deserializeSaveGameHeader(PHYSFS_file* fileHandle, GAME_SAVEHEADER* 
 	return true;
 }
 
-struct STRUCT_SAVEHEADER : public GAME_SAVEHEADER
-{
-	UDWORD quantity;
-};
-
-struct FEATURE_SAVEHEADER : public GAME_SAVEHEADER
-{
-	UDWORD quantity;
-};
-
-/* Structure definitions for loading and saving map data */
-struct TILETYPE_SAVEHEADER : public GAME_SAVEHEADER
-{
-	UDWORD quantity;
-};
 
 /* Sanity check definitions for the save struct file sizes */
 #define DROIDINIT_HEADER_SIZE		12
@@ -2489,7 +2463,7 @@ static inline void setIniDroidOrder(nlohmann::json& jsonObj, WzString const& key
 	jsonObj[keyStr + "/pos2"] = order.pos2;
 	jsonObj[keyStr + "/direction"] = order.direction;
 	setIniBaseObject(jsonObj, key + "/obj", order.target);
-	setIniStructureStats(jsonObj, key + "/stats", order.structure_stats);
+	setIniStructureStats(jsonObj, key + "/stats", order.structure_stats.get());
 }
 
 static void allocatePlayers()
@@ -5366,7 +5340,7 @@ static void loadSaveObject(WzConfig& ini, BaseObject * psObj)
 	psObj->timeLastHit = ini.value("timeLastHit", UDWORD_MAX).toInt();
 	psObj->lastEmission = ini.value("lastEmission", 0).toInt();
 	psObj->damageManager->setSelected(ini.value("selected", false).toBool());
-	psObj->born = ini.value("born", 2).toInt();
+	psObj->setBornTime(ini.value("born", 2).toInt());
 }
 
 static void writeSaveObject(WzConfig& ini, BaseObject * psObj)
@@ -5397,7 +5371,7 @@ static void writeSaveObject(WzConfig& ini, BaseObject * psObj)
 	{
 		ini.setValue("periodicalDamage", psObj->damageManager->getPeriodicalDamage());
 	}
-	ini.setValue("born", psObj->born);
+	ini.setValue("born", psObj->getBornTime());
 	if (psObj->damageManager->getTimeOfDeath() > 0)
 	{
 		ini.setValue("died", psObj->damageManager->getTimeOfDeath());
@@ -5445,7 +5419,7 @@ static void writeSaveObjectJSON(nlohmann::json& jsonObj, BaseObject const* psObj
 	{
 		jsonObj["periodicalDamage"] = psObj->damageManager->getPeriodicalDamage();
 	}
-	jsonObj["born"] = psObj->born;
+	jsonObj["born"] = psObj->getBornTime();
 	if (psObj->damageManager->getTimeOfDeath() > 0)
 	{
 		jsonObj["died"] = psObj->damageManager->getTimeOfDeath();
@@ -5527,15 +5501,13 @@ static nlohmann::json writeDroid(Droid const* psCurr, bool onMission, int& count
 		droidObj["baseStruct/player"] = psCurr->getBase()->playerManager->getPlayer(); // always ours, but for completeness
 		droidObj["baseStruct/type"] = getObjectType(psCurr->getBase()); // always a building, but for completeness
 	}
-	if (psCurr->group)
-	{
-		droidObj["aigroup"] = psCurr->group->id; // AI and commander/transport group
-		droidObj["aigroup/type"] = psCurr->group->type;
+	if (psCurr->getGroup()) {
+		droidObj["aigroup"] = psCurr->getGroup()->getId(); // AI and commander/transport group
+		droidObj["aigroup/type"] = psCurr->getGroup()->getType();
 	}
 	droidObj["group"] = psCurr->group; // different kind of group. of course.
-	if (hasCommander(psCurr) && psCurr->group->psCommander->died <= 1)
-	{
-		droidObj["commander"] = psCurr->group->psCommander->id;
+	if (hasCommander(psCurr) && psCurr->getCommander()->damageManager->getTimeOfDeath() <= 1) {
+		droidObj["commander"] = psCurr->getCommander()->getId();
 	}
 	if (psCurr->damageManager->getResistance() > 0)
 	{
@@ -5544,13 +5516,13 @@ static nlohmann::json writeDroid(Droid const* psCurr, bool onMission, int& count
 	droidObj["droidType"] = psCurr->getType();
 	droidObj["weapons"] = numWeapons(*psCurr);
 	nlohmann::json partsObj = nlohmann::json::object();
-	partsObj["body"] = (asBodyStats + psCurr->asBits[COMP_BODY])->id;
-	partsObj["propulsion"] = (asPropulsionStats + psCurr->asBits[COMP_PROPULSION])->id;
-	partsObj["brain"] = (asBrainStats + psCurr->asBits[COMP_BRAIN])->id;
-	partsObj["repair"] = (asRepairStats + psCurr->asBits[COMP_REPAIRUNIT])->id;
-	partsObj["ecm"] = (asECMStats + psCurr->asBits[COMP_ECM])->id;
-	partsObj["sensor"] = (asSensorStats + psCurr->asBits[COMP_SENSOR])->id;
-	partsObj["construct"] = (asConstructStats + psCurr->asBits[COMP_CONSTRUCT])->id;
+	partsObj["body"] = psCurr->getComponent(COMPONENT_TYPE::BODY)->id;
+	partsObj["propulsion"] = psCurr->getComponent(COMPONENT_TYPE::PROPULSION)->id;
+	partsObj["brain"] = psCurr->getComponent(COMPONENT_TYPE::BRAIN)->id;
+	partsObj["repair"] = psCurr->getComponent(COMPONENT_TYPE::REPAIR_UNIT)->id;
+	partsObj["ecm"] = psCurr->getComponent(COMPONENT_TYPE::ECM)->id;
+	partsObj["sensor"] = psCurr->getComponent(COMPONENT_TYPE::SENSOR)->id;
+	partsObj["construct"] = psCurr->getComponent(COMPONENT_TYPE::CONSTRUCT)->id;
 	for (auto j = 0; j < numWeapons(*psCurr); j++)
 	{
 		partsObj["weapon/" + WzString::number(j + 1).toStdString()] = psCurr->getWeapon(j)->getStats()->id;
@@ -5600,10 +5572,9 @@ static void writeDroidFile(const char* pFileName, bool onMission)
 
       // if transporter save any droids in the grp
 			if (isTransporter(psCurr)) {
-				for (Droid* psTrans = psCurr->group->members; psTrans != nullptr; psTrans = psTrans->psGrpNext)
+				for (auto psTrans : psCurr.getGroup()->getMembers())
 				{
-					if (psTrans != psCurr)
-					{
+					if (psTrans != &psCurr) {
 						droidKey = "droid_" + (WzString::number(counter++).leftPadToMinimumLength(
 							WzUniCodepoint::fromASCII('0'), 10)); // Zero padded so that alphabetical sort works.
 						mRoot[droidKey.toStdString()] = writeDroid(psTrans, onMission, counter);

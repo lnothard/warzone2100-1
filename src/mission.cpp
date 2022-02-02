@@ -237,17 +237,6 @@ void initMission()
 {
 	debug(LOG_SAVE, "*** Init Mission ***");
 	mission.type = LEVEL_TYPE::LDS_NONE;
-	for (int inc = 0; inc < MAX_PLAYERS; inc++)
-	{
-		mission.apsStructLists[inc] = nullptr;
-		mission.apsDroidLists[inc] = nullptr;
-		mission.apsFeatureLists[inc] = nullptr;
-		mission.apsFlagPosLists[inc] = nullptr;
-		mission.apsExtractorLists[inc] = nullptr;
-		apsLimboDroids[inc] = nullptr;
-	}
-	mission.apsSensorList[0] = nullptr;
-	mission.apsOilList[0] = nullptr;
 	offWorldKeepLists = false;
 	mission.time = -1;
 	setMissionCountDown();
@@ -304,8 +293,6 @@ bool missionShutDown()
 		releaseAllProxDisp();
 		gwShutDown();
 
-		for (int inc = 0; inc < MAX_PLAYERS; inc++)
-		{
 			apsDroidLists[inc] = mission.apsDroidLists[inc];
 			mission.apsDroidLists[inc] = nullptr;
 			apsStructLists[inc] = mission.apsStructLists[inc];
@@ -316,7 +303,7 @@ bool missionShutDown()
 			mission.apsFlagPosLists[inc] = nullptr;
 			apsExtractorLists[inc] = mission.apsExtractorLists[inc];
 			mission.apsExtractorLists[inc] = nullptr;
-		}
+
 		apsSensorList[0] = mission.apsSensorList[0];
 		apsOilList[0] = mission.apsOilList[0];
 		mission.apsSensorList[0] = nullptr;

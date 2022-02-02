@@ -260,7 +260,7 @@ public:
   Structure(Structure&& rhs) noexcept = default;
   Structure& operator=(Structure&& rhs) noexcept = default;
 
-  [[nodiscard]] virtual bool isIdle() const = 0;
+  [[nodiscard]] virtual bool isIdle() const;
 
   [[nodiscard]] STRUCTURE_ANIMATION_STATE getAnimationState() const;
   [[nodiscard]] ANIMATION_EVENTS getAnimationEvent() const;

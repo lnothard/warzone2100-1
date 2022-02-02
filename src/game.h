@@ -98,6 +98,37 @@ enum GAME_TYPE
     ///< User saved game - in the middle of a level
 };
 
+/** struct used to store the data for retreating. */
+struct RUN_DATA
+{
+  Vector2i sPos = Vector2i(0, 0); ///< position to where units should flee to.
+  uint8_t forceLevel = 0; ///< number of units below which others might flee.
+  uint8_t healthLevel = 0; ///< health percentage value below which it might flee. This value is used for groups only.
+  uint8_t leadership = 0; ///< basic value that will be used on calculations of the flee probability.
+};
+
+struct GAME_SAVEHEADER
+{
+  char aFileType[4];
+  uint32_t version;
+};
+
+struct STRUCT_SAVEHEADER : public GAME_SAVEHEADER
+{
+  UDWORD quantity;
+};
+
+struct FEATURE_SAVEHEADER : public GAME_SAVEHEADER
+{
+  UDWORD quantity;
+};
+
+/* Structure definitions for loading and saving map data */
+struct TILETYPE_SAVEHEADER : public GAME_SAVEHEADER
+{
+  UDWORD quantity;
+};
+
 struct VIS_SAVEHEADER
 {
     char aFileType[4];

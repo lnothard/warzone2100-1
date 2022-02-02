@@ -79,7 +79,7 @@ public:
   [[nodiscard]] unsigned getShortRangeHitChance(unsigned player) const;
   [[nodiscard]] unsigned getNumAttackRuns(unsigned player) const;
   [[nodiscard]] unsigned getShotsFired() const noexcept;
-  [[nodiscard]] iIMDShape const* getImdShape() const;
+  [[nodiscard]] iIMDShape const* getImdShape() const override;
   [[nodiscard]] iIMDShape const* getMountGraphic() const;
   [[nodiscard]] WEAPON_SUBCLASS getSubclass() const;
   [[nodiscard]] TARGET_ORIGIN getTargetOrigin() const noexcept;

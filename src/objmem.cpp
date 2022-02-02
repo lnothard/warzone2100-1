@@ -371,13 +371,6 @@ void removeDroid(Droid* psDroidToRemove)
   psDroidToRemove->damageManager->setTimeOfDeath(NOT_CURRENT_LIST);
 }
 
-void removeMissionDroid(Droid* psDroid)
-{
-  if (psDroid->getType() == DROID_TYPE::SENSOR) {
-    std::erase(mission.apsSensorList, psDroid);
-  }
-}
-
 /*Removes all droids that may be stored in the mission lists*/
 void freeAllMissionDroids()
 {
@@ -632,28 +625,28 @@ BaseObject* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
 		switch (i) {
 		case 0:
 			switch (type) {
-			case OBJ_DROID: psObj = apsDroidLists[player];
+        case OBJECT_TYPE::DROID: psObj = apsDroidLists[player];
 				break;
-			case OBJ_STRUCTURE: psObj = apsStructLists[player];
+        case OBJECT_TYPE::STRUCTURE: psObj = apsStructLists[player];
 				break;
-			case OBJ_FEATURE: psObj = apsFeatureLists[0];
+        case OBJECT_TYPE::FEATURE: psObj = apsFeatureLists[0];
 			default: break;
 			}
 			break;
 		case 1:
 			switch (type)
 			{
-			case OBJ_DROID: psObj = mission.apsDroidLists[player];
+        case OBJECT_TYPE::DROID: psObj = mission.apsDroidLists[player];
 				break;
-			case OBJ_STRUCTURE: psObj = mission.apsStructLists[player];
+        case OBJECT_TYPE::STRUCTURE: psObj = mission.apsStructLists[player];
 				break;
-			case OBJ_FEATURE: psObj = mission.apsFeatureLists[0];
+        case OBJECT_TYPE::FEATURE: psObj = mission.apsFeatureLists[0];
 				break;
 			default: break;
 			}
 			break;
 		case 2:
-			if (player == 0 && type == OBJ_DROID) {
+			if (player == 0 && type == OBJECT_TYPE::DROID) {
 				psObj = apsLimboDroids[0];
 			}
 			break;
@@ -665,7 +658,7 @@ BaseObject* getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
 				return psObj;
 			}
 			// if transporter check any droids in the grp
-			if ((psObj->type == OBJ_DROID) && isTransporter((Droid*)psObj))
+			if (psObj->type == OBJ_DROID && isTransporter((Droid *) psObj))
 			{
 				for (psTrans = ((Droid*)psObj)->group->members; psTrans != nullptr; psTrans = psTrans->psGrpNext)
 				{

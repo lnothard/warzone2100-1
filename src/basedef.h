@@ -122,10 +122,9 @@ class BaseObject
 public:
   virtual ~BaseObject() = default;
   explicit BaseObject(unsigned id);
-  BaseObject(unsigned id, std::unique_ptr<PlayerManager> playerManager);
+  BaseObject(unsigned id, Player* playerManager);
   BaseObject(unsigned id, std::unique_ptr<Health> damageManager);
-  BaseObject(unsigned id,
-             std::unique_ptr<PlayerManager> playerManager,
+  BaseObject(unsigned id, Player* playerManager,
              std::unique_ptr<Health> damageManager);
 
   BaseObject(BaseObject const& rhs);
@@ -136,7 +135,7 @@ public:
 
   [[nodiscard]] virtual int objRadius() const;
   [[nodiscard]] virtual Weapon const* getWeapon(int slot) const;
-  [[nodiscard]] virtual std::vector<Weapon> const* getWeapons() const;
+  [[nodiscard]] virtual std::array<Weapon, MAX_WEAPONS> const* getWeapons() const;
   [[nodiscard]] virtual iIMDShape const* getImdShape() const;
   [[nodiscard]] virtual bool hasArtillery() const;
 
@@ -165,7 +164,7 @@ public:
   void setImdShape(iIMDShape* imd);
 public:
   std::unique_ptr<Health> damageManager;
-  std::unique_ptr<PlayerManager> playerManager;
+  Player* playerManager;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;

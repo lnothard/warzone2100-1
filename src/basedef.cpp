@@ -14,7 +14,6 @@
 
 bool aiCheckAlliances(unsigned, unsigned);
 int establishTargetHeight(BaseObject const*);
-void visRemoveVisibility(BaseObject*);
 int map_Height(Vector2i);
 bool map_Intersect(int*, int*, int*, int*, int*, int*);
 
@@ -68,9 +67,9 @@ BaseObject::BaseObject(unsigned id)
 {
 }
 
-BaseObject::BaseObject(unsigned id, std::unique_ptr<PlayerManager> playerManager)
+BaseObject::BaseObject(unsigned id, Player* playerManager)
   : pimpl{std::make_unique<Impl>(id)}
-  , playerManager{std::move(playerManager)}
+  , playerManager{playerManager}
 {
 }
 
@@ -80,18 +79,17 @@ BaseObject::BaseObject(unsigned id, std::unique_ptr<Health> damageManager)
 {
 }
 
-BaseObject::BaseObject(unsigned id,
-                       std::unique_ptr<PlayerManager> playerManager,
+BaseObject::BaseObject(unsigned id, Player* playerManager,
                        std::unique_ptr<Health> damageManager)
   : pimpl{std::make_unique<Impl>(id)}
-  , playerManager{std::move(playerManager)}
+  , playerManager{playerManager}
   , damageManager{std::move(damageManager)}
 {
 }
 
 BaseObject::BaseObject(BaseObject const& rhs)
   : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
-  , playerManager{std::make_unique<PlayerManager>(*rhs.playerManager)}
+  , playerManager{rhs.playerManager}
   , damageManager{std::make_unique<Health>(*rhs.damageManager)}
 {
 }
@@ -100,7 +98,7 @@ BaseObject& BaseObject::operator=(BaseObject const& rhs)
 {
   if (this == &rhs) return *this;
   *pimpl = *rhs.pimpl;
-  *playerManager = *rhs.playerManager;
+  playerManager = rhs.playerManager;
   *damageManager = *rhs.damageManager;
   return *this;
 }
@@ -702,11 +700,9 @@ BaseObject* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
   BaseObject* target = nullptr;
   bool is_cb_sensor = false;
   bool found_cb = false;
-  auto target_dist = weapon.getMaxRange(
-          dynamic_cast<PlayerManager const&>(unit).getPlayer());
+  auto target_dist = weapon.getMaxRange(unit.playerManager->getPlayer());
 
-  auto min_dist = weapon.getMinRange(
-          dynamic_cast<PlayerManager const&>(unit).getPlayer());
+  auto min_dist = weapon.getMinRange(unit.playerManager->getPlayer());
 
   for (const auto sensor : apsSensorList)
   {
@@ -741,8 +737,8 @@ BaseObject* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
         dynamic_cast<Health *>(target)->isDead() ||
         dynamic_cast<Health *>(target)->isProbablyDoomed(false) ||
         !unit.isValidTarget(target, 0) ||
-        aiCheckAlliances(dynamic_cast<PlayerManager *>(target)->getPlayer(),
-                         dynamic_cast<PlayerManager const&>(unit).getPlayer())) {
+        aiCheckAlliances(target->playerManager->getPlayer(),
+                         unit.playerManager->getPlayer())) {
       continue;
     }
 

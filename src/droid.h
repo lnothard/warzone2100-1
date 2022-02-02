@@ -271,6 +271,7 @@ public:
   [[nodiscard]] Order const* getOrder() const;
   [[nodiscard]] DROID_TYPE getType() const noexcept;
   [[nodiscard]] unsigned getLevel() const;
+  [[nodiscard]] Droid const* getCommander() const;
   [[nodiscard]] unsigned getCommanderLevel() const;
   [[nodiscard]] int getVerticalSpeed() const noexcept;
   [[nodiscard]] unsigned getSecondaryOrder() const noexcept;
@@ -283,8 +284,8 @@ public:
   [[nodiscard]] Structure const* getBase() const;
   [[nodiscard]] ComponentStats const* getComponent(COMPONENT_TYPE compName) const;
   [[nodiscard]] unsigned getTimeActionStarted() const;
-  [[nodiscard]] Weapon const* getWeapon(int slot) const;
-  [[nodiscard]] std::array<Weapon, MAX_WEAPONS> *const getWeapons() const;
+  [[nodiscard]] Weapon const* getWeapon(int slot) const override;
+  [[nodiscard]] std::array<Weapon, MAX_WEAPONS> const* getWeapons() const override;
   [[nodiscard]] unsigned getExperience() const;
   [[nodiscard]] unsigned getKills() const;
   [[nodiscard]] int getAudioId() const;

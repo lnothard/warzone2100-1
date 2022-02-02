@@ -65,9 +65,9 @@ public:
   /// Remove a droid from the group.
 	void remove(Droid* psDroid);
   [[nodiscard]] GROUP_TYPE getType() const;
+  [[nodiscard]] unsigned getId() const;
   [[nodiscard]] bool isCommandGroup() const noexcept;
   [[nodiscard]] bool hasElectronicWeapon() const;
-  [[nodiscard]] Droid const* getCommander() const;
   [[nodiscard]] std::vector<Droid*> const& getMembers() const;
 	void orderGroup(ORDER_TYPE order); // give an order all the droids of the group
 	void orderGroup(ORDER_TYPE order, unsigned x, unsigned y);

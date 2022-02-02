@@ -329,12 +329,12 @@ Movement const* Droid::getMovementData() const
 
 Weapon const* Droid::getWeapon(int slot) const
 {
-  return pimpl ? pimpl->weapons[slot] : nullptr;
+  return pimpl ? &pimpl->weapons[slot] : nullptr;
 }
 
-std::array<Weapon, MAX_WEAPONS> *const Droid::getWeapons() const
+std::array<Weapon, MAX_WEAPONS> const* Droid::getWeapons() const
 {
-  return pimpl ? pimpl->weapons : nullptr;
+  return pimpl ? &pimpl->weapons : nullptr;
 }
 
 unsigned Droid::getExperience() const 
@@ -498,6 +498,11 @@ unsigned Droid::calculateSensorRange() const
 DROID_TYPE Droid::getType() const noexcept
 {
   return pimpl ? pimpl->type : DROID_TYPE::ANY;
+}
+
+Droid const* Droid::getCommander() const
+{
+  return pimpl ? pimpl->commander : nullptr;
 }
 
 bool Droid::hasElectronicWeapon() const
