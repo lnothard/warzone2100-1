@@ -154,7 +154,7 @@ struct QueuedDroidInfo
 	// subType == ObjOrder || subType == LocOrder
 	ORDER_TYPE order = ORDER_TYPE::NONE;
 	uint32_t destId = 0; // if (subType == ObjOrder)
-	OBJECT_TYPE destType = OBJ_DROID; // if (subType == ObjOrder)
+	OBJECT_TYPE destType = OBJECT_TYPE::DROID; // if (subType == ObjOrder)
 	Vector2i pos = Vector2i(0, 0); // if (subType == LocOrder)
 	uint32_t y = 0; // if (subType == LocOrder)
 	uint32_t structRef = 0; // if (order == ORDER_TYPE::BUILD || order == ORDER_TYPE::LINEBUILD)
@@ -312,13 +312,13 @@ bool SendDroid(DroidTemplate* pTemplate, uint32_t x, uint32_t y, uint8_t player,
 		WzString name = pTemplate->name;
 		NETwzstring(name);
 		NETint32_t(&droidType);
-		NETuint8_t(&pTemplate->asParts[COMP_BODY]);
-		NETuint8_t(&pTemplate->asParts[COMP_BRAIN]);
-		NETuint8_t(&pTemplate->asParts[COMP_PROPULSION]);
-		NETuint8_t(&pTemplate->asParts[COMP_REPAIRUNIT]);
-		NETuint8_t(&pTemplate->asParts[COMP_ECM]);
-		NETuint8_t(&pTemplate->asParts[COMP_SENSOR]);
-		NETuint8_t(&pTemplate->asParts[COMP_CONSTRUCT]);
+		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::BODY]);
+		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::BRAIN]);
+		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::PROPULSION]);
+		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::REPAIR_UNIT]);
+		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::ECM]);
+		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::SENSOR]);
+		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::CONSTRUCT]);
 		NETint8_t(&pTemplate->weaponCount);
 		for (int i = 0; i < pTemplate->weaponCount; i++)
 		{
@@ -408,7 +408,7 @@ bool recvDroid(NETQUEUE queue)
 
 	// If we were able to build the droid set it up
 	if (psDroid) {
-		psDroid->id = id;
+		psDroid->setId(id);
 		addDroid(psDroid);
 
 		if (haveInitialOrders) {
@@ -417,7 +417,6 @@ bool recvDroid(NETQUEUE queue)
 			orderDroidLoc(psDroid, ORDER_TYPE::MOVE, initialOrders.moveToX, initialOrders.moveToY, ModeImmediate);
 			cbNewDroid(IdToStruct(initialOrders.factoryId, ANYPLAYER), psDroid);
 		}
-		syncDebugDroid(psDroid, '+');
 	}
 	else {
 		debug(LOG_ERROR, "Packet from %d cannot create droid for p%d (%s)!", queue.index,
@@ -631,7 +630,6 @@ bool recvDroidInfo(NETQUEUE queue)
 				syncDebug("Wrong player.");
 				continue;
 			}
-			syncDebugDroid(psDroid, '<');
 
 			switch (info.subType) {
 			case ObjOrder:
@@ -684,18 +682,18 @@ static BaseObject* processDroidTarget(OBJECT_TYPE desttype, uint32_t destid)
 	else {
     BaseObject* psObj = nullptr;
 		switch (desttype) {
-		case OBJ_DROID:
+      case OBJECT_TYPE::DROID:
 			psObj = IdToDroid(destid, ANYPLAYER);
 			break;
-		case OBJ_STRUCTURE:
+      case OBJECT_TYPE::STRUCTURE:
 			psObj = IdToStruct(destid, ANYPLAYER);
 			break;
-		case OBJ_FEATURE:
+      case OBJECT_TYPE::FEATURE:
 			psObj = IdToFeature(destid, ANYPLAYER);
 			break;
 
 		// We should not get this!
-		case OBJ_PROJECTILE:
+      case OBJECT_TYPE::PROJECTILE:
 			debug(LOG_ERROR, "ProcessDroidOrder: order specified destination as a bullet. what am i to do??");
 			break;
 		default:

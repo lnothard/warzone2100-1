@@ -279,13 +279,9 @@ static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 {
 	Droid* psDroid = IdToDroid(droidID, from);
 
-	if (psDroid)
-	{
-		syncDebugDroid(psDroid, '<');
+	if (psDroid) {
 		giftSingleDroid(psDroid, to, false);
-		syncDebugDroid(psDroid, '>');
-		if (to == selectedPlayer)
-		{
+		if (to == selectedPlayer) {
 			CONPRINTF(_("%s Gives you a %s"), getPlayerName(from), psDroid->getName().c_str());
 		}
 	}
@@ -306,8 +302,7 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 	uint8_t giftType = DROID_GIFT;
 	uint8_t totalToSend;
 
-	if (apsDroidLists[from] == nullptr)
-	{
+	if (playerList[from].droids.empty()) {
 		return;
 	}
 
@@ -558,7 +553,7 @@ void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allow
 			orderDroid(psDroid, ORDER_TYPE::STOP, ModeImmediate);
 		}
 	}
-	for (auto& psDroid : apsDroidLists[p2]) // to -> from
+	for (auto& psDroid : playerList[p2].droids) // to -> from
 	{
 		if (psDroid.getOrder()->type == ORDER_TYPE::ATTACK
 			&& psDroid.getOrder()->target
@@ -736,7 +731,7 @@ void recvMultiPlayerFeature(NETQUEUE queue)
 		{
 			// Create a feature of the specified type at the given location
 			Feature* result = buildFeature(&asFeatureStats[i], x, y, false);
-			result->id = id;
+			result->setId(id);
 			break;
 		}
 	}

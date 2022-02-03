@@ -35,7 +35,6 @@
  * It's now PSX friendly in that there's no floats
  */
 
-#include "lib/framework/wzapp.h"
 #include "lib/framework/wzconfig.h"
 #include "lib/framework/frameresource.h"
 #include "lib/framework/input.h"
@@ -68,7 +67,6 @@
 #include "console.h"
 #include "loop.h"
 
-#include "multiplay.h"
 #include "component.h"
 #include "objmem.h"
 
@@ -352,7 +350,7 @@ void addEffect(const Vector3i* pos, EFFECT_GROUP group, EFFECT_TYPE type,
 	if (specified)
 	{
 		/* We're specifying what the imd is - override */
-		psEffect->imd = imd;
+		psEffect->imd = std::make_unique<iIMDShape>(*imd);
 		psEffect->size = specifiedSize;
 	}
 
@@ -1679,17 +1677,17 @@ void effectSetupFirework(EFFECT* psEffect)
 		/* setup the imds */
 		switch (rand() % 3) {
 		case 0:
-			psEffect->imd = getImdFromIndex(MI_FIREWORK);
+			psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_FIREWORK));
 			psEffect->size = 45; //size of graphic
 			break;
 		case 1:
-			psEffect->imd = getImdFromIndex(MI_SNOW);
+			psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_SNOW));
 			SET_CYCLIC(psEffect);
 			psEffect->size = 60; //size of graphic
 
 			break;
 		default:
-			psEffect->imd = getImdFromIndex(MI_FLAME);
+			psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_FLAME));
 			psEffect->size = 40; //size of graphic
 
 
@@ -1729,35 +1727,35 @@ void effectSetupSmoke(EFFECT* psEffect)
 	switch (psEffect->type) {
     using enum EFFECT_TYPE;
   	case SMOKE_TYPE_DRIFTING:
-  		psEffect->imd = getImdFromIndex(MI_SMALL_SMOKE);
+  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_SMALL_SMOKE));
   		psEffect->lifeSpan = (UWORD)NORMAL_SMOKE_LIFESPAN;
   		psEffect->velocity.y = (float)(35 + rand() % 30);
   		psEffect->baseScale = 40;
   		break;
   	case SMOKE_TYPE_DRIFTING_HIGH:
-  		psEffect->imd = getImdFromIndex(MI_SMALL_SMOKE);
+  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_SMALL_SMOKE));
   		psEffect->lifeSpan = (UWORD)NORMAL_SMOKE_LIFESPAN;
   		psEffect->velocity.y = (float)(40 + rand() % 45);
   		psEffect->baseScale = 25;
   		break;
   	case SMOKE_TYPE_DRIFTING_SMALL:
-  		psEffect->imd = getImdFromIndex(MI_SMALL_SMOKE);
+  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_SMALL_SMOKE));
   		psEffect->lifeSpan = (UWORD)SMALL_SMOKE_LIFESPAN;
   		psEffect->velocity.y = (float)(25 + rand() % 35);
   		psEffect->baseScale = 17;
   		break;
   	case SMOKE_TYPE_BILLOW:
-  		psEffect->imd = getImdFromIndex(MI_SMALL_SMOKE);
+  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_SMALL_SMOKE));
   		psEffect->lifeSpan = (UWORD)SMALL_SMOKE_LIFESPAN;
   		psEffect->velocity.y = (float)(10 + rand() % 20);
   		psEffect->baseScale = 80;
   		break;
   	case SMOKE_TYPE_STEAM:
-  		psEffect->imd = getImdFromIndex(MI_SMALL_STEAM);
+  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_SMALL_STEAM));
   		psEffect->velocity.y = (float)(rand() % 5);
   		break;
   	case SMOKE_TYPE_TRAIL:
-  		psEffect->imd = getImdFromIndex(MI_TRAIL);
+  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_TRAIL));
   		psEffect->lifeSpan = TRAIL_SMOKE_LIFESPAN;
   		psEffect->velocity.y = (float)(5 + rand() % 10);
   		psEffect->baseScale = 25;
@@ -1843,61 +1841,61 @@ void effectSetupExplosion(EFFECT* psEffect)
 	{
 		switch (psEffect->type) {
 	  	case EXPLOSION_TYPE_SMALL:
-	  		psEffect->imd = getImdFromIndex(MI_EXPLOSION_SMALL);
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_EXPLOSION_SMALL));
 	  		psEffect->size = (UBYTE)((6 * EXPLOSION_SIZE) / 5);
 	  		break;
 	  	case EXPLOSION_TYPE_VERY_SMALL:
-	  		psEffect->imd = getImdFromIndex(MI_EXPLOSION_SMALL);
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_EXPLOSION_SMALL));
 	  		psEffect->size = (UBYTE)(BASE_FLAME_SIZE + auxVar);
 	  		break;
 	  	case EXPLOSION_TYPE_MEDIUM:
-	  		psEffect->imd = getImdFromIndex(MI_EXPLOSION_MEDIUM);
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_EXPLOSION_MEDIUM));
 	  		psEffect->size = (UBYTE)EXPLOSION_SIZE;
 	  		break;
 	  	case EXPLOSION_TYPE_LARGE:
-	  		psEffect->imd = getImdFromIndex(MI_EXPLOSION_MEDIUM);
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_EXPLOSION_MEDIUM));
 	  		psEffect->size = (UBYTE)EXPLOSION_SIZE * 2;
 	  		break;
 	  	case EXPLOSION_TYPE_FLAMETHROWER:
-	  		psEffect->imd = getImdFromIndex(MI_FLAME);
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_FLAME));
 	  		psEffect->size = (UBYTE)(BASE_FLAME_SIZE + auxVar);
 	  		break;
 	  	case EXPLOSION_TYPE_LASER:
-	  		psEffect->imd = getImdFromIndex(MI_FLAME); // change this
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_FLAME)); // change this
 	  		psEffect->size = (UBYTE)(BASE_LASER_SIZE + auxVar);
 	  		break;
 	  	case EXPLOSION_TYPE_DISCOVERY:
-	  		psEffect->imd = getImdFromIndex(MI_TESLA); // change this
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_TESLA)); // change this
 	  		psEffect->size = DISCOVERY_SIZE;
 	  		break;
 	  	case EXPLOSION_TYPE_FLARE:
-	  		psEffect->imd = getImdFromIndex(MI_MFLARE);
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_MFLARE));
 	  		psEffect->size = FLARE_SIZE;
 	  		break;
 	  	case EXPLOSION_TYPE_TESLA:
-	  		psEffect->imd = getImdFromIndex(MI_TESLA);
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_TESLA));
 	  		psEffect->size = TESLA_SIZE;
 	  		psEffect->velocity.y = (float)TESLA_SPEED;
 	  		break;
 
 	  	case EXPLOSION_TYPE_KICKUP:
-	  		psEffect->imd = getImdFromIndex(MI_KICK);
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_KICK));
 	  		psEffect->size = 100;
 	  		break;
 	  	case EXPLOSION_TYPE_PLASMA:
-	  		psEffect->imd = getImdFromIndex(MI_PLASMA);
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_PLASMA));
 	  		psEffect->size = BASE_PLASMA_SIZE;
 	  		psEffect->velocity.y = 0.0f;
 	  		break;
 	  	case EXPLOSION_TYPE_LAND_LIGHT:
-	  		psEffect->imd = getImdFromIndex(MI_LANDING);
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_LANDING));
 	  		psEffect->size = 120;
 	  		psEffect->specific = ellSpec;
 	  		psEffect->velocity.y = 0.0f;
 	  		SET_ESSENTIAL(psEffect); // Landing lights are permanent and cyclic
 	  		break;
 	  	case EXPLOSION_TYPE_SHOCKWAVE:
-	  		psEffect->imd = getImdFromIndex(MI_SHOCK);
+	  		psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_SHOCK));
 	  		psEffect->size = 50;
 	  		psEffect->velocity.y = 0.0f;
 	  		break;
@@ -1965,7 +1963,7 @@ void effectSetupConstruction(EFFECT* psEffect)
 	psEffect->velocity.z = 0.f; //(1-rand()%3);
 	psEffect->velocity.y = (float)(0 - rand() % 3);
 	psEffect->frameDelay = (UWORD)CONSTRUCTION_FRAME_DELAY;
-	psEffect->imd = getImdFromIndex(MI_CONSTRUCTION);
+	psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_CONSTRUCTION));
 	psEffect->lifeSpan = CONSTRUCTION_LIFESPAN;
 
 	/* These effects always face you */
@@ -1996,7 +1994,7 @@ void effectSetupFire(EFFECT* psEffect)
 
 void effectSetupWayPoint(EFFECT* psEffect)
 {
-	psEffect->imd = pProximityMsgIMD;
+	psEffect->imd = std::make_unique<iIMDShape>(*pProximityMsgIMD);
 
 	/* These effects musnt make way for others */
 	SET_ESSENTIAL(psEffect);
@@ -2007,7 +2005,7 @@ static void effectSetupBlood(EFFECT* psEffect)
 {
 	psEffect->frameDelay = BLOOD_FRAME_DELAY;
 	psEffect->velocity.y = (float)BLOOD_FALL_SPEED;
-	psEffect->imd = getImdFromIndex(MI_BLOOD);
+	psEffect->imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_BLOOD));
 	psEffect->size = (UBYTE)BLOOD_SIZE;
 }
 
@@ -2152,7 +2150,7 @@ static void effectStructureUpdates()
 	/* Go thru' all players */
 	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
-		for (auto& psStructure : apsStructLists[player])
+		for (auto& psStructure : playerList[player].structures)
 		{
 			// Find its group.
 			auto partition = psStructure->getId() % EFFECT_STRUCTURE_DIVISION;
@@ -2243,7 +2241,7 @@ bool writeFXData(const char* fileName)
 
 		if (it->imd)
 		{
-			effectObj["imd_name"] = modelName(it->imd);
+			effectObj["imd_name"] = modelName(it->imd.get());
 		}
 
 		auto effectKey = "effect_" + WzString::number(i);
@@ -2298,7 +2296,7 @@ bool readFXData(const char* fileName)
 			WzString imd_name = ini.value("imd_name").toWzString();
 			if (!imd_name.isEmpty())
 			{
-				curEffect->imd = modelGet(imd_name);
+				curEffect->imd = std::make_unique<iIMDShape>(*modelGet(imd_name));
 			}
 		}
 		else

@@ -425,7 +425,7 @@ FPATH_RESULT fpathDroidRoute(Droid* psDroid, int tX, int tY, FPATH_MOVETYPE move
   // blocking tiles and find an alternative if they are
 	auto startPos = psDroid->getPosition();
 	auto endPos = Position(tX, tY, 0);
-  auto dstStructure = getStructureBounds(worldTile(endPos.xy())->psObject);
+  auto dstStructure = getStructureBounds(dynamic_cast<Structure*>(worldTile(endPos.xy())->psObject));
 
   auto propulsionType = psPropStats->propulsionType;
 	startPos = findNonblockingPosition(startPos, propulsionType, psDroid->playerManager->getPlayer(), moveType);
@@ -548,7 +548,6 @@ static size_t fpathResultQueueLength()
 	wzMutexUnlock(fpathMutex);
 	return count;
 }
-
 
 // Only used by fpathTest.
 static FPATH_RESULT fpathSimpleRoute(Movement* psMove, int id, int startX,

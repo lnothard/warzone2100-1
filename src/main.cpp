@@ -52,18 +52,14 @@
 #endif
 #  endif
 #elif defined(WZ_OS_UNIX)
-#  include <cerrno>
 #endif // WZ_OS_WIN
 
 #include "lib/framework/input.h"
 #include "lib/framework/physfs_ext.h"
-#include "lib/framework/wzpaths.h"
 #include "lib/framework/wztime.h"
 #include "lib/exceptionhandler/exceptionhandler.h"
 #include "lib/exceptionhandler/dumpinfo.h"
 
-#include "lib/sound/playlist.h"
-#include "lib/gamelib/gtime.h"
 #include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/piepalette.h"
@@ -71,19 +67,16 @@
 #include "lib/ivis_opengl/screen.h"
 #include "lib/netplay/netplay.h"
 #include "lib/netplay/netreplay.h"
-#include "lib/sound/audio.h"
 #include "lib/sound/cdaudio.h"
 
 #include "clparse.h"
 #include "challenge.h"
 #include "configuration.h"
-#include "display.h"
 #include "display3d.h"
 #include "frontend.h"
 #include "game.h"
 #include "init.h"
 #include "levels.h"
-#include "lighting.h"
 #include "loadsave.h"
 #include "loop.h"
 #include "mission.h"
@@ -91,7 +84,6 @@
 #include "multiplay.h"
 #include "notifications.h"
 #include "qtscript.h"
-#include "research.h"
 #include "seqdisp.h"
 #include "warzoneconfig.h"
 #include "main.h"
@@ -111,12 +103,10 @@
 #include "integrations/wzdiscordrpc.h"
 #endif
 #include "wzcrashhandlingproviders.h"
-#include "wzpropertyproviders.h"
 #include "3rdparty/gsl_finally.h"
 
 #if defined(WZ_OS_UNIX)
 # include <csignal>
-# include <ctime>
 #endif
 
 #if defined(WZ_OS_MAC)
@@ -136,6 +126,7 @@
 #  define WZ_DATADIR "data"
 #endif
 
+#include "projectile.h"
 
 enum FOCUS_STATE
 {
@@ -984,8 +975,7 @@ static void startGameLoop()
 	setCDAudioForCurrentGameMode();
 
 	// Not sure what aLevelName is, in relation to game.map. But need to use aLevelName here, to be able to start the right map for campaign, and need game.hash, to start the right non-campaign map, if there are multiple identically named maps.
-	if (!levLoadData(aLevelName, &game.hash, nullptr, GTYPE_SCENARIO_START))
-	{
+	if (!levLoadData(aLevelName, &game.hash, nullptr, GAME_TYPE::GTYPE_SCENARIO_START)) {
 		debug(LOG_FATAL, "Shutting down after failure");
 		exit(EXIT_FAILURE);
 	}
@@ -1800,7 +1790,7 @@ int realmain(int argc, char* argv[])
 	debug(LOG_WZ, "Backend: %s", BACKEND);
 	debug(LOG_MEMORY,
         "sizeof: SIMPLE_OBJECT=%ld, SimpleObject=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-        (long)sizeof(PlayerOwnedObject), (long)sizeof(PlayerOwnedObject), (long)sizeof(Droid), (long)sizeof(Structure),
+        (long)sizeof(BaseObject), (long)sizeof(BaseObject), (long)sizeof(Droid), (long)sizeof(Structure),
         (long)sizeof(Feature), (long)sizeof(Projectile));
 
 #if defined(WZ_OS_UNIX)
@@ -1943,7 +1933,7 @@ int realmain(int argc, char* argv[])
 	debug(LOG_WZ, "Backend: %s", BACKEND);
 	debug(LOG_MEMORY,
         "sizeof: SIMPLE_OBJECT=%ld, SimpleObject=%ld, DROID=%ld, STRUCTURE=%ld, FEATURE=%ld, PROJECTILE=%ld",
-        (long)sizeof(PlayerOwnedObject), (long)sizeof(PlayerOwnedObject), (long)sizeof(Droid), (long)sizeof(Structure),
+        (long)sizeof(BaseObject), (long)sizeof(BaseObject), (long)sizeof(Droid), (long)sizeof(Structure),
         (long)sizeof(Feature), (long)sizeof(Projectile));
 
 	int w = pie_GetVideoBufferWidth();

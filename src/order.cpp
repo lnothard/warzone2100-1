@@ -36,6 +36,7 @@
 #include "objmem.h"
 #include "order.h"
 #include "projectile.h"
+#include "hci.h"
 
 typedef std::vector<BaseObject *> GridList;
 GridList const& gridStartIterate(int, int, unsigned);
@@ -271,7 +272,7 @@ static void orderCmdGroupBase(Group* psGroup, Order* psData)
 		// picking up an artifact - only need to send one unit
 		Droid* psChosen = nullptr;
 		auto mindist = SDWORD_MAX;
-		for (auto psCurr : psGroup->getMembers())
+		for (auto psCurr : *psGroup->getMembers())
 		{
 			if (psCurr->getOrder()->type == ORDER_TYPE::RETURN_TO_REPAIR ||
           psCurr->getOrder()->type == ORDER_TYPE::RETURN_TO_BASE   ||
@@ -293,7 +294,7 @@ static void orderCmdGroupBase(Group* psGroup, Order* psData)
 	else {
 		const bool isAttackOrder = psData->type == ORDER_TYPE::ATTACK_TARGET ||
                                psData->type == ORDER_TYPE::ATTACK;
-		for (auto psCurr : psGroup->getMembers())
+		for (auto psCurr : *psGroup->getMembers())
 		{
 			syncDebug("command %d", psCurr->getId());
       if (orderState(psCurr, ORDER_TYPE::RETURN_TO_REPAIR)) {
@@ -748,7 +749,7 @@ ORDER_TYPE chooseOrderLoc(Droid* psDroid, int x, int y, bool altOrder)
 {
   using enum ORDER_TYPE;
 	ORDER_TYPE order = NONE;
-	auto propulsion = psDroid->getPropulsion()->propulsionType;
+	auto propulsion = dynamic_cast<PropulsionStats const*>(psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
 
 	if (isTransporter(*psDroid) &&
       game.type == LEVEL_TYPE::CAMPAIGN) {
@@ -759,11 +760,11 @@ ORDER_TYPE chooseOrderLoc(Droid* psDroid, int x, int y, bool altOrder)
 	// default to move; however, we can only end up on a tile
 	// where can stay, i.e., VTOLs must be able to land as well
 	if (psDroid->isVtol()) {
-		propulsion = PROPULSION_TYPE::WHEELED;
+		propulsion->propulsionType = PROPULSION_TYPE::WHEELED;
 	}
 	if (!fpathBlockingTile(map_coord(x),
                          map_coord(y),
-                         propulsion)) {
+                         propulsion->propulsionType)) {
 		order = MOVE;
 	}
 
@@ -827,9 +828,9 @@ void orderSelectedLoc(unsigned player, unsigned x, unsigned y, bool add)
 	// note that an order list graphic needs to be displayed
 	bOrderEffectDisplayed = false;
 
-	for (auto& psCurr : apsDroidLists[player])
+	for (auto& psCurr : playerList[player].droids)
 	{
-		if (psCurr.selected) {
+		if (psCurr.damageManager->isSelected()) {
 			// can't use bMultiPlayer since multimsg could be off.
 			if (psCurr.getType() == DROID_TYPE::SUPER_TRANSPORTER &&
           game.type == LEVEL_TYPE::CAMPAIGN) {
@@ -884,7 +885,7 @@ static int highestQueuedModule(Order const& order, Structure const* structure, i
 
 static int highestQueuedModule(Droid const* droid, Structure const* structure)
 {
-	auto module = highestQueuedModule(droid->getOrder(), structure, -1);
+	auto module = highestQueuedModule(*droid->getOrder(), structure, -1);
 	for (unsigned n = droid->listPendingBegin; n < droid->asOrderList.size(); ++n)
 	{
 		module = highestQueuedModule(droid->asOrderList[n], structure, module);
@@ -905,7 +906,7 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 		// in multiPlayer, need to be able to get transporter repaired
 		if (bMultiPlayer) {
       auto psStruct = dynamic_cast<Structure*>(psObj);
-			if (aiCheckAlliances(psObj->getPlayer(), psDroid->getPlayer()) && psObj) {
+			if (aiCheckAlliances(psObj->playerManager->getPlayer(), psDroid->playerManager->getPlayer()) && psObj) {
 
 				ASSERT_OR_RETURN(Order(NONE), psObj != nullptr, "Invalid structure pointer");
 				if (psStruct->getStats()->type == STRUCTURE_TYPE::REPAIR_FACILITY &&
@@ -919,7 +920,7 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 
 	if (altOrder &&
       (dynamic_cast<Droid*>(psObj) || dynamic_cast<Structure*>(psObj)) &&
-      psDroid->getPlayer() == psObj->getPlayer()) {
+      psDroid->playerManager->getPlayer() == psObj->playerManager->getPlayer()) {
 
 		if (psDroid->getType() == DROID_TYPE::SENSOR) {
 			return {OBSERVE, *psObj};
@@ -939,7 +940,7 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 	// check for transporters first
 	if (dynamic_cast<Droid*>(psObj) &&
       isTransporter(*dynamic_cast<Droid*>(psObj)) &&
-      psObj->getPlayer() == psDroid->getPlayer()) {
+      psObj->playerManager->getPlayer() == psDroid->playerManager->getPlayer()) {
 		order = Order(EMBARK, *psObj);
 	}
 	// go to recover an artifact/oil drum - don't allow VTOLs to get this order
@@ -952,8 +953,8 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 	}
 	// else default to attack if the droid has a weapon
 	else if (numWeapons(*psDroid) > 0 &&
-           psObj->getPlayer() != psDroid->getPlayer() &&
-           !aiCheckAlliances(psObj->getPlayer(), psDroid->getPlayer())) {
+           psObj->playerManager->getPlayer() != psDroid->playerManager->getPlayer() &&
+           !aiCheckAlliances(psObj->playerManager->getPlayer(), psDroid->playerManager->getPlayer())) {
 		// check valid weapon/prop combination
 		for (int i = 0; i < MAX_WEAPONS; ++i)
 		{
@@ -964,12 +965,12 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 		}
 	}
 	else if (psDroid->getType() == DROID_TYPE::SENSOR
-		&& psObj->getPlayer() != psDroid->getPlayer()
-		&& !aiCheckAlliances(psObj->getPlayer(), psDroid->getPlayer())) {
+		&& psObj->playerManager->getPlayer() != psDroid->playerManager->getPlayer()
+		&& !aiCheckAlliances(psObj->playerManager->getPlayer(), psDroid->playerManager->getPlayer())) {
 		// check for standard sensor or VTOL intercept sensor
-		if (asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SENSOR_TYPE::STANDARD
-			|| asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SENSOR_TYPE::VTOL_INTERCEPT
-			|| asSensorStats[psDroid->asBits[COMP_SENSOR]].type == SENSOR_TYPE::SUPER) {
+		if (asSensorStats[psDroid->asBits[COMPONENT_TYPE::SENSOR]].type == SENSOR_TYPE::STANDARD
+			|| asSensorStats[psDroid->asBits[COMPONENT_TYPE::SENSOR]].type == SENSOR_TYPE::VTOL_INTERCEPT
+			|| asSensorStats[psDroid->asBits[COMPONENT_TYPE::SENSOR]].type == SENSOR_TYPE::SUPER) {
 			// a sensor droid observing an object
 			order = Order(OBSERVE, *psObj);
 		}
@@ -979,7 +980,7 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 		order = Order(FIRE_SUPPORT, *psObj);
 		setSensorAssigned();
 	}
-	else if (psObj->getPlayer() == psDroid->getPlayer() &&
+	else if (psObj->playerManager->getPlayer() == psDroid->playerManager->getPlayer() &&
 		       dynamic_cast<Droid*>(psObj) &&
            dynamic_cast<Droid*>(psObj)->getType() == DROID_TYPE::COMMAND &&
            psDroid->getType() != DROID_TYPE::COMMAND &&
@@ -991,7 +992,7 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 		order = Order(COMMANDER_SUPPORT, *psObj);
 	}
 	// repair droid
-	else if (aiCheckAlliances(psObj->getPlayer(), psDroid->getPlayer()) &&
+	else if (aiCheckAlliances(psObj->playerManager->getPlayer(), psDroid->playerManager->getPlayer()) &&
            dynamic_cast<Droid*>(psObj) &&
            (psDroid->getType() == DROID_TYPE::REPAIRER ||
             psDroid->getType() == DROID_TYPE::CYBORG_REPAIR) &&
@@ -1000,23 +1001,23 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 		order = Order(DROID_REPAIR, *psObj);
 	}
 	// guarding constructor droids
-	else if (aiCheckAlliances(psObj->getPlayer(), psDroid->getPlayer()) &&
+	else if (aiCheckAlliances(psObj->playerManager->getPlayer(), psDroid->playerManager->getPlayer()) &&
 		       dynamic_cast<Droid*>(psObj) &&
            (dynamic_cast<Droid*>(psObj)->getType() == DROID_TYPE::CONSTRUCT ||
             dynamic_cast<Droid*>(psObj)->getType() == DROID_TYPE::CYBORG_CONSTRUCT ||
             dynamic_cast<Droid*>(psObj)->getType() == DROID_TYPE::SENSOR ||
             dynamic_cast<Droid*>(psObj)->getType() == DROID_TYPE::COMMAND) &&
-           psObj->getPlayer() != psDroid->getPlayer() &&
+           psObj->playerManager->getPlayer() != psDroid->playerManager->getPlayer() &&
            (psDroid->getType() == DROID_TYPE::WEAPON ||
             psDroid->getType() == DROID_TYPE::CYBORG ||
             psDroid->getType() == DROID_TYPE::CYBORG_SUPER) &&
-           proj_Direct(&psDroid->getWeapons()[0].getStats())) {
+           proj_Direct(psDroid->weaponManager->weapons[0].stats.get())) {
 
 		order = Order(GUARD, *psObj);
 		assignSensorTarget(psObj);
-		psDroid->selected = false;
+		psDroid->damageManager->setSelected(false);
 	}
-	else if (aiCheckAlliances(psObj->getPlayer(), psDroid->getPlayer()) &&
+	else if (aiCheckAlliances(psObj->playerManager->getPlayer(), psDroid->playerManager->getPlayer()) &&
 	         dynamic_cast<Structure*>(psObj)) {
 		auto psStruct = dynamic_cast<Structure*>(psObj);
 		ASSERT_OR_RETURN(Order(NONE), psObj != nullptr, "Invalid structure pointer");
@@ -1031,7 +1032,7 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
         : -1);
 
 			// re-written to allow the demolish order to be added to the queuing system
-			if (intDemolishSelectMode() && psObj->getPlayer() == psDroid->getPlayer()) {
+			if (intDemolishSelectMode() && psObj->playerManager->getPlayer() == psDroid->playerManager->getPlayer()) {
 				// check to see if anything is currently trying to build the structure
 				// -- can't build and demolish at the same time!
 				if (psStruct->getState() == STRUCTURE_STATE::BUILT ||
@@ -1054,7 +1055,7 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 					}
 				}
 			}
-			else if (psStruct->getHp() < structureBody(psStruct)) {
+			else if (psStruct->damageManager->getHp() < structureBody(psStruct)) {
 				order = Order(REPAIR, *psObj);
 			}
 			// check if we can build a module
@@ -1070,8 +1071,8 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 				order = Order{RTR_SPECIFIED, *psObj};
 			}
 			else if (electronicDroid(psDroid) &&
-				psStruct->getResistance() < (int)structureResistance(
-                psStruct->getStats(), psStruct->getPlayer())) {
+				psStruct->damageManager->getResistance() < (int)structureResistance(
+                psStruct->getStats(), psStruct->playerManager->getPlayer())) {
 				order = Order(RESTORE, *psObj);
 			}
 			// check for counter battery assignment
@@ -1094,7 +1095,7 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 			else if ((psDroid->getType() == DROID_TYPE::WEAPON ||
                 psDroid->getType() == DROID_TYPE::CYBORG ||
                 psDroid->getType() == DROID_TYPE::CYBORG_SUPER) &&
-               proj_Direct(&psDroid->getWeapons()[0].getStats())) {
+               proj_Direct(psDroid->weaponManager->weapons[0].stats.get())) {
 				order = Order(GUARD, *psObj);
 			}
 		}
@@ -1112,23 +1113,23 @@ static void orderPlayOrderObjAudio(unsigned player, BaseObject * psObj)
 	ASSERT_PLAYER_OR_RETURN(, player);
 
 	/* loop over selected droids */
-	for (auto& psDroid : apsDroidLists[player])
+	for (auto& psDroid : playerList[player].droids)
 	{
-		if (psDroid.selected) {
-			/* currently only looks for VTOL */
-			if (psDroid.isVtol()) {
-				switch (psDroid.getOrder()->type) {
-          case ORDER_TYPE::ATTACK:
-					audio_QueueTrack(ID_SOUND_ON_OUR_WAY2);
-					break;
-				default:
-					break;
-				}
-			}
-			/* only play audio once */
-			break;
-		}
-	}
+    if (!psDroid.damageManager->isSelected()) continue;
+
+    /* currently only looks for VTOL */
+    if (psDroid.isVtol()) {
+      switch (psDroid.getOrder()->type) {
+case ORDER_TYPE::ATTACK:
+        audio_QueueTrack(ID_SOUND_ON_OUR_WAY2);
+        break;
+      default:
+        break;
+      }
+    }
+    /* only play audio once */
+      break;
+  }
 }
 
 /** This function sends orders to all the selected droids according to the object.
@@ -1142,9 +1143,9 @@ void orderSelectedObjAdd(unsigned player, BaseObject * psObj, bool add)
 	// note that an order list graphic needs to be displayed
 	bOrderEffectDisplayed = false;
 
-	for (auto& psCurr : apsDroidLists[player])
+	for (auto& psCurr : playerList[player].droids)
 	{
-		if (psCurr.isSelected()) {
+		if (psCurr.damageManager->isSelected()) {
 			if (isBlueprint(psObj)) {
 				if (isConstructionDroid(&psCurr)) {
           // help build the planned structure.
@@ -1190,9 +1191,9 @@ void orderSelectedStatsLocDir(unsigned player, ORDER_TYPE order, StructureStats*
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 
-	for (auto& psCurr : apsDroidLists[player])
+	for (auto& psCurr : playerList[player].droids)
 	{
-		if (psCurr.isSelected() && isConstructionDroid(&psCurr)) {
+		if (psCurr.damageManager->isSelected() && isConstructionDroid(&psCurr)) {
 			if (add) {
 				orderDroidStatsLocDirAdd(&psCurr, order, psStats, x, y, direction);
 			}
@@ -1212,9 +1213,9 @@ void orderSelectedStatsTwoLocDir(unsigned player, ORDER_TYPE order, StructureSta
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 
-	for (auto& psCurr : apsDroidLists[player])
+	for (auto& psCurr : playerList[player].droids)
 	{
-		if (psCurr.isSelected()) {
+		if (psCurr.damageManager->isSelected()) {
 			if (add) {
 				orderDroidStatsTwoLocDirAdd(&psCurr, order, psStats, x1, y1, x2, y2, direction);
 			}
@@ -1228,13 +1229,13 @@ void orderSelectedStatsTwoLocDir(unsigned player, ORDER_TYPE order, StructureSta
 /**
  * This function runs though all player's droids to check if any of them
  * is a transporter. Returns the transporter droid if any was found, and NULL else.*/
-Droid* FindATransporter(Droid const* embarkee)
+Droid* FindATransporter(Droid* embarkee)
 {
 	auto isCyborg_ = isCyborg(embarkee);
 	Droid* bestDroid = nullptr;
 	auto bestDist = ~0u;
 
-	for (auto& psDroid : apsDroidLists[embarkee->getPlayer()])
+	for (auto& psDroid : playerList[embarkee->playerManager->getPlayer()].droids)
 	{
 		if ((isCyborg_ && psDroid.getType() == DROID_TYPE::TRANSPORTER) ||
         psDroid.getType() == DROID_TYPE::SUPER_TRANSPORTER) {
@@ -1258,10 +1259,10 @@ static Structure* FindAFactory(unsigned player, STRUCTURE_TYPE factoryType)
 {
 	ASSERT_PLAYER_OR_RETURN(nullptr, player);
 
-	for (auto& psStruct : apsStructLists[player])
+	for (auto& psStruct : playerList[player].structures)
 	{
-		if (psStruct->getStats()->type == factoryType) {
-			return psStruct.get();
+		if (psStruct.getStats()->type == factoryType) {
+			return &psStruct;
 		}
 	}
 	return nullptr;
@@ -1272,10 +1273,10 @@ static Structure* FindARepairFacility(unsigned player)
 {
 	ASSERT_PLAYER_OR_RETURN(nullptr, player);
 
-	for (auto& psStruct : apsStructLists[player])
+	for (auto& psStruct : playerList[player].structures)
 	{
-		if (psStruct->getStats()->type == STRUCTURE_TYPE::REPAIR_FACILITY) {
-			return psStruct.get();
+		if (psStruct.getStats()->type == STRUCTURE_TYPE::REPAIR_FACILITY) {
+			return &psStruct;
 		}
 	}
 	return nullptr;
@@ -1298,15 +1299,15 @@ bool secondarySupported(Droid* psDroid, SECONDARY_ORDER sec)
 			supported = false;
 		}
 		if ((sec == ASSIGN_PRODUCTION &&
-         FindAFactory(psDroid->getPlayer(),
+         FindAFactory(psDroid->playerManager->getPlayer(),
                       STRUCTURE_TYPE::FACTORY) == nullptr) ||
 
         (sec == ASSIGN_CYBORG_PRODUCTION &&
-         FindAFactory(psDroid->getPlayer(),
+         FindAFactory(psDroid->playerManager->getPlayer(),
                       STRUCTURE_TYPE::CYBORG_FACTORY) == nullptr) ||
 
 			  (sec == ASSIGN_VTOL_PRODUCTION &&
-         FindAFactory(psDroid->getPlayer(),
+         FindAFactory(psDroid->playerManager->getPlayer(),
                       STRUCTURE_TYPE::VTOL_FACTORY) == nullptr)) {
 
 			supported = false;
@@ -1326,10 +1327,10 @@ bool secondarySupported(Droid* psDroid, SECONDARY_ORDER sec)
 		if (numWeapons(*psDroid) > 0) {
 			for (auto i = 0; i < numWeapons(*psDroid); ++i)
 			{
-				const auto& weaponStats = psDroid->getWeapons()[i].getStats();
+				const auto weaponStats = psDroid->weaponManager->weapons[i].stats.get();
 
-				if (proj_GetLongRange(&weaponStats, psDroid->getPlayer()) ==
-              proj_GetShortRange(&weaponStats, psDroid->getPlayer())) {
+				if (proj_GetLongRange(weaponStats, psDroid->playerManager->getPlayer()) ==
+              proj_GetShortRange(weaponStats, psDroid->playerManager->getPlayer())) {
 					supported = false;
 				}
 				else {
@@ -1363,13 +1364,13 @@ bool secondarySupported(Droid* psDroid, SECONDARY_ORDER sec)
 	case RETURN_TO_LOCATION:
 		break;
 	case RECYCLE: // only if player has got a factory.
-		if ((FindAFactory(psDroid->getPlayer(),
+		if ((FindAFactory(psDroid->playerManager->getPlayer(),
                       STRUCTURE_TYPE::FACTORY) == nullptr) &&
-		  	(FindAFactory(psDroid->getPlayer(),
+		  	(FindAFactory(psDroid->playerManager->getPlayer(),
                     STRUCTURE_TYPE::CYBORG_FACTORY) == nullptr) &&
-		  	(FindAFactory(psDroid->getPlayer(),
+		  	(FindAFactory(psDroid->playerManager->getPlayer(),
                     STRUCTURE_TYPE::VTOL_FACTORY) == nullptr) &&
-		  	(FindARepairFacility(psDroid->getPlayer()) == nullptr)) {
+		  	(FindARepairFacility(psDroid->playerManager->getPlayer()) == nullptr)) {
 			supported = false;
 		}
 		break;
@@ -1432,16 +1433,16 @@ static bool secondaryCheckDamageLevelDeselect(Droid* psDroid, SECONDARY_STATE re
 	}
 
 	// psDroid->body / psDroid->originalBody < repairLevel / 100, without integer truncation
-  if (psDroid->getHp() * 100 > repairLevel * psDroid->getOriginalHp()) {
+  if (psDroid->damageManager->getHp() * 100 > repairLevel * psDroid->damageManager->getOriginalHp()) {
     return false;
   }
   // only deselect the droid if there is another droid selected.
-  if (!psDroid->isSelected() || selectedPlayer >= MAX_PLAYERS) {
+  if (!psDroid->damageManager->isSelected() || selectedPlayer >= MAX_PLAYERS) {
     return true;
   }
-  for (auto& psTempDroid : apsDroidLists[selectedPlayer])
+  for (auto& psTempDroid : playerList[selectedPlayer].droids)
   {
-    if (&psTempDroid != psDroid && psTempDroid.isSelected()) {
+    if (&psTempDroid != psDroid && psTempDroid.damageManager->isSelected()) {
       DeSelectDroid(psDroid);
       break;
     }
@@ -1497,7 +1498,7 @@ static void secondarySetGroupState(unsigned player, const Group& group, SECONDAR
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 
-	for (auto& psCurr : apsDroidLists[player])
+	for (auto& psCurr : playerList[player].droids)
 	{
 		if (psCurr.getGroup() == &group &&
 			secondaryGetState(&psCurr, sec) != state) {
@@ -1525,7 +1526,7 @@ static SECONDARY_STATE secondaryGetAverageGroupState(unsigned player, const Grou
 	auto numStates = 0;
   auto i = 0;
 	memset(aStateCount, 0, sizeof(aStateCount));
-	for (auto& psCurr : apsDroidLists[player])
+	for (auto& psCurr : playerList[player].droids)
 	{
 		if (psCurr.getGroup() == &group) {
 			for (i = 0; i < numStates; i++)
@@ -1590,15 +1591,15 @@ void secondarySetAverageGroupState(unsigned player, const Group& group)
 /**
  * lasSat structure can select a target
  */
-void orderStructureObj(unsigned player, BaseObject * psObj)
+void orderStructureObj(unsigned player, BaseObject* psObj)
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 
-	for (auto& psStruct : apsStructLists[player])
+	for (auto& psStruct : playerList[player].structures)
 	{
-		if (lasSatStructSelected(psStruct.get())) {
+		if (lasSatStructSelected(&psStruct)) {
 			// send the weapon fire
-			sendLasSat(player, psStruct.get(), psObj);
+			sendLasSat(player, &psStruct, psObj);
 			break;
 		}
 	}

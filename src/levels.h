@@ -119,7 +119,7 @@ bool levReleaseAll();
 bool levReleaseMissionData();
 
 //get the type of level currently being loaded of GTYPE type
-SDWORD getLevelLoadType();
+GAME_TYPE getLevelLoadType();
 
 const char* getLevelName();
 

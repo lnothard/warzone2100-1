@@ -60,6 +60,7 @@
 #include "transporter.h"
 #include "visibility.h"
 #include "warcam.h"
+#include "game.h"
 
 
 // the structure that was last hit

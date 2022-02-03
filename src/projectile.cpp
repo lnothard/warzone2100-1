@@ -37,6 +37,7 @@
 #include "scores.h"
 #include "structure.h"
 #include "weapon.h"
+#include "display.h"
 
 bool bMultiPlayer;
 bool gamePaused();

@@ -23,47 +23,46 @@
  * Display routines
  */
 
+#include "lib/framework/math_ext.h"
 #include "lib/framework/wzapp.h"
-
-#include "display.h"
-
-#include "loop.h"
-#include "display3d.h"
-#include "edit3d.h"
-#include "geometry.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
-#include "displaydef.h"
-#include "radar.h"
-#include "lib/framework/math_ext.h"
-#include "wrappers.h"
-#include "intimage.h"
-#include "ingameop.h"
-#include "warcam.h"
-#include "keybind.h"
-#include "cmddroid.h"
-#include "transporter.h"
-#include "intorder.h"
-#include "qtscript.h"
-#include "warzoneconfig.h"
-#include "animation.h"
-#include "mapgrid.h"
-#include "objmem.h"
-#include "multiplay.h"
+
 #include "action.h"
+#include "animation.h"
 #include "baseobject.h"
-#include "levels.h"
+#include "cmddroid.h"
+#include "display.h"
+#include "display3d.h"
+#include "edit3d.h"
+#include "displaydef.h"
 #include "fpath.h"
+#include "geometry.h"
+#include "ingameop.h"
+#include "intimage.h"
+#include "intorder.h"
+#include "keybind.h"
+#include "levels.h"
+#include "loop.h"
+#include "mapgrid.h"
+#include "multiplay.h"
+#include "objmem.h"
+#include "projectile.h"
+#include "qtscript.h"
+#include "radar.h"
+#include "transporter.h"
+#include "warcam.h"
+#include "warzoneconfig.h"
+#include "wrappers.h"
 
 InputManager gInputManager;
 KeyFunctionConfiguration gKeyFuncConfig;
 DragBox3D dragBox3D;
 WallDrag wallDrag;
 
+
 static constexpr auto POSSIBLE_SELECTIONS	= 14;
 static constexpr auto POSSIBLE_TARGETS = 23;
-
-extern std::string DROIDDOING; // holds the string on what the droid is doing
 
 // NOTE: the external file "cursorselection" is used, so you can import
 // that into a spreadsheet, and edit it there, much easier.
@@ -397,16 +396,16 @@ static bool localPlayerHasSelection()
 		return false;
 	}
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			return true;
 		}
 	}
 
-	for (auto& psStruct : apsStructLists[selectedPlayer])
+	for (auto& psStruct : playerList[selectedPlayer].structures)
 	{
-		if (psStruct->damageManager->isSelected()) {
+		if (psStruct.damageManager->isSelected()) {
 			return true;
 		}
 	}
@@ -784,7 +783,7 @@ void processMouseClickInput()
 			else if (selection == SC_DROID_REPAIR)
 			{
 				// We can't repair ourselves, so change it to a blocking cursor
-				for (auto& psCurr : apsDroidLists[selectedPlayer])
+				for (auto& psCurr : playerList[selectedPlayer].droids)
 				{
 					if (psCurr.damageManager->isSelected()) {
 						if ((ObjUnderMouse != nullptr) && ObjUnderMouse->playerManager->getPlayer() == selectedPlayer && psCurr.getId() ==
@@ -899,21 +898,18 @@ void processMouseClickInput()
 				wzSetCursor(CURSOR_DISEMBARK);
 			}
 			else if (specialOrderKeyDown() && selection == SC_DROID_DIRECT &&
-				arnMPointers[item][selection] == CURSOR_MOVE)
-			{
+				arnMPointers[item][selection] == CURSOR_MOVE) {
 				// Alt+move = scout
 				wzSetCursor(CURSOR_SCOUT);
 			}
 			else if (arnMPointers[item][selection] == CURSOR_NOTPOSSIBLE &&
                ObjUnderMouse && ObjUnderMouse->playerManager->isSelectedPlayer() &&
                getObjectType(ObjUnderMouse) == OBJECT_TYPE::STRUCTURE &&
-               dynamic_cast<Structure*>(ObjUnderMouse)->getWeapon(0)->getStats() &&
-							 dynamic_cast<Structure*>(ObjUnderMouse)->getWeapon(0)->getStats()->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT)
-			{
+               dynamic_cast<Structure*>(ObjUnderMouse)->weaponManager->weapons[0].stats &&
+							 dynamic_cast<Structure*>(ObjUnderMouse)->weaponManager->weapons[0].stats->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT) {
 				wzSetCursor(CURSOR_SELECT); // Special casing for LasSat
 			}
-			else
-			{
+			else {
 				wzSetCursor(arnMPointers[item][selection]);
 			}
 		}
@@ -1290,7 +1286,7 @@ BaseObject * mouseTarget()
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
 		/* Note the !psObject check isn't really necessary as the goto will jump out */
-		for (auto& psDroid : apsDroidLists[i])
+		for (auto& psDroid : playerList[i].droids)
 		{
 			dispX = psDroid.getDisplayData()->screen_x;
 			dispY = psDroid.getDisplayData()->screen_y;
@@ -1517,22 +1513,17 @@ void dealWithDroidSelect(Droid* psDroid, bool bDragBox)
 {
 	/*	Toggle selection on and off - allows you drag around a big
 		area of droids and then exclude certain individuals */
-	if (!bDragBox && psDroid->damageManager->isSelected())
-	{
+	if (!bDragBox && psDroid->damageManager->isSelected()) {
 		DeSelectDroid(psDroid);
 	}
-	else if (ctrlShiftDown() || !droidHasLeader(psDroid))
-	{
-		if (specialOrderKeyDown())
-		{
+	else if (ctrlShiftDown() || !droidHasLeader(psDroid)) {
+		if (specialOrderKeyDown()) {
 			/* We only want to select weapon units if ALT is down on a drag */
-			if (psDroid->asWeaps[0].nStat > 0)
-			{
+			if (psDroid->asWeaps[0].nStat > 0) {
 				SelectDroid(psDroid);
 			}
 		}
-		else
-		{
+		else {
 			SelectDroid(psDroid);
 		}
 	}
@@ -1574,9 +1565,9 @@ static void printDroidClickInfo(Droid* psDroid)
 		console(
             "%s - Hitpoints %d/%d - ID %d - experience %f, %s - order %s - action %s - sensor range %hu - ECM %u - pitch %.0f - frust %u - kills %d",
             droidGetName(psDroid), psDroid->damageManager->getHp(), psDroid->damageManager->getOriginalHp(), psDroid->getId(),
-			psDroid->getExperience() / 65536.f, getDroidLevelName(psDroid), getDroidOrderName(psDroid->getOrder()->type),
-            getDroidActionName(psDroid->getAction()),
-            droidSensorRange(psDroid), objJammerPower(psDroid), UNDEG(psDroid->getRotation().pitch), psDroid->lastFrustratedTime,
+            psDroid->getExperience() / 65536.f, getDroidLevelName(psDroid).c_str(), getDroidOrderName(psDroid->getOrder()->type).c_str(),
+            getDroidActionName(psDroid->getAction()).c_str(),
+            droidSensorRange(psDroid), objJammerPower(psDroid), UNDEG(psDroid->getRotation().pitch), psDroid->getLastFrustratedTime(),
             psDroid->getKills());
 		FeedbackOrderGiven();
 	}
@@ -1584,7 +1575,7 @@ static void printDroidClickInfo(Droid* psDroid)
 	{
 		console(_("%s - Hitpoints %d/%d - Experience %.1f, %s, Kills %d"), droidGetName(psDroid), psDroid->damageManager->getHp(),
 		        psDroid->damageManager->getOriginalHp(),
-		        psDroid->getExperience() / 65536.f, _(getDroidLevelName(psDroid)), psDroid->getKills());
+		        psDroid->getExperience() / 65536.f, getDroidLevelName(psDroid).c_str(), psDroid->getKills());
 		FeedbackOrderGiven();
 	}
 	clearSelection();
@@ -1608,8 +1599,8 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 			console(_(
 				"(Enemy!) %s - Hitpoints %d/%d - ID %d - experience %f, %s - order %s - action %s - sensor range %d - ECM %d - pitch %.0f"),
               droidGetName(psDroid), psDroid->damageManager->getHp(), psDroid->damageManager->getOriginalHp(), psDroid->getId(),
-			        psDroid->getExperience() / 65536.f, getDroidLevelName(psDroid), getDroidOrderName(psDroid->getOrder()->type),
-              getDroidActionName(psDroid->getAction()), droidSensorRange(psDroid), objJammerPower(psDroid),
+			        psDroid->getExperience() / 65536.f, getDroidLevelName(psDroid).c_str(), getDroidOrderName(psDroid->getOrder()->type).c_str(),
+              getDroidActionName(psDroid->getAction()).c_str(), droidSensorRange(psDroid), objJammerPower(psDroid),
               UNDEG(psDroid->getRotation().pitch));
 			FeedbackOrderGiven();
 		}
@@ -1688,12 +1679,12 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 	else if (psDroid->getType() == DROID_TYPE::SENSOR)
 	{
 		bSensorAssigned = false;
-		for (auto& psCurr : apsDroidLists[selectedPlayer])
+		for (auto& psCurr : playerList[selectedPlayer].droids)
 		{
 			//must be indirect weapon droid or VTOL weapon droid
 			if (psCurr.getType() == DROID_TYPE::WEAPON &&
           psCurr.damageManager->isSelected() &&
-					(!proj_Direct(psCurr.getWeapon(0)->getStats()) ||
+					(!proj_Direct(psCurr.weaponManager->weapons[0].stats.get()) ||
            psCurr.isVtol()) &&
 					droidSensorDroidWeapon((BaseObject *)psDroid, &psCurr)) {
 				bSensorAssigned = true;
@@ -1800,9 +1791,9 @@ static void dealWithLMBStructure(Structure* psStructure, SELECTION_TYPE selectio
 			auto shouldDisplayInterface = !anyDroidSelected(selectedPlayer);
 			if (selection == SC_INVALID) {
 				/* Clear old building selection(s) - should only be one */
-				for (auto& psCurr : apsStructLists[selectedPlayer])
+				for (auto& psCurr : playerList[selectedPlayer].structures)
 				{
-					psCurr->damageManager->setSelected(false);
+					psCurr.damageManager->setSelected(false);
 				}
 				/* Establish new one */
 				psStructure->damageManager->setSelected(true);
@@ -1823,9 +1814,9 @@ static void dealWithLMBStructure(Structure* psStructure, SELECTION_TYPE selectio
 		       (psStructure->getStats()->type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR) &&
 		       selection == SC_INVALID && ownStruct) {
 		/* Clear old building selection(s) - should only be one */
-		for (auto& psCurr : apsStructLists[selectedPlayer])
+		for (auto& psCurr : playerList[selectedPlayer].structures)
 		{
-			psCurr->damageManager->setSelected(false);
+			psCurr.damageManager->setSelected(false);
 		}
 		/* Establish new one */
 		psStructure->damageManager->setSelected(true);
@@ -1874,9 +1865,8 @@ static void dealWithLMBFeature(Feature* psFeature)
 	}
 
 	//clicking an oil field should start a build..
-	if (psFeature->getStats()->subType == FEATURE_TYPE::OIL_RESOURCE)
-	{
-		unsigned int i;
+	if (psFeature->getStats()->subType == FEATURE_TYPE::OIL_RESOURCE) {
+		unsigned i;
 		// find any construction droids. and order them to build an oil resource.
 
 		// first find the derrick.
@@ -1889,13 +1879,12 @@ static void dealWithLMBFeature(Feature* psFeature)
 			(apStructTypeLists[selectedPlayer][i] == AVAILABLE)) // don't go any further if no derrick stat found.
 		{
 			// for each droid
-			for (auto& psCurr : apsDroidLists[selectedPlayer])
+			for (auto& psCurr : playerList[selectedPlayer].droids)
 			{
-				if ((droidType(&psCurr) == DROID_TYPE::CONSTRUCT ||
+				if ((psCurr.getType() == DROID_TYPE::CONSTRUCT ||
              droidType(&psCurr) == DROID_TYPE::CYBORG_CONSTRUCT) &&
-            psCurr.damageManager->isSelected()) {
-					if (fireOnLocation(psFeature->getPosition().x, psFeature->getPosition().y))
-					{
+             psCurr.damageManager->isSelected()) {
+					if (fireOnLocation(psFeature->getPosition().x, psFeature->getPosition().y)) {
 						// Can't build because it's burning
 						AddDerrickBurningMessage();
 					}
@@ -2284,7 +2273,7 @@ static MOUSE_TARGET itemUnderMouse(BaseObject * * ppObjectUnderMouse)
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{
 		/* Note the !psObject check isn't really necessary as the goto will jump out */
-		for (auto& psDroid : apsDroidLists[i])
+		for (auto& psDroid : playerList[i].droids)
 		{
       if ((retVal) != MT_NOTARGET) break;
 			dispX = psDroid.getDisplayData()->screen_x;
@@ -2480,7 +2469,7 @@ static SELECTION_TYPE establishSelection(unsigned _selectedPlayer)
 		return SC_INVALID;
 	}
 
-	for (auto& psDroid : apsDroidLists[_selectedPlayer])
+	for (auto& psDroid : playerList[_selectedPlayer].droids)
 	{
 		// This works, uses the DroidSelectionWeights[] table to priorities the different
 		// droid types and find the dominant selection.
@@ -2500,7 +2489,7 @@ static SELECTION_TYPE establishSelection(unsigned _selectedPlayer)
 		switch (psDominant->getType()) {
       using enum DROID_TYPE;
 		case WEAPON:
-			if (proj_Direct(psDominant->getWeapon(0)->getStats())) {
+			if (proj_Direct(psDominant->weaponManager->weapons[0].stats.get())) {
 				selectionClass = SC_DROID_DIRECT;
 			}
 			else {
@@ -2566,7 +2555,7 @@ bool repairDroidSelected(unsigned player)
 {
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "Invalid player (%" PRIu32 ")", player);
 
-	for (auto& psCurr : apsDroidLists[player])
+	for (auto& psCurr : playerList[player].droids)
 	{
 		if (psCurr.damageManager->isSelected() && (
 						psCurr.getType() == DROID_TYPE::REPAIRER ||
@@ -2584,7 +2573,7 @@ bool vtolDroidSelected(unsigned player)
 {
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "player: %" PRIu32 "", player);
 
-	for (auto& psCurr : apsDroidLists[player])
+	for (auto& psCurr : playerList[player].droids)
 	{
 		if (psCurr.damageManager->isSelected() && psCurr.isVtol())
 		{
@@ -2602,7 +2591,7 @@ bool anyDroidSelected(unsigned player)
 {
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "Invalid player (%" PRIu32 ")", player);
 
-	for (auto& psCurr : apsDroidLists[player])
+	for (auto& psCurr : playerList[player].droids)
 	{
 		if (psCurr.damageManager->isSelected()) {
 			return true;
@@ -2618,10 +2607,9 @@ bool cyborgDroidSelected(unsigned player)
 {
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "Invalid player (%" PRIu32 ")", player);
 
-	for (auto& psCurr : apsDroidLists[player])
+	for (auto& psCurr : playerList[player].droids)
 	{
-		if (psCurr.damageManager->isSelected() && isCyborg(&psCurr))
-		{
+		if (psCurr.damageManager->isSelected() && isCyborg(&psCurr)) {
 			return true;
 		}
 	}
@@ -2639,16 +2627,16 @@ void clearSelection()
 		return;
 	}
 
-	for (auto& psCurrDroid : apsDroidLists[selectedPlayer])
+	for (auto& psCurrDroid : playerList[selectedPlayer].droids)
 	{
 		psCurrDroid.damageManager->setSelected(false);
 	}
-	for (auto& psStruct : apsStructLists[selectedPlayer])
+	for (auto& psStruct : playerList[selectedPlayer].structures)
 	{
-		psStruct->damageManager->setSelected(false);
+		psStruct.damageManager->setSelected(false);
 	}
 
-	bLasSatStruct = false;
+	bLasS.Struct = false;
 	//clear the Deliv Point if one
 	for (auto psFlagPos : apsFlagPosLists[selectedPlayer])
 	{
@@ -2656,7 +2644,6 @@ void clearSelection()
 	}
 
 	intRefreshScreen();
-
 	triggerEventSelected();
 }
 

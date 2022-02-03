@@ -1139,7 +1139,7 @@ bool autoSave()
 	std::string withoutTechlevel = mapNameWithoutTechlevel(getLevelName());
 	char savefile[PATH_MAX];
 	snprintf(savefile, sizeof(savefile), "%s/%s_%s.gam", dir, withoutTechlevel.c_str(), savedate);
-	if (saveGame(savefile, GTYPE_SAVE_MIDMISSION))
+	if (saveGame(savefile, GAME_TYPE::GTYPE_SAVE_MIDMISSION))
 	{
 		console(_("AutoSave %s"), savefile);
 		return true;

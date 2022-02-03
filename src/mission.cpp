@@ -293,16 +293,16 @@ bool missionShutDown()
 		releaseAllProxDisp();
 		gwShutDown();
 
-			apsDroidLists[inc] = mission.apsDroidLists[inc];
-			mission.apsDroidLists[inc] = nullptr;
-			apsStructLists[inc] = mission.apsStructLists[inc];
-			mission.apsStructLists[inc] = nullptr;
-			apsFeatureLists[inc] = mission.apsFeatureLists[inc];
-			mission.apsFeatureLists[inc] = nullptr;
-			apsFlagPosLists[inc] = mission.apsFlagPosLists[inc];
-			mission.apsFlagPosLists[inc] = nullptr;
-			apsExtractorLists[inc] = mission.apsExtractorLists[inc];
-			mission.apsExtractorLists[inc] = nullptr;
+    apsDroidLists[inc] = mission.apsDroidLists[inc];
+    mission.apsDroidLists[inc] = nullptr;
+    apsStructLists[inc] = mission.apsStructLists[inc];
+    mission.apsStructLists[inc] = nullptr;
+    apsFeatureLists[inc] = mission.apsFeatureLists[inc];
+    mission.apsFeatureLists[inc] = nullptr;
+    apsFlagPosLists[inc] = mission.apsFlagPosLists[inc];
+    mission.apsFlagPosLists[inc] = nullptr;
+    apsExtractorLists[inc] = mission.apsExtractorLists[inc];
+    mission.apsExtractorLists[inc] = nullptr;
 
 		apsSensorList[0] = mission.apsSensorList[0];
 		apsOilList[0] = mission.apsOilList[0];

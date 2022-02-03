@@ -410,11 +410,7 @@ static bool bufferSFEATLoad(const char* fileName, void** ppData)
 {
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	calcDataHash(ini, DATA_SFEAT);
-
-	if (!loadFeatureStats(ini))
-	{
-		return false;
-	}
+	loadFeatureStats(ini);
 	// set a dummy value so the release function gets called
 	*ppData = (void*)1;
 	return true;

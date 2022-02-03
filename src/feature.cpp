@@ -40,6 +40,7 @@
 #include "objmem.h"
 #include "random.h"
 #include "scores.h"
+#include "display.h"
 
 void jsDebugMessageUpdate();
 

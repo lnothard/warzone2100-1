@@ -51,6 +51,7 @@
 #include "radar.h"
 #include "seqdisp.h"
 #include "lib/sound/track.h"
+#include "display.h"
 
 bool hostQuitConfirmation = true;
 
@@ -485,7 +486,6 @@ void intCloseInGameOptionsNoAnim()
 	resetMissionWidgets();
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 bool intCloseInGameOptions(bool bPutUpLoadSave, bool bResetMissionWidgets)
 {
 	bool keymapWasUp = isKeyMapEditorUp;

@@ -275,7 +275,7 @@ static bool intAddMessageForm(bool _playCurrent)
 
 	//add each button
 	messageID = 0;
-	for (MESSAGE* psMessage = apsMessages[selectedPlayer]; psMessage != nullptr; psMessage = psMessage->psNext)
+	for (auto& psMessage : apsMessages[selectedPlayer])
 	{
 		/*if (psMessage->type == MSG_TUTORIAL)
 		{
@@ -283,8 +283,7 @@ static bool intAddMessageForm(bool _playCurrent)
 			ASSERT( false, "Tutorial message in Intelligence screen!" );
 			continue;
 		}*/
-		if (psMessage->type == MSG_PROXIMITY)
-		{
+		if (psMessage.type == MESSAGE_TYPE::MSG_PROXIMITY) {
 			//ignore proximity messages here
 			continue;
 		}
@@ -292,12 +291,11 @@ static bool intAddMessageForm(bool _playCurrent)
 		auto button = std::make_shared<IntMessageButton>();
 		msgList->attach(button);
 		button->id = nextButtonId;
-		button->setMessage(psMessage);
+		button->setMessage(&psMessage);
 		msgList->addWidgetToLayout(button);
 
 		/* if the current message matches psSelected lock the button */
-		if (psMessage == psCurrentMsg)
-		{
+		if (&psMessage == psCurrentMsg) {
 			messageID = nextButtonId;
 			button->setState(WBUT_LOCK);
 			msgList->setCurrentPage(msgList->pages() - 1);
@@ -316,8 +314,7 @@ static bool intAddMessageForm(bool _playCurrent)
 	if (_playCurrent)
 	{
 		//is it a proximity message?
-		if (psCurrentMsg->type == MSG_PROXIMITY)
-		{
+		if (psCurrentMsg->type == MESSAGE_TYPE::MSG_PROXIMITY) {
 			//intIntelButtonPressed(true, messageID);
 		}
 		else
@@ -384,8 +381,8 @@ bool intAddMessageView(MESSAGE* psMessage)
 	messages->setBackgroundColor(WZCOL_TRANSPARENT_BOX);
 	messages->setPadding({10, 10, 10, 10});
 
-	if (psMessage->type != MSG_RESEARCH && psMessage->pViewData->type == VIEW_RPL)
-	{
+	if (psMessage->type != MESSAGE_TYPE::MSG_RESEARCH &&
+      psMessage->pViewData->type == VIEW_TYPE::VIEW_RPL) {
 		auto psViewReplay = (VIEW_REPLAY*)psMessage->pViewData->pData;
 		for (const auto& seq : psViewReplay->seqList)
 		{
@@ -403,7 +400,7 @@ bool intAddMessageView(MESSAGE* psMessage)
 		return true;
 	}
 
-	ASSERT_OR_RETURN(false, psMessage->type != MSG_PROXIMITY, "Invalid message type for research");
+	ASSERT_OR_RETURN(false, psMessage->type != MESSAGE_TYPE::MSG_PROXIMITY, "Invalid message type for research");
 
 	/*Add the PIE box*/
 	W_FORMINIT sFormInit;
@@ -481,15 +478,14 @@ static void StartMessageSequences(MESSAGE* psMessage, bool Start)
 	debug(LOG_GUI, "StartMessageSequences: start message sequence");
 
 	//should never have a proximity message here
-	if (psMessage->type == MSG_PROXIMITY)
+	if (psMessage->type == MESSAGE_TYPE::MSG_PROXIMITY)
 	{
 		return;
 	}
 
 	ASSERT_OR_RETURN(, psMessage->pViewData != nullptr, "Invalid ViewData pointer");
 
-	if (psMessage->pViewData->type == VIEW_RPL)
-	{
+	if (psMessage->pViewData->type == VIEW_TYPE::VIEW_RPL) {
 		VIEW_REPLAY* psViewReplay;
 		UDWORD Sequence;
 
@@ -523,8 +519,7 @@ static void StartMessageSequences(MESSAGE* psMessage, bool Start)
 		}
 	}
 
-	else if (psMessage->pViewData->type == VIEW_RES)
-	{
+	else if (psMessage->pViewData->type == VIEW_TYPE::VIEW_RES) {
 		VIEW_RESEARCH* psViewReplay;
 		//UDWORD Sequence;
 
@@ -546,7 +541,6 @@ button has been pressed
 */
 void intIntelButtonPressed(bool proxMsg, UDWORD id)
 {
-	MESSAGE* psMessage;
 	UDWORD currID;
 	ResearchStats* psResearch;
 
@@ -573,13 +567,10 @@ void intIntelButtonPressed(bool proxMsg, UDWORD id)
 
 	//Find the message for the new button */
 	currID = IDINTMAP_MSGSTART;
-	for (psMessage = apsMessages[selectedPlayer]; psMessage; psMessage =
-	     psMessage->psNext)
+	for (auto& psMessage : apsMessages[selectedPlayer])
 	{
-		if (psMessage->type != MSG_PROXIMITY)
-		{
-			if (currID == id)
-			{
+		if (psMessage.type != MESSAGE_TYPE::MSG_PROXIMITY) {
+			if (currID == id) {
 				break;
 			}
 			currID++;
@@ -599,7 +590,7 @@ void intIntelButtonPressed(bool proxMsg, UDWORD id)
 		      psMessage->type);
 
 		//should never have a proximity message
-		if (psMessage->type == MSG_PROXIMITY)
+		if (psMessage->type == MESSAGE_TYPE::MSG_PROXIMITY)
 		{
 			return;
 		}
@@ -607,7 +598,7 @@ void intIntelButtonPressed(bool proxMsg, UDWORD id)
 		if (psMessage->pViewData)
 		{
 			// If it's a video sequence then play it anyway
-			if (psMessage->pViewData->type == VIEW_RPL)
+			if (psMessage->pViewData->type == VIEW_TYPE::VIEW_RPL)
 			{
 				if (psMessage->pViewData)
 				{
@@ -677,25 +668,19 @@ void intIntelButtonPressed(bool proxMsg, UDWORD id)
 
 static void intCleanUpIntelMap()
 {
-	MESSAGE *psMessage, *psNext;
 	bool removedAMessage = false;
 
-	if (selectedPlayer < MAX_PLAYERS)
-	{
+	if (selectedPlayer < MAX_PLAYERS) {
 		//remove any research messages that have been read
-		for (psMessage = apsMessages[selectedPlayer]; psMessage != nullptr; psMessage =
-		     psNext)
+		for (auto& psMessage : apsMessages[selectedPlayer])
 		{
-			psNext = psMessage->psNext;
-			if (psMessage->type == MSG_RESEARCH && psMessage->read)
-			{
-				removeMessage(psMessage, selectedPlayer);
+			if (psMessage.type == MESSAGE_TYPE::MSG_RESEARCH && psMessage.read) {
+				removeMessage(&psMessage, selectedPlayer);
 				removedAMessage = true;
 			}
 		}
 	}
-	if (removedAMessage)
-	{
+	if (removedAMessage) {
 		jsDebugMessageUpdate();
 	}
 	resetIntelligencePauseState();
@@ -806,32 +791,27 @@ void IntMessageButton::display(int xOffset, int yOffset)
 	initDisplay();
 
 	//shouldn't have any proximity messages here...
-	if (psMsg->type == MSG_PROXIMITY)
-	{
+	if (psMsg->type == MESSAGE_TYPE::MSG_PROXIMITY) {
 		return;
 	}
 	//set the graphic for the button
 	switch (psMsg->type)
 	{
-	case MSG_RESEARCH:
+	case MESSAGE_TYPE::MSG_RESEARCH:
 		pResearch = getResearchForMsg(psMsg->pViewData);
 	//IMDType = IMDTYPE_RESEARCH;
 	//set the IMDType depending on what stat is associated with the research
-		if (pResearch && pResearch->psStat)
-		{
+		if (pResearch && pResearch->psStat) {
 			//we have a Stat associated with this research topic
-			if (StatIsStructure(pResearch->psStat))
-			{
+			if (StatIsStructure(pResearch->psStat.get())) {
 				//this defines how the button is drawn
-				object = ImdObject::StructureStat(pResearch->psStat);
+				object = ImdObject::StructureStat(pResearch->psStat.get());
 			}
-			else
-			{
-				int compID = StatIsComponent(pResearch->psStat);
-				if (compID != COMP_NUMCOMPONENTS)
-				{
+			else {
+				auto compID = StatIsComponent(pResearch->psStat.get());
+				if (compID != COMPONENT_TYPE::COUNT) {
 					//this defines how the button is drawn
-					object = ImdObject::Component(pResearch->psStat);
+					object = ImdObject::Component(pResearch->psStat.get());
 				}
 				else
 				{
@@ -846,11 +826,11 @@ void IntMessageButton::display(int xOffset, int yOffset)
 			object = ImdObject::Research(pResearch);
 		}
 		break;
-	case MSG_CAMPAIGN:
+  case MESSAGE_TYPE::MSG_CAMPAIGN:
 		image = Image(IntImages, IMAGE_INTEL_CAMPAIGN);
 		MovieButton = true;
 		break;
-	case MSG_MISSION:
+	case MESSAGE_TYPE::MSG_MISSION:
 		image = Image(IntImages, IMAGE_INTEL_MISSION);
 		MovieButton = true;
 		break;
@@ -888,8 +868,7 @@ void intDisplayPIEView(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 	ResearchStats* psResearch;
 
 	// Should not have any proximity messages here...
-	if (!psMessage || psMessage->type == MSG_PROXIMITY)
-	{
+	if (!psMessage || psMessage->type == MESSAGE_TYPE::MSG_PROXIMITY) {
 		return;
 	}
 
@@ -903,7 +882,7 @@ void intDisplayPIEView(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 		//moved from after close render
 		RenderWindowFrame(FRAME_NORMAL, x0, y0, width, height);
 
-		if (psMessage->pViewData->type != VIEW_RES)
+		if (psMessage->pViewData->type != VIEW_TYPE::VIEW_RES)
 		{
 			ASSERT(false, "intDisplayPIEView: Invalid message type");
 			return;
@@ -929,8 +908,7 @@ void intDisplayFLICView(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 	VIEW_RESEARCH* psViewResearch;
 
 	//shouldn't have any proximity messages here...
-	if (!psMessage || psMessage->type == MSG_PROXIMITY)
-	{
+	if (!psMessage || psMessage->type == MESSAGE_TYPE::MSG_PROXIMITY) {
 		return;
 	}
 
@@ -941,8 +919,7 @@ void intDisplayFLICView(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
 		int x1 = x0 + psWidget->width();
 		int y1 = y0 + psWidget->height();
 
-		if (psMessage->pViewData->type != VIEW_RES)
-		{
+		if (psMessage->pViewData->type != VIEW_TYPE::VIEW_RES) {
 			ASSERT(false, "intDisplayFLICView: Invalid message type");
 			return;
 		}
@@ -991,20 +968,15 @@ void addVideoText(SEQ_DISPLAY* psSeqDisplay, UDWORD sequence)
 /*sets psCurrentMsg for the Intelligence screen*/
 void setCurrentMsg()
 {
-	MESSAGE *psMsg, *psLastMsg;
-
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "Unsupported selectedPlayer: %" PRIu32 "", selectedPlayer);
+  MESSAGE* psLastMessage = nullptr;
 
-	psLastMsg = nullptr;
-	for (psMsg = apsMessages[selectedPlayer]; psMsg != nullptr; psMsg =
-	     psMsg->psNext)
-	{
-		if (psMsg->type != MSG_PROXIMITY)
-		{
-			psLastMsg = psMsg;
+	for (auto& psMsg : apsMessages[selectedPlayer]) {
+		if (psMsg.type != MESSAGE_TYPE::MSG_PROXIMITY) {
+			psLastMessage = &psMsg;
 		}
 	}
-	psCurrentMsg = psLastMsg;
+	psCurrentMsg = psLastMessage;
 }
 
 /*sets which states need to be paused when the intelligence screen is up*/
@@ -1063,7 +1035,7 @@ void displayImmediateMessage(MESSAGE* psMessage)
 	}
 	// remind the player that the message can be seen again from
 	// the intelligence screen
-	addConsoleMessage(_("New Intelligence Report"), CENTRE_JUSTIFY, SYSTEM_MESSAGE);
+	addConsoleMessage(_("New Intelligence Report"), CONSOLE_TEXT_JUSTIFICATION::CENTRE, SYSTEM_MESSAGE);
 	flashReticuleButton(IDRET_INTEL_MAP);
 }
 
@@ -1095,14 +1067,13 @@ static const char* getMessageTitle(const MESSAGE& message)
 {
 	ResearchStats* research;
 
-	switch (message.type)
-	{
-	case MSG_RESEARCH:
+	switch (message.type) {
+    case MESSAGE_TYPE::MSG_RESEARCH:
 		research = getResearchForMsg(message.pViewData);
 		return research ? _(research->name.toUtf8().c_str()) : _("Research Update");
-	case MSG_CAMPAIGN:
+	case MESSAGE_TYPE::MSG_CAMPAIGN:
 		return _("Project Goals and Updates");
-	case MSG_MISSION:
+	case MESSAGE_TYPE::MSG_MISSION:
 		return _("Current Objective");
 	default:
 		return nullptr;

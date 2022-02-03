@@ -20,10 +20,18 @@
 
 #include <cstring>
 
+#include "lib/framework/fixedpoint.h"
 #include "lib/framework/frame.h"
 #include "lib/framework/wzapp.h"
 #include "lib/framework/rational.h"
 #include "lib/framework/physfs_ext.h"
+#include "lib/ivis_opengl/piestate.h"
+#include "lib/ivis_opengl/screen.h"
+#include "lib/netplay/netplay.h"
+#include "lib/sound/audio.h"
+#include "lib/sound/audio_id.h"
+#include "lib/widget/listwidget.h"
+
 #include "objects.h"
 #include "levels.h"
 #include "basedef.h"
@@ -36,8 +44,6 @@
 #include "edit3d.h"
 #include "keybind.h"
 #include "mechanics.h"
-#include "lib/sound/audio.h"
-#include "lib/sound/audio_id.h"
 #include "lighting.h"
 #include "power.h"
 #include "hci.h"
@@ -47,22 +53,12 @@
 #include "component.h"
 #include "radar.h"
 #include "structure.h"
-// FIXME Direct iVis implementation include!
-#include "lib/ivis_opengl/screen.h"
-
 #include "cheat.h"
-#include "lib/netplay/netplay.h"
 #include "multiplay.h"
 #include "multimenu.h"
 #include "atmos.h"
-
 #include "intorder.h"
-#include "lib/widget/listwidget.h"
 #include "order.h"
-#include "lib/ivis_opengl/piestate.h"
-// FIXME Direct iVis implementation include!
-#include "lib/framework/fixedpoint.h"
-
 #include "loop.h"
 #include "mission.h"
 #include "selection.h"
@@ -75,7 +71,6 @@
 #include "game.h"
 #include "droid.h"
 #include "spectatorwidgets.h"
-
 #include "activity.h"
 #include "objmem.h"
 
@@ -210,7 +205,7 @@ void kf_DamageMe()
 	{
 		return; // no-op
 	}
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			int val = psDroid.damageManager->getHp() - ((psDroid.damageManager->getOriginalHp() / 100) * 20);
@@ -224,7 +219,7 @@ void kf_DamageMe()
 			}
 		}
 	}
-	for (auto& psStruct : apsStructLists[selectedPlayer])
+	for (auto& psStruct : playerList[selectedPlayer].structures)
 	{
 		if (psStruct->damageManager->isSelected()) {
 			int val = psStruct->damageManager->getHp() - ((structureBody(psStruct.get()) / 100) * 20);
@@ -247,7 +242,7 @@ void kf_TraceObject()
 		return; // no-op
 	}
 
-	for (auto& psCDroid : apsDroidLists[selectedPlayer])
+	for (auto& psCDroid : playerList[selectedPlayer].droids)
 	{
 		if (psCDroid.damageManager->isSelected()) {
 			objTraceEnable(psCDroid.getId());
@@ -255,7 +250,7 @@ void kf_TraceObject()
 			return;
 		}
 	}
-	for (auto& psCStruct : apsStructLists[selectedPlayer])
+	for (auto& psCStruct : playerList[selectedPlayer].structures)
 	{
 		if (psCStruct->damageManager->isSelected()) {
 			objTraceEnable(psCStruct->getId());
@@ -356,7 +351,7 @@ void kf_DebugDroidInfo()
 		return; // no-op
 	}
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			printDroidInfo(&psDroid);
@@ -381,7 +376,7 @@ void kf_CloneSelected(int limit)
 		return; // no-op
 	}
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			enumerateTemplates(selectedPlayer, [psDroid, &sTemplate](DroidTemplate* psTempl)
@@ -444,7 +439,7 @@ void kf_MakeMeHero()
 		return; // no-op
 	}
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected() && 
         psDroid.getType() == DROID_TYPE::COMMAND) {
@@ -472,7 +467,7 @@ void kf_TeachSelected()
 		return; // no-op
 	}
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			psDroid.experience += 4 * 65536;
@@ -496,14 +491,14 @@ void kf_Unselectable()
 		return; // no-op
 	}
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			psDroid.setFlag(static_cast<size_t>(OBJECT_FLAG::UNSELECTABLE), true);
 			psDroid.damageManager->setSelected(false);
 		}
 	}
-	for (auto& psStruct : apsStructLists[selectedPlayer])
+	for (auto& psStruct : playerList[selectedPlayer].structures)
 	{
 		if (psStruct->damageManager->isSelected()) {
 			psStruct->setFlag(static_cast<size_t>(OBJECT_FLAG::UNSELECTABLE), true);
@@ -884,12 +879,12 @@ void kf_MapCheck()
 
 	if (selectedPlayer >= MAX_PLAYERS) { return; }
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		psDroid.pos.z = map_Height(psDroid.getPosition().x, psDroid.getPosition().y);
 	}
 
-	for (auto& psStruct : apsStructLists[selectedPlayer])
+	for (auto& psStruct : playerList[selectedPlayer].structures)
 	{
 		alignStructure(psStruct.get());
 	}
@@ -1056,7 +1051,7 @@ void kf_SelectGrouping(UDWORD groupNumber)
 	bool Selected;
 
 	bAlreadySelected = false;
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		/* Wipe out the ones in the wrong group */
 		if (psDroid.damageManager->isSelected() && 
@@ -1828,7 +1823,7 @@ MappableFunction kf_SelectNextFactory(const STRUCTURE_TYPE factoryType, const bo
 		selNextSpecifiedBuilding(factoryType, bJumpToSelected);
 
 		//deselect factories of other types
-		for (auto& psCurrent : apsStructLists[selectedPlayer])
+		for (auto& psCurrent : playerList[selectedPlayer].structures)
 		{
 			const STRUCTURE_TYPE currentType = psCurrent->getStats()->type;
 			const bool bIsAnotherTypeOfFactory = currentType != factoryType && std::any_of(
@@ -1882,9 +1877,6 @@ MappableFunction kf_SelectNextPowerStation(const bool bJumpToSelected)
 // --------------------------------------------------------------------------
 void kf_KillEnemy()
 {
-	Droid *psCDroid, *psNDroid;
-	Structure *psCStruct, *psNStruct;
-
 #ifndef DEBUG
 	// Bail out if we're running a _true_ multiplayer game (to prevent MP cheating)
 	if (runningMultiplayer())
@@ -1903,20 +1895,17 @@ void kf_KillEnemy()
 	sendInGameSystemMessage(cmsg.c_str());
 	Cheated = true;
 
-	for (unsigned playerId = 0; playerId < MAX_PLAYERS; playerId++)
+	for (auto playerId = 0; playerId < MAX_PLAYERS; playerId++)
 	{
-		if (playerId != selectedPlayer)
-		{
+		if (playerId != selectedPlayer) {
 			// wipe out all the droids
-			for (psCDroid = apsDroidLists[playerId]; psCDroid; psCDroid = psNDroid)
+			for (auto& psCDroid : playerList[playerId].droids)
 			{
-				psNDroid = psCDroid->psNext;
 				SendDestroyDroid(psCDroid);
 			}
 			// wipe out all their structures
-			for (psCStruct = apsStructLists[playerId]; psCStruct; psCStruct = psNStruct)
+			for (auto& psCStruct : playerList[playerId].structures)
 			{
-				psNStruct = psCStruct->psNext;
 				SendDestroyStructure(psCStruct);
 			}
 		}
@@ -1926,9 +1915,6 @@ void kf_KillEnemy()
 // kill all the selected objects
 void kf_KillSelected()
 {
-	Droid *psCDroid, *psNDroid;
-	Structure *psCStruct, *psNStruct;
-
 	/* not supported if a spectator */
 	SPECTATOR_NO_OP();
 
@@ -1949,9 +1935,8 @@ void kf_KillSelected()
 	audio_PlayTrack(ID_SOUND_COLL_DIE);
 	Cheated = true;
 
-	for (psCDroid = apsDroidLists[selectedPlayer]; psCDroid; psCDroid = psNDroid)
+	for (auto& psCDroid : playerList[selectedPlayer].droids)
 	{
-		psNDroid = psCDroid->psNext;
 		if (psCDroid->damageManager->isSelected())
 		{
 			if (!bMultiMessages)
@@ -1964,9 +1949,8 @@ void kf_KillSelected()
 			}
 		}
 	}
-	for (psCStruct = apsStructLists[selectedPlayer]; psCStruct; psCStruct = psNStruct)
+	for (auto& psCStruct : playerList[selectedPlayer].structures)
 	{
-		psNStruct = psCStruct->psNext;
 		if (psCStruct->damageManager->isSelected())
 		{
 			if (!bMultiMessages)
@@ -2080,7 +2064,7 @@ MappableFunction kf_OrderDroid(ORDER_TYPE order)
 		/* not supported if a spectator */
 		SPECTATOR_NO_OP();
 
-		for (auto& psDroid : apsDroidLists[selectedPlayer])
+		for (auto& psDroid : playerList[selectedPlayer].droids)
 		{
 			if (psDroid.damageManager->isSelected()) {
 				orderDroid(&psDroid, order, ModeQueue);
@@ -2116,7 +2100,7 @@ static void kfsf_SetSelectedDroidsState(SECONDARY_ORDER sec, SECONDARY_STATE sta
 	// _not_ be disallowed in multiplayer games.
 
 	// This code is similar to SetSecondaryState() in intorder.cpp. Unfortunately, it seems hard to un-duplicate the code.
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		// Only set the state if it's not a transporter.
 		if (psDroid.damageManager->isSelected() && !isTransporter(*psDroid))
@@ -2134,7 +2118,7 @@ void kf_TriggerRayCast()
 	SPECTATOR_NO_OP();
 
 	bool found = false;
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			found = true;
@@ -2160,7 +2144,7 @@ void kf_CentreOnBase()
 	SPECTATOR_NO_OP();
 
 	/* Got through our buildings */
-	for (auto& psStruct : apsStructLists[selectedPlayer])
+	for (auto& psStruct : playerList[selectedPlayer].structures)
   {
 		/* Have we got a HQ? */
 		if (psStruct->getStats()->type == STRUCTURE_TYPE::HQ)
@@ -2213,7 +2197,7 @@ void kf_RightOrderMenu()
 	/* not supported if a spectator */
 	SPECTATOR_NO_OP();
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			bFound = true;
@@ -2562,7 +2546,7 @@ void kf_QuickSave()
 	{
 		deleteSaveGame(quickSaveFolder);
 	}
-	if (saveGame(filename, GTYPE_SAVE_MIDMISSION)) // still expects a .gam filename... TODO: FIX
+	if (saveGame(filename, GAME_TYPE::GTYPE_SAVE_MIDMISSION)) // still expects a .gam filename... TODO: FIX
 	{
 		console(_("QuickSave"));
 	}

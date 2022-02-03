@@ -262,15 +262,15 @@ static void resetMultiVisibility(UDWORD player)
 		if (owned != player) // done reset own stuff..
 		{
 			//droids
-			for (auto& pDroid : apsDroidLists[owned])
+			for (auto& pDroid : playerList[owned].droids)
 			{
 				pDroid.setVisibleToPlayer(player, false);
 			}
 
 			//structures
-			for (auto& pStruct : apsStructLists[owned])
+			for (auto& pStruct : playerList[owned].structures)
 			{
-				pStruct->setVisibleToPlayer(player, false);
+				pStruct.setVisibleToPlayer(player, false);
 			}
 		}
 	}

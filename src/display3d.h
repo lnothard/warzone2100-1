@@ -21,13 +21,26 @@
 #ifndef __INCLUDED_SRC_DISPLAY3D_H__
 #define __INCLUDED_SRC_DISPLAY3D_H__
 
-#include "lib/ivis_opengl/pietypes.h"
-#include "lib/ivis_opengl/piedef.h"
+#include <cstdint>
 
-#include "display.h"
-#include "message.h"
-#include "objectdef.h"
-#include "projectile.h"
+#include <glm/fwd.hpp>
+#include "lib/framework/fixedpoint.h"
+#include "lib/framework/vector.h"
+#include "lib/ivis_opengl/pietypes.h"
+
+#include "console.h"
+#include "hci.h"
+
+class BaseObject;
+class Droid;
+class Feature;
+class FlagPosition;
+class iIMDShape;
+class Projectile;
+class PROXIMITY_DISPLAY;
+class Structure;
+class StructureStats;
+
 
 static constexpr auto TILE_WIDTH = 128;
 static constexpr auto TILE_HEIGHT = 128;
@@ -90,13 +103,13 @@ extern bool radarPermitted;
 bool radarVisible();
 
 extern bool rangeOnScreen; // Added to get sensor/gun range on screen.  -Q 5-10-05
-void setViewPos(UDWORD x, UDWORD y, bool Pan);
+void setViewPos(unsigned x, unsigned y, bool Pan);
 Vector2i getPlayerPos();
-void setPlayerPos(SDWORD x, SDWORD y);
+void setPlayerPos(int x, int y);
 void disp3d_setView(iView* newView);
 void disp3d_oldView(); // for save games <= 10
 void disp3d_getView(iView* newView);
-void screenCoordToWorld(const Vector2i, Vector2i&, SDWORD&, SDWORD&);
+void screenCoordToWorld(Vector2i, Vector2i&, int&, int&);
 void draw3DScene();
 void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix);
 void renderFeature(Feature* psFeature, const glm::mat4& viewMatrix);
@@ -111,7 +124,7 @@ void drawDroidSelection(Droid* psDroid, bool drawBox);
 bool doWeDrawProximitys();
 void setProximityDraw(bool val);
 
-bool clipXY(SDWORD x, SDWORD y);
+bool clipXY(int x, int y);
 inline bool clipShapeOnScreen(const iIMDShape* pIMD, const glm::mat4& viewModelMatrix, int overdrawScreenPoints = 10);
 bool clipDroidOnScreen(Droid* psDroid, const glm::mat4& viewModelMatrix, int overdrawScreenPoints = 25);
 bool clipStructureOnScreen(Structure* psStructure, const glm::mat4& viewModelMatrix, int overdrawScreenPoints = 0);
@@ -121,17 +134,17 @@ void shutdown3DView();
 extern iView playerPos;
 extern bool selectAttempt;
 
-extern SDWORD scrollSpeed;
+extern int scrollSpeed;
 void assignSensorTarget(BaseObject* psObj);
 void assignDestTarget();
-UDWORD getWaterTileNum();
-void setUnderwaterTile(UDWORD num);
-UDWORD getRubbleTileNum();
-void setRubbleTile(UDWORD num);
+unsigned getWaterTileNum();
+void setUnderwaterTile(unsigned num);
+unsigned getRubbleTileNum();
+void setRubbleTile(unsigned num);
 
 Structure* getTileBlueprintStructure(int mapX, int mapY);
 ///< Gets the blueprint at those coordinates, if any. Previous return value becomes invalid.
-StructureStats const* getTileBlueprintStats(int mapX, int mapY);
+StructureStats getTileBlueprintStats(int mapX, int mapY);
 ///< Gets the structure stats of the blueprint at those coordinates, if any.
 bool anyBlueprintTooClose(StructureStats const* stats, Vector2i pos, uint16_t dir);
 ///< Checks if any blueprint is too close to the given structure.
@@ -140,7 +153,7 @@ void clearBlueprints();
 void display3dScreenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
                                   unsigned int newHeight);
 
-extern SDWORD mouseTileX, mouseTileY;
+extern int mouseTileX, mouseTileY;
 extern Vector2i mousePos;
 
 extern bool bRender3DOnly;
@@ -149,21 +162,21 @@ extern bool showPath;
 extern const Vector2i visibleTiles;
 
 /*returns the graphic ID for a droid rank*/
-UDWORD getDroidRankGraphic(Droid* psDroid);
+unsigned getDroidRankGraphic(Droid* psDroid);
 
 void setSkyBox(const char* page, float mywind, float myscale);
 
 #define	BASE_MUZZLE_FLASH_DURATION	(GAME_TICKS_PER_SEC/10)
 #define	EFFECT_MUZZLE_ADDITIVE		128
 
-extern UWORD barMode;
+extern uint16_t barMode;
 
 extern bool CauseCrash;
 
 extern bool tuiTargetOrigin;
 
 /// Draws using the animation systems. Usually want to use in a while loop to get all model levels.
-bool drawShape(PlayerOwnedObject * psObj, iIMDShape* strImd, int colour, PIELIGHT buildingBrightness, int pieFlag,
+bool drawShape(BaseObject* psObj, iIMDShape* strImd, int colour, PIELIGHT buildingBrightness, int pieFlag,
                int pieFlagData, const glm::mat4& viewMatrix);
 
 int calculateCameraHeightAt(int tileX, int tileY);

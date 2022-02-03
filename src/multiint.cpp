@@ -1553,11 +1553,11 @@ static void addGameOptions()
 	allianceChoice->setLabel(_("Alliances"));
 	addMultiButton(allianceChoice, ALLIANCE_TYPE::FFA, Image(FrontImages, IMAGE_NOALLI), Image(FrontImages, IMAGE_NOALLI_HI),
 	               _("No Alliances"));
-	addMultiButton(allianceChoice, ALLIANCES, Image(FrontImages, IMAGE_ALLI), Image(FrontImages, IMAGE_ALLI_HI),
+	addMultiButton(allianceChoice, ALLIANCE_TYPE::ALLIANCES, Image(FrontImages, IMAGE_ALLI), Image(FrontImages, IMAGE_ALLI_HI),
 	               _("Allow Alliances"));
-	addMultiButton(allianceChoice, ALLIANCES_UNSHARED, Image(FrontImages, IMAGE_ALLI_UNSHARED),
+	addMultiButton(allianceChoice, ALLIANCE_TYPE::ALLIANCES_UNSHARED, Image(FrontImages, IMAGE_ALLI_UNSHARED),
 	               Image(FrontImages, IMAGE_ALLI_UNSHARED_HI), _("Locked Teams, No Shared Research"));
-	addMultiButton(allianceChoice, ALLIANCES_TEAMS, Image(FrontImages, IMAGE_ALLI_TEAMS),
+	addMultiButton(allianceChoice, ALLIANCE_TYPE::ALLIANCES_TEAMS, Image(FrontImages, IMAGE_ALLI_TEAMS),
 	               Image(FrontImages, IMAGE_ALLI_TEAMS_HI), _("Locked Teams"));
 	allianceChoice->enable(!locked.alliances);
 	optionsList->addWidgetToLayout(allianceChoice);
@@ -5721,7 +5721,7 @@ static void loadMapChallengeSettings(WzConfig& ini)
 				game.maxPlayers = std::min(std::max((uint8_t)1u, configuredMaxPlayers), game.maxPlayers);
 			}
 			game.scavengers = ini.value("scavengers", game.scavengers).toInt();
-			game.alliance = ini.value("alliances", ALLIANCES_TEAMS).toInt();
+			game.alliance = ini.value("alliances", ALLIANCE_TYPE::ALLIANCES_TEAMS).toInt();
 			game.power = ini.value("powerLevel", game.power).toInt();
 			game.base = ini.value("bases", game.base + 1).toInt() - 1; // count from 1 like the humans do
 			sstrcpy(game.name, ini.value("name").toWzString().toUtf8().c_str());
@@ -8729,16 +8729,16 @@ size_t WZGameReplayOptionsHandler::desiredBufferSize() const
 	auto currentGameMode = ActivityManager::instance().getCurrentGameMode();
 	switch (currentGameMode)
 	{
-	case ActivitySink::GameMode::MENUS:
+	case GAME_MODE::MENUS:
 		// should not happen
 		break;
-	case ActivitySink::GameMode::CAMPAIGN:
-	case ActivitySink::GameMode::CHALLENGE:
+	case GAME_MODE::CAMPAIGN:
+	case GAME_MODE::CHALLENGE:
 		// replays not currently supported
 		break;
-	case ActivitySink::GameMode::SKIRMISH:
+	case GAME_MODE::SKIRMISH:
 		return 0; // use default
-	case ActivitySink::GameMode::MULTIPLAYER:
+	case GAME_MODE::MULTIPLAYER:
 		// big games need a big buffer
 		return std::numeric_limits<size_t>::max();
 	default:

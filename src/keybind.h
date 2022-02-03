@@ -21,9 +21,9 @@
 #ifndef __INCLUDED_SRC_KEYBIND_H__
 #define __INCLUDED_SRC_KEYBIND_H__
 
-#include "console.h"
-#include "selection.h"
 #include "lib/framework/fixedpoint.h"
+
+#include "selection.h"
 
 #define	MAP_ZOOM_RATE_MAX	(1000)
 #define	MAP_ZOOM_RATE_MIN	(200)
@@ -114,7 +114,6 @@ MappableFunction kf_SetDroid(SECONDARY_ORDER order, SECONDARY_STATE state);
 MappableFunction kf_OrderDroid(Order order);
 
 void kf_CentreOnBase();
-void kf_ToggleFog();
 void kf_MoveToLastMessagePos();
 void kf_RightOrderMenu();
 

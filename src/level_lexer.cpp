@@ -64,7 +64,6 @@
 #endif
 
 /* First, we deal with  platform-specific or compiler-specific issues. */
-#include "lib/framework/frame.h"
 /* begin standard C headers. */
 #include <cstdio>
 #include <cstring>

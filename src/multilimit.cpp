@@ -385,10 +385,9 @@ bool applyLimitSet()
 				{
 					while (asStructureStats[id].curCount[player] > asStructureStats[id].upgraded_stats[player].limit)
 					{
-						for (Structure* psStruct = apsStructLists[player]; psStruct; psStruct = psStruct->psNext)
+						for (auto& psStruct : playerList[player].structures)
 						{
-							if (psStruct->pStructureType->type == asStructureStats[id].type)
-							{
+							if (psStruct.getStats()->type == asStructureStats[id].type) {
 								removeStruct(psStruct, true);
 								break;
 							}

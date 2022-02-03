@@ -41,6 +41,7 @@
 #include "lib/widget/scrollablelist.h"
 #include <chrono>
 #include <memory>
+#include "console.h"
 
 
 #define W_TRACK_ROW_PADDING 5

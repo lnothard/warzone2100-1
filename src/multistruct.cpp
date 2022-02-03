@@ -124,8 +124,8 @@ bool recvBuildFinished(NETQUEUE queue)
 		if (asStructureStats[typeindex].type == psStruct->getStats()->type)
 		{
 			// Correct type, correct location, just rename the id's to sync it.. (urgh)
-			psStruct->id = structId;
-			psStruct->status = SS_BUILT;
+			psStruct->setId(structId);
+			psStruct->status = STRUCTURE_STATE::BUILT;
 			buildingComplete(psStruct);
 			debug(LOG_SYNC, "Created modified building %u for player %u", psStruct->getId(), player);
 #if defined (DEBUG)
@@ -139,10 +139,10 @@ bool recvBuildFinished(NETQUEUE queue)
 
 	if (psStruct)
 	{
-		psStruct->id = structId;
-		psStruct->status = SS_BUILT;
+		psStruct->setId(structId);
+		psStruct->status = STRUCTURE_STATE::BUILT;
 		buildingComplete(psStruct);
-		debug(LOG_SYNC, "Huge synch error, forced to create building %u for player %u", psStruct->id, player);
+		debug(LOG_SYNC, "Huge synch error, forced to create building %u for player %u", psStruct->getId(), player);
 #if defined (DEBUG)
 		NETlogEntry("had to plonk down a building", SYNC_FLAG, player);
 #endif
@@ -244,7 +244,7 @@ bool recvLasSat(NETQUEUE queue)
 	if (psStruct && psObj && psStruct->getStats()->psWeapStat[0]->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT)
 	{
 		// Lassats have just one weapon
-		unsigned firePause = weaponFirePause(&asWeaponStats[psStruct->asWeaps[0].nStat], player);
+		unsigned firePause = weaponFirePause(psStruct->weaponManager->weapons[0].stats.get(), player);
 		unsigned damLevel = PERCENT(psStruct->damageManager->getHp(), structureBody(psStruct));
 
 		if (damLevel < HEAVY_DAMAGE_LEVEL)
@@ -252,16 +252,15 @@ bool recvLasSat(NETQUEUE queue)
 			firePause += firePause;
 		}
 
-		if (isHumanPlayer(player) && gameTime - psStruct->asWeaps[0].timeLastFired <= firePause)
-		{
+		if (isHumanPlayer(player) && gameTime - psStruct->weaponManager->weapons[0].timeLastFired <= firePause) {
 			/* Too soon to fire again */
 			return true; // Return value meaningless and ignored.
 		}
 
 		// Give enemy no quarter, unleash the lasat
-		proj_SendProjectile(&psStruct->asWeaps[0], nullptr, player, psObj->getPosition(), psObj, true, 0);
-		psStruct->asWeaps[0].timeLastFired = gameTime;
-		psStruct->asWeaps[0].ammo = 1; // abducting this field for keeping track of triggers
+		proj_SendProjectile(&psStruct->weaponManager->weapons[0], nullptr, player, psObj->getPosition(), psObj, true, 0);
+		psStruct->weaponManager->weapons[0].timeLastFired = gameTime;
+		psStruct->weaponManager->weapons[0].ammo = 1; // abducting this field for keeping track of triggers
 
 		// Play 5 second countdown message
 		audio_QueueTrackPos(ID_SOUND_LAS_SAT_COUNTDOWN, psObj->getPosition().x, psObj->getPosition().y, psObj->getPosition().z);

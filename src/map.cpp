@@ -1949,7 +1949,7 @@ static void threatUpdate(unsigned player)
 			continue;
 		}
 
-		for (auto& psDroid : apsDroidLists[i])
+		for (auto& psDroid : playerList[i].droids)
 		{
       using enum DROID_TYPE;
 			uint8_t mode = 0;
@@ -1972,21 +1972,21 @@ static void threatUpdate(unsigned player)
 			}
 		}
 
-		for (auto& psStruct : apsStructLists[i])
+		for (auto& psStruct : playerList[i].structures)
 		{
 			uint8_t mode = 0;
 
-			for (auto weapon = 0; weapon < numWeapons(*psStruct); weapon++)
+			for (auto weapon = 0; weapon < numWeapons(psStruct); weapon++)
 			{
-				mode |= psStruct->getWeapon(weapon)->getStats()->surfaceToAir;
+				mode |= psStruct.weaponManager->weapons[weapon].stats->surfaceToAir;
 			}
-			if (psStruct->getStats()->sensor_stats &&
-          psStruct->getStats()->sensor_stats->location == LOC::TURRET) {
+			if (psStruct.getStats()->sensor_stats &&
+          psStruct.getStats()->sensor_stats->location == LOC::TURRET) {
         // special treatment for sensor turrets
 				mode |= SHOOT_ON_GROUND; // assume it only shoots at ground targets for now
 			}
 			if (mode > 0) {
-				threatUpdateTarget(player, psStruct.get(),
+				threatUpdateTarget(player, &psStruct,
                            mode & SHOOT_ON_GROUND,
                            mode & SHOOT_IN_AIR);
 			}

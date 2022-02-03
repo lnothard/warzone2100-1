@@ -97,6 +97,7 @@
 #include "seqdisp.h"
 #include "version.h"
 #include "visibility.h"
+#include "lib/sound/track.h"
 
 #include <algorithm>
 #include <unordered_map>
@@ -1563,7 +1564,8 @@ bool stageTwoShutDown()
 
 bool stageThreeInitialise()
 {
-	bool fromSave = (getSaveGameType() == GTYPE_SAVE_START || getSaveGameType() == GTYPE_SAVE_MIDMISSION);
+	bool fromSave = getSaveGameType() == GAME_TYPE::GTYPE_SAVE_START ||
+                  getSaveGameType() == GAME_TYPE::GTYPE_SAVE_MIDMISSION;
 
 	debug(LOG_WZ, "== stageThreeInitialise ==");
 
@@ -1603,7 +1605,8 @@ bool stageThreeInitialise()
 
 	preProcessVisibility();
 
-	prepareScripts(getLevelLoadType() == GTYPE_SAVE_MIDMISSION || getLevelLoadType() == GTYPE_SAVE_START);
+	prepareScripts(getLevelLoadType() == (int)GAME_TYPE::GTYPE_SAVE_MIDMISSION ||
+                 getLevelLoadType() == (int)GAME_TYPE::GTYPE_SAVE_START);
 
 	if (!fpathInitialise())
 	{
@@ -1635,8 +1638,8 @@ bool stageThreeInitialise()
 
 	countUpdate();
 
-	if (getLevelLoadType() == GTYPE_SAVE_MIDMISSION || getLevelLoadType() == GTYPE_SAVE_START)
-	{
+	if (getLevelLoadType() == (int)GAME_TYPE::GTYPE_SAVE_MIDMISSION ||
+      getLevelLoadType() == (int)GAME_TYPE::GTYPE_SAVE_START) {
 		triggerEvent(TRIGGER_GAME_LOADED);
 	}
 	else

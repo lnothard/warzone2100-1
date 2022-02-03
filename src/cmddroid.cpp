@@ -47,19 +47,18 @@ static constexpr auto MAX_COMMAND_LIMIT_MESSAGE_PAUSE = 10000;
  */
 bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 {
-	std::unique_ptr<Group> psGroup;
 	bool addedToGroup = false;
 
 	ASSERT_OR_RETURN(false, psCommander != nullptr, "psCommander is null?");
 	ASSERT_OR_RETURN(false, psDroid != nullptr, "psDroid is null?");
 
-	if (psCommander->group == nullptr) {
-		psGroup = grpCreate(-1);
-		psGroup->add(psCommander);
+	if (psCommander->getGroup() == nullptr) {
+		auto psGroup = addGroup(-1);
+		psGroup->addDroid(psCommander);
 		psDroid->group = UBYTE_MAX;
 	}
 
-	if (psCommander->getGroup()->getMembers().size() < cmdDroidMaxGroup(psCommander)) {
+	if (psCommander->getGroup()->getMembers()->size() < cmdDroidMaxGroup(psCommander)) {
 		addedToGroup = true;
 
 		psCommander->group->add(psDroid);
@@ -116,7 +115,7 @@ long get_commander_index(Droid const& commander)
 {
   assert(commander.getType() == DROID_TYPE::COMMAND);
 
-  auto const& droids = apsDroidLists[commander.playerManager->getPlayer()];
+  auto const& droids = playerList[commander.playerManager->getPlayer()].droids;
   return std::find_if(droids.begin(), droids.end(),
                       [&commander](auto const& droid) {
       return droid.getType() == DROID_TYPE::COMMAND &&
@@ -127,7 +126,7 @@ long get_commander_index(Droid const& commander)
 /** This function returns the maximum group size of the command droid.*/
 unsigned cmdDroidMaxGroup(Droid const* psCommander)
 {
-	const auto psStats = dynamic_cast<CommanderStats const*>(psCommander->getComponent("brain"));
+	const auto psStats = dynamic_cast<CommanderStats const*>(psCommander->getComponent(COMPONENT_TYPE::BRAIN));
 	return getDroidLevel(psCommander) * psStats->upgraded[psCommander->playerManager->getPlayer()].maxDroidsMult
          + psStats->upgraded[psCommander->playerManager->getPlayer()].maxDroids;
 }
@@ -138,7 +137,7 @@ void cmdDroidUpdateExperience(Droid *psShooter, unsigned experienceInc)
 	ASSERT_OR_RETURN(, psShooter != nullptr, "invalid Unit pointer");
 
 	if (hasCommander(psShooter)) {
-		auto psCommander = psShooter->getGroup()->getCommander();
+		auto psCommander = psShooter->getCommander();
 		psCommander->experience += MIN(experienceInc, UINT32_MAX - psCommander->experience);
 	}
 }

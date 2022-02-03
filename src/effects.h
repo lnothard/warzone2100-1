@@ -174,6 +174,6 @@ bool readFXData(const char* fileName);
 bool writeFXData(const char* fileName);
 void effectSetSize(UDWORD size);
 void effectSetLandLightSpec(LAND_LIGHT_SPEC spec);
-void SetEffectForPlayer(uint8_t player);
+void SetEffectForPlayer(unsigned player);
 
 #endif // __INCLUDED_SRC_EFFECTS_H__

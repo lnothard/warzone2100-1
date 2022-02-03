@@ -25,74 +25,44 @@
  * Originally by Alex McLean & Jeremy Sallis, Pumpkin Studios, EIDOS INTERACTIVE
  */
 
-#include "lib/framework/frame.h"
 #include "lib/framework/math_ext.h"
-#include "lib/framework/stdio_ext.h"
-
-/* Includes direct access to render library */
-#include "lib/ivis_opengl/pieblitfunc.h"
-#include "lib/ivis_opengl/pietypes.h"
-#include "lib/ivis_opengl/piestate.h"
-#include "lib/ivis_opengl/piepalette.h"
+#include "lib/ivis_opengl/imd.h"
+#include "lib/ivis_opengl/piefunc.h"
 #include "lib/ivis_opengl/piematrix.h"
 #include "lib/ivis_opengl/piemode.h"
-#include "lib/framework/fixedpoint.h"
-#include "lib/ivis_opengl/piefunc.h"
-#include "lib/ivis_opengl/screen.h"
-#include "lib/ivis_opengl/imd.h"
-#include "lib/ivis_opengl/pieclip.h"
-
-#include "lib/gamelib/gtime.h"
-#include "lib/sound/audio.h"
-#include "lib/sound/audio_id.h"
+#include "lib/ivis_opengl/piestate.h"
 #include "lib/netplay/netplay.h"
+#include "lib/sound/audio.h"
+#include "lib/widget/widget.h"
 
-#ifndef GLM_ENABLE_EXPERIMENTAL
-#define GLM_ENABLE_EXPERIMENTAL
-#endif
-#include <memory>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtx/matrix_interpolation.hpp>
-
-#include "loop.h"
-#include "atmos.h"
-#include "map.h"
-#include "droid.h"
-#include "move.h"
-#include "displaydef.h"
-#include "group.h"
-#include "visibility.h"
-#include "geometry.h"
-#include "messagedef.h"
-#include "miscimd.h"
-#include "effects.h"
-#include "edit3d.h"
-#include "feature.h"
-#include "hci.h"
-#include "display.h"
-#include "intdisplay.h"
-#include "radar.h"
-#include "display3d.h"
-#include "lighting.h"
-#include "console.h"
-#include "projectile.h"
-#include "bucket3d.h"
-#include "message.h"
-#include "component.h"
-#include "warcam.h"
-#include "order.h"
-#include "scores.h"
-#include "multiplay.h"
-#include "cmddroid.h"
-#include "terrain.h"
-#include "warzoneconfig.h"
-#include "multistat.h"
 #include "animation.h"
-#include "faction.h"
-#include "objmem.h"
-#include "intfac.h"
-#include "intimage.h"
+#include "atmos.h"
 #include "baseobject.h"
+#include "bucket3d.h"
+#include "component.h"
+#include "display.h"
+#include "display3d.h"
+#include "displaydef.h"
+#include "edit3d.h"
+#include "effects.h"
+#include "faction.h"
+#include "geometry.h"
+#include "intimage.h"
+#include "levels.h"
+#include "lighting.h"
+#include "loop.h"
+#include "miscimd.h"
+#include "move.h"
+#include "multiplay.h"
+#include "multistat.h"
+#include "projectile.h"
+#include "radar.h"
+#include "scores.h"
+#include "terrain.h"
+#include "warcam.h"
+#include "warzoneconfig.h"
+#include "cmddroid.h"
+
 
 static void displayDelivPoints(const glm::mat4& viewMatrix);
 static void displayProximityMsgs(const glm::mat4& viewMatrix);
@@ -292,7 +262,7 @@ static UDWORD destTileX = 0, destTileY = 0;
 struct Blueprint
 {
 	Blueprint()
-		: stats(nullptr)
+		: stats()
 		  , pos({0, 0, 0})
 		  , dir(0)
 		  , index(0)
@@ -303,7 +273,7 @@ struct Blueprint
 
 	Blueprint(StructureStats const* stats, Vector3i pos, uint16_t dir, 
             unsigned index, STRUCTURE_STATE state, unsigned player)
-		: stats(stats)
+		: stats()
 		  , pos(pos)
 		  , dir(dir)
 		  , index(index)
@@ -494,9 +464,9 @@ static Blueprint getTileBlueprint(int mapX, int mapY)
 {
 	Vector2i mouse(world_coord(mapX) + TILE_UNITS / 2, world_coord(mapY) + TILE_UNITS / 2);
 
-	for (auto& blueprint : blueprints)
+	for (auto const& blueprint : blueprints)
 	{
-		const Vector2i size = blueprint.stats.size(blueprint.dir) * TILE_UNITS;
+		const auto size = blueprint.stats.size(blueprint.dir) * TILE_UNITS;
 		if (abs(mouse.x - blueprint.pos.x) < size.x / 2 && abs(mouse.y - blueprint.pos.y) < size.y / 2) {
 			return blueprint;
 		}
@@ -517,7 +487,7 @@ Structure* getTileBlueprintStructure(int mapX, int mapY)
 	return nullptr;
 }
 
-StructureStats const* getTileBlueprintStats(int mapX, int mapY)
+StructureStats getTileBlueprintStats(int mapX, int mapY)
 {
 	return getTileBlueprint(mapX, mapY).stats;
 }
@@ -599,7 +569,7 @@ static void showDroidPaths()
 		return; // no-op for now
 	}
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected() && 
         psDroid.getMovementData()->status != MOVE_STATUS::INACTIVE) {
@@ -922,7 +892,7 @@ void draw3DScene()
 	{
 		int visibleDroids = 0;
 		int undrawnDroids = 0;
-		for (auto& psDroid : apsDroidLists[selectedPlayer])
+		for (auto& psDroid : playerList[selectedPlayer].droids)
 		{
 			if (psDroid.getDisplayData()->frame_number != currentGameFrame) {
 				++undrawnDroids;
@@ -1455,22 +1425,18 @@ bool clipDroidOnScreen(Droid* psDroid, const glm::mat4& viewModelMatrix, int ove
 {
 	/* Get its absolute dimensions */
 	// NOTE: This only takes into account body, but is "good enough"
-	const auto psBStats = asBodyStats + psDroid->asBits[COMP_BODY];
-  
-	const auto pIMD = (psBStats != nullptr)
-          ? psBStats->pIMD.get() 
-          : nullptr;
-
+	const auto psBStats = psDroid->getComponent(COMPONENT_TYPE::BODY);
+	const auto pIMD = (psBStats != nullptr) ? psBStats->pIMD.get() : nullptr;
 	return clipShapeOnScreen(pIMD, viewModelMatrix, overdrawScreenPoints);
 }
 
-bool clipStructureOnScreen(Structure* psStructure)
+bool clipStructureOnScreen(Structure const* psStructure)
 {
-	StructureBounds b = getStructureBounds(psStructure);
+	auto const& b = getStructureBounds(psStructure);
 	assert(b.size.x != 0 && b.size.y != 0);
-	for (int breadth = 0; breadth < b.size.y + 2; ++breadth) // +2 to make room for shadows on the terrain
+	for (auto breadth = 0; breadth < b.size.y + 2; ++breadth) // +2 to make room for shadows on the terrain
 	{
-		for (int width = 0; width < b.size.x + 2; ++width)
+		for (auto width = 0; width < b.size.x + 2; ++width)
 		{
 			if (clipXY(world_coord(b.map.x + width),
                  world_coord(b.map.y + breadth))) {
@@ -1519,17 +1485,17 @@ static void display3DProjectiles(const glm::mat4& viewMatrix)
 			   whatever for Y (height) coord - arcing ?
 			*/
 			/* these guys get drawn last */
-			if (psObj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::ROCKET ||
-          psObj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::MISSILE ||
-          psObj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND ||
-          psObj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::SLOW_MISSILE ||
-          psObj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::SLOW_ROCKET ||
-          psObj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::ENERGY ||
-          psObj->weaponStats->weaponSubClass == WEAPON_SUBCLASS::EMP) {
+			if (psObj->weaponManager->weapons[0].stats->weaponSubClass == WEAPON_SUBCLASS::ROCKET ||
+          psObj->weaponManager->weapons[0].stats->weaponSubClass == WEAPON_SUBCLASS::MISSILE ||
+          psObj->weaponManager->weapons[0].stats->weaponSubClass == WEAPON_SUBCLASS::COMMAND ||
+          psObj->weaponManager->weapons[0].stats->weaponSubClass == WEAPON_SUBCLASS::SLOW_MISSILE ||
+          psObj->weaponManager->weapons[0].stats->weaponSubClass == WEAPON_SUBCLASS::SLOW_ROCKET ||
+          psObj->weaponManager->weapons[0].stats->weaponSubClass == WEAPON_SUBCLASS::ENERGY ||
+          psObj->weaponManager->weapons[0].stats->weaponSubClass == WEAPON_SUBCLASS::EMP) {
 				bucketAddTypeToList(RENDER_TYPE::RENDER_PROJECTILE, psObj, viewMatrix);
 			}
 			else {
-				::renderProjectile(psObj, viewMatrix);
+				renderProjectile(psObj, viewMatrix);
 			}
 		}
 		psObj = proj_GetNext();
@@ -1539,18 +1505,17 @@ static void display3DProjectiles(const glm::mat4& viewMatrix)
 /// Draw a projectile to the screen
 void renderProjectile(Projectile* psCurr, const glm::mat4& viewMatrix)
 {
-	WeaponStats* psStats;
 	Vector3i dv;
 	iIMDShape* pIMD;
 	Spacetime st;
 
-	psStats = psCurr->weaponStats.get();
+	auto psStats = psCurr->getWeaponStats();
 	/* Reject flame or command since they have interim drawn fx */
 	if (psStats->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
-		psStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND || // || psStats->weaponSubClass == WEAPON_SUBCLASS::ENERGY)
-		psStats->weaponSubClass == WEAPON_SUBCLASS::ELECTRONIC ||
-		psStats->weaponSubClass == WEAPON_SUBCLASS::EMP ||
-		(bMultiPlayer && psStats->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT)) {
+      psStats->weaponSubClass == WEAPON_SUBCLASS::COMMAND ||// || psStats->weaponSubClass == WEAPON_SUBCLASS::ENERGY)
+      psStats->weaponSubClass == WEAPON_SUBCLASS::ELECTRONIC ||
+      psStats->weaponSubClass == WEAPON_SUBCLASS::EMP ||
+      bMultiPlayer && psStats->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT) {
 		// we don't do projectiles from these guys, cos there's an effect instead
 		return;
 	}
@@ -1680,7 +1645,7 @@ static void displayStaticObjects(const glm::mat4& viewMatrix)
 		for (; list != nullptr; list = list->psNext)
 		{
 			/* Worth rendering the structure? */
-			if (list->type != OBJ_STRUCTURE ||
+			if (getObjectType(list) != OBJECT_TYPE::STRUCTURE ||
           (list->damageManager->isDead() != 0 &&
            list->damageManager->isDead() < graphicsTime)) {
 				continue;
@@ -1840,18 +1805,24 @@ void displayBlueprints(const glm::mat4& viewMatrix)
 					}
 
 				if (!playerBlueprintX->currently_tracking()) {
-          playerBlueprintX->start(pos.x)->start(BlueprintTrackAnimationSpeed);
-          playerBlueprintY->start(pos.y)->start(BlueprintTrackAnimationSpeed);
-          playerBlueprintZ->start(z)->start(BlueprintTrackAnimationSpeed);
-          playerBlueprintDirection->start(direction)->start(BlueprintTrackAnimationSpeed + 30);
+          playerBlueprintX->start(pos.x);
+          playerBlueprintX->start(BlueprintTrackAnimationSpeed);
+          playerBlueprintY->start(pos.y);
+          playerBlueprintY->start(BlueprintTrackAnimationSpeed);
+          playerBlueprintZ->start(z);
+          playerBlueprintZ->start(BlueprintTrackAnimationSpeed);
+          playerBlueprintDirection->start(direction);
+          playerBlueprintDirection->start(BlueprintTrackAnimationSpeed + 30);
 				}
 
-        playerBlueprintX->set_target(pos.x)->update();
-        playerBlueprintY->set_target(pos.y)->update();
-        playerBlueprintZ->set_target(z)->update();
+        playerBlueprintX->set_target(pos.x);
+        playerBlueprintX->update();
+        playerBlueprintY->set_target(pos.y);
+        playerBlueprintY->update();
+        playerBlueprintZ->set_target(z);
+        playerBlueprintZ->update();
 
-				if (playerBlueprintDirection->reachedTarget())
-				{
+				if (playerBlueprintDirection->reachedTarget()) {
           playerBlueprintDirection->start(playerBlueprintDirection->get_target());
           playerBlueprintDirection->
                   set_target_delta((SWORD) (direction - playerBlueprintDirection->get_target()));
@@ -1891,13 +1862,13 @@ void displayBlueprints(const glm::mat4& viewMatrix)
             ? STRUCTURE_STATE::BLUEPRINT_PLANNED
             : STRUCTURE_STATE::BLUEPRINT_PLANNED_BY_ALLY;
 
-		for (auto& psDroid : apsDroidLists[player])
+		for (auto const& psDroid : playerList[player].droids)
 		{
 			if (psDroid.getType() == DROID_TYPE::CONSTRUCT ||
           psDroid.getType() == DROID_TYPE::CYBORG_CONSTRUCT) {
-				renderBuildOrder(psDroid.playerManager->getPlayer(), psDroid.getOrder(), state);
+				renderBuildOrder(psDroid.playerManager->getPlayer(), *psDroid.getOrder(), state);
 				//now look thru' the list of orders to see if more building sites
-				for (int order = psDroid.listPendingBegin; order < (int)psDroid.asOrderList.size(); order++)
+				for (auto order = psDroid.listPendingBegin; order < (int)psDroid.asOrderList.size(); order++)
 				{
 					renderBuildOrder(psDroid.playerManager->getPlayer(), psDroid.asOrderList[order], state);
 				}
@@ -1922,10 +1893,10 @@ static void displayDelivPoints(const glm::mat4& viewMatrix)
 	if (selectedPlayer >= MAX_PLAYERS) {
     return; // no-op
   }
-	for (auto& psDelivPoint : apsFlagPosLists[selectedPlayer])
+	for (auto& psDelivPoint : playerList[selectedPlayer].flagPositions)
 	{
-		if (clipXY(psDelivPoint->coords.x, psDelivPoint->coords.y)) {
-			renderDeliveryPoint(psDelivPoint, false, viewMatrix);
+		if (clipXY(psDelivPoint.coords.x, psDelivPoint.coords.y)) {
+			renderDeliveryPoint(&psDelivPoint, false, viewMatrix);
 		}
 	}
 }
@@ -1934,16 +1905,16 @@ static void displayDelivPoints(const glm::mat4& viewMatrix)
 static void displayFeatures(const glm::mat4& viewMatrix)
 {
 	// player can only be 0 for the features.
-	for (unsigned player = 0; player <= 1; ++player)
+	for (auto player = 0; player <= 1; ++player)
 	{
-    BaseObject * list = player < 1 ? apsFeatureLists[player] : psDestroyedObj;
+    BaseObject* list = player < 1 ? apsFeatureLists[player] : psDestroyedObj;
 
 		/* Go through all the features */
 		for (; list != nullptr; list = list->psNext)
 		{
-			if (list->type == OBJ_FEATURE
-				&& (list->damageManager->isDead() == 0 || list->damageManager->isDead() > graphicsTime)
-				&& clipXY(list->getPosition().x, list->getPosition().y)) {
+			if (getObjectType(list) == OBJECT_TYPE::FEATURE
+				  && (list->damageManager->isDead() == 0 || list->damageManager->isDead() > graphicsTime)
+				  && clipXY(list->getPosition().x, list->getPosition().y)) {
 				auto psFeature = dynamic_cast<Feature*>(list);
 				renderFeature(psFeature, viewMatrix);
 			}
@@ -1989,9 +1960,9 @@ static void displayProximityMsgs(const glm::mat4& viewMatrix)
 static void displayDynamicObjects(const glm::mat4& viewMatrix)
 {
 	/* Need to go through all the droid lists */
-	for (unsigned player = 0; player <= MAX_PLAYERS; ++player)
+	for (auto player = 0; player <= MAX_PLAYERS; ++player)
 	{
-    BaseObject * list = player < MAX_PLAYERS ? apsDroidLists[player] : psDestroyedObj;
+    BaseObject* list = player < MAX_PLAYERS ? playerList[player].droids : psDestroyedObj;
 
 		for (; list != nullptr; list = list->psNext)
 		{
@@ -2108,12 +2079,11 @@ void renderFeature(Feature* psFeature, const glm::mat4& viewMatrix)
 	}
 
 	if (psFeature->getStats()->subType == FEATURE_TYPE::BUILDING
-		|| psFeature->getStats()->subType == FEATURE_TYPE::SKYSCRAPER
-		|| psFeature->getStats()->subType == FEATURE_TYPE::GEN_ARTE
-		|| psFeature->getStats()->subType == FEATURE_TYPE::BOULDER
-		|| psFeature->getStats()->subType == FEATURE_TYPE::VEHICLE
-		|| psFeature->getStats()->subType == FEATURE_TYPE::OIL_DRUM)
-	{
+		  || psFeature->getStats()->subType == FEATURE_TYPE::SKYSCRAPER
+		  || psFeature->getStats()->subType == FEATURE_TYPE::GEN_ARTE
+		  || psFeature->getStats()->subType == FEATURE_TYPE::BOULDER
+		  || psFeature->getStats()->subType == FEATURE_TYPE::VEHICLE
+		  || psFeature->getStats()->subType == FEATURE_TYPE::OIL_DRUM) {
 		/* these cast a shadow */
 		pieFlags = pie_SHADOW;
 	}
@@ -2126,7 +2096,7 @@ void renderFeature(Feature* psFeature, const glm::mat4& viewMatrix)
 		imd = imd->next;
 	}
 
-	setScreenDisp(&psFeature->getDisplayData(), viewMatrix * modelMatrix);
+	setScreenDisp(psFeature->getDisplayData(), viewMatrix * modelMatrix);
 }
 
 void renderProximityMsg(PROXIMITY_DISPLAY* psProxDisp, const glm::mat4& viewMatrix)
@@ -2206,19 +2176,17 @@ void renderProximityMsg(PROXIMITY_DISPLAY* psProxDisp, const glm::mat4& viewMatr
 			break;
 		}
 	}
-	else
-	{
+	else {
 		//object Proximity displays are for oil resources and artefacts
-		ASSERT_OR_RETURN(, psProxDisp->psMessage->psObj->type == OBJ_FEATURE,
+		ASSERT_OR_RETURN(, getObjectType(psProxDisp->psMessage->psObj) == OBJECT_TYPE::FEATURE,
 		                   "Invalid object type for proximity display");
 
-		if (dynamic_cast<Feature*>(psProxDisp->psMessage->psObj)->getStats()->subType == FEATURE_TYPE::OIL_RESOURCE)
-		{
+		if (dynamic_cast<Feature*>(psProxDisp->psMessage->psObj)->
+            getStats()->subType == FEATURE_TYPE::OIL_RESOURCE) {
 			//resource
 			proxImd = getImdFromIndex(MI_BLIP_RESOURCE);
 		}
-		else
-		{
+		else {
 			//artefact
 			proxImd = getImdFromIndex(MI_BLIP_ARTEFACT);
 		}
@@ -2227,8 +2195,7 @@ void renderProximityMsg(PROXIMITY_DISPLAY* psProxDisp, const glm::mat4& viewMatr
 	modelMatrix *= glm::rotate(UNDEG(-playerPos.r.y), glm::vec3(0.f, 1.f, 0.f)) *
 		glm::rotate(UNDEG(-playerPos.r.x), glm::vec3(1.f, 0.f, 0.f));
 
-	if (proxImd)
-	{
+	if (proxImd) {
 		pie_Draw3DShape(proxImd, getModularScaledGraphicsTime(proxImd->animInterval, proxImd->numFrames), 0,
 		                WZCOL_WHITE, pie_ADDITIVE, 192, viewMatrix * modelMatrix);
 	}
@@ -2271,20 +2238,19 @@ static void renderStructureTurrets(Structure* psStructure, iIMDShape* strImd,
 	//check for weapon
 	for (auto i = 0; i < MAX(1, numWeapons(*psStructure)); i++)
 	{
-		if (psStructure->asWeaps[i].nStat > 0)
-		{
-			const auto nWeaponStat = psStructure->getWeapons()[i].getStats();
+		if (psStructure->asWeaps[i].nStat > 0) {
+			const auto nWeaponStat = psStructure->weaponManager->weapons[i].stats.get();
 
-			weaponImd[i] = asWeaponStats[nWeaponStat].pIMD.get();
-			mountImd[i] = asWeaponStats[nWeaponStat].pMountGraphic.get();
-			flashImd[i] = asWeaponStats[nWeaponStat].pMuzzleGraphic.get();
+			weaponImd[i] = nWeaponStat->pIMD.get();
+			mountImd[i] = nWeaponStat->pMountGraphic.get();
+			flashImd[i] = nWeaponStat->pMuzzleGraphic.get();
 		}
 	}
 
 	// check for ECM
 	if (weaponImd[0] == nullptr && psStructure->getStats()->ecm_stats != nullptr)
 	{
-		weaponImd[0] = psStructure->getStats()->ecm_stats->IMDs.get();
+		weaponImd[0] = psStructure->getStats()->ecm_stats->pIMD.get();
 		mountImd[0] = psStructure->getStats()->ecm_stats->pMountGraphic.get();
 		flashImd[0] = nullptr;
 	}
@@ -2292,7 +2258,7 @@ static void renderStructureTurrets(Structure* psStructure, iIMDShape* strImd,
 	bool noRecoil = false;
 	if (weaponImd[0] == nullptr && psStructure->getStats()->sensor_stats != nullptr)
 	{
-		weaponImd[0] = psStructure->getStats()->sensor_stats->IMDs.get();
+		weaponImd[0] = psStructure->getStats()->sensor_stats->pIMD.get();
 		/* No recoil for sensors */
 		noRecoil = true;
 		mountImd[0] = psStructure->getStats()->sensor_stats->pMountGraphic.get();
@@ -2320,7 +2286,7 @@ static void renderStructureTurrets(Structure* psStructure, iIMDShape* strImd,
 		{
 			glm::mat4 matrix = glm::translate(glm::vec3(strImd->connectors[i].xzy())) * glm::rotate(
 				UNDEG(-rot.direction), glm::vec3(0.f, 1.f, 0.f));
-			auto recoilValue = noRecoil ? 0 : getRecoil(psStructure->getWeapons()[i]);
+			auto recoilValue = noRecoil ? 0 : psStructure->weaponManager->weapons[i].getRecoil();
 			if (mountImd[i] != nullptr)
 			{
 				matrix *= glm::translate(glm::vec3(0.f, 0.f, recoilValue / 3.f));
@@ -2348,8 +2314,7 @@ static void renderStructureTurrets(Structure* psStructure, iIMDShape* strImd,
 					RepairFacility* psRepairFac = &psStructure->pFunctionality->repairFacility;
 					// draw repair flash if the Repair Facility has a target which it has started work on
 					if (weaponImd[i]->nconnectors && psRepairFac->psObj != nullptr
-						&& psRepairFac->psObj->type == OBJ_DROID)
-					{
+						&& getObjectType(psRepairFac->psObj) == OBJECT_TYPE::DROID) {
 						auto psDroid = (Droid*)psRepairFac->psObj;
 						SDWORD xdiff, ydiff;
 						xdiff = (SDWORD)psDroid->getPosition().x - (SDWORD)psStructure->getPosition().x;
@@ -2374,7 +2339,7 @@ static void renderStructureTurrets(Structure* psStructure, iIMDShape* strImd,
 				}
 				else // we have a weapon so we draw a muzzle flash
 				{
-					drawMuzzleFlash(psStructure->asWeaps[i], weaponImd[i], flashImd[i], buildingBrightness, pieFlag,
+					drawMuzzleFlash(psStructure->weaponManager->weapons[i], weaponImd[i], flashImd[i], buildingBrightness, pieFlag,
 					                pieFlagData, modelViewMatrix * matrix, colour);
 				}
 			}
@@ -2382,11 +2347,11 @@ static void renderStructureTurrets(Structure* psStructure, iIMDShape* strImd,
 		// no IMD, its a baba machine gun, bunker, etc.
 		else if (psStructure->asWeaps[i].nStat > 0) {
 			if (psStructure->getState() == STRUCTURE_STATE::BUILT) {
-				const auto nWeaponStat = psStructure->getWeapons()[i].getStats();
+				const auto nWeaponStat = psStructure->weaponManager->weapons[i].stats.get();
 
 				// get an imd to draw on the connector priority is weapon, ECM, sensor
 				// check for weapon
-				flashImd[i] = asWeaponStats[nWeaponStat].pMuzzleGraphic;
+				flashImd[i] = nWeaponStat->pMuzzleGraphic.get();
 
 				// draw Weapon/ECM/Sensor for structure
 				if (flashImd[i] != nullptr) {
@@ -2411,14 +2376,14 @@ static void renderStructureTurrets(Structure* psStructure, iIMDShape* strImd,
 						// assume no clan colours for muzzle effects
 						if (flashImd[i]->numFrames == 0 || flashImd[i]->animInterval <= 0) {
 							// no anim so display one frame for a fixed time
-							if (graphicsTime >= psStructure->getWeapons()[i].timeLastFired && graphicsTime < psStructure->getWeapons()
-								[i].timeLastFired + BASE_MUZZLE_FLASH_DURATION) {
+							if (graphicsTime >= psStructure->weaponManager->weapons[i].timeLastFired &&
+                  graphicsTime < psStructure->weaponManager->weapons[i].timeLastFired + BASE_MUZZLE_FLASH_DURATION) {
 								pie_Draw3DShape(flashImd[i], 0, colour, buildingBrightness, 0, 0,
 								                modelViewMatrix * matrix); //muzzle flash
 							}
 						}
 						else {
-							const auto frame = (graphicsTime - psStructure->getWeapons()[i].timeLastFired) / flashImd[i]->
+							const auto frame = (graphicsTime - psStructure->weaponManager->weapons[i].timeLastFired) / flashImd[i]->
 								animInterval;
 							if (frame < flashImd[i]->numFrames && frame >= 0) {
 								pie_Draw3DShape(flashImd[i], 0, colour, buildingBrightness, 0, 0,
@@ -2500,25 +2465,20 @@ void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix)
 	psStructure->sDisplay.frame_number = currentGameFrame;
 
 	if (!defensive
-		&& psStructure->timeLastHit - graphicsTime < ELEC_DAMAGE_DURATION
-		&& psStructure->damageManager->getLastHitWeapon() == WEAPON_SUBCLASS::ELECTRONIC)
-	{
+		&& psStructure->damageManager->getTimeLastHit() - graphicsTime < ELEC_DAMAGE_DURATION
+		&& psStructure->damageManager->getLastHitWeapon() == WEAPON_SUBCLASS::ELECTRONIC) {
 		bHitByElectronic = true;
 	}
 
 	buildingBrightness = structureBrightness(psStructure);
 
-	if (!defensive)
-	{
+	if (!defensive) {
 		/* Draw the building's base first */
-		if (psStructure->getStats()->base_imd != nullptr)
-		{
-			if (structureIsBlueprint(psStructure))
-			{
+		if (psStructure->getStats()->base_imd != nullptr) {
+			if (structureIsBlueprint(psStructure)) {
 				pieFlagData = BLUEPRINT_OPACITY;
 			}
-			else
-			{
+			else {
 				pieFlag = pie_FORCE_FOG | ecmFlag;
 				pieFlagData = 255;
 			}
@@ -2832,7 +2792,7 @@ static void drawStructureTargetOriginIcon(Structure* psStruct, int weapon_slot)
 	scrR = scale * 20;
 
 	/* Render target origin graphics */
-	switch (psStruct->getWeapon(weapon_slot)->getTargetOrigin()) {
+	switch (psStruct->weaponManager->weapons[weapon_slot].origin) {
     using enum TARGET_ORIGIN;
 	  case VISUAL:
 	  	iV_DrawImage(IntImages, IMAGE_ORIGIN_VISUAL, scrX + scrR + 5, scrY - 1);
@@ -2957,42 +2917,40 @@ static void drawStructureSelections()
 	if (selectedPlayer >= MAX_PLAYERS) { return; /* no-op */ }
 
 	/* Go thru' all the buildings */
-	for (psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
+	for (auto& psStruct : playerList[selectedPlayer].structures)
 	{
-		if (psStruct->getDisplayData()->frame_number == currentGameFrame)
-		{
+		if (psStruct.getDisplayData()->frame_number == currentGameFrame) {
 			/* If it's selected */
-			if (psStruct->damageManager->isSelected() ||
-				(barMode == BAR_DROIDS_AND_STRUCTURES && psStruct->getStats()->type != STRUCTURE_TYPE::WALL && psStruct->
-					getStats()->type != STRUCTURE_TYPE::WALL_CORNER) ||
-				(bMouseOverOwnStructure &&
-         psStruct == dynamic_cast<Structure*>(psClickedOn))) {
-				drawStructureHealth(psStruct);
+			if (psStruct.damageManager->isSelected() ||
+			  	(barMode == BAR_DROIDS_AND_STRUCTURES &&
+           psStruct.getStats()->type != STRUCTURE_TYPE::WALL &&
+           psStruct.getStats()->type != STRUCTURE_TYPE::WALL_CORNER) ||
+				  (bMouseOverOwnStructure &&
+           &psStruct == dynamic_cast<Structure*>(psClickedOn))) {
+				drawStructureHealth(&psStruct);
 
-				for (i = 0; i < numWeapons(*psStruct); i++)
+				for (i = 0; i < numWeapons(psStruct); i++)
 				{
-					drawWeaponReloadBar((BaseObject *)psStruct, &psStruct->asWeaps[i], i);
-					drawStructureTargetOriginIcon(psStruct, i);
+					drawWeaponReloadBar(&psStruct, &psStruct.weaponManager->weapons[i], i);
+					drawStructureTargetOriginIcon(&psStruct, i);
 				}
 			}
 
-			if (psStruct->getState() == STRUCTURE_STATE::BEING_BUILT)
-			{
-				drawStructureBuildProgress(psStruct);
+			if (psStruct.getState() == STRUCTURE_STATE::BEING_BUILT) {
+				drawStructureBuildProgress(&psStruct);
 			}
 		}
 	}
 
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (psStruct = apsStructLists[i]; psStruct; psStruct = psStruct->psNext)
+		for (auto& psStruct : playerList[i].structures)
 		{
 			/* If it's targetted and on-screen */
-			if (psStruct->testFlag((size_t)OBJECT_FLAG::TARGETED)
-				&& psStruct->getDisplayData()->frame_number == currentGameFrame)
-			{
-				scrX = psStruct->getDisplayData()->screen_x;
-				scrY = psStruct->getDisplayData()->screen_y;
+			if (psStruct.testFlag((size_t)OBJECT_FLAG::TARGETED)
+				&& psStruct.getDisplayData()->frame_number == currentGameFrame) {
+				scrX = psStruct.getDisplayData()->screen_x;
+				scrY = psStruct.getDisplayData()->screen_y;
 				iV_DrawImage(IntImages, getTargettingGfx(), scrX, scrY);
 			}
 		}
@@ -3147,19 +3105,18 @@ void drawDroidSelection(Droid* psDroid, bool drawBox)
 
 	/* Write the droid rank out */
 	if ((psDroid->getDisplayData()->screen_x + psDroid->getDisplayData()->screen_r) > 0
-		&& (psDroid->getDisplayData()->screen_x - psDroid->getDisplayData()->screen_r) < pie_GetVideoBufferWidth()
-		&& (psDroid->getDisplayData()->screen_y + psDroid->getDisplayData()->screen_r) > 0
-		&& (psDroid->getDisplayData()->screen_y - psDroid->getDisplayData()->screen_r) < pie_GetVideoBufferHeight())
-	{
+	  	&& (psDroid->getDisplayData()->screen_x - psDroid->getDisplayData()->screen_r) < pie_GetVideoBufferWidth()
+		  && (psDroid->getDisplayData()->screen_y + psDroid->getDisplayData()->screen_r) > 0
+		  && (psDroid->getDisplayData()->screen_y - psDroid->getDisplayData()->screen_r) < pie_GetVideoBufferHeight()) {
 		drawDroidRank(psDroid);
 		drawDroidSensorLock(psDroid);
 		drawDroidCmndNo(psDroid);
 		drawDroidGroupNumber(psDroid);
 	}
 
-	for (int i = 0; i < numWeapons(*psDroid); i++)
+	for (auto i = 0; i < numWeapons(*psDroid); i++)
 	{
-		drawWeaponReloadBar(psDroid, &psDroid->getWeapons()[i], i);
+		drawWeaponReloadBar(psDroid, &psDroid->weaponManager->weapons[i], i);
 	}
 }
 
@@ -3187,7 +3144,7 @@ static void drawDroidSelections()
 	if (selectedPlayer >= MAX_PLAYERS) { return; /* no-op */ }
 
 	pie_SetFogStatus(false);
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		/* If it's selected and on screen or it's the one the mouse is over */
 		if (eitherSelected(&psDroid) ||
@@ -3279,13 +3236,12 @@ static void drawDroidSelections()
 		}
 	}
 
-	for (int i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
 		/* Go thru' all the droidss */
-		for (const auto& psDroid : apsDroidLists[i])
+		for (auto const& psDroid : playerList[i].droids)
 		{
-			if (showORDERS)
-			{
+			if (showORDERS) {
 				drawDroidOrder(&psDroid);
 			}
 			if (!psDroid.damageManager->isDead() && psDroid.getDisplayData()->frame_number == currentGameFrame) {
@@ -3388,13 +3344,11 @@ static void drawDroidCmndNo(Droid* psDroid)
 
 	id2 = IMAGE_GN_STAR;
 	index = SDWORD_MAX;
-	if (psDroid->getType() == DROID_TYPE::COMMAND)
-	{
+	if (psDroid->getType() == DROID_TYPE::COMMAND) {
 		index = cmdDroidGetIndex(psDroid);
 	}
-	else if (hasCommander(psDroid))
-	{
-		index = cmdDroidGetIndex(psDroid->group->psCommander);
+	else if (hasCommander(psDroid)) {
+		index = cmdDroidGetIndex(psDroid->getCommander());
 	}
 	switch (index)
 	{
@@ -3767,32 +3721,28 @@ static void structureEffectsPlayer(UDWORD player)
 		return; // Don't add effects this frame.
 	}
 
-	for (auto& psStructure : apsStructLists[player])
+	for (auto& psStructure : playerList[player].structures)
 	{
-		if (psStructure->getState() != STRUCTURE_STATE::BUILT)
-		{
+		if (psStructure.getState() != STRUCTURE_STATE::BUILT) {
 			continue;
 		}
-		if (psStructure->getStats()->type == STRUCTURE_TYPE::POWER_GEN && psStructure->isVisibleToSelectedPlayer())
-		{
-			PowerGenerator* psPowerGen = &psStructure->pFunctionality->powerGenerator;
+		if (psStructure.getStats()->type == STRUCTURE_TYPE::POWER_GEN &&
+        psStructure.isVisibleToSelectedPlayer()) {
+			PowerGenerator* psPowerGen = &psStructure.pFunctionality->powerGenerator;
 			unsigned numConnected = 0;
-			for (int i = 0; i < NUM_POWER_MODULES; i++)
+			for (auto i = 0; i < NUM_POWER_MODULES; i++)
 			{
-				if (psPowerGen->resource_extractors[i])
-				{
+				if (psPowerGen->getExtractor(i)) {
 					numConnected++;
 				}
 			}
 			/* No effect if nothing connected */
-			if (!numConnected)
-			{
+			if (!numConnected) {
 				//keep looking for another!
 				continue;
 			}
 			else
-				switch (numConnected)
-				{
+				switch (numConnected) {
 				case 1:
 				case 2:
 					gameDiv = 1440;
@@ -3805,30 +3755,30 @@ static void structureEffectsPlayer(UDWORD player)
 				}
 
 			/* New addition - it shows how many are connected... */
-			for (int i = 0; i < numConnected; i++)
+			for (auto i = 0; i < numConnected; i++)
 			{
 				radius = 32 - (i * 2); // around the spire
 				xDif = iSinSR(effectTime, gameDiv, radius);
 				yDif = iCosSR(effectTime, gameDiv, radius);
 
-				pos.x = psStructure->getPosition().x + xDif;
-				pos.z = psStructure->getPosition().y + yDif;
+				pos.x = psStructure.getPosition().x + xDif;
+				pos.z = psStructure.getPosition().y + yDif;
 				pos.y = map_Height(pos.x, pos.z) + 64 + (i * 20); // 64 up to get to base of spire
 				effectGiveAuxVar(50); // half normal plasma size...
 				addEffect(&pos, EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_LASER, false, nullptr, 0);
 
-				pos.x = psStructure->getPosition().x - xDif;
-				pos.z = psStructure->getPosition().y - yDif;
+				pos.x = psStructure.getPosition().x - xDif;
+				pos.z = psStructure.getPosition().y - yDif;
 				effectGiveAuxVar(50); // half normal plasma size...
 
 				addEffect(&pos, EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_LASER, false, nullptr, 0);
 			}
 		}
 		/* Might be a re-arm pad! */
-		else if (psStructure->getStats()->type == STRUCTURE_TYPE::REARM_PAD
-			&& psStructure->isVisibleToSelectedPlayer())
+		else if (psStructure.getStats()->type == STRUCTURE_TYPE::REARM_PAD
+			&& psStructure.isVisibleToSelectedPlayer())
 		{
-			RearmPad* psReArmPad = &psStructure->pFunctionality->rearmPad;
+			RearmPad* psReArmPad = &psStructure.pFunctionality->rearmPad;
       BaseObject * psChosenObj = psReArmPad->psObj;
 			if (psChosenObj != nullptr && (((Droid*)psChosenObj)->isVisibleToSelectedPlayer()))
 			{
@@ -3839,16 +3789,16 @@ static void structureEffectsPlayer(UDWORD player)
 					bFXSize = 30;
 				}
 				/* Then it's repairing...? */
-				radius = psStructure->getDisplayData()->imd_shape->radius;
+				radius = psStructure.getDisplayData()->imd_shape->radius;
 				xDif = iSinSR(effectTime, 720, radius);
 				yDif = iCosSR(effectTime, 720, radius);
-				pos.x = psStructure->getPosition().x + xDif;
-				pos.z = psStructure->getPosition().y + yDif;
-				pos.y = map_Height(pos.x, pos.z) + psStructure->getDisplayData()->imd_shape->max.y;
+				pos.x = psStructure.getPosition().x + xDif;
+				pos.z = psStructure.getPosition().y + yDif;
+				pos.y = map_Height(pos.x, pos.z) + psStructure.getDisplayData()->imd_shape->max.y;
 				effectGiveAuxVar(30 + bFXSize); // half normal plasma size...
 				addEffect(&pos, EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_LASER, false, nullptr, 0);
-				pos.x = psStructure->getPosition().x - xDif;
-				pos.z = psStructure->getPosition().y - yDif; // buildings are level!
+				pos.x = psStructure.getPosition().x - xDif;
+				pos.z = psStructure.getPosition().y - yDif; // buildings are level!
 				effectGiveAuxVar(30 + bFXSize); // half normal plasma size...
 				addEffect(&pos, EFFECT_GROUP::EXPLOSION, EFFECT_TYPE::EXPLOSION_TYPE_LASER, false, nullptr, 0);
 			}
@@ -3859,9 +3809,9 @@ static void structureEffectsPlayer(UDWORD player)
 /// Draw the effects for all players and buildings
 static void structureEffects()
 {
-	for (unsigned i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		if (apsStructLists[i]) {
+		if (!playerList[i].structures.empty()) {
 			structureEffectsPlayer(i);
 		}
 	}
@@ -3877,17 +3827,17 @@ static void showDroidSensorRanges()
 	if (rangeOnScreen)
 	// note, we still have to decide what to do with multiple units selected, since it will draw it for all of them! -Q 5-10-05
 	{
-		for (auto& psDroid : apsDroidLists[selectedPlayer])
+		for (auto& psDroid : playerList[selectedPlayer].droids)
 		{
 			if (psDroid.damageManager->isSelected()) {
 				showSensorRange2(&psDroid);
 			}
 		}
 
-		for (auto& psStruct : apsStructLists[selectedPlayer])
+		for (auto& psStruct : playerList[selectedPlayer].structures)
 		{
-			if (psStruct->damageManager->isSelected()) {
-				showSensorRange2(psStruct.get());
+			if (psStruct.damageManager->isSelected()) {
+				showSensorRange2(&psStruct);
 			}
 		}
 	} //end if we want to display...
@@ -3920,7 +3870,7 @@ static void showWeaponRange(BaseObject const* psObj)
 	WeaponStats const* psStats;
 
 	if (auto psDroid = dynamic_cast<Droid const*>(psObj)) {
-		psStats = psDroid->getWeapon(0)->getStats();
+		psStats = psDroid->weaponManager->weapons[0].stats.get();
 	}
 	else {
 		auto psStruct = dynamic_cast<Structure const*>(psObj);
@@ -4046,9 +3996,9 @@ static void drawDroidSensorLock(Droid* psDroid)
 /// Draw the construction lines for all construction droids
 static void doConstructionLines(const glm::mat4& viewMatrix)
 {
-	for (unsigned i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (auto& psDroid : apsDroidLists[i])
+		for (auto& psDroid : playerList[i].droids)
 		{
 			if (clipXY(psDroid.getPosition().x, psDroid.getPosition().y)
 				&& psDroid.isVisibleToSelectedPlayer() == UBYTE_MAX
@@ -4063,7 +4013,7 @@ static void doConstructionLines(const glm::mat4& viewMatrix)
 				else if ((psDroid.getAction() == ACTION::DEMOLISH) ||
 					(psDroid.getAction() == ACTION::REPAIR) ||
 					(psDroid.getAction() == ACTION::RESTORE)) {
-					if (&dynamic_cast<const Structure&>(psDroid.getTarget(0))) {
+					if (dynamic_cast<const Structure*>(psDroid.getTarget(0))) {
 						addConstructionLine(&psDroid, dynamic_cast<const Structure*>(psDroid.getTarget(0)), viewMatrix);
 					}
 				}
@@ -4102,10 +4052,10 @@ static void addConstructionLine(Droid* psDroid, Structure* psStructure, const gl
                       psDroid->getPosition().z + 24,
                       -psDroid->getPosition().y) + deltaPlayer;
 
-	auto constructPoints = constructorPoints(dynamic_cast<ConstructStats const*>(psDroid->getComponent("construct")),
-                                           psDroid->playerManager->getPlayer());
+	auto constructPoints = constructorPoints(dynamic_cast<ConstructStats const*>(
+              psDroid->getComponent(COMPONENT_TYPE::CONSTRUCT)), psDroid->playerManager->getPlayer());
   
-	auto amount = 800 * constructPoints * (graphicsTime - psDroid->time_action_started) / GAME_TICKS_PER_SEC;
+	auto amount = 800 * constructPoints * (graphicsTime - psDroid->getTimeActionStarted()) / GAME_TICKS_PER_SEC;
 
 	Vector3i each;
 	auto getPoint = [&](uint32_t c)
@@ -4114,9 +4064,9 @@ static void addConstructionLine(Droid* psDroid, Structure* psStructure, const gl
 		auto s = (amount + c) % 1000 * .001f;
 		auto pointIndexA = randHash({psDroid->getId(), 
                                       psStructure->getId(), 
-                                      psDroid->timeActionStarted, t, c}) % psStructure->
+                                      psDroid->getTimeActionStarted(), t, c}) % psStructure->
 			getDisplayData()->imd_shape->points.size();
-		auto pointIndexB = randHash({psDroid->getId(), psStructure->getId(), psDroid->time_action_started, t + 1, c}) % psStructure
+		auto pointIndexB = randHash({psDroid->getId(), psStructure->getId(), psDroid->getTimeActionStarted(), t + 1, c}) % psStructure
 			->getDisplayData()->imd_shape->points.size();
 		auto& pointA = psStructure->getDisplayData()->imd_shape->points[pointIndexA];
 		auto& pointB = psStructure->getDisplayData()->imd_shape->points[pointIndexB];

@@ -57,6 +57,8 @@
 #include "warzoneconfig.h"
 #include "wzscriptdebug.h"
 #include "map.h"
+#include "baseobject.h"
+#include "game.h"
 
 static constexpr auto ATTACK_THROTTLE = 1000;
 
@@ -218,7 +220,7 @@ uniqueTimerID scripting_engine::setTimer(wzapi::scripting_instance* caller, cons
 	                                                              std::move(additionalParam));
 	if (obj != nullptr) {
 		node->baseobj = obj->getId();
-		node->baseobjtype = obj->type;
+		node->baseobjtype = getObjectType(obj);
 	}
 	node->type = type;
 	node->timerID = newTimerID;
@@ -1157,7 +1159,7 @@ bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, BaseObject* psObj)
 
 	if ((trigger == TRIGGER_START_LEVEL || trigger == TRIGGER_GAME_LOADED) && !saveandquit_enabled().empty())
 	{
-		saveGame(saveandquit_enabled().c_str(), GTYPE_SAVE_START);
+		saveGame(saveandquit_enabled().c_str(), GAME_TYPE::GTYPE_SAVE_START);
 		exit(0);
 	}
 

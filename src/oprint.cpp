@@ -31,6 +31,7 @@
 #include "oprint.h"
 #include "projectile.h"
 #include "visibility.h"
+#include "baseobject.h"
 
 /** print out information about a base object
  *  \param psObj the object to print the info for
@@ -38,14 +39,14 @@
 static void printBaseObjInfo(BaseObject const* psObj)
 {
 	const char* pType;
-	switch (psObj->type) {
-	case OBJ_DROID:
+	switch (getObjectType(psObj)) {
+    case OBJECT_TYPE::DROID:
 		pType = "UNIT";
 		break;
-	case OBJ_STRUCTURE:
+    case OBJECT_TYPE::STRUCTURE:
 		pType = "STRUCT";
 		break;
-	case OBJ_FEATURE:
+    case OBJECT_TYPE::FEATURE:
 		pType = "FEAT";
 		break;
 	default:
@@ -211,15 +212,14 @@ void printDroidInfo(const Droid* psDroid)
             objJammerPower(psDroid), psDroid->damageManager->getHp());
 
 	if (psDroid->asWeaps[0].nStat > 0) {
-		printWeaponInfo(asWeaponStats + psDroid->asWeaps[0].nStat);
+		printWeaponInfo(psDroid->weaponManager->weapons[0].stats.get());
 	}
 
-	for (int i = 0; i < COMP_NUMCOMPONENTS; ++i)
+	for (auto i = 0; i < COMPONENT_TYPE::COUNT; ++i)
 	{
 		switch (i) {
-		case COMP_BODY:
-			if (psDroid->asBits[i] > 0)
-			{
+      case COMPONENT_TYPE::BODY:
+			if (psDroid->asBits[i] > 0) {
 				CONPRINTF("%s", "Body: ");
 				psBdyStats = asBodyStats + psDroid->asBits[i];
 				printComponentInfo((ComponentStats*)psBdyStats);

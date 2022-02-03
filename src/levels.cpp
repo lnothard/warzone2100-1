@@ -104,7 +104,7 @@ bool levInitialise()
 	return true;
 }
 
-SDWORD getLevelLoadType()
+GAME_TYPE getLevelLoadType()
 {
 	return levelLoadType;
 }
@@ -693,10 +693,9 @@ bool levLoadData(char const* name, Sha256 const* hash, char* pSaveName, GAME_TYP
 {
 	debug(LOG_WZ, "Loading level %s hash %s (%s, type %d)", name,
 	      hash == nullptr ? "builtin" : hash->toString().c_str(), pSaveName, (int)saveType);
-	if (saveType == GTYPE_SAVE_START || saveType == GTYPE_SAVE_MIDMISSION)
-	{
-		if (!levReleaseAll())
-		{
+	if (saveType == GAME_TYPE::GTYPE_SAVE_START ||
+      saveType == GAME_TYPE::GTYPE_SAVE_MIDMISSION) {
+		if (!levReleaseAll()) {
 			debug(LOG_ERROR, "Failed to unload old data");
 			return false;
 		}
@@ -720,9 +719,9 @@ bool levLoadData(char const* name, Sha256 const* hash, char* pSaveName, GAME_TYP
 	/* Keep a copy of the present level name */
 	sstrcpy(currentLevelName, name);
 
-	const bool bCamChangeSaveGame = pSaveName && saveType == GTYPE_SAVE_START && psNewLevel->psChange != nullptr;
-	if (bCamChangeSaveGame)
-	{
+	const bool bCamChangeSaveGame = pSaveName && saveType == GAME_TYPE::GTYPE_SAVE_START &&
+                                  psNewLevel->psChange != nullptr;
+	if (bCamChangeSaveGame) {
 		debug(LOG_WZ, "** CAMCHANGE FOUND");
 	}
 
@@ -883,8 +882,7 @@ bool levLoadData(char const* name, Sha256 const* hash, char* pSaveName, GAME_TYP
 			}
 
 			//set the mission type before the saveGame data is loaded
-			if (saveType == GTYPE_SAVE_MIDMISSION)
-			{
+			if (saveType == GAME_TYPE::GTYPE_SAVE_MIDMISSION) {
 				debug(LOG_WZ, "Init mission stuff");
 				if (!startMissionSave(psNewLevel->type))
 				{
@@ -904,8 +902,7 @@ bool levLoadData(char const* name, Sha256 const* hash, char* pSaveName, GAME_TYP
 			}
 		}
 
-		if (pSaveName == nullptr || saveType == GTYPE_SAVE_START)
-		{
+		if (pSaveName == nullptr || saveType == GAME_TYPE::GTYPE_SAVE_START) {
 			debug(LOG_NEVER, "Start mission - no .gam");
 			if (!startMission((LEVEL_TYPE)psNewLevel->type, nullptr))
 			{
@@ -962,7 +959,7 @@ bool levLoadData(char const* name, Sha256 const* hash, char* pSaveName, GAME_TYP
 			if (pSaveName != nullptr && !bCamChangeSaveGame)
 			{
 				//set the mission type before the saveGame data is loaded
-				if (saveType == GTYPE_SAVE_MIDMISSION)
+				if (saveType == GAME_TYPE::GTYPE_SAVE_MIDMISSION)
 				{
 					debug(LOG_WZ, "Init mission stuff");
 					if (!startMissionSave(psNewLevel->type))
@@ -983,8 +980,7 @@ bool levLoadData(char const* name, Sha256 const* hash, char* pSaveName, GAME_TYP
 				}
 			}
 
-			if (pSaveName == nullptr || saveType == GTYPE_SAVE_START)
-			{
+			if (pSaveName == nullptr || saveType == GAME_TYPE::GTYPE_SAVE_START) {
 				// load the game
 				debug(LOG_WZ, "Loading scenario file %s", psNewLevel->apDataFiles[i]);
 				switch (psNewLevel->type)
@@ -1106,8 +1102,7 @@ bool levLoadData(char const* name, Sha256 const* hash, char* pSaveName, GAME_TYP
 		}
 	}
 
-	if (pSaveName != nullptr && saveType == GTYPE_SAVE_MIDMISSION)
-	{
+	if (pSaveName != nullptr && saveType == GAME_TYPE::GTYPE_SAVE_MIDMISSION) {
 		//load script stuff
 		// load the event system state here for a save game
 		debug(LOG_SAVE, "Loading script system state");

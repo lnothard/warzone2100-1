@@ -249,8 +249,8 @@ static void updateCurrentPower(Structure* psStruct, unsigned player, int ticks)
 	int64_t extractedPower = 0;
 	for (auto i = 0; i < NUM_POWER_MODULES; ++i)
 	{
-		auto& extractor = psPowerGen->resource_extractors[i];
-		if (extractor && extractor->died) {
+		auto extractor = psPowerGen->getExtractor(i);
+		if (extractor && extractor->damageManager->isDead()) {
 			syncDebugStructure(extractor, '-');
 			extractor = nullptr; // Clear pointer.
 		}

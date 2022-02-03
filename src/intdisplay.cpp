@@ -74,6 +74,7 @@
 #include "multiplay.h"
 #include "qtscript.h"
 #include "objmem.h"
+#include "baseobject.h"
 
 // Is a button widget highlighted, either because the cursor is over it or it is flashing.
 //
@@ -392,8 +393,8 @@ IntStatusButton::IntStatusButton()
 // Widget callback to display a rendered status button, ie the progress of a manufacturing or  building task.
 void IntStatusButton::display(int xOffset, int yOffset)
 {
-	Structure* Structure;
-	Droid* Droid;
+	Structure* psStruct;
+	Droid* psDroid;
 	BaseStats *Stats, *psResGraphic;
 	UDWORD compID;
 	bool bOnHold = false;
@@ -410,82 +411,71 @@ void IntStatusButton::display(int xOffset, int yOffset)
 		intRefreshScreen();
 	}
 
-	if (psObj)
-	{
-		switch (psObj->type)
-		{
-		case OBJ_DROID: // If it's a droid...
-			Droid = (Droid*)psObj;
+	if (psObj) {
+		switch (getObjectType(psObj)) {
+      case OBJECT_TYPE::DROID: // If it's a droid...
+        psDroid = dynamic_cast<Droid*>(psObj);
 
-			if (DroidIsBuilding(Droid))
-			{
-				Structure = DroidGetBuildStructure(Droid);
-				if (Structure)
-				{
-					object = ImdObject::Structure(Structure);
+			if (DroidIsBuilding(psDroid)) {
+        psStruct = DroidGetBuildStructure(psDroid);
+				if (psStruct) {
+					object = ImdObject::Structure(psStruct);
 				}
 			}
-			else if (DroidGoingToBuild(Droid))
-			{
-				Stats = DroidGetBuildStats(Droid);
+			else if (DroidGoingToBuild(psDroid)) {
+				Stats = DroidGetBuildStats(psDroid);
 				ASSERT(Stats != nullptr, "NULL Stats pointer.");
 				object = ImdObject::StructureStat(Stats);
 			}
-			else if (orderState(Droid, ORDER_TYPE::DEMOLISH))
-			{
+			else if (orderState(psDroid, ORDER_TYPE::DEMOLISH)) {
 				Stats = structGetDemolishStat();
 				ASSERT(Stats != nullptr, "NULL Stats pointer.");
 				object = ImdObject::StructureStat(Stats);
 			}
-			else if (Droid->getType() == DROID_TYPE::COMMAND)
+			else if (psDroid->getType() == DROID_TYPE::COMMAND)
 			{
-				Structure = droidGetCommandFactory(Droid);
-				if (Structure)
+        psStruct = droidGetCommandFactory(psDroid);
+				if (psStruct)
 				{
-					object = ImdObject::Structure(Structure);
+					object = ImdObject::Structure(psStruct);
 				}
 			}
 			break;
 
-		case OBJ_STRUCTURE: // If it's a structure...
-			Structure = (Structure*)psObj;
-			switch (Structure->getStats()->type) {
+      case OBJECT_TYPE::STRUCTURE: // If it's a structure...
+        psStruct = (Structure*)psObj;
+			switch (psStruct->getStats()->type) {
           using enum STRUCTURE_TYPE;
 			case FACTORY:
 			case CYBORG_FACTORY:
 			case VTOL_FACTORY:
-				if (StructureIsManufacturingPending(Structure))
+				if (StructureIsManufacturingPending(psStruct))
 				{
-					object = ImdObject::DroidTemplate(FactoryGetTemplate(StructureGetFactory(Structure)));
-					bOnHold = StructureIsOnHoldPending(Structure);
+					object = ImdObject::DroidTemplate(FactoryGetTemplate(StructureGetFactory(psStruct)));
+					bOnHold = StructureIsOnHoldPending(psStruct);
 				}
 
 				break;
 
 			case RESEARCH:
-				if (structureIsResearchingPending(Structure))
+				if (structureIsResearchingPending(psStruct))
 				{
 					iIMDShape* shape;
 					Stats = theStats;
-					if (!Stats)
-					{
+					if (!Stats) {
 						break;
 					}
-					bOnHold = StructureIsOnHoldPending(Structure);
+					bOnHold = StructureIsOnHoldPending(psStruct);
 					StatGetResearchImage(Stats, &image, &shape, &psResGraphic, false);
-					if (psResGraphic)
-					{
+					if (psResGraphic) {
 						// we have a Stat associated with this research topic
-						if (StatIsStructure(psResGraphic))
-						{
+						if (StatIsStructure(psResGraphic)) {
 							// overwrite the Object pointer
 							object = ImdObject::StructureStat(psResGraphic);
 						}
-						else
-						{
-							compID = StatIsComponent(psResGraphic);
-							if (compID != COMP_NUMCOMPONENTS)
-							{
+						else {
+							compID = (int)StatIsComponent(psResGraphic);
+							if (compID != (int)COMPONENT_TYPE::COUNT) {
 								// overwrite the Object pointer
 								object = ImdObject::Component(psResGraphic);
 							}
@@ -496,8 +486,7 @@ void IntStatusButton::display(int xOffset, int yOffset)
 							}
 						}
 					}
-					else
-					{
+					else {
 						// no Stat for this research topic so just use the graphic provided
 						// if Object != NULL the there must be a IMD so set the object to
 						// equal the Research stat
@@ -555,14 +544,12 @@ void IntObjectButton::display(int xOffset, int yOffset)
 		intRefreshScreen();
 	}
 
-	if (psObj)
-	{
-		switch (psObj->type)
-		{
-		case OBJ_DROID: // If it's a droid...
+	if (psObj) {
+		switch (getObjectType(psObj)) {
+      case OBJECT_TYPE::DROID: // If it's a droid...
 			object = ImdObject::Droid(psObj);
 			break;
-		case OBJ_STRUCTURE: // If it's a structure...
+      case OBJECT_TYPE::STRUCTURE: // If it's a structure...
 			object = ImdObject::Structure(psObj);
 			break;
 		default:
@@ -608,8 +595,8 @@ void IntStatsButton::display(int xOffset, int yOffset)
 		}
 		else
 		{
-			compID = StatIsComponent(Stat); // This fails for viper body.
-			if (compID != COMPONENT_TYPE::COUNT)
+			compID = (int)StatIsComponent(Stat); // This fails for viper body.
+			if (compID != (int)COMPONENT_TYPE::COUNT)
 			{
 				object = ImdObject::Component(Stat);
 			}
@@ -617,23 +604,18 @@ void IntStatsButton::display(int xOffset, int yOffset)
 			{
 				iIMDShape* shape;
 				StatGetResearchImage(Stat, &image, &shape, &psResGraphic, true);
-				if (psResGraphic)
-				{
+				if (psResGraphic) {
 					//we have a Stat associated with this research topic
-					if (StatIsStructure(psResGraphic))
-					{
+					if (StatIsStructure(psResGraphic)) {
 						object = ImdObject::StructureStat(psResGraphic);
 					}
-					else
-					{
-						compID = StatIsComponent(psResGraphic);
-						if (compID != COMP_NUMCOMPONENTS)
-						{
+					else {
+						compID = (int)StatIsComponent(psResGraphic);
+						if (compID != (int)COMPONENT_TYPE::COUNT) {
 							//overwrite the Object pointer
 							object = ImdObject::Component(psResGraphic);
 						}
-						else
-						{
+						else {
 							ASSERT(false, "Invalid Stat for research button");
 							object = ImdObject::Research(nullptr);
 						}
@@ -1041,23 +1023,19 @@ void IntFancyButton::displayIMD(Image image, ImdObject imdObject, int xOffset, i
 
 		displayClear(xOffset, yOffset);
 
-		if (IMDType == IMDTYPE_DROID)
-		{
-			if (isTransporter((Droid*)Object))
-			{
-				if (((Droid*)Object)->getType() == DROID_TYPE::TRANSPORTER)
-				{
+		if (IMDType == IMDTYPE_DROID) {
+			if (isTransporter(*(Droid*)Object)) {
+				if (((Droid*)Object)->getType() == DROID_TYPE::TRANSPORTER) {
 					model.scale = DROID_BUT_SCALE / 2;
 				}
-				else
-				{
+				else {
 					model.scale = DROID_BUT_SCALE / 3;
 				}
 			}
 		}
 		else //(IMDType == IMDTYPE_DROIDTEMPLATE)
 		{
-			if (isTransporter((DroidTemplate*)Object))
+			if (isTransporter(*(DroidTemplate*)Object))
 			{
 				if (((DroidTemplate*)Object)->type == DROID_TYPE::TRANSPORTER)
 				{
@@ -1336,9 +1314,8 @@ bool DroidGoingToBuild(Droid* Droid)
 	StructureStats* Stats;
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, Droid);
 
-	if (!(droidType(Droid) == DROID_CONSTRUCT ||
-		droidType(Droid) == DROID_CYBORG_CONSTRUCT))
-	{
+	if (!(Droid->getType() == DROID_TYPE::CONSTRUCT ||
+		  droidType(Droid) == DROID_TYPE::CYBORG_CONSTRUCT)) {
 		return false;
 	}
 
@@ -1350,19 +1327,15 @@ bool DroidGoingToBuild(Droid* Droid)
 	return false;
 }
 
-
 // Get the structure for a structure which a droid is currently building.
-//
 Structure* DroidGetBuildStructure(Droid* Droid)
 {
-   BaseObject* Structure = nullptr;
+   BaseObject* psStruct = nullptr;
 
-	if (orderStateObj(Droid, ORDER_TYPE::BUILD))
-	{
-		Structure = orderStateObj(Droid, ORDER_TYPE::HELP_BUILD);
+	if (orderStateObj(Droid, ORDER_TYPE::BUILD)) {
+		psStruct = orderStateObj(Droid, ORDER_TYPE::HELP_BUILD);
 	}
-
-	return (Structure*)Structure;
+return (Structure*)psStruct;
 }
 
 // Get the first factory assigned to a command droid
@@ -1372,37 +1345,33 @@ Structure* droidGetCommandFactory(Droid* psDroid)
 	{
 		if (psDroid->getSecondaryOrder() & (1 << (inc + DSS_ASSPROD_SHIFT))) {
 			// found an assigned factory - look for it in the lists
-			for (auto& psCurr : apsStructLists[psDroid->playerManager->getPlayer()])
+			for (auto& psCurr : playerList[psDroid->playerManager->getPlayer()].structures)
 			{
-				if ((psCurr->getStats()->type == STRUCTURE_TYPE::FACTORY) &&
-					(((Factory*)psCurr->pFunctionality)->
-					 psAssemblyPoint->factoryInc == inc)) {
-					return psCurr.get();
+				if (psCurr.getStats()->type == STRUCTURE_TYPE::FACTORY &&
+            (((Factory *) psCurr.pFunctionality)->psAssemblyPoint->factoryInc == inc)) {
+					return &psCurr;
 				}
 			}
 		}
 		if (psDroid->getSecondaryOrder() & (1 << (inc + DSS_ASSPROD_CYBORG_SHIFT))) {
 			// found an assigned factory - look for it in the lists
-			for (auto& psCurr : apsStructLists[psDroid->playerManager->getPlayer()])
+			for (auto& psCurr : playerList[psDroid->playerManager->getPlayer()].structures)
 			{
-				if ((psCurr->getStats()->type == STRUCTURE_TYPE::CYBORG_FACTORY) &&
-					(((Factory*)psCurr->pFunctionality)->
-					 psAssemblyPoint->factoryInc == inc))
-				{
-					return psCurr.get();
+				if ((psCurr.getStats()->type == STRUCTURE_TYPE::CYBORG_FACTORY) &&
+					(((Factory*)psCurr.pFunctionality)->
+					 psAssemblyPoint->factoryInc == inc)) {
+					return &psCurr;
 				}
 			}
 		}
-		if (psDroid->getSecondaryOrder() & (1 << (inc + DSS_ASSPROD_VTOL_SHIFT)))
-		{
+		if (psDroid->getSecondaryOrder() & (1 << (inc + DSS_ASSPROD_VTOL_SHIFT))) {
 			// found an assigned factory - look for it in the lists
-			for (auto& psCurr : apsStructLists[psDroid->playerManager->getPlayer()])
+			for (auto& psCurr : playerList[psDroid->playerManager->getPlayer()].structures)
 			{
-				if ((psCurr->getStats()->type == STRUCTURE_TYPE::VTOL_FACTORY) &&
-					(((Factory*)psCurr->pFunctionality)->
-					 psAssemblyPoint->factoryInc == inc))
-				{
-					return psCurr.get();
+				if ((psCurr.getStats()->type == STRUCTURE_TYPE::VTOL_FACTORY) &&
+					(((Factory*)psCurr.pFunctionality)->
+					 psAssemblyPoint->factoryInc == inc)) {
+					return &psCurr;
 				}
 			}
 		}
@@ -1526,7 +1495,7 @@ bool StatIsFeature(BaseStats const* Stat)
 iIMDShape* StatGetStructureIMD(BaseStats* Stat, UDWORD Player)
 {
 	(void)Player;
-	return ((StructureStats*)Stat)->IMDs[0];
+	return ((StructureStats*)Stat)->IMDs[0].get();
 }
 
 bool StatIsTemplate(BaseStats* Stat)
@@ -1557,48 +1526,48 @@ bool StatGetComponentIMD(BaseStats* Stat, COMPONENT_TYPE compID, iIMDShape** Com
 	*CompIMD = nullptr;
 	*MountIMD = nullptr;
 
-	switch (compID)
-	{
-	case COMP_BODY:
-		*CompIMD = ((ComponentStats*)Stat)->pIMD;
+	switch (compID) {
+      using enum COMPONENT_TYPE;
+	case BODY:
+		*CompIMD = ((ComponentStats*)Stat)->pIMD.get();
 		return true;
 
-	case COMP_BRAIN:
-		psWStat = ((CommanderStats*)Stat)->psWeaponStat;
-		*MountIMD = psWStat->pMountGraphic;
-		*CompIMD = psWStat->pIMD;
+	case BRAIN:
+		psWStat = ((CommanderStats*)Stat)->psWeaponStat.get();
+		*MountIMD = psWStat->pMountGraphic.get();
+		*CompIMD = psWStat->pIMD.get();
 		return true;
 
-	case COMP_WEAPON:
-		*MountIMD = ((WeaponStats*)Stat)->pMountGraphic;
-		*CompIMD = ((ComponentStats*)Stat)->pIMD;
+	case WEAPON:
+		*MountIMD = ((WeaponStats*)Stat)->pMountGraphic.get();
+		*CompIMD = ((ComponentStats*)Stat)->pIMD.get();
 		return true;
 
-	case COMP_SENSOR:
-		*MountIMD = ((SensorStats*)Stat)->pMountGraphic;
-		*CompIMD = ((ComponentStats*)Stat)->pIMD;
+	case SENSOR:
+		*MountIMD = ((SensorStats*)Stat)->pMountGraphic.get();
+		*CompIMD = ((ComponentStats*)Stat)->pIMD.get();
 		return true;
 
-	case COMP_ECM:
-		*MountIMD = ((EcmStats*)Stat)->pMountGraphic;
-		*CompIMD = ((ComponentStats*)Stat)->pIMD;
+	case ECM:
+		*MountIMD = ((EcmStats*)Stat)->pMountGraphic.get();
+		*CompIMD = ((ComponentStats*)Stat)->pIMD.get();
 		return true;
 
-	case COMP_CONSTRUCT:
-		*MountIMD = ((ConstructStats*)Stat)->pMountGraphic;
-		*CompIMD = ((ComponentStats*)Stat)->pIMD;
+	case CONSTRUCT:
+		*MountIMD = ((ConstructStats*)Stat)->pMountGraphic.get();
+		*CompIMD = ((ComponentStats*)Stat)->pIMD.get();
 		return true;
 
-	case COMP_PROPULSION:
-		*CompIMD = ((ComponentStats*)Stat)->pIMD;
+	case PROPULSION:
+		*CompIMD = ((ComponentStats*)Stat)->pIMD.get();
 		return true;
 
-	case COMP_REPAIRUNIT:
-		*MountIMD = ((RepairStats*)Stat)->pMountGraphic;
-		*CompIMD = ((ComponentStats*)Stat)->pIMD;
+	case REPAIR_UNIT:
+		*MountIMD = ((RepairStats*)Stat)->pMountGraphic.get();
+		*CompIMD = ((ComponentStats*)Stat)->pIMD.get();
 		return true;
 
-	case COMP_NUMCOMPONENTS:
+	case COUNT:
 		ASSERT(false, "Unknown component");
 	}
 
@@ -1621,14 +1590,14 @@ static void StatGetResearchImage(BaseStats* psStat, Image* image, iIMDShape** Sh
 	//if the research has a Stat associated with it - use this as display in the button
 	if (((ResearchStats*)psStat)->psStat)
 	{
-		*ppGraphicData = ((ResearchStats*)psStat)->psStat;
+		*ppGraphicData = ((ResearchStats*)psStat)->psStat.get();
 		//make sure the IMDShape is initialised
 		*Shape = nullptr;
 	}
 	else
 	{
 		//no stat so just just the IMD associated with the research
-		*Shape = ((ResearchStats*)psStat)->pIMD;
+		*Shape = ((ResearchStats*)psStat)->pIMD.get();
 		//make sure the stat is initialised
 		*ppGraphicData = nullptr;
 	}
@@ -1758,9 +1727,8 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 			PROX_TYPE proxType = ((VIEW_PROXIMITY*)psProxDisp->psMessage->pViewData->pData)->proxType;
 			images = imagesProxTypes[proxType];
 		}
-		else
-		{
-			const Feature* psFeature = castFeature(psProxDisp->psMessage->psObj);
+		else {
+			auto psFeature = dynamic_cast<Feature const*>(psProxDisp->psMessage->psObj);
 
 			ASSERT_OR_RETURN(, psFeature && psFeature->getStats(), "Bad feature message");
 			if (psFeature && psFeature->getStats() && psFeature->getStats()->subType == FEATURE_TYPE::OIL_RESOURCE)
@@ -1794,14 +1762,13 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 			imageID = images[1 + psProxDisp->strobe];
 		}
 
-		if (psProxDisp->type == POS_PROXDATA)
-		{
+		if (psProxDisp->type == POSITION_TYPE::POS_PROXDATA) {
 			const VIEW_PROXIMITY* psViewProx = (VIEW_PROXIMITY*)psProxDisp->psMessage->pViewData->pData;
 
 			x = static_cast<int>((psViewProx->x / TILE_UNITS - scrollMinX) * pixSizeH);
 			y = static_cast<int>((psViewProx->y / TILE_UNITS - scrollMinY) * pixSizeV);
 		}
-		else if (psProxDisp->type == POS_PROXOBJ)
+		else if (psProxDisp->type == POSITION_TYPE::POS_PROXOBJ)
 		{
 			x = static_cast<int>((psProxDisp->psMessage->psObj->getPosition().x / TILE_UNITS - scrollMinX) * pixSizeH);
 			y = static_cast<int>((psProxDisp->psMessage->psObj->getPosition().y / TILE_UNITS - scrollMinY) * pixSizeV);
@@ -1851,22 +1818,20 @@ void intDisplayProximityBlips(WIDGET* psWidget, WZ_DECL_UNUSED UDWORD xOffset, W
 	MESSAGE* psMsg = psProxDisp->psMessage;
 	SDWORD x = 0, y = 0;
 
-	ASSERT(psMsg->type == MSG_PROXIMITY, "Invalid message type");
+	ASSERT(psMsg->type == MESSAGE_TYPE::MSG_PROXIMITY, "Invalid message type");
 
 	//if no data - ignore message
-	if (psMsg->pViewData == nullptr || psMsg->player != selectedPlayer)
-	{
+	if (psMsg->pViewData == nullptr || psMsg->player != selectedPlayer) {
 		return;
 	}
-	if (psProxDisp->type == POS_PROXDATA)
-	{
+	if (psProxDisp->type == POSITION_TYPE:: POS_PROXDATA) {
 		x = ((VIEW_PROXIMITY*)psProxDisp->psMessage->pViewData->pData)->x;
 		y = ((VIEW_PROXIMITY*)psProxDisp->psMessage->pViewData->pData)->y;
 	}
-	else if (psProxDisp->type == POS_PROXOBJ)
+	else if (psProxDisp->type == POSITION_TYPE::POS_PROXOBJ)
 	{
-		x = psProxDisp->psMessage->psObj->pos.x;
-		y = psProxDisp->psMessage->psObj->pos.y;
+		x = psProxDisp->psMessage->psObj->getPosition().x;
+		y = psProxDisp->psMessage->psObj->getPosition().y;
 	}
 
 	//if not within view ignore message

@@ -30,8 +30,9 @@
 #include "input/manager.h"
 #include "input/keyconfig.h"
 
-#include "basedef.h"
-#include "structure.h"
+class Droid;
+class FlagPosition;
+
 
 /* Initialise the display system */
 bool dispInitialise();

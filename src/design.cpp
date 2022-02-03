@@ -682,7 +682,7 @@ bool intAddDesign(bool bShowCentreScreen)
 	}
 
 	/* Initialise the current design */
-	sDefaultDesignTemplate.type = DROID_ANY;
+	sDefaultDesignTemplate.type = DROID_TYPE::ANY;
 	sCurrDesign = sDefaultDesignTemplate;
 	sCurrDesign.isStored = false;
 	sstrcpy(aCurrName, _("New Vehicle"));
@@ -883,14 +883,14 @@ bool intAddDesign(bool bShowCentreScreen)
 	sBarInit.sMinorCol.byte.g = DES_CLICKBARMINORGREEN;
 	sBarInit.sMinorCol.byte.b = DES_CLICKBARMINORBLUE;
 	sBarInit.pTip = _("Kinetic Armour");
-	sBarInit.iRange = getDesignMaxBodyArmour(WC_KINETIC);
+	sBarInit.iRange = getDesignMaxBodyArmour(WEAPON_CLASS::KINETIC);
 	bodyForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 	sBarInit.id = IDDES_BODYARMOUR_H;
 //+= DES_CLICKBARHEIGHT + DES_CLICKGAP;
 	sBarInit.y = DES_STATBAR_Y2;
 	sBarInit.pTip = _("Thermal Armour");
-	sBarInit.iRange = getDesignMaxBodyArmour(WC_HEAT);
+	sBarInit.iRange = getDesignMaxBodyArmour(WEAPON_CLASS::HEAT);
 	bodyForm->attach(std::make_shared<DesignStatsBar>(&sBarInit));
 
 	sBarInit.id = IDDES_BODYPOWER;
@@ -1043,13 +1043,13 @@ void desSetupDesignTemplates()
 		/* add template to list if not a transporter,
 		 * cyborg, person or command droid,
 		 */
-		if (templ.type != DROID_TRANSPORTER &&
-        templ.type != DROID_SUPERTRANSPORTER &&
-        templ.type != DROID_CYBORG &&
-        templ.type != DROID_CYBORG_SUPER &&
-        templ.type != DROID_CYBORG_CONSTRUCT &&
-        templ.type != DROID_CYBORG_REPAIR &&
-        templ.type != DROID_PERSON &&
+		if (templ.type != DROID_TYPE::TRANSPORTER &&
+        templ.type != DROID_TYPE::SUPER_TRANSPORTER &&
+        templ.type != DROID_TYPE::CYBORG &&
+        templ.type != DROID_TYPE::CYBORG_SUPER &&
+        templ.type != DROID_TYPE::CYBORG_CONSTRUCT &&
+        templ.type != DROID_TYPE::CYBORG_REPAIR &&
+        templ.type != DROID_TYPE::PERSON &&
         researchedTemplate(&templ, selectedPlayer, includeRedundantDesigns))
 		{
 			apsTemplateList.push_back(&templ);
@@ -1781,19 +1781,17 @@ static bool intSetPropulsionForm(PropulsionStats* psStats)
 	ASSERT_OR_RETURN(false, psStats != nullptr, "Invalid propulsion stats pointer");
 
 	/* figure out what the new mode should be */
-	switch (asPropulsionTypes[psStats->propulsionType].travel)
-	{
-	case GROUND:
-		newPropMode = IDES_GROUND;
-		break;
-	case AIR:
-		newPropMode = IDES_AIR;
-		break;
+	switch (asPropulsionTypes[(int)psStats->propulsionType].travel) {
+    case TRAVEL_MEDIUM::GROUND:
+      newPropMode = IDES_GROUND;
+      break;
+    case TRAVEL_MEDIUM::AIR:
+      newPropMode = IDES_AIR;
+      break;
 	}
 
 	/* Remove the old form if necessary */
-	if (desPropMode != IDES_NOPROPULSION)
-	{
+	if (desPropMode != IDES_NOPROPULSION) {
 		widgDelete(psWScreen, IDDES_PROPFORM);
 	}
 
@@ -2062,7 +2060,7 @@ static bool intAddComponentButtons(ListTabWidget* compList,
                                    const ComponentIterator& componentIterator, 
                                    unsigned compID, bool bWeapon)
 {
-	int bodysize = SIZE_NUM;
+	auto bodysize = BODY_SIZE::COUNT;
 
 	/* Set up the button struct */
 	int nextButtonId = IDDES_COMPSTART;
@@ -2106,8 +2104,8 @@ static bool intAddComponentButtons(ListTabWidget* compList,
 		{
 			auto& weapon = (WeaponStats&)currStats;
 			if ((weapon.vtolAttackRuns > 0) != bVTOL
-				|| (weapon.weaponSize == WEAPON_SIZE_LIGHT && bodysize != SIZE_LIGHT)
-				|| (weapon.weaponSize == WEAPON_SIZE_HEAVY && bodysize == SIZE_LIGHT))
+				|| (weapon.weaponSize == WEAPON_SIZE::LIGHT && bodysize != BODY_SIZE::LIGHT)
+				|| (weapon.weaponSize == WEAPON_SIZE::HEAVY && bodysize == BODY_SIZE::LIGHT))
 			{
 				return true;
 			}
@@ -2571,7 +2569,7 @@ static void setTemplateStat(DroidTemplate* psTemplate, ComponentStats* psStats)
 		// Reset the sensor, ECM and constructor and repair
 		// - defaults will be set when OK is hit
 		psTemplate->asParts[COMPONENT_TYPE::BRAIN] = 0;
-		psTemplate->asParts[COMPONENT_TYPE::REPAIRUNIT] = 0;
+		psTemplate->asParts[COMPONENT_TYPE::REPAIR_UNIT] = 0;
 		psTemplate->asParts[COMPONENT_TYPE::ECM] = 0;
 		psTemplate->asParts[COMPONENT_TYPE::SENSOR] = 0;
 		psTemplate->asParts[COMPONENT_TYPE::CONSTRUCT] = 0;
@@ -2619,9 +2617,9 @@ static void setTemplateStat(DroidTemplate* psTemplate, ComponentStats* psStats)
 			psTemplate->asParts[COMPONENT_TYPE::PROPULSION] = stats - asPropulsionStats;
 			break;
 		}
-	case COMPONENT_TYPE::REPAIRUNIT:
+	case COMPONENT_TYPE::REPAIR_UNIT:
 		clearTurret();
-		psTemplate->asParts[COMPONENT_TYPE::REPAIRUNIT] = (RepairStats*)psStats - asRepairStats;
+		psTemplate->asParts[COMPONENT_TYPE::REPAIR_UNIT] = (RepairStats*)psStats - asRepairStats;
 		break;
 	case COMPONENT_TYPE::ECM:
 		clearTurret();
@@ -2931,8 +2929,8 @@ bool intValidTemplate(DroidTemplate* psTempl, const char* newName, bool complain
 	}
 
 	//can only have a VTOL weapon on a VTOL propulsion
-	if (checkTemplateIsVtol(psTempl) && !isTransporter(psTempl) && psTempl->weaponCount == 0)
-	{
+	if (checkTemplateIsVtol(psTempl) &&
+      !isTransporter(*psTempl) && psTempl->weaponCount == 0) {
 		debug(level, "VTOL with system turret, not possible");
 		return false;
 	}
@@ -3445,11 +3443,11 @@ void intProcessDesign(unsigned id)
 			// Add the correct component form
 			switch (droidTemplateType(&sCurrDesign))
 			{
-			case DROID_COMMAND:
-			case DROID_SENSOR:
-			case DROID_CONSTRUCT:
-			case DROID_ECM:
-			case DROID_REPAIR:
+			case DROID_TYPE::COMMAND:
+			case DROID_TYPE::SENSOR:
+			case DROID_TYPE::CONSTRUCT:
+			case DROID_TYPE::ECM:
+      case DROID_TYPE::REPAIRER:
 				intSetDesignMode(IDES_SYSTEM);
 				break;
 			default:
@@ -3987,14 +3985,13 @@ to check the weapon is 'allowed'. Check if VTOL, the weapon is direct fire.
 Also check numVTOLattackRuns for the weapon is not zero - return true if valid weapon*/
 static bool intCheckValidWeaponForProp(DroidTemplate* psTemplate)
 {
-	if (asPropulsionTypes[asPropulsionStats[psTemplate->asParts[COMPONENT_TYPE::PROPULSION]].propulsionType].travel != AIR)
-	{
-		if (psTemplate->weaponCount == 0 &&
-        (psTemplate->asParts[COMPONENT_TYPE::SENSOR] ||
-				psTemplate->asParts[COMPONENT_TYPE::REPAIRUNIT] ||
-				psTemplate->asParts[COMPONENT_TYPE::CONSTRUCT] ||
-				psTemplate->asParts[COMPONENT_TYPE::ECM]))
-		{
+  auto propulsion = dynamic_cast<PropulsionStats const*>(psTemplate->getComponent(COMPONENT_TYPE::PROPULSION));
+	if (asPropulsionTypes[(int)propulsion->propulsionType].travel != TRAVEL_MEDIUM::AIR) {
+		if (psTemplate->weapons.empty() &&
+        (psTemplate->components.at(COMPONENT_TYPE::SENSOR) ||
+				psTemplate->components.at(COMPONENT_TYPE::REPAIR_UNIT) ||
+				psTemplate->components.at(COMPONENT_TYPE::CONSTRUCT) ||
+				psTemplate->components.at(COMPONENT_TYPE::ECM))) {
 			// non-AIR propulsions can have systems, too.
 			return true;
 		}
@@ -4003,25 +4000,23 @@ static bool intCheckValidWeaponForProp(DroidTemplate* psTemplate)
 }
 
 //checks if the template has PROPULSION_TYPE::LIFT propulsion attached - returns true if it does
-bool checkTemplateIsVtol(const DroidTemplate* psTemplate)
+bool checkTemplateIsVtol(DroidTemplate const* psTemplate)
 {
-	return asPropulsionStats[psTemplate->asParts[COMPONENT_TYPE::PROPULSION]].propulsionType == PROPULSION_TYPE::LIFT;
+	return dynamic_cast<PropulsionStats const*>(psTemplate->getComponent(
+          COMPONENT_TYPE::PROPULSION))->propulsionType == PROPULSION_TYPE::LIFT;
 }
 
 void updateStoreButton(bool isStored)
 {
 	unsigned imageset;
 
-	if (isStored)
-	{
+	if (isStored) {
 		imageset = PACKDWORD_TRI(0, IMAGE_DES_DELETEH, IMAGE_DES_DELETE);
 		widgGetFromID(psWScreen, IDDES_STOREBUTTON)->setTip(_("Do Not Store Design"));
 	}
-	else
-	{
+	else {
 		imageset = PACKDWORD_TRI(0, IMAGE_DES_SAVEH, IMAGE_DES_SAVE);
 		widgGetFromID(psWScreen, IDDES_STOREBUTTON)->setTip(_("Store Design"));
 	}
-
 	widgSetUserData2(psWScreen, IDDES_STOREBUTTON, imageset);
 }

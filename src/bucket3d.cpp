@@ -394,7 +394,7 @@ void bucketRenderCurrentList(const glm::mat4& viewMatrix)
 		{
       using enum RENDER_TYPE;
 		case RENDER_PARTICLE:
-			renderParticle((Particle*)thisTag.pObject, viewMatrix);
+			::renderParticle((Particle*)thisTag.pObject, viewMatrix);
 			break;
 		case RENDER_EFFECT:
 			renderEffect((EFFECT*)thisTag.pObject, viewMatrix);

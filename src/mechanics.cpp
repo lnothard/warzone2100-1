@@ -76,45 +76,45 @@ void freeComponentLists()
 	for (inc = 0; inc < MAX_PLAYERS; inc++)
 	{
 		//free the component lists
-		if (apCompLists[inc][COMP_BODY])
+		if (apCompLists[inc][COMPONENT_TYPE::BODY])
 		{
-			free(apCompLists[inc][COMP_BODY]);
-			apCompLists[inc][COMP_BODY] = nullptr;
+			free(apCompLists[inc][COMPONENT_TYPE::BODY]);
+			apCompLists[inc][COMPONENT_TYPE::BODY] = nullptr;
 		}
-		if (apCompLists[inc][COMP_BRAIN])
+		if (apCompLists[inc][COMPONENT_TYPE::BRAIN])
 		{
-			free(apCompLists[inc][COMP_BRAIN]);
-			apCompLists[inc][COMP_BRAIN] = nullptr;
+			free(apCompLists[inc][COMPONENT_TYPE::BRAIN]);
+			apCompLists[inc][COMPONENT_TYPE::BRAIN] = nullptr;
 		}
-		if (apCompLists[inc][COMP_PROPULSION])
+		if (apCompLists[inc][COMPONENT_TYPE::PROPULSION])
 		{
-			free(apCompLists[inc][COMP_PROPULSION]);
-			apCompLists[inc][COMP_PROPULSION] = nullptr;
+			free(apCompLists[inc][COMPONENT_TYPE::PROPULSION]);
+			apCompLists[inc][COMPONENT_TYPE::PROPULSION] = nullptr;
 		}
-		if (apCompLists[inc][COMP_SENSOR])
+		if (apCompLists[inc][COMPONENT_TYPE::SENSOR])
 		{
-			free(apCompLists[inc][COMP_SENSOR]);
-			apCompLists[inc][COMP_SENSOR] = nullptr;
+			free(apCompLists[inc][COMPONENT_TYPE::SENSOR]);
+			apCompLists[inc][COMPONENT_TYPE::SENSOR] = nullptr;
 		}
-		if (apCompLists[inc][COMP_ECM])
+		if (apCompLists[inc][COMPONENT_TYPE::ECM])
 		{
-			free(apCompLists[inc][COMP_ECM]);
-			apCompLists[inc][COMP_ECM] = nullptr;
+			free(apCompLists[inc][COMPONENT_TYPE::ECM]);
+			apCompLists[inc][COMPONENT_TYPE::ECM] = nullptr;
 		}
-		if (apCompLists[inc][COMP_REPAIRUNIT])
+		if (apCompLists[inc][COMPONENT_TYPE::REPAIR_UNIT])
 		{
-			free(apCompLists[inc][COMP_REPAIRUNIT]);
-			apCompLists[inc][COMP_REPAIRUNIT] = nullptr;
+			free(apCompLists[inc][COMPONENT_TYPE::REPAIRUNIT]);
+			apCompLists[inc][COMPONENT_TYPE::REPAIRUNIT] = nullptr;
 		}
-		if (apCompLists[inc][COMP_CONSTRUCT])
+		if (apCompLists[inc][COMPONENT_TYPE::CONSTRUCT])
 		{
-			free(apCompLists[inc][COMP_CONSTRUCT]);
-			apCompLists[inc][COMP_CONSTRUCT] = nullptr;
+			free(apCompLists[inc][COMPONENT_TYPE::CONSTRUCT]);
+			apCompLists[inc][COMPONENT_TYPE::CONSTRUCT] = nullptr;
 		}
-		if (apCompLists[inc][COMP_WEAPON])
+		if (apCompLists[inc][COMPONENT_TYPE::WEAPON])
 		{
-			free(apCompLists[inc][COMP_WEAPON]);
-			apCompLists[inc][COMP_WEAPON] = nullptr;
+			free(apCompLists[inc][COMPONENT_TYPE::WEAPON]);
+			apCompLists[inc][COMPONENT_TYPE::WEAPON] = nullptr;
 		}
 	}
 }
@@ -170,35 +170,35 @@ void makeAllAvailable()
 	{
 		for (comp = 0; comp < numWeaponStats; comp++)
 		{
-			apCompLists[i][COMP_WEAPON][comp] = AVAILABLE;
+			apCompLists[i][COMPONENT_TYPE::WEAPON][comp] = AVAILABLE;
 		}
 		for (comp = 0; comp < numBodyStats; comp++)
 		{
-			apCompLists[i][COMP_BODY][comp] = AVAILABLE;
+			apCompLists[i][COMPONENT_TYPE::BODY][comp] = AVAILABLE;
 		}
 		for (comp = 0; comp < numPropulsionStats; comp++)
 		{
-			apCompLists[i][COMP_PROPULSION][comp] = AVAILABLE;
+			apCompLists[i][COMPONENT_TYPE::PROPULSION][comp] = AVAILABLE;
 		}
 		for (comp = 0; comp < numSensorStats; comp++)
 		{
-			apCompLists[i][COMP_SENSOR][comp] = AVAILABLE;
+			apCompLists[i][COMPONENT_TYPE::SENSOR][comp] = AVAILABLE;
 		}
 		for (comp = 0; comp < numECMStats; comp++)
 		{
-			apCompLists[i][COMP_ECM][comp] = AVAILABLE;
+			apCompLists[i][COMPONENT_TYPE::ECM][comp] = AVAILABLE;
 		}
 		for (comp = 0; comp < numConstructStats; comp++)
 		{
-			apCompLists[i][COMP_CONSTRUCT][comp] = AVAILABLE;
+			apCompLists[i][COMPONENT_TYPE::CONSTRUCT][comp] = AVAILABLE;
 		}
 		for (comp = 0; comp < numBrainStats; comp++)
 		{
-			apCompLists[i][COMP_BRAIN][comp] = AVAILABLE;
+			apCompLists[i][COMPONENT_TYPE::BRAIN][comp] = AVAILABLE;
 		}
 		for (comp = 0; comp < numRepairStats; comp++)
 		{
-			apCompLists[i][COMP_REPAIRUNIT][comp] = AVAILABLE;
+			apCompLists[i][COMPONENT_TYPE::REPAIR_UNIT][comp] = AVAILABLE;
 		}
 
 		//make all the structures available

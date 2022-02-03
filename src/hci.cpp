@@ -1259,43 +1259,43 @@ void intOpenDebugMenu(OBJECT_TYPE id)
 
 	intResetScreen(true);
 	switch (id) {
-	case OBJ_DROID:
+    case OBJECT_TYPE::DROID:
 		apsTemplateList.clear();
-		for (auto& localTemplate : localTemplates)
-		{
-			apsTemplateList.push_back(&localTemplate);
-		}
-		ppsStatsList = (BaseStats**)&apsTemplateList[0];
-	// FIXME Ugly cast, and is undefined behaviour (strict-aliasing violation) in C/C++.
-		objMode = IOBJ_DEBUG_DROID;
-		intAddDebugStatsForm(ppsStatsList, apsTemplateList.size());
-		intMode = INT_EDITSTAT;
-		editPosMode = IED_NOPOS;
-		break;
-	case OBJ_STRUCTURE:
-		for (unsigned i = 0; i < std::min<unsigned>(numStructureStats, MAXSTRUCTURES); ++i)
-		{
-			apsStructStatsList[i] = asStructureStats + i;
-		}
-		ppsStatsList = (BaseStats**)apsStructStatsList;
-		objMode = IOBJ_DEBUG_STRUCTURE;
-		intAddDebugStatsForm(ppsStatsList, std::min<unsigned>(numStructureStats, MAXSTRUCTURES));
-		intMode = INT_EDITSTAT;
-		editPosMode = IED_NOPOS;
-		break;
-	case OBJ_FEATURE:
-		for (unsigned i = 0; i < std::min<unsigned>(numFeatureStats, MAXFEATURES); ++i)
-		{
-			apsFeatureList[i] = asFeatureStats + i;
-		}
-		ppsStatsList = (BaseStats**)apsFeatureList;
-		intAddDebugStatsForm(ppsStatsList, std::min<unsigned>(numFeatureStats, MAXFEATURES));
-		intMode = INT_EDITSTAT;
-		editPosMode = IED_NOPOS;
-		break;
-	default:
-		ASSERT(false, "Unknown debug menu code");
-		break;
+  		for (auto& localTemplate : localTemplates)
+  		{
+  			apsTemplateList.push_back(&localTemplate);
+  		}
+  		ppsStatsList = (BaseStats**)&apsTemplateList[0];
+  	// FIXME Ugly cast, and is undefined behaviour (strict-aliasing violation) in C/C++.
+  		objMode = IOBJ_DEBUG_DROID;
+  		intAddDebugStatsForm(ppsStatsList, apsTemplateList.size());
+  		intMode = INT_EDITSTAT;
+  		editPosMode = IED_NOPOS;
+  		break;
+    case OBJECT_TYPE::STRUCTURE:
+		  for (unsigned i = 0; i < std::min<unsigned>(numStructureStats, MAXSTRUCTURES); ++i)
+		  {
+		  	apsStructStatsList[i] = asStructureStats + i;
+		  }
+		  ppsStatsList = (BaseStats**)apsStructStatsList;
+		  objMode = IOBJ_DEBUG_STRUCTURE;
+		  intAddDebugStatsForm(ppsStatsList, std::min<unsigned>(numStructureStats, MAXSTRUCTURES));
+		  intMode = INT_EDITSTAT;
+		  editPosMode = IED_NOPOS;
+		  break;
+    case OBJECT_TYPE::FEATURE:
+		  for (unsigned i = 0; i < std::min<unsigned>(numFeatureStats, MAXFEATURES); ++i)
+		  {
+		  	apsFeatureList[i] = asFeatureStats + i;
+		  }
+		  ppsStatsList = (BaseStats**)apsFeatureList;
+		  intAddDebugStatsForm(ppsStatsList, std::min<unsigned>(numFeatureStats, MAXFEATURES));
+		  intMode = INT_EDITSTAT;
+		  editPosMode = IED_NOPOS;
+		  break;
+	  default:
+      ASSERT(false, "Unknown debug menu code");
+      break;
 	}
 }
 
@@ -1354,7 +1354,7 @@ INT_RETVAL intRunWidgets()
 		}
 		else
 		{
-			if (saveGame(sRequestResult, GTYPE_SAVE_START))
+			if (saveGame(sRequestResult, GAME_TYPE::GTYPE_SAVE_START))
 			{
 				char msg[256] = {'\0'};
 
@@ -1750,7 +1750,7 @@ INT_RETVAL intRunWidgets()
 						else
 						{
 							Structure* psStructure = &tmp;
-							tmp.id = generateNewObjectId();
+							tmp.setId(generateNewObjectId());
 							tmp.pStructureType = (StructureStats*)psPositionStats;
 							tmp.setPosition({pos.x, pos.y, map_Height(pos.x, pos.y) + world_coord(1) / 10});
 
@@ -2838,17 +2838,15 @@ Droid* intGotoNextDroidType(Droid* CurrDroid, DROID_TYPE droidType, bool AllowGr
 	}
 	else
 	{
-		psDroid = apsDroidLists[selectedPlayer];
+		psDroid = playerList[selectedPlayer].droids;
 	}
 
 	for (; psDroid != nullptr; psDroid = psDroid->psNext)
 	{
 		if ((psDroid->getType() == droidType
 				|| (droidType == DROID_TYPE::ANY && !isTransporter(*psDroid)))
-			&& (psDroid->group == UBYTE_MAX || AllowGroup))
-		{
-			if (psDroid != CurrentDroid)
-			{
+		   	&& (psDroid->group == UBYTE_MAX || AllowGroup)) {
+			if (psDroid != CurrentDroid) {
 				clearSelection();
 				SelectDroid(psDroid);
 				CurrentDroid = psDroid;
@@ -2860,7 +2858,7 @@ Droid* intGotoNextDroidType(Droid* CurrDroid, DROID_TYPE droidType, bool AllowGr
 
 	// Start back at the beginning?
 	if ((!Found) && (CurrentDroid != nullptr)) {
-		for (auto& psDroid : apsDroidLists[selectedPlayer])
+		for (auto& psDroid : playerList[selectedPlayer].droids)
 		{
       if (&psDroid == CurrentDroid) continue;
 

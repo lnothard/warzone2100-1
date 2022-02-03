@@ -25,23 +25,21 @@
  * - Alex McLean, Pumpkin Studios, EIDOS Interactive.
  */
 
+#include "lib/framework/fixedpoint.h"
 #include "lib/framework/frame.h"
 #include "lib/framework/math_ext.h"
-
-#include "lib/ivis_opengl/piestate.h"
+#include "lib/gamelib/gtime.h"
 #include "lib/ivis_opengl/piematrix.h"
 #include "lib/ivis_opengl/pienormalize.h"
 #include "lib/ivis_opengl/piepalette.h"
-#include "lib/framework/fixedpoint.h"
+#include "lib/ivis_opengl/piestate.h"
 
-#include "lib/gamelib/gtime.h"
-
-#include "map.h"
-#include "lighting.h"
 #include "display3d.h"
+#include "lighting.h"
+#include "map.h"
+#include "objmem.h"
 #include "terrain.h"
 #include "warzoneconfig.h"
-#include "objmem.h"
 
 // These magic values determine the fog
 #define FOG_BEGIN 4000
@@ -374,13 +372,13 @@ void doBuildingLights()
 
 	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (auto& psStructure : apsStructLists[i])
+		for (auto& psStructure : playerList[i].structures)
 		{
-			light.range = psStructure->getStats()->base_width * TILE_UNITS;
-			light.position.x = psStructure->getPosition().x;
-			light.position.z = psStructure->getPosition().y;
+			light.range = psStructure.getStats()->base_width * TILE_UNITS;
+			light.position.x = psStructure.getPosition().x;
+			light.position.z = psStructure.getPosition().y;
 			light.position.y = map_Height(light.position.x, light.position.z);
-			light.range = psStructure->getStats()->base_width * TILE_UNITS;
+			light.range = psStructure.getStats()->base_width * TILE_UNITS;
 			light.colour = pal_Colour(255, 255, 255);
 			processLight(&light);
 		}

@@ -413,7 +413,7 @@ static bool BuildSelectedDroidList()
 		return false;
 	}
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			SelectedDroids.push_back(&psDroid);

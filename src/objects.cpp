@@ -29,6 +29,7 @@
 #include "feature.h"
 #include "objects.h"
 #include "structure.h"
+#include "baseobject.h"
 
 class Droid;
 bool objmemInitialise();
@@ -82,26 +83,25 @@ const char* objInfo(const BaseObject * psObj)
 		return "null";
 	}
 
-	switch (psObj->type)
-	{
-	case OBJ_DROID:
+	switch (getObjectType(psObj)) {
+    case OBJECT_TYPE::DROID:
 		{
 			const Droid* psDroid = (const Droid*)psObj;
 			return droidGetName(psDroid);
 		}
-	case OBJ_STRUCTURE:
+    case OBJECT_TYPE::STRUCTURE:
 		{
 			const Structure* psStruct = (const Structure*)psObj;
-			sstrcpy(info, getStatsName(psStruct->pStructureType));
+			sstrcpy(info, getStatsName(psStruct->getStats()));
 			break;
 		}
-	case OBJ_FEATURE:
+    case OBJECT_TYPE::FEATURE:
 		{
 			const Feature* psFeat = (const Feature*)psObj;
-			sstrcpy(info, getStatsName(psFeat->psStats));
+			sstrcpy(info, getStatsName(psFeat->getStats()));
 			break;
 		}
-	case OBJ_PROJECTILE:
+    case OBJECT_TYPE::PROJECTILE:
 		sstrcpy(info, "Projectile"); // TODO
 		break;
 	default:

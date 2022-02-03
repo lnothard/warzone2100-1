@@ -44,6 +44,7 @@ struct Structure;
 struct W_SCREEN;
 struct iIMDShape;
 
+
 /// Reticule button indices
 enum 
 {
@@ -57,7 +58,6 @@ enum
 };
 
 static constexpr auto BASE_COORDS_X	= 640;
-static constexpr auto BASE_COORDS_Y	= 460;
 
 #define E_W (pie_GetVideoBufferWidth() - BASE_COORDS_X)
 #define E_H (pie_GetVideoBufferHeight() - BASE_COORDS_Y)

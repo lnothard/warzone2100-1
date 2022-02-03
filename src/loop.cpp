@@ -24,7 +24,7 @@
  */
 
 #include "lib/framework/wzapp.h"
-#include "lib/ivis_opengl/piestate.h" //ivis render code
+#include "lib/ivis_opengl/piestate.h"
 #include "lib/ivis_opengl/piemode.h"
 #include "lib/sound/cdaudio.h"
 #include "lib/sound/mixer.h"
@@ -33,7 +33,7 @@
 #include "loop.h"
 #include "ingameop.h"
 #include "display3d.h"
-#include "multiplay.h" //ajl
+#include "multiplay.h"
 #include "intelmap.h"
 #include "loadsave.h"
 #include "game.h"
@@ -55,14 +55,10 @@
 #include "objmem.h"
 #include "fpath.h"
 #include "random.h"
-
-#ifdef DEBUG
-#include "objmem.h"
-#endif
+#include "display.h"
 
 void proj_UpdateAll();
-void visUpdateLevel();
-void processVisibility();
+
 
 /*
  * Global variables
@@ -153,7 +149,7 @@ static GAME_CODE renderLoop()
 
 			for (auto i = 0; i < MAX_PLAYERS; i++)
 			{
-				for (auto& psCurr : apsDroidLists[i])
+				for (auto& psCurr : playerList[i].droids)
 				{
 					// Don't copy the next pointer - if droids somehow get destroyed in the graphics rendering loop, who cares if we crash.
 					calcDroidIllumination(&psCurr);
@@ -206,7 +202,7 @@ static GAME_CODE renderLoop()
 				char msgbuffer[256] = {'\0'};
 
 				if (saveInMissionRes()) {
-					if (saveGame(sRequestResult, GTYPE_SAVE_START)) {
+					if (saveGame(sRequestResult, GAME_TYPE::GTYPE_SAVE_START)) {
 						sstrcpy(msgbuffer, _("GAME SAVED: "));
 						sstrcat(msgbuffer, sRequestResult);
 						addConsoleMessage(msgbuffer, CONSOLE_TEXT_JUSTIFICATION::LEFT, NOTIFY_MESSAGE);
@@ -220,7 +216,7 @@ static GAME_CODE renderLoop()
 					}
 				}
 				else if (bMultiPlayer || saveMidMission()) {
-					if (saveGame(sRequestResult, GTYPE_SAVE_MIDMISSION)) //mid mission from [esc] menu
+					if (saveGame(sRequestResult, GAME_TYPE::GTYPE_SAVE_MIDMISSION)) //mid mission from [esc] menu
 					{
 						sstrcpy(msgbuffer, _("GAME SAVED: "));
 						sstrcat(msgbuffer, sRequestResult);
@@ -359,7 +355,7 @@ void countUpdate(bool synch)
 		numMissionDroids[i] = 0;
 		numTransporterDroids[i] = 0;
 
-		for (auto& psCurr : apsDroidLists[i])
+		for (auto& psCurr : playerList[i].droids)
 		{
 			numDroids[i]++;
 			switch (psCurr.getType()) {
@@ -417,14 +413,14 @@ void countUpdate(bool synch)
 		}
 		// FIXME: These for-loops are code duplicationo
 		setLasSatExists(false, i);
-		for (auto& psCBuilding : apsStructLists[i])
+		for (auto& psCBuilding : playerList[i].structures)
 		{
 			if (psCBuilding->getStats()->type == STRUCTURE_TYPE::SAT_UPLINK &&
           psCBuilding->getState() == STRUCTURE_STATE::BUILT) {
 				setSatUplinkExists(true, i);
 			}
 			//don't wait for the Las Sat to be built - can't build another if one is partially built
-			if (asWeaponStats[psCBuilding->asWeaps[0].nStat].weaponSubClass == WEAPON_SUBCLASS::LAS_SAT) {
+			if (psCBuilding->weaponManager->weapons[0].stats->weaponSubClass == WEAPON_SUBCLASS::LAS_SAT) {
 				setLasSatExists(true, i);
 			}
 		}
@@ -507,7 +503,7 @@ static void gameStateUpdate()
 		//update the current power available for a player
 		updatePlayerPower(i);
 
-		for (auto& psCurr : apsDroidLists[i])
+		for (auto& psCurr : playerList[i].droids)
 		{
 			droidUpdate(&psCurr);
 		}
@@ -519,7 +515,7 @@ static void gameStateUpdate()
 
 		// FIXME: These for-loops are code duplication
 		Structure* psNBuilding;
-		for (auto& psCBuilding : apsStructLists[i])
+		for (auto& psCBuilding : playerList[i].structures)
 		{
 			psCBuilding->structureUpdate(false);
 		}
@@ -856,21 +852,21 @@ void adjustDroidCount(Droid* droid, int delta)
 // Increase counts of droids in a transporter
 void droidCountsInTransporter(Droid* droid, unsigned player)
 {
-	if (!isTransporter(*droid) || droid->group == nullptr) {
+	if (!isTransporter(*droid) || droid->getGroup() == nullptr) {
 		return;
 	}
 
 	numTransporterDroids[player] += droid->group->refCount - 1;
 
 	// and count the units inside it...
-	for (auto psDroid = droid->group->members; psDroid != nullptr && psDroid != droid; psDroid = psDroid->psGrpNext)
+	for (auto psDroid : *droid->getGroup()->getMembers())
 	{
-    using enum DROID_TYPE;
-		if (psDroid->type == CYBORG_CONSTRUCT || 
-        psDroid->type == CONSTRUCT) {
+    if (psDroid == droid) break;
+		if (psDroid->getType() == DROID_TYPE::CYBORG_CONSTRUCT ||
+        psDroid->getType() == DROID_TYPE::CONSTRUCT) {
 			numConstructorDroids[player] += 1;
 		}
-		if (psDroid->type == COMMAND) {
+		if (psDroid->getType() == DROID_TYPE::COMMAND) {
 			numCommandDroids[player] += 1;
 		}
 	}
