@@ -29,10 +29,29 @@
 #include "lib/framework/wzconfig.h"
 
 class BaseObject;
-enum class DROID_TYPE;
+
 
 static constexpr auto SHOOT_ON_GROUND = 0x01;
 static constexpr auto SHOOT_IN_AIR = 0x02;
+
+enum class DROID_TYPE
+{
+  WEAPON,
+  SENSOR,
+  ECM,
+  CONSTRUCT,
+  PERSON,
+  CYBORG,
+  TRANSPORTER,
+  COMMAND,
+  REPAIRER,
+  DEFAULT,
+  CYBORG_CONSTRUCT,
+  CYBORG_REPAIR,
+  CYBORG_SUPER,
+  SUPER_TRANSPORTER,
+  ANY
+};
 
 static inline bool stringToEnumSortFunction(std::pair<char const*, unsigned> const& a,
                                             std::pair<char const*, unsigned> const& b)
@@ -122,7 +141,6 @@ enum class WEAPON_CLASS
 {
     /// E.g., bullets
     KINETIC,
-
     /// E.g., lasers
     HEAT,
     COUNT // MUST BE LAST
@@ -289,7 +307,7 @@ struct ComponentStats : public BaseStats
 
     unsigned weight = 0;
     COMPONENT_TYPE compType = COMPONENT_TYPE::COUNT;
-    DROID_TYPE droidTypeOverride;
+    DROID_TYPE droidTypeOverride = DROID_TYPE::ANY;
 
     /// `true` iff this component may be used in the design screen
     bool designable = false;
@@ -393,7 +411,7 @@ struct WeaponStats : public ComponentStats
     UBYTE faceInFlight = 0; ///< flag to make the inflight effect face the player when drawn
     UBYTE surfaceToAir = 0; ///< indicates how good in the air - SHOOT_ON_GROUND, SHOOT_IN_AIR or both
     bool lightWorld = false; ///< flag to indicate whether the effect lights up the world
-    bool penetrate = false; ///< flag to indicate whether pentrate droid or not
+    bool penetrate = false; ///< flag to indicate whether penetrate droid or not
     bool fireOnMove = false; ///< indicates whether the droid has to stop before firing
 
     std::bitset< static_cast<std::size_t>(WEAPON_FLAGS::COUNT) > flags;

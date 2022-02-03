@@ -171,5 +171,7 @@ void gameDisplayScaleFactorDidChange(float newDisplayScaleFactor);
 nonstd::optional<nlohmann::json> parseJsonFile(const char* filename);
 
 bool saveJSONToFile(const nlohmann::json& obj, const char* pFileName);
+bool skipForDifficulty(WzConfig& ini, unsigned player);
+int getPlayer(WzConfig const& ini);
 
 #endif // __INCLUDED_SRC_GAME_H__

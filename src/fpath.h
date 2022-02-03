@@ -32,16 +32,6 @@
 #include "structure.h"
 
 
-enum class FPATH_MOVETYPE
-{
-	FMT_MOVE,
-	///< Move around all obstacles
-	FMT_ATTACK,
-	///< Assume that we will destroy enemy obstacles
-	FMT_BLOCK
-	///< Don't go through obstacles, not even gates.
-};
-
 enum class FPATH_RESULT
 {
     OK,
@@ -56,18 +46,17 @@ struct PathBlockingMap;
 
 struct PathJob
 {
-	PROPULSION_TYPE propulsion;
-	DROID_TYPE droidType;
+	PROPULSION_TYPE propulsion = PROPULSION_TYPE::COUNT;
+	DROID_TYPE droidType = DROID_TYPE::ANY;
 	PathCoord destination {0, 0};
 	PathCoord origin {0, 0};
-	StructureBounds dstStructure;
-	unsigned droidID;
-	FPATH_MOVETYPE moveType;
-	unsigned owner; ///< Player owner
-	std::shared_ptr<PathBlockingMap> blockingMap; ///< Map of blocking tiles.
-	bool acceptNearest;
-	bool deleted;
-	///< Droid was deleted, so throw away result when complete. Must still process this PATHJOB, since processing order can affect resulting paths (but can't affect the path length).
+	NonBlockingArea dstStructure{};
+	unsigned droidID = 0;
+	FPATH_MOVETYPE moveType = FPATH_MOVETYPE::COUNT;
+	unsigned owner = 0;
+	std::shared_ptr<PathBlockingMap> blockingMap;
+	bool acceptNearest = false;
+	bool deleted = false;
 };
 
 struct PathResult
@@ -90,7 +79,7 @@ void fpathUpdate();
 
 /** Find a route for a droid to a location.
  */
-FPATH_RESULT fpathDroidRoute(Droid* psDroid, SDWORD targetX, SDWORD targetY, FPATH_MOVETYPE moveType);
+FPATH_RESULT fpathDroidRoute(Droid* psDroid, int targetX, int targetY, FPATH_MOVETYPE moveType);
 
 /// Returns true iff the parameters have equivalent behaviour in fpathBaseBlockingTile.
 bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, unsigned player1, FPATH_MOVETYPE moveType1,
@@ -108,9 +97,9 @@ bool fpathIsEquivalentBlocking(PROPULSION_TYPE propulsion1, unsigned player1, FP
  *
  *  @return true if the given tile is blocking for this droid
  */
-bool fpathBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion);
+bool fpathBlockingTile(int x, int y, PROPULSION_TYPE propulsion);
 bool fpathDroidBlockingTile(Droid* psDroid, int x, int y, FPATH_MOVETYPE moveType);
-bool fpathBaseBlockingTile(SDWORD x, SDWORD y, PROPULSION_TYPE propulsion, unsigned player, FPATH_MOVETYPE moveType);
+bool fpathBaseBlockingTile(int x, int y, PROPULSION_TYPE propulsion, unsigned player, FPATH_MOVETYPE moveType);
 
 static inline bool fpathBlockingTile(Vector2i tile, PROPULSION_TYPE propulsion)
 {
@@ -124,7 +113,7 @@ static inline bool fpathBlockingTile(Vector2i tile, PROPULSION_TYPE propulsion)
  *
  *  Used for instance by VTOLs. Function is thread-safe.
  */
-void fpathSetDirectRoute(Droid* psDroid, SDWORD targetX, SDWORD targetY);
+void fpathSetDirectRoute(Droid* psDroid, int targetX, int targetY);
 
 /** Clean up path jobs and results for a droid. Function is thread-safe. */
 void fpathRemoveDroidData(int id);

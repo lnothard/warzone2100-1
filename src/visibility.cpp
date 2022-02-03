@@ -645,7 +645,7 @@ static void processVisibilitySelf(BaseObject* psObj)
 	if (psDroid != nullptr && psDroid->getAction() == ACTION::OBSERVE && psDroid->hasCbSensor()) {
 		// Anyone commenting this out will get a knee capping from John.
 		// You have been warned!!
-		setSeenByInstantly(psDroid->getActionTarget(0),
+		setSeenByInstantly(psDroid->getTarget(0),
                        psObj->playerManager->getPlayer(), UBYTE_MAX);
 	}
 }

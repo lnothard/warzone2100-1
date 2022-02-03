@@ -94,19 +94,20 @@ struct Action
 std::string getDroidActionName(ACTION action);
 
 /**
- * Update the action state for a droid.
+ * @typedef tileMatchFunction
  *
- * @todo FIXME: Bad design, "updating" the action state is too fuzzy a goal for
- *              a function. As a result this beast is <em>way</em> too large.
- *              The scope of this function should be significantly limited, or
- *              implemented only as a series of subroutine calls with almost no
- *              data manipulation in this function itself. In either case, this
- *              function requires a major refactoring...
+ * @brief pointer to a 'tile search function', used by spiralSearch()
+ *
+ * @param x,y  are the coordinates that should be inspected.
+ *
+ * @param data a pointer to state data, allows the search function to retain
+ *             state in between calls and can be used as a means of returning
+ *             its result to the caller of spiralSearch().
+ *
+ * @return true when the search has finished, false when the search should
+ *         continue.
  */
-void actionUpdateDroid(Droid* psDroid);
-
-/** Do sanity update only. Called from actionUpdateDroid() normally. */
-void actionSanity(Droid* psDroid);
+typedef bool (*tileMatchFunction)(int x, int y, void* matchState);
 
 /** Give a droid an action. */
 void actionDroid(Droid* psDroid, ACTION action);
@@ -120,21 +121,17 @@ void actionDroid(Droid* psDroid, ACTION action,
                  unsigned x, unsigned y);
 
 /** Give a droid an action with an object target. */
-void actionDroid(Droid* psDroid, ACTION action, BaseObject * psObj);
+void actionDroid(Droid* psDroid, ACTION action, BaseObject* psObj);
 
 /** Give a droid an action with an object target and a location. */
-void actionDroid(Droid* psDroid, ACTION action, BaseObject * psObj,
+void actionDroid(Droid* psDroid, ACTION action, BaseObject* psObj,
                  unsigned x, unsigned y);
 
 /** Rotate turret toward  target return True if locked on (Droid and Structure). */
-bool actionTargetTurret(BaseObject * psAttacker, BaseObject * psTarget,
-                        Weapon* psWeapon);
-
-/** Realign turret. */
-void actionAlignTurret(BaseObject * psObj, int weapon_slot);
+bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, int slot);
 
 /** Check if a target is within weapon range. */
-bool actionInRange(const Droid* psDroid, const BaseObject * psObj,
+bool actionInRange(const Droid* psDroid, const BaseObject* psObj,
                    int weapon_slot, bool useLongWithOptimum = true);
 
 /** Return whether a droid can see a target to fire on it. */
@@ -151,11 +148,29 @@ bool actionReachedDroid(Droid const* psDroid, Droid const* psOther);
 /** Send the vtol droid back to the nearest rearming pad - if there is one, otherwise return to base. */
 void moveToRearm(Droid* psDroid);
 
-/** Choose a landing position for a VTOL when it goes to rearm. */
-bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p);
-
 static bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, WeaponStats const* psStats);
 
 static bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir, BaseStats* psStats);
+
+// Choose a landing position for a VTOL when it goes to rearm that is close to rearm
+// pad but not on it, since it may be busy by the time we get there.
+bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p);
+
+
+/**
+ * Performs a space-filling spiral-like search from startX,startY up to (and
+ * including) radius. For each tile, the search function is called; if it
+ * returns 'true', the search will finish immediately.
+ *
+ * @param startX,startY starting x and y coordinates
+ *
+ * @param max_radius radius to examine. Search will finish when @c max_radius is exceeded.
+ *
+ * @param match searchFunction to use; described in typedef
+ * \param matchState state for the search function
+ * \return true if finished because the searchFunction requested termination,
+ *         false if the radius limit was reached
+ */
+static bool spiralSearch(int startX, int startY, int max_radius, tileMatchFunction match, void* matchState);
 
 #endif // __INCLUDED_SRC_ACTION_H__

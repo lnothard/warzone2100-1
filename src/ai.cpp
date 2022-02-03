@@ -208,7 +208,7 @@ static BaseObject const* aiSearchSensorTargets(BaseObject const* psObj, int weap
 			   	objRadarDetector((BaseObject *)psDroid)) {
 				continue;
 			}
-			psTemp = psDroid->getActionTarget(0);
+			psTemp = psDroid->getTarget(0);
 			isCB = sensor->type == SENSOR_TYPE::INDIRECT_CB;
 			//isRD = objRadarDetector((SimpleObject *)psDroid);
 		}
@@ -297,8 +297,8 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
                              weaponSlot < numWeapons(*psDroid); weaponSlot++)
 				{
 					// see if this weapon is targeting our commander
-					if (psDroid->getActionTarget(weaponSlot) ==
-              psAttackerDroid->getGroup()->getCommander()) {
+					if (psDroid->getTarget(weaponSlot) ==
+              psAttackerDroid->getCommander()) {
 						bTargetingCmd = true;
 					}
 				}
@@ -310,7 +310,7 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
                   weaponSlot < numWeapons(*psStruct); weaponSlot++)
 					{
 						if (psStruct->getTarget(weaponSlot) ==
-                    psAttackerDroid->getGroup()->getCommander()) {
+                    psAttackerDroid->getCommander()) {
 							bTargetingCmd = true;
 						}
 					}
@@ -403,8 +403,10 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
 		}
 
 		/* Now calculate the overall weight */
-		attackWeight = asWeaponModifier[(int)weaponEffect][targetDroid->getPropulsion()->propulsionType] // Our weapon's effect against target
-			+ asWeaponModifierBody[weaponEffect][(asBodyStats + targetDroid->asBits[COMP_BODY])->size]
+    auto propulsion = dynamic_cast<PropulsionStats const*>(targetDroid->getComponent(COMPONENT_TYPE::PROPULSION));
+    auto body = dynamic_cast<BodyStats const*>(targetDroid->getComponent(COMPONENT_TYPE::BODY));
+		attackWeight = asWeaponModifier[(int)weaponEffect][(int)propulsion->propulsionType] // Our weapon's effect against target
+			+ asWeaponModifierBody[(int)weaponEffect][(int)body->size]
 			+ WEIGHT_DIST_TILE_DROID * objSensorRange(psAttacker) / TILE_UNITS
 			- WEIGHT_DIST_TILE_DROID * dist / TILE_UNITS // farther droids are less attractive
 			+ WEIGHT_HEALTH_DROID * damageRatio / 100 // we prefer damaged droids
@@ -492,23 +494,22 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
   if (!bCmdAttached) {
     return std::max<int>(1, attackWeight);
   }
-  ASSERT(psAttackerDroid->group->psCommander != nullptr, "Commander is NULL");
+  ASSERT(psAttackerDroid->getCommander() != nullptr, "Commander is NULL");
 
   // if commander is being targeted by our target, try to defend the commander
   if (bTargetingCmd) {
     attackWeight += WEIGHT_CMD_RANK * (1 + getDroidLevel(
-            psAttackerDroid->group->psCommander));
+            psAttackerDroid->getCommander()));
   }
 
   // fire support - go through all droids assigned to the commander
-  for (auto psGroupDroid = psAttackerDroid->group->members;
-       psGroupDroid; psGroupDroid = psGroupDroid->psGrpNext)
+  for (auto psGroupDroid : psAttackerDroid->getGroup()->getMembers())
   {
-    for (weaponSlot = 0; weaponSlot < psGroupDroid->numWeaps; weaponSlot++)
+    for (weaponSlot = 0; weaponSlot < numWeapons(*psGroupDroid); weaponSlot++)
     {
       // see if this droid is currently targeting current target
-      if (psGroupDroid->getOrder().target == psTarget ||
-              psGroupDroid->getTarget(weaponSlot) == psTarget) {
+      if (psGroupDroid->getOrder()->target == psTarget ||
+          psGroupDroid->getTarget(weaponSlot) == psTarget) {
         // we prefer targets that are already targeted and
         // hence will be destroyed faster
         attackWeight += WEIGHT_CMD_SAME_TARGET;
@@ -551,7 +552,7 @@ int aiBestNearestTarget(Droid* psDroid, BaseObject** ppsObj, int weapon_slot, in
 		bestMod = targetAttackWeight(bestTarget, (BaseObject *)psDroid, weapon_slot);
 	}
 
-	weaponEffect = psDroid->getWeapons()[weapon_slot].getStats().weaponEffect;
+	weaponEffect = psDroid->getWeapon(weapon_slot)->getStats()->weaponEffect;
 
 	electronic = electronicDroid(psDroid);
 
@@ -638,8 +639,8 @@ int aiBestNearestTarget(Droid* psDroid, BaseObject** ppsObj, int weapon_slot, in
 				}
 			}
 			else if (dynamic_cast<Feature*>(targetInQuestion) &&
-               psDroid->lastFrustratedTime > 0 &&
-               gameTime - psDroid->lastFrustratedTime < FRUSTRATED_TIME &&
+               psDroid->getLastFrustratedTime() > 0 &&
+               gameTime - psDroid->getLastFrustratedTime() < FRUSTRATED_TIME &&
                dynamic_cast<Feature*>(targetInQuestion)->getStats()->damageable &&
                psDroid->playerManager->getPlayer() != scavengerPlayer()) { //< hack to avoid scavs blowing up their nice feature walls
 
@@ -754,7 +755,7 @@ bool aiChooseTarget(BaseObject* psObj, BaseObject** ppsTarget, int weapon_slot,
 
 	/* See if there is a something in range */
 	if (auto droid = dynamic_cast<Droid*>(psObj)) {
-		auto psCurrTarget = droid->getActionTarget(0);
+		auto psCurrTarget = droid->getTarget(0);
 
 		/* find a new target */
 		auto newTargetWeight = aiBestNearestTarget(droid, &psTarget, weapon_slot);
@@ -796,10 +797,10 @@ bool aiChooseTarget(BaseObject* psObj, BaseObject** ppsTarget, int weapon_slot,
 			debug(LOG_NEVER, "Commander %d is good enough for fire designation", psCommander->getId());
 
 			if (psCommander->getAction() == ACTION::ATTACK
-				  && psCommander->getActionTarget(0) != nullptr
-				  && !psCommander->getActionTarget(0)->damageManager->isDead()) {
+				  && psCommander->getTarget(0) != nullptr
+				  && !psCommander->getTarget(0)->damageManager->isDead()) {
 				// the commander has a target to fire on
-				if (aiStructHasRange(structure, psCommander->getActionTarget(0), weapon_slot)) {
+				if (aiStructHasRange(structure, psCommander->getTarget(0), weapon_slot)) {
 					// target in range - fire on it
 					tmpOrigin = TARGET_ORIGIN::COMMANDER;
 					psTarget = psCommander->action_target[0];

@@ -71,70 +71,18 @@ static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, unsigned t)
                                   st1.time, st2.time, t)};
 }
 
-Spacetime interpolateObjectSpacetime(const BaseObject* obj, unsigned t)
+Spacetime interpolateObjectSpacetime(BaseObject const* obj, unsigned t)
 {
-	if (auto psDroid = dynamic_cast<const Droid*>(obj)) {
+	if (auto psDroid = dynamic_cast<Droid const*>(obj)) {
     return interpolateSpacetime(psDroid->getPreviousLocation(),
                                 obj->getSpacetime(), t);
   }
-  if (auto psStruct = dynamic_cast<const Structure*>(obj)) {
+  if (auto psStruct = dynamic_cast<Structure const*>(obj)) {
     return interpolateSpacetime(psStruct->getPreviousLocation(),
                                 obj->getSpacetime(), t);
   }
   return obj->getSpacetime();
 }
-
-//void checkObject(const SimpleObject* psObject, const char* const location_description, const char* function,
-//                 const int recurse)
-//{
-//	if (recurse < 0) {
-//		return;
-//	}
-//
-//	ASSERT(psObject != nullptr, "NULL pointer");
-//
-//	switch (psObject->type) {
-//	case OBJ_DROID:
-//		checkDroid((const Droid*)psObject, location_description, function, recurse - 1);
-//		break;
-//
-//	case OBJ_STRUCTURE:
-//		checkStructure((const Structure*)psObject, location_description, function, recurse - 1);
-//		break;
-//
-//	case OBJ_PROJECTILE:
-//		checkProjectile((const Projectile*)psObject, location_description, function, recurse - 1);
-//		break;
-//
-//	case OBJ_FEATURE:
-//		break;
-//
-//	default:
-//		ASSERT_HELPER(!"invalid object type", location_description, function,
-//		              "CHECK_OBJECT: Invalid object type (type num %u)", (unsigned int)psObject->type);
-//		break;
-//	}
-//}
-//
-//void _syncDebugObject(const char* function, SimpleObject const* psObject, char ch)
-//{
-//	switch (psObject->type)
-//	{
-//	case OBJ_DROID: _syncDebugDroid(function, (const Droid*)psObject, ch);
-//		break;
-//	case OBJ_STRUCTURE: _syncDebugStructure(function, (const Structure*)psObject, ch);
-//		break;
-//	case OBJ_FEATURE: _syncDebugFeature(function, (const Feature*)psObject, ch);
-//		break;
-//	case OBJ_PROJECTILE: dynamic_cast<const Projectile*>(psObject)->debug_(function, ch);
-//		break;
-//	default: _syncDebug(function, "%c unidentified_object%d = p%d;objectType%d", ch, psObject->id, psObject->player,
-//	                    psObject->type);
-//		ASSERT_HELPER(!"invalid object type", "_syncDebugObject", function,
-//		              "syncDebug: Invalid object type (type num %u)", (unsigned int)psObject->type);
-//		break;
-//	}
-//}
 
 Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 {
@@ -149,8 +97,8 @@ Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 
 StructureBounds getStructureBounds(BaseObject const* object)
 {
-	auto const psStructure = dynamic_cast<const Structure*>(object);
-	auto const psFeature = dynamic_cast<const Feature*>(object);
+	auto const psStructure = dynamic_cast<Structure const*>(object);
+	auto const psFeature = dynamic_cast<Feature const*>(object);
 
 	if (psStructure != nullptr) {
 		return getStructureBounds(psStructure);
@@ -159,7 +107,8 @@ StructureBounds getStructureBounds(BaseObject const* object)
 		return getStructureBounds(psFeature);
 	}
 
-	return {Vector2i(32767, 32767), Vector2i(-65535, -65535)}; // Default to an invalid area.
+	return {Vector2i(32767, 32767),
+          Vector2i(-65535, -65535)}; // Default to an invalid area.
 }
 
 StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos, uint16_t direction)
@@ -171,5 +120,7 @@ StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos, uint16_
 		return getStructureBounds(dynamic_cast<FeatureStats const*>(stats), pos);
 	}
 
-	return {map_coord(pos), Vector2i(1, 1)}; // Default to a 1×1 tile.
+  // Default to a 1×1 tile.
+	return {map_coord(pos),
+          Vector2i(1, 1)};
 }

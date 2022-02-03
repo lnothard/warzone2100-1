@@ -102,4 +102,10 @@ private:
   std::unique_ptr<Impl> pimpl;
 };
 
+class WeaponManager
+{
+public:
+  std::array<Weapon, MAX_WEAPONS> weapons;
+};
+
 #endif // __INCLUDED_WEAPONDEF_H__

@@ -89,8 +89,8 @@ static bool checkReferences(BaseObject const* psVictim)
 
 			for (auto i = 0; i < numWeapons(psDroid); ++i)
 			{
-				if (psDroid.getActionTarget(i) == psVictim) {
-					ASSERT_OR_RETURN(false, psDroid.getActionTarget(i) != psVictim,
+				if (psDroid.getTarget(i) == psVictim) {
+					ASSERT_OR_RETURN(false, psDroid.getTarget(i) != psVictim,
 					                 BADREF(psDroid->actionTargetFunc[i], psDroid->actionTargetLine[i]));
 				}
 			}

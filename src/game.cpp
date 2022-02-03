@@ -5120,7 +5120,6 @@ static bool loadWzMapDroidInit(WzMap::Map& wzMap)
 	return true;
 }
 
-// -----------------------------------------------------------------------------------------
 // Remaps old player number based on position on map to new owner
 static unsigned RemapPlayerNumber(unsigned OldNumber)
 {
@@ -5141,7 +5140,7 @@ static unsigned RemapPlayerNumber(unsigned OldNumber)
 	return 0;
 }
 
-static int getPlayer(WzConfig const& ini)
+int getPlayer(WzConfig const& ini)
 {
 	if (ini.contains("player")) {
 		json_variant result = ini.value("player");
@@ -5184,7 +5183,7 @@ static inline void setPlayerJSON(nlohmann::json& jsonObj, unsigned player)
 	}
 }
 
-static bool skipForDifficulty(WzConfig& ini, unsigned player)
+bool skipForDifficulty(WzConfig& ini, unsigned player)
 {
   // optionally skip this object
   if (!ini.contains("difficulty"))
@@ -5257,7 +5256,7 @@ static bool loadSaveDroidPointers(const WzString& pFileName)
 		for (int j = 0; j < MAX_WEAPONS; j++)
 		{
 			objTrace(psDroid->getId(), "weapon %d, nStat %d", j, psDroid->asWeaps[j].nStat);
-			getIniBaseObject(ini, "actionTarget/" + WzString::number(j), *psDroid->getActionTarget(j));
+			getIniBaseObject(ini, "actionTarget/" + WzString::number(j), *psDroid->getTarget(j));
 		}
 		if (ini.contains("baseStruct/id"))
 		{
@@ -5440,7 +5439,7 @@ static nlohmann::json writeDroid(Droid const* psCurr, bool onMission, int& count
 	}
 	for (unsigned i = 0; i < MAX_WEAPONS; i++)
 	{
-		setIniBaseObject(droidObj, "actionTarget/" + WzString::number(i), psCurr->getActionTarget(i));
+		setIniBaseObject(droidObj, "actionTarget/" + WzString::number(i), psCurr->getTarget(i));
 	}
 	if (psCurr->lastFrustratedTime > 0)
 	{

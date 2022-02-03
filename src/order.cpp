@@ -137,7 +137,7 @@ Droid* checkForRepairRange(Droid* psDroid)
 {
 	Droid const* psFailedTarget;
 	if (psDroid->getAction() == ACTION::SULK) {
-		psFailedTarget = dynamic_cast<const Droid*>(psDroid->getActionTarget(0));
+		psFailedTarget = dynamic_cast<const Droid*>(psDroid->getTarget(0));
 	}
 
 	ASSERT(psDroid->getType() == DROID_TYPE::REPAIRER ||
@@ -192,7 +192,7 @@ static std::pair<Structure*, ACTION> checkForDamagedStruct(Droid* psDroid)
 {
 	Structure const* psFailedTarget = nullptr;
 	if (psDroid->getAction() == ACTION::SULK) {
-		psFailedTarget = dynamic_cast<Structure const*>(psDroid->getActionTarget(0));
+		psFailedTarget = dynamic_cast<Structure const*>(psDroid->getTarget(0));
 	}
 
 	const auto radius = ((psDroid->getOrder()->type == ORDER_TYPE::HOLD) ||

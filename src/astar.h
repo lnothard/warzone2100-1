@@ -28,12 +28,24 @@
 
 #include "lib/framework/vector.h"
 
-enum class FPATH_MOVETYPE;
-enum class PROPULSION_TYPE;
+#include "stats.h"
+
+
 struct Movement;
 struct PathJob;
 struct StructureBounds;
 
+
+enum class FPATH_MOVETYPE
+{
+  FMT_MOVE,
+  ///< Move around all obstacles
+  FMT_ATTACK,
+  ///< Assume that we will destroy enemy obstacles
+  FMT_BLOCK,
+  ///< Don't go through obstacles, not even gates.
+  COUNT
+};
 
 /**
  * Conversion table from direction to offset
@@ -72,7 +84,8 @@ struct PathCoord
     bool operator ==(const PathCoord& rhs) const = default;
     bool operator !=(const PathCoord& rhs) const = default;
 
-    int x, y;
+    int x = 0;
+    int y = 0;
 };
 
 struct ExploredTile
@@ -96,16 +109,16 @@ struct ExploredTile
 struct PathBlockingType
 {
     /// Internal representation of game time
-    std::size_t gameTime = 0;
+    unsigned gameTime = 0;
 
     /// The player id for the owner of this region
     unsigned owner = 0;
 
     /// How does this region interact with colliding units?
-    FPATH_MOVETYPE moveType;
+    FPATH_MOVETYPE moveType = FPATH_MOVETYPE::COUNT;
 
     /// Which movement class are we blocking?
-    PROPULSION_TYPE propulsion;
+    PROPULSION_TYPE propulsion = PROPULSION_TYPE::COUNT;
 };
 
 /// Represents a route node in the pathfinding table
@@ -142,13 +155,13 @@ struct NonBlockingArea
      * @return `true` if the coordinate (x, y) is within the bounds
      * of this region, `false` otherwise
      */
-    [[nodiscard]] bool is_non_blocking(int x, int y) const;
+    [[nodiscard]] bool isNonBlocking(int x, int y) const;
 
     /**
      * @return `true` if `coord` is within the bounds of this
      * region, `false` otherwise
      */
-    [[nodiscard]] bool is_non_blocking(PathCoord coord) const;
+    [[nodiscard]] bool isNonBlocking(PathCoord coord) const;
 
     /* Coordinates corresponding to the outer tile edges */
     int x_1 = 0;
@@ -160,12 +173,12 @@ struct NonBlockingArea
 /// Represents a blocking region
 struct PathBlockingMap
 {
-    /// Overload testing equivalence of two distinct blocking regions
-    bool operator ==(const PathBlockingType& rhs) const;
+  /// Overload testing equivalence of two distinct blocking regions
+  bool operator ==(const PathBlockingType& rhs) const;
 
-    PathBlockingType type;
-    std::vector<bool> map;
-    std::vector<bool> threat_map;
+  PathBlockingType type;
+  std::vector<bool> map;
+  std::vector<bool> threat_map;
 };
 
 /// Global list of blocking regions
@@ -174,47 +187,48 @@ extern std::vector<PathBlockingMap> blocking_maps;
 /// Main pathfinding data structure. Represents a candidate route
 struct PathContext
 {
-    /// @return `true` if the position at (x, y) is currently blocked
-    [[nodiscard]] bool is_blocked(int x, int y) const;
+  PathContext() = default;
+  PathContext(PathBlockingMap& blockingMap, PathCoord start,
+              PathCoord realStart, PathCoord end, NonBlockingArea nonBlocking);
 
-    /// @return `true` if there are potential threats in the vicinity of (x, y)
-    [[nodiscard]] bool is_dangerous(int x, int y) const;
+  /// @return `true` if the position at (x, y) is currently blocked
+  [[nodiscard]] bool isBlocked(int x, int y) const;
 
-    /// Reverts the route to a default state and sets the parameters
-    void reset(const PathBlockingMap& blocking_map,
-               PathCoord start_coord,
-               NonBlockingArea bounds);
+  /// @return `true` if there are potential threats in the vicinity of (x, y)
+  [[nodiscard]] bool isDangerous(int x, int y) const;
 
-    void init(PathBlockingMap& blocking_map, PathCoord start_coord,
-              PathCoord real_start, PathCoord end, NonBlockingArea non_blocking);
+  /// Reverts the route to a default state and sets the parameters
+  void reset(const PathBlockingMap& blocking_map,
+             PathCoord start_coord,
+             NonBlockingArea bounds);
 
-    /// @return `true` if two path contexts are equivalent
-    [[nodiscard]] bool matches(PathBlockingMap& blocking, PathCoord start,
-                 NonBlockingArea dest) const;
+  /// @return `true` if two path contexts are equivalent
+  [[nodiscard]] bool matches(PathBlockingMap& blocking, PathCoord start,
+               NonBlockingArea dest) const;
 
-    /// How many times have we explored?
-    unsigned iteration;
+  /// How many times have we explored?
+  unsigned iteration = 0;
 
-    /// This could be either the source or target tile
-    PathCoord start_coord;
+  /// This could be either the source or target tile
+  PathCoord start_coord{0, 0};
 
-    /// The next step towards the destination tile
-    PathCoord nearest_reachable_tile;
+  /// The next step towards the destination tile
+  PathCoord nearest_reachable_tile {0, 0};
 
-    /// Should be equal to the game time of `blocking_map`
-    std::size_t game_time = 0;
+  /// Should be equal to the game time of `blocking_map`
+  std::size_t game_time = 0;
 
-    /// The edge of the explored region
-    std::vector<PathNode> nodes;
+  /// The edge of the explored region
+  std::vector<PathNode> nodes;
 
-    /// Paths leading back to `start_coord`, i.e., the route history
-    std::vector<ExploredTile> map;
+  /// Paths leading back to `start_coord`, i.e., the route history
+  std::vector<ExploredTile> map;
 
-    /// Pointer (owning) to the list of blocking tiles for this route
-    std::unique_ptr<PathBlockingMap> blocking_map;
+  /// Pointer (owning) to the list of blocking tiles for this route
+  std::unique_ptr<PathBlockingMap> blocking_map;
 
-    /// Destination structure bounds that may be considered non-blocking
-    NonBlockingArea destination_bounds;
+  /// Destination structure bounds that may be considered non-blocking
+  NonBlockingArea destination_bounds;
 };
 
 /// Global list of available routes
@@ -235,23 +249,23 @@ void fpathSetBlockingMap(PathJob& path_job);
 void fpathHardTableReset();
 
 /// Finds the current best node, and removes it from the node heap
-PathNode get_best_node(std::vector<PathNode>& nodes);
+PathNode getBestNode(std::vector<PathNode>& nodes);
 
 /// @return a rough estimate of the distance to the target point
-unsigned estimate_distance(PathCoord start, PathCoord finish);
+unsigned estimateDistance(PathCoord start, PathCoord finish);
 
 /// @return a more precise estimate using hypotenuse calculation
-unsigned estimate_distance_precise(PathCoord start, PathCoord finish);
+unsigned estimateDistancePrecise(PathCoord start, PathCoord finish);
 
 /// Explore a new node
-void generate_new_node(PathContext& context, PathCoord destination,
+void generateNewNode(PathContext& context, PathCoord destination,
                        PathCoord current_pos, PathCoord prev_pos,
                        unsigned prev_dist);
 
 /// Update the estimates of the given pathfinding context
-void recalculate_estimates(PathContext& context, PathCoord tile);
+void recalculateEstimates(PathContext& context, PathCoord tile);
 
-PathCoord find_nearest_explored_tile(PathContext& context, PathCoord tile);
+PathCoord findNearestExploredTile(PathContext& context, PathCoord tile);
 
 /**
  * Use the A* algorithm to find a path

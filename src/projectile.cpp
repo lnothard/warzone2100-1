@@ -559,7 +559,7 @@ Droid* getDesignatorAttackingObject(unsigned player, BaseObject* target)
 
 	return psCommander != nullptr && 
          psCommander->getAction() == ACTION::ATTACK &&
-         psCommander->getActionTarget(0) == target
+                         psCommander->getTarget(0) == target
 		       ? psCommander
 		       : nullptr;
 }

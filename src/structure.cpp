@@ -254,7 +254,7 @@ struct ResourceExtractor::Impl
 };
 
 Structure::Structure(unsigned id, Player* player)
-  : BaseObject(id, player, std::make_unique<Health>())
+  : BaseObject(id, player, std::make_unique<Health>(), std::make_unique<WeaponManager>())
   , pimpl{std::make_unique<Impl>()}
 {
 }
@@ -613,16 +613,6 @@ iIMDShape const* Structure::getImdShape() const
   return pimpl ? pimpl->prebuiltImd.get() : nullptr;
 }
 
-Weapon const* Structure::getWeapon(int slot) const
-{
-  return pimpl ? &pimpl->weapons[slot] : nullptr;
-}
-
-std::array<Weapon, MAX_WEAPONS> const* Structure::getWeapons() const
-{
-  return &pimpl->weapons;
-}
-
 void Structure::setFoundationDepth(int depth) noexcept
 {
   ASSERT_OR_RETURN(, pimpl != nullptr, "Structure object is undefined");
@@ -887,7 +877,7 @@ Structure* Structure::giftSingleStructure(unsigned attackPlayer, bool electronic
         }
         for (auto i = 0; i < numWeapons(psCurr); ++i)
         {
-          if (psCurr.getActionTarget(i) == this) {
+          if (psCurr.getTarget(i) == this) {
             orderDroid(&psCurr, ORDER_TYPE::STOP, ModeImmediate);
             break;
           }

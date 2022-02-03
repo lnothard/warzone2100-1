@@ -32,6 +32,7 @@
 
 #include "atmos.h"
 #include "bucket3d.h"
+#include "component.h"
 #include "display3d.h"
 #include "displaydef.h"
 #include "effects.h"
@@ -44,7 +45,6 @@ struct BodyStats;
 struct Droid;
 struct iIMDShape;
 struct BaseObject;
-void displayComponentObject(Droid*, const glm::mat4&);
 int pie_GetVideoBufferHeight();
 int pie_GetVideoBufferWidth();
 int pie_RotateProject(const Vector3i*, const glm::mat4&, Vector2i*);
@@ -350,7 +350,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 		}
 		break;
 	case RENDER_DROID:
-		pie = BODY_IMD(((Droid *)pObject), 0);
+		pie = BODY_IMD(((Droid *)pObject), 0).get();
 		z = INT32_MAX - pie->texpage;
 		break;
 	case RENDER_STRUCTURE:

@@ -4063,8 +4063,8 @@ static void doConstructionLines(const glm::mat4& viewMatrix)
 				else if ((psDroid.getAction() == ACTION::DEMOLISH) ||
 					(psDroid.getAction() == ACTION::REPAIR) ||
 					(psDroid.getAction() == ACTION::RESTORE)) {
-					if (&dynamic_cast<const Structure&>(psDroid.getActionTarget(0))) {
-						addConstructionLine(&psDroid, dynamic_cast<const Structure*>(psDroid.getActionTarget(0)), viewMatrix);
+					if (&dynamic_cast<const Structure&>(psDroid.getTarget(0))) {
+						addConstructionLine(&psDroid, dynamic_cast<const Structure*>(psDroid.getTarget(0)), viewMatrix);
 					}
 				}
 			}

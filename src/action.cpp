@@ -25,10 +25,12 @@
 
 #include "lib/framework/fixedpoint.h"
 #include "lib/framework/math_ext.h"
+#include "lib/framework/vector.h"
 #include "lib/sound/audio.h"
 
 #include "action.h"
 #include "droid.h"
+#include "fpath.h"
 #include "geometry.h"
 #include "map.h"
 #include "mapgrid.h"
@@ -36,21 +38,6 @@
 #include "projectile.h"
 #include "visibility.h"
 
-/**
- * @typedef tileMatchFunction
- *
- * @brief pointer to a 'tile search function', used by spiralSearch()
- *
- * @param x,y  are the coordinates that should be inspected.
- *
- * @param data a pointer to state data, allows the search function to retain
- *             state in between calls and can be used as a means of returning
- *             its result to the caller of spiralSearch().
- *
- * @return true when the search has finished, false when the search should
- *         continue.
- */
-typedef bool (*tileMatchFunction)(int x, int y, void* matchState);
 
 std::string getDroidActionName(ACTION action)
 {
@@ -101,7 +88,7 @@ std::string getDroidActionName(ACTION action)
 // check if a target is within weapon range
 bool actionInRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slot, bool useLongWithOptimum)
 {
-	auto psStats = psDroid->getWeapon(0)->getStats();
+	auto psStats = psDroid->weaponManager->getWeapon(0)->getStats();
 
 	const auto dx = psDroid->getPosition().x - psObj->getPosition().x;
 	const auto dy = psDroid->getPosition().y - psObj->getPosition().y;
@@ -149,7 +136,7 @@ bool actionInRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slo
 static bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, WeaponStats const* psStats)
 {
 	if (!psStats) {
-		psStats = psDroid->getWeapon(0)->getStats();
+		psStats = psDroid->weaponManager->getWeapon(0)->getStats();
 	}
 
 	/* if I am a multi-turret droid */
@@ -171,12 +158,13 @@ static bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, 
 }
 
 /* returns true if on target */
-bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* psWeapon)
+bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, int weaponSlot)
 {
+  auto weapon = psAttacker->weaponManager->getWeapon(weaponSlot);
   auto rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
   auto pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
 
-	auto psWeapStats = psWeapon->getStats();
+	auto psWeapStats = weapon->getStats();
 	unsigned tRotation, tPitch;
 	unsigned targetRotation;
 	auto rotationTolerance = 0;
@@ -196,8 +184,8 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* ps
 		pitchRate = rotRate / 2;
 	}
 
-	tRotation = psWeapon->getRotation().direction;
-	tPitch = psWeapon->getRotation().pitch;
+	tRotation = weapon->getRotation().direction;
+	tPitch = weapon->getRotation().pitch;
 
 	// set the pitch limits based on the weapon stats of the attacker
 	pitchLowerLimit = pitchUpperLimit = 0;
@@ -206,15 +194,12 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* ps
 	// using for calculating the pitch, but not the direction, in case
   // using the exact direction causes bugs somewhere.
 	if (auto as_struct = dynamic_cast<Structure*>(psAttacker)) {
-		int weapon_slot = psWeapon - as_struct->asWeaps; // Should probably be passed weapon_slot instead of psWeapon.
-		calcStructureMuzzleLocation(as_struct, &attackerMuzzlePos, weapon_slot);
+		calcStructureMuzzleLocation(as_struct, &attackerMuzzlePos, weaponSlot);
 		pitchLowerLimit = DEG(psWeapStats->minElevation);
 		pitchUpperLimit = DEG(psWeapStats->maxElevation);
 	}
 	else if (auto psDroid = dynamic_cast<Droid*>(psAttacker)) {
-		int weapon_slot = psWeapon - psDroid->asWeaps; // Should probably be passed weapon_slot instead of psWeapon.
-		calcDroidMuzzleLocation(psDroid, &attackerMuzzlePos, weapon_slot);
-
+		calcDroidMuzzleLocation(psDroid, &attackerMuzzlePos, weaponSlot);
 		if (psDroid->getType() == DROID_TYPE::WEAPON ||
        isTransporter(*psDroid) ||
        psDroid->getType() == DROID_TYPE::COMMAND ||
@@ -272,15 +257,15 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, Weapon* ps
 		tPitch += clip(pitchError, -pitchRate, pitchRate);
 		onTarget = onTarget && targetPitch == tPitch;
 	}
-  psWeapon->setRotation({static_cast<int>(tRotation),
+  weapon->setRotation({static_cast<int>(tRotation),
                         static_cast<int>(tPitch),
-                        psWeapon->getRotation().roll});
+                        weapon->getRotation().roll});
 
 	return onTarget;
 }
 
 // return whether a droid can see a target to fire on it
-bool actionVisibleTarget(Droid const* psDroid, BaseObject const* psTarget, int weapon_slot)
+bool actionVisibleTarget(Droid const* psDroid, BaseObject const* psTarget, int weapon_slot, bool useLongWithOptimum)
 {
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
 	ASSERT_OR_RETURN(false, psDroid->playerManager->getPlayer() < MAX_PLAYERS,
@@ -301,7 +286,7 @@ bool actionVisibleTarget(Droid const* psDroid, BaseObject const* psTarget, int w
 
 static void actionAddVtolAttackRun(Droid* psDroid)
 {
-  auto psTarget = psDroid->getActionTarget(0);
+  auto psTarget = psDroid->getTarget(0);
 
 	if (psDroid->getOrder()->target != nullptr)
 		psTarget = psDroid->getOrder()->target;
@@ -478,7 +463,7 @@ void actionDroid(Droid* psDroid, ACTION action, unsigned x, unsigned y)
 }
 
 /* Give a droid an action with an object target */
-void actionDroid(Droid* psDroid, ACTION action, BaseObject * psObj)
+void actionDroid(Droid* psDroid, ACTION action, BaseObject* psObj)
 {
 	Action sAction;
 
@@ -501,7 +486,6 @@ void actionDroid(Droid* psDroid, ACTION action,
 	sAction.y = y;
 	psDroid->actionDroidBase(&sAction);
 }
-
 
 /*send the vtol droid back to the nearest rearming pad - if one otherwise
 return to base*/
@@ -542,152 +526,115 @@ void moveToRearm(Droid* psDroid)
 	}
 }
 
-///**
-// * Performs a space-filling spiral-like search from startX,startY up to (and
-// * including) radius. For each tile, the search function is called; if it
-// * returns 'true', the search will finish immediately.
-// *
-// * @param startX,startY starting x and y coordinates
-// *
-// * @param max_radius radius to examine. Search will finish when @c max_radius is exceeded.
-// *
-// * @param match searchFunction to use; described in typedef
-// * \param matchState state for the search function
-// * \return true if finished because the searchFunction requested termination,
-// *         false if the radius limit was reached
-// */
-//static bool spiralSearch(int startX, int startY, int max_radius, tileMatchFunction match, void* matchState)
-//{
-//	// test center tile
-//	if (match(startX, startY, matchState))
-//	{
-//		return true;
-//	}
-//
-//	// test for each radius, from 1 to max_radius (inclusive)
-//	for (int radius = 1; radius <= max_radius; ++radius)
-//	{
-//		// choose tiles that are between radius and radius+1 away from center
-//		// distances are squared
-//		const int min_distance = radius * radius;
-//		const int max_distance = min_distance + 2 * radius;
-//
-//		// X offset from startX
-//		int dx;
-//
-//		// dx starts with 1, to visiting tiles on same row or col as start twice
-//		for (dx = 1; dx <= max_radius; dx++)
-//		{
-//			// Y offset from startY
-//			int dy;
-//
-//			for (dy = 0; dy <= max_radius; dy++)
-//			{
-//				// Current distance, squared
-//				const int distance = dx * dx + dy * dy;
-//
-//				// Ignore tiles outside of the current circle
-//				if (distance < min_distance || distance > max_distance)
-//				{
-//					continue;
-//				}
-//
-//				// call search function for each of the 4 quadrants of the circle
-//				if (match(startX + dx, startY + dy, matchState)
-//					|| match(startX - dx, startY - dy, matchState)
-//					|| match(startX + dy, startY - dx, matchState)
-//					|| match(startX - dy, startY + dx, matchState))
-//				{
-//					return true;
-//				}
-//			}
-//		}
-//	}
-//
-//	return false;
-//}
-//
-///**
-// * an internal tileMatchFunction that checks if x and y are coordinates of a
-// * valid landing place.
-// *
-// * @param matchState a pointer to a Vector2i where these coordintates should be stored
-// *
-// * @return true if coordinates are a valid landing tile, false if not.
-// */
-//static bool vtolLandingTileSearchFunction(int x, int y, void* matchState)
-//{
-//	Vector2i* const xyCoords = (Vector2i*)matchState;
-//
-//	if (vtolLandingTile(x, y))
-//	{
-//		xyCoords->x = x;
-//		xyCoords->y = y;
-//		return true;
-//	}
-//
-//	return false;
-//}
+static bool spiralSearch(int startX, int startY, int max_radius, tileMatchFunction match, void* matchState)
+{
+	// test center tile
+	if (match(startX, startY, matchState)) {
+		return true;
+	}
 
-//// Choose a landing position for a VTOL when it goes to rearm that is close to rearm
-//// pad but not on it, since it may be busy by the time we get there.
-//bool actionVTOLLandingPos(DROID const* psDroid, Vector2i* p)
-//{
-//	CHECK_DROID(psDroid);
-//
-//	/* Initial box dimensions and set iteration count to zero */
-//	int startX = map_coord(p->x);
-//	int startY = map_coord(p->y);
-//
-//	// set blocking flags for all the other droids
-//	for (const DROID* psCurr = apsDroidLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
-//	{
-//		Vector2i t(0, 0);
-//		if (DROID_STOPPED(psCurr))
-//		{
-//			t = map_coord(psCurr->pos.xy());
-//		}
-//		else
-//		{
-//			t = map_coord(psCurr->sMove.destination);
-//		}
-//		if (psCurr != psDroid)
-//		{
-//			if (tileOnMap(t))
-//			{
-//				mapTile(t)->tileInfoBits |= BITS_FPATHBLOCK;
-//			}
-//		}
-//	}
-//
-//	// search for landing tile; will stop when found or radius exceeded
-//	Vector2i xyCoords(0, 0);
-//	const bool foundTile = spiralSearch(startX, startY, vtolLandingRadius,
-//	                                    vtolLandingTileSearchFunction, &xyCoords);
-//	if (foundTile)
-//	{
-//		objTrace(psDroid->id, "Unit %d landing pos (%d,%d)", psDroid->id, xyCoords.x, xyCoords.y);
-//		p->x = world_coord(xyCoords.x) + TILE_UNITS / 2;
-//		p->y = world_coord(xyCoords.y) + TILE_UNITS / 2;
-//	}
-//
-//	// clear blocking flags for all the other droids
-//	for (DROID* psCurr = apsDroidLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
-//	{
-//		Vector2i t(0, 0);
-//		if (DROID_STOPPED(psCurr))
-//		{
-//			t = map_coord(psCurr->pos.xy());
-//		}
-//		else
-//		{
-//			t = map_coord(psCurr->sMove.destination);
-//		}
-//		if (tileOnMap(t))
-//		{
-//			mapTile(t)->tileInfoBits &= ~BITS_FPATHBLOCK;
-//		}
-//	}
-//
-//	return foundTile;
-//}
+	// test for each radius, from 1 to max_radius (inclusive)
+	for (auto radius = 1; radius <= max_radius; ++radius)
+	{
+		// choose tiles that are between radius and radius+1 away from center
+		// distances are squared
+		const auto min_distance = radius * radius;
+		const auto max_distance = min_distance + 2 * radius;
+
+		// dx starts with 1, to visiting tiles on same row or col as start twice
+		for (auto dx = 1; dx <= max_radius; dx++)
+		{
+			for (auto dy = 0; dy <= max_radius; dy++)
+			{
+				// Current distance, squared
+				const auto distance = dx * dx + dy * dy;
+
+				// Ignore tiles outside of the current circle
+				if (distance < min_distance || distance > max_distance) {
+					continue;
+				}
+
+				// call search function for each of the 4 quadrants of the circle
+				if (match(startX + dx, startY + dy, matchState) ||
+            match(startX - dx, startY - dy, matchState) ||
+            match(startX + dy, startY - dx, matchState) ||
+            match(startX - dy, startY + dx, matchState)) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+/**
+ * an internal tileMatchFunction that checks if x and y are coordinates of a
+ * valid landing place.
+ *
+ * @param matchState a pointer to a Vector2i where these coordintates should be stored
+ *
+ * @return true if coordinates are a valid landing tile, false if not.
+ */
+static bool vtolLandingTileSearchFunction(int x, int y, void* matchState)
+{
+	auto const xyCoords = (Vector2i*)matchState;
+
+	if (vtolCanLandHere(x, y)) {
+		xyCoords->x = x;
+		xyCoords->y = y;
+		return true;
+	}
+	return false;
+}
+
+// Choose a landing position for a VTOL when it goes to rearm that is close to rearm
+// pad but not on it, since it may be busy by the time we get there.
+bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p)
+{
+	/* Initial box dimensions and set iteration count to zero */
+	auto startX = map_coord(p->x);
+	auto startY = map_coord(p->y);
+
+	// set blocking flags for all the other droids
+	for (auto const& psCurr : playerList[psDroid->playerManager->getPlayer()].droids)
+	{
+		static Vector2i t(0, 0);
+		if (psCurr.isStationary()) {
+			t = map_coord(psCurr.getPosition().xy());
+		}
+		else {
+			t = map_coord(psCurr.getMovementData()->destination);
+		}
+		if (&psCurr != psDroid) {
+			if (tileOnMap(t)) {
+				mapTile(t)->tileInfoBits |= BITS_FPATHBLOCK;
+			}
+		}
+	}
+
+	// search for landing tile; will stop when found or radius exceeded
+	Vector2i xyCoords(0, 0);
+	const bool foundTile = spiralSearch(startX, startY, VTOL_LANDING_RADIUS,
+	                                    vtolLandingTileSearchFunction, &xyCoords);
+	if (foundTile) {
+		objTrace(psDroid->getId(), "Unit %d landing pos (%d,%d)", psDroid->getId(), xyCoords.x, xyCoords.y);
+		p->x = world_coord(xyCoords.x) + TILE_UNITS / 2;
+		p->y = world_coord(xyCoords.y) + TILE_UNITS / 2;
+	}
+
+	// clear blocking flags for all the other droids
+	for (auto const& psCurr : playerList[psDroid->playerManager->getPlayer()].droids)
+	{
+		Vector2i t(0, 0);
+		if (psCurr.isStationary()) {
+			t = map_coord(psCurr.getPosition().xy());
+		}
+		else {
+			t = map_coord(psCurr.getMovementData()->destination);
+		}
+		if (tileOnMap(t)) {
+			mapTile(t)->tileInfoBits &= ~BITS_FPATHBLOCK;
+		}
+	}
+	return foundTile;
+}

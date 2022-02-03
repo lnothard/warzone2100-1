@@ -7,12 +7,13 @@
 #include "lib/ivis_opengl/ivisdef.h"
 #include "wzmaplib/map.h"
 
+#include "ai.h"
+#include "action.h"
 #include "basedef.h"
 #include "displaydef.h"
 #include "objmem.h"
 #include "visibility.h"
 
-bool aiCheckAlliances(unsigned, unsigned);
 int establishTargetHeight(BaseObject const*);
 int map_Height(Vector2i);
 bool map_Intersect(int*, int*, int*, int*, int*, int*);
@@ -74,8 +75,8 @@ BaseObject::BaseObject(unsigned id, Player* playerManager)
 }
 
 BaseObject::BaseObject(unsigned id, std::unique_ptr<Health> damageManager)
-        : pimpl{std::make_unique<Impl>(id)}
-        , damageManager{std::move(damageManager)}
+  : pimpl{std::make_unique<Impl>(id)}
+  , damageManager{std::move(damageManager)}
 {
 }
 
@@ -84,6 +85,15 @@ BaseObject::BaseObject(unsigned id, Player* playerManager,
   : pimpl{std::make_unique<Impl>(id)}
   , playerManager{playerManager}
   , damageManager{std::move(damageManager)}
+{
+}
+
+BaseObject::BaseObject(unsigned id, Player* playerManager, std::unique_ptr<Health> damageManager,
+                       std::unique_ptr<WeaponManager> weaponManager)
+  : pimpl{std::make_unique<Impl>(id)}
+  , playerManager{playerManager}
+  , damageManager{std::move(damageManager)}
+  , weaponManager{std::move(weaponManager)}
 {
 }
 
@@ -262,6 +272,12 @@ void BaseObject::setHidden()
   pimpl->visibleToPlayer.fill(0);
 }
 
+void BaseObject::setFrameNumber(unsigned num)
+{
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Object undefined");
+  pimpl->display->frame_number = num;
+}
+
 void BaseObject::setVisibleToPlayer(unsigned player, uint8_t vis)
 {
   if (!pimpl) return;
@@ -324,6 +340,12 @@ void Health::setExpectedDamageIndirect(unsigned damage)
 {
   if (!pimpl) return;
   pimpl->expectedDamageIndirect = damage;
+}
+
+void Health::setTimeLastHit(unsigned time)
+{
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Object undefined");
+  pimpl->timeLastHit = time;
 }
 
 void Health::setLastHitWeapon(WEAPON_SUBCLASS weap)
@@ -417,8 +439,8 @@ int objectPositionSquareDiff(const Position& first, const Position& second)
 
 bool hasFullAmmo(Droid const& droid) noexcept
 {
-  auto weapons = droid.getWeapons();
-  return std::all_of(weapons->begin(), weapons->end(),
+  auto weapons = droid.weaponManager->weapons;
+  return std::all_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon) {
     return weapon.hasFullAmmo();
   });
@@ -426,8 +448,8 @@ bool hasFullAmmo(Droid const& droid) noexcept
 
 bool hasFullAmmo(Structure const& structure) noexcept
 {
-  auto weapons = structure.getWeapons();
-  return std::all_of(weapons->begin(), weapons->end(),
+  auto weapons = structure.weaponManager->weapons;
+  return std::all_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon) {
     return weapon.hasFullAmmo();
   });
@@ -435,8 +457,8 @@ bool hasFullAmmo(Structure const& structure) noexcept
 
 bool hasArtillery(Droid const& droid) noexcept
 {
-  auto weapons = droid.getWeapons();
-  return std::any_of(weapons->begin(), weapons->end(),
+  auto weapons = droid.weaponManager->weapons;
+  return std::any_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon) {
     return weapon.isArtillery();
   });
@@ -444,8 +466,8 @@ bool hasArtillery(Droid const& droid) noexcept
 
 bool hasArtillery(Structure const& structure) noexcept
 {
-  auto weapons = structure.getWeapons();
-  return std::any_of(weapons->begin(), weapons->end(),
+  auto weapons = structure.weaponManager->weapons;
+  return std::any_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon) {
     return weapon.isArtillery();
   });
@@ -481,15 +503,15 @@ Vector3i calculateMuzzleBaseLocation(BaseObject const& unit, int weapon_slot)
 Vector3i calculateMuzzleTipLocation(BaseObject const& unit, int weapon_slot)
 {
   const auto imd_shape = unit.getImdShape();
-  const auto weapon = unit.getWeapon(weapon_slot);
+  const auto& weapon = unit.weaponManager->weapons[weapon_slot];
   const auto& position = unit.getPosition();
   const auto& rotation = unit.getRotation();
   auto muzzle = Vector3i{0, 0, 0};
 
   if (imd_shape->nconnectors) {
     auto barrel = Vector3i{0, 0, 0};
-    const auto weapon_imd = weapon->getImdShape();
-    const auto mount_imd = weapon->getMountGraphic();
+    const auto weapon_imd = weapon.getImdShape();
+    const auto mount_imd = weapon.getMountGraphic();
 
     Affine3F af;
     af.Trans(position.x, -position.z, position.y);
@@ -499,19 +521,19 @@ Vector3i calculateMuzzleTipLocation(BaseObject const& unit, int weapon_slot)
     af.Trans(imd_shape->connectors[weapon_slot].x, -imd_shape->connectors[weapon_slot].z,
              -imd_shape->connectors[weapon_slot].y);
 
-    af.RotY(weapon->getRotation().direction);
+    af.RotY(weapon.getRotation().direction);
 
     if (mount_imd->nconnectors) {
       af.Trans(mount_imd->connectors->x,
                -mount_imd->connectors->z,
                -mount_imd->connectors->y);
     }
-    af.RotX(weapon->getRotation().pitch);
+    af.RotX(weapon.getRotation().pitch);
 
     if (weapon_imd->nconnectors) {
       auto connector_num = unsigned{0};
-      if (weapon->getShotsFired() && weapon_imd->nconnectors > 1) {
-        connector_num = (weapon->getShotsFired() - 1) % weapon_imd->nconnectors;
+      if (weapon.getShotsFired() && weapon_imd->nconnectors > 1) {
+        connector_num = (weapon.getShotsFired() - 1) % weapon_imd->nconnectors;
       }
       const auto connector = weapon_imd->connectors[connector_num];
       barrel = Vector3i{connector.x,
@@ -666,10 +688,10 @@ void BaseObject::setPreviousTime(unsigned t)
 
 bool hasElectronicWeapon(BaseObject const& unit) noexcept
 {
-  auto weapons = unit.getWeapons();
-  if (weapons->empty()) return false;
+  auto weapons = unit.weaponManager->weapons;
+  if (weapons.empty()) return false;
 
-  return std::any_of(weapons->begin(), weapons->end(),
+  return std::any_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon) {
     return weapon.getSubclass() == WEAPON_SUBCLASS::ELECTRONIC;
   });
@@ -679,7 +701,7 @@ bool targetInLineOfFire(BaseObject const& unit, BaseObject const& target, int we
 {
   const auto distance = iHypot((target.getPosition() - unit.getPosition()).xy());
 
-  auto range = unit.getWeapon(weapon_slot)->getMaxRange(unit.playerManager->getPlayer());
+  auto range = unit.weaponManager->weapons[weapon_slot].getMaxRange(unit.playerManager->getPlayer());
 
   if (!unit.hasArtillery()) {
     return range >= distance &&
@@ -694,10 +716,10 @@ bool targetInLineOfFire(BaseObject const& unit, BaseObject const& target, int we
   return range >= distance;
 }
 
-BaseObject* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
+BaseObject const* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
                         int weapon_slot, Weapon const& weapon)
 {
-  BaseObject* target = nullptr;
+  BaseObject const* target = nullptr;
   bool is_cb_sensor = false;
   bool found_cb = false;
   auto target_dist = weapon.getMaxRange(unit.playerManager->getPlayer());
@@ -733,10 +755,9 @@ BaseObject* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
     target = sensor->getTarget(0);
     is_cb_sensor = sensor->hasCbSensor();
 
-    if (!target ||
-        dynamic_cast<Health *>(target)->isDead() ||
-        dynamic_cast<Health *>(target)->isProbablyDoomed(false) ||
-        !unit.isValidTarget(target, 0) ||
+    if (!target || target->damageManager->isDead() ||
+        target->damageManager->isProbablyDoomed(false) ||
+        !validTarget(&unit, target, 0) ||
         aiCheckAlliances(target->playerManager->getPlayer(),
                          unit.playerManager->getPlayer())) {
       continue;
@@ -746,7 +767,7 @@ BaseObject* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
             target->getPosition(), unit.getPosition());
 
     if (targetInLineOfFire(unit, *target, weapon_slot) &&
-        unit.isTargetVisible(target, false)) {
+        actionVisibleTarget(&unit, target, false)) {
 
       target_dist = square_dist;
       if (is_cb_sensor) {
@@ -760,18 +781,18 @@ BaseObject* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
 
 size_t numWeapons(Droid const& droid)
 {
-  return droid.getWeapons()->size();
+  return droid.weaponManager->weapons.size();
 }
 
 size_t numWeapons(Structure const& structure)
 {
-  return structure.getWeapons()->size();
+  return structure.weaponManager->weapons.size();
 }
 
 unsigned getMaxWeaponRange(Droid const& droid)
 {
   auto max = unsigned{0};
-  for (const auto& weapon : *droid.getWeapons())
+  for (const auto& weapon : droid.weaponManager->weapons)
   {
     const auto max_weapon_range = weapon.getMaxRange(droid.playerManager->getPlayer());
     if (max_weapon_range > max)

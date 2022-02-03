@@ -92,27 +92,27 @@ NonBlockingArea::NonBlockingArea(const StructureBounds& bounds)
 {
 }
 
-bool NonBlockingArea::is_non_blocking(int x, int y) const
+bool NonBlockingArea::isNonBlocking(int x, int y) const
 {
   return x >= x_1 && x < x_2 &&
          y >= y_1 && y < y_2;
 }
 
-bool NonBlockingArea::is_non_blocking(PathCoord coord) const
+bool NonBlockingArea::isNonBlocking(PathCoord coord) const
 {
-  return is_non_blocking(coord.x, coord.y);
+  return isNonBlocking(coord.x, coord.y);
 }
 
-bool PathContext::is_blocked(int x, int y) const
+bool PathContext::isBlocked(int x, int y) const
 {
-  if (destination_bounds.is_non_blocking(x, y))  {
+  if (destination_bounds.isNonBlocking(x, y))  {
     return false;
   }
   return x < 0 || y < 0 || x >= mapWidth || y >= mapHeight ||
          blocking_map->map[x + y * mapWidth];
 }
 
-bool PathContext::is_dangerous(int x, int y) const
+bool PathContext::isDangerous(int x, int y) const
 {
   return !blocking_map->threat_map.empty() &&
          blocking_map->threat_map[x + y * mapWidth];
@@ -142,14 +142,13 @@ void PathContext::reset(const PathBlockingMap& blocking,
   map.resize(static_cast<std::size_t>(mapWidth) * static_cast<std::size_t>(mapHeight));
 }
 
-void PathContext::init(PathBlockingMap& blocking, PathCoord start,
-                       PathCoord real_start, PathCoord end, NonBlockingArea non_blocking)
+PathContext::PathContext(PathBlockingMap& blocking, PathCoord start,
+                         PathCoord real_start, PathCoord end, NonBlockingArea non_blocking)
 {
   reset(blocking, start, non_blocking);
-
   // add the start node to the open list
-  generate_new_node(*this, end, real_start,
-                    real_start, 0);
+  generateNewNode(*this, end, real_start,
+                  real_start, 0);
 }
 
 bool PathContext::matches(PathBlockingMap& blocking, PathCoord start, NonBlockingArea dest) const
@@ -249,7 +248,7 @@ void fpathHardTableReset()
   blocking_maps.clear();
 }
 
-PathNode get_best_node(std::vector<PathNode>& nodes)
+PathNode getBestNode(std::vector<PathNode>& nodes)
 {
   // find the node with the lowest distance
   // if equal totals, give preference to node closer to target
@@ -276,7 +275,7 @@ PathNode get_best_node(std::vector<PathNode>& nodes)
 //	return ret;
 //}
 
-unsigned estimate_distance(PathCoord start, PathCoord finish)
+unsigned estimateDistance(PathCoord start, PathCoord finish)
 {
   const auto x_delta = std::abs(start.x - finish.x);
   const auto y_delta = std::abs(start.y - finish.y);
@@ -298,7 +297,7 @@ unsigned estimate_distance(PathCoord start, PathCoord finish)
 //	return std::min(xDelta, yDelta) * (198 - 140) + std::max(xDelta, yDelta) * 140;
 //}
 
-unsigned estimate_distance_precise(PathCoord start, PathCoord finish)
+unsigned estimateDistancePrecise(PathCoord start, PathCoord finish)
 {
   /**
    * cost of moving horizontal/vertical = 70*2,
@@ -314,15 +313,15 @@ unsigned estimate_distance_precise(PathCoord start, PathCoord finish)
 //	return iHypot((s.x - f.x) * 140, (s.y - f.y) * 140);
 //}
 
-void generate_new_node(PathContext& context, PathCoord destination,
+void generateNewNode(PathContext& context, PathCoord destination,
                        PathCoord current_pos, PathCoord prev_pos,
                        unsigned prev_dist)
 {
-  const auto cost_factor = context.is_dangerous(current_pos.x, current_pos.y);
+  const auto cost_factor = context.isDangerous(current_pos.x, current_pos.y);
   const auto dist = prev_dist +
-                    estimate_distance(prev_pos, current_pos) * cost_factor;
+                    estimateDistance(prev_pos, current_pos) * cost_factor;
   auto node = PathNode{current_pos, dist,
-                       dist + estimate_distance_precise(current_pos, destination)};
+                       dist + estimateDistancePrecise(current_pos, destination)};
 
   auto delta = Vector2i{current_pos.x - prev_pos.x,
                         current_pos.y - prev_pos.y} * 64;
@@ -482,12 +481,12 @@ void generate_new_node(PathContext& context, PathCoord destination,
 //	std::push_heap(context.nodes.begin(), context.nodes.end()); // Move the new node to the right place in the heap.
 //}
 
-void recalculate_estimates(PathContext& context, PathCoord tile)
+void recalculateEstimates(PathContext& context, PathCoord tile)
 {
   for (auto& node : context.nodes)
   {
     node.estimated_distance_to_end = node.distance_from_start +
-                                     estimate_distance_precise(node.path_coordinate, tile);
+                                     estimateDistancePrecise(node.path_coordinate, tile);
   }
   // Changing the estimates breaks the heap ordering. Fix the heap ordering.
   std::make_heap(context.nodes.begin(), context.nodes.end());
@@ -504,14 +503,14 @@ void recalculate_estimates(PathContext& context, PathCoord tile)
 //	std::make_heap(context.nodes.begin(), context.nodes.end());
 //}
 
-PathCoord find_nearest_explored_tile(PathContext& context, PathCoord tile)
+PathCoord findNearestExploredTile(PathContext& context, PathCoord tile)
 {
   unsigned nearest_dist = UINT32_MAX;
   auto nearest_coord = PathCoord{0, 0};
   bool target_found = false;
   while (!target_found)
   {
-    auto node = get_best_node(context.nodes);
+    auto node = getBestNode(context.nodes);
     if (context.map[node.path_coordinate.x + node.path_coordinate.y * mapWidth].visited) {
       // already visited
       continue;
@@ -546,32 +545,31 @@ PathCoord find_nearest_explored_tile(PathContext& context, PathCoord tile)
        *			   3  2  1
        * odd: orthogonal-adjacent tiles even: non-orthogonal-adjacent tiles
        */
-      if (direction % 2 != 0 && !context.destination_bounds.
-              is_non_blocking(node.path_coordinate.x, node.path_coordinate.y) &&
-          !context.destination_bounds.is_non_blocking(x, y)) {
+      if (direction % 2 != 0 && !context.destination_bounds.isNonBlocking(node.path_coordinate.x, node.path_coordinate.y) &&
+          !context.destination_bounds.isNonBlocking(x, y)) {
 
         // cannot cut corners
         auto x_2 = node.path_coordinate.x + offset[(direction + 1) % 8].x;
         auto y_2 = node.path_coordinate.y + offset[(direction + 1) % 8].y;
-        if (context.is_blocked(x_2, y_2)) {
+        if (context.isBlocked(x_2, y_2)) {
           continue;
         }
         x_2 = node.path_coordinate.x + offset[(direction + 7) % 8].x;
         y_2 = node.path_coordinate.y + offset[(direction + 7) % 8].y;
-        if (context.is_blocked(x_2, y_2)) {
+        if (context.isBlocked(x_2, y_2)) {
           continue;
         }
       }
 
       // see if node is a blocking tile
-      if (context.is_blocked(x, y)) {
+      if (context.isBlocked(x, y)) {
         // blocked -- skip
         continue;
       }
 
       // now insert the point into the appropriate list, if not already visited.
-      generate_new_node(context, tile, PathCoord{x, y},
-                        node.path_coordinate, node.distance_from_start);
+      generateNewNode(context, tile, PathCoord{x, y},
+                      node.path_coordinate, node.distance_from_start);
     }
   }
   return nearest_coord;
@@ -691,8 +689,8 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
       }
       else {
         // continue previous exploration
-        recalculate_estimates(context, origin_tile);
-        end = find_nearest_explored_tile(context, origin_tile);
+        recalculateEstimates(context, origin_tile);
+        end = findNearestExploredTile(context, origin_tile);
       }
 
       if (end != origin_tile)  {
@@ -719,10 +717,9 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
      * we will be searching from orig to dest, since we don't know where the
      * nearest reachable tile to dest is.
      */
-    auto new_context = PathContext();
-    new_context.init(*pathJob.blockingMap, origin_tile, origin_tile,
-                     destination_tile);
-    end = find_nearest_explored_tile(*it, destination_tile);
+    auto new_context = PathContext(*pathJob.blockingMap, origin_tile, origin_tile,
+                                   destination_tile, pathJob.dstStructure);
+    end = findNearestExploredTile(*it, destination_tile);
     it->nearest_reachable_tile = end;
   }
 
@@ -749,12 +746,12 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
     // 1 if `next` is on the bottom edge of the tile, -1 if on the top
     auto y = next.y - world_coord(map.y) > TILE_UNITS / 2 ? 1 : -1;
 
-    if (it->is_blocked(map.x + x, map.y))  {
+    if (it->isBlocked(map.x + x, map.y))  {
       // point too close to a blocking tile on left or right side,
       // so move the point to the middle.
       next.x = world_coord(map.x) + TILE_UNITS / 2;
     }
-    if (it->is_blocked(map.x, map.y + y)) {
+    if (it->isBlocked(map.x, map.y + y)) {
       // point too close to a blocking tile on rop or bottom side,
       // so move the point to the middle.
       next.y = world_coord(map.y) + TILE_UNITS / 2;
@@ -787,11 +784,11 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
 
 		// if blocked, searching from `destination_tile` to
     // `origin_tile` wouldn't find the origin tile.
-    if (!it->is_blocked(origin_tile.x, origin_tile.y))  {
+    if (!it->isBlocked(origin_tile.x, origin_tile.y))  {
 			// next time, search starting from the nearest reachable
       // tile to the destination.
-			it->init(*pathJob.blockingMap, destination_tile,
-               it->nearest_reachable_tile, origin_tile, dstIgnore);
+      *it = PathContext(*pathJob.blockingMap, destination_tile,
+                       it->nearest_reachable_tile, origin_tile, dstIgnore);
     }
   }
   else {
@@ -989,54 +986,48 @@ void fpathSetBlockingMap(PathJob& path_job)
 
 	// find the map.
 	auto it = std::find_if(blocking_maps.begin(), blocking_maps.end(),
-	                      [&](PathBlockingMap const& map)
-  {
+	                      [&](PathBlockingMap const& map) {
     return map == type;
   });
 
-	if (it == blocking_maps.end())  {
-		// didn't find the map, so i does not point to a map.
-		auto blocking = PathBlockingMap();
-		blocking_maps.emplace_back(blocking);
+  if (it != blocking_maps.end()) {
+    syncDebug("blockingMap(%d,%d,%d,%d) = cached", gameTime, path_job.propulsion, path_job.owner, path_job.moveType);
+    path_job.blockingMap = std::make_shared<PathBlockingMap>(*it);
+    return;
+  }
 
-		// `blocking` now points to an empty map with no data. fill the map.
-		blocking.type = type;
-		std::vector<bool>& map = blocking.map;
-		map.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
-		unsigned checksum_map = 0, checksum_threat_map = 0, factor = 0;
-		for (auto y = 0; y < mapHeight; ++y)
-    {
-      for (auto x = 0; x < mapWidth; ++x)
-      {
-        map[x + y * mapWidth] = fpathBaseBlockingTile(x, y, type.propulsion,
-                                                      type.owner, type.moveType);
-        checksum_map ^= map[x + y * mapWidth] * (factor = 3 * factor + 1);
+  // didn't find the map, so i does not point to a map.
+  auto blocking = PathBlockingMap();
+  blocking_maps.emplace_back(blocking);
+
+  // `blocking` now points to an empty map with no data. fill the map.
+  blocking.type = type;
+  std::vector<bool> &map = blocking.map;
+  map.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
+  unsigned checksum_map = 0, checksum_threat_map = 0, factor = 0;
+  for (auto y = 0; y < mapHeight; ++y) {
+    for (auto x = 0; x < mapWidth; ++x) {
+      map[x + y * mapWidth] = fpathBaseBlockingTile(x, y, type.propulsion,
+                                                    type.owner, type.moveType);
+      checksum_map ^= map[x + y * mapWidth] * (factor = 3 * factor + 1);
+    }
+  }
+  if (!isHumanPlayer(type.owner) && type.moveType == FPATH_MOVETYPE::FMT_MOVE) {
+    auto threat = blocking.threat_map;
+    threat.resize(static_cast<size_t>(mapWidth) *
+                  static_cast<size_t>(mapHeight));
+    for (auto y = 0; y < mapHeight; ++y) {
+      for (auto x = 0; x < mapWidth; ++x) {
+        threat[x + y * mapWidth] = auxTile(x, y, type.owner) & AUXBITS_THREAT;
+        checksum_threat_map ^= threat[x + y * mapWidth] * (factor = 3 * factor + 1);
       }
     }
-		if (!isHumanPlayer(type.owner) && type.moveType == FPATH_MOVETYPE::FMT_MOVE) {
-			auto threat = blocking.threat_map;
-			threat.resize(static_cast<size_t>(mapWidth) *
-                    static_cast<size_t>(mapHeight));
-			for (auto y = 0; y < mapHeight; ++y)
-      {
-				for (auto x = 0; x < mapWidth; ++x)
-				{
-					threat[x + y * mapWidth] = auxTile(x, y, type.owner) & AUXBITS_THREAT;
-          checksum_threat_map ^= threat[x + y * mapWidth] * (factor = 3 * factor + 1);
-				}
-      }
-		}
-		syncDebug("blockingMap(%d,%d,%d,%d) = %08X %08X", gameTime,
-              path_job.propulsion, path_job.owner, path_job.moveType,
-              checksum_map, checksum_threat_map);
+  }
+  syncDebug("blockingMap(%d,%d,%d,%d) = %08X %08X", gameTime,
+            path_job.propulsion, path_job.owner, path_job.moveType,
+            checksum_map, checksum_threat_map);
 
-    path_job.blockingMap = std::make_shared<PathBlockingMap>(blocking_maps.back());
-	}
-  else {
-		syncDebug("blockingMap(%d,%d,%d,%d) = cached", gameTime,
-              path_job.propulsion, path_job.owner, path_job.moveType);
-    path_job.blockingMap = std::make_shared<PathBlockingMap>(*it);
-	}
+  path_job.blockingMap = std::make_shared<PathBlockingMap>(blocking_maps.back());
 }
 
 bool PathBlockingMap::operator==(const PathBlockingType &rhs) const

@@ -30,6 +30,7 @@
 #include "multiplay.h"
 #include "objmem.h"
 
+
 struct Group::Impl
 {
   Impl() = default;
@@ -109,17 +110,15 @@ bool Group::isCommandGroup() const noexcept
 bool Group::hasElectronicWeapon() const
 {
   if (!pimpl) return false;
-  return std::any_of(pimpl->members.begin(),
-                     pimpl->members.end(),
+  return std::any_of(pimpl->members.begin(), pimpl->members.end(),
                      [](const auto droid) {
     return droid->hasElectronicWeapon();
   });
 }
 
-std::vector<Droid*> const& Group::getMembers() const
+std::vector<Droid*> const* Group::getMembers() const
 {
-  assert(pimpl); // FIXME
-  return pimpl->members;
+  return pimpl ? &pimpl->members : nullptr;
 }
 
 unsigned Group::getId() const
@@ -129,30 +128,28 @@ unsigned Group::getId() const
 
 GROUP_TYPE Group::getType() const
 {
-  return pimpl->type;
+  return pimpl ? pimpl->type : GROUP_TYPE::COUNT;
 }
 
-std::unique_ptr<Group> Group::create(unsigned id)
+void Group::addDroid(Droid* psDroid)
 {
-	return std::make_unique<Group>(id);
-}
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Group object undefined");
+  ASSERT_OR_RETURN(, psDroid != nullptr, "Droid is null");
 
-void Group::add(Droid* psDroid)
-{
-  if (!pimpl || !psDroid) return;
-
-  if (std::any_of(pimpl->members.begin(), pimpl->members.end(),
+  bool unownedDroids = std::any_of(pimpl->members.begin(), pimpl->members.end(),
                   [&psDroid](const auto member) {
     return psDroid->playerManager->getPlayer() != member->playerManager->getPlayer();
-  })) {
+  });
+
+  if (unownedDroids) {
     ASSERT(false, "grpJoin: Cannot have more than one players droids in a group");
     return;
   }
 
-  if (psDroid->pimpl->group != nullptr) {
-    psDroid->group->remove(psDroid);
+  if (psDroid->getGroup() != nullptr) {
+    psDroid->removeDroidFromGroup(psDroid);
   }
-  psDroid->group = this;
+  psDroid->setGroup(this);
 
   if (isTransporter(*psDroid)) {
     ASSERT_OR_RETURN(, (pimpl->type == GROUP_TYPE::NORMAL), "grpJoin: Cannot have two transporters in a group");
@@ -180,52 +177,49 @@ void Group::add(Droid* psDroid)
 void Group::vanishAll()
 {
   ASSERT_OR_RETURN(, pimpl != nullptr, "Group object is undefined");
-  for (auto droid : pimpl->members)
-  {
+  std::for_each(pimpl->members.begin(), pimpl->members.end(), [](auto droid) {
     vanishDroid(droid);
-  }
+  });
 }
 
 // remove a droid from a group
-void Group::remove(Droid* psDroid)
+void Group::removeDroid(Droid* psDroid)
 {
-  if (!pimpl) return;
-	if (psDroid != nullptr && psDroid->group != this) {
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Group object is undefined");
+
+	if (psDroid != nullptr && psDroid->getGroup() != this) {
 		ASSERT(false, "grpLeave: droid group does not match");
 		return;
 	}
-
-	// SyncDebug
 	if (psDroid != nullptr && pimpl->type == GROUP_TYPE::COMMAND) {
 		syncDebug("Droid %d leaving command group %d",
               psDroid->getId(), pimpl->psCommander != nullptr
               ? pimpl->psCommander->getId() : 0);
 	}
 
-  psDroid->group = nullptr;
+  psDroid->setGroup(nullptr);
 
   // update group's type
   if (psDroid->getType() == DROID_TYPE::COMMAND &&
       pimpl->type == GROUP_TYPE::COMMAND) {
     pimpl->type = GROUP_TYPE::NORMAL;
     pimpl->psCommander = nullptr;
-  } else if (isTransporter(*psDroid) &&
+  }
+  else if (isTransporter(*psDroid) &&
              pimpl->type == GROUP_TYPE::TRANSPORTER) {
     pimpl->type = GROUP_TYPE::NORMAL;
   }
 }
 
-// Give a group of droids an order
 void Group::orderGroup(ORDER_TYPE order)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Group object is undefined");
 	for (auto droid : pimpl->members)
 	{
 		orderDroid(droid, order, ModeQueue);
 	}
 }
 
-// Give a group of droids an order (using a Location)
 void Group::orderGroup(ORDER_TYPE order, unsigned x, unsigned y)
 {
   ASSERT_OR_RETURN(, pimpl != nullptr, "Group object in undefined state");
@@ -259,4 +253,15 @@ void Group::setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state)
 	{
 		droid->secondarySetState(sec, state);
 	}
+}
+
+Group* addGroup(unsigned id)
+{
+  groupList.emplace_back(id);
+  return &groupList.back();
+}
+
+Group* findGroupById(unsigned id)
+{
+  return findById(id, groupList);
 }

@@ -116,6 +116,8 @@ static constexpr auto EXP_REDUCE_DAMAGE  = 6;
 static constexpr auto EXP_ACCURACY_BONUS = 5;
 /// Speed of a droid is increased by this value per experience level (in percent)
 static constexpr auto EXP_SPEED_BONUS = 5;
+// Minimum damage a weapon will deal to its target
+static constexpr auto MIN_WEAPON_DAMAGE	 = 1;
 
 /**
  * The number of components in the asParts / asBits arrays.
@@ -162,25 +164,6 @@ enum class PICK_TILE
 {
   NO_FREE_TILE,
   FREE_TILE
-};
-
-enum class DROID_TYPE
-{
-  WEAPON,
-  SENSOR,
-  ECM,
-  CONSTRUCT,
-  PERSON,
-  CYBORG,
-  TRANSPORTER,
-  COMMAND,
-  REPAIRER,
-  DEFAULT,
-  CYBORG_CONSTRUCT,
-  CYBORG_REPAIR,
-  CYBORG_SUPER,
-  SUPER_TRANSPORTER,
-  ANY
 };
 
 enum class ACTION
@@ -238,11 +221,10 @@ struct DroidTemplate : public BaseStats
 
   [[nodiscard]] ComponentStats const* getComponent(COMPONENT_TYPE compName) const;
 
-  using enum DROID_TYPE;
   unsigned id = 0;
-  std::unordered_map<std::string, std::unique_ptr<ComponentStats>> components;
+  std::unordered_map<COMPONENT_TYPE, ComponentStats> components;
   std::array<Weapon, MAX_WEAPONS> weapons;
-  DROID_TYPE type = ANY;
+  DROID_TYPE type = DROID_TYPE::ANY;
 
   /// Not player designed, not saved, never delete or change
   bool isPrefab = false;
@@ -265,7 +247,6 @@ public:
 
 
   [[nodiscard]] int objRadius() const override;
-
   [[nodiscard]] ANIMATION_EVENTS getAnimationEvent() const;
   [[nodiscard]] ACTION getAction() const noexcept;
   [[nodiscard]] Order const* getOrder() const;
@@ -277,15 +258,14 @@ public:
   [[nodiscard]] unsigned getSecondaryOrder() const noexcept;
   [[nodiscard]] Vector2i getDestination() const;
   [[nodiscard]] Movement const* getMovementData() const;
+  [[nodiscard]] unsigned getLastFrustratedTime() const;
   [[nodiscard]] std::string getName() const;
   [[nodiscard]] unsigned getWeight() const;
-  [[nodiscard]] BaseObject const* getActionTarget(int idx) const;
+  [[nodiscard]] BaseObject const* getTarget(int idx) const override;
   [[nodiscard]] Group const* getGroup() const;
   [[nodiscard]] Structure const* getBase() const;
   [[nodiscard]] ComponentStats const* getComponent(COMPONENT_TYPE compName) const;
   [[nodiscard]] unsigned getTimeActionStarted() const;
-  [[nodiscard]] Weapon const* getWeapon(int slot) const override;
-  [[nodiscard]] std::array<Weapon, MAX_WEAPONS> const* getWeapons() const override;
   [[nodiscard]] unsigned getExperience() const;
   [[nodiscard]] unsigned getKills() const;
   [[nodiscard]] int getAudioId() const;
@@ -301,9 +281,9 @@ public:
   [[nodiscard]] int spaceOccupiedOnTransporter() const;
   [[nodiscard]] bool isAttacking() const noexcept;
   [[nodiscard]] int calculateElectronicResistance() const;
-  [[nodiscard]] bool isRadarDetector() const;
+  [[nodiscard]] bool isRadarDetector() const override;
   [[nodiscard]] bool hasStandardSensor() const;
-  [[nodiscard]] bool hasCbSensor() const;
+  [[nodiscard]] bool hasCbSensor() const override;
   [[nodiscard]] int droidDamage(unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
                                 unsigned impactTime, bool isDPS, int minDamage);
   void orderDroidCmd(ORDER_TYPE order, QUEUE_MODE mode);
@@ -356,6 +336,9 @@ public:
   void orderDroidListEraseRange(int indexBegin, int indexEnd);
   void orderClearTargetFromDroidList(BaseObject const* psTarget);
   void removeDroidBase();
+  void setOrderTarget(BaseObject* target);
+  void setGroup(Group* group);
+  void removeDroidFromGroup(Droid* droid);
   void orderCheckGuardPosition(int range);
   bool orderDroidList();
   void moveStopDroid();
@@ -641,7 +624,6 @@ void clear_blocking_flags(const Droid& droid);
 bool isCyborg(const Droid* psDroid);
 
 bool isConstructionDroid(Droid const* psDroid);
-bool isConstructionDroid(BaseObject const* psObject);
 
 /** Check if droid is in a legal world position and is not on its way to drive off the map. */
 bool droidOnMap(const Droid* psDroid);
@@ -654,18 +636,13 @@ int droidReloadBar(BaseObject const* psObj, Weapon const* psWeap, int weapon_slo
 /** If droid can get to given object using its current propulsion, return the square distance. Otherwise return -1. */
 int droidSqDist(Droid* psDroid, BaseObject* psObj);
 
-// Minimum damage a weapon will deal to its target
-static constexpr auto MIN_WEAPON_DAMAGE	 = 1;
 
 void templateSetParts(Droid const* psDroid, DroidTemplate* psTemplate);
-
-#define syncDebugDroid(psDroid, ch) _syncDebugDroid(__FUNCTION__, psDroid, ch)
-void _syncDebugDroid(const char* function, Droid const* psDroid, char ch);
 
 static unsigned droidSensorRange(Droid const* psDroid);
 
 static bool droidUpdateDroidRepairBase(Droid* psRepairDroid, Droid* psDroidToRepair);
 static Rotation getInterpolatedWeaponRotation(Droid const* psDroid, int weaponSlot, unsigned time);
-Vector2i spiral_search(Vector2i start_pos, int max_radius);
+bool vtolCanLandHere(int x, int y);
 
 #endif // __INCLUDED_SRC_DROID_H__

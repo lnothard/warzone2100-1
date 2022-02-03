@@ -29,11 +29,12 @@
 #include <bitset>
 
 #include "player.h"
-#include "weapon.h"
 
 struct DisplayData;
 struct Weapon;
+struct WeaponManager;
 enum class WEAPON_SUBCLASS;
+enum class TARGET_ORIGIN;
 
 
 static constexpr auto LINE_OF_FIRE_MINIMUM = 5;
@@ -97,6 +98,7 @@ public:
   void setLastHitWeapon(WEAPON_SUBCLASS weap);
   void setPeriodicalDamage(unsigned damage);
   void setPeriodicalDamageStartTime(unsigned time);
+  void setTimeLastHit(unsigned time);
   void setTimeOfDeath(unsigned t);
   [[nodiscard]] bool isSelected() const;
   [[nodiscard]] unsigned getHp() const;
@@ -125,8 +127,8 @@ public:
   explicit BaseObject(unsigned id);
   BaseObject(unsigned id, Player* playerManager);
   BaseObject(unsigned id, std::unique_ptr<Health> damageManager);
-  BaseObject(unsigned id, Player* playerManager,
-             std::unique_ptr<Health> damageManager);
+  BaseObject(unsigned id, Player* playerManager, std::unique_ptr<Health> damageManager);
+  BaseObject(unsigned id, Player* playerManager, std::unique_ptr<Health> damageManager, std::unique_ptr<WeaponManager> weaponManager);
 
   BaseObject(BaseObject const& rhs);
   BaseObject& operator=(BaseObject const& rhs);
@@ -135,10 +137,13 @@ public:
   BaseObject& operator=(BaseObject&& rhs) noexcept = default;
 
   [[nodiscard]] virtual int objRadius() const;
-  [[nodiscard]] virtual Weapon const* getWeapon(int slot) const;
-  [[nodiscard]] virtual std::array<Weapon, MAX_WEAPONS> const* getWeapons() const;
   [[nodiscard]] virtual iIMDShape const* getImdShape() const;
   [[nodiscard]] virtual bool hasArtillery() const;
+  [[nodiscard]] virtual bool hasCbSensor() const;
+  [[nodiscard]] virtual bool hasVtolCbSensor() const;
+  [[nodiscard]] virtual bool hasVtolInterceptSensor() const;
+  [[nodiscard]] virtual bool isRadarDetector() const;
+  [[nodiscard]] virtual BaseObject const* getTarget(int idx) const;
 
   [[nodiscard]] unsigned getId() const noexcept;
   [[nodiscard]] unsigned getBornTime() const noexcept;
@@ -151,6 +156,7 @@ public:
   [[nodiscard]] uint8_t isVisibleToPlayer(unsigned player) const;
   [[nodiscard]] uint8_t isVisibleToSelectedPlayer() const;
   [[nodiscard]] bool testFlag(size_t pos) const;
+  void setFrameNumber(unsigned num);
   void setVisibleToPlayer(unsigned player, uint8_t vis);
   void setId(unsigned id) noexcept;
   void setBornTime(unsigned t) noexcept;
@@ -165,7 +171,8 @@ public:
   void setImdShape(iIMDShape* imd);
 public:
   std::unique_ptr<Health> damageManager;
-  Player* playerManager;
+  std::unique_ptr<WeaponManager> weaponManager;
+  Player* playerManager = nullptr;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
@@ -214,6 +221,9 @@ void checkAngle(int64_t& angle_tan, int start_coord, int height,
 
 [[nodiscard]] size_t numWeapons(const Droid& droid);
 [[nodiscard]] size_t numWeapons(const Structure& structure);
+
+BaseObject const* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_type,
+                              int weapon_slot, Weapon const& weapon);
 
 
 #endif // __INCLUDED_BASEDEF_H__

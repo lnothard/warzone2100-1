@@ -30,7 +30,6 @@
 
 #include "lib/framework/vector.h"
 #include "objectdef.h"
-#include "fpath.h"
 #include "wzmaplib/map.h"
 
 

@@ -35,7 +35,8 @@ enum class GROUP_TYPE
 {
 	NORMAL,
 	COMMAND,
-	TRANSPORTER
+	TRANSPORTER,
+  COUNT
 };
 
 class Group
@@ -53,33 +54,26 @@ public:
   Group(Group&& rhs) noexcept = default;
   Group& operator=(Group&& rhs) noexcept = default;
 
-  /**
-   * Add a droid to the group. Remove it from its existing
-   * group if it exists
-   */
-	void add(Droid* psDroid);
-  void vanishAll();
-
-  [[nodiscard]] static std::unique_ptr<Group> create(unsigned id);
-
-  /// Remove a droid from the group.
-	void remove(Droid* psDroid);
   [[nodiscard]] GROUP_TYPE getType() const;
   [[nodiscard]] unsigned getId() const;
   [[nodiscard]] bool isCommandGroup() const noexcept;
   [[nodiscard]] bool hasElectronicWeapon() const;
-  [[nodiscard]] std::vector<Droid*> const& getMembers() const;
-	void orderGroup(ORDER_TYPE order); // give an order all the droids of the group
-	void orderGroup(ORDER_TYPE order, unsigned x, unsigned y);
+  [[nodiscard]] std::vector<Droid*> const* getMembers() const;
+  void removeDroid(Droid* psDroid);
+  void setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state);
+  void addDroid(Droid* psDroid);
+  void vanishAll();
 
-	/// Give an order all the droids of the group (using location)
+	void orderGroup(ORDER_TYPE order);
+	void orderGroup(ORDER_TYPE order, unsigned x, unsigned y);
 	void orderGroup(ORDER_TYPE order, BaseObject* psObj);
 
-  // set the secondary state for a group of droids
-	void setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state);
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
-};
+}; std::vector<Group> groupList;
+
+Group* addGroup(unsigned id);
+[[nodiscard]] Group* findGroupById(unsigned id);
 
 #endif // __INCLUDED_SRC_GROUP_H__
