@@ -266,9 +266,10 @@ public:
   [[nodiscard]] ANIMATION_EVENTS getAnimationEvent() const;
   [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
   [[nodiscard]] Vector2i getSize() const;
+  [[nodiscard]] unsigned getLastResistance() const;
   [[nodiscard]] int getFoundationDepth() const noexcept;
-  [[nodiscard]] iIMDShape const* getImdShape() const;
-  [[nodiscard]] BaseObject const* getTarget(int weapon_slot) const;
+  [[nodiscard]] iIMDShape const* getImdShape() const override;
+  [[nodiscard]] BaseObject const* getTarget(int weapon_slot) const override;
   [[nodiscard]] STRUCTURE_STATE getState() const;
   [[nodiscard]] StructureStats const* getStats() const;
   [[nodiscard]] uint8_t getCapacity() const;
@@ -800,8 +801,8 @@ static inline unsigned structJammerPower(const Structure* psObj)
 
 static inline Rotation structureGetInterpolatedWeaponRotation(Structure const* psStructure, int weaponSlot, uint32_t time)
 {
-	return interpolateRot(psStructure->getWeapon(weaponSlot)->getPreviousRotation(),
-                        psStructure->getWeapon(weaponSlot)->getRotation(),
+	return interpolateRot(psStructure->weaponManager->weapons[weaponSlot].previousRotation,
+                        psStructure->weaponManager->weapons[weaponSlot].getRotation(),
                         psStructure->getPreviousLocation().time, psStructure->getTime(), time);
 }
 

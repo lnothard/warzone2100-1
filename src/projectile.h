@@ -78,7 +78,7 @@ class Projectile : public BaseObject
 {
 public:
   ~Projectile() override = default;
-  Projectile(unsigned id, unsigned  player);
+  Projectile(unsigned id, Player* player);
 
   Projectile(Projectile const& rhs);
   Projectile& operator=(Projectile const& rhs);

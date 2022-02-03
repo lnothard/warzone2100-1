@@ -808,8 +808,7 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 		}
 	}
 
-	MultiplayerGameInfo::AllianceOption; alliancesOpt =
-		MultiplayerGameInfo::AllianceOption::NO_ALLIANCES;
+	MultiplayerGameInfo::AllianceOption; alliancesOpt = ALLIANCE_TYPE::FFA;
 	if (multiGame.alliance == ALLIANCE_TYPE::ALLIANCES)
 	{
 		alliancesOpt = MultiplayerGameInfo::AllianceOption::ALLIANCES;

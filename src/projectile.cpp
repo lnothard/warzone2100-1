@@ -120,9 +120,8 @@ struct ObjectShape::Impl
   Vector2i size{};
 };
 
-Projectile::Projectile(unsigned id, unsigned player)
-  : BaseObject(id, std::make_unique<PlayerManager>(player),
-               std::make_unique<Health>())
+Projectile::Projectile(unsigned id, Player* player)
+  : BaseObject(id, player, std::make_unique<Health>())
   , pimpl{std::make_unique<Impl>()}
 {
 }
@@ -349,12 +348,11 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacke
                                            int weapon_slot, int min_angle, unsigned fireTime) const
 {
   ASSERT_OR_RETURN(false, pimpl != nullptr, "Projectile object is undefined");
-  auto psStats = psWeap->getStats();
+  auto psStats = psWeap->stats.get();
 
   ASSERT_OR_RETURN(false, psTarget == nullptr || !psTarget->damageManager->isDead(), "Aiming at dead target!");
 
-  auto psProj = std::make_unique<Projectile>(
-          ProjectileTrackerID + ++projectileTrackerIDIncrement, plr);
+  auto psProj = std::make_unique<Projectile>(ProjectileTrackerID + ++projectileTrackerIDIncrement, &playerList[plr]);
 
   /* get muzzle offset */
   if (psAttacker == nullptr) {
@@ -466,10 +464,10 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacke
   // if droid or structure, set muzzle pitch
   if (psAttacker != nullptr && weapon_slot >= 0) {
     if (auto droid = dynamic_cast<Droid*>(psAttacker)) {
-      droid->weapons[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
+      droid->weaponManager->weapons[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
     }
     else if (auto structure = dynamic_cast<Structure*>(psAttacker)) {
-      structure->weapons[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
+      structure->weaponManager->weapons[weapon_slot].rotation.pitch = psProj->getRotation().pitch;
     }
   }
 
@@ -669,8 +667,8 @@ static Interval collisionXY(int x1, int y1, int x2, int y2, int radius)
 {
 	// Solve (1 - t)v1 + t v2 = r.
 	auto dx = x2 - x1, dy = y2 - y1;
-	auto a = (int64_t)dx * dx + (int64_t)dy * dy; // a = (v2 - v1)²
-	auto b = (int64_t)x1 * dx + (int64_t)y1 * dy; // b = v1(v2 - v1)
+	int a = (int64_t)dx * dx + (int64_t)dy * dy; // a = (v2 - v1)²
+	int b = (int64_t)x1 * dx + (int64_t)y1 * dy; // b = v1(v2 - v1)
 	auto c = (int64_t)x1 * x1 + (int64_t)y1 * y1 - (int64_t)radius * radius; // c = v1² - r²
 	// Equation to solve is now a t^2 + 2 b t + c = 0.
 	auto d = b * b - a * c; // d = b² - a c
@@ -1195,13 +1193,12 @@ void Projectile::proj_ImpactFunc()
 
       // if we are in a multiplayer game and the attacker is our responsibility
       if (bMultiPlayer && pimpl->source) {
-        updateMultiStatsDamage(dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer(),
-                               dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer(),
-                               damage);
+        updateMultiStatsDamage(pimpl->source->playerManager->getPlayer(),
+                               pimpl->target->playerManager->getPlayer(), damage);
       }
 
       debug(LOG_NEVER, "Damage to object %d, player %d\n",
-            pimpl->target->getId(), dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer());
+            pimpl->target->getId(), pimpl->target->playerManager->getPlayer());
 
       struct Damage sDamage = {
               pimpl->target,
@@ -1260,8 +1257,7 @@ void Projectile::proj_ImpactFunc()
         continue; // Don't hit main target twice.
       }
 
-      if (pimpl->source && pimpl->source->playerManager->getPlayer() ==
-                                   dynamic_cast<PlayerManager *>(psCurr)->getPlayer() &&
+      if (pimpl->source && pimpl->source->playerManager->getPlayer() == psCurr->playerManager->getPlayer() &&
           psStats->flags.test(static_cast<size_t>(WEAPON_FLAGS::NO_FRIENDLY_FIRE))) {
         continue; // this weapon does not do friendly damage
       }
@@ -1617,8 +1613,8 @@ int Projectile::objectDamageDispatch()
 bool Projectile::isFriendlyFire() const
 {
 	return pimpl && pimpl->target &&
-         dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer()
-         == dynamic_cast<PlayerManager *>(pimpl->target)->getPlayer();
+         pimpl->source->playerManager->getPlayer()
+           == pimpl->target->playerManager->getPlayer();
 }
 
 bool Projectile::shouldIncreaseExperience() const
@@ -1632,20 +1628,20 @@ void Projectile::updateKills()
 {
 	if (bMultiPlayer) {
 		updateMultiStatsKills(pimpl->damage->target,
-                          dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer());
+                          pimpl->source->playerManager->getPlayer());
 	}
 
 	if (auto psDroid = dynamic_cast<Droid*>(pimpl->source)) {
 		psDroid->incrementKills();
 
 		if (psDroid->hasCommander()) {
-			auto psCommander = psDroid->getGroup()->getCommander();
+			auto psCommander = psDroid->getCommander();
 			psCommander->incrementKills();
 		}
 	}
 	else if (dynamic_cast<Structure*>(pimpl->source)) {
 		auto psCommander = getDesignatorAttackingObject(
-            dynamic_cast<PlayerManager *>(pimpl->source)->getPlayer(),
+            pimpl->source->playerManager->getPlayer(),
             pimpl->target);
 
 		if (psCommander != nullptr) {
@@ -1738,11 +1734,11 @@ int establishTargetHeight(BaseObject const* psTarget)
       case WEAPON:
         if (numWeapons(*psDroid) > 0) {
           // Don't do this for Barbarian Propulsions as they don't possess a turret (and thus have pIMD == NULL)
-          if (!psDroid->getWeapon(0)->getStats()->pIMD) {
+          if (!psDroid->weaponManager->weapons[0].getImdShape()) {
             return height;
           }
-          yMax = psDroid->getWeapon(0)->getStats()->pIMD->max.y;
-          yMin = psDroid->getWeapon(0)->getStats()->pIMD->min.y;
+          yMax = psDroid->weaponManager->weapons[0].getImdShape()->max.y;
+          yMin = psDroid->weaponManager->weapons[0].getImdShape()->min.y;
         }
         break;
       case SENSOR:

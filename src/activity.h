@@ -164,7 +164,7 @@ public:
 	static std::string getTeamDescription(const SkirmishGameInfo& info);
 };
 
-std::string to_string(GameEndReason reason);
+std::string to_string(GameEndReason const& reason);
 std::string to_string(const END_GAME_STATS_DATA& stats);
 
 // Thread-safe class for retrieving and setting ActivityRecord data

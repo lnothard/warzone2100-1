@@ -186,8 +186,6 @@ static void atmosAddParticle(const Vector3f& pos, PARTICLE_TYPE type)
 	  	asAtmosParts[freeParticle].imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_RAIN));
 	  	asAtmosParts[freeParticle].size = 50;
 	  	break;
-	  default:
-	  	break;
 	}
 
 	/* Setup position */

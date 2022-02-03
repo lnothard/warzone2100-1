@@ -146,6 +146,7 @@ public:
   [[nodiscard]] virtual BaseObject const* getTarget(int idx) const;
 
   [[nodiscard]] unsigned getId() const noexcept;
+  [[nodiscard]] std::string const* getName() const;
   [[nodiscard]] unsigned getBornTime() const noexcept;
   [[nodiscard]] Spacetime getSpacetime() const noexcept;
   [[nodiscard]] Position getPosition() const noexcept;

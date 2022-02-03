@@ -69,9 +69,6 @@ bool aiInitialise();
 /* Shutdown the AI system */
 bool aiShutdown();
 
-/* Do the AI for a droid */
-void aiUpdateDroid(Droid* psDroid);
-
 /// Find the nearest best target for a droid
 /// returns integer representing quality of choice, -1 if failed
 int aiBestNearestTarget(Droid* psDroid, BaseObject ** ppsObj, int weapon_slot, int extraRange = 0);

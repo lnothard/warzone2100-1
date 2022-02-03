@@ -31,6 +31,7 @@
 
 enum class ACTION;
 struct BaseStats;
+struct BaseObject;
 struct Droid;
 struct Weapon;
 struct WeaponStats;

@@ -26,7 +26,6 @@
 #include "lib/framework/fixedpoint.h"
 #include "lib/framework/math_ext.h"
 #include "lib/framework/vector.h"
-#include "lib/sound/audio.h"
 
 #include "action.h"
 #include "droid.h"
@@ -88,7 +87,7 @@ std::string getDroidActionName(ACTION action)
 // check if a target is within weapon range
 bool actionInRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slot, bool useLongWithOptimum)
 {
-	auto psStats = psDroid->weaponManager->getWeapon(0)->getStats();
+	auto psStats = psDroid->weaponManager->weapons[0].stats.get();
 
 	const auto dx = psDroid->getPosition().x - psObj->getPosition().x;
 	const auto dy = psDroid->getPosition().y - psObj->getPosition().y;
@@ -136,7 +135,7 @@ bool actionInRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slo
 static bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, WeaponStats const* psStats)
 {
 	if (!psStats) {
-		psStats = psDroid->weaponManager->getWeapon(0)->getStats();
+		psStats = psDroid->weaponManager->weapons[0].stats.get();
 	}
 
 	/* if I am a multi-turret droid */
@@ -160,11 +159,11 @@ static bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, 
 /* returns true if on target */
 bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, int weaponSlot)
 {
-  auto weapon = psAttacker->weaponManager->getWeapon(weaponSlot);
+  auto weapon = psAttacker->weaponManager->weapons[weaponSlot];
   auto rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
   auto pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
 
-	auto psWeapStats = weapon->getStats();
+	auto psWeapStats = weapon.stats.get();
 	unsigned tRotation, tPitch;
 	unsigned targetRotation;
 	auto rotationTolerance = 0;
@@ -184,8 +183,8 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, int weapon
 		pitchRate = rotRate / 2;
 	}
 
-	tRotation = weapon->getRotation().direction;
-	tPitch = weapon->getRotation().pitch;
+	tRotation = weapon.getRotation().direction;
+	tPitch = weapon.getRotation().pitch;
 
 	// set the pitch limits based on the weapon stats of the attacker
 	pitchLowerLimit = pitchUpperLimit = 0;
@@ -257,9 +256,9 @@ bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, int weapon
 		tPitch += clip(pitchError, -pitchRate, pitchRate);
 		onTarget = onTarget && targetPitch == tPitch;
 	}
-  weapon->setRotation({static_cast<int>(tRotation),
+  weapon.setRotation({static_cast<int>(tRotation),
                         static_cast<int>(tPitch),
-                        weapon->getRotation().roll});
+                        weapon.getRotation().roll});
 
 	return onTarget;
 }
@@ -487,44 +486,6 @@ void actionDroid(Droid* psDroid, ACTION action,
 	psDroid->actionDroidBase(&sAction);
 }
 
-/*send the vtol droid back to the nearest rearming pad - if one otherwise
-return to base*/
-void moveToRearm(Droid* psDroid)
-{
-	if (!psDroid->isVtol()) {
-		return;
-	}
-
-	//if droid is already returning - ignore
-	if (vtolRearming(*psDroid)) {
-		return;
-	}
-
-	//get the droid to fly back to a ReArming Pad
-	// don't worry about finding a clear one for the minute
-	auto psStruct = findNearestReArmPad(psDroid, psDroid->associatedStructure, false);
-	if (psStruct) {
-		// note a base rearm pad if the vtol doesn't have one
-		if (psDroid->getBase() == nullptr) {
-			setDroidBase(psDroid, psStruct);
-		}
-
-		//return to re-arming pad
-		if (psDroid->getOrder()->type == ORDER_TYPE::NONE) {
-			// no order set - use the rearm order to ensure the unit goes back
-			// to the landing pad
-			orderDroidObj(psDroid, ORDER_TYPE::REARM, psStruct, ModeImmediate);
-		}
-		else {
-			actionDroid(psDroid, ACTION::MOVE_TO_REARM, psStruct);
-		}
-	}
-	else {
-		//return to base un-armed
-		objTrace(psDroid->getId(), "Did not find an available rearm pad - RTB instead");
-		orderDroid(psDroid, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
-	}
-}
 
 static bool spiralSearch(int startX, int startY, int max_radius, tileMatchFunction match, void* matchState)
 {
@@ -571,7 +532,7 @@ static bool spiralSearch(int startX, int startY, int max_radius, tileMatchFuncti
  * an internal tileMatchFunction that checks if x and y are coordinates of a
  * valid landing place.
  *
- * @param matchState a pointer to a Vector2i where these coordintates should be stored
+ * @param matchState a pointer to a Vector2i where these coordinates should be stored
  *
  * @return true if coordinates are a valid landing tile, false if not.
  */

@@ -24,6 +24,7 @@
  */
 
 #ifndef __INCLUDED_SRC_GAME_H__
+#define __INCLUDED_SRC_GAME_H__
 
 #include <sstream>
 
@@ -35,6 +36,8 @@
 
 enum class TILE_SET;
 
+
+static const UDWORD NULL_ID = UDWORD_MAX;
 
 //the version number used in save games
 //#define VERSION_1             1	        // demo save games
@@ -84,7 +87,7 @@ enum class TILE_SET;
 #define KEEPOBJECTS				true
 #define FREEMEM					true
 
-enum GAME_TYPE
+enum class GAME_TYPE
 {
     GTYPE_SCENARIO_START,
     ///< Initial scenario state.
@@ -173,5 +176,7 @@ nonstd::optional<nlohmann::json> parseJsonFile(const char* filename);
 bool saveJSONToFile(const nlohmann::json& obj, const char* pFileName);
 bool skipForDifficulty(WzConfig& ini, unsigned player);
 int getPlayer(WzConfig const& ini);
+int healthValue(WzConfig& ini, int defaultValue);
+unsigned getResearchIdFromName(WzString const& name);
 
 #endif // __INCLUDED_SRC_GAME_H__

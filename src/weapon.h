@@ -60,46 +60,32 @@ enum class TARGET_ORIGIN
 class Weapon : public BaseObject
 {
 public:
-  ~Weapon() override = default;
   Weapon() = default;
   Weapon(unsigned id, Player* player);
 
-  Weapon(Weapon const& rhs);
-  Weapon& operator=(Weapon const& rhs);
-
-  Weapon(Weapon&& rhs) noexcept = default;
-  Weapon& operator=(Weapon&& rhs) noexcept = default;
-
-
-  [[nodiscard]] WeaponStats const* getStats() const;
-  [[nodiscard]] unsigned getRecoil() const;
+  [[nodiscard]] iIMDShape const* getMountGraphic() const;
+  [[nodiscard]] iIMDShape const* getImdShape() const override;
+  [[nodiscard]] unsigned getNumAttackRuns(unsigned player) const;
   [[nodiscard]] unsigned getMaxRange(unsigned player) const;
   [[nodiscard]] unsigned getMinRange(unsigned player) const;
   [[nodiscard]] unsigned getShortRange(unsigned player) const;
   [[nodiscard]] unsigned getHitChance(unsigned player) const;
   [[nodiscard]] unsigned getShortRangeHitChance(unsigned player) const;
-  [[nodiscard]] unsigned getNumAttackRuns(unsigned player) const;
-  [[nodiscard]] unsigned getShotsFired() const noexcept;
-  [[nodiscard]] iIMDShape const* getImdShape() const override;
-  [[nodiscard]] iIMDShape const* getMountGraphic() const;
-  [[nodiscard]] WEAPON_SUBCLASS getSubclass() const;
-  [[nodiscard]] TARGET_ORIGIN getTargetOrigin() const noexcept;
-  [[nodiscard]] Rotation getPreviousRotation() const;
-  [[nodiscard]] unsigned getAmmoUsed() const;
-  [[nodiscard]] unsigned getTimeLastFired() const;
-  [[nodiscard]] bool hasAmmo() const;
+  [[nodiscard]] unsigned getRecoil() const;
   [[nodiscard]] bool hasFullAmmo() const noexcept;
   [[nodiscard]] bool isArtillery() const noexcept;
   [[nodiscard]] bool isVtolWeapon() const;
   [[nodiscard]] bool isEmptyVtolWeapon(unsigned player) const;
   [[nodiscard]] unsigned calculateRateOfFire(unsigned player) const;
-  [[nodiscard]] unsigned getAmmoRemaining() const;
-  void setPreviousRotation(Rotation prev);
   void alignTurret();
-  void useAmmo();
-private:
-  struct Impl;
-  std::unique_ptr<Impl> pimpl;
+public:
+  std::shared_ptr<WeaponStats> stats;
+  Rotation previousRotation {0, 0, 0};
+  TARGET_ORIGIN origin = TARGET_ORIGIN::UNKNOWN;
+  unsigned timeLastFired = 0;
+  unsigned ammo = 0;
+  unsigned ammoUsed = 0;
+  unsigned shotsFired = 0;
 };
 
 class WeaponManager

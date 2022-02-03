@@ -464,7 +464,7 @@ int visibleObject(BaseObject const* psViewer, BaseObject const* psTarget, bool w
 
     if (dynamic_cast<Droid const*>(psTarget) &&
         dynamic_cast<Droid const*>(psTarget)->isVtol() &&
-        psStruct->getWeapon(0)->getStats()->surfaceToAir == SHOOT_IN_AIR) {
+        psStruct->weaponManager->weapons[0].stats.get()->surfaceToAir == SHOOT_IN_AIR) {
       range = 3 * range / 2; // increase vision range of AA vs VTOL
     }
 
@@ -844,10 +844,10 @@ bool lineOfFire(BaseObject const* psViewer, BaseObject const* psTarget, int weap
                    "Bad viewer type");
 
 	if (auto psDroid = dynamic_cast<Droid const*>(psViewer)) {
-		psStats = psDroid->getWeapon(weapon_slot)->getStats();
+		psStats = psDroid->weaponManager->weapons[weapon_slot].stats.get();
 	}
 	else if (auto psStruct = dynamic_cast<Structure const*>(psViewer)) {
-		psStats = psStruct->getWeapon(weapon_slot)->getStats();
+		psStats = psStruct->weaponManager->weapons[weapon_slot].stats.get();
 	}
 	// 2d distance
 	auto distance = iHypot((psTarget->getPosition() - psViewer->getPosition()).xy());

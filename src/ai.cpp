@@ -102,7 +102,7 @@ static unsigned aiDroidRange(Droid const* psDroid, int weapon_slot)
 		return 0;
 	}
 	else {
-		auto psWStats = psDroid->getWeapon(weapon_slot)->getStats();
+		auto psWStats = psDroid->weaponManager->weapons[weapon_slot].stats.get();
 		longRange = proj_GetLongRange(psWStats, psDroid->playerManager->getPlayer());
 	}
 	return longRange;
@@ -116,7 +116,7 @@ static bool aiStructHasRange(Structure const* psStruct, BaseObject const* psTarg
 		return false;
 	}
 
-	auto psWStats = psStruct->getWeapon(weapon_slot)->getStats();
+	auto psWStats = psStruct->weaponManager->weapons[weapon_slot].stats.get();
 	auto longRange = proj_GetLongRange(psWStats, psStruct->playerManager->getPlayer());
 	return objectPositionSquareDiff(
           psStruct->getPosition(),
@@ -284,7 +284,7 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
 
 	/* Get attacker weapon effect */
 	if ((psAttackerDroid = dynamic_cast<Droid*>(psAttacker))) {
-		attackerWeapon = psAttackerDroid->getWeapon(0)->getStats();
+		attackerWeapon = psAttackerDroid->weaponManager->weapons[0].stats.get();
 
 		// check if this droid is assigned to a commander
 		bCmdAttached = psAttackerDroid->hasCommander();
@@ -319,7 +319,7 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
 		}
 	}
 	else if (auto psStruct = dynamic_cast<Structure*>(psAttacker)) {
-		attackerWeapon = psStruct->getWeapon(weapon_slot)->getStats();
+		attackerWeapon = psStruct->weaponManager->weapons[weapon_slot].stats.get();
 	}
 	else {
   /* feature */
@@ -503,7 +503,7 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
   }
 
   // fire support - go through all droids assigned to the commander
-  for (auto psGroupDroid : psAttackerDroid->getGroup()->getMembers())
+  for (auto psGroupDroid : *psAttackerDroid->getGroup()->getMembers())
   {
     for (weaponSlot = 0; weaponSlot < numWeapons(*psGroupDroid); weaponSlot++)
     {
@@ -545,14 +545,14 @@ int aiBestNearestTarget(Droid* psDroid, BaseObject** ppsObj, int weapon_slot, in
 		return failure;
 	}
 	// Check if we have a CB target to begin with
-	if (!proj_Direct(psDroid->getWeapon(0)->getStats())) {
-		auto psWStats = psDroid->getWeapon(0)->getStats();
+	if (!proj_Direct(psDroid->weaponManager->weapons[0].stats.get())) {
+		auto psWStats = psDroid->weaponManager->weapons[0].stats.get();
 
 		bestTarget = aiSearchSensorTargets(psDroid, weapon_slot, psWStats, &tmpOrigin);
 		bestMod = targetAttackWeight(bestTarget, (BaseObject *)psDroid, weapon_slot);
 	}
 
-	weaponEffect = psDroid->getWeapon(weapon_slot)->getStats()->weaponEffect;
+	weaponEffect = psDroid->weaponManager->weapons[weapon_slot].stats->weaponEffect;
 
 	electronic = electronicDroid(psDroid);
 
@@ -575,7 +575,7 @@ int aiBestNearestTarget(Droid* psDroid, BaseObject** ppsObj, int weapon_slot, in
 			if (friendlyObj->isVisibleToPlayer(psDroid->playerManager->getPlayer()) == UBYTE_MAX) {
 				if (auto friendlyDroid = dynamic_cast<Droid*>(friendlyObj)) {
 					/* See if friendly droid has a target */
-					tempTarget = friendlyDroid->actionTarget[0];
+					tempTarget = friendlyDroid->getTarget(0);
 					if (tempTarget && !tempTarget->damageManager->isDead()) {
 						//make sure a weapon droid is targeting it
 						if (numWeapons(*friendlyDroid) > 0) {
@@ -587,7 +587,7 @@ int aiBestNearestTarget(Droid* psDroid, BaseObject** ppsObj, int weapon_slot, in
 					}
 				}
 				else if (auto friendlyStruct = dynamic_cast<Structure*>(friendlyObj)) {
-					tempTarget = friendlyStruct->psTarget[0];
+					tempTarget = friendlyStruct->getTarget(0);
 					if (tempTarget && !tempTarget->damageManager->isDead()) {
 						targetInQuestion = tempTarget;
 					}
@@ -671,7 +671,7 @@ int aiBestNearestTarget(Droid* psDroid, BaseObject** ppsObj, int weapon_slot, in
 
 		// See if target is blocked by a wall; only affects direct weapons
 		// Ignore friendly walls here
-		if (proj_Direct(psDroid->getWeapon(weapon_slot)->getStats()) && targetStructure &&
+		if (proj_Direct(psDroid->weaponManager->weapons[weapon_slot].stats.get()) && targetStructure &&
         !aiCheckAlliances(psDroid->playerManager->getPlayer(), targetStructure->playerManager->getPlayer())) {
 			//are we any good against walls?
 			if (asStructStrengthModifier[weaponEffect][targetStructure->getStats()->strength] >=
@@ -751,7 +751,7 @@ bool aiChooseTarget(BaseObject* psObj, BaseObject** ppsTarget, int weapon_slot,
 		*targetOrigin = TARGET_ORIGIN::UNKNOWN;
 	}
 
-	ASSERT_OR_RETURN(false, (unsigned)weapon_slot < numWeapons(*psObj), "Invalid weapon selected");
+	ASSERT_OR_RETURN(false, (unsigned)weapon_slot < psObj->weaponManager->weapons.size(), "Invalid weapon selected");
 
 	/* See if there is a something in range */
 	if (auto droid = dynamic_cast<Droid*>(psObj)) {
@@ -780,7 +780,7 @@ bool aiChooseTarget(BaseObject* psObj, BaseObject** ppsTarget, int weapon_slot,
 	else if (auto structure = dynamic_cast<Structure*>(psObj)) {
 		bool bCommanderBlock = false;
 
-		auto psWStats = structure->getWeapon(weapon_slot)->getStats();
+		auto psWStats = structure->weaponManager->weapons[weapon_slot].stats.get();
 		auto longRange = proj_GetLongRange(psWStats, psObj->playerManager->getPlayer());
 
 		// see if there is a target from the command droids
@@ -1027,7 +1027,7 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
 
     // can't attack without a weapon
     if (numWeapons(*psDroid) != 0) {
-      surfaceToAir = psDroid->getWeapon(weapon_slot)->getStats()->surfaceToAir;
+      surfaceToAir = psDroid->weaponManager->weapons[weapon_slot].stats.get()->surfaceToAir;
       if (((surfaceToAir & SHOOT_IN_AIR) && bTargetInAir) ||
           ((surfaceToAir & SHOOT_ON_GROUND) && !bTargetInAir)) {
         return true;
@@ -1040,7 +1040,7 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
 	else if (auto psStruct = dynamic_cast<Structure const*>(psObject)) {
     // can't attack without a weapon
     if (numWeapons(*psStruct) != 0) {
-      surfaceToAir = psStruct->getWeapon(weapon_slot)->getStats()->surfaceToAir;
+      surfaceToAir = psStruct->weaponManager->weapons[weapon_slot].stats.get()->surfaceToAir;
     }
     else {
       surfaceToAir = 0;

@@ -35,6 +35,7 @@ struct BaseObject::Impl
   Impl(Impl&& rhs) noexcept = default;
   Impl& operator=(Impl&& rhs) noexcept = default;
 
+  std::string name;
   unsigned id;
   unsigned time = 0;
   unsigned bornTime = 0;
@@ -160,6 +161,11 @@ Health &Health::operator=(Health const& rhs)
   if (this == &rhs) return *this;
   *pimpl = *rhs.pimpl;
   return *this;
+}
+
+std::string const* BaseObject::getName() const
+{
+  return pimpl ? &pimpl->name : nullptr;
 }
 
 unsigned BaseObject::getId() const noexcept
@@ -532,8 +538,8 @@ Vector3i calculateMuzzleTipLocation(BaseObject const& unit, int weapon_slot)
 
     if (weapon_imd->nconnectors) {
       auto connector_num = unsigned{0};
-      if (weapon.getShotsFired() && weapon_imd->nconnectors > 1) {
-        connector_num = (weapon.getShotsFired() - 1) % weapon_imd->nconnectors;
+      if (weapon.shotsFired && weapon_imd->nconnectors > 1) {
+        connector_num = (weapon.shotsFired - 1) % weapon_imd->nconnectors;
       }
       const auto connector = weapon_imd->connectors[connector_num];
       barrel = Vector3i{connector.x,
@@ -693,7 +699,7 @@ bool hasElectronicWeapon(BaseObject const& unit) noexcept
 
   return std::any_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon) {
-    return weapon.getSubclass() == WEAPON_SUBCLASS::ELECTRONIC;
+    return weapon.stats->weaponSubClass == WEAPON_SUBCLASS::ELECTRONIC;
   });
 }
 

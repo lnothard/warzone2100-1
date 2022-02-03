@@ -35,6 +35,7 @@
 #include "lib/ivis_opengl/tex.h"
 
 #include "action.h"
+#include "baseobject.h"
 #include "clparse.h"
 #include "combat.h"
 #include "console.h"
@@ -79,6 +80,7 @@
 #include "multiplay.h"
 #include "objmem.h"
 #include "lib/sound/track.h"
+#include "fpath.h"
 
 #include <list>
 #include <utility>
@@ -104,13 +106,13 @@
 #define ENEMIES -3
 
 
-BaseObject* IdToObject(unsigned id, unsigned player)
+BaseObject* IdToObject(unsigned id, unsigned player, OBJECT_TYPE type)
 {
 	switch (type) {
-	case OBJ_DROID: return IdToDroid(id, player);
-	case OBJ_FEATURE: return IdToFeature(id, player);
-	case OBJ_STRUCTURE: return IdToStruct(id, player);
-	default: return nullptr;
+    case OBJECT_TYPE::DROID: return IdToDroid(id, player);
+    case OBJECT_TYPE::FEATURE: return IdToFeature(id, player);
+    case OBJECT_TYPE::STRUCTURE: return IdToStruct(id, player);
+    default: return nullptr;
 	}
 }
 
@@ -140,7 +142,7 @@ bool wzapi::scripting_instance::isHostAI() const
 // - 3.) The filename *only* is checked relative to the main scriptPath (LoadFileSearchOptions::ScriptPath_FileNameOnlyBackwardsCompat) - for backwards-compat only
 // - 4.) The filePath is checked relative to the main scriptPath (LoadFileSearchOptions::ScriptPath)
 bool wzapi::scripting_instance::loadFileForInclude(const std::string& filePath, std::string& loadedFilePath,
-                                                   char** ppFileData, size_t* pFileSize,
+                                                   char** ppFileData, unsigned* pFileSize,
                                                    unsigned searchFlags /*= LoadFileSearchOptions::All*/) const
 {
 	WzPathInfo filePathInfo = WzPathInfo::fromPlatformIndependentPath(filePath);
@@ -390,8 +392,8 @@ bool wzapi::orderDroidBuild(WZAPI_PARAMS(Droid* psDroid, ORDER_TYPE order, std::
 	auto direction = static_cast<uint16_t>(DEG(_direction.value_or(0)));
 
 	auto droidOrder = psDroid->getOrder();
-	if (droidOrder->type == order && psDroid->actionPos.x == world_coord(x) &&
-      psDroid->actionPos.y == world_coord(y)) {
+	if (droidOrder->type == order && psDroid->getActionPos().x == world_coord(x) &&
+      psDroid->getActionPos().y == world_coord(y)) {
 		return true;
 	}
 	orderDroidStatsLocDir(psDroid, order, psStats, world_coord(x) + TILE_UNITS / 2,
@@ -459,7 +461,7 @@ bool wzapi::setSunIntensity(WZAPI_PARAMS(float ambient_r, float ambient_g, float
 //--
 bool wzapi::setWeather(WZAPI_PARAMS(int weatherType))
 {
-	SCRIPT_ASSERT(false, context, weatherType >= 0 && weatherType <= WEATHER_TYPE::NONE, "Bad weather type");
+	SCRIPT_ASSERT(false, context, weatherType >= 0 && weatherType <= (int)WEATHER_TYPE::NONE, "Bad weather type");
 	atmosSetWeatherType((WEATHER_TYPE)weatherType);
 	return true;
 }
@@ -505,7 +507,7 @@ bool wzapi::cameraTrack(WZAPI_PARAMS(optional<Droid*> _droid))
 		SCRIPT_ASSERT(false, context, droid, "No valid droid provided");
 		SCRIPT_ASSERT(false, context, selectedPlayer < MAX_PLAYERS,
 		              "Invalid selectedPlayer for current client: %" PRIu32 "", selectedPlayer);
-		for (auto& psDroid : apsDroidLists[selectedPlayer])
+		for (auto& psDroid : playerList[selectedPlayer].droids)
 		{
 			psDroid.damageManager->setSelected(&psDroid == droid); // select only the target droid
 		}
@@ -589,21 +591,23 @@ bool wzapi::changePlayerColour(WZAPI_PARAMS(unsigned player, int colour))
 //-- Change the health of the given game object, in percentage. Does not take care of network sync, so for multiplayer games,
 //-- needs wrapping in a syncRequest. (3.2.3+ only.)
 //--
-bool wzapi::setHealth(WZAPI_PARAMS(BaseObject * psObject, int health)) MULTIPLAY_SYNCREQUEST_REQUIRED
+bool wzapi::setHealth(WZAPI_PARAMS(BaseObject* psObject, int health)) MULTIPLAY_SYNCREQUEST_REQUIRED
 {
 	SCRIPT_ASSERT(false, context, psObject, "No valid object provided");
 	SCRIPT_ASSERT(false, context, health >= 1, "Bad health value %d", health);
 	auto id = psObject->getId();
 	auto player = psObject->playerManager->getPlayer();
-	OBJECT_TYPE objectType = psObject->type;
-	SCRIPT_ASSERT(false, context, objectType == OBJ_DROID || objectType == OBJ_STRUCTURE || objectType == OBJ_FEATURE,
+	OBJECT_TYPE objectType = getObjectType(psObject);
+	SCRIPT_ASSERT(false, context, objectType == OBJECT_TYPE::DROID ||
+                                objectType == OBJECT_TYPE::STRUCTURE ||
+                                objectType == OBJECT_TYPE::FEATURE,
 	              "Bad object type");
-	if (objectType == OBJ_DROID) {
+	if (objectType == OBJECT_TYPE::DROID) {
 		auto psDroid = (Droid*)psObject;
 		SCRIPT_ASSERT(false, context, psDroid, "No such droid id %d belonging to player %d", id, player);
 		psDroid->damageManager->setHp(health * psDroid->damageManager->getOriginalHp() / 100);
 	}
-	else if (objectType == OBJ_STRUCTURE) {
+	else if (objectType == OBJECT_TYPE::STRUCTURE) {
 		auto psStruct = (Structure*)psObject;
 		SCRIPT_ASSERT(false, context, psStruct, "No such structure id %d belonging to player %d", id, player);
 		psStruct->damageManager->setHp(health * MAX(1, structureBody(psStruct)) / 100);
@@ -730,29 +734,26 @@ wzapi::no_return_value wzapi::hackAddMessage(WZAPI_PARAMS(std::string message, i
 	MESSAGE_TYPE msgType = (MESSAGE_TYPE)messageType;
 	SCRIPT_ASSERT_PLAYER({}, context, player);
 	MESSAGE* psMessage = addMessage(msgType, false, player);
-	if (psMessage)
-	{
-		VIEWDATA* psViewData = getViewData(WzString::fromUtf8(message));
-		SCRIPT_ASSERT({}, context, psViewData, "Viewdata not found");
-		psMessage->pViewData = psViewData;
-		debug(LOG_MSG, "Adding %s pViewData=%p", psViewData->name.toUtf8().c_str(),
-		      static_cast<void *>(psMessage->pViewData));
-		if (msgType == MSG_PROXIMITY)
-		{
-			VIEW_PROXIMITY* psProx = (VIEW_PROXIMITY*)psViewData->pData;
-			// check the z value is at least the height of the terrain
-			int height = map_Height(psProx->x, psProx->y);
-			if (psProx->z < height)
-			{
-				psProx->z = height;
-			}
-		}
-		if (immediate)
-		{
-			displayImmediateMessage(psMessage);
-		}
-	}
-	//	jsDebugMessageUpdate();
+
+  if (!psMessage) return {};
+
+  auto psViewData = getViewData(WzString::fromUtf8(message));
+  SCRIPT_ASSERT({}, context, psViewData, "Viewdata not found");
+  psMessage->pViewData = psViewData;
+  debug(LOG_MSG, "Adding %s pViewData=%p", psViewData->name.toUtf8().c_str(),
+        static_cast<void *>(psMessage->pViewData));
+  if (msgType == MESSAGE_TYPE::MSG_PROXIMITY) {
+    auto psProx = (VIEW_PROXIMITY*)psViewData->pData;
+    auto height = map_Height(psProx->x, psProx->y);
+
+    // check the z value is at least the height of the terrain
+    if (psProx->z < height) {
+      psProx->z = height;
+    }
+  }
+  if (immediate) {
+    displayImmediateMessage(psMessage);
+  }
 	return {};
 }
 
@@ -790,7 +791,7 @@ WZAPI_DEPRECATED
 {
 	OBJECT_TYPE objectType = (OBJECT_TYPE)_objectType;
 	SCRIPT_ASSERT_PLAYER(nullptr, context, player);
-	return IdToObject(objectType, id, player);
+	return IdToObject(id, player, objectType);
 }
 
 //-- ## hackAssert(condition, message...)
@@ -1112,7 +1113,7 @@ std::vector<const Droid*> wzapi::enumDroid(WZAPI_PARAMS(optional<int> _player, o
 	SCRIPT_ASSERT_PLAYER({}, context, player);
 	SCRIPT_ASSERT({}, context, (playerFilter >= 0 && playerFilter < MAX_PLAYERS) || playerFilter == ALL_PLAYERS,
 	              "Player filter index out of range: %d", playerFilter);
-	for (auto& psDroid : apsDroidLists[player])
+	for (auto& psDroid : playerList[player].droids)
 	{
 		if ((playerFilter == ALL_PLAYERS || psDroid.isVisibleToPlayer(playerFilter))
 		  	&& !psDroid.damageManager->isDead()
@@ -1174,19 +1175,19 @@ std::vector<scr_position> wzapi::enumBlips(WZAPI_PARAMS(unsigned player))
 //--
 //-- Return an array containing all game objects currently selected by the host player. (3.2+ only)
 //--
-std::vector<const BaseObject *> wzapi::enumSelected(WZAPI_NO_PARAMS_NO_CONTEXT)
+std::vector<BaseObject const*> wzapi::enumSelected(WZAPI_NO_PARAMS_NO_CONTEXT)
 {
-	std::vector<const BaseObject *> matches;
+	std::vector<BaseObject const*> matches;
 	if (selectedPlayer >= MAX_PLAYERS) {
 		return matches;
 	}
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			matches.push_back(&psDroid);
 		}
 	}
-	for (auto& psStruct : apsStructLists[selectedPlayer])
+	for (auto& psStruct : playerList[selectedPlayer].droids)
 	{
 		if (psStruct->damageManager->isSelected()) {
 			matches.push_back(psStruct.get());
@@ -1269,9 +1270,9 @@ std::vector<const BaseObject *> wzapi::enumRange(
 	{
 		if ((psObj->isVisibleToPlayer(player) || !seen) && !psObj->damageManager->isDead()) {
       if ((playerFilter >= 0 && psObj->playerManager->getPlayer() == playerFilter) || playerFilter == ALL_PLAYERS
-        || (playerFilter == ALLIES && psObj->type != OBJ_FEATURE && 
+        || (playerFilter == ALLIES && getObjectType(psObj) != OBJECT_TYPE::FEATURE &&
               aiCheckAlliances(psObj->playerManager->getPlayer(), player))
-        || (playerFilter == ENEMIES && psObj->type != OBJ_FEATURE && 
+        || (playerFilter == ENEMIES && getObjectType(psObj) != OBJECT_TYPE::FEATURE &&
               !aiCheckAlliances(psObj->playerManager->getPlayer(), player))) {
         list.push_back(psObj);
       }
@@ -1452,8 +1453,8 @@ bool wzapi::orderDroidLoc(WZAPI_PARAMS(Droid *psDroid, ORDER_TYPE order, int x, 
 	              getDroidOrderName(order).c_str());
 	SCRIPT_ASSERT(false, context, tileOnMap(x, y), "Outside map bounds (%d, %d)", x, y);
 	auto droidOrder = psDroid->getOrder();
-	if (droidOrder->type == order && psDroid->actionPos.x == world_coord(x) && 
-      psDroid->actionPos.y == world_coord(y)) {
+	if (droidOrder->type == order && psDroid->getActionPos().x == world_coord(x) &&
+      psDroid->getActionPos().y == world_coord(y)) {
 		return true;
 	}
 	orderDroidLoc(psDroid, order, world_coord(x), world_coord(y), ModeQueue);
@@ -1673,7 +1674,7 @@ endstructloc:
 bool wzapi::droidCanReach(WZAPI_PARAMS(const Droid *psDroid, int x, int y))
 {
 	SCRIPT_ASSERT(false, context, psDroid, "No valid droid provided");
-	auto psPropStats = dynamic_cast<PropulsionStats const*>(psDroid->getComponent("propulsion"));
+	auto psPropStats = dynamic_cast<PropulsionStats const*>(psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
 	return fpathCheck(psDroid->getPosition(),
                     Vector3i(world_coord(x), world_coord(y), 0),
                     psPropStats->propulsionType);
@@ -1762,8 +1763,8 @@ static std::unique_ptr<DroidTemplate> makeTemplate(unsigned player, const std::s
 	size_t numTurrets = _turrets.va_list.size();
 	int result;
 
-	memset(psTemplate->asParts, 0, sizeof(psTemplate->asParts)); // reset to defaults
-	memset(psTemplate->asWeaps, 0, sizeof(psTemplate->asWeaps));
+  psTemplate->weapons.clear();
+  psTemplate->components.clear();
 	int body = get_first_available_component(player, capacity, _body, COMPONENT_TYPE::BODY, strict);
 	if (body < 0) {
 		debug(LOG_SCRIPT, "Wanted to build %s but body types all unavailable",
@@ -1780,7 +1781,6 @@ static std::unique_ptr<DroidTemplate> makeTemplate(unsigned player, const std::s
 	psTemplate->asParts[COMPONENT_TYPE::BODY] = body;
 	psTemplate->asParts[COMPONENT_TYPE::PROPULSION] = prop;
 
-	psTemplate->weaponCount = 0;
 	numTurrets = std::min<size_t>(numTurrets, asBodyStats[body].weaponSlots); // Restrict max no. turrets
 	if (asBodyStats[body].droidTypeOverride != DROID_TYPE::ANY)
 	{
@@ -1825,7 +1825,7 @@ static std::unique_ptr<DroidTemplate> makeTemplate(unsigned player, const std::s
 			debug(LOG_SCRIPT, "Wanted to build %s but turret unavailable", templateName.c_str());
 			return nullptr;
 		}
-		psTemplate->asParts[psComp->compType] = result;
+		psTemplate->components.insert_or_assign(psComp->compType, result);
 	}
 	bool valid = intValidTemplate(psTemplate.get(), templateName.c_str(), true, player);
 	if (valid) {
@@ -1913,7 +1913,7 @@ MUTLIPLAY_UNSAFE
 	SCRIPT_ASSERT(nullptr, context, !turrets.va_list.empty() && !turrets.va_list[0].strings.empty(),
 	              "No turrets provided");
 	std::unique_ptr<DroidTemplate> psTemplate = ::makeTemplate(player, templateName, body, propulsion, turrets,
-                                                             BODY_SIZE::COUNT, false);
+                                                             (int)BODY_SIZE::COUNT, false);
   if (!psTemplate) return nullptr;
   
   Droid* psDroid = nullptr;
@@ -1934,8 +1934,8 @@ MUTLIPLAY_UNSAFE
     psDroid = buildDroid(psTemplate.get(), world_coord(x) + TILE_UNITS / 2,
                          world_coord(y) + TILE_UNITS / 2, player, onMission, nullptr).get();
     if (psDroid) {
-      addDroid(psDroid, apsDroidLists);
-      debug(LOG_LIFE, "Created droid %s by script for player %d: %u", objInfo(psDroid), player, psDroid->id);
+      playerList[psDroid->playerManager->getPlayer()].addDroid(*psDroid);
+      debug(LOG_LIFE, "Created droid %s by script for player %d: %u", objInfo(psDroid), player, psDroid->getId());
     }
     else {
       debug(LOG_ERROR, "Invalid droid %s", templateName.c_str());
@@ -1978,7 +1978,7 @@ bool wzapi::addDroidToTransporter(WZAPI_PARAMS(game_object_identifier transporte
 	Droid* psTransporter = IdToMissionDroid(transporterId, transporterPlayer);
 	SCRIPT_ASSERT(false, context, psTransporter, "No such transporter id %d belonging to player %d", transporterId,
 	              transporterPlayer);
-	SCRIPT_ASSERT(false, context, isTransporter(psTransporter),
+	SCRIPT_ASSERT(false, context, isTransporter(*psTransporter),
 	              "Droid id %d belonging to player %d is not a transporter", transporterId, transporterPlayer);
 	int droidId = droid.id;
 	int droidPlayer = droid.player;
@@ -2004,7 +2004,7 @@ MUTLIPLAY_UNSAFE
 	FeatureStats* psStats = &asFeatureStats[feature];
 	for (Feature* psFeat = apsFeatureLists[0]; psFeat; psFeat = psFeat->psNext)
 	{
-		SCRIPT_ASSERT(nullptr, context, map_coord(psFeat->getPosition().x) != x || map_coord(psFeat->pos.y) != y,
+		SCRIPT_ASSERT(nullptr, context, map_coord(psFeat->getPosition().x) != x || map_coord(psFeat->getPosition().y) != y,
 		              "Building feature on tile already occupied");
 	}
 	Feature* psFeature = buildFeature(psStats, world_coord(x), world_coord(y), false);
@@ -2279,17 +2279,14 @@ bool wzapi::setExperienceModifier(WZAPI_PARAMS(unsigned player, int percent))
 //--
 //-- Returns an array of droid objects inside given transport. (3.2+ only)
 //--
-std::vector<const Droid*> wzapi::enumCargo(WZAPI_PARAMS(const Droid *psDroid))
+std::vector<const Droid*> wzapi::enumCargo(WZAPI_PARAMS(Droid const* psDroid))
 {
 	SCRIPT_ASSERT({}, context, psDroid, "No valid droid provided");
 	SCRIPT_ASSERT({}, context, isTransporter(*psDroid), "Wrong droid type (expecting: transporter)");
 	std::vector<const Droid*> result;
-	result.reserve(psDroid->getGroup()->getMembers().size());
-	int i = 0;
-	for (Droid* psCurr = psDroid->group->members; psCurr; psCurr = psCurr->psGrpNext, i++)
+	for (auto const psCurr : *psDroid->getGroup()->getMembers())
 	{
-		if (psDroid != psCurr)
-		{
+		if (psDroid != psCurr) {
 			result.push_back(psCurr);
 		}
 	}
@@ -2387,7 +2384,7 @@ bool wzapi::playSound(WZAPI_PARAMS(std::string sound, optional<int> _x, optional
 bool wzapi::gameOverMessage(WZAPI_PARAMS(bool gameWon, optional<bool> _showBackDrop, optional<bool> _showOutro))
 {
 	unsigned player = context.player();
-	const MESSAGE_TYPE msgType = MSG_MISSION; // always
+	auto const msgType = MESSAGE_TYPE::MSG_MISSION;
 	bool showBackDrop = _showBackDrop.value_or(true);
 	bool showOutro = _showOutro.value_or(false);
 	VIEWDATA* psViewData;
@@ -2530,6 +2527,7 @@ wzapi::no_return_value wzapi::setReinforcementTime(WZAPI_PARAMS(int _time))
 	              "The transport timer cannot be set to more than 1 hour!");
 	SCRIPT_ASSERT({}, context, selectedPlayer < MAX_PLAYERS, "Invalid selectedPlayer for current client: %" PRIu32 "",
 	              selectedPlayer);
+
 	mission.ETA = time;
 	if (missionCanReEnforce()) {
 		addTransporterTimerInterface();
@@ -2539,14 +2537,14 @@ wzapi::no_return_value wzapi::setReinforcementTime(WZAPI_PARAMS(int _time))
     
 		/* Only remove the launch if haven't got a transporter droid since the scripts set the
 		 * time to -1 at the between stage if there are not going to be reinforcements on the submap  */
-    auto it = std::find_if(apsDroidLists[selectedPlayer].begin(),
-                                       apsDroidLists[selectedPlayer].end(),
-                                      [](auto const& droid) {
+    auto it = std::find_if(playerList[selectedPlayer].droids.begin(),
+                           playerList[selectedPlayer].droids.end(),
+                           [](auto const& droid) {
       return isTransporter(droid);
     });
     
 		// if not found a transporter, can remove the launch button
-		if (it == apsDroidLists[selectedPlayer].end()) {
+		if (it == playerList[selectedPlayer].droids.end()) {
 			intRemoveTransporterLaunch();
 		}
 	}
@@ -2951,33 +2949,29 @@ bool wzapi::removeObject(WZAPI_PARAMS(BaseObject *psObj, optional<bool> _sfx))
 	bool sfx = _sfx.value_or(false);
 
 	bool retval = false;
-	if (sfx)
-	{
-		switch (psObj->type)
-		{
-		case OBJ_STRUCTURE: destroyStruct((Structure*)psObj, gameTime);
-			break;
-		case OBJ_DROID: retval = destroyDroid((Droid*)psObj, gameTime);
-			break;
-		case OBJ_FEATURE: retval = destroyFeature((Feature*)psObj, gameTime);
-			break;
-		default: SCRIPT_ASSERT(false, context, false, "Wrong game object type");
-			break;
+	if (sfx) {
+		switch (getObjectType(psObj)) {
+      case OBJECT_TYPE::STRUCTURE: destroyStruct((Structure*)psObj, gameTime);
+        break;
+      case OBJECT_TYPE::DROID: retval = destroyDroid((Droid*)psObj, gameTime);
+        break;
+      case OBJECT_TYPE::FEATURE: retval = destroyFeature((Feature*)psObj, gameTime);
+        break;
+      default: SCRIPT_ASSERT(false, context, false, "Wrong game object type");
+        break;
 		}
 	}
-	else
-	{
-		switch (psObj->type)
-		{
-		case OBJ_STRUCTURE: retval = removeStruct((Structure*)psObj, true);
-			break;
-		case OBJ_DROID: retval = removeDroidBase((Droid*)psObj);
-			break;
-		case OBJ_FEATURE: retval = removeFeature((Feature*)psObj);
-			break;
-		default: SCRIPT_ASSERT(false, context, false, "Wrong game object type");
-			break;
-		}
+	else {
+		switch (getObjectType(psObj)) {
+      case OBJECT_TYPE::STRUCTURE: retval = removeStruct((Structure*)psObj, true);
+        break;
+      case OBJECT_TYPE::DROID: retval = removeDroidBase((Droid*)psObj);
+        break;
+      case OBJECT_TYPE::FEATURE: retval = removeFeature((Feature*)psObj);
+        break;
+      default: SCRIPT_ASSERT(false, context, false, "Wrong game object type");
+        break;
+    }
 	}
 	return retval;
 }
@@ -3051,9 +3045,8 @@ wzapi::returned_nullable_ptr<const Structure> wzapi::addStructure(
 
 	StructureStats* psStat = &asStructureStats[structureIndex];
 	Structure* psStruct = buildStructure(psStat, x, y, player, false);
-	if (psStruct)
-	{
-		psStruct->state = SS_BUILT;
+	if (psStruct) {
+		psStruct->state = STRUCTURE_STATE::BUILT;
 		buildingComplete(psStruct);
 		return psStruct;
 	}
@@ -3183,8 +3176,7 @@ bool wzapi::donateObject(WZAPI_PARAMS(BaseObject *psObject, unsigned player))
 	uint8_t from = psObject->playerManager->getPlayer();
 	uint8_t to = static_cast<uint8_t>(player);
 	uint8_t giftType = 0;
-	if (psObject->type == OBJ_DROID)
-	{
+	if (getObjectType(psObject) == OBJECT_TYPE::DROID) {
 		// Check unit limits.
 		auto psDroid = (Droid*)psObject;
 		if ((psDroid->getType() == DROID_TYPE::COMMAND && getNumCommandDroids(to) + 1 > getMaxCommanders(to))
@@ -3195,8 +3187,7 @@ bool wzapi::donateObject(WZAPI_PARAMS(BaseObject *psObject, unsigned player))
 		}
 		giftType = DROID_GIFT;
 	}
-	else if (psObject->type == OBJ_STRUCTURE)
-	{
+	else if (getObjectType(psObject) == OBJECT_TYPE::STRUCTURE) {
 		auto psStruct = (Structure*)psObject;
 		const auto statidx = psStruct->pStructureType - asStructureStats;
 		if (asStructureStats[statidx].curCount[to] + 1 > asStructureStats[statidx].upgraded_stats[to].limit)
@@ -3296,10 +3287,12 @@ wzapi::no_return_value wzapi::setObjectFlag(WZAPI_PARAMS(BaseObject *psObj, int 
 MULTIPLAY_SYNCREQUEST_REQUIRED
 {
 	SCRIPT_ASSERT({}, context, psObj, "No valid object provided");
-	SCRIPT_ASSERT({}, context, psObj->type == OBJ_DROID || psObj->type == OBJ_STRUCTURE || psObj->type == OBJ_FEATURE,
-	              "Bad object type");
+	SCRIPT_ASSERT({}, context, getObjectType(psObj) == OBJECT_TYPE::DROID ||
+                             getObjectType(psObj) == OBJECT_TYPE::STRUCTURE ||
+                             getObjectType(psObj) == OBJECT_TYPE::FEATURE, "Bad object type");
+
 	auto flag = (OBJECT_FLAG)_flag;
-	SCRIPT_ASSERT({}, context, flag >= 0 && flag < OBJECT_FLAG::COUNT, "Bad flag value %d", flag);
+	SCRIPT_ASSERT({}, context, (int)flag >= 0 && flag < OBJECT_FLAG::COUNT, "Bad flag value %d", flag);
 	psObj->setFlag(static_cast<size_t>(flag), flagValue);
 	return {};
 }
@@ -3367,7 +3360,7 @@ bool wzapi::transformPlayerToSpectator(WZAPI_PARAMS(unsigned player))
 // flag all droids as requiring update on next frame
 static void dirtyAllDroids(unsigned player)
 {
-	for (auto& psDroid : apsDroidLists[player])
+	for (auto& psDroid : playerList[player].droids)
 	{
 		psDroid.setFlag(static_cast<size_t>(OBJECT_FLAG::DIRTY));
 	}
@@ -3383,7 +3376,7 @@ static void dirtyAllDroids(unsigned player)
 
 static void dirtyAllStructures(unsigned player)
 {
-	for (auto& psCurr : apsStructLists[player])
+	for (auto& psCurr : playerList[player].structures)
 	{
 		psCurr->flags.set(OBJECT_FLAG::DIRTY);
 	}
@@ -3395,7 +3388,7 @@ static void dirtyAllStructures(unsigned player)
 
 enum Scrcb
 {
-	SCRCB_FIRST = COMPONENT_TYPE::NUMCOMPONENTS,
+	SCRCB_FIRST = (int)COMPONENT_TYPE::COUNT,
 	SCRCB_RES = SCRCB_FIRST,
 	// Research upgrade
 	SCRCB_MODULE_RES,
@@ -3417,7 +3410,7 @@ enum Scrcb
 	SCRCB_LAST = SCRCB_LIMIT
 };
 
-bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string& name, int type, unsigned index,
+bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string& name, COMPONENT_TYPE type, unsigned index,
                                               const nlohmann::json& newValue))
 {
 	int value = json_variant(newValue).toInt();
@@ -3594,7 +3587,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string
 			SCRIPT_ASSERT(false, context, false, "Upgrade component %s not found", name.c_str());
 		}
 	}
-	else if (type == COMPONENT_TYPE::REPAIRUNIT)
+	else if (type == COMPONENT_TYPE::REPAIR_UNIT)
 	{
 		SCRIPT_ASSERT(false, context, index < numRepairStats, "Bad index");
 		RepairStats* psStats = asRepairStats + index;
@@ -3725,7 +3718,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string
 		case SCRCB_ELW:
 			// Update resistance points for all structures, to avoid making them damaged
 			// FIXME - this is _really_ slow! we could be doing this for dozens of buildings one at a time!
-			for (auto& psCurr : apsStructLists[player])
+			for (auto& psCurr : playerList[player].structures)
 			{
 				if (psStats == psCurr->getStats() && psStats->upgraded_stats[player].resistance < value)
 				{
@@ -3745,7 +3738,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string
 			// Update body points for all structures, to avoid making them damaged
 			// FIXME - this is _really_ slow! we could be doing this for
 			// dozens of buildings one at a time!
-			for (auto& psCurr : apsStructLists[player])
+			for (auto& psCurr : playerList[player].structures)
 			{
 				if (psStats == psCurr->getStats() && psStats->upgraded_stats[player].hitPoints < value)
 				{
@@ -3774,7 +3767,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string
 	return true;
 }
 
-nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string& name, int type, unsigned index))
+nlohmann::json wzapi::getUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string& name, COMPONENT_TYPE type, unsigned index))
 {
 	if (type == COMPONENT_TYPE::BODY)
 	{
@@ -4168,9 +4161,9 @@ std::vector<wzapi::PerPlayerUpgrades> wzapi::getUpgradesObject()
 		{
 			RepairStats* psStats = asRepairStats + j;
 			GameEntityRules repair(i, j, {
-				                       {"RepairPoints", COMPONENT_TYPE::REPAIRUNIT},
-				                       {"HitPoints", COMPONENT_TYPE::REPAIRUNIT},
-				                       {"HitPointPct", COMPONENT_TYPE::REPAIRUNIT},
+				                       {"RepairPoints", COMPONENT_TYPE::REPAIR_UNIT},
+				                       {"HitPoints", COMPONENT_TYPE::REPAIR_UNIT},
+				                       {"HitPointPct", COMPONENT_TYPE::REPAIR_UNIT},
 			                       });
 			repairbase.addRules(psStats->name.toUtf8(), std::move(repair));
 		}

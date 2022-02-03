@@ -25,7 +25,6 @@
 
 #ifndef __INCLUDED_SRC_LEVELS_H__
 
-#include "game.h"
 #include "init.h"
 
 enum class GAME_TYPE;

@@ -251,6 +251,7 @@ public:
   [[nodiscard]] ACTION getAction() const noexcept;
   [[nodiscard]] Order const* getOrder() const;
   [[nodiscard]] DROID_TYPE getType() const noexcept;
+  [[nodiscard]] Vector2i getActionPos() const;
   [[nodiscard]] unsigned getLevel() const;
   [[nodiscard]] Droid const* getCommander() const;
   [[nodiscard]] unsigned getCommanderLevel() const;
@@ -259,7 +260,6 @@ public:
   [[nodiscard]] Vector2i getDestination() const;
   [[nodiscard]] Movement const* getMovementData() const;
   [[nodiscard]] unsigned getLastFrustratedTime() const;
-  [[nodiscard]] std::string getName() const;
   [[nodiscard]] unsigned getWeight() const;
   [[nodiscard]] BaseObject const* getTarget(int idx) const override;
   [[nodiscard]] Group const* getGroup() const;
@@ -289,9 +289,10 @@ public:
   void orderDroidCmd(ORDER_TYPE order, QUEUE_MODE mode);
   void setAudioId(int audio);
   void setUpBuildModule();
+  void moveToRearm();
   void actionUpdateDroid();
   void initVisibility();
-  bool loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists);
+  bool loadSaveDroid(const char* pFileName);
   void actionSanity();
   void fpathSetDirectRoute(int targetX, int targetY);
   void actionUpdateTransporter();

@@ -127,16 +127,14 @@ struct PathNode
     PathNode() = default;
     PathNode(PathCoord coord, unsigned dist, unsigned est);
 
-    bool operator <(const PathNode& rhs) const;
+    bool operator<(PathNode const& rhs) const;
 
     /// The current position in route
     PathCoord path_coordinate;
-
     /// The total distance traversed so far
-    unsigned distance_from_start;
-
+    unsigned distance_from_start = 0;
     /// An estimate of the remaining distance. Frequently updated
-    unsigned estimated_distance_to_end;
+    unsigned estimated_distance_to_end = 0;
 };
 
 /// Represents a region of the map that may be non-blocking

@@ -86,7 +86,6 @@ struct Droid::Impl
   Impl& operator=(Impl&& rhs) noexcept = default;
 
 
-  std::string name;
   Droid* commander = nullptr;
   DROID_TYPE type = DROID_TYPE::ANY;
   unsigned weight = 0;
@@ -202,8 +201,7 @@ Droid::Impl::Impl()
 }
 
 Droid::Impl::Impl(Impl const& rhs)
-  : name{rhs.name},
-    type{rhs.type},
+  : type{rhs.type},
     weight{rhs.weight},
     baseSpeed{rhs.baseSpeed},
     experience{rhs.experience},
@@ -235,7 +233,6 @@ Droid::Impl& Droid::Impl::operator=(Impl const& rhs)
 {
   if (this == &rhs) return *this;
 
-  name = rhs.name;
   type = rhs.type;
   weight = rhs.weight;
   baseSpeed = rhs.baseSpeed;
@@ -281,7 +278,7 @@ ComponentStats const* DroidTemplate::getComponent(COMPONENT_TYPE compName) const
 
 const ComponentStats* Droid::getComponent(COMPONENT_TYPE compName) const
 {
-  return pimpl ? pimpl->components.at(compName).get() : nullptr;
+  return pimpl ? &pimpl->components.at(compName) : nullptr;
 }
 
 ANIMATION_EVENTS Droid::getAnimationEvent() const
@@ -299,9 +296,9 @@ ACTION Droid::getAction() const noexcept
   return pimpl ? pimpl->action : ACTION::NONE;
 }
 
-std::string Droid::getName() const
+Vector2i Droid::getActionPos() const
 {
-  return pimpl ? pimpl->name : "";
+  return pimpl ? pimpl->actionPos : Vector2i();
 }
 
 unsigned Droid::getWeight() const
@@ -803,7 +800,7 @@ void Droid::actionSanity()
   // clear the target if it has died
   for (auto i = 0; i < MAX_WEAPONS; i++)
   {
-    auto bDirect = proj_Direct(weaponManager->weapons[i].getStats());
+    auto bDirect = proj_Direct(weaponManager->weapons[i].stats.get());
     if (!pimpl->actionTargets[i] ||
         !(avoidOverkill
           ? pimpl->actionTargets[i]->damageManager->isProbablyDoomed(bDirect)
@@ -829,7 +826,7 @@ void Droid::actionSanity()
       actionDroid(this, ACTION::MOVE, pimpl->order->pos.x, pimpl->order->pos.y);
     }
     else {
-      moveToRearm(this);
+      moveToRearm();
     }
   }
 }
@@ -855,7 +852,7 @@ void Droid::actionDroidBase(Action* psAction)
                      !psAction->psObj->damageManager->isDead(),
                     "Droid is dead");
 
-  auto psWeapStats = weaponManager->weapons[0].getStats();
+  auto psWeapStats = weaponManager->weapons[0].stats.get();
   Vector2i pos{0, 0};
 
   auto secHoldActive = secondaryGetState(
@@ -1390,7 +1387,7 @@ void Droid::orderUpdateDroid()
             }
             if (isVtol() && !vtolFull(*this) &&
                 (pimpl->secondaryOrder & DSS_ALEV_MASK) != DSS_ALEV_NEVER) {
-              moveToRearm(this);
+              moveToRearm();
               break;
             }
             // head back to the other point
@@ -1422,7 +1419,7 @@ void Droid::orderUpdateDroid()
       }
       if (pimpl->order->type == PATROL && isVtol() && vtolEmpty(*this) &&
           (pimpl->secondaryOrder & DSS_ALEV_MASK) != DSS_ALEV_NEVER) {
-        moveToRearm(this); // Completely empty (and we're not set to hold fire), don't bother patrolling.
+        moveToRearm(); // Completely empty (and we're not set to hold fire), don't bother patrolling.
         break;
       }
       break;
@@ -1477,7 +1474,7 @@ void Droid::orderUpdateDroid()
 
         if (isVtol() && vtolEmpty(*this) &&
             (pimpl->secondaryOrder & DSS_ALEV_MASK) != DSS_ALEV_NEVER) {
-          moveToRearm(this); // Completely empty (and we're not set to hold fire), don't bother circling.
+          moveToRearm(); // Completely empty (and we're not set to hold fire), don't bother circling.
           break;
         }
       }
@@ -1517,7 +1514,7 @@ void Droid::orderUpdateDroid()
           pimpl->actionTargets[0] == nullptr) {
         // arm pad destroyed find another
         pimpl->order = std::make_unique<Order>(NONE);
-        moveToRearm(this);
+        moveToRearm();
       }
       else if (pimpl->action == ACTION::NONE) {
         pimpl->order = std::make_unique<Order>(NONE);
@@ -1532,7 +1529,7 @@ void Droid::orderUpdateDroid()
         if (isVtol()) {
           if (!orderDroidList()) {
             pimpl->order = std::make_unique<Order>(NONE);
-            moveToRearm(this);
+            moveToRearm();
           }
         }
         else {
@@ -1717,7 +1714,7 @@ void Droid::orderUpdateDroid()
       if (pimpl->order->target == nullptr) {
         pimpl->order = std::make_unique<Order>(NONE);
         if (isVtol() && !vtolFull(*this)) {
-          moveToRearm(this);
+          moveToRearm();
         }
         else {
           actionDroid(this, ACTION::NONE);
@@ -1725,7 +1722,7 @@ void Droid::orderUpdateDroid()
       }
         //before targetting - check VTOL's are fully armed
       else if (vtolEmpty(*this)) {
-        moveToRearm(this);
+        moveToRearm();
       }
         //indirect weapon droid attached to (standard)sensor droid
       else {
@@ -1777,7 +1774,7 @@ void Droid::orderUpdateDroid()
                  !vtolFull(*this) &&
                  (pimpl->action != ACTION::NONE) &&
                  (pimpl->action != ACTION::FIRE_SUPPORT)) {
-          moveToRearm(this);
+          moveToRearm();
         }
         else if ((pimpl->action != ACTION::FIRE_SUPPORT) &&
                  (pimpl->action != ACTION::FIRE_SUPPORT_RETREAT)) {
@@ -2023,7 +2020,7 @@ void Droid::actionUpdateDroid()
         if (!nonNullWeapon[i]) continue;
 
         BaseObject* psTemp1 = nullptr;
-        psWeapStats = weaponManager->weapons[i].getStats();
+        psWeapStats = weaponManager->weapons[i].stats.get();
         if (psWeapStats->rotate &&
             aiBestNearestTarget(this, &psTemp1, i) >= 0) {
           if (secondaryGetState(SECONDARY_ORDER::ATTACK_LEVEL) == DSS_ALEV_ALWAYS) {
@@ -2117,7 +2114,7 @@ void Droid::actionUpdateDroid()
             BaseObject* psTemp = nullptr;
 
             // i moved psWeapStats flag update there
-            psWeapStats = weaponManager->weapons[i].getStats();
+            psWeapStats = weaponManager->weapons[i].stats.get();
             if (!isVtol() &&
                 psWeapStats->rotate &&
                 psWeapStats->fireOnMove &&
@@ -2140,7 +2137,7 @@ void Droid::actionUpdateDroid()
     case MOVE_FIRE:
       // check if vtol is armed
       if (vtolEmpty(*this)) {
-        moveToRearm(this);
+        moveToRearm();
       }
       // if droid stopped, it can no longer be in ACTION::MOVE_FIRE
       if (isStationary()) {
@@ -2151,7 +2148,7 @@ void Droid::actionUpdateDroid()
       bHasTarget = false;
       for (auto i = 0; i < numWeapons(*this); ++i)
       {
-        bDirect = proj_Direct(weaponManager->weapons[i].getStats());
+        bDirect = proj_Direct(weaponManager->weapons[i].stats.get());
         blockingWall = nullptr;
         // Does this weapon have a target?
         if (pimpl->actionTargets[i] != nullptr) {
@@ -2197,7 +2194,7 @@ void Droid::actionUpdateDroid()
         // loop through weapons
         for (auto i = 0; i < numWeapons(*this); ++i)
         {
-          auto psStats = weaponManager->weapons[i].getStats();
+          auto psStats = weaponManager->weapons[i].stats.get();
           wallBlocked = false;
 
           // has weapon a target? is target valid?
@@ -2320,7 +2317,7 @@ void Droid::actionUpdateDroid()
         if (nonNullWeapon[i]
             && actionVisibleTarget(this, psActionTarget, i)
             && actionInRange(this, psActionTarget, i)) {
-          const auto& psWeapStats = weaponManager->weapons[i].getStats();
+          const auto& psWeapStats = weaponManager->weapons[i].stats.get();
           auto weapEffect = psWeapStats->weaponEffect;
           blockingWall = dynamic_cast<Structure*>(visGetBlockingWall(this, psActionTarget));
 
@@ -2451,7 +2448,7 @@ void Droid::actionUpdateDroid()
             playerManager->getPlayer() == pimpl->actionTargets[0]->playerManager->getPlayer() ||
             // Huh? !targetIsValid can't be true, we just checked for it
             !targetIsValid) {
-          moveToRearm(this);
+          moveToRearm();
           break;
         }
 
@@ -2460,7 +2457,7 @@ void Droid::actionUpdateDroid()
           if (!nonNullWeapon[i] || !validTarget(this, pimpl->actionTargets[0], i))
             continue;
 
-          psWeapStats = weaponManager->weapons[i].getStats();
+          psWeapStats = weaponManager->weapons[i].stats.get();
           if (!actionVisibleTarget(this, pimpl->actionTargets[0], i))
             continue;
 
@@ -2518,7 +2515,7 @@ void Droid::actionUpdateDroid()
     case ACTION::MOVE_TO_ATTACK:
       // send vtols back to rearm
       if (isVtol() && vtolEmpty(*this)) {
-        moveToRearm(this);
+        moveToRearm();
         break;
       }
       ASSERT_OR_RETURN(, pimpl->actionTargets[0] != nullptr, "action update move to attack target is NULL");
@@ -2543,7 +2540,7 @@ void Droid::actionUpdateDroid()
                 validTarget(this, pimpl->actionTargets[0], i) &&
                 actionVisibleTarget(this, pimpl->actionTargets[0], i)) {
               bool chaseBloke = false;
-              psWeapStats = weaponManager->weapons[i].getStats();
+              psWeapStats = weaponManager->weapons[i].stats.get();
 
               if (psWeapStats->rotate) {
                 actionTargetTurret(this, pimpl->actionTargets[0], i);
@@ -2613,7 +2610,7 @@ void Droid::actionUpdateDroid()
           /* Stopped moving but haven't reached the target - possibly move again */
 
           // 'hack' to make the droid to check the primary turret instead of all
-          psWeapStats = weaponManager->weapons[0].getStats();
+          psWeapStats = weaponManager->weapons[0].stats.get();
 
           if (pimpl->order->type == ORDER_TYPE::ATTACK_TARGET && secHoldActive) {
             pimpl->action = NONE; // on hold, give up.
@@ -3147,7 +3144,7 @@ void Droid::actionUpdateDroid()
       if (!isVtol() && !dynamic_cast<Structure*>(pimpl->order->target)) {
         auto diff = (getPosition() - pimpl->order->target->getPosition()).xy();
         //Consider .shortRange here
-        auto rangeSq = weaponManager->weapons[0].getStats()->upgraded[playerManager->getPlayer()].maxRange / 2;
+        auto rangeSq = weaponManager->weapons[0].stats.get()->upgraded[playerManager->getPlayer()].maxRange / 2;
         // move close to sensor
         rangeSq = rangeSq * rangeSq;
         if (dot(diff, diff) < rangeSq) {
@@ -3227,7 +3224,7 @@ void Droid::actionUpdateDroid()
           if (nonNullWeapon[i]) {
             BaseObject* psTemp = nullptr;
 
-            const auto& psWeapStats = weaponManager->weapons[i].getStats();
+            const auto psWeapStats = weaponManager->weapons[i].stats.get();
             if (psWeapStats->rotate &&
                 secondaryGetState(SECONDARY_ORDER::ATTACK_LEVEL) == DSS_ALEV_ALWAYS &&
                 aiBestNearestTarget(this, &psTemp, i) >= 0 && psTemp) {
@@ -3280,7 +3277,7 @@ void Droid::actionUpdateDroid()
       if (pimpl->actionTargets[0] == nullptr) {
         // rearm pad destroyed - move to another
         objTrace(getId(), "rearm pad gone - switch to new one");
-        moveToRearm(this);
+        moveToRearm();
         break;
       }
       if (isStationary() && vtolHappy(*this)) {
@@ -3296,7 +3293,7 @@ void Droid::actionUpdateDroid()
         if (!vtolHappy(*this))
           // Droid has cleared the rearm pad without getting rearmed. One way this can happen if a rearming pad was built under the VTOL while it was waiting for a pad.
         {
-          moveToRearm(this); // Rearm somewhere else instead.
+          moveToRearm(); // Rearm somewhere else instead.
         }
       }
       break;
@@ -3307,7 +3304,7 @@ void Droid::actionUpdateDroid()
       if (pimpl->actionTargets[0] == nullptr) {
         // base destroyed - find another
         objTrace(getId(), "rearm gone - find another");
-        moveToRearm(this);
+        moveToRearm();
         break;
       }
 
@@ -3622,7 +3619,7 @@ bool Droid::droidUpdateRestore()
   ASSERT_OR_RETURN(false, psStruct, "Target is not a structure");
   ASSERT_OR_RETURN(false, numWeapons(*this) > 0, "Droid doesn't have any weapons");
 
-  auto psStats = weaponManager->weapons[0].getStats();
+  auto psStats = weaponManager->weapons[0].stats.get();
   ASSERT_OR_RETURN(false,
                    psStats->weaponSubClass == WEAPON_SUBCLASS::ELECTRONIC,
                    "unit's weapon is not EW");
@@ -3795,7 +3792,7 @@ void Droid::droidUpdate()
   setTime(gameTime);
   for (auto i = 0; i < MAX(1, numWeapons(*this)); ++i)
   {
-    weaponManager->weapons[i].setPreviousRotation(weaponManager->weapons[i].getRotation());
+    weaponManager->weapons[i].previousRotation = weaponManager->weapons[i].getRotation();
   }
 
   if (pimpl->animationEvent != ANIM_EVENT_NONE) {
@@ -4271,7 +4268,7 @@ bool Droid::droidSensorDroidWeapon(const BaseObject* psObj) const
 
   //finally check the right droid/sensor combination
   // check vtol droid with commander
-  if ((isVtol() || !proj_Direct(weaponManager->weapons[0].getStats())) &&
+  if ((isVtol() || !proj_Direct(weaponManager->weapons[0].stats.get())) &&
       dynamic_cast<const Droid*>(psObj) &&
       dynamic_cast<const Droid*>(psObj)->getType() == DROID_TYPE::COMMAND) {
     return true;
@@ -4289,7 +4286,7 @@ bool Droid::droidSensorDroidWeapon(const BaseObject* psObj) const
   }
 
   // Check indirect weapon droid with standard/CB/radar detector sensor
-  if (!proj_Direct(weaponManager->weapons[0].getStats())) {
+  if (!proj_Direct(weaponManager->weapons[0].stats.get())) {
     if (psStats->type == STANDARD ||
         psStats->type == INDIRECT_CB ||
         psStats->type == SUPER ) {
@@ -4447,7 +4444,7 @@ bool Droid::secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_
           // just kill these orders
           orderDroid(this, ORDER_TYPE::STOP, ModeImmediate);
           if (isVtol()) {
-            moveToRearm(this);
+            moveToRearm();
           }
         }
         else if (droidAttacking(this)) {
@@ -5500,8 +5497,8 @@ int Droid::moveCalcDroidSpeed()
 
   // stop droids that have just fired a no fire while moving weapon
   if (numWeapons(*this) > 0) {
-    if (weaponManager->weapons[0].getTimeLastFired() + FOM_MOVEPAUSE > gameTime) {
-      auto psWStats = weaponManager->weapons[0].getStats();
+    if (weaponManager->weapons[0].timeLastFired + FOM_MOVEPAUSE > gameTime) {
+      auto psWStats = weaponManager->weapons[0].stats.get();
       if (!psWStats->fireOnMove) {
         speed = 0;
       }
@@ -6635,7 +6632,7 @@ void Droid::orderDroidBase(Order* psOrder)
     case RTR_SPECIFIED:
     {
       if (isVtol()) {
-        moveToRearm(this);
+        moveToRearm();
         break;
       }
       // if already has a target repair, don't override it: it might be different
@@ -7158,10 +7155,10 @@ void Droid::droidSetBits(const DroidTemplate* pTemplate)
     // this is also used to check if a droid has a weapon, so zero it
     weaponManager->weapons[inc].ammo = 0;
     weaponManager->weapons[inc].setRotation({0, 0, 0});
-    weaponManager->weapons[inc].setPreviousRotation(weaponManager->weapons[inc].getRotation());
+    weaponManager->weapons[inc].previousRotation = weaponManager->weapons[inc].getRotation();
     weaponManager->weapons[inc].origin = TARGET_ORIGIN::UNKNOWN;
     if (inc < pTemplate->weapons.size()) {
-      weaponManager->weapons[inc].ammo = weaponManager->weapons[inc].getStats()->upgraded[playerManager->getPlayer()].numRounds;
+      weaponManager->weapons[inc].ammo = weaponManager->weapons[inc].stats->upgraded[playerManager->getPlayer()].numRounds;
     }
     weaponManager->weapons[inc].ammoUsed = 0;
   }
@@ -7235,10 +7232,10 @@ bool droidInit()
 int droidReloadBar(BaseObject const& psObj, Weapon const* psWeap, int weapon_slot)
 {
 
-	if (numWeapons(psObj) == 0) {
+	if (!psObj.weaponManager || psObj.weaponManager->weapons.empty()) {
 		return -1;
 	}
-	auto psStats = psWeap->getStats();
+	auto psStats = psWeap->stats.get();
 
 	/* Justifiable on. when greater than a one second reload or intra salvo time  */
   auto player = psObj.playerManager->getPlayer();
@@ -7253,13 +7250,13 @@ int droidReloadBar(BaseObject const& psObj, Weapon const* psWeap, int weapon_slo
   if (psDroid && psDroid->isVtol()) {
   //deal with VTOLs
   firingStage = getNumAttackRuns(psDroid, weapon_slot)
-          - psDroid->getWeapon(weapon_slot)->getAmmoUsed();
+          - psDroid->weaponManager->weapons[weapon_slot].ammoUsed;
 
   //compare with max value
   interval = getNumAttackRuns(psDroid, weapon_slot);
   }
   else {
-  firingStage = gameTime - psWeap->getTimeLastFired();
+  firingStage = gameTime - psWeap->timeLastFired;
   interval = bSalvo
           ? weaponReloadTime(psStats, player)
           : weaponFirePause(psStats, player);
@@ -7363,7 +7360,7 @@ void Droid::droidRemove()
 
 	// leave the current group if any - not if its a Transporter droid
 	if (!isTransporter(*this) && pimpl->group) {
-		pimpl->group->remove(this);
+		removeDroidFromGroup(this);
 		pimpl->group = nullptr;
 	}
 
@@ -7564,7 +7561,7 @@ static unsigned calcSum(std::unordered_map<std::string, std::unique_ptr<Componen
 
 	for (auto weap : asWeaps)
 	{
-		sum += func(weap->getStats());
+		sum += func(weap->stats.get());
 	}
 	return sum;
 }
@@ -7591,7 +7588,7 @@ static unsigned calcUpgradeSum(const std::unordered_map<std::string, std::unique
 
   for (auto weap : asWeaps)
   {
-    sum += func(weap->getStats()->upgraded[player]);
+    sum += func(weap->stats.get()->upgraded[player]);
   }
 	return sum;
 }
@@ -8747,11 +8744,11 @@ unsigned getNumAttackRuns(Droid const* psDroid, int weapon_slot)
 {
 	ASSERT_OR_RETURN(0, psDroid->isVtol(), "not a VTOL Droid");
 	// if weapon is a salvo weapon, then number of shots that can be fired = vtolAttackRuns * numRounds
-	if (psDroid->weaponManager->weapons[weapon_slot].getStats()->upgraded[psDroid->playerManager->getPlayer()].reloadTime) {
-		return psDroid->weaponManager->weapons[weapon_slot].getStats()->upgraded[psDroid->playerManager->getPlayer()].numRounds
-			* psDroid->weaponManager->weapons[weapon_slot].getStats()->vtolAttackRuns;
+	if (psDroid->weaponManager->weapons[weapon_slot].stats.get()->upgraded[psDroid->playerManager->getPlayer()].reloadTime) {
+		return psDroid->weaponManager->weapons[weapon_slot].stats.get()->upgraded[psDroid->playerManager->getPlayer()].numRounds
+			* psDroid->weaponManager->weapons[weapon_slot].stats.get()->vtolAttackRuns;
 	}
-	return psDroid->weaponManager->weapons[weapon_slot].getStats()->vtolAttackRuns;
+	return psDroid->weaponManager->weapons[weapon_slot].stats.get()->vtolAttackRuns;
 }
 
 bool vtolHappy(Droid const& droid)
@@ -8810,11 +8807,12 @@ void updateVtolAttackRun(Droid& droid, int weapon_slot)
   }
 
   auto weapon = droid.weaponManager->weapons[weapon_slot];
-  if (weapon.getStats()->vtolAttackRuns == 0) {
+  if (weapon.stats.get()->vtolAttackRuns == 0) {
     return;
   }
-  droid.useAmmo(weapon_slot);
+  ++droid.weaponManager->weapons[weapon_slot].ammoUsed;
 }
+
 ///*checks if the droid is a VTOL droid and updates the attack runs as required*/
 //void updateVtolAttackRun(DROID* psDroid, int weapon_slot)
 //{
@@ -8912,21 +8910,21 @@ bool checkValidWeaponForProp(DroidTemplate const* psTemplate)
 
 	if (asPropulsionTypes[(int)psPropStats->propulsionType].travel == TRAVEL_MEDIUM::AIR) {
 		//check weapon stat for indirect
-		if (!proj_Direct(psTemplate->weapons[0].getStats()) ||
-        !psTemplate->weapons[0].getStats()->vtolAttackRuns) {
+		if (!proj_Direct(psTemplate->weapons[0].stats.get()) ||
+        !psTemplate->weapons[0].stats.get()->vtolAttackRuns) {
 			return false;
 		}
 	}
 	else {
 		// VTOL weapons do not go on non-AIR units
-		if (psTemplate->weapons[0].getStats()->vtolAttackRuns) {
+		if (psTemplate->weapons[0].stats.get()->vtolAttackRuns) {
 			return false;
 		}
 	}
 
 	//also checks that there is no other system component
 	if (psTemplate->getComponent(COMPONENT_TYPE::BRAIN) != nullptr &&
-      psTemplate->weapons[0].getStats()->weaponSubClass != WEAPON_SUBCLASS::COMMAND) {
+      psTemplate->weapons[0].stats.get()->weaponSubClass != WEAPON_SUBCLASS::COMMAND) {
 		assert(false);
 		return false;
 	}
@@ -9212,13 +9210,13 @@ static unsigned droidSensorRange(Droid const* psDroid)
 
 static Rotation getInterpolatedWeaponRotation(Droid const* psDroid, int weaponSlot, unsigned time)
 {
-  return interpolateRot(psDroid->weaponManager->weapons[weaponSlot].getPreviousRotation(),
+  return interpolateRot(psDroid->weaponManager->weapons[weaponSlot].previousRotation,
                         psDroid->weaponManager->weapons[weaponSlot].getRotation(),
                         psDroid->getPreviousLocation().time,
                         psDroid->getTime(), time);
 }
 
-bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
+bool Droid::loadSaveDroid(const char* pFileName)
 {
   if (!PHYSFS_exists(pFileName)) {
     debug(LOG_SAVE, "No %s found -- use fallback method", pFileName);
@@ -9230,7 +9228,7 @@ bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
   // Sort list so transports are loaded first, since they must be loaded before the droids they contain.
   std::vector<std::pair<int, WzString>> sortedList;
   bool missionList = fName.compare("mdroid");
-  for (size_t i = 0; i < list.size(); ++i)
+  for (auto i = 0; i < list.size(); ++i)
   {
     ini.beginGroup(list[i]);
     DROID_TYPE droidType = (DROID_TYPE)ini.value("droidType").toInt();
@@ -9244,8 +9242,7 @@ bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
         //Don't care about sorting commanders in the mission list for safety missions. They
         //don't have a group to command and it messes up the order of the list sorting them
         //which causes problems getting the first transporter group for Gamma-1.
-        if (!missionList || (missionList && !getDroidsToSafetyFlag()))
-        {
+        if (!missionList || (missionList && !getDroidsToSafetyFlag())) {
           ++priority;
         }
       default:
@@ -9304,8 +9301,7 @@ bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
     }
 
     // If droid is on a mission, calling with the saved position might cause an assertion. Or something like that.
-    if (!onMission)
-    {
+    if (!onMission) {
       pos.x = clip(pos.x, world_coord(1), world_coord(mapWidth - 1));
       pos.y = clip(pos.y, world_coord(1), world_coord(mapHeight - 1));
     }
@@ -9313,7 +9309,7 @@ bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
     /* Create the Droid */
     turnOffMultiMsg(true);
     psDroid = reallyBuildDroid(psTemplate, pos, player, onMission, rot).get();
-    ASSERT_OR_RETURN(false, psDroid != nullptr, "Failed to build unit %s", sortedList[i].second.toUtf8().c_str());
+    ASSERT_OR_RETURN(false, psDroid != nullptr, "Failed to build unit %s", pair.second.toUtf8().c_str());
     turnOffMultiMsg(false);
 
     // Copy the values across
@@ -9350,19 +9346,18 @@ bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
     for (auto j = 0; j < numWeapons(*psDroid); j++)
     {
       if (psDroid->asWeaps[j].nStat > 0) {
-        psDroid->pimpl->weapons[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
-        psDroid->pimpl->weapons[j].timeLastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
-        psDroid->pimpl->weapons[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
-        psDroid->pimpl->weapons[j].setRotation(ini.vector3i("rotation/" + WzString::number(j)));
+        psDroid->weaponManager->weapons[j].ammo = ini.value("ammo/" + WzString::number(j)).toInt();
+        psDroid->weaponManager->weapons[j].timeLastFired = ini.value("lastFired/" + WzString::number(j)).toInt();
+        psDroid->weaponManager->weapons[j].shotsFired = ini.value("shotsFired/" + WzString::number(j)).toInt();
+        psDroid->weaponManager->weapons[j].setRotation(ini.vector3i("rotation/" + WzString::number(j)));
       }
     }
 
     psDroid->group = ini.value("group", UBYTE_MAX).toInt();
-    int aigroup = ini.value("aigroup", -1).toInt();
-    if (aigroup >= 0)
-    {
-      Group* psGroup = grpFind(aigroup);
-      psGroup->add(psDroid);
+    auto aigroup = ini.value("aigroup", -1).toInt();
+    if (aigroup >= 0) {
+      Group* psGroup = findGroupById(aigroup);
+      psGroup->addDroid(psDroid);
       if (psGroup->getType() == GROUP_TYPE::TRANSPORTER) {
         psDroid->damageManager->setSelected(false); // Droid should be visible in the transporter interface.
         visRemoveVisibility(psDroid); // should not have visibility data when in a transporter
@@ -9370,11 +9365,10 @@ bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
     }
     else {
       if (isTransporter(*psDroid) || psDroid->getType() == DROID_TYPE::COMMAND) {
-        Group* psGroup = grpCreate();
-        psGroup->add(psDroid);
+        Group* psGroup = addGroup(-1);
+        psGroup->addDroid(psDroid);
       }
-      else
-      {
+      else {
         psDroid->pimpl->group = nullptr;
       }
     }
@@ -9396,9 +9390,10 @@ bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
     psDroid->pimpl->movement->vertical_speed = ini.value("vertSpeed").toInt();
     psDroid->pimpl->movement->bumpTime = ini.value("bumpTime").toInt();
     psDroid->pimpl->movement->shuffleStart = ini.value("shuffleStart").toInt();
-    for (int j = 0; j < MAX_WEAPONS; ++j)
+
+    for (auto j = 0; j < MAX_WEAPONS; ++j)
     {
-      psDroid->pimpl->weapons[j].ammoUsed = ini.value("attackRun/" + WzString::number(j)).toInt();
+      psDroid->weaponManager->weapons[j].ammoUsed = ini.value("attackRun/" + WzString::number(j)).toInt();
     }
     psDroid->pimpl->movement->lastBump = ini.value("lastBump").toInt();
     psDroid->pimpl->movement->pauseTime = ini.value("pauseTime").toInt();
@@ -9406,8 +9401,7 @@ bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
     psDroid->pimpl->movement->bumpPos = Vector3i(tmp.x, tmp.y, 0);
 
     // Recreate path-finding jobs
-    if (psDroid->pimpl->movement->status == MOVE_STATUS::WAIT_FOR_ROUTE)
-    {
+    if (psDroid->pimpl->movement->status == MOVE_STATUS::WAIT_FOR_ROUTE) {
       psDroid->pimpl->movement->status = MOVE_STATUS::INACTIVE;
       fpathDroidRoute(psDroid, psDroid->getMovementData()->destination.x, psDroid->getMovementData()->destination.y, FPATH_MOVETYPE::FMT_MOVE);
       psDroid->pimpl->movement->status = MOVE_STATUS::WAIT_FOR_ROUTE;
@@ -9440,7 +9434,7 @@ bool Droid::loadSaveDroid(const char* pFileName, Droid** ppsCurrentDroidLists)
         psDroid->getGroup()->getType() != GROUP_TYPE::TRANSPORTER ||
         isTransporter(*psDroid)) {
       // do not add to list if on a transport, then the group list is used instead
-      addDroid(psDroid, ppsCurrentDroidLists);
+      playerList[psDroid->playerManager->getPlayer()].addDroid(*psDroid);
     }
 
     ini.endGroup();
@@ -9452,4 +9446,43 @@ void Droid::fpathSetDirectRoute(int targetX, int targetY)
 {
   ASSERT_OR_RETURN(, pimpl != nullptr, "Undefined");
   fpathSetMove(pimpl->movement.get(), targetX, targetY);
+}
+
+/*send the vtol droid back to the nearest rearming pad - if one otherwise
+return to base*/
+void Droid::moveToRearm()
+{
+  if (!isVtol()) {
+    return;
+  }
+
+  //if droid is already returning - ignore
+  if (vtolRearming(*this)) {
+    return;
+  }
+
+  //get the droid to fly back to a ReArming Pad
+  // don't worry about finding a clear one for the minute
+  auto psStruct = findNearestReArmPad(this, pimpl->associatedStructure, false);
+  if (psStruct) {
+    // note a base rearm pad if the vtol doesn't have one
+    if (pimpl->associatedStructure == nullptr) {
+      pimpl->associatedStructure = psStruct;
+    }
+
+    //return to re-arming pad
+    if (pimpl->order->type == ORDER_TYPE::NONE) {
+      // no order set - use the rearm order to ensure the unit goes back
+      // to the landing pad
+      orderDroidObj(this, ORDER_TYPE::REARM, psStruct, ModeImmediate);
+    }
+    else {
+      actionDroid(this, ACTION::MOVE_TO_REARM, psStruct);
+    }
+  }
+  else {
+    //return to base un-armed
+    objTrace(getId(), "Did not find an available rearm pad - RTB instead");
+    orderDroid(this, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
+  }
 }
