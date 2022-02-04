@@ -609,6 +609,11 @@ unsigned Structure::buildPointsToCompletion() const
          : 0;
 }
 
+unsigned Structure::getCurrentBuildPoints() const
+{
+  return pimpl ? pimpl->currentBuildPoints : 0;
+}
+
 iIMDShape const* Structure::getImdShape() const
 {
   return pimpl ? pimpl->prebuiltImd.get() : nullptr;
@@ -3790,7 +3795,7 @@ void _syncDebugStructure(const char* function, Structure const* psStruct, char c
     psStruct->getPosition().z,
 		(int)psStruct->getState(),
 		(int)psStruct->getStats()->type, refChr, ref,
-		(int)psStruct->currentBuildPoints,
+		(int)psStruct->getCurrentBuildPoints(),
 		(int)psStruct->damageManager->getHp(),
 	};
 	_syncDebugIntList(function, "%c structure%d = p%d;pos(%d,%d,%d),status%d,type%d,%c%.0d,bld%d,body%d", list,
@@ -4269,7 +4274,7 @@ bool validLocation(BaseStats* psStats, Vector2i pos, uint16_t direction, unsigne
 		}
 	}
 	else if (psTemplate != nullptr) {
-		auto psPropStats = psTemplate->asParts[COMP_PROPULSION];
+		auto psPropStats = psTemplate->asParts[COMPONENT_TYPE::PROPULSION];
 
 		if (fpathBlockingTile(b.map.x, b.map.y, psPropStats->propulsionType)) {
 			return false;
@@ -5429,15 +5434,15 @@ void factoryReward(uint8_t losingPlayer, uint8_t rewardPlayer)
   auto comp = 0;
 	for (auto inc = 0; inc < numPropulsionStats; inc++)
 	{
-		if (apCompLists[losingPlayer][COMP_PROPULSION][inc] == AVAILABLE &&
-			apCompLists[rewardPlayer][COMP_PROPULSION][inc] != AVAILABLE) {
+		if (apCompLists[losingPlayer][COMPONENT_TYPE::PROPULSION][inc] == AVAILABLE &&
+			apCompLists[rewardPlayer][COMPONENT_TYPE::PROPULSION][inc] != AVAILABLE) {
 			if (asPropulsionStats[inc].buildPower > asPropulsionStats[comp].buildPower) {
 				comp = inc;
 			}
 		}
 	}
 	if (comp != 0) {
-		apCompLists[rewardPlayer][COMP_PROPULSION][comp] = AVAILABLE;
+		apCompLists[rewardPlayer][COMPONENT_TYPE::PROPULSION][comp] = AVAILABLE;
 		if (rewardPlayer == selectedPlayer) {
 			console("%s :- %s", _("Factory Reward - Propulsion"), getStatsName(&asPropulsionStats[comp]));
 		}
@@ -5447,15 +5452,15 @@ void factoryReward(uint8_t losingPlayer, uint8_t rewardPlayer)
 	//haven't found a propulsion - look for a body
 	for (auto inc = 0; inc < numBodyStats; inc++)
 	{
-		if (apCompLists[losingPlayer][COMP_BODY][inc] == AVAILABLE &&
-			apCompLists[rewardPlayer][COMP_BODY][inc] != AVAILABLE) {
+		if (apCompLists[losingPlayer][COMPONENT_TYPE::BODY][inc] == AVAILABLE &&
+			apCompLists[rewardPlayer][COMPONENT_TYPE::BODY][inc] != AVAILABLE) {
 			if (asBodyStats[inc].buildPower > asBodyStats[comp].buildPower) {
 				comp = inc;
 			}
 		}
 	}
 	if (comp != 0) {
-		apCompLists[rewardPlayer][COMP_BODY][comp] = AVAILABLE;
+		apCompLists[rewardPlayer][COMPONENT_TYPE::BODY][comp] = AVAILABLE;
 		if (rewardPlayer == selectedPlayer) {
 			console("%s :- %s", _("Factory Reward - Body"), getStatsName(&asBodyStats[comp]));
 		}
@@ -5465,15 +5470,15 @@ void factoryReward(uint8_t losingPlayer, uint8_t rewardPlayer)
 	//haven't found a body - look for a weapon
 	for (auto inc = 0; inc < numWeaponStats; inc++)
 	{
-		if (apCompLists[losingPlayer][COMP_WEAPON][inc] == AVAILABLE &&
-			apCompLists[rewardPlayer][COMP_WEAPON][inc] != AVAILABLE) {
+		if (apCompLists[losingPlayer][COMPONENT_TYPE::WEAPON][inc] == AVAILABLE &&
+			apCompLists[rewardPlayer][COMPONENT_TYPE::WEAPON][inc] != AVAILABLE) {
 			if (asWeaponStats[inc].buildPower > asWeaponStats[comp].buildPower) {
 				comp = inc;
 			}
 		}
 	}
 	if (comp != 0) {
-		apCompLists[rewardPlayer][COMP_WEAPON][comp] = AVAILABLE;
+		apCompLists[rewardPlayer][COMPONENT_TYPE::WEAPON][comp] = AVAILABLE;
 		if (rewardPlayer == selectedPlayer) {
 			console("%s :- %s", _("Factory Reward - Weapon"), getStatsName(&asWeaponStats[comp]));
 		}
@@ -5500,15 +5505,15 @@ void repairFacilityReward(uint8_t losingPlayer, uint8_t rewardPlayer)
 	//search through the repair stats
 	for (auto inc = 0; inc < numRepairStats; inc++)
 	{
-		if (apCompLists[losingPlayer][COMP_REPAIRUNIT][inc] == AVAILABLE &&
-			apCompLists[rewardPlayer][COMP_REPAIRUNIT][inc] != AVAILABLE) {
+		if (apCompLists[losingPlayer][COMPONENT_TYPE::REPAIR_UNIT][inc] == AVAILABLE &&
+			apCompLists[rewardPlayer][COMPONENT_TYPE::REPAIR_UNIT][inc] != AVAILABLE) {
 			if (asRepairStats[inc].buildPower > asRepairStats[comp].buildPower) {
 				comp = inc;
 			}
 		}
 	}
 	if (comp != 0) {
-		apCompLists[rewardPlayer][COMP_REPAIRUNIT][comp] = AVAILABLE;
+		apCompLists[rewardPlayer][COMPONENT_TYPE::REPAIR_UNIT][comp] = AVAILABLE;
 		if (rewardPlayer == selectedPlayer) {
 			console("%s :- %s", _("Repair Facility Award - Repair"), getStatsName(&asRepairStats[comp]));
 		}
@@ -5542,11 +5547,11 @@ void hqReward(uint8_t losingPlayer, uint8_t rewardPlayer)
 	//struct
 	for (auto i = 0; i < MAX_PLAYERS; ++i)
 	{
-		for (auto& psStruct : apsStructLists[i])
+		for (auto& psStruct : playerList[i].structures)
 		{
-			if (psStruct->isVisibleToPlayer(losingPlayer) &&
-          !psStruct->damageManager->isDead()) {
-				psStruct->setVisibleToPlayer(rewardPlayer, psStruct->isVisibleToPlayer(losingPlayer));
+			if (psStruct.isVisibleToPlayer(losingPlayer) &&
+          !psStruct.damageManager->isDead()) {
+				psStruct.setVisibleToPlayer(rewardPlayer, psStruct.isVisibleToPlayer(losingPlayer));
 			}
 		}
 
@@ -5572,12 +5577,9 @@ void hqReward(uint8_t losingPlayer, uint8_t rewardPlayer)
 // Return true if flag is a delivery point for a factory.
 bool FlagIsFactory(FlagPosition const* psCurrFlag)
 {
-	if (psCurrFlag->factoryType == FACTORY_FLAG ||
-      psCurrFlag->factoryType == CYBORG_FLAG ||
-      psCurrFlag->factoryType == VTOL_FLAG) {
-		return true;
-	}
-	return false;
+	return psCurrFlag->factoryType == FACTORY_FLAG ||
+         psCurrFlag->factoryType == CYBORG_FLAG ||
+         psCurrFlag->factoryType == VTOL_FLAG;
 }
 
 // Find a structure's delivery point, only if it's a factory.
@@ -5593,7 +5595,10 @@ FlagPosition* Factory::FindFactoryDelivery() const
            pimpl->psAssemblyPoint->factoryInc == flag->factoryInc &&
            pimpl->psAssemblyPoint->factoryType == flag->factoryType;
   });
-  if (it != apsFlagPosLists[playerManager->getPlayer()].end()) return *it;
+
+  if (it != apsFlagPosLists[playerManager->getPlayer()].end())
+    return *it;
+
   return nullptr;
 }
 
@@ -6471,7 +6476,7 @@ void ResearchFacility::aiUpdate()
     return;
   }
 
-  auto researchIndex = pimpl->psSubject->ref - STAT_RESEARCH;
+  auto researchIndex = pimpl->psSubject->tech_code - STAT_RESEARCH;
 
   auto pPlayerRes = &asPlayerResList[playerManager->getPlayer()][researchIndex];
   //check research has not already been completed by another structumplre

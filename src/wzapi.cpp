@@ -340,7 +340,7 @@ wzapi::no_return_value wzapi::sendAllianceRequest(WZAPI_PARAMS(unsigned player))
 	{
 		requestAlliance(context.player(), player, true, true);
 	}
-	return wzapi::no_return_value();
+	return {};
 }
 
 //-- ## orderDroid(droid, order)
@@ -373,10 +373,8 @@ bool wzapi::orderDroid(WZAPI_PARAMS(Droid* psDroid, ORDER_TYPE order))
 }
 
 //-- ## orderDroidBuild(droid, order, structureName, x, y[, direction])
-//--
 //-- Give a droid an order to build something at the given position. Returns true if allowed.
-//--
-bool wzapi::orderDroidBuild(WZAPI_PARAMS(Droid* psDroid, ORDER_TYPE order, std::string structureName, int x, int y,
+bool wzapi::orderDroidBuild(WZAPI_PARAMS(Droid* psDroid, ORDER_TYPE order, std::string const& structureName, int x, int y,
                                          optional<float> _direction))
 {
 	SCRIPT_ASSERT(false, context, psDroid, "No valid droid provided");
@@ -470,7 +468,7 @@ bool wzapi::setWeather(WZAPI_PARAMS(int weatherType))
 //--
 //-- Change the skybox. (3.2+ only)
 //--
-bool wzapi::setSky(WZAPI_PARAMS(std::string textureFilename, float windSpeed, float scale))
+bool wzapi::setSky(WZAPI_PARAMS(std::string const& textureFilename, float windSpeed, float scale))
 {
 	setSkyBox(textureFilename.c_str(), windSpeed, scale);
 	return true; // TODO: modify setSkyBox to return bool, success / failure
@@ -571,7 +569,7 @@ bool wzapi::syncRequest(WZAPI_PARAMS(int req_id, int _x, int _y, optional<const 
 //-- Replace one texture with another. This can be used to for example give buildings on a specific tileset different
 //-- looks, or to add variety to the looks of droids in campaign missions. (3.2+ only)
 //--
-bool wzapi::replaceTexture(WZAPI_PARAMS(std::string oldFilename, std::string newFilename))
+bool wzapi::replaceTexture(WZAPI_PARAMS(std::string const& oldFilename, std::string const& newFilename))
 {
 	return replaceTexture(WzString::fromUtf8(oldFilename), WzString::fromUtf8(newFilename));
 }
@@ -728,10 +726,10 @@ wzapi::no_return_value wzapi::hackNetOn(WZAPI_NO_PARAMS)
 //--
 //-- See wzscript docs for info, to the extent any exist. (3.2+ only)
 //--
-wzapi::no_return_value wzapi::hackAddMessage(WZAPI_PARAMS(std::string message, int messageType, unsigned player,
+wzapi::no_return_value wzapi::hackAddMessage(WZAPI_PARAMS(std::string const& message, int messageType, unsigned player,
                                                           bool immediate))
 {
-	MESSAGE_TYPE msgType = (MESSAGE_TYPE)messageType;
+	auto msgType = (MESSAGE_TYPE)messageType;
 	SCRIPT_ASSERT_PLAYER({}, context, player);
 	MESSAGE* psMessage = addMessage(msgType, false, player);
 
@@ -763,7 +761,7 @@ wzapi::no_return_value wzapi::hackAddMessage(WZAPI_PARAMS(std::string message, i
 //--
 wzapi::no_return_value wzapi::hackRemoveMessage(WZAPI_PARAMS(std::string message, int messageType, unsigned player))
 {
-	MESSAGE_TYPE msgType = (MESSAGE_TYPE)messageType;
+	auto msgType = (MESSAGE_TYPE)messageType;
 	SCRIPT_ASSERT_PLAYER({}, context, player);
 	VIEWDATA* psViewData = getViewData(WzString::fromUtf8(message));
 	SCRIPT_ASSERT({}, context, psViewData, "Viewdata not found");
@@ -789,7 +787,7 @@ wzapi::no_return_value wzapi::hackRemoveMessage(WZAPI_PARAMS(std::string message
 wzapi::returned_nullable_ptr<const BaseObject> wzapi::hackGetObj(WZAPI_PARAMS(int _objectType, unsigned player, int id))
 WZAPI_DEPRECATED
 {
-	OBJECT_TYPE objectType = (OBJECT_TYPE)_objectType;
+	auto objectType = (OBJECT_TYPE)_objectType;
 	SCRIPT_ASSERT_PLAYER(nullptr, context, player);
 	return IdToObject(id, player, objectType);
 }
@@ -932,7 +930,7 @@ wzapi::no_return_value wzapi::dump(WZAPI_PARAMS(va_list_treat_as_strings strings
 		{
 			result.append(" ");
 		}
-		result.append(strings.strings[idx].c_str());
+		result.append(strings.strings[idx]);
 	}
 	result += "\n";
 
@@ -967,7 +965,7 @@ wzapi::no_return_value wzapi::debugOutputStrings(WZAPI_PARAMS(wzapi::va_list_tre
 //-- Print text to the player console.
 //--
 // TODO, should cover scrShowConsoleText, scrAddConsoleText, scrTagConsoleText and scrConsole
-bool wzapi::console(WZAPI_PARAMS(va_list_treat_as_strings strings))
+bool wzapi::console(WZAPI_PARAMS(va_list_treat_as_strings const& strings))
 {
 	unsigned player = context.player();
 	if (player == selectedPlayer)
@@ -1961,7 +1959,7 @@ std::unique_ptr<const DroidTemplate> wzapi::makeTemplate(WZAPI_PARAMS(unsigned p
 	SCRIPT_ASSERT(nullptr, context, !turrets.va_list.empty() && !turrets.va_list[0].strings.empty(),
 	              "No turrets provided");
 	std::unique_ptr<DroidTemplate> psTemplate = ::makeTemplate(player, templateName, body, propulsion, turrets,
-                                                             SIZE_NUM, true);
+                                                             (int)BODY_SIZE::COUNT, true);
 	return std::unique_ptr<const DroidTemplate>(std::move(psTemplate));
 }
 
@@ -3725,7 +3723,7 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(unsigned player, const std::string
 					psCurr->damageManager->setResistance(value);
 				}
 			}
-			for (auto& psCurr : mission.apsStructLists[player])
+			for (auto& psCurr : mission.players[player].structures)
 			{
 				if (psStats == psCurr->getStats() && psStats->upgraded_stats[player].resistance < value)
 				{
@@ -4425,7 +4423,7 @@ nlohmann::json wzapi::constructStatsObject()
 
 		//==   * ```WeaponClass``` Defined weapon classes
 		nlohmann::json weaponTypes = nlohmann::json::array(); //engine->newArray(WEAPON_SUBCLASS::NUM_WEAPON_SUBCLASSES);
-		for (int j = 0; j < WEAPON_SUBCLASS::COUNT; j++)
+		for (int j = 0; j < (int)WEAPON_SUBCLASS::COUNT; j++)
 		{
 			weaponTypes.push_back(getWeaponSubClass((WEAPON_SUBCLASS)j));
 		}
@@ -4438,7 +4436,7 @@ nlohmann::json wzapi::constructStatsObject()
 			StructureStats* psStats = asStructureStats + j;
 			nlohmann::json strct = nlohmann::json::object();
 			strct["Id"] = psStats->id;
-			if (psStats->type == STRUCTURE_TYPE::DEFENSE || psStats->type == STRUCTURE_TYPE::WALL || psStats->type == STRUCTURE_TYPE::WALLCORNER
+			if (psStats->type == STRUCTURE_TYPE::DEFENSE || psStats->type == STRUCTURE_TYPE::WALL || psStats->type == STRUCTURE_TYPE::WALL_CORNER
 				|| psStats->type == STRUCTURE_TYPE::GENERIC || psStats->type == STRUCTURE_TYPE::GATE)
 			{
 				strct["Type"] = "Wall";
@@ -4508,9 +4506,9 @@ nlohmann::json wzapi::getUsefulConstants()
 	constants["CAMP_BASE"] = CAMP_BASE;
 	constants["CAMP_WALLS"] = CAMP_WALLS;
 	constants["NO_ALLIANCES"] = ALLIANCE_TYPE::FFA;
-	constants["ALLIANCES"] = ALLIANCES;
-	constants["ALLIANCES_TEAMS"] = ALLIANCES_TEAMS;
-	constants["ALLIANCES_UNSHARED"] = ALLIANCES_UNSHARED;
+	constants["ALLIANCES"] = ALLIANCE_TYPE::ALLIANCES;
+	constants["ALLIANCES_TEAMS"] = ALLIANCE_TYPE::ALLIANCES_TEAMS;
+	constants["ALLIANCES_UNSHARED"] = ALLIANCE_TYPE::ALLIANCES_UNSHARED;
 	constants["NO_SCAVENGERS"] = NO_SCAVENGERS;
 	constants["SCAVENGERS"] = SCAVENGERS;
 	constants["ULTIMATE_SCAVENGERS"] = ULTIMATE_SCAVENGERS;
@@ -4550,9 +4548,9 @@ nlohmann::json wzapi::getUsefulConstants()
 	constants["MEDIUM"] = static_cast<int8_t>(AIDifficulty::MEDIUM);
 	constants["HARD"] = static_cast<int8_t>(AIDifficulty::HARD);
 	constants["INSANE"] = static_cast<int8_t>(AIDifficulty::INSANE);
-	constants["STRUCTURE"] = OBJ_STRUCTURE;
-	constants["DROID"] = OBJ_DROID;
-	constants["FEATURE"] = OBJ_FEATURE;
+	constants["STRUCTURE"] = OBJECT_TYPE::STRUCTURE;
+	constants["DROID"] = OBJECT_TYPE::DROID;
+	constants["FEATURE"] = OBJECT_TYPE::FEATURE;
 	constants["ALL_PLAYERS"] = ALL_PLAYERS;
 	constants["ALLIES"] = ALLIES;
 	constants["ENEMIES"] = ENEMIES;
@@ -4565,10 +4563,10 @@ nlohmann::json wzapi::getUsefulConstants()
 	constants["LZ_COMPROMISED_TIME"] = JS_LZ_COMPROMISED_TIME;
 	constants["OBJECT_FLAG_UNSELECTABLE"] = OBJECT_FLAG::UNSELECTABLE;
 	// the constants below are subject to change without notice...
-	constants["PROX_MSG"] = MSG_PROXIMITY;
-	constants["CAMP_MSG"] = MSG_CAMPAIGN;
-	constants["MISS_MSG"] = MSG_MISSION;
-	constants["RES_MSG"] = MSG_RESEARCH;
+	constants["PROX_MSG"] = MESSAGE_TYPE::MSG_PROXIMITY;
+	constants["CAMP_MSG"] = MESSAGE_TYPE::MSG_CAMPAIGN;
+	constants["MISS_MSG"] = MESSAGE_TYPE::MSG_MISSION;
+	constants["RES_MSG"] = MESSAGE_TYPE::MSG_RESEARCH;
 	constants["LDS_EXPAND_LIMBO"] = static_cast<int8_t>(LEVEL_TYPE::LDS_EXPAND_LIMBO);
 
 	return constants;

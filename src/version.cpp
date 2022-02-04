@@ -34,8 +34,6 @@
 using nonstd::optional;
 using nonstd::nullopt;
 
-#include "build_tools/autorevision.h"
-
 static const char vcs_branch_cstr[] = VCS_BRANCH;
 static const char vcs_tag[] = VCS_TAG;
 
@@ -136,7 +134,7 @@ std::string version_getVersionedAppDirFolderName()
  *  If on a tag, this is "mods/<tag version>/"
  *  If not on a tag, this is "mods/" (as non-tagged builds have versioned parent config folders)
  */
-std::string version_getVersionedModsFolderPath(std::string subFolders /*= ""*/)
+std::string version_getVersionedModsFolderPath(const std::string& subFolders /*= ""*/)
 {
 	std::string versionedModsFolderPath;
 	if (strlen(VCS_TAG))

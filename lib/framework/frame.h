@@ -45,8 +45,8 @@
 #include "debug.h"
 #include "i18n.h"
 #include "macros.h"
-#include "wzglobal.h"
 #include "trig.h"
+#include "wzglobal.h"
 
 #define REALCONCAT(x, y) x ## y
 #define CONCAT(x, y) REALCONCAT(x, y)
@@ -141,7 +141,7 @@ enum class VIDEO_BACKEND
 	num_backends // Must be last!
 };
 
-std::optional<VIDEO_BACKEND> video_backend_from_str(const std::string& str);
+std::optional<VIDEO_BACKEND> video_backend_from_str(const char* str);
 std::string to_string(VIDEO_BACKEND backend);
 std::string to_display_string(const VIDEO_BACKEND& backend);
 

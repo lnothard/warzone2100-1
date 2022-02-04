@@ -23,8 +23,6 @@
  * alexl.
  */
 
-// ////////////////////////////////////////////////////////////////////////////
-// includes
 #include <unordered_map>
 #include <optional-lite/optional.hpp>
 #include <utility>
@@ -53,8 +51,6 @@
 
 static unsigned int getMaxKeyMapNameWidth(InputManager& inputManager);
 
-// ////////////////////////////////////////////////////////////////////////////
-// defines
 
 #define	KM_START			10204
 #define	KM_END				10399

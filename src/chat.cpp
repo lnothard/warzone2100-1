@@ -30,8 +30,8 @@
 #include "qtscript.h"
 #include "ai.h"
 
-ChatMessage::ChatMessage(unsigned sender, std::string text)
-  : sender{sender}, text{std::move(text)}
+ChatMessage::ChatMessage(unsigned sender, char* text)
+  : sender{sender}, text{text}
 {
 }
 
@@ -106,7 +106,7 @@ std::string ChatMessage::formatReceivers() const
 void ChatMessage::sendToHumanPlayers() const
 {
 	char formatted[MAX_CONSOLE_STRING_LENGTH];
-	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), formatReceivers().c_str(), text.c_str());
+	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), formatReceivers().c_str(), text);
 
 	auto message = NetworkTextMessage(sender, formatted);
 	message.teamSpecific = allies_only && intended_recipients.empty();
@@ -151,7 +151,7 @@ void ChatMessage::sendToAiPlayer(unsigned receiver)
 	NETbeginEncode(NETnetQueue(responsiblePlayer), NET_AITEXTMSG);
 	NETuint32_t(&sender);
 	NETuint32_t(&receiver);
-	NETstring(text.c_str(), MAX_CONSOLE_STRING_LENGTH);
+	NETstring(text, MAX_CONSOLE_STRING_LENGTH);
 	NETend();
 }
 
@@ -163,7 +163,7 @@ void ChatMessage::sendToAiPlayers()
       continue;
     }
     if (myResponsibility(receiver)) {
-      triggerEventChat(sender, receiver, text.c_str());
+      triggerEventChat(sender, receiver, text);
     }
     else {
       sendToAiPlayer(receiver);
@@ -179,7 +179,7 @@ void ChatMessage::sendToSpectators()
 	}
 
 	char formatted[MAX_CONSOLE_STRING_LENGTH];
-	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), _("Spectators"), text.c_str());
+	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), _("Spectators"), text);
 
 	if ((sender == selectedPlayer || should_receive(selectedPlayer)) && NetPlay.players[selectedPlayer].isSpectator)
 	{
@@ -235,6 +235,6 @@ void ChatMessage::send()
 			return;
 		}
 		sendToAiPlayers();
-		triggerEventChat(sender, sender, text.c_str());
+		triggerEventChat(sender, sender, text);
 	}
 }

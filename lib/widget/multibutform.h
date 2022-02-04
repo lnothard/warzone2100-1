@@ -87,7 +87,6 @@ protected:
 
 class MultichoiceWidget : public MultibuttonWidget
 {
-
 public:
 	MultichoiceWidget(int value = -1);
 };

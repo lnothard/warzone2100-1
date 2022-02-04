@@ -47,7 +47,7 @@ void calcBackdropLayoutForMultiplayerOptionsTitleUI(WIDGET* psWidget);
 void readAIs(); ///< step 1, load AI definition files
 void loadMultiScripts(); ///< step 2, load the actual AI scripts
 const char* getAIName(unsigned player); ///< only run this -after- readAIs() is called
-const std::vector<WzString> getAINames();
+std::vector<WzString> getAINames();
 int matchAIbyName(const char* name); ///< only run this -after- readAIs() is called
 
 LOBBY_ERROR_TYPES getLobbyError();

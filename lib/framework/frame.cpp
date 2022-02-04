@@ -396,11 +396,11 @@ std::string video_backend_names[] =
 
 static_assert((size_t)VIDEO_BACKEND::num_backends == (sizeof(video_backend_names) / sizeof(std::string)) - 1, "video_backend_names must match video_backend enum");
 
-std::optional<VIDEO_BACKEND> video_backend_from_str(const std::string& str)
+std::optional<VIDEO_BACKEND> video_backend_from_str(const char* str)
 {
 	for (size_t i = 0; i < (size_t)VIDEO_BACKEND::num_backends; i++)
 	{
-		if (strcasecmp(video_backend_names[i].c_str(), str.c_str()) == 0) {
+		if (strcasecmp(video_backend_names[i].c_str(), str) == 0) {
 			return (VIDEO_BACKEND)i;
 		}
 	}

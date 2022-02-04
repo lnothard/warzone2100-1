@@ -36,6 +36,7 @@ struct BaseObject::Impl
   Impl& operator=(Impl&& rhs) noexcept = default;
 
   std::string name;
+  uint8_t selectionGroup = 0;
   unsigned id;
   unsigned time = 0;
   unsigned bornTime = 0;
@@ -43,6 +44,7 @@ struct BaseObject::Impl
   Rotation rotation {0, 0, 0};
   Spacetime previousLocation;
   std::unique_ptr<DisplayData> display;
+  std::array<uint8_t, MAX_PLAYERS> seenThisTick{};
   std::array<uint8_t, MAX_PLAYERS> visibleToPlayer{};
   std::bitset<static_cast<size_t>(OBJECT_FLAG::COUNT)> flags;
 };
@@ -190,6 +192,17 @@ Position BaseObject::getPosition() const noexcept
   return pimpl ? pimpl->position : Position();
 }
 
+uint8_t BaseObject::getSelectionGroup() const
+{
+  return pimpl ? pimpl->selectionGroup : 0;
+}
+
+void BaseObject::setSelectionGroup(uint8_t sel)
+{
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Object undefined");
+  pimpl->selectionGroup = sel;
+}
+
 Rotation BaseObject::getRotation() const noexcept
 {
   return pimpl ? pimpl->rotation : Rotation();
@@ -258,6 +271,11 @@ void BaseObject::setPosition(Position pos) noexcept
 {
   if (!pimpl) return;
   pimpl->position = pos;
+}
+
+uint8_t BaseObject::seenThisTick(unsigned player) const
+{
+  return pimpl ? pimpl->seenThisTick[player] : 0;
 }
 
 void BaseObject::setRotation(Rotation new_rotation) noexcept

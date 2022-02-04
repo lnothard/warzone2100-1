@@ -371,16 +371,13 @@ bool displayGameOver(bool bDidit, bool showBackDrop)
 			MAX_CONSOLE_MESSAGE_DURATION);
 		// TODO: Display this in a form with a "Quit to Main Menu" button?, or adapt intAddMissionResult to have a separate display for spectators?
 	}
-	else
-	{
+	else {
 		intAddMissionResult(bDidit, true, showBackDrop);
 	}
 
 	return true;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
 bool testPlayerHasLost()
 {
 	return (bPlayerHasLost);
@@ -391,8 +388,6 @@ void setPlayerHasLost(bool val)
 	bPlayerHasLost = val;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
 bool testPlayerHasWon()
 {
 	return (bPlayerHasWon);

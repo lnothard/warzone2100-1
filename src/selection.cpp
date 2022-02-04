@@ -204,19 +204,19 @@ static bool componentsInCombinations(Droid* psDroid, bool add)
 		{
 		case 0: stat = psDroid->asWeaps[1].nStat;
 			break;
-		case 1: stat = psDroid->asBits[COMP_ECM];
+		case 1: stat = psDroid->asBits[COMPONENT_TYPE::ECM];
 			break;
-		case 2: stat = psDroid->asBits[COMP_BRAIN];
+		case 2: stat = psDroid->asBits[COMPONENT_TYPE::BRAIN];
 			break;
-		case 3: stat = psDroid->asBits[COMP_SENSOR];
+		case 3: stat = psDroid->asBits[COMPONENT_TYPE::SENSOR];
 			break;
-		case 4: stat = psDroid->asBits[COMP_REPAIRUNIT];
+		case 4: stat = psDroid->asBits[COMPONENT_TYPE::REPAIR_UNIT];
 			break;
-		case 5: stat = psDroid->asBits[COMP_CONSTRUCT];
+		case 5: stat = psDroid->asBits[COMPONENT_TYPE::CONSTRUCT];
 			break;
-		case 6: stat = psDroid->asBits[COMP_BODY];
+		case 6: stat = psDroid->asBits[COMPONENT_TYPE::BODY];
 			break;
-		case 7: stat = psDroid->asBits[COMP_PROPULSION];
+		case 7: stat = psDroid->asBits[COMPONENT_TYPE::PROPULSION];
 			break;
 		case 8: stat = psDroid->asWeaps[0].nStat;
 			break;
@@ -247,7 +247,7 @@ static bool componentsInCombinations(Droid* psDroid, bool add)
 }
 
 // Selects all units with the same propulsion, body and turret(s) as the one(s) selected
-static unsigned int selSelectAllSame(unsigned unsigned player, bool bOnScreen)
+static unsigned int selSelectAllSame(unsigned player, bool bOnScreen)
 {
 	unsigned int i = 0, selected = 0;
 	std::vector<unsigned int> excluded;
@@ -408,7 +408,7 @@ void selNextUnassignedUnit()
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "invalid selectedPlayer: %" PRIu32 "", selectedPlayer);
 
-	for (auto& psCurr : apsDroidLists[selectedPlayer])
+	for (auto& psCurr : playerList[selectedPlayer].droids)
 	{
 		/* Only look at unselected ones */
 		if (psCurr.group == UBYTE_MAX)
@@ -539,7 +539,7 @@ static bool droidIsCommanderNum(Droid* psDroid, SDWORD n)
 	}
 
 	int numLess = 0;
-	for (const auto& psCurr : apsDroidLists[psDroid->playerManager->getPlayer()])
+	for (const auto& psCurr : playerList[psDroid->playerManager->getPlayer()].droids)
 	{
 		if ((psCurr.getType() == DROID_TYPE::COMMAND) && (psCurr.getId() < psDroid->getId())) {
 			numLess++;
@@ -554,7 +554,7 @@ void selCommander(int n)
 {
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "invalid selectedPlayer: %" PRIu32 "", selectedPlayer);
 
-	for (auto& psCurr : apsDroidLists[selectedPlayer])
+	for (auto& psCurr : playerList[selectedPlayer].droids)
 	{
 		if (droidIsCommanderNum(&psCurr, n)) {
 			if (!psCurr.damageManager->isSelected() && !psCurr.testFlag(static_cast<size_t>(OBJECT_FLAG::UNSELECTABLE))) {

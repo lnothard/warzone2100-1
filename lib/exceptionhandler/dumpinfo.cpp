@@ -29,7 +29,6 @@
 #include <deque>
 #include <sstream>
 #include <physfs.h>
-#include "lib/framework/stdio_ext.h"
 #include "lib/framework/wzglobal.h" // required for config.h
 #include "lib/framework/wzapp.h"
 #include "lib/framework/i18n.h" // required to print build date in ISO 8601

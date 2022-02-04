@@ -50,7 +50,8 @@ enum class OBJECT_TYPE
   DROID,
   STRUCTURE,
   FEATURE,
-  PROJECTILE
+  PROJECTILE,
+  COUNT
 };
 
 enum class OBJECT_FLAG
@@ -154,13 +155,16 @@ public:
   [[nodiscard]] unsigned getTime() const noexcept;
   [[nodiscard]] const DisplayData* getDisplayData() const noexcept;
   [[nodiscard]] Spacetime getPreviousLocation() const noexcept;
+  [[nodiscard]] uint8_t getSelectionGroup() const;
   [[nodiscard]] uint8_t isVisibleToPlayer(unsigned player) const;
   [[nodiscard]] uint8_t isVisibleToSelectedPlayer() const;
   [[nodiscard]] bool testFlag(size_t pos) const;
+  [[nodiscard]] uint8_t seenThisTick(unsigned player) const;
   void setFrameNumber(unsigned num);
   void setVisibleToPlayer(unsigned player, uint8_t vis);
   void setId(unsigned id) noexcept;
   void setBornTime(unsigned t) noexcept;
+  void setSelectionGroup(uint8_t sel);
   void setHidden();
   void setFlag(size_t pos, bool val);
   void setTime(unsigned t) noexcept;

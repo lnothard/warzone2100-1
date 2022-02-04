@@ -395,19 +395,19 @@ bool applyLimitSet()
 					}
 				}
 			}
-			if (asStructureStats[id].type == REF_VTOL_FACTORY && structLimit.limit == 0)
+			if (asStructureStats[id].type == STRUCTURE_TYPE::VTOL_FACTORY && structLimit.limit == 0)
 			{
 				flags |= MPFLAGS_NO_VTOLS;
 			}
-			if (asStructureStats[id].type == REF_CYBORG_FACTORY && structLimit.limit == 0)
+			if (asStructureStats[id].type == STRUCTURE_TYPE::CYBORG_FACTORY && structLimit.limit == 0)
 			{
 				flags |= MPFLAGS_NO_CYBORGS;
 			}
-			if (asStructureStats[id].type == REF_LASSAT && structLimit.limit == 0)
+			if (asStructureStats[id].type == STRUCTURE_TYPE::LASSAT && structLimit.limit == 0)
 			{
 				flags |= MPFLAGS_NO_LASSAT;
 			}
-			if (asStructureStats[id].type == REF_SAT_UPLINK && structLimit.limit == 0)
+			if (asStructureStats[id].type == STRUCTURE_TYPE::SAT_UPLINK && structLimit.limit == 0)
 			{
 				flags |= MPFLAGS_NO_UPLINK;
 			}
@@ -459,9 +459,7 @@ bool applyLimitSet()
 	return true;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
-
-static void displayStructureBar(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
+static void displayStructureBar(WIDGET const* psWidget, unsigned xOffset, unsigned yOffset)
 {
 	// Any widget using displayStructureBar must have its pUserData initialized to a (DisplayStructureBarCache*)
 	assert(psWidget->pUserData != nullptr);
@@ -517,7 +515,7 @@ static void displayStructureBar(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset
 
 void resetLimits()
 {
-	for (unsigned i = 0; i < numStructureStats; ++i)
+	for (auto i = 0; i < numStructureStats; ++i)
 	{
 		asStructureStats[i].upgraded_stats[0].limit = asStructureStats[i].base.limit;
 	}

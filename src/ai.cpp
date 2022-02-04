@@ -527,7 +527,7 @@ int aiBestNearestTarget(Droid* psDroid, BaseObject** ppsObj, int weapon_slot, in
 {
 	int failure = -1;
 	int bestMod = 0;
-  BaseObject *psTarget = nullptr, *bestTarget = nullptr, *tempTarget;
+  BaseObject const* psTarget = nullptr, *bestTarget = nullptr, *tempTarget;
 	bool electronic = false;
 	Structure* targetStructure;
 	WEAPON_EFFECT weaponEffect;
@@ -1027,7 +1027,7 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
 
     // can't attack without a weapon
     if (numWeapons(*psDroid) != 0) {
-      surfaceToAir = psDroid->weaponManager->weapons[weapon_slot].stats.get()->surfaceToAir;
+      surfaceToAir = psDroid->weaponManager->weapons[weapon_slot].stats->surfaceToAir;
       if (((surfaceToAir & SHOOT_IN_AIR) && bTargetInAir) ||
           ((surfaceToAir & SHOOT_ON_GROUND) && !bTargetInAir)) {
         return true;
@@ -1040,7 +1040,7 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
 	else if (auto psStruct = dynamic_cast<Structure const*>(psObject)) {
     // can't attack without a weapon
     if (numWeapons(*psStruct) != 0) {
-      surfaceToAir = psStruct->weaponManager->weapons[weapon_slot].stats.get()->surfaceToAir;
+      surfaceToAir = psStruct->weaponManager->weapons[weapon_slot].stats->surfaceToAir;
     }
     else {
       surfaceToAir = 0;

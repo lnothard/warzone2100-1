@@ -28,10 +28,9 @@ void BuildController::updateBuildersList()
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "selectedPlayer = %" PRIu32 "", selectedPlayer);
 
-	for (Droid* droid = apsDroidLists[selectedPlayer]; droid; droid = droid->psNext)
+	for (auto& droid : playerList[selectedPlayer].droids)
 	{
-		if (isConstructionDroid(droid) && droid->died == 0)
-		{
+		if (isConstructionDroid(droid) && droid->died == 0) {
 			builders.push_back(droid);
 		}
 	}
@@ -54,31 +53,32 @@ StructureStats* BuildController::getObjectStatsAt(size_t objectIndex) const
 		return nullptr;
 	}
 
-	if (!(droidType(builder) == DROID_CONSTRUCT || droidType(builder) == DROID_CYBORG_CONSTRUCT))
-	{
+	if (!(droidType(builder) == DROID_TYPE::CONSTRUCT ||
+        droidType(builder) == DROID_TYPE::CYBORG_CONSTRUCT)) {
 		return nullptr;
 	}
 
 	StructureStats* builderStats;
-	if (orderStateStatsLoc(builder, DORDER_BUILD, &builderStats)) // Moving to build location?
+	if (orderStateStatsLoc(builder, ORDER_TYPE::BUILD, &builderStats)) // Moving to build location?
 	{
 		return builderStats;
 	}
 
-	if (builder->order.type == DORDER_BUILD && orderStateObj(builder, DORDER_BUILD)) // Is building
+	if (builder->getOrder()->type == ORDER_TYPE::BUILD &&
+      orderStateObj(builder, ORDER_TYPE::BUILD)) // Is building
 	{
-		return builder->order.psStats;
+		return builder->getOrder()->structure_stats.get();
 	}
 
-	if (builder->order.type == DORDER_HELPBUILD || builder->order.type == DORDER_LINEBUILD) // Is helping
+	if (builder->getOrder()->type == ORDER_TYPE::HELP_BUILD ||
+      builder->getOrder()->type == ORDER_TYPE::LINE_BUILD) // Is helping
 	{
-		if (auto structure = orderStateObj(builder, DORDER_HELPBUILD))
-		{
-			return ((Structure*)structure)->pStructureType;
+		if (auto structure = orderStateObj(builder, ORDER_TYPE::HELP_BUILD)) {
+			return ((Structure*)structure)->getStats();
 		}
 	}
 
-	if (orderState(builder, DORDER_DEMOLISH))
+	if (orderState(builder, ORDER_TYPE::DEMOLISH))
 	{
 		return structGetDemolishStat();
 	}
@@ -130,33 +130,28 @@ void BuildController::clearData()
 	setHighlightedObject(nullptr);
 	stats.clear();
 }
-
 void BuildController::toggleBuilderSelection(Droid* droid)
 {
-	if (droid->selected)
-	{
-		droid->selected = false;
+	if (droid->damageManager->isSelected()) {
+		droid->damageManager->setSelected(false);
 	}
-	else
-	{
-		if (auto highlightedObject = getHighlightedObject())
-		{
-			highlightedObject->selected = true;
+	else {
+		if (auto highlightedObject = getHighlightedObject()) {
+			highlightedObject->damageManager->setSelected(true);
 		}
 		selectObject(droid);
 	}
 	triggerEventSelected();
 }
 
-void BuildController::setHighlightedObject(PlayerOwnedObject * object)
+void BuildController::setHighlightedObject(BaseObject* object)
 {
-	if (object == nullptr)
-	{
+	if (object == nullptr) {
 		highlightedBuilder = nullptr;
 		return;
 	}
 
-	auto builder = castDroid(object);
+	auto builder = dynamic_cast<Droid*>(object);
 	ASSERT_NOT_NULLPTR_OR_RETURN(, builder);
 	ASSERT_OR_RETURN(, isConstructionDroid(builder), "Droid is not a construction droid");
 	highlightedBuilder = builder;
@@ -198,8 +193,7 @@ protected:
 		updateLayout();
 		auto droid = controller->getObjectAt(objectIndex);
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
-		if (isDead(droid))
-		{
+		if (droid->damageManager->isDead()) {
 			ASSERT_FAILURE(!isDead(droid), "!isDead(droid)", AT_MACRO, __FUNCTION__, "Droid is dead");
 			// ensure the backing information is refreshed before the next draw
 			intRefreshScreen();
@@ -296,24 +290,22 @@ private:
 		progressBar->hide();
 
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
-		if (!DroidIsBuilding(droid))
-		{
+		if (!DroidIsBuilding(droid)) {
 			return;
 		}
 
-		ASSERT(droid->asBits[COMP_CONSTRUCT], "Invalid droid type");
+		ASSERT(droid->getComponent(COMPONENT_TYPE::CONSTRUCT), "Invalid droid type");
 
-		if (auto structure = DroidGetBuildStructure(droid))
-		{
+		if (auto structure = DroidGetBuildStructure(droid)) {
 			//show progress of build
-			if (structure->currentBuildPts != 0)
-			{
-				formatTime(progressBar.get(), structure->currentBuildPts, structureBuildPointsToCompletion(*structure),
+			if (structure->getCurrentBuildPoints() != 0) {
+				formatTime(progressBar.get(), structure->getCurrentBuildPoints(),
+                   structureBuildPointsToCompletion(*structure),
 				           structure->lastBuildRate, _("Build Progress"));
 			}
-			else
-			{
-				formatPower(progressBar.get(), checkPowerRequest(structure), structure->pStructureType->power_cost);
+			else {
+				formatPower(progressBar.get(), checkPowerRequest(structure),
+                    structure->getStats()->power_cost);
 			}
 		}
 	}
@@ -330,25 +322,23 @@ private:
 			int deltaCount = 0;
 			switch (order.type)
 			{
-			case DORDER_BUILD:
-			case DORDER_LINEBUILD:
-				newStats = order.psStats;
-				deltaCount = order.type == DORDER_LINEBUILD
+			case ORDER_TYPE::BUILD:
+			case ORDER_TYPE::LINE_BUILD:
+				newStats = order.structure_stats.get();
+				deltaCount = order.type == ORDER_TYPE::LINE_BUILD
 					             ? 1 + (abs(order.pos.x - order.pos2.x) + abs(order.pos.y - order.pos2.y)) / TILE_UNITS
 					             : 1;
 				break;
-			case DORDER_HELPBUILD:
-				if (Structure* target = castStructure(order.psObj))
-				{
-					newStats = target->pStructureType;
+			case ORDER_TYPE::HELP_BUILD:
+				if (auto target = dynamic_cast<Structure*>(order.structure_stats.get())) {
+					newStats = target->getStats();
 					deltaCount = 1;
 				}
 				break;
 			default:
 				return false;
 			}
-			if (newStats != nullptr && (stats == nullptr || stats == newStats))
-			{
+			if (newStats != nullptr && (stats == nullptr || stats == newStats)) {
 				stats = newStats;
 				count += deltaCount;
 				return true;
@@ -356,28 +346,23 @@ private:
 			return false;
 		};
 
-		if (droid && processOrder(droid->order))
-		{
+		if (droid && processOrder(droid->order)) {
 			for (auto const& order : droid->asOrderList)
 			{
-				if (!processOrder(order))
-				{
+				if (!processOrder(order)) {
 					break;
 				}
 			}
 		}
-		if (count > 1)
-		{
+		if (count > 1) {
 			remaining = count;
 		}
 
-		if (remaining != -1)
-		{
+		if (remaining != -1) {
 			productionRunSizeLabel->setString(WzString::fromUtf8(astringf("%d", remaining)));
 			productionRunSizeLabel->show();
 		}
-		else
-		{
+		else {
 			productionRunSizeLabel->hide();
 		}
 	}
@@ -385,7 +370,8 @@ private:
 	bool isHighlighted() const override
 	{
 		auto droid = controller->getObjectAt(objectIndex);
-		return droid && (droid->selected || droid == controller->getHighlightedObject());
+		return droid && (droid->damageManager->isSelected() ||
+                     droid == controller->getHighlightedObject());
 	}
 
 	void clickPrimary() override
@@ -393,12 +379,10 @@ private:
 		auto droid = controller->getObjectAt(objectIndex);
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 
-		if (keyDown(KEY_LCTRL) || keyDown(KEY_RCTRL) || keyDown(KEY_LSHIFT) || keyDown(KEY_RSHIFT))
-		{
+		if (keyDown(KEY_LCTRL) || keyDown(KEY_RCTRL) || keyDown(KEY_LSHIFT) || keyDown(KEY_RSHIFT)) {
 			controller->toggleBuilderSelection(droid);
 		}
-		else
-		{
+		else {
 			controller->clearSelection();
 			controller->selectObject(droid);
 		}
@@ -413,8 +397,7 @@ private:
 		auto highlighted = controller->getHighlightedObject();
 
 		// prevent highlighting a builder when another builder is already selected
-		if (droid == highlighted || !highlighted->selected)
-		{
+		if (droid == highlighted || !highlighted->damageManager->isSelected()) {
 			controller->setHighlightedObject(droid);
 			BaseStatsController::scheduleDisplayStatsForm(controller);
 		}

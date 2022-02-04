@@ -38,6 +38,7 @@
 #include "src/input/debugmappings.h"
 #include "display.h"
 #include "map.h"
+#include "baseobject.h"
 
 enum SubType
 {
@@ -174,7 +175,7 @@ static std::vector<QueuedDroidInfo> queuedOrders;
 // Local Prototypes
 
 static BaseObject * processDroidTarget(OBJECT_TYPE desttype, unsigned destid);
-static BaseObject TargetMissing_(OBJ_NUM_TYPES, 0, 0); // This memory is never referenced.
+static BaseObject TargetMissing_(OBJECT_TYPE::COUNT, 0, 0); // This memory is never referenced.
 static BaseObject * const TargetMissing = &TargetMissing_; // Error return value for processDroidTarget.
 
 // Send
@@ -204,9 +205,9 @@ bool sendDroidDisembark(Droid const* psTransporter, Droid const* psDroid)
 
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DROIDDISEMBARK);
 	{
-		uint32_t player = psTransporter->playerManager->getPlayer();
-		uint32_t droidId = psDroid->getId();
-		uint32_t transportId = psTransporter->getId();
+		auto player = psTransporter->playerManager->getPlayer();
+		auto droidId = psDroid->getId();
+		auto transportId = psTransporter->getId();
 
 		NETuint32_t(&player);
 		NETuint32_t(&droidId);
@@ -224,9 +225,9 @@ bool recvDroidDisEmbark(NETQUEUE queue)
 
 	NETbeginDecode(queue, GAME_DROIDDISEMBARK);
 	{
-		uint32_t player;
-		uint32_t droidID;
-		uint32_t transporterID;
+		unsigned player;
+		unsigned droidID;
+		unsigned transporterID;
 
 		NETuint32_t(&player);
 		NETuint32_t(&droidID);
@@ -245,16 +246,13 @@ bool recvDroidDisEmbark(NETQUEUE queue)
 			return false;
 		}
 		// we need to find the droid *in* the transporter
-		psCheckDroid = psTransporterDroid->group->members;
-		while (psCheckDroid)
+    for (auto& psCheckDroid : *psTransporterDroid->getGroup()->getMembers())
 		{
 			// is this the one we want?
 			if (psCheckDroid->getId() == droidID) {
 				psFoundDroid = psCheckDroid;
 				break;
 			}
-			// not found, so check next one in *group*
-			psCheckDroid = psCheckDroid->psGrpNext;
 		}
 		// don't continue if we couldn't find it.
 		if (!psFoundDroid) {
@@ -262,7 +260,6 @@ bool recvDroidDisEmbark(NETQUEUE queue)
 			debug(LOG_ERROR, "Couldn't find droid %d to disembark from player %d's transporter?", droidID, player);
 			return false;
 		}
-
 		transporterRemoveDroid(psTransporterDroid, psFoundDroid, ModeImmediate);
 	}
 	return true;
@@ -312,15 +309,15 @@ bool SendDroid(DroidTemplate* pTemplate, uint32_t x, uint32_t y, uint8_t player,
 		WzString name = pTemplate->name;
 		NETwzstring(name);
 		NETint32_t(&droidType);
-		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::BODY]);
-		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::BRAIN]);
-		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::PROPULSION]);
-		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::REPAIR_UNIT]);
-		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::ECM]);
-		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::SENSOR]);
-		NETuint8_t(&pTemplate->asParts[COMPONENT_TYPE::CONSTRUCT]);
+		NETuint8_t(&pTemplate->components[COMPONENT_TYPE::BODY]);
+		NETuint8_t(&pTemplate->components[COMPONENT_TYPE::BRAIN]);
+		NETuint8_t(&pTemplate->components[COMPONENT_TYPE::PROPULSION]);
+		NETuint8_t(&pTemplate->components[COMPONENT_TYPE::REPAIR_UNIT]);
+		NETuint8_t(&pTemplate->components[COMPONENT_TYPE::ECM]);
+		NETuint8_t(&pTemplate->components[COMPONENT_TYPE::SENSOR]);
+		NETuint8_t(&pTemplate->components[COMPONENT_TYPE::CONSTRUCT]);
 		NETint8_t(&pTemplate->weaponCount);
-		for (int i = 0; i < pTemplate->weaponCount; i++)
+		for (auto i = 0; i < pTemplate->weaponCount; i++)
 		{
 			NETuint32_t(&pTemplate->asWeaps[i]);
 		}
@@ -362,13 +359,13 @@ bool recvDroid(NETQUEUE queue)
 		pT->name = name;
 		pT->id = pT->name;
 		NETint32_t(&droidType);
-		NETuint8_t(&pT->asParts[COMP_BODY]);
-		NETuint8_t(&pT->asParts[COMP_BRAIN]);
-		NETuint8_t(&pT->asParts[COMP_PROPULSION]);
-		NETuint8_t(&pT->asParts[COMP_REPAIRUNIT]);
-		NETuint8_t(&pT->asParts[COMP_ECM]);
-		NETuint8_t(&pT->asParts[COMP_SENSOR]);
-		NETuint8_t(&pT->asParts[COMP_CONSTRUCT]);
+		NETuint8_t(&pT->asParts[COMPONENT_TYPE::BODY]);
+		NETuint8_t(&pT->asParts[COMPONENT_TYPE::BRAIN]);
+		NETuint8_t(&pT->asParts[COMPONENT_TYPE::PROPULSION]);
+		NETuint8_t(&pT->asParts[COMPONENT_TYPE::REPAIR_UNIT]);
+		NETuint8_t(&pT->asParts[COMPONENT_TYPE::ECM]);
+		NETuint8_t(&pT->asParts[COMPONENT_TYPE::SENSOR]);
+		NETuint8_t(&pT->asParts[COMPONENT_TYPE::CONSTRUCT]);
 		NETint8_t(&pT->weaponCount);
 		ASSERT_OR_RETURN(false, pT->weaponCount >= 0 && pT->weaponCount <= ARRAY_SIZE(pT->asWeaps), "Bad numWeaps %d",
                      pT->weaponCount);
@@ -523,12 +520,11 @@ Order infoToOrderData(QueuedDroidInfo const& info, StructureStats* psStats)
 	sOrder.direction = info.direction;
 	sOrder.index = info.index;
 	sOrder.target = processDroidTarget(info.destType, info.destId);
-	sOrder.structure_stats = psStats;
+	sOrder.structure_stats = std::make_shared<StructureStats>(*psStats);
 
 	return sOrder;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // Droid update information
 void sendDroidInfo(Droid* psDroid, Order const& order, bool add)
 {
@@ -544,7 +540,7 @@ void sendDroidInfo(Droid* psDroid, Order const& order, bool add)
 	info.order = order.type;
 	if (info.subType == ObjOrder) {
 		info.destId = order.target->getId();
-		info.destType = order.target->type;
+		info.destType = getObjectType(order.target);
 	}
 	else {
 		info.pos = order.pos;
@@ -598,7 +594,7 @@ bool recvDroidInfo(NETQUEUE queue)
 		}
 
 		switch (info.subType) {
-		case ObjOrder: syncDebug("Order=%s,%d(%d)", getDroidOrderName(info.order), info.destId, info.destType);
+		case ObjOrder: syncDebug("Order=%s,%d(%d)", getDroidOrderName(info.order).c_str(), info.destId, info.destType);
 			break;
 		case LocOrder: syncDebug("Order=%s,(%d,%d)", getDroidOrderName(info.order).c_str(), info.pos.x, info.pos.y);
 			break;
@@ -639,7 +635,7 @@ bool recvDroidInfo(NETQUEUE queue)
 				* commander yet are in the commander group remove us from it.
 				*/
 				if (hasCommander(psDroid)) {
-					psDroid->group->remove(psDroid);
+					psDroid->removeDroidFromGroup(psDroid);
 				}
 
 				if (sOrder.target != TargetMissing) { // Only do order if the target didn't die.
@@ -663,7 +659,6 @@ bool recvDroidInfo(NETQUEUE queue)
 				turnOffMultiMsg(false);
 				break;
 			}
-			syncDebugDroid(psDroid, '>');
 		}
 	}
 	NETend();
@@ -672,10 +667,10 @@ bool recvDroidInfo(NETQUEUE queue)
 
 // ////////////////////////////////////////////////////////////////////////////
 // process droid order
-static BaseObject* processDroidTarget(OBJECT_TYPE desttype, uint32_t destid)
+static BaseObject* processDroidTarget(OBJECT_TYPE desttype, unsigned destid)
 {
 	// Target is a location
-	if (destid == 0 && desttype == 0) {
+	if (destid == 0) {
 		return nullptr;
 	}
 	// Target is an object
@@ -702,8 +697,7 @@ static BaseObject* processDroidTarget(OBJECT_TYPE desttype, uint32_t destid)
 		}
 
 		// If we did not find anything, return
-		if (!psObj) // failed to find it;
-		{
+		if (!psObj) { // failed to find it;
 			syncDebug("Target missing");
 			return TargetMissing; // Can't return NULL, since then the order would still be attempted.
 		}
@@ -717,11 +711,8 @@ bool SendDestroyDroid(Droid const* psDroid)
 {
 	if (!bMultiMessages) return true;
 
-	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_REMOVE_DROID);
-	{
-		unsigned id = psDroid->getId();
-
-		// Send the droid's ID
+	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_REMOVE_DROID); {
+		auto id = psDroid->getId();
 		debug(LOG_DEATH, "Requested all players to destroy droid %u", (unsigned int)id);
 		NETuint32_t(&id);
 	}

@@ -74,7 +74,7 @@ void reverseObjectList(BaseObject ** ppsList)
 	*ppsList = psPrev;
 }
 
-const char* objInfo(const BaseObject * psObj)
+const char* objInfo(BaseObject const* psObj)
 {
 	static char info[PATH_MAX];
 

@@ -40,10 +40,10 @@
 #include "urlrequest.h"
 #include "stdinreader.h"
 #include "scores.h"
+#include "baseobject.h"
 
 #include <memory>
 #include <utility>
-#include <memory>
 #include <SQLiteCpp/SQLiteCpp.h>
 
 
@@ -441,29 +441,28 @@ void updateMultiStatsLoses()
 	++playerStats[selectedPlayer].losses;
 }
 
-static inline unsigned calcObjectCost(const BaseObject * psObj)
+static inline unsigned calcObjectCost(BaseObject const* psObj)
 {
-	switch (psObj->type)
-	{
-	case OBJ_DROID:
-		return calcDroidPower((const Droid*)psObj);
-	case OBJ_STRUCTURE:
-		{
-			auto psStruct = static_cast<const Structure*>(psObj);
-			ASSERT_OR_RETURN(0, psStruct->getStats() != nullptr, "pStructureType is null?");
-			return psStruct->getStats()->power_cost;
-		}
-	case OBJ_FEATURE:
-		return 0;
-	default:
-		ASSERT(false, "No such supported object type: %d", static_cast<int>(psObj->type));
-		break;
+	switch (getObjectType(psObj)) {
+    case OBJECT_TYPE::DROID:
+      return calcDroidPower((const Droid*)psObj);
+    case OBJECT_TYPE::STRUCTURE:
+    {
+      auto psStruct = dynamic_cast<const Structure*>(psObj);
+      ASSERT_OR_RETURN(0, psStruct->getStats() != nullptr, "pStructureType is null?");
+      return psStruct->getStats()->power_cost;
+    }
+    case OBJECT_TYPE::FEATURE:
+      return 0;
+    default:
+      ASSERT(false, "No such supported object type: %d", static_cast<int>(getObjectType(psObj)));
+      break;
 	}
 	return 0;
 }
 
 // update kills
-void updateMultiStatsKills(BaseObject * psKilled, unsigned player)
+void updateMultiStatsKills(BaseObject const* psKilled, unsigned player)
 {
   if (player >= MAX_PLAYERS){
     return;
@@ -489,7 +488,7 @@ class KnownPlayersDB
 public:
 	struct PlayerInfo
 	{
-		int64_t local_id;
+		int64_t local_id = -1;
 		std::string name;
 		EcKey::Key pk;
 	};

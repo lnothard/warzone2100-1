@@ -328,7 +328,7 @@ bool loadResearch(WzConfig& ini)
 		ASSERT_OR_RETURN(false, checkResearchName(&research, inc), "Research name '%s' used already",
 		                 getStatsName(&research));
 
-		research.ref = STAT_RESEARCH + inc;
+		research.techCode = STAT_RESEARCH + inc;
 
 		research.results = ini.json("results", nlohmann::json::array());
 
@@ -1080,17 +1080,17 @@ void researchResult(UDWORD researchIndex, UBYTE player, bool bDisplay, Structure
 			apCompLists[player][type][compInc] = AVAILABLE;
 		}
 		//check for default sensor
-		if (type == COMP_SENSOR && (asSensorStats + compInc)->location == LOC_DEFAULT)
+		if (type == COMPONENT_TYPE::SENSOR && (asSensorStats + compInc)->location == LOC::DEFAULT)
 		{
 			aDefaultSensor[player] = compInc;
 		}
 		//check for default ECM
-		else if (type == COMP_ECM && (asECMStats + compInc)->location == LOC_DEFAULT)
+		else if (type == COMPONENT_TYPE::ECM && (asECMStats + compInc)->location == LOC::DEFAULT)
 		{
 			aDefaultECM[player] = compInc;
 		}
 		//check for default Repair
-		else if (type == COMP_REPAIRUNIT && (asRepairStats + compInc)->location == LOC_DEFAULT)
+		else if (type == COMPONENT_TYPE::REPAIR_UNIT && (asRepairStats + compInc)->location == LOC::DEFAULT)
 		{
 			aDefaultRepair[player] = compInc;
 			enableSelfRepair(player);

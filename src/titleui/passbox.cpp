@@ -32,7 +32,6 @@
 #include <utility>
 
 #include "titleui.h"
-#include "lib/ivis_opengl/pieblitfunc.h"
 #include "lib/ivis_opengl/piemode.h"
 #include "lib/ivis_opengl/screen.h"
 
@@ -42,14 +41,15 @@
 #include "lib/widget/widgint.h"
 #include "lib/widget/label.h"
 
-#include "../multiplay.h"
 #include "../intdisplay.h"
 #include "../multiint.h"
 #include "../warzoneconfig.h"
 #include "../frend.h"
-#include "../init.h"
+#include "src/hci.h"
+
 WzPassBoxTitleUI::WzPassBoxTitleUI(std::function<void(const char*)> next) : next(std::move(next))
 {
+}
 
 void WzPassBoxTitleUI::start()
 {

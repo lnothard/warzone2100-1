@@ -26,6 +26,7 @@
 #ifndef FIXEDPOINT_H
 #define FIXEDPOINT_H
 
+#include <cstdint>
 #include "wzglobal.h"
 
 //! PSX-style float emulation: 12 digit semi-floats stored in an int

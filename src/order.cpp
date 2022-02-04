@@ -500,7 +500,7 @@ void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject* psObj, QUEUE_MO
  * @todo the first switch can be removed and substituted by orderState() function.
  * @todo the use of this function is somewhat superfluous on some cases. Investigate.
  */
-BaseObject* orderStateObj(Droid* psDroid, ORDER_TYPE order)
+BaseObject* orderStateObj(Droid const* psDroid, ORDER_TYPE order)
 {
 	bool match = false;
   using enum ORDER_TYPE;
@@ -968,9 +968,10 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 		&& psObj->playerManager->getPlayer() != psDroid->playerManager->getPlayer()
 		&& !aiCheckAlliances(psObj->playerManager->getPlayer(), psDroid->playerManager->getPlayer())) {
 		// check for standard sensor or VTOL intercept sensor
-		if (asSensorStats[psDroid->asBits[COMPONENT_TYPE::SENSOR]].type == SENSOR_TYPE::STANDARD
-			|| asSensorStats[psDroid->asBits[COMPONENT_TYPE::SENSOR]].type == SENSOR_TYPE::VTOL_INTERCEPT
-			|| asSensorStats[psDroid->asBits[COMPONENT_TYPE::SENSOR]].type == SENSOR_TYPE::SUPER) {
+    auto sensor = dynamic_cast<SensorStats const*>(psDroid->getComponent(COMPONENT_TYPE::SENSOR));
+		if (sensor->type == SENSOR_TYPE::STANDARD ||
+        sensor->type == SENSOR_TYPE::VTOL_INTERCEPT ||
+        sensor->type == SENSOR_TYPE::SUPER) {
 			// a sensor droid observing an object
 			order = Order(OBSERVE, *psObj);
 		}
@@ -1458,7 +1459,7 @@ void secondaryCheckDamageLevel(Droid* psDroid)
                   psDroid, SECONDARY_ORDER::REPAIR_LEVEL))) {
     
 		if (!psDroid->isVtol()) {
-			psDroid->group = UBYTE_MAX;
+			psDroid->setSelectionGroup(UBYTE_MAX);
 		}
 
 		/* set return to repair if not on hold */

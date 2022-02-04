@@ -860,7 +860,7 @@ namespace wzapi
 		}
 
 		ResearchStats* psResearch = nullptr;
-		unsigned player;
+		unsigned player = 0;
 	};
 
 	struct researchResults

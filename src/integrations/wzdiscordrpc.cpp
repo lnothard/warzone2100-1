@@ -41,6 +41,8 @@
 #include <sodium.h>
 #include <EmbeddedJSONSignature.h>
 #include <optional-lite/optional.hpp>
+#include "../ai.h"
+#include "src/scores.h"
 using nonstd::optional;
 using nonstd::nullopt;
 
@@ -176,18 +178,17 @@ static void asyncGetDiscordUserAvatar(const DiscordUser* request,
 	urlRequestData(urlRequest);
 }
 
-static std::string getAllianceString(const ActivitySink::MultiplayerGameInfo& info)
+static std::string getAllianceString(const MultiplayerGameInfo& info)
 {
-	switch (info.alliances)
-	{
-	case ActivitySink::SkirmishGameInfo::AllianceOption::NO_ALLIANCES:
-		return "\xf0\x9f\x9a\xab"; // 🚫
-	case ActivitySink::SkirmishGameInfo::AllianceOption::ALLIANCES:
-		return "\xf0\x9f\x91\x8d"; // 👍
-	case ActivitySink::SkirmishGameInfo::AllianceOption::ALLIANCES_TEAMS:
-		return "\xf0\x9f\x94\x92\xf0\x9f\x94\xac"; // 🔒🔬
-	case ActivitySink::SkirmishGameInfo::AllianceOption::ALLIANCES_UNSHARED:
-		return "\xf0\x9f\x94\x92\xf0\x9f\x9a\xab"; // 🔒🚫
+	switch (info.alliances) {
+    case ALLIANCE_TYPE::FFA:
+	  	return "\xf0\x9f\x9a\xab"; // 🚫
+	  case ALLIANCE_TYPE::ALLIANCES:
+	  	return "\xf0\x9f\x91\x8d"; // 👍
+	  case ALLIANCE_TYPE::ALLIANCES_TEAMS:
+	  	return "\xf0\x9f\x94\x92\xf0\x9f\x94\xac"; // 🔒🔬
+	  case ALLIANCE_TYPE::ALLIANCES_UNSHARED:
+	  	return "\xf0\x9f\x94\x92\xf0\x9f\x9a\xab"; // 🔒🚫
 	}
 	return ""; // silence warning
 }
@@ -218,8 +219,7 @@ static void displayCantJoinWhileInGameNotification()
 static void joinGameImpl(const std::vector<JoinConnectionDescription>& joinConnectionDetails)
 {
 	const auto currentGameMode = ActivityManager::instance().getCurrentGameMode();
-	if (currentGameMode != ActivitySink::GameMode::MENUS)
-	{
+	if (currentGameMode != GAME_MODE::MENUS) {
 		// Can't join a game while already in a game
 		cancelOrDismissNotificationsWithTag(JOIN_FIND_AND_CONNECT_TAG);
 		debug(LOG_ERROR, "Can't join a game while already in a game / lobby.");
@@ -251,8 +251,7 @@ static void findAndJoinLobbyGameImpl(const std::string& lobbyAddress, unsigned i
 		// once the notification is completely displayed, trigger the lookup & join
 
 		const auto currentGameMode = ActivityManager::instance().getCurrentGameMode();
-		if (currentGameMode != ActivitySink::GameMode::MENUS)
-		{
+		if (currentGameMode != GAME_MODE::MENUS) {
 			// Can't join a game while in a game - abort
 			cancelOrDismissNotificationsWithTag(JOIN_FIND_AND_CONNECT_TAG);
 			displayCantJoinWhileInGameNotification();
@@ -596,8 +595,7 @@ public:
 	void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result,
 	                                  END_GAME_STATS_DATA stats, bool cheatsUsed) override
 	{
-		if (result == GameEndReason::QUIT)
-		{
+		if (result == GameEndReason::QUIT) {
 			setDiscordStatus_InMenus();
 			updateDiscordPresence();
 			return;
@@ -715,8 +713,8 @@ public:
 	void processQueuedPresenceUpdate();
 
 private:
-	void setJoinInformation(const ActivitySink::MultiplayerGameInfo& info, int64_t startTimestamp);
-	void setBaseMultiplayerGameInfo(const ActivitySink::MultiplayerGameInfo& info);
+	void setJoinInformation(const MultiplayerGameInfo& info, int64_t startTimestamp);
+	void setBaseMultiplayerGameInfo(const MultiplayerGameInfo& info);
 
 	void cancelOrDismissJoinNotifications()
 	{
@@ -758,7 +756,7 @@ std::vector<unsigned char> int64_tToUnsignedCharVector(int64_t value)
 	return result;
 }
 
-void DiscordRPCActivitySink::setJoinInformation(const ActivitySink::MultiplayerGameInfo& info, int64_t startTimestamp)
+void DiscordRPCActivitySink::setJoinInformation(const MultiplayerGameInfo& info, int64_t startTimestamp)
 {
 	if (info.lobbyGameId != 0)
 	{
@@ -860,9 +858,8 @@ void DiscordRPCActivitySink::setJoinInformation(const ActivitySink::MultiplayerG
 				                   {
 					                   // Verify that game state is still "in lobby"
 					                   const auto currentGameMode = ActivityManager::instance().getCurrentGameMode();
-					                   if ((currentGameMode != ActivitySink::GameMode::HOSTING_IN_LOBBY) && (
-						                   currentGameMode != ActivitySink::GameMode::JOINING_IN_LOBBY))
-					                   {
+					                   if (currentGameMode != GAME_MODE::HOSTING_IN_LOBBY &&
+                                 currentGameMode != GAME_MODE::JOINING_IN_LOBBY) {
 						                   // game is no longer in lobby
 						                   return;
 					                   }
@@ -918,12 +915,10 @@ void DiscordRPCActivitySink::setBaseMultiplayerGameInfo(const MultiplayerGameInf
 	std::string nameAndHostStr = astringf(_("Game Name: \"%s\" by %s"), info.game.name, hostNameStr.c_str());
 	currentRichPresenceData.largeImageText = truncateStringIfExceedsLength(nameAndHostStr, MAX_DISCORD_STR_LEN);
 	const auto currentGameMode = ActivityManager::instance().getCurrentGameMode();
-	if (currentGameMode == ActivitySink::GameMode::MULTIPLAYER)
-	{
+	if (currentGameMode == GAME_MODE::MULTIPLAYER) {
 		currentRichPresenceData.smallImageKey = "multiplayer_sm";
 	}
-	else
-	{
+	else {
 		currentRichPresenceData.smallImageKey = "in_lobby_sm";
 	}
 
@@ -935,8 +930,7 @@ void DiscordRPCActivitySink::setBaseMultiplayerGameInfo(const MultiplayerGameInf
 		const std::string passwordEmoji = "\xf0\x9f\x94\x90"; // 🔐
 		gameInfoStr += passwordEmoji + " | ";
 	}
-	if (info.hasLimits())
-	{
+	if (info.hasLimits()) {
 		std::vector<std::string> limits;
 		if (info.limit_no_tanks) ///< Flag for tanks disabled
 		{
@@ -1076,8 +1070,7 @@ static void handleDiscordJoin(const char* secret)
 	debug(LOG_INFO, "Discord: join");
 
 	const auto currentGameMode = ActivityManager::instance().getCurrentGameMode();
-	if (currentGameMode != ActivitySink::GameMode::MENUS)
-	{
+	if (currentGameMode != GAME_MODE::MENUS) {
 		// For now, display an error - can't join a game while already in a game
 		// It's a little complicated to properly save/quit the current game automatically from here...
 		// (Plus we'd need to wait for a return to the title menus?)
@@ -1104,7 +1097,7 @@ static void handleDiscordJoinRequest(const DiscordUser* request)
 
 	// Check application state and only display if we're actually in hosting lobby mode
 	const auto currentGameMode = ActivityManager::instance().getCurrentGameMode();
-	if (currentGameMode != ActivitySink::GameMode::HOSTING_IN_LOBBY)
+	if (currentGameMode != GAME_MODE::HOSTING_IN_LOBBY)
 	{
 		// If not, just respond with "NO", and log it
 		Discord_Respond(request->userId, DISCORD_REPLY_NO);
@@ -1230,14 +1223,13 @@ void discordRPCPerFrame()
 	const auto currentGameMode = ActivityManager::instance().getCurrentGameMode();
 
 	uint32_t minUpdateCheckInterval = (2 * GAME_TICKS_PER_SEC);
-	if ((currentGameMode == ActivitySink::GameMode::HOSTING_IN_LOBBY) || (remainingInitialFastChecks > 0))
-	{
+	if ((currentGameMode == GAME_MODE::HOSTING_IN_LOBBY) || (remainingInitialFastChecks > 0)) {
 		// Perform more frequent Discord_RunCallbacks() calls:
 		//	- when in the game lobby as host (to surface "ask to join" requests faster)
 		//	- at application startup (to handle when Discord launches the game with a game join / invite code)
 		minUpdateCheckInterval = (GAME_TICKS_PER_SEC / 2);
 	}
-	else if (currentGameMode == ActivitySink::GameMode::MENUS)
+	else if (currentGameMode == GAME_MODE::MENUS)
 	{
 		minUpdateCheckInterval = GAME_TICKS_PER_SEC;
 	}

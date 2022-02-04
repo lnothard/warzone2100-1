@@ -31,7 +31,7 @@
 struct ChatMessage
 {
   ChatMessage() = default;
-	ChatMessage(unsigned sender, std::string text);
+	ChatMessage(unsigned sender, char* text);
 
 	void send();
 	void addReceiverByPosition(unsigned playerPosition);

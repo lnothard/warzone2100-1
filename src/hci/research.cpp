@@ -8,6 +8,7 @@
 #include "../qtscript.h"
 #include "../component.h"
 #include "../mission.h"
+#include "src/multiplay.h"
 
 Structure* ResearchController::highlightedFacility = nullptr;
 static ImdObject getResearchObjectImage(ResearchStats* research);
@@ -23,26 +24,23 @@ void ResearchController::updateFacilitiesList()
 {
 	facilities.clear();
 
-	for (auto psStruct = interfaceStructList(); psStruct != nullptr; psStruct = psStruct->psNext)
+	for (auto& psStruct : *interfaceStructList())
 	{
-		if (psStruct->pStructureType->type == REF_RESEARCH && psStruct->status == SS_BUILT && psStruct->died == 0)
-		{
-			facilities.push_back(psStruct);
+		if (psStruct.getStats()->type == STRUCTURE_TYPE::RESEARCH &&
+        psStruct.getState() == STRUCTURE_STATE::BUILT &&
+        psStruct.damageManager->getTimeOfDeath() == 0) {
+			facilities.push_back(&psStruct);
 		}
 	}
-
 	std::reverse(facilities.begin(), facilities.end());
 }
 
 nonstd::optional<size_t> ResearchController::getHighlightedFacilityIndex()
 {
-	if (!getHighlightedObject())
-	{
+	if (!getHighlightedObject()) {
 		return nonstd::nullopt;
 	}
-
 	auto found = std::find(facilities.begin(), facilities.end(), getHighlightedObject());
-
 	return found == facilities.end() ? nonstd::nullopt : nonstd::optional<size_t>(found - facilities.begin());
 }
 
@@ -76,12 +74,7 @@ void ResearchController::updateResearchOptionsList()
 ResearchStats* ResearchController::getObjectStatsAt(size_t objectIndex) const
 {
 	auto facility = getObjectAt(objectIndex);
-	if (facility == nullptr)
-	{
-		return nullptr;
-	}
-	if (facility->pFunctionality == nullptr)
-	{
+	if (facility == nullptr) {
 		return nullptr;
 	}
 
@@ -92,7 +85,7 @@ ResearchStats* ResearchController::getObjectStatsAt(size_t objectIndex) const
 	}
 
 	if (psResearchFacility->psSubjectPending != nullptr && !IsResearchCompleted(
-		&asPlayerResList[facility->player][psResearchFacility->psSubjectPending->index]))
+		&asPlayerResList[facility->playerManager->getPlayer()][psResearchFacility->psSubjectPending->index]))
 	{
 		return psResearchFacility->psSubjectPending;
 	}
@@ -159,7 +152,7 @@ void ResearchController::startResearch(ResearchStats& research)
 	stopReticuleButtonFlash(IDRET_RESEARCH);
 }
 
-void ResearchController::setHighlightedObject(PlayerOwnedObject * object)
+void ResearchController::setHighlightedObject(BaseObject* object)
 {
 	if (object == nullptr)
 	{
@@ -167,9 +160,9 @@ void ResearchController::setHighlightedObject(PlayerOwnedObject * object)
 		return;
 	}
 
-	auto facility = castStructure(object);
+	auto facility = dynamic_cast<Structure*>(object);
 	ASSERT_NOT_NULLPTR_OR_RETURN(, facility);
-	ASSERT_OR_RETURN(, facility->stats->type == REF_RESEARCH, "Invalid facility pointer");
+	ASSERT_OR_RETURN(, facility->getStats()->type == STRUCTURE_TYPE::RESEARCH, "Invalid facility pointer");
 	highlightedFacility = facility;
 }
 
@@ -287,8 +280,7 @@ protected:
 		updateLayout();
 		auto facility = controller->getObjectAt(objectIndex);
 		ASSERT_NOT_NULLPTR_OR_RETURN(, facility);
-		if (isDead(facility))
-		{
+		if (facility->damageManager->isDead()) {
 			ASSERT_FAILURE(!isDead(facility), "!isDead(facility)", AT_MACRO, __FUNCTION__, "Facility is dead");
 			// ensure the backing information is refreshed before the next draw
 			intRefreshScreen();
@@ -302,8 +294,7 @@ protected:
 	{
 		BaseWidget::updateLayout();
 
-		if (bMultiPlayer)
-		{
+		if (bMultiPlayer) {
 			updateAllyStatus();
 		}
 	}
@@ -313,8 +304,7 @@ protected:
 		allyResearchIcons.hide();
 
 		auto research = controller->getObjectStatsAt(objectIndex);
-		if (research == nullptr)
-		{
+		if (research == nullptr) {
 			return;
 		}
 
@@ -331,7 +321,7 @@ protected:
 	{
 		auto facility = controller->getObjectAt(objectIndex);
 		ASSERT_NOT_NULLPTR_OR_RETURN("", facility);
-		return getStatsName(facility->pStructureType);
+		return getStatsName(facility->getStats());
 	}
 
 	ResearchController& getController() const override
@@ -444,7 +434,8 @@ private:
 	bool isHighlighted() const override
 	{
 		auto facility = controller->getObjectAt(objectIndex);
-		return facility && (facility->selected || facility == controller->getHighlightedObject());
+		return facility && (facility->damageManager->isSelected() ||
+                        facility == controller->getHighlightedObject());
 	}
 
 	void clickPrimary() override
@@ -730,7 +721,7 @@ void ResearchController::requestResearchCancellation(Structure* facility)
 
 static ImdObject getResearchObjectImage(ResearchStats* research)
 {
-	BaseStats* psResGraphic = research->psStat;
+	BaseStats* psResGraphic = research->psStat.get();
 
 	if (!psResGraphic)
 	{
@@ -746,15 +737,13 @@ static ImdObject getResearchObjectImage(ResearchStats* research)
 	}
 
 	// we have a Stat associated with this research topic
-	if (StatIsStructure(psResGraphic))
-	{
+	if (StatIsStructure(psResGraphic)) {
 		// overwrite the Object pointer
 		return ImdObject::StructureStat(psResGraphic);
 	}
 
 	auto compID = StatIsComponent(psResGraphic);
-	if (compID != COMP_NUMCOMPONENTS)
-	{
+	if (compID != COMPONENT_TYPE::COUNT) {
 		return ImdObject::Component(psResGraphic);
 	}
 

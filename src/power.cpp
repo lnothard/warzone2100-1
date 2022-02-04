@@ -43,7 +43,7 @@ bool powerCalculated;
 static int64_t updateExtractedPower(Structure* psBuilding);
 
 //returns the relevant list based on OffWorld or OnWorld
-static std::vector<std::unique_ptr<Structure>>& powerStructList(unsigned player);
+static std::vector<Structure>& powerStructList(unsigned player);
 
 
 PowerRequest::PowerRequest(unsigned id, int64_t amount)
@@ -209,13 +209,13 @@ void powerCalc(bool on)
 //}
 
 //returns the relevant list based on OffWorld or OnWorld
-std::vector<std::unique_ptr<Structure>>& powerStructList(unsigned player)
+std::vector<Structure>& powerStructList(unsigned player)
 {
 	if (offWorldKeepLists) {
-		return mission.apsStructLists[player];
+		return mission.players[player].structures;
 	}
 	else {
-		return apsStructLists[player];
+		return playerList[player].structures;
 	}
 }
 
@@ -228,9 +228,9 @@ void updatePlayerPower(unsigned player, int ticks)
 
 	for (auto& psStruct : powerStructList(player))
 	{
-		if (psStruct->getStats()->type == STRUCTURE_TYPE::POWER_GEN &&
-        psStruct->getState() == STRUCTURE_STATE::BUILT) {
-			updateCurrentPower(psStruct.get(), player, ticks);
+		if (psStruct.getStats()->type == STRUCTURE_TYPE::POWER_GEN &&
+        psStruct.getState() == STRUCTURE_STATE::BUILT) {
+			updateCurrentPower(&psStruct, player, ticks);
 		}
 	}
 	syncDebug("updatePlayerPower%u %" PRId64"->%" PRId64"", player, powerBefore, asPower[player].currentPower);

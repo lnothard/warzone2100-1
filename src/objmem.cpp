@@ -65,20 +65,20 @@ static bool checkReferences(BaseObject const* psVictim)
 {
 	for (auto plr = 0; plr < MAX_PLAYERS; ++plr)
 	{
-		for (auto& psStruct : apsStructLists[plr])
+		for (auto& psStruct : playerList[plr].structures)
 		{
-			if (psStruct.get() == psVictim) {
+			if (&psStruct == psVictim) {
         // don't worry about self references
 				continue;
 			}
 
-			for (auto i = 0; i < numWeapons(*psStruct); ++i)
+			for (auto i = 0; i < numWeapons(psStruct); ++i)
 			{
-				ASSERT_OR_RETURN(false, psStruct->getTarget(i) != psVictim,
-				                 BADREF(psStruct->targetFunc[i], psStruct->targetLine[i]));
+				ASSERT_OR_RETURN(false, psStruct.getTarget(i) != psVictim,
+				                 BADREF(psStruct.targetFunc[i], psStruct.targetLine[i]));
 			}
 		}
-		for (auto& psDroid : apsDroidLists[plr])
+		for (auto& psDroid : playerList[plr].droids)
 		{
 			if (&psDroid == psVictim) {
 				continue; // Don't worry about self references.
@@ -91,7 +91,7 @@ static bool checkReferences(BaseObject const* psVictim)
 			{
 				if (psDroid.getTarget(i) == psVictim) {
 					ASSERT_OR_RETURN(false, psDroid.getTarget(i) != psVictim,
-					                 BADREF(psDroid->actionTargetFunc[i], psDroid->actionTargetLine[i]));
+					                 BADREF(psDroid.actionTargetFunc[i], psDroid.actionTargetLine[i]));
 				}
 			}
 		}
@@ -194,7 +194,7 @@ static inline void destroyObject(OBJECT* list[], OBJECT* object)
 	{
 		list[object->player] = list[object->player]->psNext;
 		object->psNext = psDestroyedObj;
-		psDestroyedObj = (PlayerOwnedObject *)object;
+		psDestroyedObj = object;
 		object->died = gameTime;
 		scriptRemoveObject(object);
 		return;

@@ -3,7 +3,6 @@
 //
 
 #include "lib/framework/math_ext.h"
-
 #include "weapon.h"
 
 

@@ -248,6 +248,7 @@ public:
 
   [[nodiscard]] int objRadius() const override;
   [[nodiscard]] ANIMATION_EVENTS getAnimationEvent() const;
+  [[nodiscard]] unsigned getBaseSpeed() const;
   [[nodiscard]] ACTION getAction() const noexcept;
   [[nodiscard]] Order const* getOrder() const;
   [[nodiscard]] DROID_TYPE getType() const noexcept;

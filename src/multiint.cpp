@@ -158,12 +158,12 @@ struct RoomMessage
 
 	static RoomMessage system(std::string messageText)
 	{
-		return {RoomMessageSystem, messageText};
+		return {RoomMessageSystem, std::move(messageText)};
 	}
 
 	static RoomMessage notify(std::string messageText)
 	{
-		return {RoomMessageNotify, messageText};
+		return {RoomMessageNotify, std::move(messageText)};
 	}
 
 private:
@@ -263,7 +263,7 @@ static bool SendFactionRequest(UBYTE player, UBYTE faction);
 static bool SendPositionRequest(UBYTE player, UBYTE chosenPlayer);
 static bool SendPlayerSlotTypeRequest(uint32_t player, bool isSpectator);
 
-static void stopJoining(std::shared_ptr<WzTitleUI> parent);
+static void stopJoining(const std::shared_ptr<WzTitleUI>& parent);
 static int difficultyIcon(int difficulty);
 
 
@@ -364,7 +364,7 @@ private:
 	std::shared_ptr<W_SCREEN> optionsOverlayScreen;
 
 	void displayParagraphContextualMenu(const std::string& textToCopy);
-	std::shared_ptr<WIDGET> createParagraphContextualMenuPopoverForm(std::string textToCopy);
+	std::shared_ptr<WIDGET> createParagraphContextualMenuPopoverForm(const std::string& textToCopy);
 
 	void displayMessage(RoomMessage const& message);
 
@@ -391,7 +391,7 @@ void displayRoomNotifyMessage(char const* text)
 	displayRoomMessage(RoomMessage::notify(text));
 }
 
-const std::vector<WzString> getAINames()
+std::vector<WzString> getAINames()
 {
 	std::vector<WzString> l;
 	for (const auto& i : aidata)
@@ -588,9 +588,9 @@ static void loadEmptyMapPreview()
 
 	// Slight hack to init array with a special value used to determine how many players on map
 	Vector2i playerpos[MAX_PLAYERS];
-	for (size_t i = 0; i < MAX_PLAYERS; ++i)
+	for (auto & playerpo : playerpos)
 	{
-		playerpos[i] = Vector2i(0x77777777, 0x77777777);
+		playerpo = Vector2i(0x77777777, 0x77777777);
 	}
 
 	screen_enableMapPreview(ex, ey, playerpos);
@@ -612,7 +612,7 @@ static inline WzMap::MapPreviewColor PIELIGHT_to_MapPreviewColor(PIELIGHT color)
 class WzLobbyPreviewPlayerColorProvider : public WzMap::MapPlayerColorProvider
 {
 public:
-	~WzLobbyPreviewPlayerColorProvider() = default;
+	~WzLobbyPreviewPlayerColorProvider() override = default;
 
 	// -1 = scavs
 	WzMap::MapPreviewColor getPlayerColor(int8_t mapPlayer) override
@@ -713,7 +713,7 @@ void loadMapPreview(bool hideInterface)
 	aFileName += "/";
 	auto data = WzMap::Map::loadFromPath(aFileName, WzMap::MapType::SKIRMISH, psLevel->players, rand(), true,
 	                                     std::unique_ptr<WzMap::LoggingProtocol>(new WzMapDebugLogger()),
-	                                     std::unique_ptr<WzMapPhysFSIO>(new WzMapPhysFSIO()));
+	                                     std::make_unique<WzMapPhysFSIO>());
 	if (!data)
 	{
 		debug(LOG_ERROR, "Failed to load map from path: %s", aFileName.c_str());
@@ -746,9 +746,9 @@ void loadMapPreview(bool hideInterface)
 	}
 
 	// Slight hack to init array with a special value used to determine how many players on map
-	for (size_t i = 0; i < MAX_PLAYERS; ++i)
+	for (auto & playerpo : playerpos)
 	{
-		playerpos[i] = Vector2i(0x77777777, 0x77777777);
+		playerpo = Vector2i(0x77777777, 0x77777777);
 	}
 
 	std::unique_ptr<WzMap::LoggingProtocol> generatePreviewLogger(new WzMapDebugLogger());
@@ -1029,20 +1029,20 @@ std::vector<JoinConnectionDescription> findLobbyGame(const std::string& lobbyAdd
 }
 
 static JoinGameResult joinGameInternal(std::vector<JoinConnectionDescription> connection_list,
-                                       std::shared_ptr<WzTitleUI> oldUI, bool asSpectator = false);
-static JoinGameResult joinGameInternalConnect(const char* host, uint32_t port, std::shared_ptr<WzTitleUI> oldUI,
+                                       const std::shared_ptr<WzTitleUI>& oldUI, bool asSpectator = false);
+static JoinGameResult joinGameInternalConnect(const char* host, uint32_t port, const std::shared_ptr<WzTitleUI>& oldUI,
                                               bool asSpectator = false);
 
 JoinGameResult joinGame(const char* connectionString, bool asSpectator /*= false*/)
 {
-	if (strchr(connectionString, '[') == NULL || strchr(connectionString, ']') == NULL)
+	if (strchr(connectionString, '[') == NULL || strchr(connectionString, ']') == nullptr)
 	// it is not IPv6. For more see rfc3986 section-3.2.2
 	{
 		const char* ddch = strchr(connectionString, ':');
-		if (ddch != NULL)
+		if (ddch != nullptr)
 		{
 			uint32_t serverPort = atoi(ddch + 1);
-			std::string serverIP = "";
+			std::string serverIP;
 			serverIP.assign(connectionString, ddch - connectionString);
 			debug(LOG_INFO, "Connecting to ip [%s] port %d", serverIP.c_str(), serverPort);
 			return joinGame(serverIP.c_str(), serverPort, asSpectator);
@@ -1063,7 +1063,7 @@ JoinGameResult joinGame(const std::vector<JoinConnectionDescription>& connection
 }
 
 static JoinGameResult joinGameInternal(std::vector<JoinConnectionDescription> connection_list,
-                                       std::shared_ptr<WzTitleUI> oldUI, bool asSpectator /*= false*/)
+                                       const std::shared_ptr<WzTitleUI>& oldUI, bool asSpectator /*= false*/)
 {
 	if (connection_list.size() > 1)
 	{
@@ -1109,7 +1109,7 @@ static JoinGameResult joinGameInternal(std::vector<JoinConnectionDescription> co
  *  doesn't turn into the parent of the next connection attempt.
  * Any other barriers/auth methods/whatever would presumably benefit in the same way.
  */
-static JoinGameResult joinGameInternalConnect(const char* host, uint32_t port, std::shared_ptr<WzTitleUI> oldUI,
+static JoinGameResult joinGameInternalConnect(const char* host, uint32_t port, const std::shared_ptr<WzTitleUI>& oldUI,
                                               bool asSpectator /*= false*/)
 {
 	// oldUI may get captured for use in the password dialog, among other things.
@@ -1173,7 +1173,7 @@ static JoinGameResult joinGameInternalConnect(const char* host, uint32_t port, s
 // ////////////////////////////////////////////////////////////////////////////
 
 static std::shared_ptr<W_FORM> addInlineChooserBlueForm(const std::shared_ptr<W_SCREEN>& psScreen, W_FORM* psParent,
-                                                        UDWORD id, WzString txt, UDWORD x, UDWORD y, UDWORD w, UDWORD h)
+                                                        UDWORD id, const WzString& txt, UDWORD x, UDWORD y, UDWORD w, UDWORD h)
 {
 	W_FORMINIT sFormInit; // draw options box.
 	sFormInit.formID = MULTIOP_INLINE_OVERLAY_ROOT_FRM;
@@ -1424,7 +1424,7 @@ static bool canChangeMapOrRandomize()
 	return allowed;
 }
 
-static void addMultiButton(std::shared_ptr<MultibuttonWidget> mbw, int value, Image image, Image imageDown,
+static void addMultiButton(const std::shared_ptr<MultibuttonWidget>& mbw, int value, Image image, Image imageDown,
                            char const* tip)
 {
 	auto button = std::make_shared<W_BUTTON>();
@@ -1547,17 +1547,17 @@ static void addGameOptions()
 	scavengerChoice->enable(!locked.scavengers);
 	optionsList->addWidgetToLayout(scavengerChoice);
 
-	auto allianceChoice = std::make_shared<MultichoiceWidget>(game.alliance);
+	auto allianceChoice = std::make_shared<MultichoiceWidget>((int)game.alliance);
 	optionsList->attach(allianceChoice);
 	allianceChoice->id = MULTIOP_ALLIANCES;
 	allianceChoice->setLabel(_("Alliances"));
-	addMultiButton(allianceChoice, ALLIANCE_TYPE::FFA, Image(FrontImages, IMAGE_NOALLI), Image(FrontImages, IMAGE_NOALLI_HI),
+	addMultiButton(allianceChoice, (int)ALLIANCE_TYPE::FFA, Image(FrontImages, IMAGE_NOALLI), Image(FrontImages, IMAGE_NOALLI_HI),
 	               _("No Alliances"));
-	addMultiButton(allianceChoice, ALLIANCE_TYPE::ALLIANCES, Image(FrontImages, IMAGE_ALLI), Image(FrontImages, IMAGE_ALLI_HI),
+	addMultiButton(allianceChoice, (int)ALLIANCE_TYPE::ALLIANCES, Image(FrontImages, IMAGE_ALLI), Image(FrontImages, IMAGE_ALLI_HI),
 	               _("Allow Alliances"));
-	addMultiButton(allianceChoice, ALLIANCE_TYPE::ALLIANCES_UNSHARED, Image(FrontImages, IMAGE_ALLI_UNSHARED),
+	addMultiButton(allianceChoice, (int)ALLIANCE_TYPE::ALLIANCES_UNSHARED, Image(FrontImages, IMAGE_ALLI_UNSHARED),
 	               Image(FrontImages, IMAGE_ALLI_UNSHARED_HI), _("Locked Teams, No Shared Research"));
-	addMultiButton(allianceChoice, ALLIANCE_TYPE::ALLIANCES_TEAMS, Image(FrontImages, IMAGE_ALLI_TEAMS),
+	addMultiButton(allianceChoice, (int)ALLIANCE_TYPE::ALLIANCES_TEAMS, Image(FrontImages, IMAGE_ALLI_TEAMS),
 	               Image(FrontImages, IMAGE_ALLI_TEAMS_HI), _("Locked Teams"));
 	allianceChoice->enable(!locked.alliances);
 	optionsList->addWidgetToLayout(allianceChoice);
@@ -1703,10 +1703,9 @@ static int allPlayersOnSameTeam(int except)
 	return -1; // Players not all on same team.
 }
 
-int WzMultiplayerOptionsTitleUI::playerRowY0(uint32_t row) const
+unsigned WzMultiplayerOptionsTitleUI::playerRowY0(unsigned row) const
 {
-	if (row >= playerRows.size())
-	{
+	if (row >= playerRows.size()) {
 		return -1;
 	}
 	return playerRows[row]->y();
@@ -1714,13 +1713,12 @@ int WzMultiplayerOptionsTitleUI::playerRowY0(uint32_t row) const
 
 static unsigned playerBoxHeight(uint32_t rowPosition)
 {
-	bool hasPlayersTabs = widgGetFromID(psWScreen, MULTIOP_PLAYERS_TABS) != nullptr;
-	unsigned playersTop = (hasPlayersTabs) ? MULTIOP_PLAYERS_TABS_H + 1 : 1;
-	int gap = (MULTIOP_PLAYERSH - playersTop) - MULTIOP_TEAMSHEIGHT * numSlotsToBeDisplayed();
-	int gapDiv = numSlotsToBeDisplayed() - 1;
+	auto hasPlayersTabs = widgGetFromID(psWScreen, MULTIOP_PLAYERS_TABS) != nullptr;
+	auto playersTop = (hasPlayersTabs) ? MULTIOP_PLAYERS_TABS_H + 1 : 1;
+	auto gap = (MULTIOP_PLAYERSH - playersTop) - MULTIOP_TEAMSHEIGHT * numSlotsToBeDisplayed();
+	auto gapDiv = numSlotsToBeDisplayed() - 1;
 	gap = std::min(gap, 5 * gapDiv);
-	if (hasPlayersTabs)
-	{
+	if (hasPlayersTabs) {
 		gap = 0;
 	}
 	STATIC_ASSERT(MULTIOP_TEAMSHEIGHT == MULTIOP_PLAYERHEIGHT); // Why are these different defines?
@@ -1810,7 +1808,7 @@ static std::shared_ptr<WzMultiButton> addMultiButWithClickHandler(const std::sha
 {
 	ASSERT_OR_RETURN(nullptr, parent != nullptr, "Null parent");
 	auto psButton = std::dynamic_pointer_cast<WzMultiButton>(
-		addMultiBut(*(parent.get()), id, x, y, width, height, tipres, norm, down, hi, tc));
+		addMultiBut(*(parent), id, x, y, width, height, tipres, norm, down, hi, tc));
 	if (!psButton)
 	{
 		return nullptr;
@@ -2064,17 +2062,16 @@ class WzPlayerSelectPositionRowFactory
 {
 public:
 	virtual ~WzPlayerSelectPositionRowFactory()
-	{
-	}
+	= default;
 
-	virtual std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx,
+	[[nodiscard]] virtual std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx,
 	                                       const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent) const = 0;
 };
 
 class WzPlayerSelectionChangePositionRow : public W_BUTTON
 {
 protected:
-	WzPlayerSelectionChangePositionRow(uint32_t targetPlayerIdx)
+	explicit WzPlayerSelectionChangePositionRow(uint32_t targetPlayerIdx)
 		: W_BUTTON()
 		  , targetPlayerIdx(targetPlayerIdx)
 	{
@@ -2089,7 +2086,7 @@ public:
 		class make_shared_enabler : public WzPlayerSelectionChangePositionRow
 		{
 		public:
-			make_shared_enabler(uint32_t targetPlayerIdx) : WzPlayerSelectionChangePositionRow(targetPlayerIdx)
+			explicit make_shared_enabler(uint32_t targetPlayerIdx) : WzPlayerSelectionChangePositionRow(targetPlayerIdx)
 			{
 			}
 		};
@@ -2138,11 +2135,9 @@ public:
 class WzPlayerSelectionChangePositionRowFactory : public WzPlayerSelectPositionRowFactory
 {
 public:
-	~WzPlayerSelectionChangePositionRowFactory()
-	{
-	}
+	~WzPlayerSelectionChangePositionRowFactory() = default;
 
-	virtual std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx,
+	std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx,
 	                                       const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent) const override
 	{
 		return WzPlayerSelectionChangePositionRow::make(switcherPlayerIdx, targetPlayerIdx, parent);
@@ -2152,7 +2147,7 @@ public:
 class WzPlayerIndexSwapPositionRow : public W_BUTTON
 {
 protected:
-	WzPlayerIndexSwapPositionRow(uint32_t targetPlayerIdx)
+	explicit WzPlayerIndexSwapPositionRow(uint32_t targetPlayerIdx)
 		: W_BUTTON()
 		  , targetPlayerIdx(targetPlayerIdx)
 	{
@@ -2166,7 +2161,7 @@ public:
 		class make_shared_enabler : public WzPlayerIndexSwapPositionRow
 		{
 		public:
-			make_shared_enabler(uint32_t targetPlayerIdx) : WzPlayerIndexSwapPositionRow(targetPlayerIdx)
+			explicit make_shared_enabler(uint32_t targetPlayerIdx) : WzPlayerIndexSwapPositionRow(targetPlayerIdx)
 			{
 			}
 		};
@@ -2230,17 +2225,18 @@ public:
 class WzPlayerIndexSwapPositionRowRactory : public WzPlayerSelectPositionRowFactory
 {
 public:
-	~WzPlayerIndexSwapPositionRowRactory()
+	~WzPlayerIndexSwapPositionRowRactory() override
 	{
 	}
 
-	virtual std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx,
+	[[nodiscard]] virtual std::shared_ptr<W_BUTTON> make(uint32_t switcherPlayerIdx, uint32_t targetPlayerIdx,
 	                                       const std::shared_ptr<WzMultiplayerOptionsTitleUI>& parent) const override
 	{
 		return WzPlayerIndexSwapPositionRow::make(switcherPlayerIdx, targetPlayerIdx, parent);
 	}
 };
 
+#include <memory>
 #include <set>
 #include <utility>
 
@@ -2291,7 +2287,7 @@ public:
 		{
 			auto playerPositionRow = rowFactory.make(switcherPlayerIdx, i, parent);
 			widget->attach(playerPositionRow);
-			widget->positionSelectionRows.push_back(PlayerButtonRow(playerPositionRow, i));
+			widget->positionSelectionRows.emplace_back(playerPositionRow, i);
 		}
 		widget->positionRows();
 
@@ -3646,17 +3642,17 @@ private:
 	{
 		if (totalAvailableSlots == 0)
 		{
-			return Image();
+			return {};
 		}
 		if (numTakenSlots == 0)
 		{
-			return Image();
+			return {};
 		}
 		if (numTakenSlots != numTakenSlotsReady)
 		{
-			return Image(FrontImages, IMAGE_LAMP_AMBER);
+			return {FrontImages, IMAGE_LAMP_AMBER};
 		}
-		return Image(FrontImages, IMAGE_LAMP_GREEN);
+		return {FrontImages, IMAGE_LAMP_GREEN};
 	}
 
 	void recalculateSlotsLabel();
@@ -3856,13 +3852,13 @@ private:
 class WzPlayerBoxTabs : public WIDGET
 {
 protected:
-	WzPlayerBoxTabs(const std::shared_ptr<WzMultiplayerOptionsTitleUI>& titleUI)
+	explicit WzPlayerBoxTabs(const std::shared_ptr<WzMultiplayerOptionsTitleUI>& titleUI)
 		: WIDGET()
 		  , weakTitleUI(titleUI)
 	{
 	}
 
-	~WzPlayerBoxTabs()
+	~WzPlayerBoxTabs() override
 	{
 		if (optionsOverlayScreen)
 		{
@@ -3877,7 +3873,7 @@ public:
 		class make_shared_enabler : public WzPlayerBoxTabs
 		{
 		public:
-			make_shared_enabler(const std::shared_ptr<WzMultiplayerOptionsTitleUI>& titleUI) : WzPlayerBoxTabs(titleUI)
+			explicit make_shared_enabler(const std::shared_ptr<WzMultiplayerOptionsTitleUI>& titleUI) : WzPlayerBoxTabs(titleUI)
 			{
 			}
 		};
@@ -5311,7 +5307,7 @@ void ChatBoxWidget::initializeMessages(bool preserveOldChat)
 {
 	if (preserveOldChat)
 	{
-		for (auto message : ChatBoxWidget::persistentMessageLocalStorage)
+		for (const auto& message : ChatBoxWidget::persistentMessageLocalStorage)
 		{
 			displayMessage(message);
 		}
@@ -5379,7 +5375,7 @@ void ChatBoxWidget::displayMessage(RoomMessage const& message)
 
 #define MENU_BUTTONS_PADDING 20
 
-std::shared_ptr<WIDGET> ChatBoxWidget::createParagraphContextualMenuPopoverForm(std::string textToCopy)
+std::shared_ptr<WIDGET> ChatBoxWidget::createParagraphContextualMenuPopoverForm(const std::string& textToCopy)
 {
 	// create all the buttons / option rows
 	std::weak_ptr<ChatBoxWidget> weakChatBoxWidget = std::dynamic_pointer_cast<ChatBoxWidget>(shared_from_this());
@@ -5542,7 +5538,7 @@ static void disableMultiButs()
 }
 
 ////////////////////////////////////////////////////////////////////////////
-static void stopJoining(std::shared_ptr<WzTitleUI> parent)
+static void stopJoining(const std::shared_ptr<WzTitleUI>& parent)
 {
 	bInActualHostedLobby = false;
 
@@ -5721,7 +5717,7 @@ static void loadMapChallengeSettings(WzConfig& ini)
 				game.maxPlayers = std::min(std::max((uint8_t)1u, configuredMaxPlayers), game.maxPlayers);
 			}
 			game.scavengers = ini.value("scavengers", game.scavengers).toInt();
-			game.alliance = ini.value("alliances", ALLIANCE_TYPE::ALLIANCES_TEAMS).toInt();
+			game.alliance = (ALLIANCE_TYPE)ini.value("alliances", (int)ALLIANCE_TYPE::ALLIANCES_TEAMS).toInt();
 			game.power = ini.value("powerLevel", game.power).toInt();
 			game.base = ini.value("bases", game.base + 1).toInt() - 1; // count from 1 like the humans do
 			sstrcpy(game.name, ini.value("name").toWzString().toUtf8().c_str());
@@ -5747,7 +5743,7 @@ static void loadMapChallengeSettings(WzConfig& ini)
 		{
 			game.scavengers = ini.value("scavengers", game.scavengers).toInt();
 			game.base = ini.value("bases", game.base).toInt();
-			game.alliance = ini.value("alliances", game.alliance).toInt();
+			game.alliance = ALLIANCE_TYPE(ini.value("alliances", (int)game.alliance).toInt());
 			game.power = ini.value("powerLevel", game.power).toInt();
 		}
 		ini.endGroup();
@@ -6142,10 +6138,9 @@ static void randomizeOptions()
 		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_GAMETYPE))->choose(game.scavengers);
 	}
 
-	if (!locked.alliances)
-	{
-		game.alliance = rand() % 4;
-		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_ALLIANCES))->choose(game.alliance);
+	if (!locked.alliances) {
+		game.alliance = static_cast<ALLIANCE_TYPE>(rand() % 4);
+		((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_ALLIANCES))->choose((int)game.alliance);
 	}
 	if (!locked.power)
 	{
@@ -6309,7 +6304,7 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 			break;
 
 		case MULTIOP_ALLIANCES:
-			game.alliance = ((MultichoiceWidget*)widgGetFromID(psWScreen, MULTIOP_ALLIANCES))->currentValue();
+			game.alliance = static_cast<ALLIANCE_TYPE>(((MultichoiceWidget *) widgGetFromID(psWScreen, MULTIOP_ALLIANCES))->currentValue());
 
 			resetReadyStatus(false);
 			netPlayersUpdated = true;
@@ -6595,11 +6590,10 @@ class WzHostLobbyOperationsInterface : public HostLobbyOperationsInterface
 {
 public:
 	virtual ~WzHostLobbyOperationsInterface()
-	{
-	}
+	= default;
 
 public:
-	virtual bool changeTeam(uint32_t player, uint8_t team) override
+	bool changeTeam(uint32_t player, uint8_t team) override
 	{
 		ASSERT_HOST_ONLY(return false);
 		ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "Invalid player: %" PRIu32, player);
@@ -6619,7 +6613,7 @@ public:
 		return true;
 	}
 
-	virtual bool changePosition(uint32_t player, uint8_t position) override
+	bool changePosition(uint32_t player, uint8_t position) override
 	{
 		ASSERT_HOST_ONLY(return false);
 		ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "Invalid player: %" PRIu32, player);
@@ -6642,7 +6636,7 @@ public:
 		return true;
 	}
 
-	virtual bool changeBase(uint8_t baseValue) override
+	bool changeBase(uint8_t baseValue) override
 	{
 		ASSERT_HOST_ONLY(return false);
 		ASSERT_OR_RETURN(false, baseValue == CAMP_CLEAN || baseValue == CAMP_BASE || baseValue == CAMP_WALLS,
@@ -6659,15 +6653,16 @@ public:
 		return true;
 	}
 
-	virtual bool changeAlliances(uint8_t allianceValue) override
+	bool changeAlliances(ALLIANCE_TYPE allianceValue) override
 	{
 		ASSERT_HOST_ONLY(return false);
 		ASSERT_OR_RETURN(
 			false,
-			allianceValue == NO_ALLIANCES || allianceValue == ALLIANCES || allianceValue == ALLIANCES_UNSHARED ||
-			allianceValue == ALLIANCES_TEAMS, "Invalid allianceValue: %" PRIu8, allianceValue);
-		if (locked.alliances)
-		{
+			allianceValue == ALLIANCE_TYPE::FFA || allianceValue == ALLIANCE_TYPE::ALLIANCES ||
+      allianceValue == ALLIANCE_TYPE::ALLIANCES_UNSHARED || allianceValue == ALLIANCE_TYPE::ALLIANCES_TEAMS,
+      "Invalid allianceValue: %" PRIu8, allianceValue);
+
+		if (locked.alliances) {
 			debug(LOG_INFO, "Unable to change alliances to %" PRIu8 " - alliances are locked", allianceValue);
 			return false;
 		}
@@ -7759,14 +7754,14 @@ static int factionIcon(FactionID faction)
 {
 	switch (faction)
 	{
-	case 0: return IMAGE_FACTION_NORMAL;
-	case 1: return IMAGE_FACTION_NEXUS;
-	case 2: return IMAGE_FACTION_COLLECTIVE;
+	case (FactionID)0: return IMAGE_FACTION_NORMAL;
+	case (FactionID)1: return IMAGE_FACTION_NEXUS;
+	case (FactionID)2: return IMAGE_FACTION_COLLECTIVE;
 	default: return IMAGE_NO; /// what??
 	}
 }
 
-static void displayDifficulty(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
+static void displayDifficulty(WIDGET const* psWidget, unsigned xOffset, unsigned yOffset)
 {
 	// Any widget using displayDifficulty must have its pUserData initialized to a (DisplayDifficultyCache*)
 	assert(psWidget->pUserData != nullptr);
@@ -8465,7 +8460,7 @@ inline void from_json(const nlohmann::json& j, MULTIPLAYERGAME& p)
 	p.modHashes = j.at("modHashes").get<std::vector<Sha256>>();
 	p.power = j.at("power").get<uint32_t>();
 	p.base = j.at("base").get<uint8_t>();
-	p.alliance = j.at("alliance").get<uint8_t>();
+	p.alliance = j.at("alliance").get<ALLIANCE_TYPE>();
 	p.mapHasScavengers = j.at("mapHasScavengers").get<bool>();
 	p.isMapMod = j.at("isMapMod").get<bool>();
 	p.isRandom = j.at("isRandom").get<bool>();

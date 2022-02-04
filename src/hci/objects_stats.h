@@ -16,22 +16,22 @@ class BaseObjectsController
 {
 public:
 	virtual ~BaseObjectsController() = default;
-	virtual size_t objectsSize() const = 0;
-	virtual PlayerOwnedObject * getObjectAt(size_t index) const = 0;
-	virtual BaseStats* getObjectStatsAt(size_t index) const = 0;
-	virtual bool findObject(std::function<bool (PlayerOwnedObject *)> iteration) const = 0;
+	[[nodiscard]] virtual size_t objectsSize() const = 0;
+	[[nodiscard]] virtual BaseObject* getObjectAt(size_t index) const = 0;
+	[[nodiscard]] virtual BaseStats* getObjectStatsAt(size_t index) const = 0;
+	virtual bool findObject(std::function<bool (BaseObject*)> iteration) const = 0;
 	virtual void refresh() = 0;
 	virtual bool showInterface() = 0;
 	virtual void prepareToClose();
 	virtual void clearData() = 0;
-	void jumpToObject(BaseObject * object);
+	void jumpToObject(BaseObject* object);
 	void updateHighlighted();
 	void clearSelection();
 	void clearStructureSelection();
 	void selectObject(BaseObject* object);
 
-	virtual BaseObject * getHighlightedObject() const = 0;
-	virtual void setHighlightedObject(BaseObject * object) = 0;
+	[[nodiscard]] virtual BaseObject* getHighlightedObject() const = 0;
+	virtual void setHighlightedObject(BaseObject* object) = 0;
 
 	void closeInterface()
 	{
@@ -69,11 +69,11 @@ class BaseStatsController
 {
 public:
 	virtual ~BaseStatsController() = default;
-	virtual size_t statsSize() const = 0;
+	[[nodiscard]] virtual size_t statsSize() const = 0;
 	virtual std::shared_ptr<StatsForm> makeStatsForm() = 0;
 	void displayStatsForm();
 	static void scheduleDisplayStatsForm(const std::shared_ptr<BaseStatsController>& controller);
-	virtual BaseStats* getStatsAt(size_t) const = 0;
+	[[nodiscard]] virtual BaseStats* getStatsAt(size_t) const = 0;
 };
 
 class BaseObjectsStatsController : public BaseStatsController, public BaseObjectsController
@@ -187,7 +187,7 @@ protected:
 	{
 	}
 
-	void display(int xOffset, int yOffset);
+	void display(int xOffset, int yOffset) override;
 	void initialize();
 	void addCloseButton();
 	void addTabList();
@@ -201,7 +201,7 @@ protected:
 
 	std::shared_ptr<IntListTabWidget> objectsList;
 	size_t buttonsCount = 0;
-  PlayerOwnedObject * previousHighlighted = nullptr;
+  BaseObject* previousHighlighted = nullptr;
 };
 
 class StatsForm : public IntFormAnimated
@@ -238,7 +238,7 @@ private:
 	typedef StatsForm BaseWidget;
 
 public:
-	virtual BaseObjectsStatsController& getController() const override = 0;
+	BaseObjectsStatsController& getController() const override = 0;
 
 protected:
 	void updateLayout() override;

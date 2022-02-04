@@ -26,32 +26,29 @@
  */
 
 #include <map>
+
 #include "lib/framework/frame.h"
-#include "lib/framework/wzconfig.h"
 #include "lib/framework/frameresource.h"
 #include "lib/framework/strres.h"
+#include "lib/framework/wzconfig.h"
+#include "lib/ivis_opengl/imd.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
-#include "lib/ivis_opengl/imd.h"
 
 #include "console.h"
 #include "feature.h"
 #include "hci.h"
+#include "qtscript.h"
 #include "stats.h"
 #include "text.h"
-#include "qtscript.h"
 
 static std::map<WzString, VIEWDATA*> apsViewData;
 
 /* The id number for the next message allocated
  * Each message will have a unique id number irrespective of type
  */
-static UDWORD msgID = 0;
-
+static unsigned msgID = 0;
 static int currentNumProxDisplays = 0;
-
-/* The list of proximity displays allocated */
-PROXIMITY_DISPLAY* apsProxDisp[MAX_PLAYERS];
 
 /* The IMD to use for the proximity messages */
 iIMDShape* pProximityMsgIMD;
@@ -85,97 +82,87 @@ static inline MESSAGE* createMessage(MESSAGE_TYPE msgType, UDWORD player)
  * list is a pointer to the message list
  * Order is now CAMPAIGN, MISSION, RESEARCH/PROXIMITY
  */
-static inline void addMessageToList(MESSAGE* list[MAX_PLAYERS], MESSAGE* msg, UDWORD player)
+static inline void addMessageToList(MESSAGE* msg, unsigned player)
 {
-	MESSAGE *psCurr = nullptr, *psPrev = nullptr;
-
 	ASSERT_OR_RETURN(, msg != nullptr, "Invalid message pointer");
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Bad player");
 
 	// If there is no message list, create one
-	if (list[player] == nullptr)
-	{
-		list[player] = msg;
-		msg->psNext = nullptr;
-
+	if (apsMessages[player].empty()) {
+		apsMessages[player].push_back(*msg);
 		return;
 	}
 
-	switch (msg->type)
-	{
+	switch (msg->type) {
     using enum MESSAGE_TYPE;
-	case MSG_CAMPAIGN:
-		/*add it before the first mission/research/prox message */
-		for (psCurr = list[player]; psCurr != nullptr; psCurr = psCurr->psNext)
-		{
-			if (psCurr->type == MSG_MISSION ||
-				psCurr->type == MSG_RESEARCH ||
-				psCurr->type == MSG_PROXIMITY)
-			{
-				break;
-			}
+	  case MSG_CAMPAIGN:
+	  	/*add it before the first mission/research/prox message */
+	  	for (auto& psCurr : apsMessages[player])
+	  	{
+	  		if (psCurr.type == MSG_MISSION ||
+	  			psCurr.type == MSG_RESEARCH ||
+	  			psCurr.type == MSG_PROXIMITY) {
+	  			break;
+	  		}
+	  	}
+	  	if (psPrev)
+      {
+	  		psPrev->psNext = msg;
+	  		msg->psNext = psCurr;
+	  	}
+	  	else
+	  	{
+	  		//must be top of list
+	  		psPrev = list[player];
+	  		list[player] = msg;
+	  		msg->psNext = psPrev;
+	  	}
 
-			psPrev = psCurr;
-		}
+	  	break;
+	  case MSG_MISSION:
+	  	/*add it before the first research/prox message */
+	  	for (psCurr = list[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+	  	{
+	  		if (psCurr->type == MSG_RESEARCH ||
+	  			psCurr->type == MSG_PROXIMITY)
+	  		{
+	  			break;
+	  		}
 
-		if (psPrev)
-		{
-			psPrev->psNext = msg;
-			msg->psNext = psCurr;
-		}
-		else
-		{
-			//must be top of list
-			psPrev = list[player];
-			list[player] = msg;
-			msg->psNext = psPrev;
-		}
+	  		psPrev = psCurr;
+	  	}
 
-		break;
-	case MSG_MISSION:
-		/*add it before the first research/prox message */
-		for (psCurr = list[player]; psCurr != nullptr; psCurr = psCurr->psNext)
-		{
-			if (psCurr->type == MSG_RESEARCH ||
-				psCurr->type == MSG_PROXIMITY)
-			{
-				break;
-			}
+	  	if (psPrev)
+	  	{
+	  		psPrev->psNext = msg;
+	  		msg->psNext = psCurr;
+	  	}
+	  	else
+	  	{
+	  		//must be top of list
+	  		psPrev = list[player];
+	  		list[player] = msg;
+	  		msg->psNext = psPrev;
+	  	}
 
-			psPrev = psCurr;
-		}
+	  	break;
+	  case MSG_RESEARCH:
+	  case MSG_PROXIMITY:
+	  	/*add it to the bottom of the list */
 
-		if (psPrev)
-		{
-			psPrev->psNext = msg;
-			msg->psNext = psCurr;
-		}
-		else
-		{
-			//must be top of list
-			psPrev = list[player];
-			list[player] = msg;
-			msg->psNext = psPrev;
-		}
+	  	// Iterate to the last item in the list
+	  	for (psCurr = list[player]; psCurr->psNext != nullptr; psCurr = psCurr->psNext)
+	  	{
+	  	}
 
-		break;
-	case MSG_RESEARCH:
-	case MSG_PROXIMITY:
-		/*add it to the bottom of the list */
+	  // Append the new message to the end of the list
+	  	psCurr->psNext = msg;
+	  	msg->psNext = nullptr;
 
-		// Iterate to the last item in the list
-		for (psCurr = list[player]; psCurr->psNext != nullptr; psCurr = psCurr->psNext)
-		{
-		}
-
-	// Append the new message to the end of the list
-		psCurr->psNext = msg;
-		msg->psNext = nullptr;
-
-		break;
-	default:
-		debug(LOG_ERROR, "unknown message type");
-		break;
+	  	break;
+	  default:
+	  	debug(LOG_ERROR, "unknown message type");
+	  	break;
 	}
 }
 
@@ -243,8 +230,8 @@ bool messageInitVars()
 
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{
-		apsMessages[i] = nullptr;
-		apsProxDisp[i] = nullptr;
+		apsMessages[i].clear();
+		apsProxDisp[i].clear();
 	}
 
 	pProximityMsgIMD = nullptr;
@@ -321,24 +308,20 @@ static void addProximityDisplay(MESSAGE* psMessage, bool proxPos, UDWORD player)
 MESSAGE* addMessage(MESSAGE_TYPE msgType, bool proxPos, UDWORD player)
 {
 	//first create a message of the required type
-	MESSAGE* psMsgToAdd = createMessage(msgType, player);
-
+	auto psMsgToAdd = createMessage(msgType, player);
 	debug(LOG_MSG, "adding message for player %d, type is %d, proximity is %d", player, msgType, proxPos);
-
 	ASSERT(psMsgToAdd, "createMessage failed");
-	if (!psMsgToAdd)
-	{
+
+	if (!psMsgToAdd) {
 		return nullptr;
 	}
 	//then add to the players' list
-	addMessageToList(apsMessages, psMsgToAdd, player);
+	addMessageToList(psMsgToAdd, player);
 
 	//add a proximity display
-	if (msgType == MESSAGE_TYPE::MSG_PROXIMITY)
-	{
+	if (msgType == MESSAGE_TYPE::MSG_PROXIMITY) {
 		addProximityDisplay(psMsgToAdd, proxPos, player);
 	}
-
 	return psMsgToAdd;
 }
 

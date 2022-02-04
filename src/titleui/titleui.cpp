@@ -27,27 +27,25 @@
 #include "../intdisplay.h"
 #include "../hci.h"
 
+
 std::shared_ptr<WzTitleUI> wzTitleUICurrent;
 char serverName[128];
 
-WzTitleUI::~WzTitleUI()
-= default;
+WzTitleUI::~WzTitleUI() = default;
 
-void WzTitleUI::screenSizeDidChange(unsigned int oldWidth, unsigned int oldHeight, unsigned int newWidth,
-                                    unsigned int newHeight)
+void WzTitleUI::screenSizeDidChange(unsigned oldWidth, unsigned oldHeight,
+                                    unsigned newWidth, unsigned newHeight)
 {
 }
 
-void changeTitleUI(const std::shared_ptr<WzTitleUI>& target)
+void changeTitleUI(std::shared_ptr<WzTitleUI> const& target)
 {
 	wzTitleUICurrent = target;
-	if (psWScreen)
-	{
+	if (psWScreen) {
 		// Deletes the backdrop, which in turn deletes the rest of the UI from whatever was on screen before this UI
 		widgDelete(psWScreen, FRONTEND_BACKDROP);
 	}
-	if (target)
-	{
+	if (target) {
 		target->start();
 	}
 }

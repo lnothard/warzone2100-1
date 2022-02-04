@@ -372,7 +372,7 @@ float interpolateAngleDegrees(int a, int b, float t)
 	return a + d * t;
 }
 
-bool drawShape(BaseObject * psObj, iIMDShape* strImd, int colour, PIELIGHT buildingBrightness, int pieFlag,
+bool drawShape(BaseObject const* psObj, iIMDShape* strImd, int colour, PIELIGHT buildingBrightness, int pieFlag,
                int pieFlagData, const glm::mat4& viewMatrix)
 {
 	glm::mat4 modelMatrix(1.f);
@@ -1638,7 +1638,7 @@ static void displayStaticObjects(const glm::mat4& viewMatrix)
 	for (unsigned aPlayer = 0; aPlayer <= MAX_PLAYERS; ++aPlayer)
 	{
     BaseObject * list = aPlayer < MAX_PLAYERS
-            ? apsStructLists[aPlayer]
+            ? playerList[aPlayer].structures
             : psDestroyedObj;
 
 		/* Now go all buildings for that player */
@@ -2462,7 +2462,7 @@ void renderStructure(Structure* psStructure, const glm::mat4& viewMatrix)
 	// -------------------------------------------------------------------------------
 
 	/* Mark it as having been drawn */
-	psStructure->sDisplay.frame_number = currentGameFrame;
+	psStructure->setFrameNumber(currentGameFrame);
 
 	if (!defensive
 		&& psStructure->damageManager->getTimeLastHit() - graphicsTime < ELEC_DAMAGE_DURATION
@@ -2618,7 +2618,7 @@ static bool renderWallSection(Structure* psStructure, const glm::mat4& viewMatri
 		ecmFlag = pie_ECM;
 	}
 
-	psStructure->getDisplayData()->frame_number = currentGameFrame;
+	psStructure->setFrameNumber(currentGameFrame);
 
 	brightness = structureBrightness(psStructure);
 	pie_SetShaderStretchDepth(psStructure->getPosition().z - psStructure->getFoundationDepth());
@@ -2782,7 +2782,8 @@ static void drawStructureTargetOriginIcon(Structure* psStruct, int weapon_slot)
 	unsigned scale;
 
 	// Process main weapon only for now
-	if (!tuiTargetOrigin || weapon_slot || !((psStruct->asWeaps[weapon_slot]).nStat)) {
+	if (!tuiTargetOrigin || weapon_slot ||
+      !psStruct->weaponManager->weapons[weapon_slot].stats) {
 		return;
 	}
 
@@ -2994,31 +2995,25 @@ static UDWORD getTargettingGfx()
 }
 
 /// Is the droid, its commander or its sensor tower selected?
-bool eitherSelected(Droid* psDroid)
+bool eitherSelected(Droid const* psDroid)
 {
 	bool retVal = false;
-	if (psDroid->damageManager->isSelected())
-	{
+	if (psDroid->damageManager->isSelected()) {
 		retVal = true;
 	}
 
-	if (psDroid->group)
-	{
-		if (psDroid->group->psCommander)
-		{
-			if (psDroid->group->psCommander->selected)
-			{
+	if (psDroid->getGroup()) {
+		if (psDroid->getCommander()) {
+			if (psDroid->getCommander()->damageManager->isSelected()) {
 				retVal = true;
 			}
 		}
 	}
 
-  BaseObject * psObj = orderStateObj(psDroid, ORDER_TYPE::FIRE_SUPPORT);
-	if (psObj && psObj->damageManager->isSelected())
-	{
+  auto const psObj = orderStateObj(psDroid, ORDER_TYPE::FIRE_SUPPORT);
+	if (psObj && psObj->damageManager->isSelected()) {
 		retVal = true;
 	}
-
 	return retVal;
 }
 
@@ -3271,47 +3266,46 @@ static void drawDroidSelections()
 static constexpr auto GN_X_OFFSET = 8;
 
 /// Draw the number of the group the droid is in next to the droid
-static void drawDroidGroupNumber(Droid* psDroid)
+static void drawDroidGroupNumber(Droid const* psDroid)
 {
-	UWORD id = UWORD_MAX;
+	uint16_t id = UWORD_MAX;
 
-	switch (psDroid->group) {
-	case 0:
-		id = IMAGE_GN_0;
-		break;
-	case 1:
-		id = IMAGE_GN_1;
-		break;
-	case 2:
-		id = IMAGE_GN_2;
-		break;
-	case 3:
-		id = IMAGE_GN_3;
-		break;
-	case 4:
-		id = IMAGE_GN_4;
-		break;
-	case 5:
-		id = IMAGE_GN_5;
-		break;
-	case 6:
-		id = IMAGE_GN_6;
-		break;
-	case 7:
-		id = IMAGE_GN_7;
-		break;
-	case 8:
-		id = IMAGE_GN_8;
-		break;
-	case 9:
-		id = IMAGE_GN_9;
-		break;
-	default:
-		break;
+	switch (psDroid->getSelectionGroup()) {
+	  case 0:
+	  	id = IMAGE_GN_0;
+	  	break;
+	  case 1:
+	  	id = IMAGE_GN_1;
+	  	break;
+	  case 2:
+	  	id = IMAGE_GN_2;
+	  	break;
+	  case 3:
+	  	id = IMAGE_GN_3;
+	  	break;
+	  case 4:
+	  	id = IMAGE_GN_4;
+	  	break;
+	  case 5:
+	  	id = IMAGE_GN_5;
+	  	break;
+	  case 6:
+	  	id = IMAGE_GN_6;
+	  	break;
+	  case 7:
+	  	id = IMAGE_GN_7;
+	  	break;
+	  case 8:
+	  	id = IMAGE_GN_8;
+	  	break;
+	  case 9:
+	  	id = IMAGE_GN_9;
+	  	break;
+	  default:
+	  	break;
 	}
 
-	if (id != UWORD_MAX)
-	{
+	if (id != UWORD_MAX) {
 		int xShift = psDroid->getDisplayData()->screen_r + GN_X_OFFSET;
 		int yShift = psDroid->getDisplayData()->screen_r;
 		iV_DrawImage(IntImages, id, psDroid->getDisplayData()->screen_x - xShift, psDroid->getDisplayData()->screen_y + yShift);
@@ -3404,15 +3398,14 @@ static void drawDroidCmndNo(Droid* psDroid)
 void calcScreenCoords(Droid* psDroid, const glm::mat4& viewMatrix)
 {
 	/* Get it's absolute dimensions */
-	const BodyStats* psBStats = asBodyStats + psDroid->asBits[COMP_BODY];
+	auto psBStats =psDroid->getComponent(COMPONENT_TYPE::BODY);
 	Vector3i origin;
 	Vector2i center(0, 0);
 	int wsRadius = 22; // World space radius, 22 = magic minimum
 	float radius;
 
 	// NOTE: This only takes into account body, but seems "good enough"
-	if (psBStats && psBStats->pIMD)
-	{
+	if (psBStats && psBStats->pIMD) {
 		wsRadius = MAX(wsRadius, psBStats->pIMD->radius);
 	}
 
@@ -3422,24 +3415,19 @@ void calcScreenCoords(Droid* psDroid, const glm::mat4& viewMatrix)
 	const float cZ = pie_RotateProject(&origin, viewMatrix, &center) * 0.1f;
 
 	// avoid division by zero
-	if (cZ > 0)
-	{
+	if (cZ > 0) {
 		radius = wsRadius / cZ * pie_GetResScalingFactor();
 	}
-	else
-	{
+	else {
 		radius = 1; // 1 just in case some other code assumes radius != 0
 	}
 
 	/* Deselect all the droids if we've released the drag box */
-	if (dragBox3D.status == DRAG_RELEASED)
-	{
-		if (inQuad(&center, &dragQuad) && psDroid->playerManager->isSelectedPlayer())
-		{
+	if (dragBox3D.status == DRAG_RELEASED) {
+		if (inQuad(&center, &dragQuad) && psDroid->playerManager->isSelectedPlayer()) {
 			//don't allow Transporter Droids to be selected here
 			//unless we're in multiPlayer mode!!!!
-			if (!isTransporter(*psDroid) || bMultiPlayer)
-			{
+			if (!isTransporter(*psDroid) || bMultiPlayer) {
 				dealWithDroidSelect(psDroid, true);
 			}
 		}
@@ -4080,12 +4068,17 @@ static void addConstructionLine(Droid* psDroid, Structure* psStructure, const gl
 	auto pt1 = getPoint(250);
 	auto pt2 = getPoint(750);
 
-	if (psStructure->currentBuildPoints < 10) {
-		auto pointC = Vector3f(psStructure->getPosition().x, psStructure->getPosition().z + 10, -psStructure->getPosition().y) + deltaPlayer;
-		auto cross = Vector3f(psStructure->getPosition().y - psDroid->getPosition().y, 0, psStructure->getPosition().x - psDroid->getPosition().x);
+	if (psStructure->getCurrentBuildPoints() < 10) {
+		auto pointC = Vector3f(psStructure->getPosition().x,
+                           psStructure->getPosition().z + 10,
+                           -psStructure->getPosition().y) + deltaPlayer;
+
+		auto cross = Vector3f(psStructure->getPosition().y - psDroid->getPosition().y,
+                          0, psStructure->getPosition().x - psDroid->getPosition().x);
+
 		auto shift = 40.f * normalize(cross);
-		pt1 = mix(pointC - shift, pt1, psStructure->currentBuildPts * .1f);
-		pt2 = mix(pointC + shift, pt1, psStructure->currentBuildPts * .1f);
+		pt1 = mix(pointC - shift, pt1, psStructure->getCurrentBuildPoints() * .1f);
+		pt2 = mix(pointC + shift, pt1, psStructure->getCurrentBuildPoints() * .1f);
 	}
 
 	if (rand() % 250u < deltaGraphicsTime) {

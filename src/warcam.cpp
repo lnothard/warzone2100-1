@@ -190,7 +190,7 @@ static void processLeaderSelection()
 	switch (leaderClass)
 	{
 	case LEADER_LEFT:
-		for (auto& psDroid : apsDroidLists[selectedPlayer])
+		for (auto& psDroid : playerList[selectedPlayer].droids)
 		{
 			/* Is it even on the sscreen? */
 			if (DrawnInLastFrame(psDroid.getDisplayData()->frame_number) &&
@@ -207,7 +207,7 @@ static void processLeaderSelection()
 		}
 		break;
 	case LEADER_RIGHT:
-		for (auto& psDroid : apsDroidLists[selectedPlayer])
+		for (auto& psDroid : playerList[selectedPlayer].droids)
 		{
 			/* Is it even on the sscreen? */
 			if (DrawnInLastFrame(psDroid.getDisplayData()->frame_number) && 
@@ -224,7 +224,7 @@ static void processLeaderSelection()
 		}
 		break;
 	case LEADER_UP:
-		for (auto& psDroid : apsDroidLists[selectedPlayer])
+		for (auto& psDroid : playerList[selectedPlayer].droids)
 		{
 			/* Is it even on the sscreen? */
 			if (DrawnInLastFrame(psDroid.getDisplayData()->frame_number) &&
@@ -241,7 +241,7 @@ static void processLeaderSelection()
 		}
 		break;
 	case LEADER_DOWN:
-		for (auto psDroid : apsDroidLists[selectedPlayer])
+		for (auto psDroid : playerList[selectedPlayer].droids)
 		{
 			/* Is it even on the sscreen? */
 			if (DrawnInLastFrame(psDroid.getDisplayData()->frame_number) &&
@@ -374,7 +374,7 @@ Droid* camFindDroidTarget()
 		return nullptr;
 	}
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
 			/* Return the first one found */
@@ -436,7 +436,7 @@ static uint16_t getAverageTrackAngle(unsigned groupNumber, bool bCheckOnScreen)
 	}
 
 	/* Got thru' all droids */
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		/* Is he worth selecting? */
 		if (groupNumber == GROUP_SELECTED ? psDroid.damageManager->isSelected() : psDroid.group == groupNumber) {
@@ -462,7 +462,7 @@ static void getTrackingConcerns(SDWORD* x, SDWORD* y, SDWORD* z, UDWORD groupNum
 	}
 
   auto count = 0;
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if (groupNumber == GROUP_SELECTED
                 ? psDroid.damageManager->isSelected()
@@ -541,12 +541,10 @@ static void updateCameraAcceleration(UBYTE update)
 		that we need to find an offset point from it relative to it's present
 		direction
 	*/
-	const int angle = 90 - abs((playerPos.r.x / 182) % 90);
+	const auto angle = 90 - abs((playerPos.r.x / 182) % 90);
+	auto psPropStats = dynamic_cast<PropulsionStats const*>(trackingCamera.target->getComponent(COMPONENT_TYPE::PROPULSION));
 
-	const PropulsionStats* psPropStats = &asPropulsionStats[trackingCamera.target->asBits[COMP_PROPULSION]];
-
-	if (psPropStats->propulsionType == PROPULSION_TYPE::LIFT)
-	{
+	if (psPropStats->propulsionType == PROPULSION_TYPE::LIFT) {
 		bFlying = true;
 	}
 
@@ -644,7 +642,7 @@ static void updateCameraRotationAcceleration(UBYTE update)
 	SDWORD xPos = 0, yPos = 0, zPos = 0;
 
 	auto bTooLow = false;
-	auto psPropStats = dynamic_cast<PropulsionStats const*>(trackingCamera.target->getComponent("propulsion"));
+	auto psPropStats = dynamic_cast<PropulsionStats const*>(trackingCamera.target->getComponent(COMPONENT_TYPE::PROPULSION));
 	if (psPropStats->propulsionType == PROPULSION_TYPE::LIFT)
 	{
 		int droidHeight, difHeight, droidMapHeight;
@@ -795,7 +793,7 @@ static void updateCameraRotationPosition(UBYTE update)
 /* Updates the viewpoint according to the object being tracked */
 static bool camTrackCamera()
 {
-	PropulsionStats* psPropStats;
+	PropulsionStats const* psPropStats;
 	bool bFlying = false;
 
 	/* Most importantly - see if the target we're tracking is dead! */
@@ -811,28 +809,23 @@ static bool camTrackCamera()
 	/* Update the acceleration,velocity and rotation of the camera for rotation */
 	/*	You can track roll as well (z axis) but it makes you ill and looks
 		like a flight sim, so for now just pitch and orientation */
-	psPropStats = asPropulsionStats + trackingCamera.target->asBits[COMP_PROPULSION];
-	if (psPropStats->propulsionType == PROPULSION_TYPE::LIFT)
-	{
+	psPropStats = dynamic_cast<PropulsionStats const*>(trackingCamera.target->getComponent(COMPONENT_TYPE::PROPULSION));
+	if (psPropStats->propulsionType == PROPULSION_TYPE::LIFT) {
 		bFlying = true;
 	}
 
-	if (bFlying)
-	{
+	if (bFlying) {
 		updateCameraRotationAcceleration(CAM_ALL);
 	}
-	else
-	{
+	else {
 		updateCameraRotationAcceleration(CAM_X_AND_Y);
 	}
 
-	if (bFlying)
-	{
+	if (bFlying) {
 		updateCameraRotationVelocity(CAM_ALL);
 		updateCameraRotationPosition(CAM_ALL);
 	}
-	else
-	{
+	else {
 		updateCameraRotationVelocity(CAM_X_AND_Y);
 		updateCameraRotationPosition(CAM_X_AND_Y);
 	}
@@ -848,8 +841,7 @@ static bool camTrackCamera()
 	playerPos.r.z = static_cast<int>(trackingCamera.rotation.z);
 
 	/* There's a minimum for this - especially when John's VTOL code lets them land vertically on cliffs */
-	if (playerPos.r.x > DEG(360 + MAX_PLAYER_X_ANGLE))
-	{
+	if (playerPos.r.x > DEG(360 + MAX_PLAYER_X_ANGLE)) {
 		playerPos.r.x = DEG(360 + MAX_PLAYER_X_ANGLE);
 	}
 
@@ -858,13 +850,11 @@ static bool camTrackCamera()
 
 	/* Store away our last update as acceleration and velocity are all fn()/dt */
 	trackingCamera.lastUpdate = realTime;
-	if (bFullInfo)
-	{
+	if (bFullInfo) {
 		flushConsoleMessages();
 		printDroidInfo(trackingCamera.target);
 	}
-
-	return (true);
+	return true;
 }
 
 /* Updates the viewpoint animation to jump to the location pointed at the radar */

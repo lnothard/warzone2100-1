@@ -21,6 +21,7 @@
 #include <string>
 
 class NetworkTextMessage;
+enum class ALLIANCE_TYPE;
 
 
 static constexpr auto LOBBY_COMMAND_PREFIX = '/';
@@ -34,7 +35,7 @@ public:
 	virtual bool changeTeam(unsigned player, uint8_t team) = 0;
 	virtual bool changePosition(unsigned player, uint8_t position) = 0;
 	virtual bool changeBase(uint8_t baseValue) = 0;
-	virtual bool changeAlliances(uint8_t allianceValue) = 0;
+	virtual bool changeAlliances(ALLIANCE_TYPE allianceValue) = 0;
 	virtual bool changeScavengers(uint8_t scavsValue) = 0;
 	virtual bool kickPlayer(unsigned player_id, const char* reason) = 0;
 	virtual bool movePlayerToSpectators(unsigned player_id) = 0;

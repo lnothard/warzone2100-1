@@ -263,6 +263,7 @@ public:
 
   [[nodiscard]] virtual bool isIdle() const;
 
+  [[nodiscard]] unsigned getCurrentBuildPoints() const;
   [[nodiscard]] STRUCTURE_ANIMATION_STATE getAnimationState() const;
   [[nodiscard]] ANIMATION_EVENTS getAnimationEvent() const;
   [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
@@ -298,7 +299,7 @@ public:
   void aiUpdateStructure(bool isMission);
   void structureUpdate(bool bMission);
   int requestOpenGate();
-  bool loadSaveStructure(char* pFileData, UDWORD filesize);
+  bool loadSaveStructure(char* pFileData, unsigned filesize);
   bool loadSaveStructure2(const char* pFileName, Structure** ppList);
   void actionDroidTarget(Droid* droid, ACTION action, int idx);
   void structureBuild(Droid* psDroid, int builtPoints, int buildRate_);

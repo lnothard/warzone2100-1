@@ -35,11 +35,10 @@
 #include "lib/framework/input.h"
 #include "lib/framework/strres.h"
 #include "lib/framework/physfs_ext.h"
-#include "map.h"
 
+#include "map.h"
 #include "game.h"									// for loading maps
 #include "hci.h"
-
 #include "research.h"
 #include "display3d.h"								// for changing the viewpoint
 #include "console.h"								// for screen messages
@@ -63,7 +62,6 @@
 #include "keybind.h"
 #include "qtscript.h"
 #include "design.h"
-
 #include "template.h"
 #include "lib/netplay/netplay.h"								// the netplay library.
 #include "modding.h"
@@ -83,6 +81,7 @@
 #include "stdinreader.h"
 #include "spectatorwidgets.h"
 #include "objmem.h"
+#include "display.h"
 
 // globals.
 bool bMultiPlayer = false; // true when more than 1 player.
@@ -221,12 +220,12 @@ bool multiplayerWinSequence(bool firstCall)
 		CancelAllResearch(selectedPlayer);
 
 		// stop all manufacture.
-		for (auto& psStruct : apsStructLists[selectedPlayer])
+		for (auto& psStruct : playerList[selectedPlayer].structures)
 		{
-			if (StructIsFactory(psStruct.get())) {
-				if (dynamic_cast<Factory*>(psStruct.get())->psSubject) //check if active
+			if (StructIsFactory(&psStruct)) {
+				if (dynamic_cast<Factory*>(&psStruct)->psSubject) //check if active
 				{
-					cancelProduction(psStruct.get(), ModeQueue);
+					cancelProduction(&psStruct, ModeQueue);
 				}
 			}
 		}

@@ -55,14 +55,14 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 	if (psCommander->getGroup() == nullptr) {
 		auto psGroup = addGroup(-1);
 		psGroup->addDroid(psCommander);
-		psDroid->group = UBYTE_MAX;
+		psDroid->setSelectionGroup(UBYTE_MAX);
 	}
 
 	if (psCommander->getGroup()->getMembers()->size() < cmdDroidMaxGroup(psCommander)) {
 		addedToGroup = true;
 
 		psCommander->group->add(psDroid);
-		psDroid->group = UBYTE_MAX;
+		psDroid->setSelectionGroup(UBYTE_MAX);
 
 		// set the secondary states for the unit don't reset DSO_ATTACK_RANGE,
     // because there is no way to modify it under commander

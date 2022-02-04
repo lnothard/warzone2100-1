@@ -49,7 +49,6 @@
 #define NOMINMAX
 #include "urlrequest.h"
 #include "lib/framework/wzapp.h"
-#include <atomic>
 #include <list>
 #include <algorithm>
 #include <cstdio>
@@ -73,7 +72,6 @@
 # ifndef _POSIX_SOURCE
 #  define _POSIX_SOURCE
 # endif
-# include <cstdio>
 #endif
 
 #undef max

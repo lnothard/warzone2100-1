@@ -58,6 +58,7 @@
 #include "multiplay.h"
 #include "intfac.h"
 #include "intimage.h"
+#include "fpath.h"
 
 //#define IDTRANS_FORM			9000	//The Transporter base form
 #define IDTRANS_CLOSE			9002	//The close button icon
@@ -105,9 +106,6 @@
 
 #define MAX_TRANSPORT_FULL_MESSAGE_PAUSE 20000
 
-/* the widget screen */
-extern std::shared_ptr<W_SCREEN> psWScreen;
-
 /* Static variables */
 static Droid* psCurrTransporter = nullptr;
 static Droid* g_psCurScriptTransporter = nullptr;
@@ -128,7 +126,7 @@ static bool intAddTransButtonForm();
 static bool intAddTransContentsForm();
 static bool intAddDroidsAvailForm();
 static void intRemoveTransContent();
-static Droid* transInterfaceDroidList();
+static std::vector<Droid>& transInterfaceDroidList();
 static void intTransporterAddDroid(unsigned id);
 static void intRemoveTransDroidsAvail();
 static void intRemoveTransDroidsAvailNoAnim();
@@ -412,11 +410,11 @@ bool intAddTransButtonForm()
 	int nextStatButtonId = IDTRANS_STATSTART;
 
 	//add each button
-	for (Droid* psDroid = transInterfaceDroidList(); psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : transInterfaceDroidList())
 	{
 		//only interested in Transporter droids
-		if ((isTransporter(*psDroid) && (psDroid->getAction() == ACTION::TRANSPORT_OUT ||
-			  psDroid->getAction() == ACTION::TRANSPORT_IN)) || !isTransporter(*psDroid)) {
+		if ((isTransporter(psDroid) && (psDroid.getAction() == ACTION::TRANSPORT_OUT ||
+			  psDroid.getAction() == ACTION::TRANSPORT_IN)) || !isTransporter(psDroid)) {
 			continue;
 		}
 
@@ -435,16 +433,16 @@ bool intAddTransButtonForm()
 		objButton->setGeometry(0, OBJ_STARTY, OBJ_BUTWIDTH, OBJ_BUTHEIGHT);
 
 		/* Set the tip and add the button */
-		objButton->setTip(psDroid->getName());
-		objButton->setObject(psDroid);
+		objButton->setTip(*psDroid.getName());
+		objButton->setObject(&psDroid);
 
 		//set the first Transporter to be the current one if not already set
 		if (psCurrTransporter == nullptr) {
-			psCurrTransporter = psDroid;
+			psCurrTransporter = &psDroid;
 		}
 
 		/* if the current droid matches psCurrTransporter lock the button */
-		if (psDroid == psCurrTransporter)
+		if (&psDroid == psCurrTransporter)
 		{
 			objButton->setState(WBUT_LOCK);
 			transList->setCurrentPage(transList->pages() - 1);
@@ -486,9 +484,9 @@ bool intAddTransContentsForm()
 		return true;
 	}
 
-	for (Droid* psDroid = psCurrTransporter->group->members; psDroid != nullptr && psDroid != psCurrTransporter;
-	     psDroid = psDroid->psGrpNext)
+	for (auto& psDroid : *psCurrTransporter->getGroup()->getMembers())
 	{
+    if (psDroid == psCurrTransporter) break;
 		if (psDroid->damageManager->isSelected()) {
 			continue; // Droid is queued to be ejected from the transport, so don't display it.
 		}
@@ -582,7 +580,7 @@ bool intAddDroidsAvailForm()
 	sBarInit.sMinorCol = WZCOL_ACTION_PROGRESS_BAR_MINOR;
 
 	//add droids built before the mission
-	for (auto& psDroid : mission.apsDroidLists[selectedPlayer])
+	for (auto& psDroid : mission.players[selectedPlayer].droids)
 	{
 		//stop adding the buttons once IDTRANS_DROIDEND has been reached
 		if (nextButtonId == IDTRANS_DROIDEND) {
@@ -632,7 +630,6 @@ up different amount depending on their body size - currently all are set to one!
 int calcRemainingCapacity(const Droid* psTransporter)
 {
 	int capacity = TRANSPORTER_CAPACITY;
-	Droid const *psDroid, *psNext;
 
 	// If it's dead then just return 0.
 	if (psTransporter->damageManager->isDead()) {
@@ -644,10 +641,10 @@ int calcRemainingCapacity(const Droid* psTransporter)
 		return 0;
 	}
 
-	for (psDroid = psTransporter->group->members; psDroid != nullptr && psDroid != psTransporter; psDroid = psNext)
+	for (auto& psDroid : *psTransporter->getGroup()->getMembers())
 	{
-		psNext = psDroid->psGrpNext;
-		const int space = transporterSpaceRequired(psDroid);
+    if (psDroid == psTransporter) break;
+		const auto space = transporterSpaceRequired(psDroid);
 		ASSERT(space > 0, "Invalid space required for %s", objInfo(psDroid));
 		capacity -= space;
 	}
@@ -663,10 +660,9 @@ bool transporterIsEmpty(Droid const* psTransporter)
 	ASSERT(isTransporter(*psTransporter), "Non-transporter droid given");
 
 	// Assume dead droids and non-transporter droids to be empty
-	return (psTransporter->damageManager->isDead()
-		|| !isTransporter(*psTransporter)
-		|| psTransporter->group->members == nullptr
-		|| psTransporter->group->members == psTransporter);
+  return psTransporter->damageManager->isDead() || !isTransporter(*psTransporter) ||
+         psTransporter->getGroup()->getMembers() == nullptr ||
+         psTransporter->getGroup()->getMembers()->front() == psTransporter;
 }
 
 static void intSetTransCapacityLabel(W_LABEL& Label)
@@ -703,10 +699,9 @@ void intProcessTransporter(unsigned id)
 		//got to have a current transporter for this to work - and can't be flying
 		if (psCurrTransporter != nullptr && !transporterFlying(psCurrTransporter)) {
 			unsigned currID = IDTRANS_CONTSTART;
-			Droid* psDroid;
-			for (psDroid = psCurrTransporter->group->members; psDroid != nullptr && psDroid != psCurrTransporter;
-			     psDroid = psDroid->psGrpNext)
+			for (auto& psDroid : *psCurrTransporter->getGroup()->getMembers())
 			{
+        if (psDroid == psCurrTransporter) break;
 				if (psDroid->damageManager->isSelected()) {
 					continue; // Already scheduled this droid for removal.
 				}
@@ -903,8 +898,8 @@ void transporterRemoveDroid(Droid* psTransport, Droid* psDroid, QUEUE_MODE mode)
 	orderDroid(psDroid, ORDER_TYPE::STOP, ModeImmediate);
 	// check if it is a commander
 	if (psDroid->getType() == DROID_TYPE::COMMAND) {
-		auto psGroup = Group::create(-1);
-		psGroup->add(psDroid);
+		auto psGroup = addGroup(-1);
+		psGroup->addDroid(psDroid);
 	}
 	psDroid->damageManager->setSelected(true);
 
@@ -918,13 +913,11 @@ void transporterRemoveDroid(Droid* psTransport, Droid* psDroid, QUEUE_MODE mode)
 static void intTransporterAddDroid(unsigned id)
 {
   ASSERT(psCurrTransporter != nullptr, "intTransporterAddUnit:can't remove units");
-	Droid *psDroid, *psNext;
 	auto currID = IDTRANS_DROIDSTART;
   
-	for (psDroid = transInterfaceDroidList(); psDroid != nullptr; psDroid = psNext)
+	for (auto& psDroid : transInterfaceDroidList())
 	{
-		psNext = psDroid->psNext;
-    if (isTransporter(*psDroid)) continue;
+    if (isTransporter(psDroid)) continue;
     if (currID == id) break;
     currID++;
   }
@@ -989,8 +982,6 @@ void transporterAddDroid(Droid* psTransporter, Droid* psDroidToAdd)
 /*check to see if the droid can fit on the Transporter - return true if fits*/
 bool checkTransporterSpace(Droid const* psTransporter, Droid const* psAssigned, bool mayFlash)
 {
-	Droid *psDroid, *psNext;
-
 	ASSERT_OR_RETURN(false, psTransporter != nullptr, "Invalid droid pointer");
 	ASSERT_OR_RETURN(false, psAssigned != nullptr, "Invalid droid pointer");
 	ASSERT_OR_RETURN(false, isTransporter(*psTransporter), "Droid is not a Transporter");
@@ -998,9 +989,9 @@ bool checkTransporterSpace(Droid const* psTransporter, Droid const* psAssigned, 
 
 	//work out how much space is currently left
 	auto capacity = TRANSPORTER_CAPACITY;
-	for (psDroid = psTransporter->group->members; psDroid != nullptr && psDroid != psTransporter; psDroid = psNext)
+	for (auto& psDroid : *psTransporter->getGroup()->getMembers())
 	{
-		psNext = psDroid->psGrpNext;
+    if (psDroid == psTransporter) break;
 		capacity -= transporterSpaceRequired(psDroid);
 	}
 	if (capacity >= transporterSpaceRequired(psAssigned)) {
@@ -1025,10 +1016,10 @@ bool checkTransporterSpace(Droid const* psTransporter, Droid const* psAssigned, 
 std::vector<Droid>& transInterfaceDroidList()
 {
 	if (onMission) {
-		return mission.apsDroidLists[selectedPlayer];
+		return mission.players[selectedPlayer].droids;
 	}
 	else {
-		return apsDroidLists[selectedPlayer];
+		return playerList[selectedPlayer].droids;
 	}
 }
 

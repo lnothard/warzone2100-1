@@ -42,8 +42,8 @@
  * outside the rectangles). The orange points are the search results.
  */
 
-Filter::Filter(const PointTree& pointTree)
-  : data{pointTree.points.size() + 1}
+Filter::Filter(PointTree const& pointTree)
+  : data{static_cast<unsigned>(pointTree.points.size() + 1)}
 {
 }
 

@@ -75,19 +75,20 @@ enum class ORDER_TYPE
 
 enum class SECONDARY_ORDER
 {
-    ATTACK_RANGE,
-    REPAIR_LEVEL,
-    ATTACK_LEVEL,
-    ASSIGN_PRODUCTION,
-    ASSIGN_CYBORG_PRODUCTION,
-    CLEAR_PRODUCTION,
-    RECYCLE,
-    PATROL,
-    HALT_TYPE,
-    RETURN_TO_LOCATION,
-    FIRE_DESIGNATOR,
-    ASSIGN_VTOL_PRODUCTION,
-    CIRCLE
+  UNUSED,
+  ATTACK_RANGE,
+  REPAIR_LEVEL,
+  ATTACK_LEVEL,
+  ASSIGN_PRODUCTION,
+  ASSIGN_CYBORG_PRODUCTION,
+  CLEAR_PRODUCTION,
+  RECYCLE,
+  PATROL,
+  HALT_TYPE,
+  RETURN_TO_LOCATION,
+  FIRE_DESIGNATOR,
+  ASSIGN_VTOL_PRODUCTION,
+  CIRCLE
 };
 
 enum SECONDARY_STATE
@@ -246,7 +247,7 @@ bool orderStateLoc(Droid* psDroid, ORDER_TYPE order, unsigned* pX, unsigned* pY)
 void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject* psObj, QUEUE_MODE mode);
 
 /** \brief Gets the state of a droid's order with an object. */
-BaseObject* orderStateObj(Droid* psDroid, ORDER_TYPE order);
+BaseObject* orderStateObj(Droid const* psDroid, ORDER_TYPE order);
 
 /** \brief Sends an order with a location and a stat to a droid. */
 void orderDroidStatsLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, unsigned x, unsigned y,

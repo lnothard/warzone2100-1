@@ -31,7 +31,7 @@
 const char* version_getVersionString();
 const char* version_getFormattedVersionString(bool translated = true); // not thread-safe
 std::string version_getVersionedAppDirFolderName();
-std::string version_getVersionedModsFolderPath(std::string subFolders = "");
+std::string version_getVersionedModsFolderPath(const std::string& subFolders = "");
 const char* WZ_DECL_PURE version_getLatestTag();
 
 std::string version_getBuildIdentifierReleaseString();

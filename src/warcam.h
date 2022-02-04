@@ -26,6 +26,7 @@
 struct PlayerOwnedObject;
 struct Droid;
 
+
 #define X_UPDATE 0x1
 #define Y_UPDATE 0x2
 #define Z_UPDATE 0x4

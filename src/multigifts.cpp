@@ -282,7 +282,7 @@ static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 	if (psDroid) {
 		giftSingleDroid(psDroid, to, false);
 		if (to == selectedPlayer) {
-			CONPRINTF(_("%s Gives you a %s"), getPlayerName(from), psDroid->getName().c_str());
+			CONPRINTF(_("%s Gives you a %s"), getPlayerName(from), psDroid->getName()->c_str());
 		}
 	}
 	else
@@ -298,9 +298,7 @@ static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 // \param to    :player that should be getting the droid
 static void sendGiftDroids(uint8_t from, uint8_t to)
 {
-	Droid* psD;
 	uint8_t giftType = DROID_GIFT;
-	uint8_t totalToSend;
 
 	if (playerList[from].droids.empty()) {
 		return;
@@ -312,12 +310,15 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 	 * over their droid limit.
 	 */
 
-	for (totalToSend = 0, psD = apsDroidLists[from];
-	     psD && getNumDroids(to) + totalToSend < getMaxDroids(to) && totalToSend != UINT8_MAX;
-	     psD = psD->psNext)
+  uint8_t totalToSend = 0;
+	for (auto& psD : playerList[from].droids)
 	{
-		if (psD->damageManager->isSelected())
-		{
+    if (getNumDroids(to) + totalToSend >= getMaxDroids(to) ||
+        totalToSend == UINT8_MAX) {
+      break;
+    }
+
+		if (psD.damageManager->isSelected()) {
 			++totalToSend;
 		}
 	}
@@ -326,22 +327,21 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 	 * does its own net calls.
 	 */
 
-	for (psD = apsDroidLists[from]; psD && totalToSend != 0; psD = psD->psNext)
+	for (auto& psD : playerList[from].droids)
 	{
-		if (isTransporter(*psD)
-			&& !transporterIsEmpty(psD))
-		{
-			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD->getName().c_str());
+    if (totalToSend == 0) break;
+
+		if (isTransporter(psD) && !transporterIsEmpty(&psD)) {
+			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD.getName()->c_str());
 			continue;
 		}
-		if (psD->damageManager->isSelected())
-		{
+		if (psD.damageManager->isSelected()) {
 			NETbeginEncode(NETgameQueue(selectedPlayer), GAME_GIFT);
 			NETuint8_t(&giftType);
 			NETuint8_t(&from);
 			NETuint8_t(&to);
 			// Add the droid to the packet
-			NETuint32_t(&psD->getId());
+			NETuint32_t(&psD.getId());
 			NETend();
 
 			// Decrement the number of droids left to send
@@ -350,15 +350,12 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 	}
 }
 
-
-// ////////////////////////////////////////////////////////////////////////////
 // give technologies.
 static void giftResearch(uint8_t from, uint8_t to, bool send)
 {
-	uint32_t dummy = 0;
+	unsigned dummy = 0;
 
-	if (send)
-	{
+	if (send) {
 		uint8_t giftType = RESEARCH_GIFT;
 
 		NETbeginEncode(NETgameQueue(selectedPlayer), GAME_GIFT);
@@ -368,19 +365,16 @@ static void giftResearch(uint8_t from, uint8_t to, bool send)
 		NETuint32_t(&dummy);
 		NETend();
 	}
-	else if (alliancesCanGiveResearchAndRadar(game.alliance))
-	{
-		if (to == selectedPlayer)
-		{
+	else if (alliancesCanGiveResearchAndRadar(game.alliance)) {
+		if (to == selectedPlayer) {
 			CONPRINTF(_("%s Gives You Technology Documents"), getPlayerName(from));
 		}
 		// For each topic
-		for (size_t i = 0; i < asResearch.size(); i++)
+		for (auto i = 0; i < asResearch.size(); i++)
 		{
 			// If they have it and we don't research it
 			if (IsResearchCompleted(&asPlayerResList[from][i])
-				&& !IsResearchCompleted(&asPlayerResList[to][i]))
-			{
+				&& !IsResearchCompleted(&asPlayerResList[to][i])) {
 				MakeResearchCompleted(&asPlayerResList[to][i]);
 				researchResult(i, to, false, nullptr, true);
 			}
@@ -505,11 +499,9 @@ void breakAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio)
 
 void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allowNotification)
 {
-	Droid* psDroid;
 	char tm1[128];
 
-	if (bMultiMessages && prop)
-	{
+	if (bMultiMessages && prop) {
 		sendAlliance(p1, p2, ALLIANCE_FORMED, false);
 		return; // Wait for our message.
 	}
@@ -525,32 +517,28 @@ void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allow
 	triggerEventAllianceAccepted(p1, p2);
 	alliances[p1][p2] = ALLIANCE_FORMED;
 	alliances[p2][p1] = ALLIANCE_FORMED;
-	if (bMultiPlayer && alliancesSharedVision(game.alliance)) // this is for shared vision only
-	{
+	if (bMultiPlayer && alliancesSharedVision(game.alliance)) { // this is for shared vision only
 		alliancebits[p1] |= 1 << p2;
 		alliancebits[p2] |= 1 << p1;
 	}
 
-	if (allowAudio && (p1 == selectedPlayer || p2 == selectedPlayer))
-	{
+	if (allowAudio && (p1 == selectedPlayer || p2 == selectedPlayer)) {
 		audio_QueueTrack(ID_ALLIANCE_ACC);
 	}
 
 	// Not campaign and alliances are transitive
-	if (bMultiPlayer && alliancesSharedVision(game.alliance))
-	{
+	if (bMultiPlayer && alliancesSharedVision(game.alliance)) {
 		giftRadar(p1, p2, false);
 		giftRadar(p2, p1, false);
 	}
 
 	// Clear out any attacking orders
-	for (psDroid = apsDroidLists[p1]; psDroid; psDroid = psDroid->psNext) // from -> to
+	for (auto& psDroid : playerList[p1].droids) // from -> to
 	{
-		if (psDroid->getOrder()->type == ORDER_TYPE::ATTACK
-			&& psDroid->getOrder()->target
-			&& psDroid->getOrder()->target->playerManager->getPlayer() == p2)
-		{
-			orderDroid(psDroid, ORDER_TYPE::STOP, ModeImmediate);
+		if (psDroid.getOrder()->type == ORDER_TYPE::ATTACK
+			  && psDroid.getOrder()->target
+			  && psDroid.getOrder()->target->playerManager->getPlayer() == p2) {
+			orderDroid(&psDroid, ORDER_TYPE::STOP, ModeImmediate);
 		}
 	}
 	for (auto& psDroid : playerList[p2].droids) // to -> from
@@ -562,7 +550,6 @@ void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allow
 		}
 	}
 }
-
 
 void sendAlliance(uint8_t from, uint8_t to, uint8_t state, int32_t value)
 {
@@ -649,17 +636,16 @@ void technologyGiveAway(const Structure* pS)
 	// If a fully built factory (or with modules under construction) which is our responsibility got destroyed
 	if (pS->getStats()->type == STRUCTURE_TYPE::FACTORY &&
       (pS->getState() == STRUCTURE_STATE::BUILT ||
-       pS->currentBuildPts >= pS->damageManager->getHp())) {
+       pS->getCurrentBuildPoints() >= pS->damageManager->getHp())) {
 		syncDebug("Adding artefact.");
 	}
-	else
-	{
+	else {
 		syncDebug("Not adding artefact.");
 		return;
 	}
 
-	int featureIndex;
-	for (featureIndex = 0; featureIndex < numFeatureStats && asFeatureStats[featureIndex].subType != FEATURE_TYPE::GEN_ARTE; ++
+	int featureIndex = 0;
+	for (; featureIndex < numFeatureStats && asFeatureStats[featureIndex].subType != FEATURE_TYPE::GEN_ARTE; ++
 	     featureIndex)
 	{
 	}
@@ -669,9 +655,8 @@ void technologyGiveAway(const Structure* pS)
 		return;
 	}
 
-	uint32_t x = map_coord(pS->getPosition().x), y = map_coord(pS->getPosition().y);
-	if (!pickATileGen(&x, &y, LOOK_FOR_EMPTY_TILE, zonedPAT))
-	{
+	unsigned x = map_coord(pS->getPosition().x), y = map_coord(pS->getPosition().y);
+	if (!pickATileGen(&x, &y, LOOK_FOR_EMPTY_TILE, zonedPAT)) {
 		syncDebug("Did not find location for oil drum.");
 		debug(LOG_FEATURE, "Unable to find a free location.");
 		return;

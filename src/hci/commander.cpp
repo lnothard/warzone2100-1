@@ -19,10 +19,10 @@ void CommanderController::updateCommandersList()
 
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "selectedPlayer = %" PRIu32 "", selectedPlayer);
 
-	for (auto& droid : apsDroidLists[selectedPlayer])
+	for (auto& droid : playerList[selectedPlayer].droids)
 	{
-		if (droid.getType() == DROID_TYPE::COMMAND && droid.damageManager->getTimeOfDeath() == 0)
-		{
+		if (droid.getType() == DROID_TYPE::COMMAND &&
+        droid.damageManager->getTimeOfDeath() == 0) {
 			commanders.push_back(&droid);
 		}
 	}
@@ -145,7 +145,7 @@ protected:
 	{
 		ASSERT_NOT_NULLPTR_OR_RETURN(, droid);
 		auto text = astringf("%u/%u", droid->getGroup()
-                                          ? droid->getGroup()->getMembers().size()
+                                          ? droid->getGroup()->getMembers()->size()
                                           : 0, cmdDroidMaxGroup(droid));
 
 		groupSizeLabel->setString(WzString::fromUtf8(text));

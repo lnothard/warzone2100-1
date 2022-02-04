@@ -8,6 +8,7 @@
 #include <utility>
 #include "../mission.h"
 #include "../qtscript.h"
+#include "src/template.h"
 
 Structure* ManufactureController::highlightedFactory = nullptr;
 
@@ -104,24 +105,25 @@ static inline bool compareFactories(Structure* a, Structure* b)
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, x);
 	auto y = getFactoryOrNullptr(b);
 	ASSERT_NOT_NULLPTR_OR_RETURN(false, y);
-	ASSERT_NOT_NULLPTR_OR_RETURN(false, x->psAssemblyPoint);
-	ASSERT_NOT_NULLPTR_OR_RETURN(false, y->psAssemblyPoint);
-	if (x->psAssemblyPoint->factoryType != y->psAssemblyPoint->factoryType)
+	ASSERT_NOT_NULLPTR_OR_RETURN(false, x->getAssemblyPoint());
+	ASSERT_NOT_NULLPTR_OR_RETURN(false, y->getAssemblyPoint());
+	if (x->getAssemblyPoint()->factoryType != y->getAssemblyPoint()->factoryType)
 	{
-		return x->psAssemblyPoint->factoryType < y->psAssemblyPoint->factoryType;
+		return x->getAssemblyPoint()->factoryType < y->getAssemblyPoint()->factoryType;
 	}
 
-	return x->psAssemblyPoint->factoryInc < y->psAssemblyPoint->factoryInc;
+	return x->getAssemblyPoint()->factoryInc < y->getAssemblyPoint()->factoryInc;
 }
 
 void ManufactureController::updateFactoriesList()
 {
 	factories.clear();
 
-	for (auto structure = interfaceStructList(); structure != nullptr; structure = structure->psNext)
+	for (auto& structure : *interfaceStructList())
 	{
-		if (structure->status == SS_BUILT && structure->died == 0 && StructIsFactory(structure))
-		{
+		if (structure.getState() == STRUCTURE_STATE::BUILT &&
+        structure.damageManager->getTimeOfDeath() == 0 &&
+        StructIsFactory(structure)) {
 			factories.push_back(structure);
 		}
 	}
@@ -131,12 +133,10 @@ void ManufactureController::updateFactoriesList()
 
 void ManufactureController::updateManufactureOptionsList()
 {
-	if (auto factory = getHighlightedObject())
-	{
+	if (auto factory = getHighlightedObject()) {
 		stats = fillTemplateList(factory);
 	}
-	else
-	{
+	else {
 		stats.clear();
 	}
 }
@@ -151,8 +151,7 @@ void ManufactureController::refresh()
 {
 	updateData();
 
-	if (objectsSize() == 0)
-	{
+	if (objectsSize() == 0) {
 		closeInterface();
 	}
 }
@@ -164,7 +163,7 @@ void ManufactureController::clearData()
 	stats.clear();
 }
 
-void ManufactureController::setHighlightedObject(PlayerOwnedObject * object)
+void ManufactureController::setHighlightedObject(BaseObject* object)
 {
 	if (object == nullptr)
 	{
@@ -172,7 +171,7 @@ void ManufactureController::setHighlightedObject(PlayerOwnedObject * object)
 		return;
 	}
 
-	auto factory = castStructure(object);
+	auto factory = dynamic_cast<Structure*>(object);
 	ASSERT_OR_RETURN(, StructIsFactory(factory), "Invalid factory pointer");
 	highlightedFactory = factory;
 }
@@ -244,19 +243,18 @@ protected:
 		BaseWidget::updateLayout();
 		auto factory = getFactoryOrNullptr(controller->getObjectAt(objectIndex));
 		ASSERT_NOT_NULLPTR_OR_RETURN(, factory);
-		if (factory->psAssemblyPoint == nullptr)
-		{
+		if (factory->getAssemblyPoint() == nullptr) {
 			factoryNumberLabel->setString("");
 			return;
 		}
-		factoryNumberLabel->setString(WzString::fromUtf8(astringf("%u", factory->psAssemblyPoint->factoryInc + 1)));
+		factoryNumberLabel->setString(WzString::fromUtf8(astringf("%u", factory->getAssemblyPoint()->factoryInc + 1)));
 	}
 
 	std::string getTip() override
 	{
 		auto factory = controller->getObjectAt(objectIndex);
 		ASSERT_NOT_NULLPTR_OR_RETURN("", factory);
-		return getStatsName(factory->pStructureType);
+		return getStatsName(factory->getStats());
 	}
 
 	ManufactureController& getController() const override
@@ -362,10 +360,9 @@ private:
 		progressBar->hide();
 
 		ASSERT_NOT_NULLPTR_OR_RETURN(, factory);
-		ASSERT_OR_RETURN(, !isDead(factory), "Factory is dead");
+		ASSERT_OR_RETURN(, !factory->damageManager->isDead(), "Factory is dead");
 
-		if (!StructureIsManufacturingPending(factory))
-		{
+		if (!StructureIsManufacturingPending(factory)) {
 			return;
 		}
 
@@ -373,8 +370,7 @@ private:
 		ASSERT_NOT_NULLPTR_OR_RETURN(, manufacture);
 
 		if (manufacture->psSubject != nullptr && manufacture->buildPointsRemaining < calcTemplateBuild(
-			manufacture->psSubject))
-		{
+			manufacture->psSubject)) {
 			// Started production. Set the colour of the bar to yellow.
 			int buildPointsTotal = calcTemplateBuild(FactoryGetTemplate(manufacture));
 			int buildRate = manufacture->timeStartHold == 0 ? getBuildingProductionPoints(factory) : 0;
@@ -633,7 +629,7 @@ private:
 		{
 			if (auto manufactureController = weakController.lock())
 			{
-				auto& obsoleteButton = static_cast<MultipleChoiceButton&>(button);
+				auto& obsoleteButton = dynamic_cast<MultipleChoiceButton&>(button);
 				auto newValue = !obsoleteButton.getChoice();
 				manufactureController->setShouldShowRedundantDesign(newValue);
 				obsoleteButton.setChoice(newValue);
@@ -660,7 +656,7 @@ private:
 		typedef W_BUTTON BaseWidget;
 
 	public:
-		DeliveryPointButton(const std::shared_ptr<ManufactureController>& controller): BaseWidget(),
+		explicit DeliveryPointButton(const std::shared_ptr<ManufactureController>& controller): BaseWidget(),
 			controller(controller)
 		{
 			style |= WBUT_SECONDARY;
@@ -689,18 +685,18 @@ private:
 			auto factory = controller->getHighlightedObject();
 			ASSERT_NOT_NULLPTR_OR_RETURN(, factory);
 
-			switch (factory->pStructureType->type)
+			switch (factory->getStats()->type)
 			{
 			default:
-			case REF_FACTORY:
+      case STRUCTURE_TYPE::FACTORY:
 				setImages(Image(IntImages, IMAGE_FDP_UP), Image(IntImages, IMAGE_FDP_DOWN),
 				          Image(IntImages, IMAGE_FDP_HI));
 				break;
-			case REF_CYBORG_FACTORY:
+			case STRUCTURE_TYPE::CYBORG_FACTORY:
 				setImages(Image(IntImages, IMAGE_CDP_UP), Image(IntImages, IMAGE_CDP_DOWN),
 				          Image(IntImages, IMAGE_CDP_HI));
 				break;
-			case REF_VTOL_FACTORY:
+			case STRUCTURE_TYPE::VTOL_FACTORY:
 				setImages(Image(IntImages, IMAGE_VDP_UP), Image(IntImages, IMAGE_VDP_DOWN),
 				          Image(IntImages, IMAGE_VDP_HI));
 				break;

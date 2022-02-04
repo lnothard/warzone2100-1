@@ -20,6 +20,7 @@
 #ifndef __INCLUDED_WZSCRIPTDEBUG_H__
 #define __INCLUDED_WZSCRIPTDEBUG_H__
 
+#include "lib/framework/frame.h"
 #include "lib/widget/widget.h"
 #include "lib/widget/form.h"
 
@@ -27,16 +28,11 @@
 #include <list>
 #include <memory>
 
-#include "lib/framework/frame.h"
 #include "basedef.h"
-#include "droiddef.h"
-#include "structuredef.h"
-#include "researchdef.h"
-#include "featuredef.h"
-
 #include "wzapi.h"
 #include <unordered_map>
 #include "qtscript.h"
+#include "baseobject.h"
 
 class MultibuttonWidget;
 class ScrollableListWidget;
@@ -48,19 +44,19 @@ class WZScriptDebugger : public W_FORM
 {
 public:
 	WZScriptDebugger(std::shared_ptr<scripting_engine::DebugInterface>  debugInterface, bool readOnly);
-	~WZScriptDebugger();
+	~WZScriptDebugger() override;
 
 	static std::shared_ptr<WZScriptDebugger> make(
 		const std::shared_ptr<scripting_engine::DebugInterface>& debugInterface, bool readOnly);
 
-	virtual void display(int xOffset, int yOffset) override;
+	void display(int xOffset, int yOffset) override;
 
 public:
-	void selected(const PlayerOwnedObject * psObj);
+	void selected(BaseObject const* psObj);
 	void updateMessages();
 
 	const MODELMAP& getModelMap() const { return modelMap; }
-	const std::vector<scripting_engine::timerNodeSnapshot> getTriggerSnapshot() const { return trigger_snapshot; }
+	std::vector<scripting_engine::timerNodeSnapshot> getTriggerSnapshot() const { return trigger_snapshot; }
 	const std::vector<scripting_engine::LabelInfo>& getLabelModel() const { return labels; }
 
 public:
@@ -103,16 +99,16 @@ private:
 private:
 	struct SelectedObjectId
 	{
-		OBJECT_TYPE type = OBJ_NUM_TYPES;
-		uint32_t id = -1;
-		uint8_t player = -1;
+		OBJECT_TYPE type = OBJECT_TYPE::COUNT;
+		unsigned id = -1;
+		unsigned player = -1;
 
-		SelectedObjectId(const PlayerOwnedObject * psObj)
+		explicit SelectedObjectId(BaseObject const* psObj)
 		{
 			if (!psObj) { return; }
-			type = psObj->type;
-			id = psObj->id;
-			player = psObj->player;
+			type = getObjectType(psObj);
+			id = psObj->getId();
+			player = psObj->playerManager->getPlayer();
 		}
 	};
 

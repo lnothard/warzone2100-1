@@ -82,7 +82,7 @@ bool challengeActive = false; ///< Whether we are running a challenge
 std::string challengeName;
 WzString challengeFileName;
 
-static void displayLoadBanner(WIDGET const* psWidget, unsigned xOffset, unsigned yOffset)
+static void displayLoadBanner(WIDGET* psWidget, unsigned xOffset, unsigned yOffset)
 {
 	PIELIGHT col = WZCOL_GREEN;
 	auto x = xOffset + psWidget->x();
@@ -145,7 +145,7 @@ struct DisplayLoadSlotCache
 struct DisplayLoadSlotData
 {
 	DisplayLoadSlotCache cache;
-	std::string filename;
+	char* filename;
 };
 
 static void displayLoadSlot(WIDGET const* psWidget, unsigned xOffset, unsigned yOffset)

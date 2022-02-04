@@ -140,7 +140,6 @@ void sendOptions()
 	ActivityManager::instance().updateMultiplayGameData(game, ingame, NETGameIsLocked());
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // options for a game. (usually recvd in frontend)
 // returns: false if the options should be considered invalid and the client should disconnect
 bool recvOptions(NETQUEUE queue)

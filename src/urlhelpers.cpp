@@ -46,10 +46,6 @@
 #endif // WZ_OS_MAC
 
 #if defined(HAVE_POSIX_SPAWN) || defined(HAVE_POSIX_SPAWNP)
-# include <spawn.h>
-# include <sys/types.h>
-# include <sys/wait.h>
-# include <unistd.h>
 # if !defined(HAVE_ENVIRON_DECL)
   extern char **environ;
 # endif

@@ -26,7 +26,6 @@
 
 #include "lib/framework/frame.h"
 #include "lib/framework/wzapp.h"
-#include "lib/framework/strres.h"
 #include "lib/framework/physfs_ext.h"
 #include "lib/widget/gridlayout.h"
 #include "lib/widget/alignment.h"
@@ -71,6 +70,7 @@
 #include "frontend.h"
 #include "intfac.h"
 #include "intimage.h"
+#include "display.h"
 
 // ////////////////////////////////////////////////////////////////////////////
 // defines
@@ -148,27 +148,23 @@ static bool giftsUp[MAX_PLAYERS] = {true}; //gift buttons for player are up.
 static PIELIGHT GetPlayerTextColor(int mode, UDWORD player)
 {
 	// override color if they are dead...
-	if (player >= MAX_PLAYERS || apsDroidLists[player].empty() && apsStructLists[player].empty())
-	{
+	if (player >= MAX_PLAYERS ||
+      playerList[player].droids.empty() &&
+      playerList[player].structures.empty()) {
 		return WZCOL_GREY; // dead text color
 	}
 	// the colors were chosen to match the FRIEND/FOE radar map colors.
-	else if (mode == ALLIANCE_FORMED)
-	{
+	else if (mode == ALLIANCE_FORMED) {
 		return WZCOL_YELLOW; // Human alliance text color
 	}
 	else if (isHumanPlayer(player)) // Human player, no alliance
 	{
 		return WZCOL_TEXT_BRIGHT; // Normal text color
 	}
-	else
-	{
+	else {
 		return WZCOL_RED; // Enemy color
 	}
 }
-
-// ////////////////////////////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////
 
 struct DisplayRequestOptionCache
 {
@@ -715,33 +711,28 @@ public:
 
 	void display(int xOffset, int yOffset) override
 	{
-		// a droid of theirs.
-		Droid* displayDroid = (player < MAX_PLAYERS) ? apsDroidLists[player] : nullptr;
-		while (displayDroid != nullptr && !displayDroid->isVisibleToSelectedPlayer())
-		{
-			displayDroid = displayDroid->psNext;
-		}
+    auto it = std::find_if(playerList[player].droids.begin(),
+                           playerList[player].droids.end(),
+                           [](auto const& droid) {
+      return droid.isVisibleToSelectedPlayer();
+    });
 
 		auto centerX = xOffset + x() + width() / 2;
 		auto y0 = yOffset + y();
-		if (displayDroid)
-		{
+		if (it != playerList[player].droids.end()) {
 			pie_SetGeometricOffset(centerX, y0 + height() * 3 / 4);
 			Vector3i rotation(-15, 45, 0);
 			Position position(0, 0, BUTTON_DEPTH); // Scale them.
-			if (displayDroid->getType() == DROID_TYPE::SUPER_TRANSPORTER)
-			{
+			if (it->getType() == DROID_TYPE::SUPER_TRANSPORTER) {
 				position.z = 7850;
 			}
-			else if (displayDroid->getType() == DROID_TYPE::TRANSPORTER)
-			{
+			else if (it->getType() == DROID_TYPE::TRANSPORTER) {
 				position.z = 4100;
 			}
 
-			displayComponentButtonObject(displayDroid, &rotation, &position, 100);
+			displayComponentButtonObject(&*it, &rotation, &position, 100);
 		}
-		else if ((player < MAX_PLAYERS) && !apsDroidLists[player].empty())
-		{
+		else if ((player < MAX_PLAYERS) && !playerList[player].droids.empty()) {
 			// Show that they have droids, but not which droids, since we can't see them.
 			iV_DrawImageTc(
 				IntImages,
@@ -829,7 +820,7 @@ private:
 	std::shared_ptr<WIDGET> wrapGift(const std::shared_ptr<WIDGET>& gift)
 	{
 		auto alignment = Alignment(Alignment::Vertical::Center, Alignment::Horizontal::Center);
-		return alignment.wrap(Margin(0, 1, 0, 0).wrap(std::move(gift)));
+		return alignment.wrap(Margin(0, 1, 0, 0).wrap(gift));
 	}
 
 	void addPlayerWidgets(uint32_t player, uint32_t row)
@@ -1024,7 +1015,7 @@ private:
 				{
 					// NOTE, This tallys up *all* the structures you have. Test out via 'start with no base'.
 					int num = 0;
-					for (auto& temp : apsStructLists[playerWidget.player])
+					for (auto& temp : playerList[playerWidget.player].structures)
 					{
 						++num;
 					}

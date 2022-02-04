@@ -807,22 +807,6 @@ void ActivityManager::updateMultiplayGameData(const MULTIPLAYERGAME& multiGame, 
 			}
 		}
 	}
-
-	MultiplayerGameInfo::AllianceOption; alliancesOpt = ALLIANCE_TYPE::FFA;
-	if (multiGame.alliance == ALLIANCE_TYPE::ALLIANCES)
-	{
-		alliancesOpt = MultiplayerGameInfo::AllianceOption::ALLIANCES;
-	}
-	else if (multiGame.alliance == ::ALLIANCE_TYPE::ALLIANCES_TEAMS)
-	{
-		alliancesOpt = MultiplayerGameInfo::AllianceOption::ALLIANCES_TEAMS;
-	}
-	else if (multiGame.alliance == ::ALLIANCE_TYPE::ALLIANCES_UNSHARED)
-	{
-		alliancesOpt = MultiplayerGameInfo::AllianceOption::ALLIANCES_UNSHARED;
-	}
-	currentMultiplayGameInfo.alliances = alliancesOpt;
-
 	currentMultiplayGameInfo.maxPlayers = maxPlayers; // accounts for closed slots
 	currentMultiplayGameInfo.numHumanPlayers = numHumanPlayers;
 	currentMultiplayGameInfo.numAvailableSlots = numAvailableSlots;

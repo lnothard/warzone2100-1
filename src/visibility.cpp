@@ -31,16 +31,16 @@
 #include "lib/sound/audio_id.h"
 #include "wzmaplib/map.h"
 
+#include "baseobject.h"
 #include "displaydef.h"
 #include "map.h"
+#include "message.h"
 #include "multiplay.h"
 #include "objmem.h"
 #include "projectile.h"
 #include "raycast.h"
 #include "visibility.h"
 #include "wavecast.h"
-#include "message.h"
-#include "baseobject.h"
 
 /* forward decl */
 bool bInTutorial;
@@ -464,7 +464,7 @@ int visibleObject(BaseObject const* psViewer, BaseObject const* psTarget, bool w
 
     if (dynamic_cast<Droid const*>(psTarget) &&
         dynamic_cast<Droid const*>(psTarget)->isVtol() &&
-        psStruct->weaponManager->weapons[0].stats.get()->surfaceToAir == SHOOT_IN_AIR) {
+        psStruct->weaponManager->weapons[0].stats->surfaceToAir == SHOOT_IN_AIR) {
       range = 3 * range / 2; // increase vision range of AA vs VTOL
     }
 
@@ -591,7 +591,7 @@ static void setSeenBy(BaseObject* psObj, unsigned viewer, int val)
 	for (auto ally = 0; ally < MAX_PLAYERS; ++ally)
 	{
 		if (hasSharedVision(viewer, ally)) {
-			psObj->seenThisTick[ally] = MAX(psObj->seenThisTick[ally], val);
+			psObj->seenThisTick[ally] = MAX(psObj->seenThisTick(ally), val);
 		}
 	}
 }
@@ -604,7 +604,7 @@ static void setSeenByInstantly(BaseObject * psObj, unsigned viewer, int val /*= 
 	for (auto ally = 0; ally < MAX_PLAYERS; ++ally)
 	{
 		if (hasSharedVision(viewer, ally)) {
-			psObj->seenThisTick[ally] = MAX(psObj->seenThisTick[ally], val);
+			psObj->seenThisTick[ally] = MAX(psObj->seenThisTick(ally), val);
 			psObj->setVisibleToPlayer(ally, MAX(psObj->isVisibleToPlayer(ally), val));
 		}
 	}
@@ -685,7 +685,7 @@ static void processVisibilityLevel(BaseObject* psObj, bool& addedMessage)
 	for (auto player = 0; player < MAX_PLAYERS; player++)
 	{
 		bool justBecameVisible = false;
-		auto visLevel = psObj->seenThisTick[player];
+		auto visLevel = psObj->seenThisTick(player);
 
 		if (player == psObj->playerManager->getPlayer()) {
 			// owner can always see it fully

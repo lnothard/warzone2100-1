@@ -684,7 +684,7 @@ std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* req
 	label_contents->setCustomHitTest([](WIDGET* psWidget, int x, int y) -> bool { return false; });
 
 	// Add action buttons
-	std::string dismissLabel = _("Dismiss");
+	char const* dismissLabel = _("Dismiss");
 	std::string actionLabel = request->notification.action.title;
 
 	std::shared_ptr<W_BUTTON> psActionButton = nullptr;
@@ -746,11 +746,11 @@ std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* req
 		dismissLabel = u8"▴ " + dismissLabel;
 		sButInit.id = 3;
 		sButInit.FontID = font_regular;
-		sButInit.width = iV_GetTextWidth(dismissLabel.c_str(), font_regular) + 18;
+		sButInit.width = iV_GetTextWidth(dismissLabel, font_regular) + 18;
 		sButInit.x = (short)(((psActionButton)
 			                      ? (psActionButton->x()) - WZ_NOTIFICATION_BETWEEN_BUTTON_PADDING
 			                      : psNewNotificationForm->width() - WZ_NOTIFICATION_PADDING) - sButInit.width);
-		sButInit.pText = dismissLabel.c_str();
+		sButInit.pText = dismissLabel;
 		sButInit.UserData = 0; // store regular state
 		psDismissButton = std::make_shared<W_BUTTON>(&sButInit);
 		psDismissButton->addOnClickHandler([](W_BUTTON& button)

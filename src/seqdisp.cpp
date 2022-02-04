@@ -46,11 +46,9 @@
 #include "init.h" // For fileLoadBuffer
 #include "lib/ivis_opengl/textdraw.h"
 
-/***************************************************************************/
 /*
  *	local Definitions
  */
-/***************************************************************************/
 #define MAX_TEXT_OVERLAYS 32
 #define MAX_SEQ_LIST	  6
 #define SUBTITLE_BOX_MIN 430

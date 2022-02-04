@@ -198,17 +198,10 @@ static void printWeaponInfo(const WeaponStats* psStats)
  */
 void printDroidInfo(const Droid* psDroid)
 {
-	BodyStats* psBdyStats;
-	PropulsionStats* psPropStats;
-	EcmStats* psECMStats;
-	SensorStats* psSensStats;
-	ConstructStats* psConstStats;
-	RepairStats* psRepairStats;
-
 	printBaseObjInfo(psDroid);
 
 	CONPRINTF("   wt %d bSpeed %d sRng %d ECM %d bdy %d\n",
-						psDroid->getWeight(), psDroid->base_speed, droidSensorRange(psDroid),
+						psDroid->getWeight(), psDroid->getBaseSpeed(), droidSensorRange(psDroid),
             objJammerPower(psDroid), psDroid->damageManager->getHp());
 
 	if (psDroid->asWeaps[0].nStat > 0) {
@@ -221,8 +214,8 @@ void printDroidInfo(const Droid* psDroid)
       case (int)COMPONENT_TYPE::BODY:
 			if (psDroid->asBits[i] > 0) {
 				CONPRINTF("%s", "Body: ");
-				psBdyStats = asBodyStats + psDroid->asBits[i];
-				printComponentInfo((ComponentStats*)psBdyStats);
+				auto psBdyStats = psDroid->getComponent((COMPONENT_TYPE)i);
+				printComponentInfo(psBdyStats);
 			}
 			else
 			{
@@ -234,8 +227,8 @@ void printDroidInfo(const Droid* psDroid)
       case (int)COMPONENT_TYPE::PROPULSION:
 			if (psDroid->asBits[i] > 0) {
 				CONPRINTF("%s", "Prop: ");
-				psPropStats = asPropulsionStats + psDroid->asBits[i];
-				printComponentInfo((ComponentStats*)psPropStats);
+				auto psPropStats = psDroid->getComponent((COMPONENT_TYPE)i);
+				printComponentInfo(psPropStats);
 			}
 			else
 			{
@@ -245,8 +238,8 @@ void printDroidInfo(const Droid* psDroid)
       case (int)COMPONENT_TYPE::ECM:
 			if (psDroid->asBits[i] > 0) {
 				CONPRINTF("%s", "ECM: ");
-				psECMStats = asECMStats + psDroid->asBits[i];
-				printComponentInfo((ComponentStats*)psECMStats);
+				auto psECMStats = dynamic_cast<EcmStats const*>(psDroid->getComponent((COMPONENT_TYPE)i));
+				printComponentInfo(psECMStats);
 				CONPRINTF("   range %d loc %d imd %p\n",
 				          ecmRange(psECMStats, psDroid->playerManager->getPlayer()),
                   psECMStats->location, static_cast<void*>(psECMStats->pMountGraphic.get()));
@@ -258,8 +251,8 @@ void printDroidInfo(const Droid* psDroid)
       case (int)COMPONENT_TYPE::SENSOR:
 			if (psDroid->asBits[i] > 0) {
 				CONPRINTF("%s", "Sensor: ");
-				psSensStats = asSensorStats + psDroid->asBits[i];
-				printComponentInfo((ComponentStats*)psSensStats);
+				auto psSensStats = dynamic_cast<SensorStats const*>(psDroid->getComponent((COMPONENT_TYPE)i));
+				printComponentInfo(psSensStats);
 				CONPRINTF("   rng %d loc %d imd %p\n",
 				          sensorRange(psSensStats, psDroid->playerManager->getPlayer()),
 				          psSensStats->location, static_cast<void*>(psSensStats->pMountGraphic.get()));
@@ -271,8 +264,8 @@ void printDroidInfo(const Droid* psDroid)
       case (int)COMPONENT_TYPE::CONSTRUCT:
 			if (psDroid->asBits[i] > 0) {
 				CONPRINTF("%s", "Construct: ");
-				psConstStats = asConstructStats + psDroid->asBits[i];
-				printComponentInfo((ComponentStats*)psConstStats);
+				auto psConstStats = dynamic_cast<ConstructStats const*>(psDroid->getComponent((COMPONENT_TYPE)i));
+				printComponentInfo(psConstStats);
 				CONPRINTF("   cPnts %d imd %p\n",
 				          constructorPoints(psConstStats, psDroid->playerManager->getPlayer()),
 				          static_cast<void*>(psConstStats->pMountGraphic.get()));
@@ -282,7 +275,7 @@ void printDroidInfo(const Droid* psDroid)
 			if (psDroid->asBits[i] > 0)
 			{
 				CONPRINTF("%s", "Repair: ");
-				psRepairStats = asRepairStats + psDroid->asBits[i];
+				auto psRepairStats = dynamic_cast<RepairStats const*>(psDroid->getComponent((COMPONENT_TYPE)i));
 				printComponentInfo((ComponentStats*)psRepairStats);
 				CONPRINTF("   repPnts %d loc %d imd %p\n",
 				          repairPoints(psRepairStats, psDroid->playerManager->getPlayer()),

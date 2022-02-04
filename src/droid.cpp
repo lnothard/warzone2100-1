@@ -317,6 +317,11 @@ Order const* Droid::getOrder() const
   return pimpl ? pimpl->order.get() : nullptr;
 }
 
+unsigned Droid::getBaseSpeed() const
+{
+  return pimpl ? pimpl->baseSpeed : 0;
+}
+
 Movement const* Droid::getMovementData() const
 {
   return pimpl ? pimpl->movement.get() : nullptr;
@@ -7831,14 +7836,14 @@ void assignDroidsToGroup(unsigned playerNumber, unsigned groupNumber, bool clear
 		for (auto& psDroid : playerList[playerNumber].droids)
 		{
 			/* Clear out the old ones */
-			if (clearGroup && psDroid.group == groupNumber) {
-				psDroid.group = UBYTE_MAX;
+			if (clearGroup && psDroid.getSelectionGroup() == groupNumber) {
+				psDroid.setSelectionGroup(UBYTE_MAX);
 			}
 
 			/* Only assign the currently selected ones */
 			if (psDroid.damageManager->isSelected()) {
 				/* Set them to the right group - they can only be a member of one group */
-				psDroid.group = (UBYTE)groupNumber;
+				psDroid.setSelectionGroup((UBYTE)groupNumber);
 				bAtLeastOne = true;
 			}
 		}
@@ -7863,7 +7868,7 @@ void removeDroidsFromGroup(unsigned playerNumber)
 	for (auto& psDroid : playerList[playerNumber].droids)
 	{
 		if (psDroid.damageManager->isSelected()) {
-			psDroid.group = UBYTE_MAX;
+			psDroid.setSelectionGroup(UBYTE_MAX);
 			removedCount++;
 		}
 	}
@@ -7883,11 +7888,12 @@ bool activateGroupAndMove(unsigned playerNumber, unsigned groupNumber)
 		for (auto& psDroid : playerList[playerNumber].droids)
 		{
 			/* Wipe out the ones in the wrong group */
-			if (psDroid.damageManager->isSelected() && psDroid.group != groupNumber) {
+			if (psDroid.damageManager->isSelected() &&
+          psDroid.getSelectionGroup() != groupNumber) {
 				DeSelectDroid(&psDroid);
 			}
 			/* Get the right ones */
-			if (psDroid.group == groupNumber) {
+			if (psDroid.getSelectionGroup() == groupNumber) {
 				SelectDroid(&psDroid);
 				psCentreDroid = &psDroid;
 			}
@@ -7938,7 +7944,8 @@ bool activateNoGroup(unsigned playerNumber, SELECTIONTYPE selectionType,
 	for (auto& psDroid : playerList[playerNumber].droids)
 	{
 		/* Wipe out the ones in the wrong group */
-		if (psDroid.damageManager->isSelected() && psDroid.group != UBYTE_MAX) {
+		if (psDroid.damageManager->isSelected() &&
+        psDroid.getSelectionGroup() != UBYTE_MAX) {
 			DeSelectDroid(&psDroid);
 		}
 	}
@@ -7963,11 +7970,12 @@ bool activateGroup(unsigned playerNumber, unsigned groupNumber)
 		for (auto& psDroid : playerList[playerNumber].droids)
 		{
 			/* Wipe out the ones in the wrong group */
-			if (psDroid.damageManager->isSelected() && psDroid.group != groupNumber) {
+			if (psDroid.damageManager->isSelected() &&
+          psDroid.getSelectionGroup() != groupNumber) {
 				DeSelectDroid(&psDroid);
 			}
 			/* Get the right ones */
-			if (psDroid.group == groupNumber) {
+			if (psDroid.getSelectionGroup() == groupNumber) {
 				SelectDroid(&psDroid);
 				selected = true;
 			}
@@ -9354,7 +9362,7 @@ bool Droid::loadSaveDroid(const char* pFileName)
       }
     }
 
-    psDroid->group = ini.value("group", UBYTE_MAX).toInt();
+    psDroid->setSelectionGroup(ini.value("group", UBYTE_MAX).toInt());
     auto aigroup = ini.value("aigroup", -1).toInt();
     if (aigroup >= 0) {
       Group* psGroup = findGroupById(aigroup);

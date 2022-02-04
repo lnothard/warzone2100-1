@@ -160,7 +160,7 @@ bool intDisplayMultiJoiningStatus(UBYTE joinCount)
 			{
 				textCache.wzPlayerNameAndStatus.resize(player + 1);
 			}
-			textCache.wzPlayerNameAndStatus[player].setText((statusStrings[status] + getPlayerName(player)).c_str(),
+			textCache.wzPlayerNameAndStatus[player].setText((statusStrings[status] + getPlayerName(player)),
 			                                                font_small);
 			textCache.wzPlayerNameAndStatus[player].render(x + 5, yPos + yStep * NetPlay.players[player].position,
 			                                               WZCOL_TEXT_BRIGHT);
@@ -177,11 +177,8 @@ bool intDisplayMultiJoiningStatus(UBYTE joinCount)
 ** @param player -- the one we need to clear
 ** @param quietly -- true means without any visible effects
 */
-void clearPlayer(UDWORD player, bool quietly)
+void clearPlayer(unsigned player, bool quietly)
 {
-	UDWORD i;
-	Structure *psStruct, *psNext;
-
 	ASSERT_OR_RETURN(, player < MAX_CONNECTED_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
 	ASSERT(player < NetPlay.playerReferences.size(), "Invalid player: %" PRIu32 "", player);
@@ -195,14 +192,13 @@ void clearPlayer(UDWORD player, bool quietly)
 	ingame.DataIntegrity[player] = false;
 	ingame.lastSentPlayerDataCheck2[player].reset();
 
-	if (player >= MAX_PLAYERS)
-	{
+	if (player >= MAX_PLAYERS) {
 		return; // no more to do
 	}
 
 	(void)setPlayerName(player, ""); //clear custom player name (will use default instead)
 
-	for (i = 0; i < MAX_PLAYERS; i++) // remove alliances
+	for (auto i = 0; i < MAX_PLAYERS; i++) // remove alliances
 	{
 		// Never remove a player's self-alliance, as the player can be selected and units added via the debug menu
 		// even after they have left, and this would lead to them firing on each other.
@@ -216,26 +212,21 @@ void clearPlayer(UDWORD player, bool quietly)
 	}
 
 	debug(LOG_DEATH, "killing off all droids for player %d", player);
-	while (apsDroidLists[player]) // delete all droids
+	for (auto& psDroid : playerList[player].droids) // delete all droids
 	{
-		if (quietly) // don't show effects
-		{
-			killDroid(apsDroidLists[player]);
+		if (quietly) { // don't show effects
+			killDroid(psDroid);
 		}
-		else // show effects
-		{
-			destroyDroid(apsDroidLists[player], gameTime);
+		else { // show effects
+			destroyDroid(&psDroid, gameTime);
 		}
 	}
 
 	debug(LOG_DEATH, "killing off all structures for player %d", player);
-	psStruct = apsStructLists[player];
-	while (psStruct) // delete all structs
+	for (auto& psStruct : playerList[player].structures) // delete all structs
 	{
-		psNext = psStruct->psNext;
-
 		// FIXME: look why destroyStruct() doesn't put back the feature like removeStruct() does
-		if (quietly || psStruct->getStats()->type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR) // don't show effects
+		if (quietly || psStruct.getStats()->type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR) // don't show effects
 		{
 			removeStruct(psStruct, true);
 		}
@@ -243,11 +234,8 @@ void clearPlayer(UDWORD player, bool quietly)
 		{
 			destroyStruct(psStruct, gameTime);
 		}
-
-		psStruct = psNext;
 	}
-
-	}
+}
 
 // Reset visibility, so a new player can't see the old stuff!!
 static void resetMultiVisibility(UDWORD player)
@@ -439,10 +427,8 @@ bool MultiPlayerJoin(UDWORD playerIndex)
 
 bool sendDataCheck()
 {
-	int i = 0;
-
 	NETbeginEncode(NETnetQueue(NetPlay.hostPlayer), NET_DATA_CHECK); // only need to send to HOST
-	for (i = 0; i < DATA_MAXDATA; i++)
+	for (auto i = 0; i < DATA_MAXDATA; i++)
 	{
 		NETuint32_t(&DataHash[i]);
 	}

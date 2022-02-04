@@ -73,7 +73,7 @@ static bool researchedPart(const DroidTemplate* psCurr, unsigned player, COMPONE
 static bool researchedWeap(const DroidTemplate* psCurr, unsigned player, int weapIndex, bool allowRedundant)
 {
 	ASSERT_PLAYER_OR_RETURN(false, player);
-	int availability = apCompLists[player][COMP_WEAPON][psCurr->asWeaps[weapIndex]];
+	int availability = apCompLists[player][(int)COMPONENT_TYPE::WEAPON][psCurr->weapons[weapIndex]];
 	return availability == AVAILABLE || (allowRedundant && availability == REDUNDANT);
 }
 
@@ -81,13 +81,13 @@ bool researchedTemplate(const DroidTemplate* psCurr, unsigned player, bool allow
 {
 	ASSERT_OR_RETURN(false, psCurr, "Given a null template");
 	ASSERT_PLAYER_OR_RETURN(false, player);
-	bool resBody = researchedPart(psCurr, player, COMP_BODY, false, allowRedundant);
-	bool resBrain = researchedPart(psCurr, player, COMP_BRAIN, true, allowRedundant);
-	bool resProp = researchedPart(psCurr, player, COMP_PROPULSION, false, allowRedundant);
-	bool resSensor = researchedPart(psCurr, player, COMP_SENSOR, true, allowRedundant);
-	bool resEcm = researchedPart(psCurr, player, COMP_ECM, true, allowRedundant);
-	bool resRepair = researchedPart(psCurr, player, COMP_REPAIRUNIT, true, allowRedundant);
-	bool resConstruct = researchedPart(psCurr, player, COMP_CONSTRUCT, true, allowRedundant);
+	bool resBody = researchedPart(psCurr, player, COMPONENT_TYPE::BODY, false, allowRedundant);
+	bool resBrain = researchedPart(psCurr, player, COMPONENT_TYPE::BRAIN, true, allowRedundant);
+	bool resProp = researchedPart(psCurr, player, COMPONENT_TYPE::PROPULSION, false, allowRedundant);
+	bool resSensor = researchedPart(psCurr, player, COMPONENT_TYPE::SENSOR, true, allowRedundant);
+	bool resEcm = researchedPart(psCurr, player, COMPONENT_TYPE::ECM, true, allowRedundant);
+	bool resRepair = researchedPart(psCurr, player, COMPONENT_TYPE::REPAIR_UNIT, true, allowRedundant);
+	bool resConstruct = researchedPart(psCurr, player, COMPONENT_TYPE::CONSTRUCT, true, allowRedundant);
 	bool researchedEverything = resBody && resBrain && resProp && resSensor && resEcm && resRepair && resConstruct;
 	if (verbose && !researchedEverything)
 	{
@@ -96,7 +96,7 @@ bool researchedTemplate(const DroidTemplate* psCurr, unsigned player, bool allow
 		      (int)resBody, (int)resBrain, (int)resProp, (int)resSensor, (int)resEcm, (int)resRepair,
 		      (int)resConstruct);
 	}
-	for (int weapIndex = 0; weapIndex < psCurr->weaponCount && researchedEverything; ++weapIndex)
+	for (int weapIndex = 0; weapIndex < psCurr->weapons.size() && researchedEverything; ++weapIndex)
 	{
 		researchedEverything = researchedWeap(psCurr, player, weapIndex, allowRedundant);
 		if (!researchedEverything && verbose)
@@ -129,10 +129,10 @@ bool droidTemplate_LoadPartByName(COMPONENT_TYPE compType, const WzString& name,
 
 bool droidTemplate_LoadWeapByName(size_t destIndex, const WzString& name, DroidTemplate& outputTemplate)
 {
-	int index = getCompFromName(COMP_WEAPON, name);
+	int index = getCompFromName(COMPONENT_TYPE::WEAPON, name);
 	if (index < 0)
 	{
-		debug(LOG_ERROR, "Stored template contains an unknown (type: %d) component: %s.", COMP_WEAPON,
+		debug(LOG_ERROR, "Stored template contains an unknown (type: %d) component: %s.", COMPONENT_TYPE::WEAPON,
 		      name.toUtf8().c_str());
 		return false;
 	}
@@ -140,7 +140,7 @@ bool droidTemplate_LoadWeapByName(size_t destIndex, const WzString& name, DroidT
 	if (index > (int)UINT32_MAX)
 	{
 		// returned index exceeds uint32_t max - consider changing type of asWeaps in DROID_TEMPLATE?
-		debug(LOG_ERROR, "Stored template contains a (type: %d) component (%s) index that exceeds UINT32_MAX: %d", COMP_WEAPON, name.toUtf8().c_str(), index);
+		debug(LOG_ERROR, "Stored template contains a (type: %d) component (%s) index that exceeds UINT32_MAX: %d", COMPONENT_TYPE::WEAPON, name.toUtf8().c_str(), index);
 		return false;
 	}
 #endif
@@ -156,77 +156,77 @@ bool loadTemplateCommon(WzConfig& ini, DroidTemplate& outputTemplate)
 
 	if (droidType == "ECM")
 	{
-		design.type = DROID_ECM;
+		design.type = DROID_TYPE::ECM;
 	}
 	else if (droidType == "SENSOR")
 	{
-		design.type = DROID_SENSOR;
+		design.type = DROID_TYPE::SENSOR;
 	}
 	else if (droidType == "CONSTRUCT")
 	{
-		design.type = DROID_CONSTRUCT;
+		design.type = DROID_TYPE::CONSTRUCT;
 	}
 	else if (droidType == "WEAPON")
 	{
-		design.type = DROID_WEAPON;
+		design.type = DROID_TYPE::WEAPON;
 	}
 	else if (droidType == "PERSON")
 	{
-		design.type = DROID_PERSON;
+		design.type = DROID_TYPE::PERSON;
 	}
 	else if (droidType == "CYBORG")
 	{
-		design.type = DROID_CYBORG;
+		design.type = DROID_TYPE::CYBORG;
 	}
 	else if (droidType == "CYBORG_SUPER")
 	{
-		design.type = DROID_CYBORG_SUPER;
+		design.type = DROID_TYPE::CYBORG_SUPER;
 	}
 	else if (droidType == "CYBORG_CONSTRUCT")
 	{
-		design.type = DROID_CYBORG_CONSTRUCT;
+		design.type = DROID_TYPE::CYBORG_CONSTRUCT;
 	}
 	else if (droidType == "CYBORG_REPAIR")
 	{
-		design.type = DROID_CYBORG_REPAIR;
+		design.type = DROID_TYPE::CYBORG_REPAIR;
 	}
 	else if (droidType == "TRANSPORTER")
 	{
-		design.type = DROID_TRANSPORTER;
+		design.type = DROID_TYPE::TRANSPORTER;
 	}
 	else if (droidType == "SUPERTRANSPORTER")
 	{
-		design.type = DROID_SUPERTRANSPORTER;
+		design.type = DROID_TYPE::SUPER_TRANSPORTER;
 	}
 	else if (droidType == "DROID")
 	{
-		design.type = DROID_DEFAULT;
+		design.type = DROID_TYPE::DEFAULT;
 	}
 	else if (droidType == "DROID_COMMAND")
 	{
-		design.type = DROID_COMMAND;
+		design.type = DROID_TYPE::COMMAND;
 	}
 	else if (droidType == "REPAIR")
 	{
-		design.type = DROID_REPAIR;
+		design.type = DROID_TYPE::REPAIRER;
 	}
 	else
 	{
 		ASSERT(false, "No such droid type \"%s\" for %s", droidType.toUtf8().c_str(), getID(&design));
 	}
 
-	if (!droidTemplate_LoadPartByName(COMP_BODY, ini.value("body").toWzString(), design)) return false;
-	if (!droidTemplate_LoadPartByName(COMP_BRAIN, ini.value("brain", WzString("ZNULLBRAIN")).toWzString(), design))
+	if (!droidTemplate_LoadPartByName(COMPONENT_TYPE::BODY, ini.value("body").toWzString(), design)) return false;
+	if (!droidTemplate_LoadPartByName(COMPONENT_TYPE::BRAIN, ini.value("brain", WzString("ZNULLBRAIN")).toWzString(), design))
 		return false;
-	if (!droidTemplate_LoadPartByName(COMP_PROPULSION, ini.value("propulsion", WzString("ZNULLPROP")).toWzString(),
+	if (!droidTemplate_LoadPartByName(COMPONENT_TYPE::PROPULSION, ini.value("propulsion", WzString("ZNULLPROP")).toWzString(),
 	                                  design)) return false;
-	if (!droidTemplate_LoadPartByName(COMP_REPAIRUNIT, ini.value("repair", WzString("ZNULLREPAIR")).toWzString(),
+	if (!droidTemplate_LoadPartByName(COMPONENT_TYPE::REPAIR_UNIT, ini.value("repair", WzString("ZNULLREPAIR")).toWzString(),
 	                                  design)) return false;
-	if (!droidTemplate_LoadPartByName(COMP_ECM, ini.value("ecm", WzString("ZNULLECM")).toWzString(), design)) return
+	if (!droidTemplate_LoadPartByName(COMPONENT_TYPE::ECM, ini.value("ecm", WzString("ZNULLECM")).toWzString(), design)) return
 		false;
-	if (!droidTemplate_LoadPartByName(COMP_SENSOR, ini.value("sensor", WzString("ZNULLSENSOR")).toWzString(), design))
+	if (!droidTemplate_LoadPartByName(COMPONENT_TYPE::SENSOR, ini.value("sensor", WzString("ZNULLSENSOR")).toWzString(), design))
 		return false;
-	if (!droidTemplate_LoadPartByName(COMP_CONSTRUCT, ini.value("construct", WzString("ZNULLCONSTRUCT")).toWzString(),
+	if (!droidTemplate_LoadPartByName(COMPONENT_TYPE::CONSTRUCT, ini.value("construct", WzString("ZNULLCONSTRUCT")).toWzString(),
 	                                  design)) return false;
 
 	std::vector<WzString> weapons = ini.value("weapons").toWzStringList();
@@ -282,17 +282,17 @@ bool initTemplates()
 		};
 
 		bool designable =
-			designablePart(asBodyStats[design.asParts[COMP_BODY]], "Body")
-			&& designablePart(asPropulsionStats[design.asParts[COMP_PROPULSION]], "Propulsion")
-			&& (design.asParts[COMP_BRAIN] == 0 || designablePart(asBrainStats[design.asParts[COMP_BRAIN]], "Brain"))
-			&& (design.asParts[COMP_REPAIRUNIT] == 0 || designablePart(asRepairStats[design.asParts[COMP_REPAIRUNIT]],
+			designablePart(asBodyStats[design.asParts[COMPONENT_TYPE::BODY]], "Body")
+			&& designablePart(asPropulsionStats[design.asParts[COMPONENT_TYPE::PROPULSION]], "Propulsion")
+			&& (design.asParts[COMPONENT_TYPE::BRAIN] == 0 || designablePart(asBrainStats[design.asParts[COMPONENT_TYPE::BRAIN]], "Brain"))
+			&& (design.asParts[COMPONENT_TYPE::REPAIR_UNIT] == 0 || designablePart(asRepairStats[design.asParts[COMPONENT_TYPE::REPAIR_UNIT]],
 			                                                           "Repair unit"))
-			&& (design.asParts[COMP_ECM] == 0 || designablePart(asECMStats[design.asParts[COMP_ECM]], "ECM"))
-			&& (design.asParts[COMP_SENSOR] == 0 ||
-				designablePart(asSensorStats[design.asParts[COMP_SENSOR]], "Sensor"))
-			&& (design.asParts[COMP_CONSTRUCT] == 0 || designablePart(asConstructStats[design.asParts[COMP_CONSTRUCT]],
+			&& (design.asParts[COMPONENT_TYPE::ECM] == 0 || designablePart(asECMStats[design.asParts[COMPONENT_TYPE::ECM]], "ECM"))
+			&& (design.asParts[COMPONENT_TYPE::SENSOR] == 0 ||
+				designablePart(asSensorStats[design.asParts[COMPONENT_TYPE::SENSOR]], "Sensor"))
+			&& (design.asParts[COMPONENT_TYPE::CONSTRUCT] == 0 || designablePart(asConstructStats[design.asParts[COMPONENT_TYPE::CONSTRUCT]],
 			                                                          "Construction part"))
-			&& (design.weaponCount <= 0 || asBrainStats[design.asParts[COMP_BRAIN]].psWeaponStat == &asWeaponStats[design.
+			&& (design.weaponCount <= 0 || asBrainStats[design.asParts[COMPONENT_TYPE::BRAIN]].psWeaponStat == &asWeaponStats[design.
 					asWeaps[0]]
           || designablePart(asWeaponStats[design.asWeaps[0]], "Weapon 0"))
 			&& (design.weaponCount <= 1 || designablePart(asWeaponStats[design.asWeaps[1]], "Weapon 1"))
@@ -320,13 +320,13 @@ bool initTemplates()
 				&& psDestTemplate->asWeaps[0] == design.asWeaps[0]
 				&& psDestTemplate->asWeaps[1] == design.asWeaps[1]
 				&& psDestTemplate->asWeaps[2] == design.asWeaps[2]
-				&& psDestTemplate->asParts[COMP_BODY] == design.asParts[COMP_BODY]
-				&& psDestTemplate->asParts[COMP_PROPULSION] == design.asParts[COMP_PROPULSION]
-				&& psDestTemplate->asParts[COMP_REPAIRUNIT] == design.asParts[COMP_REPAIRUNIT]
-				&& psDestTemplate->asParts[COMP_ECM] == design.asParts[COMP_ECM]
-				&& psDestTemplate->asParts[COMP_SENSOR] == design.asParts[COMP_SENSOR]
-				&& psDestTemplate->asParts[COMP_CONSTRUCT] == design.asParts[COMP_CONSTRUCT]
-				&& psDestTemplate->asParts[COMP_BRAIN] == design.asParts[COMP_BRAIN])
+				&& psDestTemplate->asParts[COMPONENT_TYPE::BODY] == design.asParts[COMPONENT_TYPE::BODY]
+				&& psDestTemplate->asParts[COMPONENT_TYPE::PROPULSION] == design.asParts[COMPONENT_TYPE::PROPULSION]
+				&& psDestTemplate->asParts[COMPONENT_TYPE::REPAIR_UNIT] == design.asParts[COMPONENT_TYPE::REPAIR_UNIT]
+				&& psDestTemplate->asParts[COMPONENT_TYPE::ECM] == design.asParts[COMPONENT_TYPE::ECM]
+				&& psDestTemplate->asParts[COMPONENT_TYPE::SENSOR] == design.asParts[COMPONENT_TYPE::SENSOR]
+				&& psDestTemplate->asParts[COMPONENT_TYPE::CONSTRUCT] == design.asParts[COMPONENT_TYPE::CONSTRUCT]
+				&& psDestTemplate->asParts[COMPONENT_TYPE::BRAIN] == design.asParts[COMPONENT_TYPE::BRAIN])
 			{
 				break;
 			}
@@ -351,57 +351,57 @@ nlohmann::json saveTemplateCommon(const DroidTemplate* psCurr)
 	templateObj["name"] = psCurr->name;
 	switch (psCurr->type)
 	{
-	case DROID_ECM: templateObj["type"] = "ECM";
+    case DROID_TYPE::ECM: templateObj["type"] = "ECM";
 		break;
-	case DROID_SENSOR: templateObj["type"] = "SENSOR";
+    case DROID_TYPE::SENSOR: templateObj["type"] = "SENSOR";
 		break;
-	case DROID_CONSTRUCT: templateObj["type"] = "CONSTRUCT";
+  case DROID_TYPE::CONSTRUCT: templateObj["type"] = "CONSTRUCT";
 		break;
-	case DROID_WEAPON: templateObj["type"] = "WEAPON";
+  case DROID_TYPE::WEAPON: templateObj["type"] = "WEAPON";
 		break;
-	case DROID_PERSON: templateObj["type"] = "PERSON";
+  case DROID_TYPE::PERSON: templateObj["type"] = "PERSON";
 		break;
-	case DROID_CYBORG: templateObj["type"] = "CYBORG";
+  case DROID_TYPE::CYBORG: templateObj["type"] = "CYBORG";
 		break;
-	case DROID_CYBORG_SUPER: templateObj["type"] = "CYBORG_SUPER";
+  case DROID_TYPE::CYBORG_SUPER: templateObj["type"] = "CYBORG_SUPER";
 		break;
-	case DROID_CYBORG_CONSTRUCT: templateObj["type"] = "CYBORG_CONSTRUCT";
+  case DROID_TYPE::CYBORG_CONSTRUCT: templateObj["type"] = "CYBORG_CONSTRUCT";
 		break;
-	case DROID_CYBORG_REPAIR: templateObj["type"] = "CYBORG_REPAIR";
+  case DROID_TYPE::CYBORG_REPAIR: templateObj["type"] = "CYBORG_REPAIR";
 		break;
-	case DROID_TRANSPORTER: templateObj["type"] = "TRANSPORTER";
+  case DROID_TYPE::TRANSPORTER: templateObj["type"] = "TRANSPORTER";
 		break;
-	case DROID_SUPERTRANSPORTER: templateObj["type"] = "SUPERTRANSPORTER";
+  case DROID_TYPE::SUPER_TRANSPORTER: templateObj["type"] = "SUPERTRANSPORTER";
 		break;
-	case DROID_COMMAND: templateObj["type"] = "DROID_COMMAND";
+  case DROID_TYPE::COMMAND: templateObj["type"] = "DROID_COMMAND";
 		break;
-	case DROID_REPAIR: templateObj["type"] = "REPAIR";
+  case DROID_TYPE::REPAIRER: templateObj["type"] = "REPAIR";
 		break;
-	case DROID_DEFAULT: templateObj["type"] = "DROID";
+  case DROID_TYPE::DEFAULT: templateObj["type"] = "DROID";
 		break;
 	default: ASSERT(false, "No such droid type \"%d\" for %s", psCurr->type, psCurr->name.toUtf8().c_str());
 	}
-	templateObj["body"] = (asBodyStats + psCurr->asParts[COMP_BODY])->id;
-	templateObj["propulsion"] = (asPropulsionStats + psCurr->asParts[COMP_PROPULSION])->id;
-	if (psCurr->asParts[COMP_BRAIN] != 0)
+	templateObj["body"] = (asBodyStats + psCurr->asParts[COMPONENT_TYPE::BODY])->id;
+	templateObj["propulsion"] = (asPropulsionStats + psCurr->asParts[COMPONENT_TYPE::PROPULSION])->id;
+	if (psCurr->asParts[COMPONENT_TYPE::BRAIN] != 0)
 	{
-		templateObj["brain"] = (asBrainStats + psCurr->asParts[COMP_BRAIN])->id;
+		templateObj["brain"] = (asBrainStats + psCurr->asParts[COMPONENT_TYPE::BRAIN])->id;
 	}
-	if ((asRepairStats + psCurr->asParts[COMP_REPAIRUNIT])->location == LOC_TURRET) // avoid auto-repair...
+	if ((asRepairStats + psCurr->asParts[COMPONENT_TYPE::REPAIR_UNIT])->location == LOC::TURRET) // avoid auto-repair...
 	{
-		templateObj["repair"] = (asRepairStats + psCurr->asParts[COMP_REPAIRUNIT])->id;
+		templateObj["repair"] = (asRepairStats + psCurr->asParts[COMPONENT_TYPE::REPAIR_UNIT])->id;
 	}
-	if ((asECMStats + psCurr->asParts[COMP_ECM])->location == LOC_TURRET)
+	if ((asECMStats + psCurr->asParts[COMPONENT_TYPE::ECM])->location == LOC::TURRET)
 	{
-		templateObj["ecm"] = (asECMStats + psCurr->asParts[COMP_ECM])->id;
+		templateObj["ecm"] = (asECMStats + psCurr->asParts[COMPONENT_TYPE::ECM])->id;
 	}
-	if ((asSensorStats + psCurr->asParts[COMP_SENSOR])->location == LOC_TURRET)
+	if ((asSensorStats + psCurr->asParts[COMPONENT_TYPE::SENSOR])->location == LOC::TURRET)
 	{
-		templateObj["sensor"] = (asSensorStats + psCurr->asParts[COMP_SENSOR])->id;
+		templateObj["sensor"] = (asSensorStats + psCurr->asParts[COMPONENT_TYPE::SENSOR])->id;
 	}
-	if (psCurr->asParts[COMP_CONSTRUCT] != 0)
+	if (psCurr->asParts[COMPONENT_TYPE::CONSTRUCT] != 0)
 	{
-		templateObj["construct"] = (asConstructStats + psCurr->asParts[COMP_CONSTRUCT])->id;
+		templateObj["construct"] = (asConstructStats + psCurr->asParts[COMPONENT_TYPE::CONSTRUCT])->id;
 	}
 	nlohmann::json weapons = nlohmann::json::array();
 	for (int j = 0; j < psCurr->weaponCount; j++)
@@ -782,14 +782,14 @@ std::vector<DroidTemplate*> fillTemplateList(Structure* psFactory)
 		}
 
 		//check the factory can cope with this sized body
-		if (((asBodyStats + psCurr->asParts[COMP_BODY])->size <= iCapacity))
+		if (((asBodyStats + psCurr->asParts[COMPONENT_TYPE::BODY])->size <= iCapacity))
 		{
 			pList.push_back(psCurr);
 		}
 		else if (bMultiPlayer && (iCapacity == SIZE_HEAVY))
 		{
 			// Special case for Super heavy bodyies (Super Transporter)
-			if ((asBodyStats + psCurr->asParts[COMP_BODY])->size == SIZE_SUPER_HEAVY)
+			if ((asBodyStats + psCurr->asParts[COMPONENT_TYPE::BODY])->size == SIZE_SUPER_HEAVY)
 			{
 				pList.push_back(psCurr);
 			}

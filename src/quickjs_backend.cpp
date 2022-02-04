@@ -229,7 +229,7 @@ public:
 		                                wzapi::GlobalVariableFlags::DoNotSave) override;
 
 private:
-	inline int toQuickJSPropertyFlags(wzapi::GlobalVariableFlags flags)
+	inline unsigned toQuickJSPropertyFlags(wzapi::GlobalVariableFlags flags)
 	{
 		int propertyFlags = 0;
 		if (((flags & wzapi::GlobalVariableFlags::ReadOnly) != wzapi::GlobalVariableFlags::ReadOnly)
@@ -315,32 +315,32 @@ public:
 	//__ An event that is run when the mission transporter has been ordered to fly off.
 	//__
 	bool handle_eventLaunchTransporter() override; // DEPRECATED!
-	bool handle_eventTransporterLaunch(const PlayerOwnedObject * psTransport) override;
+	bool handle_eventTransporterLaunch(const BaseObject * psTransport) override;
 
 	//__ ## eventTransporterArrived(transport)
 	//__
 	//__ An event that is run when the mission transporter has arrived at the map edge with reinforcements.
 	//__
 	bool handle_eventReinforcementsArrived() override; // DEPRECATED!
-	bool handle_eventTransporterArrived(const PlayerOwnedObject * psTransport) override;
+	bool handle_eventTransporterArrived(const BaseObject * psTransport) override;
 
 	//__ ## eventTransporterExit(transport)
 	//__
 	//__ An event that is run when the mission transporter has left the map.
 	//__
-	bool handle_eventTransporterExit(const PlayerOwnedObject * psObj) override;
+	bool handle_eventTransporterExit(const BaseObject * psObj) override;
 
 	//__ ## eventTransporterDone(transport)
 	//__
 	//__ An event that is run when the mission transporter has no more reinforcements to deliver.
 	//__
-	bool handle_eventTransporterDone(const PlayerOwnedObject * psTransport) override;
+	bool handle_eventTransporterDone(const BaseObject * psTransport) override;
 
 	//__ ## eventTransporterLanded(transport)
 	//__
 	//__ An event that is run when the mission transporter has landed with reinforcements.
 	//__
-	bool handle_eventTransporterLanded(const PlayerOwnedObject * psTransport) override;
+	bool handle_eventTransporterLanded(const BaseObject * psTransport) override;
 
 public:
 	// MARK: UI-related events (intended for the tutorial)
@@ -349,13 +349,13 @@ public:
 	//__
 	//__ An event that is run when the current player starts to move a delivery point.
 	//__
-	bool handle_eventDeliveryPointMoving(const PlayerOwnedObject * psStruct) override;
+	bool handle_eventDeliveryPointMoving(const BaseObject * psStruct) override;
 
 	//__ ## eventDeliveryPointMoved()
 	//__
 	//__ An event that is run after the current player has moved a delivery point.
 	//__
-	bool handle_eventDeliveryPointMoved(const PlayerOwnedObject * psStruct) override;
+	bool handle_eventDeliveryPointMoved(const BaseObject * psStruct) override;
 
 	//__ ## eventDesignBody()
 	//__
@@ -435,7 +435,7 @@ public:
 	//__ deselected object. If all selected game objects are deselected, ```objects``` will
 	//__ be empty.
 	//__
-	bool handle_eventSelectionChanged(const std::vector<const PlayerOwnedObject *>& objects) override;
+	bool handle_eventSelectionChanged(const std::vector<const BaseObject *>& objects) override;
 
 public:
 	// MARK: Game state-change events
@@ -444,7 +444,7 @@ public:
 	//__
 	//__ An event that is run when an object (ex. droid, structure) is recycled.
 	//__
-	bool handle_eventObjectRecycled(const PlayerOwnedObject * psObj) override;
+	bool handle_eventObjectRecycled(const BaseObject * psObj) override;
 
 	//__ ## eventPlayerLeft(player)
 	//__
@@ -507,7 +507,7 @@ public:
 	//__ An event that is run when an object belonging to the script's controlling player is
 	//__ attacked. The attacker parameter may be either a structure or a droid.
 	//__
-	bool handle_eventAttacked(const PlayerOwnedObject * psVictim, const PlayerOwnedObject * psAttacker) override;
+	bool handle_eventAttacked(const BaseObject * psVictim, const BaseObject * psAttacker) override;
 
 	//__ ## eventResearched(research, structure, player)
 	//__
@@ -524,7 +524,7 @@ public:
 	//__ An event that is run whenever an object is destroyed. Careful passing
 	//__ the parameter object around, since it is about to vanish!
 	//__
-	bool handle_eventDestroyed(const PlayerOwnedObject * psVictim) override;
+	bool handle_eventDestroyed(const BaseObject * psVictim) override;
 
 	//__ ## eventPickup(feature, droid)
 	//__
@@ -541,7 +541,7 @@ public:
 	//__ An event that is run sometimes when an objectm  goes from not seen to seen.
 	//__ First parameter is **game object** doing the seeing, the next the game
 	//__ object being seen.
-	bool handle_eventObjectSeen(const PlayerOwnedObject * psViewer, const PlayerOwnedObject * psSeen) override;
+	bool handle_eventObjectSeen(const BaseObject * psViewer, const BaseObject * psSeen) override;
 
 	//__
 	//__ ## eventGroupSeen(viewer, group)
@@ -551,7 +551,7 @@ public:
 	//__ First parameter is **game object** doing the seeing, the next the id of the group
 	//__ being seen.
 	//__
-	bool handle_eventGroupSeen(const PlayerOwnedObject * psViewer, int groupId) override;
+	bool handle_eventGroupSeen(const BaseObject * psViewer, int groupId) override;
 
 	//__ ## eventObjectTransfer(object, from)
 	//__
@@ -560,7 +560,7 @@ public:
 	//__ object has been transferred, so the target player is in object.player.
 	//__ The event is called for both players.
 	//__
-	bool handle_eventObjectTransfer(const PlayerOwnedObject * psObj, int from) override;
+	bool handle_eventObjectTransfer(const BaseObject * psObj, unsigned from) override;
 
 	//__ ## eventChat(from, to, message)
 	//__
@@ -568,7 +568,7 @@ public:
 	//__ player sending the chat message. For the moment, the ```to``` parameter is always the script
 	//__ player.
 	//__
-	bool handle_eventChat(int from, int to, const char* message) override;
+	bool handle_eventChat(unsigned from, unsigned to, const char* message) override;
 
 	//__ ## eventBeacon(x, y, from, to[, message])
 	//__
@@ -576,14 +576,14 @@ public:
 	//__ player sending the beacon. For the moment, the ```to``` parameter is always the script player.
 	//__ Message may be undefined.
 	//__
-	bool handle_eventBeacon(int x, int y, int from, int to, optional<const char*> message) override;
+	bool handle_eventBeacon(int x, int y, unsigned from, unsigned to, optional<const char*> message) override;
 
 	//__ ## eventBeaconRemoved(from, to)
 	//__
 	//__ An event that is run whenever a beacon message is removed. The ```from``` parameter is the
 	//__ player sending the beacon. For the moment, the ```to``` parameter is always the script player.
 	//__
-	bool handle_eventBeaconRemoved(int from, int to) override;
+	bool handle_eventBeaconRemoved(unsigned from, unsigned to) override;
 
 	//__ ## eventGroupLoss(object, groupId, newSize)
 	//__
@@ -591,7 +591,7 @@ public:
 	//__ is the about to be killed object, the group's id, and the new group size.
 	//__
 	//		// Since groups are entities local to one context, we do not iterate over them here.
-	bool handle_eventGroupLoss(const PlayerOwnedObject * psObj, int group, int size) override;
+	bool handle_eventGroupLoss(const BaseObject * psObj, int group, int size) override;
 
 	//__ ## eventArea<label>(droid)
 	//__
@@ -635,8 +635,8 @@ public:
 	//__ to prevent desync from happening. Sync requests must be carefully validated to prevent
 	//__ cheating!
 	//__
-	bool handle_eventSyncRequest(int from, int req_id, int x, int y, const PlayerOwnedObject * psObj,
-	                                     const PlayerOwnedObject * psObj2) override;
+	bool handle_eventSyncRequest(unsigned from, int req_id, int x, int y, const BaseObject * psObj,
+	                                     const BaseObject * psObj2) override;
 
 	//__ ## eventKeyPressed(meta, key)
 	//__
@@ -868,17 +868,17 @@ JSValue convStructure(const Structure* psStruct, JSContext* ctx)
 		QuickJS_DefinePropertyValue(ctx, value, "modules", JS_NULL, JS_PROP_ENUMERABLE);
 	}
 	JSValue weaponlist = JS_NewArray(ctx);
-	for (int j = 0; j < psStruct->numWeaps; j++)
+	for (auto j = 0; j < numWeapons(*psStruct); j++)
 	{
 		JSValue weapon = JS_NewObject(ctx);
-		const WeaponStats* psStats = asWeaponStats + psStruct->asWeaps[j].nStat;
+		const auto psStats = psStruct->weaponManager->weapons[j].stats;
 		QuickJS_DefinePropertyValue(ctx, weapon, "fullname", JS_NewString(ctx, psStats->name.toUtf8().c_str()),
 		                            JS_PROP_ENUMERABLE);
 		QuickJS_DefinePropertyValue(ctx, weapon, "name", JS_NewString(ctx, psStats->id.toUtf8().c_str()),
 		                            JS_PROP_ENUMERABLE); // will be changed to contain full name
 		QuickJS_DefinePropertyValue(ctx, weapon, "id", JS_NewString(ctx, psStats->id.toUtf8().c_str()),
 		                            JS_PROP_ENUMERABLE);
-		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psStruct->asWeaps[j].timeLastFired),
+		QuickJS_DefinePropertyValue(ctx, weapon, "lastFired", JS_NewUint32(ctx, psStruct->weaponManager->weapons[j].timeLastFired),
 		                            JS_PROP_ENUMERABLE);
 		JS_DefinePropertyValueUint32(ctx, weaponlist, j, weapon, JS_PROP_ENUMERABLE);
 	}
@@ -974,7 +974,7 @@ JSValue convDroid(const Droid* psDroid, JSContext* ctx)
 	bool ga = false;
 	bool indirect = false;
 	int range = -1;
-	const BodyStats* psBodyStats = &asBodyStats[psDroid->asBits[COMP_BODY]];
+	const BodyStats* psBodyStats = &asBodyStats[psDroid->asBits[COMPONENT_TYPE::BODY]];
 
 	for (int i = 0; i < psDroid->numWeaps; i++)
 	{
@@ -1021,7 +1021,7 @@ JSValue convDroid(const Droid* psDroid, JSContext* ctx)
 		break;
 	}
 	QuickJS_DefinePropertyValue(ctx, value, "bodySize", JS_NewInt32(ctx, psBodyStats->size), JS_PROP_ENUMERABLE);
-	if (isTransporter(psDroid))
+	if (isTransporter(*psDroid))
 	{
 		QuickJS_DefinePropertyValue(ctx, value, "cargoCapacity", JS_NewInt32(ctx, TRANSPORTER_CAPACITY),
 		                            JS_PROP_ENUMERABLE);
@@ -1049,11 +1049,11 @@ JSValue convDroid(const Droid* psDroid, JSContext* ctx)
 	                            JS_PROP_ENUMERABLE);
 
 	QuickJS_DefinePropertyValue(ctx, value, "body",
-	                            JS_NewString(ctx, asBodyStats[psDroid->asBits[COMP_BODY]].id.toUtf8().c_str()),
+	                            JS_NewString(ctx, asBodyStats[psDroid->asBits[COMPONENT_TYPE::BODY]].id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "propulsion",
 	                            JS_NewString(
-		                            ctx, asPropulsionStats[psDroid->asBits[COMP_PROPULSION]].id.toUtf8().c_str()),
+		                            ctx, asPropulsionStats[psDroid->asBits[COMPONENT_TYPE::PROPULSION]].id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "armed", JS_NewFloat64(ctx, 0.0), JS_PROP_ENUMERABLE); // deprecated!
 
@@ -1176,28 +1176,28 @@ JSValue convTemplate(const DroidTemplate* psTempl, JSContext* ctx)
 	QuickJS_DefinePropertyValue(ctx, value, "cost", JS_NewUint32(ctx, calcTemplatePower(psTempl)), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "droidType", JS_NewInt32(ctx, psTempl->type), JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "body",
-	                            JS_NewString(ctx, (asBodyStats + psTempl->asParts[COMP_BODY])->id.toUtf8().c_str()),
+	                            JS_NewString(ctx, (asBodyStats + psTempl->asParts[COMPONENT_TYPE::BODY])->id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "propulsion",
 	                            JS_NewString(
-		                            ctx, (asPropulsionStats + psTempl->asParts[COMP_PROPULSION])->id.toUtf8().c_str()),
+		                            ctx, (asPropulsionStats + psTempl->asParts[COMPONENT_TYPE::PROPULSION])->id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "brain",
-	                            JS_NewString(ctx, (asBrainStats + psTempl->asParts[COMP_BRAIN])->id.toUtf8().c_str()),
+	                            JS_NewString(ctx, (asBrainStats + psTempl->asParts[COMPONENT_TYPE::BRAIN])->id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "repair",
 	                            JS_NewString(
-		                            ctx, (asRepairStats + psTempl->asParts[COMP_REPAIRUNIT])->id.toUtf8().c_str()),
+		                            ctx, (asRepairStats + psTempl->asParts[COMPONENT_TYPE::REPAIR_UNIT])->id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "ecm",
-	                            JS_NewString(ctx, (asECMStats + psTempl->asParts[COMP_ECM])->id.toUtf8().c_str()),
+	                            JS_NewString(ctx, (asECMStats + psTempl->asParts[COMPONENT_TYPE::ECM])->id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "sensor",
-	                            JS_NewString(ctx, (asSensorStats + psTempl->asParts[COMP_SENSOR])->id.toUtf8().c_str()),
+	                            JS_NewString(ctx, (asSensorStats + psTempl->asParts[COMPONENT_TYPE::SENSOR])->id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
 	QuickJS_DefinePropertyValue(ctx, value, "construct",
 	                            JS_NewString(
-		                            ctx, (asConstructStats + psTempl->asParts[COMP_CONSTRUCT])->id.toUtf8().c_str()),
+		                            ctx, (asConstructStats + psTempl->asParts[COMPONENT_TYPE::CONSTRUCT])->id.toUtf8().c_str()),
 	                            JS_PROP_ENUMERABLE);
 	JSValue weaponlist = JS_NewArray(ctx);
 	for (int j = 0; j < psTempl->weaponCount; j++)
@@ -1567,28 +1567,28 @@ namespace
 	};
 
 	template <>
-	struct unbox<PlayerOwnedObject *>
+	struct unbox<BaseObject *>
 	{
-    PlayerOwnedObject * operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+    BaseObject * operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
 			if (argc <= idx)
 				return {};
 			JSValue objVal = argv[idx++];
 			int oid = QuickJS_GetInt32(ctx, objVal, "id");
 			int oplayer = QuickJS_GetInt32(ctx, objVal, "player");
-			OBJECT_TYPE otype = (OBJECT_TYPE)QuickJS_GetInt32(ctx, objVal, "type");
-      PlayerOwnedObject * psObj = IdToObject(otype, oid, oplayer);
+			auto otype = (OBJECT_TYPE)QuickJS_GetInt32(ctx, objVal, "type");
+      BaseObject * psObj = IdToObject(otype, oid, oplayer);
 			UNBOX_SCRIPT_ASSERT(context, psObj, "No such object id %d belonging to player %d", oid, oplayer);
 			return psObj;
 		}
 	};
 
 	template <>
-	struct unbox<const PlayerOwnedObject *>
+	struct unbox<const BaseObject *>
 	{
-		const PlayerOwnedObject * operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
+		const BaseObject * operator()(size_t& idx, JSContext* ctx, int argc, JSValueConst* argv, const char* function)
 		{
-			return unbox<PlayerOwnedObject *>()(idx, ctx, argc, argv, function);
+			return unbox<BaseObject *>()(idx, ctx, argc, argv, function);
 		}
 	};
 
@@ -1831,7 +1831,7 @@ namespace
 			{
 				int id = QuickJS_GetInt32(ctx, qval, "id");
 				unsigned player = QuickJS_GetInt32(ctx, qval, "player");
-        PlayerOwnedObject * psObj = IdToObject((OBJECT_TYPE)type, id, player);
+        BaseObject * psObj = IdToObject((OBJECT_TYPE)type, id, player);
 				UNBOX_SCRIPT_ASSERT(context, psObj, "Object id %d not found belonging to player %d", id, player);
 				// TODO: fail out
 				return generic_script_object::fromObject(psObj);
@@ -1851,7 +1851,7 @@ namespace
 
 			if ((argc - idx) >= 3) // get by ID case (3 parameters)
 			{
-				OBJECT_TYPE type = (OBJECT_TYPE)JSValueToInt32(ctx, argv[idx++]);
+				auto type = (OBJECT_TYPE)JSValueToInt32(ctx, argv[idx++]);
 				unsigned player = JSValueToInt32(ctx, argv[idx++]);
 				int id = JSValueToInt32(ctx, argv[idx++]);
 				return wzapi::object_request(type, player, id);
@@ -1943,7 +1943,7 @@ namespace
 		return JS_UNDEFINED;
 	}
 
-	JSValue box(const PlayerOwnedObject * psObj, JSContext* ctx)
+	JSValue box(const BaseObject * psObj, JSContext* ctx)
 	{
 		if (!psObj)
 		{
@@ -2050,7 +2050,7 @@ namespace
 		case OBJ_FEATURE:
 		case OBJ_STRUCTURE:
 			{
-      PlayerOwnedObject * psObj = p.getObject();
+      BaseObject * psObj = p.getObject();
 				return convMax(psObj, ctx);
 			}
 			break;
@@ -2524,11 +2524,11 @@ public:
 };
 
 static uniqueTimerID SetQuickJSTimer(JSContext* ctx, unsigned player, const std::string& funcName, int32_t ms,
-                                     const std::string& stringArg, PlayerOwnedObject * psObj, timerType type)
+                                     const std::string& stringArg, BaseObject * psObj, timerType type)
 {
 	return scripting_engine::instance().setTimer(engineToInstanceMap.at(ctx)
 	                                             // timerFunc
-	                                             , [ctx, funcName](uniqueTimerID timerID, PlayerOwnedObject * baseObject,
+	                                             , [ctx, funcName](uniqueTimerID timerID, BaseObject * baseObject,
                                                                  timerAdditionalData* additionalParams)
 	                                             {
 		                                             auto* pData = dynamic_cast<
@@ -2589,7 +2589,7 @@ static JSValue js_setTimer(JSContext* ctx, JSValueConst this_val, int argc, JSVa
 	JS_FreeValue(ctx, funcObj);
 
 	std::string stringArg;
-  PlayerOwnedObject * psObj = nullptr;
+  BaseObject * psObj = nullptr;
 	if (argc == 3)
 	{
 		JSValue obj = argv[2];
@@ -2600,7 +2600,7 @@ static JSValue js_setTimer(JSContext* ctx, JSValueConst this_val, int argc, JSVa
 		else // is game object
 		{
 			int baseobj = QuickJS_GetInt32(ctx, obj, "id");
-			OBJECT_TYPE baseobjtype = (OBJECT_TYPE)QuickJS_GetInt32(ctx, obj, "type");
+			auto baseobjtype = (OBJECT_TYPE)QuickJS_GetInt32(ctx, obj, "type");
 			psObj = IdToObject(baseobjtype, baseobj, player);
 		}
 	}
@@ -2675,7 +2675,7 @@ static JSValue js_queue(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	unsigned player = QuickJS_GetInt32(ctx, global_obj, "me");
 
 	std::string stringArg;
-  PlayerOwnedObject * psObj = nullptr;
+  BaseObject * psObj = nullptr;
 	if (argc == 3)
 	{
 		JSValue obj = argv[2];
@@ -2686,7 +2686,7 @@ static JSValue js_queue(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 		else // is game object
 		{
 			int baseobj = QuickJS_GetInt32(ctx, obj, "id");
-			OBJECT_TYPE baseobjtype = (OBJECT_TYPE)QuickJS_GetInt32(ctx, obj, "type");
+			auto baseobjtype = (OBJECT_TYPE)QuickJS_GetInt32(ctx, obj, "type");
 			psObj = IdToObject(baseobjtype, baseobj, player);
 		}
 	}
@@ -2951,7 +2951,7 @@ std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>> quickjs_scripting_in
 
 	return std::tuple<TimerFunc, std::unique_ptr<timerAdditionalData>>{
 		// timerFunc
-		[pContext, funcName](uniqueTimerID timerID, PlayerOwnedObject * baseObject, timerAdditionalData* additionalParams)
+		[pContext, funcName](uniqueTimerID timerID, BaseObject * baseObject, timerAdditionalData* additionalParams)
 		{
 			auto* pData = dynamic_cast<quickjs_timer_additionaldata*>(additionalParams);
 			std::vector<JSValue> args;
@@ -3101,16 +3101,16 @@ IMPL_EVENT_HANDLER_NO_PARAMS(eventGameSaved)
 
 // MARK: Transporter events
 IMPL_EVENT_HANDLER_NO_PARAMS(eventLaunchTransporter) // DEPRECATED!
-IMPL_EVENT_HANDLER(eventTransporterLaunch, const PlayerOwnedObject *)
+IMPL_EVENT_HANDLER(eventTransporterLaunch, const BaseObject *)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventReinforcementsArrived) // DEPRECATED!
-IMPL_EVENT_HANDLER(eventTransporterArrived, const PlayerOwnedObject *)
-IMPL_EVENT_HANDLER(eventTransporterExit, const PlayerOwnedObject *)
-IMPL_EVENT_HANDLER(eventTransporterDone, const PlayerOwnedObject *)
-IMPL_EVENT_HANDLER(eventTransporterLanded, const PlayerOwnedObject *)
+IMPL_EVENT_HANDLER(eventTransporterArrived, const BaseObject *)
+IMPL_EVENT_HANDLER(eventTransporterExit, const BaseObject *)
+IMPL_EVENT_HANDLER(eventTransporterDone, const BaseObject *)
+IMPL_EVENT_HANDLER(eventTransporterLanded, const BaseObject *)
 
 // MARK: UI-related events (intended for the tutorial)
-IMPL_EVENT_HANDLER(eventDeliveryPointMoving, const PlayerOwnedObject *)
-IMPL_EVENT_HANDLER(eventDeliveryPointMoved, const PlayerOwnedObject *)
+IMPL_EVENT_HANDLER(eventDeliveryPointMoving, const BaseObject *)
+IMPL_EVENT_HANDLER(eventDeliveryPointMoved, const BaseObject *)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventDesignBody)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventDesignPropulsion)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventDesignWeapon)
@@ -3123,10 +3123,10 @@ IMPL_EVENT_HANDLER_NO_PARAMS(eventMenuBuild)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventMenuResearch)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventMenuDesign)
 IMPL_EVENT_HANDLER_NO_PARAMS(eventMenuManufacture)
-IMPL_EVENT_HANDLER(eventSelectionChanged, const std::vector<const PlayerOwnedObject *>&)
+IMPL_EVENT_HANDLER(eventSelectionChanged, const std::vector<const BaseObject *>&)
 
 // MARK: Game state-change events
-IMPL_EVENT_HANDLER(eventObjectRecycled, const PlayerOwnedObject *)
+IMPL_EVENT_HANDLER(eventObjectRecycled, const BaseObject *)
 IMPL_EVENT_HANDLER(eventPlayerLeft, int)
 IMPL_EVENT_HANDLER(eventCheatMode, bool)
 IMPL_EVENT_HANDLER(eventDroidIdle, const Droid *)
@@ -3135,17 +3135,17 @@ IMPL_EVENT_HANDLER(eventStructureBuilt, const Structure *, optional<const Droid 
 IMPL_EVENT_HANDLER(eventStructureDemolish, const Structure *, optional<const Droid *>)
 IMPL_EVENT_HANDLER(eventStructureReady, const Structure *)
 IMPL_EVENT_HANDLER(eventStructureUpgradeStarted, const Structure *)
-IMPL_EVENT_HANDLER(eventAttacked, const PlayerOwnedObject *, const PlayerOwnedObject *)
+IMPL_EVENT_HANDLER(eventAttacked, const BaseObject *, const BaseObject *)
 IMPL_EVENT_HANDLER(eventResearched, const wzapi::researchResult&, wzapi::event_nullable_ptr<const Structure>, int)
-IMPL_EVENT_HANDLER(eventDestroyed, const PlayerOwnedObject *)
+IMPL_EVENT_HANDLER(eventDestroyed, const BaseObject *)
 IMPL_EVENT_HANDLER(eventPickup, const Feature *, const Droid *)
-IMPL_EVENT_HANDLER(eventObjectSeen, const PlayerOwnedObject *, const PlayerOwnedObject *)
-IMPL_EVENT_HANDLER(eventGroupSeen, const PlayerOwnedObject *, int)
-IMPL_EVENT_HANDLER(eventObjectTransfer, const PlayerOwnedObject *, int)
+IMPL_EVENT_HANDLER(eventObjectSeen, const BaseObject *, const BaseObject *)
+IMPL_EVENT_HANDLER(eventGroupSeen, const BaseObject *, int)
+IMPL_EVENT_HANDLER(eventObjectTransfer, const BaseObject *, int)
 IMPL_EVENT_HANDLER(eventChat, int, int, const char *)
 IMPL_EVENT_HANDLER(eventBeacon, int, int, int, int, optional<const char *>)
 IMPL_EVENT_HANDLER(eventBeaconRemoved, int, int)
-IMPL_EVENT_HANDLER(eventGroupLoss, const PlayerOwnedObject *, int, int)
+IMPL_EVENT_HANDLER(eventGroupLoss, const BaseObject *, int, int)
 
 bool quickjs_scripting_instance::handle_eventArea(const std::string& label, const Droid* psDroid)
 {
@@ -3164,7 +3164,7 @@ IMPL_EVENT_HANDLER(eventAllianceAccepted, uint8_t, uint8_t)
 IMPL_EVENT_HANDLER(eventAllianceBroken, uint8_t, uint8_t)
 
 // MARK: Special input events
-IMPL_EVENT_HANDLER(eventSyncRequest, int, int, int, int, const PlayerOwnedObject *, const PlayerOwnedObject *)
+IMPL_EVENT_HANDLER(eventSyncRequest, int, int, int, int, const BaseObject *, const BaseObject *)
 IMPL_EVENT_HANDLER(eventKeyPressed, int, int)
 
 // ----------------------------------------------------------------------------------------

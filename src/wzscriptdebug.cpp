@@ -70,6 +70,7 @@
 #include "loop.h"
 #include "mission.h"
 #include "message.h"
+#include "move.h"
 #include "transporter.h"
 #include "template.h"
 #include "multiint.h"
@@ -77,6 +78,8 @@
 
 #include "wzapi.h"
 #include "qtscript.h"
+#include "baseobject.h"
+#include "intfac.h"
 
 #include <numeric>
 #include <algorithm>
@@ -162,7 +165,7 @@ static RowDataModel fillViewdataModel()
 	for (const WzString& key : keys)
 	{
 		VIEWDATA* ptr = getViewData(key);
-		ASSERT(ptr->type < view_type.size(), "Bad viewdata type");
+		ASSERT((int)ptr->type < view_type.size(), "Bad viewdata type");
 
 		result.newRow({key, view_type.at(ptr->type), ptr->fileName}, SCRIPTDEBUG_ROW_HEIGHT, true);
 	}
@@ -197,7 +200,7 @@ static RowDataModel fillMessageModel()
 			else if (psCurr.psObj)
 			{
 				columnTexts.emplace_back((objInfo(psCurr.psObj)));
-				columnTexts.push_back(obj_type.at(psCurr.psObj->type));
+				columnTexts.push_back(obj_type.at(getObjectType(psCurr.psObj)));
 			}
 			else
 			{
@@ -325,15 +328,14 @@ static nlohmann::ordered_json fillPlayerModel(int i)
 
 // MARK: - componentToString
 
-static const char* getObjType(const PlayerOwnedObject * psObj)
+static const char* getObjType(BaseObject const* psObj)
 {
-	switch (psObj->type)
-	{
-	case OBJ_DROID: return "Droid";
-	case OBJ_STRUCTURE: return "Structure";
-	case OBJ_FEATURE: return "Feature";
-	case OBJ_PROJECTILE: return "Projectile";
-	default: break;
+	switch (getObjectType(psObj)) {
+    case OBJECT_TYPE::DROID: return "Droid";
+    case OBJECT_TYPE::STRUCTURE: return "Structure";
+    case OBJECT_TYPE::FEATURE: return "Feature";
+    case OBJECT_TYPE::PROJECTILE: return "Projectile";
+    default: break;
 	}
 	return "Unknown";
 }
@@ -364,12 +366,12 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, unsigned
 	key["^Power"] = psStats->buildPower;
 	key["^Build Points"] = psStats->buildPoints;
 	key["^Weight"] = psStats->weight;
-	key["^Hit points"] = psStats->getUpgrade(player).hitPoints;
-	key["^Hit points +% of total"] = psStats->getUpgrade(player).hitpointPct;
+	key["^Hit points"] = psStats->upgraded[player].hitPoints;
+	key["^Hit points +% of total"] = psStats->upgraded[player].hitpointPct;
 	key["^Designable"] = psStats->designable;
 	switch (psStats->compType)
 	{
-	case COMP_BODY:
+    case COMPONENT_TYPE::BODY:
 		{
 			const auto* psBody = (const BodyStats*)psStats;
 			key["^Size"] = psBody->size;
@@ -377,7 +379,7 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, unsigned
 			key["^Body class"] = psBody->bodyClass.toUtf8();
 			break;
 		}
-	case COMP_PROPULSION:
+    case COMPONENT_TYPE::PROPULSION:
 		{
 			const auto* psProp = (const PropulsionStats*)psStats;
 			key["^Hit points +% of body"] = psProp->upgraded[player].hitpointPctOfBody;
@@ -391,7 +393,7 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, unsigned
 			key["^Acceleration"] = psProp->acceleration;
 			break;
 		}
-	case COMP_BRAIN:
+	case COMPONENT_TYPE::BRAIN:
 		{
 			const auto* psBrain = (const CommanderStats*)psStats;
 			std::string ranks;
@@ -418,33 +420,33 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, unsigned
 			key["^Rank thresholds"] = thresholds;
 			break;
 		}
-	case COMP_REPAIRUNIT:
+	case COMPONENT_TYPE::REPAIR_UNIT:
 		{
 			const auto* psRepair = (const RepairStats*)psStats;
 			key["^Repair time"] = psRepair->time;
 			key["^Base repair points"] = psRepair->upgraded[player].repairPoints;
 			break;
 		}
-	case COMP_ECM:
+	case COMPONENT_TYPE::ECM:
 		{
 			const auto* psECM = (const EcmStats*)psStats;
 			key["^Base range"] = psECM->upgraded[player].range;
 			break;
 		}
-	case COMP_SENSOR:
+	case COMPONENT_TYPE::SENSOR:
 		{
 			const auto* psSensor = (const SensorStats*)psStats;
 			key["^Sensor type"] = psSensor->type;
 			key["^Base range"] = psSensor->upgraded[player].range;
 			break;
 		}
-	case COMP_CONSTRUCT:
+	case COMPONENT_TYPE::CONSTRUCT:
 		{
 			const auto* psCon = (const ConstructStats*)psStats;
 			key["^Base construct points"] = psCon->upgraded[player].constructPoints;
 			break;
 		}
-	case COMP_WEAPON:
+	case COMPONENT_TYPE::WEAPON:
 		{
 			const auto* psWeap = (const WeaponStats*)psStats;
 			key["Max range"] = psWeap->upgraded[player].maxRange;
@@ -463,8 +465,8 @@ nlohmann::ordered_json componentToString(const ComponentStats* psStats, unsigned
 			key["Short range"] = psWeap->upgraded[player].shortRange;
 			break;
 		}
-	case COMP_NUMCOMPONENTS:
-		ASSERT_OR_RETURN(key, "%s", "Invalid component: COMP_NUMCOMPONENTS!");
+	case COMPONENT_TYPE::COUNT:
+		ASSERT_OR_RETURN(key, "%s", "Invalid component: COMPONENT_TYPE::NUMCOMPONENTS!");
 		break;
 	// no "default" case because modern compiler plus "-Werror"
 	// will raise error if a switch is forgotten
@@ -593,10 +595,10 @@ public:
 		auto panel = std::make_shared<WzMainPanel>(readOnly);
 
 		std::shared_ptr<W_BUTTON> previousRowButton;
-		previousRowButton = panel->createButton(0, "Add droids", []() { intOpenDebugMenu(OBJ_DROID); }, nullptr, true);
-		previousRowButton = panel->createButton(0, "Add structures", []() { intOpenDebugMenu(OBJ_STRUCTURE); },
+		previousRowButton = panel->createButton(0, "Add droids", []() { intOpenDebugMenu(OBJECT_TYPE::DROID); }, nullptr, true);
+		previousRowButton = panel->createButton(0, "Add structures", []() { intOpenDebugMenu(OBJECT_TYPE::STRUCTURE); },
 		                                        previousRowButton, true);
-		previousRowButton = panel->createButton(0, "Add features", []() { intOpenDebugMenu(OBJ_FEATURE); },
+		previousRowButton = panel->createButton(0, "Add features", []() { intOpenDebugMenu(OBJECT_TYPE::FEATURE); },
 		                                        previousRowButton, true);
 
 		previousRowButton = panel->createButton(1, "Research all", kf_FinishAllResearch, nullptr, true);
@@ -859,7 +861,7 @@ public:
 private:
 	std::shared_ptr<W_BUTTON> createButton(int row, const std::string& text, const std::function<void ()>& onClickFunc,
 	                                       const std::shared_ptr<W_BUTTON>& previousButton = nullptr,
-	                                       bool requiresWriteAccess = true)
+	                                       bool requiresWriteAccess = true) const
 	{
 		auto button = makeDebugButton(text.c_str());
 		button->setGeometry(button->x(), button->y(), button->width() + 10, button->height());
@@ -2284,114 +2286,110 @@ void WZScriptDebugger::selected(BaseObject const* psObj)
 		selectedObjectId = SelectedObjectId(psObj);
 		selectedObjectDetails["Name"] = objInfo(psObj);
 		selectedObjectDetails["Type"] = getObjType(psObj);
-		selectedObjectDetails["Id"] = psObj->id;
-		selectedObjectDetails["Player"] = psObj->player;
-		selectedObjectDetails["Born"] = psObj->born;
-		selectedObjectDetails["Died"] = psObj->died;
+		selectedObjectDetails["Id"] = psObj->getId();
+		selectedObjectDetails["Player"] = psObj->playerManager->getPlayer();
+		selectedObjectDetails["Born"] = psObj->getBornTime();
+		selectedObjectDetails["Died"] = psObj->damageManager->getTimeOfDeath();
 		selectedObjectDetails["Group"] = psObj->group;
 		selectedObjectDetails["Watched tiles"] = psObj->watchedTiles.size();
-		selectedObjectDetails["Last hit"] = psObj->timeLastHit;
-		selectedObjectDetails["Hit points"] = psObj->body;
-		selectedObjectDetails["Periodical start"] = psObj->periodicalDamageStart;
-		selectedObjectDetails["Periodical damage"] = psObj->periodicalDamage;
+		selectedObjectDetails["Last hit"] = psObj->damageManager->getTimeLastHit();
+		selectedObjectDetails["Hit points"] = psObj->damageManager->getHp();
+		selectedObjectDetails["Periodical start"] = psObj->damageManager->getPeriodicalDamageStartTime();
+		selectedObjectDetails["Periodical damage"] = psObj->damageManager->getPeriodicalDamage();
 		selectedObjectDetails["Animation event"] = psObj->animationEvent;
 		selectedObjectDetails["Number of weapons"] = psObj->numWeaps;
-		selectedObjectDetails["Last hit weapon"] = psObj->lastHitWeapon;
+		selectedObjectDetails["Last hit weapon"] = psObj->damageManager->getLastHitWeapon();
 		selectedObjectDetails["Visible"] = arrayToString(psObj->visible, MAX_PLAYERS);
 		selectedObjectDetails["Seen last tick"] = arrayToString(psObj->seenThisTick, MAX_PLAYERS);
 
 		nlohmann::ordered_json weapons = nlohmann::ordered_json::array();
-		for (int i = 0; i < psObj->numWeaps; i++)
+		for (auto i = 0; i < psObj->numWeaps; i++)
 		{
-			if (psObj->asWeaps[i].nStat > 0)
-			{
-				WeaponStats* psWeap = asWeaponStats + psObj->asWeaps[i].nStat;
-				auto component = componentToString(psWeap, psObj->player);
-				component["Ammo"] = psObj->asWeaps[i].ammo;
-				component["Last fired time"] = psObj->asWeaps[i].timeLastFired;
-				component["Shots fired"] = psObj->asWeaps[i].shotsFired;
-				component["Used ammo"] = psObj->asWeaps[i].ammoUsed;
-				component["Origin"] = psObj->asWeaps[i].origin;
+			if (psObj->asWeaps[i].nStat > 0) {
+				auto psWeap = psObj->weaponManager->weapons[i].stats;
+				auto component = componentToString(psWeap, psObj->playerManager->getPlayer());
+				component["Ammo"] = psObj->weaponManager->weapons[i].ammo;
+				component["Last fired time"] = psObj->weaponManager->weapons[i].timeLastFired;
+				component["Shots fired"] = psObj->weaponManager->weapons[i].shotsFired;
+				component["Used ammo"] = psObj->weaponManager->weapons[i].ammoUsed;
+				component["Origin"] = psObj->weaponManager->weapons[i].origin;
 				weapons.push_back(component);
 			}
 		}
 		selectedObjectDetails["Weapons"] = weapons;
 
-		if (psObj->type == OBJ_DROID)
-		{
-			const Droid* psDroid = castDroid(psObj);
-			selectedObjectDetails["Droid type"] = psDroid->type;
-			selectedObjectDetails["Weight"] = psDroid->weight;
-			selectedObjectDetails["Base speed"] = psDroid->base_speed;
-			selectedObjectDetails["Original hit points"] = psDroid->original_hp;
-			selectedObjectDetails["Experience"] = psDroid->experience;
-			selectedObjectDetails["Frustrated time"] = psDroid->lastFrustratedTime;
-			selectedObjectDetails["Resistance"] = psDroid->resistance_to_electric;
-			selectedObjectDetails["Secondary order"] = psDroid->secondary_order;
-			selectedObjectDetails["Action"] = getDroidActionName(psDroid->action);
-			selectedObjectDetails["Action position"] = glm::to_string(psDroid->actionPos);
-			selectedObjectDetails["Action started"] = psDroid->time_action_started;
+		if (getObjectType(psObj) == OBJECT_TYPE::DROID) {
+			auto psDroid = dynamic_cast<Droid const*>(psObj);
+			selectedObjectDetails["Droid type"] = psDroid->getType();
+			selectedObjectDetails["Weight"] = psDroid->getWeight();
+			selectedObjectDetails["Base speed"] = psDroid->getBaseSpeed();
+			selectedObjectDetails["Original hit points"] = psDroid->damageManager->getOriginalHp();
+			selectedObjectDetails["Experience"] = psDroid->getExperience();
+			selectedObjectDetails["Frustrated time"] = psDroid->getLastFrustratedTime();
+			selectedObjectDetails["Resistance"] = psDroid->damageManager->getResistance();
+			selectedObjectDetails["Secondary order"] = psDroid->getSecondaryOrder();
+			selectedObjectDetails["Action"] = getDroidActionName(psDroid->getAction());
+			selectedObjectDetails["Action position"] = glm::to_string(psDroid->getActionPos());
+			selectedObjectDetails["Action started"] = psDroid->getTimeActionStarted();
 			selectedObjectDetails["Action points"] = psDroid->action_points_done;
 			selectedObjectDetails["Illumination"] = psDroid->illumination_level;
 			selectedObjectDetails["Blocked bits"] = psDroid->blockedBits;
-			selectedObjectDetails["Move status"] = psDroid->movement.status;
-			selectedObjectDetails["Move index"] = psDroid->movement.pathIndex;
-			selectedObjectDetails["Move points"] = psDroid->movement.path.size();
-			selectedObjectDetails["Move destination"] = glm::to_string(psDroid->movement.destination);
-			selectedObjectDetails["Move source"] = glm::to_string(psDroid->movement.origin);
-			selectedObjectDetails["Move target"] = glm::to_string(psDroid->movement.target);
-			selectedObjectDetails["Move bump pos"] = glm::to_string(psDroid->movement.bumpPos);
-			selectedObjectDetails["Move speed"] = psDroid->movement.speed;
-			selectedObjectDetails["Move direction"] = psDroid->movement.moveDir;
-			selectedObjectDetails["Move bump dir"] = psDroid->movement.bumpDir;
-			selectedObjectDetails["Move bump time"] = psDroid->movement.bumpTime;
-			selectedObjectDetails["Move last bump"] = psDroid->movement.lastBump;
-			selectedObjectDetails["Move pause time"] = psDroid->movement.pauseTime;
-			selectedObjectDetails["Move shuffle start"] = psDroid->movement.shuffleStart;
-			selectedObjectDetails["Move vert speed"] = psDroid->movement.vertical_speed;
-			selectedObjectDetails["Body"] = componentToString(asBodyStats + psDroid->asBits[COMP_BODY], psObj->player);
-			selectedObjectDetails["Brain"] = componentToString(asBrainStats + psDroid->asBits[COMP_BRAIN],
-			                                                   psObj->player);
+			selectedObjectDetails["Move status"] = psDroid->getMovementData()->status;
+			selectedObjectDetails["Move index"] = psDroid->getMovementData()->pathIndex;
+			selectedObjectDetails["Move points"] = psDroid->getMovementData()->path.size();
+			selectedObjectDetails["Move destination"] = glm::to_string(psDroid->getMovementData()->destination);
+			selectedObjectDetails["Move source"] = glm::to_string(psDroid->getMovementData()->src);
+			selectedObjectDetails["Move target"] = glm::to_string(psDroid->getMovementData()->target);
+			selectedObjectDetails["Move bump pos"] = glm::to_string(psDroid->getMovementData()->bumpPos);
+			selectedObjectDetails["Move speed"] = psDroid->getMovementData()->speed;
+			selectedObjectDetails["Move direction"] = psDroid->getMovementData()->moveDir;
+			selectedObjectDetails["Move bump dir"] = psDroid->getMovementData()->bumpDir;
+			selectedObjectDetails["Move bump time"] = psDroid->getMovementData()->bumpTime;
+			selectedObjectDetails["Move last bump"] = psDroid->getMovementData()->lastBump;
+			selectedObjectDetails["Move pause time"] = psDroid->getMovementData()->pauseTime;
+			selectedObjectDetails["Move shuffle start"] = psDroid->getMovementData()->shuffleStart;
+			selectedObjectDetails["Move vert speed"] = psDroid->getMovementData()->vertical_speed;
+			selectedObjectDetails["Body"] = componentToString(asBodyStats + psDroid->asBits[COMPONENT_TYPE::BODY], psObj->playerManager->getPlayer());
+			selectedObjectDetails["Brain"] = componentToString(asBrainStats + psDroid->asBits[COMPONENT_TYPE::BRAIN],
+			                                                   psObj->playerManager->getPlayer());
 			selectedObjectDetails["Propulsion"] = componentToString(
-				asPropulsionStats + psDroid->asBits[COMP_PROPULSION], psObj->player);
-			selectedObjectDetails["ECM"] = componentToString(asECMStats + psDroid->asBits[COMP_ECM], psObj->player);
-			selectedObjectDetails["Sensor"] = componentToString(asSensorStats + psDroid->asBits[COMP_SENSOR],
-			                                                    psObj->player);
-			selectedObjectDetails["Construct"] = componentToString(asConstructStats + psDroid->asBits[COMP_CONSTRUCT],
-			                                                       psObj->player);
-			selectedObjectDetails["Repair"] = componentToString(asRepairStats + psDroid->asBits[COMP_REPAIRUNIT],
-			                                                    psObj->player);
+				asPropulsionStats + psDroid->asBits[COMPONENT_TYPE::PROPULSION], psObj->playerManager->getPlayer());
+			selectedObjectDetails["ECM"] = componentToString(asECMStats + psDroid->asBits[COMPONENT_TYPE::ECM], psObj->playerManager->getPlayer());
+			selectedObjectDetails["Sensor"] = componentToString(asSensorStats + psDroid->asBits[COMPONENT_TYPE::SENSOR],
+			                                                    psObj->playerManager->getPlayer());
+			selectedObjectDetails["Construct"] = componentToString(asConstructStats + psDroid->asBits[COMPONENT_TYPE::CONSTRUCT],
+			                                                       psObj->playerManager->getPlayer());
+			selectedObjectDetails["Repair"] = componentToString(asRepairStats + psDroid->asBits[COMPONENT_TYPE::REPAIR_UNIT],
+			                                                    psObj->playerManager->getPlayer());
 		}
-		else if (psObj->type == OBJ_STRUCTURE)
-		{
-			const Structure* psStruct = castStructure(psObj);
-			selectedObjectDetails["Build points"] = psStruct->currentBuildPts;
+		else if (getObjectType(psObj) == OBJECT_TYPE::STRUCTURE) {
+			auto psStruct = dynamic_cast<Structure const*>(psObj);
+			selectedObjectDetails["Build points"] = psStruct->getCurrentBuildPoints();
 			selectedObjectDetails["Build rate"] = psStruct->buildRate;
-			selectedObjectDetails["Resistance"] = psStruct->resistance;
-			selectedObjectDetails["Foundation depth"] = psStruct->foundationDepth;
-			selectedObjectDetails["Capacity"] = psStruct->capacity;
-			selectedObjectDetails["^Type"] = psStruct->pStructureType->type;
+			selectedObjectDetails["Resistance"] = psStruct->damageManager->getResistance();
+			selectedObjectDetails["Foundation depth"] = psStruct->getFoundationDepth();
+			selectedObjectDetails["Capacity"] = psStruct->getCapacity();
+			selectedObjectDetails["^Type"] = psStruct->getStats()->type;
 			selectedObjectDetails["^Build points"] = structureBuildPointsToCompletion(*psStruct);
-			selectedObjectDetails["^Power points"] = psStruct->pStructureType->power_cost;
-			selectedObjectDetails["^Height"] = psStruct->pStructureType->height;
-			selectedObjectDetails["ECM"] = componentToString(psStruct->pStructureType->ecm_stats, psObj->player);
-			selectedObjectDetails["Sensor"] = componentToString(psStruct->pStructureType->sensor_stats, psObj->player);
-			if (psStruct->pStructureType->type == REF_REARM_PAD)
-			{
+			selectedObjectDetails["^Power points"] = psStruct->getStats()->power_cost;
+			selectedObjectDetails["^Height"] = psStruct->getStats()->height;
+			selectedObjectDetails["ECM"] = componentToString(psStruct->getStats()->ecm_stats.get(), psObj->playerManager->getPlayer());
+			selectedObjectDetails["Sensor"] = componentToString(psStruct->getStats()->sensor_stats.get(), psObj->playerManager->getPlayer());
+			if (psStruct->getStats()->type == STRUCTURE_TYPE::REARM_PAD) {
 				selectedObjectDetails[":timeStarted"] = psStruct->pFunctionality->rearmPad.timeStarted;
 				selectedObjectDetails[":timeLastUpdated"] = psStruct->pFunctionality->rearmPad.timeLastUpdated;
 				selectedObjectDetails[":Rearm target"] = objInfo(psStruct->pFunctionality->rearmPad.psObj);
 			}
 		}
-		else if (psObj->type == OBJ_FEATURE)
+		else if (getObjectType(psObj) == OBJECT_TYPE::FEATURE)
 		{
-			const Feature* psFeat = castFeature(psObj);
-			selectedObjectDetails["^Feature type"] = psFeat->psStats->subType;
-			selectedObjectDetails["^Needs drawn"] = psFeat->psStats->tileDraw;
-			selectedObjectDetails["^Visible at start"] = psFeat->psStats->visibleAtStart;
-			selectedObjectDetails["^Damageable"] = psFeat->psStats->damageable;
-			selectedObjectDetails["^Hit points"] = psFeat->psStats->body;
-			selectedObjectDetails["^Armour"] = psFeat->psStats->armourValue;
+			auto psFeat = dynamic_cast<Feature const*>(psObj);
+			selectedObjectDetails["^Feature type"] = psFeat->getStats()->subType;
+			selectedObjectDetails["^Needs drawn"] = psFeat->getStats()->tileDraw;
+			selectedObjectDetails["^Visible at start"] = psFeat->getStats()->visibleAtStart;
+			selectedObjectDetails["^Damageable"] = psFeat->getStats()->damageable;
+			selectedObjectDetails["^Hit points"] = psFeat->getStats()->body;
+			selectedObjectDetails["^Armour"] = psFeat->getStats()->armourValue;
 		}
 	}
 

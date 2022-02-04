@@ -41,7 +41,7 @@ bool triggerEventCheatMode(bool);
 
 struct CHEAT_ENTRY
 {
-	std::string pName;
+	char* pName;
 	void (*function)(); // pointer to void* function
 };
 
@@ -95,7 +95,7 @@ static CHEAT_ENTRY cheatCodes[] =
 
 };
 
-bool _attemptCheatCode(const std::string& cheat_name)
+bool _attemptCheatCode(const char* cheat_name)
 {
 	const CHEAT_ENTRY* curCheat;
 	static const CHEAT_ENTRY* const EndCheat = &cheatCodes[ARRAY_SIZE(cheatCodes)];
@@ -146,7 +146,7 @@ bool _attemptCheatCode(const std::string& cheat_name)
 			curCheat->function(); // run it
 
 			// Copy this info to be used by the crash handler for the dump file
-			ssprintf(buf, "User has used cheat code: %s", curCheat->pName.c_str());
+			ssprintf(buf, "User has used cheat code: %s", curCheat->pName);
 			addDumpInfo(buf);
 
 			/* And get out of here */

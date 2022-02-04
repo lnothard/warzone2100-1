@@ -24,22 +24,22 @@
  */
 
 #include "lib/framework/frame.h"
-#include "warzoneconfig.h"
 #include "lib/sound/sounddefs.h"
+
+#include "activity.h"
 #include "component.h"
 #include "display.h"
 #include "keybind.h"
 #include "radar.h"
-#include "activity.h"
+#include "warzoneconfig.h"
 
-/***************************************************************************/
 
 struct WARZONE_GLOBALS
 {
 	FMV_MODE FMVmode = FMV_FULLSCREEN;
-	UDWORD width = 1024;
-	UDWORD height = 768;
-	UDWORD videoBufferDepth = 32;
+	unsigned width = 1024;
+	unsigned height = 768;
+	unsigned videoBufferDepth = 32;
 	int displayScale = 100;
 	int screen = 0;
 	int8_t SPcolor = 0;
@@ -70,8 +70,6 @@ struct WARZONE_GLOBALS
 
 static WARZONE_GLOBALS warGlobs;
 
-/***************************************************************************/
-
 std::string js_backend_names[] =
 {
 	"quickjs",
@@ -98,9 +96,6 @@ std::string to_string(JS_BACKEND backend)
 {
 	return js_backend_names[(size_t)backend];
 }
-
-
-/***************************************************************************/
 
 void war_SetDefaultStates()
 {

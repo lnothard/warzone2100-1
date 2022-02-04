@@ -63,10 +63,6 @@ static bool isMouseOptionsUp = false;
 static bool isInGameConfirmQuitUp = false;
 bool isKeyMapEditorUp = false;
 bool isMusicManagerUp = false;
-// ////////////////////////////////////////////////////////////////////////////
-// functions
-
-// ////////////////////////////////////////////////////////////////////////////
 
 static bool addIGTextButton(UDWORD id, UWORD x, UWORD y, UWORD width, const char* string, UDWORD Style)
 {

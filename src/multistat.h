@@ -31,21 +31,21 @@
 
 struct PLAYERSTATS
 {
-	uint32_t played = 0; /// propagated stats.
-	uint32_t wins = 0;
-	uint32_t losses = 0;
-	uint32_t totalKills = 0;
-	uint32_t totalScore = 0;
+	unsigned played = 0; /// propagated stats.
+	unsigned wins = 0;
+	unsigned losses = 0;
+	unsigned totalKills = 0;
+	unsigned totalScore = 0;
 
-	uint32_t recentKills = 0; // score/kills in last game.
-	uint32_t recentScore = 0;
+	unsigned recentKills = 0; // score/kills in last game.
+	unsigned recentScore = 0;
 	uint64_t recentPowerLost = 0;
 	// power lost in last game (i.e. from droids / structures being killed by other players)
 
 	struct Autorating
 	{
 		Autorating() = default;
-		Autorating(nlohmann::json const& json);
+		explicit Autorating(nlohmann::json const& json);
 
 		bool valid = false;
 		bool dummy = false;
@@ -57,19 +57,18 @@ struct PLAYERSTATS
 	};
 
 	Autorating autorating;
-
 	EcKey identity;
 };
 
 bool saveMultiStats(const char* sFName, const char* sPlayerName, const PLAYERSTATS* playerStats); // to disk
 bool loadMultiStats(char* sPlayerName, PLAYERSTATS* playerStats); // form disk
-PLAYERSTATS const& getMultiStats(UDWORD player); // get from net
+PLAYERSTATS const& getMultiStats(unsigned player); // get from net
 bool setMultiStats(uint32_t player, PLAYERSTATS plStats, bool bLocal); // send to net.
-void updateMultiStatsDamage(UDWORD attacker, UDWORD defender, UDWORD inflicted);
+void updateMultiStatsDamage(unsigned attacker, unsigned defender, unsigned inflicted);
 void updateMultiStatsGames();
 void updateMultiStatsWins();
 void updateMultiStatsLoses();
-void updateMultiStatsKills(PlayerOwnedObject * psKilled, UDWORD player);
+void updateMultiStatsKills(BaseObject const* psKilled, unsigned player);
 void recvMultiStats(NETQUEUE queue);
 void lookupRatingAsync(uint32_t playerIndex);
 

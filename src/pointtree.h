@@ -64,14 +64,13 @@ private:
 class Filter
 {
 public:
-    Filter() = default;
-    explicit Filter(PointTree const& pointTree);
+  Filter() = default;
+  explicit Filter(PointTree const& pointTree);
 
-    void reset(PointTree const& pointTree);
-    void erase(unsigned index);
-
-private:
-    std::vector<unsigned> data {1};
+  void reset(PointTree const& pointTree);
+  void erase(unsigned index);
+public:
+  std::vector<unsigned> data {1};
 };
 
 #endif //_point_tree_h

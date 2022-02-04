@@ -19,7 +19,6 @@
 
 #define _WITH_DPRINTF  // Required for FreeBSD < 12 (?) for dprintf(); Must be before any include of stdio.h
 
-#include "lib/framework/frame.h"
 #include "lib/framework/string_ext.h"
 #include "exceptionhandler.h"
 #include "dumpinfo.h"

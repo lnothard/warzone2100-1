@@ -57,8 +57,8 @@ void gridReset()
 	// Put all existing objects into the point tree.
 	for (auto player = 0; player < MAX_PLAYERS; player++)
 	{
-    BaseObject * start[3] = {
-            (BaseObject *)apsDroidLists[player], (BaseObject *)apsStructLists[player],
+    BaseObject* start[3] = {
+            (BaseObject *)playerList[player].droids, (BaseObject *)playerList[player].structures,
             (BaseObject *)apsFeatureLists[player]
 		};
 		for (auto psObj : start)

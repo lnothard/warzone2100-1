@@ -34,7 +34,7 @@ bool DebugInputManager::debugMappingsAllowed() const
 	return bDoingDebugMappings;
 }
 
-bool DebugInputManager::getPlayerWantsDebugMappings(const unsigned unsigned playerIndex) const
+bool DebugInputManager::getPlayerWantsDebugMappings(const unsigned  playerIndex) const
 {
 	ASSERT_OR_RETURN(false, playerIndex < playerWantsDebugMappings.size(),
 	                 "Tried to get debug mapping status for playerIndex > maxPlayers");
@@ -42,7 +42,7 @@ bool DebugInputManager::getPlayerWantsDebugMappings(const unsigned unsigned play
 	return playerWantsDebugMappings[playerIndex];
 }
 
-void DebugInputManager::setPlayerWantsDebugMappings(const unsigned unsigned playerIndex, const bool bWants)
+void DebugInputManager::setPlayerWantsDebugMappings(const unsigned  playerIndex, const bool bWants)
 {
 	ASSERT_OR_RETURN(, playerIndex < playerWantsDebugMappings.size(), "playerIndex is invalid: %u", playerIndex);
 	playerWantsDebugMappings[playerIndex] = bWants;

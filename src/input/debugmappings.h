@@ -31,9 +31,9 @@ public:
 public:
 	bool debugMappingsAllowed() const;
 
-	bool getPlayerWantsDebugMappings(const unsigned unsigned playerIndex) const;
+	bool getPlayerWantsDebugMappings(const unsigned  playerIndex) const;
 
-	void setPlayerWantsDebugMappings(const unsigned unsigned playerIndex, const bool bWants);
+	void setPlayerWantsDebugMappings(const unsigned  playerIndex, const bool bWants);
 
 	bool toggleDebugMappingPriority()
 	{

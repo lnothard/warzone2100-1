@@ -5,6 +5,7 @@
 #include "../qtscript.h"
 #include "../warcam.h"
 #include "../geometry.h"
+#include "../display.h"
 
 void BaseObjectsController::clearSelection()
 {
@@ -13,13 +14,13 @@ void BaseObjectsController::clearSelection()
 
 void BaseObjectsController::clearStructureSelection()
 {
-	for (auto structure = interfaceStructList(); structure != nullptr; structure = structure->psNext)
+	for (auto structure : *interfaceStructList())
 	{
-		structure->damageManager->setSelected(false);
+		structure.damageManager->setSelected(false);
 	}
 }
 
-void BaseObjectsController::selectObject(BaseObject * object)
+void BaseObjectsController::selectObject(BaseObject* object)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(, object);
 	object->damageManager->setSelected(true);
@@ -34,52 +35,45 @@ void BaseObjectsController::prepareToClose()
 	clearData();
 }
 
-void BaseObjectsController::jumpToObject(PlayerOwnedObject * object)
+void BaseObjectsController::jumpToObject(BaseObject* object)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN(, object);
-	setPlayerPos(object->pos.x, object->pos.y);
+	setPlayerPos(object->getPosition().x, object->getPosition().y);
 	setWarCamActive(false);
 }
 
 void BaseObjectsController::updateHighlighted()
 {
-	if (objectsSize() == 0)
-	{
+	if (objectsSize() == 0) {
 		setHighlightedObject(nullptr);
 		return;
 	}
 
-	auto findAnySelectedObject = [&](PlayerOwnedObject * object)
+	auto findAnySelectedObject = [&](BaseObject* object)
 	{
-		if (object->died == 0 && object->selected)
-		{
+		if (object->damageManager->getTimeOfDeath() == 0 &&
+        object->damageManager->isSelected()) {
 			setHighlightedObject(object);
 			return true;
 		}
-
 		return false;
 	};
 
-	if (findObject(findAnySelectedObject))
-	{
+	if (findObject(findAnySelectedObject)) {
 		return;
 	}
 
-	if (auto highlighted = getHighlightedObject())
-	{
-		auto findHighlightedObject = [&](PlayerOwnedObject * object)
+	if (auto highlighted = getHighlightedObject()) {
+		auto findHighlightedObject = [&](BaseObject* object)
 		{
-			if (object->died == 0 && object == highlighted)
-			{
+			if (object->damageManager->getTimeOfDeath() == 0 && object == highlighted) {
 				setHighlightedObject(object);
 				return true;
 			}
-
 			return false;
 		};
 
-		if (findObject(findHighlightedObject))
-		{
+		if (findObject(findHighlightedObject)) {
 			return;
 		}
 	}

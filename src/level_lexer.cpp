@@ -639,7 +639,6 @@ char* lev_text;
  * lexer for loading level description files
  */
 
-#include "lib/framework/frame.h"
 #include "lib/framework/string_ext.h"
 
 #include "src/levels.h"
