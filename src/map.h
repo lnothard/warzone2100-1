@@ -133,20 +133,17 @@ extern std::array<std::vector<uint8_t>, AUX_MAX + MAX_PLAYERS> psAuxMap;
 /// Store a shadow copy of a player's aux map for use in threaded calculations
 static inline void auxMapStore(unsigned player, int slot)
 {
-	memcpy(psBlockMap[slot], psBlockMap[0], sizeof(uint8_t) * mapWidth * mapHeight);
-	memcpy(psAuxMap[MAX_PLAYERS + slot], psAuxMap[player], sizeof(uint8_t) * mapWidth * mapHeight);
+	psBlockMap[slot] = psBlockMap[0];
+  psAuxMap[MAX_PLAYERS + slot] = psAuxMap[player];
 }
 
 /// Restore selected fields from the shadow copy of a player's aux map (ignoring the block map)
 static inline void auxMapRestore(unsigned player, int slot, int mask)
 {
-	int i;
-	uint8_t original, cached;
-
-	for (i = 0; i < mapHeight * mapWidth; i++)
+	for (auto i = 0; i < mapHeight * mapWidth; i++)
 	{
-		original = psAuxMap[player][i];
-		cached = psAuxMap[MAX_PLAYERS + slot][i];
+		auto original = psAuxMap[player][i];
+		auto cached = psAuxMap[MAX_PLAYERS + slot][i];
 		psAuxMap[player][i] = original ^ ((original ^ cached) & mask);
 	}
 }

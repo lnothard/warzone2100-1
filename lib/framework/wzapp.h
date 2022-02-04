@@ -23,6 +23,7 @@
 
 #include "frame.h"
 #include "wzstring.h"
+#include <utility>
 #include <vector>
 #include <functional>
 #include <optional-lite/optional.hpp>
@@ -36,8 +37,8 @@ struct WZ_SEMAPHORE;
 class WZ_MAINTHREADEXEC
 {
 public:
-	WZ_MAINTHREADEXEC() { }
-	virtual ~WZ_MAINTHREADEXEC() { };
+	WZ_MAINTHREADEXEC() = default;
+	virtual ~WZ_MAINTHREADEXEC() = default;
 
 	// subclass should override this
 	virtual void doExecOnMainThread() { };
@@ -48,12 +49,12 @@ class WZ_MAINTHREADEXECFUNC: public WZ_MAINTHREADEXEC
 public:
 	typedef std::function<void ()> execFuncType;
 public:
-	WZ_MAINTHREADEXECFUNC(const execFuncType &execFunc)
-	: execFunc(execFunc)
+	WZ_MAINTHREADEXECFUNC(execFuncType execFunc)
+	: execFunc(std::move(execFunc))
 	{ }
-	virtual ~WZ_MAINTHREADEXECFUNC() { };
+	~WZ_MAINTHREADEXECFUNC() override { };
 
-	void doExecOnMainThread()
+	void doExecOnMainThread() override
 	{
 		execFunc();
 	};
@@ -99,7 +100,7 @@ void wzApplyCursor();
 void wzShowMouse(bool visible); ///< Show the Mouse?
 void wzGrabMouse();		///< Trap mouse cursor in application window
 void wzReleaseMouse();	///< Undo the wzGrabMouse operation
-int wzGetTicks();		///< Milliseconds since start of game
+unsigned wzGetTicks();		///< Milliseconds since start of game
 enum DialogType {
 	Dialog_Error,
 	Dialog_Warning,

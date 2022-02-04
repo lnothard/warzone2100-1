@@ -505,7 +505,7 @@ static void deserializeMultiplayerGame_json(const nlohmann::json& o, MULTIPLAYER
 	sstrcpy(serializeMulti->name, o.at("multiGameName").get<std::string>().c_str());
 	serializeMulti->power = o.at("multiPower").get<uint32_t>();
 	serializeMulti->base = o.at("multiBase").get<uint8_t>();
-	serializeMulti->alliance = o.at("multiAlliance").get<uint8_t>();
+	serializeMulti->alliance = o.at("multiAlliance").get<ALLIANCE_TYPE>();
 	Sha256 sha256;
 	sha256.fromString(o.at("multiHash").get<std::string>());
 	serializeMulti->hash = sha256;
@@ -2735,7 +2735,7 @@ bool loadGame(const char* pGameToLoad, bool keepObjects, bool freeMem, bool User
 				{
 					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psStr.playerManager->getPlayer(), selectedPlayer))
 					{
-						visTilesUpdate(psStr.get());
+						visTilesUpdate(&psStr);
 					}
 				}
 

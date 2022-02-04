@@ -297,7 +297,7 @@ struct ComponentStats : public BaseStats
     } base, upgraded[MAX_PLAYERS];
 
     /// The IMD to draw for this component
-    std::shared_ptr<iIMDShape> pIMD;
+    std::shared_ptr<iIMDShape> pIMD = nullptr;
 
     /// Power required to build the component
     unsigned buildPower = 0;
@@ -333,8 +333,8 @@ struct PropulsionStats : public ComponentStats
 
 struct SensorStats : public ComponentStats
 {
-    std::shared_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
-    LOC location; ///< specifies whether the Sensor is default or for the Turret
+    std::shared_ptr<iIMDShape> pMountGraphic = nullptr; ///< The turret mount to use
+    LOC location = LOC::DEFAULT; ///< specifies whether the Sensor is default or for the Turret
     SENSOR_TYPE type = SENSOR_TYPE::STANDARD; ///< used for combat
 
     struct : Upgradeable
@@ -345,8 +345,8 @@ struct SensorStats : public ComponentStats
 
 struct EcmStats : public ComponentStats
 {
-    std::shared_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
-    LOC location; ///< Specifies whether the ECM is default or for the Turret
+    std::shared_ptr<iIMDShape> pMountGraphic = nullptr; ///< The turret mount to use
+    LOC location = LOC::DEFAULT; ///< Specifies whether the ECM is default or for the Turret
 
     struct : Upgradeable
     {
@@ -356,8 +356,8 @@ struct EcmStats : public ComponentStats
 
 struct RepairStats : public ComponentStats
 {
-    std::shared_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
-    LOC location; ///< Specifies whether the Repair is default or for the Turret
+    std::shared_ptr<iIMDShape> pMountGraphic = nullptr; ///< The turret mount to use
+    LOC location = LOC::DEFAULT; ///< Specifies whether the Repair is default or for the Turret
     unsigned time = 0; ///< Time delay for repair cycle
 
     struct : Upgradeable
@@ -421,13 +421,13 @@ struct WeaponStats : public ComponentStats
     unsigned numExplosions = 0; ///< The number of explosions per shot
 
     /* Graphics used for the weapon */
-    std::shared_ptr<iIMDShape> pMountGraphic; ///< The turret mount to use
-    std::shared_ptr<iIMDShape> pMuzzleGraphic; ///< The muzzle flash
-    std::shared_ptr<iIMDShape> pInFlightGraphic; ///< The ammo in flight
-    std::shared_ptr<iIMDShape> pTargetHitGraphic; ///< The ammo hitting a target
-    std::shared_ptr<iIMDShape> pTargetMissGraphic; ///< The ammo missing a target
-    std::shared_ptr<iIMDShape> pWaterHitGraphic; ///< The ammo hitting water
-    std::shared_ptr<iIMDShape> pTrailGraphic; ///< The trail used for in flight
+    std::shared_ptr<iIMDShape> pMountGraphic = nullptr; ///< The turret mount to use
+    std::shared_ptr<iIMDShape> pMuzzleGraphic = nullptr; ///< The muzzle flash
+    std::shared_ptr<iIMDShape> pInFlightGraphic = nullptr; ///< The ammo in flight
+    std::shared_ptr<iIMDShape> pTargetHitGraphic = nullptr; ///< The ammo hitting a target
+    std::shared_ptr<iIMDShape> pTargetMissGraphic = nullptr; ///< The ammo missing a target
+    std::shared_ptr<iIMDShape> pWaterHitGraphic = nullptr; ///< The ammo hitting water
+    std::shared_ptr<iIMDShape> pTrailGraphic = nullptr; ///< The trail used for in flight
 
     int iAudioFireID = 0;
     int iAudioImpactID = 0;
@@ -436,12 +436,12 @@ struct WeaponStats : public ComponentStats
 struct ConstructStats : public ComponentStats
 { 
     /// The turret mount to use
-    std::shared_ptr<iIMDShape> pMountGraphic;
+    std::shared_ptr<iIMDShape> pMountGraphic = nullptr;
 
     struct : Upgradeable
     {
         /// The number of points contributed each cycle
-        unsigned constructPoints;
+        unsigned constructPoints = 0;
     } upgraded[MAX_PLAYERS], base;
 };
 

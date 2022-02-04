@@ -366,7 +366,7 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
 			damageRatio = 0;
 			debug(LOG_ERROR, "targetAttackWeight: 0HP droid detected!");
 			debug(LOG_ERROR, "  Type: %i Name: \"%s\" Owner: %i \"%s\")",
-            targetDroid->getType(), targetDroid->getName().c_str(), 
+            targetDroid->getType(), targetDroid->getName()->c_str(),
             targetDroid->playerManager->getPlayer(),
             getPlayerName(targetDroid->playerManager->getPlayer()));
 		}

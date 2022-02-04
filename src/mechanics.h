@@ -26,13 +26,12 @@
 #ifndef __INCLUDED_SRC_MECHANICS_H__
 #define __INCLUDED_SRC_MECHANICS_H__
 
-#include "statsdef.h"
 
 /* Shutdown the mechanics system */
 bool mechanicsShutdown();
 
 // Allocate the list for a component
-bool allocComponentList(COMPONENT_TYPE type, SDWORD number);
+bool allocComponentList(COMPONENT_TYPE type, int number);
 
 // release all the component lists
 void freeComponentLists();

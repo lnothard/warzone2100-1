@@ -27,12 +27,12 @@
 #include "lib/framework/physfs_ext.h"
 #include "lib/framework/wzapp.h"
 
+#include "fpath.h"
 #include "game.h"
 #include "map.h"
 #include "multiplay.h"
-#include "qtscript.h"
-#include "fpath.h"
 #include "objmem.h"
+#include "qtscript.h"
 #include "random.h"
 #include "terrain.h"
 
@@ -251,7 +251,7 @@ static bool mapLoadGroundTypes(bool preview)
 		//increment the pointer to the start of the next record
 		pFileData = strchr(pFileData, '\n') + 1;
 		numGroundTypes = numlines;
-		psGroundTypes = std::unique_ptr<GROUND_TYPE[]>(new GROUND_TYPE[numlines]());
+		psGroundTypes.resize(numlines);
 
 		for (i = 0; i < numlines; i++)
 		{
@@ -294,7 +294,7 @@ static bool mapLoadGroundTypes(bool preview)
 		//increment the pointer to the start of the next record
 		pFileData = strchr(pFileData, '\n') + 1;
 		numGroundTypes = numlines;
-		psGroundTypes = std::unique_ptr<GROUND_TYPE[]>(new GROUND_TYPE[numlines]());
+		psGroundTypes.resize(numlines);
 
 		for (i = 0; i < numlines; i++)
 		{
@@ -338,7 +338,7 @@ static bool mapLoadGroundTypes(bool preview)
 		//increment the pointer to the start of the next record
 		pFileData = strchr(pFileData, '\n') + 1;
 		numGroundTypes = numlines;
-		psGroundTypes = std::unique_ptr<GROUND_TYPE[]>(new GROUND_TYPE[numlines]());
+		psGroundTypes.resize(numlines);
 
 		for (i = 0; i < numlines; i++)
 		{
@@ -877,11 +877,11 @@ bool mapLoadFromWzMapData(const std::shared_ptr<WzMap::MapData>& loadedMap)
 	height = loadedMap->height;
 
 	/* See if this is the first time a map has been loaded */
-	ASSERT(psMapTiles == nullptr, "Map has not been cleared before calling mapLoad()!");
+	ASSERT(psMapTiles.empty(), "Map has not been cleared before calling mapLoad()!");
 
 	/* Allocate the memory for the map */
-	psMapTiles = std::unique_ptr<Tile[]>(new Tile[width * height]());
-	ASSERT(psMapTiles != nullptr, "Out of memory");
+	psMapTiles.resize(width * height);
+	ASSERT(!psMapTiles.empty(), "Out of memory");
 
 	mapWidth = width;
 	mapHeight = height;
@@ -912,9 +912,9 @@ bool mapLoadFromWzMapData(const std::shared_ptr<WzMap::MapData>& loadedMap)
 		psMapTiles[i].height = loadedMap->mMapTiles[i].height;
 
 		// Visibility stuff
-		memset(psMapTiles[i].watchers, 0, sizeof(psMapTiles[i].watchers));
-		memset(psMapTiles[i].sensors, 0, sizeof(psMapTiles[i].sensors));
-		memset(psMapTiles[i].jammers, 0, sizeof(psMapTiles[i].jammers));
+    psMapTiles[i].watchers.fill(0);
+    psMapTiles[i].sensors.fill(0);
+    psMapTiles[i].jammers.fill(0);
 		psMapTiles[i].sensorBits = 0;
 		psMapTiles[i].jammerBits = 0;
 		psMapTiles[i].tileExploredBits = 0;
@@ -970,47 +970,41 @@ static bool afterMapLoad()
 	/* Allocate aux maps */
 	ASSERT(mapWidth >= 0 && mapHeight >= 0, "Invalid mapWidth or mapHeight (%d x %d)", mapWidth, mapHeight);
 	const size_t mapSize = static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight);
-	psBlockMap[AUX_MAP] = std::unique_ptr<uint8_t[]>(new uint8_t[mapSize]());
-	psBlockMap[AUX_ASTARMAP] = std::unique_ptr<uint8_t[]>(new uint8_t[mapSize]());
-	psBlockMap[AUX_DANGERMAP] = std::unique_ptr<uint8_t[]>(new uint8_t[mapSize]());
-	for (int x = 0; x < MAX_PLAYERS + AUX_MAX; ++x)
+	psBlockMap[AUX_MAP].resize(mapSize);
+	psBlockMap[AUX_ASTARMAP].resize(mapSize);
+	psBlockMap[AUX_DANGERMAP].resize(mapSize);
+	for (auto x = 0; x < MAX_PLAYERS + AUX_MAX; ++x)
 	{
-		psAuxMap[x] = std::unique_ptr<uint8_t[]>(new uint8_t[mapSize]());
+		psAuxMap[x].resize(mapSize);
 	}
 
 	// Set our blocking bits
-	for (int y = 0; y < mapHeight; ++y)
+	for (auto y = 0; y < mapHeight; ++y)
 	{
-		for (int x = 0; x < mapWidth; ++x)
+		for (auto x = 0; x < mapWidth; ++x)
 		{
-			Tile* psTile = mapTile(x, y);
+			auto const psTile = mapTile(x, y);
 
 			auxClearBlocking(x, y, AUXBITS_ALL);
 			auxClearAll(x, y, AUXBITS_ALL);
 
 			/* All tiles outside of the map and on map border are blocking. */
-			if (x < 1 || y < 1 || x > mapWidth - 1 || y > mapHeight - 1)
-			{
+			if (x < 1 || y < 1 || x > mapWidth - 1 || y > mapHeight - 1) {
 				auxSetBlocking(x, y, AUXBITS_ALL); // block everything
 			}
-			if (terrainType(psTile) == TER_WATER)
-			{
+			if (terrainType(psTile) == TER_WATER) {
 				auxSetBlocking(x, y, WATER_BLOCKED);
 			}
-			else
-			{
+			else {
 				auxSetBlocking(x, y, LAND_BLOCKED);
 			}
-			if (terrainType(psTile) == TER_CLIFFFACE)
-			{
+			if (terrainType(psTile) == TER_CLIFFFACE) {
 				auxSetBlocking(x, y, FEATURE_BLOCKED);
 			}
 		}
 	}
-
 	/* Set continents. This should ideally be done in advance by the map editor. */
 	mapFloodFillContinents();
-
 	return true;
 }
 
@@ -1911,7 +1905,7 @@ static int dangerThreadFunc()
 	return 0;
 }
 
-static void threatUpdateTarget(unsigned player, BaseObject* psObj, bool ground, bool air)
+static void threatUpdateTarget(unsigned player, BaseObject const* psObj, bool ground, bool air)
 {
   if (!psObj->isVisibleToPlayer(player) && psObj->getBornTime() != 2)
     return;
@@ -1961,7 +1955,7 @@ static void threatUpdate(unsigned player)
 			}
 			for (auto weapon = 0; weapon < numWeapons(psDroid); weapon++)
 			{
-				mode |= psDroid.getWeapon(weapon)->getStats()->surfaceToAir;
+				mode |= psDroid.weaponManager->weapons[weapon].stats->surfaceToAir;
 			}
 			if (psDroid.getType() == SENSOR) {
         // special treatment for sensor turrets, no multi weapon support

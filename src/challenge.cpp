@@ -188,11 +188,11 @@ void challengesScreenSizeDidChange(unsigned oldWidth, unsigned oldHeight,
 //*****************************************************************************************
 bool addChallenges()
 {
-	std::string sPath;
-	std::string sSearchPath = "challenges";
-	static std::array<std::string, totalslots> sSlotCaps;
-	static std::array<std::string, totalslots> sSlotTips;
-	static std::array<std::string, totalslots> sSlotFile;
+	char* sPath;
+	char* SearchPath = "challenges";
+	static std::array<char*, totalslots> sSlotCaps;
+	static std::array<char*, totalslots> sSlotTips;
+	static std::array<char*, totalslots> sSlotFile;
 
 	psRequestScreen = W_SCREEN::make(); // init the screen
 
@@ -290,7 +290,7 @@ bool addChallenges()
 	sPath = sSearchPath;
 	sPath += "/*.json";
 
-	debug(LOG_SAVE, "Searching \"%s\" for challenges", sPath.c_str());
+	debug(LOG_SAVE, "Searching \"%s\" for challenges", sPath);
 
 	// add challenges to buttons
 	WZ_PHYSFS_enumerateFiles(sSearchPath.c_str(), [&](const char* i) -> bool
@@ -303,7 +303,7 @@ bool addChallenges()
 
 		/* First grab any high score associated with this challenge */
 		sPath = i;
-    sPath = sPath.substr(sPath.size() - 5, 5); // remove .json
+    sPath = sPath.substr(sizeof(sPath) - 5, 5); // remove .json
 		auto highscore = "no score";
 		WzConfig scores(CHALLENGE_SCORES, WzConfig::ReadOnly);
 		scores.beginGroup(sPath);
@@ -335,8 +335,8 @@ bool addChallenges()
 		debug(LOG_SAVE, "We found [%s]", i);
 
 		/* Set the button-text */
-		sstrcpy(sSlotCaps[slotCount], name.toUtf8().c_str()); // store it!
-		sstrcpy(sSlotTips[slotCount], description.toUtf8().c_str()); // store it, too!
+		sstrcpy(sSlotCaps[slotCount], name.toUtf8()); // store it!
+		sstrcpy(sSlotTips[slotCount], description.toUtf8()); // store it, too!
 		sSlotFile[slotCount] = sPath; // store filename
 
 		/* Add button */

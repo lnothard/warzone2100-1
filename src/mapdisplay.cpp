@@ -38,11 +38,11 @@
 
 /* renders the Research IMDs into the surface - used by message display in
 Intelligence Map */
-void renderResearchToBuffer(ResearchStats* psResearch, UDWORD OriginX, UDWORD OriginY)
+void renderResearchToBuffer(ResearchStats* psResearch, unsigned OriginX, unsigned OriginY)
 {
 	BaseStats* psResGraphic;
-	UDWORD IMDType;
-	SDWORD scale = 0;
+	unsigned IMDType;
+	int scale = 0;
 
 	pie_SetGeometricOffset(OriginX + 10, OriginY + 10);
 
@@ -67,7 +67,7 @@ void renderResearchToBuffer(ResearchStats* psResearch, UDWORD OriginX, UDWORD Or
 			{
 				scale = RESEARCH_COMPONENT_SCALE / 2;
 				/*HACK HACK HACK!
-				if its a 'tall thin (ie tower)' structure stat with something on
+				if it's a 'tall thin (ie tower)' structure stat with something on
 				the top - offset the position to show the object on top*/
 				if (((StructureStats*)psResearch->psStat.get())->IMDs[0]->nconnectors &&
             getStructureStatHeight((StructureStats*)psResearch->psStat.get()) > TOWER_HEIGHT)
@@ -122,42 +122,33 @@ void renderResearchToBuffer(ResearchStats* psResearch, UDWORD OriginX, UDWORD Or
 	}
 
 	//scale the research according to size of IMD
-	if (IMDType == IMDTYPE_RESEARCH)
-	{
-		unsigned Radius = getResearchRadius((BaseStats*)psResGraphic);
-		if (Radius <= 100)
-		{
+	if (IMDType == IMDTYPE_RESEARCH) {
+		auto Radius = getResearchRadius((BaseStats*)psResGraphic);
+		if (Radius <= 100) {
 			scale = RESEARCH_COMPONENT_SCALE / 2;
 		}
-		else if (Radius <= 128)
-		{
+		else if (Radius <= 128) {
 			scale = RESEARCH_COMPONENT_SCALE / 3;
 		}
-		else if (Radius <= 256)
-		{
+		else if (Radius <= 256) {
 			scale = RESEARCH_COMPONENT_SCALE / 4;
 		}
-		else
-		{
+		else {
 			scale = RESEARCH_COMPONENT_SCALE / 5;
 		}
 	}
 
 	/* display the IMDs */
-	if (IMDType == IMDTYPE_COMPONENT)
-	{
+	if (IMDType == IMDTYPE_COMPONENT) {
 		displayComponentButton(psResGraphic, &Rotation, &Position, scale);
 	}
-	else if (IMDType == IMDTYPE_RESEARCH)
-	{
+	else if (IMDType == IMDTYPE_RESEARCH) {
 		displayResearchButton(psResGraphic, &Rotation, &Position, scale);
 	}
-	else if (IMDType == IMDTYPE_STRUCTURESTAT)
-	{
+	else if (IMDType == IMDTYPE_STRUCTURESTAT) {
 		displayStructureStatButton((StructureStats*)psResGraphic, &Rotation, &Position, scale);
 	}
-	else
-	{
+	else {
 		ASSERT(false, "Unknown PIEType");
 	}
 }

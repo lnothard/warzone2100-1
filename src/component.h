@@ -97,7 +97,7 @@ void drawMuzzleFlash(Weapon sWeap, iIMDShape* weaponImd, iIMDShape* flashImd, PI
 /* Get the brain imd - NOTE: Unused!*/
 #define BRAIN_IMD(Droid,PLAYER)	(asBrainStats[Droid->asBits[COMP_BRAIN]].pIMD)
 /* Get the weapon imd */
-#define WEAPON_IMD(Droid,WEAPON_NUM)	(asWeaponStats[Droid->asWeaps[WEAPON_NUM].nStat].pIMD)
+#define WEAPON_IMD(Droid,WEAPON_NUM)	(Droid->weaponManager->weapons[WEAPON_NUM].stats->pIMD)
 /* Get the propulsion imd  THIS IS A LITTLE MORE COMPLICATED NOW!*/
 //#define PROPULSION_IMD(Droid,PLAYER)	(asPropulsionStats[Droid->asBits[COMP_PROPULSION]].pIMD[PLAYER])
 /* Get the sensor imd */
@@ -109,7 +109,7 @@ void drawMuzzleFlash(Weapon sWeap, iIMDShape* weaponImd, iIMDShape* flashImd, PI
 /* Get a construct imd */
 #define CONSTRUCT_IMD(Droid,PLAYER)	(asConstructStats[Droid->asBits[COMP_CONSTRUCT]].pIMD)
 /* Get a weapon mount imd*/
-#define WEAPON_MOUNT_IMD(Droid,WEAPON_NUM)	(asWeaponStats[Droid->asWeaps[WEAPON_NUM].nStat].pMountGraphic)
+#define WEAPON_MOUNT_IMD(Droid,WEAPON_NUM)	(Droid->weaponManager->weapons[WEAPON_NUM].stats->pMountGraphic)
 /* Get a sensor mount imd*/
 #define SENSOR_MOUNT_IMD(Droid,PLAYER)	(asSensorStats[Droid->asBits[COMP_SENSOR]].pMountGraphic)
 /* Get a construct mount imd*/

@@ -46,6 +46,7 @@
 #include "lib/framework/wzpaths.h"
 #include "lib/wzmaplib/include/wzmaplib/map.h"
 
+#include "basedef.h"
 #include "challenge.h"
 #include "clparse.h"
 #include "difficulty.h"
@@ -144,7 +145,7 @@ std::vector<const BaseObject *> scripting_engine::GROUPMAP::getGroupObjects(grou
 scripting_engine::timerNode::timerNode(wzapi::scripting_instance* caller, TimerFunc  func,
                                        std::string  timerName, int plr, int frame,
                                        std::unique_ptr<timerAdditionalData> additionalParam /*= nullptr*/)
-	: function(std::move(func)), timerName(std::move(timerName)), instance(caller), baseobj(-1), baseobjtype(OBJ_NUM_TYPES),
+	: function(std::move(func)), timerName(std::move(timerName)), instance(caller), baseobj(-1), baseobjtype(OBJECT_TYPE::COUNT),
 	  additionalTimerFuncParam(std::move(additionalParam)),
 	  frameTime(frame + gameTime), ms(frame), player(plr), calls(0), type(TIMER_REPEAT)
 {
@@ -1692,13 +1693,12 @@ std::vector<scripting_engine::LabelInfo> scripting_engine::debug_GetLabelInfo() 
 		scripting_engine::LabelInfo labelInfo;
 		labelInfo.label = WzString::fromUtf8(label.first);
 		const char* c = "?";
-		switch (l.type)
-		{
-		case OBJ_DROID: c = "DROID";
+		switch (l.type) {
+      case OBJECT_TYPE::DROID: c = "DROID";
 			break;
-		case OBJ_FEATURE: c = "FEATURE";
+      case OBJECT_TYPE::FEATURE: c = "FEATURE";
 			break;
-		case OBJ_STRUCTURE: c = "STRUCTURE";
+      case OBJECT_TYPE::STRUCTURE: c = "STRUCTURE";
 			break;
 		case SCRIPT_POSITION: c = "POSITION";
 			break;
@@ -1710,7 +1710,7 @@ std::vector<scripting_engine::LabelInfo> scripting_engine::debug_GetLabelInfo() 
 			break;
 		case SCRIPT_PLAYER:
 		case SCRIPT_RESEARCH:
-		case OBJ_PROJECTILE:
+    case OBJECT_TYPE::PROJECTILE:
 		case SCRIPT_COUNT: c = "ERROR";
 			break;
 		}
@@ -2360,7 +2360,7 @@ wzapi::no_return_value scripting_engine::addLabel(
 	auto& labels = scripting_engine::instance().labels;
 	auto value = object.toNewLabel();
 
-	if (value.type == OBJ_DROID || value.type == OBJ_STRUCTURE || value.type == OBJ_FEATURE)
+	if (value.type == OBJECT_TYPE::DROID || value.type == OBJECT_TYPE::STRUCTURE || value.type == OBJECT_TYPE::FEATURE)
 	{
     BaseObject * psObj = IdToObject(value.id, value.player);
 		SCRIPT_ASSERT({}, context, psObj, "Object id %d not found belonging to player %d", value.id, value.player);
@@ -2403,7 +2403,6 @@ optional<std::string> scripting_engine::getLabel(WZAPI_PARAMS(const BaseObject *
 	wzapi::game_object_identifier tmp;
 	tmp.id = psObj->getId();
 	tmp.player = psObj->playerManager->getPlayer();
-	tmp.type = psObj->type;
 	return _findMatchingLabel(tmp);
 }
 
@@ -2572,9 +2571,10 @@ std::vector<const BaseObject *> scripting_engine::_enumAreaWorldCoords(
 	{
 		if ((psObj->isVisibleToPlayer(player) || !seen) && !psObj->damageManager->isDead()) {
 			if ((playerFilter >= 0 && psObj->playerManager->getPlayer() == playerFilter) || playerFilter == ALL_PLAYERS
-				|| (playerFilter == ALLIES && psObj->type != OBJ_FEATURE && aiCheckAlliances(psObj->playerManager->getPlayer(), player))
-				|| (playerFilter == ENEMIES && psObj->type != OBJ_FEATURE && !aiCheckAlliances(psObj->playerManager->getPlayer(), player)))
-			{
+				  || (playerFilter == ALLIES && getObjectType(psObj) != OBJECT_TYPE::FEATURE &&
+              aiCheckAlliances(psObj->playerManager->getPlayer(), player))
+				  || (playerFilter == ENEMIES && getObjectType(psObj) != OBJECT_TYPE::FEATURE &&
+              !aiCheckAlliances(psObj->playerManager->getPlayer(), player))) {
 				list.push_back(psObj);
 			}
 		}
@@ -2641,7 +2641,7 @@ wzapi::no_return_value scripting_engine::groupAddArea(WZAPI_PARAMS(int groupId, 
 	auto x2 = world_coord(_x2);
 	auto y2 = world_coord(_y2);
 
-	for (auto& psDroid : apsDroidLists[player])
+	for (auto& psDroid : playerList[player].droids)
 	{
 		if (psDroid.getPosition().x >= x1 && psDroid.getPosition().x <= x2 &&
         psDroid.getPosition().y >= y1 && psDroid.getPosition().y <= y2) {

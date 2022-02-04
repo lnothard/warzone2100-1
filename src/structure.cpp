@@ -36,6 +36,7 @@
 #include "cmddroid.h"
 #include "combat.h"
 #include "console.h"
+#include "display.h"
 #include "display3d.h"
 #include "displaydef.h"
 #include "effects.h"
@@ -853,7 +854,7 @@ Structure* Structure::giftSingleStructure(unsigned attackPlayer, bool electronic
       (void)removeStruct(this, false);
 
       // remove structure from one list
-      removeStructureFromList(this, apsStructLists);
+      playerList[playerManager->getPlayer()].removeStructure(this);
 
       damageManager->setSelected(false);
 
@@ -1696,8 +1697,7 @@ std::unique_ptr<Structure> Structure::buildStructureDir(StructureStats* pStructu
                     weaponSubClass == WEAPON_SUBCLASS::LAS_SAT) {
           psBuilding->weaponManager->weapons[0].timeLastFired = gameTime;
         }
-        psBuilding->weaponManager->weapons[0].stats = pStructureType->
-                psWeapStat[0] - asWeaponStats;
+        psBuilding->weaponManager->weapons[0].stats = std::make_shared<StructureStats>(pStructureType->psWeapStat[0]);
 
         psBuilding->weaponManager->weapons[0].ammo = psBuilding->weaponManager->weapons[0].stats.get()->
                 upgraded[playerManager->getPlayer()].numRounds;
@@ -4912,23 +4912,23 @@ void ResourceExtractor::checkForPowerGen()
 	// find a power generator, if possible with a power module.
 	Structure* bestPowerGen = nullptr;
 	int bestSlot = 0;
-	for (auto& psCurr : apsStructLists[playerManager->getPlayer()])
+	for (auto& psCurr : playerList[playerManager->getPlayer()].structures)
 	{
-    if (psCurr->getStats()->type != STRUCTURE_TYPE::POWER_GEN ||
-        psCurr->getState() != STRUCTURE_STATE::BUILT) {
+    if (psCurr.getStats()->type != STRUCTURE_TYPE::POWER_GEN ||
+        psCurr.getState() != STRUCTURE_STATE::BUILT) {
       continue;
     }
 
     if (bestPowerGen != nullptr &&
-        bestPowerGen->getCapacity() >= psCurr->getCapacity()) {
+        bestPowerGen->getCapacity() >= psCurr.getCapacity()) {
       continue; // power generator not better.
     }
 
-    auto psPg = dynamic_cast<PowerGenerator*>(psCurr.get());
+    auto psPg = dynamic_cast<PowerGenerator*>(&psCurr);
     for (auto i = 0; i < NUM_POWER_MODULES; ++i)
     {
       if (psPg->getExtractor(i) == nullptr) {
-        bestPowerGen = psCurr.get();
+        bestPowerGen = &psCurr;
         bestSlot = i;
         break;
       }

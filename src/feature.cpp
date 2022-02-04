@@ -266,7 +266,7 @@ std::unique_ptr<Feature> Feature::buildFeature(FeatureStats* stats,
 	psFeature->damageManager->setPeriodicalDamage(0);
 
 	// it has never been drawn
-	psFeature->display->frame_number = 0;
+	psFeature->setFrameNumber(0);
 
 	// set up the imd for the feature
 	psFeature->setImdShape(stats->psImd.get());

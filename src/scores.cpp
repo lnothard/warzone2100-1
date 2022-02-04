@@ -276,7 +276,7 @@ END_GAME_STATS_DATA collectEndGameStatsData()
 	fullStats.numUnits = 0;
 	if (selectedPlayer < MAX_PLAYERS)
 	{
-		for (auto& psDroid : apsDroidLists[selectedPlayer])
+		for (auto& psDroid : playerList[selectedPlayer].droids)
 		{
 		}
 		for (auto& psDroid : mission.apsDroidLists[selectedPlayer])
@@ -579,14 +579,14 @@ void stdOutGameSummary(UDWORD realTimeThrottleSeconds, bool flush_output /* = tr
 			}
 			uint32_t unitsKilled = getMultiPlayUnitsKilled(n);
 			uint32_t numUnits = 0;
-			for (auto& psDroid : apsDroidLists[n])
+			for (auto& psDroid : playerList[n].droids)
 			{
 			}
 			uint32_t numStructs = 0;
 			uint32_t numFactories = 0;
 			uint32_t numResearch = 0;
 			uint32_t numFactoriesThatCanProduceConstructionUnits = 0;
-			for (auto& psStruct : apsStructLists[n])
+			for (auto& psStruct : playerList[n].structures)
 			{
 				if (psStruct->getState() != STRUCTURE_STATE::BUILT || psStruct->damageManager->isDead() != 0)
 				{

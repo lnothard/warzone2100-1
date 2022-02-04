@@ -69,7 +69,7 @@ static void printComponentInfo(const ComponentStats* psStats)
 	          "   bPwr %d bPnts %d wt %d bdy %d imd %p\n",
 	          getStatsName(psStats), psStats->ref, psStats->buildPower,
 	          psStats->buildPoints, psStats->weight, psStats->base.hitPoints,
-	          static_cast<void*>(psStats->pIMD));
+	          static_cast<void*>(psStats->pIMD.get()));
 }
 
 /** print out weapon information
@@ -215,10 +215,10 @@ void printDroidInfo(const Droid* psDroid)
 		printWeaponInfo(psDroid->weaponManager->weapons[0].stats.get());
 	}
 
-	for (auto i = 0; i < COMPONENT_TYPE::COUNT; ++i)
+	for (auto i = 0; i < (int)COMPONENT_TYPE::COUNT; ++i)
 	{
 		switch (i) {
-      case COMPONENT_TYPE::BODY:
+      case (int)COMPONENT_TYPE::BODY:
 			if (psDroid->asBits[i] > 0) {
 				CONPRINTF("%s", "Body: ");
 				psBdyStats = asBodyStats + psDroid->asBits[i];
@@ -229,11 +229,10 @@ void printDroidInfo(const Droid* psDroid)
 				CONPRINTF("%s", "ZNULL BODY\n");
 			}
 			break;
-		case COMP_BRAIN:
+      case (int)COMPONENT_TYPE::BRAIN:
 			break;
-		case COMP_PROPULSION:
-			if (psDroid->asBits[i] > 0)
-			{
+      case (int)COMPONENT_TYPE::PROPULSION:
+			if (psDroid->asBits[i] > 0) {
 				CONPRINTF("%s", "Prop: ");
 				psPropStats = asPropulsionStats + psDroid->asBits[i];
 				printComponentInfo((ComponentStats*)psPropStats);
@@ -243,48 +242,43 @@ void printDroidInfo(const Droid* psDroid)
 				CONPRINTF("%s", "ZNULL PROPULSION\n");
 			}
 			break;
-		case COMP_ECM:
-			if (psDroid->asBits[i] > 0)
-			{
+      case (int)COMPONENT_TYPE::ECM:
+			if (psDroid->asBits[i] > 0) {
 				CONPRINTF("%s", "ECM: ");
 				psECMStats = asECMStats + psDroid->asBits[i];
 				printComponentInfo((ComponentStats*)psECMStats);
 				CONPRINTF("   range %d loc %d imd %p\n",
-				          ecmRange(psECMStats, psDroid->playerManager->getPlayer()), psECMStats->location,
-				          static_cast<void*>(psECMStats->pMountGraphic));
+				          ecmRange(psECMStats, psDroid->playerManager->getPlayer()),
+                  psECMStats->location, static_cast<void*>(psECMStats->pMountGraphic.get()));
 			}
-			else
-			{
+			else {
 				CONPRINTF("%s", "ZNULL ECM\n");
 			}
 			break;
-		case COMP_SENSOR:
-			if (psDroid->asBits[i] > 0)
-			{
+      case (int)COMPONENT_TYPE::SENSOR:
+			if (psDroid->asBits[i] > 0) {
 				CONPRINTF("%s", "Sensor: ");
 				psSensStats = asSensorStats + psDroid->asBits[i];
 				printComponentInfo((ComponentStats*)psSensStats);
 				CONPRINTF("   rng %d loc %d imd %p\n",
-				          sensorRange(psSensStats, psDroid->player),
-				          psSensStats->location, static_cast<void*>(psSensStats->pMountGraphic));
+				          sensorRange(psSensStats, psDroid->playerManager->getPlayer()),
+				          psSensStats->location, static_cast<void*>(psSensStats->pMountGraphic.get()));
 			}
-			else
-			{
+			else {
 				CONPRINTF("%s", "ZNULL SENSOR\n");
 			}
 			break;
-		case COMP_CONSTRUCT:
-			if (psDroid->asBits[i] > 0)
-			{
+      case (int)COMPONENT_TYPE::CONSTRUCT:
+			if (psDroid->asBits[i] > 0) {
 				CONPRINTF("%s", "Construct: ");
 				psConstStats = asConstructStats + psDroid->asBits[i];
 				printComponentInfo((ComponentStats*)psConstStats);
 				CONPRINTF("   cPnts %d imd %p\n",
 				          constructorPoints(psConstStats, psDroid->playerManager->getPlayer()),
-				          static_cast<void*>(psConstStats->pMountGraphic));
+				          static_cast<void*>(psConstStats->pMountGraphic.get()));
 			}
 			break;
-		case COMP_REPAIRUNIT:
+      case (int)COMPONENT_TYPE::REPAIR_UNIT:
 			if (psDroid->asBits[i] > 0)
 			{
 				CONPRINTF("%s", "Repair: ");
@@ -292,11 +286,9 @@ void printDroidInfo(const Droid* psDroid)
 				printComponentInfo((ComponentStats*)psRepairStats);
 				CONPRINTF("   repPnts %d loc %d imd %p\n",
 				          repairPoints(psRepairStats, psDroid->playerManager->getPlayer()),
-				          psRepairStats->location,
-				          static_cast<void*>(psRepairStats->pMountGraphic));
+				          psRepairStats->location, static_cast<void*>(psRepairStats->pMountGraphic.get()));
 			}
 			break;
-		case COMP_WEAPON:
 		default:
 			break;
 		}

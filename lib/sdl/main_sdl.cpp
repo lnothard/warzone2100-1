@@ -60,7 +60,7 @@
 #include "cursors_sdl.h"
 #include <algorithm>
 #include <map>
-#include <locale.h>
+#include <clocale>
 #include <atomic>
 #include <chrono>
 
@@ -141,7 +141,7 @@ struct INPUT_STATE
 };
 
 // Clipboard routines
-bool has_scrap(void);
+bool has_scrap();
 bool get_scrap(char **dst);
 
 /// constant for the interval between 2 singleclicks for doubleclick event in ms
@@ -213,7 +213,7 @@ WzString wzGetPlatform()
 }
 
 // See if we have TEXT in the clipboard
-bool has_scrap(void)
+bool has_scrap()
 {
 	return SDL_HasClipboardText();
 }
@@ -310,7 +310,7 @@ std::vector<screeninfo> wzAvailableResolutions()
 std::vector<unsigned int> wzAvailableDisplayScales()
 {
 	static const unsigned int wzDisplayScales[] = { 100, 125, 150, 200, 250, 300, 400, 500 };
-	return std::vector<unsigned int>(wzDisplayScales, wzDisplayScales + (sizeof(wzDisplayScales) / sizeof(wzDisplayScales[0])));
+	return {wzDisplayScales, wzDisplayScales + (sizeof(wzDisplayScales) / sizeof(wzDisplayScales[0]))};
 }
 
 static std::vector<VIDEO_BACKEND>& sortGfxBackendsForCurrentSystem(std::vector<VIDEO_BACKEND>& backends)
@@ -461,7 +461,7 @@ void wzShowMouse(bool visible)
 	SDL_ShowCursor(visible ? SDL_ENABLE : SDL_DISABLE);
 }
 
-int wzGetTicks()
+unsigned wzGetTicks()
 {
 	return SDL_GetTicks();
 }
@@ -792,7 +792,7 @@ void wzAsyncExecOnMainThread(WZ_MAINTHREADEXEC *exec)
 	event.user.code = wzSDLAppEventCodes::MAINTHREADEXEC;
 	event.user.data1 = exec;
 	assert(event.user.data1 != nullptr);
-	event.user.data2 = 0;
+	event.user.data2 = nullptr;
 	SDL_PushEvent(&event);
 	// receiver handles deleting `exec` on the main thread after doExecOnMainThread() has been called
 }
@@ -1040,16 +1040,16 @@ void mouseKeyCodeToString(const MOUSE_KEY_CODE code, char* ascii, const int maxS
 }
 
 /* Initialise the input module */
-void inputInitialise(void)
+void inputInitialise()
 {
-	for (unsigned int i = 0; i < KEY_MAXSCAN; i++)
+	for (auto & i : aKeyState)
 	{
-		aKeyState[i].state = KEY_UP;
+		i.state = KEY_UP;
 	}
 
-	for (unsigned int i = 0; i < MOUSE_END; i++)
+	for (auto & i : aMouseState)
 	{
-		aMouseState[i].state = KEY_UP;
+		i.state = KEY_UP;
 	}
 
 	pStartBuffer = pInputBuffer;
@@ -1062,7 +1062,7 @@ void inputInitialise(void)
 }
 
 /* Clear the input buffer */
-void inputClearBuffer(void)
+void inputClearBuffer()
 {
 	pStartBuffer = pInputBuffer;
 	pEndBuffer = pInputBuffer;
@@ -1105,7 +1105,7 @@ MousePresses const &inputGetClicks()
  * This is called once a frame so that the system can tell
  * whether a key was pressed this turn or held down from the last frame.
  */
-void inputNewFrame(void)
+void inputNewFrame()
 {
 	// handle the keyboard
 	for (unsigned int i = 0; i < KEY_MAXSCAN; i++)
@@ -1124,17 +1124,17 @@ void inputNewFrame(void)
 	}
 
 	// handle the mouse
-	for (unsigned int i = 0; i < MOUSE_END; i++)
+	for (auto & i : aMouseState)
 	{
-		if (aMouseState[i].state == KEY_PRESSED)
+		if (i.state == KEY_PRESSED)
 		{
-			aMouseState[i].state = KEY_DOWN;
+			i.state = KEY_DOWN;
 		}
-		else if (aMouseState[i].state == KEY_RELEASED
-		         || aMouseState[i].state == KEY_DOUBLECLICK
-		         || aMouseState[i].state == KEY_PRESSRELEASE)
+		else if (i.state == KEY_RELEASED
+		         || i.state == KEY_DOUBLECLICK
+		         || i.state == KEY_PRESSRELEASE)
 		{
-			aMouseState[i].state = KEY_UP;
+			i.state = KEY_UP;
 		}
 	}
 	mousePresses.clear();
@@ -1144,16 +1144,16 @@ void inputNewFrame(void)
 /*!
  * Release all keys (and buttons) when we lose focus
  */
-void inputLoseFocus(void)
+void inputLoseFocus()
 {
 	/* Lost the window focus, have to take this as a global key up */
-	for (unsigned int i = 0; i < KEY_MAXSCAN; i++)
+	for (auto & i : aKeyState)
 	{
-		aKeyState[i].state = KEY_UP;
+		i.state = KEY_UP;
 	}
-	for (unsigned int i = 0; i < MOUSE_END; i++)
+	for (auto & i : aMouseState)
 	{
-		aMouseState[i].state = KEY_UP;
+		i.state = KEY_UP;
 	}
 }
 
@@ -1179,13 +1179,13 @@ bool keyReleased(KEY_CODE code)
 }
 
 /* Return the X coordinate of the mouse */
-Uint16 mouseX(void)
+Uint16 mouseX()
 {
 	return mouseXPos;
 }
 
 /* Return the Y coordinate of the mouse */
-Uint16 mouseY(void)
+Uint16 mouseY()
 {
 	return mouseYPos;
 }
@@ -1331,15 +1331,13 @@ static void inputHandleKeyEvent(SDL_KeyboardEvent *keyEvent)
 
 		debug(LOG_INPUT, "Key Code (pressed): 0x%x, %d, [%c] SDLkey=[%s]", currentKey, currentKey, currentKey < 128 && currentKey > 31 ? (char)currentKey : '?', SDL_GetKeyName(currentKey));
 
-		KEY_CODE code = sdlKeyToKeyCode(currentKey);
-		if (code >= KEY_MAXSCAN)
-		{
+		auto code = sdlKeyToKeyCode(currentKey);
+		if (code >= KEY_MAXSCAN) {
 			break;
 		}
 		if (aKeyState[code].state == KEY_UP ||
 		    aKeyState[code].state == KEY_RELEASED ||
-		    aKeyState[code].state == KEY_PRESSRELEASE)
-		{
+		    aKeyState[code].state == KEY_PRESSRELEASE) {
 			// whether double key press or not
 			aKeyState[code].state = KEY_PRESSED;
 			aKeyState[code].lastdown = 0;
@@ -1532,7 +1530,7 @@ void wzMain(int &argc, char **argv)
 		copied_argv[i] = new char[len];
 		memcpy(copied_argv[i], argv[i], len);
 	}
-	copied_argv[argc] = NULL;
+	copied_argv[argc] = nullptr;
 	copied_argc = argc;
 }
 
@@ -1570,10 +1568,10 @@ void handleWindowSizeChange(unsigned int oldWidth, unsigned int oldHeight, unsig
 	// NOTE: This function receives the window size in the window's logical units, but not accounting for the interface scale factor.
 	// Therefore, the provided old/newWidth/Height must be divided by the interface scale factor to calculate the new
 	// *game* screen logical width / height.
-	unsigned int oldScreenWidth = static_cast<unsigned int>(oldWidth / current_displayScaleFactor);
-	unsigned int oldScreenHeight = static_cast<unsigned int>(oldHeight / current_displayScaleFactor);
-	unsigned int newScreenWidth = static_cast<unsigned int>(newWidth / current_displayScaleFactor);
-	unsigned int newScreenHeight = static_cast<unsigned int>(newHeight / current_displayScaleFactor);
+	auto oldScreenWidth = static_cast<unsigned int>(oldWidth / current_displayScaleFactor);
+	auto oldScreenHeight = static_cast<unsigned int>(oldHeight / current_displayScaleFactor);
+	auto newScreenWidth = static_cast<unsigned int>(newWidth / current_displayScaleFactor);
+	auto newScreenHeight = static_cast<unsigned int>(newHeight / current_displayScaleFactor);
 
 	handleGameScreenSizeChange(oldScreenWidth, oldScreenHeight, newScreenWidth, newScreenHeight);
 
@@ -1616,7 +1614,7 @@ float wzGetMaximumDisplayScaleFactorForWindowSize(unsigned int width, unsigned i
 unsigned int wzGetMaximumDisplayScaleForWindowSize(unsigned int width, unsigned int height)
 {
 	float maxDisplayScaleFactor = wzGetMaximumDisplayScaleFactorForWindowSize(width, height);
-	unsigned int maxDisplayScalePercentage = static_cast<unsigned int>(floor(maxDisplayScaleFactor * 100.f));
+	auto maxDisplayScalePercentage = static_cast<unsigned int>(floor(maxDisplayScaleFactor * 100.f));
 
 	auto availableDisplayScales = wzAvailableDisplayScales();
 	std::sort(availableDisplayScales.begin(), availableDisplayScales.end());
@@ -1835,15 +1833,14 @@ bool wzChangeDisplayScale(unsigned int displayScale)
 	setDisplayScale(displayScale);
 
 	// Set the new minimum window size
-	unsigned int minWindowWidth = 0, minWindowHeight = 0;
+	unsigned minWindowWidth = 0, minWindowHeight = 0;
 	wzGetMinimumWindowSizeForDisplayScaleFactor(&minWindowWidth, &minWindowHeight, newDisplayScaleFactor);
 	SDL_SetWindowMinimumSize(WZwindow, minWindowWidth, minWindowHeight);
 
 	// Update the game's logical screen size
-	unsigned int oldScreenWidth = screenWidth, oldScreenHeight = screenHeight;
-	unsigned int newScreenWidth = windowWidth, newScreenHeight = windowHeight;
-	if (newDisplayScaleFactor > 1.0f)
-	{
+	auto oldScreenWidth = screenWidth, oldScreenHeight = screenHeight;
+	auto newScreenWidth = windowWidth, newScreenHeight = windowHeight;
+	if (newDisplayScaleFactor > 1.0f) {
 		newScreenWidth = static_cast<unsigned int>(windowWidth / newDisplayScaleFactor);
 		newScreenHeight = static_cast<unsigned int>(windowHeight / newDisplayScaleFactor);
 	}
@@ -2031,7 +2028,7 @@ static SDL_WindowFlags SDL_backend(const VIDEO_BACKEND& backend)
 	return SDL_WindowFlags{};
 }
 
-bool shouldResetGfxBackendPrompt(VIDEO_BACKEND currentBackend, VIDEO_BACKEND newBackend, std::string failedToInitializeObject = "graphics", std::string additionalErrorDetails = "")
+bool shouldResetGfxBackendPrompt(VIDEO_BACKEND currentBackend, VIDEO_BACKEND newBackend, const std::string& failedToInitializeObject = "graphics", std::string additionalErrorDetails = "")
 {
 	// Offer to reset to the specified gfx backend
 	std::string resetString = std::string("Reset to ") + to_display_string(newBackend) + "";
@@ -2235,7 +2232,7 @@ optional<SDL_gfx_api_Impl_Factory::Configuration> wzMainScreenSetup_CreateVideoW
 		for (int j = 0; j < numdisplaymodes; j++)
 		{
 			displaymode.format = displaymode.w = displaymode.h = displaymode.refresh_rate = 0;
-			displaymode.driverdata = 0;
+			displaymode.driverdata = nullptr;
 			if (SDL_GetDisplayMode(i, j, &displaymode) < 0)
 			{
 				debug(LOG_FATAL, "SDL_LOG_CATEGORY_APPLICATION error:%s", SDL_GetError());
@@ -2264,7 +2261,7 @@ optional<SDL_gfx_api_Impl_Factory::Configuration> wzMainScreenSetup_CreateVideoW
 		}
 	}
 
-	SDL_DisplayMode current = { 0, 0, 0, 0, 0 };
+	SDL_DisplayMode current = { 0, 0, 0, 0, nullptr };
 	for (int i = 0; i < SDL_GetNumVideoDisplays(); ++i)
 	{
 		int display = SDL_GetCurrentDisplayMode(i, &current);
@@ -2877,7 +2874,7 @@ static void handleActiveEvent(SDL_Event *event)
 }
 
 // Actual mainloop
-void wzMainEventLoop(void)
+void wzMainEventLoop()
 {
 	SDL_Event event;
 
@@ -2922,7 +2919,7 @@ void wzMainEventLoop(void)
 					case wzSDLAppEventCodes::MAINTHREADEXEC:
 						if (event.user.data1 != nullptr)
 						{
-							WZ_MAINTHREADEXEC * pExec = static_cast<WZ_MAINTHREADEXEC *>(event.user.data1);
+							auto * pExec = static_cast<WZ_MAINTHREADEXEC *>(event.user.data1);
 							pExec->doExecOnMainThread();
 							delete pExec;
 						}

@@ -321,10 +321,8 @@ bool intAddTransporterContents()
 bool intAddTransporterLaunch(Droid* psDroid)
 {
 	unsigned capacity;
-	Droid *psCurr, *psNext;
 
-	if (bMultiPlayer)
-	{
+	if (bMultiPlayer) {
 		return true;
 	}
 
@@ -370,23 +368,19 @@ bool intAddTransporterLaunch(Droid* psDroid)
 	}
 
 	//when full flash the transporter button
-	if (psCurrTransporter && psCurrTransporter->group)
+	if (psCurrTransporter && psCurrTransporter->getGroup())
 	{
 		capacity = TRANSPORTER_CAPACITY;
-		for (psCurr = psCurrTransporter->group->members; psCurr != nullptr; psCurr = psNext)
+		for (auto psCurr : *psCurrTransporter->getGroup()->getMembers())
 		{
-			psNext = psCurr->psGrpNext;
-			if (psCurr != psCurrTransporter)
-			{
+			if (psCurr != psCurrTransporter) {
 				capacity -= transporterSpaceRequired(psCurr);
 			}
 		}
-		if (capacity <= 0)
-		{
+		if (capacity <= 0) {
 			flashMissionButton(IDTRANS_LAUNCH);
 		}
 	}
-
 	return true;
 }
 

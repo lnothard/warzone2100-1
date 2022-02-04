@@ -58,7 +58,7 @@ W_BUTTON::W_BUTTON()
 	, FontID(font_regular)
 {}
 
-unsigned W_BUTTON::getState()
+unsigned W_BUTTON::getState() const
 {
 	return state & (WBUT_DISABLE | WBUT_LOCK | WBUT_CLICKLOCK | WBUT_FLASH | WBUT_DOWN | WBUT_HIGHLIGHT);
 }
@@ -109,23 +109,18 @@ void W_BUTTON::setTip(std::string string)
 
 void W_BUTTON::clicked(W_CONTEXT *, WIDGET_KEY key)
 {
-	if ((minClickInterval > 0) && (realTime - lastClickTime < minClickInterval))
-	{
+	if ((minClickInterval > 0) && (realTime - lastClickTime < minClickInterval)) {
 		return;
 	}
 	lastClickTime = realTime;
-
 	dirty = true;
 
 	/* Can't click a button if it is disabled or locked down */
-	if ((state & (WBUT_DISABLE | WBUT_LOCK)) == 0)
-	{
+	if ((state & (WBUT_DISABLE | WBUT_LOCK)) == 0) {
 		// Check this is the correct key
 		if ((!(style & WBUT_NOPRIMARY) && key == WKEY_PRIMARY) ||
-		    ((style & WBUT_SECONDARY) && key == WKEY_SECONDARY))
-		{
-			if (AudioCallback)
-			{
+		    ((style & WBUT_SECONDARY) && key == WKEY_SECONDARY)) {
+			if (AudioCallback) {
 				AudioCallback(ClickedAudioID);
 			}
 			state &= ~WBUT_FLASH;	// Stop it flashing
@@ -137,34 +132,29 @@ void W_BUTTON::clicked(W_CONTEXT *, WIDGET_KEY key)
 /* Respond to a mouse button up */
 void W_BUTTON::released(W_CONTEXT *, WIDGET_KEY key)
 {
-	if (state & WBUT_DOWN)
-	{
-		// Check this is the correct key
-		if ((!(style & WBUT_NOPRIMARY) && key == WKEY_PRIMARY) ||
-		    ((style & WBUT_SECONDARY) && key == WKEY_SECONDARY))
-		{
-			lastClickButton = key;
+  if (!(state & WBUT_DOWN)) return;
 
-			/* Call all onClick event handlers */
-			for (auto it = onClickHandlers.begin(); it != onClickHandlers.end(); it++)
-			{
-				auto onClickHandler = *it;
-				if (onClickHandler)
-				{
-					onClickHandler(*this);
-				}
-			}
+  // Check this is the correct key
+  if ((!(style & WBUT_NOPRIMARY) && key == WKEY_PRIMARY) ||
+      ((style & WBUT_SECONDARY) && key == WKEY_SECONDARY)) {
+    lastClickButton = key;
 
-			lastClickButton = WKEY_NONE;
+    /* Call all onClick event handlers */
+    for (auto it = onClickHandlers.begin(); it != onClickHandlers.end(); it++)
+    {
+      auto onClickHandler = *it;
+      if (onClickHandler) {
+        onClickHandler(*this);
+      }
+    }
+    lastClickButton = WKEY_NONE;
 
-			if (auto lockedScreen = screenPointer.lock())
-			{
-				lockedScreen->setReturn(shared_from_this());
-			}
-			state &= ~WBUT_DOWN;
-			dirty = true;
-		}
-	}
+    if (auto lockedScreen = screenPointer.lock()) {
+      lockedScreen->setReturn(shared_from_this());
+    }
+    state &= ~WBUT_DOWN;
+    dirty = true;
+  }
 }
 
 WIDGET_KEY W_BUTTON::getOnClickButtonPressed() const
@@ -180,13 +170,11 @@ bool W_BUTTON::isHighlighted() const
 /* Respond to a mouse moving over a button */
 void W_BUTTON::highlight(W_CONTEXT *psContext)
 {
-	if ((state & WBUT_HIGHLIGHT) == 0)
-	{
+	if ((state & WBUT_HIGHLIGHT) == 0) {
 		state |= WBUT_HIGHLIGHT;
 		dirty = true;
 	}
-	if (AudioCallback)
-	{
+	if (AudioCallback) {
 		AudioCallback(HilightAudioID);
 	}
 }
@@ -201,10 +189,10 @@ void W_BUTTON::highlightLost()
 
 void W_BUTTON::display(int xOffset, int yOffset)
 {
-	int x0 = x() + xOffset;
-	int y0 = y() + yOffset;
-	int x1 = x0 + width();
-	int y1 = y0 + height();
+	auto x0 = x() + xOffset;
+	auto y0 = y() + yOffset;
+	auto x1 = x0 + width();
+	auto y1 = y0 + height();
 
 	bool haveText = !pText.isEmpty();
 
@@ -213,63 +201,51 @@ void W_BUTTON::display(int xOffset, int yOffset)
 	bool isHighlight = (state & WBUT_HIGHLIGHT) != 0;
 
 	// Display the button.
-	if (!images.normal.isNull())
-	{
+	if (!images.normal.isNull()) {
 		iV_DrawImageImage(images.normal, x0, y0);
-		if (isDown && !images.down.isNull())
-		{
+		if (isDown && !images.down.isNull()) {
 			iV_DrawImageImage(images.down, x0, y0);
 		}
-		if (isDisabled && !images.disabled.isNull())
-		{
+		if (isDisabled && !images.disabled.isNull()) {
 			iV_DrawImageImage(images.disabled, x0, y0);
 		}
-		if (isHighlight && !images.highlighted.isNull())
-		{
+		if (isHighlight && !images.highlighted.isNull()) {
 			iV_DrawImageImage(images.highlighted, x0, y0);
 		}
 	}
-	else
-	{
+	else {
 		iV_ShadowBox(x0, y0, x1, y1, 0, WZCOL_FORM_LIGHT, isDisabled ? WZCOL_FORM_LIGHT : WZCOL_FORM_DARK, WZCOL_FORM_BACKGROUND);
-		if (isHighlight)
-		{
+		if (isHighlight) {
 			iV_Box(x0 + 2, y0 + 2, x1 - 3, y1 - 3, WZCOL_FORM_HILITE);
 		}
 	}
 
-	if (haveText)
-	{
-		int fw = iV_GetTextWidth(pText.toUtf8().c_str(), FontID);
-		int fx = x0 + (width() - fw) / 2;
-		int fy = y0 + (height() - iV_GetTextLineSize(FontID)) / 2 - iV_GetTextAboveBase(FontID);
-		if (isDisabled)
-		{
+	if (haveText) {
+		auto fw = iV_GetTextWidth(pText.toUtf8().c_str(), FontID);
+		auto fx = x0 + (width() - fw) / 2;
+		auto fy = y0 + (height() - iV_GetTextLineSize(FontID)) / 2 - iV_GetTextAboveBase(FontID);
+		if (isDisabled) {
 			iV_SetTextColour(WZCOL_FORM_LIGHT);
 			iV_DrawText(pText.toUtf8().c_str(), fx + 1, fy + 1, FontID);
 			iV_SetTextColour(WZCOL_FORM_DISABLE);
 		}
-		else
-		{
+		else {
 			iV_SetTextColour(WZCOL_FORM_TEXT);
 		}
 		iV_DrawText(pText.toUtf8().c_str(), fx, fy, FontID);
 	}
 
-	if (isDisabled && !images.normal.isNull() && images.disabled.isNull())
-	{
+	if (isDisabled && !images.normal.isNull() && images.disabled.isNull()) {
 		// disabled, render something over it!
 		iV_TransBoxFill(x0, y0, x0 + width(), y0 + height());
 	}
 }
 
-void W_BUTTON::displayRecursive(WidgetGraphicsContext const &context)
+void W_BUTTON::displayRecursive(WidgetGraphicsContext const& context)
 {
-	// call parent displayRecursive
 	WIDGET::displayRecursive(context);
 
-	if (progressBorder.has_value())
-	{
+	if (progressBorder.has_value()) {
 		// "over-draw" with the progress border
 		drawProgressBorder(context.getXOffset(), context.getYOffset());
 	}
@@ -608,13 +584,13 @@ std::shared_ptr<W_BUTTON> makeFormTransparentCornerButton(const char* text, int 
 	return button;
 }
 
-void PopoverMenuButtonDisplayFunc(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
+void PopoverMenuButtonDisplayFunc(WIDGET const* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
 	// Any widget using PopoverMenuButtonDisplayFunc must have its pUserData initialized to a (PopoverMenuButtonDisplayCache*)
 	assert(psWidget->pUserData != nullptr);
 	PopoverMenuButtonDisplayCache& cache = *static_cast<PopoverMenuButtonDisplayCache*>(psWidget->pUserData);
 
-	W_BUTTON *psButton = dynamic_cast<W_BUTTON*>(psWidget);
+	auto psButton = dynamic_cast<W_BUTTON const*>(psWidget);
 	ASSERT_OR_RETURN(, psButton, "psWidget is null");
 
 	int x0 = psButton->x() + xOffset;

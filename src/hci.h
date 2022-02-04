@@ -351,7 +351,7 @@ void intRemoveStatsNoAnim();
 void intRemoveObjectNoAnim();
 
 /*sets which list of structures to use for the interface*/
-Structure* interfaceStructList();
+std::vector<Structure>* interfaceStructList();
 
 //sets up the Transporter Screen as far as the interface is concerned
 void addTransporterInterface(Droid* psSelected, bool onMission);

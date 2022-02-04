@@ -45,8 +45,6 @@ struct BodyStats;
 struct Droid;
 struct iIMDShape;
 struct BaseObject;
-int pie_GetVideoBufferHeight();
-int pie_GetVideoBufferWidth();
 int pie_RotateProject(const Vector3i*, const glm::mat4&, Vector2i*);
 
 
@@ -320,7 +318,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 		if (objectType == RENDER_TYPE::RENDER_DROID || objectType == RENDER_TYPE::RENDER_STRUCTURE)
 		{
 			/* Won't draw selection boxes */
-			((BaseObject *)pObject)->sDisplay.frame_number = 0;
+			((BaseObject *)pObject)->setFrameNumber(0);
 		}
 
 		return;

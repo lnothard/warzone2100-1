@@ -481,7 +481,7 @@ void selNextSpecifiedBuilding(STRUCTURE_TYPE structType, bool jump)
 	/* Firstly, start coughing if the type is invalid */
 	ASSERT(structType <= STRUCTURE_TYPE::COUNT, "Invalid structure type %u", structType);
 
-	for (auto& psCurr : apsStructLists[selectedPlayer])
+	for (auto& psCurr : playerList[selectedPlayer].structures)
 	{
 		if (psCurr->getStats()->type == structType &&
         psCurr->getState() == STRUCTURE_STATE::BUILT) {

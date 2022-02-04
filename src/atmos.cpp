@@ -31,6 +31,7 @@
 #include "display3d.h"
 #include "effects.h"
 #include "miscimd.h"
+#include "display.h"
 
 int mapWidth, mapHeight;
 int map_Height(int, int);
@@ -279,8 +280,7 @@ void atmosDrawParticles(const glm::mat4& viewMatrix)
 		{
 			/* Is it visible on the screen? */
 			if (clipXYZ(static_cast<int>(asAtmosParts[i].position.x), static_cast<int>(asAtmosParts[i].position.z),
-			            static_cast<int>(asAtmosParts[i].position.y), viewMatrix))
-			{
+			            static_cast<int>(asAtmosParts[i].position.y), viewMatrix)) {
 				renderParticle(&asAtmosParts[i], viewMatrix);
 			}
 		}

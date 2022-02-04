@@ -107,6 +107,7 @@ enum class PENDING_STATUS
 
 enum class STRUCTURE_TYPE
 {
+  ANY,
   HQ,
   FACTORY,
   FACTORY_MODULE,

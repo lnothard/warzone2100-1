@@ -166,7 +166,7 @@ protected:
 	virtual bool hitTest(int x, int y);
 
 public:
-	virtual unsigned getState();
+	virtual unsigned getState() const;
 	virtual void setState(unsigned state);
 	virtual void setFlash(bool enable);
 	virtual WzString getString() const;

@@ -20,7 +20,6 @@
 #include "frame.h"
 #include "wzstring.h"
 #include <algorithm>
-#include <cctype>
 #include <sstream>
 #include <iomanip>
 #include <limits>
@@ -562,11 +561,7 @@ WzString WzString::operator+(const char* other) const
 	return newString;
 }
 
-WzString& WzString::operator=(const WzString &other)
-{
-	_utf8String = other._utf8String;
-	return *this;
-}
+WzString& WzString::operator=(const WzString &other) = default;
 
 WzString& WzString::operator=(const WzUniCodepoint& ch)
 {

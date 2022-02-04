@@ -51,17 +51,16 @@ bool allocComponentList(COMPONENT_TYPE type, int number)
 	//allocate the space for the Players' component lists
 	for (auto inc = 0; inc < MAX_PLAYERS; inc++)
 	{
-		if (apCompLists[inc][type])
-		{
-			free(apCompLists[inc][type]);
+		if (apCompLists[inc][(int)type]) {
+			free(apCompLists[inc][(int)type]);
 		}
 
-		apCompLists[inc][type] = (UBYTE*)malloc(sizeof(UBYTE) * number);
+		apCompLists[inc][(int)type] = (UBYTE*)malloc(sizeof(UBYTE) * number);
 
 		//initialise the players' lists
 		for (auto comp = 0; comp < number; comp++)
 		{
-			apCompLists[inc][type][comp] = UNAVAILABLE;
+			apCompLists[inc][(int)type][comp] = UNAVAILABLE;
 		}
 	}
 
@@ -71,50 +70,48 @@ bool allocComponentList(COMPONENT_TYPE type, int number)
 // release all the component lists
 void freeComponentLists()
 {
-	UDWORD inc;
-
-	for (inc = 0; inc < MAX_PLAYERS; inc++)
+	for (auto inc = 0; inc < MAX_PLAYERS; inc++)
 	{
 		//free the component lists
-		if (apCompLists[inc][COMPONENT_TYPE::BODY])
+		if (apCompLists[inc][(int)COMPONENT_TYPE::BODY])
 		{
-			free(apCompLists[inc][COMPONENT_TYPE::BODY]);
-			apCompLists[inc][COMPONENT_TYPE::BODY] = nullptr;
+			free(apCompLists[inc][(int)COMPONENT_TYPE::BODY]);
+			apCompLists[inc][(int)COMPONENT_TYPE::BODY] = nullptr;
 		}
-		if (apCompLists[inc][COMPONENT_TYPE::BRAIN])
+		if (apCompLists[inc][(int)COMPONENT_TYPE::BRAIN])
 		{
-			free(apCompLists[inc][COMPONENT_TYPE::BRAIN]);
-			apCompLists[inc][COMPONENT_TYPE::BRAIN] = nullptr;
+			free(apCompLists[inc][(int)COMPONENT_TYPE::BRAIN]);
+			apCompLists[inc][(int)COMPONENT_TYPE::BRAIN] = nullptr;
 		}
-		if (apCompLists[inc][COMPONENT_TYPE::PROPULSION])
+		if (apCompLists[inc][(int)COMPONENT_TYPE::PROPULSION])
 		{
-			free(apCompLists[inc][COMPONENT_TYPE::PROPULSION]);
-			apCompLists[inc][COMPONENT_TYPE::PROPULSION] = nullptr;
+			free(apCompLists[inc][(int)COMPONENT_TYPE::PROPULSION]);
+			apCompLists[inc][(int)COMPONENT_TYPE::PROPULSION] = nullptr;
 		}
-		if (apCompLists[inc][COMPONENT_TYPE::SENSOR])
+		if (apCompLists[inc][(int)COMPONENT_TYPE::SENSOR])
 		{
-			free(apCompLists[inc][COMPONENT_TYPE::SENSOR]);
-			apCompLists[inc][COMPONENT_TYPE::SENSOR] = nullptr;
+			free(apCompLists[inc][(int)COMPONENT_TYPE::SENSOR]);
+			apCompLists[inc][(int)COMPONENT_TYPE::SENSOR] = nullptr;
 		}
-		if (apCompLists[inc][COMPONENT_TYPE::ECM])
+		if (apCompLists[inc][(int)COMPONENT_TYPE::ECM])
 		{
-			free(apCompLists[inc][COMPONENT_TYPE::ECM]);
-			apCompLists[inc][COMPONENT_TYPE::ECM] = nullptr;
+			free(apCompLists[inc][(int)COMPONENT_TYPE::ECM]);
+			apCompLists[inc][(int)COMPONENT_TYPE::ECM] = nullptr;
 		}
-		if (apCompLists[inc][COMPONENT_TYPE::REPAIR_UNIT])
+		if (apCompLists[inc][(int)COMPONENT_TYPE::REPAIR_UNIT])
 		{
-			free(apCompLists[inc][COMPONENT_TYPE::REPAIRUNIT]);
-			apCompLists[inc][COMPONENT_TYPE::REPAIRUNIT] = nullptr;
+			free(apCompLists[inc][(int)COMPONENT_TYPE::REPAIR_UNIT]);
+			apCompLists[inc][(int)COMPONENT_TYPE::REPAIR_UNIT] = nullptr;
 		}
-		if (apCompLists[inc][COMPONENT_TYPE::CONSTRUCT])
+		if (apCompLists[inc][(int)COMPONENT_TYPE::CONSTRUCT])
 		{
-			free(apCompLists[inc][COMPONENT_TYPE::CONSTRUCT]);
-			apCompLists[inc][COMPONENT_TYPE::CONSTRUCT] = nullptr;
+			free(apCompLists[inc][(int)COMPONENT_TYPE::CONSTRUCT]);
+			apCompLists[inc][(int)COMPONENT_TYPE::CONSTRUCT] = nullptr;
 		}
-		if (apCompLists[inc][COMPONENT_TYPE::WEAPON])
+		if (apCompLists[inc][(int)COMPONENT_TYPE::WEAPON])
 		{
-			free(apCompLists[inc][COMPONENT_TYPE::WEAPON]);
-			apCompLists[inc][COMPONENT_TYPE::WEAPON] = nullptr;
+			free(apCompLists[inc][(int)COMPONENT_TYPE::WEAPON]);
+			apCompLists[inc][(int)COMPONENT_TYPE::WEAPON] = nullptr;
 		}
 	}
 }
@@ -122,14 +119,12 @@ void freeComponentLists()
 //allocate the space for the Players' structure lists
 bool allocStructLists()
 {
-	SDWORD inc, stat;
-
-	for (inc = 0; inc < MAX_PLAYERS; inc++)
+	for (auto inc = 0; inc < MAX_PLAYERS; inc++)
 	{
 		if (numStructureStats)
 		{
 			apStructTypeLists[inc] = (UBYTE*)malloc(sizeof(UBYTE) * numStructureStats);
-			for (stat = 0; stat < (SDWORD)numStructureStats; stat++)
+			for (auto stat = 0; stat < (SDWORD)numStructureStats; stat++)
 			{
 				apStructTypeLists[inc][stat] = UNAVAILABLE;
 			}
@@ -147,13 +142,10 @@ bool allocStructLists()
 // release the structure lists
 void freeStructureLists()
 {
-	UDWORD inc;
-
-	for (inc = 0; inc < MAX_PLAYERS; inc++)
+	for (auto inc = 0; inc < MAX_PLAYERS; inc++)
 	{
 		//free the structure lists
-		if (apStructTypeLists[inc])
-		{
+		if (apStructTypeLists[inc]) {
 			free(apStructTypeLists[inc]);
 			apStructTypeLists[inc] = nullptr;
 		}
@@ -164,50 +156,48 @@ void freeStructureLists()
 //TEST FUNCTION - MAKE EVERYTHING AVAILABLE
 void makeAllAvailable()
 {
-	UDWORD comp, i;
-
-	for (i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (comp = 0; comp < numWeaponStats; comp++)
+		for (auto comp = 0; comp < numWeaponStats; comp++)
 		{
-			apCompLists[i][COMPONENT_TYPE::WEAPON][comp] = AVAILABLE;
+			apCompLists[i][(int)COMPONENT_TYPE::WEAPON][comp] = AVAILABLE;
 		}
-		for (comp = 0; comp < numBodyStats; comp++)
+		for (auto comp = 0; comp < numBodyStats; comp++)
 		{
-			apCompLists[i][COMPONENT_TYPE::BODY][comp] = AVAILABLE;
+			apCompLists[i][(int)COMPONENT_TYPE::BODY][comp] = AVAILABLE;
 		}
-		for (comp = 0; comp < numPropulsionStats; comp++)
+		for (auto comp = 0; comp < numPropulsionStats; comp++)
 		{
-			apCompLists[i][COMPONENT_TYPE::PROPULSION][comp] = AVAILABLE;
+			apCompLists[i][(int)COMPONENT_TYPE::PROPULSION][comp] = AVAILABLE;
 		}
-		for (comp = 0; comp < numSensorStats; comp++)
+		for (auto comp = 0; comp < numSensorStats; comp++)
 		{
-			apCompLists[i][COMPONENT_TYPE::SENSOR][comp] = AVAILABLE;
+			apCompLists[i][(int)COMPONENT_TYPE::SENSOR][comp] = AVAILABLE;
 		}
-		for (comp = 0; comp < numECMStats; comp++)
+		for (auto comp = 0; comp < numECMStats; comp++)
 		{
-			apCompLists[i][COMPONENT_TYPE::ECM][comp] = AVAILABLE;
+			apCompLists[i][(int)COMPONENT_TYPE::ECM][comp] = AVAILABLE;
 		}
-		for (comp = 0; comp < numConstructStats; comp++)
+		for (auto comp = 0; comp < numConstructStats; comp++)
 		{
-			apCompLists[i][COMPONENT_TYPE::CONSTRUCT][comp] = AVAILABLE;
+			apCompLists[i][(int)COMPONENT_TYPE::CONSTRUCT][comp] = AVAILABLE;
 		}
-		for (comp = 0; comp < numBrainStats; comp++)
+		for (auto comp = 0; comp < numBrainStats; comp++)
 		{
-			apCompLists[i][COMPONENT_TYPE::BRAIN][comp] = AVAILABLE;
+			apCompLists[i][(int)COMPONENT_TYPE::BRAIN][comp] = AVAILABLE;
 		}
-		for (comp = 0; comp < numRepairStats; comp++)
+		for (auto comp = 0; comp < numRepairStats; comp++)
 		{
-			apCompLists[i][COMPONENT_TYPE::REPAIR_UNIT][comp] = AVAILABLE;
+			apCompLists[i][(int)COMPONENT_TYPE::REPAIR_UNIT][comp] = AVAILABLE;
 		}
 
 		//make all the structures available
-		for (comp = 0; comp < numStructureStats; comp++)
+		for (auto comp = 0; comp < numStructureStats; comp++)
 		{
 			apStructTypeLists[i][comp] = AVAILABLE;
 		}
 		//make all research availble to be performed
-		for (comp = 0; comp < asResearch.size(); comp++)
+		for (auto comp = 0; comp < asResearch.size(); comp++)
 		{
 			enableResearch(&asResearch[comp], i);
 		}

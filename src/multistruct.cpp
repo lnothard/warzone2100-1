@@ -350,13 +350,11 @@ void recvStructureInfo(NETQUEUE queue)
 		debug(LOG_WARNING, "Could not find structure %u to change production for", structId);
 		return;
 	}
-	if (!canGiveOrdersFor(queue.index, psStruct->player))
+	if (!canGiveOrdersFor(queue.index, psStruct->playerManager->getPlayer()))
 	{
 		syncDebug("Wrong player.");
 		return;
 	}
-
-	CHECK_STRUCTURE(psStruct);
 
 	if (structureInfo == STRUCTUREINFO_MANUFACTURE && !researchedTemplate(pT, player, true, true))
 	{
@@ -373,7 +371,7 @@ void recvStructureInfo(NETQUEUE queue)
 	{
 		popStatusPending(psStruct->pFunctionality->factory);
 	}
-	else if (psStruct->pStructureType->type == REF_RESEARCH)
+	else if (psStruct->getStats()->type == STRUCTURE_TYPE::RESEARCH)
 	{
 		popStatusPending(psStruct->pFunctionality->researchFacility);
 	}
@@ -399,6 +397,4 @@ void recvStructureInfo(NETQUEUE queue)
 	}
 
 	syncDebugStructure(psStruct, '>');
-
-	CHECK_STRUCTURE(psStruct);
 }

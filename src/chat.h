@@ -57,7 +57,7 @@ struct ChatMessage
 
   unsigned sender = 0;
 
-  std::string text {};
+  char* text;
 
   /**
    * Set to `true` if this message should be private, i.e.,

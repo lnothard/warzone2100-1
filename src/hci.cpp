@@ -101,8 +101,7 @@ struct BUTOFFSET
 	SWORD y;
 };
 
-static BUTOFFSET ReticuleOffsets[NUMRETBUTS] = // Reticule button form relative positions.
-{
+static std::array<BUTOFFSET, NUMRETBUTS> ReticuleOffsets {{
 	{43, 47}, // RETBUT_CANCEL,
 	{47, 15}, // RETBUT_FACTORY,
 	{81, 33}, // RETBUT_RESEARCH,
@@ -110,10 +109,9 @@ static BUTOFFSET ReticuleOffsets[NUMRETBUTS] = // Reticule button form relative 
 	{47, 87}, // RETBUT_DESIGN,
 	{13, 69}, // RETBUT_INTELMAP,
 	{13, 33}, // RETBUT_COMMAND,
-};
+}};
 
-static BUTSTATE ReticuleEnabled[NUMRETBUTS] = // Reticule button enable states.
-{
+static std::array<BUTSTATE, NUMRETBUTS> ReticuleEnabled {{
 	{IDRET_CANCEL, false, false},
 	{IDRET_MANUFACTURE, false, false},
 	{IDRET_RESEARCH, false, false},
@@ -121,13 +119,12 @@ static BUTSTATE ReticuleEnabled[NUMRETBUTS] = // Reticule button enable states.
 	{IDRET_DESIGN, false, false},
 	{IDRET_INTEL_MAP, false, false},
 	{IDRET_COMMAND, false, false},
-};
+}};
 
-static UDWORD keyButtonMapping = 0;
+static unsigned keyButtonMapping = 0;
 static bool ReticuleUp = false;
 static bool Refreshing = false;
 
-/***************************************************************************************/
 /*                  Widget ID numbers                                                  */
 
 #define IDPOW_FORM			100		// power bar form
@@ -264,7 +261,7 @@ static bool intAddCommand();
 static void intStopStructPosition();
 
 static Structure* CurrentStruct = nullptr;
-static SWORD CurrentStructType = 0;
+static STRUCTURE_TYPE CurrentStructType = STRUCTURE_TYPE::COUNT;
 static Droid* CurrentDroid = nullptr;
 static DROID_TYPE CurrentDroidType = DROID_TYPE::ANY;
 
@@ -277,12 +274,10 @@ static void intRunPower();
 static void processProximityButtons(UDWORD id);
 
 // count the number of selected droids of a type
-static SDWORD intNumSelectedDroids(DROID_TYPE droidType);
+static long intNumSelectedDroids(DROID_TYPE droidType);
 
 static void parseChatMessageModifiers(ChatMessage& message);
 
-
-/***************************GAME CODE ****************************/
 
 struct RETBUTSTATS
 {
@@ -304,7 +299,7 @@ static bool buttonIsClickable(uint16_t id)
 	return !gamePaused() && enabled;
 }
 
-static bool buttonIsHighlighted(W_BUTTON* p)
+static bool buttonIsHighlighted(W_BUTTON const* p)
 {
 	bool clickable = buttonIsClickable(p->id);
 	return (p->getState() & WBUT_HIGHLIGHT) != 0 && clickable;
@@ -312,36 +307,30 @@ static bool buttonIsHighlighted(W_BUTTON* p)
 
 void setReticuleFlash(int ButId, bool flash)
 {
-	if (MissionResUp)
-	{
+	if (MissionResUp) {
 		return;
 	}
-	if (flash != retbutstats[ButId].flashing)
-	{
+	if (flash != retbutstats[ButId].flashing) {
 		retbutstats[ButId].flashing = flash;
 		retbutstats[ButId].flashTime = 0;
 	}
 }
 
 // set up the button's size & hit-testing based on the dimensions of the "normal" image
-void setReticuleButtonDimensions(W_BUTTON& button, const WzString& filename)
+void setReticuleButtonDimensions(W_BUTTON& button, WzString const& filename)
 {
 	ImageDef* image = nullptr;
-	if (!filename.isEmpty())
-	{
+	if (!filename.isEmpty()) {
 		image = iV_GetImage(filename);
 	}
-	else
-	{
+	else {
 		ASSERT(IntImages->imageDefs.size() >= IMAGE_RETICULE_GREY, "IMAGE_RETICULE_GREY isn't in IntImages?");
-		if (IntImages->imageDefs.size() >= IMAGE_RETICULE_GREY)
-		{
+		if (IntImages->imageDefs.size() >= IMAGE_RETICULE_GREY) {
 			image = &(IntImages->imageDefs[IMAGE_RETICULE_GREY]);
 		}
 	}
 
-	if (image)
-	{
+	if (image) {
 		// set the button width/height based on the "normal" image dimensions (preserving the current x, y)
 		button.setGeometry(button.x(), button.y(), image->Width / 2, image->Height / 2);
 
@@ -349,17 +338,17 @@ void setReticuleButtonDimensions(W_BUTTON& button, const WzString& filename)
 		button.setCustomHitTest([](WIDGET* psWidget, int x, int y) -> bool
 		{
 			// determine center of ellipse contained within the bounding rect
-			float centerX = ((psWidget->x()) + (psWidget->x() + psWidget->width())) / 2.f;
-			float centerY = ((psWidget->y()) + (psWidget->y() + psWidget->height())) / 2.f;
+			auto centerX = ((psWidget->x()) + (psWidget->x() + psWidget->width())) / 2.f;
+			auto centerY = ((psWidget->y()) + (psWidget->y() + psWidget->height())) / 2.f;
 
 			// determine semi-major axis + semi-minor axis
-			float axisX = psWidget->width() / 2.f;
-			float axisY = psWidget->height() / 2.f;
+			auto axisX = psWidget->width() / 2.f;
+			auto axisY = psWidget->height() / 2.f;
 
 			// Srivatsan (https://math.stackexchange.com/users/13425/srivatsan), Check if a point is within an ellipse, URL (version: 2011-10-27): https://math.stackexchange.com/q/76463
-			float partX = (((float)x - centerX) * ((float)x - centerX)) / (axisX * axisX);
+			auto partX = (((float)x - centerX) * ((float)x - centerX)) / (axisX * axisX);
 			// ((x - centerX)^2) / ((axisX)^2)
-			float partY = (((float)y - centerY) * ((float)y - centerY)) / (axisY * axisY);
+			auto partY = (((float)y - centerY) * ((float)y - centerY)) / (axisY * axisY);
 			// ((y - centerY)^2) / ((axisY)^2)
 			return partX + partY <= 1.f;
 		});
@@ -426,82 +415,67 @@ void setReticulesEnabled(bool enabled)
 	}
 }
 
-static void intDisplayReticuleButton(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset)
+static void intDisplayReticuleButton(WIDGET const* psWidget, UDWORD xOffset, UDWORD yOffset)
 {
-	const int x = xOffset + psWidget->x();
-	const int y = yOffset + psWidget->y();
-	int DownTime = retbutstats[psWidget->UserData].downTime;
-	bool flashing = retbutstats[psWidget->UserData].flashing;
-	int flashTime = retbutstats[psWidget->UserData].flashTime;
+	const auto x = xOffset + psWidget->x();
+	const auto y = yOffset + psWidget->y();
+	auto DownTime = retbutstats[psWidget->UserData].downTime;
+	auto flashing = retbutstats[psWidget->UserData].flashing;
+	auto flashTime = retbutstats[psWidget->UserData].flashTime;
 	ASSERT_OR_RETURN(, psWidget->type == WIDG_BUTTON, "Not a button");
-	auto* psButton = (W_BUTTON*)psWidget;
+	auto psButton = static_cast<W_BUTTON const*>(psWidget);
 	bool butDisabled = psButton->state & WBUT_DISABLE;
 
-	if (retbutstats[psWidget->UserData].filename.isEmpty() && !butDisabled)
-	{
+	if (retbutstats[psWidget->UserData].filename.isEmpty() && !butDisabled) {
 		butDisabled = true;
 		retbutstats[psWidget->UserData].button->setState(WBUT_DISABLE);
 	}
 
-	if (butDisabled)
-	{
-		if (psWidget->UserData != RETBUT_CANCEL)
-		{
+	if (butDisabled) {
+		if (psWidget->UserData != RETBUT_CANCEL) {
 			iV_DrawImage2("image_reticule_grey.png", x, y, psWidget->width(), psWidget->height());
 		}
-		else
-		{
+		else {
 			iV_DrawImage2(retbutstats[psWidget->UserData].filenameDown, x, y, psWidget->width(), psWidget->height());
 		}
 		return;
 	}
 
 	bool Down = psButton->state & (WBUT_DOWN | WBUT_CLICKLOCK);
-	if (Down && buttonIsClickable(psButton->id))
-	{
-		if ((DownTime < 1) && (psWidget->UserData != RETBUT_CANCEL))
-		{
+	if (Down && buttonIsClickable(psButton->id)) {
+		if ((DownTime < 1) && (psWidget->UserData != RETBUT_CANCEL)) {
 			iV_DrawImage2("image_reticule_butdown.png", x, y, psWidget->width(), psWidget->height());
 		}
-		else
-		{
+		else {
 			iV_DrawImage2(retbutstats[psWidget->UserData].filenameDown, x, y, psWidget->width(), psWidget->height());
 		}
 		DownTime++;
 		flashing = false; // stop the reticule from flashing if it was
 	}
-	else
-	{
-		if (flashing && !gamePaused())
-		{
-			if (((realTime / 250) % 2) != 0)
-			{
+	else {
+		if (flashing && !gamePaused()) {
+			if (((realTime / 250) % 2) != 0) {
 				iV_DrawImage2(retbutstats[psWidget->UserData].filenameDown, x, y, psWidget->width(),
 				              psWidget->height());
 				flashTime = 0;
 			}
-			else
-			{
+			else {
 				iV_DrawImage2(retbutstats[psWidget->UserData].filename, x, y, psWidget->width(), psWidget->height());
 			}
 			flashTime++;
 		}
-		else
-		{
+		else {
 			iV_DrawImage2(retbutstats[psWidget->UserData].filename, x, y, psWidget->width(), psWidget->height());
 			DownTime = 0;
 		}
 	}
 
 	bool highlighted = buttonIsHighlighted(psButton);
-	if (highlighted)
-	{
-		if (psWidget->UserData == RETBUT_CANCEL)
-		{
+	if (highlighted) {
+		if (psWidget->UserData == RETBUT_CANCEL) {
 			iV_DrawImage2("image_cancel_hilight.png", x - 1, y - 1, psWidget->width() + 2, psWidget->height() + 2);
 		}
-		else
-		{
+		else {
 			iV_DrawImage2("image_reticule_hilight.png", x - 1, y - 1, psWidget->width() + 2, psWidget->height() + 2);
 		}
 	}
@@ -1564,7 +1538,7 @@ INT_RETVAL intRunWidgets()
 		case CHAT_EDITBOX:
 			{
 				auto message = ChatMessage(selectedPlayer, widgGetString(psWScreen, CHAT_EDITBOX));
-				attemptCheatCode(message.text.c_str()); // parse the message
+				attemptCheatCode(message.text); // parse the message
 
 				if ((int)widgGetUserData2(psWScreen, CHAT_EDITBOX) == CHAT_TEAM)
 				{
@@ -1732,7 +1706,7 @@ INT_RETVAL intRunWidgets()
 					/* See what type of thing is being put down */
 					auto psBuilding = dynamic_cast<StructureStats*>(psPositionStats);
 					if (psBuilding && selectedPlayer < MAX_PLAYERS) {
-						Structure tmp(0, selectedPlayer);
+						Structure tmp(0, &playerList[selectedPlayer]);
 
 						if (psBuilding->type == STRUCTURE_TYPE::DEMOLISH) {
 							auto psTile = mapTile(map_coord(pos.x), map_coord(pos.y));
@@ -2414,41 +2388,36 @@ void addTransporterInterface(Droid* psSelected, bool onMission)
 }
 
 /*sets which list of structures to use for the interface*/
-Structure* interfaceStructList()
+std::vector<Structure>* interfaceStructList()
 {
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return nullptr;
 	}
 
-	if (offWorldKeepLists)
-	{
-		return mission.apsStructLists[selectedPlayer];
+	if (offWorldKeepLists) {
+		return &mission.players[selectedPlayer].structures;
 	}
-	else
-	{
-		return apsStructLists[selectedPlayer];
+	else {
+		return &playerList[selectedPlayer].structures;
 	}
 }
 
 
 /*causes a reticule button to start flashing*/
-void flashReticuleButton(UDWORD buttonID)
+void flashReticuleButton(unsigned buttonID)
 {
 	//get the button for the id
-	WIDGET* psButton = widgGetFromID(psWScreen, buttonID);
-	if (psButton)
-	{
+	auto const psButton = widgGetFromID(psWScreen, buttonID);
+	if (psButton) {
 		retbutstats[psButton->UserData].flashing = true;
 	}
 }
 
 // stop a reticule button flashing
-void stopReticuleButtonFlash(UDWORD buttonID)
+void stopReticuleButtonFlash(unsigned buttonID)
 {
-	WIDGET* psButton = widgGetFromID(psWScreen, buttonID);
-	if (psButton)
-	{
+	auto const psButton = widgGetFromID(psWScreen, buttonID);
+	if (psButton) {
 		retbutstats[psButton->UserData].flashTime = 0;
 		retbutstats[psButton->UserData].flashing = false;
 	}
@@ -2563,8 +2532,7 @@ bool intAddProximityButton(PROXIMITY_DISPLAY* psProxDisp, UDWORD inc)
 		for (cnt = IDPROX_START; cnt < IDPROX_END; cnt++)
 		{
 			// go down the prox msgs and see if it's free.
-			for (psProxDisp2 = apsProxDisp[selectedPlayer]; psProxDisp2 && psProxDisp2->buttonID != cnt; psProxDisp2 =
-			     psProxDisp2->psNext)
+			for (psProxDisp2 = apsProxDisp[selectedPlayer]; psProxDisp2 && psProxDisp2->buttonID != cnt; psProxDisp2 = psProxDisp2->psNext)
 			{
 			}
 
@@ -2642,21 +2610,16 @@ void setKeyButtonMapping(UDWORD val)
 }
 
 // count the number of selected droids of a type
-static int intNumSelectedDroids(DROID_TYPE droidType)
+static long intNumSelectedDroids(DROID_TYPE droidType)
 {
-	if (selectedPlayer >= MAX_PLAYERS) {
-		return 0;
-	}
+	if (selectedPlayer >= MAX_PLAYERS) return 0;
 
-	auto num = 0;
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
-	{
-		if (psDroid.damageManager->isSelected() && psDroid.getType() == droidType) {
-			num += 1;
-		}
-	}
-
-	return num;
+  return std::count_if(playerList[selectedPlayer].droids.begin(),
+                       playerList[selectedPlayer].droids.end(),
+                       [&droidType](auto const& droid) {
+    return droid.damageManager->isSelected() &&
+           droid.getType() == droidType;
+  });
 }
 
 /*Checks to see if there are any research topics to do and flashes the button -
@@ -2704,50 +2667,42 @@ int intGetResearchState()
 
 void intNotifyResearchButton(int prevState)
 {
-	int newState = intGetResearchState();
-	if (newState > prevState)
-	{
+	auto newState = intGetResearchState();
+	if (newState > prevState) {
 		// Set the research reticule button to flash.
 		flashReticuleButton(IDRET_RESEARCH);
 	}
-	else if (newState == 0 && prevState > 0)
-	{
+	else if (newState == 0 && prevState > 0) {
 		stopReticuleButtonFlash(IDRET_RESEARCH);
 	}
 }
 
 // see if a reticule button is enabled
-bool intCheckReticuleButEnabled(UDWORD id)
+bool intCheckReticuleButEnabled(unsigned id)
 {
-	for (auto& i : ReticuleEnabled)
-	{
-		if (i.id == id)
-		{
-			return i.Enabled;
-		}
-	}
-	return false;
+  auto it = std::find_if(ReticuleEnabled.begin(), ReticuleEnabled.end(),
+                     [id](auto const& state) {
+    return state.id == id;
+  });
+
+  return it == ReticuleEnabled.end() ? false : it->Enabled;
 }
 
 // Look through the players structures and find the next one of type structType.
-//
 static Structure* intGotoNextStructureType(STRUCTURE_TYPE structType)
 {
 	Structure* psStruct;
 	bool Found = false;
 
-	if ((SWORD)structType != CurrentStructType)
-	{
+	if (structType != CurrentStructType) {
 		CurrentStruct = nullptr;
-		CurrentStructType = (SWORD)structType;
+		CurrentStructType = structType;
 	}
 
-	if (CurrentStruct != nullptr)
-	{
+	if (CurrentStruct != nullptr) {
 		psStruct = CurrentStruct;
 	}
-	else
-	{
+	else {
 		psStruct = interfaceStructList();
 	}
 
@@ -2755,8 +2710,7 @@ static Structure* intGotoNextStructureType(STRUCTURE_TYPE structType)
 	{
 		if ((psStruct->getStats()->type == structType ||
          structType == STRUCTURE_TYPE::COUNT) && psStruct->getState() == STRUCTURE_STATE::BUILT) {
-			if (psStruct != CurrentStruct)
-			{
+			if (psStruct != CurrentStruct) {
 				clearSelection();
 				psStruct->damageManager->setSelected(true);
 				CurrentStruct = psStruct;
@@ -2771,8 +2725,8 @@ static Structure* intGotoNextStructureType(STRUCTURE_TYPE structType)
 		for (psStruct = interfaceStructList(); psStruct != CurrentStruct && psStruct != nullptr; psStruct = psStruct->
 		     psNext)
 		{
-			if ((psStruct->getStats()->type == structType ||
-           structType == ANY) && psStruct->getState() == STRUCTURE_STATE::BUILT) {
+			if ((psStruct->getStats()->type == structType || structType == STRUCTURE_TYPE::ANY) &&
+          psStruct->getState() == STRUCTURE_STATE::BUILT) {
 				if (psStruct != CurrentStruct) {
 					clearSelection();
 					psStruct->damageManager->setSelected(true);

@@ -643,8 +643,7 @@ void missionFlyTransportersIn(SDWORD iPlayer, bool bTrackTransporter)
 static void saveMissionData()
 {
 	UDWORD inc;
-	Droid* psDroid;
-	Structure *psStruct, *psStructBeingBuilt;
+	Structure *psStructBeingBuilt;
 	bool bRepairExists;
 
 	debug(LOG_SAVE, "called");
@@ -656,42 +655,41 @@ static void saveMissionData()
 
 	bRepairExists = false;
 	//set any structures currently being built to completed for the selected player
-	for (auto& psStruct : apsStructLists[selectedPlayer])
+	for (auto& psStruct : playerList[selectedPlayer].structures)
 	{
-		if (psStruct->getState() == STRUCTURE_STATE::BEING_BUILT)
+		if (psStruct.getState() == STRUCTURE_STATE::BEING_BUILT)
 		{
 			//find a droid working on it
-			for (psDroid = apsDroidLists[selectedPlayer]; psDroid != nullptr; psDroid = psDroid->psNext)
+			for (auto& psDroid : playerList[selectedPlayer].droids)
 			{
-				if ((psStructBeingBuilt = (Structure*)orderStateObj(psDroid, ORDER_TYPE::BUILD))
-					&& psStructBeingBuilt == psStruct)
-				{
+				if ((psStructBeingBuilt = (Structure*)orderStateObj(&psDroid, ORDER_TYPE::BUILD))
+					&& psStructBeingBuilt == &psStruct) {
 					// just give it all its build points
-					structureBuild(psStruct.get(), nullptr, structureBuildPointsToCompletion(*psStruct));
+					structureBuild(&psStruct, nullptr, structureBuildPointsToCompletion(*psStruct));
 					//don't bother looking for any other droids working on it
 					break;
 				}
 			}
 		}
 		//check if have a completed repair facility on home world
-		if (psStruct->getStats()->type == STRUCTURE_TYPE::REPAIR_FACILITY && 
-        psStruct->getState() == STRUCTURE_STATE::BUILT) {
+		if (psStruct.getStats()->type == STRUCTURE_TYPE::REPAIR_FACILITY &&
+        psStruct.getState() == STRUCTURE_STATE::BUILT) {
 			bRepairExists = true;
 		}
 	}
 
 	//repair all droids back at home base if have a repair facility
 	if (bRepairExists) {
-		for (auto& psDroid : apsDroidLists[selectedPlayer])
+		for (auto& psDroid : playerList[selectedPlayer].droids)
 		{
 			if (droidIsDamaged(&psDroid)) {
-				psDroid.damageManager->setHp(psDroid.damageManager->getOriginalHp();
+				psDroid.damageManager->setHp(psDroid.damageManager->getOriginalHp());
 			}
 		}
 	}
 
 	//clear droid orders for all droids except constructors still building
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		if ((psStructBeingBuilt = (Structure*)orderStateObj(&psDroid, ORDER_TYPE::BUILD)))
 		{
@@ -1547,13 +1545,13 @@ static void missionResetDroids()
 		}
 	}
 
-	for (auto& psDroid : apsDroidLists[selectedPlayer])
+	for (auto& psDroid : playerList[selectedPlayer].droids)
 	{
 		bool placed = false;
 
 		//for all droids that have never left home base
 		if (psDroid.getPosition().x == INVALID_XY && psDroid.getPosition().y == INVALID_XY) {
-			Structure* psStruct = psDroid.associated_structure;
+			auto psStruct = psDroid.getBase();
 			Factory* psFactory = nullptr;
 
 			if (psStruct && StructIsFactory(psStruct)) {
@@ -1565,10 +1563,9 @@ static void missionResetDroids()
 				UDWORD x, y;
 
 				// Use factory DP if one
-				if (psFactory->psAssemblyPoint)
-				{
-					x = map_coord(psFactory->psAssemblyPoint->coords.x);
-					y = map_coord(psFactory->psAssemblyPoint->coords.y);
+				if (psFactory->getAssemblyPoint()) {
+					x = map_coord(psFactory->getAssemblyPoint()->coords.x);
+					y = map_coord(psFactory->getAssemblyPoint()->coords.y);
 				}
 				else
 				{
@@ -1592,21 +1589,18 @@ static void missionResetDroids()
 			}
 			else // if couldn't find the factory - try to place near HQ instead
 			{
-				for (psStruct = apsStructLists[psDroid.playerManager->getPlayer()]; psStruct != nullptr; psStruct = psStruct->psNext)
+				for (auto& psStruct : playerList[psDroid.playerManager->getPlayer()].structures)
 				{
-					if (psStruct->getStats()->type == STRUCTURE_TYPE::HQ)
-					{
-						UDWORD x = map_coord(psStruct->getPosition().x);
-						UDWORD y = map_coord(psStruct->getPosition().y);
+					if (psStruct.getStats()->type == STRUCTURE_TYPE::HQ) {
+						UDWORD x = map_coord(psStruct.getPosition().x);
+						UDWORD y = map_coord(psStruct.getPosition().y);
 						PICK_TILE pickRes = pickHalfATile(&x, &y, LOOK_FOR_EMPTY_TILE);
 
-						if (pickRes == PICK_TILE::NO_FREE_TILE)
-						{
+						if (pickRes == PICK_TILE::NO_FREE_TILE) {
 							ASSERT(false, "missionResetUnits: Unable to find a free location");
 							psStruct = nullptr;
 						}
-						else
-						{
+						else {
 							int wx = world_coord(x);
 							int wy = world_coord(y);
 
@@ -1787,13 +1781,14 @@ void missionMoveTransporterOffWorld(Droid* psTransporter)
 		//need a callback for when all the selectedPlayers' reinforcements have been delivered
 		if (psTransporter->playerManager->isSelectedPlayer()) {
 			ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer %" PRIu32 " exceeds MAX_PLAYERS", selectedPlayer);
-			for (auto& psDroid : mission.apsDroidLists[selectedPlayer])
-			{
-				if (!isTransporter(psDroid)) {
-					break;
-				}
-			}
-			if (psDroid == nullptr) {
+
+      auto it = std::find_if(mission.players[selectedPlayer].droids.begin(),
+                             mission.players[selectedPlayer].droids.end(),
+                             [](auto const& droid) {
+         return !isTransporter(droid);
+      });
+
+			if (it == mission.players[selectedPlayer].droids.end()) {
 				triggerEvent(TRIGGER_TRANSPORTER_DONE, psTransporter);
 			}
 		}
@@ -2378,7 +2373,7 @@ void intRunMissionResult()
 				{
 					char msg[256] = {'\0'};
 
-					saveGame(sRequestResult, GTYPE_SAVE_START);
+					saveGame(sRequestResult, GAME_TYPE::GTYPE_SAVE_START);
 					sstrcpy(msg, _("GAME SAVED :"));
 					sstrcat(msg, sRequestResult);
 					addConsoleMessage(msg, CONSOLE_TEXT_JUSTIFICATION::LEFT, NOTIFY_MESSAGE);
@@ -2454,10 +2449,6 @@ void intProcessMissionResult(UDWORD id)
 	}
 }
 
-// end of interface stuff.
-// ////////////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////
-
 /*builds a droid back at the home base whilst on a mission - stored in a list made
 available to the transporter interface*/
 Droid* buildMissionDroid(DroidTemplate* psTempl, UDWORD x, UDWORD y, UDWORD player)
@@ -2471,8 +2462,7 @@ Droid* buildMissionDroid(DroidTemplate* psTempl, UDWORD x, UDWORD y, UDWORD play
 	}
 	addDroid(psNewDroid, mission.apsDroidLists);
 	//set its x/y to impossible values so can detect when return from mission
-	psNewDroid->pos.x = INVALID_XY;
-	psNewDroid->pos.y = INVALID_XY;
+  psNewDroid->setPosition({INVALID_XY, INVALID_XY, psNewDroid->getPosition().z});
 
 	//set all the droids to selected from when return
 	psNewDroid->damageManager->setSelected(isSelectable(psNewDroid));
@@ -2824,9 +2814,7 @@ void missionTimerUpdate()
 	}
 }
 
-
 // Remove any objects left ie walls,structures and droids that are not the selected player.
-//
 void missionDestroyObjects()
 {
 	Droid* psDroid;
@@ -2837,41 +2825,28 @@ void missionDestroyObjects()
 	proj_FreeAllProjectiles();
 	for (Player = 0; Player < MAX_PLAYERS; Player++)
 	{
-		if (Player != selectedPlayer)
-		{
+		if (Player != selectedPlayer) {
 			// AI player, clear out old data
 
-			psDroid = apsDroidLists[Player];
-
-			while (psDroid != nullptr)
+      for (auto& psDroid : playerList[Player].droids)
 			{
-				Droid* psNext = psDroid->psNext;
 				removeDroidBase(psDroid);
-				psDroid = psNext;
 			}
 
 			//clear out the mission lists as well to make sure no Transporters exist
 			apsDroidLists[Player] = mission.apsDroidLists[Player];
-			psDroid = apsDroidLists[Player];
 
-			while (psDroid != nullptr)
+      for (auto& psDroid : playerList[Player].droids)
 			{
-				Droid* psNext = psDroid->psNext;
-
 				//make sure its died flag is not set since we've swapped the apsDroidList pointers over
-				psDroid->damageManager->setTimeOfDeath(0);
+				psDroid.damageManager->setTimeOfDeath(0);
 				removeDroidBase(psDroid);
-				psDroid = psNext;
 			}
 			mission.apsDroidLists[Player] = nullptr;
 
-			psStruct = apsStructLists[Player];
-
-			while (psStruct != nullptr)
+      for (auto& psStruct : playerList[Player].structures)
 			{
-				Structure* psNext = psStruct->psNext;
 				removeStruct(psStruct, true);
-				psStruct = psNext;
 			}
 		}
 	}
@@ -2880,49 +2855,38 @@ void missionDestroyObjects()
 	ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer %" PRIu32 " exceeds MAX_PLAYERS", selectedPlayer);
 	Player = selectedPlayer;
 
-	psDroid = apsDroidLists[Player];
-	while (psDroid != nullptr)
-	{
-		if (psDroid->associated_structure && psDroid->associated_structure->died)
-		{
-			psDroid->setBase(nullptr);
+  for (auto& psDroid : playerList[Player].droids)
+  {
+		if (psDroid.getBase() && psDroid.getBase()->damageManager->isDead()) {
+			psDroid.setBase(nullptr);
 		}
 		for (i = 0; i < MAX_WEAPONS; i++)
 		{
-			if (psDroid->action_target[i] && psDroid->action_target[i]->died)
-			{
-				setDroidActionTarget(psDroid, nullptr, i);
+			if (psDroid.getTarget(i) && psDroid.getTarget(i)->damageManager->isDead()) {
+        psDroid.setActionTarget(nullptr, i);
 				// Clear action too if this requires a valid first action target
 				if (i == 0
-					&& psDroid->getAction() != ACTION::MOVE_FIRE
-					&& psDroid->getAction() != ACTION::TRANSPORT_IN
-					&& psDroid->getAction() != ACTION::TRANSPORT_OUT)
-				{
-					psDroid->setAction(ACTION::NONE);
+					  && psDroid.getAction() != ACTION::MOVE_FIRE
+					  && psDroid.getAction() != ACTION::TRANSPORT_IN
+					  && psDroid.getAction() != ACTION::TRANSPORT_OUT) {
+					psDroid.setAction(ACTION::NONE);
 				}
 			}
 		}
-		if (psDroid->getOrder()->target && psDroid->getOrder()->target->damageManager->isDead())
-		{
-			setDroidTarget(psDroid, nullptr);
+		if (psDroid.getOrder()->target && psDroid.getOrder()->target->damageManager->isDead()) {
+      psDroid.setTarget(nullptr);
 		}
-		psDroid = psDroid->psNext;
 	}
 
-	psStruct = apsStructLists[Player];
-	while (psStruct != nullptr)
+  for (auto& psStruct : playerList[Player].structures)
 	{
 		for (i = 0; i < MAX_WEAPONS; i++)
 		{
-			if (psStruct->getTarget(i) && psStruct->getTarget(i)->damageManager->isDead())
-			{
-				setStructureTarget(psStruct, nullptr, i, TARGET_ORIGIN::UNKNOWN);
+			if (psStruct.getTarget(i) && psStruct.getTarget(i)->damageManager->isDead()) {
+				setStructureTarget(&psStruct, nullptr, i, TARGET_ORIGIN::UNKNOWN);
 			}
 		}
-		psStruct = psStruct->psNext;
 	}
-
-	// FIXME: check that orders do not reference anything bad?
 
 	gameTime++; // Wonderful hack to ensure objects destroyed above get free'ed up by objmemUpdate.
 	objmemUpdate(); // Actually free objects removed above
@@ -2930,25 +2894,21 @@ void missionDestroyObjects()
 
 void processPreviousCampDroids()
 {
-	Droid *psDroid, *psNext;
-
 	ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer %" PRIu32 " exceeds MAX_PLAYERS", selectedPlayer);
 
 	// See if any are left
-	if (mission.apsDroidLists[selectedPlayer])
-	{
-		for (psDroid = mission.apsDroidLists[selectedPlayer]; psDroid != nullptr; psDroid = psNext)
-		{
-			psNext = psDroid->psNext;
-			// We want to kill off all droids now! - AB 27/01/99
-			// KILL OFF TRANSPORTER
-			if (droidRemove(psDroid, mission.apsDroidLists))
-			{
-				addDroid(psDroid, apsDroidLists);
-				vanishDroid(psDroid);
-			}
-		}
-	}
+	if (mission.players[selectedPlayer].droids.empty())
+    return;
+
+  for (auto& psDroid : mission.players[selectedPlayer].droids)
+  {
+    // We want to kill off all droids now! - AB 27/01/99
+    // KILL OFF TRANSPORTER
+    if (droidRemove(psDroid, mission.apsDroidLists)) {
+      playerList[psDroid.playerManager->getPlayer()].addDroid(psDroid);
+      vanishDroid(&psDroid);
+    }
+  }
 }
 
 //access functions for droidsToSafety flag - so we don't have to end the mission when a Transporter fly's off world
@@ -2979,13 +2939,12 @@ bool getPlayCountDown()
 bool missionDroidsRemaining(unsigned player)
 {
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "invalid player: %" PRIu32 "", player);
-	for (auto& psDroid : apsDroidLists[player])
-	{
-		if (!isTransporter(psDroid)) {
-			return true;
-		}
-	}
-	return false;
+
+  return std::any_of(playerList[player].droids.begin(),
+                     playerList[player].droids.end(),
+                     [](auto const& droid) {
+    return !isTransporter(droid);
+ });
 }
 
 /*called when a Transporter gets to the edge of the world and the droids are
@@ -3000,12 +2959,10 @@ void moveDroidsToSafety(Droid* psTransporter)
 	//move droids out of Transporter into mission list
 	for (psDroid = psTransporter->group->members; psDroid != nullptr && psDroid != psTransporter; psDroid = psNext)
 	{
-		psNext = psDroid->psGrpNext;
 		psTransporter->group->remove(psDroid);
 		//cam change add droid
-		psDroid->pos.x = INVALID_XY;
-		psDroid->pos.y = INVALID_XY;
-		addDroid(psDroid, mission.apsDroidLists);
+    psDroid->setPosition({INVALID_XY, INVALID_XY, psDroid->getPosition().z});
+		mission.players[psDroid->playerManager->getPlayer()].addDroid(psDroid);
 	}
 	//move the transporter into the mission list also
 	if (droidRemove(psTransporter, apsDroidLists))
@@ -3017,16 +2974,12 @@ void moveDroidsToSafety(Droid* psTransporter)
 void clearMissionWidgets()
 {
 	//remove any widgets that are up due to the missions
-	if (mission.time > 0)
-	{
+	if (mission.time > 0) {
 		intRemoveMissionTimer();
 	}
-
-	if (missionCanReEnforce())
-	{
+	if (missionCanReEnforce()) {
 		intRemoveTransporterTimer();
 	}
-
 	intRemoveTransporterLaunch();
 }
 
@@ -3035,15 +2988,15 @@ void clearMissionWidgets()
  */
 static Droid* find_transporter()
 {
-	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS, "selectedPlayer %" PRIu32 " exceeds MAX_PLAYERS",
+	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS,
+                   "selectedPlayer %" PRIu32 " exceeds MAX_PLAYERS",
 	                 selectedPlayer);
 
-	for (auto droid_list : {apsDroidLists[selectedPlayer], mission.apsDroidLists[selectedPlayer]})
+	for (auto droid_list : {playerList[selectedPlayer].droids, mission.players[selectedPlayer].droids})
 	{
 		for (auto& droid : droid_list)
 		{
-			if (isTransporter(droid))
-			{
+			if (isTransporter(droid)) {
 				return &droid;
 			}
 		}
@@ -3053,14 +3006,12 @@ static Droid* find_transporter()
 
 void resetMissionWidgets()
 {
-	if (mission.type == LEVEL_TYPE::LDS_NONE)
-	{
+	if (mission.type == LEVEL_TYPE::LDS_NONE) {
 		return;
 	}
 
 	//add back any widgets that should be up due to the missions
-	if (mission.time > 0)
-	{
+	if (mission.time > 0) {
 		intAddMissionTimer();
 		//make sure its not flashing when added
 		stopMissionButtonFlash(IDTIMER_FORM);
@@ -3140,22 +3091,20 @@ void emptyTransporters(bool bOffWorld)
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "selectedPlayer %" PRIu32 " >= MAX_PLAYERS", selectedPlayer);
 
 	//see if there are any Transporters in the world
-	for (auto& psTransporter : apsDroidLists[selectedPlayer])
+	for (auto& psTransporter : playerList[selectedPlayer].droids)
 	{
-		if (isTransporter(psTransporter))
-		{
+		if (isTransporter(psTransporter)) {
 			//if flying in, empty the contents
-			if (orderState(&psTransporter, ORDER_TYPE::TRANSPORT_IN))
-			{
+			if (orderState(&psTransporter, ORDER_TYPE::TRANSPORT_IN)) {
 				/* if we're offWorld, all we need to do is put the droids into the apsDroidList
 				and processMission() will assign them a location etc */
 				if (bOffWorld) {
 					for (auto& psDroid : psTransporter.group->members)
 					{
 						//take it out of the Transporter group
-						psTransporter.group->remove(psDroid);
+						psTransporter.removeDroidFromGroup(psDroid);
 						//add it back into current droid lists
-						addDroid(psDroid, apsDroidLists);
+						playerList[psDroid.playerManager->getPlayer()].addDroid(psDroid);
 					}
 				}
 				/* we're not offWorld so add to mission.apsDroidList to be
@@ -3177,15 +3126,14 @@ void emptyTransporters(bool bOffWorld)
 		}
 	}
 	//deal with any transporters that are waiting to come over
-	for (auto& psTransporter : mission.apsDroidLists[selectedPlayer])
+	for (auto& psTransporter : mission.players[selectedPlayer].droids)
 	{
 		if (isTransporter(psTransporter)) {
 			//for each droid within the transporter...
-			for (psDroid = psTransporter.group->members)
+			for (auto& psDroid : psTransporter.group->members)
 			{
-				psNext = psDroid->psGrpNext;
 				//take it out of the Transporter group
-				psTransporter.group->remove(psDroid);
+				psTransporter.removeDroidFromGroup(psDroid);
 				//add it back into mission droid lists
 				addDroid(psDroid, mission.apsDroidLists);
 			}
