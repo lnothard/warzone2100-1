@@ -49,7 +49,7 @@ file(GLOB SRC
 
 find_package(PNG 1.2 REQUIRED)
 find_package(Freetype REQUIRED)
-find_package(Harfbuzz 1.0 REQUIRED)
+find_package(Harfbuzz REQUIRED)
 
 include(CheckCXXCompilerFlag)
 

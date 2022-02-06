@@ -633,7 +633,6 @@ include_directories(".")
 include_directories("3rdparty")
 include_directories(SYSTEM "3rdparty/glm")
 include_directories("3rdparty/date/include")
-include_directories("3rdparty/boost-preprocessor/include")
 
 SET(STDC_HEADERS ON)
 
@@ -821,7 +820,4 @@ if(CPACK_COMMAND)
 endif()
 
 # Include Boost libs
-set(BOOST_ROOT "/opt/homebrew/Cellar/boost/1.76.0")
-find_package(Boost 1.76.0)
-include_directories(${Boost_INCLUDE_DIRS})
-target_link_libraries(warzone2100 ${Boost_LIBRARIES})
+add_subdirectory(3rdparty/boost)
