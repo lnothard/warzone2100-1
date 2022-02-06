@@ -2328,7 +2328,7 @@ void WZScriptDebugger::selected(BaseObject const* psObj)
 			selectedObjectDetails["Frustrated time"] = psDroid->getLastFrustratedTime();
 			selectedObjectDetails["Resistance"] = psDroid->damageManager->getResistance();
 			selectedObjectDetails["Secondary order"] = psDroid->getSecondaryOrder();
-			selectedObjectDetails["Action"] = getDroidActionName(psDroid->getAction());
+			selectedObjectDetails["Action"] = actionToString(psDroid->getAction());
 			selectedObjectDetails["Action position"] = glm::to_string(psDroid->getActionPos());
 			selectedObjectDetails["Action started"] = psDroid->getTimeActionStarted();
 			selectedObjectDetails["Action points"] = psDroid->action_points_done;
@@ -2378,7 +2378,7 @@ void WZScriptDebugger::selected(BaseObject const* psObj)
 			if (psStruct->getStats()->type == STRUCTURE_TYPE::REARM_PAD) {
 				selectedObjectDetails[":timeStarted"] = psStruct->pFunctionality->rearmPad.timeStarted;
 				selectedObjectDetails[":timeLastUpdated"] = psStruct->pFunctionality->rearmPad.timeLastUpdated;
-				selectedObjectDetails[":Rearm target"] = objInfo(psStruct->pFunctionality->rearmPad.psObj);
+				selectedObjectDetails[":Rearm target"] = objInfo(psStruct->pFunctionality->rearmPad.targetObject);
 			}
 		}
 		else if (getObjectType(psObj) == OBJECT_TYPE::FEATURE)

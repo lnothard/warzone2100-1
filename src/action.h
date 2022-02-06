@@ -86,26 +86,20 @@ struct Action
 {
     ACTION action;
     unsigned x, y;
-    
-    /// Multiple action target info
-    BaseObject* psObj;
-    std::unique_ptr<BaseStats> psStats;
+    BaseObject* targetObject;
+    std::unique_ptr<BaseStats> stats;
 };
 
-std::string getDroidActionName(ACTION action);
+std::string actionToString(ACTION action);
 
 /**
- * @typedef tileMatchFunction
- *
- * @brief pointer to a 'tile search function', used by spiralSearch()
- *
- * @param x,y  are the coordinates that should be inspected.
- *
+ * @typedef \c tileMatchFunction
+ * @brief pointer to a 'tile search function', used by \c spiralSearch()
+ * @param \c x,y are the coordinates that should be inspected.
  * @param data a pointer to state data, allows the search function to retain
  *             state in between calls and can be used as a means of returning
- *             its result to the caller of spiralSearch().
- *
- * @return true when the search has finished, false when the search should
+ *             its result to the caller of \c spiralSearch().
+ * @return \c true when the search has finished, \c false when the search should
  *         continue.
  */
 typedef bool (*tileMatchFunction)(int x, int y, void* matchState);

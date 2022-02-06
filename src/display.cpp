@@ -1566,7 +1566,7 @@ static void printDroidClickInfo(Droid* psDroid)
             "%s - Hitpoints %d/%d - ID %d - experience %f, %s - order %s - action %s - sensor range %hu - ECM %u - pitch %.0f - frust %u - kills %d",
             droidGetName(psDroid), psDroid->damageManager->getHp(), psDroid->damageManager->getOriginalHp(), psDroid->getId(),
             psDroid->getExperience() / 65536.f, getDroidLevelName(psDroid).c_str(), getDroidOrderName(psDroid->getOrder()->type).c_str(),
-            getDroidActionName(psDroid->getAction()).c_str(),
+            actionToString(psDroid->getAction()).c_str(),
             droidSensorRange(psDroid), objJammerPower(psDroid), UNDEG(psDroid->getRotation().pitch), psDroid->getLastFrustratedTime(),
             psDroid->getKills());
 		FeedbackOrderGiven();
@@ -1600,7 +1600,7 @@ static void dealWithLMBDroid(Droid* psDroid, SELECTION_TYPE selection)
 				"(Enemy!) %s - Hitpoints %d/%d - ID %d - experience %f, %s - order %s - action %s - sensor range %d - ECM %d - pitch %.0f"),
               droidGetName(psDroid), psDroid->damageManager->getHp(), psDroid->damageManager->getOriginalHp(), psDroid->getId(),
 			        psDroid->getExperience() / 65536.f, getDroidLevelName(psDroid).c_str(), getDroidOrderName(psDroid->getOrder()->type).c_str(),
-              getDroidActionName(psDroid->getAction()).c_str(), droidSensorRange(psDroid), objJammerPower(psDroid),
+              actionToString(psDroid->getAction()).c_str(), droidSensorRange(psDroid), objJammerPower(psDroid),
               UNDEG(psDroid->getRotation().pitch));
 			FeedbackOrderGiven();
 		}

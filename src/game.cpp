@@ -5455,7 +5455,7 @@ static nlohmann::json writeDroid(Droid const* psCurr, bool onMission, int& count
 	}
 	droidObj["secondaryOrder"] = psCurr->getSecondaryOrder();
 	droidObj["action"] = psCurr->getAction();
-	droidObj["actionString"] = getDroidActionName(psCurr->getAction()); // future-proofing
+	droidObj["actionString"] = actionToString(psCurr->getAction()); // future-proofing
 	droidObj["action/pos"] = psCurr->getActionPos();
 	droidObj["actionStarted"] = psCurr->getTimeActionStarted();
 	droidObj["actionPoints"] = psCurr->action_points_done;
@@ -6072,7 +6072,7 @@ static bool loadWzMapFeature(WzMap::Map& wzMap)
 			debug(LOG_ERROR, "Unable to create feature %s", feature.getName()->c_str());
 			continue;
 		}
-		if (pFeature->psStats->subType == FEATURE_TYPE::OIL_RESOURCE) {
+		if (pFeature->stats->subType == FEATURE_TYPE::OIL_RESOURCE) {
 			scriptSetDerrickPos(pFeature->pos.x, pFeature->pos.y);
 		}
 		//restore values

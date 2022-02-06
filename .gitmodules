@@ -43,3 +43,6 @@
 [submodule "3rdparty/fmt"]
 	path = 3rdparty/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "3rdparty/boost"]
+	path = 3rdparty/boost
+	url = git@github.com:boostorg/boost.git

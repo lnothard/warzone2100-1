@@ -854,8 +854,8 @@ void Droid::removeDroidFromGroup(Droid* droid)
 void Droid::actionDroidBase(Action* psAction)
 {
   ASSERT_OR_RETURN(, pimpl != nullptr, "Droid object is undefined");
-  ASSERT_OR_RETURN(, psAction->psObj == nullptr ||
-                     !psAction->psObj->damageManager->isDead(),
+  ASSERT_OR_RETURN(, psAction->targetObject == nullptr ||
+                     !psAction->targetObject->damageManager->isDead(),
                     "Droid is dead");
 
   auto psWeapStats = weaponManager->weapons[0].stats.get();
@@ -868,7 +868,7 @@ void Droid::actionDroidBase(Action* psAction)
   bool hasValidWeapon = false;
 
   for (auto i = 0; i < MAX_WEAPONS; ++i)
-    hasValidWeapon |= validTarget(this, psAction->psObj, i);
+    hasValidWeapon |= validTarget(this, psAction->targetObject, i);
 
   switch (psAction->action) {
     using enum ACTION;
@@ -895,7 +895,7 @@ void Droid::actionDroidBase(Action* psAction)
     case ACTION::ATTACK:
       if (numWeapons(*this) == 0 ||
           isTransporter(*this) ||
-          psAction->psObj == this) {
+          psAction->targetObject == this) {
         break;
       }
       if (!hasValidWeapon) {
@@ -905,16 +905,16 @@ void Droid::actionDroidBase(Action* psAction)
       }
       if (hasElectronicWeapon()) {
         //check for low or zero resistance - just zero resistance!
-        if (dynamic_cast<Structure*>(psAction->psObj) &&
-            !validStructResistance(dynamic_cast<Structure*>(psAction->psObj))) {
+        if (dynamic_cast<Structure*>(psAction->targetObject) &&
+            !validStructResistance(dynamic_cast<Structure*>(psAction->targetObject))) {
           //structure is low resistance already so don't attack
           pimpl->action = NONE;
           break;
         }
 
         // in multiplayer cannot electronically attack a transporter
-        if (bMultiPlayer && dynamic_cast<Droid*>(psAction->psObj) &&
-            isTransporter(*dynamic_cast<Droid*>(psAction->psObj))) {
+        if (bMultiPlayer && dynamic_cast<Droid*>(psAction->targetObject) &&
+            isTransporter(*dynamic_cast<Droid*>(psAction->targetObject))) {
           pimpl->action = NONE;
           break;
         }
@@ -924,7 +924,7 @@ void Droid::actionDroidBase(Action* psAction)
       // droid has gone during an attack
       // slightly strange place to store this I know, but I didn't want to add any more to the droid
       pimpl->actionPos = pos.xy();
-      setActionTarget(psAction->psObj, 0);
+      setActionTarget(psAction->targetObject, 0);
 
       if (((pimpl->order->type == ORDER_TYPE::ATTACK_TARGET
             || pimpl->order->type == ORDER_TYPE::NONE
@@ -935,7 +935,7 @@ void Droid::actionDroidBase(Action* psAction)
               this, ORDER_TYPE::FIRE_SUPPORT) != nullptr)))
 
         pimpl->action = ATTACK; // holding, try attack straightaway
-      else if (actionInsideMinRange(this, psAction->psObj, psWeapStats)) { // too close?
+      else if (actionInsideMinRange(this, psAction->targetObject, psWeapStats)) { // too close?
         if (!proj_Direct(psWeapStats)) {
           if (psWeapStats->rotate) pimpl->action = ATTACK;
           else {
@@ -950,7 +950,7 @@ void Droid::actionDroidBase(Action* psAction)
           auto pby = 0;
           /* direct fire - try and extend the range */
           pimpl->action = MOVE_TO_ATTACK;
-          actionCalcPullBackPoint(this, psAction->psObj, &pbx, &pby);
+          actionCalcPullBackPoint(this, psAction->targetObject, &pbx, &pby);
 
           turnOffMultiMsg(true);
           moveDroidTo(this, (unsigned)pbx, (unsigned)pby);
@@ -962,8 +962,8 @@ void Droid::actionDroidBase(Action* psAction)
         // approach closer?
         pimpl->action = MOVE_TO_ATTACK;
         turnOffMultiMsg(true);
-        moveDroidTo(this, psAction->psObj->getPosition().x,
-                 psAction->psObj->getPosition().y);
+        moveDroidTo(this, psAction->targetObject->getPosition().x,
+                 psAction->targetObject->getPosition().y);
         turnOffMultiMsg(false);
       }
       else if (pimpl->order->type != ORDER_TYPE::HOLD &&
@@ -974,9 +974,9 @@ void Droid::actionDroidBase(Action* psAction)
 
     case MOVE_TO_REARM:
       pimpl->action = MOVE_TO_REARM;
-      pimpl->actionPos = psAction->psObj->getPosition().xy();
+      pimpl->actionPos = psAction->targetObject->getPosition().xy();
       pimpl->timeActionStarted = gameTime;
-      setActionTarget(psAction->psObj, 0);
+      setActionTarget(psAction->targetObject, 0);
       pos = pimpl->actionTargets[0]->getPosition().xy();
 
       if (!actionVTOLLandingPos(this, &pos)) {
@@ -991,7 +991,7 @@ void Droid::actionDroidBase(Action* psAction)
     case CLEAR_REARM_PAD:
       debug(LOG_NEVER, "Unit %d clearing rearm pad", getId());
       pimpl->action = CLEAR_REARM_PAD;
-      setActionTarget(psAction->psObj, 0);
+      setActionTarget(psAction->targetObject, 0);
       pos = pimpl->actionTargets[0]->getPosition().xy();
 
       if (!actionVTOLLandingPos(this, &pos)) {
@@ -1013,7 +1013,7 @@ void Droid::actionDroidBase(Action* psAction)
       pimpl->actionPos.x = psAction->x;
       pimpl->actionPos.y = psAction->y;
       pimpl->timeActionStarted = gameTime;
-      setActionTarget(psAction->psObj, 0);
+      setActionTarget(psAction->targetObject, 0);
       moveDroidTo(this, psAction->x, psAction->y);
       break;
 
@@ -1041,7 +1041,7 @@ void Droid::actionDroidBase(Action* psAction)
       pimpl->order->structure_stats = std::make_shared<StructureStats>(
               *dynamic_cast<Structure*>(pimpl->order->target)->getStats());
 
-      setActionTarget(psAction->psObj, 0);
+      setActionTarget(psAction->targetObject, 0);
       moveDroidTo(this, psAction->x, psAction->y);
       break;
 
@@ -1050,7 +1050,7 @@ void Droid::actionDroidBase(Action* psAction)
       pimpl->actionPos.x = psAction->x;
       pimpl->actionPos.y = psAction->y;
       //this needs setting so that automatic repair works
-      setActionTarget(psAction->psObj, 0);
+      setActionTarget(psAction->targetObject, 0);
 
       ASSERT_OR_RETURN(,
               pimpl->actionTargets[0] != nullptr &&
@@ -1072,7 +1072,7 @@ void Droid::actionDroidBase(Action* psAction)
 
     case OBSERVE:
       pimpl->action = psAction->action;
-      setActionTarget(psAction->psObj, 0);
+      setActionTarget(psAction->targetObject, 0);
       pimpl->actionPos.x = getPosition().x;
       pimpl->actionPos.y = getPosition().y;
       if (secondaryGetState(SECONDARY_ORDER::HALT_TYPE) != DSS_HALT_GUARD &&
@@ -1112,7 +1112,7 @@ void Droid::actionDroidBase(Action* psAction)
       pimpl->actionPos.x = psAction->x;
       pimpl->actionPos.y = psAction->y;
       pimpl->timeActionStarted = gameTime;
-      setActionTarget(psAction->psObj, 0);
+      setActionTarget(psAction->targetObject, 0);
       moveDroidToNoFormation(this, psAction->x, psAction->y);
       break;
 
@@ -1126,11 +1126,11 @@ void Droid::actionDroidBase(Action* psAction)
       pimpl->actionPos.x = psAction->x;
       pimpl->actionPos.y = psAction->y;
       pimpl->timeActionStarted = gameTime;
-      setActionTarget(psAction->psObj, 0);
+      setActionTarget(psAction->targetObject, 0);
       moveDroidToDirect(psAction->x, psAction->y);
 
       // make sure there aren't any other VTOLs on the rearm pad
-      ensureRearmPadClear(dynamic_cast<Structure*>(psAction->psObj), this);
+      ensureRearmPadClear(dynamic_cast<Structure*>(psAction->targetObject), this);
       break;
 
     case DROID_REPAIR:
@@ -1138,7 +1138,7 @@ void Droid::actionDroidBase(Action* psAction)
       pimpl->action = psAction->action;
       pimpl->actionPos.x = psAction->x;
       pimpl->actionPos.y = psAction->y;
-      setActionTarget(psAction->psObj, 0);
+      setActionTarget(psAction->targetObject, 0);
       //initialise the action points
       pimpl->actionPointsDone = 0;
       pimpl->timeActionStarted = gameTime;
@@ -1172,7 +1172,7 @@ void Droid::actionDroidBase(Action* psAction)
       pimpl->order->structure_stats = std::make_shared<StructureStats>(
               *dynamic_cast<Structure*>(pimpl->order->target)->getStats());
 
-      setActionTarget(psAction->psObj, 0);
+      setActionTarget(psAction->targetObject, 0);
       if (pimpl->order->type != ORDER_TYPE::HOLD) {
         pimpl->action = MOVE_TO_RESTORE;
         moveDroidTo(this, psAction->x, psAction->y);
@@ -1905,7 +1905,7 @@ void Droid::orderUpdateDroid()
              "%.12s,id(%d) order(%d):%s action(%d):%s secondary:%x move:%s",
              droidGetName(this), getId(),
              pimpl->order->type, getDroidOrderName(pimpl->order->type).c_str(), pimpl->action,
-             getDroidActionName(pimpl->action).c_str(), pimpl->secondaryOrder,
+             actionToString(pimpl->action).c_str(), pimpl->secondaryOrder,
              moveDescription(pimpl->movement->status).c_str());
   }
 }
@@ -3695,7 +3695,7 @@ bool Droid::droidUpdateBuild()
   ASSERT_OR_RETURN(false, pimpl != nullptr, "Droid object is undefined");
   ASSERT_OR_RETURN(false, pimpl->action == ACTION::BUILD, "%s (order %s) has wrong action for construction: %s",
                    droidGetName(this), getDroidOrderName(pimpl->order->type).c_str(),
-                   getDroidActionName(pimpl->action).c_str());
+                   actionToString(pimpl->action).c_str());
 
   auto psStruct = dynamic_cast<Structure*>(pimpl->order->target);
   if (psStruct == nullptr) {

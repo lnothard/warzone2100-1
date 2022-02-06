@@ -38,7 +38,7 @@
 #include "visibility.h"
 
 
-std::string getDroidActionName(ACTION action)
+std::string actionToString(ACTION action)
 {
 	static std::array<std::string, 
     static_cast<std::size_t>(ACTION::COUNT) + 1> name {
@@ -467,7 +467,7 @@ void actionDroid(Droid* psDroid, ACTION action, BaseObject* psObj)
 	Action sAction;
 
 	sAction.action = action;
-	sAction.psObj = psObj;
+	sAction.targetObject = psObj;
 	sAction.x = psObj->getPosition().x;
 	sAction.y = psObj->getPosition().y;
 	psDroid->actionDroidBase(&sAction);
@@ -480,7 +480,7 @@ void actionDroid(Droid* psDroid, ACTION action,
 	Action sAction;
 
 	sAction.action = action;
-	sAction.psObj = psObj;
+	sAction.targetObject = psObj;
 	sAction.x = x;
 	sAction.y = y;
 	psDroid->actionDroidBase(&sAction);
