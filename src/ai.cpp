@@ -40,57 +40,6 @@ const char* objInfo(const BaseObject *);
 int scavengerPlayer();
 
 
-/* Weights used for target selection code,
- * target distance is used as 'common currency'
- */
-static constexpr auto	WEIGHT_DIST_TILE = 13;						//In points used in weaponmodifier.txt and structuremodifier.txt
-static constexpr auto	WEIGHT_DIST_TILE_DROID = WEIGHT_DIST_TILE; //How much weight a distance of 1 tile (128 world units) has when looking for the best nearest target
-
-static constexpr auto	WEIGHT_DIST_TILE_STRUCT =	WEIGHT_DIST_TILE;
-static constexpr auto	WEIGHT_HEALTH_DROID	=	WEIGHT_DIST_TILE * 10; //How much weight unit damage has (100% of damage is equally weighted as 10 tiles distance)
-
-//~100% damage should be ~8 tiles (max sensor range)
-static constexpr auto	WEIGHT_HEALTH_STRUCT = WEIGHT_DIST_TILE * 7;
-
-static constexpr auto	WEIGHT_NOT_VISIBLE_F = 10;						//We really don't like objects we can't see
-
-static constexpr auto	WEIGHT_SERVICE_DROIDS	=	WEIGHT_DIST_TILE_DROID * 5;		//We don't want them to be repairing droids or structures while we are after them
-
-static constexpr auto	WEIGHT_WEAPON_DROIDS =	WEIGHT_DIST_TILE_DROID * 4;		//We prefer to go after anything that has a gun and can hurt us
-
-static constexpr auto	WEIGHT_COMMAND_DROIDS	=	WEIGHT_DIST_TILE_DROID * 6;		//Commanders get a higher priority
-static constexpr auto	WEIGHT_MILITARY_STRUCT = WEIGHT_DIST_TILE_STRUCT;				//Droid/cyborg factories, repair facility; shouldn't have too much weight
-
-static constexpr auto	WEIGHT_WEAPON_STRUCT = WEIGHT_WEAPON_DROIDS;	//Same as weapon droids (?)
-static constexpr auto	WEIGHT_DERRICK_STRUCT	=	WEIGHT_MILITARY_STRUCT + WEIGHT_DIST_TILE_STRUCT * 4;	//Even if it's 4 tiles further away than defenses we still choose it
-
-
-static constexpr auto	WEIGHT_STRUCT_NOTBUILT_F = 8;						//Humans won't fool us anymore!
-
-static constexpr auto OLD_TARGET_THRESHOLD = WEIGHT_DIST_TILE * 4;	//it only makes sense to switch target if new one is 4+ tiles closer
-
-
-static constexpr auto	EMP_DISABLED_PENALTY_F = 10;								//EMP shouldn't attack emped targets again
-static constexpr auto	EMP_STRUCT_PENALTY_F = EMP_DISABLED_PENALTY_F * 2;	//EMP don't attack structures, should be bigger than EMP_DISABLED_PENALTY_F
-
-
-static constexpr auto TOO_CLOSE_PENALTY_F = 20;
-
-static constexpr auto TARGET_DOOMED_PENALTY_F	= 10;	// Targets that have a lot of damage incoming are less attractive
-static constexpr auto TARGET_DOOMED_SLOW_RELOAD_T	= 21;	// Weapon ROF threshold for above penalty. per minute.
-
-//Some weights for the units attached to a commander
-static constexpr auto	WEIGHT_CMD_RANK	=	WEIGHT_DIST_TILE * 4;			//A single rank is as important as 4 tiles distance
-static constexpr auto	WEIGHT_CMD_SAME_TARGET = WEIGHT_DIST_TILE;				//Don't want this to be too high, since a commander can have many units assigned
-
-uint8_t alliances[MAX_PLAYER_SLOTS][MAX_PLAYER_SLOTS];
-
-/// A bitfield of vision sharing in alliances, for quick manipulation of vision information
-PlayerMask alliancebits[MAX_PLAYER_SLOTS];
-
-/// A bitfield for the satellite uplink
-PlayerMask satuplinkbits;
-
 static unsigned aiDroidRange(Droid const* psDroid, int weapon_slot)
 {
 	unsigned longRange;
@@ -98,7 +47,6 @@ static unsigned aiDroidRange(Droid const* psDroid, int weapon_slot)
 		longRange = objSensorRange(psDroid);
 	}
 	else if (numWeapons(*psDroid) == 0) {
-		// can't attack without a weapon
 		return 0;
 	}
 	else {
@@ -112,12 +60,13 @@ static unsigned aiDroidRange(Droid const* psDroid, int weapon_slot)
 static bool aiStructHasRange(Structure const* psStruct, BaseObject const* psTarget, int weapon_slot)
 {
 	if (numWeapons(*psStruct) == 0) {
-		// can't attack without a weapon
 		return false;
 	}
 
-	auto psWStats = psStruct->weaponManager->weapons[weapon_slot].stats.get();
-	auto longRange = proj_GetLongRange(psWStats, psStruct->playerManager->getPlayer());
+	auto const psWStats = psStruct->weaponManager->weapons[weapon_slot].stats;
+	auto const longRange = proj_GetLongRange(
+          psWStats.get(), psStruct->playerManager->getPlayer());
+
 	return objectPositionSquareDiff(
           psStruct->getPosition(),
           psTarget->getPosition()) < longRange * longRange &&
@@ -126,7 +75,7 @@ static bool aiStructHasRange(Structure const* psStruct, BaseObject const* psTarg
 
 static bool aiDroidHasRange(Droid const* psDroid, BaseObject const* psTarget, int weapon_slot)
 {
-	auto longRange = aiDroidRange(psDroid, weapon_slot);
+	auto const longRange = aiDroidRange(psDroid, weapon_slot);
 	return objectPositionSquareDiff(psDroid->getPosition(),
                                   psTarget->getPosition()) < longRange * longRange;
 }
@@ -144,7 +93,6 @@ static bool aiObjHasRange(BaseObject const* psObj, BaseObject const* psTarget, i
 	return false;
 }
 
-/* Initialise the AI system */
 bool aiInitialise()
 {
   using enum ALLIANCE_TYPE;
@@ -167,15 +115,14 @@ bool aiInitialise()
 static BaseObject const* aiSearchSensorTargets(BaseObject const* psObj, int weapon_slot,
 																							 WeaponStats const* psWStats, TARGET_ORIGIN* targetOrigin)
 {
-  auto longRange = proj_GetLongRange(
+  auto const longRange = proj_GetLongRange(
           psWStats, psObj->playerManager->getPlayer());
 
   auto tarDist = longRange * longRange;
   auto foundCB = false;
-  auto minDist = proj_GetMinRange(
+  auto const minDist = proj_GetMinRange(
           psWStats, psObj->playerManager->getPlayer()) *
-                 proj_GetMinRange(
-                         psWStats, psObj->playerManager->getPlayer());
+                 proj_GetMinRange(psWStats, psObj->playerManager->getPlayer());
 
   BaseObject const* psTarget = nullptr;
 
@@ -183,7 +130,7 @@ static BaseObject const* aiSearchSensorTargets(BaseObject const* psObj, int weap
 		*targetOrigin = TARGET_ORIGIN::UNKNOWN;
 	}
 
-	for (auto psSensor : apsSensorList)
+	for (auto const psSensor : apsSensorList)
 	{
     BaseObject const* psTemp = nullptr;
 		bool isCB = false;
@@ -192,7 +139,7 @@ static BaseObject const* aiSearchSensorTargets(BaseObject const* psObj, int weap
                           psObj->playerManager->getPlayer())) {
 			continue;
 		}
-		else if (auto psDroid = dynamic_cast<Droid*>(psSensor)) {
+		else if (auto psDroid = dynamic_cast<Droid const*>(psSensor)) {
 			ASSERT_OR_RETURN(nullptr, psDroid->getType() == DROID_TYPE::SENSOR,
 			                 "A non-sensor droid in a sensor list is non-sense");
       
@@ -205,15 +152,14 @@ static BaseObject const* aiSearchSensorTargets(BaseObject const* psObj, int weap
       auto sensor = dynamic_cast<SensorStats const*>(psDroid->getComponent(COMPONENT_TYPE::SENSOR));
 			if (sensor->type == SENSOR_TYPE::VTOL_CB ||
           sensor->type == SENSOR_TYPE::VTOL_INTERCEPT ||
-			   	objRadarDetector((BaseObject *)psDroid)) {
+			   	objRadarDetector(psDroid)) {
 				continue;
 			}
 			psTemp = psDroid->getTarget(0);
 			isCB = sensor->type == SENSOR_TYPE::INDIRECT_CB;
 			//isRD = objRadarDetector((SimpleObject *)psDroid);
 		}
-		else if (auto psCStruct = dynamic_cast<Structure*>(psSensor))
-		{
+		else if (auto psCStruct = dynamic_cast<Structure*>(psSensor)) {
 			// skip incomplete structures
 			if (psCStruct->getState() != STRUCTURE_STATE::BUILT) {
 				continue;
@@ -235,7 +181,7 @@ static BaseObject const* aiSearchSensorTargets(BaseObject const* psObj, int weap
                          psObj->playerManager->getPlayer())) {
 			continue;
 		}
-		auto distSq = objectPositionSquareDiff(psTemp->getPosition(), psObj->getPosition());
+		auto const distSq = objectPositionSquareDiff(psTemp->getPosition(), psObj->getPosition());
     
 		// Need to be in range, prefer closer targets or CB targets
     if (!(isCB > foundCB ||
@@ -263,9 +209,9 @@ static BaseObject const* aiSearchSensorTargets(BaseObject const* psObj, int weap
 }
 
 /* Calculates attack priority for a certain target */
-static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker, int weapon_slot)
+static int targetAttackWeight(BaseObject const* psTarget, BaseObject const* psAttacker, int weapon_slot)
 {
-  Droid* psAttackerDroid;
+  Droid const* psAttackerDroid;
 	int damageRatio = 0, attackWeight = 0, noTarget = -1;
 	unsigned weaponSlot;
 	WEAPON_EFFECT weaponEffect;
@@ -283,7 +229,7 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
 	auto targetTypeBonus = 0;
 
 	/* Get attacker weapon effect */
-	if ((psAttackerDroid = dynamic_cast<Droid*>(psAttacker))) {
+	if ((psAttackerDroid = dynamic_cast<Droid const*>(psAttacker))) {
 		attackerWeapon = psAttackerDroid->weaponManager->weapons[0].stats.get();
 
 		// check if this droid is assigned to a commander
@@ -318,7 +264,7 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
 			}
 		}
 	}
-	else if (auto psStruct = dynamic_cast<Structure*>(psAttacker)) {
+	else if (auto psStruct = dynamic_cast<Structure const*>(psAttacker)) {
 		attackerWeapon = psStruct->weaponManager->weapons[weapon_slot].stats.get();
 	}
 	else {
@@ -328,7 +274,7 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
 	}
 	bDirect = proj_Direct(attackerWeapon);
 
-	if (dynamic_cast<Droid*>(psAttacker) &&
+	if (dynamic_cast<Droid const*>(psAttacker) &&
       psAttackerDroid->getType() == DROID_TYPE::SENSOR) {
 		// sensors are considered a direct weapon, but for
     // computing expected damage it makes more sense
@@ -519,15 +465,12 @@ static int targetAttackWeight(BaseObject const* psTarget, BaseObject* psAttacker
   return std::max<int>(1, attackWeight);
 }
 
-
-// Find the best nearest target for a droid.
-// If extraRange is higher than zero, then this is the range it accepts for movement to target.
-// Returns integer representing target priority, -1 if failed
-int aiBestNearestTarget(Droid* psDroid, BaseObject** ppsObj, int weapon_slot, int extraRange)
+int aiBestNearestTarget(Droid const* psDroid, BaseObject** ppsObj, int weapon_slot, int extraRange)
 {
 	int failure = -1;
 	int bestMod = 0;
-  BaseObject const* psTarget = nullptr, *bestTarget = nullptr, *tempTarget;
+  BaseObject const* psTarget = nullptr, *bestTarget = nullptr;
+  BaseObject* tempTarget;
 	bool electronic = false;
 	Structure* targetStructure;
 	WEAPON_EFFECT weaponEffect;
@@ -652,7 +595,7 @@ int aiBestNearestTarget(Droid* psDroid, BaseObject** ppsObj, int weapon_slot, in
 
 			// check if our weapon is most effective against this object
 			if (psTarget != nullptr && psTarget == targetInQuestion) { //< was assigned?
-				auto newMod = targetAttackWeight(psTarget, (BaseObject *)psDroid, weapon_slot);
+				auto newMod = targetAttackWeight(psTarget, psDroid, weapon_slot);
 
 				// remember this one if it's our best target so far
 				if (newMod >= 0 &&
