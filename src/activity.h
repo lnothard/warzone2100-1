@@ -26,7 +26,9 @@
 #define __INCLUDED_SRC_ACTIVITY_H__
 
 #include <vector>
+
 #include "multiplay.h"
+#include "scores.h"
 
 enum class ALLIANCE_TYPE;
 enum class LOBBY_ERROR_TYPES;
@@ -43,8 +45,7 @@ enum class GAME_MODE
   SKIRMISH,
   HOSTING_IN_LOBBY,
   JOINING_IN_PROGRESS,
-  /// Joined but waiting on game information from host
-  JOINING_IN_LOBBY,
+  JOINING_IN_LOBBY, ///< Joined but waiting on game information from host
   MULTIPLAYER,
   COUNT
 };
@@ -60,19 +61,17 @@ struct SkirmishGameInfo
 {
   virtual ~SkirmishGameInfo() = default;
 
-  [[nodiscard]] virtual uint8_t numberOfPlayers() const;
+  [[nodiscard]] unsigned numberOfPlayers() const;
   [[nodiscard]] std::string gameName() const;
   [[nodiscard]] std::string mapName() const;
   [[nodiscard]] bool hasLimits() const;
 
   MULTIPLAYERGAME game;
-  uint8_t numAIBotPlayers = 0;
+  unsigned numAIBotPlayers = 0;
   size_t currentPlayerIdx = 0;
-
   // = the selectedPlayer global for the current client
   // (points to currently controlled player in the players array)
   std::vector<PLAYER> players;
-
   /// Flag for tanks disabled
   bool limit_no_tanks;
   /// Flag for cyborgs disabled
@@ -85,7 +84,6 @@ struct SkirmishGameInfo
   bool limit_no_lassat;
   /// Flag to force structure limits
   bool force_structure_limits;
-
   std::vector<MULTISTRUCTLIMITS> structureLimits;
   ALLIANCE_TYPE alliances;
   bool isReplay = false;
@@ -95,24 +93,24 @@ struct ListeningInterfaces
 {
   bool IPv4 = false;
   bool IPv6 = false;
-  unsigned ipv4_port;
-  unsigned ipv6_port;
+  unsigned ipv4_port = 0;
+  unsigned ipv6_port = 0;
 };
 
 struct MultiplayerGameInfo : public SkirmishGameInfo
 {
+  bool isHost;
+  bool privateGame;
   std::string hostName;
   std::string lobbyAddress;
   ListeningInterfaces listeningInterfaces;
   unsigned lobbyPort;
   unsigned lobbyGameId = 0;
-  bool isHost;
-  bool privateGame;
-  uint8_t maxPlayers = 0;
-  uint8_t numHumanPlayers = 0;
-  uint8_t numAvailableSlots = 0;
-  uint8_t numSpectators = 0;
-  uint8_t numOpenSpectatorSlots = 0;
+  unsigned maxPlayers = 0;
+  unsigned numHumanPlayers = 0;
+  unsigned numAvailableSlots = 0;
+  unsigned numSpectators = 0;
+  unsigned numOpenSpectatorSlots = 0;
 };
 
 /**
@@ -124,26 +122,25 @@ class ActivitySink
 public:
 	virtual ~ActivitySink() = default;
 
-	virtual void navigatedToMenu(std::string const& menuName) = 0;
-	virtual void startedCampaignMission(std::string const& campaign, std::string const& levelName) = 0;
+	virtual void navigatedToMenu(std::string const& menuName) const = 0;
+	virtual void startedCampaignMission(std::string const& campaign, std::string const& levelName) const = 0;
 	virtual void endedCampaignMission(std::string const& campaign, std::string const& levelName,
-                                    GAME_END_REASON result, END_GAME_STATS_DATA stats, bool cheatsUsed) = 0;
-	virtual void startedChallenge(std::string const& challengeName) = 0;
+                                    GAME_END_REASON result, END_GAME_STATS_DATA const& stats, bool cheatsUsed) const = 0;
+	virtual void startedChallenge(std::string const& challengeName) const = 0;
 	virtual void endedChallenge(std::string const& challengeName, GAME_END_REASON result,
-                              END_GAME_STATS_DATA const& stats, bool cheatsUsed) = 0;
-	virtual void startedSkirmishGame(SkirmishGameInfo const& info) = 0;
+                              END_GAME_STATS_DATA const& stats, bool cheatsUsed) const = 0;
+	virtual void startedSkirmishGame(SkirmishGameInfo const& info) const = 0;
 	virtual void endedSkirmishGame(SkirmishGameInfo const& info, GAME_END_REASON result,
-                                 END_GAME_STATS_DATA const& stats) = 0;
-	virtual void hostingMultiplayerGame(MultiplayerGameInfo const& info) = 0;
-	virtual void joinedMultiplayerGame(MultiplayerGameInfo const& info) = 0;
-	virtual void updateMultiplayerGameInfo(MultiplayerGameInfo const& info) = 0;
-	virtual void leftMultiplayerGameLobby(bool wasHost, LOBBY_ERROR_TYPES type) = 0;
-	virtual void startedMultiplayerGame(MultiplayerGameInfo const& info) = 0;
+                                 END_GAME_STATS_DATA const& stats) const = 0;
+	virtual void hostingMultiplayerGame(MultiplayerGameInfo const& info) const = 0;
+	virtual void joinedMultiplayerGame(MultiplayerGameInfo const& info) const = 0;
+	virtual void updateMultiplayerGameInfo(MultiplayerGameInfo const& info) const = 0;
+	virtual void startedMultiplayerGame(MultiplayerGameInfo const& info) const = 0;
 	virtual void endedMultiplayerGame(MultiplayerGameInfo const& info, GAME_END_REASON result,
-                                    END_GAME_STATS_DATA const& stats) = 0;
-	virtual void changedSetting(std::string const& settingKey, std::string const& settingValue) = 0;
-	virtual void cheatUsed(std::string const& cheatName) = 0;
-	virtual void loadedModsChanged( std::vector<Sha256> const& loadedModHashes) = 0;
+                                    END_GAME_STATS_DATA const& stats) const = 0;
+	virtual void changedSetting(std::string const& settingKey, std::string const& settingValue) const = 0;
+	virtual void cheatUsed(std::string const& cheatName) const = 0;
+	virtual void loadedModsChanged( std::vector<Sha256> const& loadedModHashes) const = 0;
 
 	static std::string getTeamDescription(SkirmishGameInfo const& info);
 };
@@ -169,7 +166,7 @@ class ActivityManager
 {
 public:
   [[nodiscard]] GAME_MODE getCurrentGameMode() const;
-  [[nodiscard]] std::shared_ptr<ActivityDBProtocol> getRecord() const;
+  [[nodiscard]] ActivityDBProtocol const* getRecord() const;
   void startingGame();
 	void startingSavedGame();
 	void loadedLevel(LEVEL_TYPE type, std::string const& levelName);
@@ -183,11 +180,12 @@ public:
 	void cheatUsed(std::string const& cheatName);
 	void rebuiltSearchPath();
 
-	// called when a joinable multiplayer game is hosted
-	// lobbyGameId is 0 if the lobby can't be contacted / the game is not registered with the lobby
+	/**
+	 * Called when a join-able multiplayer game is hosted. \c lobbyGameId is 0 if
+	 * the lobby can't be contacted or the game is not registered with the lobby
+	 */
 	void hostGame(char const* SessionName, char const* PlayerName, char const* lobbyAddress,
                 unsigned lobbyPort, ListeningInterfaces const& listeningInterfaces, unsigned lobbyGameId = 0);
-
 	void hostGameLobbyServerDisconnect();
 	void hostLobbyQuit();
 	void willAttemptToJoinLobbyGame(std::string const& lobbyAddress, unsigned lobbyPort, unsigned lobbyGameId,
@@ -196,21 +194,18 @@ public:
 	void joinGameSucceeded(char const* host, unsigned port);
 	void joinedLobbyQuit();
 	void updateMultiplayGameData(MULTIPLAYERGAME const& game, MULTIPLAYERINGAME const& ingame,
-	                             optional<bool> privateGame);
-	void hostKickPlayer(PLAYER const& player, LOBBY_ERROR_TYPES kick_type, std::string const& reason);
-	void wasKickedByPlayer(PLAYER const& kicker, LOBBY_ERROR_TYPES kick_type, std::string const& reason);
-
+                               optional<bool> privateGame);
 	static ActivityManager& instance();
-	bool initialize();
+	void initialize();
 	void shutdown();
-	void addActivitySink(std::shared_ptr<ActivitySink> const& sink);
+	void addActivitySink(std::unique_ptr<ActivitySink>&& sink);
 	void removeActivitySink(std::shared_ptr<ActivitySink> const& sink);
 private:
 	ActivityManager();
-	void _endedMission(GAME_END_REASON result, END_GAME_STATS_DATA const& stats, bool cheatsUsed);
+	void endedMission(GAME_END_REASON result, END_GAME_STATS_DATA const& stats, bool cheatsUsed);
 private:
-	std::vector<std::shared_ptr<ActivitySink>> activitySinks;
-	std::shared_ptr<ActivityDBProtocol> activityDatabase;
+	std::vector<std::unique_ptr<ActivitySink> > activitySinks;
+	std::unique_ptr<ActivityDBProtocol> activityDatabase;
 
 	// storing current game state, to aid in synthesizing events
 	bool bIsLoadingConfiguration = false;
@@ -220,7 +215,10 @@ private:
 
 	struct LoadedLevelEvent
 	{
-		LEVEL_TYPE type;
+    LoadedLevelEvent() = default;
+    LoadedLevelEvent(LEVEL_TYPE type, std::string levelName);
+
+		LEVEL_TYPE type = LEVEL_TYPE::LDS_NONE;
 		std::string levelName;
 	};
 
@@ -240,10 +238,48 @@ private:
 		}
 	};
 
-  LoadedLevelEvent* cachedLoadedLevelEvent = nullptr;
+  std::unique_ptr<LoadedLevelEvent> cachedLoadedLevelEvent = nullptr;
   LoadedLevelEvent lastLoadedLevelEvent;
 	FoundLobbyGameDetails lastLobbyGameJoinAttempt;
 	optional<std::vector<Sha256>> lastLoadedMods;
+};
+
+class LoggingActivitySink : public virtual ActivitySink
+{
+public:
+  void navigatedToMenu(const std::string& menuName) const override;
+  void startedCampaignMission(const std::string& campaign, const std::string& levelName) const override;
+  void endedCampaignMission(const std::string& campaign, const std::string& levelName, GAME_END_REASON result,
+                            END_GAME_STATS_DATA const& stats, bool cheatsUsed) const override;
+  void startedChallenge(const std::string& challengeName) const override;
+  void endedChallenge(const std::string& challengeName, GAME_END_REASON result,
+                      const END_GAME_STATS_DATA& stats, bool cheatsUsed) const override;
+  void startedSkirmishGame(const SkirmishGameInfo& info) const override;
+  void endedSkirmishGame(const SkirmishGameInfo& info, GAME_END_REASON result,
+                         const END_GAME_STATS_DATA& stats) const override;
+  void hostingMultiplayerGame(const MultiplayerGameInfo& info) const override;
+  void joinedMultiplayerGame(const MultiplayerGameInfo& info) const override;
+  void updateMultiplayerGameInfo(const MultiplayerGameInfo& info) const override;
+  void startedMultiplayerGame(const MultiplayerGameInfo& info) const override;
+  void endedMultiplayerGame(const MultiplayerGameInfo& info, GAME_END_REASON result,
+                            const END_GAME_STATS_DATA& stats) const override;
+  void changedSetting(const std::string& settingKey, const std::string& settingValue) const override;
+  void cheatUsed(const std::string& cheatName) const override;
+  void loadedModsChanged(const std::vector<Sha256>& loadedModHashes) const override;
+private:
+  [[nodiscard]] static std::string modListToStr(const std::vector<Sha256>& modHashes)
+  {
+    if (modHashes.empty())
+    {
+      return "[no mods]";
+    }
+    std::string result = "[" + std::to_string(modHashes.size()) + " mods]:";
+    for (auto& modHash : modHashes)
+    {
+      result += std::string(" ") + modHash.toString();
+    }
+    return result;
+  }
 };
 
 #endif // __INCLUDED_SRC_ACTIVITY_H__

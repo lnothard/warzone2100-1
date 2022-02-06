@@ -10,11 +10,11 @@
     case elem : return BOOST_PP_STRINGIZE(elem);
 
 #define DEFINE_ENUM_WITH_STRING_CONVERSIONS(name, enumerators)                \
-    enum name {                                                               \
+    enum class name {                                                         \
         BOOST_PP_SEQ_ENUM(enumerators)                                        \
     };                                                                        \
                                                                               \
-    inline const char* ToString(name v)                                       \
+    inline char const* toString(name v)                                       \
     {                                                                         \
         switch (v)                                                            \
         {                                                                     \

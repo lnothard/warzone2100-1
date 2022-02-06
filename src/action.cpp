@@ -68,10 +68,11 @@ Action::Action(ACTION action, Vector2i location, BaseObject* targetObject)
  */
 static bool vtolLandingTileSearchFunction(Vector2i coords, void* matchState)
 {
-  auto xyCoords = static_cast<Vector2i*>(matchState);
+  auto const xyCoords = static_cast<Vector2i*>(matchState);
 
   if (vtolCanLandHere(coords.x, coords.y)) {
-    xyCoords = &coords;
+    xyCoords->x = coords.x;
+    xyCoords->y = coords.y;
     return true;
   }
   return false;
@@ -127,14 +128,14 @@ bool actionInRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slo
 {
 	auto psStats = psDroid->weaponManager->weapons[0].stats.get();
 
-	const auto dx = psDroid->getPosition().x - psObj->getPosition().x;
-	const auto dy = psDroid->getPosition().y - psObj->getPosition().y;
+	auto const dx = psDroid->getPosition().x - psObj->getPosition().x;
+	auto const dy = psDroid->getPosition().y - psObj->getPosition().y;
 
-	const auto radSq = dx * dx + dy * dy;
-	const auto longRange = proj_GetLongRange(psStats, psDroid->playerManager->getPlayer());
-	const auto shortRange = proj_GetShortRange(psStats, psDroid->playerManager->getPlayer());
+	auto const radSq = dx * dx + dy * dy;
+	auto const longRange = proj_GetLongRange(psStats, psDroid->playerManager->getPlayer());
+	auto const shortRange = proj_GetShortRange(psStats, psDroid->playerManager->getPlayer());
 
-	auto rangeSq = 0;
+	unsigned rangeSq;
 	switch (psDroid->getSecondaryOrder() & DSS_ARANGE_MASK) {
 	case DSS_ARANGE_OPTIMUM:
 		if (!useLongWithOptimum && weaponShortHit(
@@ -199,11 +200,8 @@ bool actionTargetTurret(BaseObject const* psAttacker, BaseObject const* psTarget
   auto rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
   auto pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
 
-	auto psWeapStats = weapon.stats.get();
-	unsigned tRotation, tPitch;
-	unsigned targetRotation;
+	auto const psWeapStats = weapon.stats.get();
 	auto rotationTolerance = 0;
-	int pitchLowerLimit, pitchUpperLimit;
 
 	if (!psTarget) {
 		return false;
@@ -219,11 +217,11 @@ bool actionTargetTurret(BaseObject const* psAttacker, BaseObject const* psTarget
 		pitchRate = rotRate / 2;
 	}
 
-	tRotation = weapon.getRotation().direction;
-	tPitch = weapon.getRotation().pitch;
+	auto tRotation = weapon.getRotation().direction;
+	auto tPitch = weapon.getRotation().pitch;
 
 	// set the pitch limits based on the weapon stats of the attacker
-	pitchLowerLimit = pitchUpperLimit = 0;
+	auto pitchLowerLimit = 0; auto pitchUpperLimit = 0;
 	auto attackerMuzzlePos = psAttacker->getPosition();
 
 	// using for calculating the pitch, but not the direction, in case
@@ -256,7 +254,7 @@ bool actionTargetTurret(BaseObject const* psAttacker, BaseObject const* psTarget
 	pitchRate = MAX(pitchRate, DEG(1));
 
 	//and point the turret at target
-	targetRotation = calcDirection(psAttacker->getPosition().x, psAttacker->getPosition().y,
+	auto targetRotation = calcDirection(psAttacker->getPosition().x, psAttacker->getPosition().y,
                                  psTarget->getPosition().x, psTarget->getPosition().y);
 
 	//restrict rotationError to =/- 180 degrees
@@ -363,15 +361,15 @@ void actionCalcPullBackPoint(BaseObject const* psObj, BaseObject const* psTarget
 	// get the distance vector from the target to the object
 	auto xdiff = psObj->getPosition().x - psTarget->getPosition().x;
 	auto ydiff = psObj->getPosition().y - psTarget->getPosition().y;
-	const auto len = iHypot(xdiff, ydiff);
+	auto const len = iHypot(xdiff, ydiff);
 
 	if (len == 0) {
 		xdiff = TILE_UNITS;
 		ydiff = TILE_UNITS;
 	}
 	else {
-		xdiff = (xdiff * TILE_UNITS) / len;
-		ydiff = (ydiff * TILE_UNITS) / len;
+		xdiff = xdiff * TILE_UNITS / len;
+		ydiff = ydiff * TILE_UNITS / len;
 	}
 
 	// create the fallback position
@@ -385,9 +383,9 @@ void actionCalcPullBackPoint(BaseObject const* psObj, BaseObject const* psTarget
 bool actionReachedDroid(Droid const* psDroid, Droid const* psOther)
 {
 	ASSERT_OR_RETURN(false, psDroid != nullptr && psOther != nullptr, "Bad droids");
-	auto xy = map_coord(psDroid->getPosition().xy());
-	auto otherxy = map_coord(psOther->getPosition().xy());
-	auto delta = xy - otherxy;
+	auto const xy = map_coord(psDroid->getPosition().xy());
+	auto const otherxy = map_coord(psOther->getPosition().xy());
+	auto const delta = xy - otherxy;
 	return delta.x >= -1 && delta.x <= 1 && delta.y >= -1 && delta.y <= 1;
 }
 
@@ -396,13 +394,10 @@ bool actionReachedBuildPos(Droid const* psDroid, Vector2i location, uint16_t dir
 	ASSERT_OR_RETURN(false, psStats != nullptr &&
                           psDroid != nullptr, "Bad stat or droid");
 
-	auto b = getStructureBounds(
+	auto const b = getStructureBounds(
           dynamic_cast<StructureStats const*>(psStats), location, dir);
 
-	// do all calculations in half tile units so that
-	// the droid moves to within half a tile of the target
-	// NOT ANYMORE - JOHN
-	Vector2i delta = map_coord(psDroid->getPosition().xy()) - b.map;
+	auto const delta = map_coord(psDroid->getPosition().xy()) - b.map;
 	return delta.x >= -1 && delta.x <= b.size.x &&
          delta.y >= -1 && delta.y <= b.size.y;
 }
@@ -413,12 +408,12 @@ bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir,
 
 	bool buildPosEmpty = true;
 
-	auto b = getStructureBounds(
+	auto const b = getStructureBounds(
           dynamic_cast<StructureStats const*>(psStats),
           pos, dir);
 
-	auto structureCentre = world_coord(b.map) + world_coord(b.size) / 2;
-	auto structureMaxRadius = iHypot(world_coord(b.size) / 2) + 1; // +1 since iHypot rounds down.
+	auto const structureCentre = world_coord(b.map) + world_coord(b.size) / 2;
+	auto const structureMaxRadius = iHypot(world_coord(b.size) / 2) + 1; // +1 since iHypot rounds down.
 
 	static GridList gridList; // static to avoid allocations.
 	gridList = gridStartIterate(structureCentre.x, structureCentre.y, structureMaxRadius);
@@ -427,7 +422,7 @@ bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir,
 		auto droid = dynamic_cast<Droid*>(gi);
 		if (droid == nullptr) continue; // Only looking for droids.
 
-		Vector2i delta = map_coord(droid->getPosition().xy()) - b.map;
+		auto const delta = map_coord(droid->getPosition().xy()) - b.map;
 		if (delta.x < 0 || delta.x >= b.size.x || delta.y < 0 ||
         delta.y >= b.size.y || isFlying(droid)) {
 			continue; // Droid not under new structure (just near it).
@@ -445,8 +440,8 @@ bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir,
 		for (auto y = -1; y <= b.size.y; ++y)
     {
       for (auto x = -1; x <= b.size.x; x += y >= 0 && y < b.size.y ? b.size.x + 1 : 1) {
-        Vector2i dest = world_coord(b.map + Vector2i(x, y)) + Vector2i(TILE_UNITS, TILE_UNITS) / 2;
-        unsigned dist = iHypot(droid->getPosition().xy() - dest);
+        auto const dest = world_coord(b.map + Vector2i(x, y)) + Vector2i(TILE_UNITS, TILE_UNITS) / 2;
+        auto const dist = iHypot(droid->getPosition().xy() - dest);
         if (dist < bestDist &&
             !fpathBlockingTile(map_coord(dest.x),
                                map_coord(dest.y),
@@ -459,7 +454,7 @@ bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir,
     }
 		if (bestDist != UINT32_MAX) {
 			// Push the droid out of the way.
-			auto newPos = droid->getPosition().xy() + iSinCosR(
+			auto const newPos = droid->getPosition().xy() + iSinCosR(
               iAtan2(bestDest - droid->getPosition().xy()),
               gameTimeAdjustedIncrement(TILE_UNITS));
 
