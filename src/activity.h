@@ -19,13 +19,13 @@
 
 /**
  * @file activity.h
+ *
  */
 
 #ifndef __INCLUDED_SRC_ACTIVITY_H__
 #define __INCLUDED_SRC_ACTIVITY_H__
 
 #include <vector>
-
 #include "multiplay.h"
 
 enum class ALLIANCE_TYPE;
@@ -36,212 +36,183 @@ struct PLAYER;
 
 enum class GAME_MODE
 {
-    MENUS,
-    TUTORIAL,
-    CAMPAIGN,
-    CHALLENGE,
-    SKIRMISH,
-    HOSTING_IN_LOBBY,
-    JOINING_IN_PROGRESS,
-
-    /// Joined but waiting on game information from host
-    JOINING_IN_LOBBY,
-
-    MULTIPLAYER
+  MENUS,
+  TUTORIAL,
+  CAMPAIGN,
+  CHALLENGE,
+  SKIRMISH,
+  HOSTING_IN_LOBBY,
+  JOINING_IN_PROGRESS,
+  /// Joined but waiting on game information from host
+  JOINING_IN_LOBBY,
+  MULTIPLAYER,
+  COUNT
 };
 
-enum class GameEndReason
+enum class GAME_END_REASON
 {
-    WON,
-    LOST,
-    QUIT
+  WON,
+  LOST,
+  QUIT
 };
 
 struct SkirmishGameInfo
 {
-    virtual ~SkirmishGameInfo() = default;
+  virtual ~SkirmishGameInfo() = default;
 
-    [[nodiscard]] std::string gameName() const;
-    [[nodiscard]] std::string mapName() const;
-    [[nodiscard]] virtual uint8_t numberOfPlayers() const;
-    [[nodiscard]] bool hasLimits() const;
+  [[nodiscard]] virtual uint8_t numberOfPlayers() const;
+  [[nodiscard]] std::string gameName() const;
+  [[nodiscard]] std::string mapName() const;
+  [[nodiscard]] bool hasLimits() const;
 
-    MULTIPLAYERGAME game;
-    uint8_t numAIBotPlayers = 0;
-    std::size_t currentPlayerIdx = 0;
-    // = the selectedPlayer global for the current client
-    // (points to currently controlled player in the players array)
-    std::vector<PLAYER> players;
+  MULTIPLAYERGAME game;
+  uint8_t numAIBotPlayers = 0;
+  size_t currentPlayerIdx = 0;
 
-    // information on limits
-    bool limit_no_tanks; ///< Flag for tanks disabled
-    bool limit_no_cyborgs; ///< Flag for cyborgs disabled
-    bool limit_no_vtols; ///< Flag for VTOLs disabled
-    bool limit_no_uplink; ///< Flag for Satellite Uplink disabled
-    bool limit_no_lassat; ///< Flag for Laser Satellite Command Post disabled
-    bool force_structure_limits; ///< Flag to force structure limits
-    std::vector<MULTISTRUCTLIMITS> structureLimits;
-    ALLIANCE_TYPE alliances;
+  // = the selectedPlayer global for the current client
+  // (points to currently controlled player in the players array)
+  std::vector<PLAYER> players;
 
-    // is this a loaded replay?
-    bool isReplay = false;
+  /// Flag for tanks disabled
+  bool limit_no_tanks;
+  /// Flag for cyborgs disabled
+  bool limit_no_cyborgs;
+  /// Flag for VTOLs disabled
+  bool limit_no_vtols;
+  /// Flag for Satellite Uplink disabled
+  bool limit_no_uplink;
+  /// Flag for Laser Satellite Command Post disabled
+  bool limit_no_lassat;
+  /// Flag to force structure limits
+  bool force_structure_limits;
+
+  std::vector<MULTISTRUCTLIMITS> structureLimits;
+  ALLIANCE_TYPE alliances;
+  bool isReplay = false;
 };
 
 struct ListeningInterfaces
 {
-    bool IPv4 = false;
-    bool IPv6 = false;
-    unsigned int ipv4_port;
-    unsigned int ipv6_port;
+  bool IPv4 = false;
+  bool IPv6 = false;
+  unsigned ipv4_port;
+  unsigned ipv6_port;
 };
 
 struct MultiplayerGameInfo : public SkirmishGameInfo
 {
-    // host information
-    std::string hostName; // host player name
-    ListeningInterfaces listeningInterfaces;
-    std::string lobbyAddress;
-    unsigned lobbyPort;
-    unsigned lobbyGameId = 0;
-
-    bool isHost; // whether the current client is the game host
-    bool privateGame; // whether game is password-protected
-    uint8_t maxPlayers = 0;
-    uint8_t numHumanPlayers = 0;
-    uint8_t numAvailableSlots = 0;
-    uint8_t numSpectators = 0;
-    uint8_t numOpenSpectatorSlots = 0;
+  std::string hostName;
+  std::string lobbyAddress;
+  ListeningInterfaces listeningInterfaces;
+  unsigned lobbyPort;
+  unsigned lobbyGameId = 0;
+  bool isHost;
+  bool privateGame;
+  uint8_t maxPlayers = 0;
+  uint8_t numHumanPlayers = 0;
+  uint8_t numAvailableSlots = 0;
+  uint8_t numSpectators = 0;
+  uint8_t numOpenSpectatorSlots = 0;
 };
 
-// Subclass ActivitySink to implement a custom handler for higher-level game-state event callbacks.
+/**
+ * Subclass ActivitySink to implement a custom handler for higher-level
+ * game-state event callbacks
+ */
 class ActivitySink
 {
 public:
 	virtual ~ActivitySink() = default;
 
-	/// Navigating main menus
-	virtual void navigatedToMenu(const std::string& menuName);
+	virtual void navigatedToMenu(std::string const& menuName) = 0;
+	virtual void startedCampaignMission(std::string const& campaign, std::string const& levelName) = 0;
+	virtual void endedCampaignMission(std::string const& campaign, std::string const& levelName,
+                                    GAME_END_REASON result, END_GAME_STATS_DATA stats, bool cheatsUsed) = 0;
+	virtual void startedChallenge(std::string const& challengeName) = 0;
+	virtual void endedChallenge(std::string const& challengeName, GAME_END_REASON result,
+                              END_GAME_STATS_DATA const& stats, bool cheatsUsed) = 0;
+	virtual void startedSkirmishGame(SkirmishGameInfo const& info) = 0;
+	virtual void endedSkirmishGame(SkirmishGameInfo const& info, GAME_END_REASON result,
+                                 END_GAME_STATS_DATA const& stats) = 0;
+	virtual void hostingMultiplayerGame(MultiplayerGameInfo const& info) = 0;
+	virtual void joinedMultiplayerGame(MultiplayerGameInfo const& info) = 0;
+	virtual void updateMultiplayerGameInfo(MultiplayerGameInfo const& info) = 0;
+	virtual void leftMultiplayerGameLobby(bool wasHost, LOBBY_ERROR_TYPES type) = 0;
+	virtual void startedMultiplayerGame(MultiplayerGameInfo const& info) = 0;
+	virtual void endedMultiplayerGame(MultiplayerGameInfo const& info, GAME_END_REASON result,
+                                    END_GAME_STATS_DATA const& stats) = 0;
+	virtual void changedSetting(std::string const& settingKey, std::string const& settingValue) = 0;
+	virtual void cheatUsed(std::string const& cheatName) = 0;
+	virtual void loadedModsChanged( std::vector<Sha256> const& loadedModHashes) = 0;
 
-	// campaign games
-	virtual void startedCampaignMission(const std::string& campaign, const std::string& levelName);
-
-	virtual void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result,
-	                                  END_GAME_STATS_DATA stats, bool cheatsUsed);
-
-	// challenges
-	virtual void startedChallenge(const std::string& challengeName);
-
-	virtual void endedChallenge(const std::string& challengeName, GameEndReason result,
-	                            const END_GAME_STATS_DATA& stats, bool cheatsUsed);
-
-
-	virtual void startedSkirmishGame(const SkirmishGameInfo& info);
-
-	virtual void endedSkirmishGame(const SkirmishGameInfo& info, GameEndReason result, const END_GAME_STATS_DATA& stats);
-
-	virtual void hostingMultiplayerGame(const MultiplayerGameInfo& info);
-
-	virtual void joinedMultiplayerGame(const MultiplayerGameInfo& info);
-
-	virtual void updateMultiplayerGameInfo(const MultiplayerGameInfo& info);
-
-	virtual void leftMultiplayerGameLobby(bool wasHost, LOBBY_ERROR_TYPES type);
-
-	virtual void startedMultiplayerGame(const MultiplayerGameInfo& info);
-
-	virtual void endedMultiplayerGame(const MultiplayerGameInfo& info, GameEndReason result,
-	                                  const END_GAME_STATS_DATA& stats);
-
-	virtual void changedSetting(const std::string& settingKey, const std::string& settingValue);
-
-	// cheats used
-	virtual void cheatUsed(const std::string& cheatName);
-
-	// loaded mods changed
-	virtual void loadedModsChanged(const std::vector<Sha256>& loadedModHashes);
-
-	// Helper Functions
-	static std::string getTeamDescription(const SkirmishGameInfo& info);
+	static std::string getTeamDescription(SkirmishGameInfo const& info);
 };
 
-std::string to_string(GameEndReason const& reason);
-std::string to_string(const END_GAME_STATS_DATA& stats);
+std::string to_string(GAME_END_REASON const& reason);
+std::string to_string(END_GAME_STATS_DATA const& stats);
 
-// Thread-safe class for retrieving and setting ActivityRecord data
+// Thread-safe class for retrieving and setting \c ActivityRecord data
 class ActivityDBProtocol
 {
 public:
 	virtual ~ActivityDBProtocol();
-public:
+
 	[[nodiscard]] virtual std::string getFirstLaunchDate() const = 0;
 };
 
-// ActivityManager accepts numerous event callbacks from the core game and synthesizes
-// a (more) sensible stream of higher-level event callbacks to subscribed ActivitySinks.
-//
-// To access the single, global instance of ActivityManager, use ActivityManager::instance()
-//
+/**
+ * \c ActivityManager accepts numerous event callbacks from the core game and synthesizes
+ * a (more) sensible stream of higher-level event callbacks to subscribed \c ActivitySinks.
+ * To access the single, global instance of \c ActivityManager, use \c ActivityManager::instance()
+ */
 class ActivityManager
 {
 public:
-	void startingGame();
+  [[nodiscard]] GAME_MODE getCurrentGameMode() const;
+  [[nodiscard]] std::shared_ptr<ActivityDBProtocol> getRecord() const;
+  void startingGame();
 	void startingSavedGame();
-	void loadedLevel(LEVEL_TYPE type, const std::string& levelName);
-	void completedMission(bool result, const END_GAME_STATS_DATA& stats, bool cheatsUsed);
-	void quitGame(const END_GAME_STATS_DATA& stats, bool cheatsUsed);
+	void loadedLevel(LEVEL_TYPE type, std::string const& levelName);
+	void completedMission(bool result, END_GAME_STATS_DATA const& stats, bool cheatsUsed);
+	void quitGame(END_GAME_STATS_DATA const& stats, bool cheatsUsed);
 	void preSystemShutdown();
-
-	// navigating main menus
-	void navigateToMenu(const std::string& menuName);
-
-	// changing settings
+	void navigateToMenu(std::string const& menuName);
 	void beginLoadingSettings();
-	void changedSetting(const std::string& settingKey, const std::string& settingValue);
+	void changedSetting(std::string const& settingKey, std::string const& settingValue);
 	void endLoadingSettings();
-
-	// cheats used
-	void cheatUsed(const std::string& cheatName);
-
-	// mods reloaded / possibly changed
+	void cheatUsed(std::string const& cheatName);
 	void rebuiltSearchPath();
 
 	// called when a joinable multiplayer game is hosted
 	// lobbyGameId is 0 if the lobby can't be contacted / the game is not registered with the lobby
-	void hostGame(const char* SessionName, const char* PlayerName, const char* lobbyAddress, unsigned int lobbyPort,
-	              const ListeningInterfaces& listeningInterfaces, uint32_t lobbyGameId = 0);
+	void hostGame(char const* SessionName, char const* PlayerName, char const* lobbyAddress,
+                unsigned lobbyPort, ListeningInterfaces const& listeningInterfaces, unsigned lobbyGameId = 0);
+
 	void hostGameLobbyServerDisconnect();
 	void hostLobbyQuit();
-	// called when attempting to join a lobby game
-	void willAttemptToJoinLobbyGame(const std::string& lobbyAddress, unsigned int lobbyPort, uint32_t lobbyGameId,
-	                                const std::vector<JoinConnectionDescription>& connections);
-	// called when an attempt to join fails
-	void joinGameFailed(const std::vector<JoinConnectionDescription>& connection_list);
-	// called when joining a multiplayer game
-	void joinGameSucceeded(const char* host, uint32_t port);
+	void willAttemptToJoinLobbyGame(std::string const& lobbyAddress, unsigned lobbyPort, unsigned lobbyGameId,
+	                                std::vector<JoinConnectionDescription> const& connections);
+	void joinGameFailed( std::vector<JoinConnectionDescription> const& connection_list);
+	void joinGameSucceeded(char const* host, unsigned port);
 	void joinedLobbyQuit();
-	// for skirmish / multiplayer, provide additional data / state
-	void updateMultiplayGameData(const MULTIPLAYERGAME& game, const MULTIPLAYERINGAME& ingame,
+	void updateMultiplayGameData(MULTIPLAYERGAME const& game, MULTIPLAYERINGAME const& ingame,
 	                             optional<bool> privateGame);
-	// called on the host when the host kicks a player
-	void hostKickPlayer(const PLAYER& player, LOBBY_ERROR_TYPES kick_type, const std::string& reason);
-	// called on the kicked player when they are kicked by another player
-	void wasKickedByPlayer(const PLAYER& kicker, LOBBY_ERROR_TYPES kick_type, const std::string& reason);
-public:
+	void hostKickPlayer(PLAYER const& player, LOBBY_ERROR_TYPES kick_type, std::string const& reason);
+	void wasKickedByPlayer(PLAYER const& kicker, LOBBY_ERROR_TYPES kick_type, std::string const& reason);
+
 	static ActivityManager& instance();
 	bool initialize();
 	void shutdown();
-	void addActivitySink(const std::shared_ptr<ActivitySink>& sink);
-	void removeActivitySink(const std::shared_ptr<ActivitySink>& sink);
-	[[nodiscard]] GAME_MODE getCurrentGameMode() const;
-	inline std::shared_ptr<ActivityDBProtocol> getRecord() { return activityDatabase; }
+	void addActivitySink(std::shared_ptr<ActivitySink> const& sink);
+	void removeActivitySink(std::shared_ptr<ActivitySink> const& sink);
 private:
 	ActivityManager();
-	void _endedMission(GameEndReason result, const END_GAME_STATS_DATA& stats, bool cheatsUsed);
+	void _endedMission(GAME_END_REASON result, END_GAME_STATS_DATA const& stats, bool cheatsUsed);
 private:
 	std::vector<std::shared_ptr<ActivitySink>> activitySinks;
 	std::shared_ptr<ActivityDBProtocol> activityDatabase;
 
-	// storing current game state, to aide in synthesizing events
+	// storing current game state, to aid in synthesizing events
 	bool bIsLoadingConfiguration = false;
 	GAME_MODE currentMode = GAME_MODE::MENUS;
 	bool bEndedCurrentMission = false;
@@ -253,15 +224,11 @@ private:
 		std::string levelName;
 	};
 
-	LoadedLevelEvent* cachedLoadedLevelEvent = nullptr;
-
-	LoadedLevelEvent lastLoadedLevelEvent;
-
 	struct FoundLobbyGameDetails
 	{
 		std::string lobbyAddress;
-		unsigned int lobbyPort;
-		uint32_t lobbyGameId;
+		unsigned lobbyPort;
+		unsigned lobbyGameId;
 		std::vector<JoinConnectionDescription> connections;
 
 		void clear()
@@ -273,8 +240,9 @@ private:
 		}
 	};
 
+  LoadedLevelEvent* cachedLoadedLevelEvent = nullptr;
+  LoadedLevelEvent lastLoadedLevelEvent;
 	FoundLobbyGameDetails lastLobbyGameJoinAttempt;
-
 	optional<std::vector<Sha256>> lastLoadedMods;
 };
 

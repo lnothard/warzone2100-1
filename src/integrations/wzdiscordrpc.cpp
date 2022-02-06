@@ -592,10 +592,10 @@ public:
 		updateDiscordPresence();
 	}
 
-	void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result,
+	void endedCampaignMission(const std::string& campaign, const std::string& levelName, GAME_END_REASON result,
 	                                  END_GAME_STATS_DATA stats, bool cheatsUsed) override
 	{
-		if (result == GameEndReason::QUIT) {
+		if (result == GAME_END_REASON::QUIT) {
 			setDiscordStatus_InMenus();
 			updateDiscordPresence();
 			return;
@@ -617,7 +617,7 @@ public:
 		updateDiscordPresence();
 	}
 
-	void endedChallenge(const std::string& challengeName, GameEndReason result,
+	void endedChallenge(const std::string& challengeName, GAME_END_REASON result,
 	                            const END_GAME_STATS_DATA& stats, bool cheatsUsed) override
 	{
 		setDiscordStatus_InMenus();
@@ -650,7 +650,7 @@ public:
 		updateDiscordPresence();
 	}
 
-	void endedSkirmishGame(const SkirmishGameInfo& info, GameEndReason result,
+	void endedSkirmishGame(const SkirmishGameInfo& info, GAME_END_REASON result,
 	                               const END_GAME_STATS_DATA& stats) override
 	{
 		setDiscordStatus_InMenus();
@@ -701,7 +701,7 @@ public:
 		updateDiscordPresence();
 	}
 
-	void endedMultiplayerGame(const MultiplayerGameInfo& info, GameEndReason result,
+	void endedMultiplayerGame(const MultiplayerGameInfo& info, GAME_END_REASON result,
 	                                  const END_GAME_STATS_DATA& stats) override
 	{
 		lastDismissedJoinRequestByUserId.clear();

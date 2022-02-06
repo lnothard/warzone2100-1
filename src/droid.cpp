@@ -9457,8 +9457,10 @@ void Droid::fpathSetDirectRoute(int targetX, int targetY)
   fpathSetMove(pimpl->movement.get(), targetX, targetY);
 }
 
-/*send the vtol droid back to the nearest rearming pad - if one otherwise
-return to base*/
+/**
+ * Send the vtol droid back to the nearest rearming pad - if
+ * there is one, otherwise return to base
+ */
 void Droid::moveToRearm()
 {
   if (!isVtol()) {

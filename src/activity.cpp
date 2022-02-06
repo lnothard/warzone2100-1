@@ -57,83 +57,81 @@ bool SkirmishGameInfo::hasLimits() const
          limit_no_lassat || force_structure_limits;
 }
 
-//std::string ActivitySink::getTeamDescription(const ActivitySink::SkirmishGameInfo& info)
-//{
-//	if (!alliancesSetTeamsBeforeGame(info.game.alliance))
-//	{
-//		return "";
-//	}
-//	std::map<int32_t, size_t> teamIdToCountOfPlayers;
-//	for (size_t index = 0; index < std::min<size_t>(info.players.size(), (size_t)game.maxPlayers); ++index)
-//	{
-//		PLAYER const& p = NetPlay.players[index];
-//		if (p.ai == AI_CLOSED)
-//		{
-//			// closed slot - skip
-//			continue;
-//		}
-//		else if (p.ai == AI_OPEN)
-//		{
-//			if (p.isSpectator)
-//			{
-//				// spectator slot - skip
-//				continue;
-//			}
-//			else if (!p.allocated)
-//			{
-//				// available slot - count team association
-//				// (since available slots can have assigned teams)
-//				teamIdToCountOfPlayers[p.team]++;
-//			}
-//			else
-//			{
-//				// human player
-//				teamIdToCountOfPlayers[p.team]++;
-//			}
-//		}
-//		else
-//		{
-//			// bot player
-//			teamIdToCountOfPlayers[p.team]++;
-//		}
-//	}
-//	if (teamIdToCountOfPlayers.size() <= 1)
-//	{
-//		// does not have multiple teams
-//		return "";
-//	}
-//	std::string teamDescription;
-//	for (const auto& team : teamIdToCountOfPlayers)
-//	{
-//		if (!teamDescription.empty())
-//		{
-//			teamDescription += "v";
-//		}
-//		teamDescription += std::to_string(team.second);
-//	}
-//	return teamDescription;
-//}
+std::shared_ptr<ActivityDBProtocol> ActivityManager::getRecord() const
+{
+  return activityDatabase;
+}
 
-std::string to_string(const GameEndReason& reason)
+std::string ActivitySink::getTeamDescription(SkirmishGameInfo const& info)
+{
+	if (!alliancesSetTeamsBeforeGame(info.game.alliance)) {
+		return "";
+	}
+
+	std::map<int, size_t> teamIdToCountOfPlayers;
+	for (auto index = 0; index < std::min<size_t>(info.players.size(), (size_t)game.maxPlayers); ++index)
+	{
+		auto const& p = NetPlay.players[index];
+		if (p.ai == AI_CLOSED) {
+			// closed slot - skip
+			continue;
+		}
+		else if (p.ai == AI_OPEN) {
+			if (p.isSpectator) {
+				// spectator slot - skip
+				continue;
+			}
+			else if (!p.allocated) {
+				// available slot - count team association
+				// (since available slots can have assigned teams)
+				teamIdToCountOfPlayers[p.team]++;
+			}
+			else {
+				// human player
+				teamIdToCountOfPlayers[p.team]++;
+			}
+		}
+		else {
+			// bot player
+			teamIdToCountOfPlayers[p.team]++;
+		}
+	}
+	if (teamIdToCountOfPlayers.size() <= 1) {
+		// does not have multiple teams
+		return "";
+	}
+
+	std::string teamDescription;
+	for (const auto& team : teamIdToCountOfPlayers)
+	{
+		if (!teamDescription.empty()) {
+			teamDescription += "v";
+		}
+		teamDescription += std::to_string(team.second);
+	}
+	return teamDescription;
+}
+
+std::string to_string(GAME_END_REASON const& reason)
 {
 	switch (reason) {
-	case GameEndReason::WON:
+	case GAME_END_REASON::WON:
 		return "Won";
-	case GameEndReason::LOST:
+	case GAME_END_REASON::LOST:
 		return "Lost";
-	case GameEndReason::QUIT:
+	case GAME_END_REASON::QUIT:
 		return "Quit";
 	}
 }
 
-std::string to_string(const END_GAME_STATS_DATA& stats)
+std::string to_string(END_GAME_STATS_DATA const& stats)
 {
 	return astringf("numUnits: %u, missionStartedTime: %u, unitsBuilt: %u, unitsLost: %u, unitsKilled: %u",
 	                stats.numUnits, stats.missionData.missionStarted, stats.missionData.unitsBuilt,
 	                stats.missionData.unitsLost, stats.missionData.unitsKilled);
 }
 
-class LoggingActivitySink : public ActivitySink
+class LoggingActivitySink : public virtual ActivitySink
 {
 public:
 	// navigating main menus
@@ -148,7 +146,7 @@ public:
 		debug(LOG_ACTIVITY, "- startedCampaignMission: %s:%s", campaign.c_str(), levelName.c_str());
 	}
 
-	void endedCampaignMission(const std::string& campaign, const std::string& levelName, GameEndReason result,
+	void endedCampaignMission(const std::string& campaign, const std::string& levelName, GAME_END_REASON result,
 	                                  END_GAME_STATS_DATA stats, bool cheatsUsed) override
 	{
 		debug(LOG_ACTIVITY, "- endedCampaignMission: %s:%s; result: %s; stats: (%s)", campaign.c_str(),
@@ -161,7 +159,7 @@ public:
 		debug(LOG_ACTIVITY, "- startedChallenge: %s", challengeName.c_str());
 	}
 
-	void endedChallenge(const std::string& challengeName, GameEndReason result,
+	void endedChallenge(const std::string& challengeName, GAME_END_REASON result,
 	                            const END_GAME_STATS_DATA& stats, bool cheatsUsed) override
 	{
 		debug(LOG_ACTIVITY, "- endedChallenge: %s; result: %s; stats: (%s)", challengeName.c_str(),
@@ -173,7 +171,7 @@ public:
 		debug(LOG_ACTIVITY, "- startedSkirmishGame: %s", info.game.name);
 	}
 
-	void endedSkirmishGame(const SkirmishGameInfo& info, GameEndReason result,
+	void endedSkirmishGame(const SkirmishGameInfo& info, GAME_END_REASON result,
 	                               const END_GAME_STATS_DATA& stats) override
 	{
 		debug(LOG_ACTIVITY, "- endedSkirmishGame: %s; result: %s; stats: (%s)", info.game.name,
@@ -205,7 +203,7 @@ public:
 		debug(LOG_ACTIVITY, "- startedMultiplayerGame: %s", info.game.name);
 	}
 
-	void endedMultiplayerGame(const MultiplayerGameInfo& info, GameEndReason result,
+	void endedMultiplayerGame(const MultiplayerGameInfo& info, GAME_END_REASON result,
 	                                  const END_GAME_STATS_DATA& stats) override
 	{
 		debug(LOG_ACTIVITY, "- endedMultiplayerGame: %s; result: %s; stats: (%s)", info.game.name,
@@ -448,16 +446,13 @@ GAME_MODE ActivityManager::getCurrentGameMode() const
 GAME_MODE currentGameTypeToMode()
 {
 	GAME_MODE mode = GAME_MODE::CAMPAIGN;
-	if (challengeActive)
-	{
+	if (challengeActive) {
 		mode = GAME_MODE::CHALLENGE;
 	}
-	else if (game.type == LEVEL_TYPE::SKIRMISH)
-	{
+	else if (game.type == LEVEL_TYPE::SKIRMISH) {
 		mode = (NetPlay.bComms) ? GAME_MODE::MULTIPLAYER : GAME_MODE::SKIRMISH;
 	}
-	else if (game.type == LEVEL_TYPE::CAMPAIGN)
-	{
+	else if (game.type == LEVEL_TYPE::CAMPAIGN) {
 		mode = GAME_MODE::CAMPAIGN;
 	}
 	return mode;
@@ -465,27 +460,23 @@ GAME_MODE currentGameTypeToMode()
 
 void ActivityManager::startingGame()
 {
-	GAME_MODE mode = currentGameTypeToMode();
+	auto mode = currentGameTypeToMode();
 	bEndedCurrentMission = false;
-
 	currentMode = mode;
 }
 
 void ActivityManager::startingSavedGame()
 {
-	GAME_MODE mode = currentGameTypeToMode();
+	auto mode = currentGameTypeToMode();
 	bEndedCurrentMission = false;
 
-	if (mode == GAME_MODE::SKIRMISH || (mode == GAME_MODE::MULTIPLAYER && NETisReplay()))
-	{
+	if (mode == GAME_MODE::SKIRMISH || mode == GAME_MODE::MULTIPLAYER && NETisReplay()) {
 		// synthesize an "update multiplay game data" call on skirmish save game load (or loading MP replay)
 		ActivityManager::instance().updateMultiplayGameData(game, ingame, false);
 	}
 
 	currentMode = mode;
-
-	if (cachedLoadedLevelEvent)
-	{
+	if (cachedLoadedLevelEvent) {
 		// process a (delayed) loaded level event
 		loadedLevel(cachedLoadedLevelEvent->type, cachedLoadedLevelEvent->levelName);
 		delete cachedLoadedLevelEvent;
@@ -496,9 +487,7 @@ void ActivityManager::startingSavedGame()
 void ActivityManager::loadedLevel(LEVEL_TYPE type, const std::string& levelName)
 {
 	bEndedCurrentMission = false;
-
-	if (currentMode == GAME_MODE::MENUS)
-	{
+	if (currentMode == GAME_MODE::MENUS) {
 		// hit a case where startedGameMode is called *after* loadedLevel, so cache the loadedLevel call
 		// (for example, on save game load, the game mode isn't set until the save is loaded)
 		ASSERT(cachedLoadedLevelEvent == nullptr, "Missed a cached loaded level event?");
@@ -509,9 +498,7 @@ void ActivityManager::loadedLevel(LEVEL_TYPE type, const std::string& levelName)
 
 	lastLoadedLevelEvent.type = type;
 	lastLoadedLevelEvent.levelName = levelName;
-
-	switch (currentMode)
-	{
+	switch (currentMode) {
 	case GAME_MODE::CAMPAIGN:
 		for (const auto& sink : activitySinks) { sink->startedCampaignMission(getCampaignName(), levelName); }
 		break;
@@ -529,14 +516,13 @@ void ActivityManager::loadedLevel(LEVEL_TYPE type, const std::string& levelName)
 	}
 }
 
-void ActivityManager::_endedMission(GameEndReason result, const END_GAME_STATS_DATA& stats, bool cheatsUsed)
+void ActivityManager::_endedMission(GAME_END_REASON result, END_GAME_STATS_DATA const& stats, bool cheatsUsed)
 {
-	if (bEndedCurrentMission) return;
+	if (bEndedCurrentMission)
+    return;
 
 	lastLobbyGameJoinAttempt.clear();
-
-	switch (currentMode)
-	{
+	switch (currentMode) {
 	case GAME_MODE::CAMPAIGN:
 		for (const auto& sink : activitySinks)
 		{
@@ -558,18 +544,16 @@ void ActivityManager::_endedMission(GameEndReason result, const END_GAME_STATS_D
 	bEndedCurrentMission = true;
 }
 
-void ActivityManager::completedMission(bool result, const END_GAME_STATS_DATA& stats, bool cheatsUsed)
+void ActivityManager::completedMission(bool result, END_GAME_STATS_DATA const& stats, bool cheatsUsed)
 {
-	_endedMission(result ? GameEndReason::WON : GameEndReason::LOST, stats, cheatsUsed);
+	_endedMission(result ? GAME_END_REASON::WON : GAME_END_REASON::LOST, stats, cheatsUsed);
 }
 
-void ActivityManager::quitGame(const END_GAME_STATS_DATA& stats, bool cheatsUsed)
+void ActivityManager::quitGame(END_GAME_STATS_DATA const& stats, bool cheatsUsed)
 {
-	if (currentMode != GAME_MODE::MENUS)
-	{
-		_endedMission(GameEndReason::QUIT, stats, cheatsUsed);
+	if (currentMode != GAME_MODE::MENUS) {
+		_endedMission(GAME_END_REASON::QUIT, stats, cheatsUsed);
 	}
-
 	currentMode = GAME_MODE::MENUS;
 }
 
@@ -577,16 +561,18 @@ void ActivityManager::preSystemShutdown()
 {
 	// Synthesize appropriate events, as needed
 	// For example, may need to synthesize a "quitGame" event if the user quit directly from window menus, etc
-	if (currentMode != GAME_MODE::MENUS)
-	{
+	if (currentMode != GAME_MODE::MENUS) {
 		// quitGame was never generated - synthesize it
 		ActivityManager::instance().quitGame(collectEndGameStatsData(), Cheated);
 	}
 }
 
-void ActivityManager::navigateToMenu(const std::string& menuName)
+void ActivityManager::navigateToMenu(std::string const& menuName)
 {
-	for (const auto& sink : activitySinks) { sink->navigatedToMenu(menuName); }
+	for (auto const& sink : activitySinks)
+  {
+    sink->navigatedToMenu(menuName);
+  }
 }
 
 void ActivityManager::beginLoadingSettings()
@@ -594,11 +580,15 @@ void ActivityManager::beginLoadingSettings()
 	bIsLoadingConfiguration = true;
 }
 
-void ActivityManager::changedSetting(const std::string& settingKey, const std::string& settingValue)
+void ActivityManager::changedSetting(std::string const& settingKey, std::string const& settingValue)
 {
-	if (bIsLoadingConfiguration) return;
+	if (bIsLoadingConfiguration)
+    return;
 
-	for (const auto& sink : activitySinks) { sink->changedSetting(settingKey, settingValue); }
+	for (auto const& sink : activitySinks)
+  {
+    sink->changedSetting(settingKey, settingValue);
+  }
 }
 
 void ActivityManager::endLoadingSettings()
@@ -606,29 +596,32 @@ void ActivityManager::endLoadingSettings()
 	bIsLoadingConfiguration = false;
 }
 
-// cheats used
-void ActivityManager::cheatUsed(const std::string& cheatName)
+void ActivityManager::cheatUsed(std::string const& cheatName)
 {
-	for (const auto& sink : activitySinks) { sink->cheatUsed(cheatName); }
+	for (auto const& sink : activitySinks)
+  {
+    sink->cheatUsed(cheatName);
+  }
 }
 
-// mods reloaded / possibly changed
 void ActivityManager::rebuiltSearchPath()
 {
 	auto newLoadedModHashes = getModHashList();
-	if (!lastLoadedMods.has_value() || newLoadedModHashes != lastLoadedMods.value())
-	{
-		// list of loaded mods changed!
-		for (const auto& sink : activitySinks) { sink->loadedModsChanged(newLoadedModHashes); }
-		lastLoadedMods = newLoadedModHashes;
-	}
+  if (lastLoadedMods.has_value() && newLoadedModHashes == lastLoadedMods.value())
+    return;
+
+  for (auto const& sink : activitySinks)
+  {
+    sink->loadedModsChanged(newLoadedModHashes);
+  }
+  lastLoadedMods = newLoadedModHashes;
 }
 
 // called when a joinable multiplayer game is hosted
 // lobbyGameId is 0 if the lobby can't be contacted / the game is not registered with the lobby
 void ActivityManager::hostGame(const char* SessionName, const char* PlayerName, const char* lobbyAddress,
-                               unsigned int lobbyPort, const ListeningInterfaces& listeningInterfaces,
-                               uint32_t lobbyGameId /*= 0*/)
+                               unsigned lobbyPort, ListeningInterfaces const& listeningInterfaces,
+                               unsigned lobbyGameId /*= 0*/)
 {
 	currentMode = GAME_MODE::HOSTING_IN_LOBBY;
 

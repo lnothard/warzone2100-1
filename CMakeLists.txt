@@ -37,7 +37,6 @@ else()
 	set(WZ_Wno_ "-Wno-")
 endif()
 
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF) # Disable compiler-specific extensions
@@ -634,6 +633,7 @@ include_directories(".")
 include_directories("3rdparty")
 include_directories(SYSTEM "3rdparty/glm")
 include_directories("3rdparty/date/include")
+include_directories("3rdparty/boost-preprocessor/include")
 
 SET(STDC_HEADERS ON)
 
@@ -819,3 +819,9 @@ if(CPACK_COMMAND)
 	)
 	set_property(TARGET dist PROPERTY FOLDER "_WZAliasTargets")
 endif()
+
+# Include Boost libs
+set(BOOST_ROOT "/opt/homebrew/Cellar/boost/1.76.0")
+find_package(Boost 1.76.0)
+include_directories(${Boost_INCLUDE_DIRS})
+target_link_libraries(warzone2100 ${Boost_LIBRARIES})
