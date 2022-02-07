@@ -129,8 +129,8 @@ static constexpr auto DROID_MAXCOMP = (int)COMPONENT_TYPE::COUNT -  1;
 static constexpr auto DROID_DAMAGE_SCALING  = 400;
 
 
-static const auto	DROID_DAMAGE_SPREAD = 16 - rand() % 32;
-static const auto DROID_REPAIR_SPREAD=	20 - rand() % 40;
+const auto DROID_DAMAGE_SPREAD = 16 - rand() % 32;
+const auto DROID_REPAIR_SPREAD=	20 - rand() % 40;
 
 /// Store the experience of recently recycled droids
 static std::priority_queue<int> recycled_experience[MAX_PLAYERS];
@@ -276,6 +276,13 @@ public:
   SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate);
   void orderDroidAdd(Order* order_);
   void orderDroidAddPending(Order* order_);
+
+  /**
+ * Find the best nearest target for a droid.
+ * If \c extraRange is higher than zero, then this is the range it accepts for movement to target.
+ * @return integer representing target priority, -1 if failed
+ */
+  int aiBestNearestTarget(BaseObject** ppsObj, int weapon_slot, int extraRange = 0) const;
   void orderCheckList();
   void orderDroidBase(Order* psOrder);
   void incrementKills() noexcept;
@@ -353,7 +360,7 @@ std::unique_ptr<Droid> buildDroid(DroidTemplate* pTemplate, unsigned x, unsigned
 std::unique_ptr<Droid> reallyBuildDroid(const DroidTemplate* pTemplate, Position pos, unsigned player, bool onMission,
                         Rotation rot = Rotation());
 
-/* Set the asBits in a DROID structure given it's template. */
+/* Set the asBits in a DROID structure given its template. */
 void droidSetBits(const DroidTemplate* pTemplate, Droid* psDroid);
 
 /* See if a droid is next to a structure */
@@ -363,7 +370,7 @@ static bool droidBuildStartAudioCallback(void* psObj);
 
 static void addConstructorEffect(Structure* psStruct);
 
-/* Calculate the weight of a droid from it's template */
+/* Calculate the weight of a droid from its template */
 unsigned calcDroidWeight(const DroidTemplate* psTemplate);
 
 /* Calculate the power points required to build/maintain a droid */
@@ -372,10 +379,10 @@ int calcDroidPower(const Droid* psDroid);
 // Calculate the number of points required to build a droid
 unsigned calcDroidPoints(Droid* psDroid);
 
-/* Calculate the body points of a droid from it's template */
+/* Calculate the body points of a droid from its template */
 unsigned calcTemplateBody(const DroidTemplate* psTemplate, UBYTE player);
 
-/* Calculate the base speed of a droid from it's template */
+/* Calculate the base speed of a droid from its template */
 unsigned calcDroidBaseSpeed(const DroidTemplate* psTemplate, unsigned weight, UBYTE player);
 
 /* Calculate the speed of a droid over a terrain */
@@ -417,10 +424,10 @@ bool droidUpdateBuild(Droid* psDroid);
 /*continue restoring a structure*/
 bool droidUpdateRestore(Droid* psDroid);
 
-// recycle a droid (retain it's experience and some of it's cost)
+// recycle a droid (retain its experience and some of it's cost)
 void recycleDroid(Droid* psDel);
 
-/* Remove a droid and free it's memory */
+/* Remove a droid and free its memory */
 bool destroyDroid(Droid* psDel, unsigned impactTime);
 
 /* Same as destroy droid except no graphical effects */
@@ -433,10 +440,10 @@ bool droidRemove(Droid* psDroid);
 //free the storage for the droid templates
 bool droidTemplateShutDown();
 
-/* Return the type of a droid */
+/* Return the type of droid */
 DROID_TYPE droidType(Droid* psDroid);
 
-/* Return the type of a droid from it's template */
+/* Return the type of droid from its template */
 DROID_TYPE droidTemplateType(const DroidTemplate* psTemplate);
 
 void assignDroidsToGroup(unsigned playerNumber, unsigned groupNumber, bool clearGroup);

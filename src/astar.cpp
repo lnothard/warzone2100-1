@@ -177,11 +177,11 @@ PathNode getBestNode(std::vector<PathNode>& nodes)
 {
   // find the node with the lowest distance
   // if equal totals, give preference to node closer to target
-  const auto best = nodes.front();
+  auto const best = nodes.front();
   // remove the node from the list
   std::pop_heap(nodes.begin(), nodes.end());
   // move the best node from the front of nodes to the back of nodes,
-  // preserving the heap properties, setting the front to the next best node.
+  // preserving the heap properties, setting the front to the next best node
   nodes.pop_back();
   return best;
 }
@@ -579,7 +579,7 @@ void fpathSetBlockingMap(PathJob& path_job)
   path_job.blockingMap = std::make_shared<PathBlockingMap>(blocking_maps.back());
 }
 
-bool PathBlockingMap::operator==(const PathBlockingType &rhs) const
+bool PathBlockingMap::operator==(PathBlockingType const& rhs) const
 {
   return type.gameTime == rhs.gameTime &&
          fpathIsEquivalentBlocking(type.propulsion, type.owner, type.moveType,

@@ -88,9 +88,7 @@ static void testParticleWrap(Particle* psPart)
 static void processParticle(Particle* psPart)
 {
 	/* Only move if the game isn't paused */
-  if (gamePaused()) {
-    return;
-  }
+  if (gamePaused()) return;
 
   /* Move the particle - frame rate controlled */
   psPart->position.x += graphicsTimeAdjustedIncrement(psPart->velocity.x);
@@ -104,7 +102,7 @@ static void processParticle(Particle* psPart)
   if (psPart->position.x < 0 || psPart->position.z < 0 ||
       psPart->position.x > ((mapWidth - 1) * TILE_UNITS) ||
       psPart->position.z > ((mapHeight - 1) * TILE_UNITS)) {
-    /* The kill it */
+    // then kill it
     psPart->status = PARTICLE_STATUS::INACTIVE;
     return;
   }
@@ -116,23 +114,24 @@ static void processParticle(Particle* psPart)
                                    static_cast<int>(psPart->position.z));
 
     /* Are we below ground? */
-    if ((int)psPart->position.y < groundHeight
-      || psPart->position.y < 0.f) {
+    if (psPart->position.y < groundHeight || psPart->position.y < 0.f) {
       /* Kill it and return */
       psPart->status = PARTICLE_STATUS::INACTIVE;
-      if (psPart->type == PARTICLE_TYPE::RAIN) {
-        auto x = map_coord(static_cast<int>(psPart->position.x));
-        auto y = map_coord(static_cast<int>(psPart->position.z));
-        auto psTile = mapTile(x, y);
-        if (terrainType(psTile) == TER_WATER &&
-            TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile)) {
-          // display-only check for adding effect
-          auto pos = Position{psPart->position.x, groundHeight, psPart->position.z};
-          effectSetSize(60);
-          addEffect(&pos, EFFECT_GROUP::EXPLOSION,
-                    EFFECT_TYPE::EXPLOSION_TYPE_SPECIFIED,
-                    true, getImdFromIndex(MI_SPLASH), 0);
-        }
+
+      if (psPart->type != PARTICLE_TYPE::RAIN)
+        return;
+
+      auto x = map_coord(static_cast<int>(psPart->position.x));
+      auto y = map_coord(static_cast<int>(psPart->position.z));
+      auto psTile = mapTile(x, y);
+      if (terrainType(psTile) == TER_WATER &&
+          TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile)) {
+        // display-only check for adding effect
+        auto pos = Position{psPart->position.x, groundHeight, psPart->position.z};
+        effectSetSize(60);
+        addEffect(&pos, EFFECT_GROUP::EXPLOSION,
+                  EFFECT_TYPE::EXPLOSION_TYPE_SPECIFIED,
+                  true, getImdFromIndex(MI_SPLASH), 0);
       }
       return;
     }
@@ -201,66 +200,61 @@ static void atmosAddParticle(const Vector3f& pos, PARTICLE_TYPE type)
 	}
 }
 
-/* Move the particles */
 void atmosUpdateSystem()
 {
-	unsigned i;
-	unsigned numberToAdd;
 	Vector3f pos;
 
 	// we don't want to do any of this while paused.
-	if (!gamePaused() && weather != WEATHER_TYPE::NONE)
-	{
-		for (i = 0; i < MAX_ATMOS_PARTICLES; i++)
-		{
-			/* See if it's active */
-			if (asAtmosParts[i].status == PARTICLE_STATUS::ACTIVE)
-			{
-				processParticle(&asAtmosParts[i]);
-			}
-		}
+  if (gamePaused() || weather == WEATHER_TYPE::NONE)
+    return;
 
-		// The original code added a fixed number of particles per tick. To take into account game speed
-		// we have to accumulate a fractional number of particles to add them at a slower or faster rate.
-		static double accumulatedParticlesToAdd = 0.0;
+  for (auto i = 0; i < MAX_ATMOS_PARTICLES; i++)
+  {
+    /* See if it's active */
+    if (asAtmosParts[i].status == PARTICLE_STATUS::ACTIVE) {
+      processParticle(&asAtmosParts[i]);
+    }
+  }
 
-		double gameTimeModVal = gameTimeGetMod().asDouble();
-		if (!std::isnan(gameTimeModVal))
-		{
-			accumulatedParticlesToAdd += ((weather == WEATHER_TYPE::SNOWING) ? 2.0 : 4.0) * gameTimeModVal;
-		}
+  // The original code added a fixed number of particles per tick. To take into account game speed
+  // we have to accumulate a fractional number of particles to add them at a slower or faster rate.
+  static double accumulatedParticlesToAdd = 0.0;
 
-		numberToAdd = static_cast<UDWORD>(accumulatedParticlesToAdd);
-		accumulatedParticlesToAdd -= numberToAdd;
+  double gameTimeModVal = gameTimeGetMod().asDouble();
+  if (!std::isnan(gameTimeModVal)) {
+    accumulatedParticlesToAdd += ((weather == WEATHER_TYPE::SNOWING) ? 2.0 : 4.0) * gameTimeModVal;
+  }
 
-		/* Temporary stuff - just adds a few particles! */
-		for (i = 0; i < numberToAdd; i++)
-		{
-			pos.x = playerPos.p.x;
-			pos.z = playerPos.p.z;
-			pos.x += world_coord(rand() % visibleTiles.x - visibleTiles.x / 2);
-			pos.z += world_coord(rand() % visibleTiles.x - visibleTiles.y / 2);
-			pos.y = 1000;
+  auto numberToAdd = static_cast<unsigned>(accumulatedParticlesToAdd);
+  accumulatedParticlesToAdd -= numberToAdd;
 
-			/* If we've got one on the grid */
-			if (pos.x > 0 && pos.z > 0 &&
-				pos.x < (SDWORD)world_coord(mapWidth - 1) &&
-				pos.z < (SDWORD)world_coord(mapHeight - 1))
-			{
-				/* On grid, so which particle shall we add? */
-				switch (weather)
-				{
-				case WEATHER_TYPE::SNOWING:
-					atmosAddParticle(pos, PARTICLE_TYPE::SNOW);
-				case WEATHER_TYPE::RAINING:
-					atmosAddParticle(pos, PARTICLE_TYPE::RAIN);
-					break;
-				case WEATHER_TYPE::NONE:
-					break;
-				}
-			}
-		}
-	}
+  /* Temporary stuff - just adds a few particles! */
+  for (auto i = 0; i < numberToAdd; i++)
+  {
+    pos.x = playerPos.p.x;
+    pos.z = playerPos.p.z;
+    pos.x += world_coord(rand() % visibleTiles.x - visibleTiles.x / 2);
+    pos.z += world_coord(rand() % visibleTiles.x - visibleTiles.y / 2);
+    pos.y = 1000;
+
+    /* If we've got one on the grid */
+    if (pos.x <= 0 || pos.z <= 0 ||
+        pos.x >= (SDWORD) world_coord(mapWidth - 1) ||
+        pos.z >= (SDWORD) world_coord(mapHeight - 1)) {
+      continue;
+    }
+
+    /* On grid, so which particle shall we add? */
+    switch (weather) {
+      case WEATHER_TYPE::SNOWING:
+        atmosAddParticle(pos, PARTICLE_TYPE::SNOW);
+      case WEATHER_TYPE::RAINING:
+        atmosAddParticle(pos, PARTICLE_TYPE::RAIN);
+        break;
+      case WEATHER_TYPE::NONE:
+        break;
+    }
+  }
 }
 
 void atmosDrawParticles(const glm::mat4& viewMatrix)
@@ -287,9 +281,9 @@ void atmosDrawParticles(const glm::mat4& viewMatrix)
 	}
 }
 
-void renderParticle(Particle* psPart, const glm::mat4& viewMatrix)
+void renderParticle(Particle const* psPart, glm::mat4 const& viewMatrix)
 {
-	glm::vec3 dv;
+	static glm::vec3 dv;
 
 	/* Transform it */
 	dv.x = psPart->position.x - playerPos.p.x;
@@ -297,12 +291,12 @@ void renderParticle(Particle* psPart, const glm::mat4& viewMatrix)
 	dv.z = -(psPart->position.z - playerPos.p.z);
 	/* Make it face camera */
 	/* Scale it... */
-	const glm::mat4 modelMatrix = glm::translate(dv) *
+	auto const modelMatrix = glm::translate(dv) *
 		glm::rotate(UNDEG(-playerPos.r.y), glm::vec3(0.f, 1.f, 0.f)) *
 		glm::rotate(UNDEG(-playerPos.r.x), glm::vec3(0.f, 1.f, 0.f)) *
 		glm::scale(glm::vec3(psPart->size / 100.f));
+
 	pie_Draw3DShape(psPart->imd.get(), 0, 0, WZCOL_WHITE, 0, 0, viewMatrix * modelMatrix);
-	/* Draw it... */
 }
 
 void atmosSetWeatherType(WEATHER_TYPE type)

@@ -27,21 +27,21 @@
 
 enum class WEATHER_TYPE
 {
-    RAINING,
-    SNOWING,
-    NONE
+  RAINING,
+  SNOWING,
+  NONE
 };
 
 enum class PARTICLE_TYPE
 {
-    RAIN,
-    SNOW
+  RAIN,
+  SNOW
 };
 
 enum class PARTICLE_STATUS
 {
-    INACTIVE,
-    ACTIVE
+  INACTIVE,
+  ACTIVE
 };
 
 struct Particle
@@ -54,12 +54,12 @@ struct Particle
 	std::unique_ptr<iIMDShape> imd;
 };
 
-
+[[nodiscard]] WEATHER_TYPE atmosGetWeatherType();
 void atmosInitSystem();
+/// Move the particles
 void atmosUpdateSystem();
-void renderParticle(Particle* psPart, const glm::mat4& viewMatrix);
-void atmosDrawParticles(const glm::mat4& viewMatrix);
+void renderParticle(Particle const* psPart, glm::mat4 const& viewMatrix);
+void atmosDrawParticles(glm::mat4 const& viewMatrix);
 void atmosSetWeatherType(WEATHER_TYPE type);
-WEATHER_TYPE atmosGetWeatherType();
 
 #endif // __INCLUDED_SRC_ATMOS_H__

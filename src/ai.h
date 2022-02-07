@@ -70,7 +70,7 @@ static constexpr auto	WEIGHT_WEAPON_STRUCT = WEIGHT_WEAPON_DROIDS;
 static constexpr auto	WEIGHT_DERRICK_STRUCT	=	WEIGHT_MILITARY_STRUCT + WEIGHT_DIST_TILE_STRUCT * 4;
 
 /// Humans won't fool us anymore!
-static constexpr auto	WEIGHT_STRUCT_NOTBUILT_F = 8;
+static constexpr auto WEIGHT_STRUCT_NOT_BUILT_F = 8;
 /// It only makes sense to switch target if new one is 4+ tiles closer
 static constexpr auto OLD_TARGET_THRESHOLD = WEIGHT_DIST_TILE * 4;
 /// EMP shouldn't attack EMP'd targets again
@@ -112,16 +112,20 @@ extern PlayerMask satuplinkbits;
 bool aiInitialise();
 bool aiShutdown();
 
-// Find the best nearest target for a droid.
-// If extraRange is higher than zero, then this is the range it accepts for movement to target.
-// Returns integer representing target priority, -1 if failed
-int aiBestNearestTarget(Droid const* psDroid, BaseObject** ppsObj, int weapon_slot, int extraRange = 0);
-
 /// Update the expected damage to the object.
 void aiObjectAddExpectedDamage(BaseObject* psObject, int damage, bool isDirect);
 
-/* See if there is a target in range added int weapon_slot*/
-bool aiChooseTarget(BaseObject* psObj, BaseObject** ppsTarget, int weapon_slot,
+unsigned aiDroidRange(Droid const* psDroid, int weapon_slot);
+
+/** Search the global list of sensors for a possible target for psObj. */
+BaseObject* aiSearchSensorTargets(BaseObject const* psObj, int weapon_slot,
+                                        WeaponStats const* psWStats, TARGET_ORIGIN* targetOrigin);
+
+/* Calculates attack priority for a certain target */
+int targetAttackWeight(BaseObject const* psTarget, BaseObject const* psAttacker, int weapon_slot);
+
+/// See if there is a target in range
+bool aiChooseTarget(BaseObject const* psObj, BaseObject** ppsTarget, int weapon_slot,
                     bool bUpdateTarget, TARGET_ORIGIN* targetOrigin);
 
 /** See if there is a target in range for Sensor objects. */
@@ -135,42 +139,13 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
 bool checkAnyWeaponsTarget(BaseObject const* psObject, BaseObject const* psTarget);
 
 // Check properties of the AllianceType enum.
-static inline bool alliancesFixed(ALLIANCE_TYPE t)
-{
-  using enum ALLIANCE_TYPE;
-	return t != ALLIANCES;
-}
+static bool alliancesFixed(ALLIANCE_TYPE t);
+static bool alliancesSharedVision(ALLIANCE_TYPE t);
+static bool alliancesSharedResearch(ALLIANCE_TYPE t);
+static bool alliancesSetTeamsBeforeGame(ALLIANCE_TYPE t);
+static bool alliancesCanGiveResearchAndRadar(ALLIANCE_TYPE t);
+static bool alliancesCanGiveAnything(ALLIANCE_TYPE t);
 
-static inline bool alliancesSharedVision(ALLIANCE_TYPE t)
-{
-  using enum ALLIANCE_TYPE;
-	return t == ALLIANCES_TEAMS || t == ALLIANCES_UNSHARED;
-}
-
-static inline bool alliancesSharedResearch(ALLIANCE_TYPE t)
-{
-  using enum ALLIANCE_TYPE;
-	return t == ALLIANCES || t == ALLIANCES_TEAMS;
-}
-
-static inline bool alliancesSetTeamsBeforeGame(ALLIANCE_TYPE t)
-{
-  using enum ALLIANCE_TYPE;
-	return t == ALLIANCES_TEAMS || t == ALLIANCES_UNSHARED;
-}
-
-static inline bool alliancesCanGiveResearchAndRadar(ALLIANCE_TYPE t)
-{
-  using enum ALLIANCE_TYPE;
-	return t == ALLIANCES;
-}
-
-static inline bool alliancesCanGiveAnything(ALLIANCE_TYPE t)
-{
-  using enum ALLIANCE_TYPE;
-	return t != FFA;
-}
-
-static bool updateAttackTarget(BaseObject * psAttacker, int weapon_slot);
+bool updateAttackTarget(BaseObject* psAttacker, int weapon_slot);
 
 #endif // __INCLUDED_SRC_AI_H__

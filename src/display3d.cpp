@@ -1804,7 +1804,7 @@ void displayBlueprints(const glm::mat4& viewMatrix)
 						z = std::max(z, map_TileHeight(b.map.x + i, b.map.y + j));
 					}
 
-				if (!playerBlueprintX->currently_tracking()) {
+				if (!playerBlueprintX->isTracking()) {
           playerBlueprintX->start(pos.x);
           playerBlueprintX->start(BlueprintTrackAnimationSpeed);
           playerBlueprintY->start(pos.y);

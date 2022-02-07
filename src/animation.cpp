@@ -23,7 +23,6 @@
  */
 
 #include "lib/gamelib/gtime.h"
-
 #include "animation.h"
 
 
@@ -31,23 +30,23 @@ void ValueTracker::start(int value)
 {
   initial = value;
   target = value;
-  target_delta = value;
+  targetDelta = value;
   current = value;
-  start_time = graphicsTime;
-  target_reached = false;
+  startTime = graphicsTime;
+  targetReached = false;
 }
 
 void ValueTracker::stop()
 {
   initial = 0;
   current = 0;
-  start_time = 0;
-  target_reached = false;
+  startTime = 0;
+  targetReached = false;
 }
 
-bool ValueTracker::currently_tracking() const
+bool ValueTracker::isTracking() const
 {
-  return start_time != 0;
+  return startTime != 0;
 }
 
 void ValueTracker::set_speed(int value)
@@ -57,29 +56,29 @@ void ValueTracker::set_speed(int value)
 
 void ValueTracker::set_target_delta(int value)
 {
-	this->target_delta = value;
+	this->targetDelta = value;
 	this->target = this->initial + value;
-	this->target_reached = false;
+	this->targetReached = false;
 }
 
 void ValueTracker::set_target(int value)
 {
-  target_delta = value - initial;
+  targetDelta = value - initial;
   target = value;
-  target_reached = false;
+  targetReached = false;
 }
 
 void ValueTracker::update()
 {
-  if (target_reached) {
+  if (targetReached) {
     return;
   }
   if (std::abs(target - current) < 1) {
-    target_reached = true;
+    targetReached = true;
     return;
   }
 
-  current = (initial + target_delta - current) *
+  current = (initial + targetDelta - current) *
                   static_cast<int>( realTimeAdjustedIncrement(
                           static_cast<float>( speed )) )
                   + current;
@@ -87,7 +86,7 @@ void ValueTracker::update()
 
 int ValueTracker::get_current() const
 {
-	if (this->target_reached)  {
+	if (this->targetReached)  {
 		return this->target;
 	}
 	return static_cast<int>(this->current);
@@ -95,8 +94,8 @@ int ValueTracker::get_current() const
 
 int ValueTracker::get_current_delta() const
 {
-	if (this->target_reached)  {
-		return this->target_delta;
+	if (this->targetReached)  {
+		return this->targetDelta;
 	}
 	return static_cast<int>(this->current - this->initial);
 }
@@ -113,12 +112,12 @@ int ValueTracker::get_target() const
 
 int ValueTracker::get_target_delta() const
 {
-	return this->target_delta;
+	return this->targetDelta;
 }
 
 bool ValueTracker::reachedTarget() const
 {
-	return this->target_reached;
+	return this->targetReached;
 }
 
 unsigned calculate_easing(EASING_FUNCTION easing_func, unsigned progress)
@@ -138,7 +137,7 @@ unsigned calculate_easing(EASING_FUNCTION easing_func, unsigned progress)
 }
 
 template <class AnimatableData>
-Animation<AnimatableData>::Animation(std::size_t time)
+Animation<AnimatableData>::Animation(unsigned time)
   : time{time}
 {
 }
@@ -164,7 +163,7 @@ void Animation<AnimatableData>::update()
 }
 
 template <class AnimatableData>
-bool Animation<AnimatableData>::is_active() const
+bool Animation<AnimatableData>::isActive() const
 {
 	return progress < UINT16_MAX;
 }
@@ -216,25 +215,12 @@ Animation<AnimatableData>& Animation<AnimatableData>::setDuration(uint32_t durat
 	return *this;
 }
 
-int calculate_relative_angle(unsigned from, unsigned to)
+int calculateRelativeAngle(unsigned from, unsigned to)
 {
   return static_cast<int>( to + (from - to) );
 }
-/**
- * Find the angle equivalent to `from` in the interval between `to - 180°` and to `to + 180°`.
- *
- * For example:
- * - if `from` is `10°` and `to` is `350°`, it will return `370°`.
- * - if `from` is `350°` and `to` is `0°`, it will return `-10°`.
-// *
-// * Useful while animating a rotation, to always animate the shortest angle delta.
-// */
-//int32_t calculateRelativeAngle(uint16_t from, uint16_t to)
-//{
-//	return to + (int16_t)(from - to);
-//}
 
-RotationAnimation::RotationAnimation(std::size_t time)
+RotationAnimation::RotationAnimation(unsigned time)
   : Animation<Vector3f>{time}
 {
 }
@@ -243,9 +229,9 @@ void RotationAnimation::start()
 {
 	finalData = Vector3f((uint16_t)finalData.x, (uint16_t)finalData.y, (uint16_t)finalData.z);
 	initialData = Vector3f(
-          calculate_relative_angle(static_cast<uint16_t>(initialData.x), static_cast<uint16_t>(finalData.x)),
-          calculate_relative_angle(static_cast<uint16_t>(initialData.y), static_cast<uint16_t>(finalData.y)),
-          calculate_relative_angle(static_cast<uint16_t>(initialData.z), static_cast<uint16_t>(finalData.z))
+          calculateRelativeAngle(static_cast<uint16_t>(initialData.x), static_cast<uint16_t>(finalData.x)),
+          calculateRelativeAngle(static_cast<uint16_t>(initialData.y), static_cast<uint16_t>(finalData.y)),
+          calculateRelativeAngle(static_cast<uint16_t>(initialData.z), static_cast<uint16_t>(finalData.z))
 	);
 	Animation::start();
 }

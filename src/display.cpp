@@ -158,7 +158,7 @@ void animateToViewDistance(float target, float speed)
 	viewDistanceAnimation
 		.setInitialData(getViewDistance())
 		.setFinalData(target)
-		.setEasing(viewDistanceAnimation.is_active() 
+		.setEasing(viewDistanceAnimation.isActive()
                              ? EASING_FUNCTION::EASE_OUT 
                              : EASING_FUNCTION::EASE_IN_OUT)
 		.setDuration(speed <= 0
@@ -177,7 +177,7 @@ void incrementViewDistance(float amount)
 
 	viewDistanceIncrementCooldownTime = realTime + GAME_TICKS_PER_SEC / 50;
 	const DebugInputManager& dbgInputManager = gInputManager.debugManager();
-	auto target = (viewDistanceAnimation.is_active() ? viewDistanceAnimation.getFinalData() : getViewDistance()) +
+	auto target = (viewDistanceAnimation.isActive() ? viewDistanceAnimation.getFinalData() : getViewDistance()) +
                 amount;
 	if (!dbgInputManager.debugMappingsAllowed())
 	{
@@ -189,7 +189,7 @@ void incrementViewDistance(float amount)
 
 static void updateViewDistanceAnimation()
 {
-	if (viewDistanceAnimation.is_active())
+	if (viewDistanceAnimation.isActive())
 	{
 		viewDistanceAnimation.update();
 		setViewDistance(viewDistanceAnimation.getCurrent());

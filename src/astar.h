@@ -27,9 +27,7 @@
 #define __INCLUDED_SRC_ASTAR_H__
 
 #include "lib/framework/vector.h"
-
 #include "stats.h"
-
 
 struct Movement;
 struct PathJob;
@@ -74,98 +72,92 @@ enum class ASTAR_RESULT
 /// A two-dimensional coordinate
 struct PathCoord
 {
-    PathCoord() = default;
-    PathCoord(int x, int y);
+  PathCoord() = default;
+  PathCoord(int x, int y);
 
-    /**
-     * Default element-wise comparison. Evaluates equality of two coordinates
-     * according to the equality of their respective scalar values
-     */
-    bool operator ==(const PathCoord& rhs) const = default;
-    bool operator !=(const PathCoord& rhs) const = default;
+  /**
+   * Default element-wise comparison. Evaluates equality of two coordinates
+   * according to the equality of their respective scalar values
+   */
+  bool operator ==(PathCoord const& rhs) const = default;
+  bool operator !=(PathCoord const& rhs) const = default;
 
-    int x = 0;
-    int y = 0;
+  int x = 0;
+  int y = 0;
 };
 
 struct ExploredTile
 {
-    ExploredTile() = default;
+  ExploredTile() = default;
 
-    /// Exploration progress
-    unsigned iteration = UINT16_MAX;
-
-    /// The offset from the previous point in a route
-    int x_diff = 0, y_diff = 0;
-
-    /// The shortest known distance to tile
-    unsigned distance = 0;
-
-    /// Set to `true` if previously traversed
-    bool visited = false;
+  /// Exploration progress
+  unsigned iteration = UINT16_MAX;
+  /// The shortest known distance to tile
+  unsigned distance = 0;
+  /// The offset from the previous point in a route
+  int x_diff = 0, y_diff = 0;
+  /// Set to `true` if previously traversed
+  bool visited = false;
 };
 
 /// Parameters governing interaction with a blocking region
 struct PathBlockingType
 {
     /// Internal representation of game time
-    unsigned gameTime = 0;
-
-    /// The player id for the owner of this region
-    unsigned owner = 0;
-
-    /// How does this region interact with colliding units?
-    FPATH_MOVETYPE moveType = FPATH_MOVETYPE::COUNT;
-
-    /// Which movement class are we blocking?
-    PROPULSION_TYPE propulsion = PROPULSION_TYPE::COUNT;
+  unsigned gameTime = 0;
+  /// The player id for the owner of this region
+  unsigned owner = 0;
+  /// How does this region interact with colliding units?
+  FPATH_MOVETYPE moveType = FPATH_MOVETYPE::COUNT;
+  /// Which movement class are we blocking?
+  PROPULSION_TYPE propulsion = PROPULSION_TYPE::COUNT;
 };
 
 /// Represents a route node in the pathfinding table
 struct PathNode
 {
-    PathNode() = default;
-    PathNode(PathCoord coord, unsigned dist, unsigned est);
+  PathNode() = default;
+  PathNode(PathCoord coord, unsigned dist, unsigned est);
 
-    bool operator<(PathNode const& rhs) const;
+  bool operator<(PathNode const& rhs) const;
 
-    /// The current position in route
-    PathCoord path_coordinate;
-    /// The total distance traversed so far
-    unsigned distance_from_start = 0;
-    /// An estimate of the remaining distance. Frequently updated
-    unsigned estimated_distance_to_end = 0;
+  /// The current position in route
+  PathCoord path_coordinate;
+  /// The total distance traversed so far
+  unsigned distance_from_start = 0;
+  /// An estimate of the remaining distance. Frequently updated
+  unsigned estimated_distance_to_end = 0;
 };
 
 /// Represents a region of the map that may be non-blocking
 struct NonBlockingArea
 {
-    NonBlockingArea() = default;
+  NonBlockingArea() = default;
 
-    /// Construct from existing `StructureBounds` object
-    explicit NonBlockingArea(const StructureBounds& bounds);
+  /// Construct from existing `StructureBounds` object
+  explicit NonBlockingArea(StructureBounds const& bounds);
 
-    /// Standard element-wise comparison
-    [[nodiscard]] bool operator ==(const NonBlockingArea& rhs) const = default;
-    [[nodiscard]] bool operator !=(const NonBlockingArea& rhs) const = default;
+  /// Standard element-wise comparison
+  [[nodiscard]] bool operator ==(const NonBlockingArea& rhs) const = default;
+  [[nodiscard]] bool operator !=(const NonBlockingArea& rhs) const = default;
 
-    /**
-     * @return `true` if the coordinate (x, y) is within the bounds
-     * of this region, `false` otherwise
-     */
-    [[nodiscard]] bool isNonBlocking(int x, int y) const;
+  /**
+   * @return `true` if the coordinate (x, y) is within the bounds
+   * of this region, `false` otherwise
+   */
+  [[nodiscard]] bool isNonBlocking(int x, int y) const;
 
-    /**
-     * @return `true` if `coord` is within the bounds of this
-     * region, `false` otherwise
-     */
-    [[nodiscard]] bool isNonBlocking(PathCoord coord) const;
+  /**
+   * @return `true` if `coord` is within the bounds of this
+   * region, `false` otherwise
+   */
+  [[nodiscard]] bool isNonBlocking(PathCoord coord) const;
 
-    /* Coordinates corresponding to the outer tile edges */
-    int x_1 = 0;
-    int x_2 = 0;
-    int y_1 = 0;
-    int y_2 = 0;
+  /* Coordinates corresponding to the outer tile edges */
+  int x_1 = 0;
+  int x_2 = 0;
+  int y_1 = 0;
+  int y_2 = 0;
 };
 
 /// Represents a blocking region
@@ -177,10 +169,7 @@ struct PathBlockingMap
   PathBlockingType type;
   std::vector<bool> map;
   std::vector<bool> threat_map;
-};
-
-/// Global list of blocking regions
-extern std::vector<PathBlockingMap> blocking_maps;
+}; extern std::vector<PathBlockingMap> blocking_maps;
 
 /// Main pathfinding data structure. Represents a candidate route
 struct PathContext
@@ -189,10 +178,10 @@ struct PathContext
   PathContext(PathBlockingMap& blockingMap, PathCoord start,
               PathCoord realStart, PathCoord end, NonBlockingArea nonBlocking);
 
-  /// @return `true` if the position at (x, y) is currently blocked
+  /// @return \c true if the position at \c (x, y) is currently blocked
   [[nodiscard]] bool isBlocked(int x, int y) const;
 
-  /// @return `true` if there are potential threats in the vicinity of (x, y)
+  /// @return \c true if there are potential threats in the vicinity of \c (x, y)
   [[nodiscard]] bool isDangerous(int x, int y) const;
 
   /// Reverts the route to a default state and sets the parameters
@@ -204,33 +193,24 @@ struct PathContext
   [[nodiscard]] bool matches(PathBlockingMap& blocking, PathCoord start,
                NonBlockingArea dest) const;
 
+
   /// How many times have we explored?
   unsigned iteration = 0;
-
   /// This could be either the source or target tile
   PathCoord start_coord{0, 0};
-
   /// The next step towards the destination tile
   PathCoord nearest_reachable_tile {0, 0};
-
   /// Should be equal to the game time of `blocking_map`
-  std::size_t game_time = 0;
-
+  unsigned game_time = 0;
   /// The edge of the explored region
   std::vector<PathNode> nodes;
-
   /// Paths leading back to `start_coord`, i.e., the route history
   std::vector<ExploredTile> map;
-
   /// Pointer (owning) to the list of blocking tiles for this route
   std::unique_ptr<PathBlockingMap> blocking_map;
-
   /// Destination structure bounds that may be considered non-blocking
   NonBlockingArea destination_bounds;
-};
-
-/// Global list of available routes
-extern std::vector<PathContext> path_contexts;
+}; extern std::vector<PathContext> path_contexts;
 
 /**
  * Call from the main thread. Sets `path_job.blocking_map` for later use by
@@ -242,7 +222,7 @@ void fpathSetBlockingMap(PathJob& path_job);
  * Clear the global path contexts and blocking maps
  *
  * @note Call this on shutdown to prevent memory from leaking,
- * or if loading/saving, to prevent stale data from being reused.
+ *   or if loading/saving, to prevent stale data from being reused
  */
 void fpathHardTableReset();
 
@@ -267,7 +247,6 @@ PathCoord findNearestExploredTile(PathContext& context, PathCoord tile);
 
 /**
  * Use the A* algorithm to find a path
- *
  * @return Whether we successfully found a path
  */
 ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob);
