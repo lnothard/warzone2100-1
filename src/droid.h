@@ -31,7 +31,7 @@
 #include "lib/gamelib/gtime.h"
 #include "lib/ivis_opengl/ivisdef.h"
 #include "lib/sound/audio_id.h"
-#include "wzmaplib/map.h"
+#include "lib/wzmaplib/include/wzmaplib/map.h"
 
 #include "basedef.h"
 #include "order.h"
@@ -253,9 +253,18 @@ public:
   void moveToRearm();
   void actionUpdateDroid();
   void initVisibility();
+  void cmdDroidUpdateExperience(unsigned experienceInc) const;
+  void addDroidToGroup(Droid* psDroid) const;
   bool loadSaveDroid(const char* pFileName);
   void actionSanity();
-  void fpathSetDirectRoute(int targetX, int targetY);
+
+  /**
+   * Set a direct path to position:
+   *  Plan a path from \c the droid's current position to given position without
+   *  taking obstructions into consideration.
+   *  Used for instance by VTOLs. Function is thread-safe.
+   */
+  void fpathSetDirectRoute(Vector2i targetLocation);
   void actionUpdateTransporter();
   void setOrder(std::unique_ptr<Order> order);
   void setAction(ACTION action);
@@ -266,8 +275,8 @@ public:
   void resetAction() noexcept;
   void gainExperience(unsigned exp);
   void upgradeHitPoints();
-  bool moveDroidToBase(unsigned x, unsigned y, bool bFormation, FPATH_MOVETYPE moveType);
-  void moveDroidToDirect(unsigned x, unsigned y);
+  bool moveDroidToBase(Vector2i location, bool bFormation, FPATH_MOVETYPE moveType);
+  void moveDroidToDirect(Vector2i location);
   void moveTurnDroid(unsigned x, unsigned y);
   void moveShuffleDroid(Vector2i s);
   bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode = ModeQueue);

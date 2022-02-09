@@ -63,12 +63,9 @@ Rotation interpolateRot(Rotation v1, Rotation v2, unsigned t1, unsigned t2, unsi
 
 static Spacetime interpolateSpacetime(Spacetime st1, Spacetime st2, unsigned t)
 {
-	// Cyp says this should never happen, #3037 and #3238 say it does though.
-	ASSERT_OR_RETURN(st1, st1.time != st2.time, "Spacetime overlap!");
-	return {t, interpolatePos(st1.position, st2.position,
-                            st1.time, st2.time, t),
-	                 interpolateRot(st1.rotation, st2.rotation,
-                                  st1.time, st2.time, t)};
+  ASSERT_OR_RETURN(st1, st1.time != st2.time, "Spacetime overlap!");
+  return {t, interpolatePos(st1.position, st2.position, st1.time, st2.time, t),
+          interpolateRot(st1.rotation, st2.rotation, st1.time, st2.time, t)};
 }
 
 Spacetime interpolateObjectSpacetime(BaseObject const* obj, unsigned t)
@@ -97,13 +94,10 @@ Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 
 StructureBounds getStructureBounds(BaseObject const* object)
 {
-	auto const psStructure = dynamic_cast<Structure const*>(object);
-	auto const psFeature = dynamic_cast<Feature const*>(object);
-
-	if (psStructure != nullptr) {
+	if (auto psStructure = dynamic_cast<Structure const*>(object)) {
 		return getStructureBounds(psStructure);
 	}
-	else if (psFeature != nullptr) {
+	else if (auto psFeature = dynamic_cast<Feature const*>(object)) {
 		return getStructureBounds(psFeature);
 	}
 

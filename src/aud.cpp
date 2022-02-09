@@ -49,21 +49,9 @@ bool audio_ObjectDead(BaseObject const* psSimpleObj)
 	}
 }
 
-// @FIXME we don't need to do this, since we are not using qsound.
-
 Vector3f audio_GetPlayerPos()
 {
-	Vector3f pos;
-
-	pos.x = playerPos.p.x;
-	pos.y = playerPos.p.z;
-	pos.z = playerPos.p.y;
-
-	// Invert Y to match QSOUND axes
-	// @NOTE What is QSOUND? Why invert the Y axis?
-	pos.y = world_coord(mapHeight) - pos.y;
-
-	return pos;
+	return {playerPos.p.x, world_coord(mapHeight) - playerPos.p.z, playerPos.p.y};
 }
 
 /**

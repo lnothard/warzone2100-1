@@ -41,7 +41,7 @@ bool triggerEventCheatMode(bool);
 
 struct CHEAT_ENTRY
 {
-	char* pName;
+	char const* pName;
 	void (*function)(); // pointer to void* function
 };
 
@@ -97,7 +97,6 @@ static CHEAT_ENTRY cheatCodes[] =
 
 bool _attemptCheatCode(const char* cheat_name)
 {
-	const CHEAT_ENTRY* curCheat;
 	static const CHEAT_ENTRY* const EndCheat = &cheatCodes[ARRAY_SIZE(cheatCodes)];
 
 	// there is no reason to make people enter "cheat mode" to enter following commands
@@ -136,25 +135,23 @@ bool _attemptCheatCode(const char* cheat_name)
 		return false;
 	}
 
-	for (curCheat = cheatCodes; curCheat != EndCheat; ++curCheat)
+	for (auto curCheat = cheatCodes; curCheat != EndCheat; ++curCheat)
 	{
-		if (strcasecmp(cheat_name, curCheat->pName) == 0)
-		{
-			char buf[256];
+    if (strcasecmp(cheat_name, curCheat->pName) != 0)
+      continue;
 
-			/* We've got our man... */
-			curCheat->function(); // run it
+    char buf[256];
+    /* We've got our man... */
+    curCheat->function();// run it
 
-			// Copy this info to be used by the crash handler for the dump file
-			ssprintf(buf, "User has used cheat code: %s", curCheat->pName);
-			addDumpInfo(buf);
+    // Copy this info to be used by the crash handler for the dump file
+    ssprintf(buf, "User has used cheat code: %s", curCheat->pName);
+    addDumpInfo(buf);
 
-			/* And get out of here */
-			Cheated = true;
-			return true;
-		}
-	}
-
+    /* And get out of here */
+    Cheated = true;
+    return true;
+  }
 	return false;
 }
 
@@ -187,11 +184,10 @@ static std::string getWantedDebugMappingStatuses(const DebugInputManager& dbgInp
 {
 	char ret[MAX_PLAYERS + 1] = "\0";
 	char* p = ret;
-	for (unsigned n = 0; n < MAX_PLAYERS; ++n)
+	for (auto n = 0; n < MAX_PLAYERS; ++n)
 	{
-		if (NetPlay.players[n].allocated && !NetPlay.players[n].isSpectator && (dbgInputManager.
-			getPlayerWantsDebugMappings(n) == bStatus))
-		{
+		if (NetPlay.players[n].allocated && !NetPlay.players[n].isSpectator &&
+        dbgInputManager.getPlayerWantsDebugMappings(n) == bStatus) {
 			*p++ = '0' + NetPlay.players[n].position;
 		}
 	}
@@ -207,14 +203,13 @@ void recvProcessDebugMappings(NETQUEUE queue)
 	NETbool(&val);
 	NETend();
 
-	DebugInputManager& dbgInputManager = gInputManager.debugManager();
+	auto& dbgInputManager = gInputManager.debugManager();
 	bool oldDebugMode = dbgInputManager.debugMappingsAllowed();
 	dbgInputManager.setPlayerWantsDebugMappings(queue.index, val);
 	bool newDebugMode = dbgInputManager.debugMappingsAllowed();
 
 	std::string cmsg;
-	if (val)
-	{
+	if (val) {
 		cmsg = astringf(
 			_("%s wants to enable debug mode. Enabled: %s, Disabled: %s."),
 			getPlayerName(queue.index),
@@ -222,8 +217,7 @@ void recvProcessDebugMappings(NETQUEUE queue)
 			getWantedDebugMappingStatuses(dbgInputManager, false).c_str()
 		);
 	}
-	else
-	{
+	else {
 		cmsg = astringf(
 			_("%s wants to disable debug mode. Enabled: %s, Disabled: %s."),
 			getPlayerName(queue.index),
@@ -233,18 +227,15 @@ void recvProcessDebugMappings(NETQUEUE queue)
 	}
 	addConsoleMessage(cmsg.c_str(), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 
-	if (!oldDebugMode && newDebugMode)
-	{
+	if (!oldDebugMode && newDebugMode) {
 		addConsoleMessage(_("Debug mode now enabled!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 		Cheated = true;
 		gInputManager.contexts().set(InputContext::DEBUG_MISC, InputContext::State::ACTIVE);
 		triggerEventCheatMode(true);
 	}
-	else if (oldDebugMode && !newDebugMode)
-	{
+	else if (oldDebugMode && !newDebugMode) {
 		addConsoleMessage(_("Debug mode now disabled!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
-		if (!NETisReplay())
-		{
+		if (!NETisReplay()) {
 			gInputManager.contexts().set(InputContext::DEBUG_MISC, InputContext::State::INACTIVE);
 		}
 		triggerEventCheatMode(false);

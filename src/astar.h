@@ -36,13 +36,20 @@ struct StructureBounds;
 
 enum class FPATH_MOVETYPE
 {
-  FMT_MOVE,
-  ///< Move around all obstacles
-  FMT_ATTACK,
-  ///< Assume that we will destroy enemy obstacles
-  FMT_BLOCK,
-  ///< Don't go through obstacles, not even gates.
+  FMT_MOVE, ///< Move around all obstacles
+  FMT_ATTACK, ///< Assume that we will destroy enemy obstacles
+  FMT_BLOCK, ///< Don't go through obstacles, not even gates
   COUNT
+};
+
+struct PathBlockingType
+{
+  bool operator==(PathBlockingType const& rhs) const = default;
+
+  unsigned gameTime = 0;
+  unsigned player;
+  PROPULSION_TYPE propulsion = PROPULSION_TYPE::COUNT;
+  FPATH_MOVETYPE moveType = FPATH_MOVETYPE::COUNT;
 };
 
 /**
@@ -100,19 +107,6 @@ struct ExploredTile
   bool visited = false;
 };
 
-/// Parameters governing interaction with a blocking region
-struct PathBlockingType
-{
-    /// Internal representation of game time
-  unsigned gameTime = 0;
-  /// The player id for the owner of this region
-  unsigned owner = 0;
-  /// How does this region interact with colliding units?
-  FPATH_MOVETYPE moveType = FPATH_MOVETYPE::COUNT;
-  /// Which movement class are we blocking?
-  PROPULSION_TYPE propulsion = PROPULSION_TYPE::COUNT;
-};
-
 /// Represents a route node in the pathfinding table
 struct PathNode
 {
@@ -138,8 +132,8 @@ struct NonBlockingArea
   explicit NonBlockingArea(StructureBounds const& bounds);
 
   /// Standard element-wise comparison
-  [[nodiscard]] bool operator ==(const NonBlockingArea& rhs) const = default;
-  [[nodiscard]] bool operator !=(const NonBlockingArea& rhs) const = default;
+  [[nodiscard]] bool operator ==(NonBlockingArea const& rhs) const = default;
+  [[nodiscard]] bool operator !=(NonBlockingArea const& rhs) const = default;
 
   /**
    * @return `true` if the coordinate (x, y) is within the bounds
@@ -164,7 +158,7 @@ struct NonBlockingArea
 struct PathBlockingMap
 {
   /// Overload testing equivalence of two distinct blocking regions
-  bool operator ==(const PathBlockingType& rhs) const;
+  bool operator ==(PathBlockingType const& rhs) const;
 
   PathBlockingType type;
   std::vector<bool> map;

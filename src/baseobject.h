@@ -38,20 +38,11 @@ struct StructureBounds;
 
 static constexpr auto max_check_object_recursion = 4;
 
-/// Get interpolated direction at time t.
-Rotation interpolateRot(Rotation v1, Rotation v2, unsigned t1,
-                        unsigned t2, unsigned t);
-
-/// Get interpolated object getSpacetime at time t.
+Rotation interpolateRot(Rotation v1, Rotation v2, unsigned t1, unsigned t2, unsigned t);
 Spacetime interpolateObjectSpacetime(BaseObject const* obj, unsigned t);
-
-void checkObject(BaseObject const* psObject, std::string location_description,
-                 std::string function, int recurse);
-
 Vector2i getStatsSize(BaseStats const* pType, uint16_t direction);
 StructureBounds getStructureBounds(BaseObject const* object);
 StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos, uint16_t direction);
-
 [[nodiscard]] OBJECT_TYPE getObjectType(BaseObject const* obj);
 
 #endif // __INCLUDED_BASEOBJECT_H__

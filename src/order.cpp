@@ -44,7 +44,7 @@ bool checkTransporterSpace(Droid*, Droid*, bool);
 bool ctrlShiftDown();
 bool missionLimboExpand();
 bool specialOrderKeyDown();
-bool fpathBlockingTile(int x, int y, PROPULSION_TYPE propulsion);
+bool fpathBlockingTile(Vector2i, PROPULSION_TYPE);
 void assignSensorTarget(BaseObject *);
 void setSensorAssigned();
 int visibleObject(BaseObject *, BaseObject *, bool);
@@ -749,7 +749,8 @@ ORDER_TYPE chooseOrderLoc(Droid* psDroid, int x, int y, bool altOrder)
 {
   using enum ORDER_TYPE;
 	ORDER_TYPE order = NONE;
-	auto propulsion = dynamic_cast<PropulsionStats const*>(psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
+	auto propulsion = dynamic_cast<PropulsionStats const*>(
+          psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
 
 	if (isTransporter(*psDroid) &&
       game.type == LEVEL_TYPE::CAMPAIGN) {
@@ -762,8 +763,7 @@ ORDER_TYPE chooseOrderLoc(Droid* psDroid, int x, int y, bool altOrder)
 	if (psDroid->isVtol()) {
 		propulsion->propulsionType = PROPULSION_TYPE::WHEELED;
 	}
-	if (!fpathBlockingTile(map_coord(x),
-                         map_coord(y),
+	if (!fpathBlockingTile({map_coord(x), map_coord(y)},
                          propulsion->propulsionType)) {
 		order = MOVE;
 	}
@@ -816,8 +816,6 @@ ORDER_TYPE chooseOrderLoc(Droid* psDroid, int x, int y, bool altOrder)
  */
 void orderSelectedLoc(unsigned player, unsigned x, unsigned y, bool add)
 {
-	ORDER_TYPE order;
-
 	// if we're in build select mode ignore all other clicking
 	if (intBuildSelectMode()) {
 		return;
@@ -839,7 +837,7 @@ void orderSelectedLoc(unsigned player, unsigned x, unsigned y, bool add)
 				continue;
 			}
 
-			order = chooseOrderLoc(&psCurr, x, y, specialOrderKeyDown());
+			auto order = chooseOrderLoc(&psCurr, x, y, specialOrderKeyDown());
 			// see if the order can be added to the list
 			if (order != ORDER_TYPE::NONE &&
           !(add && orderDroidLocAdd(&psCurr, order, x, y))) {
@@ -904,18 +902,20 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 
 	if (isTransporter(*psDroid)) {
 		// in multiPlayer, need to be able to get transporter repaired
-		if (bMultiPlayer) {
-      auto psStruct = dynamic_cast<Structure*>(psObj);
-			if (aiCheckAlliances(psObj->playerManager->getPlayer(), psDroid->playerManager->getPlayer()) && psObj) {
+    if (!bMultiPlayer)
+      return Order(NONE);
 
-				ASSERT_OR_RETURN(Order(NONE), psObj != nullptr, "Invalid structure pointer");
-				if (psStruct->getStats()->type == STRUCTURE_TYPE::REPAIR_FACILITY &&
-					psStruct->getState() == STRUCTURE_STATE::BUILT) {
-					return {RTR_SPECIFIED, *psObj};
-				}
-			}
-		}
-		return Order(NONE);
+    auto psStruct1 = dynamic_cast<Structure*>(psObj);
+    if (!aiCheckAlliances(psObj->playerManager->getPlayer(), psDroid->playerManager->getPlayer()) || !psObj) {
+      return Order(NONE);
+    }
+
+    ASSERT_OR_RETURN(Order(NONE), psObj != nullptr, "Invalid structure pointer");
+    if (psStruct1->getStats()->type == STRUCTURE_TYPE::REPAIR_FACILITY &&
+        psStruct1->getState() == STRUCTURE_STATE::BUILT) {
+      return {RTR_SPECIFIED, *psObj};
+    }
+    return Order(NONE);
 	}
 
 	if (altOrder &&
@@ -946,7 +946,7 @@ Order chooseOrderObj(Droid* psDroid, BaseObject * psObj, bool altOrder)
 	// go to recover an artifact/oil drum - don't allow VTOLs to get this order
 	else if (psFeat &&
 		       (psFeat->getStats()->subType == FEATURE_TYPE::GEN_ARTE ||
-           (psFeat->getStats()->subType == FEATURE_TYPE::OIL_DRUM))) {
+            psFeat->getStats()->subType == FEATURE_TYPE::OIL_DRUM)) {
 		if (!psDroid->isVtol()) {
 			order = Order(RECOVER, *psObj);
 		}
@@ -1121,15 +1121,15 @@ static void orderPlayOrderObjAudio(unsigned player, BaseObject * psObj)
     /* currently only looks for VTOL */
     if (psDroid.isVtol()) {
       switch (psDroid.getOrder()->type) {
-case ORDER_TYPE::ATTACK:
-        audio_QueueTrack(ID_SOUND_ON_OUR_WAY2);
-        break;
-      default:
-        break;
+        case ORDER_TYPE::ATTACK:
+          audio_QueueTrack(ID_SOUND_ON_OUR_WAY2);
+          break;
+        default:
+          break;
       }
     }
     /* only play audio once */
-      break;
+    break;
   }
 }
 
@@ -1137,47 +1137,47 @@ case ORDER_TYPE::ATTACK:
  * If add is true, the orders are queued.
  * @todo this function runs through all the player's droids, but only uses the selected ones. Consider an efficiency improvement in here.
  */
-void orderSelectedObjAdd(unsigned player, BaseObject * psObj, bool add)
+void orderSelectedObjAdd(unsigned player, BaseObject* psObj, bool add)
 {
-	ASSERT_PLAYER_OR_RETURN(, player);
+  ASSERT_PLAYER_OR_RETURN(, player);
 
-	// note that an order list graphic needs to be displayed
-	bOrderEffectDisplayed = false;
+  // note that an order list graphic needs to be displayed
+  bOrderEffectDisplayed = false;
 
-	for (auto& psCurr : playerList[player].droids)
-	{
-		if (psCurr.damageManager->isSelected()) {
-			if (isBlueprint(psObj)) {
-				if (isConstructionDroid(&psCurr)) {
-          // help build the planned structure.
-          orderDroidStatsLocDirAdd(&psCurr, ORDER_TYPE::BUILD,
-                                   dynamic_cast<Structure*>(psObj)->getStats(),
-                                   psObj->getPosition().x, psObj->getPosition().y,
-                                   dynamic_cast<Structure *>(psObj)->getRotation().direction,
-                                   add);
-        }
-				else {
-					// help watch the structure being built.
-					orderDroidLocAdd(&psCurr, ORDER_TYPE::MOVE,
-                           psObj->getPosition().x,
-                           psObj->getPosition().y, add);
-				}
-				continue;
-			}
+  for (auto& psCurr : playerList[player].droids)
+  {
+    if (!psCurr.damageManager->isSelected())
+      continue;
 
-			auto order = chooseOrderObj(&psCurr, psObj, specialOrderKeyDown());
-			// see if the order can be added to the list
-			if (order.type != ORDER_TYPE::NONE && !orderDroidObjAdd(&psCurr, order, add)) {
-				// if not just do it straight off
-				orderDroidObj(&psCurr, order.type, order.target, ModeQueue);
-			}
-		}
-	}
+    if (isBlueprint(psObj)) {
+      if (isConstructionDroid(&psCurr)) {
+        // help build the planned structure.
+        orderDroidStatsLocDirAdd(&psCurr, ORDER_TYPE::BUILD,
+                                 dynamic_cast<Structure*>(psObj)->getStats(),
+                                 psObj->getPosition().x, psObj->getPosition().y,
+                                 dynamic_cast<Structure *>(psObj)->getRotation().direction,
+                                 add);
+        continue;
+      }
+      // help watch the structure being built.
+      orderDroidLocAdd(&psCurr, ORDER_TYPE::MOVE,
+                       psObj->getPosition().x,
+                       psObj->getPosition().y, add);
+      continue;
+    }
+
+    auto order = chooseOrderObj(&psCurr, psObj, specialOrderKeyDown());
+    // see if the order can be added to the list
+    if (order.type != ORDER_TYPE::NONE && !orderDroidObjAdd(&psCurr, order, add)) {
+      // if not just do it straight off
+      orderDroidObj(&psCurr, order.type, order.target, ModeQueue);
+    }
+  }
 	orderPlayOrderObjAudio(player, psObj);
 }
 
 /** This function just calls orderSelectedObjAdd with add = false.*/
-void orderSelectedObj(unsigned player, BaseObject * psObj)
+void orderSelectedObj(unsigned player, BaseObject* psObj)
 {
 	ASSERT_PLAYER_OR_RETURN(, player);
 	orderSelectedObjAdd(player, psObj, false);
@@ -1194,15 +1194,16 @@ void orderSelectedStatsLocDir(unsigned player, ORDER_TYPE order, StructureStats*
 
 	for (auto& psCurr : playerList[player].droids)
 	{
-		if (psCurr.damageManager->isSelected() && isConstructionDroid(&psCurr)) {
-			if (add) {
-				orderDroidStatsLocDirAdd(&psCurr, order, psStats, x, y, direction);
-			}
-			else {
-				orderDroidStatsLocDir(&psCurr, order, psStats, x, y, direction, ModeQueue);
-			}
-		}
-	}
+    if (!psCurr.damageManager->isSelected() || !isConstructionDroid(&psCurr))
+      continue;
+
+    if (add) {
+      orderDroidStatsLocDirAdd(&psCurr, order, psStats, x, y, direction);
+    }
+    else {
+      orderDroidStatsLocDir(&psCurr, order, psStats, x, y, direction, ModeQueue);
+    }
+  }
 }
 
 /** Same as orderSelectedStatsLocDir() but with two locations.
@@ -1454,41 +1455,43 @@ static bool secondaryCheckDamageLevelDeselect(Droid* psDroid, SECONDARY_STATE re
 /** This function checks the droid damage level against its secondary state. If the damage level is too high, then it sends an order to the droid to return to repair.*/
 void secondaryCheckDamageLevel(Droid* psDroid)
 {
-	if (secondaryCheckDamageLevelDeselect(
+  if (!secondaryCheckDamageLevelDeselect(
           psDroid, secondaryGetState(
                   psDroid, SECONDARY_ORDER::REPAIR_LEVEL))) {
-    
-		if (!psDroid->isVtol()) {
-			psDroid->setSelectionGroup(UBYTE_MAX);
-		}
+    return;
+  }
 
-		/* set return to repair if not on hold */
-		if (psDroid->getOrder()->type != ORDER_TYPE::RETURN_TO_REPAIR &&
-			psDroid->getOrder()->type != ORDER_TYPE::RETURN_TO_BASE &&
-			!vtolRearming(*psDroid)) {
-      
-			if (psDroid->isVtol()) {
-				moveToRearm(psDroid);
-			}
-			else {
-				RtrBestResult result = decideWhereToRepairAndBalance(psDroid);
-				if (result.type == RTR_DATA_TYPE::REPAIR_FACILITY) {
-					ASSERT(result.target, "RTR_FACILITY but target is null");
-					orderDroidObj(psDroid, ORDER_TYPE::RETURN_TO_REPAIR, result.target, ModeImmediate);
-					return;
-				}
-				else if (result.type == RTR_DATA_TYPE::HQ) {
-					ASSERT(result.target, "RTR_DATA_TYPE::HQ but target is null");
-					orderDroid(psDroid, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
-					return;
-				}
-				else if (result.type == RTR_DATA_TYPE::DROID) {
-					ASSERT(result.target, "RTR_DROID but target is null");
-					orderDroidObj(psDroid, ORDER_TYPE::RETURN_TO_REPAIR, result.target, ModeImmediate);
-				}
-			}
-		}
-	}
+  if (!psDroid->isVtol()) {
+    psDroid->setSelectionGroup(UBYTE_MAX);
+  }
+
+  /* set return to repair if not on hold */
+  if (psDroid->getOrder()->type == ORDER_TYPE::RETURN_TO_REPAIR ||
+      psDroid->getOrder()->type == ORDER_TYPE::RETURN_TO_BASE ||
+      vtolRearming(*psDroid)) {
+    return;
+  }
+
+  if (psDroid->isVtol()) {
+    psDroid->moveToRearm();
+    return;
+  }
+
+  auto const result = decideWhereToRepairAndBalance(psDroid);
+  if (result.type == RTR_DATA_TYPE::REPAIR_FACILITY) {
+    ASSERT(result.target, "RTR_FACILITY but target is null");
+    orderDroidObj(psDroid, ORDER_TYPE::RETURN_TO_REPAIR, result.target, ModeImmediate);
+    return;
+  }
+  else if (result.type == RTR_DATA_TYPE::HQ) {
+    ASSERT(result.target, "RTR_DATA_TYPE::HQ but target is null");
+    orderDroid(psDroid, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
+    return;
+  }
+  else if (result.type == RTR_DATA_TYPE::DROID) {
+    ASSERT(result.target, "RTR_DROID but target is null");
+    orderDroidObj(psDroid, ORDER_TYPE::RETURN_TO_REPAIR, result.target, ModeImmediate);
+  }
 }
 
 /** This function assigns all droids of the group to the state.

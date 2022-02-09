@@ -221,7 +221,7 @@ bool actionTargetTurret(BaseObject const* psAttacker, BaseObject const* psTarget
 	auto tPitch = weapon.getRotation().pitch;
 
 	// set the pitch limits based on the weapon stats of the attacker
-	auto pitchLowerLimit = 0; auto pitchUpperLimit = 0;
+	int pitchLowerLimit, pitchUpperLimit;
 	auto attackerMuzzlePos = psAttacker->getPosition();
 
 	// using for calculating the pitch, but not the direction, in case
@@ -296,7 +296,8 @@ bool actionTargetTurret(BaseObject const* psAttacker, BaseObject const* psTarget
 	return onTarget;
 }
 
-bool actionVisibleTarget(Droid const* psDroid, BaseObject const* psTarget, int weapon_slot, bool useLongWithOptimum)
+bool actionVisibleTarget(Droid const* psDroid, BaseObject const* psTarget,
+                         int weapon_slot, bool useLongWithOptimum)
 {
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
 	ASSERT_OR_RETURN(false, psDroid->playerManager->getPlayer() < MAX_PLAYERS,
@@ -317,7 +318,7 @@ bool actionVisibleTarget(Droid const* psDroid, BaseObject const* psTarget, int w
 
 void actionAddVtolAttackRun(Droid* psDroid)
 {
-  auto psTarget = psDroid->getTarget(0);
+  BaseObject const* psTarget;
 
 	if (psDroid->getOrder()->target != nullptr)
 		psTarget = psDroid->getOrder()->target;
@@ -333,7 +334,7 @@ void actionAddVtolAttackRun(Droid* psDroid)
 	if (!worldOnMap(dest))
 		debug(LOG_NEVER, "*** actionAddVtolAttackRun: run off map! ***");
 	else
-		moveDroidToDirect(psDroid, dest.x, dest.y);
+		moveDroidToDirect(psDroid, {dest.x, dest.y});
 }
 
 void actionUpdateVtolAttack(Droid* psDroid)
@@ -350,8 +351,7 @@ void actionUpdateVtolAttack(Droid* psDroid)
 	}
 
 	/* circle around target if hovering and not cyborg */
-	if (psDroid->getMovementData()->status == MOVE_STATUS::HOVER &&
-      !isCyborg(psDroid)) {
+	if (psDroid->getMovementData()->status == MOVE_STATUS::HOVER && !isCyborg(psDroid)) {
 		actionAddVtolAttackRun(psDroid);
 	}
 }
@@ -383,9 +383,9 @@ void actionCalcPullBackPoint(BaseObject const* psObj, BaseObject const* psTarget
 bool actionReachedDroid(Droid const* psDroid, Droid const* psOther)
 {
 	ASSERT_OR_RETURN(false, psDroid != nullptr && psOther != nullptr, "Bad droids");
-	auto const xy = map_coord(psDroid->getPosition().xy());
-	auto const otherxy = map_coord(psOther->getPosition().xy());
-	auto const delta = xy - otherxy;
+  auto const delta = map_coord(psDroid->getPosition().xy())
+                     - map_coord(psOther->getPosition().xy());
+
 	return delta.x >= -1 && delta.x <= 1 && delta.y >= -1 && delta.y <= 1;
 }
 
@@ -443,8 +443,7 @@ bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir,
         auto const dest = world_coord(b.map + Vector2i(x, y)) + Vector2i(TILE_UNITS, TILE_UNITS) / 2;
         auto const dist = iHypot(droid->getPosition().xy() - dest);
         if (dist < bestDist &&
-            !fpathBlockingTile(map_coord(dest.x),
-                               map_coord(dest.y),
+            !fpathBlockingTile(map_coord(dest),
                                dynamic_cast<PropulsionStats const *>(
                                        droid->getComponent(COMPONENT_TYPE::PROPULSION))->propulsionType)) {
           bestDest = dest;
@@ -541,10 +540,8 @@ bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p)
 		else {
       tileCoords = map_coord(psCurr.getMovementData()->destination);
 		}
-		if (&psCurr != psDroid) {
-			if (tileOnMap(tileCoords)) {
-				mapTile(tileCoords)->tileInfoBits |= BITS_FPATHBLOCK;
-			}
+		if (&psCurr != psDroid && tileOnMap(tileCoords)) {
+      mapTile(tileCoords)->tileInfoBits |= BITS_FPATHBLOCK;
 		}
 	}
 

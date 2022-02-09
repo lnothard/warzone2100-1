@@ -60,9 +60,6 @@ int cmdDroidGetIndex(Droid* psCommander);
 /** \brief Gets the maximum group size for a command droid.*/
 unsigned int cmdDroidMaxGroup(const Droid* psCommander);
 
-/** \brief Updates the experience of a command droid if psShooter is in a command group.*/
-void cmdDroidUpdateExperience(Droid* psShooter, unsigned experienceInc);
-
 /** \brief Gets the level of the droid group's commander, if any.*/
 unsigned int cmdGetCommanderLevel(const Droid* psDroid);
 

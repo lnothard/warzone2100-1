@@ -38,7 +38,7 @@ void technologyGiveAway(const Structure* pS);
 void recvMultiPlayerFeature(NETQUEUE queue);
 void sendMultiPlayerFeature(uint32_t ref, uint32_t x, uint32_t y, uint32_t id);
 
-bool pickupArtefact(int toPlayer, int fromPlayer);
+bool pickupArtefact(unsigned toPlayer, unsigned fromPlayer);
 void giftPower(uint8_t from, uint8_t to, uint32_t amount, bool send);
 void giftRadar(uint8_t from, uint8_t to, bool send);
 

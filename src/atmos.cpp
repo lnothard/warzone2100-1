@@ -259,26 +259,23 @@ void atmosUpdateSystem()
 
 void atmosDrawParticles(const glm::mat4& viewMatrix)
 {
-	UDWORD i;
 
-	if (weather == WEATHER_TYPE::NONE)
-	{
+	if (weather == WEATHER_TYPE::NONE) {
 		return;
 	}
 
 	/* Traverse the list */
-	for (i = 0; i < MAX_ATMOS_PARTICLES; i++)
+	for (auto i = 0; i < MAX_ATMOS_PARTICLES; i++)
 	{
 		/* Don't bother unless it's active */
-		if (asAtmosParts[i].status == PARTICLE_STATUS::ACTIVE)
-		{
-			/* Is it visible on the screen? */
-			if (clipXYZ(static_cast<int>(asAtmosParts[i].position.x), static_cast<int>(asAtmosParts[i].position.z),
-			            static_cast<int>(asAtmosParts[i].position.y), viewMatrix)) {
-				renderParticle(&asAtmosParts[i], viewMatrix);
-			}
-		}
-	}
+    if (asAtmosParts[i].status != PARTICLE_STATUS::ACTIVE) continue;
+    /* Is it visible on the screen? */
+    if (clipXYZ(static_cast<int>(asAtmosParts[i].position.x),
+                static_cast<int>(asAtmosParts[i].position.z),
+                static_cast<int>(asAtmosParts[i].position.y), viewMatrix)) {
+      renderParticle(&asAtmosParts[i], viewMatrix);
+    }
+  }
 }
 
 void renderParticle(Particle const* psPart, glm::mat4 const& viewMatrix)
@@ -296,7 +293,8 @@ void renderParticle(Particle const* psPart, glm::mat4 const& viewMatrix)
 		glm::rotate(UNDEG(-playerPos.r.x), glm::vec3(0.f, 1.f, 0.f)) *
 		glm::scale(glm::vec3(psPart->size / 100.f));
 
-	pie_Draw3DShape(psPart->imd.get(), 0, 0, WZCOL_WHITE, 0, 0, viewMatrix * modelMatrix);
+	pie_Draw3DShape(psPart->imd.get(), 0, 0, WZCOL_WHITE,
+                  0, 0, viewMatrix * modelMatrix);
 }
 
 void atmosSetWeatherType(WEATHER_TYPE type)

@@ -30,6 +30,7 @@
 #include "qtscript.h"
 #include "ai.h"
 
+
 ChatMessage::ChatMessage(unsigned sender, char* text)
   : sender{sender}, text{text}
 {
@@ -49,13 +50,12 @@ bool ChatMessage::should_receive(unsigned player) const
          // if `allies_only` is set to `true`, and there is an alliance between `player`
          // and `sender_id`, return `true`
          intended_recipients.find(player) != intended_recipients.end() ||
-         (allies_only && sender < MAX_PLAYERS && player < MAX_PLAYERS && aiCheckAlliances(sender, player));
+         allies_only && sender < MAX_PLAYERS && player < MAX_PLAYERS && aiCheckAlliances(sender, player);
 }
 
 std::unique_ptr< std::vector<unsigned> > ChatMessage::get_recipients() const
 {
 	auto recipients = std::make_unique<std::vector<unsigned>>();
-
 	for (auto player = 0; player < MAX_CONNECTED_PLAYERS; player++)
 	{
 		if (should_receive(player) && openchannels[player]) {
@@ -68,23 +68,18 @@ std::unique_ptr< std::vector<unsigned> > ChatMessage::get_recipients() const
 std::string ChatMessage::formatReceivers() const
 {
 	if (is_global())
-	{
 		return _("Global");
-	}
 
 	if (allies_only && intended_recipients.empty())
-	{
 		return _("Allies");
-	}
 
 	auto directs = intended_recipients.begin();
 	std::stringstream ss;
-	if (allies_only)
-	{
+
+	if (allies_only) {
 		ss << _("Allies");
 	}
-	else
-	{
+	else {
 		ss << _("private to ");
 		ss << getPlayerName(*directs++);
 	}
@@ -92,14 +87,10 @@ std::string ChatMessage::formatReceivers() const
 	while (directs != intended_recipients.end())
 	{
 		auto nextName = getPlayerName(*directs++);
-		if (!nextName)
-		{
-			continue;
-		}
+		if (!nextName) continue;
 		ss << (directs == intended_recipients.end() ? _(" and ") : ", ");
 		ss << nextName;
 	}
-
 	return ss.str();
 }
 
@@ -173,24 +164,20 @@ void ChatMessage::sendToAiPlayers()
 
 void ChatMessage::sendToSpectators()
 {
-	if (!ingame.localOptionsReceived)
-	{
-		return;
-	}
+	if (!ingame.localOptionsReceived) return;
 
 	char formatted[MAX_CONSOLE_STRING_LENGTH];
 	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), _("Spectators"), text);
 
-	if ((sender == selectedPlayer || should_receive(selectedPlayer)) && NetPlay.players[selectedPlayer].isSpectator)
-	{
+	if ((sender == selectedPlayer || should_receive(selectedPlayer)) &&
+      NetPlay.players[selectedPlayer].isSpectator) {
 		auto message = NetworkTextMessage(SPECTATOR_MESSAGE, formatted);
 		printInGameTextMessage(message);
 	}
 
 	for (auto receiver : *get_recipients())
 	{
-		if (isHumanPlayer(receiver) && NetPlay.players[receiver].isSpectator && receiver != selectedPlayer)
-		{
+		if (isHumanPlayer(receiver) && NetPlay.players[receiver].isSpectator && receiver != selectedPlayer) {
 			ASSERT(!myResponsibility(receiver), "Should not be my responsibility...");
 			enqueueSpectatorMessage(NETnetQueue(receiver), formatted);
 		}
@@ -205,36 +192,33 @@ void ChatMessage::enqueueSpectatorMessage(NETQUEUE queue, char const* formattedM
 	NETend();
 }
 
-void ChatMessage::addReceiverByPosition(uint32_t playerPosition)
+void ChatMessage::addReceiverByPosition(unsigned playerPosition)
 {
-	int32_t playerIndex = findPlayerIndexByPosition(playerPosition);
-	if (playerIndex >= 0)
-	{
+	auto playerIndex = findPlayerIndexByPosition(playerPosition);
+	if (playerIndex >= 0) {
 		intended_recipients.insert(playerIndex);
 	}
 }
 
-void ChatMessage::addReceiverByIndex(uint32_t playerIndex)
+void ChatMessage::addReceiverByIndex(unsigned playerIndex)
 {
 	intended_recipients.insert(playerIndex);
 }
 
 void ChatMessage::send()
 {
-	if (NetPlay.players[selectedPlayer].isSpectator && !NetPlay.isHost)
-	{
+	if (NetPlay.players[selectedPlayer].isSpectator && !NetPlay.isHost) {
 		sendToSpectators();
+    return;
 	}
-	else
-	{
-		sendToHumanPlayers();
-		if (NetPlay.isHost && NetPlay.players[selectedPlayer].isSpectator)
-		{
-			// spectator hosts do get to send messages visible to all players,
-			// but not AI / scripts
-			return;
-		}
-		sendToAiPlayers();
-		triggerEventChat(sender, sender, text);
-	}
+
+  sendToHumanPlayers();
+  if (NetPlay.isHost && NetPlay.players[selectedPlayer].isSpectator) {
+    // spectator hosts do get to send messages visible to all players,
+    // but not AI / scripts
+    return;
+  }
+
+  sendToAiPlayers();
+  triggerEventChat(sender, sender, text);
 }

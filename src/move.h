@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "lib/framework/vector.h"
-#include "objectdef.h"
 #include "wzmaplib/map.h"
 
 
@@ -115,7 +114,7 @@ struct Movement
     int pathIndex = 0;
 
     /// Pointer to list of block (x,y) map coordinates
-    std::vector<Vector2i> path;
+    std::vector<Vector2i> path{0};
 
     /// World coordinates of movement destination
     Vector2i destination {0, 0};
@@ -137,17 +136,17 @@ struct Movement
 };
 
 /* Set a target location for a droid to move to  - returns a bool based on if there is a path to the destination (true if there is a path)*/
-bool moveDroidTo(Droid* psDroid, UDWORD x, UDWORD y, FPATH_MOVETYPE moveType = FMT_MOVE);
+bool moveDroidTo(Droid* psDroid, Vector2i location, FPATH_MOVETYPE moveType = FPATH_MOVETYPE::FMT_MOVE);
 
 /* Set a target location for a droid to move to  - returns a bool based on if there is a path to the destination (true if there is a path)*/
 // the droid will not join a formation when it gets to the location
-bool moveDroidToNoFormation(Droid* psDroid, UDWORD x, UDWORD y, FPATH_MOVETYPE moveType = FMT_MOVE);
+bool moveDroidToNoFormation(Droid* psDroid, Vector2i location, FPATH_MOVETYPE moveType = FPATH_MOVETYPE::FMT_MOVE);
 
 // move a droid directly to a location (used by vtols only)
-void moveDroidToDirect(Droid* psDroid, UDWORD x, UDWORD y);
+void moveDroidToDirect(Droid* psDroid, Vector2i location);
 
 // Get a droid to turn towards a locaton
-void moveTurnDroid(Droid* psDroid, UDWORD x, UDWORD y);
+void moveTurnDroid(Droid* psDroid, Vector2i location);
 
 /* Stop a droid */
 void moveStopDroid(Droid* psDroid);

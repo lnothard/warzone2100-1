@@ -46,38 +46,24 @@ struct Droid;
 struct iIMDShape;
 struct BaseObject;
 int pie_RotateProject(const Vector3i*, const glm::mat4&, Vector2i*);
-
-
-static constexpr int CLIP_LEFT	 = 0;
-static const int CLIP_RIGHT = 	pie_GetVideoBufferWidth();
-static constexpr int CLIP_TOP = 	0;
-static const int CLIP_BOTTOM  = pie_GetVideoBufferHeight();
-
-// Gerard - HACK Multiplied by 7 to fix clipping
-// someone needs to take a good look at the radius calculation
-static constexpr auto SCALE_DEPTH =  FP12_MULTIPLIER * 7;
-
-struct BUCKET_TAG
-{
-	bool operator <(BUCKET_TAG const& b) const
-	{
-		return actualZ > b.actualZ; // Sort in reverse z order.
-	}
-
-	RENDER_TYPE objectType; //type of object held
-	void* pObject; //pointer to the object
-	int32_t actualZ;
-};
-
 static std::vector<BUCKET_TAG> bucketArray;
 
-static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::mat4& viewMatrix)
+BUCKET_TAG::BUCKET_TAG(RENDER_TYPE objectType, void* objPtr, int z)
+  : objectType{objectType}, pObject{objPtr}, actualZ{z}
+{
+}
+
+bool BUCKET_TAG::operator<(BUCKET_TAG const& b) const
+{
+  return actualZ > b.actualZ; // sort in reverse z order
+}
+
+static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, glm::mat4 const& viewMatrix)
 {
 	int z = 0, radius;
 	Vector2i pixel(0, 0);
 	Vector3i position(0, 0, 0);
 	unsigned droidSize;
-	Droid* psDroid;
 	BodyStats const* psBStats;
   BaseObject* psSimpObj;
 	iIMDShape* pImd;
@@ -113,27 +99,26 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
                      psProj->getWeaponStats()->weaponSubClass == WEAPON_SUBCLASS::EMP)) {
         /* We don't do projectiles from these guys, cos there's an effect instead */
         z = -1;
+        break;
       }
-      else {
-        //the weapon stats holds the reference to which graphic to use
-        pImd = psProj->getWeaponStats()->pInFlightGraphic.get();
+      //the weapon stats holds the reference to which graphic to use
+      pImd = psProj->getWeaponStats()->pInFlightGraphic.get();
 
-        psSimpObj = static_cast<BaseObject*>(pObject);
-        position.x = psSimpObj->getPosition().x - playerPos.p.x;
-        position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
+      psSimpObj = static_cast<BaseObject*>(pObject);
+      position.x = psSimpObj->getPosition().x - playerPos.p.x;
+      position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
-        position.y = psSimpObj->getPosition().z;
+      position.y = psSimpObj->getPosition().z;
 
-        z = pie_RotateProject(&position, viewMatrix, &pixel);
+      z = pie_RotateProject(&position, viewMatrix, &pixel);
 
-        if (z > 0) {
-          //particle use the image radius
-          radius = pImd->radius;
-          radius *= SCALE_DEPTH;
-          radius /= z;
-          if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT) || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM)) {
-            z = -1;
-          }
+      if (z > 0) {
+        //particle use the image radius
+        radius = pImd->radius;
+        radius *= SCALE_DEPTH;
+        radius /= z;
+        if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT) || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM)) {
+          z = -1;
         }
       }
       break;
@@ -157,65 +142,54 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel);
 
-	  	if (z > 0)
-	  	{
-	  		//particle use the image radius
-	  		radius *= SCALE_DEPTH;
-	  		radius /= z;
-	  		if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-	  			|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
-	  		{
-	  			z = -1;
-	  		}
-	  	}
+	  	if (z <= 0) break;
+      //particle use the image radius
+      radius *= SCALE_DEPTH;
+      radius /= z;
+      if (pixel.x + radius < CLIP_LEFT || pixel.x - radius > CLIP_RIGHT ||
+          pixel.y + radius < CLIP_TOP || (pixel.y - radius > CLIP_BOTTOM)) {
+        z = -1;
+      }
 	  	break;
 	  case RENDER_FEATURE: //not depth sorted
-	  	psSimpObj = (BaseObject*)pObject;
-	  	position.x = psSimpObj->getPosition().x - playerPos.p.x;
-	  	position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
-
-	  	position.y = psSimpObj->getPosition().z + 2;
+	  	psSimpObj = static_cast<BaseObject*>(pObject);
+      position = {psSimpObj->getPosition().x - playerPos.p.x,
+                  psSimpObj->getPosition().z + 2,
+                  -(psSimpObj->getPosition().y - playerPos.p.z)};
 
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel);
 
-	  	if (z > 0)
-	  	{
-	  		//particle use the image radius
-	  		radius = ((Feature*)pObject)->getDisplayData()->imd_shape->radius;
-	  		radius *= SCALE_DEPTH;
-	  		radius /= z;
-	  		if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-	  			|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
-	  		{
-	  			z = -1;
-	  		}
-	  	}
+	  	if (z <= 0) break;
+      //particle use the image radius
+      radius = ((Feature*)pObject)->getDisplayData()->imd_shape->radius;
+      radius *= SCALE_DEPTH;
+      radius /= z;
+      if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
+           || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM)) {
+        z = -1;
+      }
 	  	break;
-	  case RENDER_DROID:
-	  	psDroid = (Droid*)pObject;
+	  case RENDER_DROID: {
+      auto psDroid = static_cast<Droid*>(pObject);
+      psSimpObj = static_cast<BaseObject*>(pObject);
+      position.x = psSimpObj->getPosition().x - playerPos.p.x;
+      position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
+      position.y = psSimpObj->getPosition().z;
 
-	  	psSimpObj = (BaseObject *)pObject;
-	  	position.x = psSimpObj->getPosition().x - playerPos.p.x;
-	  	position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
-	  	position.y = psSimpObj->getPosition().z;
+      psBStats = dynamic_cast<BodyStats const *>(psDroid->getComponent(COMPONENT_TYPE::BODY));
+      droidSize = psBStats->pIMD->radius;
+      z = pie_RotateProject(&position, viewMatrix, &pixel) - (droidSize * 2);
 
-	  	psBStats = dynamic_cast<BodyStats const*>(psDroid->getComponent(COMPONENT_TYPE::BODY));
-	  	droidSize = psBStats->pIMD->radius;
-	  	z = pie_RotateProject(&position, viewMatrix, &pixel) - (droidSize * 2);
-
-	  	if (z > 0)
-	  	{
-	  		//particle use the image radius
-	  		radius = droidSize;
-	  		radius *= SCALE_DEPTH;
-	  		radius /= z;
-	  		if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-	  			|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
-	  		{
-	  			z = -1;
-	  		}
-	  	}
-	  	break;
+      if (z <= 0) break;
+      //particle use the image radius
+      radius = droidSize;
+      radius *= SCALE_DEPTH;
+      radius /= z;
+      if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT) || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM)) {
+        z = -1;
+      }
+      break;
+    }
 	  case RENDER_PROXMSG:
 	  	if (((PROXIMITY_DISPLAY*)pObject)->type == POSITION_TYPE::POS_PROXDATA)
 	  	{
@@ -309,7 +283,6 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, const glm::ma
 void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4& viewMatrix)
 {
 	const iIMDShape* pie;
-	BUCKET_TAG newTag;
 	auto z = bucketCalculateZ(objectType, pObject, viewMatrix);
 
 	if (z < 0)
@@ -373,9 +346,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 	}
 
 	//put the object data into the tag
-	newTag.objectType = objectType;
-	newTag.pObject = pObject;
-	newTag.actualZ = z;
+  auto newTag = BUCKET_TAG{objectType, pObject, z};
 
 	//add tag to bucketArray
 	bucketArray.push_back(newTag);
@@ -384,39 +355,38 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 /* render Objects in list */
 void bucketRenderCurrentList(const glm::mat4& viewMatrix)
 {
-	std::sort(bucketArray.begin(), bucketArray.end());
+  std::sort(bucketArray.begin(), bucketArray.end());
 
-	for (auto& thisTag : bucketArray)
-	{
-		switch (thisTag.objectType)
-		{
+  for (auto& thisTag : bucketArray)
+  {
+    switch (thisTag.objectType) {
       using enum RENDER_TYPE;
-		case RENDER_PARTICLE:
-			::renderParticle((Particle*)thisTag.pObject, viewMatrix);
-			break;
-		case RENDER_EFFECT:
-			renderEffect((EFFECT*)thisTag.pObject, viewMatrix);
-			break;
-		case RENDER_DROID:
-			displayComponentObject((Droid*)thisTag.pObject, viewMatrix);
-			break;
-		case RENDER_STRUCTURE:
-			renderStructure((Structure*)thisTag.pObject, viewMatrix);
-			break;
-		case RENDER_FEATURE:
-			renderFeature((Feature*)thisTag.pObject, viewMatrix);
-			break;
-		case RENDER_PROXMSG:
-			renderProximityMsg((PROXIMITY_DISPLAY*)thisTag.pObject, viewMatrix);
-			break;
-		case RENDER_PROJECTILE:
-			renderProjectile((Projectile*)thisTag.pObject, viewMatrix);
-			break;
-		case RENDER_DELIVPOINT:
-			renderDeliveryPoint((FlagPosition*)thisTag.pObject, false, viewMatrix);
-			break;
-		}
-	}
+      case RENDER_PARTICLE:
+        ::renderParticle((Particle*)thisTag.pObject, viewMatrix);
+        break;
+      case RENDER_EFFECT:
+        renderEffect((EFFECT*)thisTag.pObject, viewMatrix);
+        break;
+      case RENDER_DROID:
+        displayComponentObject((Droid*)thisTag.pObject, viewMatrix);
+        break;
+      case RENDER_STRUCTURE:
+        renderStructure((Structure*)thisTag.pObject, viewMatrix);
+        break;
+      case RENDER_FEATURE:
+        renderFeature((Feature*)thisTag.pObject, viewMatrix);
+        break;
+      case RENDER_PROXMSG:
+        renderProximityMsg((PROXIMITY_DISPLAY*)thisTag.pObject, viewMatrix);
+        break;
+      case RENDER_PROJECTILE:
+        renderProjectile((Projectile*)thisTag.pObject, viewMatrix);
+        break;
+      case RENDER_DELIVPOINT:
+        renderDeliveryPoint((FlagPosition*)thisTag.pObject, false, viewMatrix);
+        break;
+    }
+  }
 
 	//reset the bucket array as we go
 	bucketArray.resize(0);

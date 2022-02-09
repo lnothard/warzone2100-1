@@ -36,7 +36,6 @@ std::array<Droid*, MAX_PLAYERS> apsCmdDesignator;
 
 // Last time the max commander limit message was displayed
 static unsigned lastMaxCmdLimitMsgTime = 0;
-
 static constexpr auto MAX_COMMAND_LIMIT_MESSAGE_PAUSE = 10000;
 
 /**
@@ -61,7 +60,7 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 	if (psCommander->getGroup()->getMembers()->size() < cmdDroidMaxGroup(psCommander)) {
 		addedToGroup = true;
 
-		psCommander->group->add(psDroid);
+		psCommander->addDroidToGroup(psDroid);
 		psDroid->setSelectionGroup(UBYTE_MAX);
 
 		// set the secondary states for the unit don't reset DSO_ATTACK_RANGE,
@@ -126,18 +125,7 @@ long get_commander_index(Droid const& commander)
 /** This function returns the maximum group size of the command droid.*/
 unsigned cmdDroidMaxGroup(Droid const* psCommander)
 {
-	const auto psStats = dynamic_cast<CommanderStats const*>(psCommander->getComponent(COMPONENT_TYPE::BRAIN));
+	auto psStats = dynamic_cast<CommanderStats const*>(psCommander->getComponent(COMPONENT_TYPE::BRAIN));
 	return getDroidLevel(psCommander) * psStats->upgraded[psCommander->playerManager->getPlayer()].maxDroidsMult
          + psStats->upgraded[psCommander->playerManager->getPlayer()].maxDroids;
-}
-
-/** This function adds experience to the command droid of the psShooter's command group.*/
-void cmdDroidUpdateExperience(Droid *psShooter, unsigned experienceInc)
-{
-	ASSERT_OR_RETURN(, psShooter != nullptr, "invalid Unit pointer");
-
-	if (hasCommander(psShooter)) {
-		auto psCommander = psShooter->getCommander();
-		psCommander->experience += MIN(experienceInc, UINT32_MAX - psCommander->experience);
-	}
 }

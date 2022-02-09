@@ -57,7 +57,7 @@ struct ChatMessage
 
   unsigned sender = 0;
 
-  char* text;
+  char* text = nullptr;
 
   /**
    * Set to `true` if this message should be private, i.e.,

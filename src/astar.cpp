@@ -57,7 +57,7 @@ Vector2i map_coord(Vector2i);
 
 
 /// Game time for all blocking maps in fpathBlockingMaps.
-static std::size_t fpathCurrentGameTime;
+static unsigned fpathCurrentGameTime;
 
 static constexpr auto AUXBITS_THREAT = 0x20; ///< Can hostile players shoot here?
 
@@ -87,11 +87,11 @@ bool PathNode::operator <(const PathNode& rhs) const
   return path_coordinate.y < rhs.path_coordinate.y;
 }
 
-NonBlockingArea::NonBlockingArea(const StructureBounds& bounds)
-  : x_1(bounds.map.x),
-    x_2(bounds.map.x + bounds.size.x),
-    y_1(bounds.map.y),
-    y_2(bounds.map.y + bounds.size.y)
+NonBlockingArea::NonBlockingArea(StructureBounds const& bounds)
+  : x_1(bounds.map.x)
+  , x_2(bounds.map.x + bounds.size.x)
+  , y_1(bounds.map.y)
+  , y_2(bounds.map.y + bounds.size.y)
 {
 }
 
@@ -121,7 +121,7 @@ bool PathContext::isDangerous(int x, int y) const
          blocking_map->threat_map[x + y * mapWidth];
 }
 
-void PathContext::reset(const PathBlockingMap& blocking,
+void PathContext::reset(PathBlockingMap const& blocking,
                         PathCoord start,
                         NonBlockingArea bounds)
 {
@@ -165,8 +165,6 @@ bool PathContext::matches(PathBlockingMap& blocking, PathCoord start, NonBlockin
   dest == destination_bounds;
 }
 
-
-
 void fpathHardTableReset()
 {
   path_contexts.clear();
@@ -188,16 +186,13 @@ PathNode getBestNode(std::vector<PathNode>& nodes)
 
 unsigned estimateDistance(PathCoord start, PathCoord finish)
 {
-  const auto x_delta = std::abs(start.x - finish.x);
-  const auto y_delta = std::abs(start.y - finish.y);
-
   /**
    * cost of moving horizontal/vertical = 70*2,
    * cost of moving diagonal = 99*2,
    * 99/70 = 1.41428571... ≈ √2 = 1.41421356...
    */
-  return std::min(x_delta, y_delta) * (198 - 140) +
-         std::max(x_delta, y_delta) * 140;
+  return std::min(std::abs(start.x - finish.x), std::abs(start.y - finish.y)) * (198 - 140)
+           + std::max(std::abs(start.x - finish.x), std::abs(start.y - finish.y)) * 140;
 }
 
 unsigned estimateDistancePrecise(PathCoord start, PathCoord finish)
@@ -207,13 +202,11 @@ unsigned estimateDistancePrecise(PathCoord start, PathCoord finish)
    * cost of moving diagonal = 99*2,
    * 99/70 = 1.41428571... ≈ √2 = 1.41421356...
    */
-  return iHypot((start.x - finish.x) * 140,
-                (start.y - finish.y) * 140);
+  return iHypot((start.x - finish.x) * 140, (start.y - finish.y) * 140);
 }
 
 void generateNewNode(PathContext& context, PathCoord destination,
-                       PathCoord current_pos, PathCoord prev_pos,
-                       unsigned prev_dist)
+                     PathCoord current_pos, PathCoord prev_pos, unsigned prev_dist)
 {
   const auto cost_factor = context.isDangerous(current_pos.x, current_pos.y);
   const auto dist = prev_dist +
@@ -527,21 +520,18 @@ void fpathSetBlockingMap(PathJob& path_job)
 	}
 
 	// figure out which map we are looking for.
-	PathBlockingType type;
-	type.gameTime = gameTime;
-	type.propulsion = path_job.propulsion;
-	type.owner = path_job.owner;
-	type.moveType = path_job.moveType;
+  path_job.moveType.gameTime = gameTime;
 
 	// find the map.
 	auto it = std::find_if(blocking_maps.begin(), blocking_maps.end(),
-	                      [&](PathBlockingMap const& map) {
-    return map == type;
+	                      [&path_job](PathBlockingMap const& map) {
+    return map == path_job.moveType;
   });
 
   if (it != blocking_maps.end()) {
-    syncDebug("blockingMap(%d,%d,%d,%d) = cached", gameTime, path_job.propulsion, path_job.owner, path_job.moveType);
-    path_job.blockingMap = std::make_shared<PathBlockingMap>(*it);
+    syncDebug("blockingMap(%d,%d,%d,%d) = cached", gameTime, path_job.moveType.propulsion,
+              path_job.moveType.player, path_job.moveType.moveType);
+    path_job.blockingMap = std::make_unique<PathBlockingMap>(*it);
     return;
   }
 
@@ -550,38 +540,37 @@ void fpathSetBlockingMap(PathJob& path_job)
   blocking_maps.emplace_back(blocking);
 
   // `blocking` now points to an empty map with no data. fill the map.
-  blocking.type = type;
+  blocking.type = path_job.moveType;
   std::vector<bool> &map = blocking.map;
   map.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
   unsigned checksum_map = 0, checksum_threat_map = 0, factor = 0;
   for (auto y = 0; y < mapHeight; ++y) {
     for (auto x = 0; x < mapWidth; ++x) {
-      map[x + y * mapWidth] = fpathBaseBlockingTile(x, y, type.propulsion,
-                                                    type.owner, type.moveType);
+      map[x + y * mapWidth] = fpathBaseBlockingTile({x, y}, path_job.moveType);
       checksum_map ^= map[x + y * mapWidth] * (factor = 3 * factor + 1);
     }
   }
-  if (!isHumanPlayer(type.owner) && type.moveType == FPATH_MOVETYPE::FMT_MOVE) {
+  if (!isHumanPlayer(path_job.moveType.player) &&
+      path_job.moveType.moveType == FPATH_MOVETYPE::FMT_MOVE) {
     auto threat = blocking.threat_map;
-    threat.resize(static_cast<size_t>(mapWidth) *
-                  static_cast<size_t>(mapHeight));
+    threat.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
+
     for (auto y = 0; y < mapHeight; ++y) {
       for (auto x = 0; x < mapWidth; ++x) {
-        threat[x + y * mapWidth] = auxTile(x, y, type.owner) & AUXBITS_THREAT;
+        threat[x + y * mapWidth] = auxTile(x, y, path_job.moveType.player) & AUXBITS_THREAT;
         checksum_threat_map ^= threat[x + y * mapWidth] * (factor = 3 * factor + 1);
       }
     }
   }
   syncDebug("blockingMap(%d,%d,%d,%d) = %08X %08X", gameTime,
-            path_job.propulsion, path_job.owner, path_job.moveType,
-            checksum_map, checksum_threat_map);
+            path_job.moveType.propulsion, path_job.moveType.player,
+            path_job.moveType.moveType, checksum_map, checksum_threat_map);
 
-  path_job.blockingMap = std::make_shared<PathBlockingMap>(blocking_maps.back());
+  path_job.blockingMap = std::make_unique<PathBlockingMap>(blocking_maps.back());
 }
 
 bool PathBlockingMap::operator==(PathBlockingType const& rhs) const
 {
   return type.gameTime == rhs.gameTime &&
-         fpathIsEquivalentBlocking(type.propulsion, type.owner, type.moveType,
-                                   rhs.propulsion, rhs.owner, rhs.moveType);;
+         fpathIsEquivalentBlocking(type, rhs);
 }

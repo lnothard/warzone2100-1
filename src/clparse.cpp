@@ -166,38 +166,32 @@ static void poptPrintHelp(poptContext ctx, FILE* output)
 {
 	// TRANSLATORS: Summary of commandline option syntax
 	fprintf(output, _("Usage: %s [OPTION...]\n"), ctx->argv[0]);
-	for (int i = 0; i < ctx->size; i++)
+	for (auto i = 0; i < ctx->size; i++)
 	{
 		char txt[128];
 		ssprintf(txt, "  --%s", ctx->table[i].string);
 
-		if (ctx->table[i].argument)
-		{
+		if (ctx->table[i].argument) {
 			sstrcat(txt, "=");
-			if (ctx->table[i].argDescrip)
-			{
+			if (ctx->table[i].argDescrip) {
 				sstrcat(txt, ctx->table[i].argDescrip);
 			}
 		}
 
 		// calculate number of terminal columns required to print
 		// for languages with multibyte characters
-		const size_t txtSize = strlen(txt) + 1;
 		std::mbstate_t state = std::mbstate_t();
 		const char* pTxt = txt;
-		size_t txtOffset = std::mbsrtowcs(nullptr, &pTxt, 0, &state) + 1 - txtSize;
+		size_t txtOffset = std::mbsrtowcs(nullptr, &pTxt, 0, &state) + 1 - strlen(txt) + 1;
 		// CJK characters take up two columns
 		char language[3]; // stores ISO 639-1 code
 		strlcpy(language, setlocale(LC_MESSAGES, nullptr), sizeof(language));
-		if (strcmp(language, "zh") == 0 || strcmp(language, "ko") == 0)
-		{
+		if (strcmp(language, "zh") == 0 || strcmp(language, "ko") == 0) {
 			txtOffset /= 2;
 		}
 
 		fprintf(output, "%-*s", static_cast<int>(40 - txtOffset), txt);
-
-		if (ctx->table[i].descrip)
-		{
+		if (ctx->table[i].descrip) {
 			fprintf(output, "%s", ctx->table[i].descrip);
 		}
 		fprintf(output, "\n");
@@ -219,7 +213,6 @@ static int poptGetNextOpt(poptContext ctx)
 	static char match[PATH_MAX]; // static for bad function
 	static char parameter[PATH_MAX]; // static for arg function
 	char* pparam;
-	int i;
 
 	ctx->bad = nullptr;
 	ctx->parameter = nullptr;
@@ -267,20 +260,17 @@ static int poptGetNextOpt(poptContext ctx)
 		}
 	}
 
-	for (i = 0; i < ctx->size; i++)
+	for (auto i = 0; i < ctx->size; i++)
 	{
 		char slong[64];
-
 		ssprintf(slong, "--%s", ctx->table[i].string);
-		if (strcmp(slong, match) == 0)
-		{
-			if (ctx->table[i].argument && pparam)
-			{
-				ctx->parameter = parameter;
-			}
-			return ctx->table[i].enumeration;
-		}
-	}
+    if (strcmp(slong, match) != 0) continue;
+
+    if (ctx->table[i].argument && pparam) {
+      ctx->parameter = parameter;
+    }
+    return ctx->table[i].enumeration;
+  }
 	ctx->bad = match;
 	ctx->current++;
 	return POPT_ERROR_BADOPT;
@@ -301,7 +291,6 @@ static poptContext poptGetContext(WZ_DECL_UNUSED void* unused, int argc, const c
 
 	return &ctx;
 }
-
 
 typedef enum
 {
@@ -459,31 +448,23 @@ static const struct poptOption* getOptionsTable()
 	static struct poptOption TranslatedOptionsTable[sizeof(optionsTable) / sizeof(struct poptOption)];
 	static bool translated = false;
 
-	if (!translated)
-	{
-		unsigned int table_size = sizeof(optionsTable) / sizeof(struct poptOption) - 1;
-		unsigned int i;
+  if (translated) return TranslatedOptionsTable;
 
-		for (i = 0; i < table_size; ++i)
-		{
-			TranslatedOptionsTable[i] = optionsTable[i];
+  for (auto i = 0; i < sizeof(optionsTable) / sizeof(struct poptOption) - 1; ++i)
+  {
+    TranslatedOptionsTable[i] = optionsTable[i];
+    // If there is a description, make sure to translate it with gettext
+    if (TranslatedOptionsTable[i].descrip != nullptr) {
+      TranslatedOptionsTable[i].descrip = gettext(TranslatedOptionsTable[i].descrip);
+    }
 
-			// If there is a description, make sure to translate it with gettext
-			if (TranslatedOptionsTable[i].descrip != nullptr)
-			{
-				TranslatedOptionsTable[i].descrip = gettext(TranslatedOptionsTable[i].descrip);
-			}
+    if (TranslatedOptionsTable[i].argDescrip != nullptr) {
+      TranslatedOptionsTable[i].argDescrip = gettext(TranslatedOptionsTable[i].argDescrip);
+    }
+  }
 
-			if (TranslatedOptionsTable[i].argDescrip != nullptr)
-			{
-				TranslatedOptionsTable[i].argDescrip = gettext(TranslatedOptionsTable[i].argDescrip);
-			}
-		}
-
-		translated = true;
-	}
-
-	return TranslatedOptionsTable;
+  translated = true;
+  return TranslatedOptionsTable;
 }
 
 //! Early parsing of the commandline
@@ -668,9 +649,8 @@ bool ParseCommandLine(int argc, const char* const * argv)
 			// retrieve the game name
 			token = poptGetOptArg(poptCon);
 			if (token == nullptr
-				|| (strcmp(token, "CAM_1A") && strcmp(token, "CAM_2A") && strcmp(token, "CAM_3A")
-					&& strcmp(token, "TUTORIAL3") && strcmp(token, "FASTPLAY")))
-			{
+				  || (strcmp(token, "CAM_1A") && strcmp(token, "CAM_2A") && strcmp(token, "CAM_3A")
+					&& strcmp(token, "TUTORIAL3") && strcmp(token, "FASTPLAY"))) {
 				qFatal("The game parameter requires one of the following keywords:"
 					"CAM_1A, CAM_2A, CAM_3A, TUTORIAL3, or FASTPLAY.");
 			}
@@ -870,7 +850,7 @@ bool ParseCommandLine(int argc, const char* const * argv)
 					qFatal("Unrecognised backend");
 				}
 				VIDEO_BACKEND gfxBackend;
-				if (video_backend_from_str(token, gfxBackend))
+				if (video_backend_from_str(token))
 				{
 					war_setGfxBackend(gfxBackend);
 				}

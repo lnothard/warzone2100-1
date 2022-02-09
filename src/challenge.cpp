@@ -87,7 +87,6 @@ static void displayLoadBanner(WIDGET* psWidget, unsigned xOffset, unsigned yOffs
 	PIELIGHT col = WZCOL_GREEN;
 	auto x = xOffset + psWidget->x();
 	auto y = yOffset + psWidget->y();
-
 	pie_BoxFill(x, y, x + psWidget->width(), y + psWidget->height(), col);
 	pie_BoxFill(x + 2, y + 2, x + psWidget->width() - 2, y + psWidget->height() - 2, WZCOL_MENU_BACKGROUND);
 }
@@ -101,12 +100,10 @@ std::string_view currentChallengeName()
 // quite the hack, game name is stored in global sRequestResult
 void updateChallenge(bool gameWon)
 {
-	auto seconds = 0;
-  auto newtime = (gameTime - mission.startTime) / GAME_TICKS_PER_SEC;
-	auto victory = false;
-	WzConfig scores(CHALLENGE_SCORES, WzConfig::ReadAndWrite);
-	ASSERT_OR_RETURN(, strlen(sRequestResult) > 0, "Empty sRequestResult");
+  ASSERT_OR_RETURN(, strlen(sRequestResult) > 0, "Empty sRequestResult");
 
+  auto newtime = (gameTime - mission.startTime) / GAME_TICKS_PER_SEC;
+	WzConfig scores(CHALLENGE_SCORES, WzConfig::ReadAndWrite);
 	auto fStr = strrchr(sRequestResult, '/');
 	if (fStr != nullptr) ++fStr; // skip slash
 	else fStr = sRequestResult;
@@ -120,8 +117,8 @@ void updateChallenge(bool gameWon)
 		sPath.truncate(sPath.length() - 5);
 	}
 	scores.beginGroup(sPath);
-	victory = scores.value("victory", false).toBool();
-	seconds = scores.value("seconds", 0).toInt();
+	auto victory = scores.value("victory", false).toBool();
+	auto seconds = scores.value("seconds", 0).toInt();
 
 	// Update score if we have a victory and best recorded was a loss,
 	// or both were losses but time is higher, or both were victories
@@ -148,19 +145,20 @@ struct DisplayLoadSlotData
 	char* filename;
 };
 
-static void displayLoadSlot(WIDGET const* psWidget, unsigned xOffset, unsigned yOffset)
+static void displayLoadSlot(WIDGET* psWidget, unsigned xOffset, unsigned yOffset)
 {
 	// Any widget using displayLoadSlot must have its pUserData initialized to a (DisplayLoadSlotData*)
 	assert(psWidget->pUserData != nullptr);
 	auto& data = *static_cast<DisplayLoadSlotData*>(psWidget->pUserData);
 
-	auto x = xOffset + psWidget->x();
-	auto y = yOffset + psWidget->y();
+	auto const x = xOffset + psWidget->x();
+	auto const y = yOffset + psWidget->y();
 	char butString[64];
 
 	drawBlueBox(x, y, psWidget->width(), psWidget->height()); //draw box
 
-  if (((W_BUTTON *) psWidget)->pText.isEmpty()) return;
+  if (dynamic_cast<W_BUTTON const*>(psWidget)->pText.isEmpty())
+    return;
 
   sstrcpy(butString, ((W_BUTTON*)psWidget)->pText.toUtf8().c_str());
   if (data.cache.fullText != butString) {
@@ -183,16 +181,13 @@ void challengesScreenSizeDidChange(unsigned oldWidth, unsigned oldHeight,
 	psRequestScreen->screenSizeDidChange(oldWidth, oldHeight, newWidth, newHeight);
 }
 
-//****************************************************************************************
-// Challenge menu
-//*****************************************************************************************
 bool addChallenges()
 {
-	char* sPath;
-	char* SearchPath = "challenges";
-	static std::array<char*, totalslots> sSlotCaps;
-	static std::array<char*, totalslots> sSlotTips;
-	static std::array<char*, totalslots> sSlotFile;
+	char sPath[PATH_MAX];
+	char* const sSearchPath = "challenges";
+	static char sSlotCaps[totalslots][totalslotspace];
+	static char sSlotTips[totalslots][totalslotspace];
+	static char sSlotFile[totalslots][totalslotspace];
 
 	psRequestScreen = W_SCREEN::make(); // init the screen
 
@@ -287,13 +282,13 @@ bool addChallenges()
 	// fill slots.
 	slotCount = 0;
 
-	sPath = sSearchPath;
-	sPath += "/*.json";
+	sstrcpy(sPath, sSearchPath);
+	sstrcat(sPath, "/*.json");
 
 	debug(LOG_SAVE, "Searching \"%s\" for challenges", sPath);
 
 	// add challenges to buttons
-	WZ_PHYSFS_enumerateFiles(sSearchPath.c_str(), [&](const char* i) -> bool
+	WZ_PHYSFS_enumerateFiles(sSearchPath, [&](const char* i) -> bool
 	{
 		// See if this filename contains the extension we're looking for
 		if (!strstr(i, ".json")) {
@@ -302,9 +297,9 @@ bool addChallenges()
 		}
 
 		/* First grab any high score associated with this challenge */
-		sPath = i;
-    sPath = sPath.substr(sizeof(sPath) - 5, 5); // remove .json
-		auto highscore = "no score";
+		sstrcpy(sPath, i);
+    sPath[strlen(sPath) - 5] = '\0';	// remove .json
+    WzString highscore = "no score";
 		WzConfig scores(CHALLENGE_SCORES, WzConfig::ReadOnly);
 		scores.beginGroup(sPath);
 		auto name = scores.value("player", "NO NAME").toWzString();
@@ -320,11 +315,11 @@ bool addChallenges()
 		scores.endGroup();
 		ssprintf(sPath, "%s/%s", sSearchPath, i);
 		WzConfig challenge(sPath, WzConfig::ReadOnlyAndRequired);
-		ASSERT(challenge.contains("challenge"), "Invalid challenge file %s - no challenge section!", sPath.c_str());
+		ASSERT(challenge.contains("challenge"), "Invalid challenge file %s - no challenge section!", sPath);
 		challenge.beginGroup("challenge");
-		ASSERT(challenge.contains("name"), "Invalid challenge file %s - no name", sPath.c_str());
+		ASSERT(challenge.contains("name"), "Invalid challenge file %s - no name", sPath);
 		name = challenge.value("name", "BAD NAME").toWzString();
-		ASSERT(challenge.contains("map"), "Invalid challenge file %s - no map", sPath.c_str());
+		ASSERT(challenge.contains("map"), "Invalid challenge file %s - no map", sPath);
 		auto map = challenge.value("map", "BAD MAP").toWzString();
 		auto difficulty = challenge.value("difficulty", "BAD DIFFICULTY").toWzString();
 		auto description = map + ", " + difficulty + ", " + highscore + ".\n" + challenge.value("description", "").
@@ -335,9 +330,9 @@ bool addChallenges()
 		debug(LOG_SAVE, "We found [%s]", i);
 
 		/* Set the button-text */
-		sstrcpy(sSlotCaps[slotCount], name.toUtf8()); // store it!
-		sstrcpy(sSlotTips[slotCount], description.toUtf8()); // store it, too!
-		sSlotFile[slotCount] = sPath; // store filename
+		sstrcpy(sSlotCaps[slotCount], name.toUtf8().c_str()); // store it!
+		sstrcpy(sSlotTips[slotCount], description.toUtf8().c_str()); // store it, too!
+		sstrcpy(sSlotFile[slotCount], sPath); // store filename
 
 		/* Add button */
 		button->pTip = sSlotTips[slotCount];
@@ -357,7 +352,6 @@ bool addChallenges()
 	return true;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 bool closeChallenges()
 {
 	psRequestScreen = nullptr;
@@ -367,7 +361,6 @@ bool closeChallenges()
 	return true;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // Returns true if cancel pressed or a valid game slot was selected.
 // if when returning true strlen(sRequestResult) != 0 then a valid game
 // slot was selected otherwise cancel was selected..
@@ -424,7 +417,6 @@ success:
 	return true;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // should be done when drawing the other widgets.
 bool displayChallenges()
 {

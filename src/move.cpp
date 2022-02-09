@@ -87,23 +87,22 @@ std::string moveDescription(MOVE_STATUS status)
  * Move a droid to a location, joining a formation
  * @see moveDroidToBase() for the parameter and return value specification
  */
-bool moveDroidTo(Droid* psDroid, unsigned x, unsigned y, FPATH_MOVETYPE moveType)
+bool moveDroidTo(Droid* psDroid, Vector2i location, FPATH_MOVETYPE moveType)
 {
-	return psDroid->moveDroidToBase(x, y, true, moveType);
+	return psDroid->moveDroidToBase(location, true, moveType);
 }
 
 /**
  * Move a droid to a location, not joining a formation
  * @see moveDroidToBase() for the parameter and return value specification
  */
-bool moveDroidToNoFormation(Droid* psDroid, unsigned x, unsigned y, FPATH_MOVETYPE moveType)
+bool moveDroidToNoFormation(Droid* psDroid, Vector2i location, FPATH_MOVETYPE moveType)
 {
-	ASSERT_OR_RETURN(false, x > 0 && y > 0, "Bad movement position");
-	return psDroid->moveDroidToBase(x, y, false, moveType);
+	ASSERT_OR_RETURN(false, location.x > 0 && location.y > 0, "Bad movement position");
+	return psDroid->moveDroidToBase(location, false, moveType);
 }
 
-
-static bool moveBlockingTileCallback(Vector2i pos, int32_t dist, void* data_)
+static bool moveBlockingTileCallback(Vector2i pos, int dist, void* data_)
 {
 	auto* data = (BLOCKING_CALLBACK_DATA*)data_;
 	data->blocking |= pos != data->src && pos != data->dst && fpathBlockingTile(
@@ -404,7 +403,7 @@ static bool moveDroidStartCallback(Droid* psDroid)
 	return true;
 }
 
-static bool pickupOilDrum(int toPlayer, int fromPlayer)
+static bool pickupOilDrum(unsigned toPlayer, unsigned fromPlayer)
 {
 	auto power = OILDRUM_POWER;
 	if (!bMultiPlayer && !bInTutorial) {

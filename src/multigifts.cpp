@@ -722,8 +722,7 @@ void recvMultiPlayerFeature(NETQUEUE queue)
 	}
 }
 
-// ///////////////////////////////////////////////////////////////
-bool pickupArtefact(int toPlayer, int fromPlayer)
+bool pickupArtefact(unsigned toPlayer, unsigned fromPlayer)
 {
 	if (fromPlayer < MAX_PLAYERS && bMultiPlayer)
 	{

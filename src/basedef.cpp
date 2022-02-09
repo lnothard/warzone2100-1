@@ -12,7 +12,6 @@
 #include "basedef.h"
 #include "displaydef.h"
 #include "objmem.h"
-#include "visibility.h"
 
 int establishTargetHeight(BaseObject const*);
 int map_Height(Vector2i);
@@ -577,7 +576,7 @@ Vector3i calculateMuzzleTipLocation(BaseObject const& unit, int weapon_slot)
 void checkAngle(int64_t& angle_tan, int start_coord, int height,
                 int square_distance, int target_height, bool is_direct)
 {
-  auto current_angle = int64_t{0};
+  int64_t current_angle;
 
   if (is_direct) {
     current_angle = (65536 * height) / iSqrt(start_coord);
@@ -696,8 +695,7 @@ int calculateLineOfFire(const BaseObject& unit, const BaseObject & target,
     return establishTargetHeight(&target) -
            (pos.z + (angletan * iSqrt(distSq)) / 65536 - dest.z);
   }
-  else
-  {
+  else {
     angletan = iAtan2(angletan, 65536);
     angletan = angleDelta(angletan);
     return DEG(1) + angletan;
@@ -712,11 +710,9 @@ void BaseObject::setPreviousTime(unsigned t)
 
 bool hasElectronicWeapon(BaseObject const& unit) noexcept
 {
-  auto weapons = unit.weaponManager->weapons;
-  if (weapons.empty()) return false;
-
-  return std::any_of(weapons.begin(), weapons.end(),
-                     [](const auto& weapon) {
+  return std::any_of(unit.weaponManager->weapons.begin(),
+                     unit.weaponManager->weapons.end(),
+                     [](auto const& weapon) {
     return weapon.stats->weaponSubClass == WEAPON_SUBCLASS::ELECTRONIC;
   });
 }
@@ -724,7 +720,6 @@ bool hasElectronicWeapon(BaseObject const& unit) noexcept
 bool targetInLineOfFire(BaseObject const& unit, BaseObject const& target, int weapon_slot)
 {
   const auto distance = iHypot((target.getPosition() - unit.getPosition()).xy());
-
   auto range = unit.weaponManager->weapons[weapon_slot].getMaxRange(unit.playerManager->getPlayer());
 
   if (!unit.hasArtillery()) {
@@ -744,7 +739,6 @@ BaseObject const* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_typ
                         int weapon_slot, Weapon const& weapon)
 {
   BaseObject const* target = nullptr;
-  bool is_cb_sensor = false;
   bool found_cb = false;
   auto target_dist = weapon.getMaxRange(unit.playerManager->getPlayer());
 
@@ -769,7 +763,8 @@ BaseObject const* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_typ
       if (as_droid->getAction() == ACTION::OBSERVE) {
         continue;
       }
-    } else { // structure
+    }
+    else { // structure
       auto as_structure = dynamic_cast<const Structure*>(sensor);
       // skip incomplete structures
       if (as_structure->getState() != STRUCTURE_STATE::BUILT) {
@@ -777,7 +772,7 @@ BaseObject const* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_typ
       }
     }
     target = sensor->getTarget(0);
-    is_cb_sensor = sensor->hasCbSensor();
+    auto is_cb_sensor = sensor->hasCbSensor();
 
     if (!target || target->damageManager->isDead() ||
         target->damageManager->isProbablyDoomed(false) ||
@@ -787,11 +782,11 @@ BaseObject const* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_typ
       continue;
     }
 
-    auto square_dist = objectPositionSquareDiff(
+    auto const square_dist = objectPositionSquareDiff(
             target->getPosition(), unit.getPosition());
 
     if (targetInLineOfFire(unit, *target, weapon_slot) &&
-        actionVisibleTarget(&unit, target, false)) {
+        actionVisibleTarget(&dynamic_cast<Droid const&>(unit), target, weapon_slot, false)) {
 
       target_dist = square_dist;
       if (is_cb_sensor) {

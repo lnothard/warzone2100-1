@@ -22,7 +22,14 @@
 #define __INCLUDED_SRC_BUCKET3D_H__
 
 #include <glm/gtx/transform.hpp>
+#include "console.h"
 
+
+static constexpr auto CLIP_LEFT	 = 0;
+static const auto CLIP_RIGHT = 	pie_GetVideoBufferWidth();
+static constexpr auto CLIP_TOP = 	0;
+static const auto CLIP_BOTTOM  = pie_GetVideoBufferHeight();
+static constexpr auto SCALE_DEPTH =  FP12_MULTIPLIER * 7;
 
 enum class RENDER_TYPE
 {
@@ -36,10 +43,19 @@ enum class RENDER_TYPE
 	RENDER_PARTICLE
 };
 
-/* add an object to the current render list */
+struct BUCKET_TAG
+{
+  BUCKET_TAG(RENDER_TYPE, void*, int);
+  bool operator <(BUCKET_TAG const& b) const;
+
+  RENDER_TYPE objectType; // type of object held
+  void* pObject; // pointer to the object
+  int actualZ;
+};
+
+/// Add an object to the current render list
 void bucketAddTypeToList(RENDER_TYPE objectType, void* object, const glm::mat4& viewMatrix);
 
-/* render Objects in list */
 void bucketRenderCurrentList(const glm::mat4& viewMatrix);
 
 #endif // __INCLUDED_SRC_BUCKET3D_H__
