@@ -43,6 +43,7 @@
 #include "stats.h"
 #include "visibility.h"
 #include "weapon.h"
+#include "baseobject.h"
 
 static constexpr auto NUM_FACTORY_MODULES = 2;
 static constexpr auto NUM_POWER_MODULES = 4;

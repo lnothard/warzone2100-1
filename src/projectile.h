@@ -102,7 +102,7 @@ public:
   void proj_ImpactFunc();
   void proj_PostImpactFunc();
   void proj_checkPeriodicalDamage();
-  bool proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacker, unsigned plr,
+  bool proj_SendProjectileAngled(Weapon const* psWeap, BaseObject* psAttacker, unsigned plr,
                                  Vector3i dest, BaseObject* psTarget, bool bVisible,
                                  int weapon_slot, int min_angle, unsigned fireTime) const;
   /// Update the source experience after a target is damaged/destroyed
@@ -211,6 +211,6 @@ static void setProjectileSource(Projectile *psProj, ConstructedObject *psObj);
 
 ObjectShape establishTargetShape(BaseObject* psTarget);
 static unsigned qualityFactor(Droid* psAttacker, Droid* psVictim);
-Droid* getDesignatorAttackingObject(unsigned player, BaseObject* target);
+Droid* getDesignatorAttackingObject(unsigned player, BaseObject const* target);
 
 #endif // __INCLUDED_SRC_PROJECTILE_H__

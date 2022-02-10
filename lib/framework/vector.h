@@ -41,21 +41,22 @@ using Vector3f = glm::vec3;
 
 struct Rotation
 {
-	Rotation()
-	{
-		direction = 0;
-		pitch = 0;
-		roll = 0;
-	}
-	Rotation(int direction, int pitch, int roll) : direction((uint16_t)direction), pitch((uint16_t)pitch), roll((uint16_t)roll) {}
-	Rotation(Vector3i xyz) : direction((uint16_t)xyz.x), pitch((uint16_t)xyz.y), roll((uint16_t)xyz.z) {}
-	uint16_t direction, pitch, roll;  ///< Object rotation in 0..64k range
+	Rotation() = default;
+	Rotation(int direction, int pitch, int roll)
+      : direction((uint16_t)direction), pitch((uint16_t)pitch), roll((uint16_t)roll) {}
+
+  explicit Rotation(Vector3i xyz)
+      : direction((uint16_t)xyz.x), pitch((uint16_t)xyz.y), roll((uint16_t)xyz.z) {}
+
+	uint16_t direction = 0;
+  uint16_t pitch = 0;
+  uint16_t roll = 0;
 };
 typedef Vector3i Position;  ///< Map position in world coordinates
 
-static inline Vector3i toVector(Rotation const &r)
+static inline Vector3i toVector(Rotation const& r)
 {
-	return Vector3i(r.direction, r.pitch, r.roll);
+	return {r.direction, r.pitch, r.roll};
 }
 
 // vector * vector -> scalar

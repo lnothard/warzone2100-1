@@ -256,19 +256,19 @@ void BaseObject::setImdShape(iIMDShape* imd)
 
 void BaseObject::setFlag(size_t pos, bool val)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->flags.set(pos, val);
 }
 
 void BaseObject::setTime(unsigned t) noexcept
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->time = t;
 }
 
 void BaseObject::setPosition(Position pos) noexcept
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->position = pos;
 }
 
@@ -279,19 +279,19 @@ uint8_t BaseObject::seenThisTick(unsigned player) const
 
 void BaseObject::setRotation(Rotation new_rotation) noexcept
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->rotation = new_rotation;
 }
 
 void BaseObject::setHeight(int height) noexcept
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->position.z = height;
 }
 
 void BaseObject::setHidden()
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->visibleToPlayer.fill(0);
 }
 
@@ -303,31 +303,31 @@ void BaseObject::setFrameNumber(unsigned num)
 
 void BaseObject::setVisibleToPlayer(unsigned player, uint8_t vis)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->visibleToPlayer[player] = vis;
 }
 
 void BaseObject::setPreviousLocation(Spacetime prevLoc)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->previousLocation = prevLoc;
 }
 
 void Health::setTimeOfDeath(unsigned t)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->timeOfDeath = t;
 }
 
 void Health::setHp(unsigned hp)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->hitPoints = hp;
 }
 
 void Health::setOriginalHp(unsigned hp)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->originalHp = hp;
 }
 
@@ -343,25 +343,25 @@ unsigned Health::getTimeOfDeath() const
 
 void Health::setSelected(bool sel)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->isSelected = sel;
 }
 
 void Health::setResistance(unsigned res)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->resistanceToElectric = res;
 }
 
 void Health::setExpectedDamageDirect(unsigned damage)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->expectedDamageDirect = damage;
 }
 
 void Health::setExpectedDamageIndirect(unsigned damage)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->expectedDamageIndirect = damage;
 }
 
@@ -373,19 +373,19 @@ void Health::setTimeLastHit(unsigned time)
 
 void Health::setLastHitWeapon(WEAPON_SUBCLASS weap)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->lastHitWeapon = weap;
 }
 
 void Health::setPeriodicalDamage(unsigned damage)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->periodicalDamage = damage;
 }
 
 void Health::setPeriodicalDamageStartTime(unsigned time)
 {
-  if (!pimpl) return;
+  ASSERT_OR_RETURN(, pimpl != nullptr, "Null object");
   pimpl->periodicalDamageStartTime = time;
 }
 
@@ -441,11 +441,10 @@ bool Health::isDead() const
 
 bool Health::isProbablyDoomed(bool isDirectDamage) const
 {
-  if (!pimpl) return false;
+  ASSERT_OR_RETURN(false, pimpl != nullptr, "Null object");
 
   auto is_doomed = [this](unsigned damage) {
-    const auto hp = getHp();
-    return damage > hp && damage - hp > hp / 5;
+    return damage > getHp() && damage - getHp() > getHp() / 5;
   };
 
   if (isDirectDamage)
@@ -454,15 +453,15 @@ bool Health::isProbablyDoomed(bool isDirectDamage) const
   return is_doomed(pimpl->expectedDamageIndirect);
 }
 
-int objectPositionSquareDiff(const Position& first, const Position& second)
+int objectPositionSquareDiff(Position const& first, Position const& second)
 {
-  Vector2i diff = (first - second).xy();
+  auto diff = (first - second).xy();
   return dot(diff, diff);
 }
 
 bool hasFullAmmo(Droid const& droid) noexcept
 {
-  auto weapons = droid.weaponManager->weapons;
+  auto const weapons = droid.weaponManager->weapons;
   return std::all_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon) {
     return weapon.hasFullAmmo();
@@ -480,7 +479,7 @@ bool hasFullAmmo(Structure const& structure) noexcept
 
 bool hasArtillery(Droid const& droid) noexcept
 {
-  auto weapons = droid.weaponManager->weapons;
+  auto const weapons = droid.weaponManager->weapons;
   return std::any_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon) {
     return weapon.isArtillery();
@@ -489,7 +488,7 @@ bool hasArtillery(Droid const& droid) noexcept
 
 bool hasArtillery(Structure const& structure) noexcept
 {
-  auto weapons = structure.weaponManager->weapons;
+  auto const weapons = structure.weaponManager->weapons;
   return std::any_of(weapons.begin(), weapons.end(),
                      [](const auto& weapon) {
     return weapon.isArtillery();
@@ -499,77 +498,73 @@ bool hasArtillery(Structure const& structure) noexcept
 Vector3i calculateMuzzleBaseLocation(BaseObject const& unit, int weapon_slot)
 {
   auto imd_shape = unit.getImdShape();
-  const auto position = unit.getPosition();
+  auto const position = unit.getPosition();
   auto muzzle = Vector3i{0, 0, 0};
 
-  if (imd_shape->nconnectors) {
-    Affine3F af;
-    auto rotation = unit.getRotation();
-    af.Trans(position.x, -position.z, position.y);
-    af.RotY(rotation.direction);
-    af.RotX(rotation.pitch);
-    af.RotZ(-rotation.roll);
-    af.Trans(imd_shape->connectors[weapon_slot].x,
-             -imd_shape->connectors[weapon_slot].z,
-             -imd_shape->connectors[weapon_slot].y);
+  if (!imd_shape->nconnectors) {
+    return position + Vector3i{0, 0, unit.getDisplayData()->imd_shape->max.y};
+  }
 
-    const auto barrel = Vector3i{};
-    muzzle = (af * barrel).xzy();
-    muzzle.z = -muzzle.z;
-  }
-  else {
-    muzzle = position + Vector3i{0, 0, unit.getDisplayData()->imd_shape->max.y};
-  }
+  Affine3F af;
+  auto const rotation = unit.getRotation();
+  af.Trans(position.x, -position.z, position.y);
+  af.RotY(rotation.direction);
+  af.RotX(rotation.pitch);
+  af.RotZ(-rotation.roll);
+  af.Trans(imd_shape->connectors[weapon_slot].x,
+           -imd_shape->connectors[weapon_slot].z,
+           -imd_shape->connectors[weapon_slot].y);
+
+  auto const barrel = Vector3i{};
+  muzzle = (af * barrel).xzy();
+  muzzle.z = -muzzle.z;
   return muzzle;
 }
 
 Vector3i calculateMuzzleTipLocation(BaseObject const& unit, int weapon_slot)
 {
-  const auto imd_shape = unit.getImdShape();
-  const auto& weapon = unit.weaponManager->weapons[weapon_slot];
-  const auto& position = unit.getPosition();
-  const auto& rotation = unit.getRotation();
+  auto imd_shape = unit.getImdShape();
+  auto const& weapon = unit.weaponManager->weapons[weapon_slot];
+  auto const position = unit.getPosition();
+  auto const rotation = unit.getRotation();
   auto muzzle = Vector3i{0, 0, 0};
 
-  if (imd_shape->nconnectors) {
-    auto barrel = Vector3i{0, 0, 0};
-    const auto weapon_imd = weapon.getImdShape();
-    const auto mount_imd = weapon.getMountGraphic();
-
-    Affine3F af;
-    af.Trans(position.x, -position.z, position.y);
-    af.RotY(rotation.direction);
-    af.RotX(rotation.pitch);
-    af.RotZ(-rotation.roll);
-    af.Trans(imd_shape->connectors[weapon_slot].x, -imd_shape->connectors[weapon_slot].z,
-             -imd_shape->connectors[weapon_slot].y);
-
-    af.RotY(weapon.getRotation().direction);
-
-    if (mount_imd->nconnectors) {
-      af.Trans(mount_imd->connectors->x,
-               -mount_imd->connectors->z,
-               -mount_imd->connectors->y);
-    }
-    af.RotX(weapon.getRotation().pitch);
-
-    if (weapon_imd->nconnectors) {
-      auto connector_num = unsigned{0};
-      if (weapon.shotsFired && weapon_imd->nconnectors > 1) {
-        connector_num = (weapon.shotsFired - 1) % weapon_imd->nconnectors;
-      }
-      const auto connector = weapon_imd->connectors[connector_num];
-      barrel = Vector3i{connector.x,
-                        -connector.z,
-                        -connector.y};
-    }
-    muzzle = (af * barrel).xzy();
-    muzzle.z = -muzzle.z;
+  if (!imd_shape->nconnectors) {
+    return position + Vector3i{0, 0, 0 + unit.
+            getDisplayData()->imd_shape->max.y};
   }
-  else {
-    muzzle = position + Vector3i{
-            0, 0, 0 + unit.getDisplayData()->imd_shape->max.y};
+
+  auto barrel = Vector3i{0, 0, 0};
+  auto weapon_imd = weapon.getImdShape();
+  auto mount_imd = weapon.getMountGraphic();
+
+  Affine3F af;
+  af.Trans(position.x, -position.z, position.y);
+  af.RotY(rotation.direction);
+  af.RotX(rotation.pitch);
+  af.RotZ(-rotation.roll);
+  af.Trans(imd_shape->connectors[weapon_slot].x, -imd_shape->connectors[weapon_slot].z,
+           -imd_shape->connectors[weapon_slot].y);
+
+  af.RotY(weapon.getRotation().direction);
+
+  if (mount_imd->nconnectors) {
+    af.Trans(mount_imd->connectors->x,
+             -mount_imd->connectors->z,
+             -mount_imd->connectors->y);
   }
+  af.RotX(weapon.getRotation().pitch);
+
+  if (weapon_imd->nconnectors) {
+    auto connector_num = unsigned{0};
+    if (weapon.shotsFired && weapon_imd->nconnectors > 1) {
+      connector_num = (weapon.shotsFired - 1) % weapon_imd->nconnectors;
+    }
+    auto const connector = weapon_imd->connectors[connector_num];
+    barrel = Vector3i{connector.x, -connector.z, -connector.y};
+  }
+  muzzle = (af * barrel).xzy();
+  muzzle.z = -muzzle.z;
   return muzzle;
 }
 

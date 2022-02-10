@@ -81,12 +81,12 @@ unsigned Weapon::getNumAttackRuns(unsigned player) const
   return stats->vtolAttackRuns;
 }
 
-const iIMDShape* Weapon::getImdShape() const
+iIMDShape const* Weapon::getImdShape() const
 {
   return stats->pIMD.get();
 }
 
-const iIMDShape* Weapon::getMountGraphic() const
+iIMDShape const* Weapon::getMountGraphic() const
 {
   return stats->pMountGraphic.get();
 }

@@ -103,7 +103,7 @@ struct Projectile::Impl
   int vZ = 0;
   int vXY = 0;
   /// Expected damage that this projectile will cause to the target
-  int expectedDamageCaused = 0;
+  unsigned expectedDamageCaused = 0;
   /// How much of target was visible on shooting (important for homing)
   int partVisible = 0;
 };
@@ -270,7 +270,7 @@ bool Projectile::isVisible() const
 	if (pimpl->isVisible) return true;
 
 	// you fired it
-	if (playerManager->getPlayer() == selectedPlayer) return true;
+	if (playerManager->isSelectedPlayer()) return true;
 
 	// someone else's structure firing at something you can't see
 	if (pimpl->source != nullptr &&
@@ -314,46 +314,46 @@ WeaponStats const* Projectile::getWeaponStats() const
 void Projectile::updateExperience(unsigned experienceInc)
 {
   ASSERT_OR_RETURN(, pimpl != nullptr, "Projectile object is undefined");
+  auto psDroid = dynamic_cast<Droid*>(pimpl->source);
 
   /* update droid kills */
-  if (auto psDroid = dynamic_cast<Droid*>(pimpl->source)) {
-    // if it is 'droid-on-droid' then modify the experience by the
-    // quality factor. only do this in MP so to not unbalance the campaign
-    if (pimpl->target && dynamic_cast<Droid*>(pimpl->target) && bMultiPlayer) {
-      // modify the experience gained by the 'quality factor' of the units
-      experienceInc = experienceInc * qualityFactor(
-              psDroid, dynamic_cast<Droid*>(pimpl->target)) / 65536;
-    }
-    ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536), "Experience increase out of range");
-    psDroid->gainExperience(experienceInc);
-    cmdDroidUpdateExperience(psDroid, experienceInc);
+  if (psDroid == nullptr) {
+    if (!dynamic_cast<Structure*>(pimpl->source)) return;
 
-    auto psSensor = orderStateObj(psDroid, ORDER_TYPE::FIRE_SUPPORT);
-    if (psSensor && dynamic_cast<Droid*>(psSensor)) {
-      dynamic_cast<Droid*>(psSensor)->gainExperience(experienceInc);
-    }
-  }
-  else if (dynamic_cast<Structure*>(pimpl->source)) {
-    ASSERT_OR_RETURN(, experienceInc < (int)(2.1 * 65536),
-                       "Experience increase out of range");
+    ASSERT_OR_RETURN(, experienceInc < (int) (2.1 * 65536), "Experience increase out of range");
     psDroid = getDesignatorAttackingObject(pimpl->source->playerManager->getPlayer(), pimpl->target);
-
     if (psDroid) {
       psDroid->gainExperience(experienceInc);
     }
+    return;
+  }
+
+  // if it is 'droid-on-droid' then modify the experience by the
+  // quality factor. only do this in MP so to not unbalance the campaign
+  if (pimpl->target && dynamic_cast<Droid*>(pimpl->target) && bMultiPlayer) {
+    // modify the experience gained by the 'quality factor' of the units
+    experienceInc = experienceInc * qualityFactor(psDroid, dynamic_cast<Droid*>(pimpl->target)) / 65536;
+  }
+  ASSERT_OR_RETURN(, experienceInc < (int) (2.1 * 65536), "Experience increase out of range");
+  psDroid->gainExperience(experienceInc);
+  cmdDroidUpdateExperience(psDroid, experienceInc);
+
+  auto psSensor = orderStateObj(psDroid, ORDER_TYPE::FIRE_SUPPORT);
+  if (psSensor && dynamic_cast<Droid*>(psSensor)) {
+    dynamic_cast<Droid*>(psSensor)->gainExperience(experienceInc);
   }
 }
 
-bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacker, unsigned plr,
+bool Projectile::proj_SendProjectileAngled(Weapon const* psWeap, BaseObject* psAttacker, unsigned plr,
                                            Vector3i dest, BaseObject* psTarget, bool bVisible,
                                            int weapon_slot, int min_angle, unsigned fireTime) const
 {
   ASSERT_OR_RETURN(false, pimpl != nullptr, "Projectile object is undefined");
-  auto psStats = psWeap->stats.get();
-
   ASSERT_OR_RETURN(false, psTarget == nullptr || !psTarget->damageManager->isDead(), "Aiming at dead target!");
 
-  auto psProj = std::make_unique<Projectile>(ProjectileTrackerID + ++projectileTrackerIDIncrement, &playerList[plr]);
+  auto const psStats = psWeap->stats.get();
+  auto psProj = std::make_unique<Projectile>(
+          ProjectileTrackerID + ++projectileTrackerIDIncrement, &playerList[plr]);
 
   /* get muzzle offset */
   if (psAttacker == nullptr) {
@@ -408,8 +408,6 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacke
 
     psProj->setSource(psOldProjectile->pimpl->source);
     psProj->pimpl->damaged = psOldProjectile->pimpl->damaged;
-
-    // TODO Should finish the tick, when penetrating.
   }
   else {
     psProj->setBornTime(fireTime); // Born at the start of the tick.
@@ -422,8 +420,8 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacke
   }
 
   if (psTarget) {
-    auto maxHeight = establishTargetHeight(psTarget);
-    auto minHeight = std::min(
+    auto const maxHeight = establishTargetHeight(psTarget);
+    auto const minHeight = std::min(
             std::max(maxHeight + 2 * LINE_OF_FIRE_MINIMUM - areaOfFire(
                     psAttacker, psTarget, weapon_slot, true), 0), maxHeight);
     scoreUpdateVar(WD_SHOTS_ON_TARGET);
@@ -489,8 +487,7 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacke
         audio_PlayObjDynamicTrack(psProj->pimpl->source,
                                   psStats->iAudioFireID, nullptr);
         /* GJ HACK: move howitzer sound with shell */
-        if (psStats->weaponSubClass == WEAPON_SUBCLASS::HOWITZERS)
-        {
+        if (psStats->weaponSubClass == WEAPON_SUBCLASS::HOWITZERS) {
           audio_PlayObjDynamicTrack(psProj.get(),
                                     ID_SOUND_HOWITZ_FLIGHT, nullptr);
         }
@@ -513,10 +510,7 @@ bool Projectile::proj_SendProjectileAngled(Weapon* psWeap, BaseObject* psAttacke
 void proj_InitSystem()
 {
 	psProjectileList.clear();
-	for (int& x : experienceGain)
-	{
-		x = 100;
-	}
+  experienceGain.fill(100);
 	projectileTrackerIDIncrement = 0;
 }
 
@@ -530,11 +524,11 @@ void proj_FreeAllProjectiles()
  * The value returned satisfies the following inequality:
  * \f(0.5 <= ret/65536 <= 2.0)\f
  */
-static unsigned qualityFactor(Droid* psAttacker, Droid* psVictim)
+static unsigned qualityFactor(Droid const* psAttacker, Droid const* psVictim)
 {
-	auto powerRatio = (uint64_t)65536 * calcDroidPower(
+	auto powerRatio = 65536 * calcDroidPower(
           psVictim) / calcDroidPower(psAttacker);
-	auto pointsRatio = (uint64_t)65536 * calcDroidPoints(
+	auto pointsRatio = 65536 * calcDroidPoints(
           psVictim) / calcDroidPoints(psAttacker);
 
 	CLIP(powerRatio, 65536 / 2, 65536 * 2);
@@ -552,22 +546,19 @@ int getExpGain(unsigned player)
 	return experienceGain[player];
 }
 
-Droid* getDesignatorAttackingObject(unsigned player, BaseObject* target)
+Droid* getDesignatorAttackingObject(unsigned player, BaseObject const* target)
 {
-	const auto psCommander = cmdDroidGetDesignator(player);
-
-	return psCommander != nullptr && 
+	auto const psCommander = cmdDroidGetDesignator(player);
+	return psCommander != nullptr &&
          psCommander->getAction() == ACTION::ATTACK &&
-                         psCommander->getTarget(0) == target
-		       ? psCommander
-		       : nullptr;
+                 psCommander->getTarget(0) == target
+         ? psCommander : nullptr;
 }
 
-
-static int randomVariation(int val)
+static int64_t randomVariation(int64_t val)
 {
 	// Up to ±5% random variation
-	return (int64_t)val * (95000 + gameRand(10001)) / 100000;
+	return val * (95000 + gameRand(10001)) / 100000;
 }
 
 int projCalcIndirectVelocities(int dx, int dz, int v,
@@ -580,47 +571,45 @@ int projCalcIndirectVelocities(int dx, int dz, int v,
 	// Increases v, if needed for there to be a solution. Decreases v, if needed for vz > 0.
 	// Randomly changes v by up to 2.5%, so the shots don't all follow the same path.
 
-	const auto g = ACC_GRAVITY; // In units/s².
-	auto a = randomVariation(v * v) - dz * g; // In units²/s².
-	auto b = g * g * ((uint64_t)dx * dx + (uint64_t)dz * dz);
+	auto a = randomVariation(v * v) - dz * ACC_GRAVITY; // In units²/s².
+	auto b = ACC_GRAVITY * ACC_GRAVITY * ((uint64_t)dx * dx + (uint64_t)dz * dz);
 	// In units⁴/s⁴. Casting to uint64_t does sign extend the int.
 	auto c = (uint64_t)a * a - b; // In units⁴/s⁴.
 	if (c < 0) {
 		// Must increase velocity, target too high. Find the smallest possible a (which corresponds to the smallest possible velocity).
-
 		a = i64Sqrt(b) + 1; // Still in units²/s². Adding +1, since i64Sqrt rounds down.
 		c = (uint64_t)a * a - b; // Still in units⁴/s⁴. Should be 0, plus possible rounding errors.
 	}
 
-	auto t = MAX(1, iSqrt(2 * (a - i64Sqrt(c))) * (GAME_TICKS_PER_SEC / g));
+	auto t = MAX(1, iSqrt(2 * (a - i64Sqrt(c))) * (ACC_GRAVITY / g));
 	// In ticks. Note that a - √c ≥ 0, since c ≤ a². Try changing the - to +, and watch the mini-rockets.
 	*vx = dx * GAME_TICKS_PER_SEC / t; // In units/sec.
-	*vz = dz * GAME_TICKS_PER_SEC / t + g * t / (2 * GAME_TICKS_PER_SEC); // In units/sec.
+	*vz = dz * GAME_TICKS_PER_SEC / t + ACC_GRAVITY * t / (2 * GAME_TICKS_PER_SEC); // In units/sec.
 
 	STATIC_ASSERT(GAME_TICKS_PER_SEC / ACC_GRAVITY * ACC_GRAVITY == GAME_TICKS_PER_SEC);
 	// On line that calculates t, must cast iSqrt to uint64_t, and remove brackets around TICKS_PER_SEC/g, if changing ACC_GRAVITY.
 
 	if (*vz < 0) {
 		// Don't want to shoot downwards, reduce velocity and let gravity take over.
-		t = MAX(1, i64Sqrt(-2 * dz * (uint64_t)GAME_TICKS_PER_SEC * GAME_TICKS_PER_SEC / g)); // Still in ticks.
+		t = MAX(1, i64Sqrt(-2 * dz * (uint64_t) ACC_GRAVITY * GAME_TICKS_PER_SEC / g)); // Still in ticks.
 		*vx = dx * GAME_TICKS_PER_SEC / t; // Still in units/sec.
 		*vz = 0; // Still in units/sec. (Wouldn't really matter if it was pigeons/inch, since it's 0 anyway.)
 	}
 
 	/* CorvusCorax: Check against min_angle */
-	if (iAtan2(*vz, *vx) < min_angle) {
-		/* set pitch to pass terrain */
-		// tan(min_angle)=mytan/65536
-		auto mytan = ((int64_t)iSin(min_angle) * 65536) / iCos(min_angle);
-		t = MAX(
-			1, i64Sqrt(2 * ((int64_t)dx * mytan - dz * 65536) * (int64_t)GAME_TICKS_PER_SEC * GAME_TICKS_PER_SEC / (
-				int64_t)(g * 65536))); // Still in ticks.
-		*vx = dx * GAME_TICKS_PER_SEC / t;
-		// mytan=65536*vz/vx
-		*vz = (mytan * (*vx)) / 65536;
-	}
+  if (iAtan2(*vz, *vx) >= min_angle) return t;
 
-	return t;
+  /* set pitch to pass terrain */
+  // tan(min_angle)=mytan/65536
+  auto mytan = ((int64_t)iSin(min_angle) * 65536) / iCos(min_angle);
+  t = MAX(
+    1, i64Sqrt(2 * ((int64_t)dx * mytan - dz * 65536) * (int64_t)GAME_TICKS_PER_SEC * ACC_GRAVITY / (
+      int64_t)(g * 65536)));// Still in ticks.
+  *vx = dx * GAME_TICKS_PER_SEC / t;
+  // mytan=65536*vz/vx
+  *vz = (mytan * (*vx)) / 65536;
+
+  return t;
 }
 
 bool proj_SendProjectile(Weapon* psWeap, BaseObject* psAttacker, unsigned player,
@@ -652,16 +641,17 @@ static Interval collisionZ(int z1, int z2, int height)
 	if (z1 > height || z2 < -height) {
 		return ret; // no collision between time 1 and time 2
 	}
-	if (z1 == z2) {
-		if (z1 >= -height && z1 <= height) {
-			ret.begin = 0;
-			ret.end = 1024;
-		}
-		return ret;
-	}
-	ret.begin = 1024 * (-height - z1) / (z2 - z1);
-	ret.end = 1024 * (height - z1) / (z2 - z1);
-	return ret;
+
+  if (z1 != z2) {
+    ret.begin = 1024 * (-height - z1) / (z2 - z1);
+    ret.end = 1024 * (height - z1) / (z2 - z1);
+    return ret;
+  }
+  if (z1 >= -height && z1 <= height) {
+    ret.begin = 0;
+    ret.end = 1024;
+  }
+  return ret;
 }
 
 static Interval collisionXY(int x1, int y1, int x2, int y2, int radius)
@@ -892,12 +882,12 @@ void Projectile::proj_InFlightFunc()
 			continue;
 		}
 
-		Vector3i psTempObjPrevPos = dynamic_cast<Droid*>(psTempObj)
+		auto const psTempObjPrevPos = dynamic_cast<Droid*>(psTempObj)
             ? dynamic_cast<Droid*>(psTempObj)->getPreviousLocation().position
             : psTempObj->getPosition();
 
-		const Vector3i diff = getPosition() - psTempObj->getPosition();
-		const Vector3i prevDiff = getPreviousLocation().position - psTempObjPrevPos;
+		const auto diff = getPosition() - psTempObj->getPosition();
+		const auto prevDiff = getPreviousLocation().position - psTempObjPrevPos;
 		const auto targetHeight = establishTargetHeight(psTempObj);
 		const auto targetShape = establishTargetShape(psTempObj);
 		const auto collision = collisionXYZ(
@@ -906,8 +896,7 @@ void Projectile::proj_InFlightFunc()
 		const auto collisionTime = getPreviousLocation().time
                                + (getTime() - getPreviousLocation().time) * collision / 1024;
 
-		if (collision >= 0 &&
-        collisionTime < closestCollisionSpacetime.time) {
+		if (collision >= 0 && collisionTime < closestCollisionSpacetime.time) {
 			// We hit!
 			closestCollisionSpacetime = interpolateObjectSpacetime(this, collisionTime);
 			closestCollisionObject = psTempObj;

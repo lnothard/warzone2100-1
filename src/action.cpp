@@ -126,12 +126,7 @@ std::string actionToString(ACTION action)
 
 bool actionInRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slot, bool useLongWithOptimum)
 {
-	auto psStats = psDroid->weaponManager->weapons[0].stats.get();
-
-	auto const dx = psDroid->getPosition().x - psObj->getPosition().x;
-	auto const dy = psDroid->getPosition().y - psObj->getPosition().y;
-
-	auto const radSq = dx * dx + dy * dy;
+	auto const psStats = psDroid->weaponManager->weapons[0].stats.get();
 	auto const longRange = proj_GetLongRange(psStats, psDroid->playerManager->getPlayer());
 	auto const shortRange = proj_GetShortRange(psStats, psDroid->playerManager->getPlayer());
 
@@ -159,36 +154,33 @@ bool actionInRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slo
 		break;
 	}
 
+  auto const radSq = objectPositionSquareDiff(psDroid, psObj);
 	/* check max range */
-	if (radSq <= rangeSq) {
-		/* check min range */
-		const auto minrange = proj_GetMinRange(psStats, psDroid->playerManager->getPlayer());
-		if (radSq >= minrange * minrange || !proj_Direct(psStats)) {
-			return true;
-		}
-	}
-	return false;
+  if (radSq > rangeSq)
+    return false;
+
+  /* check min range */
+  auto const minrange = proj_GetMinRange(psStats, psDroid->playerManager->getPlayer());
+  if (radSq >= minrange * minrange || !proj_Direct(psStats)) {
+    return true;
+  }
+  return false;
 }
 
 bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, WeaponStats const* psStats)
 {
+  /* if I am a multi-turret droid */
+  if (numWeapons(*psDroid) > 1) {
+    return false;
+  }
+
 	if (!psStats) {
 		psStats = psDroid->weaponManager->weapons[0].stats.get();
 	}
 
-	/* if I am a multi-turret droid */
-	if (numWeapons(*psDroid) > 1) {
-		return false;
-	}
-
-	auto const dx = psDroid->getPosition().x - psObj->getPosition().x;
-	auto const dy = psDroid->getPosition().y - psObj->getPosition().y;
-	auto const radSq = dx * dx + dy * dy;
+  // check min range
 	auto const minRange = proj_GetMinRange(psStats, psDroid->playerManager->getPlayer());
-	auto const rangeSq = minRange * minRange;
-
-	// check min range
-	if (radSq <= rangeSq) {
+	if (objectPositionSquareDiff(psDroid, psObj) <= minRange * minRange) {
 		return true;
 	}
 	return false;

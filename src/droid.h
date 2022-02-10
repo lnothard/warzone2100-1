@@ -280,7 +280,7 @@ public:
   void moveTurnDroid(unsigned x, unsigned y);
   void moveShuffleDroid(Vector2i s);
   bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode = ModeQueue);
-  void actionDroidBase(Action* psAction);
+  void actionDroidBase(Action const* psAction);
   RtrBestResult decideWhereToRepairAndBalance();
   SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate);
   void orderDroidAdd(Order* order_);
@@ -383,10 +383,10 @@ static void addConstructorEffect(Structure* psStruct);
 unsigned calcDroidWeight(const DroidTemplate* psTemplate);
 
 /* Calculate the power points required to build/maintain a droid */
-int calcDroidPower(const Droid* psDroid);
+int calcDroidPower(Droid const* psDroid);
 
 // Calculate the number of points required to build a droid
-unsigned calcDroidPoints(Droid* psDroid);
+unsigned calcDroidPoints(Droid const* psDroid);
 
 /* Calculate the body points of a droid from its template */
 unsigned calcTemplateBody(const DroidTemplate* psTemplate, UBYTE player);
