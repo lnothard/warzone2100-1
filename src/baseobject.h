@@ -36,8 +36,6 @@ struct Spacetime;
 struct StructureBounds;
 
 
-static constexpr auto max_check_object_recursion = 4;
-
 Rotation interpolateRot(Rotation v1, Rotation v2, unsigned t1, unsigned t2, unsigned t);
 Spacetime interpolateObjectSpacetime(BaseObject const* obj, unsigned t);
 Vector2i getStatsSize(BaseStats const* pType, uint16_t direction);

@@ -38,6 +38,7 @@ struct Weapon;
 struct WeaponStats;
 
 
+static constexpr auto BULLET_FLIGHT_HEIGHT = 16;
 static constexpr auto PROJ_ULTIMATE_PITCH = 80;
 
 /// How long an object burns for after leaving a fire
@@ -193,7 +194,10 @@ unsigned proj_GetMinRange(const WeaponStats* psStats, unsigned player);
 /** Return the short range for a weapon. */
 unsigned proj_GetShortRange(const WeaponStats* psStats, unsigned player);
 
+/*the damage depends on the weapon effect and the target propulsion type or
+structure strength*/
 unsigned calcDamage(unsigned baseDamage, WEAPON_EFFECT weaponEffect, BaseObject const* psTarget);
+
 bool gfxVisible(Projectile* psObj);
 
 glm::mat4 objectShimmy(BaseObject * psObj);

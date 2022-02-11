@@ -34,19 +34,25 @@ struct WeaponStats;
 
 
 /* Fire a weapon at something added int weapon_slot*/
-bool combFire(Weapon* psWeap, BaseObject* psAttacker,
-              BaseObject* psTarget, int weapon_slot);
+bool combFire(Weapon* psWeap, BaseObject* psAttacker, BaseObject* psTarget, int weapon_slot);
 
 /*checks through the target players list of structures and droids to see
 if any support a counter battery sensor*/
 void counterBatteryFire(BaseObject* psAttacker, BaseObject* psTarget);
 
-int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp,
-              WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
-              bool isDamagePerSecond, int minDamage);
+int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp, WEAPON_CLASS weaponClass,
+              WEAPON_SUBCLASS weaponSubClass, bool isDamagePerSecond, int minDamage);
 
+/**
+ * Guesses how damage a shot might do.
+ * @param psObj object that might be hit
+ * @param damage amount of damage to deal
+ * @param weaponClass the class of the weapon that deals the damage
+ * @param weaponSubClass the subclass of the weapon that deals the damage
+ * @return guess at amount of damage
+ */
 unsigned objGuessFutureDamage(WeaponStats const* psStats, unsigned player, BaseObject const* psTarget);
 
-int objArmour(const BaseObject* psObj, WEAPON_CLASS weaponClass);
+unsigned objArmour(BaseObject const* psObj, WEAPON_CLASS weaponClass);
 
 #endif // __INCLUDED_SRC_COMBAT_H__

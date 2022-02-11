@@ -109,7 +109,7 @@ extern PlayerMask alliancebits[MAX_PLAYER_SLOTS];
 /// A bitfield for the satellite uplink
 extern PlayerMask satuplinkbits;
 
-bool aiInitialise();
+void aiInitialise();
 bool aiShutdown();
 
 /// Update the expected damage to the object.
@@ -136,7 +136,7 @@ can fire on the propulsion type of the target*/
 bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int weapon_slot);
 
 // Check if any of the weapons can target the target
-bool checkAnyWeaponsTarget(BaseObject const* psObject, BaseObject const* psTarget);
+bool checkAnyWeaponsTarget(Droid const* psDroid, BaseObject const* psTarget);
 
 // Check properties of the AllianceType enum.
 static bool alliancesFixed(ALLIANCE_TYPE t);

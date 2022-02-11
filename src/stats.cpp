@@ -519,13 +519,11 @@ bool loadBodyStats(WzConfig& ini)
 			for (numStats = 0; numStats < numPropulsionStats; numStats++)
 			{
 				PropulsionStats* psPropulsionStat = &asPropulsionStats[numStats];
-				if (key.compare(psPropulsionStat->id) == 0)
-				{
+				if (key.compare(psPropulsionStat->id) == 0) {
 					break;
 				}
 			}
-			if (numStats == numPropulsionStats)
-			{
+			if (numStats == numPropulsionStats) {
 				debug(LOG_FATAL, "Invalid propulsion name %s", key.toUtf8().c_str());
 				return false;
 			}
@@ -551,7 +549,9 @@ bool loadBrainStats(WzConfig& ini)
 	std::vector<WzString> list = ini.childGroups();
 	statsAllocBrain(list.size());
 	// Hack to make sure ZNULLBRAIN is always first in list
-	auto nullbrain = std::find(list.begin(), list.end(), WzString::fromUtf8("ZNULLBRAIN"));
+	auto nullbrain = std::find(list.begin(), list.end(),
+                             WzString::fromUtf8("ZNULLBRAIN"));
+
 	ASSERT_OR_RETURN(false, nullbrain != list.end(), "ZNULLBRAIN is mandatory");
 	std::iter_swap(nullbrain, list.begin());
 	for (size_t i = 0; i < list.size(); ++i)
@@ -597,41 +597,32 @@ bool loadBrainStats(WzConfig& ini)
 	return true;
 }
 
-
 /*returns the propulsion type based on the string name passed in */
 bool getPropulsionType(const char* typeName, PROPULSION_TYPE* type)
 {
   using enum PROPULSION_TYPE;
-	if (strcmp(typeName, "Wheeled") == 0)
-	{
+	if (strcmp(typeName, "Wheeled") == 0) {
 		*type = WHEELED;
 	}
-	else if (strcmp(typeName, "Tracked") == 0)
-	{
+	else if (strcmp(typeName, "Tracked") == 0) {
 		*type = TRACKED;
 	}
-	else if (strcmp(typeName, "Legged") == 0)
-	{
+	else if (strcmp(typeName, "Legged") == 0) {
 		*type = LEGGED;
 	}
-	else if (strcmp(typeName, "Hover") == 0)
-	{
+	else if (strcmp(typeName, "Hover") == 0) {
 		*type = HOVER;
 	}
-	else if (strcmp(typeName, "Lift") == 0)
-	{
+	else if (strcmp(typeName, "Lift") == 0) {
 		*type = LIFT;
 	}
-	else if (strcmp(typeName, "Propellor") == 0)
-	{
+	else if (strcmp(typeName, "Propellor") == 0) {
 		*type = PROPELLOR;
 	}
-	else if (strcmp(typeName, "Half-Tracked") == 0)
-	{
+	else if (strcmp(typeName, "Half-Tracked") == 0) {
 		*type = HALF_TRACKED;
 	}
-	else
-	{
+	else {
 		debug(LOG_ERROR, "getPropulsionType: Invalid Propulsion type %s - assuming Hover", typeName);
 		*type = HOVER;
 
@@ -712,18 +703,16 @@ bool loadSensorStats(WzConfig& ini)
 		psStats->ref = STAT_SENSOR + i;
 
 		WzString location = ini.value("location").toWzString();
-		if (location.compare("DEFAULT") == 0)
-		{
+		if (location.compare("DEFAULT") == 0) {
 			psStats->location = LOC::DEFAULT;
 		}
-		else if (location.compare("TURRET") == 0)
-		{
+		else if (location.compare("TURRET") == 0) {
 			psStats->location = LOC::TURRET;
 		}
-		else
-		{
+		else {
 			ASSERT(false, "Invalid Sensor location: %s", location.toUtf8().c_str());
 		}
+
 		WzString type = ini.value("type").toWzString();
     using enum SENSOR_TYPE;
 		if (type.compare("STANDARD") == 0)
@@ -756,8 +745,8 @@ bool loadSensorStats(WzConfig& ini)
 		}
 
 		//get the IMD for the component
-		psStats->pIMD = statsGetIMD(ini, psStats, "sensorModel");
-		psStats->pMountGraphic = statsGetIMD(ini, psStats, "mountModel");
+		psStats->pIMD = std::make_shared<iIMDShape>(*statsGetIMD(ini, psStats, "sensorModel"));
+		psStats->pMountGraphic = std::make_shared<iIMDShape>(*statsGetIMD(ini, psStats, "mountModel"));
 
 		ini.endGroup();
 	}

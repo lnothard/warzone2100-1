@@ -46,13 +46,13 @@ const char* objInfo(const BaseObject *);
 
 
 /* Fire a weapon at something */
-bool combFire(Weapon* psWeap, BaseObject * psAttacker,
-              BaseObject * psTarget, int weapon_slot)
+bool combFire(Weapon* psWeap, BaseObject* psAttacker,
+              BaseObject* psTarget, int weapon_slot)
 {
 	ASSERT(psWeap != nullptr, "Invalid weapon pointer");
-
   auto player = psAttacker->playerManager->getPlayer();
   auto psDroid = dynamic_cast<Droid*>(psAttacker);
+
 	/* Don't shoot if the weapon_slot of a vtol is empty */
 	if (psDroid && psDroid->isVtol() &&
       psWeap->ammoUsed >= getNumAttackRuns(psDroid, weapon_slot)) {
@@ -94,28 +94,22 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 		return false;
 	}
 
-	ASSERT(player < MAX_PLAYERS,
-         "psAttacker->player = %" PRIu8 "",
-         player);
+	ASSERT(player < MAX_PLAYERS, "psAttacker->player = %" PRIu8 "", player);
 
 	if (psTarget->isVisibleToPlayer(player) != UBYTE_MAX) {
 		// Can't see it - can't hit it
-		objTrace(psAttacker->getId(),
-             "combFire(%u[%s]->%u): Object has no indirect sight of target",
-             psAttacker->getId(),
-		         getStatsName(psStats),
-             psTarget->getId());
+		objTrace(psAttacker->getId(), "combFire(%u[%s]->%u): Object has no indirect sight of target",
+             psAttacker->getId(), getStatsName(psStats), psTarget->getId());
 		return false;
 	}
 
 	/* Check we can hit the target */
   auto droid = dynamic_cast<Droid*>(psAttacker);
   auto structure = dynamic_cast<Structure*>(psAttacker);
-	bool tall = droid && droid->isVtol() ||
-              structure && structure->getStats()->height > 1;
+	bool tall = droid && droid->isVtol() || structure && structure->getStats()->height > 1;
 
-	if (proj_Direct(psStats.get()) && !
-      lineOfFire(psAttacker, psTarget, weapon_slot, tall)) {
+	if (proj_Direct(psStats.get()) &&
+      !lineOfFire(psAttacker, psTarget, weapon_slot, tall)) {
 		// Can't see the target - can't hit it with direct fire
 		objTrace(psAttacker->getId(), "combFire(%u[%s]->%u): No direct line of sight to target",
 		         psAttacker->getId(), objInfo(psAttacker), psTarget->getId());
@@ -149,9 +143,9 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 		// adjust maximum range of unit if forced to shoot very steep
 		if (min_angle > DEG(PROJ_MAX_PITCH)) {
 			//do not allow increase of max range though
-			if (iSin(2 * min_angle) < iSin(2 * DEG(PROJ_MAX_PITCH)))
-			// If PROJ_MAX_PITCH == 45, then always iSin(2*min_angle) <= iSin(2*DEG(PROJ_MAX_PITCH)), and the test is redundant.
-			{
+			if (iSin(2 * min_angle) < iSin(2 * DEG(PROJ_MAX_PITCH))) {
+		  	// If PROJ_MAX_PITCH == 45, then always iSin(2*min_angle) <= iSin(2*DEG(PROJ_MAX_PITCH)),
+        // and the test is redundant
 				longRange = longRange * iSin(2 * min_angle) / iSin(2 * DEG(PROJ_MAX_PITCH));
 			}
 		}
@@ -199,8 +193,7 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 		resultHitChance -= EXP_ACCURACY_BONUS * level * baseHitChance / 100;
 	}
 
-	if (droid &&
-      droid->getMovementData()->status != MOVE_STATUS::INACTIVE &&
+	if (droid && droid->getMovementData()->status != MOVE_STATUS::INACTIVE &&
       !psStats->fireOnMove) {
 		return false; // Can't fire while moving
 	}
@@ -219,19 +212,20 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 	psWeap->shotsFired++;
 
 	// predicted X,Y offset per sec
-	Vector3i predict = psTarget->getPosition();
+	auto predict = psTarget->getPosition();
 
 	// Target prediction
 	if (dynamic_cast<Droid*>(psTarget) &&
       dynamic_cast<Droid*>(psTarget)->getMovementData()->bumpTime == 0) {
-		auto psDroid = dynamic_cast<Droid*>(psTarget);
+		psDroid = dynamic_cast<Droid*>(psTarget);
 
-		int32_t flightTime;
-		if (proj_Direct(psStats.get()) || dist <= proj_GetMinRange(psStats.get(), player)) {
+		int flightTime;
+		if (proj_Direct(psStats.get()) ||
+        dist <= proj_GetMinRange(psStats.get(), player)) {
 			flightTime = dist * GAME_TICKS_PER_SEC / psStats->flightSpeed;
 		}
 		else {
-			int32_t vXY, vZ; // Unused, we just want the flight time.
+			int vXY, vZ; // Unused, we just want the flight time.
 			flightTime = projCalcIndirectVelocities(
               dist, deltaPos.z, psStats->flightSpeed,
               &vXY, &vZ, min_angle);
@@ -251,6 +245,7 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 		predict += Vector3i(iSinCosR(
             psDroid->getMovementData()->moveDir,
             psDroid->getMovementData()->speed * flightTime / GAME_TICKS_PER_SEC), 0);
+
 		if (!isFlying(psDroid)) {
 			predict.z = map_Height(predict.xy()); // Predict that the object will be on the ground.
 		}
@@ -311,82 +306,82 @@ bool combFire(Weapon* psWeap, BaseObject * psAttacker,
 	return true;
 }
 
-/*checks through the target players list of structures and droids to see
-if any support a counter battery sensor*/
 void counterBatteryFire(BaseObject* psAttacker, BaseObject* psTarget)
 {
 	/*if a null target is passed in ignore - this will be the case when a 'miss'
 	projectile is sent - we may have to cater for these at some point*/
 	// also ignore cases where you attack your own player
 	// Also ignore cases where there are already 1000 missiles heading towards the attacker.
-	if (psTarget == nullptr ||
-      (psAttacker != nullptr &&
-       psAttacker->playerManager->getPlayer() == psTarget->playerManager->getPlayer()) ||
-      (psAttacker != nullptr && dynamic_cast<Health *>(psAttacker)->isProbablyDoomed(false))) {
+  if (psTarget == nullptr || psAttacker != nullptr &&
+      psAttacker->playerManager->getPlayer() == psTarget->playerManager->getPlayer() ||
+      psAttacker != nullptr && psAttacker->damageManager->isProbablyDoomed(false)) {
 		return;
 	}
 
 	for (auto psViewer : apsSensorList)
 	{
-    if (!aiCheckAlliances(psTarget->playerManager->getPlayer(), psViewer->playerManager->getPlayer())) {
+    if (!aiCheckAlliances(psTarget->playerManager->getPlayer(),
+                          psViewer->playerManager->getPlayer())) {
       continue;
     }
+
     auto psStruct = dynamic_cast<Structure*>(psViewer);
     auto psDroid = dynamic_cast<Droid*>(psViewer);
-    if ((psStruct && !structCBSensor(psStruct) &&
-         psStruct->getStats()->sensor_stats->type != SENSOR_TYPE::VTOL_CB) ||
-        (psDroid && !psDroid->hasCbSensor())) {
+
+    if (psStruct && !structCBSensor(psStruct) &&
+        psStruct->getStats()->sensor_stats->type != SENSOR_TYPE::VTOL_CB ||
+        psDroid && !psDroid->hasCbSensor()) {
       continue;
     }
+
     const auto sensorRange = objSensorRange(psViewer);
-
-    // Check sensor distance from target
-    const auto xDiff = psViewer->getPosition().x -
-                       psTarget->getPosition().x;
-    const auto yDiff = psViewer->getPosition().y -
-                       psTarget->getPosition().y;
-
-    if (xDiff * xDiff + yDiff * yDiff >= sensorRange * sensorRange) {
+    if (objectPositionSquareDiff(psViewer, psTarget) >= sensorRange * sensorRange) {
       continue;
     }
+
     // Inform viewer of target
     if (psDroid) {
-      orderDroidObj(psDroid, ORDER_TYPE::OBSERVE,
-                    psAttacker, ModeImmediate);
+      orderDroidObj(psDroid, ORDER_TYPE::OBSERVE, psAttacker, ModeImmediate);
+      continue;
     }
-    else if (psStruct) {
-      setStructureTarget(psStruct, psAttacker, 0, TARGET_ORIGIN::CB_SENSOR);
-    }
+    if (!psStruct) continue;
+    setStructureTarget(psStruct, psAttacker, 0, TARGET_ORIGIN::CB_SENSOR);
   }
 }
 
-int objArmour(BaseObject const* psObj, WEAPON_CLASS weaponClass)
+unsigned objArmour(BaseObject const* psObj, WEAPON_CLASS weaponClass)
 {
-	auto armour = 0;
   auto player = psObj->playerManager->getPlayer();
+
 	if (auto psDroid = dynamic_cast<const Droid*>(psObj)) {
     auto body = psDroid->getComponent(COMPONENT_TYPE::BODY);
-    if (body) {
-      armour = bodyArmour(
-              dynamic_cast<const BodyStats*>(body),
-              player, weaponClass);
-    }
+    if (!body) return 0;
+    return bodyArmour(dynamic_cast<const BodyStats*>(body), player, weaponClass);
 	}
-	else if (auto psStruct = dynamic_cast<const Structure*>(psObj)) {
-    if (psStruct->getState() != STRUCTURE_STATE::BEING_BUILT) {
-      if (weaponClass == WEAPON_CLASS::KINETIC) {
-        armour = psStruct->getStats()->upgraded_stats[player].armour;
-      }
-      else if (weaponClass == WEAPON_CLASS::HEAT) {
-        armour = psStruct->getStats()->upgraded_stats[player].thermal;
-      }
-    }
-	}
-	else if (auto psFeature = dynamic_cast<const Feature*>(psObj))
-    if (weaponClass == WEAPON_CLASS::KINETIC) {
-		  armour = psFeature->getStats()->armourValue;
-	}
-	return armour;
+
+  auto psStruct = dynamic_cast<const Structure*>(psObj);
+  auto psFeature = dynamic_cast<const Feature*>(psObj);
+  if (psStruct == nullptr && psFeature == nullptr)
+    return 0;
+
+  if (psStruct == nullptr) {
+    return weaponClass == WEAPON_CLASS::KINETIC
+            ? psFeature->getStats()->armourValue
+            : 0;
+  }
+
+  if (psStruct->getState() == STRUCTURE_STATE::BEING_BUILT)
+    return 0;
+
+  if (weaponClass == WEAPON_CLASS::KINETIC) {
+    return psStruct->getStats()->upgraded_stats[player].armour;
+  }
+
+  if (weaponClass == WEAPON_CLASS::HEAT) {
+    return psStruct->getStats()->upgraded_stats[player].thermal;
+  }
+
+  return 0;
 }
 
 /* Deals damage to an object
@@ -400,22 +395,20 @@ int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp,
               WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
               bool isDamagePerSecond, int minDamage)
 {
-	auto level = 1;
-	auto armour = objArmour(psObj, weaponClass);
-	const auto lastHit = psObj->damageManager->getTimeLastHit();
+	unsigned level;
+  auto const lastHit = psObj->damageManager->getTimeLastHit();
+
+  // EMP cannons do no damage, if we are one return now
+  if (weaponSubClass == WEAPON_SUBCLASS::EMP) {
+    return 0;
+  }
 
 	// If the previous hit was by an EMP cannon and this one is not:
 	// don't reset the weapon class and hit time
 	// (Giel: I guess we need this to determine when the EMP-"shock" is over)
-	if (psObj->damageManager->getLastHitWeapon() != WEAPON_SUBCLASS::EMP ||
-      weaponSubClass == WEAPON_SUBCLASS::EMP) {
+	if (psObj->damageManager->getLastHitWeapon() != WEAPON_SUBCLASS::EMP) {
 		psObj->damageManager->setTimeLastHit(gameTime);
 		psObj->damageManager->setLastHitWeapon(weaponSubClass);
-	}
-
-	// EMP cannons do no damage, if we are one return now
-	if (weaponSubClass == WEAPON_SUBCLASS::EMP) {
-		return 0;
 	}
 
 	// apply game difficulty setting
@@ -438,15 +431,13 @@ int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp,
 	auto actualDamage = (damage * (100 - EXP_REDUCE_DAMAGE * level)) / 100;
 
 	// Apply at least the minimum damage amount
-	actualDamage = MAX(actualDamage - armour, actualDamage * minDamage / 100);
+	actualDamage = MAX(actualDamage - objArmour(psObj, weaponClass), actualDamage * minDamage / 100);
 
 	// And at least MIN_WEAPON_DAMAGE points
 	actualDamage = MAX(actualDamage, MIN_WEAPON_DAMAGE);
 
-	debug(LOG_ATTACK, "objDamage(%d): body: %d, armour: %d,"
-                    " basic damage: %d, actual damage: %d",
-                    psObj->getId(), psObj->damageManager->getHp(), armour,
-                    damage, actualDamage);
+  debug(LOG_ATTACK, "objDamage(%d): body: %d, armour: %d," " basic damage: %d, actual damage: %d",
+        psObj->getId(), psObj->damageManager->getHp(), objArmour(psObj, weaponClass), damage, actualDamage);
 
 	if (isDamagePerSecond) {
 		auto deltaDamageRate = actualDamage - psObj->damageManager->getPeriodicalDamage();
@@ -460,7 +451,7 @@ int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp,
 	objTrace(psObj->getId(), "objDamage: Penetrated %d", actualDamage);
 	syncDebug("damage%u dam%u,o%u,wc%d.%d,ar%d,lev%d,aDam%d,isDps%d",
             psObj->getId(), damage, originalhp, weaponClass,
-	          weaponSubClass, armour, level, actualDamage, isDamagePerSecond);
+	          weaponSubClass, objArmour(psObj, weaponClass), level, actualDamage, isDamagePerSecond);
 
 	// for some odd reason, we have 0 hitpoints.
 	if (originalhp == 0) {
@@ -476,35 +467,23 @@ int objDamage(BaseObject* psObj, unsigned damage, unsigned originalhp,
 
 	// Subtract the dealt damage from the droid's remaining body points
 	psObj->damageManager->setHp(psObj->damageManager->getHp() - actualDamage);
-
 	return (int64_t)65536 * actualDamage / originalhp;
 }
 
-/* Guesses how damage a shot might do.
- * \param psObj object that might be hit
- * \param damage amount of damage to deal
- * \param weaponClass the class of the weapon that deals the damage
- * \param weaponSubClass the subclass of the weapon that deals the damage
- * \return guess at amount of damage
- */
 unsigned objGuessFutureDamage(WeaponStats const* psStats, unsigned player, BaseObject const* psTarget)
 {
-	int level = 1;
+	unsigned level;
 
-	if (psTarget == nullptr) {
-		return 0; // Hard to destroy the ground. The armour on the mud is very strong and blocks all damage.
-	}
-
-	auto damage = calcDamage(weaponDamage(psStats, player),
-                      psStats->weaponEffect, psTarget);
-
-	// EMP cannons do no damage, if we are one return now
-	if (psStats->weaponSubClass == WEAPON_SUBCLASS::EMP) {
+  // EMP cannons do no damage, if we are one return now
+	if (psTarget == nullptr || psStats->weaponSubClass == WEAPON_SUBCLASS::EMP) {
 		return 0;
 	}
 
+  auto damage = calcDamage(weaponDamage(psStats, player),
+                           psStats->weaponEffect, psTarget);
+
 	// apply game difficulty setting
-	damage = modifyForDifficultyLevel(damage, psTarget->playerManager->getPlayer() != selectedPlayer);
+	damage = modifyForDifficultyLevel(damage, !psTarget->playerManager->isSelectedPlayer());
 	auto armour = objArmour(psTarget, psStats->weaponClass);
 
 	if (auto psDroid = dynamic_cast<Droid const*>(psTarget)) {
@@ -514,15 +493,11 @@ unsigned objGuessFutureDamage(WeaponStats const* psStats, unsigned player, BaseO
 	//debug(LOG_ATTACK, "objGuessFutureDamage(%d): body %d armour %d damage: %d", psObj->id, psObj->body, armour, damage);
 
 	// Reduce damage taken by EXP_REDUCE_DAMAGE % for each experience level
-	auto actualDamage = (damage * (100 - EXP_REDUCE_DAMAGE * level)) / 100;
+	auto actualDamage = damage * (100 - EXP_REDUCE_DAMAGE * level) / 100;
 
 	// You always do at least a third of the experience modified damage
 	actualDamage = MAX(actualDamage - armour, actualDamage * psStats->upgraded[player].minimumDamage / 100);
 
 	// And at least MIN_WEAPON_DAMAGE points
-	actualDamage = MAX(actualDamage, MIN_WEAPON_DAMAGE);
-
-	//objTrace(psObj->id, "objGuessFutureDamage: Would penetrate %d", actualDamage);
-
-	return actualDamage;
+	return MAX(actualDamage, MIN_WEAPON_DAMAGE);
 }
