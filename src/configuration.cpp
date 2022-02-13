@@ -82,16 +82,14 @@ public:
 public:
 	[[nodiscard]] std::shared_ptr<std::istream> getFileReadStream() const override
 	{
-		if (utf8Path.empty())
-		{
+		if (utf8Path.empty()) {
 			return nullptr;
 		}
-		try
-		{
+
+		try {
 			return std::static_pointer_cast<std::istream>(PhysFS::ifstream::make(utf8Path));
 		}
-		catch (const std::exception&)
-		{
+		catch (std::exception const&) {
 			// file likely does not exist
 			return nullptr;
 		}
@@ -165,61 +163,55 @@ static void iniSectionSetInteger(IniSection& iniSection, const std::string& key,
 static optional<bool> iniSectionGetBool(const IniSection& iniSection, const std::string& key,
                                         optional<bool> defaultValue = nullopt)
 {
-	if (!iniSection.has(key))
-	{
+	if (!iniSection.has(key)) {
 		return defaultValue;
 	}
+
 	auto valueStr = WzString::fromUtf8(iniSection.get(key)).toLower();
 	// first check if it's equal to "true" or "false" (case-insensitive)
-	if (valueStr == "true")
-	{
+	if (valueStr == "true") {
 		return true;
 	}
-	else if (valueStr == "false")
-	{
+
+	if (valueStr == "false") {
 		return false;
 	}
-	else
-	{
-		// check for 1 or 0
-		if (auto valueInt = iniSectionGetInteger(iniSection, key))
-		{
-			if (valueInt.value() == 1)
-			{
-				return true;
-			}
-			else if (valueInt.value() == 0)
-			{
-				return false;
-			}
-		}
-	}
-	return defaultValue;
+
+  // check for 1 or 0
+  auto valueInt = iniSectionGetInteger(iniSection, key);
+  if (!valueInt)
+    return defaultValue;
+
+  if (valueInt.value() == 1) {
+    return true;
+  }
+  if (valueInt.value() == 0) {
+    return false;
+  }
+  return defaultValue;
 }
 
 static void iniSectionSetBool(IniSection& iniSection, const std::string& key, bool value)
 {
-	iniSection[key] = (value) ? "true" : "false";
+	iniSection[key] = value ? "true" : "false";
 }
 
 static optional<std::string> iniSectionGetString(const IniSection& iniSection, const std::string& key,
                                                  optional<std::string> defaultValue = nullopt)
 {
-	if (!iniSection.has(key))
-	{
+	if (!iniSection.has(key)) {
 		return defaultValue;
 	}
 	std::string result = iniSection.get(key);
+
 	// To support prior INI files written by QSettings, strip surrounding "" if present
-	if (!result.empty() && result.front() == '"' && result.back() == '"')
-	{
-		if (result.size() <= 2)
-		{
-			return std::string();
-		}
-		result = result.substr(1, result.size() - 2);
-	}
-	return result;
+  if (result.empty() || result.front() != '"' || result.back() != '"')
+    return result;
+
+  if (result.size() <= 2) {
+    return {};
+  }
+  return result.substr(1, result.size() - 2);
 }
 
 bool saveIniFile(mINI::INIFile& file, mINI::INIStructure& ini)
@@ -241,7 +233,6 @@ bool saveIniFile(mINI::INIFile& file, mINI::INIStructure& ini)
 	return true;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 bool loadConfig()
 {
 	// first, create a file instance
@@ -626,12 +617,9 @@ bool saveConfig()
 	{
 		iniSetInteger("colour", (int)*getPlayerColour(0)); // favourite colour.
 	}
-	else
-	{
-		if (NetPlay.isHost && ingame.localJoiningInProgress)
-		{
-			if (bMultiPlayer && NetPlay.bComms)
-			{
+	else {
+		if (NetPlay.isHost && ingame.localJoiningInProgress) {
+			if (bMultiPlayer && NetPlay.bComms) {
 				iniSetString("gameName", game.name); //  last hosted game
 				war_setMPInactivityMinutes(game.inactivityMinutes);
 

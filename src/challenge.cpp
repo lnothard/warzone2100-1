@@ -82,6 +82,7 @@ bool challengeActive = false; ///< Whether we are running a challenge
 std::string challengeName;
 WzString challengeFileName;
 
+
 static void displayLoadBanner(WIDGET* psWidget, unsigned xOffset, unsigned yOffset)
 {
 	PIELIGHT col = WZCOL_GREEN;
@@ -93,8 +94,7 @@ static void displayLoadBanner(WIDGET* psWidget, unsigned xOffset, unsigned yOffs
 
 std::string_view currentChallengeName()
 {
-	if (challengeActive) return challengeName;
-	return {};
+  return challengeActive ? challengeName : std::string_view();
 }
 
 // quite the hack, game name is stored in global sRequestResult
@@ -105,12 +105,17 @@ void updateChallenge(bool gameWon)
   auto newtime = (gameTime - mission.startTime) / GAME_TICKS_PER_SEC;
 	WzConfig scores(CHALLENGE_SCORES, WzConfig::ReadAndWrite);
 	auto fStr = strrchr(sRequestResult, '/');
-	if (fStr != nullptr) ++fStr; // skip slash
-	else fStr = sRequestResult;
+
+	if (fStr != nullptr)
+    ++fStr; // skip slash
+	else
+    fStr = sRequestResult;
+
 	if (*fStr == '\0') {
 		debug(LOG_ERROR, "Bad path to challenge file (%s)", sRequestResult);
 		return;
 	}
+
 	WzString sPath = fStr;
 	// remove .json
 	if (sPath.endsWith(".json")) {
@@ -123,9 +128,9 @@ void updateChallenge(bool gameWon)
 	// Update score if we have a victory and best recorded was a loss,
 	// or both were losses but time is higher, or both were victories
 	// but time is lower.
-	if (!victory && gameWon ||
+  if (!victory && gameWon ||
       !gameWon && !victory && newtime > seconds ||
-      gameWon && victory && newtime < seconds) {
+      gameWon && newtime < seconds) {
 		scores.setValue("seconds", newtime);
 		scores.setValue("victory", gameWon);
 		scores.setValue("player", NetPlay.players[selectedPlayer].name);
@@ -184,7 +189,7 @@ void challengesScreenSizeDidChange(unsigned oldWidth, unsigned oldHeight,
 bool addChallenges()
 {
 	char sPath[PATH_MAX];
-	char* const sSearchPath = "challenges";
+	char const* sSearchPath = "challenges";
 	static char sSlotCaps[totalslots][totalslotspace];
 	static char sSlotTips[totalslots][totalslotspace];
 	static char sSlotFile[totalslots][totalslotspace];
@@ -198,9 +203,10 @@ bool addChallenges()
 
 	parent->attach(challengeForm);
 	challengeForm->setCalcLayout(LAMBDA_CALCLAYOUT_SIMPLE({
-			psWidget->setGeometry(CHALLENGE_X, CHALLENGE_Y, CHALLENGE_W, (slotsInColumn * CHALLENGE_ENTRY_H +
-				CHALLENGE_HGAP * slotsInColumn) + CHALLENGE_BANNER_DEPTH + 20);
-			}));
+    psWidget->setGeometry(CHALLENGE_X, CHALLENGE_Y, CHALLENGE_W,
+                          slotsInColumn * CHALLENGE_ENTRY_H +
+                                  CHALLENGE_HGAP * slotsInColumn + CHALLENGE_BANNER_DEPTH + 20);
+	}));
 
 	// Add Banner
 	W_FORMINIT sFormInit;
@@ -263,8 +269,8 @@ bool addChallenges()
 
 		if (slotCount < slotsInColumn) {
 			sButInit.x = 22 + CHALLENGE_HGAP;
-			sButInit.y = ((CHALLENGE_BANNER_DEPTH + (2 * CHALLENGE_VGAP)) + (
-				slotCount * (CHALLENGE_VGAP + CHALLENGE_ENTRY_H)));
+      sButInit.y = CHALLENGE_BANNER_DEPTH + 2 * CHALLENGE_VGAP +
+                   slotCount * (CHALLENGE_VGAP + CHALLENGE_ENTRY_H);
 		}
 		else if (slotCount >= slotsInColumn && (slotCount < (slotsInColumn * 2))) {
 			sButInit.x = 22 + (2 * CHALLENGE_HGAP + CHALLENGE_ENTRY_W);
@@ -305,8 +311,8 @@ bool addChallenges()
 		auto name = scores.value("player", "NO NAME").toWzString();
 		auto victory = scores.value("victory", false).toBool();
 		auto seconds = scores.value("seconds", -1).toInt();
-		if (seconds > 0)
-		{
+
+		if (seconds > 0) {
 			char psTimeText[sizeof("HH:MM:SS")] = {0};
 			struct tm tmp = getUtcTime(static_cast<time_t>(seconds));
 			strftime(psTimeText, sizeof(psTimeText), "%H:%M:%S", &tmp);
@@ -374,31 +380,29 @@ bool runChallenges()
 		sstrcpy(sRequestResult, ""); // set returned filename to null;
 
 		// cancel this operation...
-		if (id == CHALLENGE_CANCEL || CancelPressed())
-		{
+		if (id == CHALLENGE_CANCEL || CancelPressed()) {
 			goto failure;
 		}
 
 		// clicked a load entry
-		if (id >= CHALLENGE_ENTRY_START && id <= CHALLENGE_ENTRY_END) {
-			auto psWidget = dynamic_cast<W_BUTTON*>(widgGetFromID(psRequestScreen, id));
-			assert(psWidget != nullptr);
-			if (!(psWidget->pText.isEmpty()))
-			{
-				auto data = static_cast<DisplayLoadSlotData*>(psWidget->pUserData);
-				assert(data != nullptr);
-				assert(data->filename != nullptr);
-				sstrcpy(sRequestResult, data->filename);
-				challengeFileName = sRequestResult;
-				challengeName = psWidget->pText.toStdString();
-			}
-			else
-			{
-				goto failure; // clicked on an empty box
-			}
-			goto success;
-		}
-	}
+    if (id < CHALLENGE_ENTRY_START || id > CHALLENGE_ENTRY_END)
+      continue;
+
+    auto psWidget = dynamic_cast<W_BUTTON*>(widgGetFromID(psRequestScreen, id));
+    assert(psWidget != nullptr);
+    if (!psWidget->pText.isEmpty()) {
+      auto data = static_cast<DisplayLoadSlotData*>(psWidget->pUserData);
+      assert(data != nullptr);
+      assert(data->filename != nullptr);
+      sstrcpy(sRequestResult, data->filename);
+      challengeFileName = sRequestResult;
+      challengeName = psWidget->pText.toStdString();
+    }
+    else {
+      goto failure; // clicked on an empty box
+    }
+    goto success;
+  }
 
 	return false;
 

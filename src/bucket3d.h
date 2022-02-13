@@ -25,11 +25,11 @@
 #include "console.h"
 
 
-static constexpr auto CLIP_LEFT	 = 0;
-static const auto CLIP_RIGHT = 	pie_GetVideoBufferWidth();
-static constexpr auto CLIP_TOP = 	0;
-static const auto CLIP_BOTTOM  = pie_GetVideoBufferHeight();
-static constexpr auto SCALE_DEPTH =  FP12_MULTIPLIER * 7;
+static constexpr auto SCALE_DEPTH = FP12_MULTIPLIER * 7;
+static constexpr auto CLIP_LEFT = 0;
+static constexpr auto CLIP_TOP = 0;
+static const auto CLIP_RIGHT = pie_GetVideoBufferWidth();
+static const auto CLIP_BOTTOM = pie_GetVideoBufferHeight();
 
 enum class RENDER_TYPE
 {
@@ -46,7 +46,7 @@ enum class RENDER_TYPE
 struct BUCKET_TAG
 {
   BUCKET_TAG(RENDER_TYPE, void*, int);
-  bool operator <(BUCKET_TAG const& b) const;
+  bool operator<(BUCKET_TAG const& b) const;
 
   RENDER_TYPE objectType; // type of object held
   void* pObject; // pointer to the object
@@ -54,8 +54,8 @@ struct BUCKET_TAG
 };
 
 /// Add an object to the current render list
-void bucketAddTypeToList(RENDER_TYPE objectType, void* object, const glm::mat4& viewMatrix);
+void bucketAddTypeToList(RENDER_TYPE objectType, void* object, glm::mat4 const& viewMatrix);
 
-void bucketRenderCurrentList(const glm::mat4& viewMatrix);
+void bucketRenderCurrentList(glm::mat4 const& viewMatrix);
 
 #endif // __INCLUDED_SRC_BUCKET3D_H__

@@ -254,7 +254,7 @@ void orderDroidStatsLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psS
                            uint16_t direction, QUEUE_MODE mode);
 
 /** \brief Gets the state of a droid order with a location and a stat. */
-bool orderStateStatsLoc(Droid* psDroid, ORDER_TYPE order, StructureStats** ppsStats);
+bool orderStateStatsLoc(Droid const* psDroid, ORDER_TYPE order, StructureStats** ppsStats);
 
 /** \brief Sends an order with a location and a stat to a droid. */
 void orderDroidStatsTwoLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, unsigned x1, unsigned y1,

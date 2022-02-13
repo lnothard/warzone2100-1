@@ -117,7 +117,7 @@ unsigned aiDroidRange(Droid const* psDroid, int weapon_slot);
 
 /// Search the global list of sensors for a possible target for psObj
 BaseObject* aiSearchSensorTargets(BaseObject const* psObj, int weapon_slot,
-                                        WeaponStats const* psWStats, TARGET_ORIGIN* targetOrigin);
+                                  WeaponStats const* psWStats, TARGET_ORIGIN* targetOrigin);
 
 /// Calculates attack priority for a certain target
 int targetAttackWeight(BaseObject const* psTarget, BaseObject const* psAttacker, int weapon_slot);

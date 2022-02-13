@@ -192,8 +192,7 @@ public:
 	void joinGameFailed( std::vector<JoinConnectionDescription> const& connection_list);
 	void joinGameSucceeded(char const* host, unsigned port);
 	void joinedLobbyQuit();
-	void updateMultiplayGameData(MULTIPLAYERGAME const& game, MULTIPLAYERINGAME const& ingame,
-                               optional<bool> privateGame);
+	void updateMultiplayGameData(MULTIPLAYERGAME const& game, MULTIPLAYERINGAME const& ingame, optional<bool> privateGame);
 	static ActivityManager& instance();
 	void initialize();
 	void shutdown();

@@ -1328,32 +1328,33 @@ bool DroidGoingToBuild(Droid* Droid)
 }
 
 // Get the structure for a structure which a droid is currently building.
-Structure* DroidGetBuildStructure(Droid* Droid)
+Structure* DroidGetBuildStructure(Droid const* Droid)
 {
-   BaseObject* psStruct = nullptr;
+  BaseObject* psStruct = nullptr;
 
-	if (orderStateObj(Droid, ORDER_TYPE::BUILD)) {
-		psStruct = orderStateObj(Droid, ORDER_TYPE::HELP_BUILD);
-	}
-return (Structure*)psStruct;
+  if (orderStateObj(Droid, ORDER_TYPE::BUILD)) {
+    psStruct = orderStateObj(Droid, ORDER_TYPE::HELP_BUILD);
+  }
+  return (Structure*)psStruct;
 }
 
 // Get the first factory assigned to a command droid
-Structure* droidGetCommandFactory(Droid* psDroid)
+Structure* droidGetCommandFactory(Droid const* psDroid)
 {
 	for (auto inc = 0; inc < MAX_FACTORY; inc++)
 	{
-		if (psDroid->getSecondaryOrder() & (1 << (inc + DSS_ASSPROD_SHIFT))) {
+		if (psDroid->getSecondaryOrder() & 1 << inc + DSS_ASSPROD_SHIFT) {
 			// found an assigned factory - look for it in the lists
 			for (auto& psCurr : playerList[psDroid->playerManager->getPlayer()].structures)
 			{
 				if (psCurr.getStats()->type == STRUCTURE_TYPE::FACTORY &&
-            (((Factory *) psCurr.pFunctionality)->psAssemblyPoint->factoryInc == inc)) {
+            ((Factory *) psCurr.pFunctionality)->psAssemblyPoint->factoryInc == inc) {
 					return &psCurr;
 				}
 			}
 		}
-		if (psDroid->getSecondaryOrder() & (1 << (inc + DSS_ASSPROD_CYBORG_SHIFT))) {
+
+		if (psDroid->getSecondaryOrder() & 1 << inc + DSS_ASSPROD_CYBORG_SHIFT) {
 			// found an assigned factory - look for it in the lists
 			for (auto& psCurr : playerList[psDroid->playerManager->getPlayer()].structures)
 			{
@@ -1364,13 +1365,13 @@ Structure* droidGetCommandFactory(Droid* psDroid)
 				}
 			}
 		}
-		if (psDroid->getSecondaryOrder() & (1 << (inc + DSS_ASSPROD_VTOL_SHIFT))) {
+
+		if (psDroid->getSecondaryOrder() & 1 << inc + DSS_ASSPROD_VTOL_SHIFT) {
 			// found an assigned factory - look for it in the lists
 			for (auto& psCurr : playerList[psDroid->playerManager->getPlayer()].structures)
 			{
-				if ((psCurr.getStats()->type == STRUCTURE_TYPE::VTOL_FACTORY) &&
-					(((Factory*)psCurr.pFunctionality)->
-					 psAssemblyPoint->factoryInc == inc)) {
+				if (psCurr.getStats()->type == STRUCTURE_TYPE::VTOL_FACTORY &&
+            (((Factory *) psCurr.pFunctionality)->psAssemblyPoint->factoryInc == inc)) {
 					return &psCurr;
 				}
 			}
@@ -1503,19 +1504,19 @@ bool StatIsTemplate(BaseStats* Stat)
 	return Stat->hasType(STAT_TEMPLATE);
 }
 
-COMPONENT_TYPE StatIsComponent(BaseStats* Stat)
+COMPONENT_TYPE StatIsComponent(BaseStats const* Stat)
 {
-	switch (StatType(Stat->ref & STAT_MASK)) {
-      using enum COMPONENT_TYPE;
-	case STAT_BODY: return BODY;
-	case STAT_BRAIN: return BRAIN;
-	case STAT_PROPULSION: return PROPULSION;
-	case STAT_WEAPON: return WEAPON;
-	case STAT_SENSOR: return SENSOR;
-	case STAT_ECM: return ECM;
-	case STAT_CONSTRUCT: return CONSTRUCT;
-	case STAT_REPAIR: return REPAIR_UNIT;
-	default: return COUNT;
+  switch (StatType(Stat->ref & STAT_MASK)) {
+    using enum COMPONENT_TYPE;
+    case STAT_BODY: return BODY;
+    case STAT_BRAIN: return BRAIN;
+    case STAT_PROPULSION: return PROPULSION;
+    case STAT_WEAPON: return WEAPON;
+    case STAT_SENSOR: return SENSOR;
+    case STAT_ECM: return ECM;
+    case STAT_CONSTRUCT: return CONSTRUCT;
+    case STAT_REPAIR: return REPAIR_UNIT;
+    default: return COUNT;
 	}
 }
 

@@ -48,6 +48,7 @@ struct BaseObject;
 int pie_RotateProject(const Vector3i*, const glm::mat4&, Vector2i*);
 static std::vector<BUCKET_TAG> bucketArray;
 
+
 BUCKET_TAG::BUCKET_TAG(RENDER_TYPE objectType, void* objPtr, int z)
   : objectType{objectType}, pObject{objPtr}, actualZ{z}
 {
@@ -81,17 +82,18 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, glm::mat4 con
 
       /* 16 below is HACK!!! */
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel) - 16;
-	  	if (z > 0) {
-	  		//particle use the image radius
-	  		radius = ((Particle*)pObject)->imd->radius;
-	  		radius *= SCALE_DEPTH;
-	  		radius /= z;
-	  		if (pixel.x + radius < CLIP_LEFT || pixel.x - radius > CLIP_RIGHT ||
-            pixel.y + radius < CLIP_TOP || pixel.y - radius > CLIP_BOTTOM) {
-	  			z = -1;
-	  		}
-	  	}
-	  	break;
+      if (z <= 0)
+        break;
+
+      //particle use the image radius
+      radius = ((Particle*)pObject)->imd->radius;
+      radius *= SCALE_DEPTH;
+      radius /= z;
+      if (pixel.x + radius < CLIP_LEFT || pixel.x - radius > CLIP_RIGHT ||
+          pixel.y + radius < CLIP_TOP || pixel.y - radius > CLIP_BOTTOM) {
+        z = -1;
+      }
+      break;
 	  case RENDER_PROJECTILE: {
       auto psProj = static_cast<Projectile*>(pObject);
       if (psProj && (psProj->getWeaponStats()->weaponSubClass == WEAPON_SUBCLASS::FLAME ||
@@ -107,42 +109,43 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, glm::mat4 con
       psSimpObj = static_cast<BaseObject*>(pObject);
       position.x = psSimpObj->getPosition().x - playerPos.p.x;
       position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
-
       position.y = psSimpObj->getPosition().z;
 
       z = pie_RotateProject(&position, viewMatrix, &pixel);
 
-      if (z > 0) {
-        //particle use the image radius
-        radius = pImd->radius;
-        radius *= SCALE_DEPTH;
-        radius /= z;
-        if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT) || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM)) {
-          z = -1;
-        }
+      if (z <= 0)
+        break;
+
+      //particle use the image radius
+      radius = pImd->radius * SCALE_DEPTH / z;
+      if (pixel.x + radius < CLIP_LEFT || pixel.x - radius > CLIP_RIGHT ||
+          pixel.y + radius < CLIP_TOP || pixel.y - radius > CLIP_BOTTOM) {
+        z = -1;
       }
       break;
     }
+
 	  case RENDER_STRUCTURE: //not depth sorted
 	  	psSimpObj = (BaseObject*)pObject;
 	  	position.x = psSimpObj->getPosition().x - playerPos.p.x;
 	  	position.z = -(psSimpObj->getPosition().y - playerPos.p.z);
 
-	  	if ((objectType == RENDER_STRUCTURE) &&
-	  		((((Structure*)pObject)->getStats()->type == STRUCTURE_TYPE::DEFENSE) ||
-         (((Structure*)pObject)->getStats()->type == STRUCTURE_TYPE::WALL) ||
-         (((Structure*)pObject)->getStats()->type == STRUCTURE_TYPE::WALL_CORNER))) {
+	  	if (((Structure *) pObject)->getStats()->type == STRUCTURE_TYPE::DEFENSE ||
+          ((Structure *) pObject)->getStats()->type == STRUCTURE_TYPE::WALL ||
+          ((Structure *) pObject)->getStats()->type == STRUCTURE_TYPE::WALL_CORNER) {
 	  		position.y = psSimpObj->getPosition().z + 64;
 	  		radius = ((Structure*)pObject)->getDisplayData()->imd_shape->radius; //walls guntowers and tank traps clip tightly
 	  	}
 	  	else {
 	  		position.y = psSimpObj->getPosition().z;
-	  		radius = (((Structure*)pObject)->getDisplayData()->imd_shape->radius);
+        radius = ((Structure *) pObject)->getDisplayData()->imd_shape->radius;
 	  	}
 
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel);
 
-	  	if (z <= 0) break;
+	  	if (z <= 0)
+        break;
+
       //particle use the image radius
       radius *= SCALE_DEPTH;
       radius /= z;
@@ -151,6 +154,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, glm::mat4 con
         z = -1;
       }
 	  	break;
+
 	  case RENDER_FEATURE: //not depth sorted
 	  	psSimpObj = static_cast<BaseObject*>(pObject);
       position = {psSimpObj->getPosition().x - playerPos.p.x,
@@ -159,17 +163,22 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, glm::mat4 con
 
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel);
 
-	  	if (z <= 0) break;
+	  	if (z <= 0)
+        break;
+
       //particle use the image radius
       radius = ((Feature*)pObject)->getDisplayData()->imd_shape->radius;
       radius *= SCALE_DEPTH;
       radius /= z;
-      if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-           || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM)) {
+
+      if (pixel.x + radius < CLIP_LEFT || pixel.x - radius > CLIP_RIGHT ||
+          pixel.y + radius < CLIP_TOP || pixel.y - radius > CLIP_BOTTOM) {
         z = -1;
       }
 	  	break;
-	  case RENDER_DROID: {
+
+	  case RENDER_DROID:
+    {
       auto psDroid = static_cast<Droid*>(pObject);
       psSimpObj = static_cast<BaseObject*>(pObject);
       position.x = psSimpObj->getPosition().x - playerPos.p.x;
@@ -180,48 +189,45 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, glm::mat4 con
       droidSize = psBStats->pIMD->radius;
       z = pie_RotateProject(&position, viewMatrix, &pixel) - (droidSize * 2);
 
-      if (z <= 0) break;
+      if (z <= 0)
+        break;
+
       //particle use the image radius
-      radius = droidSize;
-      radius *= SCALE_DEPTH;
-      radius /= z;
-      if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT) || (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM)) {
+      radius = droidSize * SCALE_DEPTH / z;
+      if (pixel.x + radius < CLIP_LEFT || pixel.x - radius > CLIP_RIGHT ||
+          pixel.y + radius < CLIP_TOP || pixel.y - radius > CLIP_BOTTOM) {
         z = -1;
       }
       break;
     }
+
 	  case RENDER_PROXMSG:
-	  	if (((PROXIMITY_DISPLAY*)pObject)->type == POSITION_TYPE::POS_PROXDATA)
-	  	{
-	  		const PROXIMITY_DISPLAY* ptr = (PROXIMITY_DISPLAY*)pObject;
+	  	if (((PROXIMITY_DISPLAY*)pObject)->type == POSITION_TYPE::POS_PROXDATA) {
+	  		auto ptr = (PROXIMITY_DISPLAY*)pObject;
 	  		position.x = ((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->x - playerPos.p.x;
 	  		position.z = -(((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->y - playerPos.p.z);
 	  		position.y = ((VIEW_PROXIMITY*)ptr->psMessage->pViewData->pData)->z;
 	  	}
-	  	else if (((PROXIMITY_DISPLAY*)pObject)->type == POSITION_TYPE::POS_PROXOBJ)
-	  	{
-	  		const PROXIMITY_DISPLAY* ptr = (PROXIMITY_DISPLAY*)pObject;
+	  	else if (((PROXIMITY_DISPLAY*)pObject)->type == POSITION_TYPE::POS_PROXOBJ) {
+	  		auto ptr = (PROXIMITY_DISPLAY*)pObject;
 	  		position.x = ptr->psMessage->psObj->getPosition().x - playerPos.p.x;
 	  		position.z = -(ptr->psMessage->psObj->getPosition().y - playerPos.p.z);
 	  		position.y = ptr->psMessage->psObj->getPosition().z;
 	  	}
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel);
 
-	  	if (z > 0)
-	  	{
-	  		//particle use the image radius
-	  		pImd = getImdFromIndex(MI_BLIP_ENEMY); //use MI_BLIP_ENEMY as all are same radius
-	  		radius = pImd->radius;
-	  		radius *= SCALE_DEPTH;
-	  		radius /= z;
-	  		if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-	  			|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
-	  		{
-	  			z = -1;
-	  		}
-	  	}
-	  	break;
-	  case RENDER_EFFECT:
+      if (z <= 0)
+        break;
+
+      //particle use the image radius
+      pImd = getImdFromIndex(MI_BLIP_ENEMY);//use MI_BLIP_ENEMY as all are same radius
+      radius = pImd->radius * SCALE_DEPTH / z;
+      if (pixel.x + radius < CLIP_LEFT || pixel.x - radius > CLIP_RIGHT ||
+          pixel.y + radius < CLIP_TOP || pixel.y - radius > CLIP_BOTTOM) {
+        z = -1;
+      }
+
+    case RENDER_EFFECT:
 	  	position.x = static_cast<int>(((EFFECT*)pObject)->position.x - playerPos.p.x);
 	  	position.z = static_cast<int>(-(((EFFECT*)pObject)->position.z - playerPos.p.z));
 	  	position.y = static_cast<int>(((EFFECT*)pObject)->position.y);
@@ -229,53 +235,45 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, glm::mat4 con
 	  /* 16 below is HACK!!! */
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel) - 16;
 
-	  	if (z > 0)
-	  	{
-	  		//particle use the image radius
-	  		pImd = ((EFFECT*)pObject)->imd.get();
-	  		if (pImd != nullptr)
-	  		{
-	  			radius = pImd->radius;
-	  			radius *= SCALE_DEPTH;
-	  			radius /= z;
-	  			if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-	  				|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
-	  			{
-	  				z = -1;
-	  			}
-	  		}
-	  	}
+      if (z <= 0)
+        break;
 
-	  	break;
+      //particle use the image radius
+      pImd = ((EFFECT*)pObject)->imd.get();
+      if (pImd == nullptr)
+        break;
 
-	  case RENDER_DELIVPOINT:
+      radius = pImd->radius;
+      radius *= SCALE_DEPTH;
+      radius /= z;
+      if (pixel.x + radius < CLIP_LEFT || pixel.x - radius > CLIP_RIGHT ||
+          pixel.y + radius < CLIP_TOP || pixel.y - radius > CLIP_BOTTOM) {
+        z = -1;
+      }
+      break;
+
+    case RENDER_DELIVPOINT:
 	  	position.x = ((FlagPosition*)pObject)->coords.x - playerPos.p.x;
-	  	position.z = -(((FlagPosition*)pObject)->
-	  	               coords.y - playerPos.p.z);
+	  	position.z = -(((FlagPosition*)pObject)->coords.y - playerPos.p.z);
 	  	position.y = ((FlagPosition*)pObject)->coords.z;
 
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel);
 
-	  	if (z > 0)
-	  	{
-	  		//particle use the image radius
-	  		radius = pAssemblyPointIMDs[((FlagPosition*)pObject)->factoryType][((FlagPosition*)pObject)->factoryInc]->
-	  			radius;
-	  		radius *= SCALE_DEPTH;
-	  		radius /= z;
-	  		if ((pixel.x + radius < CLIP_LEFT) || (pixel.x - radius > CLIP_RIGHT)
-	  			|| (pixel.y + radius < CLIP_TOP) || (pixel.y - radius > CLIP_BOTTOM))
-	  		{
-	  			z = -1;
-	  		}
-	  	}
+      if (z <= 0)
+        break;
 
-	  	break;
-
-	  default:
+      //particle use the image radius
+      radius = pAssemblyPointIMDs[((FlagPosition*)pObject)->factoryType][((FlagPosition*)pObject)->factoryInc]->radius;
+      radius *= SCALE_DEPTH;
+      radius /= z;
+      if (pixel.x + radius < CLIP_LEFT || pixel.x - radius > CLIP_RIGHT ||
+          pixel.y + radius < CLIP_TOP || pixel.y - radius > CLIP_BOTTOM) {
+        z = -1;
+      }
+      break;
+    default:
 	  	break;
 	}
-
 	return z;
 }
 
@@ -285,65 +283,62 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 	const iIMDShape* pie;
 	auto z = bucketCalculateZ(objectType, pObject, viewMatrix);
 
-	if (z < 0)
-	{
+	if (z < 0) {
 		/* Object will not be render - has been clipped! */
-		if (objectType == RENDER_TYPE::RENDER_DROID || objectType == RENDER_TYPE::RENDER_STRUCTURE)
-		{
+		if (objectType == RENDER_TYPE::RENDER_DROID || objectType == RENDER_TYPE::RENDER_STRUCTURE) {
 			/* Won't draw selection boxes */
 			((BaseObject *)pObject)->setFrameNumber(0);
 		}
-
 		return;
 	}
 
-	switch (objectType) {
+  switch (objectType) {
     using enum RENDER_TYPE;
     using enum EFFECT_GROUP;
-	case RENDER_EFFECT:
-		switch (((EFFECT*)pObject)->group)
-		{
-		case EXPLOSION:
-		case CONSTRUCTION:
-		case SMOKE:
-		case FIREWORK:
-			// Use calculated Z
-			break;
+    case RENDER_EFFECT:
+      switch (((EFFECT*)pObject)->group)
+      {
+        case EXPLOSION:
+        case CONSTRUCTION:
+        case SMOKE:
+        case FIREWORK:
+          // Use calculated Z
+          break;
 
-		case WAYPOINT:
-			pie = ((EFFECT*)pObject)->imd.get();
-			z = INT32_MAX - pie->texpage;
-			break;
+        case WAYPOINT:
+          pie = ((EFFECT*)pObject)->imd.get();
+          z = INT32_MAX - pie->texpage;
+          break;
 
-		default:
-			z = INT32_MAX - 42;
-			break;
-		}
-		break;
-	case RENDER_DROID:
-		pie = BODY_IMD(((Droid *)pObject), 0).get();
-		z = INT32_MAX - pie->texpage;
-		break;
-	case RENDER_STRUCTURE:
-		pie = ((Structure*)pObject)->getDisplayData()->imd_shape.get();
-		z = INT32_MAX - pie->texpage;
-		break;
-	case RENDER_FEATURE:
-		pie = ((Feature*)pObject)->getDisplayData()->imd_shape.get();
-		z = INT32_MAX - pie->texpage;
-		break;
-	case RENDER_DELIVPOINT:
-		pie = pAssemblyPointIMDs[((FlagPosition*)pObject)->
-			factoryType][((FlagPosition*)pObject)->factoryInc];
-		z = INT32_MAX - pie->texpage;
-		break;
-	case RENDER_PARTICLE:
-		z = 0;
-		break;
-	default:
-		// Use calculated Z
-		break;
-	}
+        default:
+          z = INT32_MAX - 42;
+          break;
+      }
+      break;
+    case RENDER_DROID:
+      pie = BODY_IMD(((Droid *)pObject), 0).get();
+      z = INT32_MAX - pie->texpage;
+      break;
+    case RENDER_STRUCTURE:
+      pie = ((Structure*)pObject)->getDisplayData()->imd_shape.get();
+      z = INT32_MAX - pie->texpage;
+      break;
+    case RENDER_FEATURE:
+      pie = ((Feature*)pObject)->getDisplayData()->imd_shape.get();
+      z = INT32_MAX - pie->texpage;
+      break;
+    case RENDER_DELIVPOINT:
+      pie = pAssemblyPointIMDs[((FlagPosition*)pObject)->
+              factoryType][((FlagPosition*)pObject)->factoryInc];
+      z = INT32_MAX - pie->texpage;
+      break;
+    case RENDER_PARTICLE:
+      z = 0;
+      break;
+    default:
+      // Use calculated Z
+      break;
+  }
 
 	//put the object data into the tag
   auto newTag = BUCKET_TAG{objectType, pObject, z};

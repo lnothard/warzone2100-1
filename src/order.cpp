@@ -63,7 +63,7 @@ static void orderClearDroidList(Droid* psDroid);
  */
 
 #define ASSERT_PLAYER_OR_RETURN(retVal, player) \
-	ASSERT_OR_RETURN(retVal, player < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
+	ASSERT_OR_RETURN(retVal, (player) < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
 Order::Order(ORDER_TYPE type)
   : type{type}, pos{0, 0}, pos2{0, 0}, direction{0}, index{0},
@@ -650,27 +650,27 @@ void orderDroidStatsTwoLocDirAdd(Droid* psDroid, ORDER_TYPE order, StructureStat
                                direction), true);
 }
 
-
 /**
  * This function returns false if droid's order and order don't match or the
  * order is not a location order. Else ppsStats = psDroid->psTarStats,
  * (pX,pY) = psDroid.(orderX,orderY) and it returns true.
  */
-bool orderStateStatsLoc(Droid* psDroid, ORDER_TYPE order, StructureStats** ppsStats)
+bool orderStateStatsLoc(Droid const* psDroid, ORDER_TYPE order, StructureStats** ppsStats)
 {
 	bool match = false;
   using enum ORDER_TYPE;
 	switch (order) {
 	  case BUILD:
 	  case LINE_BUILD:
-	  	if (psDroid->getOrder()->type == BUILD ||
-	  		psDroid->getOrder()->type == LINE_BUILD) {
+      if (psDroid->getOrder()->type == BUILD ||
+          psDroid->getOrder()->type == LINE_BUILD) {
 	  		match = true;
 	  	}
 	  	break;
 	  default:
 	  	break;
 	}
+
 	if (!match) {
 		return false;
 	}
@@ -683,11 +683,10 @@ bool orderStateStatsLoc(Droid* psDroid, ORDER_TYPE order, StructureStats** ppsSt
 	  		*ppsStats = psDroid->getOrder()->structure_stats.get();
 	  		return true;
 	  	}
-	  	break;
+      return false;
     default:
       return false;
 	}
-	return false;
 }
 
 /** This function clears all the synchronised orders from the list, calling orderDroidListEraseRange() from 0 to psDroid->listSize.*/
@@ -736,6 +735,7 @@ static bool orderDroidObjAdd(Droid* psDroid, Order const& order, bool add)
 	  default:
 	  	return false;
 	}
+
 	sendDroidInfo(psDroid, order, add);
 	return true;
 }
@@ -778,15 +778,16 @@ ORDER_TYPE chooseOrderLoc(Droid* psDroid, int x, int y, bool altOrder)
 	}
 
 	// and now we want transporters to fly - in multiplayer!
-	if (isTransporter(*psDroid) &&
-      game.type == LEVEL_TYPE::SKIRMISH) {
+	if (isTransporter(*psDroid) && game.type == LEVEL_TYPE::SKIRMISH) {
 		// in multiplayer - if ALT key is pressed then need to get
     // the transporter to fly to location and all units to disembark
 		if (altOrder) {
 			order = DISEMBARK;
 		}
+    return order;
 	}
-	else if (psDroid->secondaryGetState(SECONDARY_ORDER::CIRCLE,
+
+	if (psDroid->secondaryGetState(SECONDARY_ORDER::CIRCLE,
                                       ModeQueue) == DSS_CIRCLE_SET) {
     // ModeQueue here means to check whether we pressed the circle button,
     // whether or not it sync'd yet. The reason for this weirdness is that
@@ -795,8 +796,10 @@ ORDER_TYPE chooseOrderLoc(Droid* psDroid, int x, int y, bool altOrder)
     // state..!), so anything dealing with circle orders will necessarily be weird.
     order = CIRCLE;
 		psDroid->secondarySetState(SECONDARY_ORDER::CIRCLE, DSS_NONE);
+    return order;
 	}
-	else if (psDroid->secondaryGetState(SECONDARY_ORDER::PATROL,
+
+	if (psDroid->secondaryGetState(SECONDARY_ORDER::PATROL,
                              ModeQueue) == DSS_PATROL_SET) {
     // ModeQueue here means to check whether we pressed the patrol button,
     // whether or not it synched yet. The reason for this weirdness is that

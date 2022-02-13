@@ -167,7 +167,7 @@ void updateAttackRuns(Droid* psDroid);
  * Calculate a position for units to pull back to if they
  * need to increase the range between them and a target
  */
-void getFallbackPosition(BaseObject const* psObj, BaseObject const* psTarget, int* px, int* py);
+[[nodiscard]] Vector2i getFallbackPosition(BaseObject const* psObj, BaseObject const* psTarget);
 
 /**
  * Rotate turret toward a target
@@ -198,22 +198,22 @@ bool pushDroidsAwayFromBuildSite(unsigned player, Vector2i pos, uint16_t dir, Ba
 
 /**
  * Choose a landing position for a VTOL when it goes to rearm that
- * is close to a rearm * pad but not on it, since it may be busy
+ * is close to a rearm pad but not on it, since it may be busy
  * by the time we get there
  */
-bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p);
+bool findVtolLandingPosition(Droid const* psDroid, Vector2i* p);
 
 /**
- * Performs a space-filling spiral-like search from \c startCoords up to (and
- * including) \c maxRadius. For each tile, the search function is called - if it
- * returns \c true, the search will finish immediately
+ * Performs a space-filling spiral-like search from @c startCoords up to (and
+ * including) @c maxRadius. For each tile, the search function is called - if it
+ * returns @c true, the search will finish immediately
  *
- * @param startCoords starting \c (x, y) coordinates
- * @param maxRadius radius to examine. Search will finish when \c maxRadius is exceeded.
+ * @param startCoords starting @c (x, y) coordinates
+ * @param maxRadius radius to examine. Search will finish when @c maxRadius is exceeded.
  * @param match searchFunction to use; described in typedef
  * \param matchState state for the search function
- * \return \c true if finished because the searchFunction requested termination,
- *   \c false if the radius limit was reached
+ * \return @c true if finished because the searchFunction requested termination,
+ *   @c false if the radius limit was reached
  */
 bool spiralSearch(Vector2i startCoords, int maxRadius, tileMatchFunction match, void* matchState);
 

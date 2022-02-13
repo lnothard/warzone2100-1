@@ -571,7 +571,6 @@ bool aiChooseTarget(BaseObject const* psObj, BaseObject** ppsTarget, int weapon_
 
 bool aiChooseSensorTarget(BaseObject const* psObj, BaseObject** ppsTarget)
 {
-
   if (!objActiveRadar(psObj) && !objRadarDetector(psObj)) {
 		ASSERT(false, "Only to be used for sensor turrets!");
 		return false;
@@ -587,7 +586,7 @@ bool aiChooseSensorTarget(BaseObject const* psObj, BaseObject** ppsTarget)
     debug(LOG_NEVER, "Sensor droid(%d) found possible target(%d)!!!", psObj->getId(), psTarget->getId());
 
     if (objectPositionSquareDiff(psTarget, psObj)
-        < objSensorRange(psObj) * objSensorRange(psObj)) {
+          < objSensorRange(psObj) * objSensorRange(psObj)) {
       *ppsTarget = psTarget;
       return true;
     }
@@ -684,7 +683,8 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
 
 	// need to check the propulsion type of target
 	if (auto psDroid = dynamic_cast<Droid const*>(psTarget)) {
-    auto propulsion = dynamic_cast<PropulsionStats const*>(psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
+    auto propulsion = dynamic_cast<PropulsionStats const*>(
+            psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
     if (propulsion != nullptr &&
         asPropulsionTypes[static_cast<size_t>(propulsion->propulsionType)].travel == TRAVEL_MEDIUM::AIR &&
         psDroid->getMovementData()->status != MOVE_STATUS::INACTIVE) {
@@ -739,8 +739,8 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
 
 	// if target is in the air, and you can shoot in the air - OK
   // if target is on the ground and can shoot at it - OK
-	if (bTargetInAir && (surfaceToAir & SHOOT_IN_AIR) ||
-      !bTargetInAir && (surfaceToAir & SHOOT_ON_GROUND)) {
+	if (bTargetInAir && surfaceToAir & SHOOT_IN_AIR ||
+      !bTargetInAir && surfaceToAir & SHOOT_ON_GROUND) {
     return true;
 	}
   return false;

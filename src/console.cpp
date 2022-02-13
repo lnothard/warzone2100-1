@@ -560,30 +560,26 @@ bool mouseOverHistoryConsoleBox()
 	}
 
 	// check to see if mouse is in the area when console is enabled
-	if (bConsoleDropped &&
-		((UDWORD)mouseX() > historyConsole.topX + nudgeright)
-		&& ((UDWORD)mouseY() > historyConsole.topY)
-		&& ((UDWORD)mouseX() < historyConsole.topX + historyConsole.width)
-		&& ((UDWORD)mouseY() < (historyConsole.topY + 4 + linePitch * NumDisplayLines))) {
-		if (mousePressed(MOUSE_WUP))
-		{
-			updatepos--;
-		}
-		else if (mousePressed(MOUSE_WDN))
-		{
-			updatepos++;
-		}
-		if (keyDown(KEY_LCTRL))
-		{
-			showBackgroundColor = true;
-		}
-		else
-		{
-			showBackgroundColor = false;
-		}
-    return true;
-	}
-  return false;
+  if (!bConsoleDropped || !((UDWORD) mouseX() > historyConsole.topX + nudgeright) ||
+      !((UDWORD) mouseY() > historyConsole.topY) ||
+      !((UDWORD) mouseX() < historyConsole.topX + historyConsole.width) ||
+      !((UDWORD) mouseY() < historyConsole.topY + 4 + linePitch * NumDisplayLines))
+    return false;
+
+  if (mousePressed(MOUSE_WUP)) {
+    updatepos--;
+  }
+  else if (mousePressed(MOUSE_WDN)) {
+    updatepos++;
+  }
+
+  if (keyDown(KEY_LCTRL)) {
+    showBackgroundColor = true;
+  }
+  else {
+    showBackgroundColor = false;
+  }
+  return true;
 }
 
 /** Sets up how many lines are allowed and how many are visible */

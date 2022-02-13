@@ -956,7 +956,7 @@ void Droid::actionDroidBase(Action const* psAction)
       setActionTarget(psAction->targetObject, 0);
       pos = pimpl->actionTargets[0]->getPosition().xy();
 
-      if (!actionVTOLLandingPos(this, &pos)) {
+      if (!findVtolLandingPosition(this, &pos)) {
         // totally bunged up - give up
         objTrace(getId(), "move to rearm action failed!");
         orderDroid(this, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
@@ -972,7 +972,7 @@ void Droid::actionDroidBase(Action const* psAction)
       setActionTarget(psAction->targetObject, 0);
       pos = pimpl->actionTargets[0]->getPosition().xy();
 
-      if (!actionVTOLLandingPos(this, &pos)) {
+      if (!findVtolLandingPosition(this, &pos)) {
         // totally bunged up - give up
         objTrace(getId(), "clear rearm pad action failed!");
         orderDroid(this, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
@@ -3283,7 +3283,7 @@ void Droid::actionUpdateDroid()
 
       if (isStationary() || pimpl->action == WAIT_FOR_REARM) {
         Vector2i pos = pimpl->actionTargets[0]->getPosition().xy();
-        if (!actionVTOLLandingPos(this, &pos)) {
+        if (!findVtolLandingPosition(this, &pos)) {
           // totally bunged up - give up
           objTrace(getId(), "Couldn't find a clear tile near rearm pad - returning to base");
           orderDroid(this, ORDER_TYPE::RETURN_TO_BASE, ModeImmediate);
@@ -4161,7 +4161,7 @@ void Droid::moveShuffleDroid(Vector2i s)
   // check the location for vtols
   auto tar = getPosition().xy() + Vector2i(mx, my);
   if (isVtol()) {
-    actionVTOLLandingPos(this, &tar);
+    findVtolLandingPosition(this, &tar);
   }
 
   // set up the move state
@@ -5809,7 +5809,7 @@ void Droid::moveUpdateDroid()
                 // Not doing an order which means we never land (which means we might want to land).
                 pimpl->action != ACTION::MOVE_TO_REARM &&
                 pimpl->action != ACTION::MOVE_TO_REARM_POINT
-                && actionVTOLLandingPos(this, &tar) // Can find a sensible place to land.
+                && findVtolLandingPosition(this, &tar) // Can find a sensible place to land.
                 && map_coord(tar) != map_coord(pimpl->movement->destination))
               // We're not at the right place to land.
             {
@@ -6555,7 +6555,7 @@ void Droid::orderDroidBase(Order* psOrder)
           pimpl->order = std::make_unique<Order>(*psOrder);
           // find a place to land for vtols (and transporters in a multiplayer game)
           if (isVtol() || (game.type == LEVEL_TYPE::SKIRMISH && isTransporter(*this))) {
-            actionVTOLLandingPos(this, &pos);
+            findVtolLandingPosition(this, &pos);
           }
           newAction(this, ACTION::MOVE, pos.x, pos.y);
           break;
@@ -6612,7 +6612,7 @@ void Droid::orderDroidBase(Order* psOrder)
           Vector2i pos = pimpl->order->pos;
 
           objTrace(getId(), "Repair transport");
-          actionVTOLLandingPos(this, &pos);
+          findVtolLandingPosition(this, &pos);
           newAction(this, ACTION::MOVE, pos.x, pos.y);
         }
         else {

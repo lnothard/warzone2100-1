@@ -1609,8 +1609,7 @@ bool recvResearchStatus(NETQUEUE queue)
 		}
 	}
 
-	if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, player))
-	{
+	if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, player)) {
 		intAlliedResearchChanged();
 		intNotifyResearchButton(prevResearchState);
 	}
@@ -1618,7 +1617,7 @@ bool recvResearchStatus(NETQUEUE queue)
 	return true;
 }
 
-NetworkTextMessage::NetworkTextMessage(int32_t messageSender, char const* messageText)
+NetworkTextMessage::NetworkTextMessage(int messageSender, char const* messageText)
 {
 	sender = messageSender;
 	sstrcpy(text, messageText);

@@ -75,7 +75,8 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
     return true;
 	}
 
-  if (psCommander->playerManager->getPlayer() == selectedPlayer && lastMaxCmdLimitMsgTime + MAX_COMMAND_LIMIT_MESSAGE_PAUSE < gameTime) {
+  if (psCommander->playerManager->getPlayer() == selectedPlayer &&
+      lastMaxCmdLimitMsgTime + MAX_COMMAND_LIMIT_MESSAGE_PAUSE < gameTime) {
     addConsoleMessage( _("Commander needs a higher level to command more units"),
                        CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
     lastMaxCmdLimitMsgTime = gameTime;
@@ -110,8 +111,7 @@ long get_commander_index(Droid const& commander)
 
   return std::find_if(droids.begin(), droids.end(),
                       [&commander](auto const& droid) {
-      return droid.getType() == DROID_TYPE::COMMAND &&
-             &droid == &commander;
+    return droid.getType() == DROID_TYPE::COMMAND && &droid == &commander;
   }) - droids.begin();
 }
 

@@ -259,7 +259,7 @@ void formatTime(W_BARGRAPH* barGraph, int buildPointsDone, int buildPointsTotal,
 void formatPower(W_BARGRAPH* barGraph, int neededPower, int powerToBuild);
 
 bool DroidIsBuilding(Droid* Droid);
-Structure* DroidGetBuildStructure(Droid* Droid);
+Structure* DroidGetBuildStructure(Droid const* Droid);
 bool DroidGoingToBuild(Droid* Droid);
 BaseStats* DroidGetBuildStats(Droid* Droid);
 iIMDShape* DroidGetIMD(Droid* Droid);
@@ -280,7 +280,7 @@ iIMDShape* StatGetStructureIMD(BaseStats* Stat, UDWORD Player);
 bool StatIsTemplate(BaseStats* Stat);
 bool StatIsFeature(BaseStats const* Stat);
 
-COMPONENT_TYPE StatIsComponent(BaseStats* Stat);
+COMPONENT_TYPE StatIsComponent(BaseStats const* Stat);
 bool StatGetComponentIMD(BaseStats* Stat, COMPONENT_TYPE compID, iIMDShape** CompIMD, iIMDShape** MountIMD);
 
 bool StatIsResearch(BaseStats* Stat);
@@ -315,7 +315,7 @@ void intUpdateQuantitySlider(WIDGET* psWidget, W_CONTEXT* psContext);
 void intDisplayMissionClock(WIDGET* psWidget, UDWORD xOffset, UDWORD yOffset);
 
 void intDisplayUpdateAllyBar(W_BARGRAPH* psBar, const ResearchStats& research, const std::vector<AllyResearch>& researches);
-Structure* droidGetCommandFactory(Droid* psDroid);
+Structure* droidGetCommandFactory(Droid const* psDroid);
 
 void intSetShadowPower(int quantity);
 

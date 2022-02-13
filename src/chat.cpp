@@ -102,8 +102,7 @@ void ChatMessage::sendToHumanPlayers() const
 	auto message = NetworkTextMessage(sender, formatted);
 	message.teamSpecific = allies_only && intended_recipients.empty();
 
-	if (sender == selectedPlayer ||
-      should_receive(selectedPlayer)) {
+	if (sender == selectedPlayer || should_receive(selectedPlayer)) {
 		printInGameTextMessage(message);
 	}
 
@@ -153,18 +152,19 @@ void ChatMessage::sendToAiPlayers()
     if (isHumanPlayer(receiver)) {
       continue;
     }
+
     if (myResponsibility(receiver)) {
       triggerEventChat(sender, receiver, text);
+      continue;
     }
-    else {
-      sendToAiPlayer(receiver);
-    }
+    sendToAiPlayer(receiver);
   }
 }
 
 void ChatMessage::sendToSpectators()
 {
-	if (!ingame.localOptionsReceived) return;
+	if (!ingame.localOptionsReceived)
+    return;
 
 	char formatted[MAX_CONSOLE_STRING_LENGTH];
 	ssprintf(formatted, "%s (%s): %s", getPlayerName(sender), _("Spectators"), text);

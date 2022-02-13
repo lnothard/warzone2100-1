@@ -633,8 +633,7 @@ bool ParseCommandLine(int argc, const char* const * argv)
 		case CLI_CONNECTTOIP_SPECTATE:
 			//get the ip we want to connect with, and go directly to join screen.
 			token = poptGetOptArg(poptCon);
-			if (token == nullptr)
-			{
+			if (token == nullptr) {
 				qFatal("No IP/hostname given");
 			}
 			sstrcpy(iptoconnect, token);
@@ -647,12 +646,10 @@ bool ParseCommandLine(int argc, const char* const * argv)
 			break;
 		case CLI_GAME:
 			// retrieve the game name
-			token = poptGetOptArg(poptCon);
-			if (token == nullptr
-				  || (strcmp(token, "CAM_1A") && strcmp(token, "CAM_2A") && strcmp(token, "CAM_3A")
-					&& strcmp(token, "TUTORIAL3") && strcmp(token, "FASTPLAY"))) {
-				qFatal("The game parameter requires one of the following keywords:"
-					"CAM_1A, CAM_2A, CAM_3A, TUTORIAL3, or FASTPLAY.");
+      token = poptGetOptArg(poptCon);
+        if (token == nullptr || strcmp(token, "CAM_1A") && strcmp(token, "CAM_2A") &&
+                                strcmp(token, "CAM_3A") && strcmp(token, "TUTORIAL3") && strcmp(token, "FASTPLAY")) {
+          qFatal("The game parameter requires one of the following keywords:" "CAM_1A, CAM_2A, CAM_3A, TUTORIAL3, or FASTPLAY.");
 			}
 			NetPlay.bComms = false;
 			bMultiPlayer = false;
@@ -665,41 +662,38 @@ bool ParseCommandLine(int argc, const char* const * argv)
 		//NET_InitPlayer deallocates Player 0, who must be allocated so that a later invocation of processDebugMappings does not trigger DEBUG mode
 			NetPlay.players[0].allocated = true;
 
-			if (!strcmp(token, "CAM_1A") || !strcmp(token, "CAM_2A") || !strcmp(token, "CAM_3A"))
-			{
+			if (!strcmp(token, "CAM_1A") || !strcmp(token, "CAM_2A") || !strcmp(token, "CAM_3A")) {
 				game.type = LEVEL_TYPE::CAMPAIGN;
 			}
-			else
-			{
+			else {
 				game.type = LEVEL_TYPE::SKIRMISH; // tutorial is skirmish for some reason
 			}
 			sstrcpy(aLevelName, token);
 			SetGameMode(GS_NORMAL);
 			break;
 		case CLI_MOD_GLOB:
-			{
-				// retrieve the file name
-				token = poptGetOptArg(poptCon);
-				if (token == nullptr)
-				{
-					qFatal("Missing mod name?");
-				}
+    {
+      // retrieve the file name
+      token = poptGetOptArg(poptCon);
+      if (token == nullptr) {
+        qFatal("Missing mod name?");
+      }
 
-				global_mods.emplace_back(token);
-				break;
-			}
+      global_mods.emplace_back(token);
+      break;
+    }
 		case CLI_MOD_CA:
-			{
-				// retrieve the file name
-				token = poptGetOptArg(poptCon);
-				if (token == nullptr)
-				{
-					qFatal("Missing mod name?");
-				}
+    {
+      // retrieve the file name
+      token = poptGetOptArg(poptCon);
+      if (token == nullptr)
+      {
+        qFatal("Missing mod name?");
+      }
 
-				campaign_mods.emplace_back(token);
-				break;
-			}
+      campaign_mods.emplace_back(token);
+      break;
+    }
 		case CLI_MOD_MP:
 			{
 				// retrieve the file name

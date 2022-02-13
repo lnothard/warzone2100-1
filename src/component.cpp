@@ -129,9 +129,9 @@ unsigned getComponentRadius(BaseStats* psComponent)
 	}
 
 	// vtol bombs are only stats allowed to have NULL ComponentIMD
-	if (StatIsComponent(psComponent) != COMPONENT_TYPE::WEAPON
-		|| (((WeaponStats*)psComponent)->weaponSubClass != WEAPON_SUBCLASS::BOMB
-			&& ((WeaponStats*)psComponent)->weaponSubClass != WEAPON_SUBCLASS::EMP)) {
+  if (StatIsComponent(psComponent) != COMPONENT_TYPE::WEAPON ||
+      ((WeaponStats *) psComponent)->weaponSubClass != WEAPON_SUBCLASS::BOMB &&
+      ((WeaponStats *) psComponent)->weaponSubClass != WEAPON_SUBCLASS::EMP) {
 		ASSERT(ComponentIMD, "No ComponentIMD!");
 	}
 	return COMPONENT_RADIUS;
@@ -235,20 +235,14 @@ static void sharedStructureButton(StructureStats const* Stats, iIMDShape* strImd
       mountImd[i] = Stats->psWeapStat[i]->pMountGraphic.get();
     }
 
-    if (!weaponImd[i]) {
-      //check for ECM
-      if (Stats->ecm_stats != nullptr) {
-        weaponImd[i] = Stats->ecm_stats->pIMD.get();
-        mountImd[i] = Stats->ecm_stats->pMountGraphic.get();
-      }
+    if (!weaponImd[i] && Stats->ecm_stats != nullptr) {
+      weaponImd[i] = Stats->ecm_stats->pIMD.get();
+      mountImd[i] = Stats->ecm_stats->pMountGraphic.get();
     }
 
-    if (!weaponImd[i]) {
-      //check for sensor
-      if (Stats->sensor_stats != nullptr) {
-        weaponImd[i] = Stats->sensor_stats->pIMD.get();
-        mountImd[i] = Stats->sensor_stats->pMountGraphic.get();
-      }
+    if (!weaponImd[i] && Stats->sensor_stats != nullptr) {
+      weaponImd[i] = Stats->sensor_stats->pIMD.get();
+      mountImd[i] = Stats->sensor_stats->pMountGraphic.get();
     }
   }
 
@@ -291,24 +285,22 @@ void displayStructureStatButton(StructureStats* Stats, const Vector3i* rotation,
 }
 
 // Render a component given a BASE_STATS structure.
-//
-void displayComponentButton(BaseStats* Stat, const Vector3i* Rotation,
-                            const Vector3i* Position, int scale)
+void displayComponentButton(BaseStats* Stat, Vector3i const* Rotation,
+                            Vector3i const* Position, int scale)
 {
 	iIMDShape* ComponentIMD = nullptr;
 	iIMDShape* MountIMD = nullptr;
 	auto compID = StatIsComponent(Stat);
-
   StatGetComponentIMD(Stat, compID, &ComponentIMD, &MountIMD);
-
   glm::mat4 matrix = setMatrix(Position, Rotation, scale);
 
   // vtol bombs are the only stats allowed to have NULL ComponentIMD
-  if (StatIsComponent(Stat) != COMPONENT_TYPE::WEAPON
-      || (((WeaponStats*)Stat)->weaponSubClass != WEAPON_SUBCLASS::BOMB
-          && ((WeaponStats*)Stat)->weaponSubClass != WEAPON_SUBCLASS::EMP)) {
+  if (StatIsComponent(Stat) != COMPONENT_TYPE::WEAPON ||
+      ((WeaponStats *) Stat)->weaponSubClass != WEAPON_SUBCLASS::BOMB &&
+      ((WeaponStats *) Stat)->weaponSubClass != WEAPON_SUBCLASS::EMP) {
     ASSERT(ComponentIMD, "No ComponentIMD");
   }
+
   if (!MountIMD) {
     return;
   }
@@ -320,6 +312,7 @@ void displayComponentButton(BaseStats* Stat, const Vector3i* Rotation,
   if (MountIMD->nconnectors) {
     matrix *= glm::translate(glm::vec3(MountIMD->connectors->xzy()));
   }
+
   if (ComponentIMD) {
     draw_player_3d_shape(selectedPlayer, ComponentIMD, 0, 
                          WZCOL_WHITE, pie_BUTTON, 0, matrix);
@@ -335,7 +328,8 @@ void displayResearchButton(BaseStats* Stat, const Vector3i* Rotation, const Vect
   if (!ResearchIMD) {
     return;
   }
-  const glm::mat4& matrix = setMatrix(Position, Rotation, scale);
+
+  auto const& matrix = setMatrix(Position, Rotation, scale);
   if (MountIMD) {
     draw_player_3d_shape(selectedPlayer, MountIMD, 0,
                          WZCOL_WHITE, pie_BUTTON, 0, matrix);
@@ -375,9 +369,9 @@ void drawMuzzleFlash(const Weapon& sWeap, const iIMDShape* weaponImd, iIMDShape*
 	auto connector_num = 0;
 
 	// which barrel is firing if model have multiple muzzle connectors?
-	if (sWeap.shotsFired && (weaponImd->nconnectors > 1)) {
+	if (sWeap.shotsFired && weaponImd->nconnectors > 1) {
 		// shoot first, draw later - subtract one shot to get correct results
-		connector_num = (sWeap.shotsFired - 1) % (weaponImd->nconnectors);
+		connector_num = (sWeap.shotsFired - 1) % weaponImd->nconnectors;
 	}
 
 	// now we need to move to the end of the firing barrel
@@ -393,20 +387,23 @@ void drawMuzzleFlash(const Weapon& sWeap, const iIMDShape* weaponImd, iIMDShape*
                       pieFlag | pie_ADDITIVE, EFFECT_MUZZLE_ADDITIVE,
 			                viewMatrix * modelMatrix);
 		}
+    return;
 	}
-	else if (graphicsTime >= sWeap.timeLastFired) {
-		// animated muzzle
-		const auto DEFAULT_ANIM_INTERVAL = 17;
-		// A lot of PIE files specify 1, which is too small, so set something bigger as a fallback
-		auto animRate = MAX(flashImd->animInterval, DEFAULT_ANIM_INTERVAL);
-		auto frame = (graphicsTime - sWeap.timeLastFired) / animRate;
-		if (frame < flashImd->numFrames)
-		{
-			pie_Draw3DShape(flashImd, frame, colour, buildingBrightness, 
-                      pieFlag | pie_ADDITIVE, EFFECT_MUZZLE_ADDITIVE,
-			                viewMatrix * modelMatrix);
-		}
-	}
+
+  if (graphicsTime < sWeap.timeLastFired)
+    return;
+
+  // animated muzzle
+  const auto DEFAULT_ANIM_INTERVAL = 17;
+  // A lot of PIE files specify 1, which is too small, so set something bigger as a fallback
+  auto animRate = MAX(flashImd->animInterval, DEFAULT_ANIM_INTERVAL);
+  auto frame = (graphicsTime - sWeap.timeLastFired) / animRate;
+
+  if (frame < flashImd->numFrames) {
+    pie_Draw3DShape(flashImd, frame, colour, buildingBrightness,
+                    pieFlag | pie_ADDITIVE, EFFECT_MUZZLE_ADDITIVE,
+                    viewMatrix * modelMatrix);
+  }
 }
 
 /* Assumes matrix context is already set */
@@ -423,8 +420,7 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 	glm::mat4 modelMatrix(1.f);
 
 	if (psDroid->damageManager->getTimeLastHit() - graphicsTime < ELEC_DAMAGE_DURATION &&
-      psDroid->damageManager->getLastHitWeapon() == WEAPON_SUBCLASS::ELECTRONIC &&
-		  !gamePaused()) {
+      psDroid->damageManager->getLastHitWeapon() == WEAPON_SUBCLASS::ELECTRONIC && !gamePaused()) {
 		colour = getPlayerColour(rand() % MAX_PLAYERS);
 	}
 	else {
@@ -470,16 +466,12 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
             0.f, -world_coord(1) / 2.3f, 0.f));
 	}
 
-	iIMDShape* psShapeProp = (leftFirst
-          ? getLeftPropulsionIMD(psDroid)
-          : getRightPropulsionIMD(psDroid));
+	iIMDShape *psShapeProp = leftFirst ? getLeftPropulsionIMD(psDroid) : getRightPropulsionIMD(psDroid);
 
-	if (psShapeProp) {
-		if (pie_Draw3DShape(psShapeProp, 0, colour, brightness,
-                        pieFlag, iPieData, viewMatrix * modelMatrix)) {
-			didDrawSomething = true;
-		}
-	}
+  if (psShapeProp && pie_Draw3DShape(psShapeProp, 0, colour, brightness,
+                                     pieFlag, iPieData, viewMatrix * modelMatrix)) {
+    didDrawSomething = true;
+  }
 
 	/* set default components transparent */
 	if (psDroid->asBits[COMPONENT_TYPE::BODY] == 0) {
@@ -494,7 +486,7 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 	/* Get the body graphic now*/
 	auto psShapeBody = BODY_IMD(psDroid, psDroid->getPlayer());
 	if (psShapeBody) {
-		auto strImd = psShapeBody;
+		auto strImd = psShapeBody.get();
 		if (psDroid->getType() == DROID_TYPE::PERSON) {
 			modelMatrix *= glm::scale(glm::vec3(.75f)); // FIXME - hideous....!!!!
 		}
@@ -504,7 +496,7 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 		glm::mat4 viewModelMatrix = viewMatrix * modelMatrix;
 		while (strImd)
 		{
-			if (drawShape(psDroid, strImd.get(), colour, brightness,
+			if (drawShape(psDroid, strImd, colour, brightness,
                     pieFlag, iPieData, viewModelMatrix)) {
 				didDrawSomething = true;
 			}
@@ -526,14 +518,12 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 			didDrawSomething = true;
 		}
 	}
-	else if (!bButton && psStillAnim) { //< standing still
-		if (pie_Draw3DShape(psStillAnim,
-		                    getModularScaledGraphicsTime(
-                                psStillAnim->animInterval, psStillAnim->numFrames), colour,
-                        brightness, 0, 0, viewModelMatrix)) {
-			didDrawSomething = true;
-		}
-	}
+  else if (!bButton && psStillAnim &&
+          pie_Draw3DShape(psStillAnim, getModularScaledGraphicsTime(
+                                  psStillAnim->animInterval, psStillAnim->numFrames),
+                          colour, brightness, 0, 0, viewModelMatrix)) {
+    didDrawSomething = true;
+  }
 
 	// don't change the screen coords of an object if drawing it in a button
 	if (!bButton) {
@@ -670,122 +660,121 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 		  case ECM:
 		  case REPAIRER:
 		  case CYBORG_REPAIR:
-		  	{
-		  		Rotation rot = getInterpolatedWeaponRotation(psDroid, 0, graphicsTime);
-		  		iIMDShape* psShape = nullptr;
-		  		iIMDShape* psMountShape = nullptr;
+      {
+        Rotation rot = getInterpolatedWeaponRotation(psDroid, 0, graphicsTime);
+        iIMDShape* psShape = nullptr;
+        iIMDShape* psMountShape = nullptr;
 
-		  		switch (psDroid->getType()) {
-		  		  case SENSOR:
-		  		  	psMountShape = SENSOR_MOUNT_IMD(psDroid, psDroid->player);
-		  		  /* Get the sensor graphic, assuming it's there */
-		  		  	psShape = SENSOR_IMD(psDroid, psDroid->player);
-		  		  	break;
-		  		  case CONSTRUCT:
-		  		  case CYBORG_CONSTRUCT:
-		  		  	psMountShape = CONSTRUCT_MOUNT_IMD(psDroid, psDroid->player);
-		  		  /* Get the construct graphic assuming it's there */
-		  		  	psShape = CONSTRUCT_IMD(psDroid, psDroid->player);
-		  		  	break;
-		  		  case ECM:
-		  		  	psMountShape = ECM_MOUNT_IMD(psDroid, psDroid->player);
-		  		  /* Get the ECM graphic assuming it's there.... */
-		  		  	psShape = ECM_IMD(psDroid, psDroid->player);
-		  		  	break;
-		  		  case REPAIRER:
-		  		  case CYBORG_REPAIR:
-		  		  	psMountShape = REPAIR_MOUNT_IMD(psDroid, psDroid->player);
-		  		  /* Get the Repair graphic assuming it's there.... */
-		  		  	psShape = REPAIR_IMD(psDroid, psDroid->player);
-		  		  	break;
-            default:
-              ASSERT(false, "Bad component type");
-              break;
-		  		}
-		  		/*	Get the mounting graphic - we've already moved to the right position
-		  		Allegedly - all droids will have a mount graphic so this shouldn't
-		  		fall on it's arse......*/
-		  		//sensor and cyborg and ecm uses connectors[0]
+        switch (psDroid->getType()) {
+          case SENSOR:
+            psMountShape = SENSOR_MOUNT_IMD(psDroid, psDroid->player);
+            /* Get the sensor graphic, assuming it's there */
+            psShape = SENSOR_IMD(psDroid, psDroid->player);
+            break;
+          case CONSTRUCT:
+          case CYBORG_CONSTRUCT:
+            psMountShape = CONSTRUCT_MOUNT_IMD(psDroid, psDroid->player);
+            /* Get the construct graphic assuming it's there */
+            psShape = CONSTRUCT_IMD(psDroid, psDroid->player);
+            break;
+          case ECM:
+            psMountShape = ECM_MOUNT_IMD(psDroid, psDroid->player);
+            /* Get the ECM graphic assuming it's there.... */
+            psShape = ECM_IMD(psDroid, psDroid->player);
+            break;
+          case REPAIRER:
+          case CYBORG_REPAIR:
+            psMountShape = REPAIR_MOUNT_IMD(psDroid, psDroid->player);
+            /* Get the Repair graphic assuming it's there.... */
+            psShape = REPAIR_IMD(psDroid, psDroid->player);
+            break;
+          default:
+            ASSERT(false, "Bad component type");
+            break;
+        }
+        /*	Get the mounting graphic - we've already moved to the right position
+        Allegedly - all droids will have a mount graphic so this shouldn't
+        fall on it's arse......*/
+        //sensor and cyborg and ecm uses connectors[0]
 
-		  		glm::mat4 localModelMatrix = modelMatrix;
-		  		/* vtol weapons inverted */
-		  		if (iConnector >= VTOL_CONNECTOR_START) {
-		  			//this might affect gun rotation
-		  			localModelMatrix *= glm::rotate(
-                    UNDEG(65536 / 2), glm::vec3(0.f, 0.f, 1.f));
-		  		}
+        glm::mat4 localModelMatrix = modelMatrix;
+        /* vtol weapons inverted */
+        if (iConnector >= VTOL_CONNECTOR_START) {
+          //this might affect gun rotation
+          localModelMatrix *= glm::rotate(
+                  UNDEG(65536 / 2), glm::vec3(0.f, 0.f, 1.f));
+        }
 
-		  		localModelMatrix *= glm::translate(glm::vec3(psShapeBody->connectors[0].xzy()));
+        localModelMatrix *= glm::translate(glm::vec3(psShapeBody->connectors[0].xzy()));
 
-		  		localModelMatrix *= glm::rotate(
-                  UNDEG(-rot.direction), glm::vec3(0.f, 1.f, 0.f));
-		  		/* Draw it */
-		  		if (psMountShape) {
-		  			if (pie_Draw3DShape(psMountShape, 0, colour,
-                                brightness, pieFlag, iPieData,
-		  			                    viewMatrix * localModelMatrix)) {
-		  				didDrawSomething = true;
-		  			}
-		  		}
+        localModelMatrix *= glm::rotate(
+                UNDEG(-rot.direction), glm::vec3(0.f, 1.f, 0.f));
+        /* Draw it */
+        if (psMountShape && pie_Draw3DShape(psMountShape, 0, colour,
+                                            brightness, pieFlag, iPieData,
+                                            viewMatrix * localModelMatrix)) {
+          didDrawSomething = true;
+        }
 
-		  		/* translate for construct mount point if cyborg */
-		  		if (isCyborg(psDroid) && psMountShape && psMountShape->nconnectors) {
-		  			localModelMatrix *= glm::translate(
-                    glm::vec3(psMountShape->connectors[0].xzy()));
-		  		}
+        /* translate for construct mount point if cyborg */
+        if (isCyborg(psDroid) && psMountShape && psMountShape->nconnectors) {
+          localModelMatrix *= glm::translate(
+                  glm::vec3(psMountShape->connectors[0].xzy()));
+        }
 
-		  		/* Draw it */
-		  		if (psShape) {
-		  			if (pie_Draw3DShape(psShape, 0, colour, brightness, pieFlag, iPieData,
-		  			                    viewMatrix * localModelMatrix)) {
-		  				didDrawSomething = true;
-		  			}
+        /* Draw it */
+        if (!psShape)
+          break;
 
-		  			// in repair droid case only:
-		  			if ((psDroid->getType() == REPAIRER ||
-                 psDroid->getType() == CYBORG_REPAIR) &&
-		  				 	 psShape->nconnectors &&
-                 psDroid->getAction() == ACTION::REPAIR) {
-		  				auto st = interpolateObjectSpacetime(psDroid, graphicsTime);
-		  				localModelMatrix *= glm::translate(glm::vec3(psShape->connectors[0].xzy()));
-		  				localModelMatrix *= glm::translate(glm::vec3(0.f, -20.f, 0.f));
+        if (pie_Draw3DShape(psShape, 0, colour, brightness, pieFlag, iPieData,
+                            viewMatrix * localModelMatrix)) {
+          didDrawSomething = true;
+        }
 
-		  				psShape = getImdFromIndex(MI_FLAME);
+        // in repair droid case only:
+        if (!(psDroid->getType() == REPAIRER ||
+              psDroid->getType() == CYBORG_REPAIR) ||
+            !psShape->nconnectors || psDroid->getAction() != ACTION::REPAIR)
+          break;
 
-		  				/* Rotate for droid */
-		  				localModelMatrix *= glm::rotate(
-                      UNDEG(st.rotation.direction),
-                      glm::vec3(0.f, 1.f, 0.f));
-		  				localModelMatrix *= glm::rotate(
-                      UNDEG(-st.rotation.pitch),
-                      glm::vec3(1.f, 0.f, 0.f));
-		  				localModelMatrix *= glm::rotate(
-                      UNDEG(-st.rotation.roll),
-                      glm::vec3(0.f, 0.f, 1.f));
-		  				// rotate Y
-		  				localModelMatrix *= glm::rotate(
-                      UNDEG(rot.direction),
-                      glm::vec3(0.f, 1.f, 0.f));
+        auto st = interpolateObjectSpacetime(psDroid, graphicsTime);
+        localModelMatrix *= glm::translate(glm::vec3(psShape->connectors[0].xzy()));
+        localModelMatrix *= glm::translate(glm::vec3(0.f, -20.f, 0.f));
 
-		  				localModelMatrix *= glm::rotate(
-                      UNDEG(-playerPos.r.y),
-                      glm::vec3(0.f, 1.f, 0.f));
-		  				localModelMatrix *= glm::rotate(
-                      UNDEG(-playerPos.r.x),
-                      glm::vec3(1.f, 0.f, 0.f));
+        psShape = getImdFromIndex(MI_FLAME);
 
-		  				if (pie_Draw3DShape(
-                      psShape, getModularScaledGraphicsTime(
-                              psShape->animInterval, psShape->numFrames),
-                              0, brightness, pie_ADDITIVE, 140,
-                      viewMatrix * localModelMatrix)) {
-                didDrawSomething = true;
-              }
-		  			}
-		  		}
-		  		break;
-		  	}
-		  case PERSON:
+        /* Rotate for droid */
+        localModelMatrix *= glm::rotate(
+                UNDEG(st.rotation.direction),
+                glm::vec3(0.f, 1.f, 0.f));
+        localModelMatrix *= glm::rotate(
+                UNDEG(-st.rotation.pitch),
+                glm::vec3(1.f, 0.f, 0.f));
+        localModelMatrix *= glm::rotate(
+                UNDEG(-st.rotation.roll),
+                glm::vec3(0.f, 0.f, 1.f));
+        // rotate Y
+        localModelMatrix *= glm::rotate(
+                UNDEG(rot.direction),
+                glm::vec3(0.f, 1.f, 0.f));
+
+        localModelMatrix *= glm::rotate(
+                UNDEG(-playerPos.r.y),
+                glm::vec3(0.f, 1.f, 0.f));
+        localModelMatrix *= glm::rotate(
+                UNDEG(-playerPos.r.x),
+                glm::vec3(1.f, 0.f, 0.f));
+
+        if (pie_Draw3DShape(
+                psShape, getModularScaledGraphicsTime(
+                        psShape->animInterval, psShape->numFrames),
+                0, brightness, pie_ADDITIVE, 140,
+                viewMatrix * localModelMatrix)) {
+          didDrawSomething = true;
+        }
+        break;
+      }
+      case PERSON:
 		  	// no extra mounts for people
 		  	break;
 		  default:
@@ -805,19 +794,19 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 	}
 
 	// now render the other propulsion side
-	psShapeProp = (leftFirst ? getRightPropulsionIMD(psDroid) : getLeftPropulsionIMD(psDroid));
-	if (psShapeProp)
-	{
-		if (pie_Draw3DShape(psShapeProp, 0, colour,
-                        brightness, pieFlag, iPieData,
-                        viewModelMatrix)) {
-      // safe to use viewModelMatrix because modelView has not been
-      // changed since it was calculated
-			didDrawSomething = true;
-		}
-	}
+  psShapeProp = leftFirst ? getRightPropulsionIMD(psDroid) : getLeftPropulsionIMD(psDroid);
+  if (!psShapeProp)
+    return didDrawSomething;
 
-	return didDrawSomething;
+  if (pie_Draw3DShape(psShapeProp, 0, colour,
+                      brightness, pieFlag, iPieData,
+                      viewModelMatrix)) {
+    // safe to use viewModelMatrix because modelView has not been
+    // changed since it was calculated
+    didDrawSomething = true;
+  }
+
+  return didDrawSomething;
 }
 
 void displayComponentButtonTemplate(DroidTemplate* psTemplate, const Vector3i* Rotation,

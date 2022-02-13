@@ -161,8 +161,7 @@ void animateToViewDistance(float target, float speed)
 		.setEasing(viewDistanceAnimation.isActive()
                              ? EASING_FUNCTION::EASE_OUT 
                              : EASING_FUNCTION::EASE_IN_OUT)
-		.setDuration(speed <= 0
-			             ? 0
+		.setDuration(speed <= 0 ? 0
 			             : static_cast<uint32_t>(glm::log(std::abs(target - getViewDistance())) * 100 *
 				             DEFAULT_VIEW_DISTANCE_ANIMATION_SPEED / speed))
 		.start();
@@ -208,15 +207,12 @@ void setShakeStatus(bool val)
 
 void shakeStart(unsigned int length)
 {
-	if (bShakingPermitted)
-	{
-		if (!bScreenShakeActive)
-		{
-			bScreenShakeActive = true;
-			screenShakeStarted = gameTime;
-			screenShakeLength = length;
-		}
-	}
+  if (!bShakingPermitted || bScreenShakeActive)
+    return;
+
+  bScreenShakeActive = true;
+  screenShakeStarted = gameTime;
+  screenShakeLength = length;
 }
 
 void shakeStop()
@@ -230,26 +226,22 @@ static void shakeUpdate()
 	unsigned screenShakePercentage;
 
 	/* Check if we're shaking the screen or not */
-	if (bScreenShakeActive)
-	{
-		screenShakePercentage = PERCENT(gameTime - screenShakeStarted, screenShakeLength);
-		if (screenShakePercentage < 100)
-		{
-			playerPos.r.z = 0 + DEG(screenShakeTable[screenShakePercentage]);
-		}
-		if (gameTime > (screenShakeStarted + screenShakeLength))
-		{
-			bScreenShakeActive = false;
-			playerPos.r.z = 0;
-		}
-	}
-	else
-	{
-		if (!getWarCamStatus())
-		{
-			playerPos.r.z = 0;
-		}
-	}
+  if (!bScreenShakeActive) {
+    if (!getWarCamStatus()) {
+      playerPos.r.z = 0;
+    }
+    return;
+  }
+
+  screenShakePercentage = PERCENT(gameTime - screenShakeStarted, screenShakeLength);
+  if (screenShakePercentage < 100) {
+    playerPos.r.z = 0 + DEG(screenShakeTable[screenShakePercentage]);
+  }
+
+  if (gameTime > (screenShakeStarted + screenShakeLength)) {
+    bScreenShakeActive = false;
+    playerPos.r.z = 0;
+  }
 }
 
 bool isMouseOverRadar()
@@ -269,7 +261,7 @@ void setCameraAccel(bool val)
 
 bool getInvertMouseStatus()
 {
-	return (bInvertMouse);
+  return bInvertMouse;
 }
 
 void setInvertMouseStatus(bool val)
@@ -323,62 +315,53 @@ void ProcessRadarInput()
 
 	/* Only allow jump-to-area-of-map if radar is on-screen */
 	mouseOverRadar = false;
-	if (radarVisible())
-	{
-		if (CoordInRadar(x, y))
-		{
-			mouseOverRadar = true;
+  if (!radarVisible() || !CoordInRadar(x, y))
+    return;
 
-			if (mousePressed(MOUSE_ORDER))
-			{
-				x = mousePressPos_DEPRECATED(MOUSE_ORDER).x;
-				y = mousePressPos_DEPRECATED(MOUSE_ORDER).y;
+  mouseOverRadar = true;
 
-				/* If we're tracking a droid, then cancel that */
-				CalcRadarPosition(x, y, &PosX, &PosY);
-				if (mouseOverRadar && selectedPlayer < MAX_PLAYERS)
-				{
-					// MARKER
-					// Send all droids to that location
-					orderSelectedLoc(selectedPlayer, (PosX * TILE_UNITS) + TILE_UNITS / 2,
-					                 (PosY * TILE_UNITS) + TILE_UNITS / 2, ctrlShiftDown());
-					// ctrlShiftDown() = ctrl clicked a destination, add an order
-				}
-				CheckScrollLimits();
-				audio_PlayTrack(ID_SOUND_MESSAGEEND);
-			}
+  if (mousePressed(MOUSE_ORDER)) {
+    x = mousePressPos_DEPRECATED(MOUSE_ORDER).x;
+    y = mousePressPos_DEPRECATED(MOUSE_ORDER).y;
 
+    /* If we're tracking a droid, then cancel that */
+    CalcRadarPosition(x, y, &PosX, &PosY);
+    if (mouseOverRadar && selectedPlayer < MAX_PLAYERS) {
+      // MARKER
+      // Send all droids to that location
+      orderSelectedLoc(selectedPlayer, (PosX * TILE_UNITS) + TILE_UNITS / 2,
+                       (PosY * TILE_UNITS) + TILE_UNITS / 2, ctrlShiftDown());
+      // ctrlShiftDown() = ctrl clicked a destination, add an order
+    }
+    CheckScrollLimits();
+    audio_PlayTrack(ID_SOUND_MESSAGEEND);
+  }
 
-			if (mouseDrag(MOUSE_SELECT, &temp1, &temp2) && !rotActive)
-			{
-				CalcRadarPosition(x, y, &PosX, &PosY);
-				setViewPos(PosX, PosY, true);
-				bRadarDragging = true;
-				if (ctrlShiftDown())
-				{
-					playerPos.r.y = 0;
-				}
-			}
-			else if (mousePressed(MOUSE_SELECT))
-			{
-				x = mousePressPos_DEPRECATED(MOUSE_SELECT).x;
-				y = mousePressPos_DEPRECATED(MOUSE_SELECT).y;
+  if (mouseDrag(MOUSE_SELECT, &temp1, &temp2) && !rotActive) {
+    CalcRadarPosition(x, y, &PosX, &PosY);
+    setViewPos(PosX, PosY, true);
+    bRadarDragging = true;
+    if (ctrlShiftDown()) {
+      playerPos.r.y = 0;
+    }
+    return;
+  }
 
-				CalcRadarPosition(x, y, &PosX, &PosY);
+  if (!mousePressed(MOUSE_SELECT))
+    return;
 
-				if (war_GetRadarJump())
-				{
-					/* Go instantly */
-					setViewPos(PosX, PosY, true);
-				}
-				else
-				{
-					/* Pan to it */
-					requestRadarTrack(PosX * TILE_UNITS, PosY * TILE_UNITS);
-				}
-			}
-		}
-	}
+  x = mousePressPos_DEPRECATED(MOUSE_SELECT).x;
+  y = mousePressPos_DEPRECATED(MOUSE_SELECT).y;
+  CalcRadarPosition(x, y, &PosX, &PosY);
+
+  if (war_GetRadarJump()) {
+    /* Go instantly */
+    setViewPos(PosX, PosY, true);
+    return;
+  }
+
+  /* Pan to it */
+  requestRadarTrack(PosX * TILE_UNITS, PosY * TILE_UNITS);
 }
 
 // reset the input state
@@ -416,34 +399,28 @@ static bool localPlayerHasSelection()
 /* Process the user input. This just processes the key input and jumping around the radar*/
 void processInput()
 {
-	if (InGameOpUp || isInGamePopupUp)
-	{
+	if (InGameOpUp || isInGamePopupUp) {
 		dragBox3D.status = DRAG_INACTIVE; // disengage the dragging since it stops menu input
 	}
 
 
 	StartOfLastFrame = currentFrame;
 	currentFrame = frameGetFrameNumber();
-
 	ignoreRMBC = false;
 
 	const bool mOverConstruction = CoordInBuild(mouseX(), mouseY());
 	const bool mouseIsOverScreenOverlayChild = isMouseOverScreenOverlayChild(mouseX(), mouseY());
 
-	if (!mouseIsOverScreenOverlayChild)
-	{
+	if (!mouseIsOverScreenOverlayChild) {
 		mouseOverConsole = mouseOverHistoryConsoleBox();
 
 		/* Process all of our key mappings */
-		if (mOverConstruction)
-		{
-			if (mousePressed(MOUSE_WUP))
-			{
+		if (mOverConstruction) {
+			if (mousePressed(MOUSE_WUP)) {
 				kf_BuildPrevPage();
 			}
 
-			if (mousePressed(MOUSE_WDN))
-			{
+			if (mousePressed(MOUSE_WDN)) {
 				kf_BuildNextPage();
 			}
 		}
@@ -455,14 +432,13 @@ void processInput()
 	);
 	gInputManager.contexts().updatePriorityStatus();
 
-	if (!isInTextInputMode())
-	{
+	if (!isInTextInputMode()) {
 		const bool allowMouseWheelEvents = !mouseIsOverScreenOverlayChild && !mouseOverConsole && !mOverConstruction;
 		gInputManager.processMappings(allowMouseWheelEvents);
 	}
+
 	/* Allow the user to clear the (Active) console if need be */
-	if (!mouseIsOverScreenOverlayChild && mouseOverConsoleBox() && mousePressed(MOUSE_LMB))
-	{
+	if (!mouseIsOverScreenOverlayChild && mouseOverConsoleBox() && mousePressed(MOUSE_LMB)) {
 		clearActiveConsole();
 	}
 }
@@ -474,44 +450,33 @@ static bool OverRadarAndNotDragging()
 
 static void CheckFinishedDrag(SELECTION_TYPE selection)
 {
-	if (mouseReleased(MOUSE_LMB) || mouseDown(MOUSE_RMB))
-	{
-		selectAttempt = false;
-		if (dragBox3D.status == DRAG_DRAGGING)
-		{
-			if (wallDrag.status == DRAG_DRAGGING)
-			{
-				//if invalid location keep looking for a valid one
-				if ((buildState == BUILD3D_VALID || buildState == BUILD3D_FINISHED)
-					&& sBuildDetails.psStats->hasType(STAT_STRUCTURE))
-				{
-					if (canLineBuild())
-					{
-						wallDrag.pos2 = mousePos;
-						wallDrag.status = DRAG_RELEASED;
-					}
-				}
-			}
+  if (!mouseReleased(MOUSE_LMB) && !mouseDown(MOUSE_RMB))
+    return;
 
-			/* Only clear if shift isn't down - this is for the drag selection box for units*/
-			if (!ctrlShiftDown() && wallDrag.status == DRAG_INACTIVE)
-			{
-				clearSelection();
-			}
-			dragBox3D.status = DRAG_RELEASED;
-			dragBox3D.x2 = mouseX();
-			dragBox3D.y2 = mouseY();
-			if (selection == SC_DROID_DEMOLISH && ctrlShiftDown())
-			{
-				handleAreaDemolition();
-			}
-		}
-		else
-		{
-			dragBox3D.status = DRAG_INACTIVE;
-			wallDrag.status = DRAG_INACTIVE;
-		}
-	}
+  selectAttempt = false;
+  if (dragBox3D.status != DRAG_DRAGGING) {
+    dragBox3D.status = DRAG_INACTIVE;
+    wallDrag.status = DRAG_INACTIVE;
+    return;
+  }
+
+  if (wallDrag.status == DRAG_DRAGGING && (buildState == BUILD3D_VALID || buildState == BUILD3D_FINISHED) &&
+      sBuildDetails.psStats->hasType(STAT_STRUCTURE) && canLineBuild()) {
+    wallDrag.pos2 = mousePos;
+    wallDrag.status = DRAG_RELEASED;
+  }
+
+  /* Only clear if shift isn't down - this is for the drag selection box for units*/
+  if (!ctrlShiftDown() && wallDrag.status == DRAG_INACTIVE) {
+    clearSelection();
+  }
+
+  dragBox3D.status = DRAG_RELEASED;
+  dragBox3D.x2 = mouseX();
+  dragBox3D.y2 = mouseY();
+  if (selection == SC_DROID_DEMOLISH && ctrlShiftDown()) {
+    handleAreaDemolition();
+  }
 }
 
 /**
@@ -550,27 +515,27 @@ static void handleAreaDemolition()
 
 static void CheckStartWallDrag()
 {
-	if (mousePressed(MOUSE_LMB))
-	{
-		/* Store away the details if we're building */
-		// You can start dragging walls from invalid locations so check for
-		// BUILD3D_POS or BUILD3D_VALID, used tojust check for BUILD3D_VALID.
-		if ((buildState == BUILD3D_POS || buildState == BUILD3D_VALID)
-			&& sBuildDetails.psStats->hasType(STAT_STRUCTURE))
-		{
-			if (canLineBuild())
-			{
-				wallDrag.pos = wallDrag.pos2 = mousePos;
-				wallDrag.status = DRAG_PLACING;
-				debug(LOG_NEVER, "Start Wall Drag\n");
-			}
-		}
-		else if (intBuildSelectMode()) //if we were in build select mode
-		{
-			//uhoh no place to build here
-			audio_PlayBuildFailedOnce();
-		}
-	}
+  if (!mousePressed(MOUSE_LMB))
+    return;
+
+  /* Store away the details if we're building */
+  // You can start dragging walls from invalid locations so check for
+  // BUILD3D_POS or BUILD3D_VALID, used tojust check for BUILD3D_VALID.
+  if ((buildState == BUILD3D_POS || buildState == BUILD3D_VALID) &&
+      sBuildDetails.psStats->hasType(STAT_STRUCTURE)) {
+    if (!canLineBuild())
+      return;
+
+    wallDrag.pos = wallDrag.pos2 = mousePos;
+    wallDrag.status = DRAG_PLACING;
+    debug(LOG_NEVER, "Start Wall Drag\n");
+    return;
+  }
+
+  if (intBuildSelectMode()) { //if we were in build select mode
+    //uhoh no place to build here
+    audio_PlayBuildFailedOnce();
+  }
 }
 
 //this function is called when a location has been chosen to place a structure or a DP
@@ -579,47 +544,45 @@ static bool CheckFinishedFindPosition()
 	bool OverRadar = OverRadarAndNotDragging();
 
 	/* Do not let the player position buildings 'under' the radar */
-	if (mouseReleased(MOUSE_LMB) && !OverRadar)
-	{
-		if (deliveryReposValid())
-		{
-			finishDeliveryPosition();
-			return true;
-		}
-		else if (buildState == BUILD3D_VALID)
-		{
-			if (sBuildDetails.psStats->hasType(STAT_STRUCTURE) && canLineBuild())
-			{
-				wallDrag.pos2 = mousePos;
-				wallDrag.status = DRAG_RELEASED;
-			}
-			debug(LOG_NEVER, "BUILD3D_FINISHED\n");
-			buildState = BUILD3D_FINISHED;
-			return true;
-		}
-	}
+  if (!mouseReleased(MOUSE_LMB) || OverRadar)
+    return false;
 
-	return false;
+  if (deliveryReposValid()) {
+    finishDeliveryPosition();
+    return true;
+  }
+
+  if (buildState != BUILD3D_VALID)
+    return false;
+
+  if (sBuildDetails.psStats->hasType(STAT_STRUCTURE) && canLineBuild()) {
+    wallDrag.pos2 = mousePos;
+    wallDrag.status = DRAG_RELEASED;
+  }
+
+  debug(LOG_NEVER, "BUILD3D_FINISHED\n");
+  buildState = BUILD3D_FINISHED;
+  return true;
 }
 
 static void HandleDrag()
 {
 	unsigned dragX = 0, dragY = 0;
 
-	if (mouseDrag(MOUSE_LMB, &dragX, &dragY) && !mouseOverRadar && !mouseDown(MOUSE_RMB))
-	{
-		dragBox3D.x1 = dragX;
-		dragBox3D.x2 = mouseX();
-		dragBox3D.y1 = dragY;
-		dragBox3D.y2 = mouseY();
-		dragBox3D.status = DRAG_DRAGGING;
+  if (!mouseDrag(MOUSE_LMB, &dragX, &dragY) ||
+      mouseOverRadar || mouseDown(MOUSE_RMB))
+    return;
 
-		if (buildState == BUILD3D_VALID && canLineBuild())
-		{
-			wallDrag.pos2 = mousePos;
-			wallDrag.status = DRAG_DRAGGING;
-		}
-	}
+  dragBox3D.x1 = dragX;
+  dragBox3D.x2 = mouseX();
+  dragBox3D.y1 = dragY;
+  dragBox3D.y2 = mouseY();
+  dragBox3D.status = DRAG_DRAGGING;
+
+  if (buildState == BUILD3D_VALID && canLineBuild()) {
+    wallDrag.pos2 = mousePos;
+    wallDrag.status = DRAG_DRAGGING;
+  }
 }
 
 // Mouse X coordinate at start of panning.

@@ -100,38 +100,35 @@ bool _attemptCheatCode(const char* cheat_name)
 	static const CHEAT_ENTRY* const EndCheat = &cheatCodes[ARRAY_SIZE(cheatCodes)];
 
 	// there is no reason to make people enter "cheat mode" to enter following commands
-	if (!strcasecmp("showfps", cheat_name))
-	{
+	if (!strcasecmp("showfps", cheat_name)) {
 		kf_ToggleFPS();
 		return true;
 	}
-	if (!strcasecmp("showunits", cheat_name))
-	{
+
+	if (!strcasecmp("showunits", cheat_name)) {
 		kf_ToggleUnitCount();
 		return true;
 	}
-	if (!strcasecmp("specstats", cheat_name))
-	{
+
+	if (!strcasecmp("specstats", cheat_name)) {
 		kf_ToggleSpecOverlays();
 		return true;
 	}
 
-	const DebugInputManager& dbgInputManager = gInputManager.debugManager();
-	if (strcmp(cheat_name, "cheat on") == 0 || strcmp(cheat_name, "debug") == 0)
-	{
-		if (!dbgInputManager.debugMappingsAllowed())
-		{
+	auto const& dbgInputManager = gInputManager.debugManager();
+	if (strcmp(cheat_name, "cheat on") == 0 || strcmp(cheat_name, "debug") == 0) {
+		if (!dbgInputManager.debugMappingsAllowed()) {
 			kf_ToggleDebugMappings();
 		}
 		return true;
 	}
-	if (strcmp(cheat_name, "cheat off") == 0 && dbgInputManager.debugMappingsAllowed())
-	{
+
+	if (strcmp(cheat_name, "cheat off") == 0 && dbgInputManager.debugMappingsAllowed()) {
 		kf_ToggleDebugMappings();
 		return true;
 	}
-	if (!dbgInputManager.debugMappingsAllowed())
-	{
+
+	if (!dbgInputManager.debugMappingsAllowed()) {
 		return false;
 	}
 
@@ -155,11 +152,10 @@ bool _attemptCheatCode(const char* cheat_name)
 	return false;
 }
 
-bool attemptCheatCode(const char* cheat_name)
+bool attemptCheatCode(char const* cheat_name)
 {
 	bool result = _attemptCheatCode(cheat_name);
-	if (result)
-	{
+	if (result) {
 		ActivityManager::instance().cheatUsed(cheat_name);
 	}
 	return result;
@@ -167,12 +163,11 @@ bool attemptCheatCode(const char* cheat_name)
 
 void sendProcessDebugMappings(bool val)
 {
-	if (NETisReplay())
-	{
+	if (NETisReplay()) {
 		return;
 	}
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return;
 	}
 	NETbeginEncode(NETgameQueue(selectedPlayer), GAME_DEBUG_MODE);
@@ -225,19 +220,22 @@ void recvProcessDebugMappings(NETQUEUE queue)
 			getWantedDebugMappingStatuses(dbgInputManager, false).c_str()
 		);
 	}
-	addConsoleMessage(cmsg.c_str(), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 
+	addConsoleMessage(cmsg.c_str(), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 	if (!oldDebugMode && newDebugMode) {
 		addConsoleMessage(_("Debug mode now enabled!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
 		Cheated = true;
 		gInputManager.contexts().set(InputContext::DEBUG_MISC, InputContext::State::ACTIVE);
 		triggerEventCheatMode(true);
+    return;
 	}
-	else if (oldDebugMode && !newDebugMode) {
-		addConsoleMessage(_("Debug mode now disabled!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
-		if (!NETisReplay()) {
-			gInputManager.contexts().set(InputContext::DEBUG_MISC, InputContext::State::INACTIVE);
-		}
-		triggerEventCheatMode(false);
-	}
+
+  if (!oldDebugMode || newDebugMode)
+    return;
+
+  addConsoleMessage(_("Debug mode now disabled!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
+  if (!NETisReplay()) {
+    gInputManager.contexts().set(InputContext::DEBUG_MISC, InputContext::State::INACTIVE);
+  }
+  triggerEventCheatMode(false);
 }

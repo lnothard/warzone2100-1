@@ -583,7 +583,7 @@ void ActivityManager::hostGame(const char* SessionName, const char* PlayerName, 
 	currentMode = GAME_MODE::HOSTING_IN_LOBBY;
 	currentMultiplayGameInfo.hostName = PlayerName;
 	currentMultiplayGameInfo.listeningInterfaces = listeningInterfaces;
-	currentMultiplayGameInfo.lobbyAddress = (lobbyAddress != nullptr) ? lobbyAddress : std::string();
+	currentMultiplayGameInfo.lobbyAddress = lobbyAddress != nullptr ? lobbyAddress : std::string();
 	currentMultiplayGameInfo.lobbyPort = lobbyPort;
 	currentMultiplayGameInfo.lobbyGameId = lobbyGameId;
 	currentMultiplayGameInfo.isHost = true;
@@ -674,6 +674,7 @@ void ActivityManager::joinedLobbyQuit()
     currentMode = GAME_MODE::MENUS;
     return;
   }
+
   if (currentMode != GAME_MODE::MENUS) {
     debug(LOG_ACTIVITY, "Unexpected call to joinedLobbyQuit - currentMode (%u) - ignoring",
           (unsigned) currentMode);
@@ -778,7 +779,7 @@ std::string LoggingActivitySink::modListToStr(const std::vector<Sha256>& modHash
     return "[no mods]";
   }
 
-  std::string result = "[" + std::to_string(modHashes.size()) + " mods]:";
+  auto result = "[" + std::to_string(modHashes.size()) + " mods]:";
   for (auto& modHash : modHashes)
   {
     result += std::string(" ") + modHash.toString();

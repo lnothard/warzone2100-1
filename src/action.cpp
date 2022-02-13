@@ -158,7 +158,9 @@ bool withinRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slot,
     return false;
 
   /* check min range */
-  auto const minrange = proj_GetMinRange(psStats, psDroid->playerManager->getPlayer());
+  auto const minrange = proj_GetMinRange(
+          psStats, psDroid->playerManager->getPlayer());
+
   if (radSq >= minrange * minrange || !proj_Direct(psStats)) {
     return true;
   }
@@ -177,7 +179,9 @@ bool targetInsideFiringDistance(Droid const* psDroid, BaseObject const* psObj, W
 	}
 
   // check min range
-	auto const minRange = proj_GetMinRange(psStats, psDroid->playerManager->getPlayer());
+  auto const minRange = proj_GetMinRange(
+          psStats, psDroid->playerManager->getPlayer());
+
 	if (objectPositionSquareDiff(psDroid, psObj) <= minRange * minRange) {
 		return true;
 	}
@@ -219,12 +223,13 @@ bool rotateTurret(BaseObject const* psAttacker, BaseObject const* psTarget, int 
 		pitchLowerLimit = DEG(psWeapStats->minElevation);
 		pitchUpperLimit = DEG(psWeapStats->maxElevation);
 	}
+
 	if (auto psDroid = dynamic_cast<Droid const*>(psAttacker)) {
-		calcDroidMuzzleLocation(psDroid, &attackerMuzzlePos, slot);
-		if (psDroid->getType() == DROID_TYPE::WEAPON || isTransporter(*psDroid) ||
-       psDroid->getType() == DROID_TYPE::COMMAND || psDroid->getType() == DROID_TYPE::CYBORG ||
-       psDroid->getType() == DROID_TYPE::CYBORG_SUPER) {
-			pitchLowerLimit = DEG(psWeapStats->minElevation);
+    calcDroidMuzzleLocation(psDroid, &attackerMuzzlePos, slot);
+    if (psDroid->getType() == DROID_TYPE::WEAPON || isTransporter(*psDroid) ||
+        psDroid->getType() == DROID_TYPE::COMMAND || psDroid->getType() == DROID_TYPE::CYBORG ||
+        psDroid->getType() == DROID_TYPE::CYBORG_SUPER) {
+      pitchLowerLimit = DEG(psWeapStats->minElevation);
 			pitchUpperLimit = DEG(psWeapStats->maxElevation);
 		}
 		else if (psDroid->getType() == DROID_TYPE::REPAIRER) {
@@ -233,13 +238,14 @@ bool rotateTurret(BaseObject const* psAttacker, BaseObject const* psTarget, int 
 		}
 	}
 
-	//get the maximum rotation this frame
+	// get the maximum rotation this frame
 	rotRate = MAX(gameTimeAdjustedIncrement(rotRate), DEG(1));
 	pitchRate = MAX(gameTimeAdjustedIncrement(pitchRate), DEG(1));
 
-	//and point the turret at target
-  auto targetRotation = calcDirection(psAttacker->getPosition().x, psAttacker->getPosition().y,
-                                                    psTarget->getPosition().x, psTarget->getPosition().y);
+	// point the turret at target
+  auto targetRotation = calcDirection(
+          psAttacker->getPosition().x, psAttacker->getPosition().y,
+          psTarget->getPosition().x, psTarget->getPosition().y);
 
 	//restrict rotationError to =/- 180 degrees
 	auto rotationError = angleDelta(targetRotation - (tRotation + psAttacker->getRotation().direction));
@@ -260,10 +266,12 @@ bool rotateTurret(BaseObject const* psAttacker, BaseObject const* psTarget, int 
 	bool onTarget = abs(angleDelta(targetRotation - tRotation + psAttacker->getRotation().direction)) <= rotationTolerance;
 
 	/* Set muzzle pitch if not repairing or outside minimum range */
-	auto const minRange = proj_GetMinRange(psWeapStats, psAttacker->playerManager->getPlayer());
-	if (!bRepair && objectPositionSquareDiff(psAttacker->getPosition(),
-                                           psTarget->getPosition()) > minRange * minRange) {
-		/* get target distance */
+	auto const minRange = proj_GetMinRange(
+          psWeapStats, psAttacker->playerManager->getPlayer());
+
+	if (!bRepair && objectPositionSquareDiff(
+          psAttacker->getPosition(), psTarget->getPosition()) > minRange * minRange) {
+		// get target distance
 		auto delta = psTarget->getPosition() - attackerMuzzlePos;
 
     auto targetPitch = iAtan2(delta.z, iHypot(delta.x, delta.y));
@@ -279,7 +287,7 @@ bool rotateTurret(BaseObject const* psAttacker, BaseObject const* psTarget, int 
 }
 
 bool targetVisible(Droid const* psDroid, BaseObject const* psTarget,
-                         int weapon_slot, bool useLongWithOptimum)
+                   int weapon_slot, bool useLongWithOptimum)
 {
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
 	ASSERT_OR_RETURN(false, psDroid->playerManager->getPlayer() < MAX_PLAYERS,
@@ -326,11 +334,10 @@ void updateAttackRuns(Droid* psDroid)
       isCyborg(psDroid)) {
 		return;
 	}
-
   addAttackRun(psDroid);
 }
 
-void getFallbackPosition(BaseObject const* psObj, BaseObject const* psTarget, int* px, int* py)
+Vector2i getFallbackPosition(BaseObject const* psObj, BaseObject const* psTarget)
 {
 	// get the distance vector from the target to the object
 	auto xdiff = psObj->getPosition().x - psTarget->getPosition().x;
@@ -341,11 +348,12 @@ void getFallbackPosition(BaseObject const* psObj, BaseObject const* psTarget, in
   ydiff = len == 0 ? TILE_UNITS : ydiff * TILE_UNITS / len;
 
 	// create the fallback position
-	*px = psObj->getPosition().x + xdiff * PULL_BACK_DIST;
-	*py = psObj->getPosition().y + ydiff * PULL_BACK_DIST;
+  auto fallbackPos = Vector2i{psObj->getPosition().x + xdiff * PULL_BACK_DIST,
+                              psObj->getPosition().y + ydiff * PULL_BACK_DIST};
 
 	// make sure the coordinates stay within the map bounds
-	clip_world_offmap(px, py);
+	clip_world_offmap(&fallbackPos.x, &fallbackPos.y);
+  return fallbackPos;
 }
 
 bool adjacentToOtherDroid(Droid const* psDroid, Droid const* psOther)
@@ -359,7 +367,7 @@ bool adjacentToOtherDroid(Droid const* psDroid, Droid const* psOther)
 }
 
 bool adjacentToBuildSite(Droid const* psDroid, BaseStats const* psStats,
-                           Vector2i location, uint16_t direction)
+                         Vector2i location, uint16_t direction)
 {
 	ASSERT_OR_RETURN(false, psStats != nullptr && psDroid != nullptr, "Bad stat or droid");
   auto const bounds = getStructureBounds(
@@ -496,7 +504,7 @@ bool spiralSearch(Vector2i startCoords, int maxRadius, tileMatchFunction match, 
 	return false;
 }
 
-bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p)
+bool findVtolLandingPosition(Droid const* psDroid, Vector2i* p)
 {
   set_blocking_flags(*psDroid, BITS_FPATHBLOCK);
 

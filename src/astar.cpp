@@ -303,7 +303,7 @@ void recalculateEstimates(PathContext& context, PathCoord tile)
 
 PathCoord findNearestExploredTile(PathContext& context, PathCoord tile)
 {
-  unsigned nearest_dist = UINT32_MAX;
+  auto nearest_dist = UINT32_MAX;
   auto nearest_coord = PathCoord{0, 0};
   bool target_found = false;
   while (!target_found)
@@ -349,11 +349,13 @@ PathCoord findNearestExploredTile(PathContext& context, PathCoord tile)
         // cannot cut corners
         auto x_2 = node.path_coordinate.x + offset[(direction + 1) % 8].x;
         auto y_2 = node.path_coordinate.y + offset[(direction + 1) % 8].y;
+
         if (context.isBlocked(x_2, y_2)) {
           continue;
         }
         x_2 = node.path_coordinate.x + offset[(direction + 7) % 8].x;
         y_2 = node.path_coordinate.y + offset[(direction + 7) % 8].y;
+
         if (context.isBlocked(x_2, y_2)) {
           continue;
         }
@@ -379,18 +381,18 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
   auto result = ASTAR_RESULT::OK;
   auto must_reverse = true;
 
-  const auto origin_tile = PathCoord{map_coord(pathJob.origin.x),
+  auto const origin_tile = PathCoord{map_coord(pathJob.origin.x),
                                      map_coord(pathJob.origin.y)};
 
-  const auto destination_tile = PathCoord{map_coord(pathJob.destination.x),
+  auto const destination_tile = PathCoord{map_coord(pathJob.destination.x),
                                           map_coord(pathJob.destination.y)};
 
-  const auto dstIgnore = NonBlockingArea{pathJob.dstStructure};
+  auto const dstIgnore = NonBlockingArea{pathJob.dstStructure};
 
   auto it = std::find_if(path_contexts.begin(), path_contexts.end(),
                          [&origin_tile, &end, &must_reverse](auto& context) {
       if (context.map[origin_tile.x + origin_tile.y * mapWidth].iteration ==
-          context.map[origin_tile.x + origin_tile.y * mapWidth].visited)  {
+          context.map[origin_tile.x + origin_tile.y * mapWidth].visited) {
         // already know the path
         end = origin_tile;
       }
@@ -413,9 +415,9 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
       return true;
   });
 
-  if (it == path_contexts.end())  {
+  if (it == path_contexts.end()) {
     // did not find an appropriate route so make one
-    if (path_contexts.size() < 30)  {
+    if (path_contexts.size() < 30) {
       path_contexts.emplace_back(PathContext());
     }
 
@@ -444,10 +446,8 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
   for(;;)
   {
     route.push_back(start);
-    auto& tile = it->map[map_coord(start.x) +
-                         map_coord(start.y) * mapWidth];
-    auto next = start - Vector2i{tile.x_diff, tile.y_diff} *
-                        (TILE_UNITS / 64);
+    auto& tile = it->map[map_coord(start.x) + map_coord(start.y) * mapWidth];
+    auto next = start - Vector2i{tile.x_diff, tile.y_diff} * (TILE_UNITS / 64);
     auto map = map_coord(next);
     // 1 if `next` is on the bottom edge of the tile, -1 if on the left
     auto x = next.x - world_coord(map.x) > TILE_UNITS / 2 ? 1 : -1;
@@ -543,19 +543,25 @@ void fpathSetBlockingMap(PathJob& path_job)
   std::vector<bool> &map = blocking.map;
   map.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
   unsigned checksum_map = 0, checksum_threat_map = 0, factor = 0;
-  for (auto y = 0; y < mapHeight; ++y) {
-    for (auto x = 0; x < mapWidth; ++x) {
+
+  for (auto y = 0; y < mapHeight; ++y)
+  {
+    for (auto x = 0; x < mapWidth; ++x)
+    {
       map[x + y * mapWidth] = fpathBaseBlockingTile({x, y}, path_job.moveType);
       checksum_map ^= map[x + y * mapWidth] * (factor = 3 * factor + 1);
     }
   }
+
   if (!isHumanPlayer(path_job.moveType.player) &&
       path_job.moveType.moveType == FPATH_MOVETYPE::FMT_MOVE) {
     auto threat = blocking.threat_map;
     threat.resize(static_cast<size_t>(mapWidth) * static_cast<size_t>(mapHeight));
 
-    for (auto y = 0; y < mapHeight; ++y) {
-      for (auto x = 0; x < mapWidth; ++x) {
+    for (auto y = 0; y < mapHeight; ++y)
+    {
+      for (auto x = 0; x < mapWidth; ++x)
+      {
         threat[x + y * mapWidth] = auxTile(x, y, path_job.moveType.player) & AUXBITS_THREAT;
         checksum_threat_map ^= threat[x + y * mapWidth] * (factor = 3 * factor + 1);
       }

@@ -3547,7 +3547,7 @@ bool Factory::structPlaceDroid(DroidTemplate* psTempl, Droid** ppsDroid)
 			if (psFlag && psNewDroid->isVtol()) {
 				Vector2i pos = psFlag->coords.xy();
 				//find a suitable location near the delivery point
-				actionVTOLLandingPos(psNewDroid, &pos);
+        findVtolLandingPosition(psNewDroid, &pos);
 				orderDroidLoc(psNewDroid, ORDER_TYPE::MOVE, pos.x, pos.y, ModeQueue);
 			}
 			else if (psFlag) {

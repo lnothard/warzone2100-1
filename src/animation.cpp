@@ -142,15 +142,12 @@ void Animation<AnimatableData>::start()
 template <class AnimatableData>
 void Animation<AnimatableData>::update()
 {
-	if (duration > 0)  {
-		auto deltaTime = time - (int64_t)startTime;
-		progress = MAX(0, MIN(UINT16_MAX, UINT16_MAX * deltaTime / duration));
-	}
-  else  {
-		progress = UINT16_MAX;
-	}
+  auto deltaTime = time - (int64_t)startTime;
+  progress = duration > 0
+             ? MAX(0, MIN(UINT16_MAX, UINT16_MAX * deltaTime / duration))
+             : UINT16_MAX;
 
-	currentData = initialData + (finalData - initialData) * (getEasedProgress() / (float)UINT16_MAX);
+  currentData = initialData + (finalData - initialData) * (getEasedProgress() / (float)UINT16_MAX);
 }
 
 template <class AnimatableData>

@@ -65,24 +65,17 @@ DIFFICULTY_LEVEL getDifficultyLevel()
 
 int modifyForDifficultyLevel(int basicVal, bool IsPlayer)
 {
-	if (IsPlayer)
-	{
+	if (IsPlayer) {
 		return basicVal * fDifPlayerModifier / 100;
 	}
-	else
-	{
-		return basicVal * fDifEnemyModifier / 100;
-	}
+  return basicVal * fDifEnemyModifier / 100;
 }
 
 void resetDamageModifiers()
 {
-	if (bMultiPlayer)
-	{
+	if (bMultiPlayer) {
 		setDamageModifiers(100, 100);
+    return;
 	}
-	else
-	{
-		setDifficultyLevel(getDifficultyLevel());
-	}
+  setDifficultyLevel(getDifficultyLevel());
 }

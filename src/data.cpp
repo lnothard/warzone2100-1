@@ -69,15 +69,15 @@ static unsigned hashBuffer(const uint8_t* pData, unsigned size)
 		{
 		}
 
-		if (i != j) // CRC non-empty lines only.
-		{
-			crc = crcSum(crc, pData + i, j - i); // CRC the line.
-			crc = crcSum(crc, &nl, 1); // CRC the line ending.
+    if (i == j) // CRC non-empty lines only.
+      continue;
 
-			++lines;
-			bytes += j - i + 1;
-		}
-	}
+    crc = crcSum(crc, pData + i, j - i);// CRC the line.
+    crc = crcSum(crc, &nl, 1);          // CRC the line ending.
+    ++lines;
+    bytes += j - i + 1;
+  }
+
 	debug(LOG_NET,
 	      "The size of the old buffer (%u bytes - %d stripped), New buffer size of %u bytes, %u non-empty lines.", size,
 	      size - bytes, bytes, lines);
@@ -91,15 +91,13 @@ void calcDataHash(const uint8_t* pBuffer, unsigned size, unsigned index)
 {
 	const unsigned oldHash = DataHash[index];
 
-	if (!bMultiPlayer)
-	{
+	if (!bMultiPlayer) {
 		return;
 	}
 
 	DataHash[index] += hashBuffer(pBuffer, size);
 
-	if (!DataHash[index] && oldHash)
-	{
+	if (!DataHash[index] && oldHash) {
 		debug(LOG_NET, "The new hash is 0, the old hash was %u. We added the negated value!", oldHash);
 	}
 
@@ -114,16 +112,12 @@ static void calcDataHash(const WzConfig& ini, unsigned index)
 
 void resetDataHash()
 {
-	unsigned i;
-	for (i = 0; i < DATA_MAXDATA; i++)
+	for (auto i = 0; i < DATA_MAXDATA; i++)
 	{
 		DataHash[i] = 0;
 	}
 	debug(LOG_NET, "== Hash is reset ==");
 }
-
-/**********************************************************/
-
 
 void dataSetSaveFlag()
 {
@@ -155,16 +149,13 @@ static void dataReleaseStats(WZ_DECL_UNUSED void* pData)
 	statsShutDown();
 }
 
-
 /* Load the weapon stats */
 static bool bufferSWEAPONLoad(const char* fileName, void** ppData)
 {
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	calcDataHash(ini, DATA_SWEAPON);
 
-	if (!loadWeaponStats(ini)
-		|| !allocComponentList(COMPONENT_TYPE::WEAPON, numWeaponStats))
-	{
+	if (!loadWeaponStats(ini) || !allocComponentList(COMPONENT_TYPE::WEAPON, numWeaponStats)) {
 		return false;
 	}
 
@@ -179,9 +170,7 @@ static bool bufferSCONSTRLoad(const char* fileName, void** ppData)
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	calcDataHash(ini, DATA_SCONSTR);
 
-	if (!loadConstructStats(ini)
-		|| !allocComponentList(COMPONENT_TYPE::CONSTRUCT, numConstructStats))
-	{
+	if (!loadConstructStats(ini) || !allocComponentList(COMPONENT_TYPE::CONSTRUCT, numConstructStats)) {
 		return false;
 	}
 
@@ -196,9 +185,7 @@ static bool bufferSECMLoad(const char* fileName, void** ppData)
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	calcDataHash(ini, DATA_SECM);
 
-	if (!loadECMStats(ini)
-		|| !allocComponentList(COMPONENT_TYPE::ECM, numECMStats))
-	{
+	if (!loadECMStats(ini) || !allocComponentList(COMPONENT_TYPE::ECM, numECMStats)) {
 		return false;
 	}
 
@@ -340,12 +327,10 @@ static bool bufferSWEAPMODLoad(const char* fileName, void** ppData)
 	return true;
 }
 
-
 /* Load the Template stats */
 static bool bufferSTEMPLLoad(const char* fileName, void** ppData)
 {
-	if (!loadDroidTemplates(fileName))
-	{
+	if (!loadDroidTemplates(fileName)) {
 		return false;
 	}
 
@@ -367,13 +352,7 @@ static bool bufferSSTRUCTLoad(const char* fileName, void** ppData)
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	calcDataHash(ini, DATA_SSTRUCT);
 
-	if (!loadStructureStats(ini))
-	{
-		return false;
-	}
-
-	if (!allocStructLists())
-	{
+	if (!loadStructureStats(ini) || !allocStructLists()) {
 		return false;
 	}
 
@@ -442,12 +421,7 @@ static bool bufferRESCHLoad(const char* fileName, void** ppData)
 	WzConfig ini(fileName, WzConfig::ReadOnlyAndRequired);
 	calcDataHash(ini, DATA_RESCH);
 
-	if (!loadResearch(ini))
-	{
-		return false;
-	}
-
-	return true;
+  return loadResearch(ini);
 }
 
 /* Load the message viewdata */
@@ -510,7 +484,6 @@ static bool dataImageLoad(const char* fileName, void** ppData)
 	return true;
 }
 
-
 // Tertiles (terrain tiles) loader.
 static bool dataTERTILESLoad(const char* fileName, void** ppData)
 {
@@ -536,7 +509,6 @@ static bool dataIMGLoad(const char* fileName, void** ppData)
 	return true;
 }
 
-
 static void dataIMGRelease(void* pData)
 {
 	iV_FreeImageFile((IMAGEFILE*)pData);
@@ -555,12 +527,10 @@ static void dataImageRelease(void* pData)
 	}
 }
 
-
 /* Load an audio file */
 static bool dataAudioLoad(const char* fileName, void** ppData)
 {
-	if (audio_Disabled())
-	{
+	if (audio_Disabled()) {
 		*ppData = nullptr;
 		// No error occurred (sound is just disabled), so we return true
 		return true;
@@ -593,9 +563,7 @@ static bool dataAudioCfgLoad(const char* fileName, void** ppData)
 	}
 
 	success = ParseResourceFile(fileHandle);
-
 	PHYSFS_close(fileHandle);
-
 	return success;
 }
 
@@ -603,18 +571,10 @@ static bool dataAudioCfgLoad(const char* fileName, void** ppData)
 static bool dataStrResLoad(const char* fileName, void** ppData)
 {
 	// recreate the string resource if it was freed by a WRF release
-	if (psStringRes == nullptr)
-	{
-		if (!stringsInitialise())
-		{
-			return false;
-		}
-	}
-
-	if (!strresLoad(psStringRes, fileName))
-	{
-		return false;
-	}
+	if (psStringRes == nullptr && !stringsInitialise() ||
+      !strresLoad(psStringRes, fileName)) {
+    return false;
+  }
 
 	*ppData = psStringRes;
 	return true;
@@ -622,8 +582,7 @@ static bool dataStrResLoad(const char* fileName, void** ppData)
 
 static void dataStrResRelease(WZ_DECL_UNUSED void* pData)
 {
-	if (psStringRes != nullptr)
-	{
+	if (psStringRes != nullptr) {
 		strresDestroy(psStringRes);
 		psStringRes = nullptr;
 	}
