@@ -139,61 +139,62 @@ struct Action
 std::string actionToString(ACTION action);
 
 /**
- * @typedef \c tileMatchFunction
- * @brief pointer to a 'tile search function', used by \c spiralSearch()
- * @param \c x,y are the coordinates that should be inspected.
+ * @typedef @c tileMatchFunction
+ * @brief Pointer to a 'tile search function', used by @c spiralSearch()
+ * @param coords the coordinates that should be inspected
  * @param data a pointer to state data, allows the search function to retain
- *             state in between calls and can be used as a means of returning
- *             its result to the caller of \c spiralSearch().
- * @return \c true when the search has finished, \c false when the search should
- *         continue.
+ *      state in between calls and can be used as a means of returning
+ *      its result to the caller of @c spiralSearch()
+ *
+ * @return @c true when the search has finished, @c false when the search should
+ *      continue
  */
 typedef bool (*tileMatchFunction)(Vector2i coords, void* matchState);
 
 /// Give a droid an action
-void actionDroid(Droid* psDroid, ACTION action);
+void newAction(Droid* psDroid, ACTION action);
 /// Give a droid an action with a location target
-void actionDroid(Droid* psDroid, ACTION action, Vector2i location);
+void newAction(Droid* psDroid, ACTION action, Vector2i location);
 /// Give a droid an action with an object target
-void actionDroid(Droid* psDroid, ACTION action, BaseObject* targetObject);
+void newAction(Droid* psDroid, ACTION action, BaseObject* targetObject);
 /// Give a droid an action with an object target and a location
-void actionDroid(Droid* psDroid, ACTION action, BaseObject* targetObject, Vector2i location);
+void newAction(Droid* psDroid, ACTION action, BaseObject* targetObject, Vector2i location);
 
-void actionAddVtolAttackRun(Droid* psDroid);
-void actionUpdateVtolAttack(Droid* psDroid);
+void addAttackRun(Droid* psDroid);
+void updateAttackRuns(Droid* psDroid);
 
 /**
  * Calculate a position for units to pull back to if they
  * need to increase the range between them and a target
  */
-void actionCalcPullBackPoint(BaseObject const* psObj, BaseObject const* psTarget, int* px, int* py);
+void getFallbackPosition(BaseObject const* psObj, BaseObject const* psTarget, int* px, int* py);
 
 /**
  * Rotate turret toward a target
- * @return \c true if locked on (to a droid or building)
+ * @return @c true if locked on to a droid or building
  */
-bool actionTargetTurret(BaseObject const* psAttacker, BaseObject const* psTarget, int slot);
+bool rotateTurret(BaseObject const* psAttacker, BaseObject const* psTarget, int slot);
 
-/// @return \c true if a target is within weapon range
-bool actionInRange(Droid const* psDroid, BaseObject const* psObj,
+/// @return @c true if a target is within weapon range
+bool withinRange(Droid const* psDroid, BaseObject const* psObj,
                    int weapon_slot, bool useLongWithOptimum = true);
 
-/// @return \c true if a droid can see a target to fire on it
-bool actionVisibleTarget(Droid const* psDroid, BaseObject const* psTarget,
-                         int weapon_slot, bool useLongWithOptimum);
+/// @return @c true if a droid can see a target to fire on it
+bool targetVisible(Droid const* psDroid, BaseObject const* psTarget,
+                         int weapon_slot, bool useLongWithOptimum = true);
 
-/// @return \c true if a droid is in the neighboring tile to a build position
-bool actionReachedBuildPos(Droid const* psDroid, BaseStats const* psStats,
+/// @return @c true if a droid is in the neighboring tile to a build position
+bool adjacentToBuildSite(Droid const* psDroid, BaseStats const* psStats,
                            Vector2i location, uint16_t direction);
 
-/// @return \c true if a droid is in the neighboring tile of another droid
-bool actionReachedDroid(Droid const* psDroid, Droid const* psOther);
+/// @return @c true if a droid is in the neighboring tile of another droid
+bool adjacentToOtherDroid(Droid const* psDroid, Droid const* psOther);
 
-/// @return \c true if a target is inside minimum weapon range
-bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, WeaponStats const* psStats);
+/// @return @c true if a target is inside minimum weapon range
+bool targetInsideFiringDistance(Droid const* psDroid, BaseObject const* psObj, WeaponStats const* psStats);
 
-/// @return \c true if a droid is on the foundations of a new building
-bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir, BaseStats const* psStats);
+/// @return @c true if a droid is on the foundations of a new building
+bool pushDroidsAwayFromBuildSite(unsigned player, Vector2i pos, uint16_t dir, BaseStats const* psStats);
 
 /**
  * Choose a landing position for a VTOL when it goes to rearm that

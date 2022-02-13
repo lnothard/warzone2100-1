@@ -1058,7 +1058,7 @@ bool launchTransporter(Droid* psTransporter)
 
 		orderDroid(psTransporter, ORDER_TYPE::TRANSPORT_IN, ModeImmediate);
 		/* set action transporter waits for timer */
-		actionDroid(psTransporter, ACTION::TRANSPORT_WAIT_TO_FLY_IN);
+    newAction(psTransporter, ACTION::TRANSPORT_WAIT_TO_FLY_IN);
 
 		missionSetReinforcementTime(gameTime);
 	}

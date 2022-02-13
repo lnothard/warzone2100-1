@@ -1382,7 +1382,7 @@ void Structure::aiUpdateStructure(bool isMission)
                   getPosition().x, getPosition().y, psChosenObjs[i]->getPosition().x, psChosenObjs[i]->getPosition().y);
           combFire(&weaponManager->weapons[i], this, psChosenObjs[i], i);
         }
-        else if (actionTargetTurret(this, psChosenObjs[i], i)) {
+        else if (rotateTurret(this, psChosenObjs[i], i)) {
           combFire(&weaponManager->weapons[i], this, psChosenObjs[i], i);
         }
       }
@@ -4397,7 +4397,7 @@ bool removeStruct(Structure* psDel, bool bDestroy)
 
 void Structure::actionDroidTarget(Droid* droid, ACTION action, int idx)
 {
-  ::actionDroid(droid, action, pimpl->targets[idx]);
+  ::newAction(droid, action, pimpl->targets[idx]);
 }
 
 /* Remove a structure */
@@ -6127,7 +6127,7 @@ void ensureRearmPadClear(Structure* psStruct, Droid const* psDroid)
       auto const ty = map_coord(psStruct->getPosition().y);
       if (&psCurr != psDroid && map_coord(psCurr.getPosition().x) == tx &&
           map_coord(psCurr.getPosition().y) == ty && psCurr.isVtol()) {
-        actionDroid(&psCurr, ACTION::CLEAR_REARM_PAD, psStruct);
+        newAction(&psCurr, ACTION::CLEAR_REARM_PAD, psStruct);
       }
     }
   }
@@ -6730,13 +6730,13 @@ void RepairFacility::aiUpdate()
         (pimpl->psObj->getAction() == ACTION::WAIT_DURING_REPAIR &&
          xdiff * xdiff + ydiff * ydiff > (TILE_UNITS * 5 / 2) * (TILE_UNITS * 5 / 2))) {
       objTrace(getId(), "Requesting droid %d to come to us", pimpl->psObj->getId());
-      actionDroid(pimpl->psObj, ACTION::MOVE_TO_REPAIR_POINT, this, getPosition().x, getPosition().y);
+      newAction(pimpl->psObj, ACTION::MOVE_TO_REPAIR_POINT, this, getPosition().x, getPosition().y);
     }
   }
 
   // update repair arm position
   if (pimpl->psObj) {
-    actionTargetTurret(this, pimpl->psObj, 0);
+    rotateTurret(this, pimpl->psObj, 0);
   }
   else if ((weaponManager->weapons[0].getRotation().direction % DEG(90)) != 0 ||
            weaponManager->weapons[0].getRotation().pitch != 0) {
@@ -6849,7 +6849,7 @@ void RearmPad::aiUpdate()
       }
     }
     if (pimpl->psObj != nullptr) {
-      actionDroid(pimpl->psObj, ACTION::MOVE_TO_REARM_POINT, this);
+      newAction(pimpl->psObj, ACTION::MOVE_TO_REARM_POINT, this);
     }
   }
   else {
@@ -6858,7 +6858,7 @@ void RearmPad::aiUpdate()
         pimpl->psObj->getAction() == ACTION::WAIT_FOR_REARM) {
       objTrace(pimpl->psObj->getId(), "supposed to go to rearm but not on our way -- fixing");
       // this should never happen...
-      actionDroid(pimpl->psObj, ACTION::MOVE_TO_REARM_POINT, this);
+      newAction(pimpl->psObj, ACTION::MOVE_TO_REARM_POINT, this);
     }
   }
 

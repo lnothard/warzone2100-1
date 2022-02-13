@@ -781,7 +781,7 @@ BaseObject const* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_typ
             target->getPosition(), unit.getPosition());
 
     if (targetInLineOfFire(unit, *target, weapon_slot) &&
-        actionVisibleTarget(&dynamic_cast<Droid const&>(unit), target, weapon_slot, false)) {
+        targetVisible(&dynamic_cast<Droid const &>(unit), target, weapon_slot, false)) {
 
       target_dist = square_dist;
       if (is_cb_sensor) {

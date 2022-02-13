@@ -595,8 +595,8 @@ void DeSelectDroid(Droid* psDroid);
 /* audio finished callback */
 bool droidAudioTrackStopped(Droid* psDroid);
 
-void set_blocking_flags(const Droid& droid);
-void clear_blocking_flags(const Droid& droid);
+void set_blocking_flags(const Droid& droid, uint8_t flag);
+void clear_blocking_flags(const Droid& droid, uint8_t flag);
 
 /*returns true if droid type is one of the Cyborg types*/
 bool isCyborg(const Droid* psDroid);

@@ -124,7 +124,7 @@ std::string actionToString(ACTION action)
 	return name[ static_cast<size_t>(action) ];
 }
 
-bool actionInRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slot, bool useLongWithOptimum)
+bool withinRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slot, bool useLongWithOptimum)
 {
 	auto const psStats = psDroid->weaponManager->weapons[0].stats.get();
 	auto const longRange = proj_GetLongRange(psStats, psDroid->playerManager->getPlayer());
@@ -165,7 +165,7 @@ bool actionInRange(Droid const* psDroid, BaseObject const* psObj, int weapon_slo
   return false;
 }
 
-bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, WeaponStats const* psStats)
+bool targetInsideFiringDistance(Droid const* psDroid, BaseObject const* psObj, WeaponStats const* psStats)
 {
   /* if I am a multi-turret droid */
   if (numWeapons(*psDroid) > 1) {
@@ -184,9 +184,9 @@ bool actionInsideMinRange(Droid const* psDroid, BaseObject const* psObj, WeaponS
 	return false;
 }
 
-bool actionTargetTurret(BaseObject const* psAttacker, BaseObject const* psTarget, int weaponSlot)
+bool rotateTurret(BaseObject const* psAttacker, BaseObject const* psTarget, int slot)
 {
-  auto weapon = psAttacker->weaponManager->weapons[weaponSlot];
+  auto weapon = psAttacker->weaponManager->weapons[slot];
   auto rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;
   auto pitchRate = DEG(ACTION_TURRET_ROTATION_RATE) * 2;
 
@@ -215,12 +215,12 @@ bool actionTargetTurret(BaseObject const* psAttacker, BaseObject const* psTarget
 	// using for calculating the pitch, but not the direction, in case
   // using the exact direction causes bugs somewhere.
 	if (auto as_struct = dynamic_cast<Structure const*>(psAttacker)) {
-		calcStructureMuzzleLocation(as_struct, &attackerMuzzlePos, weaponSlot);
+		calcStructureMuzzleLocation(as_struct, &attackerMuzzlePos, slot);
 		pitchLowerLimit = DEG(psWeapStats->minElevation);
 		pitchUpperLimit = DEG(psWeapStats->maxElevation);
 	}
 	if (auto psDroid = dynamic_cast<Droid const*>(psAttacker)) {
-		calcDroidMuzzleLocation(psDroid, &attackerMuzzlePos, weaponSlot);
+		calcDroidMuzzleLocation(psDroid, &attackerMuzzlePos, slot);
 		if (psDroid->getType() == DROID_TYPE::WEAPON || isTransporter(*psDroid) ||
        psDroid->getType() == DROID_TYPE::COMMAND || psDroid->getType() == DROID_TYPE::CYBORG ||
        psDroid->getType() == DROID_TYPE::CYBORG_SUPER) {
@@ -278,7 +278,7 @@ bool actionTargetTurret(BaseObject const* psAttacker, BaseObject const* psTarget
 	return onTarget;
 }
 
-bool actionVisibleTarget(Droid const* psDroid, BaseObject const* psTarget,
+bool targetVisible(Droid const* psDroid, BaseObject const* psTarget,
                          int weapon_slot, bool useLongWithOptimum)
 {
 	ASSERT_OR_RETURN(false, psTarget != nullptr, "Target is NULL");
@@ -294,7 +294,7 @@ bool actionVisibleTarget(Droid const* psDroid, BaseObject const* psTarget,
          visibleObject(psDroid, psTarget, false);
 }
 
-void actionAddVtolAttackRun(Droid* psDroid)
+void addAttackRun(Droid* psDroid)
 {
   if (psDroid->getOrder()->target == nullptr)
     return;
@@ -310,13 +310,13 @@ void actionAddVtolAttackRun(Droid* psDroid)
           delta * VTOL_ATTACK_LENGTH / std::max(iHypot(delta), 1);
 
   if (!worldOnMap(dest)) {
-    debug(LOG_NEVER, "*** actionAddVtolAttackRun: run off map! ***");
+    debug(LOG_NEVER, "*** addAttackRun: run off map! ***");
     return;
   }
   psDroid->moveDroidToDirect(dest);
 }
 
-void actionUpdateVtolAttack(Droid* psDroid)
+void updateAttackRuns(Droid* psDroid)
 {
 	// don't do attack runs whilst returning to base
   // order back to base after fixed number of attack runs
@@ -327,10 +327,10 @@ void actionUpdateVtolAttack(Droid* psDroid)
 		return;
 	}
 
-  actionAddVtolAttackRun(psDroid);
+  addAttackRun(psDroid);
 }
 
-void actionCalcPullBackPoint(BaseObject const* psObj, BaseObject const* psTarget, int* px, int* py)
+void getFallbackPosition(BaseObject const* psObj, BaseObject const* psTarget, int* px, int* py)
 {
 	// get the distance vector from the target to the object
 	auto xdiff = psObj->getPosition().x - psTarget->getPosition().x;
@@ -348,7 +348,7 @@ void actionCalcPullBackPoint(BaseObject const* psObj, BaseObject const* psTarget
 	clip_world_offmap(px, py);
 }
 
-bool actionReachedDroid(Droid const* psDroid, Droid const* psOther)
+bool adjacentToOtherDroid(Droid const* psDroid, Droid const* psOther)
 {
 	ASSERT_OR_RETURN(false, psDroid != nullptr && psOther != nullptr, "Bad droids");
 
@@ -358,20 +358,21 @@ bool actionReachedDroid(Droid const* psDroid, Droid const* psOther)
 	return delta.x >= -1 && delta.x <= 1 && delta.y >= -1 && delta.y <= 1;
 }
 
-bool actionReachedBuildPos(Droid const* psDroid, BaseStats const* psStats,
-                           Vector2i location, uint16_t dir)
+bool adjacentToBuildSite(Droid const* psDroid, BaseStats const* psStats,
+                           Vector2i location, uint16_t direction)
 {
 	ASSERT_OR_RETURN(false, psStats != nullptr && psDroid != nullptr, "Bad stat or droid");
+  auto const bounds = getStructureBounds(
+          dynamic_cast<StructureStats const*>(psStats), location, direction);
 
-  auto const b = getStructureBounds(
-          dynamic_cast<StructureStats const*>(psStats), location, dir);
+	auto const delta = map_coord(
+          psDroid->getPosition().xy()) - bounds.map;
 
-	auto const delta = map_coord(psDroid->getPosition().xy()) - b.map;
-	return delta.x >= -1 && delta.x <= b.size.x &&
-         delta.y >= -1 && delta.y <= b.size.y;
+	return delta.x >= -1 && delta.x <= bounds.size.x &&
+         delta.y >= -1 && delta.y <= bounds.size.y;
 }
 
-bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir, BaseStats const* psStats)
+bool pushDroidsAwayFromBuildSite(unsigned player, Vector2i pos, uint16_t dir, BaseStats const* psStats)
 {
 	ASSERT_OR_RETURN(false, psStats != nullptr, "Bad stat");
 
@@ -432,25 +433,25 @@ bool actionRemoveDroidsFromBuildPos(unsigned player, Vector2i pos, uint16_t dir,
 	return buildPosEmpty;
 }
 
-void actionDroid(Droid* psDroid, ACTION action)
+void newAction(Droid* psDroid, ACTION action)
 {
 	Action sAction{action};
 	psDroid->actionDroidBase(&sAction);
 }
 
-void actionDroid(Droid* psDroid, ACTION action, Vector2i location)
+void newAction(Droid* psDroid, ACTION action, Vector2i location)
 {
 	Action sAction{action, location};
 	psDroid->actionDroidBase(&sAction);
 }
 
-void actionDroid(Droid* psDroid, ACTION action, BaseObject* targetObject)
+void newAction(Droid* psDroid, ACTION action, BaseObject* targetObject)
 {
 	Action sAction{action, targetObject};
 	psDroid->actionDroidBase(&sAction);
 }
 
-void actionDroid(Droid* psDroid, ACTION action, BaseObject* targetObject, Vector2i location)
+void newAction(Droid* psDroid, ACTION action, BaseObject* targetObject, Vector2i location)
 {
 	Action sAction{action, location, targetObject};
 	psDroid->actionDroidBase(&sAction);
@@ -497,18 +498,7 @@ bool spiralSearch(Vector2i startCoords, int maxRadius, tileMatchFunction match, 
 
 bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p)
 {
-	// set blocking flags for all the other droids
-	for (auto const& psCurr : playerList[psDroid->playerManager->getPlayer()].droids)
-	{
-		static Vector2i tileCoords{0, 0};
-    tileCoords = map_coord(psCurr.isStationary()
-                           ? psCurr.getPosition().xy()
-                           : psCurr.getMovementData()->destination);
-
-    if (&psCurr != psDroid && tileOnMap(tileCoords)) {
-      mapTile(tileCoords)->tileInfoBits |= BITS_FPATHBLOCK;
-		}
-	}
+  set_blocking_flags(*psDroid, BITS_FPATHBLOCK);
 
 	// search for landing tile; will stop when found or radius exceeded
 	Vector2i xyCoords{0, 0};
@@ -522,16 +512,6 @@ bool actionVTOLLandingPos(Droid const* psDroid, Vector2i* p)
 	}
 
 	// clear blocking flags for all the other droids
-	for (auto const& psCurr : playerList[psDroid->playerManager->getPlayer()].droids)
-	{
-		static Vector2i t{0, 0};
-    t = map_coord(psCurr.isStationary()
-                  ? psCurr.getPosition().xy()
-                  : psCurr.getMovementData()->destination);
-
-    if (tileOnMap(t)) {
-			mapTile(t)->tileInfoBits &= ~BITS_FPATHBLOCK;
-		}
-	}
+  clear_blocking_flags(*psDroid, BITS_FPATHBLOCK);
 	return foundTile;
 }

@@ -1161,7 +1161,7 @@ void Projectile::proj_ImpactFunc()
                            playerManager->getPlayer())) {
         if (auto psDroid = dynamic_cast<Droid*>(pimpl->source)) {
           psDroid->order.type = ORDER_TYPE::NONE;
-          actionDroid(psDroid, ACTION::NONE);
+          newAction(psDroid, ACTION::NONE);
         }
         else if (auto psStruct = dynamic_cast<Structure*>(pimpl->source)) {
           psStruct->psTarget[0] = nullptr;

@@ -651,7 +651,7 @@ bool updateAttackTarget(BaseObject* psAttacker, int weapon_slot)
        orderState(psDroid, ORDER_TYPE::GUARD) ||
        orderState(psDroid, ORDER_TYPE::ATTACK_TARGET)) &&
       weapon_slot == 0) {
-    actionDroid(psDroid, ACTION::ATTACK, psBetterTarget);
+    newAction(psDroid, ACTION::ATTACK, psBetterTarget);
     return true;
   }
   // can't override current order
