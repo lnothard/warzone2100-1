@@ -624,7 +624,7 @@ bool saveConfig()
 	iniSetString("publicIPv6LookupService_JSONKey", getPublicIPv6LookupServiceJSONKey());
 	if (!bMultiPlayer)
 	{
-		iniSetInteger("colour", (int)getPlayerColour(0)); // favourite colour.
+		iniSetInteger("colour", (int)*getPlayerColour(0)); // favourite colour.
 	}
 	else
 	{

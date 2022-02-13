@@ -27,6 +27,7 @@
 
 #include <deque>
 #include <set>
+#include <sstream>
 
 #include "lib/ivis_opengl/piepalette.h"
 #include "lib/sound/audio.h"
@@ -102,9 +103,9 @@ void setConsoleCalcLayout(const CONSOLE_CALC_LAYOUT_FUNC& layoutFunc)
 /** Sets the system up */
 void initConsoleMessages()
 {
-	unsigned int duration = (game.type == LEVEL_TYPE::SKIRMISH)
-		                        ? DEFAULT_MESSAGE_DURATION
-		                        : DEFAULT_MESSAGE_DURATION_CAMPAIGN;
+	unsigned duration = game.type == LEVEL_TYPE::SKIRMISH
+                                  ? DEFAULT_MESSAGE_DURATION
+                                  : DEFAULT_MESSAGE_DURATION_CAMPAIGN;
 	linePitch = iV_GetTextLineSize(font_regular);
 	bConsoleDropped = false;
 	setConsoleMessageDuration(duration); // Setup how long messages are displayed for
@@ -114,8 +115,9 @@ void initConsoleMessages()
 	//	Set up the main console size and position x,y,width
 	setConsoleCalcLayout([]()
 	{
-		setConsoleSizePos(16, (!challengeActive && (game.type == LEVEL_TYPE::SKIRMISH)) ? 32 : (32 + TIMER_Y),
-		                  pie_GetVideoBufferWidth() - 32);
+    setConsoleSizePos(16, !challengeActive && game.type == LEVEL_TYPE::SKIRMISH
+                          ? 32 : 32 + TIMER_Y,
+                      pie_GetVideoBufferWidth() - 32);
 	});
 	historyConsole.topX = HISTORYBOX_X;
 	historyConsole.topY = HISTORYBOX_Y;
@@ -383,116 +385,104 @@ void displayOldMessages(bool mode)
 	int startpos = 0;
 	std::deque<CONSOLE_MESSAGE>* WhichMessages;
 
-	if (mode)
-	{
+	if (mode) {
 		WhichMessages = &TeamMessages;
 	}
-	else
-	{
+	else {
 		WhichMessages = &HistoryMessages;
 	}
-	if (!WhichMessages->empty())
-	{
-		unsigned int count = WhichMessages->size(); // total number of messages
-		if (count > NumDisplayLines) // if we have more than we can display
-		{
-			startpos = count - NumDisplayLines; // show last X lines
-			startpos += updatepos; // unless user wants to start at something else
-			if (startpos < 0) // don't underflow
-			{
-				startpos = 0;
-				updatepos = (count - NumDisplayLines) * -1; // reset back to first entry
-				count = NumDisplayLines;
-			}
-			else if (count + updatepos <= count)
-			{
-				count += updatepos; // user may want something different
-			}
-			else
-			{
-				// reset all, we got overflow
-				count = WhichMessages->size();
-				updatepos = 0;
-				startpos = count - NumDisplayLines;
-			}
-		}
 
-		int nudgeright = 0;
-		int TextYpos = historyConsole.topY + linePitch - 2;
+  if (WhichMessages->empty())
+    return;
 
-		if (isSecondaryWindowUp()) // see if (build/research/...)window is up
-		{
-			nudgeright = RET_FORMWIDTH + 2; // move text over
-		}
-		// if user wants to add a bit more contrast to the text
-		if (showBackgroundColor)
-		{
-			iV_TransBoxFill(historyConsole.topX + nudgeright - CON_BORDER_WIDTH,
-			                historyConsole.topY - historyConsole.textDepth - CON_BORDER_HEIGHT,
-			                historyConsole.topX + historyConsole.width,
-			                historyConsole.topY + (NumDisplayLines * linePitch) + CON_BORDER_HEIGHT);
-		}
-		for (int i = startpos; i < count; ++i)
-		{
-			PIELIGHT colour = mode ? WZCOL_CONS_TEXT_USER_ALLY : getConsoleTextColor((*WhichMessages)[i].player);
-			console_drawtext((*WhichMessages)[i].display, colour, historyConsole.topX + nudgeright, TextYpos,
-			                 (*WhichMessages)[i].JustifyType, historyConsole.width);
-			TextYpos += (*WhichMessages)[i].display.lineSize();
-		}
-	}
+  auto count = WhichMessages->size();// total number of messages
+  if (count > NumDisplayLines) // if we have more than we can display
+  {
+    startpos = count - NumDisplayLines; // show last X lines
+    startpos += updatepos; // unless user wants to start at something else
+    if (startpos < 0) { // don't underflow
+      startpos = 0;
+      updatepos = (count - NumDisplayLines) * -1; // reset back to first entry
+      count = NumDisplayLines;
+    }
+    else if (count + updatepos <= count) {
+      count += updatepos; // user may want something different
+    }
+    else {
+      // reset all, we got overflow
+      count = WhichMessages->size();
+      updatepos = 0;
+      startpos = count - NumDisplayLines;
+    }
+  }
+
+  int nudgeright = 0;
+  int TextYpos = historyConsole.topY + linePitch - 2;
+
+  if (isSecondaryWindowUp()) { // see if (build/research/...)window is up
+    nudgeright = RET_FORMWIDTH + 2; // move text over
+  }
+  // if user wants to add a bit more contrast to the text
+  if (showBackgroundColor) {
+    iV_TransBoxFill(historyConsole.topX + nudgeright - CON_BORDER_WIDTH,
+                    historyConsole.topY - historyConsole.textDepth - CON_BORDER_HEIGHT,
+                    historyConsole.topX + historyConsole.width,
+                    historyConsole.topY + (NumDisplayLines * linePitch) + CON_BORDER_HEIGHT);
+  }
+
+  for (auto i = startpos; i < count; ++i)
+  {
+    auto colour = mode ? WZCOL_CONS_TEXT_USER_ALLY : getConsoleTextColor((*WhichMessages)[i].player);
+    console_drawtext((*WhichMessages)[i].display, colour, historyConsole.topX + nudgeright, TextYpos,
+                     (*WhichMessages)[i].JustifyType, historyConsole.width);
+    TextYpos += (*WhichMessages)[i].display.lineSize();
+  }
 }
 
 /** Displays all the console messages */
 void displayConsoleMessages()
 {
 	// Check if we have any messages we want to show
-	if (ActiveMessages.empty() && !bConsoleDropped && InfoMessages.empty())
-	{
-		return;
-	}
-
-	// scripts can disable the console
-	if (!bConsoleDisplayEnabled && InfoMessages.empty())
-	{
+	if (ActiveMessages.empty() && !bConsoleDropped && InfoMessages.empty() ||
+      !bConsoleDisplayEnabled && InfoMessages.empty()) {
 		return;
 	}
 
 	pie_SetFogStatus(false);
 
-	if (bConsoleDropped)
-	{
+	if (bConsoleDropped) {
 		displayOldMessages(HistoryMode);
 	}
 
-	if (!InfoMessages.empty())
-	{
+	if (!InfoMessages.empty()) {
 		auto i = InfoMessages.end() - 1; // we can only show the last one...
-		int tmp = pie_GetVideoBufferWidth();
+		auto tmp = pie_GetVideoBufferWidth();
 		drawBlueBox(0, 0, tmp, 18);
 		tmp -= i->display.width();
-		console_drawtext(i->display, getConsoleTextColor(i->player), tmp - 6, linePitch - 2, i->JustifyType,
-		                 i->display.width());
+    console_drawtext(i->display, getConsoleTextColor(i->player),
+                     tmp - 6, linePitch - 2, i->JustifyType,
+                     i->display.width());
 	}
 
-	if (!ActiveMessages.empty())
-	{
-		int TextYpos = mainConsole.topY;
-		// Draw the blue background for the text (only in game, not lobby)
-		if (bTextBoxActive && GetGameMode() == GS_NORMAL)
-		{
-			iV_TransBoxFill(mainConsole.topX - CON_BORDER_WIDTH,
-			                mainConsole.topY - mainConsole.textDepth - CON_BORDER_HEIGHT,
-			                mainConsole.topX + mainConsole.width,
-			                mainConsole.topY + (getNumberConsoleMessages() * linePitch) + CON_BORDER_HEIGHT -
-			                linePitch);
-		}
-		for (auto& ActiveMessage : ActiveMessages)
-		{
-			console_drawtext(ActiveMessage.display, getConsoleTextColor(ActiveMessage.player), mainConsole.topX,
-			                 TextYpos, ActiveMessage.JustifyType, mainConsole.width);
-			TextYpos += ActiveMessage.display.lineSize();
-		}
-	}
+  if (ActiveMessages.empty())
+    return;
+
+  auto TextYpos = mainConsole.topY;
+  // Draw the blue background for the text (only in game, not lobby)
+  if (bTextBoxActive && GetGameMode() == GS_NORMAL) {
+    iV_TransBoxFill(mainConsole.topX - CON_BORDER_WIDTH,
+                    mainConsole.topY - mainConsole.textDepth - CON_BORDER_HEIGHT,
+                    mainConsole.topX + mainConsole.width,
+                    mainConsole.topY + (getNumberConsoleMessages() * linePitch) + CON_BORDER_HEIGHT -
+                    linePitch);
+  }
+
+  for (auto& ActiveMessage : ActiveMessages)
+  {
+    console_drawtext(ActiveMessage.display, getConsoleTextColor(ActiveMessage.player), mainConsole.topX,
+                     TextYpos, ActiveMessage.JustifyType, mainConsole.width);
+    TextYpos += ActiveMessage.display.lineSize();
+  }
 }
 
 /** destroy CONPRINTF messages **/
@@ -535,34 +525,26 @@ void setConsoleSizePos(UDWORD x, UDWORD y, UDWORD width)
 /**	Establishes whether the console messages stay there */
 void setConsolePermanence(bool state, bool bClearOld)
 {
-	if (mainConsole.permanent && !state)
-	{
-		if (bClearOld)
-		{
+	if (mainConsole.permanent && !state) {
+		if (bClearOld) {
 			flushConsoleMessages();
 		}
 		mainConsole.permanent = false;
+    return;
 	}
-	else
-	{
-		if (bClearOld)
-		{
-			flushConsoleMessages();
-		}
-		mainConsole.permanent = state;
-	}
+  if (bClearOld) {
+    flushConsoleMessages();
+  }
+  mainConsole.permanent = state;
 }
 
 /** Check if mouse is over the Active console 'window' area */
 bool mouseOverConsoleBox()
 {
-	auto gotMessages = getNumberConsoleMessages();
-	if (gotMessages &&
-		((UDWORD)mouseX() > mainConsole.topX)
-		&& ((UDWORD)mouseY() > mainConsole.topY)
-		&& ((UDWORD)mouseX() < mainConsole.topX + mainConsole.width)
-		&& ((UDWORD)mouseY() < (mainConsole.topY + 4 + linePitch * gotMessages)))
-	{
+  if (getNumberConsoleMessages() && (UDWORD) mouseX() > mainConsole.topX &&
+      (UDWORD) mouseY() > mainConsole.topY &&
+      (UDWORD) mouseX() < mainConsole.topX + mainConsole.width &&
+      (UDWORD) mouseY() < mainConsole.topY + 4 + linePitch * getNumberConsoleMessages()) {
 		return true;
 	}
 	return false;
@@ -572,30 +554,17 @@ bool mouseOverConsoleBox()
 bool mouseOverHistoryConsoleBox()
 {
 	int nudgeright = 0;
-	if (isSecondaryWindowUp())
-	{
+	if (isSecondaryWindowUp()) {
 		// if a build/research/... is up, we need to move text over by this much
 		nudgeright = RET_FORMWIDTH;
 	}
-	// enable below to see the hitbox of the history console window
-#if 0
-	if (isSecondaryWindowUp())
-	{
-		iV_Box2(historyConsole.topX + nudgeright, historyConsole.topY, historyConsole.topX + historyConsole.width, (historyConsole.topY + 4 + linePitch * NumDisplayLines), WZCOL_RED, WZCOL_GREEN);
 
-	}
-	else
-	{
-		iV_Box2(historyConsole.topX, historyConsole.topY, historyConsole.topX + historyConsole.width, (historyConsole.topY + 4 + linePitch * NumDisplayLines), WZCOL_GREY, WZCOL_GREY);
-	}
-#endif
 	// check to see if mouse is in the area when console is enabled
 	if (bConsoleDropped &&
 		((UDWORD)mouseX() > historyConsole.topX + nudgeright)
 		&& ((UDWORD)mouseY() > historyConsole.topY)
 		&& ((UDWORD)mouseX() < historyConsole.topX + historyConsole.width)
-		&& ((UDWORD)mouseY() < (historyConsole.topY + 4 + linePitch * NumDisplayLines)))
-	{
+		&& ((UDWORD)mouseY() < (historyConsole.topY + 4 + linePitch * NumDisplayLines))) {
 		if (mousePressed(MOUSE_WUP))
 		{
 			updatepos--;
@@ -612,12 +581,9 @@ bool mouseOverHistoryConsoleBox()
 		{
 			showBackgroundColor = false;
 		}
-		return (true);
+    return true;
 	}
-	else
-	{
-		return (false);
-	}
+  return false;
 }
 
 /** Sets up how many lines are allowed and how many are visible */

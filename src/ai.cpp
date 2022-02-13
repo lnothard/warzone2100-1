@@ -61,17 +61,17 @@ static bool aiStructHasRange(Structure const* psStruct, BaseObject const* psTarg
 	auto const longRange = proj_GetLongRange(
           psWStats.get(), psStruct->playerManager->getPlayer());
 
-	return objectPositionSquareDiff(
+  return objectPositionSquareDiff(
           psStruct->getPosition(),
           psTarget->getPosition()) < longRange * longRange &&
-          lineOfFire(psStruct, psTarget, weapon_slot, true);
+         lineOfFire(psStruct, psTarget, weapon_slot, true);
 }
 
 static bool aiDroidHasRange(Droid const* psDroid, BaseObject const* psTarget, int weapon_slot)
 {
 	auto const longRange = aiDroidRange(psDroid, weapon_slot);
-	return objectPositionSquareDiff(psDroid->getPosition(),
-                                  psTarget->getPosition()) < longRange * longRange;
+  return objectPositionSquareDiff(psDroid->getPosition(), psTarget->getPosition())
+         < longRange * longRange;
 }
 
 static bool aiObjHasRange(BaseObject const* psObj, BaseObject const* psTarget, int weapon_slot)
@@ -79,12 +79,9 @@ static bool aiObjHasRange(BaseObject const* psObj, BaseObject const* psTarget, i
 	if (auto psDroid = dynamic_cast<Droid const*>(psObj)) {
 		return aiDroidHasRange(psDroid, psTarget, weapon_slot);
 	}
-
 	if (auto psStruct = dynamic_cast<Structure const*>(psObj)) {
-    return aiStructHasRange(dynamic_cast<Structure const*>(psObj),
-                            psTarget, weapon_slot);
+    return aiStructHasRange(psStruct, psTarget, weapon_slot);
 	}
-
 	return false;
 }
 
@@ -96,7 +93,7 @@ void aiInitialise()
 		alliancebits[i] = 0;
 		for (auto j = 0; j < MAX_PLAYER_SLOTS; j++)
 		{
-			bool valid = (i == j && i < MAX_PLAYERS);
+			bool valid = i == j && i < MAX_PLAYERS;
 
 			alliances[i][j] = valid ? ALLIANCE_FORMED : ALLIANCE_BROKEN;
 			alliancebits[i] |= valid << j;
@@ -153,7 +150,7 @@ BaseObject* aiSearchSensorTargets(BaseObject const* psObj, int weapon_slot,
 			//isRD = objRadarDetector((SimpleObject *)psDroid);
 		}
 
-		else if (auto psCStruct = dynamic_cast<Structure*>(psSensor)) {
+		if (auto psCStruct = dynamic_cast<Structure*>(psSensor)) {
 			// skip incomplete structures
 			// Artillery should not fire at objects observed by VTOL CB/Strike sensors.
 			if (psCStruct->getState() != STRUCTURE_STATE::BUILT ||
@@ -169,18 +166,14 @@ BaseObject* aiSearchSensorTargets(BaseObject const* psObj, int weapon_slot,
 		if (!psTemp || psTemp->damageManager->isDead() ||
         psTemp->damageManager->isProbablyDoomed(false) ||
         !validTarget(psObj, psTemp, 0) ||
-		  	aiCheckAlliances(psTemp->playerManager->getPlayer(),
-                         psObj->playerManager->getPlayer())) {
+		  	aiCheckAlliances(psTemp->playerManager->getPlayer(), psObj->playerManager->getPlayer())) {
 			continue;
 		}
 		auto const distSq = objectPositionSquareDiff(psTemp->getPosition(), psObj->getPosition());
     
 		// Need to be in range, prefer closer targets or CB targets
     if (!(isCB > foundCB || isCB == foundCB && distSq < tarDist) ||
-        distSq <= minDist) {
-      continue;
-    }
-    if (!aiObjHasRange(psObj, psTemp, weapon_slot) ||
+        distSq <= minDist || !aiObjHasRange(psObj, psTemp, weapon_slot) ||
         !visibleObject(psSensor, psTemp, false)) {
       continue;
     }
@@ -224,47 +217,41 @@ int targetAttackWeight(BaseObject const* psTarget, BaseObject const* psAttacker,
 		// check if this droid is assigned to a commander
 		bCmdAttached = psAttackerDroid->hasCommander();
 
+    auto psStruct = dynamic_cast<Structure const*>(psTarget);
+    auto psDroid = dynamic_cast<Droid const*>(psTarget);
+
 		// find out if current target is targeting our commander
-		if (bCmdAttached) {
-			if (auto psDroid = dynamic_cast<Droid const*>(psTarget)) {
-				//go through all enemy weapon slots
-				for (auto weaponSlot = 0; !bTargetingCmd &&
-                weaponSlot < numWeapons(*psDroid); weaponSlot++)
-				{
-					// see if this weapon is targeting our commander
-					if (psDroid->getTarget(weaponSlot) ==
-              psAttackerDroid->getCommander()) {
-						bTargetingCmd = true;
-					}
-				}
-			}
-			else {
-				if (auto psStruct = dynamic_cast<Structure const*>(psTarget)) {
-					// go through all enemy weapons
-					for (auto weaponSlot = 0; !bTargetingCmd &&
-                  weaponSlot < numWeapons(*psStruct); weaponSlot++)
-					{
-						if (psStruct->getTarget(weaponSlot) ==
-                    psAttackerDroid->getCommander()) {
-							bTargetingCmd = true;
-						}
-					}
-				}
-			}
-		}
-	}
+    if (!bCmdAttached) { }
+    else if (psDroid) {
+      //go through all enemy weapon slots
+      for (auto weaponSlot = 0; !bTargetingCmd && weaponSlot < numWeapons(*psDroid); weaponSlot++) {
+        // see if this weapon is targeting our commander
+        if (psDroid->getTarget(weaponSlot) ==
+            psAttackerDroid->getCommander()) {
+          bTargetingCmd = true;
+        }
+      }
+    }
+    else if (psStruct) {
+      // go through all enemy weapons
+      for (auto weaponSlot = 0; !bTargetingCmd && weaponSlot < numWeapons(*psStruct); weaponSlot++) {
+        if (psStruct->getTarget(weaponSlot) == psAttackerDroid->getCommander()) {
+          bTargetingCmd = true;
+        }
+      }
+    }
+  }
 	else if (auto psStruct = dynamic_cast<Structure const*>(psAttacker)) {
 		attackerWeapon = psStruct->weaponManager->weapons[weapon_slot].stats.get();
 	}
 	else {
-  /* feature */
+    /* feature */
 		ASSERT(!"invalid attacker object type", "targetAttackWeight: Invalid attacker object type");
 		return noTarget;
 	}
 	bDirect = proj_Direct(attackerWeapon);
 
-	if (dynamic_cast<Droid const*>(psAttacker) &&
-      psAttackerDroid->getType() == DROID_TYPE::SENSOR) {
+	if (dynamic_cast<Droid const*>(psAttacker) && psAttackerDroid->getType() == DROID_TYPE::SENSOR) {
 		// sensors are considered a direct weapon, but for
     // computing expected damage it makes more sense
     // to use indirect damage
@@ -431,18 +418,21 @@ int targetAttackWeight(BaseObject const* psTarget, BaseObject const* psAttacker,
 
   // if commander is being targeted by our target, try to defend the commander
   if (bTargetingCmd) {
-    attackWeight += WEIGHT_CMD_RANK * (1 + getDroidLevel(
-            psAttackerDroid->getCommander()));
+    attackWeight += WEIGHT_CMD_RANK * (1 + getDroidLevel(psAttackerDroid->getCommander()));
   }
 
   // fire support - go through all droids assigned to the commander
   for (auto const psGroupDroid : *psAttackerDroid->getGroup()->getMembers())
   {
+    if (psGroupDroid->getOrder()->target == psTarget) {
+      attackWeight = WEIGHT_CMD_SAME_TARGET;
+      continue;
+    }
+
     for (auto weaponSlot = 0; weaponSlot < numWeapons(*psGroupDroid); weaponSlot++)
     {
       // see if this droid is currently targeting current target
-      if (psGroupDroid->getOrder()->target == psTarget ||
-          psGroupDroid->getTarget(weaponSlot) == psTarget) {
+      if (psGroupDroid->getTarget(weaponSlot) == psTarget) {
         // we prefer targets that are already targeted and
         // hence will be destroyed faster
         attackWeight += WEIGHT_CMD_SAME_TARGET;
@@ -491,7 +481,8 @@ bool aiChooseTarget(BaseObject const* psObj, BaseObject** ppsTarget, int weapon_
 			return true;
 		}
 	}
-	else if (structure == nullptr) return false;
+	else if (structure == nullptr)
+    return false;
 
   bool bCommanderBlock = false;
   auto psWStats = structure->weaponManager->weapons[weapon_slot].stats.get();
@@ -556,8 +547,7 @@ bool aiChooseTarget(BaseObject const* psObj, BaseObject** ppsTarget, int weapon_
         auto newTargetValue = targetAttackWeight(psCurr, psObj, weapon_slot);
         // See if in sensor range and visible
         auto distSq = objectPositionSquareDiff(psCurr->getPosition(), psObj->getPosition());
-        if (newTargetValue < targetValue ||
-            (newTargetValue == targetValue && distSq >= tarDist)) {
+        if (newTargetValue < targetValue || newTargetValue == targetValue && distSq >= tarDist) {
           continue;
         }
 
@@ -579,35 +569,29 @@ bool aiChooseTarget(BaseObject const* psObj, BaseObject** ppsTarget, int weapon_
   return true;
 }
 
-/// See if there is a target in range for sensor objects
 bool aiChooseSensorTarget(BaseObject const* psObj, BaseObject** ppsTarget)
 {
-	auto const sensorRange = objSensorRange(psObj);
-	auto const radSquared = sensorRange * sensorRange;
-	bool const radarDetector = objRadarDetector(psObj);
 
-	if (!objActiveRadar(psObj) && !radarDetector) {
+  if (!objActiveRadar(psObj) && !objRadarDetector(psObj)) {
 		ASSERT(false, "Only to be used for sensor turrets!");
 		return false;
 	}
 
 	/* See if there is something in range */
-	if (auto droid = dynamic_cast<Droid const*>(psObj)) {
-    BaseObject* psTarget = nullptr;
+  BaseObject* psTarget = nullptr;
+  auto droid = dynamic_cast<Droid const*>(psObj);
+  if (droid && droid->aiBestNearestTarget(&psTarget, 0) >= 0) {
+    /* See if in sensor range */
 
-		if (droid->aiBestNearestTarget(&psTarget, 0) >= 0) {
-			/* See if in sensor range */
-      auto const distSq = objectPositionSquareDiff(psTarget, psObj);
+    // I do believe this will never happen, check for yourself :-)
+    debug(LOG_NEVER, "Sensor droid(%d) found possible target(%d)!!!", psObj->getId(), psTarget->getId());
 
-			// I do believe this will never happen, check for yourself :-)
-			debug(LOG_NEVER, "Sensor droid(%d) found possible target(%d)!!!", psObj->getId(), psTarget->getId());
-
-			if (distSq < radSquared) {
-				*ppsTarget = psTarget;
-				return true;
-			}
-		}
-	}
+    if (objectPositionSquareDiff(psTarget, psObj)
+        < objSensorRange(psObj) * objSensorRange(psObj)) {
+      *ppsTarget = psTarget;
+      return true;
+    }
+  }
 
   // structure
   BaseObject* psTemp = nullptr;
@@ -623,22 +607,17 @@ bool aiChooseSensorTarget(BaseObject const* psObj, BaseObject** ppsTarget)
       continue;
     }
 
-    if (aiCheckAlliances(psCurr->playerManager->getPlayer(),
-                         psObj->playerManager->getPlayer()) ||
-                         dynamic_cast<Structure*>(psCurr) &&
-                         dynamic_cast<Structure*>(psCurr)->isWall()) {
+    if (aiCheckAlliances(psCurr->playerManager->getPlayer(), psObj->playerManager->getPlayer()) ||
+                         dynamic_cast<Structure*>(psCurr) && dynamic_cast<Structure*>(psCurr)->isWall()) {
       continue;
     }
 
-    // see if in sensor range and visible
-    const auto xdiff1 = psCurr->getPosition().x - psObj->getPosition().x;
-    const auto ydiff1 = psCurr->getPosition().y - psObj->getPosition().y;
-    const auto distSq1 = xdiff1 * xdiff1 + ydiff1 * ydiff1;
-
-    if (distSq1 < radSquared && psCurr->isVisibleToPlayer(
-            psObj->playerManager->getPlayer()) == UBYTE_MAX && distSq1 < tarDist) {
+    if (objectPositionSquareDiff(psCurr, psObj)
+          < objSensorRange(psObj) * objSensorRange(psObj) &&
+        psCurr->isVisibleToPlayer(psObj->playerManager->getPlayer()) == UBYTE_MAX &&
+        objectPositionSquareDiff(psCurr, psObj) < tarDist) {
       psTemp = psCurr;
-      tarDist = distSq1;
+      tarDist = objectPositionSquareDiff(psCurr, psObj);
     }
   }
 
@@ -698,7 +677,7 @@ bool checkAnyWeaponsTarget(Droid const* psDroid, BaseObject const* psTarget)
  */
 bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int weapon_slot)
 {
-	bool bTargetInAir = false, bValidTarget = false;
+	bool bTargetInAir = false;
 	uint8_t surfaceToAir = 0;
 
 	if (!psTarget) return false;
@@ -707,40 +686,37 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
 	if (auto psDroid = dynamic_cast<Droid const*>(psTarget)) {
     auto propulsion = dynamic_cast<PropulsionStats const*>(psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
     if (propulsion != nullptr &&
-        asPropulsionTypes[static_cast<size_t>(propulsion->propulsionType)].travel == TRAVEL_MEDIUM::AIR) {
-      if (psDroid->getMovementData()->status != MOVE_STATUS::INACTIVE) {
-        bTargetInAir = true;
-      }
-      else {
-        bTargetInAir = false;
-      }
+        asPropulsionTypes[static_cast<size_t>(propulsion->propulsionType)].travel == TRAVEL_MEDIUM::AIR &&
+        psDroid->getMovementData()->status != MOVE_STATUS::INACTIVE) {
+      bTargetInAir = true;
     }
     else {
-      bTargetInAir = false;
+        bTargetInAir = false;
     }
   }
-	else if (dynamic_cast<Structure const*>(psTarget)) {
+
+	if (dynamic_cast<Structure const*>(psTarget)) {
 		// let's hope so!
 		bTargetInAir = false;
 	}
 
 	// need what can shoot at
-	if (auto psDroid= dynamic_cast<Droid const*>(psObject)) {
+	if (auto psDroid = dynamic_cast<Droid const*>(psObject)) {
     if (psDroid->getType() == DROID_TYPE::SENSOR) {
-      return !bTargetInAir; // Sensor droids should not target anything in the air.
+      // Sensor droids should not target anything in the air.
+      return !bTargetInAir;
     }
 
     // can't attack without a weapon
-    if (numWeapons(*psDroid) != 0) {
-      surfaceToAir = psDroid->weaponManager->weapons[weapon_slot].stats->surfaceToAir;
-      if (surfaceToAir & SHOOT_IN_AIR && bTargetInAir ||
-          surfaceToAir & SHOOT_ON_GROUND && !bTargetInAir) {
-        return true;
-      }
-    }
-    else {
+    if (numWeapons(*psDroid) == 0)
       return false;
+
+    surfaceToAir = psDroid->weaponManager->weapons[weapon_slot].stats->surfaceToAir;
+    if (surfaceToAir & SHOOT_IN_AIR && bTargetInAir ||
+        surfaceToAir & SHOOT_ON_GROUND && !bTargetInAir) {
+      return true;
     }
+    return false;
   }
 
 	if (auto psStruct = dynamic_cast<Structure const*>(psObject)) {
@@ -762,16 +738,12 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
   }
 
 	// if target is in the air, and you can shoot in the air - OK
-	if (bTargetInAir && (surfaceToAir & SHOOT_IN_AIR)) {
-		bValidTarget = true;
+  // if target is on the ground and can shoot at it - OK
+	if (bTargetInAir && (surfaceToAir & SHOOT_IN_AIR) ||
+      !bTargetInAir && (surfaceToAir & SHOOT_ON_GROUND)) {
+    return true;
 	}
-
-	// if target is on the ground and can shoot at it - OK
-	if (!bTargetInAir && (surfaceToAir & SHOOT_ON_GROUND)) {
-		bValidTarget = true;
-	}
-
-	return bValidTarget;
+  return false;
 }
 
 // Check properties of the AllianceType enum.

@@ -8966,10 +8966,10 @@ bool droidOnMap(const Droid* psDroid)
 }
 
 /** Teleport a droid to a new position on the map */
-void droidSetPosition(Droid* psDroid, int x, int y)
+void droidSetPosition(Droid* psDroid, Vector2i pos)
 {
-  psDroid->setPosition({x, y, map_Height(psDroid->getPosition().x,
-                                          psDroid->getPosition().y)});
+  psDroid->setPosition({pos.x, pos.y, map_Height(psDroid->getPosition().x,
+                                                 psDroid->getPosition().y)});
 	initDroidMovement(psDroid);
 	visTilesUpdate(psDroid);
 }

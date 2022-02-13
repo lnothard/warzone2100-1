@@ -92,8 +92,7 @@ public:
 	Animation<AnimatableData>& setInitialData(AnimatableData initial);
 	Animation<AnimatableData>& setFinalData(AnimatableData final);
 	Animation<AnimatableData>& setEasing(EASING_FUNCTION easing);
-	Animation<AnimatableData>& setDuration(uint32_t durationMilliseconds);
-
+	Animation<AnimatableData>& setDuration(unsigned durationMilliseconds);
 protected:
 	[[nodiscard]] unsigned getEasedProgress() const;
 

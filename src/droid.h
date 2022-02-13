@@ -606,7 +606,7 @@ bool isConstructionDroid(Droid const* psDroid);
 /** Check if droid is in a legal world position and is not on its way to drive off the map. */
 bool droidOnMap(const Droid* psDroid);
 
-void droidSetPosition(Droid* psDroid, int x, int y);
+void droidSetPosition(Droid* psDroid, Vector2i pos);
 
 /// Return a percentage of how fully armed the object is, or -1 if N/A.
 int droidReloadBar(BaseObject const* psObj, Weapon const* psWeap, int weapon_slot);

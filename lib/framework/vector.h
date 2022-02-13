@@ -43,10 +43,10 @@ struct Rotation
 {
 	Rotation() = default;
 	Rotation(int direction, int pitch, int roll)
-      : direction((uint16_t)direction), pitch((uint16_t)pitch), roll((uint16_t)roll) {}
+    : direction((uint16_t)direction), pitch((uint16_t)pitch), roll((uint16_t)roll) {}
 
   explicit Rotation(Vector3i xyz)
-      : direction((uint16_t)xyz.x), pitch((uint16_t)xyz.y), roll((uint16_t)xyz.z) {}
+    : direction((uint16_t)xyz.x), pitch((uint16_t)xyz.y), roll((uint16_t)xyz.z) {}
 
 	uint16_t direction = 0;
   uint16_t pitch = 0;
@@ -101,11 +101,8 @@ static inline WZ_DECL_PURE int iHypot(Vector3i const &a)
  */
 static inline WZ_DECL_PURE Vector2f Vector2f_Rotate2f(Vector2f v, int angle)
 {
-	Vector2f result;
-	result.x = (v.x * iCos((uint16_t)angle) - v.y * iSin((uint16_t)angle)) / 65536;
-	result.y = (v.x * iSin((uint16_t)angle) + v.y * iCos((uint16_t)angle)) / 65536;
-
-	return result;
+  return {(v.x * iCos((uint16_t)angle) - v.y * iSin((uint16_t)angle)) / 65536,
+          (v.x * iSin((uint16_t)angle) + v.y * iCos((uint16_t)angle)) / 65536};
 }
 
 
@@ -120,11 +117,11 @@ static inline WZ_DECL_PURE Vector2f Vector2f_Rotate2f(Vector2f v, int angle)
 static inline bool WZ_DECL_PURE Vector3i_InCircle(Vector3i v, Vector3i c, unsigned r)
 {
 	Vector2i delta = Vector3i(v - c).xy();
-	// Explictily cast to "unsigned int" because this number never can be
+	// Explicitly cast to "unsigned int" because this number never can be
 	// negative, due to the fact that these numbers are squared. Still GCC
 	// warns about a comparison of a comparison between an unsigned and a
 	// signed integer.
-	return (unsigned int)dot(delta, delta) < r * r;
+	return (unsigned)dot(delta, delta) < r * r;
 }
 
 
@@ -142,11 +139,11 @@ static inline bool WZ_DECL_PURE Vector3i_InCircle(Vector3i v, Vector3i c, unsign
 static inline bool WZ_DECL_PURE Vector3i_InSphere(Vector3i v, Vector3i c, unsigned r)
 {
 	Vector3i delta = v - c;
-	// Explictily cast to "unsigned int" because this number never can be
+	// Explicitly cast to "unsigned int" because this number never can be
 	// negative, due to the fact that these numbers are squared. Still GCC
 	// warns about a comparison of a comparison between an unsigned and a
 	// signed integer.
-	return (unsigned int)dot(delta, delta) < r * r;
+	return (unsigned)dot(delta, delta) < r * r;
 }
 
 // Round direction to nearest axis-aligned direction.

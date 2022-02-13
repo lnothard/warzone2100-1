@@ -28,19 +28,14 @@
 
 void ValueTracker::start(int value)
 {
-  initial = value;
-  target = value;
-  targetDelta = value;
-  current = value;
+  initial = target = targetDelta = current = value;
   startTime = graphicsTime;
   targetReached = false;
 }
 
 void ValueTracker::stop()
 {
-  initial = 0;
-  current = 0;
-  startTime = 0;
+  initial = current = startTime = 0;
   targetReached = false;
 }
 
@@ -70,23 +65,18 @@ void ValueTracker::set_target(int value)
 
 void ValueTracker::update()
 {
-  if (targetReached) {
-    return;
-  }
-  if (std::abs(target - current) < 1) {
+  if (targetReached || std::abs(target - current) < 1) {
     targetReached = true;
     return;
   }
 
   current = (initial + targetDelta - current) *
-                  static_cast<int>( realTimeAdjustedIncrement(
-                          static_cast<float>( speed )) )
-                  + current;
+            static_cast<int>( realTimeAdjustedIncrement( static_cast<float>( speed )) ) + current;
 }
 
 int ValueTracker::get_current() const
 {
-	if (this->targetReached)  {
+	if (this->targetReached) {
 		return this->target;
 	}
 	return static_cast<int>(this->current);
@@ -94,7 +84,7 @@ int ValueTracker::get_current() const
 
 int ValueTracker::get_current_delta() const
 {
-	if (this->targetReached)  {
+	if (this->targetReached) {
 		return this->targetDelta;
 	}
 	return static_cast<int>(this->current - this->initial);
@@ -155,7 +145,8 @@ void Animation<AnimatableData>::update()
 	if (duration > 0)  {
 		auto deltaTime = time - (int64_t)startTime;
 		progress = MAX(0, MIN(UINT16_MAX, UINT16_MAX * deltaTime / duration));
-	} else  {
+	}
+  else  {
 		progress = UINT16_MAX;
 	}
 
@@ -189,8 +180,7 @@ unsigned Animation<AnimatableData>::getEasedProgress() const
 template <class AnimatableData>
 Animation<AnimatableData>& Animation<AnimatableData>::setInitialData(AnimatableData initial)
 {
-	initialData = initial;
-	currentData = initial;
+	initialData = currentData = initial;
 	return *this;
 }
 
@@ -209,9 +199,9 @@ Animation<AnimatableData>& Animation<AnimatableData>::setEasing(EASING_FUNCTION 
 }
 
 template <class AnimatableData>
-Animation<AnimatableData>& Animation<AnimatableData>::setDuration(uint32_t durationMilliseconds)
+Animation<AnimatableData>& Animation<AnimatableData>::setDuration(unsigned durationMilliseconds)
 {
-	duration = static_cast<uint32_t>(durationMilliseconds * 0.001 * GAME_TICKS_PER_SEC);
+	duration = static_cast<unsigned>(durationMilliseconds * 0.001 * GAME_TICKS_PER_SEC);
 	return *this;
 }
 

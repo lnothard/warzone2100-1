@@ -46,8 +46,6 @@ static constexpr auto MAX_COMMAND_LIMIT_MESSAGE_PAUSE = 10000;
  */
 bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 {
-	bool addedToGroup = false;
-
 	ASSERT_OR_RETURN(false, psCommander != nullptr, "psCommander is null?");
 	ASSERT_OR_RETURN(false, psDroid != nullptr, "psDroid is null?");
 
@@ -58,8 +56,6 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 	}
 
 	if (psCommander->getGroup()->getMembers()->size() < cmdDroidMaxGroup(psCommander)) {
-		addedToGroup = true;
-
 		psCommander->addDroidToGroup(psDroid);
 		psDroid->setSelectionGroup(UBYTE_MAX);
 
@@ -76,18 +72,15 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 		                  ModeImmediate);
 
 		orderDroidObj(psDroid, ORDER_TYPE::GUARD, psCommander, ModeImmediate);
-	}
-	else if (psCommander->playerManager->getPlayer() == selectedPlayer) {
-		//Do not potentially spam the console with this message
-		if (lastMaxCmdLimitMsgTime + MAX_COMMAND_LIMIT_MESSAGE_PAUSE < gameTime) {
-			addConsoleMessage(
-				_("Commander needs a higher level to command more units"),
-        CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
-			lastMaxCmdLimitMsgTime = gameTime;
-		}
+    return true;
 	}
 
-	return addedToGroup;
+  if (psCommander->playerManager->getPlayer() == selectedPlayer && lastMaxCmdLimitMsgTime + MAX_COMMAND_LIMIT_MESSAGE_PAUSE < gameTime) {
+    addConsoleMessage( _("Commander needs a higher level to command more units"),
+                       CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
+    lastMaxCmdLimitMsgTime = gameTime;
+  }
+	return false;
 }
 
 Droid* cmdDroidGetDesignator(unsigned player)
@@ -101,7 +94,6 @@ void cmdDroidSetDesignator(Droid* psDroid)
 	if (psDroid->getType() != DROID_TYPE::COMMAND) {
 		return;
 	}
-
 	apsCmdDesignator[psDroid->playerManager->getPlayer()] = psDroid;
 }
 
@@ -113,8 +105,9 @@ void cmdDroidClearDesignator(unsigned player)
 long get_commander_index(Droid const& commander)
 {
   assert(commander.getType() == DROID_TYPE::COMMAND);
+  auto const& droids = playerList[
+          commander.playerManager->getPlayer()].droids;
 
-  auto const& droids = playerList[commander.playerManager->getPlayer()].droids;
   return std::find_if(droids.begin(), droids.end(),
                       [&commander](auto const& droid) {
       return droid.getType() == DROID_TYPE::COMMAND &&

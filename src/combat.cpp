@@ -490,14 +490,11 @@ unsigned objGuessFutureDamage(WeaponStats const* psStats, unsigned player, BaseO
 		// Retrieve highest, applicable, experience level
 		level = getDroidEffectiveLevel(psDroid);
 	}
-	//debug(LOG_ATTACK, "objGuessFutureDamage(%d): body %d armour %d damage: %d", psObj->id, psObj->body, armour, damage);
 
 	// Reduce damage taken by EXP_REDUCE_DAMAGE % for each experience level
 	auto actualDamage = damage * (100 - EXP_REDUCE_DAMAGE * level) / 100;
-
 	// You always do at least a third of the experience modified damage
 	actualDamage = MAX(actualDamage - armour, actualDamage * psStats->upgraded[player].minimumDamage / 100);
-
 	// And at least MIN_WEAPON_DAMAGE points
 	return MAX(actualDamage, MIN_WEAPON_DAMAGE);
 }

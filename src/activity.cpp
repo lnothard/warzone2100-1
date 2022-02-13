@@ -57,9 +57,8 @@ unsigned SkirmishGameInfo::numberOfPlayers() const
 
 bool SkirmishGameInfo::hasLimits() const
 {
-  return limit_no_tanks || limit_no_cyborgs ||
-         limit_no_vtols || limit_no_uplink ||
-         limit_no_lassat || force_structure_limits;
+  return limit_no_tanks || limit_no_cyborgs || limit_no_vtols ||
+         limit_no_uplink || limit_no_lassat || force_structure_limits;
 }
 
 ActivityDBProtocol const* ActivityManager::getRecord() const
@@ -77,25 +76,14 @@ std::string ActivitySink::getTeamDescription(SkirmishGameInfo const& info)
 	for (auto index = 0; index < std::min<size_t>(info.players.size(), game.maxPlayers); ++index)
 	{
 		auto const& p = NetPlay.players[index];
-		if (p.ai == AI_CLOSED) {
-			// closed slot - skip
+		if (p.ai == AI_CLOSED || p.ai == AI_OPEN && p.isSpectator) {
+			// closed slot or spectator slot - skip
 			continue;
 		}
-		else if (p.ai == AI_OPEN) {
-			if (p.isSpectator) {
-				// spectator slot - skip
-				continue;
-			}
-			else {
-				// human player
-				teamIdToCountOfPlayers[p.team]++;
-			}
-		}
-		else {
-			// bot player
-			teamIdToCountOfPlayers[p.team]++;
-		}
+    // bot player
+    teamIdToCountOfPlayers[p.team]++;
 	}
+
 	if (teamIdToCountOfPlayers.size() <= 1) {
 		// does not have multiple teams
 		return "";
@@ -114,14 +102,14 @@ std::string ActivitySink::getTeamDescription(SkirmishGameInfo const& info)
 
 std::string to_string(GAME_END_REASON const& reason)
 {
-	switch (reason) {
-	case GAME_END_REASON::WON:
-		return "Won";
-	case GAME_END_REASON::LOST:
-		return "Lost";
-	case GAME_END_REASON::QUIT:
-		return "Quit";
-	}
+  switch (reason) {
+    case GAME_END_REASON::WON:
+      return "Won";
+    case GAME_END_REASON::LOST:
+      return "Lost";
+    case GAME_END_REASON::QUIT:
+      return "Quit";
+  }
 }
 
 std::string to_string(END_GAME_STATS_DATA const& stats)
@@ -241,9 +229,8 @@ public:
 			*db, "UPDATE general_kv_storage SET value = ? WHERE name = ?");
 	}
 
-public:
 	// Must be thread-safe
-	std::string getFirstLaunchDate() const override
+	[[nodiscard]] std::string getFirstLaunchDate() const override
 	{
 		auto result = getValue(FIRST_LAUNCH_DATE_KEY);
 		ASSERT_OR_RETURN("", result.has_value(), "Should always be initialized");
@@ -254,33 +241,27 @@ private:
 	// Must be thread-safe
 	optional<std::string> getValue(const std::string& name) const
 	{
-		if (name.empty())
-		{
+		if (name.empty()) {
 			return nullopt;
 		}
 
 		std::lock_guard<std::mutex> guard(db_mutex);
-
 		optional<std::string> result;
-		try
-		{
+		try {
 			query_findValueByName->bind(1, name);
-			if (query_findValueByName->executeStep())
-			{
+			if (query_findValueByName->executeStep()) {
 				result = query_findValueByName->getColumn(0).getString();
 			}
 		}
-		catch (const std::exception& e)
-		{
+		catch (const std::exception& e) {
 			debug(LOG_ERROR, "Failure to query database for key; error: %s", e.what());
 			result = nullopt;
 		}
-		try
-		{
+
+		try {
 			query_findValueByName->reset();
 		}
-		catch (const std::exception& e)
-		{
+		catch (const std::exception& e) {
 			debug(LOG_ERROR, "Failed to reset prepared statement; error: %s", e.what());
 		}
 		return result;
@@ -289,65 +270,57 @@ private:
 	// Must be thread-safe
 	bool setValue(std::string const& name, std::string const& value)
 	{
-		if (name.empty())
-		{
+		if (name.empty()) {
 			return false;
 		}
 
 		std::lock_guard<std::mutex> guard(db_mutex);
-
-		try
-		{
+		try {
 			// Begin transaction
 			SQLite::Transaction transaction(*db);
 
 			query_insertValueForName->bind(1, name);
 			query_insertValueForName->bind(2, value);
-			if (query_insertValueForName->exec() == 0)
-			{
-				query_updateValueForName->bind(1, value);
-				query_updateValueForName->bind(2, name);
-				if (query_updateValueForName->exec() == 0)
-				{
-					debug(LOG_WARNING, "Failed to update value for key (%s)", name.c_str());
-				}
-				query_updateValueForName->reset();
-			}
-			query_insertValueForName->reset();
 
-			// Commit transaction
-			transaction.commit();
-			return true;
-		}
-		catch (const std::exception& e)
-		{
+      if (query_insertValueForName->exec() != 0) {
+        query_insertValueForName->reset();
+        // Commit transaction
+        transaction.commit();
+        return true;
+      }
+
+      query_updateValueForName->bind(1, value);
+      query_updateValueForName->bind(2, name);
+      if (query_updateValueForName->exec() == 0) {
+        debug(LOG_WARNING, "Failed to update value for key (%s)", name.c_str());
+      }
+      query_updateValueForName->reset();
+    }
+		catch (const std::exception& e) {
 			debug(LOG_ERROR, "Update / insert failed; error: %s", e.what());
 			// continue on to try to reset prepared statements
 		}
 
-		try
-		{
+		try {
 			query_updateValueForName->reset();
 			query_insertValueForName->reset();
 		}
-		catch (const std::exception& e)
-		{
+		catch (const std::exception& e) {
 			debug(LOG_ERROR, "Failed to reset prepared statement; error: %s", e.what());
 		}
 		return false;
 	}
-
 private:
 	void createTables()
 	{
 		SQLite::Transaction transaction(*db);
-		if (!db->tableExists("general_kv_storage"))
-		{
-			db->exec("CREATE TABLE general_kv_storage (local_id INTEGER PRIMARY KEY, name TEXT UNIQUE, value TEXT)");
+		if (!db->tableExists("general_kv_storage")) {
+			db->exec("CREATE TABLE general_kv_storage (local_id INTEGER PRIMARY "
+               "KEY, name TEXT UNIQUE, value TEXT)");
 		}
 		// initialize first launch date if it doesn't exist
-		db->exec(
-			"INSERT OR IGNORE INTO general_kv_storage(name, value) VALUES(\"" FIRST_LAUNCH_DATE_KEY "\", date('now'))");
+		db->exec("INSERT OR IGNORE INTO general_kv_storage(name, value) VALUES(\""
+             FIRST_LAUNCH_DATE_KEY "\", date('now'))");
 		transaction.commit();
 	}
 
@@ -364,19 +337,17 @@ ActivityManager::ActivityManager()
 	ASSERT_OR_RETURN(, PHYSFS_isInit() != 0, "PHYSFS must be initialized before the ActivityManager is created");
 
 	const char* pWriteDir = PHYSFS_getWriteDir();
-	ASSERT(pWriteDir != nullptr, "PHYSFS_getWriteDir returned null");
+	ASSERT_OR_RETURN(, pWriteDir != nullptr, "PHYSFS_getWriteDir returned null");
 
-	if (pWriteDir) {
-		std::string statsDBPath = std::string(pWriteDir) + PHYSFS_getDirSeparator() + "stats.db";
-		try {
-			activityDatabase = std::make_unique<ActivityDatabase>(statsDBPath);
-		}
-		catch (std::exception& e) {
-			// error loading SQLite database
-			debug(LOG_ERROR, "Unable to load or initialize SQLite3 database (%s); error: %s", statsDBPath.c_str(),
-			      e.what());
-		}
-	}
+  auto statsDBPath = std::string(pWriteDir) + PHYSFS_getDirSeparator() + "stats.db";
+  try {
+    activityDatabase = std::make_unique<ActivityDatabase>(statsDBPath);
+  }
+  catch (std::exception &e) {
+    // error loading SQLite database
+    debug(LOG_ERROR, "Unable to load or initialize SQLite3 database (%s); error: %s",
+          statsDBPath.c_str(), e.what());
+  }
 }
 
 ActivityManager& ActivityManager::instance()
@@ -413,17 +384,16 @@ GAME_MODE ActivityManager::getCurrentGameMode() const
 
 GAME_MODE currentGameTypeToMode()
 {
-	GAME_MODE mode = GAME_MODE::CAMPAIGN;
 	if (challengeActive) {
-		mode = GAME_MODE::CHALLENGE;
+		return GAME_MODE::CHALLENGE;
 	}
-	else if (game.type == LEVEL_TYPE::SKIRMISH) {
-		mode = (NetPlay.bComms) ? GAME_MODE::MULTIPLAYER : GAME_MODE::SKIRMISH;
+	if (game.type == LEVEL_TYPE::SKIRMISH) {
+		return NetPlay.bComms ? GAME_MODE::MULTIPLAYER : GAME_MODE::SKIRMISH;
 	}
-	else if (game.type == LEVEL_TYPE::CAMPAIGN) {
-		mode = GAME_MODE::CAMPAIGN;
+	if (game.type == LEVEL_TYPE::CAMPAIGN) {
+		return GAME_MODE::CAMPAIGN;
 	}
-	return mode;
+  return GAME_MODE::CAMPAIGN;
 }
 
 void ActivityManager::startingGame()
@@ -499,26 +469,35 @@ void ActivityManager::endedMission(GAME_END_REASON result, END_GAME_STATS_DATA c
 	if (bEndedCurrentMission)
     return;
 
-	lastLobbyGameJoinAttempt.clear();
-	switch (currentMode) {
-	case GAME_MODE::CAMPAIGN:
-		for (const auto& sink : activitySinks)
-		{
-			sink->endedCampaignMission(getCampaignName(), lastLoadedLevelEvent.levelName, result, stats, cheatsUsed);
-		}
-		break;
-	case GAME_MODE::CHALLENGE:
-		for (const auto& sink : activitySinks) { sink->endedChallenge(currentChallengeName(), result, stats, cheatsUsed); }
-		break;
-	case GAME_MODE::SKIRMISH:
-		for (const auto& sink : activitySinks) { sink->endedSkirmishGame(currentMultiplayGameInfo, result, stats); }
-		break;
-	case GAME_MODE::MULTIPLAYER:
-		for (const auto& sink : activitySinks) { sink->endedMultiplayerGame(currentMultiplayGameInfo, result, stats); }
-		break;
-	default:
-		debug(LOG_ACTIVITY, "endedMission: Unhandled case: %u", (unsigned int)currentMode);
-	}
+  lastLobbyGameJoinAttempt.clear();
+  switch (currentMode) {
+    case GAME_MODE::CAMPAIGN:
+      for (const auto& sink : activitySinks)
+      {
+        sink->endedCampaignMission(getCampaignName(), lastLoadedLevelEvent.levelName, result, stats, cheatsUsed);
+      }
+      break;
+    case GAME_MODE::CHALLENGE:
+      for (const auto& sink : activitySinks)
+      {
+        sink->endedChallenge(currentChallengeName(), result, stats, cheatsUsed);
+      }
+      break;
+    case GAME_MODE::SKIRMISH:
+      for (const auto& sink : activitySinks)
+      {
+        sink->endedSkirmishGame(currentMultiplayGameInfo, result, stats);
+      }
+      break;
+    case GAME_MODE::MULTIPLAYER:
+      for (const auto& sink : activitySinks)
+      {
+        sink->endedMultiplayerGame(currentMultiplayGameInfo, result, stats);
+      }
+      break;
+    default:
+      debug(LOG_ACTIVITY, "endedMission: Unhandled case: %u", (unsigned int)currentMode);
+  }
 	bEndedCurrentMission = true;
 }
 
@@ -645,12 +624,12 @@ void ActivityManager::hostGameLobbyServerDisconnect()
 
 void ActivityManager::hostLobbyQuit()
 {
-	if (currentMode != GAME_MODE::HOSTING_IN_LOBBY) {
-		debug(LOG_ACTIVITY, "Unexpected call to hostLobbyQuit - currentMode (%u) - ignoring",
-		      (unsigned)currentMode);
-		return;
-	}
-	currentMode = GAME_MODE::MENUS;
+  if (currentMode == GAME_MODE::HOSTING_IN_LOBBY) {
+    currentMode = GAME_MODE::MENUS;
+    return;
+  }
+  debug(LOG_ACTIVITY, "Unexpected call to hostLobbyQuit - currentMode (%u) - ignoring",
+        (unsigned) currentMode);
 }
 
 void ActivityManager::willAttemptToJoinLobbyGame(std::string const& lobbyAddress,
@@ -675,32 +654,30 @@ void ActivityManager::joinGameSucceeded(const char* host, unsigned port)
 
 	// If the host and port match information in the lastLobbyGameJoinAttempt.connections,
 	// store the lastLobbyGameJoinAttempt lookup info in currentMultiplayGameInfo
-	bool joinedLobbyGame = false;
-	for (auto const& connection : lastLobbyGameJoinAttempt.connections)
-	{
-		if (connection.host == host && connection.port == port) {
-			joinedLobbyGame = true;
-			break;
-		}
-	}
-	if (joinedLobbyGame) {
-		currentMultiplayGameInfo.lobbyAddress = lastLobbyGameJoinAttempt.lobbyAddress;
-		currentMultiplayGameInfo.lobbyPort = lastLobbyGameJoinAttempt.lobbyPort;
-		currentMultiplayGameInfo.lobbyGameId = lastLobbyGameJoinAttempt.lobbyGameId;
-	}
+  auto joined = std::any_of(lastLobbyGameJoinAttempt.connections.begin(),
+                  lastLobbyGameJoinAttempt.connections.end(),
+                  [&host, &port](auto const& conn) {
+    return conn.host == host && conn.port == port;
+  });
+
+  if (joined) {
+    currentMultiplayGameInfo.lobbyAddress = lastLobbyGameJoinAttempt.lobbyAddress;
+    currentMultiplayGameInfo.lobbyPort = lastLobbyGameJoinAttempt.lobbyPort;
+    currentMultiplayGameInfo.lobbyGameId = lastLobbyGameJoinAttempt.lobbyGameId;
+  }
 	lastLobbyGameJoinAttempt.clear();
 }
 
 void ActivityManager::joinedLobbyQuit()
 {
-	if (currentMode != GAME_MODE::JOINING_IN_LOBBY) {
-		if (currentMode != GAME_MODE::MENUS) {
-			debug(LOG_ACTIVITY, "Unexpected call to joinedLobbyQuit - currentMode (%u) - ignoring",
-			      (unsigned)currentMode);
-		}
-		return;
-	}
-	currentMode = GAME_MODE::MENUS;
+  if (currentMode == GAME_MODE::JOINING_IN_LOBBY) {
+    currentMode = GAME_MODE::MENUS;
+    return;
+  }
+  if (currentMode != GAME_MODE::MENUS) {
+    debug(LOG_ACTIVITY, "Unexpected call to joinedLobbyQuit - currentMode (%u) - ignoring",
+          (unsigned) currentMode);
+  }
 }
 
 // for skirmish / multiplayer, provide additional data / state
@@ -720,24 +697,14 @@ void ActivityManager::updateMultiplayGameData(MULTIPLAYERGAME const& multiGame,
 		auto const& p = NetPlay.players[index];
 		if (p.ai == AI_CLOSED || p.isSpectator) {
 			--maxPlayers;
+      continue;
 		}
-		else if (p.ai == AI_OPEN) {
-			if (!p.allocated) {
-				++numAvailableSlots;
-			}
-			else {
-				++numHumanPlayers;
-			}
-		}
-		else {
-			if (!p.allocated) {
-				++numAIBotPlayers;
-			}
-			else {
-				++numHumanPlayers;
-			}
-		}
-	}
+    if (p.allocated) {
+      ++numHumanPlayers;
+      continue;
+    }
+    ++(p.ai == AI_OPEN ? numAvailableSlots : numAIBotPlayers);
+  }
 
 	for (auto const& slot : NetPlay.players)
 	{
@@ -746,10 +713,9 @@ void ActivityManager::updateMultiplayGameData(MULTIPLAYERGAME const& multiGame,
 
     if (!slot.allocated) {
       ++numOpenSpectatorSlots;
+      continue;
     }
-    else {
-      ++numSpectators;
-    }
+    ++numSpectators;
   }
 	currentMultiplayGameInfo.maxPlayers = maxPlayers; // accounts for closed slots
 	currentMultiplayGameInfo.numHumanPlayers = numHumanPlayers;
@@ -792,13 +758,30 @@ void ActivityManager::updateMultiplayGameData(MULTIPLAYERGAME const& multiGame,
     {
       sink->updateMultiplayerGameInfo(currentMultiplayGameInfo);
     }
-	}
-	else if (currentMode == GAME_MODE::JOINING_IN_PROGRESS) {
-		// Have now received the initial game data, so trigger ActivitySink::joinedMultiplayerGame
-		currentMode = GAME_MODE::JOINING_IN_LOBBY;
-		for (auto const& sink : activitySinks)
-    {
-      sink->joinedMultiplayerGame(currentMultiplayGameInfo);
-    }
-	}
+    return;
+  }
+
+  if (currentMode != GAME_MODE::JOINING_IN_PROGRESS)
+    return;
+
+  // Have now received the initial game data, so trigger ActivitySink::joinedMultiplayerGame
+  currentMode = GAME_MODE::JOINING_IN_LOBBY;
+  for (auto const& sink1: activitySinks)
+  {
+    sink1->joinedMultiplayerGame(currentMultiplayGameInfo);
+  }
+}
+
+std::string LoggingActivitySink::modListToStr(const std::vector<Sha256>& modHashes)
+{
+  if (modHashes.empty()) {
+    return "[no mods]";
+  }
+
+  std::string result = "[" + std::to_string(modHashes.size()) + " mods]:";
+  for (auto& modHash : modHashes)
+  {
+    result += std::string(" ") + modHash.toString();
+  }
+  return result;
 }

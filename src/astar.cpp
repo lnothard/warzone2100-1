@@ -242,16 +242,15 @@ void generateNewNode(PathContext& context, PathCoord destination,
        * +---+---+
        */
 
-      unsigned distA = node.distance_from_start -
-                       (is_diagonal ? 198 : 140) * cost_factor;
+      auto distA = node.distance_from_start - (is_diagonal ? 198 : 140) * cost_factor;
       // If diagonal, node is A and explored is B.
-      unsigned distB = explored.distance -
-                       (is_diagonal ? 140 : 198) * cost_factor;
+      auto distB = explored.distance - (is_diagonal ? 140 : 198) * cost_factor;
       if (!is_diagonal) {
         std::swap(distA, distB);
         std::swap(delta, delta_b);
       }
-      int gradientX = int(distB - distA) / cost_factor;
+      auto gradientX = int(distB - distA) / cost_factor;
+
       if (gradientX > 0 && gradientX <= 98) {
         // 98 = floor(140/√2), so gradientX <= 98 is needed so that
         // gradientX < gradientY.
@@ -267,12 +266,13 @@ void generateNewNode(PathContext& context, PathCoord destination,
         };
         // = sqrt(140² -  gradientX²), rounded to nearest integer
         int gradientY = gradYLookup[gradientX];
-        unsigned distP = gradientY * cost_factor + distB;
+        auto distP = gradientY * cost_factor + distB;
         node.estimated_distance_to_end -= node.distance_from_start - distP;
         node.distance_from_start = distP;
         delta = (delta * gradientX + delta_b * (gradientY - gradientX)) / gradientY;
       }
     }
+
     if (explored.distance <= node.distance_from_start) {
       // a different path to this tile is shorter.
       return;
@@ -295,7 +295,7 @@ void recalculateEstimates(PathContext& context, PathCoord tile)
   for (auto& node : context.nodes)
   {
     node.estimated_distance_to_end = node.distance_from_start +
-                                     estimateDistancePrecise(node.path_coordinate, tile);
+            estimateDistancePrecise(node.path_coordinate, tile);
   }
   // Changing the estimates breaks the heap ordering. Fix the heap ordering.
   std::make_heap(context.nodes.begin(), context.nodes.end());
@@ -343,9 +343,9 @@ PathCoord findNearestExploredTile(PathContext& context, PathCoord tile)
        *			   3  2  1
        * odd: orthogonal-adjacent tiles even: non-orthogonal-adjacent tiles
        */
-      if (direction % 2 != 0 && !context.destination_bounds.isNonBlocking(node.path_coordinate.x, node.path_coordinate.y) &&
+      if (direction % 2 != 0 && !context.destination_bounds.isNonBlocking(
+              node.path_coordinate.x, node.path_coordinate.y) &&
           !context.destination_bounds.isNonBlocking(x, y)) {
-
         // cannot cut corners
         auto x_2 = node.path_coordinate.x + offset[(direction + 1) % 8].x;
         auto y_2 = node.path_coordinate.y + offset[(direction + 1) % 8].y;
@@ -426,6 +426,7 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
      */
     auto new_context = PathContext(*pathJob.blockingMap, origin_tile, origin_tile,
                                    destination_tile, pathJob.dstStructure);
+
     end = findNearestExploredTile(*it, destination_tile);
     it->nearest_reachable_tile = end;
   }
@@ -463,8 +464,7 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
       // so move the point to the middle.
       next.y = world_coord(map.y) + TILE_UNITS / 2;
     }
-    if (map_coord(start) == Vector2i{it->start_coord.x, it->start_coord.y} ||
-        start == next)  {
+    if (map_coord(start) == Vector2i{it->start_coord.x, it->start_coord.y} || start == next)  {
       // we stopped moving, because we reached the destination or
       // the closest reachable tile to it->start. give up now.
       break;
@@ -473,13 +473,12 @@ ASTAR_RESULT fpathAStarRoute(Movement& movement, PathJob& pathJob)
   if (result == ASTAR_RESULT::OK)  {
     // found exact path, so use the exact coordinates for
     // last point. no reason to lose precision
-    auto coord = Vector2i{pathJob.destination.x,
-                          pathJob.destination.y};
+    auto coord = Vector2i{pathJob.destination.x, pathJob.destination.y};
 
-    if (must_reverse)  {
+    if (must_reverse) {
       route.front() = coord;
     }
-    else  {
+    else {
       route.back() = coord;
     }
   }
@@ -571,6 +570,5 @@ void fpathSetBlockingMap(PathJob& path_job)
 
 bool PathBlockingMap::operator==(PathBlockingType const& rhs) const
 {
-  return type.gameTime == rhs.gameTime &&
-         fpathIsEquivalentBlocking(type, rhs);
+  return type.gameTime == rhs.gameTime && fpathIsEquivalentBlocking(type, rhs);
 }

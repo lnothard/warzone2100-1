@@ -353,7 +353,8 @@ static inline Vector2i map_coord(Vector2i const& worldCoord)
 
 static inline Vector2i round_to_nearest_tile(Vector2i const& worldCoord)
 {
-	return {round_to_nearest_tile(worldCoord.x), round_to_nearest_tile(worldCoord.y)};
+	return {round_to_nearest_tile(worldCoord.x),
+          round_to_nearest_tile(worldCoord.y)};
 }
 
 /** 

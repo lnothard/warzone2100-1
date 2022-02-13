@@ -94,6 +94,7 @@ static constexpr auto	WEIGHT_CMD_SAME_TARGET = WEIGHT_DIST_TILE;
 
 enum class ALLIANCE_TYPE
 {
+  /// No alliances
 	FFA,
   /// Players can make and break alliances during the game
 	ALLIANCES,
@@ -105,40 +106,39 @@ enum class ALLIANCE_TYPE
 
 extern uint8_t alliances[MAX_PLAYER_SLOTS][MAX_PLAYER_SLOTS];
 /// A bitfield of vision sharing in alliances, for quick manipulation of vision information
-extern PlayerMask alliancebits[MAX_PLAYER_SLOTS];
+extern std::array<PlayerMask, MAX_PLAYER_SLOTS> alliancebits;
 /// A bitfield for the satellite uplink
 extern PlayerMask satuplinkbits;
 
 void aiInitialise();
 bool aiShutdown();
 
-/// Update the expected damage to the object.
-void aiObjectAddExpectedDamage(BaseObject* psObject, int damage, bool isDirect);
-
 unsigned aiDroidRange(Droid const* psDroid, int weapon_slot);
 
-/** Search the global list of sensors for a possible target for psObj. */
+/// Search the global list of sensors for a possible target for psObj
 BaseObject* aiSearchSensorTargets(BaseObject const* psObj, int weapon_slot,
                                         WeaponStats const* psWStats, TARGET_ORIGIN* targetOrigin);
 
-/* Calculates attack priority for a certain target */
+/// Calculates attack priority for a certain target
 int targetAttackWeight(BaseObject const* psTarget, BaseObject const* psAttacker, int weapon_slot);
 
 /// See if there is a target in range
 bool aiChooseTarget(BaseObject const* psObj, BaseObject** ppsTarget, int weapon_slot,
                     bool bUpdateTarget, TARGET_ORIGIN* targetOrigin);
 
-/** See if there is a target in range for Sensor objects. */
+/// See if there is a target in range for sensor objects
 bool aiChooseSensorTarget(BaseObject* psObj, BaseObject** ppsTarget);
 
-/*set of rules which determine whether the weapon associated with the object
-can fire on the propulsion type of the target*/
+/**
+ * Set of rules which determine whether the weapon associated with the object
+ * can fire on the propulsion type of the target
+ */
 bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int weapon_slot);
 
-// Check if any of the weapons can target the target
+/// Check if any of the weapons can target the target
 bool checkAnyWeaponsTarget(Droid const* psDroid, BaseObject const* psTarget);
 
-// Check properties of the AllianceType enum.
+/// Check properties of the AllianceType enum.
 static bool alliancesFixed(ALLIANCE_TYPE t);
 static bool alliancesSharedVision(ALLIANCE_TYPE t);
 static bool alliancesSharedResearch(ALLIANCE_TYPE t);

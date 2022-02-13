@@ -89,8 +89,7 @@ struct PathCoord
   bool operator ==(PathCoord const& rhs) const = default;
   bool operator !=(PathCoord const& rhs) const = default;
 
-  int x = 0;
-  int y = 0;
+  int x = 0, y = 0;
 };
 
 struct ExploredTile
@@ -179,7 +178,7 @@ struct PathContext
   [[nodiscard]] bool isDangerous(int x, int y) const;
 
   /// Reverts the route to a default state and sets the parameters
-  void reset(const PathBlockingMap& blocking_map,
+  void reset(PathBlockingMap const& blocking_map,
              PathCoord start_coord,
              NonBlockingArea bounds);
 

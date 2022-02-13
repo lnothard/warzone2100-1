@@ -40,10 +40,10 @@ bool gamePaused();
 
 /* Roughly one per tile */
 static constexpr auto	MAX_ATMOS_PARTICLES	= MAP_MAXWIDTH * MAP_MAXHEIGHT;
-static const auto	SNOW_SPEED_DRIFT = (40 - rand() % 80);
-static const auto SNOW_SPEED_FALL  = (0 - (rand() % 40 + 80));
-static const auto	RAIN_SPEED_DRIFT = (rand() % 50);
-static const auto	RAIN_SPEED_FALL  = (0 - ((rand() % 300) + 700));
+static const auto SNOW_SPEED_DRIFT = 40 - rand() % 80;
+static const auto SNOW_SPEED_FALL = 0 - (rand() % 40 + 80);
+static const auto RAIN_SPEED_DRIFT = rand() % 50;
+static const auto RAIN_SPEED_FALL = 0 - (rand() % 300 + 700);
 
 static std::vector<Particle> asAtmosParts;
 static unsigned freeParticle;
@@ -52,8 +52,7 @@ static WEATHER_TYPE weather = WEATHER_TYPE::NONE;
 /* Setup all the particles */
 void atmosInitSystem()
 {
-	if (asAtmosParts.empty() &&
-      weather != WEATHER_TYPE::NONE) {
+	if (asAtmosParts.empty() && weather != WEATHER_TYPE::NONE) {
 		asAtmosParts.resize(MAX_ATMOS_PARTICLES);
 	}
   freeParticle = 0;
@@ -69,7 +68,7 @@ static void testParticleWrap(Particle* psPart)
 	}
 
 	/* Gone off right side */
-	else if (psPart->position.x > (playerPos.p.x + world_coord(visibleTiles.x) / 2)) {
+	else if (psPart->position.x > playerPos.p.x + world_coord(visibleTiles.x) / 2) {
 		psPart->position.x -= world_coord(visibleTiles.x);
 	}
 
@@ -79,7 +78,7 @@ static void testParticleWrap(Particle* psPart)
 	}
 
 	/* Gone off bottom */
-	else if (psPart->position.z > (playerPos.p.z + world_coord(visibleTiles.y) / 2)) {
+	else if (psPart->position.z > playerPos.p.z + world_coord(visibleTiles.y) / 2) {
 		psPart->position.z -= world_coord(visibleTiles.y);
 	}
 }
@@ -124,8 +123,7 @@ static void processParticle(Particle* psPart)
       auto x = map_coord(static_cast<int>(psPart->position.x));
       auto y = map_coord(static_cast<int>(psPart->position.z));
       auto psTile = mapTile(x, y);
-      if (terrainType(psTile) == TER_WATER &&
-          TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile)) {
+      if (terrainType(psTile) == TER_WATER && TEST_TILE_VISIBLE_TO_SELECTEDPLAYER(psTile)) {
         // display-only check for adding effect
         auto pos = Position{psPart->position.x, groundHeight, psPart->position.z};
         effectSetSize(60);
@@ -136,13 +134,15 @@ static void processParticle(Particle* psPart)
       return;
     }
   }
-  if (psPart->type == PARTICLE_TYPE::SNOW) {
-    if (rand() % 30 == 1) {
-      psPart->velocity.z = (float)SNOW_SPEED_DRIFT;
-    }
-    if (rand() % 30 == 1) {
-      psPart->velocity.x = (float)SNOW_SPEED_DRIFT;
-    }
+
+  if (psPart->type != PARTICLE_TYPE::SNOW)
+    return;
+
+  if (rand() % 30 == 1) {
+    psPart->velocity.z = (float)SNOW_SPEED_DRIFT;
+  }
+  if (rand() % 30 == 1) {
+    psPart->velocity.x = (float)SNOW_SPEED_DRIFT;
   }
 }
 
@@ -152,7 +152,8 @@ static void atmosAddParticle(const Vector3f& pos, PARTICLE_TYPE type)
 	unsigned activeCount;
   int i;
 
-	for (i = freeParticle, activeCount = 0; asAtmosParts[i].status == PARTICLE_STATUS::ACTIVE && activeCount < MAX_ATMOS_PARTICLES; i++) {
+  for (i = freeParticle, activeCount = 0; asAtmosParts[i].status == PARTICLE_STATUS::ACTIVE &&
+                                          activeCount < MAX_ATMOS_PARTICLES; i++) {
 		activeCount++;
 		/* Check for wrap around */
 		if (i >= (MAX_ATMOS_PARTICLES - 1)) {
@@ -166,9 +167,7 @@ static void atmosAddParticle(const Vector3f& pos, PARTICLE_TYPE type)
 		/* All of the particles active!?!? */
 		return;
 	}
-	else {
-		freeParticle = i;
-	}
+	freeParticle = i;
 
 	/* Record it's type */
 	asAtmosParts[freeParticle].type = type;
@@ -177,15 +176,15 @@ static void atmosAddParticle(const Vector3f& pos, PARTICLE_TYPE type)
 	asAtmosParts[freeParticle].status = PARTICLE_STATUS::ACTIVE;
 
 	/* Setup the imd */
-	switch (type) {
-	  case PARTICLE_TYPE::SNOW:
-	  	asAtmosParts[freeParticle].imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_SNOW));
-	  	asAtmosParts[freeParticle].size = 80;
-	  	break;
-      case PARTICLE_TYPE::RAIN:
-	  	asAtmosParts[freeParticle].imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_RAIN));
-	  	asAtmosParts[freeParticle].size = 50;
-	  	break;
+  switch (type) {
+    case PARTICLE_TYPE::SNOW:
+      asAtmosParts[freeParticle].imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_SNOW));
+      asAtmosParts[freeParticle].size = 80;
+      break;
+    case PARTICLE_TYPE::RAIN:
+      asAtmosParts[freeParticle].imd = std::make_unique<iIMDShape>(*getImdFromIndex(MI_RAIN));
+      asAtmosParts[freeParticle].size = 50;
+      break;
 	}
 
 	/* Setup position */
@@ -194,10 +193,9 @@ static void atmosAddParticle(const Vector3f& pos, PARTICLE_TYPE type)
 	/* Setup its velocity */
 	if (type == PARTICLE_TYPE::RAIN) {
 		asAtmosParts[freeParticle].velocity = Vector3f(RAIN_SPEED_DRIFT, RAIN_SPEED_FALL, RAIN_SPEED_DRIFT);
+    return;
 	}
-	else {
-		asAtmosParts[freeParticle].velocity = Vector3f(SNOW_SPEED_DRIFT, SNOW_SPEED_FALL, SNOW_SPEED_DRIFT);
-	}
+  asAtmosParts[freeParticle].velocity = Vector3f(SNOW_SPEED_DRIFT, SNOW_SPEED_FALL, SNOW_SPEED_DRIFT);
 }
 
 void atmosUpdateSystem()
@@ -222,7 +220,7 @@ void atmosUpdateSystem()
 
   double gameTimeModVal = gameTimeGetMod().asDouble();
   if (!std::isnan(gameTimeModVal)) {
-    accumulatedParticlesToAdd += ((weather == WEATHER_TYPE::SNOWING) ? 2.0 : 4.0) * gameTimeModVal;
+    accumulatedParticlesToAdd += (weather == WEATHER_TYPE::SNOWING ? 2.0 : 4.0) * gameTimeModVal;
   }
 
   auto numberToAdd = static_cast<unsigned>(accumulatedParticlesToAdd);
@@ -251,7 +249,7 @@ void atmosUpdateSystem()
       case WEATHER_TYPE::RAINING:
         atmosAddParticle(pos, PARTICLE_TYPE::RAIN);
         break;
-      case WEATHER_TYPE::NONE:
+      default:
         break;
     }
   }
@@ -259,7 +257,6 @@ void atmosUpdateSystem()
 
 void atmosDrawParticles(const glm::mat4& viewMatrix)
 {
-
 	if (weather == WEATHER_TYPE::NONE) {
 		return;
 	}
@@ -268,7 +265,9 @@ void atmosDrawParticles(const glm::mat4& viewMatrix)
 	for (auto i = 0; i < MAX_ATMOS_PARTICLES; i++)
 	{
 		/* Don't bother unless it's active */
-    if (asAtmosParts[i].status != PARTICLE_STATUS::ACTIVE) continue;
+    if (asAtmosParts[i].status != PARTICLE_STATUS::ACTIVE)
+      continue;
+
     /* Is it visible on the screen? */
     if (clipXYZ(static_cast<int>(asAtmosParts[i].position.x),
                 static_cast<int>(asAtmosParts[i].position.z),

@@ -78,7 +78,7 @@ static constexpr auto REPAIR_RANGE = 2 * TILE_UNITS;
 /// The maximum distance a repair droid will automatically go in guard mode
 static constexpr auto REPAIR_MAXDIST = 5 * TILE_UNITS;
 
-// The minimum structure strength modifier needed to automatically target blocking walls
+/// The minimum structure strength modifier needed to automatically target blocking walls
 static constexpr auto MIN_STRUCTURE_BLOCK_STRENGTH = 33;
 
 enum class ACTION
@@ -133,7 +133,7 @@ struct Action
   ACTION action = ACTION::NONE;
   Vector2i location{0, 0};
   BaseObject* targetObject = nullptr;
-  std::unique_ptr<BaseStats> stats = nullptr;
+  std::shared_ptr<BaseStats> stats = nullptr;
 };
 
 std::string actionToString(ACTION action);
@@ -172,7 +172,7 @@ void actionCalcPullBackPoint(BaseObject const* psObj, BaseObject const* psTarget
  * Rotate turret toward a target
  * @return \c true if locked on (to a droid or building)
  */
-bool actionTargetTurret(BaseObject* psAttacker, BaseObject* psTarget, int slot);
+bool actionTargetTurret(BaseObject const* psAttacker, BaseObject const* psTarget, int slot);
 
 /// @return \c true if a target is within weapon range
 bool actionInRange(Droid const* psDroid, BaseObject const* psObj,
@@ -183,8 +183,8 @@ bool actionVisibleTarget(Droid const* psDroid, BaseObject const* psTarget,
                          int weapon_slot, bool useLongWithOptimum);
 
 /// @return \c true if a droid is in the neighboring tile to a build position
-bool actionReachedBuildPos(Droid const* psDroid, Vector2i location,
-                           uint16_t direction, BaseStats const* psStats);
+bool actionReachedBuildPos(Droid const* psDroid, BaseStats const* psStats,
+                           Vector2i location, uint16_t direction);
 
 /// @return \c true if a droid is in the neighboring tile of another droid
 bool actionReachedDroid(Droid const* psDroid, Droid const* psOther);

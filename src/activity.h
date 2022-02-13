@@ -31,7 +31,6 @@
 #include "scores.h"
 
 enum class ALLIANCE_TYPE;
-enum class LOBBY_ERROR_TYPES;
 struct END_GAME_STATS_DATA;
 struct PLAYER;
 
@@ -267,19 +266,7 @@ public:
   void cheatUsed(const std::string& cheatName) const override;
   void loadedModsChanged(const std::vector<Sha256>& loadedModHashes) const override;
 private:
-  [[nodiscard]] static std::string modListToStr(const std::vector<Sha256>& modHashes)
-  {
-    if (modHashes.empty())
-    {
-      return "[no mods]";
-    }
-    std::string result = "[" + std::to_string(modHashes.size()) + " mods]:";
-    for (auto& modHash : modHashes)
-    {
-      result += std::string(" ") + modHash.toString();
-    }
-    return result;
-  }
+  [[nodiscard]] static std::string modListToStr(const std::vector<Sha256>& modHashes);
 };
 
 #endif // __INCLUDED_SRC_ACTIVITY_H__
