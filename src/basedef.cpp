@@ -48,6 +48,13 @@ struct BaseObject::Impl
   std::bitset<static_cast<size_t>(OBJECT_FLAG::COUNT)> flags;
 };
 
+struct ConstructedObject::Impl
+{
+  unsigned lastEmissionTime = 0;
+  unsigned timeAnimationStarted = 0;
+  ANIMATION_EVENTS animationEvent = ANIM_EVENT_NONE;
+};
+
 struct Health::Impl
 {
   Impl() = default;
@@ -90,15 +97,6 @@ BaseObject::BaseObject(unsigned id, Player* playerManager,
 {
 }
 
-BaseObject::BaseObject(unsigned id, Player* playerManager, std::unique_ptr<Health> damageManager,
-                       std::unique_ptr<WeaponManager> weaponManager)
-  : pimpl{std::make_unique<Impl>(id)}
-  , playerManager{playerManager}
-  , damageManager{std::move(damageManager)}
-  , weaponManager{std::move(weaponManager)}
-{
-}
-
 BaseObject::BaseObject(BaseObject const& rhs)
   : pimpl{std::make_unique<Impl>(*rhs.pimpl)}
   , playerManager{rhs.playerManager}
@@ -125,6 +123,7 @@ BaseObject::Impl::Impl(Impl const& rhs)
   , display{rhs.display
             ? std::make_unique<DisplayData>(*rhs.display)
             : nullptr}
+
   , time{rhs.time}
   , position{rhs.position}
   , rotation{rhs.rotation}
@@ -139,12 +138,32 @@ BaseObject::Impl& BaseObject::Impl::operator=(Impl const& rhs)
   display = rhs.display
             ? std::make_unique<DisplayData>(*rhs.display)
             : nullptr;
+
   time = rhs.time;
   position = rhs.position;
   rotation = rhs.rotation;
   previousLocation = rhs.previousLocation;
   flags = rhs.flags;
   visibleToPlayer = rhs.visibleToPlayer;
+}
+
+ConstructedObject::ConstructedObject(unsigned id, Player* playerManager)
+  : BaseObject(id, playerManager)
+  , pimpl{std::make_unique<Impl>()}
+{
+}
+
+ConstructedObject::ConstructedObject(ConstructedObject const& rhs)
+  : BaseObject(rhs)
+  , pimpl{std::make_unique<Impl>(*rhs.pimpl)}
+{
+}
+
+ConstructedObject& ConstructedObject::operator=(ConstructedObject const& rhs)
+{
+  if (this == &rhs) return *this;
+  *pimpl = *rhs.pimpl;
+  return *this;
 }
 
 Health::Health()
@@ -451,6 +470,11 @@ bool Health::isProbablyDoomed(bool isDirectDamage) const
     return is_doomed(pimpl->expectedDamageDirect);
 
   return is_doomed(pimpl->expectedDamageIndirect);
+}
+
+ANIMATION_EVENTS ConstructedObject::getAnimationEvent() const
+{
+  return pimpl ? pimpl->animationEvent : ANIMATION_EVENTS::ANIM_EVENT_NONE;
 }
 
 int objectPositionSquareDiff(Position const& first, Position const& second)

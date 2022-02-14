@@ -122,7 +122,7 @@ BaseObject* aiSearchSensorTargets(BaseObject const* psObj, int weapon_slot,
 
 	for (auto const psSensor : apsSensorList)
 	{
-    BaseObject const* psTemp = nullptr;
+    BaseObject* psTemp = nullptr;
 		bool isCB = false;
 
 		if (!aiCheckAlliances(psSensor->playerManager->getPlayer(),
@@ -602,12 +602,9 @@ bool aiChooseSensorTarget(BaseObject const* psObj, BaseObject** ppsTarget)
   {
     // don't target features or doomed/dead objects
     if (dynamic_cast<Feature*>(psCurr) || psCurr->damageManager->isDead() ||
-        psCurr->damageManager->isProbablyDoomed(false)) {
-      continue;
-    }
-
-    if (aiCheckAlliances(psCurr->playerManager->getPlayer(), psObj->playerManager->getPlayer()) ||
-                         dynamic_cast<Structure*>(psCurr) && dynamic_cast<Structure*>(psCurr)->isWall()) {
+        psCurr->damageManager->isProbablyDoomed(false) ||
+        aiCheckAlliances(psCurr->playerManager->getPlayer(), psObj->playerManager->getPlayer()) ||
+        dynamic_cast<Structure*>(psCurr) && dynamic_cast<Structure*>(psCurr)->isWall()) {
       continue;
     }
 
@@ -700,6 +697,11 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
 		bTargetInAir = false;
 	}
 
+  if (!dynamic_cast<Droid const*>(psObject) &&
+      !dynamic_cast<Structure const*>(psObject)) {
+    return false;
+  }
+
 	// need what can shoot at
 	if (auto psDroid = dynamic_cast<Droid const*>(psObject)) {
     if (psDroid->getType() == DROID_TYPE::SENSOR) {
@@ -732,9 +734,6 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
         surfaceToAir & SHOOT_ON_GROUND && !bTargetInAir) {
       return true;
     }
-  }
-  else {
-    surfaceToAir = 0;
   }
 
 	// if target is in the air, and you can shoot in the air - OK

@@ -178,7 +178,6 @@ struct InitialOrders
 struct DroidTemplate : public BaseStats
 {
   DroidTemplate() = default;
-
   [[nodiscard]] ComponentStats const* getComponent(COMPONENT_TYPE compName) const;
 
   unsigned id = 0;
@@ -193,7 +192,7 @@ struct DroidTemplate : public BaseStats
   bool isEnabled = false;
 };
 
-class Droid : public BaseObject
+class Droid : public ConstructedObject
 {
 public:
   ~Droid() override;
@@ -207,7 +206,6 @@ public:
 
 
   [[nodiscard]] int objRadius() const override;
-  [[nodiscard]] ANIMATION_EVENTS getAnimationEvent() const;
   [[nodiscard]] unsigned getBaseSpeed() const;
   [[nodiscard]] ACTION getAction() const noexcept;
   [[nodiscard]] Order const* getOrder() const;
@@ -238,12 +236,12 @@ public:
   [[nodiscard]] bool isStationary() const;
   [[nodiscard]] bool isRepairDroid() const noexcept;
   [[nodiscard]] std::string getDroidLevelName() const;
-  [[nodiscard]] unsigned calculateSensorRange() const;
+  [[nodiscard]] unsigned calculateSensorRange() const override;
   [[nodiscard]] int spaceOccupiedOnTransporter() const;
   [[nodiscard]] bool isAttacking() const noexcept;
   [[nodiscard]] int calculateElectronicResistance() const;
   [[nodiscard]] bool isRadarDetector() const override;
-  [[nodiscard]] bool hasStandardSensor() const;
+  [[nodiscard]] bool hasStandardSensor() const override;
   [[nodiscard]] bool hasCbSensor() const override;
   [[nodiscard]] int droidDamage(unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
                                 unsigned impactTime, bool isDPS, int minDamage);
@@ -466,9 +464,9 @@ bool activateGroup(unsigned playerNumber, unsigned groupNumber);
 unsigned getNumDroidsForLevel(uint32_t player, unsigned level);
 
 bool activateGroupAndMove(unsigned playerNumber, unsigned groupNumber);
-/* calculate muzzle tip location in 3d world added int weapon_slot to fix the always slot 0 hack*/
+/* calculate muzzle tip location in 3d world added int weapon_slot to fix the slot 0 hack*/
 bool calcDroidMuzzleLocation(const Droid* psDroid, Vector3i* muzzle, int weapon_slot);
-/* calculate muzzle base location in 3d world added int weapon_slot to fix the always slot 0 hack*/
+/* calculate muzzle base location in 3d world added int weapon_slot to fix the slot 0 hack*/
 bool calcDroidMuzzleBaseLocation(const Droid* psDroid, Vector3i* muzzle, int weapon_slot);
 
 /* Droid experience stuff */
@@ -508,13 +506,7 @@ int nextModuleToBuild(Structure const* psStruct, int lastOrderedModule);
 /// Deals with building a module - checking if any droid is currently doing this if so, helping to build the current one
 void setUpBuildModule(Droid* psDroid);
 
-/// Just returns true if the droid's present body points aren't as high as the original
-bool droidIsDamaged(const Droid* psDroid);
-
 char const* getDroidResourceName(char const* pName);
-
-/// Checks to see if an electronic warfare weapon is attached to the droid
-bool electronicDroid(Droid const* psDroid);
 
 /// checks to see if the droid is currently being repaired by another
 bool droidUnderRepair(Droid const* psDroid);
@@ -593,10 +585,10 @@ void SelectDroid(Droid* psDroid);
 void DeSelectDroid(Droid* psDroid);
 
 /* audio finished callback */
-bool droidAudioTrackStopped(Droid* psDroid);
+void droidAudioTrackStopped(Droid* psDroid);
 
-void set_blocking_flags(const Droid& droid, uint8_t flag);
-void clear_blocking_flags(const Droid& droid, uint8_t flag);
+void setBlockingFlags(const Droid& droid, uint8_t flag);
+void clearBlockingFlags(const Droid& droid, uint8_t flag);
 
 /*returns true if droid type is one of the Cyborg types*/
 bool isCyborg(const Droid* psDroid);
@@ -611,16 +603,24 @@ void droidSetPosition(Droid* psDroid, Vector2i pos);
 /// Return a percentage of how fully armed the object is, or -1 if N/A.
 int droidReloadBar(BaseObject const* psObj, Weapon const* psWeap, int weapon_slot);
 
-/** If droid can get to given object using its current propulsion, return the square distance. Otherwise return -1. */
-int droidSqDist(Droid* psDroid, BaseObject* psObj);
-
+/**
+ * If droid can get to given object using its current propulsion,
+ * return the square distance. Otherwise return -1.
+ */
+int droidSqDist(Droid const* psDroid, BaseObject const* psObj);
 
 void templateSetParts(Droid const* psDroid, DroidTemplate* psTemplate);
 
 static unsigned droidSensorRange(Droid const* psDroid);
 
-static bool droidUpdateDroidRepairBase(Droid* psRepairDroid, Droid* psDroidToRepair);
-static Rotation getInterpolatedWeaponRotation(Droid const* psDroid, int weaponSlot, unsigned time);
-bool vtolCanLandHere(int x, int y);
+static bool droidUpdateDroidRepairBase(Droid const* psRepairDroid, Droid* psDroidToRepair);
+[[nodiscard]] static Rotation getInterpolatedWeaponRotation(Droid const* psDroid, int weaponSlot, unsigned time);
+[[nodiscard]] bool vtolCanLandHere(Vector2i position);
+[[nodiscard]] unsigned calculateMaxRange(Droid const& droid);
+[[nodiscard]] bool transporterIsFlying(Droid const& transporter);
+[[nodiscard]] bool stillBuilding(Droid const& droid);
+[[nodiscard]] bool canAssignFireSupport(Droid const& droid, Structure const& structure);
+[[nodiscard]] bool tileOccupiedByDroid(Vector2i position);
+Vector2i chooseLandingPosition(Droid const& vtol, Vector2i position);
 
 #endif // __INCLUDED_SRC_DROID_H__

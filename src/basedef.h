@@ -129,7 +129,6 @@ public:
   BaseObject(unsigned id, Player* playerManager);
   BaseObject(unsigned id, std::unique_ptr<Health> damageManager);
   BaseObject(unsigned id, Player* playerManager, std::unique_ptr<Health> damageManager);
-  BaseObject(unsigned id, Player* playerManager, std::unique_ptr<Health> damageManager, std::unique_ptr<WeaponManager> weaponManager);
 
   BaseObject(BaseObject const& rhs);
   BaseObject& operator=(BaseObject const& rhs);
@@ -139,12 +138,6 @@ public:
 
   [[nodiscard]] virtual int objRadius() const;
   [[nodiscard]] virtual iIMDShape const* getImdShape() const;
-  [[nodiscard]] virtual bool hasArtillery() const;
-  [[nodiscard]] virtual bool hasCbSensor() const;
-  [[nodiscard]] virtual bool hasVtolCbSensor() const;
-  [[nodiscard]] virtual bool hasVtolInterceptSensor() const;
-  [[nodiscard]] virtual bool isRadarDetector() const;
-  [[nodiscard]] virtual BaseObject const* getTarget(int idx) const;
 
   [[nodiscard]] unsigned getId() const noexcept;
   [[nodiscard]] std::string const* getName() const;
@@ -176,16 +169,44 @@ public:
   void setImdShape(iIMDShape* imd);
 public:
   std::unique_ptr<Health> damageManager;
-  std::unique_ptr<WeaponManager> weaponManager;
   Player* playerManager = nullptr;
 private:
   struct Impl;
   std::unique_ptr<Impl> pimpl;
 };
 
+/// Droids and buildings
+class ConstructedObject : public BaseObject
+{
+public:
+  ~ConstructedObject() override = default;
+  ConstructedObject(unsigned id, Player* playerManager);
 
-int objectPositionSquareDiff(const Position& first, const Position& second);
-int objectPositionSquareDiff(const BaseObject* first, const BaseObject* second);
+  ConstructedObject(ConstructedObject const& rhs);
+  ConstructedObject& operator=(ConstructedObject const& rhs);
+
+  ConstructedObject(ConstructedObject&& rhs) noexcept = default;
+  ConstructedObject& operator=(ConstructedObject&& rhs) noexcept = default;
+
+  [[nodiscard]] virtual bool hasArtillery() const;
+  [[nodiscard]] virtual bool hasStandardSensor() const;
+  [[nodiscard]] virtual bool hasCbSensor() const;
+  [[nodiscard]] virtual bool hasVtolCbSensor() const;
+  [[nodiscard]] virtual bool hasVtolInterceptSensor() const;
+  [[nodiscard]] virtual bool isRadarDetector() const;
+  [[nodiscard]] virtual BaseObject const* getTarget(int idx) const;
+  [[nodiscard]] virtual unsigned calculateSensorRange() const;
+
+  [[nodiscard]] ANIMATION_EVENTS getAnimationEvent() const;
+public:
+  std::unique_ptr<WeaponManager> weaponManager;
+private:
+  struct Impl;
+  std::unique_ptr<Impl> pimpl;
+};
+
+int objectPositionSquareDiff(Position const& first, Position const& second);
+int objectPositionSquareDiff(BaseObject const* first, BaseObject const* second);
 
 Vector3i calculateMuzzleBaseLocation(const BaseObject& unit, int weapon_slot);
 

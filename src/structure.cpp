@@ -1256,11 +1256,7 @@ STRUCTURE_ANIMATION_STATE Structure::getAnimationState() const
   return pimpl ? pimpl->animationState : STRUCTURE_ANIMATION_STATE::NORMAL;
 }
 
-ANIMATION_EVENTS Structure::getAnimationEvent() const
-{
-  return pimpl ? pimpl->animationEvent : ANIMATION_EVENTS::ANIM_EVENT_NONE;
-}
-    
+
 void Structure::aiUpdateStructure(bool isMission)
 {
   if (!pimpl) return;
@@ -7225,18 +7221,16 @@ bool Structure::loadSaveStructure(char* pFileData, UDWORD filesize)
   SAVE_STRUCTURE_V2 *psSaveStructure, sSaveStructure;
   Structure* psStructure;
   StructureStats* psStats = nullptr;
-  UDWORD count, statInc;
-  int32_t found;
-  UDWORD NumberOfSkippedStructures = 0;
-  UDWORD periodicalDamageTime;
+  unsigned count, statInc;
+  int found;
+  unsigned NumberOfSkippedStructures = 0;
+  unsigned periodicalDamageTime;
 
   /* Check the file type */
   psHeader = (STRUCT_SAVEHEADER*)pFileData;
   if (psHeader->aFileType[0] != 's' || psHeader->aFileType[1] != 't' ||
-      psHeader->aFileType[2] != 'r' || psHeader->aFileType[3] != 'u')
-  {
+      psHeader->aFileType[2] != 'r' || psHeader->aFileType[3] != 'u') {
     debug(LOG_ERROR, "loadSaveStructure: Incorrect file type");
-
     return false;
   }
 
@@ -7250,17 +7244,14 @@ bool Structure::loadSaveStructure(char* pFileData, UDWORD filesize)
   debug(LOG_SAVE, "file version is %u ", psHeader->version);
 
   /* Check the file version */
-  if (psHeader->version < VERSION_7 || psHeader->version > VERSION_8)
-  {
+  if (psHeader->version < VERSION_7 || psHeader->version > VERSION_8) {
     debug(LOG_ERROR, "StructLoad: unsupported save format version %d", psHeader->version);
-
     return false;
   }
 
   psSaveStructure = &sSaveStructure;
 
-  if ((sizeof(SAVE_STRUCTURE_V2) * psHeader->quantity + STRUCT_HEADER_SIZE) > filesize)
-  {
+  if (sizeof(SAVE_STRUCTURE_V2) * psHeader->quantity + STRUCT_HEADER_SIZE > filesize) {
     debug(LOG_ERROR, "structureLoad: unexpected end of file");
     return false;
   }
@@ -7293,8 +7284,7 @@ bool Structure::loadSaveStructure(char* pFileData, UDWORD filesize)
 
     psSaveStructure->player = RemapPlayerNumber(psSaveStructure->player);
 
-    if (psSaveStructure->player >= MAX_PLAYERS)
-    {
+    if (psSaveStructure->player >= MAX_PLAYERS) {
       psSaveStructure->player = MAX_PLAYERS - 1;
       NumberOfSkippedStructures++;
     }
@@ -7306,15 +7296,14 @@ bool Structure::loadSaveStructure(char* pFileData, UDWORD filesize)
       psStats = asStructureStats + statInc;
       //loop until find the same name
 
-      if (psStats->id.compare(psSaveStructure->name) == 0)
-      {
+      if (psStats->id.compare(psSaveStructure->name) == 0) {
         found = true;
         break;
       }
     }
+
     //if haven't found the structure - ignore this record!
-    if (!found)
-    {
+    if (!found) {
       debug(LOG_ERROR, "This structure no longer exists - %s",
             getSaveStructNameV19((SAVE_STRUCTURE_V17 *)psSaveStructure));
       //ignore this
@@ -7322,41 +7311,38 @@ bool Structure::loadSaveStructure(char* pFileData, UDWORD filesize)
     }
 
     //for modules - need to check the base structure exists
-    if (IsStatExpansionModule(psStats))
-    {
-      psStructure = getTileStructure(map_coord(psSaveStructure->x), map_coord(psSaveStructure->y));
-      if (psStructure == nullptr)
-      {
-        debug(LOG_ERROR, "No owning structure for module - %s for player - %d",
-              getSaveStructNameV19((SAVE_STRUCTURE_V17 *)psSaveStructure), psSaveStructure->player);
-        //ignore this module
-        continue;
-      }
+    psStructure = getTileStructure(map_coord(psSaveStructure->x), map_coord(psSaveStructure->y));
+    if (IsStatExpansionModule(psStats) && psStructure == nullptr) {
+      debug(LOG_ERROR, "No owning structure for module - %s for player - %d",
+            getSaveStructNameV19((SAVE_STRUCTURE_V17 *)psSaveStructure), psSaveStructure->player);
+      //ignore this module
+      continue;
     }
 
     //check not trying to build too near the edge
-    if (map_coord(psSaveStructure->x) < TOO_NEAR_EDGE || map_coord(psSaveStructure->x) > mapWidth - TOO_NEAR_EDGE)
-    {
+    if (map_coord(psSaveStructure->x) < TOO_NEAR_EDGE ||
+        map_coord(psSaveStructure->x) > mapWidth - TOO_NEAR_EDGE) {
       debug(LOG_ERROR, "Structure %s, x coord too near the edge of the map. id - %d",
             getSaveStructNameV19((SAVE_STRUCTURE_V17 *)psSaveStructure), psSaveStructure->id);
       //ignore this
       continue;
     }
-    if (map_coord(psSaveStructure->y) < TOO_NEAR_EDGE || map_coord(psSaveStructure->y) > mapHeight - TOO_NEAR_EDGE)
-    {
+
+    if (map_coord(psSaveStructure->y) < TOO_NEAR_EDGE ||
+        map_coord(psSaveStructure->y) > mapHeight - TOO_NEAR_EDGE) {
       debug(LOG_ERROR, "Structure %s, y coord too near the edge of the map. id - %d",
             getSaveStructNameV19((SAVE_STRUCTURE_V17 *)psSaveStructure), psSaveStructure->id);
       //ignore this
       continue;
     }
-
     psStructure = buildStructureDir(psStats, psSaveStructure->x, psSaveStructure->y,
                                     DEG(psSaveStructure->direction), psSaveStructure->player, true);
+
     ASSERT(psStructure, "Unable to create structure");
-    if (!psStructure)
-    {
+    if (!psStructure) {
       continue;
     }
+
     // The original code here didn't work and so the scriptwriters worked round it by using the module ID - so making it work now will screw up
     // the scripts -so in ALL CASES overwrite the ID!
     psStructure->setId(psSaveStructure->getId() > 0 ? psSaveStructure->getId() : 0xFEDBCA98); // hack to remove struct id zero
@@ -7366,22 +7352,31 @@ bool Structure::loadSaveStructure(char* pFileData, UDWORD filesize)
     if (psStructure->getState() == STRUCTURE_STATE::BUILT) {
       buildingComplete(psStructure);
     }
-    if (psStructure->getStats()->type == STRUCTURE_TYPE::HQ)
-    {
+
+    if (psStructure->getStats()->type == STRUCTURE_TYPE::HQ) {
       scriptSetStartPos(psSaveStructure->player, psStructure->getPosition().x, psStructure->getPosition().y);
+      continue;
     }
-    else if (psStructure->getStats()->type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR)
-    {
+
+    if (psStructure->getStats()->type == STRUCTURE_TYPE::RESOURCE_EXTRACTOR) {
       scriptSetDerrickPos(psStructure->getPosition().x, psStructure->getPosition().y);
     }
   }
 
-  if (NumberOfSkippedStructures > 0)
-  {
+  if (NumberOfSkippedStructures > 0) {
     debug(LOG_ERROR, "structureLoad: invalid player number in %d structures ... assigned to the last player!\n\n",
           NumberOfSkippedStructures);
     return false;
   }
-
   return true;
+}
+
+void Structure::setTarget(BaseObject* psNewTarget, unsigned idx, TARGET_ORIGIN targetOrigin)
+{
+  ASSERT_OR_RETURN(, idx < MAX_WEAPONS, "Bad index");
+  ASSERT_OR_RETURN(, psNewTarget == nullptr || !psNewTarget->damageManager->isDead(),
+                     "setStructureTarget set dead target");
+
+  pimpl->targets[idx] = psNewTarget;
+  weaponManager->weapons[idx].origin = targetOrigin;
 }

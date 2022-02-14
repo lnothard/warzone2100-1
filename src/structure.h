@@ -241,7 +241,6 @@ struct StructureStats : public BaseStats
   bool is_favourite = false; ///< on Favorites list
 };
 
-
 struct WALL
 {
     /// Type of wall --
@@ -249,7 +248,7 @@ struct WALL
     unsigned type;
 };
 
-class Structure : public BaseObject
+class Structure : public ConstructedObject
 {
 public:
   ~Structure() override;
@@ -266,7 +265,6 @@ public:
 
   [[nodiscard]] unsigned getCurrentBuildPoints() const;
   [[nodiscard]] STRUCTURE_ANIMATION_STATE getAnimationState() const;
-  [[nodiscard]] ANIMATION_EVENTS getAnimationEvent() const;
   [[nodiscard]] unsigned getArmourValue(WEAPON_CLASS weaponClass) const;
   [[nodiscard]] Vector2i getSize() const;
   [[nodiscard]] unsigned getLastResistance() const;
@@ -282,13 +280,13 @@ public:
   [[nodiscard]] bool isRadarDetector() const override;
   [[nodiscard]] bool hasModules() const noexcept;
   [[nodiscard]] bool hasSensor() const;
-  [[nodiscard]] bool hasStandardSensor() const;
+  [[nodiscard]] bool hasStandardSensor() const override;
   [[nodiscard]] bool hasCbSensor() const override;
   [[nodiscard]] bool hasVtolInterceptSensor() const override;
   [[nodiscard]] bool hasVtolCbSensor() const override;
   [[nodiscard]] bool smokeWhenDamaged() const noexcept;
   void updateExpectedDamage(unsigned damage, bool is_direct) noexcept;
-  [[nodiscard]] unsigned calculateSensorRange() const;
+  [[nodiscard]] unsigned calculateSensorRange() const override;
   [[nodiscard]] int calculateGateHeight(unsigned time, int minimum) const;
   void setFoundationDepth(int depth) noexcept;
   void printInfo() const;
@@ -303,6 +301,7 @@ public:
   bool loadSaveStructure(char* pFileData, unsigned filesize);
   bool loadSaveStructure2(const char* pFileName, Structure** ppList);
   void actionDroidTarget(Droid* droid, ACTION action, int idx);
+  void setTarget(BaseObject* psNewTarget, unsigned idx, TARGET_ORIGIN targetOrigin);
   void structureBuild(Droid* psDroid, int builtPoints, int buildRate_);
   [[nodiscard]] std::unique_ptr<Structure> buildStructureDir(
         StructureStats* pStructureType, unsigned x, unsigned y,
@@ -811,23 +810,7 @@ static inline Rotation structureGetInterpolatedWeaponRotation(Structure const* p
 
 #define setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin) _setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin, __LINE__, __FUNCTION__)
 
-static inline void _setStructureTarget(Structure* psBuilding, BaseObject * psNewTarget, UWORD idx,
-                                       TARGET_ORIGIN targetOrigin, int line, const char* func)
-{
-	ASSERT_OR_RETURN(, idx < MAX_WEAPONS, "Bad index");
-	ASSERT_OR_RETURN(, psNewTarget == nullptr || !psNewTarget->damageManager->isDead(),
-                   "setStructureTarget set dead target");
-	psBuilding->psTarget[idx] = psNewTarget;
-	psBuilding->asWeaps[idx].origin = targetOrigin;
-#ifdef DEBUG
-	psBuilding->targetLine[idx] = line;
-	sstrcpy(psBuilding->targetFunc[idx], func);
-#else
-	// Prevent warnings about unused parameters
-	(void)line;
-	(void)func;
-#endif
-}
+
 
 // Functions for the GUI to know what's pending, before it's synchronised.
 template <typename Functionality, typename Subject>

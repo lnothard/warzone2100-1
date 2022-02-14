@@ -506,7 +506,7 @@ bool spiralSearch(Vector2i startCoords, int maxRadius, tileMatchFunction match, 
 
 bool findVtolLandingPosition(Droid const* psDroid, Vector2i* p)
 {
-  set_blocking_flags(*psDroid, BITS_FPATHBLOCK);
+  setBlockingFlags(*psDroid, BITS_FPATHBLOCK);
 
 	// search for landing tile; will stop when found or radius exceeded
 	Vector2i xyCoords{0, 0};
@@ -520,6 +520,6 @@ bool findVtolLandingPosition(Droid const* psDroid, Vector2i* p)
 	}
 
 	// clear blocking flags for all the other droids
-  clear_blocking_flags(*psDroid, BITS_FPATHBLOCK);
+  clearBlockingFlags(*psDroid, BITS_FPATHBLOCK);
 	return foundTile;
 }
