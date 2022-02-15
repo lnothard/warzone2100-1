@@ -276,7 +276,7 @@ public:
   void upgradeHitPoints();
   bool moveDroidToBase(Vector2i location, bool bFormation, FPATH_MOVETYPE moveType);
   void moveDroidToDirect(Vector2i location);
-  void moveTurnDroid(unsigned x, unsigned y);
+  void moveTurnDroid(Vector2i location);
   void moveShuffleDroid(Vector2i s);
   bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode = ModeQueue);
   void actionDroidBase(Action const* psAction);

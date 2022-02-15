@@ -142,7 +142,7 @@ bool moveDroidTo(Droid* psDroid, Vector2i location, FPATH_MOVETYPE moveType = FP
 // the droid will not join a formation when it gets to the location
 bool moveDroidToNoFormation(Droid* psDroid, Vector2i location, FPATH_MOVETYPE moveType = FPATH_MOVETYPE::FMT_MOVE);
 
-// Get a droid to turn towards a locaton
+// Get a droid to turn towards a location
 void moveTurnDroid(Droid* psDroid, Vector2i location);
 
 /* Stop a droid */
