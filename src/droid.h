@@ -250,6 +250,7 @@ public:
   void setUpBuildModule();
   void moveToRearm();
   void actionUpdateDroid();
+  void droidUpdateRepair();
   void initVisibility();
   void cmdDroidUpdateExperience(unsigned experienceInc) const;
   void addDroidToGroup(Droid* psDroid) const;
@@ -355,7 +356,7 @@ std::priority_queue<int> copy_experience_queue(unsigned player);
 void add_to_experience_queue(unsigned player, int value);
 
 // initialise droid module
-bool droidInit();
+void droidInit();
 
 bool removeDroidBase(Droid* psDel);
 
@@ -407,7 +408,6 @@ bool isIdf(Droid* psDroid);
 /* The main update routine for all droids */
 void droidUpdate(Droid* psDroid);
 
-
 DroidStartBuild droidStartBuild(Droid* psDroid);
 
 /* Update a construction droid while it is demolishing
@@ -416,10 +416,6 @@ bool droidUpdateDemolishing(Droid* psDroid);
 
 /* Sets a droid to start a generic action */
 void droidStartAction(Droid* psDroid);
-
-/* Update a construction droid while it is repairing
-   returns true while repairing */
-bool droidUpdateRepair(Droid* psDroid);
 
 /*Updates a Repair Droid working on a damaged droid - returns true whilst repairing*/
 bool droidUpdateDroidRepair(Droid* psRepairDroid);
@@ -435,7 +431,7 @@ bool droidUpdateRestore(Droid* psDroid);
 void recycleDroid(Droid* psDel);
 
 /* Remove a droid and free its memory */
-bool destroyDroid(Droid* psDel, unsigned impactTime);
+void destroyDroid(Droid* psDel, unsigned impactTime);
 
 /* Same as destroy droid except no graphical effects */
 void vanishDroid(Droid* psDel);

@@ -915,7 +915,7 @@ void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix)
 	}
 }
 
-void destroyFXDroid(Droid* psDroid, unsigned impactTime)
+void destroyFXDroid(Droid const* psDroid, unsigned impactTime)
 {
 	for (auto i = 0; i < 5; ++i)
 	{
@@ -928,6 +928,7 @@ void destroyFXDroid(Droid* psDroid, unsigned impactTime)
 		auto pos = (
             psDroid->getPosition() + Vector3i(
                     horizontalScatter, 16 + heightScatter)).xzy();
+
 		switch (i) {
 		  case 0:
 		  	switch (psDroid->getType()) {
@@ -982,7 +983,7 @@ void destroyFXDroid(Droid* psDroid, unsigned impactTime)
 	}
 }
 
-void compPersonToBits(Droid* psDroid)
+void compPersonToBits(Droid const* psDroid)
 {
   // display only - should not affect game state
 	if (!psDroid->isVisibleToSelectedPlayer()) {

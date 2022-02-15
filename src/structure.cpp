@@ -2357,24 +2357,24 @@ static void initModuleStats(unsigned i, STRUCTURE_TYPE type)
 {
 	// need to work out the stats for the modules
   // HACK! - but less hacky than what was here before
-	switch (type) {
-	case STRUCTURE_TYPE::FACTORY_MODULE:
-		//store the stat for easy access later on
-		factoryModuleStat = i;
-		break;
+  switch (type) {
+    case STRUCTURE_TYPE::FACTORY_MODULE:
+      //store the stat for easy access later on
+      factoryModuleStat = i;
+      break;
 
-	case STRUCTURE_TYPE::RESEARCH_MODULE:
-		// store the stat for easy access later on
-		researchModuleStat = i;
-		break;
+    case STRUCTURE_TYPE::RESEARCH_MODULE:
+      // store the stat for easy access later on
+      researchModuleStat = i;
+      break;
 
-	case STRUCTURE_TYPE::POWER_MODULE:
-		// store the stat for easy access later on
-		powerModuleStat = i;
-		break;
-	default:
-		break;
-	}
+    case STRUCTURE_TYPE::POWER_MODULE:
+      // store the stat for easy access later on
+      powerModuleStat = i;
+      break;
+    default:
+      break;
+  }
 }
 
 template <typename T, size_t N>
@@ -2403,6 +2403,7 @@ bool loadStructureStats(WzConfig& ini)
 	auto list = ini.childGroups();
 	asStructureStats = new StructureStats[list.size()];
 	numStructureStats = list.size();
+
 	for (auto inc = 0; inc < list.size(); ++inc)
 	{
 		ini.beginGroup(list[inc]);
@@ -2432,6 +2433,7 @@ bool loadStructureStats(WzConfig& ini)
 			psStats->maxLimit = LOTS_OF;
 			psStats->base.limit = LOTS_OF;
 		}
+
 		psStats->base.research = ini.value("researchPoints", 0).toInt();
 		psStats->base.moduleResearch = ini.value("moduleResearchPoints", 0).toInt();
 		psStats->base.production = ini.value("productionPoints", 0).toInt();
@@ -2444,6 +2446,7 @@ bool loadStructureStats(WzConfig& ini)
 		psStats->base.hitPoints = ini.value("hitpoints", 1).toUInt();
 		psStats->base.armour = ini.value("armour", 0).toUInt();
 		psStats->base.thermal = ini.value("thermal", 0).toUInt();
+
 		for (auto& upgraded_stat : psStats->upgraded_stats)
 		{
 			upgraded_stat.limit = psStats->base.limit;
@@ -2522,6 +2525,7 @@ bool loadStructureStats(WzConfig& ini)
 		auto weapons = ini.value("weapons").toWzStringList();
 		ASSERT_OR_RETURN(false, weapons.size() <= MAX_WEAPONS,
 		                 "Too many weapons are attached to structure '%s'. Maximum is %d", getID(psStats), MAX_WEAPONS);
+
 		psStats->numWeaps = weapons.size();
 		for (auto j = 0; j < psStats->numWeaps; ++j)
 		{
@@ -2547,9 +2551,8 @@ bool loadStructureStats(WzConfig& ini)
 		psStats->combines_with_wall = ini.value("combinesWithWall", false).toBool();
 		ini.endGroup();
 	}
-	parseFavoriteStructs();
 
-	/* get global dummy stat pointer - GJ */
+	parseFavoriteStructs();
 	g_psStatDestroyStruct = nullptr;
 	for (auto iID = 0; iID < numStructureStats; ++iID)
 	{
@@ -2572,18 +2575,20 @@ void setCurrentStructQuantity(bool displayError)
 		{
 			asStructureStats[inc].curCount[player] = 0;
 		}
+
 		for (auto const& psCurr : playerList[player].structures)
 		{
 			auto stats = psCurr.getStats();
 			asStructureStats[inc].curCount[player]++;
-			if (displayError) {
-				//check quantity never exceeds the limit
-				ASSERT(asStructureStats[inc].curCount[player] <=
-            asStructureStats[inc].upgraded_stats[player].limit,
-				  "There appears to be too many %s on this map!",
-          getStatsName(&asStructureStats[inc]));
-			}
-		}
+      if (!displayError)
+        continue;
+
+      //check quantity never exceeds the limit
+      ASSERT(asStructureStats[inc].curCount[player] <=
+             asStructureStats[inc].upgraded_stats[player].limit,
+             "There appears to be too many %s on this map!",
+             getStatsName(&asStructureStats[inc]));
+    }
 	}
 }
 
@@ -2598,6 +2603,7 @@ bool loadStructureStrengthModifiers(WzConfig& ini)
 			asStructStrengthModifier[i][j] = 100;
 		}
 	}
+
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	auto list = ini.childGroups();
 	for (auto& i : list)
@@ -2609,6 +2615,7 @@ bool loadStructureStrengthModifiers(WzConfig& ini)
 			ini.endGroup();
 			continue;
 		}
+
 		std::vector<WzString> keys = ini.childKeys();
 		for (auto& strength : keys)
 		{
@@ -2616,19 +2623,22 @@ bool loadStructureStrengthModifiers(WzConfig& ini)
 			// FIXME - add support for dynamic categories
 			if (strength.compare("SOFT") == 0) {
 				asStructStrengthModifier[static_cast<int>(effectInc)][0] = modifier;
+        continue;
 			}
-			else if (strength.compare("MEDIUM") == 0) {
+			if (strength.compare("MEDIUM") == 0) {
 				asStructStrengthModifier[static_cast<int>(effectInc)][1] = modifier;
+        continue;
 			}
-			else if (strength.compare("HARD") == 0) {
+			if (strength.compare("HARD") == 0) {
 				asStructStrengthModifier[static_cast<int>(effectInc)][2] = modifier;
+        continue;
 			}
-			else if (strength.compare("BUNKER") == 0) {
+			if (strength.compare("BUNKER") == 0) {
 				asStructStrengthModifier[static_cast<int>(effectInc)][3] = modifier;
+        continue;
 			}
-			else {
-				debug(LOG_ERROR, "Unsupported structure strength %s", strength.toUtf8().c_str());
-			}
+
+      debug(LOG_ERROR, "Unsupported structure strength %s", strength.toUtf8().c_str());
 		}
 		ini.endGroup();
 	}
@@ -2665,8 +2675,9 @@ int structureDamage(Structure* psStructure, unsigned damage, WEAPON_CLASS weapon
 
 int getStructureDamage(Structure const* psStructure)
 {
-	auto maxBody = structureBodyBuilt(psStructure);
-	auto health = (int64_t)65536 * psStructure->damageManager->getHp() / MAX(1, maxBody);
+  auto health = (int64_t)65536 * psStructure->damageManager->getHp() /
+                MAX(1, structureBodyBuilt(psStructure));
+
 	CLIP(health, 0, 65536);
 	return 65536 - health;
 }
@@ -2676,20 +2687,20 @@ unsigned structureBuildPointsToCompletion(Structure const& structure)
   if (!structureHasModules(&structure)) {
     return structure.getStats()->build_point_cost;
   }
-  auto moduleStat = getModuleStat(&structure);
-  if (moduleStat != nullptr) {
-    return moduleStat->build_point_cost;
-  }
-  return structure.getStats()->build_point_cost;
+
+  auto const moduleStat = getModuleStat(&structure);
+  return (moduleStat != nullptr
+          ? moduleStat
+          : structure.getStats())->build_point_cost;
 }
 
 // Power returned on demolish, which is half the power taken to build the structure and any modules
-static int structureTotalReturn(const Structure* psStruct)
+static int structureTotalReturn(Structure const* psStruct)
 {
 	auto power = psStruct->getStats()->power_cost;
 	const auto moduleStats = getModuleStat(psStruct);
 
-	if (nullptr != moduleStats) {
+	if (moduleStats != nullptr) {
 		power += psStruct->getCapacity() * moduleStats->power_cost;
 	}
 	return power / 2;
@@ -2702,12 +2713,12 @@ void structureDemolish(Structure* psStruct, Droid* psDroid, int buildPoints)
 
 void structureRepair(Structure* psStruct, int buildRate)
 {
-	auto repairAmount = gameTimeAdjustedAverage(
+  auto repairAmount = gameTimeAdjustedAverage(
           buildRate * structureBody(psStruct),
-	            psStruct->getStats()->build_point_cost);
+          psStruct->getStats()->build_point_cost);
+
 	/*	(droid construction power * current max hitpoints [incl. upgrades])
 			/ construction power that was necessary to build structure in the first place
-
 	=> to repair a building from 1HP to full health takes as much time as building it.
 	=> if buildPoints = 1 and structureBody < buildPoints, repairAmount might get truncated to zero.
 		This happens with expensive, but weak buildings like mortar pits. In this case, do nothing
@@ -2734,18 +2745,10 @@ bool Factory::structSetManufacture(DroidTemplate* psTempl, QUEUE_MODE mode)
 {
   ASSERT_OR_RETURN(false, pimpl != nullptr, "Factory object is undefined");
 	/* psTempl might be NULL if the build is being cancelled in the middle */
-	ASSERT_OR_RETURN(false, !psTempl ||
-          (validTemplateForFactory(psTempl,
-                                   this,
-                                   true) &&
-
-           researchedTemplate(psTempl,
-                              playerManager->getPlayer(),
-                              true, true)) ||
-
-          playerManager->getPlayer() == scavengerPlayer() || !bMultiPlayer,
-                   "Wrong template for player %d factory.",
-                   playerManager->getPlayer());
+  ASSERT_OR_RETURN(false, !psTempl || validTemplateForFactory(psTempl, this, true) &&
+                  researchedTemplate(psTempl, playerManager->getPlayer(), true, true) ||
+                  playerManager->getPlayer() == scavengerPlayer() || !bMultiPlayer,
+                  "Wrong template for player %d factory.", playerManager->getPlayer());
 
 	if (mode == ModeQueue) {
 		sendStructureInfo(this,
@@ -2776,7 +2779,6 @@ bool Factory::structSetManufacture(DroidTemplate* psTempl, QUEUE_MODE mode)
   return true;
 }
 
-/*****************************************************************************/
 /*
 * All this wall type code is horrible, but I really can't think of a better way to do it.
 *        John.

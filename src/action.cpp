@@ -70,7 +70,7 @@ static bool vtolLandingTileSearchFunction(Vector2i coords, void* matchState)
 {
   auto const xyCoords = static_cast<Vector2i*>(matchState);
 
-  if (!vtolCanLandHere(coords.x, coords.y)) {
+  if (!vtolCanLandHere(coords)) {
     return false;
   }
   xyCoords->x = coords.x;
@@ -188,7 +188,7 @@ bool targetInsideFiringDistance(Droid const* psDroid, BaseObject const* psObj, W
 	return false;
 }
 
-bool rotateTurret(BaseObject const* psAttacker, BaseObject const* psTarget, int slot)
+bool rotateTurret(ConstructedObject const* psAttacker, BaseObject const* psTarget, int slot)
 {
   auto weapon = psAttacker->weaponManager->weapons[slot];
   auto rotRate = DEG(ACTION_TURRET_ROTATION_RATE) * 4;

@@ -442,7 +442,7 @@ int targetAttackWeight(BaseObject const* psTarget, BaseObject const* psAttacker,
   return std::max<int>(1, attackWeight);
 }
 
-bool aiChooseTarget(BaseObject const* psObj, BaseObject** ppsTarget, int weapon_slot,
+bool aiChooseTarget(ConstructedObject const* psObj, BaseObject** ppsTarget, int weapon_slot,
 										bool bUpdateTarget, TARGET_ORIGIN* targetOrigin)
 {
   BaseObject * psTarget = nullptr;
@@ -639,7 +639,7 @@ bool updateAttackTarget(BaseObject* psAttacker, int weapon_slot)
   auto psDroid = dynamic_cast<Droid*>(psAttacker);
   auto psBuilding = dynamic_cast<Structure *>(psAttacker);
   if (psDroid == nullptr && psBuilding != nullptr) {
-    setStructureTarget(psBuilding, psBetterTarget, weapon_slot, tmpOrigin);
+    psBuilding->setTarget(psBetterTarget, weapon_slot, tmpOrigin);
     return true;
   }
 

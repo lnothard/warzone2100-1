@@ -81,10 +81,10 @@ void displayComponentButtonObject(Droid* psDroid, const Vector3i* Rotation, cons
 
 void displayComponentObject(Droid* psDroid, const glm::mat4& viewMatrix);
 
-void compPersonToBits(Droid* psDroid);
+void compPersonToBits(Droid const* psDroid);
 
 SDWORD rescaleButtonObject(SDWORD radius, SDWORD baseScale, SDWORD baseRadius);
-void destroyFXDroid(Droid* psDroid, unsigned impactTime);
+void destroyFXDroid(Droid const* psDroid, unsigned impactTime);
 
 void drawMuzzleFlash(Weapon sWeap, iIMDShape* weaponImd, iIMDShape* flashImd, PIELIGHT buildingBrightness, int pieFlag,
                      int pieFlagData, const glm::mat4& viewMatrix, UBYTE colour = 0);
