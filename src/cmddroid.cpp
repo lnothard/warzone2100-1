@@ -62,16 +62,13 @@ bool cmdDroidAddDroid(Droid* psCommander, Droid* psDroid)
 		// set the secondary states for the unit don't reset DSO_ATTACK_RANGE,
     // because there is no way to modify it under commander
 		secondarySetState(psDroid, SECONDARY_ORDER::REPAIR_LEVEL,
-                      (SECONDARY_STATE)(psCommander->getSecondaryOrder() & DSS_REPLEV_MASK),
-		                  ModeImmediate);
+                      (SECONDARY_STATE)(psCommander->getSecondaryOrder() & DSS_REPLEV_MASK));
 		secondarySetState(psDroid, SECONDARY_ORDER::ATTACK_LEVEL,
-                      (SECONDARY_STATE)(psCommander->getSecondaryOrder() & DSS_ALEV_MASK),
-		                  ModeImmediate);
+                      (SECONDARY_STATE)(psCommander->getSecondaryOrder() & DSS_ALEV_MASK));
 		secondarySetState(psDroid, SECONDARY_ORDER::HALT_TYPE,
-                      (SECONDARY_STATE)(psCommander->getSecondaryOrder() & DSS_HALT_MASK),
-		                  ModeImmediate);
+                      (SECONDARY_STATE)(psCommander->getSecondaryOrder() & DSS_HALT_MASK));
 
-		orderDroidObj(psDroid, ORDER_TYPE::GUARD, psCommander, ModeImmediate);
+		orderDroidObj(psDroid, ORDER_TYPE::GUARD, psCommander);
     return true;
 	}
 

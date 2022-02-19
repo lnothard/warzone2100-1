@@ -889,7 +889,6 @@ bool loadConstructStats(WzConfig& ini)
 	return true;
 }
 
-
 /*Load the Propulsion Types from the file exported from Access*/
 bool loadPropulsionTypes(WzConfig& ini)
 {

@@ -42,14 +42,12 @@ bool StatIsFeature(const BaseStats*);
 
 static inline uint16_t interpolateAngle(uint16_t v1, uint16_t v2, unsigned t1, unsigned t2, unsigned t)
 {
-	const auto numer = t - t1, denom = t2 - t1;
-	return v1 + angleDelta(v2 - v1) * numer / denom;
+  return v1 + angleDelta(v2 - v1) * (t - t1) / (t2 - t1);
 }
 
 static Position interpolatePos(Position p1, Position p2, unsigned t1, unsigned t2, unsigned t)
 {
-	const int numer = t - t1, denom = t2 - t1;
-	return p1 + (p2 - p1) * numer / denom;
+  return p1 + (p2 - p1) * (t - t1) / (t2 - t1);
 }
 
 Rotation interpolateRot(Rotation v1, Rotation v2, unsigned t1, unsigned t2, unsigned t)
@@ -86,7 +84,7 @@ Vector2i getStatsSize(BaseStats const* pType, uint16_t direction)
 	if (StatIsStructure(pType)) {
 		return dynamic_cast<StructureStats const*>(pType)->size(direction);
 	}
-	else if (StatIsFeature(pType)) {
+	if (StatIsFeature(pType)) {
 		return dynamic_cast<FeatureStats const*>(pType)->size();
 	}
 	return {1, 1};
@@ -97,7 +95,7 @@ StructureBounds getStructureBounds(BaseObject const* object)
 	if (auto psStructure = dynamic_cast<Structure const*>(object)) {
 		return getStructureBounds(psStructure);
 	}
-	else if (auto psFeature = dynamic_cast<Feature const*>(object)) {
+	if (auto psFeature = dynamic_cast<Feature const*>(object)) {
 		return getStructureBounds(psFeature);
 	}
 
@@ -110,7 +108,7 @@ StructureBounds getStructureBounds(BaseStats const* stats, Vector2i pos, uint16_
 	if (StatIsStructure(stats)) {
 		return getStructureBounds(dynamic_cast<StructureStats const*>(stats), pos, direction);
 	}
-	else if (StatIsFeature(stats)) {
+	if (StatIsFeature(stats)) {
 		return getStructureBounds(dynamic_cast<FeatureStats const*>(stats), pos);
 	}
 

@@ -44,7 +44,6 @@ bool mechanicsShutdown()
 	return true;
 }
 
-
 // Allocate the list for a component
 bool allocComponentList(COMPONENT_TYPE type, int number)
 {

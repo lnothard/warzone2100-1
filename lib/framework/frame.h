@@ -80,22 +80,6 @@ typedef uint32_t PlayerMask;
 typedef uint64_t PlayerMask;
 #endif
 
-enum QUEUE_MODE
-{
-  /**
-   * Sends a message on the game queue, which will get synchronised,
-   * by sending a GAME_ message
-   */
-	ModeQueue,
-
-  /**
-   * Performs the action immediately. Must already have been
-   * synchronised, for example by sending a GAME_ message
-   */
-	ModeImmediate
-};
-
-
 /**
  * Initialise the framework library
  * @param pWindowName the text to appear in the window title bar

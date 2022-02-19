@@ -545,7 +545,7 @@ Vector3i calculateMuzzleBaseLocation(BaseObject const& unit, int weapon_slot)
   return muzzle;
 }
 
-Vector3i calculateMuzzleTipLocation(BaseObject const& unit, int weapon_slot)
+Vector3i calculateMuzzleTipLocation(ConstructedObject const& unit, int weapon_slot)
 {
   auto imd_shape = unit.getImdShape();
   auto const& weapon = unit.weaponManager->weapons[weapon_slot];
@@ -727,7 +727,7 @@ void BaseObject::setPreviousTime(unsigned t)
   pimpl->previousLocation.time = t;
 }
 
-bool hasElectronicWeapon(BaseObject const& unit) noexcept
+bool hasElectronicWeapon(ConstructedObject const& unit) noexcept
 {
   return std::any_of(unit.weaponManager->weapons.begin(),
                      unit.weaponManager->weapons.end(),
@@ -736,7 +736,7 @@ bool hasElectronicWeapon(BaseObject const& unit) noexcept
   });
 }
 
-bool targetInLineOfFire(BaseObject const& unit, BaseObject const& target, int weapon_slot)
+bool targetInLineOfFire(ConstructedObject const& unit, BaseObject const& target, int weapon_slot)
 {
   const auto distance = iHypot((target.getPosition() - unit.getPosition()).xy());
   auto range = unit.weaponManager->weapons[weapon_slot].getMaxRange(unit.playerManager->getPlayer());
@@ -745,11 +745,10 @@ bool targetInLineOfFire(BaseObject const& unit, BaseObject const& target, int we
     return range >= distance &&
            LINE_OF_FIRE_MINIMUM <= calculateLineOfFire(unit, target, weapon_slot);
   }
+
   auto min_angle = calculateLineOfFire(unit, target, weapon_slot);
-  if (min_angle > DEG(PROJ_MAX_PITCH)) {
-    if (iSin(2 * min_angle) < iSin(2 * DEG(PROJ_MAX_PITCH))) {
-      range = range * iSin(2 * min_angle) / iSin(2 * DEG(PROJ_MAX_PITCH));
-    }
+  if (min_angle > DEG(PROJ_MAX_PITCH) && iSin(2 * min_angle) < iSin(2 * DEG(PROJ_MAX_PITCH))) {
+    range = range * iSin(2 * min_angle) / iSin(2 * DEG(PROJ_MAX_PITCH));
   }
   return range >= distance;
 }

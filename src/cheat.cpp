@@ -92,7 +92,6 @@ static CHEAT_ENTRY cheatCodes[] =
 	{"autogame on", kf_AutoGame},
 	{"autogame off", kf_AutoGame},
 	{"shakey", kf_ToggleShakeStatus}, //shakey
-
 };
 
 bool _attemptCheatCode(const char* cheat_name)
@@ -189,53 +188,4 @@ static std::string getWantedDebugMappingStatuses(const DebugInputManager& dbgInp
 	std::sort(ret, p);
 	*p++ = '\0';
 	return ret;
-}
-
-void recvProcessDebugMappings(NETQUEUE queue)
-{
-	bool val = false;
-	NETbeginDecode(queue, GAME_DEBUG_MODE);
-	NETbool(&val);
-	NETend();
-
-	auto& dbgInputManager = gInputManager.debugManager();
-	bool oldDebugMode = dbgInputManager.debugMappingsAllowed();
-	dbgInputManager.setPlayerWantsDebugMappings(queue.index, val);
-	bool newDebugMode = dbgInputManager.debugMappingsAllowed();
-
-	std::string cmsg;
-	if (val) {
-		cmsg = astringf(
-			_("%s wants to enable debug mode. Enabled: %s, Disabled: %s."),
-			getPlayerName(queue.index),
-			getWantedDebugMappingStatuses(dbgInputManager, true).c_str(),
-			getWantedDebugMappingStatuses(dbgInputManager, false).c_str()
-		);
-	}
-	else {
-		cmsg = astringf(
-			_("%s wants to disable debug mode. Enabled: %s, Disabled: %s."),
-			getPlayerName(queue.index),
-			getWantedDebugMappingStatuses(dbgInputManager, true).c_str(),
-			getWantedDebugMappingStatuses(dbgInputManager, false).c_str()
-		);
-	}
-
-	addConsoleMessage(cmsg.c_str(), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
-	if (!oldDebugMode && newDebugMode) {
-		addConsoleMessage(_("Debug mode now enabled!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
-		Cheated = true;
-		gInputManager.contexts().set(InputContext::DEBUG_MISC, InputContext::State::ACTIVE);
-		triggerEventCheatMode(true);
-    return;
-	}
-
-  if (!oldDebugMode || newDebugMode)
-    return;
-
-  addConsoleMessage(_("Debug mode now disabled!"), CONSOLE_TEXT_JUSTIFICATION::DEFAULT, SYSTEM_MESSAGE);
-  if (!NETisReplay()) {
-    gInputManager.contexts().set(InputContext::DEBUG_MISC, InputContext::State::INACTIVE);
-  }
-  triggerEventCheatMode(false);
 }

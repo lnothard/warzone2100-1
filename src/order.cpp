@@ -32,7 +32,6 @@
 #include "ai.h"
 #include "droid.h"
 #include "map.h"
-#include "multiplay.h"
 #include "objmem.h"
 #include "order.h"
 #include "projectile.h"
@@ -172,7 +171,7 @@ Droid* checkForRepairRange(Droid* psDroid)
 		  	distanceSq <= bestDistanceSq && // must be as close as possible
 		  	aiCheckAlliances(psDroid->playerManager->getPlayer(),
                          droid->playerManager->getPlayer()) && // must be a friendly droid
-		  	droidIsDamaged(droid) && // must need repairing
+		  	droid->isDamaged() && // must need repairing
 		  	visibleObject(psDroid,
                       droid,
                       false)) { // must be able to sense it
@@ -362,7 +361,7 @@ static void orderPlayFireSupportAudio(BaseObject const* psObj)
 }
 
 /** This function sends the droid an order. It uses sendDroidInfo() if mode == ModeQueue and orderDroidBase() if not. */
-void orderDroid(Droid* psDroid, ORDER_TYPE order, QUEUE_MODE mode)
+void orderDroid(Droid* psDroid, ORDER_TYPE order)
 {
   using enum ORDER_TYPE;
   
@@ -379,13 +378,8 @@ void orderDroid(Droid* psDroid, ORDER_TYPE order, QUEUE_MODE mode)
 	       "orderUnit: Invalid order");
 
 	Order sOrder(order);
-	if (mode == ModeQueue && bMultiPlayer) {
-		sendDroidInfo(psDroid, sOrder, false);
-	}
-	else {
-		orderClearDroidList(psDroid);
-		orderDroidBase(psDroid, &sOrder);
-	}
+  orderClearDroidList(psDroid);
+  orderDroidBase(psDroid, &sOrder);
 }
 
 /**
@@ -420,16 +414,12 @@ bool validOrderForLoc(ORDER_TYPE order)
  * list using sendDroidInfo(), else, a DROID_ORDER_DATA is alloc,
  * the old order list is erased, and the order is sent using orderDroidBase().
  */
-void orderDroidLoc(Droid* psDroid, ORDER_TYPE order, unsigned x, unsigned y, QUEUE_MODE mode)
+void orderDroidLoc(Droid* psDroid, ORDER_TYPE order, unsigned x, unsigned y)
 {
 	ASSERT_OR_RETURN(, psDroid != nullptr, "Invalid unit pointer");
 	ASSERT_OR_RETURN(, validOrderForLoc(order), "Invalid order for location");
 
 	auto sOrder = Order{order, Vector2i(x, y)};
-	if (mode == ModeQueue) {
-		sendDroidInfo(psDroid, sOrder, false);
-		return; // Wait to receive our order before changing the droid.
-	}
 	orderClearDroidList(psDroid);
 	orderDroidBase(psDroid, &sOrder);
 }
@@ -479,7 +469,7 @@ bool validOrderForObj(ORDER_TYPE order)
  * is alloc, the old order list is erased, and the order is sent 
  * using orderDroidBase().
  */
-void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject* psObj, QUEUE_MODE mode)
+void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject* psObj)
 {
 	ASSERT(psDroid != nullptr, "Invalid unit pointer");
 	ASSERT(validOrderForObj(order), "Invalid order for object");
@@ -487,10 +477,6 @@ void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject* psObj, QUEUE_MO
 	ASSERT_OR_RETURN(, !psObj->damageManager->isDead(), "Target dead");
 
 	auto sOrder = Order{order, *psObj};
-	if (mode == ModeQueue)  {
-		sendDroidInfo(psDroid, sOrder, false);
-		return; // Wait for the order to be received before changing the droid.
-	}
 	orderClearDroidList(psDroid);
 	orderDroidBase(psDroid, &sOrder);
 }
@@ -548,9 +534,9 @@ BaseObject* orderStateObj(Droid const* psDroid, ORDER_TYPE order)
 	  	break;
 
 	  case HELP_BUILD:
-	  	if (psDroid->getAction() == ACTION::BUILD ||
-	  		psDroid->getAction() == ACTION::BUILD_WANDER ||
-	  		psDroid->getAction() == ACTION::MOVE_TO_BUILD) {
+      if (psDroid->getAction() == ACTION::BUILD ||
+          psDroid->getAction() == ACTION::BUILD_WANDER ||
+          psDroid->getAction() == ACTION::MOVE_TO_BUILD) {
 	  		return psDroid->getOrder()->target;
 	  	}
 	  	break;
@@ -575,7 +561,6 @@ BaseObject* orderStateObj(Droid const* psDroid, ORDER_TYPE order)
 	return nullptr;
 }
 
-
 /**
  * This function sends the droid an order with a location and stats.
  * If the mode is ModeQueue, the order is added to the droid's order
@@ -583,42 +568,19 @@ BaseObject* orderStateObj(Droid const* psDroid, ORDER_TYPE order)
  * old order list is erased, and the order is sent using orderDroidBase().
  */
 void orderDroidStatsLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats,
-                           unsigned x, unsigned y, uint16_t direction, QUEUE_MODE mode)
+                           unsigned x, unsigned y, uint16_t direction)
 {
 	ASSERT(psDroid != nullptr, "Invalid unit pointer");
 	ASSERT(order == ORDER_TYPE::BUILD, "Invalid order for location");
 
 	Order sOrder(order, *psStats, Vector2i(x, y), direction);
-	if (mode == ModeQueue && bMultiPlayer) {
-		sendDroidInfo(psDroid, sOrder, false);
-		return; // Wait for our order before changing the droid.
-	}
-
 	orderClearDroidList(psDroid);
 	orderDroidBase(psDroid, &sOrder);
 }
 
-/**
- * This function adds that order to the droid's list using sendDroidInfo().
- * @todo seems closely related with orderDroidStatsLocDir(). See if this one can be incorporated on it.
- */
-void orderDroidStatsLocDirAdd(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, unsigned x, unsigned y,
-                              uint16_t direction, bool add)
-{
-	ASSERT(psDroid != nullptr, "Invalid unit pointer");
-
-	// can only queue build orders with this function
-	if (order != ORDER_TYPE::BUILD) {
-		return;
-	}
-	sendDroidInfo(psDroid, Order(order, *psStats,
-                               Vector2i(x, y), direction), add);
-}
-
-
 /// Equivalent to orderDroidStatsLocDir(), but uses two locations.
 void orderDroidStatsTwoLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, unsigned x1, unsigned y1,
-                              unsigned x2, unsigned y2, uint16_t direction, QUEUE_MODE mode)
+                              unsigned x2, unsigned y2, uint16_t direction)
 {
 	ASSERT(psDroid != nullptr, "Invalid unit pointer");
 	ASSERT(order == ORDER_TYPE::LINE_BUILD, "Invalid order for location");
@@ -626,28 +588,9 @@ void orderDroidStatsTwoLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* 
 	Order sOrder(order, *psStats,
                Vector2i(x1, y1),
                Vector2i(x2, y2), direction);
-	if (mode == ModeQueue && bMultiPlayer) {
-		sendDroidInfo(psDroid, sOrder, false);
-    // wait for our order before changing the droid
-		return;
-	}
+
 	orderClearDroidList(psDroid);
 	orderDroidBase(psDroid, &sOrder);
-}
-
-/** Equivalent to orderDroidStatsLocDirAdd(), but uses two locations.
- * @todo seems closely related with orderDroidStatsTwoLocDir(). See if this can be incorporated on it.
- */
-void orderDroidStatsTwoLocDirAdd(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats,
-                                 unsigned x1, unsigned y1, unsigned x2, unsigned y2, unsigned direction)
-{
-	ASSERT(psDroid != nullptr, "Invalid unit pointer");
-	ASSERT(order == ORDER_TYPE::LINE_BUILD, "Invalid order for location");
-
-	sendDroidInfo(psDroid, Order(order, *psStats,
-                                Vector2i(x1, y1),
-                               Vector2i(x2, y2),
-                               direction), true);
 }
 
 /**
@@ -707,7 +650,6 @@ static bool orderDroidLocAdd(Droid* psDroid, ORDER_TYPE order, unsigned x, unsig
 	if (order != MOVE && order != SCOUT && order != DISEMBARK) {
 		return false;
 	}
-	sendDroidInfo(psDroid, Order(order, Vector2i(x, y)), add);
 	return true;
 }
 
@@ -735,8 +677,6 @@ static bool orderDroidObjAdd(Droid* psDroid, Order const& order, bool add)
 	  default:
 	  	return false;
 	}
-
-	sendDroidInfo(psDroid, order, add);
 	return true;
 }
 
@@ -752,17 +692,12 @@ ORDER_TYPE chooseOrderLoc(Droid* psDroid, int x, int y, bool altOrder)
 	auto propulsion = dynamic_cast<PropulsionStats const*>(
           psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
 
-	if (isTransporter(*psDroid) &&
-      game.type == LEVEL_TYPE::CAMPAIGN) {
-		// transporter cannot be player-controlled in campaign
-		return NONE;
-	}
-
 	// default to move; however, we can only end up on a tile
 	// where can stay, i.e., VTOLs must be able to land as well
 	if (psDroid->isVtol()) {
 		propulsion->propulsionType = PROPULSION_TYPE::WHEELED;
 	}
+
 	if (!fpathBlockingTile({map_coord(x), map_coord(y)},
                          propulsion->propulsionType)) {
 		order = MOVE;
@@ -832,14 +767,6 @@ void orderSelectedLoc(unsigned player, unsigned x, unsigned y, bool add)
 	for (auto& psCurr : playerList[player].droids)
 	{
 		if (psCurr.damageManager->isSelected()) {
-			// can't use bMultiPlayer since multimsg could be off.
-			if (psCurr.getType() == DROID_TYPE::SUPER_TRANSPORTER &&
-          game.type == LEVEL_TYPE::CAMPAIGN) {
-				// a transporter in campaign mode cannot be controlled by players
-				DeSelectDroid(&psCurr);
-				continue;
-			}
-
 			auto order = chooseOrderLoc(&psCurr, x, y, specialOrderKeyDown());
 			// see if the order can be added to the list
 			if (order != ORDER_TYPE::NONE &&

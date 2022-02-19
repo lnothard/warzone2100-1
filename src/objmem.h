@@ -36,7 +36,7 @@
 /* The lists of objects allocated */
 extern std::array<std::vector<FlagPosition*>, MAX_PLAYERS> apsFlagPosLists;
 extern std::array<std::vector<ResourceExtractor*>, MAX_PLAYERS> apsExtractorLists;
-extern std::vector<BaseObject*> apsSensorList;
+extern std::vector<ConstructedObject*> apsSensorList;
 extern std::array<std::vector<Feature*>, MAX_PLAYERS> apsFeatureLists;
 
 /* The list of destroyed objects */

@@ -36,10 +36,7 @@
 #include "ai.h"
 #include "console.h"
 #include "lib/framework/input.h"
-#include "levels.h"
 #include "main.h"
-#include "multiplay.h"
-
 
 #define		TIMER_Y					22
 #define RET_FORMWIDTH		132
@@ -103,9 +100,8 @@ void setConsoleCalcLayout(const CONSOLE_CALC_LAYOUT_FUNC& layoutFunc)
 /** Sets the system up */
 void initConsoleMessages()
 {
-	unsigned duration = game.type == LEVEL_TYPE::SKIRMISH
-                                  ? DEFAULT_MESSAGE_DURATION
-                                  : DEFAULT_MESSAGE_DURATION_CAMPAIGN;
+  unsigned duration = DEFAULT_MESSAGE_DURATION;
+
 	linePitch = iV_GetTextLineSize(font_regular);
 	bConsoleDropped = false;
 	setConsoleMessageDuration(duration); // Setup how long messages are displayed for
@@ -115,7 +111,7 @@ void initConsoleMessages()
 	//	Set up the main console size and position x,y,width
 	setConsoleCalcLayout([]()
 	{
-    setConsoleSizePos(16, !challengeActive && game.type == LEVEL_TYPE::SKIRMISH
+    setConsoleSizePos(16, !challengeActive
                           ? 32 : 32 + TIMER_Y,
                       pie_GetVideoBufferWidth() - 32);
 	});

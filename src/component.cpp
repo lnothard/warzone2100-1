@@ -51,8 +51,8 @@ static constexpr auto EMP_DISABLE_TIME = 10000;
 enum class FACTION;
 int bobTransporterHeight();
 const FACTION* getPlayerFaction(uint8_t);
-iIMDShape* getFactionIMD(const FACTION*, iIMDShape*);
-Spacetime interpolateObjectSpacetime(const PlayerOwnedObject *, unsigned);
+iIMDShape* getFactionIMD(FACTION const*, iIMDShape*);
+Spacetime interpolateObjectSpacetime(PlayerOwnedObject const*, unsigned);
 bool missionIsOffworld();
 bool gamePaused();
 COMPONENT_TYPE StatIsComponent(BaseStats*);
@@ -147,7 +147,6 @@ unsigned getResearchRadius(BaseStats* Stat)
 	return 100;
 }
 
-
 unsigned getStructureSizeMax(Structure* psStructure)
 {
 	// radius based on base plate size
@@ -163,19 +162,18 @@ unsigned getStructureStatSizeMax(StructureStats* Stats)
 
 unsigned getStructureStatHeight(StructureStats const* psStat)
 {
-	if (psStat->IMDs[0]) {
-		return (psStat->IMDs[0]->max.y - psStat->IMDs[0]->min.y);
-	}
-	return 0;
+  return psStat->IMDs[0]
+         ? psStat->IMDs[0]->max.y - psStat->IMDs[0]->min.y
+         : 0;
 }
 
 static void draw_player_3d_shape(unsigned player_index, iIMDShape* shape, 
                                  int frame, PIELIGHT colour, int pie_flag,
                                  int pie_flag_data, const glm::mat4& model_view)
 {
-	auto faction_shape = getFactionIMD(getPlayerFaction(player_index), shape);
-	pie_Draw3DShape(faction_shape, frame, getPlayerColour(player_index), colour,
-                  pie_flag, pie_flag_data, model_view);
+  pie_Draw3DShape(getFactionIMD(getPlayerFaction(player_index), shape), frame,
+                  getPlayerColour(player_index), colour, pie_flag,
+                  pie_flag_data, model_view);
 }
 
 void displayIMDButton(iIMDShape* IMDShape, const Vector3i* Rotation, 
@@ -338,17 +336,16 @@ void displayResearchButton(BaseStats* Stat, const Vector3i* Rotation, const Vect
                        WZCOL_WHITE, pie_BUTTON, 0, matrix);
 }
 
-
-static iIMDShape* getLeftPropulsionIMD(Droid* psDroid)
+static iIMDShape* getLeftPropulsionIMD(Droid const* psDroid)
 {
-	auto bodyStat = psDroid->asBits[COMPONENT_TYPE::BODY];
-	auto propStat = psDroid->asBits[COMPONENT_TYPE::PROPULSION];
+	auto bodyStat = dynamic_cast<BodyStats const*>(psDroid->getComponent(COMPONENT_TYPE::BODY));
+	auto propStat = dynamic_cast<PropulsionStats const*>(psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
   
-	return asBodyStats[bodyStat].ppIMDList[
+	return bodyStat->ppIMDList[
           propStat * PROP_SIDE::COUNT + PROP_SIDE::LEFT];
 }
 
-static iIMDShape* getRightPropulsionIMD(Droid* psDroid)
+static iIMDShape* getRightPropulsionIMD(Droid const* psDroid)
 {
 	auto bodyStat = psDroid->asBits[COMPONENT_TYPE::BODY];
 	auto propStat = psDroid->asBits[COMPONENT_TYPE::PROPULSION];
@@ -608,14 +605,12 @@ static bool displayCompObj(Droid* psDroid, bool bButton,
 		  			localModelMatrix *= glm::translate(
                     glm::vec3(0.f, 0.f, recoilValue / 3.f));
 
-		  			/* Draw it */
-		  			if (psShape) {
-		  				if (pie_Draw3DShape(
-                      psShape, 0, colour, brightness,
-                      pieFlag, iPieData, viewMatrix * localModelMatrix)) {
-		  					didDrawSomething = true;
-		  				}
-		  			}
+            /* Draw it */
+            if (psShape && pie_Draw3DShape(
+                    psShape, 0, colour, brightness,
+                    pieFlag, iPieData, viewMatrix * localModelMatrix)) {
+              didDrawSomething = true;
+            }
 		  			localModelMatrix *= glm::translate(
                     glm::vec3(0, 0, recoilValue));
 

@@ -491,7 +491,7 @@ bool aiChooseTarget(ConstructedObject const* psObj, BaseObject** ppsTarget, int 
   // see if there is a target from the command droids
   psTarget = nullptr;
   psCommander = cmdDroidGetDesignator(psObj->playerManager->getPlayer());
-  if (!proj_Direct(psWStats) && (psCommander != nullptr) &&
+  if (!proj_Direct(psWStats) && psCommander != nullptr &&
     aiStructHasRange(structure, (BaseObject *)psCommander, weapon_slot)) {
     // there is a commander that can fire designate for this structure
     // set bCommanderBlock so that the structure does not fire until the commander

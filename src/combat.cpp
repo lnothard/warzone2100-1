@@ -341,11 +341,11 @@ void counterBatteryFire(BaseObject* psAttacker, BaseObject* psTarget)
 
     // Inform viewer of target
     if (psDroid) {
-      orderDroidObj(psDroid, ORDER_TYPE::OBSERVE, psAttacker, ModeImmediate);
+      orderDroidObj(psDroid, ORDER_TYPE::OBSERVE, psAttacker);
       continue;
     }
     if (!psStruct) continue;
-    setStructureTarget(psStruct, psAttacker, 0, TARGET_ORIGIN::CB_SENSOR);
+    psStruct->setTarget(psAttacker, 0, TARGET_ORIGIN::CB_SENSOR);
   }
 }
 

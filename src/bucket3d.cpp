@@ -82,8 +82,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, glm::mat4 con
 
       /* 16 below is HACK!!! */
 	  	z = pie_RotateProject(&position, viewMatrix, &pixel) - 16;
-      if (z <= 0)
-        break;
+      if (z <= 0) break;
 
       //particle use the image radius
       radius = ((Particle*)pObject)->imd->radius;
@@ -94,6 +93,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, glm::mat4 con
         z = -1;
       }
       break;
+
 	  case RENDER_PROJECTILE: {
       auto psProj = static_cast<Projectile*>(pObject);
       if (psProj && (psProj->getWeaponStats()->weaponSubClass == WEAPON_SUBCLASS::FLAME ||

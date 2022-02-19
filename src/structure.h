@@ -378,10 +378,10 @@ public:
   [[nodiscard]] FlagPosition const* getAssemblyPoint() const;
   [[nodiscard]] Droid const* getCommander() const;
   void aiUpdate();
-  bool structSetManufacture(DroidTemplate* psTempl, QUEUE_MODE mode);
+  bool structSetManufacture(DroidTemplate* psTempl);
   void refundBuildPower();
-  void releaseProduction(QUEUE_MODE mode);
-  void holdProduction(QUEUE_MODE mode);
+  void releaseProduction();
+  void holdProduction();
   void assignFactoryCommandDroid(Droid* commander);
   bool setFactoryState(SECONDARY_ORDER sec, SECONDARY_STATE state);
   bool getFactoryState(SECONDARY_ORDER sec, SECONDARY_STATE* pState);
@@ -391,7 +391,7 @@ public:
   ProductionRun getProduction(DroidTemplate *psTemplate);
   void factoryLoopAdjust(bool add);
   [[nodiscard]] FlagPosition* FindFactoryDelivery() const;
-  void cancelProduction(QUEUE_MODE mode, bool mayClearProductionRun);
+  void cancelProduction(bool mayClearProductionRun);
   DroidTemplate* factoryProdUpdate(DroidTemplate* psTemplate);
 private:
   struct Impl;
@@ -535,7 +535,7 @@ void structureBuild(Structure* psStructure, Droid* psDroid, int buildPoints, int
 void structureDemolish(Structure* psStructure, Droid* psDroid, int buildPoints);
 void structureRepair(Structure* psStruct, int buildRate);
 /* Set the type of droid for a factory to build */
-bool structSetManufacture(Structure* psStruct, DroidTemplate* psTempl, QUEUE_MODE mode);
+bool structSetManufacture(Structure* psStruct, DroidTemplate* psTempl);
 unsigned structureBuildPointsToCompletion(const Structure& structure);
 float structureCompletionProgress(const Structure& structure);
 
@@ -709,16 +709,16 @@ void factoryLoopAdjust(Structure* psStruct, bool add);
 
 /*cancels the production run for the factory and returns any power that was
 accrued but not used*/
-void cancelProduction(Structure* psBuilding, QUEUE_MODE mode, bool mayClearProductionRun = true);
+void cancelProduction(Structure* psBuilding, bool mayClearProductionRun = true);
 
 /*set a factory's production run to hold*/
-void holdProduction(Structure* psBuilding, QUEUE_MODE mode);
+void holdProduction(Structure* psBuilding);
 
 /*release a factory's production run from hold*/
-void releaseProduction(Structure* psBuilding, QUEUE_MODE mode);
+void releaseProduction(Structure* psBuilding);
 
 /// Does the next item in the production list.
-void doNextProduction(Structure* psStructure, DroidTemplate* current, QUEUE_MODE mode);
+void doNextProduction(Structure* psStructure, DroidTemplate* current);
 
 // Count number of factories assignable to a command droid.
 UWORD countAssignableFactories(UBYTE player, UWORD FactoryType);
@@ -807,10 +807,6 @@ static inline Rotation structureGetInterpolatedWeaponRotation(Structure const* p
                         psStructure->weaponManager->weapons[weaponSlot].getRotation(),
                         psStructure->getPreviousLocation().time, psStructure->getTime(), time);
 }
-
-#define setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin) _setStructureTarget(_psBuilding, _psNewTarget, _idx, _targetOrigin, __LINE__, __FUNCTION__)
-
-
 
 // Functions for the GUI to know what's pending, before it's synchronised.
 template <typename Functionality, typename Subject>

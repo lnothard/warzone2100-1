@@ -226,7 +226,7 @@ void orderCheckList(Droid* psDroid);
 void orderUpdateDroid(Droid* psDroid);
 
 /** \brief Sends an order to a droid. */
-void orderDroid(Droid* psDroid, ORDER_TYPE order, QUEUE_MODE mode);
+void orderDroid(Droid* psDroid, ORDER_TYPE order);
 
 /** \brief Compares droid's order with order. */
 bool orderState(Droid const* psDroid, ORDER_TYPE order);
@@ -238,27 +238,27 @@ bool validOrderForLoc(ORDER_TYPE order);
 bool validOrderForObj(ORDER_TYPE order);
 
 /** \brief Sends an order with a location to a droid. */
-void orderDroidLoc(Droid* psDroid, ORDER_TYPE order, unsigned x, unsigned y, QUEUE_MODE mode);
+void orderDroidLoc(Droid* psDroid, ORDER_TYPE order, unsigned x, unsigned y);
 
 /** \brief Gets the state of a droid order with a location. */
 bool orderStateLoc(Droid* psDroid, ORDER_TYPE order, unsigned* pX, unsigned* pY);
 
 /** \brief Sends an order with an object target to a droid. */
-void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject* psObj, QUEUE_MODE mode);
+void orderDroidObj(Droid* psDroid, ORDER_TYPE order, BaseObject* psObj);
 
 /** \brief Gets the state of a droid's order with an object. */
 BaseObject* orderStateObj(Droid const* psDroid, ORDER_TYPE order);
 
 /** \brief Sends an order with a location and a stat to a droid. */
 void orderDroidStatsLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, unsigned x, unsigned y,
-                           uint16_t direction, QUEUE_MODE mode);
+                           uint16_t direction);
 
 /** \brief Gets the state of a droid order with a location and a stat. */
 bool orderStateStatsLoc(Droid const* psDroid, ORDER_TYPE order, StructureStats** ppsStats);
 
 /** \brief Sends an order with a location and a stat to a droid. */
 void orderDroidStatsTwoLocDir(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, unsigned x1, unsigned y1,
-                              unsigned x2, unsigned y2, uint16_t direction, QUEUE_MODE mode);
+                              unsigned x2, unsigned y2, uint16_t direction);
 
 /** \brief Sends an order with two locations and a stat to a droid. */
 void orderDroidStatsTwoLocDirAdd(Droid* psDroid, ORDER_TYPE order, StructureStats* psStats, unsigned x1, unsigned y1,
@@ -296,10 +296,10 @@ void orderSelectedStatsTwoLocDir(unsigned player, ORDER_TYPE order, StructureSta
 bool secondarySupported(Droid* psDroid, SECONDARY_ORDER sec);
 
 /** \brief Gets the state of a secondary order, return false if unsupported. */
-SECONDARY_STATE secondaryGetState(Droid* psDroid, SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate);
+SECONDARY_STATE secondaryGetState(Droid* psDroid, SECONDARY_ORDER sec);
 
 /** \brief Sets the state of a secondary order, return false if failed. */
-bool secondarySetState(Droid* psDroid, SECONDARY_ORDER sec, SECONDARY_STATE State, QUEUE_MODE mode = ModeQueue);
+bool secondarySetState(Droid* psDroid, SECONDARY_ORDER sec, SECONDARY_STATE State);
 
 /** \brief Checks the damage level of a droid against it's secondary state. */
 void secondaryCheckDamageLevel(Droid* psDroid);

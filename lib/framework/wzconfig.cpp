@@ -118,7 +118,7 @@ WzConfig::WzConfig(const WzString &name, WzConfig::warning warning)
 	ASSERT(mRoot.is_object(), "JSON document from %s is not an object. Read: \n%s", name.toUtf8().c_str(), data);
 	free(data);
 	WZ_PHYSFS_enumerateFiles("diffs", [&](const char *i) -> bool {
-		std::string str(std::string("diffs/") + i + std::string("/") + name.toUtf8().c_str());
+		std::string str(std::string("diffs/") + i + std::string("/") + name.toUtf8());
 		if (!PHYSFS_exists(str.c_str()))
 		{
 			return true; // continue;
