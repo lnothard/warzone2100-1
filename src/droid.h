@@ -223,7 +223,7 @@ public:
   [[nodiscard]] BaseObject const* getTarget(int idx) const override;
   [[nodiscard]] Group const* getGroup() const;
   [[nodiscard]] Structure const* getBase() const;
-  [[nodiscard]] ComponentStats const* getComponent(COMPONENT_TYPE compName) const;
+  [[nodiscard]] unsigned getComponent(COMPONENT_TYPE compName) const;
   [[nodiscard]] unsigned getTimeActionStarted() const;
   [[nodiscard]] unsigned getExperience() const;
   [[nodiscard]] unsigned getKills() const;
@@ -245,7 +245,7 @@ public:
   [[nodiscard]] bool hasCbSensor() const override;
   [[nodiscard]] int droidDamage(unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass,
                                 unsigned impactTime, bool isDPS, int minDamage);
-  void orderDroidCmd(ORDER_TYPE order, QUEUE_MODE mode);
+  void orderDroidCmd(ORDER_TYPE order);
   void setAudioId(int audio);
   void setUpBuildModule();
   void moveToRearm();
@@ -278,10 +278,10 @@ public:
   void moveDroidToDirect(Vector2i location);
   void moveTurnDroid(Vector2i location);
   void moveShuffleDroid(Vector2i s);
-  bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state, QUEUE_MODE mode = ModeQueue);
+  bool secondarySetState(SECONDARY_ORDER sec, SECONDARY_STATE state);
   void actionDroidBase(Action const* psAction);
   RtrBestResult decideWhereToRepairAndBalance();
-  SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec, QUEUE_MODE mode = ModeImmediate);
+  SECONDARY_STATE secondaryGetState(SECONDARY_ORDER sec);
   void orderDroidAdd(Order* order_);
   void orderDroidAddPending(Order* order_);
 
@@ -571,7 +571,7 @@ bool checkValidWeaponForProp(DroidTemplate* psTemplate);
 const char* getDroidNameForRank(unsigned rank);
 
 /*called when a Template is deleted in the Design screen*/
-void deleteTemplateFromProduction(DroidTemplate* psTemplate, unsigned player, QUEUE_MODE mode);
+void deleteTemplateFromProduction(DroidTemplate* psTemplate, unsigned player);
 // ModeQueue deletes from production queues, which are not yet synchronised. ModeImmediate deletes from current production which is synchronised.
 
 // Select a droid and do any necessary housekeeping.

@@ -25,8 +25,6 @@
 
 #include <fmt/core.h>
 
-#include "mission.h"
-#include "multiint.h"
 #include "objmem.h"
 #include "power.h"
 
@@ -208,15 +206,9 @@ void powerCalc(bool on)
 //	return extractedPoints;
 //}
 
-//returns the relevant list based on OffWorld or OnWorld
 std::vector<Structure>& powerStructList(unsigned player)
 {
-	if (offWorldKeepLists) {
-		return mission.players[player].structures;
-	}
-	else {
-		return playerList[player].structures;
-	}
+  return playerList[player].structures;
 }
 
 /* Update current power based on what Power Generators exist */

@@ -104,7 +104,7 @@ static int bucketCalculateZ(RENDER_TYPE objectType, void* pObject, glm::mat4 con
         break;
       }
       //the weapon stats holds the reference to which graphic to use
-      pImd = psProj->getWeaponStats()->pInFlightGraphic.get();
+      pImd = psProj->getWeaponStats()->pInFlightGraphic;
 
       psSimpObj = static_cast<BaseObject*>(pObject);
       position.x = psSimpObj->getPosition().x - playerPos.p.x;
@@ -284,7 +284,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
 	auto z = bucketCalculateZ(objectType, pObject, viewMatrix);
 
 	if (z < 0) {
-		/* Object will not be render - has been clipped! */
+		/* Object will not be rendered - has been clipped! */
 		if (objectType == RENDER_TYPE::RENDER_DROID || objectType == RENDER_TYPE::RENDER_STRUCTURE) {
 			/* Won't draw selection boxes */
 			((BaseObject *)pObject)->setFrameNumber(0);
@@ -316,7 +316,7 @@ void bucketAddTypeToList(RENDER_TYPE objectType, void* pObject, const glm::mat4&
       }
       break;
     case RENDER_DROID:
-      pie = BODY_IMD(((Droid *)pObject), 0).get();
+      pie = BODY_IMD(((Droid *)pObject), 0);
       z = INT32_MAX - pie->texpage;
       break;
     case RENDER_STRUCTURE:

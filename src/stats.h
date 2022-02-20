@@ -26,10 +26,11 @@
 #ifndef __INCLUDED_SRC_STATS_H__
 #define __INCLUDED_SRC_STATS_H__
 
+#include <deque>
 #include "lib/framework/wzconfig.h"
 
-class BaseObject;
-
+struct BaseObject;
+struct StructureStats;
 
 static constexpr auto SHOOT_ON_GROUND = 0x01;
 static constexpr auto SHOOT_IN_AIR = 0x02;
@@ -185,7 +186,7 @@ enum class MOVEMENT_MODEL
  * Used to modify the damage to a propulsion type (or structure) 
  * based on weapon type
  */
-enum class WEAPON_EFFECT
+enum WEAPON_EFFECT
 {
     ANTI_PERSONNEL,
     ANTI_TANK,
@@ -297,7 +298,7 @@ struct ComponentStats : public BaseStats
     } base, upgraded[MAX_PLAYERS];
 
     /// The IMD to draw for this component
-    std::shared_ptr<iIMDShape> pIMD = nullptr;
+    iIMDShape* pIMD = nullptr;
 
     /// Power required to build the component
     unsigned buildPower = 0;
@@ -333,7 +334,7 @@ struct PropulsionStats : public ComponentStats
 
 struct SensorStats : public ComponentStats
 {
-    std::shared_ptr<iIMDShape> pMountGraphic = nullptr; ///< The turret mount to use
+    iIMDShape* pMountGraphic = nullptr; ///< The turret mount to use
     LOC location = LOC::DEFAULT; ///< specifies whether the Sensor is default or for the Turret
     SENSOR_TYPE type = SENSOR_TYPE::STANDARD; ///< used for combat
 
@@ -345,7 +346,7 @@ struct SensorStats : public ComponentStats
 
 struct EcmStats : public ComponentStats
 {
-    std::shared_ptr<iIMDShape> pMountGraphic = nullptr; ///< The turret mount to use
+    iIMDShape* pMountGraphic = nullptr; ///< The turret mount to use
     LOC location = LOC::DEFAULT; ///< Specifies whether the ECM is default or for the Turret
 
     struct : Upgradeable
@@ -356,7 +357,7 @@ struct EcmStats : public ComponentStats
 
 struct RepairStats : public ComponentStats
 {
-    std::shared_ptr<iIMDShape> pMountGraphic = nullptr; ///< The turret mount to use
+    iIMDShape* pMountGraphic = nullptr; ///< The turret mount to use
     LOC location = LOC::DEFAULT; ///< Specifies whether the Repair is default or for the Turret
     unsigned time = 0; ///< Time delay for repair cycle
 
@@ -421,13 +422,13 @@ struct WeaponStats : public ComponentStats
     unsigned numExplosions = 0; ///< The number of explosions per shot
 
     /* Graphics used for the weapon */
-    std::shared_ptr<iIMDShape> pMountGraphic = nullptr; ///< The turret mount to use
-    std::shared_ptr<iIMDShape> pMuzzleGraphic = nullptr; ///< The muzzle flash
-    std::shared_ptr<iIMDShape> pInFlightGraphic = nullptr; ///< The ammo in flight
-    std::shared_ptr<iIMDShape> pTargetHitGraphic = nullptr; ///< The ammo hitting a target
-    std::shared_ptr<iIMDShape> pTargetMissGraphic = nullptr; ///< The ammo missing a target
-    std::shared_ptr<iIMDShape> pWaterHitGraphic = nullptr; ///< The ammo hitting water
-    std::shared_ptr<iIMDShape> pTrailGraphic = nullptr; ///< The trail used for in flight
+    iIMDShape* pMountGraphic = nullptr; ///< The turret mount to use
+    iIMDShape* pMuzzleGraphic = nullptr; ///< The muzzle flash
+    iIMDShape* pInFlightGraphic = nullptr; ///< The ammo in flight
+    iIMDShape* pTargetHitGraphic = nullptr; ///< The ammo hitting a target
+    iIMDShape* pTargetMissGraphic = nullptr; ///< The ammo missing a target
+    iIMDShape* pWaterHitGraphic = nullptr; ///< The ammo hitting water
+    iIMDShape* pTrailGraphic = nullptr; ///< The trail used for in flight
 
     int iAudioFireID = 0;
     int iAudioImpactID = 0;
@@ -436,7 +437,7 @@ struct WeaponStats : public ComponentStats
 struct ConstructStats : public ComponentStats
 { 
     /// The turret mount to use
-    std::shared_ptr<iIMDShape> pMountGraphic = nullptr;
+    iIMDShape* pMountGraphic = nullptr;
 
     struct : Upgradeable
     {
@@ -448,15 +449,13 @@ struct ConstructStats : public ComponentStats
 struct CommanderStats : public ComponentStats
 {
     /// Weapon stats associated with this brain - for Command Droids
-    std::shared_ptr<WeaponStats> psWeaponStat; 
+    WeaponStats* psWeaponStat;
 
     struct : Upgradeable
     {
         std::vector<int> rankThresholds;
-
         /// base maximum number of droids that the commander can control
         int maxDroids = 0;
-
         /// maximum number of controlled droids multiplied by level
         int maxDroidsMult = 0;
     } upgraded[MAX_PLAYERS], base;
@@ -470,13 +469,13 @@ struct BodyStats : public ComponentStats
     unsigned weaponSlots = 0;
 
     /// List of IMDs to use for propulsion unit - up to numPropulsionStats
-    std::vector<iIMDShape> ppIMDList;
+    std::deque<iIMDShape*> ppIMDList;
 
     /// List of IMDs to use when droid is moving - up to numPropulsionStats
-    std::vector<iIMDShape> ppMoveIMDList;
+    std::deque<iIMDShape*> ppMoveIMDList;
 
     /// List of IMDs to use when droid is still - up to numPropulsionStats
-    std::vector<iIMDShape> ppStillIMDList;
+    std::deque<iIMDShape*> ppStillIMDList;
 
     /// Rules hint to script about its classification
     WzString bodyClass;
@@ -519,19 +518,23 @@ struct Propulsion
 
 typedef uint16_t WEAPON_MODIFIER;
 
-extern std::vector<Propulsion> asPropulsionTypes;
+extern std::deque<Propulsion> asPropulsionTypes;
 
 //used to hold the modifiers cross refd by weapon effect and propulsion type
 extern WEAPON_MODIFIER asWeaponModifier[(size_t)WEAPON_EFFECT::COUNT][(size_t)PROPULSION_TYPE::COUNT];
 extern WEAPON_MODIFIER asWeaponModifierBody[(size_t)WEAPON_EFFECT::COUNT][(size_t)BODY_SIZE::COUNT];
 
-//stores for each players component states - see below
-extern uint8_t* apCompLists[MAX_PLAYERS][(size_t)COMPONENT_TYPE::COUNT];
+extern std::deque<BodyStats> bodyStatsList;
+extern std::deque<CommanderStats> brainStatsList;
+extern std::deque<PropulsionStats> propulsionStatsList;
+extern std::deque<SensorStats> sensorStatsList;
+extern std::deque<EcmStats> ecmStatsList;
+extern std::deque<RepairStats> repairStatsList;
+extern std::deque<WeaponStats> weaponStatsList;
+extern std::deque<ConstructStats> constructStatsList;
 
-//store for each players Structure states
-extern uint8_t* apStructTypeLists[MAX_PLAYERS];
-
-//Values to fill apCompLists and apStructTypeLists. Not a bitfield, values are in case that helps with savegame compatibility.
+// Values to fill apCompLists and apStructTypeLists. Not a bitfield, values are
+// in case that helps with savegame compatibility.
 enum ItemAvailability
 {
 	AVAILABLE = 1,
@@ -570,7 +573,6 @@ bool statsAllocConstruct(unsigned numEntries);
 
 /* Load stats functions */
 
-struct StructureStats;
 // Used from structure.cpp
 void loadStructureStats_BaseStats(WzConfig& json, StructureStats* psStats, size_t index);
 void unloadStructureStats_BaseStats(const StructureStats& psStats);

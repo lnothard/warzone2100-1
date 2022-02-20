@@ -531,13 +531,10 @@ static void DrawRadarObjects()
 				|| psDroid.getPosition().x >= world_coord(scrollMaxX) || psDroid.getPosition().y >= world_coord(scrollMaxY)) {
 				continue;
 			}
-			if (psDroid.isVisibleToSelectedPlayer()
-				|| (bMultiPlayer && alliancesSharedVision(game.alliance)
-					&& selectedPlayer < MAX_PLAYERS &&
-              aiCheckAlliances(selectedPlayer, psDroid.playerManager->getPlayer()))) {
+			if (psDroid.isVisibleToSelectedPlayer()) {
 				int x = psDroid.getPosition().x / TILE_UNITS;
 				int y = psDroid.getPosition().y / TILE_UNITS;
-				size_t pos = (x - scrollMinX) + (y - scrollMinY) * radarTexWidth;
+				size_t pos = x - scrollMinX + (y - scrollMinY) * radarTexWidth;
 
 				ASSERT(pos * sizeof(*radarOverlayBuffer) < radarBufferSize, "Buffer overrun");
 				if (clan == selectedPlayer && gameTime > HIT_NOTIFICATION && gameTime - psDroid.timeLastHit <

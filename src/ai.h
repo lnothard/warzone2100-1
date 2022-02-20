@@ -33,12 +33,6 @@
 #include "weapon.h"
 
 
-static constexpr auto ALLIANCE_BROKEN	= 0;
-static constexpr auto ALLIANCE_REQUESTED = 1;
-static constexpr auto ALLIANCE_INVITATION	= 2;
-static constexpr auto ALLIANCE_FORMED	= 3;
-static constexpr auto ALLIANCE_NULL	= 4;
-
 /// Amount of time to rage at the world when frustrated (10 seconds)
 static constexpr auto FRUSTRATED_TIME = 1000 * 10;
 
@@ -89,24 +83,6 @@ static constexpr auto	WEIGHT_CMD_RANK	=	WEIGHT_DIST_TILE * 4;
 /// Don't want this to be too high, since a commander can have many units assigned
 static constexpr auto	WEIGHT_CMD_SAME_TARGET = WEIGHT_DIST_TILE;
 
-/// Check no alliance has formed. This is a define to make sure we inline it
-#define aiCheckAlliances(_s1, _s2) (alliances[_s1][_s2] == ALLIANCE_FORMED)
-
-enum class ALLIANCE_TYPE
-{
-  /// No alliances
-	FFA,
-  /// Players can make and break alliances during the game
-	ALLIANCES,
-  /// Alliances are set before the game
-	ALLIANCES_TEAMS,
-  /// Alliances are set before the game. No shared research
-	ALLIANCES_UNSHARED
-};
-
-extern uint8_t alliances[MAX_PLAYER_SLOTS][MAX_PLAYER_SLOTS];
-/// A bitfield of vision sharing in alliances, for quick manipulation of vision information
-extern std::array<PlayerMask, MAX_PLAYER_SLOTS> alliancebits;
 /// A bitfield for the satellite uplink
 extern PlayerMask satuplinkbits;
 
@@ -137,14 +113,6 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
 
 /// Check if any of the weapons can target the target
 bool checkAnyWeaponsTarget(Droid const* psDroid, BaseObject const* psTarget);
-
-/// Check properties of the AllianceType enum.
-static bool alliancesFixed(ALLIANCE_TYPE t);
-static bool alliancesSharedVision(ALLIANCE_TYPE t);
-static bool alliancesSharedResearch(ALLIANCE_TYPE t);
-static bool alliancesSetTeamsBeforeGame(ALLIANCE_TYPE t);
-static bool alliancesCanGiveResearchAndRadar(ALLIANCE_TYPE t);
-static bool alliancesCanGiveAnything(ALLIANCE_TYPE t);
 
 bool updateAttackTarget(BaseObject* psAttacker, int weapon_slot);
 

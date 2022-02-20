@@ -134,7 +134,7 @@ struct Droid::Impl
 
   int iAudioID = NO_SOUND;
 
-  std::unordered_map<COMPONENT_TYPE, ComponentStats> components;
+  std::array<unsigned, (unsigned)COMPONENT_TYPE::COUNT-1> components;
 };
 
 Droid::~Droid()
@@ -259,9 +259,9 @@ ComponentStats const* DroidTemplate::getComponent(COMPONENT_TYPE compName) const
   return &components.at(compName);
 }
 
-const ComponentStats* Droid::getComponent(COMPONENT_TYPE compName) const
+unsigned Droid::getComponent(COMPONENT_TYPE compName) const
 {
-  return pimpl ? &pimpl->components.at(compName) : nullptr;
+  return pimpl->components[(unsigned)compName];
 }
 
 unsigned Droid::getTimeActionStarted() const

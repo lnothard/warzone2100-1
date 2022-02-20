@@ -229,18 +229,18 @@ static void sharedStructureButton(StructureStats const* Stats, iIMDShape* strImd
   {
     //can only have the one
     if (Stats->psWeapStat[i] != nullptr) {
-      weaponImd[i] = Stats->psWeapStat[i]->pIMD.get();
-      mountImd[i] = Stats->psWeapStat[i]->pMountGraphic.get();
+      weaponImd[i] = Stats->psWeapStat[i]->pIMD;
+      mountImd[i] = Stats->psWeapStat[i]->pMountGraphic;
     }
 
     if (!weaponImd[i] && Stats->ecm_stats != nullptr) {
-      weaponImd[i] = Stats->ecm_stats->pIMD.get();
-      mountImd[i] = Stats->ecm_stats->pMountGraphic.get();
+      weaponImd[i] = Stats->ecm_stats->pIMD;
+      mountImd[i] = Stats->ecm_stats->pMountGraphic;
     }
 
     if (!weaponImd[i] && Stats->sensor_stats != nullptr) {
-      weaponImd[i] = Stats->sensor_stats->pIMD.get();
-      mountImd[i] = Stats->sensor_stats->pMountGraphic.get();
+      weaponImd[i] = Stats->sensor_stats->pIMD;
+      mountImd[i] = Stats->sensor_stats->pMountGraphic;
     }
   }
 
@@ -338,20 +338,20 @@ void displayResearchButton(BaseStats* Stat, const Vector3i* Rotation, const Vect
 
 static iIMDShape* getLeftPropulsionIMD(Droid const* psDroid)
 {
-	auto bodyStat = dynamic_cast<BodyStats const*>(psDroid->getComponent(COMPONENT_TYPE::BODY));
-	auto propStat = dynamic_cast<PropulsionStats const*>(psDroid->getComponent(COMPONENT_TYPE::PROPULSION));
-  
-	return bodyStat->ppIMDList[
-          propStat * PROP_SIDE::COUNT + PROP_SIDE::LEFT];
+	auto bodyStat = psDroid->getComponent(COMPONENT_TYPE::BODY);
+	auto propStat = psDroid->getComponent(COMPONENT_TYPE::PROPULSION);
+
+  return bodyStatsList[bodyStat].ppIMDList[
+          propStat * (unsigned)PROP_SIDE::COUNT + (unsigned)PROP_SIDE::LEFT];
 }
 
 static iIMDShape* getRightPropulsionIMD(Droid const* psDroid)
 {
-	auto bodyStat = psDroid->asBits[COMPONENT_TYPE::BODY];
-	auto propStat = psDroid->asBits[COMPONENT_TYPE::PROPULSION];
+	auto bodyStat = psDroid->getComponent(COMPONENT_TYPE::BODY);
+	auto propStat = psDroid->getComponent(COMPONENT_TYPE::PROPULSION);
   
-	return asBodyStats[bodyStat].ppIMDList[
-          propStat * PROP_SIDE::COUNT + PROP_SIDE::RIGHT];
+	return bodyStatsList[bodyStat].ppIMDList[
+          propStat * (unsigned)PROP_SIDE::COUNT + (unsigned)PROP_SIDE::RIGHT];
 }
 
 void drawMuzzleFlash(const Weapon& sWeap, const iIMDShape* weaponImd, iIMDShape* flashImd,

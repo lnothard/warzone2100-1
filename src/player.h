@@ -6,6 +6,7 @@
 #define WARZONE2100_PLAYER_H
 
 #include <memory>
+#include "stats.h"
 
 class ResourceExtractor;
 class FlagPosition;
@@ -18,11 +19,14 @@ public:
 
   void addDroid(unsigned droidId);
   void addDroid(Droid& droid);
+  void killDroid(Droid& droid);
+  void removeDroid(Droid& droid);
   [[nodiscard]] Droid* findDroidById(unsigned droidId) const;
 
   void addStructure(unsigned structId);
   void addStructure(Structure& structure);
   void killStructure(Structure& structure);
+  void removeStructure(Structure& structure);
   [[nodiscard]] Structure* findStructureById(unsigned structId) const;
 
   void setPlayer(unsigned playerId);
@@ -34,6 +38,8 @@ public:
   std::vector<Structure> structures;
   std::vector<ResourceExtractor> extractors;
   std::vector<FlagPosition> flagPositions;
+  std::array<std::deque<uint8_t>, (size_t)COMPONENT_TYPE::COUNT> componentStates;
+  std::deque<uint8_t> structureStates;
 }; extern std::array<Player, MAX_PLAYERS> playerList;
 
 

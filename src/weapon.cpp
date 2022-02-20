@@ -83,12 +83,12 @@ unsigned Weapon::getNumAttackRuns(unsigned player) const
 
 iIMDShape const* Weapon::getImdShape() const
 {
-  return stats->pIMD.get();
+  return stats->pIMD;
 }
 
 iIMDShape const* Weapon::getMountGraphic() const
 {
-  return stats->pMountGraphic.get();
+  return stats->pMountGraphic;
 }
 
 unsigned Weapon::calculateRateOfFire(unsigned player) const

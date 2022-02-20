@@ -81,6 +81,7 @@
 #include "objmem.h"
 #include "lib/sound/track.h"
 #include "fpath.h"
+#include "display.h"
 
 #include <list>
 #include <utility>

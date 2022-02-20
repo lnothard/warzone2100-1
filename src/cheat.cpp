@@ -28,7 +28,6 @@
 #include "input/debugmappings.h"
 #include "lib/netplay/netplay.h"
 
-#include "activity.h"
 #include "cheat.h"
 #include "display.h"
 #include "keybind.h"
@@ -153,11 +152,7 @@ bool _attemptCheatCode(const char* cheat_name)
 
 bool attemptCheatCode(char const* cheat_name)
 {
-	bool result = _attemptCheatCode(cheat_name);
-	if (result) {
-		ActivityManager::instance().cheatUsed(cheat_name);
-	}
-	return result;
+	return _attemptCheatCode(cheat_name);
 }
 
 void sendProcessDebugMappings(bool val)

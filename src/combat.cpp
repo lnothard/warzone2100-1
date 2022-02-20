@@ -320,8 +320,7 @@ void counterBatteryFire(BaseObject* psAttacker, BaseObject* psTarget)
 
 	for (auto psViewer : apsSensorList)
 	{
-    if (!aiCheckAlliances(psTarget->playerManager->getPlayer(),
-                          psViewer->playerManager->getPlayer())) {
+    if (psAttacker->playerManager->getPlayer() != psViewer->playerManager->getPlayer()) {
       continue;
     }
 

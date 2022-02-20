@@ -325,24 +325,22 @@ bool WzConfig::beginGroup(const WzString &prefix)
 	mObjNameStack.push_back(mName);
 	mObjStack.push_back(pCurrentObj);
 	mName = prefix;
-	if (mWarning == ReadAndWrite)
-	{
+	if (mWarning == ReadAndWrite) {
 		mNewObjStack.push_back(nlohmann::json::object());
 		pCurrentObj = &mNewObjStack.back();
+    return true;
 	}
-	else
-	{
-		auto it = pCurrentObj->find(prefix.toUtf8());
-		// Check if mObj contains the prefix
-		if (it == pCurrentObj->end()) // handled in this way for backwards compatibility
-		{
-			mNewObjStack.push_back(nlohmann::json::object());
-			pCurrentObj = &mNewObjStack.back();
-			return false;
-		}
-		ASSERT(it.value().is_object(), "%s: beginGroup() on non-object key \"%s\"", mFilename.toUtf8().c_str(), prefix.toUtf8().c_str());
-		pCurrentObj = &it.value();
-	}
+
+  auto it = pCurrentObj->find(prefix.toUtf8());
+  // Check if mObj contains the prefix
+  if (it == pCurrentObj->end()) { // handled in this way for backwards compatibility
+    mNewObjStack.push_back(nlohmann::json::object());
+    pCurrentObj = &mNewObjStack.back();
+    return false;
+  }
+  ASSERT(it.value().is_object(), "%s: beginGroup() on non-object key \"%s\"", mFilename.toUtf8().c_str(), prefix.toUtf8().c_str());
+  pCurrentObj = &it.value();
+
 	return true;
 }
 

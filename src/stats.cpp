@@ -44,28 +44,11 @@ bool BaseStats::hasType(StatType type) const
   return (ref & STAT_MASK) == type;
 }
 
-std::vector<Propulsion> asPropulsionTypes;
 static int* asTerrainTable;
 
 //used to hold the modifiers cross refd by weapon effect and propulsion type
 WEAPON_MODIFIER asWeaponModifier[(size_t)WEAPON_EFFECT::COUNT][(size_t)PROPULSION_TYPE::COUNT];
 WEAPON_MODIFIER asWeaponModifierBody[(size_t)WEAPON_EFFECT::COUNT][(size_t)BODY_SIZE::COUNT];
-
-/* The number of different stats stored */
-unsigned numBodyStats;
-unsigned numBrainStats;
-unsigned numPropulsionStats;
-unsigned numSensorStats;
-unsigned numECMStats;
-unsigned numRepairStats;
-unsigned numWeaponStats;
-unsigned numConstructStats;
-
-//stores for each players component states - can be either UNAVAILABLE, REDUNDANT, FOUND or AVAILABLE
-uint8_t* apCompLists[MAX_PLAYERS][(size_t)COMPONENT_TYPE::COUNT];
-
-//store for each players Structure states
-uint8_t* apStructTypeLists[MAX_PLAYERS];
 
 static std::unordered_map<WzString, BaseStats*> lookupStatPtr;
 static std::unordered_map<WzString, ComponentStats*> lookupCompStatPtr;
@@ -99,8 +82,7 @@ bool statsShutDown()
 static iIMDShape* statsGetIMD(WzConfig& json, BaseStats* psStats, WzString const& key,
                               WzString const& key2 = WzString())
 {
-	iIMDShape* retval = nullptr;
-  if (!json.contains(key)) return retval;
+  if (!json.contains(key)) return nullptr;
 
   auto value = json.json(key);
   if (value.is_object()) {
@@ -113,7 +95,7 @@ static iIMDShape* statsGetIMD(WzConfig& json, BaseStats* psStats, WzString const
   }
 
   auto filename = json_variant(value).toWzString();
-  retval = modelGet(filename);
+  auto retval = modelGet(filename);
   ASSERT(retval != nullptr, "Cannot find the PIE model %s for stat %s in %s",
          filename.toUtf8().c_str(), getStatsName(psStats), json.fileName().toUtf8().c_str());
 
@@ -125,14 +107,10 @@ static void loadStats(WzConfig& json, BaseStats* psStats, size_t index)
 	psStats->id = json.group();
 	psStats->name = json.string("name");
 	psStats->index = index;
-	ASSERT(lookupStatPtr.find(psStats->id) == lookupStatPtr.end(), "Duplicate ID found! (%s)",
-	       psStats->id.toUtf8().c_str());
-	lookupStatPtr.insert(std::make_pair(psStats->id, psStats));
-}
+	ASSERT(lookupStatPtr.find(psStats->id) == lookupStatPtr.end(),
+         "Duplicate ID found! (%s)", psStats->id.toUtf8().c_str());
 
-void loadStructureStats_BaseStats(WzConfig& json, StructureStats* psStats, size_t index)
-{
-	loadStats(json, psStats, index);
+	lookupStatPtr.insert(std::make_pair(psStats->id, psStats));
 }
 
 void unloadStructureStats_BaseStats(const StructureStats& psStats)
@@ -212,22 +190,23 @@ bool loadWeaponStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	statsAllocWeapons(list.size());
+
 	// Hack to make sure ZNULLWEAPON is always first in list
 	auto nullweapon = std::find(list.begin(), list.end(), WzString::fromUtf8("ZNULLWEAPON"));
 	ASSERT_OR_RETURN(false, nullweapon != list.end(), "ZNULLWEAPON is mandatory");
-	std::iter_swap(nullweapon, list.begin());
-	for (size_t i = 0; i < list.size(); ++i)
-	{
-		WeaponStats* psStats = &asWeaponStats[i];
-		std::vector<WzString> flags;
 
+	std::iter_swap(nullweapon, list.begin());
+  weaponStatsList.resize(list.size());
+	for (auto i = 0; i < list.size(); ++i)
+	{
+    weaponStatsList[i] = WeaponStats();
+    auto psStats = &weaponStatsList[i];
+		std::vector<WzString> flags;
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
 		psStats->compType = COMPONENT_TYPE::WEAPON;
 
 		psStats->radiusLife = ini.value("radiusLife", 0).toUInt();
-
 		psStats->base.shortRange = ini.value("shortRange").toUInt();
 		psStats->base.maxRange = ini.value("longRange").toUInt();
 		psStats->base.minRange = ini.value("minRange", 0).toUInt();
@@ -243,11 +222,13 @@ bool loadWeaponStats(WzConfig& ini)
 		psStats->base.periodicalDamageTime = ini.value("periodicalDamageTime", 0).toUInt();
 		psStats->base.periodicalDamage = ini.value("periodicalDamage", 0).toUInt();
 		psStats->base.periodicalDamageRadius = ini.value("periodicalDamageRadius", 0).toUInt();
+
 		// multiply time stats
 		psStats->base.firePause *= WEAPON_TIME;
 		psStats->base.periodicalDamageTime *= WEAPON_TIME;
 		psStats->radiusLife *= WEAPON_TIME;
 		psStats->base.reloadTime *= WEAPON_TIME;
+
 		// copy for upgrades
 		for (auto& j : psStats->upgraded)
 		{
@@ -262,6 +243,7 @@ bool loadWeaponStats(WzConfig& ini)
 		psStats->recoilValue = ini.value("recoilValue").toUInt();
 		psStats->effectSize = ini.value("effectSize").toUInt();
 		std::vector<WzString> flags_raw = ini.value("flags", 0).toWzStringList();
+
 		// convert flags entries to lowercase
 		std::transform(
 			flags_raw.begin(),
@@ -269,6 +251,7 @@ bool loadWeaponStats(WzConfig& ini)
 			std::back_inserter(flags),
 			[](const WzString& in) { return in.toLower(); }
 		);
+
 		psStats->vtolAttackRuns = ini.value("numAttackRuns", 0).toUInt();
 		psStats->penetrate = ini.value("penetrate", false).toBool();
 		// weapon size limitation
@@ -281,15 +264,15 @@ bool loadWeaponStats(WzConfig& ini)
 		psStats->ref = STAT_WEAPON + i;
 
 		//get the IMD for the component
-		psStats->pIMD = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "model"));
-		psStats->pMountGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "mountModel"));
+		psStats->pIMD = statsGetIMD(ini, psStats, "model");
+		psStats->pMountGraphic = statsGetIMD(ini, psStats, "mountModel");
 		if (GetGameMode() == GS_NORMAL) {
-			psStats->pMuzzleGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "muzzleGfx"));
-			psStats->pInFlightGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "flightGfx"));
-			psStats->pTargetHitGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "hitGfx"));
-			psStats->pTargetMissGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "missGfx"));
-			psStats->pWaterHitGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "waterGfx"));
-			psStats->pTrailGraphic = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "trailGfx"));
+			psStats->pMuzzleGraphic = statsGetIMD(ini, psStats, "muzzleGfx");
+			psStats->pInFlightGraphic = statsGetIMD(ini, psStats, "flightGfx");
+			psStats->pTargetHitGraphic = statsGetIMD(ini, psStats, "hitGfx");
+			psStats->pTargetMissGraphic = statsGetIMD(ini, psStats, "missGfx");
+			psStats->pWaterHitGraphic = statsGetIMD(ini, psStats, "waterGfx");
+			psStats->pTrailGraphic = statsGetIMD(ini, psStats, "trailGfx");
 		}
 		psStats->fireOnMove = ini.value("fireOnMove", true).toBool();
 
@@ -441,14 +424,17 @@ bool loadBodyStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	statsAllocBody(list.size());
+
 	// Hack to make sure ZNULLBODY is always first in list
 	auto nullbody = std::find(list.begin(), list.end(), WzString::fromUtf8("ZNULLBODY"));
 	ASSERT_OR_RETURN(false, nullbody != list.end(), "ZNULLBODY is mandatory");
+
 	std::iter_swap(nullbody, list.begin());
-	for (size_t i = 0; i < list.size(); ++i)
+  bodyStatsList.resize(list.size());
+	for (auto i = 0; i < list.size(); ++i)
 	{
-		BodyStats* psStats = &asBodyStats[i];
+    bodyStatsList[i] = BodyStats();
+		auto psStats = &bodyStatsList[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -470,22 +456,15 @@ bool loadBodyStats(WzConfig& ini)
 			ASSERT(false, "Unknown body size for %s", getStatsName(psStats));
 			return false;
 		}
-		psStats->pIMD = std::make_unique<iIMDShape>(*statsGetIMD(ini, psStats, "model"));
+		psStats->pIMD = statsGetIMD(ini, psStats, "model");
 
 		ini.endGroup();
+
+    psStats->ppIMDList.resize(propulsionStatsList.size() * (int)PROP_SIDE::COUNT);
+    psStats->ppMoveIMDList.resize(propulsionStatsList.size() * (int)PROP_SIDE::COUNT);
+    psStats->ppStillIMDList.resize(propulsionStatsList.size() * (int)PROP_SIDE::COUNT);
 	}
 
-	// now get the extra stuff ... hack it together with above later, moved here from
-	// separate function
-
-	// allocate space
-	for (auto numStats = 0; numStats < numBodyStats; ++numStats)
-	{
-		auto psBodyStat = &asBodyStats[numStats];
-		psBodyStat->ppIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT);
-		psBodyStat->ppMoveIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT);
-		psBodyStat->ppStillIMDList.resize(numPropulsionStats * (int)PROP_SIDE::COUNT);
-	}
 	for (auto& i : list)
 	{
 		WzString propulsionName, leftIMD, rightIMD;
@@ -493,40 +472,43 @@ bool loadBodyStats(WzConfig& ini)
 		int numStats;
 
 		ini.beginGroup(i);
-		if (!ini.contains("propulsionExtraModels"))
-		{
+		if (!ini.contains("propulsionExtraModels")) {
 			ini.endGroup();
 			continue;
 		}
 		ini.beginGroup("propulsionExtraModels");
+
 		//get the body stats
-		for (numStats = 0; numStats < numBodyStats; ++numStats)
+		for (numStats = 0; numStats < bodyStatsList.size(); ++numStats)
 		{
-			psBodyStat = &asBodyStats[numStats];
-			if (i.compare(psBodyStat->id) == 0)
-			{
+			psBodyStat = &bodyStatsList[numStats];
+			if (i.compare(psBodyStat->id) == 0) {
 				break;
 			}
 		}
-		if (numStats == numBodyStats) // not found
+
+		if (numStats == bodyStatsList.size()) // not found
 		{
 			debug(LOG_FATAL, "Invalid body name %s", i.toUtf8().c_str());
 			return false;
 		}
+
 		std::vector<WzString> keys = ini.childKeys();
 		for (auto& key : keys)
 		{
-			for (numStats = 0; numStats < numPropulsionStats; numStats++)
+			for (numStats = 0; numStats < propulsionStatsList.size(); numStats++)
 			{
-				PropulsionStats* psPropulsionStat = &asPropulsionStats[numStats];
+				auto psPropulsionStat = &propulsionStatsList[numStats];
 				if (key.compare(psPropulsionStat->id) == 0) {
 					break;
 				}
 			}
-			if (numStats == numPropulsionStats) {
+
+			if (numStats == propulsionStatsList.size()) {
 				debug(LOG_FATAL, "Invalid propulsion name %s", key.toUtf8().c_str());
 				return false;
 			}
+
 			//allocate the left and right propulsion IMDs + movement and standing still animations
 			psBodyStat->ppIMDList[numStats * (int)PROP_SIDE::COUNT + (int)PROP_SIDE::LEFT] = statsGetIMD(
 				ini, psBodyStat, key, WzString::fromUtf8("left"));
@@ -547,16 +529,18 @@ bool loadBrainStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	statsAllocBrain(list.size());
 	// Hack to make sure ZNULLBRAIN is always first in list
 	auto nullbrain = std::find(list.begin(), list.end(),
                              WzString::fromUtf8("ZNULLBRAIN"));
 
 	ASSERT_OR_RETURN(false, nullbrain != list.end(), "ZNULLBRAIN is mandatory");
+
 	std::iter_swap(nullbrain, list.begin());
-	for (size_t i = 0; i < list.size(); ++i)
+  brainStatsList.resize(list.size());
+	for (auto i = 0; i < list.size(); ++i)
 	{
-		CommanderStats* psStats = &asBrainStats[i];
+    brainStatsList[i] = CommanderStats();
+		auto psStats = &brainStatsList[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -585,15 +569,15 @@ bool loadBrainStats(WzConfig& ini)
 
 		// check weapon attached
 		psStats->psWeaponStat = nullptr;
-		if (ini.contains("turret"))
-		{
+		if (ini.contains("turret")) {
 			int weapon = getCompFromName(COMPONENT_TYPE::WEAPON, ini.value("turret").toWzString());
 			ASSERT_OR_RETURN(false, weapon >= 0, "Unable to find weapon for brain %s", getStatsName(psStats));
-			psStats->psWeaponStat = asWeaponStats + weapon;
+			psStats->psWeaponStat = &weaponStatsList[weapon];
 		}
 		psStats->designable = ini.value("designable", false).toBool();
 		ini.endGroup();
 	}
+
 	return true;
 }
 
@@ -637,14 +621,17 @@ bool loadPropulsionStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	statsAllocPropulsion(list.size());
+
 	// Hack to make sure ZNULLPROP is always first in list
 	auto nullprop = std::find(list.begin(), list.end(), WzString::fromUtf8("ZNULLPROP"));
 	ASSERT_OR_RETURN(false, nullprop != list.end(), "ZNULLPROP is mandatory");
+
 	std::iter_swap(nullprop, list.begin());
+  propulsionStatsList.resize(list.size());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		PropulsionStats* psStats = &asPropulsionStats[i];
+    propulsionStatsList[i] = PropulsionStats();
+		auto psStats = &propulsionStatsList[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -681,14 +668,16 @@ bool loadSensorStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	statsAllocSensor(list.size());
+
 	// Hack to make sure ZNULLSENSOR is always first in list
 	auto nullsensor = std::find(list.begin(), list.end(), WzString::fromUtf8("ZNULLSENSOR"));
 	ASSERT_OR_RETURN(false, nullsensor != list.end(), "ZNULLSENSOR is mandatory");
+
 	std::iter_swap(nullsensor, list.begin());
+  sensorStatsList.resize(list.size());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		SensorStats* psStats = &asSensorStats[i];
+		auto psStats = &sensorStatsList[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -745,8 +734,8 @@ bool loadSensorStats(WzConfig& ini)
 		}
 
 		//get the IMD for the component
-		psStats->pIMD = std::make_shared<iIMDShape>(*statsGetIMD(ini, psStats, "sensorModel"));
-		psStats->pMountGraphic = std::make_shared<iIMDShape>(*statsGetIMD(ini, psStats, "mountModel"));
+		psStats->pIMD = statsGetIMD(ini, psStats, "sensorModel");
+		psStats->pMountGraphic = statsGetIMD(ini, psStats, "mountModel");
 
 		ini.endGroup();
 	}
@@ -758,14 +747,17 @@ bool loadECMStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	statsAllocECM(list.size());
+
 	// Hack to make sure ZNULLECM is always first in list
 	auto nullecm = std::find(list.begin(), list.end(), WzString::fromUtf8("ZNULLECM"));
 	ASSERT_OR_RETURN(false, nullecm != list.end(), "ZNULLECM is mandatory");
+
 	std::iter_swap(nullecm, list.begin());
+  ecmStatsList.resize(list.size());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		EcmStats* psStats = &asECMStats[i];
+    ecmStatsList[i] = EcmStats();
+		auto psStats = &ecmStatsList[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -807,14 +799,17 @@ bool loadRepairStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	statsAllocRepair(list.size());
+
 	// Hack to make sure ZNULLREPAIR is always first in list
 	auto nullrepair = std::find(list.begin(), list.end(), WzString::fromUtf8("ZNULLREPAIR"));
 	ASSERT_OR_RETURN(false, nullrepair != list.end(), "ZNULLREPAIR is mandatory");
+
 	std::iter_swap(nullrepair, list.begin());
+  repairStatsList.resize(list.size());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		RepairStats* psStats = &asRepairStats[i];
+    repairStatsList[i] = RepairStats();
+		auto psStats = &repairStatsList[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -860,14 +855,17 @@ bool loadConstructStats(WzConfig& ini)
 {
 	ASSERT(ini.isAtDocumentRoot(), "WzConfig instance is in the middle of traversal");
 	std::vector<WzString> list = ini.childGroups();
-	statsAllocConstruct(list.size());
+
 	// Hack to make sure ZNULLCONSTRUCT is always first in list
 	auto nullconstruct = std::find(list.begin(), list.end(), WzString::fromUtf8("ZNULLCONSTRUCT"));
 	ASSERT_OR_RETURN(false, nullconstruct != list.end(), "ZNULLCONSTRUCT is mandatory");
+
 	std::iter_swap(nullconstruct, list.begin());
+  constructStatsList.resize(list.size());
 	for (size_t i = 0; i < list.size(); ++i)
 	{
-		ConstructStats* psStats = &asConstructStats[i];
+    constructStatsList[i] = ConstructStats();
+		auto psStats = &constructStatsList[i];
 
 		ini.beginGroup(list[i]);
 		loadCompStats(ini, psStats, i);
@@ -912,7 +910,7 @@ bool loadPropulsionTypes(WzConfig& ini)
 			return false;
 		}
 
-		Propulsion* pPropType = &asPropulsionTypes[type];
+		auto pPropType = &asPropulsionTypes[(int)type];
 
 		WzString flightName = ini.value("flightName").toWzString();
 		if (flightName.compare("GROUND") == 0) {
@@ -1038,11 +1036,11 @@ bool loadWeaponModifiers(WzConfig& ini)
 					debug(LOG_FATAL, "Invalid Propulsion or Body type - %s", key.toUtf8().c_str());
 					continue;
 				}
-				asWeaponModifierBody[effectInc][body] = modifier;
+				asWeaponModifierBody[(int)effectInc][(int)body] = modifier;
 			}
 			else // is propulsion
 			{
-				asWeaponModifier[effectInc][propInc] = modifier;
+				asWeaponModifier[(int)effectInc][(int)propInc] = modifier;
 			}
 		}
 		ini.endGroup();
@@ -1092,7 +1090,7 @@ bool loadPropulsionSounds(const char* pFileName)
 			debug(LOG_FATAL, "Invalid Propulsion type - %s", list[i].toUtf8().c_str());
 			return false;
 		}
-		Propulsion* pPropType = &asPropulsionTypes[type];
+		Propulsion* pPropType = &asPropulsionTypes[(int)type];
 		pPropType->startID = (SWORD)startID;
 		pPropType->idleID = (SWORD)idleID;
 		pPropType->moveOffID = (SWORD)moveOffID;
@@ -1350,13 +1348,13 @@ bool getMovementModel(const WzString& movementModel, MOVEMENT_MODEL* model)
 
 const StringToEnum<WEAPON_EFFECT> mapUnsorted_WEAPON_EFFECT[] =
 {
-	{"ANTI PERSONNEL", WEAPON_EFFECT::ANTI_PERSONNEL},
-	{"ANTI TANK", WEAPON_EFFECT::ANTI_TANK},
-	{"BUNKER BUSTER", WEAPON_EFFECT::BUNKER_BUSTER},
-	{"ARTILLERY ROUND", WEAPON_EFFECT::ARTILLERY_ROUND},
-	{"FLAMER", WEAPON_EFFECT::FLAMER},
-	{"ANTI AIRCRAFT", WEAPON_EFFECT::ANTI_AIRCRAFT},
-	{"ALL ROUNDER", WEAPON_EFFECT::ANTI_AIRCRAFT}, // Alternative name for WEAPON_EFFECT::ANTI_AIRCRAFT.
+	{"ANTI PERSONNEL", ANTI_PERSONNEL},
+	{"ANTI TANK", ANTI_TANK},
+	{"BUNKER BUSTER", BUNKER_BUSTER},
+	{"ARTILLERY ROUND", ARTILLERY_ROUND},
+	{"FLAMER", FLAMER},
+	{"ANTI AIRCRAFT", ANTI_AIRCRAFT},
+	{"ALL ROUNDER", ANTI_AIRCRAFT}, // Alternative name for WEAPON_EFFECT::ANTI_AIRCRAFT.
 };
 const StringToEnumMap<WEAPON_EFFECT> map_WEAPON_EFFECT = mapUnsorted_WEAPON_EFFECT;
 
@@ -1416,15 +1414,16 @@ bool getWeaponClass(WzString const& weaponClassStr, WEAPON_CLASS* weaponClass)
 {
 	if (weaponClassStr.compare("KINETIC") == 0) {
 		*weaponClass = WEAPON_CLASS::KINETIC;
+    return true;
 	}
-	else if (weaponClassStr.compare("HEAT") == 0) {
+
+	if (weaponClassStr.compare("HEAT") == 0) {
 		*weaponClass = WEAPON_CLASS::HEAT;
+    return true;
 	}
-	else {
-		ASSERT(false, "Bad weapon class %s", weaponClassStr.toUtf8().c_str());
-		return false;
-	};
-	return true;
+
+  ASSERT(false, "Bad weapon class %s", weaponClassStr.toUtf8().c_str());
+  return false;
 }
 
 #define ASSERT_PLAYER_OR_RETURN(retVal, player) \
@@ -1587,9 +1586,11 @@ bool objRadarDetector(BaseObject const* psObj)
             psStruct->getStats()->sensor_stats &&
             psStruct->getStats()->sensor_stats->type == SENSOR_TYPE::RADAR_DETECTOR;
 	}
-	else if (auto const& psDroid = dynamic_cast<Droid const*>(psObj)) {
+
+	if (auto const& psDroid = dynamic_cast<Droid const*>(psObj)) {
 		auto psSensor = dynamic_cast<SensorStats const*>(psDroid->getComponent(COMPONENT_TYPE::SENSOR));
 		return psSensor && psSensor->type == SENSOR_TYPE::RADAR_DETECTOR;
 	}
+
 	return false;
 }

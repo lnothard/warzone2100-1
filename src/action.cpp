@@ -408,10 +408,6 @@ bool pushDroidsAwayFromBuildSite(unsigned player, Vector2i pos, uint16_t dir, Ba
 
 		buildPosEmpty = false; // Found a droid, have to move it away.
 
-		if (!aiCheckAlliances(player, droid->playerManager->getPlayer())) {
-			continue; // Enemy droids probably don't feel like moving.
-		}
-
 		// TODO If the action code was less convoluted, it would be possible for the droid should drive away instead of just getting moved away.
 		Vector2i bestDest(0, 0); // Dummy initialisation.
 		auto bestDist = UINT32_MAX;

@@ -764,7 +764,7 @@ BaseObject const* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_typ
 
   for (const auto sensor : apsSensorList)
   {
-    if (!aiCheckAlliances(sensor->playerManager->getPlayer(), unit.playerManager->getPlayer()))
+    if (sensor->playerManager->getPlayer() != unit.playerManager->getPlayer())
       continue;
 
     // Artillery should not fire at objects observed
@@ -794,9 +794,7 @@ BaseObject const* find_target(BaseObject const& unit, TARGET_ORIGIN attacker_typ
 
     if (!target || target->damageManager->isDead() ||
         target->damageManager->isProbablyDoomed(false) ||
-        !validTarget(&unit, target, 0) ||
-        aiCheckAlliances(target->playerManager->getPlayer(),
-                         unit.playerManager->getPlayer())) {
+        !validTarget(&unit, target, 0)) {
       continue;
     }
 

@@ -87,18 +87,6 @@ static bool aiObjHasRange(BaseObject const* psObj, BaseObject const* psTarget, i
 
 void aiInitialise()
 {
-  using enum ALLIANCE_TYPE;
-	for (auto i = 0; i < MAX_PLAYER_SLOTS; i++)
-	{
-		alliancebits[i] = 0;
-		for (auto j = 0; j < MAX_PLAYER_SLOTS; j++)
-		{
-			bool valid = i == j && i < MAX_PLAYERS;
-
-			alliances[i][j] = valid ? ALLIANCE_FORMED : ALLIANCE_BROKEN;
-			alliancebits[i] |= valid << j;
-		}
-	}
 	satuplinkbits = 0;
 }
 
@@ -124,11 +112,6 @@ BaseObject* aiSearchSensorTargets(BaseObject const* psObj, int weapon_slot,
 	{
     BaseObject* psTemp = nullptr;
 		bool isCB = false;
-
-		if (!aiCheckAlliances(psSensor->playerManager->getPlayer(),
-                          psObj->playerManager->getPlayer())) {
-			continue;
-		}
 
 		if (auto psDroid = dynamic_cast<Droid const*>(psSensor)) {
 			ASSERT_OR_RETURN(nullptr, psDroid->getType() == DROID_TYPE::SENSOR,
@@ -165,8 +148,7 @@ BaseObject* aiSearchSensorTargets(BaseObject const* psObj, int weapon_slot,
 
 		if (!psTemp || psTemp->damageManager->isDead() ||
         psTemp->damageManager->isProbablyDoomed(false) ||
-        !validTarget(psObj, psTemp, 0) ||
-		  	aiCheckAlliances(psTemp->playerManager->getPlayer(), psObj->playerManager->getPlayer())) {
+        !validTarget(psObj, psTemp, 0)) {
 			continue;
 		}
 		auto const distSq = objectPositionSquareDiff(psTemp->getPosition(), psObj->getPosition());
@@ -539,7 +521,6 @@ bool aiChooseTarget(ConstructedObject const* psObj, BaseObject** ppsTarget, int 
     {
       /* Check that it is a valid target */
       if (!dynamic_cast<Feature*>(psCurr) && !psCurr->damageManager->isDead() &&
-          !aiCheckAlliances(psCurr->playerManager->getPlayer(), psObj->playerManager->getPlayer()) &&
           validTarget(psObj, psCurr, weapon_slot) &&
           psCurr->isVisibleToPlayer(psObj->playerManager->getPlayer()) == UBYTE_MAX &&
           aiStructHasRange(structure, psCurr, weapon_slot)) {
@@ -603,7 +584,6 @@ bool aiChooseSensorTarget(BaseObject const* psObj, BaseObject** ppsTarget)
     // don't target features or doomed/dead objects
     if (dynamic_cast<Feature*>(psCurr) || psCurr->damageManager->isDead() ||
         psCurr->damageManager->isProbablyDoomed(false) ||
-        aiCheckAlliances(psCurr->playerManager->getPlayer(), psObj->playerManager->getPlayer()) ||
         dynamic_cast<Structure*>(psCurr) && dynamic_cast<Structure*>(psCurr)->isWall()) {
       continue;
     }
@@ -743,38 +723,4 @@ bool validTarget(BaseObject const* psObject, BaseObject const* psTarget, int wea
     return true;
 	}
   return false;
-}
-
-// Check properties of the AllianceType enum.
-static bool alliancesFixed(ALLIANCE_TYPE t)
-{
-  return t != ALLIANCE_TYPE::ALLIANCES;
-}
-
-static bool alliancesSharedVision(ALLIANCE_TYPE t)
-{
-  return t == ALLIANCE_TYPE::ALLIANCES_TEAMS ||
-         t == ALLIANCE_TYPE::ALLIANCES_UNSHARED;
-}
-
-static bool alliancesSharedResearch(ALLIANCE_TYPE t)
-{
-  return t == ALLIANCE_TYPE::ALLIANCES ||
-         t == ALLIANCE_TYPE::ALLIANCES_TEAMS;
-}
-
-static bool alliancesSetTeamsBeforeGame(ALLIANCE_TYPE t)
-{
-  return t == ALLIANCE_TYPE::ALLIANCES_TEAMS ||
-         t == ALLIANCE_TYPE::ALLIANCES_UNSHARED;
-}
-
-static bool alliancesCanGiveResearchAndRadar(ALLIANCE_TYPE t)
-{
-  return t == ALLIANCE_TYPE::ALLIANCES;
-}
-
-static bool alliancesCanGiveAnything(ALLIANCE_TYPE t)
-{
-  return t != ALLIANCE_TYPE::FFA;
 }
