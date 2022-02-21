@@ -406,7 +406,6 @@ bool actionTargetTurret(BASE_OBJECT *psAttacker, BASE_OBJECT *psTarget, WEAPON *
 	return onTarget;
 }
 
-
 // return whether a droid can see a target to fire on it
 bool actionVisibleTarget(DROID *psDroid, BASE_OBJECT *psTarget, int weapon_slot)
 {
@@ -502,20 +501,18 @@ static void actionUpdateTransporter(DROID *psDroid)
 
 // calculate a position for units to pull back to if they
 // need to increase the range between them and a target
-static void actionCalcPullBackPoint(BASE_OBJECT *psObj, BASE_OBJECT *psTarget, int *px, int *py)
+static void actionCalcPullBackPoint(BASE_OBJECT const* psObj, BASE_OBJECT const* psTarget, int *px, int *py)
 {
 	// get the vector from the target to the object
-	int xdiff = psObj->pos.x - psTarget->pos.x;
-	int ydiff = psObj->pos.y - psTarget->pos.y;
-	const int len = iHypot(xdiff, ydiff);
+	auto xdiff = psObj->pos.x - psTarget->pos.x;
+	auto ydiff = psObj->pos.y - psTarget->pos.y;
+	const auto len = iHypot(xdiff, ydiff);
 
-	if (len == 0)
-	{
+	if (len == 0) {
 		xdiff = TILE_UNITS;
 		ydiff = TILE_UNITS;
 	}
-	else
-	{
+	else {
 		xdiff = (xdiff * TILE_UNITS) / len;
 		ydiff = (ydiff * TILE_UNITS) / len;
 	}
@@ -787,7 +784,7 @@ void actionUpdateDroid(DROID *psDroid)
 				{
 					ASSERT_OR_RETURN(, false, "Unable to remove transporter from mission list");
 				}
-				addDroid(psDroid, apsDroidLists);
+				addDroid(psDroid);
 				//set the x/y up since they were set to INVALID_XY when moved offWorld
 				missionGetTransporterExit(selectedPlayer, &droidX, &droidY);
 				psDroid->pos.x = droidX;
@@ -1125,11 +1122,11 @@ void actionUpdateDroid(DROID *psDroid)
 			if (secHoldActive && (order->type == DORDER_ATTACKTARGET || order->type == DORDER_FIRESUPPORT))
 			{
 				psDroid->action = DACTION_NONE; // secondary holding, cancel the order.
+        break;
 			}
-			else if (secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_PURSUE &&
-				!supportsSensorTower &&
-				!(order->type == DORDER_HOLD ||
-				order->type == DORDER_RTR))
+
+			if (secondaryGetState(psDroid, DSO_HALTTYPE) == DSS_HALT_PURSUE &&
+				!supportsSensorTower && !(order->type == DORDER_HOLD || order->type == DORDER_RTR))
 			{
 				//We need this so pursuing doesn't stop if a unit is ordered to move somewhere while
 				//it is still in weapon range of the target when reaching the end destination.
@@ -2717,16 +2714,14 @@ static bool spiralSearch(int startX, int startY, int max_radius, tileMatchFuncti
  */
 static bool vtolLandingTileSearchFunction(int x, int y, void *matchState)
 {
-	Vector2i *const xyCoords = (Vector2i *)matchState;
+	auto const xyCoords = static_cast<Vector2i*>(matchState);
 
-	if (vtolLandingTile(x, y))
-	{
-		xyCoords->x = x;
-		xyCoords->y = y;
-		return true;
-	}
+  if (!vtolLandingTile(x, y))
+    return false;
 
-	return false;
+  xyCoords->x = x;
+  xyCoords->y = y;
+  return true;
 }
 
 // Choose a landing position for a VTOL when it goes to rearm that is close to rearm
@@ -2736,55 +2731,48 @@ bool actionVTOLLandingPos(DROID const *psDroid, Vector2i *p)
 	CHECK_DROID(psDroid);
 
 	/* Initial box dimensions and set iteration count to zero */
-	int startX = map_coord(p->x);
-	int startY = map_coord(p->y);
+	auto startX = map_coord(p->x);
+	auto startY = map_coord(p->y);
 
 	// set blocking flags for all the other droids
-	for (const DROID *psCurr = apsDroidLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+	for (auto const& psCurr : apsDroidLists[psDroid->player])
 	{
-		Vector2i t(0, 0);
-		if (DROID_STOPPED(psCurr))
-		{
-			t = map_coord(psCurr->pos.xy());
+		static Vector2i t(0, 0);
+		if (DROID_STOPPED(&psCurr)) {
+			t = map_coord(psCurr.pos.xy());
 		}
-		else
-		{
-			t = map_coord(psCurr->sMove.destination);
+		else {
+			t = map_coord(psCurr.sMove.destination);
 		}
-		if (psCurr != psDroid)
-		{
-			if (tileOnMap(t))
-			{
-				mapTile(t)->tileInfoBits |= BITS_FPATHBLOCK;
-			}
-		}
+
+		if (&psCurr != psDroid && tileOnMap(t)) {
+      mapTile(t)->tileInfoBits |= BITS_FPATHBLOCK;
+    }
 	}
 
 	// search for landing tile; will stop when found or radius exceeded
 	Vector2i xyCoords(0, 0);
 	const bool foundTile = spiralSearch(startX, startY, vtolLandingRadius,
 	                                    vtolLandingTileSearchFunction, &xyCoords);
-	if (foundTile)
-	{
+
+	if (foundTile) {
 		objTrace(psDroid->id, "Unit %d landing pos (%d,%d)", psDroid->id, xyCoords.x, xyCoords.y);
 		p->x = world_coord(xyCoords.x) + TILE_UNITS / 2;
 		p->y = world_coord(xyCoords.y) + TILE_UNITS / 2;
 	}
 
 	// clear blocking flags for all the other droids
-	for (DROID *psCurr = apsDroidLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsDroidLists[psDroid->player])
 	{
-		Vector2i t(0, 0);
-		if (DROID_STOPPED(psCurr))
-		{
-			t = map_coord(psCurr->pos.xy());
+		static Vector2i t(0, 0);
+		if (DROID_STOPPED(&psCurr)) {
+			t = map_coord(psCurr.pos.xy());
 		}
-		else
-		{
-			t = map_coord(psCurr->sMove.destination);
+		else {
+			t = map_coord(psCurr.sMove.destination);
 		}
-		if (tileOnMap(t))
-		{
+
+		if (tileOnMap(t)) {
 			mapTile(t)->tileInfoBits &= ~BITS_FPATHBLOCK;
 		}
 	}

@@ -24,6 +24,7 @@
 #ifndef __INCLUDED_DROIDDEF_H__
 #define __INCLUDED_DROIDDEF_H__
 
+#include <array>
 #include <vector>
 
 #include "stringdef.h"
@@ -78,12 +79,12 @@ struct DROID_TEMPLATE : public BASE_STATS
 
 static inline DROID_TEMPLATE *castDroidTemplate(BASE_STATS *stats)
 {
-	return stats != nullptr && stats->hasType(STAT_TEMPLATE)? static_cast<DROID_TEMPLATE *>(stats) : nullptr;
+	return stats != nullptr && stats->hasType(STAT_TEMPLATE)? dynamic_cast<DROID_TEMPLATE *>(stats) : nullptr;
 }
 
 static inline DROID_TEMPLATE const *castDroidTemplate(BASE_STATS const *stats)
 {
-	return stats != nullptr && stats->hasType(STAT_TEMPLATE)? static_cast<DROID_TEMPLATE const *>(stats) : nullptr;
+	return stats != nullptr && stats->hasType(STAT_TEMPLATE)? dynamic_cast<DROID_TEMPLATE const *>(stats) : nullptr;
 }
 
 class DROID_GROUP;
@@ -92,7 +93,7 @@ struct STRUCTURE;
 struct DROID : public BASE_OBJECT
 {
 	DROID(uint32_t id, unsigned player);
-	~DROID();
+	~DROID() override;
 
 	/// UTF-8 name of the droid. This is generated from the droid template
 	///  WARNING: This *can* be changed by the game player after creation & can be translated, do NOT rely on this being the same for everyone!
@@ -142,7 +143,7 @@ struct DROID : public BASE_OBJECT
 	/* Action data */
 	DROID_ACTION    action;
 	Vector2i        actionPos;
-	BASE_OBJECT    *psActionTarget[MAX_WEAPONS] = {}; ///< Action target object
+	std::array<BASE_OBJECT*, MAX_WEAPONS> psActionTarget;
 	UDWORD          actionStarted;                  ///< Game time action started
 	UDWORD          actionPoints;                   ///< number of points done by action since start
 	UDWORD          expectedDamageDirect;                 ///< Expected damage to be caused by all currently incoming direct projectiles. This info is shared between all players,

@@ -24,6 +24,8 @@
  *
  */
 
+#include <algorithm>
+
 #include "lib/framework/frame.h"
 #include "lib/framework/input.h"
 #include "lib/framework/strres.h"
@@ -34,6 +36,8 @@
 
 #include "action.h"
 #include "display.h"
+
+#include <memory>
 #include "droid.h"
 #include "fpath.h"
 #include "group.h"
@@ -122,8 +126,8 @@ static UDWORD	currentFrame;
 static UDWORD StartOfLastFrame;
 static SDWORD	rotX;
 static SDWORD	rotY;
-std::unique_ptr<ValueTracker> rotationHorizontalTracker = std::unique_ptr<ValueTracker>(new ValueTracker());
-std::unique_ptr<ValueTracker> rotationVerticalTracker = std::unique_ptr<ValueTracker>(new ValueTracker());
+std::unique_ptr<ValueTracker> rotationHorizontalTracker = std::make_unique<ValueTracker>();
+std::unique_ptr<ValueTracker> rotationVerticalTracker = std::make_unique<ValueTracker>();
 static uint32_t scrollRefTime;
 static float	scrollSpeedLeftRight; //use two directions and add them because its simple
 static float	scrollStepLeftRight;
@@ -411,26 +415,21 @@ void resetInput()
 
 static bool localPlayerHasSelection()
 {
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return false;
 	}
 
-	for (DROID* psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
-	{
-		if (psDroid->selected)
-		{
-			return true;
-		}
-	}
+  if (std::any_of(apsDroidLists[selectedPlayer].begin(),
+                  apsDroidLists[selectedPlayer].end(),
+                  [](auto const& psDroid) {
+    return psDroid.selected;
+  })) return true;
 
-	for (STRUCTURE* psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
-	{
-		if (psStruct->selected)
-		{
-			return true;
-		}
-	}
+  if (std::any_of(apsStructLists[selectedPlayer].begin(),
+                  apsStructLists[selectedPlayer].end(),
+                  [](auto const& psStruct) {
+    return psStruct.selected;
+  })) return true;
 
 	return false;
 }
@@ -496,45 +495,37 @@ static bool OverRadarAndNotDragging()
 
 static void CheckFinishedDrag(SELECTION_TYPE selection)
 {
-	if (mouseReleased(MOUSE_LMB) || mouseDown(MOUSE_RMB))
-	{
-		selectAttempt = false;
-		if (dragBox3D.status == DRAG_DRAGGING)
-		{
-			if (wallDrag.status == DRAG_DRAGGING)
-			{
-				//if invalid location keep looking for a valid one
-				if ((buildState == BUILD3D_VALID || buildState == BUILD3D_FINISHED)
-				    && sBuildDetails.psStats->hasType(STAT_STRUCTURE))
-				{
-					if (canLineBuild())
-					{
-						wallDrag.pos2 = mousePos;
-						wallDrag.status = DRAG_RELEASED;
-					}
-				}
-			}
+  if (!mouseReleased(MOUSE_LMB) && !mouseDown(MOUSE_RMB))
+    return;
 
-			/* Only clear if shift isn't down - this is for the drag selection box for units*/
-			if (!ctrlShiftDown() && wallDrag.status == DRAG_INACTIVE)
-			{
-				clearSelection();
-			}
-			dragBox3D.status = DRAG_RELEASED;
-			dragBox3D.x2 = mouseX();
-			dragBox3D.y2 = mouseY();
-			if (selection == SC_DROID_DEMOLISH && ctrlShiftDown())
-			{
-				handleAreaDemolition();
-			}
-		}
-		else
-		{
-			dragBox3D.status = DRAG_INACTIVE;
-			wallDrag.status = DRAG_INACTIVE;
-		}
-	}
+  selectAttempt = false;
+  if (dragBox3D.status != DRAG_DRAGGING) {
+    dragBox3D.status = DRAG_INACTIVE;
+    wallDrag.status = DRAG_INACTIVE;
+    return;
+  }
+
+  if (wallDrag.status == DRAG_DRAGGING &&
+      (buildState == BUILD3D_VALID || buildState == BUILD3D_FINISHED) &&
+      sBuildDetails.psStats->hasType(STAT_STRUCTURE) && canLineBuild()) {
+    wallDrag.pos2 = mousePos;
+    wallDrag.status = DRAG_RELEASED;
+  }
+
+  /* Only clear if shift isn't down - this is for the drag selection box for units*/
+  if (!ctrlShiftDown() && wallDrag.status == DRAG_INACTIVE) {
+    clearSelection();
+  }
+
+  dragBox3D.status = DRAG_RELEASED;
+  dragBox3D.x2 = mouseX();
+  dragBox3D.y2 = mouseY();
+
+  if (selection == SC_DROID_DEMOLISH && ctrlShiftDown()) {
+    handleAreaDemolition();
+  }
 }
+
 /**
  * Demolish all structures in given area
  * Note: Does not attempt to optimize movement paths,
@@ -1917,16 +1908,12 @@ static void dealWithLMBFeature(FEATURE *psFeature)
 		// first find the derrick.
 		for (i = 0; (i < numStructureStats) && (asStructureStats[i].type != REF_RESOURCE_EXTRACTOR); ++i) {}
 
-		if ((i < numStructureStats) &&
-		    (apStructTypeLists[selectedPlayer][i] == AVAILABLE))	// don't go any further if no derrick stat found.
+		if (i < numStructureStats && apStructTypeLists[selectedPlayer][i] == AVAILABLE)	// don't go any further if no derrick stat found.
 		{
-			DROID *psCurr;
-
 			// for each droid
-			for (psCurr = apsDroidLists[selectedPlayer]; psCurr; psCurr = psCurr->psNext)
+			for (auto& psCurr : apsDroidLists[selectedPlayer])
 			{
-				if ((droidType(psCurr) == DROID_CONSTRUCT ||
-				     droidType(psCurr) == DROID_CYBORG_CONSTRUCT) && (psCurr->selected))
+				if ((droidType(&psCurr) == DROID_CONSTRUCT || droidType(&psCurr) == DROID_CYBORG_CONSTRUCT) && psCurr.selected)
 				{
 					if (fireOnLocation(psFeature->pos.x, psFeature->pos.y))
 					{
@@ -2131,23 +2118,22 @@ static FLAG_POSITION *findMouseDeliveryPoint()
 		return nullptr;
 	}
 
-	for (auto psPoint = apsFlagPosLists[selectedPlayer]; psPoint; psPoint = psPoint->psNext)
+	for (auto& psPoint : apsFlagPosLists[selectedPlayer])
 	{
-		if (psPoint->type != POS_DELIVERY) {
+		if (psPoint.type != POS_DELIVERY) {
 			continue;
 		}
 
-		auto dispX = psPoint->screenX;
-		auto dispY = psPoint->screenY;
-		auto dispR = psPoint->screenR;
-		if (DrawnInLastFrame(psPoint->frameNumber) == true)	// Only check DP's that are on screen
-		{
-			if (mouseInBox(dispX - dispR, dispY - dispR, dispX + dispR, dispY + dispR))
-			{
-				// We HAVE clicked on DP!
-				return psPoint;
-			}
-		}
+		auto dispX = psPoint.screenX;
+		auto dispY = psPoint.screenY;
+		auto dispR = psPoint.screenR;
+
+		if (DrawnInLastFrame(psPoint.frameNumber) &&
+        mouseInBox(dispX - dispR, dispY - dispR, dispX + dispR, dispY + dispR))	// Only check DP's that are on screen
+    {
+      // We HAVE clicked on DP!
+      return psPoint;
+    }
 	}
 
 	return nullptr;
@@ -2159,7 +2145,7 @@ static void dealWithRMB()
 	DROID				*psDroid;
 	STRUCTURE			*psStructure;
 
-	if (mouseOverRadar || InGameOpUp == true || widgGetFromID(psWScreen, INTINGAMEOP))
+	if (mouseOverRadar || InGameOpUp || widgGetFromID(psWScreen, INTINGAMEOP))
 	{
 		return;
 	}

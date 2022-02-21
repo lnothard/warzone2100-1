@@ -53,7 +53,7 @@ public: // TODO: c++ design to members become private.
 
 	GROUP_TYPE	type;         // Type from the enum GROUP_TYPE above
 	SWORD		refCount;     // Number of objects in the group. Group is deleted if refCount<=0. Count number of droids+NULL pointers.
-	DROID		*psList;      // List of droids in the group
+	std::vector<DROID*> psList;      // List of droids in the group
 	DROID		*psCommander; // The command droid of a command group
 	int		id;	// unique group id
 };

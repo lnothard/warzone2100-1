@@ -27,21 +27,22 @@
 #include "objectdef.h"
 
 /* The lists of objects allocated */
-extern DROID			*apsDroidLists[MAX_PLAYERS];
-extern STRUCTURE		*apsStructLists[MAX_PLAYERS];
-extern FEATURE			*apsFeatureLists[MAX_PLAYERS];
-extern FLAG_POSITION	*apsFlagPosLists[MAX_PLAYERS];
-extern STRUCTURE		*apsExtractorLists[MAX_PLAYERS];
-extern BASE_OBJECT		*apsSensorList[1];
-extern FEATURE			*apsOilList[1];
+std::array<std::vector<DROID>, MAX_PLAYERS> apsDroidLists;
+std::array<std::vector<STRUCTURE>, MAX_PLAYERS> apsStructLists;
+std::array<std::vector<FLAG_POSITION>, MAX_PLAYERS> apsFlagPosLists;
+std::vector<FEATURE> apsFeatureLists;
+
+std::array<std::vector<STRUCTURE*>, MAX_PLAYERS> apsExtractorLists;
+std::vector<BASE_OBJECT*> apsSensorList;
+std::vector<FEATURE*> apsOilList;
+
 
 /* The list of destroyed objects */
-extern BASE_OBJECT	*psDestroyedObj;
+std::vector<BASE_OBJECT> psDestroyedObj;
 
 /* Initialise the object heaps */
 bool objmemInitialise();
 
-/* Release the object heaps */
 void objmemShutdown();
 
 /* General housekeeping for the object system */
@@ -53,7 +54,7 @@ uint32_t generateNewObjectId();
 uint32_t generateSynchronisedObjectId();
 
 /* add the droid to the Droid Lists */
-void addDroid(DROID *psDroidToAdd, DROID *pList[MAX_PLAYERS]);
+void addDroid(DROID *psDroidToAdd);
 
 /*destroy a droid */
 void killDroid(DROID *psDel);
@@ -62,10 +63,7 @@ void killDroid(DROID *psDel);
 void freeAllDroids();
 
 /*Remove a single Droid from its list*/
-void removeDroid(DROID *psDroidToRemove, DROID *pList[MAX_PLAYERS]);
-
-/*Removes all droids that may be stored in the mission lists*/
-void freeAllMissionDroids();
+void removeDroid(DROID *psDroidToRemove);
 
 /*Removes all droids that may be stored in the limbo lists*/
 void freeAllLimboDroids();
@@ -80,7 +78,7 @@ void killStruct(STRUCTURE *psDel);
 void freeAllStructs();
 
 /*Remove a single Structure from a list*/
-void removeStructureFromList(STRUCTURE *psStructToRemove, STRUCTURE *pList[MAX_PLAYERS]);
+void removeStructureFromList(STRUCTURE *psStructToRemove);
 
 /* add the feature to the Feature Lists */
 void addFeature(FEATURE *psFeatureToAdd);

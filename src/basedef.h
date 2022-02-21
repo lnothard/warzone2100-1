@@ -63,23 +63,6 @@ struct TILEPOS
 
 struct BASE_OBJECT;
 
-struct NEXTOBJ
-{
-	NEXTOBJ(BASE_OBJECT *ptr_ = nullptr) : ptr(ptr_) {}
-	NEXTOBJ &operator =(BASE_OBJECT *ptr_)
-	{
-		ptr = ptr_;
-		return *this;
-	}
-	template<class T>
-	operator T *() const
-	{
-		return static_cast<T *>(ptr);
-	}
-
-	BASE_OBJECT *ptr;
-};
-
 struct SIMPLE_OBJECT
 {
 	SIMPLE_OBJECT(OBJECT_TYPE type, uint32_t id, unsigned player);
@@ -109,7 +92,7 @@ enum OBJECT_FLAG
 struct BASE_OBJECT : public SIMPLE_OBJECT
 {
 	BASE_OBJECT(OBJECT_TYPE type, uint32_t id, unsigned player);
-	~BASE_OBJECT();
+	~BASE_OBJECT() override;
 
 	SCREEN_DISP_DATA    sDisplay;                   ///< screen coordinate details
 	UBYTE               group = 0;                  ///< Which group selection is the droid currently in?
@@ -131,20 +114,16 @@ struct BASE_OBJECT : public SIMPLE_OBJECT
 	WEAPON              asWeaps[MAX_WEAPONS];
 
 	std::bitset<OBJECT_FLAG_COUNT> flags;
-
-	NEXTOBJ             psNext;                     ///< Pointer to the next object in the object list
-	NEXTOBJ             psNextFunc;                 ///< Pointer to the next object in the function list
-
 public:
 	// Query visibility for display purposes (i.e. for `selectedPlayer`)
 	// *DO NOT USE TO QUERY VISIBILITY FOR CALCULATIONS INVOLVING GAME / SIMULATION STATE*
-	UBYTE visibleForLocalDisplay() const;
+	[[nodiscard]] UBYTE visibleForLocalDisplay() const;
 };
 
 /// Space-time coordinate, including orientation.
 struct Spacetime
 {
-	Spacetime() {}
+	Spacetime() = default;
 	Spacetime(Position pos_, Rotation rot_, uint32_t time_) : time(time_), pos(pos_), rot(rot_) {}
 
 	uint32_t time = 0;                  ///< Game time
@@ -154,7 +133,7 @@ struct Spacetime
 
 static inline Spacetime getSpacetime(SIMPLE_OBJECT const *psObj)
 {
-	return Spacetime(psObj->pos, psObj->rot, psObj->time);
+	return {psObj->pos, psObj->rot, psObj->time};
 }
 static inline void setSpacetime(SIMPLE_OBJECT *psObj, Spacetime const &st)
 {
@@ -166,7 +145,7 @@ static inline void setSpacetime(SIMPLE_OBJECT *psObj, Spacetime const &st)
 static inline bool isDead(const BASE_OBJECT *psObj)
 {
 	// See objmem.c for comments on the NOT_CURRENT_LIST hack
-	return (psObj->died > NOT_CURRENT_LIST);
+	return psObj->died > NOT_CURRENT_LIST;
 }
 
 static inline int objPosDiffSq(Position pos1, Position pos2)

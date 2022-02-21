@@ -124,33 +124,33 @@ void cancelBuild(DROID *psDroid)
 
 static void droidBodyUpgrade(DROID *psDroid)
 {
-	const int factor = 10000; // use big numbers to scare away rounding errors
-	int prev = psDroid->originalBody;
-	psDroid->originalBody = calcDroidBaseBody(psDroid);
-	int increase = psDroid->originalBody * factor / prev;
+	const auto factor = 10000; // use big numbers to scare away rounding errors
+  psDroid->originalBody = calcDroidBaseBody(psDroid);
+
+	auto increase = psDroid->originalBody * factor / psDroid->originalBody;
 	psDroid->body = MIN(psDroid->originalBody, (psDroid->body * increase) / factor + 1);
-	DROID_TEMPLATE sTemplate;
-	templateSetParts(psDroid, &sTemplate);
+
 	// update engine too
+  DROID_TEMPLATE sTemplate;
+  templateSetParts(psDroid, &sTemplate);
 	psDroid->baseSpeed = calcDroidBaseSpeed(&sTemplate, psDroid->weight, psDroid->player);
-	if (isTransporter(psDroid))
-	{
-		for (DROID *psCurr = psDroid->psGroup->psList; psCurr != nullptr; psCurr = psCurr->psGrpNext)
-		{
-			if (psCurr != psDroid)
-			{
-				droidBodyUpgrade(psCurr);
-			}
-		}
-	}
+
+  if (!isTransporter(psDroid)) return;
+
+  for (auto& psCurr : psDroid->psGroup->psList)
+  {
+    if (psCurr != psDroid) {
+      droidBodyUpgrade(psCurr);
+    }
+  }
 }
 
 // initialise droid module
 bool droidInit()
 {
-	for (int i = 0; i < MAX_PLAYERS; i++)
+	for (auto& i : recycled_experience)
 	{
-		recycled_experience[i] = std::priority_queue <int>(); // clear it
+		i = std::priority_queue <int>(); // clear it
 	}
 	psLastDroidHit = nullptr;
 
@@ -209,17 +209,14 @@ int droidReloadBar(const BASE_OBJECT *psObj, const WEAPON *psWeap, int weapon_sl
  */
 int32_t droidDamage(DROID *psDroid, unsigned damage, WEAPON_CLASS weaponClass, WEAPON_SUBCLASS weaponSubClass, unsigned impactTime, bool isDamagePerSecond, int minDamage)
 {
-	int32_t relativeDamage;
-
 	CHECK_DROID(psDroid);
 
 	// VTOLs (and transporters in MP) on the ground take triple damage
-	if ((isVtolDroid(psDroid) || (isTransporter(psDroid) && bMultiPlayer)) && (psDroid->sMove.Status == MOVEINACTIVE))
-	{
+	if (isVtolDroid(psDroid) && psDroid->sMove.Status == MOVEINACTIVE) {
 		damage *= 3;
 	}
 
-	relativeDamage = objDamage(psDroid, damage, psDroid->originalBody, weaponClass, weaponSubClass, isDamagePerSecond, minDamage);
+	auto relativeDamage = objDamage(psDroid, damage, psDroid->originalBody, weaponClass, weaponSubClass, isDamagePerSecond, minDamage);
 
 	if (relativeDamage > 0)
 	{
@@ -425,13 +422,11 @@ void recycleDroid(DROID *psDroid)
 	CHECK_DROID(psDroid);
 }
 
-
 bool removeDroidBase(DROID *psDel)
 {
 	CHECK_DROID(psDel);
 
-	if (isDead(psDel))
-	{
+	if (isDead(psDel)) {
 		// droid has already been killed, quit
 		syncDebug("droid already dead");
 		return true;
@@ -440,26 +435,18 @@ bool removeDroidBase(DROID *psDel)
 	syncDebugDroid(psDel, '#');
 
 	//kill all the droids inside the transporter
-	if (isTransporter(psDel))
-	{
-		if (psDel->psGroup)
-		{
-			//free all droids associated with this Transporter
-			DROID *psNext;
-			for (auto psCurr = psDel->psGroup->psList; psCurr != nullptr && psCurr != psDel; psCurr = psNext)
-			{
-				psNext = psCurr->psGrpNext;
-
-				/* add droid to droid list then vanish it - hope this works! - GJ */
-				addDroid(psCurr, apsDroidLists);
-				vanishDroid(psCurr);
-			}
-		}
-	}
+	if (isTransporter(psDel) && psDel->psGroup) {
+    //free all droids associated with this Transporter
+    for (auto psCurr : psDel->psGroup->psList)
+    {
+      /* add droid to droid list then vanish it - hope this works! - GJ */
+      addDroid(psCurr);
+      vanishDroid(psCurr);
+    }
+  }
 
 	// leave the current group if any
-	if (psDel->psGroup)
-	{
+	if (psDel->psGroup) {
 		psDel->psGroup->remove(psDel);
 		psDel->psGroup = nullptr;
 	}
@@ -467,37 +454,31 @@ bool removeDroidBase(DROID *psDel)
 	/* Put Deliv. Pts back into world when a command droid dies */
 	if (psDel->droidType == DROID_COMMAND)
 	{
-		for (auto psStruct = apsStructLists[psDel->player]; psStruct; psStruct = psStruct->psNext)
+		for (auto& psStruct : apsStructLists[psDel->player])
 		{
 			// alexl's stab at a right answer.
-			if (StructIsFactory(psStruct)
-				&& psStruct->pFunctionality->factory.psCommander == psDel)
-			{
-				assignFactoryCommandDroid(psStruct, nullptr);
+			if (StructIsFactory(&psStruct) && psStruct.pFunctionality->factory.psCommander == psDel) {
+				assignFactoryCommandDroid(&psStruct, nullptr);
 			}
 		}
 	}
 
 	// Check to see if constructor droid currently trying to find a location to build
-	if (psDel->player == selectedPlayer && psDel->selected && isConstructionDroid(psDel))
-	{
-		// If currently trying to build, kill off the placement
-		if (tryingToGetLocation())
-		{
-			int numSelectedConstructors = 0;
-			for (DROID *psDroid = apsDroidLists[psDel->player]; psDroid != nullptr; psDroid = psDroid->psNext)
-			{
-				numSelectedConstructors += psDroid->selected && isConstructionDroid(psDroid);
-			}
-			if (numSelectedConstructors <= 1)  // If we were the last selected construction droid.
-			{
-				kill3DBuilding();
-			}
-		}
-	}
+	if (psDel->player == selectedPlayer && psDel->selected &&
+      isConstructionDroid(psDel) && tryingToGetLocation()) {
+    int numSelectedConstructors = 0;
+    for (auto& psDroid : apsDroidLists[psDel->player])
+    {
+      numSelectedConstructors += psDroid.selected && isConstructionDroid(&psDroid);
+    }
 
-	if (psDel->player == selectedPlayer)
-	{
+    if (numSelectedConstructors <= 1)  // If we were the last selected construction droid.
+    {
+      kill3DBuilding();
+    }
+  }
+
+	if (psDel->player == selectedPlayer) {
 		intRefreshScreen();
 	}
 
@@ -527,23 +508,22 @@ static void removeDroidFX(DROID *psDel, unsigned impactTime)
 	{
 		// The barbarian has been run over ...
 		audio_PlayStaticTrack(psDel->pos.x, psDel->pos.y, ID_SOUND_BARB_SQUISH);
+    return;
 	}
-	else
-	{
-		destroyFXDroid(psDel, impactTime);
-		pos.x = psDel->pos.x;
-		pos.z = psDel->pos.y;
-		pos.y = psDel->pos.z;
-		if (psDel->droidType == DROID_SUPERTRANSPORTER)
-		{
-			addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_LARGE, false, nullptr, 0, impactTime);
-		}
-		else
-		{
-			addEffect(&pos, EFFECT_DESTRUCTION, DESTRUCTION_TYPE_DROID, false, nullptr, 0, impactTime);
-		}
-		audio_PlayStaticTrack(psDel->pos.x, psDel->pos.y, ID_SOUND_EXPLOSION);
-	}
+
+  destroyFXDroid(psDel, impactTime);
+  pos.x = psDel->pos.x;
+  pos.z = psDel->pos.y;
+  pos.y = psDel->pos.z;
+
+  if (psDel->droidType == DROID_SUPERTRANSPORTER) {
+    addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_LARGE, false, nullptr, 0, impactTime);
+  }
+  else {
+    addEffect(&pos, EFFECT_DESTRUCTION, DESTRUCTION_TYPE_DROID, false, nullptr, 0, impactTime);
+  }
+
+  audio_PlayStaticTrack(psDel->pos.x, psDel->pos.y, ID_SOUND_EXPLOSION);
 }
 
 bool destroyDroid(DROID *psDel, unsigned impactTime)

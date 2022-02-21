@@ -24,7 +24,7 @@
  *
  */
 
-#include <string.h>
+#include <cstring>
 #include "lib/framework/frame.h"
 #include "objects.h"
 #include "cmddroiddef.h"
@@ -37,39 +37,22 @@
 #include "objmem.h"
 #include "droid.h"
 
-/**This represents the current selected player, which is the client's player.*/
-extern UDWORD selectedPlayer;
-
 /** This global instance is responsible for dealing with the each player's target designator.*/
-DROID *apsCmdDesignator[MAX_PLAYERS];
+std::array<DROID*, MAX_PLAYERS> apsCmdDesignator;
 
 // Last time the max commander limit message was displayed
 static UDWORD lastMaxCmdLimitMsgTime = 0;
 
 #define MAX_COMMAND_LIMIT_MESSAGE_PAUSE 10000
 
-
-/** This function allocs the global instance apsCmdDesignator.*/
-bool cmdDroidInit()
-{
-	memset(apsCmdDesignator, 0, sizeof(DROID *)*MAX_PLAYERS);
-	return true;
-}
-
-// ShutDown the command droids
-void cmdDroidShutDown()
-{
-}
-
 /** This function runs on all players to check if the player's current target designator as died.
  * If it does, sets the target designator to NULL.
  */
 void cmdDroidUpdate()
 {
-	for (auto &i : apsCmdDesignator)
+	for (auto i : apsCmdDesignator)
 	{
-		if (i && i->died)
-		{
+		if (i && i->died) {
 			ASSERT(i->type == OBJ_DROID, "Bad droid pointer! type=%u", i->type);
 			i = nullptr;
 		}
@@ -110,15 +93,13 @@ bool cmdDroidAddDroid(DROID *psCommander, DROID *psDroid)
 
 		orderDroidObj(psDroid, DORDER_GUARD, (BASE_OBJECT *)psCommander, ModeImmediate);
 	}
-	else if (psCommander->player == selectedPlayer)
-	{
-		//Do not potentially spam the console with this message
-		if (lastMaxCmdLimitMsgTime + MAX_COMMAND_LIMIT_MESSAGE_PAUSE < gameTime)
-		{
-			addConsoleMessage(_("Commander needs a higher level to command more units"), DEFAULT_JUSTIFY,  SYSTEM_MESSAGE);
-			lastMaxCmdLimitMsgTime = gameTime;
-		}
-	}
+
+	else if (psCommander->player == selectedPlayer &&
+           lastMaxCmdLimitMsgTime + MAX_COMMAND_LIMIT_MESSAGE_PAUSE < gameTime) {
+    addConsoleMessage(_("Commander needs a higher level to command more units"),
+                      DEFAULT_JUSTIFY,  SYSTEM_MESSAGE);
+    lastMaxCmdLimitMsgTime = gameTime;
+  }
 
 	return addedToGroup;
 }
@@ -131,8 +112,7 @@ DROID *cmdDroidGetDesignator(UDWORD player)
 void cmdDroidSetDesignator(DROID *psDroid)
 {
 	ASSERT_OR_RETURN(, psDroid != nullptr, "Invalid droid!");
-	if (psDroid->droidType != DROID_COMMAND)
-	{
+	if (psDroid->droidType != DROID_COMMAND) {
 		return;
 	}
 
@@ -150,20 +130,15 @@ void cmdDroidClearDesignator(UDWORD player)
  */
 SDWORD cmdDroidGetIndex(DROID *psCommander)
 {
-	SDWORD	index = 1;
-	DROID	*psCurr;
-
-	if (psCommander->droidType != DROID_COMMAND)
-	{
+	if (psCommander->droidType != DROID_COMMAND) {
 		return 0;
 	}
 
-	for (psCurr = apsDroidLists[psCommander->player]; psCurr; psCurr = psCurr->psNext)
+  auto index = 1;
+	for (auto& psCurr : apsDroidLists[psCommander->player])
 	{
-		if (psCurr->droidType == DROID_COMMAND &&
-		    psCurr->id < psCommander->id)
-		{
-			index += 1;
+		if (psCurr.droidType == DROID_COMMAND && psCurr.id < psCommander->id) {
+			index++;
 		}
 	}
 
