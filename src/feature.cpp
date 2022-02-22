@@ -244,8 +244,8 @@ FEATURE *buildFeature(FEATURE_STATS *psStats, UDWORD x, UDWORD y, bool FromSave)
 	// it has never been drawn
 	psFeature->sDisplay.frameNumber = 0;
 
-	memset(psFeature->seenThisTick, 0, sizeof(psFeature->seenThisTick));
-	memset(psFeature->visible, 0, sizeof(psFeature->visible));
+  psFeature->seenThisTick.fill(0);
+  psFeature->visible.fill(0);
 
 	// set up the imd for the feature
 	psFeature->sDisplay.imd = psStats->psImd;

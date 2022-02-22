@@ -2335,12 +2335,12 @@ bool loadMissionExtras(const char* pGameToLoad, LEVEL_TYPE levelType)
 
 static void sanityUpdate()
 {
-	for (int player = 0; player < game.maxPlayers; player++)
+	for (auto player = 0; player < game.maxPlayers; player++)
 	{
-		for (DROID *psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[player])
 		{
-			orderCheckList(psDroid);
-			actionSanity(psDroid);
+			orderCheckList(&psDroid);
+			actionSanity(&psDroid);
 		}
 	}
 }
@@ -2362,8 +2362,7 @@ static void getIniBaseObject(WzConfig &ini, WzString const &key, BASE_OBJECT *&o
 static void getIniStructureStats(WzConfig &ini, WzString const &key, STRUCTURE_STATS *&stats)
 {
 	stats = nullptr;
-	if (ini.contains(key))
-	{
+	if (ini.contains(key)) {
 		WzString statName = ini.value(key).toWzString();
 		int tid = getStructStatFromName(statName);
 		ASSERT_OR_RETURN(, tid >= 0, "Target stats not found %s", statName.toUtf8().c_str());
@@ -2442,28 +2441,26 @@ static void allocatePlayers()
 static void getPlayerNames()
 {
 	/* Get human and AI players names */
-	if (saveGameVersion >= VERSION_34)
-	{
-		for (unsigned i = 0; i < MAX_PLAYERS; ++i)
-		{
-			(void)setPlayerName(i, saveGameData.sPlayerName[i]);
-		}
-	}
+  if (saveGameVersion < VERSION_34)
+    return;
+
+  for (auto i = 0; i < MAX_PLAYERS; ++i)
+  {
+    (void)setPlayerName(i, saveGameData.sPlayerName[i]);
+  }
 }
 
 static WzMap::MapType getWzMapType(bool UserSaveGame)
 {
-	if (UserSaveGame)
-	{
+	if (UserSaveGame) {
 		return WzMap::MapType::SAVEGAME;
 	}
-	else
-	{
-		return (game.type == LEVEL_TYPE::CAMPAIGN) ? WzMap::MapType::CAMPAIGN : WzMap::MapType::SKIRMISH;
-	}
+
+  return game.type == LEVEL_TYPE::CAMPAIGN
+         ? WzMap::MapType::CAMPAIGN
+         : WzMap::MapType::SKIRMISH;
 }
 
-// -----------------------------------------------------------------------------------------
 // UserSaveGame ... this is true when you are loading a players save game
 bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool UserSaveGame)
 {
@@ -2483,9 +2480,7 @@ bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool User
 	/* Stop the game clock */
 	gameTimeStop();
 
-	if ((gameType == GTYPE_SAVE_START) ||
-	    (gameType == GTYPE_SAVE_MIDMISSION))
-	{
+	if (gameType == GTYPE_SAVE_START || gameType == GTYPE_SAVE_MIDMISSION) {
 		gameTimeReset(savedGameTime);//added 14 may 98 JPS to solve kev's problem with no firing droids
 	}
 
@@ -2509,14 +2504,14 @@ bool loadGame(const char *pGameToLoad, bool keepObjects, bool freeMem, bool User
 		//initialise the lists
 		for (player = 0; player < MAX_PLAYERS; player++)
 		{
-			apsDroidLists[player] = nullptr;
-			apsStructLists[player] = nullptr;
-			apsFeatureLists[player] = nullptr;
-			apsFlagPosLists[player] = nullptr;
+			apsDroidLists[player].clear();
+			apsStructLists[player].clear();
+			apsFeatureLists.clear();
+			apsFlagPosLists[player].clear();
 			//clear all the messages?
 			apsProxDisp[player] = nullptr;
-			apsSensorList[0] = nullptr;
-			apsExtractorLists[player] = nullptr;
+			apsSensorList.clear();
+			apsExtractorLists[player].clear();
 		}
 		apsOilList[0] = nullptr;
 		initFactoryNumFlag();

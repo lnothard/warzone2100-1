@@ -97,12 +97,12 @@ struct BASE_OBJECT : public SIMPLE_OBJECT
 	SCREEN_DISP_DATA    sDisplay;                   ///< screen coordinate details
 	UBYTE               group = 0;                  ///< Which group selection is the droid currently in?
 	UBYTE               selected;                   ///< Whether the object is selected (might want this elsewhere)
-	UBYTE               visible[MAX_PLAYERS];       ///< Whether object is visible to specific player
-	UBYTE               seenThisTick[MAX_PLAYERS];  ///< Whether object has been seen this tick by the specific player.
-	UDWORD              lastEmission;               ///< When did it last puff out smoke?
-	WEAPON_SUBCLASS     lastHitWeapon;              ///< The weapon that last hit it
-	UDWORD              timeLastHit;                ///< The time the structure was last attacked
-	UDWORD              body;                       ///< Hit points with lame name
+	std::array<UBYTE, MAX_PLAYERS> visible;         ///< Whether object is visible to specific player
+  std::array<UBYTE, MAX_PLAYERS> seenThisTick;    ///< Whether object has been seen this tick by the specific player.
+  UDWORD              lastEmission;               ///< When did it last puff out smoke?
+  WEAPON_SUBCLASS     lastHitWeapon;              ///< The weapon that last hit it
+  UDWORD              timeLastHit;                ///< The time the structure was last attacked
+  UDWORD              body;                       ///< Hit points with lame name
 	UDWORD              periodicalDamageStart;                  ///< When the object entered the fire
 	UDWORD              periodicalDamage;                 ///< How much damage has been done since the object entered the fire
 	std::vector<TILEPOS> watchedTiles;              ///< Variable size array of watched tiles, empty for features
@@ -111,7 +111,7 @@ struct BASE_OBJECT : public SIMPLE_OBJECT
 	UBYTE               animationEvent;             ///< If animation start time > 0, this points to which animation to run
 
 	unsigned            numWeaps;
-	WEAPON              asWeaps[MAX_WEAPONS];
+  std::array<WEAPON, MAX_WEAPONS> asWeaps;
 
 	std::bitset<OBJECT_FLAG_COUNT> flags;
 public:
@@ -164,11 +164,13 @@ static inline bool isBaseObject(SIMPLE_OBJECT const *psObject)
 {
 	return psObject != nullptr && psObject->type != OBJ_PROJECTILE;
 }
+
 // Returns BASE_OBJECT * if base_object or NULL if not.
 static inline BASE_OBJECT *castBaseObject(SIMPLE_OBJECT *psObject)
 {
 	return isBaseObject(psObject) ? (BASE_OBJECT *)psObject : (BASE_OBJECT *)nullptr;
 }
+
 // Returns BASE_OBJECT const * if base_object or NULL if not.
 static inline BASE_OBJECT const *castBaseObject(SIMPLE_OBJECT const *psObject)
 {

@@ -81,6 +81,7 @@
 #include "random.h"
 #include <functional>
 #include <unordered_map>
+#include <utility>
 
 //Maximium slope of the terrain for building a structure
 #define MAX_INCLINE		50//80//40
@@ -1524,7 +1525,7 @@ STRUCTURE *buildStructureDir(STRUCTURE_STATS *pStructureType, UDWORD x, UDWORD y
 		psBuilding->lastResistance = ACTION_START_TIME;
 
 		// Do the visibility stuff before setFunctionality - so placement of DP's can work
-		memset(psBuilding->seenThisTick, 0, sizeof(psBuilding->seenThisTick));
+    psBuilding->seenThisTick.fill(0);
 
 		// Structure is visible to anyone with shared vision.
 		for (unsigned vPlayer = 0; vPlayer < MAX_PLAYERS; ++vPlayer)
@@ -2089,56 +2090,34 @@ void assignFactoryCommandDroid(STRUCTURE *psStruct, DROID *psCommander)
 // remove all factories from a command droid
 void clearCommandDroidFactory(DROID *psDroid)
 {
-	STRUCTURE	*psCurr;
-
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "invalid selectedPlayer: %" PRIu32 "", selectedPlayer);
 
-	for (psCurr = apsStructLists[selectedPlayer]; psCurr; psCurr = psCurr->psNext)
-	{
-		if ((psCurr->pStructureType->type == REF_FACTORY) ||
-		    (psCurr->pStructureType->type == REF_CYBORG_FACTORY) ||
-		    (psCurr->pStructureType->type == REF_VTOL_FACTORY))
-		{
-			if (psCurr->pFunctionality->factory.psCommander == psDroid)
-			{
-				assignFactoryCommandDroid(psCurr, nullptr);
-			}
-		}
-	}
-	for (psCurr = mission.apsStructLists[selectedPlayer]; psCurr; psCurr = psCurr->psNext)
-	{
-		if ((psCurr->pStructureType->type == REF_FACTORY) ||
-		    (psCurr->pStructureType->type == REF_CYBORG_FACTORY) ||
-		    (psCurr->pStructureType->type == REF_VTOL_FACTORY))
-		{
-			if (psCurr->pFunctionality->factory.psCommander == psDroid)
-			{
-				assignFactoryCommandDroid(psCurr, nullptr);
-			}
-		}
-	}
+  for (auto& psCurr : apsStructLists[selectedPlayer])
+  {
+    if ((psCurr.pStructureType->type == REF_FACTORY ||
+         psCurr.pStructureType->type == REF_CYBORG_FACTORY ||
+         psCurr.pStructureType->type == REF_VTOL_FACTORY) &&
+        psCurr.pFunctionality->factory.psCommander == psDroid) {
+      assignFactoryCommandDroid(&psCurr, nullptr);
+    }
+  }
 }
 
 /* Check that a tile is vacant for a droid to be placed */
 static bool structClearTile(UWORD x, UWORD y)
 {
-	UDWORD	player;
-	DROID	*psCurr;
-
 	/* Check for a structure */
-	if (fpathBlockingTile(x, y, PROPULSION_TYPE_WHEELED))
-	{
+	if (fpathBlockingTile(x, y, PROPULSION_TYPE_WHEELED)) {
 		debug(LOG_NEVER, "failed - blocked");
 		return false;
 	}
 
 	/* Check for a droid */
-	for (player = 0; player < MAX_PLAYERS; player++)
+	for (auto player = 0; player < MAX_PLAYERS; player++)
 	{
-		for (psCurr = apsDroidLists[player]; psCurr; psCurr = psCurr->psNext)
+		for (auto& psCurr : apsDroidLists[player])
 		{
-			if (map_coord(psCurr->pos.x) == x
-			    && map_coord(psCurr->pos.y) == y)
+			if (map_coord(psCurr.pos.x) == x && map_coord(psCurr.pos.y) == y)
 			{
 				debug(LOG_NEVER, "failed - not vacant");
 				return false;
@@ -2206,7 +2185,7 @@ bool placeDroid(STRUCTURE *psStructure, UDWORD *droidX, UDWORD *droidY)
 		{
 			if (structClearTile(x, y))
 			{
-				tiles.push_back(Vector2i(12 * x - sx, 12 * y - sy));
+				tiles.emplace_back(12 * x - sx, 12 * y - sy);
 			}
 		}
 	}
@@ -6970,7 +6949,7 @@ void checkStructure(const STRUCTURE *psStructure, const char *const location_des
 	ASSERT_HELPER(psStructure->pStructureType->type < NUM_DIFF_BUILDINGS, location_description, function, "CHECK_STRUCTURE: Out of bound structure type (%u)", (unsigned int)psStructure->pStructureType->type);
 	ASSERT_HELPER(psStructure->numWeaps <= MAX_WEAPONS, location_description, function, "CHECK_STRUCTURE: Out of bound weapon count (%u)", (unsigned int)psStructure->numWeaps);
 
-	for (unsigned i = 0; i < ARRAY_SIZE(psStructure->asWeaps); ++i)
+	for (unsigned i = 0; i < psStructure->asWeaps.size(); ++i)
 	{
 		if (psStructure->psTarget[i])
 		{
@@ -6981,16 +6960,13 @@ void checkStructure(const STRUCTURE *psStructure, const char *const location_des
 
 static void parseFavoriteStructs()
 {
-	for (unsigned i = 0; i < numStructureStats; ++i)
+	for (auto i = 0; i < numStructureStats; ++i)
 	{
-		if (favoriteStructs.contains(asStructureStats[i].id))
-		{
+		if (favoriteStructs.contains(asStructureStats[i].id)) {
 			asStructureStats[i].isFavorite = true;
+      continue;
 		}
-		else
-		{
-			asStructureStats[i].isFavorite = false;
-		}
+    asStructureStats[i].isFavorite = false;
 	}
 }
 
@@ -6999,21 +6975,20 @@ static void packFavoriteStructs()
 	favoriteStructs = "";
 	bool first = true;
 
-	for (unsigned i = 0; i < numStructureStats; ++i)
+	for (auto i = 0; i < numStructureStats; ++i)
 	{
-		if (asStructureStats[i].isFavorite)
-		{
-			if (first)
-			{
-				first = false;
-			}
-			else
-			{
-				favoriteStructs += ",";
-			}
-			favoriteStructs += asStructureStats[i].id;
-		}
-	}
+    if (!asStructureStats[i].isFavorite)
+      continue;
+
+    if (first) {
+      first = false;
+    }
+    else {
+      favoriteStructs += ",";
+    }
+
+    favoriteStructs += asStructureStats[i].id;
+  }
 }
 
 WzString getFavoriteStructs()
@@ -7023,14 +6998,13 @@ WzString getFavoriteStructs()
 
 void setFavoriteStructs(WzString list)
 {
-	favoriteStructs = list;
+	favoriteStructs = std::move(list);
 }
 
 // This follows the logic in droid.cpp nextModuleToBuild()
 bool canStructureHaveAModuleAdded(const STRUCTURE* const structure)
 {
-	if (nullptr == structure || nullptr == structure->pStructureType || structure->status != SS_BUILT)
-	{
+	if (nullptr == structure || nullptr == structure->pStructureType || structure->status != SS_BUILT) {
 		return false;
 	}
 

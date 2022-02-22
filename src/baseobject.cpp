@@ -104,7 +104,7 @@ BASE_OBJECT::BASE_OBJECT(OBJECT_TYPE type, uint32_t id, unsigned player)
 	, timeAnimationStarted(0)
 	, animationEvent(ANIM_EVENT_NONE)
 {
-	memset(visible, 0, sizeof(visible));
+  visible.fill(0);
 	sDisplay.imd = nullptr;
 	sDisplay.frameNumber = 0;
 	sDisplay.screenX = 0;

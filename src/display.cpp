@@ -768,20 +768,16 @@ void processMouseClickInput()
 		ASSERT(selectedPlayer < MAX_PLAYERS, "selectedPlayer is too high: %" PRIu32 "", selectedPlayer);
 		ObjAllied = (ObjUnderMouse && selectedPlayer != ObjUnderMouse->player && aiCheckAlliances(selectedPlayer, ObjUnderMouse->player));
 
-		if (item != MT_NOTARGET)
-		{
+		if (item != MT_NOTARGET) {
 			// exceptions to the lookup table.
 			if (ctrlShiftDown() &&
 			    (ObjUnderMouse != nullptr) &&
 			    (ObjUnderMouse->player == selectedPlayer) &&
-			    (ObjUnderMouse->type == OBJ_DROID))
-			{
+			    (ObjUnderMouse->type == OBJ_DROID)) {
 				item = MT_OWNDROID;
 			}
-			else if (specialOrderKeyDown() &&
-			         (ObjUnderMouse != nullptr) &&
-			         ObjUnderMouse->player == selectedPlayer)
-			{
+			else if (specialOrderKeyDown() && ObjUnderMouse != nullptr &&
+			         ObjUnderMouse->player == selectedPlayer) {
 				if (selection == SC_DROID_REPAIR)
 				{
 					item = MT_OWNDROIDDAM;
@@ -795,12 +791,11 @@ void processMouseClickInput()
 			else if (selection == SC_DROID_REPAIR)
 			{
 				// We can't repair ourselves, so change it to a blocking cursor
-				for (DROID *psCurr = apsDroidLists[selectedPlayer]; psCurr != nullptr; psCurr = psCurr->psNext)
+				for (auto& psCurr : apsDroidLists[selectedPlayer])
 				{
-					if (psCurr->selected)
-					{
-						if ((ObjUnderMouse != nullptr) && ObjUnderMouse->player == selectedPlayer && psCurr->id == ObjUnderMouse->id)
-						{
+					if (psCurr.selected) {
+						if (ObjUnderMouse != nullptr && ObjUnderMouse->player == selectedPlayer &&
+                psCurr.id == ObjUnderMouse->id) {
 							item = MT_BLOCKING;
 						}
 						break;
@@ -1300,23 +1295,22 @@ BASE_OBJECT *mouseTarget()
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
 		/* Note the !psObject check isn't really necessary as the goto will jump out */
-		for (DROID *psDroid = apsDroidLists[i]; psDroid && !psReturn; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[i])
 		{
-			dispX = psDroid->sDisplay.screenX;
-			dispY = psDroid->sDisplay.screenY;
-			dispR = psDroid->sDisplay.screenR;
+      if (psReturn) break;
+
+			dispX = psDroid.sDisplay.screenX;
+			dispY = psDroid.sDisplay.screenY;
+			dispR = psDroid.sDisplay.screenR;
 
 			// Has the droid been drawn since the start of the last frame
-			if (psDroid->visibleForLocalDisplay() && DrawnInLastFrame(psDroid->sDisplay.frameNumber))
-			{
-				if (mouseInBox(dispX - dispR, dispY - dispR, dispX + dispR, dispY + dispR))
-				{
-					/* We HAVE clicked on droid! */
-					psReturn = (BASE_OBJECT *) psDroid;
-					/* There's no point in checking other object types */
-					return psReturn;
-				}
-			}
+			if (psDroid.visibleForLocalDisplay() && DrawnInLastFrame(psDroid.sDisplay.frameNumber) &&
+          mouseInBox(dispX - dispR, dispY - dispR, dispX + dispR, dispY + dispR)) {
+        /* We HAVE clicked on droid! */
+        psReturn = (BASE_OBJECT *) &psDroid;
+        /* There's no point in checking other object types */
+        return psReturn;
+      }
 		}
 	} // end of checking for droids
 
@@ -1324,8 +1318,7 @@ BASE_OBJECT *mouseTarget()
 		If still NULL after this then nothing */
 	psReturn = getTileOccupier(mouseTileX, mouseTileY);
 
-	if (psReturn == nullptr)
-	{
+	if (psReturn == nullptr) {
 		psReturn = getTileBlueprintStructure(mouseTileX, mouseTileY);
 	}
 
@@ -1342,8 +1335,6 @@ static bool flagReposFinished;
 
 void startDeliveryPosition(FLAG_POSITION *psFlag)
 {
-	FLAG_POSITION	*psFlagPos;
-
 	if (tryingToGetLocation()) // if we're placing a building don't place
 	{
 		return;
@@ -1352,9 +1343,9 @@ void startDeliveryPosition(FLAG_POSITION *psFlag)
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "Invalid player (selectedPlayer: %" PRIu32 ")", selectedPlayer);
 
 	//clear the selected delivery point
-	for (psFlagPos = apsFlagPosLists[selectedPlayer]; psFlagPos; psFlagPos = psFlagPos->psNext)
+	for (auto& psFlagPos : apsFlagPosLists[selectedPlayer])
 	{
-		psFlagPos->selected = false;
+		psFlagPos.selected = false;
 	}
 
 	//set this object position to be highlighted
@@ -2664,14 +2655,11 @@ bool	vtolDroidSelected(UDWORD player)
 {
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "player: %" PRIu32 "", player);
 
-	DROID	*psCurr;
-
-	for (psCurr = apsDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsDroidLists[player])
 	{
-		if (psCurr->selected && isVtolDroid(psCurr))
-		{
+		if (psCurr.selected && isVtolDroid(&psCurr)) {
 			// horrible hack to note one of the selected vtols
-			psSelectedVtol = psCurr;
+			psSelectedVtol = &psCurr;
 			return true;
 		}
 	}
@@ -2685,18 +2673,11 @@ bool	anyDroidSelected(UDWORD player)
 {
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "Invalid player (%" PRIu32 ")", player);
 
-	DROID	*psCurr;
-
-	for (psCurr = apsDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
-	{
-		if (psCurr->selected)
-		{
-			return true;
-		}
-	}
-
-	//didn't find one...
-	return false;
+  return std::any_of(apsDroidLists[player].begin(),
+                     apsDroidLists[player].end(),
+                     [](auto const& psCurr) {
+    return psCurr.selected;
+  });
 }
 
 /*Looks through the list of selected players droids to see if one is a cyborg droid*/
@@ -2704,12 +2685,9 @@ bool cyborgDroidSelected(UDWORD player)
 {
 	ASSERT_OR_RETURN(false, player < MAX_PLAYERS, "Invalid player (%" PRIu32 ")", player);
 
-	DROID	*psCurr;
-
-	for (psCurr = apsDroidLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsDroidLists[player])
 	{
-		if (psCurr->selected && cyborgDroid(psCurr))
-		{
+		if (psCurr.selected && cyborgDroid(&psCurr)) {
 			return true;
 		}
 	}
@@ -2721,34 +2699,30 @@ bool cyborgDroidSelected(UDWORD player)
 /* Clear the selection flag for a player */
 void clearSelection()
 {
-	DROID			*psCurrDroid;
-	STRUCTURE		*psStruct;
-	FLAG_POSITION	*psFlagPos;
-
 	memset(DROIDDOING, 0x0 , sizeof(DROIDDOING));	// clear string when deselected
 
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return;
 	}
 
-	for (psCurrDroid = apsDroidLists[selectedPlayer]; psCurrDroid; psCurrDroid = psCurrDroid->psNext)
+	for (auto& psCurrDroid : apsDroidLists[selectedPlayer])
 	{
-		psCurrDroid->selected = false;
+		psCurrDroid.selected = false;
 	}
-	for (psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
+
+	for (auto& psStruct : apsStructLists[selectedPlayer])
 	{
-		psStruct->selected = false;
+		psStruct.selected = false;
 	}
+
 	bLasSatStruct = false;
 	//clear the Deliv Point if one
-	for (psFlagPos = apsFlagPosLists[selectedPlayer]; psFlagPos; psFlagPos = psFlagPos->psNext)
+	for (auto& psFlagPos : apsFlagPosLists[selectedPlayer])
 	{
-		psFlagPos->selected = false;
+		psFlagPos.selected = false;
 	}
 
 	intRefreshScreen();
-
 	triggerEventSelected();
 }
 

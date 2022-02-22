@@ -172,12 +172,11 @@ static BASE_OBJECT *aiSearchSensorTargets(BASE_OBJECT *psObj, int weapon_slot, W
 	int		minDist = proj_GetMinRange(psWStats, psObj->player) * proj_GetMinRange(psWStats, psObj->player);
 	BASE_OBJECT	*psTarget = nullptr;
 
-	if (targetOrigin)
-	{
+	if (targetOrigin) {
 		*targetOrigin = ORIGIN_UNKNOWN;
 	}
 
-	for (BASE_OBJECT *psSensor = apsSensorList[0]; psSensor; psSensor = psSensor->psNextFunc)
+	for (auto psSensor : apsSensorList)
 	{
 		BASE_OBJECT	*psTemp = nullptr;
 		bool		isCB = false;
@@ -273,7 +272,7 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 {
 	SDWORD			targetTypeBonus = 0, damageRatio = 0, attackWeight = 0, noTarget = -1;
 	UDWORD			weaponSlot;
-	DROID			*targetDroid = nullptr, *psAttackerDroid = nullptr, *psGroupDroid, *psDroid;
+	DROID			*targetDroid = nullptr, *psAttackerDroid = nullptr, *psDroid;
 	STRUCTURE		*targetStructure = nullptr;
 	WEAPON_EFFECT	weaponEffect;
 	WEAPON_STATS	*attackerWeapon;
@@ -521,14 +520,13 @@ static SDWORD targetAttackWeight(BASE_OBJECT *psTarget, BASE_OBJECT *psAttacker,
 		}
 
 		//fire support - go through all droids assigned to the commander
-		for (psGroupDroid = psAttackerDroid->psGroup->psList; psGroupDroid; psGroupDroid = psGroupDroid->psGrpNext)
+		for (auto psGroupDroid : psAttackerDroid->psGroup->psList)
 		{
 			for (weaponSlot = 0; weaponSlot < psGroupDroid->numWeaps; weaponSlot++)
 			{
 				//see if this droid is currently targeting current target
 				if (psGroupDroid->order.psObj == psTarget ||
-				    psGroupDroid->psActionTarget[weaponSlot] == psTarget)
-				{
+				    psGroupDroid->psActionTarget[weaponSlot] == psTarget) {
 					//we prefer targets that are already targeted and hence will be destroyed faster
 					attackWeight += WEIGHT_CMD_SAME_TARGET;
 				}

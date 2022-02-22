@@ -146,7 +146,7 @@ SDWORD cmdDroidGetIndex(DROID *psCommander)
 }
 
 /** This function returns the maximum group size of the command droid.*/
-unsigned int cmdDroidMaxGroup(const DROID *psCommander)
+unsigned cmdDroidMaxGroup(const DROID *psCommander)
 {
 	const BRAIN_STATS *psStats = getBrainStats(psCommander);
 	return getDroidLevel(psCommander) * psStats->upgrade[psCommander->player].maxDroidsMult + psStats->upgrade[psCommander->player].maxDroids;
@@ -157,9 +157,8 @@ void cmdDroidUpdateExperience(DROID *psShooter, uint32_t experienceInc)
 {
 	ASSERT_OR_RETURN(, psShooter != nullptr, "invalid Unit pointer");
 
-	if (hasCommander(psShooter))
-	{
-		DROID *psCommander = psShooter->psGroup->psCommander;
+	if (hasCommander(psShooter)) {
+		auto psCommander = psShooter->psGroup->psCommander;
 		psCommander->experience += MIN(experienceInc, UINT32_MAX - psCommander->experience);
 	}
 }
@@ -169,33 +168,22 @@ bool hasCommander(const DROID *psDroid)
 {
 	ASSERT_OR_RETURN(false, psDroid != nullptr, "invalid droid pointer");
 
-	if (psDroid->droidType != DROID_COMMAND &&
-	    psDroid->psGroup != nullptr &&
-	    psDroid->psGroup->type == GT_COMMAND)
-	{
-		return true;
-	}
-
-	return false;
+  return psDroid->droidType != DROID_COMMAND &&
+         psDroid->psGroup != nullptr &&
+         psDroid->psGroup->type == GT_COMMAND;
 }
 
 /** This function returns the level of a droids commander. If the droid doesn't have commander, it returns 0.*/
-unsigned int cmdGetCommanderLevel(const DROID *psDroid)
+unsigned cmdGetCommanderLevel(const DROID *psDroid)
 {
-	const DROID *psCommander;
-
 	ASSERT(psDroid != nullptr, "invalid droid pointer");
 
 	// If this droid is not the member of a Commander's group
 	// Return an experience level of 0
-	if (!hasCommander(psDroid))
-	{
+	if (!hasCommander(psDroid)) {
 		return 0;
 	}
 
-	// Retrieve this group's commander
-	psCommander = psDroid->psGroup->psCommander;
-
-	// Return the experience level of this commander
-	return getDroidLevel(psCommander);
+  // Return the experience level of this commander
+	return getDroidLevel(psDroid->psGroup->psCommander);
 }

@@ -73,7 +73,7 @@ DROID_GROUP::DROID_GROUP()
 DROID_GROUP *grpCreate(int id)
 {
 	ASSERT(grpInitialized, "Group code not initialized yet");
-	DROID_GROUP *psGroup = new DROID_GROUP;
+	auto *psGroup = new DROID_GROUP;
 	if (id == -1)
 	{
 		int i;
@@ -92,7 +92,7 @@ DROID_GROUP *grpCreate(int id)
 DROID_GROUP *grpFind(int id)
 {
 	DROID_GROUP *psGroup = nullptr;
-	std::map<int, DROID_GROUP *>::iterator it = grpGlobalManager.find(id);
+	auto it = grpGlobalManager.find(id);
 	if (it != grpGlobalManager.end())
 	{
 		psGroup = it->second;
@@ -205,12 +205,12 @@ void DROID_GROUP::remove(DROID *psDroid)
 		psDroid->psGrpNext = nullptr;
 
 		// update group's type
-		if ((psDroid->droidType == DROID_COMMAND) && (type == GT_COMMAND))
+		if (psDroid->droidType == DROID_COMMAND && type == GT_COMMAND)
 		{
 			type = GT_NORMAL;
 			psCommander = nullptr;
 		}
-		else if (isTransporter(psDroid) && (type == GT_TRANSPORTER))
+		else if (isTransporter(psDroid) && type == GT_TRANSPORTER)
 		{
 			type = GT_NORMAL;
 		}

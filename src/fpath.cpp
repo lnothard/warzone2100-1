@@ -287,7 +287,7 @@ static Position findNonblockingPosition(Position pos, PROPULSION_TYPE propulsion
 	Vector2i minCoord = world_coord(bestTile);
 	Vector2i maxCoord = minCoord + Vector2i(TILE_UNITS - 1, TILE_UNITS - 1);
 
-	return Position(std::min(std::max(pos.x, minCoord.x), maxCoord.x), std::min(std::max(pos.y, minCoord.y), maxCoord.y), pos.z);
+	return {std::min(std::max(pos.x, minCoord.x), maxCoord.x), std::min(std::max(pos.y, minCoord.y), maxCoord.y), pos.z};
 }
 
 
@@ -341,7 +341,7 @@ static FPATH_RETVAL fpathRoute(MOVE_CONTROL *psMove, unsigned id, int startX, in
 		auto const &I = pathResults.find(id);
 		ASSERT(I != pathResults.end(), "Missing path result promise");
 		PATHRESULT result = I->second.get();
-		ASSERT(result.retval != FPR_OK || result.sMove.asPath.size() > 0, "Ok result but no path in list");
+		ASSERT(result.retval != FPR_OK || !result.sMove.asPath.empty(), "Ok result but no path in list");
 
 		// Copy over select fields - preserve others
 		psMove->destination = result.sMove.destination;
@@ -350,7 +350,7 @@ static FPATH_RETVAL fpathRoute(MOVE_CONTROL *psMove, unsigned id, int startX, in
 		psMove->Status = MOVENAVIGATE;
 		psMove->asPath = result.sMove.asPath;
 		FPATH_RETVAL retval = result.retval;
-		ASSERT(retval != FPR_OK || psMove->asPath.size() > 0, "Ok result but no path after copy");
+		ASSERT(retval != FPR_OK || !psMove->asPath.empty(), "Ok result but no path after copy");
 
 		// Remove it from the result list
 		pathResults.erase(id);
@@ -462,7 +462,7 @@ PATHRESULT fpathExecute(PATHJOB job)
 
 	ASR_RETVAL retval = fpathAStarRoute(&result.sMove, &job);
 
-	ASSERT(retval != ASR_OK || result.sMove.asPath.size() > 0, "Ok result but no path in result");
+	ASSERT(retval != ASR_OK || !result.sMove.asPath.empty(), "Ok result but no path in result");
 	switch (retval)
 	{
 	case ASR_NEAREST:
@@ -569,7 +569,7 @@ void fpathTest(int x, int y, int x2, int y2)
 	assert(fpathResultQueueLength() == 1);
 	r = fpathSimpleRoute(&sMove, 1, x, y, x2, y2);
 	assert(r == FPR_OK);
-	assert(sMove.asPath.size() > 0);
+	assert(!sMove.asPath.empty());
 	assert(sMove.asPath[sMove.asPath.size() - 1].x == x2);
 	assert(sMove.asPath[sMove.asPath.size() - 1].y == y2);
 	assert(fpathResultQueueLength() == 0);
@@ -591,7 +591,7 @@ void fpathTest(int x, int y, int x2, int y2)
 		sMove.Status = MOVEWAITROUTE;
 		r = fpathSimpleRoute(&sMove, i, x, y, x2, y2);
 		assert(r == FPR_OK);
-		assert(sMove.asPath.size() > 0 && sMove.asPath.size() > 0);
+		assert(!sMove.asPath.empty() && !sMove.asPath.empty());
 		assert(sMove.asPath[sMove.asPath.size() - 1].x == x2);
 		assert(sMove.asPath[sMove.asPath.size() - 1].y == y2);
 	}
