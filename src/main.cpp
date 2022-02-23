@@ -75,7 +75,6 @@
 #include "lib/sound/cdaudio.h"
 
 #include "clparse.h"
-#include "challenge.h"
 #include "configuration.h"
 #include "display.h"
 #include "display3d.h"
@@ -86,7 +85,6 @@
 #include "lighting.h"
 #include "loadsave.h"
 #include "loop.h"
-#include "mission.h"
 #include "modding.h"
 #include "multiplay.h"
 #include "notifications.h"
@@ -994,10 +992,6 @@ static void startGameLoop()
 	// set a flag for the trigger/event system to indicate initialisation is complete
 	gameInitialised = true;
 
-	if (challengeActive)
-	{
-		addMissionTimerInterface();
-	}
 	triggerEvent(TRIGGER_START_LEVEL);
 	screen_disableMapPreview();
 
@@ -1122,10 +1116,6 @@ static bool initSaveGameLoad()
 	{
 		wzGrabMouse();
 	}
-	if (challengeActive)
-	{
-		addMissionTimerInterface();
-	}
 
 	return true;
 }
@@ -1144,7 +1134,7 @@ static void runGameLoop()
 		break;
 	case GAMECODE_QUITGAME:
 		debug(LOG_MAIN, "GAMECODE_QUITGAME");
-		ActivityManager::instance().quitGame(collectEndGameStatsData(), Cheated);
+		ActivityManager::instance().quitGame(collectEndGameStatsData(), false);
 		cdAudio_SetGameMode(MusicGameMode::MENUS);
 		stopGameLoop();
 		startTitleLoop(); // Restart into titleloop

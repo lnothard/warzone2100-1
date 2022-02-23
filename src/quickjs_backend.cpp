@@ -34,12 +34,12 @@
 
 #include "action.h"
 #include "clparse.h"
+#include "group.h"
 #include "combat.h"
 #include "console.h"
 #include "design.h"
 #include "display3d.h"
 #include "map.h"
-#include "mission.h"
 #include "move.h"
 #include "order.h"
 #include "transporter.h"
@@ -48,7 +48,6 @@
 #include "intelmap.h"
 #include "hci.h"
 #include "wrappers.h"
-#include "challenge.h"
 #include "research.h"
 #include "multilimit.h"
 #include "multigifts.h"
@@ -2139,7 +2138,7 @@ static JSValue callFunction(JSContext *ctx, const std::string &function, std::ve
 		{
 			size_t idx WZ_DECL_UNUSED = 0; // unused when Args... is empty
 			quickjs_execution_context execution_context(context);
-			return box(apply(f, UnboxTuple<Args...>(execution_context, idx, context, argc, argv, wrappedFunctionName)()), context);
+			return box(::apply(f, UnboxTuple<Args...>(execution_context, idx, context, argc, argv, wrappedFunctionName)()), context);
 		}
 
 		template<typename R, typename...Args>

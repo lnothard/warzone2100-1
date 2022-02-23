@@ -67,7 +67,6 @@
 #include "console.h"
 #include "cmddroid.h"
 #include "transporter.h"
-#include "mission.h"
 
 #include "multiplay.h"
 #include "qtscript.h"
@@ -1345,47 +1344,42 @@ STRUCTURE *DroidGetBuildStructure(DROID *Droid)
 // Get the first factory assigned to a command droid
 STRUCTURE *droidGetCommandFactory(DROID *psDroid)
 {
-	SDWORD		inc;
-	STRUCTURE	*psCurr;
-
-	for (inc = 0; inc < MAX_FACTORY; inc++)
+	for (auto inc = 0; inc < MAX_FACTORY; inc++)
 	{
 		if (psDroid->secondaryOrder & (1 << (inc + DSS_ASSPROD_SHIFT)))
 		{
 			// found an assigned factory - look for it in the lists
-			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+			for (auto& psCurr : apsStructLists[psDroid->player])
 			{
-				if ((psCurr->pStructureType->type == REF_FACTORY) &&
-				    (((FACTORY *)psCurr->pFunctionality)->
-				     psAssemblyPoint->factoryInc == inc))
-				{
-					return psCurr;
+				if (psCurr.pStructureType->type == REF_FACTORY &&
+            ((FACTORY *) psCurr.pFunctionality)->psAssemblyPoint->factoryInc == inc) {
+					return &psCurr;
 				}
 			}
 		}
 		if (psDroid->secondaryOrder & (1 << (inc + DSS_ASSPROD_CYBORG_SHIFT)))
 		{
 			// found an assigned factory - look for it in the lists
-			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+			for (auto& psCurr : apsStructLists[psDroid->player])
 			{
-				if ((psCurr->pStructureType->type == REF_CYBORG_FACTORY) &&
-				    (((FACTORY *)psCurr->pFunctionality)->
+				if ((psCurr.pStructureType->type == REF_CYBORG_FACTORY) &&
+				    (((FACTORY *)psCurr.pFunctionality)->
 				     psAssemblyPoint->factoryInc == inc))
 				{
-					return psCurr;
+					return &psCurr;
 				}
 			}
 		}
 		if (psDroid->secondaryOrder & (1 << (inc + DSS_ASSPROD_VTOL_SHIFT)))
 		{
 			// found an assigned factory - look for it in the lists
-			for (psCurr = apsStructLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+			for (auto& psCurr : apsStructLists[psDroid->player])
 			{
-				if ((psCurr->pStructureType->type == REF_VTOL_FACTORY) &&
-				    (((FACTORY *)psCurr->pFunctionality)->
+				if ((psCurr.pStructureType->type == REF_VTOL_FACTORY) &&
+				    (((FACTORY *)psCurr.pFunctionality)->
 				     psAssemblyPoint->factoryInc == inc))
 				{
-					return psCurr;
+					return &psCurr;
 				}
 			}
 		}
@@ -1666,7 +1660,6 @@ void IntTransportButton::display(int xOffset, int yOffset)
 /* Draws blips on radar to represent Proximity Display and damaged structures */
 void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, const glm::mat4 &modelViewProjection)
 {
-	PROXIMITY_DISPLAY	*psProxDisp;
 	UWORD			imageID;
 	UDWORD			delay = 150;
 	UDWORD			i;
@@ -1687,11 +1680,11 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{
 		/* Go through all the proximity Displays*/
-		for (psProxDisp = apsProxDisp[i]; psProxDisp != nullptr; psProxDisp = psProxDisp->psNext)
+		for (auto& psProxDisp : apsProxDisp[i])
 		{
-			if (psProxDisp->psMessage->dataType == MSG_DATA_BEACON)
+			if (psProxDisp.psMessage->dataType == MSG_DATA_BEACON)
 			{
-				MESSAGE		*psCurrMsg = psProxDisp->psMessage;
+				MESSAGE		*psCurrMsg = psProxDisp.psMessage;
 				VIEWDATA	*pViewData = psCurrMsg->pViewData;
 
 				ASSERT_OR_RETURN(, pViewData != nullptr, "Message without data!");
@@ -1716,24 +1709,24 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 	}
 
 	/* Go through all the proximity Displays */
-	for (psProxDisp = (selectedPlayer < MAX_PLAYERS) ? apsProxDisp[selectedPlayer] : nullptr; psProxDisp != nullptr; psProxDisp = psProxDisp->psNext)
+	for (auto& psProxDisp : apsProxDisp[selectedPlayer])
 	{
 		unsigned        animationLength = ARRAY_SIZE(imagesEnemy) - 1;  // Same size as imagesResource and imagesArtifact.
 		const uint16_t *images;
 
-		if (psProxDisp->psMessage->player != selectedPlayer)
+		if (psProxDisp.psMessage->player != selectedPlayer)
 		{
 			continue;
 		}
 
-		if (psProxDisp->type == POS_PROXDATA)
+		if (psProxDisp.type == POS_PROXDATA)
 		{
-			PROX_TYPE proxType = ((VIEW_PROXIMITY *)psProxDisp->psMessage->pViewData->pData)->proxType;
+			PROX_TYPE proxType = ((VIEW_PROXIMITY *)psProxDisp.psMessage->pViewData->pData)->proxType;
 			images = imagesProxTypes[proxType];
 		}
 		else
 		{
-			const FEATURE *psFeature = castFeature(psProxDisp->psMessage->psObj);
+			const FEATURE *psFeature = castFeature(psProxDisp.psMessage->psObj);
 
 			ASSERT_OR_RETURN(, psFeature && psFeature->psStats, "Bad feature message");
 			if (psFeature && psFeature->psStats && psFeature->psStats->subType == FEAT_OIL_RESOURCE)
@@ -1752,33 +1745,33 @@ void drawRadarBlips(int radarX, int radarY, float pixSizeH, float pixSizeV, cons
 		}
 
 		// Draw the 'blips' on the radar - use same timings as radar blips if the message is read - don't animate
-		if (psProxDisp->psMessage->read)
+		if (psProxDisp.psMessage->read)
 		{
 			imageID = images[0];
 		}
 		else
 		{
 			// Draw animated
-			if (realTime - psProxDisp->timeLastDrawn > delay)
+			if (realTime - psProxDisp.timeLastDrawn > delay)
 			{
-				++psProxDisp->strobe;
-				psProxDisp->timeLastDrawn = realTime;
+				++psProxDisp.strobe;
+				psProxDisp.timeLastDrawn = realTime;
 			}
-			psProxDisp->strobe %= animationLength;
-			imageID = images[1 + psProxDisp->strobe];
+			psProxDisp.strobe %= animationLength;
+			imageID = images[1 + psProxDisp.strobe];
 		}
 
-		if (psProxDisp->type == POS_PROXDATA)
+		if (psProxDisp.type == POS_PROXDATA)
 		{
-			const VIEW_PROXIMITY *psViewProx = (VIEW_PROXIMITY *)psProxDisp->psMessage->pViewData->pData;
+			const VIEW_PROXIMITY *psViewProx = (VIEW_PROXIMITY *)psProxDisp.psMessage->pViewData->pData;
 
 			x = static_cast<int>((psViewProx->x / TILE_UNITS - scrollMinX) * pixSizeH);
 			y = static_cast<int>((psViewProx->y / TILE_UNITS - scrollMinY) * pixSizeV);
 		}
-		else if (psProxDisp->type == POS_PROXOBJ)
+		else if (psProxDisp.type == POS_PROXOBJ)
 		{
-			x = static_cast<int>((psProxDisp->psMessage->psObj->pos.x / TILE_UNITS - scrollMinX) * pixSizeH);
-			y = static_cast<int>((psProxDisp->psMessage->psObj->pos.y / TILE_UNITS - scrollMinY) * pixSizeV);
+			x = static_cast<int>((psProxDisp.psMessage->psObj->pos.x / TILE_UNITS - scrollMinX) * pixSizeH);
+			y = static_cast<int>((psProxDisp.psMessage->psObj->pos.y / TILE_UNITS - scrollMinY) * pixSizeV);
 		}
 		else
 		{

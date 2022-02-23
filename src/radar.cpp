@@ -44,7 +44,6 @@
 #include "loop.h"
 #include "warcam.h"
 #include "display.h"
-#include "mission.h"
 #include "multiplay.h"
 #include "intdisplay.h"
 #include "texture.h"
@@ -486,8 +485,6 @@ static void DrawRadarObjects()
 	/* Show droids on map - go through all players */
 	for (clan = 0; clan < MAX_PLAYERS; clan++)
 	{
-		DROID		*psDroid;
-
 		//see if have to draw enemy/ally color
 		if (bEnemyAllyRadarColor)
 		{
@@ -511,32 +508,32 @@ static void DrawRadarObjects()
 		flashCol = flashColours[getPlayerColour(clan)];
 
 		/* Go through all droids */
-		for (psDroid = apsDroidLists[clan]; psDroid != nullptr; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[clan])
 		{
-			if (psDroid->pos.x < world_coord(scrollMinX) || psDroid->pos.y < world_coord(scrollMinY)
-			    || psDroid->pos.x >= world_coord(scrollMaxX) || psDroid->pos.y >= world_coord(scrollMaxY))
+			if (psDroid.pos.x < world_coord(scrollMinX) || psDroid.pos.y < world_coord(scrollMinY)
+			    || psDroid.pos.x >= world_coord(scrollMaxX) || psDroid.pos.y >= world_coord(scrollMaxY))
 			{
 				continue;
 			}
-			if (psDroid->visibleForLocalDisplay()
+			if (psDroid.visibleForLocalDisplay()
 			    || (bMultiPlayer && alliancesSharedVision(game.alliance)
-					&& selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psDroid->player)))
+					&& selectedPlayer < MAX_PLAYERS && aiCheckAlliances(selectedPlayer, psDroid.player)))
 			{
-				int	x = psDroid->pos.x / TILE_UNITS;
-				int	y = psDroid->pos.y / TILE_UNITS;
+				int	x = psDroid.pos.x / TILE_UNITS;
+				int	y = psDroid.pos.y / TILE_UNITS;
 				size_t	pos = (x - scrollMinX) + (y - scrollMinY) * radarTexWidth;
 
 				ASSERT(pos * sizeof(*radarOverlayBuffer) < radarBufferSize, "Buffer overrun");
-				if (clan == selectedPlayer && gameTime > HIT_NOTIFICATION && gameTime - psDroid->timeLastHit < HIT_NOTIFICATION)
+				if (clan == selectedPlayer && gameTime > HIT_NOTIFICATION && gameTime - psDroid.timeLastHit < HIT_NOTIFICATION)
 				{
-					if (psDroid->selected && !blinkState)
+					if (psDroid.selected && !blinkState)
 						radarOverlayBuffer[pos] = applyAlpha(flashCol, OVERLAY_OPACITY).rgba;
 					else
 						radarOverlayBuffer[pos] = flashCol.rgba;
 				}
 				else
 				{
-					if (psDroid->selected && !blinkState)
+					if (psDroid.selected && !blinkState)
 						radarOverlayBuffer[pos] = applyAlpha(playerCol, OVERLAY_OPACITY).rgba;
 					else
 						radarOverlayBuffer[pos] = playerCol.rgba;
@@ -685,10 +682,10 @@ static void setViewingWindow()
 	int x = static_cast<int>(playerPos.p.x * pixSizeH / TILE_UNITS);
 	int y = static_cast<int>(playerPos.p.z * pixSizeV / TILE_UNITS);
 
-	shortX = static_cast<int>(((visibleTiles.x / 4) - (dif / 6)) * pixSizeH);
-	longX = static_cast<int>(((visibleTiles.x / 2) - (dif / 4)) * pixSizeH);
-	yDropVar = static_cast<int>(((visibleTiles.y / 2) - (dif2 / 3)) * pixSizeV);
-	yDrop = static_cast<int>(((visibleTiles.y / 2) - dif2 / 3) * pixSizeV);
+	shortX = static_cast<int>((visibleTiles.x / 4 - dif / 6) * pixSizeH);
+	longX = static_cast<int>((visibleTiles.x / 2 - dif / 4) * pixSizeH);
+	yDropVar = static_cast<int>((visibleTiles.y / 2 - dif2 / 3) * pixSizeV);
+	yDrop = static_cast<int>((visibleTiles.y / 2 - dif2 / 3) * pixSizeV);
 
 	v[0].x = longX;
 	v[0].y = -yDropVar;
@@ -706,30 +703,6 @@ static void setViewingWindow()
 	centre.y = static_cast<int>(y - scrollMinY * pixSizeV);
 
 	RotateVector2D(v, tv, &centre, playerPos.r.y, 4);
-
-	switch (getCampaignNumber())
-	{
-	case 1:
-	case 2:
-		// white
-		colour.byte.r = UBYTE_MAX;
-		colour.byte.g = UBYTE_MAX;
-		colour.byte.b = UBYTE_MAX;
-		colour.byte.a = 0x3f;
-		break;
-	case 3:
-		// greenish
-		colour.byte.r = 0x3f;
-		colour.byte.g = UBYTE_MAX;
-		colour.byte.b = 0x3f;
-		colour.byte.a = 0x3f;
-		break;
-	default:
-		// black
-		colour.rgba = 0;
-		colour.byte.a = 0x3f;
-		break;
-	}
 
 	/* Send the four points to the draw routine and the clip box params */
 	pie_SetViewingWindow(tv, colour);

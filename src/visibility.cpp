@@ -750,7 +750,7 @@ static void processVisibilityVision(BASE_OBJECT *psViewer)
 
 /* Find out what can see this object */
 // Fade in/out of view. Must be called after calculation of which objects are seen.
-static void processVisibilityLevel(BASE_OBJECT *psObj, bool& addedMessage)
+static void processVisibilityLevel(BASE_OBJECT *psObj)
 {
 	// update the visibility levels
 	for (unsigned player = 0; player < MAX_PLAYERS; player++)
@@ -793,7 +793,6 @@ static void processVisibilityLevel(BASE_OBJECT *psObj, bool& addedMessage)
 			// if a feature has just become visible set the message blips
 			if (psObj->type == OBJ_FEATURE)
 			{
-				MESSAGE *psMessage;
 				INGAME_AUDIO type = NO_SOUND;
 
 				/* If this is an oil resource we want to add a proximity message for
@@ -809,12 +808,11 @@ static void processVisibilityLevel(BASE_OBJECT *psObj, bool& addedMessage)
 
 				if (type != NO_SOUND)
 				{
-					psMessage = addMessage(MSG_PROXIMITY, true, player);
-					if (psMessage)
+					auto psMessage = addMessage(MSG_PROXIMITY, true, player);
+					if (psMessage != nullptr)
 					{
 						psMessage->psObj = psObj;
 						debug(LOG_MSG, "Added message for oil well or artefact, pViewData=%p", static_cast<void *>(psMessage->pViewData));
-						addedMessage = true;
 					}
 					if (!bInTutorial && player == selectedPlayer)
 					{
@@ -830,61 +828,40 @@ static void processVisibilityLevel(BASE_OBJECT *psObj, bool& addedMessage)
 void processVisibility()
 {
 	updateSpotters();
-	for (int player = 0; player < MAX_PLAYERS; ++player)
+
+	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
-		BASE_OBJECT *lists[] = {apsDroidLists[player], apsStructLists[player], apsFeatureLists[player]};
-		unsigned list;
-		for (list = 0; list < sizeof(lists) / sizeof(*lists); ++list)
-		{
-			for (BASE_OBJECT *psObj = lists[list]; psObj != nullptr; psObj = psObj->psNext)
-			{
-				processVisibilitySelf(psObj);
-			}
-		}
+    forEachList(processVisibilitySelf, apsDroidLists[player],
+                apsStructLists[player], apsFeatureLists);
 	}
 
-	for (int player = 0; player < MAX_PLAYERS; ++player)
+	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
-		BASE_OBJECT *lists[] = {apsDroidLists[player], apsStructLists[player]};
-		unsigned list;
-		for (list = 0; list < sizeof(lists) / sizeof(*lists); ++list)
-		{
-			for (BASE_OBJECT *psObj = lists[list]; psObj != nullptr; psObj = psObj->psNext)
-			{
-				processVisibilityVision(psObj);
-			}
-		}
+    forEachList( processVisibilityVision, apsDroidLists[player],
+                 apsStructLists[player]);
 	}
+
 	for (auto psObj : apsSensorList)
 	{
-		if (objRadarDetector(psObj)) {
-			for (auto psTarget : apsSensorList)
-			{
-				if (psObj != psTarget && psTarget->visible[psObj->player] < UBYTE_MAX / 2
-				    && objActiveRadar(psTarget)
-				    && iHypot((psTarget->pos - psObj->pos).xy()) < objSensorRange(psObj) * 10) {
-					psTarget->visible[psObj->player] = UBYTE_MAX / 2;
-				}
-			}
-		}
-	}
-	bool addedMessage = false;
-	for (int player = 0; player < MAX_PLAYERS; ++player)
+    if (!objRadarDetector(psObj)) continue;
+
+    for (auto psTarget : apsSensorList)
+    {
+      if (psObj != psTarget && psTarget->visible[psObj->player] < UBYTE_MAX / 2
+          && objActiveRadar(psTarget)
+          && iHypot((psTarget->pos - psObj->pos).xy()) < objSensorRange(psObj) * 10) {
+        psTarget->visible[psObj->player] = UBYTE_MAX / 2;
+      }
+    }
+  }
+
+	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
-		BASE_OBJECT *lists[] = {apsDroidLists[player], apsStructLists[player], apsFeatureLists[player]};
-		unsigned list;
-		for (list = 0; list < sizeof(lists) / sizeof(*lists); ++list)
-		{
-			for (BASE_OBJECT *psObj = lists[list]; psObj != nullptr; psObj = psObj->psNext)
-			{
-				processVisibilityLevel(psObj, addedMessage);
-			}
-		}
+    forEachList(processVisibilityLevel, apsDroidLists[player],
+                apsStructLists[player], apsFeatureLists);
 	}
-	if (addedMessage)
-	{
-		jsDebugMessageUpdate();
-	}
+
+  jsDebugMessageUpdate();
 }
 
 void	setUnderTilesVis(BASE_OBJECT *psObj, UDWORD player)

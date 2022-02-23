@@ -62,7 +62,6 @@
 #include "loadsave.h"
 #include "loop.h"
 #include "order.h"
-#include "mission.h"
 #include "multimenu.h"
 #include "multiplay.h"
 #include "multigifts.h"
@@ -306,10 +305,6 @@ static bool buttonIsHighlighted(W_BUTTON *p)
 
 void setReticuleFlash(int ButId, bool flash)
 {
-	if (MissionResUp)
-	{
-		return;
-	}
 	if (flash != retbutstats[ButId].flashing)
 	{
 		retbutstats[ButId].flashing = flash;
@@ -1006,16 +1001,13 @@ bool intIsRefreshing()
 // see if a delivery point is selected
 static FLAG_POSITION *intFindSelectedDelivPoint()
 {
-	FLAG_POSITION *psFlagPos;
-
 	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS, "Not supported selectedPlayer: %" PRIu32 "", selectedPlayer);
 
-	for (psFlagPos = apsFlagPosLists[selectedPlayer]; psFlagPos;
-	     psFlagPos = psFlagPos->psNext)
+	for (auto& psFlagPos : apsFlagPosLists[selectedPlayer])
 	{
-		if (psFlagPos->selected && (psFlagPos->type == POS_DELIVERY))
+		if (psFlagPos.selected && psFlagPos.type == POS_DELIVERY)
 		{
-			return psFlagPos;
+			return &psFlagPos;
 		}
 	}
 
@@ -1193,10 +1185,7 @@ void intResetScreen(bool NoAnim, bool skipMissionResultScreen /*= false*/)
 		intRemoveIntelMap();
 		intRemoveTrans(true);
 	}
-	if ((intMode == INT_MISSIONRES) && !skipMissionResultScreen)
-	{
-		intRemoveMissionResultNoAnim();
-	}
+
 	intRemoveDesign();
 	intHidePowerBar();
 
@@ -1324,11 +1313,6 @@ INT_RETVAL intRunWidgets()
 				sstrcpy(msg, _("GAME SAVED: "));
 				sstrcat(msg, saveGameName);
 				addConsoleMessage(msg, LEFT_JUSTIFY, NOTIFY_MESSAGE);
-
-				if (widgGetFromID(psWScreen, IDMISSIONRES_SAVE))
-				{
-					widgDelete(psWScreen, IDMISSIONRES_SAVE);
-				}
 			}
 			else
 			{
@@ -1336,11 +1320,6 @@ INT_RETVAL intRunWidgets()
 				deleteSaveGame_classic(sRequestResult);
 			}
 		}
-	}
-
-	if (MissionResUp)
-	{
-		intRunMissionResult();
 	}
 
 	/* Run the current set of widgets */
@@ -1514,7 +1493,6 @@ INT_RETVAL intRunWidgets()
 
 		/* Catch the quit button here */
 		case INTINGAMEOP_POPUP_QUIT:
-		case IDMISSIONRES_QUIT:			// mission quit
 		case INTINGAMEOP_QUIT:			// esc quit confirm
 		case IDOPT_QUIT:						// options screen quit
 			intCloseInGameOptions(false, false);
@@ -1566,7 +1544,6 @@ INT_RETVAL intRunWidgets()
 				intProcessOrder(retID);
 				break;
 			case INT_MISSIONRES:
-				intProcessMissionResult(retID);
 				break;
 			case INT_INGAMEOP:
 				intProcessInGameOptions(retID);
@@ -1734,7 +1711,6 @@ INT_RETVAL intRunWidgets()
 							std::string msg = astringf(_("Player %u is cheating (debug menu) him/herself a new structure: %s."),
 										selectedPlayer, getStatsName(psStructure->pStructureType));
 							sendInGameSystemMessage(msg.c_str());
-							Cheated = true;
 						}
 					}
 					else if (psPositionStats->hasType(STAT_FEATURE))
@@ -1743,7 +1719,6 @@ INT_RETVAL intRunWidgets()
 						std::string msg = astringf(_("Player %u is cheating (debug menu) him/herself a new feature: %s."),
 									selectedPlayer, getStatsName(psPositionStats));
 						sendInGameSystemMessage(msg.c_str());
-						Cheated = true;
 						// Notify the other hosts that we've just built ourselves a feature
 						//sendMultiPlayerFeature(result->psStats->subType, result->pos.x, result->pos.y, result->id);
 						sendMultiPlayerFeature(((FEATURE_STATS *)psPositionStats)->ref, pos.x, pos.y, generateNewObjectId());
@@ -1755,7 +1730,7 @@ INT_RETVAL intRunWidgets()
 						cancelDeliveryRepos();
 						if (psDroid)
 						{
-							addDroid(psDroid, apsDroidLists);
+							addDroid(psDroid);
 
 							// Send a text message to all players, notifying them of
 							// the fact that we're cheating ourselves a new droid.
@@ -1770,7 +1745,6 @@ INT_RETVAL intRunWidgets()
 							msg = astringf(_("Player %u is cheating (debug menu) him/herself a new droid."), selectedPlayer);
 						}
 						sendInGameSystemMessage(msg.c_str());
-						Cheated = true;
 					}
 					if (!quickQueueMode)
 					{
@@ -2500,7 +2474,6 @@ void forceHidePowerBar(bool forceSetPowerBarUpState)
 /* Add the Proximity message buttons */
 bool intAddProximityButton(PROXIMITY_DISPLAY *psProxDisp, UDWORD inc)
 {
-	PROXIMITY_DISPLAY	*psProxDisp2;
 	UDWORD				cnt;
 
 	if (selectedPlayer >= MAX_PLAYERS)
@@ -2520,13 +2493,13 @@ bool intAddProximityButton(PROXIMITY_DISPLAY *psProxDisp, UDWORD inc)
 		for (cnt = IDPROX_START; cnt < IDPROX_END; cnt++)
 		{
 			// go down the prox msgs and see if it's free.
-			for (psProxDisp2 = apsProxDisp[selectedPlayer]; psProxDisp2 && psProxDisp2->buttonID != cnt; psProxDisp2 = psProxDisp2->psNext) {}
-
-			if (psProxDisp2 == nullptr)	// value was unused.
-			{
-				sBFormInit.id = cnt;
-				break;
-			}
+			for (auto& psProxDisp2 : apsProxDisp[selectedPlayer])
+      {
+        if (psProxDisp2.buttonID == cnt) {
+          sBFormInit.id = cnt;
+          break;
+        }
+      }
 		}
 		ASSERT_OR_RETURN(false, cnt != IDPROX_END, "Ran out of proximity displays");
 	}
@@ -2560,8 +2533,6 @@ void intRemoveProximityButton(PROXIMITY_DISPLAY *psProxDisp)
 /*deals with the proximity message when clicked on*/
 void processProximityButtons(UDWORD id)
 {
-	PROXIMITY_DISPLAY	*psProxDisp;
-
 	if (!doWeDrawProximitys())
 	{
 		return;
@@ -2570,20 +2541,15 @@ void processProximityButtons(UDWORD id)
 	if (selectedPlayer >= MAX_PLAYERS) { return; /* no-op */ }
 
 	//find which proximity display this relates to
-	psProxDisp = nullptr;
-	for (psProxDisp = apsProxDisp[selectedPlayer]; psProxDisp; psProxDisp = psProxDisp->psNext)
+	for (auto& psProxDisp : apsProxDisp[selectedPlayer])
 	{
-		if (psProxDisp->buttonID == id)
+		if (psProxDisp.buttonID == id)
 		{
+      //if not been read - display info
+      if (!psProxDisp.psMessage->read) {
+        displayProximityMessage(&psProxDisp);
+      }
 			break;
-		}
-	}
-	if (psProxDisp)
-	{
-		//if not been read - display info
-		if (!psProxDisp->psMessage->read)
-		{
-			displayProximityMessage(psProxDisp);
 		}
 	}
 }
@@ -2597,7 +2563,6 @@ void	setKeyButtonMapping(UDWORD	val)
 // count the number of selected droids of a type
 static SDWORD intNumSelectedDroids(UDWORD droidType)
 {
-	DROID	*psDroid;
 	SDWORD	num;
 
 	if (selectedPlayer >= MAX_PLAYERS)
@@ -2606,9 +2571,9 @@ static SDWORD intNumSelectedDroids(UDWORD droidType)
 	}
 
 	num = 0;
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		if (psDroid->selected && psDroid->droidType == droidType)
+		if (psDroid.selected && psDroid.droidType == droidType)
 		{
 			num += 1;
 		}
@@ -2627,11 +2592,11 @@ int intGetResearchState()
 	}
 
 	bool resFree = false;
-	for (STRUCTURE *psStruct = interfaceStructList(); psStruct != nullptr; psStruct = psStruct->psNext)
+	for (auto& psStruct : apsStructLists[selectedPlayer])
 	{
-		if (psStruct->pStructureType->type == REF_RESEARCH &&
-		    psStruct->status == SS_BUILT &&
-		    getResearchStats(psStruct) == nullptr)
+		if (psStruct.pStructureType->type == REF_RESEARCH &&
+		    psStruct.status == SS_BUILT &&
+		    getResearchStats(&psStruct) == nullptr)
 		{
 			resFree = true;
 			break;
@@ -2689,64 +2654,22 @@ bool intCheckReticuleButEnabled(UDWORD id)
 }
 
 // Look through the players structures and find the next one of type structType.
-//
 static STRUCTURE *intGotoNextStructureType(UDWORD structType)
 {
-	STRUCTURE	*psStruct;
 	bool Found = false;
 
-	if ((SWORD)structType != CurrentStructType)
+	for (auto& psStruct : apsStructLists[selectedPlayer])
 	{
-		CurrentStruct = nullptr;
-		CurrentStructType = (SWORD)structType;
-	}
-
-	if (CurrentStruct != nullptr)
-	{
-		psStruct = CurrentStruct;
-	}
-	else
-	{
-		psStruct = interfaceStructList();
-	}
-
-	for (; psStruct != nullptr; psStruct = psStruct->psNext)
-	{
-		if ((psStruct->pStructureType->type == structType || structType == REF_ANY) && psStruct->status == SS_BUILT)
+		if ((psStruct.pStructureType->type == structType || structType == REF_ANY) && psStruct.status == SS_BUILT)
 		{
-			if (psStruct != CurrentStruct)
-			{
-				clearSelection();
-				psStruct->selected = true;
-				CurrentStruct = psStruct;
-				Found = true;
-				break;
-			}
+      clearSelection();
+      psStruct.selected = true;
+      jsDebugSelected(&psStruct);
+      triggerEventSelected();
+      return &psStruct;
 		}
 	}
-
-	// Start back at the beginning?
-	if ((!Found) && (CurrentStruct != nullptr))
-	{
-		for (psStruct = interfaceStructList(); psStruct != CurrentStruct && psStruct != nullptr; psStruct = psStruct->psNext)
-		{
-			if ((psStruct->pStructureType->type == structType || structType == REF_ANY) && psStruct->status == SS_BUILT)
-			{
-				if (psStruct != CurrentStruct)
-				{
-					clearSelection();
-					psStruct->selected = true;
-					jsDebugSelected(psStruct);
-					CurrentStruct = psStruct;
-					break;
-				}
-			}
-		}
-	}
-
-	triggerEventSelected();
-
-	return CurrentStruct;
+  return nullptr;
 }
 
 // Find any structure. Returns NULL if none found.
@@ -2776,82 +2699,24 @@ STRUCTURE *intFindAStructure()
 //
 DROID *intGotoNextDroidType(DROID *CurrDroid, DROID_TYPE droidType, bool AllowGroup)
 {
-	DROID *psDroid;
-	bool Found = false;
-
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
 		return nullptr;
 	}
 
-	if (CurrDroid != nullptr)
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		CurrentDroid = CurrDroid;
-	}
-
-	if (droidType != CurrentDroidType && droidType != DROID_ANY)
-	{
-		CurrentDroid = nullptr;
-		CurrentDroidType = droidType;
-	}
-
-	if (CurrentDroid != nullptr)
-	{
-		psDroid = CurrentDroid;
-	}
-	else
-	{
-		psDroid = apsDroidLists[selectedPlayer];
-	}
-
-	for (; psDroid != nullptr; psDroid = psDroid->psNext)
-	{
-		if ((psDroid->droidType == droidType
-		     || (droidType == DROID_ANY && !isTransporter(psDroid)))
-		    && (psDroid->group == UBYTE_MAX || AllowGroup))
+		if ((psDroid.droidType == droidType
+		     || (droidType == DROID_ANY && !isTransporter(&psDroid)))
+		    && (psDroid.group == UBYTE_MAX || AllowGroup))
 		{
-			if (psDroid != CurrentDroid)
-			{
-				clearSelection();
-				SelectDroid(psDroid);
-				CurrentDroid = psDroid;
-				Found = true;
-				break;
-			}
-		}
+      clearSelection();
+      SelectDroid(&psDroid);
+      intSetMapPos(psDroid.pos.x, psDroid.pos.y);
+      return &psDroid;
+    }
 	}
-
-	// Start back at the beginning?
-	if ((!Found) && (CurrentDroid != nullptr))
-	{
-		for (psDroid = apsDroidLists[selectedPlayer]; (psDroid != CurrentDroid) && (psDroid != nullptr); psDroid = psDroid->psNext)
-		{
-			if ((psDroid->droidType == droidType ||
-			     ((droidType == DROID_ANY) && !isTransporter(psDroid))) &&
-			    ((psDroid->group == UBYTE_MAX) || AllowGroup))
-			{
-				if (psDroid != CurrentDroid)
-				{
-					clearSelection();
-					SelectDroid(psDroid);
-					CurrentDroid = psDroid;
-					Found = true;
-					break;
-				}
-			}
-		}
-	}
-
-	if (Found == true)
-	{
-		// Center it on screen.
-		if (CurrentDroid)
-		{
-			intSetMapPos(CurrentDroid->pos.x, CurrentDroid->pos.y);
-		}
-		return CurrentDroid;
-	}
-	return nullptr;
+  return nullptr;
 }
 
 // Checks if a coordinate is over the build menu

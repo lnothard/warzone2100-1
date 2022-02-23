@@ -52,29 +52,21 @@ void gridReset()
 {
 	gridPointTree->clear();
 
-	// Put all existing objects into the point tree.
-	for (unsigned player = 0; player < MAX_PLAYERS; player++)
-	{
-		BASE_OBJECT *start[3] = {(BASE_OBJECT *)apsDroidLists[player], (BASE_OBJECT *)apsStructLists[player], (BASE_OBJECT *)apsFeatureLists[player]};
-		for (unsigned type = 0; type != sizeof(start) / sizeof(*start); ++type)
-		{
-			for (BASE_OBJECT *psObj = start[type]; psObj != nullptr; psObj = psObj->psNext)
-			{
-				if (!psObj->died)
-				{
-					gridPointTree->insert(psObj, psObj->pos.x, psObj->pos.y);
-					for (unsigned char &viewer : psObj->seenThisTick)
-					{
-						viewer = 0;
-					}
-				}
-			}
-		}
-	}
+  auto p = [](BASE_OBJECT* psObj) {
+      if (psObj->died != 0) return;
+      gridPointTree->insert(psObj, psObj->pos.x, psObj->pos.y);
+      psObj->seenThisTick.fill(0);
+  };
 
+	// Put all existing objects into the point tree.
+	for (auto player = 0; player < MAX_PLAYERS; player++)
+	{
+    forEachList(p, apsDroidLists[player], apsStructLists[player]);
+	}
+  forEachList(p, apsFeatureLists);
 	gridPointTree->sort();
 
-	for (unsigned player = 0; player < MAX_PLAYERS; ++player)
+	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
 		gridFiltersUnseen[player].reset(*gridPointTree);
 		gridFiltersDroidsByPlayer[player].reset(*gridPointTree);

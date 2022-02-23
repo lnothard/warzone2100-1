@@ -563,33 +563,27 @@ void vanishDroid(DROID *psDel)
 /* Remove a droid from the List so doesn't update or get drawn etc
 TAKE CARE with removeDroid() - usually want droidRemove since it deal with grid code*/
 //returns false if the droid wasn't removed - because it died!
-bool droidRemove(DROID *psDroid, DROID *pList[MAX_PLAYERS])
+bool droidRemove(DROID *psDroid)
 {
 	CHECK_DROID(psDroid);
 
-	if (isDead(psDroid))
-	{
+	if (isDead(psDroid)) {
 		// droid has already been killed, quit
 		return false;
 	}
 
 	// leave the current group if any - not if its a Transporter droid
-	if (!isTransporter(psDroid) && psDroid->psGroup)
-	{
+	if (!isTransporter(psDroid) && psDroid->psGroup) {
 		psDroid->psGroup->remove(psDroid);
 		psDroid->psGroup = nullptr;
 	}
-
 	// reset the baseStruct
 	setDroidBase(psDroid, nullptr);
 
 	removeDroid(psDroid);
-
-	if (psDroid->player == selectedPlayer)
-	{
+	if (psDroid->player == selectedPlayer) {
 		intRefreshScreen();
 	}
-
 	return true;
 }
 

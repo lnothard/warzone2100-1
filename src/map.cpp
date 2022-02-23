@@ -43,7 +43,6 @@
 #include "advvis.h"
 #include "random.h"
 #include "research.h"
-#include "mission.h"
 #include "gateway.h"
 #include "wrappers.h"
 #include "mapgrid.h"

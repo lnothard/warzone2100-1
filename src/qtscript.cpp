@@ -54,12 +54,10 @@
 #include "difficulty.h"
 #include "console.h"
 #include "clparse.h"
-#include "mission.h"
 #include "modding.h"
 #include "version.h"
 #include "game.h"
 #include "warzoneconfig.h"
-#include "challenge.h"
 
 #include <set>
 #include <memory>
@@ -595,7 +593,7 @@ wzapi::scripting_instance* scripting_engine::loadPlayerScript(const WzString& pa
 	//== * ```isMultiplayer``` If the current game is a online multiplayer game or not. (3.2+ only)
 	globalVars["isMultiplayer"] = NetPlay.bComms;
 	//== * ```challenge``` If the current game is a challenge. (4.1.4+ only)
-	globalVars["challenge"] = challengeActive;
+	globalVars["challenge"] = false;
 	//== * ```idleTime``` The amount of game time without active play before a player should be considered "inactive". (0 = disable activity alerts / AFK check) (4.2.0+ only)
 	globalVars["idleTime"] = game.inactivityMinutes * 60 * 1000;
 
@@ -2593,11 +2591,10 @@ wzapi::no_return_value scripting_engine::groupAddArea(WZAPI_PARAMS(int groupId, 
 	int x2 = world_coord(_x2);
 	int y2 = world_coord(_y2);
 
-	for (DROID *psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[player])
 	{
-		if (psDroid->pos.x >= x1 && psDroid->pos.x <= x2 && psDroid->pos.y >= y1 && psDroid->pos.y <= y2)
-		{
-			scripting_engine::instance().groupAddObject(psDroid, groupId, context.currentInstance());
+		if (psDroid.pos.x >= x1 && psDroid.pos.x <= x2 && psDroid.pos.y >= y1 && psDroid.pos.y <= y2) {
+			scripting_engine::instance().groupAddObject(&psDroid, groupId, context.currentInstance());
 		}
 	}
 	return {};
@@ -2636,9 +2633,7 @@ int scripting_engine::groupSize(WZAPI_PARAMS(int groupId))
 	return groupMap->groupSize(groupId);
 }
 
-// ----------------------------------------------------------------------------------------
 // Register functions with scripting system
-
 bool scripting_engine::unregisterFunctions(wzapi::scripting_instance *instance)
 {
 	int num = 0;

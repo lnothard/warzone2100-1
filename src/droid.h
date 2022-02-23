@@ -154,7 +154,7 @@ void vanishDroid(DROID *psDel);
 
 /* Remove a droid from the apsDroidLists so doesn't update or get drawn etc*/
 //returns true if successfully removed from the list
-bool droidRemove(DROID *psDroid, DROID *pList[MAX_PLAYERS]);
+bool droidRemove(DROID *psDroid);
 
 //free the storage for the droid templates
 bool droidTemplateShutDown();

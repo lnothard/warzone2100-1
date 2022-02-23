@@ -61,7 +61,6 @@
 #include "loop.h"
 #include "warzoneconfig.h"
 #include "seqdisp.h"
-#include "mission.h"
 
 #include "multiplay.h"
 #include "lib/sequence/sequence.h"
@@ -269,15 +268,9 @@ static bool intAddMessageForm(bool _playCurrent)
 
 	//add each button
 	messageID = 0;
-	for (MESSAGE *psMessage = apsMessages[selectedPlayer]; psMessage != nullptr; psMessage = psMessage->psNext)
+	for (auto& psMessage : apsMessages[selectedPlayer])
 	{
-		/*if (psMessage->type == MSG_TUTORIAL)
-		{
-			//tutorial cases should never happen
-			ASSERT( false, "Tutorial message in Intelligence screen!" );
-			continue;
-		}*/
-		if (psMessage->type == MSG_PROXIMITY)
+		if (psMessage.type == MSG_PROXIMITY)
 		{
 			//ignore proximity messages here
 			continue;
@@ -286,11 +279,11 @@ static bool intAddMessageForm(bool _playCurrent)
 		auto button = std::make_shared<IntMessageButton>();
 		msgList->attach(button);
 		button->id = nextButtonId;
-		button->setMessage(psMessage);
+		button->setMessage(&psMessage);
 		msgList->addWidgetToLayout(button);
 
 		/* if the current message matches psSelected lock the button */
-		if (psMessage == psCurrentMsg)
+		if (&psMessage == psCurrentMsg)
 		{
 			messageID = nextButtonId;
 			button->setState(WBUT_LOCK);
@@ -540,7 +533,6 @@ button has been pressed
 */
 void intIntelButtonPressed(bool proxMsg, UDWORD id)
 {
-	MESSAGE			*psMessage;
 	UDWORD			currID;
 	RESEARCH		*psResearch;
 
@@ -567,122 +559,112 @@ void intIntelButtonPressed(bool proxMsg, UDWORD id)
 
 	//Find the message for the new button */
 	currID = IDINTMAP_MSGSTART;
-	for (psMessage = apsMessages[selectedPlayer]; psMessage; psMessage =
-	         psMessage->psNext)
+	for (auto& psMessage : apsMessages[selectedPlayer])
 	{
-		if (psMessage->type != MSG_PROXIMITY)
+		if (psMessage.type != MSG_PROXIMITY)
 		{
 			if (currID == id)
 			{
-				break;
+        //set the current message
+        psCurrentMsg = &psMessage;
+        //set the read flag
+        psCurrentMsg->read = true;
+
+        debug(LOG_GUI, "intIntelButtonPressed: Dealing with a new message type=%d", psMessage.type);
+
+        //should never have a proximity message
+        if (psMessage.type == MSG_PROXIMITY)
+        {
+          return;
+        }
+
+        if (psMessage.pViewData)
+        {
+          // If it's a video sequence then play it anyway
+          if (psMessage.pViewData->type == VIEW_RPL)
+          {
+            if (psMessage.pViewData)
+            {
+              intAddMessageView(&psMessage);
+            }
+            // only attempt to show videos if they are installed
+            if (PHYSFS_exists("sequences/devastation.ogg"))
+            {
+              StartMessageSequences(&psMessage, true);
+            }
+          }
+          else if (psMessage.pViewData->type == VIEW_RES)
+          {
+            psResearch = getResearchForMsg(psMessage.pViewData);
+            if (psResearch != nullptr)
+            {
+              static AUDIO_STREAM *playing = nullptr;
+
+              // only play the sample once, otherwise, they tend to overlap each other
+              if (sound_isStreamPlaying(playing))
+              {
+                sound_StopStream(playing);
+              }
+
+              char const *audio = nullptr;
+              switch (psResearch->iconID)
+              {
+                case IMAGE_RES_DROIDTECH:
+                case IMAGE_RES_CYBORGTECH:
+                  audio = "sequenceaudio/res_droid.ogg";
+                  break;
+                case IMAGE_RES_WEAPONTECH:
+                  audio = "sequenceaudio/res_weapons.ogg";
+                  break;
+                case IMAGE_RES_COMPUTERTECH:
+                  audio = "sequenceaudio/res_com.ogg";
+                  break;
+                case IMAGE_RES_POWERTECH:
+                  audio = "sequenceaudio/res_pow.ogg";
+                  break;
+                case IMAGE_RES_SYSTEMTECH:
+                  audio = "sequenceaudio/res_systech.ogg";
+                  break;
+                case IMAGE_RES_STRUCTURETECH:
+                case IMAGE_RES_DEFENCE:
+                  audio = "sequenceaudio/res_strutech.ogg";
+                  break;
+              }
+
+              if (audio != nullptr)
+              {
+                playing = audio_PlayStream(audio, sound_GetUIVolume(), [](const void *) { playing = nullptr; }, nullptr);
+              }
+            }
+
+            //and finally for the dumb?
+            if (psMessage.pViewData)
+            {
+              intAddMessageView(&psMessage);
+            }
+          }
+        }
 			}
 			currID++;
 		}
 	}
 
 	//deal with the message if one
-	if (psMessage)
-	{
-		//set the current message
-		psCurrentMsg = psMessage;
-
-		//set the read flag
-		psCurrentMsg->read = true;
-
-		debug(LOG_GUI, "intIntelButtonPressed: Dealing with a new message type=%d",
-		      psMessage->type);
-
-		//should never have a proximity message
-		if (psMessage->type == MSG_PROXIMITY)
-		{
-			return;
-		}
-
-		if (psMessage->pViewData)
-		{
-			// If it's a video sequence then play it anyway
-			if (psMessage->pViewData->type == VIEW_RPL)
-			{
-				if (psMessage->pViewData)
-				{
-					intAddMessageView(psMessage);
-				}
-				// only attempt to show videos if they are installed
-				if (PHYSFS_exists("sequences/devastation.ogg"))
-				{
-					StartMessageSequences(psMessage, true);
-				}
-			}
-			else if (psMessage->pViewData->type == VIEW_RES)
-			{
-				psResearch = getResearchForMsg(psMessage->pViewData);
-				if (psResearch != nullptr)
-				{
-					static AUDIO_STREAM *playing = nullptr;
-
-					// only play the sample once, otherwise, they tend to overlap each other
-					if (sound_isStreamPlaying(playing))
-					{
-						sound_StopStream(playing);
-					}
-
-					char const *audio = nullptr;
-					switch (psResearch->iconID)
-					{
-					case IMAGE_RES_DROIDTECH:
-					case IMAGE_RES_CYBORGTECH:
-						audio = "sequenceaudio/res_droid.ogg";
-						break;
-					case IMAGE_RES_WEAPONTECH:
-						audio = "sequenceaudio/res_weapons.ogg";
-						break;
-					case IMAGE_RES_COMPUTERTECH:
-						audio = "sequenceaudio/res_com.ogg";
-						break;
-					case IMAGE_RES_POWERTECH:
-						audio = "sequenceaudio/res_pow.ogg";
-						break;
-					case IMAGE_RES_SYSTEMTECH:
-						audio = "sequenceaudio/res_systech.ogg";
-						break;
-					case IMAGE_RES_STRUCTURETECH:
-					case IMAGE_RES_DEFENCE:
-						audio = "sequenceaudio/res_strutech.ogg";
-						break;
-					}
-
-					if (audio != nullptr)
-					{
-						playing = audio_PlayStream(audio, sound_GetUIVolume(), [](const void *) { playing = nullptr; }, nullptr);
-					}
-				}
-
-				//and finally for the dumb?
-				if (psMessage->pViewData)
-				{
-					intAddMessageView(psMessage);
-				}
-			}
-		}
-	}
 }
 
 
 static void intCleanUpIntelMap()
 {
-	MESSAGE		*psMessage, *psNext;
 	bool removedAMessage = false;
 
 	if (selectedPlayer < MAX_PLAYERS)
 	{
 		//remove any research messages that have been read
-		for (psMessage = apsMessages[selectedPlayer]; psMessage != nullptr; psMessage =
-				 psNext)
+		for (auto& psMessage : apsMessages[selectedPlayer])
 		{
-			psNext = psMessage->psNext;
-			if (psMessage->type == MSG_RESEARCH && psMessage->read)
+			if (psMessage.type == MSG_RESEARCH && psMessage.read)
 			{
-				removeMessage(psMessage, selectedPlayer);
+				removeMessage(&psMessage, selectedPlayer);
 				removedAMessage = true;
 			}
 		}
@@ -981,17 +963,14 @@ void addVideoText(SEQ_DISPLAY *psSeqDisplay, UDWORD sequence)
 /*sets psCurrentMsg for the Intelligence screen*/
 void setCurrentMsg()
 {
-	MESSAGE *psMsg, *psLastMsg;
-
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "Unsupported selectedPlayer: %" PRIu32 "", selectedPlayer);
 
-	psLastMsg = nullptr;
-	for (psMsg = apsMessages[selectedPlayer]; psMsg != nullptr; psMsg =
-	         psMsg->psNext)
+	MESSAGE* psLastMsg = nullptr;
+	for (auto& psMsg : apsMessages[selectedPlayer])
 	{
-		if (psMsg->type != MSG_PROXIMITY)
+		if (psMsg.type != MSG_PROXIMITY)
 		{
-			psLastMsg = psMsg;
+			psLastMsg = &psMsg;
 		}
 	}
 	psCurrentMsg = psLastMsg;
@@ -1000,40 +979,11 @@ void setCurrentMsg()
 /*sets which states need to be paused when the intelligence screen is up*/
 void setIntelligencePauseState()
 {
-	if (!bMultiPlayer)
-	{
-		//need to clear mission widgets from being shown on intel screen
-		clearMissionWidgets();
-		gameTimeStop();
-		setGameUpdatePause(true);
-		if (!bInTutorial)
-		{
-			// Don't pause the scripts or the console if the tutorial is running.
-			setScriptPause(true);
-			setConsolePause(true);
-		}
-		setScrollPause(true);
-		screen_RestartBackDrop();
-	}
 }
 
 /*resets the pause states */
 void resetIntelligencePauseState()
 {
-	if (!bMultiPlayer)
-	{
-		//put any widgets back on for the missions
-		resetMissionWidgets();
-		setGameUpdatePause(false);
-		if (!bInTutorial)
-		{
-			setScriptPause(false);
-		}
-		setScrollPause(false);
-		setConsolePause(false);
-		gameTimeStart();
-		screen_StopBackDrop();
-	}
 }
 
 /** Play an intelligence message.

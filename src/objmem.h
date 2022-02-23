@@ -103,8 +103,30 @@ BASE_OBJECT *getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type);
 BASE_OBJECT *getBaseObjFromId(UDWORD id);
 
 UDWORD getRepairIdFromFlag(FLAG_POSITION *psFlag);
-
 void objCount(int *droids, int *structures, int *features);
+
+template <typename Func, typename... Ts>
+void forEachList(Func f, Ts&&... n)
+{
+  ([&](auto&& list) {
+      for (auto& el : list)
+      {
+        f(&el);
+      }
+  } (std::forward<Ts>(n)), ...);
+}
+
+template <typename Func, typename... Args, typename... Ts>
+void forEachList(Func f, std::tuple<Args...> t, Ts&&... n)
+{
+  ([&](auto&& list) {
+    for (auto& el : list)
+    {
+      auto args = std::tuple_cat(std::make_tuple(&el), t);
+      std::apply(f, args);
+    }
+  } (std::forward<Ts>(n)), ...);
+}
 
 #ifdef DEBUG
 void checkFactoryFlags();

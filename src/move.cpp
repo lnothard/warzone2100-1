@@ -53,7 +53,6 @@
 #include "multiplay.h"
 #include "multigifts.h"
 #include "random.h"
-#include "mission.h"
 #include "qtscript.h"
 
 /* max and min vtol heights above terrain */
@@ -1314,18 +1313,9 @@ SDWORD moveCalcDroidSpeed(DROID *psDroid)
 
 	CHECK_DROID(psDroid);
 
-	// NOTE: This screws up since the transporter is offscreen still (on a mission!), and we are trying to find terrainType of a tile (that is offscreen!)
-	if (psDroid->droidType == DROID_SUPERTRANSPORTER && missionIsOffworld())
-	{
-		PROPULSION_STATS	*propulsion = asPropulsionStats + psDroid->asBits[COMP_PROPULSION];
-		speed = propulsion->maxSpeed;
-	}
-	else
-	{
-		mapX = map_coord(psDroid->pos.x);
-		mapY = map_coord(psDroid->pos.y);
-		speed = calcDroidSpeed(psDroid->baseSpeed, terrainType(mapTile(mapX, mapY)), psDroid->asBits[COMP_PROPULSION], getDroidEffectiveLevel(psDroid));
-	}
+  mapX = map_coord(psDroid->pos.x);
+  mapY = map_coord(psDroid->pos.y);
+  speed = calcDroidSpeed(psDroid->baseSpeed, terrainType(mapTile(mapX, mapY)), psDroid->asBits[COMP_PROPULSION], getDroidEffectiveLevel(psDroid));
 
 
 	// now offset the speed for the slope of the droid
@@ -1978,24 +1968,9 @@ static void movePlayAudio(DROID *psDroid, bool bStarted, bool bStoppedBefore, SD
 static bool pickupOilDrum(int toPlayer, int fromPlayer)
 {
 	unsigned int power = OILDRUM_POWER;
-
-	if (!bMultiPlayer && !bInTutorial)
-	{
-		// Let Beta and Gamma campaign oil drums give a little more power
-		if (getCampaignNumber() == 2)
-		{
-			power = OILDRUM_POWER + (OILDRUM_POWER / 2);
-		}
-		else if (getCampaignNumber() == 3)
-		{
-			power = OILDRUM_POWER * 2;
-		}
-	}
-
 	addPower(toPlayer, power);  // give power
 
-	if (toPlayer == selectedPlayer)
-	{
+	if (toPlayer == selectedPlayer) {
 		CONPRINTF(_("You found %u power in an oil drum."), power);
 	}
 
@@ -2007,7 +1982,7 @@ static bool pickupOilDrum(int toPlayer, int fromPlayer)
 static void checkLocalFeatures(DROID *psDroid)
 {
 	// NOTE: Why not do this for AI units also?
-	if ((!isHumanPlayer(psDroid->player) && psDroid->order.type != DORDER_RECOVER) || isVtolDroid(psDroid) || isTransporter(psDroid))  // VTOLs or transporters can't pick up features!
+	if (!isHumanPlayer(psDroid->player) && psDroid->order.type != DORDER_RECOVER || isVtolDroid(psDroid) || isTransporter(psDroid))  // VTOLs or transporters can't pick up features!
 	{
 		return;
 	}

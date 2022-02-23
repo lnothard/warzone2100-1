@@ -48,7 +48,6 @@
 #include "input/manager.h"
 #include "advvis.h"
 #include "atmos.h"
-#include "challenge.h"
 #include "cmddroid.h"
 #include "configuration.h"
 #include "console.h"
@@ -72,7 +71,6 @@
 #include "mapgrid.h"
 #include "mechanics.h"
 #include "miscimd.h"
-#include "mission.h"
 #include "modding.h"
 #include "multiint.h"
 #include "multigifts.h"
@@ -97,6 +95,8 @@
 #include "spectatorwidgets.h"
 #include "seqdisp.h"
 #include "version.h"
+#include "power.h"
+#include "group.h"
 
 #include <algorithm>
 #include <unordered_map>
@@ -1192,10 +1192,7 @@ bool frontendShutdown()
 	}
 
 	changeTitleUI(nullptr);
-	if (challengesUp)
-	{
-		closeChallenges(); // TODO: Ideally this would not be required here (refactor challenge.cpp / frontend.cpp?)
-	}
+
 	if (bLoadSaveUp)
 	{
 		closeLoadSaveOnShutdown(); // TODO: Ideally this would not be required here (refactor loadsave.cpp / frontend.cpp?)
@@ -1291,7 +1288,6 @@ bool stageOneInitialise()
 		return false;
 	}
 
-	initMission();
 	initTransporters();
 	scriptInit();
 
@@ -1321,8 +1317,6 @@ bool stageOneShutDown()
 	}
 
 	proj_Shutdown();
-
-	releaseMission();
 
 	if (!aiShutdown())
 	{
@@ -1523,9 +1517,7 @@ bool stageTwoShutDown()
 
 bool stageThreeInitialise()
 {
-	STRUCTURE *psStr;
 	UDWORD i;
-	DROID *psDroid;
 	bool fromSave = (getSaveGameType() == GTYPE_SAVE_START || getSaveGameType() == GTYPE_SAVE_MIDMISSION);
 
 	debug(LOG_WZ, "== stageThreeInitialise ==");
@@ -1576,21 +1568,10 @@ bool stageThreeInitialise()
 	mapInit();
 	gridReset();
 
-	//if mission screen is up, close it.
-	if (MissionResUp)
-	{
-		intRemoveMissionResultNoAnim();
-	}
-
 	// Re-inititialise some static variables.
 
 	bInTutorial = false;
 	rangeOnScreen = false;
-
-	if (fromSave && ActivityManager::instance().getCurrentGameMode() == ActivitySink::GameMode::CHALLENGE)
-	{
-		challengeActive = true;
-	}
 
 	resizeRadar();
 
@@ -1607,20 +1588,20 @@ bool stageThreeInitialise()
 			if (i != selectedPlayer)
 			{
 				/* Structures */
-				for (psStr = apsStructLists[i]; psStr; psStr = psStr->psNext)
+				for (auto& psStr : apsStructLists[i])
 				{
-					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psStr->player, selectedPlayer))
+					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psStr.player, selectedPlayer))
 					{
-						visTilesUpdate((BASE_OBJECT *)psStr);
+						visTilesUpdate(&psStr);
 					}
 				}
 
 				/* Droids */
-				for (psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
+				for (auto& psDroid : apsDroidLists[i])
 				{
-					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psDroid->player, selectedPlayer))
+					if (selectedPlayer < MAX_PLAYERS && aiCheckAlliances(psDroid.player, selectedPlayer))
 					{
-						visTilesUpdate((BASE_OBJECT *)psDroid);
+						visTilesUpdate(&psDroid);
 					}
 				}
 			}
@@ -1670,8 +1651,6 @@ bool stageThreeShutDown()
 
 	specStatsViewShutdown();
 
-	challengesUp = false;
-	challengeActive = false;
 	isInGamePopupUp = false;
 	InGameOpUp = false;
 	bInTutorial = false;
@@ -1686,12 +1665,6 @@ bool stageThreeShutDown()
 	if (bMultiPlayer)
 	{
 		multiGameShutdown();
-	}
-
-	//call this here before mission data is released
-	if (!missionShutDown())
-	{
-		return false;
 	}
 
 	setScriptWinLoseVideo(PLAY_NONE);
@@ -1724,7 +1697,6 @@ bool saveGameReset()
 	freeAllDroids();
 	freeAllFeatures();
 	freeAllFlagPositions();
-	initMission();
 	initTransporters();
 
 	//free up the gateway stuff?

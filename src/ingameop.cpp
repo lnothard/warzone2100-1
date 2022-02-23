@@ -44,7 +44,6 @@
 #include "multiplay.h"
 #include "musicmanager.h"
 #include "ingameop.h"
-#include "mission.h"
 #include "warzoneconfig.h"
 #include "qtscript.h"		// for bInTutorial
 #include "radar.h"
@@ -202,9 +201,6 @@ static bool _intAddInGameOptions()
 {
 	audio_StopAll();
 
-	//clear out any mission widgets - timers etc that may be on the screen
-	clearMissionWidgets();
-
 	setWidgetsStatus(true);
 
 	//if already open, then close!
@@ -354,8 +350,6 @@ static bool runInGameConfirmQuit(UDWORD id)
 //
 void intAddInGamePopup()
 {
-	//clear out any mission widgets - timers etc that may be on the screen
-	clearMissionWidgets();
 	setWidgetsStatus(true);
 	intResetScreen(false);
 
@@ -456,7 +450,6 @@ void intCloseInGameOptionsNoAnim()
 	InGameOpUp = false;
 
 	ProcessOptionFinished();
-	resetMissionWidgets();
 }
 
 // ////////////////////////////////////////////////////////////////////////////
@@ -527,14 +520,6 @@ bool intCloseInGameOptions(bool bPutUpLoadSave, bool bResetMissionWidgets)
 	}
 
 	ProcessOptionFinished();
-
-	//don't add the widgets if the load/save screen is put up or exiting to front end
-	if (bResetMissionWidgets)
-	{
-		//put any widgets back on for the missions
-		resetMissionWidgets();
-	}
-
 	return true;
 }
 

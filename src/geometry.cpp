@@ -53,21 +53,21 @@ DROID	*getNearestDroid(UDWORD x, UDWORD y, bool bSelected)
 	ASSERT_OR_RETURN(nullptr, selectedPlayer < MAX_PLAYERS, "Not supported selectedPlayer: %" PRIu32 "", selectedPlayer);
 
 	/* Go thru' all the droids  - how often have we seen this - a MACRO maybe? */
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		if (!isVtolDroid(psDroid))
+		if (!isVtolDroid(&psDroid))
 		{
 			/* Clever (?) bit that reads whether we're interested in droids being selected or not */
-			if (!bSelected || psDroid->selected)
+			if (!bSelected || psDroid.selected)
 			{
-				uint32_t dist = iHypot(psDroid->pos.x - x, psDroid->pos.y - y);
+				uint32_t dist = iHypot(psDroid.pos.x - x, psDroid.pos.y - y);
 				/* Is this the nearest one we got so far? */
 				if (dist < bestSoFar)
 				{
 					/* Yes, then keep a record of the distance for comparison... */
 					bestSoFar = dist;
 					/* ..and store away the droid responsible */
-					psBestUnit = psDroid;
+					psBestUnit = &psDroid;
 				}
 			}
 		}

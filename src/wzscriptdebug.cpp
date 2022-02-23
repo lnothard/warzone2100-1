@@ -68,12 +68,10 @@
 #include "display.h"
 #include "keybind.h"
 #include "loop.h"
-#include "mission.h"
 #include "message.h"
 #include "transporter.h"
 #include "template.h"
 #include "multiint.h"
-#include "challenge.h"
 
 #include "wzapi.h"
 #include "qtscript.h"
@@ -172,26 +170,26 @@ static RowDataModel fillMessageModel()
 	RowDataModel result(6);
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (const MESSAGE *psCurr = apsMessages[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (auto const& psCurr : apsMessages[i])
 		{
-			ASSERT(psCurr->type < msg_type.size(), "Bad message type");
-			ASSERT(psCurr->dataType < msg_data_type.size(), "Bad viewdata type");
+			ASSERT(psCurr.type < msg_type.size(), "Bad message type");
+			ASSERT(psCurr.dataType < msg_data_type.size(), "Bad viewdata type");
 			std::vector<WzString> columnTexts;
-			columnTexts.push_back(WzString::number(psCurr->id));
-			columnTexts.push_back(msg_type.at(psCurr->type));
-			columnTexts.push_back(msg_data_type.at(psCurr->dataType));
-			columnTexts.push_back(WzString::number(psCurr->player));
-			ASSERT(!psCurr->pViewData || !psCurr->psObj, "Both viewdata and object in message should be impossible!");
-			if (psCurr->pViewData)
+			columnTexts.push_back(WzString::number(psCurr.id));
+			columnTexts.push_back(msg_type.at(psCurr.type));
+			columnTexts.push_back(msg_data_type.at(psCurr.dataType));
+			columnTexts.push_back(WzString::number(psCurr.player));
+			ASSERT(!psCurr.pViewData || !psCurr.psObj, "Both viewdata and object in message should be impossible!");
+			if (psCurr.pViewData)
 			{
-				ASSERT(psCurr->pViewData->type < view_type.size(), "Bad viewdata type");
-				columnTexts.push_back(psCurr->pViewData->name);
-				columnTexts.push_back(view_type.at(psCurr->pViewData->type));
+				ASSERT(psCurr.pViewData->type < view_type.size(), "Bad viewdata type");
+				columnTexts.push_back(psCurr.pViewData->name);
+				columnTexts.push_back(view_type.at(psCurr.pViewData->type));
 			}
-			else if (psCurr->psObj)
+			else if (psCurr.psObj)
 			{
-				columnTexts.push_back((objInfo(psCurr->psObj)));
-				columnTexts.push_back(obj_type.at(psCurr->psObj->type));
+				columnTexts.push_back((objInfo(psCurr.psObj)));
+				columnTexts.push_back(obj_type.at(psCurr.psObj->type));
 			}
 			else
 			{
@@ -256,23 +254,15 @@ static nlohmann::ordered_json fillMainModel()
 	nlohmann::ordered_json result = nlohmann::ordered_json::object();
 
 	int8_t gameType = static_cast<int8_t>(game.type);
-	int8_t missionType = static_cast<int8_t>(mission.type);
 	ASSERT(gameType < lev_type.size() && gameType != 13 && gameType != 15 && gameType != 16 && gameType != 17, "Bad LEVEL_TYPE for game.type");
 	result["game.type"] = lev_type.at(gameType);
 	result["game.scavengers"] = game.scavengers;
 	result["game.map"] = game.map;
 	result["game.maxPlayers"] = game.maxPlayers;
 	result["transporterGetLaunchTime"] = transporterGetLaunchTime();
-	result["missionIsOffworld"] = missionIsOffworld();
-	result["missionCanReEnforce"] = missionCanReEnforce();
-	result["missionForReInforcements"] = missionForReInforcements();
-	ASSERT(missionType < lev_type.size() && missionType != 13 && missionType != 15 && missionType != 16 && missionType != 17, "Bad LEVEL_TYPE for mission.type");
-	result["mission.type"] = lev_type.at(missionType);
-	result["getDroidsToSafetyFlag"] = getDroidsToSafetyFlag();
 	result["scavengerSlot"] = scavengerSlot();
 	result["scavengerPlayer"] = scavengerPlayer();
 	result["bMultiPlayer"] = bMultiPlayer;
-	result["challenge"] = challengeActive;
 	ASSERT(getDifficultyLevel() < difficulty_type.size(), "Bad DIFFICULTY_LEVEL");
 	result["difficultyLevel"] = difficulty_type.at(getDifficultyLevel());
 	result["loopPieCount"] = loopPieCount;
@@ -327,14 +317,13 @@ static const char *getObjType(const BASE_OBJECT *psObj)
 	return "Unknown";
 }
 
-template<typename T>
-static std::string arrayToString(const T *array, int length)
+template<typename T, auto size>
+static std::string arrayToString(std::array<T, size> const& array)
 {
 	WzString result;
-	for (int i = 0; i < length; i++)
+	for (int i = 0; i < size; i++)
 	{
-		if (!result.isEmpty())
-		{
+		if (!result.isEmpty()) {
 			result.append(", ");
 		}
 		result.append(WzString::number(array[i]));
@@ -2096,8 +2085,8 @@ void WZScriptDebugger::selected(const BASE_OBJECT *psObj)
 		selectedObjectDetails["Animation event"] = psObj->animationEvent;
 		selectedObjectDetails["Number of weapons"] = psObj->numWeaps;
 		selectedObjectDetails["Last hit weapon"] = psObj->lastHitWeapon;
-		selectedObjectDetails["Visible"] = arrayToString(psObj->visible, MAX_PLAYERS);
-		selectedObjectDetails["Seen last tick"] = arrayToString(psObj->seenThisTick, MAX_PLAYERS);
+		selectedObjectDetails["Visible"] = arrayToString(psObj->visible);
+		selectedObjectDetails["Seen last tick"] = arrayToString(psObj->seenThisTick);
 
 		nlohmann::ordered_json weapons = nlohmann::ordered_json::array();
 		for (int i = 0; i < psObj->numWeaps; i++)

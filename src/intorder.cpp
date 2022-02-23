@@ -375,11 +375,9 @@ static ORDERBUTTONS OrderButtons[NUM_ORDERS] =
 	},
 };
 
-
-static std::vector<DROID *> SelectedDroids;
+static std::vector<DROID*> SelectedDroids;
 static STRUCTURE *psSelectedFactory = nullptr;
 static std::vector<AVORDER> AvailableOrders;
-
 
 bool OrderUp = false;
 
@@ -393,11 +391,11 @@ static bool BuildSelectedDroidList()
 		return false;
 	}
 
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		if (psDroid->selected)
+		if (psDroid.selected)
 		{
-			SelectedDroids.push_back(psDroid);
+			SelectedDroids.push_back(&psDroid);
 		}
 	}
 

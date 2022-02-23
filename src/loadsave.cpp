@@ -51,7 +51,6 @@
 #include "lib/netplay/netplay.h"
 #include "loop.h"
 #include "intdisplay.h"
-#include "mission.h"
 #include "lib/gamelib/gtime.h"
 #include "console.h"
 #include "keybind.h"
@@ -679,7 +678,7 @@ bool findLastSave()
 static WzString suggestSaveName(const char *saveGamePath)
 {
 	const WzString levelName = getLevelName();
-	const std::string cheatedSuffix = Cheated ? _("cheated") : "";
+	const std::string cheatedSuffix = "";
 	char saveNamePartial[64] = "\0";
 
 	if (bLoadSaveMode == SAVE_MISSIONEND || bLoadSaveMode == SAVE_INGAME_MISSION)
@@ -735,10 +734,6 @@ static void runLoadSaveCleanup(bool resetWidgets, bool goBack)
 	closeLoadSave(goBack);
 	bRequestLoad = false;
 	bRequestLoadReplay = false;
-	if (!goBack && resetWidgets && widgGetFromID(psWScreen, IDMISSIONRES_FORM) == nullptr)
-	{
-		resetMissionWidgets();
-	}
 }
 
 static void runLoadCleanup()
@@ -754,7 +749,6 @@ static void runLoadCleanup()
 
 	// Load a savegame.
 	unsigned campaign = getCampaign(sRequestResult);
-	setCampaignNumber(campaign);
 	debug(LOG_WZ, "Set campaign for %s to %u", sRequestResult, campaign);
 	closeLoadSave();
 }
@@ -1078,7 +1072,7 @@ bool autoSave()
 {
 	// Bail out if we're running a _true_ multiplayer game or are playing a tutorial/debug/cheating/autogames
 	const DebugInputManager& dbgInputManager = gInputManager.debugManager();
-	if (!autosaveEnabled || runningMultiplayer() || bInTutorial || dbgInputManager.debugMappingsAllowed() || Cheated || autogame_enabled())
+	if (!autosaveEnabled || runningMultiplayer() || bInTutorial || dbgInputManager.debugMappingsAllowed() || autogame_enabled())
 	{
 		return false;
 	}
