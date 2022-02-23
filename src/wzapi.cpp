@@ -33,6 +33,7 @@
 #include "qtscript.h"
 #include "lib/ivis_opengl/tex.h"
 
+#include "group.h"
 #include "action.h"
 #include "clparse.h"
 #include "combat.h"
@@ -40,7 +41,6 @@
 #include "design.h"
 #include "display3d.h"
 #include "map.h"
-#include "mission.h"
 #include "move.h"
 #include "order.h"
 #include "transporter.h"
@@ -49,7 +49,6 @@
 #include "intelmap.h"
 #include "hci.h"
 #include "wrappers.h"
-#include "challenge.h"
 #include "research.h"
 #include "multilimit.h"
 #include "multigifts.h"
@@ -76,6 +75,7 @@
 #include "chat.h"
 #include "scores.h"
 #include "data.h"
+#include "power.h"
 
 #include <list>
 
@@ -600,7 +600,6 @@ bool wzapi::setHealth(WZAPI_PARAMS(BASE_OBJECT* psObject, int health)) MULTIPLAY
 //--
 bool wzapi::useSafetyTransport(WZAPI_PARAMS(bool flag))
 {
-	setDroidsToSafetyFlag(flag);
 	return true;
 }
 
@@ -611,7 +610,6 @@ bool wzapi::useSafetyTransport(WZAPI_PARAMS(bool flag))
 //--
 bool wzapi::restoreLimboMissionData(WZAPI_NO_PARAMS)
 {
-	resetLimboMission();
 	return true;
 }
 
@@ -630,17 +628,7 @@ uint32_t wzapi::getMultiTechLevel(WZAPI_NO_PARAMS)
 //--
 bool wzapi::setCampaignNumber(WZAPI_PARAMS(int campaignNumber))
 {
-	::setCampaignNumber(campaignNumber);
 	return true;
-}
-
-//-- ## getMissionType()
-//--
-//-- Return the current mission type. (3.3+ only)
-//--
-int32_t wzapi::getMissionType(WZAPI_NO_PARAMS)
-{
-	return (int32_t)mission.type;
 }
 
 //-- ## getRevealStatus()
@@ -704,7 +692,7 @@ wzapi::no_return_value wzapi::hackAddMessage(WZAPI_PARAMS(std::string message, i
 {
 	MESSAGE_TYPE msgType = (MESSAGE_TYPE)messageType;
 	SCRIPT_ASSERT_PLAYER({}, context, player);
-	MESSAGE *psMessage = addMessage(msgType, false, player);
+	auto psMessage = addMessage(msgType, false, player);
 	if (psMessage)
 	{
 		VIEWDATA *psViewData = getViewData(WzString::fromUtf8(message));
@@ -723,7 +711,7 @@ wzapi::no_return_value wzapi::hackAddMessage(WZAPI_PARAMS(std::string message, i
 		}
 		if (immediate)
 		{
-			displayImmediateMessage(psMessage);
+			displayImmediateMessage(psMessage.get());
 		}
 	}
 //	jsDebugMessageUpdate();
@@ -1036,7 +1024,6 @@ std::vector<const STRUCTURE *> wzapi::enumStruct(WZAPI_PARAMS(optional<int> _pla
 //--
 std::vector<const STRUCTURE *> wzapi::enumStructOffWorld(WZAPI_PARAMS(optional<int> _player, optional<STRUCTURE_TYPE_or_statsName_string> _structureType, optional<int> _playerFilter))
 {
-	return _enumStruct_fromList(context, _player, _structureType, _playerFilter, (mission.apsStructLists));
 }
 
 //-- ## enumDroid([player[, droidType[, playerFilter]]])
@@ -1863,31 +1850,17 @@ wzapi::returned_nullable_ptr<const DROID> wzapi::addDroid(WZAPI_PARAMS(int playe
 		DROID *psDroid = nullptr;
 		bool oldMulti = bMultiMessages;
 		bMultiMessages = false; // ugh, fixme
-		if (onMission)
-		{
-			psDroid = ::buildMissionDroid(psTemplate.get(), 128, 128, player);
-			if (psDroid)
-			{
-				debug(LOG_LIFE, "Created mission-list droid %s by script for player %d: %u", objInfo(psDroid), player, psDroid->id);
-			}
-			else
-			{
-				debug(LOG_ERROR, "Invalid droid %s", templateName.c_str());
-			}
-		}
-		else
-		{
-			psDroid = ::buildDroid(psTemplate.get(), world_coord(x) + TILE_UNITS / 2, world_coord(y) + TILE_UNITS / 2, player, onMission, nullptr);
-			if (psDroid)
-			{
-				addDroid(psDroid);
-				debug(LOG_LIFE, "Created droid %s by script for player %d: %u", objInfo(psDroid), player, psDroid->id);
-			}
-			else
-			{
-				debug(LOG_ERROR, "Invalid droid %s", templateName.c_str());
-			}
-		}
+
+    psDroid = ::buildDroid(psTemplate.get(), world_coord(x) + TILE_UNITS / 2, world_coord(y) + TILE_UNITS / 2, player, onMission, nullptr);
+    if (psDroid)
+    {
+      addDroid(psDroid);
+      debug(LOG_LIFE, "Created droid %s by script for player %d: %u", objInfo(psDroid), player, psDroid->id);
+    }
+    else
+    {
+      debug(LOG_ERROR, "Invalid droid %s", templateName.c_str());
+    }
 		bMultiMessages = oldMulti; // ugh
 		return psDroid;
 	}
@@ -1926,8 +1899,6 @@ bool wzapi::addDroidToTransporter(WZAPI_PARAMS(game_object_identifier transporte
 	DROID *psDroid = IdToMissionDroid(droidId, droidPlayer);
 	SCRIPT_ASSERT(false, context, psDroid, "No such droid id %d belonging to player %d", droidId, droidPlayer);
 	SCRIPT_ASSERT(false, context, checkTransporterSpace(psTransporter, psDroid), "Not enough room in transporter %d for droid %d", transporterId, droidId);
-	bool removeSuccessful = droidRemove(psDroid, mission.apsDroidLists);
-	SCRIPT_ASSERT(false, context, removeSuccessful, "Could not remove droid id %d from mission list", droidId);
 	psTransporter->psGroup->add(psDroid);
 	return true;
 }
@@ -2223,12 +2194,13 @@ std::vector<const DROID *> wzapi::enumCargo(WZAPI_PARAMS(const DROID *psDroid))
 	std::vector<const DROID *> result;
 	result.reserve(psDroid->psGroup->getNumMembers());
 	int i = 0;
-	for (DROID *psCurr = psDroid->psGroup->psList; psCurr; psCurr = psCurr->psGrpNext, i++)
+	for (auto psCurr : psDroid->psGroup->psList)
 	{
 		if (psDroid != psCurr)
 		{
 			result.push_back(psCurr);
 		}
+    i++;
 	}
 	return result;
 }
@@ -2341,7 +2313,7 @@ bool wzapi::gameOverMessage(WZAPI_PARAMS(bool gameWon, optional<bool> _showBackD
 		}
 	}
 	ASSERT(psViewData, "Viewdata not found");
-	MESSAGE *psMessage = nullptr;
+	std::unique_ptr<MESSAGE> psMessage = nullptr;
 	if (player < MAX_PLAYERS)
 	{
 		psMessage = addMessage(msgType, false, player);
@@ -2361,16 +2333,13 @@ bool wzapi::gameOverMessage(WZAPI_PARAMS(bool gameWon, optional<bool> _showBackD
 		{
 			//set the data
 			psMessage->pViewData = psViewData;
-			displayImmediateMessage(psMessage);
+			displayImmediateMessage(psMessage.get());
 			stopReticuleButtonFlash(IDRET_INTEL_MAP);
 		}
 	}
 //	jsDebugMessageUpdate();
 	displayGameOver(gameWon, showBackDrop);
-	if (challengeActive)
-	{
-		updateChallenge(gameWon);
-	}
+
 	if (autogame_enabled())
 	{
 		debug(LOG_WARNING, "Autogame completed successfully!");
@@ -2414,80 +2383,6 @@ bool wzapi::setStructureLimits(WZAPI_PARAMS(std::string structureName, int limit
 bool wzapi::applyLimitSet(WZAPI_NO_PARAMS)
 {
 	return ::applyLimitSet();
-}
-
-//-- ## setMissionTime(time)
-//--
-//-- Set mission countdown in seconds.
-//--
-wzapi::no_return_value wzapi::setMissionTime(WZAPI_PARAMS(int _time))
-{
-	int time = _time * GAME_TICKS_PER_SEC;
-	mission.startTime = gameTime;
-	mission.time = time;
-	setMissionCountDown();
-	if (mission.time >= 0)
-	{
-		mission.startTime = gameTime;
-		addMissionTimerInterface();
-	}
-	else
-	{
-		intRemoveMissionTimer();
-		mission.cheatTime = 0;
-	}
-	return {};
-}
-
-//-- ## getMissionTime()
-//--
-//-- Get time remaining on mission countdown in seconds. (3.2+ only)
-//--
-int wzapi::getMissionTime(WZAPI_NO_PARAMS)
-{
-	return (mission.time - (gameTime - mission.startTime)) / GAME_TICKS_PER_SEC;
-}
-
-//-- ## setReinforcementTime(time)
-//--
-//-- Set time for reinforcements to arrive. If time is negative, the reinforcement GUI
-//-- is removed and the timer stopped. Time is in seconds.
-//-- If time equals to the magic ```LZ_COMPROMISED_TIME``` constant, reinforcement GUI ticker
-//-- is set to "--:--" and reinforcements are suppressed until this function is called
-//-- again with a regular time value.
-//--
-wzapi::no_return_value wzapi::setReinforcementTime(WZAPI_PARAMS(int _time))
-{
-	int time = _time * GAME_TICKS_PER_SEC;
-	SCRIPT_ASSERT({}, context, time == LZ_COMPROMISED_TIME || time < 60 * 60 * GAME_TICKS_PER_SEC,
-	              "The transport timer cannot be set to more than 1 hour!");
-	SCRIPT_ASSERT({}, context, selectedPlayer < MAX_PLAYERS, "Invalid selectedPlayer for current client: %" PRIu32 "", selectedPlayer);
-	mission.ETA = time;
-	if (missionCanReEnforce())
-	{
-		addTransporterTimerInterface();
-	}
-	if (time < 0)
-	{
-		DROID *psDroid;
-
-		intRemoveTransporterTimer();
-		/* Only remove the launch if haven't got a transporter droid since the scripts set the
-		 * time to -1 at the between stage if there are not going to be reinforcements on the submap  */
-		for (psDroid = apsDroidLists[selectedPlayer]; psDroid != nullptr; psDroid = psDroid->psNext)
-		{
-			if (isTransporter(psDroid))
-			{
-				break;
-			}
-		}
-		// if not found a transporter, can remove the launch button
-		if (psDroid ==  nullptr)
-		{
-			intRemoveTransporterLaunch();
-		}
-	}
-	return {};
 }
 
 //-- ## completeResearch(researchName[, player[, forceResearch]])
@@ -2747,10 +2642,6 @@ wzapi::no_return_value wzapi::setReticuleButton(WZAPI_PARAMS(int buttonId, std::
 	if (callbackFuncName.has_value())
 	{
 		func = WzString::fromUtf8(callbackFuncName.value());
-	}
-	if (MissionResUp)
-	{
-		return {}; // no-op
 	}
 	setReticuleStats(buttonId, tooltip, filename, filenameDown, func.isEmpty() ? nullptr : context.getNamedScriptCallback(func));
 	return {};
@@ -3159,15 +3050,6 @@ wzapi::no_return_value wzapi::setNoGoArea(WZAPI_PARAMS(int x1, int y1, int x2, i
 	SCRIPT_ASSERT({}, context, y2 <= mapHeight, "Maximum scroll y value %d is greater than mapHeight %d", y2, (int)mapHeight);
 	SCRIPT_ASSERT({}, context, (playerFilter >= 0 && playerFilter < MAX_PLAYERS) || playerFilter == ALL_PLAYERS, "Bad player filter value %d", playerFilter);
 
-	if (playerFilter == ALL_PLAYERS)
-	{
-		::setNoGoArea(x1, y1, x2, y2, LIMBO_LANDING);
-		placeLimboDroids();	// this calls the Droids from the Limbo list onto the map
-	}
-	else
-	{
-		::setNoGoArea(x1, y1, x2, y2, playerFilter);
-	}
 	return {};
 }
 
@@ -3181,8 +3063,6 @@ wzapi::no_return_value wzapi::setNoGoArea(WZAPI_PARAMS(int x1, int y1, int x2, i
 wzapi::no_return_value wzapi::startTransporterEntry(WZAPI_PARAMS(int x, int y, int player))
 {
 	SCRIPT_ASSERT_PLAYER({}, context, player);
-	missionSetTransporterEntry(player, x, y);
-	missionFlyTransportersIn(player, false);
 	return {};
 }
 
@@ -3193,7 +3073,6 @@ wzapi::no_return_value wzapi::startTransporterEntry(WZAPI_PARAMS(int x, int y, i
 wzapi::no_return_value wzapi::setTransporterExit(WZAPI_PARAMS(int x, int y, int player))
 {
 	SCRIPT_ASSERT_PLAYER({}, context, player);
-	missionSetTransporterExit(player, x, y);
 	return {};
 }
 
@@ -3279,22 +3158,13 @@ static void dirtyAllDroids(int player)
 	{
 		psDroid.flags.set(OBJECT_FLAG_DIRTY);
 	}
-
-	for (DROID *psDroid = apsLimboDroids[player]; psDroid != nullptr; psDroid = psDroid->psNext)
-	{
-		psDroid->flags.set(OBJECT_FLAG_DIRTY);
-	}
 }
 
 static void dirtyAllStructures(int player)
 {
-	for (STRUCTURE *psCurr = apsStructLists[player]; psCurr; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsStructLists[player])
 	{
-		psCurr->flags.set(OBJECT_FLAG_DIRTY);
-	}
-	for (STRUCTURE *psCurr = mission.apsStructLists[player]; psCurr; psCurr = psCurr->psNext)
-	{
-		psCurr->flags.set(OBJECT_FLAG_DIRTY);
+		psCurr.flags.set(OBJECT_FLAG_DIRTY);
 	}
 }
 
@@ -3613,40 +3483,28 @@ bool wzapi::setUpgradeStats(WZAPI_BASE_PARAMS(int player, const std::string& nam
 		case SCRCB_ELW:
 			// Update resistance points for all structures, to avoid making them damaged
 			// FIXME - this is _really_ slow! we could be doing this for dozens of buildings one at a time!
-			for (STRUCTURE *psCurr = apsStructLists[player]; psCurr; psCurr = psCurr->psNext)
+			for (auto& psCurr : apsStructLists[player])
 			{
-				if (psStats == psCurr->pStructureType && psStats->upgrade[player].resistance < value)
+				if (psStats == psCurr.pStructureType && psStats->upgrade[player].resistance < value)
 				{
-					psCurr->resistance = value;
+					psCurr.resistance = value;
 				}
 			}
-			for (STRUCTURE *psCurr = mission.apsStructLists[player]; psCurr; psCurr = psCurr->psNext)
-			{
-				if (psStats == psCurr->pStructureType && psStats->upgrade[player].resistance < value)
-				{
-					psCurr->resistance = value;
-				}
-			}
+
 			psStats->upgrade[player].resistance = value;
 			break;
 		case SCRCB_HIT:
 			// Update body points for all structures, to avoid making them damaged
 			// FIXME - this is _really_ slow! we could be doing this for
 			// dozens of buildings one at a time!
-			for (STRUCTURE *psCurr = apsStructLists[player]; psCurr; psCurr = psCurr->psNext)
+			for (auto& psCurr : apsStructLists[player])
 			{
-				if (psStats == psCurr->pStructureType && psStats->upgrade[player].hitpoints < value)
+				if (psStats == psCurr.pStructureType && psStats->upgrade[player].hitpoints < value)
 				{
-					psCurr->body = (psCurr->body * value) / psStats->upgrade[player].hitpoints;
+					psCurr.body = (psCurr.body * value) / psStats->upgrade[player].hitpoints;
 				}
 			}
-			for (STRUCTURE *psCurr = mission.apsStructLists[player]; psCurr; psCurr = psCurr->psNext)
-			{
-				if (psStats == psCurr->pStructureType && psStats->upgrade[player].hitpoints < value)
-				{
-					psCurr->body = (psCurr->body * value) / psStats->upgrade[player].hitpoints;
-				}
-			}
+
 			psStats->upgrade[player].hitpoints = value;
 			break;
 		case SCRCB_LIMIT:
@@ -4441,7 +4299,6 @@ nlohmann::json wzapi::getUsefulConstants()
 	constants["GROUP"] = SCRIPT_GROUP;
 	constants["PLAYER_DATA"] = SCRIPT_PLAYER;
 	constants["RESEARCH_DATA"] = SCRIPT_RESEARCH;
-	constants["LZ_COMPROMISED_TIME"] = JS_LZ_COMPROMISED_TIME;
 	constants["OBJECT_FLAG_UNSELECTABLE"] = OBJECT_FLAG_UNSELECTABLE;
 	// the constants below are subject to change without notice...
 	constants["PROX_MSG"] = MSG_PROXIMITY;

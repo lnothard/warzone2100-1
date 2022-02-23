@@ -270,8 +270,7 @@ bool recvDroidDisEmbark(NETQUEUE queue)
 			return false;
 		}
 		// we need to find the droid *in* the transporter
-		psCheckDroid = psTransporterDroid ->psGroup->psList;
-		while (psCheckDroid)
+		for (auto psCheckDroid : psTransporterDroid->psGroup->psList)
 		{
 			// is this the one we want?
 			if (psCheckDroid->id == droidID)
@@ -437,7 +436,7 @@ bool recvDroid(NETQUEUE queue)
 	if (psDroid)
 	{
 		psDroid->id = id;
-		addDroid(psDroid, apsDroidLists);
+		addDroid(psDroid);
 
 		if (haveInitialOrders)
 		{

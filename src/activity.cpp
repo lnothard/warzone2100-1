@@ -22,8 +22,6 @@
 #include "ai.h"
 #include "activity.h"
 #include "multiint.h"
-#include "mission.h"
-#include "challenge.h"
 #include "modding.h"
 #include <algorithm>
 #include <mutex>
@@ -387,11 +385,7 @@ ActivitySink::GameMode ActivityManager::getCurrentGameMode() const
 ActivitySink::GameMode currentGameTypeToMode()
 {
 	ActivitySink::GameMode mode = ActivitySink::GameMode::CAMPAIGN;
-	if (challengeActive)
-	{
-		mode = ActivitySink::GameMode::CHALLENGE;
-	}
-	else if (game.type == LEVEL_TYPE::SKIRMISH)
+	if (game.type == LEVEL_TYPE::SKIRMISH)
 	{
 		mode = (NetPlay.bComms) ? ActivitySink::GameMode::MULTIPLAYER : ActivitySink::GameMode::SKIRMISH;
 	}
@@ -451,12 +445,6 @@ void ActivityManager::loadedLevel(LEVEL_TYPE type, const std::string& levelName)
 
 	switch (currentMode)
 	{
-		case ActivitySink::GameMode::CAMPAIGN:
-			for (auto sink : activitySinks) { sink->startedCampaignMission(getCampaignName(), levelName); }
-			break;
-		case ActivitySink::GameMode::CHALLENGE:
-			for (auto sink : activitySinks) { sink->startedChallenge(currentChallengeName()); }
-			break;
 		case ActivitySink::GameMode::SKIRMISH:
 			for (auto sink : activitySinks) { sink->startedSkirmishGame(currentMultiplayGameInfo); }
 			break;
@@ -476,12 +464,6 @@ void ActivityManager::_endedMission(ActivitySink::GameEndReason result, END_GAME
 
 	switch (currentMode)
 	{
-		case ActivitySink::GameMode::CAMPAIGN:
-			for (auto sink : activitySinks) { sink->endedCampaignMission(getCampaignName(), lastLoadedLevelEvent.levelName, result, stats, cheatsUsed); }
-			break;
-		case ActivitySink::GameMode::CHALLENGE:
-			for (auto sink : activitySinks) { sink->endedChallenge(currentChallengeName(), result, stats, cheatsUsed); }
-			break;
 		case ActivitySink::GameMode::SKIRMISH:
 			for (auto sink : activitySinks) { sink->endedSkirmishGame(currentMultiplayGameInfo, result, stats); }
 			break;
@@ -516,7 +498,7 @@ void ActivityManager::preSystemShutdown()
 	if (currentMode != ActivitySink::GameMode::MENUS)
 	{
 		// quitGame was never generated - synthesize it
-		ActivityManager::instance().quitGame(collectEndGameStatsData(), Cheated);
+		ActivityManager::instance().quitGame(collectEndGameStatsData(), false);
 	}
 }
 

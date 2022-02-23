@@ -66,10 +66,10 @@ struct DROID_TEMPLATE : public BASE_STATS
 	 *
 	 * Weapons are stored in asWeaps, _not_ here at index COMP_WEAPON! (Which is the reason we do not have a COMP_NUMCOMPONENTS sized array here.)
 	 */
-	uint8_t         asParts[DROID_MAXCOMP];
+  std::array<uint8_t, DROID_MAXCOMP> asParts;
 	/* The weapon systems */
 	int8_t          numWeaps;                   ///< Number of weapons
-	uint32_t        asWeaps[MAX_WEAPONS];       ///< weapon indices
+	std::array<uint32_t, MAX_WEAPONS> asWeaps;
 	DROID_TYPE      droidType;                  ///< The type of droid
 	UDWORD          multiPlayerID;              ///< multiplayer unique descriptor(cant use id's for templates). Used for save games as well now - AB 29/10/98
 	bool            prefab;                     ///< Not player designed, not saved, never delete or change

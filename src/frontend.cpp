@@ -45,7 +45,6 @@
 #include <limits>
 
 #include "advvis.h"
-#include "challenge.h"
 #include "component.h"
 #include "configuration.h"
 #include "difficulty.h"
@@ -62,7 +61,6 @@
 #include "keyedit.h"
 #include "loadsave.h"
 #include "main.h"
-#include "mission.h"
 #include "modding.h"
 #include "multiint.h"
 #include "multilimit.h"
@@ -242,7 +240,6 @@ void runContinue()
 	SPinit(lastSaveMP ? LEVEL_TYPE::SKIRMISH : LEVEL_TYPE::CAMPAIGN);
 	sstrcpy(saveGameName, lastSavePath.toPath(SaveGamePath_t::Extension::GAM).c_str());
 	bMultiPlayer = lastSaveMP;
-	setCampaignNumber(getCampaign(saveGameName));
 }
 
 bool runTitleMenu()
@@ -356,7 +353,6 @@ bool runTutorialMenu()
 // Single Player Menu
 void startSinglePlayerMenu()
 {
-	challengeActive = false;
 	addBackdrop();
 	addTopForm(false);
 	addBottomForm();
@@ -384,61 +380,15 @@ void startCampaignSelector()
 	addTopForm(false);
 	addBottomForm();
 
-	std::vector<CAMPAIGN_FILE> list = readCampaignFiles();
-	ASSERT(list.size() <= static_cast<size_t>(std::numeric_limits<UDWORD>::max()), "list.size() (%zu) exceeds UDWORD max", list.size());
-	for (UDWORD i = 0; i < static_cast<UDWORD>(list.size()); i++)
-	{
-		addTextButton(FRONTEND_CAMPAIGN_1 + i, FRONTEND_POS1X, FRONTEND_POS2Y + FRONTEND_BUTHEIGHT * i, gettext(list[i].name.toUtf8().c_str()), WBUT_TXTCENTRE);
-	}
 	addSideText(FRONTEND_SIDETEXT, FRONTEND_SIDEX, FRONTEND_SIDEY, _("CAMPAIGNS"));
-	addMultiBut(psWScreen, FRONTEND_BOTFORM, FRONTEND_QUIT, 10, 10, 30, 29, P_("menu", "Return"), IMAGE_RETURN, IMAGE_RETURN_HI, IMAGE_RETURN_HI);
+	addMultiBut(psWScreen, FRONTEND_BOTFORM, FRONTEND_QUIT, 10, 10, 30,
+              29, P_("menu", "Return"), IMAGE_RETURN, IMAGE_RETURN_HI, IMAGE_RETURN_HI);
+
 	// show this only when the video sequences are not installed
-	if (!PHYSFS_exists("sequences/devastation.ogg"))
-	{
+	if (!PHYSFS_exists("sequences/devastation.ogg")) {
 		addSmallTextButton(FRONTEND_HYPERLINK, FRONTEND_POS9X, FRONTEND_POS9Y, _("Campaign videos are missing! Get them from http://wz2100.net"), 0);
 		notifyAboutMissingVideos();
 	}
-}
-
-static void frontEndNewGame(int which)
-{
-	std::vector<CAMPAIGN_FILE> list = readCampaignFiles();
-	sstrcpy(aLevelName, list[which].level.toUtf8().c_str());
-	// show this only when the video sequences are installed
-	if (PHYSFS_exists("sequences/devastation.ogg"))
-	{
-		if (!list[which].video.isEmpty())
-		{
-			seq_ClearSeqList();
-			seq_AddSeqToList(list[which].video.toUtf8().c_str(), nullptr, list[which].captions.toUtf8().c_str(), false);
-			seq_StartNextFullScreenVideo();
-		}
-	}
-	if (!list[which].package.isEmpty())
-	{
-		WzString path;
-		path += PHYSFS_getWriteDir();
-		path += PHYSFS_getDirSeparator();
-		path += "campaigns";
-		path += PHYSFS_getDirSeparator();
-		path += list[which].package;
-		if (!PHYSFS_mount(path.toUtf8().c_str(), NULL, PHYSFS_APPEND))
-		{
-			debug(LOG_ERROR, "Failed to load campaign mod \"%s\": %s",
-			      path.toUtf8().c_str(), WZ_PHYSFS_getLastError());
-		}
-	}
-	if (!list[which].loading.isEmpty())
-	{
-		debug(LOG_WZ, "Adding campaign mod level \"%s\"", list[which].loading.toUtf8().c_str());
-		if (!loadLevFile(list[which].loading.toUtf8(), mod_campaign, false, nullptr))
-		{
-			debug(LOG_ERROR, "Failed to load %s", list[which].loading.toUtf8().c_str());
-			return;
-		}
-	}
-	debug(LOG_WZ, "Loading campaign mod -- %s", aLevelName);
-	changeTitleMode(STARTGAME);
 }
 
 static void loadOK()
@@ -486,7 +436,6 @@ bool runCampaignSelector()
 	else if (id >= FRONTEND_CAMPAIGN_1 && id <= FRONTEND_CAMPAIGN_6) // chose a campaign
 	{
 		SPinit(LEVEL_TYPE::CAMPAIGN);
-		frontEndNewGame(id - FRONTEND_CAMPAIGN_1);
 	}
 	else if (id == FRONTEND_HYPERLINK)
 	{
@@ -511,10 +460,6 @@ bool runSinglePlayerMenu()
 		{
 			loadOK();
 		}
-	}
-	else if (challengesUp)
-	{
-		runChallenges();
 	}
 	else
 	{
@@ -560,7 +505,6 @@ bool runSinglePlayerMenu()
 
 		case FRONTEND_CHALLENGES:
 			SPinit(LEVEL_TYPE::SKIRMISH);
-			addChallenges();
 			break;
 
 		case FRONTEND_HYPERLINK:
@@ -577,7 +521,7 @@ bool runSinglePlayerMenu()
 		}
 	}
 
-	if (!bLoadSaveUp && !challengesUp)						// if save/load screen is up
+	if (!bLoadSaveUp)						// if save/load screen is up
 	{
 		widgDisplayScreen(psWScreen);						// show the widgets currently running
 	}
@@ -585,16 +529,10 @@ bool runSinglePlayerMenu()
 	{
 		displayLoadSave();
 	}
-	else if (challengesUp)
-	{
-		displayChallenges();
-	}
 
 	return true;
 }
 
-
-// ////////////////////////////////////////////////////////////////////////////
 // Multi Player Menu
 void startMultiPlayerMenu()
 {

@@ -886,7 +886,6 @@ UDWORD widgGetUserData2(const std::shared_ptr<W_SCREEN> &psScreen, UDWORD id)
 	return 0;
 }
 
-
 /* Set user data for a widget */
 void widgSetUserData(const std::shared_ptr<W_SCREEN> &psScreen, UDWORD id, void *UserData)
 {

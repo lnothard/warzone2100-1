@@ -60,7 +60,6 @@
 #include "cmddroid.h"
 #include "fpath.h"
 #include "projectile.h"
-#include "mission.h"
 #include "levels.h"
 #include "transporter.h"
 #include "selection.h"
@@ -308,7 +307,7 @@ DROID::DROID(uint32_t id, unsigned player)
 	, actionPos(0, 0)
 {
 	memset(aName, 0, sizeof(aName));
-	memset(asBits, 0, sizeof(asBits));
+  asBits.fill(0);
 	pos = Vector3i(0, 0, 0);
 	rot = Vector3i(0, 0, 0);
 	order.type = DORDER_NONE;
@@ -349,28 +348,19 @@ DROID::~DROID()
 	// In BASE_OBJECT::~BASE_OBJECT() is too late for this, since some callbacks require us to still be a DROID.
 	audio_RemoveObj(this);
 
-	DROID *psDroid = this;
-	DROID	*psCurr, *pNextGroupDroid = nullptr;
-
-	if (isTransporter(psDroid))
-	{
-		if (psDroid->psGroup)
-		{
-			//free all droids associated with this Transporter
-			for (psCurr = psDroid->psGroup->psList; psCurr != nullptr && psCurr != psDroid; psCurr = pNextGroupDroid)
-			{
-				pNextGroupDroid = psCurr->psGrpNext;
-				delete psCurr;
-			}
-		}
-	}
-
-	fpathRemoveDroidData(psDroid->id);
+	if (isTransporter(this) && psGroup) {
+    //free all droids associated with this Transporter
+    for (auto psCurr : psGroup->psList)
+    {
+      if (psCurr == this) continue;
+      std::erase(apsDroidLists[player], *psCurr);
+    }
+  }
+	fpathRemoveDroidData(id);
 
 	// leave the current group if any
-	if (psDroid->psGroup)
-	{
-		psDroid->psGroup->remove(psDroid);
+	if (psGroup) {
+		psGroup->remove(this);
 	}
 }
 
@@ -1307,7 +1297,7 @@ DROID_TYPE droidTemplateType(const DROID_TEMPLATE *psTemplate)
 }
 
 template <typename F, typename G>
-static unsigned calcSum(const uint8_t (&asParts)[DROID_MAXCOMP], int numWeaps, const uint32_t (&asWeaps)[MAX_WEAPONS], F func, G propulsionFunc)
+static unsigned calcSum(const std::array<uint8_t, DROID_MAXCOMP> &asParts, int numWeaps, const std::array<uint32_t, MAX_WEAPONS> &asWeaps, F func, G propulsionFunc)
 {
 	unsigned sum =
 		func(asBrainStats    [asParts[COMP_BRAIN]]) +
@@ -1327,7 +1317,7 @@ static unsigned calcSum(const uint8_t (&asParts)[DROID_MAXCOMP], int numWeaps, c
 	ASSERT_OR_RETURN(retVal, player >= 0 && player < MAX_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
 template <typename F, typename G>
-static unsigned calcUpgradeSum(const uint8_t (&asParts)[DROID_MAXCOMP], int numWeaps, const uint32_t (&asWeaps)[MAX_WEAPONS], int player, F func, G propulsionFunc)
+static unsigned calcUpgradeSum(const std::array<uint8_t, DROID_MAXCOMP> &asParts, int numWeaps, const std::array<uint32_t, MAX_WEAPONS> &asWeaps, int player, F func, G propulsionFunc)
 {
 	ASSERT_PLAYER_OR_RETURN(0, player);
 	unsigned sum =
@@ -1352,16 +1342,16 @@ struct FilterDroidWeaps
 {
 	FilterDroidWeaps(unsigned numWeaps, const std::array<WEAPON, MAX_WEAPONS> &asWeaps)
 	{
-		std::transform(asWeaps, asWeaps + numWeaps, this->asWeaps, [](const WEAPON &weap) {
+		std::transform(asWeaps.begin(), asWeaps.end(), this->asWeaps, [](const WEAPON &weap) {
 			return weap.nStat;
 		});
-		this->numWeaps = std::remove_if(this->asWeaps, this->asWeaps + numWeaps, [](uint32_t stat) {
+		this->numWeaps = std::remove_if(this->asWeaps.begin(), this->asWeaps.end(), [](uint32_t stat) {
 			return stat == 0;
-		}) - this->asWeaps;
+		}) - this->asWeaps.begin();
 	}
 
 	unsigned numWeaps;
-	uint32_t asWeaps[MAX_WEAPONS];
+  std::array<uint32_t, MAX_WEAPONS> asWeaps;
 };
 
 template <typename F, typename G>
@@ -1616,7 +1606,7 @@ DROID *reallyBuildDroid(const DROID_TEMPLATE *pTemplate, Position pos, UDWORD pl
 	if (isTransporter(psDroid))
 	{
 		//add transporter launch button if selected player and not a reinforcable situation
-		if (player == selectedPlayer && !missionCanReEnforce())
+		if (player == selectedPlayer)
 		{
 			(void)intAddTransporterLaunch(psDroid);
 		}
@@ -1699,7 +1689,7 @@ void droidSetBits(const DROID_TEMPLATE *pTemplate, DROID *psDroid)
 		}
 		psDroid->asWeaps[inc].usedAmmo = 0;
 	}
-	memcpy(psDroid->asBits, pTemplate->asParts, sizeof(psDroid->asBits));
+  psDroid->asBits = pTemplate->asParts;
 
 	switch (getPropulsionStats(psDroid)->propulsionType)  // getPropulsionStats(psDroid) only defined after psDroid->asBits[COMP_PROPULSION] is set.
 	{
@@ -1734,7 +1724,7 @@ void templateSetParts(const DROID *psDroid, DROID_TEMPLATE *psTemplate)
 			psTemplate->asWeaps[inc] = psDroid->asWeaps[inc].nStat;
 		}
 	}
-	memcpy(psTemplate->asParts, psDroid->asBits, sizeof(psDroid->asBits));
+  psTemplate->asParts = psDroid->asBits;
 }
 
 /* Make all the droids for a certain player a member of a specific group */
@@ -3036,7 +3026,7 @@ DROID *giftSingleDroid(DROID *psD, UDWORD to, bool electronic)
 		psNewDroid = reallyBuildDroid(&sTemplate, Position(psD->pos.x, psD->pos.y, 0), to, false, psD->rot);
 		ASSERT_OR_RETURN(nullptr, psNewDroid, "Unable to build unit");
 
-		addDroid(psNewDroid, apsDroidLists);
+		addDroid(psNewDroid);
 		adjustDroidCount(psNewDroid, 1);
 
 		psNewDroid->body = clip((psD->body*psNewDroid->originalBody + psD->originalBody/2)/std::max(psD->originalBody, 1u), 1u, psNewDroid->originalBody);
@@ -3080,7 +3070,7 @@ DROID *giftSingleDroid(DROID *psD, UDWORD to, bool electronic)
 	adjustDroidCount(psD, -1);
 	scriptRemoveObject(psD); //Remove droid from any script groups
 
-	if (droidRemove(psD, apsDroidLists))
+	if (droidRemove(psD))
 	{
 		psD->player	= to;
 
@@ -3316,7 +3306,6 @@ bool isConstructionDroid(BASE_OBJECT const *psObject)
 bool droidOnMap(const DROID *psDroid)
 {
 	if (psDroid->died == NOT_CURRENT_LIST || isTransporter(psDroid)
-		|| psDroid->pos.x == INVALID_XY || psDroid->pos.y == INVALID_XY || missionIsOffworld()
 		|| mapHeight == 0)
 	{
 		// Off world or on a transport or is a transport or in mission list, or on a mission, or no map - ignore

@@ -33,7 +33,6 @@
 #include "map.h"
 #include "power.h"
 #include "objects.h"
-#include "mission.h"
 #include "structuredef.h"
 #include "structure.h"
 #include "droid.h"

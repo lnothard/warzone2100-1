@@ -64,7 +64,6 @@
 #include "main.h"
 #include "display.h"
 #include "cmddroid.h"
-#include "mission.h"
 #include "template.h"
 #include "multiplay.h"
 #include "qtscript.h"
@@ -3882,7 +3881,6 @@ static void setDesignPauseState()
 	if (!bMultiPlayer && !bInTutorial)
 	{
 		//need to clear mission widgets from being shown on design screen
-		clearMissionWidgets();
 		gameTimeStop();
 		setGameUpdatePause(true);
 		setScrollPause(true);
@@ -3896,7 +3894,6 @@ static void resetDesignPauseState()
 	if (!bMultiPlayer && !bInTutorial)
 	{
 		//put any widgets back on for the missions
-		resetMissionWidgets();
 		setGameUpdatePause(false);
 		setScrollPause(false);
 		gameTimeStart();

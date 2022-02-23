@@ -2006,7 +2006,6 @@ void	effectSetupWayPoint(EFFECT *psEffect)
 	SET_ESSENTIAL(psEffect);
 }
 
-
 static void effectSetupBlood(EFFECT *psEffect)
 {
 	psEffect->frameDelay = BLOOD_FRAME_DELAY;
@@ -2046,7 +2045,6 @@ static void effectSetupDestruction(EFFECT *psEffect)
 		psEffect->frameDelay = DESTRUCTION_FRAME_DELAY / 2;
 	}
 }
-
 
 #define SMOKE_SHIFT (16 - (rand()%32))
 void initPerimeterSmoke(iIMDShape *pImd, Vector3i base)
@@ -2154,10 +2152,10 @@ static void effectStructureUpdates()
 	/* Go thru' all players */
 	for (unsigned player = 0; player < MAX_PLAYERS; ++player)
 	{
-		for (STRUCTURE *psStructure = apsStructLists[player]; psStructure != nullptr; psStructure = psStructure->psNext)
+		for (auto& psStructure : apsStructLists[player])
 		{
 			// Find its group.
-			unsigned int partition = psStructure->id % EFFECT_STRUCTURE_DIVISION;
+			unsigned int partition = psStructure.id % EFFECT_STRUCTURE_DIVISION;
 
 			/* Is it the right frame? */
 			if (partition != curPartition)
@@ -2165,13 +2163,13 @@ static void effectStructureUpdates()
 				continue;
 			}
 
-			if (psStructure->status != SS_BUILT || !psStructure->visibleForLocalDisplay())
+			if (psStructure.status != SS_BUILT || !psStructure.visibleForLocalDisplay())
 			{
 				continue;
 			}
 
 			/* Factories puff out smoke, power stations puff out tesla stuff */
-			switch (psStructure->pStructureType->type)
+			switch (psStructure.pStructureType->type)
 			{
 			case REF_FACTORY:
 			case REF_CYBORG_FACTORY:
@@ -2180,30 +2178,30 @@ static void effectStructureUpdates()
 					We're a factory, so better puff out a bit of steam
 					Complete hack with the magic numbers - just for IAN demo
 				*/
-				if (psStructure->sDisplay.imd->nconnectors == 1)
+				if (psStructure.sDisplay.imd->nconnectors == 1)
 				{
-					Vector3i eventPos = psStructure->pos.xzy() + Affine3F().RotY(psStructure->rot.direction)*Vector3i(
-					                        psStructure->sDisplay.imd->connectors->x,
-					                        psStructure->sDisplay.imd->connectors->z,
-					                        -psStructure->sDisplay.imd->connectors->y
+					Vector3i eventPos = psStructure.pos.xzy() + Affine3F().RotY(psStructure.rot.direction)*Vector3i(
+					                        psStructure.sDisplay.imd->connectors->x,
+					                        psStructure.sDisplay.imd->connectors->z,
+					                        -psStructure.sDisplay.imd->connectors->y
 					                    );
 
 					addEffect(&eventPos, EFFECT_SMOKE, SMOKE_TYPE_STEAM, false, nullptr, 0);
 
-					audio_PlayObjStaticTrack(psStructure, ID_SOUND_STEAM);
+					audio_PlayObjStaticTrack(&psStructure, ID_SOUND_STEAM);
 				}
 				break;
 			case REF_POWER_GEN:
 				{
-					Vector3i eventPos = psStructure->pos.xzy();
+					Vector3i eventPos = psStructure.pos.xzy();
 
 					// Add an effect over the central spire.
 
-					eventPos.y = psStructure->pos.z + 48;
+					eventPos.y = psStructure.pos.z + 48;
 
 					addEffect(&eventPos, EFFECT_EXPLOSION, EXPLOSION_TYPE_TESLA, false, nullptr, 0);
 
-					audio_PlayObjStaticTrack(psStructure, ID_SOUND_POWER_SPARK);
+					audio_PlayObjStaticTrack(&psStructure, ID_SOUND_POWER_SPARK);
 					break;
 				}
 			default:

@@ -35,9 +35,9 @@
 #include "activity.h"
 #include "clparse.h"
 #include "main.h"
-#include "mission.h" // for cheats
 #include "multistat.h"
 #include "urlrequest.h"
+#include "droid.h"
 
 #include <utility>
 #include <memory>
@@ -360,10 +360,6 @@ bool loadMultiStats(char *sPlayerName, PLAYERSTATS *st)
 // Save Player Stats
 bool saveMultiStats(const char *sFileName, const char *sPlayerName, const PLAYERSTATS *st)
 {
-	if (Cheated)
-	{
-	    return false;
-	}
 	char buffer[1000];
 
 	ssprintf(buffer, "WZ.STA.v3\n%u %u %u %u %u\n%s\n",
@@ -464,27 +460,26 @@ static inline uint32_t calcObjectCost(const BASE_OBJECT *psObj)
 // update kills
 void updateMultiStatsKills(BASE_OBJECT *psKilled, UDWORD player)
 {
-	if (player < MAX_PLAYERS)
-	{
-		if (NetPlay.bComms)
-		{
-			// killing scavengers does not count in MP games
-			if (psKilled != nullptr && psKilled->player != scavengerSlot())
-			{
-				// FIXME: Why in the world are we using two different structs for stats when we can use only one?
-				++playerStats[player].totalKills;
-				++playerStats[player].recentKills;
-				if (psKilled->player < MAX_PLAYERS)
-				{
-					playerStats[psKilled->player].recentPowerLost += static_cast<uint64_t>(calcObjectCost(psKilled));
-				}
-			}
-		}
-		else
-		{
-			ingame.skScores[player][1]++;
-		}
-	}
+  if (player >= MAX_PLAYERS)
+    return;
+
+  if (NetPlay.bComms) {
+    // killing scavengers does not count in MP games
+    if (psKilled != nullptr && psKilled->player != scavengerSlot())
+    {
+      // FIXME: Why in the world are we using two different structs for stats when we can use only one?
+      ++playerStats[player].totalKills;
+      ++playerStats[player].recentKills;
+      if (psKilled->player < MAX_PLAYERS)
+      {
+        playerStats[psKilled->player].recentPowerLost += static_cast<uint64_t>(calcObjectCost(psKilled));
+      }
+    }
+  }
+  else
+  {
+    ingame.skScores[player][1]++;
+  }
 }
 
 class KnownPlayersDB {

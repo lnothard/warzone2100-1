@@ -60,7 +60,6 @@
 #include "multiint.h"
 #include "multigifts.h"
 #include "multijoin.h"
-#include "mission.h"
 #include "scores.h"
 #include "keybind.h"
 #include "loop.h"
@@ -139,7 +138,7 @@ static bool		giftsUp[MAX_PLAYERS] = {true};		//gift buttons for player are up.
 static PIELIGHT GetPlayerTextColor(int mode, UDWORD player)
 {
 	// override color if they are dead...
-	if (player >= MAX_PLAYERS || (!apsDroidLists[player] && !apsStructLists[player]))
+	if (player >= MAX_PLAYERS || (apsDroidLists[player].empty() && apsStructLists[player].empty()))
 	{
 		return WZCOL_GREY;			// dead text color
 	}
@@ -692,32 +691,30 @@ public:
 
 	void display(int xOffset, int yOffset) override
 	{
-		// a droid of theirs.
-		DROID *displayDroid = (player < MAX_PLAYERS) ? apsDroidLists[player] : nullptr;
-		while (displayDroid != nullptr && !displayDroid->visibleForLocalDisplay())
+    auto centerX = xOffset + x() + width() / 2;
+    auto y0 = yOffset + y();
+
+    // a droid of theirs.
+		for (auto& displayDroid : apsDroidLists[player])
 		{
-			displayDroid = displayDroid->psNext;
+      if (displayDroid.visibleForLocalDisplay()) {
+        pie_SetGeometricOffset(centerX, y0 + height() * 3 / 4);
+        Vector3i rotation(-15, 45, 0);
+        Position position(0, 0, BUTTON_DEPTH);  // Scale them.
+        if (displayDroid.droidType == DROID_SUPERTRANSPORTER)
+        {
+          position.z = 7850;
+        }
+        else if (displayDroid.droidType == DROID_TRANSPORTER)
+        {
+          position.z = 4100;
+        }
+        displayComponentButtonObject(&displayDroid, &rotation, &position, 100);
+        return;
+      }
 		}
 
-		auto centerX = xOffset + x() + width() / 2;
-		auto y0 = yOffset + y();
-		if (displayDroid)
-		{
-			pie_SetGeometricOffset(centerX, y0 + height() * 3 / 4);
-			Vector3i rotation(-15, 45, 0);
-			Position position(0, 0, BUTTON_DEPTH);  // Scale them.
-			if (displayDroid->droidType == DROID_SUPERTRANSPORTER)
-			{
-				position.z = 7850;
-			}
-			else if (displayDroid->droidType == DROID_TRANSPORTER)
-			{
-				position.z = 4100;
-			}
-
-			displayComponentButtonObject(displayDroid, &rotation, &position, 100);
-		}
-		else if ((player < MAX_PLAYERS) && apsDroidLists[player])
+		if (player < MAX_PLAYERS && !apsDroidLists[player].empty())
 		{
 			// Show that they have droids, but not which droids, since we can't see them.
 			iV_DrawImageTc(
@@ -935,15 +932,7 @@ private:
 			// Let's use the real score for MP games
 			if (NetPlay.bComms)
 			{
-				if (Cheated)
-				{
-					sstrcpy(scoreString, "(cheated)");
-				}
-				else
-				{
-					ssprintf(scoreString, "%d", getMultiStats(playerWidget.player).recentScore);
-				}
-
+        ssprintf(scoreString, "%d", getMultiStats(playerWidget.player).recentScore);
 				ssprintf(killsString, "%d", getMultiStats(playerWidget.player).recentKills);
 			}
 			else
@@ -989,7 +978,7 @@ private:
 				{
 					// NOTE, This tallys up *all* the structures you have. Test out via 'start with no base'.
 					int num = 0;
-					for (STRUCTURE *temp = apsStructLists[playerWidget.player]; temp != nullptr; temp = temp->psNext)
+					for (auto& temp : apsStructLists[playerWidget.player])
 					{
 						++num;
 					}
@@ -1276,7 +1265,8 @@ void intProcessMultiMenu(UDWORD id)
 			char buf[250];
 
 			// Allow the host to kick the AI only in a MP game, or if they activated cheats in a skirmish game
-			if ((NetPlay.bComms || Cheated) && (NetPlay.players[i].allocated || (NetPlay.players[i].allocated == false && NetPlay.players[i].ai != AI_OPEN)))
+      if (NetPlay.bComms && (NetPlay.players[i].allocated ||
+          NetPlay.players[i].allocated == false && NetPlay.players[i].ai != AI_OPEN))
 			{
 				inputLoseFocus();
 				ssprintf(buf, _("The host has kicked %s from the game!"), getPlayerName((unsigned int) i));

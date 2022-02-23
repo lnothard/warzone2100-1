@@ -37,13 +37,14 @@
 #include "clparse.h"
 #include "frontend.h"
 #include "keyedit.h"
-#include "mission.h"
 #include "multiint.h"
 #include "multilimit.h"
 #include "multistat.h"
 #include "warzoneconfig.h"
 #include "wrappers.h"
 #include "titleui/titleui.h"
+#include "multiplay.h"
+#include "lib/framework/input.h"
 
 struct STAR
 {
@@ -175,13 +176,9 @@ TITLECODE titleLoop()
 				NetPlay.bComms = true; // use network = true
 				NetPlay.isUPNP_CONFIGURED = false;
 				NetPlay.isUPNP_ERROR = false;
-				bMultiMessages = true;
 				NETinit(true);
 				NETdiscoverUPnPDevices();
 			}
-			bMultiPlayer = true;
-			ingame.side = InGameSide::HOST_OR_SINGLEPLAYER;
-			game.type = LEVEL_TYPE::SKIRMISH;
 			// Ensure the game has a place to return to
 			changeTitleMode(TITLE);
 			changeTitleUI(std::make_shared<WzMultiplayerOptionsTitleUI>(wzTitleUICurrent));
@@ -357,18 +354,12 @@ bool displayGameOver(bool bDidit, bool showBackDrop)
 	}
 
 	//clear out any mission widgets - timers etc that may be on the screen
-	clearMissionWidgets();
-
 	if (bMultiPlayer && NetPlay.players[selectedPlayer].isSpectator)
 	{
 		// Special message for spectators to inform them that the game is fully over
 		addConsoleMessage(_("GAME OVER"), CENTRE_JUSTIFY, SYSTEM_MESSAGE, false, MAX_CONSOLE_MESSAGE_DURATION);
 		addConsoleMessage(_("The battle is over - you can leave the room."), CENTRE_JUSTIFY, SYSTEM_MESSAGE, false, MAX_CONSOLE_MESSAGE_DURATION);
 		// TODO: Display this in a form with a "Quit to Main Menu" button?, or adapt intAddMissionResult to have a separate display for spectators?
-	}
-	else
-	{
-		intAddMissionResult(bDidit, true, showBackDrop);
 	}
 
 	return true;

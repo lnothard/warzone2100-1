@@ -56,7 +56,6 @@
 #include "research.h"
 #include "init.h"
 #include "warcam.h"	// these 4 for fireworks
-#include "mission.h"
 #include "effects.h"
 #include "lib/gamelib/gtime.h"
 #include "keybind.h"
@@ -211,7 +210,6 @@ bool multiplayerWinSequence(bool firstCall)
 	static Position pos = Position(0, 0, 0);
 	static UDWORD last = 0;
 	float		rotAmount;
-	STRUCTURE	*psStruct;
 
 	if (selectedPlayer >= MAX_PLAYERS)
 	{
@@ -227,20 +225,20 @@ bool multiplayerWinSequence(bool firstCall)
 		CancelAllResearch(selectedPlayer);
 
 		// stop all manufacture.
-		for (psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
+		for (auto& psStruct : apsStructLists[selectedPlayer])
 		{
-			if (StructIsFactory(psStruct))
+			if (StructIsFactory(&psStruct))
 			{
-				if (((FACTORY *)psStruct->pFunctionality)->psSubject)//check if active
+				if (((FACTORY *)psStruct.pFunctionality)->psSubject)//check if active
 				{
-					cancelProduction(psStruct, ModeQueue);
+					cancelProduction(&psStruct, ModeQueue);
 				}
 			}
 		}
 	}
 
 	// rotate world
-	if (MissionResUp && !getWarCamStatus())
+	if (!getWarCamStatus())
 	{
 		rotAmount = graphicsTimeAdjustedIncrement(MAP_SPIN_RATE / 12);
 		playerPos.r.y = static_cast<int>(playerPos.r.y + rotAmount);
@@ -403,58 +401,28 @@ DROID *IdToDroid(UDWORD id, UDWORD player)
 	{
 		for (int i = 0; i < MAX_PLAYERS; i++)
 		{
-			for (DROID *d = apsDroidLists[i]; d; d = d->psNext)
+			for (auto& d : apsDroidLists[i])
 			{
-				if (d->id == id)
+				if (d.id == id)
 				{
-					return d;
+					return &d;
 				}
 			}
 		}
 	}
 	else if (player < MAX_PLAYERS)
 	{
-		for (DROID *d = apsDroidLists[player]; d; d = d->psNext)
+		for (auto& d : apsDroidLists[player])
 		{
-			if (d->id == id)
+			if (d.id == id)
 			{
-				return d;
+				return &d;
 			}
 		}
 	}
 	return nullptr;
 }
 
-// find off-world droids
-DROID *IdToMissionDroid(UDWORD id, UDWORD player)
-{
-	if (player == ANYPLAYER)
-	{
-		for (int i = 0; i < MAX_PLAYERS; i++)
-		{
-			for (DROID *d = mission.apsDroidLists[i]; d; d = d->psNext)
-			{
-				if (d->id == id)
-				{
-					return d;
-				}
-			}
-		}
-	}
-	else if (player < MAX_PLAYERS)
-	{
-		for (DROID *d = mission.apsDroidLists[player]; d; d = d->psNext)
-		{
-			if (d->id == id)
-			{
-				return d;
-			}
-		}
-	}
-	return nullptr;
-}
-
-// ////////////////////////////////////////////////////////////////////////////
 // find a structure
 STRUCTURE *IdToStruct(UDWORD id, UDWORD player)
 {
@@ -464,33 +432,29 @@ STRUCTURE *IdToStruct(UDWORD id, UDWORD player)
 		beginPlayer = player;
 		endPlayer = std::min<int>(player + 1, MAX_PLAYERS);
 	}
-	STRUCTURE **lists[2] = {apsStructLists, mission.apsStructLists};
-	for (int j = 0; j < 2; ++j)
-	{
-		for (int i = beginPlayer; i < endPlayer; ++i)
-		{
-			for (STRUCTURE *d = lists[j][i]; d; d = d->psNext)
-			{
-				if (d->id == id)
-				{
-					return d;
-				}
-			}
-		}
-	}
+
+  for (int i = beginPlayer; i < endPlayer; ++i)
+  {
+    for (auto& d : apsStructLists[i])
+    {
+      if (d.id == id)
+      {
+        return &d;
+      }
+    }
+  }
 	return nullptr;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // find a feature
 FEATURE *IdToFeature(UDWORD id, UDWORD player)
 {
 	(void)player;	// unused, all features go into player 0
-	for (FEATURE *d = apsFeatureLists[0]; d; d = d->psNext)
+	for (auto& d : apsFeatureLists)
 	{
-		if (d->id == id)
+		if (d.id == id)
 		{
-			return d;
+			return &d;
 		}
 	}
 	return nullptr;
@@ -648,42 +612,45 @@ int scavengerSlot()
 
 int scavengerPlayer()
 {
-	return (game.scavengers != NO_SCAVENGERS) ? scavengerSlot() : -1;
+	return game.scavengers != NO_SCAVENGERS ? scavengerSlot() : -1;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // probably temporary. Places the camera on the players 1st droid or struct.
 Vector3i cameraToHome(UDWORD player, bool scroll)
 {
 	UDWORD x, y;
-	STRUCTURE	*psBuilding = nullptr;
+  bool found = false;
 
 	if (player < MAX_PLAYERS)
 	{
-		for (psBuilding = apsStructLists[player]; psBuilding && (psBuilding->pStructureType->type != REF_HQ); psBuilding = psBuilding->psNext) {}
+		for (auto& psBuilding : apsStructLists[player])
+    {
+      if (psBuilding.pStructureType->type == REF_HQ) {
+        x = map_coord(psBuilding.pos.x);
+        y = map_coord(psBuilding.pos.y);
+        found = true;
+        break;
+      }
+    }
 	}
 
-	if (psBuilding)
-	{
-		x = map_coord(psBuilding->pos.x);
-		y = map_coord(psBuilding->pos.y);
-	}
-	else if ((player < MAX_PLAYERS) && apsDroidLists[player])				// or first droid
-	{
-		x = map_coord(apsDroidLists[player]->pos.x);
-		y =	map_coord(apsDroidLists[player]->pos.y);
-	}
-	else if ((player < MAX_PLAYERS) && apsStructLists[player])				// center on first struct
-	{
-		x = map_coord(apsStructLists[player]->pos.x);
-		y = map_coord(apsStructLists[player]->pos.y);
-	}
-	else														//or map center.
-	{
-		x = mapWidth / 2;
-		y = mapHeight / 2;
-	}
-
+  if (!found) {
+    if (player < MAX_PLAYERS && !apsDroidLists[player].empty())        // or first droid
+    {
+      x = map_coord(apsDroidLists[player].front().pos.x);
+      y = map_coord(apsDroidLists[player].front().pos.y);
+    }
+    else if (player < MAX_PLAYERS && !apsStructLists[player].empty())        // center on first struct
+    {
+      x = map_coord(apsStructLists[player].front().pos.x);
+      y = map_coord(apsStructLists[player].front().pos.y);
+    }
+    else                            //or map center.
+    {
+      x = mapWidth / 2;
+      y = mapHeight / 2;
+    }
+  }
 
 	if (scroll)
 	{
@@ -1495,13 +1462,13 @@ bool sendResearchStatus(const STRUCTURE *psBuilding, uint32_t index, uint8_t pla
 STRUCTURE *findResearchingFacilityByResearchIndex(unsigned player, unsigned index)
 {
 	// Go through the structs to find the one doing this topic
-	for (STRUCTURE *psBuilding = apsStructLists[player]; psBuilding; psBuilding = psBuilding->psNext)
+	for (auto& psBuilding : apsStructLists[player])
 	{
-		if (psBuilding->pStructureType->type == REF_RESEARCH
-		    && ((RESEARCH_FACILITY *)psBuilding->pFunctionality)->psSubject
-		    && ((RESEARCH_FACILITY *)psBuilding->pFunctionality)->psSubject->ref - STAT_RESEARCH == index)
+		if (psBuilding.pStructureType->type == REF_RESEARCH
+		    && ((RESEARCH_FACILITY *)psBuilding.pFunctionality)->psSubject
+		    && ((RESEARCH_FACILITY *)psBuilding.pFunctionality)->psSubject->ref - STAT_RESEARCH == index)
 		{
-			return psBuilding;
+			return &psBuilding;
 		}
 	}
 	return nullptr;  // Not found.
@@ -2108,18 +2075,18 @@ MESSAGE *findBeaconMsg(UDWORD player, SDWORD sender)
 {
 	ASSERT_OR_RETURN(nullptr, player < MAX_PLAYERS, "Unsupported player: %" PRIu32 "", player);
 
-	for (MESSAGE *psCurr = apsMessages[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsMessages[player])
 	{
 		//look for VIEW_BEACON, should only be 1 per player
-		if (psCurr->dataType == MSG_DATA_BEACON)
+		if (psCurr.dataType == MSG_DATA_BEACON)
 		{
-			if (psCurr->pViewData->type == VIEW_BEACON)
+			if (psCurr.pViewData->type == VIEW_BEACON)
 			{
 				debug(LOG_WZ, "findBeaconMsg: %d ALREADY HAS A MESSAGE STORED", player);
-				if (((VIEW_PROXIMITY *)psCurr->pViewData->pData)->sender == sender)
+				if (((VIEW_PROXIMITY *)psCurr.pViewData->pData)->sender == sender)
 				{
 					debug(LOG_WZ, "findBeaconMsg: %d ALREADY HAS A MESSAGE STORED from %d", player, sender);
-					return psCurr;
+					return &psCurr;
 				}
 			}
 		}
@@ -2132,8 +2099,6 @@ MESSAGE *findBeaconMsg(UDWORD player, SDWORD sender)
 /* Add a beacon (blip) */
 bool addBeaconBlip(SDWORD locX, SDWORD locY, SDWORD forPlayer, SDWORD sender, const char *textMsg)
 {
-	MESSAGE *psMessage;
-
 	if (forPlayer >= MAX_PLAYERS)
 	{
 		debug(LOG_ERROR, "addBeaconBlip: player number is too high");
@@ -2141,15 +2106,14 @@ bool addBeaconBlip(SDWORD locX, SDWORD locY, SDWORD forPlayer, SDWORD sender, co
 	}
 
 	//find the message if was already added previously
-	psMessage = findBeaconMsg(forPlayer, sender);
-	if (psMessage)
+	if (auto psMessage = findBeaconMsg(forPlayer, sender))
 	{
 		//remove it
 		removeMessage(psMessage, forPlayer);
 	}
 
 	//create new message
-	psMessage = addBeaconMessage(MSG_PROXIMITY, false, forPlayer);
+	auto psMessage = addBeaconMessage(MSG_PROXIMITY, false, forPlayer);
 	if (psMessage)
 	{
 		VIEWDATA *pTempData = CreateBeaconViewData(sender, locX, locY);
@@ -2308,11 +2272,11 @@ bool makePlayerSpectator(uint32_t playerIndex, bool removeAllStructs, bool quiet
 
 		// Destroy HQ
 		std::vector<STRUCTURE *> hqStructs;
-		for (STRUCTURE *psStruct = apsStructLists[playerIndex]; psStruct; psStruct = psStruct->psNext)
+		for (auto& psStruct : apsStructLists[playerIndex])
 		{
-			if (REF_HQ == psStruct->pStructureType->type)
+			if (REF_HQ == psStruct.pStructureType->type)
 			{
-				hqStructs.push_back(psStruct);
+				hqStructs.push_back(&psStruct);
 			}
 		}
 		for (auto psStruct : hqStructs)
@@ -2329,43 +2293,39 @@ bool makePlayerSpectator(uint32_t playerIndex, bool removeAllStructs, bool quiet
 
 		// Destroy all droids
 		debug(LOG_DEATH, "killing off all droids for player %d", playerIndex);
-		while (apsDroidLists[playerIndex])				// delete all droids
+    for (auto& droid : apsDroidLists[playerIndex])
 		{
 			if (quietly)			// don't show effects
 			{
-				killDroid(apsDroidLists[playerIndex]);
+				killDroid(&droid);
 			}
 			else				// show effects
 			{
-				destroyDroid(apsDroidLists[playerIndex], gameTime);
+				destroyDroid(&droid, gameTime);
 			}
 		}
 
 		// Destroy structs
 		debug(LOG_DEATH, "killing off structures for player %d", playerIndex);
-		STRUCTURE *psStruct = apsStructLists[playerIndex];
-		while (psStruct)				// delete structs
-		{
-			STRUCTURE * psNext = psStruct->psNext;
 
+    for (auto& psStruct : apsStructLists[playerIndex])
+		{
 			if (removeAllStructs
-				|| psStruct->pStructureType->type == REF_POWER_GEN
-				|| psStruct->pStructureType->type == REF_RESEARCH
-				|| psStruct->pStructureType->type == REF_COMMAND_CONTROL
-				|| StructIsFactory(psStruct))
+				|| psStruct.pStructureType->type == REF_POWER_GEN
+				|| psStruct.pStructureType->type == REF_RESEARCH
+				|| psStruct.pStructureType->type == REF_COMMAND_CONTROL
+				|| StructIsFactory(&psStruct))
 			{
 				// FIXME: look why destroyStruct() doesn't put back the feature like removeStruct() does
-				if (quietly || psStruct->pStructureType->type == REF_RESOURCE_EXTRACTOR)		// don't show effects
+				if (quietly || psStruct.pStructureType->type == REF_RESOURCE_EXTRACTOR)		// don't show effects
 				{
-					removeStruct(psStruct, true);
+					removeStruct(&psStruct, true);
 				}
 				else			// show effects
 				{
-					destroyStruct(psStruct, gameTime);
+					destroyStruct(&psStruct, gameTime);
 				}
 			}
-
-			psStruct = psNext;
 		}
 	}
 

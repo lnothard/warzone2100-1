@@ -58,7 +58,6 @@
 #include "group.h"
 #include "transporter.h"
 #include "fpath.h"
-#include "mission.h"
 #include "levels.h"
 #include "console.h"
 #include "cmddroid.h"
@@ -1516,7 +1515,7 @@ STRUCTURE *buildStructureDir(STRUCTURE_STATS *pStructureType, UDWORD x, UDWORD y
 		have DP's in an invalid location - the scroll limits will have been
 		changed to not include them. This is the only HACK I can think of to
 		enable them to be loaded up. So here goes...*/
-		if (FromSave && player == selectedPlayer && missionLimboExpand())
+		if (FromSave && player == selectedPlayer)
 		{
 			//save the current values
 			preScrollMinX = scrollMinX;
@@ -1536,7 +1535,7 @@ STRUCTURE *buildStructureDir(STRUCTURE_STATS *pStructureType, UDWORD x, UDWORD y
 			removeStructFromMap(psBuilding);
 			delete psBuilding;
 			//better reset these if you couldn't build the structure!
-			if (FromSave && player == selectedPlayer && missionLimboExpand())
+			if (FromSave && player == selectedPlayer)
 			{
 				//reset the current values
 				scrollMinX = preScrollMinX;
@@ -1549,7 +1548,7 @@ STRUCTURE *buildStructureDir(STRUCTURE_STATS *pStructureType, UDWORD x, UDWORD y
 		}
 
 		//reset the scroll values if adjusted
-		if (FromSave && player == selectedPlayer && missionLimboExpand())
+		if (FromSave && player == selectedPlayer)
 		{
 			//reset the current values
 			scrollMinX = preScrollMinX;
@@ -2004,20 +2003,11 @@ void assignFactoryCommandDroid(STRUCTURE *psStruct, DROID *psCommander)
 		psFact->psCommander = nullptr;
 		// TODO: Synchronise .psCommander.
 		//syncDebug("Removed commander from factory %d", psStruct->id);
-		if (!missionIsOffworld())
-		{
-			addFlagPosition(psFact->psAssemblyPoint);	// add the assembly point back into the list
-		}
-		else
-		{
-			psFact->psAssemblyPoint->psNext = mission.apsFlagPosLists[psFact->psAssemblyPoint->player];
-			mission.apsFlagPosLists[psFact->psAssemblyPoint->player] = psFact->psAssemblyPoint;
-		}
+    addFlagPosition(psFact->psAssemblyPoint);	// add the assembly point back into the list
 	}
 
 	if (psCommander != nullptr)
 	{
-		ASSERT_OR_RETURN(, !missionIsOffworld(), "cannot assign a commander to a factory when off world");
 		factoryInc = psFact->psAssemblyPoint->factoryInc;
 
 		for (auto& psFlag : apsFlagPosLists[psStruct->player])
@@ -2758,54 +2748,54 @@ static void aiUpdateStructure(STRUCTURE *psStructure, bool isMission)
 					mindist = (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2;
 				}
 				psRepairFac->droidQueue = 0;
-				for (auto& psDroid : apsDroidLists[psStructure->player])
+				for (auto& droid : apsDroidLists[psStructure->player])
 				{
-					BASE_OBJECT *const psTarget = orderStateObj(&psDroid, DORDER_RTR);
+					BASE_OBJECT *const psTarget = orderStateObj(&droid, DORDER_RTR);
 
 					// Highest priority:
 					// Take any droid with orders to Return to Repair (DORDER_RTR),
 					// or that have been ordered to this repair facility (DORDER_RTR_SPECIFIED),
 					// or any "lost" unit with one of those two orders.
-					if (((psDroid.order.type == DORDER_RTR || (psDroid.order.type == DORDER_RTR_SPECIFIED
-					                                            && (!psTarget || psTarget == psStructure)))
-					     && psDroid.action != DACTION_WAITFORREPAIR && psDroid.action != DACTION_MOVETOREPAIRPOINT
-					     && psDroid.action != DACTION_WAITDURINGREPAIR)
+					if (((droid.order.type == DORDER_RTR || (droid.order.type == DORDER_RTR_SPECIFIED
+                                                   && (!psTarget || psTarget == psStructure)))
+               && droid.action != DACTION_WAITFORREPAIR && droid.action != DACTION_MOVETOREPAIRPOINT
+               && droid.action != DACTION_WAITDURINGREPAIR)
 					    || (psTarget && psTarget == psStructure))
 					{
-						if (psDroid.body >= psDroid.originalBody)
+						if (droid.body >= droid.originalBody)
 						{
-							objTrace(psStructure->id, "Repair not needed of droid %d", (int)psDroid.id);
+							objTrace(psStructure->id, "Repair not needed of droid %d", (int)droid.id);
 
 							/* set droid points to max */
-							psDroid.body = psDroid.originalBody;
+							droid.body = droid.originalBody;
 
 							// if completely repaired reset order
-							secondarySetState(&psDroid, DSO_RETURN_TO_LOC, DSS_NONE);
+							secondarySetState(&droid, DSO_RETURN_TO_LOC, DSS_NONE);
 
-							if (hasCommander(&psDroid))
+							if (hasCommander(&droid))
 							{
 								// return a droid to it's command group
-								DROID	*psCommander = psDroid.psGroup->psCommander;
+								DROID	*psCommander = droid.psGroup->psCommander;
 
-								orderDroidObj(&psDroid, DORDER_GUARD, psCommander, ModeImmediate);
+								orderDroidObj(&droid, DORDER_GUARD, psCommander, ModeImmediate);
 							}
 							else if (psRepairFac->psDeliveryPoint != nullptr)
 							{
 								// move the droid out the way
-								objTrace(psDroid.id, "Repair not needed - move to delivery point");
-								orderDroidLoc(&psDroid, DORDER_MOVE,
-								              psRepairFac->psDeliveryPoint->coords.x,
-								              psRepairFac->psDeliveryPoint->coords.y, ModeQueue);  // ModeQueue because delivery points are not yet synchronised!
+								objTrace(droid.id, "Repair not needed - move to delivery point");
+								orderDroidLoc(&droid, DORDER_MOVE,
+                              psRepairFac->psDeliveryPoint->coords.x,
+                              psRepairFac->psDeliveryPoint->coords.y, ModeQueue);  // ModeQueue because delivery points are not yet synchronised!
 							}
 							continue;
 						}
-						xdiff = (SDWORD)psDroid.pos.x - (SDWORD)psStructure->pos.x;
-						ydiff = (SDWORD)psDroid.pos.y - (SDWORD)psStructure->pos.y;
+						xdiff = (SDWORD)droid.pos.x - (SDWORD)psStructure->pos.x;
+						ydiff = (SDWORD)droid.pos.y - (SDWORD)psStructure->pos.y;
 						currdist = xdiff * xdiff + ydiff * ydiff;
 						if (currdist < mindist && currdist < (TILE_UNITS * 8) * (TILE_UNITS * 8))
 						{
 							mindist = currdist;
-							psChosenObj = &psDroid;
+							psChosenObj = &droid;
 						}
 						if (psTarget && psTarget == psStructure)
 						{
@@ -2815,7 +2805,7 @@ static void aiUpdateStructure(STRUCTURE *psStructure, bool isMission)
 					// Second highest priority:
 					// Help out another nearby repair facility
 					else if (psTarget && mindist > (TILE_UNITS * 8) * (TILE_UNITS * 8)
-					         && psTarget != psStructure && psDroid.action == DACTION_WAITFORREPAIR)
+                   && psTarget != psStructure && droid.action == DACTION_WAITFORREPAIR)
 					{
 						int distLimit = mindist;
 						if (psTarget->type == OBJ_STRUCTURE && ((STRUCTURE *)psTarget)->pStructureType->type == REF_REPAIR_FACILITY)  // Is a repair facility (not the HQ).
@@ -2825,28 +2815,28 @@ static void aiUpdateStructure(STRUCTURE *psStructure, bool isMission)
 							distLimit = world_coord(stealFrom->droidQueue) * world_coord(stealFrom->droidQueue) * 10;
 						}
 
-						xdiff = (SDWORD)psDroid.pos.x - (SDWORD)psStructure->pos.x;
-						ydiff = (SDWORD)psDroid.pos.y - (SDWORD)psStructure->pos.y;
+						xdiff = (SDWORD)droid.pos.x - (SDWORD)psStructure->pos.x;
+						ydiff = (SDWORD)droid.pos.y - (SDWORD)psStructure->pos.y;
 						currdist = xdiff * xdiff + ydiff * ydiff + (TILE_UNITS * 8) * (TILE_UNITS * 8); // lower priority
 						if (currdist < mindist && currdist - (TILE_UNITS * 8) * (TILE_UNITS * 8) < distLimit)
 						{
 							mindist = currdist;
-							psChosenObj = &psDroid;
+							psChosenObj = &droid;
 							psRepairFac->droidQueue++;	// shared queue
 							objTrace(psChosenObj->id, "Stolen by another repair facility, currdist=%d, mindist=%d, distLimit=%d", (int)currdist, (int)mindist, distLimit);
 						}
 					}
 					// Lowest priority:
 					// Just repair whatever is nearby and needs repairing.
-					else if (mindist > (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2 && psDroid.body < psDroid.originalBody)
+					else if (mindist > (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2 && droid.body < droid.originalBody)
 					{
-						xdiff = (SDWORD)psDroid.pos.x - (SDWORD)psStructure->pos.x;
-						ydiff = (SDWORD)psDroid.pos.y - (SDWORD)psStructure->pos.y;
+						xdiff = (SDWORD)droid.pos.x - (SDWORD)psStructure->pos.x;
+						ydiff = (SDWORD)droid.pos.y - (SDWORD)psStructure->pos.y;
 						currdist = xdiff * xdiff + ydiff * ydiff + (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2; // even lower priority
 						if (currdist < mindist && currdist < (TILE_UNITS * 5 / 2) * (TILE_UNITS * 5 / 2) + (TILE_UNITS * 8) * (TILE_UNITS * 8) * 2)
 						{
 							mindist = currdist;
-							psChosenObj = &psDroid;
+							psChosenObj = &droid;
 						}
 					}
 				}
@@ -2858,17 +2848,17 @@ static void aiUpdateStructure(STRUCTURE *psStructure, bool isMission)
 					{
 						if (aiCheckAlliances(i, psStructure->player) && i != psStructure->player)
 						{
-							for (auto& psDroid : apsDroidLists[i])
+							for (auto& droid : apsDroidLists[i])
 							{
-								if (psDroid.body < psDroid.originalBody)
+								if (droid.body < droid.originalBody)
 								{
-									xdiff = (SDWORD)psDroid.pos.x - (SDWORD)psStructure->pos.x;
-									ydiff = (SDWORD)psDroid.pos.y - (SDWORD)psStructure->pos.y;
+									xdiff = (SDWORD)droid.pos.x - (SDWORD)psStructure->pos.x;
+									ydiff = (SDWORD)droid.pos.y - (SDWORD)psStructure->pos.y;
 									currdist = xdiff * xdiff + ydiff * ydiff;
 									if (currdist < mindist)
 									{
 										mindist = currdist;
-										psChosenObj = &psDroid;
+										psChosenObj = &droid;
 									}
 								}
 							}
@@ -2938,15 +2928,15 @@ static void aiUpdateStructure(STRUCTURE *psStructure, bool isMission)
 			if (psChosenObj == nullptr)
 			{
 				objTrace(psStructure->id, "Rearm pad idle - look for victim");
-				for (auto& psDroid : apsDroidLists[psStructure->player])
+				for (auto& droid : apsDroidLists[psStructure->player])
 				{
 					// move next droid waiting on ground to rearm pad
-					if (vtolReadyToRearm(&psDroid, psStructure) &&
-					    (psChosenObj == nullptr || ((DROID *) psChosenObj)->actionStarted > psDroid.actionStarted))
+					if (vtolReadyToRearm(&droid, psStructure) &&
+              (psChosenObj == nullptr || ((DROID *) psChosenObj)->actionStarted > droid.actionStarted))
 					{
-						objTrace(psDroid.id, "rearm pad candidate");
-						objTrace(psStructure->id, "we found %s to rearm", objInfo(&psDroid));
-						psChosenObj = &psDroid;
+						objTrace(droid.id, "rearm pad candidate");
+						objTrace(psStructure->id, "we found %s to rearm", objInfo(&droid));
+						psChosenObj = &droid;
 					}
 				}
 
@@ -2955,14 +2945,14 @@ static void aiUpdateStructure(STRUCTURE *psStructure, bool isMission)
 				{
 					if (aiCheckAlliances(i, psStructure->player) && i != psStructure->player)
 					{
-						for (auto& psDroid : apsDroidLists[i])
+						for (auto& droid : apsDroidLists[i])
 						{
 							// move next droid waiting on ground to rearm pad
-							if (vtolReadyToRearm(&psDroid, psStructure))
+							if (vtolReadyToRearm(&droid, psStructure))
 							{
-								psChosenObj = &psDroid;
-								objTrace(psDroid.id, "allied rearm pad candidate");
-								objTrace(psStructure->id, "we found allied %s to rearm", objInfo(&psDroid));
+								psChosenObj = &droid;
+								objTrace(droid.id, "allied rearm pad candidate");
+								objTrace(psStructure->id, "we found allied %s to rearm", objInfo(&droid));
 								break;
 							}
 						}
@@ -3169,26 +3159,8 @@ static void aiUpdateStructure(STRUCTURE *psStructure, bool isMission)
 			//check for manufacture to be complete
 			if (psFactory->buildPointsRemaining <= 0 && !IsFactoryCommanderGroupFull(psFactory) && !checkHaltOnMaxUnitsReached(psStructure, isMission))
 			{
-				if (isMission)
-				{
-					// put it in the mission list
-					psDroid = buildMissionDroid((DROID_TEMPLATE *)pSubject,
-					                            psStructure->pos.x, psStructure->pos.y,
-					                            psStructure->player);
-					if (psDroid)
-					{
-						psDroid->secondaryOrder = psFactory->secondaryOrder;
-						psDroid->secondaryOrderPending = psDroid->secondaryOrder;
-						setFactorySecondaryState(psDroid, psStructure);
-						setDroidBase(psDroid, psStructure);
-						bDroidPlaced = true;
-					}
-				}
-				else
-				{
-					// place it on the map
-					bDroidPlaced = structPlaceDroid(psStructure, (DROID_TEMPLATE *)pSubject, &psDroid);
-				}
+        // place it on the map
+        bDroidPlaced = structPlaceDroid(psStructure, (DROID_TEMPLATE *)pSubject, &psDroid);
 
 				//script callback, must be called after factory was flagged as idle
 				if (bDroidPlaced)
@@ -3800,29 +3772,26 @@ std::vector<STRUCTURE_STATS *> fillStructureList(UDWORD _selectedPlayer, UDWORD 
 	int8_t researchModules			= 0;
 
 	//if currently on a mission can't build factory/research/power/derricks
-	if (!missionIsOffworld())
-	{
-		for (auto& psCurr : apsStructLists[_selectedPlayer])
-		{
-			if (psCurr.pStructureType->type == REF_RESEARCH && psCurr.status == SS_BUILT)
-			{
-				researchModules += psCurr.capacity;
-			}
-			else if (psCurr.pStructureType->type == REF_FACTORY && psCurr.status == SS_BUILT)
-			{
-				factoryModules += psCurr.capacity;
-			}
-			else if (psCurr.pStructureType->type == REF_POWER_GEN && psCurr.status == SS_BUILT)
-			{
-				powerGenModules += psCurr.capacity;
-			}
-			else if (psCurr.pStructureType->type == REF_VTOL_FACTORY && psCurr.status == SS_BUILT)
-			{
-				// same as REF_FACTORY
-				factoryModules += psCurr.capacity;
-			}
-		}
-	}
+  for (auto& curr : apsStructLists[_selectedPlayer])
+  {
+    if (curr.pStructureType->type == REF_RESEARCH && curr.status == SS_BUILT)
+    {
+      researchModules += curr.capacity;
+    }
+    else if (curr.pStructureType->type == REF_FACTORY && curr.status == SS_BUILT)
+    {
+      factoryModules += curr.capacity;
+    }
+    else if (curr.pStructureType->type == REF_POWER_GEN && curr.status == SS_BUILT)
+    {
+      powerGenModules += curr.capacity;
+    }
+    else if (curr.pStructureType->type == REF_VTOL_FACTORY && curr.status == SS_BUILT)
+    {
+      // same as REF_FACTORY
+      factoryModules += curr.capacity;
+    }
+  }
 
 	// find maximum allowed limits (current built numbers already available, just grab them)
 	for (inc = 0; inc < numStructureStats; inc++)
@@ -3884,20 +3853,6 @@ std::vector<STRUCTURE_STATS *> fillStructureList(UDWORD _selectedPlayer, UDWORD 
 				if (bInTutorial)
 				{
 					if (psBuilding->type == REF_DEMOLISH)
-					{
-						continue;
-					}
-				}
-
-				//can't build list when offworld
-				if (missionIsOffworld())
-				{
-					if (psBuilding->type == REF_FACTORY ||
-					    psBuilding->type == REF_POWER_GEN ||
-					    psBuilding->type == REF_RESOURCE_EXTRACTOR ||
-					    psBuilding->type == REF_RESEARCH ||
-					    psBuilding->type == REF_CYBORG_FACTORY ||
-					    psBuilding->type == REF_VTOL_FACTORY)
 					{
 						continue;
 					}
@@ -4092,10 +4047,6 @@ bool validLocation(BASE_STATS *psStats, Vector2i pos, uint16_t direction, unsign
 				for (int j = 0; j < b.size.y; ++j)
 					for (int i = 0; i < b.size.x; ++i)
 					{
-						if (withinLandingZone(b.map.x + i, b.map.y + j))
-						{
-							return false;
-						}
 					}
 
 				//walls/defensive structures can be built along any ground
@@ -5177,9 +5128,6 @@ STRUCTURE_STATS *getModuleStat(const STRUCTURE *psStruct)
  */
 static unsigned int countAssignedDroids(const STRUCTURE *psStructure)
 {
-	const DROID *psCurr;
-	unsigned int num;
-
 	CHECK_STRUCTURE(psStructure);
 
 	// For non-debug builds
@@ -5193,7 +5141,7 @@ static unsigned int countAssignedDroids(const STRUCTURE *psStructure)
 		return 0;
 	}
 
-	num = 0;
+	auto num = 0;
 	for (auto& psCurr : apsDroidLists[selectedPlayer])
 	{
 		if (psCurr.order.psObj && psCurr.order.psObj->id == psStructure->id &&

@@ -41,7 +41,6 @@
 #include "wrappers.h"			// for gameover..
 #include "loop.h"
 #include "transporter.h"
-#include "mission.h" // for INVALID_XY
 #include "qtscript.h"
 
 #include "lib/netplay/netplay.h"
@@ -294,12 +293,9 @@ static void recvGiftDroids(uint8_t from, uint8_t to, uint32_t droidID)
 // \param to    :player that should be getting the droid
 static void sendGiftDroids(uint8_t from, uint8_t to)
 {
-	DROID        *psD;
 	uint8_t      giftType = DROID_GIFT;
-	uint8_t      totalToSend;
 
-	if (apsDroidLists[from] == nullptr)
-	{
+	if (apsDroidLists[from].empty()) {
 		return;
 	}
 
@@ -309,36 +305,39 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 	 * over their droid limit.
 	 */
 
-	for (totalToSend = 0, psD = apsDroidLists[from];
-	     psD && getNumDroids(to) + totalToSend < getMaxDroids(to) && totalToSend != UINT8_MAX;
-	     psD = psD->psNext)
+  auto totalToSend = 0;
+	for (auto& psD : apsDroidLists[from])
 	{
-		if (psD->selected)
-		{
+    if (getNumDroids(to) + totalToSend >= getMaxDroids(to) || totalToSend == UINT8_MAX)
+      break;
+
+		if (psD.selected) {
 			++totalToSend;
 		}
 	}
+
 	/*
 	 * We must send one droid at a time, due to the fact that giftSingleDroid()
 	 * does its own net calls.
 	 */
-
-	for (psD = apsDroidLists[from]; psD && totalToSend != 0; psD = psD->psNext)
+	for (auto& psD : apsDroidLists[from])
 	{
-		if (isTransporter(psD)
-		    && !transporterIsEmpty(psD))
+    if (totalToSend == 0) break;
+
+		if (isTransporter(&psD)
+		    && !transporterIsEmpty(&psD))
 		{
-			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD->aName);
+			CONPRINTF(_("Tried to give away a non-empty %s - but this is not allowed."), psD.aName);
 			continue;
 		}
-		if (psD->selected)
+		if (psD.selected)
 		{
 			NETbeginEncode(NETgameQueue(selectedPlayer), GAME_GIFT);
 			NETuint8_t(&giftType);
 			NETuint8_t(&from);
 			NETuint8_t(&to);
 			// Add the droid to the packet
-			NETuint32_t(&psD->id);
+			NETuint32_t(&psD.id);
 			NETend();
 
 			// Decrement the number of droids left to send
@@ -347,8 +346,6 @@ static void sendGiftDroids(uint8_t from, uint8_t to)
 	}
 }
 
-
-// ////////////////////////////////////////////////////////////////////////////
 // give technologies.
 static void giftResearch(uint8_t from, uint8_t to, bool send)
 {
@@ -502,7 +499,6 @@ void breakAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio)
 
 void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allowNotification)
 {
-	DROID	*psDroid;
 	char	tm1[128];
 
 	if (bMultiMessages && prop)
@@ -541,27 +537,25 @@ void formAlliance(uint8_t p1, uint8_t p2, bool prop, bool allowAudio, bool allow
 	}
 
 	// Clear out any attacking orders
-	for (psDroid = apsDroidLists[p1]; psDroid; psDroid = psDroid->psNext)	// from -> to
+	for (auto& psDroid : apsDroidLists[p1])	// from -> to
 	{
-		if (psDroid->order.type == DORDER_ATTACK
-		    && psDroid->order.psObj
-		    && psDroid->order.psObj->player == p2)
+		if (psDroid.order.type == DORDER_ATTACK
+		    && psDroid.order.psObj
+		    && psDroid.order.psObj->player == p2)
 		{
-			orderDroid(psDroid, DORDER_STOP, ModeImmediate);
+			orderDroid(&psDroid, DORDER_STOP, ModeImmediate);
 		}
 	}
-	for (psDroid = apsDroidLists[p2]; psDroid; psDroid = psDroid->psNext)	// to -> from
+	for (auto& psDroid : apsDroidLists[p2])	// to -> from
 	{
-		if (psDroid->order.type == DORDER_ATTACK
-		    && psDroid->order.psObj
-		    && psDroid->order.psObj->player == p1)
+		if (psDroid.order.type == DORDER_ATTACK
+		    && psDroid.order.psObj
+		    && psDroid.order.psObj->player == p1)
 		{
-			orderDroid(psDroid, DORDER_STOP, ModeImmediate);
+			orderDroid(&psDroid, DORDER_STOP, ModeImmediate);
 		}
 	}
 }
-
-
 
 void sendAlliance(uint8_t from, uint8_t to, uint8_t state, int32_t value)
 {

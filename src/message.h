@@ -34,7 +34,7 @@
 extern std::array<std::vector<MESSAGE>, MAX_PLAYERS> apsMessages;
 
 /** The IMD to use for the proximity messages. */
-extern std::vector<iIMDShape*> pProximityMsgIMD;
+extern iIMDShape* pProximityMsgIMD;
 
 /** The list of proximity displays allocated. */
 extern std::array<std::vector<PROXIMITY_DISPLAY>, MAX_PLAYERS> apsProxDisp;

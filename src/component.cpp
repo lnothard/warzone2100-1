@@ -37,7 +37,6 @@
 #include "miscimd.h"
 #include "projectile.h"
 #include "transporter.h"
-#include "mission.h"
 #include "faction.h"
 #ifndef GLM_ENABLE_EXPERIMENTAL
 	#define GLM_ENABLE_EXPERIMENTAL
@@ -431,7 +430,7 @@ static bool displayCompObj(DROID *psDroid, bool bButton, const glm::mat4 &viewMa
 		pieFlag = pie_SHADOW;
 		brightness = pal_SetBrightness(psDroid->illumination);
 		// NOTE: Beware of transporters that are offscreen, on a mission!  We should *not* be checking tiles at this point in time!
-		if (!isTransporter(psDroid) && !missionIsOffworld())
+		if (!isTransporter(psDroid))
 		{
 			MAPTILE *psTile = worldTile(psDroid->pos.x, psDroid->pos.y);
 			if (psTile->jammerBits & alliancebits[psDroid->player])

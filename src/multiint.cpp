@@ -63,7 +63,6 @@
 #include "lib/widget/multibutform.h"
 #include "lib/widget/checkbox.h"
 
-#include "challenge.h"
 #include "main.h"
 #include "levels.h"
 #include "objects.h"
@@ -404,13 +403,6 @@ void loadMultiScripts()
 	WzString ininame;
 	WzString path;
 	bool loadExtra = false;
-
-	if (challengeFileName.length() > 0)
-	{
-		ininame = challengeFileName;
-		path = "challenges/";
-		loadExtra = true;
-	}
 
 	if (getHostLaunch() == HostLaunch::Skirmish)
 	{
@@ -1389,7 +1381,7 @@ static void addGameOptions()
 	else
 	{
 		addMultiEditBox(MULTIOP_OPTIONS, MULTIOP_GNAME, MCOL0, MROW2, _("Game Name"),
-		                challengeActive ? game.name : _("One-Player Skirmish"), IMAGE_EDIT_GAME,
+		                _("One-Player Skirmish"), IMAGE_EDIT_GAME,
 		                IMAGE_EDIT_GAME_HI, MULTIOP_GNAME_ICON);
 		// disable for one-player skirmish
 		widgSetButtonState(psWScreen, MULTIOP_GNAME, WEDBS_DISABLE);
@@ -1423,11 +1415,7 @@ static void addGameOptions()
 	{
 		widgHide(psWScreen, MULTIOP_MAP_RANDOM);
 	}
-	// disable for challenges
-	if (challengeActive)
-	{
-		widgSetButtonState(psWScreen, MULTIOP_MAP_ICON, WBUT_DISABLE);
-	}
+
 	// password box
 	if (NetPlay.bComms && ingame.side == InGameSide::HOST_OR_SINGLEPLAYER)
 	{
@@ -1508,7 +1496,7 @@ static void addGameOptions()
 	/* Add additional controls if we are (or going to be) hosting the game */
 	if (ingame.side == InGameSide::HOST_OR_SINGLEPLAYER)
 	{
-		auto structureLimitsLabel = challengeActive ? _("Show Structure Limits") : _("Set Structure Limits");
+		auto structureLimitsLabel = _("Set Structure Limits");
 		auto structLimitsButton = std::make_shared<MultibuttonWidget>();
 		optionsList->attach(structLimitsButton);
 		structLimitsButton->id = MULTIOP_STRUCTLIMITS;
@@ -1516,42 +1504,38 @@ static void addGameOptions()
 		addMultiButton(structLimitsButton, 0, Image(FrontImages, IMAGE_SLIM), Image(FrontImages, IMAGE_SLIM_HI), structureLimitsLabel);
 		optionsList->addWidgetToLayout(structLimitsButton);
 
-		/* ...and even more controls if we are not starting a challenge */
-		if (!challengeActive)
-		{
-			auto randomButton = std::make_shared<MultibuttonWidget>();
-			optionsList->attach(randomButton);
-			randomButton->id = MULTIOP_RANDOM;
-			randomButton->setLabel(_("Random Game Options"));
-			addMultiButton(randomButton, 0, Image(FrontImages, IMAGE_RELOAD), Image(FrontImages, IMAGE_RELOAD), _("Random Game Options\nCan be blocked by players' votes"));
-			randomButton->setButtonMinClickInterval(GAME_TICKS_PER_SEC / 2);
-			optionsList->addWidgetToLayout(randomButton);
+    auto randomButton = std::make_shared<MultibuttonWidget>();
+    optionsList->attach(randomButton);
+    randomButton->id = MULTIOP_RANDOM;
+    randomButton->setLabel(_("Random Game Options"));
+    addMultiButton(randomButton, 0, Image(FrontImages, IMAGE_RELOAD), Image(FrontImages, IMAGE_RELOAD), _("Random Game Options\nCan be blocked by players' votes"));
+    randomButton->setButtonMinClickInterval(GAME_TICKS_PER_SEC / 2);
+    optionsList->addWidgetToLayout(randomButton);
 
-			/* Add the tech level choice if we have already started hosting. The only real reason this is displayed only after
-			   starting the host is due to the fact that there is not enough room before the "Host Game" button is hidden.		*/
-			if (NetPlay.isHost)
-			{
-				auto TechnologyChoice = std::make_shared<MultichoiceWidget>(game.techLevel);
-				optionsList->attach(TechnologyChoice);
-				TechnologyChoice->id = MULTIOP_TECHLEVEL;
-				TechnologyChoice->setLabel(_("Tech"));
-				addMultiButton(TechnologyChoice, TECH_1, Image(FrontImages, IMAGE_TECHLO), Image(FrontImages, IMAGE_TECHLO_HI), _("Technology Level 1"));
-				addMultiButton(TechnologyChoice, TECH_2, Image(FrontImages, IMAGE_TECHMED), Image(FrontImages, IMAGE_TECHMED_HI), _("Technology Level 2"));
-				addMultiButton(TechnologyChoice, TECH_3, Image(FrontImages, IMAGE_TECHHI), Image(FrontImages, IMAGE_TECHHI_HI), _("Technology Level 3"));
-				addMultiButton(TechnologyChoice, TECH_4, Image(FrontImages, IMAGE_COMPUTER_Y), Image(FrontImages, IMAGE_COMPUTER_Y_HI), _("Technology Level 4"));
-				optionsList->addWidgetToLayout(TechnologyChoice);
-			}
-			/* If not hosting (yet), add the button for starting the host. */
-			else
-			{
-				auto hostButton = std::make_shared<MultibuttonWidget>();
-				optionsList->attach(hostButton);
-				hostButton->id = MULTIOP_HOST;
-				hostButton->setLabel(_("Start Hosting Game"));
-				addMultiButton(hostButton, 0, Image(FrontImages, IMAGE_HOST), Image(FrontImages, IMAGE_HOST_HI), _("Start Hosting Game"));
-				optionsList->addWidgetToLayout(hostButton);
-			}
-		}
+    /* Add the tech level choice if we have already started hosting. The only real reason this is displayed only after
+       starting the host is due to the fact that there is not enough room before the "Host Game" button is hidden.		*/
+    if (NetPlay.isHost)
+    {
+      auto TechnologyChoice = std::make_shared<MultichoiceWidget>(game.techLevel);
+      optionsList->attach(TechnologyChoice);
+      TechnologyChoice->id = MULTIOP_TECHLEVEL;
+      TechnologyChoice->setLabel(_("Tech"));
+      addMultiButton(TechnologyChoice, TECH_1, Image(FrontImages, IMAGE_TECHLO), Image(FrontImages, IMAGE_TECHLO_HI), _("Technology Level 1"));
+      addMultiButton(TechnologyChoice, TECH_2, Image(FrontImages, IMAGE_TECHMED), Image(FrontImages, IMAGE_TECHMED_HI), _("Technology Level 2"));
+      addMultiButton(TechnologyChoice, TECH_3, Image(FrontImages, IMAGE_TECHHI), Image(FrontImages, IMAGE_TECHHI_HI), _("Technology Level 3"));
+      addMultiButton(TechnologyChoice, TECH_4, Image(FrontImages, IMAGE_COMPUTER_Y), Image(FrontImages, IMAGE_COMPUTER_Y_HI), _("Technology Level 4"));
+      optionsList->addWidgetToLayout(TechnologyChoice);
+    }
+    /* If not hosting (yet), add the button for starting the host. */
+    else
+    {
+      auto hostButton = std::make_shared<MultibuttonWidget>();
+      optionsList->attach(hostButton);
+      hostButton->id = MULTIOP_HOST;
+      hostButton->setLabel(_("Start Hosting Game"));
+      addMultiButton(hostButton, 0, Image(FrontImages, IMAGE_HOST), Image(FrontImages, IMAGE_HOST_HI), _("Start Hosting Game"));
+      optionsList->addWidgetToLayout(hostButton);
+    }
 	}
 
 	// cancel
@@ -5275,88 +5259,6 @@ static void updateMapWidgets(LEVEL_DATASET *mapData)
 	widgSetString(psWScreen, MULTIOP_MAP + 1, name.toUtf8().c_str()); //What a horrible, horrible way to do this! FIX ME! (See addBlueForm)
 }
 
-static void loadMapChallengeSettings(WzConfig& ini)
-{
-	ini.beginGroup("locked"); // GUI lockdown
-	{
-		locked.power = ini.value("power", challengeActive).toBool();
-		locked.alliances = ini.value("alliances", challengeActive).toBool();
-		locked.teams = ini.value("teams", challengeActive).toBool();
-		locked.difficulty = ini.value("difficulty", challengeActive).toBool();
-		locked.ai = ini.value("ai", challengeActive).toBool();
-		locked.scavengers = ini.value("scavengers", challengeActive).toBool();
-		locked.position = ini.value("position", challengeActive).toBool();
-		locked.bases = ini.value("bases", challengeActive).toBool();
-	}
-	ini.endGroup();
-
-	const bool bIsAutoHostOrAutoGame = getHostLaunch() == HostLaunch::Skirmish || getHostLaunch() == HostLaunch::Autohost;
-	if (challengeActive || bIsAutoHostOrAutoGame)
-	{
-		ini.beginGroup("challenge");
-		{
-			sstrcpy(game.map, ini.value("map", game.map).toWzString().toUtf8().c_str());
-			game.hash = levGetMapNameHash(game.map);
-
-			LEVEL_DATASET* mapData = levFindDataSet(game.map, &game.hash);
-			if (!mapData)
-			{
-				code_part log_level = (bIsAutoHostOrAutoGame) ? LOG_ERROR : LOG_FATAL;
-				debug(log_level, "Map %s not found!", game.map);
-				if (bIsAutoHostOrAutoGame)
-				{
-					exit(1);
-				}
-			}
-			game.maxPlayers = mapData->players;
-
-			uint8_t configuredMaxPlayers = ini.value("maxPlayers", game.maxPlayers).toUInt();
-			if (getHostLaunch() == HostLaunch::Autohost)
-			{
-				// always use the autohost config - if it specifies an invalid number of players, this is a bug in the config
-				// however, maxPlayers must still be limited to MAX_PLAYERS
-				ASSERT(configuredMaxPlayers < MAX_PLAYERS, "Configured maxPlayers (%" PRIu8 ") exceeds MAX_PLAYERS (%d)", configuredMaxPlayers, (int)MAX_PLAYERS);
-				configuredMaxPlayers = std::min<uint8_t>(configuredMaxPlayers, MAX_PLAYERS);
-				game.maxPlayers = std::max((uint8_t)1u, configuredMaxPlayers);
-			}
-			else
-			{
-				game.maxPlayers = std::min(std::max((uint8_t)1u, configuredMaxPlayers), game.maxPlayers);
-			}
-			game.scavengers = ini.value("scavengers", game.scavengers).toInt();
-			game.alliance = ini.value("alliances", ALLIANCES_TEAMS).toInt();
-			game.power = ini.value("powerLevel", game.power).toInt();
-			game.base = ini.value("bases", game.base + 1).toInt() - 1;		// count from 1 like the humans do
-			sstrcpy(game.name, ini.value("name").toWzString().toUtf8().c_str());
-			game.techLevel = ini.value("techLevel", game.techLevel).toInt();
-
-			// Allow making the host a spectator (for MP games)
-			spectatorHost = ini.value("spectatorHost", false).toBool();
-
-			// Allow configuring of open spectator slots (for MP games)
-			unsigned int openSpectatorSlots_uint = ini.value("openSpectatorSlots", 0).toUInt();
-			defaultOpenSpectatorSlots = static_cast<uint16_t>(std::min<unsigned int>(openSpectatorSlots_uint, MAX_SPECTATOR_SLOTS));
-
-			// DEPRECATED: This seems to have been odd workaround for not having the locked group handled.
-			//             Keeping it around in case mods use it.
-			locked.position = !ini.value("allowPositionChange", !locked.position).toBool();
-		}
-		ini.endGroup();
-	}
-	else
-	{
-		ini.beginGroup("defaults");
-		{
-			game.scavengers = ini.value("scavengers", game.scavengers).toInt();
-			game.base = ini.value("bases", game.base).toInt();
-			game.alliance = ini.value("alliances", game.alliance).toInt();
-			game.power = ini.value("powerLevel", game.power).toInt();
-		}
-		ini.endGroup();
-	}
-}
-
-
 static void resolveAIForPlayer(int player, WzString& aiValue)
 {
 	if (aiValue.compare("null") == 0)
@@ -5389,10 +5291,6 @@ static void loadMapPlayerSettings(WzConfig& ini)
 		if (ini.contains("team"))
 		{
 			NetPlay.players[i].team = ini.value("team").toInt();
-		}
-		else if (challengeActive) // team is a required key for challenges
-		{
-			NetPlay.players[i].ai = AI_CLOSED;
 		}
 
 		/* Load pre-configured AIs */
@@ -5446,7 +5344,7 @@ static void loadMapPlayerSettings(WzConfig& ini)
 				}
 			}
 		}
-		if (ini.contains("spectator") && !challengeActive)
+		if (ini.contains("spectator"))
 		{
 			NetPlay.players[i].isSpectator = ini.value("spectator", false).toBool();
 			if (NetPlay.players[i].isSpectator)
@@ -5580,7 +5478,7 @@ static void loadMapChallengeAndPlayerSettings(bool forceLoadPlayers = false)
 	aFileName[std::max<size_t>(strlen(aFileName), 4) - 4] = '\0';
 	sstrcat(aFileName, ".json");
 
-	WzString ininame = challengeActive ? sRequestResult : aFileName;
+	WzString ininame = aFileName;
 	bool warnIfMissing = false;
 	if (getHostLaunch() == HostLaunch::Skirmish)
 	{
@@ -5609,8 +5507,6 @@ static void loadMapChallengeAndPlayerSettings(bool forceLoadPlayers = false)
 		return;
 	}
 	WzConfig ini(ininame, WzConfig::ReadOnly);
-
-	loadMapChallengeSettings(ini);
 
 	/* Do not load player settings if we are already hosting an online match */
 	if (!bIsOnline || forceLoadPlayers)
@@ -6059,24 +5955,13 @@ void WzMultiplayerOptionsTitleUI::processMultiopWidgets(UDWORD id)
 		
 		setHostLaunch(HostLaunch::Normal); // Dont load the autohost file on subsequent hosts
 		performedFirstStart = false; // Reset everything
-		if (!challengeActive)
-		{
-			if (NetPlay.bComms && ingame.side == InGameSide::MULTIPLAYER_CLIENT && !NetPlay.isHost)
-			{
-				// remove a potential "allow" vote if we gracefully leave
-				sendVoteData(0);
-			}
-			NETGameLocked(false);		// reset status on a cancel
-			stopJoining(parent);
-		}
-		else
-		{
-			NETclose();
-			ingame.localJoiningInProgress = false;
-			changeTitleMode(SINGLE);
-			pie_LoadBackDrop(SCREEN_RANDOMBDROP);
-			addChallenges();
-		}
+    if (NetPlay.bComms && ingame.side == InGameSide::MULTIPLAYER_CLIENT && !NetPlay.isHost)
+    {
+      // remove a potential "allow" vote if we gracefully leave
+      sendVoteData(0);
+    }
+    NETGameLocked(false);		// reset status on a cancel
+    stopJoining(parent);
 		break;
 	case MULTIOP_MAP_PREVIEW:
 		loadMapPreview(true);
@@ -7024,10 +6909,7 @@ static void printHostHelpMessagesToConsole()
 			displayRoomNotifyMessage(buf);
 		}
 	}
-	if (challengeActive)
-	{
-		ssprintf(buf, "%s", _("Hit the ready box to begin your challenge!"));
-	}
+
 	else if (!NetPlay.isHost)
 	{
 		ssprintf(buf, "%s", _("Press the start hosting button to begin hosting a game."));
@@ -7111,32 +6993,22 @@ void WzMultiplayerOptionsTitleUI::start()
 		PLAYERSTATS	nullStats;
 		loadMultiStats((char*)sPlayer, &nullStats);
 		lookupRatingAsync(selectedPlayer);
-
-		/* Entering the first time with challenge, immediately start the host */
-		if (challengeActive && !startHost())
-		{
-			debug(LOG_ERROR, "Failed to host the challenge.");
-			return;
-		}
 	}
 
 	loadMapPreview(false);
 
 	/* Re-entering or entering without a challenge */
-	if (bReenter || !challengeActive)
-	{
-		addPlayerBox(false);
-		addGameOptions();
-		addChatBox(bReenter);
+  addPlayerBox(false);
+  addGameOptions();
+  addChatBox(bReenter);
 
-		if (ingame.side == InGameSide::HOST_OR_SINGLEPLAYER)
-		{
-			printHostHelpMessagesToConsole();
-		}
-	}
+  if (ingame.side == InGameSide::HOST_OR_SINGLEPLAYER)
+  {
+    printHostHelpMessagesToConsole();
+  }
 
 	/* Reset structure limits if we are entering the first time or if we have a challenge */
-	if (!bReenter || challengeActive)
+	if (!bReenter)
 	{
 		resetLimits();
 		updateStructureDisabledFlags();
@@ -7483,10 +7355,7 @@ void displayPlayer(WIDGET *psWidget, UDWORD xOffset, UDWORD yOffset)
 		}
 
 		// challenges may use custom AIs that are not in aidata and set to 127
-		if (!challengeActive)
-		{
-		    ASSERT_OR_RETURN(, NetPlay.players[j].ai < (int)aidata.size(), "Uh-oh, AI index out of bounds");
-		}
+    ASSERT_OR_RETURN(, NetPlay.players[j].ai < (int)aidata.size(), "Uh-oh, AI index out of bounds");
 
 		PIELIGHT textColor = WZCOL_FORM_TEXT;
 		switch (NetPlay.players[j].ai)

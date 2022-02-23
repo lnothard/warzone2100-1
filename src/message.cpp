@@ -152,7 +152,7 @@ bool messageInitVars()
 		apsProxDisp[i].clear();
 	}
 
-	pProximityMsgIMD.clear();
+	pProximityMsgIMD = nullptr;
 	return true;
 }
 
@@ -283,8 +283,8 @@ void releaseAllProxDisp()
 bool initMessage()
 {
 	//set up the imd used for proximity messages
-	pProximityMsgIMD.push_back(modelGet("arrow.pie"));
-  ASSERT_OR_RETURN(false, pProximityMsgIMD[0] != nullptr, "Unable to load Proximity Message PIE");
+	pProximityMsgIMD = modelGet("arrow.pie");
+  ASSERT_OR_RETURN(false, pProximityMsgIMD != nullptr, "Unable to load Proximity Message PIE");
 	return true;
 }
 

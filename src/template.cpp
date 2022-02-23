@@ -30,7 +30,6 @@
 #include "lib/netplay/netplay.h"
 #include "template.h"
 #include "cmddroiddef.h"
-#include "mission.h"
 #include "objects.h"
 #include "droid.h"
 #include "design.h"
@@ -600,71 +599,55 @@ DROID_TEMPLATE *getTemplateFromMultiPlayerID(UDWORD multiPlayerID)
 /*called when a Template is deleted in the Design screen*/
 void deleteTemplateFromProduction(DROID_TEMPLATE *psTemplate, unsigned player, QUEUE_MODE mode)
 {
-	STRUCTURE   *psStruct;
-	STRUCTURE	*psList;
-
 	ASSERT_OR_RETURN(, psTemplate != nullptr, "Null psTemplate");
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Invalid player: %u", player);
 
 	//see if any factory is currently using the template
-	for (unsigned i = 0; i < 2; ++i)
-	{
-		psList = nullptr;
-		switch (i)
-		{
-		case 0:
-			psList = apsStructLists[player];
-			break;
-		case 1:
-			psList = mission.apsStructLists[player];
-			break;
-		}
-		for (psStruct = psList; psStruct != nullptr; psStruct = psStruct->psNext)
-		{
-			if (StructIsFactory(psStruct))
-			{
-				if (psStruct->pFunctionality == nullptr)
-				{
-					continue;
-				}
-				FACTORY *psFactory = &psStruct->pFunctionality->factory;
+  for (auto& psStruct : apsStructLists[player])
+  {
+    if (StructIsFactory(&psStruct))
+    {
+      if (psStruct.pFunctionality == nullptr)
+      {
+        continue;
+      }
+      FACTORY *psFactory = &psStruct.pFunctionality->factory;
 
-				if (psFactory->psAssemblyPoint && psFactory->psAssemblyPoint->factoryType < NUM_FACTORY_TYPES
-					&& psFactory->psAssemblyPoint->factoryInc < asProductionRun[psFactory->psAssemblyPoint->factoryType].size())
-				{
-					ProductionRun &productionRun = asProductionRun[psFactory->psAssemblyPoint->factoryType][psFactory->psAssemblyPoint->factoryInc];
-					for (unsigned inc = 0; inc < productionRun.size(); ++inc)
-					{
-						if (productionRun[inc].psTemplate && productionRun[inc].psTemplate->multiPlayerID == psTemplate->multiPlayerID && mode == ModeQueue)
-						{
-							//just need to erase this production run entry
-							productionRun.erase(productionRun.begin() + inc);
-							--inc;
-						}
-					}
-				}
+      if (psFactory->psAssemblyPoint && psFactory->psAssemblyPoint->factoryType < NUM_FACTORY_TYPES
+        && psFactory->psAssemblyPoint->factoryInc < asProductionRun[psFactory->psAssemblyPoint->factoryType].size())
+      {
+        ProductionRun &productionRun = asProductionRun[psFactory->psAssemblyPoint->factoryType][psFactory->psAssemblyPoint->factoryInc];
+        for (unsigned inc = 0; inc < productionRun.size(); ++inc)
+        {
+          if (productionRun[inc].psTemplate && productionRun[inc].psTemplate->multiPlayerID == psTemplate->multiPlayerID && mode == ModeQueue)
+          {
+            //just need to erase this production run entry
+            productionRun.erase(productionRun.begin() + inc);
+            --inc;
+          }
+        }
+      }
 
-				if (psFactory->psSubject == nullptr)
-				{
-					continue;
-				}
+      if (psFactory->psSubject == nullptr)
+      {
+        continue;
+      }
 
-				// check not being built in the factory for the template player
-				if (psTemplate->multiPlayerID == psFactory->psSubject->multiPlayerID && mode == ModeImmediate)
-				{
-					syncDebugStructure(psStruct, '<');
-					syncDebug("Clearing production");
+      // check not being built in the factory for the template player
+      if (psTemplate->multiPlayerID == psFactory->psSubject->multiPlayerID && mode == ModeImmediate)
+      {
+        syncDebugStructure(&psStruct, '<');
+        syncDebug("Clearing production");
 
-					// Clear the factory's subject, and returns power.
-					cancelProduction(psStruct, ModeImmediate, false);
-					// Check to see if anything left to produce. (Also calls cancelProduction again, if nothing left to produce, which is a no-op. But if other things are left to produce, doesn't call cancelProduction, so wouldn't return power without the explicit cancelProduction call above.)
-					doNextProduction(psStruct, nullptr, ModeImmediate);
+        // Clear the factory's subject, and returns power.
+        cancelProduction(&psStruct, ModeImmediate, false);
+        // Check to see if anything left to produce. (Also calls cancelProduction again, if nothing left to produce, which is a no-op. But if other things are left to produce, doesn't call cancelProduction, so wouldn't return power without the explicit cancelProduction call above.)
+        doNextProduction(&psStruct, nullptr, ModeImmediate);
 
-					syncDebugStructure(psStruct, '>');
-				}
-			}
-		}
-	}
+        syncDebugStructure(&psStruct, '>');
+      }
+    }
+  }
 }
 
 // return whether a template is for an IDF droid

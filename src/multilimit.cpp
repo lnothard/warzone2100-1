@@ -50,7 +50,6 @@
 #include "multiint.h"
 #include "multilimit.h"
 #include "lib/ivis_opengl/piemode.h"
-#include "challenge.h"
 #include "objmem.h"
 #include "titleui/titleui.h"
 
@@ -123,17 +122,8 @@ void WzMultiLimitTitleUI::start()
 		closeLoadingScreen();
 	}
 
-	if (challengeActive)
-	{
-		resetLimits();
-		// turn off the sliders
-		sliderEnableDrag(false);
-	}
-	else
-	{
-		//enable the sliders
-		sliderEnableDrag(true);
-	}
+  //enable the sliders
+  sliderEnableDrag(true);
 
 	// TRANSLATORS: Sidetext of structure limits screen
 	addSideText(FRONTEND_SIDETEXT1, LIMITSX - 2, LIMITSY, _("LIMITS"));
@@ -157,12 +147,8 @@ void WzMultiLimitTitleUI::start()
 	            iV_GetImageWidth(FrontImages, IMAGE_DARK_LOCKED),
 	            iV_GetImageHeight(FrontImages, IMAGE_DARK_LOCKED),
 	            _("Force Limits at Start"), IMAGE_DARK_LOCKED, IMAGE_DARK_LOCKED, true);
-	if (challengeActive)
-	{
-		widgSetButtonState(psWScreen, IDLIMITS_FORCE, WBUT_DISABLE);
-		widgSetButtonState(psWScreen, IDLIMITS_FORCEOFF, WBUT_DISABLE);
-	}
-	else if (ingame.flags & MPFLAGS_FORCELIMITS)
+
+	if (ingame.flags & MPFLAGS_FORCELIMITS)
 	{
 		widgSetButtonState(psWScreen, IDLIMITS_FORCE, WBUT_DISABLE);
 		widgSetButtonState(psWScreen, IDLIMITS_FORCEOFF, 0);
@@ -287,7 +273,7 @@ TITLECODE WzMultiLimitTitleUI::run()
 
 			break;
 		case IDLIMITS_OK:
-			if (!challengeActive && widgGetButtonState(psWScreen, IDLIMITS_FORCE))
+			if (widgGetButtonState(psWScreen, IDLIMITS_FORCE))
 			{
 				ingame.flags |= MPFLAGS_FORCELIMITS;
 			}
@@ -316,12 +302,6 @@ void createLimitSet()
 	debug(LOG_NET, "LimitSet created");
 	// free old limiter structure
 	freeLimitSet();
-
-	// don't bother creating if a challenge mode is active
-	if (challengeActive)
-	{
-		return;
-	}
 
 	// Count the number of changes
 	for (unsigned i = 0; i < numStructureStats; i++)
@@ -380,11 +360,11 @@ bool applyLimitSet()
 				{
 					while (asStructureStats[id].curCount[player] > asStructureStats[id].upgrade[player].limit)
 					{
-						for (STRUCTURE *psStruct = apsStructLists[player]; psStruct; psStruct = psStruct->psNext)
+						for (auto& psStruct : apsStructLists[player])
 						{
-							if (psStruct->pStructureType->type == asStructureStats[id].type)
+							if (psStruct.pStructureType->type == asStructureStats[id].type)
 							{
-								removeStruct(psStruct, true);
+								removeStruct(&psStruct, true);
 								break;
 							}
 						}

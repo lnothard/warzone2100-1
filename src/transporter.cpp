@@ -743,7 +743,6 @@ void setCurrentTransporter(UDWORD id)
       if (currID == id) {
         psCurrTransporter = &psDroid;
         //set the data for the transporter timer
-        widgSetUserData(psWScreen, IDTRANTIMER_DISPLAY, (void *)psCurrTransporter);
         break;
       }
 			currID++;
@@ -778,12 +777,9 @@ void transporterRemoveDroid(DROID *psTransport, DROID *psDroid, QUEUE_MODE mode)
 	//add it back into apsDroidLists
   addDroid(psDroid);
 
-	if (psDroid->pos.x != INVALID_XY)
-	{
-		// We can update the orders now, since everyone has been
-		// notified of the droid exiting the transporter
-		updateDroidOrientation(psDroid);
-	}
+  // We can update the orders now, since everyone has been
+  // notified of the droid exiting the transporter
+  updateDroidOrientation(psDroid);
 	//initialise the movement data
 	initDroidMovement(psDroid);
 	//reset droid orders
@@ -940,9 +936,8 @@ bool updateTransporter(DROID *psTransporter)
 	// fly to edge of map before turning round again
   if (psTransporter->sMove.Status == MOVEINACTIVE ||
       psTransporter->sMove.Status == MOVEHOVER ||
-      psTransporter->action == DACTION_TRANSPORTOUT && !missionIsOffworld() &&
-      gameTime > transporterGetLaunchTime() + TRANSPORTOUT_TIME &&
-      !getDroidsToSafetyFlag())
+      psTransporter->action == DACTION_TRANSPORTOUT &&
+      gameTime > transporterGetLaunchTime() + TRANSPORTOUT_TIME)
 	{
 		audio_StopObjTrack(psTransporter, ID_SOUND_BLIMP_FLIGHT);
 		if (psTransporter->action == DACTION_TRANSPORTIN)
@@ -951,7 +946,7 @@ bool updateTransporter(DROID *psTransporter)
 			audio_PlayObjDynamicTrack(psTransporter, ID_SOUND_BLIMP_TAKE_OFF, nullptr);
 		}
 
-		if (!bFirstTransporter && missionForReInforcements() &&
+		if (!bFirstTransporter &&
 		    psTransporter->action == DACTION_TRANSPORTIN &&
 		    psTransporter->player == selectedPlayer)
 		{
@@ -960,7 +955,6 @@ bool updateTransporter(DROID *psTransporter)
 			                    psTransporter->pos.x, psTransporter->pos.y, psTransporter->pos.z);
 			addConsoleMessage(_("Reinforcements landing"), LEFT_JUSTIFY, SYSTEM_MESSAGE);
 			//reset the data for the transporter timer
-			widgSetUserData(psWScreen, IDTRANTIMER_DISPLAY, (void *)nullptr);
 			return true;
 		}
 
@@ -1014,7 +1008,6 @@ void processLaunchTransporter()
 
 			launchTransporter(psCurrTransporter);
 			//set the data for the transporter timer
-			widgSetUserData(psWScreen, IDTRANTIMER_DISPLAY, (void *)psCurrTransporter);
 
 			triggerEvent(TRIGGER_TRANSPORTER_LAUNCH, psCurrTransporter);
 		}

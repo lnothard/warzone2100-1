@@ -36,8 +36,6 @@
 #include "main.h"
 #include "radar.h"
 #include "hci.h"
-#include "mission.h" //for TIMER_Y
-#include "challenge.h" //for challengeActive
 #include <string>
 #include <sstream>
 #include <deque>
@@ -138,7 +136,7 @@ void setConsoleCalcLayout(const CONSOLE_CALC_LAYOUT_FUNC& layoutFunc)
 /** Sets the system up */
 void	initConsoleMessages()
 {
-	unsigned int duration = (game.type == LEVEL_TYPE::SKIRMISH) ? DEFAULT_MESSAGE_DURATION : DEFAULT_MESSAGE_DURATION_CAMPAIGN;
+	unsigned int duration = DEFAULT_MESSAGE_DURATION;
 	linePitch = iV_GetTextLineSize(font_regular);
 	bConsoleDropped = false;
 	setConsoleMessageDuration(duration);					// Setup how long messages are displayed for
@@ -147,7 +145,7 @@ void	initConsoleMessages()
 
 	//	Set up the main console size and position x,y,width
 	setConsoleCalcLayout([]() {
-		setConsoleSizePos(16, (!challengeActive && (game.type == LEVEL_TYPE::SKIRMISH)) ? 32 : (32 + TIMER_Y), pie_GetVideoBufferWidth() - 32);
+		setConsoleSizePos(16, 32, pie_GetVideoBufferWidth() - 32);
 	});
 	historyConsole.topX = HISTORYBOX_X;
 	historyConsole.topY = HISTORYBOX_Y;

@@ -178,7 +178,6 @@ bool intDisplayMultiJoiningStatus(UBYTE joinCount)
 void clearPlayer(UDWORD player, bool quietly)
 {
 	UDWORD			i;
-	STRUCTURE		*psStruct, *psNext;
 
 	ASSERT_OR_RETURN(, player < MAX_CONNECTED_PLAYERS, "Invalid player: %" PRIu32 "", player);
 
@@ -214,35 +213,30 @@ void clearPlayer(UDWORD player, bool quietly)
 	}
 
 	debug(LOG_DEATH, "killing off all droids for player %d", player);
-	while (apsDroidLists[player])				// delete all droids
+  for (auto& psDroid : apsDroidLists[player])
 	{
 		if (quietly)			// don't show effects
 		{
-			killDroid(apsDroidLists[player]);
+			killDroid(&psDroid);
 		}
 		else				// show effects
 		{
-			destroyDroid(apsDroidLists[player], gameTime);
+			destroyDroid(&psDroid, gameTime);
 		}
 	}
 
 	debug(LOG_DEATH, "killing off all structures for player %d", player);
-	psStruct = apsStructLists[player];
-	while (psStruct)				// delete all structs
+	for (auto& psStruct : apsStructLists[player])				// delete all structs
 	{
-		psNext = psStruct->psNext;
-
 		// FIXME: look why destroyStruct() doesn't put back the feature like removeStruct() does
-		if (quietly || psStruct->pStructureType->type == REF_RESOURCE_EXTRACTOR)		// don't show effects
+		if (quietly || psStruct.pStructureType->type == REF_RESOURCE_EXTRACTOR)		// don't show effects
 		{
-			removeStruct(psStruct, true);
+			removeStruct(&psStruct, true);
 		}
 		else			// show effects
 		{
-			destroyStruct(psStruct, gameTime);
+			destroyStruct(&psStruct, gameTime);
 		}
-
-		psStruct = psNext;
 	}
 
 	return;
@@ -251,29 +245,25 @@ void clearPlayer(UDWORD player, bool quietly)
 // Reset visibility, so a new player can't see the old stuff!!
 static void resetMultiVisibility(UDWORD player)
 {
-	UDWORD		owned;
-	DROID		*pDroid;
-	STRUCTURE	*pStruct;
-
 	if (player >= MAX_PLAYERS)
 	{
 		return;
 	}
 
-	for (owned = 0 ; owned < MAX_PLAYERS ; owned++)		// for each player
+	for (auto owned = 0 ; owned < MAX_PLAYERS ; owned++)		// for each player
 	{
 		if (owned != player)								// done reset own stuff..
 		{
 			//droids
-			for (pDroid = apsDroidLists[owned]; pDroid; pDroid = pDroid->psNext)
+			for (auto& pDroid : apsDroidLists[owned])
 			{
-				pDroid->visible[player] = false;
+				pDroid.visible[player] = false;
 			}
 
 			//structures
-			for (pStruct = apsStructLists[owned]; pStruct; pStruct = pStruct->psNext)
+			for (auto& pStruct : apsStructLists[owned])
 			{
-				pStruct->visible[player] = false;
+				pStruct.visible[player] = false;
 			}
 
 		}
