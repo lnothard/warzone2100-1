@@ -31,13 +31,13 @@
 #define NO_AUDIO_MSG		-1
 
 /** The lists of messages allocated. */
-extern MESSAGE		*apsMessages[MAX_PLAYERS];
+extern std::array<std::vector<MESSAGE>, MAX_PLAYERS> apsMessages;
 
 /** The IMD to use for the proximity messages. */
-extern iIMDShape	*pProximityMsgIMD;
+extern std::vector<iIMDShape*> pProximityMsgIMD;
 
 /** The list of proximity displays allocated. */
-extern PROXIMITY_DISPLAY *apsProxDisp[MAX_PLAYERS];
+extern std::array<std::vector<PROXIMITY_DISPLAY>, MAX_PLAYERS> apsProxDisp;
 
 extern bool releaseObjectives;
 
@@ -51,10 +51,10 @@ bool initMessage();
 bool messageShutdown();
 
 /** Add a message to the list. */
-MESSAGE *addMessage(MESSAGE_TYPE msgType, bool proxPos, UDWORD player);
+std::unique_ptr<MESSAGE> addMessage(MESSAGE_TYPE msgType, bool proxPos, UDWORD player);
 
 /** Add a beacon message to the list. */
-MESSAGE *addBeaconMessage(MESSAGE_TYPE msgType, bool proxPos, UDWORD player);
+std::unique_ptr<MESSAGE> addBeaconMessage(MESSAGE_TYPE msgType, bool proxPos, UDWORD player);
 
 /** Remove a message. */
 void removeMessage(MESSAGE *psDel, UDWORD player);

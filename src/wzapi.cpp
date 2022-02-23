@@ -473,24 +473,20 @@ bool wzapi::cameraZoom(WZAPI_PARAMS(float viewDistance, float speed))
 }
 
 //-- ## cameraTrack([droid])
-//--
 //-- Make the camera follow the given droid object around. Pass in a null object to stop. (3.2+ only)
-//--
 bool wzapi::cameraTrack(WZAPI_PARAMS(optional<DROID *> _droid))
 {
-	if (_droid.has_value())
-	{
+	if (_droid.has_value()) {
 		DROID *droid = _droid.value();
 		SCRIPT_ASSERT(false, context, droid, "No valid droid provided");
 		SCRIPT_ASSERT(false, context, selectedPlayer < MAX_PLAYERS, "Invalid selectedPlayer for current client: %" PRIu32 "", selectedPlayer);
-		for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid != nullptr; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[selectedPlayer])
 		{
-			psDroid->selected = psDroid == droid; // select only the target droid
+			psDroid.selected = &psDroid == droid; // select only the target droid
 		}
 		setWarCamActive(true);
 	}
-	else
-	{
+	else {
 		setWarCamActive(false);
 	}
 	return true;
@@ -1001,14 +997,14 @@ std::vector<const STRUCTURE *> _enumStruct_fromList(WZAPI_PARAMS(optional<int> _
 
 	SCRIPT_ASSERT_PLAYER({}, context, player);
 	SCRIPT_ASSERT({}, context, (playerFilter >= 0 && playerFilter < MAX_PLAYERS) || playerFilter == ALL_PLAYERS, "Player filter index out of range: %d", playerFilter);
-	for (STRUCTURE *psStruct = psStructLists[player]; psStruct; psStruct = psStruct->psNext)
+	for (auto& psStruct : apsStructLists[player])
 	{
-		if ((playerFilter == ALL_PLAYERS || psStruct->visible[playerFilter])
-		    && !psStruct->died
-		    && (type == NUM_DIFF_BUILDINGS || type == psStruct->pStructureType->type)
-		    && (statsName.isEmpty() || statsName.compare(psStruct->pStructureType->id) == 0))
+		if ((playerFilter == ALL_PLAYERS || psStruct.visible[playerFilter])
+		    && !psStruct.died
+		    && (type == NUM_DIFF_BUILDINGS || type == psStruct.pStructureType->type)
+		    && (statsName.isEmpty() || statsName.compare(psStruct.pStructureType->id) == 0))
 		{
-			matches.push_back(psStruct);
+			matches.push_back(&psStruct);
 		}
 	}
 
@@ -1076,13 +1072,13 @@ std::vector<const DROID *> wzapi::enumDroid(WZAPI_PARAMS(optional<int> _player, 
 	}
 	SCRIPT_ASSERT_PLAYER({}, context, player);
 	SCRIPT_ASSERT({}, context, (playerFilter >= 0 && playerFilter < MAX_PLAYERS) || playerFilter == ALL_PLAYERS, "Player filter index out of range: %d", playerFilter);
-	for (DROID *psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[player])
 	{
-		if ((playerFilter == ALL_PLAYERS || psDroid->visible[playerFilter])
-		    && !psDroid->died
-		    && (droidType == DROID_ANY || droidType == psDroid->droidType || droidType2 == psDroid->droidType))
+		if ((playerFilter == ALL_PLAYERS || psDroid.visible[playerFilter])
+		    && !psDroid.died
+		    && (droidType == DROID_ANY || droidType == psDroid.droidType || droidType2 == psDroid.droidType))
 		{
-			matches.push_back(psDroid);
+			matches.push_back(&psDroid);
 		}
 	}
 	return matches;
@@ -1104,13 +1100,13 @@ std::vector<const FEATURE *> wzapi::enumFeature(WZAPI_PARAMS(int playerFilter, o
 	}
 
 	std::vector<const FEATURE *> matches;
-	for (FEATURE *psFeat = apsFeatureLists[0]; psFeat; psFeat = psFeat->psNext)
+	for (auto& psFeat : apsFeatureLists)
 	{
-		if ((playerFilter == ALL_PLAYERS || psFeat->visible[playerFilter])
-		    && !psFeat->died
-		    && (featureName.isEmpty() || featureName.compare(psFeat->psStats->id) == 0))
+		if ((playerFilter == ALL_PLAYERS || psFeat.visible[playerFilter])
+		    && !psFeat.died
+		    && (featureName.isEmpty() || featureName.compare(psFeat.psStats->id) == 0))
 		{
-			matches.push_back(psFeat);
+			matches.push_back(&psFeat);
 		}
 	}
 	return matches;
@@ -1126,10 +1122,9 @@ std::vector<scr_position> wzapi::enumBlips(WZAPI_PARAMS(int player))
 {
 	SCRIPT_ASSERT_PLAYER({}, context, player);
 	std::vector<scr_position> matches;
-	for (BASE_OBJECT *psSensor = apsSensorList[0]; psSensor; psSensor = psSensor->psNextFunc)
+	for (auto& psSensor : apsSensorList)
 	{
-		if (psSensor->visible[player] > 0 && psSensor->visible[player] < UBYTE_MAX)
-		{
+		if (psSensor->visible[player] > 0 && psSensor->visible[player] < UBYTE_MAX) {
 			matches.push_back({map_coord(psSensor->pos.x), map_coord(psSensor->pos.y)});
 		}
 	}
@@ -1143,25 +1138,24 @@ std::vector<scr_position> wzapi::enumBlips(WZAPI_PARAMS(int player))
 std::vector<const BASE_OBJECT *> wzapi::enumSelected(WZAPI_NO_PARAMS_NO_CONTEXT)
 {
 	std::vector<const BASE_OBJECT *> matches;
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		return matches;
 	}
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		if (psDroid->selected)
-		{
-			matches.push_back(psDroid);
+		if (psDroid.selected) {
+			matches.push_back(&psDroid);
 		}
 	}
-	for (STRUCTURE *psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
+
+	for (auto& psStruct : apsStructLists[selectedPlayer])
 	{
-		if (psStruct->selected)
-		{
-			matches.push_back(psStruct);
+		if (psStruct.selected) {
+			matches.push_back(&psStruct);
 		}
 	}
-	// TODO - also add selected delivery points
+
 	return matches;
 }
 
@@ -1886,7 +1880,7 @@ wzapi::returned_nullable_ptr<const DROID> wzapi::addDroid(WZAPI_PARAMS(int playe
 			psDroid = ::buildDroid(psTemplate.get(), world_coord(x) + TILE_UNITS / 2, world_coord(y) + TILE_UNITS / 2, player, onMission, nullptr);
 			if (psDroid)
 			{
-				addDroid(psDroid, apsDroidLists);
+				addDroid(psDroid);
 				debug(LOG_LIFE, "Created droid %s by script for player %d: %u", objInfo(psDroid), player, psDroid->id);
 			}
 			else
@@ -1947,9 +1941,9 @@ wzapi::returned_nullable_ptr<const FEATURE> wzapi::addFeature(WZAPI_PARAMS(std::
 {
 	int feature = getFeatureStatFromName(WzString::fromUtf8(featureName));
 	FEATURE_STATS *psStats = &asFeatureStats[feature];
-	for (FEATURE *psFeat = apsFeatureLists[0]; psFeat; psFeat = psFeat->psNext)
+	for (auto& psFeat : apsFeatureLists)
 	{
-		SCRIPT_ASSERT(nullptr, context, map_coord(psFeat->pos.x) != x || map_coord(psFeat->pos.y) != y,
+		SCRIPT_ASSERT(nullptr, context, map_coord(psFeat.pos.x) != x || map_coord(psFeat.pos.y) != y,
 		              "Building feature on tile already occupied");
 	}
 	FEATURE *psFeature = buildFeature(psStats, world_coord(x), world_coord(y), false);
@@ -3281,14 +3275,11 @@ bool wzapi::transformPlayerToSpectator(WZAPI_PARAMS(int player))
 // flag all droids as requiring update on next frame
 static void dirtyAllDroids(int player)
 {
-	for (DROID *psDroid = apsDroidLists[player]; psDroid != nullptr; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[player])
 	{
-		psDroid->flags.set(OBJECT_FLAG_DIRTY);
+		psDroid.flags.set(OBJECT_FLAG_DIRTY);
 	}
-	for (DROID *psDroid = mission.apsDroidLists[player]; psDroid != nullptr; psDroid = psDroid->psNext)
-	{
-		psDroid->flags.set(OBJECT_FLAG_DIRTY);
-	}
+
 	for (DROID *psDroid = apsLimboDroids[player]; psDroid != nullptr; psDroid = psDroid->psNext)
 	{
 		psDroid->flags.set(OBJECT_FLAG_DIRTY);

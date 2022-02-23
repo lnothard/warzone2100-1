@@ -65,11 +65,11 @@
 #include "loadsave.h"
 #include "game.h"
 #include "multijoin.h"
+#include "group.h"
 #include "lighting.h"
 #include "intimage.h"
 #include "lib/framework/cursors.h"
 #include "seqdisp.h"
-#include "mission.h"
 #include "warcam.h"
 #include "lighting.h"
 #include "mapgrid.h"
@@ -186,23 +186,22 @@ static GAMECODE renderLoop()
 				multiPlayerLoop();
 			}
 
-			for (unsigned i = 0; i < MAX_PLAYERS; i++)
+			for (auto i = 0; i < MAX_PLAYERS; i++)
 			{
-				for (DROID *psCurr = apsDroidLists[i]; psCurr; psCurr = psCurr->psNext)
+				for (auto& psCurr : apsDroidLists[i])
 				{
 					// Don't copy the next pointer - if droids somehow get destroyed in the graphics rendering loop, who cares if we crash.
-					calcDroidIllumination(psCurr);
+					calcDroidIllumination(&psCurr);
 				}
 			}
 		}
 
-		if (!consolePaused())
-		{
+		if (!consolePaused()) {
 			/* Process all the console messages */
 			updateConsoleMessages();
 		}
-		if (!scrollPaused() && dragBox3D.status != DRAG_DRAGGING && intMode != INT_INGAMEOP)
-		{
+
+		if (!scrollPaused() && dragBox3D.status != DRAG_DRAGGING && intMode != INT_INGAMEOP) {
 			displayRenderLoop();
 		}
 	}
@@ -211,13 +210,11 @@ static GAMECODE renderLoop()
 		// Using software cursors (when on) for these menus due to a bug in SDL's SDL_ShowCursor()
 		wzSetCursor(CURSOR_DEFAULT);
 
-		if (dragBox3D.status != DRAG_DRAGGING)
-		{
+		if (dragBox3D.status != DRAG_DRAGGING) {
 			displayRenderLoop();
 		}
 
-		if (InGameOpUp || isInGamePopupUp)		// ingame options menu up, run it!
-		{
+		if (InGameOpUp || isInGamePopupUp) {		// ingame options menu up, run it!
 			WidgetTriggers const &triggers = widgRunScreen(psWScreen);
 			unsigned widgval = triggers.empty() ? 0 : triggers.front().widget->id; // Just use first click here, since the next click could be on another menu.
 
@@ -338,58 +335,22 @@ static GAMECODE renderLoop()
 
 	pie_GetResetCounts(&loopPieCount, &loopPolyCount);
 
-	// deal with the mission state
-	switch (loopMissionState)
-	{
-	case LMS_CLEAROBJECTS:
-		missionDestroyObjects();
-		setScriptPause(true);
-		loopMissionState = LMS_SETUPMISSION;
-		break;
-
-	case LMS_NORMAL:
-		// default
-		break;
-	case LMS_SETUPMISSION:
-		setScriptPause(false);
-		if (!setUpMission(nextMissionType))
-		{
-			return GAMECODE_QUITGAME;
-		}
-		break;
-	case LMS_SAVECONTINUE:
-		// just wait for this to be changed when the new mission starts
-		break;
-	case LMS_NEWLEVEL:
-		nextMissionType = LEVEL_TYPE::LDS_NONE;
-		return GAMECODE_NEWLEVEL;
-		break;
-	case LMS_LOADGAME:
-		return GAMECODE_LOADGAME;
-		break;
-	default:
-		ASSERT(false, "unknown loopMissionState");
-		break;
-	}
-
 	int clearMode = 0;
-	if (getDrawShadows())
-	{
+	if (getDrawShadows()) {
 		clearMode |= CLEAR_SHADOW;
 	}
-	if (quitting || loopMissionState == LMS_SAVECONTINUE)
-	{
+
+	if (quitting || loopMissionState == LMS_SAVECONTINUE) {
 		pie_SetFogStatus(false);
 		clearMode = CLEAR_BLACK;
 	}
 	pie_ScreenFlip(clearMode);//gameloopflip
 
-	if (quitting)
-	{
+	if (quitting) {
 		return GAMECODE_QUITGAME;
 	}
-	else if (loop_GetVideoStatus())
-	{
+
+	if (loop_GetVideoStatus()) {
 		audio_StopAll();
 		return GAMECODE_PLAYVIDEO;
 	}
@@ -411,10 +372,10 @@ void countUpdate(bool synch)
 		numMissionDroids[i] = 0;
 		numTransporterDroids[i] = 0;
 
-		for (DROID *psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (auto& psCurr : apsDroidLists[i])
 		{
 			numDroids[i]++;
-			switch (psCurr->droidType)
+			switch (psCurr.droidType)
 			{
 			case DROID_COMMAND:
 				numCommandDroids[i] += 1;
@@ -425,76 +386,28 @@ void countUpdate(bool synch)
 				break;
 			case DROID_TRANSPORTER:
 			case DROID_SUPERTRANSPORTER:
-				droidCountsInTransporter(psCurr, i);
+				droidCountsInTransporter(&psCurr, i);
 				break;
 			default:
 				break;
 			}
 		}
-		for (DROID *psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
-		{
-			numMissionDroids[i]++;
-			switch (psCurr->droidType)
-			{
-			case DROID_COMMAND:
-				numCommandDroids[i] += 1;
-				break;
-			case DROID_CONSTRUCT:
-			case DROID_CYBORG_CONSTRUCT:
-				numConstructorDroids[i] += 1;
-				break;
-			case DROID_TRANSPORTER:
-			case DROID_SUPERTRANSPORTER:
-				droidCountsInTransporter(psCurr, i);
-				break;
-			default:
-				break;
-			}
-		}
-		for (DROID *psCurr = apsLimboDroids[i]; psCurr != nullptr; psCurr = psCurr->psNext)
-		{
-			// count the type of units
-			switch (psCurr->droidType)
-			{
-			case DROID_COMMAND:
-				numCommandDroids[i] += 1;
-				break;
-			case DROID_CONSTRUCT:
-			case DROID_CYBORG_CONSTRUCT:
-				numConstructorDroids[i] += 1;
-				break;
-			default:
-				break;
-			}
-		}
+
 		// FIXME: These for-loops are code duplicationo
 		setLasSatExists(false, i);
-		for (STRUCTURE *psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->psNext)
+		for (auto& psCBuilding : apsStructLists[i])
 		{
-			if (psCBuilding->pStructureType->type == REF_SAT_UPLINK && psCBuilding->status == SS_BUILT)
-			{
+			if (psCBuilding.pStructureType->type == REF_SAT_UPLINK && psCBuilding.status == SS_BUILT) {
 				setSatUplinkExists(true, i);
 			}
+
 			//don't wait for the Las Sat to be built - can't build another if one is partially built
-			if (asWeaponStats[psCBuilding->asWeaps[0].nStat].weaponSubClass == WSC_LAS_SAT)
-			{
+			if (asWeaponStats[psCBuilding.asWeaps[0].nStat].weaponSubClass == WSC_LAS_SAT) {
 				setLasSatExists(true, i);
 			}
 		}
-		for (STRUCTURE *psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psCBuilding->psNext)
-		{
-			if (psCBuilding->pStructureType->type == REF_SAT_UPLINK && psCBuilding->status == SS_BUILT)
-			{
-				setSatUplinkExists(true, i);
-			}
-			//don't wait for the Las Sat to be built - can't build another if one is partially built
-			if (asWeaponStats[psCBuilding->asWeaps[0].nStat].weaponSubClass == WSC_LAS_SAT)
-			{
-				setLasSatExists(true, i);
-			}
-		}
-		if (synch)
-		{
+
+		if (synch) {
 			syncDebug("counts[%d] = {droid: %d, command: %d, constructor: %d, mission: %d, transporter: %d}", i, numDroids[i], numCommandDroids[i], numConstructorDroids[i], numMissionDroids[i], numTransporterDroids[i]);
 		}
 	}
@@ -553,47 +466,22 @@ static void gameStateUpdate()
 		//update the current power available for a player
 		updatePlayerPower(i);
 
-		DROID *psNext;
-		for (DROID *psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
+		for (auto& psCurr : apsDroidLists[i])
 		{
-			// Copy the next pointer - not 100% sure if the droid could get destroyed but this covers us anyway
-			psNext = psCurr->psNext;
-			droidUpdate(psCurr);
+			droidUpdate(&psCurr);
 		}
 
-		for (DROID *psCurr = mission.apsDroidLists[i]; psCurr != nullptr; psCurr = psNext)
+		for (auto& psCBuilding : apsStructLists[i])
 		{
-			/* Copy the next pointer - not 100% sure if the droid could
-			get destroyed but this covers us anyway */
-			psNext = psCurr->psNext;
-			missionDroidUpdate(psCurr);
+			structureUpdate(&psCBuilding, false);
 		}
 
-		// FIXME: These for-loops are code duplicationo
-		STRUCTURE *psNBuilding;
-		for (STRUCTURE *psCBuilding = apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
-		{
-			/* Copy the next pointer - not 100% sure if the structure could get destroyed but this covers us anyway */
-			psNBuilding = psCBuilding->psNext;
-			structureUpdate(psCBuilding, false);
-		}
-		for (STRUCTURE *psCBuilding = mission.apsStructLists[i]; psCBuilding != nullptr; psCBuilding = psNBuilding)
-		{
-			/* Copy the next pointer - not 100% sure if the structure could get destroyed but this covers us anyway. It shouldn't do since its not even on the map!*/
-			psNBuilding = psCBuilding->psNext;
-			structureUpdate(psCBuilding, true); // update for mission
-		}
 	}
-
-	missionTimerUpdate();
-
 	proj_UpdateAll();
 
-	FEATURE *psNFeat;
-	for (FEATURE *psCFeat = apsFeatureLists[0]; psCFeat; psCFeat = psNFeat)
+	for (auto& psCFeat : apsFeatureLists)
 	{
-		psNFeat = psCFeat->psNext;
-		featureUpdate(psCFeat);
+		featureUpdate(&psCFeat);
 	}
 
 	// Free dead droid memory.
@@ -900,24 +788,21 @@ void adjustDroidCount(DROID *droid, int delta) {
 // Increase counts of droids in a transporter
 void droidCountsInTransporter(DROID *droid, int player)
 {
-	DROID *psDroid = nullptr;
-
 	if (!isTransporter(droid) || droid->psGroup == nullptr)
-	{
 		return;
-	}
 
-	numTransporterDroids[player] += droid->psGroup->refCount - 1;
+	numTransporterDroids[player] += droid->psGroup->getNumMembers();
 
 	// and count the units inside it...
-	for (psDroid = droid->psGroup->psList; psDroid != nullptr && psDroid != droid; psDroid = psDroid->psGrpNext)
+	for (auto psDroid : droid->psGroup->psList)
 	{
-		if (psDroid->droidType == DROID_CYBORG_CONSTRUCT || psDroid->droidType == DROID_CONSTRUCT)
-		{
+    if (psDroid == droid) break;
+
+		if (psDroid->droidType == DROID_CYBORG_CONSTRUCT || psDroid->droidType == DROID_CONSTRUCT) {
 			numConstructorDroids[player] += 1;
 		}
-		if (psDroid->droidType == DROID_COMMAND)
-		{
+
+		if (psDroid->droidType == DROID_COMMAND) {
 			numCommandDroids[player] += 1;
 		}
 	}

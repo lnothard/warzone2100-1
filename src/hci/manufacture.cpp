@@ -116,11 +116,11 @@ void ManufactureController::updateFactoriesList()
 {
 	factories.clear();
 
-	for (auto structure = interfaceStructList(); structure != nullptr; structure = structure->psNext)
+	for (auto& structure : apsStructLists[selectedPlayer])
 	{
-		if (structure->status == SS_BUILT && structure->died == 0 && StructIsFactory(structure))
+		if (structure.status == SS_BUILT && structure.died == 0 && StructIsFactory(&structure))
 		{
-			factories.push_back(structure);
+			factories.push_back(&structure);
 		}
 	}
 
@@ -129,14 +129,11 @@ void ManufactureController::updateFactoriesList()
 
 void ManufactureController::updateManufactureOptionsList()
 {
-	if (auto factory = getHighlightedObject())
-	{
+	if (auto factory = getHighlightedObject()) {
 		stats = fillTemplateList(factory);
+    return;
 	}
-	else
-	{
-		stats.clear();
-	}
+  stats.clear();
 }
 
 DROID_TEMPLATE *ManufactureController::getObjectStatsAt(size_t objectIndex) const

@@ -5126,7 +5126,6 @@ static bool loadSaveDroidPointers(const WzString &pFileName, DROID **ppsCurrentD
 	for (size_t i = 0; i < list.size(); ++i)
 	{
 		ini.beginGroup(list[i]);
-		DROID *psDroid;
 		int id = ini.value("id", -1).toInt();
 		int player = getPlayer(ini);
 
@@ -5141,11 +5140,12 @@ static bool loadSaveDroidPointers(const WzString &pFileName, DROID **ppsCurrentD
 			continue; // another hack for campaign missions, cannot have targets
 		}
 
-		for (psDroid = ppsCurrentDroidLists[player]; psDroid && psDroid->id != id; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[player])
 		{
-			if (isTransporter(psDroid) && psDroid->psGroup != nullptr)  // Check for droids in the transporter.
+      if (psDroid.id == id) break;
+			if (isTransporter(&psDroid) && psDroid.psGroup != nullptr)  // Check for droids in the transporter.
 			{
-				for (DROID *psTrDroid = psDroid->psGroup->psList; psTrDroid != nullptr; psTrDroid = psTrDroid->psGrpNext)
+				for (auto psTrDroid : psDroid.psGroup->psList)
 				{
 					if (psTrDroid->id == id)
 					{
@@ -5707,7 +5707,7 @@ static bool writeDroidFile(const char *pFileName, DROID **ppsCurrentDroidLists)
 			mRoot[droidKey.toStdString()] = writeDroid(psCurr, onMission, counter);
 			if (isTransporter(psCurr))	// if transporter save any droids in the grp
 			{
-				for (DROID *psTrans = psCurr->psGroup->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
+				for (auto& psTrans : psCurr->psGroup->psList)
 				{
 					if (psTrans != psCurr)
 					{
@@ -5995,7 +5995,7 @@ static bool loadWzMapStructure(WzMap::Map& wzMap)
 
 // -----------------------------------------------------------------------------------------
 /* code for versions after version 20 of a save structure */
-static bool loadSaveStructure2(const char *pFileName, STRUCTURE **ppList)
+static bool loadSaveStructure2(const char *pFileName)
 {
 	if (!PHYSFS_exists(pFileName))
 	{
@@ -6284,54 +6284,52 @@ bool writeStructFile(const char *pFileName)
 
 	for (int player = 0; player < MAX_PLAYERS; player++)
 	{
-		for (STRUCTURE *psCurr = apsStructLists[player]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (auto& psCurr : apsStructLists[player])
 		{
 			ini.beginGroup("structure_" + (WzString::number(counter++).leftPadToMinimumLength(WzUniCodepoint::fromASCII('0'), 10)));  // Zero padded so that alphabetical sort works.
-			ini.setValue("name", psCurr->pStructureType->id);
+			ini.setValue("name", psCurr.pStructureType->id);
 
-			writeSaveObject(ini, psCurr);
+			writeSaveObject(ini, &psCurr);
 
-			if (psCurr->resistance > 0)
-			{
-				ini.setValue("resistance", psCurr->resistance);
+			if (psCurr.resistance > 0) {
+				ini.setValue("resistance", psCurr.resistance);
 			}
-			if (psCurr->status != SS_BUILT)
-			{
-				ini.setValue("status", psCurr->status);
+			if (psCurr.status != SS_BUILT) {
+				ini.setValue("status", psCurr.status);
 			}
-			ini.setValue("weapons", psCurr->numWeaps);
-			for (unsigned j = 0; j < psCurr->numWeaps; j++)
+			ini.setValue("weapons", psCurr.numWeaps);
+			for (unsigned j = 0; j < psCurr.numWeaps; j++)
 			{
-				ini.setValue("parts/weapon/" + WzString::number(j + 1), (asWeaponStats + psCurr->asWeaps[j].nStat)->id);
-				if (psCurr->asWeaps[j].nStat > 0)
+				ini.setValue("parts/weapon/" + WzString::number(j + 1), (asWeaponStats + psCurr.asWeaps[j].nStat)->id);
+				if (psCurr.asWeaps[j].nStat > 0)
 				{
-					ini.setValue("ammo/" + WzString::number(j), psCurr->asWeaps[j].ammo);
-					ini.setValue("lastFired/" + WzString::number(j), psCurr->asWeaps[j].lastFired);
-					ini.setValue("shotsFired/" + WzString::number(j), psCurr->asWeaps[j].shotsFired);
-					ini.setVector3i("rotation/" + WzString::number(j), toVector(psCurr->asWeaps[j].rot));
+					ini.setValue("ammo/" + WzString::number(j), psCurr.asWeaps[j].ammo);
+					ini.setValue("lastFired/" + WzString::number(j), psCurr.asWeaps[j].lastFired);
+					ini.setValue("shotsFired/" + WzString::number(j), psCurr.asWeaps[j].shotsFired);
+					ini.setVector3i("rotation/" + WzString::number(j), toVector(psCurr.asWeaps[j].rot));
 				}
 			}
-			for (unsigned i = 0; i < psCurr->numWeaps; i++)
+			for (unsigned i = 0; i < psCurr.numWeaps; i++)
 			{
-				if (psCurr->psTarget[i] && !psCurr->psTarget[i]->died)
+				if (psCurr.psTarget[i] && !psCurr.psTarget[i]->died)
 				{
-					ini.setValue("target/" + WzString::number(i) + "/id", psCurr->psTarget[i]->id);
-					ini.setValue("target/" + WzString::number(i) + "/player", psCurr->psTarget[i]->player);
-					ini.setValue("target/" + WzString::number(i) + "/type", psCurr->psTarget[i]->type);
+					ini.setValue("target/" + WzString::number(i) + "/id", psCurr.psTarget[i]->id);
+					ini.setValue("target/" + WzString::number(i) + "/player", psCurr.psTarget[i]->player);
+					ini.setValue("target/" + WzString::number(i) + "/type", psCurr.psTarget[i]->type);
 #ifdef DEBUG
 					ini.setValue("target/" + WzString::number(i) + "/debugfunc", WzString::fromUtf8(psCurr->targetFunc[i]));
 					ini.setValue("target/" + WzString::number(i) + "/debugline", psCurr->targetLine[i]);
 #endif
 				}
 			}
-			ini.setValue("currentBuildPts", psCurr->currentBuildPts);
-			if (psCurr->pFunctionality)
+			ini.setValue("currentBuildPts", psCurr.currentBuildPts);
+			if (psCurr.pFunctionality)
 			{
-				if (psCurr->pStructureType->type == REF_FACTORY || psCurr->pStructureType->type == REF_CYBORG_FACTORY
-				    || psCurr->pStructureType->type == REF_VTOL_FACTORY)
+				if (psCurr.pStructureType->type == REF_FACTORY || psCurr.pStructureType->type == REF_CYBORG_FACTORY
+				    || psCurr.pStructureType->type == REF_VTOL_FACTORY)
 				{
-					FACTORY *psFactory = (FACTORY *)psCurr->pFunctionality;
-					ini.setValue("modules", psCurr->capacity);
+					FACTORY *psFactory = (FACTORY *)psCurr.pFunctionality;
+					ini.setValue("modules", psCurr.capacity);
 					ini.setValue("Factory/productionLoops", psFactory->productionLoops);
 					ini.setValue("Factory/timeStarted", psFactory->timeStarted);
 					ini.setValue("Factory/buildPointsRemaining", psFactory->buildPointsRemaining);
@@ -6344,7 +6342,7 @@ bool writeStructFile(const char *pFileName)
 					{
 						ini.setValue("Factory/template", psFactory->psSubject->multiPlayerID);
 					}
-					FLAG_POSITION *psFlag = ((FACTORY *)psCurr->pFunctionality)->psAssemblyPoint;
+					FLAG_POSITION *psFlag = ((FACTORY *)psCurr.pFunctionality)->psAssemblyPoint;
 					if (psFlag != nullptr)
 					{
 						ini.setVector3i("Factory/assemblyPoint/pos", psFlag->coords);
@@ -6380,22 +6378,22 @@ bool writeStructFile(const char *pFileName)
 						ini.setValue("Factory/productionRuns", 0);
 					}
 				}
-				else if (psCurr->pStructureType->type == REF_RESEARCH)
+				else if (psCurr.pStructureType->type == REF_RESEARCH)
 				{
-					ini.setValue("modules", psCurr->capacity);
-					ini.setValue("Research/timeStartHold", ((RESEARCH_FACILITY *)psCurr->pFunctionality)->timeStartHold);
-					if (((RESEARCH_FACILITY *)psCurr->pFunctionality)->psSubject)
+					ini.setValue("modules", psCurr.capacity);
+					ini.setValue("Research/timeStartHold", ((RESEARCH_FACILITY *)psCurr.pFunctionality)->timeStartHold);
+					if (((RESEARCH_FACILITY *)psCurr.pFunctionality)->psSubject)
 					{
-						ini.setValue("Research/target", ((RESEARCH_FACILITY *)psCurr->pFunctionality)->psSubject->id);
+						ini.setValue("Research/target", ((RESEARCH_FACILITY *)psCurr.pFunctionality)->psSubject->id);
 					}
 				}
-				else if (psCurr->pStructureType->type == REF_POWER_GEN)
+				else if (psCurr.pStructureType->type == REF_POWER_GEN)
 				{
-					ini.setValue("modules", psCurr->capacity);
+					ini.setValue("modules", psCurr.capacity);
 				}
-				else if (psCurr->pStructureType->type == REF_REPAIR_FACILITY)
+				else if (psCurr.pStructureType->type == REF_REPAIR_FACILITY)
 				{
-					REPAIR_FACILITY *psRepair = ((REPAIR_FACILITY *)psCurr->pFunctionality);
+					REPAIR_FACILITY *psRepair = ((REPAIR_FACILITY *)psCurr.pFunctionality);
 					if (psRepair->psObj)
 					{
 						ini.setValue("Repair/target/id", psRepair->psObj->id);
@@ -6412,9 +6410,9 @@ bool writeStructFile(const char *pFileName)
 						}
 					}
 				}
-				else if (psCurr->pStructureType->type == REF_REARM_PAD)
+				else if (psCurr.pStructureType->type == REF_REARM_PAD)
 				{
-					REARM_PAD *psReArmPad = ((REARM_PAD *)psCurr->pFunctionality);
+					REARM_PAD *psReArmPad = ((REARM_PAD *)psCurr.pFunctionality);
 					ini.setValue("Rearm/timeStarted", psReArmPad->timeStarted);
 					ini.setValue("Rearm/timeLastUpdated", psReArmPad->timeLastUpdated);
 					if (psReArmPad->psObj)
@@ -6424,9 +6422,9 @@ bool writeStructFile(const char *pFileName)
 						ini.setValue("Rearm/target/type", psReArmPad->psObj->type);
 					}
 				}
-				else if (psCurr->pStructureType->type == REF_WALL || psCurr->pStructureType->type == REF_GATE)
+				else if (psCurr.pStructureType->type == REF_WALL || psCurr.pStructureType->type == REF_GATE)
 				{
-					ini.setValue("Wall/type", psCurr->pFunctionality->wall.type);
+					ini.setValue("Wall/type", psCurr.pFunctionality->wall.type);
 				}
 			}
 			ini.endGroup();
@@ -6749,17 +6747,16 @@ bool writeFeatureFile(const char *pFileName)
 	WzConfig ini(WzString::fromUtf8(pFileName), WzConfig::ReadAndWrite);
 	int counter = 0;
 
-	for (FEATURE *psCurr = apsFeatureLists[0]; psCurr != nullptr; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsFeatureLists)
 	{
 		ini.beginGroup("feature_" + (WzString::number(counter++).leftPadToMinimumLength(WzUniCodepoint::fromASCII('0'), 10)));  // Zero padded so that alphabetical sort works.
-		ini.setValue("name", psCurr->psStats->id);
-		writeSaveObject(ini, psCurr);
+		ini.setValue("name", psCurr.psStats->id);
+		writeSaveObject(ini, &psCurr);
 		ini.endGroup();
 	}
 	return true;
 }
 
-// -----------------------------------------------------------------------------------------
 bool loadSaveTemplate(const char *pFileName)
 {
 	WzConfig ini(WzString::fromUtf8(pFileName), WzConfig::ReadOnly);

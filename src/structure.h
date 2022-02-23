@@ -453,7 +453,7 @@ static inline bool isStructure(SIMPLE_OBJECT const *psObject)
 // Returns STRUCTURE * if structure or NULL if not.
 static inline STRUCTURE *castStructure(SIMPLE_OBJECT *psObject)
 {
-	return isStructure(psObject) ? (STRUCTURE *)psObject : (STRUCTURE *)nullptr;
+	return dynamic_cast<STRUCTURE*>(psObject);
 }
 // Returns STRUCTURE const * if structure or NULL if not.
 static inline STRUCTURE const *castStructure(SIMPLE_OBJECT const *psObject)

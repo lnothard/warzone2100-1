@@ -32,10 +32,10 @@
 
 std::string ActivitySink::getTeamDescription(const ActivitySink::SkirmishGameInfo& info)
 {
-	if (!alliancesSetTeamsBeforeGame(info.game.alliance))
-	{
+	if (!alliancesSetTeamsBeforeGame(info.game.alliance)) {
 		return "";
 	}
+
 	std::map<int32_t, size_t> teamIdToCountOfPlayers;
 	for (size_t index = 0; index < std::min<size_t>(info.players.size(), (size_t)game.maxPlayers); ++index)
 	{

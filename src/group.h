@@ -52,7 +52,6 @@ public: // TODO: c++ design to members become private.
 	void setSecondary(SECONDARY_ORDER sec, SECONDARY_STATE state); // set the secondary state for a group of droids
 
 	GROUP_TYPE	type;         // Type from the enum GROUP_TYPE above
-	SWORD		refCount;     // Number of objects in the group. Group is deleted if refCount<=0. Count number of droids+NULL pointers.
 	std::vector<DROID*> psList;      // List of droids in the group
 	DROID		*psCommander; // The command droid of a command group
 	int		id;	// unique group id

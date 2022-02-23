@@ -628,17 +628,13 @@ STRUCTURE *visGetBlockingWall(const BASE_OBJECT *psViewer, const BASE_OBJECT *ps
 	if (numWalls > 0)
 	{
 		Vector2i tile = map_coord(wall);
-		unsigned int player;
 
-		for (player = 0; player < MAX_PLAYERS; player++)
+		for (auto player = 0; player < MAX_PLAYERS; player++)
 		{
-			STRUCTURE *psWall;
-
-			for (psWall = apsStructLists[player]; psWall; psWall = psWall->psNext)
+			for (auto& psWall : apsStructLists[player])
 			{
-				if (map_coord(psWall->pos) == tile)
-				{
-					return psWall;
+				if (map_coord(psWall.pos) == tile) {
+					return &psWall;
 				}
 			}
 		}
@@ -846,6 +842,7 @@ void processVisibility()
 			}
 		}
 	}
+
 	for (int player = 0; player < MAX_PLAYERS; ++player)
 	{
 		BASE_OBJECT *lists[] = {apsDroidLists[player], apsStructLists[player]};
@@ -858,16 +855,14 @@ void processVisibility()
 			}
 		}
 	}
-	for (BASE_OBJECT *psObj = apsSensorList[0]; psObj != nullptr; psObj = psObj->psNextFunc)
+	for (auto psObj : apsSensorList)
 	{
-		if (objRadarDetector(psObj))
-		{
-			for (BASE_OBJECT *psTarget = apsSensorList[0]; psTarget != nullptr; psTarget = psTarget->psNextFunc)
+		if (objRadarDetector(psObj)) {
+			for (auto psTarget : apsSensorList)
 			{
 				if (psObj != psTarget && psTarget->visible[psObj->player] < UBYTE_MAX / 2
 				    && objActiveRadar(psTarget)
-				    && iHypot((psTarget->pos - psObj->pos).xy()) < objSensorRange(psObj) * 10)
-				{
+				    && iHypot((psTarget->pos - psObj->pos).xy()) < objSensorRange(psObj) * 10) {
 					psTarget->visible[psObj->player] = UBYTE_MAX / 2;
 				}
 			}

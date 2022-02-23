@@ -39,7 +39,6 @@
 #include "objects.h"
 #include "hci.h"
 #include "levels.h"
-#include "mission.h"
 #include "levelint.h"
 #include "game.h"
 #include "lib/ivis_opengl/piestate.h"
@@ -911,29 +910,20 @@ bool levLoadData(char const *name, Sha256 const *hash, char *pSaveName, GAME_TYP
 	}
 
 	//we need to load up the save game data here for a camchange
-	if (bCamChangeSaveGame)
-	{
-		if (pSaveName != nullptr)
-		{
-			if (psBaseData != nullptr)
-			{
-				if (!stageTwoInitialise())
-				{
-					debug(LOG_ERROR, "Failed stageTwoInitialise() [camchange]!");
-					return false;
-				}
-			}
+  if (bCamChangeSaveGame && pSaveName != nullptr) {
+    if (psBaseData != nullptr && !stageTwoInitialise()) {
+      debug(LOG_ERROR, "Failed stageTwoInitialise() [camchange]!");
+      return false;
+    }
 
-			debug(LOG_NEVER, "loading savegame: %s", pSaveName);
-			if (!loadGame(pSaveName, false, true, true))
-			{
-				debug(LOG_ERROR, "Failed loadGame(%s)!", pSaveName);
-				return false;
-			}
+    debug(LOG_NEVER, "loading savegame: %s", pSaveName);
+    if (!loadGame(pSaveName, false, true, true)) {
+      debug(LOG_ERROR, "Failed loadGame(%s)!", pSaveName);
+      return false;
+    }
 
-			campaignReset();
-		}
-	}
+    campaignReset();
+  }
 
 
 	// load the new data
@@ -943,14 +933,11 @@ bool levLoadData(char const *name, Sha256 const *hash, char *pSaveName, GAME_TYP
 		if (psNewLevel->game == i)
 		{
 			// do some more initialising if necessary
-			if (psNewLevel->type == LEVEL_TYPE::LDS_COMPLETE || psNewLevel->type >= LEVEL_TYPE::LDS_MULTI_TYPE_START || (psBaseData != nullptr && !bCamChangeSaveGame))
-			{
-				if (!stageTwoInitialise())
-				{
-					debug(LOG_ERROR, "Failed stageTwoInitialise() [newdata]!");
-					return false;
-				}
-			}
+			if ((psNewLevel->type == LEVEL_TYPE::LDS_COMPLETE || psNewLevel->type >= LEVEL_TYPE::LDS_MULTI_TYPE_START ||
+           psBaseData != nullptr && !bCamChangeSaveGame) && !stageTwoInitialise()) {
+        debug(LOG_ERROR, "Failed stageTwoInitialise() [newdata]!");
+        return false;
+      }
 
 			// load a savegame if there is one - but not if already done so
 			if (pSaveName != nullptr && !bCamChangeSaveGame)

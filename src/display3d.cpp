@@ -597,18 +597,18 @@ static void showDroidPaths()
 		return; // no-op for now
 	}
 
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		if (psDroid->selected && psDroid->sMove.Status != MOVEINACTIVE)
+		if (psDroid.selected && psDroid.sMove.Status != MOVEINACTIVE)
 		{
-			const int len = psDroid->sMove.asPath.size();
-			for (int i = std::max(psDroid->sMove.pathIndex - 1, 0); i < len; i++)
+			const int len = psDroid.sMove.asPath.size();
+			for (int i = std::max(psDroid.sMove.pathIndex - 1, 0); i < len; i++)
 			{
 				Vector3i pos;
 
-				ASSERT(worldOnMap(psDroid->sMove.asPath[i].x, psDroid->sMove.asPath[i].y), "Path off map!");
-				pos.x = psDroid->sMove.asPath[i].x;
-				pos.z = psDroid->sMove.asPath[i].y;
+				ASSERT(worldOnMap(psDroid.sMove.asPath[i].x, psDroid.sMove.asPath[i].y), "Path off map!");
+				pos.x = psDroid.sMove.asPath[i].x;
+				pos.z = psDroid.sMove.asPath[i].y;
 				pos.y = map_Height(pos.x, pos.z) + 16;
 
 				effectGiveAuxVar(80);
@@ -912,10 +912,9 @@ void draw3DScene()
 	{
 		int visibleDroids = 0;
 		int undrawnDroids = 0;
-		for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[selectedPlayer])
 		{
-			if (psDroid->sDisplay.frameNumber != currentGameFrame)
-			{
+			if (psDroid.sDisplay.frameNumber != currentGameFrame) {
 				++undrawnDroids;
 				continue;
 			}
@@ -1673,55 +1672,35 @@ void	renderProjectile(PROJECTILE *psCurr, const glm::mat4 &viewMatrix)
 /// Draw the buildings
 static void displayStaticObjects(const glm::mat4 &viewMatrix)
 {
-	// to solve the flickering edges of baseplates
-//	pie_SetDepthOffset(-1.0f);
+  auto drawValidBuildings = [&]<typename T>(std::vector<T>& list)
+  {
+    for (auto& obj : list)
+    {
+      auto psStructure = dynamic_cast<STRUCTURE*>(&obj);
+      if (!psStructure || (obj.died != 0 && obj.died < graphicsTime) ||
+          !clipStructureOnScreen(psStructure))
+        continue;
 
-	/* Go through all the players */
-	for (unsigned aPlayer = 0; aPlayer <= MAX_PLAYERS; ++aPlayer)
+      renderStructure(psStructure, viewMatrix);
+    }
+  };
+
+	for (auto player = 0; player < MAX_PLAYERS; ++player)
 	{
-		BASE_OBJECT *list = aPlayer < MAX_PLAYERS ? apsStructLists[aPlayer] : psDestroyedObj;
-
-		/* Now go all buildings for that player */
-		for (; list != nullptr; list = list->psNext)
-		{
-			/* Worth rendering the structure? */
-			if (list->type != OBJ_STRUCTURE || (list->died != 0 && list->died < graphicsTime))
-			{
-				continue;
-			}
-			STRUCTURE *psStructure = castStructure(list);
-
-			if (!clipStructureOnScreen(psStructure))
-			{
-				continue;
-			}
-
-			renderStructure(psStructure, viewMatrix);
-		}
+    drawValidBuildings(apsStructLists[player]);
 	}
-//	pie_SetDepthOffset(0.0f);
+  drawValidBuildings(psDestroyedObj);
 }
 
 static bool tileHasIncompatibleStructure(MAPTILE const *tile, STRUCTURE_STATS const *stats, int moduleIndex)
 {
-	STRUCTURE *psStruct = castStructure(tile->psObject);
-	if (psStruct == nullptr)
-	{
-		return false;
-	}
-	if (psStruct->status == SS_BEING_BUILT && nextModuleToBuild(psStruct, -1) >= moduleIndex)
-	{
-		return true;
-	}
-	if (isWall(psStruct->pStructureType->type) && isBuildableOnWalls(stats->type))
-	{
-		return false;
-	}
-	if (IsStatExpansionModule(stats))
-	{
-		return false;
-	}
-	return true;
+	auto psStruct = castStructure(tile->psObject);
+
+  return psStruct && psStruct->status == SS_BEING_BUILT &&
+         nextModuleToBuild(psStruct, -1) >= moduleIndex ||
+         !(isWall(psStruct->pStructureType->type) && !isBuildableOnWalls(stats->type)) &&
+         !IsStatExpansionModule(stats);
+
 }
 
 static void drawLineBuild(uint8_t player, STRUCTURE_STATS const *psStats, Vector2i pos, Vector2i pos2, uint16_t direction, STRUCT_STATES state)
@@ -1891,15 +1870,15 @@ void displayBlueprints(const glm::mat4 &viewMatrix)
 			continue;
 		}
 		STRUCT_STATES state = player == selectedPlayer ? SS_BLUEPRINT_PLANNED : SS_BLUEPRINT_PLANNED_BY_ALLY;
-		for (DROID *psDroid = apsDroidLists[player]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[player])
 		{
-			if (psDroid->droidType == DROID_CONSTRUCT || psDroid->droidType == DROID_CYBORG_CONSTRUCT)
+			if (psDroid.droidType == DROID_CONSTRUCT || psDroid.droidType == DROID_CYBORG_CONSTRUCT)
 			{
-				renderBuildOrder(psDroid->player, psDroid->order, state);
+				renderBuildOrder(psDroid.player, psDroid.order, state);
 				//now look thru' the list of orders to see if more building sites
-				for (int order = psDroid->listPendingBegin; order < (int)psDroid->asOrderList.size(); order++)
+				for (int order = psDroid.listPendingBegin; order < (int)psDroid.asOrderList.size(); order++)
 				{
-					renderBuildOrder(psDroid->player, psDroid->asOrderList[order], state);
+					renderBuildOrder(psDroid.player, psDroid.asOrderList[order], state);
 				}
 			}
 		}
@@ -1922,96 +1901,88 @@ void displayBlueprints(const glm::mat4 &viewMatrix)
 static void displayDelivPoints(const glm::mat4& viewMatrix)
 {
 	if (selectedPlayer >= MAX_PLAYERS) { return; /* no-op */ }
-	for (FLAG_POSITION *psDelivPoint = apsFlagPosLists[selectedPlayer]; psDelivPoint != nullptr; psDelivPoint = psDelivPoint->psNext)
+	for (auto& psDelivPoint : apsFlagPosLists[selectedPlayer])
 	{
-		if (clipXY(psDelivPoint->coords.x, psDelivPoint->coords.y))
-		{
-			renderDeliveryPoint(psDelivPoint, false, viewMatrix);
+		if (clipXY(psDelivPoint.coords.x, psDelivPoint.coords.y)) {
+			renderDeliveryPoint(&psDelivPoint, false, viewMatrix);
 		}
 	}
 }
 
 /// Draw the features
-static void displayFeatures(const glm::mat4 &viewMatrix)
+static void displayFeatures(glm::mat4 const& viewMatrix)
 {
-	// player can only be 0 for the features.
-	for (unsigned player = 0; player <= 1; ++player)
-	{
-		BASE_OBJECT *list = player < 1 ? apsFeatureLists[player] : psDestroyedObj;
+  auto drawFeatures = [&viewMatrix]<typename T>(std::vector<T>& list)
+  {
+    for (auto& psObj : list)
+    {
+      if (dynamic_cast<FEATURE*>(&psObj) &&
+          (psObj.died == 0 || psObj.died > graphicsTime) &&
+          clipXY(psObj.pos.x, psObj.pos.y)) {
+        renderFeature(dynamic_cast<FEATURE*>(&psObj), viewMatrix);
+      }
+    }
+  };
 
-		/* Go through all the features */
-		for (; list != nullptr; list = list->psNext)
-		{
-			if (list->type == OBJ_FEATURE
-			    && (list->died == 0 || list->died > graphicsTime)
-			    && clipXY(list->pos.x, list->pos.y))
-			{
-				FEATURE *psFeature = castFeature(list);
-				renderFeature(psFeature, viewMatrix);
-			}
-		}
-	}
+  drawFeatures(apsFeatureLists);
+  drawFeatures(psDestroyedObj);
 }
 
 /// Draw the Proximity messages for the *SELECTED PLAYER ONLY*
-static void displayProximityMsgs(const glm::mat4& viewMatrix)
+static void displayProximityMsgs(glm::mat4 const& viewMatrix)
 {
-	if (selectedPlayer >= MAX_PLAYERS) { return; /* no-op */ }
+	if (selectedPlayer >= MAX_PLAYERS) return; /* no-op */
 
 	/* Go through all the proximity Displays*/
-	for (PROXIMITY_DISPLAY *psProxDisp = apsProxDisp[selectedPlayer]; psProxDisp != nullptr; psProxDisp = psProxDisp->psNext)
+	for (auto& psProxDisp : apsProxDisp[selectedPlayer])
 	{
-		if (!(psProxDisp->psMessage->read))
-		{
-			unsigned x, y;
-			if (psProxDisp->type == POS_PROXDATA)
-			{
-				VIEW_PROXIMITY *pViewProximity = (VIEW_PROXIMITY *)psProxDisp->psMessage->pViewData->pData;
-				x = pViewProximity->x;
-				y = pViewProximity->y;
-			}
-			else
-			{
-				if (!psProxDisp->psMessage->psObj)
-				{
-					continue;    // sanity check
-				}
-				x = psProxDisp->psMessage->psObj->pos.x;
-				y = psProxDisp->psMessage->psObj->pos.y;
-			}
-			/* Is the Message worth rendering? */
-			if (clipXY(x, y))
-			{
-				renderProximityMsg(psProxDisp, viewMatrix);
-			}
-		}
-	}
+    if (psProxDisp.psMessage->read) continue;
+
+    unsigned x, y;
+    if (psProxDisp.type != POS_PROXDATA) {
+      if (!psProxDisp.psMessage->psObj) {
+        continue;    // sanity check
+      }
+      x = psProxDisp.psMessage->psObj->pos.x;
+      y = psProxDisp.psMessage->psObj->pos.y;
+    }
+    else {
+      auto pViewProximity = dynamic_cast<VIEW_PROXIMITY*>(psProxDisp.psMessage->pViewData->pData);
+      x = pViewProximity->x;
+      y = pViewProximity->y;
+    }
+
+    /* Is the Message worth rendering? */
+    if (clipXY(x, y)) {
+      renderProximityMsg(&psProxDisp, viewMatrix);
+    }
+  }
 }
 
 /// Draw the droids
 static void displayDynamicObjects(const glm::mat4 &viewMatrix)
 {
-	/* Need to go through all the droid lists */
-	for (unsigned player = 0; player <= MAX_PLAYERS; ++player)
-	{
-		BASE_OBJECT *list = player < MAX_PLAYERS ? apsDroidLists[player] : psDestroyedObj;
+  auto drawValidUnits = [&]<typename T>(std::vector<T>& list)
+  {
+    for (auto& obj : list)
+    {
+      auto droid = dynamic_cast<DROID*>(&obj);
+      if (!droid || (obj.died != 0 && obj.died < graphicsTime) ||
+          !quickClipXYToMaximumTilesFromCurrentPosition(obj.pos.x, obj.pos.y)) {
+        continue;
+      }
 
-		for (; list != nullptr; list = list->psNext)
-		{
-			DROID *psDroid = castDroid(list);
-			if (!psDroid || (list->died != 0 && list->died < graphicsTime)
-			    || !quickClipXYToMaximumTilesFromCurrentPosition(list->pos.x, list->pos.y))
-			{
-				continue;
-			}
+      if (obj.visibleForLocalDisplay()) {
+        displayComponentObject(droid, viewMatrix);
+      }
+    }
+  };
 
-			/* No point in adding it if you can't see it? */
-			if (psDroid->visibleForLocalDisplay())
-			{
-				displayComponentObject(psDroid, viewMatrix);
-			}
-		}
-	}
+  for (auto player = 0; player < MAX_PLAYERS; ++player)
+  {
+    drawValidUnits(apsDroidLists[player]);
+  }
+  drawValidUnits(psDestroyedObj);
 }
 
 /// Sets the player's position and view angle - defaults player rotations as well
@@ -2023,13 +1994,11 @@ void setViewPos(UDWORD x, UDWORD y, WZ_DECL_UNUSED bool Pan)
 
 	updatePlayerAverageCentreTerrainHeight();
 
-	if(playerPos.p.y < averageCentreTerrainHeight)
-	{
+	if(playerPos.p.y < averageCentreTerrainHeight) {
 		playerPos.p.y = averageCentreTerrainHeight + CAMERA_PIVOT_HEIGHT - HEIGHT_TRACK_INCREMENTS;
 	}
 
-	if (getWarCamStatus())
-	{
+	if (getWarCamStatus()) {
 		camToggleStatus();
 	}
 }
@@ -2914,7 +2883,6 @@ static void	drawStructureSelections()
 {
 	STRUCTURE	*psStruct;
 	SDWORD		scrX, scrY;
-	UDWORD		i;
 	BASE_OBJECT	*psClickedOn;
 	bool		bMouseOverStructure = false;
 	bool		bMouseOverOwnStructure = false;
@@ -2933,59 +2901,55 @@ static void	drawStructureSelections()
 	if (selectedPlayer >= MAX_PLAYERS) { return; /* no-op */ }
 
 	/* Go thru' all the buildings */
-	for (psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
+	for (auto& structure : apsStructLists[selectedPlayer])
 	{
-		if (psStruct->sDisplay.frameNumber == currentGameFrame)
+		if (structure.sDisplay.frameNumber == currentGameFrame)
 		{
 			/* If it's selected */
-			if (psStruct->selected ||
-			    (barMode == BAR_DROIDS_AND_STRUCTURES && psStruct->pStructureType->type != REF_WALL && psStruct->pStructureType->type != REF_WALLCORNER) ||
-			    (bMouseOverOwnStructure && psStruct == (STRUCTURE *)psClickedOn)
+			if (structure.selected ||
+          barMode == BAR_DROIDS_AND_STRUCTURES && structure.pStructureType->type != REF_WALL &&
+          structure.pStructureType->type != REF_WALLCORNER ||
+          bMouseOverOwnStructure && &structure == psClickedOn
 			   )
 			{
-				drawStructureHealth(psStruct);
+				drawStructureHealth(&structure);
 
-				for (i = 0; i < psStruct->numWeaps; i++)
+				for (auto i = 0; i < structure.numWeaps; i++)
 				{
-					drawWeaponReloadBar((BASE_OBJECT *)psStruct, &psStruct->asWeaps[i], i);
-					drawStructureTargetOriginIcon(psStruct, i);
+					drawWeaponReloadBar(&structure, &structure.asWeaps[i], i);
+					drawStructureTargetOriginIcon(&structure, i);
 				}
 			}
 
-			if (psStruct->status == SS_BEING_BUILT)
+			if (structure.status == SS_BEING_BUILT)
 			{
-				drawStructureBuildProgress(psStruct);
+				drawStructureBuildProgress(&structure);
 			}
 		}
 	}
 
-	for (i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (psStruct = apsStructLists[i]; psStruct; psStruct = psStruct->psNext)
+		for (auto& structure : apsStructLists[i])
 		{
 			/* If it's targetted and on-screen */
-			if (psStruct->flags.test(OBJECT_FLAG_TARGETED)
-			    && psStruct->sDisplay.frameNumber == currentGameFrame)
-			{
-				scrX = psStruct->sDisplay.screenX;
-				scrY = psStruct->sDisplay.screenY;
+			if (structure.flags.test(OBJECT_FLAG_TARGETED)
+          && structure.sDisplay.frameNumber == currentGameFrame) {
+				scrX = structure.sDisplay.screenX;
+				scrY = structure.sDisplay.screenY;
 				iV_DrawImage(IntImages, getTargettingGfx(), scrX, scrY);
 			}
 		}
 	}
 
-	if (bMouseOverStructure && !bMouseOverOwnStructure)
-	{
-		if (mouseDown(getRightClickOrders() ? MOUSE_LMB : MOUSE_RMB))
-		{
-			psStruct = (STRUCTURE *)psClickedOn;
-			drawStructureHealth(psStruct);
-			if (psStruct->status == SS_BEING_BUILT)
-			{
-				drawStructureBuildProgress(psStruct);
-			}
-		}
-	}
+  if (bMouseOverStructure && !bMouseOverOwnStructure &&
+      mouseDown(getRightClickOrders() ? MOUSE_LMB : MOUSE_RMB)) {
+    psStruct = (STRUCTURE *)psClickedOn;
+    drawStructureHealth(psStruct);
+    if (psStruct->status == SS_BEING_BUILT) {
+      drawStructureBuildProgress(psStruct);
+    }
+  }
 
 }
 
@@ -3135,16 +3099,14 @@ static void	drawDroidSelections()
 	if (selectedPlayer >= MAX_PLAYERS) { return; /* no-op */ }
 
 	pie_SetFogStatus(false);
-	for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
 		/* If it's selected and on screen or it's the one the mouse is over */
-		if (eitherSelected(psDroid) ||
-		    (bMouseOverOwnDroid && psDroid == (DROID *) psClickedOn) ||
-		    droidUnderRepair(psDroid) ||
-		    barMode == BAR_DROIDS || barMode == BAR_DROIDS_AND_STRUCTURES
-		   )
-		{
-			drawDroidSelection(psDroid, psDroid->selected);
+		if (eitherSelected(&psDroid) ||
+        bMouseOverOwnDroid && &psDroid == (DROID *) psClickedOn ||
+        droidUnderRepair(&psDroid) ||
+		    barMode == BAR_DROIDS || barMode == BAR_DROIDS_AND_STRUCTURES) {
+			drawDroidSelection(&psDroid, psDroid.selected);
 		}
 	}
 
@@ -3233,36 +3195,29 @@ static void	drawDroidSelections()
 		}
 	}
 
-	for (int i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
 		/* Go thru' all the droidss */
-		for (const DROID *psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
+		for (auto const& psDroid : apsDroidLists[i])
 		{
-			if (showORDERS)
-			{
-				drawDroidOrder(psDroid);
+			if (showORDERS) {
+				drawDroidOrder(&psDroid);
 			}
-			if (!psDroid->died && psDroid->sDisplay.frameNumber == currentGameFrame)
-			{
-				/* If it's selected */
-				if (psDroid->flags.test(OBJECT_FLAG_TARGETED) && psDroid->visibleForLocalDisplay() == UBYTE_MAX)
-				{
-					index = IMAGE_BLUE1 + getModularScaledRealTime(1020, 5);
-					iV_DrawImage(IntImages, index, psDroid->sDisplay.screenX, psDroid->sDisplay.screenY);
-				}
-			}
+
+			if (!psDroid.died && psDroid.sDisplay.frameNumber == currentGameFrame &&
+          psDroid.flags.test(OBJECT_FLAG_TARGETED) && psDroid.visibleForLocalDisplay() == UBYTE_MAX) {
+        index = IMAGE_BLUE1 + getModularScaledRealTime(1020, 5);
+        iV_DrawImage(IntImages, index, psDroid.sDisplay.screenX, psDroid.sDisplay.screenY);
+      }
 		}
 	}
 
-	for (const FEATURE *psFeature = apsFeatureLists[0]; psFeature; psFeature = psFeature->psNext)
+	for (auto const& psFeature : apsFeatureLists)
 	{
-		if (!psFeature->died && psFeature->sDisplay.frameNumber == currentGameFrame)
-		{
-			if (psFeature->flags.test(OBJECT_FLAG_TARGETED))
-			{
-				iV_DrawImage(IntImages, getTargettingGfx(), psFeature->sDisplay.screenX, psFeature->sDisplay.screenY);
-			}
-		}
+		if (!psFeature.died && psFeature.sDisplay.frameNumber == currentGameFrame &&
+        psFeature.flags.test(OBJECT_FLAG_TARGETED)) {
+      iV_DrawImage(IntImages, getTargettingGfx(), psFeature.sDisplay.screenX, psFeature.sDisplay.screenY);
+    }
 	}
 }
 
@@ -3711,15 +3666,15 @@ static void structureEffectsPlayer(UDWORD player)
 		return;  // Don't add effects this frame.
 	}
 
-	for (STRUCTURE *psStructure = apsStructLists[player]; psStructure; psStructure = psStructure->psNext)
+	for (auto& psStructure : apsStructLists[player])
 	{
-		if (psStructure->status != SS_BUILT)
+		if (psStructure.status != SS_BUILT)
 		{
 			continue;
 		}
-		if (psStructure->pStructureType->type == REF_POWER_GEN && psStructure->visibleForLocalDisplay())
+		if (psStructure.pStructureType->type == REF_POWER_GEN && psStructure.visibleForLocalDisplay())
 		{
-			POWER_GEN *psPowerGen = &psStructure->pFunctionality->powerGenerator;
+			POWER_GEN *psPowerGen = &psStructure.pFunctionality->powerGenerator;
 			unsigned numConnected = 0;
 			for (int i = 0; i < NUM_POWER_MODULES; i++)
 			{
@@ -3754,24 +3709,24 @@ static void structureEffectsPlayer(UDWORD player)
 				xDif = iSinSR(effectTime, gameDiv, radius);
 				yDif = iCosSR(effectTime, gameDiv, radius);
 
-				pos.x = psStructure->pos.x + xDif;
-				pos.z = psStructure->pos.y + yDif;
+				pos.x = psStructure.pos.x + xDif;
+				pos.z = psStructure.pos.y + yDif;
 				pos.y = map_Height(pos.x, pos.z) + 64 + (i * 20);	// 64 up to get to base of spire
 				effectGiveAuxVar(50);	// half normal plasma size...
 				addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_LASER, false, nullptr, 0);
 
-				pos.x = psStructure->pos.x - xDif;
-				pos.z = psStructure->pos.y - yDif;
+				pos.x = psStructure.pos.x - xDif;
+				pos.z = psStructure.pos.y - yDif;
 				effectGiveAuxVar(50);	// half normal plasma size...
 
 				addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_LASER, false, nullptr, 0);
 			}
 		}
 		/* Might be a re-arm pad! */
-		else if (psStructure->pStructureType->type == REF_REARM_PAD
-		         && psStructure->visibleForLocalDisplay())
+		else if (psStructure.pStructureType->type == REF_REARM_PAD
+		         && psStructure.visibleForLocalDisplay())
 		{
-			REARM_PAD *psReArmPad = &psStructure->pFunctionality->rearmPad;
+			REARM_PAD *psReArmPad = &psStructure.pFunctionality->rearmPad;
 			BASE_OBJECT *psChosenObj = psReArmPad->psObj;
 			if (psChosenObj != nullptr && (((DROID *)psChosenObj)->visibleForLocalDisplay()))
 			{
@@ -3782,16 +3737,16 @@ static void structureEffectsPlayer(UDWORD player)
 					bFXSize = 30;
 				}
 				/* Then it's repairing...? */
-				radius = psStructure->sDisplay.imd->radius;
+				radius = psStructure.sDisplay.imd->radius;
 				xDif = iSinSR(effectTime, 720, radius);
 				yDif = iCosSR(effectTime, 720, radius);
-				pos.x = psStructure->pos.x + xDif;
-				pos.z = psStructure->pos.y + yDif;
-				pos.y = map_Height(pos.x, pos.z) + psStructure->sDisplay.imd->max.y;
+				pos.x = psStructure.pos.x + xDif;
+				pos.z = psStructure.pos.y + yDif;
+				pos.y = map_Height(pos.x, pos.z) + psStructure.sDisplay.imd->max.y;
 				effectGiveAuxVar(30 + bFXSize);	// half normal plasma size...
 				addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_LASER, false, nullptr, 0);
-				pos.x = psStructure->pos.x - xDif;
-				pos.z = psStructure->pos.y - yDif;	// buildings are level!
+				pos.x = psStructure.pos.x - xDif;
+				pos.z = psStructure.pos.y - yDif;	// buildings are level!
 				effectGiveAuxVar(30 + bFXSize);	// half normal plasma size...
 				addEffect(&pos, EFFECT_EXPLOSION, EXPLOSION_TYPE_LASER, false, nullptr, 0);
 			}
@@ -3802,10 +3757,9 @@ static void structureEffectsPlayer(UDWORD player)
 /// Draw the effects for all players and buildings
 static void structureEffects()
 {
-	for (unsigned i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		if (apsStructLists[i])
-		{
+		if (!apsStructLists[i].empty()) {
 			structureEffectsPlayer(i);
 		}
 	}
@@ -3814,26 +3768,22 @@ static void structureEffects()
 /// Show the sensor ranges of selected droids and buildings
 static void	showDroidSensorRanges()
 {
-	DROID		*psDroid;
-	STRUCTURE	*psStruct;
-
 	if (selectedPlayer >= MAX_PLAYERS) { return; /* no-op */ }
 
 	if (rangeOnScreen)		// note, we still have to decide what to do with multiple units selected, since it will draw it for all of them! -Q 5-10-05
 	{
-		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[selectedPlayer])
 		{
-			if (psDroid->selected)
+			if (psDroid.selected)
 			{
-				showSensorRange2((BASE_OBJECT *)psDroid);
+				showSensorRange2(&psDroid);
 			}
 		}
 
-		for (psStruct = apsStructLists[selectedPlayer]; psStruct; psStruct = psStruct->psNext)
+		for (auto& psStruct : apsStructLists[selectedPlayer])
 		{
-			if (psStruct->selected)
-			{
-				showSensorRange2((BASE_OBJECT *)psStruct);
+			if (psStruct.selected) {
+				showSensorRange2(&psStruct);
 			}
 		}
 	}//end if we want to display...
@@ -3864,15 +3814,13 @@ static void showWeaponRange(BASE_OBJECT *psObj)
 {
 	WEAPON_STATS *psStats;
 
-	if (psObj->type == OBJ_DROID)
-	{
+	if (psObj->type == OBJ_DROID) {
 		DROID *psDroid = (DROID *)psObj;
 		const int compIndex = psDroid->asWeaps[0].nStat;	// weapon_slot
 		ASSERT_OR_RETURN(, compIndex < numWeaponStats, "Invalid range referenced for numWeaponStats, %d > %d", compIndex, numWeaponStats);
 		psStats = asWeaponStats + compIndex;
 	}
-	else
-	{
+	else {
 		STRUCTURE *psStruct = (STRUCTURE *)psObj;
 		if (psStruct->pStructureType->numWeaps == 0)
 		{
@@ -3996,30 +3944,26 @@ static void doConstructionLines(const glm::mat4 &viewMatrix)
 {
 	for (unsigned i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (DROID *psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[i])
 		{
-			if (clipXY(psDroid->pos.x, psDroid->pos.y)
-			    && psDroid->visibleForLocalDisplay() == UBYTE_MAX
-			    && psDroid->sMove.Status != MOVESHUFFLE)
+			if (clipXY(psDroid.pos.x, psDroid.pos.y)
+			    && psDroid.visibleForLocalDisplay() == UBYTE_MAX
+			    && psDroid.sMove.Status != MOVESHUFFLE)
 			{
-				if (psDroid->action == DACTION_BUILD)
+				if (psDroid.action == DACTION_BUILD)
 				{
-					if (psDroid->order.psObj)
-					{
-						if (psDroid->order.psObj->type == OBJ_STRUCTURE)
-						{
-							addConstructionLine(psDroid, (STRUCTURE *)psDroid->order.psObj, viewMatrix);
-						}
-					}
+					if (psDroid.order.psObj && psDroid.order.psObj->type == OBJ_STRUCTURE) {
+            addConstructionLine(&psDroid, (STRUCTURE *)psDroid.order.psObj, viewMatrix);
+          }
 				}
-				else if ((psDroid->action == DACTION_DEMOLISH) ||
-				         (psDroid->action == DACTION_REPAIR) ||
-				         (psDroid->action == DACTION_RESTORE))
+				else if (psDroid.action == DACTION_DEMOLISH ||
+                 psDroid.action == DACTION_REPAIR ||
+                 psDroid.action == DACTION_RESTORE)
 				{
-					if (psDroid->psActionTarget[0]
-					    && psDroid->psActionTarget[0]->type == OBJ_STRUCTURE)
+					if (psDroid.psActionTarget[0]
+					    && psDroid.psActionTarget[0]->type == OBJ_STRUCTURE)
 					{
-						addConstructionLine(psDroid, (STRUCTURE *)psDroid->psActionTarget[0], viewMatrix);
+						addConstructionLine(&psDroid, (STRUCTURE *)psDroid.psActionTarget[0], viewMatrix);
 					}
 				}
 			}

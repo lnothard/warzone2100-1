@@ -806,7 +806,7 @@ void displayComponentButtonTemplate(DROID_TEMPLATE *psTemplate, const Vector3i *
 	leftFirst = angleDelta(DEG(Rotation->y)) < 0;
 
 	DROID Droid(0, selectedPlayer);
-	memset(Droid.asBits, 0, sizeof(Droid.asBits));
+  Droid.asBits.fill(0);
 	droidSetBits(psTemplate, &Droid);
 
 	Droid.pos = Vector3i(0, 0, 0);

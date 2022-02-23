@@ -103,7 +103,7 @@ struct DROID : public BASE_OBJECT
 	 *  per part to be calculated. Indexed by COMPONENT_TYPE.
 	 *  Weapons need to be dealt with separately.
 	 */
-	uint8_t         asBits[DROID_MAXCOMP];
+  std::array<uint8_t, DROID_MAXCOMP> asBits;
 	/* The other droid data.  These are all derived from the components
 	 * but stored here for easy access
 	 */

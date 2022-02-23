@@ -23,6 +23,7 @@
 #include "map_internal.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cinttypes>
 #include <limits>
 

@@ -136,7 +136,6 @@ void	initWarCam()
 
 static void processLeaderSelection()
 {
-	DROID *psDroid;
 	DROID *psNew = nullptr;
 	UDWORD leaderClass;
 	bool bSuccess;
@@ -184,76 +183,69 @@ static void processLeaderSelection()
 	switch (leaderClass)
 	{
 	case	LEADER_LEFT:
-		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[selectedPlayer])
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
+			if (DrawnInLastFrame(psDroid.sDisplay.frameNumber) && psDroid.selected && &psDroid != trackingCamera.target)
 			{
-				if (psDroid->sDisplay.screenX < trackingCamera.target->sDisplay.screenX)
+				if (psDroid.sDisplay.screenX < trackingCamera.target->sDisplay.screenX)
 				{
-					dif = trackingCamera.target->sDisplay.screenX - psDroid->sDisplay.screenX;
+					dif = trackingCamera.target->sDisplay.screenX - psDroid.sDisplay.screenX;
 					if (dif < bestSoFar)
 					{
 						bestSoFar = dif;
 						bSuccess = true;
-						psNew = psDroid;
+						psNew = &psDroid;
 					}
 				}
 			}
 		}
 		break;
 	case	LEADER_RIGHT:
-		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[selectedPlayer])
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
-			{
-				if (psDroid->sDisplay.screenX > trackingCamera.target->sDisplay.screenX)
-				{
-					dif = psDroid->sDisplay.screenX - trackingCamera.target->sDisplay.screenX;
-					if (dif < bestSoFar)
-					{
-						bestSoFar = dif;
-						bSuccess = true;
-						psNew = psDroid;
-					}
-				}
-			}
+			if (DrawnInLastFrame(psDroid.sDisplay.frameNumber) && psDroid.selected &&
+          &psDroid != trackingCamera.target && psDroid.sDisplay.screenX > trackingCamera.target->sDisplay.screenX) {
+        dif = psDroid.sDisplay.screenX - trackingCamera.target->sDisplay.screenX;
+        if (dif < bestSoFar) {
+          bestSoFar = dif;
+          bSuccess = true;
+          psNew = &psDroid;
+        }
+      }
 		}
 		break;
 	case	LEADER_UP:
-		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[selectedPlayer])
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
-			{
-				if (psDroid->sDisplay.screenY < trackingCamera.target->sDisplay.screenY)
-				{
-					dif = trackingCamera.target->sDisplay.screenY - psDroid->sDisplay.screenY;
-					if (dif < bestSoFar)
-					{
-						bestSoFar = dif;
-						bSuccess = true;
-						psNew = psDroid;
-					}
-				}
-			}
+			if (DrawnInLastFrame(psDroid.sDisplay.frameNumber) && psDroid.selected && &psDroid != trackingCamera.target &&
+          psDroid.sDisplay.screenY < trackingCamera.target->sDisplay.screenY) {
+        dif = trackingCamera.target->sDisplay.screenY - psDroid.sDisplay.screenY;
+        if (dif < bestSoFar)
+        {
+          bestSoFar = dif;
+          bSuccess = true;
+          psNew = &psDroid;
+        }
+      }
 		}
 		break;
 	case	LEADER_DOWN:
-		for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[selectedPlayer])
 		{
 			/* Is it even on the sscreen? */
-			if (DrawnInLastFrame(psDroid->sDisplay.frameNumber) && psDroid->selected && psDroid != trackingCamera.target)
+			if (DrawnInLastFrame(psDroid.sDisplay.frameNumber) && psDroid.selected && &psDroid != trackingCamera.target)
 			{
-				if (psDroid->sDisplay.screenY > trackingCamera.target->sDisplay.screenY)
+				if (psDroid.sDisplay.screenY > trackingCamera.target->sDisplay.screenY)
 				{
-					dif = psDroid->sDisplay.screenY - trackingCamera.target->sDisplay.screenY;
+					dif = psDroid.sDisplay.screenY - trackingCamera.target->sDisplay.screenY;
 					if (dif < bestSoFar)
 					{
 						bestSoFar = dif;
 						bSuccess = true;
-						psNew = psDroid;
+						psNew = &psDroid;
 					}
 				}
 			}
@@ -375,33 +367,24 @@ void	setWarCamActive(bool status)
 	}
 }
 
-//-----------------------------------------------------------------------------------
-
 DROID *camFindDroidTarget()
 {
-	DROID	*psDroid;
-
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		// Not currently supported when selectedPlayer >= MAX_PLAYERS
 		return nullptr;
 	}
 
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		if (psDroid->selected)
-		{
+		if (psDroid.selected) {
 			/* Return the first one found */
-			return psDroid;
+			return &psDroid;
 		}
 	}
 
 	/* We didn't find one */
-	return (nullptr);
+  return nullptr;
 }
-
-
-//-----------------------------------------------------------------------------------
 
 /* Stores away old viewangle info and sets up new distance and angles */
 void	camAlignWithTarget(DROID *psDroid)
@@ -447,7 +430,6 @@ void	camAlignWithTarget(DROID *psDroid)
 //-----------------------------------------------------------------------------------
 static uint16_t getAverageTrackAngle(unsigned groupNumber, bool bCheckOnScreen)
 {
-	DROID *psDroid;
 	int32_t xTotal = 0, yTotal = 0;
 
 	if (selectedPlayer >= MAX_PLAYERS)
@@ -457,15 +439,15 @@ static uint16_t getAverageTrackAngle(unsigned groupNumber, bool bCheckOnScreen)
 	}
 
 	/* Got thru' all droids */
-	for (psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
 		/* Is he worth selecting? */
-		if (groupNumber == GROUP_SELECTED ? psDroid->selected : psDroid->group == groupNumber)
+		if (groupNumber == GROUP_SELECTED ? psDroid.selected : psDroid.group == groupNumber)
 		{
-			if (bCheckOnScreen ? objectOnScreen(psDroid, pie_GetVideoBufferWidth() / 6) : true)
+			if (bCheckOnScreen ? objectOnScreen(&psDroid, pie_GetVideoBufferWidth() / 6) : true)
 			{
-				xTotal += iSin(psDroid->rot.direction);
-				yTotal += iCos(psDroid->rot.direction);
+				xTotal += iSin(psDroid.rot.direction);
+				yTotal += iCos(psDroid.rot.direction);
 			}
 		}
 	}
@@ -478,25 +460,23 @@ static uint16_t getAverageTrackAngle(unsigned groupNumber, bool bCheckOnScreen)
 static void getTrackingConcerns(SDWORD *x, SDWORD *y, SDWORD *z, UDWORD groupNumber, bool bOnScreen)
 {
 	SDWORD xTotals = 0, yTotals = 0, zTotals = 0;
-	DROID *psDroid;
-	UDWORD count;
 
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
+	if (selectedPlayer >= MAX_PLAYERS) {
 		// Not currently supported when selectedPlayer >= MAX_PLAYERS
 		return;
 	}
 
-	for (count = 0, psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext)
+  auto count = 0;
+	for (auto& psDroid : apsDroidLists[selectedPlayer])
 	{
-		if (groupNumber == GROUP_SELECTED ? psDroid->selected : psDroid->group == groupNumber)
+		if (groupNumber == GROUP_SELECTED ? psDroid.selected : psDroid.group == groupNumber)
 		{
-			if (!bOnScreen || objectOnScreen(psDroid, pie_GetVideoBufferWidth() / 4))
+			if (!bOnScreen || objectOnScreen(&psDroid, pie_GetVideoBufferWidth() / 4))
 			{
 				count++;
-				xTotals += psDroid->pos.x;
-				yTotals += psDroid->pos.z;	// note the flip
-				zTotals += psDroid->pos.y;
+				xTotals += psDroid.pos.x;
+				yTotals += psDroid.pos.z;	// note the flip
+				zTotals += psDroid.pos.y;
 			}
 		}
 	}

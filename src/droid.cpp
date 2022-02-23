@@ -328,7 +328,7 @@ DROID::DROID(uint32_t id, unsigned player)
 	{
 		visible[vPlayer] = hasSharedVision(vPlayer, player) ? UINT8_MAX : 0;
 	}
-	memset(seenThisTick, 0, sizeof(seenThisTick));
+  seenThisTick.fill(0);
 	periodicalDamageStart = 0;
 	periodicalDamage = 0;
 	sDisplay.screenX = OFF_SCREEN;
@@ -401,10 +401,9 @@ void recycleDroid(DROID *psDroid)
 	addPower(psDroid->player, (UDWORD)cost);
 
 	// hide the droid
-	memset(psDroid->visible, 0, sizeof(psDroid->visible));
+  psDroid->visible.fill(0);
 
-	if (psDroid->psGroup)
-	{
+	if (psDroid->psGroup) {
 		psDroid->psGroup->remove(psDroid);
 	}
 
@@ -584,7 +583,7 @@ bool droidRemove(DROID *psDroid, DROID *pList[MAX_PLAYERS])
 	// reset the baseStruct
 	setDroidBase(psDroid, nullptr);
 
-	removeDroid(psDroid, pList);
+	removeDroid(psDroid);
 
 	if (psDroid->player == selectedPlayer)
 	{
@@ -758,44 +757,43 @@ void droidUpdate(DROID *psDroid)
 	// unlike a repair facility
 	// 	- we don't really need to move droids to us, we can come ourselves
 	//	- we don't steal work from other repair turrets/ repair facilities
-	DROID *psOther;
 	if (psDroid->droidType == DROID_REPAIR || psDroid->droidType == DROID_CYBORG_REPAIR)
 	{
-		for (psOther = apsDroidLists[psDroid->player]; psOther; psOther = psOther->psNext)
+		for (auto& psOther : apsDroidLists[psDroid->player])
 		{
 			// unlike repair facility, no droid  can have DORDER_RTR_SPECIFIED with another droid as target, so skip that check
-			if (psOther->order.type == DORDER_RTR && 
-					psOther->order.rtrType == RTR_TYPE_DROID &&
-					psOther->action != DACTION_WAITFORREPAIR &&
-					psOther->action != DACTION_MOVETOREPAIRPOINT &&
-					psOther->action != DACTION_WAITDURINGREPAIR)
+			if (psOther.order.type == DORDER_RTR &&
+					psOther.order.rtrType == RTR_TYPE_DROID &&
+					psOther.action != DACTION_WAITFORREPAIR &&
+					psOther.action != DACTION_MOVETOREPAIRPOINT &&
+					psOther.action != DACTION_WAITDURINGREPAIR)
 			{
-				if (psOther->body >= psOther->originalBody)
+				if (psOther.body >= psOther.originalBody)
 				{
 					// set droid points to max
-					psOther->body = psOther->originalBody;
+					psOther.body = psOther.originalBody;
 					// if completely repaired reset order
-					secondarySetState(psOther, DSO_RETURN_TO_LOC, DSS_NONE);
+					secondarySetState(&psOther, DSO_RETURN_TO_LOC, DSS_NONE);
 
-					if (hasCommander(psOther))
+					if (hasCommander(&psOther))
 					{
 						// return a droid to it's command group
-						DROID	*psCommander = psOther->psGroup->psCommander;
-						orderDroidObj(psOther, DORDER_GUARD, psCommander, ModeImmediate);
+						DROID	*psCommander = psOther.psGroup->psCommander;
+						orderDroidObj(&psOther, DORDER_GUARD, psCommander, ModeImmediate);
 					}
 					continue;
 				}
 			}
 
-			else if (psOther->order.rtrType == RTR_TYPE_DROID 
+			else if (psOther.order.rtrType == RTR_TYPE_DROID
 					//is being, or waiting for repairs..
-					&& (psOther->action == DACTION_WAITFORREPAIR || psOther->action == DACTION_WAITDURINGREPAIR)
+					&& (psOther.action == DACTION_WAITFORREPAIR || psOther.action == DACTION_WAITDURINGREPAIR)
 					// don't steal work from others
-					&& psOther->order.psObj == psDroid)
+					&& psOther.order.psObj == psDroid)
 			{
-				if (!actionReachedDroid(psDroid, psOther))
+				if (!actionReachedDroid(psDroid, &psOther))
 				{
-					actionDroid(psOther, DACTION_MOVE, psDroid, psDroid->pos.x, psDroid->pos.y);
+					actionDroid(&psOther, DACTION_MOVE, psDroid, psDroid->pos.x, psDroid->pos.y);
 				}
 				
 			}
@@ -1358,7 +1356,7 @@ static unsigned calcUpgradeSum(const uint8_t (&asParts)[DROID_MAXCOMP], int numW
 
 struct FilterDroidWeaps
 {
-	FilterDroidWeaps(unsigned numWeaps, const WEAPON (&asWeaps)[MAX_WEAPONS])
+	FilterDroidWeaps(unsigned numWeaps, const std::array<WEAPON, MAX_WEAPONS> &asWeaps)
 	{
 		std::transform(asWeaps, asWeaps + numWeaps, this->asWeaps, [](const WEAPON &weap) {
 			return weap.nStat;
@@ -1748,40 +1746,38 @@ void templateSetParts(const DROID *psDroid, DROID_TEMPLATE *psTemplate)
 /* Make all the droids for a certain player a member of a specific group */
 void assignDroidsToGroup(UDWORD	playerNumber, UDWORD groupNumber, bool clearGroup)
 {
-	DROID	*psDroid;
 	bool	bAtLeastOne = false;
-	FLAG_POSITION	*psFlagPos;
 
 	ASSERT_OR_RETURN(, playerNumber < MAX_PLAYERS, "Invalid player: %" PRIu32 "", playerNumber);
 
 	if (groupNumber < UBYTE_MAX)
 	{
 		/* Run through all the droids */
-		for (psDroid = apsDroidLists[playerNumber]; psDroid != nullptr; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[playerNumber])
 		{
 			/* Clear out the old ones */
-			if (clearGroup && psDroid->group == groupNumber)
+			if (clearGroup && psDroid.group == groupNumber)
 			{
-				psDroid->group = UBYTE_MAX;
+				psDroid.group = UBYTE_MAX;
 			}
 
 			/* Only assign the currently selected ones */
-			if (psDroid->selected)
+			if (psDroid.selected)
 			{
 				/* Set them to the right group - they can only be a member of one group */
-				psDroid->group = (UBYTE)groupNumber;
+				psDroid.group = (UBYTE)groupNumber;
 				bAtLeastOne = true;
 			}
 		}
 	}
+
 	if (bAtLeastOne)
 	{
 		//clear the Deliv Point if one
 		ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "Unsupported selectedPlayer: %" PRIu32 "", selectedPlayer);
-		for (psFlagPos = apsFlagPosLists[selectedPlayer]; psFlagPos;
-			 psFlagPos = psFlagPos->psNext)
+		for (auto& psFlagPos : apsFlagPosLists[selectedPlayer])
 		{
-			psFlagPos->selected = false;
+			psFlagPos.selected = false;
 		}
 		groupConsoleInformOfCreation(groupNumber);
 		secondarySetAverageGroupState(selectedPlayer, groupNumber);
@@ -1791,16 +1787,15 @@ void assignDroidsToGroup(UDWORD	playerNumber, UDWORD groupNumber, bool clearGrou
 
 void removeDroidsFromGroup(UDWORD playerNumber)
 {
-	DROID	*psDroid;
 	unsigned removedCount = 0;
 
 	ASSERT_OR_RETURN(, playerNumber < MAX_PLAYERS, "Invalid player: %" PRIu32 "", playerNumber);
 
-	for (psDroid = apsDroidLists[playerNumber]; psDroid != nullptr; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[playerNumber])
 	{
-		if (psDroid->selected)
+		if (psDroid.selected)
 		{
-			psDroid->group = UBYTE_MAX;
+			psDroid.group = UBYTE_MAX;
 			removedCount++;
 		}
 	}
@@ -1812,26 +1807,25 @@ void removeDroidsFromGroup(UDWORD playerNumber)
 
 bool activateGroupAndMove(UDWORD playerNumber, UDWORD groupNumber)
 {
-	DROID	*psDroid, *psCentreDroid = nullptr;
+	DROID	*psCentreDroid = nullptr;
 	bool selected = false;
-	FLAG_POSITION	*psFlagPos;
 
 	ASSERT_OR_RETURN(false, playerNumber < MAX_PLAYERS, "Invalid player: %" PRIu32 "", playerNumber);
 
 	if (groupNumber < UBYTE_MAX)
 	{
-		for (psDroid = apsDroidLists[playerNumber]; psDroid != nullptr; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[playerNumber])
 		{
 			/* Wipe out the ones in the wrong group */
-			if (psDroid->selected && psDroid->group != groupNumber)
+			if (psDroid.selected && psDroid.group != groupNumber)
 			{
-				DeSelectDroid(psDroid);
+				DeSelectDroid(&psDroid);
 			}
 			/* Get the right ones */
-			if (psDroid->group == groupNumber)
+			if (psDroid.group == groupNumber)
 			{
-				SelectDroid(psDroid);
-				psCentreDroid = psDroid;
+				SelectDroid(&psDroid);
+				psCentreDroid = &psDroid;
 			}
 		}
 
@@ -1842,10 +1836,9 @@ bool activateGroupAndMove(UDWORD playerNumber, UDWORD groupNumber)
 			ASSERT(selectedPlayer < MAX_PLAYERS, "Unsupported selectedPlayer: %" PRIu32 "", selectedPlayer);
 			if (selectedPlayer < MAX_PLAYERS)
 			{
-				for (psFlagPos = apsFlagPosLists[selectedPlayer]; psFlagPos;
-					 psFlagPos = psFlagPos->psNext)
+				for (auto& psFlagPos : apsFlagPosLists[selectedPlayer])
 				{
-					psFlagPos->selected = false;
+					psFlagPos.selected = false;
 				}
 			}
 
@@ -1873,9 +1866,7 @@ bool activateGroupAndMove(UDWORD playerNumber, UDWORD groupNumber)
 }
 
 bool activateNoGroup(UDWORD playerNumber, const SELECTIONTYPE selectionType, const SELECTION_CLASS selectionClass, const bool bOnScreen) {
-	DROID	*psDroid;
 	bool selected = false;
-	FLAG_POSITION	*psFlagPos;
 	SELECTIONTYPE dselectionType = selectionType;
 	SELECTION_CLASS dselectionClass = selectionClass;
 	bool dbOnScreen = bOnScreen;
@@ -1883,22 +1874,21 @@ bool activateNoGroup(UDWORD playerNumber, const SELECTIONTYPE selectionType, con
 	ASSERT_OR_RETURN(false, playerNumber < MAX_PLAYERS, "Invalid player: %" PRIu32 "", playerNumber);
 
 	selDroidSelection(selectedPlayer, dselectionClass, dselectionType, dbOnScreen);
-	for (psDroid = apsDroidLists[playerNumber]; psDroid; psDroid = psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[playerNumber])
 	{
 		/* Wipe out the ones in the wrong group */
-		if (psDroid->selected && psDroid->group != UBYTE_MAX)
+		if (psDroid.selected && psDroid.group != UBYTE_MAX)
 		{
-			DeSelectDroid(psDroid);
+			DeSelectDroid(&psDroid);
 		}
 	}
 	if (selected)
 	{
 		//clear the Deliv Point if one
 		ASSERT_OR_RETURN(false, selectedPlayer < MAX_PLAYERS, "Unsupported selectedPlayer: %" PRIu32 "", selectedPlayer);
-		for (psFlagPos = apsFlagPosLists[selectedPlayer]; psFlagPos;
-			 psFlagPos = psFlagPos->psNext)
+		for (auto& psFlagPos : apsFlagPosLists[selectedPlayer])
 		{
-			psFlagPos->selected = false;
+			psFlagPos.selected = false;
 		}
 	}
 	return selected;
@@ -1906,25 +1896,22 @@ bool activateNoGroup(UDWORD playerNumber, const SELECTIONTYPE selectionType, con
 
 bool activateGroup(UDWORD playerNumber, UDWORD groupNumber)
 {
-	DROID	*psDroid;
 	bool selected = false;
-	FLAG_POSITION	*psFlagPos;
-
 	ASSERT_OR_RETURN(false, playerNumber < MAX_PLAYERS, "Invalid player: %" PRIu32 "", playerNumber);
 
 	if (groupNumber < UBYTE_MAX)
 	{
-		for (psDroid = apsDroidLists[playerNumber]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[playerNumber])
 		{
 			/* Wipe out the ones in the wrong group */
-			if (psDroid->selected && psDroid->group != groupNumber)
+			if (psDroid.selected && psDroid.group != groupNumber)
 			{
-				DeSelectDroid(psDroid);
+				DeSelectDroid(&psDroid);
 			}
 			/* Get the right ones */
-			if (psDroid->group == groupNumber)
+			if (psDroid.group == groupNumber)
 			{
-				SelectDroid(psDroid);
+				SelectDroid(&psDroid);
 				selected = true;
 			}
 		}
@@ -1934,10 +1921,9 @@ bool activateGroup(UDWORD playerNumber, UDWORD groupNumber)
 	{
 		//clear the Deliv Point if one
 		ASSERT_OR_RETURN(false, selectedPlayer < MAX_PLAYERS, "Unsupported selectedPlayer: %" PRIu32 "", selectedPlayer);
-		for (psFlagPos = apsFlagPosLists[selectedPlayer]; psFlagPos;
-			 psFlagPos = psFlagPos->psNext)
+		for (auto& psFlagPos : apsFlagPosLists[selectedPlayer])
 		{
-			psFlagPos->selected = false;
+			psFlagPos.selected = false;
 		}
 		groupConsoleInformOfSelection(groupNumber);
 	}
@@ -2158,16 +2144,12 @@ const char *getDroidLevelName(const DROID *psDroid)
 
 UDWORD	getNumDroidsForLevel(uint32_t player, UDWORD level)
 {
-	DROID	*psDroid;
-	UDWORD	count;
-
 	if (player >= MAX_PLAYERS) { return 0; }
 
-	for (psDroid = apsDroidLists[player], count = 0;
-		 psDroid; psDroid = psDroid->psNext)
+  unsigned count = 0;
+	for (auto& psDroid : apsDroidLists[player])
 	{
-		if (getDroidLevel(psDroid) == level)
-		{
+		if (getDroidLevel(&psDroid) == level) {
 			count++;
 		}
 	}
@@ -2176,14 +2158,12 @@ UDWORD	getNumDroidsForLevel(uint32_t player, UDWORD level)
 }
 
 // Get the name of a droid from it's DROID structure.
-//
 const char *droidGetName(const DROID *psDroid)
 {
 	ASSERT_NOT_NULLPTR_OR_RETURN("", psDroid);
 	return psDroid->aName;
 }
 
-//
 // Set the name of a droid in it's DROID structure.
 //
 // - only possible on the PC where you can adjust the names,
@@ -2193,20 +2173,16 @@ void droidSetName(DROID *psDroid, const char *pName)
 	sstrcpy(psDroid->aName, pName);
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // returns true when no droid on x,y square.
 bool noDroid(UDWORD x, UDWORD y)
 {
-	unsigned int i;
-
 	// check each droid list
-	for (i = 0; i < MAX_PLAYERS; ++i)
+	for (auto i = 0; i < MAX_PLAYERS; ++i)
 	{
-		const DROID *psDroid;
-		for (psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[i])
 		{
-			if (map_coord(psDroid->pos.x) == x
-				&& map_coord(psDroid->pos.y) == y)
+			if (map_coord(psDroid.pos.x) == x
+				&& map_coord(psDroid.pos.y) == y)
 			{
 				return false;
 			}
@@ -2215,20 +2191,17 @@ bool noDroid(UDWORD x, UDWORD y)
 	return true;
 }
 
-// ////////////////////////////////////////////////////////////////////////////
 // returns true when at most one droid on x,y square.
 static bool oneDroidMax(UDWORD x, UDWORD y)
 {
-	UDWORD i;
 	bool bFound = false;
-	DROID *pD;
 	// check each droid list
-	for (i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (pD = apsDroidLists[i]; pD ; pD = pD->psNext)
+		for (auto& pD : apsDroidLists[i])
 		{
-			if (map_coord(pD->pos.x) == x
-				&& map_coord(pD->pos.y) == y)
+			if (map_coord(pD.pos.x) == x
+				&& map_coord(pD.pos.y) == y)
 			{
 				if (bFound)
 				{
@@ -2294,14 +2267,12 @@ bool pickATileGen(Vector2i *pos, unsigned numIterations, bool (*function)(UDWORD
 
 static bool ThreatInRange(SDWORD player, SDWORD range, SDWORD rangeX, SDWORD rangeY, bool bVTOLs)
 {
-	UDWORD				i, structType;
-	STRUCTURE			*psStruct;
-	DROID				*psDroid;
+	UDWORD				structType;
 
 	const int tx = map_coord(rangeX);
 	const int ty = map_coord(rangeY);
 
-	for (i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
 		if ((alliances[player][i] == ALLIANCE_FORMED) || (i == player))
 		{
@@ -2309,13 +2280,13 @@ static bool ThreatInRange(SDWORD player, SDWORD range, SDWORD rangeX, SDWORD ran
 		}
 
 		//check structures
-		for (psStruct = apsStructLists[i]; psStruct; psStruct = psStruct->psNext)
+		for (auto& psStruct : apsStructLists[i])
 		{
-			if (psStruct->visible[player] || psStruct->born == 2)	// if can see it or started there
+			if (psStruct.visible[player] || psStruct.born == 2)	// if can see it or started there
 			{
-				if (psStruct->status == SS_BUILT)
+				if (psStruct.status == SS_BUILT)
 				{
-					structType = psStruct->pStructureType->type;
+					structType = psStruct.pStructureType->type;
 
 					switch (structType)		//dangerous to get near these structures
 					{
@@ -2326,7 +2297,7 @@ static bool ThreatInRange(SDWORD player, SDWORD range, SDWORD rangeX, SDWORD ran
 					case REF_REARM_PAD:
 
 						if (range < 0
-							|| world_coord(static_cast<int32_t>(hypotf(tx - map_coord(psStruct->pos.x), ty - map_coord(psStruct->pos.y)))) < range)	//enemy in range
+							|| world_coord(static_cast<int32_t>(hypotf(tx - map_coord(psStruct.pos.x), ty - map_coord(psStruct.pos.y)))) < range)	//enemy in range
 						{
 							return true;
 						}
@@ -2338,23 +2309,23 @@ static bool ThreatInRange(SDWORD player, SDWORD range, SDWORD rangeX, SDWORD ran
 		}
 
 		//check droids
-		for (psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[i])
 		{
-			if (psDroid->visible[player])		//can see this droid?
+			if (psDroid.visible[player])		//can see this droid?
 			{
-				if (!objHasWeapon((BASE_OBJECT *)psDroid))
+				if (!objHasWeapon(&psDroid))
 				{
 					continue;
 				}
 
 				//if VTOLs are excluded, skip them
-				if (!bVTOLs && ((asPropulsionStats[psDroid->asBits[COMP_PROPULSION]].propulsionType == PROPULSION_TYPE_LIFT) || isTransporter(psDroid)))
+				if (!bVTOLs && ((asPropulsionStats[psDroid.asBits[COMP_PROPULSION]].propulsionType == PROPULSION_TYPE_LIFT) || isTransporter(&psDroid)))
 				{
 					continue;
 				}
 
 				if (range < 0
-					|| world_coord(static_cast<int32_t>(hypotf(tx - map_coord(psDroid->pos.x), ty - map_coord(psDroid->pos.y)))) < range)	//enemy in range
+					|| world_coord(static_cast<int32_t>(hypotf(tx - map_coord(psDroid.pos.x), ty - map_coord(psDroid.pos.y)))) < range)	//enemy in range
 				{
 					return true;
 				}
@@ -2426,15 +2397,12 @@ PICKTILE pickHalfATile(UDWORD *x, UDWORD *y, UBYTE numIterations)
 
 /* Looks through the players list of droids to see if any of them are
 building the specified structure - returns true if finds one*/
-bool checkDroidsBuilding(STRUCTURE *psStructure)
+bool checkDroidsBuilding(STRUCTURE const* psStructure)
 {
-	DROID				*psDroid;
-
-	for (psDroid = apsDroidLists[psStructure->player]; psDroid != nullptr; psDroid =
-			 psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[psStructure->player])
 	{
 		//check DORDER_BUILD, HELP_BUILD is handled the same
-		BASE_OBJECT *const psStruct = orderStateObj(psDroid, DORDER_BUILD);
+		BASE_OBJECT *const psStruct = orderStateObj(&psDroid, DORDER_BUILD);
 		if ((STRUCTURE *)psStruct == psStructure)
 		{
 			return true;
@@ -2447,13 +2415,10 @@ bool checkDroidsBuilding(STRUCTURE *psStructure)
 demolishing the specified structure - returns true if finds one*/
 bool checkDroidsDemolishing(STRUCTURE *psStructure)
 {
-	DROID				*psDroid;
-
-	for (psDroid = apsDroidLists[psStructure->player]; psDroid != nullptr; psDroid =
-			 psDroid->psNext)
+	for (auto& psDroid : apsDroidLists[psStructure->player])
 	{
 		//check DORDER_DEMOLISH
-		BASE_OBJECT *const psStruct = orderStateObj(psDroid, DORDER_DEMOLISH);
+		BASE_OBJECT *const psStruct = orderStateObj(&psDroid, DORDER_DEMOLISH);
 		if ((STRUCTURE *)psStruct == psStructure)
 		{
 			return true;
@@ -2461,7 +2426,6 @@ bool checkDroidsDemolishing(STRUCTURE *psStructure)
 	}
 	return false;
 }
-
 
 int nextModuleToBuild(STRUCTURE const *psStruct, int lastOrderedModule)
 {
@@ -2588,10 +2552,9 @@ bool electronicDroid(const DROID *psDroid)
 	if (psDroid->droidType == DROID_COMMAND && psDroid->psGroup && psDroid->psGroup->psCommander == psDroid)
 	{
 		// if a commander has EW units attached it is electronic
-		for (const DROID *psCurr = psDroid->psGroup->psList; psCurr; psCurr = psCurr->psGrpNext)
+		for (auto const& psCurr : psDroid->psGroup->psList)
 		{
-			if (psDroid != psCurr && electronicDroid(psCurr))
-			{
+			if (psDroid != psCurr && electronicDroid(psCurr)) {
 				return true;
 			}
 		}
@@ -2609,11 +2572,11 @@ bool droidUnderRepair(const DROID *psDroid)
 	if (droidIsDamaged(psDroid))
 	{
 		//look thru the list of players droids to see if any are repairing this droid
-		for (const DROID *psCurr = apsDroidLists[psDroid->player]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (auto const& psCurr : apsDroidLists[psDroid->player])
 		{
-			if ((psCurr->droidType == DROID_REPAIR || psCurr->droidType ==
-				 DROID_CYBORG_REPAIR) && psCurr->action ==
-				DACTION_DROIDREPAIR && psCurr->order.psObj == psDroid)
+			if ((psCurr.droidType == DROID_REPAIR || psCurr.droidType ==
+				 DROID_CYBORG_REPAIR) && psCurr.action ==
+				DACTION_DROIDREPAIR && psCurr.order.psObj == psDroid)
 			{
 				return true;
 			}
@@ -2627,9 +2590,9 @@ UBYTE checkCommandExist(UBYTE player)
 {
 	UBYTE	quantity = 0;
 
-	for (DROID *psDroid = apsDroidLists[player]; psDroid != nullptr; psDroid = psDroid->psNext)
+	for (auto const& psDroid : apsDroidLists[player])
 	{
-		if (psDroid->droidType == DROID_COMMAND)
+		if (psDroid.droidType == DROID_COMMAND)
 		{
 			quantity++;
 		}
@@ -2671,11 +2634,7 @@ bool vtolEmpty(const DROID *psDroid)
 {
 	CHECK_DROID(psDroid);
 
-	if (!isVtolDroid(psDroid))
-	{
-		return false;
-	}
-	if (psDroid->droidType != DROID_WEAPON)
+	if (!isVtolDroid(psDroid) || psDroid->droidType != DROID_WEAPON)
 	{
 		return false;
 	}
@@ -2818,11 +2777,11 @@ bool allVtolsRearmed(const DROID *psDroid)
 	}
 
 	bool stillRearming = false;
-	for (const DROID *psCurr = apsDroidLists[psDroid->player]; psCurr; psCurr = psCurr->psNext)
+	for (auto const& psCurr : apsDroidLists[psDroid->player])
 	{
-		if (vtolRearming(psCurr) &&
-			psCurr->order.type == psDroid->order.type &&
-			psCurr->order.psObj == psDroid->order.psObj)
+		if (vtolRearming(&psCurr) &&
+			psCurr.order.type == psDroid->order.type &&
+			psCurr.order.psObj == psDroid->order.psObj)
 		{
 			stillRearming = true;
 			break;
@@ -3102,24 +3061,22 @@ DROID *giftSingleDroid(DROID *psD, UDWORD to, bool electronic)
 	int oldPlayer = psD->player;
 
 	// reset the assigned state of units attached to a leader
-	for (DROID *psCurr = apsDroidLists[oldPlayer]; psCurr != nullptr; psCurr = psCurr->psNext)
+	for (auto& psCurr : apsDroidLists[oldPlayer])
 	{
 		BASE_OBJECT	*psLeader;
 
-		if (hasCommander(psCurr))
-		{
-			psLeader = (BASE_OBJECT *)psCurr->psGroup->psCommander;
+		if (hasCommander(&psCurr)) {
+			psLeader = (BASE_OBJECT *)psCurr.psGroup->psCommander;
 		}
-		else
-		{
+		else {
 			//psLeader can be either a droid or a structure
-			psLeader = orderStateObj(psCurr, DORDER_FIRESUPPORT);
+			psLeader = orderStateObj(&psCurr, DORDER_FIRESUPPORT);
 		}
 
 		if (psLeader && psLeader->id == psD->id)
 		{
-			psCurr->selected = false;
-			orderDroid(psCurr, DORDER_STOP, ModeQueue);
+			psCurr.selected = false;
+			orderDroid(&psCurr, DORDER_STOP, ModeQueue);
 		}
 	}
 
@@ -3133,7 +3090,7 @@ DROID *giftSingleDroid(DROID *psD, UDWORD to, bool electronic)
 	{
 		psD->player	= to;
 
-		addDroid(psD, apsDroidLists);
+		addDroid(psD);
 		adjustDroidCount(psD, 1);
 
 		// the new player may have different default sensor/ecm/repair components
@@ -3176,23 +3133,23 @@ DROID *giftSingleDroid(DROID *psD, UDWORD to, bool electronic)
 			continue;
 		}
 
-		for (DROID *psCurr = apsDroidLists[i]; psCurr != nullptr; psCurr = psCurr->psNext)
+		for (auto& psCurr : apsDroidLists[i])
 		{
-			if (psCurr->order.psObj == psD || psCurr->psActionTarget[0] == psD)
+			if (psCurr.order.psObj == psD || psCurr.psActionTarget[0] == psD)
 			{
-				orderDroid(psCurr, DORDER_STOP, ModeQueue);
+				orderDroid(&psCurr, DORDER_STOP, ModeQueue);
 				break;
 			}
-			for (unsigned iWeap = 0; iWeap < psCurr->numWeaps; ++iWeap)
+			for (unsigned iWeap = 0; iWeap < psCurr.numWeaps; ++iWeap)
 			{
-				if (psCurr->psActionTarget[iWeap] == psD)
+				if (psCurr.psActionTarget[iWeap] == psD)
 				{
-					orderDroid(psCurr, DORDER_STOP, ModeImmediate);
+					orderDroid(&psCurr, DORDER_STOP, ModeImmediate);
 					break;
 				}
 			}
 			// check through order list
-			orderClearTargetFromDroidList(psCurr, (BASE_OBJECT *)psD);
+			orderClearTargetFromDroidList(&psCurr, (BASE_OBJECT *)psD);
 		}
 	}
 
@@ -3204,11 +3161,11 @@ DROID *giftSingleDroid(DROID *psD, UDWORD to, bool electronic)
 		}
 
 		// check through the players list, and our allies, of structures to see if any are targetting it
-		for (STRUCTURE *psStruct = apsStructLists[i]; psStruct != nullptr; psStruct = psStruct->psNext)
+		for (auto& psStruct : apsStructLists[i])
 		{
-			if (psStruct->psTarget[0] == psD)
+			if (psStruct.psTarget[0] == psD)
 			{
-				setStructureTarget(psStruct, nullptr, 0, ORIGIN_UNKNOWN);
+				setStructureTarget(&psStruct, nullptr, 0, ORIGIN_UNKNOWN);
 			}
 		}
 	}

@@ -316,23 +316,20 @@ void updateFogDistance(float distance)
 void calcDroidIllumination(DROID *psDroid)
 {
 	int lightVal, presVal, retVal;
-	float adjust;
 	const int tileX = map_coord(psDroid->pos.x);
 	const int tileY = map_coord(psDroid->pos.y);
 
 	/* Are we at the edge, or even on the map */
-	if (!tileOnMap(tileX, tileY))
-	{
+	if (!tileOnMap(tileX, tileY)) {
 		psDroid->illumination = UBYTE_MAX;
 		return;
 	}
-	else if (tileX <= 1 || tileX >= mapWidth - 2 || tileY <= 1 || tileY >= mapHeight - 2)
-	{
+
+	if (tileX <= 1 || tileX >= mapWidth - 2 || tileY <= 1 || tileY >= mapHeight - 2) {
 		lightVal = mapTile(tileX, tileY)->illumination;
 		lightVal += MIN_DROID_LIGHT_LEVEL;
 	}
-	else
-	{
+	else {
 		lightVal = mapTile(tileX, tileY)->illumination +		 //
 		           mapTile(tileX - 1, tileY)->illumination +	 //		 *
 		           mapTile(tileX, tileY - 1)->illumination +	 //		***		pattern
@@ -343,16 +340,15 @@ void calcDroidIllumination(DROID *psDroid)
 	}
 
 	/* Saturation */
-	if (lightVal > 255)
-	{
+	if (lightVal > 255) {
 		lightVal = 255;
 	}
 	presVal = psDroid->illumination;
-	adjust = (float)lightVal - (float)presVal;
+	auto adjust = (float)lightVal - (float)presVal;
 	adjust *= graphicsTimeAdjustedIncrement(DROID_SEEK_LIGHT_SPEED);
 	retVal = static_cast<int>(presVal + adjust);
-	if (retVal > 255)
-	{
+
+	if (retVal > 255) {
 		retVal = 255;
 	}
 	psDroid->illumination = retVal;
@@ -360,35 +356,18 @@ void calcDroidIllumination(DROID *psDroid)
 
 void doBuildingLights()
 {
-	STRUCTURE	*psStructure;
-	UDWORD	i;
-	LIGHT	light;
-
-	for (i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		for (psStructure = apsStructLists[i]; psStructure; psStructure = psStructure->psNext)
+		for (auto& psStructure : apsStructLists[i])
 		{
-			light.range = psStructure->pStructureType->baseWidth * TILE_UNITS;
-			light.position.x = psStructure->pos.x;
-			light.position.z = psStructure->pos.y;
+      auto light = LIGHT();
+			light.range = psStructure.pStructureType->baseWidth * TILE_UNITS;
+			light.position.x = psStructure.pos.x;
+			light.position.z = psStructure.pos.y;
 			light.position.y = map_Height(light.position.x, light.position.z);
-			light.range = psStructure->pStructureType->baseWidth * TILE_UNITS;
+			light.range = psStructure.pStructureType->baseWidth * TILE_UNITS;
 			light.colour = pal_Colour(255, 255, 255);
 			processLight(&light);
 		}
 	}
 }
-
-#if 0
-/* Experimental moving shadows code */
-void findSunVector()
-{
-	Vector3f val(
-	    4096 - getModularScaledGraphicsTime(16384, 8192),
-	    0 - getModularScaledGraphicsTime(16384, 4096),
-	    4096 - getModularScaledGraphicsTime(49152, 8192)
-	);
-
-	setTheSun(val);
-}
-#endif

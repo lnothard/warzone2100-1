@@ -2389,25 +2389,6 @@ void addTransporterInterface(DROID *psSelected, bool onMission)
 	}
 }
 
-/*sets which list of structures to use for the interface*/
-STRUCTURE *interfaceStructList()
-{
-	if (selectedPlayer >= MAX_PLAYERS)
-	{
-		return nullptr;
-	}
-
-	if (offWorldKeepLists)
-	{
-		return mission.apsStructLists[selectedPlayer];
-	}
-	else
-	{
-		return apsStructLists[selectedPlayer];
-	}
-}
-
-
 /*causes a reticule button to start flashing*/
 void flashReticuleButton(UDWORD buttonID)
 {

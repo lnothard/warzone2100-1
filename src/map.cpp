@@ -58,12 +58,14 @@
 static WZ_THREAD *dangerThread = nullptr;
 static WZ_SEMAPHORE *dangerSemaphore = nullptr;
 static WZ_SEMAPHORE *dangerDoneSemaphore = nullptr;
+
 struct floodtile
 {
 	uint8_t x;
 	uint8_t y;
 };
-static struct floodtile *floodbucket = nullptr;
+
+static std::vector<floodtile> floodbucket;
 static int bucketcounter;
 static UDWORD lastDangerUpdate = 0;
 static int lastDangerPlayer = -1;
@@ -1094,7 +1096,7 @@ bool mapShutdown()
 	mapDecals = nullptr;
 	psBlockMap[AUX_MAP] = nullptr;
 	psBlockMap[AUX_ASTARMAP] = nullptr;
-	free(floodbucket);
+  floodbucket.clear();
 	psBlockMap[AUX_DANGERMAP] = nullptr;
 	for (x = 0; x < MAX_PLAYERS + AUX_MAX; x++)
 	{
@@ -1102,7 +1104,6 @@ bool mapShutdown()
 	}
 
 	map = nullptr;
-	floodbucket = nullptr;
 	psGroundTypes = nullptr;
 	mapDecals = nullptr;
 	psMapTiles = nullptr;
@@ -1935,67 +1936,59 @@ static inline void threatUpdateTarget(int player, BASE_OBJECT *psObj, bool groun
 
 static void threatUpdate(int player)
 {
-	int i, weapon, x, y;
-
 	// Step 1: Clear our threat bits
-	for (y = 0; y < mapHeight; y++)
+	for (auto y = 0; y < mapHeight; y++)
 	{
-		for (x = 0; x < mapWidth; x++)
+		for (auto x = 0; x < mapWidth; x++)
 		{
 			auxClear(x, y, MAX_PLAYERS + AUX_DANGERMAP, AUXBITS_THREAT | AUXBITS_AATHREAT);
 		}
 	}
 
 	// Step 2: Set threat bits
-	for (i = 0; i < MAX_PLAYERS; i++)
+	for (auto i = 0; i < MAX_PLAYERS; i++)
 	{
-		DROID *psDroid;
-		STRUCTURE *psStruct;
-
-		if (aiCheckAlliances(player, i))
-		{
+		if (aiCheckAlliances(player, i)) {
 			// No need to iterate friendly objects
 			continue;
 		}
 
-		for (psDroid = apsDroidLists[i]; psDroid; psDroid = psDroid->psNext)
+		for (auto& psDroid : apsDroidLists[i])
 		{
-			UBYTE mode = 0;
-
-			if (psDroid->droidType == DROID_CONSTRUCT || psDroid->droidType == DROID_CYBORG_CONSTRUCT
-			    || psDroid->droidType == DROID_REPAIR || psDroid->droidType == DROID_CYBORG_REPAIR)
-			{
+			if (psDroid.droidType == DROID_CONSTRUCT || psDroid.droidType == DROID_CYBORG_CONSTRUCT
+			    || psDroid.droidType == DROID_REPAIR || psDroid.droidType == DROID_CYBORG_REPAIR) {
 				continue;	// hack that really should not be needed, but is -- trucks can SHOOT_ON_GROUND...!
 			}
-			for (weapon = 0; weapon < psDroid->numWeaps; weapon++)
+
+      UBYTE mode = 0;
+			for (auto weapon = 0; weapon < psDroid.numWeaps; weapon++)
 			{
-				mode |= asWeaponStats[psDroid->asWeaps[weapon].nStat].surfaceToAir;
+				mode |= asWeaponStats[psDroid.asWeaps[weapon].nStat].surfaceToAir;
 			}
-			if (psDroid->droidType == DROID_SENSOR)	// special treatment for sensor turrets, no multiweapon support
-			{
+
+			if (psDroid.droidType == DROID_SENSOR) {	// special treatment for sensor turrets, no multiweapon support
 				mode |= SHOOT_ON_GROUND;		// assume it only shoots at ground targets for now
 			}
-			if (mode > 0)
-			{
-				threatUpdateTarget(player, (BASE_OBJECT *)psDroid, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
+
+			if (mode > 0) {
+				threatUpdateTarget(player, &psDroid, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
 			}
 		}
 
-		for (psStruct = apsStructLists[i]; psStruct; psStruct = psStruct->psNext)
+		for (auto& psStruct : apsStructLists[i])
 		{
 			UBYTE mode = 0;
-
-			for (weapon = 0; weapon < psStruct->numWeaps; weapon++)
+			for (auto weapon = 0; weapon < psStruct.numWeaps; weapon++)
 			{
-				mode |= asWeaponStats[psStruct->asWeaps[weapon].nStat].surfaceToAir;
+				mode |= asWeaponStats[psStruct.asWeaps[weapon].nStat].surfaceToAir;
 			}
-			if (psStruct->pStructureType->pSensor && psStruct->pStructureType->pSensor->location == LOC_TURRET)	// special treatment for sensor turrets
-			{
+
+			if (psStruct.pStructureType->pSensor && psStruct.pStructureType->pSensor->location == LOC_TURRET) {	// special treatment for sensor turrets
 				mode |= SHOOT_ON_GROUND;		// assume it only shoots at ground targets for now
 			}
-			if (mode > 0)
-			{
-				threatUpdateTarget(player, (BASE_OBJECT *)psStruct, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
+
+			if (mode > 0) {
+				threatUpdateTarget(player, &psStruct, mode & SHOOT_ON_GROUND, mode & SHOOT_IN_AIR);
 			}
 		}
 	}
@@ -2003,31 +1996,27 @@ static void threatUpdate(int player)
 
 void mapInit()
 {
-	int player;
-
-	free(floodbucket);
-	floodbucket = (struct floodtile *)malloc(mapWidth * mapHeight * sizeof(*floodbucket));
-
+  floodbucket.clear();
 	lastDangerUpdate = 0;
 	lastDangerPlayer = -1;
 
 	// Start danger thread (not used for campaign for now - mission map swaps too icky)
 	ASSERT(dangerSemaphore == nullptr && dangerThread == nullptr, "Map data not cleaned up before starting!");
-	if (game.type == LEVEL_TYPE::SKIRMISH)
-	{
-		for (player = 0; player < MAX_PLAYERS; player++)
-		{
-			auxMapStore(player, AUX_DANGERMAP);
-			threatUpdate(player);
-			dangerFloodFill(player);
-			auxMapRestore(player, AUX_DANGERMAP, AUXBITS_DANGER | AUXBITS_THREAT | AUXBITS_AATHREAT);
-		}
-		lastDangerPlayer = 0;
-		dangerSemaphore = wzSemaphoreCreate(0);
-		dangerDoneSemaphore = wzSemaphoreCreate(0);
-		dangerThread = wzThreadCreate(dangerThreadFunc, nullptr);
-		wzThreadStart(dangerThread);
-	}
+  if (game.type != LEVEL_TYPE::SKIRMISH)
+    return;
+
+  for (auto player = 0; player < MAX_PLAYERS; player++)
+  {
+    auxMapStore(player, AUX_DANGERMAP);
+    threatUpdate(player);
+    dangerFloodFill(player);
+    auxMapRestore(player, AUX_DANGERMAP, AUXBITS_DANGER | AUXBITS_THREAT | AUXBITS_AATHREAT);
+  }
+  lastDangerPlayer = 0;
+  dangerSemaphore = wzSemaphoreCreate(0);
+  dangerDoneSemaphore = wzSemaphoreCreate(0);
+  dangerThread = wzThreadCreate(dangerThreadFunc, nullptr);
+  wzThreadStart(dangerThread);
 }
 
 void mapUpdate()

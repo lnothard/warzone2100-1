@@ -296,16 +296,15 @@ void actionAlignTurret(BASE_OBJECT *psObj, int weapon_slot)
 }
 
 /* returns true if on target */
-bool actionTargetTurret(BASE_OBJECT *psAttacker, BASE_OBJECT *psTarget, WEAPON *psWeapon)
+bool actionTargetTurret(BASE_OBJECT *psAttacker, BASE_OBJECT *psTarget, int weapon_slot)
 {
-	WEAPON_STATS *psWeapStats = asWeaponStats + psWeapon->nStat;
+	WEAPON_STATS *psWeapStats = asWeaponStats + psAttacker->asWeaps[weapon_slot].nStat;
 	uint16_t tRotation, tPitch;
 	uint16_t targetRotation;
 	int32_t  rotationTolerance = 0;
 	int32_t  pitchLowerLimit, pitchUpperLimit;
 
-	if (!psTarget)
-	{
+	if (!psTarget) {
 		return false;
 	}
 
@@ -324,8 +323,8 @@ bool actionTargetTurret(BASE_OBJECT *psAttacker, BASE_OBJECT *psTarget, WEAPON *
 		pitchRate = rotRate / 2;
 	}
 
-	tRotation = psWeapon->rot.direction;
-	tPitch = psWeapon->rot.pitch;
+	tRotation = psAttacker->asWeaps[weapon_slot].rot.direction;
+	tPitch = psAttacker->asWeaps[weapon_slot].rot.pitch;
 
 	//set the pitch limits based on the weapon stats of the attacker
 	pitchLowerLimit = pitchUpperLimit = 0;
@@ -333,7 +332,6 @@ bool actionTargetTurret(BASE_OBJECT *psAttacker, BASE_OBJECT *psTarget, WEAPON *
 	if (psAttacker->type == OBJ_STRUCTURE)
 	{
 		STRUCTURE *psStructure = (STRUCTURE *)psAttacker;
-		int weapon_slot = psWeapon - psStructure->asWeaps;  // Should probably be passed weapon_slot instead of psWeapon.
 		calcStructureMuzzleLocation(psStructure, &attackerMuzzlePos, weapon_slot);
 		pitchLowerLimit = DEG(psWeapStats->minElevation);
 		pitchUpperLimit = DEG(psWeapStats->maxElevation);
@@ -341,7 +339,6 @@ bool actionTargetTurret(BASE_OBJECT *psAttacker, BASE_OBJECT *psTarget, WEAPON *
 	else if (psAttacker->type == OBJ_DROID)
 	{
 		DROID *psDroid = (DROID *)psAttacker;
-		int weapon_slot = psWeapon - psDroid->asWeaps;  // Should probably be passed weapon_slot instead of psWeapon.
 		calcDroidMuzzleLocation(psDroid, &attackerMuzzlePos, weapon_slot);
 
 		if (psDroid->droidType == DROID_WEAPON || isTransporter(psDroid)
@@ -400,8 +397,8 @@ bool actionTargetTurret(BASE_OBJECT *psAttacker, BASE_OBJECT *psTarget, WEAPON *
 		onTarget = onTarget && targetPitch == tPitch;
 	}
 
-	psWeapon->rot.direction = tRotation;
-	psWeapon->rot.pitch = tPitch;
+	psAttacker->asWeaps[weapon_slot].rot.direction = tRotation;
+	psAttacker->asWeaps[weapon_slot].rot.pitch = tPitch;
 
 	return onTarget;
 }
@@ -1133,24 +1130,19 @@ void actionUpdateDroid(DROID *psDroid)
 				//Weird case, I know, but keeps the previous pursue order intact.
 				psDroid->action = DACTION_MOVETOATTACK;	// out of range - chase it
 			}
-			else if (supportsSensorTower ||
-				order->type == DORDER_NONE ||
-				order->type == DORDER_HOLD ||
-				order->type == DORDER_RTR)
-			{
+			else if (supportsSensorTower || order->type == DORDER_NONE ||
+				order->type == DORDER_HOLD || order->type == DORDER_RTR) {
 				// don't move if on hold or firesupport for a sensor tower
 				// also don't move if we're holding position or waiting for repair
 				psDroid->action = DACTION_NONE; // holding, cancel the order.
 			}
 			//Units attached to commanders are always guarding the commander
-			else if (secHoldActive && order->type == DORDER_GUARD && hasCommander(psDroid))
-			{
-				DROID *commander = psDroid->psGroup->psCommander;
+			else if (secHoldActive && order->type == DORDER_GUARD && hasCommander(psDroid)) {
+				auto const commander = psDroid->psGroup->psCommander;
 
-				if (commander->order.type == DORDER_ATTACKTARGET ||
-					commander->order.type == DORDER_FIRESUPPORT ||
-					commander->order.type == DORDER_ATTACK)
-				{
+        if (commander->order.type == DORDER_ATTACKTARGET ||
+            commander->order.type == DORDER_FIRESUPPORT ||
+            commander->order.type == DORDER_ATTACK) {
 					psDroid->action = DACTION_MOVETOATTACK;
 				}
 				else
@@ -1193,35 +1185,34 @@ void actionUpdateDroid(DROID *psDroid)
 
 				for (unsigned i = 0; i < psDroid->numWeaps; ++i)
 				{
-					if (nonNullWeapon[i]
-					    && validTarget(psDroid, psDroid->psActionTarget[0], i))
-					{
-						//I moved psWeapStats flag update there
-						psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
-						if (actionVisibleTarget(psDroid, psDroid->psActionTarget[0], i))
-						{
-							if (actionInRange(psDroid, psDroid->psActionTarget[0], i))
-							{
-								if (psDroid->player == selectedPlayer)
-								{
-									audio_QueueTrackMinDelay(ID_SOUND_COMMENCING_ATTACK_RUN2,
-									                         VTOL_ATTACK_AUDIO_DELAY);
-								}
+          if (!nonNullWeapon[i] || !validTarget(psDroid, psDroid->psActionTarget[0], i))
+            continue;
 
-								if (actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[i]))
-								{
-									// In range - fire !!!
-									combFire(&psDroid->asWeaps[i], psDroid,
-									         psDroid->psActionTarget[0], i);
-								}
-							}
-							else
-							{
-								actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[i]);
-							}
-						}
-					}
-				}
+          //I moved psWeapStats flag update there
+          psWeapStats = &asWeaponStats[psDroid->asWeaps[i].nStat];
+          if (!actionVisibleTarget(psDroid, psDroid->psActionTarget[0], i))
+            continue;
+
+          if (actionInRange(psDroid, psDroid->psActionTarget[0], i))
+          {
+            if (psDroid->player == selectedPlayer)
+            {
+              audio_QueueTrackMinDelay(ID_SOUND_COMMENCING_ATTACK_RUN2,
+                                       VTOL_ATTACK_AUDIO_DELAY);
+            }
+
+            if (actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[i]))
+            {
+              // In range - fire !!!
+              combFire(&psDroid->asWeaps[i], psDroid,
+                       psDroid->psActionTarget[0], i);
+            }
+          }
+          else
+          {
+            actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[i]);
+          }
+        }
 			}
 
 			/* circle around target if hovering and not cyborg */
@@ -2577,14 +2568,7 @@ void moveToRearm(DROID *psDroid)
 {
 	CHECK_DROID(psDroid);
 
-	if (!isVtolDroid(psDroid))
-	{
-		return;
-	}
-
-	//if droid is already returning - ignore
-	if (vtolRearming(psDroid))
-	{
+	if (!isVtolDroid(psDroid) || vtolRearming(psDroid)) {
 		return;
 	}
 
@@ -2623,20 +2607,13 @@ void moveToRearm(DROID *psDroid)
 // whether a tile is suitable for a vtol to land on
 static bool vtolLandingTile(SDWORD x, SDWORD y)
 {
-	if (x < 0 || x >= (SDWORD)mapWidth || y < 0 || y >= (SDWORD)mapHeight)
-	{
+	if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
 		return false;
 	}
 
-	const MAPTILE *psTile = mapTile(x, y);
-	if (psTile->tileInfoBits & BITS_FPATHBLOCK ||
-	    TileIsOccupied(psTile) ||
-	    terrainType(psTile) == TER_CLIFFFACE ||
-	    terrainType(psTile) == TER_WATER)
-	{
-		return false;
-	}
-	return true;
+	auto const psTile = mapTile(x, y);
+  return !(psTile->tileInfoBits & BITS_FPATHBLOCK) && !TileIsOccupied(psTile) &&
+         terrainType(psTile) != TER_CLIFFFACE && terrainType(psTile) != TER_WATER;
 }
 
 /**
@@ -2656,8 +2633,7 @@ static bool vtolLandingTile(SDWORD x, SDWORD y)
 static bool spiralSearch(int startX, int startY, int max_radius, tileMatchFunction match, void *matchState)
 {
 	// test center tile
-	if (match(startX, startY, matchState))
-	{
+	if (match(startX, startY, matchState)) {
 		return true;
 	}
 
@@ -2669,23 +2645,17 @@ static bool spiralSearch(int startX, int startY, int max_radius, tileMatchFuncti
 		const int min_distance = radius * radius;
 		const int max_distance = min_distance + 2 * radius;
 
-		// X offset from startX
-		int dx;
-
 		// dx starts with 1, to visiting tiles on same row or col as start twice
-		for (dx = 1; dx <= max_radius; dx++)
+		for (auto dx = 1; dx <= max_radius; dx++)
 		{
 			// Y offset from startY
-			int dy;
-
-			for (dy = 0; dy <= max_radius; dy++)
+			for (auto dy = 0; dy <= max_radius; dy++)
 			{
 				// Current distance, squared
 				const int distance = dx * dx + dy * dy;
 
 				// Ignore tiles outside of the current circle
-				if (distance < min_distance || distance > max_distance)
-				{
+				if (distance < min_distance || distance > max_distance) {
 					continue;
 				}
 
@@ -2693,8 +2663,7 @@ static bool spiralSearch(int startX, int startY, int max_radius, tileMatchFuncti
 				if (match(startX + dx, startY + dy, matchState)
 				    || match(startX - dx, startY - dy, matchState)
 				    || match(startX + dy, startY - dx, matchState)
-				    || match(startX - dy, startY + dx, matchState))
-				{
+				    || match(startX - dy, startY + dx, matchState)) {
 					return true;
 				}
 			}
