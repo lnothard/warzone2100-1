@@ -148,7 +148,6 @@ static const UDWORD NULL_ID = UDWORD_MAX;
 #define SAVEKEY_ONMISSION	0x100
 static UDWORD RemapPlayerNumber(UDWORD OldNumber);
 bool writeGameInfo(const char *pFileName);
-static nonstd::optional<nlohmann::json> readGamJson(const char*);
 /** struct used to store the data for retreating. */
 struct RUN_DATA
 {
@@ -1352,8 +1351,6 @@ static bool writeFiresupportDesignators(const char *pFileName);
 
 static bool writeScriptState(const char *pFileName);
 
-static bool gameLoad(const char *fileName);
-
 /* set the global scroll values to use for the save game */
 static void setMapScroll();
 
@@ -1384,15 +1381,6 @@ bool loadGameInit(const char *fileName)
 		bMultiPlayer = true;
 		bMultiMessages = true;
 		changeTitleMode(STARTGAME);
-	}
-	else if (!gameLoad(fileName))
-	{
-		debug(LOG_ERROR, "Corrupted / unsupported savegame file %s, Unable to load!", fileName);
-		// NOTE: why do we start the game clock on a *failed* load?
-		// Start the game clock
-		gameTimeStart();
-
-		return false;
 	}
 
 	return true;
@@ -1569,128 +1557,6 @@ static bool writeMapFile(const char *fileName)
 	status = WzMap::writeMapData(mapData, fileName, mapIO, WzMap::LatestOutputFormat, &debugLoggerInstance);
 
 	return status;
-}
-
-static bool gameLoad(const char *fileName)
-{
-	char CurrentFileName[PATH_MAX];
-	strcpy(CurrentFileName, fileName);
-	GAME_SAVEHEADER fileHeader = {};
-	auto gamJsonSave = readGamJson(fileName);
-	debug(LOG_SAVEGAME, "loading %s", fileName);
-	PHYSFS_file *fileHandle = openLoadFile(fileName, false);
-	if (!gamJsonSave.has_value() && fileHandle)
-	{
-		// haven't converted .gam to .json yet!
-		// Read the header from the file
-		if (!deserializeSaveGameHeader(fileHandle, &fileHeader))
-		{
-			debug(LOG_ERROR, "gameLoad: error while reading header from file (%s): %s", fileName, WZ_PHYSFS_getLastError());
-			PHYSFS_close(fileHandle);
-			return false;
-		}
-	}
-	else if (gamJsonSave.has_value())
-	{
-		// be compatible with .gam logic
-		fileHeader.version = gamJsonSave.value().at("version").get<uint32_t>();
-		fileHeader.aFileType[0] = 'g';
-		fileHeader.aFileType[1] = 'a';
-		fileHeader.aFileType[2] = 'm';
-		fileHeader.aFileType[3] = 'e';
-	}
-	// exit if no .gam neither .json was found
-	if (!fileHandle && !gamJsonSave.has_value())
-	{
-		// Failure to open the file is a failure to load the specified savegame
-		return false;
-	}
-	debug(LOG_WZ, "gameLoad");
-
-	// Check the header to see if we've been given a file of the right type
-	if (!(fileHeader.aFileType[0] == 'g' && fileHeader.aFileType[1] == 'a' && fileHeader.aFileType[2] == 'm' && fileHeader.aFileType[3] == 'e'))
-	{
-		debug(LOG_ERROR, "gameLoad: Weird file type found? Has header letters - '%c' '%c' '%c' '%c' (should be 'g' 'a' 'm' 'e')",
-		      fileHeader.aFileType[0],
-		      fileHeader.aFileType[1],
-		      fileHeader.aFileType[2],
-		      fileHeader.aFileType[3]);
-
-		PHYSFS_close(fileHandle);
-
-		return false;
-	}
-
-	debug(LOG_NEVER, "gl .gam file is version %u\n", fileHeader.version);
-
-	// Prior to getting here, the directory structure has been set to wherever the
-	// map or savegame is loaded from, so we will get the right ruleset file.
-	if (!PHYSFS_exists("ruleset.json"))
-	{
-		debug(LOG_ERROR, "ruleset.json not found! User generated data will not work.");
-		memset(rulesettag, 0, sizeof(rulesettag));
-	}
-	else
-	{
-		WzConfig ruleset(WzString::fromUtf8("ruleset.json"), WzConfig::ReadOnly);
-		if (!ruleset.contains("tag"))
-		{
-			debug(LOG_ERROR, "ruleset tag not found in ruleset.json!"); // fall-through
-		}
-		WzString tag = ruleset.value("tag", "[]").toWzString();
-		sstrcpy(rulesettag, tag.toUtf8().c_str());
-		if (strspn(rulesettag, "abcdefghijklmnopqrstuvwxyz") != strlen(rulesettag)) // for safety
-		{
-			debug(LOG_ERROR, "ruleset.json userdata tag contains invalid characters!");
-			debug(LOG_ERROR, "User generated data will not work.");
-			memset(rulesettag, 0, sizeof(rulesettag));
-		}
-	}
-
-	//set main version Id from game file
-	saveGameVersion = fileHeader.version;
-	debug(LOG_SAVE, "file version is %u, (%s)", fileHeader.version, fileName);
-	/* Check the file version */
-	if (fileHeader.version < VERSION_7)
-	{
-		debug(LOG_ERROR, "gameLoad: unsupported save format version %d", fileHeader.version);
-		PHYSFS_close(fileHandle);
-
-		return false;
-	}
-	else if (fileHeader.version < VERSION_9)
-	{
-		bool retVal = gameLoadV7(fileHandle, gamJsonSave);
-		PHYSFS_close(fileHandle);
-		return retVal;
-	}
-	else if (fileHeader.version <= CURRENT_VERSION_NUM)
-	{
-		//The in-game load menu was clearing level data AFTER loading in some savegame data.
-		//Hacking this in here so things make a little more sense and so that data loaded
-		//in from main.json is somewhat safe from being reset by mistake.
-		if (!levReleaseAll())
-		{
-			debug(LOG_ERROR, "Failed to unload old data. Attempting to load anyway");
-		}
-
-		//remove the file extension
-		CurrentFileName[strlen(CurrentFileName) - 4] = '\0';
-		loadMainFile(std::string(CurrentFileName) + "/main.json");
-
-		bool retVal = gameLoadV(fileHandle, fileHeader.version, gamJsonSave);
-		PHYSFS_close(fileHandle);
-
-		loadMainFileFinal(std::string(CurrentFileName) + "/main.json");
-		return retVal;
-	}
-	else
-	{
-		debug(LOG_ERROR, "Unsupported main save format version %u", fileHeader.version);
-		PHYSFS_close(fileHandle);
-
-		return false;
-	}
 }
 
 /* code specific to version 7 of a save game */
@@ -4442,7 +4308,7 @@ bool readFiresupportDesignators(const char *pFileName)
 		uint32_t id = ini.value("Player_" + WzString::number(i) + "/id", NULL_ID).toInt();
 		if (id != NULL_ID)
 		{
-			cmdDroidSetDesignator((DROID *)getBaseObjFromId(id));
+			cmdDroidSetDesignator((DROID *)getBaseObjFromId(id, OBJ_DROID));
 		}
 	}
 	return true;

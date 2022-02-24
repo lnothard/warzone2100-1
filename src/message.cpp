@@ -47,6 +47,13 @@ static std::map<WzString, VIEWDATA *> apsViewData;
 static UDWORD	msgID = 0;
 static int currentNumProxDisplays = 0;
 bool releaseObjectives = true;
+std::array<std::vector<MESSAGE>, MAX_PLAYERS> apsMessages;
+
+/** The IMD to use for the proximity messages. */
+iIMDShape* pProximityMsgIMD;
+
+/** The list of proximity displays allocated. */
+std::array<std::vector<PROXIMITY_DISPLAY>, MAX_PLAYERS> apsProxDisp;
 
 
 /* Creating a new message

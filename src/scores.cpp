@@ -48,7 +48,6 @@
 #include "miscimd.h"
 #include "lib/ivis_opengl/piematrix.h"
 #include "display3d.h"
-#include "mission.h"
 #include "game.h"
 #include "lib/sound/audio.h"
 #include "lib/sound/audio_id.h"
@@ -57,6 +56,7 @@
 #include "activity.h"
 #include "multistat.h"
 #include "clparse.h"
+#include "power.h"
 
 #include <algorithm>
 
@@ -289,8 +289,7 @@ END_GAME_STATS_DATA	collectEndGameStatsData()
 	fullStats.numUnits = 0;
 	if (selectedPlayer < MAX_PLAYERS)
 	{
-		for (DROID *psDroid = apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext, fullStats.numUnits++) {}
-		for (DROID *psDroid = mission.apsDroidLists[selectedPlayer]; psDroid; psDroid = psDroid->psNext, fullStats.numUnits++) {}
+		for (auto& psDroid : apsDroidLists[selectedPlayer]) {fullStats.numUnits++;}
 	}
 
 	return fullStats;
@@ -309,9 +308,6 @@ void scoreDataToScreen(WIDGET *psWidget, ScoreDataToScreenCache& cache)
 	}
 
 	fillUpStats(collectEndGameStatsData());
-
-	pie_UniTransBoxFill(16 + D_W, MT_Y_POS - 16, pie_GetVideoBufferWidth() - D_W - 16, MT_Y_POS + 256 + 16, WZCOL_SCORE_BOX);
-	iV_Box(16 + D_W, MT_Y_POS - 16, pie_GetVideoBufferWidth() - D_W - 16, MT_Y_POS + 256 + 16, WZCOL_SCORE_BOX_BORDER);
 
 	cache.wzLabelText_UnitLosses.setText(_("Unit Losses"), font_regular);
 	cache.wzLabelText_UnitLosses.render(LC_X + D_W, 80 + 16 + D_H, WZCOL_FORM_TEXT);
@@ -583,27 +579,28 @@ void stdOutGameSummary(UDWORD realTimeThrottleSeconds, bool flush_output /* = tr
 			}
 			uint32_t unitsKilled = getMultiPlayUnitsKilled(n);
 			uint32_t numUnits = 0;
-			for (DROID *psDroid = apsDroidLists[n]; psDroid; psDroid = psDroid->psNext, numUnits++) {}
+			for (auto& psDroid : apsDroidLists[n]) {numUnits++;}
 			uint32_t numStructs = 0;
 			uint32_t numFactories = 0;
 			uint32_t numResearch = 0;
 			uint32_t numFactoriesThatCanProduceConstructionUnits = 0;
-			for (STRUCTURE *psStruct = apsStructLists[n]; psStruct; psStruct = psStruct->psNext, numStructs++)
+
+			for (auto& psStruct : apsStructLists[n])
 			{
-				if (psStruct->status != SS_BUILT || psStruct->died != 0)
+				if (psStruct.status != SS_BUILT || psStruct.died != 0)
 				{
 					continue; // ignore structures that aren't completely built, or are "dead"
 				}
-				if (StructIsFactory(psStruct))
+				if (StructIsFactory(&psStruct))
 				{
 					numFactories++;
-					if (psStruct->pStructureType->type == REF_FACTORY ||
-						psStruct->pStructureType->type == REF_CYBORG_FACTORY)
+					if (psStruct.pStructureType->type == REF_FACTORY ||
+						psStruct.pStructureType->type == REF_CYBORG_FACTORY)
 					{
 						numFactoriesThatCanProduceConstructionUnits++;
 					}
 				}
-				else if (psStruct->pStructureType->type == REF_RESEARCH)
+				else if (psStruct.pStructureType->type == REF_RESEARCH)
 				{
 					numResearch++;
 				}
@@ -613,7 +610,8 @@ void stdOutGameSummary(UDWORD realTimeThrottleSeconds, bool flush_output /* = tr
 			const bool playerCantDoAnything = (numFactoriesThatCanProduceConstructionUnits == 0) && (numUnits == 0);
 			const char * deadStatus = playerCantDoAnything ? "x" : "";
 			fprintf(stdout, "%2u | %11.11s | %10" PRIi64 " | %12" PRIi32 " | %13.13s | %11" PRIi32 " | %7" PRIi32 " | %s\n", n, NetPlay.players[n].name, getExtractedPower(n), unitsKilled, structInfoString.c_str(), numUnits, getPower(n), deadStatus);
-		}
+      numStructs++;
+    }
 	}
 	fprintf(stdout, "--------------------------------------------------------------------------------------\n");
 	if (flush_output)

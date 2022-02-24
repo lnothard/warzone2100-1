@@ -244,35 +244,18 @@ static GAMECODE renderLoop()
 
 				if (saveInMissionRes())
 				{
-					if (saveGame(sRequestResult, GTYPE_SAVE_START))
-					{
-						sstrcpy(msgbuffer, _("GAME SAVED: "));
-						sstrcat(msgbuffer, sRequestResult);
-						addConsoleMessage(msgbuffer, LEFT_JUSTIFY, NOTIFY_MESSAGE);
-					}
-					else
-					{
+
 						ASSERT(false, "Mission Results: saveGame Failed");
 						sstrcpy(msgbuffer, _("Could not save game!"));
 						addConsoleMessage(msgbuffer, LEFT_JUSTIFY, NOTIFY_MESSAGE);
 						deleteSaveGame_classic(sRequestResult);
-					}
 				}
 				else if (bMultiPlayer || saveMidMission())
 				{
-					if (saveGame(sRequestResult, GTYPE_SAVE_MIDMISSION))//mid mission from [esc] menu
-					{
-						sstrcpy(msgbuffer, _("GAME SAVED: "));
-						sstrcat(msgbuffer, sRequestResult);
-						addConsoleMessage(msgbuffer, LEFT_JUSTIFY, NOTIFY_MESSAGE);
-					}
-					else
-					{
 						ASSERT(!"saveGame(sRequestResult, GTYPE_SAVE_MIDMISSION) failed", "Mid Mission: saveGame Failed");
 						sstrcpy(msgbuffer, _("Could not save game!"));
 						addConsoleMessage(msgbuffer, LEFT_JUSTIFY, NOTIFY_MESSAGE);
 						deleteSaveGame_classic(sRequestResult);
-					}
 				}
 				else
 				{
@@ -439,9 +422,6 @@ static void gameStateUpdate()
 	{
 		updateScripts();
 	}
-
-	// Update abandoned structures
-	handleAbandonedStructures();
 
 	// Update the visibility change stuff
 	visUpdateLevel();

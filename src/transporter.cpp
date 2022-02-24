@@ -125,7 +125,6 @@ static bool intAddTransButtonForm();
 static bool intAddTransContentsForm();
 static bool intAddDroidsAvailForm();
 static void intRemoveTransContent();
-static DROID *transInterfaceDroidList();
 static void intTransporterAddDroid(UDWORD id);
 static void intRemoveTransDroidsAvail();
 static void intRemoveTransDroidsAvailNoAnim();
@@ -794,8 +793,6 @@ void transporterRemoveDroid(DROID *psTransport, DROID *psDroid, QUEUE_MODE mode)
 
 	if (calcRemainingCapacity(psTransport))
 	{
-		//make sure the button isn't flashing
-		stopMissionButtonFlash(IDTRANS_LAUNCH);
 	}
 }
 
@@ -890,7 +887,6 @@ bool checkTransporterSpace(DROID const *psTransporter, DROID const *psAssigned, 
 	if (capacity >= transporterSpaceRequired(psAssigned)) {
 		//when full flash the transporter button
 		if (mayFlash && capacity - transporterSpaceRequired(psAssigned) == 0) {
-			flashMissionButton(IDTRANS_LAUNCH);
 		}
 		return true;
 	}
@@ -991,7 +987,6 @@ void processLaunchTransporter()
 		if (capacity != TRANSPORTER_CAPACITY)
 		{
 			//make sure the button doesn't flash once launched
-			stopMissionButtonFlash(IDTRANS_LAUNCH);
 			//disable the form so can't add any more droids into the transporter
 			psForm = (W_CLICKFORM *)widgGetFromID(psWScreen, IDTRANS_LAUNCH);
 			if (psForm)
@@ -1006,9 +1001,7 @@ void processLaunchTransporter()
 				psForm->setState(WBUT_LOCK);
 			}
 
-			launchTransporter(psCurrTransporter);
 			//set the data for the transporter timer
-
 			triggerEvent(TRIGGER_TRANSPORTER_LAUNCH, psCurrTransporter);
 		}
 	}

@@ -24,6 +24,7 @@
 #ifndef __INCLUDED_BASEDEF_H__
 #define __INCLUDED_BASEDEF_H__
 
+#include <array>
 #include <bitset>
 
 #include "lib/framework/vector.h"
@@ -57,9 +58,6 @@ struct TILEPOS
 
   For explanation of yaw/pitch/roll look for "flight dynamics" in your encyclopedia.
 */
-
-/// NEXTOBJ is an ugly hack to avoid having to fix all occurrences of psNext and psNextFunc. The use of the original NEXTOBJ(pointerType) hack wasn't valid C, so in that sense, it's an improvement.
-/// NEXTOBJ is a BASE_OBJECT *, which can automatically be cast to DROID *, STRUCTURE * and FEATURE *...
 
 struct BASE_OBJECT;
 

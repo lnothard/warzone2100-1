@@ -1202,11 +1202,6 @@ bool frontendShutdown()
 	//do this before shutting down the iV library
 	resReleaseAllData();
 
-	if (!objShutdown())
-	{
-		return false;
-	}
-
 	ResearchRelease();
 
 	debug(LOG_TEXTURE, "=== frontendShutdown ===");
@@ -1248,11 +1243,6 @@ bool stageOneInitialise()
 	}
 
 	if (!droidInit())
-	{
-		return false;
-	}
-
-	if (!initViewData())
 	{
 		return false;
 	}
@@ -1323,11 +1313,6 @@ bool stageOneShutDown()
 		return false;
 	}
 
-	if (!objShutdown())
-	{
-		return false;
-	}
-
 	grpShutDown();
 
 	ResearchRelease();
@@ -1388,11 +1373,6 @@ bool stageTwoInitialise()
 	{
 		debug(LOG_FATAL, "Can't find all the explosions graphics?");
 		abort();
-		return false;
-	}
-
-	if (!cmdDroidInit())
-	{
 		return false;
 	}
 
@@ -1499,8 +1479,6 @@ bool stageTwoShutDown()
 	}
 
 	interfaceShutDown();
-
-	cmdDroidShutDown();
 
 	//free up the gateway stuff?
 	gwShutDown();

@@ -1026,7 +1026,6 @@ namespace wzapi
 	bool buildDroid(WZAPI_PARAMS(STRUCTURE *psFactory, std::string templateName, string_or_string_list body, string_or_string_list propulsion, reservedParam reserved1, reservedParam reserved2, va_list<string_or_string_list> turrets));
 	returned_nullable_ptr<const DROID> addDroid(WZAPI_PARAMS(int player, int x, int y, std::string templateName, string_or_string_list body, string_or_string_list propulsion, reservedParam reserved1, reservedParam reserved2, va_list<string_or_string_list> turrets)); MUTLIPLAY_UNSAFE
 	std::unique_ptr<const DROID_TEMPLATE> makeTemplate(WZAPI_PARAMS(int player, std::string templateName, string_or_string_list body, string_or_string_list propulsion, reservedParam reserved1, va_list<string_or_string_list> turrets));
-	bool addDroidToTransporter(WZAPI_PARAMS(game_object_identifier transporter, game_object_identifier droid));
 	returned_nullable_ptr<const FEATURE> addFeature(WZAPI_PARAMS(std::string featureName, int x, int y)) MUTLIPLAY_UNSAFE;
 	bool componentAvailable(WZAPI_PARAMS(std::string componentType, optional<std::string> _componentName));
 	bool isVTOL(WZAPI_PARAMS(const DROID *psDroid));
@@ -1055,9 +1054,7 @@ namespace wzapi
 	// MARK: - Global state manipulation -- not for use with skirmish AI (unless you want it to cheat, obviously)
 	bool setStructureLimits(WZAPI_PARAMS(std::string structureName, int limit, optional<int> _player));
 	bool applyLimitSet(WZAPI_NO_PARAMS);
-	no_return_value setMissionTime(WZAPI_PARAMS(int _time));
 	int getMissionTime(WZAPI_NO_PARAMS);
-	no_return_value setReinforcementTime(WZAPI_PARAMS(int _time));
 	no_return_value completeResearch(WZAPI_PARAMS(std::string researchName, optional<int> _player, optional<bool> _forceResearch));
 	no_return_value completeAllResearch(WZAPI_PARAMS(optional<int> _player));
 	bool enableResearch(WZAPI_PARAMS(std::string researchName, optional<int> _player));

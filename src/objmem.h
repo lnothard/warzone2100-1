@@ -27,18 +27,18 @@
 #include "objectdef.h"
 
 /* The lists of objects allocated */
-std::array<std::vector<DROID>, MAX_PLAYERS> apsDroidLists;
-std::array<std::vector<STRUCTURE>, MAX_PLAYERS> apsStructLists;
-std::array<std::vector<FLAG_POSITION>, MAX_PLAYERS> apsFlagPosLists;
-std::vector<FEATURE> apsFeatureLists;
+extern std::array<std::vector<DROID>, MAX_PLAYERS> apsDroidLists;
+extern std::array<std::vector<STRUCTURE>, MAX_PLAYERS> apsStructLists;
+extern std::array<std::vector<FLAG_POSITION>, MAX_PLAYERS> apsFlagPosLists;
+extern std::vector<FEATURE> apsFeatureLists;
 
-std::array<std::vector<STRUCTURE*>, MAX_PLAYERS> apsExtractorLists;
-std::vector<BASE_OBJECT*> apsSensorList;
-std::vector<FEATURE*> apsOilList;
+extern std::array<std::vector<STRUCTURE*>, MAX_PLAYERS> apsExtractorLists;
+extern std::vector<BASE_OBJECT*> apsSensorList;
+extern std::vector<FEATURE*> apsOilList;
 
 
 /* The list of destroyed objects */
-std::vector<BASE_OBJECT> psDestroyedObj;
+extern std::vector<BASE_OBJECT> psDestroyedObj;
 
 /* Initialise the object heaps */
 bool objmemInitialise();
@@ -100,7 +100,7 @@ void freeAllFlagPositions();
 
 // Find a base object from it's id
 BASE_OBJECT *getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type);
-BASE_OBJECT *getBaseObjFromId(UDWORD id);
+BASE_OBJECT *getBaseObjFromId(UDWORD id, OBJECT_TYPE type);
 
 UDWORD getRepairIdFromFlag(FLAG_POSITION *psFlag);
 void objCount(int *droids, int *structures, int *features);

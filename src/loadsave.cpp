@@ -748,8 +748,6 @@ static void runLoadCleanup()
 	}
 
 	// Load a savegame.
-	unsigned campaign = getCampaign(sRequestResult);
-	debug(LOG_WZ, "Set campaign for %s to %u", sRequestResult, campaign);
 	closeLoadSave();
 }
 
@@ -1098,14 +1096,7 @@ bool autoSave()
 	std::string withoutTechlevel = mapNameWithoutTechlevel(getLevelName());
 	char savefile[PATH_MAX];
 	snprintf(savefile, sizeof(savefile), "%s/%s_%s.gam", dir, withoutTechlevel.c_str(), savedate);
-	if (saveGame(savefile, GTYPE_SAVE_MIDMISSION))
-	{
-		console(_("AutoSave %s"), savefile);
-		return true;
-	}
-	else
-	{
-		console(_("AutoSave %s failed"), savefile);
-		return false;
-	}
+
+  console(_("AutoSave %s failed"), savefile);
+  return false;
 }

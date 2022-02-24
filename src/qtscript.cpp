@@ -1116,7 +1116,6 @@ bool triggerEvent(SCRIPT_TRIGGER_TYPE trigger, BASE_OBJECT *psObj)
 
 	if ((trigger == TRIGGER_START_LEVEL || trigger == TRIGGER_GAME_LOADED) && !saveandquit_enabled().empty())
 	{
-		saveGame(saveandquit_enabled().c_str(), GTYPE_SAVE_START);
 		exit(0);
 	}
 

@@ -2309,24 +2309,22 @@ static bool structPlaceDroid(STRUCTURE *psStructure, DROID_TEMPLATE *psTempl, DR
 				factoryType = VTOL_FLAG;
 			}
 			//find flag in question.
-			for (psFlag = apsFlagPosLists[psFact->psAssemblyPoint->player]; psFlag
-			     && !(psFlag->factoryInc == psFact->psAssemblyPoint->factoryInc // correct fact.
-			          && psFlag->factoryType == factoryType); // correct type
-			     psFlag = psFlag->psNext) {}
-			ASSERT(psFlag, "No flag found for %s at (%d, %d)", objInfo(psStructure), psStructure->pos.x, psStructure->pos.y);
-
-			//if vtol droid - send it to ReArm Pad if one exists
-			if (psFlag && isVtolDroid(psNewDroid))
-			{
-				Vector2i pos = psFlag->coords.xy();
-				//find a suitable location near the delivery point
-				actionVTOLLandingPos(psNewDroid, &pos);
-				orderDroidLoc(psNewDroid, DORDER_MOVE, pos.x, pos.y, ModeQueue);
-			}
-			else if (psFlag)
-			{
-				orderDroidLoc(psNewDroid, DORDER_MOVE, psFlag->coords.x, psFlag->coords.y, ModeQueue);
-			}
+			for (auto& psFlag : apsFlagPosLists[psFact->psAssemblyPoint->player])
+      {
+        if (psFlag.factoryInc == psFact->psAssemblyPoint->factoryInc &&
+            psFlag.factoryType == factoryType) {
+          //if vtol droid - send it to ReArm Pad if one exists
+          if (isVtolDroid(psNewDroid)) {
+            Vector2i pos = psFlag.coords.xy();
+            //find a suitable location near the delivery point
+            actionVTOLLandingPos(psNewDroid, &pos);
+            orderDroidLoc(psNewDroid, DORDER_MOVE, pos.x, pos.y, ModeQueue);
+          }
+          else {
+            orderDroidLoc(psNewDroid, DORDER_MOVE, psFlag.coords.x, psFlag.coords.y, ModeQueue);
+          }
+        }
+      }
 		}
 		if (assignCommander)
 		{
@@ -2616,7 +2614,7 @@ static void aiUpdateStructure(STRUCTURE *psStructure, bool isMission)
 						psStructure->asWeaps[i].rot.direction = calcDirection(psStructure->pos.x, psStructure->pos.y, psChosenObjs[i]->pos.x, psChosenObjs[i]->pos.y);
 						combFire(&psStructure->asWeaps[i], psStructure, psChosenObjs[i], i);
 					}
-					else if (actionTargetTurret(psStructure, psChosenObjs[i], &psStructure->asWeaps[i]))
+					else if (actionTargetTurret(psStructure, psChosenObjs[i], i))
 					{
 						combFire(&psStructure->asWeaps[i], psStructure, psChosenObjs[i], i);
 					}
@@ -2906,7 +2904,7 @@ static void aiUpdateStructure(STRUCTURE *psStructure, bool isMission)
 			// update repair arm position
 			if (psChosenObj)
 			{
-				actionTargetTurret(psStructure, psChosenObj, &psStructure->asWeaps[0]);
+				actionTargetTurret(psStructure, psChosenObj, 0);
 			}
 			else if ((psStructure->asWeaps[0].rot.direction % DEG(90)) != 0 || psStructure->asWeaps[0].rot.pitch != 0)
 			{

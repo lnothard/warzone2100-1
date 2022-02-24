@@ -6,8 +6,10 @@ RUN mkdir -p /scripts
 COPY get-dependencies_linux.sh /scripts
 RUN chmod +x /scripts/get-dependencies_linux.sh
 
+RUN useradd -rm -d /home/ubuntu -s /bin/bash -g root -G sudo -u 1001 ubuntu
+
 RUN apt-get -u update \
- && DEBIAN_FRONTEND=noninteractive apt-get -y install gcc g++ clang libc-dev dpkg-dev ninja-build pkg-config \
+ && DEBIAN_FRONTEND=noninteractive apt-get -y install gcc g++ clang libc-dev dpkg-dev ninja-build pkg-config warzone2100 \
  && /scripts/get-dependencies_linux.sh ubuntu build-dependencies \
  && rm -rf /var/lib/apt/lists/*
 

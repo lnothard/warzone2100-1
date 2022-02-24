@@ -61,9 +61,6 @@ int calcRemainingCapacity(const DROID *psTransporter);
 
 bool transporterIsEmpty(const DROID *psTransporter);
 
-/*launches the defined transporter to the offworld map*/
-bool launchTransporter(DROID *psTransporter);
-
 /*checks how long the transporter has been travelling to see if it should
 have arrived - returns true when there*/
 bool updateTransporter(DROID *psTransporter);
@@ -96,7 +93,6 @@ UDWORD transporterGetLaunchTime();
 /*set the time for the Launch*/
 void transporterSetLaunchTime(UDWORD time);
 
-void flashMissionButton(UDWORD buttonID);
 void stopMissionButtonFlash(UDWORD buttonID);
 /*checks the order of the droid to see if its currently flying*/
 bool transporterFlying(DROID *psTransporter);

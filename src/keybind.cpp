@@ -2491,14 +2491,7 @@ void kf_QuickSave()
 	{
 		deleteSaveGame(quickSaveFolder);
 	}
-	if (saveGame(filename, GTYPE_SAVE_MIDMISSION)) // still expects a .gam filename... TODO: FIX
-	{
-		console(_("QuickSave"));
-	}
-	else
-	{
-		console(_("QuickSave failed"));
-	}
+  console(_("QuickSave failed"));
 }
 
 void kf_QuickLoad()

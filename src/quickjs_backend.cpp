@@ -3022,7 +3022,6 @@ IMPL_JS_FUNC(enumResearch, wzapi::enumResearch)
 IMPL_JS_FUNC(componentAvailable, wzapi::componentAvailable)
 IMPL_JS_FUNC(addFeature, wzapi::addFeature)
 IMPL_JS_FUNC(addDroid, wzapi::addDroid)
-IMPL_JS_FUNC(addDroidToTransporter, wzapi::addDroidToTransporter)
 IMPL_JS_FUNC(makeTemplate, wzapi::makeTemplate)
 IMPL_JS_FUNC(buildDroid, wzapi::buildDroid)
 IMPL_JS_FUNC(enumStruct, wzapi::enumStruct)
@@ -3047,13 +3046,10 @@ IMPL_JS_FUNC(orderDroid, wzapi::orderDroid)
 IMPL_JS_FUNC(orderDroidObj, wzapi::orderDroidObj)
 IMPL_JS_FUNC(orderDroidBuild, wzapi::orderDroidBuild)
 IMPL_JS_FUNC(orderDroidLoc, wzapi::orderDroidLoc)
-IMPL_JS_FUNC(setMissionTime, wzapi::setMissionTime)
-IMPL_JS_FUNC(getMissionTime, wzapi::getMissionTime)
 IMPL_JS_FUNC(setTransporterExit, wzapi::setTransporterExit)
 IMPL_JS_FUNC(startTransporterEntry, wzapi::startTransporterEntry)
 IMPL_JS_FUNC(useSafetyTransport, wzapi::useSafetyTransport)
 IMPL_JS_FUNC(restoreLimboMissionData, wzapi::restoreLimboMissionData)
-IMPL_JS_FUNC(setReinforcementTime, wzapi::setReinforcementTime)
 IMPL_JS_FUNC(setStructureLimits, wzapi::setStructureLimits)
 IMPL_JS_FUNC(centreView, wzapi::centreView)
 IMPL_JS_FUNC(hackPlayIngameAudio, wzapi::hackPlayIngameAudio)
@@ -3170,7 +3166,6 @@ IMPL_JS_FUNC(isSpectator, wzapi::isSpectator)
 IMPL_JS_FUNC(changePlayerColour, wzapi::changePlayerColour)
 IMPL_JS_FUNC(getMultiTechLevel, wzapi::getMultiTechLevel)
 IMPL_JS_FUNC(setCampaignNumber, wzapi::setCampaignNumber)
-IMPL_JS_FUNC(getMissionType, wzapi::getMissionType)
 IMPL_JS_FUNC(getRevealStatus, wzapi::getRevealStatus)
 IMPL_JS_FUNC(setRevealStatus, wzapi::setRevealStatus)
 
@@ -3338,7 +3333,6 @@ bool quickjs_scripting_instance::registerFunctions(const std::string& scriptName
 	JS_REGISTER_FUNC(restoreLimboMissionData, 0); // WZAPI
 	JS_REGISTER_FUNC(getMultiTechLevel, 0); // WZAPI
 	JS_REGISTER_FUNC(setCampaignNumber, 1); // WZAPI
-	JS_REGISTER_FUNC(getMissionType, 0); // WZAPI
 	JS_REGISTER_FUNC(getRevealStatus, 0); // WZAPI
 	JS_REGISTER_FUNC(setRevealStatus, 1); // WZAPI
 	JS_REGISTER_FUNC(autoSave, 0); // WZAPI
@@ -3394,7 +3388,6 @@ bool quickjs_scripting_instance::registerFunctions(const std::string& scriptName
 	JS_REGISTER_FUNC(orderDroid, 2); // WZAPI
 	JS_REGISTER_FUNC2(buildDroid, 7, 7 + MAX_JS_VARARGS); // WZAPI
 	JS_REGISTER_FUNC2(addDroid, 9, 9 + MAX_JS_VARARGS); // WZAPI
-	JS_REGISTER_FUNC(addDroidToTransporter, 2); // WZAPI
 	JS_REGISTER_FUNC(addFeature, 3); // WZAPI
 	JS_REGISTER_FUNC2(componentAvailable, 1, 2); // WZAPI
 	JS_REGISTER_FUNC(isVTOL, 1); // WZAPI
@@ -3421,9 +3414,6 @@ bool quickjs_scripting_instance::registerFunctions(const std::string& scriptName
 	// Global state manipulation -- not for use with skirmish AI (unless you want it to cheat, obviously)
 	JS_REGISTER_FUNC2(setStructureLimits, 2, 3); // WZAPI
 	JS_REGISTER_FUNC(applyLimitSet, 0); // WZAPI
-	JS_REGISTER_FUNC(setMissionTime, 1); // WZAPI
-	JS_REGISTER_FUNC(getMissionTime, 0); // WZAPI
-	JS_REGISTER_FUNC(setReinforcementTime, 1); // WZAPI
 	JS_REGISTER_FUNC2(completeResearch, 1, 3); // WZAPI
 	JS_REGISTER_FUNC2(completeAllResearch, 0, 1); // WZAPI
 	JS_REGISTER_FUNC2(enableResearch, 1, 2); // WZAPI

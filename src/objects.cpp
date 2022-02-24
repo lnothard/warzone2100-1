@@ -40,15 +40,6 @@ bool objInitialise()
 	return true;
 }
 
-
-/* Shutdown the object system */
-bool objShutdown()
-{
-	objmemShutdown();
-
-	return true;
-}
-
 template <typename T>
 void reverseObjectList(std::vector<T>& vec)
 {

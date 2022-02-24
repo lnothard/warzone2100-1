@@ -885,11 +885,6 @@ bool levLoadData(char const *name, Sha256 const *hash, char *pSaveName, GAME_TYP
 			}
 
 			debug(LOG_NEVER, "Loading savegame: %s", pSaveName);
-			if (!loadGame(pSaveName, false, true, true))
-			{
-				debug(LOG_ERROR, "Failed loadGame(%s)!", pSaveName);
-				return false;
-			}
 		}
 
 		if (pSaveName == nullptr || saveType == GTYPE_SAVE_START)
@@ -906,11 +901,6 @@ bool levLoadData(char const *name, Sha256 const *hash, char *pSaveName, GAME_TYP
     }
 
     debug(LOG_NEVER, "loading savegame: %s", pSaveName);
-    if (!loadGame(pSaveName, false, true, true)) {
-      debug(LOG_ERROR, "Failed loadGame(%s)!", pSaveName);
-      return false;
-    }
-
     campaignReset();
   }
 
@@ -942,11 +932,6 @@ bool levLoadData(char const *name, Sha256 const *hash, char *pSaveName, GAME_TYP
 				}
 
 				debug(LOG_NEVER, "Loading save game %s", pSaveName);
-				if (!loadGame(pSaveName, false, true, true))
-				{
-					debug(LOG_ERROR, "Failed loadGame(%s)!", pSaveName);
-					return false;
-				}
 			}
 
 			if (pSaveName == nullptr || saveType == GTYPE_SAVE_START)

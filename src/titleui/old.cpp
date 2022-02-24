@@ -41,6 +41,7 @@
 #include "../warzoneconfig.h"
 #include "../frend.h"
 #include "../activity.h"
+#include "src/display.h"
 
 WzOldTitleUI::WzOldTitleUI(tMode mode) : mode(mode)
 {

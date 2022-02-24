@@ -690,7 +690,6 @@ std::shared_ptr<W_NOTIFICATION> W_NOTIFICATION::make(WZ_Queued_Notification* req
 	if (psActionButton != nullptr || request->notification.duration == 0)
 	{
 		// 2.) "Dismiss" button
-		dismissLabel = u8"▴ " + dismissLabel;
 		sButInit.id = 3;
 		sButInit.FontID = font_regular;
 		sButInit.width = iV_GetTextWidth(dismissLabel.c_str(), font_regular) + 18;

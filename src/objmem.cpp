@@ -56,6 +56,18 @@ uint32_t                synchObjID;
 static void objListIntegCheck();
 #endif
 
+/* The lists of objects allocated */
+std::array<std::vector<DROID>, MAX_PLAYERS> apsDroidLists;
+std::array<std::vector<STRUCTURE>, MAX_PLAYERS> apsStructLists;
+std::array<std::vector<FLAG_POSITION>, MAX_PLAYERS> apsFlagPosLists;
+std::vector<FEATURE> apsFeatureLists;
+
+std::array<std::vector<STRUCTURE*>, MAX_PLAYERS> apsExtractorLists;
+std::vector<BASE_OBJECT*> apsSensorList;
+std::vector<FEATURE*> apsOilList;
+
+/* The list of destroyed objects */
+std::vector<BASE_OBJECT> psDestroyedObj;
 
 /* Initialise the object heaps */
 bool objmemInitialise()
@@ -249,7 +261,10 @@ void removeDroid(DROID *psDroidToRemove)
 {
 	ASSERT_OR_RETURN(, psDroidToRemove->type == OBJ_DROID, "Pointer is not a unit");
 	ASSERT_OR_RETURN(, psDroidToRemove->player < MAX_PLAYERS, "Invalid player for unit");
-  std::erase_if(apsDroidLists[psDroidToRemove->player], psDroidToRemove);
+
+  std::erase_if(apsDroidLists[psDroidToRemove->player], [psDroidToRemove](auto& curr) {
+    return &curr == psDroidToRemove;
+  });
 
 	/* Whenever a droid is removed from the current list its died
 	 * flag is set to NOT_CURRENT_LIST so that anything targetting
@@ -338,7 +353,9 @@ void removeStructureFromList(STRUCTURE *psStructToRemove)
 {
 	ASSERT(psStructToRemove->type == OBJ_STRUCTURE, "removeStructureFromList: pointer is not a structure");
 	ASSERT(psStructToRemove->player < MAX_PLAYERS, "removeStructureFromList: invalid player for structure");
-  std::erase(apsStructLists[psStructToRemove->player], *psStructToRemove);
+  std::erase_if(apsStructLists[psStructToRemove->player], [psStructToRemove](auto& curr) {
+    return &curr == psStructToRemove;
+  });
 
 	if (psStructToRemove->pStructureType->pSensor
 	    && psStructToRemove->pStructureType->pSensor->location == LOC_TURRET) {
@@ -430,7 +447,9 @@ void removeFlagPosition(FLAG_POSITION *psDel)
   ASSERT_OR_RETURN(, psDel != nullptr, "Invalid Flag Position pointer");
   for (auto player = 0; player < MAX_PLAYERS; ++player)
   {
-    std::erase(apsFlagPosLists[player], *psDel);
+    std::erase_if(apsFlagPosLists[player], [psDel](auto& curr) {
+      return &curr == psDel;
+    });
   }
 }
 
@@ -502,6 +521,18 @@ BASE_OBJECT *getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
       return findById(id, apsFeatureLists);
     default:
       return nullptr;
+  }
+}
+
+BASE_OBJECT* getBaseObjFromId(unsigned id, OBJECT_TYPE type)
+{
+  if (type == OBJ_FEATURE) {
+    return findById(id, apsFeatureLists);
+  }
+
+  for (auto player = 0; player < MAX_PLAYERS; ++player)
+  {
+    return getBaseObjFromData(id, player, type);
   }
 }
 

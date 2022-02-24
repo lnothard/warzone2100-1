@@ -35,8 +35,6 @@ bool cmdDroidInit();
 
 /** \brief Shut down commander code module.
  */
-void cmdDroidShutDown();
-
 /** \brief Checks the validity of all target designators.*/
 void cmdDroidUpdate();
 

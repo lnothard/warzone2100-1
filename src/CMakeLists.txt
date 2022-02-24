@@ -302,10 +302,10 @@ if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
 	# To properly bundle the resources, they must be built before the app
 	add_dependencies(warzone2100 data)
 	if(ENABLE_DOCS)
-		add_dependencies(warzone2100 wz2100_doc)
+#		add_dependencies(warzone2100 wz2100_doc)
 	endif()
 	if(ENABLE_NLS)
-		add_dependencies(warzone2100 translations)
+#		add_dependencies(warzone2100 translations)
 	endif()
 
 	# Bundle the Data resources
@@ -729,7 +729,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Windows")
 							LIBRARIES \"\${_WZ_STDCXXDLL}\"
 							DIRECTORIES \"\${_WZ_STDCXXDLL_PATH}\"
 							PRE_EXCLUDE_REGEXES \"^api-ms-win-*.dll$\" \"^ucrtbase.dll$\" \"^kernelbase.dll$\" \"^kernel32.dll$\"
-							POST_EXCLUDE_REGEXES \"[\\\\/][Ww][Ii][Nn][Dd][Oo][Ww][Ss][\\\\/][Ss][Yy][Ss][Tt][Ee][Mm]32[\\\\/].*\.dll$\"
+							POST_EXCLUDE_REGEXES \"[\\\\/][Ww][Ii][Nn][Dd][Oo][Ww][Ss][\\\\/][Ss][Yy][Ss][Tt][Ee][Mm]32[\\\\/].*.dll$\"
 						)
 						foreach(_stdcxx_dependency IN LISTS _WZ_STDCXXDLL_DEPENDENCIES)
 							get_filename_component(_stdcxx_dependency_filename \"\${_stdcxx_dependency}\" NAME)

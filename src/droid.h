@@ -206,7 +206,7 @@ bool pickATileGenThreat(UDWORD *x, UDWORD *y, UBYTE numIterations, SDWORD threat
 void initDroidMovement(DROID *psDroid);
 
 /// Looks through the players list of droids to see if any of them are building the specified structure - returns true if finds one
-bool checkDroidsBuilding(STRUCTURE *psStructure);
+bool checkDroidsBuilding(STRUCTURE const* psStructure);
 
 /// Looks through the players list of droids to see if any of them are demolishing the specified structure - returns true if finds one
 bool checkDroidsDemolishing(STRUCTURE *psStructure);

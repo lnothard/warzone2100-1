@@ -1306,19 +1306,8 @@ INT_RETVAL intRunWidgets()
 		}
 		else
 		{
-			if (saveGame(sRequestResult, GTYPE_SAVE_START))
-			{
-				char msg[256] = {'\0'};
-
-				sstrcpy(msg, _("GAME SAVED: "));
-				sstrcat(msg, saveGameName);
-				addConsoleMessage(msg, LEFT_JUSTIFY, NOTIFY_MESSAGE);
-			}
-			else
-			{
-				ASSERT(false, "intRunWidgets: saveGame Failed");
-				deleteSaveGame_classic(sRequestResult);
-			}
+      ASSERT(false, "intRunWidgets: saveGame Failed");
+      deleteSaveGame_classic(sRequestResult);
 		}
 	}
 

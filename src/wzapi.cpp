@@ -968,7 +968,7 @@ bool wzapi::structureIdle(WZAPI_PARAMS(const STRUCTURE *psStruct))
 	return ::structureIdle(psStruct);
 }
 
-std::vector<const STRUCTURE *> _enumStruct_fromList(WZAPI_PARAMS(optional<int> _player, optional<wzapi::STRUCTURE_TYPE_or_statsName_string> _structureType, optional<int> _playerFilter), STRUCTURE **psStructLists)
+std::vector<const STRUCTURE *> _enumStruct_fromList(WZAPI_PARAMS(optional<int> _player, optional<wzapi::STRUCTURE_TYPE_or_statsName_string> _structureType, optional<int> _playerFilter))
 {
 	std::vector<const STRUCTURE *> matches;
 	WzString statsName;
@@ -1010,7 +1010,7 @@ std::vector<const STRUCTURE *> _enumStruct_fromList(WZAPI_PARAMS(optional<int> _
 //--
 std::vector<const STRUCTURE *> wzapi::enumStruct(WZAPI_PARAMS(optional<int> _player, optional<STRUCTURE_TYPE_or_statsName_string> _structureType, optional<int> _playerFilter))
 {
-	return _enumStruct_fromList(context, _player, _structureType, _playerFilter, apsStructLists);
+	return _enumStruct_fromList(context, _player, _structureType, _playerFilter);
 }
 
 //-- ## enumStructOffWorld([player[, structureType[, playerFilter]]])
@@ -1699,8 +1699,9 @@ static std::unique_ptr<DROID_TEMPLATE> makeTemplate(int player, const std::strin
 	size_t numTurrets = _turrets.va_list.size();
 	int result;
 
-	memset(psTemplate->asParts, 0, sizeof(psTemplate->asParts)); // reset to defaults
-	memset(psTemplate->asWeaps, 0, sizeof(psTemplate->asWeaps));
+  psTemplate->asParts.fill(0);
+  psTemplate->asWeaps.fill(0);
+
 	int body = get_first_available_component(player, capacity, _body, COMP_BODY, strict);
 	if (body < 0)
 	{
@@ -1879,28 +1880,6 @@ std::unique_ptr<const DROID_TEMPLATE> wzapi::makeTemplate(WZAPI_PARAMS(int playe
 	SCRIPT_ASSERT(nullptr, context, !turrets.va_list.empty() && !turrets.va_list[0].strings.empty(), "No turrets provided");
 	std::unique_ptr<DROID_TEMPLATE> psTemplate = ::makeTemplate(player, templateName, body, propulsion, turrets, SIZE_NUM, true);
 	return std::unique_ptr<const DROID_TEMPLATE>(std::move(psTemplate));
-}
-
-//-- ## addDroidToTransporter(transporter, droid)
-//--
-//-- Load a droid, which is currently located on the campaign off-world mission list,
-//-- into a transporter, which is also currently on the campaign off-world mission list.
-//-- (3.2+ only)
-//--
-bool wzapi::addDroidToTransporter(WZAPI_PARAMS(game_object_identifier transporter, game_object_identifier droid))
-{
-	int transporterId = transporter.id;
-	int transporterPlayer = transporter.player;
-	DROID *psTransporter = IdToMissionDroid(transporterId, transporterPlayer);
-	SCRIPT_ASSERT(false, context, psTransporter, "No such transporter id %d belonging to player %d", transporterId, transporterPlayer);
-	SCRIPT_ASSERT(false, context, isTransporter(psTransporter), "Droid id %d belonging to player %d is not a transporter", transporterId, transporterPlayer);
-	int droidId = droid.id;
-	int droidPlayer = droid.player;
-	DROID *psDroid = IdToMissionDroid(droidId, droidPlayer);
-	SCRIPT_ASSERT(false, context, psDroid, "No such droid id %d belonging to player %d", droidId, droidPlayer);
-	SCRIPT_ASSERT(false, context, checkTransporterSpace(psTransporter, psDroid), "Not enough room in transporter %d for droid %d", transporterId, droidId);
-	psTransporter->psGroup->add(psDroid);
-	return true;
 }
 
 //-- ## addFeature(featureName, x, y)

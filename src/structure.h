@@ -69,8 +69,6 @@ extern UDWORD				numStructureStats;
 //used to hold the modifiers cross refd by weapon effect and structureStrength
 extern STRUCTSTRENGTH_MODIFIER		asStructStrengthModifier[WE_NUMEFFECTS][NUM_STRUCT_STRENGTH];
 
-void handleAbandonedStructures();
-
 int getMaxDroids(UDWORD player);
 int getMaxCommanders(UDWORD player);
 int getMaxConstructors(UDWORD player);

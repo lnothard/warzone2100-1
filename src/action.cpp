@@ -921,7 +921,7 @@ void actionUpdateDroid(DROID *psDroid)
 						}
 
 						// is the turret aligned with the target?
-						if (!wallBlocked && actionTargetTurret(psDroid, psActionTarget, &psDroid->asWeaps[i]))
+						if (!wallBlocked && actionTargetTurret(psDroid, psActionTarget, i))
 						{
 							// In range - fire !!!
 							combFire(&psDroid->asWeaps[i], psDroid, psActionTarget, i);
@@ -1070,7 +1070,7 @@ void actionUpdateDroid(DROID *psDroid)
 						}
 					}
 					else if (!psWeapStats->rotate ||
-					         actionTargetTurret(psDroid, psActionTarget, &psDroid->asWeaps[i]))
+					         actionTargetTurret(psDroid, psActionTarget, i))
 					{
 						/* In range - fire !!! */
 						combFire(&psDroid->asWeaps[i], psDroid, psActionTarget, i);
@@ -1179,7 +1179,7 @@ void actionUpdateDroid(DROID *psDroid)
                                        VTOL_ATTACK_AUDIO_DELAY);
             }
 
-            if (actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[i]))
+            if (actionTargetTurret(psDroid, psDroid->psActionTarget[0], i))
             {
               // In range - fire !!!
               combFire(&psDroid->asWeaps[i], psDroid,
@@ -1188,7 +1188,7 @@ void actionUpdateDroid(DROID *psDroid)
           }
           else
           {
-            actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[i]);
+            actionTargetTurret(psDroid, psDroid->psActionTarget[0], i);
           }
         }
 			}
@@ -1269,7 +1269,7 @@ void actionUpdateDroid(DROID *psDroid)
 
 						if (psWeapStats->rotate)
 						{
-							actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[i]);
+							actionTargetTurret(psDroid, psDroid->psActionTarget[0], i);
 						}
 
 						if (!isVtolDroid(psDroid) &&
@@ -1664,7 +1664,7 @@ void actionUpdateDroid(DROID *psDroid)
 		}
 		if (droidUpdateBuild(psDroid))
 		{
-			actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[0]);
+			actionTargetTurret(psDroid, psDroid->psActionTarget[0], 0);
 		}
 		break;
 	case DACTION_MOVETODEMOLISH:
@@ -1789,7 +1789,7 @@ void actionUpdateDroid(DROID *psDroid)
 		else if (actionUpdateFunc(psDroid))
 		{
 			//use 0 for non-combat(only 1 'weapon')
-			actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[0]);
+			actionTargetTurret(psDroid, psDroid->psActionTarget[0], 0);
 		}
 		else
 		{
@@ -1850,7 +1850,7 @@ void actionUpdateDroid(DROID *psDroid)
 		break;
 	case DACTION_OBSERVE:
 		// align the turret
-		actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[0]);
+		actionTargetTurret(psDroid, psDroid->psActionTarget[0], 0);
 
 		if (!cbSensorDroid(psDroid))
 		{
@@ -1876,7 +1876,7 @@ void actionUpdateDroid(DROID *psDroid)
 		break;
 	case DACTION_MOVETOOBSERVE:
 		// align the turret
-		actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[0]);
+		actionTargetTurret(psDroid, psDroid->psActionTarget[0], 0);
 
 		if (visibleObject(psDroid, psDroid->psActionTarget[0], false))
 		{
@@ -1969,7 +1969,7 @@ void actionUpdateDroid(DROID *psDroid)
 				// Got to destination - start repair
 				//rotate turret to point at droid being repaired
 				//use 0 for repair droid
-				actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[0]);
+				actionTargetTurret(psDroid, psDroid->psActionTarget[0], 0);
 				droidStartAction(psDroid);
 				psDroid->action = DACTION_DROIDREPAIR;
 			}
@@ -1988,7 +1988,7 @@ void actionUpdateDroid(DROID *psDroid)
 			// If not doing self-repair (psActionTarget[0] is repair target)
 			if (psDroid->psActionTarget[0] != psDroid)
 			{
-				actionTargetTurret(psDroid, psDroid->psActionTarget[0], &psDroid->asWeaps[0]);
+				actionTargetTurret(psDroid, psDroid->psActionTarget[0], 0);
 			}
 			// Just self-repairing.
 			// See if there's anything to shoot.
