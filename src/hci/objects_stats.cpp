@@ -13,9 +13,9 @@ void BaseObjectsController::clearSelection()
 
 void BaseObjectsController::clearStructureSelection()
 {
-	for (auto structure = interfaceStructList(); structure != nullptr; structure = structure->psNext)
+	for (auto structure : apsStructLists[selectedPlayer])
 	{
-		structure->selected = false;
+		structure.selected = false;
 	}
 }
 

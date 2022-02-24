@@ -23,7 +23,7 @@
  * Object memory management functions.
  *
  */
-#include <string.h>
+#include <cstring>
 
 #include "lib/framework/frame.h"
 #include "objects.h"
@@ -40,6 +40,7 @@
 #include "combat.h"
 #include "visibility.h"
 #include "qtscript.h"
+#include "group.h"
 
 // the initial value for the object ID
 #define OBJ_ID_INIT 20000
@@ -248,7 +249,7 @@ void removeDroid(DROID *psDroidToRemove)
 {
 	ASSERT_OR_RETURN(, psDroidToRemove->type == OBJ_DROID, "Pointer is not a unit");
 	ASSERT_OR_RETURN(, psDroidToRemove->player < MAX_PLAYERS, "Invalid player for unit");
-  std::erase(apsDroidLists[psDroidToRemove->player], psDroidToRemove);
+  std::erase_if(apsDroidLists[psDroidToRemove->player], psDroidToRemove);
 
 	/* Whenever a droid is removed from the current list its died
 	 * flag is set to NOT_CURRENT_LIST so that anything targetting
@@ -257,12 +258,6 @@ void removeDroid(DROID *psDroidToRemove)
     std::erase(apsSensorList, psDroidToRemove);
   }
   psDroidToRemove->died = NOT_CURRENT_LIST;
-}
-
-/*Removes all droids that may be stored in the limbo lists*/
-void freeAllLimboDroids()
-{
-	releaseAllObjectsInList(apsLimboDroids);
 }
 
 /* add the structure to the Structure Lists */
@@ -357,7 +352,7 @@ void removeStructureFromList(STRUCTURE *psStructToRemove)
 /* add the feature to the Feature Lists */
 void addFeature(FEATURE *psFeatureToAdd)
 {
-  apsFeatureLists[0].push_back(*psFeatureToAdd);
+  apsFeatureLists.push_back(*psFeatureToAdd);
 	if (psFeatureToAdd->psStats->subType == FEAT_OIL_RESOURCE) {
     apsOilList.push_back(psFeatureToAdd);
 	}
@@ -373,7 +368,6 @@ void killFeature(FEATURE *psDel)
 	destroyObject(psDel);
 
 	if (psDel->psStats->subType == FEAT_OIL_RESOURCE) {
-		removeObjectFromFuncList(apsOilList, psDel, 0);
     std::erase(apsOilList, psDel);
 	}
 }
@@ -381,10 +375,7 @@ void killFeature(FEATURE *psDel)
 /* Remove all features */
 void freeAllFeatures()
 {
-  for (auto& vec : apsFeatureLists)
-  {
-    vec.clear();
-  }
+    apsFeatureLists.clear();
 }
 
 /* Create a new Flag Position */
@@ -437,9 +428,11 @@ void addFlagPosition(FLAG_POSITION *psFlagPosToAdd)
 void removeFlagPosition(FLAG_POSITION *psDel)
 {
   ASSERT_OR_RETURN(, psDel != nullptr, "Invalid Flag Position pointer");
-  std::erase(apsFlagPosLists, *psDel);
+  for (auto player = 0; player < MAX_PLAYERS; ++player)
+  {
+    std::erase(apsFlagPosLists[player], *psDel);
+  }
 }
-
 
 // free all flag positions
 void freeAllFlagPositions()
@@ -487,186 +480,46 @@ void checkFactoryFlags()
 }
 #endif
 
+template<typename T>
+T* findById(unsigned id, std::vector<T>& vec)
+{
+  auto it = std::find_if(vec.begin(), vec.end(),
+                         [id](auto const& t) {
+    return t.id == id;
+  });
+  return it == vec.end() ? nullptr : &*it;
+}
 
 // Find a base object from it's id
 BASE_OBJECT *getBaseObjFromData(unsigned id, unsigned player, OBJECT_TYPE type)
 {
-	BASE_OBJECT		*psObj;
-	DROID			*psTrans;
-
   switch (type) {
     case OBJ_DROID:
-      for (auto& psDroid : apsDroidLists[player])
-      {
-
-      }
-      break;
+      return findById(id, apsDroidLists[player]);
     case OBJ_STRUCTURE:
-      psObj = apsStructLists[player];
-    break;
+      return findById(id, apsStructLists[player]);
     case OBJ_FEATURE:
-      psObj = apsFeatureLists[0];
+      return findById(id, apsFeatureLists);
     default:
-      break;
+      return nullptr;
   }
-
-  while (psObj)
-  {
-    if (psObj->id == id)
-    {
-      return psObj;
-    }
-    // if transporter check any droids in the grp
-    if (psObj->type == OBJ_DROID && isTransporter((DROID *) psObj))
-    {
-      for (psTrans = ((DROID *)psObj)->psGroup->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
-      {
-        if (psTrans->id == id)
-        {
-          return (BASE_OBJECT *)psTrans;
-        }
-      }
-    }
-    psObj = psObj->psNext;
-  }
-
-	ASSERT(false, "failed to find id %d for player %d", id, player);
-
-	return nullptr;
-}
-
-// Find a base object from it's id
-BASE_OBJECT *getBaseObjFromId(UDWORD id)
-{
-	unsigned int i;
-	UDWORD			player;
-	BASE_OBJECT		*psObj;
-	DROID			*psTrans;
-
-	for (i = 0; i < 7; ++i)
-	{
-		for (player = 0; player < MAX_PLAYERS; ++player)
-		{
-			switch (i)
-			{
-			case 0:
-				psObj = (BASE_OBJECT *)apsDroidLists[player];
-				break;
-			case 1:
-				psObj = (BASE_OBJECT *)apsStructLists[player];
-				break;
-			case 2:
-				if (player == 0)
-				{
-					psObj = (BASE_OBJECT *)apsFeatureLists[0];
-				}
-				else
-				{
-					psObj = nullptr;
-				}
-				break;
-			case 3:
-				psObj = (BASE_OBJECT *)mission.apsDroidLists[player];
-				break;
-			case 4:
-				psObj = (BASE_OBJECT *)mission.apsStructLists[player];
-				break;
-			case 5:
-				if (player == 0)
-				{
-					psObj = (BASE_OBJECT *)mission.apsFeatureLists[0];
-				}
-				else
-				{
-					psObj = nullptr;
-				}
-				break;
-			case 6:
-				if (player == 0)
-				{
-					psObj = (BASE_OBJECT *)apsLimboDroids[0];
-				}
-				else
-				{
-					psObj = nullptr;
-				}
-				break;
-			default:
-				psObj = nullptr;
-				break;
-			}
-
-			while (psObj)
-			{
-				if (psObj->id == id)
-				{
-					return psObj;
-				}
-				// if transporter check any droids in the grp
-				if ((psObj->type == OBJ_DROID) && isTransporter((DROID *)psObj))
-				{
-					for (psTrans = ((DROID *)psObj)->psGroup->psList; psTrans != nullptr; psTrans = psTrans->psGrpNext)
-					{
-						if (psTrans->id == id)
-						{
-							return (BASE_OBJECT *)psTrans;
-						}
-					}
-				}
-				psObj = psObj->psNext;
-			}
-		}
-	}
-	ASSERT(!"couldn't find a BASE_OBJ with ID", "getBaseObjFromId() failed for id %d", id);
-
-	return nullptr;
 }
 
 UDWORD getRepairIdFromFlag(FLAG_POSITION *psFlag)
 {
-	unsigned int i;
-	UDWORD			player;
-	STRUCTURE		*psObj;
-	REPAIR_FACILITY	*psRepair;
+  for (auto& psObj : apsStructLists[psFlag->player])
+  {
+    if (!psObj.pFunctionality || psObj.pStructureType->type != REF_REPAIR_FACILITY)
+      continue;
 
+    //check for matching delivery point
+    auto psRepair = (REPAIR_FACILITY *) psObj.pFunctionality;
+    if (psRepair->psDeliveryPoint == psFlag) {
+      return psObj.id;
+    }
+  }
 
-	player = psFlag->player;
-
-	//probably don't need to check mission list
-	for (i = 0; i < 2; ++i)
-	{
-		switch (i)
-		{
-		case 0:
-			psObj = (STRUCTURE *)apsStructLists[player];
-			break;
-		case 1:
-			psObj = (STRUCTURE *)mission.apsStructLists[player];
-			break;
-		default:
-			psObj = nullptr;
-			break;
-		}
-
-		while (psObj)
-		{
-			if (psObj->pFunctionality)
-			{
-				if	(psObj->pStructureType->type == REF_REPAIR_FACILITY)
-				{
-					//check for matching delivery point
-					psRepair = ((REPAIR_FACILITY *)psObj->pFunctionality);
-					if (psRepair->psDeliveryPoint == psFlag)
-					{
-						return psObj->id;
-					}
-				}
-			}
-			psObj = psObj->psNext;
-		}
-	}
 	ASSERT(!"unable to find repair id for FLAG_POSITION", "getRepairIdFromFlag() failed");
-
 	return UDWORD_MAX;
 }
 
@@ -721,9 +574,7 @@ void objCount(int *droids, int *structures, int *features)
 		{
 			(*droids)++;
 			if (isTransporter(&psDroid)) {
-				auto psTrans = psDroid.psGroup->psList;
-
-				for (psTrans = psTrans->psGrpNext; psTrans != nullptr; psTrans = psTrans->psGrpNext)
+				for (auto psTrans : psDroid.psGroup->psList)
 				{
 					(*droids)++;
 				}

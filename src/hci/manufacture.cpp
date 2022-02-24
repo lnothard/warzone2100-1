@@ -4,8 +4,10 @@
 #include "lib/sound/audio_id.h"
 #include "lib/sound/audio.h"
 #include "manufacture.h"
-#include "../mission.h"
 #include "../qtscript.h"
+#include "src/display.h"
+#include "src/objmem.h"
+#include "src/power.h"
 
 STRUCTURE *ManufactureController::highlightedFactory = nullptr;
 
@@ -193,10 +195,6 @@ public:
 
 	void jump() override
 	{
-		if (!offWorldKeepLists)
-		{
-			BaseWidget::jump();
-		}
 	}
 
 	void clickPrimary() override

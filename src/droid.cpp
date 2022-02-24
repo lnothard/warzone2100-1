@@ -353,7 +353,9 @@ DROID::~DROID()
     for (auto psCurr : psGroup->psList)
     {
       if (psCurr == this) continue;
-      std::erase(apsDroidLists[player], *psCurr);
+      std::erase_if(apsDroidLists[player], [psCurr](auto& droid) {
+        return psCurr == &droid;
+      });
     }
   }
 	fpathRemoveDroidData(id);
@@ -1342,7 +1344,7 @@ struct FilterDroidWeaps
 {
 	FilterDroidWeaps(unsigned numWeaps, const std::array<WEAPON, MAX_WEAPONS> &asWeaps)
 	{
-		std::transform(asWeaps.begin(), asWeaps.end(), this->asWeaps, [](const WEAPON &weap) {
+		std::transform(asWeaps.begin(), asWeaps.end(), this->asWeaps.begin(), [](const WEAPON &weap) {
 			return weap.nStat;
 		});
 		this->numWeaps = std::remove_if(this->asWeaps.begin(), this->asWeaps.end(), [](uint32_t stat) {

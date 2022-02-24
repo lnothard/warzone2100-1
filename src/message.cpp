@@ -129,7 +129,9 @@ static inline void removeMessageFromList(MESSAGE *del, UDWORD player)
 	ASSERT_OR_RETURN(, del != nullptr, "Invalid message pointer");
 	ASSERT_OR_RETURN(, player < MAX_PLAYERS, "Bad player");
 
-  std::erase(apsMessages[player], *del);
+  std::erase_if(apsMessages[player], [del](auto& msg) {
+    return del == &msg;
+  });
 }
 
 static inline void releaseAllMessages()
@@ -234,7 +236,9 @@ static void removeProxDisp(MESSAGE *psMessage, UDWORD player)
   }
 
   intRemoveProximityButton(&*prox);
-  std::erase(apsProxDisp[player], *prox);
+  std::erase_if(apsProxDisp[player], [prox](auto& t) {
+    return &*prox == &t;
+  });
 }
 
 void removeMessage(MESSAGE *psDel, UDWORD player)

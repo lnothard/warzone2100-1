@@ -8,6 +8,8 @@ unset(_OLD_CMAKE_MODULE_PATH)
 
 project(warzone2100)
 
+add_compile_options(-Wno-error)
+
 if(${CMAKE_VERSION} VERSION_LESS 3.12)
     cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
@@ -17,7 +19,7 @@ include(CMakeDependentOption)
 OPTION(ENABLE_DOCS "Enable documentation generation" ON)
 OPTION(ENABLE_NLS "Native Language Support" ON)
 OPTION(WZ_ENABLE_WARNINGS "Enable (additional) warnings" OFF)
-OPTION(WZ_ENABLE_WARNINGS_AS_ERRORS "Enable compiler flags that treat (most) warnings as errors" ON)
+OPTION(WZ_ENABLE_WARNINGS_AS_ERRORS "Enable compiler flags that treat (most) warnings as errors" OFF)
 OPTION(WZ_ENABLE_BACKEND_VULKAN "Enable Vulkan backend" ON)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows" OR CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -615,6 +617,9 @@ macro(CONFIGURE_WZ_COMPILER_WARNINGS)
 		check_compiler_flags_output("-Werror -Wformat-truncation -Wno-error=cpp" COMPILER_TYPE C   OUTPUT_FLAGS "-Wno-format-truncation" OUTPUT_VARIABLE _supported_c_compiler_flags APPEND)
 		check_compiler_flags_output("-Werror -Wformat-truncation -Wno-error=cpp" COMPILER_TYPE CXX OUTPUT_FLAGS "-Wno-format-truncation" OUTPUT_VARIABLE _supported_cxx_compiler_flags APPEND)
 
+		check_compiler_flags_output("-Werror -Wno-unused-variable -Wno-error=cpp" COMPILER_TYPE C   OUTPUT_FLAGS "-Wno-unused-variable" OUTPUT_VARIABLE _supported_c_compiler_flags APPEND)
+		check_compiler_flags_output("-Werror -Wno-unused-variable -Wno-error=cpp" COMPILER_TYPE CXX OUTPUT_FLAGS "-Wno-unused-variable" OUTPUT_VARIABLE _supported_cxx_compiler_flags APPEND)
+
 		message( STATUS "Supported C compiler_flags=${_supported_c_compiler_flags}" )
 		message( STATUS "Supported CXX compiler_flags=${_supported_cxx_compiler_flags}" )
 
@@ -771,7 +776,6 @@ add_subdirectory(data)
 add_subdirectory(lib)
 add_subdirectory(doc)
 add_subdirectory(icons)
-add_subdirectory(po)
 add_subdirectory(src)
 add_subdirectory(pkg)
 add_subdirectory(tools/map)

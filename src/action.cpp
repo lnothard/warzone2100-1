@@ -76,10 +76,12 @@ struct DROID_ACTION_DATA
 	BASE_STATS		*psStats;
 };
 
-// Check if a droid has stopped moving
-#define DROID_STOPPED(psDroid) \
-	(psDroid->sMove.Status == MOVEINACTIVE || psDroid->sMove.Status == MOVEHOVER || \
-	 psDroid->sMove.Status == MOVESHUFFLE)
+bool DROID_STOPPED(DROID const* psDroid)
+{
+   return psDroid->sMove.Status == MOVEINACTIVE ||
+          psDroid->sMove.Status == MOVEHOVER ||
+	        psDroid->sMove.Status == MOVESHUFFLE;
+}
 
 /** Radius for search when looking for VTOL landing position */
 static const int vtolLandingRadius = 23;
@@ -765,30 +767,6 @@ void actionUpdateDroid(DROID *psDroid)
 				moveDroidToNoFormation(psDroid, order->psObj->pos.x, order->psObj->pos.y);
 			} else {
 				moveStopDroid(psDroid);
-			}
-		}
-		break;
-	case DACTION_TRANSPORTWAITTOFLYIN:
-		//if we're moving droids to safety and currently waiting to fly back in, see if time is up
-		if (psDroid->player == selectedPlayer && getDroidsToSafetyFlag())
-		{
-			bool enoughTimeRemaining = (mission.time - (gameTime - mission.startTime)) >= (60 * GAME_TICKS_PER_SEC);
-			if (((SDWORD)(mission.ETA - (gameTime - missionGetReinforcementTime())) <= 0) && enoughTimeRemaining)
-			{
-				UDWORD droidX, droidY;
-
-				if (!droidRemove(psDroid, mission.apsDroidLists))
-				{
-					ASSERT_OR_RETURN(, false, "Unable to remove transporter from mission list");
-				}
-				addDroid(psDroid);
-				//set the x/y up since they were set to INVALID_XY when moved offWorld
-				missionGetTransporterExit(selectedPlayer, &droidX, &droidY);
-				psDroid->pos.x = droidX;
-				psDroid->pos.y = droidY;
-				//fly Transporter back to get some more droids
-				orderDroidLoc(psDroid, DORDER_TRANSPORTIN,
-				              getLandingX(selectedPlayer), getLandingY(selectedPlayer), ModeImmediate);
 			}
 		}
 		break;

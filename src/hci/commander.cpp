@@ -16,14 +16,13 @@ void CommanderController::updateData()
 void CommanderController::updateCommandersList()
 {
 	commanders.clear();
-
 	ASSERT_OR_RETURN(, selectedPlayer < MAX_PLAYERS, "selectedPlayer = %" PRIu32 "", selectedPlayer);
 
-	for (DROID *droid = apsDroidLists[selectedPlayer]; droid; droid = droid->psNext)
+	for (auto& droid : apsDroidLists[selectedPlayer])
 	{
-		if (droid->droidType == DROID_COMMAND && droid->died == 0)
+		if (droid.droidType == DROID_COMMAND && droid.died == 0)
 		{
-			commanders.push_back(droid);
+			commanders.push_back(&droid);
 		}
 	}
 

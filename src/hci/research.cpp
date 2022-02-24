@@ -7,7 +7,9 @@
 #include "research.h"
 #include "../qtscript.h"
 #include "../component.h"
-#include "../mission.h"
+#include "src/objmem.h"
+#include "src/multiplay.h"
+#include "src/power.h"
 
 STRUCTURE *ResearchController::highlightedFacility = nullptr;
 static ImdObject getResearchObjectImage(RESEARCH *research);
@@ -23,11 +25,11 @@ void ResearchController::updateFacilitiesList()
 {
 	facilities.clear();
 
-	for (auto psStruct = interfaceStructList(); psStruct != nullptr; psStruct = psStruct->psNext)
+	for (auto psStruct : apsStructLists[selectedPlayer])
 	{
-		if (psStruct->pStructureType->type == REF_RESEARCH && psStruct->status == SS_BUILT && psStruct->died == 0)
+		if (psStruct.pStructureType->type == REF_RESEARCH && psStruct.status == SS_BUILT && psStruct.died == 0)
 		{
-			facilities.push_back(psStruct);
+			facilities.push_back(&psStruct);
 		}
 	}
 
@@ -260,10 +262,6 @@ private:
 protected:
 	void jump() override
 	{
-		if (!offWorldKeepLists)
-		{
-			BaseWidget::jump();
-		}
 	}
 
 	void clickPrimary() override

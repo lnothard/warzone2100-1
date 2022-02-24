@@ -35,7 +35,6 @@
 #include "lib/widget/label.h"
 #include "../intdisplay.h"
 #include "../hci.h"
-#include "../mission.h"
 #include "../console.h"
 #include "../multiint.h"
 #include "../multilimit.h"

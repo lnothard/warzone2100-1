@@ -92,8 +92,10 @@ struct STRUCTURE;
 
 struct DROID : public BASE_OBJECT
 {
+  ~DROID() override;
 	DROID(uint32_t id, unsigned player);
-	~DROID() override;
+
+  DROID& operator=(DROID const& rhs) = default;
 
 	/// UTF-8 name of the droid. This is generated from the droid template
 	///  WARNING: This *can* be changed by the game player after creation & can be translated, do NOT rely on this being the same for everyone!
